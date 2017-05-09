@@ -42,250 +42,102 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
   def run(root: SimplifiedAst.Root)(implicit flix: Flix): Validation[SimplifiedAst.Root, CompilationError] = {
 
     /**
-      * A set containing all singleton-valued enums.
+      * Returns `true` if and only if `enum` is a singleton-valued enum.
       */
-    val singleCaseEnums: Set[Symbol.EnumSym] = root.enums.filter{case (sym, defn) => defn.cases.size <= 1}.keySet
+    def isSingleCaseEnum(enum: Symbol.EnumSym): Boolean = root.enums.filter{case (sym, defn) => defn.cases.size <= 1}.contains(enum)
 
     /**
       * Performs a single pass optimization on each element in `es`.
       *
-      * That is, applies `optimizeExp` to each element in `es` and returns the results in a List.
+      * That is, applies `optimize` to each element in `es` and returns the results in a List.
       */
-    def optimizeExps(es: List[Expression]): List[(Expression, Boolean)] = es.map(optimizeExp)
+    def optimizeExps(es: List[Expression]): List[Expression] = es.map(optimize)
 
     /**
       * Performs a single pass optimization on the given Expression `e0`.
-      *
-      * Returns a pair `(exp, bool)` where:
-      *
-      * - `exp` is the single pass optimized version of the given Expression `e0`
-      *
-      * - `bool` is true iff some optimization was performed.
       */
-    def optimizeExp(e0: Expression): (Expression, Boolean) = e0 match {
-      case Expression.Unit => (Expression.Unit, false)
-      case Expression.True => (Expression.True, false)
-      case Expression.False => (Expression.False, false)
-      case Expression.Char(lit) => (Expression.Char(lit), false)
-      case Expression.Float32(lit) => (Expression.Float32(lit), false)
-      case Expression.Float64(lit) => (Expression.Float64(lit), false)
-      case Expression.Int8(lit) => (Expression.Int8(lit), false)
-      case Expression.Int16(lit) => (Expression.Int16(lit), false)
-      case Expression.Int32(lit) => (Expression.Int32(lit), false)
-      case Expression.Int64(lit) => (Expression.Int64(lit), false)
-      case Expression.BigInt(lit) => (Expression.BigInt(lit), false)
-      case Expression.Str(lit) => (Expression.Str(lit), false)
-      case Expression.LoadBool(exp, offset) =>
-        val (e, b) = optimizeExp(exp)
-        (Expression.LoadBool(e, offset), b)
-      case Expression.LoadInt8(exp, offset) =>
-        val (e, b) = optimizeExp(exp)
-        (Expression.LoadInt8(e, offset), b)
-      case Expression.LoadInt16(exp, offset) =>
-        val (e, b) = optimizeExp(exp)
-        (Expression.LoadInt16(e, offset), b)
-      case Expression.LoadInt32(exp, offset) =>
-        val (e, b) = optimizeExp(exp)
-        (Expression.LoadInt32(e, offset), b)
-      case Expression.StoreBool(exp, offset, v) =>
-        val (e1, b1) = optimizeExp(exp)
-        val (e2, b2) = optimizeExp(v)
-        (Expression.StoreBool(e1, offset, e2), b1 || b2)
-      case Expression.StoreInt8(exp, offset, v) =>
-        val (e1, b1) = optimizeExp(exp)
-        val (e2, b2) = optimizeExp(v)
-        (Expression.StoreInt8(e1, offset, e2), b1 || b2)
-      case Expression.StoreInt16(exp, offset, v) =>
-        val (e1, b1) = optimizeExp(exp)
-        val (e2, b2) = optimizeExp(v)
-        (Expression.StoreInt16(e1, offset, e2), b1 || b2)
-      case Expression.StoreInt32(exp, offset, v) =>
-        val (e1, b1) = optimizeExp(exp)
-        val (e2, b2) = optimizeExp(v)
-        (Expression.StoreInt32(e1, offset, e2), b1 || b2)
-      case Expression.Var(sym, tpe, loc) => (Expression.Var(sym, tpe, loc), false)
-      case Expression.Ref(sym, tpe, loc) => (Expression.Ref(sym, tpe, loc), false)
-      case Expression.Lambda(args, body, tpe, loc) =>
-        val (e, b) = optimizeExp(body)
-        (Expression.Lambda(args, e, tpe, loc), b)
-      case Expression.Hook(hook, tpe, loc) => (Expression.Hook(hook, tpe, loc), false)
+    def optimize(e0: Expression): Expression = e0 match {
+      case Expression.Unit => Expression.Unit
+      case Expression.True => Expression.True
+      case Expression.False => Expression.False
+      case Expression.Char(lit) => Expression.Char(lit)
+      case Expression.Float32(lit) => Expression.Float32(lit)
+      case Expression.Float64(lit) => Expression.Float64(lit)
+      case Expression.Int8(lit) => Expression.Int8(lit)
+      case Expression.Int16(lit) => Expression.Int16(lit)
+      case Expression.Int32(lit) => Expression.Int32(lit)
+      case Expression.Int64(lit) => Expression.Int64(lit)
+      case Expression.BigInt(lit) => Expression.BigInt(lit)
+      case Expression.Str(lit) => Expression.Str(lit)
+      case Expression.LoadBool(exp, offset) => Expression.LoadBool(optimize(exp), offset)
+      case Expression.LoadInt8(exp, offset) => Expression.LoadInt8(optimize(exp), offset)
+      case Expression.LoadInt16(exp, offset) => Expression.LoadInt16(optimize(exp), offset)
+      case Expression.LoadInt32(exp, offset) => Expression.LoadInt32(optimize(exp), offset)
+      case Expression.StoreBool(exp, offset, v) => Expression.StoreBool(optimize(exp), offset, optimize(v))
+      case Expression.StoreInt8(exp, offset, v) => Expression.StoreInt8(optimize(exp), offset, optimize(v))
+      case Expression.StoreInt16(exp, offset, v) => Expression.StoreInt16(optimize(exp), offset, optimize(v))
+      case Expression.StoreInt32(exp, offset, v) => Expression.StoreInt32(optimize(exp), offset, optimize(v))
+      case Expression.Var(sym, tpe, loc) => Expression.Var(sym, tpe, loc)
+      case Expression.Ref(sym, tpe, loc) => Expression.Ref(sym, tpe, loc)
+      case Expression.Lambda(args, body, tpe, loc) => Expression.Lambda(args, optimize(body), tpe, loc)
+      case Expression.Hook(hook, tpe, loc) => Expression.Hook(hook, tpe, loc)
       case Expression.MkClosure(lambda, freeVars, tpe, loc) =>
-        val (e, b) = optimizeExp(lambda)
-        (Expression.MkClosure(e.asInstanceOf[Expression.Lambda], freeVars, tpe, loc), b)
+        Expression.MkClosure(optimize(lambda).asInstanceOf[Expression.Lambda], freeVars, tpe, loc)
       case Expression.MkClosureRef(ref, freeVars, tpe, loc) =>
-        val (e, b) = optimizeExp(ref)
-        (Expression.MkClosureRef(e.asInstanceOf[Expression.Ref], freeVars, tpe, loc), b)
-      case Expression.ApplyRef(sym, args, tpe, loc) =>
-        val (es, bs) = optimizeExps(args).unzip
-        (Expression.ApplyRef(sym, es, tpe, loc), bs.exists(identity))
+        Expression.MkClosureRef(optimize(ref).asInstanceOf[Expression.Ref], freeVars, tpe, loc)
+      case Expression.ApplyRef(sym, args, tpe, loc) => Expression.ApplyRef(sym, optimizeExps(args), tpe, loc)
       case Expression.ApplyTail(sym, formals, actuals, tpe, loc) =>
-        val (es, bs) = optimizeExps(actuals).unzip
-        (Expression.ApplyTail(sym, formals, es, tpe, loc), bs.exists(identity))
-      case Expression.ApplyHook(hook, args, tpe, loc) =>
-        val (es, bs) = optimizeExps(args).unzip
-        (Expression.ApplyHook(hook, es, tpe, loc), bs.exists(identity))
-      case Expression.Apply(exp, args, tpe, loc) =>
-        val (e, b) = optimizeExp(exp)
-        val (es, bs) = optimizeExps(args).unzip
-        (Expression.Apply(e, es, tpe, loc), bs.exists(identity) || b)
-      case Expression.Unary(op, exp, tpe, loc) =>
-        val (e, b) = optimizeExp(exp)
-        (Expression.Unary(op, e, tpe, loc), b)
+        Expression.ApplyTail(sym, formals, optimizeExps(actuals), tpe, loc)
+      case Expression.ApplyHook(hook, args, tpe, loc) => Expression.ApplyHook(hook, optimizeExps(args), tpe, loc)
+      case Expression.Apply(exp, args, tpe, loc) => Expression.Apply(optimize(exp), optimizeExps(args), tpe, loc)
+      case Expression.Unary(op, exp, tpe, loc) => Expression.Unary(op, optimize(exp), tpe, loc)
       case Expression.Binary(op, exp1, exp2, tpe, loc) =>
         // Elimination of run-time tag checks of singleton-valued enums.
-        val (e1, b1) = optimizeExp(exp1)
-        val (e2, b2) = optimizeExp(exp2)
+        val e1 = optimize(exp1)
+        val e2 = optimize(exp2)
         (op, e1, e2) match {
           case (BinaryOperator.Equal, Expression.Tag(sym, tag, exp, tp, lc), _) =>
-            if (singleCaseEnums.contains(sym) && exp == Expression.Unit) (Expression.True, true)
-            else (Expression.Binary(op, e1, e2, tpe, loc), b1 || b2)
+            if (isSingleCaseEnum(sym) && exp == Expression.Unit) Expression.True
+            else Expression.Binary(op, e1, e2, tpe, loc)
           case (BinaryOperator.Equal, _, Expression.Tag(sym, tag, exp, tp, lc)) =>
-            if (singleCaseEnums.contains(sym) && exp == Expression.Unit) (Expression.True, true)
-            else (Expression.Binary(op, e1, e2, tpe, loc), b1 || b2)
-          case _ => (Expression.Binary(op, e1, e2, tpe, loc), b1 || b2)
+            if (isSingleCaseEnum(sym) && exp == Expression.Unit) Expression.True
+            else Expression.Binary(op, e1, e2, tpe, loc)
+          case _ => Expression.Binary(op, e1, e2, tpe, loc)
         }
       case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
         // Elimination of dead branches (e.g. if (true) e1 else e2).
-        val (e1, b1) = optimizeExp(exp1)
+        val e1 = optimize(exp1)
         e1 match {
-          case Expression.True => (optimizeExp(exp2)._1, true)
-          case Expression.False => (optimizeExp(exp3)._1, true)
+          case Expression.True => optimize(exp2)
+          case Expression.False => optimize(exp3)
           case _ =>
-            val (e2, b2) = optimizeExp(exp2)
-            val (e3, b3) = optimizeExp(exp3)
-            (Expression.IfThenElse(e1, e2, e3, tpe, loc), b1 || b2 || b3)
+            val e2 = optimize(exp2)
+            val e3 = optimize(exp3)
+            Expression.IfThenElse(e1, e2, e3, tpe, loc)
         }
-      case Expression.Let(sym, exp1, exp2, tpe, loc) =>
-        val (e1, b1) = optimizeExp(exp1)
-        val (e2, b2) = optimizeExp(exp2)
-        (Expression.Let(sym, e1, e2, tpe, loc), b1 || b2)
-      case Expression.Is(exp, tag, loc) =>
-        val (e, b) = optimizeExp(exp)
-        (Expression.Is(e, tag, loc), b)
-      case Expression.Tag(sym, tag, exp, tpe, loc) =>
-        val (e, b) = optimizeExp(exp)
-        (Expression.Tag(sym, tag, e, tpe, loc), b)
-      case Expression.Untag(tag, exp, tpe, loc) =>
-        val (e, b) = optimizeExp(exp)
-        (Expression.Untag(tag, e, tpe, loc), b)
-      case Expression.Index(base, offset, tpe, loc) =>
-        val (e, b) = optimizeExp(base)
-        (Expression.Index(e, offset, tpe, loc), b)
-      case Expression.Tuple(elms, tpe, loc) =>
-        val (es, bs) = optimizeExps(elms).unzip
-        (Expression.Tuple(es, tpe, loc), bs.exists(identity))
-      case Expression.Existential(fparam, exp, loc) =>
-        val (e, b) = optimizeExp(exp)
-        (Expression.Existential(fparam, e, loc), b)
-      case Expression.Universal(fparam, exp, loc) =>
-        val (e, b) = optimizeExp(exp)
-        (Expression.Universal(fparam, e, loc), b)
+      case Expression.Let(sym, exp1, exp2, tpe, loc) => Expression.Let(sym, optimize(exp1), optimize(exp2), tpe, loc)
+      case Expression.Is(exp, tag, loc) => Expression.Is(optimize(exp), tag, loc)
+      case Expression.Tag(sym, tag, exp, tpe, loc) => Expression.Tag(sym, tag, optimize(exp), tpe, loc)
+      case Expression.Untag(tag, exp, tpe, loc) => Expression.Untag(tag, optimize(exp), tpe, loc)
+      case Expression.Index(base, offset, tpe, loc) => Expression.Index(optimize(base), offset, tpe, loc)
+      case Expression.Tuple(elms, tpe, loc) => Expression.Tuple(optimizeExps(elms), tpe, loc)
+      case Expression.Existential(fparam, exp, loc) => Expression.Existential(fparam, optimize(exp), loc)
+      case Expression.Universal(fparam, exp, loc) => Expression.Universal(fparam, optimize(exp), loc)
       case Expression.NativeConstructor(constructor, args, tpe, loc) =>
-        val (es, bs) = optimizeExps(args).unzip
-        (Expression.NativeConstructor(constructor, es, tpe, loc), bs.exists(identity))
-      case Expression.NativeField(field, tpe, loc) => (Expression.NativeField(field, tpe, loc), false)
+        Expression.NativeConstructor(constructor, optimizeExps(args), tpe, loc)
+      case Expression.NativeField(field, tpe, loc) => Expression.NativeField(field, tpe, loc)
       case Expression.NativeMethod(method, args, tpe, loc) =>
-        val (es, bs) = optimizeExps(args).unzip
-        (Expression.NativeMethod(method, es, tpe, loc), bs.exists(identity))
-      case Expression.UserError(tpe, loc) => (Expression.UserError(tpe, loc), false)
-      case Expression.MatchError(tpe, loc) => (Expression.MatchError(tpe, loc), false)
-      case Expression.SwitchError(tpe, loc) => (Expression.SwitchError(tpe, loc), false)
-    }
-
-    /**
-      * Fully optimizes the given Expression `e0`.
-      *
-      * That is, iteratively applies `optimizeExp` to `e0` until no further optimizations are made.
-      */
-    def fullyOptimizeExp(e0: Expression): Expression = {
-      var exp = e0
-      var changing = true
-
-      while (changing) {
-        val (optExp, change) = optimizeExp(exp)
-        exp = optExp
-        changing = change
-      }
-
-      exp
-    }
-
-    /**
-      * Fully optimizes each SimplifiedAst.Term.Head in `hs`.
-      */
-    def fullyOptimizeHeadTerms(hs: List[SimplifiedAst.Term.Head]): List[SimplifiedAst.Term.Head] = hs.map(fullyOptimizeHeadTerm)
-
-    /**
-      * Fully optimizes the given SimplifiedAst.Term.Head `h0`.
-      */
-    def fullyOptimizeHeadTerm(h0: SimplifiedAst.Term.Head): SimplifiedAst.Term.Head = {
-      h0 match {
-        case SimplifiedAst.Term.Head.Var(sym, tpe, loc) => SimplifiedAst.Term.Head.Var(sym, tpe, loc)
-        case SimplifiedAst.Term.Head.Lit(lit, tpe, loc) => SimplifiedAst.Term.Head.Lit(fullyOptimizeExp(lit), tpe, loc)
-        case SimplifiedAst.Term.Head.App(sym, args, tpe, loc) => SimplifiedAst.Term.Head.App(sym, args, tpe, loc)
-      }
-    }
-
-    /**
-      * Fully optimizes each SimplifiedAst.Term.Body in `bs`.
-      */
-    def fullyOptimizeBodyTerms(bs: List[SimplifiedAst.Term.Body]): List[SimplifiedAst.Term.Body] = bs.map(fullyOptimizeBodyTerm)
-
-    /**
-      * Fully optimizes the given SimplifiedAst.Term.Body `b0`.
-      */
-    def fullyOptimizeBodyTerm(b0: SimplifiedAst.Term.Body): SimplifiedAst.Term.Body = {
-      b0 match {
-        case SimplifiedAst.Term.Body.Wild(tpe, loc) => SimplifiedAst.Term.Body.Wild(tpe, loc)
-        case SimplifiedAst.Term.Body.Var(sym, tpe, loc) => SimplifiedAst.Term.Body.Var(sym, tpe, loc)
-        case SimplifiedAst.Term.Body.Lit(exp, tpe, loc) => SimplifiedAst.Term.Body.Lit(fullyOptimizeExp(exp), tpe, loc)
-        case SimplifiedAst.Term.Body.Pat(pat, tpe, loc) => SimplifiedAst.Term.Body.Pat(pat, tpe, loc)
-      }
+        Expression.NativeMethod(method, optimizeExps(args), tpe, loc)
+      case Expression.UserError(tpe, loc) => Expression.UserError(tpe, loc)
+      case Expression.MatchError(tpe, loc) => Expression.MatchError(tpe, loc)
+      case Expression.SwitchError(tpe, loc) => Expression.SwitchError(tpe, loc)
     }
 
     // Start the timer.
     val t = System.nanoTime()
 
     // Optimize expressions in the definitions.
-    val optDefinitions = root.definitions.mapValues(defn => defn.copy(exp = fullyOptimizeExp(defn.exp)))
-
-    // Optimize expressions in the strata.
-    val optStrata = root.strata.map(stratum => {
-      val optConstraints = stratum.constraints.map(constraint => {
-        val optHead = constraint.head match {
-          case SimplifiedAst.Predicate.Head.True(loc) => SimplifiedAst.Predicate.Head.True(loc)
-          case SimplifiedAst.Predicate.Head.False(loc) => SimplifiedAst.Predicate.Head.False(loc)
-          case SimplifiedAst.Predicate.Head.Positive(sym, terms, loc) =>
-            SimplifiedAst.Predicate.Head.Positive(sym, fullyOptimizeHeadTerms(terms), loc)
-          case SimplifiedAst.Predicate.Head.Negative(sym, terms, loc) =>
-            SimplifiedAst.Predicate.Head.Negative(sym, fullyOptimizeHeadTerms(terms), loc)
-        }
-        val optBody = constraint.body.map {
-          case SimplifiedAst.Predicate.Body.Positive(sym, terms, loc) =>
-            SimplifiedAst.Predicate.Body.Positive(sym, fullyOptimizeBodyTerms(terms), loc)
-          case SimplifiedAst.Predicate.Body.Negative(sym, terms, loc) =>
-            SimplifiedAst.Predicate.Body.Negative(sym, fullyOptimizeBodyTerms(terms), loc)
-          case SimplifiedAst.Predicate.Body.Filter(sym, terms, loc) =>
-            SimplifiedAst.Predicate.Body.Filter(sym, fullyOptimizeBodyTerms(terms), loc)
-          case SimplifiedAst.Predicate.Body.Loop(sym, term, loc) =>
-            SimplifiedAst.Predicate.Body.Loop(sym, fullyOptimizeHeadTerm(term), loc)
-        }
-        constraint.copy(head = optHead, body = optBody)
-      })
-      stratum.copy(constraints = optConstraints)
-    })
-
-    // Optimize expressions in the lattices.
-    val optLattices = root.lattices.mapValues {
-      case SimplifiedAst.Definition.Lattice(tpe, bot, top, leq, lub, glb, loc) =>
-        SimplifiedAst.Definition.Lattice(tpe, fullyOptimizeExp(bot), fullyOptimizeExp(top),
-          fullyOptimizeExp(leq), fullyOptimizeExp(lub), fullyOptimizeExp(glb), loc)
-    }
-
-    // Optimize expressions in the properties.
-    val optProperties = root.properties.map {
-      case SimplifiedAst.Property(law, defn, exp) => SimplifiedAst.Property(law, defn, fullyOptimizeExp(exp))
-    }
+    val optDefinitions = root.definitions.mapValues(defn => defn.copy(exp = optimize(defn.exp)))
 
     // Calculate the elapsed time.
     val e = System.nanoTime() - t
@@ -293,9 +145,6 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     // Reassemble the AST.
     root.copy(
       definitions = optDefinitions,
-      strata = optStrata,
-      lattices = optLattices,
-      properties = optProperties,
       time = root.time.copy(optimizer = e)
     ).toSuccess
   }
