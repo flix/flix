@@ -1097,11 +1097,11 @@ object Codegen {
             // Unit can only be equal to unit, so the objects are poped from the top of the stack
             visitor.visitInsn(POP)
             visitor.visitInsn(POP)
-            (e2.tpe, o) match {
-              case (Type.Unit, BinaryOperator.NotEqual) => visitor.visitJumpInsn(GOTO, condElse)
-              case (Type.Unit, BinaryOperator.Equal) =>
-              case (_, BinaryOperator.Equal) => visitor.visitJumpInsn(GOTO, condElse)
-              case (_, BinaryOperator.NotEqual) =>
+            e2.tpe match {
+              case Type.Unit if o == BinaryOperator.NotEqual => visitor.visitJumpInsn(GOTO, condElse)
+              case Type.Unit if o == BinaryOperator.Equal =>
+              case _ if o == BinaryOperator.Equal => visitor.visitJumpInsn(GOTO, condElse)
+              case _ =>
             }
           case Type.Str if o == BinaryOperator.Equal || o == BinaryOperator.NotEqual =>
             // String can be compared using Object's `equal` method
