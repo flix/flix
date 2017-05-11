@@ -498,7 +498,7 @@ object Codegen {
       }
       compileExpression(ctx, visitor, entryPoint)(exp2)
 
-    case Expression.Is(exp, tag, _) =>
+    case Expression.Is(sym, tag, exp, _) =>
       // Value.Tag.tag() method
       val clazz1 = Constants.tagClass
       val method1 = clazz1.getMethod("tag")
@@ -520,7 +520,7 @@ object Codegen {
       compileBoxedExpr(ctx, visitor, entryPoint)(exp)
       visitor.visitMethodInsn(INVOKEVIRTUAL, Constants.valueObject, "mkTag", "(Ljava/lang/String;Ljava/lang/Object;)Lca/uwaterloo/flix/runtime/Value$Tag;", false)
 
-    case Expression.Untag(tag, exp, tpe, _) =>
+    case Expression.Untag(sym, tag, exp, tpe, _) =>
       // Value.Tag.value() method
       val clazz = Constants.tagClass
       val method = clazz.getMethod("value")

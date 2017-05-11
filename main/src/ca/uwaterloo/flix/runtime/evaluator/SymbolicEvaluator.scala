@@ -687,7 +687,7 @@ object SymbolicEvaluator {
       /**
         * Is Tag.
         */
-      case Expression.Is(exp, tag, _) =>
+      case Expression.Is(sym, tag, exp, _) =>
         eval(pc0, exp, env0, qua0) flatMap {
           case (pc, qua, SymVal.Tag(tag2, _)) =>
             if (tag == tag2)
@@ -700,7 +700,7 @@ object SymbolicEvaluator {
       /**
         * Tag.
         */
-      case Expression.Tag(enum, tag, exp, _, _) =>
+      case Expression.Tag(sym, tag, exp, _, _) =>
         eval(pc0, exp, env0, qua0) flatMap {
           case (pc, qua, v) => lift(pc, qua, SymVal.Tag(tag, v))
         }
@@ -708,7 +708,7 @@ object SymbolicEvaluator {
       /**
         * Untag.
         */
-      case Expression.Untag(tag, exp, _, _) =>
+      case Expression.Untag(sym, tag, exp, _, _) =>
         eval(pc0, exp, env0, qua0) flatMap {
           case (pc, qua, SymVal.Tag(_, v)) => lift(pc, qua, v)
           case v => throw InternalCompilerException(s"Type Error: Unexpected value: '$v'.")

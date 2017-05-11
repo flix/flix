@@ -156,12 +156,12 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         Expression.IfThenElse(visit(exp1), visit(exp2), visit(exp3), tpe, loc)
       case Expression.Let(sym, exp1, exp2, tpe, loc) =>
         Expression.Let(sym, visit(exp1), visit(exp2), tpe, loc)
-      case Expression.Is(exp, tag, loc) =>
-        Expression.Is(visit(exp), tag, loc)
+      case Expression.Is(sym, tag, exp, loc) =>
+        Expression.Is(sym, tag, visit(exp), loc)
       case Expression.Tag(enum, tag, exp, tpe, loc) =>
         Expression.Tag(enum, tag, visit(exp), tpe, loc)
-      case Expression.Untag(tag, exp, tpe, loc) =>
-        Expression.Untag(tag, visit(exp), tpe, loc)
+      case Expression.Untag(sym, tag, exp, tpe, loc) =>
+        Expression.Untag(sym, tag, visit(exp), tpe, loc)
       case Expression.Index(exp, offset, tpe, loc) =>
         Expression.Index(visit(exp), offset, tpe, loc)
       case Expression.Tuple(elms, tpe, loc) =>
