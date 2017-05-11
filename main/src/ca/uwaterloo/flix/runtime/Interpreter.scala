@@ -112,9 +112,9 @@ object Interpreter {
     case Expression.Let(sym, exp1, exp2, _, _) =>
       val newEnv = env0 + (sym.toString -> eval(exp1, root, env0))
       eval(exp2, root, newEnv)
-    case Expression.Is(exp, tag, _) => Value.mkBool(Value.cast2tag(eval(exp, root, env0)).tag == tag)
+    case Expression.Is(sym, tag, exp, _) => Value.mkBool(Value.cast2tag(eval(exp, root, env0)).tag == tag)
     case Expression.Tag(name, tag, exp, _, _) => Value.mkTag(tag, eval(exp, root, env0))
-    case Expression.Untag(tag, exp, _, _) => Value.cast2tag(eval(exp, root, env0)).value
+    case Expression.Untag(sym, tag, exp, _, _) => Value.cast2tag(eval(exp, root, env0)).value
     case Expression.Index(base, offset, _, _) => eval(base, root, env0).asInstanceOf[Array[AnyRef]](offset)
     case Expression.Tuple(elms, _, _) =>
       val array = new Array[AnyRef](elms.length)

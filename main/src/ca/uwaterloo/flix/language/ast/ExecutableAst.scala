@@ -454,13 +454,13 @@ object ExecutableAst {
                    tpe: Type,
                    loc: SourceLocation) extends ExecutableAst.Expression
 
-    case class Is(exp: ExecutableAst.Expression, tag: String, loc: SourceLocation) extends ExecutableAst.Expression {
+    case class Is(sym: Symbol.EnumSym, tag: String, exp: ExecutableAst.Expression, loc: SourceLocation) extends ExecutableAst.Expression {
       final val tpe: Type = Type.Bool
     }
 
     case class Tag(sym: Symbol.EnumSym, tag: String, exp: ExecutableAst.Expression, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
-    case class Untag(tag: String, exp: ExecutableAst.Expression, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
+    case class Untag(sym: Symbol.EnumSym, tag: String, exp: ExecutableAst.Expression, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
     case class Index(base: ExecutableAst.Expression, offset: scala.Int, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
