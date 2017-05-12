@@ -48,9 +48,15 @@
             <include name="**/*.java"/>
         </scalac>
 
+        <!-- Compile java soruces -->
+        <javac srcdir="${src.dir}" destdir="${out.dir}/classes" classpathref="classpath" fork="false"/>
+
         <!-- Copy resources. -->
         <copy todir="${out.dir}/classes">
-            <fileset dir="${src.dir}/src" excludes="**/*.scala"/>
+            <fileset dir="${src.dir}/src">
+                <exclude name="**/*.scala"/>
+                <exclude name="**/*.java"/>
+            </fileset>
         </copy>
     </target>
 
@@ -101,7 +107,7 @@
     <!-- ======================================================== -->
     <!-- Run scalatest.                                           -->
     <!-- ======================================================== -->
-    <target name="test" depends="build-all, test-jar" />
+    <target name="test" depends="build-all, test-jar"/>
 
     <!-- ======================================================== -->
     <!-- Run scalatest.                                           -->
