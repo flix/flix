@@ -57,6 +57,7 @@ class Flix {
     "BigInt.flix" -> LocalResource.get("/library/BigInt.flix"),
     "Bounded.flix" -> LocalResource.get("/library/Bounded.flix"),
     "Char.flix" -> LocalResource.get("/library/Char.flix"),
+    "Console.flix" -> LocalResource.get("/library/Console.flix"),
     "Float32.flix" -> LocalResource.get("/library/Float32.flix"),
     "Float64.flix" -> LocalResource.get("/library/Float64.flix"),
     "Int8.flix" -> LocalResource.get("/library/Int8.flix"),
