@@ -196,6 +196,7 @@ class Flix {
             Documentor |>
             Stratifier |>
             Monomorph |>
+            PatternExhaustiveness |>
             Simplifier |>
             LambdaLift |>
             Tailrec |>
