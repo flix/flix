@@ -204,6 +204,7 @@ object LoadBytecode extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
       case Expression.Binary(op, exp1, exp2, tpe, loc) => visit(exp1) ++ visit(exp2)
       case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) => visit(exp1) ++ visit(exp2) ++ visit(exp3)
       case Expression.Let(sym, exp1, exp2, tpe, loc) => visit(exp1) ++ visit(exp2)
+      case Expression.LetRec(sym, exp1, exp2, tpe, loc) => visit(exp1) ++ visit(exp2)
       case Expression.Is(sym, tag, exp, loc) => visit(exp)
       case Expression.Tag(enum, tag, exp, tpe, loc) => visit(exp)
       case Expression.Untag(sym, tag, exp, tpe, loc) => visit(exp)

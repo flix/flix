@@ -685,6 +685,11 @@ object SymbolicEvaluator {
         }
 
       /**
+        * LetRec-binding.
+        */
+      case Expression.LetRec(sym, exp1, exp2, _, _) => ??? // TODO: Add support for LetRec.
+
+      /**
         * Is Tag.
         */
       case Expression.Is(sym, tag, exp, _) =>

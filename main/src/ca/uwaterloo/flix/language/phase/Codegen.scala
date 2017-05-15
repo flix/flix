@@ -498,6 +498,9 @@ object Codegen {
       }
       compileExpression(ctx, visitor, entryPoint)(exp2)
 
+    case Expression.LetRec(sym, exp1, exp2, _, _) =>
+      ??? // TODO: Add support for LetRec.
+
     case Expression.Is(sym, tag, exp, _) =>
       // Value.Tag.tag() method
       val clazz1 = Constants.tagClass

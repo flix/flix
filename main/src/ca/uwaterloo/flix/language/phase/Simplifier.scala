@@ -148,6 +148,9 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case TypedAst.Expression.Let(sym, e1, e2, tpe, loc) =>
         SimplifiedAst.Expression.Let(sym, simplify(e1), simplify(e2), tpe, loc)
 
+      case TypedAst.Expression.LetRec(sym, e1, e2, tpe, loc) =>
+        SimplifiedAst.Expression.LetRec(sym, simplify(e1), simplify(e2), tpe, loc)
+
       case TypedAst.Expression.Match(exp0, rules, tpe, loc) =>
         import SimplifiedAst.{Expression => SExp}
 
@@ -640,6 +643,8 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         SimplifiedAst.Expression.IfThenElse(visit(exp1), visit(exp2), visit(exp3), tpe, loc)
       case SimplifiedAst.Expression.Let(sym, exp1, exp2, tpe, loc) =>
         SimplifiedAst.Expression.Let(sym, visit(exp1), visit(exp2), tpe, loc)
+      case SimplifiedAst.Expression.LetRec(sym, exp1, exp2, tpe, loc) =>
+        SimplifiedAst.Expression.LetRec(sym, visit(exp1), visit(exp2), tpe, loc)
       case SimplifiedAst.Expression.Is(sym, tag, exp, loc) =>
         SimplifiedAst.Expression.Is(sym, tag, visit(exp), loc)
       case SimplifiedAst.Expression.Tag(enum, tag, exp, tpe, loc) =>
