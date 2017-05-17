@@ -199,7 +199,7 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
        * root constructor set, or if we match every constructor for the
        * expression
        */
-      expCtors.toSet.diff(ctors.toSet.map(_.name)).isEmpty
+      expCtors.toSet.diff(ctors.toSet.map((x: EnumSym) => x.name)).isEmpty
     }
 
 
