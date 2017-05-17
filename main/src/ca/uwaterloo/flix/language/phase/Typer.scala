@@ -583,6 +583,18 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           ) yield resultVar
 
         /*
+         * LetRec expression.
+         */
+        case ResolvedAst.Expression.LetRec(sym, exp1, exp2, tvar, loc) =>
+          // TODO: Require boundVar to be a function?
+          for (
+            tpe1 <- visitExp(exp1);
+            tpe2 <- visitExp(exp2);
+            boundVar <- unifyM(sym.tvar, tpe1, loc);
+            resultVar <- unifyM(tvar, tpe2, loc)
+          ) yield resultVar
+
+        /*
          * If-then-else expression.
          */
         case ResolvedAst.Expression.IfThenElse(exp1, exp2, exp3, tvar, loc) =>
@@ -830,6 +842,14 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           val e1 = visitExp(exp1, subst0)
           val e2 = visitExp(exp2, subst0)
           TypedAst.Expression.Let(sym, e1, e2, subst0(tvar), loc)
+
+        /*
+         * LetRec expression.
+         */
+        case ResolvedAst.Expression.LetRec(sym, exp1, exp2, tvar, loc) =>
+          val e1 = visitExp(exp1, subst0)
+          val e2 = visitExp(exp2, subst0)
+          TypedAst.Expression.LetRec(sym, e1, e2, subst0(tvar), loc)
 
         /*
          * Match expression.

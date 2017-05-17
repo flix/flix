@@ -472,7 +472,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
 
     def Primary: Rule1[ParsedAst.Expression] = rule {
-      LetMatch | IfThenElse | Match | LambdaMatch | Switch | Unsafe | Native | Lambda | Tuple | FNil | FSet | FMap | Literal |
+      LetRec | LetMatch | IfThenElse | Match | LambdaMatch | Switch | Unsafe | Native | Lambda | Tuple | FNil | FSet | FMap | Literal |
         Existential | Universal | UnaryLambda | QName | Wild | Tag | SName | UserError
     }
 
@@ -482,6 +482,10 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
     def IfThenElse: Rule1[ParsedAst.Expression.IfThenElse] = rule {
       SP ~ atomic("if") ~ optWS ~ "(" ~ optWS ~ Expression ~ optWS ~ ")" ~ optWS ~ Expression ~ WS ~ atomic("else") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.IfThenElse
+    }
+
+    def LetRec: Rule1[ParsedAst.Expression.LetRec] = rule {
+      SP ~ atomic("letrec") ~ WS ~ Names.Variable ~ optWS ~ "=" ~ optWS ~ Expression ~ optWS ~ ";" ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.LetRec
     }
 
     def LetMatch: Rule1[ParsedAst.Expression.LetMatch] = rule {
