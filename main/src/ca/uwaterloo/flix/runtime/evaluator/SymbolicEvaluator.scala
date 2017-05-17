@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.api.{MatchException, SwitchException, UserException}
 import ca.uwaterloo.flix.language.GenSym
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Expression
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.util.InternalCompilerException
+import ca.uwaterloo.flix.util.{InternalCompilerException, InternalRuntimeException}
 
 /**
   * Symbolic evaluator that supports symbolic values and collects path constraints.
@@ -159,9 +159,9 @@ object SymbolicEvaluator {
       case Expression.MkClosureRef(ref, freeVars, _, _) =>
         // Save the values of the free variables in a list.
         // When the closure is called, these values will be provided at the beginning of the argument list.
-        val env = freeVars.toList.map(f => env0(f.sym))
+        val bindings = freeVars.map(f => env0(f.sym))
         // Construct the closure.
-        val clo = SymVal.Closure(ref, env)
+        val clo = SymVal.Closure(ref, bindings)
         lift(pc0, qua0, clo)
 
       /**
@@ -687,7 +687,26 @@ object SymbolicEvaluator {
       /**
         * LetRec-binding.
         */
-      case Expression.LetRec(sym, exp1, exp2, _, _) => ??? // TODO: Add support for LetRec.
+      case Expression.LetRec(sym, exp1, exp2, _, _) => exp1 match {
+        case Expression.MkClosureRef(ref, freeVars, _, _) =>
+          // Save the values of the free variables in a list.
+          // When the closure is called, these values will be provided at the beginning of the argument list.
+          val bindings = Array.ofDim[SymVal](freeVars.length)
+          for (freeVar <- freeVars) {
+            // A value might be absent from the the environment if it is recursively bound.
+            env0.get(freeVar.sym) match {
+              case None => // Ok, value probably recursive.
+              case Some(v) => bindings(sym.getStackOffset) = v
+            }
+          }
+          // Construct circular closure.
+          val clo = SymVal.Closure(ref, bindings)
+          bindings(sym.getStackOffset) = clo
+
+          // Return the closure.
+          lift(pc0, qua0, clo)
+        case _ => throw InternalRuntimeException(s"Expected MkClosureRef expression: '$exp1'")
+      }
 
       /**
         * Is Tag.
