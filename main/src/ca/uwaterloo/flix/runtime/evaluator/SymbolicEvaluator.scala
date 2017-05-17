@@ -756,6 +756,35 @@ object SymbolicEvaluator {
         }
 
       /**
+        * Reference.
+        */
+      case Expression.Reference(exp, tpe, loc) => ??? // TODO
+
+      /**
+        * Dereference.
+        */
+      case Expression.Dereference(exp, tpe, loc) => ??? // TODO
+
+      /**
+        * Assignment.
+        */
+      case Expression.Assignment(exp1, exp2, tpe, loc) => ??? // TODO
+
+      /**
+        * Existential Quantifier.
+        */
+      case e: Expression.Existential => throw InternalCompilerException(s"Unsupported expression: '$e'.") // TODO
+
+      /**
+        * Universal Quantifier.
+        */
+      case Expression.Universal(fparam, exp, _) =>
+        // Enumerate the possible symbolic values of the formal parameter.
+        enumerator(fparam.sym, fparam.tpe) flatMap {
+          case value => eval(pc0, exp, env0 + (fparam.sym -> value), qua0 + (fparam.sym -> value))
+        }
+
+      /**
         * Native Constructor.
         */
       case Expression.NativeConstructor(constructor, args, tpe, loc) => throw InternalCompilerException("Not yet supported.")
@@ -784,20 +813,6 @@ object SymbolicEvaluator {
         * Switch Error
         */
       case Expression.SwitchError(tpe, loc) => throw SwitchException("Switch Error", loc)
-
-      /**
-        * Existential Quantifier.
-        */
-      case e: Expression.Existential => throw InternalCompilerException(s"Unsupported expression: '$e'.") // TODO
-
-      /**
-        * Universal Quantifier.
-        */
-      case Expression.Universal(fparam, exp, _) =>
-        // Enumerate the possible symbolic values of the formal parameter.
-        enumerator(fparam.sym, fparam.tpe) flatMap {
-          case value => eval(pc0, exp, env0 + (fparam.sym -> value), qua0 + (fparam.sym -> value))
-        }
 
       /**
         * Unsupported expressions.

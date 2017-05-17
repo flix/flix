@@ -571,6 +571,12 @@ object Codegen {
         visitor.visitInsn(AASTORE)
       }
 
+    case Expression.Reference(exp, tpe, loc) => ??? // TODO
+
+    case Expression.Dereference(exp, tpe, loc) => ??? // TODO
+
+    case Expression.Assignment(exp1, exp2, tpe, loc) => ??? // TODO
+
     case Expression.Existential(params, exp, loc) =>
       throw InternalCompilerException(s"Unexpected expression: '$expr' at ${loc.source.format}.")
 
