@@ -29,9 +29,7 @@ object Effects extends Phase[TypedAst.Root, TypedAst.Root] {
     * Performs effect inference on the given AST `root`.
     */
   def run(root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, CompilationError] = {
-
     // TODO
-
     root.toSuccess
   }
 
@@ -53,14 +51,14 @@ object Effects extends Phase[TypedAst.Root, TypedAst.Root] {
           val es = args.map(visit)
 
           // The effect is the effect of the individual arguments and the latent effect of the lambda.
-          val eff = Effect.combine(e.eff.latent, es.map(_.eff))
+          val eff = lub(e.eff.latent, lub(es.map(_.eff)))
           Expression.Apply(e, es, tpe, eff, loc)
 
         case Expression.IfThenElse(exp1, exp2, exp3, tpe, _, loc) =>
           val e1 = visit(exp1)
           val e2 = visit(exp2)
           val e3 = visit(exp3)
-          val eff = Effect.combine(e1.eff, e2.eff, e3.eff)
+          val eff = lub(e1.eff, e2.eff, e3.eff)
           Expression.IfThenElse(e1, e2, e3, tpe, eff, loc)
 
         case _ => ??? // TODO: Remove once all cases have been added.
@@ -72,5 +70,8 @@ object Effects extends Phase[TypedAst.Root, TypedAst.Root] {
 
   }
 
+  private def lub(eff1: Eff, eff2: Eff, effs: Eff*): Eff = ???
+
+  private def lub(effs: List[Eff]): Eff = ???
 
 }

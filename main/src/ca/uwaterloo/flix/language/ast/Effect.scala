@@ -17,54 +17,25 @@
 package ca.uwaterloo.flix.language.ast
 
 /**
-  * Representation of effects.
+  * Represents a single effect.
   */
-trait Effect {
-
-  def latent: Effect = ???
-
-}
+trait Effect
 
 object Effect {
 
   /**
-    * A pure (empty) effect.
+    * The IO effect.
     */
-  case object Pure extends Effect
+  case object IO extends Effect
 
   /**
-    * An effect that represents that the expression may throw an exception.
+    * The exception effect.
     */
   case object Exception extends Effect
 
   /**
-    * A set of effects.
+    * A latent effect.
     */
-  case class EffectSet(effs: Set[Effect]) extends Effect
-
-  /**
-    * Combines the two given effects `eff1` and `eff2` into a single effect.
-    */
-  def combine(eff1: Effect, eff2: Effect): Effect = (eff1, eff2) match {
-    case (Pure, Pure) => Pure
-    case (Exception, Exception) => Exception
-
-    case (EffectSet(es), Pure) => EffectSet(es)
-    case (EffectSet(es), Exception) => EffectSet(es + Exception)
-
-    case (Pure, EffectSet(es)) => EffectSet(es)
-    case (Exception, EffectSet(es)) => EffectSet(es)
-
-    case (EffectSet(es1), EffectSet(es2)) => EffectSet(es1 ++ es2)
-  }
-
-  // TODO: DOC
-  def combine(eff1: Effect, eff2: Effect, es: Effect*): Effect =
-    es.foldLeft(combine(eff1, eff2))(combine)
-
-  // TODO: DOC
-  def combine(eff: Effect, effs: List[Effect]): Effect =
-    effs.foldLeft(eff)(combine)
-
+  case class Latent(effect: Effect) extends Effect
 
 }
