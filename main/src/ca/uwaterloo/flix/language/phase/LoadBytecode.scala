@@ -210,6 +210,9 @@ object LoadBytecode extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
       case Expression.Untag(sym, tag, exp, tpe, loc) => visit(exp)
       case Expression.Index(base, offset, tpe, loc) => visit(base)
       case Expression.Tuple(elms, tpe, loc) => elms.flatMap(visit).toSet
+      case Expression.Reference(exp, tpe, loc) => ??? // TODO
+      case Expression.Dereference(exp, tpe, loc) => ??? // TODO
+      case Expression.Assignment(exp1, exp2, tpe, loc) => ??? // TODO
       case Expression.Existential(params, exp, loc) =>
         ???
       case Expression.Universal(params, exp, loc) =>

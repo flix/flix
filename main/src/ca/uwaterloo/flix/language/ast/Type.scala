@@ -45,6 +45,7 @@ sealed trait Type {
     case Type.BigInt => Set.empty
     case Type.Str => Set.empty
     case Type.Native => Set.empty
+    case Type.Ref => Set.empty
     case Type.Arrow(l) => Set.empty
     case Type.FTuple(l) => Set.empty
     case Type.Enum(enumName, kind) => Set.empty
@@ -86,6 +87,7 @@ sealed trait Type {
     case Type.BigInt => "BigInt"
     case Type.Str => "Str"
     case Type.Native => "Native"
+    case Type.Ref => "Ref"
     case Type.Arrow(l) => s"Arrow($l)"
     case Type.FTuple(l) => s"Tuple($l)"
     case Type.Apply(Type.FTuple(l), ts) => "(" + ts.mkString(", ") + ")"
@@ -221,6 +223,13 @@ object Type {
   }
 
   /**
+    * A type constructor that represents references.
+    */
+  case object Ref extends Type {
+    def kind: Kind = Kind.Star
+  }
+
+  /**
     * A type expression that represents functions.
     */
   case class Arrow(length: Int) extends Type {
@@ -312,6 +321,7 @@ object Type {
       case Type.BigInt => Type.BigInt
       case Type.Str => Type.Str
       case Type.Native => Type.Native
+      case Type.Ref => Type.Ref
       case Type.Arrow(l) => Type.Arrow(l)
       case Type.FTuple(l) => Type.FTuple(l)
       case Type.Apply(t, ts) => Type.Apply(visit(t), ts map visit)
