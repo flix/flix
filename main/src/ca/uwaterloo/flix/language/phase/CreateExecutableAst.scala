@@ -222,6 +222,8 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
         ExecutableAst.Expression.IfThenElse(toExecutable(exp1), toExecutable(exp2), toExecutable(exp3), tpe, loc)
       case SimplifiedAst.Expression.Let(sym, exp1, exp2, tpe, loc) =>
         ExecutableAst.Expression.Let(sym, toExecutable(exp1), toExecutable(exp2), tpe, loc)
+      case SimplifiedAst.Expression.LetRec(sym, exp1, exp2, tpe, loc) =>
+        ExecutableAst.Expression.LetRec(sym, toExecutable(exp1), toExecutable(exp2), tpe, loc)
       case SimplifiedAst.Expression.Is(sym, tag, exp, loc) =>
         ExecutableAst.Expression.Is(sym, tag, toExecutable(exp), loc)
       case SimplifiedAst.Expression.Tag(enum, tag, exp, tpe, loc) =>

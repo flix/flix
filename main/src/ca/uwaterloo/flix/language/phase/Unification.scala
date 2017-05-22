@@ -70,6 +70,7 @@ object Unification {
       case Type.BigInt => Type.BigInt
       case Type.Str => Type.Str
       case Type.Native => Type.Native
+      case Type.Ref => Type.Ref
       case Type.Arrow(l) => Type.Arrow(l)
       case Type.FTuple(l) => Type.FTuple(l)
       case Type.Enum(name, kind) => Type.Enum(name, kind)
@@ -178,6 +179,7 @@ object Unification {
       case (Type.BigInt, Type.BigInt) => Result.Ok(Substitution.empty)
       case (Type.Str, Type.Str) => Result.Ok(Substitution.empty)
       case (Type.Native, Type.Native) => Result.Ok(Substitution.empty)
+      case (Type.Ref, Type.Ref) => Result.Ok(Substitution.empty)
       case (Type.Arrow(l1), Type.Arrow(l2)) if l1 == l2 => Result.Ok(Substitution.empty)
       case (Type.FTuple(l1), Type.FTuple(l2)) if l1 == l2 => Result.Ok(Substitution.empty)
       case (Type.Enum(name1, kind1), Type.Enum(name2, kind2)) if name1 == name2 => Result.Ok(Substitution.empty)

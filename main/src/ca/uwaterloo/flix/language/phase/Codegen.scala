@@ -407,6 +407,9 @@ object Codegen {
       }
       compileExpression(ctx, visitor, entryPoint)(exp2)
 
+    case Expression.LetRec(sym, exp1, exp2, _, _) =>
+      ??? // TODO: Add support for LetRec.
+
     case Expression.Is(enum, tag, exp, _) =>
       // Value.Tag.tag() method
       val clazz1 = Constants.tagClass
@@ -476,6 +479,12 @@ object Codegen {
         // Store the value into the array.
         visitor.visitInsn(AASTORE)
       }
+
+    case Expression.Reference(exp, tpe, loc) => ??? // TODO
+
+    case Expression.Dereference(exp, tpe, loc) => ??? // TODO
+
+    case Expression.Assignment(exp1, exp2, tpe, loc) => ??? // TODO
 
     case Expression.Existential(params, exp, loc) =>
       throw InternalCompilerException(s"Unexpected expression: '$expr' at ${loc.source.format}.")

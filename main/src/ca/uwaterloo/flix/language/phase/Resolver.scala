@@ -292,6 +292,12 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
             e2 <- visit(exp2)
           } yield ResolvedAst.Expression.Let(sym, e1, e2, tvar, loc)
 
+        case NamedAst.Expression.LetRec(sym, exp1, exp2, tvar, loc) =>
+          for {
+            e1 <- visit(exp1)
+            e2 <- visit(exp2)
+          } yield ResolvedAst.Expression.LetRec(sym, e1, e2, tvar, loc)
+
         case NamedAst.Expression.Match(exp, rules, tvar, loc) =>
           val rulesVal = rules map {
             case NamedAst.MatchRule(pat, guard, body) =>

@@ -141,6 +141,8 @@ object ClosureConv {
       SimplifiedAst.Expression.IfThenElse(convert(e1), convert(e2), convert(e3), tpe, loc)
     case SimplifiedAst.Expression.Let(sym, e1, e2, tpe, loc) =>
       SimplifiedAst.Expression.Let(sym, convert(e1), convert(e2), tpe, loc)
+    case SimplifiedAst.Expression.LetRec(sym, e1, e2, tpe, loc) =>
+      SimplifiedAst.Expression.LetRec(sym, convert(e1), convert(e2), tpe, loc)
     case SimplifiedAst.Expression.Is(sym, tag, e, loc) =>
       SimplifiedAst.Expression.Is(sym, tag, convert(e), loc)
     case SimplifiedAst.Expression.Tag(enum, tag, e, tpe, loc) =>
@@ -212,6 +214,9 @@ object ClosureConv {
     case SimplifiedAst.Expression.Let(sym, exp1, exp2, tpe, loc) =>
       val bound = sym
       freeVariables(exp1) ++ freeVariables(exp2).filterNot { v => bound == v._1 }
+    case SimplifiedAst.Expression.LetRec(sym, exp1, exp2, tpe, loc) =>
+      val bound = sym
+      (freeVariables(exp1) ++ freeVariables(exp2)).filterNot { v => bound == v._1 }
     case SimplifiedAst.Expression.Is(sym, tag, exp, loc) => freeVariables(exp)
     case SimplifiedAst.Expression.Untag(sym, tag, exp, tpe, loc) => freeVariables(exp)
     case SimplifiedAst.Expression.Tag(enum, tag, exp, tpe, loc) => freeVariables(exp)
@@ -299,6 +304,13 @@ object ClosureConv {
         subst.get(sym) match {
           case None => Expression.Let(sym, e1, e2, tpe, loc)
           case Some(newSym) => Expression.Let(newSym, e1, e2, tpe, loc)
+        }
+      case Expression.LetRec(sym, exp1, exp2, tpe, loc) =>
+        val e1 = visit(exp1)
+        val e2 = visit(exp2)
+        subst.get(sym) match {
+          case None => Expression.LetRec(sym, e1, e2, tpe, loc)
+          case Some(newSym) => Expression.LetRec(newSym, e1, e2, tpe, loc)
         }
       case Expression.Is(sym, tag, exp, loc) =>
         val e = visit(exp)

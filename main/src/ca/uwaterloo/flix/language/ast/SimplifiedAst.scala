@@ -393,16 +393,10 @@ object SimplifiedAst {
       */
     case class IfThenElse(exp1: SimplifiedAst.Expression, exp2: SimplifiedAst.Expression, exp3: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
-    /**
-      * A typed AST node representing a let expression.
-      *
-      * @param sym  the name of the bound variable.
-      * @param exp1 the value of the bound variable.
-      * @param exp2 the body expression in which the bound variable is visible.
-      * @param tpe  the type of the expression (which is equivalent to the type of the body expression).
-      * @param loc  the source location of the expression.
-      */
     case class Let(sym: Symbol.VarSym, exp1: SimplifiedAst.Expression, exp2: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
+
+    // NB: After lambda lifting and closure conversion `exp1` is guaranteed to be a MkClosureRef.
+    case class LetRec(sym: Symbol.VarSym, exp1: SimplifiedAst.Expression, exp2: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
     case class Is(sym: Symbol.EnumSym, tag: String, exp: SimplifiedAst.Expression, loc: SourceLocation) extends SimplifiedAst.Expression {
       final val tpe: Type = Type.Bool

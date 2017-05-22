@@ -147,6 +147,7 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.Binary(op, exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2)
       case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
       case Expression.Let(sym, exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2)
+      case Expression.LetRec(sym, exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2)
       case Expression.Is(sym, tag, exp, loc) => visitExp(exp)
       case Expression.Tag(sym, tag, exp, tpe, loc) => visitExp(exp)
       case Expression.Untag(sym, tag, exp, tpe, loc) => visitExp(exp)

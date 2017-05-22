@@ -141,9 +141,9 @@ object SymVal {
     * A closure value.
     *
     * @param exp the expression of the closure.
-    * @param env the closure environment.
+    * @param bindings the closure environment.
     */
-  case class Closure(exp: Expression.Ref, env: List[SymVal]) extends SymVal
+  case class Closure(exp: Expression.Ref, bindings: Array[SymVal]) extends SymVal
 
   /**
     * Returns a stringified model of the given quantifier map `qua` with free variables replaced by the optional Z3 model.

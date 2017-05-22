@@ -88,6 +88,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         case Type.BigInt => Type.BigInt
         case Type.Str => Type.Str
         case Type.Native => Type.Native
+        case Type.Ref => Type.Ref
         case Type.Arrow(l) => Type.Arrow(l)
         case Type.FTuple(l) => Type.FTuple(l)
         case Type.Enum(name, kind) => Type.Enum(name, kind)
@@ -232,6 +233,12 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           val freshSym = Symbol.freshVarSym(sym)
           val env1 = env0 + (sym -> freshSym)
           Expression.Let(freshSym, visitExp(exp1, env1), visitExp(exp2, env1), subst0(tpe), loc)
+
+        case Expression.LetRec(sym, exp1, exp2, tpe, loc) =>
+          // Generate a fresh symbol for the letrec-bound variable.
+          val freshSym = Symbol.freshVarSym(sym)
+          val env1 = env0 + (sym -> freshSym)
+          Expression.LetRec(freshSym, visitExp(exp1, env1), visitExp(exp2, env1), subst0(tpe), loc)
 
         case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
           val e1 = visitExp(exp1, env0)

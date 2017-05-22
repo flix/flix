@@ -435,6 +435,11 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
               }
           }
 
+        case ParsedAst.Expression.LetRec(sp1, ident, exp1, exp2, sp2) =>
+          @@(visit(exp1, unsafe), visit(exp2, unsafe)) map {
+            case (value, body) => WeededAst.Expression.LetRec(ident, value, body, mkSL(sp1, sp2))
+          }
+
         case ParsedAst.Expression.Match(sp1, exp, rules, sp2) =>
           val rulesVal = rules map {
             case ParsedAst.MatchRule(pat, None, body) => @@(Patterns.weed(pat), visit(body, unsafe)) map {
@@ -1058,6 +1063,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.Binary(e1, _, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.IfThenElse(sp1, _, _, _, _) => sp1
     case ParsedAst.Expression.LetMatch(sp1, _, _, _, _, _) => sp1
+    case ParsedAst.Expression.LetRec(sp1, _, _, _, _) => sp1
     case ParsedAst.Expression.Match(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Switch(sp1, _, _) => sp1
     case ParsedAst.Expression.Tag(sp1, _, _, _) => sp1

@@ -291,17 +291,15 @@ object LoadBytecode extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
       case Expression.Binary(op, exp1, exp2, tpe, loc) => visit(exp1) ++ visit(exp2)
       case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) => visit(exp1) ++ visit(exp2) ++ visit(exp3)
       case Expression.Let(sym, exp1, exp2, tpe, loc) => visit(exp1) ++ visit(exp2)
-      case Expression.Is(sym, tag, exp, loc) => {
-        visit(exp)
-      }
-      case Expression.Tag(enum, tag, exp, tpe, loc) => {
-        visit(exp)
-      }
-      case Expression.Untag(sym, tag, exp, tpe, loc) => {
-        visit(exp)
-      }
+      case Expression.LetRec(sym, exp1, exp2, tpe, loc) => visit(exp1) ++ visit(exp2)
+      case Expression.Is(sym, tag, exp, loc) => visit(exp)
+      case Expression.Tag(enum, tag, exp, tpe, loc) => visit(exp)
+      case Expression.Untag(sym, tag, exp, tpe, loc) => visit(exp)
       case Expression.Index(base, offset, tpe, loc) => visit(base)
       case Expression.Tuple(elms, tpe, loc) => elms.flatMap(visit).toSet
+      case Expression.Reference(exp, tpe, loc) => ??? // TODO
+      case Expression.Dereference(exp, tpe, loc) => ??? // TODO
+      case Expression.Assignment(exp1, exp2, tpe, loc) => ??? // TODO
       case Expression.Existential(params, exp, loc) =>
         ???
       case Expression.Universal(params, exp, loc) =>

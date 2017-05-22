@@ -439,20 +439,10 @@ object ExecutableAst {
       override def toString: String = "IfThenElse(" + exp1 + ", " + exp2 + ", " + exp3 + ")"
     }
 
-    /**
-      * A typed AST node representing a let expression.
-      *
-      * @param sym  the name of the bound variable.
-      * @param exp1 the value of the bound variable.
-      * @param exp2 the body expression in which the bound variable is visible.
-      * @param tpe  the type of the expression (which is equivalent to the type of the body expression).
-      * @param loc  the source location of the expression.
-      */
-    case class Let(sym: Symbol.VarSym,
-                   exp1: ExecutableAst.Expression,
-                   exp2: ExecutableAst.Expression,
-                   tpe: Type,
-                   loc: SourceLocation) extends ExecutableAst.Expression
+    case class Let(sym: Symbol.VarSym, exp1: ExecutableAst.Expression, exp2: ExecutableAst.Expression, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
+
+    // NB: After lambda lifting and closure conversion `exp1` is guaranteed to be a MkClosureRef.
+    case class LetRec(sym: Symbol.VarSym, exp1: ExecutableAst.Expression, exp2: ExecutableAst.Expression, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
     case class Is(sym: Symbol.EnumSym, tag: String, exp: ExecutableAst.Expression, loc: SourceLocation) extends ExecutableAst.Expression {
       final val tpe: Type = Type.Bool
@@ -465,6 +455,12 @@ object ExecutableAst {
     case class Index(base: ExecutableAst.Expression, offset: scala.Int, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
     case class Tuple(elms: Array[ExecutableAst.Expression], tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
+
+    case class Reference(exp: ExecutableAst, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
+
+    case class Dereference(exp: ExecutableAst, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
+
+    case class Assignment(exp1: ExecutableAst, exp2: ExecutableAst, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
     case class Existential(fparam: ExecutableAst.FormalParam, exp: ExecutableAst.Expression, loc: SourceLocation) extends ExecutableAst.Expression {
       def tpe: Type = Type.Bool
