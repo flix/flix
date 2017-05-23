@@ -70,48 +70,63 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
 
   object Expression {
     def CheckPats(root: TypedAst.Root, tast: TypedAst.Expression)(implicit genSym: GenSym): Validation[TypedAst.Expression, CompilationError] = tast match {
-      case TypedAst.Expression.Match(exp, rules, tpe, loc) => {
+      case TypedAst.Expression.Match(exp, rules, tpe, loc) =>
         for  {
           _rules <- CheckRules(root, exp, rules)
         } yield TypedAst.Expression.Match(exp, _rules, tpe, loc)
-      }
 
 
       case a => Success(a, Stream.empty)
     }
 
     def CheckRules(root: TypedAst.Root, exp: TypedAst.Expression, rules: List[TypedAst.MatchRule]): Validation[List[TypedAst.MatchRule], CompilationError] = {
-      AlgI(root, exp, rules.map(r => List(r.pat)), 1) match {
+      FindNonMatchingPat(root, exp, rules.map(r => List(r.pat)), 1) match {
         case Right(a) => Success(rules, Stream.empty)
         case Left((c, rule)) => Failure(ExhaustiveMatchError(rule.toString(), rule.head.loc.source) #:: Stream.empty);
       }
     }
 
     /**
-      * Given a list of patterns, computesa pattern vector of size n such
-      * that all the instances of p are no matching values
+      * Given a list of patterns, computes a pattern vector of size n such
+      * that p doesn't match any rule in rules
       *
-      * If no such pattern exists, returns the input
+      * @param  root The AST root of the expression
+      * @param  exp The expression the patterns match against
+      * @param rules The rules to check for exhaustion
+      * @param n The size of resulting pattern vector
+      * @returns If no such pattern exists, returns Right(the input), else returns Left(a matching pattern)
       */
-    def AlgI(root: TypedAst.Root, exp: TypedAst.Expression, rules: List[List[TypedAst.Pattern]], n: Integer): Either[(EnumSym, List[Pattern]), List[List[Pattern]]] ={
-      if (rules.isEmpty && n==0) {
+    def FindNonMatchingPat(root: TypedAst.Root, exp: TypedAst.Expression, rules: List[List[TypedAst.Pattern]], n: Integer): Either[(EnumSym, List[Pattern]), List[List[Pattern]]] = {
+      if (rules.isEmpty || n==0) {
         return Right(rules)
       }
 
-      val ak = 0
       val sigma = rootCtors(rules)
       if (completeSig(root, exp, sigma)) {
-        val check_all: List[Either[(EnumSym, List[Pattern]), List[List[Pattern]]]] = sigma.map(c => AlgI(root, exp, AlgS(root, c, rules), ak + n - 1))
-        val base: Either[(EnumSym, List[Pattern]), List[List[Pattern]]] =
-          Right(List.empty[List[Pattern]])
-        val rules_valid: Either[(EnumSym, List[Pattern]), List[List[Pattern]]] =
-          check_all.foldRight(base)(mergeEither)
+        /* If the constructors are complete, then we check that the arguments to the constructors and the remaining
+         * patterns are complete
+         *
+         * e.g. If we have
+         * enum Option {
+         *    case Some a,
+         *    case Nothing
+         *  }
+         * case Some True =>
+         * case Some False =>
+         * case Nothing =>
+         *
+         * {Some, Nothing} is a complete signature, but the just case is exhaustive only if the {True, False} case is
+         * exhaustive. So we create a "Specialized" matrix for Just with {True, False} as rows and check that.
+         */
+        val check_all: List[Either[(EnumSym, List[Pattern]), List[List[Pattern]]]] = sigma.map(c => FindNonMatchingPat(root, exp, Specialize(root, c, rules),  root.enums.get(c).get.cases.size + n - 1))
+        val base: Either[(EnumSym, List[Pattern]), List[List[Pattern]]] = Right(List.empty[List[Pattern]])
+        val rules_valid: Either[(EnumSym, List[Pattern]), List[List[Pattern]]] = check_all.foldRight(base)(mergeEither)
         rules_valid match {
           case Right(a) => Right(a)
           case Left((c, pats)) => Left((c, List(TypedAst.Pattern.Tag(c, "TEST", TypedAst.Pattern.Tuple(pats, exp.tpe, exp.loc), exp.tpe, exp.loc))))
         }
       } else {
-        AlgI(root, exp, AlgD(rules), n - 1) match {
+        FindNonMatchingPat(root, exp, defaultMatrix(rules), n - 1) match {
           case Right(a) => Right(a)
           case Left((c, pats)) => sigma match {
             case Nil => Left(c, Pattern.Wild(exp.tpe, exp.loc) :: pats)
@@ -124,7 +139,7 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
     // Specialize a matrix of patterns for the Constructor ctor
     // For a constructor of C(r1,...ra) and a matrix of width n,
     // we return a matrix of width n+a-1
-    def AlgS(root: TypedAst.Root, ctor: EnumSym, rules: List[List[TypedAst.Pattern]]): List[List[TypedAst.Pattern]] = {
+    def Specialize(root: TypedAst.Root, ctor: EnumSym, rules: List[List[TypedAst.Pattern]]): List[List[TypedAst.Pattern]] = {
       // First figure out how many arguments are needed by the ctor
       val numArgs = root.enums.get(ctor).get.cases.size
 
@@ -149,11 +164,23 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
       rules.foldRight(List.empty[List[TypedAst.Pattern]])(specializeRow)
     }
 
-    def AlgD(rules: List[List[TypedAst.Pattern]]): List[List[TypedAst.Pattern]] = {
+    /**
+      * Extract a default matrix of width n-1
+      *
+      * DefaultMatrix is called we called FindNonMatchingPat when the given constructor patterns don't cover every
+      * possibility. We want to check if we take one of the wild card patterns, it is exhaustive.
+      *
+      * DefaultMatrix constructs a matrix which only has the patterns that begin with a wildcard, then removes the
+      * first wildcard since we know all the patterns start with it.
+      *
+      * Similar to calling `tail` on a list
+      */
+    def defaultMatrix(rules: List[List[TypedAst.Pattern]]): List[List[TypedAst.Pattern]] = {
       val defaultRow = (pat: List[TypedAst.Pattern], acc: List[List[TypedAst.Pattern]]) => pat.head match {
+        // If it's a constructor, we don't include a row
         case _: TypedAst.Pattern.Tag => acc
+        // If it's a wild card, we take the rest of the pattern
         case _: TypedAst.Pattern.Wild => pat.tail :: acc
-        // Or pattern case would go here
       }
       rules.foldRight(List.empty[List[TypedAst.Pattern]])(defaultRow)
     }
@@ -164,19 +191,42 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
       * patterns
       */
     def rootCtors(rules: List[List[TypedAst.Pattern]]): List[EnumSym] = {
-      val rootCtor = (pat: TypedAst.Pattern, pats: List[EnumSym]) => pat match {
+      def rootCtor(pat: TypedAst.Pattern, pats: List[EnumSym]) = pat match {
         case _: Pattern.Wild => pats
         case _: Pattern.Var => pats
+        case tg: Pattern.Tag => tg.sym :: pats
         case t: Pattern.True => new EnumSym(List.empty, "True", t.loc) :: pats
         case f: Pattern.False => new EnumSym(List.empty, "False", f.loc) :: pats
         case u: Pattern.Unit => new EnumSym(List.empty, "Unit", u.loc) :: pats
-        case tg: Pattern.Tag => tg.sym :: pats
+        case t: Pattern.Tuple => new EnumSym(List.empty, "Tuple ", t.loc) :: pats
+        case i: Pattern.BigInt => new EnumSym(List.empty, "BigInt", i.loc) :: pats
+        case i: Pattern.Int8 => new EnumSym(List.empty, "Int8", i.loc) :: pats
+        case i: Pattern.Int16 => new EnumSym(List.empty, "Int16", i.loc) :: pats
+        case i: Pattern.Int32 => new EnumSym(List.empty, "Int32", i.loc) :: pats
+        case i: Pattern.Int64 => new EnumSym(List.empty, "Int64", i.loc) :: pats
+        case i: Pattern.Float32 => new EnumSym(List.empty, "Float32", i.loc) :: pats
+        case i: Pattern.Float64 => new EnumSym(List.empty, "Float64", i.loc) :: pats
+        case i: Pattern.Str => new EnumSym(List.empty, "Str", i.loc) :: pats
       }
      rules.head.foldRight(List.empty[EnumSym])(rootCtor)
     }
 
     /**
-      * True if ctors is a complete signature for exp
+      * True if ctors is a complete signature for exp. A complete signature is when all constructors of a type are
+      * present. E.g. for
+      *
+      * enum Color {
+      *    case Red,
+      *    case Blue,
+      *    case Yellow
+      *  }
+      *
+      * {Red, Blue, Yellow} is a complete signature, but {Red, Blue} is not. Additionally, {Red, Blue, _} is also not
+      * If the constructors are a complete signature, then they are exhaustive for the type, and we just have to
+      * check that their arguments are also exhaustive
+      *
+      * Wildcards are exhaustive, but we need to do some additional checking in that case (@see DefaultMatrix)
+      *
       * @param root Root of the expression tree
       * @param exp The expression to match
       * @param ctors The ctors that we match with
