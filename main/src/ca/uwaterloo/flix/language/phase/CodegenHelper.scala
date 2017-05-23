@@ -91,6 +91,7 @@ object CodegenHelper {
     val flixClass : Class[_] = classOf[Flix]
 
     val unitClass : Class[_] = Value.Unit.getClass
+    @deprecated
     val tagClass : Class[_] = classOf[Value.Tag]
 
     val valueObject = "ca/uwaterloo/flix/runtime/Value$"
@@ -109,7 +110,7 @@ object CodegenHelper {
                      declarations: Map[Symbol.DefnSym, Type],
                      interfaces: Map[Type, List[String]],
                      enumInterfaces: Map[Type, Class[_]],
-                     enums: Map[Symbol.EnumSym, (Class[_], Map[String, Class[_]])]) {
+                     enums: Map[Type, Map[String, Class[_]]]) {
     // wrapper around descriptor
     def descriptor(tpe: Type, check: Boolean = true): String = CodegenHelper.descriptor(tpe, interfaces, enumInterfaces, check)
   }

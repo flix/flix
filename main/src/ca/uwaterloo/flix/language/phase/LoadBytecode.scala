@@ -26,7 +26,7 @@ import ca.uwaterloo.flix.runtime.Value
 import ca.uwaterloo.flix.util.{Evaluation, InternalCompilerException}
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
-
+import org.objectweb.asm.Opcodes._
 object LoadBytecode extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
 
   private class Loader extends ClassLoader {
@@ -174,7 +174,7 @@ object LoadBytecode extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     }.toMap
 
     // 7. Create a class for each enum case.
-    val loadedEnums : Map[Symbol.EnumSym, (Class[_], Map[String, Class[_]])]  = declaredEnums.map{ case (tpe, cases) =>
+    val loadedEnums : Map[Type, Map[String, Class[_]]]  = declaredEnums.map{ case (tpe, cases) =>
       //Get the enum symbol from the type
       val sym = tpe match {
         case Type.Apply(Type.Enum(s, _), _) => s
@@ -188,13 +188,13 @@ object LoadBytecode extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
       // Create a class for each enum case
       val classes : Map[String, Class[_]] = cases.map{ case (enumSubCase, fieldType) =>
         val bytecode = Enumgen.compileEnumClass(prefix :+ enumSubCase, enumInterfaces(tpe),
-          CodegenHelper.descriptor(fieldType, interfaces, enumInterfaces, false))
+          CodegenHelper.descriptor(fieldType, interfaces, enumInterfaces, false), fieldType)
         if (flix.options.debug) {
           dump(prefix :+ enumSubCase, bytecode)
         }
         enumSubCase -> loader(prefix :+ enumSubCase, bytecode)
       }.toMap
-      sym -> (enumInterfaces(tpe), classes)
+      tpe -> classes
     }.toMap
 
 
@@ -372,7 +372,7 @@ object LoadBytecode extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     case Expression.SwitchError(tpe, loc) => Nil
   }
 
-  /**
+  /** TODO: CHANGE THIS!
     * Type to a string wrapped in a list. This string doesn't contain prohibited characters of the type representation
     * @param tpe type
     * @return
