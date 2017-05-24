@@ -31,7 +31,7 @@ class TestOptimizer extends FunSuite {
   test("ConstantFold.Plus.01") {
     val input = "def f: Int = 1 + 2 + 3"
     val s = statsOf(input)
-    assertResult(2)(s.plusExpressions) // TODO: Change to zero for when the optimizer is enabled.
+    assertResult(0)(s.plusExpressions)
   }
 
   private def statsOf(input: String): AstStats = new Flix().addStr(input).setOptions(opts).astStats().get
