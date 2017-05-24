@@ -106,6 +106,7 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         val i1 = visitExp(exp1, i0)
         val i2 = visitExp(exp2, i1)
         visitExp(exp3, i2)
+
       case Expression.Let(sym, exp1, exp2, tpe, loc) =>
         // Set the stack offset for the symbol.
         sym.setStackOffset(i0)
@@ -118,9 +119,23 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
 
         // Visit the let-body expression.
         visitExp(exp2, i2)
-      case Expression.Is(exp, tag, loc) => visitExp(exp, i0)
+
+      case Expression.LetRec(sym, exp1, exp2, tpe, loc) =>
+        // Set the stack offset for the symbol.
+        sym.setStackOffset(i0)
+
+        // Compute the next free stack offset.
+        val i1 = i0 + getStackSize(exp1.tpe)
+
+        // Visit the let-bound value expression.
+        val i2 = visitExp(exp1, i1)
+
+        // Visit the let-body expression.
+        visitExp(exp2, i2)
+
+      case Expression.Is(sym, tag, exp, loc) => visitExp(exp, i0)
       case Expression.Tag(enum, tag, exp, tpe, loc) => visitExp(exp, i0)
-      case Expression.Untag(tag, exp, tpe, loc) => visitExp(exp, i0)
+      case Expression.Untag(sym, tag, exp, tpe, loc) => visitExp(exp, i0)
       case Expression.Index(exp, index, tpe, loc) => visitExp(exp, i0)
       case Expression.Tuple(elms, tpe, loc) => visitExps(elms, i0)
       case Expression.Existential(params, exp, loc) => visitExp(exp, i0)

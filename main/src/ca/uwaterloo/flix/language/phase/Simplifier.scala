@@ -148,6 +148,9 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case TypedAst.Expression.Let(sym, e1, e2, tpe, loc) =>
         SimplifiedAst.Expression.Let(sym, simplify(e1), simplify(e2), tpe, loc)
 
+      case TypedAst.Expression.LetRec(sym, e1, e2, tpe, loc) =>
+        SimplifiedAst.Expression.LetRec(sym, simplify(e1), simplify(e2), tpe, loc)
+
       case TypedAst.Expression.Match(exp0, rules, tpe, loc) =>
         import SimplifiedAst.{Expression => SExp}
 
@@ -328,11 +331,11 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         * nested pattern of the tag added in front and a new fresh variable holding
         * the value of the tag.
         */
-      case (Tag(enum, tag, pat, tpe, loc) :: ps, v :: vs) =>
-        val cond = SExp.Is(SExp.Var(v, tpe, loc), tag, loc)
+      case (Tag(sym, tag, pat, tpe, loc) :: ps, v :: vs) =>
+        val cond = SExp.Is(sym, tag, SExp.Var(v, tpe, loc), loc)
         val freshVar = Symbol.freshVarSym("innerTag")
         val inner = simplify(pat :: ps, freshVar :: vs, guard, succ, fail)
-        val consequent = SExp.Let(freshVar, SExp.Untag(tag, SExp.Var(v, tpe, loc), pat.tpe, loc), inner, succ.tpe, loc)
+        val consequent = SExp.Let(freshVar, SExp.Untag(sym, tag, SExp.Var(v, tpe, loc), pat.tpe, loc), inner, succ.tpe, loc)
         SExp.IfThenElse(cond, consequent, fail, succ.tpe, loc)
 
       /**
@@ -640,12 +643,14 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         SimplifiedAst.Expression.IfThenElse(visit(exp1), visit(exp2), visit(exp3), tpe, loc)
       case SimplifiedAst.Expression.Let(sym, exp1, exp2, tpe, loc) =>
         SimplifiedAst.Expression.Let(sym, visit(exp1), visit(exp2), tpe, loc)
-      case SimplifiedAst.Expression.Is(exp, tag, loc) =>
-        SimplifiedAst.Expression.Is(visit(exp), tag, loc)
+      case SimplifiedAst.Expression.LetRec(sym, exp1, exp2, tpe, loc) =>
+        SimplifiedAst.Expression.LetRec(sym, visit(exp1), visit(exp2), tpe, loc)
+      case SimplifiedAst.Expression.Is(sym, tag, exp, loc) =>
+        SimplifiedAst.Expression.Is(sym, tag, visit(exp), loc)
       case SimplifiedAst.Expression.Tag(enum, tag, exp, tpe, loc) =>
         SimplifiedAst.Expression.Tag(enum, tag, visit(exp), tpe, loc)
-      case SimplifiedAst.Expression.Untag(tag, exp, tpe, loc) =>
-        SimplifiedAst.Expression.Untag(tag, visit(exp), tpe, loc)
+      case SimplifiedAst.Expression.Untag(sym, tag, exp, tpe, loc) =>
+        SimplifiedAst.Expression.Untag(sym, tag, visit(exp), tpe, loc)
       case SimplifiedAst.Expression.Index(exp, offset, tpe, loc) =>
         SimplifiedAst.Expression.Index(visit(exp), offset, tpe, loc)
       case SimplifiedAst.Expression.Tuple(elms, tpe, loc) =>

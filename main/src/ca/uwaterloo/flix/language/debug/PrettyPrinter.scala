@@ -170,12 +170,20 @@ object PrettyPrinter {
           vt << ";" << NewLine
           visitExp(exp2)
 
-        case Expression.Is(exp, tag, loc) =>
+        case Expression.LetRec(sym, exp1, exp2, tpe, loc) =>
+          vt << Bold("let") << " "
+          fmtSym(sym, vt)
+          vt.text(" = ")
+          visitExp(exp1)
+          vt << ";" << NewLine
+          visitExp(exp2)
+
+        case Expression.Is(sym, tag, exp, loc) =>
           visitExp(exp)
           vt.text(" is ")
           vt.text(tag)
 
-        case Expression.Tag(enum, tag, exp, tpe, loc) => exp match {
+        case Expression.Tag(sym, tag, exp, tpe, loc) => exp match {
           case Expression.Unit => vt.text(tag)
           case _ =>
             vt.text(tag).text("(")
@@ -183,7 +191,7 @@ object PrettyPrinter {
             vt.text(")")
         }
 
-        case Expression.Untag(tag, exp, tpe, loc) =>
+        case Expression.Untag(sym, tag, exp, tpe, loc) =>
           vt.text("Untag(")
           visitExp(exp)
           vt.text(")")

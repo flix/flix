@@ -16,6 +16,8 @@
 
 package ca.uwaterloo.flix.language.phase
 
+import java.lang.reflect.Modifier
+
 import ca.uwaterloo.flix.api._
 import ca.uwaterloo.flix.language.ast.Ast.Hook
 import ca.uwaterloo.flix.language.ast.ExecutableAst.{Definition, Expression, LoadExpression, StoreExpression}
@@ -32,7 +34,6 @@ import scala.language.existentials
 // TODO: Debugging information
 
 object Codegen {
-
   /*
    * Constants passed to the asm library to generate bytecode.
    *
@@ -497,7 +498,10 @@ object Codegen {
       }
       compileExpression(ctx, visitor, entryPoint)(exp2)
 
-    case Expression.Is(exp, tag, _) =>
+    case Expression.LetRec(sym, exp1, exp2, _, _) =>
+      ??? // TODO: Add support for LetRec.
+
+    case Expression.Is(sym, tag, exp, _) =>
       // Value.Tag.tag() method
       val clazz1 = Constants.tagClass
       val method1 = clazz1.getMethod("tag")
@@ -519,7 +523,7 @@ object Codegen {
       compileBoxedExpr(ctx, visitor, entryPoint)(exp)
       visitor.visitMethodInsn(INVOKEVIRTUAL, Constants.valueObject, "mkTag", "(Ljava/lang/String;Ljava/lang/Object;)Lca/uwaterloo/flix/runtime/Value$Tag;", false)
 
-    case Expression.Untag(tag, exp, tpe, _) =>
+    case Expression.Untag(sym, tag, exp, tpe, _) =>
       // Value.Tag.value() method
       val clazz = Constants.tagClass
       val method = clazz.getMethod("value")
@@ -567,17 +571,52 @@ object Codegen {
         visitor.visitInsn(AASTORE)
       }
 
+    case Expression.Reference(exp, tpe, loc) => ??? // TODO
+
+    case Expression.Dereference(exp, tpe, loc) => ??? // TODO
+
+    case Expression.Assignment(exp1, exp2, tpe, loc) => ??? // TODO
+
     case Expression.Existential(params, exp, loc) =>
       throw InternalCompilerException(s"Unexpected expression: '$expr' at ${loc.source.format}.")
 
     case Expression.Universal(params, exp, loc) =>
       throw InternalCompilerException(s"Unexpected expression: '$expr' at ${loc.source.format}.")
 
-    case Expression.NativeConstructor(constructor, args, tpe, loc) => ??? // TODO
+    case Expression.NativeConstructor(constructor, args, tpe, loc) =>
+      val descriptor = asm.Type.getConstructorDescriptor(constructor)
+      val declaration = asm.Type.getInternalName(constructor.getDeclaringClass)
+      // Create a new object of the declaration type
+      visitor.visitTypeInsn(NEW, declaration)
+      // Duplicate the reference since the first argument for a constructor call is the reference to the object
+      visitor.visitInsn(DUP)
+      // Evaluate arguments left-to-right and push them onto the stack.
+      args.foreach(compileExpression(ctx, visitor, entryPoint))
+      // Call the constructor
+      visitor.visitMethodInsn(INVOKESPECIAL, declaration, "<init>", descriptor, false)
 
-    case Expression.NativeField(field, tpe, loc) => ??? // TODO
+    case Expression.NativeField(field, tpe, loc) =>
+      // Fetch a field from an object
+      val declaration = asm.Type.getInternalName(field.getDeclaringClass)
+      val name = field.getName
+      // Use GETSTATIC if the field is static and GETFIELD if the field is on an object
+      val getInsn = if(Modifier.isStatic(field.getModifiers)) GETSTATIC else GETFIELD
+      visitor.visitFieldInsn(getInsn, declaration, name, ctx.descriptor(tpe))
 
-    case Expression.NativeMethod(method, args, tpe, loc) => ??? // TODO
+    case Expression.NativeMethod(method, args, tpe, loc) =>
+      // Evaluate arguments left-to-right and push them onto the stack.
+      args.foreach(compileExpression(ctx, visitor, entryPoint))
+      val declaration = asm.Type.getInternalName(method.getDeclaringClass)
+      val name = method.getName
+      val descriptor = asm.Type.getMethodDescriptor(method)
+      // If the method is static, use INVOKESTATIC otherwise use INVOKEVIRTUAL
+      val invokeInsn = if (Modifier.isStatic(method.getModifiers)) INVOKESTATIC else INVOKEVIRTUAL
+      visitor.visitMethodInsn(invokeInsn, declaration, name, descriptor, false)
+      // If the method is void, put a unit on top of the stack
+      if(asm.Type.getType(method.getReturnType) == asm.Type.VOID_TYPE) {
+        val clazz = Constants.unitClass
+        visitor.visitFieldInsn(GETSTATIC, asm.Type.getInternalName(clazz), "MODULE$", asm.Type.getDescriptor(clazz))
+      }
 
     case Expression.UserError(_, loc) =>
       val name = asm.Type.getInternalName(classOf[UserException])
@@ -973,6 +1012,13 @@ object Codegen {
           val clazz = Constants.bigIntegerClass
           val method = clazz.getMethod(bigIntOp, clazz)
           visitor.visitMethodInsn(INVOKEVIRTUAL, asm.Type.getInternalName(clazz), bigIntOp, asm.Type.getMethodDescriptor(method), false);
+        case Type.Str => (e2.tpe, o) match {
+          case (Type.Str, BinaryOperator.Plus) =>
+            val clazz = Constants.stringClass
+            val method = clazz.getMethod("concat", Constants.stringClass)
+            visitor.visitMethodInsn(INVOKEVIRTUAL, asm.Type.getInternalName(clazz), method.getName, asm.Type.getMethodDescriptor(method), false)
+          case _ => throw InternalCompilerException(s"Can't apply $o to type ${e1.tpe} near ${e1.loc.format}")
+        }
         case _ => throw InternalCompilerException(s"Can't apply $o to type ${e1.tpe} near ${e1.loc.format}")
       }
     }
@@ -1047,18 +1093,34 @@ object Codegen {
         compileExpression(ctx, visitor, entryPoint)(e2)
         val condElse = new Label()
         val condEnd = new Label()
-        val (intOp, floatOp, doubleOp, refOp, cmp) = o match {
-          case BinaryOperator.Less => (IF_ICMPGE, FCMPG, DCMPG, NOP, IFGE)
-          case BinaryOperator.LessEqual => (IF_ICMPGT, FCMPG, DCMPG, NOP, IFGT)
-          case BinaryOperator.Greater => (IF_ICMPLE, FCMPL, DCMPL, NOP, IFLE)
-          case BinaryOperator.GreaterEqual => (IF_ICMPLT, FCMPL, DCMPL, NOP, IFLT)
-          case BinaryOperator.Equal => (IF_ICMPNE, FCMPG, DCMPG, IF_ACMPNE, IFNE)
-          case BinaryOperator.NotEqual => (IF_ICMPEQ, FCMPG, DCMPG, IF_ACMPEQ, IFEQ)
+        val (intOp, floatOp, doubleOp, cmp) = o match {
+          case BinaryOperator.Less => (IF_ICMPGE, FCMPG, DCMPG, IFGE)
+          case BinaryOperator.LessEqual => (IF_ICMPGT, FCMPG, DCMPG, IFGT)
+          case BinaryOperator.Greater => (IF_ICMPLE, FCMPL, DCMPL, IFLE)
+          case BinaryOperator.GreaterEqual => (IF_ICMPLT, FCMPL, DCMPL, IFLT)
+          case BinaryOperator.Equal => (IF_ICMPNE, FCMPG, DCMPG, IFNE)
+          case BinaryOperator.NotEqual => (IF_ICMPEQ, FCMPG, DCMPG, IFEQ)
         }
         e1.tpe match {
-          case Type.Unit | Type.Str if o == BinaryOperator.Equal || o == BinaryOperator.NotEqual =>
-            // Unit and String can be reference compared for equality.
-            visitor.visitJumpInsn(refOp, condElse)
+          case Type.Unit if o == BinaryOperator.Equal || o == BinaryOperator.NotEqual =>
+            // Unit can only be equal to unit, so objects are poped from the top of the stack
+            visitor.visitInsn(POP)
+            visitor.visitInsn(POP)
+            // A unit value is always equal itself, so no need to branch.
+            // A unit value is never unequal to itself, so always branch to else label.
+            e2.tpe match {
+              case Type.Unit if o == BinaryOperator.NotEqual => visitor.visitJumpInsn(GOTO, condElse)
+              case Type.Unit if o == BinaryOperator.Equal =>
+              case _ if o == BinaryOperator.Equal => visitor.visitJumpInsn(GOTO, condElse)
+              case _ =>
+            }
+          case Type.Str if o == BinaryOperator.Equal || o == BinaryOperator.NotEqual =>
+            // String can be compared using Object's `equal` method
+            val clazz = Constants.objectClass
+            val method = clazz.getMethod("equals", clazz)
+            visitor.visitMethodInsn(INVOKEVIRTUAL, asm.Type.getInternalName(clazz), method.getName, asm.Type.getMethodDescriptor(method), false)
+            visitor.visitInsn(ICONST_1)
+            visitor.visitJumpInsn(intOp, condElse)
           case Type.Bool if o == BinaryOperator.Equal || o == BinaryOperator.NotEqual =>
             // Bool can be (value) compared for equality.
             visitor.visitJumpInsn(intOp, condElse)

@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.api.{MatchException, SwitchException, UserException}
 import ca.uwaterloo.flix.language.GenSym
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Expression
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.util.InternalCompilerException
+import ca.uwaterloo.flix.util.{InternalCompilerException, InternalRuntimeException}
 
 /**
   * Symbolic evaluator that supports symbolic values and collects path constraints.
@@ -159,9 +159,9 @@ object SymbolicEvaluator {
       case Expression.MkClosureRef(ref, freeVars, _, _) =>
         // Save the values of the free variables in a list.
         // When the closure is called, these values will be provided at the beginning of the argument list.
-        val env = freeVars.toList.map(f => env0(f.sym))
+        val bindings = freeVars.map(f => env0(f.sym))
         // Construct the closure.
-        val clo = SymVal.Closure(ref, env)
+        val clo = SymVal.Closure(ref, bindings)
         lift(pc0, qua0, clo)
 
       /**
@@ -685,9 +685,33 @@ object SymbolicEvaluator {
         }
 
       /**
+        * LetRec-binding.
+        */
+      case Expression.LetRec(sym, exp1, exp2, _, _) => exp1 match {
+        case Expression.MkClosureRef(ref, freeVars, _, _) =>
+          // Save the values of the free variables in a list.
+          // When the closure is called, these values will be provided at the beginning of the argument list.
+          val bindings = Array.ofDim[SymVal](freeVars.length)
+          for (freeVar <- freeVars) {
+            // A value might be absent from the the environment if it is recursively bound.
+            env0.get(freeVar.sym) match {
+              case None => // Ok, value probably recursive.
+              case Some(v) => bindings(sym.getStackOffset) = v
+            }
+          }
+          // Construct circular closure.
+          val clo = SymVal.Closure(ref, bindings)
+          bindings(sym.getStackOffset) = clo
+
+          // Return the closure.
+          lift(pc0, qua0, clo)
+        case _ => throw InternalRuntimeException(s"Expected MkClosureRef expression: '$exp1'")
+      }
+
+      /**
         * Is Tag.
         */
-      case Expression.Is(exp, tag, _) =>
+      case Expression.Is(sym, tag, exp, _) =>
         eval(pc0, exp, env0, qua0) flatMap {
           case (pc, qua, SymVal.Tag(tag2, _)) =>
             if (tag == tag2)
@@ -700,7 +724,7 @@ object SymbolicEvaluator {
       /**
         * Tag.
         */
-      case Expression.Tag(enum, tag, exp, _, _) =>
+      case Expression.Tag(sym, tag, exp, _, _) =>
         eval(pc0, exp, env0, qua0) flatMap {
           case (pc, qua, v) => lift(pc, qua, SymVal.Tag(tag, v))
         }
@@ -708,7 +732,7 @@ object SymbolicEvaluator {
       /**
         * Untag.
         */
-      case Expression.Untag(tag, exp, _, _) =>
+      case Expression.Untag(sym, tag, exp, _, _) =>
         eval(pc0, exp, env0, qua0) flatMap {
           case (pc, qua, SymVal.Tag(_, v)) => lift(pc, qua, v)
           case v => throw InternalCompilerException(s"Type Error: Unexpected value: '$v'.")
@@ -729,6 +753,35 @@ object SymbolicEvaluator {
         eval(pc0, base, env0, qua0) flatMap {
           case (pc, qua, SymVal.Tuple(elms)) => lift(pc, qua, elms(offset))
           case v => throw InternalCompilerException(s"Type Error: Unexpected value: '$v'.")
+        }
+
+      /**
+        * Reference.
+        */
+      case Expression.Reference(exp, tpe, loc) => ??? // TODO
+
+      /**
+        * Dereference.
+        */
+      case Expression.Dereference(exp, tpe, loc) => ??? // TODO
+
+      /**
+        * Assignment.
+        */
+      case Expression.Assignment(exp1, exp2, tpe, loc) => ??? // TODO
+
+      /**
+        * Existential Quantifier.
+        */
+      case e: Expression.Existential => throw InternalCompilerException(s"Unsupported expression: '$e'.") // TODO
+
+      /**
+        * Universal Quantifier.
+        */
+      case Expression.Universal(fparam, exp, _) =>
+        // Enumerate the possible symbolic values of the formal parameter.
+        enumerator(fparam.sym, fparam.tpe) flatMap {
+          case value => eval(pc0, exp, env0 + (fparam.sym -> value), qua0 + (fparam.sym -> value))
         }
 
       /**
@@ -760,20 +813,6 @@ object SymbolicEvaluator {
         * Switch Error
         */
       case Expression.SwitchError(tpe, loc) => throw SwitchException("Switch Error", loc)
-
-      /**
-        * Existential Quantifier.
-        */
-      case e: Expression.Existential => throw InternalCompilerException(s"Unsupported expression: '$e'.") // TODO
-
-      /**
-        * Universal Quantifier.
-        */
-      case Expression.Universal(fparam, exp, _) =>
-        // Enumerate the possible symbolic values of the formal parameter.
-        enumerator(fparam.sym, fparam.tpe) flatMap {
-          case value => eval(pc0, exp, env0 + (fparam.sym -> value), qua0 + (fparam.sym -> value))
-        }
 
       /**
         * Unsupported expressions.

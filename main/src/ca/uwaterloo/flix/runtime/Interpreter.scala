@@ -61,15 +61,7 @@ object Interpreter {
     }
     case Expression.Ref(name, _, _) => eval(root.definitions(name).exp, root, env0)
     case Expression.MkClosureRef(ref, freeVars, _, _) =>
-      // Save the values of the free variables in the Value.Closure structure.
-      // When the closure is called, these values will be provided at the beginning of the argument list.
-      val bindings = new Array[AnyRef](freeVars.length)
-      var i = 0
-      while (i < bindings.length) {
-        bindings(i) = env0(freeVars(i).sym.toString)
-        i = i + 1
-      }
-      Value.Closure(ref.sym, bindings)
+      allocateClosure(ref, freeVars, env0)
     case Expression.ApplyRef(sym, args0, _, _) =>
       val args = evalArgs(args0, root, env0)
       Linker.link(sym, root).invoke(args.toArray)
@@ -112,9 +104,22 @@ object Interpreter {
     case Expression.Let(sym, exp1, exp2, _, _) =>
       val newEnv = env0 + (sym.toString -> eval(exp1, root, env0))
       eval(exp2, root, newEnv)
-    case Expression.Is(exp, tag, _) => Value.mkBool(Value.cast2tag(eval(exp, root, env0)).tag == tag)
+
+    case Expression.LetRec(sym, exp1, exp2, _, _) => exp1 match {
+      case Expression.MkClosureRef(ref, freeVars, _, _) =>
+        // Allocate a circular closure.
+        val closure = allocateClosure(ref, freeVars, env0)
+        closure.bindings(sym.getStackOffset) = closure
+
+        // Evaluate the body expression under the extended environment.
+        val newEnv = env0 + (sym.toString -> closure)
+        eval(exp2, root, newEnv)
+      case _ => throw InternalRuntimeException("Non-closure letrec value.")
+    }
+
+    case Expression.Is(sym, tag, exp, _) => Value.mkBool(Value.cast2tag(eval(exp, root, env0)).tag == tag)
     case Expression.Tag(name, tag, exp, _, _) => Value.mkTag(tag, eval(exp, root, env0))
-    case Expression.Untag(tag, exp, _, _) => Value.cast2tag(eval(exp, root, env0)).value
+    case Expression.Untag(sym, tag, exp, _, _) => Value.cast2tag(eval(exp, root, env0)).value
     case Expression.Index(base, offset, _, _) => eval(base, root, env0).asInstanceOf[Array[AnyRef]](offset)
     case Expression.Tuple(elms, _, _) =>
       val array = new Array[AnyRef](elms.length)
@@ -124,6 +129,13 @@ object Interpreter {
         i = i + 1
       }
       array
+
+    case Expression.Reference(exp, tpe, loc) => ??? // TODO
+
+    case Expression.Dereference(exp, tpe, loc) => ??? // TODO
+
+    case Expression.Assignment(exp1, exp2, tpe, loc) => ??? // TODO
+
     case Expression.Existential(params, exp, loc) => throw InternalRuntimeException(s"Unexpected expression: '$exp' at ${loc.source.format}.")
     case Expression.Universal(params, exp, loc) => throw InternalRuntimeException(s"Unexpected expression: '$exp' at ${loc.source.format}.")
 
@@ -401,6 +413,26 @@ object Interpreter {
     */
   private def evalArgs(exps: List[Expression], root: Root, env: Map[String, AnyRef]): List[AnyRef] = {
     exps.map(a => eval(a, root, env))
+  }
+
+  /**
+    * Allocates a closure for the given reference `ref` with free variables `freeVars` under the given environment `env0`.
+    */
+  private def allocateClosure(ref: Expression.Ref, freeVars: Array[ExecutableAst.FreeVar], env0: Map[String, AnyRef]): Value.Closure = {
+    // Save the values of the free variables in the Value.Closure structure.
+    // When the closure is called, these values will be provided at the beginning of the argument list.
+    val bindings = new Array[AnyRef](freeVars.length)
+    var i = 0
+    while (i < bindings.length) {
+      // A value might be absent from the the environment if it is recursively bound.
+      env0.get(freeVars(i).sym.toString) match {
+        case None => // Ok, value probably recursive.
+        case Some(v) =>
+          bindings(i) = v
+      }
+      i = i + 1
+    }
+    Value.Closure(ref.sym, bindings)
   }
 
 }
