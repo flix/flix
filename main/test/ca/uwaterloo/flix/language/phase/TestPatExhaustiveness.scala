@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.errors.ExhaustiveMatchError
 import org.scalatest.FunSuite
 import ca.uwaterloo.flix.util.Options
 import ca.uwaterloo.flix.runtime.Model
@@ -78,6 +79,17 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
         |  case 'c' => 3
         |}
       """.stripMargin
+    expectError[ExhaustiveMatchError](new Flix().addStr(input).compile())
+  }
+  test("Pattern.Literal.Char.02") {
+    val input =
+      """def f(x: Char): Int = match x with {
+        |  case 'a' => 1
+        |  case 'b' => 2
+        |  case 'c' => 3
+        |  case _ => 4
+        |}
+      """.stripMargin
     run(input)
   }
 
@@ -89,7 +101,7 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
         |  case 3 => 3
         |}
       """.stripMargin
-    run(input)
+    expectError[ExhaustiveMatchError](new Flix().addStr(input).compile())
   }
 
   test("Pattern.Literal.Int64.01") {
@@ -100,7 +112,7 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
         |  case 3i64 => 3
         |}
       """.stripMargin
-    run(input)
+    expectError[ExhaustiveMatchError](new Flix().addStr(input).compile())
   }
 
   test("Pattern.Literal.Str.01") {
@@ -111,7 +123,7 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
         |  case "baz" => 3
         |}
       """.stripMargin
-    run(input)
+    expectError[ExhaustiveMatchError](new Flix().addStr(input).compile())
   }
 
   test("Pattern.Enum.01") {

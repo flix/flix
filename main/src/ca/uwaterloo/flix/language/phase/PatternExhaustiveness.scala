@@ -20,6 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Symbol.EnumSym
 import ca.uwaterloo.flix.language.ast.{Type, TypedAst}
 import ca.uwaterloo.flix.language.ast.TypedAst.Pattern
+import ca.uwaterloo.flix.language.ast.TypedAst.Pattern.Tag
 import ca.uwaterloo.flix.language.errors.ExhaustiveMatchError
 import ca.uwaterloo.flix.language.{CompilationError, GenSym}
 import ca.uwaterloo.flix.util.Validation
@@ -42,9 +43,11 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
       // Can probably do options stuff here
     }
     implicit val _ = flix.genSym
-    val defns = root.definitions.map { case (k, v) => k -> Definition.CheckPats(root, v) }
+    //val defns = seqM(root.definitions.map { case (_, v) => Definition.CheckPats(root, v) })
+    val defns1 = root.definitions.filter { case (_, v) => Definition.CheckPats(root, v).isFailure }
+    val defns = seqM(defns1.map { case (_, v) => Definition.CheckPats(root, v) })
 
-    root.toSuccess
+    defns.map ( _ => root)
   }
 
   object Definition {
@@ -82,8 +85,26 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
     def CheckRules(root: TypedAst.Root, exp: TypedAst.Expression, rules: List[TypedAst.MatchRule]): Validation[List[TypedAst.MatchRule], CompilationError] = {
       FindNonMatchingPat(root, exp, rules.map(r => List(r.pat)), 1) match {
         case Right(a) => Success(rules, Stream.empty)
-        case Left((c, rule)) => Failure(ExhaustiveMatchError(rule.toString(), rule.head.loc.source) #:: Stream.empty);
+        case Left((c, rule)) => Failure(ExhaustiveMatchError(formatRule(rule), rule.head.loc.source) #:: Stream.empty);
       }
+    }
+
+    def formatRule(rule: List[TypedAst.Pattern]): String = {
+      def formatPattern(pat: TypedAst.Pattern, acc: String):String = pat match {
+        case Pattern.Int8(lit, _) => acc ++ ", " ++ lit.toString
+        case Pattern.Int16(lit, _) => acc ++ ", " ++ lit.toString
+        case Pattern.Int32(lit, _) => acc ++ ", " ++ lit.toString
+        case Pattern.Int64(lit, _) => acc ++ ", " + lit.toString
+        case Pattern.Float32(lit, _) => acc ++ ", " ++ lit.toString
+        case Pattern.Float64(lit, _) => acc ++ ", " ++ lit.toString
+        case Pattern.Char(lit, _) => acc ++ ", " ++ lit.toString
+        case Pattern.BigInt(lit, _) => acc ++ ", " ++ lit.toString
+        case Pattern.Wild(_, _) => acc ++ ", _"
+        case Pattern.Var(_, _, _) => acc ++ ", _"
+        case Pattern.Tuple(pats, _ ,_ ) => acc ++ ", (" ++ formatRule(pats) ++ ")"
+        case Pattern.Tag(sym, tag, pt, _, _) => acc ++ ", " ++ sym.name ++ "/" ++ tag ++ formatRule(List(pt))
+      }
+      rule.foldRight("")(formatPattern)
     }
 
     /**
@@ -94,10 +115,13 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
       * @param  exp The expression the patterns match against
       * @param rules The rules to check for exhaustion
       * @param n The size of resulting pattern vector
-      * @returns If no such pattern exists, returns Right(the input), else returns Left(a matching pattern)
+      * @return If no such pattern exists, returns Right(the input), else returns Left(a matching pattern)
       */
     def FindNonMatchingPat(root: TypedAst.Root, exp: TypedAst.Expression, rules: List[List[TypedAst.Pattern]], n: Integer): Either[(EnumSym, List[Pattern]), List[List[Pattern]]] = {
-      if (rules.isEmpty || n==0) {
+      if (n==0) {
+        if (rules.isEmpty) {
+          return Left((new EnumSym(List.empty[String], "", null), List.empty[Pattern]))
+        }
         return Right(rules)
       }
 
@@ -116,51 +140,92 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
          * case Nothing =>
          *
          * {Some, Nothing} is a complete signature, but the just case is exhaustive only if the {True, False} case is
+         *
          * exhaustive. So we create a "Specialized" matrix for Just with {True, False} as rows and check that.
          */
-        val check_all: List[Either[(EnumSym, List[Pattern]), List[List[Pattern]]]] = sigma.map(c => FindNonMatchingPat(root, exp, Specialize(root, c, rules),  root.enums.get(c).get.cases.size + n - 1))
+        val check_all: List[Either[(EnumSym, List[Pattern]), List[List[Pattern]]]] = sigma.map(c => FindNonMatchingPat(root, exp, Specialize(root, c, rules),  countCtorArgs(c) + n - 1))
         val base: Either[(EnumSym, List[Pattern]), List[List[Pattern]]] = Right(List.empty[List[Pattern]])
         val rules_valid: Either[(EnumSym, List[Pattern]), List[List[Pattern]]] = check_all.foldRight(base)(mergeEither)
         rules_valid match {
           case Right(a) => Right(a)
-          case Left((c, pats)) => Left((c, List(TypedAst.Pattern.Tag(c, "TEST", TypedAst.Pattern.Tuple(pats, exp.tpe, exp.loc), exp.tpe, exp.loc))))
+          case Left((c, pats)) => Left((c, List(TypedAst.Pattern.Tag(c, c.name, TypedAst.Pattern.Tuple(pats, exp.tpe, exp.loc), exp.tpe, exp.loc))))
         }
       } else {
         FindNonMatchingPat(root, exp, defaultMatrix(rules), n - 1) match {
           case Right(a) => Right(a)
           case Left((c, pats)) => sigma match {
             case Nil => Left(c, Pattern.Wild(exp.tpe, exp.loc) :: pats)
-            case _ => Left(c, List(TypedAst.Pattern.Tag(c, "TEST", TypedAst.Pattern.Tuple(pats, exp.tpe, exp.loc), exp.tpe, exp.loc)))
+            case _ => Left(c, List(TypedAst.Pattern.Tag(c, c.name, TypedAst.Pattern.Tuple(pats, exp.tpe, exp.loc), exp.tpe, exp.loc)))
           }
         }
       }
     }
 
-    // Specialize a matrix of patterns for the Constructor ctor
-    // For a constructor of C(r1,...ra) and a matrix of width n,
-    // we return a matrix of width n+a-1
-    def Specialize(root: TypedAst.Root, ctor: EnumSym, rules: List[List[TypedAst.Pattern]]): List[List[TypedAst.Pattern]] = {
+    /**
+      * Specialize a matrix of patterns for the Constructor ctor For a constructor of C(r1,...ra) and a matrix of width
+      * n, we return a matrix of width n+a-1
+      *
+      * e.g. If we have
+      * enum Option {
+      *    case Some a,
+      *    case Nothing
+      *  }
+      *
+      * And the pattern matrix
+      *
+      * case Some True =>
+      * case Some False =>
+      * case Nothing =>
+      *
+      * Specializing for Some gives use the matrix
+      * True =>
+      * False =>
+      *
+      * Where' we've taken a matrix had made of the arguments to the Some rows. Specializing for Nothing would give
+      * an empty matrix as it has no arguments.
+      *
+      * @param root The ast root
+      * @param ctor The constructor to specialize for
+      * @param rules The rules matrix to specialize
+      * @return The specialized matrix of rules
+      */
+    def Specialize(root: TypedAst.Root, ctor: TypedAst.Pattern, rules: List[List[TypedAst.Pattern]]): List[List[TypedAst.Pattern]] = {
       // First figure out how many arguments are needed by the ctor
-      val numArgs = root.enums.get(ctor).get.cases.size
+      val numArgs = countCtorArgs(ctor)
 
-      val specializeRow = (pat: List[TypedAst.Pattern], acc: List[List[TypedAst.Pattern]]) =>
-        pat.head match {
-          // If it's a pattern with the constructor that we are
-          // specializing for, we break it up into it's arguments
-          // If it's not our constructor, we ignore it
-          case TypedAst.Pattern.Tag(sym, _, exp, _, _) => exp match {
-            case TypedAst.Pattern.Tuple(elms, _, _) =>
-              if (sym == ctor) {
-                (elms ++ pat.tail) :: acc
-              } else acc
-            case _ => ???
-          }
-          // A wild constructor is the same as the constructor
-          // with all its arguments as wild
-          case a: TypedAst.Pattern.Wild =>
-            (List.fill(numArgs)(a) ++ pat.tail) :: acc
-          // We don't have or patterns, but if we did, they would go here
+      def specializeRow(pat: List[TypedAst.Pattern], acc: List[List[TypedAst.Pattern]]) = pat.head match {
+        // A wild constructor is the same as the constructor
+        // with all its arguments as wild
+        case a: TypedAst.Pattern.Wild =>
+          (List.fill(numArgs)(a) ++ pat.tail) :: acc
+        case a: TypedAst.Pattern.Var =>
+          (List.fill(numArgs)(a) ++ pat.tail) :: acc
+
+        // If it's a pattern with the constructor that we are
+        // specializing for, we break it up into it's arguments
+        // If it's not our constructor, we ignore it
+        case TypedAst.Pattern.Tag(_, tag, exp, _, _) => exp match {
+          case TypedAst.Pattern.Tuple(elms, _, _) =>
+            if (tag.equals(patName(ctor))) {
+              (elms ++ pat.tail) :: acc
+            } else acc
+          case TypedAst.Pattern.Unit(_) =>
+            if (tag.equals (patName (ctor) ) ) {
+              pat.tail :: acc
+            } else acc
+          case _ =>
+            if (tag.equals (patName (ctor) ) ) {
+              (exp :: pat.tail) :: acc
+            } else acc
         }
+
+        // Also handle the non tag constructors
+        case p =>
+          if (patName(p).equals(patName(ctor))) {
+            (p :: pat.tail) :: acc
+          } else acc
+      }
+
       rules.foldRight(List.empty[List[TypedAst.Pattern]])(specializeRow)
     }
 
@@ -177,10 +242,12 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
       */
     def defaultMatrix(rules: List[List[TypedAst.Pattern]]): List[List[TypedAst.Pattern]] = {
       val defaultRow = (pat: List[TypedAst.Pattern], acc: List[List[TypedAst.Pattern]]) => pat.head match {
-        // If it's a constructor, we don't include a row
-        case _: TypedAst.Pattern.Tag => acc
         // If it's a wild card, we take the rest of the pattern
         case _: TypedAst.Pattern.Wild => pat.tail :: acc
+        case _: TypedAst.Pattern.Var => pat.tail :: acc
+
+        // If it's a constructor, we don't include a row
+        case _ => acc
       }
       rules.foldRight(List.empty[List[TypedAst.Pattern]])(defaultRow)
     }
@@ -190,25 +257,14 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
       * Computes the set of constructors that appear at the root of the
       * patterns
       */
-    def rootCtors(rules: List[List[TypedAst.Pattern]]): List[EnumSym] = {
-      def rootCtor(pat: TypedAst.Pattern, pats: List[EnumSym]) = pat match {
+    def rootCtors(rules: List[List[TypedAst.Pattern]]): List[TypedAst.Pattern] = {
+      def rootCtor(pat: List[TypedAst.Pattern], pats: List[TypedAst.Pattern]) = pat.head match {
         case _: Pattern.Wild => pats
         case _: Pattern.Var => pats
-        case tg: Pattern.Tag => tg.sym :: pats
-        case t: Pattern.True => new EnumSym(List.empty, "True", t.loc) :: pats
-        case f: Pattern.False => new EnumSym(List.empty, "False", f.loc) :: pats
-        case u: Pattern.Unit => new EnumSym(List.empty, "Unit", u.loc) :: pats
-        case t: Pattern.Tuple => new EnumSym(List.empty, "Tuple ", t.loc) :: pats
-        case i: Pattern.BigInt => new EnumSym(List.empty, "BigInt", i.loc) :: pats
-        case i: Pattern.Int8 => new EnumSym(List.empty, "Int8", i.loc) :: pats
-        case i: Pattern.Int16 => new EnumSym(List.empty, "Int16", i.loc) :: pats
-        case i: Pattern.Int32 => new EnumSym(List.empty, "Int32", i.loc) :: pats
-        case i: Pattern.Int64 => new EnumSym(List.empty, "Int64", i.loc) :: pats
-        case i: Pattern.Float32 => new EnumSym(List.empty, "Float32", i.loc) :: pats
-        case i: Pattern.Float64 => new EnumSym(List.empty, "Float64", i.loc) :: pats
-        case i: Pattern.Str => new EnumSym(List.empty, "Str", i.loc) :: pats
+        case tg: Pattern.Tag => tg :: pats
+        case p => p :: pats
       }
-     rules.head.foldRight(List.empty[EnumSym])(rootCtor)
+     rules.foldRight(List.empty[TypedAst.Pattern])(rootCtor)
     }
 
     /**
@@ -232,26 +288,74 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
       * @param ctors The ctors that we match with
       * @return
       */
-    def completeSig(root: TypedAst.Root, exp: TypedAst.Expression, ctors: List[EnumSym]): Boolean = {
+    def completeSig(root: TypedAst.Root, exp: TypedAst.Expression, ctors: List[Pattern]): Boolean = {
       // Enumerate all the constructors that we need to cover
       val expCtors: List[String] = exp.tpe match {
         case Type.Bool => List("True", "False")
         case Type.Unit => List("Unit")
         case Type.Enum(enum,_) => root.enums.get(enum).get.cases.toList.map(_._1)
         case Type.FTuple(_) => List("Tuple")
-        /* For "infinite" types, the only way we get a match is through a
-         * wild. Technically, you could, for example, cover a Char by
+        /* For numeric types, we consider them as "infinite" types union
+         * Int = ...| -1 | 0 | 1 | 2 | 3 | ...
+         * The only way we get a match is through a wild. Technically, you could, for example, cover a Char by
          * having a case for [0 255], but we'll ignore that case for now
          */
-        case _ => return false
+        case p => return false
       }
       /* We cover the needed constructors if there is a wild card in the
        * root constructor set, or if we match every constructor for the
        * expression
        */
-      expCtors.toSet.diff(ctors.toSet.map((x: EnumSym) => x.name)).isEmpty
+      val ctornames = ctors.map {
+        case TypedAst.Pattern.Tag(_, tg, _, _, _) => tg
+        case p => patName(p)
+      }
+      expCtors.toSet.diff(ctornames.toSet).isEmpty
     }
 
+    /**
+      * Gets the number of arguments for a constructor, takes into account the "fake constructors"
+      *
+      * @param ctor The constructor to get from
+      * @return The number of arguments for the constructor
+      */
+    def countCtorArgs(ctor: Pattern): Int = ctor match {
+      case _:TypedAst.Pattern.True => 0
+      case _:TypedAst.Pattern.False => 0
+      case _:TypedAst.Pattern.Unit => 0
+      case _:TypedAst.Pattern.BigInt => 1
+      case _:TypedAst.Pattern.Int8 => 1
+      case _:TypedAst.Pattern.Int16 => 1
+      case _:TypedAst.Pattern.Int32 => 1
+      case _:TypedAst.Pattern.Int64 => 1
+      case _:TypedAst.Pattern.Float32 => 1
+      case _:TypedAst.Pattern.Float64 => 1
+      case _:TypedAst.Pattern.Str => 1
+      case _:TypedAst.Pattern.Char => 1
+      case _: TypedAst.Pattern.Wild => 0
+      case _: TypedAst.Pattern.Var => 0
+      case TypedAst.Pattern.Tuple(elems, _ ,_ ) => elems.size
+      case TypedAst.Pattern.Tag(_, _,pat, _ ,_) => countCtorArgs(pat)
+    }
+
+    def patName(p: TypedAst.Pattern): String = p match {
+      case _: Pattern.True => "True"
+      case _: Pattern.False => "False"
+      case _: Pattern.Unit => "Unit"
+      case _: Pattern.Tuple => "Tuple"
+      case _: Pattern.BigInt => "BigInt"
+      case _: Pattern.Int8 => "Int8"
+      case _: Pattern.Int16 => "Int16"
+      case _: Pattern.Int32 => "Int32"
+      case _: Pattern.Int64 => "Int64"
+      case _: Pattern.Float32 => "Float32"
+      case _: Pattern.Float64 => "Float64"
+      case _: Pattern.Str => "Str"
+      case _: Pattern.Char => "Char"
+      case _: Pattern.Wild => "Wild"
+      case _: Pattern.Var => "Var"
+      case p: Pattern.Tag => p.tag
+    }
 
     def mergeEither(x: Either[(EnumSym, List[Pattern]), List[List[Pattern]]],
                     acc: Either[(EnumSym, List[Pattern]), List[List[Pattern]]]): Either[(EnumSym, List[Pattern]), List[List[Pattern]]] =

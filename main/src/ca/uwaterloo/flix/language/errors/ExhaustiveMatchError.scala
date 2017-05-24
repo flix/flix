@@ -28,12 +28,12 @@ import ca.uwaterloo.flix.util.vt.VirtualTerminal
   * @param src the source input.
   */
 case class ExhaustiveMatchError(msg: String, src: SourceInput) extends CompilationError {
-  val kind = "Exhuastive Match Error"
+  val kind = "Exhaustive Match Error"
   val source: SourceInput = src
   val message: VirtualTerminal = {
     val vt = new VirtualTerminal
     vt << Line(kind, source.format) << NewLine
-    vt << ">> Exhuastive Match Error:" << NewLine
+    vt << ">> Exhaustive Match Error:" << NewLine
     vt << NewLine
     vt << Red(msg) << NewLine
   }
