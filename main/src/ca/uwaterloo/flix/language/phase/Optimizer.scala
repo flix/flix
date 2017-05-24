@@ -256,11 +256,12 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
             Expression.IfThenElse(e1, e2, e3, tpe, loc)
         }
       case Expression.Let(sym, exp1, exp2, tpe, loc) => Expression.Let(sym, optimize(exp1), optimize(exp2), tpe, loc)
+      case Expression.LetRec(sym, exp1, exp2, tpe, loc) => Expression.LetRec(sym, optimize(exp1), optimize(exp2), tpe, loc)
       // TODO: Elimination of run-time tag checks of singleton-valued enums.
-      case Expression.Is(exp, tag, loc) => Expression.Is(optimize(exp), tag, loc)
+      case Expression.Is(sym, tag, exp, loc) => Expression.Is(sym, tag, optimize(exp), loc)
       // TODO: Remove the tag and untag on a single case enum.
       case Expression.Tag(sym, tag, exp, tpe, loc) => Expression.Tag(sym, tag, optimize(exp), tpe, loc)
-      case Expression.Untag(tag, exp, tpe, loc) => Expression.Untag(tag, optimize(exp), tpe, loc)
+      case Expression.Untag(sym, tag, exp, tpe, loc) => Expression.Untag(sym, tag, optimize(exp), tpe, loc)
       case Expression.Index(base, offset, tpe, loc) => Expression.Index(optimize(base), offset, tpe, loc)
       case Expression.Tuple(elms, tpe, loc) => Expression.Tuple(optimizeExps(elms), tpe, loc)
       case Expression.Existential(fparam, exp, loc) => Expression.Existential(fparam, optimize(exp), loc)
