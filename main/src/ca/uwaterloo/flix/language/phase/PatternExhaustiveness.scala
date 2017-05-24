@@ -43,9 +43,7 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
       // Can probably do options stuff here
     }
     implicit val _ = flix.genSym
-    //val defns = seqM(root.definitions.map { case (_, v) => Definition.CheckPats(root, v) })
-    val defns1 = root.definitions.filter { case (_, v) => Definition.CheckPats(root, v).isFailure }
-    val defns = seqM(defns1.map { case (_, v) => Definition.CheckPats(root, v) })
+    val defns = seqM(root.definitions.map { case (_, v) => Definition.CheckPats(root, v) })
 
     defns.map ( _ => root)
   }
@@ -89,6 +87,12 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
       }
     }
 
+    /**
+      * Format a pattern for printing so the user knows what they missed
+      *
+      * @param rule The rule to print
+      * @return The formatted string
+      */
     def formatRule(rule: List[TypedAst.Pattern]): String = {
       def formatPattern(pat: TypedAst.Pattern, acc: String):String = pat match {
         case Pattern.Int8(lit, _) => acc ++ ", " ++ lit.toString
@@ -151,6 +155,9 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
           case Left((c, pats)) => Left((c, List(TypedAst.Pattern.Tag(c, c.name, TypedAst.Pattern.Tuple(pats, exp.tpe, exp.loc), exp.tpe, exp.loc))))
         }
       } else {
+        /* If the constructors are not complete, then we will fall to the wild/default case. In that case, we need to
+         * check for non matching patterns in the wild/default matrix.
+         */
         FindNonMatchingPat(root, exp, defaultMatrix(rules), n - 1) match {
           case Right(a) => Right(a)
           case Left((c, pats)) => sigma match {
@@ -357,6 +364,12 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
       case p: Pattern.Tag => p.tag
     }
 
+    /**
+      * Flatten/join for Either. Accumulates Rights if they are there, but if there is a left, propogates it through
+      * @param x The Either under consideration
+      * @param acc The Either accumulated so far
+      * @return The merged result
+      */
     def mergeEither(x: Either[(EnumSym, List[Pattern]), List[List[Pattern]]],
                     acc: Either[(EnumSym, List[Pattern]), List[List[Pattern]]]): Either[(EnumSym, List[Pattern]), List[List[Pattern]]] =
         (x, acc) match {
