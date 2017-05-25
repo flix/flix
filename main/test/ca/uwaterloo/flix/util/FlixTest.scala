@@ -17,22 +17,47 @@
 package ca.uwaterloo.flix.util
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.runtime.Model
+import ca.uwaterloo.flix.util.Validation.{Failure, Success}
+import ca.uwaterloo.flix.util.vt.TerminalContext
 import org.scalatest.FunSuite
 
 class FlixTest(name: String, path: String) extends FunSuite {
 
+  /**
+    * Returns the name of the test suite.
+    */
   override def suiteName: String = name
 
-  {
+  /**
+    * Attempts to initialize all the tests.
+    */
+  private def init(): Unit = {
+    // Options and Flix object.
     val opts = Options.DefaultTest.copy(core = false)
     val flix = new Flix().setOptions(opts)
 
     // Add the given path.
     flix.addPath(path)
 
-    // Evaluate the program to obtain the model.
-    val model = flix.solve().get
+    // Compile and Evaluate the program to obtain the model.
+    flix.solve() match {
+      case Success(model, _) => runTests(model)
+      case Failure(errors) =>
+        // Create a single test that always fails.
+        test("Aborted.") {
+          for (e <- errors) {
+            println(e.message.fmt(TerminalContext.AnsiTerminal))
+          }
+          fail(s"Unable to compile FlixTest for test suite: '$name'. Failed with: ${errors.length} errors.")
+        }
+    }
+  }
 
+  /**
+    * Runs all tests in the given `model`.
+    */
+  private def runTests(model: Model): Unit = {
     // Group the tests by namespace.
     val testsByNamespace = model.getTests.groupBy(_._1.namespace)
 
@@ -55,5 +80,7 @@ class FlixTest(name: String, path: String) extends FunSuite {
       }
     }
   }
+
+  init()
 
 }
