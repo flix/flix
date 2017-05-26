@@ -66,7 +66,7 @@ object Effects extends Phase[TypedAst.Root, TypedAst.Root] {
         * Local visitor.
         */
       // TODO: Does this need to happen inside validation or not?
-      def visit(e0: Expression): Validation[Expression, EffectError] = exp0 match {
+      def visit(e0: Expression, env0: Map[Symbol.VarSym, Eff]): Validation[Expression, EffectError] = exp0 match {
         /**
           * Literal Expressions.
           */
@@ -83,11 +83,21 @@ object Effects extends Phase[TypedAst.Root, TypedAst.Root] {
         case Expression.BigInt(lit, loc) => e0.toSuccess
         case Expression.Str(lit, loc) => e0.toSuccess
 
+        /**
+          * Wildcard Expressions.
+          */
+        case Expression.Wild(tpe, _, loc) =>
+          // Wildcards are pure.
+          Expression.Wild(tpe, Eff.Pure, loc).toSuccess
 
-        //          case class Wild(tpe: Type, eff: Eff, loc: SourceLocation) extends TypedAst.Expression
-        //
-        //          case class Var(sym: Symbol.VarSym, tpe: Type, eff: Eff, loc: SourceLocation) extends TypedAst.Expression
-        //
+        /**
+          * Variable Expressions.
+          */
+        case Expression.Var(sym, tpe, _, loc) =>
+          // TODO: Lookup the effect in the effect environment.
+          val eff = Eff.Pure
+          Expression.Var(sym, tpe, eff, loc).toSuccess
+
         //          case class Ref(sym: Symbol.DefnSym, tpe: Type, eff: Eff, loc: SourceLocation) extends TypedAst.Expression
         //
         //          case class Hook(hook: Ast.Hook, tpe: Type, eff: Eff, loc: SourceLocation) extends TypedAst.Expression
@@ -96,14 +106,7 @@ object Effects extends Phase[TypedAst.Root, TypedAst.Root] {
         //
         //          case class Apply(exp: TypedAst.Expression, args: List[TypedAst.Expression], tpe: Type, eff: Eff, loc: SourceLocation) extends TypedAst.Expression
 
-
         case Expression.Apply(lambda, args, tpe, _, loc) =>
-          val e = visit(lambda)
-          val es = args.map(visit)
-
-          // The effect is the effect of the individual arguments and the latent effect of the lambda.
-          val eff = ???
-          //Expression.Apply(e, es, tpe, eff, loc)
           ???
 
 
@@ -112,7 +115,7 @@ object Effects extends Phase[TypedAst.Root, TypedAst.Root] {
           */
         case Expression.Unary(op, exp, tpe, _, loc) =>
           for {
-            e <- visit(exp)
+            e <- visit(exp, env0)
           } yield {
             val eff = e.eff
             Expression.Unary(op, e, tpe, eff, loc)
@@ -123,30 +126,38 @@ object Effects extends Phase[TypedAst.Root, TypedAst.Root] {
           */
         case Expression.Binary(op, exp1, exp2, tpe, _, loc) =>
           for {
-            e1 <- visit(exp1)
-            e2 <- visit(exp2)
+            e1 <- visit(exp1, env0)
+            e2 <- visit(exp2, env0)
           } yield {
             // The effects of e1 happen before the effects of e2.
             val eff = Eff.seq(e1.eff, e2.eff)
             Expression.Binary(op, exp1, exp2, tpe, eff, loc)
           }
 
+        /**
+          * Let Expressions.
+          */
+        case Expression.Let(sym, exp1, exp2, tpe, _, loc) =>
+          for {
+            e1 <- visit(exp1, env0)
+            // TODO: To what extend should the environment be extended with the effect of e1?
+            e2 <- visit(exp2, env0 + (sym -> e1.eff))
+          } yield {
+            // The effects of e1 happen before e2.
+            val eff = Eff.seq(e1.eff, e2.eff)
+            Expression.Let(sym, exp1, exp2, tpe, eff, loc)
+          }
 
-
-        //
-        //          case class Let(sym: Symbol.VarSym, exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: Eff, loc: SourceLocation) extends TypedAst.Expression
-        //
         //          case class LetRec(sym: Symbol.VarSym, exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: Eff, loc: SourceLocation) extends TypedAst.Expression
-        //
 
         /**
           * If-Then-Else Expressions.
           */
         case Expression.IfThenElse(exp1, exp2, exp3, tpe, _, loc) =>
           for {
-            e1 <- visit(exp1)
-            e2 <- visit(exp2)
-            e3 <- visit(exp3)
+            e1 <- visit(exp1, env0)
+            e2 <- visit(exp2, env0)
+            e3 <- visit(exp3, env0)
           } yield {
             // The effects of e1 happen before the effects of e2 and e3.
             val seq1 = Eff.seq(e1.eff, e2.eff)
@@ -157,26 +168,20 @@ object Effects extends Phase[TypedAst.Root, TypedAst.Root] {
             Expression.IfThenElse(e1, e2, e3, tpe, eff, loc)
           }
 
-        //
         //          case class Match(exp: TypedAst.Expression, rules: List[TypedAst.MatchRule], tpe: Type, eff: Eff, loc: SourceLocation) extends TypedAst.Expression
         //
         //          case class Switch(rules: List[(TypedAst.Expression, TypedAst.Expression)], tpe: Type, eff: Eff, loc: SourceLocation) extends TypedAst.Expression
-
-
-        //
-        //          case class Tag(sym: Symbol.EnumSym, tag: String, exp: TypedAst.Expression, tpe: Type, eff: Eff, loc: SourceLocation) extends TypedAst.Expression
 
         /**
           * Tag Expressions.
           */
         case Expression.Tag(sym, tag, exp, tpe, _, loc) =>
           for {
-            e <- visit(exp)
+            e <- visit(exp, env0)
           } yield {
             val eff = exp.eff
             Expression.Tag(sym, tag, e, tpe, eff, loc)
           }
-
 
         //
         //          case class Tuple(elms: List[TypedAst.Expression], tpe: Type, eff: Eff, loc: SourceLocation) extends TypedAst.Expression
@@ -202,7 +207,7 @@ object Effects extends Phase[TypedAst.Root, TypedAst.Root] {
 
       }
 
-      visit(exp0)
+      visit(exp0, /* TODO*/ Map.empty)
     }
 
   }
