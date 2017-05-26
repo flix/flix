@@ -33,9 +33,4 @@ object Effect {
     */
   case object Exception extends Effect
 
-  /**
-    * A latent effect.
-    */
-  case class Latent(effect: Effect) extends Effect
-
 }

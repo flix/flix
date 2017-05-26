@@ -16,41 +16,52 @@
 
 package ca.uwaterloo.flix.language.ast
 
+/**
+  * Represents the computational effect of an expression.
+  */
+sealed trait Eff {
+
+  /**
+    * Returns `true` if the computational effect is pure.
+    */
+  val isPure: Boolean = ??? // TODO
+
+}
+
 object Eff {
 
   /**
     * Represents a computational effect that is pure.
     */
-  val Pure: Eff = Eff(Set.empty, Set.empty)
-
-  def lub(eff1: Eff, eff2: Eff): Eff = ???
-
-}
-
-/**
-  * Represents the computational effect of an expression.
-  */
-case class Eff(may: Set[Effect], must: Set[Effect]) {
+  val Pure: Eff = Coll(Set.empty, Set.empty)
 
   /**
-    * Returns `true` if the computational effect is pure.
+    *
     */
-  val isPure: Boolean = may.isEmpty && must.isEmpty
+  def leq(eff1: Eff, eff2: Eff): Boolean = ??? // TODO
 
   /**
-    * Returns the latent effects of `this` effect, i.e. the effects
-    * that result from an application of the expression.
+    *
     */
-  def latent: Eff = {
-    // Collect the latent effects that *may* occur.
-    val latentMay = may.collect {
-      case Effect.Latent(effect) => effect
-    }
-    // Collect the latent effects that *must* occur.
-    val latentMust = must.collect {
-      case Effect.Latent(effect) => effect
-    }
-    Eff(latentMay, latentMust)
-  }
+  def lub(eff1: Eff, eff2: Eff): Eff = ??? // TODO
+
+  /**
+    */
+  def seq(eff1: Eff, eff2: Eff): Eff = ??? // TODO
+
+  /**
+    *
+    */
+  case object Box extends Eff
+
+  /**
+    *
+    */
+  case class Arrow(eff1: Eff, eff: Eff, eff2: Eff) extends Eff
+
+  /**
+    *
+    */
+  case class Coll(may: Set[Effect], must: Set[Effect]) extends Eff
 
 }
