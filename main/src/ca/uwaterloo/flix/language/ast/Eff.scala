@@ -24,7 +24,14 @@ sealed trait Eff {
   /**
     * Returns `true` if the computational effect is pure.
     */
-  val isPure: Boolean = ??? // TODO
+  def isPure: Boolean = ??? // TODO
+
+  // TODO: Which ops should be infix?
+
+  /**
+    *
+    */
+  def leq(that: Eff): Boolean = ??? // TODO
 
 }
 

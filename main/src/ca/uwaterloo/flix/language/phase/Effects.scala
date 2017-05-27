@@ -22,38 +22,69 @@ import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.ast.TypedAst.Expression
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
-import ca.uwaterloo.flix.util.vt.VirtualString.{Line, NewLine, Red}
+import ca.uwaterloo.flix.util.vt.VirtualString._
 import ca.uwaterloo.flix.util.vt.VirtualTerminal
 
+/**
+  * A phase that computes the effect of every expression in the program.
+  */
 object Effects extends Phase[TypedAst.Root, TypedAst.Root] {
 
-  // TODO: The values of ANF becomes more clear when we start to consider the order of effects.
+  // TODO: The order of effects might become significantly more clear if the AST was in administrative normal form (ANF).
 
   /**
-    * TODO: DOC
+    * An error raised to indicate that the expected effects of an expression does not match its actual effects.
     *
     * @param loc the location where the error occurred.
     */
-  case class EffectError(loc: SourceLocation) extends CompilationError {
+  case class EffectError(expected: Eff, actual: Eff, loc: SourceLocation) extends CompilationError {
     val kind: String = "Effect Error"
     val source: SourceInput = loc.source
     val message: VirtualTerminal = {
+      // TODO: Improve error message.
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
-      vt << ">> Effect Error" << NewLine
+      vt << ">> Expression effect to have " << expected.toString << "effects but has " << actual.toString << " effects." << NewLine
     }
   }
-
 
   /**
     * Performs effect inference on the given AST `root`.
     */
   def run(root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, EffectError] = {
-    // TODO
+    /**
+      * Infer effects for definitions.
+      */
+    val definitionsVal = root.definitions.map {
+      case (sym, defn0) => Declarations.infer(defn0, root) map {
+        case defn => sym -> defn
+      }
+    }
 
-    // TODO: EffectParam
+    // TODO: Infer effects for constraints.
 
-    root.toSuccess
+    for {
+      definitions <- seqM(definitionsVal)
+    } yield {
+      // TODO: Time
+      root.copy(definitions = definitions.toMap)
+    }
+  }
+
+  object Declarations {
+
+    /**
+      * Infers the effects of the given definition `defn0`.
+      */
+    def infer(defn0: TypedAst.Declaration.Definition, root: TypedAst.Root): Validation[TypedAst.Declaration.Definition, EffectError] = {
+      // TODO: Introduce EffectParam
+
+      for {
+        e <- Expressions.infer(defn0.exp, root)
+      } yield {
+        defn0.copy(exp = e)
+      }
+    }
   }
 
   object Expressions {
@@ -65,8 +96,7 @@ object Effects extends Phase[TypedAst.Root, TypedAst.Root] {
       /**
         * Local visitor.
         */
-      // TODO: Does this need to happen inside validation or not?
-      def visit(e0: Expression, env0: Map[Symbol.VarSym, Eff]): Validation[Expression, EffectError] = exp0 match {
+      def visitExp(e0: Expression, env0: Map[Symbol.VarSym, Eff]): Validation[Expression, EffectError] = e0 match {
         /**
           * Literal Expressions.
           */
@@ -115,7 +145,7 @@ object Effects extends Phase[TypedAst.Root, TypedAst.Root] {
           */
         case Expression.Unary(op, exp, tpe, _, loc) =>
           for {
-            e <- visit(exp, env0)
+            e <- visitExp(exp, env0)
           } yield {
             val eff = e.eff
             Expression.Unary(op, e, tpe, eff, loc)
@@ -126,8 +156,8 @@ object Effects extends Phase[TypedAst.Root, TypedAst.Root] {
           */
         case Expression.Binary(op, exp1, exp2, tpe, _, loc) =>
           for {
-            e1 <- visit(exp1, env0)
-            e2 <- visit(exp2, env0)
+            e1 <- visitExp(exp1, env0)
+            e2 <- visitExp(exp2, env0)
           } yield {
             // The effects of e1 happen before the effects of e2.
             val eff = Eff.seq(e1.eff, e2.eff)
@@ -139,25 +169,37 @@ object Effects extends Phase[TypedAst.Root, TypedAst.Root] {
           */
         case Expression.Let(sym, exp1, exp2, tpe, _, loc) =>
           for {
-            e1 <- visit(exp1, env0)
+            e1 <- visitExp(exp1, env0)
             // TODO: To what extend should the environment be extended with the effect of e1?
-            e2 <- visit(exp2, env0 + (sym -> e1.eff))
+            e2 <- visitExp(exp2, env0 + (sym -> e1.eff))
           } yield {
             // The effects of e1 happen before e2.
             val eff = Eff.seq(e1.eff, e2.eff)
             Expression.Let(sym, exp1, exp2, tpe, eff, loc)
           }
 
-        //          case class LetRec(sym: Symbol.VarSym, exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: Eff, loc: SourceLocation) extends TypedAst.Expression
+        /**
+          * LetRec Expressions.
+          */
+        case Expression.LetRec(sym, exp1, exp2, tpe, _, loc) =>
+          for {
+          // TODO: To what extend should the environment be extended with the effect of e1?
+            e1 <- visitExp(exp1, env0)
+            e2 <- visitExp(exp2, env0 + (sym -> e1.eff))
+          } yield {
+            // The effects of e1 happen before e2.
+            val eff = Eff.seq(e1.eff, e2.eff)
+            Expression.LetRec(sym, exp1, exp2, tpe, eff, loc)
+          }
 
         /**
           * If-Then-Else Expressions.
           */
         case Expression.IfThenElse(exp1, exp2, exp3, tpe, _, loc) =>
           for {
-            e1 <- visit(exp1, env0)
-            e2 <- visit(exp2, env0)
-            e3 <- visit(exp3, env0)
+            e1 <- visitExp(exp1, env0)
+            e2 <- visitExp(exp2, env0)
+            e3 <- visitExp(exp3, env0)
           } yield {
             // The effects of e1 happen before the effects of e2 and e3.
             val seq1 = Eff.seq(e1.eff, e2.eff)
@@ -168,46 +210,78 @@ object Effects extends Phase[TypedAst.Root, TypedAst.Root] {
             Expression.IfThenElse(e1, e2, e3, tpe, eff, loc)
           }
 
-        //          case class Match(exp: TypedAst.Expression, rules: List[TypedAst.MatchRule], tpe: Type, eff: Eff, loc: SourceLocation) extends TypedAst.Expression
-        //
-        //          case class Switch(rules: List[(TypedAst.Expression, TypedAst.Expression)], tpe: Type, eff: Eff, loc: SourceLocation) extends TypedAst.Expression
+        /**
+          * Match Expressions.
+          */
+        case Expression.Match(exp, rules, tpe, _, loc) =>
+          ??? // TODO
+
+        /**
+          * Switch Expressions.
+          */
+        case Expression.Switch(rules, tpe, _, loc) =>
+          ??? // TODO
 
         /**
           * Tag Expressions.
           */
         case Expression.Tag(sym, tag, exp, tpe, _, loc) =>
           for {
-            e <- visit(exp, env0)
+            e <- visitExp(exp, env0)
           } yield {
             val eff = exp.eff
             Expression.Tag(sym, tag, e, tpe, eff, loc)
           }
 
-        //
-        //          case class Tuple(elms: List[TypedAst.Expression], tpe: Type, eff: Eff, loc: SourceLocation) extends TypedAst.Expression
-        //
-        //          case class Existential(fparam: TypedAst.FormalParam, exp: TypedAst.Expression, eff: Eff, loc: SourceLocation) extends TypedAst.Expression {
-        //            def tpe: Type = Type.Bool
-        //          }
-        //
-        //          case class Universal(fparam: TypedAst.FormalParam, exp: TypedAst.Expression, eff: Eff, loc: SourceLocation) extends TypedAst.Expression {
-        //            def tpe: Type = Type.Bool
-        //          }
-        //
-        //          case class NativeConstructor(constructor: Constructor[_], args: List[TypedAst.Expression], tpe: Type, eff: Eff, loc: SourceLocation) extends TypedAst.Expression
-        //
-        //          case class NativeField(field: Field, tpe: Type, eff: Eff, loc: SourceLocation) extends TypedAst.Expression
-        //
-        //          case class NativeMethod(method: Method, args: List[TypedAst.Expression], tpe: Type, eff: Eff, loc: SourceLocation) extends TypedAst.Expression
-        //
-        //          case class UserError(tpe: Type, eff: Eff, loc: SourceLocation) extends TypedAst.Expression
+        /**
+          * Tuple Expressions.
+          */
+        case Expression.Tuple(elms, tpe, _, loc) =>
+          ??? // TODO
 
+        /**
+          * Existential Expressions.
+          */
+        case Expression.Existential(fparam, exp, _, loc) =>
+          ??? // TODO
 
-        case _ => ??? // TODO: Remove once all cases have been added.
+        /**
+          * Universal Expressions.
+          */
+        case Expression.Universal(fparam, exp, _, loc) =>
+          ??? // TODO
 
+        /**
+          * Native Constructor Expressions.
+          */
+        case Expression.NativeConstructor(constructor, args, tpe, _, loc) =>
+          ??? // TODO
+
+        /**
+          * Native Field Expressions.
+          */
+        case Expression.NativeField(field, tpe, _, loc) =>
+          ??? // TODO
+
+        /**
+          * Native Method Expressions.
+          */
+        case Expression.NativeMethod(method, args, tpe, _, loc) =>
+          ??? // TODO
+
+        /**
+          * User Error Expressions.
+          */
+        case Expression.UserError(tpe, _, loc) =>
+          ??? // TODO
       }
 
-      visit(exp0, /* TODO*/ Map.empty)
+      /**
+        * Local visitor.
+        */
+      def visitExps(es: List[Expression], env0: Map[Symbol.VarSym, Eff]): Validation[Expression, EffectError] = ???
+
+      visitExp(exp0, /* TODO what effect environment?*/ Map.empty)
     }
 
   }
