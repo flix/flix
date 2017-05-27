@@ -89,7 +89,6 @@ object Effects extends Phase[TypedAst.Root, TypedAst.Root] {
 
   object Expressions {
 
-
     /**
       * Infers the effects of the given expression `exp0`.
       */
@@ -139,7 +138,8 @@ object Effects extends Phase[TypedAst.Root, TypedAst.Root] {
           * Hook Expressions.
           */
         case Expression.Hook(hook, tpe, _, loc) =>
-          ??? // TODO
+          // TODO: Decide what the effect of a hook is.
+          Expression.Hook(hook, tpe, Eff.Pure, loc).toSuccess
 
         /**
           * Lambda Expressions.
@@ -147,6 +147,9 @@ object Effects extends Phase[TypedAst.Root, TypedAst.Root] {
         case Expression.Lambda(args, body, tpe, _, loc) =>
           ??? // TODO
 
+        /**
+          * Apply Expressions.
+          */
         case Expression.Apply(lambda, args, tpe, _, loc) =>
           ???
 
@@ -256,16 +259,22 @@ object Effects extends Phase[TypedAst.Root, TypedAst.Root] {
           // An existential expression must be pure.
           for {
             e <- visitExp(exp, env0)
-            _ <- leqM(e.eff, Eff.Pure)
+            f <- pureM(e)
           } yield {
-            Expression.Existential(fparam, exp, Eff.Pure, loc)
+            Expression.Existential(fparam, exp, f, loc)
           }
 
         /**
           * Universal Expressions.
           */
         case Expression.Universal(fparam, exp, _, loc) =>
-          ??? // TODO
+          // A universal expression must be pure.
+          for {
+            e <- visitExp(exp, env0)
+            f <- pureM(e)
+          } yield {
+            Expression.Universal(fparam, exp, f, loc)
+          }
 
         /**
           * Native Constructor Expressions.
@@ -289,7 +298,8 @@ object Effects extends Phase[TypedAst.Root, TypedAst.Root] {
           * User Error Expressions.
           */
         case Expression.UserError(tpe, _, loc) =>
-          ??? // TODO
+          // A user error is treated as if it is pure, although it is not.
+          Expression.UserError(tpe, Eff.Pure, loc).toSuccess
       }
 
       /**
@@ -304,9 +314,11 @@ object Effects extends Phase[TypedAst.Root, TypedAst.Root] {
 
   // TODO: Change signature to take and return exp?
 
-  def pureM(eff1: Eff, eff2: Eff): Validation[Unit, EffectError] = ???
+  def pureM(e0: Expression): Validation[Eff, EffectError] = ???
 
 
   def leqM(eff1: Eff, eff2: Eff): Validation[Unit, EffectError] = ???
+
+  // TODO: Dont prefix with TypedAst.
 
 }
