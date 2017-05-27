@@ -51,29 +51,24 @@ object Eff {
   /**
     *
     */
-  def leq(eff1: Eff, eff2: Eff): Boolean = ??? // TODO
+  def leq(eff1: Eff, eff2: Eff): Boolean = true // TODO
 
   /**
     *
     */
-  def lub(eff1: Eff, eff2: Eff): Eff = ??? // TODO
+  def lub(eff1: Eff, eff2: Eff): Eff = eff1 // TODO
 
   /**
     */
-  def app(eff: Eff): Eff = ??? // TODO
-
-
-  /**
-    */
-  def seq(eff1: Eff, eff2: Eff): Eff = ??? // TODO
+  def app(eff: Eff): Eff = eff // TODO
 
   /**
     */
-  def seq(effs: List[Eff]): Eff = {
-    println(effs)
+  def seq(eff1: Eff, eff2: Eff): Eff = eff1
 
-    ??? // TODO
-  }
+  /**
+    */
+  def seq(effs: List[Eff]): Eff = effs.head // TODO
 
   /**
     *
