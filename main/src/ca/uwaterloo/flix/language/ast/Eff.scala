@@ -43,6 +43,12 @@ object Eff {
   val Pure: Eff = Coll(Set.empty, Set.empty)
 
   /**
+    * Represents any effect.
+    */
+  // TODO: Name
+  val Top: Eff = Coll(Set.empty, Set.empty) // TODO
+
+  /**
     *
     */
   def leq(eff1: Eff, eff2: Eff): Boolean = ??? // TODO
@@ -54,7 +60,20 @@ object Eff {
 
   /**
     */
+  def app(eff: Eff): Eff = ??? // TODO
+
+
+  /**
+    */
   def seq(eff1: Eff, eff2: Eff): Eff = ??? // TODO
+
+  /**
+    */
+  def seq(effs: List[Eff]): Eff = {
+    println(effs)
+
+    ??? // TODO
+  }
 
   /**
     *

@@ -132,14 +132,17 @@ object Effects extends Phase[TypedAst.Root, TypedAst.Root] {
           * Ref Expressions.
           */
         case Expression.Ref(sym, tpe, _, loc) =>
-          ??? // TODO
+          // The effect of a ref is its declared effect.
+          val defn = root.definitions(sym)
+          // TODO: Retrieve and instantiate effect.
+          Expression.Ref(sym, tpe, /* TODO */ Eff.Top, loc).toSuccess
 
         /**
           * Hook Expressions.
           */
         case Expression.Hook(hook, tpe, _, loc) =>
-          // TODO: Decide what the effect of a hook is.
-          Expression.Hook(hook, tpe, Eff.Pure, loc).toSuccess
+          // A hook expression has any effect.
+          Expression.Hook(hook, tpe, Eff.Top, loc).toSuccess
 
         /**
           * Lambda Expressions.
@@ -151,7 +154,17 @@ object Effects extends Phase[TypedAst.Root, TypedAst.Root] {
           * Apply Expressions.
           */
         case Expression.Apply(lambda, args, tpe, _, loc) =>
-          ???
+          for {
+          // TODO: rename
+            lambda <- visitExp(lambda, env0)
+            actuals <- seqM(args.map(e => visitExp(e, env0)))
+          } yield {
+            // TODO: Cleanup
+            // The effects of the lambda expression happen before the effects the arguments.
+            // Then the effects of applying the lambda happens.
+            val eff = Eff.seq(lambda.eff, Eff.seq(Eff.seq(actuals.map(_.eff)), Eff.app(lambda.eff)))
+            Expression.Apply(lambda, actuals, tpe, eff, loc)
+          }
 
         /**
           * Unary Expressions.
@@ -301,11 +314,6 @@ object Effects extends Phase[TypedAst.Root, TypedAst.Root] {
           // A user error is treated as if it is pure, although it is not.
           Expression.UserError(tpe, Eff.Pure, loc).toSuccess
       }
-
-      /**
-        * Local visitor.
-        */
-      def visitExps(es: List[Expression], env0: Map[Symbol.VarSym, Eff]): Validation[Expression, EffectError] = ???
 
       visitExp(exp0, /* TODO what effect environment?*/ Map.empty)
     }
