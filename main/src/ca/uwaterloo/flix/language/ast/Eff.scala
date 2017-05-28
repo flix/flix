@@ -31,7 +31,11 @@ sealed trait Eff {
   /**
     *
     */
-  def leq(that: Eff): Boolean = ??? // TODO
+  def leq(that: Eff): Boolean = true // TODO
+
+  def lub(eff1: Eff): Eff = eff1 // TODO
+
+  def seq(eff1: Eff): Eff = eff1
 
 }
 
@@ -68,7 +72,7 @@ object Eff {
 
   /**
     */
-  def seq(effs: List[Eff]): Eff = effs.head // TODO
+  def seq(effs: List[Eff]): Eff = effs.foldLeft(Eff.Pure)(seq)
 
   /**
     *

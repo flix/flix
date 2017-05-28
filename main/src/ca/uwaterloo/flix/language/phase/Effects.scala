@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.language.ast.TypedAst.Expression
+import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, MatchRule}
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.vt.VirtualString._
@@ -148,7 +148,14 @@ object Effects extends Phase[TypedAst.Root, TypedAst.Root] {
           * Lambda Expressions.
           */
         case Expression.Lambda(args, body, tpe, _, loc) =>
-          ??? // TODO
+          for {
+            e <- visitExp(body, env0)
+          } yield {
+            val eff = args.foldLeft(e.eff) {
+              case (eacc, _) => Eff.Arrow(Eff.Box, eacc, Eff.Box)
+            }
+            Expression.Lambda(args, body, tpe, eff, loc)
+          }
 
         /**
           * Apply Expressions.
@@ -240,13 +247,62 @@ object Effects extends Phase[TypedAst.Root, TypedAst.Root] {
           * Match Expressions.
           */
         case Expression.Match(exp, rules, tpe, _, loc) =>
-          ??? // TODO
+          // Infer the effects of each rule.
+          val rs = rules.map {
+            case MatchRule(pat, guard, body) =>
+              for {
+                g <- visitExp(guard, env0)
+                b <- visitExp(body, env0)
+              } yield {
+                MatchRule(pat, g, b)
+              }
+          }
+
+          // Infer the effects of the entire match expression.
+          for {
+            e <- visitExp(exp, env0)
+            rs <- seqM(rs) // TODO: Duplcate rs
+          } yield {
+            // Compute the effects of the match value expression.
+            val matchEffect = e.eff
+
+            // Compute the total effects of all the rules.
+            val rulesEffect = rs.foldLeft(Eff.Pure) {
+              case (eacc, MatchRule(pat, guard, body)) =>
+                // The effect of the guard happens before the effect of the body.
+                eacc lub (guard.eff seq body.eff)
+            }
+
+            // The effect of the match value expression happens before any effects of the rules.
+            val eff = e.eff seq rulesEffect
+            Expression.Match(e, rs, tpe, eff, loc)
+          }
 
         /**
           * Switch Expressions.
           */
         case Expression.Switch(rules, tpe, _, loc) =>
-          ??? // TODO
+          // Infer the effects of each rule.
+          val rs = rules.map {
+            case (guard, body) =>
+              for {
+                g <- visitExp(guard, env0)
+                b <- visitExp(body, env0)
+              } yield {
+                (g, b)
+              }
+          }
+
+          // Infer the effects.
+          for {
+            rs <- seqM(rs) // TODO: Duplcate rs
+          } yield {
+            val eff = rs.foldLeft(Eff.Pure) {
+              case (eacc, (guard, body)) =>
+                eacc lub (guard.eff seq body.eff)
+            }
+            Expression.Switch(rs, tpe, eff, loc)
+          }
 
         /**
           * Tag Expressions.
@@ -263,7 +319,13 @@ object Effects extends Phase[TypedAst.Root, TypedAst.Root] {
           * Tuple Expressions.
           */
         case Expression.Tuple(elms, tpe, _, loc) =>
-          ??? // TODO
+          for {
+            es <- seqM(elms.map(e => visitExp(e, env0)))
+          } yield {
+            // The effects of the each element expression happen in sequence.
+            val eff = Eff.seq(es.map(_.eff))
+            Expression.Tuple(elms, tpe, eff, loc)
+          }
 
         /**
           * Existential Expressions.
@@ -293,19 +355,25 @@ object Effects extends Phase[TypedAst.Root, TypedAst.Root] {
           * Native Constructor Expressions.
           */
         case Expression.NativeConstructor(constructor, args, tpe, _, loc) =>
-          ??? // TODO
+          // A native constructor expression has any effect.
+          val eff = Eff.Top
+          Expression.NativeConstructor(constructor, args, tpe, eff, loc).toSuccess
 
         /**
           * Native Field Expressions.
           */
         case Expression.NativeField(field, tpe, _, loc) =>
-          ??? // TODO
+          // A native field expression has any effect.
+          val eff = Eff.Top
+          Expression.NativeField(field, tpe, eff, loc).toSuccess
 
         /**
           * Native Method Expressions.
           */
         case Expression.NativeMethod(method, args, tpe, _, loc) =>
-          ??? // TODO
+          // A native method expression has any effect.
+          val eff = Eff.Top
+          Expression.NativeMethod(method, args, tpe, eff, loc).toSuccess
 
         /**
           * User Error Expressions.
@@ -322,7 +390,12 @@ object Effects extends Phase[TypedAst.Root, TypedAst.Root] {
 
   // TODO: Change signature to take and return exp?
 
-  def pureM(e0: Expression): Validation[Eff, EffectError] = ???
+  def pureM(e0: Expression): Validation[Eff, EffectError] = {
+    if (e0.eff leq Eff.Pure)
+      Eff.Pure.toSuccess
+    else
+      EffectError(Eff.Pure, e0.eff, e0.loc).toFailure
+  }
 
 
   def leqM(eff1: Eff, eff2: Eff): Validation[Unit, EffectError] = ???
