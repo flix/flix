@@ -598,9 +598,11 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
             }
           }
 
-        case ParsedAst.Expression.Ascribe(exp, tpe, sp2) =>
+        case ParsedAst.Expression.Ascribe(exp, tpe, effOpt, sp2) =>
           visit(exp, unsafe) map {
-            case e => WeededAst.Expression.Ascribe(e, Types.weed(tpe), mkSL(leftMostSourcePosition(exp), sp2))
+            case e =>
+              // TODO: Deal with effect
+              WeededAst.Expression.Ascribe(e, Types.weed(tpe), mkSL(leftMostSourcePosition(exp), sp2))
           }
 
         case ParsedAst.Expression.Unsafe(sp1, exp, sp2) =>
@@ -1115,7 +1117,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.FMap(sp1, _, _) => sp1
     case ParsedAst.Expression.Existential(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Universal(sp1, _, _, _) => sp1
-    case ParsedAst.Expression.Ascribe(e1, _, _) => leftMostSourcePosition(e1)
+    case ParsedAst.Expression.Ascribe(e1, _, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.Unsafe(sp1, _, _) => sp1
     case ParsedAst.Expression.NativeField(sp1, _, _) => sp1
     case ParsedAst.Expression.NativeMethod(sp1, _, _, _) => sp1

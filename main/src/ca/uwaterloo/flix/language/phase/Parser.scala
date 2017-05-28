@@ -462,7 +462,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
 
     def Ascribe: Rule1[ParsedAst.Expression] = rule {
-      FAppend ~ optional(optWS ~ ":" ~ optWS ~ Type ~ SP ~> ParsedAst.Expression.Ascribe)
+      FAppend ~ optional(optWS ~ ":" ~ optWS ~ Type ~ optional(optWS ~ atomic("@") ~ WS ~ Effect) ~ SP ~> ParsedAst.Expression.Ascribe)
     }
 
     def Primary: Rule1[ParsedAst.Expression] = rule {
@@ -696,7 +696,6 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
   }
 
-
   /////////////////////////////////////////////////////////////////////////////
   // Predicates                                                              //
   /////////////////////////////////////////////////////////////////////////////
@@ -810,6 +809,13 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     def Apply: Rule1[ParsedAst.Type] = rule {
       SP ~ Ref ~ optWS ~ "[" ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]" ~ SP ~ optWS ~> ParsedAst.Type.Apply
     }
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Effects                                                                 //
+  /////////////////////////////////////////////////////////////////////////////
+  def Effect: Rule1[ParsedAst.Effect] = rule {
+    SP ~ atomic("IO") ~ SP ~> ParsedAst.Effect.IO
   }
 
   /////////////////////////////////////////////////////////////////////////////

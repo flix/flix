@@ -584,9 +584,10 @@ object ParsedAst {
       *
       * @param exp the expression.
       * @param tpe the ascribed type.
+      * @param eff the optional effect.
       * @param sp2 the position of the last character in the expression.
       */
-    case class Ascribe(exp: ParsedAst.Expression, tpe: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Expression
+    case class Ascribe(exp: ParsedAst.Expression, tpe: ParsedAst.Type, eff: Option[ParsedAst.Effect], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Unsafe Expression.
@@ -925,6 +926,23 @@ object ParsedAst {
       * @param sp2     the position of the last character in the type.
       */
     case class Apply(sp1: SourcePosition, base: ParsedAst.Type, tparams: Seq[ParsedAst.Type], sp2: SourcePosition) extends ParsedAst.Type
+
+  }
+
+  /**
+    * Effects.
+    */
+  sealed trait Effect extends ParsedAst
+
+  object Effect {
+
+    /**
+      * The IO Effect.
+      *
+      * @param sp1 the position of the first character in the attribute.
+      * @param sp2 the position of the last character in the attribute.
+      */
+    case class IO(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Effect
 
   }
 
