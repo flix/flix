@@ -28,9 +28,4 @@ object Effect {
     */
   case object IO extends Effect
 
-  /**
-    * The exception effect.
-    */
-  case object Exception extends Effect
-
 }

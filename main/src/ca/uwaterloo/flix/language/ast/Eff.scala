@@ -24,9 +24,11 @@ sealed trait Eff {
   /**
     * Returns `true` if the computational effect is pure.
     */
-  def isPure: Boolean = ??? // TODO
-
-  // TODO: Which ops should be infix?
+  def isPure: Boolean = this match {
+    case Eff.EffectSet(Some(may), None) => may.isEmpty
+    case Eff.Arrow(eff1, eff2, eff3) => eff1.isPure && eff2.isPure && eff3.isPure
+    case _ => false
+  }
 
   /**
     *
@@ -44,23 +46,13 @@ object Eff {
   /**
     * Represents a computational effect that is pure.
     */
-  val Pure: Eff = Coll(Set.empty, Set.empty)
+  val Pure: Eff = EffectSet(Some(Set.empty), None)
 
   /**
     * Represents any effect.
     */
   // TODO: Name
-  val Top: Eff = Coll(Set.empty, Set.empty) // TODO
-
-  /**
-    *
-    */
-  def leq(eff1: Eff, eff2: Eff): Boolean = true // TODO
-
-  /**
-    *
-    */
-  def lub(eff1: Eff, eff2: Eff): Eff = eff1 // TODO
+  val Top: Eff = EffectSet(None, Some(Set.empty)) // TODO
 
   /**
     */
@@ -75,18 +67,13 @@ object Eff {
   def seq(effs: List[Eff]): Eff = effs.foldLeft(Eff.Pure)(seq)
 
   /**
-    *
+    * Represents a collection of effects.
     */
-  case object Box extends Eff
+  case class EffectSet(may: Option[Set[Effect]], must: Option[Set[Effect]]) extends Eff
 
   /**
     *
     */
   case class Arrow(eff1: Eff, eff: Eff, eff2: Eff) extends Eff
-
-  /**
-    *
-    */
-  case class Coll(may: Set[Effect], must: Set[Effect]) extends Eff
 
 }

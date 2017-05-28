@@ -19,8 +19,8 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, MatchRule}
-import ca.uwaterloo.flix.util.Validation
+import ca.uwaterloo.flix.language.ast.TypedAst._
+import ca.uwaterloo.flix.util.{Timer, Validation}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.vt.VirtualString._
 import ca.uwaterloo.flix.util.vt.VirtualTerminal
@@ -28,9 +28,7 @@ import ca.uwaterloo.flix.util.vt.VirtualTerminal
 /**
   * A phase that computes the effect of every expression in the program.
   */
-object Effects extends Phase[TypedAst.Root, TypedAst.Root] {
-
-  // TODO: The order of effects might become significantly more clear if the AST was in administrative normal form (ANF).
+object Effects extends Phase[Root, Root] {
 
   /**
     * An error raised to indicate that the expected effects of an expression does not match its actual effects.
@@ -41,34 +39,42 @@ object Effects extends Phase[TypedAst.Root, TypedAst.Root] {
     val kind: String = "Effect Error"
     val source: SourceInput = loc.source
     val message: VirtualTerminal = {
-      // TODO: Improve error message.
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
-      vt << ">> Expression effect to have " << expected.toString << "effects but has " << actual.toString << " effects." << NewLine
+      vt << ">> Inferred effect(s) do match the expected effect(s)." << NewLine
+      vt << NewLine
+      vt << Code(loc, "unexpected effect(s).") << NewLine
+      vt << NewLine
+      vt << "Expected: " << Green(expected.toString) << NewLine
+      vt << "Actual  : " << Red(actual.toString) << NewLine
     }
   }
 
   /**
     * Performs effect inference on the given AST `root`.
     */
-  def run(root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, EffectError] = {
-    /**
-      * Infer effects for definitions.
-      */
-    val definitionsVal = root.definitions.map {
-      case (sym, defn0) => Declarations.infer(defn0, root) map {
-        case defn => sym -> defn
+  def run(root: Root)(implicit flix: Flix): Validation[Root, EffectError] = {
+    val timer = new Timer({
+      /**
+        * Infer effects for definitions.
+        */
+      val definitionsVal = root.definitions.map {
+        case (sym, defn0) => Declarations.infer(defn0, root) map {
+          case defn => sym -> defn
+        }
       }
-    }
 
-    // TODO: Infer effects for constraints.
+      // TODO: Infer effects for constraints.
 
-    for {
-      definitions <- seqM(definitionsVal)
-    } yield {
-      // TODO: Time
-      root.copy(definitions = definitions.toMap)
-    }
+      for {
+        definitions <- seqM(definitionsVal)
+      } yield {
+        root.copy(definitions = definitions.toMap)
+      }
+    })
+
+    // TODO: Add time
+    timer.getResult.map(root => root.copy(time = root.time))
   }
 
   object Declarations {
@@ -76,7 +82,7 @@ object Effects extends Phase[TypedAst.Root, TypedAst.Root] {
     /**
       * Infers the effects of the given definition `defn0`.
       */
-    def infer(defn0: TypedAst.Declaration.Definition, root: TypedAst.Root): Validation[TypedAst.Declaration.Definition, EffectError] = {
+    def infer(defn0: Declaration.Definition, root: Root): Validation[Declaration.Definition, EffectError] = {
       // TODO: Introduce EffectParam
 
       for {
@@ -92,7 +98,7 @@ object Effects extends Phase[TypedAst.Root, TypedAst.Root] {
     /**
       * Infers the effects of the given expression `exp0`.
       */
-    def infer(exp0: Expression, root: TypedAst.Root): Validation[Expression, EffectError] = {
+    def infer(exp0: Expression, root: Root): Validation[Expression, EffectError] = {
       /**
         * Local visitor.
         */
@@ -124,8 +130,8 @@ object Effects extends Phase[TypedAst.Root, TypedAst.Root] {
           * Variable Expressions.
           */
         case Expression.Var(sym, tpe, _, loc) =>
-          // TODO: Lookup the effect in the effect environment.
-          val eff = Eff.Pure
+          // Lookup the effect in the effect environment.
+          val eff = env0.getOrElse(sym, Eff.Pure)
           Expression.Var(sym, tpe, eff, loc).toSuccess
 
         /**
@@ -152,7 +158,7 @@ object Effects extends Phase[TypedAst.Root, TypedAst.Root] {
             e <- visitExp(body, env0)
           } yield {
             val eff = args.foldLeft(e.eff) {
-              case (eacc, _) => Eff.Arrow(Eff.Box, eacc, Eff.Box)
+              case (eacc, _) => Eff.Arrow(Eff.Pure, eacc, Eff.Pure)
             }
             Expression.Lambda(args, body, tpe, eff, loc)
           }
@@ -180,6 +186,7 @@ object Effects extends Phase[TypedAst.Root, TypedAst.Root] {
           for {
             e <- visitExp(exp, env0)
           } yield {
+            // The effects are simplify the sub-effects.
             val eff = e.eff
             Expression.Unary(op, e, tpe, eff, loc)
           }
@@ -239,7 +246,7 @@ object Effects extends Phase[TypedAst.Root, TypedAst.Root] {
             val seq2 = Eff.seq(e1.eff, e3.eff)
 
             // The effects of the overall expression is the least upper bound of the two effects above.
-            val eff = Eff.lub(seq1, seq2)
+            val eff = seq1 lub seq2
             Expression.IfThenElse(e1, e2, e3, tpe, eff, loc)
           }
 
@@ -334,7 +341,7 @@ object Effects extends Phase[TypedAst.Root, TypedAst.Root] {
           // An existential expression must be pure.
           for {
             e <- visitExp(exp, env0)
-            f <- pureM(e)
+            f <- assertPure(e)
           } yield {
             Expression.Existential(fparam, exp, f, loc)
           }
@@ -346,7 +353,7 @@ object Effects extends Phase[TypedAst.Root, TypedAst.Root] {
           // A universal expression must be pure.
           for {
             e <- visitExp(exp, env0)
-            f <- pureM(e)
+            f <- assertPure(e)
           } yield {
             Expression.Universal(fparam, exp, f, loc)
           }
@@ -383,23 +390,20 @@ object Effects extends Phase[TypedAst.Root, TypedAst.Root] {
           Expression.UserError(tpe, Eff.Pure, loc).toSuccess
       }
 
-      visitExp(exp0, /* TODO what effect environment?*/ Map.empty)
+      visitExp(exp0, Map.empty)
     }
-
   }
 
-  // TODO: Change signature to take and return exp?
-
-  def pureM(e0: Expression): Validation[Eff, EffectError] = {
+  /**
+    * Returns [[Success]] with the bottom effect if the given expression `e0` has the bottom effect.
+    *
+    * Otherwise returns [[Failure]] with an [[EffectError]].
+    */
+  def assertPure(e0: Expression): Validation[Eff, EffectError] = {
     if (e0.eff leq Eff.Pure)
       Eff.Pure.toSuccess
     else
       EffectError(Eff.Pure, e0.eff, e0.loc).toFailure
   }
-
-
-  def leqM(eff1: Eff, eff2: Eff): Validation[Unit, EffectError] = ???
-
-  // TODO: Dont prefix with TypedAst.
 
 }
