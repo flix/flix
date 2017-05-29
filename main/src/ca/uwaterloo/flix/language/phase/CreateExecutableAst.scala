@@ -26,14 +26,8 @@ import ca.uwaterloo.flix.util.Validation._
 
 import scala.collection.mutable
 
-/**
-  * A phase that transforms a SimplifiedAst into an ExecutableAst.
-  * Essentially the identity transform, with a few differences:
-  *
-  * - Lists are copied to arrays
-  * - Certain nodes no longer exist in SimplifiedAst and thus do not exist in ExecutableAst
-  */
-// TODO: Better name
+// TODO: This class is pretty ugly and could use a rewrite.
+
 object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root] {
 
   /**
@@ -62,7 +56,7 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
     val tables = root.tables.map { case (k, v) => k -> Table.toExecutable(v) }
     val indexes = root.indexes.map { case (k, v) => k -> Definition.toExecutable(v) }
     // TODO: Assumes one stratum
-    val constraints = root.strata.head.constraints.map(Constraint.toConstraint)
+    val constraints = root.strata.head.constraints.map(c => Constraint.toConstraint(c, m))
     val properties = root.properties.map(p => toExecutable(p))
     val reachable = root.reachable
     val time = root.time
@@ -154,9 +148,9 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
   }
 
   object Constraint {
-    def toConstraint(sast: SimplifiedAst.Constraint): ExecutableAst.Constraint = {
-      val head = Predicate.Head.toExecutable(sast.head)
-      val body = sast.body.map(Predicate.Body.toExecutable)
+    def toConstraint(sast: SimplifiedAst.Constraint, m: TopLevel)(implicit genSym: GenSym): ExecutableAst.Constraint = {
+      val head = Predicate.Head.toExecutable(sast.head, m)
+      val body = sast.body.map(b => Predicate.Body.toExecutable(b, m))
       val cparams = sast.cparams.map {
         case SimplifiedAst.ConstraintParam.HeadParam(sym, tpe, loc) => ExecutableAst.ConstraintParam.HeadParam(sym, tpe, loc)
         case SimplifiedAst.ConstraintParam.RuleParam(sym, tpe, loc) => ExecutableAst.ConstraintParam.RuleParam(sym, tpe, loc)
@@ -283,16 +277,16 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
   object Predicate {
 
     object Head {
-      def toExecutable(sast: SimplifiedAst.Predicate.Head): ExecutableAst.Predicate.Head = sast match {
+      def toExecutable(sast: SimplifiedAst.Predicate.Head, m: TopLevel)(implicit genSym: GenSym): ExecutableAst.Predicate.Head = sast match {
         case SimplifiedAst.Predicate.Head.True(loc) => ExecutableAst.Predicate.Head.True(loc)
         case SimplifiedAst.Predicate.Head.False(loc) => ExecutableAst.Predicate.Head.False(loc)
 
         case SimplifiedAst.Predicate.Head.Positive(name, terms, loc) =>
-          val ts = terms.map(Terms.translate).toArray
+          val ts = terms.map(t => Terms.translate(t, m)).toArray
           ExecutableAst.Predicate.Head.Positive(name, ts, loc)
 
         case SimplifiedAst.Predicate.Head.Negative(name, terms, loc) =>
-          val ts = terms.map(Terms.translate).toArray
+          val ts = terms.map(t => Terms.translate(t, m)).toArray
           ExecutableAst.Predicate.Head.Negative(name, ts, loc)
       }
     }
@@ -308,9 +302,9 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
         case (xs, t: SimplifiedAst.Term.Body.Pat) => xs // TODO ????
       }
 
-      def toExecutable(sast: SimplifiedAst.Predicate.Body): ExecutableAst.Predicate.Body = sast match {
+      def toExecutable(sast: SimplifiedAst.Predicate.Body, m: TopLevel)(implicit genSym: GenSym): ExecutableAst.Predicate.Body = sast match {
         case SimplifiedAst.Predicate.Body.Positive(sym, terms, loc) =>
-          val termsArray = terms.map(Terms.Body.translate).toArray
+          val termsArray = terms.map(t => Terms.Body.translate(t, m)).toArray
           val index2var: Array[Symbol.VarSym] = {
             val r = new Array[Symbol.VarSym](termsArray.length)
             var i = 0
@@ -327,7 +321,7 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
           ExecutableAst.Predicate.Body.Positive(sym, termsArray, index2var, freeVars(terms), loc)
 
         case SimplifiedAst.Predicate.Body.Negative(sym, terms, loc) =>
-          val termsArray = terms.map(Terms.Body.translate).toArray
+          val termsArray = terms.map(t => Terms.Body.translate(t, m)).toArray
           val index2var: Array[Symbol.VarSym] = {
             val r = new Array[Symbol.VarSym](termsArray.length)
             var i = 0
@@ -345,11 +339,11 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
 
 
         case SimplifiedAst.Predicate.Body.Filter(name, terms, loc) =>
-          val termsArray = terms.map(Terms.Body.translate).toArray
+          val termsArray = terms.map(t => Terms.Body.translate(t, m)).toArray
           ExecutableAst.Predicate.Body.Filter(name, termsArray, freeVars(terms), loc)
         case SimplifiedAst.Predicate.Body.Loop(sym, term, loc) =>
           val freeVars = Set.empty[String] // TODO
-          ExecutableAst.Predicate.Body.Loop(sym, Terms.translate(term), freeVars, loc)
+          ExecutableAst.Predicate.Body.Loop(sym, Terms.translate(term, m), freeVars, loc)
       }
     }
 
@@ -360,12 +354,11 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
     /**
       * Returns the given simplified head term `t0` as an executable head term.
       */
-    def translate(t0: SimplifiedAst.Term.Head): ExecutableAst.Term.Head = t0 match {
+    def translate(t0: SimplifiedAst.Term.Head, m: TopLevel)(implicit genSym: GenSym): ExecutableAst.Term.Head = t0 match {
       case SimplifiedAst.Term.Head.Var(sym, tpe, loc) => ExecutableAst.Term.Head.Var(sym, tpe, loc)
       case SimplifiedAst.Term.Head.Lit(lit, tpe, loc) =>
-        // Evaluate the literal to a value.
-        val v = Interpreter.lit2value(Expression.toExecutable(lit))
-        ExecutableAst.Term.Head.Lit(v, tpe, loc)
+        val sym = lit2sym(lit, m)
+        ExecutableAst.Term.Head.Lit(sym, tpe, loc)
       case SimplifiedAst.Term.Head.App(name, args, tpe, loc) =>
         ExecutableAst.Term.Head.App(name, args.toArray, tpe, loc)
     }
@@ -374,13 +367,12 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
       /**
         * Returns the given simplified body term `t0` as an executable body term.
         */
-      def translate(t0: SimplifiedAst.Term.Body): ExecutableAst.Term.Body = t0 match {
+      def translate(t0: SimplifiedAst.Term.Body, m: TopLevel)(implicit genSym: GenSym): ExecutableAst.Term.Body = t0 match {
         case SimplifiedAst.Term.Body.Wild(tpe, loc) => ExecutableAst.Term.Body.Wild(tpe, loc)
         case SimplifiedAst.Term.Body.Var(sym, tpe, loc) => ExecutableAst.Term.Body.Var(sym, tpe, loc)
         case SimplifiedAst.Term.Body.Lit(lit, tpe, loc) =>
-          // Evaluate the literal to a value.
-          val v = Interpreter.lit2value(Expression.toExecutable(lit))
-          ExecutableAst.Term.Body.Lit(v, tpe, loc)
+          val sym = lit2sym(lit, m)
+          ExecutableAst.Term.Body.Lit(sym, tpe, loc)
         case SimplifiedAst.Term.Body.Pat(pat, tpe, loc) => ExecutableAst.Term.Body.Pat(Patterns.toExecutable(pat), tpe, loc)
       }
     }
@@ -398,5 +390,15 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
 
   def toExecutable(sast: SimplifiedAst.Property): ExecutableAst.Property =
     ExecutableAst.Property(sast.law, sast.defn, Expression.toExecutable(sast.exp))
+
+  private def lit2sym(exp0: SimplifiedAst.Expression, m: TopLevel)(implicit genSym: GenSym): Symbol.DefnSym = {
+    // TODO: Consider using a notion of constant pool.
+    // Generate a top-level function for the literal.
+    val sym = Symbol.freshDefnSym("lit")
+    val lit = Expression.toExecutable(exp0)
+    val defn = ExecutableAst.Definition.Constant(Ast.Annotations(Nil), sym, formals = Array(), lit, isSynthetic = true, exp0.tpe, exp0.loc)
+    m += (sym -> defn)
+    sym
+  }
 
 }
