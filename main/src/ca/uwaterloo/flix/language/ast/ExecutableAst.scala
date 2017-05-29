@@ -19,6 +19,8 @@ package ca.uwaterloo.flix.language.ast
 import java.lang.reflect.{Constructor, Field, Method}
 import java.util.concurrent.atomic.{AtomicInteger, AtomicLong}
 
+import ca.uwaterloo.flix.language.ast.Symbol.EnumSym
+import ca.uwaterloo.flix.language.phase.CodegenHelper.QualName
 import ca.uwaterloo.flix.runtime.InvocationTarget
 
 sealed trait ExecutableAst
@@ -33,6 +35,10 @@ object ExecutableAst {
                   constraints: List[ExecutableAst.Constraint],
                   properties: List[ExecutableAst.Property],
                   reachable: Set[Symbol.DefnSym],
+                  enumInterfaceByteCodes: Map[EnumSym, (QualName, Array[Byte])],
+                  enumClassByteCodes: Map[EnumSym, (Map[(String, Type), Array[Byte]], Map[String, Array[Byte]])],
+                  interfaceByteCodes: Map[Type, (QualName, Array[Byte])],
+                  classByteCodes: Map[QualName, Array[Byte]],
                   time: Time,
                   dependenciesOf: Map[Symbol.TableSym, Set[(Constraint, ExecutableAst.Predicate.Body.Positive)]]) extends ExecutableAst
 

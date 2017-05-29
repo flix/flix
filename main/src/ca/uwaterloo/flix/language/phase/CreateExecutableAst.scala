@@ -94,7 +94,8 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
       result.toMap
     }
 
-    ExecutableAst.Root(constants ++ m, enums, lattices, tables, indexes, constraints, properties, reachable, time, dependenciesOf).toSuccess
+    ExecutableAst.Root(constants ++ m, enums, lattices, tables, indexes, constraints, properties,
+      reachable, Map(), Map(), Map(), Map(), time, dependenciesOf).toSuccess
   }
 
   object Definition {

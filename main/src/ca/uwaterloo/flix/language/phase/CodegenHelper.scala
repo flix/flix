@@ -1,7 +1,25 @@
+/*
+ * Copyright 2015-2017 Ramin Zarifi
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api._
-import ca.uwaterloo.flix.language.ast.ExecutableAst.Definition
+import ca.uwaterloo.flix.language.GenSym
+import ca.uwaterloo.flix.language.ast.ExecutableAst.{Definition, Expression}
+import ca.uwaterloo.flix.language.ast.Symbol.EnumSym
 import ca.uwaterloo.flix.language.ast.{Type, _}
 import ca.uwaterloo.flix.runtime.Value
 import ca.uwaterloo.flix.util.InternalCompilerException
@@ -9,14 +27,27 @@ import org.objectweb.asm
 import org.objectweb.asm.Opcodes._
 import org.objectweb.asm.{Type => _, _}
 
-/**
-  * Created by ramin on 2017-05-22.
-  */
 object CodegenHelper {
+
+  val fixedPrefix = List("ca", "waterloo", "flix", "enums")
+
+  case class QualName(ref: List[String])
+
+  def getEnumCaseName(sym: EnumSym, tag: String, tpe: Option[Type]) : QualName = tpe match {
+    case Some(t) if t.isPrimitive => QualName(CodegenHelper.fixedPrefix ++ sym.namespace ++ List(sym.name, t.toString, tag))
+    case _ => QualName(CodegenHelper.fixedPrefix ++ sym.namespace ++ List(sym.name, "object", tag))
+  }
+
+  def getEnumInterfaceName(sym: EnumSym): QualName = {
+    QualName(CodegenHelper.fixedPrefix ++ sym.namespace ++ List(sym.name, "EnumInterface"))
+  }
+
   /*
    * Decorate (mangle) a prefix (list of strings) to get the internal JVM name.
    */
   def decorate(prefix: List[String]): String = prefix.mkString("/")
+
+  def decorate(qualName: QualName): String = decorate(qualName.ref)
 
   /*
    * Returns the internal name of the JVM type that `tpe` maps to.
@@ -32,7 +63,7 @@ object CodegenHelper {
    * `((II)I)I`.
    */
   //TODO: We should get rid of `check` when we fully implement enum interfaces
-  def descriptor(tpe: Type, interfaces: Map[Type, List[String]], enumInterfaces: Map[Type, Class[_]], check: Boolean = true): String = {
+  def descriptor(tpe: Type, interfaces: Map[Type, QualName]): String = {
     def inner(tpe: Type): String = tpe match {
       case Type.Var(id, kind) => throw InternalCompilerException(s"Non-monomorphed type variable '$id in type '$tpe'.")
       case Type.Unit => asm.Type.getDescriptor(Constants.unitClass)
@@ -49,11 +80,14 @@ object CodegenHelper {
       case Type.Native => asm.Type.getDescriptor(Constants.objectClass)
       case Type.Apply(Type.Arrow(l), _) => s"L${decorate(interfaces(tpe))};"
       case Type.Apply(Type.FTuple(l), _) => asm.Type.getDescriptor(Constants.arrayObjectClass)
-      case _ if tpe.isEnum => if(check) {
-        asm.Type.getDescriptor(Constants.tagClass) //This case will be deleted
-      } else {
-        asm.Type.getDescriptor(enumInterfaces(tpe))
-      }
+      case _ if tpe.isEnum =>
+        val sym = tpe match {
+          case Type.Apply(Type.Enum(s, _), _) => s
+          case Type.Enum(s, _) => s
+          case _ => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
+        }
+        val fullName = fixedPrefix ++ sym.namespace ++ List(sym.name, "EnumInterface")
+        s"L${decorate(fullName)};"
       case _ => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
     }
 
@@ -91,12 +125,11 @@ object CodegenHelper {
     val flixClass : Class[_] = classOf[Flix]
 
     val unitClass : Class[_] = Value.Unit.getClass
-    @deprecated
-    val tagClass : Class[_] = classOf[Value.Tag]
-
+    val tagClass : Class[_] = classOf[TagInterface]
     val valueObject = "ca/uwaterloo/flix/runtime/Value$"
     val scalaPredef = "scala/Predef$"
     val scalaMathPkg = "scala/math/package$"
+    val tagInterface : Class[_] = classOf[TagInterface]
 
     def loadValueObject(visitor: MethodVisitor): Unit =
       visitor.visitFieldInsn(GETSTATIC, valueObject, "MODULE$", s"L$valueObject;")
@@ -105,13 +138,124 @@ object CodegenHelper {
   // This constant is used in LoadBytecode, so we can't put it in the private Constants object.
   val flixObject = "flixObject"
 
-  case class Context(prefix: List[String],
-                     functions: List[Definition.Constant],
-                     declarations: Map[Symbol.DefnSym, Type],
-                     interfaces: Map[Type, List[String]],
-                     enumInterfaces: Map[Type, Class[_]],
-                     enums: Map[Type, Map[String, Class[_]]]) {
-    // wrapper around descriptor
-    def descriptor(tpe: Type, check: Boolean = true): String = CodegenHelper.descriptor(tpe, interfaces, enumInterfaces, check)
+  /**
+    * Generates all the names of the functional interfaces used in the Flix program.
+    */
+  def generateInterfaceNames(consts: List[Definition.Constant])(implicit genSym: GenSym): Map[Type, QualName] = {
+    def visit(e: Expression): Set[Type] = e match {
+      case Expression.Unit => Set.empty
+      case Expression.True => Set.empty
+      case Expression.False => Set.empty
+      case Expression.Char(lit) => Set.empty
+      case Expression.Float32(lit) => Set.empty
+      case Expression.Float64(lit) => Set.empty
+      case Expression.Int8(lit) => Set.empty
+      case Expression.Int16(lit) => Set.empty
+      case Expression.Int32(lit) => Set.empty
+      case Expression.Int64(lit) => Set.empty
+      case Expression.BigInt(lit) => Set.empty
+      case Expression.Str(lit) => Set.empty
+      case Expression.LoadBool(n, o) => Set.empty
+      case Expression.LoadInt8(b, o) => Set.empty
+      case Expression.LoadInt16(b, o) => Set.empty
+      case Expression.LoadInt32(b, o) => Set.empty
+      case Expression.StoreBool(b, o, v) => Set.empty
+      case Expression.StoreInt8(b, o, v) => Set.empty
+      case Expression.StoreInt16(b, o, v) => Set.empty
+      case Expression.StoreInt32(b, o, v) => Set.empty
+      case Expression.Var(sym, tpe, loc) => Set.empty
+      case Expression.Ref(name, tpe, loc) => Set.empty
+      case Expression.MkClosureRef(ref, freeVars, tpe, loc) => Set(tpe)
+      case Expression.ApplyRef(name, args, tpe, loc) => args.flatMap(visit).toSet
+      case Expression.ApplyTail(name, formals, actuals, tpe, loc) => actuals.flatMap(visit).toSet
+      case Expression.ApplyHook(hook, args, tpe, loc) => args.flatMap(visit).toSet
+      case Expression.ApplyClosure(exp, args, tpe, loc) => visit(exp) ++ args.flatMap(visit)
+      case Expression.Unary(op, exp, tpe, loc) => visit(exp)
+      case Expression.Binary(op, exp1, exp2, tpe, loc) => visit(exp1) ++ visit(exp2)
+      case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) => visit(exp1) ++ visit(exp2) ++ visit(exp3)
+      case Expression.Let(sym, exp1, exp2, tpe, loc) => visit(exp1) ++ visit(exp2)
+      case Expression.LetRec(sym, exp1, exp2, tpe, loc) => visit(exp1) ++ visit(exp2)
+      case Expression.Is(sym, tag, exp, loc) => visit(exp)
+      case Expression.Tag(enum, tag, exp, tpe, loc) => visit(exp)
+      case Expression.Untag(sym, tag, exp, tpe, loc) => visit(exp)
+      case Expression.Index(base, offset, tpe, loc) => visit(base)
+      case Expression.Tuple(elms, tpe, loc) => elms.flatMap(visit).toSet
+      case Expression.Reference(exp, tpe, loc) => ??? // TODO
+      case Expression.Dereference(exp, tpe, loc) => ??? // TODO
+      case Expression.Assignment(exp1, exp2, tpe, loc) => ??? // TODO
+      case Expression.Existential(params, exp, loc) =>
+        ???
+      case Expression.Universal(params, exp, loc) =>
+        ???
+      case Expression.NativeConstructor(constructor, args, tpe, loc) => args.flatMap(visit).toSet
+      case Expression.NativeField(field, tpe, loc) => Set.empty
+      case Expression.NativeMethod(method, args, tpe, loc) => args.flatMap(visit).toSet
+      case Expression.UserError(tpe, loc) => Set.empty
+      case Expression.MatchError(tpe, loc) => Set.empty
+      case Expression.SwitchError(tpe, loc) => Set.empty
+    }
+
+    val types = consts.flatMap(x => visit(x.exp)).toSet
+    types.map { t =>
+      val name = Symbol.freshVarSym("FnItf").toString
+      val prefix = QualName(List("ca", "uwaterloo", "flix", "runtime", name))
+      t -> prefix
+    }.toMap
+  }
+
+
+  /**
+    * Find enums from the given expression
+    * @param e expression
+    * @return
+    */
+  def findEnums(e: Expression): List[(Type, (String, Type))] = e match {
+    case Expression.Unit => Nil
+    case Expression.True => Nil
+    case Expression.False => Nil
+    case Expression.Char(lit) => Nil
+    case Expression.Float32(lit) => Nil
+    case Expression.Float64(lit) => Nil
+    case Expression.Int8(lit) => Nil
+    case Expression.Int16(lit) => Nil
+    case Expression.Int32(lit) => Nil
+    case Expression.Int64(lit) => Nil
+    case Expression.BigInt(lit) => Nil
+    case Expression.Str(lit) => Nil
+    case Expression.LoadBool(n, o) => Nil
+    case Expression.LoadInt8(b, o) => Nil
+    case Expression.LoadInt16(b, o) => Nil
+    case Expression.LoadInt32(b, o) => Nil
+    case Expression.StoreBool(b, o, v) => Nil
+    case Expression.StoreInt8(b, o, v) => Nil
+    case Expression.StoreInt16(b, o, v) => Nil
+    case Expression.StoreInt32(b, o, v) => Nil
+    case Expression.Var(sym, tpe, loc) => Nil
+    case Expression.Ref(name, tpe, loc) => Nil
+    case Expression.MkClosureRef(ref, freeVars, tpe, loc) => Nil
+    case Expression.ApplyRef(name, args, tpe, loc) => args.flatMap(findEnums)
+    case Expression.ApplyTail(name, formals, actuals, tpe, loc) => actuals.flatMap(findEnums)
+    case Expression.ApplyHook(hook, args, tpe, loc) => args.flatMap(findEnums)
+    case Expression.ApplyClosure(exp, args, tpe, loc) => findEnums(exp) ++ args.flatMap(findEnums)
+    case Expression.Unary(op, exp, tpe, loc) => findEnums(exp)
+    case Expression.Binary(op, exp1, exp2, tpe, loc) => findEnums(exp1) ++ findEnums(exp2)
+    case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) => findEnums(exp1) ++ findEnums(exp2) ++ findEnums(exp3)
+    case Expression.Let(sym, exp1, exp2, tpe, loc) => findEnums(exp1) ++ findEnums(exp2)
+    case Expression.Is(sym, tag, exp, loc) => findEnums(exp)
+    case Expression.Tag(enum, tag, exp, tpe, loc) => List((tpe, (tag, exp.tpe))) ++ findEnums(exp)
+    case Expression.Untag(sym, tag, exp, tpe, loc)  => List((exp.tpe, (tag, tpe))) ++ findEnums(exp)
+    case Expression.Index(base, offset, tpe, loc) => findEnums(base)
+    case Expression.Tuple(elms, tpe, loc) => elms.flatMap(findEnums).toList
+    case Expression.Reference(exp, tpe, loc) => ??? // TODO
+    case Expression.Dereference(exp, tpe, loc) => ??? // TODO
+    case Expression.Assignment(exp1, exp2, tpe, loc) => ??? // TODO
+    case Expression.Existential(params, exp, loc) => findEnums(exp)
+    case Expression.Universal(params, exp, loc) => findEnums(exp)
+    case Expression.NativeConstructor(constructor, args, tpe, loc) => args.flatMap(findEnums)
+    case Expression.NativeField(field, tpe, loc) => Nil
+    case Expression.NativeMethod(method, args, tpe, loc) => args.flatMap(findEnums)
+    case Expression.UserError(tpe, loc) => Nil
+    case Expression.MatchError(tpe, loc) => Nil
+    case Expression.SwitchError(tpe, loc) => Nil
   }
 }

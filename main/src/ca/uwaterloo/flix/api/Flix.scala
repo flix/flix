@@ -26,7 +26,7 @@ import ca.uwaterloo.flix.runtime.quickchecker.QuickChecker
 import ca.uwaterloo.flix.runtime.verifier.Verifier
 import ca.uwaterloo.flix.runtime.{DeltaSolver, Model, Solver, Value}
 import ca.uwaterloo.flix.util.{LocalResource, Options, Validation}
-
+import org.objectweb.asm.Opcodes.V1_8
 import scala.collection.mutable.ListBuffer
 import scala.collection.{immutable, mutable}
 
@@ -87,6 +87,11 @@ class Flix {
     * The current Flix options.
     */
   var options = Options.Default
+
+  /**
+    * Java version of generated codes.
+    */
+  val javaVersion = V1_8
 
   /**
     * The symbol generator associated with this Flix instance.
@@ -279,6 +284,8 @@ class Flix {
             TreeShaker |>
             VarNumbering |>
             CreateExecutableAst |>
+            EnumGen |>
+            CodeGen |>
             LoadBytecode |>
             QuickChecker |>
             Verifier

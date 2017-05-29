@@ -95,6 +95,15 @@ sealed trait Type {
     case Type.Apply(t, ts) => s"$t[${ts.mkString(", ")}]"
     case Type.Enum(enum, kind) => enum.toString
   }
+
+  /**
+    * Returns true if the Type corresponds to a primitive in Java
+    */
+  def isPrimitive: Boolean = this match {
+    case Type.Char | Type.Bool | Type.Int8 | Type.Int16 | Type.Int32 | Type.Int64 | Type.Float32 |
+         Type.Float64 => true
+    case _ => false
+  }
 }
 
 object Type {
