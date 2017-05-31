@@ -17,24 +17,28 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.SourceInput
+import ca.uwaterloo.flix.language.ast.{SourceInput, SourceLocation, TypedAst}
 import ca.uwaterloo.flix.util.vt.VirtualString._
 import ca.uwaterloo.flix.util.vt.VirtualTerminal
 
 /**
-  * An error raised to indicate a parse error.
+  * An error raised to indicate a non exhaustive pattern match
   *
-  * @param msg the error message.
-  * @param src the source input.
   */
-case class ExhaustiveMatchError(msg: String, src: SourceInput) extends CompilationError {
+case class NonExhaustiveMatchError(rules: List[TypedAst.MatchRule], pattern: String, loc: SourceLocation) extends CompilationError {
   val kind = "Exhaustive Match Error"
-  val source: SourceInput = src
+  val source: SourceInput = loc.source
   val message: VirtualTerminal = {
     val vt = new VirtualTerminal
     vt << Line(kind, source.format) << NewLine
     vt << ">> Exhaustive Match Error:" << NewLine
     vt << NewLine
-    vt << Red(msg) << NewLine
+    vt << "The expression: " << NewLine
+    vt << Code(loc, "")
+    vt << "Matched by the rules:" << NewLine
+    rules.foreach(x => vt << Code(x.pat.loc, ""))
+    vt << "is not exhaustive, consider the pattern: " << NewLine
+    vt << Red(pattern)
+    vt << NewLine
   }
 }

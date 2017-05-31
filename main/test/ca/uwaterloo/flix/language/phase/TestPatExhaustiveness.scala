@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.errors.ExhaustiveMatchError
+import ca.uwaterloo.flix.language.errors.NonExhaustiveMatchError
 import org.scalatest.FunSuite
 import ca.uwaterloo.flix.util.Options
 import ca.uwaterloo.flix.runtime.Model
@@ -79,7 +79,7 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
         |  case 'c' => 3
         |}
       """.stripMargin
-    expectError[ExhaustiveMatchError](new Flix().addStr(input).compile())
+    expectError[NonExhaustiveMatchError](new Flix().addStr(input).compile())
   }
   test("Pattern.Literal.Char.02") {
     val input =
@@ -101,7 +101,7 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
         |  case 3 => 3
         |}
       """.stripMargin
-    expectError[ExhaustiveMatchError](new Flix().addStr(input).compile())
+    expectError[NonExhaustiveMatchError](new Flix().addStr(input).compile())
   }
 
   test("Pattern.Literal.Int64.01") {
@@ -112,7 +112,7 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
         |  case 3i64 => 3
         |}
       """.stripMargin
-    expectError[ExhaustiveMatchError](new Flix().addStr(input).compile())
+    expectError[NonExhaustiveMatchError](new Flix().addStr(input).compile())
   }
 
   test("Pattern.Literal.Str.01") {
@@ -123,7 +123,7 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
         |  case "baz" => 3
         |}
       """.stripMargin
-    expectError[ExhaustiveMatchError](new Flix().addStr(input).compile())
+    expectError[NonExhaustiveMatchError](new Flix().addStr(input).compile())
   }
 
   test("Pattern.Enum.01") {
@@ -185,4 +185,91 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
       """.stripMargin
     run(input)
   }
+
+  test("Pattern.Tuples.01") {
+    val input =
+      """enum Color {
+        |  case Red,
+        |  case Blu
+        |}
+        |
+        |def f(x: (Color, Color)): Int = match x with {
+        |  case (Color.Red, _) => 1
+        |  case (Color.Blu, _) => 2
+        |}
+      """.stripMargin
+    run(input)
+  }
+  test("Pattern.Tuples.02") {
+    val input =
+      """enum Color {
+        |  case Red,
+        |  case Blu
+        |}
+        |
+        |def f(x: (Color, Color)): Int = match x with {
+        |  case (_,Color.Red ) => 1
+        |  case (_, Color.Blu ) => 2
+        |}
+      """.stripMargin
+    run(input)
+  }
+  test("Pattern.Tuples.03") {
+    val input =
+      """enum Color {
+        |  case Red,
+        |  case Blu
+        |}
+        |
+        |def f(x: (Color, Color)): Int = match x with {
+        |  case (Color.Red ,Color.Red ) => 1
+        |  case (_, _) => 2
+        |}
+      """.stripMargin
+    run(input)
+  }
+
+  test("Pattern.Literal.Tuples.04") {
+    val input =
+      """enum Color {
+        |  case Red,
+        |  case Blu
+        |}
+        |
+        |def f(x: (Color, Color)): Int = match x with {
+        |  case (Color.Red() ,_ ) => 1
+        |  case (_, Color.Blu) => 2
+        |}
+      """.stripMargin
+    expectError[NonExhaustiveMatchError](new Flix().addStr(input).compile())
+  }
+
+  test("Pattern.Literal.Lists.01") {
+    val input =
+      """ enum IntList {
+        |   case Lst(Int32, IntList),
+        |   case Empty
+        |}
+        |def f(i: Int32, xs: IntList): Int32 = match (i, xs) with {
+        |  case (0, Lst(x, _)) => x
+        |  case (p, Lst(x, rs)) => x
+        |}
+      """.stripMargin
+    expectError[NonExhaustiveMatchError](new Flix().addStr(input).compile())
+  }
+
+  test("Pattern.Literal.Lists.02") {
+    val input =
+      """ enum IntList {
+        |   case Lst(Int32, IntList),
+        |   case Empty
+        |}
+        |def f(xs: IntList, ys: IntList): Int32 = match (xs, ys) with {
+        |  case (Empty, Empty) => 0
+        |  case (Lst(x,xs), Lst(y,ys)) => 1
+        |}
+      """.stripMargin
+    expectError[NonExhaustiveMatchError](new Flix().addStr(input).compile())
+  }
+
 }
