@@ -22,54 +22,62 @@ package ca.uwaterloo.flix.language.ast
 sealed trait Eff {
 
   /**
-    * Returns `true` if the computational effect is pure.
+    * Returns `true` if `this` effect is pure (i.e. the bottom element).
     */
-  def isPure: Boolean = ??? // TODO
+  def isPure: Boolean = this match {
+    case Eff.Box(eff) => eff.isPure
+    case Eff.Arrow(_, _, _, eff) => eff.isPure
+  }
 
   /**
+    * Returns `true` if `this` effect is subsumed by `that` effect.
     *
+    * NB: The structure of `this` and `that` must be the same.
     */
-  def leq(that: Eff): Boolean = true // TODO
+  def leq(that: Eff): Boolean = (this, that) match {
+    case (Eff.Box(eff1), Eff.Box(eff2)) => eff1 leq eff2
+    // TODO: Arrow part.
+    case _ => false
+  }
 
+  /**
+    * Returns the least upper bound of `this` and `that` effect.
+    *
+    * NB: The structure of `this` and `that` must be the same.
+    */
   def lub(eff1: Eff): Eff = eff1 // TODO
 
-  def seq(eff1: Eff): Eff = eff1
+
+  /**
+    */
+  def app(eff: Eff): Eff = eff // TODO, move into trait.
+
+  def seq(that: Eff): Eff = this // TODO: incorrect
 
 }
 
 object Eff {
 
   /**
-    * Represents a computational effect that is pure.
+    * Represents the bot (pure) effect set.
     */
-  val Pure: Eff = ???
+  val Bot: Eff = Box(EffectSet.Bot)
 
   /**
-    * Represents any effect.
+    * Represents the top (any) effect set.
     */
-  // TODO: Name
-  val Top: Eff = ???
+  val Top: Eff = Box(EffectSet.Top)
 
   /**
+    * Represents a non-lambda effect.
     */
-  def app(eff: Eff): Eff = eff // TODO
+  case class Box(eff: EffectSet) extends Eff
 
   /**
+    * Represents a lambda effect from `e1` with `latent` effect to `e2` where the expression itself has effect `eff`.
+    *
+    * As a picture: (e1 ---latent---> e2) @ eff
     */
-  def seq(eff1: Eff, eff2: Eff): Eff = eff1
-
-  /**
-    */
-  def seq(effs: List[Eff]): Eff = effs.foldLeft(Eff.Pure)(seq)
-
-  /**
-    * Represents a set of effects.
-    */
-  case class Leaf(eff: EffectSet) extends Eff
-
-  /**
-    * Represents
-    */
-  case class Arrow(eff1: Eff, latent: EffectSet, eff2: Eff, eff: EffectSet) extends Eff
+  case class Arrow(e1: Eff, latent: EffectSet, e2: Eff, eff: EffectSet) extends Eff
 
 }

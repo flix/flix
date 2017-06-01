@@ -124,14 +124,14 @@ object Effects extends Phase[Root, Root] {
           */
         case Expression.Wild(tpe, _, loc) =>
           // Wildcards are pure.
-          Expression.Wild(tpe, Eff.Pure, loc).toSuccess
+          Expression.Wild(tpe, Eff.Bot, loc).toSuccess
 
         /**
           * Variable Expressions.
           */
         case Expression.Var(sym, tpe, _, loc) =>
           // Lookup the effect in the effect environment.
-          val eff = env0.getOrElse(sym, Eff.Pure)
+          val eff = env0.getOrElse(sym, Eff.Bot)
           Expression.Var(sym, tpe, eff, loc).toSuccess
 
         /**
@@ -158,7 +158,7 @@ object Effects extends Phase[Root, Root] {
             e <- visitExp(body, env0)
           } yield {
             val eff = args.foldLeft(e.eff) {
-              case (eacc, _) => ???
+              case (eacc, _) => Eff.Top // TODO
             }
             Expression.Lambda(args, body, tpe, eff, loc)
           }
@@ -175,7 +175,7 @@ object Effects extends Phase[Root, Root] {
             // TODO: Cleanup
             // The effects of the lambda expression happen before the effects the arguments.
             // Then the effects of applying the lambda happens.
-            val eff = Eff.seq(lambda.eff, Eff.seq(Eff.seq(actuals.map(_.eff)), Eff.app(lambda.eff)))
+            val eff = Eff.Bot // TODO lambda.eff seq Eff.seq(Eff.seq(actuals.map(_.eff)), Eff.app(lambda.eff))
             Expression.Apply(lambda, actuals, tpe, eff, loc)
           }
 
@@ -200,7 +200,7 @@ object Effects extends Phase[Root, Root] {
             e2 <- visitExp(exp2, env0)
           } yield {
             // The effects of e1 happen before the effects of e2.
-            val eff = Eff.seq(e1.eff, e2.eff)
+            val eff = e1.eff seq e2.eff
             Expression.Binary(op, exp1, exp2, tpe, eff, loc)
           }
 
@@ -214,7 +214,7 @@ object Effects extends Phase[Root, Root] {
             e2 <- visitExp(exp2, env0 + (sym -> e1.eff))
           } yield {
             // The effects of e1 happen before e2.
-            val eff = Eff.seq(e1.eff, e2.eff)
+            val eff = e1.eff seq e2.eff
             Expression.Let(sym, exp1, exp2, tpe, eff, loc)
           }
 
@@ -228,7 +228,7 @@ object Effects extends Phase[Root, Root] {
             e2 <- visitExp(exp2, env0 + (sym -> e1.eff))
           } yield {
             // The effects of e1 happen before e2.
-            val eff = Eff.seq(e1.eff, e2.eff)
+            val eff = e1.eff seq e2.eff
             Expression.LetRec(sym, exp1, exp2, tpe, eff, loc)
           }
 
@@ -242,8 +242,8 @@ object Effects extends Phase[Root, Root] {
             e3 <- visitExp(exp3, env0)
           } yield {
             // The effects of e1 happen before the effects of e2 and e3.
-            val seq1 = Eff.seq(e1.eff, e2.eff)
-            val seq2 = Eff.seq(e1.eff, e3.eff)
+            val seq1 = e1.eff seq e2.eff
+            val seq2 = e1.eff seq e3.eff
 
             // The effects of the overall expression is the least upper bound of the two effects above.
             val eff = seq1 lub seq2
@@ -274,7 +274,7 @@ object Effects extends Phase[Root, Root] {
             val matchEffect = e.eff
 
             // Compute the total effects of all the rules.
-            val rulesEffect = rs.foldLeft(Eff.Pure) {
+            val rulesEffect = rs.foldLeft(Eff.Bot) {
               case (eacc, MatchRule(pat, guard, body)) =>
                 // The effect of the guard happens before the effect of the body.
                 eacc lub (guard.eff seq body.eff)
@@ -304,7 +304,7 @@ object Effects extends Phase[Root, Root] {
           for {
             rs <- seqM(rs) // TODO: Duplcate rs
           } yield {
-            val eff = rs.foldLeft(Eff.Pure) {
+            val eff = rs.foldLeft(Eff.Bot) {
               case (eacc, (guard, body)) =>
                 eacc lub (guard.eff seq body.eff)
             }
@@ -330,7 +330,7 @@ object Effects extends Phase[Root, Root] {
             es <- seqM(elms.map(e => visitExp(e, env0)))
           } yield {
             // The effects of the each element expression happen in sequence.
-            val eff = Eff.seq(es.map(_.eff))
+            val eff = Eff.Bot // TODO Eff.seq(es.map(_.eff))
             Expression.Tuple(elms, tpe, eff, loc)
           }
 
@@ -387,7 +387,7 @@ object Effects extends Phase[Root, Root] {
           */
         case Expression.UserError(tpe, _, loc) =>
           // A user error is treated as if it is pure, although it is not.
-          Expression.UserError(tpe, Eff.Pure, loc).toSuccess
+          Expression.UserError(tpe, Eff.Bot, loc).toSuccess
       }
 
       visitExp(exp0, Map.empty)
@@ -400,10 +400,10 @@ object Effects extends Phase[Root, Root] {
     * Otherwise returns [[Failure]] with an [[EffectError]].
     */
   def assertPure(e0: Expression): Validation[Eff, EffectError] = {
-    if (e0.eff leq Eff.Pure)
-      Eff.Pure.toSuccess
+    if (e0.eff leq Eff.Bot)
+      Eff.Bot.toSuccess
     else
-      EffectError(Eff.Pure, e0.eff, e0.loc).toFailure
+      EffectError(Eff.Bot, e0.eff, e0.loc).toFailure
   }
 
 }
