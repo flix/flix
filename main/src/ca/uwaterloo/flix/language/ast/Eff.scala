@@ -16,10 +16,17 @@
 
 package ca.uwaterloo.flix.language.ast
 
+import ca.uwaterloo.flix.util.InternalCompilerException
+
 /**
   * Represents the computational effect of an expression.
   */
 sealed trait Eff {
+
+  /**
+    * Returns the effect set.
+    */
+  def eff: EffectSet
 
   /**
     * Returns `true` if `this` effect is pure (i.e. the bottom element).
@@ -45,14 +52,27 @@ sealed trait Eff {
     *
     * NB: The structure of `this` and `that` must be the same.
     */
-  def lub(eff1: Eff): Eff = eff1 // TODO
-
+  def lub(that: Eff): Eff = (this, that) match {
+    case (Eff.Box(eff1), Eff.Box(eff2)) => Eff.Box(eff1 lub eff2)
+    case (Eff.Arrow(e11, latent1, e12, eff1), Eff.Arrow(e21, latent2, e22, eff2)) =>
+      val e1 = e11 lub e21
+      val e2 = e12 lub e22
+      Eff.Arrow(e1, latent1 lub latent2, e2, eff1 lub eff2)
+    case _ => throw InternalCompilerException(s"Mismatched effects '$this' and '$that'.")
+  }
 
   /**
+    * Returns the effect of executing the effects of `this` before the effects of `that`.
+    *
+    * NB: The structure of `this` and `that` must be the same. (TODO: Yes?)
+    *
     */
-  def app(eff: Eff): Eff = eff // TODO, move into trait.
-
-  def seq(that: Eff): Eff = this // TODO: incorrect
+  def seq(that: Eff): Eff = (this, that) match {
+    case (Eff.Box(eff1), Eff.Box(eff2)) => Eff.Box(eff1 seq eff2)
+    case (Eff.Arrow(e11, latent1, e12, eff1), Eff.Box(eff2)) => Eff.Box(eff1 seq eff2)
+    // TODO: Arrow part...
+    case _ => throw InternalCompilerException(s"Mismatched effects '$this' and '$that'.")
+  }
 
 }
 

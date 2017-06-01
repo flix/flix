@@ -157,9 +157,8 @@ object Effects extends Phase[Root, Root] {
           for {
             e <- visitExp(body, env0)
           } yield {
-            val eff = args.foldLeft(e.eff) {
-              case (eacc, _) => Eff.Top // TODO
-            }
+            // TODO: deal with arguments
+            val eff = Eff.Arrow(Eff.Bot, e.eff.eff, Eff.Bot, EffectSet.Bot)
             Expression.Lambda(args, body, tpe, eff, loc)
           }
 
