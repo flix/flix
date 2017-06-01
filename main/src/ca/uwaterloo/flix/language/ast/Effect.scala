@@ -28,4 +28,14 @@ object Effect {
     */
   case object IO extends Effect
 
+  /**
+    * The File Effect.
+    */
+  case object File extends Effect
+
+  /**
+    * The Network Effect.
+    */
+  case object Network extends Effect
+
 }

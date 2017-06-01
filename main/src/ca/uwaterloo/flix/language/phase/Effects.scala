@@ -18,12 +18,12 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.util.{Timer, Validation}
+import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.vt.VirtualString._
 import ca.uwaterloo.flix.util.vt.VirtualTerminal
+import ca.uwaterloo.flix.util.{Timer, Validation}
 
 /**
   * A phase that computes the effect of every expression in the program.
@@ -158,7 +158,7 @@ object Effects extends Phase[Root, Root] {
             e <- visitExp(body, env0)
           } yield {
             val eff = args.foldLeft(e.eff) {
-              case (eacc, _) => Eff.Arrow(Eff.Pure, eacc, Eff.Pure)
+              case (eacc, _) => ???
             }
             Expression.Lambda(args, body, tpe, eff, loc)
           }

@@ -24,11 +24,7 @@ sealed trait Eff {
   /**
     * Returns `true` if the computational effect is pure.
     */
-  def isPure: Boolean = this match {
-    case Eff.EffectSet(Some(may), None) => may.isEmpty
-    case Eff.Arrow(eff1, eff2, eff3) => eff1.isPure && eff2.isPure && eff3.isPure
-    case _ => false
-  }
+  def isPure: Boolean = ??? // TODO
 
   /**
     *
@@ -46,13 +42,13 @@ object Eff {
   /**
     * Represents a computational effect that is pure.
     */
-  val Pure: Eff = EffectSet(Some(Set.empty), None)
+  val Pure: Eff = ???
 
   /**
     * Represents any effect.
     */
   // TODO: Name
-  val Top: Eff = EffectSet(None, Some(Set.empty)) // TODO
+  val Top: Eff = ???
 
   /**
     */
@@ -67,13 +63,13 @@ object Eff {
   def seq(effs: List[Eff]): Eff = effs.foldLeft(Eff.Pure)(seq)
 
   /**
-    * Represents a collection of effects.
+    * Represents a set of effects.
     */
-  case class EffectSet(may: Option[Set[Effect]], must: Option[Set[Effect]]) extends Eff
+  case class Leaf(eff: EffectSet) extends Eff
 
   /**
-    *
+    * Represents
     */
-  case class Arrow(eff1: Eff, eff: Eff, eff2: Eff) extends Eff
+  case class Arrow(eff1: Eff, latent: EffectSet, eff2: Eff, eff: EffectSet) extends Eff
 
 }
