@@ -92,7 +92,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
       /*
        * Definition.
        */
-      case WeededAst.Declaration.Definition(doc, ann, mod, ident, tparams0, fparams0, exp, tpe, loc) =>
+      case WeededAst.Declaration.Definition(doc, ann, mod, ident, tparams0, fparams0, exp, tpe, eff, loc) =>
         // check if the definition already exists.
         val defns = prog0.definitions.getOrElse(ns0, Map.empty)
         defns.get(ident.name) match {
@@ -123,7 +123,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
               case e =>
                 val sym = Symbol.mkDefnSym(ns0, ident)
                 val sc = NamedAst.Scheme(tparams.map(_.tpe), Types.namer(tpe, tenv0))
-                val defn = NamedAst.Declaration.Definition(doc, ann, mod, sym, tparams, pms0.reverse, e, sc, loc)
+                val defn = NamedAst.Declaration.Definition(doc, ann, mod, sym, tparams, pms0.reverse, e, sc, eff, loc)
                 prog0.copy(definitions = prog0.definitions + (ns0 -> (defns + (ident.name -> defn))))
             }
           case Some(defn) =>

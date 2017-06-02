@@ -122,7 +122,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           * Performs type inference and reassembly on the given definition `defn`.
           */
         def visitDefn(defn: ResolvedAst.Declaration.Definition): Result[(Symbol.DefnSym, TypedAst.Declaration.Definition), TypeError] = defn match {
-          case ResolvedAst.Declaration.Definition(doc, ann, mod, sym, tparams, params, exp, tpe, loc) =>
+          case ResolvedAst.Declaration.Definition(doc, ann, mod, sym, tparams, params, exp, tpe, eff, loc) =>
             infer(defn, program) map {
               case d => sym -> d
             }
@@ -172,7 +172,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
                     TypedAst.FormalParam(sym, mod, subst0(sym.tvar), sym.loc)
                 }
 
-                Ok(TypedAst.Declaration.Definition(defn0.doc, defn0.ann, defn0.mod, defn0.sym, tparams, formals, exp, resultType, defn0.loc))
+                Ok(TypedAst.Declaration.Definition(defn0.doc, defn0.ann, defn0.mod, defn0.sym, tparams, formals, exp, resultType, defn0.eff, defn0.loc))
 
               case Err(e) => Err(e)
             }

@@ -65,22 +65,23 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           case ds => List(WeededAst.Declaration.Namespace(name, ds.flatten, mkSL(sp1, sp2)))
         }
 
-      case ParsedAst.Declaration.Definition(docOpt, ann, mods, sp1, ident, tparams0, paramsOpt, tpe, exp, sp2) =>
+      case ParsedAst.Declaration.Definition(docOpt, ann, mods, sp1, ident, tparams0, paramsOpt, tpe, effOpt, exp, sp2) =>
         val loc = mkSL(ident.sp1, ident.sp2)
         val doc = docOpt.map(d => Ast.Documentation(d.text.mkString(" "), loc))
         val annVal = Annotations.weed(ann)
         val modVal = Modifiers.weed(mods)
         val expVal = Expressions.weed(exp)
         val tparams = tparams0.toList.map(_.ident)
+        val effVal = Effects.weed(effOpt)
 
         /*
          * Check for `IllegalParameterList`.
          */
         paramsOpt match {
-          case None => @@(annVal, modVal, expVal) map {
-            case (as, mod, e) =>
+          case None => @@(annVal, modVal, expVal, effVal) map {
+            case (as, mod, e, eff) =>
               val t = WeededAst.Type.Arrow(Nil, Types.weed(tpe), loc)
-              List(WeededAst.Declaration.Definition(doc, as, mod, ident, tparams, Nil, e, t, loc))
+              List(WeededAst.Declaration.Definition(doc, as, mod, ident, tparams, Nil, e, t, eff, loc))
           }
           case Some(Nil) => IllegalParameterList(loc).toFailure
           case Some(params) =>
@@ -88,10 +89,10 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
              * Check for `DuplicateFormal`.
              */
             val formalsVal = checkDuplicateFormal(params)
-            @@(annVal, modVal, formalsVal, expVal) map {
-              case (as, mod, fs, e) =>
+            @@(annVal, modVal, formalsVal, expVal, effVal) map {
+              case (as, fs, e, eff) =>
                 val t = WeededAst.Type.Arrow(fs map (_.tpe), Types.weed(tpe), loc)
-                List(WeededAst.Declaration.Definition(doc, as, mod, ident, tparams, fs, e, t, loc))
+                List(WeededAst.Declaration.Definition(doc, as, mod, ident, tparams, fs, e, t, eff, loc))
             }
         }
 
@@ -109,7 +110,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
               // Rewrite to Definition.
               val ann = Ast.Annotations(List(Ast.Annotation.Law(loc)))
               val t = WeededAst.Type.Arrow(Nil, Types.weed(tpe), loc)
-              List(WeededAst.Declaration.Definition(doc, ann, mod, ident, tparams.map(_.ident).toList, Nil, e, t, loc)).toSuccess
+              List(WeededAst.Declaration.Definition(doc, ann, mod, ident, tparams.map(_.ident).toList, Nil, e, t, Eff.Bot, loc)).toSuccess
             case Some(Nil) => IllegalParameterList(mkSL(sp1, sp2)).toFailure
             case Some(params) =>
               /*
@@ -120,7 +121,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
                   // Rewrite to Definition.
                   val ann = Ast.Annotations(List(Ast.Annotation.Law(loc)))
                   val t = WeededAst.Type.Arrow(fs map (_.tpe), Types.weed(tpe), loc)
-                  List(WeededAst.Declaration.Definition(doc, ann, mod, ident, tparams.map(_.ident).toList, fs, e, t, loc))
+                  List(WeededAst.Declaration.Definition(doc, ann, mod, ident, tparams.map(_.ident).toList, fs, e, t, Eff.Bot, loc))
               }
           }
         }
@@ -956,7 +957,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
             case ds => List(WeededAst.Declaration.Namespace(name, ds.flatten, mkSL(sp1, sp2)))
           }
 
-        case ParsedAst.Declaration.Definition(_, meta, _, _, defn, _, _, _, _, _) =>
+        case ParsedAst.Declaration.Definition(_, meta, _, _, defn, _, _, _, _, _, _) =>
           // Instantiate properties based on the laws referenced by the definition.
           @@(meta.collect {
             case ParsedAst.Property(sp1, law, args, sp2) =>

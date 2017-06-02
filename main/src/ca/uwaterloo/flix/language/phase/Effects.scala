@@ -95,7 +95,7 @@ object Effects extends Phase[Root, Root] {
     def infer(defn0: Declaration.Definition, root: Root): Validation[Declaration.Definition, EffectError] = {
       // TODO: Introduce EffectParam
 
-      val expectedEff = Eff.Top
+      val expectedEff = defn0.eff
 
       Expressions.infer(defn0.exp, root) flatMap {
         case e =>

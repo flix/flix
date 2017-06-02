@@ -152,7 +152,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
 
     def Definition: Rule1[ParsedAst.Declaration.Definition] = rule {
-      Documentation ~ Annotations ~ Modifiers ~ SP ~ atomic("def") ~ WS ~ Names.Definition ~ optWS ~ TypeParams ~ FormalParams ~ optWS ~ ":" ~ optWS ~ Type ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~> ParsedAst.Declaration.Definition
+      Documentation ~ Annotations ~ Modifiers ~ SP ~ atomic("def") ~ WS ~ Names.Definition ~ optWS ~ TypeParams ~ FormalParams ~ optWS ~ ":" ~ optWS ~ TypeAndEffect ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~> ParsedAst.Declaration.Definition
     }
 
     def Law: Rule1[ParsedAst.Declaration.Law] = rule {
@@ -462,7 +462,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
 
     def Ascribe: Rule1[ParsedAst.Expression] = rule {
-      FAppend ~ optional(optWS ~ ":" ~ optWS ~ Type ~ optional(optWS ~ atomic("@") ~ WS ~ Effect) ~ SP ~> ParsedAst.Expression.Ascribe)
+      FAppend ~ optional(optWS ~ ":" ~ optWS ~ TypeAndEffect ~ SP ~> ParsedAst.Expression.Ascribe)
     }
 
     def Primary: Rule1[ParsedAst.Expression] = rule {
@@ -816,6 +816,13 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   /////////////////////////////////////////////////////////////////////////////
   def Effect: Rule1[ParsedAst.Effect] = rule {
     SP ~ atomic("IO") ~ SP ~> ParsedAst.Effect.IO
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Type and (optional) Effects                                             //
+  /////////////////////////////////////////////////////////////////////////////
+  def TypeAndEffect: Rule2[ParsedAst.Type, Option[ParsedAst.Effect]] = rule {
+    Type ~ optional(optWS ~ atomic("@") ~ WS ~ Effect)
   }
 
   /////////////////////////////////////////////////////////////////////////////

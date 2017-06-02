@@ -135,7 +135,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
         fparams <- seqM(d0.fparams.map(fparam => Params.resolve(fparam, ns0, prog0)))
         e <- Expressions.resolve(d0.exp, ns0, prog0)
         sc <- schemeVal
-      } yield ResolvedAst.Declaration.Definition(d0.doc, d0.ann, d0.mod, d0.sym, tparams, fparams, e, sc, d0.loc)
+      } yield ResolvedAst.Declaration.Definition(d0.doc, d0.ann, d0.mod, d0.sym, tparams, fparams, e, sc, d0.eff, d0.loc)
 
     }
 

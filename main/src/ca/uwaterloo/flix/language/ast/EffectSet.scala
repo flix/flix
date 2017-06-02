@@ -52,9 +52,8 @@ sealed trait EffectSet {
     * Note: We union the may effects and intersect the must effects.
     */
   def lub(that: EffectSet): EffectSet = (this, that) match {
-    case (EffectSet.Bot, EffectSet.Bot) => EffectSet.Bot
-    case (EffectSet.Bot, EffectSet.MayMust(may, must)) =>  EffectSet.MayMust(may, Set.empty)
-    case (EffectSet.MayMust(may, must), EffectSet.Bot) =>  EffectSet.MayMust(may, Set.empty)
+    case (EffectSet.Bot, x) => x
+    case (x, EffectSet.Bot) => x
     case (EffectSet.MayMust(may1, must1), EffectSet.MayMust(may2, must2)) => EffectSet.MayMust(may1 union may2, must1 intersect must2)
     case (EffectSet.Top, _) => EffectSet.Top
     case (_, EffectSet.Top) => EffectSet.Top
