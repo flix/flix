@@ -210,7 +210,6 @@ object Effects extends Phase[Root, Root] {
           for {
             e <- visitExp(exp, env0)
           } yield {
-            // The effects are simplify the sub-effects.
             val eff = e.eff
             Expression.Unary(op, e, tpe, eff, loc)
           }
@@ -234,8 +233,7 @@ object Effects extends Phase[Root, Root] {
         case Expression.Let(sym, exp1, exp2, tpe, _, loc) =>
           for {
             e1 <- visitExp(exp1, env0)
-            // TODO: To what extend should the environment be extended with the effect of e1?
-            e2 <- visitExp(exp2, env0 + (sym -> e1.eff))
+            e2 <- visitExp(exp2, env0 + (sym -> e1.eff.restrict))
           } yield {
             // The effects of e1 happen before e2.
             val eff = e1.eff seq e2.eff
@@ -247,9 +245,8 @@ object Effects extends Phase[Root, Root] {
           */
         case Expression.LetRec(sym, exp1, exp2, tpe, _, loc) =>
           for {
-          // TODO: To what extend should the environment be extended with the effect of e1?
             e1 <- visitExp(exp1, env0)
-            e2 <- visitExp(exp2, env0 + (sym -> e1.eff))
+            e2 <- visitExp(exp2, env0 + (sym -> e1.eff.restrict))
           } yield {
             // The effects of e1 happen before e2.
             val eff = e1.eff seq e2.eff
@@ -328,7 +325,7 @@ object Effects extends Phase[Root, Root] {
           for {
             rs <- seqM(rulesVal)
           } yield {
-            val eff = rs.foldLeft(Eff.Pure) {
+            val eff = rs.foldLeft(Eff.Bot) {
               case (eacc, (guard, body)) =>
                 eacc lub (guard.eff seq body.eff)
             }
@@ -354,7 +351,9 @@ object Effects extends Phase[Root, Root] {
             es <- seqM(elms.map(e => visitExp(e, env0)))
           } yield {
             // The effects of the each element expression happen in sequence.
-            val eff = Eff.Pure // TODO Eff.seq(es.map(_.eff))
+            val eff = es.foldLeft(Eff.Bot) {
+              case (eacc, e) => eacc seq e.eff
+            }
             Expression.Tuple(elms, tpe, eff, loc)
           }
 
@@ -397,28 +396,31 @@ object Effects extends Phase[Root, Root] {
           * Native Constructor Expressions.
           */
         case Expression.NativeConstructor(constructor, args, tpe, _, loc) =>
-          val eff = Eff.Bot
+          // Unsoundly pretend that a native constructor is pure.
+          val eff = Eff.Pure
           Expression.NativeConstructor(constructor, args, tpe, eff, loc).toSuccess
 
         /**
           * Native Field Expressions.
           */
         case Expression.NativeField(field, tpe, _, loc) =>
-          val eff = Eff.Bot
+          // Unsoundly pretend that a native field is pure.
+          val eff = Eff.Pure
           Expression.NativeField(field, tpe, eff, loc).toSuccess
 
         /**
           * Native Method Expressions.
           */
         case Expression.NativeMethod(method, args, tpe, _, loc) =>
-          val eff = Eff.Bot
+          // Unsoundly pretend that a native method is pure.
+          val eff = Eff.Pure
           Expression.NativeMethod(method, args, tpe, eff, loc).toSuccess
 
         /**
           * User Error Expressions.
           */
         case Expression.UserError(tpe, _, loc) =>
-          // A user error is treated as if it is pure, although it is not.
+          // Unsoundly pretend that a user error is pure.
           Expression.UserError(tpe, Eff.Pure, loc).toSuccess
       }
 

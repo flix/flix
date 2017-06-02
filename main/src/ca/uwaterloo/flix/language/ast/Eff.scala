@@ -37,6 +37,14 @@ sealed trait Eff {
   }
 
   /**
+    * Returns the "arrow" part of an effect.
+    */
+  def restrict: Eff = this match {
+    case Eff.Box(eff) => Eff.Box(EffectSet.Pure)
+    case Eff.Arrow(e1, latent, e2, eff) => Eff.Arrow(e1, latent, e2, EffectSet.Pure)
+  }
+
+  /**
     * Returns `true` if `this` effect is subsumed by `that` effect.
     *
     * NB: The structure of `this` and `that` must be the same.
