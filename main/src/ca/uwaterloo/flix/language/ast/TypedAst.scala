@@ -186,6 +186,8 @@ object TypedAst {
       def tpe: Type = Type.Bool
     }
 
+    case class Ascribe(exp: TypedAst.Expression, tpe: Type, eff: Eff, loc: SourceLocation) extends TypedAst.Expression
+
     case class NativeConstructor(constructor: Constructor[_], args: List[TypedAst.Expression], tpe: Type, eff: Eff, loc: SourceLocation) extends TypedAst.Expression
 
     case class NativeField(field: Field, tpe: Type, eff: Eff, loc: SourceLocation) extends TypedAst.Expression

@@ -344,11 +344,11 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
             e <- visit(exp)
           } yield ResolvedAst.Expression.Universal(fp, e, loc)
 
-        case NamedAst.Expression.Ascribe(exp, tpe, loc) =>
+        case NamedAst.Expression.Ascribe(exp, tpe, eff, loc) =>
           for {
             e <- visit(exp)
             t <- lookupType(tpe, ns0, prog0)
-          } yield ResolvedAst.Expression.Ascribe(e, t, loc)
+          } yield ResolvedAst.Expression.Ascribe(e, t, eff, loc)
 
         case NamedAst.Expression.NativeConstructor(constructor, args, tpe, loc) =>
           for {

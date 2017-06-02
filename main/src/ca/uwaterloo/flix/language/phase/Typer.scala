@@ -705,7 +705,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         /*
          * Ascribe expression.
          */
-        case ResolvedAst.Expression.Ascribe(exp, expectedType, loc) =>
+        case ResolvedAst.Expression.Ascribe(exp, expectedType, eff, loc) =>
           for {
             actualType <- visitExp(exp)
             resultType <- unifyM(actualType, expectedType, loc)
@@ -905,9 +905,9 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         /*
          * Ascribe expression.
          */
-        case ResolvedAst.Expression.Ascribe(exp, tpe, loc) =>
-          // simply reassemble the nested expression.
-          visitExp(exp, subst0)
+        case ResolvedAst.Expression.Ascribe(exp, tpe, eff, loc) =>
+          val e = visitExp(exp, subst0)
+          TypedAst.Expression.Ascribe(e, tpe, eff, loc)
 
         /*
          * Native Constructor expression.

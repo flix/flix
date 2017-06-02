@@ -258,6 +258,9 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         val e = simplify(exp)
         SimplifiedAst.Expression.Universal(p, e, loc)
 
+      case TypedAst.Expression.Ascribe(exp, tpe, eff, loc) =>
+        simplify(exp)
+
       case TypedAst.Expression.NativeConstructor(constructor, args, tpe, eff, loc) =>
         val es = args.map(e => simplify(e))
         SimplifiedAst.Expression.NativeConstructor(constructor, es, tpe, loc)

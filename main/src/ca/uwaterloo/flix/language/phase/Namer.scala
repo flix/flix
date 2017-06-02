@@ -438,8 +438,8 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
             NamedAst.Expression.Universal(p, e, loc)
         }
 
-      case WeededAst.Expression.Ascribe(exp, tpe, loc) => namer(exp, env0, tenv0) map {
-        case e => NamedAst.Expression.Ascribe(e, Types.namer(tpe, tenv0), loc)
+      case WeededAst.Expression.Ascribe(exp, tpe, eff, loc) => namer(exp, env0, tenv0) map {
+        case e => NamedAst.Expression.Ascribe(e, Types.namer(tpe, tenv0), eff, loc)
       }
 
       case WeededAst.Expression.NativeConstructor(className, args, loc) =>
@@ -504,7 +504,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
       case WeededAst.Expression.Tuple(elms, loc) => elms.flatMap(freeVars)
       case WeededAst.Expression.Existential(fparam, exp, loc) => filterBoundVars(freeVars(exp), List(fparam.ident))
       case WeededAst.Expression.Universal(fparam, exp, loc) => filterBoundVars(freeVars(exp), List(fparam.ident))
-      case WeededAst.Expression.Ascribe(exp, tpe, loc) => freeVars(exp)
+      case WeededAst.Expression.Ascribe(exp, tpe, eff, loc) => freeVars(exp)
       case WeededAst.Expression.NativeField(className, fieldName, loc) => Nil
       case WeededAst.Expression.NativeMethod(className, methodName, args, loc) => args.flatMap(freeVars)
       case WeededAst.Expression.NativeConstructor(className, args, loc) => args.flatMap(freeVars)

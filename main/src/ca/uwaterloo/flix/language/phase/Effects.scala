@@ -167,15 +167,23 @@ object Effects extends Phase[Root, Root] {
           */
         case Expression.Apply(lambda, args, tpe, _, loc) =>
           for {
-          // TODO: rename
-            lambda <- visitExp(lambda, env0)
-            actuals <- seqM(args.map(e => visitExp(e, env0)))
+            e <- visitExp(lambda, env0)
+            es <- seqM(args.map(e => visitExp(e, env0)))
           } yield {
-            // TODO: Cleanup
+            // TODO: This implementation is not yet fully correct!
+
+            // Effects of lambda expression.
+            val Eff.Arrow(_, latent, e2, eff) = e.eff
+
+            // Effects of arguments.
+            val argumentEffect = es.foldLeft(Eff.Bot) {
+              case (eacc, exp) => eacc seq exp.eff
+            }
+
             // The effects of the lambda expression happen before the effects the arguments.
             // Then the effects of applying the lambda happens.
-            val eff = Eff.Bot // TODO lambda.eff seq Eff.seq(Eff.seq(actuals.map(_.eff)), Eff.app(lambda.eff))
-            Expression.Apply(lambda, actuals, tpe, eff, loc)
+            val resultEff =  (Eff.Box(latent) lub e2) seq argumentEffect
+            Expression.Apply(e, es, tpe, resultEff, loc)
           }
 
         /**
@@ -358,6 +366,16 @@ object Effects extends Phase[Root, Root] {
           }
 
         /**
+          * Ascribe Expressions.
+          */
+        case Expression.Ascribe(exp, tpe, eff, loc) =>
+          for {
+            e <- visitExp(exp, env0)
+          } yield {
+            Expression.Ascribe(e, tpe, eff, loc)
+          }
+
+        /**
           * Native Constructor Expressions.
           */
         case Expression.NativeConstructor(constructor, args, tpe, _, loc) =>
@@ -398,7 +416,7 @@ object Effects extends Phase[Root, Root] {
     *
     * Otherwise returns [[Failure]] with an [[EffectError]].
     */
-  def assertPure(e0: Expression): Validation[Eff, EffectError] = {
+  private def assertPure(e0: Expression): Validation[Eff, EffectError] = {
     if (e0.eff leq Eff.Bot)
       Eff.Bot.toSuccess
     else

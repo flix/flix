@@ -52,24 +52,12 @@ sealed trait EffectSet {
     * Note: We union the may effects and intersect the must effects.
     */
   def lub(that: EffectSet): EffectSet = (this, that) match {
-    case (EffectSet.Bot, x) => x
-    case (x, EffectSet.Bot) => x
+    case (EffectSet.Bot, EffectSet.Bot) => EffectSet.Bot
+    case (EffectSet.Bot, EffectSet.MayMust(may, must)) =>  EffectSet.MayMust(may, Set.empty)
+    case (EffectSet.MayMust(may, must), EffectSet.Bot) =>  EffectSet.MayMust(may, Set.empty)
     case (EffectSet.MayMust(may1, must1), EffectSet.MayMust(may2, must2)) => EffectSet.MayMust(may1 union may2, must1 intersect must2)
     case (EffectSet.Top, _) => EffectSet.Top
     case (_, EffectSet.Top) => EffectSet.Top
-  }
-
-  /**
-    * Returns the greatest lower bound of `this` effect set and `that` effect set.
-    *
-    * Note: We intersect the may effects and union the must effects.
-    */
-  def glb(that: EffectSet): EffectSet = (this, that) match {
-    case (EffectSet.Top, x) => x
-    case (x, EffectSet.Top) => x
-    case (EffectSet.MayMust(may1, must1), EffectSet.MayMust(may2, must2)) => EffectSet.MayMust(may1 intersect may2, must1 union must2)
-    case (EffectSet.Bot, _) => EffectSet.Top
-    case (_, EffectSet.Bot) => EffectSet.Top
   }
 
   /**

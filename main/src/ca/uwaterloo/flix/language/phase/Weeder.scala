@@ -422,7 +422,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
               tpe match {
                 case None => WeededAst.Expression.Let(ident, value, body, mkSL(sp1, sp2))
                 case Some(t) =>
-                  val ascribed = WeededAst.Expression.Ascribe(value, Types.weed(t), value.loc)
+                  val ascribed = WeededAst.Expression.Ascribe(value, Types.weed(t), Eff.Bot, value.loc)
                   WeededAst.Expression.Let(ident, ascribed, body, mkSL(sp1, sp2))
               }
             case (pattern, value, body) =>
@@ -432,7 +432,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
               tpe match {
                 case None => WeededAst.Expression.Match(value, List(rule), mkSL(sp1, sp2))
                 case Some(t) =>
-                  val ascribed = WeededAst.Expression.Ascribe(value, Types.weed(t), value.loc)
+                  val ascribed = WeededAst.Expression.Ascribe(value, Types.weed(t), Eff.Bot, value.loc)
                   WeededAst.Expression.Match(ascribed, List(rule), mkSL(sp1, sp2))
               }
           }
@@ -599,10 +599,11 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           }
 
         case ParsedAst.Expression.Ascribe(exp, tpe, effOpt, sp2) =>
-          visit(exp, unsafe) map {
-            case e =>
-              // TODO: Deal with effect
-              WeededAst.Expression.Ascribe(e, Types.weed(tpe), mkSL(leftMostSourcePosition(exp), sp2))
+          for {
+            e <- visit(exp, unsafe)
+            eff <- Effects.weed(effOpt)
+          } yield {
+            WeededAst.Expression.Ascribe(e, Types.weed(tpe), eff, mkSL(leftMostSourcePosition(exp), sp2))
           }
 
         case ParsedAst.Expression.Unsafe(sp1, exp, sp2) =>
@@ -1001,6 +1002,21 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         WeededAst.Type.Apply(weed(base), List(weed(tpe1), weed(tpe2)), mkSL(leftMostSourcePosition(tpe1), sp2))
 
       case ParsedAst.Type.Apply(sp1, base, tparams, sp2) => WeededAst.Type.Apply(weed(base), tparams.toList.map(weed), mkSL(sp1, sp2))
+    }
+
+  }
+
+  object Effects {
+
+    /**
+      * Weeds the given parsed optional effect `effOpt`.
+      */
+    def weed(effOpt: Option[ParsedAst.Effect]): Validation[Eff, WeederError] = effOpt match {
+      case None => Eff.Bot.toSuccess
+      case Some(ParsedAst.Effect.IO(sp1, sp2)) =>
+        // TODO: Error checking
+        val eff = EffectSet.MayMust(Set(Effect.IO), Set(Effect.IO))
+        Eff.Box(eff).toSuccess
     }
 
   }
