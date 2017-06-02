@@ -693,50 +693,66 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
                                visitor: MethodVisitor,
                                entryPoint: Label)(exp: Expression): Unit = exp.tpe match {
     case Type.Bool =>
-      // If we know the value of the boolean expression, then compile it directly rather than calling mkBool.
-      Constants.loadValueObject(visitor)
+      val booleanInternalName = "java/lang/Boolean"
+      // If we know the value of the boolean expression, then compile it directly rather than calling constructor of boolean class
       exp match {
-        case Expression.True => visitor.visitMethodInsn(INVOKEVIRTUAL, Constants.valueObject, "True", "()Ljava/lang/Object;", false)
-        case Expression.False => visitor.visitMethodInsn(INVOKEVIRTUAL, Constants.valueObject, "False", "()Ljava/lang/Object;", false)
+        case Expression.True => visitor.visitFieldInsn(GETSTATIC, booleanInternalName, "TRUE", s"L$booleanInternalName;")
+        case Expression.False => visitor.visitFieldInsn(GETSTATIC, booleanInternalName, "FALSE", s"L$booleanInternalName;")
         case _ =>
+          visitor.visitTypeInsn(NEW, booleanInternalName)
+          visitor.visitInsn(DUP)
           compileExpression(prefix, functions, declarations, interfaces, enums, visitor, entryPoint)(exp)
-          visitor.visitMethodInsn(INVOKEVIRTUAL, Constants.valueObject, "mkBool", "(Z)Ljava/lang/Object;", false)
+          visitor.visitMethodInsn(INVOKESPECIAL, booleanInternalName, "<init>", "(Z)V", false)
       }
 
     case Type.Char =>
-      Constants.loadValueObject(visitor)
+      val charInternalName = "java/lang/Character"
+      visitor.visitTypeInsn(NEW, charInternalName)
+      visitor.visitInsn(DUP)
       compileExpression(prefix, functions, declarations, interfaces, enums, visitor, entryPoint)(exp)
-      visitor.visitMethodInsn(INVOKEVIRTUAL, Constants.valueObject, "mkChar", "(C)Ljava/lang/Object;", false)
+      visitor.visitMethodInsn(INVOKESPECIAL, charInternalName, "<init>", "(C)V", false)
 
     case Type.Float32 =>
-      Constants.loadValueObject(visitor)
+      val floatInternalName = "java/lang/Float"
+      visitor.visitTypeInsn(NEW, floatInternalName)
+      visitor.visitInsn(DUP)
       compileExpression(prefix, functions, declarations, interfaces, enums, visitor, entryPoint)(exp)
-      visitor.visitMethodInsn(INVOKEVIRTUAL, Constants.valueObject, "mkFloat32", "(F)Ljava/lang/Object;", false)
+      visitor.visitMethodInsn(INVOKESPECIAL, floatInternalName, "<init>", "(F)V", false)
 
     case Type.Float64 =>
-      Constants.loadValueObject(visitor)
+      val doubleInternalName = "java/lang/Double"
+      visitor.visitTypeInsn(NEW, doubleInternalName)
+      visitor.visitInsn(DUP)
       compileExpression(prefix, functions, declarations, interfaces, enums, visitor, entryPoint)(exp)
-      visitor.visitMethodInsn(INVOKEVIRTUAL, Constants.valueObject, "mkFloat64", "(D)Ljava/lang/Object;", false)
+      visitor.visitMethodInsn(INVOKESPECIAL, doubleInternalName, "<init>", "(D)V", false)
 
     case Type.Int8 =>
-      Constants.loadValueObject(visitor)
+      val byteInternalName = "java/lang/Byte"
+      visitor.visitTypeInsn(NEW, byteInternalName)
+      visitor.visitInsn(DUP)
       compileExpression(prefix, functions, declarations, interfaces, enums, visitor, entryPoint)(exp)
-      visitor.visitMethodInsn(INVOKEVIRTUAL, Constants.valueObject, "mkInt8", "(I)Ljava/lang/Object;", false)
+      visitor.visitMethodInsn(INVOKESPECIAL, byteInternalName, "<init>", "(B)V", false)
 
     case Type.Int16 =>
-      Constants.loadValueObject(visitor)
+      val shortInternalName = "java/lang/Short"
+      visitor.visitTypeInsn(NEW, shortInternalName)
+      visitor.visitInsn(DUP)
       compileExpression(prefix, functions, declarations, interfaces, enums, visitor, entryPoint)(exp)
-      visitor.visitMethodInsn(INVOKEVIRTUAL, Constants.valueObject, "mkInt16", "(I)Ljava/lang/Object;", false)
+      visitor.visitMethodInsn(INVOKESPECIAL, shortInternalName, "<init>", "(S)V", false)
 
     case Type.Int32 =>
-      Constants.loadValueObject(visitor)
+      val intInternalName = "java/lang/Integer"
+      visitor.visitTypeInsn(NEW, intInternalName)
+      visitor.visitInsn(DUP)
       compileExpression(prefix, functions, declarations, interfaces, enums, visitor, entryPoint)(exp)
-      visitor.visitMethodInsn(INVOKEVIRTUAL, Constants.valueObject, "mkInt32", "(I)Ljava/lang/Object;", false)
+      visitor.visitMethodInsn(INVOKESPECIAL, intInternalName, "<init>", "(I)V", false)
 
     case Type.Int64 =>
-      Constants.loadValueObject(visitor)
+      val longInternalName = "java/lang/Long"
+      visitor.visitTypeInsn(NEW, longInternalName)
+      visitor.visitInsn(DUP)
       compileExpression(prefix, functions, declarations, interfaces, enums, visitor, entryPoint)(exp)
-      visitor.visitMethodInsn(INVOKEVIRTUAL, Constants.valueObject, "mkInt64", "(J)Ljava/lang/Object;", false)
+      visitor.visitMethodInsn(INVOKESPECIAL, longInternalName, "<init>", "(J)V", false)
 
     case Type.Unit | Type.BigInt | Type.Str | Type.Native | Type.Enum(_, _) | Type.Apply(Type.FTuple(_), _) | Type.Apply(Type.Arrow(_), _) |
          Type.Apply(Type.Enum(_, _), _) => compileExpression(prefix, functions, declarations, interfaces, enums, visitor, entryPoint)(exp)
@@ -1354,7 +1370,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
    * `tpe` is type of value on top of the stack. If the value is not primitive, then we cast it to it's specific type,
    * if the value is a primitive then since there is no boxing, then no casting is necessary.
    */
-  private def castIfNotPrim(tpe: Type, interfaces: Map[Type, FlixClassName], visitor: MethodVisitor) = tpe match {
+  private def castIfNotPrim(tpe: Type, interfaces: Map[Type, FlixClassName], visitor: MethodVisitor) : Unit = tpe match {
     case Type.Var(id, kind) => throw InternalCompilerException(s"Non-monomorphed type variable '$id in type '$tpe'.")
     case Type.Unit => visitor.visitTypeInsn(CHECKCAST, asm.Type.getInternalName(Constants.unitClass))
     case Type.Bool => ()
@@ -1383,5 +1399,4 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
       visitor.visitTypeInsn(CHECKCAST, decorate(fullName))
     case _ => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
   }
-
 }
