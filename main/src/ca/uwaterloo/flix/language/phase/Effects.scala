@@ -156,8 +156,9 @@ object Effects extends Phase[Root, Root] {
         case Expression.Ref(sym, tpe, _, loc) =>
           // The effect of a ref is its declared effect.
           val defn = root.definitions(sym)
-          // TODO: Retrieve and instantiate effect.
-          Expression.Ref(sym, tpe, /* TODO */ Eff.Top, loc).toSuccess
+          val latent = defn.eff.eff
+          val eff = Eff.Arrow(Eff.Bot, latent, Eff.Bot, EffectSet.Bot)
+          Expression.Ref(sym, tpe, eff, loc).toSuccess
 
         /**
           * Hook Expressions.
