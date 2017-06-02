@@ -199,7 +199,7 @@ object Effects extends Phase[Root, Root] {
 
             // The effects of the lambda expression happen before the effects the arguments.
             // Then the effects of applying the lambda happens.
-            val resultEff = (Eff.Box(latent) lub e2) seq argumentEffect
+            val resultEff = Eff.Box(latent) seq argumentEffect
             Expression.Apply(e, es, tpe, resultEff, loc)
           }
 
@@ -279,7 +279,7 @@ object Effects extends Phase[Root, Root] {
           */
         case Expression.Match(exp, rules, tpe, _, loc) =>
           // Infer the effects of each rule.
-          val rs = rules.map {
+          val rulesVal = rules.map {
             case MatchRule(pat, guard, body) =>
               for {
                 g <- visitExp(guard, env0)
@@ -292,7 +292,7 @@ object Effects extends Phase[Root, Root] {
           // Infer the effects of the entire match expression.
           for {
             e <- visitExp(exp, env0)
-            rs <- seqM(rs) // TODO: Duplcate rs
+            rs <- seqM(rulesVal)
           } yield {
             // Compute the effects of the match value expression.
             val matchEffect = e.eff
@@ -314,7 +314,7 @@ object Effects extends Phase[Root, Root] {
           */
         case Expression.Switch(rules, tpe, _, loc) =>
           // Infer the effects of each rule.
-          val rs = rules.map {
+          val rulesVal = rules.map {
             case (guard, body) =>
               for {
                 g <- visitExp(guard, env0)
@@ -326,7 +326,7 @@ object Effects extends Phase[Root, Root] {
 
           // Infer the effects.
           for {
-            rs <- seqM(rs) // TODO: Duplcate rs
+            rs <- seqM(rulesVal)
           } yield {
             val eff = rs.foldLeft(Eff.Pure) {
               case (eacc, (guard, body)) =>
@@ -386,6 +386,7 @@ object Effects extends Phase[Root, Root] {
           * Ascribe Expressions.
           */
         case Expression.Ascribe(exp, tpe, eff, loc) =>
+          // TODO: Introduce a cast instruction to annotate an effect separate from ascribe.
           for {
             e <- visitExp(exp, env0)
           } yield {
@@ -396,24 +397,21 @@ object Effects extends Phase[Root, Root] {
           * Native Constructor Expressions.
           */
         case Expression.NativeConstructor(constructor, args, tpe, _, loc) =>
-          // A native constructor expression has any effect.
-          val eff = Eff.Top
+          val eff = Eff.Bot
           Expression.NativeConstructor(constructor, args, tpe, eff, loc).toSuccess
 
         /**
           * Native Field Expressions.
           */
         case Expression.NativeField(field, tpe, _, loc) =>
-          // A native field expression has any effect.
-          val eff = Eff.Top
+          val eff = Eff.Bot
           Expression.NativeField(field, tpe, eff, loc).toSuccess
 
         /**
           * Native Method Expressions.
           */
         case Expression.NativeMethod(method, args, tpe, _, loc) =>
-          // A native method expression has any effect.
-          val eff = Eff.Top
+          val eff = Eff.Bot
           Expression.NativeMethod(method, args, tpe, eff, loc).toSuccess
 
         /**

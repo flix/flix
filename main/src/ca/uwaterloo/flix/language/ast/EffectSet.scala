@@ -87,6 +87,7 @@ object EffectSet {
   /**
     * The top (any) effect set.
     */
+  // TODO: We can and should probably eliminate the top here, and instead use a MayandMust instance...
   case object Top extends EffectSet
 
   /**

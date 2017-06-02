@@ -932,19 +932,7 @@ object ParsedAst {
   /**
     * Effects.
     */
-  sealed trait Effect extends ParsedAst
-
-  object Effect {
-
-    /**
-      * The IO Effect.
-      *
-      * @param sp1 the position of the first character in the attribute.
-      * @param sp2 the position of the last character in the attribute.
-      */
-    case class IO(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Effect
-
-  }
+  case class Effect(xs: Seq[Name.Ident]) extends ParsedAst
 
   /**
     * Attribute.

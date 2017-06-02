@@ -814,8 +814,10 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   /////////////////////////////////////////////////////////////////////////////
   // Effects                                                                 //
   /////////////////////////////////////////////////////////////////////////////
-  def Effect: Rule1[ParsedAst.Effect] = rule {
-    SP ~ atomic("IO") ~ SP ~> ParsedAst.Effect.IO
+  def Effect: Rule1[ParsedAst.Effect] = {
+    rule {
+      oneOrMore(Names.UpperCaseName).separatedBy(optWS ~ "," ~ optWS) ~> ParsedAst.Effect
+    }
   }
 
   /////////////////////////////////////////////////////////////////////////////
