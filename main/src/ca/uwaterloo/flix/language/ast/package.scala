@@ -124,7 +124,7 @@ package object ast {
   }
 
   object Time {
-    val Default: Time = Time(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+    val Default: Time = Time(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
   }
 
   /**
@@ -147,6 +147,7 @@ package object ast {
                   varNumbering: Long,
                   enumGen: Long,
                   codeGen: Long,
+                  tupleGen: Long,
                   loadByteCode: Long,
                   solver: Long)
 

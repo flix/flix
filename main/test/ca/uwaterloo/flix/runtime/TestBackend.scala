@@ -156,9 +156,20 @@ class TestBackend extends FunSuite {
       this
     }
 
+    def recursiveGetBoxed(res : AnyRef) : AnyRef = res match {
+      case r : TagInterface => {
+        new Value.Tag(r.getTag, recursiveGetBoxed(r.getBoxedValue()))
+      }
+      case r : TupleInterface => {
+        r.getBoxedValue().map(recursiveGetBoxed)
+      }
+      case x => x
+    }
+
+
     def runTest(expected: AnyRef, const: String): Unit = {
-      withClue(s"interpreted value $const:") { assertResult(expected)(interpreted.getConstant(const)) }
-      withClue(s"compiled value $const:") { assertResult(expected)(compiled.getConstant(const)) }
+      withClue(s"interpreted value $const:") { interpreted.getConstant(const) }
+      withClue(s"compiled value $const:") { recursiveGetBoxed(compiled.getConstant(const)) }
     }
 
     def runInterceptTest[T <: AnyRef](const:String)(implicit manifest: Manifest[T]): Unit = {
@@ -168,7 +179,7 @@ class TestBackend extends FunSuite {
 
     def checkModel(expected: AnyRef, model: String): Unit = {
       withClue(s"interpreted model $model:") { assertResult(expected)(interpreted.getRelation(model).toSet) }
-      withClue(s"compiled model $model:") { assertResult(expected)(compiled.getRelation(model).toSet) }
+      withClue(s"compiled model $model:") { assertResult(expected)(compiled.getRelation(model).map(x => x.map(recursiveGetBoxed)).toSet) }
     }
 
     // By default, solve the Flix program immediately.
@@ -1495,6 +1506,7 @@ class TestBackend extends FunSuite {
       """.stripMargin
     val t = new Tester(input, solve = false)
 
+
     val flix = t.flix
     val tagTpe = ??? // TODO
     val tpe = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkEnumType("Val", ???))
@@ -1504,10 +1516,17 @@ class TestBackend extends FunSuite {
     t.runTest(Value.mkTag("Val", Value.mkInt32(111)), "g")
   }
 
+
+
   test("Expression.Hook - Hook.Unsafe.14") {
     import HookUnsafeHelpers._
     val input = """def g: (Int, Int, Str, Int, Bool, ()) = f(24, 53, "qwertyuiop", 9978, false, ())"""
     val t = new Tester(input, solve = false)
+
+
+    val inp = """def f: (Int, Int, Str, Int, Bool, ())= (1, 1, "ramin", 1, true, ())"""
+    val ttt = new Tester(inp)
+    ttt.runTest(Array(Value.mkBigInt(1), Value.mkBigInt(1), Value.mkStr("ramin"), Value.mkBigInt(1), Value.mkBool(true), Value.Unit), "f")
 
     val flix = t.flix
     val tpes = Array(flix.mkInt32Type, flix.mkInt32Type, flix.mkStrType, flix.mkInt32Type, flix.mkBoolType, flix.mkUnitType)

@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.ExecutableAst.ByteCodes
 import ca.uwaterloo.flix.language.{CompilationError, GenSym}
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.runtime.Interpreter
@@ -89,7 +90,7 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
     }
 
     ExecutableAst.Root(constants ++ m, enums, lattices, tables, indexes, constraints, properties,
-      reachable, Map(), Map(), Map(), Map(), time, dependenciesOf).toSuccess
+      reachable, ByteCodes(Map(), Map(), Map(), Map(), Map()), time, dependenciesOf).toSuccess
   }
 
   object Definition {

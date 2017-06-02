@@ -89,11 +89,6 @@ class Flix {
   var options = Options.Default
 
   /**
-    * Java version of generated codes.
-    */
-  val javaVersion = V1_8
-
-  /**
     * The symbol generator associated with this Flix instance.
     */
   val genSym = new GenSym()
@@ -284,6 +279,7 @@ class Flix {
             TreeShaker |>
             VarNumbering |>
             CreateExecutableAst |>
+            TupleGen |>
             EnumGen |>
             CodeGen |>
             LoadBytecode |>

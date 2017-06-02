@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix
 
-import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.api.{Flix, TagInterface, TupleInterface}
 import ca.uwaterloo.flix.runtime.{Model, Value}
 import ca.uwaterloo.flix.util._
 import org.scalatest.FunSuite
@@ -29,6 +29,17 @@ class TestExamples extends FunSuite {
     private val compiledFlix = createFlix(codegen = true)
     private var interpreted: Model = null
     private var compiled: Model = null
+
+
+    def getBoxedIfNecessary(res : AnyRef) : AnyRef = res match {
+      case r : TagInterface => {
+        new Value.Tag(r.getTag, getBoxedIfNecessary(r.getBoxedValue()))
+      }
+      case r : TupleInterface => {
+        r.getBoxedValue().map(getBoxedIfNecessary)
+      }
+      case x => x
+    }
 
     private def createFlix(codegen: Boolean = false) = {
       val options = Options.DefaultTest.copy(core = false, evaluation = if (codegen) Evaluation.Compiled else Evaluation.Interpreted)
@@ -60,7 +71,7 @@ class TestExamples extends FunSuite {
       }
       withClue(s"compiled value $latticeName($key):") {
         val lattice = compiled.getLattice(latticeName).toMap
-        assertResult(expected)(lattice(key))
+        assertResult(expected)(getBoxedIfNecessary(lattice(key)))
       }
     }
 

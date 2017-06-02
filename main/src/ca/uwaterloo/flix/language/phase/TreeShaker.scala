@@ -43,7 +43,7 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     * Performs tree shaking on the given AST `root`.
     */
   def run(root: SimplifiedAst.Root)(implicit flix: Flix): Validation[SimplifiedAst.Root, CompilationError] = {
-
+    return root.toSuccess
     /**
       * A set used to collect the definition symbols of reachable functions.
       */
