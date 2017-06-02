@@ -22,12 +22,7 @@ package ca.uwaterloo.flix.language.ast
 sealed trait EffectSet {
 
   /**
-    * Alias for [[isBot]].
-    */
-  def isPure: Boolean = isBot
-
-  /**
-    * Returns `true` if `this` effect set is the bottom (pure) effect set.
+    * Returns `true` if `this` effect set is the bottom (impossible) effect set.
     */
   def isBot: Boolean = this == EffectSet.Bot
 
@@ -35,6 +30,14 @@ sealed trait EffectSet {
     * Returns `true` if `this` effect set is the top (any) effect set.
     */
   def isTop: Boolean = this == EffectSet.Top
+
+  /**
+    * Returns `true` if `this` effect set is the pure effect set.
+    */
+  def isPure: Boolean = this match {
+    case EffectSet.MayMust(may, must) => may.isEmpty && must.isEmpty
+    case _ => false
+  }
 
   /**
     * Returns `true` if `this` effect set is smaller or equal to `that` effect set.
@@ -77,7 +80,7 @@ sealed trait EffectSet {
 object EffectSet {
 
   /**
-    * The bot (pure) effect set.
+    * The bot (impossible) effect set.
     */
   case object Bot extends EffectSet
 
@@ -85,6 +88,11 @@ object EffectSet {
     * The top (any) effect set.
     */
   case object Top extends EffectSet
+
+  /**
+    * The empty (pure) effect set.
+    */
+  val Pure: EffectSet = MayMust(Set.empty, Set.empty)
 
   /**
     * Represents a collection of effects that an expression may and must cause.

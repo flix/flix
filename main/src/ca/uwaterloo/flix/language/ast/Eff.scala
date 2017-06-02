@@ -29,7 +29,7 @@ sealed trait Eff {
   def eff: EffectSet
 
   /**
-    * Returns `true` if `this` effect is pure (i.e. the bottom element).
+    * Returns `true` if `this` effect is pure.
     */
   def isPure: Boolean = this match {
     case Eff.Box(eff) => eff.isPure
@@ -79,7 +79,7 @@ sealed trait Eff {
 object Eff {
 
   /**
-    * Represents the bot (pure) effect set.
+    * Represents the bot (impossible) effect set.
     */
   val Bot: Eff = Box(EffectSet.Bot)
 
@@ -87,6 +87,11 @@ object Eff {
     * Represents the top (any) effect set.
     */
   val Top: Eff = Box(EffectSet.Top)
+
+  /**
+    * Represents the pure (empty) effect set.
+    */
+  val Pure: Eff = Box(EffectSet.Pure)
 
   /**
     * Represents a non-lambda effect.

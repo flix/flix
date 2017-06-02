@@ -110,7 +110,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
               // Rewrite to Definition.
               val ann = Ast.Annotations(List(Ast.Annotation.Law(loc)))
               val t = WeededAst.Type.Arrow(Nil, Types.weed(tpe), loc)
-              List(WeededAst.Declaration.Definition(doc, ann, mod, ident, tparams.map(_.ident).toList, Nil, e, t, Eff.Bot, loc)).toSuccess
+              List(WeededAst.Declaration.Definition(doc, ann, mod, ident, tparams.map(_.ident).toList, Nil, e, t, Eff.Pure, loc)).toSuccess
             case Some(Nil) => IllegalParameterList(mkSL(sp1, sp2)).toFailure
             case Some(params) =>
               /*
@@ -121,7 +121,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
                   // Rewrite to Definition.
                   val ann = Ast.Annotations(List(Ast.Annotation.Law(loc)))
                   val t = WeededAst.Type.Arrow(fs map (_.tpe), Types.weed(tpe), loc)
-                  List(WeededAst.Declaration.Definition(doc, ann, mod, ident, tparams.map(_.ident).toList, fs, e, t, Eff.Bot, loc))
+                  List(WeededAst.Declaration.Definition(doc, ann, mod, ident, tparams.map(_.ident).toList, fs, e, t, Eff.Pure, loc))
               }
           }
         }
@@ -423,7 +423,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
               tpe match {
                 case None => WeededAst.Expression.Let(ident, value, body, mkSL(sp1, sp2))
                 case Some(t) =>
-                  val ascribed = WeededAst.Expression.Ascribe(value, Types.weed(t), Eff.Bot, value.loc)
+                  val ascribed = WeededAst.Expression.Ascribe(value, Types.weed(t), Eff.Pure, value.loc)
                   WeededAst.Expression.Let(ident, ascribed, body, mkSL(sp1, sp2))
               }
             case (pattern, value, body) =>
@@ -433,7 +433,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
               tpe match {
                 case None => WeededAst.Expression.Match(value, List(rule), mkSL(sp1, sp2))
                 case Some(t) =>
-                  val ascribed = WeededAst.Expression.Ascribe(value, Types.weed(t), Eff.Bot, value.loc)
+                  val ascribed = WeededAst.Expression.Ascribe(value, Types.weed(t), Eff.Pure, value.loc)
                   WeededAst.Expression.Match(ascribed, List(rule), mkSL(sp1, sp2))
               }
           }
@@ -1013,7 +1013,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       * Weeds the given parsed optional effect `effOpt`.
       */
     def weed(effOpt: Option[ParsedAst.Effect]): Validation[Eff, WeederError] = effOpt match {
-      case None => Eff.Bot.toSuccess
+      case None => Eff.Pure.toSuccess
       case Some(ParsedAst.Effect.IO(sp1, sp2)) =>
         // TODO: Error checking
         val eff = EffectSet.MayMust(Set(Effect.IO), Set(Effect.IO))

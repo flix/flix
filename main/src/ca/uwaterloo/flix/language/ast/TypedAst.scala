@@ -79,73 +79,73 @@ object TypedAst {
     case class Unit(loc: SourceLocation) extends TypedAst.Expression {
       final def tpe: Type = Type.Unit
 
-      final def eff: Eff = Eff.Bot
+      final def eff: Eff = Eff.Pure
     }
 
     case class True(loc: SourceLocation) extends TypedAst.Expression {
       final def tpe: Type = Type.Bool
 
-      final def eff: Eff = Eff.Bot
+      final def eff: Eff = Eff.Pure
     }
 
     case class False(loc: SourceLocation) extends TypedAst.Expression {
       final def tpe: Type = Type.Bool
 
-      final def eff: Eff = Eff.Bot
+      final def eff: Eff = Eff.Pure
     }
 
     case class Char(lit: scala.Char, loc: SourceLocation) extends TypedAst.Expression {
       final def tpe: Type = Type.Char
 
-      final def eff: Eff = Eff.Bot
+      final def eff: Eff = Eff.Pure
     }
 
     case class Float32(lit: scala.Float, loc: SourceLocation) extends TypedAst.Expression {
       final def tpe: Type = Type.Float32
 
-      final def eff: Eff = Eff.Bot
+      final def eff: Eff = Eff.Pure
     }
 
     case class Float64(lit: scala.Double, loc: SourceLocation) extends TypedAst.Expression {
       final def tpe: Type = Type.Float64
 
-      final def eff: Eff = Eff.Bot
+      final def eff: Eff = Eff.Pure
     }
 
     case class Int8(lit: scala.Byte, loc: SourceLocation) extends TypedAst.Expression {
       final def tpe: Type = Type.Int8
 
-      final def eff: Eff = Eff.Bot
+      final def eff: Eff = Eff.Pure
     }
 
     case class Int16(lit: scala.Short, loc: SourceLocation) extends TypedAst.Expression {
       final def tpe: Type = Type.Int16
 
-      final def eff: Eff = Eff.Bot
+      final def eff: Eff = Eff.Pure
     }
 
     case class Int32(lit: scala.Int, loc: SourceLocation) extends TypedAst.Expression {
       final def tpe: Type = Type.Int32
 
-      final def eff: Eff = Eff.Bot
+      final def eff: Eff = Eff.Pure
     }
 
     case class Int64(lit: scala.Long, loc: SourceLocation) extends TypedAst.Expression {
       final def tpe: Type = Type.Int64
 
-      final def eff: Eff = Eff.Bot
+      final def eff: Eff = Eff.Pure
     }
 
     case class BigInt(lit: java.math.BigInteger, loc: SourceLocation) extends TypedAst.Expression {
       final def tpe: Type = Type.BigInt
 
-      final def eff: Eff = Eff.Bot
+      final def eff: Eff = Eff.Pure
     }
 
     case class Str(lit: java.lang.String, loc: SourceLocation) extends TypedAst.Expression {
       final def tpe: Type = Type.Str
 
-      final def eff: Eff = Eff.Bot
+      final def eff: Eff = Eff.Pure
     }
 
     case class Wild(tpe: Type, eff: Eff, loc: SourceLocation) extends TypedAst.Expression
