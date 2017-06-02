@@ -33,7 +33,9 @@ object Effects extends Phase[Root, Root] {
   /**
     * An error raised to indicate that the expected effects of an expression does not match its actual effects.
     *
-    * @param loc the location where the error occurred.
+    * @param expected the expected effects.
+    * @param inferred the inferred effects.
+    * @param loc      the location where the error occurred.
     */
   case class EffectError(expected: Eff, inferred: Eff, loc: SourceLocation) extends CompilationError {
     val kind: String = "Effect Error"
@@ -41,7 +43,7 @@ object Effects extends Phase[Root, Root] {
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
-      vt << ">> Inferred effect(s) do match the expected effect(s)." << NewLine
+      vt << ">> Inferred effect(s) do not match the expected effect(s)." << NewLine
       vt << NewLine
       vt << Code(loc, "unexpected effect(s).") << NewLine
       vt << NewLine

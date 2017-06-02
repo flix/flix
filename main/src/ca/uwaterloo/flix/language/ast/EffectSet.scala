@@ -44,7 +44,6 @@ sealed trait EffectSet {
     */
   def leq(that: EffectSet): Boolean = (this, that) match {
     case (EffectSet.Bot, _) => true
-    case (_, EffectSet.Top) => true
     case (EffectSet.MayMust(may1, must1), EffectSet.MayMust(may2, must2)) => (may1 subsetOf may2) && (must2 subsetOf must1)
     case _ => false
   }
@@ -58,8 +57,6 @@ sealed trait EffectSet {
     case (EffectSet.Bot, x) => x
     case (x, EffectSet.Bot) => x
     case (EffectSet.MayMust(may1, must1), EffectSet.MayMust(may2, must2)) => EffectSet.MayMust(may1 union may2, must1 intersect must2)
-    case (EffectSet.Top, _) => EffectSet.Top
-    case (_, EffectSet.Top) => EffectSet.Top
   }
 
   /**
@@ -71,8 +68,6 @@ sealed trait EffectSet {
     case (EffectSet.Bot, x) => x
     case (x, EffectSet.Bot) => x
     case (EffectSet.MayMust(may1, must1), EffectSet.MayMust(may2, must2)) => EffectSet.MayMust(may1 union may2, must1 union must2)
-    case (EffectSet.Top, _) => EffectSet.Top
-    case (_, EffectSet.Top) => EffectSet.Top
   }
 
 }
@@ -87,8 +82,7 @@ object EffectSet {
   /**
     * The top (any) effect set.
     */
-  // TODO: We can and should probably eliminate the top here, and instead use a MayandMust instance...
-  case object Top extends EffectSet
+  val Top = MayMust(Set(Effect.IO, Effect.File, Effect.Network), Set.empty)
 
   /**
     * The empty (pure) effect set.
