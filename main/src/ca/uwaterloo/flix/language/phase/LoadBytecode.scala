@@ -18,12 +18,12 @@ package ca.uwaterloo.flix.language.phase
 
 import java.nio.file.{Files, Paths}
 
-import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.api.{Flix, TupleInterface}
 import ca.uwaterloo.flix.language.{CompilationError, GenSym}
 import ca.uwaterloo.flix.language.ast.ExecutableAst.{Definition, Expression}
 import ca.uwaterloo.flix.language.ast.Symbol.EnumSym
 import ca.uwaterloo.flix.language.ast.{ExecutableAst, Symbol, Type}
-import ca.uwaterloo.flix.language.phase.CodegenHelper.QualName
+import ca.uwaterloo.flix.language.phase.CodegenHelper.{EnumClassName, FlixClassName, QualName, TupleClassName}
 import ca.uwaterloo.flix.runtime.Value
 import ca.uwaterloo.flix.util.{Evaluation, InternalCompilerException}
 import ca.uwaterloo.flix.util.Validation
@@ -83,10 +83,18 @@ object LoadBytecode extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
         case Type.Apply(Type.Arrow(l), _) => f
         case t => f.copy(tpe = Type.mkArrow(List(), t))
       }
-    }.toList.groupBy(cst => QualName(cst.sym.prefix))
+    }.toList.groupBy(cst => FlixClassName(cst.sym.prefix))
+
+    //TODO: NEW
+    val loadedTuples: Map[QualName, Class[_]] = root.byteCodes.tupleByteCode.map{ case (name, byteCode) =>
+      if(flix.options.debug){
+        dump(name, byteCode)
+      }
+      name -> loader(name, byteCode)
+    }.toMap
 
     // 2. Load Enum interfaces
-    val loadedEnumInterfaces : Map[EnumSym, Class[_]] = root.enumInterfaceByteCodes.map{ case (sym, (name, byteCode)) =>
+    val loadedEnumInterfaces : Map[EnumSym, Class[_]] = root.byteCodes.enumInterfaceByteCodes.map{ case (sym, (name, byteCode)) =>
       if(flix.options.debug){
         dump(name, byteCode)
       }
@@ -94,24 +102,24 @@ object LoadBytecode extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     }.toMap // Despite IDE highlighting, this is actually necessary.
 
     // 3. Load functional interfaces.
-    val loadedInterfaces: Map[Type, Class[_]] = root.interfaceByteCodes.map { case (tpe, (prefix, bytecode)) =>
-      if (flix.options.debug) {
+    val loadedInterfaces: Map[Type, Class[_]] = root.byteCodes.functionalInterfaceByteCodes.map { case (tpe, (prefix, bytecode)) =>
+      if(flix.options.debug) {
         dump(prefix, bytecode)
       }
       tpe -> loader(prefix, bytecode)
     }.toMap // Despite IDE highlighting, this is actually necessary.
 
     // 4. Load Enum classes
-    val loadedEnums = root.enumClassByteCodes.map{ case (sym, (prims, objs)) =>
+    val loadedEnums = root.byteCodes.enumClassByteCodes.map{ case (sym, (prims, objs)) =>
       val loadedPrimEnums : Map[(String, Type), Class[_]] = prims.map{ case ((name, tpe), byteCode) =>
-        val qualName: QualName = CodegenHelper.getEnumCaseName(sym, name, Some(tpe))
+        val qualName: QualName = EnumClassName(sym, name, Some(tpe))
         if(flix.options.debug){
           dump(qualName, byteCode)
         }
         (name, tpe)  -> loader(qualName, byteCode)
       }.toMap // Despite IDE highlighting, this is actually necessary.
       val loadedObjEnums : Map[String, Class[_]] = objs.map{ case (name, byteCode) =>
-        val fullName = CodegenHelper.getEnumCaseName(sym, name, None)
+        val fullName = EnumClassName(sym, name, None)
         if(flix.options.debug){
           dump(fullName, byteCode)
         }
@@ -121,7 +129,7 @@ object LoadBytecode extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     }
 
     // 5. Load bytecodes of flix functions
-    val loadedClasses: Map[QualName, Class[_]] = root.classByteCodes.map { case (prefix, bytecode) =>
+    val loadedClasses: Map[QualName, Class[_]] = root.byteCodes.classByteCodes.map { case (prefix, bytecode) =>
       if (flix.options.debug) {
         dump(prefix, bytecode)
       }
@@ -138,7 +146,7 @@ object LoadBytecode extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
       val targs = ts.take(l - 1)
 
       val clazz = loadedClasses(prefix)
-      val argTpes = targs.map(t => toJavaClass(t, loadedInterfaces, loadedEnumInterfaces))
+      val argTpes = targs.map(t => toJavaClass(t, loadedInterfaces, loadedEnumInterfaces, loadedTuples))
       // Note: Update the original constant in root.constants, not the temporary one in constantsMap!
       root.definitions(const.sym).method = clazz.getMethod(const.sym.suffix, argTpes: _*)
     }
@@ -147,9 +155,7 @@ object LoadBytecode extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     root.copy(time = root.time.copy(loadByteCode = e)).toSuccess
   }
 
-  private def dump(path: String, code: Array[Byte]): Unit = Files.write(Paths.get(path), code)
-
-  private def dump(qualName: QualName, code: Array[Byte]): Unit = dump(qualName.ref.mkString("", "$", ".class"), code)
+  private def dump(qualName: QualName, code: Array[Byte]): Unit = Files.write(Paths.get(qualName.ref.mkString("", "$", ".class")), code)
 
   /**
     * Convert a Flix type `tpe` into a representation of a Java type, i.e. an instance of `Class[_]`.
@@ -157,7 +163,8 @@ object LoadBytecode extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     */
   private def toJavaClass(tpe: Type,
                           interfaces: Map[Type, Class[_]],
-                          enums: Map[EnumSym, Class[_]]): Class[_] = tpe match {
+                          enums: Map[EnumSym, Class[_]],
+                          loadedTuples: Map[QualName, Class[_]]): Class[_] = tpe match {
     case Type.Var(id, kind) => classOf[java.lang.Object]
     case Type.Unit => Value.Unit.getClass
     case Type.Bool => classOf[Boolean]
@@ -173,7 +180,9 @@ object LoadBytecode extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     case Type.Native => classOf[java.lang.Object]
     case Type.Enum(s, _) => enums(s)
     case Type.Apply(Type.Enum(s, _), _) => enums(s)
-    case Type.Apply(Type.FTuple(l), _) => classOf[Array[Object]]
+    case Type.Apply(Type.FTuple(_), lst) =>
+      val clazzName = TupleClassName(lst.map(CodegenHelper.transformTypeToOptionType))
+      loadedTuples(clazzName)
     case Type.Apply(Type.Arrow(l), _) => interfaces(tpe)
     case _ => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
   }
