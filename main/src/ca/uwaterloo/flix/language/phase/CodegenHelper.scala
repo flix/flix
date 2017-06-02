@@ -428,13 +428,9 @@ object CodegenHelper {
     val unitClass : Class[_] = Value.Unit.getClass
     val tagClass : Class[_] = classOf[TagInterface]
     val tupleClass : Class[_] = classOf[TupleInterface]
-    val valueObject = "ca/uwaterloo/flix/runtime/Value$"
     val scalaPredef = "scala/Predef$"
     val scalaMathPkg = "scala/math/package$"
     val tagInterface : Class[_] = classOf[TagInterface]
-
-    def loadValueObject(visitor: MethodVisitor): Unit =
-      visitor.visitFieldInsn(GETSTATIC, valueObject, "MODULE$", s"L$valueObject;")
   }
 
   // This constant is used in LoadBytecode, so we can't put it in the private Constants object.
