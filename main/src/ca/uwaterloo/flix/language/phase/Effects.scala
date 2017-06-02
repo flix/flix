@@ -35,7 +35,7 @@ object Effects extends Phase[Root, Root] {
     *
     * @param loc the location where the error occurred.
     */
-  case class EffectError(expected: Eff, actual: Eff, loc: SourceLocation) extends CompilationError {
+  case class EffectError(expected: Eff, inferred: Eff, loc: SourceLocation) extends CompilationError {
     val kind: String = "Effect Error"
     val source: SourceInput = loc.source
     val message: VirtualTerminal = {
@@ -45,8 +45,18 @@ object Effects extends Phase[Root, Root] {
       vt << NewLine
       vt << Code(loc, "unexpected effect(s).") << NewLine
       vt << NewLine
-      vt << "Expected: " << Green(expected.toString) << NewLine
-      vt << "Actual  : " << Red(actual.toString) << NewLine
+      vt << "Expected: " << Cyan(pretty(expected)) << NewLine
+      vt << "Inferred: " << Magenta(pretty(inferred)) << NewLine
+    }
+
+    /**
+      * Returns a human readable representation of the given effect `eff`.
+      */
+    private def pretty(eff: Eff): String = eff match {
+      case Eff.Box(EffectSet.Bot) => "Bot"
+      case Eff.Box(EffectSet.Top) => "Top"
+      case Eff.Box(EffectSet.MayMust(may, must)) => s"may = {${may.mkString(", ")}}, must = {${must.mkString(", ")}}"
+      case _ => eff.toString
     }
   }
 
@@ -85,11 +95,17 @@ object Effects extends Phase[Root, Root] {
     def infer(defn0: Declaration.Definition, root: Root): Validation[Declaration.Definition, EffectError] = {
       // TODO: Introduce EffectParam
 
-      for {
-        e <- Expressions.infer(defn0.exp, root)
-      } yield {
-        defn0.copy(exp = e)
+      val expectedEff = Eff.Top
+
+      Expressions.infer(defn0.exp, root) flatMap {
+        case e =>
+          val actualEff = e.eff
+          if (actualEff leq expectedEff)
+            defn0.copy(exp = e).toSuccess
+          else
+            EffectError(expectedEff, actualEff, defn0.exp.loc).toFailure
       }
+
     }
   }
 
@@ -182,7 +198,7 @@ object Effects extends Phase[Root, Root] {
 
             // The effects of the lambda expression happen before the effects the arguments.
             // Then the effects of applying the lambda happens.
-            val resultEff =  (Eff.Box(latent) lub e2) seq argumentEffect
+            val resultEff = (Eff.Box(latent) lub e2) seq argumentEffect
             Expression.Apply(e, es, tpe, resultEff, loc)
           }
 
