@@ -68,7 +68,7 @@ class LatticeImpl[ValueType <: AnyRef](lattice: ExecutableAst.Table.Lattice, roo
     // evaluate the partial order function passing the arguments `x` and `y`.
     val args = Array(x, y).asInstanceOf[Array[AnyRef]]
     val result = Leq.invoke(args)
-    Value.cast2bool(result)
+    return result.asInstanceOf[java.lang.Boolean].booleanValue()
   }
 
   /**

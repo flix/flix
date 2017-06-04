@@ -56,15 +56,6 @@ object Value {
   @inline
   def mkBool(b: Boolean): AnyRef = if (b) True else False
 
-  /**
-    * Casts the given reference `ref` to a primitive boolean.
-    */
-  @inline
-  def cast2bool(ref: Any): Boolean = ref match {
-    case o: java.lang.Boolean => o.booleanValue()
-    case _ => throw new InternalRuntimeException(s"Unexpected non-bool value: '$ref'.")
-  }
-
   /////////////////////////////////////////////////////////////////////////////
   // Chars                                                                   //
   /////////////////////////////////////////////////////////////////////////////
@@ -75,14 +66,6 @@ object Value {
   @inline
   def mkChar(c: Char): AnyRef = new java.lang.Character(c)
 
-  /**
-    * Casts the given reference `ref` to a primitive char.
-    */
-  @inline
-  def cast2char(ref: AnyRef): Char = ref match {
-    case o: java.lang.Character => o.charValue()
-    case _ => throw new InternalRuntimeException(s"Unexpected non-char value: '$ref'.")
-  }
 
   /////////////////////////////////////////////////////////////////////////////
   // Floats                                                                  //
@@ -106,23 +89,6 @@ object Value {
   @inline
   def mkFloat64(d: Double): AnyRef = new java.lang.Double(d)
 
-  /**
-    * Casts the given reference `ref` to a Float32.
-    */
-  @inline
-  def cast2float32(ref: AnyRef): Float = ref match {
-    case o: java.lang.Float => o.floatValue()
-    case _ => throw new InternalRuntimeException(s"Unexpected non-float32 value: '$ref'.")
-  }
-
-  /**
-    * Casts the given reference `ref` to a Float64.
-    */
-  @inline
-  def cast2float64(ref: AnyRef): Double = ref match {
-    case o: java.lang.Double => o.doubleValue()
-    case _ => throw new InternalRuntimeException(s"Unexpected non-float64 value: '$ref'.")
-  }
 
   /////////////////////////////////////////////////////////////////////////////
   // Ints                                                                    //
@@ -197,51 +163,6 @@ object Value {
     case _ => throw new InternalRuntimeException(s"Unexpected non-bigint value: '$ref'.")
   }
 
-  /**
-    * Casts the given reference `ref` to an int8.
-    */
-  @inline
-  def cast2int8(ref: AnyRef): Byte = ref match {
-    case o: java.lang.Byte => o.byteValue()
-    case _ => throw new InternalRuntimeException(s"Unexpected non-int8 value: '$ref'.")
-  }
-
-  /**
-    * Casts the given reference `ref` to an int16.
-    */
-  @inline
-  def cast2int16(ref: AnyRef): Short = ref match {
-    case o: java.lang.Short => o.shortValue()
-    case _ => throw new InternalRuntimeException(s"Unexpected non-int16 value: '$ref'.")
-  }
-
-  /**
-    * Casts the given reference `ref` to an int32.
-    */
-  @inline
-  def cast2int32(ref: AnyRef): Int = ref match {
-    case o: java.lang.Integer => o.intValue()
-    case _ => throw new InternalRuntimeException(s"Unexpected non-int32 value: '$ref'.")
-  }
-
-  /**
-    * Casts the given reference `ref` to an int64.
-    */
-  @inline
-  def cast2int64(ref: AnyRef): Long = ref match {
-    case o: java.lang.Long => o.longValue()
-    case _ => throw new InternalRuntimeException(s"Unexpected non-int64 value: '$ref'.")
-  }
-
-  /**
-    * Casts the given reference `ref` to a java.math.BigInteger.
-    */
-  @inline
-  def cast2bigInt(ref: AnyRef): java.math.BigInteger = ref match {
-    case o: java.math.BigInteger => o
-    case _ => throw new InternalRuntimeException(s"Unexpected non-bigint value: '$ref'.")
-  }
-
   /////////////////////////////////////////////////////////////////////////////
   // Closures                                                                //
   /////////////////////////////////////////////////////////////////////////////
@@ -272,15 +193,6 @@ object Value {
   @inline
   def mkStr(s: String): AnyRef = s
 
-  /**
-    * Casts the given reference `ref` to a string.
-    */
-  @inline
-  def cast2str(ref: AnyRef): String = ref match {
-    case o: java.lang.String => o
-    case _ => throw new InternalRuntimeException(s"Unexpected non-string value: '$ref'.")
-  }
-
   /////////////////////////////////////////////////////////////////////////////
   // Tags                                                                    //
   /////////////////////////////////////////////////////////////////////////////
@@ -305,48 +217,6 @@ object Value {
   def mkTag(t: java.lang.String, v: AnyRef): Value.Tag = new Value.Tag(t, v)
 
   /**
-    * Returns the Nil element of a list.
-    */
-  def mkNil: Value.Tag = mkTag("Nil", Unit)
-
-  /**
-    * Returns the list `vs` with the element `v` prepended.
-    */
-  def mkCons(v: AnyRef, vs: AnyRef): Value.Tag = mkTag("Cons", Array(v, vs))
-
-  /**
-    * Returns the given Scala list `as` as a Flix list.
-    */
-  def mkList(as: List[AnyRef]): Value.Tag = as.foldRight(mkNil) {
-    case (a, l) => mkCons(a, l)
-  }
-
-  /**
-    * Returns the None element of a Flix Option.
-    */
-  def mkNone(): Value.Tag = mkTag("None", Unit)
-
-  /**
-    * Returns `Some(v)` of the given value `v`.
-    */
-  def mkSome(v: AnyRef): Value.Tag = mkTag("Some", v)
-
-  /**
-    * Returns `Ok(v)` of the given value `v`.
-    */
-  def mkOk(v: AnyRef): Value.Tag = mkTag("Ok", v)
-
-  /**
-    * Returns `Err(v)` of the given value `v`.
-    */
-  def mkErr(v: AnyRef): Value.Tag = mkTag("Err", v)
-
-  /**
-    * Returns the given Scala list `as` as a Flix set.
-    */
-  def mkFlixSet(as: List[AnyRef]): Value.Tag = mkTag("Set", mkList(as))
-
-  /**
     * Casts the given reference `ref` to a tag.
     */
   @inline
@@ -366,15 +236,6 @@ object Value {
   def mkSet(ref: AnyRef): AnyRef = ref match {
     case o: immutable.Set[_] => o
     case _ => throw new InternalRuntimeException(s"Unexpected non-set value: '$ref'.")
-  }
-
-  /**
-    * Constructs the Flix representation of a map for the given `ref`.
-    */
-  @inline
-  def mkMap(ref: AnyRef): AnyRef = ref match {
-    case o: immutable.Map[_, _] => o
-    case _ => throw new InternalRuntimeException(s"Unexpected non-map value: '$ref'.")
   }
 
   /////////////////////////////////////////////////////////////////////////////

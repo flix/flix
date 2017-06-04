@@ -16,24 +16,10 @@
 
 package ca.uwaterloo.flix.language.phase
 
-import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.AstStats
-import ca.uwaterloo.flix.util.Options
 import org.scalatest.FunSuite
 
 class TestOptimizer extends FunSuite {
 
-  val opts = Options.DefaultTest.copy(optimize = true)
-
-  // TODO: Add two types of test cases. One type to check that the behaviour is preserved,
-  // and another to test that the expected transformations take place.
-
-  test("ConstantFold.Plus.01") {
-    val input = "def f: Int = 1 + 2 + 3"
-    val s = statsOf(input)
-    assertResult(2)(s.plusExpressions) // TODO: Change to zero for when the optimizer is enabled.
-  }
-
-  private def statsOf(input: String): AstStats = new Flix().addStr(input).setOptions(opts).astStats().get
+  // TODO
 
 }

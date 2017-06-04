@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.api.{Invokable, InvokableUnsafe}
+import ca.uwaterloo.flix.api.InvokableUnsafe
 
 /**
   * A collection of AST nodes that are shared across multiple ASTs.
@@ -165,15 +165,6 @@ object Ast {
   }
 
   object Hook {
-
-    /**
-      * A reference to an implementation of the [[Invokable]] interface.
-      *
-      * @param sym the symbol of the hook.
-      * @param inv the functional object.
-      * @param tpe the type of the function.
-      */
-    case class Safe(sym: Symbol.DefnSym, inv: Invokable, tpe: Type) extends Hook
 
     /**
       * A reference to an implementation of the [[InvokableUnsafe]] interface.
