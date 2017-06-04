@@ -336,38 +336,6 @@ class TestNamer extends FunSuite with TestUtils {
     expectError[ResolutionError.UndefinedType](result)
   }
 
-  test("Expression.Hook.01") {
-    val input =
-      s"""namespace A {
-         |  def f(x: Int): Bool = g(x)
-         |}
-       """.stripMargin
-    val flix = new Flix()
-    val tpe = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkBoolType)
-    flix
-      .addStr(input)
-      .addHook("A.g", tpe, new Invokable {
-        def apply(args: Array[IValue]) = flix.mkTrue
-      })
-    flix.compile().get
-  }
-
-  test("Expression.Hook.02") {
-    val input =
-      s"""namespace A {
-         |  def f(x: Bool, y: Int, z: Str): Bool = g(x, y, z)
-         |}
-       """.stripMargin
-    val flix = new Flix()
-    val tpe = flix.mkFunctionType(Array(flix.mkBoolType, flix.mkInt32Type, flix.mkStrType), flix.mkBoolType)
-    flix
-      .addStr(input)
-      .addHook("A.g", tpe, new Invokable {
-        def apply(args: Array[IValue]) = flix.mkTrue
-      })
-    flix.compile().get
-  }
-
   test("UndefinedNativeClass.01") {
     val input = "def f: Int = unsafe native field java.lang.Foo"
     val result = new Flix().addStr(input).compile()

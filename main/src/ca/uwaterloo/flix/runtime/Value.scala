@@ -305,48 +305,6 @@ object Value {
   def mkTag(t: java.lang.String, v: AnyRef): Value.Tag = new Value.Tag(t, v)
 
   /**
-    * Returns the Nil element of a list.
-    */
-  def mkNil: Value.Tag = mkTag("Nil", Unit)
-
-  /**
-    * Returns the list `vs` with the element `v` prepended.
-    */
-  def mkCons(v: AnyRef, vs: AnyRef): Value.Tag = mkTag("Cons", Array(v, vs))
-
-  /**
-    * Returns the given Scala list `as` as a Flix list.
-    */
-  def mkList(as: List[AnyRef]): Value.Tag = as.foldRight(mkNil) {
-    case (a, l) => mkCons(a, l)
-  }
-
-  /**
-    * Returns the None element of a Flix Option.
-    */
-  def mkNone(): Value.Tag = mkTag("None", Unit)
-
-  /**
-    * Returns `Some(v)` of the given value `v`.
-    */
-  def mkSome(v: AnyRef): Value.Tag = mkTag("Some", v)
-
-  /**
-    * Returns `Ok(v)` of the given value `v`.
-    */
-  def mkOk(v: AnyRef): Value.Tag = mkTag("Ok", v)
-
-  /**
-    * Returns `Err(v)` of the given value `v`.
-    */
-  def mkErr(v: AnyRef): Value.Tag = mkTag("Err", v)
-
-  /**
-    * Returns the given Scala list `as` as a Flix set.
-    */
-  def mkFlixSet(as: List[AnyRef]): Value.Tag = mkTag("Set", mkList(as))
-
-  /**
     * Casts the given reference `ref` to a tag.
     */
   @inline
@@ -366,15 +324,6 @@ object Value {
   def mkSet(ref: AnyRef): AnyRef = ref match {
     case o: immutable.Set[_] => o
     case _ => throw new InternalRuntimeException(s"Unexpected non-set value: '$ref'.")
-  }
-
-  /**
-    * Constructs the Flix representation of a map for the given `ref`.
-    */
-  @inline
-  def mkMap(ref: AnyRef): AnyRef = ref match {
-    case o: immutable.Map[_, _] => o
-    case _ => throw new InternalRuntimeException(s"Unexpected non-map value: '$ref'.")
   }
 
   /////////////////////////////////////////////////////////////////////////////
