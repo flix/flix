@@ -38,7 +38,6 @@ import scala.collection.mutable
   */
 
 object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
-
   /**
     * Performs tree shaking on the given AST `root`.
     */
