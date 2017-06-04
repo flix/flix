@@ -416,13 +416,7 @@ object Value {
       return true
     case _ =>
       val tpe1 = ref1.getClass.getCanonicalName
-      val tpe2 = ref2.getClass.getCanonicalName/*
-      //TODO: WE SHOULD GET RID OF THIS WHEN WE REMOVE DEPENDENCY OF CODE GEN ON INTERPRETER
-      //TODO: For now it just decreases number of false tests
-      if(tpe1.split('.').take(3).toList == List("ca","waterloo", "flix") &&
-        tpe2.split('.').take(3).toList == List("ca","waterloo", "flix")) {
-        return ref1.equals(ref2)
-      } else*/
+      val tpe2 = ref2.getClass.getCanonicalName
         throw InternalRuntimeException(s"Unable to compare '$tpe1' and '$tpe2'.")
   }
 
