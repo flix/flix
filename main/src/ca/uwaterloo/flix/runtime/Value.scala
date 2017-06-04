@@ -16,6 +16,7 @@
 
 package ca.uwaterloo.flix.runtime
 
+import ca.uwaterloo.flix.api.TagInterface
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Pattern
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.util.InternalRuntimeException
@@ -287,7 +288,7 @@ object Value {
   /**
     * Flix internal representation of tags.
     */
-  final class Tag private[Value](val tag: java.lang.String, val value: AnyRef) {
+  final class Tag(val tag: java.lang.String, val value: AnyRef) {
     override def equals(other: Any): scala.Boolean = other match {
       case that: Value.Tag => this.tag == that.tag && equal(this.value, that.value)
       case _ => false
@@ -416,7 +417,7 @@ object Value {
     case _ =>
       val tpe1 = ref1.getClass.getCanonicalName
       val tpe2 = ref2.getClass.getCanonicalName
-      throw InternalRuntimeException(s"Unable to compare '$tpe1' and '$tpe2'.")
+        throw InternalRuntimeException(s"Unable to compare '$tpe1' and '$tpe2'.")
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -473,6 +474,7 @@ object Value {
     case (Pattern.BigInt(lit, _), o: java.math.BigInteger) => lit.equals(o)
     case (Pattern.Str(lit, _), o: java.lang.String) => lit.equals(o)
     case (Pattern.Tag(enum, tag, p, _, _), o: Value.Tag) => if (tag.equals(o.tag)) unify(p, o.value, env0) else false
+    case (Pattern.Tag(enum, tag, p, _, _), o: TagInterface) => if(tag == o.getTag) unify(p, o.getBoxedValue, env0) else false
     case (Pattern.Tuple(elms, _, _), o: Array[AnyRef]) =>
       if (elms.length != o.length)
         return false
