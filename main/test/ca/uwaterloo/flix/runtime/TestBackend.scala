@@ -1217,7 +1217,7 @@ class TestBackend extends FunSuite {
     t.runTest(Value.mkTag("Val", Value.mkInt32(111)), "g")
   }
 
-  test("Expression.Hook - Hook.Safe.14") {
+  ignore("Expression.Hook - Hook.Safe.14") {
     import HookSafeHelpers._
     val input = """def g: (Int, Int, Str, Int, Bool, ()) = f(24, 53, "qwertyuiop", 9978, false, ())"""
     val t = new Tester(input, solve = false)
@@ -1506,7 +1506,6 @@ class TestBackend extends FunSuite {
       """.stripMargin
     val t = new Tester(input, solve = false)
 
-
     val flix = t.flix
     val tagTpe = ??? // TODO
     val tpe = flix.mkFunctionType(Array(flix.mkInt32Type), flix.mkEnumType("Val", ???))
@@ -1516,17 +1515,10 @@ class TestBackend extends FunSuite {
     t.runTest(Value.mkTag("Val", Value.mkInt32(111)), "g")
   }
 
-
-
-  test("Expression.Hook - Hook.Unsafe.14") {
+  ignore("Expression.Hook - Hook.Unsafe.14") {
     import HookUnsafeHelpers._
     val input = """def g: (Int, Int, Str, Int, Bool, ()) = f(24, 53, "qwertyuiop", 9978, false, ())"""
     val t = new Tester(input, solve = false)
-
-
-    val inp = """def f: (Int, Int, Str, Int, Bool, ())= (1, 1, "ramin", 1, true, ())"""
-    val ttt = new Tester(inp)
-    ttt.runTest(Array(Value.mkBigInt(1), Value.mkBigInt(1), Value.mkStr("ramin"), Value.mkBigInt(1), Value.mkBool(true), Value.Unit), "f")
 
     val flix = t.flix
     val tpes = Array(flix.mkInt32Type, flix.mkInt32Type, flix.mkStrType, flix.mkInt32Type, flix.mkBoolType, flix.mkUnitType)

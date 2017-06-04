@@ -546,6 +546,7 @@ object CodegenHelper {
     case Expression.Reference(exp, tpe, loc) => ??? // TODO
     case Expression.Dereference(exp, tpe, loc) => ??? // TODO
     case Expression.Assignment(exp1, exp2, tpe, loc) => ??? // TODO
+    case Expression.LetRec(sym, exp1, exp2, tpe, loc) => ??? // TODO
     case Expression.Existential(params, exp, loc) => findEnumCases(exp)
     case Expression.Universal(params, exp, loc) => findEnumCases(exp)
     case Expression.NativeConstructor(constructor, args, tpe, loc) => args.flatMap(findEnumCases)
