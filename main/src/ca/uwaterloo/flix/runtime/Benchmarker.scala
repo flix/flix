@@ -21,12 +21,12 @@ object Benchmarker {
   /**
     * The number of times to evaluate the benchmark before measurements.
     */
-  val WarmupRounds = 25
+  val WarmupRounds = 100
 
   /**
     * The number of times to evaluate the benchmark to compute the average.
     */
-  val ActualRounds = 10
+  val ActualRounds = 50
 
   /**
     * Evaluates all benchmarks in the given `model`.
@@ -67,12 +67,12 @@ object Benchmarker {
        * Actual Rounds.
        */
       Console.println(s"    Actual Rounds: $ActualRounds")
-      Console.println(s"      Name:                  Time (ms)          Ops (ops/s)")
+      Console.println(s"      Name:                Median (ms)")
       for ((sym, defn) <- benchmarks.toList.sortBy(_._1.loc)) {
-        val elapsedTimeInNanoSeconds = run(defn, ActualRounds).toDouble
-        val meanTimeInMiliSeconds = elapsedTimeInNanoSeconds / (1000 * 1000 * ActualRounds.toDouble)
-        val operationsPerSecond = 1000.0 / meanTimeInMiliSeconds
-        Console.println(f"      ${sym.name} $meanTimeInMiliSeconds%20.1f $operationsPerSecond%20.1f")
+        val timings = run(defn, ActualRounds)
+        val medianInMiliSeconds = median(timings).toDouble / (1000.0 * 1000.0)
+        Console.println(f"      ${sym.name} $medianInMiliSeconds%20.1f")
+        sleepAndGC()
       }
 
       Console.println()
@@ -80,17 +80,46 @@ object Benchmarker {
   }
 
   /**
-    * Returns the elapsed time in nanoseconds of evaluating `f` over `n` rounds.
+    * Returns the timings of evaluating `f` over `n` rounds.
     */
-  @inline
-  private def run(f: () => AnyRef, n: Int): Long = {
-    val t = System.nanoTime()
+  private def run(f: () => AnyRef, n: Int): List[Long] = {
+    var result = List.empty[Long]
     var i = 0
     while (i < n) {
+      val t = System.nanoTime()
       f()
+      val e = System.nanoTime() - t
       i = i + 1
+      result = e :: result
     }
-    System.nanoTime() - t
+    result
+  }
+
+  /**
+    * Returns the median of the given list of longs.
+    */
+  private def median(xs: List[Long]): Long = {
+    if (xs.isEmpty) throw new IllegalArgumentException("Empty list.")
+    if (xs.length == 1) return xs.head
+
+    val l = xs.sorted
+    val n = xs.length
+    if (n % 2 == 0) {
+      val index = n / 2
+      l(index)
+    } else {
+      val index = n / 2
+      (l(index) + l(index + 1)) / 2
+    }
+  }
+
+  /**
+    * Sleeps for a little while and tries to run the garbage collector.
+    */
+  private def sleepAndGC(): Unit = {
+    Thread.sleep(500)
+    System.gc()
+    Thread.sleep(500)
   }
 
 }
