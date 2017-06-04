@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2017 Ramin Zarifi
+ * Copyright 2017 Ramin Zarifi
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,16 @@
 package ca.uwaterloo.flix.api;
 
 /**
- * All Enum interfaces extend this interface. Methods `getTag()` and `getBoxedValue()` will be implemented
- * by generated classes for each enum case
+ * A common super-type for all generated Java interfaces and classes that represent Flix enums.
  */
 public interface TagInterface {
+    /**
+     * Returns the tag of `this` tagged value.
+     */
     String getTag();
+
+    /**
+     * Returns the value of `this` tagged value.
+     */
     Object getBoxedValue();
 }

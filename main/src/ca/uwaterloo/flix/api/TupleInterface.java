@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2017 Ramin Zarifi
+ * Copyright 2017 Ramin Zarifi
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,12 @@
 package ca.uwaterloo.flix.api;
 
 /**
- * All tuples extend this interface. Method `getBoxedValue()` returns an array of all fields of the tuple and it will
- * box them if they are represented using primitives.
+ * A common super-type for all generated Java classes that represent tuples.
  */
 public interface TupleInterface {
+
+    /**
+     * Returns an array of the elements of `this` tuple.
+     */
     Object[] getBoxedValue();
 }
