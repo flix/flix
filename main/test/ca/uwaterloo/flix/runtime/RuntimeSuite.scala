@@ -21,8 +21,7 @@ import org.scalatest.{ParallelTestExecution, Suites}
 class RuntimeSuite extends Suites(
   new TestBackend,
   new TestDeltaSolver,
-  new TestSolver,
-  new TestValue
+  new TestSolver
 ) with ParallelTestExecution {
   /* left empty */
 }
