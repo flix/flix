@@ -26,8 +26,9 @@ import ca.uwaterloo.flix.runtime.quickchecker.QuickChecker
 import ca.uwaterloo.flix.runtime.verifier.Verifier
 import ca.uwaterloo.flix.runtime.{DeltaSolver, Model, Solver, Value}
 import ca.uwaterloo.flix.util.{LocalResource, Options, Validation}
+
+import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
-import scala.collection.{immutable, mutable}
 
 /**
   * Main programmatic interface for Flix.
@@ -230,13 +231,6 @@ class Flix {
     */
   def deltaSolve(path: Path): Validation[Unit, CompilationError] = compile().map {
     case root => DeltaSolver.solve(root, options, path)
-  }
-
-  /**
-    * Returns statistics about the abstract syntax tree.
-    */
-  def astStats(): Validation[AstStats, CompilationError] = compile() map {
-    case root => AstStats.statsOf(root)
   }
 
   /**
