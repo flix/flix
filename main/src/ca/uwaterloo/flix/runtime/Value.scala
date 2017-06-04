@@ -288,7 +288,7 @@ object Value {
   /**
     * Flix internal representation of tags.
     */
-  final class Tag(val tag: java.lang.String, val value: AnyRef) {
+  final class Tag private[Value](val tag: java.lang.String, val value: AnyRef) {
     override def equals(other: Any): scala.Boolean = other match {
       case that: Value.Tag => this.tag == that.tag && equal(this.value, that.value)
       case _ => false
