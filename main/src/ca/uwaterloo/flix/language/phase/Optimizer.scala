@@ -29,7 +29,7 @@ import ca.uwaterloo.flix.util.Validation._
   * Specifically,
   *
   * - Elimination of run-time tag checks for Unit.
-  * - Elimination of run-time tag checks of singleton-valued enums.
+  * - Elimination of run-time tag checks of single-valued enums.
   * - Elimination of dead branches (e.g. if (true) e1 else e2).
   * - Copy propagation (e.g. let z = w; let y = z; let x = y; x -> w)
   * - Redundant branching (e.g. if(c1, if(c2, e2, e3), e3) -> if (c1 && c2, e2, e3))
@@ -42,11 +42,11 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
   def run(root: SimplifiedAst.Root)(implicit flix: Flix): Validation[SimplifiedAst.Root, CompilationError] = {
 
     /**
-      * Returns `true` if and only if `enum` is a singleton-valued enum.
+      * Returns `true` if and only if `enum` is a single-valued enum.
       */
     def isSingleCaseEnum(enum: Symbol.EnumSym): Boolean = root.enums.get(enum) match {
       case None => false
-      case Some(defn) => defn.cases.size <= 1
+      case Some(defn) => defn.cases.size == 1
     }
 
     def toExp(b0: Boolean): Expression = if (b0) Expression.True else Expression.False
@@ -56,22 +56,11 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         val e1 = optimize(exp1)
         val e2 = optimize(exp2)
         (op, e1, e2) match {
-          // Elimination of run-time tag checks of singleton-valued enums.
-          case (BinaryOperator.Equal, Expression.Tag(sym, tag, exp, tp, lc), _) =>
-            if (isSingleCaseEnum(sym) && exp == Expression.Unit) Expression.True
-            else Expression.Binary(op, e1, e2, tpe, loc)
-          case (BinaryOperator.Equal, _, Expression.Tag(sym, tag, exp, tp, lc)) =>
-            if (isSingleCaseEnum(sym) && exp == Expression.Unit) Expression.True
-            else Expression.Binary(op, e1, e2, tpe, loc)
           // Optimizations for Bool.
-          case (BinaryOperator.Equal | BinaryOperator.LogicalAnd, Expression.True, exp) => exp
-          case (BinaryOperator.Equal | BinaryOperator.LogicalAnd, exp, Expression.True) => exp
-          case (BinaryOperator.Equal, Expression.False, exp) => Expression.Unary(UnaryOperator.LogicalNot, exp, tpe, loc)
-          case (BinaryOperator.Equal, exp, Expression.False) => Expression.Unary(UnaryOperator.LogicalNot, exp, tpe, loc)
-          case (BinaryOperator.NotEqual, Expression.True, exp) => Expression.Unary(UnaryOperator.LogicalNot, exp, tpe, loc)
-          case (BinaryOperator.NotEqual, exp, Expression.True) => Expression.Unary(UnaryOperator.LogicalNot, exp, tpe, loc)
-          case (BinaryOperator.NotEqual | BinaryOperator.LogicalOr, Expression.False, exp) => exp
-          case (BinaryOperator.NotEqual | BinaryOperator.LogicalOr, exp, Expression.False) => exp
+          case (BinaryOperator.LogicalAnd, Expression.True, exp) => exp
+          case (BinaryOperator.LogicalAnd, exp, Expression.True) => exp
+          case (BinaryOperator.LogicalOr, Expression.False, exp) => exp
+          case (BinaryOperator.LogicalOr, exp, Expression.False) => exp
           case (BinaryOperator.LogicalAnd, Expression.False, _) | (BinaryOperator.LogicalAnd, _, Expression.False) => Expression.False
           case (BinaryOperator.LogicalOr, _, Expression.True) | (BinaryOperator.LogicalOr, Expression.True, _) => Expression.True
           // Optimizations for Char.
@@ -121,7 +110,7 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
               case BinaryOperator.Plus => Expression.Int8((lit1 + lit2).toByte)
               case BinaryOperator.Minus => Expression.Int8((lit1 - lit2).toByte)
               case BinaryOperator.Times => Expression.Int8((lit1 * lit2).toByte)
-              case BinaryOperator.Divide => Expression.Int8((lit1 / lit2).toByte)
+              case BinaryOperator.Divide => if (lit2 == 0.toByte) Expression.Binary(op, e1, e2, tpe, loc) else Expression.Int8((lit1 / lit2).toByte)
               case BinaryOperator.Exponentiate => Expression.Int8(scala.math.pow(lit1, lit2).toByte)
               case BinaryOperator.Less => toExp(lit1 < lit2)
               case BinaryOperator.LessEqual => toExp(lit1 <= lit2)
@@ -137,7 +126,7 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
               case BinaryOperator.Plus => Expression.Int16((lit1 + lit2).toShort)
               case BinaryOperator.Minus => Expression.Int16((lit1 - lit2).toShort)
               case BinaryOperator.Times => Expression.Int16((lit1 * lit2).toShort)
-              case BinaryOperator.Divide => Expression.Int16((lit1 / lit2).toShort)
+              case BinaryOperator.Divide => if (lit2 == 0.toShort) Expression.Binary(op, e1, e2, tpe, loc) else Expression.Int16((lit1 / lit2).toShort)
               case BinaryOperator.Exponentiate => Expression.Int16(scala.math.pow(lit1, lit2).toShort)
               case BinaryOperator.Less => toExp(lit1 < lit2)
               case BinaryOperator.LessEqual => toExp(lit1 <= lit2)
@@ -153,7 +142,7 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
               case BinaryOperator.Plus => Expression.Int32(lit1 + lit2)
               case BinaryOperator.Minus => Expression.Int32(lit1 - lit2)
               case BinaryOperator.Times => Expression.Int32(lit1 * lit2)
-              case BinaryOperator.Divide => Expression.Int32(lit1 / lit2)
+              case BinaryOperator.Divide => if (lit2 == 0) Expression.Binary(op, e1, e2, tpe, loc) else Expression.Int32(lit1 / lit2)
               case BinaryOperator.Exponentiate => Expression.Int32(scala.math.pow(lit1, lit2).toInt)
               case BinaryOperator.Less => toExp(lit1 < lit2)
               case BinaryOperator.LessEqual => toExp(lit1 <= lit2)
@@ -169,7 +158,7 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
               case BinaryOperator.Plus => Expression.Int64(lit1 + lit2)
               case BinaryOperator.Minus => Expression.Int64(lit1 - lit2)
               case BinaryOperator.Times => Expression.Int64(lit1 * lit2)
-              case BinaryOperator.Divide => Expression.Int64(lit1 / lit2)
+              case BinaryOperator.Divide => if (lit2 == 0.toLong) Expression.Binary(op, e1, e2, tpe, loc) else Expression.Int64(lit1 / lit2)
               case BinaryOperator.Exponentiate => Expression.Int64(scala.math.pow(lit1, lit2).toLong)
               case BinaryOperator.Less => toExp(lit1 < lit2)
               case BinaryOperator.LessEqual => toExp(lit1 <= lit2)
@@ -185,7 +174,7 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
               case BinaryOperator.Plus => Expression.BigInt(lit1.add(lit2))
               case BinaryOperator.Minus => Expression.BigInt(lit1.subtract(lit2))
               case BinaryOperator.Times => Expression.BigInt(lit1.multiply(lit2))
-              case BinaryOperator.Divide => Expression.BigInt(lit1.divide(lit2))
+              case BinaryOperator.Divide => if (lit2 == java.math.BigInteger.ZERO) Expression.Binary(op, e1, e2, tpe, loc) else Expression.BigInt(lit1.divide(lit2))
               //case BinaryOperator.Exponentiate => Expression.BigInt(...) Cannot exponentiate BinInts
               case BinaryOperator.Less => toExp(lit1.compareTo(lit2) == -1)
               case BinaryOperator.LessEqual => toExp(lit1.compareTo(lit2) <= 0)
@@ -257,11 +246,18 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         }
       case Expression.Let(sym, exp1, exp2, tpe, loc) => Expression.Let(sym, optimize(exp1), optimize(exp2), tpe, loc)
       case Expression.LetRec(sym, exp1, exp2, tpe, loc) => Expression.LetRec(sym, optimize(exp1), optimize(exp2), tpe, loc)
-      // TODO: Elimination of run-time tag checks of singleton-valued enums.
-      case Expression.Is(sym, tag, exp, loc) => Expression.Is(sym, tag, optimize(exp), loc)
-      // TODO: Remove the tag and untag on a single case enum.
-      case Expression.Tag(sym, tag, exp, tpe, loc) => Expression.Tag(sym, tag, optimize(exp), tpe, loc)
-      case Expression.Untag(sym, tag, exp, tpe, loc) => Expression.Untag(sym, tag, optimize(exp), tpe, loc)
+      case Expression.Is(sym, tag, exp, loc) =>
+        // Elimination of run-time tag checks of single-valued enums.
+        val e = optimize(exp)
+        if (isSingleCaseEnum(sym)) Expression.True else Expression.Is(sym, tag, e, loc)
+      case Expression.Tag(sym, tag, exp, tpe, loc) =>
+        // Remove the tag on a single-valued enum.
+        val e = optimize(exp)
+        if (isSingleCaseEnum(sym)) e else Expression.Tag(sym, tag, e, tpe, loc)
+      case Expression.Untag(sym, tag, exp, tpe, loc) =>
+        // Remove the untag on a single-valued enum.
+        val e = optimize(exp)
+        if (isSingleCaseEnum(sym)) e else Expression.Untag(sym, tag, e, tpe, loc)
       case Expression.Index(base, offset, tpe, loc) => Expression.Index(optimize(base), offset, tpe, loc)
       case Expression.Tuple(elms, tpe, loc) => Expression.Tuple(optimizeExps(elms), tpe, loc)
       case Expression.Existential(fparam, exp, loc) => Expression.Existential(fparam, optimize(exp), loc)
@@ -280,7 +276,7 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     val t = System.nanoTime()
 
     // Optimize expressions in the definitions.
-    val optDefinitions = root.definitions.mapValues(defn => defn.copy(exp = optimize(defn.exp)))
+    val optDefinitions = root.definitions map {case (sym, defn) => (sym, defn.copy(exp = optimize(defn.exp)))}
 
     // Calculate the elapsed time.
     val e = System.nanoTime() - t
