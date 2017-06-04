@@ -142,26 +142,6 @@ class Flix {
   def getReachableRoots: Set[Symbol.DefnSym] = reachableRoots.toSet
 
   /**
-    * Calls the invokable with the given name `name`, passing the given `args.`
-    *
-    * @param fqn  the fully qualified name for the invokable.
-    * @param args the array of arguments passed to the invokable.
-    */
-  def invoke(fqn: String, args: Array[IValue]): IValue = {
-    if (fqn == null)
-      throw new IllegalArgumentException("'name' must be non-null.")
-    if (args == null)
-      throw new IllegalArgumentException("'args' must be non-null.")
-
-    val sym = Symbol.mkDefnSym(fqn)
-    hooks.get(sym) match {
-      case None => throw new NoSuchElementException(s"Hook '$fqn' does not exist.")
-      case Some(_: Hook.Unsafe) => throw new RuntimeException(s"Trying to invoke a safe hook but '$fqn' is an unsafe hook.")
-      case Some(hook: Hook.Safe) => hook.inv(args)
-    }
-  }
-
-  /**
     * Calls the unsafe invokable with the given name `name`, passing the given `args.`
     *
     * @param fqn  the fully qualified name for the invokable.
@@ -176,7 +156,6 @@ class Flix {
     val sym = Symbol.mkDefnSym(fqn)
     hooks.get(sym) match {
       case None => throw new NoSuchElementException(s"Hook '$fqn' does not exist.")
-      case Some(_: Hook.Safe) => throw new RuntimeException(s"Trying to invoke an unsafe hook but '$fqn' is a safe hook.")
       case Some(hook: Hook.Unsafe) => hook.inv(args)
     }
   }

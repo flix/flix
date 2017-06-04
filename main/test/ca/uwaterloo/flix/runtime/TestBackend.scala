@@ -24,32 +24,6 @@ import scala.language.implicitConversions
 
 class TestBackend extends FunSuite {
 
-  private object HookSafeHelpers {
-    case class MyObject(x: Int)
-
-    implicit def f0h(f: Function0[IValue]): Invokable = new Invokable {
-      override def apply(args: Array[IValue]): IValue = f()
-    }
-    implicit def f1h(f: Function1[IValue,IValue]): Invokable = new Invokable {
-      override def apply(args: Array[IValue]): IValue = f(args(0))
-    }
-    implicit def f2h(f: Function2[IValue,IValue,IValue]): Invokable = new Invokable {
-      override def apply(args: Array[IValue]): IValue = f(args(0), args(1))
-    }
-    implicit def f3h(f: Function3[IValue,IValue,IValue,IValue]): Invokable = new Invokable {
-      override def apply(args: Array[IValue]): IValue = f(args(0), args(1), args(2))
-    }
-    implicit def f4h(f: Function4[IValue,IValue,IValue,IValue,IValue]): Invokable = new Invokable {
-      override def apply(args: Array[IValue]): IValue = f(args(0), args(1), args(2), args(3))
-    }
-    implicit def f5h(f: Function5[IValue,IValue,IValue,IValue,IValue,IValue]): Invokable = new Invokable {
-      override def apply(args: Array[IValue]): IValue = f(args(0), args(1), args(2), args(3), args(4))
-    }
-    implicit def f6h(f: Function6[IValue,IValue,IValue,IValue,IValue,IValue,IValue]): Invokable = new Invokable {
-      override def apply(args: Array[IValue]): IValue = f(args(0), args(1), args(2), args(3), args(4), args(5))
-    }
-  }
-
   private object HookUnsafeHelpers {
     type JBool = java.lang.Boolean
     type JChar = java.lang.Character

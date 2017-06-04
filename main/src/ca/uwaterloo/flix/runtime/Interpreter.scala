@@ -71,9 +71,6 @@ object Interpreter {
     case Expression.ApplyHook(hook, args0, _, _) =>
       val args = evalArgs(args0, root, env0)
       hook match {
-        case Ast.Hook.Safe(name, inv, _) =>
-          val wargs: Array[IValue] = args.map(new WrappedValue(_)).toArray
-          inv(wargs).getUnsafeRef
         case Ast.Hook.Unsafe(name, inv, _) =>
           inv(args.toArray)
       }

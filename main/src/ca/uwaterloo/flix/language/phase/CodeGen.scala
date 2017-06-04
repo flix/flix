@@ -436,7 +436,6 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
 
     case Expression.ApplyHook(hook, args, tpe, _) =>
       val (isSafe, name, elmsClass) = hook match {
-        case _: Hook.Safe => (true, "invoke", classOf[IValue])
         case _: Hook.Unsafe => (false, "invokeUnsafe", Constants.objectClass)
       }
       val clazz = Constants.flixClass
@@ -458,17 +457,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
         visitor.visitInsn(DUP)
         compileInt(visitor)(i)
 
-        // Load the actual element. If we're calling a safe hook, we need to wrap the value.
-        if (isSafe) {
-          val clazz2 = classOf[WrappedValue]
-          val ctor = clazz2.getConstructors.head
-          visitor.visitTypeInsn(NEW, asm.Type.getInternalName(clazz2))
-          visitor.visitInsn(DUP)
-          compileBoxedExpr(prefix, functions, declarations, interfaces, enums, visitor, entryPoint)(e)
-          visitor.visitMethodInsn(INVOKESPECIAL, asm.Type.getInternalName(clazz2), "<init>", asm.Type.getConstructorDescriptor(ctor), false)
-        } else {
-          compileBoxedExpr(prefix, functions, declarations, interfaces, enums, visitor, entryPoint)(e)
-        }
+        compileBoxedExpr(prefix, functions, declarations, interfaces, enums, visitor, entryPoint)(e)
         visitor.visitInsn(AASTORE)
       }
 
