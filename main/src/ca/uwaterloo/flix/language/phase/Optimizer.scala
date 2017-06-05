@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.{BinaryOperator, SimplifiedAst, Symbol, UnaryOperator}
+import ca.uwaterloo.flix.language.ast.{BinaryOperator, SimplifiedAst, Symbol, Type, UnaryOperator, SourceLocation}
 import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expression
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
@@ -49,7 +49,20 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Some(defn) => defn.cases.size == 1
     }
 
+    def mapType(t0: Type): Type = t0 match {
+      case Type.Enum(sym, kind) =>
+        root.enums.get(sym) match {
+          case Some(defn) => if (defn.cases.size == 1) defn.cases.values.iterator.next().tpe else t0
+          case None => t0
+        }
+      case _ => t0
+    }
+
     def toExp(b0: Boolean): Expression = if (b0) Expression.True else Expression.False
+
+    def not(e0: Expression, loc: SourceLocation): Expression = Expression.Unary(UnaryOperator.LogicalNot, e0, Type.Bool, loc)
+
+    def and(e1: Expression, e2: Expression, loc: SourceLocation): Expression = Expression.Binary(BinaryOperator.LogicalAnd, e1, e2, Type.Bool, loc)
 
     def optimizeBinaryExpression(e0: Expression.Binary): Expression = e0 match {
       case Expression.Binary(op, exp1, exp2, tpe, loc) =>
@@ -234,22 +247,36 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.Unary(op, exp, tpe, loc) => Expression.Unary(op, optimize(exp), tpe, loc)
       case Expression.Binary(op, exp1, exp2, tpe, loc) => optimizeBinaryExpression(e0.asInstanceOf[Expression.Binary])
       case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
-        // Elimination of dead branches (e.g. if (true) e1 else e2).
         val e1 = optimize(exp1)
         e1 match {
+          // Elimination of dead branches (e.g. if (true) e1 else e2).
           case Expression.True => optimize(exp2)
           case Expression.False => optimize(exp3)
           case _ =>
+            // Elimination of redundant branching (e.g. if(c1, if(c2, e2, e3), e3) -> if (c1 && c2, e2, e3))
             val e2 = optimize(exp2)
             val e3 = optimize(exp3)
-            Expression.IfThenElse(e1, e2, e3, tpe, loc)
+            (e2, e3) match {
+              case (Expression.IfThenElse(se1, se2, se3, _, _), _) =>
+                if (se3 == e3) Expression.IfThenElse(and(e1, se1, loc), se2, se3, tpe, loc)
+                else if (se2 == e3) Expression.IfThenElse(and(e1, not(se1, loc), loc), se3, se2, tpe, loc)
+                else Expression.IfThenElse(e1, e2, e3, tpe, loc)
+              case (_, Expression.IfThenElse(se1, se2, se3, _, _)) =>
+                if (se3 == e2) Expression.IfThenElse(and(not(e1, loc), se1, loc), se2, se3, tpe, loc)
+                else if (se2 == e2) Expression.IfThenElse(and(not(e1, loc), not(se1, loc), loc), se3, se2, tpe, loc)
+                else Expression.IfThenElse(e1, e2, e3, tpe, loc)
+              case _ => Expression.IfThenElse(e1, e2, e3, tpe, loc)
+            }
         }
       case Expression.Let(sym, exp1, exp2, tpe, loc) => Expression.Let(sym, optimize(exp1), optimize(exp2), tpe, loc)
       case Expression.LetRec(sym, exp1, exp2, tpe, loc) => Expression.LetRec(sym, optimize(exp1), optimize(exp2), tpe, loc)
       case Expression.Is(sym, tag, exp, loc) =>
-        // Elimination of run-time tag checks of single-valued enums.
         val e = optimize(exp)
-        if (isSingleCaseEnum(sym)) Expression.True else Expression.Is(sym, tag, e, loc)
+        // Elimination of run-time tag checks for Unit.
+        if (e == Expression.Unit) Expression.False
+        // Elimination of run-time tag checks of single-valued enums.
+        else if (isSingleCaseEnum(sym)) Expression.True
+        else Expression.Is(sym, tag, e, loc)
       case Expression.Tag(sym, tag, exp, tpe, loc) =>
         // Remove the tag on a single-valued enum.
         val e = optimize(exp)
