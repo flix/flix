@@ -56,7 +56,7 @@ class LatticeImpl[ValueType <: AnyRef](lattice: ExecutableAst.Table.Lattice, roo
   /**
     * Returns `true` if `x` is equal to `y` according to the partial order of the lattice.
     */
-  def equal(x: ValueType, y: ValueType): Boolean = Value.equal(x, y)
+  def equal(x: ValueType, y: ValueType): Boolean = x.equals(y)
 
   /**
     * Returns `true` if `x` is less than or equal to `y` according to the partial order of the lattice.
@@ -68,7 +68,7 @@ class LatticeImpl[ValueType <: AnyRef](lattice: ExecutableAst.Table.Lattice, roo
     // evaluate the partial order function passing the arguments `x` and `y`.
     val args = Array(x, y).asInstanceOf[Array[AnyRef]]
     val result = Leq.invoke(args)
-    Value.cast2bool(result)
+    return result.asInstanceOf[java.lang.Boolean].booleanValue()
   }
 
   /**

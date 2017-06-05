@@ -524,7 +524,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
       val result = filter.target.invoke(args)
 
       // Return the result.
-      return Value.cast2bool(result)
+      return result.asInstanceOf[java.lang.Boolean].booleanValue()
   }
 
   /**
