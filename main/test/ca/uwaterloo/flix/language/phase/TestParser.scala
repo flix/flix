@@ -996,6 +996,7 @@ class TestParser extends FunSuite with TestUtils {
     val input =
       """def f: Int = match 1 with {
         |  case 2 => 3
+        |  case _ => 3
         |}
       """.stripMargin
     run(input)
@@ -1006,6 +1007,7 @@ class TestParser extends FunSuite with TestUtils {
       """def f: Int = match 1 with {
         |  case 2 => 3
         |  case 4 => 5
+        |  case _ => 5
         |}
       """.stripMargin
     run(input)
@@ -1016,8 +1018,10 @@ class TestParser extends FunSuite with TestUtils {
       """def f: Int = match 1 with {
         |  case 2 => match 3 with {
         |    case 4 => 5
+        |    case _ => 5
         |  }
         |  case 6 => 7
+        |  case _ => 7
         |}
       """.stripMargin
     run(input)
@@ -1028,8 +1032,10 @@ class TestParser extends FunSuite with TestUtils {
       """def f: Int = match
         |  match 1 with {
         |    case 2 => 3
+        |    case _ => 3
         |  } with {
         |    case 4 => 5
+        |    case _ => 5
         |}
       """.stripMargin
     run(input)
@@ -1575,6 +1581,7 @@ class TestParser extends FunSuite with TestUtils {
         |  case 'a' => 1
         |  case 'b' => 2
         |  case 'c' => 3
+        |  case _ => 4
         |}
       """.stripMargin
     run(input)
@@ -1586,6 +1593,7 @@ class TestParser extends FunSuite with TestUtils {
         |  case 1.0f32 => 1
         |  case 2.0f32 => 2
         |  case 3.0f32 => 3
+        |  case _ => 4
         |}
       """.stripMargin
     run(input)
@@ -1597,6 +1605,7 @@ class TestParser extends FunSuite with TestUtils {
         |  case 1.0f64 => 1
         |  case 2.0f64 => 2
         |  case 3.0f64 => 3
+        |  case _ => 4
         |}
       """.stripMargin
     run(input)
@@ -1608,6 +1617,7 @@ class TestParser extends FunSuite with TestUtils {
         |  case 1i8 => 1
         |  case 2i8 => 2
         |  case 3i8 => 3
+        |  case _ => 4
         |}
       """.stripMargin
     run(input)
@@ -1619,6 +1629,7 @@ class TestParser extends FunSuite with TestUtils {
         |  case 1i16 => 1
         |  case 2i16 => 2
         |  case 3i16 => 3
+        |  case _ => 4
         |}
       """.stripMargin
     run(input)
@@ -1630,6 +1641,7 @@ class TestParser extends FunSuite with TestUtils {
         |  case 1 => 1
         |  case 2 => 2
         |  case 3 => 3
+        |  case _ => 4
         |}
       """.stripMargin
     run(input)
@@ -1641,6 +1653,7 @@ class TestParser extends FunSuite with TestUtils {
         |  case 1i64 => 1
         |  case 2i64 => 2
         |  case 3i64 => 3
+        |  case _ => 4
         |}
       """.stripMargin
     run(input)
@@ -1652,6 +1665,7 @@ class TestParser extends FunSuite with TestUtils {
         |  case "foo" => 1
         |  case "bar" => 2
         |  case "baz" => 3
+        |  case _ => 4
         |}
       """.stripMargin
     run(input)
@@ -1731,6 +1745,7 @@ class TestParser extends FunSuite with TestUtils {
     val input =
       """def f(xs: List[Int]): Int = match xs with {
         |  case Nil => 0
+        |  case _ => 1
         |}
       """.stripMargin
     run(input, core = false)
@@ -1740,6 +1755,7 @@ class TestParser extends FunSuite with TestUtils {
     val input =
       """def f(xs: List[Int]): Int = match xs with {
         |  case 1 :: Nil => 0
+        |  case _ => 1
         |}
       """.stripMargin
     run(input, core = false)
@@ -1749,6 +1765,7 @@ class TestParser extends FunSuite with TestUtils {
     val input =
       """def f(xs: List[Int]): Int = match xs with {
         |  case 1 :: 2 :: Nil => 0
+        |  case _ => 1
         |}
       """.stripMargin
     run(input, core = false)
@@ -1758,6 +1775,7 @@ class TestParser extends FunSuite with TestUtils {
     val input =
       """def f(xs: List[Int]): Int = match xs with {
         |  case 1 :: 2 :: 3 :: Nil => 0
+        |  case _ => 1
         |}
       """.stripMargin
     run(input, core = false)
@@ -1767,6 +1785,7 @@ class TestParser extends FunSuite with TestUtils {
     val input =
       """def f(xs: List[Int]): Int = match xs with {
         |  case x :: Nil => x
+        |  case _ => 1
         |}
       """.stripMargin
     run(input, core = false)
@@ -1776,6 +1795,7 @@ class TestParser extends FunSuite with TestUtils {
     val input =
       """def f(xs: List[Int]): Int = match xs with {
         |  case x :: y :: Nil => x + y
+        |  case _ => 1
         |}
       """.stripMargin
     run(input, core = false)

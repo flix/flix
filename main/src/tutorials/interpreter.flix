@@ -247,6 +247,7 @@ def evalInst(instructions: List[Inst], stack: List[Int]): Int = match (instructi
             evalInst(is1, st)
         else
             evalInst(is2, st)
+    case (Nil, Nil) => ??? // shouldn't happen
 }
 
 //

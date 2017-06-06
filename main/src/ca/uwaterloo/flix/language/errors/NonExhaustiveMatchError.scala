@@ -23,7 +23,6 @@ import ca.uwaterloo.flix.util.vt.VirtualTerminal
 
 /**
   * An error raised to indicate a non exhaustive pattern match
-  *
   */
 case class NonExhaustiveMatchError(rules: List[TypedAst.MatchRule], pattern: String, loc: SourceLocation) extends CompilationError {
   val kind = "Exhaustive Match Error"
@@ -38,7 +37,7 @@ case class NonExhaustiveMatchError(rules: List[TypedAst.MatchRule], pattern: Str
     vt << "Matched by the rules:" << NewLine
     rules.foreach(x => vt << Code(x.pat.loc, ""))
     vt << "is not exhaustive, consider the pattern: " << NewLine
-    vt << Red(pattern)
+    vt << Indent << Red(pattern)
     vt << NewLine
   }
 }

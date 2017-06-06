@@ -598,6 +598,7 @@ class TestTyper extends FunSuite with TestUtils {
         |  case 1 => true
         |  case 2 => true
         |  case 3 => true
+        |  case _ => true
         |}
       """.stripMargin
     val result = new Flix().addStr(input).compile()
