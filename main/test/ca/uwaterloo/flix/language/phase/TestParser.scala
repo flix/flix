@@ -1736,6 +1736,7 @@ class TestParser extends FunSuite with TestUtils {
       """def f(x: (Bool, Char, Int)): Int = match x with {
         |  case (true, 'a', 42) => 1
         |  case (false, 'b', 21) => 2
+        |  case _ => 3
         |}
       """.stripMargin
     run(input)
@@ -1840,6 +1841,7 @@ class TestParser extends FunSuite with TestUtils {
         |  case Nil => 0
         |  case (c, i) :: Nil => i
         |  case (c1, i1) :: (c2, i2) :: Nil => i1 + i2
+        |  case _ => 4
         |}
       """.stripMargin
     run(input, core = false)
@@ -1851,6 +1853,7 @@ class TestParser extends FunSuite with TestUtils {
         |  case Nil => 0
         |  case (c, 42) :: Nil => 1
         |  case ('a', i1) :: (c2, 21) :: Nil => 2
+        |  case _ => 3
         |}
       """.stripMargin
     run(input, core = false)
@@ -1861,6 +1864,7 @@ class TestParser extends FunSuite with TestUtils {
       """def f(xs: List[List[Int]]): Int = match xs with {
         |  case Nil => 0
         |  case (x :: Nil) :: (y :: Nil) :: Nil => x + y
+        |  case _ => 3
         |}
       """.stripMargin
     run(input, core = false)
@@ -1871,6 +1875,7 @@ class TestParser extends FunSuite with TestUtils {
       """def f(xs: List[List[Int]]): Int = match xs with {
         |  case Nil => 0
         |  case (x :: y :: Nil) :: (z :: w :: Nil) :: Nil => x + y + z + w
+        |  case _ => 3
         |}
       """.stripMargin
     run(input, core = false)
@@ -1881,6 +1886,7 @@ class TestParser extends FunSuite with TestUtils {
       """def f(xs: List[List[Int]]): Int = match xs with {
         |  case Nil => 0
         |  case (x :: xs) :: (y :: ys) :: (z :: zs) :: Nil => x + y + z
+        |  case _ => 3
         |}
       """.stripMargin
     run(input, core = false)

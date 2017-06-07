@@ -90,15 +90,22 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
     val startTime = System.nanoTime()
 
     for {
-      defns <- seqM(root.definitions.map { case (_, v) => Definitions.checkPats(v, root) })
+      _ <- seqM(root.definitions.map { case (_, v) => Definitions.checkPats(v, root) })
     } yield {
       val currentTime = System.nanoTime()
-      val time = root.time.copy(typer = currentTime - startTime)
-      root
+      val time = root.time.copy(patsExhaustive = currentTime - startTime)
+      root.copy(time = time)
     }
   }
 
   object Definitions {
+    /**
+      * Check that all patterns in a Declaration are exhaustive
+      * @param tast The expression to check
+      * @param root The AST root
+      * @param genSym
+      * @return
+      */
     def checkPats(tast: TypedAst.Declaration.BoundedLattice, root: TypedAst.Root)(implicit genSym: GenSym): Validation[TypedAst.Declaration.BoundedLattice, CompilationError] = tast match {
       case TypedAst.Declaration.BoundedLattice(_, bot0, top0, leq0, lub0, glb0, _) =>
         for {
@@ -110,14 +117,35 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
         } yield tast
     }
 
+    /**
+      * Check that all patterns in a Declaration are exhaustive
+      * @param tast The expression to check
+      * @param root The AST root
+      * @param genSym
+      * @return
+      */
     def checkPats(tast: TypedAst.Declaration.Definition, root: TypedAst.Root)(implicit genSym: GenSym): Validation[TypedAst.Declaration.Definition, CompilationError] = for {
     _ <- Expressions.checkPats(tast.exp, root)
     } yield tast
 
+    /**
+      * Check that all patterns in a Declaration are exhaustive
+      * @param tast The expression to check
+      * @param root The AST root
+      * @param genSym
+      * @return
+      */
     def checkPats(tast: TypedAst.Declaration.Index, root: TypedAst.Root )(implicit genSym: GenSym): TypedAst.Declaration.Index = tast
   }
 
   object Expressions {
+    /**
+      * Check that all patterns in an expression are exhaustive
+      * @param tast The expression to check
+      * @param root The AST root
+      * @param genSym
+      * @return
+      */
     def checkPats(tast: TypedAst.Expression, root: TypedAst.Root)(implicit genSym: GenSym): Validation[TypedAst.Expression, CompilationError] = {
       tast match {
         case TypedAst.Expression.Match(exp, rules, _, _) =>
@@ -164,7 +192,7 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
 
       val sigma = rootCtors(rules)
       val missing = missingFromSig(sigma, root)
-      if (missing.isEmpty) {
+      if (missing.isEmpty && sigma.nonEmpty) {
         /* If the constructors are complete, then we check that the arguments to the constructors and the remaining
          * patterns are complete
          *
@@ -271,13 +299,13 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
           }
         case TypedAst.Pattern.Tuple(elms, _, _) =>
           if (ctor.isInstanceOf[TypeConstructor.Tuple])  {
-            elms :: acc
+            (elms ::: pat.tail) :: acc
           } else {
             acc
           }
         // Also handle the non tag constructors
         case p =>
-          if (patToCtor(p).getClass == ctor.getClass) {
+          if (patToCtor(p) == ctor) {
             (p :: pat.tail) :: acc
           } else acc
       }
@@ -416,6 +444,10 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
       case Enum(_, _, numArgs, _) => numArgs
     }
 
+    /**
+      * @param tpe the type to count
+      * @return the number of arguments a type constructor expects
+      */
     def countTypeArgs(tpe: Type): Int = tpe match {
       case Type.Var(id, kind) => 0
       case Type.Unit => 0
@@ -476,6 +508,12 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
       case (a, b) =>  a.getClass == b.getClass;
     }
 
+    /**
+      * Convert a pattern to a TypeConstructor
+      *
+      * @param pattern The pattern to convert
+      * @return a TypeConstructor representing the given pattern
+      */
     def patToCtor(pattern: TypedAst.Pattern): TypeConstructor = pattern match {
       case Pattern.Wild(_, _) => TypeConstructor.Wild
       case Var(_, _, _) => TypeConstructor.Wild
@@ -491,11 +529,14 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
       case Pattern.Int64(_, _) => TypeConstructor.Int64
       case Pattern.BigInt(_, _) => TypeConstructor.BigInt
       case Pattern.Str(_, _) => TypeConstructor.Str
-      case Pattern.Tag(sym, tag, pat, tpe, _) => TypeConstructor.Enum(tag, sym, countTypeArgs(tpe), pat match {
-        case Pattern.Unit(_) => List.empty[TypeConstructor]
-        case Pattern.Tuple(elms, _, _) => elms.map(patToCtor)
-        case a => List(patToCtor(a))
-      })
+      case Pattern.Tag(sym, tag, pat, tpe, _) => {
+        val (args, numArgs)  = pat match {
+          case Pattern.Unit(_) => (List.empty[TypeConstructor], 0)
+          case Pattern.Tuple(elms, _, _) => (elms.map(patToCtor), elms.length)
+          case a => (List(patToCtor(a)), 1)
+        }
+        TypeConstructor.Enum(tag, sym, numArgs, args)
+      }
       case Pattern.Tuple(elms, _, _) => TypeConstructor.Tuple(elms.map(patToCtor))
     }
 

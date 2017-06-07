@@ -244,6 +244,47 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
     expectError[NonExhaustiveMatchError](new Flix().addStr(input).compile())
   }
 
+  test("Pattern.Literal.Tuples.05") {
+    val input =
+      """def f(x: (Int8, (Str, Str))): Int = match x with {
+        |  case (5i8, ("five", _)) => 5
+        |  case (6i8, (_, "six")) => 6
+        |  case (7i8, (_,_)) => 7
+        |}
+      """.stripMargin
+    expectError[NonExhaustiveMatchError](new Flix().addStr(input).compile())
+  }
+
+  test("Pattern.Literal.Tuples.06") {
+    val input =
+      """def f(x: (Int, Int, Int, Int, Int)): Int = match x with {
+        |  case (1,2,3,4,5) => 1
+        |  case (_,2,3,4,5) => 1
+        |  case (1,_,3,4,5) => 1
+        |  case (1,2,_,4,5) => 1
+        |  case (1,2,3,_,5) => 1
+        |  case (1,2,3,4,_) => 1
+        |}
+      """.stripMargin
+    expectError[NonExhaustiveMatchError](new Flix().addStr(input).compile())
+  }
+  test("Pattern.Literal.Tuples.07") {
+    val input =
+      """def f(x: (Int, Int, Int, Int, Int)): Int = match x with {
+        |  case (1,2,3,4,5) => 1
+        |  case (_,2,3,4,5) => 1
+        |  case (1,_,3,4,5) => 1
+        |  case (1,2,_,4,5) => 1
+        |  case (1,2,3,_,5) => 1
+        |  case (1,2,3,4,_) => 1
+        |  case (1,2,3,4,_) => 1
+        |  case (_,_,_,_,_) => 1
+        |}
+      """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    result.get
+  }
+
   test("Pattern.Literal.Lists.01") {
     val input =
       """ enum IntList {
@@ -267,6 +308,58 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
         |def f(xs: IntList, ys: IntList): Int32 = match (xs, ys) with {
         |  case (Empty, Empty) => 0
         |  case (Lst(x,xs), Lst(y,ys)) => 1
+        |}
+      """.stripMargin
+    expectError[NonExhaustiveMatchError](new Flix().addStr(input).compile())
+  }
+
+  test("Expression.LetMatch01") {
+    val input =
+      """enum E {
+        |  case A(Bool)
+        |}
+        |
+        |def f(e: E): Bool = let E.A(b) = e; b
+      """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    result.get
+  }
+
+  test("Expression.LetMatch02") {
+    val input =
+      """enum E {
+        |  case A(Bool, Char, Int8)
+        |}
+        |
+        |def f(e: E): Int8 = let E.A(true, 'a', i) = e; i
+      """.stripMargin
+    expectError[NonExhaustiveMatchError](new Flix().addStr(input).compile())
+  }
+
+  test("Expression.LetMatch03") {
+    val input =
+      """def f(e: (Int8, Int8)): Int8 = let (a,b) = e; a
+      """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    result.get
+  }
+
+  test("Expression.LetMatch04") {
+    val input =
+      """def f(e: (Int8, Int8)): Int8 = let (a,1i8) = e; a
+      """.stripMargin
+    expectError[NonExhaustiveMatchError](new Flix().addStr(input).compile())
+  }
+
+  test("Pattern.Deep.01") {
+    val input =
+      """enum Evil {
+        |  case Evil(Evil, Evil),
+        |  case Done
+        |}
+        |
+        |def f(x: Evil): Evil = match x with {
+        |  case Evil(_, Evil(_, Evil(_, Evil(_, Evil(_, Evil(_, Evil(_, _))))))) => Evil(Done, Done)
         |}
       """.stripMargin
     expectError[NonExhaustiveMatchError](new Flix().addStr(input).compile())

@@ -543,13 +543,10 @@ class TestTyper extends FunSuite with TestUtils {
   test("Expression.LetMatch03") {
     val input =
       """enum E {
-        |  case A(Bool),
-        |  case B(Char),
-        |  case C(Int)
+        |  case A(Bool)
         |}
         |
         |def f(e: E): Bool = let E.A(b) = e; b
-        |def g(e: E): Char = let E.B(c) = e; c
       """.stripMargin
     val result = new Flix().addStr(input).compile()
     result.get
@@ -558,11 +555,10 @@ class TestTyper extends FunSuite with TestUtils {
   test("Expression.LetMatch04") {
     val input =
       """enum E {
-        |  case A(Bool, Char, Int8),
-        |  case B
+        |  case A(Bool, Char, Int8)
         |}
         |
-        |def f(e: E): Int8 = let E.A(true, 'a', i) = e; i
+        |def f(e: E): Int8 = let E.A(i, j, k) = e; k
       """.stripMargin
     val result = new Flix().addStr(input).compile()
     result.get
@@ -640,6 +636,7 @@ class TestTyper extends FunSuite with TestUtils {
     val input =
       """def f: Int = match (true, 42, "foo") with {
         |  case (false, 21, "bar") => 42
+        |  case _ => 42
         |}
       """.stripMargin
     val result = new Flix().addStr(input).compile()
@@ -843,6 +840,7 @@ class TestTyper extends FunSuite with TestUtils {
       """
         |def f(xs: List[Int], ys: List[Int]): Int = match (xs, ys) with {
         |  case (42 :: xss, y :: yss) => f(xss, y :: yss)
+        |  case _ => 42
         |}
       """.stripMargin
     val result = new Flix().addStr(input).compile()
