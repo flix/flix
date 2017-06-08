@@ -106,7 +106,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
         case Type.Enum(s, _) => s
         case _ => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
       }
-      (tpe, name) -> EnumClassName(sym, name, Some(subType))
+      (tpe, name) -> EnumClassName(sym, name, typeToWrappedType(subType))
     }.toMap
 
     // 4. Generate functional interfaces.
@@ -539,7 +539,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
        * We get the descriptor of the type of the `value` field of enum, if type if primitive we use the corresponding
        * primitive in java otherwise we use the descriptor of object.
        */
-      val desc = getFieldOptionDescriptor(transformTypeToOptionType(exp.tpe))
+      val desc = getWrappedTypeDescriptor(typeToWrappedType(exp.tpe))
       // Creating a new instance of the class
       visitor.visitTypeInsn(NEW, decorate(clazzName))
       visitor.visitInsn(DUP)
@@ -553,9 +553,9 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
        * We get the descriptor of the type of the `value` field of enum, if type if primitive we use the corresponding
        * primitive in java otherwise we use the descriptor of object.
        */
-      val desc = getFieldOptionDescriptor(transformTypeToOptionType(tpe))
+      val desc = getWrappedTypeDescriptor(typeToWrappedType(tpe))
       // Qualified name of the enum
-      val clazz = EnumClassName(enum, tag, Some(tpe))
+      val clazz = EnumClassName(enum, tag, typeToWrappedType(tpe))
       // Evaluate the exp
       compileExpression(prefix, functions, declarations, interfaces, enums, visitor, entryPoint)(exp)
       // Cast the exp to the type of the tag
@@ -567,10 +567,10 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
 
     case Expression.Index(base, offset, tpe, _) =>
       // Descriptor of the field of the element in the tuple specified by the `offset`
-      val desc = getFieldOptionDescriptor(transformTypeToOptionType(tpe))
+      val desc = getWrappedTypeDescriptor(typeToWrappedType(tpe))
       // Qualified name of the class defining the tuple
       val clazzName = base.tpe match {
-        case Type.Apply(Type.FTuple(_), lst) => TupleClassName(lst.map(transformTypeToOptionType))
+        case Type.Apply(Type.FTuple(_), lst) => TupleClassName(lst.map(typeToWrappedType))
         case _ => throw InternalCompilerException(s"Unexpected type: `${base.tpe}`")
       }
       // evaluating the `base`
@@ -582,9 +582,9 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
       
     case Expression.Tuple(elms, _, _) =>
       // Transforming types of elements of the tuple to the appropriate type
-      val fieldTypes : List[Option[Type]] = elms.map(x => transformTypeToOptionType(x.tpe)).toList
+      val fieldTypes : List[WrappedType] = elms.map(x => typeToWrappedType(x.tpe)).toList
       // Descriptor of the parameters of the constructor of the tuple class
-      val desc = fieldTypes.map(getFieldOptionDescriptor).mkString
+      val desc = fieldTypes.map(getWrappedTypeDescriptor).mkString
       // Qualified name of the class that can represent this tuple
       val clazzName = TupleClassName(fieldTypes)
       // Creating a new instance of the class
@@ -792,7 +792,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
     case Type.Native => // Don't need to cast AnyRef to anything
 
     case Type.Apply(Type.FTuple(l), lst) =>
-      val clazzName = TupleClassName(lst.map(transformTypeToOptionType))
+      val clazzName = TupleClassName(lst.map(typeToWrappedType))
 
 
       visitor.visitTypeInsn(CHECKCAST, decorate(clazzName))
@@ -1375,7 +1375,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
     case Type.Native => visitor.visitTypeInsn(CHECKCAST, asm.Type.getInternalName(Constants.objectClass))
     case Type.Apply(Type.Arrow(l), _) => visitor.visitTypeInsn(CHECKCAST, decorate(interfaces(tpe)))
     case Type.Apply(Type.FTuple(l), lst) =>
-      val clazzName = TupleClassName(lst.map(transformTypeToOptionType))
+      val clazzName = TupleClassName(lst.map(typeToWrappedType))
       visitor.visitTypeInsn(CHECKCAST, decorate(clazzName))
     case _ if tpe.isEnum =>
       val sym = tpe match {

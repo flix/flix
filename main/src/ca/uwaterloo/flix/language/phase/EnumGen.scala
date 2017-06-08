@@ -152,22 +152,27 @@ object EnumGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     }.toMap // Despite IDE highlighting, this is actually necessary.
 
     // 3. Separate primitive enums and object enums.
-    val enumsGroupedBySymbolAndFieldType : Map[EnumSym, (Set[(String, Type)], Set[String])] = enumsGroupedBySymbol.map{case (sym, li) =>
-      val (primEnums, enumsWithObjField) = li.partition(x => isPrimitive(x._2._2))
-      sym -> (primEnums.map(x => (x._2._1, x._2._2)).toSet, enumsWithObjField.map(x => x._2._1).toSet)
+    val enumsGroupedBySymbolAndFieldType : Map[EnumSym, (Set[(String, Type)], Map[String, Set[Type]])] =
+      enumsGroupedBySymbol.map{
+        case (sym, li) =>
+          val (primEnums, enumsWithObjField) = li.partition(x => isPrimitive(x._2._2))
+          sym -> (primEnums.map(x => (x._2._1, x._2._2)).toSet,
+            enumsWithObjField.groupBy(x => x._2._1).map(x => (x._1, x._2.map(_._2._2).toSet)))
     }.toMap // Despite IDE highlighting, this is actually necessary.
 
     // 4. Generate bytecode for each enum case.
     val enumByteCodes = enumsGroupedBySymbolAndFieldType.map{ case (sym, (primEnums, objectEnums)) =>
       val generatedPrimEnums : Map[(String, Type), Array[Byte]] = primEnums.map{ case (name, tpe) =>
-        val qualName = EnumClassName(sym, name, Some(tpe))
+        val wrapped = WrappedPrimitive(tpe)
+        val qualName = EnumClassName(sym, name, wrapped)
         val interface = enumInterfaces(sym)._1
-        (name, tpe) -> EnumGen.compileEnumClass(qualName, interface, Some(tpe))
+        (name, tpe) -> EnumGen.compileEnumClass(qualName, interface, wrapped)
       }.toMap
-      val generatedObjectEnums : Map[String, Array[Byte]] = objectEnums.map{ name =>
-        val fullName = EnumClassName(sym, name, None)
+      val generatedObjectEnums : Map[String, Array[Byte]] = objectEnums.map{ case (name, tpes) =>
+        val wrapped = WrappedNonPrimitives(tpes)
+        val fullName = EnumClassName(sym, name, wrapped)
         val interface = enumInterfaces(sym)._1
-        name -> EnumGen.compileEnumClass(fullName, interface, None)
+        name -> EnumGen.compileEnumClass(fullName, interface, wrapped)
       }.toMap
       sym -> (generatedPrimEnums, generatedObjectEnums)
     }
@@ -213,7 +218,7 @@ object EnumGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     */
   def compileEnumClass(className: EnumClassName,
                        superType: EnumInterfName,
-                       fType: Option[Type]): Array[Byte] = {
+                       fType: WrappedType): Array[Byte] = {
     /*
      *  Initialize the class writer. We override `getCommonSuperClass` method because `asm` implementation of this
      * function requires types to loaded so that they can be compared to each other.
@@ -232,14 +237,14 @@ object EnumGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     visitor.visit(JavaVersion, ACC_PUBLIC + ACC_FINAL, decorate(className), null, superClass, implementedInterfaces)
 
     // Generate tag and value fields
-    compileField(visitor, "value", getFieldOptionDescriptor(fType))
+    compileField(visitor, "value", getWrappedTypeDescriptor(fType))
     compileField(visitor, "tag", asm.Type.getDescriptor(Constants.stringClass))
 
     // Generate the constructor of the class
     compileEnumConstructor(visitor, className, fType)
 
     // Generate the `getValue` method
-    compileGetFieldMethod(visitor, className, getFieldOptionDescriptor(fType), "value", "getValue", getReturnInsn(fType))
+    compileGetFieldMethod(visitor, className, getWrappedTypeDescriptor(fType), "value", "getValue", getReturnInsn(fType))
 
     // Generate `getBoxedValue` method
     compileGetBoxedValueMethod(visitor, className, fType)
@@ -268,8 +273,8 @@ object EnumGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     * @param className name of the class
     * @param fType type of the `value` field
     */
-  private def compileEnumConstructor(visitor: ClassWriter, className: EnumClassName, fType: Option[Type]) = {
-    val descriptor = getFieldOptionDescriptor(fType)
+  private def compileEnumConstructor(visitor: ClassWriter, className: EnumClassName, fType: WrappedType) = {
+    val descriptor = getWrappedTypeDescriptor(fType)
 
     val constructor = visitor.visitMethod(ACC_PUBLIC, "<init>", s"($descriptor)V", null, null)
     val clazz = Constants.objectClass
@@ -306,12 +311,12 @@ object EnumGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     * @param fType type
     * @return A load instruction
     */
-  private def getReturnInsn(fType: Option[Type]) : Int = fType match {
-    case Some(Type.Var(id, kind)) =>  throw InternalCompilerException(s"Non-monomorphed type variable '$id in type '${fType.get}'.")
-    case Some(Type.Bool) | Some(Type.Char) | Some(Type.Int8) | Some(Type.Int16) | Some(Type.Int32) => IRETURN
-    case Some(Type.Int64) => LRETURN
-    case Some(Type.Float32) => FRETURN
-    case Some(Type.Float64) => DRETURN
+  private def getReturnInsn(fType: WrappedType) : Int = fType match {
+    case WrappedPrimitive(Type.Bool) | WrappedPrimitive(Type.Char) | WrappedPrimitive(Type.Int8) | WrappedPrimitive(Type.Int16) |
+         WrappedPrimitive(Type.Int32) => IRETURN
+    case WrappedPrimitive(Type.Int64) => LRETURN
+    case WrappedPrimitive(Type.Float32) => FRETURN
+    case WrappedPrimitive(Type.Float64) => DRETURN
     case _ => ARETURN
   }
 
@@ -368,7 +373,7 @@ object EnumGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     * @param qualName Qualified name of the class
     * @param fType type of the `value` field of the class
     */
-  private def compileGetBoxedValueMethod(visitor: ClassWriter, qualName: QualName, fType: Option[Type]) = {
+  private def compileGetBoxedValueMethod(visitor: ClassWriter, qualName: QualName, fType: WrappedType) = {
     val method = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, "getBoxedValue", s"()Ljava/lang/Object;", null, null)
 
     method.visitCode()
@@ -389,7 +394,7 @@ object EnumGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     * @param qualName Qualified name of the class
     * @param fType type of the underlying `value`
     */
-  private def compileHashCodeMethod(visitor: ClassWriter, qualName: QualName, fType: Option[Type]) = {
+  private def compileHashCodeMethod(visitor: ClassWriter, qualName: QualName, fType: WrappedType) = {
     val clazz = Constants.objectClass
     val method = visitor.visitMethod(ACC_PUBLIC, "hashCode", "()I", null, null)
 
@@ -399,7 +404,7 @@ object EnumGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     method.visitInsn(IMUL)
     method.visitLdcInsn(11)
     method.visitVarInsn(ALOAD, 0)
-    method.visitFieldInsn(GETFIELD, decorate(qualName), "value", getFieldOptionDescriptor(fType))
+    method.visitFieldInsn(GETFIELD, decorate(qualName), "value", getWrappedTypeDescriptor(fType))
 
     /*
      * If the field is of type Object, we get the hashCode of the object
@@ -433,7 +438,7 @@ object EnumGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     * @param qualName Qualified name of the class
     * @param fType type of the `value` field
     */
-  private def compileToStringMethod(visitor: ClassWriter, qualName: EnumClassName, fType: Option[Type]) = {
+  private def compileToStringMethod(visitor: ClassWriter, qualName: EnumClassName, fType: WrappedType) = {
     val stringInternalName = asm.Type.getInternalName(Constants.stringClass)
     val stringConcatMethod = Constants.stringClass.getMethod("concat", Constants.stringClass)
 
@@ -442,7 +447,7 @@ object EnumGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     method.visitCode()
     method.visitLdcInsn(qualName.tag.concat("("))
     method.visitVarInsn(ALOAD, 0)
-    method.visitFieldInsn(GETFIELD, decorate(qualName), "value", getFieldOptionDescriptor(fType))
+    method.visitFieldInsn(GETFIELD, decorate(qualName), "value", getWrappedTypeDescriptor(fType))
 
     /*
      * Converting `value` to String.
@@ -484,12 +489,12 @@ object EnumGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     * @param qualName Qualified name of the class
     * @param fType Type of the `value` field
     */
-  private def compileEqualsMethod(visitor: ClassWriter, qualName: QualName, fType: Option[Type]) = {
+  private def compileEqualsMethod(visitor: ClassWriter, qualName: QualName, fType: WrappedType) = {
     val clazz = Constants.objectClass
     val neq = new Label() //label for when the object is not instanceof tag case
 
     // Descriptor of the `value` field
-    val descriptor = getFieldOptionDescriptor(fType)
+    val descriptor = getWrappedTypeDescriptor(fType)
 
     val method = visitor.visitMethod(ACC_PUBLIC, "equals", s"(${asm.Type.getDescriptor(clazz)})Z", null, null)
     method.visitCode()
