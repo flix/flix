@@ -22,22 +22,19 @@ import ca.uwaterloo.flix.util.vt.VirtualString._
 import ca.uwaterloo.flix.util.vt.VirtualTerminal
 
 /**
-  * An error raised to indicate a non exhaustive pattern match
+  * An error raised to indicate a non exhaustive pattern match expression.
   */
-case class NonExhaustiveMatchError(rules: List[TypedAst.MatchRule], pattern: String, loc: SourceLocation) extends CompilationError {
-  val kind = "Exhaustive Match Error"
+case class NonExhaustiveMatchError(rules: List[TypedAst.MatchRule], pat: String, loc: SourceLocation) extends CompilationError {
+  val kind = "Non-Exhaustive Pattern Match"
+
   val source: SourceInput = loc.source
+
   val message: VirtualTerminal = {
     val vt = new VirtualTerminal
     vt << Line(kind, source.format) << NewLine
-    vt << ">> Exhaustive Match Error:" << NewLine
+    vt << ">> Non-Exhaustive Pattern. Missing case: " << Red(pat) << " in match expression." << NewLine
     vt << NewLine
-    vt << "The expression: " << NewLine
-    vt << Code(loc, "")
-    vt << "Matched by the rules:" << NewLine
-    rules.foreach(x => vt << Code(x.pat.loc, ""))
-    vt << "is not exhaustive, consider the pattern: " << NewLine
-    vt << Indent << Red(pattern)
+    vt << Code(loc, "incomplete pattern.")
     vt << NewLine
   }
 }

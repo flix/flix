@@ -19,9 +19,9 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Symbol.EnumSym
 import ca.uwaterloo.flix.language.ast.Type.{Apply, Arrow, Bool, FTuple, Native, Ref}
-import ca.uwaterloo.flix.language.ast.{Type, TypedAst}
 import ca.uwaterloo.flix.language.ast.TypedAst.Pattern
 import ca.uwaterloo.flix.language.ast.TypedAst.Pattern.Var
+import ca.uwaterloo.flix.language.ast.{Type, TypedAst}
 import ca.uwaterloo.flix.language.errors.NonExhaustiveMatchError
 import ca.uwaterloo.flix.language.phase.PatternExhaustiveness.Exhaustiveness.{Exhaustive, NonExhaustive}
 import ca.uwaterloo.flix.language.phase.PatternExhaustiveness.TypeConstructor.{BigInt, Char, Enum, False, Float32, Float64, Int16, Int32, Int64, Int8, Str, True, Tuple, Unit, Wild}
@@ -35,8 +35,7 @@ import ca.uwaterloo.flix.util.Validation._
   * A pattern match is exhaustive if there exists a type correct expression which is not matched by any of the patterns
   * in the pattern match
   *
-  * Implemented as described in
-  * MARANGET, L. (2007). Warnings for pattern matching. Journal of Functional Programming, 17(3), 387-421. doi:10.1017/S0956796807006223
+  * Implemented as described in MARANGET, L. (2007). Warnings for pattern matching. Journal of Functional Programming, 17(3), 387-421. doi:10.1017/S0956796807006223
   *
   * The algorithm works by recursively "peeling off layers" of the pattern match. It check if the outermost type
   * constructors are exhaustive, then if so, recursively calls itself on the arguments. If it finds a pattern which
@@ -53,22 +52,39 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
     * way we would a user defined enum.
     */
   sealed trait TypeConstructor
+
   object TypeConstructor {
+
     case object True extends TypeConstructor
+
     case object False extends TypeConstructor
+
     case object Unit extends TypeConstructor
+
     case class Tuple(args: List[TypeConstructor]) extends TypeConstructor
+
     case object BigInt extends TypeConstructor
+
     case object Int8 extends TypeConstructor
+
     case object Int16 extends TypeConstructor
+
     case object Int32 extends TypeConstructor
+
     case object Int64 extends TypeConstructor
+
     case object Float32 extends TypeConstructor
+
     case object Float64 extends TypeConstructor
+
     case object Str extends TypeConstructor
+
     case object Char extends TypeConstructor
+
     case object Wild extends TypeConstructor
+
     case class Enum(name: String, sym: EnumSym, numArgs: Int, args: List[TypeConstructor]) extends TypeConstructor
+
   }
 
   /**
@@ -77,9 +93,13 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
     * Essentially a reverse Optional: we only include a parameter if there is an error
     */
   sealed trait Exhaustiveness
+
   object Exhaustiveness {
+
     case object Exhaustive extends Exhaustiveness
+
     case class NonExhaustive(pat: List[TypeConstructor]) extends Exhaustiveness
+
   }
 
   /**
@@ -101,10 +121,9 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
   object Definitions {
     /**
       * Check that all patterns in a Declaration are exhaustive
+      *
       * @param tast The expression to check
       * @param root The AST root
-      * @param genSym
-      * @return
       */
     def checkPats(tast: TypedAst.Declaration.BoundedLattice, root: TypedAst.Root)(implicit genSym: GenSym): Validation[TypedAst.Declaration.BoundedLattice, CompilationError] = tast match {
       case TypedAst.Declaration.BoundedLattice(_, bot0, top0, leq0, lub0, glb0, _) =>
@@ -119,32 +138,30 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
 
     /**
       * Check that all patterns in a Declaration are exhaustive
+      *
       * @param tast The expression to check
       * @param root The AST root
-      * @param genSym
-      * @return
       */
     def checkPats(tast: TypedAst.Declaration.Definition, root: TypedAst.Root)(implicit genSym: GenSym): Validation[TypedAst.Declaration.Definition, CompilationError] = for {
-    _ <- Expressions.checkPats(tast.exp, root)
+      _ <- Expressions.checkPats(tast.exp, root)
     } yield tast
 
     /**
       * Check that all patterns in a Declaration are exhaustive
+      *
       * @param tast The expression to check
       * @param root The AST root
-      * @param genSym
       * @return
       */
-    def checkPats(tast: TypedAst.Declaration.Index, root: TypedAst.Root )(implicit genSym: GenSym): TypedAst.Declaration.Index = tast
+    def checkPats(tast: TypedAst.Declaration.Index, root: TypedAst.Root)(implicit genSym: GenSym): TypedAst.Declaration.Index = tast
   }
 
   object Expressions {
     /**
       * Check that all patterns in an expression are exhaustive
+      *
       * @param tast The expression to check
       * @param root The AST root
-      * @param genSym
-      * @return
       */
     def checkPats(tast: TypedAst.Expression, root: TypedAst.Root)(implicit genSym: GenSym): Validation[TypedAst.Expression, CompilationError] = {
       tast match {
@@ -160,16 +177,15 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
     /**
       * Check that the given rules are exhaustive for the given expression
       *
-      * @param root The root of the tree
-      * @param exp The expression to check
+      * @param root  The root of the tree
+      * @param exp   The expression to check
       * @param rules The rules to check
       * @return
       */
     def checkRules(exp: TypedAst.Expression, rules: List[TypedAst.MatchRule], root: TypedAst.Root): Validation[TypedAst, CompilationError] = {
       findNonMatchingPat(rules.map(r => List(r.pat)), 1, root) match {
         case Exhaustive => root.toSuccess[TypedAst, CompilationError]
-        case NonExhaustive(ctors) => NonExhaustiveMatchError(
-          rules, prettyPrintCtor(ctors.head), exp.loc).toFailure
+        case NonExhaustive(ctors) => NonExhaustiveMatchError(rules, prettyPrintCtor(ctors.head), exp.loc).toFailure
       }
     }
 
@@ -178,12 +194,12 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
       * that p doesn't match any rule in rules
       *
       * @param rules The rules to check for exhaustion
-      * @param n The size of resulting pattern vector
+      * @param n     The size of resulting pattern vector
       * @param  root The AST root of the expression
       * @return If no such pattern exists, returns Exhaustive, else returns NonExhaustive(a matching pattern)
       */
     def findNonMatchingPat(rules: List[List[Pattern]], n: Integer, root: TypedAst.Root): Exhaustiveness = {
-      if (n==0) {
+      if (n == 0) {
         if (rules.isEmpty) {
           return NonExhaustive(List.empty[TypeConstructor])
         }
@@ -241,9 +257,9 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
       *
       * e.g. If we have
       * enum Option {
-      *    case Some a,
-      *    case Nothing
-      *  }
+      * case Some a,
+      * case Nothing
+      * }
       *
       * And the pattern matrix
       *
@@ -258,9 +274,9 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
       * Where' we've taken a matrix had made of the arguments to the Some rows. Specializing for Nothing would give
       * an empty matrix as it has no arguments.
       *
-      * @param ctor The constructor to specialize for
+      * @param ctor  The constructor to specialize for
       * @param rules The rules matrix to specialize
-      * @param root The ast root
+      * @param root  The ast root
       * @return The specialized matrix of rules
       */
     def specialize(ctor: TypeConstructor, rules: List[List[Pattern]], root: TypedAst.Root): List[List[TypedAst.Pattern]] = {
@@ -283,8 +299,8 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
             case Enum(name, _, _, _) =>
               if (tag == name) {
                 exp match {
-                    // The expression varies depending on how many arguments it has, 0 arguments => unit, non zero
-                    // => Tuple. If there are arguments, we add them to the matrix
+                  // The expression varies depending on how many arguments it has, 0 arguments => unit, non zero
+                  // => Tuple. If there are arguments, we add them to the matrix
                   case TypedAst.Pattern.Tuple(elms, _, _) =>
                     (elms ::: pat.tail) :: acc
                   case TypedAst.Pattern.Unit(_) =>
@@ -298,7 +314,7 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
             case _ => acc
           }
         case TypedAst.Pattern.Tuple(elms, _, _) =>
-          if (ctor.isInstanceOf[TypeConstructor.Tuple])  {
+          if (ctor.isInstanceOf[TypeConstructor.Tuple]) {
             (elms ::: pat.tail) :: acc
           } else {
             acc
@@ -368,7 +384,8 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
         case tg: Pattern.Tag => tg :: pats
         case p => p :: pats
       }
-     rules.foldRight(List.empty[TypedAst.Pattern])(rootCtor).map(patToCtor)
+
+      rules.foldRight(List.empty[TypedAst.Pattern])(rootCtor).map(patToCtor)
     }
 
     /**
@@ -376,10 +393,10 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
       * present. E.g. for
       *
       * enum Color {
-      *    case Red,
-      *    case Blue,
-      *    case Yellow
-      *  }
+      * case Red,
+      * case Blue,
+      * case Yellow
+      * }
       *
       * {Red, Blue, Yellow} is a complete signature, but {Red, Blue} is not. Additionally, {Red, Blue, _} is also not
       * If the constructors are a complete signature, then they are exhaustive for the type, and we just have to
@@ -388,22 +405,23 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
       * Wildcards are exhaustive, but we need to do some additional checking in that case (@see DefaultMatrix)
       *
       * @param ctors The ctors that we match with
-      * @param root Root of the expression tree
+      * @param root  Root of the expression tree
       * @return
       */
     def missingFromSig(ctors: List[TypeConstructor], root: TypedAst.Root): List[TypeConstructor] = {
       // Enumerate all the constructors that we need to cover
       def getAllCtors(x: TypeConstructor, xs: List[TypeConstructor]) = x match {
         // For built in constructors, we can add all the options since we know them a priori
-        case TypeConstructor.True  => TypeConstructor.True :: TypeConstructor.False :: xs
+        case TypeConstructor.True => TypeConstructor.True :: TypeConstructor.False :: xs
         case TypeConstructor.False => TypeConstructor.True :: TypeConstructor.False :: xs
-        case TypeConstructor.Unit  => TypeConstructor.Unit :: xs
-        case a:TypeConstructor.Tuple => a :: xs
+        case TypeConstructor.Unit => TypeConstructor.Unit :: xs
+        case a: TypeConstructor.Tuple => a :: xs
 
         // For Enums, we have to figure out what base enum is, then look it up in the enum definitions to get the
         // other enums
         case TypeConstructor.Enum(_, sym, _, _) => {
-          root.enums.get(sym).get.cases.map(x => TypeConstructor.Enum(x._1, sym, countTypeArgs(x._2.tpe), List.empty[TypeConstructor]))}.toList ::: xs
+          root.enums.get(sym).get.cases.map(x => TypeConstructor.Enum(x._1, sym, countTypeArgs(x._2.tpe), List.empty[TypeConstructor]))
+        }.toList ::: xs
 
         /* For numeric types, we consider them as "infinite" types union
          * Int = ...| -1 | 0 | 1 | 2 | 3 | ...
@@ -412,6 +430,7 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
          */
         case _ => TypeConstructor.Wild :: xs
       }
+
       val expCtors = ctors.foldRight(List.empty[TypeConstructor])(getAllCtors)
       /* We cover the needed constructors if there is a wild card in the
        * root constructor set, or if we match every constructor for the
@@ -490,7 +509,7 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
       case Str => "Str"
       case Char => "Char"
       case Wild => "_"
-      case Enum(name, _, num_args, args) => if (num_args == 0 ) name else name + prettyPrintCtor(Tuple(args))
+      case Enum(name, _, num_args, args) => if (num_args == 0) name else name + prettyPrintCtor(Tuple(args))
     }
 
 
@@ -501,11 +520,11 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
       * @param c2 Second constructor to compare
       * @return True if they are the same constructor
       */
-    def sameCtor(c1: TypeConstructor, c2: TypeConstructor): Boolean = (c1,c2) match {
+    def sameCtor(c1: TypeConstructor, c2: TypeConstructor): Boolean = (c1, c2) match {
       // Two enums are the same constructor if they have the same name and enum sym
       case (TypeConstructor.Enum(n1, s1, _, _), TypeConstructor.Enum(n2, s2, _, _)) => n1 == n2 && s1 == s2
       // Everything else is the same constructor if they are the same type
-      case (a, b) =>  a.getClass == b.getClass;
+      case (a, b) => a.getClass == b.getClass;
     }
 
     /**
@@ -530,7 +549,7 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
       case Pattern.BigInt(_, _) => TypeConstructor.BigInt
       case Pattern.Str(_, _) => TypeConstructor.Str
       case Pattern.Tag(sym, tag, pat, tpe, _) => {
-        val (args, numArgs)  = pat match {
+        val (args, numArgs) = pat match {
           case Pattern.Unit(_) => (List.empty[TypeConstructor], 0)
           case Pattern.Tuple(elms, _, _) => (elms.map(patToCtor), elms.length)
           case a => (List(patToCtor(a)), 1)
@@ -545,11 +564,11 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
       *
       * e.g. rebuildPatter(Foo(a,b), [1,2,3]) => [Foo(1,2), 3]
       *
-      * @param tc The type constructor to add
+      * @param tc  The type constructor to add
       * @param lst The list to add to
       * @return The new list
       */
-    def rebuildPattern(tc: TypeConstructor, lst : List[TypeConstructor]): List[TypeConstructor] = tc match {
+    def rebuildPattern(tc: TypeConstructor, lst: List[TypeConstructor]): List[TypeConstructor] = tc match {
       case Tuple(args) => Tuple(lst.take(args.size)) :: lst.drop(args.size)
       case Enum(name, sym, numArgs, _) => Enum(name, sym, numArgs,
         if (numArgs > lst.size) {
@@ -563,15 +582,16 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
     /**
       * Flatten/join for Exhaust. Accumulates failures if they are there.
       *
-      * @param x The Exhasutiveness under consideration
+      * @param x   The Exhaustiveness under consideration
       * @param acc The Exhaustiveness accumulated so far
       * @return The merged result
       */
     def mergeExhaustive(x: Exhaustiveness, acc: Exhaustiveness): Exhaustiveness =
-        (x, acc) match {
-          case (Exhaustive, Exhaustive) => Exhaustive
-          case (a: NonExhaustive, _) => a
-          case (_, a: NonExhaustive) => a
-        }
+      (x, acc) match {
+        case (Exhaustive, Exhaustive) => Exhaustive
+        case (a: NonExhaustive, _) => a
+        case (_, a: NonExhaustive) => a
+      }
   }
+
 }
