@@ -97,9 +97,17 @@ object Effects extends Phase[Root, Root] {
     def infer(defn0: Declaration.Definition, root: Root): Validation[Declaration.Definition, EffectError] = {
       // TODO: Introduce EffectParam
 
+      val env0 = defn0.fparams.foldLeft(Map.empty[Symbol.VarSym, Eff]) {
+        case (macc, TypedAst.FormalParam(sym, tpe, _)) => tpe match {
+          case Type.Apply(Type.Arrow(_), _) =>
+            macc + (sym -> Eff.Arrow(Eff.Pure, EffectSet.Bot, Eff.Pure, EffectSet.Bot))
+          case _ => macc
+        }
+      }
+
       val expectedEff = defn0.eff
 
-      Expressions.infer(defn0.exp, root) flatMap {
+      Expressions.infer(defn0.exp, env0, root) flatMap {
         case e =>
           val actualEff = e.eff
           if (actualEff leq expectedEff)
@@ -116,7 +124,9 @@ object Effects extends Phase[Root, Root] {
     /**
       * Infers the effects of the given expression `exp0`.
       */
-    def infer(exp0: Expression, root: Root): Validation[Expression, EffectError] = {
+    // TODO: naming of env
+    def infer(exp0: Expression, env: Map[Symbol.VarSym, Eff], root: Root): Validation[Expression, EffectError] = {
+
       /**
         * Local visitor.
         */
@@ -426,7 +436,7 @@ object Effects extends Phase[Root, Root] {
           Expression.UserError(tpe, Eff.Pure, loc).toSuccess
       }
 
-      visitExp(exp0, Map.empty)
+      visitExp(exp0, env)
     }
   }
 
