@@ -407,7 +407,7 @@ object TupleGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
     method.visitCode()
 
     // Initial accumulator of the result
-    method.visitLdcInsn("Tuple".concat("("))
+    method.visitLdcInsn("(")
 
     // We loop over each field, convert the field to string and concat the result to the accumulator
     fields.zipWithIndex.foreach { case (field, ind) =>
