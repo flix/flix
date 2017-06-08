@@ -290,6 +290,7 @@ namespace List {
     def at[a](i: Int32, xs: List[a]): a = match (i, xs) with {
         case (0, x :: _) => x
         case (p, x :: rs) => at(p - 1, rs)
+        case _ => ??? // never happens
     }
 
     ///
@@ -377,6 +378,7 @@ namespace List {
     def applyListHelper[a](xs: List[a], ys: List[List[a]]): List[List[a]] = match (xs, ys) with {
         case (Nil, Nil) => Nil
         case (x :: rs, y :: qs) => (x :: y) :: applyListHelper(rs, qs)
+        case _ => ??? // never happens
     }
 
 

@@ -377,6 +377,8 @@ def redex(e0: Expression): (Expression, EvaluationContext) = match e0 with {
             let (rdx, ec) = redex(e2);
                 (rdx, ELink2(e1, ec))
     }
+    case True => ??? // shouldn't happen
+    case False => ??? // shouldn't happen
 
 }
 
@@ -628,6 +630,8 @@ def substitute(e0: Expression, x: Variable, r0: Expression): Expression = match 
     case OnResolve(e1, e2)      => OnResolve(substitute(e1, x, r0), substitute(e2, x, r0))
     case OnReject(e1, e2)       => OnReject(substitute(e1, x, r0), substitute(e2, x, r0))
     case Link(e1, e2)           => Link(substitute(e1, x, r0), substitute(e2, x, r0))
+    case True => ??? // shouldn't happen
+    case False  => ??? // shouldn't happen
 }
 
 ///
@@ -660,6 +664,8 @@ def alpha(e0: Expression, m: Map[Variable, Variable]): Expression = match e0 wit
     case OnResolve(e1, e2)      => OnResolve(alpha(e1, m), alpha(e2, m))
     case OnReject(e1, e2)       => OnReject(alpha(e1, m), alpha(e2, m))
     case Link(e1, e2)           => Link(alpha(e1, m), alpha(e2, m))
+    case True                   => ??? // shouldn't happen
+    case False                  => ??? // shouldn't happen
 }
 
 ///

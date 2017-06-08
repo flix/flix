@@ -20,6 +20,10 @@ A unique feature of Flix is its extension of Datalog semantics with user-defined
 See the [official Flix website](https://flix.github.io/) for more information about Flix. 
 You can [try Flix](https://flix.github.io/try/) in the online editor.
 
+[![Build Status](https://travis-ci.org/flix/flix.svg?branch=master)](https://travis-ci.org/flix/flix)
+[![CircleCI](https://circleci.com/gh/flix/flix.svg?style=svg)](https://circleci.com/gh/flix/flix)
+[![Gitter](https://badges.gitter.im/gitterHQ/gitter.svg)](https://gitter.im/flix/Lobby)
+
 ## Sample Flix Code (Functional)
 
 ```
@@ -87,11 +91,6 @@ ArithmeticError(r) :- isMaybeZero(y),
 - built-in test framework.
 - built-in static program verifier.
 - integrated browser-based debugger and profiler.
-
-## Continuous Integration
-
-[![Build Status](https://travis-ci.org/flix/flix.svg?branch=master)](https://travis-ci.org/flix/flix)
-[![CircleCI](https://circleci.com/gh/flix/flix.svg?style=svg)](https://circleci.com/gh/flix/flix)
 
 ## License
 

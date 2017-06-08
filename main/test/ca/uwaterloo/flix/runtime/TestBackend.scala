@@ -5359,17 +5359,6 @@ class TestBackend extends FunSuite {
     t.runTest(Value.mkInt32(0), "g04")
   }
 
-  test("Match.Error.01") {
-    val input =
-      """def f(x: Int): Bool = match x with {
-        |  case 321 => true
-        |}
-        |def g: Bool = f(123)
-      """.stripMargin
-    val t = new Tester(input)
-    t.runInterceptTest[MatchException]("g")
-  }
-
   /////////////////////////////////////////////////////////////////////////////
   // Term.Head.Var                                                           //
   /////////////////////////////////////////////////////////////////////////////
