@@ -273,7 +273,8 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
                                 entryPoint: Label)(expr: Expression): Unit = expr match {
     case Expression.Unit =>
       val clazz = Constants.unitClass
-      visitor.visitFieldInsn(GETSTATIC, asm.Type.getInternalName(clazz), "MODULE$", asm.Type.getDescriptor(clazz))
+      val method = clazz.getMethod("getInstance")
+      visitor.visitMethodInsn(INVOKESTATIC, asm.Type.getInternalName(clazz), method.getName, asm.Type.getMethodDescriptor(method), false)
     case Expression.True => visitor.visitInsn(ICONST_1)
     case Expression.False => visitor.visitInsn(ICONST_0)
     case Expression.Char(c) => compileInt(visitor)(c)
@@ -640,7 +641,8 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
       // If the method is void, put a unit on top of the stack
       if(asm.Type.getType(method.getReturnType) == asm.Type.VOID_TYPE) {
         val clazz = Constants.unitClass
-        visitor.visitFieldInsn(GETSTATIC, asm.Type.getInternalName(clazz), "MODULE$", asm.Type.getDescriptor(clazz))
+        val method = clazz.getMethod("getInstance")
+        visitor.visitMethodInsn(INVOKESTATIC, asm.Type.getInternalName(clazz), method.getName, asm.Type.getMethodDescriptor(method), false)
       }
 
     case Expression.UserError(_, loc) =>

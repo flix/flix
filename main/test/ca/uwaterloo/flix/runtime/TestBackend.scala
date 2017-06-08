@@ -59,6 +59,7 @@ class TestBackend extends FunSuite {
       case r : TupleInterface => {
         r.getBoxedValue().map(recursiveGetBoxed)
       }
+      case r : UnitClass => Value.Unit
       case x => x
     }
 

@@ -377,13 +377,13 @@ class TestSolver extends FunSuite {
     val A = model.getLattice("A").toMap
     assert(A(List(Value.mkInt32(1))).isInstanceOf[TagInterface])
     assert(A(List(Value.mkInt32(1))).asInstanceOf[TagInterface].getTag == "Odd")
-    assert(A(List(Value.mkInt32(1))).asInstanceOf[TagInterface].getBoxedValue == Value.Unit)
+    assert(A(List(Value.mkInt32(1))).asInstanceOf[TagInterface].getBoxedValue == UnitClass.getInstance)
     assert(A(List(Value.mkInt32(2))).isInstanceOf[TagInterface])
     assert(A(List(Value.mkInt32(2))).asInstanceOf[TagInterface].getTag == "Even")
-    assert(A(List(Value.mkInt32(2))).asInstanceOf[TagInterface].getBoxedValue == Value.Unit)
+    assert(A(List(Value.mkInt32(2))).asInstanceOf[TagInterface].getBoxedValue == UnitClass.getInstance)
     assert(A(List(Value.mkInt32(3))).isInstanceOf[TagInterface])
     assert(A(List(Value.mkInt32(3))).asInstanceOf[TagInterface].getTag == "Top")
-    assert(A(List(Value.mkInt32(3))).asInstanceOf[TagInterface].getBoxedValue == Value.Unit)
+    assert(A(List(Value.mkInt32(3))).asInstanceOf[TagInterface].getBoxedValue == UnitClass.getInstance)
   }
 
   test("Lattice02") {
@@ -399,7 +399,7 @@ class TestSolver extends FunSuite {
     val A = model.getLattice("A").toMap
     assert(A(List(Value.mkInt32(1))).isInstanceOf[TagInterface])
     assert(A(List(Value.mkInt32(1))).asInstanceOf[TagInterface].getTag == "Top")
-    assert(A(List(Value.mkInt32(1))).asInstanceOf[TagInterface].getBoxedValue == Value.Unit)
+    assert(A(List(Value.mkInt32(1))).asInstanceOf[TagInterface].getBoxedValue == UnitClass.getInstance)
   }
 
   test("Lattice03") {
@@ -417,7 +417,7 @@ class TestSolver extends FunSuite {
     val A = model.getLattice("A").toMap
     assert(A(List(Value.mkInt32(3))).isInstanceOf[TagInterface])
     assert(A(List(Value.mkInt32(3))).asInstanceOf[TagInterface].getTag == "Top")
-    assert(A(List(Value.mkInt32(3))).asInstanceOf[TagInterface].getBoxedValue == Value.Unit)
+    assert(A(List(Value.mkInt32(3))).asInstanceOf[TagInterface].getBoxedValue == UnitClass.getInstance)
   }
 
   test("NotEqual01") {

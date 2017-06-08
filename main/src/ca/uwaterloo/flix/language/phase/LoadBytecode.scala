@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import java.nio.file.{Files, Paths}
 
-import ca.uwaterloo.flix.api.{Flix, TupleInterface}
+import ca.uwaterloo.flix.api.{Flix, TupleInterface, UnitClass}
 import ca.uwaterloo.flix.language.{CompilationError, GenSym}
 import ca.uwaterloo.flix.language.ast.ExecutableAst.{Definition, Expression}
 import ca.uwaterloo.flix.language.ast.Symbol.EnumSym
@@ -169,7 +169,7 @@ object LoadBytecode extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
                           enums: Map[EnumSym, Class[_]],
                           loadedTuples: Map[QualName, Class[_]]): Class[_] = tpe match {
     case Type.Var(id, kind) => classOf[java.lang.Object]
-    case Type.Unit => Value.Unit.getClass
+    case Type.Unit => classOf[UnitClass]
     case Type.Bool => classOf[Boolean]
     case Type.Char => classOf[Char]
     case Type.Float32 => classOf[Float]

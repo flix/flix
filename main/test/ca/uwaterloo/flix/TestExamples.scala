@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix
 
-import ca.uwaterloo.flix.api.{Flix, TagInterface, TupleInterface}
+import ca.uwaterloo.flix.api.{Flix, TagInterface, TupleInterface, UnitClass}
 import ca.uwaterloo.flix.runtime.{Model, Value}
 import ca.uwaterloo.flix.util._
 import org.scalatest.FunSuite
@@ -38,6 +38,7 @@ class TestExamples extends FunSuite {
       case r : TupleInterface => {
         r.getBoxedValue().map(getBoxedIfNecessary)
       }
+      case r : UnitClass => Value.Unit
       case x => x
     }
 

@@ -459,7 +459,7 @@ object CodegenHelper {
     val setClass : Class[_] = classOf[scala.collection.immutable.Set[Object]]
     val flixClass : Class[_] = classOf[Flix]
 
-    val unitClass : Class[_] = Value.Unit.getClass
+    val unitClass : Class[_] = classOf[UnitClass]
     val tupleClass : Class[_] = classOf[TupleInterface]
     val scalaPredef = "scala/Predef$"
     val scalaMathPkg = "scala/math/package$"
