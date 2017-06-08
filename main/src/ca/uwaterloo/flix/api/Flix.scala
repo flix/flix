@@ -205,6 +205,9 @@ class Flix {
             TreeShaker |>
             VarNumbering |>
             CreateExecutableAst |>
+            TupleGen |>
+            EnumGen |>
+            CodeGen |>
             LoadBytecode |>
             QuickChecker |>
             Verifier
