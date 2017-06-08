@@ -346,7 +346,10 @@ class RestServer(solver: Solver) {
       JObject(List(JField("name", JString("Simplifier")), JField("time", JInt(solver.root.time.simplifier / 1000000)))),
       JObject(List(JField("name", JString("TreeShaker")), JField("time", JInt(solver.root.time.treeshaker / 1000000)))),
       JObject(List(JField("name", JString("VarNumbering")), JField("time", JInt(solver.root.time.varNumbering / 1000000)))),
-      JObject(List(JField("name", JString("CodeGen")), JField("time", JInt(solver.root.time.codeGen / 1000000))))
+      JObject(List(JField("name", JString("TupleGen")), JField("time", JInt(solver.root.time.tupleGen / 1000000)))),
+      JObject(List(JField("name", JString("EnumGen")), JField("time", JInt(solver.root.time.enumGen / 1000000)))),
+      JObject(List(JField("name", JString("CodeGen")), JField("time", JInt(solver.root.time.codeGen / 1000000)))),
+      JObject(List(JField("name", JString("LoadByteCode")), JField("time", JInt(solver.root.time.loadByteCode / 1000000))))
     ))
   }
 

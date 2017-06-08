@@ -16,9 +16,8 @@
 
 package ca.uwaterloo.flix.language.phase
 
-import ca.uwaterloo.flix.api.{Flix, TagInterface}
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.ExecutableAst.Definition
 import ca.uwaterloo.flix.language.ast.Symbol.EnumSym
 import org.objectweb.asm
 import org.objectweb.asm.{ClassWriter, Label}
@@ -434,6 +433,15 @@ object EnumGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     *   return "Ok(".concat(this.value.toString().concat(")"));
     * }
     *
+    * Special cases are listed as follows:
+    *
+    * 1. When the enum case has a unit field, we just print the case name and ignore printing the unit as it's field
+    * For example, for `case Red(Unit)` we generate the following method:
+    *
+    * public String toString() {
+    *   return "Red";
+    * }
+    *
     * @param visitor class visitor
     * @param qualName Qualified name of the class
     * @param fType type of the `value` field
@@ -445,23 +453,30 @@ object EnumGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     val method = visitor.visitMethod(ACC_PUBLIC, "toString", s"()${asm.Type.getDescriptor(Constants.stringClass)}", null, null)
 
     method.visitCode()
-    method.visitLdcInsn(qualName.tag.concat("("))
-    method.visitVarInsn(ALOAD, 0)
-    method.visitFieldInsn(GETFIELD, decorate(qualName), "value", getWrappedTypeDescriptor(fType))
 
-    /*
-     * Converting `value` to String.
-     * If it's an object, we will call `toString` on the object.
-     * Otherwise, we use `valueOf` static method on String with the appropriate type.
-     */
-    javaValueToString(method, fType)
+    // Special case for when the field is `Unit`
+    if(fType == WrappedNonPrimitives(Set(Type.Unit))) {
+      method.visitLdcInsn(qualName.tag)
+    } else {
+      // Normal version of `toString`
+      method.visitLdcInsn(qualName.tag.concat("("))
+      method.visitVarInsn(ALOAD, 0)
+      method.visitFieldInsn(GETFIELD, decorate(qualName), "value", getWrappedTypeDescriptor(fType))
 
-    method.visitLdcInsn(")")
+      /*
+       * Converting `value` to String.
+       * If it's an object, we will call `toString` on the object.
+       * Otherwise, we use `valueOf` static method on String with the appropriate type.
+       */
+      javaValueToString(method, fType)
 
-    // We concatenate twice since there is 3 strings on the stack that we want to concat them together
-    for(_ <- 0 until 2) {
-      method.visitMethodInsn(INVOKEVIRTUAL, stringInternalName, stringConcatMethod.getName,
-        asm.Type.getMethodDescriptor(stringConcatMethod), false)
+      method.visitLdcInsn(")")
+
+      // We concatenate twice since there is 3 strings on the stack that we want to concat them together
+      for (_ <- 0 until 2) {
+        method.visitMethodInsn(INVOKEVIRTUAL, stringInternalName, stringConcatMethod.getName,
+          asm.Type.getMethodDescriptor(stringConcatMethod), false)
+      }
     }
 
     method.visitInsn(ARETURN)
