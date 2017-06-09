@@ -245,11 +245,11 @@ object EnumGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     visitor.visit(JavaVersion, ACC_PUBLIC + ACC_FINAL, decorate(className), null, superClass, implementedInterfaces)
 
     // Generate value field
-    compileField(visitor, "value", getWrappedTypeDescriptor(fType), isStatic = false)
+    compileField(visitor, "value", getWrappedTypeDescriptor(fType), isStatic = false, isPrivate = true)
 
     // Generate static `INSTANCE` field if it is a singleton
     if(isSingleton) {
-      compileField(visitor, "unitInstance", s"L${decorate(className)};", isStatic = true)
+      compileField(visitor, "unitInstance", s"L${decorate(className)};", isStatic = true, isPrivate = false)
     }
 
     // Generate the constructor of the class
@@ -363,20 +363,6 @@ object EnumGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
   }
 
   /**
-    * Returns the load instruction corresponding to the `fType`, if it is `None` then the type can be represented by an object
-    * @param fType type
-    * @return A load instruction
-    */
-  private def getReturnInsn(fType: WrappedType) : Int = fType match {
-    case WrappedPrimitive(Type.Bool) | WrappedPrimitive(Type.Char) | WrappedPrimitive(Type.Int8) | WrappedPrimitive(Type.Int16) |
-         WrappedPrimitive(Type.Int32) => IRETURN
-    case WrappedPrimitive(Type.Int64) => LRETURN
-    case WrappedPrimitive(Type.Float32) => FRETURN
-    case WrappedPrimitive(Type.Float64) => DRETURN
-    case _ => ARETURN
-  }
-
-  /**
     * Generates the `getTag()` method of the class which is the implementation of `getTag` method on `tagInterface`.
     * This methods returns an string containing the tag name.
     * For example, `Val[Char]` has following `getTag()`method:
@@ -393,34 +379,6 @@ object EnumGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     val method = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, "getTag", s"()$descriptor", null, null)
     method.visitLdcInsn(className.tag)
     method.visitInsn(ARETURN)
-    method.visitMaxs(1, 1)
-    method.visitEnd()
-  }
-
-  /**
-    * Generate the `methodName` method for fetching the `fieldName` field of the class.
-    * `name` is name of the class and `descriptor` is type of the `fieldName` field.
-    * This method generates `getValue()` method of the class.
-    * For example, `Val[Char]` has following `getValue()`method:
-    *
-    * public final char getValue() {
-    *   return this.value;
-    * }
-    *
-    * @param visitor class visitor
-    * @param qualName Qualified name of the class
-    * @param fieldName name of the field
-    * @param methodName method name of getter of `fieldName`
-    * @param iReturn opcode for returning the value of the field
-    */
-  private def compileGetFieldMethod(visitor: ClassWriter, qualName: QualName, descriptor: String, fieldName: String,
-                                    methodName: String, iReturn: Int) = {
-    val method = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, methodName, s"()$descriptor", null, null)
-
-    method.visitCode()
-    method.visitVarInsn(ALOAD, 0)
-    method.visitFieldInsn(GETFIELD, decorate(qualName), fieldName, descriptor)
-    method.visitInsn(iReturn)
     method.visitMaxs(1, 1)
     method.visitEnd()
   }

@@ -169,16 +169,18 @@ object CodegenHelper {
   /**
     * Generates a field for the class with with name `name`, with descriptor `descriptor` using `visitor`. If `isStatic = true`
     * then the field is static, otherwise the field will be non-static.
-    * For example calling this method with name = `field01`, descriptor = `I` and isStatic = `false` creates the following field:
+    * For example calling this method with name = `field01`, descriptor = `I`, isStatic = `false` and isPrivate = `true`
+    * creates the following field:
     *
-    * public int field01;
+    * private int field01;
     *
-    * calling this method with name = `value`, descriptor = `java/lang/Object` and isStatic = `false` creates the following:
+    * calling this method with name = `value`, descriptor = `java/lang/Object`, isStatic = `false` and isPrivate = `true`
+    * creates the following:
     *
-    * public Object value;
+    * private Object value;
     *
-    * calling this method with name = `unitInstance`, descriptor = `ca/waterloo/flix/enums/List/object/Nil` and `isStatic = true`
-    * generates the following:
+    * calling this method with name = `unitInstance`, descriptor = `ca/waterloo/flix/enums/List/object/Nil`, `isStatic = true`
+    * and isPrivate = `false` generates the following:
     *
     * public static Nil unitInstance;
     *
@@ -186,16 +188,94 @@ object CodegenHelper {
     * @param name name of the field
     * @param descriptor descriptor of field
     * @param isStatic if this is true the the field is static
+    * @param isPrivate if this is set then the field is private
     */
-  def compileField(visitor: ClassWriter, name: String, descriptor: String, isStatic: Boolean) : Unit = {
-    val specifier =
-      if(isStatic) {
-        ACC_STATIC + ACC_PUBLIC
+  def compileField(visitor: ClassWriter, name: String, descriptor: String, isStatic: Boolean, isPrivate: Boolean) : Unit = {
+    val visibility =
+      if(isPrivate) {
+        ACC_PRIVATE
       } else {
         ACC_PUBLIC
       }
-    val field = visitor.visitField(specifier, name, descriptor, null, null)
+
+    val fieldType =
+      if(isStatic) {
+        ACC_STATIC
+      } else {
+        0
+      }
+
+    val field = visitor.visitField(visibility + fieldType, name, descriptor, null, null)
     field.visitEnd()
+  }
+
+  /**
+    * Generate the `methodName` method for fetching the `fieldName` field of the class.
+    * `name` is name of the class and `descriptor` is type of the `fieldName` field.
+    * For example, `Val[Char]` has following `getValue()`method:
+    *
+    * public final char getValue() {
+    *   return this.value;
+    * }
+    *
+    * @param visitor class visitor
+    * @param qualName Qualified name of the class
+    * @param fieldName name of the field
+    * @param methodName method name of getter of `fieldName`
+    * @param iReturn opcode for returning the value of the field
+    */
+  def compileGetFieldMethod(visitor: ClassWriter, qualName: QualName, descriptor: String, fieldName: String,
+                                    methodName: String, iReturn: Int) : Unit = {
+    val method = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, methodName, s"()$descriptor", null, null)
+
+    method.visitCode()
+    method.visitVarInsn(ALOAD, 0)
+    method.visitFieldInsn(GETFIELD, decorate(qualName), fieldName, descriptor)
+    method.visitInsn(iReturn)
+    method.visitMaxs(1, 1)
+    method.visitEnd()
+  }
+
+  /**
+    * Generate the `methodName` method for setting the `fieldName` field of the class.
+    * `name` is name of the class and `descriptor` is type of the `fieldName` field.
+    * For example, the class of `Tuple[Int32, Int32]` has the following `setField0` method:
+    *
+    * public final void setField0(int var) {
+    *   this.field0 = var;
+    * }
+    *
+    * @param visitor class visitor
+    * @param qualName Qualified name of the class
+    * @param fieldName name of the field
+    * @param methodName method name of getter of `fieldName`
+    * @param iLoad opcode for loading the single parameter of the method
+    */
+  def compileSetFieldMethod(visitor: ClassWriter, qualName: QualName, descriptor: String, fieldName: String,
+                            methodName: String, iLoad: Int) : Unit = {
+    val method = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, methodName, s"($descriptor)V", null, null)
+
+    method.visitCode()
+    method.visitVarInsn(ALOAD, 0)
+    method.visitVarInsn(iLoad, 1)
+    method.visitFieldInsn(PUTFIELD, decorate(qualName), fieldName, descriptor)
+    method.visitInsn(RETURN)
+    method.visitMaxs(1, 1)
+    method.visitEnd()
+  }
+
+  /**
+    * Returns the load instruction corresponding to the `fType`, if it is `None` then the type can be represented by an object
+    * @param fType type
+    * @return A load instruction
+    */
+  def getReturnInsn(fType: WrappedType) : Int = fType match {
+    case WrappedPrimitive(Type.Bool) | WrappedPrimitive(Type.Char) | WrappedPrimitive(Type.Int8) | WrappedPrimitive(Type.Int16) |
+         WrappedPrimitive(Type.Int32) => IRETURN
+    case WrappedPrimitive(Type.Int64) => LRETURN
+    case WrappedPrimitive(Type.Float32) => FRETURN
+    case WrappedPrimitive(Type.Float64) => DRETURN
+    case _ => ARETURN
   }
 
   /**

@@ -567,7 +567,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
       // Cast the exp to the type of the tag
       visitor.visitTypeInsn(CHECKCAST, decorate(clazz))
       // Invoke `getValue()` method to extract the field of the tag
-      visitor.visitMethodInsn(INVOKEVIRTUAL, decorate(clazz), "getValue", s"()${desc}", false)
+      visitor.visitMethodInsn(INVOKEVIRTUAL, decorate(clazz), "getValue", s"()$desc", false)
       // Cast the object to it's type if it's not a primitive
       castIfNotPrim(tpe, interfaces, visitor)
 
@@ -581,8 +581,8 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
       }
       // evaluating the `base`
       compileExpression(prefix, functions, declarations, interfaces, enums, visitor, entryPoint)(base)
-      // Fetching the field containing the element specified by the `offset`
-      visitor.visitFieldInsn(GETFIELD, decorate(clazzName), s"field$offset",desc)
+      // Invoking `getField${offset}()` method for fetching the field
+      visitor.visitMethodInsn(INVOKEVIRTUAL, decorate(clazzName), s"getField$offset", s"()$desc", false)
       // Cast the object to it's type if it's not a primitive
       castIfNotPrim(tpe, interfaces, visitor)
       
