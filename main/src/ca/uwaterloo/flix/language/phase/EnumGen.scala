@@ -98,7 +98,11 @@ object EnumGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     *   return "Some(".concat(String.valueOf(this.value).concat(")"));
     * }
     *
-    * `hashCode()` returns a hashCode corresponding to this enum case. hashCode is the the hash of a list containing namespace
+    * `toString()` has to special cases, first when the field of the enum is `Unit` we don't show the `Unit` on the result
+    * of the representation of the case, second for case `Cons` of `List` enum we represent it using `::` symbol instead of
+    * the traditional representation.
+    *
+    * hashCode() returns a hashCode corresponding to this enum case. hashCode is the the hash of a list containing namespace
     * of the enum symbol, enum name and case name multiplied by 7 added to the hashCode of the field of the enum multiplied by 11.
     * For example, for enum `Some[Bool]` we generate the following method:
     *
@@ -236,11 +240,25 @@ object EnumGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     visitor.visit(JavaVersion, ACC_PUBLIC + ACC_FINAL, decorate(className), null, superClass, implementedInterfaces)
 
     // Generate tag and value fields
-    compileField(visitor, "value", getWrappedTypeDescriptor(fType))
-    compileField(visitor, "tag", asm.Type.getDescriptor(Constants.stringClass))
+    compileField(visitor, "value", getWrappedTypeDescriptor(fType), isStatic = false)
+    compileField(visitor, "tag", asm.Type.getDescriptor(Constants.stringClass), isStatic = false)
+
+    // Generate static `INSTANCE` field if underlying field can be `Unit`
+    fType match {
+      case WrappedNonPrimitives(s) if s.contains(Type.Unit) =>
+        compileField(visitor, "unitInstance", s"L${decorate(className)};", isStatic = true)
+      case _ => ()
+    }
 
     // Generate the constructor of the class
     compileEnumConstructor(visitor, className, fType)
+
+    // Initialize the static field if it is singleton
+    fType match {
+      case WrappedNonPrimitives(s) if s.contains(Type.Unit) =>
+        initializeStaticField(visitor, className)
+      case _ => ()
+    }
 
     // Generate the `getValue` method
     compileGetFieldMethod(visitor, className, getWrappedTypeDescriptor(fType), "value", "getValue", getReturnInsn(fType))
@@ -265,9 +283,44 @@ object EnumGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
   }
 
   /**
+    * Initializing `getInstance` static field if the `value` field can be `UnitClass`
+    * @param visitor class visitor
+    * @param className Qualified name of the class
+    */
+  private def initializeStaticField(visitor: ClassWriter, className: EnumClassName) = {
+    val unitClazz = Constants.unitClass
+    val getInstanceMethod = unitClazz.getMethod("getInstance")
+
+    val method = visitor.visitMethod(ACC_STATIC, "<clinit>", "()V", null, null)
+    method.visitCode()
+
+    // Instantiating the object
+    method.visitTypeInsn(NEW, decorate(className))
+    method.visitInsn(DUP)
+
+    // Getting instance of `UnitClass`
+    method.visitMethodInsn(INVOKESTATIC, asm.Type.getInternalName(unitClazz), getInstanceMethod.getName,
+      asm.Type.getMethodDescriptor(getInstanceMethod), false)
+
+    // Calling constructor on the object
+    method.visitMethodInsn(INVOKESPECIAL, decorate(className), "<init>", s"(${asm.Type.getDescriptor(Constants.objectClass)})V", false)
+
+    // Initializing the static field
+    method.visitFieldInsn(PUTSTATIC, decorate(className), "unitInstance", s"L${decorate(className)};")
+
+    // Return
+    method.visitInsn(RETURN)
+    method.visitMaxs(2, 0)
+    method.visitEnd()
+  }
+
+  /**
     * Creates the single argument constructor of the enum case class which is named `className`.
     * The only argument required to instantiate the class is the `value`.
-    * The type of the field of the case is give by `descriptor`
+    * The type of the field of the case is give by `descriptor`.
+    * If the `fType` is only `Unit`, then we can make the constructor private since the `unitInstance` field
+    * can be used to obtain an instance of the case.
+    *
     * @param visitor class visitor
     * @param className name of the class
     * @param fType type of the `value` field
@@ -275,7 +328,15 @@ object EnumGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
   private def compileEnumConstructor(visitor: ClassWriter, className: EnumClassName, fType: WrappedType) = {
     val descriptor = getWrappedTypeDescriptor(fType)
 
-    val constructor = visitor.visitMethod(ACC_PUBLIC, "<init>", s"($descriptor)V", null, null)
+    // If the type of the field is unit, this is a singleton object and we should make the constructor private
+    val specifier =
+      if(fType == WrappedNonPrimitives(Set(Type.Unit))) {
+        ACC_PRIVATE
+      } else {
+        ACC_PUBLIC
+      }
+
+    val constructor = visitor.visitMethod(specifier, "<init>", s"($descriptor)V", null, null)
     val clazz = Constants.objectClass
     val ctor = clazz.getConstructor()
 
@@ -442,6 +503,19 @@ object EnumGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     *   return "Red";
     * }
     *
+    * 2. When the enum case is `Cons` of `List`, we hack to represent it with `::` which is also hacked into the system.
+    * We first get the `value` field of the case, then since we know it's a tuple we cast it and use `getBoxedValue` to get
+    * an array of length two. Then we invoke `toString` on the first element of the array, append " :: " to the string and
+    * put it on top of the stack then we invoke `toString` on the second element of the array and then concatenate this to
+    * the string on top of the stack.
+    *
+    * The code we generate is equivalent to:
+    *
+    * public String toString() {
+    *   Object[] var10000 = ((TupleInterface)this.value).getBoxedValue();
+    *   return var10000[0].toString().concat(" :: ".concat(var10000[1].toString()));
+    * }
+    *
     * @param visitor class visitor
     * @param qualName Qualified name of the class
     * @param fType type of the `value` field
@@ -454,9 +528,54 @@ object EnumGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
 
     method.visitCode()
 
-    // Special case for when the field is `Unit`
-    if(fType == WrappedNonPrimitives(Set(Type.Unit))) {
+    if(fType == WrappedNonPrimitives(Set(Type.Unit))) { // Special case for when the field is `Unit`
       method.visitLdcInsn(qualName.tag)
+    } else if(qualName.tag == "Cons" && qualName.sym.namespace == Nil && qualName.sym.name == "List") { // Special case for cons
+      val tupleClazz = Constants.tupleClass
+      val getBoxedValueMethod = tupleClazz.getMethod("getBoxedValue")
+
+      // Load value field
+      method.visitVarInsn(ALOAD, 0)
+      method.visitFieldInsn(GETFIELD, decorate(qualName), "value", getWrappedTypeDescriptor(fType))
+
+      // Cast the field to tuple interface
+      method.visitTypeInsn(CHECKCAST, asm.Type.getInternalName(Constants.tupleClass))
+
+      // Call `getBoxedValue()` on the object
+      method.visitMethodInsn(INVOKEVIRTUAL, asm.Type.getInternalName(tupleClazz), getBoxedValueMethod.getName,
+        asm.Type.getMethodDescriptor(getBoxedValueMethod), false)
+
+      // Duplicate the reference to array
+      method.visitInsn(DUP)
+
+      // Get the first element of the array
+      method.visitLdcInsn(0)
+      method.visitInsn(AALOAD)
+
+      // Convert the first element of the array to string
+      javaValueToString(method, WrappedNonPrimitives(Set()))
+
+      // Bring reference to the array to the top of the stack
+      method.visitInsn(SWAP)
+
+      // Put " :: " on top of the stack
+      method.visitLdcInsn(" :: ")
+
+      // Again, bring reference to the array to the top of the stack
+      method.visitInsn(SWAP)
+
+      // Convert the second element of the array to string
+      method.visitLdcInsn(1)
+      method.visitInsn(AALOAD)
+
+      // Convert the first element of the array to string
+      javaValueToString(method, WrappedNonPrimitives(Set()))
+
+      // Concatenate all of the string on top of the stack together
+      for (_ <- 0 until 2) {
+        method.visitMethodInsn(INVOKEVIRTUAL, stringInternalName, stringConcatMethod.getName,
+          asm.Type.getMethodDescriptor(stringConcatMethod), false)
+      }
     } else {
       // Normal version of `toString`
       method.visitLdcInsn(qualName.tag.concat("("))

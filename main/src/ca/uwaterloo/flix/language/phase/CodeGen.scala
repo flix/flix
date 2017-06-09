@@ -536,19 +536,23 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
     case Expression.Tag(enum, tag, exp, tpe, _) =>
       //  We look in the enum map to find the qualified name of the class of the enum case
       val clazzName = enums(tpe, tag)
-      /*
-       * We get the descriptor of the type of the `value` field of enum, if type if primitive we use the corresponding
-       * primitive in java otherwise we use the descriptor of object.
-       */
-      val desc = getWrappedTypeDescriptor(typeToWrappedType(exp.tpe))
-      // Creating a new instance of the class
-      visitor.visitTypeInsn(NEW, decorate(clazzName))
-      visitor.visitInsn(DUP)
-      // Evaluating the single argument of the class constructor
-      compileExpression(prefix, functions, declarations, interfaces, enums, visitor, entryPoint)(exp)
-      // Calling the constructor of the class
-      visitor.visitMethodInsn(INVOKESPECIAL, decorate(clazzName), "<init>", s"(${desc})V", false)
 
+      if(exp.tpe == Type.Unit) {
+        visitor.visitFieldInsn(GETSTATIC, decorate(clazzName), "unitInstance", s"L${decorate(clazzName)};")
+      } else {
+        /*
+         * We get the descriptor of the type of the `value` field of enum, if type if primitive we use the corresponding
+         * primitive in java otherwise we use the descriptor of object.
+         */
+        val desc = getWrappedTypeDescriptor(typeToWrappedType(exp.tpe))
+        // Creating a new instance of the class
+        visitor.visitTypeInsn(NEW, decorate(clazzName))
+        visitor.visitInsn(DUP)
+        // Evaluating the single argument of the class constructor
+        compileExpression(prefix, functions, declarations, interfaces, enums, visitor, entryPoint)(exp)
+        // Calling the constructor of the class
+        visitor.visitMethodInsn(INVOKESPECIAL, decorate(clazzName), "<init>", s"(${desc})V", false)
+      }
     case Expression.Untag(enum, tag, exp, tpe, _) =>
       /*
        * We get the descriptor of the type of the `value` field of enum, if type if primitive we use the corresponding

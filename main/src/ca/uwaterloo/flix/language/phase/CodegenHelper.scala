@@ -21,7 +21,6 @@ import ca.uwaterloo.flix.language.GenSym
 import ca.uwaterloo.flix.language.ast.ExecutableAst.{Definition, Expression}
 import ca.uwaterloo.flix.language.ast.Symbol.EnumSym
 import ca.uwaterloo.flix.language.ast.{Type, _}
-import ca.uwaterloo.flix.runtime.Value
 import ca.uwaterloo.flix.util.InternalCompilerException
 import org.objectweb.asm
 import org.objectweb.asm.Opcodes._
@@ -168,22 +167,34 @@ object CodegenHelper {
   }
 
   /**
-    * Generates a field for the class with with name `name`, with descriptor `descriptor`
-    * using `visitor`
-    * For example calling this method with name = `field01` and descriptor = `I` creates the following field:
+    * Generates a field for the class with with name `name`, with descriptor `descriptor` using `visitor`. If `isStatic = true`
+    * then the field is static, otherwise the field will be non-static.
+    * For example calling this method with name = `field01`, descriptor = `I` and isStatic = `false` creates the following field:
     *
     * public int field01;
     *
-    * calling this method with name = `value` and descriptor = `java.lang.Object` creates the following:
+    * calling this method with name = `value`, descriptor = `java/lang/Object` and isStatic = `false` creates the following:
     *
     * public Object value;
+    *
+    * calling this method with name = `unitInstance`, descriptor = `ca/waterloo/flix/enums/List/object/Nil` and `isStatic = true`
+    * generates the following:
+    *
+    * public static Nil unitInstance;
     *
     * @param visitor class visitor
     * @param name name of the field
     * @param descriptor descriptor of field
+    * @param isStatic if this is true the the field is static
     */
-  def compileField(visitor: ClassWriter, name: String, descriptor: String) : Unit = {
-    val field = visitor.visitField(ACC_PUBLIC, name, descriptor, null, null)
+  def compileField(visitor: ClassWriter, name: String, descriptor: String, isStatic: Boolean) : Unit = {
+    val specifier =
+      if(isStatic) {
+        ACC_STATIC + ACC_PUBLIC
+      } else {
+        ACC_PUBLIC
+      }
+    val field = visitor.visitField(specifier, name, descriptor, null, null)
     field.visitEnd()
   }
 

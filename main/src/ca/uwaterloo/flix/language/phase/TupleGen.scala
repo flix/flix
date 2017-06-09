@@ -196,7 +196,7 @@ object TupleGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
     fields.zipWithIndex.foreach{ case (field, ind) =>
       // Descriptor of the field
       val desc = getWrappedTypeDescriptor(field)
-      compileField(visitor, s"field$ind", desc)
+      compileField(visitor, s"field$ind", desc, isStatic = false)
     }
 
     // Emit the code for the constructor
