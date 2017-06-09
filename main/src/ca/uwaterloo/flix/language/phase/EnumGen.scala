@@ -65,10 +65,9 @@ object EnumGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     * the field.
     *
     * 4. Generate bytecode for each enum case.
-    * A class will be generated for each enum case. This class contains two fields: `tag` and `value`. `tag` is the name
-    * of the enum case represented as a string and `value` contains the field of the case. If the field is primitive, then
-    * `value` is of the type of that primitive, otherwise,`value` is just an object. For example, for the case `Ok[Int32]`
-    * we generate:
+    * A class will be generated for each enum case. This class contains one field: `value`. `value` contains the field of the case.
+    * If the field is primitive, then `value` is of the type of that primitive, otherwise, `value` is just an object.
+    * For example, for the case `Ok[Int32]` we generate:
     *
     * public int value;
     *
@@ -79,7 +78,7 @@ object EnumGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     * Classes generated at this step implements the interface corresponding the symbol of the enum case and they include
     * implementations of following methods: `getTag()`, `getValue()`, `getBoxedValue()`,`toString()`, `hashCode()` and
     * `equals(Object)`.
-    * `getTag()` is the function which returns the value of the `tag` field. `getValue()` returns the value of `value` field.
+    * `getTag()` is the function which returns the name of the enum case. `getValue()` returns the value of `value` field.
     * `getBoxedValue()` returns the `value` field but the result is boxed inside an object. As an example, `getValue()` and
     * `getBoxedValue()` of the class representing `Ok[Int32]` is as follows:
     *
@@ -169,13 +168,17 @@ object EnumGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
         val wrapped = WrappedPrimitive(tpe)
         val qualName = EnumClassName(sym, name, wrapped)
         val interface = enumInterfaces(sym)._1
-        (name, tpe) -> EnumGen.compileEnumClass(qualName, interface, wrapped)
+        // A primitive enum cannot be a singleton
+        val isSingleton = false
+        (name, tpe) -> EnumGen.compileEnumClass(qualName, interface, wrapped, isSingleton = isSingleton)
       }.toMap
       val generatedObjectEnums : Map[String, Array[Byte]] = objectEnums.map{ case (name, tpes) =>
         val wrapped = WrappedNonPrimitives(tpes)
         val fullName = EnumClassName(sym, name, wrapped)
         val interface = enumInterfaces(sym)._1
-        name -> EnumGen.compileEnumClass(fullName, interface, wrapped)
+        // If the type of the case field is `Unit` then this is a singleton
+        val isSingleton = root.enums(sym).cases(name).tpe == Type.Unit
+        name -> EnumGen.compileEnumClass(fullName, interface, wrapped, isSingleton = isSingleton)
       }.toMap
       sym -> (generatedPrimEnums, generatedObjectEnums)
     }
@@ -217,11 +220,13 @@ object EnumGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     * @param className Qualified name of the generated class
     * @param superType Qualfied name of the interface of the Enum
     * @param fType Type of the `value` field, None means that the type is not a primitive
+    * @param isSingleton is `true` if this is a singleton, `false` otherwise.
     * @return byte code representation of the class
     */
   def compileEnumClass(className: EnumClassName,
                        superType: EnumInterfName,
-                       fType: WrappedType): Array[Byte] = {
+                       fType: WrappedType,
+                       isSingleton : Boolean): Array[Byte] = {
     /*
      *  Initialize the class writer. We override `getCommonSuperClass` method because `asm` implementation of this
      * function requires types to loaded so that they can be compared to each other.
@@ -239,25 +244,20 @@ object EnumGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     val implementedInterfaces = Array(decorate(superType))
     visitor.visit(JavaVersion, ACC_PUBLIC + ACC_FINAL, decorate(className), null, superClass, implementedInterfaces)
 
-    // Generate tag and value fields
+    // Generate value field
     compileField(visitor, "value", getWrappedTypeDescriptor(fType), isStatic = false)
-    compileField(visitor, "tag", asm.Type.getDescriptor(Constants.stringClass), isStatic = false)
 
-    // Generate static `INSTANCE` field if underlying field can be `Unit`
-    fType match {
-      case WrappedNonPrimitives(s) if s.contains(Type.Unit) =>
-        compileField(visitor, "unitInstance", s"L${decorate(className)};", isStatic = true)
-      case _ => ()
+    // Generate static `INSTANCE` field if it is a singleton
+    if(isSingleton) {
+      compileField(visitor, "unitInstance", s"L${decorate(className)};", isStatic = true)
     }
 
     // Generate the constructor of the class
-    compileEnumConstructor(visitor, className, fType)
+    compileEnumConstructor(visitor, className, fType, isSingleton = isSingleton)
 
-    // Initialize the static field if it is singleton
-    fType match {
-      case WrappedNonPrimitives(s) if s.contains(Type.Unit) =>
-        initializeStaticField(visitor, className)
-      case _ => ()
+    // Initialize the static field if it is a singleton
+    if(isSingleton){
+      initializeStaticField(visitor, className)
     }
 
     // Generate the `getValue` method
@@ -267,7 +267,7 @@ object EnumGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     compileGetBoxedValueMethod(visitor, className, fType)
 
     // Generate `getTag` method
-    compileGetFieldMethod(visitor, className, asm.Type.getDescriptor(Constants.stringClass), "tag", "getTag", ARETURN)
+    compileGetTagMethod(visitor, className)
 
     // Generate `hashCode` method
     compileHashCodeMethod(visitor, className, fType)
@@ -324,13 +324,14 @@ object EnumGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     * @param visitor class visitor
     * @param className name of the class
     * @param fType type of the `value` field
+    * @param isSingleton if the class is a singleton this flag is set
     */
-  private def compileEnumConstructor(visitor: ClassWriter, className: EnumClassName, fType: WrappedType) = {
+  private def compileEnumConstructor(visitor: ClassWriter, className: EnumClassName, fType: WrappedType, isSingleton: Boolean) = {
     val descriptor = getWrappedTypeDescriptor(fType)
 
-    // If the type of the field is unit, this is a singleton object and we should make the constructor private
+    // If this is a singleton then we should make the constructor private
     val specifier =
-      if(fType == WrappedNonPrimitives(Set(Type.Unit))) {
+      if(isSingleton) {
         ACC_PRIVATE
       } else {
         ACC_PUBLIC
@@ -355,11 +356,6 @@ object EnumGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     constructor.visitVarInsn(iLoad, 1)
     constructor.visitFieldInsn(PUTFIELD, decorate(className), "value", descriptor)
 
-    // Put the name of the tag on the `tag` field
-    constructor.visitVarInsn(ALOAD, 0)
-    constructor.visitLdcInsn(className.tag)
-    constructor.visitFieldInsn(PUTFIELD, decorate(className), "tag", asm.Type.getDescriptor(Constants.stringClass))
-
     // Return
     constructor.visitInsn(RETURN)
     constructor.visitMaxs(65535, 65535)
@@ -381,18 +377,34 @@ object EnumGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
   }
 
   /**
+    * Generates the `getTag()` method of the class which is the implementation of `getTag` method on `tagInterface`.
+    * This methods returns an string containing the tag name.
+    * For example, `Val[Char]` has following `getTag()`method:
+    *
+    * public final String getTag() {
+    *   return "Var";
+    * }
+    *
+    * @param visitor class visitor
+    * @param className Qualified name of the class
+    */
+  private def compileGetTagMethod(visitor: ClassWriter, className: EnumClassName) = {
+    val descriptor = asm.Type.getDescriptor(Constants.stringClass)
+    val method = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, "getTag", s"()$descriptor", null, null)
+    method.visitLdcInsn(className.tag)
+    method.visitInsn(ARETURN)
+    method.visitMaxs(1, 1)
+    method.visitEnd()
+  }
+
+  /**
     * Generate the `methodName` method for fetching the `fieldName` field of the class.
     * `name` is name of the class and `descriptor` is type of the `fieldName` field.
-    * This method generates `getValue()` and `getTag()` methods of the class.
-    * For example, `Val[Char]` has following `getValue()` and `getTag()` methods:
+    * This method generates `getValue()` method of the class.
+    * For example, `Val[Char]` has following `getValue()`method:
     *
     * public final char getValue() {
     *   return this.value;
-    * }
-    *
-    *
-    * public final String getTag() {
-    *   return this.tag;
     * }
     *
     * @param visitor class visitor

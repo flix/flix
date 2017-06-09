@@ -100,13 +100,14 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
     // 3. Create Enum Type info
     val allEnums : List[(Type, (String, Type))] = root.definitions.values.flatMap(x => CodegenHelper.findEnumCases(x.exp)).toList
 
-    val enumTypeInfo: Map[(Type, String), QualName] = allEnums.map{ case (tpe, (name, subType)) =>
+    val enumTypeInfo: Map[(Type, String), (QualName, Boolean)] = allEnums.map{ case (tpe, (name, subType)) =>
       val sym =  tpe match {
         case Type.Apply(Type.Enum(s, _), _) => s
         case Type.Enum(s, _) => s
         case _ => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
       }
-      (tpe, name) -> EnumClassName(sym, name, typeToWrappedType(subType))
+      val isSingleton = root.enums(sym).cases(name).tpe == Type.Unit
+      (tpe, name) -> (EnumClassName(sym, name, typeToWrappedType(subType)), isSingleton)
     }.toMap
 
     // 4. Generate functional interfaces.
@@ -160,7 +161,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
               functions: List[Definition.Constant],
               declarations: Map[Symbol.DefnSym, Type],
               interfaces: Map[Type, FlixClassName],
-              enums: Map[(Type, String), QualName],
+              enums: Map[(Type, String), (QualName, Boolean)],
               options: Options): Array[Byte] = {
     /*
      * Initialize the class writer. We override `getCommonSuperClass` method because `asm` implementation of this
@@ -232,7 +233,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
                               functions: List[Definition.Constant],
                               declarations: Map[Symbol.DefnSym, Type],
                               interfaces: Map[Type, FlixClassName],
-                              enums: Map[(Type, String), QualName],
+                              enums: Map[(Type, String), (QualName, Boolean)],
                               visitor: ClassVisitor)(function: Definition.Constant): Unit = {
     val flags = if (function.isSynthetic) ACC_PUBLIC + ACC_STATIC + ACC_SYNTHETIC else ACC_PUBLIC + ACC_STATIC
     val mv = visitor.visitMethod(flags, function.sym.suffix, descriptor(function.tpe, interfaces), null, null)
@@ -268,7 +269,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
                                 functions: List[Definition.Constant],
                                 declarations: Map[Symbol.DefnSym, Type],
                                 interfaces: Map[Type, FlixClassName],
-                                enums: Map[(Type, String), QualName],
+                                enums: Map[(Type, String), (QualName, Boolean)],
                                 visitor: MethodVisitor,
                                 entryPoint: Label)(expr: Expression): Unit = expr match {
     case Expression.Unit =>
@@ -529,15 +530,15 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
       // First we compile the `exp`
       compileExpression(prefix, functions, declarations, interfaces, enums, visitor, entryPoint)(exp)
       // We look in the enum map to find the qualified name of the class of the enum case
-      val clazz = enums(exp.tpe, tag)
+      val clazz = enums(exp.tpe, tag)._1
       // We check if the enum is `instanceof` the class
       visitor.visitTypeInsn(INSTANCEOF, decorate(clazz))
 
     case Expression.Tag(enum, tag, exp, tpe, _) =>
       //  We look in the enum map to find the qualified name of the class of the enum case
-      val clazzName = enums(tpe, tag)
+      val (clazzName, isSingleton) = enums(tpe, tag)
 
-      if(exp.tpe == Type.Unit) {
+      if(isSingleton) {
         visitor.visitFieldInsn(GETSTATIC, decorate(clazzName), "unitInstance", s"L${decorate(clazzName)};")
       } else {
         /*
@@ -684,7 +685,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
                                functions: List[Definition.Constant],
                                declarations: Map[Symbol.DefnSym, Type],
                                interfaces: Map[Type, FlixClassName],
-                               enums: Map[(Type, String), QualName],
+                               enums: Map[(Type, String), (QualName, Boolean)],
                                visitor: MethodVisitor,
                                entryPoint: Label)(exp: Expression): Unit = exp.tpe match {
     case Type.Bool =>
@@ -829,7 +830,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
                               functions: List[Definition.Constant],
                               declarations: Map[Symbol.DefnSym, Type],
                               interfaces: Map[Type, FlixClassName],
-                              enums: Map[(Type, String), QualName],
+                              enums: Map[(Type, String), (QualName, Boolean)],
                               visitor: MethodVisitor,
                               entryPoint: Label)(load: LoadExpression): Unit = {
     compileExpression(prefix, functions, declarations, interfaces, enums, visitor, entryPoint)(load.e)
@@ -878,7 +879,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
                                functions: List[Definition.Constant],
                                declarations: Map[Symbol.DefnSym, Type],
                                interfaces: Map[Type, FlixClassName],
-                               enums: Map[(Type, String), QualName],
+                               enums: Map[(Type, String), (QualName, Boolean)],
                                visitor: MethodVisitor, entryPoint: Label)(store: StoreExpression): Unit = {
     compileExpression(prefix, functions, declarations, interfaces, enums, visitor, entryPoint)(store.e)
     compileInt(visitor)(store.targetMask, isLong = true)
@@ -925,7 +926,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
                                functions: List[Definition.Constant],
                                declarations: Map[Symbol.DefnSym, Type],
                                interfaces: Map[Type, FlixClassName],
-                               enums: Map[(Type, String), QualName],
+                               enums: Map[(Type, String), (QualName, Boolean)],
                                visitor: MethodVisitor,
                                entryPoint: Label)(op: UnaryOperator, e: Expression): Unit = {
     compileExpression(prefix, functions, declarations, interfaces, enums, visitor, entryPoint)(e)
@@ -967,7 +968,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
                                     functions: List[Definition.Constant],
                                     declarations: Map[Symbol.DefnSym, Type],
                                     interfaces: Map[Type, FlixClassName],
-                                    enums: Map[(Type, String), QualName],
+                                    enums: Map[(Type, String), (QualName, Boolean)],
                                     visitor: MethodVisitor)(tpe: Type): Unit = tpe match {
     case Type.Float32 => visitor.visitInsn(FNEG)
     case Type.Float64 => visitor.visitInsn(DNEG)
@@ -1046,7 +1047,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
                                     functions: List[Definition.Constant],
                                     declarations: Map[Symbol.DefnSym, Type],
                                     interfaces: Map[Type, FlixClassName],
-                                    enums: Map[(Type, String), QualName],
+                                    enums: Map[(Type, String), (QualName, Boolean)],
                                     visitor: MethodVisitor,
                                     entryPoint: Label)(o: ArithmeticOperator, e1: Expression, e2: Expression): Unit = {
     if (o == BinaryOperator.Exponentiate) {
@@ -1154,7 +1155,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
                                     functions: List[Definition.Constant],
                                     declarations: Map[Symbol.DefnSym, Type],
                                     interfaces: Map[Type, FlixClassName],
-                                    enums: Map[(Type, String), QualName],
+                                    enums: Map[(Type, String), (QualName, Boolean)],
                                     visitor: MethodVisitor, entryPoint: Label)
                                    (o: ComparisonOperator, e1: Expression, e2: Expression): Unit = {
     e1.tpe match {
@@ -1254,7 +1255,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
                                  functions: List[Definition.Constant],
                                  declarations: Map[Symbol.DefnSym, Type],
                                  interfaces: Map[Type, FlixClassName],
-                                 enums: Map[(Type, String), QualName],
+                                 enums: Map[(Type, String), (QualName, Boolean)],
                                  visitor: MethodVisitor,
                                  entryPoint: Label)(o: LogicalOperator, e1: Expression, e2: Expression): Unit = o match {
     case BinaryOperator.LogicalAnd =>
@@ -1332,7 +1333,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
                                  functions: List[Definition.Constant],
                                  declarations: Map[Symbol.DefnSym, Type],
                                  interfaces: Map[Type, FlixClassName],
-                                 enums: Map[(Type, String), QualName],
+                                 enums: Map[(Type, String), (QualName, Boolean)],
                                  visitor: MethodVisitor,
                                  entryPoint: Label)(o: BitwiseOperator, e1: Expression, e2: Expression): Unit = {
     compileExpression(prefix, functions, declarations, interfaces, enums, visitor, entryPoint)(e1)
