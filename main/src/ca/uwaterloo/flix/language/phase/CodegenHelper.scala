@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language.phase
 
-import ca.uwaterloo.flix.api._
+import ca.uwaterloo.flix.api.{Unit => UnitClass, _}
 import ca.uwaterloo.flix.language.GenSym
 import ca.uwaterloo.flix.language.ast.ExecutableAst.{Definition, Expression}
 import ca.uwaterloo.flix.language.ast.Symbol.EnumSym
@@ -41,12 +41,14 @@ object CodegenHelper {
   val JavaVersion = V1_8
 
   /**
-    * Wrapper around similar types
+    * Wrapper around similar types. This is used to group types which are similar. For example, all non primitive types
+    * need to be represented using an object if they are a field of an enum so we can just create one enum class with an
+    * object field. We group all of them using `WrappedNonPrimitives(..)`.
     */
   sealed trait WrappedType
 
   /**
-    * A wrapper around a primitive type
+    * A wrapper around a primitive type.
     * @param prim The wrapped primitive
     */
   case class WrappedPrimitive(prim: Type) extends WrappedType
@@ -328,6 +330,14 @@ object CodegenHelper {
   }
 
   /**
+    * Returns true if the case has a unit field, which means the case can be a singleton. It returns false otherwise.
+    * @param cs Enum Case
+    */
+  def isSingletonEnum(cs: ExecutableAst.Case) : Boolean = {
+    cs.tpe == Type.Unit
+  }
+
+  /**
     * This method is used to represent the value on top of the stack to as a string
     * If the value is a primitive, then we use`valueOf` method in `String` class
     * If the value is an object, we invoke `toString` method on the value on top of the stack
@@ -551,10 +561,10 @@ object CodegenHelper {
     val flixClass : Class[_] = classOf[Flix]
 
     val unitClass : Class[_] = classOf[UnitClass]
-    val tupleClass : Class[_] = classOf[TupleInterface]
+    val tupleClass : Class[_] = classOf[Tuple]
     val scalaPredef = "scala/Predef$"
     val scalaMathPkg = "scala/math/package$"
-    val tagInterface : Class[_] = classOf[TagInterface]
+    val tagInterface : Class[_] = classOf[Enum]
   }
 
   // This constant is used in LoadBytecode, so we can't put it in the private Constants object.

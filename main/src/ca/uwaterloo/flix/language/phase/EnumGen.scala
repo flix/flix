@@ -52,8 +52,8 @@ object EnumGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     * we generate the bytecode corresponding to following class:
     *
     * package ca.waterloo.flix.enums.Result;
-    * import ca.uwaterloo.flix.api.TagInterface;
-    * public interface EnumInterface extends TagInterface {
+    * import ca.uwaterloo.flix.api.Enum;
+    * public interface EnumInterface extends Enum {
     * }
     *
     * We put the result of the bytecodes for all enums inside a map from symbol to (fullyQualifiedName, bytecode)
@@ -177,7 +177,7 @@ object EnumGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
         val fullName = EnumClassName(sym, name, wrapped)
         val interface = enumInterfaces(sym)._1
         // If the type of the case field is `Unit` then this is a singleton
-        val isSingleton = root.enums(sym).cases(name).tpe == Type.Unit
+        val isSingleton = isSingletonEnum(root.enums(sym).cases(name))
         name -> EnumGen.compileEnumClass(fullName, interface, wrapped, isSingleton = isSingleton)
       }.toMap
       sym -> (generatedPrimEnums, generatedObjectEnums)
@@ -190,12 +190,12 @@ object EnumGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
 
   /**
     * Generates an interface for each enum.
-    * Each case of the enum implements this interface. This interface extends `TagInterface`.
+    * Each case of the enum implements this interface. This interface extends `Enum`.
     * For example, for enum `Result` we create:
     *
     * package ca.waterloo.flix.enums.Result;
-    * import ca.uwaterloo.flix.api.TagInterface;
-    * public interface EnumInterface extends TagInterface {
+    * import ca.uwaterloo.flix.api.Enum;
+    * public interface EnumInterface extends Enum {
     * }
     *
     * @param qualName Qualified Name of the interface to be generated
@@ -257,7 +257,7 @@ object EnumGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
 
     // Initialize the static field if it is a singleton
     if(isSingleton){
-      initializeStaticField(visitor, className)
+      compileUnitInstance(visitor, className)
     }
 
     // Generate the `getValue` method
@@ -276,18 +276,18 @@ object EnumGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     compileToStringMethod(visitor, className, fType)
 
     // Generate `equals` method
-    compileEqualsMethod(visitor, className, fType)
+    compileEqualsMethod(visitor, className, fType, isSingleton = isSingleton)
 
     visitor.visitEnd()
     visitor.toByteArray
   }
 
   /**
-    * Initializing `getInstance` static field if the `value` field can be `UnitClass`
+    * Initializing `getInstance` static field if the `value` field can be `Unit`
     * @param visitor class visitor
     * @param className Qualified name of the class
     */
-  private def initializeStaticField(visitor: ClassWriter, className: EnumClassName) = {
+  private def compileUnitInstance(visitor: ClassWriter, className: EnumClassName) = {
     val unitClazz = Constants.unitClass
     val getInstanceMethod = unitClazz.getMethod("getInstance")
 
@@ -482,7 +482,7 @@ object EnumGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     * The code we generate is equivalent to:
     *
     * public String toString() {
-    *   Object[] var10000 = ((TupleInterface)this.value).getBoxedValue();
+    *   Object[] var10000 = ((Tuple)this.value).getBoxedValue();
     *   return var10000[0].toString().concat(" :: ".concat(var10000[1].toString()));
     * }
     *
@@ -592,8 +592,9 @@ object EnumGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     * @param visitor class visitor
     * @param qualName Qualified name of the class
     * @param fType Type of the `value` field
+    * @param isSingleton `true` if the enum's field is a unit and hence it can be represented using singleton method
     */
-  private def compileEqualsMethod(visitor: ClassWriter, qualName: QualName, fType: WrappedType) = {
+  private def compileEqualsMethod(visitor: ClassWriter, qualName: QualName, fType: WrappedType, isSingleton : Boolean) = {
     val clazz = Constants.objectClass
     val neq = new Label() //label for when the object is not instanceof tag case
 
@@ -602,21 +603,32 @@ object EnumGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
 
     val method = visitor.visitMethod(ACC_PUBLIC, "equals", s"(${asm.Type.getDescriptor(clazz)})Z", null, null)
     method.visitCode()
-    method.visitVarInsn(ALOAD, 1)
-    method.visitTypeInsn(INSTANCEOF, decorate(qualName)) // compare the types
-    method.visitJumpInsn(IFEQ, neq) // if types don't match go to `neq`
-    method.visitVarInsn(ALOAD, 0)
-    method.visitFieldInsn(GETFIELD, decorate(qualName), "value", descriptor)
-    method.visitVarInsn(ALOAD, 1)
-    method.visitTypeInsn(CHECKCAST, decorate(qualName)) // cast to the current class
-    method.visitFieldInsn(GETFIELD, decorate(qualName), "value", descriptor) // get the value field
 
-    // This will pick the appropriate comparison for the type of the `value`
-    branchIfNotEqual(method, fType, neq)
+    /*
+     if the class is singleton, the constructor is private so there is only one instance of the object available, given
+     this information we can only compare the reference of objects to check their equality.
+     */
+    if(isSingleton) {
+      method.visitVarInsn(ALOAD, 0)
+      method.visitVarInsn(ALOAD, 1)
+      method.visitJumpInsn(IF_ACMPNE, neq)
+    } else {
+      method.visitVarInsn(ALOAD, 1)
+      method.visitTypeInsn(INSTANCEOF, decorate(qualName)) // compare the types
+      method.visitJumpInsn(IFEQ, neq) // if types don't match go to `neq`
+      method.visitVarInsn(ALOAD, 0)
+      method.visitFieldInsn(GETFIELD, decorate(qualName), "value", descriptor)
+      method.visitVarInsn(ALOAD, 1)
+      method.visitTypeInsn(CHECKCAST, decorate(qualName)) // cast to the current class
+      method.visitFieldInsn(GETFIELD, decorate(qualName), "value", descriptor) // get the value field
 
-    method.visitInsn(ICONST_1)
+      // This will pick the appropriate comparison for the type of the `value`
+      branchIfNotEqual(method, fType, neq)
+    }
+
+    method.visitInsn(ICONST_1) // if the code reaches here it means the comparison has been successful
     method.visitInsn(IRETURN)
-    method.visitLabel(neq) // if the code reaches here, it means that `instanceof` has returned false
+    method.visitLabel(neq) // if the code reaches here, it means that comparison has failed
     method.visitInsn(ICONST_0)
     method.visitInsn(IRETURN)
     method.visitMaxs(10, 10)

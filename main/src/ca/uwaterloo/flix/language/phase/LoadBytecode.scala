@@ -18,13 +18,12 @@ package ca.uwaterloo.flix.language.phase
 
 import java.nio.file.{Files, Paths}
 
-import ca.uwaterloo.flix.api.{Flix, TupleInterface, UnitClass}
-import ca.uwaterloo.flix.language.{CompilationError, GenSym}
-import ca.uwaterloo.flix.language.ast.ExecutableAst.{Definition, Expression}
+import ca.uwaterloo.flix.api.{Flix, Unit => UnitClass}
+import ca.uwaterloo.flix.language.CompilationError
+import ca.uwaterloo.flix.language.ast.ExecutableAst.Definition
 import ca.uwaterloo.flix.language.ast.Symbol.EnumSym
-import ca.uwaterloo.flix.language.ast.{ExecutableAst, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{ExecutableAst, Type}
 import ca.uwaterloo.flix.language.phase.CodegenHelper._
-import ca.uwaterloo.flix.runtime.Value
 import ca.uwaterloo.flix.util.{Evaluation, InternalCompilerException}
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._

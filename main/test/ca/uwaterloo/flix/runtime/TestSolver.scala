@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.runtime
 
-import ca.uwaterloo.flix.api._
+import ca.uwaterloo.flix.api.{Unit => UnitClass, _}
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.FunSuite
 
@@ -375,15 +375,15 @@ class TestSolver extends FunSuite {
 
     val model = new Flix().setOptions(opts).addStr(Parity.Definition).addStr(s).solve().get
     val A = model.getLattice("A").toMap
-    assert(A(List(Value.mkInt32(1))).isInstanceOf[TagInterface])
-    assert(A(List(Value.mkInt32(1))).asInstanceOf[TagInterface].getTag == "Odd")
-    assert(A(List(Value.mkInt32(1))).asInstanceOf[TagInterface].getBoxedValue == UnitClass.getInstance)
-    assert(A(List(Value.mkInt32(2))).isInstanceOf[TagInterface])
-    assert(A(List(Value.mkInt32(2))).asInstanceOf[TagInterface].getTag == "Even")
-    assert(A(List(Value.mkInt32(2))).asInstanceOf[TagInterface].getBoxedValue == UnitClass.getInstance)
-    assert(A(List(Value.mkInt32(3))).isInstanceOf[TagInterface])
-    assert(A(List(Value.mkInt32(3))).asInstanceOf[TagInterface].getTag == "Top")
-    assert(A(List(Value.mkInt32(3))).asInstanceOf[TagInterface].getBoxedValue == UnitClass.getInstance)
+    assert(A(List(Value.mkInt32(1))).isInstanceOf[Enum])
+    assert(A(List(Value.mkInt32(1))).asInstanceOf[Enum].getTag == "Odd")
+    assert(A(List(Value.mkInt32(1))).asInstanceOf[Enum].getBoxedValue == UnitClass.getInstance)
+    assert(A(List(Value.mkInt32(2))).isInstanceOf[Enum])
+    assert(A(List(Value.mkInt32(2))).asInstanceOf[Enum].getTag == "Even")
+    assert(A(List(Value.mkInt32(2))).asInstanceOf[Enum].getBoxedValue == UnitClass.getInstance)
+    assert(A(List(Value.mkInt32(3))).isInstanceOf[Enum])
+    assert(A(List(Value.mkInt32(3))).asInstanceOf[Enum].getTag == "Top")
+    assert(A(List(Value.mkInt32(3))).asInstanceOf[Enum].getBoxedValue == UnitClass.getInstance)
   }
 
   test("Lattice02") {
@@ -397,9 +397,9 @@ class TestSolver extends FunSuite {
 
     val model = new Flix().setOptions(opts).addStr(Parity.Definition).addStr(s).solve().get
     val A = model.getLattice("A").toMap
-    assert(A(List(Value.mkInt32(1))).isInstanceOf[TagInterface])
-    assert(A(List(Value.mkInt32(1))).asInstanceOf[TagInterface].getTag == "Top")
-    assert(A(List(Value.mkInt32(1))).asInstanceOf[TagInterface].getBoxedValue == UnitClass.getInstance)
+    assert(A(List(Value.mkInt32(1))).isInstanceOf[Enum])
+    assert(A(List(Value.mkInt32(1))).asInstanceOf[Enum].getTag == "Top")
+    assert(A(List(Value.mkInt32(1))).asInstanceOf[Enum].getBoxedValue == UnitClass.getInstance)
   }
 
   test("Lattice03") {
@@ -415,9 +415,9 @@ class TestSolver extends FunSuite {
 
     val model = new Flix().setOptions(opts).addStr(Parity.Definition).addStr(s).solve().get
     val A = model.getLattice("A").toMap
-    assert(A(List(Value.mkInt32(3))).isInstanceOf[TagInterface])
-    assert(A(List(Value.mkInt32(3))).asInstanceOf[TagInterface].getTag == "Top")
-    assert(A(List(Value.mkInt32(3))).asInstanceOf[TagInterface].getBoxedValue == UnitClass.getInstance)
+    assert(A(List(Value.mkInt32(3))).isInstanceOf[Enum])
+    assert(A(List(Value.mkInt32(3))).asInstanceOf[Enum].getTag == "Top")
+    assert(A(List(Value.mkInt32(3))).asInstanceOf[Enum].getBoxedValue == UnitClass.getInstance)
   }
 
   test("NotEqual01") {

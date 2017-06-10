@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix
 
-import ca.uwaterloo.flix.api.{Flix, TagInterface, TupleInterface, UnitClass}
+import ca.uwaterloo.flix.api.{Flix, Enum, Tuple, Unit => UnitClass}
 import ca.uwaterloo.flix.runtime.{Model, Value}
 import ca.uwaterloo.flix.util._
 import org.scalatest.FunSuite
@@ -32,10 +32,10 @@ class TestExamples extends FunSuite {
 
 
     def getBoxedIfNecessary(res : AnyRef) : AnyRef = res match {
-      case r : TagInterface => {
+      case r : Enum => {
         new Value.Tag(r.getTag, getBoxedIfNecessary(r.getBoxedValue()))
       }
-      case r : TupleInterface => {
+      case r : Tuple => {
         r.getBoxedValue().map(getBoxedIfNecessary)
       }
       case r : UnitClass => Value.Unit

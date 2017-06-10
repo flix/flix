@@ -17,16 +17,12 @@
 package ca.uwaterloo.flix.api;
 
 /**
- * A common super-type for all generated Java interfaces and classes that represent Flix enums.
+ * A common super-type for all generated Java classes that represent tuples.
  */
-public interface TagInterface {
-    /**
-     * Returns the tag of `this` tagged value.
-     */
-    String getTag();
+public interface Tuple {
 
     /**
-     * Returns the value of `this` tagged value.
+     * Returns an array of the elements of `this` tuple.
      */
-    Object getBoxedValue();
+    Object[] getBoxedValue();
 }

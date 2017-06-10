@@ -19,16 +19,16 @@ package ca.uwaterloo.flix.api;
 /**
  * UnitClass which is used to represent `Unit`
  */
-public class UnitClass {
+public class Unit {
     /**
-     * Instance of `UnitClass`
+     * Instance of `Unit`
      */
-    private static UnitClass INSTANCE = new UnitClass();
+    private static Unit INSTANCE = new Unit();
 
     /**
      * Getter of `INSTANCE`
      */
-    public static UnitClass getInstance() {
+    public static Unit getInstance() {
         return INSTANCE;
     }
 
@@ -41,15 +41,15 @@ public class UnitClass {
     }
 
     /**
-     * Returns true if `obj` is instance of `UnitClass'
+     * Since there can only be one instance of `Unit`, we can just check that the object is the instance.
      */
     @Override
     public boolean equals(Object obj) {
-        return obj instanceof UnitClass;
+        return obj == this;
     }
 
     /**
      * Private constructor
      */
-    private UnitClass() {}
+    private Unit() {}
 }
