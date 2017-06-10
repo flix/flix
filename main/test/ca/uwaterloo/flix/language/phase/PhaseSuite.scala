@@ -27,7 +27,8 @@ class PhaseSuite extends Suites(
   new TestTyper,
   new TestUnification,
   new TestWeeder,
-  new TestPatExhaustiveness
+  new TestPatExhaustiveness,
+  new TestUncurrier
 ) with ParallelTestExecution {
   /* left empty */
 }
