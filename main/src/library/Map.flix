@@ -426,10 +426,12 @@ namespace Map {
     def differenceWithKey[k, v](f: (k, v, v) -> Option[v], m1: Map[k, v], m2: Map[k, v]): Map[k, v] =
         let diff = filterWithKey((k, v) -> !memberOf(k, m2), m1);
         let g = (k, v, m) -> if (memberOf(k, m1))
-                                let Some(v1) = get(k, m1);
-                                match f(k, v1, v) with {
-                                    case None => m
-                                    case Some(w) => insert(k, w, m)
+                                match get(k, m1) with {
+                                    case Some(v1) => match f(k, v1, v) with {
+                                        case None => m
+                                        case Some(w) => insert(k, w, m)
+                                    }
+                                    case None => ??? // Shouldn't happen
                                 }
                              else m;
         foldRightWithKey(g, diff, m2)

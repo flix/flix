@@ -314,6 +314,19 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
     expectError[NonExhaustiveMatchError](new Flix().addStr(input).compile())
   }
 
+  test("Pattern.Literal.Lists.03") {
+    val input =
+      """ enum IntList {
+        |   case Lst(Int32, IntList),
+        |   case Empty
+        |}
+        |def f(xs: IntList): Int32 = match xs with {
+        |  case Empty => 42
+        |}
+      """.stripMargin
+    expectError[NonExhaustiveMatchError](new Flix().addStr(input).compile())
+  }
+
   test("Expression.LetMatch01") {
     val input =
       """enum E {
@@ -322,8 +335,7 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
         |
         |def f(e: E): Bool = let E.A(b) = e; b
       """.stripMargin
-    val result = new Flix().addStr(input).compile()
-    result.get
+    run(input)
   }
 
   test("Expression.LetMatch02") {
@@ -341,8 +353,7 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
     val input =
       """def f(e: (Int8, Int8)): Int8 = let (a,b) = e; a
       """.stripMargin
-    val result = new Flix().addStr(input).compile()
-    result.get
+    run(input)
   }
 
   test("Expression.LetMatch04") {
@@ -366,4 +377,76 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
     expectError[NonExhaustiveMatchError](new Flix().addStr(input).compile())
   }
 
+  test("Expression.MatchLambda.01") {
+    val input = "def f: Option[Int] -> Int = match None -> 42"
+    expectError[NonExhaustiveMatchError](new Flix().addStr(input).compile())
+  }
+
+  test("Expression.MatchLambda.02") {
+    val input = "def f: Option[Int] -> Int = match Some(x) -> x"
+    expectError[NonExhaustiveMatchError](new Flix().addStr(input).compile())
+  }
+
+  test("Pattern.Nested.01") {
+    val input =
+      """ enum IntList {
+        |   case Lst(Int32, IntList),
+        |   case Empty
+        |}
+        |def f(xs: IntList): Int32 = match xs with {
+        |  case Empty => 0
+        |  case Lst(y,ys) => match ys with {
+        |      case Empty => 0
+        |      case Lst(z,zs) => match zs with {
+        |           case Empty => 0
+        |      }
+        |  }
+        |}
+      """.stripMargin
+    expectError[NonExhaustiveMatchError](new Flix().addStr(input).compile())
+  }
+
+  test("Pattern.Nested.02") {
+    val input =
+      """ enum IntList {
+        |   case Lst(Int32, IntList),
+        |   case Empty
+        |}
+        |def f(xs: IntList): Int32 = match xs with {
+        |  case Empty => 0
+        |  case Lst(y,ys) => match ys with {
+        |      case Empty => 0
+        |      case Lst(z,zs) => match zs with {
+        |           case Empty => 0
+        |           case _ => 1
+        |      }
+        |  }
+        |}
+      """.stripMargin
+    run(input)
+  }
+  test ("Pattern.Nested.03") {
+    val input =
+      """ def f(l: List[Int]): Int = let foo = 42 ;
+        |     match l with {
+        |         case Nil => 42
+        |     }
+      """.stripMargin
+    expectError[NonExhaustiveMatchError](new Flix().addStr(input).compile())
+  }
+
+  test ("Pattern.Nested.04") {
+    val input =
+      """ enum IntList {
+        |   case Lst(Int32, IntList),
+        |   case Empty
+        |}
+        | def f(l: IntList): Int = let foo = 42 ;
+        |     match l with {
+        |         case Empty => 42
+        |         case _   => 42
+        |     }
+      """.stripMargin
+    run(input)
+  }
 }

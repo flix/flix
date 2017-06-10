@@ -160,6 +160,7 @@ namespace List {
         case Nil => s :: Nil
         case x :: rs => match scanRight(f, s, rs) with {
             case y :: ys => f(x, y) :: y :: ys
+            case _ => ??? // Shouldn't happen
         }
     }
 
