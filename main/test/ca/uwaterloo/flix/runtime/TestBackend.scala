@@ -202,64 +202,6 @@ class TestBackend extends FunSuite {
   }
 
   /*
-   * Note that there are specific bytecode instructions for constants 0.0f, 1.0f, and 2.0f.
-   */
-
-  test("Expression.Float32.01") {
-    val input = "def f: Float32 = 0.0f32"
-    val t = new Tester(input)
-    t.runTest(Value.mkFloat32(0.0f), "f")
-  }
-
-  test("Expression.Float32.02") {
-    val input = "def f: Float32 = -0.0f32"
-    val t = new Tester(input)
-    t.runTest(Value.mkFloat32(-0.0f), "f")
-  }
-
-  test("Expression.Float32.03") {
-    val input = "def f: Float32 = 1.0f32"
-    val t = new Tester(input)
-    t.runTest(Value.mkFloat32(1.0f), "f")
-  }
-
-  test("Expression.Float32.04") {
-    val input = "def f: Float32 = 2.0f32"
-    val t = new Tester(input)
-    t.runTest(Value.mkFloat32(2.0f), "f")
-  }
-
-  test("Expression.Float32.05") {
-    val input = "def f: Float32 = 4.2f32"
-    val t = new Tester(input)
-    t.runTest(Value.mkFloat32(4.2f), "f")
-  }
-
-  test("Expression.Float32.06") {
-    val input = "def f: Float32 = 999999999999999999999999999999.0f32"
-    val t = new Tester(input)
-    t.runTest(Value.mkFloat32(999999999999999999999999999999.0f), "f")
-  }
-
-  test("Expression.Float32.07") {
-    val input = "def f: Float32 = 0.0000000000000000000000000000001f32"
-    val t = new Tester(input)
-    t.runTest(Value.mkFloat32(0.0000000000000000000000000000001f), "f")
-  }
-
-  test("Expression.Float32.08") {
-    val input = "def f: Float32 = -999999999999999999999999999999.0f32"
-    val t = new Tester(input)
-    t.runTest(Value.mkFloat32(-999999999999999999999999999999.0f), "f")
-  }
-
-  test("Expression.Float32.09") {
-    val input = "def f: Float32 = -0.0000000000000000000000000000001f32"
-    val t = new Tester(input)
-    t.runTest(Value.mkFloat32(-0.0000000000000000000000000000001f), "f")
-  }
-
-  /*
    * Note that there are specific bytecode instructions for constants 0.0d and 1.0d.
    */
 
