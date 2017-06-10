@@ -22,8 +22,9 @@ import org.scalatest.{ParallelTestExecution, Suites}
 class FeatureSuite extends Suites(
   new FlixTest("TestConstraint", "main/test/ca/uwaterloo/flix/language/feature/TestConstraint.flix"),
   new FlixTest("TestEquality", "main/test/ca/uwaterloo/flix/language/feature/TestEquality.flix"),
+  new FlixTest("TestNativeCall", "main/test/ca/uwaterloo/flix/language/feature/TestNativeCall.flix"),
   new FlixTest("TestPatternMatch", "main/test/ca/uwaterloo/flix/language/feature/TestPatternMatch.flix"),
-  new  FlixTest("TestNativeCall", "main/test/ca/uwaterloo/flix/language/feature/TestNativeCall.flix")
+  new FlixTest("TestExpressionTuple", "main/test/ca/uwaterloo/flix/language/feature/TestExpressionTuple.flix")
 ) with ParallelTestExecution {
   /* left empty */
 }
