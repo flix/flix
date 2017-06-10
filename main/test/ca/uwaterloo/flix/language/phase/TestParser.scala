@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.api.{Flix, RuleException}
-import ca.uwaterloo.flix.language.errors.ResolutionError
+import ca.uwaterloo.flix.language.errors.{NonExhaustiveMatchError, ResolutionError}
 import ca.uwaterloo.flix.runtime.Model
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.FunSuite
@@ -1456,27 +1456,27 @@ class TestParser extends FunSuite with TestUtils {
 
   test("Expression.MatchLambda.05") {
     val input = "def f: Option[Int] -> Int = match None -> 42"
-    run(input, core = false)
+    expectError[NonExhaustiveMatchError](new Flix().addStr(input).compile())
   }
 
   test("Expression.MatchLambda.06") {
     val input = "def f: Option[Int] -> Int = match Some(x) -> x"
-    run(input, core = false)
+    expectError[NonExhaustiveMatchError](new Flix().addStr(input).compile())
   }
 
   test("Expression.MatchLambda.07") {
     val input = "def f: List[Int] -> Int = match Nil -> 42"
-    run(input, core = false)
+    expectError[NonExhaustiveMatchError](new Flix().addStr(input).compile())
   }
 
   test("Expression.MatchLambda.08") {
     val input = "def f: List[Int] -> Int = match x :: Nil -> x"
-    run(input, core = false)
+    expectError[NonExhaustiveMatchError](new Flix().addStr(input).compile())
   }
 
   test("Expression.MatchLambda.09") {
     val input = "def f: List[Int] -> Int = match x :: y :: Nil -> x + y"
-    run(input, core = false)
+    expectError[NonExhaustiveMatchError](new Flix().addStr(input).compile())
   }
 
   test("Expression.Existential.01") {
