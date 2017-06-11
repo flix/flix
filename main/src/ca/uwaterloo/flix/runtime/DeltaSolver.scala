@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.runtime
 import java.nio.file.StandardOpenOption._
 import java.nio.file.{Files, Path}
 
-import ca.uwaterloo.flix.api._
+import ca.uwaterloo.flix.api.{MatchException, RuleException, SwitchException, UserException, TimeoutException}
 import ca.uwaterloo.flix.language.ast.{ExecutableAst, PrettyPrinter}
 import ca.uwaterloo.flix.util.{Options, Verbosity}
 

@@ -17,7 +17,6 @@
 package ca.uwaterloo.flix.api
 
 import java.nio.file.{Files, Path, Paths}
-
 import ca.uwaterloo.flix.language.ast.Ast.Hook
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.phase._
@@ -133,7 +132,7 @@ class Flix {
   /**
     * Adds the given fully-qualified name as a reachable root.
     */
-  def addReachableRoot(fqn: String): Unit = {
+  def addReachableRoot(fqn: String): scala.Unit = {
     reachableRoots += Symbol.mkDefnSym(fqn)
   }
 
@@ -230,7 +229,7 @@ class Flix {
     *
     * @param path the path to write the minimized facts to.
     */
-  def deltaSolve(path: Path): Validation[Unit, CompilationError] = compile().map {
+  def deltaSolve(path: Path): Validation[scala.Unit, CompilationError] = compile().map {
     case root => DeltaSolver.solve(root, options, path)
   }
 
@@ -271,7 +270,7 @@ class Flix {
   /**
     * Adds a hook for the built-in `genSym` function.
     */
-  private def addGenSymHook(): Unit = {
+  private def addGenSymHook(): scala.Unit = {
     // Instantiate a fresh gen sym for the Flix program itself.
     val gen = new GenSym()
 
@@ -293,7 +292,7 @@ class Flix {
   /**
     * Adds a hook for the built-in `print` function.
     */
-  private def addPrintHook(): Unit = {
+  private def addPrintHook(): scala.Unit = {
     // Symbol, type, and hook.
     implicit val _ = genSym
     val sym = Symbol.mkDefnSym("printHook")
@@ -315,7 +314,7 @@ class Flix {
   /**
     * Adds a hook for the built-in `println` function.
     */
-  private def addPrintlnHook(): Unit = {
+  private def addPrintlnHook(): scala.Unit = {
     // Symbol, type, and hook.
     implicit val _ = genSym
     val sym = Symbol.mkDefnSym("printlnHook")
