@@ -135,6 +135,7 @@ package object ast {
                   namer: Long,
                   resolver: Long,
                   typer: Long,
+                  patsExhaustive: Long,
                   documentor: Long,
                   stratifier: Long,
                   monomorph: Long,

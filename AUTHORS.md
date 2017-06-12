@@ -10,3 +10,4 @@ By adding your name to this document, you agree to release all your contribution
 - [Liam Palmer](https://github.com/liampalmer43)
 - [Jim Zhang](https://github.com/neynt)
 - [Ramin Zarifi](https://github.com/FlaminGuy)
+- [Jason Mittertreiner](https://github.com/jmittert ([website](https://jmittertreiner.ca))

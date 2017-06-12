@@ -72,8 +72,10 @@ class FlixTest(name: String, path: String) extends FunSuite {
           withClue(sym.loc.format) {
             // Evaluate the function.
             val result = defn()
-            // Expect the true value.
-            assertResult(true)(result)
+            // Expect the true value, if boolean.
+            if (result.isInstanceOf[java.lang.Boolean]) {
+              assertResult(true)(result)
+            }
           }
         }
 

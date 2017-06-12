@@ -202,64 +202,6 @@ class TestBackend extends FunSuite {
   }
 
   /*
-   * Note that there are specific bytecode instructions for constants 0.0f, 1.0f, and 2.0f.
-   */
-
-  test("Expression.Float32.01") {
-    val input = "def f: Float32 = 0.0f32"
-    val t = new Tester(input)
-    t.runTest(Value.mkFloat32(0.0f), "f")
-  }
-
-  test("Expression.Float32.02") {
-    val input = "def f: Float32 = -0.0f32"
-    val t = new Tester(input)
-    t.runTest(Value.mkFloat32(-0.0f), "f")
-  }
-
-  test("Expression.Float32.03") {
-    val input = "def f: Float32 = 1.0f32"
-    val t = new Tester(input)
-    t.runTest(Value.mkFloat32(1.0f), "f")
-  }
-
-  test("Expression.Float32.04") {
-    val input = "def f: Float32 = 2.0f32"
-    val t = new Tester(input)
-    t.runTest(Value.mkFloat32(2.0f), "f")
-  }
-
-  test("Expression.Float32.05") {
-    val input = "def f: Float32 = 4.2f32"
-    val t = new Tester(input)
-    t.runTest(Value.mkFloat32(4.2f), "f")
-  }
-
-  test("Expression.Float32.06") {
-    val input = "def f: Float32 = 999999999999999999999999999999.0f32"
-    val t = new Tester(input)
-    t.runTest(Value.mkFloat32(999999999999999999999999999999.0f), "f")
-  }
-
-  test("Expression.Float32.07") {
-    val input = "def f: Float32 = 0.0000000000000000000000000000001f32"
-    val t = new Tester(input)
-    t.runTest(Value.mkFloat32(0.0000000000000000000000000000001f), "f")
-  }
-
-  test("Expression.Float32.08") {
-    val input = "def f: Float32 = -999999999999999999999999999999.0f32"
-    val t = new Tester(input)
-    t.runTest(Value.mkFloat32(-999999999999999999999999999999.0f), "f")
-  }
-
-  test("Expression.Float32.09") {
-    val input = "def f: Float32 = -0.0000000000000000000000000000001f32"
-    val t = new Tester(input)
-    t.runTest(Value.mkFloat32(-0.0000000000000000000000000000001f), "f")
-  }
-
-  /*
    * Note that there are specific bytecode instructions for constants 0.0d and 1.0d.
    */
 
@@ -4437,73 +4379,6 @@ class TestBackend extends FunSuite {
   }
 
   /////////////////////////////////////////////////////////////////////////////
-  // Expression.GetTupleIndex                                                //
-  // Tested indirectly by pattern matching.                                  //
-  /////////////////////////////////////////////////////////////////////////////
-
-  /////////////////////////////////////////////////////////////////////////////
-  // Expression.Tuple                                                        //
-  /////////////////////////////////////////////////////////////////////////////
-
-  test("Expression.Tuple.01") {
-    val input = "def f: (Int16, Int32) = (321i16, 5i32)"
-    val t = new Tester(input)
-    t.runTest(Array(Value.mkInt16(321), Value.mkInt32(5)), "f")
-  }
-
-  test("Expression.Tuple.02") {
-    val input = "def f: (Bool, Bool, Bool) = (true, true, false)"
-    val t = new Tester(input)
-    t.runTest(Array(true, true, false).map(Value.mkBool), "f")
-  }
-
-  test("Expression.Tuple.03") {
-    val input = """def f: (Str, Str, Str, Str) = ("un", "deux", "trois", "quatre")"""
-    val t = new Tester(input)
-    t.runTest(Array("un", "deux", "trois", "quatre").map(Value.mkStr), "f")
-  }
-
-  test("Expression.Tuple.04") {
-    val input = """def f: (Str, Bool, Int64, (), Int8) = ("un", false, 12345i64, (), -2i8)"""
-    val t = new Tester(input)
-    t.runTest(Array(Value.mkStr("un"), Value.False, Value.mkInt64(12345), Value.Unit, Value.mkInt8(-2)), "f")
-  }
-
-  test("Expression.Tuple.05") {
-    val input =
-      """enum ConstProp { case Top, case Val(Int), case Bot }
-        |def f: (ConstProp, ConstProp) = (ConstProp.Val(111), ConstProp.Bot)
-      """.stripMargin
-    val t = new Tester(input)
-    t.runTest(Array(Value.mkTag("Val", Value.mkInt32(111)), Value.mkTag("Bot", Value.Unit)), "f")
-  }
-
-  test("Expression.Tuple.06") {
-    val input = """def f: ((Int, Int), (Str, Str)) = ((123, 456), ("654", "321"))"""
-    val t = new Tester(input)
-    t.runTest(Array(Array(123, 456).map(Value.mkInt32), Array("654", "321").map(Value.mkStr)), "f")
-  }
-
-  test("Expression.Tuple.07") {
-    val input = """def f: (BigInt, Bool, Str) = (40ii + 2ii, !(-12 < 22), if (true) "hi" else "hello")"""
-    val t = new Tester(input)
-    t.runTest(Array(Value.mkBigInt(42), Value.False, Value.mkStr("hi")), "f")
-  }
-
-  test("Expression.Tuple.08") {
-    val input = "def f: (Char, Float32, Float64) = ('a', 1.2f32, 3.4f64)"
-    val t = new Tester(input)
-    t.runTest(Array(Value.mkChar('a'), Value.mkFloat32(1.2f), Value.mkFloat64(3.4d)), "f")
-  }
-
-  // TODO: Requires backend support
-  ignore("Expression.Tuple.09") {
-    val input = "def f: (Set[Int], Set[Char]) = (#{1, 2, 3}, #{'a', 'b'})"
-    val t = new Tester(input)
-    t.runTest(Array(Value.mkSet(Set(1, 2, 3).map(Value.mkInt32)), Value.mkSet(Set('a', 'b').map(Value.mkChar))), "f")
-  }
-
-  /////////////////////////////////////////////////////////////////////////////
   // Expression.{Match,Switch}Error                                          //
   // Tested indirectly by switch expressions and pattern matching.           //
   /////////////////////////////////////////////////////////////////////////////
@@ -5356,17 +5231,6 @@ class TestBackend extends FunSuite {
     t.runTest(Value.mkInt32(1), "g02")
     t.runTest(Value.mkInt32(2), "g03")
     t.runTest(Value.mkInt32(0), "g04")
-  }
-
-  test("Match.Error.01") {
-    val input =
-      """def f(x: Int): Bool = match x with {
-        |  case 321 => true
-        |}
-        |def g: Bool = f(123)
-      """.stripMargin
-    val t = new Tester(input)
-    t.runInterceptTest[MatchException]("g")
   }
 
   /////////////////////////////////////////////////////////////////////////////
