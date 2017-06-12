@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.{BinaryOperator, SimplifiedAst, Symbol, Type, UnaryOperator, SourceLocation}
-import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expression
+import ca.uwaterloo.flix.language.ast.SimplifiedAst.{Expression, FormalParam, FreeVar}
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
 
@@ -45,25 +45,68 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       * Returns `true` if and only if `enum` is a single-valued enum.
       */
     def isSingleCaseEnum(enum: Symbol.EnumSym): Boolean = root.enums.get(enum) match {
-      case None => false
+      case None => throw new Exception("Enum reference does not exist!")
       case Some(defn) => defn.cases.size == 1
     }
 
-    def mapType(t0: Type): Type = t0 match {
-      case Type.Enum(sym, kind) =>
-        root.enums.get(sym) match {
-          case Some(defn) => if (defn.cases.size == 1) defn.cases.values.iterator.next().tpe else t0
-          case None => t0
+    /**
+      * Returns the type of the first case in `enum`.
+      */
+    def getFirstCaseType(enum: Symbol.EnumSym): Type = root.enums.get(enum) match {
+      case None => throw new Exception("Enum reference does not exist!")
+      case Some(defn) => defn.cases.values.iterator.next().tpe
+    }
+
+    /**
+      * Adjusts the type of each element in `fs` to remove any references to single-valued enums.
+      *
+      * That is, applies `adjustFormalParam` to each element in `fs` and returns the results in a List.
+      */
+    def adjustFormalParams(fs: List[SimplifiedAst.FormalParam]): List[SimplifiedAst.FormalParam] = fs.map(adjustFormalParam)
+
+    /**
+      * Adjusts the type of `f0` to remove any references to single-valued enums.
+      */
+    def adjustFormalParam(f0: SimplifiedAst.FormalParam): SimplifiedAst.FormalParam = f0 match {
+      case FormalParam(sym, tpe) => FormalParam(sym, adjustType(tpe))
+    }
+
+    /**
+      * Adjusts the type of each element in `fs` to remove any references to single-valued enums.
+      */
+    def adjustFreeVars(fs: List[FreeVar]): List[FreeVar] = fs map {case FreeVar(sym, tpe) => FreeVar(sym, adjustType(tpe))}
+
+    /**
+      * Adjusts `t0` to remove any references to single-valued enums.
+      */
+    def adjustType(t0: Type): Type = t0 match {
+      case Type.Enum(sym, kind) => if (isSingleCaseEnum(sym)) adjustType(getFirstCaseType(sym)) else t0
+      case Type.Apply(t, ts) =>
+        t match {
+          case Type.Enum(sym, kind) => if (isSingleCaseEnum(sym)) adjustType(getFirstCaseType(sym)) else Type.Apply(t, ts.map(adjustType))
+          case _ => Type.Apply(t, ts.map(adjustType))
         }
       case _ => t0
     }
 
+    /**
+      * Converts the given Boolean `b0` to an Expression.
+      */
     def toExp(b0: Boolean): Expression = if (b0) Expression.True else Expression.False
 
+    /**
+      * Applies the UnaryOperator.LogicalNot operator to the given Expression `e0`.
+      */
     def not(e0: Expression, loc: SourceLocation): Expression = Expression.Unary(UnaryOperator.LogicalNot, e0, Type.Bool, loc)
 
+    /**
+      * Applies the BinaryOperator.LogicalAnd operator to the given Expressions `e1` and `e2`.
+      */
     def and(e1: Expression, e2: Expression, loc: SourceLocation): Expression = Expression.Binary(BinaryOperator.LogicalAnd, e1, e2, Type.Bool, loc)
 
+    /**
+      * Performs a single pass optimization on the given Expression.Binary `e0`.
+      */
     def optimizeBinaryExpression(e0: Expression.Binary): Expression = e0 match {
       case Expression.Binary(op, exp1, exp2, tpe, loc) =>
         val e1 = optimize(exp1)
@@ -81,7 +124,7 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
             op match {
               case BinaryOperator.Equal => toExp(lit1 == lit2)
               case BinaryOperator.NotEqual => toExp(lit1 != lit2)
-              case _ => Expression.Binary(op, e1, e2, tpe, loc)
+              case _ => Expression.Binary(op, e1, e2, adjustType(tpe), loc)
             }
           // Optimizations for Float32.
           case (_, Expression.Float32(lit1), Expression.Float32(lit2)) =>
@@ -97,7 +140,7 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
               case BinaryOperator.LessEqual => toExp(lit1 <= lit2)
               case BinaryOperator.Greater => toExp(lit1 > lit2)
               case BinaryOperator.GreaterEqual => toExp(lit1 >= lit2)
-              case _ => Expression.Binary(op, e1, e2, tpe, loc)
+              case _ => Expression.Binary(op, e1, e2, adjustType(tpe), loc)
             }
           // Optimizations for Float64.
           case (_, Expression.Float64(lit1), Expression.Float64(lit2)) =>
@@ -113,7 +156,7 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
               case BinaryOperator.LessEqual => toExp(lit1 <= lit2)
               case BinaryOperator.Greater => toExp(lit1 > lit2)
               case BinaryOperator.GreaterEqual => toExp(lit1 >= lit2)
-              case _ => Expression.Binary(op, e1, e2, tpe, loc)
+              case _ => Expression.Binary(op, e1, e2, adjustType(tpe), loc)
             }
           // Optimizations for Int8.
           case (_, Expression.Int8(lit1), Expression.Int8(lit2)) =>
@@ -123,13 +166,13 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
               case BinaryOperator.Plus => Expression.Int8((lit1 + lit2).toByte)
               case BinaryOperator.Minus => Expression.Int8((lit1 - lit2).toByte)
               case BinaryOperator.Times => Expression.Int8((lit1 * lit2).toByte)
-              case BinaryOperator.Divide => if (lit2 == 0.toByte) Expression.Binary(op, e1, e2, tpe, loc) else Expression.Int8((lit1 / lit2).toByte)
+              case BinaryOperator.Divide => if (lit2 == 0.toByte) Expression.Binary(op, e1, e2, adjustType(tpe), loc) else Expression.Int8((lit1 / lit2).toByte)
               case BinaryOperator.Exponentiate => Expression.Int8(scala.math.pow(lit1, lit2).toByte)
               case BinaryOperator.Less => toExp(lit1 < lit2)
               case BinaryOperator.LessEqual => toExp(lit1 <= lit2)
               case BinaryOperator.Greater => toExp(lit1 > lit2)
               case BinaryOperator.GreaterEqual => toExp(lit1 >= lit2)
-              case _ => Expression.Binary(op, e1, e2, tpe, loc)
+              case _ => Expression.Binary(op, e1, e2, adjustType(tpe), loc)
             }
           // Optimizations for Int16.
           case (_, Expression.Int16(lit1), Expression.Int16(lit2)) =>
@@ -139,13 +182,13 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
               case BinaryOperator.Plus => Expression.Int16((lit1 + lit2).toShort)
               case BinaryOperator.Minus => Expression.Int16((lit1 - lit2).toShort)
               case BinaryOperator.Times => Expression.Int16((lit1 * lit2).toShort)
-              case BinaryOperator.Divide => if (lit2 == 0.toShort) Expression.Binary(op, e1, e2, tpe, loc) else Expression.Int16((lit1 / lit2).toShort)
+              case BinaryOperator.Divide => if (lit2 == 0.toShort) Expression.Binary(op, e1, e2, adjustType(tpe), loc) else Expression.Int16((lit1 / lit2).toShort)
               case BinaryOperator.Exponentiate => Expression.Int16(scala.math.pow(lit1, lit2).toShort)
               case BinaryOperator.Less => toExp(lit1 < lit2)
               case BinaryOperator.LessEqual => toExp(lit1 <= lit2)
               case BinaryOperator.Greater => toExp(lit1 > lit2)
               case BinaryOperator.GreaterEqual => toExp(lit1 >= lit2)
-              case _ => Expression.Binary(op, e1, e2, tpe, loc)
+              case _ => Expression.Binary(op, e1, e2, adjustType(tpe), loc)
             }
           // Optimizations for Int32.
           case (_, Expression.Int32(lit1), Expression.Int32(lit2)) =>
@@ -155,13 +198,13 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
               case BinaryOperator.Plus => Expression.Int32(lit1 + lit2)
               case BinaryOperator.Minus => Expression.Int32(lit1 - lit2)
               case BinaryOperator.Times => Expression.Int32(lit1 * lit2)
-              case BinaryOperator.Divide => if (lit2 == 0) Expression.Binary(op, e1, e2, tpe, loc) else Expression.Int32(lit1 / lit2)
+              case BinaryOperator.Divide => if (lit2 == 0) Expression.Binary(op, e1, e2, adjustType(tpe), loc) else Expression.Int32(lit1 / lit2)
               case BinaryOperator.Exponentiate => Expression.Int32(scala.math.pow(lit1, lit2).toInt)
               case BinaryOperator.Less => toExp(lit1 < lit2)
               case BinaryOperator.LessEqual => toExp(lit1 <= lit2)
               case BinaryOperator.Greater => toExp(lit1 > lit2)
               case BinaryOperator.GreaterEqual => toExp(lit1 >= lit2)
-              case _ => Expression.Binary(op, e1, e2, tpe, loc)
+              case _ => Expression.Binary(op, e1, e2, adjustType(tpe), loc)
             }
           // Optimizations for Int64.
           case (_, Expression.Int64(lit1), Expression.Int64(lit2)) =>
@@ -171,13 +214,13 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
               case BinaryOperator.Plus => Expression.Int64(lit1 + lit2)
               case BinaryOperator.Minus => Expression.Int64(lit1 - lit2)
               case BinaryOperator.Times => Expression.Int64(lit1 * lit2)
-              case BinaryOperator.Divide => if (lit2 == 0.toLong) Expression.Binary(op, e1, e2, tpe, loc) else Expression.Int64(lit1 / lit2)
+              case BinaryOperator.Divide => if (lit2 == 0.toLong) Expression.Binary(op, e1, e2, adjustType(tpe), loc) else Expression.Int64(lit1 / lit2)
               case BinaryOperator.Exponentiate => Expression.Int64(scala.math.pow(lit1, lit2).toLong)
               case BinaryOperator.Less => toExp(lit1 < lit2)
               case BinaryOperator.LessEqual => toExp(lit1 <= lit2)
               case BinaryOperator.Greater => toExp(lit1 > lit2)
               case BinaryOperator.GreaterEqual => toExp(lit1 >= lit2)
-              case _ => Expression.Binary(op, e1, e2, tpe, loc)
+              case _ => Expression.Binary(op, e1, e2, adjustType(tpe), loc)
             }
           // Optimizations for BigInt.
           case (_, Expression.BigInt(lit1), Expression.BigInt(lit2)) =>
@@ -187,15 +230,15 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
               case BinaryOperator.Plus => Expression.BigInt(lit1.add(lit2))
               case BinaryOperator.Minus => Expression.BigInt(lit1.subtract(lit2))
               case BinaryOperator.Times => Expression.BigInt(lit1.multiply(lit2))
-              case BinaryOperator.Divide => if (lit2 == java.math.BigInteger.ZERO) Expression.Binary(op, e1, e2, tpe, loc) else Expression.BigInt(lit1.divide(lit2))
+              case BinaryOperator.Divide => if (lit2 == java.math.BigInteger.ZERO) Expression.Binary(op, e1, e2, adjustType(tpe), loc) else Expression.BigInt(lit1.divide(lit2))
               //case BinaryOperator.Exponentiate => Expression.BigInt(...) Cannot exponentiate BinInts
               case BinaryOperator.Less => toExp(lit1.compareTo(lit2) == -1)
               case BinaryOperator.LessEqual => toExp(lit1.compareTo(lit2) <= 0)
               case BinaryOperator.Greater => toExp(lit1.compareTo(lit2) == 1)
               case BinaryOperator.GreaterEqual => toExp(lit1.compareTo(lit2) >= 0)
-              case _ => Expression.Binary(op, e1, e2, tpe, loc)
+              case _ => Expression.Binary(op, e1, e2, adjustType(tpe), loc)
             }
-          case _ => Expression.Binary(op, e1, e2, tpe, loc)
+          case _ => Expression.Binary(op, e1, e2, adjustType(tpe), loc)
         }
     }
 
@@ -231,20 +274,20 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.StoreInt8(exp, offset, v) => Expression.StoreInt8(optimize(exp), offset, optimize(v))
       case Expression.StoreInt16(exp, offset, v) => Expression.StoreInt16(optimize(exp), offset, optimize(v))
       case Expression.StoreInt32(exp, offset, v) => Expression.StoreInt32(optimize(exp), offset, optimize(v))
-      case Expression.Var(sym, tpe, loc) => Expression.Var(sym, tpe, loc)
-      case Expression.Ref(sym, tpe, loc) => Expression.Ref(sym, tpe, loc)
-      case Expression.Lambda(args, body, tpe, loc) => Expression.Lambda(args, optimize(body), tpe, loc)
-      case Expression.Hook(hook, tpe, loc) => Expression.Hook(hook, tpe, loc)
+      case Expression.Var(sym, tpe, loc) => Expression.Var(sym, adjustType(tpe), loc)
+      case Expression.Ref(sym, tpe, loc) => Expression.Ref(sym, adjustType(tpe), loc)
+      case Expression.Lambda(args, body, tpe, loc) => Expression.Lambda(adjustFormalParams(args), optimize(body), adjustType(tpe), loc)
+      case Expression.Hook(hook, tpe, loc) => Expression.Hook(hook, adjustType(tpe), loc)
       case Expression.MkClosure(lambda, freeVars, tpe, loc) =>
-        Expression.MkClosure(optimize(lambda).asInstanceOf[Expression.Lambda], freeVars, tpe, loc)
+        Expression.MkClosure(optimize(lambda).asInstanceOf[Expression.Lambda], adjustFreeVars(freeVars), adjustType(tpe), loc)
       case Expression.MkClosureRef(ref, freeVars, tpe, loc) =>
-        Expression.MkClosureRef(optimize(ref).asInstanceOf[Expression.Ref], freeVars, tpe, loc)
-      case Expression.ApplyRef(sym, args, tpe, loc) => Expression.ApplyRef(sym, optimizeExps(args), tpe, loc)
+        Expression.MkClosureRef(optimize(ref).asInstanceOf[Expression.Ref], adjustFreeVars(freeVars), adjustType(tpe), loc)
+      case Expression.ApplyRef(sym, args, tpe, loc) => Expression.ApplyRef(sym, optimizeExps(args), adjustType(tpe), loc)
       case Expression.ApplyTail(sym, formals, actuals, tpe, loc) =>
-        Expression.ApplyTail(sym, formals, optimizeExps(actuals), tpe, loc)
-      case Expression.ApplyHook(hook, args, tpe, loc) => Expression.ApplyHook(hook, optimizeExps(args), tpe, loc)
-      case Expression.Apply(exp, args, tpe, loc) => Expression.Apply(optimize(exp), optimizeExps(args), tpe, loc)
-      case Expression.Unary(op, exp, tpe, loc) => Expression.Unary(op, optimize(exp), tpe, loc)
+        Expression.ApplyTail(sym, adjustFormalParams(formals), optimizeExps(actuals), adjustType(tpe), loc)
+      case Expression.ApplyHook(hook, args, tpe, loc) => Expression.ApplyHook(hook, optimizeExps(args), adjustType(tpe), loc)
+      case Expression.Apply(exp, args, tpe, loc) => Expression.Apply(optimize(exp), optimizeExps(args), adjustType(tpe), loc)
+      case Expression.Unary(op, exp, tpe, loc) => Expression.Unary(op, optimize(exp), adjustType(tpe), loc)
       case Expression.Binary(op, exp1, exp2, tpe, loc) => optimizeBinaryExpression(e0.asInstanceOf[Expression.Binary])
       case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
         val e1 = optimize(exp1)
@@ -258,18 +301,18 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
             val e3 = optimize(exp3)
             (e2, e3) match {
               case (Expression.IfThenElse(se1, se2, se3, _, _), _) =>
-                if (se3 == e3) Expression.IfThenElse(and(e1, se1, loc), se2, se3, tpe, loc)
-                else if (se2 == e3) Expression.IfThenElse(and(e1, not(se1, loc), loc), se3, se2, tpe, loc)
-                else Expression.IfThenElse(e1, e2, e3, tpe, loc)
+                if (se3 == e3) Expression.IfThenElse(and(e1, se1, loc), se2, se3, adjustType(tpe), loc)
+                else if (se2 == e3) Expression.IfThenElse(and(e1, not(se1, loc), loc), se3, se2, adjustType(tpe), loc)
+                else Expression.IfThenElse(e1, e2, e3, adjustType(tpe), loc)
               case (_, Expression.IfThenElse(se1, se2, se3, _, _)) =>
-                if (se3 == e2) Expression.IfThenElse(and(not(e1, loc), se1, loc), se2, se3, tpe, loc)
-                else if (se2 == e2) Expression.IfThenElse(and(not(e1, loc), not(se1, loc), loc), se3, se2, tpe, loc)
-                else Expression.IfThenElse(e1, e2, e3, tpe, loc)
-              case _ => Expression.IfThenElse(e1, e2, e3, tpe, loc)
+                if (se3 == e2) Expression.IfThenElse(and(not(e1, loc), se1, loc), se2, se3, adjustType(tpe), loc)
+                else if (se2 == e2) Expression.IfThenElse(and(not(e1, loc), not(se1, loc), loc), se3, se2, adjustType(tpe), loc)
+                else Expression.IfThenElse(e1, e2, e3, adjustType(tpe), loc)
+              case _ => Expression.IfThenElse(e1, e2, e3, adjustType(tpe), loc)
             }
         }
-      case Expression.Let(sym, exp1, exp2, tpe, loc) => Expression.Let(sym, optimize(exp1), optimize(exp2), tpe, loc)
-      case Expression.LetRec(sym, exp1, exp2, tpe, loc) => Expression.LetRec(sym, optimize(exp1), optimize(exp2), tpe, loc)
+      case Expression.Let(sym, exp1, exp2, tpe, loc) => Expression.Let(sym, optimize(exp1), optimize(exp2), adjustType(tpe), loc)
+      case Expression.LetRec(sym, exp1, exp2, tpe, loc) => Expression.LetRec(sym, optimize(exp1), optimize(exp2), adjustType(tpe), loc)
       case Expression.Is(sym, tag, exp, loc) =>
         val e = optimize(exp)
         // Elimination of run-time tag checks for Unit.
@@ -280,30 +323,30 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.Tag(sym, tag, exp, tpe, loc) =>
         // Remove the tag on a single-valued enum.
         val e = optimize(exp)
-        if (isSingleCaseEnum(sym)) e else Expression.Tag(sym, tag, e, tpe, loc)
+        if (isSingleCaseEnum(sym)) e else Expression.Tag(sym, tag, e, adjustType(tpe), loc)
       case Expression.Untag(sym, tag, exp, tpe, loc) =>
         // Remove the untag on a single-valued enum.
         val e = optimize(exp)
-        if (isSingleCaseEnum(sym)) e else Expression.Untag(sym, tag, e, tpe, loc)
-      case Expression.Index(base, offset, tpe, loc) => Expression.Index(optimize(base), offset, tpe, loc)
-      case Expression.Tuple(elms, tpe, loc) => Expression.Tuple(optimizeExps(elms), tpe, loc)
-      case Expression.Existential(fparam, exp, loc) => Expression.Existential(fparam, optimize(exp), loc)
-      case Expression.Universal(fparam, exp, loc) => Expression.Universal(fparam, optimize(exp), loc)
+        if (isSingleCaseEnum(sym)) e else Expression.Untag(sym, tag, e, adjustType(tpe), loc)
+      case Expression.Index(base, offset, tpe, loc) => Expression.Index(optimize(base), offset, adjustType(tpe), loc)
+      case Expression.Tuple(elms, tpe, loc) => Expression.Tuple(optimizeExps(elms), adjustType(tpe), loc)
+      case Expression.Existential(fparam, exp, loc) => Expression.Existential(adjustFormalParam(fparam), optimize(exp), loc)
+      case Expression.Universal(fparam, exp, loc) => Expression.Universal(adjustFormalParam(fparam), optimize(exp), loc)
       case Expression.NativeConstructor(constructor, args, tpe, loc) =>
-        Expression.NativeConstructor(constructor, optimizeExps(args), tpe, loc)
-      case Expression.NativeField(field, tpe, loc) => Expression.NativeField(field, tpe, loc)
+        Expression.NativeConstructor(constructor, optimizeExps(args), adjustType(tpe), loc)
+      case Expression.NativeField(field, tpe, loc) => Expression.NativeField(field, adjustType(tpe), loc)
       case Expression.NativeMethod(method, args, tpe, loc) =>
-        Expression.NativeMethod(method, optimizeExps(args), tpe, loc)
-      case Expression.UserError(tpe, loc) => Expression.UserError(tpe, loc)
-      case Expression.MatchError(tpe, loc) => Expression.MatchError(tpe, loc)
-      case Expression.SwitchError(tpe, loc) => Expression.SwitchError(tpe, loc)
+        Expression.NativeMethod(method, optimizeExps(args), adjustType(tpe), loc)
+      case Expression.UserError(tpe, loc) => Expression.UserError(adjustType(tpe), loc)
+      case Expression.MatchError(tpe, loc) => Expression.MatchError(adjustType(tpe), loc)
+      case Expression.SwitchError(tpe, loc) => Expression.SwitchError(adjustType(tpe), loc)
     }
 
     // Start the timer.
     val t = System.nanoTime()
 
     // Optimize expressions in the definitions.
-    val optDefinitions = root.definitions map {case (sym, defn) => (sym, defn.copy(exp = optimize(defn.exp)))}
+    val optDefinitions = root.definitions map {case (sym, defn) => (sym, defn.copy(exp = optimize(defn.exp), formals = adjustFormalParams(defn.formals), tpe = adjustType(defn.tpe)))}
 
     // Calculate the elapsed time.
     val e = System.nanoTime() - t
