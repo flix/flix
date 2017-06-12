@@ -126,6 +126,14 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
               case BinaryOperator.NotEqual => toExp(lit1 != lit2)
               case _ => Expression.Binary(op, e1, e2, adjustType(tpe), loc)
             }
+          // Optimizations for Str.
+          case (_, Expression.Str(lit1), Expression.Str(lit2)) =>
+            op match {
+              case BinaryOperator.Equal => toExp(lit1 == lit2)
+              case BinaryOperator.NotEqual => toExp(lit1 != lit2)
+              case BinaryOperator.Plus => Expression.Str(lit1 + lit2)
+              case _ => Expression.Binary(op, e1, e2, adjustType(tpe), loc)
+            }
           // Optimizations for Float32.
           case (_, Expression.Float32(lit1), Expression.Float32(lit2)) =>
             op match {
@@ -241,7 +249,6 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
           case _ => Expression.Binary(op, e1, e2, adjustType(tpe), loc)
         }
     }
-
 
     /**
       * Performs a single pass optimization on each element in `es`.
