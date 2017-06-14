@@ -16,9 +16,8 @@
 
 package ca.uwaterloo.flix.language.phase
 
-import ca.uwaterloo.flix.api.{Flix, TagInterface}
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.ExecutableAst.Definition
 import ca.uwaterloo.flix.language.ast.Symbol.EnumSym
 import org.objectweb.asm
 import org.objectweb.asm.{ClassWriter, Label}
@@ -53,8 +52,8 @@ object EnumGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     * we generate the bytecode corresponding to following class:
     *
     * package ca.waterloo.flix.enums.Result;
-    * import ca.uwaterloo.flix.api.TagInterface;
-    * public interface EnumInterface extends TagInterface {
+    * import ca.uwaterloo.flix.api.Enum;
+    * public interface EnumInterface extends Enum {
     * }
     *
     * We put the result of the bytecodes for all enums inside a map from symbol to (fullyQualifiedName, bytecode)
@@ -66,10 +65,9 @@ object EnumGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     * the field.
     *
     * 4. Generate bytecode for each enum case.
-    * A class will be generated for each enum case. This class contains two fields: `tag` and `value`. `tag` is the name
-    * of the enum case represented as a string and `value` contains the field of the case. If the field is primitive, then
-    * `value` is of the type of that primitive, otherwise,`value` is just an object. For example, for the case `Ok[Int32]`
-    * we generate:
+    * A class will be generated for each enum case. This class contains one field: `value`. `value` contains the field of the case.
+    * If the field is primitive, then `value` is of the type of that primitive, otherwise, `value` is just an object.
+    * For example, for the case `Ok[Int32]` we generate:
     *
     * public int value;
     *
@@ -80,7 +78,7 @@ object EnumGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     * Classes generated at this step implements the interface corresponding the symbol of the enum case and they include
     * implementations of following methods: `getTag()`, `getValue()`, `getBoxedValue()`,`toString()`, `hashCode()` and
     * `equals(Object)`.
-    * `getTag()` is the function which returns the value of the `tag` field. `getValue()` returns the value of `value` field.
+    * `getTag()` is the function which returns the name of the enum case. `getValue()` returns the value of `value` field.
     * `getBoxedValue()` returns the `value` field but the result is boxed inside an object. As an example, `getValue()` and
     * `getBoxedValue()` of the class representing `Ok[Int32]` is as follows:
     *
@@ -99,7 +97,11 @@ object EnumGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     *   return "Some(".concat(String.valueOf(this.value).concat(")"));
     * }
     *
-    * `hashCode()` returns a hashCode corresponding to this enum case. hashCode is the the hash of a list containing namespace
+    * `toString()` has to special cases, first when the field of the enum is `Unit` we don't show the `Unit` on the result
+    * of the representation of the case, second for case `Cons` of `List` enum we represent it using `::` symbol instead of
+    * the traditional representation.
+    *
+    * hashCode() returns a hashCode corresponding to this enum case. hashCode is the the hash of a list containing namespace
     * of the enum symbol, enum name and case name multiplied by 7 added to the hashCode of the field of the enum multiplied by 11.
     * For example, for enum `Some[Bool]` we generate the following method:
     *
@@ -152,22 +154,31 @@ object EnumGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     }.toMap // Despite IDE highlighting, this is actually necessary.
 
     // 3. Separate primitive enums and object enums.
-    val enumsGroupedBySymbolAndFieldType : Map[EnumSym, (Set[(String, Type)], Set[String])] = enumsGroupedBySymbol.map{case (sym, li) =>
-      val (primEnums, enumsWithObjField) = li.partition(x => isPrimitive(x._2._2))
-      sym -> (primEnums.map(x => (x._2._1, x._2._2)).toSet, enumsWithObjField.map(x => x._2._1).toSet)
+    val enumsGroupedBySymbolAndFieldType : Map[EnumSym, (Set[(String, Type)], Map[String, Set[Type]])] =
+      enumsGroupedBySymbol.map{
+        case (sym, li) =>
+          val (primEnums, enumsWithObjField) = li.partition(x => isPrimitive(x._2._2))
+          sym -> (primEnums.map(x => (x._2._1, x._2._2)).toSet,
+            enumsWithObjField.groupBy(x => x._2._1).map(x => (x._1, x._2.map(_._2._2).toSet)))
     }.toMap // Despite IDE highlighting, this is actually necessary.
 
     // 4. Generate bytecode for each enum case.
     val enumByteCodes = enumsGroupedBySymbolAndFieldType.map{ case (sym, (primEnums, objectEnums)) =>
       val generatedPrimEnums : Map[(String, Type), Array[Byte]] = primEnums.map{ case (name, tpe) =>
-        val qualName = EnumClassName(sym, name, Some(tpe))
+        val wrapped = WrappedPrimitive(tpe)
+        val qualName = EnumClassName(sym, name, wrapped)
         val interface = enumInterfaces(sym)._1
-        (name, tpe) -> EnumGen.compileEnumClass(qualName, interface, Some(tpe))
+        // A primitive enum cannot be a singleton
+        val isSingleton = false
+        (name, tpe) -> EnumGen.compileEnumClass(qualName, interface, wrapped, isSingleton = isSingleton)
       }.toMap
-      val generatedObjectEnums : Map[String, Array[Byte]] = objectEnums.map{ name =>
-        val fullName = EnumClassName(sym, name, None)
+      val generatedObjectEnums : Map[String, Array[Byte]] = objectEnums.map{ case (name, tpes) =>
+        val wrapped = WrappedNonPrimitives(tpes)
+        val fullName = EnumClassName(sym, name, wrapped)
         val interface = enumInterfaces(sym)._1
-        name -> EnumGen.compileEnumClass(fullName, interface, None)
+        // If the type of the case field is `Unit` then this is a singleton
+        val isSingleton = isSingletonEnum(root.enums(sym).cases(name))
+        name -> EnumGen.compileEnumClass(fullName, interface, wrapped, isSingleton = isSingleton)
       }.toMap
       sym -> (generatedPrimEnums, generatedObjectEnums)
     }
@@ -179,12 +190,12 @@ object EnumGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
 
   /**
     * Generates an interface for each enum.
-    * Each case of the enum implements this interface. This interface extends `TagInterface`.
+    * Each case of the enum implements this interface. This interface extends `Enum`.
     * For example, for enum `Result` we create:
     *
     * package ca.waterloo.flix.enums.Result;
-    * import ca.uwaterloo.flix.api.TagInterface;
-    * public interface EnumInterface extends TagInterface {
+    * import ca.uwaterloo.flix.api.Enum;
+    * public interface EnumInterface extends Enum {
     * }
     *
     * @param qualName Qualified Name of the interface to be generated
@@ -209,11 +220,13 @@ object EnumGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     * @param className Qualified name of the generated class
     * @param superType Qualfied name of the interface of the Enum
     * @param fType Type of the `value` field, None means that the type is not a primitive
+    * @param isSingleton is `true` if this is a singleton, `false` otherwise.
     * @return byte code representation of the class
     */
   def compileEnumClass(className: EnumClassName,
                        superType: EnumInterfName,
-                       fType: Option[Type]): Array[Byte] = {
+                       fType: WrappedType,
+                       isSingleton : Boolean): Array[Byte] = {
     /*
      *  Initialize the class writer. We override `getCommonSuperClass` method because `asm` implementation of this
      * function requires types to loaded so that they can be compared to each other.
@@ -231,21 +244,30 @@ object EnumGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     val implementedInterfaces = Array(decorate(superType))
     visitor.visit(JavaVersion, ACC_PUBLIC + ACC_FINAL, decorate(className), null, superClass, implementedInterfaces)
 
-    // Generate tag and value fields
-    compileField(visitor, "value", getFieldOptionDescriptor(fType))
-    compileField(visitor, "tag", asm.Type.getDescriptor(Constants.stringClass))
+    // Generate value field
+    compileField(visitor, "value", getWrappedTypeDescriptor(fType), isStatic = false, isPrivate = true)
+
+    // Generate static `INSTANCE` field if it is a singleton
+    if(isSingleton) {
+      compileField(visitor, "unitInstance", s"L${decorate(className)};", isStatic = true, isPrivate = false)
+    }
 
     // Generate the constructor of the class
-    compileEnumConstructor(visitor, className, fType)
+    compileEnumConstructor(visitor, className, fType, isSingleton = isSingleton)
+
+    // Initialize the static field if it is a singleton
+    if(isSingleton){
+      compileUnitInstance(visitor, className)
+    }
 
     // Generate the `getValue` method
-    compileGetFieldMethod(visitor, className, getFieldOptionDescriptor(fType), "value", "getValue", getReturnInsn(fType))
+    compileGetFieldMethod(visitor, className, getWrappedTypeDescriptor(fType), "value", "getValue", getReturnInsn(fType))
 
     // Generate `getBoxedValue` method
     compileGetBoxedValueMethod(visitor, className, fType)
 
     // Generate `getTag` method
-    compileGetFieldMethod(visitor, className, asm.Type.getDescriptor(Constants.stringClass), "tag", "getTag", ARETURN)
+    compileGetTagMethod(visitor, className)
 
     // Generate `hashCode` method
     compileHashCodeMethod(visitor, className, fType)
@@ -254,24 +276,68 @@ object EnumGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     compileToStringMethod(visitor, className, fType)
 
     // Generate `equals` method
-    compileEqualsMethod(visitor, className, fType)
+    compileEqualsMethod(visitor, className, fType, isSingleton = isSingleton)
 
     visitor.visitEnd()
     visitor.toByteArray
   }
 
   /**
+    * Initializing `getInstance` static field if the `value` field can be `Unit`
+    * @param visitor class visitor
+    * @param className Qualified name of the class
+    */
+  private def compileUnitInstance(visitor: ClassWriter, className: EnumClassName) = {
+    val unitClazz = Constants.unitClass
+    val getInstanceMethod = unitClazz.getMethod("getInstance")
+
+    val method = visitor.visitMethod(ACC_STATIC, "<clinit>", "()V", null, null)
+    method.visitCode()
+
+    // Instantiating the object
+    method.visitTypeInsn(NEW, decorate(className))
+    method.visitInsn(DUP)
+
+    // Getting instance of `UnitClass`
+    method.visitMethodInsn(INVOKESTATIC, asm.Type.getInternalName(unitClazz), getInstanceMethod.getName,
+      asm.Type.getMethodDescriptor(getInstanceMethod), false)
+
+    // Calling constructor on the object
+    method.visitMethodInsn(INVOKESPECIAL, decorate(className), "<init>", s"(${asm.Type.getDescriptor(Constants.objectClass)})V", false)
+
+    // Initializing the static field
+    method.visitFieldInsn(PUTSTATIC, decorate(className), "unitInstance", s"L${decorate(className)};")
+
+    // Return
+    method.visitInsn(RETURN)
+    method.visitMaxs(2, 0)
+    method.visitEnd()
+  }
+
+  /**
     * Creates the single argument constructor of the enum case class which is named `className`.
     * The only argument required to instantiate the class is the `value`.
-    * The type of the field of the case is give by `descriptor`
+    * The type of the field of the case is give by `descriptor`.
+    * If the `fType` is only `Unit`, then we can make the constructor private since the `unitInstance` field
+    * can be used to obtain an instance of the case.
+    *
     * @param visitor class visitor
     * @param className name of the class
     * @param fType type of the `value` field
+    * @param isSingleton if the class is a singleton this flag is set
     */
-  private def compileEnumConstructor(visitor: ClassWriter, className: EnumClassName, fType: Option[Type]) = {
-    val descriptor = getFieldOptionDescriptor(fType)
+  private def compileEnumConstructor(visitor: ClassWriter, className: EnumClassName, fType: WrappedType, isSingleton: Boolean) = {
+    val descriptor = getWrappedTypeDescriptor(fType)
 
-    val constructor = visitor.visitMethod(ACC_PUBLIC, "<init>", s"($descriptor)V", null, null)
+    // If this is a singleton then we should make the constructor private
+    val specifier =
+      if(isSingleton) {
+        ACC_PRIVATE
+      } else {
+        ACC_PUBLIC
+      }
+
+    val constructor = visitor.visitMethod(specifier, "<init>", s"($descriptor)V", null, null)
     val clazz = Constants.objectClass
     val ctor = clazz.getConstructor()
 
@@ -290,11 +356,6 @@ object EnumGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     constructor.visitVarInsn(iLoad, 1)
     constructor.visitFieldInsn(PUTFIELD, decorate(className), "value", descriptor)
 
-    // Put the name of the tag on the `tag` field
-    constructor.visitVarInsn(ALOAD, 0)
-    constructor.visitLdcInsn(className.tag)
-    constructor.visitFieldInsn(PUTFIELD, decorate(className), "tag", asm.Type.getDescriptor(Constants.stringClass))
-
     // Return
     constructor.visitInsn(RETURN)
     constructor.visitMaxs(65535, 65535)
@@ -302,48 +363,22 @@ object EnumGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
   }
 
   /**
-    * Returns the load instruction corresponding to the `fType`, if it is `None` then the type can be represented by an object
-    * @param fType type
-    * @return A load instruction
-    */
-  private def getReturnInsn(fType: Option[Type]) : Int = fType match {
-    case Some(Type.Var(id, kind)) =>  throw InternalCompilerException(s"Non-monomorphed type variable '$id in type '${fType.get}'.")
-    case Some(Type.Bool) | Some(Type.Char) | Some(Type.Int8) | Some(Type.Int16) | Some(Type.Int32) => IRETURN
-    case Some(Type.Int64) => LRETURN
-    case Some(Type.Float32) => FRETURN
-    case Some(Type.Float64) => DRETURN
-    case _ => ARETURN
-  }
-
-  /**
-    * Generate the `methodName` method for fetching the `fieldName` field of the class.
-    * `name` is name of the class and `descriptor` is type of the `fieldName` field.
-    * This method generates `getValue()` and `getTag()` methods of the class.
-    * For example, `Val[Char]` has following `getValue()` and `getTag()` methods:
-    *
-    * public final char getValue() {
-    *   return this.value;
-    * }
-    *
+    * Generates the `getTag()` method of the class which is the implementation of `getTag` method on `tagInterface`.
+    * This methods returns an string containing the tag name.
+    * For example, `Val[Char]` has following `getTag()`method:
     *
     * public final String getTag() {
-    *   return this.tag;
+    *   return "Var";
     * }
     *
     * @param visitor class visitor
-    * @param qualName Qualified name of the class
-    * @param fieldName name of the field
-    * @param methodName method name of getter of `fieldName`
-    * @param iReturn opcode for returning the value of the field
+    * @param className Qualified name of the class
     */
-  private def compileGetFieldMethod(visitor: ClassWriter, qualName: QualName, descriptor: String, fieldName: String,
-                                    methodName: String, iReturn: Int) = {
-    val method = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, methodName, s"()$descriptor", null, null)
-
-    method.visitCode()
-    method.visitVarInsn(ALOAD, 0)
-    method.visitFieldInsn(GETFIELD, decorate(qualName), fieldName, descriptor)
-    method.visitInsn(iReturn)
+  private def compileGetTagMethod(visitor: ClassWriter, className: EnumClassName) = {
+    val descriptor = asm.Type.getDescriptor(Constants.stringClass)
+    val method = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, "getTag", s"()$descriptor", null, null)
+    method.visitLdcInsn(className.tag)
+    method.visitInsn(ARETURN)
     method.visitMaxs(1, 1)
     method.visitEnd()
   }
@@ -368,7 +403,7 @@ object EnumGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     * @param qualName Qualified name of the class
     * @param fType type of the `value` field of the class
     */
-  private def compileGetBoxedValueMethod(visitor: ClassWriter, qualName: QualName, fType: Option[Type]) = {
+  private def compileGetBoxedValueMethod(visitor: ClassWriter, qualName: QualName, fType: WrappedType) = {
     val method = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, "getBoxedValue", s"()Ljava/lang/Object;", null, null)
 
     method.visitCode()
@@ -389,7 +424,7 @@ object EnumGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     * @param qualName Qualified name of the class
     * @param fType type of the underlying `value`
     */
-  private def compileHashCodeMethod(visitor: ClassWriter, qualName: QualName, fType: Option[Type]) = {
+  private def compileHashCodeMethod(visitor: ClassWriter, qualName: QualName, fType: WrappedType) = {
     val clazz = Constants.objectClass
     val method = visitor.visitMethod(ACC_PUBLIC, "hashCode", "()I", null, null)
 
@@ -399,7 +434,7 @@ object EnumGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     method.visitInsn(IMUL)
     method.visitLdcInsn(11)
     method.visitVarInsn(ALOAD, 0)
-    method.visitFieldInsn(GETFIELD, decorate(qualName), "value", getFieldOptionDescriptor(fType))
+    method.visitFieldInsn(GETFIELD, decorate(qualName), "value", getWrappedTypeDescriptor(fType))
 
     /*
      * If the field is of type Object, we get the hashCode of the object
@@ -429,34 +464,108 @@ object EnumGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     *   return "Ok(".concat(this.value.toString().concat(")"));
     * }
     *
+    * Special cases are listed as follows:
+    *
+    * 1. When the enum case has a unit field, we just print the case name and ignore printing the unit as it's field
+    * For example, for `case Red(Unit)` we generate the following method:
+    *
+    * public String toString() {
+    *   return "Red";
+    * }
+    *
+    * 2. When the enum case is `Cons` of `List`, we hack to represent it with `::` which is also hacked into the system.
+    * We first get the `value` field of the case, then since we know it's a tuple we cast it and use `getBoxedValue` to get
+    * an array of length two. Then we invoke `toString` on the first element of the array, append " :: " to the string and
+    * put it on top of the stack then we invoke `toString` on the second element of the array and then concatenate this to
+    * the string on top of the stack.
+    *
+    * The code we generate is equivalent to:
+    *
+    * public String toString() {
+    *   Object[] var10000 = ((Tuple)this.value).getBoxedValue();
+    *   return var10000[0].toString().concat(" :: ".concat(var10000[1].toString()));
+    * }
+    *
     * @param visitor class visitor
     * @param qualName Qualified name of the class
     * @param fType type of the `value` field
     */
-  private def compileToStringMethod(visitor: ClassWriter, qualName: EnumClassName, fType: Option[Type]) = {
+  private def compileToStringMethod(visitor: ClassWriter, qualName: EnumClassName, fType: WrappedType) = {
     val stringInternalName = asm.Type.getInternalName(Constants.stringClass)
     val stringConcatMethod = Constants.stringClass.getMethod("concat", Constants.stringClass)
 
     val method = visitor.visitMethod(ACC_PUBLIC, "toString", s"()${asm.Type.getDescriptor(Constants.stringClass)}", null, null)
 
     method.visitCode()
-    method.visitLdcInsn(qualName.tag.concat("("))
-    method.visitVarInsn(ALOAD, 0)
-    method.visitFieldInsn(GETFIELD, decorate(qualName), "value", getFieldOptionDescriptor(fType))
 
-    /*
-     * Converting `value` to String.
-     * If it's an object, we will call `toString` on the object.
-     * Otherwise, we use `valueOf` static method on String with the appropriate type.
-     */
-    javaValueToString(method, fType)
+    if(fType == WrappedNonPrimitives(Set(Type.Unit))) { // Special case for when the field is `Unit`
+      method.visitLdcInsn(qualName.tag)
+    } else if(qualName.tag == "Cons" && qualName.sym.namespace == Nil && qualName.sym.name == "List") { // Special case for cons
+      val tupleClazz = Constants.tupleClass
+      val getBoxedValueMethod = tupleClazz.getMethod("getBoxedValue")
 
-    method.visitLdcInsn(")")
+      // Load value field
+      method.visitVarInsn(ALOAD, 0)
+      method.visitFieldInsn(GETFIELD, decorate(qualName), "value", getWrappedTypeDescriptor(fType))
 
-    // We concatenate twice since there is 3 strings on the stack that we want to concat them together
-    for(_ <- 0 until 2) {
-      method.visitMethodInsn(INVOKEVIRTUAL, stringInternalName, stringConcatMethod.getName,
-        asm.Type.getMethodDescriptor(stringConcatMethod), false)
+      // Cast the field to tuple interface
+      method.visitTypeInsn(CHECKCAST, asm.Type.getInternalName(Constants.tupleClass))
+
+      // Call `getBoxedValue()` on the object
+      method.visitMethodInsn(INVOKEVIRTUAL, asm.Type.getInternalName(tupleClazz), getBoxedValueMethod.getName,
+        asm.Type.getMethodDescriptor(getBoxedValueMethod), false)
+
+      // Duplicate the reference to array
+      method.visitInsn(DUP)
+
+      // Get the first element of the array
+      method.visitLdcInsn(0)
+      method.visitInsn(AALOAD)
+
+      // Convert the first element of the array to string
+      javaValueToString(method, WrappedNonPrimitives(Set()))
+
+      // Bring reference to the array to the top of the stack
+      method.visitInsn(SWAP)
+
+      // Put " :: " on top of the stack
+      method.visitLdcInsn(" :: ")
+
+      // Again, bring reference to the array to the top of the stack
+      method.visitInsn(SWAP)
+
+      // Convert the second element of the array to string
+      method.visitLdcInsn(1)
+      method.visitInsn(AALOAD)
+
+      // Convert the first element of the array to string
+      javaValueToString(method, WrappedNonPrimitives(Set()))
+
+      // Concatenate all of the string on top of the stack together
+      for (_ <- 0 until 2) {
+        method.visitMethodInsn(INVOKEVIRTUAL, stringInternalName, stringConcatMethod.getName,
+          asm.Type.getMethodDescriptor(stringConcatMethod), false)
+      }
+    } else {
+      // Normal version of `toString`
+      method.visitLdcInsn(qualName.tag.concat("("))
+      method.visitVarInsn(ALOAD, 0)
+      method.visitFieldInsn(GETFIELD, decorate(qualName), "value", getWrappedTypeDescriptor(fType))
+
+      /*
+       * Converting `value` to String.
+       * If it's an object, we will call `toString` on the object.
+       * Otherwise, we use `valueOf` static method on String with the appropriate type.
+       */
+      javaValueToString(method, fType)
+
+      method.visitLdcInsn(")")
+
+      // We concatenate twice since there is 3 strings on the stack that we want to concat them together
+      for (_ <- 0 until 2) {
+        method.visitMethodInsn(INVOKEVIRTUAL, stringInternalName, stringConcatMethod.getName,
+          asm.Type.getMethodDescriptor(stringConcatMethod), false)
+      }
     }
 
     method.visitInsn(ARETURN)
@@ -483,31 +592,43 @@ object EnumGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     * @param visitor class visitor
     * @param qualName Qualified name of the class
     * @param fType Type of the `value` field
+    * @param isSingleton `true` if the enum's field is a unit and hence it can be represented using singleton method
     */
-  private def compileEqualsMethod(visitor: ClassWriter, qualName: QualName, fType: Option[Type]) = {
+  private def compileEqualsMethod(visitor: ClassWriter, qualName: QualName, fType: WrappedType, isSingleton : Boolean) = {
     val clazz = Constants.objectClass
     val neq = new Label() //label for when the object is not instanceof tag case
 
     // Descriptor of the `value` field
-    val descriptor = getFieldOptionDescriptor(fType)
+    val descriptor = getWrappedTypeDescriptor(fType)
 
     val method = visitor.visitMethod(ACC_PUBLIC, "equals", s"(${asm.Type.getDescriptor(clazz)})Z", null, null)
     method.visitCode()
-    method.visitVarInsn(ALOAD, 1)
-    method.visitTypeInsn(INSTANCEOF, decorate(qualName)) // compare the types
-    method.visitJumpInsn(IFEQ, neq) // if types don't match go to `neq`
-    method.visitVarInsn(ALOAD, 0)
-    method.visitFieldInsn(GETFIELD, decorate(qualName), "value", descriptor)
-    method.visitVarInsn(ALOAD, 1)
-    method.visitTypeInsn(CHECKCAST, decorate(qualName)) // cast to the current class
-    method.visitFieldInsn(GETFIELD, decorate(qualName), "value", descriptor) // get the value field
 
-    // This will pick the appropriate comparison for the type of the `value`
-    branchIfNotEqual(method, fType, neq)
+    /*
+     if the class is singleton, the constructor is private so there is only one instance of the object available, given
+     this information we can only compare the reference of objects to check their equality.
+     */
+    if(isSingleton) {
+      method.visitVarInsn(ALOAD, 0)
+      method.visitVarInsn(ALOAD, 1)
+      method.visitJumpInsn(IF_ACMPNE, neq)
+    } else {
+      method.visitVarInsn(ALOAD, 1)
+      method.visitTypeInsn(INSTANCEOF, decorate(qualName)) // compare the types
+      method.visitJumpInsn(IFEQ, neq) // if types don't match go to `neq`
+      method.visitVarInsn(ALOAD, 0)
+      method.visitFieldInsn(GETFIELD, decorate(qualName), "value", descriptor)
+      method.visitVarInsn(ALOAD, 1)
+      method.visitTypeInsn(CHECKCAST, decorate(qualName)) // cast to the current class
+      method.visitFieldInsn(GETFIELD, decorate(qualName), "value", descriptor) // get the value field
 
-    method.visitInsn(ICONST_1)
+      // This will pick the appropriate comparison for the type of the `value`
+      branchIfNotEqual(method, fType, neq)
+    }
+
+    method.visitInsn(ICONST_1) // if the code reaches here it means the comparison has been successful
     method.visitInsn(IRETURN)
-    method.visitLabel(neq) // if the code reaches here, it means that `instanceof` has returned false
+    method.visitLabel(neq) // if the code reaches here, it means that comparison has failed
     method.visitInsn(ICONST_0)
     method.visitInsn(IRETURN)
     method.visitMaxs(10, 10)

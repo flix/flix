@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import java.lang.reflect.Modifier
 
-import ca.uwaterloo.flix.api._
+import ca.uwaterloo.flix.api.{Flix, MatchException, SwitchException, UserException}
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.Ast.Hook
 import ca.uwaterloo.flix.language.ast.ExecutableAst.{Definition, Expression, LoadExpression, StoreExpression}
@@ -100,13 +100,14 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
     // 3. Create Enum Type info
     val allEnums : List[(Type, (String, Type))] = root.definitions.values.flatMap(x => CodegenHelper.findEnumCases(x.exp)).toList
 
-    val enumTypeInfo: Map[(Type, String), QualName] = allEnums.map{ case (tpe, (name, subType)) =>
+    val enumTypeInfo: Map[(Type, String), (QualName, ExecutableAst.Case)] = allEnums.map{ case (tpe, (name, subType)) =>
       val sym =  tpe match {
         case Type.Apply(Type.Enum(s, _), _) => s
         case Type.Enum(s, _) => s
         case _ => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
       }
-      (tpe, name) -> EnumClassName(sym, name, Some(subType))
+      val enumCase = root.enums(sym).cases(name)
+      (tpe, name) -> (EnumClassName(sym, name, typeToWrappedType(subType)), enumCase)
     }.toMap
 
     // 4. Generate functional interfaces.
@@ -160,7 +161,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
               functions: List[Definition.Constant],
               declarations: Map[Symbol.DefnSym, Type],
               interfaces: Map[Type, FlixClassName],
-              enums: Map[(Type, String), QualName],
+              enums: Map[(Type, String), (QualName, ExecutableAst.Case)],
               options: Options): Array[Byte] = {
     /*
      * Initialize the class writer. We override `getCommonSuperClass` method because `asm` implementation of this
@@ -232,7 +233,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
                               functions: List[Definition.Constant],
                               declarations: Map[Symbol.DefnSym, Type],
                               interfaces: Map[Type, FlixClassName],
-                              enums: Map[(Type, String), QualName],
+                              enums: Map[(Type, String), (QualName, ExecutableAst.Case)],
                               visitor: ClassVisitor)(function: Definition.Constant): Unit = {
     val flags = if (function.isSynthetic) ACC_PUBLIC + ACC_STATIC + ACC_SYNTHETIC else ACC_PUBLIC + ACC_STATIC
     val mv = visitor.visitMethod(flags, function.sym.suffix, descriptor(function.tpe, interfaces), null, null)
@@ -268,12 +269,13 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
                                 functions: List[Definition.Constant],
                                 declarations: Map[Symbol.DefnSym, Type],
                                 interfaces: Map[Type, FlixClassName],
-                                enums: Map[(Type, String), QualName],
+                                enums: Map[(Type, String), (QualName, ExecutableAst.Case)],
                                 visitor: MethodVisitor,
                                 entryPoint: Label)(expr: Expression): Unit = expr match {
     case Expression.Unit =>
       val clazz = Constants.unitClass
-      visitor.visitFieldInsn(GETSTATIC, asm.Type.getInternalName(clazz), "MODULE$", asm.Type.getDescriptor(clazz))
+      val method = clazz.getMethod("getInstance")
+      visitor.visitMethodInsn(INVOKESTATIC, asm.Type.getInternalName(clazz), method.getName, asm.Type.getMethodDescriptor(method), false)
     case Expression.True => visitor.visitInsn(ICONST_1)
     case Expression.False => visitor.visitInsn(ICONST_0)
     case Expression.Char(c) => compileInt(visitor)(c)
@@ -528,63 +530,71 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
       // First we compile the `exp`
       compileExpression(prefix, functions, declarations, interfaces, enums, visitor, entryPoint)(exp)
       // We look in the enum map to find the qualified name of the class of the enum case
-      val clazz = enums(exp.tpe, tag)
+      val clazz = enums(exp.tpe, tag)._1
       // We check if the enum is `instanceof` the class
       visitor.visitTypeInsn(INSTANCEOF, decorate(clazz))
 
     case Expression.Tag(enum, tag, exp, tpe, _) =>
       //  We look in the enum map to find the qualified name of the class of the enum case
-      val clazzName = enums(tpe, tag)
+      val (clazzName, enumCase) = enums(tpe, tag)
       /*
-       * We get the descriptor of the type of the `value` field of enum, if type if primitive we use the corresponding
-       * primitive in java otherwise we use the descriptor of object.
+       If the definition of the enum case has a `Unit` field, then it is represented by singleton pattern which means
+       there is only one instance of the class initiated as a field. We have to fetch this field instead of instantiating
+       a new one.
        */
-      val desc = getFieldOptionDescriptor(transformTypeToOptionType(exp.tpe))
-      // Creating a new instance of the class
-      visitor.visitTypeInsn(NEW, decorate(clazzName))
-      visitor.visitInsn(DUP)
-      // Evaluating the single argument of the class constructor
-      compileExpression(prefix, functions, declarations, interfaces, enums, visitor, entryPoint)(exp)
-      // Calling the constructor of the class
-      visitor.visitMethodInsn(INVOKESPECIAL, decorate(clazzName), "<init>", s"(${desc})V", false)
-
+      if(isSingletonEnum(enumCase)) {
+        visitor.visitFieldInsn(GETSTATIC, decorate(clazzName), "unitInstance", s"L${decorate(clazzName)};")
+      } else {
+        /*
+         * We get the descriptor of the type of the `value` field of enum, if type if primitive we use the corresponding
+         * primitive in java otherwise we use the descriptor of object.
+         */
+        val desc = getWrappedTypeDescriptor(typeToWrappedType(exp.tpe))
+        // Creating a new instance of the class
+        visitor.visitTypeInsn(NEW, decorate(clazzName))
+        visitor.visitInsn(DUP)
+        // Evaluating the single argument of the class constructor
+        compileExpression(prefix, functions, declarations, interfaces, enums, visitor, entryPoint)(exp)
+        // Calling the constructor of the class
+        visitor.visitMethodInsn(INVOKESPECIAL, decorate(clazzName), "<init>", s"(${desc})V", false)
+      }
     case Expression.Untag(enum, tag, exp, tpe, _) =>
       /*
        * We get the descriptor of the type of the `value` field of enum, if type if primitive we use the corresponding
        * primitive in java otherwise we use the descriptor of object.
        */
-      val desc = getFieldOptionDescriptor(transformTypeToOptionType(tpe))
+      val desc = getWrappedTypeDescriptor(typeToWrappedType(tpe))
       // Qualified name of the enum
-      val clazz = EnumClassName(enum, tag, Some(tpe))
+      val clazz = EnumClassName(enum, tag, typeToWrappedType(tpe))
       // Evaluate the exp
       compileExpression(prefix, functions, declarations, interfaces, enums, visitor, entryPoint)(exp)
       // Cast the exp to the type of the tag
       visitor.visitTypeInsn(CHECKCAST, decorate(clazz))
       // Invoke `getValue()` method to extract the field of the tag
-      visitor.visitMethodInsn(INVOKEVIRTUAL, decorate(clazz), "getValue", s"()${desc}", false)
+      visitor.visitMethodInsn(INVOKEVIRTUAL, decorate(clazz), "getValue", s"()$desc", false)
       // Cast the object to it's type if it's not a primitive
       castIfNotPrim(tpe, interfaces, visitor)
 
     case Expression.Index(base, offset, tpe, _) =>
       // Descriptor of the field of the element in the tuple specified by the `offset`
-      val desc = getFieldOptionDescriptor(transformTypeToOptionType(tpe))
+      val desc = getWrappedTypeDescriptor(typeToWrappedType(tpe))
       // Qualified name of the class defining the tuple
       val clazzName = base.tpe match {
-        case Type.Apply(Type.FTuple(_), lst) => TupleClassName(lst.map(transformTypeToOptionType))
+        case Type.Apply(Type.FTuple(_), lst) => TupleClassName(lst.map(typeToWrappedType))
         case _ => throw InternalCompilerException(s"Unexpected type: `${base.tpe}`")
       }
       // evaluating the `base`
       compileExpression(prefix, functions, declarations, interfaces, enums, visitor, entryPoint)(base)
-      // Fetching the field containing the element specified by the `offset`
-      visitor.visitFieldInsn(GETFIELD, decorate(clazzName), s"field$offset",desc)
+      // Invoking `getField${offset}()` method for fetching the field
+      visitor.visitMethodInsn(INVOKEVIRTUAL, decorate(clazzName), s"getIndex$offset", s"()$desc", false)
       // Cast the object to it's type if it's not a primitive
       castIfNotPrim(tpe, interfaces, visitor)
       
     case Expression.Tuple(elms, _, _) =>
       // Transforming types of elements of the tuple to the appropriate type
-      val fieldTypes : List[Option[Type]] = elms.map(x => transformTypeToOptionType(x.tpe)).toList
+      val fieldTypes : List[WrappedType] = elms.map(x => typeToWrappedType(x.tpe)).toList
       // Descriptor of the parameters of the constructor of the tuple class
-      val desc = fieldTypes.map(getFieldOptionDescriptor).mkString
+      val desc = fieldTypes.map(getWrappedTypeDescriptor).mkString
       // Qualified name of the class that can represent this tuple
       val clazzName = TupleClassName(fieldTypes)
       // Creating a new instance of the class
@@ -640,7 +650,8 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
       // If the method is void, put a unit on top of the stack
       if(asm.Type.getType(method.getReturnType) == asm.Type.VOID_TYPE) {
         val clazz = Constants.unitClass
-        visitor.visitFieldInsn(GETSTATIC, asm.Type.getInternalName(clazz), "MODULE$", asm.Type.getDescriptor(clazz))
+        val method = clazz.getMethod("getInstance")
+        visitor.visitMethodInsn(INVOKESTATIC, asm.Type.getInternalName(clazz), method.getName, asm.Type.getMethodDescriptor(method), false)
       }
 
     case Expression.UserError(_, loc) =>
@@ -678,7 +689,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
                                functions: List[Definition.Constant],
                                declarations: Map[Symbol.DefnSym, Type],
                                interfaces: Map[Type, FlixClassName],
-                               enums: Map[(Type, String), QualName],
+                               enums: Map[(Type, String), (QualName, ExecutableAst.Case)],
                                visitor: MethodVisitor,
                                entryPoint: Label)(exp: Expression): Unit = exp.tpe match {
     case Type.Bool =>
@@ -792,7 +803,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
     case Type.Native => // Don't need to cast AnyRef to anything
 
     case Type.Apply(Type.FTuple(l), lst) =>
-      val clazzName = TupleClassName(lst.map(transformTypeToOptionType))
+      val clazzName = TupleClassName(lst.map(typeToWrappedType))
 
 
       visitor.visitTypeInsn(CHECKCAST, decorate(clazzName))
@@ -823,7 +834,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
                               functions: List[Definition.Constant],
                               declarations: Map[Symbol.DefnSym, Type],
                               interfaces: Map[Type, FlixClassName],
-                              enums: Map[(Type, String), QualName],
+                              enums: Map[(Type, String), (QualName, ExecutableAst.Case)],
                               visitor: MethodVisitor,
                               entryPoint: Label)(load: LoadExpression): Unit = {
     compileExpression(prefix, functions, declarations, interfaces, enums, visitor, entryPoint)(load.e)
@@ -872,7 +883,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
                                functions: List[Definition.Constant],
                                declarations: Map[Symbol.DefnSym, Type],
                                interfaces: Map[Type, FlixClassName],
-                               enums: Map[(Type, String), QualName],
+                               enums: Map[(Type, String), (QualName, ExecutableAst.Case)],
                                visitor: MethodVisitor, entryPoint: Label)(store: StoreExpression): Unit = {
     compileExpression(prefix, functions, declarations, interfaces, enums, visitor, entryPoint)(store.e)
     compileInt(visitor)(store.targetMask, isLong = true)
@@ -919,7 +930,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
                                functions: List[Definition.Constant],
                                declarations: Map[Symbol.DefnSym, Type],
                                interfaces: Map[Type, FlixClassName],
-                               enums: Map[(Type, String), QualName],
+                               enums: Map[(Type, String), (QualName, ExecutableAst.Case)],
                                visitor: MethodVisitor,
                                entryPoint: Label)(op: UnaryOperator, e: Expression): Unit = {
     compileExpression(prefix, functions, declarations, interfaces, enums, visitor, entryPoint)(e)
@@ -961,7 +972,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
                                     functions: List[Definition.Constant],
                                     declarations: Map[Symbol.DefnSym, Type],
                                     interfaces: Map[Type, FlixClassName],
-                                    enums: Map[(Type, String), QualName],
+                                    enums: Map[(Type, String), (QualName, ExecutableAst.Case)],
                                     visitor: MethodVisitor)(tpe: Type): Unit = tpe match {
     case Type.Float32 => visitor.visitInsn(FNEG)
     case Type.Float64 => visitor.visitInsn(DNEG)
@@ -1040,7 +1051,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
                                     functions: List[Definition.Constant],
                                     declarations: Map[Symbol.DefnSym, Type],
                                     interfaces: Map[Type, FlixClassName],
-                                    enums: Map[(Type, String), QualName],
+                                    enums: Map[(Type, String), (QualName, ExecutableAst.Case)],
                                     visitor: MethodVisitor,
                                     entryPoint: Label)(o: ArithmeticOperator, e1: Expression, e2: Expression): Unit = {
     if (o == BinaryOperator.Exponentiate) {
@@ -1148,7 +1159,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
                                     functions: List[Definition.Constant],
                                     declarations: Map[Symbol.DefnSym, Type],
                                     interfaces: Map[Type, FlixClassName],
-                                    enums: Map[(Type, String), QualName],
+                                    enums: Map[(Type, String), (QualName, ExecutableAst.Case)],
                                     visitor: MethodVisitor, entryPoint: Label)
                                    (o: ComparisonOperator, e1: Expression, e2: Expression): Unit = {
     e1.tpe match {
@@ -1248,7 +1259,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
                                  functions: List[Definition.Constant],
                                  declarations: Map[Symbol.DefnSym, Type],
                                  interfaces: Map[Type, FlixClassName],
-                                 enums: Map[(Type, String), QualName],
+                                 enums: Map[(Type, String), (QualName, ExecutableAst.Case)],
                                  visitor: MethodVisitor,
                                  entryPoint: Label)(o: LogicalOperator, e1: Expression, e2: Expression): Unit = o match {
     case BinaryOperator.LogicalAnd =>
@@ -1326,7 +1337,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
                                  functions: List[Definition.Constant],
                                  declarations: Map[Symbol.DefnSym, Type],
                                  interfaces: Map[Type, FlixClassName],
-                                 enums: Map[(Type, String), QualName],
+                                 enums: Map[(Type, String), (QualName, ExecutableAst.Case)],
                                  visitor: MethodVisitor,
                                  entryPoint: Label)(o: BitwiseOperator, e1: Expression, e2: Expression): Unit = {
     compileExpression(prefix, functions, declarations, interfaces, enums, visitor, entryPoint)(e1)
@@ -1375,7 +1386,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
     case Type.Native => visitor.visitTypeInsn(CHECKCAST, asm.Type.getInternalName(Constants.objectClass))
     case Type.Apply(Type.Arrow(l), _) => visitor.visitTypeInsn(CHECKCAST, decorate(interfaces(tpe)))
     case Type.Apply(Type.FTuple(l), lst) =>
-      val clazzName = TupleClassName(lst.map(transformTypeToOptionType))
+      val clazzName = TupleClassName(lst.map(typeToWrappedType))
       visitor.visitTypeInsn(CHECKCAST, decorate(clazzName))
     case _ if tpe.isEnum =>
       val sym = tpe match {

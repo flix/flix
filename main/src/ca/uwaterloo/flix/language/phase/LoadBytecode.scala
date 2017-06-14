@@ -18,13 +18,12 @@ package ca.uwaterloo.flix.language.phase
 
 import java.nio.file.{Files, Paths}
 
-import ca.uwaterloo.flix.api.{Flix, TupleInterface}
-import ca.uwaterloo.flix.language.{CompilationError, GenSym}
-import ca.uwaterloo.flix.language.ast.ExecutableAst.{Definition, Expression}
+import ca.uwaterloo.flix.api.{Flix, Unit => UnitClass}
+import ca.uwaterloo.flix.language.CompilationError
+import ca.uwaterloo.flix.language.ast.ExecutableAst.Definition
 import ca.uwaterloo.flix.language.ast.Symbol.EnumSym
-import ca.uwaterloo.flix.language.ast.{ExecutableAst, Symbol, Type}
-import ca.uwaterloo.flix.language.phase.CodegenHelper.{EnumClassName, FlixClassName, QualName, TupleClassName}
-import ca.uwaterloo.flix.runtime.Value
+import ca.uwaterloo.flix.language.ast.{ExecutableAst, Type}
+import ca.uwaterloo.flix.language.phase.CodegenHelper._
 import ca.uwaterloo.flix.util.{Evaluation, InternalCompilerException}
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
@@ -47,20 +46,23 @@ object LoadBytecode extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     * (containing methods f and h) and A.B (containing method g).
     * Example 2: (in pseudocode) the constant `def x = UserError` is converted to `def x() = UserError`.
     *
-    * 2. Load Enum interfaces
+    * 2. Load Tuple classes
+    * We load tuple classes which are generated in TupleGen phase. if debug option is set, we dump the bytecode as well.
+    *
+    * 3. Load Enum interfaces
     * We load enum interfaces which are generated in EnumGen phase. if debug option is set, we dump the bytecode as well.
     *
-    * 3. Load functional interfaces.
+    * 4. Load functional interfaces.
     * We load functional interfaces which are generated at CodeGen. if debug option is set, we dump the bytecode as well.
     *
-    * 4. Load Enum classes
+    * 5. Load Enum classes
     * We load enum classes which are generated at CodeGen. if debug option is set, we dump the bytecode as well.
     *
-    * 5. Load bytecodes of flix functions
+    * 6. Load bytecodes of flix functions
     * We load classes which include flix expressions which are generated at CodeGen. if debug option is set,
     * we dump the bytecode as well. We also set the `flix` field of these classes to flix object.
     *
-    * 5. Load the methods.
+    * 7. Load the methods.
     * For each constant, we use reflection to get the corresponding java.lang.reflect.Method object.
     * This is actually a bit tricky. We need the rewritten lambda types (non-functions -> 0-arg functions, free
     * variables eliminated) to perform the reflection lookup, so we iterate over constantsMap. However, we want to
@@ -85,7 +87,7 @@ object LoadBytecode extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
       }
     }.toList.groupBy(cst => FlixClassName(cst.sym.prefix))
 
-    //TODO: NEW
+    // 2. Load Tuple classes
     val loadedTuples: Map[QualName, Class[_]] = root.byteCodes.tupleByteCode.map{ case (name, byteCode) =>
       if(flix.options.debug){
         dump(name, byteCode)
@@ -93,7 +95,7 @@ object LoadBytecode extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
       name -> loader(name, byteCode)
     }.toMap
 
-    // 2. Load Enum interfaces
+    // 3. Load Enum interfaces
     val loadedEnumInterfaces : Map[EnumSym, Class[_]] = root.byteCodes.enumInterfaceByteCodes.map{ case (sym, (name, byteCode)) =>
       if(flix.options.debug){
         dump(name, byteCode)
@@ -101,7 +103,7 @@ object LoadBytecode extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
       sym -> loader(name, byteCode)
     }.toMap // Despite IDE highlighting, this is actually necessary.
 
-    // 3. Load functional interfaces.
+    // 4. Load functional interfaces.
     val loadedInterfaces: Map[Type, Class[_]] = root.byteCodes.functionalInterfaceByteCodes.map { case (tpe, (prefix, bytecode)) =>
       if(flix.options.debug) {
         dump(prefix, bytecode)
@@ -109,17 +111,17 @@ object LoadBytecode extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
       tpe -> loader(prefix, bytecode)
     }.toMap // Despite IDE highlighting, this is actually necessary.
 
-    // 4. Load Enum classes
+    // 5. Load Enum classes
     val loadedEnums = root.byteCodes.enumClassByteCodes.map{ case (sym, (prims, objs)) =>
       val loadedPrimEnums : Map[(String, Type), Class[_]] = prims.map{ case ((name, tpe), byteCode) =>
-        val qualName: QualName = EnumClassName(sym, name, Some(tpe))
+        val qualName: QualName = EnumClassName(sym, name, WrappedPrimitive(tpe))
         if(flix.options.debug){
           dump(qualName, byteCode)
         }
         (name, tpe)  -> loader(qualName, byteCode)
       }.toMap // Despite IDE highlighting, this is actually necessary.
       val loadedObjEnums : Map[String, Class[_]] = objs.map{ case (name, byteCode) =>
-        val fullName = EnumClassName(sym, name, None)
+        val fullName = EnumClassName(sym, name, WrappedNonPrimitives(Set()))
         if(flix.options.debug){
           dump(fullName, byteCode)
         }
@@ -128,7 +130,7 @@ object LoadBytecode extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
       sym -> (loadedPrimEnums, loadedObjEnums)
     }
 
-    // 5. Load bytecodes of flix functions
+    // 6. Load bytecodes of flix functions
     val loadedClasses: Map[QualName, Class[_]] = root.byteCodes.classByteCodes.map { case (prefix, bytecode) =>
       if (flix.options.debug) {
         dump(prefix, bytecode)
@@ -139,7 +141,7 @@ object LoadBytecode extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
       prefix -> clazz
     }.toMap // Despite IDE highlighting, this is actually necessary.
 
-    // 6. Load the methods.
+    // 7. Load the methods.
     // TODO: Here we filter laws, since the backend does not support existentials/universals, but could we fix that?
     for ((prefix, consts) <- constantsMap; const <- consts; if !const.ann.isLaw) {
       val Type.Apply(Type.Arrow(l), ts) = const.tpe
@@ -166,7 +168,7 @@ object LoadBytecode extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
                           enums: Map[EnumSym, Class[_]],
                           loadedTuples: Map[QualName, Class[_]]): Class[_] = tpe match {
     case Type.Var(id, kind) => classOf[java.lang.Object]
-    case Type.Unit => Value.Unit.getClass
+    case Type.Unit => classOf[UnitClass]
     case Type.Bool => classOf[Boolean]
     case Type.Char => classOf[Char]
     case Type.Float32 => classOf[Float]
@@ -181,7 +183,7 @@ object LoadBytecode extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     case Type.Enum(s, _) => enums(s)
     case Type.Apply(Type.Enum(s, _), _) => enums(s)
     case Type.Apply(Type.FTuple(_), lst) =>
-      val clazzName = TupleClassName(lst.map(CodegenHelper.transformTypeToOptionType))
+      val clazzName = TupleClassName(lst.map(typeToWrappedType))
       loadedTuples(clazzName)
     case Type.Apply(Type.Arrow(l), _) => interfaces(tpe)
     case _ => throw InternalCompilerException(s"Unexpected type: `$tpe'.")

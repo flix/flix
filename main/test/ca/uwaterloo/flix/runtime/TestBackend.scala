@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.runtime
 
-import ca.uwaterloo.flix.api._
+import ca.uwaterloo.flix.api.{Unit => UnitClass, _}
 import ca.uwaterloo.flix.util._
 import org.scalatest.FunSuite
 
@@ -53,12 +53,13 @@ class TestBackend extends FunSuite {
     }
 
     def recursiveGetBoxed(res : AnyRef) : AnyRef = res match {
-      case r : TagInterface => {
+      case r : Enum => {
         new Value.Tag(r.getTag, recursiveGetBoxed(r.getBoxedValue()))
       }
-      case r : TupleInterface => {
+      case r : Tuple => {
         r.getBoxedValue().map(recursiveGetBoxed)
       }
+      case r : UnitClass => Value.Unit
       case x => x
     }
 
