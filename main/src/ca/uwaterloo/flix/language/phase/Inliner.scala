@@ -109,9 +109,10 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Binary(_, _, _, _, _) => None
       case IfThenElse(_, _, _, _, _) => None
       case Let(_, _, _, _, _) => None
-      case Is(_, _, _) => None
+      case LetRec(_, _, _, _, _) => None
+      case Is(_, _, _, _) => None
       case Tag(_, _, _, _, _) => None
-      case Untag(_, _, _, _) => None
+      case Untag(_, _, _, _, _) => None
       case Index(_, _, _, _) => None
       case Tuple(_, _, _) => None
       case Existential(_, _, _) => None
@@ -221,9 +222,10 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Binary(_, _, _, _, _) => None
       case IfThenElse(_, _, _, _, _) => None
       case Let(_, _, _, _, _) => None
-      case Is(_, _, _) => None
+      case LetRec(_, _, _, _, _) => None
+      case Is(_, _, _, _) => None
       case Tag(_, _, _, _, _) => None
-      case Untag(_, _, _, _) => None
+      case Untag(_, _, _, _, _) => None
       case Index(_, _, _, _) => None
       case Tuple(_, _, _) => None
       case Existential(_, _, _) => None
@@ -271,11 +273,17 @@ object FreshenExpr {
     {
       exp3 match {
         case Let(sym, exp1, exp2, tpe, loc) =>
-          val newSym = Symbol.freshVarSym("inlnrFresh")// Symbol.freshVarSym(sym)
+          val newSym = Symbol.freshVarSym("inlnrFresh")
           m += (sym -> newSym)
           val freshExp1 = AstVisitor.visitExpressionWith(freshExprVisitor, exp1)
           val freshExp2 = AstVisitor.visitExpressionWith(freshExprVisitor, exp2)
           Some(Let(newSym,freshExp1,freshExp2,tpe,loc))
+        case LetRec(sym, exp1, exp2, tpe, loc) =>
+          val newSym = Symbol.freshVarSym("inlnrFresh")
+          m += (sym -> newSym)
+          val freshExp1 = AstVisitor.visitExpressionWith(freshExprVisitor, exp1)
+          val freshExp2 = AstVisitor.visitExpressionWith(freshExprVisitor, exp2)
+          Some(LetRec(newSym,freshExp1,freshExp2,tpe,loc))
         case _ => None
       }
     }
@@ -341,12 +349,14 @@ object AstVisitor {
             IfThenElse(visit(exp1), visit(exp2), visit(exp3), tpe, loc)
           case Let(sym, exp1, exp2, tpe, loc) =>
             Let(sym, visit(exp1), visit(exp2), tpe, loc)
-          case Is(exp1, tag, loc) =>
-            Is(visit(exp1), tag, loc)
+          case LetRec(sym, exp1, exp2, tpe, loc) =>
+            LetRec(sym, visit(exp1), visit(exp2), tpe, loc)
+          case Is(sym, tag, exp1, loc) =>
+            Is(sym, tag, visit(exp1), loc)
           case Tag(sym, tag, exp1, tpe, loc) =>
             Tag(sym, tag, visit(exp1), tpe, loc)
-          case Untag(tag, exp1, tpe, loc) =>
-            Untag(tag, visit(exp1), tpe, loc)
+          case Untag(sym, tag, exp1, tpe, loc) =>
+            Untag(sym, tag, visit(exp1), tpe, loc)
           case Index(base, offset, tpe, loc) =>
             Index(visit(base), offset, tpe, loc)
           case Tuple(elms, tpe, loc) =>
@@ -431,9 +441,10 @@ object Score {
           val score3 = exprScore(exp3)
           exprListScore(acc + 2 * (score2 + score3), exp1::tl)
         case Let(_, exp1, exp2, _, _) => exprListScore(acc + 2, exp1::exp2::tl)
-        case Is(exp, _, _) => exprListScore(acc + 2, exp::tl)
+        case LetRec(_, exp1, exp2, _, _) => exprListScore(acc + 2, exp1::exp2::tl)
+        case Is(_, _, exp, _) => exprListScore(acc + 3, exp::tl)
         case Tag(_, _, exp, _, _) => exprListScore(acc + 3, exp::tl)
-        case Untag(_, exp, _, _) => exprListScore(acc + 2, exp::tl)
+        case Untag(_, _, exp, _, _) => exprListScore(acc + 3, exp::tl)
         case Index(base, _, _, _) => exprListScore(acc + 2, base::tl)
         case Tuple(elms, _, _) => exprListScore(acc + 1, elms:::tl)
         case Existential(_, exp, _) => exprListScore(acc + 1, exp::tl)
