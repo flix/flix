@@ -152,7 +152,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
 
     def Definition: Rule1[ParsedAst.Declaration.Definition] = rule {
-      Documentation ~ Annotations ~ optWS ~ Modifiers ~ optWS ~ SP ~ atomic("def") ~ WS ~ Names.Definition ~ optWS ~ TypeParams ~ FormalParams ~ optWS ~ ":" ~ optWS ~ Type ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~> ParsedAst.Declaration.Definition
+      Documentation ~ Annotations ~ optWS ~ Modifiers ~ SP ~ atomic("def") ~ WS ~ Names.Definition ~ optWS ~ TypeParams ~ FormalParams ~ optWS ~ ":" ~ optWS ~ Type ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~> ParsedAst.Declaration.Definition
     }
 
     def Law: Rule1[ParsedAst.Declaration.Law] = rule {
@@ -847,7 +847,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
 
     rule {
-      zeroOrMore(Modifier).separatedBy(WS)
+      zeroOrMore(Modifier).separatedBy(WS) ~ optWS
     }
   }
 
