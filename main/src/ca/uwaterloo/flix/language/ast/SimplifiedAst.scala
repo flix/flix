@@ -39,6 +39,7 @@ object SimplifiedAst {
   object Definition {
 
     case class Constant(ann: Ast.Annotations,
+                        mod: Ast.Modifiers,
                         sym: Symbol.DefnSym,
                         formals: List[SimplifiedAst.FormalParam],
                         exp: SimplifiedAst.Expression,
@@ -552,7 +553,7 @@ object SimplifiedAst {
 
   }
 
-  case class FormalParam(sym: Symbol.VarSym, tpe: Type) extends SimplifiedAst
+  case class FormalParam(sym: Symbol.VarSym, mod: Ast.Modifiers, tpe: Type, loc: SourceLocation) extends SimplifiedAst
 
   case class FreeVar(sym: Symbol.VarSym, tpe: Type) extends SimplifiedAst
 

@@ -92,7 +92,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
       /*
        * Definition.
        */
-      case WeededAst.Declaration.Definition(doc, ann, ident, tparams0, fparams0, exp, tpe, loc) =>
+      case WeededAst.Declaration.Definition(doc, ann, mod, ident, tparams0, fparams0, exp, tpe, loc) =>
         // check if the definition already exists.
         val defns = prog0.definitions.getOrElse(ns0, Map.empty)
         defns.get(ident.name) match {
@@ -113,9 +113,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
             // Introduce a variable symbols for each formal parameter.
             var pms0 = List.empty[NamedAst.FormalParam]
             var env0 = Map.empty[String, Symbol.VarSym]
-            for (WeededAst.FormalParam(ident, tpe, loc) <- fparams0) {
+            for (WeededAst.FormalParam(ident, mod, tpe, loc) <- fparams0) {
               val sym = Symbol.freshVarSym(ident)
-              pms0 = NamedAst.FormalParam(sym, Types.namer(tpe, tenv0), loc) :: pms0
+              pms0 = NamedAst.FormalParam(sym, mod, Types.namer(tpe, tenv0), loc) :: pms0
               env0 = env0 + (ident.name -> sym)
             }
 
@@ -123,7 +123,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
               case e =>
                 val sym = Symbol.mkDefnSym(ns0, ident)
                 val sc = NamedAst.Scheme(tparams.map(_.tpe), Types.namer(tpe, tenv0))
-                val defn = NamedAst.Declaration.Definition(doc, ann, sym, tparams, pms0.reverse, e, sc, loc)
+                val defn = NamedAst.Declaration.Definition(doc, ann, mod, sym, tparams, pms0.reverse, e, sc, loc)
                 prog0.copy(definitions = prog0.definitions + (ns0 -> (defns + (ident.name -> defn))))
             }
           case Some(defn) =>
@@ -426,7 +426,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
         val sym = Symbol.freshVarSym(param.ident)
         namer(exp, env0 + (sym.text -> sym), tenv0) map {
           case e =>
-            val p = NamedAst.FormalParam(sym, Types.namer(param.tpe, tenv0), param.loc)
+            val p = NamedAst.FormalParam(sym, param.mod, Types.namer(param.tpe, tenv0), param.loc)
             NamedAst.Expression.Existential(p, e, loc)
         }
 
@@ -434,7 +434,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
         val sym = Symbol.freshVarSym(param.ident)
         namer(exp, env0 + (sym.text -> sym), tenv0) map {
           case e =>
-            val p = NamedAst.FormalParam(sym, Types.namer(param.tpe, tenv0), param.loc)
+            val p = NamedAst.FormalParam(sym, param.mod, Types.namer(param.tpe, tenv0), param.loc)
             NamedAst.Expression.Universal(p, e, loc)
         }
 

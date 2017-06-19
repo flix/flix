@@ -96,7 +96,7 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
   object Definition {
     def toExecutable(sast: SimplifiedAst.Definition.Constant): ExecutableAst.Definition.Constant = {
       val formals = sast.formals.map {
-        case SimplifiedAst.FormalParam(sym, tpe) => ExecutableAst.FormalParam(sym, tpe)
+        case SimplifiedAst.FormalParam(sym, mod, tpe, loc) => ExecutableAst.FormalParam(sym, tpe)
       }.toArray
 
       ExecutableAst.Definition.Constant(sast.ann, sast.sym, formals, Expression.toExecutable(sast.exp), sast.isSynthetic, sast.tpe, sast.loc)

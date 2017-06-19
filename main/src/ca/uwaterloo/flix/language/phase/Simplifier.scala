@@ -99,9 +99,9 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
 
     def simplify(tast: TypedAst.Declaration.Definition)(implicit genSym: GenSym): SimplifiedAst.Definition.Constant = {
       val formals = tast.fparams.map {
-        case TypedAst.FormalParam(sym, tpe, loc) => SimplifiedAst.FormalParam(sym, tpe)
+        case TypedAst.FormalParam(sym, mod, tpe, loc) => SimplifiedAst.FormalParam(sym, mod, tpe, loc)
       }
-      SimplifiedAst.Definition.Constant(tast.ann, tast.sym, formals, Expression.simplify(tast.exp), isSynthetic = false, tast.tpe, tast.loc)
+      SimplifiedAst.Definition.Constant(tast.ann, tast.mod, tast.sym, formals, Expression.simplify(tast.exp), isSynthetic = false, tast.tpe, tast.loc)
     }
 
     def simplify(tast: TypedAst.Declaration.Index)(implicit genSym: GenSym): SimplifiedAst.Definition.Index =
@@ -243,11 +243,11 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case TypedAst.Expression.Tuple(elms, tpe, loc) =>
         SimplifiedAst.Expression.Tuple(elms map simplify, tpe, loc)
       case TypedAst.Expression.Existential(fparam, exp, loc) =>
-        val p = SimplifiedAst.FormalParam(fparam.sym, fparam.tpe)
+        val p = SimplifiedAst.FormalParam(fparam.sym, fparam.mod, fparam.tpe, fparam.loc)
         val e = simplify(exp)
         SimplifiedAst.Expression.Existential(p, e, loc)
       case TypedAst.Expression.Universal(fparam, exp, loc) =>
-        val p = SimplifiedAst.FormalParam(fparam.sym, fparam.tpe)
+        val p = SimplifiedAst.FormalParam(fparam.sym, fparam.mod, fparam.tpe, fparam.loc)
         val e = simplify(exp)
         SimplifiedAst.Expression.Universal(p, e, loc)
       case TypedAst.Expression.NativeConstructor(constructor, args, tpe, loc) =>
@@ -465,7 +465,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
 
             // Generate fresh formal parameters for the definition.
             val formals = freshSymbols.map {
-              case ((oldSym, (newSym, tpe))) => SimplifiedAst.FormalParam(newSym, tpe)
+              case ((oldSym, (newSym, tpe))) => SimplifiedAst.FormalParam(newSym, Ast.Modifiers.Empty, tpe, oldSym.loc)
             }
 
             // The expression of the fresh definition is simply `e0` with fresh local variables.
@@ -475,7 +475,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
             val arrowType = Type.mkArrow(freshSymbols.map(_._2._2), e0.tpe)
 
             // Assemble the fresh definition.
-            val defn = SimplifiedAst.Definition.Constant(Ast.Annotations(Nil), freshSym, formals, exp, isSynthetic = true, arrowType, e0.loc)
+            val defn = SimplifiedAst.Definition.Constant(Ast.Annotations(Nil), Ast.Modifiers.Empty, freshSym, formals, exp, isSynthetic = true, arrowType, e0.loc)
 
             // Add the fresh definition to the top-level.
             toplevel += freshSym -> defn
@@ -517,14 +517,14 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
 
   }
 
-  def simplify(tast: TypedAst.Attribute)(implicit genSym: GenSym): SimplifiedAst.Attribute =
-    SimplifiedAst.Attribute(tast.name, tast.tpe)
+  def simplify(a: TypedAst.Attribute)(implicit genSym: GenSym): SimplifiedAst.Attribute =
+    SimplifiedAst.Attribute(a.name, a.tpe)
 
-  def simplify(tast: TypedAst.FormalParam)(implicit genSym: GenSym): SimplifiedAst.FormalParam =
-    SimplifiedAst.FormalParam(tast.sym, tast.tpe)
+  def simplify(p: TypedAst.FormalParam)(implicit genSym: GenSym): SimplifiedAst.FormalParam =
+    SimplifiedAst.FormalParam(p.sym, p.mod, p.tpe, p.loc)
 
-  def simplify(tast: TypedAst.Property)(implicit genSym: GenSym): SimplifiedAst.Property =
-    SimplifiedAst.Property(tast.law, tast.defn, Expression.simplify(tast.exp))
+  def simplify(p: TypedAst.Property)(implicit genSym: GenSym): SimplifiedAst.Property =
+    SimplifiedAst.Property(p.law, p.defn, Expression.simplify(p.exp))
 
   def simplify(s: TypedAst.Stratum, toplevel: TopLevel)(implicit genSym: GenSym): SimplifiedAst.Stratum =
     SimplifiedAst.Stratum(s.constraints.map(d => Declarations.Constraints.simplify(d, toplevel)))

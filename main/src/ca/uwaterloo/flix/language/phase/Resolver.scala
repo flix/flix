@@ -135,7 +135,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
         fparams <- seqM(d0.fparams.map(fparam => Params.resolve(fparam, ns0, prog0)))
         e <- Expressions.resolve(d0.exp, ns0, prog0)
         sc <- schemeVal
-      } yield ResolvedAst.Declaration.Definition(d0.doc, d0.ann, d0.sym, tparams, fparams, e, sc, d0.loc)
+      } yield ResolvedAst.Declaration.Definition(d0.doc, d0.ann, d0.mod, d0.sym, tparams, fparams, e, sc, d0.loc)
 
     }
 
@@ -520,7 +520,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
     def resolve(fparam0: NamedAst.FormalParam, ns0: Name.NName, prog0: NamedAst.Program): Validation[ResolvedAst.FormalParam, ResolutionError] = {
       for {
         t <- lookupType(fparam0.tpe, ns0, prog0)
-      } yield ResolvedAst.FormalParam(fparam0.sym, t, fparam0.loc)
+      } yield ResolvedAst.FormalParam(fparam0.sym, fparam0.mod, t, fparam0.loc)
     }
 
     /**

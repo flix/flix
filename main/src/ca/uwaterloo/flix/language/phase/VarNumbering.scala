@@ -164,7 +164,7 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
 
     // Compute the stack offset for each formal parameter.
     var offset = 0
-    for (FormalParam(sym, tpe) <- defn.formals) {
+    for (FormalParam(sym, mod, tpe, loc) <- defn.formals) {
       // Set the stack offset for the symbol.
       sym.setStackOffset(offset)
 

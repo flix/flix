@@ -45,7 +45,7 @@ object NamedAst {
 
   object Declaration {
 
-    case class Definition(doc: Option[Ast.Documentation], ann: Ast.Annotations, sym: Symbol.DefnSym, tparams: List[NamedAst.TypeParam], fparams: List[NamedAst.FormalParam], exp: NamedAst.Expression, sc: NamedAst.Scheme, loc: SourceLocation) extends NamedAst.Declaration
+    case class Definition(doc: Option[Ast.Documentation], ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, tparams: List[NamedAst.TypeParam], fparams: List[NamedAst.FormalParam], exp: NamedAst.Expression, sc: NamedAst.Scheme, loc: SourceLocation) extends NamedAst.Declaration
 
     case class Enum(doc: Option[Ast.Documentation], sym: Symbol.EnumSym, tparams: List[NamedAst.TypeParam], cases: Map[String, NamedAst.Case], tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst.Declaration
 
@@ -57,7 +57,7 @@ object NamedAst {
 
   sealed trait Table extends NamedAst.Declaration {
     def sym: Symbol.TableSym
-    
+
     def loc: SourceLocation
   }
 
@@ -253,7 +253,7 @@ object NamedAst {
 
   }
 
-  case class FormalParam(sym: Symbol.VarSym, tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst
+  case class FormalParam(sym: Symbol.VarSym, mod: Ast.Modifiers, tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst
 
   case class MatchRule(pat: NamedAst.Pattern, guard: NamedAst.Expression, exp: NamedAst.Expression) extends NamedAst
 
