@@ -837,8 +837,14 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     zeroOrMore(FormalParam).separatedBy(optWS ~ "," ~ optWS)
   }
 
-  def FormalParam: Rule1[ParsedAst.FormalParam] = rule {
-    SP ~ Names.Variable ~ ":" ~ optWS ~ Type ~ SP ~> ParsedAst.FormalParam
+  def FormalParam: Rule1[ParsedAst.FormalParam] = {
+    def InlineModifier: Rule1[Boolean] = rule {
+      optional(capture(atomic("inline")) ~ optWS) ~> ((o: Option[String]) => o.nonEmpty)
+    }
+
+    rule {
+      SP ~ InlineModifier ~ Names.Variable ~ ":" ~ optWS ~ Type ~ SP ~> ParsedAst.FormalParam
+    }
   }
 
   def Annotation: Rule1[ParsedAst.AnnotationOrProperty] = rule {

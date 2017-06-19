@@ -286,7 +286,7 @@ object TypedAst {
 
   }
 
-  case class FormalParam(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends TypedAst
+  case class FormalParam(sym: Symbol.VarSym, inline: Boolean, tpe: Type, loc: SourceLocation) extends TypedAst
 
   case class MatchRule(pat: TypedAst.Pattern, guard: TypedAst.Expression, exp: TypedAst.Expression) extends TypedAst
 

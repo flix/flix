@@ -1120,10 +1120,10 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   private def checkDuplicateFormal(params: Seq[ParsedAst.FormalParam]): Validation[List[WeededAst.FormalParam], WeederError] = {
     val seen = mutable.Map.empty[String, ParsedAst.FormalParam]
     @@(params.map {
-      case param@ParsedAst.FormalParam(sp1, ident, tpe, sp2) => seen.get(ident.name) match {
+      case param@ParsedAst.FormalParam(sp1, inline, ident, tpe, sp2) => seen.get(ident.name) match {
         case None =>
           seen += (ident.name -> param)
-          WeededAst.FormalParam(ident, Types.weed(tpe), mkSL(sp1, sp2)).toSuccess
+          WeededAst.FormalParam(ident, inline, Types.weed(tpe), mkSL(sp1, sp2)).toSuccess
         case Some(otherParam) =>
           val loc1 = mkSL(otherParam.sp1, otherParam.sp2)
           val loc2 = mkSL(param.sp1, param.sp2)

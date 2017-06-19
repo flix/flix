@@ -552,7 +552,7 @@ object SimplifiedAst {
 
   }
 
-  case class FormalParam(sym: Symbol.VarSym, tpe: Type) extends SimplifiedAst
+  case class FormalParam(sym: Symbol.VarSym, inline: Boolean, tpe: Type, loc: SourceLocation) extends SimplifiedAst
 
   case class FreeVar(sym: Symbol.VarSym, tpe: Type) extends SimplifiedAst
 

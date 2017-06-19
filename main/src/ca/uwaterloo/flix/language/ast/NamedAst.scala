@@ -253,7 +253,7 @@ object NamedAst {
 
   }
 
-  case class FormalParam(sym: Symbol.VarSym, tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst
+  case class FormalParam(sym: Symbol.VarSym, inline: Boolean, tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst
 
   case class MatchRule(pat: NamedAst.Pattern, guard: NamedAst.Expression, exp: NamedAst.Expression) extends NamedAst
 
