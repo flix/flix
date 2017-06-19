@@ -39,6 +39,7 @@ object SimplifiedAst {
   object Definition {
 
     case class Constant(ann: Ast.Annotations,
+                        mod: Ast.Modifiers,
                         sym: Symbol.DefnSym,
                         formals: List[SimplifiedAst.FormalParam],
                         exp: SimplifiedAst.Expression,

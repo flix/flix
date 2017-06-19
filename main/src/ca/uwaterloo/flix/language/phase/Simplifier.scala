@@ -101,7 +101,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       val formals = tast.fparams.map {
         case TypedAst.FormalParam(sym, mod, tpe, loc) => SimplifiedAst.FormalParam(sym, mod, tpe, loc)
       }
-      SimplifiedAst.Definition.Constant(tast.ann, tast.sym, formals, Expression.simplify(tast.exp), isSynthetic = false, tast.tpe, tast.loc)
+      SimplifiedAst.Definition.Constant(tast.ann, tast.mod, tast.sym, formals, Expression.simplify(tast.exp), isSynthetic = false, tast.tpe, tast.loc)
     }
 
     def simplify(tast: TypedAst.Declaration.Index)(implicit genSym: GenSym): SimplifiedAst.Definition.Index =
@@ -475,7 +475,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
             val arrowType = Type.mkArrow(freshSymbols.map(_._2._2), e0.tpe)
 
             // Assemble the fresh definition.
-            val defn = SimplifiedAst.Definition.Constant(Ast.Annotations(Nil), freshSym, formals, exp, isSynthetic = true, arrowType, e0.loc)
+            val defn = SimplifiedAst.Definition.Constant(Ast.Annotations(Nil), Ast.Modifiers.Empty, freshSym, formals, exp, isSynthetic = true, arrowType, e0.loc)
 
             // Add the fresh definition to the top-level.
             toplevel += freshSym -> defn
