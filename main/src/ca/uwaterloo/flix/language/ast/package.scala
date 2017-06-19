@@ -124,7 +124,7 @@ package object ast {
   }
 
   object Time {
-    val Default: Time = Time(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+    val Default: Time = Time(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
   }
 
   /**
@@ -144,6 +144,7 @@ package object ast {
                   verifier: Long,
                   lambdaLift: Long,
                   tailrec: Long,
+                  inliner: Long,
                   treeshaker: Long,
                   varNumbering: Long,
                   enumGen: Long,
