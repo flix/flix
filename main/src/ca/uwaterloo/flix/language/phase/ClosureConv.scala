@@ -354,10 +354,10 @@ object ClosureConv {
     * Applies the given substitution map `subst` to the given formal parameters `fs`.
     */
   private def replace(fparam: SimplifiedAst.FormalParam, subst: Map[Symbol.VarSym, Symbol.VarSym]): SimplifiedAst.FormalParam = fparam match {
-    case SimplifiedAst.FormalParam(sym, inline, tpe, loc) =>
+    case SimplifiedAst.FormalParam(sym, mod, tpe, loc) =>
       subst.get(sym) match {
-        case None => SimplifiedAst.FormalParam(sym, inline, tpe, loc)
-        case Some(newSym) => SimplifiedAst.FormalParam(newSym, inline, tpe, loc)
+        case None => SimplifiedAst.FormalParam(sym, mod, tpe, loc)
+        case Some(newSym) => SimplifiedAst.FormalParam(newSym, mod, tpe, loc)
       }
   }
 
