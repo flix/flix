@@ -990,9 +990,9 @@ object ParsedAst {
   /**
     * Modifier.
     *
-    * @param sp1  the position of the first character in the annotation.
+    * @param sp1  the position of the first character in the modifier.
     * @param name the name of the modifier.
-    * @param sp2  the position of the last character in the annotation.
+    * @param sp2  the position of the last character in the modifier.
     */
   case class Modifier(sp1: SourcePosition, name: String, sp2: SourcePosition) extends ParsedAst
 
