@@ -97,6 +97,26 @@ object WeederError {
   }
 
   /**
+    * An error raised to indicate that the modifier `name` was used multiple times.
+    *
+    * @param name the name of the modifier.
+    * @param loc1 the location of the first modifier.
+    * @param loc2 the location of the second modifier.
+    */
+  case class DuplicateModifier(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
+    val source: SourceInput = loc1.source
+    val message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Multiple occurrences of the modifier '" << Red(name) << "'." << NewLine
+      vt << NewLine
+      vt << Code(loc1, "the first occurrence was here.") << NewLine
+      vt << NewLine
+      vt << Code(loc2, "the second occurrence was here.") << NewLine
+    }
+  }
+
+  /**
     * An error raised to indicate that the tag `name` was declared multiple times.
     *
     * @param enumName the name of the enum.

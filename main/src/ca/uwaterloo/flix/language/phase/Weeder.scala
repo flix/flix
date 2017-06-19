@@ -905,10 +905,26 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       * Weeds the given sequence of parsed modifiers `xs`.
       */
     def weed(xs: Seq[ParsedAst.Modifier]): Validation[Ast.Modifiers, WeederError] = {
-      // TODO: Duplicates
+      val seen = mutable.Map.empty[String, ParsedAst.Modifier]
+      val modifiersVal = xs map {
+        modifier =>
+          seen.get(modifier.name) match {
+            case None =>
+              seen += (modifier.name -> modifier)
+              weed(modifier)
+            case Some(other) =>
+              val loc1 = mkSL(other.sp1, other.sp2)
+              val loc2 = mkSL(modifier.sp1, modifier.sp2)
+              WeederError.DuplicateModifier(modifier.name, loc1, loc2).toFailure
+          }
+      }
+
+      // Sequence the results.
       for {
-        ms <- seqM(xs map weed)
-      } yield Ast.Modifiers(ms)
+        ms <- seqM(modifiersVal)
+      } yield {
+        Ast.Modifiers(ms)
+      }
     }
 
     /**
@@ -916,9 +932,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       */
     def weed(m: ParsedAst.Modifier): Validation[Ast.Modifier, WeederError] = m.name match {
       case "inline" => Ast.Modifier.Inline.toSuccess
-      case s =>
-        // TODO: Error reporting.
-        throw InternalCompilerException(s"Unknown modifier '$s'.")
+      case s => throw InternalCompilerException(s"Unknown modifier '$s' near ${mkSL(m.sp1, m.sp2).format}.")
     }
 
   }
