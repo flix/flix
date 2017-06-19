@@ -106,6 +106,7 @@ object ParsedAst {
       *
       * @param doc        the optional comment associated with the definition.
       * @param ann        the associated annotations.
+      * @param mod        the associated modifiers.
       * @param sp1        the position of the first character in the declaration.
       * @param ident      the name of the definition.
       * @param tparams    the type parameters.
@@ -114,7 +115,7 @@ object ParsedAst {
       * @param exp        the expression.
       * @param sp2        the position of the last character in the declaration.
       */
-    case class Definition(doc: Option[ParsedAst.Documentation], ann: Seq[ParsedAst.AnnotationOrProperty], sp1: SourcePosition, ident: Name.Ident, tparams: Seq[ParsedAst.ContextBound], fparamsOpt: Option[Seq[ParsedAst.FormalParam]], tpe: ParsedAst.Type, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Declaration
+    case class Definition(doc: Option[ParsedAst.Documentation], ann: Seq[ParsedAst.AnnotationOrProperty], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: Seq[ParsedAst.ContextBound], fparamsOpt: Option[Seq[ParsedAst.FormalParam]], tpe: ParsedAst.Type, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
       * Law Declaration.
@@ -985,6 +986,15 @@ object ParsedAst {
     * @param exp   the body expression of the rule.
     */
   case class MatchRule(pat: ParsedAst.Pattern, guard: Option[ParsedAst.Expression], exp: ParsedAst.Expression) extends ParsedAst
+
+  /**
+    * Modifier.
+    *
+    * @param sp1  the position of the first character in the annotation.
+    * @param name the name of the modifier.
+    * @param sp2  the position of the last character in the annotation.
+    */
+  case class Modifier(sp1: SourcePosition, name: String, sp2: SourcePosition) extends ParsedAst
 
   /**
     * A common super-type for annotations or properties.

@@ -156,8 +156,18 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
         zeroOrMore(Annotation | Property).separatedBy(WS)
       }
 
+      def Modifiers: Rule1[Seq[ParsedAst.Modifier]] = {
+        def Modifier: Rule1[ParsedAst.Modifier] = rule {
+          SP ~ capture(atomic("inline")) ~ SP ~> ParsedAst.Modifier
+        }
+
+        rule {
+          zeroOrMore(Modifier).separatedBy(WS)
+        }
+      }
+
       rule {
-        Documentation ~ Annotations ~ optWS ~ SP ~ atomic("def") ~ WS ~ Names.Definition ~ optWS ~ TypeParams ~ FormalParams ~ optWS ~ ":" ~ optWS ~ Type ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~> ParsedAst.Declaration.Definition
+        Documentation ~ Annotations ~ optWS ~ Modifiers ~ optWS ~ SP ~ atomic("def") ~ WS ~ Names.Definition ~ optWS ~ TypeParams ~ FormalParams ~ optWS ~ ":" ~ optWS ~ Type ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~> ParsedAst.Declaration.Definition
       }
     }
 
