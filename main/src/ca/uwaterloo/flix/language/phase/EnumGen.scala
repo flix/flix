@@ -512,8 +512,8 @@ object EnumGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
       method.visitTypeInsn(CHECKCAST, asm.Type.getInternalName(Constants.tupleClass))
 
       // Call `getBoxedValue()` on the object
-      method.visitMethodInsn(INVOKEVIRTUAL, asm.Type.getInternalName(tupleClazz), getBoxedValueMethod.getName,
-        asm.Type.getMethodDescriptor(getBoxedValueMethod), false)
+      method.visitMethodInsn(INVOKEINTERFACE, asm.Type.getInternalName(tupleClazz), getBoxedValueMethod.getName,
+        asm.Type.getMethodDescriptor(getBoxedValueMethod), true)
 
       // Duplicate the reference to array
       method.visitInsn(DUP)
