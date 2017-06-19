@@ -228,7 +228,7 @@ object WeededAst {
 
   case class Case(enum: Name.Ident, tag: Name.Ident, tpe: WeededAst.Type) extends WeededAst
 
-  case class FormalParam(ident: Name.Ident, inline: Boolean, tpe: WeededAst.Type, loc: SourceLocation) extends WeededAst
+  case class FormalParam(ident: Name.Ident, mod: Ast.Modifiers, tpe: WeededAst.Type, loc: SourceLocation) extends WeededAst
 
   case class MatchRule(pat: WeededAst.Pattern, guard: WeededAst.Expression, exp: WeededAst.Expression) extends WeededAst
 

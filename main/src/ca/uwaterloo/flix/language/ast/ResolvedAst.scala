@@ -235,7 +235,7 @@ object ResolvedAst {
 
   }
 
-  case class FormalParam(sym: Symbol.VarSym, inline: Boolean, tpe: Type, loc: SourceLocation) extends ResolvedAst
+  case class FormalParam(sym: Symbol.VarSym, mod: Ast.Modifiers, tpe: Type, loc: SourceLocation) extends ResolvedAst
 
   case class MatchRule(pat: ResolvedAst.Pattern, guard: ResolvedAst.Expression, exp: ResolvedAst.Expression) extends ResolvedAst
 

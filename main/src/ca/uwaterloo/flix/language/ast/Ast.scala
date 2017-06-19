@@ -105,8 +105,6 @@ object Ast {
 
   /**
     * A sequence of annotations.
-    *
-    * @param annotations the annotations.
     */
   case class Annotations(annotations: List[Annotation]) {
 
@@ -177,5 +175,38 @@ object Ast {
 
   }
 
+  /**
+    * Companion object of [[Modifiers]].
+    */
+  object Modifiers {
+    /**
+      * The empty sequence of modifiers.
+      */
+    val Empty: Modifiers = Modifiers(Nil)
+  }
+
+  /**
+    * A sequence of modifiers.
+    */
+  case class Modifiers(mod: List[Modifier]) {
+    /**
+      * Returns `true` if these modifiers contain the inline modifier.
+      */
+    def isInline: Boolean = mod contains Modifier.Inline
+  }
+
+  /**
+    * A common super-type for modifiers.
+    */
+  sealed trait Modifier
+
+  object Modifier {
+
+    /**
+      * The inline modifier.
+      */
+    case object Inline extends Modifier
+
+  }
 
 }

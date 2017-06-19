@@ -99,7 +99,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
 
     def simplify(tast: TypedAst.Declaration.Definition)(implicit genSym: GenSym): SimplifiedAst.Definition.Constant = {
       val formals = tast.fparams.map {
-        case TypedAst.FormalParam(sym, inline, tpe, loc) => SimplifiedAst.FormalParam(sym, inline, tpe, loc)
+        case TypedAst.FormalParam(sym, mod, tpe, loc) => SimplifiedAst.FormalParam(sym, mod, tpe, loc)
       }
       SimplifiedAst.Definition.Constant(tast.ann, tast.sym, formals, Expression.simplify(tast.exp), isSynthetic = false, tast.tpe, tast.loc)
     }
@@ -243,11 +243,11 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case TypedAst.Expression.Tuple(elms, tpe, loc) =>
         SimplifiedAst.Expression.Tuple(elms map simplify, tpe, loc)
       case TypedAst.Expression.Existential(fparam, exp, loc) =>
-        val p = SimplifiedAst.FormalParam(fparam.sym, fparam.inline, fparam.tpe, fparam.loc)
+        val p = SimplifiedAst.FormalParam(fparam.sym, fparam.mod, fparam.tpe, fparam.loc)
         val e = simplify(exp)
         SimplifiedAst.Expression.Existential(p, e, loc)
       case TypedAst.Expression.Universal(fparam, exp, loc) =>
-        val p = SimplifiedAst.FormalParam(fparam.sym, fparam.inline, fparam.tpe, fparam.loc)
+        val p = SimplifiedAst.FormalParam(fparam.sym, fparam.mod, fparam.tpe, fparam.loc)
         val e = simplify(exp)
         SimplifiedAst.Expression.Universal(p, e, loc)
       case TypedAst.Expression.NativeConstructor(constructor, args, tpe, loc) =>
@@ -465,7 +465,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
 
             // Generate fresh formal parameters for the definition.
             val formals = freshSymbols.map {
-              case ((oldSym, (newSym, tpe))) => SimplifiedAst.FormalParam(newSym, inline = false, tpe, oldSym.loc)
+              case ((oldSym, (newSym, tpe))) => SimplifiedAst.FormalParam(newSym, Ast.Modifiers.Empty, tpe, oldSym.loc)
             }
 
             // The expression of the fresh definition is simply `e0` with fresh local variables.
@@ -521,7 +521,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
     SimplifiedAst.Attribute(a.name, a.tpe)
 
   def simplify(p: TypedAst.FormalParam)(implicit genSym: GenSym): SimplifiedAst.FormalParam =
-    SimplifiedAst.FormalParam(p.sym, p.inline, p.tpe, p.loc)
+    SimplifiedAst.FormalParam(p.sym, p.mod, p.tpe, p.loc)
 
   def simplify(p: TypedAst.Property)(implicit genSym: GenSym): SimplifiedAst.Property =
     SimplifiedAst.Property(p.law, p.defn, Expression.simplify(p.exp))

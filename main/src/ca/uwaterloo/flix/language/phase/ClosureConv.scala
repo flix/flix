@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.language.GenSym
 import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expression
-import ca.uwaterloo.flix.language.ast.{SimplifiedAst, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Ast, SimplifiedAst, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 import scala.collection.mutable
@@ -79,7 +79,7 @@ object ClosureConv {
         case (oldSym, ptype) =>
           val newSym = Symbol.freshVarSym(oldSym)
           subst += (oldSym -> newSym)
-          SimplifiedAst.FormalParam(newSym, inline = false, ptype, SourceLocation.Unknown)
+          SimplifiedAst.FormalParam(newSym, Ast.Modifiers.Empty, ptype, SourceLocation.Unknown)
       } ++ args
 
       // Update the lambda type.
@@ -107,7 +107,7 @@ object ClosureConv {
       val (targs, tresult) = (ts.take(l - 1), ts.last)
 
       // Wrap the hook inside a lambda, so we can create a closure.
-      val args = targs.map { t => SimplifiedAst.FormalParam(Symbol.freshVarSym("hookArg"), inline = false, t, SourceLocation.Unknown) }
+      val args = targs.map { t => SimplifiedAst.FormalParam(Symbol.freshVarSym("hookArg"), Ast.Modifiers.Empty, t, SourceLocation.Unknown) }
       val hookArgs = args.map { f => SimplifiedAst.Expression.Var(f.sym, f.tpe, loc) }
       val body = SimplifiedAst.Expression.ApplyHook(hook, hookArgs, tresult, loc)
       val lambda = SimplifiedAst.Expression.Lambda(args, body, hook.tpe, loc)
