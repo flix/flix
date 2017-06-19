@@ -970,13 +970,13 @@ object ParsedAst {
   /**
     * Formal Parameter.
     *
-    * @param sp1    the position of the first character in the formal parameter.
-    * @param inline whether to inline the formal parameter.
-    * @param ident  the name of the argument.
-    * @param tpe    the type of the argument.
-    * @param sp2    the position of the last character in the formal parameter.
+    * @param sp1   the position of the first character in the formal parameter.
+    * @param mod   the associated modifiers.
+    * @param ident the name of the argument.
+    * @param tpe   the type of the argument.
+    * @param sp2   the position of the last character in the formal parameter.
     */
-  case class FormalParam(sp1: SourcePosition, inline: Boolean, ident: Name.Ident, tpe: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst
+  case class FormalParam(sp1: SourcePosition, mod: Seq[ParsedAst.Modifier], ident: Name.Ident, tpe: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst
 
   /**
     * A pattern match rule consists of a pattern, an optional pattern guard, and a body expression.
