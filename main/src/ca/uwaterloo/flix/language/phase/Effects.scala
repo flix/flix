@@ -400,9 +400,10 @@ object Effects extends Phase[Root, Root] {
           * Ascribe Expression.
           */
         case Expression.Ascribe(exp, tpe, eff, loc) =>
-          // TODO: Introduce a cast instruction to annotate an effect separate from ascribe.
+          // An ascribe expression is sound; the effect system checks that the declared effect matches the inferred effect.
           for {
             e <- visitExp(exp, env0)
+            _ <- assertLeq(exp, eff)
           } yield {
             Expression.Ascribe(e, tpe, eff, loc)
           }
@@ -411,11 +412,10 @@ object Effects extends Phase[Root, Root] {
           * Ascribe Expression.
           */
         case Expression.Cast(exp, tpe, eff, loc) =>
-          // TODO: Implement.
+          // An cast expression is unsound; the effect system assumes the declared effect is correct.
           for {
             e <- visitExp(exp, env0)
           } yield {
-            println(eff)
             Expression.Cast(e, tpe, eff, loc)
           }
 
@@ -460,11 +460,19 @@ object Effects extends Phase[Root, Root] {
     *
     * Otherwise returns [[Failure]] with an [[EffectError]].
     */
-  private def assertPure(e0: Expression): Validation[Eff, EffectError] = {
-    if (e0.eff leq Eff.Pure)
-      Eff.Pure.toSuccess
+  private def assertPure(e0: Expression): Validation[Eff, EffectError] = assertLeq(e0, Eff.Pure)
+
+  /**
+    * Returns [[Success]] with the given effect `eff` if the effect of the
+    * given expression `e0` is fully contained in the given effect `eff`.
+    *
+    * Otherwise returns [[Failure]] with an [[EffectError]].
+    */
+  private def assertLeq(e0: Expression, eff: Eff): Validation[Eff, EffectError] = {
+    if (e0.eff leq eff)
+      eff.toSuccess
     else
-      EffectError(Eff.Pure, e0.eff, e0.loc).toFailure
+      EffectError(eff, e0.eff, e0.loc).toFailure
   }
 
 }
