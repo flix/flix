@@ -85,8 +85,7 @@ object Effects extends Phase[Root, Root] {
       }
     })
 
-    // TODO: Add time
-    timer.getResult.map(root => root.copy(time = root.time))
+    timer.getResult.map(root => root.copy(time = root.time.copy(effects = timer.getDuration)))
   }
 
   object Declarations {

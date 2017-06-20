@@ -217,6 +217,7 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
         case Expression.Tuple(elms, _, _, _) => seqM(elms map { checkPats(_, root) }).map(const(tast))
         case Expression.Existential(_, exp, _, _) => checkPats(exp, root).map(const(tast))
         case Expression.Universal(_, exp, _, _) => checkPats(exp, root).map(const(tast))
+        case Expression.Ascribe(exp, _, _, _) => checkPats(exp, root).map(const(tast))
         case Expression.NativeConstructor(_, args, _, _, _) => seqM(args map {checkPats(_, root)}).map(const(tast))
         case Expression.NativeField(_, _, _, _) => tast.toSuccess
         case Expression.NativeMethod(_, args, _, _, _) => seqM(args map {checkPats(_, root)}).map(const(tast))
