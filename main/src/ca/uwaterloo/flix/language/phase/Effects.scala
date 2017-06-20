@@ -17,50 +17,16 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.errors.EffectError
 import ca.uwaterloo.flix.util.Validation._
-import ca.uwaterloo.flix.util.vt.VirtualString._
-import ca.uwaterloo.flix.util.vt.VirtualTerminal
 import ca.uwaterloo.flix.util.{Timer, Validation}
 
 /**
   * A phase that computes the effect of every expression in the program.
   */
 object Effects extends Phase[Root, Root] {
-
-  /**
-    * An error raised to indicate that the expected effects of an expression does not match its actual effects.
-    *
-    * @param expected the expected effects.
-    * @param inferred the inferred effects.
-    * @param loc      the location where the error occurred.
-    */
-  case class EffectError(expected: Eff, inferred: Eff, loc: SourceLocation) extends CompilationError {
-    val kind: String = "Effect Error"
-    val source: SourceInput = loc.source
-    val message: VirtualTerminal = {
-      val vt = new VirtualTerminal()
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Inferred effect(s) do not match the expected effect(s)." << NewLine
-      vt << NewLine
-      vt << Code(loc, "unexpected effect(s).") << NewLine
-      vt << NewLine
-      vt << "Expected: " << Cyan(pretty(expected)) << NewLine
-      vt << "Inferred: " << Magenta(pretty(inferred)) << NewLine
-    }
-
-    /**
-      * Returns a human readable representation of the given effect `eff`.
-      */
-    private def pretty(eff: Eff): String = eff match {
-      case Eff.Box(EffectSet.Bot) => "Bot"
-      case Eff.Box(EffectSet.Top) => "Top"
-      case Eff.Box(EffectSet.MayMust(may, must)) => s"may = {${may.mkString(", ")}}, must = {${must.mkString(", ")}}"
-      case _ => eff.toString
-    }
-  }
 
   /**
     * Performs effect inference on the given AST `root`.
