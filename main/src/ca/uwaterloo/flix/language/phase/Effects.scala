@@ -109,6 +109,9 @@ object Effects extends Phase[Root, Root] {
 
       Expressions.infer(defn0.exp, env0, root) flatMap {
         case e =>
+          /*
+           * Check that the declared effect matches the actual effect.
+           */
           val actualEff = e.eff
           if (actualEff leq expectedEff)
             defn0.copy(exp = e).toSuccess
@@ -176,8 +179,8 @@ object Effects extends Phase[Root, Root] {
           * Hook Expressions.
           */
         case Expression.Hook(hook, tpe, _, loc) =>
-          // A hook expression has any effect.
-          val eff = Eff.Arrow(Eff.Pure, EffectSet.Top, Eff.Pure, EffectSet.Bot)
+          // TODO: Unsafely assume that hooks have no effects.
+          val eff = Eff.Arrow(Eff.Pure, EffectSet.Bot, Eff.Pure, EffectSet.Bot)
           Expression.Hook(hook, tpe, eff, loc).toSuccess
 
         /**

@@ -49,11 +49,7 @@ sealed trait Eff {
     *
     * NB: The structure of `this` and `that` must be the same.
     */
-  def leq(that: Eff): Boolean = (this, that) match {
-    case (Eff.Box(eff1), Eff.Box(eff2)) => eff1 leq eff2
-    // TODO: Arrow part.
-    case _ => false
-  }
+  def leq(that: Eff): Boolean = this.eff leq that.eff
 
   /**
     * Returns the least upper bound of `this` and `that` effect.
