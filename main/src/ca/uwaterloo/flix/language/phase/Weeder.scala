@@ -607,6 +607,14 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
             WeededAst.Expression.Ascribe(e, Types.weed(tpe), eff, mkSL(leftMostSourcePosition(exp), sp2))
           }
 
+        case ParsedAst.Expression.Cast(exp, tpe, effOpt, sp2) =>
+          for {
+            e <- visit(exp, unsafe)
+            eff <- Effects.weed(effOpt)
+          } yield {
+            WeededAst.Expression.Cast(e, Types.weed(tpe), eff, mkSL(leftMostSourcePosition(exp), sp2))
+          }
+
         case ParsedAst.Expression.Unsafe(sp1, exp, sp2) =>
           /*
            * Check if unsafe operations have been disabled.
@@ -1144,6 +1152,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.Existential(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Universal(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Ascribe(e1, _, _, _) => leftMostSourcePosition(e1)
+    case ParsedAst.Expression.Cast(e1, _, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.Unsafe(sp1, _, _) => sp1
     case ParsedAst.Expression.NativeField(sp1, _, _) => sp1
     case ParsedAst.Expression.NativeMethod(sp1, _, _, _) => sp1

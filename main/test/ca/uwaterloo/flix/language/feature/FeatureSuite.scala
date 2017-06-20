@@ -23,6 +23,7 @@ class FeatureSuite extends Suites(
   new FlixTest("TestConstraint", "main/test/ca/uwaterloo/flix/language/feature/TestConstraint.flix"),
   new FlixTest("TestEquality", "main/test/ca/uwaterloo/flix/language/feature/TestEquality.flix"),
   new FlixTest("Test.Expression.Ascribe", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Ascribe.flix"),
+  new FlixTest("Test.Expression.Cast", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Cast.flix"),
   new FlixTest("TestExpressionFloat32", "main/test/ca/uwaterloo/flix/language/feature/TestExpressionFloat32.flix"),
   new FlixTest("TestExpressionTuple", "main/test/ca/uwaterloo/flix/language/feature/TestExpressionTuple.flix"),
   new FlixTest("TestNativeCall", "main/test/ca/uwaterloo/flix/language/feature/TestNativeCall.flix"),

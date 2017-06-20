@@ -137,6 +137,8 @@ object ResolvedAst {
 
     case class Ascribe(exp: ResolvedAst.Expression, tpe: Type, eff: Eff, loc: SourceLocation) extends ResolvedAst.Expression
 
+    case class Cast(exp: ResolvedAst.Expression, tpe: Type, eff: Eff, loc: SourceLocation) extends ResolvedAst.Expression
+
     case class NativeConstructor(method: Constructor[_], args: List[ResolvedAst.Expression], tpe: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class NativeField(field: Field, tpe: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression

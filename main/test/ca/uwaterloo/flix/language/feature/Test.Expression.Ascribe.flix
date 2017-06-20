@@ -39,6 +39,3 @@ def testAscribe13: (Int, Int, Int) = (1, 2, 3) : (Int, Int, Int)
 
 @test
 def testAscribe14: Option[Int] = Some(42) : Option[Int]
-
-
-

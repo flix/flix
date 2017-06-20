@@ -134,7 +134,7 @@ object Effects extends Phase[Root, Root] {
         */
       def visitExp(e0: Expression, env0: Map[Symbol.VarSym, Eff]): Validation[Expression, EffectError] = e0 match {
         /**
-          * Literal Expressions.
+          * Literal Expression.
           */
         case Expression.Unit(loc) => e0.toSuccess
         case Expression.True(loc) => e0.toSuccess
@@ -150,14 +150,14 @@ object Effects extends Phase[Root, Root] {
         case Expression.Str(lit, loc) => e0.toSuccess
 
         /**
-          * Wildcard Expressions.
+          * Wildcard Expression.
           */
         case Expression.Wild(tpe, _, loc) =>
           // Wildcards are pure.
           Expression.Wild(tpe, Eff.Pure, loc).toSuccess
 
         /**
-          * Variable Expressions.
+          * Variable Expression.
           */
         case Expression.Var(sym, tpe, _, loc) =>
           // Lookup the effect in the effect environment.
@@ -165,7 +165,7 @@ object Effects extends Phase[Root, Root] {
           Expression.Var(sym, tpe, eff, loc).toSuccess
 
         /**
-          * Ref Expressions.
+          * Ref Expression.
           */
         case Expression.Ref(sym, tpe, _, loc) =>
           // The effect of a ref is its declared effect.
@@ -175,7 +175,7 @@ object Effects extends Phase[Root, Root] {
           Expression.Ref(sym, tpe, eff, loc).toSuccess
 
         /**
-          * Hook Expressions.
+          * Hook Expression.
           */
         case Expression.Hook(hook, tpe, _, loc) =>
           // TODO: Unsafely assume that hooks have no effects.
@@ -183,7 +183,7 @@ object Effects extends Phase[Root, Root] {
           Expression.Hook(hook, tpe, eff, loc).toSuccess
 
         /**
-          * Lambda Expressions.
+          * Lambda Expression.
           */
         case Expression.Lambda(args, body, tpe, _, loc) =>
           for {
@@ -195,7 +195,7 @@ object Effects extends Phase[Root, Root] {
           }
 
         /**
-          * Apply Expressions.
+          * Apply Expression.
           */
         case Expression.Apply(lambda, args, tpe, _, loc) =>
           for {
@@ -219,7 +219,7 @@ object Effects extends Phase[Root, Root] {
           }
 
         /**
-          * Unary Expressions.
+          * Unary Expression.
           */
         case Expression.Unary(op, exp, tpe, _, loc) =>
           for {
@@ -230,7 +230,7 @@ object Effects extends Phase[Root, Root] {
           }
 
         /**
-          * Binary Expressions.
+          * Binary Expression.
           */
         case Expression.Binary(op, exp1, exp2, tpe, _, loc) =>
           for {
@@ -243,7 +243,7 @@ object Effects extends Phase[Root, Root] {
           }
 
         /**
-          * Let Expressions.
+          * Let Expression.
           */
         case Expression.Let(sym, exp1, exp2, tpe, _, loc) =>
           for {
@@ -256,7 +256,7 @@ object Effects extends Phase[Root, Root] {
           }
 
         /**
-          * LetRec Expressions.
+          * LetRec Expression.
           */
         case Expression.LetRec(sym, exp1, exp2, tpe, _, loc) =>
           for {
@@ -269,7 +269,7 @@ object Effects extends Phase[Root, Root] {
           }
 
         /**
-          * If-Then-Else Expressions.
+          * If-Then-Else Expression.
           */
         case Expression.IfThenElse(exp1, exp2, exp3, tpe, _, loc) =>
           for {
@@ -287,7 +287,7 @@ object Effects extends Phase[Root, Root] {
           }
 
         /**
-          * Match Expressions.
+          * Match Expression.
           */
         case Expression.Match(exp, rules, tpe, _, loc) =>
           // Infer the effects of each rule.
@@ -322,7 +322,7 @@ object Effects extends Phase[Root, Root] {
           }
 
         /**
-          * Switch Expressions.
+          * Switch Expression.
           */
         case Expression.Switch(rules, tpe, _, loc) =>
           // Infer the effects of each rule.
@@ -348,7 +348,7 @@ object Effects extends Phase[Root, Root] {
           }
 
         /**
-          * Tag Expressions.
+          * Tag Expression.
           */
         case Expression.Tag(sym, tag, exp, tpe, _, loc) =>
           for {
@@ -359,7 +359,7 @@ object Effects extends Phase[Root, Root] {
           }
 
         /**
-          * Tuple Expressions.
+          * Tuple Expression.
           */
         case Expression.Tuple(elms, tpe, _, loc) =>
           for {
@@ -373,7 +373,7 @@ object Effects extends Phase[Root, Root] {
           }
 
         /**
-          * Existential Expressions.
+          * Existential Expression.
           */
         case Expression.Existential(fparam, exp, _, loc) =>
           // An existential expression must be pure.
@@ -385,7 +385,7 @@ object Effects extends Phase[Root, Root] {
           }
 
         /**
-          * Universal Expressions.
+          * Universal Expression.
           */
         case Expression.Universal(fparam, exp, _, loc) =>
           // A universal expression must be pure.
@@ -397,7 +397,7 @@ object Effects extends Phase[Root, Root] {
           }
 
         /**
-          * Ascribe Expressions.
+          * Ascribe Expression.
           */
         case Expression.Ascribe(exp, tpe, eff, loc) =>
           // TODO: Introduce a cast instruction to annotate an effect separate from ascribe.
@@ -408,7 +408,19 @@ object Effects extends Phase[Root, Root] {
           }
 
         /**
-          * Native Constructor Expressions.
+          * Ascribe Expression.
+          */
+        case Expression.Cast(exp, tpe, eff, loc) =>
+          // TODO: Implement.
+          for {
+            e <- visitExp(exp, env0)
+          } yield {
+            println(eff)
+            Expression.Cast(e, tpe, eff, loc)
+          }
+
+        /**
+          * Native Constructor Expression.
           */
         case Expression.NativeConstructor(constructor, args, tpe, _, loc) =>
           // Unsoundly pretend that a native constructor is pure.
@@ -416,7 +428,7 @@ object Effects extends Phase[Root, Root] {
           Expression.NativeConstructor(constructor, args, tpe, eff, loc).toSuccess
 
         /**
-          * Native Field Expressions.
+          * Native Field Expression.
           */
         case Expression.NativeField(field, tpe, _, loc) =>
           // Unsoundly pretend that a native field is pure.
@@ -424,7 +436,7 @@ object Effects extends Phase[Root, Root] {
           Expression.NativeField(field, tpe, eff, loc).toSuccess
 
         /**
-          * Native Method Expressions.
+          * Native Method Expression.
           */
         case Expression.NativeMethod(method, args, tpe, _, loc) =>
           // Unsoundly pretend that a native method is pure.
@@ -432,7 +444,7 @@ object Effects extends Phase[Root, Root] {
           Expression.NativeMethod(method, args, tpe, eff, loc).toSuccess
 
         /**
-          * User Error Expressions.
+          * User Error Expression.
           */
         case Expression.UserError(tpe, _, loc) =>
           // Unsoundly pretend that a user error is pure.

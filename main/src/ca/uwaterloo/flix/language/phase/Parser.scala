@@ -458,7 +458,11 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
 
     def Unary: Rule1[ParsedAst.Expression] = rule {
-      !Literal ~ (SP ~ capture(atomic("!") | atomic("+") | atomic("-") | atomic("~~~")) ~ optWS ~ Unary ~ SP ~> ParsedAst.Expression.Unary) | Ascribe
+      !Literal ~ (SP ~ capture(atomic("!") | atomic("+") | atomic("-") | atomic("~~~")) ~ optWS ~ Unary ~ SP ~> ParsedAst.Expression.Unary) | Cast
+    }
+
+    def Cast: Rule1[ParsedAst.Expression] = rule {
+      Ascribe ~ optional(WS ~ atomic("as") ~ WS ~ TypeAndEffect ~ SP ~> ParsedAst.Expression.Cast)
     }
 
     def Ascribe: Rule1[ParsedAst.Expression] = rule {

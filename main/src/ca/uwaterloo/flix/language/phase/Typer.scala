@@ -706,10 +706,20 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
          * Ascribe expression.
          */
         case ResolvedAst.Expression.Ascribe(exp, expectedType, eff, loc) =>
+          // An ascribe expression is sound; the type system checks that the declared type matches the inferred type.
           for {
             actualType <- visitExp(exp)
             resultType <- unifyM(actualType, expectedType, loc)
           } yield resultType
+
+        /*
+         * Cast expression.
+         */
+        case ResolvedAst.Expression.Cast(exp, declaredType, eff, loc) =>
+          // An cast expression is unsound; the type system assumes the declared type is correct.
+          for {
+            actualType <- visitExp(exp)
+          } yield declaredType
 
         /*
          * Native Constructor expression.
@@ -908,6 +918,14 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         case ResolvedAst.Expression.Ascribe(exp, tpe, eff, loc) =>
           val e = visitExp(exp, subst0)
           TypedAst.Expression.Ascribe(e, tpe, eff, loc)
+
+        /*
+         * Cast expression.
+         */
+        case ResolvedAst.Expression.Cast(exp, tpe, eff, loc) =>
+          val e = visitExp(exp, subst0)
+          TypedAst.Expression.Cast(e, tpe, eff, loc)
+
 
         /*
          * Native Constructor expression.

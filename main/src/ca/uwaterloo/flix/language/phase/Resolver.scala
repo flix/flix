@@ -350,6 +350,12 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
             t <- lookupType(tpe, ns0, prog0)
           } yield ResolvedAst.Expression.Ascribe(e, t, eff, loc)
 
+        case NamedAst.Expression.Cast(exp, tpe, eff, loc) =>
+          for {
+            e <- visit(exp)
+            t <- lookupType(tpe, ns0, prog0)
+          } yield ResolvedAst.Expression.Cast(e, t, eff, loc)
+
         case NamedAst.Expression.NativeConstructor(constructor, args, tpe, loc) =>
           for {
             es <- seqM(args map visit)

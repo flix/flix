@@ -133,6 +133,8 @@ object NamedAst {
 
     case class Ascribe(exp: NamedAst.Expression, tpe: NamedAst.Type, eff: Eff, loc: SourceLocation) extends NamedAst.Expression
 
+    case class Cast(exp: NamedAst.Expression, tpe: NamedAst.Type, eff: Eff, loc: SourceLocation) extends NamedAst.Expression
+
     case class NativeConstructor(constructor: Constructor[_], args: List[NamedAst.Expression], tpe: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
     case class NativeField(field: Field, tpe: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression

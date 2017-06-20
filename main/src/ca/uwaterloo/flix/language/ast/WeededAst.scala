@@ -122,6 +122,8 @@ object WeededAst {
 
     case class Ascribe(exp: WeededAst.Expression, tpe: WeededAst.Type, eff: Eff, loc: SourceLocation) extends WeededAst.Expression
 
+    case class Cast(exp: WeededAst.Expression, tpe: WeededAst.Type, eff: Eff, loc: SourceLocation) extends WeededAst.Expression
+
     case class NativeConstructor(className: String, args: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
 
     case class NativeField(className: String, fieldName: String, loc: SourceLocation) extends WeededAst.Expression
