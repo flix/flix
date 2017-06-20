@@ -70,11 +70,9 @@ sealed trait Eff {
     */
   def seq(that: Eff): Eff = (this, that) match {
     case (Eff.Box(eff1), Eff.Box(eff2)) => Eff.Box(eff1 seq eff2)
-    case (Eff.Arrow(e11, latent1, e12, eff1), Eff.Box(eff2)) => Eff.Box(eff1 seq eff2)
     case (Eff.Box(eff1), Eff.Arrow(e21, latent2, e22, eff2)) => Eff.Arrow(e21, latent2, e22, eff1 seq eff2)
-
-    // TODO: Arrow part...
-    case _ => throw InternalCompilerException(s"Mismatched effects '$this' and '$that'.")
+    case (Eff.Arrow(_, _, _, eff1), Eff.Box(eff2)) => Eff.Box(eff1 seq eff2)
+    case (Eff.Arrow(_, _, _, eff1), Eff.Arrow(e21, latent2, e22, eff2)) => Eff.Arrow(e21, latent2, e22, eff1 seq eff2)
   }
 
 }
