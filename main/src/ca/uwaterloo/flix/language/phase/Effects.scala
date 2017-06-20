@@ -177,7 +177,8 @@ object Effects extends Phase[Root, Root] {
           */
         case Expression.Hook(hook, tpe, _, loc) =>
           // A hook expression has any effect.
-          Expression.Hook(hook, tpe, Eff.Top, loc).toSuccess
+          val eff = Eff.Arrow(Eff.Pure, EffectSet.Top, Eff.Pure, EffectSet.Bot)
+          Expression.Hook(hook, tpe, eff, loc).toSuccess
 
         /**
           * Lambda Expressions.
