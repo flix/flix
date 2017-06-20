@@ -90,7 +90,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
              */
             val formalsVal = checkDuplicateFormal(params)
             @@(annVal, modVal, formalsVal, expVal, effVal) map {
-              case (as, fs, e, eff) =>
+              case (as, mod, fs, e, eff) =>
                 val t = WeededAst.Type.Arrow(fs map (_.tpe), Types.weed(tpe), loc)
                 List(WeededAst.Declaration.Definition(doc, as, mod, ident, tparams, fs, e, t, eff, loc))
             }

@@ -98,7 +98,7 @@ object Effects extends Phase[Root, Root] {
       // TODO: Introduce EffectParam
 
       val env0 = defn0.fparams.foldLeft(Map.empty[Symbol.VarSym, Eff]) {
-        case (macc, TypedAst.FormalParam(sym, tpe, _)) => tpe match {
+        case (macc, TypedAst.FormalParam(sym, _, tpe, _)) => tpe match {
           case Type.Apply(Type.Arrow(_), _) =>
             macc + (sym -> Eff.Arrow(Eff.Pure, EffectSet.Bot, Eff.Pure, EffectSet.Bot))
           case _ => macc

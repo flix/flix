@@ -245,15 +245,11 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         SimplifiedAst.Expression.Tuple(elms map simplify, tpe, loc)
 
       case TypedAst.Expression.Existential(fparam, exp, eff, loc) =>
-        val p = SimplifiedAst.FormalParam(fparam.sym, fparam.mod, fparam.tpe)
-      case TypedAst.Expression.Existential(fparam, exp, loc) =>
         val p = SimplifiedAst.FormalParam(fparam.sym, fparam.mod, fparam.tpe, fparam.loc)
         val e = simplify(exp)
         SimplifiedAst.Expression.Existential(p, e, loc)
 
       case TypedAst.Expression.Universal(fparam, exp, eff, loc) =>
-        val p = SimplifiedAst.FormalParam(fparam.sym, fparam.mod, fparam.tpe)
-      case TypedAst.Expression.Universal(fparam, exp, loc) =>
         val p = SimplifiedAst.FormalParam(fparam.sym, fparam.mod, fparam.tpe, fparam.loc)
         val e = simplify(exp)
         SimplifiedAst.Expression.Universal(p, e, loc)
