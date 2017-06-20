@@ -151,14 +151,8 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
       optWS ~ SP ~ atomic("namespace") ~ WS ~ Names.Namespace ~ optWS ~ '{' ~ zeroOrMore(Declaration) ~ optWS ~ '}' ~ SP ~> ParsedAst.Declaration.Namespace
     }
 
-    def Definition: Rule1[ParsedAst.Declaration.Definition] = {
-      def Annotations: Rule1[Seq[ParsedAst.AnnotationOrProperty]] = rule {
-        zeroOrMore(Annotation | Property).separatedBy(WS)
-      }
-
-      rule {
-        Documentation ~ Annotations ~ optWS ~ SP ~ atomic("def") ~ WS ~ Names.Definition ~ optWS ~ TypeParams ~ FormalParams ~ optWS ~ ":" ~ optWS ~ Type ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~> ParsedAst.Declaration.Definition
-      }
+    def Definition: Rule1[ParsedAst.Declaration.Definition] = rule {
+      Documentation ~ Annotations ~ Modifiers ~ SP ~ atomic("def") ~ WS ~ Names.Definition ~ optWS ~ TypeParams ~ FormalParams ~ optWS ~ ":" ~ optWS ~ Type ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~> ParsedAst.Declaration.Definition
     }
 
     def Law: Rule1[ParsedAst.Declaration.Law] = rule {
@@ -838,7 +832,21 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   }
 
   def FormalParam: Rule1[ParsedAst.FormalParam] = rule {
-    SP ~ Names.Variable ~ ":" ~ optWS ~ Type ~ SP ~> ParsedAst.FormalParam
+      SP ~ Modifiers ~ Names.Variable ~ ":" ~ optWS ~ Type ~ SP ~> ParsedAst.FormalParam
+  }
+
+  def Annotations: Rule1[Seq[ParsedAst.AnnotationOrProperty]] = rule {
+    zeroOrMore(Annotation | Property).separatedBy(WS) ~ optWS
+  }
+
+  def Modifiers: Rule1[Seq[ParsedAst.Modifier]] = {
+    def Modifier: Rule1[ParsedAst.Modifier] = rule {
+      SP ~ capture(atomic("inline")) ~ SP ~> ParsedAst.Modifier
+    }
+
+    rule {
+      zeroOrMore(Modifier).separatedBy(WS) ~ optWS
+    }
   }
 
   def Annotation: Rule1[ParsedAst.AnnotationOrProperty] = rule {

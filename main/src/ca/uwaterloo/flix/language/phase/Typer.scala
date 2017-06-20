@@ -122,7 +122,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           * Performs type inference and reassembly on the given definition `defn`.
           */
         def visitDefn(defn: ResolvedAst.Declaration.Definition): Result[(Symbol.DefnSym, TypedAst.Declaration.Definition), TypeError] = defn match {
-          case ResolvedAst.Declaration.Definition(doc, ann, sym, tparams, params, exp, tpe, loc) =>
+          case ResolvedAst.Declaration.Definition(doc, ann, mod, sym, tparams, params, exp, tpe, loc) =>
             infer(defn, program) map {
               case d => sym -> d
             }
@@ -168,11 +168,11 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
 
                 // Translate the named formals into typed formals.
                 val formals = defn0.fparams.map {
-                  case ResolvedAst.FormalParam(sym, tpe, loc) =>
-                    TypedAst.FormalParam(sym, subst0(sym.tvar), sym.loc)
+                  case ResolvedAst.FormalParam(sym, mod, tpe, loc) =>
+                    TypedAst.FormalParam(sym, mod, subst0(sym.tvar), sym.loc)
                 }
 
-                Ok(TypedAst.Declaration.Definition(defn0.doc, defn0.ann, defn0.sym, tparams, formals, exp, resultType, defn0.loc))
+                Ok(TypedAst.Declaration.Definition(defn0.doc, defn0.ann, defn0.mod, defn0.sym, tparams, formals, exp, resultType, defn0.loc))
 
               case Err(e) => Err(e)
             }
@@ -805,7 +805,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
          */
         case ResolvedAst.Expression.Lambda(params, exp, tvar, loc) =>
           val lambdaArgs = params map {
-            case sym => TypedAst.FormalParam(sym, subst0(sym.tvar), sym.loc)
+            case sym => TypedAst.FormalParam(sym, Ast.Modifiers.Empty, subst0(sym.tvar), sym.loc)
           }
           val lambdaBody = visitExp(exp, subst0)
           val lambdaType = subst0(tvar)
@@ -940,7 +940,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         * Applies the substitution to the given list of formal parameters.
         */
       def visitParam(param: ResolvedAst.FormalParam): TypedAst.FormalParam =
-        TypedAst.FormalParam(param.sym, subst0(param.tpe), param.loc)
+        TypedAst.FormalParam(param.sym, param.mod, subst0(param.tpe), param.loc)
 
       visitExp(exp0, subst0)
     }
@@ -1182,7 +1182,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     // Compute the substitution by mapping the symbol of each parameter to its declared type.
     val declaredTypes = params.map(_.tpe)
     (params zip declaredTypes).foldLeft(Substitution.empty) {
-      case (macc, (ResolvedAst.FormalParam(sym, _, _), declaredType)) =>
+      case (macc, (ResolvedAst.FormalParam(sym, _, _, _), declaredType)) =>
         macc ++ Substitution.singleton(sym.tvar, declaredType)
     }
   }

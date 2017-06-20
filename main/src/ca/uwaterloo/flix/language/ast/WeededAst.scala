@@ -32,7 +32,7 @@ object WeededAst {
 
     case class Namespace(name: Name.NName, decls: List[WeededAst.Declaration], loc: SourceLocation) extends WeededAst.Declaration
 
-    case class Definition(doc: Option[Ast.Documentation], ann: Ast.Annotations, ident: Name.Ident, tparams: List[Name.Ident], fparams: List[WeededAst.FormalParam], exp: WeededAst.Expression, tpe: WeededAst.Type, loc: SourceLocation) extends WeededAst.Declaration
+    case class Definition(doc: Option[Ast.Documentation], ann: Ast.Annotations, mod: Ast.Modifiers, ident: Name.Ident, tparams: List[Name.Ident], fparams: List[WeededAst.FormalParam], exp: WeededAst.Expression, tpe: WeededAst.Type, loc: SourceLocation) extends WeededAst.Declaration
 
     case class Enum(doc: Option[Ast.Documentation], ident: Name.Ident, tparams: List[Name.Ident], cases: Map[String, WeededAst.Case], loc: SourceLocation) extends WeededAst.Declaration
 
@@ -228,7 +228,7 @@ object WeededAst {
 
   case class Case(enum: Name.Ident, tag: Name.Ident, tpe: WeededAst.Type) extends WeededAst
 
-  case class FormalParam(ident: Name.Ident, tpe: WeededAst.Type, loc: SourceLocation) extends WeededAst
+  case class FormalParam(ident: Name.Ident, mod: Ast.Modifiers, tpe: WeededAst.Type, loc: SourceLocation) extends WeededAst
 
   case class MatchRule(pat: WeededAst.Pattern, guard: WeededAst.Expression, exp: WeededAst.Expression) extends WeededAst
 
