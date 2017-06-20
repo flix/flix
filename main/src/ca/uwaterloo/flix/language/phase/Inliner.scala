@@ -90,7 +90,7 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.ApplyRef(sym, args, tpe, loc) =>
         val args1 = args.map(visit)
         definitions(sym) match {
-          case Constant(_, _, formals, exp1, _, _, _) =>
+          case Constant(_, _, _, formals, exp1, _, _, _) =>
             if (scores(sym) <= Score.MaxScore){
               val sub = formals.map(f => f.sym -> Symbol.freshVarSym(f.sym)).toMap
               val bindings = formals.map(f => sub(f.sym)).zip(args1)
