@@ -1023,17 +1023,28 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     def weed(effOpt: Option[ParsedAst.Effect]): Validation[Eff, WeederError] = effOpt match {
       case None => Eff.Pure.toSuccess
       case Some(ParsedAst.Effect(xs)) =>
-        val effects = xs.map {
-          case ident =>
-            ident.name match {
-              case "IO" => Effect.IO
-              case "File" => Effect.File
-              case "Network" => Effect.Network
-              case _ => ??? // TODO: Error checking
-            }
-        }
 
-        val eff = EffectSet.MayMust(effects.toSet, effects.toSet)
+        val isAny = xs.exists(_.name == "Any")
+        val isPure = xs.exists(_.name == "Pure")
+
+        val eff =
+          if (isAny) {
+            EffectSet.Top
+          } else if (isPure) {
+            EffectSet.Pure
+          } else {
+            val effects = xs.map {
+              case ident =>
+                ident.name match {
+                  case "IO" => Effect.IO
+                  case "File" => Effect.File
+                  case "Network" => Effect.Network
+                  case _ => ??? // TODO: Error checking
+                }
+            }
+            EffectSet.MayMust(effects.toSet, effects.toSet)
+          }
+
         Eff.Box(eff).toSuccess
     }
 

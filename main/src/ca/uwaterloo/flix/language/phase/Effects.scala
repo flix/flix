@@ -390,31 +390,31 @@ object Effects extends Phase[Root, Root] {
           * Native Constructor Expression.
           */
         case Expression.NativeConstructor(constructor, args, tpe, _, loc) =>
-          // TODO Unsoundly pretend that a native constructor is pure.
-          val eff = Eff.Pure
+          // A native constructor can have any effect.
+          val eff = Eff.Top
           Expression.NativeConstructor(constructor, args, tpe, eff, loc).toSuccess
 
         /**
           * Native Field Expression.
           */
         case Expression.NativeField(field, tpe, _, loc) =>
-          // TODO Unsoundly pretend that a native field is pure.
-          val eff = Eff.Pure
+          // A native field can have any effect.
+          val eff = Eff.Top
           Expression.NativeField(field, tpe, eff, loc).toSuccess
 
         /**
           * Native Method Expression.
           */
         case Expression.NativeMethod(method, args, tpe, _, loc) =>
-          // TODO Unsoundly pretend that a native method is pure.
-          val eff = Eff.Pure
+          // A native method can have any effect.
+          val eff = Eff.Top
           Expression.NativeMethod(method, args, tpe, eff, loc).toSuccess
 
         /**
           * User Error Expression.
           */
         case Expression.UserError(tpe, _, loc) =>
-          // TODO Unsoundly pretend that a user error is pure.
+          // Unsoundly assume that a user error exception has no effect.
           Expression.UserError(tpe, Eff.Pure, loc).toSuccess
       }
 
