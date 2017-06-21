@@ -156,6 +156,7 @@ object Effects extends Phase[Root, Root] {
             e <- visitExp(body, env0)
           } yield {
             // TODO: deal with arguments
+            // TODO: Take number of arguments into account.
             val eff = Eff.Arrow(Eff.Pure, e.eff.eff, Eff.Pure, EffectSet.Bot)
             Expression.Lambda(args, body, tpe, eff, loc)
           }
@@ -169,7 +170,7 @@ object Effects extends Phase[Root, Root] {
             es <- seqM(args.map(e => visitExp(e, env0)))
           } yield {
             // TODO: This implementation is not yet fully correct!
-
+            // TODO: Take number of arguments into account.
             // Effects of lambda expression.
             val Eff.Arrow(_, latent, e2, eff) = e.eff
 
@@ -389,7 +390,7 @@ object Effects extends Phase[Root, Root] {
           * Native Constructor Expression.
           */
         case Expression.NativeConstructor(constructor, args, tpe, _, loc) =>
-          // Unsoundly pretend that a native constructor is pure.
+          // TODO Unsoundly pretend that a native constructor is pure.
           val eff = Eff.Pure
           Expression.NativeConstructor(constructor, args, tpe, eff, loc).toSuccess
 
@@ -397,7 +398,7 @@ object Effects extends Phase[Root, Root] {
           * Native Field Expression.
           */
         case Expression.NativeField(field, tpe, _, loc) =>
-          // Unsoundly pretend that a native field is pure.
+          // TODO Unsoundly pretend that a native field is pure.
           val eff = Eff.Pure
           Expression.NativeField(field, tpe, eff, loc).toSuccess
 
@@ -405,7 +406,7 @@ object Effects extends Phase[Root, Root] {
           * Native Method Expression.
           */
         case Expression.NativeMethod(method, args, tpe, _, loc) =>
-          // Unsoundly pretend that a native method is pure.
+          // TODO Unsoundly pretend that a native method is pure.
           val eff = Eff.Pure
           Expression.NativeMethod(method, args, tpe, eff, loc).toSuccess
 
@@ -413,7 +414,7 @@ object Effects extends Phase[Root, Root] {
           * User Error Expression.
           */
         case Expression.UserError(tpe, _, loc) =>
-          // Unsoundly pretend that a user error is pure.
+          // TODO Unsoundly pretend that a user error is pure.
           Expression.UserError(tpe, Eff.Pure, loc).toSuccess
       }
 

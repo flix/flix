@@ -25,11 +25,8 @@ class TestExamples extends FunSuite {
 
   private class Tester(dumpBytecode: Boolean = false) {
 
-    private val interpretedFlix = createFlix(codegen = false)
-    private val compiledFlix = createFlix(codegen = true)
-    private var interpreted: Model = null
+    private val flix = createFlix(codegen = true)
     private var compiled: Model = null
-
 
     def getBoxedIfNecessary(res : AnyRef) : AnyRef = res match {
       case r : Enum => {
@@ -48,28 +45,21 @@ class TestExamples extends FunSuite {
     }
 
     def addPath(path: String): Tester = {
-      interpretedFlix.addPath(path)
-      compiledFlix.addPath(path)
+      flix.addPath(path)
       this
     }
 
     def addStr(str: String): Tester = {
-      interpretedFlix.addStr(str)
-      compiledFlix.addStr(str)
+      flix.addStr(str)
       this
     }
 
     def run(): Tester = {
-      interpreted = interpretedFlix.solve().get
-      compiled = compiledFlix.solve().get
+      compiled = flix.solve().get
       this
     }
 
     def checkValue(expected: AnyRef, latticeName: String, key: List[AnyRef]): Unit = {
-      withClue(s"interpreted value $latticeName($key):") {
-        val lattice = interpreted.getLattice(latticeName).toMap
-        assertResult(expected)(lattice(key))
-      }
       withClue(s"compiled value $latticeName($key):") {
         val lattice = compiled.getLattice(latticeName).toMap
         assertResult(expected)(getBoxedIfNecessary(lattice(key)))
@@ -77,10 +67,6 @@ class TestExamples extends FunSuite {
     }
 
     def checkNone(latticeName: String, key: List[AnyRef]): Unit = {
-      withClue(s"interpreted value $latticeName($key):") {
-        val lattice = interpreted.getLattice(latticeName).toMap
-        assertResult(None)(lattice.get(key))
-      }
       withClue(s"compiled value $latticeName($key):") {
         val lattice = compiled.getLattice(latticeName).toMap
         assertResult(None)(lattice.get(key))
@@ -88,8 +74,7 @@ class TestExamples extends FunSuite {
     }
 
     def checkSuccess(): Unit = {
-      assert(interpretedFlix.solve().isSuccess)
-      assert(compiledFlix.solve().isSuccess)
+      assert(flix.solve().isSuccess)
     }
 
   }
