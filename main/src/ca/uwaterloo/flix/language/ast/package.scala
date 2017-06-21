@@ -144,6 +144,7 @@ package object ast {
                   propertyGen: Long,
                   verifier: Long,
                   lambdaLift: Long,
+                  optimizer: Long,
                   tailrec: Long,
                   treeshaker: Long,
                   varNumbering: Long,

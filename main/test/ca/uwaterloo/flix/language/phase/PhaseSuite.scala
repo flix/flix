@@ -16,10 +16,11 @@
 
 package ca.uwaterloo.flix.language.phase
 
+import ca.uwaterloo.flix.util.FlixTest
 import org.scalatest.{ParallelTestExecution, Suites}
 
 class PhaseSuite extends Suites(
-  new TestOptimizer,
+  new FlixTest("TestOptimizer", "main/test/ca/uwaterloo/flix/language/phase/TestOptimizer.flix"),
   new TestParser,
   new TestNamer,
   new TestResolver,
