@@ -193,6 +193,22 @@ object WeederError {
   }
 
   /**
+    * An error raised to indicate that an effect is unknown.
+    *
+    * @param loc the location where the illegal effect occurs.
+    */
+  case class IllegalEffect(loc: SourceLocation) extends WeederError {
+    val source: SourceInput = loc.source
+    val message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Illegal effect." << NewLine
+      vt << NewLine
+      vt << Code(loc, "illegal effect.") << NewLine
+    }
+  }
+
+  /**
     * An error raised to indicate an illegal existential quantification expression.
     *
     * @param loc the location where the illegal expression occurs.

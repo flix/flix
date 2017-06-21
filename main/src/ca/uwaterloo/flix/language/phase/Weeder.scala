@@ -1023,29 +1023,33 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     def weed(effOpt: Option[ParsedAst.Effect]): Validation[Eff, WeederError] = effOpt match {
       case None => Eff.Pure.toSuccess
       case Some(ParsedAst.Effect(xs)) =>
-
-        val isAny = xs.exists(_.name == "Any")
-        val isPure = xs.exists(_.name == "Pure")
-
-        val eff =
-          if (isAny) {
-            EffectSet.Top
-          } else if (isPure) {
-            EffectSet.Pure
-          } else {
-            val effects = xs.map {
-              case ident =>
-                ident.name match {
-                  case "IO" => Effect.IO
-                  case "File" => Effect.File
-                  case "Network" => Effect.Network
-                  case _ => ??? // TODO: Error checking
-                }
-            }
-            EffectSet.MayMust(effects.toSet, effects.toSet)
+        /*
+         * Check for the Any and Pure effects.
+         */
+        if (xs.length == 1) {
+          if (xs.head.name == "Any") {
+            return Eff.Box(EffectSet.Top).toSuccess
           }
+          if (xs.head.name == "Pure") {
+            return Eff.Box(EffectSet.Pure).toSuccess
+          }
+        }
 
-        Eff.Box(eff).toSuccess
+        /*
+         * Process each effect.
+         */
+        val effectsVal = xs.map {
+          case ident => ident.name match {
+            case "IO" => Effect.IO.toSuccess
+            case "File" => Effect.File.toSuccess
+            case "Network" => Effect.Network.toSuccess
+            case name => IllegalEffect(ident.loc).toFailure
+          }
+        }
+
+        for {
+          eff <- seqM(effectsVal)
+        } yield Eff.Box(EffectSet.MayMust(eff.toSet, eff.toSet))
     }
 
   }
