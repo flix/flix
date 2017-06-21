@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.language.GenSym
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 /**
-  * Representation of monotypes.
+  * Representation of types.
   */
 sealed trait Type {
   /**

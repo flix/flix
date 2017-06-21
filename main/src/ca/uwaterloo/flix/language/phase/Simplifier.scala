@@ -111,7 +111,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
 
   object Expression {
     def simplify(tast: TypedAst.Expression)(implicit genSym: GenSym): SimplifiedAst.Expression = tast match {
-      case TypedAst.Expression.Wild(tpe, loc) => ??? // TODO
+      case TypedAst.Expression.Wild(tpe, eff, loc) => ??? // TODO
       case TypedAst.Expression.Unit(loc) => SimplifiedAst.Expression.Unit
       case TypedAst.Expression.True(loc) => SimplifiedAst.Expression.True
       case TypedAst.Expression.False(loc) => SimplifiedAst.Expression.False
@@ -124,20 +124,20 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case TypedAst.Expression.Int64(lit, loc) => SimplifiedAst.Expression.Int64(lit)
       case TypedAst.Expression.BigInt(lit, loc) => SimplifiedAst.Expression.BigInt(lit)
       case TypedAst.Expression.Str(lit, loc) => SimplifiedAst.Expression.Str(lit)
-      case TypedAst.Expression.Var(sym, tpe, loc) => SimplifiedAst.Expression.Var(sym, tpe, loc)
-      case TypedAst.Expression.Ref(sym, tpe, loc) => SimplifiedAst.Expression.Ref(sym, tpe, loc)
-      case TypedAst.Expression.Hook(hook, tpe, loc) => SimplifiedAst.Expression.Hook(hook, tpe, loc)
-      case TypedAst.Expression.Lambda(args, body, tpe, loc) =>
+      case TypedAst.Expression.Var(sym, tpe, eff, loc) => SimplifiedAst.Expression.Var(sym, tpe, loc)
+      case TypedAst.Expression.Ref(sym, tpe, eff, loc) => SimplifiedAst.Expression.Ref(sym, tpe, loc)
+      case TypedAst.Expression.Hook(hook, tpe, eff, loc) => SimplifiedAst.Expression.Hook(hook, tpe, loc)
+      case TypedAst.Expression.Lambda(args, body, tpe, eff, loc) =>
         SimplifiedAst.Expression.Lambda(args map Simplifier.simplify, simplify(body), tpe, loc)
-      case TypedAst.Expression.Apply(e, args, tpe, loc) =>
+      case TypedAst.Expression.Apply(e, args, tpe, eff, loc) =>
         SimplifiedAst.Expression.Apply(simplify(e), args map simplify, tpe, loc)
-      case TypedAst.Expression.Unary(op, e, tpe, loc) =>
+      case TypedAst.Expression.Unary(op, e, tpe, eff, loc) =>
         SimplifiedAst.Expression.Unary(op, simplify(e), tpe, loc)
-      case TypedAst.Expression.Binary(op, e1, e2, tpe, loc) =>
+      case TypedAst.Expression.Binary(op, e1, e2, tpe, eff, loc) =>
         SimplifiedAst.Expression.Binary(op, simplify(e1), simplify(e2), tpe, loc)
-      case TypedAst.Expression.IfThenElse(e1, e2, e3, tpe, loc) =>
+      case TypedAst.Expression.IfThenElse(e1, e2, e3, tpe, eff, loc) =>
         SimplifiedAst.Expression.IfThenElse(simplify(e1), simplify(e2), simplify(e3), tpe, loc)
-      case TypedAst.Expression.Switch(rules, tpe, loc) =>
+      case TypedAst.Expression.Switch(rules, tpe, eff, loc) =>
         val zero = SimplifiedAst.Expression.SwitchError(tpe, loc)
         rules.foldRight(zero: SimplifiedAst.Expression) {
           case ((e1, e2), acc) =>
@@ -145,13 +145,13 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
             val body = simplify(e2)
             SimplifiedAst.Expression.IfThenElse(cond, body, acc, tpe, loc)
         }
-      case TypedAst.Expression.Let(sym, e1, e2, tpe, loc) =>
+      case TypedAst.Expression.Let(sym, e1, e2, tpe, eff, loc) =>
         SimplifiedAst.Expression.Let(sym, simplify(e1), simplify(e2), tpe, loc)
 
-      case TypedAst.Expression.LetRec(sym, e1, e2, tpe, loc) =>
+      case TypedAst.Expression.LetRec(sym, e1, e2, tpe, eff, loc) =>
         SimplifiedAst.Expression.LetRec(sym, simplify(e1), simplify(e2), tpe, loc)
 
-      case TypedAst.Expression.Match(exp0, rules, tpe, loc) =>
+      case TypedAst.Expression.Match(exp0, rules, tpe, eff, loc) =>
         import SimplifiedAst.{Expression => SExp}
 
         /**
@@ -238,27 +238,38 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
           */
         SExp.Let(matchVar, matchExp, inner, tpe, loc)
 
-      case TypedAst.Expression.Tag(sym, tag, e, tpe, loc) =>
+      case TypedAst.Expression.Tag(sym, tag, e, tpe, eff, loc) =>
         SimplifiedAst.Expression.Tag(sym, tag, simplify(e), tpe, loc)
-      case TypedAst.Expression.Tuple(elms, tpe, loc) =>
+
+      case TypedAst.Expression.Tuple(elms, tpe, eff, loc) =>
         SimplifiedAst.Expression.Tuple(elms map simplify, tpe, loc)
-      case TypedAst.Expression.Existential(fparam, exp, loc) =>
+
+      case TypedAst.Expression.Existential(fparam, exp, eff, loc) =>
         val p = SimplifiedAst.FormalParam(fparam.sym, fparam.mod, fparam.tpe, fparam.loc)
         val e = simplify(exp)
         SimplifiedAst.Expression.Existential(p, e, loc)
-      case TypedAst.Expression.Universal(fparam, exp, loc) =>
+
+      case TypedAst.Expression.Universal(fparam, exp, eff, loc) =>
         val p = SimplifiedAst.FormalParam(fparam.sym, fparam.mod, fparam.tpe, fparam.loc)
         val e = simplify(exp)
         SimplifiedAst.Expression.Universal(p, e, loc)
-      case TypedAst.Expression.NativeConstructor(constructor, args, tpe, loc) =>
+
+      case TypedAst.Expression.Ascribe(exp, tpe, eff, loc) => simplify(exp)
+
+      case TypedAst.Expression.Cast(exp, tpe, eff, loc) => simplify(exp)
+
+      case TypedAst.Expression.NativeConstructor(constructor, args, tpe, eff, loc) =>
         val es = args.map(e => simplify(e))
         SimplifiedAst.Expression.NativeConstructor(constructor, es, tpe, loc)
-      case TypedAst.Expression.NativeField(field, tpe, loc) =>
+
+      case TypedAst.Expression.NativeField(field, tpe, eff, loc) =>
         SimplifiedAst.Expression.NativeField(field, tpe, loc)
-      case TypedAst.Expression.NativeMethod(method, args, tpe, loc) =>
+
+      case TypedAst.Expression.NativeMethod(method, args, tpe, eff, loc) =>
         val es = args.map(e => simplify(e))
         SimplifiedAst.Expression.NativeMethod(method, es, tpe, loc)
-      case TypedAst.Expression.UserError(tpe, loc) =>
+
+      case TypedAst.Expression.UserError(tpe, eff, loc) =>
         SimplifiedAst.Expression.UserError(tpe, loc)
     }
   }
@@ -434,12 +445,12 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         * Simplifies the given head term expression `e0`.
         */
       def simplify(e0: TypedAst.Expression, cparams: List[TypedAst.ConstraintParam], toplevel: TopLevel)(implicit genSym: GenSym): SimplifiedAst.Term.Head = e0 match {
-        case TypedAst.Expression.Var(sym, tpe, loc) =>
+        case TypedAst.Expression.Var(sym, tpe, eff, loc) =>
           SimplifiedAst.Term.Head.Var(sym, tpe, loc)
 
-        case TypedAst.Expression.Apply(TypedAst.Expression.Ref(sym, _, _), args, tpe, loc) if isVarExps(args) =>
+        case TypedAst.Expression.Apply(TypedAst.Expression.Ref(sym, _, _, _), args, tpe, eff, loc) if isVarExps(args) =>
           val as = args map {
-            case TypedAst.Expression.Var(x, _, _) => x
+            case TypedAst.Expression.Var(x, _, _, _) => x
             case e => throw InternalCompilerException(s"Unexpected non-variable expression: $e.")
           }
           SimplifiedAst.Term.Head.App(sym, as, tpe, loc)
@@ -509,8 +520,8 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         * Simplifies the given body term expression `e`.
         */
       def simplify(e: TypedAst.Expression)(implicit genSym: GenSym): SimplifiedAst.Term.Body = e match {
-        case TypedAst.Expression.Wild(tpe, loc) => SimplifiedAst.Term.Body.Wild(tpe, loc)
-        case TypedAst.Expression.Var(sym, tpe, loc) => SimplifiedAst.Term.Body.Var(sym, tpe, loc)
+        case TypedAst.Expression.Wild(tpe, eff, loc) => SimplifiedAst.Term.Body.Wild(tpe, loc)
+        case TypedAst.Expression.Var(sym, tpe, eff, loc) => SimplifiedAst.Term.Body.Var(sym, tpe, loc)
         case _ => SimplifiedAst.Term.Body.Lit(Expression.simplify(e), e.tpe, e.loc) // TODO: Only certain expressions should be allow here.
       }
     }
@@ -566,8 +577,8 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
     case TypedAst.Expression.Int64(lit, loc) => true
     case TypedAst.Expression.BigInt(lit, loc) => true
     case TypedAst.Expression.Str(lit, loc) => true
-    case TypedAst.Expression.Tag(sym, tag, exp, tpe, loc) => isLiteral(exp)
-    case TypedAst.Expression.Tuple(elms, tpe, loc) => elms forall isLiteral
+    case TypedAst.Expression.Tag(sym, tag, exp, tpe, eff, loc) => isLiteral(exp)
+    case TypedAst.Expression.Tuple(elms, tpe, eff, loc) => elms forall isLiteral
     case _ => false
   }
 

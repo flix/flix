@@ -157,35 +157,35 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         case Expression.Int64(lit, loc) => Expression.Int64(lit, loc)
         case Expression.BigInt(lit, loc) => Expression.BigInt(lit, loc)
         case Expression.Str(lit, loc) => Expression.Str(lit, loc)
-        case Expression.Wild(tpe, loc) => Expression.Wild(subst0(tpe), loc)
-        case Expression.Var(sym, tpe, loc) => Expression.Var(env0(sym), subst0(tpe), loc)
+        case Expression.Wild(tpe, eff, loc) => Expression.Wild(subst0(tpe), eff, loc)
+        case Expression.Var(sym, tpe, eff, loc) => Expression.Var(env0(sym), subst0(tpe), eff, loc)
 
-        case Expression.Ref(sym, tpe, loc) =>
+        case Expression.Ref(sym, tpe, eff, loc) =>
           /*
            * !! This is where all the magic happens !!
            */
           val newSym = specializeSym(sym, subst0(tpe))
-          Expression.Ref(newSym, subst0(tpe), loc)
+          Expression.Ref(newSym, subst0(tpe), eff, loc)
 
-        case Expression.Hook(hook, tpe, loc) => Expression.Hook(hook, subst0(tpe), loc)
+        case Expression.Hook(hook, tpe, eff, loc) => Expression.Hook(hook, subst0(tpe), eff, loc)
 
-        case Expression.Lambda(fparams, body, tpe, loc) =>
+        case Expression.Lambda(fparams, body, tpe, eff, loc) =>
           val (fs, env1) = specializeFormalParams(fparams, subst0)
-          Expression.Lambda(fs, visitExp(body, env0 ++ env1), subst0(tpe), loc)
+          Expression.Lambda(fs, visitExp(body, env0 ++ env1), subst0(tpe), eff, loc)
 
-        case Expression.Apply(exp, args, tpe, loc) =>
+        case Expression.Apply(exp, args, tpe, eff, loc) =>
           val e = visitExp(exp, env0)
           val as = args.map(a => visitExp(a, env0))
-          Expression.Apply(e, as, subst0(tpe), loc)
+          Expression.Apply(e, as, subst0(tpe), eff, loc)
 
-        case Expression.Unary(op, exp, tpe, loc) =>
+        case Expression.Unary(op, exp, tpe, eff, loc) =>
           val e1 = visitExp(exp, env0)
-          Expression.Unary(op, e1, subst0(tpe), loc)
+          Expression.Unary(op, e1, subst0(tpe), eff, loc)
 
         /*
          * Equality / Inequality Check.
          */
-        case Expression.Binary(op@(BinaryOperator.Equal | BinaryOperator.NotEqual), exp1, exp2, tpe, loc) =>
+        case Expression.Binary(op@(BinaryOperator.Equal | BinaryOperator.NotEqual), exp1, exp2, tpe, eff, loc) =>
           // Perform specialization on the left and right sub-expressions.
           val e1 = visitExp(exp1, env0)
           val e2 = visitExp(exp2, env0)
@@ -202,51 +202,51 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
             case None =>
               // No equality function found. Use a regular equality / inequality expression.
               if (op == BinaryOperator.Equal) {
-                Expression.Binary(BinaryOperator.Equal, e1, e2, subst0(tpe), loc)
+                Expression.Binary(BinaryOperator.Equal, e1, e2, subst0(tpe), eff, loc)
               } else {
-                Expression.Binary(BinaryOperator.NotEqual, e1, e2, subst0(tpe), loc)
+                Expression.Binary(BinaryOperator.NotEqual, e1, e2, subst0(tpe), eff, loc)
               }
             case Some(eqSym) =>
               // Equality function found. Specialize and generate a call to it.
               val newSym = specializeSym(eqSym, eqType)
-              val ref = Expression.Ref(newSym, eqType, loc)
+              val ref = Expression.Ref(newSym, eqType, eff, loc)
               // Check whether the whether the operator is equality or inequality.
               if (op == BinaryOperator.Equal) {
                 // Call the equality function.
-                Expression.Apply(ref, List(e1, e2), tpe, loc)
+                Expression.Apply(ref, List(e1, e2), tpe, eff, loc)
               } else {
                 // Call the equality function and negate the result.
-                Expression.Unary(UnaryOperator.LogicalNot, Expression.Apply(ref, List(e1, e2), tpe, loc), Type.Bool, loc)
+                Expression.Unary(UnaryOperator.LogicalNot, Expression.Apply(ref, List(e1, e2), tpe, eff, loc), Type.Bool, eff, loc)
               }
           }
 
         /*
          * Other Binary Expression.
          */
-        case Expression.Binary(op, exp1, exp2, tpe, loc) =>
+        case Expression.Binary(op, exp1, exp2, tpe, eff, loc) =>
           val e1 = visitExp(exp1, env0)
           val e2 = visitExp(exp2, env0)
-          Expression.Binary(op, e1, e2, subst0(tpe), loc)
+          Expression.Binary(op, e1, e2, subst0(tpe), eff, loc)
 
-        case Expression.Let(sym, exp1, exp2, tpe, loc) =>
+        case Expression.Let(sym, exp1, exp2, tpe, eff, loc) =>
           // Generate a fresh symbol for the let-bound variable.
           val freshSym = Symbol.freshVarSym(sym)
           val env1 = env0 + (sym -> freshSym)
-          Expression.Let(freshSym, visitExp(exp1, env1), visitExp(exp2, env1), subst0(tpe), loc)
+          Expression.Let(freshSym, visitExp(exp1, env1), visitExp(exp2, env1), subst0(tpe), eff, loc)
 
-        case Expression.LetRec(sym, exp1, exp2, tpe, loc) =>
+        case Expression.LetRec(sym, exp1, exp2, tpe, eff, loc) =>
           // Generate a fresh symbol for the letrec-bound variable.
           val freshSym = Symbol.freshVarSym(sym)
           val env1 = env0 + (sym -> freshSym)
-          Expression.LetRec(freshSym, visitExp(exp1, env1), visitExp(exp2, env1), subst0(tpe), loc)
+          Expression.LetRec(freshSym, visitExp(exp1, env1), visitExp(exp2, env1), subst0(tpe), eff, loc)
 
-        case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
+        case Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
           val e1 = visitExp(exp1, env0)
           val e2 = visitExp(exp2, env0)
           val e3 = visitExp(exp3, env0)
-          Expression.IfThenElse(e1, e2, e3, subst0(tpe), loc)
+          Expression.IfThenElse(e1, e2, e3, subst0(tpe), eff, loc)
 
-        case Expression.Match(exp, rules, tpe, loc) =>
+        case Expression.Match(exp, rules, tpe, eff, loc) =>
           val rs = rules map {
             case TypedAst.MatchRule(pat, guard, body) =>
               val (p, env1) = visitPat(pat)
@@ -255,40 +255,50 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
               val b = visitExp(body, extendedEnv)
               TypedAst.MatchRule(p, g, b)
           }
-          Expression.Match(visitExp(exp, env0), rs, subst0(tpe), loc)
+          Expression.Match(visitExp(exp, env0), rs, subst0(tpe), eff, loc)
 
-        case Expression.Switch(rules, tpe, loc) =>
+        case Expression.Switch(rules, tpe, eff, loc) =>
           val rs = rules map {
             case (e1, e2) => (visitExp(e1, env0), visitExp(e2, env0))
           }
-          Expression.Switch(rs, subst0(tpe), loc)
+          Expression.Switch(rs, subst0(tpe), eff, loc)
 
-        case Expression.Tag(sym, tag, exp, tpe, loc) =>
+        case Expression.Tag(sym, tag, exp, tpe, eff, loc) =>
           val e = visitExp(exp, env0)
-          Expression.Tag(sym, tag, e, subst0(tpe), loc)
+          Expression.Tag(sym, tag, e, subst0(tpe), eff, loc)
 
-        case Expression.Tuple(elms, tpe, loc) =>
+        case Expression.Tuple(elms, tpe, eff, loc) =>
           val es = elms.map(e => visitExp(e, env0))
-          Expression.Tuple(es, subst0(tpe), loc)
+          Expression.Tuple(es, subst0(tpe), eff, loc)
 
-        case Expression.Existential(fparam, exp, loc) =>
+        case Expression.Existential(fparam, exp, eff, loc) =>
           val (param, env1) = specializeFormalParam(fparam, subst0)
-          Expression.Existential(param, visitExp(exp, env0 ++ env1), loc)
-        case Expression.Universal(fparam, exp, loc) =>
+          Expression.Existential(param, visitExp(exp, env0 ++ env1), eff, loc)
+
+        case Expression.Universal(fparam, exp, eff, loc) =>
           val (param, env1) = specializeFormalParam(fparam, subst0)
-          Expression.Universal(param, visitExp(exp, env0 ++ env1), loc)
+          Expression.Universal(param, visitExp(exp, env0 ++ env1), eff, loc)
 
-        case Expression.NativeConstructor(constructor, args, tpe, loc) =>
+        case Expression.Ascribe(exp, tpe, eff, loc) =>
+          val e = visitExp(exp, env0)
+          Expression.Ascribe(e, subst0(tpe), eff, loc)
+
+        case Expression.Cast(exp, tpe, eff, loc) =>
+          val e = visitExp(exp, env0)
+          Expression.Cast(e, subst0(tpe), eff, loc)
+
+        case Expression.NativeConstructor(constructor, args, tpe, eff, loc) =>
           val es = args.map(e => visitExp(e, env0))
-          Expression.NativeConstructor(constructor, es, subst0(tpe), loc)
+          Expression.NativeConstructor(constructor, es, subst0(tpe), eff, loc)
 
-        case Expression.NativeField(field, tpe, loc) => Expression.NativeField(field, subst0(tpe), loc)
+        case Expression.NativeField(field, tpe, eff, loc) =>
+          Expression.NativeField(field, subst0(tpe), eff, loc)
 
-        case Expression.NativeMethod(method, args, tpe, loc) =>
+        case Expression.NativeMethod(method, args, tpe, eff, loc) =>
           val es = args.map(e => visitExp(e, env0))
-          Expression.NativeMethod(method, es, subst0(tpe), loc)
+          Expression.NativeMethod(method, es, subst0(tpe), eff, loc)
 
-        case Expression.UserError(tpe, loc) => Expression.UserError(subst0(tpe), loc)
+        case Expression.UserError(tpe, eff, loc) => Expression.UserError(subst0(tpe), eff, loc)
       }
 
       /**

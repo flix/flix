@@ -145,6 +145,12 @@ class TestWeeder extends FunSuite with TestUtils {
     expectError[WeederError.EmptyLattice](result)
   }
 
+  test("IllegalEffect.01") {
+    val input = "def f: Bool @ Foo = true"
+    val result = new Flix().addStr(input).compile()
+    expectError[WeederError.IllegalEffect](result)
+  }
+
   test("IllegalExistential.01") {
     val input = "def f: Bool = ∃. true"
     val result = new Flix().addStr(input).compile()

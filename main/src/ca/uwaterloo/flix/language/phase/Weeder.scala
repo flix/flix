@@ -65,22 +65,23 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           case ds => List(WeededAst.Declaration.Namespace(name, ds.flatten, mkSL(sp1, sp2)))
         }
 
-      case ParsedAst.Declaration.Definition(docOpt, ann, mods, sp1, ident, tparams0, paramsOpt, tpe, exp, sp2) =>
+      case ParsedAst.Declaration.Definition(docOpt, ann, mods, sp1, ident, tparams0, paramsOpt, tpe, effOpt, exp, sp2) =>
         val loc = mkSL(ident.sp1, ident.sp2)
         val doc = docOpt.map(d => Ast.Documentation(d.text.mkString(" "), loc))
         val annVal = Annotations.weed(ann)
         val modVal = Modifiers.weed(mods)
         val expVal = Expressions.weed(exp)
         val tparams = tparams0.toList.map(_.ident)
+        val effVal = Effects.weed(effOpt)
 
         /*
          * Check for `IllegalParameterList`.
          */
         paramsOpt match {
-          case None => @@(annVal, modVal, expVal) map {
-            case (as, mod, e) =>
+          case None => @@(annVal, modVal, expVal, effVal) map {
+            case (as, mod, e, eff) =>
               val t = WeededAst.Type.Arrow(Nil, Types.weed(tpe), loc)
-              List(WeededAst.Declaration.Definition(doc, as, mod, ident, tparams, Nil, e, t, loc))
+              List(WeededAst.Declaration.Definition(doc, as, mod, ident, tparams, Nil, e, t, eff, loc))
           }
           case Some(Nil) => IllegalParameterList(loc).toFailure
           case Some(params) =>
@@ -88,10 +89,10 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
              * Check for `DuplicateFormal`.
              */
             val formalsVal = checkDuplicateFormal(params)
-            @@(annVal, modVal, formalsVal, expVal) map {
-              case (as, mod, fs, e) =>
+            @@(annVal, modVal, formalsVal, expVal, effVal) map {
+              case (as, mod, fs, e, eff) =>
                 val t = WeededAst.Type.Arrow(fs map (_.tpe), Types.weed(tpe), loc)
-                List(WeededAst.Declaration.Definition(doc, as, mod, ident, tparams, fs, e, t, loc))
+                List(WeededAst.Declaration.Definition(doc, as, mod, ident, tparams, fs, e, t, eff, loc))
             }
         }
 
@@ -109,7 +110,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
               // Rewrite to Definition.
               val ann = Ast.Annotations(List(Ast.Annotation.Law(loc)))
               val t = WeededAst.Type.Arrow(Nil, Types.weed(tpe), loc)
-              List(WeededAst.Declaration.Definition(doc, ann, mod, ident, tparams.map(_.ident).toList, Nil, e, t, loc)).toSuccess
+              List(WeededAst.Declaration.Definition(doc, ann, mod, ident, tparams.map(_.ident).toList, Nil, e, t, Eff.Pure, loc)).toSuccess
             case Some(Nil) => IllegalParameterList(mkSL(sp1, sp2)).toFailure
             case Some(params) =>
               /*
@@ -120,7 +121,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
                   // Rewrite to Definition.
                   val ann = Ast.Annotations(List(Ast.Annotation.Law(loc)))
                   val t = WeededAst.Type.Arrow(fs map (_.tpe), Types.weed(tpe), loc)
-                  List(WeededAst.Declaration.Definition(doc, ann, mod, ident, tparams.map(_.ident).toList, fs, e, t, loc))
+                  List(WeededAst.Declaration.Definition(doc, ann, mod, ident, tparams.map(_.ident).toList, fs, e, t, Eff.Pure, loc))
               }
           }
         }
@@ -422,7 +423,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
               tpe match {
                 case None => WeededAst.Expression.Let(ident, value, body, mkSL(sp1, sp2))
                 case Some(t) =>
-                  val ascribed = WeededAst.Expression.Ascribe(value, Types.weed(t), value.loc)
+                  val ascribed = WeededAst.Expression.Ascribe(value, Types.weed(t), Eff.Pure, value.loc)
                   WeededAst.Expression.Let(ident, ascribed, body, mkSL(sp1, sp2))
               }
             case (pattern, value, body) =>
@@ -432,7 +433,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
               tpe match {
                 case None => WeededAst.Expression.Match(value, List(rule), mkSL(sp1, sp2))
                 case Some(t) =>
-                  val ascribed = WeededAst.Expression.Ascribe(value, Types.weed(t), value.loc)
+                  val ascribed = WeededAst.Expression.Ascribe(value, Types.weed(t), Eff.Pure, value.loc)
                   WeededAst.Expression.Match(ascribed, List(rule), mkSL(sp1, sp2))
               }
           }
@@ -598,9 +599,20 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
             }
           }
 
-        case ParsedAst.Expression.Ascribe(exp, tpe, sp2) =>
-          visit(exp, unsafe) map {
-            case e => WeededAst.Expression.Ascribe(e, Types.weed(tpe), mkSL(leftMostSourcePosition(exp), sp2))
+        case ParsedAst.Expression.Ascribe(exp, tpe, effOpt, sp2) =>
+          for {
+            e <- visit(exp, unsafe)
+            eff <- Effects.weed(effOpt)
+          } yield {
+            WeededAst.Expression.Ascribe(e, Types.weed(tpe), eff, mkSL(leftMostSourcePosition(exp), sp2))
+          }
+
+        case ParsedAst.Expression.Cast(exp, tpe, effOpt, sp2) =>
+          for {
+            e <- visit(exp, unsafe)
+            eff <- Effects.weed(effOpt)
+          } yield {
+            WeededAst.Expression.Cast(e, Types.weed(tpe), eff, mkSL(leftMostSourcePosition(exp), sp2))
           }
 
         case ParsedAst.Expression.Unsafe(sp1, exp, sp2) =>
@@ -953,7 +965,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
             case ds => List(WeededAst.Declaration.Namespace(name, ds.flatten, mkSL(sp1, sp2)))
           }
 
-        case ParsedAst.Declaration.Definition(_, meta, _, _, defn, _, _, _, _, _) =>
+        case ParsedAst.Declaration.Definition(_, meta, _, _, defn, _, _, _, _, _, _) =>
           // Instantiate properties based on the laws referenced by the definition.
           @@(meta.collect {
             case ParsedAst.Property(sp1, law, args, sp2) =>
@@ -999,6 +1011,45 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         WeededAst.Type.Apply(weed(base), List(weed(tpe1), weed(tpe2)), mkSL(leftMostSourcePosition(tpe1), sp2))
 
       case ParsedAst.Type.Apply(sp1, base, tparams, sp2) => WeededAst.Type.Apply(weed(base), tparams.toList.map(weed), mkSL(sp1, sp2))
+    }
+
+  }
+
+  object Effects {
+
+    /**
+      * Weeds the given parsed optional effect `effOpt`.
+      */
+    def weed(effOpt: Option[ParsedAst.Effect]): Validation[Eff, WeederError] = effOpt match {
+      case None => Eff.Pure.toSuccess
+      case Some(ParsedAst.Effect(xs)) =>
+        /*
+         * Check for the Any and Pure effects.
+         */
+        if (xs.length == 1) {
+          if (xs.head.name == "Any") {
+            return Eff.Box(EffectSet.Top).toSuccess
+          }
+          if (xs.head.name == "Pure") {
+            return Eff.Box(EffectSet.Pure).toSuccess
+          }
+        }
+
+        /*
+         * Process each effect.
+         */
+        val effectsVal = xs.map {
+          case ident => ident.name match {
+            case "IO" => Effect.IO.toSuccess
+            case "File" => Effect.File.toSuccess
+            case "Network" => Effect.Network.toSuccess
+            case name => IllegalEffect(ident.loc).toFailure
+          }
+        }
+
+        for {
+          eff <- seqM(effectsVal)
+        } yield Eff.Box(EffectSet.MayMust(eff.toSet, eff.toSet))
     }
 
   }
@@ -1115,7 +1166,8 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.FMap(sp1, _, _) => sp1
     case ParsedAst.Expression.Existential(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Universal(sp1, _, _, _) => sp1
-    case ParsedAst.Expression.Ascribe(e1, _, _) => leftMostSourcePosition(e1)
+    case ParsedAst.Expression.Ascribe(e1, _, _, _) => leftMostSourcePosition(e1)
+    case ParsedAst.Expression.Cast(e1, _, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.Unsafe(sp1, _, _) => sp1
     case ParsedAst.Expression.NativeField(sp1, _, _) => sp1
     case ParsedAst.Expression.NativeMethod(sp1, _, _, _) => sp1

@@ -152,7 +152,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
 
     def Definition: Rule1[ParsedAst.Declaration.Definition] = rule {
-      Documentation ~ Annotations ~ Modifiers ~ SP ~ atomic("def") ~ WS ~ Names.Definition ~ optWS ~ TypeParams ~ FormalParams ~ optWS ~ ":" ~ optWS ~ Type ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~> ParsedAst.Declaration.Definition
+      Documentation ~ Annotations ~ Modifiers ~ SP ~ atomic("def") ~ WS ~ Names.Definition ~ optWS ~ TypeParams ~ FormalParams ~ optWS ~ ":" ~ optWS ~ TypeAndEffect ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~> ParsedAst.Declaration.Definition
     }
 
     def Law: Rule1[ParsedAst.Declaration.Law] = rule {
@@ -458,11 +458,15 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
 
     def Unary: Rule1[ParsedAst.Expression] = rule {
-      !Literal ~ (SP ~ capture(atomic("!") | atomic("+") | atomic("-") | atomic("~~~")) ~ optWS ~ Unary ~ SP ~> ParsedAst.Expression.Unary) | Ascribe
+      !Literal ~ (SP ~ capture(atomic("!") | atomic("+") | atomic("-") | atomic("~~~")) ~ optWS ~ Unary ~ SP ~> ParsedAst.Expression.Unary) | Cast
+    }
+
+    def Cast: Rule1[ParsedAst.Expression] = rule {
+      Ascribe ~ optional(WS ~ atomic("as") ~ WS ~ TypeAndEffect ~ SP ~> ParsedAst.Expression.Cast)
     }
 
     def Ascribe: Rule1[ParsedAst.Expression] = rule {
-      FAppend ~ optional(optWS ~ ":" ~ optWS ~ Type ~ SP ~> ParsedAst.Expression.Ascribe)
+      FAppend ~ optional(optWS ~ ":" ~ optWS ~ TypeAndEffect ~ SP ~> ParsedAst.Expression.Ascribe)
     }
 
     def Primary: Rule1[ParsedAst.Expression] = rule {
@@ -696,7 +700,6 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
   }
 
-
   /////////////////////////////////////////////////////////////////////////////
   // Predicates                                                              //
   /////////////////////////////////////////////////////////////////////////////
@@ -810,6 +813,20 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     def Apply: Rule1[ParsedAst.Type] = rule {
       SP ~ Ref ~ optWS ~ "[" ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]" ~ SP ~ optWS ~> ParsedAst.Type.Apply
     }
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Effects                                                                 //
+  /////////////////////////////////////////////////////////////////////////////
+  def Effect: Rule1[ParsedAst.Effect] = rule {
+    oneOrMore(Names.Effect).separatedBy(optWS ~ "," ~ optWS) ~> ParsedAst.Effect
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Type and (optional) Effects                                             //
+  /////////////////////////////////////////////////////////////////////////////
+  def TypeAndEffect: Rule2[ParsedAst.Type, Option[ParsedAst.Effect]] = rule {
+    Type ~ optional(optWS ~ atomic("@") ~ WS ~ Effect)
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -964,6 +981,8 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     def Definition: Rule1[Name.Ident] = rule {
       LowerCaseName | GreekName | MathName | OperatorName
     }
+
+    def Effect: Rule1[Name.Ident] = UpperCaseName
 
     def QualifiedDefinition: Rule1[Name.QName] = LowerCaseQName // TODO: Greek letters?
 
