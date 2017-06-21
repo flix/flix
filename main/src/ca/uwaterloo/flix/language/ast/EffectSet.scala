@@ -35,6 +35,7 @@ sealed trait EffectSet {
     * Returns `true` if `this` effect set is the pure effect set.
     */
   def isPure: Boolean = this match {
+    case EffectSet.Bot => true
     case EffectSet.MayMust(may, must) => may.isEmpty && must.isEmpty
     case _ => false
   }
@@ -98,6 +99,3 @@ object EffectSet {
   case class MayMust(may: Set[Effect], must: Set[Effect]) extends EffectSet
 
 }
-
-
-

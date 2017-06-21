@@ -42,7 +42,7 @@ object Effects extends Phase[Root, Root] {
         }
       }
 
-      // TODO: Infer effects for constraints.
+      // TODO: [Effects]: Infer effects for constraints.
 
       for {
         definitions <- seqM(definitionsVal)
@@ -60,18 +60,29 @@ object Effects extends Phase[Root, Root] {
       * Infers the effects of the given definition `defn0`.
       */
     def infer(defn0: Declaration.Definition, root: Root): Validation[Declaration.Definition, EffectError] = {
-      // TODO: Introduce EffectParam
 
+      // TODO: [Effects] Introduce EffectParam for polymorphic effects.
+
+      /*
+       * Infer the effects of the formal parameters.
+       */
       val env0 = defn0.fparams.foldLeft(Map.empty[Symbol.VarSym, Eff]) {
         case (macc, TypedAst.FormalParam(sym, _, tpe, _)) => tpe match {
           case Type.Apply(Type.Arrow(_), _) =>
+            // TODO: [Effects] Assumes that every function argument is pure.
             macc + (sym -> Eff.Arrow(Eff.Pure, EffectSet.Bot, Eff.Pure, EffectSet.Bot))
           case _ => macc
         }
       }
 
+      /*
+       * The expected effect of the definition.
+       */
       val expectedEff = defn0.eff
 
+      /*
+       * Infer the effect of the expression.
+       */
       Expressions.infer(defn0.exp, env0, root) flatMap {
         case e =>
           /*
@@ -92,8 +103,7 @@ object Effects extends Phase[Root, Root] {
     /**
       * Infers the effects of the given expression `exp0`.
       */
-    // TODO: naming of env
-    def infer(exp0: Expression, env: Map[Symbol.VarSym, Eff], root: Root): Validation[Expression, EffectError] = {
+    def infer(exp0: Expression, initialEnv: Map[Symbol.VarSym, Eff], root: Root): Validation[Expression, EffectError] = {
 
       /**
         * Local visitor.
@@ -144,7 +154,7 @@ object Effects extends Phase[Root, Root] {
           * Hook Expression.
           */
         case Expression.Hook(hook, tpe, _, loc) =>
-          // TODO: Unsafely assume that hooks have no effects.
+          // Unsafely assume that hooks have no effects.
           val eff = Eff.Arrow(Eff.Pure, EffectSet.Bot, Eff.Pure, EffectSet.Bot)
           Expression.Hook(hook, tpe, eff, loc).toSuccess
 
@@ -155,8 +165,7 @@ object Effects extends Phase[Root, Root] {
           for {
             e <- visitExp(body, env0)
           } yield {
-            // TODO: deal with arguments
-            // TODO: Take number of arguments into account.
+            // TODO: [Effects]: Take the number of arguments into account.
             val eff = Eff.Arrow(Eff.Pure, e.eff.eff, Eff.Pure, EffectSet.Bot)
             Expression.Lambda(args, body, tpe, eff, loc)
           }
@@ -169,9 +178,7 @@ object Effects extends Phase[Root, Root] {
             e <- visitExp(lambda, env0)
             es <- seqM(args.map(e => visitExp(e, env0)))
           } yield {
-            // TODO: This implementation is not yet fully correct!
-            // TODO: Take number of arguments into account.
-            // Effects of lambda expression.
+            // TODO: [Effects]: Take the number of arguments into account.
             val Eff.Arrow(_, latent, e2, eff) = e.eff
 
             // Effects of arguments.
@@ -418,7 +425,7 @@ object Effects extends Phase[Root, Root] {
           Expression.UserError(tpe, Eff.Pure, loc).toSuccess
       }
 
-      visitExp(exp0, env)
+      visitExp(exp0, initialEnv)
     }
   }
 

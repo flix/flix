@@ -31,10 +31,7 @@ sealed trait Eff {
   /**
     * Returns `true` if `this` effect is pure.
     */
-  def isPure: Boolean = this match {
-    case Eff.Box(eff) => eff.isPure
-    case Eff.Arrow(_, _, _, eff) => eff.isPure
-  }
+  def isPure: Boolean = eff.isPure
 
   /**
     * Returns the "arrow" part of an effect.
