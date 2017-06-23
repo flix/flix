@@ -122,7 +122,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           * Performs type inference and reassembly on the given definition `defn`.
           */
         def visitDefn(defn: ResolvedAst.Declaration.Definition): Result[(Symbol.DefnSym, TypedAst.Declaration.Definition), TypeError] = defn match {
-          case ResolvedAst.Declaration.Definition(doc, ann, mod, sym, tparams, params, exp, tpe, loc) =>
+          case ResolvedAst.Declaration.Definition(doc, ann, mod, sym, tparams, params, exp, tpe, eff, loc) =>
             infer(defn, program) map {
               case d => sym -> d
             }
@@ -172,7 +172,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
                     TypedAst.FormalParam(sym, mod, subst0(sym.tvar), sym.loc)
                 }
 
-                Ok(TypedAst.Declaration.Definition(defn0.doc, defn0.ann, defn0.mod, defn0.sym, tparams, formals, exp, resultType, defn0.loc))
+                Ok(TypedAst.Declaration.Definition(defn0.doc, defn0.ann, defn0.mod, defn0.sym, tparams, formals, exp, resultType, defn0.eff, defn0.loc))
 
               case Err(e) => Err(e)
             }
@@ -705,11 +705,21 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         /*
          * Ascribe expression.
          */
-        case ResolvedAst.Expression.Ascribe(exp, expectedType, loc) =>
+        case ResolvedAst.Expression.Ascribe(exp, expectedType, eff, loc) =>
+          // An ascribe expression is sound; the type system checks that the declared type matches the inferred type.
           for {
             actualType <- visitExp(exp)
             resultType <- unifyM(actualType, expectedType, loc)
           } yield resultType
+
+        /*
+         * Cast expression.
+         */
+        case ResolvedAst.Expression.Cast(exp, declaredType, eff, loc) =>
+          // An cast expression is unsound; the type system assumes the declared type is correct.
+          for {
+            actualType <- visitExp(exp)
+          } yield declaredType
 
         /*
          * Native Constructor expression.
@@ -757,24 +767,24 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         /*
          * Wildcard expression.
          */
-        case ResolvedAst.Expression.Wild(tvar, loc) => TypedAst.Expression.Wild(subst0(tvar), loc)
+        case ResolvedAst.Expression.Wild(tvar, loc) => TypedAst.Expression.Wild(subst0(tvar), Eff.Bot, loc)
 
         /*
          * Variable expression.
          */
-        case ResolvedAst.Expression.Var(sym, loc) => TypedAst.Expression.Var(sym, subst0(sym.tvar), loc)
+        case ResolvedAst.Expression.Var(sym, loc) => TypedAst.Expression.Var(sym, subst0(sym.tvar), Eff.Bot, loc)
 
         /*
          * Reference expression.
          */
         case ResolvedAst.Expression.Ref(sym, tvar, loc) =>
-          TypedAst.Expression.Ref(sym, subst0(tvar), loc)
+          TypedAst.Expression.Ref(sym, subst0(tvar), Eff.Bot, loc)
 
         /*
          * Hook expression.
          */
         case ResolvedAst.Expression.Hook(hook, tpe, loc) =>
-          TypedAst.Expression.Hook(hook, subst0(tpe), loc)
+          TypedAst.Expression.Hook(hook, subst0(tpe), Eff.Bot, loc)
 
         /*
          * Literal expression.
@@ -798,7 +808,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         case ResolvedAst.Expression.Apply(lambda, actuals, tvar, loc) =>
           val l = visitExp(lambda, subst0)
           val as = actuals.map(e => visitExp(e, subst0))
-          TypedAst.Expression.Apply(l, as, subst0(tvar), loc)
+          TypedAst.Expression.Apply(l, as, subst0(tvar), Eff.Bot, loc)
 
         /*
          * Lambda expression.
@@ -809,14 +819,14 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           }
           val lambdaBody = visitExp(exp, subst0)
           val lambdaType = subst0(tvar)
-          TypedAst.Expression.Lambda(lambdaArgs, lambdaBody, lambdaType, loc)
+          TypedAst.Expression.Lambda(lambdaArgs, lambdaBody, lambdaType, Eff.Bot, loc)
 
         /*
          * Unary expression.
          */
         case ResolvedAst.Expression.Unary(op, exp, tvar, loc) =>
           val e = visitExp(exp, subst0)
-          TypedAst.Expression.Unary(op, e, subst0(tvar), loc)
+          TypedAst.Expression.Unary(op, e, subst0(tvar), Eff.Bot, loc)
 
         /*
          * Binary expression.
@@ -824,7 +834,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         case ResolvedAst.Expression.Binary(op, exp1, exp2, tvar, loc) =>
           val e1 = visitExp(exp1, subst0)
           val e2 = visitExp(exp2, subst0)
-          TypedAst.Expression.Binary(op, e1, e2, subst0(tvar), loc)
+          TypedAst.Expression.Binary(op, e1, e2, subst0(tvar), Eff.Bot, loc)
 
         /*
          * If-then-else expression.
@@ -833,7 +843,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           val e1 = visitExp(exp1, subst0)
           val e2 = visitExp(exp2, subst0)
           val e3 = visitExp(exp3, subst0)
-          TypedAst.Expression.IfThenElse(e1, e2, e3, subst0(tvar), loc)
+          TypedAst.Expression.IfThenElse(e1, e2, e3, subst0(tvar), Eff.Bot, loc)
 
         /*
          * Let expression.
@@ -841,7 +851,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         case ResolvedAst.Expression.Let(sym, exp1, exp2, tvar, loc) =>
           val e1 = visitExp(exp1, subst0)
           val e2 = visitExp(exp2, subst0)
-          TypedAst.Expression.Let(sym, e1, e2, subst0(tvar), loc)
+          TypedAst.Expression.Let(sym, e1, e2, subst0(tvar), Eff.Bot, loc)
 
         /*
          * LetRec expression.
@@ -849,7 +859,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         case ResolvedAst.Expression.LetRec(sym, exp1, exp2, tvar, loc) =>
           val e1 = visitExp(exp1, subst0)
           val e2 = visitExp(exp2, subst0)
-          TypedAst.Expression.LetRec(sym, e1, e2, subst0(tvar), loc)
+          TypedAst.Expression.LetRec(sym, e1, e2, subst0(tvar), Eff.Bot, loc)
 
         /*
          * Match expression.
@@ -863,7 +873,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
               val b = visitExp(exp, subst0)
               TypedAst.MatchRule(p, g, b)
           }
-          TypedAst.Expression.Match(e1, rs, subst0(tvar), loc)
+          TypedAst.Expression.Match(e1, rs, subst0(tvar), Eff.Bot, loc)
 
         /*
          * Switch expression.
@@ -872,68 +882,76 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           val rs = rules.map {
             case (cond, body) => (visitExp(cond, subst0), visitExp(body, subst0))
           }
-          TypedAst.Expression.Switch(rs, subst0(tvar), loc)
+          TypedAst.Expression.Switch(rs, subst0(tvar), Eff.Bot, loc)
 
         /*
          * Tag expression.
          */
         case ResolvedAst.Expression.Tag(sym, tag, exp, tvar, loc) =>
           val e = visitExp(exp, subst0)
-          TypedAst.Expression.Tag(sym, tag, e, subst0(tvar), loc)
+          TypedAst.Expression.Tag(sym, tag, e, subst0(tvar), Eff.Bot, loc)
 
         /*
          * Tuple expression.
          */
         case ResolvedAst.Expression.Tuple(elms, tvar, loc) =>
           val es = elms.map(e => visitExp(e, subst0))
-          TypedAst.Expression.Tuple(es, subst0(tvar), loc)
+          TypedAst.Expression.Tuple(es, subst0(tvar), Eff.Bot, loc)
 
         /*
          * Existential expression.
          */
         case ResolvedAst.Expression.Existential(fparam, exp, loc) =>
           val e = visitExp(exp, subst0)
-          TypedAst.Expression.Existential(visitParam(fparam), e, loc)
+          TypedAst.Expression.Existential(visitParam(fparam), e, Eff.Bot, loc)
 
         /*
          * Universal expression.
          */
         case ResolvedAst.Expression.Universal(fparam, exp, loc) =>
           val e = visitExp(exp, subst0)
-          TypedAst.Expression.Universal(visitParam(fparam), e, loc)
+          TypedAst.Expression.Universal(visitParam(fparam), e, Eff.Bot, loc)
 
         /*
          * Ascribe expression.
          */
-        case ResolvedAst.Expression.Ascribe(exp, tpe, loc) =>
-          // simply reassemble the nested expression.
-          visitExp(exp, subst0)
+        case ResolvedAst.Expression.Ascribe(exp, tpe, eff, loc) =>
+          val e = visitExp(exp, subst0)
+          TypedAst.Expression.Ascribe(e, tpe, eff, loc)
+
+        /*
+         * Cast expression.
+         */
+        case ResolvedAst.Expression.Cast(exp, tpe, eff, loc) =>
+          val e = visitExp(exp, subst0)
+          TypedAst.Expression.Cast(e, tpe, eff, loc)
+
 
         /*
          * Native Constructor expression.
          */
         case ResolvedAst.Expression.NativeConstructor(constructor, actuals, tpe, loc) =>
           val es = actuals.map(e => reassemble(e, program, subst0))
-          TypedAst.Expression.NativeConstructor(constructor, es, subst0(tpe), loc)
+          TypedAst.Expression.NativeConstructor(constructor, es, subst0(tpe), Eff.Bot, loc)
 
         /*
          * Native Field expression.
          */
         case ResolvedAst.Expression.NativeField(field, tpe, loc) =>
-          TypedAst.Expression.NativeField(field, subst0(tpe), loc)
+          TypedAst.Expression.NativeField(field, subst0(tpe), Eff.Bot, loc)
 
         /*
          * Native Method expression.
          */
         case ResolvedAst.Expression.NativeMethod(method, actuals, tpe, loc) =>
           val es = actuals.map(e => reassemble(e, program, subst0))
-          TypedAst.Expression.NativeMethod(method, es, subst0(tpe), loc)
+          TypedAst.Expression.NativeMethod(method, es, subst0(tpe), Eff.Bot, loc)
 
         /*
          * User Error expression.
          */
         case ResolvedAst.Expression.UserError(tvar, loc) =>
-          TypedAst.Expression.UserError(subst0(tvar), loc)
+          TypedAst.Expression.UserError(subst0(tvar), Eff.Bot, loc)
       }
 
       /**

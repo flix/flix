@@ -192,6 +192,7 @@ class Flix {
             Namer |>
             Resolver |>
             Typer |>
+            Effects |>
             PatternExhaustiveness |>
             Documentor |>
             Stratifier |>

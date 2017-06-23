@@ -176,51 +176,53 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
         case Expression.Int64(_, _) => tast.toSuccess
         case Expression.BigInt(_, _) => tast.toSuccess
         case Expression.Str(_, _) => tast.toSuccess
-        case Expression.Wild(_, _) => tast.toSuccess
-        case Expression.Var(_, _, _) => tast.toSuccess
-        case Expression.Ref(_, _, _) => tast.toSuccess
-        case Expression.Hook(_, _, _) => tast.toSuccess
-        case Expression.Lambda(_, body, _, _) => checkPats(body, root).map(const(tast))
-        case Expression.Apply(exp, args, tpe, loc) => for {
+        case Expression.Wild(_, _, _) => tast.toSuccess
+        case Expression.Var(_, _, _, _) => tast.toSuccess
+        case Expression.Ref(_, _, _, _) => tast.toSuccess
+        case Expression.Hook(_, _, _, _) => tast.toSuccess
+        case Expression.Lambda(_, body, _, _, _) => checkPats(body, root).map(const(tast))
+        case Expression.Apply(exp, args, tpe, _, loc) => for {
           _ <- checkPats(exp, root)
           _ <- seqM (args map { checkPats(_, root) })
         } yield tast
-        case Expression.Unary(_, exp, _, _) => checkPats(exp, root).map(const(tast))
-        case Expression.Binary(_, exp1, exp2, _, _) => for {
+        case Expression.Unary(_, exp, _, _, _) => checkPats(exp, root).map(const(tast))
+        case Expression.Binary(_, exp1, exp2, _, _, _) => for {
           _ <- checkPats(exp1, root)
           _ <- checkPats(exp2, root)
         } yield tast
-        case Expression.Let(_, exp1, exp2, _, _) => for {
+        case Expression.Let(_, exp1, exp2, _, _, _) => for {
           _ <- checkPats(exp1, root)
           _ <- checkPats(exp2, root)
         } yield tast
-        case Expression.LetRec(_, exp1, exp2, _, _) => for {
+        case Expression.LetRec(_, exp1, exp2, _, _, _) => for {
           _ <- checkPats(exp1, root)
           _ <- checkPats(exp2, root)
         } yield tast
-        case Expression.IfThenElse(exp1, exp2, exp3, _, _) => for {
+        case Expression.IfThenElse(exp1, exp2, exp3, _, _, _) => for {
           _ <- checkPats(exp1, root)
           _ <- checkPats(exp2, root)
           _ <- checkPats(exp3, root)
         } yield tast
-        case Expression.Match(exp, rules, _, _) => for {
+        case Expression.Match(exp, rules, _, _, _) => for {
           _ <- seqM (rules map {x => checkPats(x.exp, root)})
           _ <- checkRules(exp, rules, root)
         } yield tast
-        case Expression.Switch(rules, _, _) => for {
+        case Expression.Switch(rules, _, _, _) => for {
           _ <- seqM (rules map(x => for {
             _ <- checkPats(x._1, root)
             _ <- checkPats(x._2, root)
           } yield x))
         } yield tast
-        case Expression.Tag(_, _, exp, _, _) => checkPats(exp, root).map(const(tast))
-        case Expression.Tuple(elms, _, _) => seqM(elms map { checkPats(_, root) }).map(const(tast))
-        case Expression.Existential(_, exp, _) => checkPats(exp, root).map(const(tast))
-        case Expression.Universal(_, exp, _) => checkPats(exp, root).map(const(tast))
-        case Expression.NativeConstructor(_, args, _, _) => seqM(args map {checkPats(_, root)}).map(const(tast))
-        case Expression.NativeField(_, _, _) => tast.toSuccess
-        case Expression.NativeMethod(_, args, _, _) => seqM(args map {checkPats(_, root)}).map(const(tast))
-        case Expression.UserError(_, _) => tast.toSuccess
+        case Expression.Tag(_, _, exp, _, _, _) => checkPats(exp, root).map(const(tast))
+        case Expression.Tuple(elms, _, _, _) => seqM(elms map { checkPats(_, root) }).map(const(tast))
+        case Expression.Existential(_, exp, _, _) => checkPats(exp, root).map(const(tast))
+        case Expression.Universal(_, exp, _, _) => checkPats(exp, root).map(const(tast))
+        case Expression.Ascribe(exp, _, _, _) => checkPats(exp, root).map(const(tast))
+        case Expression.Cast(exp, _, _, _) => checkPats(exp, root).map(const(tast))
+        case Expression.NativeConstructor(_, args, _, _, _) => seqM(args map {checkPats(_, root)}).map(const(tast))
+        case Expression.NativeField(_, _, _, _) => tast.toSuccess
+        case Expression.NativeMethod(_, args, _, _, _) => seqM(args map {checkPats(_, root)}).map(const(tast))
+        case Expression.UserError(_, _, _) => tast.toSuccess
       }
     }
 

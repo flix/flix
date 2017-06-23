@@ -43,7 +43,7 @@ object ResolvedAst {
 
   object Declaration {
 
-    case class Definition(doc: Option[Ast.Documentation], ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, tparams: List[ResolvedAst.TypeParam], fparams: List[ResolvedAst.FormalParam], exp: ResolvedAst.Expression, sc: Scheme, loc: SourceLocation) extends ResolvedAst.Declaration
+    case class Definition(doc: Option[Ast.Documentation], ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, tparams: List[ResolvedAst.TypeParam], fparams: List[ResolvedAst.FormalParam], exp: ResolvedAst.Expression, sc: Scheme, eff: Eff, loc: SourceLocation) extends ResolvedAst.Declaration
 
     case class Enum(doc: Option[Ast.Documentation], sym: Symbol.EnumSym, tparams: List[ResolvedAst.TypeParam], cases: Map[String, ResolvedAst.Case], tpe: Type, loc: SourceLocation) extends ResolvedAst.Declaration
 
@@ -135,7 +135,9 @@ object ResolvedAst {
 
     case class Universal(fparam: ResolvedAst.FormalParam, exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Ascribe(exp: ResolvedAst.Expression, tpe: Type, loc: SourceLocation) extends ResolvedAst.Expression
+    case class Ascribe(exp: ResolvedAst.Expression, tpe: Type, eff: Eff, loc: SourceLocation) extends ResolvedAst.Expression
+
+    case class Cast(exp: ResolvedAst.Expression, tpe: Type, eff: Eff, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class NativeConstructor(method: Constructor[_], args: List[ResolvedAst.Expression], tpe: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 

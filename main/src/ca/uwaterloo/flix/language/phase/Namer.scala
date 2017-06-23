@@ -92,7 +92,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
       /*
        * Definition.
        */
-      case WeededAst.Declaration.Definition(doc, ann, mod, ident, tparams0, fparams0, exp, tpe, loc) =>
+      case WeededAst.Declaration.Definition(doc, ann, mod, ident, tparams0, fparams0, exp, tpe, eff, loc) =>
         // check if the definition already exists.
         val defns = prog0.definitions.getOrElse(ns0, Map.empty)
         defns.get(ident.name) match {
@@ -123,7 +123,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
               case e =>
                 val sym = Symbol.mkDefnSym(ns0, ident)
                 val sc = NamedAst.Scheme(tparams.map(_.tpe), Types.namer(tpe, tenv0))
-                val defn = NamedAst.Declaration.Definition(doc, ann, mod, sym, tparams, pms0.reverse, e, sc, loc)
+                val defn = NamedAst.Declaration.Definition(doc, ann, mod, sym, tparams, pms0.reverse, e, sc, eff, loc)
                 prog0.copy(definitions = prog0.definitions + (ns0 -> (defns + (ident.name -> defn))))
             }
           case Some(defn) =>
@@ -438,8 +438,12 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
             NamedAst.Expression.Universal(p, e, loc)
         }
 
-      case WeededAst.Expression.Ascribe(exp, tpe, loc) => namer(exp, env0, tenv0) map {
-        case e => NamedAst.Expression.Ascribe(e, Types.namer(tpe, tenv0), loc)
+      case WeededAst.Expression.Ascribe(exp, tpe, eff, loc) => namer(exp, env0, tenv0) map {
+        case e => NamedAst.Expression.Ascribe(e, Types.namer(tpe, tenv0), eff, loc)
+      }
+
+      case WeededAst.Expression.Cast(exp, tpe, eff, loc) => namer(exp, env0, tenv0) map {
+        case e => NamedAst.Expression.Cast(e, Types.namer(tpe, tenv0), eff, loc)
       }
 
       case WeededAst.Expression.NativeConstructor(className, args, loc) =>
@@ -504,7 +508,8 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
       case WeededAst.Expression.Tuple(elms, loc) => elms.flatMap(freeVars)
       case WeededAst.Expression.Existential(fparam, exp, loc) => filterBoundVars(freeVars(exp), List(fparam.ident))
       case WeededAst.Expression.Universal(fparam, exp, loc) => filterBoundVars(freeVars(exp), List(fparam.ident))
-      case WeededAst.Expression.Ascribe(exp, tpe, loc) => freeVars(exp)
+      case WeededAst.Expression.Ascribe(exp, tpe, eff, loc) => freeVars(exp)
+      case WeededAst.Expression.Cast(exp, tpe, eff, loc) => freeVars(exp)
       case WeededAst.Expression.NativeField(className, fieldName, loc) => Nil
       case WeededAst.Expression.NativeMethod(className, methodName, args, loc) => args.flatMap(freeVars)
       case WeededAst.Expression.NativeConstructor(className, args, loc) => args.flatMap(freeVars)
