@@ -124,7 +124,29 @@ package object ast {
   }
 
   object Time {
-    val Default: Time = Time(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+    val Default: Time = Time(parser = 0,
+      weeder = 0,
+      namer = 0,
+      resolver = 0,
+      typer = 0,
+      effects = 0,
+      patsExhaustive = 0,
+      documentor = 0,
+      stratifier = 0,
+      monomorph = 0,
+      simplifier = 0,
+      propertyGen = 0,
+      verifier = 0,
+      lambdaLift = 0,
+      tailrec = 0,
+      inliner = 0,
+      treeshaker = 0,
+      varNumbering = 0,
+      enumGen = 0,
+      codeGen = 0,
+      tupleGen = 0,
+      loadByteCode = 0,
+      solver = 0)
   }
 
   /**
@@ -145,6 +167,7 @@ package object ast {
                   verifier: Long,
                   lambdaLift: Long,
                   tailrec: Long,
+                  inliner: Long,
                   treeshaker: Long,
                   varNumbering: Long,
                   enumGen: Long,

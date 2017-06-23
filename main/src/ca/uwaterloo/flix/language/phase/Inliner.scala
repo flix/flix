@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 Magnus Madsen
+ * Copyright 2017 Magnus Madsen, Ifaz Kabir
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,11 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.SimplifiedAst
+import ca.uwaterloo.flix.language.{CompilationError, GenSym}
 import ca.uwaterloo.flix.language.ast.SimplifiedAst.Definition.Constant
-import ca.uwaterloo.flix.util.Validation
+import ca.uwaterloo.flix.language.ast.SimplifiedAst.{Expression, FreeVar, LoadExpression, StoreExpression}
+import ca.uwaterloo.flix.language.ast.{SimplifiedAst, Symbol}
+import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 import ca.uwaterloo.flix.util.Validation._
 
 /**
@@ -34,19 +35,224 @@ import ca.uwaterloo.flix.util.Validation._
 object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
 
   /**
-    * The maximum score of a function for it to be eligible for inlining.
-    */
-  val MaxScore = 25
-
-  /**
     * Performs inlining on the given AST `root`.
     */
   def run(root: SimplifiedAst.Root)(implicit flix: Flix): Validation[SimplifiedAst.Root, CompilationError] = {
+    implicit val genSym: GenSym = flix.genSym
 
-    // TODO: Implement.
+    val t = System.nanoTime()
 
-    root.toSuccess
+    val definitions = root.definitions
+
+    /**
+      * Computes the score of each function definition
+      */
+    val scores = definitions.foldLeft(Map.empty[Symbol.DefnSym, Int]) {
+      case (macc, (sym, constant)) =>
+        macc + (sym -> score(constant))
+    }
+
+    /**
+      * Transforms expressions inside definitions into optimized definitions.
+      */
+    val inlinedDefinitions = definitions.foldLeft(Map.empty[Symbol.DefnSym, Constant]) {
+      case (macc, (sym, constant)) =>
+        val newExp = inline(definitions, scores, constant.exp)
+        macc + (sym -> constant.copy(exp = newExp))
+    }
+
+    val e = System.nanoTime() - t
+    root.copy(definitions = inlinedDefinitions, time = root.time.copy(inliner = e)).toSuccess
+    //root.toSuccess
   }
+
+  /**
+    * Takes in a expression that has already been alpha-renamed and a list of args and let binds the arguments
+    */
+  def letBindArgs(exp: Expression, args: List[(Symbol.VarSym, Expression)]): Expression = {
+    args match {
+      case (sym, exp1) :: xs =>
+        val exp2 = letBindArgs(exp, xs)
+        Expression.Let(sym, exp1, exp2, exp2.tpe, exp1.loc)
+      case Nil =>
+        exp
+    }
+  }
+
+  /**
+    * Traverses through `exp` and performs inlining using
+    * definitions and sizes from `scores`
+    */
+  def inline(definitions: Map[Symbol.DefnSym, Constant], scores: Map[Symbol.DefnSym, Int], exp: Expression)(implicit genSym: GenSym): Expression = {
+    def visit = inline(definitions, scores, _: Expression)
+
+    exp match {
+      /* Inline application */
+      case Expression.ApplyRef(sym, args, tpe, loc) =>
+        //inline arguments
+        val args1 = args.map(visit)
+        definitions(sym) match {
+          case Constant(_, _, _, formals, exp1, _, _, _) =>
+            if (scores(sym) <= MaxScore) {
+              // Inline the body of the function
+              val sub = formals.map(f => f.sym -> Symbol.freshVarSym(f.sym)).toMap
+              val bindings = formals.map(f => sub(f.sym)).zip(args1)
+              letBindArgs(renameAndSubstitute(exp1, sub), bindings)
+            }
+            else {
+              // Do not inline the body -- score is too high
+              Expression.ApplyRef(sym, args1, tpe, loc)
+            }
+        }
+      /* Inline inside expression */
+      case Expression.MkClosureRef(ref, freeVars, tpe, loc) =>
+        Expression.MkClosureRef(ref, freeVars, tpe, loc)
+      case _: LoadExpression => exp
+      case _: StoreExpression => exp
+      case Expression.Unit => exp
+      case Expression.True => exp
+      case Expression.False => exp
+      case Expression.Char(_) => exp
+      case Expression.Float32(_) => exp
+      case Expression.Float64(_) => exp
+      case Expression.Int8(_) => exp
+      case Expression.Int16(_) => exp
+      case Expression.Int32(_) => exp
+      case Expression.Int64(_) => exp
+      case Expression.BigInt(_) => exp
+      case Expression.Str(_) => exp
+      case Expression.Var(_, _, _) => exp
+      case Expression.Ref(_, _, _) => exp
+      case Expression.Lambda(args, body, tpe, loc) =>
+        Expression.Lambda(args, visit(body), tpe, loc)
+      case Expression.Hook(_, _, _) => exp
+      case Expression.ApplyTail(sym, formals, actuals, tpe, loc) =>
+        Expression.ApplyTail(sym, formals, actuals.map(visit), tpe, loc)
+      case Expression.ApplyHook(hook, args, tpe, loc) =>
+        Expression.ApplyHook(hook, args.map(visit), tpe, loc)
+      case Expression.Apply(exp1, args, tpe, loc) =>
+        Expression.Apply(visit(exp1), args.map(visit), tpe, loc)
+      case Expression.Unary(op, exp1, tpe, loc) =>
+        Expression.Unary(op, visit(exp1), tpe, loc)
+      case Expression.Binary(op, exp1, exp2, tpe, loc) =>
+        Expression.Binary(op, visit(exp1), visit(exp2), tpe, loc)
+      case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
+        Expression.IfThenElse(visit(exp1), visit(exp2), visit(exp3), tpe, loc)
+      case Expression.Let(sym, exp1, exp2, tpe, loc) =>
+        Expression.Let(sym, visit(exp1), visit(exp2), tpe, loc)
+      case Expression.LetRec(sym, exp1, exp2, tpe, loc) => None
+        Expression.LetRec(sym, visit(exp1), visit(exp2), tpe, loc)
+      case Expression.Is(sym, tag, exp1, loc) =>
+        Expression.Is(sym, tag, visit(exp1), loc)
+      case Expression.Tag(sym, tag, exp1, tpe, loc) =>
+        Expression.Tag(sym, tag, visit(exp1), tpe, loc)
+      case Expression.Untag(sym, tag, exp1, tpe, loc) =>
+        Expression.Untag(sym, tag, visit(exp1), tpe, loc)
+      case Expression.Index(base, offset, tpe, loc) =>
+        Expression.Index(visit(base), offset, tpe, loc)
+      case Expression.Tuple(elms, tpe, loc) =>
+        Expression.Tuple(elms.map(visit), tpe, loc)
+      case Expression.Existential(fparam, exp1, loc) =>
+        Expression.Existential(fparam, visit(exp1), loc)
+      case Expression.Universal(fparam, exp1, loc) =>
+        Expression.Universal(fparam, visit(exp1), loc)
+      case Expression.NativeConstructor(constructor, args, tpe, loc) =>
+        Expression.NativeConstructor(constructor, args.map(visit), tpe, loc)
+      case Expression.NativeField(_, _, _) => exp
+      case Expression.NativeMethod(method, args, tpe, loc) =>
+        Expression.NativeMethod(method, args.map(visit), tpe, loc)
+      case Expression.UserError(_, _) => exp
+      case Expression.MatchError(_, _) => exp
+      case Expression.SwitchError(_, _) => exp
+      /* Error */
+      case Expression.MkClosure(_, _, _, _) =>
+        throw InternalCompilerException(s"Unexpected expression $exp after lambda lifting")
+    }
+  }
+
+  /**
+    * Performs alpha-renaming of an expression
+    */
+  def renameAndSubstitute(exp: Expression, sub: Map[Symbol.VarSym, Symbol.VarSym])(implicit genSym: GenSym): Expression = exp match {
+    case _: LoadExpression => exp
+    case _: StoreExpression => exp
+    case Expression.Unit => exp
+    case Expression.True => exp
+    case Expression.False => exp
+    case Expression.Char(_) => exp
+    case Expression.Float32(_) => exp
+    case Expression.Float64(_) => exp
+    case Expression.Int8(_) => exp
+    case Expression.Int16(_) => exp
+    case Expression.Int32(_) => exp
+    case Expression.Int64(_) => exp
+    case Expression.BigInt(_) => exp
+    case Expression.Str(_) => exp
+    case Expression.Var(sym, tpe, loc) => Expression.Var(sub(sym), tpe, loc)
+    case Expression.Ref(_, _, _) => exp
+    case Expression.Lambda(args, body, tpe, loc) =>
+      val formals = args.map(f => f.copy(sym = Symbol.freshVarSym(f.sym)))
+      val sub1 = args.map(f => f.sym).zip(formals.map(f => f.sym)).foldLeft(sub) { case (macc, (from, to)) => macc + (from -> to) }
+      Expression.Lambda(args = formals, renameAndSubstitute(body, sub1), tpe, loc)
+    case Expression.Hook(_, _, _) => exp
+    case Expression.MkClosureRef(ref, freeVars, tpe, loc) =>
+      Expression.MkClosureRef(ref, freeVars.map(fv => fv.copy(sym = sub(fv.sym))), tpe, loc)
+    case Expression.ApplyRef(sym, args, tpe, loc) =>
+      Expression.ApplyRef(sym, args.map(renameAndSubstitute(_, sub)), tpe, loc)
+    case Expression.ApplyTail(sym, formals, actuals, tpe, loc) =>
+      Expression.ApplyTail(sym, formals, actuals.map(renameAndSubstitute(_, sub)), tpe, loc)
+    case Expression.ApplyHook(hook, args, tpe, loc) =>
+      Expression.ApplyHook(hook, args.map(renameAndSubstitute(_, sub)), tpe, loc)
+    case Expression.Apply(exp1, args, tpe, loc) =>
+      Expression.Apply(renameAndSubstitute(exp1, sub), args.map(renameAndSubstitute(_, sub)), tpe, loc)
+    case Expression.Unary(op, exp1, tpe, loc) =>
+      Expression.Unary(op, renameAndSubstitute(exp1, sub), tpe, loc)
+    case Expression.Binary(op, exp1, exp2, tpe, loc) =>
+      Expression.Binary(op, renameAndSubstitute(exp1, sub), renameAndSubstitute(exp2, sub), tpe, loc)
+    case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
+      Expression.IfThenElse(renameAndSubstitute(exp1, sub), renameAndSubstitute(exp2, sub), renameAndSubstitute(exp3, sub), tpe, loc)
+    case Expression.Let(sym, exp1, exp2, tpe, loc) =>
+      val newSym = Symbol.freshVarSym(sym)
+      val sub1 = sub + (sym -> newSym)
+      Expression.Let(newSym, renameAndSubstitute(exp1, sub1), renameAndSubstitute(exp2, sub1), tpe, loc)
+    case Expression.LetRec(sym, exp1, exp2, tpe, loc) =>
+      val newSym = Symbol.freshVarSym(sym)
+      val sub1 = sub + (sym -> newSym)
+      Expression.LetRec(newSym, renameAndSubstitute(exp1, sub1), renameAndSubstitute(exp2, sub1), tpe, loc)
+    case Expression.Is(sym, tag, exp1, loc) =>
+      Expression.Is(sym, tag, renameAndSubstitute(exp1, sub), loc)
+    case Expression.Tag(sym, tag, exp1, tpe, loc) =>
+      Expression.Tag(sym, tag, renameAndSubstitute(exp1, sub), tpe, loc)
+    case Expression.Untag(sym, tag, exp1, tpe, loc) =>
+      Expression.Untag(sym, tag, renameAndSubstitute(exp1, sub), tpe, loc)
+    case Expression.Index(base, offset, tpe, loc) =>
+      Expression.Index(renameAndSubstitute(base, sub), offset, tpe, loc)
+    case Expression.Tuple(elms, tpe, loc) =>
+      Expression.Tuple(elms.map(renameAndSubstitute(_, sub)), tpe, loc)
+    case Expression.Existential(fparam, exp1, loc) =>
+      val newFparam = fparam.copy(sym = Symbol.freshVarSym(fparam.sym))
+      val sub1 = sub + (fparam.sym -> newFparam.sym)
+      Expression.Existential(newFparam, renameAndSubstitute(exp1, sub1), loc)
+    case Expression.Universal(fparam, exp1, loc) =>
+      val newFparam = fparam.copy(sym = Symbol.freshVarSym(fparam.sym))
+      val sub1 = sub + (fparam.sym -> newFparam.sym)
+      Expression.Universal(newFparam, renameAndSubstitute(exp1, sub1), loc)
+    case Expression.NativeConstructor(constructor, args, tpe, loc) =>
+      Expression.NativeConstructor(constructor, args.map(renameAndSubstitute(_, sub)), tpe, loc)
+    case Expression.NativeField(_, _, _) => exp
+    case Expression.NativeMethod(method, args, tpe, loc) =>
+      Expression.NativeMethod(method, args.map(renameAndSubstitute(_, sub)), tpe, loc)
+    case Expression.UserError(_, _) => exp
+    case Expression.MatchError(_, _) => exp
+    case Expression.SwitchError(_, _) => exp
+    case Expression.MkClosure(_, _, _, _) =>
+      throw InternalCompilerException(s"Unexpected expression $exp after lambda lifting")
+  }
+
+  /**
+    * The maximum score of a function for it to be eligible for inlining.
+    */
+  val MaxScore = 25
 
   /**
     * Returns the score of the given function definition `defn`.
@@ -58,6 +264,58 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     * - A UserError, MatchError, or SwitchError is worth zero points.
     * - An if-then-else statement is worth the value of the condition plus two times the sum of the consequent and alternative.
     */
-  def score(defn: Constant): Boolean = ??? // TODO
+  def score(definitions: Constant): Int = exprScore(definitions.exp)
 
+  /**
+    * Returns the score of the given expression `exp`.
+    */
+  def exprScore(exp: Expression): Int = {
+    exp match {
+      case _: LoadExpression => 1
+      case _: StoreExpression => 1
+      case Expression.Unit => 0
+      case Expression.True => 0
+      case Expression.False => 0
+      case Expression.Char(_) => 0
+      case Expression.Float32(_) => 0
+      case Expression.Float64(_) => 0
+      case Expression.Int8(_) => 0
+      case Expression.Int16(_) => 0
+      case Expression.Int32(_) => 0
+      case Expression.Int64(_) => 0
+      case Expression.BigInt(_) => 0
+      case Expression.Str(_) => 0
+      case Expression.Var(_, _, _) => 1
+      case Expression.Ref(_, _, _) => 1
+      case Expression.Lambda(args, body, _, _) => 1 + args.length + exprScore(body)
+      case Expression.Hook(_, _, _) => 1
+      case Expression.MkClosureRef(ref, freeVars, _, _) => 1 + freeVars.length + exprScore(ref)
+      case Expression.ApplyRef(sym, args, _, _) => 1 + args.map(exprScore).sum
+      case Expression.ApplyTail(sym, formals, actuals, _, _) =>
+        // Not to be inlined
+        MaxScore + 1 + formals.length + actuals.map(exprScore).sum
+      case Expression.ApplyHook(hook, args, _, _) => 1 + args.map(exprScore).sum
+      case Expression.Apply(exp1, args, _, _) => 1 + exprScore(exp1) + args.map(exprScore).sum
+      case Expression.Unary(op, exp1, _, _) => 1 + exprScore(exp1)
+      case Expression.Binary(op, exp1, exp2, _, _) => 1 + exprScore(exp1) + exprScore(exp2)
+      case Expression.IfThenElse(exp1, exp2, exp3, _, _) => exprScore(exp1) + (2 * (exprScore(exp2) + exprScore(exp3)))
+      case Expression.Let(sym, exp1, exp2, _, _) => 1 + exprScore(exp1) + exprScore(exp2)
+      case Expression.LetRec(sym, exp1, exp2, _, _) => 1 + exprScore(exp1) + exprScore(exp2)
+      case Expression.Is(sym, tag, exp1, loc) => 1 + exprScore(exp1)
+      case Expression.Tag(sym, tag, exp1, _, _) => 1 + exprScore(exp1)
+      case Expression.Untag(sym, tag, exp1, _, _) => 1 + exprScore(exp1)
+      case Expression.Index(base, offset, _, _) => 2
+      case Expression.Tuple(elms, _, _) => 1 + elms.map(exprScore).sum
+      case Expression.Existential(fparam, exp1, loc) => 2 + exprScore(exp1)
+      case Expression.Universal(fparam, exp1, loc) => 2 + exprScore(exp1)
+      case Expression.NativeConstructor(constructor, args, _, _) => 2 + args.map(exprScore).sum
+      case Expression.NativeField(field, _, _) => 2
+      case Expression.NativeMethod(method, args, _, _) => 2 + args.map(exprScore).sum
+      case Expression.UserError(_, _) => 0
+      case Expression.MatchError(_, _) => 0
+      case Expression.SwitchError(_, _) => 0
+      case Expression.MkClosure(_, _, _, _) =>
+        throw InternalCompilerException(s"Unexpected expression $exp after lambda lifting")
+    }
+  }
 }
