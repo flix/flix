@@ -83,7 +83,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
               val t = WeededAst.Type.Arrow(Nil, Types.weed(tpe), loc)
               List(WeededAst.Declaration.Definition(doc, as, mod, ident, tparams, Nil, e, t, eff, loc))
           }
-          case Some(Nil) => IllegalParameterList(loc).toFailure
           case Some(params) =>
             /*
              * Check for `DuplicateFormal`.
@@ -111,7 +110,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
               val ann = Ast.Annotations(List(Ast.Annotation.Law(loc)))
               val t = WeededAst.Type.Arrow(Nil, Types.weed(tpe), loc)
               List(WeededAst.Declaration.Definition(doc, ann, mod, ident, tparams.map(_.ident).toList, Nil, e, t, Eff.Pure, loc)).toSuccess
-            case Some(Nil) => IllegalParameterList(mkSL(sp1, sp2)).toFailure
             case Some(params) =>
               /*
                * Check for `DuplicateFormal`.

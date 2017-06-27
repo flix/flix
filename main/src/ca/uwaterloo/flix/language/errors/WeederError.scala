@@ -319,24 +319,6 @@ object WeederError {
   }
 
   /**
-    * An error raised to indicate an illegal parameter list.
-    *
-    * @param loc the location where the illegal parameter list occurs.
-    */
-  case class IllegalParameterList(loc: SourceLocation) extends WeederError {
-    val source: SourceInput = loc.source
-    val message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> A parameter list must contain at least one parameter or be omitted." << NewLine
-      vt << NewLine
-      vt << Code(loc, "empty parameter list.") << NewLine
-      vt << NewLine
-      vt << Underline("Tip:") << " Remove the parenthesis or add a parameter." << NewLine
-    }
-  }
-
-  /**
     * An error raised to indicate an illegal native field or method name.
     *
     * @param loc the location of the name.

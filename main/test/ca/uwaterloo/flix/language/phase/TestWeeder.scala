@@ -241,12 +241,6 @@ class TestWeeder extends FunSuite with TestUtils {
     expectError[WeederError.IllegalLattice](result)
   }
 
-  test("IllegalParameterList.01") {
-    val input = "def f(): Int = 42"
-    val result = new Flix().addStr(input).compile()
-    expectError[WeederError.IllegalParameterList](result)
-  }
-
   test("IllegalNativeFieldOrMethodName.01") {
     val input = "def f: Int = unsafe native field java"
     val result = new Flix().addStr(input).compile()
