@@ -541,7 +541,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
 
     def Apply: Rule1[ParsedAst.Expression] = rule {
-      Postfix ~ optional(ArgumentList ~ SP ~> ParsedAst.Expression.Apply)
+      Postfix ~ zeroOrMore(ArgumentList ~ SP ~> ParsedAst.Expression.Apply)
     }
 
     def Postfix: Rule1[ParsedAst.Expression] = rule {

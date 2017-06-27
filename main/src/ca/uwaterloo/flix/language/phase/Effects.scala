@@ -32,6 +32,10 @@ object Effects extends Phase[Root, Root] {
     * Performs effect inference on the given AST `root`.
     */
   def run(root: Root)(implicit flix: Flix): Validation[Root, EffectError] = {
+
+    // TODO: Effects currently disabled:
+    return root.toSuccess
+
     val timer = new Timer({
       /**
         * Infer effects for definitions.
