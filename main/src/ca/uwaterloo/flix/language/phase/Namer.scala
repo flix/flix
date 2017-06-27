@@ -108,22 +108,21 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
                 tvar.setText(p.name)
                 NamedAst.TypeParam(p, tvar, p.loc)
             }
+
+            // Compute the type environment.
             val tenv0 = tparams.map(p => p.name.name -> p.tpe).toMap
 
-            // Introduce a variable symbols for each formal parameter.
-            var pms0 = List.empty[NamedAst.FormalParam]
-            var env0 = Map.empty[String, Symbol.VarSym]
-            for (WeededAst.FormalParam(ident, mod, tpe, loc) <- fparams0) {
-              val sym = Symbol.freshVarSym(ident)
-              pms0 = NamedAst.FormalParam(sym, mod, Types.namer(tpe, tenv0), loc) :: pms0
-              env0 = env0 + (ident.name -> sym)
-            }
+            // Introduce variable symbols for each parameter.
+            val fparams = fparams0.map(p => Params.namer(p, tenv0))
+
+            // Compute the local variable environment.
+            val env0 = fparams.map(p => p.sym.text -> p.sym).toMap
 
             Expressions.namer(exp, env0, tenv0) map {
               case e =>
                 val sym = Symbol.mkDefnSym(ns0, ident)
                 val sc = NamedAst.Scheme(tparams.map(_.tpe), Types.namer(tpe, tenv0))
-                val defn = NamedAst.Declaration.Definition(doc, ann, mod, sym, tparams, pms0.reverse, e, sc, eff, loc)
+                val defn = NamedAst.Declaration.Definition(doc, ann, mod, sym, tparams, fparams, e, sc, eff, loc)
                 prog0.copy(definitions = prog0.definitions + (ns0 -> (defns + (ident.name -> defn))))
             }
           case Some(defn) =>
@@ -352,14 +351,11 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
           case (e, es) => NamedAst.Expression.Apply(e, es, Type.freshTypeVar(), loc)
         }
 
-      case WeededAst.Expression.Lambda(params, exp, loc) =>
-        // make a fresh variable symbol for each for parameter.
-        val syms = params map (ident => Symbol.freshVarSym(ident))
-        val env1 = (params zip syms) map {
-          case (ident, sym) => ident.name -> sym
-        }
+      case WeededAst.Expression.Lambda(fparams0, exp, loc) =>
+        val fparams = fparams0.map(p => Params.namer(p, tenv0))
+        val env1 = fparams.map(p => p.sym.text -> p.sym)
         namer(exp, env0 ++ env1, tenv0) map {
-          case e => NamedAst.Expression.Lambda(syms, e, Type.freshTypeVar(), loc)
+          case e => NamedAst.Expression.Lambda(fparams, e, Type.freshTypeVar(), loc)
         }
 
       case WeededAst.Expression.Unary(op, exp, loc) => namer(exp, env0, tenv0) map {
@@ -423,18 +419,16 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
         }
 
       case WeededAst.Expression.Existential(param, exp, loc) =>
-        val sym = Symbol.freshVarSym(param.ident)
-        namer(exp, env0 + (sym.text -> sym), tenv0) map {
+        val p = Params.namer(param, tenv0)
+        namer(exp, env0 + (p.sym.text -> p.sym), tenv0) map {
           case e =>
-            val p = NamedAst.FormalParam(sym, param.mod, Types.namer(param.tpe, tenv0), param.loc)
             NamedAst.Expression.Existential(p, e, loc)
         }
 
       case WeededAst.Expression.Universal(param, exp, loc) =>
-        val sym = Symbol.freshVarSym(param.ident)
-        namer(exp, env0 + (sym.text -> sym), tenv0) map {
+        val p = Params.namer(param, tenv0)
+        namer(exp, env0 + (p.sym.text -> p.sym), tenv0) map {
           case e =>
-            val p = NamedAst.FormalParam(sym, param.mod, Types.namer(param.tpe, tenv0), param.loc)
             NamedAst.Expression.Universal(p, e, loc)
         }
 
@@ -492,7 +486,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
       case WeededAst.Expression.BigInt(lit, loc) => Nil
       case WeededAst.Expression.Str(lit, loc) => Nil
       case WeededAst.Expression.Apply(lambda, args, loc) => freeVars(lambda) ++ args.flatMap(freeVars)
-      case WeededAst.Expression.Lambda(params, exp, loc) => filterBoundVars(freeVars(exp), params)
+      case WeededAst.Expression.Lambda(fparams, exp, loc) => filterBoundVars(freeVars(exp), fparams.map(_.ident))
       case WeededAst.Expression.Unary(op, exp, loc) => freeVars(exp)
       case WeededAst.Expression.Binary(op, exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
       case WeededAst.Expression.IfThenElse(exp1, exp2, exp3, loc) => freeVars(exp1) ++ freeVars(exp2) ++ freeVars(exp3)
@@ -701,6 +695,28 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
       */
     def namer(attr: WeededAst.Attribute, tenv0: Map[String, Type.Var])(implicit genSym: GenSym): NamedAst.Attribute = attr match {
       case WeededAst.Attribute(ident, tpe, loc) => NamedAst.Attribute(ident, Types.namer(tpe, tenv0), loc)
+    }
+
+  }
+
+  object Params {
+
+    /**
+      * Translates the given weeded formal parameter to a named formal parameter.
+      */
+    def namer(fparam: WeededAst.FormalParam, tenv0: Map[String, Type.Var])(implicit genSym: GenSym): NamedAst.FormalParam = fparam match {
+      case WeededAst.FormalParam(ident, mod, optType, loc) =>
+        // Generate a fresh variable symbol for the identifier.
+        val freshSym = Symbol.freshVarSym(ident)
+
+        // Compute the type of the formal parameter or use the type variable of the symbol.
+        val tpe = optType match {
+          case None => NamedAst.Type.Var(freshSym.tvar, loc)
+          case Some(t) => Types.namer(t, tenv0)
+        }
+
+        // Construct the formal parameter.
+        NamedAst.FormalParam(freshSym, mod, tpe, loc)
     }
 
   }

@@ -107,7 +107,7 @@ object NamedAst {
 
     case class Apply(lambda: NamedAst.Expression, args: List[NamedAst.Expression], tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
-    case class Lambda(params: List[Symbol.VarSym], exp: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
+    case class Lambda(fparams: List[NamedAst.FormalParam], exp: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
     case class Unary(op: UnaryOperator, exp: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 

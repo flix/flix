@@ -90,7 +90,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
             val formalsVal = checkDuplicateFormal(params)
             @@(annVal, modVal, formalsVal, expVal, effVal) map {
               case (as, mod, fs, e, eff) =>
-                val t = WeededAst.Type.Arrow(fs map (_.tpe), Types.weed(tpe), loc)
+                val t = WeededAst.Type.Arrow(fs map (_.tpe.get), Types.weed(tpe), loc)
                 List(WeededAst.Declaration.Definition(doc, as, mod, ident, tparams, fs, e, t, eff, loc))
             }
         }
@@ -118,7 +118,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
                 case fs =>
                   // Rewrite to Definition.
                   val ann = Ast.Annotations(List(Ast.Annotation.Law(loc)))
-                  val t = WeededAst.Type.Arrow(fs map (_.tpe), Types.weed(tpe), loc)
+                  val t = WeededAst.Type.Arrow(fs map (_.tpe.get), Types.weed(tpe), loc)
                   List(WeededAst.Declaration.Definition(doc, ann, mod, ident, tparams.map(_.ident).toList, fs, e, t, Eff.Pure, loc))
               }
           }
@@ -337,14 +337,17 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
               WeededAst.Expression.Apply(lambda, e :: es, loc)
           }
 
-        case ParsedAst.Expression.Lambda(sp1, params, exp, sp2) =>
+        case ParsedAst.Expression.Lambda(sp1, fparams0, exp, sp2) =>
           /*
            * Check for `DuplicateFormal`.
            */
-          checkDuplicateFormal2(params) flatMap {
+          checkDuplicateFormal2(fparams0) flatMap {
             case ps =>
+              val fparams = ps map {
+                ident => WeededAst.FormalParam(ident, Ast.Modifiers.Empty, None, ident.loc)
+              }
               visit(exp, unsafe) map {
-                case e => WeededAst.Expression.Lambda(params.toList, e, mkSL(sp1, sp2))
+                case e => WeededAst.Expression.Lambda(fparams, e, mkSL(sp1, sp2))
               }
           }
 
@@ -361,8 +364,10 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
               // Construct the body of the lambda expression.
               val varOrRef = WeededAst.Expression.VarOrRef(qname, loc)
               val rule = WeededAst.MatchRule(p, WeededAst.Expression.True(loc), e)
+
+              val fparam = WeededAst.FormalParam(ident, Ast.Modifiers.Empty, None, ident.loc)
               val body = WeededAst.Expression.Match(varOrRef, List(rule), loc)
-              WeededAst.Expression.Lambda(List(ident), body, loc)
+              WeededAst.Expression.Lambda(List(fparam), body, loc)
           }
 
         case ParsedAst.Expression.Unary(sp1, op, exp, sp2) =>
@@ -1214,7 +1219,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         case None =>
           seen += (ident.name -> param)
           Modifiers.weed(mods) map {
-            case mod => WeededAst.FormalParam(ident, mod, Types.weed(tpe), mkSL(sp1, sp2))
+            case mod => WeededAst.FormalParam(ident, mod, Some(Types.weed(tpe)), mkSL(sp1, sp2))
           }
         case Some(otherParam) =>
           val loc1 = mkSL(otherParam.sp1, otherParam.sp2)

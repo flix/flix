@@ -438,8 +438,8 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         /*
          * Lambda expression.
          */
-        case ResolvedAst.Expression.Lambda(args, body, tvar, loc) =>
-          val argumentTypes = args.map(_.tvar)
+        case ResolvedAst.Expression.Lambda(fparams, body, tvar, loc) =>
+          val argumentTypes = fparams.map(_.tpe)
           for (
             inferredBodyType <- visitExp(body);
             resultType <- unifyM(tvar, Type.mkArrow(argumentTypes, inferredBodyType), loc)
@@ -813,13 +813,13 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         /*
          * Lambda expression.
          */
-        case ResolvedAst.Expression.Lambda(params, exp, tvar, loc) =>
-          val lambdaArgs = params map {
-            case sym => TypedAst.FormalParam(sym, Ast.Modifiers.Empty, subst0(sym.tvar), sym.loc)
+        case ResolvedAst.Expression.Lambda(fparams, exp, tvar, loc) =>
+          val lambdaParams = fparams map {
+            case ResolvedAst.FormalParam(sym, mod, tpe, loc2) => TypedAst.FormalParam(sym, mod, subst0(tpe), loc2)
           }
           val lambdaBody = visitExp(exp, subst0)
           val lambdaType = subst0(tvar)
-          TypedAst.Expression.Lambda(lambdaArgs, lambdaBody, lambdaType, Eff.Bot, loc)
+          TypedAst.Expression.Lambda(lambdaParams, lambdaBody, lambdaType, Eff.Bot, loc)
 
         /*
          * Unary expression.

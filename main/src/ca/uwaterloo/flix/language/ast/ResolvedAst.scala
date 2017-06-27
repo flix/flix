@@ -111,7 +111,7 @@ object ResolvedAst {
 
     case class Apply(lambda: ResolvedAst.Expression, args: List[ResolvedAst.Expression], tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Lambda(params: List[Symbol.VarSym], exp: ResolvedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class Lambda(params: List[ResolvedAst.FormalParam], exp: ResolvedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Unary(op: UnaryOperator, exp: ResolvedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
