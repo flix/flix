@@ -600,7 +600,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
 
     def Lambda: Rule1[ParsedAst.Expression.Lambda] = rule {
-      SP ~ "(" ~ optWS ~ oneOrMore(Names.Variable).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ optWS ~ atomic("->") ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.Lambda
+      SP ~ "(" ~ optWS ~ zeroOrMore(Names.Variable).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ optWS ~ atomic("->") ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.Lambda
     }
 
     def LambdaMatch: Rule1[ParsedAst.Expression.LambdaMatch] = rule {
