@@ -409,7 +409,7 @@ object ParsedAst {
       * @param exp     the body expression.
       * @param sp2     the position of the last character in the expression.
       */
-    case class Lambda(sp1: SourcePosition, fparams: Seq[Name.Ident], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class Lambda(sp1: SourcePosition, fparams: Option[Seq[ParsedAst.FormalParam]], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Lambda Match Expression.
@@ -989,10 +989,10 @@ object ParsedAst {
     * @param sp1   the position of the first character in the formal parameter.
     * @param mod   the associated modifiers.
     * @param ident the name of the argument.
-    * @param tpe   the type of the argument.
+    * @param tpe   the optional type of the argument.
     * @param sp2   the position of the last character in the formal parameter.
     */
-  case class FormalParam(sp1: SourcePosition, mod: Seq[ParsedAst.Modifier], ident: Name.Ident, tpe: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst
+  case class FormalParam(sp1: SourcePosition, mod: Seq[ParsedAst.Modifier], ident: Name.Ident, tpe: Option[ParsedAst.Type], sp2: SourcePosition) extends ParsedAst
 
   /**
     * A pattern match rule consists of a pattern, an optional pattern guard, and a body expression.

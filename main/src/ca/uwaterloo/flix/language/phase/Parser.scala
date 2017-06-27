@@ -272,8 +272,14 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     zeroOrMore(Attribute).separatedBy(optWS ~ "," ~ optWS)
   }
 
-  def FormalParams: Rule1[Option[Seq[ParsedAst.FormalParam]]] = rule {
-    optional("(" ~ optWS ~ FormalParamList ~ optWS ~ ")")
+  def FormalParams: Rule1[Option[Seq[ParsedAst.FormalParam]]] = {
+    def FormalParamList: Rule1[Seq[ParsedAst.FormalParam]] = rule {
+      zeroOrMore(FormalParam).separatedBy(optWS ~ "," ~ optWS)
+    }
+
+    rule {
+      optional("(" ~ optWS ~ FormalParamList ~ optWS ~ ")")
+    }
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -595,12 +601,12 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
 
     def UnaryLambda: Rule1[ParsedAst.Expression.Lambda] = rule {
-      SP ~ Names.Variable ~ optWS ~ atomic("->") ~ optWS ~ Expression ~ SP ~> ((sp1: SourcePosition, arg: Name.Ident, body: ParsedAst.Expression, sp2: SourcePosition) =>
-        ParsedAst.Expression.Lambda(sp1, Seq(arg), body, sp2))
+      SP ~ FormalParam ~ optWS ~ atomic("->") ~ optWS ~ Expression ~ SP ~> ((sp1: SourcePosition, param: ParsedAst.FormalParam, body: ParsedAst.Expression, sp2: SourcePosition) =>
+        ParsedAst.Expression.Lambda(sp1, Some(Seq(param)), body, sp2))
     }
 
     def Lambda: Rule1[ParsedAst.Expression.Lambda] = rule {
-      SP ~ "(" ~ optWS ~ zeroOrMore(Names.Variable).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ optWS ~ atomic("->") ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.Lambda
+      SP ~ FormalParams ~ optWS ~ atomic("->") ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.Lambda
     }
 
     def LambdaMatch: Rule1[ParsedAst.Expression.LambdaMatch] = rule {
@@ -844,12 +850,8 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     "(" ~ optWS ~ oneOrMore(Pattern).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")"
   }
 
-  def FormalParamList: Rule1[Seq[ParsedAst.FormalParam]] = rule {
-    zeroOrMore(FormalParam).separatedBy(optWS ~ "," ~ optWS)
-  }
-
   def FormalParam: Rule1[ParsedAst.FormalParam] = rule {
-      SP ~ Modifiers ~ Names.Variable ~ ":" ~ optWS ~ Type ~ SP ~> ParsedAst.FormalParam
+    SP ~ Modifiers ~ Names.Variable ~ optional(optWS ~ ":" ~ optWS ~ Type) ~ SP ~> ParsedAst.FormalParam
   }
 
   def Annotations: Rule1[Seq[ParsedAst.AnnotationOrProperty]] = rule {
