@@ -41,7 +41,7 @@ namespace Map {
     /// Returns the empty map.
     /// `@{}` is syntactic sugar for `empty` (`@{} = empty()`).
     ///
-    def empty[k, v]: Map[k, v] = Map(Nil)
+    def empty[k, v](): Map[k, v] = Map(Nil)
 
     ///
     /// Returns the singleton map where key `k` is mapped to value `v`.

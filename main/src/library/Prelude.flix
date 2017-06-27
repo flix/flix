@@ -142,7 +142,7 @@ def assertEq![a](x: a, y: a): Bool = if (x == y) true else ???
 /// Returns a freshly generated integer.
 /// Note: Requires the --Ximpure feature flag.
 ///
-def genSym!: Int = genSymHook()
+def genSym!(): Int = genSymHook()
 
 ///
 /// Prints the given value `a`.

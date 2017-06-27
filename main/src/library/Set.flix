@@ -41,7 +41,7 @@ namespace Set {
     /// Returns the empty set.
     /// `#{}` is syntactic sugar for `empty` (`#{} = empty()`).
     ///
-    def empty[a]: Set[a] = Set(Nil)
+    def empty[a](): Set[a] = Set(Nil)
 
     ///
     /// Returns the singleton set containing `x`.

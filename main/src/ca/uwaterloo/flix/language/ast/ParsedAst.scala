@@ -115,7 +115,7 @@ object ParsedAst {
       * @param exp        the expression.
       * @param sp2        the position of the last character in the declaration.
       */
-    case class Definition(doc: Option[ParsedAst.Documentation], ann: Seq[ParsedAst.AnnotationOrProperty], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: Seq[ParsedAst.ContextBound], fparamsOpt: Option[Seq[ParsedAst.FormalParam]], tpe: ParsedAst.Type, eff: Option[ParsedAst.Effect], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Declaration
+    case class Definition(doc: Option[ParsedAst.Documentation], ann: Seq[ParsedAst.AnnotationOrProperty], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: Seq[ParsedAst.ContextBound], fparamsOpt: Seq[ParsedAst.FormalParam], tpe: ParsedAst.Type, eff: Option[ParsedAst.Effect], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
       * Law Declaration.
@@ -128,7 +128,7 @@ object ParsedAst {
       * @param exp        the expression.
       * @param sp2        the position of the last character in the declaration.
       */
-    case class Law(doc: Option[ParsedAst.Documentation], sp1: SourcePosition, ident: Name.Ident, tparams: Seq[ParsedAst.ContextBound], fparamsOpt: Option[Seq[ParsedAst.FormalParam]], tpe: ParsedAst.Type, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Declaration
+    case class Law(doc: Option[ParsedAst.Documentation], sp1: SourcePosition, ident: Name.Ident, tparams: Seq[ParsedAst.ContextBound], fparamsOpt: Seq[ParsedAst.FormalParam], tpe: ParsedAst.Type, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
       * Enum Declaration.
@@ -409,7 +409,7 @@ object ParsedAst {
       * @param exp     the body expression.
       * @param sp2     the position of the last character in the expression.
       */
-    case class Lambda(sp1: SourcePosition, fparams: Option[Seq[ParsedAst.FormalParam]], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class Lambda(sp1: SourcePosition, fparams: Seq[ParsedAst.FormalParam], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Lambda Match Expression.
@@ -567,7 +567,7 @@ object ParsedAst {
       * @param exp        the existentially quantified expression.
       * @param sp2        the position of the last character in the expression.
       */
-    case class Existential(sp1: SourcePosition, fparamsOpt: Option[Seq[ParsedAst.FormalParam]], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class Existential(sp1: SourcePosition, fparamsOpt: Seq[ParsedAst.FormalParam], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Universally Quantified Expression.
@@ -577,7 +577,7 @@ object ParsedAst {
       * @param exp        the universally quantified expression.
       * @param sp2        the position of the last character in the expression.
       */
-    case class Universal(sp1: SourcePosition, fparamsOpt: Option[Seq[ParsedAst.FormalParam]], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class Universal(sp1: SourcePosition, fparamsOpt: Seq[ParsedAst.FormalParam], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Ascribe Expression.

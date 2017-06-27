@@ -19,17 +19,17 @@ namespace Int16 {
     ///
     /// Returns the number of bits used to represent an `Int16`.
     ///
-    def size: Int32 = 16
+    def size(): Int32 = 16
 
     ///
     /// Returns the minimum number representable by an `Int16`.
     ///
-    def minValue: Int16 = 1i16 <<< (size() - 1)
+    def minValue(): Int16 = 1i16 <<< (size() - 1)
 
     ///
     /// Returns the maximum number representable by an `Int16`.
     ///
-    def maxValue: Int16 = ~~~minValue()
+    def maxValue(): Int16 = ~~~minValue()
 
     ///
     /// Returns the smaller of `x` and `y`.

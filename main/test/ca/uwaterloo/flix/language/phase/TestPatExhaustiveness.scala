@@ -378,12 +378,12 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
   }
 
   test("Expression.MatchLambda.01") {
-    val input = "def f: Option[Int] -> Int = match None -> 42"
+    val input = "def f(): Option[Int] -> Int = match None -> 42"
     expectError[NonExhaustiveMatchError](new Flix().addStr(input).compile())
   }
 
   test("Expression.MatchLambda.02") {
-    val input = "def f: Option[Int] -> Int = match Some(x) -> x"
+    val input = "def f(): Option[Int] -> Int = match Some(x) -> x"
     expectError[NonExhaustiveMatchError](new Flix().addStr(input).compile())
   }
 

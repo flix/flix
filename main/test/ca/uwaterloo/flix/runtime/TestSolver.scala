@@ -500,7 +500,7 @@ class TestSolver extends FunSuite {
     val s =
       """rel A(x: Int)
         |
-        |def f: Int = 42
+        |def f(): Int = 42
         |
         |A(f()).
       """.stripMargin
@@ -516,7 +516,7 @@ class TestSolver extends FunSuite {
     val s =
       """rel A(x: Int, y: Int)
         |
-        |def f: Int = 42
+        |def f(): Int = 42
         |def g(x: Int): Int = 21 + x
         |
         |A(f(), g(21)).
@@ -533,7 +533,7 @@ class TestSolver extends FunSuite {
     val s =
       """rel A(x: Int, y: Int, z: Int)
         |
-        |def f: Int = 42
+        |def f(): Int = 42
         |def g(x: Int): Int = 21 + x
         |def h(x: Int, y: Int): Int = f() + g(x) + y
         |
