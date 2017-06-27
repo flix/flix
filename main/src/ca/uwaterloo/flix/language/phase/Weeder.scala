@@ -75,24 +75,13 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         val effVal = Effects.weed(effOpt)
 
         /*
-         * Check for `IllegalParameterList`.
-         */
-        paramsOpt match {
-          case None => @@(annVal, modVal, expVal, effVal) map {
-            case (as, mod, e, eff) =>
-              val t = WeededAst.Type.Arrow(Nil, Types.weed(tpe), loc)
-              List(WeededAst.Declaration.Definition(doc, as, mod, ident, tparams, Nil, e, t, eff, loc))
-          }
-          case Some(params) =>
-            /*
-             * Check for `DuplicateFormal`.
-             */
-            val formalsVal = checkDuplicateFormal(params)
-            @@(annVal, modVal, formalsVal, expVal, effVal) map {
-              case (as, mod, fs, e, eff) =>
-                val t = WeededAst.Type.Arrow(fs map (_.tpe.get), Types.weed(tpe), loc)
-                List(WeededAst.Declaration.Definition(doc, as, mod, ident, tparams, fs, e, t, eff, loc))
-            }
+          * Check for `DuplicateFormal`.
+          */
+        val formalsVal = Formals.weed(paramsOpt.getOrElse(Seq.empty), requiresType = true)
+        @@(annVal, modVal, formalsVal, expVal, effVal) map {
+          case (as, mod, fs, e, eff) =>
+            val t = WeededAst.Type.Arrow(fs map (_.tpe.get), Types.weed(tpe), loc)
+            List(WeededAst.Declaration.Definition(doc, as, mod, ident, tparams, fs, e, t, eff, loc))
         }
 
       case ParsedAst.Declaration.Law(docOpt, sp1, ident, tparams, paramsOpt, tpe, exp, sp2) =>
@@ -101,27 +90,16 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         val mod = Ast.Modifiers.Empty
 
         /*
-         * Check for `IllegalParameterList`.
+         * Check for `DuplicateFormal`.
          */
-        Expressions.weed(exp) flatMap {
-          case e => paramsOpt match {
-            case None =>
-              // Rewrite to Definition.
-              val ann = Ast.Annotations(List(Ast.Annotation.Law(loc)))
-              val t = WeededAst.Type.Arrow(Nil, Types.weed(tpe), loc)
-              List(WeededAst.Declaration.Definition(doc, ann, mod, ident, tparams.map(_.ident).toList, Nil, e, t, Eff.Pure, loc)).toSuccess
-            case Some(params) =>
-              /*
-               * Check for `DuplicateFormal`.
-               */
-              checkDuplicateFormal(params) map {
-                case fs =>
-                  // Rewrite to Definition.
-                  val ann = Ast.Annotations(List(Ast.Annotation.Law(loc)))
-                  val t = WeededAst.Type.Arrow(fs map (_.tpe.get), Types.weed(tpe), loc)
-                  List(WeededAst.Declaration.Definition(doc, ann, mod, ident, tparams.map(_.ident).toList, fs, e, t, Eff.Pure, loc))
-              }
-          }
+        for {
+          fs <- Formals.weed(paramsOpt.getOrElse(Seq.empty), requiresType = true)
+          e <- Expressions.weed(exp)
+        } yield {
+          // Rewrite to Definition.
+          val ann = Ast.Annotations(List(Ast.Annotation.Law(loc)))
+          val t = WeededAst.Type.Arrow(fs map (_.tpe.get), Types.weed(tpe), loc)
+          List(WeededAst.Declaration.Definition(doc, ann, mod, ident, tparams.map(_.ident).toList, fs, e, t, Eff.Pure, loc))
         }
 
       case ParsedAst.Declaration.Enum(docOpt, sp1, ident, tparams0, cases, sp2) =>
@@ -342,7 +320,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
            * Check for `DuplicateFormal`.
            */
           for {
-            fs <- checkDuplicateFormal(fparams0.getOrElse(Seq.empty))
+            fs <- Formals.weed(fparams0.getOrElse(Seq.empty), requiresType = false)
             e <- visit(exp, unsafe)
           } yield WeededAst.Expression.Lambda(fs, e, mkSL(sp1, sp2))
 
@@ -561,7 +539,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
                 /*
                  * Check for `DuplicateFormal`.
                  */
-                checkDuplicateFormal(params) map {
+                Formals.weed(params, requiresType = true) map {
                   case ps =>
                     /*
                      * Rewrites the multi-parameter existential to nested single-parameter existentials.
@@ -585,7 +563,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
                 /*
                  * Check for `DuplicateFormal`.
                  */
-                checkDuplicateFormal(params) map {
+                Formals.weed(params, requiresType = true) map {
                   case ps =>
                     /*
                      * Rewrites the multi-parameter universal to nested single-parameter universals.
@@ -1052,6 +1030,37 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
   }
 
+  object Formals {
+
+    /**
+      * Weeds the given list of formal parameter `fparams`.
+      */
+    def weed(fparams: Seq[ParsedAst.FormalParam], requiresType: Boolean): Validation[List[WeededAst.FormalParam], WeederError] = {
+      val seen = mutable.Map.empty[String, ParsedAst.FormalParam]
+      val results = fparams map {
+        case param@ParsedAst.FormalParam(sp1, mods, ident, optType, sp2) => seen.get(ident.name) match {
+          case None =>
+            seen += (ident.name -> param)
+            Modifiers.weed(mods) flatMap {
+              case mod =>
+                if (requiresType && optType.isEmpty)
+                  IllegalFormalParameter(ident.name, mkSL(sp1, sp2)).toFailure
+                else
+                  WeededAst.FormalParam(ident, mod, optType.map(Types.weed), mkSL(sp1, sp2)).toSuccess
+            }
+          case Some(otherParam) =>
+            val loc1 = mkSL(otherParam.sp1, otherParam.sp2)
+            val loc2 = mkSL(param.sp1, param.sp2)
+            DuplicateFormalParam(ident.name, loc1, loc2).toFailure
+        }
+      }
+
+      // Sequence the results.
+      seqM(results)
+    }
+
+  }
+
   /**
     * Returns an apply expression for the given fully-qualified name `fqn` and the given arguments `args`.
     */
@@ -1200,26 +1209,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           val loc1 = mkSL(otherAttr.sp1, otherAttr.sp2)
           val loc2 = mkSL(attr.sp1, attr.sp2)
           DuplicateAttribute(ident.name, loc1, loc2).toFailure
-      }
-    })
-  }
-
-  /**
-    * Checks that no formal parameters are repeated.
-    */
-  private def checkDuplicateFormal(params: Seq[ParsedAst.FormalParam]): Validation[List[WeededAst.FormalParam], WeederError] = {
-    val seen = mutable.Map.empty[String, ParsedAst.FormalParam]
-    @@(params.map {
-      case param@ParsedAst.FormalParam(sp1, mods, ident, tpe, sp2) => seen.get(ident.name) match {
-        case None =>
-          seen += (ident.name -> param)
-          Modifiers.weed(mods) map {
-            case mod => WeededAst.FormalParam(ident, mod, tpe.map(Types.weed), mkSL(sp1, sp2))
-          }
-        case Some(otherParam) =>
-          val loc1 = mkSL(otherParam.sp1, otherParam.sp2)
-          val loc2 = mkSL(param.sp1, param.sp2)
-          DuplicateFormalParam(ident.name, loc1, loc2).toFailure
       }
     })
   }
