@@ -263,10 +263,11 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
             es <- seqM(args map visit)
           } yield ResolvedAst.Expression.Apply(e, es, tvar, loc)
 
-        case NamedAst.Expression.Lambda(params, exp, tvar, loc) =>
+        case NamedAst.Expression.Lambda(fparams, exp, tvar, loc) =>
           for {
             e <- visit(exp)
-          } yield ResolvedAst.Expression.Lambda(params, e, tvar, loc)
+            fs <- seqM(fparams.map(fparam => Params.resolve(fparam, ns0, prog0)))
+          } yield ResolvedAst.Expression.Lambda(fs, e, tvar, loc)
 
         case NamedAst.Expression.Unary(op, exp, tvar, loc) =>
           for {

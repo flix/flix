@@ -193,6 +193,25 @@ object WeederError {
   }
 
   /**
+    * An error raised to indicate that the formal parameter lacks a type declaration.
+    *
+    * @param name the name of the parameter.
+    * @param loc  the location of the formal parameter.
+    */
+  case class IllegalFormalParameter(name: String, loc: SourceLocation) extends WeederError {
+    val source: SourceInput = loc.source
+    val message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> The formal parameter '" << Red(name) << "' must have a declared type." << NewLine
+      vt << NewLine
+      vt << Code(loc, "has no declared type.") << NewLine
+      vt << NewLine
+      vt << Underline("Tip:") << " Explicitly declare the type of the formal parameter." << NewLine
+    }
+  }
+
+  /**
     * An error raised to indicate that an effect is unknown.
     *
     * @param loc the location where the illegal effect occurs.
