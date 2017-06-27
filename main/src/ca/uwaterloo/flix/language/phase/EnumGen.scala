@@ -244,6 +244,9 @@ object EnumGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     val implementedInterfaces = Array(decorate(superType))
     visitor.visit(JavaVersion, ACC_PUBLIC + ACC_FINAL, decorate(className), null, superClass, implementedInterfaces)
 
+    // Source of the class
+    visitor.visitSource(decorate(className), null)
+
     // Generate value field
     compileField(visitor, "value", getWrappedTypeDescriptor(fType), isStatic = false, isPrivate = true)
 

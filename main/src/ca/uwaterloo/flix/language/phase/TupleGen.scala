@@ -193,6 +193,9 @@ object TupleGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
     // Initialize the visitor to create a class.
     visitor.visit(JavaVersion, ACC_PUBLIC + ACC_FINAL, decorate(qualName), null, superDescriptor, interfaceDesctiptors)
 
+    // Source of the class
+    visitor.visitSource(decorate(qualName), null)
+
     fields.zipWithIndex.foreach{ case (field, ind) =>
       // Descriptor of the field
       val desc = getWrappedTypeDescriptor(field)
