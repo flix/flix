@@ -205,9 +205,9 @@ object WeederError {
       vt << Line(kind, source.format) << NewLine
       vt << ">> The formal parameter '" << Red(name) << "' must have a declared type." << NewLine
       vt << NewLine
-      vt << Code(loc, "no declared type.") << NewLine
+      vt << Code(loc, "has no declared type.") << NewLine
       vt << NewLine
-      vt << Underline("Tip:") << " Declare the type of the formal parameter." << NewLine
+      vt << Underline("Tip:") << " Explicitly declare the type of the formal parameter." << NewLine
     }
   }
 

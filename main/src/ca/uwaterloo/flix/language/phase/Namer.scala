@@ -112,10 +112,10 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
             // Compute the type environment.
             val tenv0 = tparams.map(p => p.name.name -> p.tpe).toMap
 
-            // Introduce variable symbols for each parameter.
+            // Introduce variable symbols for each formal parameter.
             val fparams = fparams0.map(p => Params.namer(p, tenv0))
 
-            // Compute the local variable environment.
+            // Compute the local variable environment from the formal parameters.
             val env0 = fparams.map(p => p.sym.text -> p.sym).toMap
 
             Expressions.namer(exp, env0, tenv0) map {
