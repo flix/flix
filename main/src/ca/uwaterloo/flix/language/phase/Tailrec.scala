@@ -75,7 +75,7 @@ object Tailrec extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       /*
        * ApplyRef: Check if the `ApplyRef` is a tail recursive call.
        */
-      case SimplifiedAst.Expression.ApplyRef(name, args, tpe, loc) =>
+      case SimplifiedAst.Expression.ApplyDef(name, args, tpe, loc) =>
         if (defn.sym == name) {
           // Case 1: Tail-recursive call. Replace node.
           SimplifiedAst.Expression.ApplyTail(name, defn.formals, args, tpe, loc)

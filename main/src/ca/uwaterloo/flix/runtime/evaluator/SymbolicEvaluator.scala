@@ -156,7 +156,7 @@ object SymbolicEvaluator {
       /**
         * Closure.
         */
-      case Expression.MkClosureRef(ref, freeVars, _, _) =>
+      case Expression.MkClosureDef(ref, freeVars, _, _) =>
         // Save the values of the free variables in a list.
         // When the closure is called, these values will be provided at the beginning of the argument list.
         val bindings = freeVars.map(f => env0(f.sym))
@@ -167,7 +167,7 @@ object SymbolicEvaluator {
       /**
         * Apply Reference.
         */
-      case Expression.ApplyRef(name, args, _, _) =>
+      case Expression.ApplyDef(name, args, _, _) =>
         // Lookup the reference.
         val defn = root.defs(name)
         // Evaluate all the arguments.
@@ -688,7 +688,7 @@ object SymbolicEvaluator {
         * LetRec-binding.
         */
       case Expression.LetRec(sym, exp1, exp2, _, _) => exp1 match {
-        case Expression.MkClosureRef(ref, freeVars, _, _) =>
+        case Expression.MkClosureDef(ref, freeVars, _, _) =>
           // Save the values of the free variables in a list.
           // When the closure is called, these values will be provided at the beginning of the argument list.
           val bindings = Array.ofDim[SymVal](freeVars.length)

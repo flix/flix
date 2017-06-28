@@ -128,8 +128,8 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.Lambda(args, body, tpe, loc) => visitExp(body)
       case Expression.Hook(hook, tpe, loc) => Set(hook.sym)
       case Expression.MkClosure(lambda, freeVars, tpe, loc) => visitExp(lambda)
-      case Expression.MkClosureRef(ref, freeVars, tpe, loc) => visitExp(ref)
-      case Expression.ApplyRef(sym, args, tpe, loc) => visitExps(args) + sym
+      case Expression.MkClosureDef(ref, freeVars, tpe, loc) => visitExp(ref)
+      case Expression.ApplyDef(sym, args, tpe, loc) => visitExps(args) + sym
       case Expression.ApplyTail(sym, formals, actuals, tpe, loc) => visitExps(actuals) + sym
       case Expression.ApplyHook(hook, args, tpe, loc) => visitExps(args)
       case Expression.Apply(exp, args, tpe, loc) => visitExps(args) ++ visitExp(exp)

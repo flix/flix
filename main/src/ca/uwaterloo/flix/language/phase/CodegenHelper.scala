@@ -589,8 +589,8 @@ object CodegenHelper {
       case Expression.Str(lit) => Set.empty
       case Expression.Var(sym, tpe, loc) => Set.empty
       case Expression.Def(name, tpe, loc) => Set.empty
-      case Expression.MkClosureRef(ref, freeVars, tpe, loc) => Set(tpe)
-      case Expression.ApplyRef(name, args, tpe, loc) => args.flatMap(visit).toSet
+      case Expression.MkClosureDef(ref, freeVars, tpe, loc) => Set(tpe)
+      case Expression.ApplyDef(name, args, tpe, loc) => args.flatMap(visit).toSet
       case Expression.ApplyTail(name, formals, actuals, tpe, loc) => actuals.flatMap(visit).toSet
       case Expression.ApplyHook(hook, args, tpe, loc) => args.flatMap(visit).toSet
       case Expression.ApplyClosure(exp, args, tpe, loc) => visit(exp) ++ args.flatMap(visit)
@@ -648,8 +648,8 @@ object CodegenHelper {
     case Expression.Str(lit) => Nil
     case Expression.Var(sym, tpe, loc) => Nil
     case Expression.Def(name, tpe, loc) => Nil
-    case Expression.MkClosureRef(ref, freeVars, tpe, loc) => Nil
-    case Expression.ApplyRef(name, args, tpe, loc) => args.flatMap(findEnumCases)
+    case Expression.MkClosureDef(ref, freeVars, tpe, loc) => Nil
+    case Expression.ApplyDef(name, args, tpe, loc) => args.flatMap(findEnumCases)
     case Expression.ApplyTail(name, formals, actuals, tpe, loc) => actuals.flatMap(findEnumCases)
     case Expression.ApplyHook(hook, args, tpe, loc) => args.flatMap(findEnumCases)
     case Expression.ApplyClosure(exp, args, tpe, loc) => findEnumCases(exp) ::: args.flatMap(findEnumCases)

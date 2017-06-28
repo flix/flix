@@ -73,7 +73,7 @@ object PrettyPrinter {
 
         case Expression.Hook(hook, tpe, loc) => vt.text(hook.sym.toString)
 
-        case Expression.MkClosureRef(ref, freeVars, tpe, loc) =>
+        case Expression.MkClosureDef(ref, freeVars, tpe, loc) =>
           vt.text("MkClosureRef(")
           visitExp(ref)
           vt.text(", [")
@@ -93,7 +93,7 @@ object PrettyPrinter {
           }
           vt.text("])")
 
-        case Expression.ApplyRef(sym, args, tpe, loc) =>
+        case Expression.ApplyDef(sym, args, tpe, loc) =>
           fmtSym(sym, vt)
           vt.text("(")
           for (arg <- args) {

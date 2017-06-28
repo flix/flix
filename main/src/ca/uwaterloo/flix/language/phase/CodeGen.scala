@@ -323,7 +323,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
       val targetTpe = declarations(name)
       visitor.visitMethodInsn(INVOKESTATIC, decorate(FlixClassName(name.prefix)), name.suffix, descriptor(targetTpe, interfaces), false)
 
-    case Expression.MkClosureRef(ref, freeVars, tpe, loc) =>
+    case Expression.MkClosureDef(ref, freeVars, tpe, loc) =>
       // We create a closure the same way Java 8 does. We use InvokeDynamic and the LambdaMetafactory. The idea is that
       // LambdaMetafactory creates a CallSite (linkage), and then the CallSite target is invoked (capture) to create a
       // function object. Later, at ApplyRef, the function object is called (invocation).
@@ -378,7 +378,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
       // Finally, generate the InvokeDynamic instruction.
       visitor.visitInvokeDynamicInsn(invokedName, invokedType, bsmHandle, bsmArgs: _*)
 
-    case Expression.ApplyRef(name, args, _, _) =>
+    case Expression.ApplyDef(name, args, _, _) =>
       // We know what function we're calling, so we can look up its signature.
       val targetTpe = declarations(name)
 

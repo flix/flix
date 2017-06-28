@@ -181,13 +181,13 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
         throw InternalCompilerException("Hooks should have been inlined into ApplyHooks or wrapped inside lambdas.")
       case SimplifiedAst.Expression.MkClosure(lambda, freeVars, tpe, loc) =>
         throw InternalCompilerException("MkClosure should have been replaced by MkClosureRef after lambda lifting.")
-      case SimplifiedAst.Expression.MkClosureRef(ref, freeVars, tpe, loc) =>
+      case SimplifiedAst.Expression.MkClosureDef(ref, freeVars, tpe, loc) =>
         val e = toExecutable(ref)
         val fvs = freeVars.map(CreateExecutableAst.toExecutable).toArray
-        ExecutableAst.Expression.MkClosureRef(e.asInstanceOf[ExecutableAst.Expression.Def], fvs, tpe, loc)
-      case SimplifiedAst.Expression.ApplyRef(name, args, tpe, loc) =>
+        ExecutableAst.Expression.MkClosureDef(e.asInstanceOf[ExecutableAst.Expression.Def], fvs, tpe, loc)
+      case SimplifiedAst.Expression.ApplyDef(name, args, tpe, loc) =>
         val argsArray = args.map(toExecutable)
-        ExecutableAst.Expression.ApplyRef(name, argsArray, tpe, loc)
+        ExecutableAst.Expression.ApplyDef(name, argsArray, tpe, loc)
       case SimplifiedAst.Expression.ApplyTail(name, formals, actuals, tpe, loc) =>
         ExecutableAst.Expression.ApplyTail(name, formals.map(CreateExecutableAst.toExecutable), actuals.map(toExecutable), tpe, loc)
       case SimplifiedAst.Expression.ApplyHook(hook, args, tpe, loc) =>

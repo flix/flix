@@ -87,7 +87,7 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
 
     exp match {
       /* Inline application */
-      case Expression.ApplyRef(sym, args, tpe, loc) =>
+      case Expression.ApplyDef(sym, args, tpe, loc) =>
         //inline arguments
         val args1 = args.map(visit)
         definitions(sym) match {
@@ -100,12 +100,12 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
             }
             else {
               // Do not inline the body -- score is too high
-              Expression.ApplyRef(sym, args1, tpe, loc)
+              Expression.ApplyDef(sym, args1, tpe, loc)
             }
         }
       /* Inline inside expression */
-      case Expression.MkClosureRef(ref, freeVars, tpe, loc) =>
-        Expression.MkClosureRef(ref, freeVars, tpe, loc)
+      case Expression.MkClosureDef(ref, freeVars, tpe, loc) =>
+        Expression.MkClosureDef(ref, freeVars, tpe, loc)
       case Expression.Unit => exp
       case Expression.True => exp
       case Expression.False => exp
@@ -190,10 +190,10 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       val sub1 = args.map(f => f.sym).zip(formals.map(f => f.sym)).foldLeft(sub) { case (macc, (from, to)) => macc + (from -> to) }
       Expression.Lambda(args = formals, renameAndSubstitute(body, sub1), tpe, loc)
     case Expression.Hook(_, _, _) => exp
-    case Expression.MkClosureRef(ref, freeVars, tpe, loc) =>
-      Expression.MkClosureRef(ref, freeVars.map(fv => fv.copy(sym = sub(fv.sym))), tpe, loc)
-    case Expression.ApplyRef(sym, args, tpe, loc) =>
-      Expression.ApplyRef(sym, args.map(renameAndSubstitute(_, sub)), tpe, loc)
+    case Expression.MkClosureDef(ref, freeVars, tpe, loc) =>
+      Expression.MkClosureDef(ref, freeVars.map(fv => fv.copy(sym = sub(fv.sym))), tpe, loc)
+    case Expression.ApplyDef(sym, args, tpe, loc) =>
+      Expression.ApplyDef(sym, args.map(renameAndSubstitute(_, sub)), tpe, loc)
     case Expression.ApplyTail(sym, formals, actuals, tpe, loc) =>
       Expression.ApplyTail(sym, formals, actuals.map(renameAndSubstitute(_, sub)), tpe, loc)
     case Expression.ApplyHook(hook, args, tpe, loc) =>
@@ -282,8 +282,8 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.Def(_, _, _) => 1
       case Expression.Lambda(args, body, _, _) => 1 + args.length + exprScore(body)
       case Expression.Hook(_, _, _) => 1
-      case Expression.MkClosureRef(ref, freeVars, _, _) => 1 + freeVars.length + exprScore(ref)
-      case Expression.ApplyRef(sym, args, _, _) => 1 + args.map(exprScore).sum
+      case Expression.MkClosureDef(ref, freeVars, _, _) => 1 + freeVars.length + exprScore(ref)
+      case Expression.ApplyDef(sym, args, _, _) => 1 + args.map(exprScore).sum
       case Expression.ApplyTail(sym, formals, actuals, _, _) =>
         // Not to be inlined
         MaxScore + 1 + formals.length + actuals.map(exprScore).sum

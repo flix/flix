@@ -46,9 +46,9 @@ object Interpreter {
       case Some(v) => v
     }
     case Expression.Def(name, _, _) => eval(root.defs(name).exp, root, env0)
-    case Expression.MkClosureRef(ref, freeVars, _, _) =>
+    case Expression.MkClosureDef(ref, freeVars, _, _) =>
       allocateClosure(ref, freeVars, env0)
-    case Expression.ApplyRef(sym, args0, _, _) =>
+    case Expression.ApplyDef(sym, args0, _, _) =>
       val args = evalArgs(args0, root, env0)
       Linker.link(sym, root).invoke(args.toArray)
     case Expression.ApplyTail(sym, _, args0, _, _) =>
@@ -89,7 +89,7 @@ object Interpreter {
       eval(exp2, root, newEnv)
 
     case Expression.LetRec(sym, exp1, exp2, _, _) => exp1 match {
-      case Expression.MkClosureRef(ref, freeVars, _, _) =>
+      case Expression.MkClosureDef(ref, freeVars, _, _) =>
         // Allocate a circular closure.
         val closure = allocateClosure(ref, freeVars, env0)
         closure.bindings(sym.getStackOffset) = closure

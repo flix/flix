@@ -199,9 +199,9 @@ object ExecutableAst {
 
     case class Def(sym: Symbol.DefnSym, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
-    case class MkClosureRef(ref: ExecutableAst.Expression.Def, freeVars: Array[FreeVar], tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
+    case class MkClosureDef(ref: ExecutableAst.Expression.Def, freeVars: Array[FreeVar], tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
-    case class ApplyRef(sym: Symbol.DefnSym, args: List[ExecutableAst.Expression], tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
+    case class ApplyDef(sym: Symbol.DefnSym, args: List[ExecutableAst.Expression], tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
     case class ApplyTail(name: Symbol.DefnSym, formals: List[ExecutableAst.FormalParam], actuals: List[ExecutableAst.Expression], tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
@@ -217,7 +217,7 @@ object ExecutableAst {
 
     case class Let(sym: Symbol.VarSym, exp1: ExecutableAst.Expression, exp2: ExecutableAst.Expression, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
-    // NB: After lambda lifting and closure conversion `exp1` is guaranteed to be a MkClosureRef.
+    // NB: After lambda lifting and closure conversion `exp1` is guaranteed to be a MkClosureDef.
     case class LetRec(sym: Symbol.VarSym, exp1: ExecutableAst.Expression, exp2: ExecutableAst.Expression, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
     case class Is(sym: Symbol.EnumSym, tag: String, exp: ExecutableAst.Expression, loc: SourceLocation) extends ExecutableAst.Expression {

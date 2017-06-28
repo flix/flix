@@ -122,18 +122,18 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         SimplifiedAst.Expression.Def(freshSymbol, tpe, loc)
 
       case Expression.Hook(hook, tpe, loc) => e
-      case Expression.MkClosureRef(ref, freeVars, tpe, loc) => e
+      case Expression.MkClosureDef(ref, freeVars, tpe, loc) => e
 
       case SimplifiedAst.Expression.MkClosure(lambda, freeVars, tpe, loc) =>
         // Replace the MkClosure node with a MkClosureRef node, since the Lambda has been replaced by a Ref.
         visit(lambda) match {
           case ref: SimplifiedAst.Expression.Def =>
-            SimplifiedAst.Expression.MkClosureRef(ref, freeVars, tpe, loc)
+            SimplifiedAst.Expression.MkClosureDef(ref, freeVars, tpe, loc)
           case _ => throw InternalCompilerException(s"Unexpected expression: '$lambda'.")
         }
 
-      case Expression.ApplyRef(name, args, tpe, loc) =>
-        Expression.ApplyRef(name, args.map(visit), tpe, loc)
+      case Expression.ApplyDef(name, args, tpe, loc) =>
+        Expression.ApplyDef(name, args.map(visit), tpe, loc)
       case Expression.ApplyTail(name, formals, args, tpe, loc) =>
         Expression.ApplyTail(name, formals, args.map(visit), tpe, loc)
       case Expression.ApplyHook(hook, args, tpe, loc) =>

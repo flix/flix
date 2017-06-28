@@ -48,7 +48,7 @@ object ClosureConv {
       // If we encounter a Ref that has a lambda type (and is not being called in an Apply),
       // i.e. the Ref will evaluate to a lambda, we replace it with a MkClosureRef. Otherwise we leave it alone.
       e.tpe match {
-        case t@Type.Apply(Type.Arrow(_), _) => SimplifiedAst.Expression.MkClosureRef(e, List.empty, t, e.loc)
+        case t@Type.Apply(Type.Arrow(_), _) => SimplifiedAst.Expression.MkClosureDef(e, List.empty, t, e.loc)
         case _ => e
       }
 
@@ -109,9 +109,9 @@ object ClosureConv {
       convert(lambda)
     case SimplifiedAst.Expression.MkClosure(lambda, freeVars, tpe, loc) =>
       throw InternalCompilerException(s"Illegal expression during closure conversion: '$exp'.")
-    case SimplifiedAst.Expression.MkClosureRef(ref, freeVars, tpe, loc) =>
+    case SimplifiedAst.Expression.MkClosureDef(ref, freeVars, tpe, loc) =>
       throw InternalCompilerException(s"Illegal expression during closure conversion: '$exp'.")
-    case SimplifiedAst.Expression.ApplyRef(name, args, tpe, loc) =>
+    case SimplifiedAst.Expression.ApplyDef(name, args, tpe, loc) =>
       throw InternalCompilerException(s"Illegal expression during closure conversion: '$exp'.")
 
     case SimplifiedAst.Expression.Apply(e, args, tpe, loc) =>
@@ -119,7 +119,7 @@ object ClosureConv {
       // it with ApplyRef. We remove the Ref node and don't recurse on it to avoid creating a closure.
       // We do something similar if `e` is a Hook, where we transform Apply to ApplyHook.
       e match {
-        case SimplifiedAst.Expression.Def(name, _, _) => SimplifiedAst.Expression.ApplyRef(name, args.map(convert), tpe, loc)
+        case SimplifiedAst.Expression.Def(name, _, _) => SimplifiedAst.Expression.ApplyDef(name, args.map(convert), tpe, loc)
         case SimplifiedAst.Expression.Hook(hook, _, _) => SimplifiedAst.Expression.ApplyHook(hook, args.map(convert), tpe, loc)
         case _ => SimplifiedAst.Expression.Apply(convert(e), args.map(convert), tpe, loc)
       }
@@ -184,9 +184,9 @@ object ClosureConv {
     case SimplifiedAst.Expression.Hook(hook, tpe, loc) => mutable.LinkedHashSet.empty
     case SimplifiedAst.Expression.MkClosure(lambda, freeVars, tpe, loc) =>
       throw InternalCompilerException(s"Unexpected expression: '$e'.")
-    case SimplifiedAst.Expression.MkClosureRef(ref, freeVars, tpe, loc) =>
+    case SimplifiedAst.Expression.MkClosureDef(ref, freeVars, tpe, loc) =>
       throw InternalCompilerException(s"Unexpected expression: '$e'.")
-    case SimplifiedAst.Expression.ApplyRef(name, args, tpe, loc) => mutable.LinkedHashSet.empty ++ args.flatMap(freeVariables)
+    case SimplifiedAst.Expression.ApplyDef(name, args, tpe, loc) => mutable.LinkedHashSet.empty ++ args.flatMap(freeVariables)
     case SimplifiedAst.Expression.ApplyHook(hook, args, tpe, loc) => mutable.LinkedHashSet.empty ++ args.flatMap(freeVariables)
     case SimplifiedAst.Expression.ApplyTail(name, formals, actuals, tpe, loc) => mutable.LinkedHashSet.empty ++ actuals.flatMap(freeVariables)
     case SimplifiedAst.Expression.Apply(exp, args, tpe, loc) =>
@@ -246,13 +246,13 @@ object ClosureConv {
         val e = visit(exp)
         Expression.Lambda(fs, e, tpe, loc)
       case Expression.Hook(hook, tpe, loc) => e
-      case Expression.MkClosureRef(ref, freeVars, tpe, loc) => e
+      case Expression.MkClosureDef(ref, freeVars, tpe, loc) => e
       case Expression.MkClosure(exp, freeVars, tpe, loc) =>
         val e = visit(exp).asInstanceOf[Expression.Lambda]
         Expression.MkClosure(e, freeVars, tpe, loc)
-      case Expression.ApplyRef(sym, args, tpe, loc) =>
+      case Expression.ApplyDef(sym, args, tpe, loc) =>
         val as = args map visit
-        Expression.ApplyRef(sym, as, tpe, loc)
+        Expression.ApplyDef(sym, as, tpe, loc)
       case Expression.ApplyTail(sym, fparams, args, tpe, loc) =>
         val as = args map visit
         Expression.ApplyTail(sym, fparams, as, tpe, loc)
