@@ -81,7 +81,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         @@(annVal, modVal, formalsVal, expVal, effVal) map {
           case (as, mod, fs, e, eff) =>
             val t = WeededAst.Type.Arrow(fs map (_.tpe.get), Types.weed(tpe), loc)
-            List(WeededAst.Declaration.Definition(doc, as, mod, ident, tparams, fs, e, t, eff, loc))
+            List(WeededAst.Declaration.Def(doc, as, mod, ident, tparams, fs, e, t, eff, loc))
         }
 
       case ParsedAst.Declaration.Law(docOpt, sp1, ident, tparams0, fparams0, tpe, exp, sp2) =>
@@ -99,7 +99,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           // Rewrite to Definition.
           val ann = Ast.Annotations(List(Ast.Annotation.Law(loc)))
           val t = WeededAst.Type.Arrow(fs map (_.tpe.get), Types.weed(tpe), loc)
-          List(WeededAst.Declaration.Definition(doc, ann, mod, ident, tparams0.map(_.ident).toList, fs, e, t, Eff.Pure, loc))
+          List(WeededAst.Declaration.Def(doc, ann, mod, ident, tparams0.map(_.ident).toList, fs, e, t, Eff.Pure, loc))
         }
 
       case ParsedAst.Declaration.Enum(docOpt, sp1, ident, tparams0, cases, sp2) =>
@@ -198,7 +198,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       case ParsedAst.Declaration.BoundedLattice(sp1, tpe, elms, sp2) =>
         val elmsVal = @@(elms.toList.map(e => Expressions.weed(e)))
         elmsVal flatMap {
-          case List(bot, top, leq, lub, glb) => List(WeededAst.Declaration.BoundedLattice(Types.weed(tpe), bot, top, leq, lub, glb, mkSL(sp1, sp2))).toSuccess
+          case List(bot, top, leq, lub, glb) => List(WeededAst.Declaration.Lattice(Types.weed(tpe), bot, top, leq, lub, glb, mkSL(sp1, sp2))).toSuccess
           case _ => IllegalLattice(mkSL(sp1, sp2)).toFailure
         }
 

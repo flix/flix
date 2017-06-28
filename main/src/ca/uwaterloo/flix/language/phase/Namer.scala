@@ -92,7 +92,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
       /*
        * Definition.
        */
-      case WeededAst.Declaration.Definition(doc, ann, mod, ident, tparams0, fparams0, exp, tpe, eff, loc) =>
+      case WeededAst.Declaration.Def(doc, ann, mod, ident, tparams0, fparams0, exp, tpe, eff, loc) =>
         // check if the definition already exists.
         val defns = prog0.definitions.getOrElse(ns0, Map.empty)
         defns.get(ident.name) match {
@@ -228,7 +228,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
       /*
        * BoundedLattice (deprecated).
        */
-      case WeededAst.Declaration.BoundedLattice(tpe, bot0, top0, leq0, lub0, glb0, loc) =>
+      case WeededAst.Declaration.Lattice(tpe, bot0, top0, leq0, lub0, glb0, loc) =>
         val botVal = Expressions.namer(bot0, Map.empty, Map.empty)
         val topVal = Expressions.namer(top0, Map.empty, Map.empty)
         val leqVal = Expressions.namer(leq0, Map.empty, Map.empty)
