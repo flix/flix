@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.{Unit => UnitClass, _}
 import ca.uwaterloo.flix.language.GenSym
-import ca.uwaterloo.flix.language.ast.ExecutableAst.{Definition, Expression}
+import ca.uwaterloo.flix.language.ast.ExecutableAst.Expression
 import ca.uwaterloo.flix.language.ast.Symbol.EnumSym
 import ca.uwaterloo.flix.language.ast.{Type, _}
 import ca.uwaterloo.flix.util.InternalCompilerException
@@ -573,7 +573,7 @@ object CodegenHelper {
   /**
     * Generates all the names of the functional interfaces used in the Flix program.
     */
-  def generateInterfaceNames(consts: List[Definition.Constant])(implicit genSym: GenSym): Map[Type, FlixClassName] = {
+  def generateInterfaceNames(consts: List[ExecutableAst.Def])(implicit genSym: GenSym): Map[Type, FlixClassName] = {
     def visit(e: Expression): Set[Type] = e match {
       case Expression.Unit => Set.empty
       case Expression.True => Set.empty
@@ -587,18 +587,10 @@ object CodegenHelper {
       case Expression.Int64(lit) => Set.empty
       case Expression.BigInt(lit) => Set.empty
       case Expression.Str(lit) => Set.empty
-      case Expression.LoadBool(n, o) => Set.empty
-      case Expression.LoadInt8(b, o) => Set.empty
-      case Expression.LoadInt16(b, o) => Set.empty
-      case Expression.LoadInt32(b, o) => Set.empty
-      case Expression.StoreBool(b, o, v) => Set.empty
-      case Expression.StoreInt8(b, o, v) => Set.empty
-      case Expression.StoreInt16(b, o, v) => Set.empty
-      case Expression.StoreInt32(b, o, v) => Set.empty
       case Expression.Var(sym, tpe, loc) => Set.empty
-      case Expression.Ref(name, tpe, loc) => Set.empty
-      case Expression.MkClosureRef(ref, freeVars, tpe, loc) => Set(tpe)
-      case Expression.ApplyRef(name, args, tpe, loc) => args.flatMap(visit).toSet
+      case Expression.Def(name, tpe, loc) => Set.empty
+      case Expression.MkClosureDef(ref, freeVars, tpe, loc) => Set(tpe)
+      case Expression.ApplyDef(name, args, tpe, loc) => args.flatMap(visit).toSet
       case Expression.ApplyTail(name, formals, actuals, tpe, loc) => actuals.flatMap(visit).toSet
       case Expression.ApplyHook(hook, args, tpe, loc) => args.flatMap(visit).toSet
       case Expression.ApplyClosure(exp, args, tpe, loc) => visit(exp) ++ args.flatMap(visit)
@@ -612,9 +604,9 @@ object CodegenHelper {
       case Expression.Untag(sym, tag, exp, tpe, loc) => visit(exp)
       case Expression.Index(base, offset, tpe, loc) => visit(base)
       case Expression.Tuple(elms, tpe, loc) => elms.flatMap(visit).toSet
-      case Expression.Reference(exp, tpe, loc) => ??? // TODO
-      case Expression.Dereference(exp, tpe, loc) => ??? // TODO
-      case Expression.Assignment(exp1, exp2, tpe, loc) => ??? // TODO
+      case Expression.Ref(exp, tpe, loc) => ??? // TODO
+      case Expression.Deref(exp, tpe, loc) => ??? // TODO
+      case Expression.Assign(exp1, exp2, tpe, loc) => ??? // TODO
       case Expression.Existential(params, exp, loc) =>
         ???
       case Expression.Universal(params, exp, loc) =>
@@ -654,18 +646,10 @@ object CodegenHelper {
     case Expression.Int64(lit) => Nil
     case Expression.BigInt(lit) => Nil
     case Expression.Str(lit) => Nil
-    case Expression.LoadBool(n, o) => Nil
-    case Expression.LoadInt8(b, o) => Nil
-    case Expression.LoadInt16(b, o) => Nil
-    case Expression.LoadInt32(b, o) => Nil
-    case Expression.StoreBool(b, o, v) => Nil
-    case Expression.StoreInt8(b, o, v) => Nil
-    case Expression.StoreInt16(b, o, v) => Nil
-    case Expression.StoreInt32(b, o, v) => Nil
     case Expression.Var(sym, tpe, loc) => Nil
-    case Expression.Ref(name, tpe, loc) => Nil
-    case Expression.MkClosureRef(ref, freeVars, tpe, loc) => Nil
-    case Expression.ApplyRef(name, args, tpe, loc) => args.flatMap(findEnumCases)
+    case Expression.Def(name, tpe, loc) => Nil
+    case Expression.MkClosureDef(ref, freeVars, tpe, loc) => Nil
+    case Expression.ApplyDef(name, args, tpe, loc) => args.flatMap(findEnumCases)
     case Expression.ApplyTail(name, formals, actuals, tpe, loc) => actuals.flatMap(findEnumCases)
     case Expression.ApplyHook(hook, args, tpe, loc) => args.flatMap(findEnumCases)
     case Expression.ApplyClosure(exp, args, tpe, loc) => findEnumCases(exp) ::: args.flatMap(findEnumCases)
@@ -678,9 +662,9 @@ object CodegenHelper {
     case Expression.Untag(sym, tag, exp, tpe, loc)  => List((exp.tpe, (tag, tpe))) ::: findEnumCases(exp)
     case Expression.Index(base, offset, tpe, loc) => findEnumCases(base)
     case Expression.Tuple(elms, tpe, loc) => elms.flatMap(findEnumCases).toList
-    case Expression.Reference(exp, tpe, loc) => ??? // TODO
-    case Expression.Dereference(exp, tpe, loc) => ??? // TODO
-    case Expression.Assignment(exp1, exp2, tpe, loc) => ??? // TODO
+    case Expression.Ref(exp, tpe, loc) => ??? // TODO
+    case Expression.Deref(exp, tpe, loc) => ??? // TODO
+    case Expression.Assign(exp1, exp2, tpe, loc) => ??? // TODO
     case Expression.LetRec(sym, exp1, exp2, tpe, loc) => ??? // TODO
     case Expression.Existential(params, exp, loc) => findEnumCases(exp)
     case Expression.Universal(params, exp, loc) => findEnumCases(exp)

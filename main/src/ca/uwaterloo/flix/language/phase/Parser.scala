@@ -151,8 +151,8 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
       optWS ~ SP ~ atomic("namespace") ~ WS ~ Names.Namespace ~ optWS ~ '{' ~ zeroOrMore(Declaration) ~ optWS ~ '}' ~ SP ~> ParsedAst.Declaration.Namespace
     }
 
-    def Definition: Rule1[ParsedAst.Declaration.Definition] = rule {
-      Documentation ~ Annotations ~ Modifiers ~ SP ~ atomic("def") ~ WS ~ Names.Definition ~ optWS ~ TypeParams ~ FormalParamList ~ optWS ~ ":" ~ optWS ~ TypeAndEffect ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~> ParsedAst.Declaration.Definition
+    def Definition: Rule1[ParsedAst.Declaration.Def] = rule {
+      Documentation ~ Annotations ~ Modifiers ~ SP ~ atomic("def") ~ WS ~ Names.Definition ~ optWS ~ TypeParams ~ FormalParamList ~ optWS ~ ":" ~ optWS ~ TypeAndEffect ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~> ParsedAst.Declaration.Def
     }
 
     def Law: Rule1[ParsedAst.Declaration.Law] = rule {

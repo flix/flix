@@ -18,8 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.{CompilationError, GenSym}
-import ca.uwaterloo.flix.language.ast.SimplifiedAst.Definition.Constant
-import ca.uwaterloo.flix.language.ast.SimplifiedAst.{Expression, FreeVar, LoadExpression, StoreExpression}
+import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expression
 import ca.uwaterloo.flix.language.ast.{SimplifiedAst, Symbol}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 import ca.uwaterloo.flix.util.Validation._
@@ -42,7 +41,7 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
 
     val t = System.nanoTime()
 
-    val definitions = root.definitions
+    val definitions = root.defs
 
     /**
       * Computes the score of each function definition
@@ -55,14 +54,14 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     /**
       * Transforms expressions inside definitions into optimized definitions.
       */
-    val inlinedDefinitions = definitions.foldLeft(Map.empty[Symbol.DefnSym, Constant]) {
+    val inlinedDefinitions = definitions.foldLeft(Map.empty[Symbol.DefnSym, SimplifiedAst.Def]) {
       case (macc, (sym, constant)) =>
         val newExp = inline(definitions, scores, constant.exp)
         macc + (sym -> constant.copy(exp = newExp))
     }
 
     val e = System.nanoTime() - t
-    root.copy(definitions = inlinedDefinitions, time = root.time.copy(inliner = e)).toSuccess
+    root.copy(defs = inlinedDefinitions, time = root.time.copy(inliner = e)).toSuccess
     //root.toSuccess
   }
 
@@ -83,16 +82,16 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     * Traverses through `exp` and performs inlining using
     * definitions and sizes from `scores`
     */
-  def inline(definitions: Map[Symbol.DefnSym, Constant], scores: Map[Symbol.DefnSym, Int], exp: Expression)(implicit genSym: GenSym): Expression = {
+  def inline(definitions: Map[Symbol.DefnSym, SimplifiedAst.Def], scores: Map[Symbol.DefnSym, Int], exp: Expression)(implicit genSym: GenSym): Expression = {
     def visit = inline(definitions, scores, _: Expression)
 
     exp match {
       /* Inline application */
-      case Expression.ApplyRef(sym, args, tpe, loc) =>
+      case Expression.ApplyDef(sym, args, tpe, loc) =>
         //inline arguments
         val args1 = args.map(visit)
         definitions(sym) match {
-          case Constant(_, _, _, formals, exp1, _, _, _) =>
+          case SimplifiedAst.Def(_, _, _, formals, exp1, _, _, _) =>
             if (scores(sym) <= MaxScore) {
               // Inline the body of the function
               val sub = formals.map(f => f.sym -> Symbol.freshVarSym(f.sym)).toMap
@@ -101,14 +100,12 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
             }
             else {
               // Do not inline the body -- score is too high
-              Expression.ApplyRef(sym, args1, tpe, loc)
+              Expression.ApplyDef(sym, args1, tpe, loc)
             }
         }
       /* Inline inside expression */
-      case Expression.MkClosureRef(ref, freeVars, tpe, loc) =>
-        Expression.MkClosureRef(ref, freeVars, tpe, loc)
-      case _: LoadExpression => exp
-      case _: StoreExpression => exp
+      case Expression.MkClosureDef(ref, freeVars, tpe, loc) =>
+        Expression.MkClosureDef(ref, freeVars, tpe, loc)
       case Expression.Unit => exp
       case Expression.True => exp
       case Expression.False => exp
@@ -122,7 +119,7 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.BigInt(_) => exp
       case Expression.Str(_) => exp
       case Expression.Var(_, _, _) => exp
-      case Expression.Ref(_, _, _) => exp
+      case Expression.Def(_, _, _) => exp
       case Expression.Lambda(args, body, tpe, loc) =>
         Expression.Lambda(args, visit(body), tpe, loc)
       case Expression.Hook(_, _, _) => exp
@@ -174,8 +171,6 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     * Performs alpha-renaming of an expression
     */
   def renameAndSubstitute(exp: Expression, sub: Map[Symbol.VarSym, Symbol.VarSym])(implicit genSym: GenSym): Expression = exp match {
-    case _: LoadExpression => exp
-    case _: StoreExpression => exp
     case Expression.Unit => exp
     case Expression.True => exp
     case Expression.False => exp
@@ -189,16 +184,16 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     case Expression.BigInt(_) => exp
     case Expression.Str(_) => exp
     case Expression.Var(sym, tpe, loc) => Expression.Var(sub(sym), tpe, loc)
-    case Expression.Ref(_, _, _) => exp
+    case Expression.Def(_, _, _) => exp
     case Expression.Lambda(args, body, tpe, loc) =>
       val formals = args.map(f => f.copy(sym = Symbol.freshVarSym(f.sym)))
       val sub1 = args.map(f => f.sym).zip(formals.map(f => f.sym)).foldLeft(sub) { case (macc, (from, to)) => macc + (from -> to) }
       Expression.Lambda(args = formals, renameAndSubstitute(body, sub1), tpe, loc)
     case Expression.Hook(_, _, _) => exp
-    case Expression.MkClosureRef(ref, freeVars, tpe, loc) =>
-      Expression.MkClosureRef(ref, freeVars.map(fv => fv.copy(sym = sub(fv.sym))), tpe, loc)
-    case Expression.ApplyRef(sym, args, tpe, loc) =>
-      Expression.ApplyRef(sym, args.map(renameAndSubstitute(_, sub)), tpe, loc)
+    case Expression.MkClosureDef(ref, freeVars, tpe, loc) =>
+      Expression.MkClosureDef(ref, freeVars.map(fv => fv.copy(sym = sub(fv.sym))), tpe, loc)
+    case Expression.ApplyDef(sym, args, tpe, loc) =>
+      Expression.ApplyDef(sym, args.map(renameAndSubstitute(_, sub)), tpe, loc)
     case Expression.ApplyTail(sym, formals, actuals, tpe, loc) =>
       Expression.ApplyTail(sym, formals, actuals.map(renameAndSubstitute(_, sub)), tpe, loc)
     case Expression.ApplyHook(hook, args, tpe, loc) =>
@@ -264,15 +259,13 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     * - A UserError, MatchError, or SwitchError is worth zero points.
     * - An if-then-else statement is worth the value of the condition plus two times the sum of the consequent and alternative.
     */
-  def score(definitions: Constant): Int = exprScore(definitions.exp)
+  def score(definitions: SimplifiedAst.Def): Int = exprScore(definitions.exp)
 
   /**
     * Returns the score of the given expression `exp`.
     */
   def exprScore(exp: Expression): Int = {
     exp match {
-      case _: LoadExpression => 1
-      case _: StoreExpression => 1
       case Expression.Unit => 0
       case Expression.True => 0
       case Expression.False => 0
@@ -286,11 +279,11 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.BigInt(_) => 0
       case Expression.Str(_) => 0
       case Expression.Var(_, _, _) => 1
-      case Expression.Ref(_, _, _) => 1
+      case Expression.Def(_, _, _) => 1
       case Expression.Lambda(args, body, _, _) => 1 + args.length + exprScore(body)
       case Expression.Hook(_, _, _) => 1
-      case Expression.MkClosureRef(ref, freeVars, _, _) => 1 + freeVars.length + exprScore(ref)
-      case Expression.ApplyRef(sym, args, _, _) => 1 + args.map(exprScore).sum
+      case Expression.MkClosureDef(ref, freeVars, _, _) => 1 + freeVars.length + exprScore(ref)
+      case Expression.ApplyDef(sym, args, _, _) => 1 + args.map(exprScore).sum
       case Expression.ApplyTail(sym, formals, actuals, _, _) =>
         // Not to be inlined
         MaxScore + 1 + formals.length + actuals.map(exprScore).sum

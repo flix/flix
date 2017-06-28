@@ -22,11 +22,11 @@ sealed trait SimplifiedAst
 
 object SimplifiedAst {
 
-  case class Root(definitions: Map[Symbol.DefnSym, SimplifiedAst.Definition.Constant],
-                  enums: Map[Symbol.EnumSym, SimplifiedAst.Definition.Enum],
-                  lattices: Map[Type, SimplifiedAst.Definition.Lattice],
+  case class Root(defs: Map[Symbol.DefnSym, SimplifiedAst.Def],
+                  enums: Map[Symbol.EnumSym, SimplifiedAst.Enum],
+                  lattices: Map[Type, SimplifiedAst.Lattice],
                   tables: Map[Symbol.TableSym, SimplifiedAst.Table],
-                  indexes: Map[Symbol.TableSym, SimplifiedAst.Definition.Index],
+                  indexes: Map[Symbol.TableSym, SimplifiedAst.Index],
                   strata: List[SimplifiedAst.Stratum],
                   properties: List[SimplifiedAst.Property],
                   reachable: Set[Symbol.DefnSym],
@@ -34,34 +34,17 @@ object SimplifiedAst {
 
   case class Constraint(cparams: List[SimplifiedAst.ConstraintParam], head: SimplifiedAst.Predicate.Head, body: List[SimplifiedAst.Predicate.Body]) extends SimplifiedAst
 
-  sealed trait Definition
+  case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, formals: List[SimplifiedAst.FormalParam], exp: SimplifiedAst.Expression, isSynthetic: Boolean, tpe: Type, loc: SourceLocation) extends SimplifiedAst
 
-  object Definition {
+  case class Enum(sym: Symbol.EnumSym, cases: Map[String, SimplifiedAst.Case], loc: SourceLocation) extends SimplifiedAst
 
-    case class Constant(ann: Ast.Annotations,
-                        mod: Ast.Modifiers,
-                        sym: Symbol.DefnSym,
-                        formals: List[SimplifiedAst.FormalParam],
-                        exp: SimplifiedAst.Expression,
-                        isSynthetic: Boolean,
-                        tpe: Type,
-                        loc: SourceLocation) extends SimplifiedAst.Definition
+  case class Lattice(tpe: Type, bot: SimplifiedAst.Expression, top: SimplifiedAst.Expression, leq: SimplifiedAst.Expression, lub: SimplifiedAst.Expression, glb: SimplifiedAst.Expression, loc: SourceLocation) extends SimplifiedAst
 
-    case class Enum(sym: Symbol.EnumSym, cases: Map[String, SimplifiedAst.Case], loc: SourceLocation) extends SimplifiedAst.Definition
+  case class Index(sym: Symbol.TableSym, indexes: Seq[Seq[Name.Ident]], loc: SourceLocation) extends SimplifiedAst
 
-    case class Lattice(tpe: Type,
-                       bot: SimplifiedAst.Expression,
-                       top: SimplifiedAst.Expression,
-                       leq: SimplifiedAst.Expression,
-                       lub: SimplifiedAst.Expression,
-                       glb: SimplifiedAst.Expression,
-                       loc: SourceLocation) extends SimplifiedAst.Definition
+  case class Property(law: Symbol.DefnSym, defn: Symbol.DefnSym, exp: SimplifiedAst.Expression) extends SimplifiedAst
 
-    case class Index(sym: Symbol.TableSym,
-                     indexes: Seq[Seq[Name.Ident]],
-                     loc: SourceLocation) extends SimplifiedAst.Definition
-
-  }
+  case class Stratum(constraints: List[SimplifiedAst.Constraint]) extends SimplifiedAst
 
   sealed trait Table extends SimplifiedAst
 
@@ -77,23 +60,6 @@ object SimplifiedAst {
     def tpe: Type
 
     def loc: SourceLocation
-  }
-
-  sealed trait LoadExpression extends Expression {
-    val e: SimplifiedAst.Expression
-    val offset: scala.Int
-    val mask: scala.Int
-    final val loc = SourceLocation.Unknown
-  }
-
-  sealed trait StoreExpression extends Expression {
-    val e: SimplifiedAst.Expression
-    val offset: scala.Int
-    val v: SimplifiedAst.Expression
-    val mask: Long
-    final val targetMask = ~(mask << offset)
-    final val tpe = Type.Int64
-    final val loc = SourceLocation.Unknown
   }
 
   object Expression {
@@ -158,245 +124,35 @@ object SimplifiedAst {
       final val loc = SourceLocation.Unknown
     }
 
-    /**
-      * An AST node representing a value (of type Bool) loaded from an Int64.
-      *
-      * @param e      the expression, returning an Int64, that the value is loaded from.
-      * @param offset the offset (in bits) from the least significant bit that the value is loaded from.
-      */
-    case class LoadBool(e: SimplifiedAst.Expression, offset: scala.Int) extends SimplifiedAst.LoadExpression {
-      val mask = 1
-      val tpe = Type.Bool
-    }
-
-    /**
-      * An AST node representing a value (of type Int8) loaded from an Int64.
-      *
-      * @param e      the expression, returning an Int64, that the value is loaded from.
-      * @param offset the offset (in bits) from the least significant bit that the value is loaded from.
-      */
-    case class LoadInt8(e: SimplifiedAst.Expression, offset: scala.Int) extends SimplifiedAst.LoadExpression {
-      val mask = 0xFF
-      val tpe = Type.Int8
-    }
-
-    /**
-      * An AST node representing a value (of type Int16) loaded from an Int64.
-      *
-      * @param e      the expression, returning an Int64, that the value is loaded from.
-      * @param offset the offset (in bits) from the least significant bit that the value is loaded from.
-      */
-    case class LoadInt16(e: SimplifiedAst.Expression, offset: scala.Int) extends SimplifiedAst.LoadExpression {
-      val mask = 0xFFFF
-      val tpe = Type.Int16
-    }
-
-    /**
-      * An AST node representing a value (of type Int32) loaded from an Int64.
-      *
-      * @param e      the expression, returning an Int64, that the value is loaded from.
-      * @param offset the offset (in bits) from the least significant bit that the value is loaded from.
-      */
-    case class LoadInt32(e: SimplifiedAst.Expression, offset: scala.Int) extends SimplifiedAst.LoadExpression {
-      // If we had unsigned ints, would be 0xFFFFFFFF
-      val mask = -1
-      val tpe = Type.Int32
-    }
-
-    /**
-      * An AST node representing a value (of type Bool) to be stored into an Int64.
-      *
-      * @param e      the expression, returning an Int64, that the value is stored into.
-      * @param offset the offset (in bits) from the least significant bit that the value is stored into.
-      * @param v      the value to be stored.
-      */
-    case class StoreBool(e: SimplifiedAst.Expression,
-                         offset: scala.Int,
-                         v: SimplifiedAst.Expression) extends SimplifiedAst.StoreExpression {
-      val mask = 0x1L
-    }
-
-    /**
-      * An AST node representing a value (of type Int8) to be stored into an Int64.
-      *
-      * @param e      the expression, returning an Int64, that the value is stored into.
-      * @param offset the offset (in bits) from the least significant bit that the value is stored into.
-      * @param v      the value to be stored.
-      */
-    case class StoreInt8(e: SimplifiedAst.Expression,
-                         offset: scala.Int,
-                         v: SimplifiedAst.Expression) extends SimplifiedAst.StoreExpression {
-      val mask = 0xFFL
-    }
-
-    /**
-      * An AST node representing a value (of type Int16) to be stored into an Int64.
-      *
-      * @param e      the expression, returning an Int64, that the value is stored into.
-      * @param offset the offset (in bits) from the least significant bit that the value is stored into.
-      * @param v      the value to be stored.
-      */
-    case class StoreInt16(e: SimplifiedAst.Expression,
-                          offset: scala.Int,
-                          v: SimplifiedAst.Expression) extends SimplifiedAst.StoreExpression {
-      val mask = 0xFFFFL
-    }
-
-    /**
-      * An AST node representing a value (of type Int32) to be stored into an Int64.
-      *
-      * @param e      the expression, returning an Int64, that the value is stored into.
-      * @param offset the offset (in bits) from the least significant bit that the value is stored into.
-      * @param v      the value to be stored.
-      */
-    case class StoreInt32(e: SimplifiedAst.Expression,
-                          offset: scala.Int,
-                          v: SimplifiedAst.Expression) extends SimplifiedAst.StoreExpression {
-      val mask = 0xFFFFFFFFL
-    }
-
-    /**
-      * A typed AST node representing a local variable expression (i.e. a parameter or let-bound variable).
-      *
-      * @param sym the name of the variable.
-      * @param tpe the type of the variable.
-      * @param loc the source location of the variable.
-      */
     case class Var(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
-    /**
-      * A typed AST node representing a reference to a top-level definition.
-      *
-      * @param sym the name of the reference.
-      * @param tpe the type of the reference.
-      * @param loc the source location of the reference.
-      */
-    case class Ref(sym: Symbol.DefnSym, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
+    case class Def(sym: Symbol.DefnSym, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
-    /**
-      * A typed AST node representing a lambda function.
-      *
-      * A later phase/pass lifts these lambda functions to top-level definitions,
-      * thus they no longer exist after lambda lifting.
-      *
-      * @param args the formal arguments to the lambda.
-      * @param body the body expression of the lambda.
-      * @param tpe  the type of the lambda.
-      * @param loc  the source location of the lambda.
-      */
     case class Lambda(args: List[SimplifiedAst.FormalParam], body: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
-    /**
-      * A typed AST node representing a hook (native function).
-      *
-      * @param hook the hook representing the native function.
-      * @param tpe  the type of the hook.
-      * @param loc  the source location of the hook.
-      */
     case class Hook(hook: Ast.Hook, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
-    /**
-      * A typed AST node representing the creation of a closure.
-      *
-      * MkClosure nodes are created during closure conversion, replacing Lambda nodes. Then, during lambda lifting,
-      * MkClosure is replaced with MkClosureRef.
-      *
-      * @param lambda   the lambda associated with the closure.
-      * @param freeVars the cached set of free variables occurring within the lambda expression.
-      * @param tpe      the type of the closure.
-      * @param loc      the source location of the lambda.
-      */
     case class MkClosure(lambda: SimplifiedAst.Expression.Lambda, freeVars: List[FreeVar], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
-    /**
-      * A typed AST node representing the creation of a closure, with the lambda lifted and replaced by a ref.
-      *
-      * Free variables are bound at run time. MkClosureRef nodes may be created during closure conversion, but most of
-      * them are created during lambda lifting, to replace MkClosure nodes.
-      *
-      * @param ref      the reference to the lambda associated with the closure.
-      * @param freeVars the cached set of free variables occurring within the lambda expression.
-      * @param tpe      the type of the closure.
-      * @param loc      the source location of the lambda.
-      */
-    case class MkClosureRef(ref: SimplifiedAst.Expression.Ref, freeVars: List[FreeVar], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
+    case class MkClosureDef(ref: SimplifiedAst.Expression.Def, freeVars: List[FreeVar], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
-    /**
-      * A typed AST node representing a function call.
-      *
-      * @param sym  the name of the function being called.
-      * @param args the function arguments.
-      * @param tpe  the return type of the function.
-      * @param loc  the source location of the expression.
-      */
-    case class ApplyRef(sym: Symbol.DefnSym, args: List[SimplifiedAst.Expression], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
+    case class ApplyDef(sym: Symbol.DefnSym, args: List[SimplifiedAst.Expression], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
-    /**
-      * A typed AST node representing a tail recursive call.
-      *
-      * @param sym     the name of the function being called.
-      * @param formals the formal parameters.
-      * @param actuals the actual parameters.
-      * @param tpe     the return type of the function.
-      * @param loc     the source location of the expression.
-      */
     case class ApplyTail(sym: Symbol.DefnSym, formals: List[SimplifiedAst.FormalParam], actuals: List[SimplifiedAst.Expression], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
-    /**
-      * A typed AST node representing a function call.
-      *
-      * @param hook the hook being called
-      * @param args the function arguments.
-      * @param tpe  the return type of the function.
-      * @param loc  the source location of the expression.
-      */
     case class ApplyHook(hook: Ast.Hook, args: List[SimplifiedAst.Expression], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
-    /**
-      * A typed AST node representing a function call.
-      *
-      * @param exp  the function being called.
-      * @param args the function arguments.
-      * @param tpe  the return type of the function.
-      * @param loc  the source location of the expression.
-      */
     case class Apply(exp: SimplifiedAst.Expression, args: List[SimplifiedAst.Expression], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
-    /**
-      * A typed AST node representing a unary expression.
-      *
-      * @param op  the unary operator.
-      * @param exp the expression.
-      * @param tpe the type of the expression.
-      * @param loc the source location of the expression.
-      */
     case class Unary(op: UnaryOperator, exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
-    /**
-      * A typed AST node representing a binary expression.
-      *
-      * @param op   the binary operator.
-      * @param exp1 the left expression.
-      * @param exp2 the right expression.
-      * @param tpe  the type of the expression.
-      * @param loc  the source location of the expression.
-      */
     case class Binary(op: BinaryOperator, exp1: SimplifiedAst.Expression, exp2: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
-    /**
-      * A typed AST node representing an if-then-else expression.
-      *
-      * @param exp1 the conditional expression.
-      * @param exp2 the consequent expression.
-      * @param exp3 the alternative expression.
-      * @param tpe  the type of the consequent and alternative expression.
-      * @param loc  the source location of the expression.
-      */
     case class IfThenElse(exp1: SimplifiedAst.Expression, exp2: SimplifiedAst.Expression, exp3: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
     case class Let(sym: Symbol.VarSym, exp1: SimplifiedAst.Expression, exp2: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
-    // NB: After lambda lifting and closure conversion `exp1` is guaranteed to be a MkClosureRef.
+    // NB: After lambda lifting and closure conversion `exp1` is guaranteed to be a MkClosureDef.
     case class LetRec(sym: Symbol.VarSym, exp1: SimplifiedAst.Expression, exp2: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
     case class Is(sym: Symbol.EnumSym, tag: String, exp: SimplifiedAst.Expression, loc: SourceLocation) extends SimplifiedAst.Expression {
@@ -517,9 +273,7 @@ object SimplifiedAst {
 
       case class Lit(lit: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Term.Head
 
-      case class App(sym: Symbol.DefnSym, args: List[Symbol.VarSym], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Term.Head {
-
-      }
+      case class App(sym: Symbol.DefnSym, args: List[Symbol.VarSym], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Term.Head
 
     }
 
@@ -556,9 +310,5 @@ object SimplifiedAst {
   case class FormalParam(sym: Symbol.VarSym, mod: Ast.Modifiers, tpe: Type, loc: SourceLocation) extends SimplifiedAst
 
   case class FreeVar(sym: Symbol.VarSym, tpe: Type) extends SimplifiedAst
-
-  case class Property(law: Symbol.DefnSym, defn: Symbol.DefnSym, exp: SimplifiedAst.Expression) extends SimplifiedAst
-
-  case class Stratum(constraints: List[SimplifiedAst.Constraint]) extends SimplifiedAst
 
 }

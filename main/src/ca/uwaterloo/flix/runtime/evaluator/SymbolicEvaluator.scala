@@ -146,9 +146,9 @@ object SymbolicEvaluator {
       /**
         * Reference.
         */
-      case Expression.Ref(name, tpe, loc) =>
+      case Expression.Def(name, tpe, loc) =>
         // Lookup and evaluate the definition.
-        root.definitions.get(name) match {
+        root.defs.get(name) match {
           case None => throw InternalCompilerException(s"Type Error: Unresolved reference '$name'.")
           case Some(defn) => eval(pc0, defn.exp, env0, qua0)
         }
@@ -156,7 +156,7 @@ object SymbolicEvaluator {
       /**
         * Closure.
         */
-      case Expression.MkClosureRef(ref, freeVars, _, _) =>
+      case Expression.MkClosureDef(ref, freeVars, _, _) =>
         // Save the values of the free variables in a list.
         // When the closure is called, these values will be provided at the beginning of the argument list.
         val bindings = freeVars.map(f => env0(f.sym))
@@ -167,9 +167,9 @@ object SymbolicEvaluator {
       /**
         * Apply Reference.
         */
-      case Expression.ApplyRef(name, args, _, _) =>
+      case Expression.ApplyDef(name, args, _, _) =>
         // Lookup the reference.
-        val defn = root.definitions(name)
+        val defn = root.defs(name)
         // Evaluate all the arguments.
         evaln(pc0, args, env0, qua0) flatMap {
           case (pc, qua, as) =>
@@ -186,7 +186,7 @@ object SymbolicEvaluator {
         */
       case Expression.ApplyTail(name, _, args, _, _) =>
         // Lookup the reference.
-        val defn = root.definitions(name)
+        val defn = root.defs(name)
         // Evaluate all the arguments.
         evaln(pc0, args, env0, qua0) flatMap {
           case (pc, qua, as) =>
@@ -207,7 +207,7 @@ object SymbolicEvaluator {
         eval(pc0, exp, env0, qua0) flatMap {
           case (pc, qua, SymVal.Closure(ref, bindings)) =>
             // Lookup the definition
-            val defn = root.definitions(ref.sym)
+            val defn = root.defs(ref.sym)
             // Evaluate all the arguments.
             evaln(pc, args, env0, qua) flatMap {
               case (pc1, qua1, actuals) =>
@@ -688,7 +688,7 @@ object SymbolicEvaluator {
         * LetRec-binding.
         */
       case Expression.LetRec(sym, exp1, exp2, _, _) => exp1 match {
-        case Expression.MkClosureRef(ref, freeVars, _, _) =>
+        case Expression.MkClosureDef(ref, freeVars, _, _) =>
           // Save the values of the free variables in a list.
           // When the closure is called, these values will be provided at the beginning of the argument list.
           val bindings = Array.ofDim[SymVal](freeVars.length)
@@ -758,17 +758,17 @@ object SymbolicEvaluator {
       /**
         * Reference.
         */
-      case Expression.Reference(exp, tpe, loc) => ??? // TODO
+      case Expression.Ref(exp, tpe, loc) => ??? // TODO
 
       /**
         * Dereference.
         */
-      case Expression.Dereference(exp, tpe, loc) => ??? // TODO
+      case Expression.Deref(exp, tpe, loc) => ??? // TODO
 
       /**
         * Assignment.
         */
-      case Expression.Assignment(exp1, exp2, tpe, loc) => ??? // TODO
+      case Expression.Assign(exp1, exp2, tpe, loc) => ??? // TODO
 
       /**
         * Existential Quantifier.
@@ -818,14 +818,6 @@ object SymbolicEvaluator {
         * Unsupported expressions.
         */
       case e: Expression.ApplyHook => throw InternalCompilerException(s"Unsupported expression: '$e'.")
-      case e: Expression.LoadBool => throw InternalCompilerException(s"Unsupported expression: '$e'.")
-      case e: Expression.LoadInt8 => throw InternalCompilerException(s"Unsupported expression: '$e'.")
-      case e: Expression.LoadInt16 => throw InternalCompilerException(s"Unsupported expression: '$e'.")
-      case e: Expression.LoadInt32 => throw InternalCompilerException(s"Unsupported expression: '$e'.")
-      case e: Expression.StoreBool => throw InternalCompilerException(s"Unsupported expression: '$e'.")
-      case e: Expression.StoreInt8 => throw InternalCompilerException(s"Unsupported expression: '$e'.")
-      case e: Expression.StoreInt16 => throw InternalCompilerException(s"Unsupported expression: '$e'.")
-      case e: Expression.StoreInt32 => throw InternalCompilerException(s"Unsupported expression: '$e'.")
 
     }
 

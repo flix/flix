@@ -20,7 +20,6 @@ import java.nio.file.{Files, Paths}
 
 import ca.uwaterloo.flix.api.{Flix, Unit => UnitClass}
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.ExecutableAst.Definition
 import ca.uwaterloo.flix.language.ast.Symbol.EnumSym
 import ca.uwaterloo.flix.language.ast.{ExecutableAst, Type}
 import ca.uwaterloo.flix.language.phase.CodegenHelper._
@@ -80,7 +79,7 @@ object LoadBytecode extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     val loader = new Loader()
 
     // 1. Group constants and transform non-functions.
-    val constantsMap: Map[QualName, List[Definition.Constant]] = root.definitions.values.map { f =>
+    val constantsMap: Map[QualName, List[ExecutableAst.Def]] = root.defs.values.map { f =>
       f.tpe match {
         case Type.Apply(Type.Arrow(l), _) => f
         case t => f.copy(tpe = Type.mkArrow(List(), t))
@@ -150,7 +149,7 @@ object LoadBytecode extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
       val clazz = loadedClasses(prefix)
       val argTpes = targs.map(t => toJavaClass(t, loadedInterfaces, loadedEnumInterfaces, loadedTuples))
       // Note: Update the original constant in root.constants, not the temporary one in constantsMap!
-      root.definitions(const.sym).method = clazz.getMethod(const.sym.suffix, argTpes: _*)
+      root.defs(const.sym).method = clazz.getMethod(const.sym.suffix, argTpes: _*)
     }
 
     val e = System.nanoTime() - t

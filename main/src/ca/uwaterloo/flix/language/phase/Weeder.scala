@@ -65,7 +65,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           case ds => List(WeededAst.Declaration.Namespace(name, ds.flatten, mkSL(sp1, sp2)))
         }
 
-      case ParsedAst.Declaration.Definition(docOpt, ann, mods, sp1, ident, tparams0, fparams0, tpe, effOpt, exp, sp2) =>
+      case ParsedAst.Declaration.Def(docOpt, ann, mods, sp1, ident, tparams0, fparams0, tpe, effOpt, exp, sp2) =>
         val loc = mkSL(ident.sp1, ident.sp2)
         val doc = docOpt.map(d => Ast.Documentation(d.text.mkString(" "), loc))
         val annVal = Annotations.weed(ann)
@@ -81,7 +81,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         @@(annVal, modVal, formalsVal, expVal, effVal) map {
           case (as, mod, fs, e, eff) =>
             val t = WeededAst.Type.Arrow(fs map (_.tpe.get), Types.weed(tpe), loc)
-            List(WeededAst.Declaration.Definition(doc, as, mod, ident, tparams, fs, e, t, eff, loc))
+            List(WeededAst.Declaration.Def(doc, as, mod, ident, tparams, fs, e, t, eff, loc))
         }
 
       case ParsedAst.Declaration.Law(docOpt, sp1, ident, tparams0, fparams0, tpe, exp, sp2) =>
@@ -99,7 +99,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           // Rewrite to Definition.
           val ann = Ast.Annotations(List(Ast.Annotation.Law(loc)))
           val t = WeededAst.Type.Arrow(fs map (_.tpe.get), Types.weed(tpe), loc)
-          List(WeededAst.Declaration.Definition(doc, ann, mod, ident, tparams0.map(_.ident).toList, fs, e, t, Eff.Pure, loc))
+          List(WeededAst.Declaration.Def(doc, ann, mod, ident, tparams0.map(_.ident).toList, fs, e, t, Eff.Pure, loc))
         }
 
       case ParsedAst.Declaration.Enum(docOpt, sp1, ident, tparams0, cases, sp2) =>
@@ -198,7 +198,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       case ParsedAst.Declaration.BoundedLattice(sp1, tpe, elms, sp2) =>
         val elmsVal = @@(elms.toList.map(e => Expressions.weed(e)))
         elmsVal flatMap {
-          case List(bot, top, leq, lub, glb) => List(WeededAst.Declaration.BoundedLattice(Types.weed(tpe), bot, top, leq, lub, glb, mkSL(sp1, sp2))).toSuccess
+          case List(bot, top, leq, lub, glb) => List(WeededAst.Declaration.Lattice(Types.weed(tpe), bot, top, leq, lub, glb, mkSL(sp1, sp2))).toSuccess
           case _ => IllegalLattice(mkSL(sp1, sp2)).toFailure
         }
 
@@ -278,10 +278,10 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
         case ParsedAst.Expression.SName(sp1, ident, sp2) =>
           val qname = Name.mkQName(ident)
-          WeededAst.Expression.VarOrRef(qname, mkSL(sp1, sp2)).toSuccess
+          WeededAst.Expression.VarOrDef(qname, mkSL(sp1, sp2)).toSuccess
 
         case ParsedAst.Expression.QName(sp1, qname, sp2) =>
-          WeededAst.Expression.VarOrRef(qname, mkSL(sp1, sp2)).toSuccess
+          WeededAst.Expression.VarOrDef(qname, mkSL(sp1, sp2)).toSuccess
 
         case ParsedAst.Expression.Lit(sp1, lit, sp2) => toExp(lit)
 
@@ -298,7 +298,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           @@(visit(exp1, unsafe), visit(exp2, unsafe)) map {
             case (e1, e2) =>
               val loc = mkSL(leftMostSourcePosition(exp1), sp2)
-              val lambda = WeededAst.Expression.VarOrRef(name, loc)
+              val lambda = WeededAst.Expression.VarOrDef(name, loc)
               WeededAst.Expression.Apply(lambda, List(e1, e2), loc)
           }
 
@@ -311,7 +311,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
               val sp1 = leftMostSourcePosition(exp)
               val loc = mkSL(sp1, sp2)
               val qname = Name.mkQName(ident)
-              val lambda = WeededAst.Expression.VarOrRef(qname, loc)
+              val lambda = WeededAst.Expression.VarOrDef(qname, loc)
               WeededAst.Expression.Apply(lambda, e :: es, loc)
           }
 
@@ -335,7 +335,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
               val ident = Name.Ident(sp1, "pat$0", sp2)
               val qname = Name.mkQName(ident)
               // Construct the body of the lambda expression.
-              val varOrRef = WeededAst.Expression.VarOrRef(qname, loc)
+              val varOrRef = WeededAst.Expression.VarOrDef(qname, loc)
               val rule = WeededAst.MatchRule(p, WeededAst.Expression.True(loc), e)
 
               val fparam = WeededAst.FormalParam(ident, Ast.Modifiers.Empty, None, ident.loc)
@@ -822,8 +822,8 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
         case ParsedAst.Predicate.Body.NotEqual(sp1, ident1, ident2, sp2) =>
           val qname = Name.mkQName("neq", sp1, sp2)
-          val t1 = WeededAst.Expression.VarOrRef(Name.mkQName(ident1), mkSL(ident1.sp1, ident1.sp2))
-          val t2 = WeededAst.Expression.VarOrRef(Name.mkQName(ident2), mkSL(ident2.sp1, ident2.sp2))
+          val t1 = WeededAst.Expression.VarOrDef(Name.mkQName(ident1), mkSL(ident1.sp1, ident1.sp2))
+          val t2 = WeededAst.Expression.VarOrDef(Name.mkQName(ident2), mkSL(ident2.sp1, ident2.sp2))
           WeededAst.Predicate.Body.Filter(qname, List(t1, t2), mkSL(sp1, sp2)).toSuccess
 
         case ParsedAst.Predicate.Body.Loop(sp1, pat, term, sp2) =>
@@ -931,7 +931,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
             case ds => List(WeededAst.Declaration.Namespace(name, ds.flatten, mkSL(sp1, sp2)))
           }
 
-        case ParsedAst.Declaration.Definition(_, meta, _, _, defn, _, _, _, _, _, _) =>
+        case ParsedAst.Declaration.Def(_, meta, _, _, defn, _, _, _, _, _, _) =>
           // Instantiate properties based on the laws referenced by the definition.
           @@(meta.collect {
             case ParsedAst.Property(sp1, law, args, sp2) =>
@@ -945,8 +945,8 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
               argsVal map {
                 case as =>
-                  val lam = WeededAst.Expression.VarOrRef(law, loc)
-                  val fun = WeededAst.Expression.VarOrRef(Name.QName(sp1, Name.RootNS, defn, sp2), loc)
+                  val lam = WeededAst.Expression.VarOrDef(law, loc)
+                  val fun = WeededAst.Expression.VarOrDef(Name.QName(sp1, Name.RootNS, defn, sp2), loc)
                   val exp = WeededAst.Expression.Apply(lam, fun :: as, loc)
                   WeededAst.Declaration.Property(law, defn, exp, loc)
               }
@@ -1057,7 +1057,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     * Returns an apply expression for the given fully-qualified name `fqn` and the given arguments `args`.
     */
   def mkApply(fqn: String, args: List[WeededAst.Expression], sp1: SourcePosition, sp2: SourcePosition): WeededAst.Expression = {
-    val lambda = WeededAst.Expression.VarOrRef(Name.mkQName(fqn, sp1, sp2), mkSL(sp1, sp2))
+    val lambda = WeededAst.Expression.VarOrDef(Name.mkQName(fqn, sp1, sp2), mkSL(sp1, sp2))
     WeededAst.Expression.Apply(lambda, args, mkSL(sp1, sp2))
   }
 

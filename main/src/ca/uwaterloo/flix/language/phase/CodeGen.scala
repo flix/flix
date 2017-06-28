@@ -21,7 +21,7 @@ import java.lang.reflect.Modifier
 import ca.uwaterloo.flix.api.{Flix, MatchException, SwitchException, UserException}
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.Ast.Hook
-import ca.uwaterloo.flix.language.ast.ExecutableAst.{Definition, Expression, LoadExpression, StoreExpression}
+import ca.uwaterloo.flix.language.ast.ExecutableAst.Expression
 import ca.uwaterloo.flix.language.ast.{Type, _}
 import ca.uwaterloo.flix.util.{Evaluation, InternalCompilerException, Options, Validation}
 import org.objectweb.asm
@@ -85,20 +85,20 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
     }
 
     // 1. Group constants and transform non-functions.
-    val constantsMap: Map[FlixClassName, List[Definition.Constant]] = root.definitions.values.map { f =>
+    val constantsMap: Map[FlixClassName, List[ExecutableAst.Def]] = root.defs.values.map { f =>
       f.tpe match {
         case Type.Apply(Type.Arrow(l), _) => f
         case t => f.copy(tpe = Type.mkArrow(List(), t))
       }
     }.toList.groupBy(cst => FlixClassName(cst.sym.prefix))
     // TODO: Here we filter laws, since the backend does not support existentials/universals, but could we fix that?
-    val constantsList: List[Definition.Constant] = constantsMap.values.flatten.toList.filterNot(_.ann.isLaw)
+    val constantsList: List[ExecutableAst.Def] = constantsMap.values.flatten.toList.filterNot(_.ann.isLaw)
 
     // 2. Create the declarations map.
     val declarations: Map[Symbol.DefnSym, Type] = constantsList.map(f => f.sym -> f.tpe).toMap
 
     // 3. Create Enum Type info
-    val allEnums : List[(Type, (String, Type))] = root.definitions.values.flatMap(x => CodegenHelper.findEnumCases(x.exp)).toList
+    val allEnums : List[(Type, (String, Type))] = root.defs.values.flatMap(x => CodegenHelper.findEnumCases(x.exp)).toList
 
     val enumTypeInfo: Map[(Type, String), (QualName, ExecutableAst.Case)] = allEnums.map{ case (tpe, (name, subType)) =>
       val sym =  tpe match {
@@ -158,7 +158,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
    * Example: The Flix definition A.B.C/foo is compiled as the method foo in class C, within the package A.B.
    */
   def compile(prefix: QualName,
-              functions: List[Definition.Constant],
+              functions: List[ExecutableAst.Def],
               declarations: Map[Symbol.DefnSym, Type],
               interfaces: Map[Type, FlixClassName],
               enums: Map[(Type, String), (QualName, ExecutableAst.Case)],
@@ -230,11 +230,11 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
    * Given a definition for a Flix function, generate bytecode. Takes a Context and an initialized ClassVisitor.
    */
   private def compileFunction(prefix: QualName,
-                              functions: List[Definition.Constant],
+                              functions: List[ExecutableAst.Def],
                               declarations: Map[Symbol.DefnSym, Type],
                               interfaces: Map[Type, FlixClassName],
                               enums: Map[(Type, String), (QualName, ExecutableAst.Case)],
-                              visitor: ClassVisitor)(function: Definition.Constant): Unit = {
+                              visitor: ClassVisitor)(function: ExecutableAst.Def): Unit = {
     val flags = if (function.isSynthetic) ACC_PUBLIC + ACC_STATIC + ACC_SYNTHETIC else ACC_PUBLIC + ACC_STATIC
     val mv = visitor.visitMethod(flags, function.sym.suffix, descriptor(function.tpe, interfaces), null, null)
     mv.visitCode()
@@ -266,7 +266,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
   }
 
   private def compileExpression(prefix: QualName,
-                                functions: List[Definition.Constant],
+                                functions: List[ExecutableAst.Def],
                                 declarations: Map[Symbol.DefnSym, Type],
                                 interfaces: Map[Type, FlixClassName],
                                 enums: Map[(Type, String), (QualName, ExecutableAst.Case)],
@@ -306,9 +306,6 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
       visitor.visitMethodInsn(INVOKESPECIAL, name, "<init>", asm.Type.getConstructorDescriptor(ctor), false)
     case Expression.Str(s) => visitor.visitLdcInsn(s)
 
-    case load: LoadExpression => compileLoadExpr(prefix, functions, declarations, interfaces, enums, visitor, entryPoint)(load)
-    case store: StoreExpression => compileStoreExpr(prefix, functions, declarations, interfaces, enums, visitor, entryPoint)(store)
-
     case Expression.Var(sym, tpe, _) => tpe match {
       case Type.Var(id, kind) =>  throw InternalCompilerException(s"Non-monomorphed type variable '$id in type '$tpe'.")
       case Type.Bool | Type.Char | Type.Int8 | Type.Int16 | Type.Int32 => visitor.visitVarInsn(ILOAD, sym.getStackOffset)
@@ -321,12 +318,12 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
       case _ => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
     }
 
-    case Expression.Ref(name, _, _) =>
+    case Expression.Def(name, _, _) =>
       // Reference to a top-level definition that isn't used in a MkClosureRef or ApplyRef, so it's a 0-arg function.
       val targetTpe = declarations(name)
       visitor.visitMethodInsn(INVOKESTATIC, decorate(FlixClassName(name.prefix)), name.suffix, descriptor(targetTpe, interfaces), false)
 
-    case Expression.MkClosureRef(ref, freeVars, tpe, loc) =>
+    case Expression.MkClosureDef(ref, freeVars, tpe, loc) =>
       // We create a closure the same way Java 8 does. We use InvokeDynamic and the LambdaMetafactory. The idea is that
       // LambdaMetafactory creates a CallSite (linkage), and then the CallSite target is invoked (capture) to create a
       // function object. Later, at ApplyRef, the function object is called (invocation).
@@ -381,7 +378,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
       // Finally, generate the InvokeDynamic instruction.
       visitor.visitInvokeDynamicInsn(invokedName, invokedType, bsmHandle, bsmArgs: _*)
 
-    case Expression.ApplyRef(name, args, _, _) =>
+    case Expression.ApplyDef(name, args, _, _) =>
       // We know what function we're calling, so we can look up its signature.
       val targetTpe = declarations(name)
 
@@ -606,11 +603,11 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
       // Invoking the constructor
       visitor.visitMethodInsn(INVOKESPECIAL, decorate(clazzName), "<init>", s"(${desc})V", false)
 
-    case Expression.Reference(exp, tpe, loc) => ??? // TODO
+    case Expression.Ref(exp, tpe, loc) => ??? // TODO
 
-    case Expression.Dereference(exp, tpe, loc) => ??? // TODO
+    case Expression.Deref(exp, tpe, loc) => ??? // TODO
 
-    case Expression.Assignment(exp1, exp2, tpe, loc) => ??? // TODO
+    case Expression.Assign(exp1, exp2, tpe, loc) => ??? // TODO
 
     case Expression.Existential(params, exp, loc) =>
       throw InternalCompilerException(s"Unexpected expression: '$expr' at ${loc.source.format}.")
@@ -686,7 +683,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
    * Other types (e.g. tag, tuple) are already Flix values.
    */
   private def compileBoxedExpr(prefix: QualName,
-                               functions: List[Definition.Constant],
+                               functions: List[ExecutableAst.Def],
                                declarations: Map[Symbol.DefnSym, Type],
                                interfaces: Map[Type, FlixClassName],
                                enums: Map[(Type, String), (QualName, ExecutableAst.Case)],
@@ -812,94 +809,6 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
   }
 
   /*
-   * (e >> offset).toInt & mask
-   *
-   * Example:
-   * x represents a bit with unknown value (0 or 1)
-   *   load   = LoadInt8(e, 16)
-   *   e      = xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx 10101010 xxxxxxxx xxxxxxxx
-   *
-   * First we do a right shift (with sign extension) (LSHR):
-   *            xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx 10101010
-   * Then we convert/truncate to an int, discarding the higher-order bits (L2I):
-   *            xxxxxxxx xxxxxxxx xxxxxxxx 10101010
-   * We bitwise-and with the mask, clearing the higher-order bits (IAND):
-   *   mask   = 00000000 00000000 00000000 11111111
-   *   result = 00000000 00000000 00000000 10101010
-   *
-   * If we used I2B instead of a mask, sign extension would give:
-   *            11111111 11111111 11111111 10101010
-   */
-  private def compileLoadExpr(prefix: QualName,
-                              functions: List[Definition.Constant],
-                              declarations: Map[Symbol.DefnSym, Type],
-                              interfaces: Map[Type, FlixClassName],
-                              enums: Map[(Type, String), (QualName, ExecutableAst.Case)],
-                              visitor: MethodVisitor,
-                              entryPoint: Label)(load: LoadExpression): Unit = {
-    compileExpression(prefix, functions, declarations, interfaces, enums, visitor, entryPoint)(load.e)
-    if (load.offset > 0) {
-      compileInt(visitor)(load.offset)
-      visitor.visitInsn(LSHR)
-    }
-    visitor.visitInsn(L2I)
-    compileInt(visitor)(load.mask)
-    visitor.visitInsn(IAND)
-  }
-
-  /*
-   * (e & targetMask) | ((v.toLong & mask) << offset)
-   *
-   * Example:
-   * x represents a bit with unknown value (0 or 1)
-   *   store  = StoreInt32(e, 0, v)
-   *   e      = xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx
-   *   v      = 11110000 11110000 11110000 11110000
-   *
-   * First we bitwise-and with targetMask to clear target/destination bits (LAND):
-   *   tMask  = 11111111 11111111 11111111 11111111 00000000 00000000 00000000 00000000
-   *   result = xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx 00000000 00000000 00000000 00000000
-   * Then we convert v to a long (with sign extension) (I2L):
-   *            11111111 11111111 11111111 11111111 11110000 11110000 11110000 11110000
-   * Then we bitwise-and with the mask, clearing the higher-order bits (LAND):
-   *   mask   = 00000000 00000000 00000000 00000000 11111111 11111111 11111111 11111111
-   *   result = 00000000 00000000 00000000 00000000 11110000 11110000 11110000 11110000
-   * In this example, we don't left shift because the shift offset is 0 (LSHL). We bitwise-or with e to get the final
-   * result (LOR):
-   *   e      = xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx 00000000 00000000 00000000 00000000
-   *   result = xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx 11110000 11110000 11110000 11110000
-   *
-   * Note: (v & mask).toLong instead of (v.toLong & mask) gives the wrong result because of sign extension.
-   * Bitwise-and of v and mask (IAND):
-   *   mask   = 11111111 11111111 11111111 11111111
-   *   result = 11110000 11110000 11110000 11110000
-   * Convert int to long (doing a sign extension) (I2L):
-   *   result = 11111111 11111111 11111111 11111111 11110000 11110000 11110000 11110000
-   * Again in this example, we don't do a left shift. But when we do a bitwise-or, we overwrite the bits of e (LOR):
-   *   e      = xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx 00000000 00000000 00000000 00000000
-   *   result = 11111111 11111111 11111111 11111111 11110000 11110000 11110000 11110000
-   */
-  private def compileStoreExpr(prefix: QualName,
-                               functions: List[Definition.Constant],
-                               declarations: Map[Symbol.DefnSym, Type],
-                               interfaces: Map[Type, FlixClassName],
-                               enums: Map[(Type, String), (QualName, ExecutableAst.Case)],
-                               visitor: MethodVisitor, entryPoint: Label)(store: StoreExpression): Unit = {
-    compileExpression(prefix, functions, declarations, interfaces, enums, visitor, entryPoint)(store.e)
-    compileInt(visitor)(store.targetMask, isLong = true)
-    visitor.visitInsn(LAND)
-    compileExpression(prefix, functions, declarations, interfaces, enums, visitor, entryPoint)(store.v)
-    visitor.visitInsn(I2L)
-    compileInt(visitor)(store.mask, isLong = true)
-    visitor.visitInsn(LAND)
-    if (store.offset > 0) {
-      compileInt(visitor)(store.offset)
-      visitor.visitInsn(LSHL)
-    }
-    visitor.visitInsn(LOR)
-  }
-
-  /*
    * Generate code to load an integer constant.
    *
    * Uses the smallest number of bytes necessary, e.g. ICONST_0 takes 1 byte to load a 0, but BIPUSH 7 takes 2 bytes to
@@ -927,7 +836,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
   }
 
   private def compileUnaryExpr(prefix: QualName,
-                               functions: List[Definition.Constant],
+                               functions: List[ExecutableAst.Def],
                                declarations: Map[Symbol.DefnSym, Type],
                                interfaces: Map[Type, FlixClassName],
                                enums: Map[(Type, String), (QualName, ExecutableAst.Case)],
@@ -969,7 +878,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
    * cast to an Int8 (byte).
    */
   private def compileUnaryMinusExpr(prefix: QualName,
-                                    functions: List[Definition.Constant],
+                                    functions: List[ExecutableAst.Def],
                                     declarations: Map[Symbol.DefnSym, Type],
                                     interfaces: Map[Type, FlixClassName],
                                     enums: Map[(Type, String), (QualName, ExecutableAst.Case)],
@@ -1048,7 +957,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
    * back to the original type (D2F, D2I, D2L; note that bytes and shorts need to be cast again with I2B and I2S).
    */
   private def compileArithmeticExpr(prefix: QualName,
-                                    functions: List[Definition.Constant],
+                                    functions: List[ExecutableAst.Def],
                                     declarations: Map[Symbol.DefnSym, Type],
                                     interfaces: Map[Type, FlixClassName],
                                     enums: Map[(Type, String), (QualName, ExecutableAst.Case)],
@@ -1156,7 +1065,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
    * `bigint1 OP bigint2` is compiled as `bigint1.compareTo(bigint2) OP 0`.
    */
   private def compileComparisonExpr(prefix: QualName,
-                                    functions: List[Definition.Constant],
+                                    functions: List[ExecutableAst.Def],
                                     declarations: Map[Symbol.DefnSym, Type],
                                     interfaces: Map[Type, FlixClassName],
                                     enums: Map[(Type, String), (QualName, ExecutableAst.Case)],
@@ -1256,7 +1165,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
    * Implication and Biconditional are rewritten to their logical equivalents, and then compiled.
    */
   private def compileLogicalExpr(prefix: QualName,
-                                 functions: List[Definition.Constant],
+                                 functions: List[ExecutableAst.Def],
                                  declarations: Map[Symbol.DefnSym, Type],
                                  interfaces: Map[Type, FlixClassName],
                                  enums: Map[(Type, String), (QualName, ExecutableAst.Case)],
@@ -1334,7 +1243,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
    * Note: the right-hand operand of a shift (i.e. the shift amount) *must* be Int32.
    */
   private def compileBitwiseExpr(prefix: QualName,
-                                 functions: List[Definition.Constant],
+                                 functions: List[ExecutableAst.Def],
                                  declarations: Map[Symbol.DefnSym, Type],
                                  interfaces: Map[Type, FlixClassName],
                                  enums: Map[(Type, String), (QualName, ExecutableAst.Case)],

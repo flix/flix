@@ -46,7 +46,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
     // make an empty program to fold over.
     val prog0 = NamedAst.Program(
       enums = Map.empty,
-      definitions = Map.empty,
+      defs = Map.empty,
       lattices = Map.empty,
       indexes = Map.empty,
       tables = Map.empty,
@@ -92,9 +92,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
       /*
        * Definition.
        */
-      case WeededAst.Declaration.Definition(doc, ann, mod, ident, tparams0, fparams0, exp, tpe, eff, loc) =>
+      case WeededAst.Declaration.Def(doc, ann, mod, ident, tparams0, fparams0, exp, tpe, eff, loc) =>
         // check if the definition already exists.
-        val defns = prog0.definitions.getOrElse(ns0, Map.empty)
+        val defns = prog0.defs.getOrElse(ns0, Map.empty)
         defns.get(ident.name) match {
           case None =>
             // Case 1: The definition does not already exist. Update it.
@@ -122,8 +122,8 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
               case e =>
                 val sym = Symbol.mkDefnSym(ns0, ident)
                 val sc = NamedAst.Scheme(tparams.map(_.tpe), Types.namer(tpe, tenv0))
-                val defn = NamedAst.Declaration.Definition(doc, ann, mod, sym, tparams, fparams, e, sc, eff, loc)
-                prog0.copy(definitions = prog0.definitions + (ns0 -> (defns + (ident.name -> defn))))
+                val defn = NamedAst.Def(doc, ann, mod, sym, tparams, fparams, e, sc, eff, loc)
+                prog0.copy(defs = prog0.defs + (ns0 -> (defns + (ident.name -> defn))))
             }
           case Some(defn) =>
             // Case 2: Duplicate definition.
@@ -148,7 +148,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
               NamedAst.Type.Enum(sym)
             else
               NamedAst.Type.Apply(NamedAst.Type.Enum(sym), quantifiers, loc)
-            val enum = NamedAst.Declaration.Enum(doc, sym, tparams, casesOf(cases, tenv), enumType, loc)
+            val enum = NamedAst.Enum(doc, sym, tparams, casesOf(cases, tenv), enumType, loc)
             val enums = enums0 + (ident.name -> enum)
             prog0.copy(enums = prog0.enums + (ns0 -> enums)).toSuccess
           case Some(enum) =>
@@ -218,7 +218,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
        */
       case WeededAst.Declaration.Index(qname, indexes, loc) =>
         val name = qname.ident.name
-        val index = NamedAst.Declaration.Index(qname, indexes.map(_.toList), loc)
+        val index = NamedAst.Index(qname, indexes.map(_.toList), loc)
         val decls = prog0.indexes.getOrElse(ns0, Map.empty)
         decls.get(name) match {
           case None => prog0.copy(indexes = prog0.indexes + (ns0 -> (decls + (name -> index)))).toSuccess
@@ -228,7 +228,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
       /*
        * BoundedLattice (deprecated).
        */
-      case WeededAst.Declaration.BoundedLattice(tpe, bot0, top0, leq0, lub0, glb0, loc) =>
+      case WeededAst.Declaration.Lattice(tpe, bot0, top0, leq0, lub0, glb0, loc) =>
         val botVal = Expressions.namer(bot0, Map.empty, Map.empty)
         val topVal = Expressions.namer(top0, Map.empty, Map.empty)
         val leqVal = Expressions.namer(leq0, Map.empty, Map.empty)
@@ -237,7 +237,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
 
         @@(botVal, topVal, leqVal, lubVal, glbVal) map {
           case (bot, top, leq, lub, glb) =>
-            val lattice = NamedAst.Declaration.BoundedLattice(Types.namer(tpe, Map.empty), bot, top, leq, lub, glb, ns0, loc)
+            val lattice = NamedAst.Lattice(Types.namer(tpe, Map.empty), bot, top, leq, lub, glb, ns0, loc)
             prog0.copy(lattices = prog0.lattices + (Types.namer(tpe, Map.empty) -> lattice)) // NB: This just overrides any existing binding.
         }
 
@@ -314,19 +314,19 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
        */
       case WeededAst.Expression.Wild(loc) => NamedAst.Expression.Wild(Type.freshTypeVar(), loc).toSuccess
 
-      case WeededAst.Expression.VarOrRef(name, loc) if name.isUnqualified =>
+      case WeededAst.Expression.VarOrDef(name, loc) if name.isUnqualified =>
         // lookup the variable name in the environment.
         env0.get(name.ident.name) match {
           case None =>
             // Case 1: reference.
-            NamedAst.Expression.Ref(name, Type.freshTypeVar(), loc).toSuccess
+            NamedAst.Expression.Def(name, Type.freshTypeVar(), loc).toSuccess
           case Some(sym) =>
             // Case 2: variable.
             NamedAst.Expression.Var(sym, loc).toSuccess
         }
 
-      case WeededAst.Expression.VarOrRef(name, loc) =>
-        NamedAst.Expression.Ref(name, Type.freshTypeVar(), loc).toSuccess
+      case WeededAst.Expression.VarOrDef(name, loc) =>
+        NamedAst.Expression.Def(name, Type.freshTypeVar(), loc).toSuccess
 
       /*
        * Literals.
@@ -472,7 +472,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
       */
     def freeVars(exp0: WeededAst.Expression): List[Name.Ident] = exp0 match {
       case WeededAst.Expression.Wild(loc) => Nil
-      case WeededAst.Expression.VarOrRef(qname, loc) => List(qname.ident)
+      case WeededAst.Expression.VarOrDef(qname, loc) => List(qname.ident)
       case WeededAst.Expression.Unit(loc) => Nil
       case WeededAst.Expression.True(loc) => Nil
       case WeededAst.Expression.False(loc) => Nil

@@ -71,7 +71,7 @@ object TupleGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
     }
 
     // 1. Extract all tuple types from definitions.
-    val allTuples : List[Type] = root.definitions.values.flatMap(x => findTuples(x.exp)).toList
+    val allTuples : List[Type] = root.defs.values.flatMap(x => findTuples(x.exp)).toList
 
     // 2. Group tuples based on representation of their fields.
     val groupedFields : List[List[List[Type]]] = allTuples.map{
@@ -526,18 +526,10 @@ object TupleGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
       case Expression.Int64(lit) => Nil
       case Expression.BigInt(lit) => Nil
       case Expression.Str(lit) => Nil
-      case Expression.LoadBool(n, o) => Nil
-      case Expression.LoadInt8(b, o) => Nil
-      case Expression.LoadInt16(b, o) => Nil
-      case Expression.LoadInt32(b, o) => Nil
-      case Expression.StoreBool(b, o, v) => Nil
-      case Expression.StoreInt8(b, o, v) => Nil
-      case Expression.StoreInt16(b, o, v) => Nil
-      case Expression.StoreInt32(b, o, v) => Nil
       case Expression.Var(sym, tpe, loc) => searchInType(tpe)
-      case Expression.Ref(name, tpe, loc) => searchInType(tpe)
-      case Expression.MkClosureRef(ref, freeVars, tpe, loc) => searchInType(tpe)
-      case Expression.ApplyRef(name, args, tpe, loc) => args.flatMap(findTuples) ::: searchInType(tpe)
+      case Expression.Def(name, tpe, loc) => searchInType(tpe)
+      case Expression.MkClosureDef(ref, freeVars, tpe, loc) => searchInType(tpe)
+      case Expression.ApplyDef(name, args, tpe, loc) => args.flatMap(findTuples) ::: searchInType(tpe)
       case Expression.ApplyTail(name, formals, actuals, tpe, loc) => actuals.flatMap(findTuples) ::: searchInType(tpe)
       case Expression.ApplyHook(hook, args, tpe, loc) => args.flatMap(findTuples) ::: searchInType(tpe)
       case Expression.ApplyClosure(exp, args, tpe, loc) => findTuples(exp) ++ args.flatMap(findTuples) ::: searchInType(tpe)
@@ -550,9 +542,9 @@ object TupleGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
       case Expression.Untag(sym, tag, exp, tpe, loc) => findTuples(exp) ::: searchInType(tpe)
       case Expression.Index(base, offset, tpe, loc) => findTuples(base) ::: searchInType(tpe)
       case Expression.Tuple(elms, tpe, loc) => elms.flatMap(findTuples).toList ++ List(tpe) ::: searchInType(tpe)
-      case Expression.Reference(exp, tpe, loc) => ??? // TODO
-      case Expression.Dereference(exp, tpe, loc) => ??? // TODO
-      case Expression.Assignment(exp1, exp2, tpe, loc) => ??? // TODO
+      case Expression.Ref(exp, tpe, loc) => ??? // TODO
+      case Expression.Deref(exp, tpe, loc) => ??? // TODO
+      case Expression.Assign(exp1, exp2, tpe, loc) => ??? // TODO
       case Expression.LetRec(sym, exp1, exp2, tpe, loc) => ??? // TODO
       case Expression.Existential(params, exp, loc) => findTuples(exp)
       case Expression.Universal(params, exp, loc) => findTuples(exp)

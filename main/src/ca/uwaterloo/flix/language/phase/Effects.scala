@@ -40,8 +40,8 @@ object Effects extends Phase[Root, Root] {
       /**
         * Infer effects for definitions.
         */
-      val definitionsVal = root.definitions.map {
-        case (sym, defn0) => Declarations.infer(defn0, root) map {
+      val definitionsVal = root.defs.map {
+        case (sym, defn0) => infer(defn0, root) map {
           case defn => sym -> defn
         }
       }
@@ -51,55 +51,52 @@ object Effects extends Phase[Root, Root] {
       for {
         definitions <- seqM(definitionsVal)
       } yield {
-        root.copy(definitions = definitions.toMap)
+        root.copy(defs = definitions.toMap)
       }
     })
 
     timer.getResult.map(root => root.copy(time = root.time.copy(effects = timer.getDuration)))
   }
 
-  object Declarations {
+  /**
+    * Infers the effects of the given definition `defn0`.
+    */
+  def infer(defn0: TypedAst.Def, root: Root): Validation[TypedAst.Def, EffectError] = {
 
-    /**
-      * Infers the effects of the given definition `defn0`.
-      */
-    def infer(defn0: Declaration.Definition, root: Root): Validation[Declaration.Definition, EffectError] = {
+    // TODO: [Effects] Introduce EffectParam for polymorphic effects.
 
-      // TODO: [Effects] Introduce EffectParam for polymorphic effects.
-
-      /*
-       * Infer the effects of the formal parameters.
-       */
-      val env0 = defn0.fparams.foldLeft(Map.empty[Symbol.VarSym, Eff]) {
-        case (macc, TypedAst.FormalParam(sym, _, tpe, _)) => tpe match {
-          case Type.Apply(Type.Arrow(_), _) =>
-            // TODO: [Effects] Assumes that every function argument is pure.
-            macc + (sym -> Eff.Arrow(Eff.Pure, EffectSet.Bot, Eff.Pure, EffectSet.Bot))
-          case _ => macc
-        }
+    /*
+     * Infer the effects of the formal parameters.
+     */
+    val env0 = defn0.fparams.foldLeft(Map.empty[Symbol.VarSym, Eff]) {
+      case (macc, TypedAst.FormalParam(sym, _, tpe, _)) => tpe match {
+        case Type.Apply(Type.Arrow(_), _) =>
+          // TODO: [Effects] Assumes that every function argument is pure.
+          macc + (sym -> Eff.Arrow(Eff.Pure, EffectSet.Bot, Eff.Pure, EffectSet.Bot))
+        case _ => macc
       }
-
-      /*
-       * The expected effect of the definition.
-       */
-      val expectedEff = defn0.eff
-
-      /*
-       * Infer the effect of the expression.
-       */
-      Expressions.infer(defn0.exp, env0, root) flatMap {
-        case e =>
-          /*
-           * Check that the declared effect matches the actual effect.
-           */
-          val actualEff = e.eff
-          if (actualEff leq expectedEff)
-            defn0.copy(exp = e).toSuccess
-          else
-            EffectError(expectedEff, actualEff, defn0.exp.loc).toFailure
-      }
-
     }
+
+    /*
+     * The expected effect of the definition.
+     */
+    val expectedEff = defn0.eff
+
+    /*
+     * Infer the effect of the expression.
+     */
+    Expressions.infer(defn0.exp, env0, root) flatMap {
+      case e =>
+        /*
+         * Check that the declared effect matches the actual effect.
+         */
+        val actualEff = e.eff
+        if (actualEff leq expectedEff)
+          defn0.copy(exp = e).toSuccess
+        else
+          EffectError(expectedEff, actualEff, defn0.exp.loc).toFailure
+    }
+
   }
 
   object Expressions {
@@ -147,12 +144,12 @@ object Effects extends Phase[Root, Root] {
         /**
           * Ref Expression.
           */
-        case Expression.Ref(sym, tpe, _, loc) =>
+        case Expression.Def(sym, tpe, _, loc) =>
           // The effect of a ref is its declared effect.
-          val defn = root.definitions(sym)
+          val defn = root.defs(sym)
           val latent = defn.eff.eff
           val eff = Eff.Arrow(Eff.Pure, latent, Eff.Pure, EffectSet.Bot)
-          Expression.Ref(sym, tpe, eff, loc).toSuccess
+          Expression.Def(sym, tpe, eff, loc).toSuccess
 
         /**
           * Hook Expression.

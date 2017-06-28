@@ -22,11 +22,11 @@ sealed trait TypedAst
 
 object TypedAst {
 
-  case class Root(definitions: Map[Symbol.DefnSym, TypedAst.Declaration.Definition],
-                  enums: Map[Symbol.EnumSym, TypedAst.Declaration.Enum],
-                  lattices: Map[Type, TypedAst.Declaration.BoundedLattice],
+  case class Root(defs: Map[Symbol.DefnSym, TypedAst.Def],
+                  enums: Map[Symbol.EnumSym, TypedAst.Enum],
+                  lattices: Map[Type, TypedAst.Lattice],
                   tables: Map[Symbol.TableSym, TypedAst.Table],
-                  indexes: Map[Symbol.TableSym, TypedAst.Declaration.Index],
+                  indexes: Map[Symbol.TableSym, TypedAst.Index],
                   strata: List[TypedAst.Stratum],
                   properties: List[TypedAst.Property],
                   reachable: Set[Symbol.DefnSym],
@@ -34,27 +34,17 @@ object TypedAst {
 
   case class Constraint(cparams: List[TypedAst.ConstraintParam], head: TypedAst.Predicate.Head, body: List[TypedAst.Predicate.Body], loc: SourceLocation) extends TypedAst
 
-  sealed trait Declaration extends TypedAst {
-    def loc: SourceLocation
-  }
+  case class Def(doc: Option[Ast.Documentation], ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, tparams: List[TypedAst.TypeParam], fparams: List[TypedAst.FormalParam], exp: TypedAst.Expression, tpe: Type, eff: Eff, loc: SourceLocation) extends TypedAst
 
-  object Declaration {
+  case class Enum(doc: Option[Ast.Documentation], sym: Symbol.EnumSym, cases: Map[String, TypedAst.Case], tpe: Type, loc: SourceLocation) extends TypedAst
 
-    case class Definition(doc: Option[Ast.Documentation], ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, tparams: List[TypedAst.TypeParam], fparams: List[TypedAst.FormalParam], exp: TypedAst.Expression, tpe: Type, eff: Eff, loc: SourceLocation) extends TypedAst.Declaration
+  case class Index(sym: Symbol.TableSym, indexes: List[List[Name.Ident]], loc: SourceLocation) extends TypedAst
 
-    case class Enum(doc: Option[Ast.Documentation], sym: Symbol.EnumSym, cases: Map[String, TypedAst.Case], tpe: Type, loc: SourceLocation) extends TypedAst.Declaration
+  case class Lattice(tpe: Type, bot: TypedAst.Expression, top: TypedAst.Expression, leq: TypedAst.Expression, lub: TypedAst.Expression, glb: TypedAst.Expression, loc: SourceLocation) extends TypedAst
 
-    case class Index(sym: Symbol.TableSym, indexes: List[List[Name.Ident]], loc: SourceLocation) extends TypedAst.Declaration
+  case class Property(law: Symbol.DefnSym, defn: Symbol.DefnSym, exp: TypedAst.Expression, loc: SourceLocation) extends TypedAst
 
-    case class BoundedLattice(tpe: Type,
-                              bot: TypedAst.Expression,
-                              top: TypedAst.Expression,
-                              leq: TypedAst.Expression,
-                              lub: TypedAst.Expression,
-                              glb: TypedAst.Expression,
-                              loc: SourceLocation) extends TypedAst.Declaration
-
-  }
+  case class Stratum(constraints: List[TypedAst.Constraint]) extends TypedAst
 
   sealed trait Table
 
@@ -152,7 +142,7 @@ object TypedAst {
 
     case class Var(sym: Symbol.VarSym, tpe: Type, eff: Eff, loc: SourceLocation) extends TypedAst.Expression
 
-    case class Ref(sym: Symbol.DefnSym, tpe: Type, eff: Eff, loc: SourceLocation) extends TypedAst.Expression
+    case class Def(sym: Symbol.DefnSym, tpe: Type, eff: Eff, loc: SourceLocation) extends TypedAst.Expression
 
     case class Hook(hook: Ast.Hook, tpe: Type, eff: Eff, loc: SourceLocation) extends TypedAst.Expression
 
@@ -321,9 +311,5 @@ object TypedAst {
   case class MatchRule(pat: TypedAst.Pattern, guard: TypedAst.Expression, exp: TypedAst.Expression) extends TypedAst
 
   case class TypeParam(name: Name.Ident, tpe: Type, loc: SourceLocation) extends TypedAst
-
-  case class Property(law: Symbol.DefnSym, defn: Symbol.DefnSym, exp: TypedAst.Expression, loc: SourceLocation) extends TypedAst
-
-  case class Stratum(constraints: List[TypedAst.Constraint]) extends TypedAst
 
 }

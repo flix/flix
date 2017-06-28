@@ -117,19 +117,19 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         *
         * Returns [[Err]] if a definition fails to type check.
         */
-      def typecheck(program: ResolvedAst.Program)(implicit genSym: GenSym): Result[Map[Symbol.DefnSym, TypedAst.Declaration.Definition], TypeError] = {
+      def typecheck(program: ResolvedAst.Program)(implicit genSym: GenSym): Result[Map[Symbol.DefnSym, TypedAst.Def], TypeError] = {
         /**
           * Performs type inference and reassembly on the given definition `defn`.
           */
-        def visitDefn(defn: ResolvedAst.Declaration.Definition): Result[(Symbol.DefnSym, TypedAst.Declaration.Definition), TypeError] = defn match {
-          case ResolvedAst.Declaration.Definition(doc, ann, mod, sym, tparams, params, exp, tpe, eff, loc) =>
+        def visitDefn(defn: ResolvedAst.Def): Result[(Symbol.DefnSym, TypedAst.Def), TypeError] = defn match {
+          case ResolvedAst.Def(doc, ann, mod, sym, tparams, params, exp, tpe, eff, loc) =>
             infer(defn, program) map {
               case d => sym -> d
             }
         }
 
         // Visit every definition in the program.
-        val result = program.definitions.toList.map {
+        val result = program.defs.toList.map {
           case (_, defn) => visitDefn(defn)
         }
 
@@ -141,7 +141,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         * Infers the type of the given definition `defn0`.
         */
       // TODO: Cleanup
-      def infer(defn0: ResolvedAst.Declaration.Definition, program: ResolvedAst.Program)(implicit genSym: GenSym): Result[TypedAst.Declaration.Definition, TypeError] = {
+      def infer(defn0: ResolvedAst.Def, program: ResolvedAst.Program)(implicit genSym: GenSym): Result[TypedAst.Def, TypeError] = {
         // Resolve the declared scheme.
         val declaredScheme = defn0.sc
 
@@ -172,7 +172,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
                     TypedAst.FormalParam(sym, mod, subst0(sym.tvar), sym.loc)
                 }
 
-                Ok(TypedAst.Declaration.Definition(defn0.doc, defn0.ann, defn0.mod, defn0.sym, tparams, formals, exp, resultType, defn0.eff, defn0.loc))
+                Ok(TypedAst.Def(defn0.doc, defn0.ann, defn0.mod, defn0.sym, tparams, formals, exp, resultType, defn0.eff, defn0.loc))
 
               case Err(e) => Err(e)
             }
@@ -185,18 +185,18 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       /**
         * Performs type inference and reassembly on all enums in the given program.
         */
-      def typecheck(program: ResolvedAst.Program)(implicit genSym: GenSym): Result[Map[Symbol.EnumSym, TypedAst.Declaration.Enum], TypeError] = {
+      def typecheck(program: ResolvedAst.Program)(implicit genSym: GenSym): Result[Map[Symbol.EnumSym, TypedAst.Enum], TypeError] = {
         /**
           * Performs type resolution on the given enum and its cases.
           */
-        def visitEnum(enum: ResolvedAst.Declaration.Enum): Result[(Symbol.EnumSym, TypedAst.Declaration.Enum), TypeError] = enum match {
-          case ResolvedAst.Declaration.Enum(doc, sym, tparams, cases0, tpe, loc) =>
+        def visitEnum(enum: ResolvedAst.Enum): Result[(Symbol.EnumSym, TypedAst.Enum), TypeError] = enum match {
+          case ResolvedAst.Enum(doc, sym, tparams, cases0, tpe, loc) =>
             val cases = cases0 map {
               case (name, ResolvedAst.Case(enumName, tagName, caseType)) =>
                 name -> TypedAst.Case(enumName, tagName, caseType)
             }
 
-            Ok(sym -> TypedAst.Declaration.Enum(doc, sym, cases, enum.tpe, loc))
+            Ok(sym -> TypedAst.Enum(doc, sym, cases, enum.tpe, loc))
         }
 
         // Visit every enum in the program.
@@ -216,13 +216,13 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         *
         * Returns [[Err]] if an index refers to a non-existent table or a non-existent attribute in a table.
         */
-      def typecheck(program: ResolvedAst.Program): Result[Map[Symbol.TableSym, TypedAst.Declaration.Index], TypeError] = {
+      def typecheck(program: ResolvedAst.Program): Result[Map[Symbol.TableSym, TypedAst.Index], TypeError] = {
 
         /**
           * Checks that the referenced table exists and that every attribute used by the index exists.
           */
-        def visitIndex(index: ResolvedAst.Declaration.Index): Result[(Symbol.TableSym, TypedAst.Declaration.Index), TypeError] = index match {
-          case ResolvedAst.Declaration.Index(sym, indexes, loc) =>
+        def visitIndex(index: ResolvedAst.Index): Result[(Symbol.TableSym, TypedAst.Index), TypeError] = index match {
+          case ResolvedAst.Index(sym, indexes, loc) =>
             // Lookup the table using the table symbol.
             val table = program.tables(index.sym)
 
@@ -236,7 +236,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
                 }
               }
             }
-            Ok(table.sym -> TypedAst.Declaration.Index(table.sym, indexes, loc))
+            Ok(table.sym -> TypedAst.Index(table.sym, indexes, loc))
         }
 
         // Visit every index in the program.
@@ -257,13 +257,13 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         *
         * Returns [[Err]] if a type error occurs.
         */
-      def typecheck(program: ResolvedAst.Program)(implicit genSym: GenSym): Result[Map[Type, TypedAst.Declaration.BoundedLattice], TypeError] = {
+      def typecheck(program: ResolvedAst.Program)(implicit genSym: GenSym): Result[Map[Type, TypedAst.Lattice], TypeError] = {
 
         /**
           * Performs type inference and reassembly on the given `lattice`.
           */
-        def visitLattice(lattice: ResolvedAst.Declaration.BoundedLattice): Result[(Type, TypedAst.Declaration.BoundedLattice), TypeError] = lattice match {
-          case ResolvedAst.Declaration.BoundedLattice(tpe, e1, e2, e3, e4, e5, ns, loc) =>
+        def visitLattice(lattice: ResolvedAst.Lattice): Result[(Type, TypedAst.Lattice), TypeError] = lattice match {
+          case ResolvedAst.Lattice(tpe, e1, e2, e3, e4, e5, ns, loc) =>
             // Perform type resolution on the declared type.
             val declaredType = lattice.tpe
 
@@ -291,7 +291,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
                 val lub = Expressions.reassemble(e4, program, subst)
                 val glb = Expressions.reassemble(e5, program, subst)
 
-                declaredType -> TypedAst.Declaration.BoundedLattice(declaredType, bot, top, leq, lub, glb, loc)
+                declaredType -> TypedAst.Lattice(declaredType, bot, top, leq, lub, glb, loc)
             }
 
         }
@@ -409,8 +409,8 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         /*
          * Reference expression.
          */
-        case ResolvedAst.Expression.Ref(sym, tvar, loc) =>
-          val defn = program.definitions(sym)
+        case ResolvedAst.Expression.Def(sym, tvar, loc) =>
+          val defn = program.defs(sym)
           unifyM(tvar, Scheme.instantiate(defn.sc), loc)
 
         /*
@@ -777,8 +777,8 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         /*
          * Reference expression.
          */
-        case ResolvedAst.Expression.Ref(sym, tvar, loc) =>
-          TypedAst.Expression.Ref(sym, subst0(tvar), Eff.Bot, loc)
+        case ResolvedAst.Expression.Def(sym, tvar, loc) =>
+          TypedAst.Expression.Def(sym, subst0(tvar), Eff.Bot, loc)
 
         /*
          * Hook expression.
@@ -1097,7 +1097,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           case Err(e) => failM(e)
         }
       case ResolvedAst.Predicate.Body.Filter(sym, terms, loc) =>
-        val defn = program.definitions(sym)
+        val defn = program.defs(sym)
         val expectedTypes = defn.fparams.map(_.tpe)
         for (
           actualTypes <- seqM(terms.map(t => Expressions.infer(t, program)));
@@ -1138,7 +1138,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         val ts = terms.map(t => Patterns.reassemble(t, program, subst0))
         TypedAst.Predicate.Body.Negative(sym, ts, loc)
       case ResolvedAst.Predicate.Body.Filter(sym, terms, loc) =>
-        val defn = program.definitions(sym)
+        val defn = program.defs(sym)
         val ts = terms.map(t => Expressions.reassemble(t, program, subst0))
         TypedAst.Predicate.Body.Filter(defn.sym, ts, loc)
       case ResolvedAst.Predicate.Body.Loop(pat, term, loc) =>

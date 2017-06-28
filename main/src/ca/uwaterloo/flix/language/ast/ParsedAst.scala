@@ -115,7 +115,7 @@ object ParsedAst {
       * @param exp        the expression.
       * @param sp2        the position of the last character in the declaration.
       */
-    case class Definition(doc: Option[ParsedAst.Documentation], ann: Seq[ParsedAst.AnnotationOrProperty], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: Seq[ParsedAst.ContextBound], fparamsOpt: Seq[ParsedAst.FormalParam], tpe: ParsedAst.Type, eff: Option[ParsedAst.Effect], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Declaration
+    case class Def(doc: Option[ParsedAst.Documentation], ann: Seq[ParsedAst.AnnotationOrProperty], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: Seq[ParsedAst.ContextBound], fparamsOpt: Seq[ParsedAst.FormalParam], tpe: ParsedAst.Type, eff: Option[ParsedAst.Effect], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
       * Law Declaration.

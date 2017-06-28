@@ -26,7 +26,7 @@ class LatticeImpl[ValueType <: AnyRef](lattice: ExecutableAst.Table.Lattice, roo
   /**
     * The lattice operations associated with each lattice.
     */
-  private val latticeOps: ExecutableAst.Definition.Lattice = root.lattices(lattice.value.tpe)
+  private val latticeOps: ExecutableAst.Lattice = root.lattices(lattice.value.tpe)
 
   /**
     * The bottom element.

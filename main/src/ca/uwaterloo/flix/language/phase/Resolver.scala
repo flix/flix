@@ -36,9 +36,9 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
 
     val b = System.nanoTime()
 
-    val definitionsVal = prog0.definitions.flatMap {
+    val definitionsVal = prog0.defs.flatMap {
       case (ns0, defs) => defs.map {
-        case (_, defn) => Declarations.resolve(defn, ns0, prog0) map {
+        case (_, defn) => resolve(defn, ns0, prog0) map {
           case d => d.sym -> d
         }
       }
@@ -46,7 +46,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
 
     val enumsVal = prog0.enums.flatMap {
       case (ns0, enums) => enums.map {
-        case (_, enum) => Declarations.resolve(enum, ns0, prog0) map {
+        case (_, enum) => resolve(enum, ns0, prog0) map {
           case d => d.sym -> d
         }
       }
@@ -56,13 +56,13 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
       case (tpe0, lattice0) =>
         for {
           tpe <- lookupType(tpe0, lattice0.ns, prog0)
-          lattice <- Declarations.resolve(lattice0, lattice0.ns, prog0)
+          lattice <- resolve(lattice0, lattice0.ns, prog0)
         } yield (tpe, lattice)
     }
 
     val indexesVal = prog0.indexes.flatMap {
       case (ns0, indexes) => indexes.map {
-        case (_, index) => Declarations.resolve(index, ns0, prog0) map {
+        case (_, index) => resolve(index, ns0, prog0) map {
           case i => i.sym -> i
         }
       }
@@ -120,66 +120,62 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
 
   }
 
-  object Declarations {
+  /**
+    * Performs name resolution on the given definition `d0` in the given namespace `ns0`.
+    */
+  def resolve(d0: NamedAst.Def, ns0: Name.NName, prog0: NamedAst.Program): Validation[ResolvedAst.Def, ResolutionError] = {
+    val schemeVal = for {
+      base <- lookupType(d0.sc.base, ns0, prog0)
+    } yield Scheme(d0.sc.quantifiers, base)
 
-    /**
-      * Performs name resolution on the given definition `d0` in the given namespace `ns0`.
-      */
-    def resolve(d0: NamedAst.Declaration.Definition, ns0: Name.NName, prog0: NamedAst.Program): Validation[ResolvedAst.Declaration.Definition, ResolutionError] = {
-      val schemeVal = for {
-        base <- lookupType(d0.sc.base, ns0, prog0)
-      } yield Scheme(d0.sc.quantifiers, base)
+    for {
+      tparams <- seqM(d0.tparams.map(tparam => Params.resolve(tparam, ns0, prog0)))
+      fparams <- seqM(d0.fparams.map(fparam => Params.resolve(fparam, ns0, prog0)))
+      e <- Expressions.resolve(d0.exp, ns0, prog0)
+      sc <- schemeVal
+    } yield ResolvedAst.Def(d0.doc, d0.ann, d0.mod, d0.sym, tparams, fparams, e, sc, d0.eff, d0.loc)
 
-      for {
-        tparams <- seqM(d0.tparams.map(tparam => Params.resolve(tparam, ns0, prog0)))
-        fparams <- seqM(d0.fparams.map(fparam => Params.resolve(fparam, ns0, prog0)))
-        e <- Expressions.resolve(d0.exp, ns0, prog0)
-        sc <- schemeVal
-      } yield ResolvedAst.Declaration.Definition(d0.doc, d0.ann, d0.mod, d0.sym, tparams, fparams, e, sc, d0.eff, d0.loc)
+  }
 
+  /**
+    * Performs name resolution on the given enum `e0` in the given namespace `ns0`.
+    */
+  def resolve(e0: NamedAst.Enum, ns0: Name.NName, prog0: NamedAst.Program): Validation[ResolvedAst.Enum, ResolutionError] = {
+    val casesVal = e0.cases.map {
+      case (name, NamedAst.Case(enum, tag, tpe)) =>
+        for {
+          t <- lookupType(tpe, ns0, prog0)
+        } yield name -> ResolvedAst.Case(enum, tag, t)
     }
 
-    /**
-      * Performs name resolution on the given enum `e0` in the given namespace `ns0`.
-      */
-    def resolve(e0: NamedAst.Declaration.Enum, ns0: Name.NName, prog0: NamedAst.Program): Validation[ResolvedAst.Declaration.Enum, ResolutionError] = {
-      val casesVal = e0.cases.map {
-        case (name, NamedAst.Case(enum, tag, tpe)) =>
-          for {
-            t <- lookupType(tpe, ns0, prog0)
-          } yield name -> ResolvedAst.Case(enum, tag, t)
-      }
+    for {
+      tparams <- seqM(e0.tparams.map(p => Params.resolve(p, ns0, prog0)))
+      cases <- seqM(casesVal)
+      tpe <- lookupType(e0.tpe, ns0, prog0)
+    } yield ResolvedAst.Enum(e0.doc, e0.sym, tparams, cases.toMap, tpe, e0.loc)
+  }
 
-      for {
-        tparams <- seqM(e0.tparams.map(p => Params.resolve(p, ns0, prog0)))
-        cases <- seqM(casesVal)
-        tpe <- lookupType(e0.tpe, ns0, prog0)
-      } yield ResolvedAst.Declaration.Enum(e0.doc, e0.sym, tparams, cases.toMap, tpe, e0.loc)
-    }
+  /**
+    * Performs name resolution on the given index `i0` in the given namespace `ns0`.
+    */
+  def resolve(i0: NamedAst.Index, ns0: Name.NName, prog0: NamedAst.Program): Validation[ResolvedAst.Index, ResolutionError] = {
+    for {
+      d <- lookupTable(i0.qname, ns0, prog0)
+    } yield ResolvedAst.Index(d.sym, i0.indexes, i0.loc)
+  }
 
-    /**
-      * Performs name resolution on the given index `i0` in the given namespace `ns0`.
-      */
-    def resolve(i0: NamedAst.Declaration.Index, ns0: Name.NName, prog0: NamedAst.Program): Validation[ResolvedAst.Declaration.Index, ResolutionError] = {
-      for {
-        d <- lookupTable(i0.qname, ns0, prog0)
-      } yield ResolvedAst.Declaration.Index(d.sym, i0.indexes, i0.loc)
-    }
-
-    /**
-      * Performs name resolution on the given lattice `l0` in the given namespace `ns0`.
-      */
-    def resolve(l0: NamedAst.Declaration.BoundedLattice, ns0: Name.NName, prog0: NamedAst.Program): Validation[ResolvedAst.Declaration.BoundedLattice, ResolutionError] = {
-      for {
-        tpe <- lookupType(l0.tpe, ns0, prog0)
-        bot <- Expressions.resolve(l0.bot, ns0, prog0)
-        top <- Expressions.resolve(l0.top, ns0, prog0)
-        leq <- Expressions.resolve(l0.leq, ns0, prog0)
-        lub <- Expressions.resolve(l0.lub, ns0, prog0)
-        glb <- Expressions.resolve(l0.glb, ns0, prog0)
-      } yield ResolvedAst.Declaration.BoundedLattice(tpe, bot, top, leq, lub, glb, ns0, l0.loc)
-    }
-
+  /**
+    * Performs name resolution on the given lattice `l0` in the given namespace `ns0`.
+    */
+  def resolve(l0: NamedAst.Lattice, ns0: Name.NName, prog0: NamedAst.Program): Validation[ResolvedAst.Lattice, ResolutionError] = {
+    for {
+      tpe <- lookupType(l0.tpe, ns0, prog0)
+      bot <- Expressions.resolve(l0.bot, ns0, prog0)
+      top <- Expressions.resolve(l0.top, ns0, prog0)
+      leq <- Expressions.resolve(l0.leq, ns0, prog0)
+      lub <- Expressions.resolve(l0.lub, ns0, prog0)
+      glb <- Expressions.resolve(l0.glb, ns0, prog0)
+    } yield ResolvedAst.Lattice(tpe, bot, top, leq, lub, glb, ns0, l0.loc)
   }
 
   object Tables {
@@ -225,10 +221,10 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
 
         case NamedAst.Expression.Var(sym, loc) => ResolvedAst.Expression.Var(sym, loc).toSuccess
 
-        case NamedAst.Expression.Ref(ref, tvar, loc) =>
+        case NamedAst.Expression.Def(ref, tvar, loc) =>
           lookupRef(ref, ns0, prog0) map {
             case RefTarget.Defn(ns, defn) =>
-              ResolvedAst.Expression.Ref(defn.sym, tvar, loc)
+              ResolvedAst.Expression.Def(defn.sym, tvar, loc)
             case RefTarget.Hook(hook) =>
               ResolvedAst.Expression.Hook(hook, hook.tpe, loc)
           }
@@ -546,7 +542,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
 
   object RefTarget {
 
-    case class Defn(ns: Name.NName, defn: NamedAst.Declaration.Definition) extends RefTarget
+    case class Defn(ns: Name.NName, defn: NamedAst.Def) extends RefTarget
 
     case class Hook(hook: Ast.Hook) extends RefTarget
 
@@ -559,7 +555,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
     // check whether the reference is fully-qualified.
     if (qname.isUnqualified) {
       // Case 1: Unqualified reference. Lookup both the definition and the hook.
-      val defnOpt = prog0.definitions.getOrElse(ns0, Map.empty).get(qname.ident.name)
+      val defnOpt = prog0.defs.getOrElse(ns0, Map.empty).get(qname.ident.name)
       val hookOpt = prog0.hooks.get(Symbol.mkDefnSym(ns0, qname.ident))
 
       (defnOpt, hookOpt) match {
@@ -567,7 +563,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
         case (None, Some(hook)) => RefTarget.Hook(hook).toSuccess
         case (None, None) =>
           // Try the global namespace.
-          prog0.definitions.getOrElse(Name.RootNS, Map.empty).get(qname.ident.name) match {
+          prog0.defs.getOrElse(Name.RootNS, Map.empty).get(qname.ident.name) match {
             case None => ResolutionError.UndefinedRef(qname, ns0, qname.loc).toFailure
             case Some(defn) => RefTarget.Defn(Name.RootNS, defn).toSuccess
           }
@@ -575,7 +571,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
       }
     } else {
       // Case 2: Qualified. Lookup both the definition and the hook.
-      val defnOpt = prog0.definitions.getOrElse(qname.namespace, Map.empty).get(qname.ident.name)
+      val defnOpt = prog0.defs.getOrElse(qname.namespace, Map.empty).get(qname.ident.name)
       val hookOpt = prog0.hooks.get(Symbol.mkDefnSym(qname.namespace, qname.ident))
 
       (defnOpt, hookOpt) match {
@@ -590,11 +586,11 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
   /**
     * Finds the enum definition matching the given qualified name and tag.
     */
-  def lookupEnumByTag(qname: Option[Name.QName], tag: Name.Ident, ns: Name.NName, prog0: NamedAst.Program): Validation[NamedAst.Declaration.Enum, ResolutionError] = {
+  def lookupEnumByTag(qname: Option[Name.QName], tag: Name.Ident, ns: Name.NName, prog0: NamedAst.Program): Validation[NamedAst.Enum, ResolutionError] = {
     /*
      * Lookup the tag name in all enums across all namespaces.
      */
-    val globalMatches = mutable.Set.empty[NamedAst.Declaration.Enum]
+    val globalMatches = mutable.Set.empty[NamedAst.Enum]
     for ((_, decls) <- prog0.enums) {
       for ((enumName, decl) <- decls) {
         for ((tagName, caze) <- decl.cases) {
@@ -617,8 +613,8 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
     /*
      * Lookup the tag name in all enums in the current namespace.
      */
-    val namespaceMatches = mutable.Set.empty[NamedAst.Declaration.Enum]
-    for ((enumName, decl) <- prog0.enums.getOrElse(namespace, Map.empty[String, NamedAst.Declaration.Enum])) {
+    val namespaceMatches = mutable.Set.empty[NamedAst.Enum]
+    for ((enumName, decl) <- prog0.enums.getOrElse(namespace, Map.empty[String, NamedAst.Enum])) {
       for ((tagName, caze) <- decl.cases) {
         if (tag.name == tagName) {
           namespaceMatches += decl
