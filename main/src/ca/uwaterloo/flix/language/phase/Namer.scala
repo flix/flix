@@ -46,7 +46,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
     // make an empty program to fold over.
     val prog0 = NamedAst.Program(
       enums = Map.empty,
-      definitions = Map.empty,
+      defs = Map.empty,
       lattices = Map.empty,
       indexes = Map.empty,
       tables = Map.empty,
@@ -94,7 +94,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
        */
       case WeededAst.Declaration.Def(doc, ann, mod, ident, tparams0, fparams0, exp, tpe, eff, loc) =>
         // check if the definition already exists.
-        val defns = prog0.definitions.getOrElse(ns0, Map.empty)
+        val defns = prog0.defs.getOrElse(ns0, Map.empty)
         defns.get(ident.name) match {
           case None =>
             // Case 1: The definition does not already exist. Update it.
@@ -122,8 +122,8 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
               case e =>
                 val sym = Symbol.mkDefnSym(ns0, ident)
                 val sc = NamedAst.Scheme(tparams.map(_.tpe), Types.namer(tpe, tenv0))
-                val defn = NamedAst.Definition(doc, ann, mod, sym, tparams, fparams, e, sc, eff, loc)
-                prog0.copy(definitions = prog0.definitions + (ns0 -> (defns + (ident.name -> defn))))
+                val defn = NamedAst.Def(doc, ann, mod, sym, tparams, fparams, e, sc, eff, loc)
+                prog0.copy(defs = prog0.defs + (ns0 -> (defns + (ident.name -> defn))))
             }
           case Some(defn) =>
             // Case 2: Duplicate definition.

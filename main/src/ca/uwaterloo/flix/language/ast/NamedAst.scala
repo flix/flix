@@ -26,7 +26,7 @@ trait NamedAst
 
 object NamedAst {
 
-  case class Program(definitions: Map[Name.NName, Map[String, NamedAst.Definition]],
+  case class Program(defs: Map[Name.NName, Map[String, NamedAst.Def]],
                      enums: Map[Name.NName, Map[String, NamedAst.Enum]],
                      lattices: Map[NamedAst.Type, NamedAst.Lattice],
                      indexes: Map[Name.NName, Map[String, NamedAst.Index]],
@@ -39,7 +39,7 @@ object NamedAst {
 
   case class Constraint(cparams: List[NamedAst.ConstraintParam], head: NamedAst.Predicate.Head, body: List[NamedAst.Predicate.Body], loc: SourceLocation) extends NamedAst
 
-  case class Definition(doc: Option[Ast.Documentation], ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, tparams: List[NamedAst.TypeParam], fparams: List[NamedAst.FormalParam], exp: NamedAst.Expression, sc: NamedAst.Scheme, eff: Eff, loc: SourceLocation) extends NamedAst
+  case class Def(doc: Option[Ast.Documentation], ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, tparams: List[NamedAst.TypeParam], fparams: List[NamedAst.FormalParam], exp: NamedAst.Expression, sc: NamedAst.Scheme, eff: Eff, loc: SourceLocation) extends NamedAst
 
   case class Enum(doc: Option[Ast.Documentation], sym: Symbol.EnumSym, tparams: List[NamedAst.TypeParam], cases: Map[String, NamedAst.Case], tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst
 

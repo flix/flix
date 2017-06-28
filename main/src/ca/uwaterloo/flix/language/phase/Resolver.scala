@@ -36,7 +36,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
 
     val b = System.nanoTime()
 
-    val definitionsVal = prog0.definitions.flatMap {
+    val definitionsVal = prog0.defs.flatMap {
       case (ns0, defs) => defs.map {
         case (_, defn) => resolve(defn, ns0, prog0) map {
           case d => d.sym -> d
@@ -123,7 +123,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
   /**
     * Performs name resolution on the given definition `d0` in the given namespace `ns0`.
     */
-  def resolve(d0: NamedAst.Definition, ns0: Name.NName, prog0: NamedAst.Program): Validation[ResolvedAst.Def, ResolutionError] = {
+  def resolve(d0: NamedAst.Def, ns0: Name.NName, prog0: NamedAst.Program): Validation[ResolvedAst.Def, ResolutionError] = {
     val schemeVal = for {
       base <- lookupType(d0.sc.base, ns0, prog0)
     } yield Scheme(d0.sc.quantifiers, base)
@@ -542,7 +542,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
 
   object RefTarget {
 
-    case class Defn(ns: Name.NName, defn: NamedAst.Definition) extends RefTarget
+    case class Defn(ns: Name.NName, defn: NamedAst.Def) extends RefTarget
 
     case class Hook(hook: Ast.Hook) extends RefTarget
 
@@ -555,7 +555,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
     // check whether the reference is fully-qualified.
     if (qname.isUnqualified) {
       // Case 1: Unqualified reference. Lookup both the definition and the hook.
-      val defnOpt = prog0.definitions.getOrElse(ns0, Map.empty).get(qname.ident.name)
+      val defnOpt = prog0.defs.getOrElse(ns0, Map.empty).get(qname.ident.name)
       val hookOpt = prog0.hooks.get(Symbol.mkDefnSym(ns0, qname.ident))
 
       (defnOpt, hookOpt) match {
@@ -563,7 +563,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
         case (None, Some(hook)) => RefTarget.Hook(hook).toSuccess
         case (None, None) =>
           // Try the global namespace.
-          prog0.definitions.getOrElse(Name.RootNS, Map.empty).get(qname.ident.name) match {
+          prog0.defs.getOrElse(Name.RootNS, Map.empty).get(qname.ident.name) match {
             case None => ResolutionError.UndefinedRef(qname, ns0, qname.loc).toFailure
             case Some(defn) => RefTarget.Defn(Name.RootNS, defn).toSuccess
           }
@@ -571,7 +571,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
       }
     } else {
       // Case 2: Qualified. Lookup both the definition and the hook.
-      val defnOpt = prog0.definitions.getOrElse(qname.namespace, Map.empty).get(qname.ident.name)
+      val defnOpt = prog0.defs.getOrElse(qname.namespace, Map.empty).get(qname.ident.name)
       val hookOpt = prog0.hooks.get(Symbol.mkDefnSym(qname.namespace, qname.ident))
 
       (defnOpt, hookOpt) match {
