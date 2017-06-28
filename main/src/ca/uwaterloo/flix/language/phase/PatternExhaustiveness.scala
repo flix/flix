@@ -109,7 +109,7 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
     val startTime = System.nanoTime()
 
     for {
-      _ <- seqM(root.definitions.map { case (_, v) => Definitions.checkPats(v, root) })
+      _ <- seqM(root.defs.map { case (_, v) => checkPats(v, root) })
     } yield {
       val currentTime = System.nanoTime()
       val time = root.time.copy(patsExhaustive = currentTime - startTime)
@@ -117,43 +117,42 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
     }
   }
 
-  object Definitions {
-    /**
-      * Check that all patterns in a Declaration are exhaustive
-      *
-      * @param tast The expression to check
-      * @param root The AST root
-      */
-    def checkPats(tast: TypedAst.Declaration.BoundedLattice, root: TypedAst.Root)(implicit genSym: GenSym): Validation[TypedAst.Declaration.BoundedLattice, CompilationError] = tast match {
-      case TypedAst.Declaration.BoundedLattice(_, bot0, top0, leq0, lub0, glb0, _) =>
-        for {
-          _ <- Expressions.checkPats(bot0, root)
-          _ <- Expressions.checkPats(top0, root)
-          _ <- Expressions.checkPats(leq0, root)
-          _ <- Expressions.checkPats(lub0, root)
-          _ <- Expressions.checkPats(glb0, root)
-        } yield tast
-    }
-
-    /**
-      * Check that all patterns in a Declaration are exhaustive
-      *
-      * @param tast The expression to check
-      * @param root The AST root
-      */
-    def checkPats(tast: TypedAst.Declaration.Definition, root: TypedAst.Root)(implicit genSym: GenSym): Validation[TypedAst.Declaration.Definition, CompilationError] = for {
-      _ <- Expressions.checkPats(tast.exp, root)
-    } yield tast
-
-    /**
-      * Check that all patterns in a Declaration are exhaustive
-      *
-      * @param tast The expression to check
-      * @param root The AST root
-      * @return
-      */
-    def checkPats(tast: TypedAst.Declaration.Index, root: TypedAst.Root)(implicit genSym: GenSym): TypedAst.Declaration.Index = tast
+  /**
+    * Check that all patterns in a Declaration are exhaustive
+    *
+    * @param tast The expression to check
+    * @param root The AST root
+    */
+  def checkPats(tast: TypedAst.Lattice, root: TypedAst.Root)(implicit genSym: GenSym): Validation[TypedAst.Lattice, CompilationError] = tast match {
+    case TypedAst.Lattice(_, bot0, top0, leq0, lub0, glb0, _) =>
+      for {
+        _ <- Expressions.checkPats(bot0, root)
+        _ <- Expressions.checkPats(top0, root)
+        _ <- Expressions.checkPats(leq0, root)
+        _ <- Expressions.checkPats(lub0, root)
+        _ <- Expressions.checkPats(glb0, root)
+      } yield tast
   }
+
+  /**
+    * Check that all patterns in a Declaration are exhaustive
+    *
+    * @param tast The expression to check
+    * @param root The AST root
+    */
+  def checkPats(tast: TypedAst.Def, root: TypedAst.Root)(implicit genSym: GenSym): Validation[TypedAst.Def, CompilationError] = for {
+    _ <- Expressions.checkPats(tast.exp, root)
+  } yield tast
+
+  /**
+    * Check that all patterns in a Declaration are exhaustive
+    *
+    * @param tast The expression to check
+    * @param root The AST root
+    * @return
+    */
+  def checkPats(tast: TypedAst.Index, root: TypedAst.Root)(implicit genSym: GenSym): TypedAst.Index = tast
+
 
   object Expressions {
     /**
@@ -162,7 +161,7 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
       * @param tast The expression to check
       * @param root The AST root
       */
-    def checkPats(tast: TypedAst.Expression, root: TypedAst.Root)(implicit genSym: GenSym): Validation[TypedAst.Expression, CompilationError]= {
+    def checkPats(tast: TypedAst.Expression, root: TypedAst.Root)(implicit genSym: GenSym): Validation[TypedAst.Expression, CompilationError] = {
       tast match {
         case Expression.Unit(_) => tast.toSuccess
         case Expression.True(_) => tast.toSuccess
@@ -183,7 +182,9 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
         case Expression.Lambda(_, body, _, _, _) => checkPats(body, root).map(const(tast))
         case Expression.Apply(exp, args, tpe, _, loc) => for {
           _ <- checkPats(exp, root)
-          _ <- seqM (args map { checkPats(_, root) })
+          _ <- seqM(args map {
+            checkPats(_, root)
+          })
         } yield tast
         case Expression.Unary(_, exp, _, _, _) => checkPats(exp, root).map(const(tast))
         case Expression.Binary(_, exp1, exp2, _, _, _) => for {
@@ -204,24 +205,30 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
           _ <- checkPats(exp3, root)
         } yield tast
         case Expression.Match(exp, rules, _, _, _) => for {
-          _ <- seqM (rules map {x => checkPats(x.exp, root)})
+          _ <- seqM(rules map { x => checkPats(x.exp, root) })
           _ <- checkRules(exp, rules, root)
         } yield tast
         case Expression.Switch(rules, _, _, _) => for {
-          _ <- seqM (rules map(x => for {
+          _ <- seqM(rules map (x => for {
             _ <- checkPats(x._1, root)
             _ <- checkPats(x._2, root)
           } yield x))
         } yield tast
         case Expression.Tag(_, _, exp, _, _, _) => checkPats(exp, root).map(const(tast))
-        case Expression.Tuple(elms, _, _, _) => seqM(elms map { checkPats(_, root) }).map(const(tast))
+        case Expression.Tuple(elms, _, _, _) => seqM(elms map {
+          checkPats(_, root)
+        }).map(const(tast))
         case Expression.Existential(_, exp, _, _) => checkPats(exp, root).map(const(tast))
         case Expression.Universal(_, exp, _, _) => checkPats(exp, root).map(const(tast))
         case Expression.Ascribe(exp, _, _, _) => checkPats(exp, root).map(const(tast))
         case Expression.Cast(exp, _, _, _) => checkPats(exp, root).map(const(tast))
-        case Expression.NativeConstructor(_, args, _, _, _) => seqM(args map {checkPats(_, root)}).map(const(tast))
+        case Expression.NativeConstructor(_, args, _, _, _) => seqM(args map {
+          checkPats(_, root)
+        }).map(const(tast))
         case Expression.NativeField(_, _, _, _) => tast.toSuccess
-        case Expression.NativeMethod(_, args, _, _, _) => seqM(args map {checkPats(_, root)}).map(const(tast))
+        case Expression.NativeMethod(_, args, _, _, _) => seqM(args map {
+          checkPats(_, root)
+        }).map(const(tast))
         case Expression.UserError(_, _, _) => tast.toSuccess
       }
     }

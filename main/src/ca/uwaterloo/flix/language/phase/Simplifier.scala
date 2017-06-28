@@ -44,17 +44,17 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
 
     val toplevel: TopLevel = mutable.Map.empty
 
-    val defns = root.definitions.map { case (k, v) => k -> Definition.simplify(v) }
+    val defns = root.defs.map { case (k, v) => k -> simplify(v) }
     val enums = root.enums.map {
-      case (k, TypedAst.Declaration.Enum(doc, sym, cases0, sc, loc)) =>
+      case (k, TypedAst.Enum(doc, sym, cases0, sc, loc)) =>
         val cases = cases0 map {
           case (tag, TypedAst.Case(enum, tagName, tpe)) => tag -> SimplifiedAst.Case(enum, tagName, tpe)
         }
         k -> SimplifiedAst.Definition.Enum(sym, cases, loc)
     }
-    val lattices = root.lattices.map { case (k, v) => k -> Definition.simplify(v) }
+    val lattices = root.lattices.map { case (k, v) => k -> simplify(v) }
     val collections = root.tables.map { case (k, v) => k -> Table.simplify(v) }
-    val indexes = root.indexes.map { case (k, v) => k -> Definition.simplify(v) }
+    val indexes = root.indexes.map { case (k, v) => k -> simplify(v) }
     val strata = root.strata.map(s => simplify(s, toplevel))
     val properties = root.properties.map { p => simplify(p) }
     val reachable = root.reachable
@@ -90,24 +90,21 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
 
   }
 
-  object Definition {
-    def simplify(tast: TypedAst.Declaration.BoundedLattice)(implicit genSym: GenSym): SimplifiedAst.Definition.Lattice = tast match {
-      case TypedAst.Declaration.BoundedLattice(tpe, bot, top, leq, lub, glb, loc) =>
-        import Expression.{simplify => s}
-        SimplifiedAst.Definition.Lattice(tpe, s(bot), s(top), s(leq), s(lub), s(glb), loc)
-    }
-
-    def simplify(tast: TypedAst.Declaration.Definition)(implicit genSym: GenSym): SimplifiedAst.Definition.Constant = {
-      val formals = tast.fparams.map {
-        case TypedAst.FormalParam(sym, mod, tpe, loc) => SimplifiedAst.FormalParam(sym, mod, tpe, loc)
-      }
-      SimplifiedAst.Definition.Constant(tast.ann, tast.mod, tast.sym, formals, Expression.simplify(tast.exp), isSynthetic = false, tast.tpe, tast.loc)
-    }
-
-    def simplify(tast: TypedAst.Declaration.Index)(implicit genSym: GenSym): SimplifiedAst.Definition.Index =
-      SimplifiedAst.Definition.Index(tast.sym, tast.indexes, tast.loc)
-
+  def simplify(tast: TypedAst.Lattice)(implicit genSym: GenSym): SimplifiedAst.Definition.Lattice = tast match {
+    case TypedAst.Lattice(tpe, bot, top, leq, lub, glb, loc) =>
+      import Expression.{simplify => s}
+      SimplifiedAst.Definition.Lattice(tpe, s(bot), s(top), s(leq), s(lub), s(glb), loc)
   }
+
+  def simplify(tast: TypedAst.Def)(implicit genSym: GenSym): SimplifiedAst.Definition.Constant = {
+    val formals = tast.fparams.map {
+      case TypedAst.FormalParam(sym, mod, tpe, loc) => SimplifiedAst.FormalParam(sym, mod, tpe, loc)
+    }
+    SimplifiedAst.Definition.Constant(tast.ann, tast.mod, tast.sym, formals, Expression.simplify(tast.exp), isSynthetic = false, tast.tpe, tast.loc)
+  }
+
+  def simplify(tast: TypedAst.Index)(implicit genSym: GenSym): SimplifiedAst.Definition.Index =
+    SimplifiedAst.Definition.Index(tast.sym, tast.indexes, tast.loc)
 
   object Expression {
     def simplify(tast: TypedAst.Expression)(implicit genSym: GenSym): SimplifiedAst.Expression = tast match {

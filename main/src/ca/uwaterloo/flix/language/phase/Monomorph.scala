@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.TypedAst.{Declaration, Expression, Pattern, Root}
+import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, Pattern, Root}
 import ca.uwaterloo.flix.language.ast.{BinaryOperator, Symbol, Type, TypedAst, UnaryOperator}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 import ca.uwaterloo.flix.util.Validation._
@@ -114,7 +114,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
       *
       * it means that the function definition f should be specialized w.r.t. the map [a -> Int] under the fresh name f$1.
       */
-    val queue: mutable.Queue[(Symbol.DefnSym, Declaration.Definition, StrictSubstitution)] = mutable.Queue.empty
+    val queue: mutable.Queue[(Symbol.DefnSym, TypedAst.Def, StrictSubstitution)] = mutable.Queue.empty
 
     /**
       * A function-local map from a symbol and a concrete type to the fresh symbol for the specialized version of that function.
@@ -340,7 +340,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
       */
     def specializeSym(sym: Symbol.DefnSym, tpe: Type): Symbol.DefnSym = {
       // Lookup the definition and its declared type.
-      val defn = root.definitions(sym)
+      val defn = root.defs(sym)
       val declaredType = defn.tpe
 
       // Unify the declared and actual type to obtain the substitution map.
@@ -409,7 +409,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
       val matches = mutable.Set.empty[Symbol.DefnSym]
 
       // Iterate through each definition and collect the matching symbols.
-      for ((sym, defn) <- root.definitions) {
+      for ((sym, defn) <- root.defs) {
         // Check the function name.
         if (name == sym.name) {
           // Check whether the type unifies.
@@ -438,14 +438,14 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
     /*
      * A map used to collect specialized definitions, etc.
      */
-    val specializedDefns: mutable.Map[Symbol.DefnSym, Declaration.Definition] = mutable.Map.empty
+    val specializedDefns: mutable.Map[Symbol.DefnSym, TypedAst.Def] = mutable.Map.empty
     val specializedProperties: mutable.ListBuffer[TypedAst.Property] = mutable.ListBuffer.empty
     // TODO: Specialize expressions occurring in other places, e.g facts/rules/properties.
 
     /*
      * Collect all non-parametric function definitions.
      */
-    val nonParametricDefns = root.definitions.filter {
+    val nonParametricDefns = root.defs.filter {
       case (_, defn) => defn.tparams.isEmpty
     }
 
@@ -509,7 +509,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
 
     // Reassemble the AST.
     root.copy(
-      definitions = specializedDefns.toMap,
+      defs = specializedDefns.toMap,
       properties = specializedProperties.toList,
       time = root.time.copy(monomorph = e)
     ).toSuccess

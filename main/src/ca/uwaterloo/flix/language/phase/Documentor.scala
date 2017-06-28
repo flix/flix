@@ -44,17 +44,17 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     // Check whether to generate documentation.
     if (flix.options.documentor) {
       // Collect the definitions.
-      val defnsByNS = root.definitions.filterNot {
+      val defnsByNS = root.defs.filterNot {
         case (sym, defn) => defn.ann.isLaw || defn.ann.isTest || defn.ann.isInternal
       }.groupBy(_._1.namespace)
 
       // Collect the laws.
-      val lawsByNS = root.definitions.filter {
+      val lawsByNS = root.defs.filter {
         case (sym, defn) => defn.ann.isLaw
       }.groupBy(_._1.namespace)
 
       // Collect the tests.
-      val testsByNS = root.definitions.filter {
+      val testsByNS = root.defs.filter {
         case (sym, defn) => defn.ann.isTest
       }.groupBy(_._1.namespace)
 
@@ -148,7 +148,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
   /**
     * Returns the given definition `d` as a JSON object.
     */
-  private def mkDefn(d: Declaration.Definition): JObject = {
+  private def mkDefn(d: TypedAst.Def): JObject = {
     // Process type parameters.
     val tparams = d.tparams.map {
       case TypeParam(ident, tpe, loc) => JObject(List(
@@ -180,7 +180,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
   /**
     * Returns the given enum `e` as a JSON object.
     */
-  private def mkEnum(e: Declaration.Enum): JObject = {
+  private def mkEnum(e: TypedAst.Enum): JObject = {
     JObject(List(
       JField("name", JString(e.sym.name)),
       JField("comment", JString(getComment(e.doc)))
