@@ -38,7 +38,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
 
     val definitionsVal = prog0.definitions.flatMap {
       case (ns0, defs) => defs.map {
-        case (_, defn) => Declarations.resolve(defn, ns0, prog0) map {
+        case (_, defn) => resolve(defn, ns0, prog0) map {
           case d => d.sym -> d
         }
       }
@@ -46,7 +46,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
 
     val enumsVal = prog0.enums.flatMap {
       case (ns0, enums) => enums.map {
-        case (_, enum) => Declarations.resolve(enum, ns0, prog0) map {
+        case (_, enum) => resolve(enum, ns0, prog0) map {
           case d => d.sym -> d
         }
       }
@@ -56,13 +56,13 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
       case (tpe0, lattice0) =>
         for {
           tpe <- lookupType(tpe0, lattice0.ns, prog0)
-          lattice <- Declarations.resolve(lattice0, lattice0.ns, prog0)
+          lattice <- resolve(lattice0, lattice0.ns, prog0)
         } yield (tpe, lattice)
     }
 
     val indexesVal = prog0.indexes.flatMap {
       case (ns0, indexes) => indexes.map {
-        case (_, index) => Declarations.resolve(index, ns0, prog0) map {
+        case (_, index) => resolve(index, ns0, prog0) map {
           case i => i.sym -> i
         }
       }
@@ -120,66 +120,62 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
 
   }
 
-  object Declarations {
+  /**
+    * Performs name resolution on the given definition `d0` in the given namespace `ns0`.
+    */
+  def resolve(d0: NamedAst.Declaration.Definition, ns0: Name.NName, prog0: NamedAst.Program): Validation[ResolvedAst.Def, ResolutionError] = {
+    val schemeVal = for {
+      base <- lookupType(d0.sc.base, ns0, prog0)
+    } yield Scheme(d0.sc.quantifiers, base)
 
-    /**
-      * Performs name resolution on the given definition `d0` in the given namespace `ns0`.
-      */
-    def resolve(d0: NamedAst.Declaration.Definition, ns0: Name.NName, prog0: NamedAst.Program): Validation[ResolvedAst.Declaration.Definition, ResolutionError] = {
-      val schemeVal = for {
-        base <- lookupType(d0.sc.base, ns0, prog0)
-      } yield Scheme(d0.sc.quantifiers, base)
+    for {
+      tparams <- seqM(d0.tparams.map(tparam => Params.resolve(tparam, ns0, prog0)))
+      fparams <- seqM(d0.fparams.map(fparam => Params.resolve(fparam, ns0, prog0)))
+      e <- Expressions.resolve(d0.exp, ns0, prog0)
+      sc <- schemeVal
+    } yield ResolvedAst.Def(d0.doc, d0.ann, d0.mod, d0.sym, tparams, fparams, e, sc, d0.eff, d0.loc)
 
-      for {
-        tparams <- seqM(d0.tparams.map(tparam => Params.resolve(tparam, ns0, prog0)))
-        fparams <- seqM(d0.fparams.map(fparam => Params.resolve(fparam, ns0, prog0)))
-        e <- Expressions.resolve(d0.exp, ns0, prog0)
-        sc <- schemeVal
-      } yield ResolvedAst.Declaration.Definition(d0.doc, d0.ann, d0.mod, d0.sym, tparams, fparams, e, sc, d0.eff, d0.loc)
+  }
 
+  /**
+    * Performs name resolution on the given enum `e0` in the given namespace `ns0`.
+    */
+  def resolve(e0: NamedAst.Declaration.Enum, ns0: Name.NName, prog0: NamedAst.Program): Validation[ResolvedAst.Enum, ResolutionError] = {
+    val casesVal = e0.cases.map {
+      case (name, NamedAst.Case(enum, tag, tpe)) =>
+        for {
+          t <- lookupType(tpe, ns0, prog0)
+        } yield name -> ResolvedAst.Case(enum, tag, t)
     }
 
-    /**
-      * Performs name resolution on the given enum `e0` in the given namespace `ns0`.
-      */
-    def resolve(e0: NamedAst.Declaration.Enum, ns0: Name.NName, prog0: NamedAst.Program): Validation[ResolvedAst.Declaration.Enum, ResolutionError] = {
-      val casesVal = e0.cases.map {
-        case (name, NamedAst.Case(enum, tag, tpe)) =>
-          for {
-            t <- lookupType(tpe, ns0, prog0)
-          } yield name -> ResolvedAst.Case(enum, tag, t)
-      }
+    for {
+      tparams <- seqM(e0.tparams.map(p => Params.resolve(p, ns0, prog0)))
+      cases <- seqM(casesVal)
+      tpe <- lookupType(e0.tpe, ns0, prog0)
+    } yield ResolvedAst.Enum(e0.doc, e0.sym, tparams, cases.toMap, tpe, e0.loc)
+  }
 
-      for {
-        tparams <- seqM(e0.tparams.map(p => Params.resolve(p, ns0, prog0)))
-        cases <- seqM(casesVal)
-        tpe <- lookupType(e0.tpe, ns0, prog0)
-      } yield ResolvedAst.Declaration.Enum(e0.doc, e0.sym, tparams, cases.toMap, tpe, e0.loc)
-    }
+  /**
+    * Performs name resolution on the given index `i0` in the given namespace `ns0`.
+    */
+  def resolve(i0: NamedAst.Declaration.Index, ns0: Name.NName, prog0: NamedAst.Program): Validation[ResolvedAst.Index, ResolutionError] = {
+    for {
+      d <- lookupTable(i0.qname, ns0, prog0)
+    } yield ResolvedAst.Index(d.sym, i0.indexes, i0.loc)
+  }
 
-    /**
-      * Performs name resolution on the given index `i0` in the given namespace `ns0`.
-      */
-    def resolve(i0: NamedAst.Declaration.Index, ns0: Name.NName, prog0: NamedAst.Program): Validation[ResolvedAst.Declaration.Index, ResolutionError] = {
-      for {
-        d <- lookupTable(i0.qname, ns0, prog0)
-      } yield ResolvedAst.Declaration.Index(d.sym, i0.indexes, i0.loc)
-    }
-
-    /**
-      * Performs name resolution on the given lattice `l0` in the given namespace `ns0`.
-      */
-    def resolve(l0: NamedAst.Declaration.BoundedLattice, ns0: Name.NName, prog0: NamedAst.Program): Validation[ResolvedAst.Declaration.BoundedLattice, ResolutionError] = {
-      for {
-        tpe <- lookupType(l0.tpe, ns0, prog0)
-        bot <- Expressions.resolve(l0.bot, ns0, prog0)
-        top <- Expressions.resolve(l0.top, ns0, prog0)
-        leq <- Expressions.resolve(l0.leq, ns0, prog0)
-        lub <- Expressions.resolve(l0.lub, ns0, prog0)
-        glb <- Expressions.resolve(l0.glb, ns0, prog0)
-      } yield ResolvedAst.Declaration.BoundedLattice(tpe, bot, top, leq, lub, glb, ns0, l0.loc)
-    }
-
+  /**
+    * Performs name resolution on the given lattice `l0` in the given namespace `ns0`.
+    */
+  def resolve(l0: NamedAst.Declaration.BoundedLattice, ns0: Name.NName, prog0: NamedAst.Program): Validation[ResolvedAst.Lattice, ResolutionError] = {
+    for {
+      tpe <- lookupType(l0.tpe, ns0, prog0)
+      bot <- Expressions.resolve(l0.bot, ns0, prog0)
+      top <- Expressions.resolve(l0.top, ns0, prog0)
+      leq <- Expressions.resolve(l0.leq, ns0, prog0)
+      lub <- Expressions.resolve(l0.lub, ns0, prog0)
+      glb <- Expressions.resolve(l0.glb, ns0, prog0)
+    } yield ResolvedAst.Lattice(tpe, bot, top, leq, lub, glb, ns0, l0.loc)
   }
 
   object Tables {

@@ -24,10 +24,10 @@ trait ResolvedAst
 
 object ResolvedAst {
 
-  case class Program(definitions: Map[Symbol.DefnSym, ResolvedAst.Declaration.Definition],
-                     enums: Map[Symbol.EnumSym, ResolvedAst.Declaration.Enum],
-                     lattices: Map[Type, ResolvedAst.Declaration.BoundedLattice],
-                     indexes: Map[Symbol.TableSym, ResolvedAst.Declaration.Index],
+  case class Program(defs: Map[Symbol.DefnSym, ResolvedAst.Def],
+                     enums: Map[Symbol.EnumSym, ResolvedAst.Enum],
+                     lattices: Map[Type, ResolvedAst.Lattice],
+                     indexes: Map[Symbol.TableSym, ResolvedAst.Index],
                      tables: Map[Symbol.TableSym, ResolvedAst.Table],
                      constraints: List[ResolvedAst.Constraint],
                      hooks: Map[Symbol.DefnSym, Ast.Hook],
@@ -37,23 +37,17 @@ object ResolvedAst {
 
   case class Constraint(cparams: List[ResolvedAst.ConstraintParam], head: ResolvedAst.Predicate.Head, body: List[ResolvedAst.Predicate.Body], loc: SourceLocation) extends ResolvedAst
 
-  sealed trait Declaration extends ResolvedAst {
-    def loc: SourceLocation
-  }
+  case class Def(doc: Option[Ast.Documentation], ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, tparams: List[ResolvedAst.TypeParam], fparams: List[ResolvedAst.FormalParam], exp: ResolvedAst.Expression, sc: Scheme, eff: Eff, loc: SourceLocation) extends ResolvedAst
 
-  object Declaration {
+  case class Enum(doc: Option[Ast.Documentation], sym: Symbol.EnumSym, tparams: List[ResolvedAst.TypeParam], cases: Map[String, ResolvedAst.Case], tpe: Type, loc: SourceLocation) extends ResolvedAst
 
-    case class Definition(doc: Option[Ast.Documentation], ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, tparams: List[ResolvedAst.TypeParam], fparams: List[ResolvedAst.FormalParam], exp: ResolvedAst.Expression, sc: Scheme, eff: Eff, loc: SourceLocation) extends ResolvedAst.Declaration
+  case class Index(sym: Symbol.TableSym, indexes: List[List[Name.Ident]], loc: SourceLocation) extends ResolvedAst
 
-    case class Enum(doc: Option[Ast.Documentation], sym: Symbol.EnumSym, tparams: List[ResolvedAst.TypeParam], cases: Map[String, ResolvedAst.Case], tpe: Type, loc: SourceLocation) extends ResolvedAst.Declaration
+  case class Lattice(tpe: Type, bot: ResolvedAst.Expression, top: ResolvedAst.Expression, leq: ResolvedAst.Expression, lub: ResolvedAst.Expression, glb: ResolvedAst.Expression, ns: Name.NName, loc: SourceLocation) extends ResolvedAst
 
-    case class Index(sym: Symbol.TableSym, indexes: List[List[Name.Ident]], loc: SourceLocation) extends ResolvedAst.Declaration
+  case class Property(law: Symbol.DefnSym, defn: Symbol.DefnSym, exp: ResolvedAst.Expression, loc: SourceLocation) extends Ast.Annotation
 
-    case class BoundedLattice(tpe: Type, bot: ResolvedAst.Expression, top: ResolvedAst.Expression, leq: ResolvedAst.Expression, lub: ResolvedAst.Expression, glb: ResolvedAst.Expression, ns: Name.NName, loc: SourceLocation) extends ResolvedAst.Declaration
-
-  }
-
-  sealed trait Table extends ResolvedAst.Declaration {
+  sealed trait Table extends ResolvedAst {
     def sym: Symbol.TableSym
 
     def attr: List[ResolvedAst.Attribute]
@@ -240,8 +234,6 @@ object ResolvedAst {
   case class FormalParam(sym: Symbol.VarSym, mod: Ast.Modifiers, tpe: Type, loc: SourceLocation) extends ResolvedAst
 
   case class MatchRule(pat: ResolvedAst.Pattern, guard: ResolvedAst.Expression, exp: ResolvedAst.Expression) extends ResolvedAst
-
-  case class Property(law: Symbol.DefnSym, defn: Symbol.DefnSym, exp: ResolvedAst.Expression, loc: SourceLocation) extends Ast.Annotation
 
   case class TypeParam(name: Name.Ident, tpe: Type.Var, loc: SourceLocation) extends ResolvedAst
 

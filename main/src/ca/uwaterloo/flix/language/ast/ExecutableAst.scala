@@ -114,6 +114,10 @@ object ExecutableAst {
 
   case class Index(name: Symbol.TableSym, indexes: Seq[Seq[Name.Ident]], loc: SourceLocation) extends ExecutableAst
 
+  case class Property(law: Symbol.DefnSym, defn: Symbol.DefnSym, exp: ExecutableAst.Expression) extends ExecutableAst {
+    def loc: SourceLocation = defn.loc
+  }
+
   sealed trait Table extends ExecutableAst
 
   object Table {
@@ -511,9 +515,5 @@ object ExecutableAst {
   case class FormalParam(sym: Symbol.VarSym, tpe: Type) extends ExecutableAst
 
   case class FreeVar(sym: Symbol.VarSym, tpe: Type) extends ExecutableAst
-
-  case class Property(law: Symbol.DefnSym, defn: Symbol.DefnSym, exp: ExecutableAst.Expression) extends ExecutableAst {
-    def loc: SourceLocation = defn.loc
-  }
 
 }
