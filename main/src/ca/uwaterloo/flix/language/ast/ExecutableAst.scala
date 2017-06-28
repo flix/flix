@@ -232,11 +232,11 @@ object ExecutableAst {
 
     case class Tuple(elms: Array[ExecutableAst.Expression], tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
-    case class Reference(exp: ExecutableAst, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
+    case class Ref(exp: ExecutableAst, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
-    case class Dereference(exp: ExecutableAst, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
+    case class Deref(exp: ExecutableAst, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
-    case class Assignment(exp1: ExecutableAst, exp2: ExecutableAst, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
+    case class Assign(exp1: ExecutableAst, exp2: ExecutableAst, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
     case class Existential(fparam: ExecutableAst.FormalParam, exp: ExecutableAst.Expression, loc: SourceLocation) extends ExecutableAst.Expression {
       def tpe: Type = Type.Bool

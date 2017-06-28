@@ -113,11 +113,11 @@ object Interpreter {
       }
       array
 
-    case Expression.Reference(exp, tpe, loc) => ??? // TODO
+    case Expression.Ref(exp, tpe, loc) => ??? // TODO
 
-    case Expression.Dereference(exp, tpe, loc) => ??? // TODO
+    case Expression.Deref(exp, tpe, loc) => ??? // TODO
 
-    case Expression.Assignment(exp1, exp2, tpe, loc) => ??? // TODO
+    case Expression.Assign(exp1, exp2, tpe, loc) => ??? // TODO
 
     case Expression.Existential(params, exp, loc) => throw InternalRuntimeException(s"Unexpected expression: '$exp' at ${loc.source.format}.")
     case Expression.Universal(params, exp, loc) => throw InternalRuntimeException(s"Unexpected expression: '$exp' at ${loc.source.format}.")

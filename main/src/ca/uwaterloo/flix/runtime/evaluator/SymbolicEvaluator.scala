@@ -758,17 +758,17 @@ object SymbolicEvaluator {
       /**
         * Reference.
         */
-      case Expression.Reference(exp, tpe, loc) => ??? // TODO
+      case Expression.Ref(exp, tpe, loc) => ??? // TODO
 
       /**
         * Dereference.
         */
-      case Expression.Dereference(exp, tpe, loc) => ??? // TODO
+      case Expression.Deref(exp, tpe, loc) => ??? // TODO
 
       /**
         * Assignment.
         */
-      case Expression.Assignment(exp1, exp2, tpe, loc) => ??? // TODO
+      case Expression.Assign(exp1, exp2, tpe, loc) => ??? // TODO
 
       /**
         * Existential Quantifier.

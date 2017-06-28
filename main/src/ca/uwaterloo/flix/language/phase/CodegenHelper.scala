@@ -604,9 +604,9 @@ object CodegenHelper {
       case Expression.Untag(sym, tag, exp, tpe, loc) => visit(exp)
       case Expression.Index(base, offset, tpe, loc) => visit(base)
       case Expression.Tuple(elms, tpe, loc) => elms.flatMap(visit).toSet
-      case Expression.Reference(exp, tpe, loc) => ??? // TODO
-      case Expression.Dereference(exp, tpe, loc) => ??? // TODO
-      case Expression.Assignment(exp1, exp2, tpe, loc) => ??? // TODO
+      case Expression.Ref(exp, tpe, loc) => ??? // TODO
+      case Expression.Deref(exp, tpe, loc) => ??? // TODO
+      case Expression.Assign(exp1, exp2, tpe, loc) => ??? // TODO
       case Expression.Existential(params, exp, loc) =>
         ???
       case Expression.Universal(params, exp, loc) =>
@@ -662,9 +662,9 @@ object CodegenHelper {
     case Expression.Untag(sym, tag, exp, tpe, loc)  => List((exp.tpe, (tag, tpe))) ::: findEnumCases(exp)
     case Expression.Index(base, offset, tpe, loc) => findEnumCases(base)
     case Expression.Tuple(elms, tpe, loc) => elms.flatMap(findEnumCases).toList
-    case Expression.Reference(exp, tpe, loc) => ??? // TODO
-    case Expression.Dereference(exp, tpe, loc) => ??? // TODO
-    case Expression.Assignment(exp1, exp2, tpe, loc) => ??? // TODO
+    case Expression.Ref(exp, tpe, loc) => ??? // TODO
+    case Expression.Deref(exp, tpe, loc) => ??? // TODO
+    case Expression.Assign(exp1, exp2, tpe, loc) => ??? // TODO
     case Expression.LetRec(sym, exp1, exp2, tpe, loc) => ??? // TODO
     case Expression.Existential(params, exp, loc) => findEnumCases(exp)
     case Expression.Universal(params, exp, loc) => findEnumCases(exp)
