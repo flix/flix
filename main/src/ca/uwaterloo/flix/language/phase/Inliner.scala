@@ -18,8 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.{CompilationError, GenSym}
-import ca.uwaterloo.flix.language.ast.SimplifiedAst.Definition.Constant
-import ca.uwaterloo.flix.language.ast.SimplifiedAst.{Expression, FreeVar, LoadExpression, StoreExpression}
+import ca.uwaterloo.flix.language.ast.SimplifiedAst.{Expression, LoadExpression, StoreExpression}
 import ca.uwaterloo.flix.language.ast.{SimplifiedAst, Symbol}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 import ca.uwaterloo.flix.util.Validation._
@@ -42,7 +41,7 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
 
     val t = System.nanoTime()
 
-    val definitions = root.definitions
+    val definitions = root.defs
 
     /**
       * Computes the score of each function definition
@@ -55,14 +54,14 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     /**
       * Transforms expressions inside definitions into optimized definitions.
       */
-    val inlinedDefinitions = definitions.foldLeft(Map.empty[Symbol.DefnSym, Constant]) {
+    val inlinedDefinitions = definitions.foldLeft(Map.empty[Symbol.DefnSym, SimplifiedAst.Def]) {
       case (macc, (sym, constant)) =>
         val newExp = inline(definitions, scores, constant.exp)
         macc + (sym -> constant.copy(exp = newExp))
     }
 
     val e = System.nanoTime() - t
-    root.copy(definitions = inlinedDefinitions, time = root.time.copy(inliner = e)).toSuccess
+    root.copy(defs = inlinedDefinitions, time = root.time.copy(inliner = e)).toSuccess
     //root.toSuccess
   }
 
@@ -83,7 +82,7 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     * Traverses through `exp` and performs inlining using
     * definitions and sizes from `scores`
     */
-  def inline(definitions: Map[Symbol.DefnSym, Constant], scores: Map[Symbol.DefnSym, Int], exp: Expression)(implicit genSym: GenSym): Expression = {
+  def inline(definitions: Map[Symbol.DefnSym, SimplifiedAst.Def], scores: Map[Symbol.DefnSym, Int], exp: Expression)(implicit genSym: GenSym): Expression = {
     def visit = inline(definitions, scores, _: Expression)
 
     exp match {
@@ -92,7 +91,7 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         //inline arguments
         val args1 = args.map(visit)
         definitions(sym) match {
-          case Constant(_, _, _, formals, exp1, _, _, _) =>
+          case SimplifiedAst.Def(_, _, _, formals, exp1, _, _, _) =>
             if (scores(sym) <= MaxScore) {
               // Inline the body of the function
               val sub = formals.map(f => f.sym -> Symbol.freshVarSym(f.sym)).toMap
@@ -264,7 +263,7 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     * - A UserError, MatchError, or SwitchError is worth zero points.
     * - An if-then-else statement is worth the value of the condition plus two times the sum of the consequent and alternative.
     */
-  def score(definitions: Constant): Int = exprScore(definitions.exp)
+  def score(definitions: SimplifiedAst.Def): Int = exprScore(definitions.exp)
 
   /**
     * Returns the score of the given expression `exp`.

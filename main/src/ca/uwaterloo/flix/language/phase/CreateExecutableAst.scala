@@ -42,10 +42,10 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
     // A mutable map to hold top-level definitions created by lifting lattice expressions.
     val m: TopLevel = mutable.Map.empty
 
-    val constants = root.definitions.map { case (k, v) => k -> Definition.toExecutable(v) }
+    val constants = root.defs.map { case (k, v) => k -> toExecutable(v) }
 
     val enums = root.enums.map {
-      case (sym, SimplifiedAst.Definition.Enum(_, cases0, loc)) =>
+      case (sym, SimplifiedAst.Enum(_, cases0, loc)) =>
         val cases = cases0.map {
           case (tag, SimplifiedAst.Case(enumName, tagName, tpe)) => tag -> ExecutableAst.Case(enumName, tagName, tpe)
         }
@@ -53,9 +53,9 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
     }
 
     // Converting lattices to ExecutableAst will create new top-level definitions in the map `m`.
-    val lattices = root.lattices.map { case (k, v) => k -> Definition.toExecutable(v, m) }
+    val lattices = root.lattices.map { case (k, v) => k -> toExecutable(v, m) }
     val tables = root.tables.map { case (k, v) => k -> Table.toExecutable(v) }
-    val indexes = root.indexes.map { case (k, v) => k -> Definition.toExecutable(v) }
+    val indexes = root.indexes.map { case (k, v) => k -> toExecutable(v) }
     // TODO: Assumes one stratum
     val constraints = root.strata.head.constraints.map(c => Constraint.toConstraint(c, m))
     val properties = root.properties.map(p => toExecutable(p))
@@ -93,49 +93,47 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
       reachable, ByteCodes(Map(), Map(), Map(), Map(), Map()), time, dependenciesOf).toSuccess
   }
 
-  object Definition {
-    def toExecutable(sast: SimplifiedAst.Definition.Constant): ExecutableAst.Definition.Constant = {
-      val formals = sast.formals.map {
-        case SimplifiedAst.FormalParam(sym, mod, tpe, loc) => ExecutableAst.FormalParam(sym, tpe)
-      }.toArray
+  def toExecutable(sast: SimplifiedAst.Def): ExecutableAst.Definition.Constant = {
+    val formals = sast.formals.map {
+      case SimplifiedAst.FormalParam(sym, mod, tpe, loc) => ExecutableAst.FormalParam(sym, tpe)
+    }.toArray
 
-      ExecutableAst.Definition.Constant(sast.ann, sast.sym, formals, Expression.toExecutable(sast.exp), sast.isSynthetic, sast.tpe, sast.loc)
-    }
-
-    def toExecutable(sast: SimplifiedAst.Definition.Lattice, m: TopLevel)(implicit genSym: GenSym): ExecutableAst.Definition.Lattice = sast match {
-      case SimplifiedAst.Definition.Lattice(tpe, bot, top, leq, lub, glb, loc) =>
-        import Expression.{toExecutable => t}
-
-        /**
-          * In `SimplifiedAst.Definition.Lattice`, bot/top/leq/lub/glb are `SimplifiedAst.Expression`s.
-          * For `ExecutableAst.Definition.Lattice`, they are `Symbol.Resolved`s.
-          *
-          * bot/top are arbitrary expressions, so we lift them to top-level definitions.
-          * We assume that leq/lub/glb are `Expression.Ref`s, so we do a cast and extract the symbols.
-          *
-          * Note that all of this code will eventually be replaced by typeclasses.
-          */
-
-        val botSym = Symbol.freshDefnSym("bot")
-        val topSym = Symbol.freshDefnSym("top")
-
-        val botConst = ExecutableAst.Definition.Constant(Ast.Annotations(Nil), botSym, formals = Array(), t(bot), isSynthetic = true, bot.tpe, bot.loc)
-        val topConst = ExecutableAst.Definition.Constant(Ast.Annotations(Nil), topSym, formals = Array(), t(top), isSynthetic = true, top.tpe, top.loc)
-
-        // Update the map of definitions
-        m ++= Map(botSym -> botConst, topSym -> topConst)
-
-        // Extract the symbols for leq/lub/glb
-        val leqSym = t(leq).asInstanceOf[ExecutableAst.Expression.Ref].sym
-        val lubSym = t(lub).asInstanceOf[ExecutableAst.Expression.Ref].sym
-        val glbSym = t(glb).asInstanceOf[ExecutableAst.Expression.Ref].sym
-
-        ExecutableAst.Definition.Lattice(tpe, botSym, topSym, leqSym, lubSym, glbSym, loc)
-    }
-
-    def toExecutable(sast: SimplifiedAst.Definition.Index): ExecutableAst.Definition.Index =
-      ExecutableAst.Definition.Index(sast.sym, sast.indexes, sast.loc)
+    ExecutableAst.Definition.Constant(sast.ann, sast.sym, formals, Expression.toExecutable(sast.exp), sast.isSynthetic, sast.tpe, sast.loc)
   }
+
+  def toExecutable(sast: SimplifiedAst.Lattice, m: TopLevel)(implicit genSym: GenSym): ExecutableAst.Definition.Lattice = sast match {
+    case SimplifiedAst.Lattice(tpe, bot, top, leq, lub, glb, loc) =>
+      import Expression.{toExecutable => t}
+
+      /**
+        * In `SimplifiedAst.Definition.Lattice`, bot/top/leq/lub/glb are `SimplifiedAst.Expression`s.
+        * For `ExecutableAst.Definition.Lattice`, they are `Symbol.Resolved`s.
+        *
+        * bot/top are arbitrary expressions, so we lift them to top-level definitions.
+        * We assume that leq/lub/glb are `Expression.Ref`s, so we do a cast and extract the symbols.
+        *
+        * Note that all of this code will eventually be replaced by typeclasses.
+        */
+
+      val botSym = Symbol.freshDefnSym("bot")
+      val topSym = Symbol.freshDefnSym("top")
+
+      val botConst = ExecutableAst.Definition.Constant(Ast.Annotations(Nil), botSym, formals = Array(), t(bot), isSynthetic = true, bot.tpe, bot.loc)
+      val topConst = ExecutableAst.Definition.Constant(Ast.Annotations(Nil), topSym, formals = Array(), t(top), isSynthetic = true, top.tpe, top.loc)
+
+      // Update the map of definitions
+      m ++= Map(botSym -> botConst, topSym -> topConst)
+
+      // Extract the symbols for leq/lub/glb
+      val leqSym = t(leq).asInstanceOf[ExecutableAst.Expression.Ref].sym
+      val lubSym = t(lub).asInstanceOf[ExecutableAst.Expression.Ref].sym
+      val glbSym = t(glb).asInstanceOf[ExecutableAst.Expression.Ref].sym
+
+      ExecutableAst.Definition.Lattice(tpe, botSym, topSym, leqSym, lubSym, glbSym, loc)
+  }
+
+  def toExecutable(sast: SimplifiedAst.Index): ExecutableAst.Definition.Index =
+    ExecutableAst.Definition.Index(sast.sym, sast.indexes, sast.loc)
 
   object Table {
     def toExecutable(sast: SimplifiedAst.Table): ExecutableAst.Table = sast match {

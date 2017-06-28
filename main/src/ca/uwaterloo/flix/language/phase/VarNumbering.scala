@@ -40,7 +40,7 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     val t = System.nanoTime()
 
     // Compute stack offset for each definition.
-    for ((sym, defn) <- root.definitions) {
+    for ((sym, defn) <- root.defs) {
       number(defn)
     }
 
@@ -60,7 +60,7 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     *
     * Returns Unit since the variable symbols are mutated to store their stack offsets.
     */
-  def number(defn: Definition.Constant): Unit = {
+  def number(defn: SimplifiedAst.Def): Unit = {
     /**
       * Returns the next available stack offset.
       *

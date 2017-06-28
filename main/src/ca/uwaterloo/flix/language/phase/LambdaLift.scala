@@ -31,7 +31,7 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
   /**
     * Mutable map of top level definitions.
     */
-  private type TopLevel = mutable.Map[Symbol.DefnSym, SimplifiedAst.Definition.Constant]
+  private type TopLevel = mutable.Map[Symbol.DefnSym, SimplifiedAst.Def]
 
   /**
     * Performs lambda lifting on all definitions in the AST.
@@ -44,14 +44,14 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     // A mutable map to hold lambdas that are lifted to the top level.
     val m: TopLevel = mutable.Map.empty
 
-    val definitions = root.definitions.map {
+    val definitions = root.defs.map {
       case (name, decl) => name -> lift(decl, m)
     }
     val properties = root.properties.map(p => lift(p, m))
 
     // Return the updated AST root.
     val e = System.nanoTime() - t
-    root.copy(definitions = definitions ++ m, properties = properties, time = root.time.copy(lambdaLift = e)).toSuccess
+    root.copy(defs = definitions ++ m, properties = properties, time = root.time.copy(lambdaLift = e)).toSuccess
   }
 
   /**
@@ -60,7 +60,7 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     * The definition's expression is closure converted, and then lifted definitions are added to the mutable map `m`.
     * The updated definition is then returned.
     */
-  private def lift(decl: SimplifiedAst.Definition.Constant, m: TopLevel)(implicit genSym: GenSym): SimplifiedAst.Definition.Constant = {
+  private def lift(decl: SimplifiedAst.Def, m: TopLevel)(implicit genSym: GenSym): SimplifiedAst.Def = {
     val convExp = ClosureConv.convert(decl.exp)
     val liftExp = lift(convExp, m, Some(decl.sym))
     decl.copy(exp = liftExp)
@@ -121,7 +121,7 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         }
 
         // Create a new top-level definition, using the fresh name and lifted body.
-        val defn = SimplifiedAst.Definition.Constant(Ast.Annotations(Nil), Ast.Modifiers.Empty, freshSymbol, fparams, liftedBody, isSynthetic = true, tpe, loc)
+        val defn = SimplifiedAst.Def(Ast.Annotations(Nil), Ast.Modifiers.Empty, freshSymbol, fparams, liftedBody, isSynthetic = true, tpe, loc)
 
         // Update the map that holds newly-generated definitions
         m += (freshSymbol -> defn)
