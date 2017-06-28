@@ -73,7 +73,7 @@ object NamedAst {
 
     case class Var(sym: Symbol.VarSym, loc: SourceLocation) extends NamedAst.Expression
 
-    case class Ref(ref: Name.QName, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
+    case class Def(ref: Name.QName, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
     case class Unit(loc: SourceLocation) extends NamedAst.Expression
 

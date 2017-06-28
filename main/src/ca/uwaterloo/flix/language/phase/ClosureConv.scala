@@ -51,7 +51,7 @@ object ClosureConv {
     case SimplifiedAst.Expression.StoreInt32(b, o, v) => exp
     case SimplifiedAst.Expression.Var(sym, tpe, loc) => exp
 
-    case e: SimplifiedAst.Expression.Ref =>
+    case e: SimplifiedAst.Expression.Def =>
       // If we encounter a Ref that has a lambda type (and is not being called in an Apply),
       // i.e. the Ref will evaluate to a lambda, we replace it with a MkClosureRef. Otherwise we leave it alone.
       e.tpe match {
@@ -126,7 +126,7 @@ object ClosureConv {
       // it with ApplyRef. We remove the Ref node and don't recurse on it to avoid creating a closure.
       // We do something similar if `e` is a Hook, where we transform Apply to ApplyHook.
       e match {
-        case SimplifiedAst.Expression.Ref(name, _, _) => SimplifiedAst.Expression.ApplyRef(name, args.map(convert), tpe, loc)
+        case SimplifiedAst.Expression.Def(name, _, _) => SimplifiedAst.Expression.ApplyRef(name, args.map(convert), tpe, loc)
         case SimplifiedAst.Expression.Hook(hook, _, _) => SimplifiedAst.Expression.ApplyHook(hook, args.map(convert), tpe, loc)
         case _ => SimplifiedAst.Expression.Apply(convert(e), args.map(convert), tpe, loc)
       }
@@ -192,7 +192,7 @@ object ClosureConv {
     case SimplifiedAst.Expression.StoreInt16(b, o, v) => mutable.LinkedHashSet.empty
     case SimplifiedAst.Expression.StoreInt32(b, o, v) => mutable.LinkedHashSet.empty
     case SimplifiedAst.Expression.Var(sym, tpe, loc) => mutable.LinkedHashSet((sym, tpe))
-    case SimplifiedAst.Expression.Ref(name, tpe, loc) => mutable.LinkedHashSet.empty
+    case SimplifiedAst.Expression.Def(name, tpe, loc) => mutable.LinkedHashSet.empty
     case SimplifiedAst.Expression.Lambda(args, body, tpe, loc) =>
       val bound = args.map(_.sym)
       freeVariables(body).filterNot { v => bound.contains(v._1) }
@@ -263,7 +263,7 @@ object ClosureConv {
         case None => Expression.Var(sym, tpe, loc)
         case Some(newSym) => Expression.Var(newSym, tpe, loc)
       }
-      case Expression.Ref(name, tpe, loc) => e
+      case Expression.Def(name, tpe, loc) => e
       case Expression.Lambda(fparams, exp, tpe, loc) =>
         val fs = fparams.map(fparam => replace(fparam, subst))
         val e = visit(exp)

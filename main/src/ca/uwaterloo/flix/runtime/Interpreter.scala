@@ -59,7 +59,7 @@ object Interpreter {
       case None => throw InternalRuntimeException(s"Key '${sym.toString}' not found in environment: '${env0.mkString(",")}'.")
       case Some(v) => v
     }
-    case Expression.Ref(name, _, _) => eval(root.defs(name).exp, root, env0)
+    case Expression.Def(name, _, _) => eval(root.defs(name).exp, root, env0)
     case Expression.MkClosureRef(ref, freeVars, _, _) =>
       allocateClosure(ref, freeVars, env0)
     case Expression.ApplyRef(sym, args0, _, _) =>
@@ -387,7 +387,7 @@ object Interpreter {
   /**
     * Allocates a closure for the given reference `ref` with free variables `freeVars` under the given environment `env0`.
     */
-  private def allocateClosure(ref: Expression.Ref, freeVars: Array[ExecutableAst.FreeVar], env0: Map[String, AnyRef]): Value.Closure = {
+  private def allocateClosure(ref: Expression.Def, freeVars: Array[ExecutableAst.FreeVar], env0: Map[String, AnyRef]): Value.Closure = {
     // Save the values of the free variables in the Value.Closure structure.
     // When the closure is called, these values will be provided at the beginning of the argument list.
     val bindings = new Array[AnyRef](freeVars.length)

@@ -146,7 +146,7 @@ object SymbolicEvaluator {
       /**
         * Reference.
         */
-      case Expression.Ref(name, tpe, loc) =>
+      case Expression.Def(name, tpe, loc) =>
         // Lookup and evaluate the definition.
         root.defs.get(name) match {
           case None => throw InternalCompilerException(s"Type Error: Unresolved reference '$name'.")

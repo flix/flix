@@ -132,7 +132,7 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.StoreInt16(exp, offset, v) => visitExp(exp) ++ visitExp(v)
       case Expression.StoreInt32(exp, offset, v) => visitExp(exp) ++ visitExp(v)
       case Expression.Var(sym, tpe, loc) => Set.empty
-      case Expression.Ref(sym, tpe, loc) => Set(sym)
+      case Expression.Def(sym, tpe, loc) => Set(sym)
       case Expression.Lambda(args, body, tpe, loc) => visitExp(body)
       case Expression.Hook(hook, tpe, loc) => Set(hook.sym)
       case Expression.MkClosure(lambda, freeVars, tpe, loc) => visitExp(lambda)

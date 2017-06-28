@@ -125,9 +125,9 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
       m ++= Map(botSym -> botConst, topSym -> topConst)
 
       // Extract the symbols for leq/lub/glb
-      val leqSym = t(leq).asInstanceOf[ExecutableAst.Expression.Ref].sym
-      val lubSym = t(lub).asInstanceOf[ExecutableAst.Expression.Ref].sym
-      val glbSym = t(glb).asInstanceOf[ExecutableAst.Expression.Ref].sym
+      val leqSym = t(leq).asInstanceOf[ExecutableAst.Expression.Def].sym
+      val lubSym = t(lub).asInstanceOf[ExecutableAst.Expression.Def].sym
+      val glbSym = t(glb).asInstanceOf[ExecutableAst.Expression.Def].sym
 
       ExecutableAst.Lattice(tpe, botSym, topSym, leqSym, lubSym, glbSym, loc)
   }
@@ -186,7 +186,7 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
         ExecutableAst.Expression.StoreInt32(toExecutable(e), offset, toExecutable(v))
       case SimplifiedAst.Expression.Var(sym, tpe, loc) =>
         ExecutableAst.Expression.Var(sym, tpe, loc)
-      case SimplifiedAst.Expression.Ref(name, tpe, loc) => ExecutableAst.Expression.Ref(name, tpe, loc)
+      case SimplifiedAst.Expression.Def(name, tpe, loc) => ExecutableAst.Expression.Def(name, tpe, loc)
       case SimplifiedAst.Expression.Lambda(args, body, tpe, loc) =>
         throw InternalCompilerException("Lambdas should have been converted to closures and lifted.")
       case SimplifiedAst.Expression.Hook(hook, tpe, loc) =>
@@ -196,7 +196,7 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
       case SimplifiedAst.Expression.MkClosureRef(ref, freeVars, tpe, loc) =>
         val e = toExecutable(ref)
         val fvs = freeVars.map(CreateExecutableAst.toExecutable).toArray
-        ExecutableAst.Expression.MkClosureRef(e.asInstanceOf[ExecutableAst.Expression.Ref], fvs, tpe, loc)
+        ExecutableAst.Expression.MkClosureRef(e.asInstanceOf[ExecutableAst.Expression.Def], fvs, tpe, loc)
       case SimplifiedAst.Expression.ApplyRef(name, args, tpe, loc) =>
         val argsArray = args.map(toExecutable)
         ExecutableAst.Expression.ApplyRef(name, argsArray, tpe, loc)

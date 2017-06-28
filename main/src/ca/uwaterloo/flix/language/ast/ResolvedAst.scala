@@ -75,7 +75,7 @@ object ResolvedAst {
 
     case class Var(sym: Symbol.VarSym, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Ref(sym: Symbol.DefnSym, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class Def(sym: Symbol.DefnSym, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Hook(hook: Ast.Hook, tpe: Type, loc: SourceLocation) extends ResolvedAst.Expression
 

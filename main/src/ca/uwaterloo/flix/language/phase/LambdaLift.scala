@@ -106,7 +106,7 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.StoreInt16(b, o, v) => e
       case Expression.StoreInt32(b, o, v) => e
       case Expression.Var(sym, tpe, loc) => e
-      case Expression.Ref(name, tpe, loc) => e
+      case Expression.Def(name, tpe, loc) => e
 
       case Expression.Lambda(fparams, body, tpe, loc) =>
         // Lift the lambda to a top-level definition, and replacing the Lambda expression with a Ref.
@@ -127,7 +127,7 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         m += (freshSymbol -> defn)
 
         // Finally, replace this current Lambda node with a Ref to the newly-generated name.
-        SimplifiedAst.Expression.Ref(freshSymbol, tpe, loc)
+        SimplifiedAst.Expression.Def(freshSymbol, tpe, loc)
 
       case Expression.Hook(hook, tpe, loc) => e
       case Expression.MkClosureRef(ref, freeVars, tpe, loc) => e
@@ -135,7 +135,7 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case SimplifiedAst.Expression.MkClosure(lambda, freeVars, tpe, loc) =>
         // Replace the MkClosure node with a MkClosureRef node, since the Lambda has been replaced by a Ref.
         visit(lambda) match {
-          case ref: SimplifiedAst.Expression.Ref =>
+          case ref: SimplifiedAst.Expression.Def =>
             SimplifiedAst.Expression.MkClosureRef(ref, freeVars, tpe, loc)
           case _ => throw InternalCompilerException(s"Unexpected expression: '$lambda'.")
         }

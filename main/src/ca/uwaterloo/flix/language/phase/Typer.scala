@@ -409,7 +409,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         /*
          * Reference expression.
          */
-        case ResolvedAst.Expression.Ref(sym, tvar, loc) =>
+        case ResolvedAst.Expression.Def(sym, tvar, loc) =>
           val defn = program.defs(sym)
           unifyM(tvar, Scheme.instantiate(defn.sc), loc)
 
@@ -777,8 +777,8 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         /*
          * Reference expression.
          */
-        case ResolvedAst.Expression.Ref(sym, tvar, loc) =>
-          TypedAst.Expression.Ref(sym, subst0(tvar), Eff.Bot, loc)
+        case ResolvedAst.Expression.Def(sym, tvar, loc) =>
+          TypedAst.Expression.Def(sym, subst0(tvar), Eff.Bot, loc)
 
         /*
          * Hook expression.

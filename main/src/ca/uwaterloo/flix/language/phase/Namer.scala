@@ -314,19 +314,19 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
        */
       case WeededAst.Expression.Wild(loc) => NamedAst.Expression.Wild(Type.freshTypeVar(), loc).toSuccess
 
-      case WeededAst.Expression.VarOrRef(name, loc) if name.isUnqualified =>
+      case WeededAst.Expression.VarOrDef(name, loc) if name.isUnqualified =>
         // lookup the variable name in the environment.
         env0.get(name.ident.name) match {
           case None =>
             // Case 1: reference.
-            NamedAst.Expression.Ref(name, Type.freshTypeVar(), loc).toSuccess
+            NamedAst.Expression.Def(name, Type.freshTypeVar(), loc).toSuccess
           case Some(sym) =>
             // Case 2: variable.
             NamedAst.Expression.Var(sym, loc).toSuccess
         }
 
-      case WeededAst.Expression.VarOrRef(name, loc) =>
-        NamedAst.Expression.Ref(name, Type.freshTypeVar(), loc).toSuccess
+      case WeededAst.Expression.VarOrDef(name, loc) =>
+        NamedAst.Expression.Def(name, Type.freshTypeVar(), loc).toSuccess
 
       /*
        * Literals.
@@ -472,7 +472,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
       */
     def freeVars(exp0: WeededAst.Expression): List[Name.Ident] = exp0 match {
       case WeededAst.Expression.Wild(loc) => Nil
-      case WeededAst.Expression.VarOrRef(qname, loc) => List(qname.ident)
+      case WeededAst.Expression.VarOrDef(qname, loc) => List(qname.ident)
       case WeededAst.Expression.Unit(loc) => Nil
       case WeededAst.Expression.True(loc) => Nil
       case WeededAst.Expression.False(loc) => Nil

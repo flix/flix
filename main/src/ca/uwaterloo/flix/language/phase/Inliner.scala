@@ -121,7 +121,7 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.BigInt(_) => exp
       case Expression.Str(_) => exp
       case Expression.Var(_, _, _) => exp
-      case Expression.Ref(_, _, _) => exp
+      case Expression.Def(_, _, _) => exp
       case Expression.Lambda(args, body, tpe, loc) =>
         Expression.Lambda(args, visit(body), tpe, loc)
       case Expression.Hook(_, _, _) => exp
@@ -188,7 +188,7 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     case Expression.BigInt(_) => exp
     case Expression.Str(_) => exp
     case Expression.Var(sym, tpe, loc) => Expression.Var(sub(sym), tpe, loc)
-    case Expression.Ref(_, _, _) => exp
+    case Expression.Def(_, _, _) => exp
     case Expression.Lambda(args, body, tpe, loc) =>
       val formals = args.map(f => f.copy(sym = Symbol.freshVarSym(f.sym)))
       val sub1 = args.map(f => f.sym).zip(formals.map(f => f.sym)).foldLeft(sub) { case (macc, (from, to)) => macc + (from -> to) }
@@ -285,7 +285,7 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.BigInt(_) => 0
       case Expression.Str(_) => 0
       case Expression.Var(_, _, _) => 1
-      case Expression.Ref(_, _, _) => 1
+      case Expression.Def(_, _, _) => 1
       case Expression.Lambda(args, body, _, _) => 1 + args.length + exprScore(body)
       case Expression.Hook(_, _, _) => 1
       case Expression.MkClosureRef(ref, freeVars, _, _) => 1 + freeVars.length + exprScore(ref)

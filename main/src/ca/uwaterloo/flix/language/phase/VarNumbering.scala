@@ -89,7 +89,7 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.StoreInt16(b, o, v) => i0
       case Expression.StoreInt32(b, o, v) => i0
       case Expression.Var(sym, tpe, loc) => i0
-      case Expression.Ref(name, tpe, loc) => i0
+      case Expression.Def(name, tpe, loc) => i0
       case Expression.Hook(hook, tpe, loc) => i0
       case Expression.MkClosureRef(ref, freeVars, tpe, loc) => i0
       case Expression.ApplyRef(name, args, tpe, loc) => visitExps(args, i0)

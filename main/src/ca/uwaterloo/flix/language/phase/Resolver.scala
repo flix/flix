@@ -221,10 +221,10 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
 
         case NamedAst.Expression.Var(sym, loc) => ResolvedAst.Expression.Var(sym, loc).toSuccess
 
-        case NamedAst.Expression.Ref(ref, tvar, loc) =>
+        case NamedAst.Expression.Def(ref, tvar, loc) =>
           lookupRef(ref, ns0, prog0) map {
             case RefTarget.Defn(ns, defn) =>
-              ResolvedAst.Expression.Ref(defn.sym, tvar, loc)
+              ResolvedAst.Expression.Def(defn.sym, tvar, loc)
             case RefTarget.Hook(hook) =>
               ResolvedAst.Expression.Hook(hook, hook.tpe, loc)
           }

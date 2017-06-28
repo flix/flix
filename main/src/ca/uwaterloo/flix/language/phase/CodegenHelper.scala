@@ -596,7 +596,7 @@ object CodegenHelper {
       case Expression.StoreInt16(b, o, v) => Set.empty
       case Expression.StoreInt32(b, o, v) => Set.empty
       case Expression.Var(sym, tpe, loc) => Set.empty
-      case Expression.Ref(name, tpe, loc) => Set.empty
+      case Expression.Def(name, tpe, loc) => Set.empty
       case Expression.MkClosureRef(ref, freeVars, tpe, loc) => Set(tpe)
       case Expression.ApplyRef(name, args, tpe, loc) => args.flatMap(visit).toSet
       case Expression.ApplyTail(name, formals, actuals, tpe, loc) => actuals.flatMap(visit).toSet
@@ -663,7 +663,7 @@ object CodegenHelper {
     case Expression.StoreInt16(b, o, v) => Nil
     case Expression.StoreInt32(b, o, v) => Nil
     case Expression.Var(sym, tpe, loc) => Nil
-    case Expression.Ref(name, tpe, loc) => Nil
+    case Expression.Def(name, tpe, loc) => Nil
     case Expression.MkClosureRef(ref, freeVars, tpe, loc) => Nil
     case Expression.ApplyRef(name, args, tpe, loc) => args.flatMap(findEnumCases)
     case Expression.ApplyTail(name, formals, actuals, tpe, loc) => actuals.flatMap(findEnumCases)

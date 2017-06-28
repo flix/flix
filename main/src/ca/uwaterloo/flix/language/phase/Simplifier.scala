@@ -122,7 +122,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case TypedAst.Expression.BigInt(lit, loc) => SimplifiedAst.Expression.BigInt(lit)
       case TypedAst.Expression.Str(lit, loc) => SimplifiedAst.Expression.Str(lit)
       case TypedAst.Expression.Var(sym, tpe, eff, loc) => SimplifiedAst.Expression.Var(sym, tpe, loc)
-      case TypedAst.Expression.Ref(sym, tpe, eff, loc) => SimplifiedAst.Expression.Ref(sym, tpe, loc)
+      case TypedAst.Expression.Def(sym, tpe, eff, loc) => SimplifiedAst.Expression.Def(sym, tpe, loc)
       case TypedAst.Expression.Hook(hook, tpe, eff, loc) => SimplifiedAst.Expression.Hook(hook, tpe, loc)
       case TypedAst.Expression.Lambda(args, body, tpe, eff, loc) =>
         SimplifiedAst.Expression.Lambda(args map Simplifier.simplify, simplify(body), tpe, loc)
@@ -445,7 +445,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         case TypedAst.Expression.Var(sym, tpe, eff, loc) =>
           SimplifiedAst.Term.Head.Var(sym, tpe, loc)
 
-        case TypedAst.Expression.Apply(TypedAst.Expression.Ref(sym, _, _, _), args, tpe, eff, loc) if isVarExps(args) =>
+        case TypedAst.Expression.Apply(TypedAst.Expression.Def(sym, _, _, _), args, tpe, eff, loc) if isVarExps(args) =>
           val as = args map {
             case TypedAst.Expression.Var(x, _, _, _) => x
             case e => throw InternalCompilerException(s"Unexpected non-variable expression: $e.")
@@ -630,7 +630,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         case None => SimplifiedAst.Expression.Var(sym, tpe, loc)
         case Some(replacement) => SimplifiedAst.Expression.Var(replacement, tpe, loc)
       }
-      case SimplifiedAst.Expression.Ref(name, tpe, loc) => e
+      case SimplifiedAst.Expression.Def(name, tpe, loc) => e
       case SimplifiedAst.Expression.Lambda(fparams, body, tpe, loc) => ??? // TODO
       case SimplifiedAst.Expression.Hook(hook, tpe, loc) => e
       case SimplifiedAst.Expression.MkClosureRef(ref, freeVars, tpe, loc) => e

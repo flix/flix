@@ -68,7 +68,7 @@ object WeededAst {
 
     case class Wild(loc: SourceLocation) extends WeededAst.Expression
 
-    case class VarOrRef(name: Name.QName, loc: SourceLocation) extends WeededAst.Expression
+    case class VarOrDef(name: Name.QName, loc: SourceLocation) extends WeededAst.Expression
 
     case class Unit(loc: SourceLocation) extends WeededAst.Expression
 

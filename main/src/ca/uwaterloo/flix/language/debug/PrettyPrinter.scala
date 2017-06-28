@@ -68,7 +68,7 @@ object PrettyPrinter {
         case Expression.StoreInt16(base, offset, value) => ???
         case Expression.StoreInt32(base, offset, value) => ???
         case Expression.Var(sym, tpe, loc) => fmtSym(sym, vt)
-        case Expression.Ref(sym, tpe, loc) => fmtSym(sym, vt)
+        case Expression.Def(sym, tpe, loc) => fmtSym(sym, vt)
         case Expression.Lambda(fparams, body, tpe, loc) =>
           vt.text("(")
           for (fparam <- fparams) {

@@ -160,12 +160,12 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         case Expression.Wild(tpe, eff, loc) => Expression.Wild(subst0(tpe), eff, loc)
         case Expression.Var(sym, tpe, eff, loc) => Expression.Var(env0(sym), subst0(tpe), eff, loc)
 
-        case Expression.Ref(sym, tpe, eff, loc) =>
+        case Expression.Def(sym, tpe, eff, loc) =>
           /*
            * !! This is where all the magic happens !!
            */
           val newSym = specializeSym(sym, subst0(tpe))
-          Expression.Ref(newSym, subst0(tpe), eff, loc)
+          Expression.Def(newSym, subst0(tpe), eff, loc)
 
         case Expression.Hook(hook, tpe, eff, loc) => Expression.Hook(hook, subst0(tpe), eff, loc)
 
@@ -209,7 +209,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
             case Some(eqSym) =>
               // Equality function found. Specialize and generate a call to it.
               val newSym = specializeSym(eqSym, eqType)
-              val ref = Expression.Ref(newSym, eqType, eff, loc)
+              val ref = Expression.Def(newSym, eqType, eff, loc)
               // Check whether the whether the operator is equality or inequality.
               if (op == BinaryOperator.Equal) {
                 // Call the equality function.

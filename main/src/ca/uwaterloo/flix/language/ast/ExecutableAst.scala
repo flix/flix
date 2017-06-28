@@ -312,9 +312,9 @@ object ExecutableAst {
 
     case class Var(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
-    case class Ref(sym: Symbol.DefnSym, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
+    case class Def(sym: Symbol.DefnSym, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
-    case class MkClosureRef(ref: ExecutableAst.Expression.Ref, freeVars: Array[FreeVar], tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
+    case class MkClosureRef(ref: ExecutableAst.Expression.Def, freeVars: Array[FreeVar], tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
     case class ApplyRef(sym: Symbol.DefnSym, args: List[ExecutableAst.Expression], tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 

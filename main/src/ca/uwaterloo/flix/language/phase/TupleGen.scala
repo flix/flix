@@ -535,7 +535,7 @@ object TupleGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
       case Expression.StoreInt16(b, o, v) => Nil
       case Expression.StoreInt32(b, o, v) => Nil
       case Expression.Var(sym, tpe, loc) => searchInType(tpe)
-      case Expression.Ref(name, tpe, loc) => searchInType(tpe)
+      case Expression.Def(name, tpe, loc) => searchInType(tpe)
       case Expression.MkClosureRef(ref, freeVars, tpe, loc) => searchInType(tpe)
       case Expression.ApplyRef(name, args, tpe, loc) => args.flatMap(findTuples) ::: searchInType(tpe)
       case Expression.ApplyTail(name, formals, actuals, tpe, loc) => actuals.flatMap(findTuples) ::: searchInType(tpe)

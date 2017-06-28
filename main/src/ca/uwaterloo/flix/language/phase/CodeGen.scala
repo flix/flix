@@ -321,7 +321,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
       case _ => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
     }
 
-    case Expression.Ref(name, _, _) =>
+    case Expression.Def(name, _, _) =>
       // Reference to a top-level definition that isn't used in a MkClosureRef or ApplyRef, so it's a 0-arg function.
       val targetTpe = declarations(name)
       visitor.visitMethodInsn(INVOKESTATIC, decorate(FlixClassName(name.prefix)), name.suffix, descriptor(targetTpe, interfaces), false)

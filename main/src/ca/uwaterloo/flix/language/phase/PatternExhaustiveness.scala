@@ -177,7 +177,7 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
         case Expression.Str(_, _) => tast.toSuccess
         case Expression.Wild(_, _, _) => tast.toSuccess
         case Expression.Var(_, _, _, _) => tast.toSuccess
-        case Expression.Ref(_, _, _, _) => tast.toSuccess
+        case Expression.Def(_, _, _, _) => tast.toSuccess
         case Expression.Hook(_, _, _, _) => tast.toSuccess
         case Expression.Lambda(_, body, _, _, _) => checkPats(body, root).map(const(tast))
         case Expression.Apply(exp, args, tpe, _, loc) => for {
