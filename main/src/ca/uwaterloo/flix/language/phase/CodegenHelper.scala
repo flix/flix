@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.{Unit => UnitClass, _}
 import ca.uwaterloo.flix.language.GenSym
-import ca.uwaterloo.flix.language.ast.ExecutableAst.{Definition, Expression}
+import ca.uwaterloo.flix.language.ast.ExecutableAst.Expression
 import ca.uwaterloo.flix.language.ast.Symbol.EnumSym
 import ca.uwaterloo.flix.language.ast.{Type, _}
 import ca.uwaterloo.flix.util.InternalCompilerException
@@ -573,7 +573,7 @@ object CodegenHelper {
   /**
     * Generates all the names of the functional interfaces used in the Flix program.
     */
-  def generateInterfaceNames(consts: List[Definition.Constant])(implicit genSym: GenSym): Map[Type, FlixClassName] = {
+  def generateInterfaceNames(consts: List[ExecutableAst.Def])(implicit genSym: GenSym): Map[Type, FlixClassName] = {
     def visit(e: Expression): Set[Type] = e match {
       case Expression.Unit => Set.empty
       case Expression.True => Set.empty

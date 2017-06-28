@@ -738,7 +738,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
     */
   private def mkModel(elapsed: Long): Model = {
     // construct the model.
-    val definitions = root.definitions.foldLeft(Map.empty[Symbol.DefnSym, () => AnyRef]) {
+    val definitions = root.defs.foldLeft(Map.empty[Symbol.DefnSym, () => AnyRef]) {
       case (macc, (sym, defn)) =>
         if (defn.formals.isEmpty)
           macc + (sym -> (() => Linker.link(sym, root).invoke(Array.empty)))

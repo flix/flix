@@ -39,7 +39,7 @@ class Model(root: ExecutableAst.Root,
     */
   def getBenchmarks: Map[Symbol.DefnSym, () => AnyRef] = {
     definitions filter {
-      case (sym, _) => root.definitions(sym).ann.isBenchmark
+      case (sym, _) => root.defs(sym).ann.isBenchmark
     }
   }
 
@@ -48,7 +48,7 @@ class Model(root: ExecutableAst.Root,
     */
   def getTests: Map[Symbol.DefnSym, () => AnyRef] = {
     definitions filter {
-      case (sym, _) => root.definitions(sym).ann.isTest
+      case (sym, _) => root.defs(sym).ann.isTest
     }
   }
 

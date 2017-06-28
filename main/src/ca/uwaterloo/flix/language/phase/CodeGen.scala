@@ -21,7 +21,7 @@ import java.lang.reflect.Modifier
 import ca.uwaterloo.flix.api.{Flix, MatchException, SwitchException, UserException}
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.Ast.Hook
-import ca.uwaterloo.flix.language.ast.ExecutableAst.{Definition, Expression, LoadExpression, StoreExpression}
+import ca.uwaterloo.flix.language.ast.ExecutableAst.{Expression, LoadExpression, StoreExpression}
 import ca.uwaterloo.flix.language.ast.{Type, _}
 import ca.uwaterloo.flix.util.{Evaluation, InternalCompilerException, Options, Validation}
 import org.objectweb.asm
@@ -85,20 +85,20 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
     }
 
     // 1. Group constants and transform non-functions.
-    val constantsMap: Map[FlixClassName, List[Definition.Constant]] = root.definitions.values.map { f =>
+    val constantsMap: Map[FlixClassName, List[ExecutableAst.Def]] = root.defs.values.map { f =>
       f.tpe match {
         case Type.Apply(Type.Arrow(l), _) => f
         case t => f.copy(tpe = Type.mkArrow(List(), t))
       }
     }.toList.groupBy(cst => FlixClassName(cst.sym.prefix))
     // TODO: Here we filter laws, since the backend does not support existentials/universals, but could we fix that?
-    val constantsList: List[Definition.Constant] = constantsMap.values.flatten.toList.filterNot(_.ann.isLaw)
+    val constantsList: List[ExecutableAst.Def] = constantsMap.values.flatten.toList.filterNot(_.ann.isLaw)
 
     // 2. Create the declarations map.
     val declarations: Map[Symbol.DefnSym, Type] = constantsList.map(f => f.sym -> f.tpe).toMap
 
     // 3. Create Enum Type info
-    val allEnums : List[(Type, (String, Type))] = root.definitions.values.flatMap(x => CodegenHelper.findEnumCases(x.exp)).toList
+    val allEnums : List[(Type, (String, Type))] = root.defs.values.flatMap(x => CodegenHelper.findEnumCases(x.exp)).toList
 
     val enumTypeInfo: Map[(Type, String), (QualName, ExecutableAst.Case)] = allEnums.map{ case (tpe, (name, subType)) =>
       val sym =  tpe match {
@@ -158,7 +158,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
    * Example: The Flix definition A.B.C/foo is compiled as the method foo in class C, within the package A.B.
    */
   def compile(prefix: QualName,
-              functions: List[Definition.Constant],
+              functions: List[ExecutableAst.Def],
               declarations: Map[Symbol.DefnSym, Type],
               interfaces: Map[Type, FlixClassName],
               enums: Map[(Type, String), (QualName, ExecutableAst.Case)],
@@ -230,11 +230,11 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
    * Given a definition for a Flix function, generate bytecode. Takes a Context and an initialized ClassVisitor.
    */
   private def compileFunction(prefix: QualName,
-                              functions: List[Definition.Constant],
+                              functions: List[ExecutableAst.Def],
                               declarations: Map[Symbol.DefnSym, Type],
                               interfaces: Map[Type, FlixClassName],
                               enums: Map[(Type, String), (QualName, ExecutableAst.Case)],
-                              visitor: ClassVisitor)(function: Definition.Constant): Unit = {
+                              visitor: ClassVisitor)(function: ExecutableAst.Def): Unit = {
     val flags = if (function.isSynthetic) ACC_PUBLIC + ACC_STATIC + ACC_SYNTHETIC else ACC_PUBLIC + ACC_STATIC
     val mv = visitor.visitMethod(flags, function.sym.suffix, descriptor(function.tpe, interfaces), null, null)
     mv.visitCode()
@@ -266,7 +266,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
   }
 
   private def compileExpression(prefix: QualName,
-                                functions: List[Definition.Constant],
+                                functions: List[ExecutableAst.Def],
                                 declarations: Map[Symbol.DefnSym, Type],
                                 interfaces: Map[Type, FlixClassName],
                                 enums: Map[(Type, String), (QualName, ExecutableAst.Case)],
@@ -686,7 +686,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
    * Other types (e.g. tag, tuple) are already Flix values.
    */
   private def compileBoxedExpr(prefix: QualName,
-                               functions: List[Definition.Constant],
+                               functions: List[ExecutableAst.Def],
                                declarations: Map[Symbol.DefnSym, Type],
                                interfaces: Map[Type, FlixClassName],
                                enums: Map[(Type, String), (QualName, ExecutableAst.Case)],
@@ -831,7 +831,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
    *            11111111 11111111 11111111 10101010
    */
   private def compileLoadExpr(prefix: QualName,
-                              functions: List[Definition.Constant],
+                              functions: List[ExecutableAst.Def],
                               declarations: Map[Symbol.DefnSym, Type],
                               interfaces: Map[Type, FlixClassName],
                               enums: Map[(Type, String), (QualName, ExecutableAst.Case)],
@@ -880,7 +880,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
    *   result = 11111111 11111111 11111111 11111111 11110000 11110000 11110000 11110000
    */
   private def compileStoreExpr(prefix: QualName,
-                               functions: List[Definition.Constant],
+                               functions: List[ExecutableAst.Def],
                                declarations: Map[Symbol.DefnSym, Type],
                                interfaces: Map[Type, FlixClassName],
                                enums: Map[(Type, String), (QualName, ExecutableAst.Case)],
@@ -927,7 +927,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
   }
 
   private def compileUnaryExpr(prefix: QualName,
-                               functions: List[Definition.Constant],
+                               functions: List[ExecutableAst.Def],
                                declarations: Map[Symbol.DefnSym, Type],
                                interfaces: Map[Type, FlixClassName],
                                enums: Map[(Type, String), (QualName, ExecutableAst.Case)],
@@ -969,7 +969,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
    * cast to an Int8 (byte).
    */
   private def compileUnaryMinusExpr(prefix: QualName,
-                                    functions: List[Definition.Constant],
+                                    functions: List[ExecutableAst.Def],
                                     declarations: Map[Symbol.DefnSym, Type],
                                     interfaces: Map[Type, FlixClassName],
                                     enums: Map[(Type, String), (QualName, ExecutableAst.Case)],
@@ -1048,7 +1048,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
    * back to the original type (D2F, D2I, D2L; note that bytes and shorts need to be cast again with I2B and I2S).
    */
   private def compileArithmeticExpr(prefix: QualName,
-                                    functions: List[Definition.Constant],
+                                    functions: List[ExecutableAst.Def],
                                     declarations: Map[Symbol.DefnSym, Type],
                                     interfaces: Map[Type, FlixClassName],
                                     enums: Map[(Type, String), (QualName, ExecutableAst.Case)],
@@ -1156,7 +1156,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
    * `bigint1 OP bigint2` is compiled as `bigint1.compareTo(bigint2) OP 0`.
    */
   private def compileComparisonExpr(prefix: QualName,
-                                    functions: List[Definition.Constant],
+                                    functions: List[ExecutableAst.Def],
                                     declarations: Map[Symbol.DefnSym, Type],
                                     interfaces: Map[Type, FlixClassName],
                                     enums: Map[(Type, String), (QualName, ExecutableAst.Case)],
@@ -1256,7 +1256,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
    * Implication and Biconditional are rewritten to their logical equivalents, and then compiled.
    */
   private def compileLogicalExpr(prefix: QualName,
-                                 functions: List[Definition.Constant],
+                                 functions: List[ExecutableAst.Def],
                                  declarations: Map[Symbol.DefnSym, Type],
                                  interfaces: Map[Type, FlixClassName],
                                  enums: Map[(Type, String), (QualName, ExecutableAst.Case)],
@@ -1334,7 +1334,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
    * Note: the right-hand operand of a shift (i.e. the shift amount) *must* be Int32.
    */
   private def compileBitwiseExpr(prefix: QualName,
-                                 functions: List[Definition.Constant],
+                                 functions: List[ExecutableAst.Def],
                                  declarations: Map[Symbol.DefnSym, Type],
                                  interfaces: Map[Type, FlixClassName],
                                  enums: Map[(Type, String), (QualName, ExecutableAst.Case)],

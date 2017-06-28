@@ -59,7 +59,7 @@ object Interpreter {
       case None => throw InternalRuntimeException(s"Key '${sym.toString}' not found in environment: '${env0.mkString(",")}'.")
       case Some(v) => v
     }
-    case Expression.Ref(name, _, _) => eval(root.definitions(name).exp, root, env0)
+    case Expression.Ref(name, _, _) => eval(root.defs(name).exp, root, env0)
     case Expression.MkClosureRef(ref, freeVars, _, _) =>
       allocateClosure(ref, freeVars, env0)
     case Expression.ApplyRef(sym, args0, _, _) =>
@@ -78,7 +78,7 @@ object Interpreter {
       val clo = eval(exp, root, env0).asInstanceOf[Value.Closure]
       val Value.Closure(name, bindings) = clo
       val args = evalArgs(args0, root, env0)
-      val constant = root.definitions(name)
+      val constant = root.defs(name)
       // Bindings for the capture variables are passed as arguments.
       val env1 = constant.formals.take(bindings.length).zip(bindings).foldLeft(env0) {
         case (macc, (formal, actual)) => macc + (formal.sym.toString -> actual)

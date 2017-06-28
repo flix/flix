@@ -139,7 +139,7 @@ object EnumGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     }
 
     // 1. Find enums and group them by symbols.
-    val allEnums: List[(Type, (String, Type))] = root.definitions.values.flatMap(x => findEnumCases(x.exp)).toList
+    val allEnums: List[(Type, (String, Type))] = root.defs.values.flatMap(x => findEnumCases(x.exp)).toList
 
     val enumsGroupedBySymbol: Map[EnumSym, List[(Type, (String, Type))]] = allEnums.groupBy{ case (tpe, _) => tpe match {
       case Type.Apply(Type.Enum(s, _), _) => s

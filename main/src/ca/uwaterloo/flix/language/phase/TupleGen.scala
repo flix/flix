@@ -71,7 +71,7 @@ object TupleGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
     }
 
     // 1. Extract all tuple types from definitions.
-    val allTuples : List[Type] = root.definitions.values.flatMap(x => findTuples(x.exp)).toList
+    val allTuples : List[Type] = root.defs.values.flatMap(x => findTuples(x.exp)).toList
 
     // 2. Group tuples based on representation of their fields.
     val groupedFields : List[List[List[Type]]] = allTuples.map{

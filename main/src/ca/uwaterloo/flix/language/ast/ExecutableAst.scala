@@ -27,11 +27,11 @@ sealed trait ExecutableAst
 
 object ExecutableAst {
 
-  case class Root(definitions: Map[Symbol.DefnSym, ExecutableAst.Definition.Constant],
-                  enums: Map[Symbol.EnumSym, ExecutableAst.Definition.Enum],
-                  lattices: Map[Type, ExecutableAst.Definition.Lattice],
+  case class Root(defs: Map[Symbol.DefnSym, ExecutableAst.Def],
+                  enums: Map[Symbol.EnumSym, ExecutableAst.Enum],
+                  lattices: Map[Type, ExecutableAst.Lattice],
                   tables: Map[Symbol.TableSym, ExecutableAst.Table],
-                  indexes: Map[Symbol.TableSym, ExecutableAst.Definition.Index],
+                  indexes: Map[Symbol.TableSym, ExecutableAst.Index],
                   constraints: List[ExecutableAst.Constraint],
                   properties: List[ExecutableAst.Property],
                   reachable: Set[Symbol.DefnSym],
@@ -101,45 +101,26 @@ object ExecutableAst {
 
   }
 
-  sealed trait Definition
-
-  object Definition {
-
-    case class Constant(ann: Ast.Annotations, sym: Symbol.DefnSym, formals: Array[ExecutableAst.FormalParam], exp: ExecutableAst.Expression, isSynthetic: Boolean, tpe: Type, loc: SourceLocation) extends ExecutableAst.Definition {
-      /**
-        * Pointer to generated code.
-        */
-      var method: Method = null
-    }
-
-    case class Enum(sym: Symbol.EnumSym, cases: Map[String, ExecutableAst.Case], loc: SourceLocation) extends ExecutableAst.Definition
-
-    case class Lattice(tpe: Type,
-                       bot: Symbol.DefnSym,
-                       top: Symbol.DefnSym,
-                       leq: Symbol.DefnSym,
-                       lub: Symbol.DefnSym,
-                       glb: Symbol.DefnSym,
-                       loc: SourceLocation) extends ExecutableAst.Definition
-
-    case class Index(name: Symbol.TableSym,
-                     indexes: Seq[Seq[Name.Ident]],
-                     loc: SourceLocation) extends ExecutableAst.Definition
-
+  case class Def(ann: Ast.Annotations, sym: Symbol.DefnSym, formals: Array[ExecutableAst.FormalParam], exp: ExecutableAst.Expression, isSynthetic: Boolean, tpe: Type, loc: SourceLocation) extends ExecutableAst {
+    /**
+      * Pointer to generated code.
+      */
+    var method: Method = null
   }
+
+  case class Enum(sym: Symbol.EnumSym, cases: Map[String, ExecutableAst.Case], loc: SourceLocation) extends ExecutableAst
+
+  case class Lattice(tpe: Type, bot: Symbol.DefnSym, top: Symbol.DefnSym, leq: Symbol.DefnSym, lub: Symbol.DefnSym, glb: Symbol.DefnSym, loc: SourceLocation) extends ExecutableAst
+
+  case class Index(name: Symbol.TableSym, indexes: Seq[Seq[Name.Ident]], loc: SourceLocation) extends ExecutableAst
 
   sealed trait Table extends ExecutableAst
 
   object Table {
 
-    case class Relation(sym: Symbol.TableSym,
-                        attributes: Array[ExecutableAst.Attribute],
-                        loc: SourceLocation) extends ExecutableAst.Table
+    case class Relation(sym: Symbol.TableSym, attributes: Array[ExecutableAst.Attribute], loc: SourceLocation) extends ExecutableAst.Table
 
-    case class Lattice(sym: Symbol.TableSym,
-                       keys: Array[ExecutableAst.Attribute],
-                       value: ExecutableAst.Attribute,
-                       loc: SourceLocation) extends ExecutableAst.Table
+    case class Lattice(sym: Symbol.TableSym, keys: Array[ExecutableAst.Attribute], value: ExecutableAst.Attribute, loc: SourceLocation) extends ExecutableAst.Table
 
   }
 
@@ -325,129 +306,25 @@ object ExecutableAst {
       val mask = 0xFFFFFFFFL
     }
 
-    /**
-      * A typed AST node representing a local variable expression (i.e. a parameter or let-bound variable).
-      *
-      * @param sym the name of the variable.
-      * @param tpe the type of the variable.
-      * @param loc the source location of the variable.
-      */
-    case class Var(sym: Symbol.VarSym,
-                   tpe: Type,
-                   loc: SourceLocation) extends ExecutableAst.Expression
+    case class Var(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
-    /**
-      * A typed AST node representing a reference to a top-level definition.
-      *
-      * @param sym the name of the reference.
-      * @param tpe the type of the reference.
-      * @param loc the source location of the reference.
-      */
     case class Ref(sym: Symbol.DefnSym, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
-    /**
-      * A typed AST node representing the creation of a closure. Free variables are computed at compile time and bound
-      * at run time.
-      *
-      * @param ref      the reference to the lambda associated with the closure.
-      * @param freeVars the cached set of free variables occurring within the lambda expression.
-      * @param tpe      the type of the closure.
-      * @param loc      the source location of the lambda.
-      */
-    case class MkClosureRef(ref: ExecutableAst.Expression.Ref,
-                            freeVars: Array[FreeVar],
-                            tpe: Type,
-                            loc: SourceLocation) extends ExecutableAst.Expression
+    case class MkClosureRef(ref: ExecutableAst.Expression.Ref, freeVars: Array[FreeVar], tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
-    /**
-      * A typed AST node representing a function call.
-      *
-      * @param sym  the name of the function being called.
-      * @param args the function arguments.
-      * @param tpe  the return type of the function.
-      * @param loc  the source location of the expression.
-      */
     case class ApplyRef(sym: Symbol.DefnSym, args: List[ExecutableAst.Expression], tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
-    /**
-      * A typed AST node representing a tail recursive call.
-      *
-      * @param name    the name of the function being called.
-      * @param formals the formal parameters.
-      * @param actuals the actual parameters.
-      * @param tpe     the return type of the function.
-      * @param loc     the source location of the expression.
-      */
     case class ApplyTail(name: Symbol.DefnSym, formals: List[ExecutableAst.FormalParam], actuals: List[ExecutableAst.Expression], tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
-    /**
-      * A typed AST node representing a function call.
-      *
-      * @param hook the hook being called
-      * @param args the function arguments.
-      * @param tpe  the return type of the function.
-      * @param loc  the source location of the expression.
-      */
     case class ApplyHook(hook: Ast.Hook, args: List[ExecutableAst.Expression], tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
-    /**
-      * A typed AST node representing a function call.
-      *
-      * @param exp  the function being called.
-      * @param args the function arguments.
-      * @param tpe  the return type of the function.
-      * @param loc  the source location of the expression.
-      */
     case class ApplyClosure(exp: ExecutableAst.Expression, args: List[ExecutableAst.Expression], tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
-    /**
-      * A typed AST node representing a unary expression.
-      *
-      * @param op  the unary operator.
-      * @param exp the expression.
-      * @param tpe the type of the expression.
-      * @param loc the source location of the expression.
-      */
-    case class Unary(op: UnaryOperator,
-                     exp: ExecutableAst.Expression,
-                     tpe: Type,
-                     loc: SourceLocation) extends ExecutableAst.Expression {
-      override def toString: String = "Unary(" + op + ", " + exp + ")"
-    }
+    case class Unary(op: UnaryOperator, exp: ExecutableAst.Expression, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
-    /**
-      * A typed AST node representing a binary expression.
-      *
-      * @param op   the binary operator.
-      * @param exp1 the left expression.
-      * @param exp2 the right expression.
-      * @param tpe  the type of the expression.
-      * @param loc  the source location of the expression.
-      */
-    case class Binary(op: BinaryOperator,
-                      exp1: ExecutableAst.Expression,
-                      exp2: ExecutableAst.Expression,
-                      tpe: Type,
-                      loc: SourceLocation) extends ExecutableAst.Expression {
-      override def toString: String = "Binary(" + op + ", " + exp1 + ", " + exp2 + ")"
-    }
+    case class Binary(op: BinaryOperator, exp1: ExecutableAst.Expression, exp2: ExecutableAst.Expression, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
-    /**
-      * A typed AST node representing an if-then-else expression.
-      *
-      * @param exp1 the conditional expression.
-      * @param exp2 the consequent expression.
-      * @param exp3 the alternative expression.
-      * @param tpe  the type of the consequent and alternative expression.
-      * @param loc  the source location of the expression.
-      */
-    case class IfThenElse(exp1: ExecutableAst.Expression,
-                          exp2: ExecutableAst.Expression,
-                          exp3: ExecutableAst.Expression,
-                          tpe: Type,
-                          loc: SourceLocation) extends ExecutableAst.Expression {
-      override def toString: String = "IfThenElse(" + exp1 + ", " + exp2 + ", " + exp3 + ")"
-    }
+    case class IfThenElse(exp1: ExecutableAst.Expression, exp2: ExecutableAst.Expression, exp3: ExecutableAst.Expression, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
     case class Let(sym: Symbol.VarSym, exp1: ExecutableAst.Expression, exp2: ExecutableAst.Expression, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 

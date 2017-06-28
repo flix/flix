@@ -34,7 +34,7 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
   /**
     * Mutable map of top level definitions.
     */
-  private type TopLevel = mutable.Map[Symbol.DefnSym, ExecutableAst.Definition.Constant]
+  private type TopLevel = mutable.Map[Symbol.DefnSym, ExecutableAst.Def]
 
   def run(root: SimplifiedAst.Root)(implicit flix: Flix): Validation[ExecutableAst.Root, CompilationError] = {
     implicit val _ = flix.genSym
@@ -49,7 +49,7 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
         val cases = cases0.map {
           case (tag, SimplifiedAst.Case(enumName, tagName, tpe)) => tag -> ExecutableAst.Case(enumName, tagName, tpe)
         }
-        sym -> ExecutableAst.Definition.Enum(sym, cases, loc)
+        sym -> ExecutableAst.Enum(sym, cases, loc)
     }
 
     // Converting lattices to ExecutableAst will create new top-level definitions in the map `m`.
@@ -93,15 +93,15 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
       reachable, ByteCodes(Map(), Map(), Map(), Map(), Map()), time, dependenciesOf).toSuccess
   }
 
-  def toExecutable(sast: SimplifiedAst.Def): ExecutableAst.Definition.Constant = {
+  def toExecutable(sast: SimplifiedAst.Def): ExecutableAst.Def = {
     val formals = sast.formals.map {
       case SimplifiedAst.FormalParam(sym, mod, tpe, loc) => ExecutableAst.FormalParam(sym, tpe)
     }.toArray
 
-    ExecutableAst.Definition.Constant(sast.ann, sast.sym, formals, Expression.toExecutable(sast.exp), sast.isSynthetic, sast.tpe, sast.loc)
+    ExecutableAst.Def(sast.ann, sast.sym, formals, Expression.toExecutable(sast.exp), sast.isSynthetic, sast.tpe, sast.loc)
   }
 
-  def toExecutable(sast: SimplifiedAst.Lattice, m: TopLevel)(implicit genSym: GenSym): ExecutableAst.Definition.Lattice = sast match {
+  def toExecutable(sast: SimplifiedAst.Lattice, m: TopLevel)(implicit genSym: GenSym): ExecutableAst.Lattice = sast match {
     case SimplifiedAst.Lattice(tpe, bot, top, leq, lub, glb, loc) =>
       import Expression.{toExecutable => t}
 
@@ -118,8 +118,8 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
       val botSym = Symbol.freshDefnSym("bot")
       val topSym = Symbol.freshDefnSym("top")
 
-      val botConst = ExecutableAst.Definition.Constant(Ast.Annotations(Nil), botSym, formals = Array(), t(bot), isSynthetic = true, bot.tpe, bot.loc)
-      val topConst = ExecutableAst.Definition.Constant(Ast.Annotations(Nil), topSym, formals = Array(), t(top), isSynthetic = true, top.tpe, top.loc)
+      val botConst = ExecutableAst.Def(Ast.Annotations(Nil), botSym, formals = Array(), t(bot), isSynthetic = true, bot.tpe, bot.loc)
+      val topConst = ExecutableAst.Def(Ast.Annotations(Nil), topSym, formals = Array(), t(top), isSynthetic = true, top.tpe, top.loc)
 
       // Update the map of definitions
       m ++= Map(botSym -> botConst, topSym -> topConst)
@@ -129,11 +129,11 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
       val lubSym = t(lub).asInstanceOf[ExecutableAst.Expression.Ref].sym
       val glbSym = t(glb).asInstanceOf[ExecutableAst.Expression.Ref].sym
 
-      ExecutableAst.Definition.Lattice(tpe, botSym, topSym, leqSym, lubSym, glbSym, loc)
+      ExecutableAst.Lattice(tpe, botSym, topSym, leqSym, lubSym, glbSym, loc)
   }
 
-  def toExecutable(sast: SimplifiedAst.Index): ExecutableAst.Definition.Index =
-    ExecutableAst.Definition.Index(sast.sym, sast.indexes, sast.loc)
+  def toExecutable(sast: SimplifiedAst.Index): ExecutableAst.Index =
+    ExecutableAst.Index(sast.sym, sast.indexes, sast.loc)
 
   object Table {
     def toExecutable(sast: SimplifiedAst.Table): ExecutableAst.Table = sast match {
@@ -395,7 +395,7 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
     // Generate a top-level function for the literal.
     val sym = Symbol.freshDefnSym("lit")
     val lit = Expression.toExecutable(exp0)
-    val defn = ExecutableAst.Definition.Constant(Ast.Annotations(Nil), sym, formals = Array(), lit, isSynthetic = true, exp0.tpe, exp0.loc)
+    val defn = ExecutableAst.Def(Ast.Annotations(Nil), sym, formals = Array(), lit, isSynthetic = true, exp0.tpe, exp0.loc)
     m += (sym -> defn)
     sym
   }
