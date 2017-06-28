@@ -123,7 +123,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
   /**
     * Performs name resolution on the given definition `d0` in the given namespace `ns0`.
     */
-  def resolve(d0: NamedAst.Declaration.Definition, ns0: Name.NName, prog0: NamedAst.Program): Validation[ResolvedAst.Def, ResolutionError] = {
+  def resolve(d0: NamedAst.Definition, ns0: Name.NName, prog0: NamedAst.Program): Validation[ResolvedAst.Def, ResolutionError] = {
     val schemeVal = for {
       base <- lookupType(d0.sc.base, ns0, prog0)
     } yield Scheme(d0.sc.quantifiers, base)
@@ -140,7 +140,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
   /**
     * Performs name resolution on the given enum `e0` in the given namespace `ns0`.
     */
-  def resolve(e0: NamedAst.Declaration.Enum, ns0: Name.NName, prog0: NamedAst.Program): Validation[ResolvedAst.Enum, ResolutionError] = {
+  def resolve(e0: NamedAst.Enum, ns0: Name.NName, prog0: NamedAst.Program): Validation[ResolvedAst.Enum, ResolutionError] = {
     val casesVal = e0.cases.map {
       case (name, NamedAst.Case(enum, tag, tpe)) =>
         for {
@@ -158,7 +158,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
   /**
     * Performs name resolution on the given index `i0` in the given namespace `ns0`.
     */
-  def resolve(i0: NamedAst.Declaration.Index, ns0: Name.NName, prog0: NamedAst.Program): Validation[ResolvedAst.Index, ResolutionError] = {
+  def resolve(i0: NamedAst.Index, ns0: Name.NName, prog0: NamedAst.Program): Validation[ResolvedAst.Index, ResolutionError] = {
     for {
       d <- lookupTable(i0.qname, ns0, prog0)
     } yield ResolvedAst.Index(d.sym, i0.indexes, i0.loc)
@@ -167,7 +167,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
   /**
     * Performs name resolution on the given lattice `l0` in the given namespace `ns0`.
     */
-  def resolve(l0: NamedAst.Declaration.BoundedLattice, ns0: Name.NName, prog0: NamedAst.Program): Validation[ResolvedAst.Lattice, ResolutionError] = {
+  def resolve(l0: NamedAst.Lattice, ns0: Name.NName, prog0: NamedAst.Program): Validation[ResolvedAst.Lattice, ResolutionError] = {
     for {
       tpe <- lookupType(l0.tpe, ns0, prog0)
       bot <- Expressions.resolve(l0.bot, ns0, prog0)
@@ -542,7 +542,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
 
   object RefTarget {
 
-    case class Defn(ns: Name.NName, defn: NamedAst.Declaration.Definition) extends RefTarget
+    case class Defn(ns: Name.NName, defn: NamedAst.Definition) extends RefTarget
 
     case class Hook(hook: Ast.Hook) extends RefTarget
 
@@ -586,11 +586,11 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
   /**
     * Finds the enum definition matching the given qualified name and tag.
     */
-  def lookupEnumByTag(qname: Option[Name.QName], tag: Name.Ident, ns: Name.NName, prog0: NamedAst.Program): Validation[NamedAst.Declaration.Enum, ResolutionError] = {
+  def lookupEnumByTag(qname: Option[Name.QName], tag: Name.Ident, ns: Name.NName, prog0: NamedAst.Program): Validation[NamedAst.Enum, ResolutionError] = {
     /*
      * Lookup the tag name in all enums across all namespaces.
      */
-    val globalMatches = mutable.Set.empty[NamedAst.Declaration.Enum]
+    val globalMatches = mutable.Set.empty[NamedAst.Enum]
     for ((_, decls) <- prog0.enums) {
       for ((enumName, decl) <- decls) {
         for ((tagName, caze) <- decl.cases) {
@@ -613,8 +613,8 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
     /*
      * Lookup the tag name in all enums in the current namespace.
      */
-    val namespaceMatches = mutable.Set.empty[NamedAst.Declaration.Enum]
-    for ((enumName, decl) <- prog0.enums.getOrElse(namespace, Map.empty[String, NamedAst.Declaration.Enum])) {
+    val namespaceMatches = mutable.Set.empty[NamedAst.Enum]
+    for ((enumName, decl) <- prog0.enums.getOrElse(namespace, Map.empty[String, NamedAst.Enum])) {
       for ((tagName, caze) <- decl.cases) {
         if (tag.name == tagName) {
           namespaceMatches += decl
