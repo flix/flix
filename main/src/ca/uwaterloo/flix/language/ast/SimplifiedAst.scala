@@ -62,23 +62,6 @@ object SimplifiedAst {
     def loc: SourceLocation
   }
 
-  sealed trait LoadExpression extends Expression {
-    val e: SimplifiedAst.Expression
-    val offset: scala.Int
-    val mask: scala.Int
-    final val loc = SourceLocation.Unknown
-  }
-
-  sealed trait StoreExpression extends Expression {
-    val e: SimplifiedAst.Expression
-    val offset: scala.Int
-    val v: SimplifiedAst.Expression
-    val mask: Long
-    final val targetMask = ~(mask << offset)
-    final val tpe = Type.Int64
-    final val loc = SourceLocation.Unknown
-  }
-
   object Expression {
 
     case object Unit extends SimplifiedAst.Expression {
@@ -139,43 +122,6 @@ object SimplifiedAst {
     case class Str(lit: java.lang.String) extends SimplifiedAst.Expression {
       final val tpe = Type.Str
       final val loc = SourceLocation.Unknown
-    }
-
-    case class LoadBool(e: SimplifiedAst.Expression, offset: scala.Int) extends SimplifiedAst.LoadExpression {
-      val mask = 1
-      val tpe = Type.Bool
-    }
-
-    case class LoadInt8(e: SimplifiedAst.Expression, offset: scala.Int) extends SimplifiedAst.LoadExpression {
-      val mask = 0xFF
-      val tpe = Type.Int8
-    }
-
-    case class LoadInt16(e: SimplifiedAst.Expression, offset: scala.Int) extends SimplifiedAst.LoadExpression {
-      val mask = 0xFFFF
-      val tpe = Type.Int16
-    }
-
-    case class LoadInt32(e: SimplifiedAst.Expression, offset: scala.Int) extends SimplifiedAst.LoadExpression {
-      // If we had unsigned ints, would be 0xFFFFFFFF
-      val mask = -1
-      val tpe = Type.Int32
-    }
-
-    case class StoreBool(e: SimplifiedAst.Expression, offset: scala.Int, v: SimplifiedAst.Expression) extends SimplifiedAst.StoreExpression {
-      val mask = 0x1L
-    }
-
-    case class StoreInt8(e: SimplifiedAst.Expression, offset: scala.Int, v: SimplifiedAst.Expression) extends SimplifiedAst.StoreExpression {
-      val mask = 0xFFL
-    }
-
-    case class StoreInt16(e: SimplifiedAst.Expression, offset: scala.Int, v: SimplifiedAst.Expression) extends SimplifiedAst.StoreExpression {
-      val mask = 0xFFFFL
-    }
-
-    case class StoreInt32(e: SimplifiedAst.Expression, offset: scala.Int, v: SimplifiedAst.Expression) extends SimplifiedAst.StoreExpression {
-      val mask = 0xFFFFFFFFL
     }
 
     case class Var(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression

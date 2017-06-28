@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.{CompilationError, GenSym}
-import ca.uwaterloo.flix.language.ast.SimplifiedAst.{Expression, LoadExpression, StoreExpression}
+import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expression
 import ca.uwaterloo.flix.language.ast.{SimplifiedAst, Symbol}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 import ca.uwaterloo.flix.util.Validation._
@@ -106,8 +106,6 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       /* Inline inside expression */
       case Expression.MkClosureRef(ref, freeVars, tpe, loc) =>
         Expression.MkClosureRef(ref, freeVars, tpe, loc)
-      case _: LoadExpression => exp
-      case _: StoreExpression => exp
       case Expression.Unit => exp
       case Expression.True => exp
       case Expression.False => exp
@@ -173,8 +171,6 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     * Performs alpha-renaming of an expression
     */
   def renameAndSubstitute(exp: Expression, sub: Map[Symbol.VarSym, Symbol.VarSym])(implicit genSym: GenSym): Expression = exp match {
-    case _: LoadExpression => exp
-    case _: StoreExpression => exp
     case Expression.Unit => exp
     case Expression.True => exp
     case Expression.False => exp
@@ -270,8 +266,6 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     */
   def exprScore(exp: Expression): Int = {
     exp match {
-      case _: LoadExpression => 1
-      case _: StoreExpression => 1
       case Expression.Unit => 0
       case Expression.True => 0
       case Expression.False => 0

@@ -618,14 +618,6 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case SimplifiedAst.Expression.Int64(lit) => e
       case SimplifiedAst.Expression.BigInt(lit) => e
       case SimplifiedAst.Expression.Str(lit) => e
-      case SimplifiedAst.Expression.LoadBool(n, o) => e
-      case SimplifiedAst.Expression.LoadInt8(b, o) => e
-      case SimplifiedAst.Expression.LoadInt16(b, o) => e
-      case SimplifiedAst.Expression.LoadInt32(b, o) => e
-      case SimplifiedAst.Expression.StoreBool(b, o, v) => e
-      case SimplifiedAst.Expression.StoreInt8(b, o, v) => e
-      case SimplifiedAst.Expression.StoreInt16(b, o, v) => e
-      case SimplifiedAst.Expression.StoreInt32(b, o, v) => e
       case SimplifiedAst.Expression.Var(sym, tpe, loc) => m.get(sym) match {
         case None => SimplifiedAst.Expression.Var(sym, tpe, loc)
         case Some(replacement) => SimplifiedAst.Expression.Var(replacement, tpe, loc)

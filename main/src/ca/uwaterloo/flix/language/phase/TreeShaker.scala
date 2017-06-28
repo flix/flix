@@ -123,14 +123,6 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.Int64(lit) => Set.empty
       case Expression.BigInt(lit) => Set.empty
       case Expression.Str(lit) => Set.empty
-      case Expression.LoadBool(exp, offset) => visitExp(exp)
-      case Expression.LoadInt8(exp, offset) => visitExp(exp)
-      case Expression.LoadInt16(exp, offset) => visitExp(exp)
-      case Expression.LoadInt32(exp, offset) => visitExp(exp)
-      case Expression.StoreBool(exp, offset, v) => visitExp(exp) ++ visitExp(v)
-      case Expression.StoreInt8(exp, offset, v) => visitExp(exp) ++ visitExp(v)
-      case Expression.StoreInt16(exp, offset, v) => visitExp(exp) ++ visitExp(v)
-      case Expression.StoreInt32(exp, offset, v) => visitExp(exp) ++ visitExp(v)
       case Expression.Var(sym, tpe, loc) => Set.empty
       case Expression.Def(sym, tpe, loc) => Set(sym)
       case Expression.Lambda(args, body, tpe, loc) => visitExp(body)

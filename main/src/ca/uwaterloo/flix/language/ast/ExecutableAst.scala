@@ -39,7 +39,6 @@ object ExecutableAst {
                   time: Time,
                   dependenciesOf: Map[Symbol.TableSym, Set[(Constraint, ExecutableAst.Predicate.Body.Positive)]]) extends ExecutableAst
 
-
   case class ByteCodes(enumInterfaceByteCodes: Map[EnumSym, (QualName, Array[Byte])],
                        enumClassByteCodes: Map[EnumSym, (Map[(String, Type), Array[Byte]], Map[String, Array[Byte]])],
                        functionalInterfaceByteCodes: Map[Type, (FlixClassName, Array[Byte])],
@@ -134,23 +133,6 @@ object ExecutableAst {
     def loc: SourceLocation
   }
 
-  sealed trait LoadExpression extends Expression {
-    val e: ExecutableAst.Expression
-    val offset: scala.Int
-    val mask: scala.Int
-    final val loc = SourceLocation.Unknown
-  }
-
-  sealed trait StoreExpression extends Expression {
-    val e: ExecutableAst.Expression
-    val offset: scala.Int
-    val v: ExecutableAst.Expression
-    val mask: Long
-    final val targetMask = ~(mask << offset)
-    final val tpe = Type.Int64
-    final val loc = SourceLocation.Unknown
-  }
-
   object Expression {
 
     case object Unit extends ExecutableAst.Expression {
@@ -211,103 +193,6 @@ object ExecutableAst {
     case class Str(lit: java.lang.String) extends ExecutableAst.Expression {
       final val tpe = Type.Str
       final val loc = SourceLocation.Unknown
-    }
-
-    /**
-      * An AST node representing a value (of type Bool) loaded from an Int64.
-      *
-      * @param e      the expression, returning an Int64, that the value is loaded from.
-      * @param offset the offset (in bits) from the least significant bit that the value is loaded from.
-      */
-    case class LoadBool(e: ExecutableAst.Expression, offset: scala.Int) extends ExecutableAst.LoadExpression {
-      val mask = 1
-      val tpe = Type.Bool
-    }
-
-    /**
-      * An AST node representing a value (of type Int8) loaded from an Int64.
-      *
-      * @param e      the expression, returning an Int64, that the value is loaded from.
-      * @param offset the offset (in bits) from the least significant bit that the value is loaded from.
-      */
-    case class LoadInt8(e: ExecutableAst.Expression, offset: scala.Int) extends ExecutableAst.LoadExpression {
-      val mask = 0xFF
-      val tpe = Type.Int8
-    }
-
-    /**
-      * An AST node representing a value (of type Int16) loaded from an Int64.
-      *
-      * @param e      the expression, returning an Int64, that the value is loaded from.
-      * @param offset the offset (in bits) from the least significant bit that the value is loaded from.
-      */
-    case class LoadInt16(e: ExecutableAst.Expression, offset: scala.Int) extends ExecutableAst.LoadExpression {
-      val mask = 0xFFFF
-      val tpe = Type.Int16
-    }
-
-    /**
-      * An AST node representing a value (of type Int32) loaded from an Int64.
-      *
-      * @param e      the expression, returning an Int64, that the value is loaded from.
-      * @param offset the offset (in bits) from the least significant bit that the value is loaded from.
-      */
-    case class LoadInt32(e: ExecutableAst.Expression, offset: scala.Int) extends ExecutableAst.LoadExpression {
-      // If we had unsigned ints, would be 0xFFFFFFFF
-      val mask = -1
-      val tpe = Type.Int32
-    }
-
-    /**
-      * An AST node representing a value (of type Bool) to be stored into an Int64.
-      *
-      * @param e      the expression, returning an Int64, that the value is stored into.
-      * @param offset the offset (in bits) from the least significant bit that the value is stored into.
-      * @param v      the value to be stored.
-      */
-    case class StoreBool(e: ExecutableAst.Expression,
-                         offset: scala.Int,
-                         v: ExecutableAst.Expression) extends ExecutableAst.StoreExpression {
-      val mask = 0x1L
-    }
-
-    /**
-      * An AST node representing a value (of type Int8) to be stored into an Int64.
-      *
-      * @param e      the expression, returning an Int64, that the value is stored into.
-      * @param offset the offset (in bits) from the least significant bit that the value is stored into.
-      * @param v      the value to be stored.
-      */
-    case class StoreInt8(e: ExecutableAst.Expression,
-                         offset: scala.Int,
-                         v: ExecutableAst.Expression) extends ExecutableAst.StoreExpression {
-      val mask = 0xFFL
-    }
-
-    /**
-      * An AST node representing a value (of type Int16) to be stored into an Int64.
-      *
-      * @param e      the expression, returning an Int64, that the value is stored into.
-      * @param offset the offset (in bits) from the least significant bit that the value is stored into.
-      * @param v      the value to be stored.
-      */
-    case class StoreInt16(e: ExecutableAst.Expression,
-                          offset: scala.Int,
-                          v: ExecutableAst.Expression) extends ExecutableAst.StoreExpression {
-      val mask = 0xFFFFL
-    }
-
-    /**
-      * An AST node representing a value (of type Int32) to be stored into an Int64.
-      *
-      * @param e      the expression, returning an Int64, that the value is stored into.
-      * @param offset the offset (in bits) from the least significant bit that the value is stored into.
-      * @param v      the value to be stored.
-      */
-    case class StoreInt32(e: ExecutableAst.Expression,
-                          offset: scala.Int,
-                          v: ExecutableAst.Expression) extends ExecutableAst.StoreExpression {
-      val mask = 0xFFFFFFFFL
     }
 
     case class Var(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression

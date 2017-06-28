@@ -21,7 +21,7 @@ import java.lang.reflect.Modifier
 import ca.uwaterloo.flix.api.{Flix, MatchException, SwitchException, UserException}
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.Ast.Hook
-import ca.uwaterloo.flix.language.ast.ExecutableAst.{Expression, LoadExpression, StoreExpression}
+import ca.uwaterloo.flix.language.ast.ExecutableAst.Expression
 import ca.uwaterloo.flix.language.ast.{Type, _}
 import ca.uwaterloo.flix.util.{Evaluation, InternalCompilerException, Options, Validation}
 import org.objectweb.asm
@@ -305,9 +305,6 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
       visitor.visitLdcInsn(ii.toString)
       visitor.visitMethodInsn(INVOKESPECIAL, name, "<init>", asm.Type.getConstructorDescriptor(ctor), false)
     case Expression.Str(s) => visitor.visitLdcInsn(s)
-
-    case load: LoadExpression => compileLoadExpr(prefix, functions, declarations, interfaces, enums, visitor, entryPoint)(load)
-    case store: StoreExpression => compileStoreExpr(prefix, functions, declarations, interfaces, enums, visitor, entryPoint)(store)
 
     case Expression.Var(sym, tpe, _) => tpe match {
       case Type.Var(id, kind) =>  throw InternalCompilerException(s"Non-monomorphed type variable '$id in type '$tpe'.")
@@ -809,94 +806,6 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
       visitor.visitTypeInsn(CHECKCAST, decorate(clazzName))
 
     case _ => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
-  }
-
-  /*
-   * (e >> offset).toInt & mask
-   *
-   * Example:
-   * x represents a bit with unknown value (0 or 1)
-   *   load   = LoadInt8(e, 16)
-   *   e      = xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx 10101010 xxxxxxxx xxxxxxxx
-   *
-   * First we do a right shift (with sign extension) (LSHR):
-   *            xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx 10101010
-   * Then we convert/truncate to an int, discarding the higher-order bits (L2I):
-   *            xxxxxxxx xxxxxxxx xxxxxxxx 10101010
-   * We bitwise-and with the mask, clearing the higher-order bits (IAND):
-   *   mask   = 00000000 00000000 00000000 11111111
-   *   result = 00000000 00000000 00000000 10101010
-   *
-   * If we used I2B instead of a mask, sign extension would give:
-   *            11111111 11111111 11111111 10101010
-   */
-  private def compileLoadExpr(prefix: QualName,
-                              functions: List[ExecutableAst.Def],
-                              declarations: Map[Symbol.DefnSym, Type],
-                              interfaces: Map[Type, FlixClassName],
-                              enums: Map[(Type, String), (QualName, ExecutableAst.Case)],
-                              visitor: MethodVisitor,
-                              entryPoint: Label)(load: LoadExpression): Unit = {
-    compileExpression(prefix, functions, declarations, interfaces, enums, visitor, entryPoint)(load.e)
-    if (load.offset > 0) {
-      compileInt(visitor)(load.offset)
-      visitor.visitInsn(LSHR)
-    }
-    visitor.visitInsn(L2I)
-    compileInt(visitor)(load.mask)
-    visitor.visitInsn(IAND)
-  }
-
-  /*
-   * (e & targetMask) | ((v.toLong & mask) << offset)
-   *
-   * Example:
-   * x represents a bit with unknown value (0 or 1)
-   *   store  = StoreInt32(e, 0, v)
-   *   e      = xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx
-   *   v      = 11110000 11110000 11110000 11110000
-   *
-   * First we bitwise-and with targetMask to clear target/destination bits (LAND):
-   *   tMask  = 11111111 11111111 11111111 11111111 00000000 00000000 00000000 00000000
-   *   result = xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx 00000000 00000000 00000000 00000000
-   * Then we convert v to a long (with sign extension) (I2L):
-   *            11111111 11111111 11111111 11111111 11110000 11110000 11110000 11110000
-   * Then we bitwise-and with the mask, clearing the higher-order bits (LAND):
-   *   mask   = 00000000 00000000 00000000 00000000 11111111 11111111 11111111 11111111
-   *   result = 00000000 00000000 00000000 00000000 11110000 11110000 11110000 11110000
-   * In this example, we don't left shift because the shift offset is 0 (LSHL). We bitwise-or with e to get the final
-   * result (LOR):
-   *   e      = xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx 00000000 00000000 00000000 00000000
-   *   result = xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx 11110000 11110000 11110000 11110000
-   *
-   * Note: (v & mask).toLong instead of (v.toLong & mask) gives the wrong result because of sign extension.
-   * Bitwise-and of v and mask (IAND):
-   *   mask   = 11111111 11111111 11111111 11111111
-   *   result = 11110000 11110000 11110000 11110000
-   * Convert int to long (doing a sign extension) (I2L):
-   *   result = 11111111 11111111 11111111 11111111 11110000 11110000 11110000 11110000
-   * Again in this example, we don't do a left shift. But when we do a bitwise-or, we overwrite the bits of e (LOR):
-   *   e      = xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx 00000000 00000000 00000000 00000000
-   *   result = 11111111 11111111 11111111 11111111 11110000 11110000 11110000 11110000
-   */
-  private def compileStoreExpr(prefix: QualName,
-                               functions: List[ExecutableAst.Def],
-                               declarations: Map[Symbol.DefnSym, Type],
-                               interfaces: Map[Type, FlixClassName],
-                               enums: Map[(Type, String), (QualName, ExecutableAst.Case)],
-                               visitor: MethodVisitor, entryPoint: Label)(store: StoreExpression): Unit = {
-    compileExpression(prefix, functions, declarations, interfaces, enums, visitor, entryPoint)(store.e)
-    compileInt(visitor)(store.targetMask, isLong = true)
-    visitor.visitInsn(LAND)
-    compileExpression(prefix, functions, declarations, interfaces, enums, visitor, entryPoint)(store.v)
-    visitor.visitInsn(I2L)
-    compileInt(visitor)(store.mask, isLong = true)
-    visitor.visitInsn(LAND)
-    if (store.offset > 0) {
-      compileInt(visitor)(store.offset)
-      visitor.visitInsn(LSHL)
-    }
-    visitor.visitInsn(LOR)
   }
 
   /*

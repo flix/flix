@@ -818,14 +818,6 @@ object SymbolicEvaluator {
         * Unsupported expressions.
         */
       case e: Expression.ApplyHook => throw InternalCompilerException(s"Unsupported expression: '$e'.")
-      case e: Expression.LoadBool => throw InternalCompilerException(s"Unsupported expression: '$e'.")
-      case e: Expression.LoadInt8 => throw InternalCompilerException(s"Unsupported expression: '$e'.")
-      case e: Expression.LoadInt16 => throw InternalCompilerException(s"Unsupported expression: '$e'.")
-      case e: Expression.LoadInt32 => throw InternalCompilerException(s"Unsupported expression: '$e'.")
-      case e: Expression.StoreBool => throw InternalCompilerException(s"Unsupported expression: '$e'.")
-      case e: Expression.StoreInt8 => throw InternalCompilerException(s"Unsupported expression: '$e'.")
-      case e: Expression.StoreInt16 => throw InternalCompilerException(s"Unsupported expression: '$e'.")
-      case e: Expression.StoreInt32 => throw InternalCompilerException(s"Unsupported expression: '$e'.")
 
     }
 

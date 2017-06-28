@@ -526,14 +526,6 @@ object TupleGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
       case Expression.Int64(lit) => Nil
       case Expression.BigInt(lit) => Nil
       case Expression.Str(lit) => Nil
-      case Expression.LoadBool(n, o) => Nil
-      case Expression.LoadInt8(b, o) => Nil
-      case Expression.LoadInt16(b, o) => Nil
-      case Expression.LoadInt32(b, o) => Nil
-      case Expression.StoreBool(b, o, v) => Nil
-      case Expression.StoreInt8(b, o, v) => Nil
-      case Expression.StoreInt16(b, o, v) => Nil
-      case Expression.StoreInt32(b, o, v) => Nil
       case Expression.Var(sym, tpe, loc) => searchInType(tpe)
       case Expression.Def(name, tpe, loc) => searchInType(tpe)
       case Expression.MkClosureRef(ref, freeVars, tpe, loc) => searchInType(tpe)

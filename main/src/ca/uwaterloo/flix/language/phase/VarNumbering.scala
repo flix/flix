@@ -80,14 +80,6 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.Int64(lit) => i0
       case Expression.BigInt(lit) => i0
       case Expression.Str(lit) => i0
-      case Expression.LoadBool(n, o) => i0
-      case Expression.LoadInt8(b, o) => i0
-      case Expression.LoadInt16(b, o) => i0
-      case Expression.LoadInt32(b, o) => i0
-      case Expression.StoreBool(b, o, v) => i0
-      case Expression.StoreInt8(b, o, v) => i0
-      case Expression.StoreInt16(b, o, v) => i0
-      case Expression.StoreInt32(b, o, v) => i0
       case Expression.Var(sym, tpe, loc) => i0
       case Expression.Def(name, tpe, loc) => i0
       case Expression.Hook(hook, tpe, loc) => i0

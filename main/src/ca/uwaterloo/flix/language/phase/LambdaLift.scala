@@ -97,14 +97,6 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.Int64(lit) => e
       case Expression.BigInt(lit) => e
       case Expression.Str(lit) => e
-      case Expression.LoadBool(n, o) => e
-      case Expression.LoadInt8(b, o) => e
-      case Expression.LoadInt16(b, o) => e
-      case Expression.LoadInt32(b, o) => e
-      case Expression.StoreBool(b, o, v) => e
-      case Expression.StoreInt8(b, o, v) => e
-      case Expression.StoreInt16(b, o, v) => e
-      case Expression.StoreInt32(b, o, v) => e
       case Expression.Var(sym, tpe, loc) => e
       case Expression.Def(name, tpe, loc) => e
 

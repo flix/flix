@@ -41,20 +41,6 @@ object Interpreter {
     case Expression.Int64(lit) => Value.mkInt64(lit)
     case Expression.BigInt(lit) => Value.mkBigInt(lit)
     case Expression.Str(lit) => Value.mkStr(lit)
-    case load: LoadExpression =>
-      val e = cast2int64(eval(load.e, root, env0))
-      val result = (e >> load.offset).toInt & load.mask
-      load match {
-        case _: Expression.LoadBool => Value.mkBool(result != 0)
-        case _: Expression.LoadInt8 => Value.mkInt8(result)
-        case _: Expression.LoadInt16 => Value.mkInt16(result)
-        case _: Expression.LoadInt32 => Value.mkInt32(result)
-      }
-    case store: StoreExpression =>
-      val e = cast2int64(eval(store.e, root, env0))
-      val v = cast2int64(eval(store.v, root, env0))
-      val result = (e & store.targetMask) | ((v & store.mask) << store.offset)
-      Value.mkInt64(result)
     case Expression.Var(sym, _, loc) => env0.get(sym.toString) match {
       case None => throw InternalRuntimeException(s"Key '${sym.toString}' not found in environment: '${env0.mkString(",")}'.")
       case Some(v) => v

@@ -59,14 +59,6 @@ object PrettyPrinter {
         case Expression.Int64(lit) => vt.text(lit.toString).text("i64")
         case Expression.BigInt(lit) => vt.text(lit.toString()).text("ii")
         case Expression.Str(lit) => vt.text("\"").text(lit).text("\"")
-        case Expression.LoadBool(base, offset) => ???
-        case Expression.LoadInt8(base, offset) => ???
-        case Expression.LoadInt16(base, offset) => ???
-        case Expression.LoadInt32(base, offset) => ???
-        case Expression.StoreBool(base, offset, value) => ???
-        case Expression.StoreInt8(base, offset, value) => ???
-        case Expression.StoreInt16(base, offset, value) => ???
-        case Expression.StoreInt32(base, offset, value) => ???
         case Expression.Var(sym, tpe, loc) => fmtSym(sym, vt)
         case Expression.Def(sym, tpe, loc) => fmtSym(sym, vt)
         case Expression.Lambda(fparams, body, tpe, loc) =>

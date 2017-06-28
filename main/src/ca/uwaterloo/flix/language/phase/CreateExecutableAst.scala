@@ -172,18 +172,6 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
       case SimplifiedAst.Expression.Int64(lit) => ExecutableAst.Expression.Int64(lit)
       case SimplifiedAst.Expression.BigInt(lit) => ExecutableAst.Expression.BigInt(lit)
       case SimplifiedAst.Expression.Str(lit) => ExecutableAst.Expression.Str(lit)
-      case SimplifiedAst.Expression.LoadBool(e, offset) => ExecutableAst.Expression.LoadBool(toExecutable(e), offset)
-      case SimplifiedAst.Expression.LoadInt8(e, offset) => ExecutableAst.Expression.LoadInt8(toExecutable(e), offset)
-      case SimplifiedAst.Expression.LoadInt16(e, offset) => ExecutableAst.Expression.LoadInt16(toExecutable(e), offset)
-      case SimplifiedAst.Expression.LoadInt32(e, offset) => ExecutableAst.Expression.LoadInt32(toExecutable(e), offset)
-      case SimplifiedAst.Expression.StoreBool(e, offset, v) =>
-        ExecutableAst.Expression.StoreBool(toExecutable(e), offset, toExecutable(v))
-      case SimplifiedAst.Expression.StoreInt8(e, offset, v) =>
-        ExecutableAst.Expression.StoreInt8(toExecutable(e), offset, toExecutable(v))
-      case SimplifiedAst.Expression.StoreInt16(e, offset, v) =>
-        ExecutableAst.Expression.StoreInt16(toExecutable(e), offset, toExecutable(v))
-      case SimplifiedAst.Expression.StoreInt32(e, offset, v) =>
-        ExecutableAst.Expression.StoreInt32(toExecutable(e), offset, toExecutable(v))
       case SimplifiedAst.Expression.Var(sym, tpe, loc) =>
         ExecutableAst.Expression.Var(sym, tpe, loc)
       case SimplifiedAst.Expression.Def(name, tpe, loc) => ExecutableAst.Expression.Def(name, tpe, loc)

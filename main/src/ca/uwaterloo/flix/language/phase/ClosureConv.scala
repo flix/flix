@@ -41,14 +41,7 @@ object ClosureConv {
     case SimplifiedAst.Expression.Int64(lit) => exp
     case SimplifiedAst.Expression.BigInt(lit) => exp
     case SimplifiedAst.Expression.Str(lit) => exp
-    case SimplifiedAst.Expression.LoadBool(n, o) => exp
-    case SimplifiedAst.Expression.LoadInt8(b, o) => exp
-    case SimplifiedAst.Expression.LoadInt16(b, o) => exp
-    case SimplifiedAst.Expression.LoadInt32(b, o) => exp
-    case SimplifiedAst.Expression.StoreBool(b, o, v) => exp
-    case SimplifiedAst.Expression.StoreInt8(b, o, v) => exp
-    case SimplifiedAst.Expression.StoreInt16(b, o, v) => exp
-    case SimplifiedAst.Expression.StoreInt32(b, o, v) => exp
+
     case SimplifiedAst.Expression.Var(sym, tpe, loc) => exp
 
     case e: SimplifiedAst.Expression.Def =>
@@ -183,14 +176,6 @@ object ClosureConv {
     case SimplifiedAst.Expression.Int64(lit) => mutable.LinkedHashSet.empty
     case SimplifiedAst.Expression.BigInt(lit) => mutable.LinkedHashSet.empty
     case SimplifiedAst.Expression.Str(lit) => mutable.LinkedHashSet.empty
-    case SimplifiedAst.Expression.LoadBool(n, o) => mutable.LinkedHashSet.empty
-    case SimplifiedAst.Expression.LoadInt8(b, o) => mutable.LinkedHashSet.empty
-    case SimplifiedAst.Expression.LoadInt16(b, o) => mutable.LinkedHashSet.empty
-    case SimplifiedAst.Expression.LoadInt32(b, o) => mutable.LinkedHashSet.empty
-    case SimplifiedAst.Expression.StoreBool(b, o, v) => mutable.LinkedHashSet.empty
-    case SimplifiedAst.Expression.StoreInt8(b, o, v) => mutable.LinkedHashSet.empty
-    case SimplifiedAst.Expression.StoreInt16(b, o, v) => mutable.LinkedHashSet.empty
-    case SimplifiedAst.Expression.StoreInt32(b, o, v) => mutable.LinkedHashSet.empty
     case SimplifiedAst.Expression.Var(sym, tpe, loc) => mutable.LinkedHashSet((sym, tpe))
     case SimplifiedAst.Expression.Def(name, tpe, loc) => mutable.LinkedHashSet.empty
     case SimplifiedAst.Expression.Lambda(args, body, tpe, loc) =>
@@ -251,14 +236,6 @@ object ClosureConv {
       case Expression.Int64(lit) => e
       case Expression.BigInt(lit) => e
       case Expression.Str(lit) => e
-      case Expression.LoadBool(n, o) => e
-      case Expression.LoadInt8(b, o) => e
-      case Expression.LoadInt16(b, o) => e
-      case Expression.LoadInt32(b, o) => e
-      case Expression.StoreBool(b, o, v) => e
-      case Expression.StoreInt8(b, o, v) => e
-      case Expression.StoreInt16(b, o, v) => e
-      case Expression.StoreInt32(b, o, v) => e
       case Expression.Var(sym, tpe, loc) => subst.get(sym) match {
         case None => Expression.Var(sym, tpe, loc)
         case Some(newSym) => Expression.Var(newSym, tpe, loc)
