@@ -71,7 +71,8 @@ object TupleGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
     }
 
     // 1. Extract all tuple types from definitions.
-    val allTuples : List[Type] = root.definitions.values.flatMap(x => findTuplesInExps(x.exp) ++ findTuplesInTypes(x.tpe)).toList
+    val allTuples : List[Type] = root.defs.values.flatMap(x => findTuplesInExps(x.exp) ++ findTuplesInTypes(x.tpe)).toList
+
 
     // 2. Group tuples based on representation of their fields.
     val groupedFields : List[List[List[Type]]] = allTuples.map{
@@ -529,18 +530,10 @@ object TupleGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
     case Expression.Int64(lit) => Set.empty
     case Expression.BigInt(lit) => Set.empty
     case Expression.Str(lit) => Set.empty
-    case Expression.LoadBool(n, o) => Set.empty
-    case Expression.LoadInt8(b, o) => Set.empty
-    case Expression.LoadInt16(b, o) => Set.empty
-    case Expression.LoadInt32(b, o) => Set.empty
-    case Expression.StoreBool(b, o, v) => Set.empty
-    case Expression.StoreInt8(b, o, v) => Set.empty
-    case Expression.StoreInt16(b, o, v) => Set.empty
-    case Expression.StoreInt32(b, o, v) => Set.empty
     case Expression.Var(sym, tpe, loc) => findTuplesInTypes(tpe)
-    case Expression.Ref(name, tpe, loc) => findTuplesInTypes(tpe)
-    case Expression.MkClosureRef(ref, freeVars, tpe, loc) => findTuplesInTypes(tpe)
-    case Expression.ApplyRef(name, args, tpe, loc) => args.foldLeft(findTuplesInTypes(tpe))((acc, elem) => acc ++ findTuplesInExps(elem))
+    case Expression.Def(name, tpe, loc) => findTuplesInTypes(tpe)
+    case Expression.MkClosureDef(ref, freeVars, tpe, loc) => findTuplesInTypes(tpe)
+    case Expression.ApplyDef(name, args, tpe, loc) => args.foldLeft(findTuplesInTypes(tpe))((acc, elem) => acc ++ findTuplesInExps(elem))
     case Expression.ApplyTail(name, formals, actuals, tpe, loc) => actuals.foldLeft(findTuplesInTypes(tpe))((acc, elem) => acc ++ findTuplesInExps(elem))
     case Expression.ApplyHook(hook, args, tpe, loc) => args.foldLeft(findTuplesInTypes(tpe))((acc, elem) => acc ++ findTuplesInExps(elem))
     case Expression.ApplyClosure(exp, args, tpe, loc) => findTuplesInExps(exp) ++ args.foldLeft(findTuplesInTypes(tpe))((acc, elem) => acc ++ findTuplesInExps(elem))
@@ -553,9 +546,9 @@ object TupleGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
     case Expression.Untag(sym, tag, exp, tpe, loc) => findTuplesInExps(exp) ++ findTuplesInTypes(tpe)
     case Expression.Index(base, offset, tpe, loc) => findTuplesInExps(base) ++ findTuplesInTypes(tpe)
     case Expression.Tuple(elms, tpe, loc) => elms.foldLeft(findTuplesInTypes(tpe) + tpe)((acc, elem) => acc ++ findTuplesInExps(elem))
-    case Expression.Reference(exp, tpe, loc) => ??? // TODO
-    case Expression.Dereference(exp, tpe, loc) => ??? // TODO
-    case Expression.Assignment(exp1, exp2, tpe, loc) => ??? // TODO
+    case Expression.Ref(exp, tpe, loc) => ??? // TODO
+    case Expression.Deref(exp, tpe, loc) => ??? // TODO
+    case Expression.Assign(exp1, exp2, tpe, loc) => ??? // TODO
     case Expression.LetRec(sym, exp1, exp2, tpe, loc) => ??? // TODO
     case Expression.Existential(params, exp, loc) => findTuplesInExps(exp)
     case Expression.Universal(params, exp, loc) => findTuplesInExps(exp)

@@ -18,640 +18,640 @@
 // maxValue                                                                //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def maxValue01: Bool = Int8.maxValue() `assertEq!` ~~~(1i8 <<< 7)
+def maxValue01(): Bool = Int8.maxValue() `assertEq!` ~~~(1i8 <<< 7)
 
 /////////////////////////////////////////////////////////////////////////////
 // minValue                                                                //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def minValue01: Bool = Int8.minValue() `assertEq!` (1i8 <<< 7)
+def minValue01(): Bool = Int8.minValue() `assertEq!` (1i8 <<< 7)
 
 /////////////////////////////////////////////////////////////////////////////
 // size                                                                    //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def size01: Bool = Int8.size() `assertEq!` 8
+def size01(): Bool = Int8.size() `assertEq!` 8
 
 /////////////////////////////////////////////////////////////////////////////
 // min                                                                     //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def min01: Bool = Int8.min(1i8, 2i8) `assertEq!` 1i8
+def min01(): Bool = Int8.min(1i8, 2i8) `assertEq!` 1i8
 
 @test
-def min02: Bool = Int8.min(2i8, -1i8) `assertEq!` -1i8
+def min02(): Bool = Int8.min(2i8, -1i8) `assertEq!` -1i8
 
 @test
-def min03: Bool = Int8.min(-33i8, -66i8) `assertEq!` -66i8
+def min03(): Bool = Int8.min(-33i8, -66i8) `assertEq!` -66i8
 
 /////////////////////////////////////////////////////////////////////////////
 // max                                                                     //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def max01: Bool = Int8.max(48i8, 49i8) `assertEq!` 49i8
+def max01(): Bool = Int8.max(48i8, 49i8) `assertEq!` 49i8
 
 @test
-def max02: Bool = Int8.max(4i8, -16i8) `assertEq!` 4i8
+def max02(): Bool = Int8.max(4i8, -16i8) `assertEq!` 4i8
 
 @test
-def max03: Bool = Int8.max(-34i8, -16i8) `assertEq!` -16i8
+def max03(): Bool = Int8.max(-34i8, -16i8) `assertEq!` -16i8
 
 /////////////////////////////////////////////////////////////////////////////
 // abs                                                                     //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def abs01: Bool = Int8.abs(31i8) `assertEq!` 31i8
+def abs01(): Bool = Int8.abs(31i8) `assertEq!` 31i8
 
 @test
-def abs02: Bool = Int8.abs(-31i8) `assertEq!` 31i8
+def abs02(): Bool = Int8.abs(-31i8) `assertEq!` 31i8
 
 @test
-def abs03: Bool = Int8.abs(127i8) `assertEq!` 127i8
+def abs03(): Bool = Int8.abs(127i8) `assertEq!` 127i8
 
 @test
-def abs04: Bool = Int8.abs(-127i8) `assertEq!` 127i8
+def abs04(): Bool = Int8.abs(-127i8) `assertEq!` 127i8
 
 @test
-def abs05: Bool = Int8.abs(0i8) `assertEq!` 0i8
+def abs05(): Bool = Int8.abs(0i8) `assertEq!` 0i8
 
 @test
-def abs06: Bool = Int8.abs(-128i8) `assertEq!` -1i8
+def abs06(): Bool = Int8.abs(-128i8) `assertEq!` -1i8
 
 /////////////////////////////////////////////////////////////////////////////
 // dist                                                                    //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def dist01: Bool = Int8.dist(31i8, -7i8) `assertEq!` 38i8
+def dist01(): Bool = Int8.dist(31i8, -7i8) `assertEq!` 38i8
 
 @test
-def dist02: Bool = Int8.dist(-44i8, -1i8) `assertEq!` 43i8
+def dist02(): Bool = Int8.dist(-44i8, -1i8) `assertEq!` 43i8
 
 @test
-def dist03: Bool = Int8.dist(-2i8, -2i8) `assertEq!` 0i8
+def dist03(): Bool = Int8.dist(-2i8, -2i8) `assertEq!` 0i8
 
 @test
-def dist04: Bool = Int8.dist(-128i8, -1i8) `assertEq!` 127i8
+def dist04(): Bool = Int8.dist(-128i8, -1i8) `assertEq!` 127i8
 
 @test
-def dist05: Bool = Int8.dist(-128i8, 0i8) `assertEq!` -1i8
+def dist05(): Bool = Int8.dist(-128i8, 0i8) `assertEq!` -1i8
 
 @test
-def dist06: Bool = Int8.dist(-123i8, 4i8) `assertEq!` 127i8
+def dist06(): Bool = Int8.dist(-123i8, 4i8) `assertEq!` 127i8
 
 @test
-def dist07: Bool = Int8.dist(-123i8, 5i8) `assertEq!` -1i8
+def dist07(): Bool = Int8.dist(-123i8, 5i8) `assertEq!` -1i8
 
 /////////////////////////////////////////////////////////////////////////////
 // compare                                                                 //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def compare01: Bool = Int8.compare(-1i8, 44i8) `assertEq!` -1
+def compare01(): Bool = Int8.compare(-1i8, 44i8) `assertEq!` -1
 
 @test
-def compare02: Bool = Int8.compare(-1i8, -44i8) `assertEq!` 1
+def compare02(): Bool = Int8.compare(-1i8, -44i8) `assertEq!` 1
 
 @test
-def compare03: Bool = Int8.compare(88i8, 88i8) `assertEq!` 0
+def compare03(): Bool = Int8.compare(88i8, 88i8) `assertEq!` 0
 
 /////////////////////////////////////////////////////////////////////////////
 // signum                                                                  //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def signum01: Bool = Int8.signum(-22i8) `assertEq!` -1
+def signum01(): Bool = Int8.signum(-22i8) `assertEq!` -1
 
 @test
-def signum02: Bool = Int8.signum(22i8) `assertEq!` 1
+def signum02(): Bool = Int8.signum(22i8) `assertEq!` 1
 
 @test
-def signum03: Bool = Int8.signum(0i8) `assertEq!` 0
+def signum03(): Bool = Int8.signum(0i8) `assertEq!` 0
 
 /////////////////////////////////////////////////////////////////////////////
 // logicalRightShift                                                       //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def logicalRightShift01: Bool = Int8.logicalRightShift(98i8, 4) `assertEq!` (98i8 >>> 4)
+def logicalRightShift01(): Bool = Int8.logicalRightShift(98i8, 4) `assertEq!` (98i8 >>> 4)
 
 @test
-def logicalRightShift02: Bool = Int8.logicalRightShift(127i8, 33) `assertEq!` (127i8 >>> 33)
+def logicalRightShift02(): Bool = Int8.logicalRightShift(127i8, 33) `assertEq!` (127i8 >>> 33)
 
 @test
-def logicalRightShift03: Bool = Int8.logicalRightShift(93i8, -8) `assertEq!` (93i8 >>> -8)
+def logicalRightShift03(): Bool = Int8.logicalRightShift(93i8, -8) `assertEq!` (93i8 >>> -8)
 
 @test
-def logicalRightShift04: Bool = Int8.logicalRightShift(93i8, 4) `assertEq!` (93i8 >>> 4)
+def logicalRightShift04(): Bool = Int8.logicalRightShift(93i8, 4) `assertEq!` (93i8 >>> 4)
 
 @test
-def logicalRightShift05: Bool = Int8.logicalRightShift(-1i8, 1) `assertEq!` 127i8
+def logicalRightShift05(): Bool = Int8.logicalRightShift(-1i8, 1) `assertEq!` 127i8
 
 @test
-def logicalRightShift06: Bool = Int8.logicalRightShift(-35i8, 4) `assertEq!` 13i8
+def logicalRightShift06(): Bool = Int8.logicalRightShift(-35i8, 4) `assertEq!` 13i8
 
 @test
-def logicalRightShift07: Bool = Int8.logicalRightShift(-44i8, -2780) `assertEq!` 13i8
+def logicalRightShift07(): Bool = Int8.logicalRightShift(-44i8, -2780) `assertEq!` 13i8
 
 @test
-def logicalRightShift08: Bool = Int8.logicalRightShift(-98i8, 64) `assertEq!` -98i8
+def logicalRightShift08(): Bool = Int8.logicalRightShift(-98i8, 64) `assertEq!` -98i8
 
 @test
-def logicalRightShift09: Bool = Int8.logicalRightShift(-27i8, 0) `assertEq!` -27i8
+def logicalRightShift09(): Bool = Int8.logicalRightShift(-27i8, 0) `assertEq!` -27i8
 
 @test
-def logicalRightShift10: Bool = Int8.logicalRightShift(127i8, 1) `assertEq!` 63i8
+def logicalRightShift10(): Bool = Int8.logicalRightShift(127i8, 1) `assertEq!` 63i8
 
 @test
-def logicalRightShift11: Bool = Int8.logicalRightShift(127i8, 9) `assertEq!` 0i8
+def logicalRightShift11(): Bool = Int8.logicalRightShift(127i8, 9) `assertEq!` 0i8
 
 @test
-def logicalRightShift12: Bool = Int8.logicalRightShift(127i8, 8) `assertEq!` 0i8
+def logicalRightShift12(): Bool = Int8.logicalRightShift(127i8, 8) `assertEq!` 0i8
 
 @test
-def logicalRightShift13: Bool = Int8.logicalRightShift(-128i8, 9) `assertEq!` 0i8
+def logicalRightShift13(): Bool = Int8.logicalRightShift(-128i8, 9) `assertEq!` 0i8
 
 @test
-def logicalRightShift14: Bool = Int8.logicalRightShift(-128i8, 9) `assertEq!` 0i8
+def logicalRightShift14(): Bool = Int8.logicalRightShift(-128i8, 9) `assertEq!` 0i8
 
 /////////////////////////////////////////////////////////////////////////////
 // bitCount                                                                //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def bitCount01: Bool = Int8.bitCount(70i8) `assertEq!` 3
+def bitCount01(): Bool = Int8.bitCount(70i8) `assertEq!` 3
 
 @test
-def bitCount02: Bool = Int8.bitCount(-1i8) `assertEq!` 8
+def bitCount02(): Bool = Int8.bitCount(-1i8) `assertEq!` 8
 
 @test
-def bitCount03: Bool = Int8.bitCount(-99i8) `assertEq!` 5
+def bitCount03(): Bool = Int8.bitCount(-99i8) `assertEq!` 5
 
 @test
-def bitCount04: Bool = Int8.bitCount(0i8) `assertEq!` 0
+def bitCount04(): Bool = Int8.bitCount(0i8) `assertEq!` 0
 
 @test
-def bitCount05: Bool = Int8.bitCount(127i8) `assertEq!` 7
+def bitCount05(): Bool = Int8.bitCount(127i8) `assertEq!` 7
 
 @test
-def bitCount06: Bool = Int8.bitCount(-128i8) `assertEq!` 1
+def bitCount06(): Bool = Int8.bitCount(-128i8) `assertEq!` 1
 
 /////////////////////////////////////////////////////////////////////////////
 // rotateRight                                                             //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def rotateRight01: Bool = Int8.rotateRight(0i8, 3) `assertEq!` 0i8
+def rotateRight01(): Bool = Int8.rotateRight(0i8, 3) `assertEq!` 0i8
 
 @test
-def rotateRight02: Bool = Int8.rotateRight(0i8, 19) `assertEq!` 0i8
+def rotateRight02(): Bool = Int8.rotateRight(0i8, 19) `assertEq!` 0i8
 
 @test
-def rotateRight03: Bool = Int8.rotateRight(0i8, -3) `assertEq!` 0i8
+def rotateRight03(): Bool = Int8.rotateRight(0i8, -3) `assertEq!` 0i8
 
 @test
-def rotateRight04: Bool = Int8.rotateRight(-1i8, 3) `assertEq!` -1i8
+def rotateRight04(): Bool = Int8.rotateRight(-1i8, 3) `assertEq!` -1i8
 
 @test
-def rotateRight05: Bool = Int8.rotateRight(-1i8, 19) `assertEq!` -1i8
+def rotateRight05(): Bool = Int8.rotateRight(-1i8, 19) `assertEq!` -1i8
 
 @test
-def rotateRight06: Bool = Int8.rotateRight(-1i8, -3) `assertEq!` -1i8
+def rotateRight06(): Bool = Int8.rotateRight(-1i8, -3) `assertEq!` -1i8
 
 @test
-def rotateRight07: Bool = Int8.rotateRight(106i8, 3) `assertEq!` 77i8
+def rotateRight07(): Bool = Int8.rotateRight(106i8, 3) `assertEq!` 77i8
 
 @test
-def rotateRight08: Bool = Int8.rotateRight(106i8, 11) `assertEq!` 77i8
+def rotateRight08(): Bool = Int8.rotateRight(106i8, 11) `assertEq!` 77i8
 
 @test
-def rotateRight09: Bool = Int8.rotateRight(106i8, -5) `assertEq!` 77i8
+def rotateRight09(): Bool = Int8.rotateRight(106i8, -5) `assertEq!` 77i8
 
 @test
-def rotateRight10: Bool = Int8.rotateRight(-75i8, 7) `assertEq!` 107i8
+def rotateRight10(): Bool = Int8.rotateRight(-75i8, 7) `assertEq!` 107i8
 
 @test
-def rotateRight11: Bool = Int8.rotateRight(-75i8, 23) `assertEq!` 107i8
+def rotateRight11(): Bool = Int8.rotateRight(-75i8, 23) `assertEq!` 107i8
 
 @test
-def rotateRight12: Bool = Int8.rotateRight(-75i8, -1) `assertEq!` 107i8
+def rotateRight12(): Bool = Int8.rotateRight(-75i8, -1) `assertEq!` 107i8
 
 @test
-def rotateRight13: Bool = Int8.rotateRight(-17i8, 6) `assertEq!` -65i8
+def rotateRight13(): Bool = Int8.rotateRight(-17i8, 6) `assertEq!` -65i8
 
 @test
-def rotateRight14: Bool = Int8.rotateRight(-17i8, 22) `assertEq!` -65i8
+def rotateRight14(): Bool = Int8.rotateRight(-17i8, 22) `assertEq!` -65i8
 
 @test
-def rotateRight15: Bool = Int8.rotateRight(-17i8, -10) `assertEq!` -65i8
+def rotateRight15(): Bool = Int8.rotateRight(-17i8, -10) `assertEq!` -65i8
 
 /////////////////////////////////////////////////////////////////////////////
 // rotateLeft                                                              //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def rotateLeft01: Bool = Int8.rotateLeft(0i8, 5) `assertEq!` 0i8
+def rotateLeft01(): Bool = Int8.rotateLeft(0i8, 5) `assertEq!` 0i8
 
 @test
-def rotateLeft02: Bool = Int8.rotateLeft(0i8, 13) `assertEq!` 0i8
+def rotateLeft02(): Bool = Int8.rotateLeft(0i8, 13) `assertEq!` 0i8
 
 @test
-def rotateLeft03: Bool = Int8.rotateLeft(0i8, -3) `assertEq!` 0i8
+def rotateLeft03(): Bool = Int8.rotateLeft(0i8, -3) `assertEq!` 0i8
 
 @test
-def rotateLeft04: Bool = Int8.rotateLeft(-1i8, 3) `assertEq!` -1i8
+def rotateLeft04(): Bool = Int8.rotateLeft(-1i8, 3) `assertEq!` -1i8
 
 @test
-def rotateLeft05: Bool = Int8.rotateLeft(-1i8, 19) `assertEq!` -1i8
+def rotateLeft05(): Bool = Int8.rotateLeft(-1i8, 19) `assertEq!` -1i8
 
 @test
-def rotateLeft06: Bool = Int8.rotateLeft(-1i8, -3) `assertEq!` -1i8
+def rotateLeft06(): Bool = Int8.rotateLeft(-1i8, -3) `assertEq!` -1i8
 
 @test
-def rotateLeft07: Bool = Int8.rotateLeft(106i8, 5) `assertEq!` 77i8
+def rotateLeft07(): Bool = Int8.rotateLeft(106i8, 5) `assertEq!` 77i8
 
 @test
-def rotateLeft08: Bool = Int8.rotateLeft(106i8, 13) `assertEq!` 77i8
+def rotateLeft08(): Bool = Int8.rotateLeft(106i8, 13) `assertEq!` 77i8
 
 @test
-def rotateLeft09: Bool = Int8.rotateLeft(106i8, -3) `assertEq!` 77i8
+def rotateLeft09(): Bool = Int8.rotateLeft(106i8, -3) `assertEq!` 77i8
 
 @test
-def rotateLeft10: Bool = Int8.rotateLeft(-75i8, 1) `assertEq!` 107i8
+def rotateLeft10(): Bool = Int8.rotateLeft(-75i8, 1) `assertEq!` 107i8
 
 @test
-def rotateLeft11: Bool = Int8.rotateLeft(-75i8, 9) `assertEq!` 107i8
+def rotateLeft11(): Bool = Int8.rotateLeft(-75i8, 9) `assertEq!` 107i8
 
 @test
-def rotateLeft12: Bool = Int8.rotateLeft(-75i8, -7) `assertEq!` 107i8
+def rotateLeft12(): Bool = Int8.rotateLeft(-75i8, -7) `assertEq!` 107i8
 
 @test
-def rotateLeft13: Bool = Int8.rotateLeft(-17i8, 2) `assertEq!` -65i8
+def rotateLeft13(): Bool = Int8.rotateLeft(-17i8, 2) `assertEq!` -65i8
 
 @test
-def rotateLeft14: Bool = Int8.rotateLeft(-17i8, 10) `assertEq!` -65i8
+def rotateLeft14(): Bool = Int8.rotateLeft(-17i8, 10) `assertEq!` -65i8
 
 @test
-def rotateLeft15: Bool = Int8.rotateLeft(-17i8, -6) `assertEq!` -65i8
+def rotateLeft15(): Bool = Int8.rotateLeft(-17i8, -6) `assertEq!` -65i8
 
 /////////////////////////////////////////////////////////////////////////////
 // reverse                                                                 //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def reverse01: Bool = Int8.reverse(58i8) `assertEq!` 92i8
+def reverse01(): Bool = Int8.reverse(58i8) `assertEq!` 92i8
 
 @test
-def reverse02: Bool = Int8.reverse(92i8) `assertEq!` 58i8
+def reverse02(): Bool = Int8.reverse(92i8) `assertEq!` 58i8
 
 @test
-def reverse03: Bool = Int8.reverse(-35i8) `assertEq!` -69i8
+def reverse03(): Bool = Int8.reverse(-35i8) `assertEq!` -69i8
 
 @test
-def reverse04: Bool = Int8.reverse(-69i8) `assertEq!` -35i8
+def reverse04(): Bool = Int8.reverse(-69i8) `assertEq!` -35i8
 
 @test
-def reverse05: Bool = Int8.reverse(-72i8) `assertEq!` 29i8
+def reverse05(): Bool = Int8.reverse(-72i8) `assertEq!` 29i8
 
 @test
-def reverse06: Bool = Int8.reverse(29i8) `assertEq!` -72i8
+def reverse06(): Bool = Int8.reverse(29i8) `assertEq!` -72i8
 
 @test
-def reverse07: Bool = Int8.reverse(4i8) `assertEq!` 32i8
+def reverse07(): Bool = Int8.reverse(4i8) `assertEq!` 32i8
 
 @test
-def reverse08: Bool = Int8.reverse(32i8) `assertEq!` 4i8
+def reverse08(): Bool = Int8.reverse(32i8) `assertEq!` 4i8
 
 @test
-def reverse09: Bool = Int8.reverse(-1i8) `assertEq!` -1i8
+def reverse09(): Bool = Int8.reverse(-1i8) `assertEq!` -1i8
 
 @test
-def reverse10: Bool = Int8.reverse(0i8) `assertEq!` 0i8
+def reverse10(): Bool = Int8.reverse(0i8) `assertEq!` 0i8
 
 /////////////////////////////////////////////////////////////////////////////
 // highestOneBitPosition                                                   //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def highestOneBitPosition01: Bool = Int8.highestOneBitPosition(-1i8) `assertEq!` 7
+def highestOneBitPosition01(): Bool = Int8.highestOneBitPosition(-1i8) `assertEq!` 7
 
 @test
-def highestOneBitPosition02: Bool = Int8.highestOneBitPosition(-128i8) `assertEq!` 7
+def highestOneBitPosition02(): Bool = Int8.highestOneBitPosition(-128i8) `assertEq!` 7
 
 @test
-def highestOneBitPosition03: Bool = Int8.highestOneBitPosition(1i8) `assertEq!` 0
+def highestOneBitPosition03(): Bool = Int8.highestOneBitPosition(1i8) `assertEq!` 0
 
 @test
-def highestOneBitPosition04: Bool = Int8.highestOneBitPosition(2i8) `assertEq!` 1
+def highestOneBitPosition04(): Bool = Int8.highestOneBitPosition(2i8) `assertEq!` 1
 
 @test
-def highestOneBitPosition05: Bool = Int8.highestOneBitPosition(3i8) `assertEq!` 1
+def highestOneBitPosition05(): Bool = Int8.highestOneBitPosition(3i8) `assertEq!` 1
 
 @test
-def highestOneBitPosition06: Bool = Int8.highestOneBitPosition(20i8) `assertEq!` 4
+def highestOneBitPosition06(): Bool = Int8.highestOneBitPosition(20i8) `assertEq!` 4
 
 @test
-def highestOneBitPosition07: Bool = Int8.highestOneBitPosition(2i8 ** 6i8) `assertEq!` 6
+def highestOneBitPosition07(): Bool = Int8.highestOneBitPosition(2i8 ** 6i8) `assertEq!` 6
 
 @test
-def highestOneBitPosition08: Bool = Int8.highestOneBitPosition(127i8) `assertEq!` 6
+def highestOneBitPosition08(): Bool = Int8.highestOneBitPosition(127i8) `assertEq!` 6
 
 @test
-def highestOneBitPosition09: Bool = Int8.highestOneBitPosition(0i8) `assertEq!` -1
+def highestOneBitPosition09(): Bool = Int8.highestOneBitPosition(0i8) `assertEq!` -1
 
 @test
-def highestOneBitPosition10: Bool = Int8.highestOneBitPosition(2i8 ** 3i8 + 2i8 ** 5i8) `assertEq!` 5
+def highestOneBitPosition10(): Bool = Int8.highestOneBitPosition(2i8 ** 3i8 + 2i8 ** 5i8) `assertEq!` 5
 
 @test
-def highestOneBitPosition11: Bool = Int8.highestOneBitPosition(2i8 ** 3i8 + 2i8 ** 4i8) `assertEq!` 4
+def highestOneBitPosition11(): Bool = Int8.highestOneBitPosition(2i8 ** 3i8 + 2i8 ** 4i8) `assertEq!` 4
 
 @test
-def highestOneBitPosition12: Bool = Int8.highestOneBitPosition(-10i8) `assertEq!` 7
+def highestOneBitPosition12(): Bool = Int8.highestOneBitPosition(-10i8) `assertEq!` 7
 
 /////////////////////////////////////////////////////////////////////////////
 // highestOneBit                                                           //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def highestOneBit01: Bool = Int8.highestOneBit(-1i8) `assertEq!` (1i8 <<< 7)
+def highestOneBit01(): Bool = Int8.highestOneBit(-1i8) `assertEq!` (1i8 <<< 7)
 
 @test
-def highestOneBit02: Bool = Int8.highestOneBit(-128i8) `assertEq!` (1i8 <<< 7)
+def highestOneBit02(): Bool = Int8.highestOneBit(-128i8) `assertEq!` (1i8 <<< 7)
 
 @test
-def highestOneBit03: Bool = Int8.highestOneBit(-77i8) `assertEq!` (1i8 <<< 7)
+def highestOneBit03(): Bool = Int8.highestOneBit(-77i8) `assertEq!` (1i8 <<< 7)
 
 @test
-def highestOneBit04: Bool = Int8.highestOneBit(2i8) `assertEq!` 2i8
+def highestOneBit04(): Bool = Int8.highestOneBit(2i8) `assertEq!` 2i8
 
 @test
-def highestOneBit05: Bool = Int8.highestOneBit(3i8) `assertEq!` 2i8
+def highestOneBit05(): Bool = Int8.highestOneBit(3i8) `assertEq!` 2i8
 
 @test
-def highestOneBit06: Bool = Int8.highestOneBit(20i8) `assertEq!` 16i8
+def highestOneBit06(): Bool = Int8.highestOneBit(20i8) `assertEq!` 16i8
 
 @test
-def highestOneBit07: Bool = Int8.highestOneBit(2i8 ** 2i8 + 2i8 ** 5i8) `assertEq!` 32i8
+def highestOneBit07(): Bool = Int8.highestOneBit(2i8 ** 2i8 + 2i8 ** 5i8) `assertEq!` 32i8
 
 @test
-def highestOneBit08: Bool = Int8.highestOneBit(127i8) `assertEq!` 64i8
+def highestOneBit08(): Bool = Int8.highestOneBit(127i8) `assertEq!` 64i8
 
 @test
-def highestOneBit09: Bool = Int8.highestOneBit(0i8) `assertEq!` 0i8
+def highestOneBit09(): Bool = Int8.highestOneBit(0i8) `assertEq!` 0i8
 
 @test
-def highestOneBit10: Bool = Int8.highestOneBit(2i8 ** 5i8 + 2i8 ** 6i8) `assertEq!` 64i8
+def highestOneBit10(): Bool = Int8.highestOneBit(2i8 ** 5i8 + 2i8 ** 6i8) `assertEq!` 64i8
 
 /////////////////////////////////////////////////////////////////////////////
 // numberOfLeadingZeros                                                    //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def numberOfLeadingZeros01: Bool = Int8.numberOfLeadingZeros(0i8) `assertEq!` 8
+def numberOfLeadingZeros01(): Bool = Int8.numberOfLeadingZeros(0i8) `assertEq!` 8
 
 @test
-def numberOfLeadingZeros02: Bool = Int8.numberOfLeadingZeros(-128i8) `assertEq!` 0
+def numberOfLeadingZeros02(): Bool = Int8.numberOfLeadingZeros(-128i8) `assertEq!` 0
 
 @test
-def numberOfLeadingZeros03: Bool = Int8.numberOfLeadingZeros(-1i8) `assertEq!` 0
+def numberOfLeadingZeros03(): Bool = Int8.numberOfLeadingZeros(-1i8) `assertEq!` 0
 
 @test
-def numberOfLeadingZeros04: Bool = Int8.numberOfLeadingZeros(127i8) `assertEq!` 1
+def numberOfLeadingZeros04(): Bool = Int8.numberOfLeadingZeros(127i8) `assertEq!` 1
 
 @test
-def numberOfLeadingZeros05: Bool = Int8.numberOfLeadingZeros(2i8 ** 6i8) `assertEq!` 1
+def numberOfLeadingZeros05(): Bool = Int8.numberOfLeadingZeros(2i8 ** 6i8) `assertEq!` 1
 
 @test
-def numberOfLeadingZeros06: Bool = Int8.numberOfLeadingZeros(2i8 ** 3i8 + 2i8 ** 6i8) `assertEq!` 1
+def numberOfLeadingZeros06(): Bool = Int8.numberOfLeadingZeros(2i8 ** 3i8 + 2i8 ** 6i8) `assertEq!` 1
 
 @test
-def numberOfLeadingZeros07: Bool = Int8.numberOfLeadingZeros(2i8 ** 4i8 + 2i8 ** 5i8) `assertEq!` 2
+def numberOfLeadingZeros07(): Bool = Int8.numberOfLeadingZeros(2i8 ** 4i8 + 2i8 ** 5i8) `assertEq!` 2
 
 @test
-def numberOfLeadingZeros08: Bool = Int8.numberOfLeadingZeros(20i8) `assertEq!` 3
+def numberOfLeadingZeros08(): Bool = Int8.numberOfLeadingZeros(20i8) `assertEq!` 3
 
 @test
-def numberOfLeadingZeros09: Bool = Int8.numberOfLeadingZeros(1i8) `assertEq!` 7
+def numberOfLeadingZeros09(): Bool = Int8.numberOfLeadingZeros(1i8) `assertEq!` 7
 
 /////////////////////////////////////////////////////////////////////////////
 // lowestOneBitPosition                                                    //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def lowestOneBitPosition01: Bool = Int8.lowestOneBitPosition(-1i8) `assertEq!` 0
+def lowestOneBitPosition01(): Bool = Int8.lowestOneBitPosition(-1i8) `assertEq!` 0
 
 @test
-def lowestOneBitPosition02: Bool = Int8.lowestOneBitPosition(-128i8) `assertEq!` 7
+def lowestOneBitPosition02(): Bool = Int8.lowestOneBitPosition(-128i8) `assertEq!` 7
 
 @test
-def lowestOneBitPosition03: Bool = Int8.lowestOneBitPosition(1i8) `assertEq!` 0
+def lowestOneBitPosition03(): Bool = Int8.lowestOneBitPosition(1i8) `assertEq!` 0
 
 @test
-def lowestOneBitPosition04: Bool = Int8.lowestOneBitPosition(2i8) `assertEq!` 1
+def lowestOneBitPosition04(): Bool = Int8.lowestOneBitPosition(2i8) `assertEq!` 1
 
 @test
-def lowestOneBitPosition05: Bool = Int8.lowestOneBitPosition(3i8) `assertEq!` 0
+def lowestOneBitPosition05(): Bool = Int8.lowestOneBitPosition(3i8) `assertEq!` 0
 
 @test
-def lowestOneBitPosition06: Bool = Int8.lowestOneBitPosition(4i8) `assertEq!` 2
+def lowestOneBitPosition06(): Bool = Int8.lowestOneBitPosition(4i8) `assertEq!` 2
 
 @test
-def lowestOneBitPosition07: Bool = Int8.lowestOneBitPosition(12i8) `assertEq!` 2
+def lowestOneBitPosition07(): Bool = Int8.lowestOneBitPosition(12i8) `assertEq!` 2
 
 @test
-def lowestOneBitPosition08: Bool = Int8.lowestOneBitPosition(2i8 ** 4i8) `assertEq!` 4
+def lowestOneBitPosition08(): Bool = Int8.lowestOneBitPosition(2i8 ** 4i8) `assertEq!` 4
 
 @test
-def lowestOneBitPosition09: Bool = Int8.lowestOneBitPosition(2i8 ** 4i8 + 2i8 ** 6i8) `assertEq!` 4
+def lowestOneBitPosition09(): Bool = Int8.lowestOneBitPosition(2i8 ** 4i8 + 2i8 ** 6i8) `assertEq!` 4
 
 @test
-def lowestOneBitPosition10: Bool = Int8.lowestOneBitPosition(127i8) `assertEq!` 0
+def lowestOneBitPosition10(): Bool = Int8.lowestOneBitPosition(127i8) `assertEq!` 0
 
 @test
-def lowestOneBitPosition11: Bool = Int8.lowestOneBitPosition(0i8) `assertEq!` -1
+def lowestOneBitPosition11(): Bool = Int8.lowestOneBitPosition(0i8) `assertEq!` -1
 
 /////////////////////////////////////////////////////////////////////////////
 // lowestOneBit                                                            //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def lowestOneBit01: Bool = Int8.lowestOneBit(-1i8) `assertEq!` 1i8
+def lowestOneBit01(): Bool = Int8.lowestOneBit(-1i8) `assertEq!` 1i8
 
 @test
-def lowestOneBit02: Bool = Int8.lowestOneBit(-128i8) `assertEq!` (1i8 <<< 7)
+def lowestOneBit02(): Bool = Int8.lowestOneBit(-128i8) `assertEq!` (1i8 <<< 7)
 
 @test
-def lowestOneBit03: Bool = Int8.lowestOneBit(1i8) `assertEq!` 1i8
+def lowestOneBit03(): Bool = Int8.lowestOneBit(1i8) `assertEq!` 1i8
 
 @test
-def lowestOneBit04: Bool = Int8.lowestOneBit(2i8) `assertEq!` 2i8
+def lowestOneBit04(): Bool = Int8.lowestOneBit(2i8) `assertEq!` 2i8
 
 @test
-def lowestOneBit05: Bool = Int8.lowestOneBit(6i8) `assertEq!` 2i8
+def lowestOneBit05(): Bool = Int8.lowestOneBit(6i8) `assertEq!` 2i8
 
 @test
-def lowestOneBit06: Bool = Int8.lowestOneBit(12i8) `assertEq!` 4i8
+def lowestOneBit06(): Bool = Int8.lowestOneBit(12i8) `assertEq!` 4i8
 
 @test
-def lowestOneBit07: Bool = Int8.lowestOneBit(2i8 ** 6i8) `assertEq!` 64i8
+def lowestOneBit07(): Bool = Int8.lowestOneBit(2i8 ** 6i8) `assertEq!` 64i8
 
 @test
-def lowestOneBit08: Bool = Int8.lowestOneBit(2i8 ** 5i8) `assertEq!` 32i8
+def lowestOneBit08(): Bool = Int8.lowestOneBit(2i8 ** 5i8) `assertEq!` 32i8
 
 @test
-def lowestOneBit09: Bool = Int8.lowestOneBit(2i8 ** 3i8 + 2i8 ** 5i8) `assertEq!` 8i8
+def lowestOneBit09(): Bool = Int8.lowestOneBit(2i8 ** 3i8 + 2i8 ** 5i8) `assertEq!` 8i8
 
 @test
-def lowestOneBit10: Bool = Int8.lowestOneBit(127i8) `assertEq!` 1i8
+def lowestOneBit10(): Bool = Int8.lowestOneBit(127i8) `assertEq!` 1i8
 
 @test
-def lowestOneBit11: Bool = Int8.lowestOneBit(0i8) `assertEq!` 0i8
+def lowestOneBit11(): Bool = Int8.lowestOneBit(0i8) `assertEq!` 0i8
 
 /////////////////////////////////////////////////////////////////////////////
 // numberOfTrailingZeros                                                   //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def numberOfTrailingZeros01: Bool = Int8.numberOfTrailingZeros(0i8) `assertEq!` 8
+def numberOfTrailingZeros01(): Bool = Int8.numberOfTrailingZeros(0i8) `assertEq!` 8
 
 @test
-def numberOfTrailingZeros02: Bool = Int8.numberOfTrailingZeros(3i8) `assertEq!` 0
+def numberOfTrailingZeros02(): Bool = Int8.numberOfTrailingZeros(3i8) `assertEq!` 0
 
 @test
-def numberOfTrailingZeros03: Bool = Int8.numberOfTrailingZeros(42i8) `assertEq!` 1
+def numberOfTrailingZeros03(): Bool = Int8.numberOfTrailingZeros(42i8) `assertEq!` 1
 
 @test
-def numberOfTrailingZeros04: Bool = Int8.numberOfTrailingZeros(2i8 ** 4i8 + 2i8 ** 6i8) `assertEq!` 4
+def numberOfTrailingZeros04(): Bool = Int8.numberOfTrailingZeros(2i8 ** 4i8 + 2i8 ** 6i8) `assertEq!` 4
 
 @test
-def numberOfTrailingZeros05: Bool = Int8.numberOfTrailingZeros(2i8 ** 6i8) `assertEq!` 6
+def numberOfTrailingZeros05(): Bool = Int8.numberOfTrailingZeros(2i8 ** 6i8) `assertEq!` 6
 
 @test
-def numberOfTrailingZeros06: Bool = Int8.numberOfTrailingZeros(-1i8) `assertEq!` 0
+def numberOfTrailingZeros06(): Bool = Int8.numberOfTrailingZeros(-1i8) `assertEq!` 0
 
 @test
-def numberOfTrailingZeros07: Bool = Int8.numberOfTrailingZeros(-128i8) `assertEq!` 7
+def numberOfTrailingZeros07(): Bool = Int8.numberOfTrailingZeros(-128i8) `assertEq!` 7
 
 /////////////////////////////////////////////////////////////////////////////
 // getBit                                                                  //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def getBit01: Bool = Int8.getBit(-1i8, 5) `assertEq!` 1
+def getBit01(): Bool = Int8.getBit(-1i8, 5) `assertEq!` 1
 
 @test
-def getBit02: Bool = Int8.getBit(-100i8, 7) `assertEq!` 1
+def getBit02(): Bool = Int8.getBit(-100i8, 7) `assertEq!` 1
 
 @test
-def getBit03: Bool = Int8.getBit(2i8 ** 5i8, 5) `assertEq!` 1
+def getBit03(): Bool = Int8.getBit(2i8 ** 5i8, 5) `assertEq!` 1
 
 @test
-def getBit04: Bool = Int8.getBit(2i8 ** 5i8, 6) `assertEq!` 0
+def getBit04(): Bool = Int8.getBit(2i8 ** 5i8, 6) `assertEq!` 0
 
 @test
-def getBit05: Bool = Int8.getBit(2i8 ** 5i8, 4) `assertEq!` 0
+def getBit05(): Bool = Int8.getBit(2i8 ** 5i8, 4) `assertEq!` 0
 
 @test
-def getBit06: Bool = Int8.getBit(-1i8 - 2i8 ** 4i8, 4) `assertEq!` 0
+def getBit06(): Bool = Int8.getBit(-1i8 - 2i8 ** 4i8, 4) `assertEq!` 0
 
 @test
-def getBit07: Bool = Int8.getBit(-1i8 - 2i8 ** 4i8, 5) `assertEq!` 1
+def getBit07(): Bool = Int8.getBit(-1i8 - 2i8 ** 4i8, 5) `assertEq!` 1
 
 @test
-def getBit08: Bool = Int8.getBit(0i8, 7) `assertEq!` 0
+def getBit08(): Bool = Int8.getBit(0i8, 7) `assertEq!` 0
 
 /////////////////////////////////////////////////////////////////////////////
 // setBit                                                                  //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def setBit01: Bool = Int8.setBit(0i8, 0) `assertEq!` 1i8
+def setBit01(): Bool = Int8.setBit(0i8, 0) `assertEq!` 1i8
 
 @test
-def setBit02: Bool = Int8.setBit(0i8, 1) `assertEq!` 2i8
+def setBit02(): Bool = Int8.setBit(0i8, 1) `assertEq!` 2i8
 
 @test
-def setBit03: Bool = Int8.setBit(0i8, 7) `assertEq!` -128i8
+def setBit03(): Bool = Int8.setBit(0i8, 7) `assertEq!` -128i8
 
 @test
-def setBit04: Bool = Int8.setBit(0i8, 8) `assertEq!` 0i8
+def setBit04(): Bool = Int8.setBit(0i8, 8) `assertEq!` 0i8
 
 @test
-def setBit05: Bool = Int8.setBit(-101i8, 31) `assertEq!` -101i8
+def setBit05(): Bool = Int8.setBit(-101i8, 31) `assertEq!` -101i8
 
 @test
-def setBit07: Bool = Int8.setBit(-17i8, 4) `assertEq!` -1i8
+def setBit07(): Bool = Int8.setBit(-17i8, 4) `assertEq!` -1i8
 
 @test
-def setBit08: Bool = Int8.setBit(-65i8, 6) `assertEq!` -1i8
+def setBit08(): Bool = Int8.setBit(-65i8, 6) `assertEq!` -1i8
 
 @test
-def setBit09: Bool = Int8.setBit(-17i8, 15) `assertEq!` -17i8
+def setBit09(): Bool = Int8.setBit(-17i8, 15) `assertEq!` -17i8
 
 @test
-def setBit10: Bool = Int8.setBit(-17i8, 30) `assertEq!` -17i8
+def setBit10(): Bool = Int8.setBit(-17i8, 30) `assertEq!` -17i8
 
 /////////////////////////////////////////////////////////////////////////////
 // clearBit                                                                //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def clearBit01: Bool = Int8.clearBit(1i8, 0) `assertEq!` 0i8
+def clearBit01(): Bool = Int8.clearBit(1i8, 0) `assertEq!` 0i8
 
 @test
-def clearBit02: Bool = Int8.clearBit(1i8, 1) `assertEq!` 1i8
+def clearBit02(): Bool = Int8.clearBit(1i8, 1) `assertEq!` 1i8
 
 @test
-def clearBit03: Bool = Int8.clearBit(2i8, 1) `assertEq!` 0i8
+def clearBit03(): Bool = Int8.clearBit(2i8, 1) `assertEq!` 0i8
 
 @test
-def clearBit04: Bool = Int8.clearBit(2i8, 2) `assertEq!` 2i8
+def clearBit04(): Bool = Int8.clearBit(2i8, 2) `assertEq!` 2i8
 
 @test
-def clearBit05: Bool = Int8.clearBit(0i8, 31) `assertEq!` 0i8
+def clearBit05(): Bool = Int8.clearBit(0i8, 31) `assertEq!` 0i8
 
 @test
-def clearBit06: Bool = Int8.clearBit(0i8, 30) `assertEq!` 0i8
+def clearBit06(): Bool = Int8.clearBit(0i8, 30) `assertEq!` 0i8
 
 @test
-def clearBit07: Bool = Int8.clearBit(1i8 <<< 7, 7) `assertEq!` 0i8
+def clearBit07(): Bool = Int8.clearBit(1i8 <<< 7, 7) `assertEq!` 0i8
 
 @test
-def clearBit08: Bool = Int8.clearBit(109i8, 3) `assertEq!` 101i8
+def clearBit08(): Bool = Int8.clearBit(109i8, 3) `assertEq!` 101i8
 
 @test
-def clearBit09: Bool = Int8.clearBit(-1i8, 0) `assertEq!` -2i8
+def clearBit09(): Bool = Int8.clearBit(-1i8, 0) `assertEq!` -2i8
 
 @test
-def clearBit10: Bool = Int8.clearBit(-1i8, 1) `assertEq!` -3i8
+def clearBit10(): Bool = Int8.clearBit(-1i8, 1) `assertEq!` -3i8
 
 @test
-def clearBit11: Bool = Int8.clearBit(-1i8, 5) `assertEq!` -33i8
+def clearBit11(): Bool = Int8.clearBit(-1i8, 5) `assertEq!` -33i8
 
 @test
-def clearBit12: Bool = Int8.clearBit(-1i8, 7) `assertEq!` ~~~(1i8 <<< 7)
+def clearBit12(): Bool = Int8.clearBit(-1i8, 7) `assertEq!` ~~~(1i8 <<< 7)
 
 @test
-def clearBit13: Bool = Int8.clearBit(-1i8, 32) `assertEq!` -2i8
+def clearBit13(): Bool = Int8.clearBit(-1i8, 32) `assertEq!` -2i8
 
 /////////////////////////////////////////////////////////////////////////////
 // flipBit                                                                 //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def flipBit01: Bool = Int8.flipBit(1i8, 0) `assertEq!` 0i8
+def flipBit01(): Bool = Int8.flipBit(1i8, 0) `assertEq!` 0i8
 
 @test
-def flipBit02: Bool = Int8.flipBit(1i8, 1) `assertEq!` 3i8
+def flipBit02(): Bool = Int8.flipBit(1i8, 1) `assertEq!` 3i8
 
 @test
-def flipBit03: Bool = Int8.flipBit(2i8, 1) `assertEq!` 0i8
+def flipBit03(): Bool = Int8.flipBit(2i8, 1) `assertEq!` 0i8
 
 @test
-def flipBit04: Bool = Int8.flipBit(2i8, 2) `assertEq!` 6i8
+def flipBit04(): Bool = Int8.flipBit(2i8, 2) `assertEq!` 6i8
 
 @test
-def flipBit05: Bool = Int8.flipBit(0i8, 7) `assertEq!` -128i8
+def flipBit05(): Bool = Int8.flipBit(0i8, 7) `assertEq!` -128i8
 
 @test
-def flipBit06: Bool = Int8.flipBit(0i8, 8) `assertEq!` 0i8
+def flipBit06(): Bool = Int8.flipBit(0i8, 8) `assertEq!` 0i8
 
 @test
-def flipBit07: Bool = Int8.flipBit(1i8 <<< 7, 7) `assertEq!` 0i8
+def flipBit07(): Bool = Int8.flipBit(1i8 <<< 7, 7) `assertEq!` 0i8
 
 @test
-def flipBit08: Bool = Int8.flipBit(-1i8, 0) `assertEq!` -2i8
+def flipBit08(): Bool = Int8.flipBit(-1i8, 0) `assertEq!` -2i8
 
 @test
-def flipBit9: Bool = Int8.flipBit(-1i8, 1) `assertEq!` -3i8
+def flipBit9(): Bool = Int8.flipBit(-1i8, 1) `assertEq!` -3i8
 
 @test
-def flipBit10: Bool = Int8.flipBit(-1i8, 5) `assertEq!` -33i8
+def flipBit10(): Bool = Int8.flipBit(-1i8, 5) `assertEq!` -33i8
 
 @test
-def flipBit11: Bool = Int8.flipBit(-1i8, 5) `assertEq!` (-1i8-(1i8 <<< 5))
+def flipBit11(): Bool = Int8.flipBit(-1i8, 5) `assertEq!` (-1i8-(1i8 <<< 5))
 
 @test
-def flipBit12: Bool = Int8.flipBit(-1i8, 32) `assertEq!` -2i8
+def flipBit12(): Bool = Int8.flipBit(-1i8, 32) `assertEq!` -2i8

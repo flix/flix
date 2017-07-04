@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.{SimplifiedAst, Symbol}
-import ca.uwaterloo.flix.language.ast.SimplifiedAst.{Expression, Definition}
+import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expression
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
 
@@ -56,7 +56,7 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       *
       * it means that the function definition f should be considered to determine new reachable functions.
       */
-    val queue: mutable.Queue[Definition.Constant] = mutable.Queue.empty
+    val queue: mutable.Queue[SimplifiedAst.Def] = mutable.Queue.empty
 
     /**
       * Returns true iff the function definition `defn` is initially reachable by (a).
@@ -65,7 +65,7 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       *
       *   (a) Appears in the global namespaces, takes zero arguments, and is not marked as synthetic.
       */
-    def isReachableRoot(defn: Definition.Constant): Boolean = {
+    def isReachableRoot(defn: SimplifiedAst.Def): Boolean = {
       (defn.sym.namespace.isEmpty && defn.formals.isEmpty && !defn.isSynthetic) || defn.ann.isBenchmark
     }
 
@@ -123,21 +123,13 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.Int64(lit) => Set.empty
       case Expression.BigInt(lit) => Set.empty
       case Expression.Str(lit) => Set.empty
-      case Expression.LoadBool(exp, offset) => visitExp(exp)
-      case Expression.LoadInt8(exp, offset) => visitExp(exp)
-      case Expression.LoadInt16(exp, offset) => visitExp(exp)
-      case Expression.LoadInt32(exp, offset) => visitExp(exp)
-      case Expression.StoreBool(exp, offset, v) => visitExp(exp) ++ visitExp(v)
-      case Expression.StoreInt8(exp, offset, v) => visitExp(exp) ++ visitExp(v)
-      case Expression.StoreInt16(exp, offset, v) => visitExp(exp) ++ visitExp(v)
-      case Expression.StoreInt32(exp, offset, v) => visitExp(exp) ++ visitExp(v)
       case Expression.Var(sym, tpe, loc) => Set.empty
-      case Expression.Ref(sym, tpe, loc) => Set(sym)
+      case Expression.Def(sym, tpe, loc) => Set(sym)
       case Expression.Lambda(args, body, tpe, loc) => visitExp(body)
       case Expression.Hook(hook, tpe, loc) => Set(hook.sym)
       case Expression.MkClosure(lambda, freeVars, tpe, loc) => visitExp(lambda)
-      case Expression.MkClosureRef(ref, freeVars, tpe, loc) => visitExp(ref)
-      case Expression.ApplyRef(sym, args, tpe, loc) => visitExps(args) + sym
+      case Expression.MkClosureDef(ref, freeVars, tpe, loc) => visitExp(ref)
+      case Expression.ApplyDef(sym, args, tpe, loc) => visitExps(args) + sym
       case Expression.ApplyTail(sym, formals, actuals, tpe, loc) => visitExps(actuals) + sym
       case Expression.ApplyHook(hook, args, tpe, loc) => visitExps(args)
       case Expression.Apply(exp, args, tpe, loc) => visitExps(args) ++ visitExp(exp)
@@ -167,7 +159,7 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     def newReachableDefinitionSymbol(sym: Symbol.DefnSym): Unit = {
       // If `sym` has not already been determined reachable, look up its definition in `root`.
       if (!reachableFunctions.contains(sym)) {
-        root.definitions.get(sym) match {
+        root.defs.get(sym) match {
           case Some(defn) =>
             reachableFunctions.add(sym)
             queue.enqueue(defn)
@@ -189,7 +181,7 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
      *
      * (a) Appear in the global namespaces, take zero arguments, and are not marked as synthetic.
      */
-    for ((sym, defn) <- root.definitions) {
+    for ((sym, defn) <- root.defs) {
       if (isReachableRoot(defn)) {
         reachableFunctions.add(sym)
       }
@@ -224,7 +216,7 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
      * (c) Appear in a lattice declaration.
      */
     reachableFunctions ++= root.lattices.values.map {
-      case SimplifiedAst.Definition.Lattice(tpe, bot, top, leq, lub, glb, loc) =>
+      case SimplifiedAst.Lattice(tpe, bot, top, leq, lub, glb, loc) =>
         visitExp(bot) ++ visitExp(top) ++ visitExp(leq) ++ visitExp(lub) ++ visitExp(glb)
     }.fold(Set())(_++_)
 
@@ -243,7 +235,7 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
      * (e) Appear in a function which itself is reachable.
      */
     reachableFunctions.foreach {
-      root.definitions.get(_) match {
+      root.defs.get(_) match {
         case Some(defn) => queue.enqueue(defn)
         case None =>
       }
@@ -259,7 +251,7 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
 
     // Reassemble the AST.
     root.copy(
-      definitions = root.definitions.filterKeys(reachableFunctions.contains),
+      defs = root.defs.filterKeys(reachableFunctions.contains),
       time = root.time.copy(treeshaker = e)
     ).toSuccess
   }

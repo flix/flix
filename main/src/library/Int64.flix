@@ -19,17 +19,17 @@ namespace Int64 {
     ///
     /// Returns the number of bits used to represent an `Int64`.
     ///
-    def size: Int32 = 64
+    def size(): Int32 = 64
 
     ///
     /// Returns the minimum number representable by an `Int64`.
     ///
-    def minValue: Int64 = 1i64 <<< (size() - 1)
+    def minValue(): Int64 = 1i64 <<< (size() - 1)
 
     ///
     /// Returns the maximum number representable by an `Int64`.
     ///
-    def maxValue: Int64 = ~~~minValue()
+    def maxValue(): Int64 = ~~~minValue()
 
     ///
     /// Returns the smaller of `x` and `y`.

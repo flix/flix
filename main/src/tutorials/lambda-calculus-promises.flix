@@ -680,7 +680,7 @@ def eval(e0: Expression, m0: State): Result[(Expression, State), Str] = match pr
 ///
 /// Injects the given expression `e0` into the initial state.
 ///
-def initialState: State =
+def initialState(): State =
     let h0 = Heap(Map.empty());
     let s0 = PromiseState(Map.empty());
     let f0 = FulfillReactions(Map.empty());
@@ -696,7 +696,7 @@ def initialState: State =
 // x.onResolve(y => Ref(y))
 // x.resolve("hello")
 //
-def testEval1: Result[(Expression, State), Str] = eval(
+def testEval1(): Result[(Expression, State), Str] = eval(
     App(Abs(V(0),
         Seq(Promisify(Var(V(0))),
             Seq(OnResolve(Var(V(0)), Abs(V(42), Ref(Var(V(42))))),
@@ -718,7 +718,7 @@ def testEval1: Result[(Expression, State), Str] = eval(
 // y.onResolve(z => Ref(z))
 // x.resolve("hello")
 //
-def testEval2: Result[(Expression, State), Str] = eval(
+def testEval2(): Result[(Expression, State), Str] = eval(
     App(App(Abs(V(0), Abs(V(1),
         Seq(Promisify(Var(V(0))),
             Seq(Promisify(Var(V(1))),
@@ -733,7 +733,7 @@ def testEval2: Result[(Expression, State), Str] = eval(
     initialState()
 )
 
-def testEval3: Result[(Expression, State), Str] = eval(
+def testEval3(): Result[(Expression, State), Str] = eval(
         IfThenElse(False, Print(Cst("A")), Print(Cst("B"))),
         initialState()
     )
@@ -742,10 +742,10 @@ def testEval3: Result[(Expression, State), Str] = eval(
 ///
 /// Returns a fresh address.
 ///
-def freshAddr: Address = A(genSym!())
+def freshAddr(): Address = A(genSym!())
 
 ///
 /// Returns a fresh variable.
 ///
-def freshVar: Variable = V(1000 + genSym!())
+def freshVar(): Variable = V(1000 + genSym!())
 

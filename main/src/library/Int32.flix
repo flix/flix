@@ -19,17 +19,17 @@ namespace Int32 {
     ///
     /// Returns the number of bits used to represent an `Int32`.
     ///
-    def size: Int32 = 32
+    def size(): Int32 = 32
 
     ///
     /// Returns the minimum number representable by an `Int32`.
     ///
-    def minValue: Int32 = 1 <<< (size() - 1)
+    def minValue(): Int32 = 1 <<< (size() - 1)
 
     ///
     /// Returns the maximum number representable by an `Int32`.
     ///
-    def maxValue: Int32 = ~~~minValue()
+    def maxValue(): Int32 = ~~~minValue()
 
     ///
     /// Returns the smaller of `x` and `y`.

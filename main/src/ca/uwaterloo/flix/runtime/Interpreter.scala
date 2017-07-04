@@ -41,28 +41,14 @@ object Interpreter {
     case Expression.Int64(lit) => Value.mkInt64(lit)
     case Expression.BigInt(lit) => Value.mkBigInt(lit)
     case Expression.Str(lit) => Value.mkStr(lit)
-    case load: LoadExpression =>
-      val e = cast2int64(eval(load.e, root, env0))
-      val result = (e >> load.offset).toInt & load.mask
-      load match {
-        case _: Expression.LoadBool => Value.mkBool(result != 0)
-        case _: Expression.LoadInt8 => Value.mkInt8(result)
-        case _: Expression.LoadInt16 => Value.mkInt16(result)
-        case _: Expression.LoadInt32 => Value.mkInt32(result)
-      }
-    case store: StoreExpression =>
-      val e = cast2int64(eval(store.e, root, env0))
-      val v = cast2int64(eval(store.v, root, env0))
-      val result = (e & store.targetMask) | ((v & store.mask) << store.offset)
-      Value.mkInt64(result)
     case Expression.Var(sym, _, loc) => env0.get(sym.toString) match {
       case None => throw InternalRuntimeException(s"Key '${sym.toString}' not found in environment: '${env0.mkString(",")}'.")
       case Some(v) => v
     }
-    case Expression.Ref(name, _, _) => eval(root.definitions(name).exp, root, env0)
-    case Expression.MkClosureRef(ref, freeVars, _, _) =>
+    case Expression.Def(name, _, _) => eval(root.defs(name).exp, root, env0)
+    case Expression.MkClosureDef(ref, freeVars, _, _) =>
       allocateClosure(ref, freeVars, env0)
-    case Expression.ApplyRef(sym, args0, _, _) =>
+    case Expression.ApplyDef(sym, args0, _, _) =>
       val args = evalArgs(args0, root, env0)
       Linker.link(sym, root).invoke(args.toArray)
     case Expression.ApplyTail(sym, _, args0, _, _) =>
@@ -78,7 +64,7 @@ object Interpreter {
       val clo = eval(exp, root, env0).asInstanceOf[Value.Closure]
       val Value.Closure(name, bindings) = clo
       val args = evalArgs(args0, root, env0)
-      val constant = root.definitions(name)
+      val constant = root.defs(name)
       // Bindings for the capture variables are passed as arguments.
       val env1 = constant.formals.take(bindings.length).zip(bindings).foldLeft(env0) {
         case (macc, (formal, actual)) => macc + (formal.sym.toString -> actual)
@@ -103,7 +89,7 @@ object Interpreter {
       eval(exp2, root, newEnv)
 
     case Expression.LetRec(sym, exp1, exp2, _, _) => exp1 match {
-      case Expression.MkClosureRef(ref, freeVars, _, _) =>
+      case Expression.MkClosureDef(ref, freeVars, _, _) =>
         // Allocate a circular closure.
         val closure = allocateClosure(ref, freeVars, env0)
         closure.bindings(sym.getStackOffset) = closure
@@ -127,11 +113,11 @@ object Interpreter {
       }
       array
 
-    case Expression.Reference(exp, tpe, loc) => ??? // TODO
+    case Expression.Ref(exp, tpe, loc) => ??? // TODO
 
-    case Expression.Dereference(exp, tpe, loc) => ??? // TODO
+    case Expression.Deref(exp, tpe, loc) => ??? // TODO
 
-    case Expression.Assignment(exp1, exp2, tpe, loc) => ??? // TODO
+    case Expression.Assign(exp1, exp2, tpe, loc) => ??? // TODO
 
     case Expression.Existential(params, exp, loc) => throw InternalRuntimeException(s"Unexpected expression: '$exp' at ${loc.source.format}.")
     case Expression.Universal(params, exp, loc) => throw InternalRuntimeException(s"Unexpected expression: '$exp' at ${loc.source.format}.")
@@ -387,7 +373,7 @@ object Interpreter {
   /**
     * Allocates a closure for the given reference `ref` with free variables `freeVars` under the given environment `env0`.
     */
-  private def allocateClosure(ref: Expression.Ref, freeVars: Array[ExecutableAst.FreeVar], env0: Map[String, AnyRef]): Value.Closure = {
+  private def allocateClosure(ref: Expression.Def, freeVars: Array[ExecutableAst.FreeVar], env0: Map[String, AnyRef]): Value.Closure = {
     // Save the values of the free variables in the Value.Closure structure.
     // When the closure is called, these values will be provided at the beginning of the argument list.
     val bindings = new Array[AnyRef](freeVars.length)

@@ -154,7 +154,7 @@ namespace IDE {
         EshCallStart(call,d,proc,dp,cs).
 
     // Rules for Example (constant propagation) from IDE paper
-    def id: Transformer = Transformer.NonBotTrans(1,0,Value.Bot)
+    def id(): Transformer = Transformer.NonBotTrans(1,0,Value.Bot)
 
     CFG("smain","n1").
     CFG("n1","n2").

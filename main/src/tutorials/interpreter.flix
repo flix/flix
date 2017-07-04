@@ -87,17 +87,17 @@ def evalBExp(e: BExp): Bool = match e with {
 //   $ flix <file> --main testEvalAExp1
 //
 
-def testEvalAExp1: Int = evalAExp(Cst(42))
-def testEvalAExp2: Int = evalAExp(Plus(Cst(42), Cst(21)))
-def testEvalAExp3: Int = evalAExp(Minus(Cst(42), Cst(21)))
-def testEvalAExp4: Int = evalAExp(IfThenElse(True, Cst(1), Cst(2)))
-def testEvalAExp5: Int = evalAExp(IfThenElse(Neq(Cst(1), Cst(2)), Cst(42), Cst(21)))
+def testEvalAExp1(): Int = evalAExp(Cst(42))
+def testEvalAExp2(): Int = evalAExp(Plus(Cst(42), Cst(21)))
+def testEvalAExp3(): Int = evalAExp(Minus(Cst(42), Cst(21)))
+def testEvalAExp4(): Int = evalAExp(IfThenElse(True, Cst(1), Cst(2)))
+def testEvalAExp5(): Int = evalAExp(IfThenElse(Neq(Cst(1), Cst(2)), Cst(42), Cst(21)))
 
-def testEvalBExp1: Bool = evalBExp(True)
-def testEvalBExp2: Bool = evalBExp(Not(True))
-def testEvalBExp3: Bool = evalBExp(Conj(True, False))
-def testEvalBExp4: Bool = evalBExp(Disj(True, False))
-def testEvalBExp5: Bool = evalBExp(Neq(Cst(1), Cst(2)))
+def testEvalBExp1(): Bool = evalBExp(True)
+def testEvalBExp2(): Bool = evalBExp(Not(True))
+def testEvalBExp3(): Bool = evalBExp(Conj(True, False))
+def testEvalBExp4(): Bool = evalBExp(Disj(True, False))
+def testEvalBExp5(): Bool = evalBExp(Neq(Cst(1), Cst(2)))
 
 //
 // We now write two compilers that translate arithmetic and boolean expressions
@@ -200,17 +200,17 @@ def compileBExp(e: BExp): List[Inst] = match e with {
 //
 // We test each compiler by writing some tests:
 //
-def testCompileAExp1: List[Inst] = compileAExp(Cst(42))
-def testCompileAExp2: List[Inst] = compileAExp(Plus(Cst(42), Cst(21)))
-def testCompileAExp3: List[Inst] = compileAExp(Minus(Cst(42), Cst(21)))
-def testCompileAExp4: List[Inst] = compileAExp(IfThenElse(True, Cst(1), Cst(2)))
-def testCompileAExp5: List[Inst] = compileAExp(IfThenElse(Neq(Cst(1), Cst(2)), Cst(42), Cst(21)))
+def testCompileAExp1(): List[Inst] = compileAExp(Cst(42))
+def testCompileAExp2(): List[Inst] = compileAExp(Plus(Cst(42), Cst(21)))
+def testCompileAExp3(): List[Inst] = compileAExp(Minus(Cst(42), Cst(21)))
+def testCompileAExp4(): List[Inst] = compileAExp(IfThenElse(True, Cst(1), Cst(2)))
+def testCompileAExp5(): List[Inst] = compileAExp(IfThenElse(Neq(Cst(1), Cst(2)), Cst(42), Cst(21)))
 
-def testCompileBExp1: List[Inst] = compileBExp(True)
-def testCompileBExp2: List[Inst] = compileBExp(Not(True))
-def testCompileBExp3: List[Inst] = compileBExp(Conj(True, False))
-def testCompileBExp4: List[Inst] = compileBExp(Disj(True, False))
-def testCompileBExp5: List[Inst] = compileBExp(Neq(Cst(1), Cst(2)))
+def testCompileBExp1(): List[Inst] = compileBExp(True)
+def testCompileBExp2(): List[Inst] = compileBExp(Not(True))
+def testCompileBExp3(): List[Inst] = compileBExp(Conj(True, False))
+def testCompileBExp4(): List[Inst] = compileBExp(Disj(True, False))
+def testCompileBExp5(): List[Inst] = compileBExp(Neq(Cst(1), Cst(2)))
 
 //
 // Finally, we write an interpreter for the stack-based language:
@@ -253,8 +253,8 @@ def evalInst(instructions: List[Inst], stack: List[Int]): Int = match (instructi
 //
 // and we can test the compiler and interpreter:
 //
-def testCompileAndEval1: Int = evalInst(compileAExp(Cst(42)), Nil)
-def testCompileAndEval2: Int = evalInst(compileAExp(Plus(Cst(42), Cst(21))), Nil)
-def testCompileAndEval3: Int = evalInst(compileAExp(Minus(Cst(42), Cst(21))), Nil)
-def testCompileAndEval4: Int = evalInst(compileAExp(IfThenElse(True, Cst(1), Cst(2))), Nil)
-def testCompileAndEval5: Int = evalInst(compileAExp(IfThenElse(Neq(Cst(1), Cst(2)), Cst(42), Cst(21))), Nil)
+def testCompileAndEval1(): Int = evalInst(compileAExp(Cst(42)), Nil)
+def testCompileAndEval2(): Int = evalInst(compileAExp(Plus(Cst(42), Cst(21))), Nil)
+def testCompileAndEval3(): Int = evalInst(compileAExp(Minus(Cst(42), Cst(21))), Nil)
+def testCompileAndEval4(): Int = evalInst(compileAExp(IfThenElse(True, Cst(1), Cst(2))), Nil)
+def testCompileAndEval5(): Int = evalInst(compileAExp(IfThenElse(Neq(Cst(1), Cst(2)), Cst(42), Cst(21))), Nil)

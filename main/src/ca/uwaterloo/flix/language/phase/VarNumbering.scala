@@ -40,7 +40,7 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     val t = System.nanoTime()
 
     // Compute stack offset for each definition.
-    for ((sym, defn) <- root.definitions) {
+    for ((sym, defn) <- root.defs) {
       number(defn)
     }
 
@@ -60,7 +60,7 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     *
     * Returns Unit since the variable symbols are mutated to store their stack offsets.
     */
-  def number(defn: Definition.Constant): Unit = {
+  def number(defn: SimplifiedAst.Def): Unit = {
     /**
       * Returns the next available stack offset.
       *
@@ -80,19 +80,11 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.Int64(lit) => i0
       case Expression.BigInt(lit) => i0
       case Expression.Str(lit) => i0
-      case Expression.LoadBool(n, o) => i0
-      case Expression.LoadInt8(b, o) => i0
-      case Expression.LoadInt16(b, o) => i0
-      case Expression.LoadInt32(b, o) => i0
-      case Expression.StoreBool(b, o, v) => i0
-      case Expression.StoreInt8(b, o, v) => i0
-      case Expression.StoreInt16(b, o, v) => i0
-      case Expression.StoreInt32(b, o, v) => i0
       case Expression.Var(sym, tpe, loc) => i0
-      case Expression.Ref(name, tpe, loc) => i0
+      case Expression.Def(name, tpe, loc) => i0
       case Expression.Hook(hook, tpe, loc) => i0
-      case Expression.MkClosureRef(ref, freeVars, tpe, loc) => i0
-      case Expression.ApplyRef(name, args, tpe, loc) => visitExps(args, i0)
+      case Expression.MkClosureDef(ref, freeVars, tpe, loc) => i0
+      case Expression.ApplyDef(name, args, tpe, loc) => visitExps(args, i0)
       case Expression.ApplyTail(name, formals, args, tpe, loc) => visitExps(args, i0)
       case Expression.ApplyHook(hook, args, tpe, loc) => visitExps(args, i0)
       case Expression.Apply(exp, args, tpe, loc) =>

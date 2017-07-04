@@ -35,7 +35,7 @@ import scala.collection.mutable
   */
 object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
 
-  type TopLevel = mutable.Map[Symbol.DefnSym, SimplifiedAst.Definition.Constant]
+  type TopLevel = mutable.Map[Symbol.DefnSym, SimplifiedAst.Def]
 
   def run(root: TypedAst.Root)(implicit flix: Flix): Validation[SimplifiedAst.Root, CompilationError] = {
     implicit val _ = flix.genSym
@@ -44,17 +44,17 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
 
     val toplevel: TopLevel = mutable.Map.empty
 
-    val defns = root.definitions.map { case (k, v) => k -> Definition.simplify(v) }
+    val defns = root.defs.map { case (k, v) => k -> simplify(v) }
     val enums = root.enums.map {
-      case (k, TypedAst.Declaration.Enum(doc, sym, cases0, sc, loc)) =>
+      case (k, TypedAst.Enum(doc, sym, cases0, sc, loc)) =>
         val cases = cases0 map {
           case (tag, TypedAst.Case(enum, tagName, tpe)) => tag -> SimplifiedAst.Case(enum, tagName, tpe)
         }
-        k -> SimplifiedAst.Definition.Enum(sym, cases, loc)
+        k -> SimplifiedAst.Enum(sym, cases, loc)
     }
-    val lattices = root.lattices.map { case (k, v) => k -> Definition.simplify(v) }
+    val lattices = root.lattices.map { case (k, v) => k -> simplify(v) }
     val collections = root.tables.map { case (k, v) => k -> Table.simplify(v) }
-    val indexes = root.indexes.map { case (k, v) => k -> Definition.simplify(v) }
+    val indexes = root.indexes.map { case (k, v) => k -> simplify(v) }
     val strata = root.strata.map(s => simplify(s, toplevel))
     val properties = root.properties.map { p => simplify(p) }
     val reachable = root.reachable
@@ -90,24 +90,21 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
 
   }
 
-  object Definition {
-    def simplify(tast: TypedAst.Declaration.BoundedLattice)(implicit genSym: GenSym): SimplifiedAst.Definition.Lattice = tast match {
-      case TypedAst.Declaration.BoundedLattice(tpe, bot, top, leq, lub, glb, loc) =>
-        import Expression.{simplify => s}
-        SimplifiedAst.Definition.Lattice(tpe, s(bot), s(top), s(leq), s(lub), s(glb), loc)
-    }
-
-    def simplify(tast: TypedAst.Declaration.Definition)(implicit genSym: GenSym): SimplifiedAst.Definition.Constant = {
-      val formals = tast.fparams.map {
-        case TypedAst.FormalParam(sym, mod, tpe, loc) => SimplifiedAst.FormalParam(sym, mod, tpe, loc)
-      }
-      SimplifiedAst.Definition.Constant(tast.ann, tast.mod, tast.sym, formals, Expression.simplify(tast.exp), isSynthetic = false, tast.tpe, tast.loc)
-    }
-
-    def simplify(tast: TypedAst.Declaration.Index)(implicit genSym: GenSym): SimplifiedAst.Definition.Index =
-      SimplifiedAst.Definition.Index(tast.sym, tast.indexes, tast.loc)
-
+  def simplify(tast: TypedAst.Lattice)(implicit genSym: GenSym): SimplifiedAst.Lattice = tast match {
+    case TypedAst.Lattice(tpe, bot, top, leq, lub, glb, loc) =>
+      import Expression.{simplify => s}
+      SimplifiedAst.Lattice(tpe, s(bot), s(top), s(leq), s(lub), s(glb), loc)
   }
+
+  def simplify(tast: TypedAst.Def)(implicit genSym: GenSym): SimplifiedAst.Def = {
+    val formals = tast.fparams.map {
+      case TypedAst.FormalParam(sym, mod, tpe, loc) => SimplifiedAst.FormalParam(sym, mod, tpe, loc)
+    }
+    SimplifiedAst.Def(tast.ann, tast.mod, tast.sym, formals, Expression.simplify(tast.exp), isSynthetic = false, tast.tpe, tast.loc)
+  }
+
+  def simplify(tast: TypedAst.Index)(implicit genSym: GenSym): SimplifiedAst.Index =
+    SimplifiedAst.Index(tast.sym, tast.indexes, tast.loc)
 
   object Expression {
     def simplify(tast: TypedAst.Expression)(implicit genSym: GenSym): SimplifiedAst.Expression = tast match {
@@ -125,7 +122,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case TypedAst.Expression.BigInt(lit, loc) => SimplifiedAst.Expression.BigInt(lit)
       case TypedAst.Expression.Str(lit, loc) => SimplifiedAst.Expression.Str(lit)
       case TypedAst.Expression.Var(sym, tpe, eff, loc) => SimplifiedAst.Expression.Var(sym, tpe, loc)
-      case TypedAst.Expression.Ref(sym, tpe, eff, loc) => SimplifiedAst.Expression.Ref(sym, tpe, loc)
+      case TypedAst.Expression.Def(sym, tpe, eff, loc) => SimplifiedAst.Expression.Def(sym, tpe, loc)
       case TypedAst.Expression.Hook(hook, tpe, eff, loc) => SimplifiedAst.Expression.Hook(hook, tpe, loc)
       case TypedAst.Expression.Lambda(args, body, tpe, eff, loc) =>
         SimplifiedAst.Expression.Lambda(args map Simplifier.simplify, simplify(body), tpe, loc)
@@ -448,7 +445,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         case TypedAst.Expression.Var(sym, tpe, eff, loc) =>
           SimplifiedAst.Term.Head.Var(sym, tpe, loc)
 
-        case TypedAst.Expression.Apply(TypedAst.Expression.Ref(sym, _, _, _), args, tpe, eff, loc) if isVarExps(args) =>
+        case TypedAst.Expression.Apply(TypedAst.Expression.Def(sym, _, _, _), args, tpe, eff, loc) if isVarExps(args) =>
           val as = args map {
             case TypedAst.Expression.Var(x, _, _, _) => x
             case e => throw InternalCompilerException(s"Unexpected non-variable expression: $e.")
@@ -486,7 +483,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
             val arrowType = Type.mkArrow(freshSymbols.map(_._2._2), e0.tpe)
 
             // Assemble the fresh definition.
-            val defn = SimplifiedAst.Definition.Constant(Ast.Annotations(Nil), Ast.Modifiers.Empty, freshSym, formals, exp, isSynthetic = true, arrowType, e0.loc)
+            val defn = SimplifiedAst.Def(Ast.Annotations(Nil), Ast.Modifiers.Empty, freshSym, formals, exp, isSynthetic = true, arrowType, e0.loc)
 
             // Add the fresh definition to the top-level.
             toplevel += freshSym -> defn
@@ -621,25 +618,17 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case SimplifiedAst.Expression.Int64(lit) => e
       case SimplifiedAst.Expression.BigInt(lit) => e
       case SimplifiedAst.Expression.Str(lit) => e
-      case SimplifiedAst.Expression.LoadBool(n, o) => e
-      case SimplifiedAst.Expression.LoadInt8(b, o) => e
-      case SimplifiedAst.Expression.LoadInt16(b, o) => e
-      case SimplifiedAst.Expression.LoadInt32(b, o) => e
-      case SimplifiedAst.Expression.StoreBool(b, o, v) => e
-      case SimplifiedAst.Expression.StoreInt8(b, o, v) => e
-      case SimplifiedAst.Expression.StoreInt16(b, o, v) => e
-      case SimplifiedAst.Expression.StoreInt32(b, o, v) => e
       case SimplifiedAst.Expression.Var(sym, tpe, loc) => m.get(sym) match {
         case None => SimplifiedAst.Expression.Var(sym, tpe, loc)
         case Some(replacement) => SimplifiedAst.Expression.Var(replacement, tpe, loc)
       }
-      case SimplifiedAst.Expression.Ref(name, tpe, loc) => e
+      case SimplifiedAst.Expression.Def(name, tpe, loc) => e
       case SimplifiedAst.Expression.Lambda(fparams, body, tpe, loc) => ??? // TODO
       case SimplifiedAst.Expression.Hook(hook, tpe, loc) => e
-      case SimplifiedAst.Expression.MkClosureRef(ref, freeVars, tpe, loc) => e
+      case SimplifiedAst.Expression.MkClosureDef(ref, freeVars, tpe, loc) => e
       case SimplifiedAst.Expression.MkClosure(lambda, freeVars, tpe, loc) => ??? // TODO
-      case SimplifiedAst.Expression.ApplyRef(name, args, tpe, loc) =>
-        SimplifiedAst.Expression.ApplyRef(name, args.map(visit), tpe, loc)
+      case SimplifiedAst.Expression.ApplyDef(name, args, tpe, loc) =>
+        SimplifiedAst.Expression.ApplyDef(name, args.map(visit), tpe, loc)
       case SimplifiedAst.Expression.ApplyTail(name, formals, args, tpe, loc) =>
         SimplifiedAst.Expression.ApplyTail(name, formals, args.map(visit), tpe, loc)
       case SimplifiedAst.Expression.ApplyHook(hook, args, tpe, loc) =>

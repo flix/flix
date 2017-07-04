@@ -27,7 +27,7 @@ object PrettyPrinter {
 
     def fmtRoot(root: Root): VirtualTerminal = {
       val vt = new VirtualTerminal()
-      for ((sym, defn) <- root.definitions.toList.sortBy(_._1.loc)) {
+      for ((sym, defn) <- root.defs.toList.sortBy(_._1.loc)) {
         vt << Bold("def") << " " << Blue(sym.toString) << "("
         for (fparam <- defn.formals) {
           fmtParam(fparam, vt)
@@ -41,7 +41,7 @@ object PrettyPrinter {
       vt
     }
 
-    def fmtExp(defn: Definition.Constant, vt: VirtualTerminal): Unit = {
+    def fmtExp(defn: SimplifiedAst.Def, vt: VirtualTerminal): Unit = {
       fmtExp(defn.exp, vt)
     }
 
@@ -59,16 +59,8 @@ object PrettyPrinter {
         case Expression.Int64(lit) => vt.text(lit.toString).text("i64")
         case Expression.BigInt(lit) => vt.text(lit.toString()).text("ii")
         case Expression.Str(lit) => vt.text("\"").text(lit).text("\"")
-        case Expression.LoadBool(base, offset) => ???
-        case Expression.LoadInt8(base, offset) => ???
-        case Expression.LoadInt16(base, offset) => ???
-        case Expression.LoadInt32(base, offset) => ???
-        case Expression.StoreBool(base, offset, value) => ???
-        case Expression.StoreInt8(base, offset, value) => ???
-        case Expression.StoreInt16(base, offset, value) => ???
-        case Expression.StoreInt32(base, offset, value) => ???
         case Expression.Var(sym, tpe, loc) => fmtSym(sym, vt)
-        case Expression.Ref(sym, tpe, loc) => fmtSym(sym, vt)
+        case Expression.Def(sym, tpe, loc) => fmtSym(sym, vt)
         case Expression.Lambda(fparams, body, tpe, loc) =>
           vt.text("(")
           for (fparam <- fparams) {
@@ -81,7 +73,7 @@ object PrettyPrinter {
 
         case Expression.Hook(hook, tpe, loc) => vt.text(hook.sym.toString)
 
-        case Expression.MkClosureRef(ref, freeVars, tpe, loc) =>
+        case Expression.MkClosureDef(ref, freeVars, tpe, loc) =>
           vt.text("MkClosureRef(")
           visitExp(ref)
           vt.text(", [")
@@ -101,7 +93,7 @@ object PrettyPrinter {
           }
           vt.text("])")
 
-        case Expression.ApplyRef(sym, args, tpe, loc) =>
+        case Expression.ApplyDef(sym, args, tpe, loc) =>
           fmtSym(sym, vt)
           vt.text("(")
           for (arg <- args) {

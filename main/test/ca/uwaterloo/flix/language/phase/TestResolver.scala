@@ -106,7 +106,7 @@ class TestResolver extends FunSuite with TestUtils {
          |  case Foo
          |}
          |
-         |def f: A = Foo
+         |def f(): A = Foo
        """.stripMargin
     val result = new Flix().addStr(input).compile()
     expectError[ResolutionError.AmbiguousTag](result)
@@ -123,7 +123,7 @@ class TestResolver extends FunSuite with TestUtils {
          |  case Foo(Int)
          |}
          |
-         |def f: A = Foo(42)
+         |def f(): A = Foo(42)
        """.stripMargin
     val result = new Flix().addStr(input).compile()
     expectError[ResolutionError.AmbiguousTag](result)
@@ -133,7 +133,7 @@ class TestResolver extends FunSuite with TestUtils {
     val input =
       s"""
          |namespace A {
-         |  def f: Int = Foo.Bar
+         |  def f(): Int = Foo.Bar
          |}
        """.stripMargin
     val result = new Flix().addStr(input).compile()
@@ -144,7 +144,7 @@ class TestResolver extends FunSuite with TestUtils {
     val input =
       s"""
          |namespace A {
-         |  def f: Int = Foo/Bar.Qux(true)
+         |  def f(): Int = Foo/Bar.Qux(true)
          |}
        """.stripMargin
     val result = new Flix().addStr(input).compile()
@@ -158,7 +158,7 @@ class TestResolver extends FunSuite with TestUtils {
          |  case Foo
          |}
          |
-         |def f: A = A.Qux
+         |def f(): A = A.Qux
          |
        """.stripMargin
     val result = new Flix().addStr(input).compile()
@@ -174,7 +174,7 @@ class TestResolver extends FunSuite with TestUtils {
          |    case Bar
          |  }
          |
-         |  def f: B = B.Qux(1 + 2)
+         |  def f(): B = B.Qux(1 + 2)
          |}
        """.stripMargin
     val result = new Flix().addStr(input).compile()
@@ -200,7 +200,7 @@ class TestResolver extends FunSuite with TestUtils {
   }
 
   test("UnresolvedType.01") {
-    val input = "def x: Foo = 42"
+    val input = "def x(): Foo = 42"
     val result = new Flix().addStr(input).compile()
     expectError[ResolutionError.UndefinedType](result)
   }

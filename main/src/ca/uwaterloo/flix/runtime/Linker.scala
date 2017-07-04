@@ -28,7 +28,7 @@ object Linker {
     */
   def link(sym: Symbol.DefnSym, root: ExecutableAst.Root): InvocationTarget = {
     // Lookup the definition symbol in the program.
-    root.definitions.get(sym) match {
+    root.defs.get(sym) match {
       case None => throw InternalRuntimeException(s"Undefined symbol: '$sym'.")
       case Some(defn) =>
         // Determine whether to invoke the interpreted or compiled code.
@@ -43,7 +43,7 @@ object Linker {
   /**
     * Returns an invocation target for the given definition `defn` that is interpreted.
     */
-  private def linkInterpreted(defn: ExecutableAst.Definition.Constant, root: ExecutableAst.Root): InvocationTarget = new InvocationTarget {
+  private def linkInterpreted(defn: ExecutableAst.Def, root: ExecutableAst.Root): InvocationTarget = new InvocationTarget {
     override def invoke(args: Array[AnyRef]): AnyRef = {
       // Extend the environment with the values of the actual arguments.
       val env = defn.formals.zip(args).foldLeft(Map.empty[String, AnyRef]) {
@@ -56,7 +56,7 @@ object Linker {
   /**
     * Returns an invocation target for the given definition `defn` that is compiled.
     */
-  private def linkCompiled(defn: ExecutableAst.Definition.Constant): InvocationTarget = new InvocationTarget {
+  private def linkCompiled(defn: ExecutableAst.Def): InvocationTarget = new InvocationTarget {
     override def invoke(args: Array[AnyRef]): AnyRef =
       try {
         // Java Reflective Call.

@@ -91,7 +91,7 @@ class TestParser extends FunSuite with TestUtils {
         |  }
         |}
         |
-        |def g: Int = A/B/C/A/B/C.f(21)
+        |def g(): Int = A/B/C/A/B/C.f(21)
       """.stripMargin
     run(input)
   }
@@ -108,7 +108,7 @@ class TestParser extends FunSuite with TestUtils {
         |  }
         |}
         |
-        |def j: Int = A/B/C/D/E/F/G.h(21)
+        |def j(): Int = A/B/C/D/E/F/G.h(21)
       """.stripMargin
     run(input)
   }
@@ -124,7 +124,7 @@ class TestParser extends FunSuite with TestUtils {
         |}
         |
         |namespace A/B/C {
-        |  def g: Int = f(21)
+        |  def g(): Int = f(21)
         |}
       """.stripMargin
     run(input)
@@ -136,7 +136,7 @@ class TestParser extends FunSuite with TestUtils {
         |  namespace B {
         |    namespace C {
         |      def f(x: Int): Int = x + 42
-        |      def g: Int = A/B/C.f(21)
+        |      def g(): Int = A/B/C.f(21)
         |    }
         |  }
         |}
@@ -162,13 +162,13 @@ class TestParser extends FunSuite with TestUtils {
         |  def w(x: Int): Int = x + 11
         |}
         |
-        |def r: Int = A/B/C.u(1) + A/B/C.v(2) + A/B/C.w(3)
+        |def r(): Int = A/B/C.u(1) + A/B/C.v(2) + A/B/C.w(3)
       """.stripMargin
     run(input)
   }
 
   test("Declaration.Definition.01") {
-    val input = "def f: Int = 42"
+    val input = "def f(): Int = 42"
     run(input)
   }
 
@@ -287,7 +287,7 @@ class TestParser extends FunSuite with TestUtils {
   }
 
   test("Declaration.Law.01") {
-    val input = "law f: Bool = true"
+    val input = "law f(): Bool = true"
     run(input)
   }
 
@@ -360,7 +360,7 @@ class TestParser extends FunSuite with TestUtils {
 
   test("Declaration.Rule.04") {
     val input =
-      """def f: Int = 42
+      """def f(): Int = 42
         |
         |rel R(a: Int)
         |
@@ -427,197 +427,197 @@ class TestParser extends FunSuite with TestUtils {
   // Expressions                                                             //
   /////////////////////////////////////////////////////////////////////////////
   test("Expression.Unit.01") {
-    val input = "def f: Unit = ()"
+    val input = "def f(): Unit = ()"
     run(input)
   }
 
   test("Expression.Bool.01") {
-    val input = "def f: Bool = true"
+    val input = "def f(): Bool = true"
     run(input)
   }
 
   test("Expression.Bool.02") {
-    val input = "def f: Bool = false"
+    val input = "def f(): Bool = false"
     run(input)
   }
 
   test("Expression.Char.01") {
-    val input = "def f: Char = 'a'"
+    val input = "def f(): Char = 'a'"
     run(input)
   }
 
   test("Expression.Char.02") {
-    val input = "def f: Char = 'x'"
+    val input = "def f(): Char = 'x'"
     run(input)
   }
 
   test("Expression.Float32.01") {
-    val input = "def f: Float32 = 123.456f32"
+    val input = "def f(): Float32 = 123.456f32"
     run(input)
   }
 
   test("Expression.Float32.02") {
-    val input = "def f: Float32 = -123.456f32"
+    val input = "def f(): Float32 = -123.456f32"
     run(input)
   }
 
   test("Expression.Float64.01") {
-    val input = "def f: Float64 = 123.456f64"
+    val input = "def f(): Float64 = 123.456f64"
     run(input)
   }
 
   test("Expression.Float64.02") {
-    val input = "def f: Float64 = -123.456f64"
+    val input = "def f(): Float64 = -123.456f64"
     run(input)
   }
 
   test("Expression.Int8.01") {
-    val input = "def f: Int8 = 123i8"
+    val input = "def f(): Int8 = 123i8"
     run(input)
   }
 
   test("Expression.Int8.02") {
-    val input = "def f: Int8 = -123i8"
+    val input = "def f(): Int8 = -123i8"
     run(input)
   }
 
   test("Expression.Int16.01") {
-    val input = "def f: Int16 = 123i16"
+    val input = "def f(): Int16 = 123i16"
     run(input)
   }
 
   test("Expression.Int16.02") {
-    val input = "def f: Int16 = -123i16"
+    val input = "def f(): Int16 = -123i16"
     run(input)
   }
 
   test("Expression.Int32.01") {
-    val input = "def f: Int32 = 123i32"
+    val input = "def f(): Int32 = 123i32"
     run(input)
   }
 
   test("Expression.Int32.02") {
-    val input = "def f: Int32 = -123i32"
+    val input = "def f(): Int32 = -123i32"
     run(input)
   }
 
   test("Expression.Int64.01") {
-    val input = "def f: Int64 = 123i64"
+    val input = "def f(): Int64 = 123i64"
     run(input)
   }
 
   test("Expression.Int64.02") {
-    val input = "def f: Int64 = -123i64"
+    val input = "def f(): Int64 = -123i64"
     run(input)
   }
 
   test("Expression.BigInt.01") {
-    val input = "def f: BigInt = 123ii"
+    val input = "def f(): BigInt = 123ii"
     run(input)
   }
 
   test("Expression.BigInt.02") {
-    val input = "def f: BigInt = -123ii"
+    val input = "def f(): BigInt = -123ii"
     run(input)
   }
 
   test("Expression.Str.01") {
-    val input = "def f: Str = \"\""
+    val input = "def f(): Str = \"\""
     run(input)
   }
 
   test("Expression.Str.02") {
-    val input = "def f: Str = \"a\""
+    val input = "def f(): Str = \"a\""
     run(input)
   }
 
   test("Expression.Str.03") {
-    val input = "def f: Str = \"0\""
+    val input = "def f(): Str = \"0\""
     run(input)
   }
 
   test("Expression.Str.04") {
-    val input = "def f: Str = \"abc\""
+    val input = "def f(): Str = \"abc\""
     run(input)
   }
 
   test("Expression.Str.05") {
-    val input = "def f: Str = \"abc123'!@#$%^&*()\""
+    val input = "def f(): Str = \"abc123'!@#$%^&*()\""
     run(input)
   }
 
   test("Expression.LogicalExp.01") {
-    val input = "def f: Bool = true && false"
+    val input = "def f(): Bool = true && false"
     run(input)
   }
 
   test("Expression.LogicalExp.02") {
-    val input = "def f: Bool = true || false"
+    val input = "def f(): Bool = true || false"
     run(input)
   }
 
   test("Expression.LogicalExp.03") {
-    val input = "def f: Bool = 1 < 2 && 3 < 4"
+    val input = "def f(): Bool = 1 < 2 && 3 < 4"
     run(input)
   }
 
   test("Expression.ComparisonExp.01") {
-    val input = "def f: Bool = 1 < 2"
+    val input = "def f(): Bool = 1 < 2"
     run(input)
   }
 
   test("Expression.ComparisonExp.02") {
-    val input = "def f: Bool = 1 + 2 > 3"
+    val input = "def f(): Bool = 1 + 2 > 3"
     run(input)
   }
 
   test("Expression.ComparisonExp.03") {
-    val input = "def f: Bool = 1 + 2 > 3 + 4"
+    val input = "def f(): Bool = 1 + 2 > 3 + 4"
     run(input)
   }
 
   test("Expression.MultiplicativeExp.01") {
-    val input = "def f: Int = 1 * 2"
+    val input = "def f(): Int = 1 * 2"
     run(input)
   }
 
   test("Expression.MultiplicativeExp.02") {
-    val input = "def f: Int = 1 * 2 * 3"
+    val input = "def f(): Int = 1 * 2 * 3"
     run(input)
   }
 
   test("Expression.MultiplicativeExp.03") {
-    val input = "def f: Int = 1 * 2 + 3"
+    val input = "def f(): Int = 1 * 2 + 3"
     run(input)
   }
 
   test("Expression.MultiplicativeExp.04") {
-    val input = "def f: Int = 1 + 2 * 3"
+    val input = "def f(): Int = 1 + 2 * 3"
     run(input)
   }
 
   test("Expression.AdditiveExp.01") {
-    val input = "def f: Int = 1 + 2"
+    val input = "def f(): Int = 1 + 2"
     run(input)
   }
 
   test("Expression.AdditiveExp.02") {
-    val input = "def f: Int = 1 + 2 + 3"
+    val input = "def f(): Int = 1 + 2 + 3"
     run(input)
   }
 
   test("Expression.AdditiveExp.03") {
-    val input = "def f: Int = 1 - 2"
+    val input = "def f(): Int = 1 - 2"
     run(input)
   }
 
   test("Expression.AdditiveExp.04") {
-    val input = "def f: Int = 1 - 2 - 3"
+    val input = "def f(): Int = 1 - 2 - 3"
     run(input)
   }
 
   test("Expression.AdditiveExp.05") {
-    val input = "def f: Int = 1 + 2 - 3 + 4 - 5 + 6"
+    val input = "def f(): Int = 1 + 2 - 3 + 4 - 5 + 6"
     run(input)
   }
 
@@ -625,7 +625,7 @@ class TestParser extends FunSuite with TestUtils {
     val input =
       """def add(x: Int, y: Int): Int = x + y
         |
-        |def f: Int = 1 `add` 2
+        |def f(): Int = 1 `add` 2
       """.stripMargin
     val model = run(input)
     assertResult(3)(model.getConstant("f"))
@@ -637,7 +637,7 @@ class TestParser extends FunSuite with TestUtils {
         |def sub(x: Int, y: Int): Int = x - y
         |def mul(x: Int, y: Int): Int = x * y
         |
-        |def f: Int = 1 `add` 2 `sub` 3 `mul` 4
+        |def f(): Int = 1 `add` 2 `sub` 3 `mul` 4
       """.stripMargin
     val model = run(input)
     assertResult(0)(model.getConstant("f"))
@@ -647,7 +647,7 @@ class TestParser extends FunSuite with TestUtils {
     val input =
       """def abs(x: Int): Int = if(x >= 0) x else -x
         |
-        |def f: Int = 1.abs()
+        |def f(): Int = 1.abs()
       """.stripMargin
     val model = run(input)
     assertResult(1)(model.getConstant("f"))
@@ -659,7 +659,7 @@ class TestParser extends FunSuite with TestUtils {
         |def inc(x: Int): Int = x + 1
         |def dec(x: Int): Int = x - 1
         |
-        |def f: Int = 1.abs().inc().dec()
+        |def f(): Int = 1.abs().inc().dec()
       """.stripMargin
     val model = run(input)
     assertResult(1)(model.getConstant("f"))
@@ -669,7 +669,7 @@ class TestParser extends FunSuite with TestUtils {
     val input =
       """def add(x: Int, y: Int): Int = x + y
         |
-        |def f: Int = 1.add(2)
+        |def f(): Int = 1.add(2)
       """.stripMargin
     val model = run(input)
     assertResult(3)(model.getConstant("f"))
@@ -681,7 +681,7 @@ class TestParser extends FunSuite with TestUtils {
         |def sub(x: Int, y: Int): Int = x - y
         |def mul(x: Int, y: Int): Int = x * y
         |
-        |def f: Int = 1.add(2).sub(3).mul(4)
+        |def f(): Int = 1.add(2).sub(3).mul(4)
       """.stripMargin
     run(input)
     val model = run(input)
@@ -692,7 +692,7 @@ class TestParser extends FunSuite with TestUtils {
     val input =
       """def add(x: Int, y: Int, z: Int): Int = x + y + z
         |
-        |def f: Int = 1.add(2, 3)
+        |def f(): Int = 1.add(2, 3)
       """.stripMargin
     val model = run(input)
     assertResult(6)(model.getConstant("f"))
@@ -704,55 +704,55 @@ class TestParser extends FunSuite with TestUtils {
         |def sub(x: Int, y: Int, z: Int): Int = x - y - z
         |def mul(x: Int, y: Int, z: Int): Int = x * y * z
         |
-        |def f: Int = 1.add(2, 3).sub(4, 5).mul(6, 7)
+        |def f(): Int = 1.add(2, 3).sub(4, 5).mul(6, 7)
       """.stripMargin
     run(input)
   }
 
   test("Expression.UnaryExp.01") {
-    val input = "def f: Int = +1"
+    val input = "def f(): Int = +1"
     run(input)
   }
 
   test("Expression.UnaryExp.02") {
-    val input = "def f: Int = -1"
+    val input = "def f(): Int = -1"
     run(input)
   }
 
   test("Expression.UnaryExp.03") {
-    val input = "def f: Int = ~~~1"
+    val input = "def f(): Int = ~~~1"
     run(input)
   }
 
   test("Expression.UnaryExp.04") {
-    val input = "def f: Bool = !!true"
+    val input = "def f(): Bool = !!true"
     run(input)
   }
 
   test("Expression.Ascribe.01") {
-    val input = "def f: Bool = true: Bool"
+    val input = "def f(): Bool = true: Bool"
     run(input)
   }
 
   test("Expression.Block.01") {
-    val input = "def f: Int = {42}"
+    val input = "def f(): Int = {42}"
     run(input)
   }
 
   test("Expression.Block.02") {
-    val input = "def f: Int = {{42}}"
+    val input = "def f(): Int = {{42}}"
     run(input)
   }
 
   test("Expression.Block.03") {
-    val input = "def f: Int = {{{42}}}"
+    val input = "def f(): Int = {{{42}}}"
     run(input)
   }
 
   test("Expression.Block.04") {
     val input =
       """
-        |def f: Int = {
+        |def f(): Int = {
         |  let x = {
         |    let y = 42;
         |    y
@@ -766,7 +766,7 @@ class TestParser extends FunSuite with TestUtils {
   test("Expression.Block.05") {
     val input =
       """
-        |def f: Int = {
+        |def f(): Int = {
         |  let x = {
         |    let y = 42;
         |    let z = 21;
@@ -781,7 +781,7 @@ class TestParser extends FunSuite with TestUtils {
   test("Expression.Block.06") {
     val input =
       """
-        |def f: Int = {
+        |def f(): Int = {
         |  let x = {
         |    let y = 42;
         |    let z = 21;
@@ -801,7 +801,7 @@ class TestParser extends FunSuite with TestUtils {
   test("Expression.Block.07") {
     val input =
       """
-        |def f: Int = {
+        |def f(): Int = {
         |  let x = {42};
         |  let y = {21};
         |  x + y
@@ -813,7 +813,7 @@ class TestParser extends FunSuite with TestUtils {
   test("Expression.Block.08") {
     val input =
       """
-        |def f: Int = {
+        |def f(): Int = {
         |  let x = {42};
         |  let y = {
         |    let z = 21;
@@ -829,7 +829,7 @@ class TestParser extends FunSuite with TestUtils {
   test("Expression.Block.09") {
     val input =
       """
-        |def f: Int = {
+        |def f(): Int = {
         |  let x = {42};
         |  let y = {
         |    let z = 21;
@@ -849,7 +849,7 @@ class TestParser extends FunSuite with TestUtils {
   test("Expression.LetMatch.01") {
     val input =
       """
-        |def f: Int =
+        |def f(): Int =
         |  let x = 42;
         |    x
         | """.stripMargin
@@ -859,7 +859,7 @@ class TestParser extends FunSuite with TestUtils {
   test("Expression.LetMatch.02") {
     val input =
       """
-        |def f: Int =
+        |def f(): Int =
         |  let (x, y) = (42, 21);
         |    x + y
         | """.stripMargin
@@ -869,7 +869,7 @@ class TestParser extends FunSuite with TestUtils {
   test("Expression.LetMatch.03") {
     val input =
       """
-        |def f: Int =
+        |def f(): Int =
         |  let x = 1;
         |  let y = 2;
         |  let z = 3;
@@ -882,7 +882,7 @@ class TestParser extends FunSuite with TestUtils {
     // Note: This is to test the performance of deeply nested lets.
     val input =
       """
-        |def f: Int =
+        |def f(): Int =
         |    let x1 = 1;
         |    let x2 = 1;
         |    let x3 = 1;
@@ -918,7 +918,7 @@ class TestParser extends FunSuite with TestUtils {
   test("Expression.LetMatch.05") {
     val input =
       """
-        |def f: Int =
+        |def f(): Int =
         |  let x = 42;
         |    x
         | """.stripMargin
@@ -928,7 +928,7 @@ class TestParser extends FunSuite with TestUtils {
   test("Expression.LetMatch.06") {
     val input =
       """
-        |def f: Int =
+        |def f(): Int =
         |  let x = 42;
         |  let y = 21;
         |    x + y
@@ -939,7 +939,7 @@ class TestParser extends FunSuite with TestUtils {
   test("Expression.LetMatch.07") {
     val input =
       """
-        |def f: Int =
+        |def f(): Int =
         |  let x = 1;
         |  let y = 2;
         |  let z = 3;
@@ -949,17 +949,17 @@ class TestParser extends FunSuite with TestUtils {
   }
 
   test("Expression.IfThenElse.01") {
-    val input = "def f: Int = if (true) 42 else 21"
+    val input = "def f(): Int = if (true) 42 else 21"
     run(input)
   }
 
   test("Expression.IfThenElse.02") {
-    val input = "def f: Int = if ((true)) (1) else (2)"
+    val input = "def f(): Int = if ((true)) (1) else (2)"
     run(input)
   }
 
   test("Expression.IfThenElse.03") {
-    val input = "def f: (Int, Int) = if (true || false) (1, 2) else (3, 4)"
+    val input = "def f(): (Int, Int) = if (true || false) (1, 2) else (3, 4)"
     run(input)
   }
 
@@ -994,7 +994,7 @@ class TestParser extends FunSuite with TestUtils {
 
   test("Expression.Match.01") {
     val input =
-      """def f: Int = match 1 with {
+      """def f(): Int = match 1 with {
         |  case 2 => 3
         |  case _ => 3
         |}
@@ -1004,7 +1004,7 @@ class TestParser extends FunSuite with TestUtils {
 
   test("Expression.Match.02") {
     val input =
-      """def f: Int = match 1 with {
+      """def f(): Int = match 1 with {
         |  case 2 => 3
         |  case 4 => 5
         |  case _ => 5
@@ -1015,7 +1015,7 @@ class TestParser extends FunSuite with TestUtils {
 
   test("Expression.Match.03") {
     val input =
-      """def f: Int = match 1 with {
+      """def f(): Int = match 1 with {
         |  case 2 => match 3 with {
         |    case 4 => 5
         |    case _ => 5
@@ -1029,7 +1029,7 @@ class TestParser extends FunSuite with TestUtils {
 
   test("Expression.Match.04") {
     val input =
-      """def f: Int = match
+      """def f(): Int = match
         |  match 1 with {
         |    case 2 => 3
         |    case _ => 3
@@ -1043,8 +1043,8 @@ class TestParser extends FunSuite with TestUtils {
 
   test("Expression.Apply.01") {
     val input =
-      """def f: Int = 42
-        |def g: Int = f()
+      """def f(): Int = 42
+        |def g(): Int = f()
       """.stripMargin
     run(input)
   }
@@ -1052,7 +1052,7 @@ class TestParser extends FunSuite with TestUtils {
   test("Expression.Apply.02") {
     val input =
       """def f(x: Int): Int = x
-        |def g: Int = f(42)
+        |def g(): Int = f(42)
       """.stripMargin
     run(input)
   }
@@ -1060,7 +1060,7 @@ class TestParser extends FunSuite with TestUtils {
   test("Expression.Apply.03") {
     val input =
       """def f(x: Int, y: Int): Int = x + y
-        |def g: Int = f(1, 2)
+        |def g(): Int = f(1, 2)
       """.stripMargin
     run(input)
   }
@@ -1068,7 +1068,7 @@ class TestParser extends FunSuite with TestUtils {
   test("Expression.Apply.04") {
     val input =
       """def f(x: Int, y: Int): Int = x + y
-        |def g: Int = f(1, f(2, 3))
+        |def g(): Int = f(1, f(2, 3))
       """.stripMargin
     run(input)
   }
@@ -1076,7 +1076,7 @@ class TestParser extends FunSuite with TestUtils {
   test("Expression.Apply.05") {
     val input =
       """def f(x: Int, y: Int): Int = x + y
-        |def g: Int = f(f(1, 2), f(3, 4))
+        |def g(): Int = f(f(1, 2), f(3, 4))
       """.stripMargin
     run(input)
   }
@@ -1089,7 +1089,7 @@ class TestParser extends FunSuite with TestUtils {
         |  case Blue
         |}
         |
-        |def f: Color = Red
+        |def f(): Color = Red
       """.stripMargin
     run(input)
   }
@@ -1102,7 +1102,7 @@ class TestParser extends FunSuite with TestUtils {
         |  case Blue
         |}
         |
-        |def f: Color = Color.Red
+        |def f(): Color = Color.Red
       """.stripMargin
     run(input)
   }
@@ -1114,8 +1114,8 @@ class TestParser extends FunSuite with TestUtils {
         |  case Square(Int, Int)
         |}
         |
-        |def f: Shape = Circle(42)
-        |def g: Shape = Square(21, 42)
+        |def f(): Shape = Circle(42)
+        |def g(): Shape = Square(21, 42)
       """.stripMargin
     run(input)
   }
@@ -1127,24 +1127,24 @@ class TestParser extends FunSuite with TestUtils {
         |  case Square(Int, Int)
         |}
         |
-        |def f: Shape = Shape.Circle(42)
-        |def g: Shape = Shape.Square(21, 42)
+        |def f(): Shape = Shape.Circle(42)
+        |def g(): Shape = Shape.Square(21, 42)
       """.stripMargin
     run(input)
   }
 
   test("Expression.Tuple.01") {
-    val input = "def f: Unit = ()"
+    val input = "def f(): Unit = ()"
     run(input)
   }
 
   test("Expression.Tuple.02") {
-    val input = "def f: Int = (42)"
+    val input = "def f(): Int = (42)"
     run(input)
   }
 
   test("Expression.Tuple.03") {
-    val input = "def f: (Int, Int) = (42, 21)"
+    val input = "def f(): (Int, Int) = (42, 21)"
     run(input)
   }
 
@@ -1159,188 +1159,188 @@ class TestParser extends FunSuite with TestUtils {
   }
 
   test("Expression.List.01") {
-    val input = "def f: List[Int] = Nil"
+    val input = "def f(): List[Int] = Nil"
     run(input, core = false)
   }
 
   test("Expression.List.02") {
-    val input = "def f: List[Int] = 1 :: Nil"
+    val input = "def f(): List[Int] = 1 :: Nil"
     run(input, core = false)
   }
 
   test("Expression.List.03") {
-    val input = "def f: List[Int] = 1 :: 2 :: Nil"
+    val input = "def f(): List[Int] = 1 :: 2 :: Nil"
     run(input, core = false)
   }
 
   test("Expression.List.04") {
-    val input = "def f: List[(Int, Int)] = Nil"
+    val input = "def f(): List[(Int, Int)] = Nil"
     run(input, core = false)
   }
 
   test("Expression.List.05") {
-    val input = "def f: List[(Int, Int)] = (1, 2) :: (3, 4) :: Nil"
+    val input = "def f(): List[(Int, Int)] = (1, 2) :: (3, 4) :: Nil"
     run(input, core = false)
   }
 
   test("Expression.ListList.01") {
-    val input = "def f: List[List[Int]] = Nil"
+    val input = "def f(): List[List[Int]] = Nil"
     run(input, core = false)
   }
 
   test("Expression.ListList.02") {
-    val input = "def f: List[List[Int]] = (1 :: Nil) :: Nil"
+    val input = "def f(): List[List[Int]] = (1 :: Nil) :: Nil"
     run(input, core = false)
   }
 
   test("Expression.ListList.03") {
-    val input = "def f: List[List[Int]] = (Nil) :: (1 :: Nil) :: (2 :: 3 :: 4 :: Nil) :: Nil"
+    val input = "def f(): List[List[Int]] = (Nil) :: (1 :: Nil) :: (2 :: 3 :: 4 :: Nil) :: Nil"
     run(input, core = false)
   }
 
   test("Expression.Append.01") {
-    val input = "def f: List[Int] = Nil ::: Nil"
+    val input = "def f(): List[Int] = Nil ::: Nil"
     run(input, core = false)
   }
 
   test("Expression.Append.02") {
-    val input = "def f: List[Int] = 1 :: Nil ::: 1 :: Nil"
+    val input = "def f(): List[Int] = 1 :: Nil ::: 1 :: Nil"
     run(input, core = false)
   }
 
   test("Expression.Append.03") {
-    val input = "def f: List[Int] = 1 :: Nil ::: 1 :: 2 :: Nil"
+    val input = "def f(): List[Int] = 1 :: Nil ::: 1 :: 2 :: Nil"
     run(input, core = false)
   }
 
   test("Expression.Append.04") {
-    val input = "def f: List[Int] = 1 :: 2 :: Nil ::: 1 :: 2 :: Nil"
+    val input = "def f(): List[Int] = 1 :: 2 :: Nil ::: 1 :: 2 :: Nil"
     run(input, core = false)
   }
 
   test("Expression.Append.05") {
-    val input = "def f: List[Int] = Nil ::: Nil ::: Nil"
+    val input = "def f(): List[Int] = Nil ::: Nil ::: Nil"
     run(input, core = false)
   }
 
   test("Expression.Append.06") {
-    val input = "def f: List[Int] = 1 :: Nil ::: 2 :: Nil ::: 3 :: Nil"
+    val input = "def f(): List[Int] = 1 :: Nil ::: 2 :: Nil ::: 3 :: Nil"
     run(input, core = false)
   }
 
   test("Expression.Set.01") {
-    val input = "def f: Set[Int] = #{}"
+    val input = "def f(): Set[Int] = #{}"
     run(input, core = false)
   }
 
   test("Expression.Set.02") {
-    val input = "def f: Set[Int] = #{1}"
+    val input = "def f(): Set[Int] = #{1}"
     run(input, core = false)
   }
 
   test("Expression.Set.03") {
-    val input = "def f: Set[Int] = #{1, 2}"
+    val input = "def f(): Set[Int] = #{1, 2}"
     run(input, core = false)
   }
 
   test("Expression.Set.04") {
-    val input = "def f: Set[Int] = #{1, 2, 3}"
+    val input = "def f(): Set[Int] = #{1, 2, 3}"
     run(input, core = false)
   }
 
   test("Expression.Set.05") {
-    val input = "def f: Set[(Int, Int)] = #{(1, 2)}"
+    val input = "def f(): Set[(Int, Int)] = #{(1, 2)}"
     run(input, core = false)
   }
 
   test("Expression.Set.06") {
-    val input = "def f: Set[(Int, Int)] = #{(1, 2), (3, 4)}"
+    val input = "def f(): Set[(Int, Int)] = #{(1, 2), (3, 4)}"
     run(input, core = false)
   }
 
   test("Expression.Set.07") {
-    val input = "def f: Set[Int] = #{1 + 2, 3 + 4, 5 + 6}"
+    val input = "def f(): Set[Int] = #{1 + 2, 3 + 4, 5 + 6}"
     run(input, core = false)
   }
 
   test("Expression.SetSet.01") {
-    val input = "def f: Set[Set[Int]] = #{}"
+    val input = "def f(): Set[Set[Int]] = #{}"
     run(input, core = false)
   }
 
   test("Expression.SetSet.02") {
-    val input = "def f: Set[Set[Int]] = #{#{}}"
+    val input = "def f(): Set[Set[Int]] = #{#{}}"
     run(input, core = false)
   }
 
   test("Expression.SetSet.03") {
-    val input = "def f: Set[Set[Int]] = #{#{1, 2}, #{3, 4}, #{5, 6}}"
+    val input = "def f(): Set[Set[Int]] = #{#{1, 2}, #{3, 4}, #{5, 6}}"
     run(input, core = false)
   }
 
   test("Expression.Map.01") {
-    val input = "def f: Map[Char, Int] = @{}"
+    val input = "def f(): Map[Char, Int] = @{}"
     run(input, core = false)
   }
 
   test("Expression.Map.02") {
-    val input = "def f: Map[Char, Int] = @{'a' -> 1}"
+    val input = "def f(): Map[Char, Int] = @{'a' -> 1}"
     run(input, core = false)
   }
 
   test("Expression.Map.03") {
-    val input = "def f: Map[Char, Int] = @{'a' -> 1, 'b' -> 2}"
+    val input = "def f(): Map[Char, Int] = @{'a' -> 1, 'b' -> 2}"
     run(input, core = false)
   }
 
   test("Expression.Map.04") {
-    val input = "def f: Map[Char, Int] = @{'a' -> 1, 'b' -> 2, 'c' -> 3}"
+    val input = "def f(): Map[Char, Int] = @{'a' -> 1, 'b' -> 2, 'c' -> 3}"
     run(input, core = false)
   }
 
   test("Expression.Map.05") {
-    val input = "def f: Map[(Int8, Int16), (Int32, Int64)] = @{}"
+    val input = "def f(): Map[(Int8, Int16), (Int32, Int64)] = @{}"
     run(input, core = false)
   }
 
   test("Expression.Map.06") {
-    val input = "def f: Map[(Int8, Int16), (Int32, Int64)] = @{(1i8, 2i16) -> (3i32, 4i64)}"
+    val input = "def f(): Map[(Int8, Int16), (Int32, Int64)] = @{(1i8, 2i16) -> (3i32, 4i64)}"
     run(input, core = false)
   }
 
   test("Expression.MapMap.01") {
-    val input = "def f: Map[Int, Map[Int, Char]] = @{}"
+    val input = "def f(): Map[Int, Map[Int, Char]] = @{}"
     run(input, core = false)
   }
 
   test("Expression.MapMap.02") {
-    val input = "def f: Map[Int, Map[Int, Char]] = @{1 -> @{}}"
+    val input = "def f(): Map[Int, Map[Int, Char]] = @{1 -> @{}}"
     run(input, core = false)
   }
 
   test("Expression.MapMap.03") {
-    val input = "def f: Map[Int, Map[Int, Char]] = @{1 -> @{}, 2 -> @{3 -> 'a', 4 -> 'b'}}"
+    val input = "def f(): Map[Int, Map[Int, Char]] = @{1 -> @{}, 2 -> @{3 -> 'a', 4 -> 'b'}}"
     run(input, core = false)
   }
 
   test("Expression.MapList.01") {
-    val input = "def f: Map[Int, List[Int]] = @{1 -> 2 :: 3 :: Nil, 4 -> 5 :: 6 :: Nil}"
+    val input = "def f(): Map[Int, List[Int]] = @{1 -> 2 :: 3 :: Nil, 4 -> 5 :: 6 :: Nil}"
     run(input, core = false)
   }
 
   test("Expression.MapListSet.01") {
-    val input = "def f: Map[Int, List[Set[Int]]] = @{}"
+    val input = "def f(): Map[Int, List[Set[Int]]] = @{}"
     run(input, core = false)
   }
 
   test("Expression.MapListSet.02") {
-    val input = "def f: Map[Int, List[Set[Int]]] = @{1 -> Nil}"
+    val input = "def f(): Map[Int, List[Set[Int]]] = @{1 -> Nil}"
     run(input, core = false)
 
   }
 
   test("Expression.MapListSet.04") {
-    val input = "def f: Map[Int, List[Set[Int]]] = @{1 -> #{1, 2, 3} :: #{4, 5, 6} :: Nil}"
+    val input = "def f(): Map[Int, List[Set[Int]]] = @{1 -> #{1, 2, 3} :: #{4, 5, 6} :: Nil}"
     run(input, core = false)
   }
 
@@ -1350,186 +1350,186 @@ class TestParser extends FunSuite with TestUtils {
   }
 
   test("Expression.Lambda.01") {
-    val input = "def f: Int -> Int = x -> x"
+    val input = "def f(): Int -> Int = x -> x"
     run(input)
   }
 
   test("Expression.Lambda.02") {
-    val input = "def f: Int -> Int = (x) -> x"
+    val input = "def f(): Int -> Int = (x) -> x"
     run(input)
   }
 
   test("Expression.Lambda.03") {
-    val input = "def f: (Bool, Char) -> Int = (x, y) -> 42"
+    val input = "def f(): (Bool, Char) -> Int = (x, y) -> 42"
     run(input)
   }
 
   test("Expression.Lambda.04") {
-    val input = "def f: (Bool, Char, Int) -> Int = (x, y, z) -> 42"
+    val input = "def f(): (Bool, Char, Int) -> Int = (x, y, z) -> 42"
     run(input)
   }
 
   test("Expression.Lambda.05") {
-    val input = "def f: (Int8, Int16, Int32, Int64) -> Int32 = (x, y, z, w) -> z"
+    val input = "def f(): (Int8, Int16, Int32, Int64) -> Int32 = (x, y, z, w) -> z"
     run(input)
   }
 
   test("Expression.Lambda.06") {
-    val input = "def f: Int -> (Bool, Char) = x -> (true, 'a')"
+    val input = "def f(): Int -> (Bool, Char) = x -> (true, 'a')"
     run(input)
   }
 
   test("Expression.Lambda.07") {
-    val input = "def f: Int -> (Bool, Char, Int) = x -> (true, 'a', 42)"
+    val input = "def f(): Int -> (Bool, Char, Int) = x -> (true, 'a', 42)"
     run(input)
   }
 
   test("Expression.Lambda.08") {
-    val input = "def f: (Bool, Char) -> (Char, Bool) = (x, y) -> (y, x)"
+    val input = "def f(): (Bool, Char) -> (Char, Bool) = (x, y) -> (y, x)"
     run(input)
   }
 
   test("Expression.Lambda.09") {
-    val input = "def f: (Bool, Char, Int) -> (Int, Char, Bool) = (x, y, z) -> (z, y, x)"
+    val input = "def f(): (Bool, Char, Int) -> (Int, Char, Bool) = (x, y, z) -> (z, y, x)"
     run(input)
   }
 
   test("Expression.Lambda.10") {
-    val input = "def f: ((Bool, Char), Int) -> (Bool, Char) = (x, y) -> x"
+    val input = "def f(): ((Bool, Char), Int) -> (Bool, Char) = (x, y) -> x"
     run(input)
   }
 
   test("Expression.Lambda.11") {
-    val input = "def f: (Bool, (Char, Int)) -> (Char, Int) = (x, y) -> y"
+    val input = "def f(): (Bool, (Char, Int)) -> (Char, Int) = (x, y) -> y"
     run(input)
   }
 
   test("Expression.Lambda.12") {
-    val input = "def f: (Int, Int) -> ((Int, Int), (Int, Int)) = (x, y) -> ((x, y), (y, x))"
+    val input = "def f(): (Int, Int) -> ((Int, Int), (Int, Int)) = (x, y) -> ((x, y), (y, x))"
     run(input)
   }
 
   test("Expression.Lambda.13") {
-    val input = "def f: Bool -> Char -> Int = x -> (y -> 42)"
+    val input = "def f(): Bool -> Char -> Int = x -> (y -> 42)"
     run(input)
   }
 
   test("Expression.Lambda.14") {
-    val input = "def f: (Bool, Bool) -> Char -> Int = (x1, x2) -> (y -> 42)"
+    val input = "def f(): (Bool, Bool) -> Char -> Int = (x1, x2) -> (y -> 42)"
     run(input)
   }
 
   test("Expression.Lambda.15") {
-    val input = "def f: Bool -> (Char, Char) -> Int = x -> ((y1, y2) -> 42)"
+    val input = "def f(): Bool -> (Char, Char) -> Int = x -> ((y1, y2) -> 42)"
     run(input)
   }
 
   test("Expression.Lambda.16") {
-    val input = "def f: Bool -> Char -> (Int, Int) = x -> (y -> (21, 42))"
+    val input = "def f(): Bool -> Char -> (Int, Int) = x -> (y -> (21, 42))"
     run(input)
   }
 
   test("Expression.Lambda.17") {
-    val input = "def f: (Bool, Bool) -> (Char, Char) -> (Int, Int) = (x1, x2) -> ((y1, y2) -> (21, 42))"
+    val input = "def f(): (Bool, Bool) -> (Char, Char) -> (Int, Int) = (x1, x2) -> ((y1, y2) -> (21, 42))"
     run(input)
   }
 
   test("Expression.MatchLambda.01") {
-    val input = "def f: Int -> Int = match x -> x"
+    val input = "def f(): Int -> Int = match x -> x"
     run(input)
   }
 
   test("Expression.MatchLambda.02") {
-    val input = "def f: ((Int, Int)) -> Int = match (x, y) -> x + y"
+    val input = "def f(): ((Int, Int)) -> Int = match (x, y) -> x + y"
     run(input)
   }
 
   test("Expression.MatchLambda.03") {
-    val input = "def f: ((Int, Int, Int)) -> Int = match (x, y, z) -> x + y + z"
+    val input = "def f(): ((Int, Int, Int)) -> Int = match (x, y, z) -> x + y + z"
     run(input)
   }
 
   test("Expression.MatchLambda.04") {
-    val input = "def f: (((Int, Int), (Int, Int))) -> Int = match ((x, y), (z, w)) -> x + y + z + w"
+    val input = "def f(): (((Int, Int), (Int, Int))) -> Int = match ((x, y), (z, w)) -> x + y + z + w"
     run(input)
   }
 
   test("Expression.MatchLambda.05") {
-    val input = "def f: Option[Int] -> Int = match None -> 42"
+    val input = "def f(): Option[Int] -> Int = match None -> 42"
     expectError[NonExhaustiveMatchError](new Flix().addStr(input).compile())
   }
 
   test("Expression.MatchLambda.06") {
-    val input = "def f: Option[Int] -> Int = match Some(x) -> x"
+    val input = "def f(): Option[Int] -> Int = match Some(x) -> x"
     expectError[NonExhaustiveMatchError](new Flix().addStr(input).compile())
   }
 
   test("Expression.MatchLambda.07") {
-    val input = "def f: List[Int] -> Int = match Nil -> 42"
+    val input = "def f(): List[Int] -> Int = match Nil -> 42"
     expectError[NonExhaustiveMatchError](new Flix().addStr(input).compile())
   }
 
   test("Expression.MatchLambda.08") {
-    val input = "def f: List[Int] -> Int = match x :: Nil -> x"
+    val input = "def f(): List[Int] -> Int = match x :: Nil -> x"
     expectError[NonExhaustiveMatchError](new Flix().addStr(input).compile())
   }
 
   test("Expression.MatchLambda.09") {
-    val input = "def f: List[Int] -> Int = match x :: y :: Nil -> x + y"
+    val input = "def f(): List[Int] -> Int = match x :: y :: Nil -> x + y"
     expectError[NonExhaustiveMatchError](new Flix().addStr(input).compile())
   }
 
   test("Expression.Existential.01") {
-    val input = "def f: Bool = ∃(x: Bool). true"
+    val input = "def f(): Bool = ∃(x: Bool). true"
     intercept[scala.NotImplementedError] {
       run(input)
     }
   }
 
   test("Expression.Existential.02") {
-    val input = "def f: Bool = ∃(x: Int, y: Int). x == y"
+    val input = "def f(): Bool = ∃(x: Int, y: Int). x == y"
     intercept[scala.NotImplementedError] {
       run(input)
     }
   }
 
   test("Expression.Existential.03") {
-    val input = "def f: Bool = \\exists(x: Bool). true"
+    val input = "def f(): Bool = \\exists(x: Bool). true"
     intercept[scala.NotImplementedError] {
       run(input)
     }
   }
 
   test("Expression.Existential.04") {
-    val input = "def f: Bool = \\exists(x: Int, y: Int). x == y"
+    val input = "def f(): Bool = \\exists(x: Int, y: Int). x == y"
     intercept[scala.NotImplementedError] {
       run(input)
     }
   }
 
   test("Expression.Universal.01") {
-    val input = "def f: Bool = ∀(x: Bool). true"
+    val input = "def f(): Bool = ∀(x: Bool). true"
     intercept[scala.NotImplementedError] {
       run(input)
     }
   }
 
   test("Expression.Universal.02") {
-    val input = "def f: Bool = ∀(x: Int, y: Int). x == y"
+    val input = "def f(): Bool = ∀(x: Int, y: Int). x == y"
     intercept[scala.NotImplementedError] {
       run(input)
     }
   }
 
   test("Expression.Universal.03") {
-    val input = "def f: Bool = \\forall(x: Bool). true"
+    val input = "def f(): Bool = \\forall(x: Bool). true"
     intercept[scala.NotImplementedError] {
       run(input)
     }
   }
 
   test("Expression.Universal.04") {
-    val input = "def f: Bool = \\forall(x: Int, y: Int). x == y"
+    val input = "def f(): Bool = \\forall(x: Int, y: Int). x == y"
     intercept[scala.NotImplementedError] {
       run(input)
     }
@@ -2121,62 +2121,62 @@ class TestParser extends FunSuite with TestUtils {
   // Types                                                                   //
   /////////////////////////////////////////////////////////////////////////////
   test("Type.Unit.01") {
-    val input = "def f: Unit = ()"
+    val input = "def f(): Unit = ()"
     run(input)
   }
 
   test("Type.Bool.01") {
-    val input = "def f: Bool = true"
+    val input = "def f(): Bool = true"
     run(input)
   }
 
   test("Type.Bool.02") {
-    val input = "def f: Bool = false"
+    val input = "def f(): Bool = false"
     run(input)
   }
 
   test("Type.Char.01") {
-    val input = "def f: Char = 'a'"
+    val input = "def f(): Char = 'a'"
     run(input)
   }
 
   test("Type.Float32.01") {
-    val input = "def f: Float32 = 0.0f32"
+    val input = "def f(): Float32 = 0.0f32"
     run(input)
   }
 
   test("Type.Float64.01") {
-    val input = "def f: Float64 = 0.0f64"
+    val input = "def f(): Float64 = 0.0f64"
     run(input)
   }
 
   test("Type.Int8.01") {
-    val input = "def f: Int8 = 0i8"
+    val input = "def f(): Int8 = 0i8"
     run(input)
   }
 
   test("Type.Int16.01") {
-    val input = "def f: Int16 = 0i16"
+    val input = "def f(): Int16 = 0i16"
     run(input)
   }
 
   test("Type.Int32.01") {
-    val input = "def f: Int32 = 0i32"
+    val input = "def f(): Int32 = 0i32"
     run(input)
   }
 
   test("Type.Int64.01") {
-    val input = "def f: Int64 = 0i64"
+    val input = "def f(): Int64 = 0i64"
     run(input)
   }
 
   test("Type.BigInt.01") {
-    val input = "def f: BigInt = 0ii"
+    val input = "def f(): BigInt = 0ii"
     run(input)
   }
 
   test("Type.Str.01") {
-    val input = "def f: Str = \"foobar\""
+    val input = "def f(): Str = \"foobar\""
     run(input)
   }
 
@@ -2186,58 +2186,58 @@ class TestParser extends FunSuite with TestUtils {
         |  case Red
         |}
         |
-        |def f: Color = Color.Red
+        |def f(): Color = Color.Red
       """.stripMargin
     run(input)
   }
 
   test("Type.Tuple.01") {
-    val input = "def f: (Int, Int) = (1, 2)"
+    val input = "def f(): (Int, Int) = (1, 2)"
     run(input)
   }
 
   test("Type.Tuple.02") {
-    val input = "def f: (Unit, Bool, Char, Int) = ((), true, 'a', 42)"
+    val input = "def f(): (Unit, Bool, Char, Int) = ((), true, 'a', 42)"
     run(input)
   }
 
   test("Type.Lambda.01") {
-    val input = "def f: Bool -> Int = x -> 42"
+    val input = "def f(): Bool -> Int = x -> 42"
     run(input)
   }
 
   test("Type.Lambda.02") {
-    val input = "def f: (Bool, Char, Int) -> Str = (x,y, z) -> \"a\""
+    val input = "def f(): (Bool, Char, Int) -> Str = (x,y, z) -> \"a\""
     run(input)
   }
 
   test("Type.Lambda.03") {
-    val input = "def f: Str -> (Bool, Char, Int) = x -> (true, 'a', 42)"
+    val input = "def f(): Str -> (Bool, Char, Int) = x -> (true, 'a', 42)"
     run(input)
   }
 
   test("Type.List.01") {
-    val input = "def f: List[Int] = Nil"
+    val input = "def f(): List[Int] = Nil"
     run(input, core = false)
   }
 
   test("Type.Set.01") {
-    val input = "def f: Set[Int] = #{}"
+    val input = "def f(): Set[Int] = #{}"
     run(input, core = false)
   }
 
   test("Type.Map.01") {
-    val input = "def f: Map[Int, Int] = @{}"
+    val input = "def f(): Map[Int, Int] = @{}"
     run(input, core = false)
   }
 
   test("Type.Infix.01") {
-    val input = "def f: Char `Map` Int = @{}"
+    val input = "def f(): Char `Map` Int = @{}"
     run(input, core = false)
   }
 
   test("Type.Infix.02") {
-    val input = "def f: Int `Map` Str = @{}"
+    val input = "def f(): Int `Map` Str = @{}"
     run(input, core = false)
   }
 
@@ -2245,52 +2245,52 @@ class TestParser extends FunSuite with TestUtils {
   // Identifiers & Names                                                     //
   /////////////////////////////////////////////////////////////////////////////
   test("Ident.01") {
-    val input = "def x: Int = 42"
+    val input = "def x(): Int = 42"
     run(input)
   }
 
   test("Ident.02") {
-    val input = "def xx: Int = 42"
+    val input = "def xx(): Int = 42"
     run(input)
   }
 
   test("Ident.03") {
-    val input = "def xxx: Int = 42"
+    val input = "def xxx(): Int = 42"
     run(input)
   }
 
   test("Ident.04") {
-    val input = "def xY: Int = 42"
+    val input = "def xY(): Int = 42"
     run(input)
   }
 
   test("Ident.05") {
-    val input = "def xxxYyy: Int = 42"
+    val input = "def xxxYyy(): Int = 42"
     run(input)
   }
 
   test("Ident.06") {
-    val input = "def xxxYyyZzz: Int = 42"
+    val input = "def xxxYyyZzz(): Int = 42"
     run(input)
   }
 
   test("Ident.07") {
-    val input = "def x0: Int = 42"
+    val input = "def x0(): Int = 42"
     run(input)
   }
 
   test("Ident.08") {
-    val input = "def x0123: Int = 42"
+    val input = "def x0123(): Int = 42"
     run(input)
   }
 
   test("Ident.09") {
-    val input = "def x_y_z: Int = 42"
+    val input = "def x_y_z(): Int = 42"
     run(input)
   }
 
   test("Ident.10") {
-    val input = "def x_Y32Y_15zz: Int = 42"
+    val input = "def x_Y32Y_15zz(): Int = 42"
     run(input)
   }
 
@@ -2339,12 +2339,12 @@ class TestParser extends FunSuite with TestUtils {
   }
 
   test("Names.Math.⊥") {
-    val input = "def ⊥: Int = ???"
+    val input = "def ⊥(): Int = ???"
     run(input)
   }
 
   test("Names.Math.⊤") {
-    val input = "def ⊤: Int = ???"
+    val input = "def ⊤(): Int = ???"
     run(input)
   }
 
@@ -2437,127 +2437,127 @@ class TestParser extends FunSuite with TestUtils {
   // Literals                                                                //
   /////////////////////////////////////////////////////////////////////////////
   test("Literal.Unit.01") {
-    val input = "def f: Unit = ()"
+    val input = "def f(): Unit = ()"
     run(input)
   }
 
   test("Literal.True.01") {
-    val input = "def f: Bool = true"
+    val input = "def f(): Bool = true"
     run(input)
   }
 
   test("Literal.False.01") {
-    val input = "def f: Bool = false"
+    val input = "def f(): Bool = false"
     run(input)
   }
 
   test("Literal.Char.01") {
-    val input = "def f: Char = 'a'"
+    val input = "def f(): Char = 'a'"
     run(input)
   }
 
   test("Literal.Float32.01") {
-    val input = "def f: Float32 = 123.456f32"
+    val input = "def f(): Float32 = 123.456f32"
     run(input)
   }
 
   test("Literal.Float32.02") {
-    val input = "def f: Float32 = +123.456f32"
+    val input = "def f(): Float32 = +123.456f32"
     run(input)
   }
 
   test("Literal.Float32.03") {
-    val input = "def f: Float32 = -123.456f32"
+    val input = "def f(): Float32 = -123.456f32"
     run(input)
   }
 
   test("Literal.Float64.01") {
-    val input = "def f: Float64 = 123.456f64"
+    val input = "def f(): Float64 = 123.456f64"
     run(input)
   }
 
   test("Literal.Float64.02") {
-    val input = "def f: Float64 = +123.456f64"
+    val input = "def f(): Float64 = +123.456f64"
     run(input)
   }
 
   test("Literal.Float64.03") {
-    val input = "def f: Float64 = -123.456f64"
+    val input = "def f(): Float64 = -123.456f64"
     run(input)
   }
 
   test("Literal.Int8.01") {
-    val input = "def f: Int8 = 123i8"
+    val input = "def f(): Int8 = 123i8"
     run(input)
   }
 
   test("Literal.Int8.02") {
-    val input = "def f: Int8 = +123i8"
+    val input = "def f(): Int8 = +123i8"
     run(input)
   }
 
   test("Literal.Int8.03") {
-    val input = "def f: Int8 = -123i8"
+    val input = "def f(): Int8 = -123i8"
     run(input)
   }
 
   test("Literal.Int16.01") {
-    val input = "def f: Int16 = 123i16"
+    val input = "def f(): Int16 = 123i16"
     run(input)
   }
 
   test("Literal.Int16.02") {
-    val input = "def f: Int16 = +123i16"
+    val input = "def f(): Int16 = +123i16"
     run(input)
   }
 
   test("Literal.Int16.03") {
-    val input = "def f: Int16 = -123i16"
+    val input = "def f(): Int16 = -123i16"
     run(input)
   }
 
   test("Literal.Int32.01") {
-    val input = "def f: Int32 = 123i32"
+    val input = "def f(): Int32 = 123i32"
     run(input)
   }
 
   test("Literal.Int32.02") {
-    val input = "def f: Int32 = +123i32"
+    val input = "def f(): Int32 = +123i32"
     run(input)
   }
 
   test("Literal.Int32.03") {
-    val input = "def f: Int32 = -123i32"
+    val input = "def f(): Int32 = -123i32"
     run(input)
   }
 
   test("Literal.Int64.01") {
-    val input = "def f: Int64 = 123i64"
+    val input = "def f(): Int64 = 123i64"
     run(input)
   }
 
   test("Literal.Int64.02") {
-    val input = "def f: Int64 = +123i64"
+    val input = "def f(): Int64 = +123i64"
     run(input)
   }
 
   test("Literal.Int64.03") {
-    val input = "def f: Int64 = -123i64"
+    val input = "def f(): Int64 = -123i64"
     run(input)
   }
 
   test("Literal.BigInt.01") {
-    val input = "def f: BigInt = 123ii"
+    val input = "def f(): BigInt = 123ii"
     run(input)
   }
 
   test("Literal.BigInt.02") {
-    val input = "def f: BigInt = +123ii"
+    val input = "def f(): BigInt = +123ii"
     run(input)
   }
 
   test("Literal.BigInt.03") {
-    val input = "def f: BigInt = -123ii"
+    val input = "def f(): BigInt = -123ii"
     run(input)
   }
 
@@ -2680,12 +2680,12 @@ class TestParser extends FunSuite with TestUtils {
   }
 
   test("Operator.Binary.Math.⊥") {
-    val input = "def ⊥: Int = ⊥()"
+    val input = "def ⊥(): Int = ⊥()"
     run(input)
   }
 
   test("Operator.Binary.Math.⊤") {
-    val input = "def ⊤: Int = ⊤()"
+    val input = "def ⊤(): Int = ⊤()"
     run(input)
   }
 
@@ -2909,7 +2909,7 @@ class TestParser extends FunSuite with TestUtils {
     val input =
       """
         |
-        |   def f: Bool =
+        |   def f(): Bool =
         |     if (/* oh a comment */ true) /* another */ true else
         |     // now what?
         |     false

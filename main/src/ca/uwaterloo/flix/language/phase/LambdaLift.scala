@@ -31,7 +31,7 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
   /**
     * Mutable map of top level definitions.
     */
-  private type TopLevel = mutable.Map[Symbol.DefnSym, SimplifiedAst.Definition.Constant]
+  private type TopLevel = mutable.Map[Symbol.DefnSym, SimplifiedAst.Def]
 
   /**
     * Performs lambda lifting on all definitions in the AST.
@@ -44,14 +44,14 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     // A mutable map to hold lambdas that are lifted to the top level.
     val m: TopLevel = mutable.Map.empty
 
-    val definitions = root.definitions.map {
+    val definitions = root.defs.map {
       case (name, decl) => name -> lift(decl, m)
     }
     val properties = root.properties.map(p => lift(p, m))
 
     // Return the updated AST root.
     val e = System.nanoTime() - t
-    root.copy(definitions = definitions ++ m, properties = properties, time = root.time.copy(lambdaLift = e)).toSuccess
+    root.copy(defs = definitions ++ m, properties = properties, time = root.time.copy(lambdaLift = e)).toSuccess
   }
 
   /**
@@ -60,7 +60,7 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     * The definition's expression is closure converted, and then lifted definitions are added to the mutable map `m`.
     * The updated definition is then returned.
     */
-  private def lift(decl: SimplifiedAst.Definition.Constant, m: TopLevel)(implicit genSym: GenSym): SimplifiedAst.Definition.Constant = {
+  private def lift(decl: SimplifiedAst.Def, m: TopLevel)(implicit genSym: GenSym): SimplifiedAst.Def = {
     val convExp = ClosureConv.convert(decl.exp)
     val liftExp = lift(convExp, m, Some(decl.sym))
     decl.copy(exp = liftExp)
@@ -97,16 +97,8 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.Int64(lit) => e
       case Expression.BigInt(lit) => e
       case Expression.Str(lit) => e
-      case Expression.LoadBool(n, o) => e
-      case Expression.LoadInt8(b, o) => e
-      case Expression.LoadInt16(b, o) => e
-      case Expression.LoadInt32(b, o) => e
-      case Expression.StoreBool(b, o, v) => e
-      case Expression.StoreInt8(b, o, v) => e
-      case Expression.StoreInt16(b, o, v) => e
-      case Expression.StoreInt32(b, o, v) => e
       case Expression.Var(sym, tpe, loc) => e
-      case Expression.Ref(name, tpe, loc) => e
+      case Expression.Def(name, tpe, loc) => e
 
       case Expression.Lambda(fparams, body, tpe, loc) =>
         // Lift the lambda to a top-level definition, and replacing the Lambda expression with a Ref.
@@ -121,27 +113,27 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         }
 
         // Create a new top-level definition, using the fresh name and lifted body.
-        val defn = SimplifiedAst.Definition.Constant(Ast.Annotations(Nil), Ast.Modifiers.Empty, freshSymbol, fparams, liftedBody, isSynthetic = true, tpe, loc)
+        val defn = SimplifiedAst.Def(Ast.Annotations(Nil), Ast.Modifiers.Empty, freshSymbol, fparams, liftedBody, isSynthetic = true, tpe, loc)
 
         // Update the map that holds newly-generated definitions
         m += (freshSymbol -> defn)
 
         // Finally, replace this current Lambda node with a Ref to the newly-generated name.
-        SimplifiedAst.Expression.Ref(freshSymbol, tpe, loc)
+        SimplifiedAst.Expression.Def(freshSymbol, tpe, loc)
 
       case Expression.Hook(hook, tpe, loc) => e
-      case Expression.MkClosureRef(ref, freeVars, tpe, loc) => e
+      case Expression.MkClosureDef(ref, freeVars, tpe, loc) => e
 
       case SimplifiedAst.Expression.MkClosure(lambda, freeVars, tpe, loc) =>
         // Replace the MkClosure node with a MkClosureRef node, since the Lambda has been replaced by a Ref.
         visit(lambda) match {
-          case ref: SimplifiedAst.Expression.Ref =>
-            SimplifiedAst.Expression.MkClosureRef(ref, freeVars, tpe, loc)
+          case ref: SimplifiedAst.Expression.Def =>
+            SimplifiedAst.Expression.MkClosureDef(ref, freeVars, tpe, loc)
           case _ => throw InternalCompilerException(s"Unexpected expression: '$lambda'.")
         }
 
-      case Expression.ApplyRef(name, args, tpe, loc) =>
-        Expression.ApplyRef(name, args.map(visit), tpe, loc)
+      case Expression.ApplyDef(name, args, tpe, loc) =>
+        Expression.ApplyDef(name, args.map(visit), tpe, loc)
       case Expression.ApplyTail(name, formals, args, tpe, loc) =>
         Expression.ApplyTail(name, formals, args.map(visit), tpe, loc)
       case Expression.ApplyHook(hook, args, tpe, loc) =>

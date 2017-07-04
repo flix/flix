@@ -65,7 +65,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           case ds => List(WeededAst.Declaration.Namespace(name, ds.flatten, mkSL(sp1, sp2)))
         }
 
-      case ParsedAst.Declaration.Definition(docOpt, ann, mods, sp1, ident, tparams0, paramsOpt, tpe, effOpt, exp, sp2) =>
+      case ParsedAst.Declaration.Def(docOpt, ann, mods, sp1, ident, tparams0, fparams0, tpe, effOpt, exp, sp2) =>
         val loc = mkSL(ident.sp1, ident.sp2)
         val doc = docOpt.map(d => Ast.Documentation(d.text.mkString(" "), loc))
         val annVal = Annotations.weed(ann)
@@ -75,53 +75,31 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         val effVal = Effects.weed(effOpt)
 
         /*
-         * Check for `IllegalParameterList`.
-         */
-        paramsOpt match {
-          case None => @@(annVal, modVal, expVal, effVal) map {
-            case (as, mod, e, eff) =>
-              val t = WeededAst.Type.Arrow(Nil, Types.weed(tpe), loc)
-              List(WeededAst.Declaration.Definition(doc, as, mod, ident, tparams, Nil, e, t, eff, loc))
-          }
-          case Some(params) =>
-            /*
-             * Check for `DuplicateFormal`.
-             */
-            val formalsVal = checkDuplicateFormal(params)
-            @@(annVal, modVal, formalsVal, expVal, effVal) map {
-              case (as, mod, fs, e, eff) =>
-                val t = WeededAst.Type.Arrow(fs map (_.tpe), Types.weed(tpe), loc)
-                List(WeededAst.Declaration.Definition(doc, as, mod, ident, tparams, fs, e, t, eff, loc))
-            }
+          * Check for `DuplicateFormal`.
+          */
+        val formalsVal = Formals.weed(fparams0, typeRequired = true)
+        @@(annVal, modVal, formalsVal, expVal, effVal) map {
+          case (as, mod, fs, e, eff) =>
+            val t = WeededAst.Type.Arrow(fs map (_.tpe.get), Types.weed(tpe), loc)
+            List(WeededAst.Declaration.Def(doc, as, mod, ident, tparams, fs, e, t, eff, loc))
         }
 
-      case ParsedAst.Declaration.Law(docOpt, sp1, ident, tparams, paramsOpt, tpe, exp, sp2) =>
+      case ParsedAst.Declaration.Law(docOpt, sp1, ident, tparams0, fparams0, tpe, exp, sp2) =>
         val loc = mkSL(sp1, sp2)
         val doc = docOpt.map(d => Ast.Documentation(d.text.mkString(" "), loc))
         val mod = Ast.Modifiers.Empty
 
         /*
-         * Check for `IllegalParameterList`.
+         * Check for `DuplicateFormal`.
          */
-        Expressions.weed(exp) flatMap {
-          case e => paramsOpt match {
-            case None =>
-              // Rewrite to Definition.
-              val ann = Ast.Annotations(List(Ast.Annotation.Law(loc)))
-              val t = WeededAst.Type.Arrow(Nil, Types.weed(tpe), loc)
-              List(WeededAst.Declaration.Definition(doc, ann, mod, ident, tparams.map(_.ident).toList, Nil, e, t, Eff.Pure, loc)).toSuccess
-            case Some(params) =>
-              /*
-               * Check for `DuplicateFormal`.
-               */
-              checkDuplicateFormal(params) map {
-                case fs =>
-                  // Rewrite to Definition.
-                  val ann = Ast.Annotations(List(Ast.Annotation.Law(loc)))
-                  val t = WeededAst.Type.Arrow(fs map (_.tpe), Types.weed(tpe), loc)
-                  List(WeededAst.Declaration.Definition(doc, ann, mod, ident, tparams.map(_.ident).toList, fs, e, t, Eff.Pure, loc))
-              }
-          }
+        for {
+          fs <- Formals.weed(fparams0, typeRequired = true)
+          e <- Expressions.weed(exp)
+        } yield {
+          // Rewrite to Definition.
+          val ann = Ast.Annotations(List(Ast.Annotation.Law(loc)))
+          val t = WeededAst.Type.Arrow(fs map (_.tpe.get), Types.weed(tpe), loc)
+          List(WeededAst.Declaration.Def(doc, ann, mod, ident, tparams0.map(_.ident).toList, fs, e, t, Eff.Pure, loc))
         }
 
       case ParsedAst.Declaration.Enum(docOpt, sp1, ident, tparams0, cases, sp2) =>
@@ -220,7 +198,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       case ParsedAst.Declaration.BoundedLattice(sp1, tpe, elms, sp2) =>
         val elmsVal = @@(elms.toList.map(e => Expressions.weed(e)))
         elmsVal flatMap {
-          case List(bot, top, leq, lub, glb) => List(WeededAst.Declaration.BoundedLattice(Types.weed(tpe), bot, top, leq, lub, glb, mkSL(sp1, sp2))).toSuccess
+          case List(bot, top, leq, lub, glb) => List(WeededAst.Declaration.Lattice(Types.weed(tpe), bot, top, leq, lub, glb, mkSL(sp1, sp2))).toSuccess
           case _ => IllegalLattice(mkSL(sp1, sp2)).toFailure
         }
 
@@ -300,10 +278,10 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
         case ParsedAst.Expression.SName(sp1, ident, sp2) =>
           val qname = Name.mkQName(ident)
-          WeededAst.Expression.VarOrRef(qname, mkSL(sp1, sp2)).toSuccess
+          WeededAst.Expression.VarOrDef(qname, mkSL(sp1, sp2)).toSuccess
 
         case ParsedAst.Expression.QName(sp1, qname, sp2) =>
-          WeededAst.Expression.VarOrRef(qname, mkSL(sp1, sp2)).toSuccess
+          WeededAst.Expression.VarOrDef(qname, mkSL(sp1, sp2)).toSuccess
 
         case ParsedAst.Expression.Lit(sp1, lit, sp2) => toExp(lit)
 
@@ -320,7 +298,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           @@(visit(exp1, unsafe), visit(exp2, unsafe)) map {
             case (e1, e2) =>
               val loc = mkSL(leftMostSourcePosition(exp1), sp2)
-              val lambda = WeededAst.Expression.VarOrRef(name, loc)
+              val lambda = WeededAst.Expression.VarOrDef(name, loc)
               WeededAst.Expression.Apply(lambda, List(e1, e2), loc)
           }
 
@@ -333,20 +311,18 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
               val sp1 = leftMostSourcePosition(exp)
               val loc = mkSL(sp1, sp2)
               val qname = Name.mkQName(ident)
-              val lambda = WeededAst.Expression.VarOrRef(qname, loc)
+              val lambda = WeededAst.Expression.VarOrDef(qname, loc)
               WeededAst.Expression.Apply(lambda, e :: es, loc)
           }
 
-        case ParsedAst.Expression.Lambda(sp1, params, exp, sp2) =>
+        case ParsedAst.Expression.Lambda(sp1, fparams0, exp, sp2) =>
           /*
            * Check for `DuplicateFormal`.
            */
-          checkDuplicateFormal2(params) flatMap {
-            case ps =>
-              visit(exp, unsafe) map {
-                case e => WeededAst.Expression.Lambda(params.toList, e, mkSL(sp1, sp2))
-              }
-          }
+          for {
+            fs <- Formals.weed(fparams0, typeRequired = false)
+            e <- visit(exp, unsafe)
+          } yield WeededAst.Expression.Lambda(fs, e, mkSL(sp1, sp2))
 
         case ParsedAst.Expression.LambdaMatch(sp1, pat, exp, sp2) =>
           /*
@@ -359,10 +335,12 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
               val ident = Name.Ident(sp1, "pat$0", sp2)
               val qname = Name.mkQName(ident)
               // Construct the body of the lambda expression.
-              val varOrRef = WeededAst.Expression.VarOrRef(qname, loc)
+              val varOrRef = WeededAst.Expression.VarOrDef(qname, loc)
               val rule = WeededAst.MatchRule(p, WeededAst.Expression.True(loc), e)
+
+              val fparam = WeededAst.FormalParam(ident, Ast.Modifiers.Empty, None, ident.loc)
               val body = WeededAst.Expression.Match(varOrRef, List(rule), loc)
-              WeededAst.Expression.Lambda(List(ident), body, loc)
+              WeededAst.Expression.Lambda(List(fparam), body, loc)
           }
 
         case ParsedAst.Expression.Unary(sp1, op, exp, sp2) =>
@@ -549,51 +527,41 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
               }
           }
 
-        case ParsedAst.Expression.Existential(sp1, paramsOpt, exp, sp2) =>
+        case ParsedAst.Expression.Existential(sp1, fparams, exp, sp2) =>
           /*
            * Checks for `IllegalExistential`.
            */
-          visit(exp, unsafe) flatMap {
-            case body => paramsOpt match {
-              case None => IllegalExistential(mkSL(sp1, sp2)).toFailure
-              case Some(Nil) => IllegalExistential(mkSL(sp1, sp2)).toFailure
-              case Some(params) =>
-                /*
-                 * Check for `DuplicateFormal`.
-                 */
-                checkDuplicateFormal(params) map {
-                  case ps =>
-                    /*
-                     * Rewrites the multi-parameter existential to nested single-parameter existentials.
-                     */
-                    ps.foldRight(body) {
-                      case (param, eacc) => WeededAst.Expression.Existential(param, eacc, mkSL(sp1, sp2))
-                    }
-                }
+          if (fparams.isEmpty)
+            return IllegalExistential(mkSL(sp1, sp2)).toFailure
+
+          for {
+            e <- visit(exp, unsafe)
+            fs <- Formals.weed(fparams, typeRequired = true)
+          } yield {
+            /*
+             * Rewrites the multi-parameter existential to nested single-parameter existentials.
+             */
+            fs.foldRight(e) {
+              case (param, eacc) => WeededAst.Expression.Existential(param, eacc, mkSL(sp1, sp2))
             }
           }
 
-        case ParsedAst.Expression.Universal(sp1, paramsOpt, exp, sp2) =>
+        case ParsedAst.Expression.Universal(sp1, fparams, exp, sp2) =>
           /*
            * Checks for `IllegalUniversal`.
            */
-          visit(exp, unsafe) flatMap {
-            case body => paramsOpt match {
-              case None => IllegalUniversal(mkSL(sp1, sp2)).toFailure
-              case Some(Nil) => IllegalUniversal(mkSL(sp1, sp2)).toFailure
-              case Some(params) =>
-                /*
-                 * Check for `DuplicateFormal`.
-                 */
-                checkDuplicateFormal(params) map {
-                  case ps =>
-                    /*
-                     * Rewrites the multi-parameter universal to nested single-parameter universals.
-                     */
-                    ps.foldRight(body) {
-                      case (param, eacc) => WeededAst.Expression.Universal(param, eacc, mkSL(sp1, sp2))
-                    }
-                }
+          if (fparams.isEmpty)
+            return IllegalUniversal(mkSL(sp1, sp2)).toFailure
+
+          for {
+            e <- visit(exp, unsafe)
+            fs <- Formals.weed(fparams, typeRequired = true)
+          } yield {
+            /*
+             * Rewrites the multi-parameter universal to nested single-parameter universals.
+             */
+            fs.foldRight(e) {
+              case (param, eacc) => WeededAst.Expression.Universal(param, eacc, mkSL(sp1, sp2))
             }
           }
 
@@ -854,8 +822,8 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
         case ParsedAst.Predicate.Body.NotEqual(sp1, ident1, ident2, sp2) =>
           val qname = Name.mkQName("neq", sp1, sp2)
-          val t1 = WeededAst.Expression.VarOrRef(Name.mkQName(ident1), mkSL(ident1.sp1, ident1.sp2))
-          val t2 = WeededAst.Expression.VarOrRef(Name.mkQName(ident2), mkSL(ident2.sp1, ident2.sp2))
+          val t1 = WeededAst.Expression.VarOrDef(Name.mkQName(ident1), mkSL(ident1.sp1, ident1.sp2))
+          val t2 = WeededAst.Expression.VarOrDef(Name.mkQName(ident2), mkSL(ident2.sp1, ident2.sp2))
           WeededAst.Predicate.Body.Filter(qname, List(t1, t2), mkSL(sp1, sp2)).toSuccess
 
         case ParsedAst.Predicate.Body.Loop(sp1, pat, term, sp2) =>
@@ -963,7 +931,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
             case ds => List(WeededAst.Declaration.Namespace(name, ds.flatten, mkSL(sp1, sp2)))
           }
 
-        case ParsedAst.Declaration.Definition(_, meta, _, _, defn, _, _, _, _, _, _) =>
+        case ParsedAst.Declaration.Def(_, meta, _, _, defn, _, _, _, _, _, _) =>
           // Instantiate properties based on the laws referenced by the definition.
           @@(meta.collect {
             case ParsedAst.Property(sp1, law, args, sp2) =>
@@ -977,8 +945,8 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
               argsVal map {
                 case as =>
-                  val lam = WeededAst.Expression.VarOrRef(law, loc)
-                  val fun = WeededAst.Expression.VarOrRef(Name.QName(sp1, Name.RootNS, defn, sp2), loc)
+                  val lam = WeededAst.Expression.VarOrDef(law, loc)
+                  val fun = WeededAst.Expression.VarOrDef(Name.QName(sp1, Name.RootNS, defn, sp2), loc)
                   val exp = WeededAst.Expression.Apply(lam, fun :: as, loc)
                   WeededAst.Declaration.Property(law, defn, exp, loc)
               }
@@ -1052,11 +1020,44 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
   }
 
+  object Formals {
+
+    /**
+      * Weeds the given list of formal parameter `fparams`.
+      *
+      * Checks for [[IllegalFormalParameter]] and [[DuplicateFormalParam]].
+      */
+    def weed(fparams: Seq[ParsedAst.FormalParam], typeRequired: Boolean): Validation[List[WeededAst.FormalParam], WeederError] = {
+      val seen = mutable.Map.empty[String, ParsedAst.FormalParam]
+      val results = fparams map {
+        case param@ParsedAst.FormalParam(sp1, mods, ident, typeOpt, sp2) => seen.get(ident.name) match {
+          case None =>
+            seen += (ident.name -> param)
+            Modifiers.weed(mods) flatMap {
+              case mod =>
+                if (typeRequired && typeOpt.isEmpty)
+                  IllegalFormalParameter(ident.name, mkSL(sp1, sp2)).toFailure
+                else
+                  WeededAst.FormalParam(ident, mod, typeOpt.map(Types.weed), mkSL(sp1, sp2)).toSuccess
+            }
+          case Some(otherParam) =>
+            val loc1 = mkSL(otherParam.sp1, otherParam.sp2)
+            val loc2 = mkSL(param.sp1, param.sp2)
+            DuplicateFormalParam(ident.name, loc1, loc2).toFailure
+        }
+      }
+
+      // Sequence the results.
+      seqM(results)
+    }
+
+  }
+
   /**
     * Returns an apply expression for the given fully-qualified name `fqn` and the given arguments `args`.
     */
   def mkApply(fqn: String, args: List[WeededAst.Expression], sp1: SourcePosition, sp2: SourcePosition): WeededAst.Expression = {
-    val lambda = WeededAst.Expression.VarOrRef(Name.mkQName(fqn, sp1, sp2), mkSL(sp1, sp2))
+    val lambda = WeededAst.Expression.VarOrDef(Name.mkQName(fqn, sp1, sp2), mkSL(sp1, sp2))
     WeededAst.Expression.Apply(lambda, args, mkSL(sp1, sp2))
   }
 
@@ -1200,42 +1201,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           val loc1 = mkSL(otherAttr.sp1, otherAttr.sp2)
           val loc2 = mkSL(attr.sp1, attr.sp2)
           DuplicateAttribute(ident.name, loc1, loc2).toFailure
-      }
-    })
-  }
-
-  /**
-    * Checks that no formal parameters are repeated.
-    */
-  private def checkDuplicateFormal(params: Seq[ParsedAst.FormalParam]): Validation[List[WeededAst.FormalParam], WeederError] = {
-    val seen = mutable.Map.empty[String, ParsedAst.FormalParam]
-    @@(params.map {
-      case param@ParsedAst.FormalParam(sp1, mods, ident, tpe, sp2) => seen.get(ident.name) match {
-        case None =>
-          seen += (ident.name -> param)
-          Modifiers.weed(mods) map {
-            case mod => WeededAst.FormalParam(ident, mod, Types.weed(tpe), mkSL(sp1, sp2))
-          }
-        case Some(otherParam) =>
-          val loc1 = mkSL(otherParam.sp1, otherParam.sp2)
-          val loc2 = mkSL(param.sp1, param.sp2)
-          DuplicateFormalParam(ident.name, loc1, loc2).toFailure
-      }
-    })
-  }
-
-  /**
-    * Checks that no formal parameters are repeated.
-    */
-  private def checkDuplicateFormal2(params: Seq[Name.Ident]): Validation[List[Name.Ident], WeederError] = {
-    val seen = mutable.Map.empty[String, Name.Ident]
-    @@(params.map {
-      case ident => seen.get(ident.name) match {
-        case None =>
-          seen += (ident.name -> ident)
-          ident.toSuccess
-        case Some(otherIdent) =>
-          DuplicateFormalParam(ident.name, otherIdent.loc, ident.loc).toFailure
       }
     })
   }

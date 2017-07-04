@@ -19,17 +19,17 @@ namespace Int8 {
     ///
     /// Returns the number of bits used to represent an `Int8`.
     ///
-    def size: Int32 = 8
+    def size(): Int32 = 8
 
     ///
     /// Returns the minimum number representable by an `Int8`.
     ///
-    def minValue: Int8 = 1i8 <<< (size() - 1)
+    def minValue(): Int8 = 1i8 <<< (size() - 1)
 
     ///
     /// Returns the maximum number representable by an `Int8`.
     ///
-    def maxValue: Int8 = ~~~minValue()
+    def maxValue(): Int8 = ~~~minValue()
 
     ///
     /// Returns the smaller of `x` and `y`.
