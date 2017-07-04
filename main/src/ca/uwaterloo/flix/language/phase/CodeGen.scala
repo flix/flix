@@ -185,7 +185,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
       asm.Type.getInternalName(Constants.objectClass), null)
 
     // Source of the class
-    visitor.visitSource(decorate(prefix), null)
+    visitor.visitSource(baseFileName(prefix), null)
 
     compileStaticFlixField(prefix, visitor)
     compileConstructor(visitor)
@@ -1326,7 +1326,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
   /*
    * Adding the source of the line for debugging
    */
-  def addSourceLine(visitor : MethodVisitor, loc: SourceLocation) : Unit = {
+  private def addSourceLine(visitor : MethodVisitor, loc: SourceLocation) : Unit = {
     val label =  new Label()
     visitor.visitLabel(label)
     visitor.visitLineNumber(loc.beginLine, label)

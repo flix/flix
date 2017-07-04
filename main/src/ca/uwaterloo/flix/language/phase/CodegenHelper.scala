@@ -127,6 +127,17 @@ object CodegenHelper {
   }
 
   /**
+    * Base filename of a file specified by the given qualified name
+    * @param qualName Qualified name of the file
+    */
+  def baseFileName(qualName: QualName) : String = qualName match {
+    case FlixClassName(ref) => s"${ref.last}.flix"
+    case EnumClassName(sym, _, _) => sym.loc.source.format
+    case EnumInterfName(sym) => sym.loc.source.format
+    case _ => throw InternalCompilerException(s"QualName $qualName does not have a base file")
+  }
+
+  /**
     * This method returns a string which uniquely specifies the give type. If the type can be represented by a primitive,
     * then the name of that primitive is returned, otherwise if the type has to be represented by an object then string
     * `object` is return

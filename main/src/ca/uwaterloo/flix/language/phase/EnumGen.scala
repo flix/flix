@@ -209,6 +209,8 @@ object EnumGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     // Interfaces to be extended
     val extendedInterfaced = Array(asm.Type.getInternalName(Constants.tagInterface))
     visitor.visit(JavaVersion, ACC_PUBLIC + ACC_ABSTRACT + ACC_INTERFACE, decorate(qualName), null, superClass, extendedInterfaced)
+    // Source of the class
+    visitor.visitSource(baseFileName(qualName), null)
 
     visitor.visitEnd()
     visitor.toByteArray
@@ -245,7 +247,7 @@ object EnumGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     visitor.visit(JavaVersion, ACC_PUBLIC + ACC_FINAL, decorate(className), null, superClass, implementedInterfaces)
 
     // Source of the class
-    visitor.visitSource(decorate(className), null)
+    visitor.visitSource(baseFileName(className), null)
 
     // Generate value field
     compileField(visitor, "value", getWrappedTypeDescriptor(fType), isStatic = false, isPrivate = true)
