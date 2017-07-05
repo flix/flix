@@ -22,8 +22,8 @@ def testChar07(): Char = '\t'
 @test
 def testChar08(): Char = '\\'
 
-//@test
-//def testChar09(): Char = '\''
+@test
+def testChar09(): Char = '\''
 
 @test
 def testChar10(): Bool = '\u0041' == 'A'

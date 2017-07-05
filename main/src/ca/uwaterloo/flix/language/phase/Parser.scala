@@ -276,7 +276,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   // Literals                                                                //
   /////////////////////////////////////////////////////////////////////////////
   def Literal: Rule1[ParsedAst.Literal] = rule {
-    Literals.Bool | Literals.Char | Literals.EscapedChar | Literals.Str | Literals.Float | Literals.Int
+    Literals.Bool | Literals.Char | Literals.Str | Literals.Float | Literals.Int
   }
 
   object Literals {
@@ -296,25 +296,27 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
       }
     }
 
-    def Char: Rule1[ParsedAst.Literal.Char] = rule {
-      SP ~ "'" ~ capture(!"'" ~ CharPredicate.All) ~ "'" ~ SP ~> ParsedAst.Literal.Char
-    }
+    def Char: Rule1[ParsedAst.Literal.Char] = {
+      def Normal: Rule1[String] = rule {
+        capture(!"'" ~ !"\\" ~ CharPredicate.All)
+      }
 
-    def EscapedChar: Rule1[ParsedAst.Literal.Char] = {
       def Special: Rule1[String] = rule {
-        capture("\\\\") |
-          capture("\\'") |
-          capture("\\n") |
-          capture("\\r") |
-          capture("\\t")
+        "\\\\" ~ push("\\") |
+        "\\'"  ~ push("'")  |
+        "\\n"  ~ push("\n") |
+        "\\r"  ~ push("\r") |
+        "\\t"  ~ push("\t")
       }
 
       def Unicode: Rule1[String] = rule {
-        "\\u" ~ capture(4 times CharPredicate.HexDigit) ~> ((x: String) => Integer.parseInt(x, 16).toChar.toString)
+        "\\u" ~ capture(4 times CharPredicate.HexDigit) ~> ((x: String) =>
+          // Convert the 4-digit string to a single character.
+          Integer.parseInt(x, 16).toChar.toString)
       }
 
       rule {
-        SP ~ "'" ~ (Unicode | Special) ~ "'" ~ SP ~> ParsedAst.Literal.Char
+        SP ~ "'" ~ (Normal | Special | Unicode) ~ "'" ~ SP ~> ParsedAst.Literal.Char
       }
     }
 
