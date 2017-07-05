@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.util.vt.VirtualString._
 import ca.uwaterloo.flix.util.vt.VirtualTerminal
 
 /**
@@ -26,5 +27,11 @@ import ca.uwaterloo.flix.util.vt.VirtualTerminal
 case class StratificationError(constraints: List[TypedAst.Constraint]) extends CompilationError {
   val kind: String = "Stratification Error"
   val source: Source = constraints.head.loc.source
-  val message: VirtualTerminal = ??? // TODO
+  val message: VirtualTerminal = {
+    val vt = new VirtualTerminal
+    vt << Line(kind, source.format) << NewLine
+    vt << ">> Stratification Error in constraints" << NewLine
+    constraints.foreach(c => vt << c.head.toString << ":-" << c.body.toString() << NewLine )
+    vt << NewLine
+  }
 }
