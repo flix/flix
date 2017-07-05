@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Jason Mittertreiner
+ * Copyright 2017 Jason Mittertreiner
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,8 +51,13 @@ object Uncurrier extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     implicit val _ = flix.genSym
     val startTime = System.nanoTime()
 
-    val defns = root.definitions.foldLeft(Map.empty[Symbol.DefnSym, SimplifiedAst.Definition.Constant])(Definitions.mkUncurriedDefs)
-    val uncurriedDef = defns map {case (k,v) => k -> Definitions.uncurry(v, root) }
+    val (defns, uncurriedSyms) = root.definitions.foldLeft(Map.empty[Symbol.DefnSym, SimplifiedAst.Definition.Constant],
+      Map.empty[Symbol.DefnSym, Map[Int, Symbol.DefnSym]])((acc, defnEntry) => {
+      val (defs, uncurriedSyms) = Definitions.mkUncurriedDef(defnEntry._1, defnEntry._2, 1, acc._2)
+      (acc._1 ++ defs, uncurriedSyms)
+    })
+
+    val uncurriedDef = defns map { case (k, v) => k -> Definitions.uncurry(v, uncurriedSyms, root) }
 
     val currentTime = System.nanoTime()
     val time = root.time.copy(uncurrier = currentTime - startTime)
@@ -61,25 +66,15 @@ object Uncurrier extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
 
   object Definitions {
     /**
-      * Create uncurried versions of all curried functions
-      *
-      * @param map The old map of function definitions
-      * @param pair The entry which to make uncurried versions of
-      * @return A new map with the uncurried versions added
-      */
-    def mkUncurriedDefs(map: Map[Symbol.DefnSym, SimplifiedAst.Definition.Constant], pair: (Symbol.DefnSym, SimplifiedAst.Definition.Constant))(implicit genSym: GenSym): Map[Symbol.DefnSym, SimplifiedAst.Definition.Constant] = {
-      map ++ mkUncurriedDef(pair)
-    }
-
-    /**
       * Creates all the uncurried versions of a function
       *
-      * @param pair The dfnsym definition pair to base the functions on
-      * @return A map containing all the new definitions
+      * @return the update functions, as well as a map from functions to their uncurried versions by level of
+      *         "uncurriedness"
       */
-    def mkUncurriedDef(pair: (Symbol.DefnSym, SimplifiedAst.Definition.Constant))(implicit genSym: GenSym): Map[Symbol.DefnSym, SimplifiedAst.Definition.Constant] = {
-      val sym = pair._1
-      val curriedDef = pair._2
+    def mkUncurriedDef(sym: Symbol.DefnSym,
+                       curriedDef: SimplifiedAst.Definition.Constant, uncurryLevel: Int,
+                       newSyms0: Map[Symbol.DefnSym, Map[Int, Symbol.DefnSym]])(implicit genSym: GenSym)
+    : (Map[Symbol.DefnSym, SimplifiedAst.Definition.Constant], Map[Symbol.DefnSym, Map[Int, Symbol.DefnSym]]) = {
       curriedDef.exp match {
         // If the body is a lambda, then we have a curried function
         // definition, so we need to create an uncurried version.
@@ -88,12 +83,19 @@ object Uncurrier extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         // formal parameters
         case Lambda(args, body, _, _) =>
           // Create a new definition for our function
-          val uncurriedSym = Symbol.mkDefnSym(pair._1.name + "$uncurried")
+          val uncurriedSym = Symbol.freshDefnSym(sym)
+
+          // Insert the created symbol into our map of uncurried symbols
+          val newSyms1 = newSyms0.get(sym) match {
+            case Some(e) => newSyms0 + (sym -> (e + (uncurryLevel -> uncurriedSym)))
+            case None => newSyms0 + (sym -> (Map.empty[Int, Symbol.DefnSym] + (uncurryLevel -> uncurriedSym)))
+          }
+
           // Create new VarSyms for our function
           val newFormals = (curriedDef.formals ::: args).map(f => f.copy(sym = Symbol.freshVarSym(f.sym)))
           // Replace the old VarSyms in the body
           val varMapping = (curriedDef.formals ::: args).map(f => f.sym).zip(newFormals.map(f => f.sym)).toMap
-          val newBody = Expressions.replaceVars(body, varMapping)
+          val newBody = Expressions.substitute(body, varMapping)
 
           val unCurriedDef = SimplifiedAst.Definition.Constant(
             curriedDef.ann,
@@ -104,37 +106,37 @@ object Uncurrier extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
             curriedDef.isSynthetic,
             uncurryType(curriedDef.tpe),
             curriedDef.loc)
-          (Map.empty[Symbol.DefnSym, SimplifiedAst.Definition.Constant] + pair + (uncurriedSym -> unCurriedDef)) ++ mkUncurriedDef(uncurriedSym, unCurriedDef)
-        case _ => Map.empty[Symbol.DefnSym, SimplifiedAst.Definition.Constant] + pair
+
+          // Create the other levels of uncurrying
+          val (uncurriedDefs, newSyms2) = mkUncurriedDef(sym, unCurriedDef, uncurryLevel + 1, newSyms1)
+          (uncurriedDefs + (uncurriedSym -> unCurriedDef), newSyms2)
+        case _ => (Map.empty[Symbol.DefnSym, SimplifiedAst.Definition.Constant] + (sym -> curriedDef), newSyms0)
       }
     }
 
     /**
       * Uncurry a definition constant
-      *
-      * @param cst
-      * @param root
-      * @return
       */
-    def uncurry(cst: SimplifiedAst.Definition.Constant, root: SimplifiedAst.Root): SimplifiedAst.Definition.Constant = {
-      cst.copy(exp = Expressions.uncurry(cst.exp, root))
+    def uncurry(cst: SimplifiedAst.Definition.Constant, newSyms0: Map[Symbol.DefnSym, Map[Int, Symbol.DefnSym]], root: SimplifiedAst.Root): SimplifiedAst.Definition.Constant = {
+      cst.copy(exp = Expressions.uncurry(cst.exp, newSyms0, root))
     }
   }
 
   object Expressions {
     /**
-      * Recursively replace all the variables in tast with new variables using the
+      * Recursively replace all the variables in exp0 with new variables using the
       * pairs in replaceSyms. This ensure that the new functions created don't
       * reference the variables of the original functions.
       *
-      * @param oldExp The expression to replace
-      * @param replaceSyms The v
+      * @param exp0 The expression to replace
+      * @param env0 The v
       * @return
       */
-    def replaceVars(oldExp: SimplifiedAst.Expression, replaceSyms : Map[Symbol.VarSym, Symbol.VarSym])(implicit genSym: GenSym): SimplifiedAst.Expression =  {
-      def replace(oldSym : Symbol.VarSym): Symbol.VarSym =
-        replaceSyms.getOrElse(oldSym, oldSym)
-      oldExp match {
+    def substitute(exp0: SimplifiedAst.Expression, env0: Map[Symbol.VarSym, Symbol.VarSym])(implicit genSym: GenSym): SimplifiedAst.Expression = {
+      def replace(oldSym: Symbol.VarSym): Symbol.VarSym =
+        env0.getOrElse(oldSym, oldSym)
+
+      exp0 match {
         case e: LoadExpression => e
         case e: StoreExpression => e
         case Unit => Unit
@@ -150,94 +152,199 @@ object Uncurrier extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         case BigInt(lit) => BigInt(lit)
         case Str(lit) => Str(lit)
         case Var(sym, tpe, loc) => Var(replace(sym), tpe, loc)
-        case e:Ref => e
+        case e: Ref => e
         // For lambdas, we have to replace the formal arguments with new formal
         // parameters
         case Lambda(args, body, tpe, loc) =>
           val newFormals = args.map(f => f.copy(sym = Symbol.freshVarSym(f.sym)))
           val newMapping = args.map(f => f.sym).zip(newFormals.map(f => f.sym)).toMap
-          Lambda(newFormals, replaceVars(body, replaceSyms ++ newMapping), tpe, loc)
-        case e:Hook => e
-        case MkClosure(lambda, freeVars, tpe, loc) => MkClosure(replaceVars(lambda, replaceSyms).asInstanceOf[SimplifiedAst.Expression.Lambda], freeVars, tpe, loc)
+          Lambda(newFormals, substitute(body, env0 ++ newMapping), tpe, loc)
+        case e: Hook => e
+        case MkClosure(lambda, freeVars, tpe, loc) => MkClosure(substitute(lambda, env0).asInstanceOf[SimplifiedAst.Expression.Lambda], freeVars, tpe, loc)
         case e: MkClosureRef => e
-        case ApplyRef(sym, args, tpe, loc) => ApplyRef(sym, args.map(replaceVars(_, replaceSyms)), tpe, loc)
-        case ApplyTail(sym, formals, actuals, tpe, loc) => ApplyTail(sym, formals, actuals.map(replaceVars(_, replaceSyms)), tpe, loc)
-        case ApplyHook(hook, args, tpe, loc) => ApplyHook(hook, args.map(replaceVars(_, replaceSyms)), tpe, loc)
-        case Apply(exp, args, tpe, loc) => Apply(replaceVars(exp, replaceSyms), args.map(a => replaceVars(a, replaceSyms)), tpe, loc)
-        case Unary(op, exp, tpe, loc) => Unary(op, replaceVars(exp, replaceSyms), tpe, loc)
-        case Binary(op, exp1, exp2, tpe, loc) => Binary(op, replaceVars(exp1, replaceSyms), replaceVars(exp2, replaceSyms), tpe, loc)
-        case IfThenElse(exp1, exp2, exp3, tpe, loc) => IfThenElse(replaceVars(exp1, replaceSyms), replaceVars(exp1, replaceSyms), replaceVars(exp3, replaceSyms), tpe, loc)
-        case Let(sym, exp1, exp2, tpe, loc) => Let(replace(sym), replaceVars(exp1, replaceSyms), replaceVars(exp2, replaceSyms), tpe, loc)
-        case LetRec(sym, exp1, exp2, tpe, loc) => LetRec(replace(sym), replaceVars(exp1, replaceSyms), replaceVars(exp2, replaceSyms), tpe, loc)
-        case Is(sym, tag, exp, loc) => Is(sym, tag, replaceVars(exp, replaceSyms), loc)
-        case Tag(sym, tag, exp, tpe, loc) => Tag(sym, tag, replaceVars(exp, replaceSyms), tpe, loc)
-        case Untag(sym, tag, exp, tpe, loc) => Untag(sym, tag, replaceVars(exp, replaceSyms), tpe, loc)
-        case Index(base, offset, tpe, loc) => Index(replaceVars(base, replaceSyms), offset, tpe, loc)
-        case Tuple(elms, tpe, loc) => Tuple(elms.map(e => replaceVars(e, replaceSyms)), tpe, loc)
-        case Existential(fparam, exp, loc) => Existential(fparam, replaceVars(exp, replaceSyms), loc)
-        case Universal(fparam, exp, loc) => Universal(fparam, replaceVars(exp, replaceSyms), loc)
-        case NativeConstructor(constructor, args, tpe, loc) => NativeConstructor(constructor, args.map(a => replaceVars(a, replaceSyms)), tpe, loc)
-        case e:NativeField => e
-        case NativeMethod(method, args, tpe, loc) => NativeMethod(method, args.map(a => replaceVars(a, replaceSyms)), tpe, loc)
-        case e:UserError => e
-        case e:MatchError => e
-        case e:SwitchError => e
+        case ApplyRef(sym, args, tpe, loc) => ApplyRef(sym, args.map(substitute(_, env0)), tpe, loc)
+        case ApplyTail(sym, formals, actuals, tpe, loc) => ApplyTail(sym, formals, actuals.map(substitute(_, env0)), tpe, loc)
+        case ApplyHook(hook, args, tpe, loc) => ApplyHook(hook, args.map(substitute(_, env0)), tpe, loc)
+        case Apply(exp, args, tpe, loc) => Apply(substitute(exp, env0), args.map(a => substitute(a, env0)), tpe, loc)
+        case Unary(op, exp, tpe, loc) => Unary(op, substitute(exp, env0), tpe, loc)
+        case Binary(op, exp1, exp2, tpe, loc) => Binary(op, substitute(exp1, env0), substitute(exp2, env0), tpe, loc)
+        case IfThenElse(exp1, exp2, exp3, tpe, loc) => IfThenElse(substitute(exp1, env0), substitute(exp1, env0), substitute(exp3, env0), tpe, loc)
+        case Let(sym, exp1, exp2, tpe, loc) => Let(replace(sym), substitute(exp1, env0), substitute(exp2, env0), tpe, loc)
+        case LetRec(sym, exp1, exp2, tpe, loc) => LetRec(replace(sym), substitute(exp1, env0), substitute(exp2, env0), tpe, loc)
+        case Is(sym, tag, exp, loc) => Is(sym, tag, substitute(exp, env0), loc)
+        case Tag(sym, tag, exp, tpe, loc) => Tag(sym, tag, substitute(exp, env0), tpe, loc)
+        case Untag(sym, tag, exp, tpe, loc) => Untag(sym, tag, substitute(exp, env0), tpe, loc)
+        case Index(base, offset, tpe, loc) => Index(substitute(base, env0), offset, tpe, loc)
+        case Tuple(elms, tpe, loc) => Tuple(elms.map(e => substitute(e, env0)), tpe, loc)
+        case Existential(fparam, exp, loc) => Existential(fparam, substitute(exp, env0), loc)
+        case Universal(fparam, exp, loc) => Universal(fparam, substitute(exp, env0), loc)
+        case NativeConstructor(constructor, args, tpe, loc) => NativeConstructor(constructor, args.map(a => substitute(a, env0)), tpe, loc)
+        case e: NativeField => e
+        case NativeMethod(method, args, tpe, loc) => NativeMethod(method, args.map(a => substitute(a, env0)), tpe, loc)
+        case e: UserError => e
+        case e: MatchError => e
+        case e: SwitchError => e
       }
     }
 
     /**
       * Uncurry an expression
       *
-      * @param tast The expression to uncurry
       * @return The expression modified to have all curried calls uncurried
       */
-    def uncurry(tast: SimplifiedAst.Expression, root: SimplifiedAst.Root): SimplifiedAst.Expression = tast match {
-      // When we see an apply on an apply, this is a curried function
-      // call (think `(foo(3))(4)`). Transform it into a call with multiple arguments
-      // as a single apply
-      case Apply(exp0, args0, tpe0, loc0) =>
-        val inner = uncurry(exp0, root)
-        inner match {
-          case Apply(exp1, args1, tpe1, loc1) => exp1 match {
-            case Ref(sym2, tpe2, loc2) =>
-              // Only call the uncurried if it exists
-              val sym = Symbol.mkDefnSym(sym2.name + "$uncurried")
-              if (root.definitions.contains(sym)) {
-                Apply(Ref(sym, uncurryType(tpe2), loc2), args1 ::: args0, tpe0, loc0)
-              } else {
-                tast
+    def uncurry(exp0: SimplifiedAst.Expression, newSyms: Map[Symbol.DefnSym, Map[Int, Symbol.DefnSym]], root: SimplifiedAst.Root): SimplifiedAst.Expression = exp0 match {
+      case _: LoadExpression => exp0
+      case _: StoreExpression => exp0
+      case Unit => exp0
+      case True => exp0
+      case False => exp0
+      case Char(lit) => exp0
+      case Float32(lit) => exp0
+      case Float64(lit) => exp0
+      case Int8(lit) => exp0
+      case Int16(lit) => exp0
+      case Int32(lit) => exp0
+      case Int64(lit) => exp0
+      case BigInt(lit) => exp0
+      case Str(lit) => exp0
+      case Var(sym, tpe, loc) => exp0
+      case Ref(sym, tpe, loc) => exp0
+      case Lambda(args, body, tpe, loc) => Lambda(args, uncurry(body, newSyms, root), tpe, loc)
+      case Hook(hook, tpe, loc) => exp0
+      case MkClosure(lambda, freeVars, tpe, loc) => exp0
+      case MkClosureRef(ref, freeVars, tpe, loc) => exp0
+      case ApplyRef(sym, args, tpe, loc) => exp0
+      case ApplyTail(sym, formals, actuals, tpe, loc) => exp0
+      case ApplyHook(hook, args, tpe, loc) => exp0
+      case a: Apply =>
+        val uncurryCount = maximalUncurry(a)
+        uncurryN(exp0, uncurryCount) match {
+        case Apply(Ref(sym1, tp1, loc1), args2, tpe2, loc2) =>
+          newSyms.get (sym1) match {
+            case Some (m) => m.get (uncurryCount) match {
+              case Some (newSym) => {
+                Apply(Ref(newSym, tp1, loc1), args2 map {
+                  uncurry(_, newSyms, root)
+                }, tpe2, loc2)
               }
-            case _ => Apply(inner, args0, tpe0, loc0)
+              case None => a
+            }
+            case None => a
           }
-          case _ => tast
+        case _ => a
         }
-      case _ => tast
+      case Unary(op, exp, tpe, loc) => Unary(op, uncurry(exp, newSyms, root), tpe, loc)
+      case Binary(op, exp1, exp2, tpe, loc) => Binary(op, uncurry(exp1, newSyms, root), uncurry(exp2, newSyms, root), tpe, loc)
+      case IfThenElse(exp1, exp2, exp3, tpe, loc) => IfThenElse(uncurry(exp1, newSyms, root), uncurry(exp2, newSyms, root), uncurry(exp3, newSyms, root), tpe, loc)
+      case Let(sym, exp1, exp2, tpe, loc) => Let(sym, uncurry(exp1, newSyms, root), uncurry(exp2, newSyms, root), tpe, loc)
+      case LetRec(sym, exp1, exp2, tpe, loc) => LetRec(sym, uncurry(exp1, newSyms, root), uncurry(exp2, newSyms, root), tpe, loc)
+      case Is(sym, tag, exp, loc) => Is(sym, tag, uncurry(exp, newSyms, root), loc)
+      case Tag(sym, tag, exp, tpe, loc) => Tag(sym, tag, uncurry(exp, newSyms, root), tpe, loc)
+      case Untag(sym, tag, exp, tpe, loc) => Untag(sym, tag, uncurry(exp, newSyms, root), tpe, loc)
+      case Index(base, offset, tpe, loc) => exp0
+      case Tuple(elms, tpe, loc) => Tuple(elms map {
+        uncurry(_, newSyms, root)
+      }, tpe, loc)
+      case Existential(fparam, exp, loc) => Existential(fparam, uncurry(exp, newSyms, root), loc)
+      case Universal(fparam, exp, loc) => Universal(fparam, uncurry(exp, newSyms, root), loc)
+      case NativeConstructor(constructor, args, tpe, loc) => NativeConstructor(constructor, args map {
+        uncurry(_, newSyms, root)
+      }, tpe, loc)
+      case NativeField(field, tpe, loc) => exp0
+      case NativeMethod(method, args, tpe, loc) => NativeMethod(method, args map {
+        uncurry(_, newSyms, root)
+      }, tpe, loc)
+      case UserError(tpe, loc) => exp0
+      case MatchError(tpe, loc) => exp0
+      case SwitchError(tpe, loc) => exp0
+    }
+
+    def uncurryN(exp0: SimplifiedAst.Expression, count: Int): SimplifiedAst.Expression = count match {
+      case 0 => exp0
+      case n => exp0 match {
+        case Apply(exp2, args2, tpe2, loc2) =>
+          val Apply(Ref(sym4, tpe4, loc4), args3, _, _) = uncurryN(exp2, n - 1)
+          Apply(Ref(sym4, uncurryType(tpe4), loc4), args3 ::: args2, tpe2, loc2)
+        case _ => throw InternalCompilerException(s"Can't uncurry expression : $exp0")
+      }
+    }
+
+    /**
+      * Counts the number of times a function can be uncurried
+      */
+
+    def maximalUncurry(exp0: SimplifiedAst.Expression.Apply): Int = exp0 match {
+      case Apply(exp1, _, _, _) =>
+        exp1 match {
+          case _: LoadExpression => 0
+          case _: StoreExpression => 0
+          case Unit => 0
+          case True => 0
+          case False => 0
+          case _: Char => 0
+          case _: Float32 => 0
+          case _: Float64 => 0
+          case _: Int8 => 0
+          case _: Int16 => 0
+          case _: Int32 => 0
+          case _: Int64 => 0
+          case _: BigInt => 0
+          case _: Str => 0
+          case _: Var => 0
+          case _: Ref => 0
+          case _: Lambda => 0
+          case _: Hook => 0
+          case _: MkClosure => 0
+          case _: MkClosureRef => 0
+          case _: ApplyRef => 0
+          case _: ApplyTail => 0
+          case _: ApplyHook => 0
+          case a: Apply => 1 + maximalUncurry(a)
+          case _: Unary => 0
+          case _: Binary => 0
+          case _: IfThenElse => 0
+          case _: Let => 0
+          case _: LetRec => 0
+          case _: Is => 0
+          case _: Tag => 0
+          case _: Untag => 0
+          case _: Index => 0
+          case _: Tuple => 0
+          case _: Existential => 0
+          case _: Universal => 0
+          case _: NativeConstructor => 0
+          case _: NativeField => 0
+          case _: NativeMethod => 0
+          case _: UserError => 0
+          case _: MatchError => 0
+          case _: SwitchError => 0
+        }
     }
   }
 
-  /**
-    * Uncurry the type of a function. Given a type like a x b -> (c -> d), turn it
-    * into a x b x c -> d
-    *
-    * @param tpe The type to uncurry
-    * @return The uncurried type
-    */
-  def uncurryType(tpe: Type): Type = tpe match {
-    case Type.Apply(Type.Arrow(len), ts) =>
-      // We're given an application which looks like
-      // List(From, From, From, To), where there are one are more From
-      // types, and the result is the To type.
-      //
-      // When we are uncurrying, the To type will also be an apply, we then
-      // transform List(From1, From2, List(From3, From4, To)) to
-      // List(From1, From2, From3, From4, To)
-      //
-      val from = ts.take(ts.size - 1)
-      val to = ts.last
-      ts.last match {
-        case Type.Apply(_, ts2) => Type.Apply(Type.Arrow(len + 1), from ::: ts2)
-        case _ => throw InternalCompilerException(s"Cannot uncurry type $tpe")
-      }
-    case _ => throw InternalCompilerException(s"Cannot uncurry type $tpe")
+    /**
+      * Uncurry the type of a function. Given a type like a x b -> (c -> d), turn it
+      * into a x b x c -> d
+      *
+      * @param tpe The type to uncurry
+      * @return The uncurried type
+      */
+    def uncurryType(tpe: Type): Type = tpe match {
+      case Type.Apply(Type.Arrow(len), ts) =>
+        // We're given an application which looks like
+        // List(From, From, From, To), where there are one are more From
+        // types, and the result is the To type.
+        //
+        // When we are uncurrying, the To type will also be an apply, we then
+        // transform List(From1, From2, List(From3, From4, To)) to
+        // List(From1, From2, From3, From4, To)
+        //
+        val from = ts.take(ts.size - 1)
+        val to = ts.last
+        ts.last match {
+          case Type.Apply(_, ts2) => Type.Apply(Type.Arrow(len + 1), from ::: ts2)
+          case _ => throw InternalCompilerException(s"Cannot uncurry type $tpe")
+        }
+      case _ => throw InternalCompilerException(s"Cannot uncurry type $tpe")
+    }
   }
-}
