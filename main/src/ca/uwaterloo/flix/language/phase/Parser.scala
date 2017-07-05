@@ -276,7 +276,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   // Literals                                                                //
   /////////////////////////////////////////////////////////////////////////////
   def Literal: Rule1[ParsedAst.Literal] = rule {
-    Literals.Bool | Literals.Char | Literals.Str | Literals.Float | Literals.Int
+    Literals.Bool | Literals.Char | Literals.EscapedChar | Literals.Str | Literals.Float | Literals.Int
   }
 
   object Literals {
@@ -298,6 +298,24 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
     def Char: Rule1[ParsedAst.Literal.Char] = rule {
       SP ~ "'" ~ capture(!"'" ~ CharPredicate.All) ~ "'" ~ SP ~> ParsedAst.Literal.Char
+    }
+
+    def EscapedChar: Rule1[ParsedAst.Literal.Char] = {
+      def Special: Rule1[String] = rule {
+        capture("\\\\") |
+          capture("\\'") |
+          capture("\\n") |
+          capture("\\r") |
+          capture("\\t")
+      }
+
+      def Unicode: Rule1[String] = rule {
+        "\\u" ~ capture(4 times CharPredicate.HexDigit) ~> ((x: String) => Integer.parseInt(x, 16).toChar.toString)
+      }
+
+      rule {
+        SP ~ "'" ~ (Unicode | Special) ~ "'" ~ SP ~> ParsedAst.Literal.Char
+      }
     }
 
     def Float: Rule1[ParsedAst.Literal] = rule {
