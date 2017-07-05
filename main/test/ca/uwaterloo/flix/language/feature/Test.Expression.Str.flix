@@ -1,8 +1,8 @@
 @test
-def testStr_01(): Str = ""
+def testStr01(): Str = ""
 
 @test
-def testStr_02(): Str = "Hello World!"
+def testStr02(): Str = "Hello World!"
 
 @test
-def testStr_03(): Str = "asdf"
+def testStr03(): Str = "asdf"

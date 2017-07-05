@@ -3,25 +3,25 @@
  */
 
 @test
-def testInt_01(): Int = 0
+def testInt01(): Int = 0
 
 @test
-def testInt_02(): Int = -1
+def testInt02(): Int = -1
 
 @test
-def testInt_03(): Int = 1
+def testInt03(): Int = 1
 
 @test
-def testInt_04(): Int = 5
+def testInt04(): Int = 5
 
 @test
-def testInt_05(): Int = -254542
+def testInt05(): Int = -254542
 
 @test
-def testInt_06(): Int = 45649878
+def testInt06(): Int = 45649878
 
 @test
-def testInt_07(): Int = 2147483647
+def testInt07(): Int = 2147483647
 
 @test
-def testInt_08(): Int = -2147483648
+def testInt08(): Int = -2147483648
