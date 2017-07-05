@@ -184,6 +184,9 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
     visitor.visit(JavaVersion, ACC_PUBLIC + ACC_SUPER, decorate(prefix), null,
       asm.Type.getInternalName(Constants.objectClass), null)
 
+    // Source of the class
+    visitor.visitSource(baseFileName(prefix), null)
+
     compileStaticFlixField(prefix, visitor)
     compileConstructor(visitor)
     // TODO: Here we filter laws, since the backend does not support existentials/universals, but could we fix that?
@@ -318,12 +321,16 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
       case _ => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
     }
 
-    case Expression.Def(name, _, _) =>
+    case Expression.Def(name, _, loc) =>
+      // Adding source line number for debugging
+      addSourceLine(visitor,loc)
       // Reference to a top-level definition that isn't used in a MkClosureRef or ApplyRef, so it's a 0-arg function.
       val targetTpe = declarations(name)
       visitor.visitMethodInsn(INVOKESTATIC, decorate(FlixClassName(name.prefix)), name.suffix, descriptor(targetTpe, interfaces), false)
 
     case Expression.MkClosureDef(ref, freeVars, tpe, loc) =>
+      // Adding source line number for debugging
+      addSourceLine(visitor,loc)
       // We create a closure the same way Java 8 does. We use InvokeDynamic and the LambdaMetafactory. The idea is that
       // LambdaMetafactory creates a CallSite (linkage), and then the CallSite target is invoked (capture) to create a
       // function object. Later, at ApplyRef, the function object is called (invocation).
@@ -378,7 +385,9 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
       // Finally, generate the InvokeDynamic instruction.
       visitor.visitInvokeDynamicInsn(invokedName, invokedType, bsmHandle, bsmArgs: _*)
 
-    case Expression.ApplyDef(name, args, _, _) =>
+    case Expression.ApplyDef(name, args, _, loc) =>
+      // Adding source line number for debugging
+      addSourceLine(visitor, loc)
       // We know what function we're calling, so we can look up its signature.
       val targetTpe = declarations(name)
 
@@ -386,7 +395,9 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
       args.foreach(compileExpression(prefix, functions, declarations, interfaces, enums, visitor, entryPoint))
       visitor.visitMethodInsn(INVOKESTATIC, decorate(FlixClassName(name.prefix)), name.suffix, descriptor(targetTpe, interfaces), false)
 
-    case Expression.ApplyTail(name, formals, actuals, _, _) =>
+    case Expression.ApplyTail(name, formals, actuals, _, loc) =>
+      // Adding source line number for debugging
+      addSourceLine(visitor, loc)
       // Evaluate each argument and push the result on the stack.
       // Compute the stack height taken by the arguments based on their types.
       var globalOffset: Int = 0
@@ -433,7 +444,9 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
       // Jump to the entry point of the method.
       visitor.visitJumpInsn(GOTO, entryPoint)
 
-    case Expression.ApplyHook(hook, args, tpe, _) =>
+    case Expression.ApplyHook(hook, args, tpe, loc) =>
+      // Adding source line number for debugging
+      addSourceLine(visitor, loc)
       val (isSafe, name, elmsClass) = hook match {
         case _: Hook.Unsafe => (false, "invokeUnsafe", Constants.objectClass)
       }
@@ -470,7 +483,9 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
       // Unbox the result, if necessary.
       compileUnbox(interfaces, visitor)(tpe)
 
-    case Expression.ApplyClosure(exp, args, _, _) =>
+    case Expression.ApplyClosure(exp, args, _, loc) =>
+      // Adding source line number for debugging
+      addSourceLine(visitor, loc)
       // Lambdas are called through an interface. We don't know what function we're calling, but we know its type,
       // so we can lookup the interface we're calling through.
       val name = interfaces(exp.tpe)
@@ -495,7 +510,9 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
         entryPoint)(o, exp1, exp2)
     }
 
-    case Expression.IfThenElse(exp1, exp2, exp3, _, _) =>
+    case Expression.IfThenElse(exp1, exp2, exp3, _, loc) =>
+      // Adding source line number for debugging
+      addSourceLine(visitor, loc)
       val ifElse = new Label()
       val ifEnd = new Label()
       compileExpression(prefix, functions, declarations, interfaces, enums, visitor, entryPoint)(exp1)
@@ -506,7 +523,9 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
       compileExpression(prefix, functions, declarations, interfaces, enums, visitor, entryPoint)(exp3)
       visitor.visitLabel(ifEnd)
 
-    case Expression.Let(sym, exp1, exp2, _, _) =>
+    case Expression.Let(sym, exp1, exp2, _, loc) =>
+      // Adding source line number for debugging
+      addSourceLine(visitor, loc)
       compileExpression(prefix, functions, declarations, interfaces, enums, visitor, entryPoint)(exp1)
       exp1.tpe match {
         case Type.Var(id, kind) =>  throw InternalCompilerException(s"Non-monomorphed type variable '$id.")
@@ -523,7 +542,9 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
     case Expression.LetRec(sym, exp1, exp2, _, _) =>
       ??? // TODO: Add support for LetRec.
 
-    case Expression.Is(enum, tag, exp, _) =>
+    case Expression.Is(enum, tag, exp, loc) =>
+      // Adding source line number for debugging
+      addSourceLine(visitor, loc)
       // First we compile the `exp`
       compileExpression(prefix, functions, declarations, interfaces, enums, visitor, entryPoint)(exp)
       // We look in the enum map to find the qualified name of the class of the enum case
@@ -531,7 +552,9 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
       // We check if the enum is `instanceof` the class
       visitor.visitTypeInsn(INSTANCEOF, decorate(clazz))
 
-    case Expression.Tag(enum, tag, exp, tpe, _) =>
+    case Expression.Tag(enum, tag, exp, tpe, loc) =>
+      // Adding source line number for debugging
+      addSourceLine(visitor, loc)
       //  We look in the enum map to find the qualified name of the class of the enum case
       val (clazzName, enumCase) = enums(tpe, tag)
       /*
@@ -555,7 +578,9 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
         // Calling the constructor of the class
         visitor.visitMethodInsn(INVOKESPECIAL, decorate(clazzName), "<init>", s"(${desc})V", false)
       }
-    case Expression.Untag(enum, tag, exp, tpe, _) =>
+    case Expression.Untag(enum, tag, exp, tpe, loc) =>
+      // Adding source line number for debugging
+      addSourceLine(visitor, loc)
       /*
        * We get the descriptor of the type of the `value` field of enum, if type if primitive we use the corresponding
        * primitive in java otherwise we use the descriptor of object.
@@ -587,7 +612,9 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
       // Cast the object to it's type if it's not a primitive
       castIfNotPrim(tpe, interfaces, visitor)
       
-    case Expression.Tuple(elms, _, _) =>
+    case Expression.Tuple(elms, _, loc) =>
+      // Adding source line number for debugging
+      addSourceLine(visitor, loc)
       // Transforming types of elements of the tuple to the appropriate type
       val fieldTypes : List[WrappedType] = elms.map(x => typeToWrappedType(x.tpe)).toList
       // Descriptor of the parameters of the constructor of the tuple class
@@ -616,6 +643,9 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
       throw InternalCompilerException(s"Unexpected expression: '$expr' at ${loc.source.format}.")
 
     case Expression.NativeConstructor(constructor, args, tpe, loc) =>
+      // Adding source line number for debugging
+      addSourceLine(visitor, loc)
+
       val descriptor = asm.Type.getConstructorDescriptor(constructor)
       val declaration = asm.Type.getInternalName(constructor.getDeclaringClass)
       // Create a new object of the declaration type
@@ -628,6 +658,8 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
       visitor.visitMethodInsn(INVOKESPECIAL, declaration, "<init>", descriptor, false)
 
     case Expression.NativeField(field, tpe, loc) =>
+      // Adding source line number for debugging
+      addSourceLine(visitor, loc)
       // Fetch a field from an object
       val declaration = asm.Type.getInternalName(field.getDeclaringClass)
       val name = field.getName
@@ -636,6 +668,8 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
       visitor.visitFieldInsn(getInsn, declaration, name, descriptor(tpe, interfaces))
 
     case Expression.NativeMethod(method, args, tpe, loc) =>
+      // Adding source line number for debugging
+      addSourceLine(visitor, loc)
       // Evaluate arguments left-to-right and push them onto the stack.
       args.foreach(compileExpression(prefix, functions, declarations, interfaces, enums, visitor, entryPoint))
       val declaration = asm.Type.getInternalName(method.getDeclaringClass)
@@ -652,16 +686,22 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
       }
 
     case Expression.UserError(_, loc) =>
+      // Adding source line number for debugging
+      addSourceLine(visitor, loc)
       val name = asm.Type.getInternalName(classOf[UserException])
       val msg = s"User exception: ${loc.format}."
       compileException(visitor, name, msg)
 
     case Expression.MatchError(_, loc) =>
+      // Adding source line number for debugging
+      addSourceLine(visitor, loc)
       val name = asm.Type.getInternalName(classOf[MatchException])
       val msg = s"Non-exhaustive match expression: ${loc.format}."
       compileException(visitor, name, msg)
 
     case Expression.SwitchError(_, loc) =>
+      // Adding source line number for debugging
+      addSourceLine(visitor, loc)
       val name = asm.Type.getInternalName(classOf[SwitchException])
       val msg = s"Non-exhaustive switch expression: ${loc.format}."
       compileException(visitor, name, msg)
@@ -688,73 +728,78 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
                                interfaces: Map[Type, FlixClassName],
                                enums: Map[(Type, String), (QualName, ExecutableAst.Case)],
                                visitor: MethodVisitor,
-                               entryPoint: Label)(exp: Expression): Unit = exp.tpe match {
-    case Type.Bool =>
-      val booleanInternalName = "java/lang/Boolean"
-      // If we know the value of the boolean expression, then compile it directly rather than calling constructor of boolean class
-      exp match {
-        case Expression.True => visitor.visitFieldInsn(GETSTATIC, booleanInternalName, "TRUE", s"L$booleanInternalName;")
-        case Expression.False => visitor.visitFieldInsn(GETSTATIC, booleanInternalName, "FALSE", s"L$booleanInternalName;")
-        case _ =>
-          visitor.visitTypeInsn(NEW, booleanInternalName)
-          visitor.visitInsn(DUP)
-          compileExpression(prefix, functions, declarations, interfaces, enums, visitor, entryPoint)(exp)
-          visitor.visitMethodInsn(INVOKESPECIAL, booleanInternalName, "<init>", "(Z)V", false)
-      }
+                               entryPoint: Label)(exp: Expression): Unit = {
+    // Adding source line number for debugging
+    addSourceLine(visitor, exp.loc)
 
-    case Type.Char =>
-      val charInternalName = "java/lang/Character"
-      visitor.visitTypeInsn(NEW, charInternalName)
-      visitor.visitInsn(DUP)
-      compileExpression(prefix, functions, declarations, interfaces, enums, visitor, entryPoint)(exp)
-      visitor.visitMethodInsn(INVOKESPECIAL, charInternalName, "<init>", "(C)V", false)
+    exp.tpe match {
+      case Type.Bool =>
+        val booleanInternalName = "java/lang/Boolean"
+        // If we know the value of the boolean expression, then compile it directly rather than calling constructor of boolean class
+        exp match {
+          case Expression.True => visitor.visitFieldInsn(GETSTATIC, booleanInternalName, "TRUE", s"L$booleanInternalName;")
+          case Expression.False => visitor.visitFieldInsn(GETSTATIC, booleanInternalName, "FALSE", s"L$booleanInternalName;")
+          case _ =>
+            visitor.visitTypeInsn(NEW, booleanInternalName)
+            visitor.visitInsn(DUP)
+            compileExpression(prefix, functions, declarations, interfaces, enums, visitor, entryPoint)(exp)
+            visitor.visitMethodInsn(INVOKESPECIAL, booleanInternalName, "<init>", "(Z)V", false)
+        }
 
-    case Type.Float32 =>
-      val floatInternalName = "java/lang/Float"
-      visitor.visitTypeInsn(NEW, floatInternalName)
-      visitor.visitInsn(DUP)
-      compileExpression(prefix, functions, declarations, interfaces, enums, visitor, entryPoint)(exp)
-      visitor.visitMethodInsn(INVOKESPECIAL, floatInternalName, "<init>", "(F)V", false)
+      case Type.Char =>
+        val charInternalName = "java/lang/Character"
+        visitor.visitTypeInsn(NEW, charInternalName)
+        visitor.visitInsn(DUP)
+        compileExpression(prefix, functions, declarations, interfaces, enums, visitor, entryPoint)(exp)
+        visitor.visitMethodInsn(INVOKESPECIAL, charInternalName, "<init>", "(C)V", false)
 
-    case Type.Float64 =>
-      val doubleInternalName = "java/lang/Double"
-      visitor.visitTypeInsn(NEW, doubleInternalName)
-      visitor.visitInsn(DUP)
-      compileExpression(prefix, functions, declarations, interfaces, enums, visitor, entryPoint)(exp)
-      visitor.visitMethodInsn(INVOKESPECIAL, doubleInternalName, "<init>", "(D)V", false)
+      case Type.Float32 =>
+        val floatInternalName = "java/lang/Float"
+        visitor.visitTypeInsn(NEW, floatInternalName)
+        visitor.visitInsn(DUP)
+        compileExpression(prefix, functions, declarations, interfaces, enums, visitor, entryPoint)(exp)
+        visitor.visitMethodInsn(INVOKESPECIAL, floatInternalName, "<init>", "(F)V", false)
 
-    case Type.Int8 =>
-      val byteInternalName = "java/lang/Byte"
-      visitor.visitTypeInsn(NEW, byteInternalName)
-      visitor.visitInsn(DUP)
-      compileExpression(prefix, functions, declarations, interfaces, enums, visitor, entryPoint)(exp)
-      visitor.visitMethodInsn(INVOKESPECIAL, byteInternalName, "<init>", "(B)V", false)
+      case Type.Float64 =>
+        val doubleInternalName = "java/lang/Double"
+        visitor.visitTypeInsn(NEW, doubleInternalName)
+        visitor.visitInsn(DUP)
+        compileExpression(prefix, functions, declarations, interfaces, enums, visitor, entryPoint)(exp)
+        visitor.visitMethodInsn(INVOKESPECIAL, doubleInternalName, "<init>", "(D)V", false)
 
-    case Type.Int16 =>
-      val shortInternalName = "java/lang/Short"
-      visitor.visitTypeInsn(NEW, shortInternalName)
-      visitor.visitInsn(DUP)
-      compileExpression(prefix, functions, declarations, interfaces, enums, visitor, entryPoint)(exp)
-      visitor.visitMethodInsn(INVOKESPECIAL, shortInternalName, "<init>", "(S)V", false)
+      case Type.Int8 =>
+        val byteInternalName = "java/lang/Byte"
+        visitor.visitTypeInsn(NEW, byteInternalName)
+        visitor.visitInsn(DUP)
+        compileExpression(prefix, functions, declarations, interfaces, enums, visitor, entryPoint)(exp)
+        visitor.visitMethodInsn(INVOKESPECIAL, byteInternalName, "<init>", "(B)V", false)
 
-    case Type.Int32 =>
-      val intInternalName = "java/lang/Integer"
-      visitor.visitTypeInsn(NEW, intInternalName)
-      visitor.visitInsn(DUP)
-      compileExpression(prefix, functions, declarations, interfaces, enums, visitor, entryPoint)(exp)
-      visitor.visitMethodInsn(INVOKESPECIAL, intInternalName, "<init>", "(I)V", false)
+      case Type.Int16 =>
+        val shortInternalName = "java/lang/Short"
+        visitor.visitTypeInsn(NEW, shortInternalName)
+        visitor.visitInsn(DUP)
+        compileExpression(prefix, functions, declarations, interfaces, enums, visitor, entryPoint)(exp)
+        visitor.visitMethodInsn(INVOKESPECIAL, shortInternalName, "<init>", "(S)V", false)
 
-    case Type.Int64 =>
-      val longInternalName = "java/lang/Long"
-      visitor.visitTypeInsn(NEW, longInternalName)
-      visitor.visitInsn(DUP)
-      compileExpression(prefix, functions, declarations, interfaces, enums, visitor, entryPoint)(exp)
-      visitor.visitMethodInsn(INVOKESPECIAL, longInternalName, "<init>", "(J)V", false)
+      case Type.Int32 =>
+        val intInternalName = "java/lang/Integer"
+        visitor.visitTypeInsn(NEW, intInternalName)
+        visitor.visitInsn(DUP)
+        compileExpression(prefix, functions, declarations, interfaces, enums, visitor, entryPoint)(exp)
+        visitor.visitMethodInsn(INVOKESPECIAL, intInternalName, "<init>", "(I)V", false)
 
-    case Type.Unit | Type.BigInt | Type.Str | Type.Native | Type.Enum(_, _) | Type.Apply(Type.FTuple(_), _) | Type.Apply(Type.Arrow(_), _) |
-         Type.Apply(Type.Enum(_, _), _) => compileExpression(prefix, functions, declarations, interfaces, enums, visitor, entryPoint)(exp)
+      case Type.Int64 =>
+        val longInternalName = "java/lang/Long"
+        visitor.visitTypeInsn(NEW, longInternalName)
+        visitor.visitInsn(DUP)
+        compileExpression(prefix, functions, declarations, interfaces, enums, visitor, entryPoint)(exp)
+        visitor.visitMethodInsn(INVOKESPECIAL, longInternalName, "<init>", "(J)V", false)
 
-    case tpe => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
+      case Type.Unit | Type.BigInt | Type.Str | Type.Native | Type.Enum(_, _) | Type.Apply(Type.FTuple(_), _) | Type.Apply(Type.Arrow(_), _) |
+           Type.Apply(Type.Enum(_, _), _) => compileExpression(prefix, functions, declarations, interfaces, enums, visitor, entryPoint)(exp)
+
+      case tpe => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
+    }
   }
 
   /*
@@ -842,6 +887,9 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
                                enums: Map[(Type, String), (QualName, ExecutableAst.Case)],
                                visitor: MethodVisitor,
                                entryPoint: Label)(op: UnaryOperator, e: Expression): Unit = {
+    // Adding source line number for debugging
+    addSourceLine(visitor, e.loc)
+
     compileExpression(prefix, functions, declarations, interfaces, enums, visitor, entryPoint)(e)
     op match {
       case UnaryOperator.LogicalNot =>
@@ -1273,6 +1321,15 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
         visitor.visitMethodInsn(INVOKEVIRTUAL, asm.Type.getInternalName(clazz), bigintOp, asm.Type.getMethodDescriptor(method), false);
       case _ => throw InternalCompilerException(s"Can't apply $o to type ${e1.tpe}.")
     }
+  }
+
+  /*
+   * Adding the source of the line for debugging
+   */
+  private def addSourceLine(visitor : MethodVisitor, loc: SourceLocation) : Unit = {
+    val label =  new Label()
+    visitor.visitLabel(label)
+    visitor.visitLineNumber(loc.beginLine, label)
   }
 
   /*

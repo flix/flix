@@ -71,7 +71,8 @@ object TupleGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
     }
 
     // 1. Extract all tuple types from definitions.
-    val allTuples : List[Type] = root.defs.values.flatMap(x => findTuples(x.exp)).toList
+    val allTuples : List[Type] = root.defs.values.flatMap(x => findTuplesInExps(x.exp) ++ findTuplesInTypes(x.tpe)).toList
+
 
     // 2. Group tuples based on representation of their fields.
     val groupedFields : List[List[List[Type]]] = allTuples.map{
@@ -192,6 +193,9 @@ object TupleGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
 
     // Initialize the visitor to create a class.
     visitor.visit(JavaVersion, ACC_PUBLIC + ACC_FINAL, decorate(qualName), null, superDescriptor, interfaceDesctiptors)
+
+    // Source of the class
+    visitor.visitSource(decorate(qualName), null)
 
     fields.zipWithIndex.foreach{ case (field, ind) =>
       // Descriptor of the field
@@ -498,62 +502,61 @@ object TupleGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
   }
 
   /**
+    * This method search in the type for a tuple type
+    * @param tpe type to be searched
+    * @return tuple types nested in the type
+    */
+  def findTuplesInTypes(tpe: Type) : Set[Type] = tpe match {
+    case Type.Apply(t, ts) if tpe.isTuple => ts.foldLeft(Set(tpe))((acc, tp) => acc ++ findTuplesInTypes(tp))
+    case Type.Apply(t, ts) =>  ts.foldLeft(Set.empty[Type])((acc, tp) => acc ++ findTuplesInTypes(tp))
+    case _ => Set.empty
+  }
+
+  /**
     * Find tuples from the given expression
     * @param e expression
     * @return A list containing all the tuples in the given expression
     */
-  def findTuples(e: Expression): List[Type] = {
-    /**
-      * This method search in the type for a tuple type
-      * @param tpe type to be searched
-      * @return tuple types nested in the type
-      */
-    def searchInType(tpe: Type) : List[Type] = tpe match {
-      case Type.Apply(t, ts) if tpe.isTuple => tpe :: ts.flatMap(searchInType)
-      case _ => Nil
-    }
-
-    e match {
-      case Expression.Unit => Nil
-      case Expression.True => Nil
-      case Expression.False => Nil
-      case Expression.Char(lit) => Nil
-      case Expression.Float32(lit) => Nil
-      case Expression.Float64(lit) => Nil
-      case Expression.Int8(lit) => Nil
-      case Expression.Int16(lit) => Nil
-      case Expression.Int32(lit) => Nil
-      case Expression.Int64(lit) => Nil
-      case Expression.BigInt(lit) => Nil
-      case Expression.Str(lit) => Nil
-      case Expression.Var(sym, tpe, loc) => searchInType(tpe)
-      case Expression.Def(name, tpe, loc) => searchInType(tpe)
-      case Expression.MkClosureDef(ref, freeVars, tpe, loc) => searchInType(tpe)
-      case Expression.ApplyDef(name, args, tpe, loc) => args.flatMap(findTuples) ::: searchInType(tpe)
-      case Expression.ApplyTail(name, formals, actuals, tpe, loc) => actuals.flatMap(findTuples) ::: searchInType(tpe)
-      case Expression.ApplyHook(hook, args, tpe, loc) => args.flatMap(findTuples) ::: searchInType(tpe)
-      case Expression.ApplyClosure(exp, args, tpe, loc) => findTuples(exp) ++ args.flatMap(findTuples) ::: searchInType(tpe)
-      case Expression.Unary(op, exp, tpe, loc) => findTuples(exp) ::: searchInType(tpe)
-      case Expression.Binary(op, exp1, exp2, tpe, loc) => findTuples(exp1) ::: findTuples(exp2) ::: searchInType(tpe)
-      case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) => findTuples(exp1) ::: findTuples(exp2) ::: findTuples(exp3)
-      case Expression.Let(sym, exp1, exp2, tpe, loc) => findTuples(exp1) ::: findTuples(exp2) ::: searchInType(tpe)
-      case Expression.Is(sym, tag, exp, loc) => findTuples(exp)
-      case Expression.Tag(enum, tag, exp, tpe, loc) => findTuples(exp) ::: searchInType(tpe)
-      case Expression.Untag(sym, tag, exp, tpe, loc) => findTuples(exp) ::: searchInType(tpe)
-      case Expression.Index(base, offset, tpe, loc) => findTuples(base) ::: searchInType(tpe)
-      case Expression.Tuple(elms, tpe, loc) => elms.flatMap(findTuples).toList ++ List(tpe) ::: searchInType(tpe)
-      case Expression.Ref(exp, tpe, loc) => ??? // TODO
-      case Expression.Deref(exp, tpe, loc) => ??? // TODO
-      case Expression.Assign(exp1, exp2, tpe, loc) => ??? // TODO
-      case Expression.LetRec(sym, exp1, exp2, tpe, loc) => ??? // TODO
-      case Expression.Existential(params, exp, loc) => findTuples(exp)
-      case Expression.Universal(params, exp, loc) => findTuples(exp)
-      case Expression.NativeConstructor(constructor, args, tpe, loc) => args.flatMap(findTuples) ::: searchInType(tpe)
-      case Expression.NativeField(field, tpe, loc) => searchInType(tpe)
-      case Expression.NativeMethod(method, args, tpe, loc) => args.flatMap(findTuples) ::: searchInType(tpe)
-      case Expression.UserError(tpe, loc) => searchInType(tpe)
-      case Expression.MatchError(tpe, loc) => searchInType(tpe)
-      case Expression.SwitchError(tpe, loc) => searchInType(tpe)
-    }
+  def findTuplesInExps(e: Expression): Set[Type] = e match {
+    case Expression.Unit => Set.empty
+    case Expression.True => Set.empty
+    case Expression.False => Set.empty
+    case Expression.Char(lit) => Set.empty
+    case Expression.Float32(lit) => Set.empty
+    case Expression.Float64(lit) => Set.empty
+    case Expression.Int8(lit) => Set.empty
+    case Expression.Int16(lit) => Set.empty
+    case Expression.Int32(lit) => Set.empty
+    case Expression.Int64(lit) => Set.empty
+    case Expression.BigInt(lit) => Set.empty
+    case Expression.Str(lit) => Set.empty
+    case Expression.Var(sym, tpe, loc) => findTuplesInTypes(tpe)
+    case Expression.Def(name, tpe, loc) => findTuplesInTypes(tpe)
+    case Expression.MkClosureDef(ref, freeVars, tpe, loc) => findTuplesInTypes(tpe)
+    case Expression.ApplyDef(name, args, tpe, loc) => args.foldLeft(findTuplesInTypes(tpe))((acc, elem) => acc ++ findTuplesInExps(elem))
+    case Expression.ApplyTail(name, formals, actuals, tpe, loc) => actuals.foldLeft(findTuplesInTypes(tpe))((acc, elem) => acc ++ findTuplesInExps(elem))
+    case Expression.ApplyHook(hook, args, tpe, loc) => args.foldLeft(findTuplesInTypes(tpe))((acc, elem) => acc ++ findTuplesInExps(elem))
+    case Expression.ApplyClosure(exp, args, tpe, loc) => findTuplesInExps(exp) ++ args.foldLeft(findTuplesInTypes(tpe))((acc, elem) => acc ++ findTuplesInExps(elem))
+    case Expression.Unary(op, exp, tpe, loc) => findTuplesInExps(exp) ++ findTuplesInTypes(tpe)
+    case Expression.Binary(op, exp1, exp2, tpe, loc) => findTuplesInExps(exp1) ++ findTuplesInExps(exp2) ++ findTuplesInTypes(tpe)
+    case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) => findTuplesInExps(exp1) ++ findTuplesInExps(exp2) ++ findTuplesInExps(exp3)
+    case Expression.Let(sym, exp1, exp2, tpe, loc) => findTuplesInExps(exp1) ++ findTuplesInExps(exp2) ++ findTuplesInTypes(tpe)
+    case Expression.Is(sym, tag, exp, loc) => findTuplesInExps(exp)
+    case Expression.Tag(enum, tag, exp, tpe, loc) => findTuplesInExps(exp) ++ findTuplesInTypes(tpe)
+    case Expression.Untag(sym, tag, exp, tpe, loc) => findTuplesInExps(exp) ++ findTuplesInTypes(tpe)
+    case Expression.Index(base, offset, tpe, loc) => findTuplesInExps(base) ++ findTuplesInTypes(tpe)
+    case Expression.Tuple(elms, tpe, loc) => elms.foldLeft(findTuplesInTypes(tpe) + tpe)((acc, elem) => acc ++ findTuplesInExps(elem))
+    case Expression.Ref(exp, tpe, loc) => ??? // TODO
+    case Expression.Deref(exp, tpe, loc) => ??? // TODO
+    case Expression.Assign(exp1, exp2, tpe, loc) => ??? // TODO
+    case Expression.LetRec(sym, exp1, exp2, tpe, loc) => ??? // TODO
+    case Expression.Existential(params, exp, loc) => findTuplesInExps(exp)
+    case Expression.Universal(params, exp, loc) => findTuplesInExps(exp)
+    case Expression.NativeConstructor(constructor, args, tpe, loc) => args.foldLeft(findTuplesInTypes(tpe))((acc, elem) => acc ++ findTuplesInExps(elem))
+    case Expression.NativeField(field, tpe, loc) => findTuplesInTypes(tpe)
+    case Expression.NativeMethod(method, args, tpe, loc) => args.foldLeft(findTuplesInTypes(tpe))((acc, elem) => acc ++ findTuplesInExps(elem))
+    case Expression.UserError(tpe, loc) => findTuplesInTypes(tpe)
+    case Expression.MatchError(tpe, loc) => findTuplesInTypes(tpe)
+    case Expression.SwitchError(tpe, loc) => findTuplesInTypes(tpe)
   }
 }
