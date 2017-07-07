@@ -116,15 +116,16 @@ object Main {
 
     // compute the least model.
     try {
-      flix.solve() match {
+      val timer = new Timer(flix.solve())
+      timer.getResult match {
         case Validation.Success(model, errors) =>
           errors.foreach(e => println(e.message.fmt))
 
           val main = cmdOpts.main
           if (main.nonEmpty) {
             val name = main.get
-            val timer = new Timer(model.getConstant(name))
-            Console.println(s"$name returned `${Value.pretty(timer.getResult)}' (elapsed ${timer.fmt})")
+            val evalTimer = new Timer(model.getConstant(name))
+            Console.println(s"$name returned `${Value.pretty(evalTimer.getResult)}' (compile: ${timer.fmt}, execute: ${evalTimer.fmt})")
           }
 
           if (cmdOpts.benchmark) {
