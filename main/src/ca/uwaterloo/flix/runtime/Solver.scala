@@ -260,7 +260,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
     }
 
   /**
-    * Initialize the solver by starting the monitor, debugger, shell etc.
+    * Initialize the solver by starting the monitor, debugger, etc.
     */
   private def initSolver(): Unit = {
     if (options.monitor) {
@@ -268,9 +268,6 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
 
       val restServer = new RestServer(this)
       restServer.start()
-
-      val shell = new Shell(this)
-      shell.start()
     }
 
     totalTime = System.nanoTime()

@@ -62,6 +62,12 @@ class TestMain extends FunSuite {
     assert(opts.delta.nonEmpty)
   }
 
+  test("--interactive") {
+    val args = Array("--interactive", "p.flix")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.interactive)
+  }
+
   test("--listen") {
     val args = Array("--listen", "8080", "p.flix")
     val opts = Main.parseCmdOpts(args).get

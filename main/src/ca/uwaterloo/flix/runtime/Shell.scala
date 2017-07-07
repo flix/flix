@@ -16,9 +16,23 @@
 
 package ca.uwaterloo.flix.runtime
 
-import ca.uwaterloo.flix.util.{PrettyPrint, Version}
+import java.io.File
 
-class Shell(solver: Solver) extends Thread {
+import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.util.vt.TerminalContext
+import ca.uwaterloo.flix.util._
+
+class Shell(files: List[File], main: Option[String], options: Options) {
+
+  /**
+    * The default color context.
+    */
+  implicit val _ = TerminalContext.AnsiTerminal
+
+  /**
+    * The current model (if any).
+    */
+  var model: Model = _
 
   /**
     * A common super-type for input commands.
@@ -33,14 +47,14 @@ class Shell(solver: Solver) extends Thread {
     case object Nop extends Input
 
     /**
+      * Runs the current program.
+      */
+    case object Run extends Input
+
+    /**
       * Prints information about the available commands.
       */
     case object Help extends Input
-
-    /**
-      * Prints some basic status information about the fixpoint computation.
-      */
-    case object Status extends Input
 
     /**
       * Prints the given constant, relation or lattice.
@@ -48,24 +62,14 @@ class Shell(solver: Solver) extends Thread {
     case class Print(name: String) extends Input
 
     /**
-      * Pauses the fixpoint computation.
-      */
-    case object Pause extends Input
-
-    /**
-      * Resumes the fixpoint computation.
-      */
-    case object Unpause extends Input
-
-    /**
       * Gracefully terminates Flix.
       */
     case object Exit extends Input
 
     /**
-      * Immediately and brutally terminates Flix.
+      * Gracefully terminates Flix.
       */
-    case object Abort extends Input
+    case object Quit extends Input
 
     /**
       * A command that was not unknown. Possibly a typo.
@@ -77,8 +81,7 @@ class Shell(solver: Solver) extends Thread {
   /**
     * Prints the welcome banner and starts the interactive shell.
     */
-  override def run(): Unit = {
-    Thread.sleep(100)
+  def run(): Unit = {
     printWelcomeBanner()
     loop()
   }
@@ -106,14 +109,12 @@ class Shell(solver: Solver) extends Thread {
     * Parses the string `line` into a command.
     */
   private def parse(line: String): Input = line match {
-    case null => Input.Abort
+    case null => Input.Exit
     case "" => Input.Nop
+    case "run" => Input.Run
     case "help" => Input.Help
-    case "status" => Input.Status
-    case "pause" => Input.Pause
-    case "resume" | "unpause" | "continue" => Input.Unpause
-    case "exit" | "quit" => Input.Exit
-    case "abort" => Input.Abort
+    case "exit" => Input.Exit
+    case "quit" => Input.Quit
     case s if s.startsWith("print") => Input.Print(s.substring("print ".length))
     case _ => Input.Unknown(line)
   }
@@ -124,37 +125,51 @@ class Shell(solver: Solver) extends Thread {
   private def execute(cmd: Input): Unit = cmd match {
     case Input.Nop => // nop
 
-    case Input.Status =>
-      Console.println(s"Read Tasks: ${solver.getCurrentReadTasks}, Write Tasks: ${solver.getCurrentWriteTasks}, Total Facts: ${solver.getNumberOfFacts}.")
+    case Input.Run =>
+      // configure Flix and add the paths.
+      val flix = new Flix()
+      flix.setOptions(options)
+      for (file <- files) {
+        flix.addPath(file.toPath)
+      }
 
-    case Input.Pause =>
-      Console.println("Fixpoint computation paused.")
-      solver.pause()
+      // check if a main function was given.
+      if (main.nonEmpty) {
+        val name = main.get
+        flix.addReachableRoot(name)
+      }
 
-    case Input.Unpause =>
-      Console.println("Fixpoint computation resumed.")
-      solver.resume()
+      // compute the least model.
+      val timer = new Timer(flix.solve())
+      timer.getResult match {
+        case Validation.Success(m, errors) =>
+          this.model = m
+          if (main.nonEmpty) {
+            val name = main.get
+            val evalTimer = new Timer(m.getConstant(name))
+            Console.println(s"$name returned `${Value.pretty(evalTimer.getResult)}' (compile: ${timer.fmt}, execute: ${evalTimer.fmt})")
+          }
+        case Validation.Failure(errors) =>
+          errors.foreach(e => println(e.message.fmt))
+      }
 
     case Input.Exit =>
       Thread.currentThread().interrupt()
 
-    case Input.Abort =>
-      System.exit(1)
+    case Input.Quit =>
+      Thread.currentThread().interrupt()
 
     case Input.Print(name) =>
-      val m = solver.getModel
-      if (m == null)
+      if (model == null)
         Console.println("Model not yet computed.")
       else
-        PrettyPrint.print(name, m)
+        PrettyPrint.print(name, model)
 
     case Input.Help =>
       Console.println("Available commands:")
-      Console.println("  status     -- prints basic info about the fixpoint computation.")
-      Console.println("  pause      -- pauses the fixpoint computation.")
-      Console.println("  resume     -- resumes the fixpoint computation.")
+      Console.println("  run        -- compile and run.")
+      Console.println("  print      -- print a relation/lattice.")
       Console.println("  exit       -- graceful shutdown.")
-      Console.println("  abort      -- immediate shutdown.")
 
     case Input.Unknown(s) => Console.println(s"Unknown command '$s'. Try `help'.")
   }

@@ -18,8 +18,8 @@ package ca.uwaterloo.flix
 
 import java.io.File
 
-import ca.uwaterloo.flix.api.{Flix, UserException, MatchException, SwitchException, RuleException}
-import ca.uwaterloo.flix.runtime.{Benchmarker, Tester, Value}
+import ca.uwaterloo.flix.api.{Flix, MatchException, RuleException, SwitchException, UserException}
+import ca.uwaterloo.flix.runtime.{Benchmarker, Shell, Tester, Value}
 import ca.uwaterloo.flix.util._
 import ca.uwaterloo.flix.util.vt.VirtualString.{Code, Line, NewLine}
 import ca.uwaterloo.flix.util.vt._
@@ -78,6 +78,13 @@ object Main {
       verbosity = if (cmdOpts.verbose) Verbosity.Verbose else Verbosity.Normal,
       verifier = cmdOpts.verifier
     )
+
+    // check if running in interactive mode.
+    if (cmdOpts.interactive) {
+      val shell = new Shell(cmdOpts.files.toList, cmdOpts.main, options)
+      shell.run()
+      System.exit(0)
+    }
 
     // configure Flix and add the paths.
     val flix = new Flix()
@@ -179,6 +186,7 @@ object Main {
   case class CmdOpts(benchmark: Boolean = false,
                      delta: Option[File] = None,
                      documentor: Boolean = false,
+                     interactive: Boolean = false,
                      listen: Option[Int] = None,
                      main: Option[String] = None,
                      monitor: Boolean = false,
@@ -226,6 +234,10 @@ object Main {
 
       // Help.
       help("help").text("prints this usage information.")
+
+      // Interactive.
+      opt[Unit]("interactive").action((f, c) => c.copy(interactive = true)).
+        text("enables interactive mode.")
 
       // Listen.
       opt[Int]("listen").action((s, c) => c.copy(listen = Some(s))).
