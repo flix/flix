@@ -53,6 +53,7 @@ object Indexer {
                   xs :+ i
                 else
                   xs
+              case (xs, (t: Term.Body.Lit, i)) => xs :+ i
               case (xs, (t: Term.Body.Cst, i)) => xs :+ i
               case (xs, (t: Term.Body.Pat, i)) => xs :+ i
             }
