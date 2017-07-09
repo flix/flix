@@ -384,7 +384,9 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
           case ExecutableAst.Term.Body.Var(sym, _, _) =>
             // A variable is replaced by its value from the environment (or null if unbound).
             env(sym.getStackOffset)
-          case ExecutableAst.Term.Body.Lit(litSym, _, _) =>
+          case ExecutableAst.Term.Body.Lit(lit, _, _) =>
+            lit
+          case ExecutableAst.Term.Body.Cst(litSym, _, _) =>
             // Every literal is lifted to a function definition and its value is obtained by invoking it.
             Linker.link(litSym, root).invoke(Array.emptyObjectArray)
           case ExecutableAst.Term.Body.Wild(_, _) =>
@@ -496,7 +498,9 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
           case Term.Body.Var(x, _, _) =>
             // A variable is replaced by its value from the environment.
             env(x.getStackOffset)
-          case Term.Body.Lit(litSym, _, _) =>
+          case Term.Body.Lit(lit, _, _) =>
+            lit
+          case Term.Body.Cst(litSym, _, _) =>
             // Every literal is lifted to a function definition and its value is obtained by invoking it.
             Linker.link(litSym, root).invoke(Array.emptyObjectArray)
           case Term.Body.Wild(_, _) =>
@@ -555,7 +559,8 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
     */
   def evalHeadTerm(t: Term.Head, root: Root, env: Env): AnyRef = t match {
     case Term.Head.Var(sym, _, _) => env(sym.getStackOffset)
-    case Term.Head.Lit(litSym, _, _) =>
+    case Term.Head.Lit(lit, _, _) => lit
+    case Term.Head.Cst(litSym, _, _) =>
       // Every literal is lifted to a function definition and its value is obtained by invoking it.
       Linker.link(litSym, root).invoke(Array.emptyObjectArray)
     case Term.Head.App(sym, syms, _, _) =>

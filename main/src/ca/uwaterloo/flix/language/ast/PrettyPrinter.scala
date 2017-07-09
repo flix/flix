@@ -54,7 +54,8 @@ object PrettyPrinter {
     */
   def fmt(t: ExecutableAst.Term.Head, sb: StringBuilder): StringBuilder = t match {
     case ExecutableAst.Term.Head.Var(sym, tpe, loc) => sb.append(sym.toString)
-    case ExecutableAst.Term.Head.Lit(sym, tpe, loc) => sb.append(sym.toString)
+    case ExecutableAst.Term.Head.Lit(lit, tpe, loc) => sb.append(lit.toString)
+    case ExecutableAst.Term.Head.Cst(sym, tpe, loc) => sb.append(sym.toString)
     case ExecutableAst.Term.Head.App(name, args, tpe, loc) => ???
   }
 

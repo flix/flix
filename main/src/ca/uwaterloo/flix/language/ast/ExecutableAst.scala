@@ -361,7 +361,9 @@ object ExecutableAst {
 
       case class Var(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends ExecutableAst.Term.Head
 
-      case class Lit(ref: Symbol.DefnSym, tpe: Type, loc: SourceLocation) extends ExecutableAst.Term.Head
+      case class Lit(lit: AnyRef, tpe: Type, loc: SourceLocation) extends ExecutableAst.Term.Head
+
+      case class Cst(ref: Symbol.DefnSym, tpe: Type, loc: SourceLocation) extends ExecutableAst.Term.Head
 
       case class App(sym: Symbol.DefnSym, args: Array[Symbol.VarSym], tpe: Type, loc: SourceLocation) extends ExecutableAst.Term.Head
 
@@ -375,7 +377,9 @@ object ExecutableAst {
 
       case class Var(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends ExecutableAst.Term.Body
 
-      case class Lit(ref: Symbol.DefnSym, tpe: Type, loc: SourceLocation) extends ExecutableAst.Term.Body
+      case class Lit(lit: AnyRef, tpe: Type, loc: SourceLocation) extends ExecutableAst.Term.Body
+
+      case class Cst(ref: Symbol.DefnSym, tpe: Type, loc: SourceLocation) extends ExecutableAst.Term.Body
 
       case class Pat(pat: ExecutableAst.Pattern, tpe: Type, loc: SourceLocation) extends ExecutableAst.Term.Body
 
