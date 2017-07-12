@@ -17,6 +17,8 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationError
+import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body.{Filter, Loop, Negative, Positive}
+import ca.uwaterloo.flix.language.ast.TypedAst.Stratum
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.vt.VirtualString._
 import ca.uwaterloo.flix.util.vt.VirtualTerminal
@@ -24,14 +26,21 @@ import ca.uwaterloo.flix.util.vt.VirtualTerminal
 /**
   * An error raised to indicate that a property is violated.
   */
-case class StratificationError(constraints: List[TypedAst.Constraint]) extends CompilationError {
+case class StratificationError(stratum: List[Stratum], head: Symbol.TableSym, body: TypedAst.Predicate.Body, bodySym: Symbol.TableSym) extends CompilationError {
   val kind: String = "Stratification Error"
   val source: Source = constraints.head.loc.source
   val message: VirtualTerminal = {
     val vt = new VirtualTerminal
     vt << Line(kind, source.format) << NewLine
     vt << ">> Stratification Error in constraints" << NewLine
-    constraints.foreach(c => vt << c.head.toString << ":-" << c.body.toString() << NewLine )
+    vt << "It was triggered by the rule: " << head.name << "(...) :- "
+    vt << (body match {
+      case Positive(sym, terms, loc) => sym.name + "(...)"
+      case Negative(sym, terms, loc) => "!" + sym.name + "(...)"
+      case Filter(name, terms, loc) => name.name + "(...)"
+      case Loop(sym, term, loc) => ???
+    })
+    vt << NewLine << "At " << body.loc.format
     vt << NewLine
   }
 }

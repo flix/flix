@@ -170,7 +170,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
                     TypedAst.TypeParam(name, tpe, loc)
                 }
 
-                // Translate the named formals into ty.toSuccessped formals.
+                // Translate the named formals into typed formals.
                 val formals = defn0.fparams.map {
                   case ResolvedAst.FormalParam(sym, mod, tpe, loc) =>
                     TypedAst.FormalParam(sym, mod, subst0(sym.tvar), sym.loc)

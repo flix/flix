@@ -35,7 +35,7 @@ class TestStratifier extends FunSuite with TestUtils {
   /////////////////////////////////////////////////////////////////////////////
   // Patterns                                                                //
   /////////////////////////////////////////////////////////////////////////////
-  test("NegativeCycles.01") {
+  test("Stratification.01") {
     val input =
       """
         |rel Foo(c: Int)
@@ -44,7 +44,7 @@ class TestStratifier extends FunSuite with TestUtils {
     expectError[StratificationError](new Flix().addStr(input).compile())
   }
 
-  test("NegativeCycles.02") {
+  test("Stratification.02") {
     val input =
       """
         |rel Foo(c: Int)
@@ -53,7 +53,7 @@ class TestStratifier extends FunSuite with TestUtils {
     run(input)
   }
 
-  test("NegativeCycles.03") {
+  test("Stratification.03") {
     val input =
       """
         |rel Foo(c: Int)
@@ -64,7 +64,7 @@ class TestStratifier extends FunSuite with TestUtils {
     expectError[StratificationError](new Flix().addStr(input).compile())
   }
 
-  test("NegativeCycles.04") {
+  test("Stratification.04") {
     val input =
       """
         |rel Foo(c: Int)
@@ -75,7 +75,7 @@ class TestStratifier extends FunSuite with TestUtils {
     expectError[StratificationError](new Flix().addStr(input).compile())
   }
 
-  test("NegativeCycles.05") {
+  test("Stratification.05") {
     val input =
       """
         |rel Foo(c: Int)
@@ -100,6 +100,18 @@ class TestStratifier extends FunSuite with TestUtils {
         |Foo8(c) :- Foo9(c).
         |Foo9(c) :- Foo10(c).
         |Foo10(c) :- !Foo(c).
+      """.stripMargin
+    expectError[StratificationError](new Flix().addStr(input).compile())
+  }
+
+  test("Stratification.06") {
+    val input =
+      """
+        |rel Foo(c: Int)
+        |rel Bar(c: Int)
+        |rel Baz(c: Int)
+        |Baz(c) :- !Foo(c).
+        |Foo(c) :- Bar(c), Baz(c).
       """.stripMargin
     expectError[StratificationError](new Flix().addStr(input).compile())
   }
