@@ -53,7 +53,7 @@ object Uncurrier extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
 
     val (defns, uncurriedSyms) = root.definitions.foldLeft(Map.empty[Symbol.DefnSym, SimplifiedAst.Definition.Constant],
       Map.empty[Symbol.DefnSym, Map[Int, Symbol.DefnSym]])((acc, defnEntry) => {
-      val (defs, uncurriedSyms) = Definitions.mkUncurriedDef(defnEntry._1, defnEntry._2, 1, acc._2)
+      val (defs, uncurriedSyms) = Definitions.mkUncurriedDef(defnEntry._1, defnEntry._2, 1, acc._2, root)
       (acc._1 ++ defs, uncurriedSyms)
     })
 
@@ -73,7 +73,8 @@ object Uncurrier extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       */
     def mkUncurriedDef(sym: Symbol.DefnSym,
                        curriedDef: SimplifiedAst.Definition.Constant, uncurryLevel: Int,
-                       newSyms0: Map[Symbol.DefnSym, Map[Int, Symbol.DefnSym]])(implicit genSym: GenSym)
+                       newSyms0: Map[Symbol.DefnSym, Map[Int, Symbol.DefnSym]],
+                      root: SimplifiedAst.Root)(implicit genSym: GenSym)
     : (Map[Symbol.DefnSym, SimplifiedAst.Definition.Constant], Map[Symbol.DefnSym, Map[Int, Symbol.DefnSym]]) = {
       curriedDef.exp match {
         // If the body is a lambda, then we have a curried function
@@ -81,7 +82,7 @@ object Uncurrier extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         // To do this, we'll take make the body of the function the body
         // of the lambda, then add the arguments of the lambda to the
         // formal parameters
-        case Lambda(args, body, _, _) =>
+        case Lambda(args, body0, _, _) =>
           // Create a new definition for our function
           val uncurriedSym = Symbol.freshDefnSym(sym)
 
@@ -92,25 +93,25 @@ object Uncurrier extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
           }
 
           // Create new VarSyms for our function
-          val newFormals = (curriedDef.formals ::: args).map(f => f.copy(sym = Symbol.freshVarSym(f.sym)))
+          val formals1 = (curriedDef.formals ::: args).map(f => f.copy(sym = Symbol.freshVarSym(f.sym)))
           // Replace the old VarSyms in the body
-          val varMapping = (curriedDef.formals ::: args).map(f => f.sym).zip(newFormals.map(f => f.sym)).toMap
-          val newBody = Expressions.substitute(body, varMapping)
+          val varMapping = (curriedDef.formals ::: args).map(f => f.sym).zip(formals1.map(f => f.sym)).toMap
+          val body1 = Expressions.substitute(body0, varMapping)
 
           val unCurriedDef = SimplifiedAst.Definition.Constant(
             curriedDef.ann,
             curriedDef.mod,
             uncurriedSym,
-            newFormals,
-            newBody,
+            formals1,
+            body1,
             curriedDef.isSynthetic,
             uncurryType(curriedDef.tpe),
             curriedDef.loc)
 
           // Create the other levels of uncurrying
-          val (uncurriedDefs, newSyms2) = mkUncurriedDef(sym, unCurriedDef, uncurryLevel + 1, newSyms1)
+          val (uncurriedDefs, newSyms2) = mkUncurriedDef(sym, unCurriedDef, uncurryLevel + 1, newSyms1, root)
           (uncurriedDefs + (uncurriedSym -> unCurriedDef), newSyms2)
-        case _ => (Map.empty[Symbol.DefnSym, SimplifiedAst.Definition.Constant] + (sym -> curriedDef), newSyms0)
+        case _ => (Map.empty[Symbol.DefnSym, SimplifiedAst.Definition.Constant] + (sym -> root.definitions(sym)), newSyms0)
       }
     }
 
@@ -259,12 +260,26 @@ object Uncurrier extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case SwitchError(tpe, loc) => exp0
     }
 
+    /**
+      * Uncurry an expression n times
+      * @return
+      */
     def uncurryN(exp0: SimplifiedAst.Expression, count: Int): SimplifiedAst.Expression = count match {
       case 0 => exp0
       case n => exp0 match {
         case Apply(exp2, args2, tpe2, loc2) =>
-          val Apply(Ref(sym4, tpe4, loc4), args3, _, _) = uncurryN(exp2, n - 1)
-          Apply(Ref(sym4, uncurryType(tpe4), loc4), args3 ::: args2, tpe2, loc2)
+          uncurryN(exp2, n - 1) match {
+              // Transform add(3)(4) -> add$uncurried(3,4)
+            case Apply(Ref(sym4, tpe4, loc4), args3, _, _) =>
+              Apply(Ref(sym4, uncurryType(tpe4), loc4), args3 ::: args2, tpe2, loc2)
+            // Transform ((x,y) -> x+y)(3)(4) -> ((x,y) -> x+y)(3,4)
+            case Apply(Lambda(args,body, tpe, loc), args3, _, _) =>
+              Apply(Lambda(args, body, tpe, loc), args3 ::: args2, tpe2, loc2)
+            // Transform var(3)(4) -> var(3,4)
+            case Apply(Var(sym, tpe, loc), args3, _, _) =>
+              Apply(Var(sym, tpe, loc), args3 ::: args2, tpe2, loc2)
+
+          }
         case _ => throw InternalCompilerException(s"Can't uncurry expression : $exp0")
       }
     }
