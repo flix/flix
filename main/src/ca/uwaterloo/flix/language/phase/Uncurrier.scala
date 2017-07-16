@@ -18,7 +18,6 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expression._
-import ca.uwaterloo.flix.language.ast.SimplifiedAst.{LoadExpression, StoreExpression}
 import ca.uwaterloo.flix.language.{CompilationError, GenSym}
 import ca.uwaterloo.flix.language.ast.{Type, _}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
@@ -51,20 +50,20 @@ object Uncurrier extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     implicit val _ = flix.genSym
     val startTime = System.nanoTime()
 
-    val (defns, uncurriedSyms) = root.definitions.foldLeft(Map.empty[Symbol.DefnSym, SimplifiedAst.Definition.Constant],
+    val (defns, uncurriedSyms) = root.defs.foldLeft(Map.empty[Symbol.DefnSym, SimplifiedAst.Def],
       Map.empty[Symbol.DefnSym, Map[Int, Symbol.DefnSym]])((acc, defnEntry) => {
-      val (defs, uncurriedSyms) = Definitions.mkUncurriedDef(defnEntry._1, defnEntry._2, 1, acc._2, root)
+      val (defs, uncurriedSyms) = Defs.mkUncurriedDef(defnEntry._1, defnEntry._2, 1, acc._2, root)
       (acc._1 ++ defs, uncurriedSyms)
     })
 
-    val uncurriedDef = defns map { case (k, v) => k -> Definitions.uncurry(v, uncurriedSyms, root) }
+    val uncurriedDefs = defns map { case (k, v) => k -> Defs.uncurry(v, uncurriedSyms, root) }
 
     val currentTime = System.nanoTime()
     val time = root.time.copy(uncurrier = currentTime - startTime)
-    root.copy(definitions = uncurriedDef).copy(time = time).toSuccess
+    root.copy(defs = uncurriedDefs).copy(time = time).toSuccess
   }
 
-  object Definitions {
+  object Defs {
     /**
       * Creates all the uncurried versions of a function
       *
@@ -72,10 +71,10 @@ object Uncurrier extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       *         "uncurriedness"
       */
     def mkUncurriedDef(sym: Symbol.DefnSym,
-                       curriedDef: SimplifiedAst.Definition.Constant, uncurryLevel: Int,
+                       curriedDef: SimplifiedAst.Def, uncurryLevel: Int,
                        newSyms0: Map[Symbol.DefnSym, Map[Int, Symbol.DefnSym]],
                       root: SimplifiedAst.Root)(implicit genSym: GenSym)
-    : (Map[Symbol.DefnSym, SimplifiedAst.Definition.Constant], Map[Symbol.DefnSym, Map[Int, Symbol.DefnSym]]) = {
+    : (Map[Symbol.DefnSym, SimplifiedAst.Def], Map[Symbol.DefnSym, Map[Int, Symbol.DefnSym]]) = {
       curriedDef.exp match {
         // If the body is a lambda, then we have a curried function
         // definition, so we need to create an uncurried version.
@@ -98,7 +97,7 @@ object Uncurrier extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
           val varMapping = (curriedDef.formals ::: args).map(f => f.sym).zip(formals1.map(f => f.sym)).toMap
           val body1 = Expressions.substitute(body0, varMapping)
 
-          val unCurriedDef = SimplifiedAst.Definition.Constant(
+          val unCurriedDef = SimplifiedAst.Def(
             curriedDef.ann,
             curriedDef.mod,
             uncurriedSym,
@@ -111,14 +110,14 @@ object Uncurrier extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
           // Create the other levels of uncurrying
           val (uncurriedDefs, newSyms2) = mkUncurriedDef(sym, unCurriedDef, uncurryLevel + 1, newSyms1, root)
           (uncurriedDefs + (uncurriedSym -> unCurriedDef), newSyms2)
-        case _ => (Map.empty[Symbol.DefnSym, SimplifiedAst.Definition.Constant] + (sym -> root.definitions(sym)), newSyms0)
+        case _ => (Map.empty[Symbol.DefnSym, SimplifiedAst.Def] + (sym -> root.defs(sym)), newSyms0)
       }
     }
 
     /**
       * Uncurry a definition constant
       */
-    def uncurry(cst: SimplifiedAst.Definition.Constant, newSyms0: Map[Symbol.DefnSym, Map[Int, Symbol.DefnSym]], root: SimplifiedAst.Root): SimplifiedAst.Definition.Constant = {
+    def uncurry(cst: SimplifiedAst.Def, newSyms0: Map[Symbol.DefnSym, Map[Int, Symbol.DefnSym]], root: SimplifiedAst.Root): SimplifiedAst.Def = {
       cst.copy(exp = Expressions.uncurry(cst.exp, newSyms0, root))
     }
   }
@@ -138,8 +137,6 @@ object Uncurrier extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         env0.getOrElse(oldSym, oldSym)
 
       exp0 match {
-        case e: LoadExpression => e
-        case e: StoreExpression => e
         case Unit => Unit
         case True => True
         case False => False
@@ -153,7 +150,7 @@ object Uncurrier extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         case BigInt(lit) => BigInt(lit)
         case Str(lit) => Str(lit)
         case Var(sym, tpe, loc) => Var(replace(sym), tpe, loc)
-        case e: Ref => e
+        case e: Def => e
         // For lambdas, we have to replace the formal arguments with new formal
         // parameters
         case Lambda(args, body, tpe, loc) =>
@@ -162,8 +159,8 @@ object Uncurrier extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
           Lambda(newFormals, substitute(body, env0 ++ newMapping), tpe, loc)
         case e: Hook => e
         case MkClosure(lambda, freeVars, tpe, loc) => MkClosure(substitute(lambda, env0).asInstanceOf[SimplifiedAst.Expression.Lambda], freeVars, tpe, loc)
-        case e: MkClosureRef => e
-        case ApplyRef(sym, args, tpe, loc) => ApplyRef(sym, args.map(substitute(_, env0)), tpe, loc)
+        case e: MkClosureDef => e
+        case ApplyDef(sym, args, tpe, loc) => ApplyDef(sym, args.map(substitute(_, env0)), tpe, loc)
         case ApplyTail(sym, formals, actuals, tpe, loc) => ApplyTail(sym, formals, actuals.map(substitute(_, env0)), tpe, loc)
         case ApplyHook(hook, args, tpe, loc) => ApplyHook(hook, args.map(substitute(_, env0)), tpe, loc)
         case Apply(exp, args, tpe, loc) => Apply(substitute(exp, env0), args.map(a => substitute(a, env0)), tpe, loc)
@@ -194,8 +191,6 @@ object Uncurrier extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       * @return The expression modified to have all curried calls uncurried
       */
     def uncurry(exp0: SimplifiedAst.Expression, newSyms: Map[Symbol.DefnSym, Map[Int, Symbol.DefnSym]], root: SimplifiedAst.Root): SimplifiedAst.Expression = exp0 match {
-      case _: LoadExpression => exp0
-      case _: StoreExpression => exp0
       case Unit => exp0
       case True => exp0
       case False => exp0
@@ -209,22 +204,22 @@ object Uncurrier extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case BigInt(lit) => exp0
       case Str(lit) => exp0
       case Var(sym, tpe, loc) => exp0
-      case Ref(sym, tpe, loc) => exp0
+      case Def(sym, tpe, loc) => exp0
       case Lambda(args, body, tpe, loc) => Lambda(args, uncurry(body, newSyms, root), tpe, loc)
       case Hook(hook, tpe, loc) => exp0
       case MkClosure(lambda, freeVars, tpe, loc) => exp0
-      case MkClosureRef(ref, freeVars, tpe, loc) => exp0
-      case ApplyRef(sym, args, tpe, loc) => exp0
+      case MkClosureDef(ref, freeVars, tpe, loc) => exp0
+      case ApplyDef(sym, args, tpe, loc) => exp0
       case ApplyTail(sym, formals, actuals, tpe, loc) => exp0
       case ApplyHook(hook, args, tpe, loc) => exp0
       case a: Apply =>
         val uncurryCount = maximalUncurry(a)
         uncurryN(exp0, uncurryCount) match {
-        case Apply(Ref(sym1, tp1, loc1), args2, tpe2, loc2) =>
+        case Apply(Def(sym1, tp1, loc1), args2, tpe2, loc2) =>
           newSyms.get (sym1) match {
             case Some (m) => m.get (uncurryCount) match {
               case Some (newSym) => {
-                Apply(Ref(newSym, tp1, loc1), args2 map {
+                Apply(Def(newSym, tp1, loc1), args2 map {
                   uncurry(_, newSyms, root)
                 }, tpe2, loc2)
               }
@@ -270,8 +265,8 @@ object Uncurrier extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         case Apply(exp2, args2, tpe2, loc2) =>
           uncurryN(exp2, n - 1) match {
               // Transform add(3)(4) -> add$uncurried(3,4)
-            case Apply(Ref(sym4, tpe4, loc4), args3, _, _) =>
-              Apply(Ref(sym4, uncurryType(tpe4), loc4), args3 ::: args2, tpe2, loc2)
+            case Apply(Def(sym4, tpe4, loc4), args3, _, _) =>
+              Apply(Def(sym4, uncurryType(tpe4), loc4), args3 ::: args2, tpe2, loc2)
             // Transform ((x,y) -> x+y)(3)(4) -> ((x,y) -> x+y)(3,4)
             case Apply(Lambda(args,body, tpe, loc), args3, _, _) =>
               Apply(Lambda(args, body, tpe, loc), args3 ::: args2, tpe2, loc2)
@@ -279,6 +274,7 @@ object Uncurrier extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
             case Apply(Var(sym, tpe, loc), args3, _, _) =>
               Apply(Var(sym, tpe, loc), args3 ::: args2, tpe2, loc2)
 
+            case _ => throw InternalCompilerException(s"Can't uncurry expression : $exp0")
           }
         case _ => throw InternalCompilerException(s"Can't uncurry expression : $exp0")
       }
@@ -291,8 +287,6 @@ object Uncurrier extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     def maximalUncurry(exp0: SimplifiedAst.Expression.Apply): Int = exp0 match {
       case Apply(exp1, _, _, _) =>
         exp1 match {
-          case _: LoadExpression => 0
-          case _: StoreExpression => 0
           case Unit => 0
           case True => 0
           case False => 0
@@ -306,12 +300,12 @@ object Uncurrier extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
           case _: BigInt => 0
           case _: Str => 0
           case _: Var => 0
-          case _: Ref => 0
+          case _: Def => 0
           case _: Lambda => 0
           case _: Hook => 0
           case _: MkClosure => 0
-          case _: MkClosureRef => 0
-          case _: ApplyRef => 0
+          case _: MkClosureDef => 0
+          case _: ApplyDef => 0
           case _: ApplyTail => 0
           case _: ApplyHook => 0
           case a: Apply => 1 + maximalUncurry(a)
