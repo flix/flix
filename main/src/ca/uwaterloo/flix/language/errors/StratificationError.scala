@@ -17,8 +17,8 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body.{Filter, Loop, Negative, Positive}
-import ca.uwaterloo.flix.language.ast.TypedAst.Stratum
+import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Head
+import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Head.{False, True}
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.vt.VirtualString._
 import ca.uwaterloo.flix.util.vt.VirtualTerminal
@@ -26,21 +26,24 @@ import ca.uwaterloo.flix.util.vt.VirtualTerminal
 /**
   * An error raised to indicate that a property is violated.
   */
-case class StratificationError(stratum: List[Stratum], head: Symbol.TableSym, body: TypedAst.Predicate.Body, bodySym: Symbol.TableSym) extends CompilationError {
+case class StratificationError(constraints: List[TypedAst.Constraint]) extends CompilationError {
   val kind: String = "Stratification Error"
   val source: Source = constraints.head.loc.source
   val message: VirtualTerminal = {
     val vt = new VirtualTerminal
     vt << Line(kind, source.format) << NewLine
-    vt << ">> Stratification Error in constraints" << NewLine
-    vt << "It was triggered by the rule: " << head.name << "(...) :- "
-    vt << (body match {
-      case Positive(sym, terms, loc) => sym.name + "(...)"
-      case Negative(sym, terms, loc) => "!" + sym.name + "(...)"
-      case Filter(name, terms, loc) => name.name + "(...)"
-      case Loop(sym, term, loc) => ???
+    vt << ">> Stratification Error in Constraints" << NewLine
+
+    vt << (if (constraints.size > 1) {"Consider the rules:"} else {"Consider the rule:"}) << NewLine
+    constraints.foreach(rule => {
+      vt << (rule.head match {
+        case True(loc) => loc.lineAt(loc.beginLine)
+        case False(loc) => loc.lineAt(loc.beginLine)
+        case Head.Positive(sym, terms, loc) => loc.lineAt(loc.beginLine)
+        case Head.Negative(sym, terms, loc) => loc.lineAt(loc.beginLine)
+      })
+      vt << NewLine
     })
-    vt << NewLine << "At " << body.loc.format
-    vt << NewLine
+    vt
   }
 }

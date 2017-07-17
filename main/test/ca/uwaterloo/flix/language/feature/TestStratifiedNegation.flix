@@ -4,6 +4,7 @@ rel Bar(c: Int)
 Foo(c) :- Foo(c).
 Bar(c) :- Bar(c).
 Foo(c) :- Bar(c).
+Bar(c) :- Foo(c).
 
 // Long chains shouldn't error
 rel Foo1(c: Int)
@@ -16,8 +17,6 @@ rel Foo7(c: Int)
 rel Foo8(c: Int)
 rel Foo9(c: Int)
 rel Foo10(c: Int)
-Foo(c) :- Foo(c).
-Foo(c) :- Foo1(c).
 Foo1(c) :- Foo2(c).
 Foo2(c) :- Foo3(c).
 Foo3(c) :- Foo4(c).
@@ -27,14 +26,13 @@ Foo6(c) :- Foo7(c).
 Foo7(c) :- Foo8(c).
 Foo8(c) :- Foo9(c).
 Foo9(c) :- Foo10(c).
-Foo10(c) :- Bar(c).
+Foo10(c) :- Foo1(c).
 
-// Both A and !A can imply B
-rel Baz(c:Int)
-Foo(c) :- Bar(c).
-Foo(c) :- !Baz(c).
-Bar(c) :- Baz(c).
-Bar(c) :- !Baz(c).
+// Both B if A and B if !A can be true
+rel A(c:Int)
+rel B(c:Int)
+B(c) :- A(c).
+B(c) :- !A(c).
 
 // Should be stratified since Q depends on P, but but P does not depend on Q
 rel P(x: Int)
