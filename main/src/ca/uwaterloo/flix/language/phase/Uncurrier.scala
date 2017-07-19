@@ -24,25 +24,20 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 import ca.uwaterloo.flix.util.Validation._
 
 /**
-  * A phase that merges curried definitions into definitions which take multiple
-  * arguments.
+  * A phase that uncurries function definitions and applications.
   *
-  * For example, consider
+  * For example, consider:
   *
-  *   |def add(x: Int): Int -> Int = {
-  *   |   z -> x + z
-  *   |}
-  *   |
-  *   |def a: Int = (add(3))(4)
+  * def add(x: Int): Int -> Int = z -> x + z
+  * def r: Int = add(3)(4)
   *
-  * The uncurrier will create a function
+  * The uncurrier will create a function:
   *
-  *   |def add$uncurried(x: Int, z: Int): Int = {
-  *   |    x + z
-  *   |}
+  * def add$uncurried(x: Int, z: Int): Int = x + z
   *
-  * And change the call site to
-  *   |def a: Int = add$uncurried(3,4)
+  * And change the call site to:
+  *
+  * def r: Int = add$uncurried(3, 4)
   */
 object Uncurrier extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
 
@@ -73,7 +68,7 @@ object Uncurrier extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     def mkUncurriedDef(sym: Symbol.DefnSym,
                        curriedDef: SimplifiedAst.Def, uncurryLevel: Int,
                        newSyms0: Map[Symbol.DefnSym, Map[Int, Symbol.DefnSym]],
-                      root: SimplifiedAst.Root)(implicit genSym: GenSym)
+                       root: SimplifiedAst.Root)(implicit genSym: GenSym)
     : (Map[Symbol.DefnSym, SimplifiedAst.Def], Map[Symbol.DefnSym, Map[Int, Symbol.DefnSym]]) = {
       curriedDef.exp match {
         // If the body is a lambda, then we have a curried function
@@ -127,10 +122,6 @@ object Uncurrier extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       * Recursively replace all the variables in exp0 with new variables using the
       * pairs in replaceSyms. This ensure that the new functions created don't
       * reference the variables of the original functions.
-      *
-      * @param exp0 The expression to replace
-      * @param env0 The v
-      * @return
       */
     def substitute(exp0: SimplifiedAst.Expression, env0: Map[Symbol.VarSym, Symbol.VarSym])(implicit genSym: GenSym): SimplifiedAst.Expression = {
       def replace(oldSym: Symbol.VarSym): Symbol.VarSym =
@@ -187,8 +178,6 @@ object Uncurrier extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
 
     /**
       * Uncurry an expression
-      *
-      * @return The expression modified to have all curried calls uncurried
       */
     def uncurry(exp0: SimplifiedAst.Expression, newSyms: Map[Symbol.DefnSym, Map[Int, Symbol.DefnSym]], root: SimplifiedAst.Root): SimplifiedAst.Expression = exp0 match {
       case Unit => exp0
@@ -215,19 +204,19 @@ object Uncurrier extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case a: Apply =>
         val uncurryCount = maximalUncurry(a)
         uncurryN(exp0, uncurryCount) match {
-        case Apply(Def(sym1, tp1, loc1), args2, tpe2, loc2) =>
-          newSyms.get (sym1) match {
-            case Some (m) => m.get (uncurryCount) match {
-              case Some (newSym) => {
-                Apply(Def(newSym, tp1, loc1), args2 map {
-                  uncurry(_, newSyms, root)
-                }, tpe2, loc2)
+          case Apply(Def(sym1, tp1, loc1), args2, tpe2, loc2) =>
+            newSyms.get(sym1) match {
+              case Some(m) => m.get(uncurryCount) match {
+                case Some(newSym) => {
+                  Apply(Def(newSym, tp1, loc1), args2 map {
+                    uncurry(_, newSyms, root)
+                  }, tpe2, loc2)
+                }
+                case None => a
               }
               case None => a
             }
-            case None => a
-          }
-        case _ => a
+          case _ => a
         }
       case Unary(op, exp, tpe, loc) => Unary(op, uncurry(exp, newSyms, root), tpe, loc)
       case Binary(op, exp1, exp2, tpe, loc) => Binary(op, uncurry(exp1, newSyms, root), uncurry(exp2, newSyms, root), tpe, loc)
@@ -257,18 +246,17 @@ object Uncurrier extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
 
     /**
       * Uncurry an expression n times
-      * @return
       */
     def uncurryN(exp0: SimplifiedAst.Expression, count: Int): SimplifiedAst.Expression = count match {
       case 0 => exp0
       case n => exp0 match {
         case Apply(exp2, args2, tpe2, loc2) =>
           uncurryN(exp2, n - 1) match {
-              // Transform add(3)(4) -> add$uncurried(3,4)
+            // Transform add(3)(4) -> add$uncurried(3,4)
             case Apply(Def(sym4, tpe4, loc4), args3, _, _) =>
               Apply(Def(sym4, uncurryType(tpe4), loc4), args3 ::: args2, tpe2, loc2)
             // Transform ((x,y) -> x+y)(3)(4) -> ((x,y) -> x+y)(3,4)
-            case Apply(Lambda(args,body, tpe, loc), args3, _, _) =>
+            case Apply(Lambda(args, body, tpe, loc), args3, _, _) =>
               Apply(Lambda(args, body, tpe, loc), args3 ::: args2, tpe2, loc2)
             // Transform var(3)(4) -> var(3,4)
             case Apply(Var(sym, tpe, loc), args3, _, _) =>
@@ -283,7 +271,6 @@ object Uncurrier extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     /**
       * Counts the number of times a function can be uncurried
       */
-
     def maximalUncurry(exp0: SimplifiedAst.Expression.Apply): Int = exp0 match {
       case Apply(exp1, _, _, _) =>
         exp1 match {
@@ -331,29 +318,26 @@ object Uncurrier extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     }
   }
 
-    /**
-      * Uncurry the type of a function. Given a type like a x b -> (c -> d), turn it
-      * into a x b x c -> d
-      *
-      * @param tpe The type to uncurry
-      * @return The uncurried type
-      */
-    def uncurryType(tpe: Type): Type = tpe match {
-      case Type.Apply(Type.Arrow(len), ts) =>
-        // We're given an application which looks like
-        // List(From, From, From, To), where there are one are more From
-        // types, and the result is the To type.
-        //
-        // When we are uncurrying, the To type will also be an apply, we then
-        // transform List(From1, From2, List(From3, From4, To)) to
-        // List(From1, From2, From3, From4, To)
-        //
-        val from = ts.take(ts.size - 1)
-        val to = ts.last
-        ts.last match {
-          case Type.Apply(_, ts2) => Type.Apply(Type.Arrow(len + 1), from ::: ts2)
-          case _ => throw InternalCompilerException(s"Cannot uncurry type $tpe")
-        }
-      case _ => throw InternalCompilerException(s"Cannot uncurry type $tpe")
-    }
+  /**
+    * Uncurry the type of a function. Given a type like a x b -> (c -> d), turn it
+    * into a x b x c -> d
+    */
+  def uncurryType(tpe: Type): Type = tpe match {
+    case Type.Apply(Type.Arrow(len), ts) =>
+      // We're given an application which looks like
+      // List(From, From, From, To), where there are one are more From
+      // types, and the result is the To type.
+      //
+      // When we are uncurrying, the To type will also be an apply, we then
+      // transform List(From1, From2, List(From3, From4, To)) to
+      // List(From1, From2, From3, From4, To)
+      //
+      val from = ts.take(ts.size - 1)
+      val to = ts.last
+      ts.last match {
+        case Type.Apply(_, ts2) => Type.Apply(Type.Arrow(len + 1), from ::: ts2)
+        case _ => throw InternalCompilerException(s"Cannot uncurry type $tpe")
+      }
+    case _ => throw InternalCompilerException(s"Cannot uncurry type $tpe")
   }
+}
