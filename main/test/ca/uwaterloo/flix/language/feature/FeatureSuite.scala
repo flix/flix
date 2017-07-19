@@ -43,7 +43,9 @@ class FeatureSuite extends Suites(
   new FlixTest("Test.Expression.Str", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Str.flix"),
   new FlixTest("Test.Expression.Ref", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Ref.flix"),
   new FlixTest("Test.Expression.Lambda", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Lambda.flix"),
-  new FlixTest("Test.Expression.Unary", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Unary.flix")
+  new FlixTest("Test.Expression.Unary", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Unary.flix"),
+  new FlixTest("Test.Expression.Binary.Arithmetic", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Binary.Arithmetic.flix"),
+  new FlixTest("Test.Expression.Binary.Comparison", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Binary.Comparison.flix")
 ) with ParallelTestExecution {
   /* left empty */
 }
