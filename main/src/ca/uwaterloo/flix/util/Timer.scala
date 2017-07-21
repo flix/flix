@@ -84,21 +84,21 @@ class Timer[T](f: => T) {
   /**
     * Returns the elapsed time as a human readable string in nanoseconds.
     */
-  def fmtNanoSeconds: String = f"$nanoseconds" + "nsec."
+  def fmtNanoSeconds: String = f"$nanoseconds" + "ns"
 
   /**
     * Returns the elapsed time as a human readable string in microseconds.
     */
-  def fmtMicroSeconds: String = f"$microseconds%.1f" + "usec."
+  def fmtMicroSeconds: String = f"$microseconds%.1f" + "us"
 
   /**
     * Returns the elapsed time as a human readable string in miliseconds.
     */
-  def fmtMiliSeconds: String = f"$miliseconds%.1f" + "msec."
+  def fmtMiliSeconds: String = f"$miliseconds%.1f" + "ms"
 
   /**
     * Returns the elapsed time as a human readable string in seconds.
     */
-  def fmtSeconds: String = f"$seconds%.1f" + "sec."
+  def fmtSeconds: String = f"$seconds%.1f" + "s"
 
 }

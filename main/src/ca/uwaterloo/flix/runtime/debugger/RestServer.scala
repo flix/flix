@@ -347,6 +347,7 @@ class RestServer(solver: Solver) {
       JObject(List(JField("name", JString("TailRec")), JField("time", JInt(solver.root.time.tailrec / 1000000)))),
       JObject(List(JField("name", JString("Inliner")), JField("time", JInt(solver.root.time.inliner / 1000000)))),
       JObject(List(JField("name", JString("Simplifier")), JField("time", JInt(solver.root.time.simplifier / 1000000)))),
+      JObject(List(JField("name", JString("Uncurrier")), JField("time", JInt(solver.root.time.uncurrier/ 1000000)))),
       JObject(List(JField("name", JString("TreeShaker")), JField("time", JInt(solver.root.time.treeshaker / 1000000)))),
       JObject(List(JField("name", JString("VarNumbering")), JField("time", JInt(solver.root.time.varNumbering / 1000000)))),
       JObject(List(JField("name", JString("TupleGen")), JField("time", JInt(solver.root.time.tupleGen / 1000000)))),

@@ -343,9 +343,10 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
       */
     def translate(t0: SimplifiedAst.Term.Head, m: TopLevel)(implicit genSym: GenSym): ExecutableAst.Term.Head = t0 match {
       case SimplifiedAst.Term.Head.Var(sym, tpe, loc) => ExecutableAst.Term.Head.Var(sym, tpe, loc)
-      case SimplifiedAst.Term.Head.Lit(lit, tpe, loc) =>
-        val sym = lit2sym(lit, m)
-        ExecutableAst.Term.Head.Lit(sym, tpe, loc)
+      case SimplifiedAst.Term.Head.Lit(lit, tpe, loc) => toValueOpt(lit) match {
+        case Some(value) => ExecutableAst.Term.Head.Lit(value, tpe, loc)
+        case None => ExecutableAst.Term.Head.Cst(lit2sym(lit, m), tpe, loc)
+      }
       case SimplifiedAst.Term.Head.App(name, args, tpe, loc) =>
         ExecutableAst.Term.Head.App(name, args.toArray, tpe, loc)
     }
@@ -357,9 +358,10 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
       def translate(t0: SimplifiedAst.Term.Body, m: TopLevel)(implicit genSym: GenSym): ExecutableAst.Term.Body = t0 match {
         case SimplifiedAst.Term.Body.Wild(tpe, loc) => ExecutableAst.Term.Body.Wild(tpe, loc)
         case SimplifiedAst.Term.Body.Var(sym, tpe, loc) => ExecutableAst.Term.Body.Var(sym, tpe, loc)
-        case SimplifiedAst.Term.Body.Lit(lit, tpe, loc) =>
-          val sym = lit2sym(lit, m)
-          ExecutableAst.Term.Body.Lit(sym, tpe, loc)
+        case SimplifiedAst.Term.Body.Lit(lit, tpe, loc) => toValueOpt(lit) match {
+          case Some(value) => ExecutableAst.Term.Body.Lit(value, tpe, loc)
+          case None => ExecutableAst.Term.Body.Cst(lit2sym(lit, m), tpe, loc)
+        }
         case SimplifiedAst.Term.Body.Pat(pat, tpe, loc) => ExecutableAst.Term.Body.Pat(Patterns.toExecutable(pat), tpe, loc)
       }
     }
@@ -378,9 +380,26 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
   def toExecutable(sast: SimplifiedAst.Property): ExecutableAst.Property =
     ExecutableAst.Property(sast.law, sast.defn, Expression.toExecutable(sast.exp))
 
+  /**
+    * Optionally returns the given expression `exp0` as a value reference.
+    */
+  private def toValueOpt(exp0: SimplifiedAst.Expression): Option[AnyRef] = exp0 match {
+    case SimplifiedAst.Expression.True => Some(java.lang.Boolean.TRUE)
+    case SimplifiedAst.Expression.False => Some(java.lang.Boolean.FALSE)
+    case SimplifiedAst.Expression.Char(lit) => Some(new java.lang.Character(lit))
+    case SimplifiedAst.Expression.Float32(lit) => Some(new java.lang.Float(lit))
+    case SimplifiedAst.Expression.Float64(lit) => Some(new java.lang.Double(lit))
+    case SimplifiedAst.Expression.Int8(lit) => Some(new java.lang.Byte(lit))
+    case SimplifiedAst.Expression.Int16(lit) => Some(new java.lang.Short(lit))
+    case SimplifiedAst.Expression.Int32(lit) => Some(new java.lang.Integer(lit))
+    case SimplifiedAst.Expression.Int64(lit) => Some(new java.lang.Long(lit))
+    case SimplifiedAst.Expression.BigInt(lit) => Some(lit)
+    case SimplifiedAst.Expression.Str(lit) => Some(lit)
+    case _ => None
+  }
+
   private def lit2sym(exp0: SimplifiedAst.Expression, m: TopLevel)(implicit genSym: GenSym): Symbol.DefnSym = {
-    // TODO: Consider using a notion of constant pool.
-    // Generate a top-level function for the literal.
+    // Generate a top-level function for the constant.
     val sym = Symbol.freshDefnSym("lit")
     val lit = Expression.toExecutable(exp0)
     val defn = ExecutableAst.Def(Ast.Annotations(Nil), sym, formals = Array(), lit, isSynthetic = true, exp0.tpe, exp0.loc)

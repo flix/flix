@@ -18,8 +18,8 @@ package ca.uwaterloo.flix
 
 import java.io.File
 
-import ca.uwaterloo.flix.api.{Flix, UserException, MatchException, SwitchException, RuleException}
-import ca.uwaterloo.flix.runtime.{Benchmarker, Tester, Value}
+import ca.uwaterloo.flix.api.{Flix, MatchException, RuleException, SwitchException, UserException}
+import ca.uwaterloo.flix.runtime.{Benchmarker, Shell, Tester, Value}
 import ca.uwaterloo.flix.util._
 import ca.uwaterloo.flix.util.vt.VirtualString.{Code, Line, NewLine}
 import ca.uwaterloo.flix.util.vt._
@@ -79,6 +79,13 @@ object Main {
       verifier = cmdOpts.verifier
     )
 
+    // check if running in interactive mode.
+    if (cmdOpts.interactive) {
+      val shell = new Shell(cmdOpts.files.toList, cmdOpts.main, options)
+      shell.loop()
+      System.exit(0)
+    }
+
     // configure Flix and add the paths.
     val flix = new Flix()
     flix.setOptions(options)
@@ -116,15 +123,16 @@ object Main {
 
     // compute the least model.
     try {
-      flix.solve() match {
+      val timer = new Timer(flix.solve())
+      timer.getResult match {
         case Validation.Success(model, errors) =>
           errors.foreach(e => println(e.message.fmt))
 
           val main = cmdOpts.main
           if (main.nonEmpty) {
             val name = main.get
-            val timer = new Timer(model.getConstant(name))
-            Console.println(s"$name returned `${Value.pretty(timer.getResult)}' (elapsed ${timer.fmt})")
+            val evalTimer = new Timer(model.getConstant(name))
+            Console.println(s"$name returned `${Value.pretty(evalTimer.getResult)}' (compile: ${timer.fmt}, execute: ${evalTimer.fmt})")
           }
 
           if (cmdOpts.benchmark) {
@@ -178,6 +186,7 @@ object Main {
   case class CmdOpts(benchmark: Boolean = false,
                      delta: Option[File] = None,
                      documentor: Boolean = false,
+                     interactive: Boolean = false,
                      listen: Option[Int] = None,
                      main: Option[String] = None,
                      monitor: Boolean = false,
@@ -225,6 +234,10 @@ object Main {
 
       // Help.
       help("help").text("prints this usage information.")
+
+      // Interactive.
+      opt[Unit]("interactive").action((f, c) => c.copy(interactive = true)).
+        text("enables interactive mode.")
 
       // Listen.
       opt[Int]("listen").action((s, c) => c.copy(listen = Some(s))).

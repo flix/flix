@@ -198,6 +198,7 @@ class Flix {
             Stratifier |>
             Monomorph |>
             Simplifier |>
+            Uncurrier |>
             LambdaLift |>
             Tailrec |>
             Inliner |>

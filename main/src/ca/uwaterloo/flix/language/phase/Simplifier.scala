@@ -488,8 +488,11 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
             // Add the fresh definition to the top-level.
             toplevel += freshSym -> defn
 
+            // Compute the argument symbols, i.e. the symbols of the rule.
+            val argSymbols = freshSymbols.map(_._1)
+
             // Return a head term that calls the freshly generated top-level definition.
-            SimplifiedAst.Term.Head.App(freshSym, freshSymbols.map(_._2._1), e0.tpe, e0.loc)
+            SimplifiedAst.Term.Head.App(freshSym, argSymbols, e0.tpe, e0.loc)
           }
       }
 
