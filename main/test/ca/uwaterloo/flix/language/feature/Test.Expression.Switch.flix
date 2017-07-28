@@ -52,32 +52,32 @@ def f04(x: Int): Str = switch {
 }
 
 @test
-def switchTest06(): Bool = assertEq!(f04(-2), "negative")
+def switchTest07(): Bool = assertEq!(f04(-2), "negative")
 
 @test
-def switchTest06(): Bool = assertEq!(f04(-1), "negative")
+def switchTest08(): Bool = assertEq!(f04(-1), "negative")
 
 @test
-def switchTest06(): Bool = assertEq!(f04(0), "zero")
+def switchTest09(): Bool = assertEq!(f04(0), "zero")
 
 @test
-def switchTest06(): Bool = assertEq!(f04(1), "one")
+def switchTest10(): Bool = assertEq!(f04(1), "one")
 
 @test
-def switchTest06(): Bool = assertEq!(f04(2), "two")
+def switchTest11(): Bool = assertEq!(f04(2), "two")
 
 @test
-def switchTest06(): Bool = assertEq!(f04(3), "many")
+def switchTest12(): Bool = assertEq!(f04(3), "many")
 
 @test
-def switchTest06(): Bool = assertEq!(f04(4), "many")
+def switchTest13(): Bool = assertEq!(f04(4), "many")
 
 def f05(x: Bool): Int = switch {
   case x => 1
 }
 
 @test
-def switchTest06(): Bool = assertEq!(f05(true), 1)
+def switchTest14(): Bool = assertEq!(f05(true), 1)
 
 
 
