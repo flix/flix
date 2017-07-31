@@ -26,6 +26,8 @@ import org.parboiled2
 import org.parboiled2._
 
 import scala.collection.immutable.Seq
+import scala.concurrent.duration.Duration
+import scala.concurrent.{Await, Future}
 
 /**
   * A phase to transform source files into abstract syntax trees.
@@ -38,8 +40,21 @@ object Parser extends Phase[(List[Source], Long, Map[Symbol.DefnSym, Ast.Hook]),
   def run(arg: (List[Source], Long, Map[Symbol.DefnSym, Ast.Hook]))(implicit flix: Flix): Validation[ParsedAst.Program, CompilationError] = {
     val (sources, reader, hooks) = arg
 
+    implicit val ec = scala.concurrent.ExecutionContext.global
+
     val timer = new Timer({
-      @@(sources.map(parse)) map {
+      // Parse each source in parallel.
+      val futures = sources map {
+        case source => Future {
+          parse(source)
+        }
+      }
+
+      // Await every future.
+      val results = Await.result(Future.sequence(futures), Duration.Inf)
+
+      // Sequence the results.
+      @@(results) map {
         case asts => ParsedAst.Program(asts, hooks, Time.Default)
       }
     })
