@@ -30,7 +30,7 @@ import ca.uwaterloo.flix.util.Validation._
 /**
   * A phase to read source files into memory.
   */
-object Reader extends Phase[(List[Input], Map[Symbol.DefnSym, Ast.Hook]), (List[Source], Map[Symbol.DefnSym, Ast.Hook])] {
+object Reader extends Phase[(List[Input], Map[Symbol.DefnSym, Ast.Hook]), (List[Source], Long, Map[Symbol.DefnSym, Ast.Hook])] {
 
   /*
    * Implicitly assumed default charset.
@@ -40,7 +40,9 @@ object Reader extends Phase[(List[Input], Map[Symbol.DefnSym, Ast.Hook]), (List[
   /**
     * Reads the given source inputs into memory.
     */
-  def run(arg: (List[Input], Map[Symbol.DefnSym, Ast.Hook]))(implicit flix: Flix): Validation[(List[Source], Map[Symbol.DefnSym, Ast.Hook]), CompilationError] = {
+  def run(arg: (List[Input], Map[Symbol.DefnSym, Ast.Hook]))(implicit flix: Flix): Validation[(List[Source], Long, Map[Symbol.DefnSym, Ast.Hook]), CompilationError] = {
+
+    val t = System.nanoTime()
 
     val (input, hooks) = arg
 
@@ -74,7 +76,9 @@ object Reader extends Phase[(List[Input], Map[Symbol.DefnSym, Ast.Hook]), (List[
         Source(path.toString, new String(bytes, DefaultCharset).toCharArray)
     }
 
-    (inputs, hooks).toSuccess
+    val e = System.nanoTime() - t
+
+    (inputs, e, hooks).toSuccess
   }
 
 }

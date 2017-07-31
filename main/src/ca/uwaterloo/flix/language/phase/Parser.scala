@@ -30,13 +30,13 @@ import scala.collection.immutable.Seq
 /**
   * A phase to transform source files into abstract syntax trees.
   */
-object Parser extends Phase[(List[Source], Map[Symbol.DefnSym, Ast.Hook]), ParsedAst.Program] {
+object Parser extends Phase[(List[Source], Long, Map[Symbol.DefnSym, Ast.Hook]), ParsedAst.Program] {
 
   /**
     * Parses the given source inputs into an abstract syntax tree.
     */
-  def run(arg: (List[Source], Map[Symbol.DefnSym, Ast.Hook]))(implicit flix: Flix): Validation[ParsedAst.Program, CompilationError] = {
-    val (sources, hooks) = arg
+  def run(arg: (List[Source], Long, Map[Symbol.DefnSym, Ast.Hook]))(implicit flix: Flix): Validation[ParsedAst.Program, CompilationError] = {
+    val (sources, reader, hooks) = arg
 
     val timer = new Timer({
       @@(sources.map(parse)) map {
@@ -45,7 +45,7 @@ object Parser extends Phase[(List[Source], Map[Symbol.DefnSym, Ast.Hook]), Parse
     })
 
     timer.getResult.map {
-      case ast => ast.copy(time = ast.time.copy(parser = timer.getDuration))
+      case ast => ast.copy(time = ast.time.copy(reader = reader, parser = timer.getDuration))
     }
   }
 

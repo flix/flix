@@ -331,6 +331,7 @@ class RestServer(solver: Solver) {
     */
   class GetCompilerPhasePerformance extends JsonHandler {
     def json: JValue = JArray(List(
+      JObject(List(JField("name", JString("Reader")), JField("time", JInt(solver.root.time.reader / 1000000)))),
       JObject(List(JField("name", JString("Parser")), JField("time", JInt(solver.root.time.parser / 1000000)))),
       JObject(List(JField("name", JString("Weeder")), JField("time", JInt(solver.root.time.weeder / 1000000)))),
       JObject(List(JField("name", JString("Namer")), JField("time", JInt(solver.root.time.namer / 1000000)))),

@@ -131,7 +131,9 @@ package object ast {
   }
 
   object Time {
-    val Default: Time = Time(parser = 0,
+    val Default: Time = Time(
+      reader = 0,
+      parser = 0,
       weeder = 0,
       namer = 0,
       resolver = 0,
@@ -160,7 +162,8 @@ package object ast {
   /**
     * A class that tracks the amount of time spent in each phase of the compiler.
     */
-  case class Time(parser: Long,
+  case class Time(reader: Long,
+                  parser: Long,
                   weeder: Long,
                   namer: Long,
                   resolver: Long,
