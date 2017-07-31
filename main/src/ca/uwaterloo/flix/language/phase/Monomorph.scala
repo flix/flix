@@ -271,6 +271,19 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           val es = elms.map(e => visitExp(e, env0))
           Expression.Tuple(es, subst0(tpe), eff, loc)
 
+        case Expression.Ref(exp, tpe, eff, loc) =>
+          val e = visitExp(exp, env0)
+          Expression.Ref(e, tpe, eff, loc)
+
+        case Expression.Deref(exp, tpe, eff, loc) =>
+          val e = visitExp(exp, env0)
+          Expression.Deref(e, tpe, eff, loc)
+
+        case Expression.Assign(exp1, exp2, tpe, eff, loc) =>
+          val e1 = visitExp(exp1, env0)
+          val e2 = visitExp(exp2, env0)
+          Expression.Assign(e1, e2, tpe, eff, loc)
+
         case Expression.Existential(fparam, exp, eff, loc) =>
           val (param, env1) = specializeFormalParam(fparam, subst0)
           Expression.Existential(param, visitExp(exp, env0 ++ env1), eff, loc)

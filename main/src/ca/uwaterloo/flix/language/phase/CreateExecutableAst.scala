@@ -217,6 +217,16 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
       case SimplifiedAst.Expression.Tuple(elms, tpe, loc) =>
         val elmsArray = elms.map(toExecutable).toArray
         ExecutableAst.Expression.Tuple(elmsArray, tpe, loc)
+      case SimplifiedAst.Expression.Ref(exp, tpe, loc) =>
+        val e = toExecutable(exp)
+        ExecutableAst.Expression.Ref(e, tpe, loc)
+      case SimplifiedAst.Expression.Deref(exp, tpe, loc) =>
+        val e = toExecutable(exp)
+        ExecutableAst.Expression.Deref(e, tpe, loc)
+      case SimplifiedAst.Expression.Assign(exp1, exp2, tpe, loc) =>
+        val e1 = toExecutable(exp1)
+        val e2 = toExecutable(exp2)
+        ExecutableAst.Expression.Assign(e1, e2, tpe, loc)
       case SimplifiedAst.Expression.Existential(fparam, exp, loc) =>
         val p = ExecutableAst.FormalParam(fparam.sym, fparam.tpe)
         ExecutableAst.Expression.Existential(p, toExecutable(exp), loc)

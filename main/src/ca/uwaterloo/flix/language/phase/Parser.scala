@@ -486,7 +486,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
 
     def Primary: Rule1[ParsedAst.Expression] = rule {
-      LetRec | LetMatch | IfThenElse | Match | LambdaMatch | Switch | Unsafe | Native | Lambda | Tuple | FNil | FSet | FMap | Literal |
+      LetRec | LetMatch | IfThenElse | Match | LambdaMatch | Switch | Unsafe | Native | Ref | Deref | Assign | Lambda | Tuple | FNil | FSet | FMap | Literal |
         Existential | Universal | UnaryLambda | QName | Wild | Tag | SName | UserError
     }
 
@@ -596,6 +596,21 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
       rule {
         SP ~ "@{" ~ optWS ~ zeroOrMore(KeyValue).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.FMap
       }
+    }
+
+    // TODO: Change syntax.
+    def Ref: Rule1[ParsedAst.Expression.Ref] = rule {
+      SP ~ atomic("ref") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.Ref
+    }
+
+    // TODO: Change syntax.
+    def Deref: Rule1[ParsedAst.Expression.Deref] = rule {
+      SP ~ atomic("deref") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.Deref
+    }
+
+    // TODO: Change syntax.
+    def Assign: Rule1[ParsedAst.Expression.Assign] = rule {
+      SP ~ atomic("assign") ~ WS ~ Expression ~ WS ~ atomic(":=") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.Assign
     }
 
     def Wild: Rule1[ParsedAst.Expression.Wild] = rule {

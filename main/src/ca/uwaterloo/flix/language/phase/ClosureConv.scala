@@ -28,21 +28,21 @@ object ClosureConv {
   /**
     * Performs closure conversion on the given expression `e`.
     */
-  def convert(exp: SimplifiedAst.Expression)(implicit genSym: GenSym): SimplifiedAst.Expression = exp match {
-    case SimplifiedAst.Expression.Unit => exp
-    case SimplifiedAst.Expression.True => exp
-    case SimplifiedAst.Expression.False => exp
-    case SimplifiedAst.Expression.Char(lit) => exp
-    case SimplifiedAst.Expression.Float32(lit) => exp
-    case SimplifiedAst.Expression.Float64(lit) => exp
-    case SimplifiedAst.Expression.Int8(lit) => exp
-    case SimplifiedAst.Expression.Int16(lit) => exp
-    case SimplifiedAst.Expression.Int32(lit) => exp
-    case SimplifiedAst.Expression.Int64(lit) => exp
-    case SimplifiedAst.Expression.BigInt(lit) => exp
-    case SimplifiedAst.Expression.Str(lit) => exp
+  def convert(exp0: SimplifiedAst.Expression)(implicit genSym: GenSym): SimplifiedAst.Expression = exp0 match {
+    case SimplifiedAst.Expression.Unit => exp0
+    case SimplifiedAst.Expression.True => exp0
+    case SimplifiedAst.Expression.False => exp0
+    case SimplifiedAst.Expression.Char(lit) => exp0
+    case SimplifiedAst.Expression.Float32(lit) => exp0
+    case SimplifiedAst.Expression.Float64(lit) => exp0
+    case SimplifiedAst.Expression.Int8(lit) => exp0
+    case SimplifiedAst.Expression.Int16(lit) => exp0
+    case SimplifiedAst.Expression.Int32(lit) => exp0
+    case SimplifiedAst.Expression.Int64(lit) => exp0
+    case SimplifiedAst.Expression.BigInt(lit) => exp0
+    case SimplifiedAst.Expression.Str(lit) => exp0
 
-    case SimplifiedAst.Expression.Var(sym, tpe, loc) => exp
+    case SimplifiedAst.Expression.Var(sym, tpe, loc) => exp0
 
     case e: SimplifiedAst.Expression.Def =>
       // If we encounter a Ref that has a lambda type (and is not being called in an Apply),
@@ -62,7 +62,7 @@ object ClosureConv {
 
       // First, we collect the free variables in the lambda expression.
       // NB: We pass the lambda expression (instead of its body) to account for bound arguments.
-      val freeVars = freeVariables(exp).toList
+      val freeVars = freeVariables(exp0).toList
 
       // We prepend the free variables to the arguments list. Thus all variables within the lambda body will be treated
       // uniformly. The implementation will supply values for the free variables, without any effort from the caller.
@@ -108,11 +108,11 @@ object ClosureConv {
       // Closure convert the lambda.
       convert(lambda)
     case SimplifiedAst.Expression.MkClosure(lambda, freeVars, tpe, loc) =>
-      throw InternalCompilerException(s"Illegal expression during closure conversion: '$exp'.")
+      throw InternalCompilerException(s"Illegal expression during closure conversion: '$exp0'.")
     case SimplifiedAst.Expression.MkClosureDef(ref, freeVars, tpe, loc) =>
-      throw InternalCompilerException(s"Illegal expression during closure conversion: '$exp'.")
+      throw InternalCompilerException(s"Illegal expression during closure conversion: '$exp0'.")
     case SimplifiedAst.Expression.ApplyDef(name, args, tpe, loc) =>
-      throw InternalCompilerException(s"Illegal expression during closure conversion: '$exp'.")
+      throw InternalCompilerException(s"Illegal expression during closure conversion: '$exp0'.")
 
     case SimplifiedAst.Expression.Apply(e, args, tpe, loc) =>
       // We're trying to call some expression `e`. If `e` is a Ref, then it's a top-level function, so we directly call
@@ -123,8 +123,8 @@ object ClosureConv {
         case SimplifiedAst.Expression.Hook(hook, _, _) => SimplifiedAst.Expression.ApplyHook(hook, args.map(convert), tpe, loc)
         case _ => SimplifiedAst.Expression.Apply(convert(e), args.map(convert), tpe, loc)
       }
-    case SimplifiedAst.Expression.ApplyTail(name, formals, actuals, tpe, loc) => exp
-    case SimplifiedAst.Expression.ApplyHook(hook, args, tpe, loc) => exp
+    case SimplifiedAst.Expression.ApplyTail(name, formals, actuals, tpe, loc) => exp0
+    case SimplifiedAst.Expression.ApplyHook(hook, args, tpe, loc) => exp0
 
     case SimplifiedAst.Expression.Unary(op, e, tpe, loc) =>
       SimplifiedAst.Expression.Unary(op, convert(e), tpe, loc)
@@ -146,16 +146,29 @@ object ClosureConv {
       SimplifiedAst.Expression.Index(convert(e), offset, tpe, loc)
     case SimplifiedAst.Expression.Tuple(elms, tpe, loc) =>
       SimplifiedAst.Expression.Tuple(elms.map(convert), tpe, loc)
+    case SimplifiedAst.Expression.Ref(exp, tpe, loc) =>
+      val e = convert(exp)
+      SimplifiedAst.Expression.Ref(e, tpe, loc)
+
+    case SimplifiedAst.Expression.Deref(exp, tpe, loc) =>
+      val e = convert(exp)
+      SimplifiedAst.Expression.Deref(e, tpe, loc)
+
+    case SimplifiedAst.Expression.Assign(exp1, exp2, tpe, loc) =>
+      val e1 = convert(exp1)
+      val e2 = convert(exp2)
+      SimplifiedAst.Expression.Assign(e1, e2, tpe, loc)
+
     case SimplifiedAst.Expression.Existential(params, e, loc) =>
       SimplifiedAst.Expression.Existential(params, convert(e), loc)
     case SimplifiedAst.Expression.Universal(params, e, loc) =>
       SimplifiedAst.Expression.Universal(params, convert(e), loc)
-    case SimplifiedAst.Expression.NativeConstructor(constructor, args, tpe, loc) => exp
-    case SimplifiedAst.Expression.NativeField(field, tpe, loc) => exp
-    case SimplifiedAst.Expression.NativeMethod(method, args, tpe, loc) => exp
-    case SimplifiedAst.Expression.UserError(tpe, loc) => exp
-    case SimplifiedAst.Expression.MatchError(tpe, loc) => exp
-    case SimplifiedAst.Expression.SwitchError(tpe, loc) => exp
+    case SimplifiedAst.Expression.NativeConstructor(constructor, args, tpe, loc) => exp0
+    case SimplifiedAst.Expression.NativeField(field, tpe, loc) => exp0
+    case SimplifiedAst.Expression.NativeMethod(method, args, tpe, loc) => exp0
+    case SimplifiedAst.Expression.UserError(tpe, loc) => exp0
+    case SimplifiedAst.Expression.MatchError(tpe, loc) => exp0
+    case SimplifiedAst.Expression.SwitchError(tpe, loc) => exp0
   }
 
   /**
@@ -207,6 +220,9 @@ object ClosureConv {
     case SimplifiedAst.Expression.Tag(enum, tag, exp, tpe, loc) => freeVariables(exp)
     case SimplifiedAst.Expression.Index(base, offset, tpe, loc) => freeVariables(base)
     case SimplifiedAst.Expression.Tuple(elms, tpe, loc) => mutable.LinkedHashSet.empty ++ elms.flatMap(freeVariables)
+    case SimplifiedAst.Expression.Ref(exp, tpe, loc) => freeVariables(exp)
+    case SimplifiedAst.Expression.Deref(exp, tpe, loc) => freeVariables(exp)
+    case SimplifiedAst.Expression.Assign(exp1, exp2, tpe, loc) => freeVariables(exp1) ++ freeVariables(exp2)
     case SimplifiedAst.Expression.Existential(fparam, exp, loc) =>
       freeVariables(exp).filterNot { v => v._1 == fparam.sym }
     case SimplifiedAst.Expression.Universal(fparam, exp, loc) =>
@@ -304,6 +320,16 @@ object ClosureConv {
       case Expression.Tuple(elms, tpe, loc) =>
         val es = elms map visit
         Expression.Tuple(es, tpe, loc)
+      case Expression.Ref(exp, tpe, loc) =>
+        val e = visit(exp)
+        Expression.Ref(e, tpe, loc)
+      case Expression.Deref(exp, tpe, loc) =>
+        val e = visit(exp)
+        Expression.Deref(e, tpe, loc)
+      case Expression.Assign(exp1, exp2, tpe, loc) =>
+        val e1 = visit(exp1)
+        val e2 = visit(exp2)
+        Expression.Assign(e1, e2, tpe, loc)
       case Expression.Existential(fparam, exp, loc) =>
         val fs = replace(fparam, subst)
         val e = visit(exp)
