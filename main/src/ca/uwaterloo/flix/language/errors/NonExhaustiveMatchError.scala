@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.{SourceInput, SourceLocation, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Source, SourceLocation, TypedAst}
 import ca.uwaterloo.flix.util.vt.VirtualString._
 import ca.uwaterloo.flix.util.vt.VirtualTerminal
 
@@ -27,7 +27,7 @@ import ca.uwaterloo.flix.util.vt.VirtualTerminal
 case class NonExhaustiveMatchError(rules: List[TypedAst.MatchRule], pat: String, loc: SourceLocation) extends CompilationError {
   val kind = "Non-Exhaustive Pattern Match"
 
-  val source: SourceInput = loc.source
+  val source: Source = loc.source
 
   val message: VirtualTerminal = {
     val vt = new VirtualTerminal

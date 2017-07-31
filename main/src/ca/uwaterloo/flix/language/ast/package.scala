@@ -25,46 +25,53 @@ package object ast {
   // TODO: Move into Ast.
 
   /**
-    * A common super-type for sources.
+    * A common super-type for inputs.
     */
-  sealed trait SourceInput {
-    def format: String = this match {
-      case SourceInput.Internal(name, str) => name
-      case SourceInput.TxtFile(p) => p.getFileName.toString
-      case SourceInput.ZipFile(p) => p.getFileName.toString
-      case SourceInput.Str(_) => "???"
-    }
-  }
+  sealed trait Input
 
-  object SourceInput {
+  object Input {
 
     /**
       * A source that is backed by an internal resource.
       */
-    case class Internal(name: String, str: String) extends SourceInput
+    case class Internal(name: String, text: String) extends Input
 
     /**
       * A source that is backed by a regular string.
       */
-    case class Str(str: String) extends SourceInput
+    case class Str(text: String) extends Input
 
     /**
       * A source that is backed by a regular file.
       */
-    case class TxtFile(path: Path) extends SourceInput
+    case class TxtFile(path: Path) extends Input
 
     /**
       * A source that is backed by a zip file.
       */
-    case class ZipFile(path: Path) extends SourceInput
+    case class ZipFile(path: Path) extends Input
 
   }
+
+  /**
+    * A source is a name and an array of character data.
+    */
+  case class Source(name: String, data: Array[Char]) {
+    def format: String = name
+
+    override def equals(o: scala.Any): Boolean = o match {
+      case that: Source => this.name == that.name
+    }
+
+    override def hashCode(): Int = name.hashCode
+  }
+
 
   object SourcePosition {
     /**
       * Represents an unknown source position.
       */
-    val Unknown: SourcePosition = SourcePosition(SourceInput.Str(""), 0, 0, None)
+    val Unknown: SourcePosition = SourcePosition(Source("", Array.emptyCharArray), 0, 0, None)
   }
 
   /**
@@ -74,7 +81,7 @@ package object ast {
     * @param col   the column number.
     * @param input the parser input.
     */
-  case class SourcePosition(source: SourceInput, line: Int, col: Int, input: Option[ParserInput])
+  case class SourcePosition(source: Source, line: Int, col: Int, input: Option[ParserInput])
 
   /**
     * Companion object for the [[SourceLocation]] class.
@@ -114,7 +121,7 @@ package object ast {
     * @param endCol    the column number where the entity ends.
     * @param lineAt    a closure which returns the text at the given line offset.
     */
-  case class SourceLocation(source: SourceInput, beginLine: Int, beginCol: Int, endLine: Int, endCol: Int, lineAt: Int => String) {
+  case class SourceLocation(source: Source, beginLine: Int, beginCol: Int, endLine: Int, endCol: Int, lineAt: Int => String) {
 
     /**
       * Returns a formatted string representation of `this` source location.

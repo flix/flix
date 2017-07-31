@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.{ExecutableAst, SourceInput, Symbol}
+import ca.uwaterloo.flix.language.ast.{ExecutableAst, Source, Symbol}
 import ca.uwaterloo.flix.util.vt.VirtualString._
 import ca.uwaterloo.flix.util.vt.VirtualTerminal
 
@@ -26,7 +26,7 @@ import ca.uwaterloo.flix.util.vt.VirtualTerminal
   */
 case class PropertyError(property: ExecutableAst.Property, m: Map[Symbol.VarSym, String]) extends CompilationError {
   val kind: String = "Property Error"
-  val source: SourceInput = property.defn.loc.source
+  val source: Source = property.defn.loc.source
   val message: VirtualTerminal = {
     val name = property.defn.toString
     val law = property.law.toString

@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.{Eff, EffectSet, SourceInput, SourceLocation}
+import ca.uwaterloo.flix.language.ast.{Eff, EffectSet, Source, SourceLocation}
 import ca.uwaterloo.flix.util.vt.VirtualString._
 import ca.uwaterloo.flix.util.vt.VirtualTerminal
 
@@ -30,7 +30,7 @@ import ca.uwaterloo.flix.util.vt.VirtualTerminal
   */
 case class EffectError(expected: Eff, inferred: Eff, loc: SourceLocation) extends CompilationError {
   val kind: String = "Effect Error"
-  val source: SourceInput = loc.source
+  val source: Source = loc.source
   val message: VirtualTerminal = {
     val vt = new VirtualTerminal()
     vt << Line(kind, source.format) << NewLine

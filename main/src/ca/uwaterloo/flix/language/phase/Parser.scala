@@ -16,40 +16,28 @@
 
 package ca.uwaterloo.flix.language.phase
 
-import java.nio.charset.Charset
-import java.nio.file.Files
-import java.util.zip.ZipFile
-
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.{ParsedAst, _}
 import ca.uwaterloo.flix.util.{StreamOps, Timer}
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
+import org.parboiled2
 import org.parboiled2._
 
 import scala.collection.immutable.Seq
 
-object Parser {
+/**
+  * A phase to transform source files into abstract syntax trees.
+  */
+object Parser extends Phase[(List[Source], Map[Symbol.DefnSym, Ast.Hook]), ParsedAst.Program] {
 
   /**
-    * Returns the AST of the given source input `source`.
+    * Parses the given source inputs into an abstract syntax tree.
     */
-  def parse(source: SourceInput): Validation[ParsedAst.Root, CompilationError] = {
-    val parser = new Parser(source)
-    parser.Root.run() match {
-      case scala.util.Success(ast) =>
-        ast.toSuccess
-      case scala.util.Failure(e: org.parboiled2.ParseError) =>
-        ca.uwaterloo.flix.language.errors.ParseError(parser.formatError(e), source).toFailure
-      case scala.util.Failure(e) =>
-        ca.uwaterloo.flix.language.errors.ParseError(e.getMessage, source).toFailure
-    }
-  }
+  def run(arg: (List[Source], Map[Symbol.DefnSym, Ast.Hook]))(implicit flix: Flix): Validation[ParsedAst.Program, CompilationError] = {
+    val (sources, hooks) = arg
 
-  /**
-    * Returns the parsed AST of the given source inputs `sources`.
-    */
-  def parseAll(sources: List[SourceInput], hooks: Map[Symbol.DefnSym, Ast.Hook]): Validation[ParsedAst.Program, CompilationError] = {
     val timer = new Timer({
       @@(sources.map(parse)) map {
         case asts => ParsedAst.Program(asts, hooks, Time.Default)
@@ -61,32 +49,32 @@ object Parser {
     }
   }
 
+  /**
+    * Returns the AST of the given source input `source`.
+    */
+  def parse(source: Source): Validation[ParsedAst.Root, CompilationError] = {
+    val parser = new Parser(source)
+    parser.Root.run() match {
+      case scala.util.Success(ast) =>
+        ast.toSuccess
+      case scala.util.Failure(e: org.parboiled2.ParseError) =>
+        ca.uwaterloo.flix.language.errors.ParseError(parser.formatError(e), source).toFailure
+      case scala.util.Failure(e) =>
+        ca.uwaterloo.flix.language.errors.ParseError(e.getMessage, source).toFailure
+    }
+  }
+
 }
 
 /**
   * A parser for the Flix language.
   */
-class Parser(val source: SourceInput) extends org.parboiled2.Parser {
-
-  /*
-    * Implicitly assumed default charset.
-    */
-  val DefaultCharset: Charset = Charset.forName("UTF-8")
+class Parser(val source: Source) extends org.parboiled2.Parser {
 
   /*
    * Initialize parser input.
    */
-  override val input: ParserInput = source match {
-    case SourceInput.Internal(name, text) => text
-    case SourceInput.Str(str) => str
-    case SourceInput.TxtFile(path) =>
-      new String(Files.readAllBytes(path), DefaultCharset)
-    case SourceInput.ZipFile(path) =>
-      val file = new ZipFile(path.toFile)
-      val entry = file.entries().nextElement()
-      val inputStream = file.getInputStream(entry)
-      new String(StreamOps.readAllBytes(inputStream), DefaultCharset)
-  }
+  override val input: ParserInput = new org.parboiled2.ParserInput.CharArrayBasedParserInput(source.data)
 
   /////////////////////////////////////////////////////////////////////////////
   // Root                                                                    //
@@ -303,10 +291,10 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
       def Special: Rule1[String] = rule {
         "\\\\" ~ push("\\") |
-        "\\'"  ~ push("'")  |
-        "\\n"  ~ push("\n") |
-        "\\r"  ~ push("\r") |
-        "\\t"  ~ push("\t")
+          "\\'" ~ push("'") |
+          "\\n" ~ push("\n") |
+          "\\r" ~ push("\r") |
+          "\\t" ~ push("\t")
       }
 
       def Unicode: Rule1[String] = rule {

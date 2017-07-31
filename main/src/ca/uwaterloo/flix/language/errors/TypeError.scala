@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.{SourceInput, SourceLocation, Type}
+import ca.uwaterloo.flix.language.ast.{Source, SourceLocation, Type}
 import ca.uwaterloo.flix.util.vt._
 import ca.uwaterloo.flix.util.vt.VirtualString._
 
@@ -38,7 +38,7 @@ object TypeError {
     */
   // TODO: Move?
   case class UndefinedAttribute(table: String, attribute: String, loc: SourceLocation) extends TypeError {
-    val source: SourceInput = loc.source
+    val source: Source = loc.source
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -60,7 +60,7 @@ object TypeError {
     * @param loc       the location where the error occurred.
     */
   case class UnificationError(baseType1: Type, baseType2: Type, fullType1: Type, fullType2: Type, loc: SourceLocation) extends TypeError {
-    val source: SourceInput = loc.source
+    val source: Source = loc.source
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
@@ -83,7 +83,7 @@ object TypeError {
     * @param loc       the location where the error occurred.
     */
   case class OccursCheckError(baseVar: Type.Var, baseType: Type, fullType1: Type, fullType2: Type, loc: SourceLocation) extends TypeError {
-    val source: SourceInput = loc.source
+    val source: Source = loc.source
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
