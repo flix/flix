@@ -38,27 +38,30 @@ object Parser extends Phase[(List[Source], Long, Map[Symbol.DefnSym, Ast.Hook]),
     * Parses the given source inputs into an abstract syntax tree.
     */
   def run(arg: (List[Source], Long, Map[Symbol.DefnSym, Ast.Hook]))(implicit flix: Flix): Validation[ParsedAst.Program, CompilationError] = {
+    // The argument consists of a list of sources, the time spent by the reader, and the map of hooks.
     val (sources, reader, hooks) = arg
 
-    implicit val ec = scala.concurrent.ExecutionContext.global
+    // Retrieve the execution context.
+    implicit val _ = flix.ec
 
     val timer = new Timer({
-      // Parse each source in parallel.
+      // Parse each source in parallel in its own future.
       val futures = sources map {
         case source => Future {
           parse(source)
         }
       }
 
-      // Await every future.
+      // Wait for the result of each parse.
       val results = Await.result(Future.sequence(futures), Duration.Inf)
 
-      // Sequence the results.
+      // Sequence and combine the ASTs into one abstract syntax tree.
       @@(results) map {
         case asts => ParsedAst.Program(asts, hooks, Time.Default)
       }
     })
 
+    // Measure the time spent in parsing.
     timer.getResult.map {
       case ast => ast.copy(time = ast.time.copy(reader = reader, parser = timer.getDuration))
     }

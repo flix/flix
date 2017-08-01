@@ -16,7 +16,6 @@
 
 package ca.uwaterloo.flix.language.phase
 
-import java.nio.charset.Charset
 import java.nio.file.Files
 import java.util.zip.ZipFile
 
@@ -28,25 +27,22 @@ import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
 
 /**
-  * A phase to read source files into memory.
+  * A phase to read inputs into memory.
   */
 object Reader extends Phase[(List[Input], Map[Symbol.DefnSym, Ast.Hook]), (List[Source], Long, Map[Symbol.DefnSym, Ast.Hook])] {
-
-  /*
-   * Implicitly assumed default charset.
-   */
-  val DefaultCharset: Charset = Charset.forName("UTF-8")
 
   /**
     * Reads the given source inputs into memory.
     */
   def run(arg: (List[Input], Map[Symbol.DefnSym, Ast.Hook]))(implicit flix: Flix): Validation[(List[Source], Long, Map[Symbol.DefnSym, Ast.Hook]), CompilationError] = {
-
+    // Measure time
     val t = System.nanoTime()
 
+    // Pattern match the argument into the inputs and the hooks.
     val (input, hooks) = arg
 
-    val inputs = input map {
+    // Compute the sources.
+    val sources = input map {
 
       /**
         * Internal.
@@ -63,7 +59,7 @@ object Reader extends Phase[(List[Input], Map[Symbol.DefnSym, Ast.Hook]), (List[
         */
       case Input.TxtFile(path) =>
         val bytes = Files.readAllBytes(path)
-        Source(path.toString, new String(bytes, DefaultCharset).toCharArray)
+        Source(path.toString, new String(bytes, flix.defaultCharset).toCharArray)
 
       /**
         * Zip file.
@@ -73,12 +69,13 @@ object Reader extends Phase[(List[Input], Map[Symbol.DefnSym, Ast.Hook]), (List[
         val entry = file.entries().nextElement()
         val inputStream = file.getInputStream(entry)
         val bytes = StreamOps.readAllBytes(inputStream)
-        Source(path.toString, new String(bytes, DefaultCharset).toCharArray)
+        Source(path.toString, new String(bytes, flix.defaultCharset).toCharArray)
     }
 
     val e = System.nanoTime() - t
 
-    (inputs, e, hooks).toSuccess
+    // Return a triple of inputs, elapsed time, and hooks.
+    (sources, e, hooks).toSuccess
   }
 
 }
