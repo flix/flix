@@ -388,7 +388,11 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   object Expressions {
 
     def Block: Rule1[ParsedAst.Expression] = rule {
-      "{" ~ optWS ~ Expression ~ optWS ~ "}" ~ optWS | LogicalOr
+      "{" ~ optWS ~ Expression ~ optWS ~ "}" ~ optWS | Assign
+    }
+
+    def Assign: Rule1[ParsedAst.Expression] = rule {
+      LogicalOr ~ optional(optWS ~ atomic(":=") ~ optWS ~ LogicalOr ~ SP ~> ParsedAst.Expression.Assign)
     }
 
     def LogicalOr: Rule1[ParsedAst.Expression] = rule {
@@ -474,7 +478,15 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
 
     def Unary: Rule1[ParsedAst.Expression] = rule {
-      !Literal ~ (SP ~ capture(atomic("!") | atomic("+") | atomic("-") | atomic("~~~")) ~ optWS ~ Unary ~ SP ~> ParsedAst.Expression.Unary) | Cast
+      !Literal ~ (SP ~ capture(atomic("!") | atomic("+") | atomic("-") | atomic("~~~")) ~ optWS ~ Unary ~ SP ~> ParsedAst.Expression.Unary) | Ref
+    }
+
+    def Ref: Rule1[ParsedAst.Expression] = rule {
+      (SP ~ atomic("ref") ~ WS ~ Deref ~ SP ~> ParsedAst.Expression.Ref) | Deref
+    }
+
+    def Deref: Rule1[ParsedAst.Expression] = rule {
+      (SP ~ atomic("deref") ~ WS ~ Cast ~ SP ~> ParsedAst.Expression.Deref) | Cast
     }
 
     def Cast: Rule1[ParsedAst.Expression] = rule {
@@ -486,7 +498,7 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
 
     def Primary: Rule1[ParsedAst.Expression] = rule {
-      LetRec | LetMatch | IfThenElse | Match | LambdaMatch | Switch | Unsafe | Native | Ref | Deref | Assign | Lambda | Tuple | FNil | FSet | FMap | Literal |
+      LetRec | LetMatch | IfThenElse | Match | LambdaMatch | Switch | Unsafe | Native | Lambda | Tuple | FNil | FSet | FMap | Literal |
         Existential | Universal | UnaryLambda | QName | Wild | Tag | SName | UserError
     }
 
@@ -596,21 +608,6 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
       rule {
         SP ~ "@{" ~ optWS ~ zeroOrMore(KeyValue).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.FMap
       }
-    }
-
-    // TODO: Change syntax.
-    def Ref: Rule1[ParsedAst.Expression.Ref] = rule {
-      SP ~ atomic("ref") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.Ref
-    }
-
-    // TODO: Change syntax.
-    def Deref: Rule1[ParsedAst.Expression.Deref] = rule {
-      SP ~ atomic("deref") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.Deref
-    }
-
-    // TODO: Change syntax.
-    def Assign: Rule1[ParsedAst.Expression.Assign] = rule {
-      SP ~ atomic("assign") ~ WS ~ Expression ~ WS ~ atomic(":=") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.Assign
     }
 
     def Wild: Rule1[ParsedAst.Expression.Wild] = rule {

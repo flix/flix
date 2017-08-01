@@ -580,12 +580,11 @@ object ParsedAst {
     /**
       * Assignment expression.
       *
-      * @param sp1  the position of the first character in the expression.
       * @param exp1 the expression to reference.
       * @param exp2 the expression to assign.
       * @param sp2  the position of the last character in the expression.
       */
-    case class Assign(sp1: SourcePosition, exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class Assign(exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Existentially Quantified Expression.
