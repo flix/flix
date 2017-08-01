@@ -1,17 +1,17 @@
 lazy val commonSettings = Seq(
-  scalaVersion := "2.11.7",
+  scalaVersion := "2.12.3",
   organization := "ca.uwaterloo.flix",
   version := "0.1-SNAPSHOT"
 )
 
 lazy val dependencies = Seq(
-  "com.github.scopt" %% "scopt" % "3.5.0",
-  "org.scalatest" %% "scalatest" % "2.2.6" % Test,
-  "org.parboiled" %% "parboiled" % "2.1.2",
-  "org.json4s" %% "json4s-native" % "3.2.11",
-  "org.ow2.asm" % "asm" % "5.0.4",
-  "org.ow2.asm" % "asm-util" % "5.0.4",
-  "org.ow2.asm" % "asm-analysis" % "5.0.4"
+  "com.github.scopt" %% "scopt" % "3.6.0",
+  "org.scalatest" %% "scalatest" % "3.0.3" % Test,
+  "org.parboiled" %% "parboiled" % "2.1.4",
+  "org.json4s" %% "json4s-native" % "3.5.3",
+  "org.ow2.asm" % "asm" % "5.2.0",
+  "org.ow2.asm" % "asm-util" % "5.2.0",
+  "org.ow2.asm" % "asm-analysis" % "5.2.0"
 )
 
 lazy val flix = (project in file("."))
