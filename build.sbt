@@ -9,9 +9,9 @@ lazy val dependencies = Seq(
   "org.scalatest" %% "scalatest" % "3.0.3" % Test,
   "org.parboiled" %% "parboiled" % "2.1.4",
   "org.json4s" %% "json4s-native" % "3.5.3",
-  "org.ow2.asm" % "asm" % "5.2.0",
-  "org.ow2.asm" % "asm-util" % "5.2.0",
-  "org.ow2.asm" % "asm-analysis" % "5.2.0"
+  "org.ow2.asm" % "asm" % "5.2",
+  "org.ow2.asm" % "asm-util" % "5.2",
+  "org.ow2.asm" % "asm-analysis" % "5.2"
 )
 
 lazy val flix = (project in file("."))
