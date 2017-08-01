@@ -76,7 +76,7 @@
 
             <!-- Bundle scala libraries. -->
             <zipgroupfileset file="${scala.home}/lib/scala-library.jar"/>
-            <zipgroupfileset file="${scala.home}/lib/scala-xml_2.11-1.0.4.jar"/>
+            <zipgroupfileset file="${scala.home}/lib/scala-xml_2.12-1.0.6.jar"/>
         </jar>
     </target>
 
