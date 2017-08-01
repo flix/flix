@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.runtime
 
 import ca.uwaterloo.flix.api.FlixException
-import ca.uwaterloo.flix.language.ast.{SourceInput, Symbol}
+import ca.uwaterloo.flix.language.ast.{Source, Symbol}
 import ca.uwaterloo.flix.util.vt.VirtualString.{Blue, Dedent, Green, Indent, Line, NewLine, Red}
 import ca.uwaterloo.flix.util.vt.VirtualTerminal
 

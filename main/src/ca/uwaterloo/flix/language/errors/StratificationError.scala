@@ -25,6 +25,6 @@ import ca.uwaterloo.flix.util.vt.VirtualTerminal
   */
 case class StratificationError(constraints: List[TypedAst.Constraint]) extends CompilationError {
   val kind: String = "Stratification Error"
-  val source: SourceInput = constraints.head.loc.source
+  val source: Source = constraints.head.loc.source
   val message: VirtualTerminal = ??? // TODO
 }

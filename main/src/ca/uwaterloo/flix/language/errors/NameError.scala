@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.{SourceInput, SourceLocation}
+import ca.uwaterloo.flix.language.ast.{Source, SourceLocation}
 import ca.uwaterloo.flix.util.vt.VirtualString._
 import ca.uwaterloo.flix.util.vt.VirtualTerminal
 
@@ -38,7 +38,7 @@ object NameError {
     * @param loc2 the location of the second definition.
     */
   case class DuplicateDefinition(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
-    val source: SourceInput = loc1.source
+    val source: Source = loc1.source
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -60,7 +60,7 @@ object NameError {
     * @param loc2 the location of the second definition.
     */
   case class DuplicateIndex(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
-    val source: SourceInput = loc1.source
+    val source: Source = loc1.source
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -81,7 +81,7 @@ object NameError {
     * @param loc       the location of the class name.
     */
   case class AmbiguousNativeConstructor(className: String, arity: Int, loc: SourceLocation) extends NameError {
-    val source: SourceInput = loc.source
+    val source: Source = loc.source
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -100,7 +100,7 @@ object NameError {
     * @param loc       the location of the class name.
     */
   case class AmbiguousNativeMethod(className: String, fieldName: String, arity: Int, loc: SourceLocation) extends NameError {
-    val source: SourceInput = loc.source
+    val source: Source = loc.source
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -117,7 +117,7 @@ object NameError {
     * @param loc  the location of the class name.
     */
   case class UndefinedNativeClass(name: String, loc: SourceLocation) extends NameError {
-    val source: SourceInput = loc.source
+    val source: Source = loc.source
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -135,7 +135,7 @@ object NameError {
     * @param loc       the location of the method name.
     */
   case class UndefinedNativeConstructor(className: String, arity: Int, loc: SourceLocation) extends NameError {
-    val source: SourceInput = loc.source
+    val source: Source = loc.source
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -153,7 +153,7 @@ object NameError {
     * @param loc       the location of the field name.
     */
   case class UndefinedNativeField(className: String, fieldName: String, loc: SourceLocation) extends NameError {
-    val source: SourceInput = loc.source
+    val source: Source = loc.source
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -172,7 +172,7 @@ object NameError {
     * @param loc       the location of the method name.
     */
   case class UndefinedNativeMethod(className: String, fieldName: String, arity: Int, loc: SourceLocation) extends NameError {
-    val source: SourceInput = loc.source
+    val source: Source = loc.source
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
