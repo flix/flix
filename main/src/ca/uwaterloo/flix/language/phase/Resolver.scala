@@ -707,6 +707,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
       case "BigInt" => Type.BigInt.toSuccess
       case "Str" => Type.Str.toSuccess
       case "Native" => Type.Native.toSuccess
+      case "Ref" => Type.Ref.toSuccess
 
       // Enum Types.
       case typeName =>
