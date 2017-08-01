@@ -1,11 +1,11 @@
 dependencies:
   pre:
-    - wget http://downloads.typesafe.com/scala/2.11.7/scala-2.11.7.tgz
-    - tar xzf scala-2.11.7.tgz
+    - wget http://downloads.typesafe.com/scala/2.12.3/scala-2.12.3.tgz
+    - tar xzf scala-2.12.3.tgz
 
 machine:
   environment:
-    SCALA_HOME: /home/ubuntu/flix/scala-2.11.7
+    SCALA_HOME: /home/ubuntu/flix/scala-2.12.3
     ANT_OPTS: -Xss8m -Xmx1536m
   java:
     version:
