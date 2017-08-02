@@ -24,7 +24,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.util.vt.TerminalContext
 import ca.uwaterloo.flix.util._
 
-import scala.collection.convert.decorateAsScala._
+import scala.collection.JavaConverters._
 
 class Shell(files: List[File], main: Option[String], options: Options) {
 
