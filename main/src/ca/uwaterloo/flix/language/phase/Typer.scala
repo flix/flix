@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.phase.Unification._
 import ca.uwaterloo.flix.language.{CompilationError, GenSym}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess}
-import ca.uwaterloo.flix.util.{InternalCompilerException, Result, Validation}
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Result, Validation}
 
 object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
 
@@ -117,7 +117,10 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         *
         * Returns [[Err]] if a definition fails to type check.
         */
-      def typecheck(program: ResolvedAst.Program)(implicit genSym: GenSym): Result[Map[Symbol.DefnSym, TypedAst.Def], TypeError] = {
+      def typecheck(program: ResolvedAst.Program)(implicit flix: Flix): Result[Map[Symbol.DefnSym, TypedAst.Def], TypeError] = {
+        // Put genSym into implicit scope.
+        implicit val genSym = flix.genSym
+
         /**
           * Performs type inference and reassembly on the given definition `defn`.
           */
@@ -128,13 +131,14 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
             }
         }
 
-        // Visit every definition in the program.
-        val result = program.defs.toList.map {
-          case (_, defn) => visitDefn(defn)
-        }
+        // Every definition in the program.
+        val defs = program.defs.values.toList
+
+        // Visit every definition in parallel.
+        val results = ParOps.parMap(visitDefn, defs)
 
         // Sequence the results and convert them back to a map.
-        Result.seqM(result).map(_.toMap)
+        Result.seqM(results).map(_.toMap)
       }
 
       /**

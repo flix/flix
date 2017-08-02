@@ -19,8 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.{ParsedAst, _}
-import ca.uwaterloo.flix.util.{StreamOps, Timer}
-import ca.uwaterloo.flix.util.Validation
+import ca.uwaterloo.flix.util.{ParOps, StreamOps, Timer, Validation}
 import ca.uwaterloo.flix.util.Validation._
 import org.parboiled2
 import org.parboiled2._
@@ -45,15 +44,8 @@ object Parser extends Phase[(List[Source], Long, Map[Symbol.DefnSym, Ast.Hook]),
     implicit val _ = flix.ec
 
     val timer = new Timer({
-      // Parse each source in parallel in its own future.
-      val futures = sources map {
-        case source => Future {
-          parse(source)
-        }
-      }
-
-      // Wait for the result of each parse.
-      val results = Await.result(Future.sequence(futures), Duration.Inf)
+      // Parse each source in parallel.
+      val results = ParOps.parMap(parse, sources)
 
       // Sequence and combine the ASTs into one abstract syntax tree.
       @@(results) map {
