@@ -226,6 +226,28 @@ object Value {
   }
 
   /////////////////////////////////////////////////////////////////////////////
+  // Boxes                                                                   //
+  /////////////////////////////////////////////////////////////////////////////
+  /**
+    * Representation of a reference cell.
+    */
+  class Box {
+    private var value: AnyRef = _
+
+    def getValue: AnyRef = value
+
+    def setValue(x: AnyRef): Unit = {
+      value = x
+    }
+
+    override def equals(obj: scala.Any): Boolean = throw InternalRuntimeException(s"Box does not support equals().")
+
+    override def hashCode(): Int = throw InternalRuntimeException(s"Box does not support hashCode().")
+
+    override def toString: String = s"Box($value)"
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
   // Opt, List, Set, Map                                                     //
   /////////////////////////////////////////////////////////////////////////////
 
@@ -278,7 +300,7 @@ object Value {
     case _ =>
       val tpe1 = ref1.getClass.getCanonicalName
       val tpe2 = ref2.getClass.getCanonicalName
-        throw InternalRuntimeException(s"Unable to compare '$tpe1' and '$tpe2'.")
+      throw InternalRuntimeException(s"Unable to compare '$tpe1' and '$tpe2'.")
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -335,7 +357,7 @@ object Value {
     case (Pattern.BigInt(lit, _), o: java.math.BigInteger) => lit.equals(o)
     case (Pattern.Str(lit, _), o: java.lang.String) => lit.equals(o)
     case (Pattern.Tag(enum, tag, p, _, _), o: Value.Tag) => if (tag.equals(o.tag)) unify(p, o.value, env0) else false
-    case (Pattern.Tag(enum, tag, p, _, _), o: Enum) => if(tag == o.getTag) unify(p, o.getBoxedValue, env0) else false
+    case (Pattern.Tag(enum, tag, p, _, _), o: Enum) => if (tag == o.getTag) unify(p, o.getBoxedValue, env0) else false
     case (Pattern.Tuple(elms, _, _), o: Array[AnyRef]) =>
       if (elms.length != o.length)
         return false

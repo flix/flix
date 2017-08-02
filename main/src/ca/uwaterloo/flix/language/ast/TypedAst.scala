@@ -168,6 +168,12 @@ object TypedAst {
 
     case class Tuple(elms: List[TypedAst.Expression], tpe: Type, eff: Eff, loc: SourceLocation) extends TypedAst.Expression
 
+    case class Ref(exp: TypedAst.Expression, tpe: Type, eff: Eff, loc: SourceLocation) extends TypedAst.Expression
+
+    case class Deref(exp: TypedAst.Expression, tpe: Type, eff: Eff, loc: SourceLocation) extends TypedAst.Expression
+
+    case class Assign(exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: Eff, loc: SourceLocation) extends TypedAst.Expression
+
     case class Existential(fparam: TypedAst.FormalParam, exp: TypedAst.Expression, eff: Eff, loc: SourceLocation) extends TypedAst.Expression {
       def tpe: Type = Type.Bool
     }

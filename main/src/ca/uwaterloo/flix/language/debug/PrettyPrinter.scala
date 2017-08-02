@@ -202,6 +202,19 @@ object PrettyPrinter {
           }
           vt.text(")")
 
+        case Expression.Ref(exp, tpe, loc) =>
+          vt.text("ref ")
+          visitExp(exp)
+
+        case Expression.Deref(exp, tpe, loc) =>
+          vt.text("deref ")
+          visitExp(exp)
+
+        case Expression.Assign(exp1, exp2, tpe, loc) =>
+          visitExp(exp1)
+          vt.text(" := ")
+          visitExp(exp2)
+
         case Expression.Existential(fparam, exp, loc) =>
           vt.text("∃(")
           fmtParam(fparam, vt)

@@ -527,6 +527,23 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
               }
           }
 
+        case ParsedAst.Expression.Ref(sp1, exp, sp2) =>
+          for {
+            e <- visit(exp, unsafe)
+          } yield WeededAst.Expression.Ref(e, mkSL(sp1, sp2))
+
+        case ParsedAst.Expression.Deref(sp1, exp, sp2) =>
+          for {
+            e <- visit(exp, unsafe)
+          } yield WeededAst.Expression.Deref(e, mkSL(sp1, sp2))
+
+        case ParsedAst.Expression.Assign(exp1, exp2, sp2) =>
+          val sp1 = leftMostSourcePosition(exp1)
+          for {
+            e1 <- visit(exp1, unsafe)
+            e2 <- visit(exp2, unsafe)
+          } yield WeededAst.Expression.Assign(e1, e2, mkSL(sp1, sp2))
+
         case ParsedAst.Expression.Existential(sp1, fparams, exp, sp2) =>
           /*
            * Checks for `IllegalExistential`.
@@ -1163,6 +1180,9 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.FAppend(fst, _, _, _) => leftMostSourcePosition(fst)
     case ParsedAst.Expression.FSet(sp1, _, _) => sp1
     case ParsedAst.Expression.FMap(sp1, _, _) => sp1
+    case ParsedAst.Expression.Ref(sp1, _, _) => sp1
+    case ParsedAst.Expression.Deref(sp1, _, _) => sp1
+    case ParsedAst.Expression.Assign(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.Existential(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Universal(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Ascribe(e1, _, _, _) => leftMostSourcePosition(e1)

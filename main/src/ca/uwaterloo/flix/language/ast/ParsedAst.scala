@@ -560,6 +560,33 @@ object ParsedAst {
     case class FMap(sp1: SourcePosition, elms: Seq[(ParsedAst.Expression, ParsedAst.Expression)], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
+      * Reference expression.
+      *
+      * @param sp1 the position of the first character in the expression.
+      * @param exp the expression to reference.
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class Ref(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
+      * Dereference expression.
+      *
+      * @param sp1 the position of the first character in the expression.
+      * @param exp the expression to dereference.
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class Deref(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
+      * Assignment expression.
+      *
+      * @param exp1 the expression to reference.
+      * @param exp2 the expression to assign.
+      * @param sp2  the position of the last character in the expression.
+      */
+    case class Assign(exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
       * Existentially Quantified Expression.
       *
       * @param sp1        the position of the first character in the expression.

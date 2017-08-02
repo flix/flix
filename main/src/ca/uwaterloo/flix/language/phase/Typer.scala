@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.phase.Unification._
 import ca.uwaterloo.flix.language.{CompilationError, GenSym}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess}
-import ca.uwaterloo.flix.util.{Result, Validation}
+import ca.uwaterloo.flix.util.{InternalCompilerException, Result, Validation}
 
 object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
 
@@ -681,6 +681,50 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           ) yield resultType
 
         /*
+         * Reference expression.
+         */
+        case ResolvedAst.Expression.Ref(exp, tvar, loc) =>
+          //
+          //  exp : t
+          //  ----------------
+          //  ref exp : Ref[t]
+          //
+          for {
+            tpe <- visitExp(exp)
+            resultType <- unifyM(tvar, Type.Apply(Type.Ref, List(tpe)), loc)
+          } yield resultType
+
+        /*
+         * Dereference expression.
+         */
+        case ResolvedAst.Expression.Deref(exp, tvar, loc) =>
+          //
+          //  exp : Ref[t]
+          //  -------------
+          //  deref exp : t
+          //
+          for {
+            tpe <- visitExp(exp)
+            _ <- unifyM(tpe, Type.Apply(Type.Ref, List(tvar)), loc)
+          } yield tvar
+
+        /*
+         * Assignment expression.
+         */
+        case ResolvedAst.Expression.Assign(exp1, exp2, tvar, loc) =>
+          //
+          //  exp1 : Ref[t]    exp2: t
+          //  ------------------------
+          //  exp1 := exp2 : Unit
+          //
+          for {
+            tpe1 <- visitExp(exp1)
+            tpe2 <- visitExp(exp2)
+            _ <- unifyM(tpe1, Type.Apply(Type.Ref, List(tpe2)), loc)
+            resultType <- unifyM(tvar, Type.Unit, loc)
+          } yield resultType
+
+        /*
          * Existential expression.
          */
         case ResolvedAst.Expression.Existential(fparam, exp, loc) =>
@@ -897,6 +941,32 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         case ResolvedAst.Expression.Tuple(elms, tvar, loc) =>
           val es = elms.map(e => visitExp(e, subst0))
           TypedAst.Expression.Tuple(es, subst0(tvar), Eff.Bot, loc)
+
+        /*
+         * Reference expression.
+         */
+        case ResolvedAst.Expression.Ref(exp, tvar, loc) =>
+          // TODO: Check if tvar is unbound.
+          if (!(subst0.m contains tvar))
+            throw InternalCompilerException("Unbound tvar in ref.")
+
+          val e = visitExp(exp, subst0)
+          TypedAst.Expression.Ref(e, subst0(tvar), Eff.Top, loc)
+
+        /*
+         * Dereference expression.
+         */
+        case ResolvedAst.Expression.Deref(exp, tvar, loc) =>
+          val e = visitExp(exp, subst0)
+          TypedAst.Expression.Deref(e, subst0(tvar), Eff.Top, loc)
+
+        /*
+         * Assignment expression.
+         */
+        case ResolvedAst.Expression.Assign(exp1, exp2, tvar, loc) =>
+          val e1 = visitExp(exp1, subst0)
+          val e2 = visitExp(exp2, subst0)
+          TypedAst.Expression.Assign(e1, e2, subst0(tvar), Eff.Top, loc)
 
         /*
          * Existential expression.

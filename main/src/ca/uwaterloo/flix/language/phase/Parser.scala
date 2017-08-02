@@ -394,7 +394,11 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   object Expressions {
 
     def Block: Rule1[ParsedAst.Expression] = rule {
-      "{" ~ optWS ~ Expression ~ optWS ~ "}" ~ optWS | LogicalOr
+      "{" ~ optWS ~ Expression ~ optWS ~ "}" ~ optWS | Assign
+    }
+
+    def Assign: Rule1[ParsedAst.Expression] = rule {
+      LogicalOr ~ optional(optWS ~ atomic(":=") ~ optWS ~ LogicalOr ~ SP ~> ParsedAst.Expression.Assign)
     }
 
     def LogicalOr: Rule1[ParsedAst.Expression] = rule {
@@ -480,7 +484,15 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Unary: Rule1[ParsedAst.Expression] = rule {
-      !Literal ~ (SP ~ capture(atomic("!") | atomic("+") | atomic("-") | atomic("~~~")) ~ optWS ~ Unary ~ SP ~> ParsedAst.Expression.Unary) | Cast
+      !Literal ~ (SP ~ capture(atomic("!") | atomic("+") | atomic("-") | atomic("~~~")) ~ optWS ~ Unary ~ SP ~> ParsedAst.Expression.Unary) | Ref
+    }
+
+    def Ref: Rule1[ParsedAst.Expression] = rule {
+      (SP ~ atomic("ref") ~ WS ~ Deref ~ SP ~> ParsedAst.Expression.Ref) | Deref
+    }
+
+    def Deref: Rule1[ParsedAst.Expression] = rule {
+      (SP ~ atomic("deref") ~ WS ~ Cast ~ SP ~> ParsedAst.Expression.Deref) | Cast
     }
 
     def Cast: Rule1[ParsedAst.Expression] = rule {

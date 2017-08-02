@@ -29,6 +29,7 @@ class FeatureSuite extends Suites(
   new FlixTest("Test.Expression.Tuple", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Tuple.flix"),
   new FlixTest("TestNativeCall", "main/test/ca/uwaterloo/flix/language/feature/TestNativeCall.flix"),
   new FlixTest("TestPatternMatch", "main/test/ca/uwaterloo/flix/language/feature/TestPatternMatch.flix"),
+  // new FlixTest("TestReferences", "main/test/ca/uwaterloo/flix/language/feature/TestReferences.flix"), // TODO
   new FlixTest("TestUncurry", "main/test/ca/uwaterloo/flix/language/feature/TestUncurry.flix")
 ) with ParallelTestExecution {
   /* left empty */

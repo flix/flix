@@ -63,7 +63,7 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       *
       * That is, returns true iff `defn` satisfies:
       *
-      *   (a) Appears in the global namespaces, takes zero arguments, and is not marked as synthetic.
+      * (a) Appears in the global namespaces, takes zero arguments, and is not marked as synthetic.
       */
     def isReachableRoot(defn: SimplifiedAst.Def): Boolean = {
       (defn.sym.namespace.isEmpty && defn.formals.isEmpty && !defn.isSynthetic) || defn.ann.isBenchmark
@@ -72,7 +72,7 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     /**
       * Returns the function symbols reachable from `hs`.
       */
-    def visitHeadTerms(hs: List[SimplifiedAst.Term.Head]): Set[Symbol.DefnSym] = hs.map(visitHeadTerm).fold(Set())(_++_)
+    def visitHeadTerms(hs: List[SimplifiedAst.Term.Head]): Set[Symbol.DefnSym] = hs.map(visitHeadTerm).fold(Set())(_ ++ _)
 
     /**
       * Returns the function symbols reachable from the given SimplifiedAst.Term.Head `head`.
@@ -88,7 +88,7 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     /**
       * Returns the function symbols reachable from `bs`.
       */
-    def visitBodyTerms(bs: List[SimplifiedAst.Term.Body]): Set[Symbol.DefnSym] = bs.map(visitBodyTerm).fold(Set())(_++_)
+    def visitBodyTerms(bs: List[SimplifiedAst.Term.Body]): Set[Symbol.DefnSym] = bs.map(visitBodyTerm).fold(Set())(_ ++ _)
 
     /**
       * Returns the function symbols reachable from the given SimplifiedAst.Term.Body `body`.
@@ -105,12 +105,12 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     /**
       * Returns the function symbols reachable from `es`.
       */
-    def visitExps(es: List[Expression]): Set[Symbol.DefnSym] =  es.map(visitExp).fold(Set())(_++_)
+    def visitExps(es: List[Expression]): Set[Symbol.DefnSym] = es.map(visitExp).fold(Set())(_ ++ _)
 
     /**
       * Returns the function symbols reachable from the given Expression `e0`.
       */
-    def visitExp(e0: Expression): Set[Symbol.DefnSym] =  e0 match {
+    def visitExp(e0: Expression): Set[Symbol.DefnSym] = e0 match {
       case Expression.Unit => Set.empty
       case Expression.True => Set.empty
       case Expression.False => Set.empty
@@ -143,6 +143,9 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.Untag(sym, tag, exp, tpe, loc) => visitExp(exp)
       case Expression.Index(base, offset, tpe, loc) => visitExp(base)
       case Expression.Tuple(elms, tpe, loc) => visitExps(elms)
+      case Expression.Ref(exp, tpe, loc) => visitExp(exp)
+      case Expression.Deref(exp, tpe, loc) => visitExp(exp)
+      case Expression.Assign(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2)
       case Expression.Existential(fparam, exp, loc) => visitExp(exp)
       case Expression.Universal(fparam, exp, loc) => visitExp(exp)
       case Expression.NativeConstructor(constructor, args, tpe, loc) => visitExps(args)
@@ -206,7 +209,7 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
           case SimplifiedAst.Predicate.Body.Negative(sym, terms, loc) => visitBodyTerms(terms)
           case SimplifiedAst.Predicate.Body.Filter(sym, terms, loc) => Set(sym)
           case SimplifiedAst.Predicate.Body.Loop(sym, term, loc) => visitHeadTerm(term)
-        }.fold(Set())(_++_)
+        }.fold(Set())(_ ++ _)
       }
     }
 
@@ -218,7 +221,7 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     reachableFunctions ++= root.lattices.values.map {
       case SimplifiedAst.Lattice(tpe, bot, top, leq, lub, glb, loc) =>
         visitExp(bot) ++ visitExp(top) ++ visitExp(leq) ++ visitExp(lub) ++ visitExp(glb)
-    }.fold(Set())(_++_)
+    }.fold(Set())(_ ++ _)
 
     /*
      * Find reachable functions that:
@@ -227,7 +230,7 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
      */
     reachableFunctions ++= root.properties.map {
       case SimplifiedAst.Property(law, defn, exp) => visitExp(exp) + law + defn
-    }.fold(Set())(_++_)
+    }.fold(Set())(_ ++ _)
 
     /*
      * Find reachable functions that:

@@ -165,6 +165,9 @@ object Uncurrier extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         case Untag(sym, tag, exp, tpe, loc) => Untag(sym, tag, substitute(exp, env0), tpe, loc)
         case Index(base, offset, tpe, loc) => Index(substitute(base, env0), offset, tpe, loc)
         case Tuple(elms, tpe, loc) => Tuple(elms.map(e => substitute(e, env0)), tpe, loc)
+        case Ref(exp, tpe, loc) => Ref(substitute(exp, env0), tpe, loc)
+        case Deref(exp, tpe, loc) => Deref(substitute(exp, env0), tpe, loc)
+        case Assign(exp1, exp2, tpe, loc) => Assign(substitute(exp1, env0), substitute(exp2, env0), tpe, loc)
         case Existential(fparam, exp, loc) => Existential(fparam, substitute(exp, env0), loc)
         case Universal(fparam, exp, loc) => Universal(fparam, substitute(exp, env0), loc)
         case NativeConstructor(constructor, args, tpe, loc) => NativeConstructor(constructor, args.map(a => substitute(a, env0)), tpe, loc)
@@ -230,6 +233,16 @@ object Uncurrier extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Tuple(elms, tpe, loc) => Tuple(elms map {
         uncurry(_, newSyms, root)
       }, tpe, loc)
+      case Ref(exp, tpe, loc) =>
+        val e = uncurry(exp, newSyms, root)
+        Ref(e, tpe, loc)
+      case Deref(exp, tpe, loc) =>
+        val e = uncurry(exp, newSyms, root)
+        Deref(e, tpe, loc)
+      case Assign(exp1, exp2, tpe, loc) =>
+        val e1 = uncurry(exp1, newSyms, root)
+        val e2 = uncurry(exp2, newSyms, root)
+        Assign(e1, e2, tpe, loc)
       case Existential(fparam, exp, loc) => Existential(fparam, uncurry(exp, newSyms, root), loc)
       case Universal(fparam, exp, loc) => Universal(fparam, uncurry(exp, newSyms, root), loc)
       case NativeConstructor(constructor, args, tpe, loc) => NativeConstructor(constructor, args map {
@@ -306,6 +319,9 @@ object Uncurrier extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
           case _: Untag => 0
           case _: Index => 0
           case _: Tuple => 0
+          case _: Ref => 0
+          case _: Deref => 0
+          case _: Assign => 0
           case _: Existential => 0
           case _: Universal => 0
           case _: NativeConstructor => 0

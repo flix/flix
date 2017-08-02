@@ -130,6 +130,11 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.Untag(sym, tag, exp, tpe, loc) => visitExp(exp, i0)
       case Expression.Index(exp, index, tpe, loc) => visitExp(exp, i0)
       case Expression.Tuple(elms, tpe, loc) => visitExps(elms, i0)
+      case Expression.Ref(exp, tpe, loc) => visitExp(exp, i0)
+      case Expression.Deref(exp, tpe, loc) => visitExp(exp, i0)
+      case Expression.Assign(exp1, exp2, tpe, loc) =>
+        val i1 = visitExp(exp1, i0)
+        visitExp(exp2, i1)
       case Expression.Existential(params, exp, loc) => visitExp(exp, i0)
       case Expression.Universal(params, exp, loc) => visitExp(exp, i0)
       case Expression.NativeConstructor(constructor, args, tpe, loc) => visitExps(args, i0)

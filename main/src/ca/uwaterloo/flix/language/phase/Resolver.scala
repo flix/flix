@@ -329,6 +329,22 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
             es <- seqM(elms map visit)
           } yield ResolvedAst.Expression.Tuple(es, tvar, loc)
 
+        case NamedAst.Expression.Ref(exp, tvar, loc) =>
+          for {
+            e <- visit(exp)
+          } yield ResolvedAst.Expression.Ref(e, tvar, loc)
+
+        case NamedAst.Expression.Deref(exp, tvar, loc) =>
+          for {
+            e <- visit(exp)
+          } yield ResolvedAst.Expression.Deref(e, tvar, loc)
+
+        case NamedAst.Expression.Assign(exp1, exp2, tvar, loc) =>
+          for {
+            e1 <- visit(exp1)
+            e2 <- visit(exp2)
+          } yield ResolvedAst.Expression.Assign(e1, e2, tvar, loc)
+
         case NamedAst.Expression.Existential(fparam, exp, loc) =>
           for {
             fp <- Params.resolve(fparam, ns0, prog0)
@@ -691,6 +707,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
       case "BigInt" => Type.BigInt.toSuccess
       case "Str" => Type.Str.toSuccess
       case "Native" => Type.Native.toSuccess
+      case "Ref" => Type.Ref.toSuccess
 
       // Enum Types.
       case typeName =>

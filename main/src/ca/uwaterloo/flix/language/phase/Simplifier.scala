@@ -241,6 +241,19 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case TypedAst.Expression.Tuple(elms, tpe, eff, loc) =>
         SimplifiedAst.Expression.Tuple(elms map simplify, tpe, loc)
 
+      case TypedAst.Expression.Ref(exp, tpe, eff, loc) =>
+        val e = simplify(exp)
+        SimplifiedAst.Expression.Ref(e, tpe, loc)
+
+      case TypedAst.Expression.Deref(exp, tpe, eff, loc) =>
+        val e = simplify(exp)
+        SimplifiedAst.Expression.Deref(e, tpe, loc)
+
+      case TypedAst.Expression.Assign(exp1, exp2, tpe, eff, loc) =>
+        val e1 = simplify(exp1)
+        val e2 = simplify(exp2)
+        SimplifiedAst.Expression.Assign(e1, e2, tpe, loc)
+
       case TypedAst.Expression.Existential(fparam, exp, eff, loc) =>
         val p = SimplifiedAst.FormalParam(fparam.sym, fparam.mod, fparam.tpe, fparam.loc)
         val e = simplify(exp)
@@ -658,6 +671,12 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         SimplifiedAst.Expression.Index(visit(exp), offset, tpe, loc)
       case SimplifiedAst.Expression.Tuple(elms, tpe, loc) =>
         SimplifiedAst.Expression.Tuple(elms.map(visit), tpe, loc)
+      case SimplifiedAst.Expression.Ref(exp, tpe, loc) =>
+        SimplifiedAst.Expression.Ref(visit(exp), tpe, loc)
+      case SimplifiedAst.Expression.Deref(exp, tpe, loc) =>
+        SimplifiedAst.Expression.Deref(visit(exp), tpe, loc)
+      case SimplifiedAst.Expression.Assign(exp1, exp2, tpe, loc) =>
+        SimplifiedAst.Expression.Assign(visit(exp1), visit(exp2), tpe, loc)
       case SimplifiedAst.Expression.Existential(params, exp, loc) =>
         SimplifiedAst.Expression.Existential(params, visit(exp), loc)
       case SimplifiedAst.Expression.Universal(params, exp, loc) =>
