@@ -53,8 +53,12 @@ class TestBackend extends FunSuite {
     }
 
     def recursiveGetBoxed(res : AnyRef) : AnyRef = res match {
+      case r : Enum if r.isInstanceOf[Tuple] => {
+        val boxedEnumField = r.asInstanceOf[Tuple].getBoxedValue().map(recursiveGetBoxed)
+        new Value.Tag(r.getTag, boxedEnumField)
+      }
       case r : Enum => {
-        new Value.Tag(r.getTag, recursiveGetBoxed(r.getBoxedValue()))
+        new Value.Tag(r.getTag, recursiveGetBoxed(r.getBoxedEnumField()))
       }
       case r : Tuple => {
         r.getBoxedValue().map(recursiveGetBoxed)

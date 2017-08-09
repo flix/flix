@@ -41,7 +41,7 @@ object EnumGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     *
     * 2. Generate byteCodes of Enum Interface.
     * At this stage, we generate an interface for each enum symbol. All cases of that symbol will implement this interface.
-    * This interface extends `tagInterface` interface which has two methods: `getBoxedValue()` and `getTag()`. For example,
+    * This interface extends `tagInterface` interface which has two methods: `getBoxedEnumField()` and `getTag()`. For example,
     * for enum result defined as follows:
     *
     * enum Result[t, e] {
@@ -76,17 +76,17 @@ object EnumGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     * public Object value;
     *
     * Classes generated at this step implements the interface corresponding the symbol of the enum case and they include
-    * implementations of following methods: `getTag()`, `getValue()`, `getBoxedValue()`,`toString()`, `hashCode()` and
+    * implementations of following methods: `getTag()`, `getValue()`, `getBoxedEnumField()`,`toString()`, `hashCode()` and
     * `equals(Object)`.
     * `getTag()` is the function which returns the name of the enum case. `getValue()` returns the value of `value` field.
-    * `getBoxedValue()` returns the `value` field but the result is boxed inside an object. As an example, `getValue()` and
-    * `getBoxedValue()` of the class representing `Ok[Int32]` is as follows:
+    * `getBoxedEnumField()` returns the `value` field but the result is boxed inside an object. As an example, `getValue()` and
+    * `getBoxedEnumField()` of the class representing `Ok[Int32]` is as follows:
     *
     * public final int getValue() {
     *   return this.value;
     * }
     *
-    * public final Object getBoxedValue() {
+    * public final Object getBoxedEnumField() {
     *   return new Integer(this.value);
     * }
     *
@@ -148,8 +148,8 @@ object EnumGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     }}
 
     // 2. Generate byteCodes of Enum Interface.
-    val enumInterfaces : Map[EnumSym, (EnumInterfName, Array[Byte])] = root.enums.map{ case (sym, _) =>
-      val name = EnumInterfName(sym)
+    val enumInterfaces : Map[EnumSym, (EnumTypeInterfaceName, Array[Byte])] = root.enums.map{ case (sym, _) =>
+      val name = EnumTypeInterfaceName(sym)
       sym -> (name, compileEnumInterface(name)(flix))
     }.toMap // Despite IDE highlighting, this is actually necessary.
 
@@ -164,21 +164,26 @@ object EnumGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
 
     // 4. Generate bytecode for each enum case.
     val enumByteCodes = enumsGroupedBySymbolAndFieldType.map{ case (sym, (primEnums, objectEnums)) =>
-      val generatedPrimEnums : Map[(String, Type), Array[Byte]] = primEnums.map{ case (name, tpe) =>
+      val generatedPrimEnums : Map[(String, Type), (Array[Byte], Array[Byte])] = primEnums.map{ case (name, tpe) =>
         val wrapped = WrappedPrimitive(tpe)
-        val qualName = EnumClassName(sym, name, wrapped)
-        val interface = enumInterfaces(sym)._1
+        val clazzName = SECClassName(sym, name, wrapped)
+        val interfName = EnumCaseInterfaceName(sym, name, wrapped)
+        val enumInterface = enumInterfaces(sym)._1
         // A primitive enum cannot be a singleton
         val isSingleton = false
-        (name, tpe) -> EnumGen.compileEnumClass(qualName, interface, wrapped, isSingleton = isSingleton)
+        (name, tpe) -> (EnumGen.compileEnumCaseClass(clazzName, interfName, wrapped, isSingleton = isSingleton),
+          compileEnumCaseInterface(interfName, enumInterface, wrapped))
       }.toMap
-      val generatedObjectEnums : Map[String, Array[Byte]] = objectEnums.map{ case (name, tpes) =>
+      val generatedObjectEnums : Map[String, (Array[Byte], Array[Byte])] = objectEnums.map{ case (name, tpes) =>
         val wrapped = WrappedNonPrimitives(tpes)
-        val fullName = EnumClassName(sym, name, wrapped)
-        val interface = enumInterfaces(sym)._1
+        val clazzName = SECClassName(sym, name, wrapped)
+        val interfName = EnumCaseInterfaceName(sym, name, wrapped)
+        val enumInterface = enumInterfaces(sym)._1
+
         // If the type of the case field is `Unit` then this is a singleton
         val isSingleton = isSingletonEnum(root.enums(sym).cases(name))
-        name -> EnumGen.compileEnumClass(fullName, interface, wrapped, isSingleton = isSingleton)
+        name -> (EnumGen.compileEnumCaseClass(clazzName, interfName, wrapped, isSingleton = isSingleton),
+          compileEnumCaseInterface(interfName, enumInterface, wrapped))
       }.toMap
       sym -> (generatedPrimEnums, generatedObjectEnums)
     }
@@ -201,7 +206,7 @@ object EnumGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     * @param qualName Qualified Name of the interface to be generated
     * @return byte code representation of the class
     */
-  def compileEnumInterface(qualName: EnumInterfName)(flix: Flix): Array[Byte] = {
+  def compileEnumInterface(qualName: EnumTypeInterfaceName)(flix: Flix): Array[Byte] = {
     val visitor = new ClassWriter(0)
 
     // Super class of the class
@@ -216,6 +221,26 @@ object EnumGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     visitor.toByteArray
   }
 
+  def compileEnumCaseInterface(className: EnumCaseInterfaceName,
+                               superType: EnumTypeInterfaceName,
+                               fType: WrappedType): Array[Byte] = {
+    val visitor = new ClassWriter(0)
+
+    // Super class of the class
+    val superClass = asm.Type.getInternalName(Constants.objectClass)
+    // Interfaces to be extended
+    val extendedInterfaced = Array(decorate(superType))
+    visitor.visit(JavaVersion, ACC_PUBLIC + ACC_ABSTRACT + ACC_INTERFACE, decorate(className), null, superClass, extendedInterfaced)
+
+    val desc = getWrappedTypeDescriptor(fType)
+
+    val getValueMethod = visitor.visitMethod(ACC_PUBLIC + ACC_ABSTRACT, s"getValue", s"()$desc", null, null)
+    getValueMethod.visitEnd()
+
+    visitor.visitEnd()
+    visitor.toByteArray
+  }
+
   /**
     * Generates the class for each enum case.
     * Each class implements the interface of enum.
@@ -225,10 +250,10 @@ object EnumGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     * @param isSingleton is `true` if this is a singleton, `false` otherwise.
     * @return byte code representation of the class
     */
-  def compileEnumClass(className: EnumClassName,
-                       superType: EnumInterfName,
-                       fType: WrappedType,
-                       isSingleton : Boolean): Array[Byte] = {
+  def compileEnumCaseClass(className: SECClassName,
+                           superType: EnumCaseInterfaceName,
+                           fType: WrappedType,
+                           isSingleton : Boolean): Array[Byte] = {
     /*
      *  Initialize the class writer. We override `getCommonSuperClass` method because `asm` implementation of this
      * function requires types to loaded so that they can be compared to each other.
@@ -268,8 +293,8 @@ object EnumGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     // Generate the `getValue` method
     compileGetFieldMethod(visitor, className, getWrappedTypeDescriptor(fType), "value", "getValue", getReturnInsn(fType))
 
-    // Generate `getBoxedValue` method
-    compileGetBoxedValueMethod(visitor, className, fType)
+    // Generate `getBoxedEnumField` method
+    compileGetBoxedEnumFieldMethod(visitor, className, fType)
 
     // Generate `getTag` method
     compileGetTagMethod(visitor, className)
@@ -281,7 +306,8 @@ object EnumGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     compileToStringMethod(visitor, className, fType)
 
     // Generate `equals` method
-    compileEqualsMethod(visitor, className, fType, isSingleton = isSingleton)
+    // compileEqualsMethod(visitor, className, fType, isSingleton = isSingleton)
+    compileEqualsWithException(visitor, className)
 
     visitor.visitEnd()
     visitor.toByteArray
@@ -292,7 +318,7 @@ object EnumGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     * @param visitor class visitor
     * @param className Qualified name of the class
     */
-  private def compileUnitInstance(visitor: ClassWriter, className: EnumClassName) = {
+  private def compileUnitInstance(visitor: ClassWriter, className: SECClassName) = {
     val unitClazz = Constants.unitClass
     val getInstanceMethod = unitClazz.getMethod("getInstance")
 
@@ -331,7 +357,7 @@ object EnumGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     * @param fType type of the `value` field
     * @param isSingleton if the class is a singleton this flag is set
     */
-  private def compileEnumConstructor(visitor: ClassWriter, className: EnumClassName, fType: WrappedType, isSingleton: Boolean) = {
+  private def compileEnumConstructor(visitor: ClassWriter, className: SECClassName, fType: WrappedType, isSingleton: Boolean) = {
     val descriptor = getWrappedTypeDescriptor(fType)
 
     // If this is a singleton then we should make the constructor private
@@ -379,7 +405,7 @@ object EnumGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     * @param visitor class visitor
     * @param className Qualified name of the class
     */
-  private def compileGetTagMethod(visitor: ClassWriter, className: EnumClassName) = {
+  def compileGetTagMethod(visitor: ClassWriter, className: EnumName) = {
     val descriptor = asm.Type.getDescriptor(Constants.stringClass)
     val method = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, "getTag", s"()$descriptor", null, null)
     method.visitLdcInsn(className.tag)
@@ -389,18 +415,18 @@ object EnumGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
   }
 
   /**
-    * Generate the `getBoxedValue` method which returns the boxed value of `value` field of the class.
+    * Generate the `getBoxedEnumField` method which returns the boxed value of `value` field of the class.
     * The generated method will return the `value` field if the field is of object type, otherwise, it will
     * box the object using the appropriate type.
     * For example, we generate the following method for `Ok[Int32]`:
     *
-    * public final Object getBoxedValue() {
+    * public final Object getBoxedEnumField() {
     *   return new Integer(this.value);
     * }
     *
     * And we generate the following method for `Ok[List[Int32]]`
     *
-    * public final Object getBoxedValue() {
+    * public final Object getBoxedEnumField() {
     *   return this.value;
     * }
     *
@@ -408,12 +434,12 @@ object EnumGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     * @param qualName Qualified name of the class
     * @param fType type of the `value` field of the class
     */
-  private def compileGetBoxedValueMethod(visitor: ClassWriter, qualName: QualName, fType: WrappedType) = {
-    val method = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, "getBoxedValue", s"()Ljava/lang/Object;", null, null)
+  def compileGetBoxedEnumFieldMethod(visitor: ClassWriter, qualName: QualName, fType: WrappedType) = {
+    val method = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, "getBoxedEnumField", s"()Ljava/lang/Object;", null, null)
 
     method.visitCode()
 
-    boxField(method, fType, qualName, "value")
+    boxField(method, fType, qualName, "getValue")
 
     method.visitInsn(ARETURN)
     method.visitMaxs(1, 1)
@@ -479,7 +505,7 @@ object EnumGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     * }
     *
     * 2. When the enum case is `Cons` of `List`, we hack to represent it with `::` which is also hacked into the system.
-    * We first get the `value` field of the case, then since we know it's a tuple we cast it and use `getBoxedValue` to get
+    * We first get the `value` field of the case, then since we know it's a tuple we cast it and use `getBoxedEnumField` to get
     * an array of length two. Then we invoke `toString` on the first element of the array, append " :: " to the string and
     * put it on top of the stack then we invoke `toString` on the second element of the array and then concatenate this to
     * the string on top of the stack.
@@ -487,7 +513,7 @@ object EnumGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     * The code we generate is equivalent to:
     *
     * public String toString() {
-    *   Object[] var10000 = ((Tuple)this.value).getBoxedValue();
+    *   Object[] var10000 = ((Tuple)this.value).getBoxedEnumField();
     *   return var10000[0].toString().concat(" :: ".concat(var10000[1].toString()));
     * }
     *
@@ -495,7 +521,7 @@ object EnumGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     * @param qualName Qualified name of the class
     * @param fType type of the `value` field
     */
-  private def compileToStringMethod(visitor: ClassWriter, qualName: EnumClassName, fType: WrappedType) = {
+  def compileToStringMethod(visitor: ClassWriter, qualName: SECClassName, fType: WrappedType) = {
     val stringInternalName = asm.Type.getInternalName(Constants.stringClass)
     val stringConcatMethod = Constants.stringClass.getMethod("concat", Constants.stringClass)
 
@@ -516,7 +542,7 @@ object EnumGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
       // Cast the field to tuple interface
       method.visitTypeInsn(CHECKCAST, asm.Type.getInternalName(Constants.tupleClass))
 
-      // Call `getBoxedValue()` on the object
+      // Call `getBoxedEnumField()` on the object
       method.visitMethodInsn(INVOKEINTERFACE, asm.Type.getInternalName(tupleClazz), getBoxedValueMethod.getName,
         asm.Type.getMethodDescriptor(getBoxedValueMethod), true)
 

@@ -377,13 +377,13 @@ class TestSolver extends FunSuite {
     val A = model.getLattice("A").toMap
     assert(A(List(Value.mkInt32(1))).isInstanceOf[Enum])
     assert(A(List(Value.mkInt32(1))).asInstanceOf[Enum].getTag == "Odd")
-    assert(A(List(Value.mkInt32(1))).asInstanceOf[Enum].getBoxedValue == UnitClass.getInstance)
+    assert(A(List(Value.mkInt32(1))).asInstanceOf[Enum].getBoxedEnumField == UnitClass.getInstance)
     assert(A(List(Value.mkInt32(2))).isInstanceOf[Enum])
     assert(A(List(Value.mkInt32(2))).asInstanceOf[Enum].getTag == "Even")
-    assert(A(List(Value.mkInt32(2))).asInstanceOf[Enum].getBoxedValue == UnitClass.getInstance)
+    assert(A(List(Value.mkInt32(2))).asInstanceOf[Enum].getBoxedEnumField == UnitClass.getInstance)
     assert(A(List(Value.mkInt32(3))).isInstanceOf[Enum])
     assert(A(List(Value.mkInt32(3))).asInstanceOf[Enum].getTag == "Top")
-    assert(A(List(Value.mkInt32(3))).asInstanceOf[Enum].getBoxedValue == UnitClass.getInstance)
+    assert(A(List(Value.mkInt32(3))).asInstanceOf[Enum].getBoxedEnumField == UnitClass.getInstance)
   }
 
   test("Lattice02") {
@@ -399,7 +399,7 @@ class TestSolver extends FunSuite {
     val A = model.getLattice("A").toMap
     assert(A(List(Value.mkInt32(1))).isInstanceOf[Enum])
     assert(A(List(Value.mkInt32(1))).asInstanceOf[Enum].getTag == "Top")
-    assert(A(List(Value.mkInt32(1))).asInstanceOf[Enum].getBoxedValue == UnitClass.getInstance)
+    assert(A(List(Value.mkInt32(1))).asInstanceOf[Enum].getBoxedEnumField == UnitClass.getInstance)
   }
 
   test("Lattice03") {
@@ -417,7 +417,7 @@ class TestSolver extends FunSuite {
     val A = model.getLattice("A").toMap
     assert(A(List(Value.mkInt32(3))).isInstanceOf[Enum])
     assert(A(List(Value.mkInt32(3))).asInstanceOf[Enum].getTag == "Top")
-    assert(A(List(Value.mkInt32(3))).asInstanceOf[Enum].getBoxedValue == UnitClass.getInstance)
+    assert(A(List(Value.mkInt32(3))).asInstanceOf[Enum].getBoxedEnumField == UnitClass.getInstance)
   }
 
   test("NotEqual01") {

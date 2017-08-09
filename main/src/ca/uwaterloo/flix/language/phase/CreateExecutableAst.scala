@@ -90,7 +90,7 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
     }
 
     ExecutableAst.Root(constants ++ m, enums, lattices, tables, indexes, constraints, properties,
-      reachable, ByteCodes(Map(), Map(), Map(), Map(), Map()), time, dependenciesOf).toSuccess
+      reachable, ByteCodes(Map(), Map(), Map(), Map(), Map(), Map()), time, dependenciesOf).toSuccess
   }
 
   def toExecutable(sast: SimplifiedAst.Def): ExecutableAst.Def = {

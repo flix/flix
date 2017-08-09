@@ -30,7 +30,7 @@ class TestExamples extends FunSuite {
 
     def getBoxedIfNecessary(res : AnyRef) : AnyRef = res match {
       case r : Enum => {
-        new Value.Tag(r.getTag, getBoxedIfNecessary(r.getBoxedValue()))
+        new Value.Tag(r.getTag, getBoxedIfNecessary(r.getBoxedEnumField()))
       }
       case r : Tuple => {
         r.getBoxedValue().map(getBoxedIfNecessary)
