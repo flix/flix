@@ -348,6 +348,40 @@ object Effects extends Phase[Root, Root] {
           }
 
         /**
+          * Reference Expression.
+          */
+        case Expression.Ref(exp, tpe, eff, loc) =>
+          for {
+            e <- visitExp(exp, env0)
+          } yield {
+            // TODO: [Effects]: Ref
+            Expression.Ref(e, tpe, eff, loc)
+          }
+
+        /**
+          * Dereference Expression.
+          */
+        case Expression.Deref(exp, tpe, eff, loc) =>
+          for {
+            e <- visitExp(exp, env0)
+          } yield {
+            // TODO: [Effects]: Deref
+            Expression.Deref(e, tpe, eff, loc)
+          }
+
+        /**
+          * Assignment Expression.
+          */
+        case Expression.Assign(exp1, exp2, tpe, eff, loc) =>
+          for {
+            e1 <- visitExp(exp1, env0)
+            e2 <- visitExp(exp2, env0)
+          } yield {
+            // TODO: [Effects]: Assign
+            Expression.Assign(e1, e2, tpe, eff, loc)
+          }
+
+        /**
           * Existential Expression.
           */
         case Expression.Existential(fparam, exp, _, loc) =>

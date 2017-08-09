@@ -16,25 +16,53 @@
 
 package ca.uwaterloo.flix.language.phase
 
-import java.nio.charset.Charset
-import java.nio.file.Files
-import java.util.zip.ZipFile
-
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.{ParsedAst, _}
-import ca.uwaterloo.flix.util.{StreamOps, Timer}
-import ca.uwaterloo.flix.util.Validation
+import ca.uwaterloo.flix.util.{ParOps, StreamOps, Timer, Validation}
 import ca.uwaterloo.flix.util.Validation._
+import org.parboiled2
 import org.parboiled2._
 
 import scala.collection.immutable.Seq
+import scala.concurrent.duration.Duration
+import scala.concurrent.{Await, Future}
 
-object Parser {
+/**
+  * A phase to transform source files into abstract syntax trees.
+  */
+object Parser extends Phase[(List[Source], Long, Map[Symbol.DefnSym, Ast.Hook]), ParsedAst.Program] {
+
+  /**
+    * Parses the given source inputs into an abstract syntax tree.
+    */
+  def run(arg: (List[Source], Long, Map[Symbol.DefnSym, Ast.Hook]))(implicit flix: Flix): Validation[ParsedAst.Program, CompilationError] = {
+    // The argument consists of a list of sources, the time spent by the reader, and the map of hooks.
+    val (sources, reader, hooks) = arg
+
+    // Retrieve the execution context.
+    implicit val _ = flix.ec
+
+    val timer = new Timer({
+      // Parse each source in parallel.
+      val results = ParOps.parMap(parse, sources)
+
+      // Sequence and combine the ASTs into one abstract syntax tree.
+      @@(results) map {
+        case asts => ParsedAst.Program(asts, hooks, Time.Default)
+      }
+    })
+
+    // Measure the time spent in parsing.
+    timer.getResult.map {
+      case ast => ast.copy(time = ast.time.copy(reader = reader, parser = timer.getDuration))
+    }
+  }
 
   /**
     * Returns the AST of the given source input `source`.
     */
-  def parse(source: SourceInput): Validation[ParsedAst.Root, CompilationError] = {
+  def parse(source: Source): Validation[ParsedAst.Root, CompilationError] = {
     val parser = new Parser(source)
     parser.Root.run() match {
       case scala.util.Success(ast) =>
@@ -46,47 +74,17 @@ object Parser {
     }
   }
 
-  /**
-    * Returns the parsed AST of the given source inputs `sources`.
-    */
-  def parseAll(sources: List[SourceInput], hooks: Map[Symbol.DefnSym, Ast.Hook]): Validation[ParsedAst.Program, CompilationError] = {
-    val timer = new Timer({
-      @@(sources.map(parse)) map {
-        case asts => ParsedAst.Program(asts, hooks, Time.Default)
-      }
-    })
-
-    timer.getResult.map {
-      case ast => ast.copy(time = ast.time.copy(parser = timer.getDuration))
-    }
-  }
-
 }
 
 /**
   * A parser for the Flix language.
   */
-class Parser(val source: SourceInput) extends org.parboiled2.Parser {
-
-  /*
-    * Implicitly assumed default charset.
-    */
-  val DefaultCharset: Charset = Charset.forName("UTF-8")
+class Parser(val source: Source) extends org.parboiled2.Parser {
 
   /*
    * Initialize parser input.
    */
-  override val input: ParserInput = source match {
-    case SourceInput.Internal(name, text) => text
-    case SourceInput.Str(str) => str
-    case SourceInput.TxtFile(path) =>
-      new String(Files.readAllBytes(path), DefaultCharset)
-    case SourceInput.ZipFile(path) =>
-      val file = new ZipFile(path.toFile)
-      val entry = file.entries().nextElement()
-      val inputStream = file.getInputStream(entry)
-      new String(StreamOps.readAllBytes(inputStream), DefaultCharset)
-  }
+  override val input: ParserInput = new org.parboiled2.ParserInput.CharArrayBasedParserInput(source.data)
 
   /////////////////////////////////////////////////////////////////////////////
   // Root                                                                    //
@@ -303,10 +301,10 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
 
       def Special: Rule1[String] = rule {
         "\\\\" ~ push("\\") |
-        "\\'"  ~ push("'")  |
-        "\\n"  ~ push("\n") |
-        "\\r"  ~ push("\r") |
-        "\\t"  ~ push("\t")
+          "\\'" ~ push("'") |
+          "\\n" ~ push("\n") |
+          "\\r" ~ push("\r") |
+          "\\t" ~ push("\t")
       }
 
       def Unicode: Rule1[String] = rule {
@@ -388,7 +386,11 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
   object Expressions {
 
     def Block: Rule1[ParsedAst.Expression] = rule {
-      "{" ~ optWS ~ Expression ~ optWS ~ "}" ~ optWS | LogicalOr
+      "{" ~ optWS ~ Expression ~ optWS ~ "}" ~ optWS | Assign
+    }
+
+    def Assign: Rule1[ParsedAst.Expression] = rule {
+      LogicalOr ~ optional(optWS ~ atomic(":=") ~ optWS ~ LogicalOr ~ SP ~> ParsedAst.Expression.Assign)
     }
 
     def LogicalOr: Rule1[ParsedAst.Expression] = rule {
@@ -474,7 +476,15 @@ class Parser(val source: SourceInput) extends org.parboiled2.Parser {
     }
 
     def Unary: Rule1[ParsedAst.Expression] = rule {
-      !Literal ~ (SP ~ capture(atomic("!") | atomic("+") | atomic("-") | atomic("~~~")) ~ optWS ~ Unary ~ SP ~> ParsedAst.Expression.Unary) | Cast
+      !Literal ~ (SP ~ capture(atomic("!") | atomic("+") | atomic("-") | atomic("~~~")) ~ optWS ~ Unary ~ SP ~> ParsedAst.Expression.Unary) | Ref
+    }
+
+    def Ref: Rule1[ParsedAst.Expression] = rule {
+      (SP ~ atomic("ref") ~ WS ~ Deref ~ SP ~> ParsedAst.Expression.Ref) | Deref
+    }
+
+    def Deref: Rule1[ParsedAst.Expression] = rule {
+      (SP ~ atomic("deref") ~ WS ~ Cast ~ SP ~> ParsedAst.Expression.Deref) | Cast
     }
 
     def Cast: Rule1[ParsedAst.Expression] = rule {

@@ -149,6 +149,12 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         Expression.Index(visit(base), offset, tpe, loc)
       case Expression.Tuple(elms, tpe, loc) =>
         Expression.Tuple(elms.map(visit), tpe, loc)
+      case Expression.Ref(exp1, tpe, loc) =>
+        Expression.Ref(visit(exp1), tpe, loc)
+      case Expression.Deref(exp1, tpe, loc) =>
+        Expression.Deref(visit(exp1), tpe, loc)
+      case Expression.Assign(exp1, exp2, tpe, loc) =>
+        Expression.Assign(visit(exp1), visit(exp2), tpe, loc)
       case Expression.Existential(fparam, exp1, loc) =>
         Expression.Existential(fparam, visit(exp1), loc)
       case Expression.Universal(fparam, exp1, loc) =>
@@ -224,6 +230,12 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       Expression.Index(renameAndSubstitute(base, sub), offset, tpe, loc)
     case Expression.Tuple(elms, tpe, loc) =>
       Expression.Tuple(elms.map(renameAndSubstitute(_, sub)), tpe, loc)
+    case Expression.Ref(exp1, tpe, loc) =>
+      Expression.Ref(renameAndSubstitute(exp1, sub), tpe, loc)
+    case Expression.Deref(exp1, tpe, loc) =>
+      Expression.Deref(renameAndSubstitute(exp1, sub), tpe, loc)
+    case Expression.Assign(exp1, exp2, tpe, loc) =>
+      Expression.Assign(renameAndSubstitute(exp1, sub), renameAndSubstitute(exp2, sub), tpe, loc)
     case Expression.Existential(fparam, exp1, loc) =>
       val newFparam = fparam.copy(sym = Symbol.freshVarSym(fparam.sym))
       val sub1 = sub + (fparam.sym -> newFparam.sym)
@@ -299,6 +311,9 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.Untag(sym, tag, exp1, _, _) => 1 + exprScore(exp1)
       case Expression.Index(base, offset, _, _) => 2
       case Expression.Tuple(elms, _, _) => 1 + elms.map(exprScore).sum
+      case Expression.Ref(exp1, _, _) => 1 + exprScore(exp1)
+      case Expression.Deref(exp1, _, _) => 1 + exprScore(exp1)
+      case Expression.Assign(exp1, exp2, _, _) => 1 + exprScore(exp1) + exprScore(exp2)
       case Expression.Existential(fparam, exp1, loc) => 2 + exprScore(exp1)
       case Expression.Universal(fparam, exp1, loc) => 2 + exprScore(exp1)
       case Expression.NativeConstructor(constructor, args, _, _) => 2 + args.map(exprScore).sum

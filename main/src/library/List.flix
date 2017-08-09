@@ -757,7 +757,11 @@ namespace List {
 
 
 
-
+    ///
+    /// Returns the list of characters `xs` as a string.
+    ///
+    def toString(xs: List[Char]): Str =
+        List.foldLeft((acc, c) -> String.concat(acc, Char.toString(c)), "", xs)
 
 
     ///

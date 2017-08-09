@@ -16,7 +16,9 @@
 
 package ca.uwaterloo.flix.api
 
+import java.nio.charset.Charset
 import java.nio.file.{Files, Path, Paths}
+
 import ca.uwaterloo.flix.language.ast.Ast.Hook
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.phase._
@@ -28,6 +30,7 @@ import ca.uwaterloo.flix.util.{LocalResource, Options, Validation}
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
+import scala.concurrent.ExecutionContext
 
 /**
   * Main programmatic interface for Flix.
@@ -72,7 +75,7 @@ class Flix {
     "Prelude.flix" -> LocalResource.get("/library/Prelude.flix"),
     "Result.flix" -> LocalResource.get("/library/Result.flix"),
     "Set.flix" -> LocalResource.get("/library/Set.flix"),
-    //"String.flix" -> LocalResource.get("/library/String.flix"),
+    "String.flix" -> LocalResource.get("/library/String.flix"),
     "TotalOrder.flix" -> LocalResource.get("/library/TotalOrder.flix"),
     "Tuple.flix" -> LocalResource.get("/library/Tuple.flix")
   )
@@ -81,6 +84,16 @@ class Flix {
     * A map of hooks to JVM invokable methods.
     */
   private val hooks = mutable.Map.empty[Symbol.DefnSym, Ast.Hook]
+
+  /**
+    * The execution context for `this` Flix instance.
+    */
+  val ec: ExecutionContext = scala.concurrent.ExecutionContext.global
+
+  /**
+    * The default assumed charset.
+    */
+  val defaultCharset: Charset = Charset.forName("UTF-8")
 
   /**
     * The current Flix options.
@@ -182,40 +195,38 @@ class Flix {
     addPrintHook()
     addPrintlnHook()
 
-    // Parse the source inputs.
-    Parser.parseAll(getSourceInputs, hooks.toMap) flatMap {
-      case parsedAst =>
+    // Construct the compiler pipeline.
+    val pipeline =
+      Reader |>
+        Parser |>
+        Weeder |>
+        Namer |>
+        Resolver |>
+        Typer |>
+        Effects |>
+        PatternExhaustiveness |>
+        Documentor |>
+        Stratifier |>
+        Monomorph |>
+        Simplifier |>
+        Uncurrier |>
+        LambdaLift |>
+        Tailrec |>
+        Inliner |>
+        Optimizer |>
+        TreeShaker |>
+        VarNumbering |>
+        CreateExecutableAst |>
+        TupleGen |>
+        EnumGen |>
+        CodeGen |>
+        LoadBytecode |>
+        QuickChecker |>
+        Verifier
 
-        // Construct the compiler pipeline.
-        val pipeline =
-          Weeder |>
-            Namer |>
-            Resolver |>
-            Typer |>
-            Effects |>
-            PatternExhaustiveness |>
-            Documentor |>
-            Stratifier |>
-            Monomorph |>
-            Simplifier |>
-            Uncurrier |>
-            LambdaLift |>
-            Tailrec |>
-            Inliner |>
-            Optimizer |>
-            TreeShaker |>
-            VarNumbering |>
-            CreateExecutableAst |>
-            TupleGen |>
-            EnumGen |>
-            CodeGen |>
-            LoadBytecode |>
-            QuickChecker |>
-            Verifier
+    // Apply the pipeline to the parsed AST.
+    pipeline.run((getInputs, hooks.toMap))(this)
 
-        // Apply the pipeline to the parsed AST.
-        pipeline.run(parsedAst)(this)
-    }
   }
 
   /**
@@ -236,9 +247,9 @@ class Flix {
   }
 
   /**
-    * Returns a list of source inputs constructed from the strings and paths passed to Flix.
+    * Returns a list of inputs constructed from the strings and paths passed to Flix.
     */
-  private def getSourceInputs: List[SourceInput] = {
+  private def getInputs: List[Input] = {
     val si1 = getStringInputs
     val si2 = getPathInputs
     val si3 = if (options.core) Nil else getStandardLibraryInputs
@@ -246,27 +257,27 @@ class Flix {
   }
 
   /**
-    * Returns the source inputs corresponding to the strings passed to Flix.
+    * Returns the inputs corresponding to the strings passed to Flix.
     */
-  private def getStringInputs: List[SourceInput] = strings.foldLeft(List.empty[SourceInput]) {
-    case (xs, s) => SourceInput.Str(s) :: xs
+  private def getStringInputs: List[Input] = strings.foldLeft(List.empty[Input]) {
+    case (xs, s) => Input.Str(s) :: xs
   }
 
   /**
-    * Returns the source inputs corresponding to the paths passed to Flix.
+    * Returns the inputs corresponding to the paths passed to Flix.
     */
-  private def getPathInputs: List[SourceInput] = paths.foldLeft(List.empty[SourceInput]) {
-    case (xs, p) if p.getFileName.toString.endsWith(".flix") => SourceInput.TxtFile(p) :: xs
-    case (xs, p) if p.getFileName.toString.endsWith(".flix.zip") => SourceInput.ZipFile(p) :: xs
-    case (xs, p) if p.getFileName.toString.endsWith(".flix.gzip") => SourceInput.ZipFile(p) :: xs
+  private def getPathInputs: List[Input] = paths.foldLeft(List.empty[Input]) {
+    case (xs, p) if p.getFileName.toString.endsWith(".flix") => Input.TxtFile(p) :: xs
+    case (xs, p) if p.getFileName.toString.endsWith(".flix.zip") => Input.ZipFile(p) :: xs
+    case (xs, p) if p.getFileName.toString.endsWith(".flix.gzip") => Input.ZipFile(p) :: xs
     case (_, p) => throw new IllegalStateException(s"Unknown file type '${p.getFileName}'.")
   }
 
   /**
-    * Returns the source inputs for the standard library.
+    * Returns the inputs for the standard library.
     */
-  private def getStandardLibraryInputs: List[SourceInput] = library.foldLeft(List.empty[SourceInput]) {
-    case (xs, (name, text)) => SourceInput.Internal(name, text) :: xs
+  private def getStandardLibraryInputs: List[Input] = library.foldLeft(List.empty[Input]) {
+    case (xs, (name, text)) => Input.Internal(name, text) :: xs
   }
 
   /**

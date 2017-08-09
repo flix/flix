@@ -89,6 +89,7 @@ def getLabel(e: Expression): Label = match e with {
     case OnResolve(_, _, l) => l
     case OnReject(_, _, l)  => l
     case Link(_, _, l)      => l
+    case _                  => ???
 }
 
 ///
@@ -345,12 +346,15 @@ def step(m0: State, k0: Kontinuation): Set[Outcome] = match (m0, k0) with {
     case (State(v2, Environment(env2), sto0, s0, f0, r0, q0, g0, _, time), KApp2(v1, Environment(env1), kont)) if isValue(v2) =>
         // NB: `v1` should be an lambda abstraction and `v2` is the argument of the application (closed by env2).
         // Evaluate the body of the lambda `v1` with argument `v2`.
-        let Abs(x, body, loc) = v1;
-        let argValue = StoredValue(v2, Environment(env2));
-        let argEnvAddr = alloc(m0, k0);
-        let bodyEnv = Map.insert(x, argEnvAddr, env1);
-        let sto1 = Store.weakUpdate(argEnvAddr, argValue, sto0);
-            #{ Next(State(body, Environment(bodyEnv), sto1, s0, f0, r0, q0, g0, kont, tick(m0, k0))) }
+        match v1 with {
+            case Abs(x, body, loc) =>
+                let argValue = StoredValue(v2, Environment(env2));
+                let argEnvAddr = alloc(m0, k0);
+                let bodyEnv = Map.insert(x, argEnvAddr, env1);
+                let sto1 = Store.weakUpdate(argEnvAddr, argValue, sto0);
+                    #{ Next(State(body, Environment(bodyEnv), sto1, s0, f0, r0, q0, g0, kont, tick(m0, k0))) }
+            case _ => ???
+        }
 
     //
     // Reference Expression.
@@ -592,6 +596,7 @@ def step(m0: State, k0: Kontinuation): Set[Outcome] = match (m0, k0) with {
                         let e = Resolve(Ptr(childAddr), App(exp, v, loc), loc);
                             Next(State(e, Environment.empty(), sto0, s0, f0, r0, q1, g0, kptr, tick(m0, k0)))
                 case Rejected(v) => ??? // NB: Conceptually similar to the fulfilled case.
+                case _ => ???
             }
          };
 
@@ -702,7 +707,7 @@ namespace Environment {
     ///
     /// Returns the empty environment.
     ///
-    def empty: Environment = Environment(Map.empty())
+    def empty(): Environment = Environment(Map.empty())
 
     ///
     /// Returns `true` if the two given environments `env1` and `env2` are equal.
@@ -838,7 +843,7 @@ namespace PromiseGraph {
     ///
     /// Returns the empty promise graph.
     ///
-    def empty: PromiseGraph = PromiseGraph(Set.empty())
+    def empty(): PromiseGraph = PromiseGraph(Set.empty())
 
     ///
     /// Adds the given edge to the given promise graph.
@@ -857,7 +862,7 @@ namespace PromiseGraph {
 // x.onResolve(y => Ref(y))
 // x.resolve("hello")
 //
-def testEval1: Set[Edge] = getPromiseGraph(run(
+def testEval1(): Set[Edge] = getPromiseGraph(run(
     App(Abs(V(0),
         Seq(Promisify(Var(V(0), L("l2")), L("l2")),
             Seq(OnResolve(Var(V(0), L("l3")), Abs(V(42), Ref(Var(V(42), L("l3")), L("l3")), L("l3")), L("l3")),
@@ -878,7 +883,7 @@ def testEval1: Set[Edge] = getPromiseGraph(run(
 // var z = y.onResolve(z => Ref(z))
 // x.resolve("hello")
 //
-def testEval2: Set[Edge] = getPromiseGraph(run(
+def testEval2(): Set[Edge] = getPromiseGraph(run(
     App(App(Abs(V(0), Abs(V(1),
         Seq(Promisify(Var(V(0), L("l2")), L("l2")),
             Seq(Promisify(Var(V(1), L("l3")), L("l3")),

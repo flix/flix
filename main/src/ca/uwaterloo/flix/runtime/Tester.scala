@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.runtime
 
 import ca.uwaterloo.flix.api.FlixException
-import ca.uwaterloo.flix.language.ast.{SourceInput, Symbol}
+import ca.uwaterloo.flix.language.ast.{Source, Symbol}
 import ca.uwaterloo.flix.util.vt.VirtualString.{Blue, Dedent, Green, Indent, Line, NewLine, Red}
 import ca.uwaterloo.flix.util.vt.VirtualTerminal
 
@@ -73,12 +73,12 @@ object Tester {
         try {
           val result = defn()
           // NB: IntellijIDEA warns about unrelated types. This is not a problem.
-          if (result == java.lang.Boolean.TRUE)
+          if (result.isInstanceOf[java.lang.Boolean] && result == java.lang.Boolean.TRUE)
             TestResult.Success(sym, "Returned true.")
-          else if (result == java.lang.Boolean.FALSE)
+          else if (result.isInstanceOf[java.lang.Boolean] && result == java.lang.Boolean.FALSE)
             TestResult.Failure(sym, "Returned false.")
           else
-            TestResult.Failure(sym, s"Returned non-boolean value: '${Value.pretty(result)}'.")
+            TestResult.Success(sym, "Returned non-false boolean value.")
         } catch {
           case ex: FlixException =>
             TestResult.Failure(sym, ex.getMessage)

@@ -418,6 +418,21 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
           case es => NamedAst.Expression.Tuple(es, Type.freshTypeVar(), loc)
         }
 
+      case WeededAst.Expression.Ref(exp, loc) =>
+        namer(exp, env0, tenv0) map {
+          case e => NamedAst.Expression.Ref(e, Type.freshTypeVar(), loc)
+        }
+
+      case WeededAst.Expression.Deref(exp, loc) =>
+        namer(exp, env0, tenv0) map {
+          case e => NamedAst.Expression.Deref(e, Type.freshTypeVar(), loc)
+        }
+
+      case WeededAst.Expression.Assign(exp1, exp2, loc) =>
+        @@(namer(exp1, env0, tenv0), namer(exp2, env0, tenv0)) map {
+          case (e1, e2) => NamedAst.Expression.Assign(e1, e2, Type.freshTypeVar(), loc)
+        }
+
       case WeededAst.Expression.Existential(param, exp, loc) =>
         val p = Params.namer(param, tenv0)
         namer(exp, env0 + (p.sym.text -> p.sym), tenv0) map {
@@ -500,6 +515,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
       }
       case WeededAst.Expression.Tag(enum, tag, exp, loc) => freeVars(exp)
       case WeededAst.Expression.Tuple(elms, loc) => elms.flatMap(freeVars)
+      case WeededAst.Expression.Ref(exp, loc) => freeVars(exp)
+      case WeededAst.Expression.Deref(exp, loc) => freeVars(exp)
+      case WeededAst.Expression.Assign(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
       case WeededAst.Expression.Existential(fparam, exp, loc) => filterBoundVars(freeVars(exp), List(fparam.ident))
       case WeededAst.Expression.Universal(fparam, exp, loc) => filterBoundVars(freeVars(exp), List(fparam.ident))
       case WeededAst.Expression.Ascribe(exp, tpe, eff, loc) => freeVars(exp)

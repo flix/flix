@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.{Name, SourceInput, SourceLocation}
+import ca.uwaterloo.flix.language.ast.{Name, Source, SourceLocation}
 import ca.uwaterloo.flix.util.vt.VirtualString._
 import ca.uwaterloo.flix.util.vt.VirtualTerminal
 
@@ -39,7 +39,7 @@ object ResolutionError {
     */
   // TODO: Replace by DuplicateDefinition during naming!
   case class AmbiguousRef(qn: Name.QName, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
-    val source: SourceInput = loc.source
+    val source: Source = loc.source
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -59,7 +59,7 @@ object ResolutionError {
     */
   // TODO: Improve error message.
   case class AmbiguousTag(tag: String, ns: Name.NName, locs: List[SourceLocation], loc: SourceLocation) extends ResolutionError {
-    val source: SourceInput = loc.source
+    val source: Source = loc.source
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -84,7 +84,7 @@ object ResolutionError {
     * @param loc the location where the error occurred.
     */
   case class UndefinedRef(qn: Name.QName, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
-    val source: SourceInput = loc.source
+    val source: Source = loc.source
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -104,7 +104,7 @@ object ResolutionError {
     * @param loc the location where the error occurred.
     */
   case class UndefinedTable(qn: Name.QName, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
-    val source: SourceInput = loc.source
+    val source: Source = loc.source
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -124,7 +124,7 @@ object ResolutionError {
     * @param loc the location where the error occurred.
     */
   case class UndefinedTag(tag: String, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
-    val source: SourceInput = loc.source
+    val source: Source = loc.source
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
@@ -144,7 +144,7 @@ object ResolutionError {
     * @param loc the location where the error occurred.
     */
   case class UndefinedType(qn: Name.QName, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
-    val source: SourceInput = loc.source
+    val source: Source = loc.source
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine

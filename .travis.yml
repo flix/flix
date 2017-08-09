@@ -16,9 +16,9 @@ before_install:
   - env
   - pushd .
   - cd
-  - wget http://downloads.typesafe.com/scala/2.11.7/scala-2.11.7.tgz
-  - tar xzf scala-2.11.7.tgz
-  - export SCALA_HOME=`pwd`/scala-2.11.7
+  - wget http://downloads.typesafe.com/scala/2.12.3/scala-2.12.3.tgz
+  - tar xzf scala-2.12.3.tgz
+  - export SCALA_HOME=`pwd`/scala-2.12.3
   - export PATH=$SCALA_HOME/bin:$PATH
   - popd
   - scalac -version

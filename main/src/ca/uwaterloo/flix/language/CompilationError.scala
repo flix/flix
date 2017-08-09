@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language
 
-import ca.uwaterloo.flix.language.ast.SourceInput
+import ca.uwaterloo.flix.language.ast.Source
 import ca.uwaterloo.flix.util.vt.VirtualTerminal
 
 /**
@@ -32,7 +32,7 @@ trait CompilationError {
   /**
     * Returns the input source of the error message.
     */
-  def source: SourceInput
+  def source: Source
 
   /**
     * Returns the formatted error message.

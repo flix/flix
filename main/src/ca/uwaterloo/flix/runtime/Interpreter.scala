@@ -113,11 +113,21 @@ object Interpreter {
       }
       array
 
-    case Expression.Ref(exp, tpe, loc) => ??? // TODO
+    case Expression.Ref(exp, tpe, loc) =>
+      val box = new Value.Box()
+      val value = eval(exp, root, env0)
+      box.setValue(value)
+      box
 
-    case Expression.Deref(exp, tpe, loc) => ??? // TODO
+    case Expression.Deref(exp, tpe, loc) =>
+      val box = eval(exp, root, env0).asInstanceOf[Value.Box]
+      box.getValue
 
-    case Expression.Assign(exp1, exp2, tpe, loc) => ??? // TODO
+    case Expression.Assign(exp1, exp2, tpe, loc) =>
+      val box = eval(exp1, root, env0).asInstanceOf[Value.Box]
+      val value = eval(exp2, root, env0)
+      box.setValue(value)
+      Value.Unit
 
     case Expression.Existential(params, exp, loc) => throw InternalRuntimeException(s"Unexpected expression: '$exp' at ${loc.source.format}.")
     case Expression.Universal(params, exp, loc) => throw InternalRuntimeException(s"Unexpected expression: '$exp' at ${loc.source.format}.")
