@@ -15,10 +15,10 @@ def f01(x: Bool): Int = switch {
 }
 
 @test
-def switchTest01(): Bool = assertEq!(f01(true), 1)
+def testSwitch01(): Bool = assertEq!(f01(true), 1)
 
 @test
-def switchTest02(): Bool = assertEq!(f01(false), 0)
+def testSwitch02(): Bool = assertEq!(f01(false), 0)
 
 def f02(x: Bool): Int = switch {
   case x => 100
@@ -26,10 +26,10 @@ def f02(x: Bool): Int = switch {
 }
 
 @test
-def switchTest03(): Bool = assertEq!(f02(true), 100)
+def testSwitch03(): Bool = assertEq!(f02(true), 100)
 
 @test
-def switchTest04(): Bool = assertEq!(f02(false), 20)
+def testSwitch04(): Bool = assertEq!(f02(false), 20)
 
 def f03(x: Bool): Int = switch {
   case x => 0
@@ -38,10 +38,10 @@ def f03(x: Bool): Int = switch {
 }
 
 @test
-def switchTest05(): Bool = assertEq!(f03(true), 0)
+def testSwitch05(): Bool = assertEq!(f03(true), 0)
 
 @test
-def switchTest06(): Bool = assertEq!(f03(false), 1)
+def testSwitch06(): Bool = assertEq!(f03(false), 1)
 
 def f04(x: Int): Str = switch {
   case x < 0 => "negative"
@@ -52,32 +52,32 @@ def f04(x: Int): Str = switch {
 }
 
 @test
-def switchTest07(): Bool = assertEq!(f04(-2), "negative")
+def testSwitch07(): Bool = assertEq!(f04(-2), "negative")
 
 @test
-def switchTest08(): Bool = assertEq!(f04(-1), "negative")
+def testSwitch08(): Bool = assertEq!(f04(-1), "negative")
 
 @test
-def switchTest09(): Bool = assertEq!(f04(0), "zero")
+def testSwitch09(): Bool = assertEq!(f04(0), "zero")
 
 @test
-def switchTest10(): Bool = assertEq!(f04(1), "one")
+def testSwitch10(): Bool = assertEq!(f04(1), "one")
 
 @test
-def switchTest11(): Bool = assertEq!(f04(2), "two")
+def testSwitch11(): Bool = assertEq!(f04(2), "two")
 
 @test
-def switchTest12(): Bool = assertEq!(f04(3), "many")
+def testSwitch12(): Bool = assertEq!(f04(3), "many")
 
 @test
-def switchTest13(): Bool = assertEq!(f04(4), "many")
+def testSwitch13(): Bool = assertEq!(f04(4), "many")
 
 def f05(x: Bool): Int = switch {
   case x => 1
 }
 
 @test
-def switchTest14(): Bool = assertEq!(f05(true), 1)
+def testSwitch14(): Bool = assertEq!(f05(true), 1)
 
 
 
