@@ -19,12 +19,65 @@ package ca.uwaterloo.flix.runtime
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.util.InternalRuntimeException
 
+sealed trait Value
+
 object Value {
 
   /**
     * The `Unit` value.
     */
-  object Unit
+  object Unit extends Value
+
+  /**
+    * The `True` value.
+    */
+  object True extends Value
+
+  /**
+    * The `False` value.
+    */
+  object False extends Value
+
+  /**
+    * A character value.
+    */
+  case class Char(lit: scala.Char) extends Value
+
+  /**
+    * A Float32 value.
+    */
+  case class Float32(lit: scala.Float) extends Value
+
+  /**
+    * A Float64 value.
+    */
+  case class Float64(lit: scala.Double) extends Value
+
+  /**
+    * An Int8 value.
+    */
+  case class Int8(lit: scala.Byte) extends Value
+
+  /**
+    * An Int16 value.
+    */
+  case class Int16(lit: scala.Short) extends Value
+
+  /**
+    * An Int32 value.
+    */
+  case class Int32(lit: scala.Int) extends Value
+
+  /**
+    * An Int64 value.
+    */
+  case class Int64(lit: scala.Long) extends Value
+
+  /**
+    * A BigInt value.
+    */
+  case class BigInt(lit: java.math.BigInteger) extends Value
+
 
   /////////////////////////////////////////////////////////////////////////////
   // Closures                                                                //
