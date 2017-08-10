@@ -22,6 +22,7 @@ import org.scalatest.FunSuite
 
 import scala.language.implicitConversions
 
+// TODO: Class is deprecated.
 class TestBackend extends FunSuite {
 
   private class Tester(input: String, solve: Boolean = true, dumpBytecode: Boolean = false) {
@@ -47,7 +48,6 @@ class TestBackend extends FunSuite {
     }
 
     def run(): Tester = {
-      interpreted = interpretedFlix.solve().get
       compiled = compiledFlix.solve().get
       this
     }
@@ -82,23 +82,6 @@ class TestBackend extends FunSuite {
     // By default, solve the Flix program immediately.
     // But in some cases we want to defer solving, so we can add initially reachable function symbols or hooks to native functions.
     if (solve) run()
-  }
-
-  /////////////////////////////////////////////////////////////////////////////
-  // Expression.Binary (Logical)                                             //
-  // BinaryOperator.{LogicalAnd,LogicalOr,Implication,Biconditional}         //
-  /////////////////////////////////////////////////////////////////////////////
-
-  test("Expression.Binary - BinaryOperator.LogicalAnd.06") {
-    val input = "def f(): Bool = true && ???"
-    val t = new Tester(input)
-    t.runInterceptTest[UserException]("f")
-  }
-
-  test("Expression.Binary - BinaryOperator.LogicalOr.06") {
-    val input = "def f(): Bool = false || ???"
-    val t = new Tester(input)
-    t.runInterceptTest[UserException]("f")
   }
 
   /////////////////////////////////////////////////////////////////////////////
