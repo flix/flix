@@ -203,6 +203,8 @@ object Interpreter {
         case Type.Int32 => mkInt32(cast2int32(v1) + cast2int32(v2))
         case Type.Int64 => mkInt64(cast2int64(v1) + cast2int64(v2))
         case Type.BigInt => mkBigInt(cast2bigInt(v1) add cast2bigInt(v2))
+        case Type.Str => mkStr(v1.toString + v2.toString)
+
         case _ => throw InternalRuntimeException(s"Can't apply BinaryOperator.$op to type ${exp1.tpe}.")
       }
       case BinaryOperator.Minus => exp1.tpe match {

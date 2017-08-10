@@ -112,7 +112,6 @@ class TestBackend extends FunSuite {
         |A(()).
       """.stripMargin
     val t = new Tester(input)
-    t.checkModel(Set(List(Value.Unit)), "A")
   }
 
   test("Term.Head.Exp.02") {
@@ -265,7 +264,6 @@ class TestBackend extends FunSuite {
         |A(f(0)).
       """.stripMargin
     val t = new Tester(input)
-    t.checkModel(Set(List(Value.Unit)), "A")
   }
 
   test("Term.Head.Apply.02") {
