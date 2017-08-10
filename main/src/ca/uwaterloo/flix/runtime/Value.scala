@@ -16,6 +16,7 @@
 
 package ca.uwaterloo.flix.runtime
 
+import ca.uwaterloo.flix.api
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.util.InternalRuntimeException
 
@@ -125,7 +126,12 @@ object Value {
   /**
     * Flix internal representation of tags.
     */
-  case class Tag(enum: Symbol.EnumSym, tag: String, value: AnyRef) extends Value {
+  case class Tag(enum: Symbol.EnumSym, tag: String, value: AnyRef) extends Value with api.Enum {
+
+    def getTag: String = tag
+
+    def getBoxedValue: AnyRef = value
+
     final override def equals(obj: scala.Any): Boolean = throw InternalRuntimeException(s"Value.Tag does not support `equals`.")
 
     final override def hashCode(): Int = throw InternalRuntimeException(s"Value.Tag does not support `hashCode`.")
@@ -136,7 +142,10 @@ object Value {
   /**
     * A Tuple value.
     */
-  case class Tuple(elms: List[AnyRef]) extends Value {
+  case class Tuple(elms: List[AnyRef]) extends Value with api.Tuple {
+
+    def getBoxedValue: Array[AnyRef] = elms.toArray
+
     final override def equals(obj: scala.Any): Boolean = throw InternalRuntimeException(s"Value.Tuple does not support `equals`.")
 
     final override def hashCode(): Int = throw InternalRuntimeException(s"Value.Tuple does not support `hashCode`.")
