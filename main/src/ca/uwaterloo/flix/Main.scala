@@ -131,8 +131,8 @@ object Main {
           val main = cmdOpts.main
           if (main.nonEmpty) {
             val name = main.get
-            val evalTimer = new Timer(model.getConstant(name))
-            Console.println(s"$name returned `${Value.pretty(evalTimer.getResult)}' (compile: ${timer.fmt}, execute: ${evalTimer.fmt})")
+            val evalTimer = new Timer(model.evalToString(name))
+            Console.println(s"$name returned `${evalTimer.getResult}' (compile: ${timer.fmt}, execute: ${evalTimer.fmt})")
           }
 
           if (cmdOpts.benchmark) {

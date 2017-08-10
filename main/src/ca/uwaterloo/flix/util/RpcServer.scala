@@ -67,7 +67,7 @@ class RpcServer(port: Int) {
           case Success(model, _) =>
 
             // Evaluate the main function.
-            val result = model.getConstant("f")
+            val result = model.evalToString("f")
 
             // Translate the computed relations to JSON data.
             val relations = model.getRelationNames.toList.sorted.map {
@@ -81,7 +81,7 @@ class RpcServer(port: Int) {
 
             JObject(
               JField("status", JString("success")),
-              JField("result", if (result == null) JNull else JString(Value.pretty(result))),
+              JField("result", if (result == null) JNull else JString(result)),
               JField("relations", JArray(relations)),
               JField("lattices", JArray(lattices))
             )
