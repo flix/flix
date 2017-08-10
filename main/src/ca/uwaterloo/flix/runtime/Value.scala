@@ -193,6 +193,20 @@ object Value {
   // TODO: Replace by built in native operator.
   def pretty(ref: AnyRef): String = ref match {
     case Value.Unit => "()"
+    case Value.True => "true"
+    case Value.False => "false"
+    case Value.Char(lit) => lit.toString
+    case Value.Int8(lit) => lit.toString
+    case Value.Int16(lit) => lit.toString
+    case Value.Int32(lit) => lit.toString
+    case Value.Int64(lit) => lit.toString
+    case Value.BigInt(lit) => lit.toString
+    case Value.Str(lit) => lit
+    case Value.Tag(enum, "Cons", Value.Tuple(elms)) => pretty(elms(0)) + " :: " + pretty(elms(1))
+    case Value.Tag(enum, tag, Value.Unit) => tag
+    case Value.Tag(enum, tag, value: Value.Tuple) => tag + pretty(value)
+    case Value.Tag(enum, tag, value) => tag + "(" + pretty(value) + ")"
+    case Value.Tuple(elms) => "(" + elms.mkString(", ") + ")"
     case o: java.lang.Boolean => o.booleanValue().toString
     case o: java.lang.Character => o.charValue().toString
     case o: java.lang.Byte => o.byteValue().toString
@@ -200,23 +214,6 @@ object Value {
     case o: java.lang.Integer => o.intValue().toString
     case o: java.lang.Long => o.longValue().toString
     case o: java.lang.String => "\"" + o + "\""
-    case o: Value.Tag =>
-      if (o.tag == "Cons") {
-        val e1 = o.value.asInstanceOf[Array[AnyRef]](0)
-        val e2 = o.value.asInstanceOf[Array[AnyRef]](1)
-        s"${pretty(e1)} :: ${pretty(e2)}"
-      }
-      else {
-        if (o.value.isInstanceOf[Value.Unit.type]) {
-          s"${o.tag}"
-        } else if (o.value.isInstanceOf[Array[AnyRef]]) {
-          s"${o.tag}(${o.value.asInstanceOf[Array[AnyRef]].map(pretty).mkString(", ")})"
-        } else {
-          s"${o.tag}(${pretty(o.value)})"
-        }
-      }
-    case o: Array[AnyRef] =>
-      "(" + o.toList.map(pretty).mkString(", ") + ")"
     case _ => ref.toString
   }
 
