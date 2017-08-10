@@ -136,25 +136,23 @@ object Interpreter {
     case Expression.Universal(params, exp, loc) => throw InternalRuntimeException(s"Unexpected expression: '$exp' at ${loc.source.format}.")
 
     case Expression.NativeConstructor(constructor, args, tpe, loc) =>
-      // TODO: Unwrap arguments
-      val values = evalArgs(args, root, env0)
+      val values = evalArgs(args, root, env0).map(toJava)
       val arguments = values.toArray
-      constructor.newInstance(arguments: _*).asInstanceOf[AnyRef]
+      fromJava(constructor.newInstance(arguments: _*).asInstanceOf[AnyRef])
 
     case Expression.NativeField(field, tpe, loc) =>
       val clazz = field.getDeclaringClass
-      field.get(clazz)
+      fromJava(field.get(clazz))
 
     case Expression.NativeMethod(method, args, tpe, loc) =>
-      // TODO: Unwrap arguments
-      val values = evalArgs(args, root, env0)
+      val values = evalArgs(args, root, env0).map(toJava)
       if (Modifier.isStatic(method.getModifiers)) {
         val arguments = values.toArray
-        method.invoke(null, arguments: _*)
+        fromJava(method.invoke(null, arguments: _*))
       } else {
         val thisObj = values.head
         val arguments = values.tail.toArray
-        method.invoke(thisObj, arguments: _*)
+        fromJava(method.invoke(thisObj, arguments: _*))
       }
 
     case Expression.UserError(_, loc) => throw UserException("User exception.", loc)
@@ -209,7 +207,10 @@ object Interpreter {
         case Type.Int32 => Value.Int32(cast2int32(v1) + cast2int32(v2))
         case Type.Int64 => Value.Int64(cast2int64(v1) + cast2int64(v2))
         case Type.BigInt => Value.BigInt(cast2bigInt(v1) add cast2bigInt(v2))
-        case Type.Str => Value.Str(v1.toString + v2.toString)
+        case Type.Str =>
+          val s1 = cast2str(v1)
+          val s2 = cast2str(v2)
+          Value.Str(s1 + s2)
 
         case _ => throw InternalRuntimeException(s"Can't apply BinaryOperator.$op to type ${exp1.tpe}.")
       }
@@ -486,6 +487,14 @@ object Interpreter {
   }
 
   /**
+    * Casts the given reference `ref` to a string.
+    */
+  private def cast2str(ref: AnyRef): String = ref match {
+    case Value.Str(lit) => lit
+    case _ => throw InternalRuntimeException(s"Unexpected non-str value: ${ref.getClass.getCanonicalName}.")
+  }
+
+  /**
     * Casts the given reference `ref` to a box.
     */
   private def cast2box(ref: AnyRef): Value.Box = ref match {
@@ -521,5 +530,42 @@ object Interpreter {
     * Constructs a bool from the given boolean `b`.
     */
   private def mkBool(b: Boolean): AnyRef = if (b) Value.True else Value.False
+
+  /**
+    * Returns the given reference `ref` as a Java object.
+    */
+  private def toJava(ref: AnyRef): AnyRef = ref match {
+    case Value.Unit => scala.Unit
+    case Value.True => java.lang.Boolean.TRUE
+    case Value.False => java.lang.Boolean.FALSE
+    case Value.Char(lit) => new java.lang.Character(lit)
+    case Value.Int8(lit) => new java.lang.Byte(lit)
+    case Value.Int16(lit) => new java.lang.Short(lit)
+    case Value.Int32(lit) => new java.lang.Integer(lit)
+    case Value.Int64(lit) => new java.lang.Long(lit)
+    case Value.BigInt(lit) => lit
+    case Value.Str(lit) => lit
+    case v: Value.Box => throw InternalRuntimeException(s"Unexpected non-primitive value: ${ref.getClass.getCanonicalName}.")
+    case v: Value.Closure => throw InternalRuntimeException(s"Unexpected non-primitive value: ${ref.getClass.getCanonicalName}.")
+    case v: Value.Tag => throw InternalRuntimeException(s"Unexpected non-primitive value: ${ref.getClass.getCanonicalName}.")
+    case v: Value.Tuple => throw InternalRuntimeException(s"Unexpected non-primitive value: ${ref.getClass.getCanonicalName}.")
+    case _ => ref
+  }
+
+  /**
+    * Returns the given reference `ref` as a Value object.
+    */
+  private def fromJava(ref: AnyRef): AnyRef = ref match {
+    case scala.Unit => Value.Unit
+    case o: java.lang.Boolean => if (o.booleanValue()) Value.True else Value.False
+    case o: java.lang.Character => Value.Char(o.charValue())
+    case o: java.lang.Byte => Value.Int8(o.byteValue())
+    case o: java.lang.Short => Value.Int16(o.shortValue())
+    case o: java.lang.Integer => Value.Int32(o.intValue())
+    case o: java.lang.Long => Value.Int64(o.longValue())
+    case o: java.math.BigInteger => Value.BigInt(o)
+    case o: java.lang.String => Value.Str(o)
+    case _ => ref
+  }
 
 }
