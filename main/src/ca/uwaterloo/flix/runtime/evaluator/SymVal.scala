@@ -130,11 +130,13 @@ object SymVal {
   /**
     * The `FNil` value.
     */
+  // TODO: Deprecated?
   case object FNil extends SymVal
 
   /**
     * The `FList` value.
     */
+  // TODO: Deprecated?
   case class FList(hd: SymVal, tl: SymVal) extends SymVal
 
   /**

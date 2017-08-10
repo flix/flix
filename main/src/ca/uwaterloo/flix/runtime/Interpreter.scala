@@ -25,6 +25,8 @@ import ca.uwaterloo.flix.util.InternalRuntimeException
 
 object Interpreter {
 
+  // TODO: Change signature to return Value
+
   /**
     * Evaluates the given expression `exp0` under the given environment `env0`.
     */
@@ -39,8 +41,8 @@ object Interpreter {
     case Expression.Int16(lit) => Value.Int16(lit)
     case Expression.Int32(lit) => Value.Int32(lit)
     case Expression.Int64(lit) => Value.Int64(lit)
-    case Expression.BigInt(lit) => mkBigInt(lit)
-    case Expression.Str(lit) => mkStr(lit)
+    case Expression.BigInt(lit) => Value.BigInt(lit)
+    case Expression.Str(lit) => Value.Str(lit)
     case Expression.Var(sym, _, loc) => env0.get(sym.toString) match {
       case None => throw InternalRuntimeException(s"Key '${sym.toString}' not found in environment: '${env0.mkString(",")}'.")
       case Some(v) => v
@@ -101,7 +103,7 @@ object Interpreter {
     }
 
     case Expression.Is(sym, tag, exp, _) => mkBool(cast2tag(eval(exp, root, env0)).tag == tag)
-    case Expression.Tag(name, tag, exp, _, _) => mkTag(tag, eval(exp, root, env0))
+    case Expression.Tag(sym, tag, exp, _, _) => Value.Tag(sym, tag, eval(exp, root, env0))
     case Expression.Untag(sym, tag, exp, _, _) => cast2tag(eval(exp, root, env0)).value
     case Expression.Index(base, offset, _, _) => eval(base, root, env0).asInstanceOf[Array[AnyRef]](offset)
     case Expression.Tuple(elms, _, _) =>
@@ -174,15 +176,16 @@ object Interpreter {
         case Type.Int16 => Value.Int16((-cast2int16(v)).toShort)
         case Type.Int32 => Value.Int32(-cast2int32(v))
         case Type.Int64 => Value.Int64(-cast2int64(v))
-        case Type.BigInt => mkBigInt(cast2bigInt(v).negate)
+        case Type.BigInt => Value.BigInt(cast2bigInt(v).negate)
         case _ => throw InternalRuntimeException(s"Can't apply UnaryOperator.$op to type ${exp0.tpe}.")
       }
       case UnaryOperator.BitwiseNegate => exp0.tpe match {
+        // NB: Despite what Intellij Idea says, the .toByte and toShort are required.
         case Type.Int8 => Value.Int8((~cast2int8(v)).toByte)
         case Type.Int16 => Value.Int16((~cast2int16(v)).toShort)
         case Type.Int32 => Value.Int32(~cast2int32(v))
         case Type.Int64 => Value.Int64(~cast2int64(v))
-        case Type.BigInt => mkBigInt(cast2bigInt(v).not)
+        case Type.BigInt => Value.BigInt(cast2bigInt(v).not)
         case _ => throw InternalRuntimeException(s"Can't apply UnaryOperator.$op to type ${exp0.tpe}.")
       }
     }
@@ -202,8 +205,8 @@ object Interpreter {
         case Type.Int16 => Value.Int16((cast2int16(v1) + cast2int16(v2)).toShort)
         case Type.Int32 => Value.Int32(cast2int32(v1) + cast2int32(v2))
         case Type.Int64 => Value.Int64(cast2int64(v1) + cast2int64(v2))
-        case Type.BigInt => mkBigInt(cast2bigInt(v1) add cast2bigInt(v2))
-        case Type.Str => mkStr(v1.toString + v2.toString)
+        case Type.BigInt => Value.BigInt(cast2bigInt(v1) add cast2bigInt(v2))
+        case Type.Str => Value.Str(v1.toString + v2.toString)
 
         case _ => throw InternalRuntimeException(s"Can't apply BinaryOperator.$op to type ${exp1.tpe}.")
       }
@@ -214,7 +217,7 @@ object Interpreter {
         case Type.Int16 => Value.Int16((cast2int16(v1) - cast2int16(v2)).toShort)
         case Type.Int32 => Value.Int32(cast2int32(v1) - cast2int32(v2))
         case Type.Int64 => Value.Int64(cast2int64(v1) - cast2int64(v2))
-        case Type.BigInt => mkBigInt(cast2bigInt(v1) subtract cast2bigInt(v2))
+        case Type.BigInt => Value.BigInt(cast2bigInt(v1) subtract cast2bigInt(v2))
         case _ => throw InternalRuntimeException(s"Can't apply BinaryOperator.$op to type ${exp1.tpe}.")
       }
       case BinaryOperator.Times => exp1.tpe match {
@@ -224,7 +227,7 @@ object Interpreter {
         case Type.Int16 => Value.Int16((cast2int16(v1) * cast2int16(v2)).toShort)
         case Type.Int32 => Value.Int32(cast2int32(v1) * cast2int32(v2))
         case Type.Int64 => Value.Int64(cast2int64(v1) * cast2int64(v2))
-        case Type.BigInt => mkBigInt(cast2bigInt(v1) multiply cast2bigInt(v2))
+        case Type.BigInt => Value.BigInt(cast2bigInt(v1) multiply cast2bigInt(v2))
         case _ => throw InternalRuntimeException(s"Can't apply BinaryOperator.$op to type ${exp1.tpe}.")
       }
       case BinaryOperator.Divide => exp1.tpe match {
@@ -234,7 +237,7 @@ object Interpreter {
         case Type.Int16 => Value.Int16((cast2int16(v1) / cast2int16(v2)).toShort)
         case Type.Int32 => Value.Int32(cast2int32(v1) / cast2int32(v2))
         case Type.Int64 => Value.Int64(cast2int64(v1) / cast2int64(v2))
-        case Type.BigInt => mkBigInt(cast2bigInt(v1) divide cast2bigInt(v2))
+        case Type.BigInt => Value.BigInt(cast2bigInt(v1) divide cast2bigInt(v2))
         case _ => throw InternalRuntimeException(s"Can't apply BinaryOperator.$op to type ${exp1.tpe}.")
       }
       case BinaryOperator.Modulo => exp1.tpe match {
@@ -244,7 +247,7 @@ object Interpreter {
         case Type.Int16 => Value.Int16((cast2int16(v1) % cast2int16(v2)).toShort)
         case Type.Int32 => Value.Int32(cast2int32(v1) % cast2int32(v2))
         case Type.Int64 => Value.Int64(cast2int64(v1) % cast2int64(v2))
-        case Type.BigInt => mkBigInt(cast2bigInt(v1) remainder cast2bigInt(v2))
+        case Type.BigInt => Value.BigInt(cast2bigInt(v1) remainder cast2bigInt(v2))
         case _ => throw InternalRuntimeException(s"Can't apply BinaryOperator.$op to type ${exp1.tpe}.")
       }
       case BinaryOperator.Exponentiate => exp1.tpe match {
@@ -337,7 +340,7 @@ object Interpreter {
         case Type.Int16 => Value.Int16((cast2int16(v1) & cast2int16(v2)).toShort)
         case Type.Int32 => Value.Int32(cast2int32(v1) & cast2int32(v2))
         case Type.Int64 => Value.Int64(cast2int64(v1) & cast2int64(v2))
-        case Type.BigInt => mkBigInt(cast2bigInt(v1) and cast2bigInt(v2))
+        case Type.BigInt => Value.BigInt(cast2bigInt(v1) and cast2bigInt(v2))
         case _ => throw InternalRuntimeException(s"Can't apply BinaryOperator.$op to type ${exp1.tpe}.")
       }
       case BinaryOperator.BitwiseOr => exp1.tpe match {
@@ -345,7 +348,7 @@ object Interpreter {
         case Type.Int16 => Value.Int16((cast2int16(v1) | cast2int16(v2)).toShort)
         case Type.Int32 => Value.Int32(cast2int32(v1) | cast2int32(v2))
         case Type.Int64 => Value.Int64(cast2int64(v1) | cast2int64(v2))
-        case Type.BigInt => mkBigInt(cast2bigInt(v1) or cast2bigInt(v2))
+        case Type.BigInt => Value.BigInt(cast2bigInt(v1) or cast2bigInt(v2))
         case _ => throw InternalRuntimeException(s"Can't apply BinaryOperator.$op to type ${exp1.tpe}.")
       }
       case BinaryOperator.BitwiseXor => exp1.tpe match {
@@ -353,7 +356,7 @@ object Interpreter {
         case Type.Int16 => Value.Int16((cast2int16(v1) ^ cast2int16(v2)).toShort)
         case Type.Int32 => Value.Int32(cast2int32(v1) ^ cast2int32(v2))
         case Type.Int64 => Value.Int64(cast2int64(v1) ^ cast2int64(v2))
-        case Type.BigInt => mkBigInt(cast2bigInt(v1) xor cast2bigInt(v2))
+        case Type.BigInt => Value.BigInt(cast2bigInt(v1) xor cast2bigInt(v2))
         case _ => throw InternalRuntimeException(s"Can't apply BinaryOperator.$op to type ${exp1.tpe}.")
       }
       case BinaryOperator.BitwiseLeftShift => exp1.tpe match {
@@ -361,7 +364,7 @@ object Interpreter {
         case Type.Int16 => Value.Int16((cast2int16(v1) << cast2int32(v2)).toShort)
         case Type.Int32 => Value.Int32(cast2int32(v1) << cast2int32(v2))
         case Type.Int64 => Value.Int64(cast2int64(v1) << cast2int32(v2))
-        case Type.BigInt => mkBigInt(cast2bigInt(v1) shiftLeft cast2int32(v2))
+        case Type.BigInt => Value.BigInt(cast2bigInt(v1) shiftLeft cast2int32(v2))
         case _ => throw InternalRuntimeException(s"Can't apply BinaryOperator.$op to type ${exp1.tpe}.")
       }
       case BinaryOperator.BitwiseRightShift => exp1.tpe match {
@@ -369,7 +372,7 @@ object Interpreter {
         case Type.Int16 => Value.Int16((cast2int16(v1) >> cast2int32(v2)).toShort)
         case Type.Int32 => Value.Int32(cast2int32(v1) >> cast2int32(v2))
         case Type.Int64 => Value.Int64(cast2int64(v1) >> cast2int32(v2))
-        case Type.BigInt => mkBigInt(cast2bigInt(v1) shiftRight cast2int32(v2))
+        case Type.BigInt => Value.BigInt(cast2bigInt(v1) shiftRight cast2int32(v2))
         case _ => throw InternalRuntimeException(s"Can't apply BinaryOperator.$op to type ${exp1.tpe}.")
       }
     }
@@ -409,9 +412,12 @@ object Interpreter {
     * Casts the given reference `ref` to a primitive boolean.
     */
   private def cast2bool(ref: Any): Boolean = ref match {
-    case o: java.lang.Boolean => o.booleanValue()
+    case Value.True => true
+    case Value.False => false
     case _ => throw InternalRuntimeException(s"Unexpected non-bool value: '$ref'.")
   }
+
+  // TODO: Update the rest.
 
   /**
     * Casts the given reference `ref` to a primitive char.
@@ -477,41 +483,6 @@ object Interpreter {
     case _ => throw InternalRuntimeException(s"Unexpected non-bigint value: '$ref'.")
   }
 
-  /////////////////////////////////////////////////////////////////////////////
-  // Bools                                                                   //
-  /////////////////////////////////////////////////////////////////////////////
-
-  /**
-    * Constructs a bool from the given boolean `b`.
-    */
-  private def mkBool(b: Boolean): AnyRef = if (b) Value.True else Value.False
-
-
-  /**
-    * Constructs the Flix representation of a java.math.BigInteger for the given `ref`.
-    */
-  private def mkBigInt(ref: AnyRef): AnyRef = ref match {
-    case o: java.math.BigInteger => o
-    case _ => throw InternalRuntimeException(s"Unexpected non-bigint value: '$ref'.")
-  }
-
-  /////////////////////////////////////////////////////////////////////////////
-  // Strings                                                                 //
-  /////////////////////////////////////////////////////////////////////////////
-
-  /**
-    * Constructs a str from the given string `s`.
-    */
-  private def mkStr(s: String): AnyRef = s
-
-  /////////////////////////////////////////////////////////////////////////////
-  // Tags                                                                    //
-  /////////////////////////////////////////////////////////////////////////////
-  /**
-    * Constructs the tag for the given tag `t` and value `v`.
-    */
-  private def mkTag(t: java.lang.String, v: AnyRef): Value.Tag = new Value.Tag(t, v)
-
   /**
     * Casts the given reference `ref` to a tag.
     */
@@ -519,5 +490,10 @@ object Interpreter {
     case v: Value.Tag => v
     case _ => throw InternalRuntimeException(s"Unexpected non-tag value: '$ref'.")
   }
+
+  /**
+    * Constructs a bool from the given boolean `b`.
+    */
+  private def mkBool(b: Boolean): AnyRef = if (b) Value.True else Value.False
 
 }

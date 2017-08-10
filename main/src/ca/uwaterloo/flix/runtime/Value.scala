@@ -21,6 +21,8 @@ import ca.uwaterloo.flix.util.InternalRuntimeException
 
 sealed trait Value
 
+//  TODO: Replace AnyRef by value.
+
 object Value {
 
   /**
@@ -78,54 +80,70 @@ object Value {
     */
   case class BigInt(lit: java.math.BigInteger) extends Value
 
-
-  /////////////////////////////////////////////////////////////////////////////
-  // Closures                                                                //
-  /////////////////////////////////////////////////////////////////////////////
+  /**
+    * A String value.
+    */
+  case class Str(lit: java.lang.String) extends Value
 
   /**
-    * Flix internal representation of closures.
+    * A Boxed value.
     */
-  final case class Closure(name: Symbol.DefnSym, bindings: Array[AnyRef])
-
-  // TODO: Introduce make function and make Closure constructor private.
-
-  /**
-    * Flix internal representation of tags.
-    */
-  final class Tag(val tag: java.lang.String, val value: AnyRef) {
-    // TODO: Throw exception
-    override def equals(other: Any): scala.Boolean = other match {
-      case that: Value.Tag => this.tag == that.tag && equal(this.value, that.value)
-      case _ => false
-    }
-
-    override def hashCode: Int = 7 * tag.hashCode + 11 * value.hashCode
-
-    override def toString: java.lang.String = s"Value.Tag($tag, $value)"
-  }
-
-
-  /////////////////////////////////////////////////////////////////////////////
-  // Boxes                                                                   //
-  /////////////////////////////////////////////////////////////////////////////
-  /**
-    * Representation of a reference cell.
-    */
-  class Box {
+  class Box extends Value {
+    /**
+      * The internal value of the box.
+      */
     private var value: AnyRef = _
 
+    /**
+      * Returns the value inside the box.
+      */
     def getValue: AnyRef = value
 
+    /**
+      * Mutates the value inside the box.
+      */
     def setValue(x: AnyRef): Unit = {
       value = x
     }
 
-    override def equals(obj: scala.Any): Boolean = throw InternalRuntimeException(s"Box does not support equals().")
+    final override def equals(obj: scala.Any): Boolean = throw InternalRuntimeException(s"Value.Box does not support `equals`.")
 
-    override def hashCode(): Int = throw InternalRuntimeException(s"Box does not support hashCode().")
+    final override def hashCode(): Int = throw InternalRuntimeException(s"Value.Box does not support `hashCode`.")
 
-    override def toString: String = s"Box($value)"
+    final override def toString: String = throw InternalRuntimeException(s"Value.Box does not support `toString`.")
+  }
+
+  /**
+    * A Closure value.
+    */
+  case class Closure(sym: Symbol.DefnSym, bindings: Array[AnyRef]) extends Value {
+    final override def equals(obj: scala.Any): Boolean = throw InternalRuntimeException(s"Value.Closure does not support `equals`.")
+
+    final override def hashCode(): Int = throw InternalRuntimeException(s"Value.Closure does not support `hashCode`.")
+
+    final override def toString: String = throw InternalRuntimeException(s"Value.Closure does not support `toString`.")
+  }
+
+  /**
+    * Flix internal representation of tags.
+    */
+  case class Tag(enum: Symbol.EnumSym, tag: String, value: AnyRef) extends Value {
+    final override def equals(obj: scala.Any): Boolean = throw InternalRuntimeException(s"Value.Tag does not support `equals`.")
+
+    final override def hashCode(): Int = throw InternalRuntimeException(s"Value.Tag does not support `hashCode`.")
+
+    final override def toString: String = throw InternalRuntimeException(s"Value.Tag does not support `toString`.")
+  }
+
+  /**
+    * A Tuple value.
+    */
+  case class Tuple(elms: List[AnyRef]) extends Value {
+    final override def equals(obj: scala.Any): Boolean = throw InternalRuntimeException(s"Value.Tuple does not support `equals`.")
+
+    final override def hashCode(): Int = throw InternalRuntimeException(s"Value.Tuple does not support `hashCode`.")
+
+    final override def toString: String = throw InternalRuntimeException(s"Value.Tuple does not support `toString`.")
   }
 
   /////////////////////////////////////////////////////////////////////////////
