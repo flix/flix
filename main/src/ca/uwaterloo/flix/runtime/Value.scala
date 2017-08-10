@@ -16,152 +16,15 @@
 
 package ca.uwaterloo.flix.runtime
 
-import ca.uwaterloo.flix.api.Enum
-import ca.uwaterloo.flix.language.ast.ExecutableAst.Pattern
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.util.InternalRuntimeException
 
-import scala.collection.immutable
-
 object Value {
 
-  /////////////////////////////////////////////////////////////////////////////
-  // Unit                                                                    //
-  /////////////////////////////////////////////////////////////////////////////
-
   /**
-    * The Unit value.
+    * The `Unit` value.
     */
   object Unit
-
-  /////////////////////////////////////////////////////////////////////////////
-  // Bools                                                                   //
-  /////////////////////////////////////////////////////////////////////////////
-
-  /**
-    * The true value.
-    */
-  @inline
-  val True: AnyRef = java.lang.Boolean.TRUE
-
-  /**
-    * The false value.
-    */
-  @inline
-  val False: AnyRef = java.lang.Boolean.FALSE
-
-  /**
-    * Constructs a bool from the given boolean `b`.
-    */
-  @inline
-  def mkBool(b: Boolean): AnyRef = if (b) True else False
-
-  /////////////////////////////////////////////////////////////////////////////
-  // Chars                                                                   //
-  /////////////////////////////////////////////////////////////////////////////
-
-  /**
-    * Constructs a char value from the given char `c`.
-    */
-  @inline
-  def mkChar(c: Char): AnyRef = new java.lang.Character(c)
-
-
-  /////////////////////////////////////////////////////////////////////////////
-  // Floats                                                                  //
-  /////////////////////////////////////////////////////////////////////////////
-
-  /**
-    * Constructs a float32 value from the given float `f`.
-    */
-  @inline
-  def mkFloat32(f: Float): AnyRef = new java.lang.Float(f)
-
-  /**
-    * Constructs a float32 value from the given double `d`.
-    */
-  @inline
-  def mkFloat32(d: Double): AnyRef = new java.lang.Float(d.asInstanceOf[Float])
-
-  /**
-    * Constructs a float64 value from the given double `d`.
-    */
-  @inline
-  def mkFloat64(d: Double): AnyRef = new java.lang.Double(d)
-
-
-  /////////////////////////////////////////////////////////////////////////////
-  // Ints                                                                    //
-  /////////////////////////////////////////////////////////////////////////////
-
-  /**
-    * Constructs an int8 value from the given byte `b`.
-    */
-  @inline
-  def mkInt8(b: Byte): AnyRef = new java.lang.Byte(b)
-
-  /**
-    * Constructs an int8 from the given int `i`.
-    */
-  @inline
-  def mkInt8(i: Int): AnyRef = new java.lang.Byte(i.asInstanceOf[Byte])
-
-  /**
-    * Constructs an int16 from the given short `s`.
-    */
-  @inline
-  def mkInt16(s: Short): AnyRef = new java.lang.Short(s)
-
-  /**
-    * Constructs an int16 form the given int `i`.
-    */
-  @inline
-  def mkInt16(i: Int): AnyRef = new java.lang.Short(i.asInstanceOf[Short])
-
-  /**
-    * Constructs an int32 from the given int `i`.
-    */
-  @inline
-  def mkInt32(i: Int): AnyRef = new java.lang.Integer(i)
-
-  /**
-    * Constructs an int64 from the given int `i`.
-    */
-  @inline
-  def mkInt64(i: Int): AnyRef = new java.lang.Long(i)
-
-  /**
-    * Constructs an int64 from the given long `l`.
-    */
-  @inline
-  def mkInt64(l: Long): AnyRef = new java.lang.Long(l)
-
-  /**
-    * Constructs a java.math.BigInteger from the given int `i`.
-    */
-  @inline
-  def mkBigInt(i: Int): AnyRef = java.math.BigInteger.valueOf(i)
-
-  /**
-    * Constructs a java.math.BigInteger from the given long `l`.
-    */
-  @inline
-  def mkBigInt(l: Long): AnyRef = java.math.BigInteger.valueOf(l)
-
-  /**
-    * Constructs a java.math.BigInteger from the given string `s`.
-    */
-  @inline
-  def mkBigInt(s: String): AnyRef = new java.math.BigInteger(s)
-
-  /**
-    * Constructs the Flix representation of a java.math.BigInteger for the given `ref`.
-    */
-  @inline
-  def mkBigInt(ref: AnyRef): AnyRef = ref match {
-    case o: java.math.BigInteger => o
-    case _ => throw new InternalRuntimeException(s"Unexpected non-bigint value: '$ref'.")
-  }
 
   /////////////////////////////////////////////////////////////////////////////
   // Closures                                                                //
@@ -175,32 +38,10 @@ object Value {
   // TODO: Introduce make function and make Closure constructor private.
 
   /**
-    * Casts the given reference `ref` to a closure.
-    */
-  @inline
-  def cast2closure(ref: AnyRef): Closure = ref match {
-    case o: Closure => o
-    case _ => throw new InternalRuntimeException(s"Unexpected non-closure value: '$ref'.")
-  }
-
-  /////////////////////////////////////////////////////////////////////////////
-  // Strings                                                                 //
-  /////////////////////////////////////////////////////////////////////////////
-
-  /**
-    * Constructs a str from the given string `s`.
-    */
-  @inline
-  def mkStr(s: String): AnyRef = s
-
-  /////////////////////////////////////////////////////////////////////////////
-  // Tags                                                                    //
-  /////////////////////////////////////////////////////////////////////////////
-
-  /**
     * Flix internal representation of tags.
     */
   final class Tag(val tag: java.lang.String, val value: AnyRef) {
+    // TODO: Throw exception
     override def equals(other: Any): scala.Boolean = other match {
       case that: Value.Tag => this.tag == that.tag && equal(this.value, that.value)
       case _ => false
@@ -211,19 +52,6 @@ object Value {
     override def toString: java.lang.String = s"Value.Tag($tag, $value)"
   }
 
-  /**
-    * Constructs the tag for the given tag `t` and value `v`.
-    */
-  def mkTag(t: java.lang.String, v: AnyRef): Value.Tag = new Value.Tag(t, v)
-
-  /**
-    * Casts the given reference `ref` to a tag.
-    */
-  @inline
-  def cast2tag(ref: AnyRef): Value.Tag = ref match {
-    case v: Value.Tag => v
-    case _ => throw new InternalRuntimeException(s"Unexpected non-tag value: '$ref'.")
-  }
 
   /////////////////////////////////////////////////////////////////////////////
   // Boxes                                                                   //
@@ -248,19 +76,6 @@ object Value {
   }
 
   /////////////////////////////////////////////////////////////////////////////
-  // Opt, List, Set, Map                                                     //
-  /////////////////////////////////////////////////////////////////////////////
-
-  /**
-    * Constructs the Flix representation of a set for the given `ref`.
-    */
-  @inline
-  def mkSet(ref: AnyRef): AnyRef = ref match {
-    case o: immutable.Set[_] => o
-    case _ => throw new InternalRuntimeException(s"Unexpected non-set value: '$ref'.")
-  }
-
-  /////////////////////////////////////////////////////////////////////////////
   // Equality                                                                //
   /////////////////////////////////////////////////////////////////////////////
   /**
@@ -269,6 +84,7 @@ object Value {
     * NB: The type system ensures that only values of the same type can be compared.
     * Hence it is sufficient to only inspect the type of the first argument.
     */
+  // TODO: Replace by built in native operator.
   def equal(ref1: AnyRef, ref2: AnyRef): Boolean = ref1 match {
     case _: Unit.type => ref1 eq ref2
     case _: java.lang.Boolean => ref1.equals(ref2)
@@ -303,78 +119,6 @@ object Value {
       throw InternalRuntimeException(s"Unable to compare '$tpe1' and '$tpe2'.")
   }
 
-  /////////////////////////////////////////////////////////////////////////////
-  // Iterators                                                               //
-  /////////////////////////////////////////////////////////////////////////////
-  /**
-    * Return an iterator over the given Set.
-    */
-  def iteratorOf(value: AnyRef): Iterator[AnyRef] = {
-    def visit(o: AnyRef): List[AnyRef] = {
-      val taggedValue = o.asInstanceOf[Value.Tag]
-      if (taggedValue.tag == "Nil") {
-        Nil
-      } else {
-        val hd = taggedValue.value.asInstanceOf[Array[AnyRef]](0)
-        val tl = taggedValue.value.asInstanceOf[Array[AnyRef]](1)
-        hd :: visit(tl)
-      }
-    }
-
-    val list = value.asInstanceOf[Value.Tag].value
-    visit(list).iterator
-  }
-
-  /////////////////////////////////////////////////////////////////////////////
-  // Unification                                                             //
-  /////////////////////////////////////////////////////////////////////////////
-
-  /**
-    * Tries to unify the given pattern `p0` with the given value `v0` under the environment `env0`.
-    *
-    * Mutates the given map. Returns `true` if unification was successful.
-    */
-  def unify(p0: Pattern, v0: AnyRef, env0: Array[AnyRef]): Boolean = (p0, v0) match {
-    case (Pattern.Wild(_, _), _) => true
-    case (Pattern.Var(sym, _, _), _) =>
-      val v2 = env0(sym.getStackOffset)
-      if (v2 == null) {
-        env0(sym.getStackOffset) = v0
-        true
-      } else {
-        Value.equal(v0, v2)
-      }
-    case (Pattern.Unit(_), Value.Unit) => true
-    case (Pattern.True(_), java.lang.Boolean.TRUE) => true
-    case (Pattern.False(_), java.lang.Boolean.FALSE) => true
-    case (Pattern.Char(lit, _), o: java.lang.Character) => lit == o.charValue()
-    case (Pattern.Float32(lit, _), o: java.lang.Float) => lit == o.floatValue()
-    case (Pattern.Float64(lit, _), o: java.lang.Double) => lit == o.doubleValue()
-    case (Pattern.Int8(lit, _), o: java.lang.Byte) => lit == o.byteValue()
-    case (Pattern.Int16(lit, _), o: java.lang.Short) => lit == o.shortValue()
-    case (Pattern.Int32(lit, _), o: java.lang.Integer) => lit == o.intValue()
-    case (Pattern.Int64(lit, _), o: java.lang.Long) => lit == o.longValue()
-    case (Pattern.BigInt(lit, _), o: java.math.BigInteger) => lit.equals(o)
-    case (Pattern.Str(lit, _), o: java.lang.String) => lit.equals(o)
-    case (Pattern.Tag(enum, tag, p, _, _), o: Value.Tag) => if (tag.equals(o.tag)) unify(p, o.value, env0) else false
-    case (Pattern.Tag(enum, tag, p, _, _), o: Enum) => if (tag == o.getTag) unify(p, o.getBoxedValue, env0) else false
-    case (Pattern.Tuple(elms, _, _), o: Array[AnyRef]) =>
-      if (elms.length != o.length)
-        return false
-      var i: Int = 0
-      while (i < o.length) {
-        val pi = elms(i)
-        val vi = o(i)
-        val success = unify(pi, vi, env0)
-        if (!success)
-          return false
-        i = i + 1
-      }
-      true
-    case _ =>
-      // Unification failed. Return `null`.
-      false
-  }
 
   /////////////////////////////////////////////////////////////////////////////
   // Pretty Printing                                                         //
@@ -383,6 +127,7 @@ object Value {
   /**
     * Returns a pretty printed formatting of the given Flix `ref`.
     */
+  // TODO: Replace by built in native operator.
   def pretty(ref: AnyRef): String = ref match {
     case Value.Unit => "()"
     case o: java.lang.Boolean => o.booleanValue().toString

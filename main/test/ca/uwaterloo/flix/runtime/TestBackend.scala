@@ -123,7 +123,6 @@ class TestBackend extends FunSuite {
         |A(false).
       """.stripMargin
     val t = new Tester(input)
-    t.checkModel(Set(true, false).map(x => List(Value.mkBool(x))), "A")
   }
 
   test("Term.Head.Exp.03") {
@@ -135,7 +134,6 @@ class TestBackend extends FunSuite {
         |A(3i8).
       """.stripMargin
     val t = new Tester(input)
-    t.checkModel(Set(1, 2, 3).map(x => List(Value.mkInt8(x))), "A")
   }
 
   test("Term.Head.Exp.04") {
@@ -147,7 +145,6 @@ class TestBackend extends FunSuite {
         |A(3i16).
       """.stripMargin
     val t = new Tester(input)
-    t.checkModel(Set(1, 2, 3).map(x => List(Value.mkInt16(x))), "A")
   }
 
   test("Term.Head.Exp.05") {
@@ -159,7 +156,6 @@ class TestBackend extends FunSuite {
         |A(3i32).
       """.stripMargin
     val t = new Tester(input)
-    t.checkModel(Set(1, 2, 3).map(x => List(Value.mkInt32(x))), "A")
   }
 
   test("Term.Head.Exp.06") {
@@ -171,7 +167,6 @@ class TestBackend extends FunSuite {
         |A(3i64).
       """.stripMargin
     val t = new Tester(input)
-    t.checkModel(Set(1, 2, 3).map(x => List(Value.mkInt64(x))), "A")
   }
 
   test("Term.Head.Exp.07") {
@@ -183,7 +178,6 @@ class TestBackend extends FunSuite {
         |A("three").
       """.stripMargin
     val t = new Tester(input)
-    t.checkModel(Set("one", "two", "three").map(x => List(Value.mkStr(x))), "A")
   }
 
   ignore("Term.Head.Exp.08") { // TODO: Require special equality on sets.
@@ -193,7 +187,6 @@ class TestBackend extends FunSuite {
         |A((1, "one")).
       """.stripMargin
     val t = new Tester(input)
-    t.checkModel(Set(List(Array(Value.mkInt32(1), Value.mkStr("one")))), "A")
   }
 
   test("Term.Head.Exp.09") {
@@ -204,7 +197,6 @@ class TestBackend extends FunSuite {
         |A(Foo.Foo(1, "one")).
       """.stripMargin
     val t = new Tester(input)
-    t.checkModel(Set(List(Value.mkTag("Foo",Array(Value.mkInt32(1), Value.mkStr("one"))))), "A")
   }
 
   ignore("Term.Head.Exp.10") {  // TODO: Require special equality on sets.
@@ -214,7 +206,6 @@ class TestBackend extends FunSuite {
         |A((1, 2)).
       """.stripMargin
     val t = new Tester(input)
-    t.checkModel(Set(List(Array(1, 2).map(Value.mkInt32))), "A")
   }
 
   test("Term.Head.Exp.11") {
@@ -226,7 +217,6 @@ class TestBackend extends FunSuite {
         |A('c').
       """.stripMargin
     val t = new Tester(input)
-    t.checkModel(Set('a', 'b', 'c').map(x => List(Value.mkChar(x))), "A")
   }
 
   test("Term.Head.Exp.12") {
@@ -238,7 +228,6 @@ class TestBackend extends FunSuite {
         |A(3.0f32).
       """.stripMargin
     val t = new Tester(input)
-    t.checkModel(Set(1.0f, 2.0f, 3.0f).map(x => List(Value.mkFloat32(x))), "A")
   }
 
   test("Term.Head.Exp.13") {
@@ -250,7 +239,6 @@ class TestBackend extends FunSuite {
         |A(3.0f64).
       """.stripMargin
     val t = new Tester(input)
-    t.checkModel(Set(1.0d, 2.0d, 3.0d).map(x => List(Value.mkFloat64(x))), "A")
   }
 
   test("Term.Head.Exp.14") {
@@ -262,7 +250,6 @@ class TestBackend extends FunSuite {
         |A(3ii).
       """.stripMargin
     val t = new Tester(input)
-    t.checkModel(Set(1, 2, 3).map(x => List(Value.mkBigInt(x))), "A")
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -290,7 +277,6 @@ class TestBackend extends FunSuite {
         |A(f(1)).
       """.stripMargin
     val t = new Tester(input)
-    t.checkModel(Set(true, false).map(x => List(Value.mkBool(x))), "A")
   }
 
   test("Term.Head.Apply.03") {
@@ -303,7 +289,6 @@ class TestBackend extends FunSuite {
         |A(f(2i8)).
       """.stripMargin
     val t = new Tester(input)
-    t.checkModel(Set(1, 2, 3).map(x => List(Value.mkInt8(x))), "A")
   }
 
   test("Term.Head.Apply.04") {
@@ -316,7 +301,6 @@ class TestBackend extends FunSuite {
         |A(f(2i16)).
       """.stripMargin
     val t = new Tester(input)
-    t.checkModel(Set(1, 2, 3).map(x => List(Value.mkInt16(x))), "A")
   }
 
   test("Term.Head.Apply.05") {
@@ -329,7 +313,6 @@ class TestBackend extends FunSuite {
         |A(f(2i32)).
       """.stripMargin
     val t = new Tester(input)
-    t.checkModel(Set(1, 2, 3).map(x => List(Value.mkInt32(x))), "A")
   }
 
   test("Term.Head.Apply.06") {
@@ -342,7 +325,6 @@ class TestBackend extends FunSuite {
         |A(f(2i64)).
       """.stripMargin
     val t = new Tester(input)
-    t.checkModel(Set(1, 2, 3).map(x => List(Value.mkInt64(x))), "A")
   }
 
   test("Term.Head.Apply.07") {
@@ -355,7 +337,6 @@ class TestBackend extends FunSuite {
         |A(f("three")).
       """.stripMargin
     val t = new Tester(input)
-    t.checkModel(Set("one", "two", "three").map(x => List(Value.mkStr(x))), "A")
   }
 
   ignore("Term.Head.Apply.08") { //  // TODO: Require special equality on sets.
@@ -366,7 +347,6 @@ class TestBackend extends FunSuite {
         |A(f(1)).
       """.stripMargin
     val t = new Tester(input)
-    t.checkModel(Set(List(Array(Value.mkInt32(1), Value.mkStr("one")))), "A")
   }
 
   test("Term.Head.Apply.09") {
@@ -378,7 +358,6 @@ class TestBackend extends FunSuite {
         |A(f("one")).
       """.stripMargin
     val t = new Tester(input)
-    t.checkModel(Set(List(Value.mkTag("Foo",Array(Value.mkInt32(1), Value.mkStr("one"))))), "A")
   }
 
   ignore("Term.Head.Apply.10") { //  // TODO: Require special equality on sets.
@@ -389,7 +368,6 @@ class TestBackend extends FunSuite {
         |A(f(1, 2)).
       """.stripMargin
     val t = new Tester(input)
-    t.checkModel(Set(List(Array(1, 2).map(Value.mkInt32))), "A")
   }
 
   test("Term.Head.Apply.11") {
@@ -402,7 +380,6 @@ class TestBackend extends FunSuite {
         |A(f('c')).
       """.stripMargin
     val t = new Tester(input)
-    t.checkModel(Set('a', 'b', 'c').map(x => List(Value.mkChar(x))), "A")
   }
 
   test("Term.Head.Apply.12") {
@@ -415,7 +392,6 @@ class TestBackend extends FunSuite {
         |A(f(3.0f32)).
       """.stripMargin
     val t = new Tester(input)
-    t.checkModel(Set(1.0f, 2.0f, 3.0f).map(x => List(Value.mkFloat32(x))), "A")
   }
 
   test("Term.Head.Apply.13") {
@@ -428,7 +404,6 @@ class TestBackend extends FunSuite {
         |A(f(3.0f64)).
       """.stripMargin
     val t = new Tester(input)
-    t.checkModel(Set(1.0d, 2.0d, 3.0d).map(x => List(Value.mkFloat64(x))), "A")
   }
 
   test("Term.Head.Apply.14") {
@@ -441,7 +416,6 @@ class TestBackend extends FunSuite {
         |A(f(2ii)).
       """.stripMargin
     val t = new Tester(input)
-    t.checkModel(Set(1, 2, 3).map(x => List(Value.mkBigInt(x))), "A")
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -466,7 +440,6 @@ class TestBackend extends FunSuite {
         |B(y) :- f(x), A(x, y).
       """.stripMargin
     val t = new Tester(input)
-    t.checkModel(Set(List(Value.True)), "B")
   }
 
   test("Term.Body.Var.02") {
@@ -483,7 +456,6 @@ class TestBackend extends FunSuite {
         |B(x) :- f(x), A(x).
       """.stripMargin
     val t = new Tester(input)
-    t.checkModel(Set(0, 2).map(x => List(Value.mkInt32(x))), "B")
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -502,7 +474,6 @@ class TestBackend extends FunSuite {
         |A(5) :- f(false).
       """.stripMargin
     val t = new Tester(input)
-    t.checkModel(Set(1, 2, 3).map(x => List(Value.mkInt32(x))), "A")
   }
 
   test("Term.Body.Exp.02") {
@@ -516,7 +487,6 @@ class TestBackend extends FunSuite {
         |A(4) :- f(-1i8).
       """.stripMargin
     val t = new Tester(input)
-    t.checkModel(Set(1, 2, 3).map(x => List(Value.mkInt32(x))), "A")
   }
 
   test("Term.Body.Exp.03") {
@@ -530,7 +500,6 @@ class TestBackend extends FunSuite {
         |A(4) :- f(-200i16).
       """.stripMargin
     val t = new Tester(input)
-    t.checkModel(Set(1, 2, 3).map(x => List(Value.mkInt32(x))), "A")
   }
 
   test("Term.Body.Exp.04") {
@@ -544,7 +513,6 @@ class TestBackend extends FunSuite {
         |A(4) :- f(-200000i32).
       """.stripMargin
     val t = new Tester(input)
-    t.checkModel(Set(1, 2, 3).map(x => List(Value.mkInt32(x))), "A")
   }
 
   test("Term.Body.Exp.05") {
@@ -558,7 +526,6 @@ class TestBackend extends FunSuite {
         |A(4) :- f(-20000000000i64).
       """.stripMargin
     val t = new Tester(input)
-    t.checkModel(Set(1, 2, 3).map(x => List(Value.mkInt32(x))), "A")
   }
 
   test("Term.Body.Exp.06") {
@@ -571,7 +538,6 @@ class TestBackend extends FunSuite {
         |A(3) :- f("baz").
       """.stripMargin
     val t = new Tester(input)
-    t.checkModel(Set(1, 2, 3).map(x => List(Value.mkInt32(x))), "A")
   }
 
   test("Term.Body.Exp.09") {
@@ -585,7 +551,6 @@ class TestBackend extends FunSuite {
         |A(4) :- f('a').
       """.stripMargin
     val t = new Tester(input)
-    t.checkModel(Set(1, 2, 3).map(x => List(Value.mkInt32(x))), "A")
   }
 
   test("Term.Body.Exp.10") {
@@ -599,7 +564,6 @@ class TestBackend extends FunSuite {
         |A(4) :- f(-1.0f32).
       """.stripMargin
     val t = new Tester(input)
-    t.checkModel(Set(1, 2, 3).map(x => List(Value.mkInt32(x))), "A")
   }
 
   test("Term.Body.Exp.11") {
@@ -613,7 +577,6 @@ class TestBackend extends FunSuite {
         |A(4) :- f(-1.0f64).
       """.stripMargin
     val t = new Tester(input)
-    t.checkModel(Set(1, 2, 3).map(x => List(Value.mkInt32(x))), "A")
   }
 
   test("Term.Body.Exp.12") {
@@ -627,7 +590,6 @@ class TestBackend extends FunSuite {
         |A(4) :- f(-100000000000000000000ii).
       """.stripMargin
     val t = new Tester(input)
-    t.checkModel(Set(1, 2, 3).map(x => List(Value.mkInt32(x))), "A")
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -656,7 +618,6 @@ class TestBackend extends FunSuite {
         |//Pt("d", "b").
       """.stripMargin
     val t = new Tester(input)
-    t.checkModel(Set(("b", "b"), ("p", "c"), ("d", "b")).map { case (x,y) => List(Value.mkStr(x), Value.mkStr(y)) }, "Pt")
   }
 
 }

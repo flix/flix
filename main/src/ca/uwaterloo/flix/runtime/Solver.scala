@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.runtime
 import java.util.concurrent._
 import java.util.concurrent.atomic.AtomicInteger
 
-import ca.uwaterloo.flix.api.{RuleException, TimeoutException}
+import ca.uwaterloo.flix.api.{Enum, RuleException, TimeoutException}
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Term.Body.Pat
 import ca.uwaterloo.flix.language.ast.ExecutableAst._
 import ca.uwaterloo.flix.language.ast.{ExecutableAst, Symbol}
@@ -417,7 +417,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
           p.terms(i) match {
             case term: Pat =>
               val value = matchedRow(i)
-              if (!Value.unify(term.pat, value, env)) {
+              if (!unify(term.pat, value, env)) {
                 // Value does not unify with the pattern term. We should skip this row.
                 skip = true
               }
@@ -450,7 +450,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
     case Nil => evalAllFilters(rule, env, interp)
     case Predicate.Body.Loop(sym, term, _, _) :: rest =>
       val value = evalHeadTerm(term, root, env)
-      for (x <- Value.iteratorOf(value)) {
+      for (x <- iteratorOf(value)) {
         val newRow = copy(env)
         newRow(sym.getStackOffset) = x
         evalLoop(rule, rest, newRow, interp)
@@ -841,6 +841,79 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
     val dst = new Array[AnyRef](src.length)
     System.arraycopy(src, 0, dst, 0, src.length)
     dst
+  }
+
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Unification                                                             //
+  /////////////////////////////////////////////////////////////////////////////
+  /**
+    * Tries to unify the given pattern `p0` with the given value `v0` under the environment `env0`.
+    *
+    * Mutates the given map. Returns `true` if unification was successful.
+    */
+  private def unify(p0: Pattern, v0: AnyRef, env0: Array[AnyRef]): Boolean = (p0, v0) match {
+    case (Pattern.Wild(_, _), _) => true
+    case (Pattern.Var(sym, _, _), _) =>
+      val v2 = env0(sym.getStackOffset)
+      if (v2 == null) {
+        env0(sym.getStackOffset) = v0
+        true
+      } else {
+        Value.equal(v0, v2)
+      }
+    case (Pattern.Unit(_), Value.Unit) => true
+    case (Pattern.True(_), java.lang.Boolean.TRUE) => true
+    case (Pattern.False(_), java.lang.Boolean.FALSE) => true
+    case (Pattern.Char(lit, _), o: java.lang.Character) => lit == o.charValue()
+    case (Pattern.Float32(lit, _), o: java.lang.Float) => lit == o.floatValue()
+    case (Pattern.Float64(lit, _), o: java.lang.Double) => lit == o.doubleValue()
+    case (Pattern.Int8(lit, _), o: java.lang.Byte) => lit == o.byteValue()
+    case (Pattern.Int16(lit, _), o: java.lang.Short) => lit == o.shortValue()
+    case (Pattern.Int32(lit, _), o: java.lang.Integer) => lit == o.intValue()
+    case (Pattern.Int64(lit, _), o: java.lang.Long) => lit == o.longValue()
+    case (Pattern.BigInt(lit, _), o: java.math.BigInteger) => lit.equals(o)
+    case (Pattern.Str(lit, _), o: java.lang.String) => lit.equals(o)
+    case (Pattern.Tag(enum, tag, p, _, _), o: Value.Tag) => if (tag.equals(o.tag)) unify(p, o.value, env0) else false
+    case (Pattern.Tag(enum, tag, p, _, _), o: Enum) => if (tag == o.getTag) unify(p, o.getBoxedValue, env0) else false
+    case (Pattern.Tuple(elms, _, _), o: Array[AnyRef]) =>
+      if (elms.length != o.length)
+        return false
+      var i: Int = 0
+      while (i < o.length) {
+        val pi = elms(i)
+        val vi = o(i)
+        val success = unify(pi, vi, env0)
+        if (!success)
+          return false
+        i = i + 1
+      }
+      true
+    case _ =>
+      // Unification failed. Return `null`.
+      false
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Iterators                                                               //
+  /////////////////////////////////////////////////////////////////////////////
+  /**
+    * Return an iterator over the given Set.
+    */
+  private def iteratorOf(value: AnyRef): Iterator[AnyRef] = {
+    def visit(o: AnyRef): List[AnyRef] = {
+      val taggedValue = o.asInstanceOf[Value.Tag]
+      if (taggedValue.tag == "Nil") {
+        Nil
+      } else {
+        val hd = taggedValue.value.asInstanceOf[Array[AnyRef]](0)
+        val tl = taggedValue.value.asInstanceOf[Array[AnyRef]](1)
+        hd :: visit(tl)
+      }
+    }
+
+    val list = value.asInstanceOf[Value.Tag].value
+    visit(list).iterator
   }
 
 }
