@@ -97,24 +97,20 @@ object Interpreter {
         // Evaluate the body expression under the extended environment.
         val newEnv = env0 + (sym.toString -> closure)
         eval(exp2, root, newEnv)
-      case _ => throw InternalRuntimeException("Non-closure letrec value: ${ref.getClass.getCanonicalName}.")
+      case _ => throw InternalRuntimeException(s"Non-closure letrec value: ${exp1.getClass.getCanonicalName}.")
     }
 
     case Expression.Is(sym, tag, exp, _) => mkBool(cast2tag(eval(exp, root, env0)).tag == tag)
+
     case Expression.Tag(sym, tag, exp, _, _) => Value.Tag(sym, tag, eval(exp, root, env0))
+
     case Expression.Untag(sym, tag, exp, _, _) => cast2tag(eval(exp, root, env0)).value
+
     case Expression.Index(base, offset, _, _) =>
       val tuple = cast2tuple(eval(base, root, env0))
       tuple.elms(offset)
     case Expression.Tuple(elms, _, _) =>
-      // TODO: Update implementation.
-      val array = new Array[AnyRef](elms.length)
-      var i = 0
-      while (i < array.length) {
-        array(i) = eval(elms(i), root, env0)
-        i = i + 1
-      }
-      Value.Tuple(array.toList)
+      Value.Tuple(elms.map(e => eval(e, root, env0)).toList)
 
     case Expression.Ref(exp, tpe, loc) =>
       val box = new Value.Box()
@@ -418,7 +414,6 @@ object Interpreter {
   private def cast2bool(ref: Any): Boolean = ref match {
     case Value.True => true
     case Value.False => false
-    //case b: java.lang.Boolean => b.booleanValue()
     case _ => throw InternalRuntimeException(s"Unexpected non-bool value: ${ref.getClass.getCanonicalName}.")
   }
 

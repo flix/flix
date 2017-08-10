@@ -63,40 +63,40 @@ object SymVal {
   /**
     * A Float32 value.
     */
-  case class Float32(lit: Float) extends SymVal
+  case class Float32(lit: scala.Float) extends SymVal
 
   /**
     * A Float64 value.
     */
-  case class Float64(lit: Double) extends SymVal
+  case class Float64(lit: scala.Double) extends SymVal
 
   /**
     * An Int8 value.
     *
     * @param lit the int literal.
     */
-  case class Int8(lit: Byte) extends SymVal
+  case class Int8(lit: scala.Byte) extends SymVal
 
   /**
     * An Int16 value.
     *
     * @param lit the int literal.
     */
-  case class Int16(lit: Short) extends SymVal
+  case class Int16(lit: scala.Short) extends SymVal
 
   /**
     * An Int32 value.
     *
     * @param lit the int literal.
     */
-  case class Int32(lit: Int) extends SymVal
+  case class Int32(lit: scala.Int) extends SymVal
 
   /**
     * An Int64 value.
     *
     * @param lit the int literal.
     */
-  case class Int64(lit: Long) extends SymVal
+  case class Int64(lit: scala.Long) extends SymVal
 
   /**
     * A BigInt value.
@@ -128,21 +128,9 @@ object SymVal {
   case class Tuple(elms: List[SymVal]) extends SymVal
 
   /**
-    * The `FNil` value.
-    */
-  // TODO: Deprecated?
-  case object FNil extends SymVal
-
-  /**
-    * The `FList` value.
-    */
-  // TODO: Deprecated?
-  case class FList(hd: SymVal, tl: SymVal) extends SymVal
-
-  /**
     * A closure value.
     *
-    * @param exp the expression of the closure.
+    * @param exp      the expression of the closure.
     * @param bindings the closure environment.
     */
   case class Closure(exp: Expression.Def, bindings: Array[SymVal]) extends SymVal
@@ -171,8 +159,6 @@ object SymVal {
       case SymVal.Tag(tag, SymVal.Unit) => tag
       case SymVal.Tag(tag, elm) => tag + "(" + visit(elm) + ")"
       case SymVal.Tuple(elms) => "(" + elms.map(visit).mkString(", ") + ")"
-      case SymVal.FNil => "Nil"
-      case SymVal.FList(hd, tl) => visit(hd) + " :: " + visit(tl)
       case SymVal.Closure(_, _) => "<<closure>>"
     }
 
