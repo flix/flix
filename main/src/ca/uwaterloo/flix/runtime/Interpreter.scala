@@ -25,8 +25,6 @@ import ca.uwaterloo.flix.util.InternalRuntimeException
 
 object Interpreter {
 
-  // TODO: Change signature to return Value
-
   /**
     * Evaluates the given expression `exp0` under the given environment `env0`.
     */
@@ -63,7 +61,7 @@ object Interpreter {
           inv(args.toArray)
       }
     case Expression.ApplyClosure(exp, args0, tpe, loc) =>
-      val clo = eval(exp, root, env0).asInstanceOf[Value.Closure]
+      val clo = cast2closure(eval(exp, root, env0))
       val Value.Closure(name, bindings) = clo
       val args = evalArgs(args0, root, env0)
       val constant = root.defs(name)
@@ -99,21 +97,24 @@ object Interpreter {
         // Evaluate the body expression under the extended environment.
         val newEnv = env0 + (sym.toString -> closure)
         eval(exp2, root, newEnv)
-      case _ => throw InternalRuntimeException("Non-closure letrec value.")
+      case _ => throw InternalRuntimeException("Non-closure letrec value: ${ref.getClass.getCanonicalName}.")
     }
 
     case Expression.Is(sym, tag, exp, _) => mkBool(cast2tag(eval(exp, root, env0)).tag == tag)
     case Expression.Tag(sym, tag, exp, _, _) => Value.Tag(sym, tag, eval(exp, root, env0))
     case Expression.Untag(sym, tag, exp, _, _) => cast2tag(eval(exp, root, env0)).value
-    case Expression.Index(base, offset, _, _) => eval(base, root, env0).asInstanceOf[Array[AnyRef]](offset)
+    case Expression.Index(base, offset, _, _) =>
+      val tuple = cast2tuple(eval(base, root, env0))
+      tuple.elms(offset)
     case Expression.Tuple(elms, _, _) =>
+      // TODO: Update implementation.
       val array = new Array[AnyRef](elms.length)
       var i = 0
       while (i < array.length) {
         array(i) = eval(elms(i), root, env0)
         i = i + 1
       }
-      array
+      Value.Tuple(array.toList)
 
     case Expression.Ref(exp, tpe, loc) =>
       val box = new Value.Box()
@@ -122,11 +123,11 @@ object Interpreter {
       box
 
     case Expression.Deref(exp, tpe, loc) =>
-      val box = eval(exp, root, env0).asInstanceOf[Value.Box]
+      val box = cast2box(eval(exp, root, env0))
       box.getValue
 
     case Expression.Assign(exp1, exp2, tpe, loc) =>
-      val box = eval(exp1, root, env0).asInstanceOf[Value.Box]
+      val box = cast2box(eval(exp1, root, env0))
       val value = eval(exp2, root, env0)
       box.setValue(value)
       Value.Unit
@@ -135,6 +136,7 @@ object Interpreter {
     case Expression.Universal(params, exp, loc) => throw InternalRuntimeException(s"Unexpected expression: '$exp' at ${loc.source.format}.")
 
     case Expression.NativeConstructor(constructor, args, tpe, loc) =>
+      // TODO: Unwrap arguments
       val values = evalArgs(args, root, env0)
       val arguments = values.toArray
       constructor.newInstance(arguments: _*).asInstanceOf[AnyRef]
@@ -144,6 +146,7 @@ object Interpreter {
       field.get(clazz)
 
     case Expression.NativeMethod(method, args, tpe, loc) =>
+      // TODO: Unwrap arguments
       val values = evalArgs(args, root, env0)
       if (Modifier.isStatic(method.getModifiers)) {
         val arguments = values.toArray
@@ -313,8 +316,8 @@ object Interpreter {
         case Type.BigInt => mkBool((cast2bigInt(v1) compareTo cast2bigInt(v2)) >= 0)
         case _ => throw InternalRuntimeException(s"Can't apply BinaryOperator.$op to type ${exp1.tpe}.")
       }
-      case BinaryOperator.Equal => java.lang.Boolean.valueOf(Value.equal(v1, v2))
-      case BinaryOperator.NotEqual => java.lang.Boolean.valueOf(!Value.equal(v1, v2))
+      case BinaryOperator.Equal => mkBool(Value.equal(v1, v2))
+      case BinaryOperator.NotEqual => mkBool(!Value.equal(v1, v2))
     }
   }
 
@@ -414,73 +417,88 @@ object Interpreter {
   private def cast2bool(ref: Any): Boolean = ref match {
     case Value.True => true
     case Value.False => false
-    case _ => throw InternalRuntimeException(s"Unexpected non-bool value: '$ref'.")
+    //case b: java.lang.Boolean => b.booleanValue()
+    case _ => throw InternalRuntimeException(s"Unexpected non-bool value: ${ref.getClass.getCanonicalName}.")
   }
-
-  // TODO: Update the rest.
 
   /**
     * Casts the given reference `ref` to a primitive char.
     */
   private def cast2char(ref: AnyRef): Char = ref match {
-    case o: java.lang.Character => o.charValue()
-    case _ => throw InternalRuntimeException(s"Unexpected non-char value: '$ref'.")
+    case Value.Char(lit) => lit
+    case _ => throw InternalRuntimeException(s"Unexpected non-char value: ${ref.getClass.getCanonicalName}.")
   }
 
   /**
     * Casts the given reference `ref` to a Float32.
     */
   private def cast2float32(ref: AnyRef): Float = ref match {
-    case o: java.lang.Float => o.floatValue()
-    case _ => throw InternalRuntimeException(s"Unexpected non-float32 value: '$ref'.")
+    case Value.Float32(lit) => lit
+    case _ => throw InternalRuntimeException(s"Unexpected non-float32 value: ${ref.getClass.getCanonicalName}.")
   }
 
   /**
     * Casts the given reference `ref` to a Float64.
     */
   private def cast2float64(ref: AnyRef): Double = ref match {
-    case o: java.lang.Double => o.doubleValue()
-    case _ => throw InternalRuntimeException(s"Unexpected non-float64 value: '$ref'.")
+    case Value.Float64(lit) => lit
+    case _ => throw InternalRuntimeException(s"Unexpected non-float64 value: ${ref.getClass.getCanonicalName}.")
   }
 
   /**
     * Casts the given reference `ref` to an int8.
     */
   private def cast2int8(ref: AnyRef): Byte = ref match {
-    case o: java.lang.Byte => o.byteValue()
-    case _ => throw InternalRuntimeException(s"Unexpected non-int8 value: '$ref'.")
+    case Value.Int8(lit) => lit
+    case _ => throw InternalRuntimeException(s"Unexpected non-int8 value: ${ref.getClass.getCanonicalName}.")
   }
 
   /**
     * Casts the given reference `ref` to an int16.
     */
   private def cast2int16(ref: AnyRef): Short = ref match {
-    case o: java.lang.Short => o.shortValue()
-    case _ => throw InternalRuntimeException(s"Unexpected non-int16 value: '$ref'.")
+    case Value.Int16(lit) => lit
+    case _ => throw InternalRuntimeException(s"Unexpected non-int16 value: ${ref.getClass.getCanonicalName}.")
   }
 
   /**
     * Casts the given reference `ref` to an int32.
     */
   private def cast2int32(ref: AnyRef): Int = ref match {
-    case o: java.lang.Integer => o.intValue()
-    case _ => throw InternalRuntimeException(s"Unexpected non-int32 value: '$ref'.")
+    case Value.Int32(lit) => lit
+    case _ => throw InternalRuntimeException(s"Unexpected non-int32 value: ${ref.getClass.getCanonicalName}.")
   }
 
   /**
     * Casts the given reference `ref` to an int64.
     */
   private def cast2int64(ref: AnyRef): Long = ref match {
-    case o: java.lang.Long => o.longValue()
-    case _ => throw InternalRuntimeException(s"Unexpected non-int64 value: '$ref'.")
+    case Value.Int64(lit) => lit
+    case _ => throw InternalRuntimeException(s"Unexpected non-int64 value: ${ref.getClass.getCanonicalName}.")
   }
 
   /**
     * Casts the given reference `ref` to a java.math.BigInteger.
     */
   private def cast2bigInt(ref: AnyRef): java.math.BigInteger = ref match {
-    case o: java.math.BigInteger => o
-    case _ => throw InternalRuntimeException(s"Unexpected non-bigint value: '$ref'.")
+    case Value.BigInt(lit) => lit
+    case _ => throw InternalRuntimeException(s"Unexpected non-bigint value: ${ref.getClass.getCanonicalName}.")
+  }
+
+  /**
+    * Casts the given reference `ref` to a box.
+    */
+  private def cast2box(ref: AnyRef): Value.Box = ref match {
+    case v: Value.Box => v
+    case _ => throw InternalRuntimeException(s"Unexpected non-box value: ${ref.getClass.getCanonicalName}.")
+  }
+
+  /**
+    * Casts the given reference `ref` to a closure.
+    */
+  private def cast2closure(ref: AnyRef): Value.Closure = ref match {
+    case v: Value.Closure => v
+    case _ => throw InternalRuntimeException(s"Unexpected non-closure value: ${ref.getClass.getCanonicalName}.")
   }
 
   /**
@@ -488,7 +506,15 @@ object Interpreter {
     */
   private def cast2tag(ref: AnyRef): Value.Tag = ref match {
     case v: Value.Tag => v
-    case _ => throw InternalRuntimeException(s"Unexpected non-tag value: '$ref'.")
+    case _ => throw InternalRuntimeException(s"Unexpected non-tag value: ${ref.getClass.getCanonicalName}.")
+  }
+
+  /**
+    * Casts the given reference `ref` to a tuple.
+    */
+  private def cast2tuple(ref: AnyRef): Value.Tuple = ref match {
+    case v: Value.Tuple => v
+    case _ => throw InternalRuntimeException(s"Unexpected non-tuple value: ${ref.getClass.getCanonicalName}.")
   }
 
   /**
