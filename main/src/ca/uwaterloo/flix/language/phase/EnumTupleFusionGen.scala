@@ -17,7 +17,7 @@ import org.objectweb.asm.Opcodes._
   * Created by ramin on 2017-08-02.
   */
 
-/*
+
 object EnumTupleFusionGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
   def run(root: ExecutableAst.Root)(implicit flix: Flix): Validation[ExecutableAst.Root, CompilationError] = {
     implicit val _ = flix.genSym
@@ -133,7 +133,7 @@ object EnumTupleFusionGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] 
     compileFusionConstructor(visitor, clazzName, fieldTypes, enumFieldType)
 
     //compileFusionEqualsMethod(visitor, clazzName, enumInterfaceName, tupleInterfaceName, fieldTypes, enumFieldType)
-    compileEqualsWithException(visitor, clazzName)
+    //compileEqualsWithException(visitor, clazzName)
 
     compileFusionHashCodeMethod(visitor, clazzName, fieldTypes, enumFieldType)
 
@@ -193,77 +193,6 @@ object EnumTupleFusionGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] 
     constructor.visitEnd()
   }
 
-  private def compileFusionEqualsMethod(visitor: ClassWriter,
-                                        className: ETFClassName,
-                                        enumCaseName: EnumCaseInterfaceName,
-                                        tupleInterfaceName: TupleInterfaceName,
-                                        fields: List[WrappedType],
-                                        enumField: WrappedType): Unit = {
-    val clazz = Constants.objectClass
-    val neq = new Label() //label for when the object is not instanceof tag case
-    val eq = new Label()
-    val checkFields = new Label()
-
-    // label for when the object is not instanceof tuple case
-    val instNotEq = new Label()
-    // label for when the result of comparing an element of a tuple is false
-    val valueNotEq = new Label()
-    // MethodWriter to emit the code for method body
-
-    // Descriptor of the `value` field
-    val descriptor = getWrappedTypeDescriptor(enumField)
-
-    val method = visitor.visitMethod(ACC_PUBLIC, "equals", s"(${asm.Type.getDescriptor(clazz)})Z", null, null)
-    method.visitCode()
-    method.visitVarInsn(ALOAD, 1)
-    method.visitTypeInsn(INSTANCEOF, decorate(enumCaseName)) // compare the types
-    method.visitJumpInsn(IFEQ, neq) // if types don't match go to `neq`
-    method.visitVarInsn(ALOAD, 1)
-    method.visitTypeInsn(CHECKCAST, decorate(enumCaseName)) // cast to the current class
-    method.visitFieldInsn(GETFIELD, decorate(enumCaseName), "value", descriptor) // get the value field
-    method.visitTypeInsn(CHECKCAST, decorate(tupleInterfaceName))
-
-    method.visitJumpInsn(GOTO, checkFields)
-
-    method.visitJumpInsn(GOTO, eq)
-
-    method.visitLabel(neq)
-    method.visitVarInsn(ALOAD, 1)
-    method.visitTypeInsn(INSTANCEOF, decorate(tupleInterfaceName)) // compare the types
-    method.visitJumpInsn(IFEQ, instNotEq) // if types don't match go to `instNotEq`
-
-    // We cast the argument to current type only once, then we just duplicate the top of the stack.
-    method.visitVarInsn(ALOAD, 1)
-    method.visitTypeInsn(CHECKCAST, decorate(tupleInterfaceName)) // cast to the current class
-
-    method.visitLabel(checkFields)
-    // Now we chack that all elements of tuple have equal values
-    fields.zipWithIndex.foreach { case (field, ind) =>
-      val desc = getWrappedTypeDescriptor(field)
-
-      method.visitInsn(DUP)
-      method.visitMethodInsn(INVOKEINTERFACE, decorate(tupleInterfaceName), s"getField$ind", s"()$desc", true)
-      method.visitVarInsn(ALOAD, 0)
-      method.visitMethodInsn(INVOKEVIRTUAL, decorate(className), s"getField$ind", s"()$desc", false)
-      branchIfNotEqual(method, field, valueNotEq)
-    }
-    method.visitInsn(POP) // Popping the casted version of the argument
-    method.visitLabel(eq)
-    method.visitInsn(ICONST_1)
-    method.visitInsn(IRETURN)
-    method.visitLabel(valueNotEq) // if the code reaches here, it means that underlying values were not equal
-    method.visitInsn(POP) // Popping the casted version of the argument
-    method.visitLabel(instNotEq) // if we jump to this label it means the `instanceof` has returned false.
-    method.visitInsn(ICONST_0)
-
-    // Return
-    method.visitInsn(IRETURN)
-
-    // Parameters of visit max are thrown away because visitor will calculate the frame and variable stack size
-    method.visitMaxs(65535, 65535)
-    method.visitEnd()
-  }
-
   private def compileFusionHashCodeMethod(visitor: ClassWriter,
                                           className: ETFClassName,
                                           fields: List[WrappedType],
@@ -300,6 +229,4 @@ object EnumTupleFusionGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] 
     method.visitMaxs(1, 1)
     method.visitEnd()
   }
-
 }
-*/

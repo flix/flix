@@ -121,8 +121,23 @@ object CodegenHelper {
   case class SECClassName(sym: EnumSym, tag: String, tpe: WrappedType) extends EnumName {
     val ref: List[String] = tpe match {
       case WrappedPrimitive(t) => CodegenHelper.fixedEnumPrefix ::: sym.namespace ::: List(sym.name, "clazz", typeSpecifier(t), tag)
-      case _ => CodegenHelper.fixedEnumPrefix ::: sym.namespace ::: List(sym.name, "clazz", tag)
+      case _ => CodegenHelper.fixedEnumPrefix ::: sym.namespace ::: List(sym.name, "clazz", "obj", tag)
     }
+  }
+
+  /**
+    * Qualified name of an enum class
+    * @param sym symbol of the enum
+    * @param tag tag of the enum
+    * @param fields tpe of the field of the enum
+    */
+  case class ETFClassName(sym: EnumSym, tag: String, fields: List[WrappedType]) extends EnumName {
+    private val desc: List[String] = fields.map{
+      case WrappedPrimitive(t) => typeSpecifier(t)
+      case _ => "obj"
+    }
+
+    val ref: List[String] = CodegenHelper.fixedEnumPrefix ::: sym.namespace ::: List(sym.name, "fusionClazz") ::: desc ::: List(tag)
   }
 
   /**
@@ -207,6 +222,23 @@ object CodegenHelper {
     case t if isPrimitive(t) => WrappedPrimitive(t)
     case _ => WrappedNonPrimitives(Set(tpe))
   }
+
+  def groupTuplesByFieldTypes(tuples: List[Type]): List[List[List[Type]]] = tuples.map{
+    case Type.Apply(_, ts) => ts
+    case y => throw InternalCompilerException(s"Unexpected type: `$y'.")
+  }.groupBy(_.map(typeSpecifier)).values.toList
+
+  def groupedFieldsToWrappedFields(groupedFields: List[List[List[Type]]]): Set[List[WrappedType]] = groupedFields.map{grp =>
+    val len = grp.head.length
+    (0 until len).map{ind =>
+      val underlyings = grp.map(tuple => tuple(ind))
+      if(isPrimitive(underlyings.head)) {
+        WrappedPrimitive(underlyings.head)
+      } else {
+        WrappedNonPrimitives(underlyings.toSet)
+      }
+    }.toList
+  }.toSet
 
   /**
     * Generates a field for the class with with name `name`, with descriptor `descriptor` using `visitor`. If `isStatic = true`

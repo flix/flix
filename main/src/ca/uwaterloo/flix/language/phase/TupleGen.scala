@@ -75,23 +75,10 @@ object TupleGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
 
 
     // 2. Group tuples based on representation of their fields.
-    val groupedFields : List[List[List[Type]]] = allTuples.map{
-      case Type.Apply(_, ts) => ts
-      case y => throw InternalCompilerException(s"Unexpected type: `$y'.")
-    }.groupBy(_.map(typeSpecifier)).values.toList
+    val groupedFields : List[List[List[Type]]] = groupTuplesByFieldTypes(allTuples)
 
     // 3. Gather unique tuple representations.
-    val wrappedFields: Set[List[WrappedType]] = groupedFields.map{grp =>
-      val len = grp.head.length
-      (0 until len).map{ind =>
-        val underlyings = grp.map(tuple => tuple(ind))
-         if(isPrimitive(underlyings.head)) {
-          WrappedPrimitive(underlyings.head)
-        } else {
-          WrappedNonPrimitives(underlyings.toSet)
-        }
-      }.toList
-    }.toSet
+    val wrappedFields: Set[List[WrappedType]] = groupedFieldsToWrappedFields(groupedFields)
 
     // 4. Emit code for tuple classes
     val tupleClassByteCode : Map[List[WrappedType], (Array[Byte], Array[Byte])] = wrappedFields.map{ fields =>
@@ -512,7 +499,7 @@ object TupleGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
     * @param className Qualified name of the tuple class
     * @param fields Fields of the class
     */
-  private def compileGetBoxedValueMethod(visitor: ClassWriter, className: TupleClassName, fields: List[WrappedType]) = {
+  def compileGetBoxedValueMethod(visitor: ClassWriter, className: QualName, fields: List[WrappedType]) = {
     // header of the method
     val method = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, "getBoxedValue", s"()[Ljava/lang/Object;", null, null)
 
