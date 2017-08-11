@@ -602,13 +602,13 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
       val desc = getWrappedTypeDescriptor(typeToWrappedType(tpe))
       // Qualified name of the class defining the tuple
       val clazzName = base.tpe match {
-        case Type.Apply(Type.FTuple(_), lst) => TupleClassName(lst.map(typeToWrappedType))
+        case Type.Apply(Type.FTuple(_), lst) => TupleInterfaceName(lst.map(typeToWrappedType))
         case _ => throw InternalCompilerException(s"Unexpected type: `${base.tpe}`")
       }
       // evaluating the `base`
       compileExpression(prefix, functions, declarations, interfaces, enums, visitor, entryPoint)(base)
       // Invoking `getField${offset}()` method for fetching the field
-      visitor.visitMethodInsn(INVOKEVIRTUAL, decorate(clazzName), s"getIndex$offset", s"()$desc", false)
+      visitor.visitMethodInsn(INVOKEINTERFACE, decorate(clazzName), s"getIndex$offset", s"()$desc", true)
       // Cast the object to it's type if it's not a primitive
       castIfNotPrim(tpe, interfaces, visitor)
       
@@ -845,9 +845,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
     case Type.Native => // Don't need to cast AnyRef to anything
 
     case Type.Apply(Type.FTuple(l), lst) =>
-      val clazzName = TupleClassName(lst.map(typeToWrappedType))
-
-
+      val clazzName = TupleInterfaceName(lst.map(typeToWrappedType))
       visitor.visitTypeInsn(CHECKCAST, decorate(clazzName))
 
     case _ => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
@@ -1352,7 +1350,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
     case Type.Native => visitor.visitTypeInsn(CHECKCAST, asm.Type.getInternalName(Constants.objectClass))
     case Type.Apply(Type.Arrow(l), _) => visitor.visitTypeInsn(CHECKCAST, decorate(interfaces(tpe)))
     case Type.Apply(Type.FTuple(l), lst) =>
-      val clazzName = TupleClassName(lst.map(typeToWrappedType))
+      val clazzName = TupleInterfaceName(lst.map(typeToWrappedType))
       visitor.visitTypeInsn(CHECKCAST, decorate(clazzName))
     case _ if tpe.isEnum =>
       val sym = tpe match {

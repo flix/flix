@@ -137,11 +137,22 @@ object CodegenHelper {
     * Qualified name of a tuple class
     * @param fields fields of the tuple
     */
+  case class TupleInterfaceName(fields: List[WrappedType]) extends QualName {
+    val ref: List[String] = fixedTuplePrefix ::: fields.map{
+      case WrappedPrimitive(tpe) => typeSpecifier(tpe)
+      case WrappedNonPrimitives(_) => "object"
+    } ::: List("interf", "Tuple")
+  }
+
+  /**
+    * Qualified name of a tuple class
+    * @param fields fields of the tuple
+    */
   case class TupleClassName(fields: List[WrappedType]) extends QualName {
     val ref: List[String] = fixedTuplePrefix ::: fields.map{
       case WrappedPrimitive(tpe) => typeSpecifier(tpe)
       case WrappedNonPrimitives(_) => "object"
-    } ::: List("Tuple")
+    } ::: List("clazz", "Tuple")
   }
 
   /**
@@ -544,7 +555,7 @@ object CodegenHelper {
       case Type.Native => asm.Type.getDescriptor(Constants.objectClass)
       case Type.Apply(Type.Arrow(l), _) => s"L${decorate(interfaces(tpe))};"
       case Type.Apply(Type.FTuple(l), lst) =>
-        val clazzName = TupleClassName(lst.map(typeToWrappedType))
+        val clazzName = TupleInterfaceName(lst.map(typeToWrappedType))
         s"L${decorate(clazzName)};"
       case _ if tpe.isEnum =>
         val sym = tpe match {

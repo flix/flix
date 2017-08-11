@@ -43,7 +43,7 @@ object ExecutableAst {
                        enumClassByteCodes: Map[EnumSym, (Map[(String, Type), (Array[Byte], Array[Byte])], Map[String, (Array[Byte], Array[Byte])])],
                        functionalInterfaceByteCodes: Map[Type, (FlixClassName, Array[Byte])],
                        classByteCodes: Map[FlixClassName, Array[Byte]],
-                       tupleByteCode: Map[TupleClassName, Array[Byte]],
+                       tupleByteCode: Map[List[WrappedType], (Array[Byte], Array[Byte])],
                        ETFusionByteCode: Map[EnumSym, Map[String, Map[List[WrappedType], Array[Byte]]]])
 
 

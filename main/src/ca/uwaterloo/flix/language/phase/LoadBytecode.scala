@@ -87,11 +87,14 @@ object LoadBytecode extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     }.toList.groupBy(cst => FlixClassName(cst.sym.prefix))
 
     // 2. Load Tuple classes
-    val loadedTuples: Map[QualName, Class[_]] = root.byteCodes.tupleByteCode.map{ case (name, byteCode) =>
+    val loadedTuples: Map[TupleInterfaceName, (Class[_], Class[_])] = root.byteCodes.tupleByteCode.map{ case (fields, (interfByteCode, clazzByteCode)) =>
+      val clazzName = TupleClassName(fields)
+      val interfName = TupleInterfaceName(fields)
       if(flix.options.debug){
-        dump(name, byteCode)
+        dump(interfName, interfByteCode)
+        dump(clazzName, clazzByteCode)
       }
-      name -> loader(name, byteCode)
+      TupleInterfaceName(fields) -> (loader(interfName, interfByteCode), loader(clazzName, clazzByteCode))
     }.toMap
 
     // 3. Load Enum interfaces
@@ -169,7 +172,7 @@ object LoadBytecode extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
   private def toJavaClass(tpe: Type,
                           interfaces: Map[Type, Class[_]],
                           enums: Map[EnumSym, Class[_]],
-                          loadedTuples: Map[QualName, Class[_]]): Class[_] = tpe match {
+                          loadedTuples: Map[TupleInterfaceName, (Class[_], Class[_])]): Class[_] = tpe match {
     case Type.Var(id, kind) => classOf[java.lang.Object]
     case Type.Unit => classOf[UnitClass]
     case Type.Bool => classOf[Boolean]
@@ -186,8 +189,8 @@ object LoadBytecode extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     case Type.Enum(s, _) => enums(s)
     case Type.Apply(Type.Enum(s, _), _) => enums(s)
     case Type.Apply(Type.FTuple(_), lst) =>
-      val clazzName = TupleClassName(lst.map(typeToWrappedType))
-      loadedTuples(clazzName)
+      val tupleInterface = TupleInterfaceName(lst.map(typeToWrappedType))
+      loadedTuples(tupleInterface)._1
     case Type.Apply(Type.Arrow(l), _) => interfaces(tpe)
     case _ => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
   }
