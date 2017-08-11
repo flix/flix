@@ -54,7 +54,12 @@ object TupleGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
     * `List(WrappedNonPrimitives(List(Result[Int32,Int32], List[Int32]), WrappedPrimitive(Bool)))`
     *
     * 3. Emit code for tuple classes
-    * At this step, we emit code for tuple classes.
+    * At this step, we emit code for tuple classes and tuple interfaces. Each tuple type has one tuple interface and one
+    * tuple class.
+    *
+    * Each tuple interface includes getter and setter methods for each index of the tuple. This interface will be extended by the tuple
+    * class generated for the same tuple type. This interface extends `Tuple` interface.
+    *
     * Each tuple class includes a field corresponding to each of the parameters of the tuple which either has the primitive
     * type representing the tuple or they have the general type object. Tuple classes include `getBoxedValue()` method which
     * will return an array of object which each object in the array represent the boxed value of a field of the class. It also
@@ -121,17 +126,6 @@ object TupleGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
     * Then we generate the `getBoxedValue()` method which will return an array containing all the elements of the represented
     * tuple but all elements are boxed if their type is not a primitive.
     *
-    * Next we generate the `equals(Obj)` method which will return true if the object that implement the method `equals(Obj)`
-    * is equal to `Obj` and will return `false` otherwise. For doing this, at first we check that `Obj` is instance of
-    * the class that we are generating. Then we will check that the value of each field is equal for both `Obj` and `this`.
-    * If the field has a primitive type then we will use `==` to compare the field otherwise we will invoke `equals(Obj)`
-    * on one field with the other field as the parameter of `equals` method.
-    * For example for `(WrappedPrimitive(Bool), WrappedNonPrimitives(Set(..)))` we will create the following `equals` method:
-    *
-    * public boolean equals(Object var1) {
-    *   return var1 instanceof Tuple && ((Tuple)var1).field0 == this.field0 && ((Tuple)var1).field1.equals(this.field1);
-    * }
-    *
     * Then we generate the `hashCode()` of the object. The hash value of the tuple is defined as follows:
     * First we initialize the hashValue to be 0. Then we loop over elements of the tuple and at each step of the loop,
     * we first multiply the current value of hash by 7, then we add the hashCode of the current element at this step of
@@ -144,15 +138,18 @@ object TupleGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
     *   return ((0 * 7 + this.field0) * 7 + this.field1.hashCode()) * 7 + this.field2;
     * }
     *
-    * Finally, we will generate the `toString()` method of the class. For each tuple (x_1, x_2, ..., x_n) it will return
-    * the string `Tuple(rep(x_1), rep(x_2), ..., rep(x_n))` which `rep(x_i)` is string representation of element `x_i` of
-    * the tuple which if the element is primitive, we use `valueOf` static method on string class to get string representation
-    * of the element and if the element is an object then we call `toString` method on the object.
-    * For example, for `((WrappedPrimitive(Int32), WrappedNonPrimitives(Set(..)), WrappedPrimitive(Int32))` we will generate
-    * the following `toString()` method:
+    * Next, we will generate the `toString()` method which will always throws an exception, since `toString` should not be called.
+    * The `toString` method is always the following:
     *
-    * public String toString() {
-    *   return "Tuple(".concat(String.valueOf(this.field0)).concat(", ").concat(this.field1.toString()).concat(", ").concat(String.valueOf(this.field2)).concat(")");
+    * public String toString() throws Exception {
+    *   throw new Exception("equals method shouldn't be called")
+    * }
+    *
+    * Finally, we generate the `equals(Obj)` method which will always throws an exception, since `equals` should not be called.
+    * The `equals` method is always the following:
+    *
+    * public boolean equals(Object var1) throws Exception {
+    *   throw new Exception("equals method shouldn't be called");
     * }
     *
     * @param fields fields of the tuple to be generated
@@ -225,6 +222,16 @@ object TupleGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
     visitor.toByteArray
   }
 
+  /**
+    * This method will generate code for a tuple interface.
+    * There is a getter and a setter method for each element of `fields` on this interface.
+    * After creating a tuple object using a tuple class which corresponds to the same tuple type as this interface,
+    * the class type should never be used to reference to that object and this interface should be used for all interactions
+    * with that object.
+    *
+    * @param fields Fields of the tuple
+    * @return Bytecode of the class
+    */
   private def compileTupleInterface(fields: List[WrappedType]) : Array[Byte] = {
     /*
      * Initialize the class writer. We override `getCommonSuperClass` method because `asm` implementation of this
@@ -267,6 +274,7 @@ object TupleGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
     visitor.visitEnd()
     visitor.toByteArray
   }
+
   /**
     * This method generates the constructor for the tuple class. Number of arguments on this constructor is equal number
     * of elements in the tuple and each argument corresponds to an element of the tuple with the appropriate type.
@@ -377,7 +385,7 @@ object TupleGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
     * @param className Qualified name of the tuple class
     * @param fields Fields of the class
     */
-  def compileGetBoxedValueMethod(visitor: ClassWriter, className: QualName, fields: List[WrappedType]) = {
+  def compileGetBoxedValueMethod(visitor: ClassWriter, className: QualName, fields: List[WrappedType]) : Unit = {
     // header of the method
     val method = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, "getBoxedValue", s"()[Ljava/lang/Object;", null, null)
 
