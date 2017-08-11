@@ -29,6 +29,30 @@ import org.objectweb.asm
 import org.objectweb.asm.{ClassWriter, Label}
 import org.objectweb.asm.Opcodes._
 
+/**
+  * At this phase, we create java classes representing a class which is a fusion of both tuples and
+  * enum cases. Fusion classes include all methods in both tuple and enum case.
+  * When we generate an enum which has a tuple as it's field, we will generate a fusion object instead of generating
+  * one tuple object and one enum object.
+  *
+  * The steps that we take to generate enums is as follows:
+  *
+  * 1. Find enums and group them by symbols.
+  * We will recursively traverse the AST to find all enum case types. We will also extract the type of the field of
+  * the enum at this stage, so each element of the list is (EnumType, (caseName, fieldType)).
+  * Then we will group enums based on their enum symbols.
+  *
+  * 2. Find the enums which have a tuple as their field.
+  * We will find the enums which have a tuple as their field. After that, we group tuples that have the same field representation so we only generate one class for them.
+  * If a field is a primitive, then it can be represented by it's primitive but if the field is not a primitive then it
+  * has to be represented using an object. Then, we generate representation of  all the tuple classes that we have to create. If a field is a primitive
+  * then we wrap the field inside `WrappedPrimitive` and if the field is not a primitive then we wrap all the types that
+  * will be represented using `object` on this tuple inside `WrappedNonPrimitives`.
+  *
+  * 3. Generate bytecode for fusion object.
+  * At this stage, we emit code for fusion objects which implements all methods implemented by tuple classes and classes
+  * for enum cases.
+  */
 object EnumTupleFusionGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
   def run(root: ExecutableAst.Root)(implicit flix: Flix): Validation[ExecutableAst.Root, CompilationError] = {
     implicit val _ = flix.genSym
@@ -48,6 +72,7 @@ object EnumTupleFusionGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] 
       case _ => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
     }}
 
+    // 2. Find the enums which have a tuple as their field.
     val enumTupleFusions: Map[EnumSym, Map[String, List[List[WrappedType]]]] =
       enumsGroupedBySymbol.map{
         case (sym, li) =>
@@ -57,6 +82,7 @@ object EnumTupleFusionGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] 
           sym -> enumsWithTupleFields
       }.toMap // Despite IDE highlighting, this is actually necessary.
 
+    // 3. Generate bytecode for fusion object.
     val byteCodes: Map[EnumSym, Map[String, Map[List[WrappedType], Array[Byte]]]] = enumTupleFusions.map{ case (sym, cases) =>
       val underlying = cases.map{ case (tag, types) =>
           val tpeToByteCode = types.map{ tpe =>
@@ -74,6 +100,14 @@ object EnumTupleFusionGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] 
     root.copy(byteCodes = root.byteCodes.copy(ETFusionByteCode = byteCodes), time = root.time.copy(tupleGen = e)).toSuccess
   }
 
+  /**
+    *
+    * @param clazzName
+    * @param tupleInterfaceName
+    * @param enumInterfaceName
+    * @param fieldTypes
+    * @return
+    */
   private def compileEnumTupleFusion(clazzName: ETFClassName,
                                      tupleInterfaceName: TupleInterfaceName,
                                      enumInterfaceName: EnumCaseInterfaceName,
