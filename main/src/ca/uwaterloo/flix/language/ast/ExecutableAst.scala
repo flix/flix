@@ -27,6 +27,8 @@ sealed trait ExecutableAst
 
 object ExecutableAst {
 
+  // TODO: Get rid of most uses of array.
+
   case class Root(defs: Map[Symbol.DefnSym, ExecutableAst.Def],
                   enums: Map[Symbol.EnumSym, ExecutableAst.Enum],
                   lattices: Map[Type, ExecutableAst.Lattice],

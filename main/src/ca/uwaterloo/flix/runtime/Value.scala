@@ -16,248 +16,141 @@
 
 package ca.uwaterloo.flix.runtime
 
-import ca.uwaterloo.flix.api.Enum
-import ca.uwaterloo.flix.language.ast.ExecutableAst.Pattern
+import ca.uwaterloo.flix.api
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.util.InternalRuntimeException
 
-import scala.collection.immutable
+sealed trait Value
 
 object Value {
 
-  /////////////////////////////////////////////////////////////////////////////
-  // Unit                                                                    //
-  /////////////////////////////////////////////////////////////////////////////
+  /**
+    * The `Unit` value.
+    */
+  object Unit extends Value
 
   /**
-    * The Unit value.
+    * The `True` value.
     */
-  object Unit
-
-  /////////////////////////////////////////////////////////////////////////////
-  // Bools                                                                   //
-  /////////////////////////////////////////////////////////////////////////////
+  object True extends Value
 
   /**
-    * The true value.
+    * The `False` value.
     */
-  @inline
-  val True: AnyRef = java.lang.Boolean.TRUE
+  object False extends Value
 
   /**
-    * The false value.
+    * A character value.
     */
-  @inline
-  val False: AnyRef = java.lang.Boolean.FALSE
+  case class Char(lit: scala.Char) extends Value
 
   /**
-    * Constructs a bool from the given boolean `b`.
+    * A Float32 value.
     */
-  @inline
-  def mkBool(b: Boolean): AnyRef = if (b) True else False
-
-  /////////////////////////////////////////////////////////////////////////////
-  // Chars                                                                   //
-  /////////////////////////////////////////////////////////////////////////////
+  case class Float32(lit: scala.Float) extends Value
 
   /**
-    * Constructs a char value from the given char `c`.
+    * A Float64 value.
     */
-  @inline
-  def mkChar(c: Char): AnyRef = new java.lang.Character(c)
-
-
-  /////////////////////////////////////////////////////////////////////////////
-  // Floats                                                                  //
-  /////////////////////////////////////////////////////////////////////////////
+  case class Float64(lit: scala.Double) extends Value
 
   /**
-    * Constructs a float32 value from the given float `f`.
+    * An Int8 value.
     */
-  @inline
-  def mkFloat32(f: Float): AnyRef = new java.lang.Float(f)
+  case class Int8(lit: scala.Byte) extends Value
 
   /**
-    * Constructs a float32 value from the given double `d`.
+    * An Int16 value.
     */
-  @inline
-  def mkFloat32(d: Double): AnyRef = new java.lang.Float(d.asInstanceOf[Float])
+  case class Int16(lit: scala.Short) extends Value
 
   /**
-    * Constructs a float64 value from the given double `d`.
+    * An Int32 value.
     */
-  @inline
-  def mkFloat64(d: Double): AnyRef = new java.lang.Double(d)
-
-
-  /////////////////////////////////////////////////////////////////////////////
-  // Ints                                                                    //
-  /////////////////////////////////////////////////////////////////////////////
+  case class Int32(lit: scala.Int) extends Value
 
   /**
-    * Constructs an int8 value from the given byte `b`.
+    * An Int64 value.
     */
-  @inline
-  def mkInt8(b: Byte): AnyRef = new java.lang.Byte(b)
+  case class Int64(lit: scala.Long) extends Value
 
   /**
-    * Constructs an int8 from the given int `i`.
+    * A BigInt value.
     */
-  @inline
-  def mkInt8(i: Int): AnyRef = new java.lang.Byte(i.asInstanceOf[Byte])
+  case class BigInt(lit: java.math.BigInteger) extends Value
 
   /**
-    * Constructs an int16 from the given short `s`.
+    * A String value.
     */
-  @inline
-  def mkInt16(s: Short): AnyRef = new java.lang.Short(s)
+  case class Str(lit: java.lang.String) extends Value
 
   /**
-    * Constructs an int16 form the given int `i`.
+    * A Boxed value.
     */
-  @inline
-  def mkInt16(i: Int): AnyRef = new java.lang.Short(i.asInstanceOf[Short])
-
-  /**
-    * Constructs an int32 from the given int `i`.
-    */
-  @inline
-  def mkInt32(i: Int): AnyRef = new java.lang.Integer(i)
-
-  /**
-    * Constructs an int64 from the given int `i`.
-    */
-  @inline
-  def mkInt64(i: Int): AnyRef = new java.lang.Long(i)
-
-  /**
-    * Constructs an int64 from the given long `l`.
-    */
-  @inline
-  def mkInt64(l: Long): AnyRef = new java.lang.Long(l)
-
-  /**
-    * Constructs a java.math.BigInteger from the given int `i`.
-    */
-  @inline
-  def mkBigInt(i: Int): AnyRef = java.math.BigInteger.valueOf(i)
-
-  /**
-    * Constructs a java.math.BigInteger from the given long `l`.
-    */
-  @inline
-  def mkBigInt(l: Long): AnyRef = java.math.BigInteger.valueOf(l)
-
-  /**
-    * Constructs a java.math.BigInteger from the given string `s`.
-    */
-  @inline
-  def mkBigInt(s: String): AnyRef = new java.math.BigInteger(s)
-
-  /**
-    * Constructs the Flix representation of a java.math.BigInteger for the given `ref`.
-    */
-  @inline
-  def mkBigInt(ref: AnyRef): AnyRef = ref match {
-    case o: java.math.BigInteger => o
-    case _ => throw new InternalRuntimeException(s"Unexpected non-bigint value: '$ref'.")
-  }
-
-  /////////////////////////////////////////////////////////////////////////////
-  // Closures                                                                //
-  /////////////////////////////////////////////////////////////////////////////
-
-  /**
-    * Flix internal representation of closures.
-    */
-  final case class Closure(name: Symbol.DefnSym, bindings: Array[AnyRef])
-
-  // TODO: Introduce make function and make Closure constructor private.
-
-  /**
-    * Casts the given reference `ref` to a closure.
-    */
-  @inline
-  def cast2closure(ref: AnyRef): Closure = ref match {
-    case o: Closure => o
-    case _ => throw new InternalRuntimeException(s"Unexpected non-closure value: '$ref'.")
-  }
-
-  /////////////////////////////////////////////////////////////////////////////
-  // Strings                                                                 //
-  /////////////////////////////////////////////////////////////////////////////
-
-  /**
-    * Constructs a str from the given string `s`.
-    */
-  @inline
-  def mkStr(s: String): AnyRef = s
-
-  /////////////////////////////////////////////////////////////////////////////
-  // Tags                                                                    //
-  /////////////////////////////////////////////////////////////////////////////
-
-  /**
-    * Flix internal representation of tags.
-    */
-  final class Tag(val tag: java.lang.String, val value: AnyRef) {
-    override def equals(other: Any): scala.Boolean = other match {
-      case that: Value.Tag => this.tag == that.tag && equal(this.value, that.value)
-      case _ => false
-    }
-
-    override def hashCode: Int = 7 * tag.hashCode + 11 * value.hashCode
-
-    override def toString: java.lang.String = s"Value.Tag($tag, $value)"
-  }
-
-  /**
-    * Constructs the tag for the given tag `t` and value `v`.
-    */
-  def mkTag(t: java.lang.String, v: AnyRef): Value.Tag = new Value.Tag(t, v)
-
-  /**
-    * Casts the given reference `ref` to a tag.
-    */
-  @inline
-  def cast2tag(ref: AnyRef): Value.Tag = ref match {
-    case v: Value.Tag => v
-    case _ => throw new InternalRuntimeException(s"Unexpected non-tag value: '$ref'.")
-  }
-
-  /////////////////////////////////////////////////////////////////////////////
-  // Boxes                                                                   //
-  /////////////////////////////////////////////////////////////////////////////
-  /**
-    * Representation of a reference cell.
-    */
-  class Box {
+  class Box extends Value {
+    /**
+      * The internal value of the box.
+      */
     private var value: AnyRef = _
 
+    /**
+      * Returns the value inside the box.
+      */
     def getValue: AnyRef = value
 
+    /**
+      * Mutates the value inside the box.
+      */
     def setValue(x: AnyRef): Unit = {
       value = x
     }
 
-    override def equals(obj: scala.Any): Boolean = throw InternalRuntimeException(s"Box does not support equals().")
+    final override def equals(obj: scala.Any): Boolean = throw InternalRuntimeException(s"Value.Box does not support `equals`.")
 
-    override def hashCode(): Int = throw InternalRuntimeException(s"Box does not support hashCode().")
+    final override def hashCode(): Int = throw InternalRuntimeException(s"Value.Box does not support `hashCode`.")
 
-    override def toString: String = s"Box($value)"
+    final override def toString: String = throw InternalRuntimeException(s"Value.Box does not support `toString`.")
   }
 
-  /////////////////////////////////////////////////////////////////////////////
-  // Opt, List, Set, Map                                                     //
-  /////////////////////////////////////////////////////////////////////////////
+  /**
+    * A Closure value.
+    */
+  case class Closure(sym: Symbol.DefnSym, bindings: Array[AnyRef]) extends Value {
+    final override def equals(obj: scala.Any): Boolean = throw InternalRuntimeException(s"Value.Closure does not support `equals`.")
+
+    final override def hashCode(): Int = throw InternalRuntimeException(s"Value.Closure does not support `hashCode`.")
+
+    final override def toString: String = throw InternalRuntimeException(s"Value.Closure does not support `toString`.")
+  }
 
   /**
-    * Constructs the Flix representation of a set for the given `ref`.
+    * Flix internal representation of tags.
     */
-  @inline
-  def mkSet(ref: AnyRef): AnyRef = ref match {
-    case o: immutable.Set[_] => o
-    case _ => throw new InternalRuntimeException(s"Unexpected non-set value: '$ref'.")
+  case class Tag(enum: Symbol.EnumSym, tag: String, value: AnyRef) extends Value with api.Enum {
+
+    def getTag: String = tag
+
+    def getBoxedEnumField: AnyRef = value
+
+    final override def equals(obj: scala.Any): Boolean = throw InternalRuntimeException(s"Value.Tag does not support `equals`.")
+
+    final override def hashCode(): Int = throw InternalRuntimeException(s"Value.Tag does not support `hashCode`.")
+
+    final override def toString: String = throw InternalRuntimeException(s"Value.Tag does not support `toString`.")
+  }
+
+  /**
+    * A Tuple value.
+    */
+  case class Tuple(elms: List[AnyRef]) extends Value with api.Tuple {
+
+    def getBoxedValue: Array[AnyRef] = elms.toArray
+
+    final override def equals(obj: scala.Any): Boolean = throw InternalRuntimeException(s"Value.Tuple does not support `equals`.")
+
+    final override def hashCode(): Int = throw InternalRuntimeException(s"Value.Tuple does not support `hashCode`.")
+
+    final override def toString: String = throw InternalRuntimeException(s"Value.Tuple does not support `toString`.")
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -269,111 +162,34 @@ object Value {
     * NB: The type system ensures that only values of the same type can be compared.
     * Hence it is sufficient to only inspect the type of the first argument.
     */
-  def equal(ref1: AnyRef, ref2: AnyRef): Boolean = ref1 match {
-    case _: Unit.type => ref1 eq ref2
-    case _: java.lang.Boolean => ref1.equals(ref2)
-    case _: java.lang.Character => ref1.equals(ref2)
-    case _: java.lang.Float => ref1.equals(ref2)
-    case _: java.lang.Double => ref1.equals(ref2)
-    case _: java.lang.Byte => ref1.equals(ref2)
-    case _: java.lang.Short => ref1.equals(ref2)
-    case _: java.lang.Integer => ref1.equals(ref2)
-    case _: java.lang.Long => ref1.equals(ref2)
-    case _: java.math.BigInteger => ref1.equals(ref2)
-    case _: java.lang.String => ref1.equals(ref2)
-    case _: Tag =>
-      val v1 = ref1.asInstanceOf[Tag]
-      val v2 = ref2.asInstanceOf[Tag]
-      v1.tag == v2.tag && equal(v1.value, v2.value)
-    case _: Array[AnyRef] =>
-      val a1 = ref1.asInstanceOf[Array[AnyRef]]
-      val a2 = ref2.asInstanceOf[Array[AnyRef]]
-      assert(a1.length == a2.length)
-      var i = 0
-      while (i < a1.length) {
-        if (!equal(a1(i), a2(i))) {
-          return false
-        }
-        i = i + 1
-      }
-      return true
+  // TODO: Replace by built in native operator.
+  def equal(ref1: AnyRef, ref2: AnyRef): Boolean = (ref1, ref2) match {
+    case (Value.Unit, Value.Unit) => true
+    case (Value.True, Value.True) => true
+    case (Value.False, Value.False) => true
+    case (Value.True, Value.False) => false
+    case (Value.False, Value.True) => false
+    case (Value.Char(lit1), Value.Char(lit2)) => lit1 == lit2
+    case (Value.Float32(lit1), Value.Float32(lit2)) => lit1 == lit2
+    case (Value.Float64(lit1), Value.Float64(lit2)) => lit1 == lit2
+    case (Value.Int8(lit1), Value.Int8(lit2)) => lit1 == lit2
+    case (Value.Int16(lit1), Value.Int16(lit2)) => lit1 == lit2
+    case (Value.Int32(lit1), Value.Int32(lit2)) => lit1 == lit2
+    case (Value.Int64(lit1), Value.Int64(lit2)) => lit1 == lit2
+    case (Value.BigInt(lit1), Value.BigInt(lit2)) => lit1 == lit2
+    case (Value.Str(lit1), Value.Str(lit2)) => lit1 == lit2
+    case (Value.Tag(_, tag1, v1), Value.Tag(_, tag2, v2)) => tag1 == tag2 && equal(v1, v2)
+    case (Value.Tuple(elms1), Value.Tuple(elms2)) => elms1.zip(elms2).forall {
+      case ((e1, e2)) => equal(e1, e2)
+    }
+    case (b1: Value.Box, b2: Value.Box) =>
+      throw InternalRuntimeException(s"Unable to compare Boxes.")
+    case (c1: Value.Closure, c2: Value.Closure) =>
+      throw InternalRuntimeException(s"Unable to compare Closures.")
     case _ =>
       val tpe1 = ref1.getClass.getCanonicalName
       val tpe2 = ref2.getClass.getCanonicalName
       throw InternalRuntimeException(s"Unable to compare '$tpe1' and '$tpe2'.")
-  }
-
-  /////////////////////////////////////////////////////////////////////////////
-  // Iterators                                                               //
-  /////////////////////////////////////////////////////////////////////////////
-  /**
-    * Return an iterator over the given Set.
-    */
-  def iteratorOf(value: AnyRef): Iterator[AnyRef] = {
-    def visit(o: AnyRef): List[AnyRef] = {
-      val taggedValue = o.asInstanceOf[Value.Tag]
-      if (taggedValue.tag == "Nil") {
-        Nil
-      } else {
-        val hd = taggedValue.value.asInstanceOf[Array[AnyRef]](0)
-        val tl = taggedValue.value.asInstanceOf[Array[AnyRef]](1)
-        hd :: visit(tl)
-      }
-    }
-
-    val list = value.asInstanceOf[Value.Tag].value
-    visit(list).iterator
-  }
-
-  /////////////////////////////////////////////////////////////////////////////
-  // Unification                                                             //
-  /////////////////////////////////////////////////////////////////////////////
-
-  /**
-    * Tries to unify the given pattern `p0` with the given value `v0` under the environment `env0`.
-    *
-    * Mutates the given map. Returns `true` if unification was successful.
-    */
-  def unify(p0: Pattern, v0: AnyRef, env0: Array[AnyRef]): Boolean = (p0, v0) match {
-    case (Pattern.Wild(_, _), _) => true
-    case (Pattern.Var(sym, _, _), _) =>
-      val v2 = env0(sym.getStackOffset)
-      if (v2 == null) {
-        env0(sym.getStackOffset) = v0
-        true
-      } else {
-        Value.equal(v0, v2)
-      }
-    case (Pattern.Unit(_), Value.Unit) => true
-    case (Pattern.True(_), java.lang.Boolean.TRUE) => true
-    case (Pattern.False(_), java.lang.Boolean.FALSE) => true
-    case (Pattern.Char(lit, _), o: java.lang.Character) => lit == o.charValue()
-    case (Pattern.Float32(lit, _), o: java.lang.Float) => lit == o.floatValue()
-    case (Pattern.Float64(lit, _), o: java.lang.Double) => lit == o.doubleValue()
-    case (Pattern.Int8(lit, _), o: java.lang.Byte) => lit == o.byteValue()
-    case (Pattern.Int16(lit, _), o: java.lang.Short) => lit == o.shortValue()
-    case (Pattern.Int32(lit, _), o: java.lang.Integer) => lit == o.intValue()
-    case (Pattern.Int64(lit, _), o: java.lang.Long) => lit == o.longValue()
-    case (Pattern.BigInt(lit, _), o: java.math.BigInteger) => lit.equals(o)
-    case (Pattern.Str(lit, _), o: java.lang.String) => lit.equals(o)
-    case (Pattern.Tag(enum, tag, p, _, _), o: Value.Tag) => if (tag.equals(o.tag)) unify(p, o.value, env0) else false
-    case (Pattern.Tag(enum, tag, p, _, _), o: Enum) => if(tag == o.getTag) unify(p, o.getBoxedEnumField, env0) else false
-    case (Pattern.Tuple(elms, _, _), o: Array[AnyRef]) =>
-      if (elms.length != o.length)
-        return false
-      var i: Int = 0
-      while (i < o.length) {
-        val pi = elms(i)
-        val vi = o(i)
-        val success = unify(pi, vi, env0)
-        if (!success)
-          return false
-        i = i + 1
-      }
-      true
-    case _ =>
-      // Unification failed. Return `null`.
-      false
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -383,8 +199,23 @@ object Value {
   /**
     * Returns a pretty printed formatting of the given Flix `ref`.
     */
+  // TODO: Replace by built in native operator.
   def pretty(ref: AnyRef): String = ref match {
     case Value.Unit => "()"
+    case Value.True => "true"
+    case Value.False => "false"
+    case Value.Char(lit) => lit.toString
+    case Value.Int8(lit) => lit.toString
+    case Value.Int16(lit) => lit.toString
+    case Value.Int32(lit) => lit.toString
+    case Value.Int64(lit) => lit.toString
+    case Value.BigInt(lit) => lit.toString
+    case Value.Str(lit) => lit
+    case Value.Tag(enum, "Cons", Value.Tuple(elms)) => pretty(elms(0)) + " :: " + pretty(elms(1))
+    case Value.Tag(enum, tag, Value.Unit) => tag
+    case Value.Tag(enum, tag, value: Value.Tuple) => tag + pretty(value)
+    case Value.Tag(enum, tag, value) => tag + "(" + pretty(value) + ")"
+    case Value.Tuple(elms) => "(" + elms.mkString(", ") + ")"
     case o: java.lang.Boolean => o.booleanValue().toString
     case o: java.lang.Character => o.charValue().toString
     case o: java.lang.Byte => o.byteValue().toString
@@ -392,23 +223,6 @@ object Value {
     case o: java.lang.Integer => o.intValue().toString
     case o: java.lang.Long => o.longValue().toString
     case o: java.lang.String => "\"" + o + "\""
-    case o: Value.Tag =>
-      if (o.tag == "Cons") {
-        val e1 = o.value.asInstanceOf[Array[AnyRef]](0)
-        val e2 = o.value.asInstanceOf[Array[AnyRef]](1)
-        s"${pretty(e1)} :: ${pretty(e2)}"
-      }
-      else {
-        if (o.value.isInstanceOf[Value.Unit.type]) {
-          s"${o.tag}"
-        } else if (o.value.isInstanceOf[Array[AnyRef]]) {
-          s"${o.tag}(${o.value.asInstanceOf[Array[AnyRef]].map(pretty).mkString(", ")})"
-        } else {
-          s"${o.tag}(${pretty(o.value)})"
-        }
-      }
-    case o: Array[AnyRef] =>
-      "(" + o.toList.map(pretty).mkString(", ") + ")"
     case _ => ref.toString
   }
 

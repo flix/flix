@@ -16,120 +16,45 @@
 
 package ca.uwaterloo.flix
 
-import ca.uwaterloo.flix.api.{Flix, Enum, Tuple, Unit => UnitClass}
-import ca.uwaterloo.flix.runtime.{Model, Value}
-import ca.uwaterloo.flix.util._
+import ca.uwaterloo.flix.api.Flix
 import org.scalatest.FunSuite
 
 class TestExamples extends FunSuite {
-
-  private class Tester(dumpBytecode: Boolean = false) {
-
-    private val flix = createFlix(codegen = true)
-    private var compiled: Model = null
-
-    def getBoxedIfNecessary(res : AnyRef) : AnyRef = res match {
-      case r : Enum => {
-        new Value.Tag(r.getTag, getBoxedIfNecessary(r.getBoxedEnumField()))
-      }
-      case r : Tuple => {
-        r.getBoxedValue().map(getBoxedIfNecessary)
-      }
-      case r : UnitClass => Value.Unit
-      case x => x
-    }
-
-    private def createFlix(codegen: Boolean = false) = {
-      val options = Options.DefaultTest.copy(core = false, evaluation = if (codegen) Evaluation.Compiled else Evaluation.Interpreted)
-      new Flix().setOptions(options)
-    }
-
-    def addPath(path: String): Tester = {
-      flix.addPath(path)
-      this
-    }
-
-    def addStr(str: String): Tester = {
-      flix.addStr(str)
-      this
-    }
-
-    def run(): Tester = {
-      compiled = flix.solve().get
-      this
-    }
-
-    def checkValue(expected: AnyRef, latticeName: String, key: List[AnyRef]): Unit = {
-      withClue(s"compiled value $latticeName($key):") {
-        val lattice = compiled.getLattice(latticeName).toMap
-        assertResult(expected)(getBoxedIfNecessary(lattice(key)))
-      }
-    }
-
-    def checkNone(latticeName: String, key: List[AnyRef]): Unit = {
-      withClue(s"compiled value $latticeName($key):") {
-        val lattice = compiled.getLattice(latticeName).toMap
-        assertResult(None)(lattice.get(key))
-      }
-    }
-
-    def checkSuccess(): Unit = {
-      assert(flix.solve().isSuccess)
-    }
-
-  }
-
-  /////////////////////////////////////////////////////////////////////////////
-  // Domains                                                                 //
-  /////////////////////////////////////////////////////////////////////////////
-
   test("Belnap.flix") {
     val input =
       """namespace Belnap {
-        |    let Belnap<> = (Belnap.Bot, Belnap.Top, leq, lub, glb)
+        |    let Belnap<> = (Bot, Top, leq, lub, glb)
+        |    
         |    lat A(k: Int, v: Belnap)
         |
-        |    A(1, Belnap.True).
-        |    A(2, Belnap.False).
+        |    A(1, True).
+        |    A(2, False).
         |
-        |    A(3, Belnap.True).
-        |    A(3, Belnap.False).
+        |    A(3, True).
+        |    A(3, False).
         |
         |    A(4, x) :- A(1, x), A(2, x).
         |
-        |    A(5, not(Belnap.False)).
+        |    A(5, not(False)).
         |
-        |    A(6, and(Belnap.True, Belnap.False)).
+        |    A(6, and(True, False)).
         |
-        |    A(7, or(Belnap.True, Belnap.False)).
+        |    A(7, or(True, False)).
         |
-        |    A(8, xor(Belnap.True, Belnap.False)).
+        |    A(8, xor(True, False)).
         |}
       """.stripMargin
 
-    val t = new Tester()
+    new Flix()
       .addPath("./examples/domains/Belnap.flix")
       .addStr(input)
-      .run()
-
-    val Tru = Value.mkTag("True", Value.Unit)
-    val Fls = Value.mkTag("False", Value.Unit)
-    val Top = Value.mkTag("Top", Value.Unit)
-
-    t.checkValue(Tru, "Belnap.A", List(Value.mkInt32(1)))
-    t.checkValue(Fls, "Belnap.A", List(Value.mkInt32(2)))
-    t.checkValue(Top, "Belnap.A", List(Value.mkInt32(3)))
-    t.checkNone("Belnap.A", List(Value.mkInt32(4)))
-    t.checkValue(Tru, "Belnap.A", List(Value.mkInt32(5)))
-    t.checkValue(Fls, "Belnap.A", List(Value.mkInt32(6)))
-    t.checkValue(Tru, "Belnap.A", List(Value.mkInt32(7)))
-    t.checkValue(Tru, "Belnap.A", List(Value.mkInt32(8)))
+      .solve()
   }
 
   test("Constant.flix") {
     val input =
       """namespace Domain/Constant {
-        |    let Constant<> = (Constant.Bot, Constant.Top, leq, lub, glb)
+        |    let Constant<> = (Bot, Top, leq, lub, glb)
         |    lat A(k: Int, v: Constant)
         |
         |    A(0, Cst(0)).
@@ -147,24 +72,11 @@ class TestExamples extends FunSuite {
         |}
       """.stripMargin
 
-    val t = new Tester()
+    new Flix()
       .addPath("./examples/domains/Belnap.flix")
       .addPath("./examples/domains/Constant.flix")
       .addStr(input)
-      .run()
-
-    val Zer = Value.mkTag("Cst", Value.mkInt32(0))
-    val One = Value.mkTag("Cst", Value.mkInt32(1))
-    val Two = Value.mkTag("Cst", Value.mkInt32(2))
-    val Top = Value.mkTag("Top", Value.Unit)
-
-    t.checkValue(Zer, "Domain/Constant.A", List(Value.mkInt32(0)))
-    t.checkValue(One, "Domain/Constant.A", List(Value.mkInt32(1)))
-    t.checkValue(Two, "Domain/Constant.A", List(Value.mkInt32(2)))
-    t.checkValue(Top, "Domain/Constant.A", List(Value.mkInt32(3)))
-    t.checkNone("Domain/Constant.A", List(Value.mkInt32(4)))
-    t.checkValue(Two, "Domain/Constant.A", List(Value.mkInt32(5)))
-    t.checkValue(Two, "Domain/Constant.A", List(Value.mkInt32(6)))
+      .solve()
   }
 
   test("ConstantSign.flix") {
@@ -193,36 +105,21 @@ class TestExamples extends FunSuite {
         |}
       """.stripMargin
 
-    val t = new Tester()
+    new Flix()
       .addPath("./examples/domains/Belnap.flix")
       .addPath("./examples/domains/ConstantSign.flix")
       .addStr(input)
-      .run()
-
-    val Zer = Value.mkTag("Cst", Value.mkBigInt(0))
-    val One = Value.mkTag("Cst", Value.mkBigInt(1))
-    val Pos = Value.mkTag("Pos", Value.Unit)
-    val Top = Value.mkTag("Top", Value.Unit)
-
-    t.checkValue(Zer, "Domain/ConstantSign.A", List(Value.mkInt32(2)))
-    t.checkValue(One, "Domain/ConstantSign.A", List(Value.mkInt32(3)))
-    t.checkValue(Top, "Domain/ConstantSign.A", List(Value.mkInt32(4)))
-    t.checkValue(Top, "Domain/ConstantSign.A", List(Value.mkInt32(4)))
-    t.checkValue(Pos, "Domain/ConstantSign.A", List(Value.mkInt32(5)))
-    t.checkNone("Domain/ConstantSign.A", List(Value.mkInt32(6)))
-    t.checkNone("Domain/ConstantSign.A", List(Value.mkInt32(7)))
-    t.checkValue(Pos, "Domain/ConstantSign.A", List(Value.mkInt32(8)))
-    t.checkValue(One, "Domain/ConstantSign.A", List(Value.mkInt32(9)))
+      .solve()
   }
 
   test("ConstantParity.flix") {
     val input = ""
 
-    val t = new Tester()
+    new Flix()
       .addPath("./examples/domains/Belnap.flix")
       .addPath("./examples/domains/ConstantParity.flix")
       .addStr(input)
-      .run()
+      .solve()
 
     // TODO: Exercise lattice.
   }
@@ -230,11 +127,11 @@ class TestExamples extends FunSuite {
   test("Mod3.flix") {
     val input = ""
 
-    val t = new Tester()
+    new Flix()
       .addPath("./examples/domains/Belnap.flix")
       .addPath("./examples/domains/Mod3.flix")
       .addStr(input)
-      .run()
+      .solve()
 
     // TODO: Exercise lattice.
   }
@@ -242,7 +139,7 @@ class TestExamples extends FunSuite {
   test("Parity.flix") {
     val input =
       """namespace Domain/Parity {
-        |    let Parity<> = (Parity.Bot, Parity.Top, leq, lub, glb)
+        |    let Parity<> = (Bot, Top, leq, lub, glb)
         |    lat A(k: Int, v: Parity)
         |
         |    A(1, Odd).
@@ -263,34 +160,21 @@ class TestExamples extends FunSuite {
         |}
       """.stripMargin
 
-    val t = new Tester()
+    new Flix()
       .addPath("./examples/domains/Belnap.flix")
       .addPath("./examples/domains/Parity.flix")
       .addStr(input)
-      .run()
-
-    val Odd = Value.mkTag("Odd", Value.Unit)
-    val Evn = Value.mkTag("Even", Value.Unit)
-    val Top = Value.mkTag("Top", Value.Unit)
-
-    t.checkValue(Odd, "Domain/Parity.A", List(Value.mkInt32(1)))
-    t.checkValue(Evn, "Domain/Parity.A", List(Value.mkInt32(2)))
-    t.checkValue(Top, "Domain/Parity.A", List(Value.mkInt32(3)))
-    t.checkNone("Domain/Parity.A", List(Value.mkInt32(4)))
-    t.checkValue(Odd, "Domain/Parity.A", List(Value.mkInt32(5)))
-    t.checkValue(Evn, "Domain/Parity.A", List(Value.mkInt32(6)))
-    t.checkValue(Evn, "Domain/Parity.A", List(Value.mkInt32(7)))
-    t.checkValue(Odd, "Domain/Parity.A", List(Value.mkInt32(8)))
+      .solve()
   }
 
   test("ParitySign.flix") {
     val input = ""
 
-    val t = new Tester()
+    new Flix()
       .addPath("./examples/domains/Belnap.flix")
       .addPath("./examples/domains/ParitySign.flix")
       .addStr(input)
-      .run()
+      .solve()
 
     // TODO: Exercise lattice.
   }
@@ -298,11 +182,11 @@ class TestExamples extends FunSuite {
   test("PrefixSuffix.flix") {
     val input = ""
 
-    val t = new Tester()
+    new Flix()
       .addPath("./examples/domains/Belnap.flix")
       .addPath("./examples/domains/PrefixSuffix.flix")
       .addStr(input)
-      .run()
+      .solve()
 
     // TODO: Exercise lattice.
   }
@@ -310,11 +194,11 @@ class TestExamples extends FunSuite {
   test("Sign.flix") {
     val input = ""
 
-    val t = new Tester()
+    val t = new Flix()
       .addPath("./examples/domains/Belnap.flix")
       .addPath("./examples/domains/Sign.flix")
       .addStr(input)
-      .run()
+      .solve()
 
     // TODO: Exercise lattice.
   }
@@ -322,7 +206,7 @@ class TestExamples extends FunSuite {
   test("StrictSign.flix") {
     val input =
       """namespace Domain/StrictSign {
-        |    let Sign<> = (Sign.Bot, Sign.Top, leq, lub, glb)
+        |    let Sign<> = (Bot, Top, leq, lub, glb)
         |    lat A(k: Int, v: Sign)
         |
         |    A(1, Neg).
@@ -343,54 +227,34 @@ class TestExamples extends FunSuite {
         |}
       """.stripMargin
 
-    val t = new Tester()
+    val t = new Flix()
       .addPath("./examples/domains/Belnap.flix")
       .addPath("./examples/domains/StrictSign.flix")
       .addStr(input)
-      .run()
-
-    val Neg = Value.mkTag("Neg", Value.Unit)
-    val Zer = Value.mkTag("Zer", Value.Unit)
-    val Pos = Value.mkTag("Pos", Value.Unit)
-    val Top = Value.mkTag("Top", Value.Unit)
-
-    t.checkValue(Neg, "Domain/StrictSign.A", List(Value.mkInt32(1)))
-    t.checkValue(Zer, "Domain/StrictSign.A", List(Value.mkInt32(2)))
-    t.checkValue(Pos, "Domain/StrictSign.A", List(Value.mkInt32(3)))
-    t.checkValue(Top, "Domain/StrictSign.A", List(Value.mkInt32(4)))
-    t.checkNone("Domain/StrictSign.A", List(Value.mkInt32(5)))
-    t.checkValue(Pos, "Domain/StrictSign.A", List(Value.mkInt32(6)))
-    t.checkValue(Top, "Domain/StrictSign.A", List(Value.mkInt32(7)))
-    t.checkValue(Zer, "Domain/StrictSign.A", List(Value.mkInt32(8)))
-    t.checkValue(Pos, "Domain/StrictSign.A", List(Value.mkInt32(9)))
+      .solve()
   }
 
   test("IFDS.flix") {
-    val t = new Tester()
+    val t = new Flix()
       .addPath("./examples/analysis/IFDS.flix")
-      .run()
-    t.checkSuccess()
+      .solve()
   }
 
   test("IDE.flix") {
-    val t = new Tester()
+    val t = new Flix()
       .addPath("./examples/analysis/IDE.flix")
-      .run()
-    t.checkSuccess()
+      .solve()
   }
 
   test("SUOpt.flix") {
-    val t = new Tester()
+    val t = new Flix()
       .addPath("./examples/analysis/SUopt.flix")
-      .run()
-    t.checkSuccess()
+      .solve()
   }
 
   test("FloydWarshall.flix") {
-    val t = new Tester()
+    val t = new Flix()
       .addPath("./examples/misc/FloydWarshall.flix")
-      .run()
-    t.checkSuccess()
+      .solve()
   }
-
 }

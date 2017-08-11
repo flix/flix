@@ -25,6 +25,4 @@ public interface Tuple {
      * Returns an array of the elements of `this` tuple.
      */
     Object[] getBoxedValue();
-
-    boolean equal(Object obj);
 }
