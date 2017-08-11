@@ -16,6 +16,8 @@ import org.objectweb.asm.Opcodes._
 /**
   * Created by ramin on 2017-08-02.
   */
+
+/*
 object EnumTupleFusionGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
   def run(root: ExecutableAst.Root)(implicit flix: Flix): Validation[ExecutableAst.Root, CompilationError] = {
     implicit val _ = flix.genSym
@@ -58,7 +60,7 @@ object EnumTupleFusionGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] 
     }.toMap
 
     val e =  System.nanoTime() - t
-    root.copy(byteCodes = root.byteCodes.copy(ETFustionByteCode = byteCodes), time = root.time.copy(tupleGen = e)).toSuccess
+    root.copy(byteCodes = root.byteCodes.copy(ETFusionByteCode = byteCodes), time = root.time.copy(tupleGen = e)).toSuccess
   }
 
   private def compileEnumTupleFusion(clazzName: ETFClassName,
@@ -300,3 +302,4 @@ object EnumTupleFusionGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] 
   }
 
 }
+*/

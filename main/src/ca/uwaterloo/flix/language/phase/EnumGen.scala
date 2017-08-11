@@ -171,8 +171,8 @@ object EnumGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
         val enumInterface = enumInterfaces(sym)._1
         // A primitive enum cannot be a singleton
         val isSingleton = false
-        (name, tpe) -> (EnumGen.compileEnumCaseClass(clazzName, interfName, wrapped, isSingleton = isSingleton),
-          compileEnumCaseInterface(interfName, enumInterface, wrapped))
+        (name, tpe) -> (compileEnumCaseInterface(interfName, enumInterface, wrapped),
+          EnumGen.compileEnumCaseClass(clazzName, interfName, wrapped, isSingleton = isSingleton))
       }.toMap
       val generatedObjectEnums : Map[String, (Array[Byte], Array[Byte])] = objectEnums.map{ case (name, tpes) =>
         val wrapped = WrappedNonPrimitives(tpes)
@@ -182,8 +182,8 @@ object EnumGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
 
         // If the type of the case field is `Unit` then this is a singleton
         val isSingleton = isSingletonEnum(root.enums(sym).cases(name))
-        name -> (EnumGen.compileEnumCaseClass(clazzName, interfName, wrapped, isSingleton = isSingleton),
-          compileEnumCaseInterface(interfName, enumInterface, wrapped))
+        name -> (compileEnumCaseInterface(interfName, enumInterface, wrapped),
+          EnumGen.compileEnumCaseClass(clazzName, interfName, wrapped, isSingleton = isSingleton))
       }.toMap
       sym -> (generatedPrimEnums, generatedObjectEnums)
     }
@@ -306,8 +306,8 @@ object EnumGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     compileToStringMethod(visitor, className, fType)
 
     // Generate `equals` method
-    // compileEqualsMethod(visitor, className, fType, isSingleton = isSingleton)
-    compileEqualsWithException(visitor, className)
+     compileEqualsMethod(visitor, className, fType, isSingleton = isSingleton)
+    //compileEqualsWithException(visitor, className)
 
     visitor.visitEnd()
     visitor.toByteArray

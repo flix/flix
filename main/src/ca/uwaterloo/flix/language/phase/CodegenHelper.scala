@@ -94,16 +94,34 @@ object CodegenHelper {
     */
   case class FlixClassName(ref: List[String]) extends QualName
 
+
+  abstract sealed trait EnumName extends QualName {
+    def tag : String
+  }
+
   /**
     * Qualified name of an enum class
     * @param sym symbol of the enum
     * @param tag tag of the enum
     * @param tpe tpe of the field of the enum
     */
-  case class EnumClassName(sym: EnumSym, tag: String, tpe: WrappedType) extends QualName {
+  case class EnumCaseInterfaceName(sym: EnumSym, tag: String, tpe: WrappedType) extends EnumName {
     val ref: List[String] = tpe match {
-      case WrappedPrimitive(t) => CodegenHelper.fixedEnumPrefix ::: sym.namespace ::: List(sym.name, typeSpecifier(t), tag)
-      case _ => CodegenHelper.fixedEnumPrefix ::: sym.namespace ::: List(sym.name, "object", tag)
+      case WrappedPrimitive(t) => CodegenHelper.fixedEnumPrefix ::: sym.namespace ::: List(sym.name, "interf", typeSpecifier(t), tag)
+      case _ => CodegenHelper.fixedEnumPrefix ::: sym.namespace ::: List(sym.name, "interf", tag)
+    }
+  }
+
+  /**
+    * Qualified name of an enum class
+    * @param sym symbol of the enum
+    * @param tag tag of the enum
+    * @param tpe tpe of the field of the enum
+    */
+  case class SECClassName(sym: EnumSym, tag: String, tpe: WrappedType) extends EnumName {
+    val ref: List[String] = tpe match {
+      case WrappedPrimitive(t) => CodegenHelper.fixedEnumPrefix ::: sym.namespace ::: List(sym.name, "clazz", typeSpecifier(t), tag)
+      case _ => CodegenHelper.fixedEnumPrefix ::: sym.namespace ::: List(sym.name, "clazz", tag)
     }
   }
 
@@ -111,8 +129,8 @@ object CodegenHelper {
     * Qualified name of an enum interface
     * @param sym symbol of the enum
     */
-  case class EnumInterfName(sym: EnumSym) extends QualName {
-    val ref: List[String] = CodegenHelper.fixedEnumPrefix ::: sym.namespace ::: List(sym.name, "EnumInterface")
+  case class EnumTypeInterfaceName(sym: EnumSym) extends QualName {
+    val ref: List[String] = CodegenHelper.fixedEnumPrefix ::: sym.namespace ::: List(sym.name, "EnumTypeInterface")
   }
 
   /**
@@ -132,8 +150,8 @@ object CodegenHelper {
     */
   def baseFileName(qualName: QualName) : String = qualName match {
     case FlixClassName(ref) => s"${ref.last}.flix"
-    case EnumClassName(sym, _, _) => sym.loc.source.format
-    case EnumInterfName(sym) => sym.loc.source.format
+    case SECClassName(sym, _, _) => sym.loc.source.format
+    case EnumTypeInterfaceName(sym) => sym.loc.source.format
     case _ => throw InternalCompilerException(s"QualName $qualName does not have a base file")
   }
 
@@ -410,9 +428,9 @@ object CodegenHelper {
     * @param method MethodVisitor used to emit the code to a method
     * @param tpe Wrapped type of the field to be boxed
     * @param className qualified name of the class that the field is defined on
-    * @param name name of the field to be boxed
+    * @param getterName name of the field to be boxed
     */
-  def boxField(method: MethodVisitor, tpe: WrappedType, className: QualName, name: String) : Unit = {
+  def boxField(method: MethodVisitor, tpe: WrappedType, className: QualName, getterName: String) : Unit = {
 
     /**
       * This method will box the primitive on top of the stack
@@ -423,7 +441,7 @@ object CodegenHelper {
       method.visitTypeInsn(NEW, boxedObjectDescriptor)
       method.visitInsn(DUP)
       method.visitVarInsn(ALOAD, 0)
-      method.visitFieldInsn(GETFIELD, decorate(className), name, getWrappedTypeDescriptor(tpe))
+      method.visitMethodInsn(INVOKESPECIAL, decorate(className), getterName, s"()${getWrappedTypeDescriptor(tpe)}", false)
       method.visitMethodInsn(INVOKESPECIAL, boxedObjectDescriptor, "<init>", signature, false)
     }
 
@@ -439,7 +457,7 @@ object CodegenHelper {
       case WrappedPrimitive(Type.Float64) => box("java/lang/Double", "(D)V")
       case _ =>
         method.visitVarInsn(ALOAD, 0)
-        method.visitFieldInsn(GETFIELD, decorate(className), name, getWrappedTypeDescriptor(tpe))
+        method.visitMethodInsn(INVOKESPECIAL, decorate(className), getterName, s"()${getWrappedTypeDescriptor(tpe)}", false)
     }
   }
 
@@ -534,7 +552,7 @@ object CodegenHelper {
           case Type.Enum(s, _) => s
           case _ => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
         }
-        s"L${decorate(EnumInterfName(sym))};"
+        s"L${decorate(EnumTypeInterfaceName(sym))};"
       case _ => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
     }
 

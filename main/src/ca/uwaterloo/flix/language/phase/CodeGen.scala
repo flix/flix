@@ -107,7 +107,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
         case _ => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
       }
       val enumCase = root.enums(sym).cases(name)
-      (tpe, name) -> (EnumClassName(sym, name, typeToWrappedType(subType)), enumCase)
+      (tpe, name) -> (SECClassName(sym, name, typeToWrappedType(subType)), enumCase)
     }.toMap
 
     // 4. Generate functional interfaces.
@@ -587,7 +587,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
        */
       val desc = getWrappedTypeDescriptor(typeToWrappedType(tpe))
       // Qualified name of the enum
-      val clazz = EnumClassName(enum, tag, typeToWrappedType(tpe))
+      val clazz = SECClassName(enum, tag, typeToWrappedType(tpe))
       // Evaluate the exp
       compileExpression(prefix, functions, declarations, interfaces, enums, visitor, entryPoint)(exp)
       // Cast the exp to the type of the tag
@@ -833,8 +833,8 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
       val name = tpe match {
         case Type.BigInt => asm.Type.getInternalName(Constants.bigIntegerClass)
         case Type.Str => asm.Type.getInternalName(Constants.stringClass)
-        case Type.Enum(sym, _) => decorate(EnumInterfName(sym))
-        case Type.Apply(Type.Enum(sym, _), _) => decorate(EnumInterfName(sym))
+        case Type.Enum(sym, _) => decorate(EnumTypeInterfaceName(sym))
+        case Type.Apply(Type.Enum(sym, _), _) => decorate(EnumTypeInterfaceName(sym))
         case Type.Apply(Type.Arrow(l), _) =>
           // TODO: Is this correct? Need to write a test when we can write lambda expressions.
           decorate(interfaces(tpe))
@@ -1361,7 +1361,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
         case _ => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
       }
 
-      val fullName = EnumInterfName(sym)
+      val fullName = EnumTypeInterfaceName(sym)
       visitor.visitTypeInsn(CHECKCAST, decorate(fullName))
     case _ => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
   }

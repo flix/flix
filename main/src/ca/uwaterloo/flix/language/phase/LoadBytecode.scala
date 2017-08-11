@@ -112,19 +112,23 @@ object LoadBytecode extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
 
     // 5. Load Enum classes
     val loadedEnums = root.byteCodes.enumClassByteCodes.map{ case (sym, (prims, objs)) =>
-      val loadedPrimEnums : Map[(String, Type), Class[_]] = prims.map{ case ((name, tpe), byteCode) =>
-        val qualName: QualName = EnumClassName(sym, name, WrappedPrimitive(tpe))
+      val loadedPrimEnums : Map[(String, Type), (Class[_], Class[_])] = prims.map{ case ((name, tpe), (interfByteCode, clazzByteCode)) =>
+        val clazzName = SECClassName(sym, name, WrappedPrimitive(tpe))
+        val interfName = EnumCaseInterfaceName(sym, name, WrappedPrimitive(tpe))
         if(flix.options.debug){
-          dump(qualName, byteCode)
+          dump(interfName, interfByteCode)
+          dump(clazzName, clazzByteCode)
         }
-        (name, tpe)  -> loader(qualName, byteCode)
+        (name, tpe)  -> (loader(interfName, interfByteCode), loader(clazzName, clazzByteCode))
       }.toMap // Despite IDE highlighting, this is actually necessary.
-      val loadedObjEnums : Map[String, Class[_]] = objs.map{ case (name, byteCode) =>
-        val fullName = EnumClassName(sym, name, WrappedNonPrimitives(Set()))
+      val loadedObjEnums : Map[String, (Class[_], Class[_])] = objs.map{ case (name, (interfByteCode, clazzByteCode)) =>
+        val clazzName = SECClassName(sym, name, WrappedNonPrimitives(Set()))
+        val interfName = EnumCaseInterfaceName(sym, name, WrappedNonPrimitives(Set()))
         if(flix.options.debug){
-          dump(fullName, byteCode)
+          dump(interfName, interfByteCode)
+          dump(clazzName, clazzByteCode)
         }
-        name -> loader(fullName, byteCode)
+        name -> (loader(interfName, interfByteCode), loader(clazzName, clazzByteCode))
       }.toMap // Despite IDE highlighting, this is actually necessary.
       sym -> (loadedPrimEnums, loadedObjEnums)
     }

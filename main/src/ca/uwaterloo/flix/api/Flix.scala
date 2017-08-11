@@ -219,7 +219,7 @@ class Flix {
         CreateExecutableAst |>
         TupleGen |>
         EnumGen |>
-        EnumTupleFusionGen |>
+        // EnumTupleFusionGen |>
         CodeGen |>
         LoadBytecode |>
         QuickChecker |>

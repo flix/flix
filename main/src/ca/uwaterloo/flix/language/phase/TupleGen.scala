@@ -487,7 +487,7 @@ object TupleGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
       method.visitLdcInsn(ind)
 
       // Boxing the field
-      boxField(method, field, className, s"field$ind")
+      boxField(method, field, className, s"getIndex$ind")
 
       // Storing the value inside the array
       method.visitInsn(AASTORE)
