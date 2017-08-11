@@ -136,6 +136,22 @@ object LoadBytecode extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
       sym -> (loadedPrimEnums, loadedObjEnums)
     }
 
+    // 5.5 Fusion
+    // Map[EnumSym, Map[String, Map[List[WrappedType], Array[Byte]]]]
+    val loadedFusions : Map[EnumSym, Map[String, Map[ETFClassName, Class[_]]]] = root.byteCodes.ETFusionByteCode.map{ case (sym, cases) =>
+      val casesResult : Map[String, Map[ETFClassName, Class[_]]] = cases.map{ case (tag, fieldTypeMap) =>
+        val fieldTypeMapResult : Map[ETFClassName, Class[_]] = fieldTypeMap.map{ case (fieldTypes, byteCode) =>
+          val qualName = ETFClassName(sym, tag, fieldTypes)
+          if(flix.options.debug) {
+            dump(qualName, byteCode)
+          }
+          qualName -> loader(qualName, byteCode)
+        }.toMap
+        tag -> fieldTypeMapResult
+      }.toMap
+      sym -> casesResult
+    }.toMap
+
     // 6. Load bytecodes of flix functions
     val loadedClasses: Map[QualName, Class[_]] = root.byteCodes.classByteCodes.map { case (prefix, bytecode) =>
       if (flix.options.debug) {

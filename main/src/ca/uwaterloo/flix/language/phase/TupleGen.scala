@@ -209,14 +209,17 @@ object TupleGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
     // Emit the code for `getBoxedValue()` method
     compileGetBoxedValueMethod(visitor, clazzName, fields)
 
-    // Emit the code for `equals(obj)` method
-    compileEqualsMethod(visitor, clazzName, fields)
-
     // Emit the code for `hashCode()` method
     compileHashCodeMethod(visitor, clazzName, fields)
 
-    // Emit the code for `toString()` method
-    compileToStringMethod(visitor, clazzName, fields)
+    // Generate `toString` method
+    val stringDescriptor = asm.Type.getDescriptor(Constants.stringClass)
+    exceptionThrowerMethod(visitor, ACC_PUBLIC + ACC_FINAL, "toString", s"()$stringDescriptor", "toString method shouldn't be called")
+
+    // Generate `equals` method
+    val objectDescriptor = asm.Type.getDescriptor(Constants.objectClass)
+    exceptionThrowerMethod(visitor, ACC_PUBLIC + ACC_FINAL, "equals", s"($objectDescriptor)Z", "equals method shouldn't be called")
+
 
     visitor.visitEnd()
     visitor.toByteArray
@@ -314,68 +317,6 @@ object TupleGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
   }
 
   /**
-    * This method generates the `equals(Obj)` method which will return true if the object that implement the method `equals(Obj)`
-    * is equal to `Obj` and will return `false` otherwise. For doing this, at first we check that `Obj` is instance of
-    * the class that we are generating. Then we will check that the value of each field is equal for both `Obj` and `this`.
-    * If the field has a primitive type then we will use `==` to compare the field otherwise we will invoke `equals(Obj)`
-    * on one field with the other field as the parameter of `equals` method.
-    * For example for `(WrappedPrimitive(Bool), WrappedNonPrimitives(Set(..)))` we will create the following `equals` method:
-    *
-    * public boolean equals(Object var1) {
-    *   return var1 instanceof Tuple && ((Tuple)var1).field0 == this.field0 && ((Tuple)var1).field1.equals(this.field1);
-    * }
-    *
-    * @param visitor ClassWriter for emitting the code to the class
-    * @param className Qualified name of the class
-    * @param fields fields of the class
-    */
-  private def compileEqualsMethod(visitor: ClassWriter, className: TupleClassName, fields: List[WrappedType]) = {
-    val clazz = Constants.objectClass
-
-    // label for when the object is not instanceof tag case
-    val instNotEq = new Label()
-    // label for when the result of comparing an element of a tuple is false
-    val valueNotEq = new Label()
-    // MethodWriter to emit the code for method body
-    val method = visitor.visitMethod(ACC_PUBLIC, "equals", s"(${asm.Type.getDescriptor(clazz)})Z", null, null)
-
-    method.visitCode()
-
-    method.visitVarInsn(ALOAD, 1)
-    method.visitTypeInsn(INSTANCEOF, decorate(className)) // compare the types
-    method.visitJumpInsn(IFEQ, instNotEq) // if types don't match go to `instNotEq`
-
-    // We cast the argument to current type only once, then we just duplicate the top of the stack.
-    method.visitVarInsn(ALOAD, 1)
-    method.visitTypeInsn(CHECKCAST, decorate(className)) // cast to the current class
-
-    // Now we chack that all elements of tuple have equal values
-    fields.zipWithIndex.foreach { case (field, ind) =>
-      val desc = getWrappedTypeDescriptor(field)
-
-      method.visitInsn(DUP)
-      method.visitFieldInsn(GETFIELD, decorate(className), s"field$ind", desc)
-      method.visitVarInsn(ALOAD, 0)
-      method.visitFieldInsn(GETFIELD, decorate(className), s"field$ind", desc)
-      branchIfNotEqual(method, field, valueNotEq)
-    }
-    method.visitInsn(POP) // Popping the casted version of the argument
-    method.visitInsn(ICONST_1)
-    method.visitInsn(IRETURN)
-    method.visitLabel(valueNotEq) // if the code reaches here, it means that underlying values were not equal
-    method.visitInsn(POP) // Popping the casted version of the argument
-    method.visitLabel(instNotEq) // if we jump to this label it means the `instanceof` has returned false.
-    method.visitInsn(ICONST_0)
-
-    // Return
-    method.visitInsn(IRETURN)
-
-    // Parameters of visit max are thrown away because visitor will calculate the frame and variable stack size
-    method.visitMaxs(65535, 65535)
-    method.visitEnd()
-  }
-
-  /**
     * The hash value of the tuple is defined as follows:
     * For tuple `(x_1, x_2, ..., x_n)` we define the hash of this tuple to be
     * `hash(x_1) * 7^{n - 1} + hash(x_2) * 7^{n - 2} + ... + hash(x_n)`
@@ -425,69 +366,6 @@ object TupleGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
 
     // Parameters of visit max are thrown away because visitor will calculate the frame and variable stack size
     method.visitMaxs(1, 1)
-    method.visitEnd()
-  }
-
-  /**
-    * This method will generate `toString()` method of the class. For each tuple (x_1, x_2, ..., x_n) it will return
-    * the string `Tuple(rep(x_1), rep(x_2), ..., rep(x_n))` which `rep(x_i)` is string representation of element `x_i` of
-    * the tuple which if the element is primitive, we use `valueOf` static method on string class to get string representation
-    * of the element and if the element is an object then we call `toString` method on the object.
-    * For example, for `(WrappedPrimitive(Int32), WrappedNonPrimitive(Set(..)), WrappedPrimitive(Int32))` we will
-    * generate the following `toString()` method:
-    *
-    * public String toString() {
-    *   return "Tuple(".concat(String.valueOf(this.field0)).concat(", ").concat(this.field1.toString()).concat(", ").concat(String.valueOf(this.field2)).concat(")");
-    * }
-    * @param visitor ClassWriter to emit method to the class
-    * @param className Qualified name of the class
-    * @param fields Fields of the class
-    */
-  private def compileToStringMethod(visitor: ClassWriter, className: TupleClassName, fields: List[WrappedType]) = {
-    val stringInternalName = asm.Type.getInternalName(Constants.stringClass)
-    val stringConcatMethod = Constants.stringClass.getMethod("concat", Constants.stringClass)
-
-    // Headers of the method
-    val method = visitor.visitMethod(ACC_PUBLIC, "toString", s"()${asm.Type.getDescriptor(Constants.stringClass)}", null, null)
-
-    method.visitCode()
-
-    // Initial accumulator of the result
-    method.visitLdcInsn("(")
-
-    // We loop over each field, convert the field to string and concat the result to the accumulator
-    fields.zipWithIndex.foreach { case (field, ind) =>
-      // descriptor of the field
-      val desc = getWrappedTypeDescriptor(field)
-
-      // Fetching the field
-      method.visitVarInsn(ALOAD, 0)
-      method.visitFieldInsn(GETFIELD, decorate(className), s"field$ind", desc)
-
-      // Converting the field to string
-      javaValueToString(method, field)
-
-      // Concatenating the string to the rest of the accumulator
-      method.visitMethodInsn(INVOKEVIRTUAL, stringInternalName, stringConcatMethod.getName,
-        asm.Type.getMethodDescriptor(stringConcatMethod), false)
-
-      // If this is not the last element of the tuple, then concat the separator `, ` to the accumulated string on the stack
-      if(ind < fields.length - 1){
-        method.visitLdcInsn(", ")
-        method.visitMethodInsn(INVOKEVIRTUAL, stringInternalName, stringConcatMethod.getName,
-          asm.Type.getMethodDescriptor(stringConcatMethod), false)
-      }
-    }
-
-    method.visitLdcInsn(")")
-    method.visitMethodInsn(INVOKEVIRTUAL, stringInternalName, stringConcatMethod.getName,
-      asm.Type.getMethodDescriptor(stringConcatMethod), false)
-
-    // Return the string
-    method.visitInsn(ARETURN)
-
-    // Parameters of visit max are thrown away because visitor will calculate the frame and variable stack size
-    method.visitMaxs(1, 10)
     method.visitEnd()
   }
 

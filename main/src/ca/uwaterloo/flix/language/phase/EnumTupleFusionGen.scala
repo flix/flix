@@ -6,7 +6,6 @@ import ca.uwaterloo.flix.language.ast.{ExecutableAst, Type}
 import ca.uwaterloo.flix.language.ast.Symbol.EnumSym
 import ca.uwaterloo.flix.language.phase.CodegenHelper._
 import ca.uwaterloo.flix.language.phase.EnumGen.{compileGetBoxedEnumFieldMethod, compileGetTagMethod}
-import ca.uwaterloo.flix.language.phase.LoadBytecode.dump
 import ca.uwaterloo.flix.language.phase.TupleGen.compileGetBoxedValueMethod
 import ca.uwaterloo.flix.util.{Evaluation, InternalCompilerException, Validation}
 import ca.uwaterloo.flix.util.Validation._
@@ -132,8 +131,14 @@ object EnumTupleFusionGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] 
 
     compileFusionConstructor(visitor, clazzName, fieldTypes, enumFieldType)
 
+    // Generate `toString` method
+    val stringDescriptor = asm.Type.getDescriptor(Constants.stringClass)
+    exceptionThrowerMethod(visitor, ACC_PUBLIC + ACC_FINAL, "toString", s"()$stringDescriptor", "toString method shouldn't be called")
+
+
     //compileFusionEqualsMethod(visitor, clazzName, enumInterfaceName, tupleInterfaceName, fieldTypes, enumFieldType)
-    //compileEqualsWithException(visitor, clazzName)
+    val clazz = Constants.objectClass
+    exceptionThrowerMethod(visitor, ACC_PUBLIC + ACC_FINAL, "equals", s"(${asm.Type.getDescriptor(clazz)})Z", "Equals method shouldn't be called")
 
     compileFusionHashCodeMethod(visitor, clazzName, fieldTypes, enumFieldType)
 

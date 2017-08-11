@@ -240,6 +240,25 @@ object CodegenHelper {
     }.toList
   }.toSet
 
+  def exceptionThrowerMethod(visitor: ClassWriter,
+                             modifiers: Int,
+                             methodName: String,
+                             descriptor: String,
+                             message: String) : Unit = {
+    val method = visitor.visitMethod(modifiers, methodName, descriptor, null, Array("java/lang/Exception"))
+    method.visitCode()
+
+    method.visitTypeInsn(NEW, "java/lang/Exception")
+    method.visitInsn(DUP)
+
+    method.visitLdcInsn(message)
+
+    method.visitMethodInsn(INVOKESPECIAL, "java/lang/Exception", "<init>", "(Ljava/lang/String;)V", false)
+    method.visitInsn(ATHROW)
+    method.visitMaxs(3, 0)
+    method.visitEnd()
+  }
+
   /**
     * Generates a field for the class with with name `name`, with descriptor `descriptor` using `visitor`. If `isStatic = true`
     * then the field is static, otherwise the field will be non-static.
