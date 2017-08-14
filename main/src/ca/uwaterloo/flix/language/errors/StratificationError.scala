@@ -24,7 +24,8 @@ import ca.uwaterloo.flix.util.vt.VirtualString._
 import ca.uwaterloo.flix.util.vt.VirtualTerminal
 
 /**
-  * An error raised to indicate that a property is violated.
+  * An error raised to indicate there is a negative cycle in the attempted
+  * stratification of the program
   */
 case class StratificationError(constraints: List[TypedAst.Constraint]) extends CompilationError {
   val kind: String = "Stratification Error"
@@ -34,13 +35,13 @@ case class StratificationError(constraints: List[TypedAst.Constraint]) extends C
     vt << Line(kind, source.format) << NewLine
     vt << ">> Stratification Error in Constraints" << NewLine
 
-    vt << (if (constraints.size > 1) {"Consider the rules:"} else {"Consider the rule:"}) << NewLine
+    vt << "The following constraint" << (if (constraints.size > 1) {"s"} else {""}) << " form a negative cycle at locations" << NewLine
     constraints.foreach(rule => {
-      vt << (rule.head match {
-        case True(loc) => loc.lineAt(loc.beginLine)
-        case False(loc) => loc.lineAt(loc.beginLine)
-        case Head.Positive(sym, terms, loc) => loc.lineAt(loc.beginLine)
-        case Head.Negative(sym, terms, loc) => loc.lineAt(loc.beginLine)
+      vt << "\t" << (rule.head match {
+        case True(loc) => loc.format
+        case False(loc) => loc.format
+        case Head.Positive(sym, terms, loc) => loc.format
+        case Head.Negative(sym, terms, loc) => loc.format
       })
       vt << NewLine
     })

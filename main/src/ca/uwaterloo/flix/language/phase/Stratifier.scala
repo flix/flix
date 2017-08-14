@@ -25,7 +25,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body.{Filter, Loop}
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Head.{False, Negative, Positive, True}
 import ca.uwaterloo.flix.language.ast.TypedAst.{Root, Stratum}
 import ca.uwaterloo.flix.language.errors.StratificationError
-import ca.uwaterloo.flix.util.Validation
+import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 import ca.uwaterloo.flix.util.Validation._
 
 /**
@@ -36,7 +36,11 @@ import ca.uwaterloo.flix.util.Validation._
   * no path in the dependency graph from p to q" -- Ullman 132
   *
   * Reports a [[StratificationError]] if the constraint cannot be
-  * Stratified
+  * Stratified.
+  *
+  * This phase consists of two parts. The first computes the strata for the
+  * program. If the first fails, then we continue to the second phase which
+  * finds a cycle in the constraints and reports it.
   */
 object Stratifier extends Phase[TypedAst.Root, TypedAst.Root] {
 
@@ -47,7 +51,8 @@ object Stratifier extends Phase[TypedAst.Root, TypedAst.Root] {
 
     val startTime = System.nanoTime()
 
-    val stratified = stratify(root.strata, root.tables.keys.toList)
+    val constraints = root.strata.head.constraints
+    val stratified = stratify(constraints, root.tables.keys.toList)
     val duration = System.nanoTime() - startTime
 
     for {
@@ -58,13 +63,13 @@ object Stratifier extends Phase[TypedAst.Root, TypedAst.Root] {
   /**
     * Stratify the graph
     */
-  def stratify(stratum: List[Stratum], syms: List[Symbol.TableSym]): Validation[List[Stratum], StratificationError] = {
+  def stratify(constraints: List[TypedAst.Constraint], syms: List[Symbol.TableSym]): Validation[List[Stratum], StratificationError] = {
     // Implementing as described in Database and Knowledge - Base Systems Volume 1
     // Ullman, Algorithm 3.5 p 133
 
     /// Start by creating a mapping from predicates to stratum
-    var strataMap = syms.map(x => (x, 1)).toMap
-    val numRules = stratum.head.constraints.size
+    var stratumOf: Map[Symbol.TableSym, Int] = syms.map(x => (x, 1)).toMap
+    val numRules = constraints.size
 
     // We repeatedly examine the rules. We move the head predicate to
     // the same strata that the body predicate is currently in if it is
@@ -76,38 +81,45 @@ object Stratifier extends Phase[TypedAst.Root, TypedAst.Root] {
     var changes = true
     while (changes) {
       changes = false
-      for (pred <- stratum.head.constraints) {
+      for (pred <- constraints) {
         pred.head match {
           case Positive(headSym, terms, loc) =>
-            val currStratum = strataMap(headSym)
+            val currStratum = stratumOf(headSym)
             for (subGoal <- pred.body) {
               subGoal match {
                 case Body.Positive(subGoalSym, _, _) =>
-                  val newStratum = math.max(strataMap(headSym), strataMap(subGoalSym))
+                  val newStratum = math.max(stratumOf(headSym), stratumOf(subGoalSym))
                   if (newStratum > numRules) {
-                    return StratificationError(findNegCycle(stratum)).toFailure
+                    // If we create more stratum than there are rules then
+                    // we know there must be a negative cycle.
+                    return StratificationError(findNegCycle(constraints)).toFailure
                   }
                   if (currStratum != newStratum) {
-                    strataMap += (headSym -> newStratum)
+                    // Update the strata of the predicate
+                    stratumOf += (headSym -> newStratum)
                     changes = true
                   }
                 case Body.Negative(subGoalSym, _, _) =>
-                  val newStratum = math.max(strataMap(headSym), strataMap(subGoalSym) + 1)
+                  val newStratum = math.max(stratumOf(headSym), stratumOf(subGoalSym) + 1)
 
                   if (newStratum > numRules) {
-                    return StratificationError(findNegCycle(stratum)).toFailure
+                    // If we create more stratum than there are rules then
+                    // we know there must be a negative cycle
+                    return StratificationError(findNegCycle(constraints)).toFailure
                   }
                   if (currStratum != newStratum) {
-                    strataMap += (headSym -> newStratum)
+                    // Update the strata of the predicate
+                    stratumOf += (headSym -> newStratum)
                     changes = true
                   }
                 case _: Filter => // Do Nothing
-                case _: Loop => ???
+                case _: Loop => // Do Nothing
               }
             }
           case _: True => // Do nothing
           case _: False => // Do nothing
-          case _: Negative => ??? // Should never happen
+          // TODO: Negative head predicates will be removed in the future
+          case _: Negative => ???
         }
       }
     }
@@ -132,34 +144,44 @@ object Stratifier extends Phase[TypedAst.Root, TypedAst.Root] {
     /**
       * Separate a list of strata into the levels found earlier
       */
-    def separate(strata: Stratum, level: Int): List[Stratum] = strata.constraints match {
-      case Nil => Stratum(Nil) :: Nil
-      case lst =>
-        val currStrata = lst.filter(x => (x.head match {
-          case Positive(sym, _, _) => strataMap(sym)
-          case True(_) => 1
-          case False(_) => 1
-          case _: Negative => ??? // Shouldn't happen
-        }) == level)
-        val remStrata = lst.filter(x => (x.head match {
-          case Positive(sym, _, _) => strataMap(sym)
-          case True(_) => 1
-          case False(_) => 1
-          case _: Negative => ??? // Shouldn't happen
-        }) != level)
-        Stratum(currStrata) :: separate(Stratum(remStrata), level + 1)
-    }
+    def separate(constraints: List[TypedAst.Constraint], currLevel: Int): List[List[TypedAst.Constraint]] = {
+      // We consider the True and False atoms to be in the first stratum
+      def getLevel(c: TypedAst.Constraint): Int = c.head match {
+        case Positive(sym, _, _) => stratumOf(sym)
+        case True(_) => 1
+        case False(_) => 1
+        // TODO: Negative head predicates will be removed in the future
+        case _: Negative => ???
+      }
 
-    val reordered = Stratum(stratum.head.constraints map reorder)
-    separate(reordered, 1).toSuccess
+      constraints match {
+        case Nil => Nil
+        case lst =>
+          val currStrata = lst.filter(x => getLevel(x) == currLevel)
+          val remStrata = lst.filter(x => getLevel(x) != currLevel)
+          currStrata :: separate(remStrata, currLevel + 1)
+      }
+    }
+    val separated = separate(constraints, 1)
+    val reordered = separated map {_ map reorder}
+    val strata = reordered.map(Stratum) match {
+      case Nil => List(Stratum(Nil))
+      case lst => lst
+    }
+    strata.toSuccess
   }
 
+
+  /**
+    * An edge represents a constraint in the program. It has a weight of -1
+    * if it is a negated predicate, else it has a weight of 0
+    */
+  case class Edge(weight: Int, rule: TypedAst.Constraint)
 
   /**
     * A graph is an adjacency list of Constraint -> (Constraint, Weight)
     * where weight is either -1 or 0
     */
-  case class Edge(weight: Int, rule: TypedAst.Constraint)
   class Graph {
 
     var vertices: Set[Symbol.TableSym] = Set.empty
@@ -168,7 +190,7 @@ object Stratifier extends Phase[TypedAst.Root, TypedAst.Root] {
     var edges: Map[Symbol.TableSym, Map[Symbol.TableSym, Edge]] = Map.empty
 
     /**
-      * Insert and edge from-to with weight into the graph
+      * Insert an edge from-to with weight into the graph
       */
     def insert(from: Symbol.TableSym, to: Symbol.TableSym, constr: TypedAst.Constraint, weight: Int): Stratifier.Graph = {
       edges = edges.get(from) match {
@@ -202,7 +224,8 @@ object Stratifier extends Phase[TypedAst.Root, TypedAst.Root] {
           case _: TypedAst.Predicate.Body.Filter => graph
           case _: TypedAst.Predicate.Body.Loop => graph
         })
-      case TypedAst.Predicate.Head.Negative(headSym, _, _) => ??? // Can't have negative heads
+      // TODO: Negative head predicates will be removed in the future
+      case _:TypedAst.Predicate.Head.Negative => ???
       case TypedAst.Predicate.Head.True(_) => graph
       case TypedAst.Predicate.Head.False(_) => graph
     })
@@ -211,9 +234,9 @@ object Stratifier extends Phase[TypedAst.Root, TypedAst.Root] {
   /**
     * Returns true iff a graph has a negative cycle
     */
-  def findNegCycle(strata: List[Stratum]): List[TypedAst.Constraint] = {
+  def findNegCycle(constraints: List[TypedAst.Constraint]): List[TypedAst.Constraint] = {
     // Get the list of constraints
-    val g = createGraph(strata.head.constraints)
+    val g = createGraph(constraints)
 
     // The Bellman Ford algorithm, we can use it to find negative cycles
 
@@ -252,20 +275,20 @@ object Stratifier extends Phase[TypedAst.Root, TypedAst.Root] {
           val firstEdge = distPred(from)._2
           witness = firstEdge :: witness
 
-          var fromConstr = distPred(firstEdge.head match {
+          var fromConstraint = distPred(firstEdge.head match {
             case Positive(sym, _, _) => sym
             case Negative(sym, _, _) => sym
-            case _:False => ??? // Shouldn't happen
-            case _:True => ??? // Shouldn't happen
+            case _:False => throw InternalCompilerException("Encountered the False atom while looking for negative cyles which should never happen")
+            case _:True => throw InternalCompilerException("Encountered the True atom while looking for negative cyles which should never happen")
           })._2
 
-          while (fromConstr != null && fromConstr != firstEdge) {
-            witness = fromConstr :: witness
-            fromConstr = distPred(fromConstr.head match {
+          while (fromConstraint != null && fromConstraint != firstEdge) {
+            witness = fromConstraint :: witness
+            fromConstraint = distPred(fromConstraint.head match {
             case Positive(sym, _, _) => sym
             case Negative(sym, _, _) => sym
-            case _:False => ??? // Shouldn't happen
-            case _:True => ??? // Shouldn't happen
+            case _:False => throw InternalCompilerException("Encountered the False atom while looking for negative cyles which should never happen")
+            case _:True => throw InternalCompilerException("Encountered the True atom while looking for negative cyles which should never happen")
             })._2
           }
           return witness
