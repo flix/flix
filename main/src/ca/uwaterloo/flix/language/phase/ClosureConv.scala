@@ -126,10 +126,10 @@ object ClosureConv {
     case SimplifiedAst.Expression.ApplyTail(name, formals, actuals, tpe, loc) => exp0
     case SimplifiedAst.Expression.ApplyHook(hook, args, tpe, loc) => exp0
 
-    case SimplifiedAst.Expression.Unary(op, e, tpe, loc) =>
-      SimplifiedAst.Expression.Unary(op, convert(e), tpe, loc)
-    case SimplifiedAst.Expression.Binary(op, e1, e2, tpe, loc) =>
-      SimplifiedAst.Expression.Binary(op, convert(e1), convert(e2), tpe, loc)
+    case SimplifiedAst.Expression.Unary(sop, op, e, tpe, loc) =>
+      SimplifiedAst.Expression.Unary(sop, op, convert(e), tpe, loc)
+    case SimplifiedAst.Expression.Binary(sop, op, e1, e2, tpe, loc) =>
+      SimplifiedAst.Expression.Binary(sop, op, convert(e1), convert(e2), tpe, loc)
     case SimplifiedAst.Expression.IfThenElse(e1, e2, e3, tpe, loc) =>
       SimplifiedAst.Expression.IfThenElse(convert(e1), convert(e2), convert(e3), tpe, loc)
     case SimplifiedAst.Expression.Let(sym, e1, e2, tpe, loc) =>
@@ -204,8 +204,8 @@ object ClosureConv {
     case SimplifiedAst.Expression.ApplyTail(name, formals, actuals, tpe, loc) => mutable.LinkedHashSet.empty ++ actuals.flatMap(freeVariables)
     case SimplifiedAst.Expression.Apply(exp, args, tpe, loc) =>
       freeVariables(exp) ++ args.flatMap(freeVariables)
-    case SimplifiedAst.Expression.Unary(op, exp, tpe, loc) => freeVariables(exp)
-    case SimplifiedAst.Expression.Binary(op, exp1, exp2, tpe, loc) =>
+    case SimplifiedAst.Expression.Unary(sop, op, exp, tpe, loc) => freeVariables(exp)
+    case SimplifiedAst.Expression.Binary(sop, op, exp1, exp2, tpe, loc) =>
       freeVariables(exp1) ++ freeVariables(exp2)
     case SimplifiedAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
       freeVariables(exp1) ++ freeVariables(exp2) ++ freeVariables(exp3)
@@ -279,13 +279,13 @@ object ClosureConv {
         val e = visit(exp)
         val as = args map visit
         Expression.Apply(e, as, tpe, loc)
-      case Expression.Unary(op, exp, tpe, loc) =>
+      case Expression.Unary(sop, op, exp, tpe, loc) =>
         val e = visit(exp)
-        Expression.Unary(op, e, tpe, loc)
-      case Expression.Binary(op, exp1, exp2, tpe, loc) =>
+        Expression.Unary(sop, op, e, tpe, loc)
+      case Expression.Binary(sop, op, exp1, exp2, tpe, loc) =>
         val e1 = visit(exp1)
         val e2 = visit(exp2)
-        Expression.Binary(op, e1, e2, tpe, loc)
+        Expression.Binary(sop, op, e1, e2, tpe, loc)
       case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
         val e1 = visit(exp1)
         val e2 = visit(exp2)

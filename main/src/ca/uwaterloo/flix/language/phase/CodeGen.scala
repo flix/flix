@@ -497,9 +497,9 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
       args.foreach(compileExpression(prefix, functions, declarations, interfaces, enums, visitor, entryPoint))
       visitor.visitMethodInsn(INVOKEINTERFACE, decorate(name), "apply", descriptor(exp.tpe, interfaces), true)
 
-    case Expression.Unary(op, exp, _, _) => compileUnaryExpr(prefix, functions, declarations, interfaces, enums,
+    case Expression.Unary(sop, op, exp, _, _) => compileUnaryExpr(prefix, functions, declarations, interfaces, enums,
       visitor, entryPoint)(op, exp)
-    case Expression.Binary(op, exp1, exp2, _, _) => op match {
+    case Expression.Binary(sop, op, exp1, exp2, _, _) => op match {
       case o: ArithmeticOperator => compileArithmeticExpr(prefix, functions, declarations, interfaces, enums,
         visitor, entryPoint)(o, exp1, exp2)
       case o: ComparisonOperator => compileComparisonExpr(prefix, functions, declarations, interfaces, enums,

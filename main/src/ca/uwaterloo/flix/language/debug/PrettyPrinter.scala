@@ -129,11 +129,11 @@ object PrettyPrinter {
           }
           vt.text(")")
 
-        case Expression.Unary(op, exp, tpe, loc) =>
+        case Expression.Unary(sop, op, exp, tpe, loc) =>
           fmtUnaryOp(op, vt)
           visitExp(exp)
 
-        case Expression.Binary(op, exp1, exp2, tpe, loc) =>
+        case Expression.Binary(sop, op, exp1, exp2, tpe, loc) =>
           visitExp(exp1)
           vt.text(" ")
           fmtBinaryOp(op, vt)

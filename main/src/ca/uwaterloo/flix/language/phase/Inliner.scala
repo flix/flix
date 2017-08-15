@@ -129,10 +129,10 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         Expression.ApplyHook(hook, args.map(visit), tpe, loc)
       case Expression.Apply(exp1, args, tpe, loc) =>
         Expression.Apply(visit(exp1), args.map(visit), tpe, loc)
-      case Expression.Unary(op, exp1, tpe, loc) =>
-        Expression.Unary(op, visit(exp1), tpe, loc)
-      case Expression.Binary(op, exp1, exp2, tpe, loc) =>
-        Expression.Binary(op, visit(exp1), visit(exp2), tpe, loc)
+      case Expression.Unary(sop, op, exp1, tpe, loc) =>
+        Expression.Unary(sop, op, visit(exp1), tpe, loc)
+      case Expression.Binary(sop, op, exp1, exp2, tpe, loc) =>
+        Expression.Binary(sop, op, visit(exp1), visit(exp2), tpe, loc)
       case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
         Expression.IfThenElse(visit(exp1), visit(exp2), visit(exp3), tpe, loc)
       case Expression.Let(sym, exp1, exp2, tpe, loc) =>
@@ -206,10 +206,10 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       Expression.ApplyHook(hook, args.map(renameAndSubstitute(_, sub)), tpe, loc)
     case Expression.Apply(exp1, args, tpe, loc) =>
       Expression.Apply(renameAndSubstitute(exp1, sub), args.map(renameAndSubstitute(_, sub)), tpe, loc)
-    case Expression.Unary(op, exp1, tpe, loc) =>
-      Expression.Unary(op, renameAndSubstitute(exp1, sub), tpe, loc)
-    case Expression.Binary(op, exp1, exp2, tpe, loc) =>
-      Expression.Binary(op, renameAndSubstitute(exp1, sub), renameAndSubstitute(exp2, sub), tpe, loc)
+    case Expression.Unary(sop, op, exp1, tpe, loc) =>
+      Expression.Unary(sop, op, renameAndSubstitute(exp1, sub), tpe, loc)
+    case Expression.Binary(sop, op, exp1, exp2, tpe, loc) =>
+      Expression.Binary(sop, op, renameAndSubstitute(exp1, sub), renameAndSubstitute(exp2, sub), tpe, loc)
     case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
       Expression.IfThenElse(renameAndSubstitute(exp1, sub), renameAndSubstitute(exp2, sub), renameAndSubstitute(exp3, sub), tpe, loc)
     case Expression.Let(sym, exp1, exp2, tpe, loc) =>
@@ -301,8 +301,8 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         MaxScore + 1 + formals.length + actuals.map(exprScore).sum
       case Expression.ApplyHook(hook, args, _, _) => 1 + args.map(exprScore).sum
       case Expression.Apply(exp1, args, _, _) => 1 + exprScore(exp1) + args.map(exprScore).sum
-      case Expression.Unary(op, exp1, _, _) => 1 + exprScore(exp1)
-      case Expression.Binary(op, exp1, exp2, _, _) => 1 + exprScore(exp1) + exprScore(exp2)
+      case Expression.Unary(sop, op, exp1, _, _) => 1 + exprScore(exp1)
+      case Expression.Binary(sop, op, exp1, exp2, _, _) => 1 + exprScore(exp1) + exprScore(exp2)
       case Expression.IfThenElse(exp1, exp2, exp3, _, _) => exprScore(exp1) + (2 * (exprScore(exp2) + exprScore(exp3)))
       case Expression.Let(sym, exp1, exp2, _, _) => 1 + exprScore(exp1) + exprScore(exp2)
       case Expression.LetRec(sym, exp1, exp2, _, _) => 1 + exprScore(exp1) + exprScore(exp2)

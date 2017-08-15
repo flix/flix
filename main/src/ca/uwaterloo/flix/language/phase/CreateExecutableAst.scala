@@ -196,10 +196,10 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
       case SimplifiedAst.Expression.Apply(exp, args, tpe, loc) =>
         val argsArray = args.map(toExecutable)
         ExecutableAst.Expression.ApplyClosure(toExecutable(exp), argsArray, tpe, loc)
-      case SimplifiedAst.Expression.Unary(op, exp, tpe, loc) =>
-        ExecutableAst.Expression.Unary(op, toExecutable(exp), tpe, loc)
-      case SimplifiedAst.Expression.Binary(op, exp1, exp2, tpe, loc) =>
-        ExecutableAst.Expression.Binary(op, toExecutable(exp1), toExecutable(exp2), tpe, loc)
+      case SimplifiedAst.Expression.Unary(sop, op, exp, tpe, loc) =>
+        ExecutableAst.Expression.Unary(sop, op, toExecutable(exp), tpe, loc)
+      case SimplifiedAst.Expression.Binary(sop, op, exp1, exp2, tpe, loc) =>
+        ExecutableAst.Expression.Binary(sop, op, toExecutable(exp1), toExecutable(exp2), tpe, loc)
       case SimplifiedAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
         ExecutableAst.Expression.IfThenElse(toExecutable(exp1), toExecutable(exp2), toExecutable(exp3), tpe, loc)
       case SimplifiedAst.Expression.Let(sym, exp1, exp2, tpe, loc) =>

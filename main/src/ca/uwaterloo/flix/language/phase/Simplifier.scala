@@ -129,9 +129,9 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case TypedAst.Expression.Apply(e, args, tpe, eff, loc) =>
         SimplifiedAst.Expression.Apply(simplify(e), args map simplify, tpe, loc)
       case TypedAst.Expression.Unary(op, e, tpe, eff, loc) =>
-        SimplifiedAst.Expression.Unary(op, simplify(e), tpe, loc)
+        SimplifiedAst.Expression.Unary(null, op, simplify(e), tpe, loc)
       case TypedAst.Expression.Binary(op, e1, e2, tpe, eff, loc) =>
-        SimplifiedAst.Expression.Binary(op, simplify(e1), simplify(e2), tpe, loc)
+        SimplifiedAst.Expression.Binary(null, op, simplify(e1), simplify(e2), tpe, loc)
       case TypedAst.Expression.IfThenElse(e1, e2, e3, tpe, eff, loc) =>
         SimplifiedAst.Expression.IfThenElse(simplify(e1), simplify(e2), simplify(e3), tpe, loc)
       case TypedAst.Expression.Switch(rules, tpe, eff, loc) =>
@@ -339,7 +339,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         */
       case (lit :: ps, v :: vs) if isLiteral(lit) =>
         val exp = simplify(ps, vs, guard, succ, fail)
-        val cond = SExp.Binary(Equal, pat2exp(lit), SExp.Var(v, lit.tpe, lit.loc), Type.Bool, lit.loc)
+        val cond = SExp.Binary(null, Equal, pat2exp(lit), SExp.Var(v, lit.tpe, lit.loc), Type.Bool, lit.loc)
         SExp.IfThenElse(cond, exp, fail, succ.tpe, lit.loc)
 
       /**
@@ -651,10 +651,10 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         SimplifiedAst.Expression.ApplyHook(hook, args.map(visit), tpe, loc)
       case SimplifiedAst.Expression.Apply(exp, args, tpe, loc) =>
         SimplifiedAst.Expression.Apply(visit(exp), args.map(visit), tpe, loc)
-      case SimplifiedAst.Expression.Unary(op, exp, tpe, loc) =>
-        SimplifiedAst.Expression.Unary(op, visit(exp), tpe, loc)
-      case SimplifiedAst.Expression.Binary(op, exp1, exp2, tpe, loc) =>
-        SimplifiedAst.Expression.Binary(op, visit(exp1), visit(exp2), tpe, loc)
+      case SimplifiedAst.Expression.Unary(sop, op, exp, tpe, loc) =>
+        SimplifiedAst.Expression.Unary(sop, op, visit(exp), tpe, loc)
+      case SimplifiedAst.Expression.Binary(sop, op, exp1, exp2, tpe, loc) =>
+        SimplifiedAst.Expression.Binary(sop, op, visit(exp1), visit(exp2), tpe, loc)
       case SimplifiedAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
         SimplifiedAst.Expression.IfThenElse(visit(exp1), visit(exp2), visit(exp3), tpe, loc)
       case SimplifiedAst.Expression.Let(sym, exp1, exp2, tpe, loc) =>

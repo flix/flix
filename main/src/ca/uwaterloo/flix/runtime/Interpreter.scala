@@ -74,8 +74,8 @@ object Interpreter {
         case (macc, (formal, actual)) => macc + (formal.sym.toString -> actual)
       }
       eval(constant.exp, root, env2)
-    case Expression.Unary(op, exp, _, _) => evalUnary(op, exp, root, env0)
-    case Expression.Binary(op, exp1, exp2, _, _) => op match {
+    case Expression.Unary(sop, op, exp, _, _) => evalUnary(op, exp, root, env0)
+    case Expression.Binary(sop, op, exp1, exp2, _, _) => op match {
       case o: ArithmeticOperator => evalArithmetic(o, exp1, exp2, root, env0)
       case o: ComparisonOperator => evalComparison(o, exp1, exp2, root, env0)
       case o: LogicalOperator => evalLogical(o, exp1, exp2, root, env0)

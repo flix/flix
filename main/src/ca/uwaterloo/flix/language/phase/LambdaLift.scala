@@ -140,10 +140,10 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         Expression.ApplyHook(hook, args.map(visit), tpe, loc)
       case Expression.Apply(exp, args, tpe, loc) =>
         Expression.Apply(visit(exp), args.map(visit), tpe, loc)
-      case Expression.Unary(op, exp, tpe, loc) =>
-        Expression.Unary(op, visit(exp), tpe, loc)
-      case Expression.Binary(op, exp1, exp2, tpe, loc) =>
-        Expression.Binary(op, visit(exp1), visit(exp2), tpe, loc)
+      case Expression.Unary(sop, op, exp, tpe, loc) =>
+        Expression.Unary(sop, op, visit(exp), tpe, loc)
+      case Expression.Binary(sop, op, exp1, exp2, tpe, loc) =>
+        Expression.Binary(sop, op, visit(exp1), visit(exp2), tpe, loc)
       case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
         Expression.IfThenElse(visit(exp1), visit(exp2), visit(exp3), tpe, loc)
       case Expression.Let(sym, exp1, exp2, tpe, loc) =>

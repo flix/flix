@@ -605,8 +605,8 @@ object CodegenHelper {
       case Expression.ApplyTail(name, formals, actuals, tpe, loc) => actuals.flatMap(visit).toSet
       case Expression.ApplyHook(hook, args, tpe, loc) => args.flatMap(visit).toSet
       case Expression.ApplyClosure(exp, args, tpe, loc) => visit(exp) ++ args.flatMap(visit)
-      case Expression.Unary(op, exp, tpe, loc) => visit(exp)
-      case Expression.Binary(op, exp1, exp2, tpe, loc) => visit(exp1) ++ visit(exp2)
+      case Expression.Unary(sop, op, exp, tpe, loc) => visit(exp)
+      case Expression.Binary(sop, op, exp1, exp2, tpe, loc) => visit(exp1) ++ visit(exp2)
       case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) => visit(exp1) ++ visit(exp2) ++ visit(exp3)
       case Expression.Let(sym, exp1, exp2, tpe, loc) => visit(exp1) ++ visit(exp2)
       case Expression.LetRec(sym, exp1, exp2, tpe, loc) => visit(exp1) ++ visit(exp2)
@@ -664,8 +664,8 @@ object CodegenHelper {
     case Expression.ApplyTail(name, formals, actuals, tpe, loc) => actuals.flatMap(findEnumCases)
     case Expression.ApplyHook(hook, args, tpe, loc) => args.flatMap(findEnumCases)
     case Expression.ApplyClosure(exp, args, tpe, loc) => findEnumCases(exp) ::: args.flatMap(findEnumCases)
-    case Expression.Unary(op, exp, tpe, loc) => findEnumCases(exp)
-    case Expression.Binary(op, exp1, exp2, tpe, loc) => findEnumCases(exp1) ::: findEnumCases(exp2)
+    case Expression.Unary(sop, op, exp, tpe, loc) => findEnumCases(exp)
+    case Expression.Binary(sop, op, exp1, exp2, tpe, loc) => findEnumCases(exp1) ::: findEnumCases(exp2)
     case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) => findEnumCases(exp1) ::: findEnumCases(exp2) ::: findEnumCases(exp3)
     case Expression.Let(sym, exp1, exp2, tpe, loc) => findEnumCases(exp1) ::: findEnumCases(exp2)
     case Expression.Is(sym, tag, exp, loc) => findEnumCases(exp)
