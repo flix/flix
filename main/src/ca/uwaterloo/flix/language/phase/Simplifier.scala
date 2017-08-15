@@ -129,7 +129,39 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case TypedAst.Expression.Apply(e, args, tpe, eff, loc) =>
         SimplifiedAst.Expression.Apply(simplify(e), args map simplify, tpe, loc)
       case TypedAst.Expression.Unary(op, e, tpe, eff, loc) =>
-        SimplifiedAst.Expression.Unary(null, op, simplify(e), tpe, loc)
+        val sop = op match {
+          case UnaryOperator.LogicalNot => SemanticOperator.Bool.Not
+          case UnaryOperator.BitwiseNegate => tpe match {
+            case Type.Int8 => SemanticOperator.Int8.Neg
+            case Type.Int16 => SemanticOperator.Int16.Neg
+            case Type.Int32 => SemanticOperator.Int32.Neg
+            case Type.Int64 => SemanticOperator.Int64.Neg
+            case Type.BigInt => SemanticOperator.BigInt.Neg
+            case _ => throw InternalCompilerException(s"Unexpected type: '$tpe' near ${loc.format}.")
+          }
+          case UnaryOperator.Plus => tpe match {
+            case Type.Float32 => SemanticOperator.Float32.Plus
+            case Type.Float64 => SemanticOperator.Float64.Plus
+            case Type.Int8 => SemanticOperator.Int8.Plus
+            case Type.Int16 => SemanticOperator.Int16.Plus
+            case Type.Int32 => SemanticOperator.Int32.Plus
+            case Type.Int64 => SemanticOperator.Int64.Plus
+            case Type.BigInt => SemanticOperator.BigInt.Plus
+            case _ => throw InternalCompilerException(s"Unexpected type: '$tpe' near ${loc.format}.")
+          }
+          case UnaryOperator.Minus => tpe match {
+            case Type.Float32 => SemanticOperator.Float32.Minus
+            case Type.Float64 => SemanticOperator.Float64.Minus
+            case Type.Int8 => SemanticOperator.Int8.Minus
+            case Type.Int16 => SemanticOperator.Int16.Minus
+            case Type.Int32 => SemanticOperator.Int32.Minus
+            case Type.Int64 => SemanticOperator.Int64.Minus
+            case Type.BigInt => SemanticOperator.BigInt.Minus
+            case _ => throw InternalCompilerException(s"Unexpected type: '$tpe' near ${loc.format}.")
+          }
+        }
+        SimplifiedAst.Expression.Unary(sop, op, simplify(e), tpe, loc)
+
       case TypedAst.Expression.Binary(op, e1, e2, tpe, eff, loc) =>
         SimplifiedAst.Expression.Binary(null, op, simplify(e1), simplify(e2), tpe, loc)
       case TypedAst.Expression.IfThenElse(e1, e2, e3, tpe, eff, loc) =>
