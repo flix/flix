@@ -35,12 +35,31 @@ object SemanticOperator {
     /**
       * Boolean And.
       */
-    case object Conj extends Bool
+    case object And extends Bool
 
     /**
       * Boolean Or.
       */
-    case object Disj extends Bool
+    case object Or extends Bool
+
+  }
+
+  /**
+    * Char Operators.
+    */
+  sealed trait Char extends SemanticOperator
+
+  object Char {
+
+    /**
+      * Equality.
+      */
+    case object Eq extends Char
+
+    /**
+      * Inequality.
+      */
+    case object Neq extends Char
 
   }
 
@@ -80,6 +99,11 @@ object SemanticOperator {
       * Division.
       */
     case object Div extends Float32
+
+    /**
+      * Exponentiate.
+      */
+    case object Exp extends Float32
 
     /**
       * Equality.
@@ -149,6 +173,11 @@ object SemanticOperator {
       * Division.
       */
     case object Div extends Float64
+
+    /**
+      * Exponentiate.
+      */
+    case object Exp extends Float64
 
     /**
       * Equality.
@@ -223,6 +252,11 @@ object SemanticOperator {
       * Remainder.
       */
     case object Rem extends Int8
+
+    /**
+      * Exponentiate.
+      */
+    case object Exp extends Int8
 
     /**
       * Bitwise Negate.
@@ -329,6 +363,11 @@ object SemanticOperator {
     case object Rem extends Int16
 
     /**
+      * Exponentiate.
+      */
+    case object Exp extends Int16
+
+    /**
       * Bitwise Negate.
       */
     case object Neg extends Int16
@@ -431,6 +470,11 @@ object SemanticOperator {
       * Remainder.
       */
     case object Rem extends Int32
+
+    /**
+      * Exponentiate.
+      */
+    case object Exp extends Int32
 
     /**
       * Bitwise Negate.
@@ -537,6 +581,11 @@ object SemanticOperator {
     case object Rem extends Int64
 
     /**
+      * Exponentiate.
+      */
+    case object Exp extends Int64
+
+    /**
       * Bitwise Negate.
       */
     case object Neg extends Int64
@@ -605,6 +654,8 @@ object SemanticOperator {
 
   object BigInt {
 
+    // TODO: What operations should we support?
+
     /**
       * Unary Plus.
       */
@@ -639,6 +690,11 @@ object SemanticOperator {
       * Remainder.
       */
     case object Rem extends BigInt
+
+    /**
+      * Exponentiate.
+      */
+    case object Exp extends BigInt
 
     /**
       * Bitwise Negate.
@@ -705,7 +761,7 @@ object SemanticOperator {
   /**
     * String Operators.
     */
-  sealed trait Str
+  sealed trait Str extends SemanticOperator
 
   object Str {
 

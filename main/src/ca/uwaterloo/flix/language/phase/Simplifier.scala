@@ -128,18 +128,22 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         SimplifiedAst.Expression.Lambda(args map Simplifier.simplify, simplify(body), tpe, loc)
       case TypedAst.Expression.Apply(e, args, tpe, eff, loc) =>
         SimplifiedAst.Expression.Apply(simplify(e), args map simplify, tpe, loc)
+
       case TypedAst.Expression.Unary(op, e, tpe, eff, loc) =>
+        /*
+         * Compute the semantic operator based on types.
+         */
         val sop = op match {
           case UnaryOperator.LogicalNot => SemanticOperator.Bool.Not
-          case UnaryOperator.BitwiseNegate => tpe match {
+          case UnaryOperator.BitwiseNegate => e.tpe match {
             case Type.Int8 => SemanticOperator.Int8.Neg
             case Type.Int16 => SemanticOperator.Int16.Neg
             case Type.Int32 => SemanticOperator.Int32.Neg
             case Type.Int64 => SemanticOperator.Int64.Neg
             case Type.BigInt => SemanticOperator.BigInt.Neg
-            case _ => throw InternalCompilerException(s"Unexpected type: '$tpe' near ${loc.format}.")
+            case t => throw InternalCompilerException(s"Unexpected type: '$t' near ${loc.format}.")
           }
-          case UnaryOperator.Plus => tpe match {
+          case UnaryOperator.Plus => e.tpe match {
             case Type.Float32 => SemanticOperator.Float32.Plus
             case Type.Float64 => SemanticOperator.Float64.Plus
             case Type.Int8 => SemanticOperator.Int8.Plus
@@ -147,9 +151,9 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
             case Type.Int32 => SemanticOperator.Int32.Plus
             case Type.Int64 => SemanticOperator.Int64.Plus
             case Type.BigInt => SemanticOperator.BigInt.Plus
-            case _ => throw InternalCompilerException(s"Unexpected type: '$tpe' near ${loc.format}.")
+            case t => throw InternalCompilerException(s"Unexpected type: '$t' near ${loc.format}.")
           }
-          case UnaryOperator.Minus => tpe match {
+          case UnaryOperator.Minus => e.tpe match {
             case Type.Float32 => SemanticOperator.Float32.Minus
             case Type.Float64 => SemanticOperator.Float64.Minus
             case Type.Int8 => SemanticOperator.Int8.Minus
@@ -157,13 +161,190 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
             case Type.Int32 => SemanticOperator.Int32.Minus
             case Type.Int64 => SemanticOperator.Int64.Minus
             case Type.BigInt => SemanticOperator.BigInt.Minus
-            case _ => throw InternalCompilerException(s"Unexpected type: '$tpe' near ${loc.format}.")
+            case t => throw InternalCompilerException(s"Unexpected type: '$t' near ${loc.format}.")
           }
         }
+
         SimplifiedAst.Expression.Unary(sop, op, simplify(e), tpe, loc)
 
       case TypedAst.Expression.Binary(op, e1, e2, tpe, eff, loc) =>
-        SimplifiedAst.Expression.Binary(null, op, simplify(e1), simplify(e2), tpe, loc)
+        /*
+         * Compute the semantic operator based on types.
+         */
+        val sop = op match {
+          case BinaryOperator.Plus => e1.tpe match {
+            case Type.Float32 => SemanticOperator.Float32.Add
+            case Type.Float64 => SemanticOperator.Float64.Add
+            case Type.Int8 => SemanticOperator.Int8.Add
+            case Type.Int16 => SemanticOperator.Int16.Add
+            case Type.Int32 => SemanticOperator.Int32.Add
+            case Type.Int64 => SemanticOperator.Int64.Add
+            case Type.BigInt => SemanticOperator.BigInt.Add
+            case Type.Str => SemanticOperator.Str.Concat
+            case t => throw InternalCompilerException(s"Unexpected type: '$t' near ${loc.format}.")
+          }
+          case BinaryOperator.Minus => e1.tpe match {
+            case Type.Float32 => SemanticOperator.Float32.Sub
+            case Type.Float64 => SemanticOperator.Float64.Sub
+            case Type.Int8 => SemanticOperator.Int8.Sub
+            case Type.Int16 => SemanticOperator.Int16.Sub
+            case Type.Int32 => SemanticOperator.Int32.Sub
+            case Type.Int64 => SemanticOperator.Int64.Sub
+            case Type.BigInt => SemanticOperator.BigInt.Sub
+            case t => throw InternalCompilerException(s"Unexpected type: '$t' near ${loc.format}.")
+          }
+          case BinaryOperator.Times => e1.tpe match {
+            case Type.Float32 => SemanticOperator.Float32.Mul
+            case Type.Float64 => SemanticOperator.Float64.Mul
+            case Type.Int8 => SemanticOperator.Int8.Mul
+            case Type.Int16 => SemanticOperator.Int16.Mul
+            case Type.Int32 => SemanticOperator.Int32.Mul
+            case Type.Int64 => SemanticOperator.Int64.Mul
+            case Type.BigInt => SemanticOperator.BigInt.Mul
+            case t => throw InternalCompilerException(s"Unexpected type: '$t' near ${loc.format}.")
+          }
+          case BinaryOperator.Divide => e1.tpe match {
+            case Type.Float32 => SemanticOperator.Float32.Div
+            case Type.Float64 => SemanticOperator.Float64.Div
+            case Type.Int8 => SemanticOperator.Int8.Div
+            case Type.Int16 => SemanticOperator.Int16.Div
+            case Type.Int32 => SemanticOperator.Int32.Div
+            case Type.Int64 => SemanticOperator.Int64.Div
+            case Type.BigInt => SemanticOperator.BigInt.Div
+            case t => throw InternalCompilerException(s"Unexpected type: '$t' near ${loc.format}.")
+          }
+          case BinaryOperator.Modulo => e1.tpe match {
+            case Type.Int8 => SemanticOperator.Int8.Rem
+            case Type.Int16 => SemanticOperator.Int16.Rem
+            case Type.Int32 => SemanticOperator.Int32.Rem
+            case Type.Int64 => SemanticOperator.Int64.Rem
+            case Type.BigInt => SemanticOperator.BigInt.Rem
+            case t => throw InternalCompilerException(s"Unexpected type: '$t' near ${loc.format}.")
+          }
+          case BinaryOperator.Exponentiate => e1.tpe match {
+            case Type.Float32 => SemanticOperator.Float32.Exp
+            case Type.Float64 => SemanticOperator.Float64.Exp
+            case Type.Int8 => SemanticOperator.Int8.Exp
+            case Type.Int16 => SemanticOperator.Int16.Exp
+            case Type.Int32 => SemanticOperator.Int32.Exp
+            case Type.Int64 => SemanticOperator.Int64.Exp
+            case Type.BigInt => SemanticOperator.BigInt.Exp
+            case t => throw InternalCompilerException(s"Unexpected type: '$t' near ${loc.format}.")
+          }
+          case BinaryOperator.Less => e1.tpe match {
+            case Type.Float32 => SemanticOperator.Float32.Lt
+            case Type.Float64 => SemanticOperator.Float64.Lt
+            case Type.Int8 => SemanticOperator.Int8.Lt
+            case Type.Int16 => SemanticOperator.Int16.Lt
+            case Type.Int32 => SemanticOperator.Int32.Lt
+            case Type.Int64 => SemanticOperator.Int64.Lt
+            case Type.BigInt => SemanticOperator.BigInt.Lt
+            case t => throw InternalCompilerException(s"Unexpected type: '$t' near ${loc.format}.")
+          }
+          case BinaryOperator.LessEqual => e1.tpe match {
+            case Type.Float32 => SemanticOperator.Float32.Le
+            case Type.Float64 => SemanticOperator.Float64.Le
+            case Type.Int8 => SemanticOperator.Int8.Le
+            case Type.Int16 => SemanticOperator.Int16.Le
+            case Type.Int32 => SemanticOperator.Int32.Le
+            case Type.Int64 => SemanticOperator.Int64.Le
+            case Type.BigInt => SemanticOperator.BigInt.Le
+            case t => throw InternalCompilerException(s"Unexpected type: '$t' near ${loc.format}.")
+          }
+          case BinaryOperator.Greater => e1.tpe match {
+            case Type.Float32 => SemanticOperator.Float32.Gt
+            case Type.Float64 => SemanticOperator.Float64.Gt
+            case Type.Int8 => SemanticOperator.Int8.Gt
+            case Type.Int16 => SemanticOperator.Int16.Gt
+            case Type.Int32 => SemanticOperator.Int32.Gt
+            case Type.Int64 => SemanticOperator.Int64.Gt
+            case Type.BigInt => SemanticOperator.BigInt.Gt
+            case t => throw InternalCompilerException(s"Unexpected type: '$t' near ${loc.format}.")
+          }
+          case BinaryOperator.GreaterEqual => e1.tpe match {
+            case Type.Float32 => SemanticOperator.Float32.Ge
+            case Type.Float64 => SemanticOperator.Float64.Ge
+            case Type.Int8 => SemanticOperator.Int8.Ge
+            case Type.Int16 => SemanticOperator.Int16.Ge
+            case Type.Int32 => SemanticOperator.Int32.Ge
+            case Type.Int64 => SemanticOperator.Int64.Ge
+            case Type.BigInt => SemanticOperator.BigInt.Ge
+            case t => throw InternalCompilerException(s"Unexpected type: '$t' near ${loc.format}.")
+          }
+          case BinaryOperator.Equal => e1.tpe match {
+            case Type.Char => SemanticOperator.Char.Eq
+            case Type.Float32 => SemanticOperator.Float32.Eq
+            case Type.Float64 => SemanticOperator.Float64.Eq
+            case Type.Int8 => SemanticOperator.Int8.Eq
+            case Type.Int16 => SemanticOperator.Int16.Eq
+            case Type.Int32 => SemanticOperator.Int32.Eq
+            case Type.Int64 => SemanticOperator.Int64.Eq
+            case Type.BigInt => SemanticOperator.BigInt.Eq
+            case t => throw InternalCompilerException(s"Unexpected type: '$t' near ${loc.format}.")
+          }
+          case BinaryOperator.NotEqual => e1.tpe match {
+            case Type.Char => SemanticOperator.Char.Neq
+            case Type.Float32 => SemanticOperator.Float32.Neq
+            case Type.Float64 => SemanticOperator.Float64.Neq
+            case Type.Int8 => SemanticOperator.Int8.Neq
+            case Type.Int16 => SemanticOperator.Int16.Neq
+            case Type.Int32 => SemanticOperator.Int32.Neq
+            case Type.Int64 => SemanticOperator.Int64.Neq
+            case Type.BigInt => SemanticOperator.BigInt.Neq
+            case t => throw InternalCompilerException(s"Unexpected type: '$t' near ${loc.format}.")
+          }
+          case BinaryOperator.LogicalAnd => e1.tpe match {
+            case Type.Bool => SemanticOperator.Bool.And
+            case t => throw InternalCompilerException(s"Unexpected type: '$t' near ${loc.format}.")
+          }
+          case BinaryOperator.LogicalOr => e1.tpe match {
+            case Type.Bool => SemanticOperator.Bool.Or
+            case t => throw InternalCompilerException(s"Unexpected type: '$t' near ${loc.format}.")
+          }
+          case BinaryOperator.BitwiseAnd => e1.tpe match {
+            case Type.Int8 => SemanticOperator.Int8.And
+            case Type.Int16 => SemanticOperator.Int16.And
+            case Type.Int32 => SemanticOperator.Int32.And
+            case Type.Int64 => SemanticOperator.Int64.And
+            case Type.BigInt => SemanticOperator.BigInt.And
+            case t => throw InternalCompilerException(s"Unexpected type: '$t' near ${loc.format}.")
+          }
+          case BinaryOperator.BitwiseOr => e1.tpe match {
+            case Type.Int8 => SemanticOperator.Int8.Or
+            case Type.Int16 => SemanticOperator.Int16.Or
+            case Type.Int32 => SemanticOperator.Int32.Or
+            case Type.Int64 => SemanticOperator.Int64.Or
+            case Type.BigInt => SemanticOperator.BigInt.Or
+            case t => throw InternalCompilerException(s"Unexpected type: '$t' near ${loc.format}.")
+          }
+          case BinaryOperator.BitwiseXor => e1.tpe match {
+            case Type.Int8 => SemanticOperator.Int8.Xor
+            case Type.Int16 => SemanticOperator.Int16.Xor
+            case Type.Int32 => SemanticOperator.Int32.Xor
+            case Type.Int64 => SemanticOperator.Int64.Xor
+            case Type.BigInt => SemanticOperator.BigInt.Xor
+            case t => throw InternalCompilerException(s"Unexpected type: '$t' near ${loc.format}.")
+          }
+          case BinaryOperator.BitwiseLeftShift => e1.tpe match {
+            case Type.Int8 => SemanticOperator.Int8.Shl
+            case Type.Int16 => SemanticOperator.Int16.Shl
+            case Type.Int32 => SemanticOperator.Int32.Shl
+            case Type.Int64 => SemanticOperator.Int64.Shl
+            case Type.BigInt => SemanticOperator.BigInt.Shl
+            case t => throw InternalCompilerException(s"Unexpected type: '$t' near ${loc.format}.")
+          }
+          case BinaryOperator.BitwiseRightShift => e1.tpe match {
+            case Type.Int8 => SemanticOperator.Int8.Shr
+            case Type.Int16 => SemanticOperator.Int16.Shr
+            case Type.Int32 => SemanticOperator.Int32.Shr
+            case Type.Int64 => SemanticOperator.Int64.Shr
+            case Type.BigInt => SemanticOperator.BigInt.Shr
+            case t => throw InternalCompilerException(s"Unexpected type: '$t' near ${loc.format}.")
+          }
+        }
+
+        SimplifiedAst.Expression.Binary(sop, op, simplify(e1), simplify(e2), tpe, loc)
+
       case TypedAst.Expression.IfThenElse(e1, e2, e3, tpe, eff, loc) =>
         SimplifiedAst.Expression.IfThenElse(simplify(e1), simplify(e2), simplify(e3), tpe, loc)
       case TypedAst.Expression.Switch(rules, tpe, eff, loc) =>
