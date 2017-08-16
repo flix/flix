@@ -214,6 +214,8 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
             case t => throw InternalCompilerException(s"Unexpected type: '$t' near ${loc.format}.")
           }
           case BinaryOperator.Modulo => e1.tpe match {
+            case Type.Float32 => SemanticOperator.Float32.Rem
+            case Type.Float64 => SemanticOperator.Float64.Rem
             case Type.Int8 => SemanticOperator.Int8.Rem
             case Type.Int16 => SemanticOperator.Int16.Rem
             case Type.Int32 => SemanticOperator.Int32.Rem
@@ -272,6 +274,8 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
             case t => throw InternalCompilerException(s"Unexpected type: '$t' near ${loc.format}.")
           }
           case BinaryOperator.Equal => e1.tpe match {
+            case Type.Unit => SemanticOperator.Unit.Eq
+            case Type.Bool => SemanticOperator.Bool.Eq
             case Type.Char => SemanticOperator.Char.Eq
             case Type.Float32 => SemanticOperator.Float32.Eq
             case Type.Float64 => SemanticOperator.Float64.Eq
@@ -280,9 +284,14 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
             case Type.Int32 => SemanticOperator.Int32.Eq
             case Type.Int64 => SemanticOperator.Int64.Eq
             case Type.BigInt => SemanticOperator.BigInt.Eq
+            case Type.Str => SemanticOperator.Str.Eq
+            case t if t.isEnum => SemanticOperator.Tag.Eq
+            case t if t.isTuple => SemanticOperator.Tuple.Eq
             case t => throw InternalCompilerException(s"Unexpected type: '$t' near ${loc.format}.")
           }
           case BinaryOperator.NotEqual => e1.tpe match {
+            case Type.Unit => SemanticOperator.Unit.Neq
+            case Type.Bool => SemanticOperator.Bool.Neq
             case Type.Char => SemanticOperator.Char.Neq
             case Type.Float32 => SemanticOperator.Float32.Neq
             case Type.Float64 => SemanticOperator.Float64.Neq
@@ -291,6 +300,9 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
             case Type.Int32 => SemanticOperator.Int32.Neq
             case Type.Int64 => SemanticOperator.Int64.Neq
             case Type.BigInt => SemanticOperator.BigInt.Neq
+            case Type.Str => SemanticOperator.Str.Neq
+            case t if t.isEnum => SemanticOperator.Tag.Neq
+            case t if t.isTuple => SemanticOperator.Tuple.Neq
             case t => throw InternalCompilerException(s"Unexpected type: '$t' near ${loc.format}.")
           }
           case BinaryOperator.LogicalAnd => e1.tpe match {

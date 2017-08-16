@@ -21,6 +21,25 @@ sealed trait SemanticOperator
 object SemanticOperator {
 
   /**
+    * Unit Operators.
+    */
+  sealed trait Unit extends SemanticOperator
+
+  object Unit {
+
+    /**
+      * Equality.
+      */
+    case object Eq extends Unit
+
+    /**
+      * Inequality.
+      */
+    case object Neq extends Unit
+
+  }
+
+  /**
     * Boolean Operators.
     */
   sealed trait Bool extends SemanticOperator
@@ -41,6 +60,16 @@ object SemanticOperator {
       * Boolean Or.
       */
     case object Or extends Bool
+
+    /**
+      * Equality.
+      */
+    case object Eq extends Bool
+
+    /**
+      * Inequality.
+      */
+    case object Neq extends Bool
 
   }
 
@@ -99,6 +128,11 @@ object SemanticOperator {
       * Division.
       */
     case object Div extends Float32
+
+    /**
+      * Remainder.
+      */
+    case object Rem extends Float32
 
     /**
       * Exponentiate.
@@ -173,6 +207,11 @@ object SemanticOperator {
       * Division.
       */
     case object Div extends Float64
+
+    /**
+      * Remainder.
+      */
+    case object Rem extends Float64
 
     /**
       * Exponentiate.
@@ -759,6 +798,45 @@ object SemanticOperator {
   }
 
   /**
+    * Tag Operators.
+    */
+  sealed trait Tag extends SemanticOperator
+
+  object Tag {
+
+    /**
+      * Equality.
+      */
+    case object Eq extends Tag
+
+    /**
+      * Inequality.
+      */
+    case object Neq extends Tag
+
+  }
+
+
+  /**
+    * Tuple Operators.
+    */
+  sealed trait Tuple extends SemanticOperator
+
+  object Tuple {
+
+    /**
+      * Equality.
+      */
+    case object Eq extends Tuple
+
+    /**
+      * Inequality.
+      */
+    case object Neq extends Tuple
+
+  }
+
+  /**
     * String Operators.
     */
   sealed trait Str extends SemanticOperator
@@ -769,6 +847,16 @@ object SemanticOperator {
       * Concatenate.
       */
     case object Concat extends Str
+
+    /**
+      * Equality.
+      */
+    case object Eq extends Str
+
+    /**
+      * Inequality.
+      */
+    case object Neq extends Str
 
   }
 
