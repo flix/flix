@@ -234,6 +234,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
             case t => throw InternalCompilerException(s"Unexpected type: '$t' near ${loc.format}.")
           }
           case BinaryOperator.Less => e1.tpe match {
+            case Type.Char => SemanticOperator.Char.Lt
             case Type.Float32 => SemanticOperator.Float32.Lt
             case Type.Float64 => SemanticOperator.Float64.Lt
             case Type.Int8 => SemanticOperator.Int8.Lt
@@ -244,6 +245,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
             case t => throw InternalCompilerException(s"Unexpected type: '$t' near ${loc.format}.")
           }
           case BinaryOperator.LessEqual => e1.tpe match {
+            case Type.Char => SemanticOperator.Char.Le
             case Type.Float32 => SemanticOperator.Float32.Le
             case Type.Float64 => SemanticOperator.Float64.Le
             case Type.Int8 => SemanticOperator.Int8.Le
@@ -254,6 +256,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
             case t => throw InternalCompilerException(s"Unexpected type: '$t' near ${loc.format}.")
           }
           case BinaryOperator.Greater => e1.tpe match {
+            case Type.Char => SemanticOperator.Char.Gt
             case Type.Float32 => SemanticOperator.Float32.Gt
             case Type.Float64 => SemanticOperator.Float64.Gt
             case Type.Int8 => SemanticOperator.Int8.Gt
@@ -264,6 +267,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
             case t => throw InternalCompilerException(s"Unexpected type: '$t' near ${loc.format}.")
           }
           case BinaryOperator.GreaterEqual => e1.tpe match {
+            case Type.Char => SemanticOperator.Char.Ge
             case Type.Float32 => SemanticOperator.Float32.Ge
             case Type.Float64 => SemanticOperator.Float64.Ge
             case Type.Int8 => SemanticOperator.Int8.Ge

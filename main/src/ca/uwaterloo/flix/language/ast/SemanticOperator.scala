@@ -90,6 +90,26 @@ object SemanticOperator {
       */
     case object Neq extends Char
 
+    /**
+      * Less than.
+      */
+    case object Lt extends Char
+
+    /**
+      * Less or equal.
+      */
+    case object Le extends Char
+
+    /**
+      * Greater than.
+      */
+    case object Gt extends Char
+
+    /**
+      * Greater or equal.
+      */
+    case object Ge extends Char
+
   }
 
   /**
