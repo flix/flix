@@ -254,6 +254,11 @@ object SemanticOperator {
     case object Neg extends Int8
 
     /**
+      * Bitwise Not.
+      */
+    case object Not extends Int8
+
+    /**
       * Addition.
       */
     case object Add extends Int8
@@ -282,11 +287,6 @@ object SemanticOperator {
       * Exponentiate.
       */
     case object Exp extends Int8
-
-    /**
-      * Bitwise Not.
-      */
-    case object Not extends Int8
 
     /**
       * Bitwise And.
@@ -358,6 +358,11 @@ object SemanticOperator {
     case object Neg extends Int16
 
     /**
+      * Bitwise Not.
+      */
+    case object Not extends Int16
+
+    /**
       * Addition.
       */
     case object Add extends Int16
@@ -386,11 +391,6 @@ object SemanticOperator {
       * Exponentiate.
       */
     case object Exp extends Int16
-
-    /**
-      * Bitwise Not.
-      */
-    case object Not extends Int16
 
     /**
       * Bitwise And.
@@ -461,7 +461,10 @@ object SemanticOperator {
       */
     case object Neg extends Int32
 
-    // TODO: Move Not up here.
+    /**
+      * Bitwise Not.
+      */
+    case object Not extends Int32
 
     /**
       * Addition.
@@ -492,11 +495,6 @@ object SemanticOperator {
       * Exponentiate.
       */
     case object Exp extends Int32
-
-    /**
-      * Bitwise Not.
-      */
-    case object Not extends Int32
 
     /**
       * Bitwise And.
@@ -568,6 +566,11 @@ object SemanticOperator {
     case object Neg extends Int64
 
     /**
+      * Bitwise Not.
+      */
+    case object Not extends Int64
+
+    /**
       * Addition.
       */
     case object Add extends Int64
@@ -596,11 +599,6 @@ object SemanticOperator {
       * Exponentiate.
       */
     case object Exp extends Int64
-
-    /**
-      * Bitwise Not.
-      */
-    case object Not extends Int64
 
     /**
       * Bitwise And.
@@ -672,6 +670,11 @@ object SemanticOperator {
     case object Neg extends BigInt
 
     /**
+      * Bitwise Not.
+      */
+    case object Not extends Int64
+
+    /**
       * Addition.
       */
     case object Add extends BigInt
@@ -700,11 +703,6 @@ object SemanticOperator {
       * Exponentiate.
       */
     case object Exp extends BigInt
-
-    /**
-      * Bitwise Not.
-      */
-    case object Not extends Int64
 
     /**
       * Bitwise And.
