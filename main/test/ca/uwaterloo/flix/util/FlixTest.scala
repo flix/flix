@@ -34,7 +34,7 @@ class FlixTest(name: String, path: String) extends FunSuite {
     */
   private def init(): Unit = {
     // Options and Flix object.
-    val opts = Options.DefaultTest.copy(core = false, evaluation = Evaluation.Interpreted)
+    val opts = Options.DefaultTest.copy(core = false)
     val flix = new Flix().setOptions(opts)
 
     // Add the given path.

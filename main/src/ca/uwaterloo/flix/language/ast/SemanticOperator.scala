@@ -23,760 +23,760 @@ object SemanticOperator {
   /**
     * Boolean Operators.
     */
-  sealed trait Bool extends SemanticOperator
+  sealed trait BoolOp extends SemanticOperator
 
-  object Bool {
+  object BoolOp {
 
     /**
       * Boolean Not.
       */
-    case object Not extends Bool
+    case object Not extends BoolOp
 
     /**
       * Boolean And.
       */
-    case object And extends Bool
+    case object And extends BoolOp
 
     /**
       * Boolean Or.
       */
-    case object Or extends Bool
+    case object Or extends BoolOp
 
     /**
       * Equality.
       */
-    case object Eq extends Bool
+    case object Eq extends BoolOp
 
     /**
       * Inequality.
       */
-    case object Neq extends Bool
+    case object Neq extends BoolOp
 
   }
 
   /**
     * Char Operators.
     */
-  sealed trait Char extends SemanticOperator
+  sealed trait CharOp extends SemanticOperator
 
-  object Char {
+  object CharOp {
 
     /**
       * Equality.
       */
-    case object Eq extends Char
+    case object Eq extends CharOp
 
     /**
       * Inequality.
       */
-    case object Neq extends Char
+    case object Neq extends CharOp
 
     /**
       * Less than.
       */
-    case object Lt extends Char
+    case object Lt extends CharOp
 
     /**
       * Less or equal.
       */
-    case object Le extends Char
+    case object Le extends CharOp
 
     /**
       * Greater than.
       */
-    case object Gt extends Char
+    case object Gt extends CharOp
 
     /**
       * Greater or equal.
       */
-    case object Ge extends Char
+    case object Ge extends CharOp
 
   }
 
   /**
     * Float32 Operators.
     */
-  sealed trait Float32 extends SemanticOperator
+  sealed trait Float32Op extends SemanticOperator
 
-  object Float32 {
+  object Float32Op {
 
     /**
       * Negation.
       */
-    case object Neg extends Float64
+    case object Neg extends Float64Op
 
     /**
       * Addition.
       */
-    case object Add extends Float32
+    case object Add extends Float32Op
 
     /**
       * Subtraction.
       */
-    case object Sub extends Float32
+    case object Sub extends Float32Op
 
     /**
       * Multiplication.
       */
-    case object Mul extends Float32
+    case object Mul extends Float32Op
 
     /**
       * Division.
       */
-    case object Div extends Float32
+    case object Div extends Float32Op
 
     /**
       * Remainder.
       */
-    case object Rem extends Float32
+    case object Rem extends Float32Op
 
     /**
       * Exponentiate.
       */
-    case object Exp extends Float32
+    case object Exp extends Float32Op
 
     /**
       * Equality.
       */
-    case object Eq extends Float32
+    case object Eq extends Float32Op
 
     /**
       * Inequality.
       */
-    case object Neq extends Float32
+    case object Neq extends Float32Op
 
     /**
       * Less than.
       */
-    case object Lt extends Float32
+    case object Lt extends Float32Op
 
     /**
       * Less or equal.
       */
-    case object Le extends Float32
+    case object Le extends Float32Op
 
     /**
       * Greater than.
       */
-    case object Gt extends Float32
+    case object Gt extends Float32Op
 
     /**
       * Greater or equal.
       */
-    case object Ge extends Float32
+    case object Ge extends Float32Op
 
   }
 
   /**
     * Float64 Operators.
     */
-  sealed trait Float64 extends SemanticOperator
+  sealed trait Float64Op extends SemanticOperator
 
-  object Float64 {
+  object Float64Op {
 
     /**
       * Negation.
       */
-    case object Neg extends Float64
+    case object Neg extends Float64Op
 
     /**
       * Addition.
       */
-    case object Add extends Float64
+    case object Add extends Float64Op
 
     /**
       * Subtraction.
       */
-    case object Sub extends Float64
+    case object Sub extends Float64Op
 
     /**
       * Multiplication.
       */
-    case object Mul extends Float64
+    case object Mul extends Float64Op
 
     /**
       * Division.
       */
-    case object Div extends Float64
+    case object Div extends Float64Op
 
     /**
       * Remainder.
       */
-    case object Rem extends Float64
+    case object Rem extends Float64Op
 
     /**
       * Exponentiate.
       */
-    case object Exp extends Float64
+    case object Exp extends Float64Op
 
     /**
       * Equality.
       */
-    case object Eq extends Float64
+    case object Eq extends Float64Op
 
     /**
       * Inequality.
       */
-    case object Neq extends Float64
+    case object Neq extends Float64Op
 
     /**
       * Less than.
       */
-    case object Lt extends Float64
+    case object Lt extends Float64Op
 
     /**
       * Less or equal.
       */
-    case object Le extends Float64
+    case object Le extends Float64Op
 
     /**
       * Greater than.
       */
-    case object Gt extends Float64
+    case object Gt extends Float64Op
 
     /**
       * Greater or equal.
       */
-    case object Ge extends Float64
+    case object Ge extends Float64Op
 
   }
 
   /**
     * Int8 Operators.
     */
-  sealed trait Int8 extends SemanticOperator
+  sealed trait Int8Op extends SemanticOperator
 
-  object Int8 {
+  object Int8Op {
 
     /**
       * Negation.
       */
-    case object Neg extends Int8
+    case object Neg extends Int8Op
 
     /**
       * Bitwise Not.
       */
-    case object Not extends Int8
+    case object Not extends Int8Op
 
     /**
       * Addition.
       */
-    case object Add extends Int8
+    case object Add extends Int8Op
 
     /**
       * Subtraction.
       */
-    case object Sub extends Int8
+    case object Sub extends Int8Op
 
     /**
       * Multiplication.
       */
-    case object Mul extends Int8
+    case object Mul extends Int8Op
 
     /**
       * Division.
       */
-    case object Div extends Int8
+    case object Div extends Int8Op
 
     /**
       * Remainder.
       */
-    case object Rem extends Int8
+    case object Rem extends Int8Op
 
     /**
       * Exponentiate.
       */
-    case object Exp extends Int8
+    case object Exp extends Int8Op
 
     /**
       * Bitwise And.
       */
-    case object And extends Int8
+    case object And extends Int8Op
 
     /**
       * Bitwise Or.
       */
-    case object Or extends Int8
+    case object Or extends Int8Op
 
     /**
       * Bitwise Xor.
       */
-    case object Xor extends Int8
+    case object Xor extends Int8Op
 
     /**
       * Bitwise Left Shift.
       */
-    case object Shl extends Int8
+    case object Shl extends Int8Op
 
     /**
       * Bitwise Right Shift.
       */
-    case object Shr extends Int8
+    case object Shr extends Int8Op
 
     /**
       * Equality.
       */
-    case object Eq extends Int8
+    case object Eq extends Int8Op
 
     /**
       * Inequality.
       */
-    case object Neq extends Int8
+    case object Neq extends Int8Op
 
     /**
       * Less than.
       */
-    case object Lt extends Int8
+    case object Lt extends Int8Op
 
     /**
       * Less or equal.
       */
-    case object Le extends Int8
+    case object Le extends Int8Op
 
     /**
       * Greater than.
       */
-    case object Gt extends Int8
+    case object Gt extends Int8Op
 
     /**
       * Greater or equal.
       */
-    case object Ge extends Int8
+    case object Ge extends Int8Op
 
   }
 
   /**
     * Int16 Operators.
     */
-  sealed trait Int16 extends SemanticOperator
+  sealed trait Int16Op extends SemanticOperator
 
-  object Int16 {
+  object Int16Op {
 
     /**
       * Negation.
       */
-    case object Neg extends Int16
+    case object Neg extends Int16Op
 
     /**
       * Bitwise Not.
       */
-    case object Not extends Int16
+    case object Not extends Int16Op
 
     /**
       * Addition.
       */
-    case object Add extends Int16
+    case object Add extends Int16Op
 
     /**
       * Subtraction.
       */
-    case object Sub extends Int16
+    case object Sub extends Int16Op
 
     /**
       * Multiplication.
       */
-    case object Mul extends Int16
+    case object Mul extends Int16Op
 
     /**
       * Division.
       */
-    case object Div extends Int16
+    case object Div extends Int16Op
 
     /**
       * Remainder.
       */
-    case object Rem extends Int16
+    case object Rem extends Int16Op
 
     /**
       * Exponentiate.
       */
-    case object Exp extends Int16
+    case object Exp extends Int16Op
 
     /**
       * Bitwise And.
       */
-    case object And extends Int16
+    case object And extends Int16Op
 
     /**
       * Bitwise Or.
       */
-    case object Or extends Int16
+    case object Or extends Int16Op
 
     /**
       * Bitwise Xor.
       */
-    case object Xor extends Int16
+    case object Xor extends Int16Op
 
     /**
       * Bitwise Left Shift.
       */
-    case object Shl extends Int16
+    case object Shl extends Int16Op
 
     /**
       * Bitwise Right Shift.
       */
-    case object Shr extends Int16
+    case object Shr extends Int16Op
 
     /**
       * Equality.
       */
-    case object Eq extends Int16
+    case object Eq extends Int16Op
 
     /**
       * Inequality.
       */
-    case object Neq extends Int16
+    case object Neq extends Int16Op
 
     /**
       * Less than.
       */
-    case object Lt extends Int16
+    case object Lt extends Int16Op
 
     /**
       * Less or equal.
       */
-    case object Le extends Int16
+    case object Le extends Int16Op
 
     /**
       * Greater than.
       */
-    case object Gt extends Int16
+    case object Gt extends Int16Op
 
     /**
       * Greater or equal.
       */
-    case object Ge extends Int16
+    case object Ge extends Int16Op
 
   }
 
   /**
     * Int32 Operators.
     */
-  sealed trait Int32 extends SemanticOperator
+  sealed trait Int32Op extends SemanticOperator
 
-  object Int32 {
+  object Int32Op {
 
     /**
       * Negation.
       */
-    case object Neg extends Int32
+    case object Neg extends Int32Op
 
     /**
       * Bitwise Not.
       */
-    case object Not extends Int32
+    case object Not extends Int32Op
 
     /**
       * Addition.
       */
-    case object Add extends Int32
+    case object Add extends Int32Op
 
     /**
       * Subtraction.
       */
-    case object Sub extends Int32
+    case object Sub extends Int32Op
 
     /**
       * Multiplication.
       */
-    case object Mul extends Int32
+    case object Mul extends Int32Op
 
     /**
       * Division.
       */
-    case object Div extends Int32
+    case object Div extends Int32Op
 
     /**
       * Remainder.
       */
-    case object Rem extends Int32
+    case object Rem extends Int32Op
 
     /**
       * Exponentiate.
       */
-    case object Exp extends Int32
+    case object Exp extends Int32Op
 
     /**
       * Bitwise And.
       */
-    case object And extends Int32
+    case object And extends Int32Op
 
     /**
       * Bitwise Or.
       */
-    case object Or extends Int32
+    case object Or extends Int32Op
 
     /**
       * Bitwise Xor.
       */
-    case object Xor extends Int32
+    case object Xor extends Int32Op
 
     /**
       * Bitwise Left Shift.
       */
-    case object Shl extends Int32
+    case object Shl extends Int32Op
 
     /**
       * Bitwise Right Shift.
       */
-    case object Shr extends Int32
+    case object Shr extends Int32Op
 
     /**
       * Equality.
       */
-    case object Eq extends Int32
+    case object Eq extends Int32Op
 
     /**
       * Inequality.
       */
-    case object Neq extends Int32
+    case object Neq extends Int32Op
 
     /**
       * Less than.
       */
-    case object Lt extends Int32
+    case object Lt extends Int32Op
 
     /**
       * Less or equal.
       */
-    case object Le extends Int32
+    case object Le extends Int32Op
 
     /**
       * Greater than.
       */
-    case object Gt extends Int32
+    case object Gt extends Int32Op
 
     /**
       * Greater or equal.
       */
-    case object Ge extends Int32
+    case object Ge extends Int32Op
 
   }
 
   /**
     * Int64 Operators.
     */
-  sealed trait Int64 extends SemanticOperator
+  sealed trait Int64Op extends SemanticOperator
 
-  object Int64 {
+  object Int64Op {
 
     /**
       * Negation.
       */
-    case object Neg extends Int64
+    case object Neg extends Int64Op
 
     /**
       * Bitwise Not.
       */
-    case object Not extends Int64
+    case object Not extends Int64Op
 
     /**
       * Addition.
       */
-    case object Add extends Int64
+    case object Add extends Int64Op
 
     /**
       * Subtraction.
       */
-    case object Sub extends Int64
+    case object Sub extends Int64Op
 
     /**
       * Multiplication.
       */
-    case object Mul extends Int64
+    case object Mul extends Int64Op
 
     /**
       * Division.
       */
-    case object Div extends Int64
+    case object Div extends Int64Op
 
     /**
       * Remainder.
       */
-    case object Rem extends Int64
+    case object Rem extends Int64Op
 
     /**
       * Exponentiate.
       */
-    case object Exp extends Int64
+    case object Exp extends Int64Op
 
     /**
       * Bitwise And.
       */
-    case object And extends Int64
+    case object And extends Int64Op
 
     /**
       * Bitwise Or.
       */
-    case object Or extends Int64
+    case object Or extends Int64Op
 
     /**
       * Bitwise Xor.
       */
-    case object Xor extends Int64
+    case object Xor extends Int64Op
 
     /**
       * Bitwise Left Shift.
       */
-    case object Shl extends Int64
+    case object Shl extends Int64Op
 
     /**
       * Bitwise Right Shift.
       */
-    case object Shr extends Int64
+    case object Shr extends Int64Op
 
     /**
       * Equality.
       */
-    case object Eq extends Int64
+    case object Eq extends Int64Op
 
     /**
       * Inequality.
       */
-    case object Neq extends Int64
+    case object Neq extends Int64Op
 
     /**
       * Less than.
       */
-    case object Lt extends Int64
+    case object Lt extends Int64Op
 
     /**
       * Less or equal.
       */
-    case object Le extends Int64
+    case object Le extends Int64Op
 
     /**
       * Greater than.
       */
-    case object Gt extends Int64
+    case object Gt extends Int64Op
 
     /**
       * Greater or equal.
       */
-    case object Ge extends Int64
+    case object Ge extends Int64Op
 
   }
 
   /**
     * BigInt Operators.
     */
-  sealed trait BigInt extends SemanticOperator
+  sealed trait BigIntOp extends SemanticOperator
 
-  object BigInt {
+  object BigIntOp {
 
     /**
       * Negation.
       */
-    case object Neg extends BigInt
+    case object Neg extends BigIntOp
 
     /**
       * Bitwise Not.
       */
-    case object Not extends Int64
+    case object Not extends Int64Op
 
     /**
       * Addition.
       */
-    case object Add extends BigInt
+    case object Add extends BigIntOp
 
     /**
       * Subtraction.
       */
-    case object Sub extends BigInt
+    case object Sub extends BigIntOp
 
     /**
       * Multiplication.
       */
-    case object Mul extends BigInt
+    case object Mul extends BigIntOp
 
     /**
       * Division.
       */
-    case object Div extends BigInt
+    case object Div extends BigIntOp
 
     /**
       * Remainder.
       */
-    case object Rem extends BigInt
+    case object Rem extends BigIntOp
 
     /**
       * Exponentiate.
       */
-    case object Exp extends BigInt
+    case object Exp extends BigIntOp
 
     /**
       * Bitwise And.
       */
-    case object And extends BigInt
+    case object And extends BigIntOp
 
     /**
       * Bitwise Or.
       */
-    case object Or extends BigInt
+    case object Or extends BigIntOp
 
     /**
       * Bitwise Xor.
       */
-    case object Xor extends BigInt
+    case object Xor extends BigIntOp
 
     /**
       * Bitwise Left Shift.
       */
-    case object Shl extends BigInt
+    case object Shl extends BigIntOp
 
     /**
       * Bitwise Right Shift.
       */
-    case object Shr extends BigInt
+    case object Shr extends BigIntOp
 
     /**
       * Equality.
       */
-    case object Eq extends BigInt
+    case object Eq extends BigIntOp
 
     /**
       * Inequality.
       */
-    case object Neq extends BigInt
+    case object Neq extends BigIntOp
 
     /**
       * Less than.
       */
-    case object Lt extends BigInt
+    case object Lt extends BigIntOp
 
     /**
       * Less or equal.
       */
-    case object Le extends BigInt
+    case object Le extends BigIntOp
 
     /**
       * Greater than.
       */
-    case object Gt extends BigInt
+    case object Gt extends BigIntOp
 
     /**
       * Greater or equal.
       */
-    case object Ge extends BigInt
+    case object Ge extends BigIntOp
 
   }
 
   /**
     * Tag Operators.
     */
-  sealed trait Tag extends SemanticOperator
+  sealed trait TagOp extends SemanticOperator
 
-  object Tag {
+  object TagOp {
 
     /**
       * Equality.
       */
-    case object Eq extends Tag
+    case object Eq extends TagOp
 
     /**
       * Inequality.
       */
-    case object Neq extends Tag
+    case object Neq extends TagOp
 
   }
 
@@ -784,43 +784,43 @@ object SemanticOperator {
   /**
     * Tuple Operators.
     */
-  sealed trait Tuple extends SemanticOperator
+  sealed trait TupleOp extends SemanticOperator
 
-  object Tuple {
+  object TupleOp {
 
     /**
       * Equality.
       */
-    case object Eq extends Tuple
+    case object Eq extends TupleOp
 
     /**
       * Inequality.
       */
-    case object Neq extends Tuple
+    case object Neq extends TupleOp
 
   }
 
   /**
     * String Operators.
     */
-  sealed trait Str extends SemanticOperator
+  sealed trait StringOp extends SemanticOperator
 
-  object Str {
+  object StringOp {
 
     /**
       * Concatenate.
       */
-    case object Concat extends Str
+    case object Concat extends StringOp
 
     /**
       * Equality.
       */
-    case object Eq extends Str
+    case object Eq extends StringOp
 
     /**
       * Inequality.
       */
-    case object Neq extends Str
+    case object Neq extends StringOp
 
   }
 
