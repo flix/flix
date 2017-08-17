@@ -694,8 +694,6 @@ object SemanticOperator {
 
   object BigInt {
 
-    // TODO: What operations should we support?
-
     /**
       * Unary Plus.
       */
