@@ -437,8 +437,8 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
           evalCross(rule, xs, newRow, interp)
         }
       }
-    case (p: Predicate.Body.Negative) :: xs =>
-      throw InternalRuntimeException("Negated predicates not yet supported")
+    case (p: Predicate.Body.Negative) :: xs => ()
+      //throw InternalRuntimeException("Negated predicates not yet supported")
 
     case _ => throw InternalRuntimeException(s"Unmatched predicate?")
   }
