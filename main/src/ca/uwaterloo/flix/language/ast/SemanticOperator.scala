@@ -461,6 +461,8 @@ object SemanticOperator {
       */
     case object Neg extends Int32
 
+    // TODO: Move Not up here.
+
     /**
       * Addition.
       */
