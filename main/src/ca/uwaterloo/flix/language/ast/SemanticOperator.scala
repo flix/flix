@@ -28,7 +28,7 @@ object SemanticOperator {
   object Bool {
 
     /**
-      * Boolean Negation.
+      * Boolean Not.
       */
     case object Not extends Bool
 
@@ -101,14 +101,9 @@ object SemanticOperator {
   object Float32 {
 
     /**
-      * Unary Plus.
+      * Negation.
       */
-    case object Plus extends Float32
-
-    /**
-      * Unary Minus.
-      */
-    case object Minus extends Float64
+    case object Neg extends Float64
 
     /**
       * Addition.
@@ -180,14 +175,9 @@ object SemanticOperator {
   object Float64 {
 
     /**
-      * Unary Plus.
+      * Negation.
       */
-    case object Plus extends Float64
-
-    /**
-      * Unary Minus.
-      */
-    case object Minus extends Float64
+    case object Neg extends Float64
 
     /**
       * Addition.
@@ -259,14 +249,9 @@ object SemanticOperator {
   object Int8 {
 
     /**
-      * Unary Plus.
+      * Negation.
       */
-    case object Plus extends Int8
-
-    /**
-      * Unary Minus.
-      */
-    case object Minus extends Int8
+    case object Neg extends Int8
 
     /**
       * Addition.
@@ -299,9 +284,9 @@ object SemanticOperator {
     case object Exp extends Int8
 
     /**
-      * Bitwise Negate.
+      * Bitwise Not.
       */
-    case object Neg extends Int8
+    case object Not extends Int8
 
     /**
       * Bitwise And.
@@ -368,14 +353,9 @@ object SemanticOperator {
   object Int16 {
 
     /**
-      * Unary Plus.
+      * Negation.
       */
-    case object Plus extends Int16
-
-    /**
-      * Unary Minus.
-      */
-    case object Minus extends Int16
+    case object Neg extends Int16
 
     /**
       * Addition.
@@ -408,9 +388,9 @@ object SemanticOperator {
     case object Exp extends Int16
 
     /**
-      * Bitwise Negate.
+      * Bitwise Not.
       */
-    case object Neg extends Int16
+    case object Not extends Int16
 
     /**
       * Bitwise And.
@@ -477,14 +457,9 @@ object SemanticOperator {
   object Int32 {
 
     /**
-      * Unary Plus.
+      * Negation.
       */
-    case object Plus extends Int32
-
-    /**
-      * Unary Minus.
-      */
-    case object Minus extends Int32
+    case object Neg extends Int32
 
     /**
       * Addition.
@@ -517,9 +492,9 @@ object SemanticOperator {
     case object Exp extends Int32
 
     /**
-      * Bitwise Negate.
+      * Bitwise Not.
       */
-    case object Neg extends Int32
+    case object Not extends Int32
 
     /**
       * Bitwise And.
@@ -586,14 +561,9 @@ object SemanticOperator {
   object Int64 {
 
     /**
-      * Unary Plus.
+      * Negation.
       */
-    case object Plus extends Int64
-
-    /**
-      * Unary Minus.
-      */
-    case object Minus extends Int64
+    case object Neg extends Int64
 
     /**
       * Addition.
@@ -626,9 +596,9 @@ object SemanticOperator {
     case object Exp extends Int64
 
     /**
-      * Bitwise Negate.
+      * Bitwise Not.
       */
-    case object Neg extends Int64
+    case object Not extends Int64
 
     /**
       * Bitwise And.
@@ -695,14 +665,9 @@ object SemanticOperator {
   object BigInt {
 
     /**
-      * Unary Plus.
+      * Negation.
       */
-    case object Plus extends BigInt
-
-    /**
-      * Unary Minus.
-      */
-    case object Minus extends BigInt
+    case object Neg extends BigInt
 
     /**
       * Addition.
@@ -735,9 +700,9 @@ object SemanticOperator {
     case object Exp extends BigInt
 
     /**
-      * Bitwise Negate.
+      * Bitwise Not.
       */
-    case object Neg extends Int64
+    case object Not extends Int64
 
     /**
       * Bitwise And.

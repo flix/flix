@@ -130,36 +130,38 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
 
       case TypedAst.Expression.Unary(op, e, tpe, eff, loc) =>
         /*
+         * Special Case 1: Unary Plus.
+         */
+        (op, e.tpe) match {
+          case (UnaryOperator.Plus, _) =>
+            // A unary plus has no semantic effect.
+            return simplify(e)
+          case _ => // fallthrough
+        }
+
+        /*
          * Compute the semantic operator based on types.
          */
         val sop = op match {
           case UnaryOperator.LogicalNot => SemanticOperator.Bool.Not
           case UnaryOperator.BitwiseNegate => e.tpe match {
+            case Type.Int8 => SemanticOperator.Int8.Not
+            case Type.Int16 => SemanticOperator.Int16.Not
+            case Type.Int32 => SemanticOperator.Int32.Not
+            case Type.Int64 => SemanticOperator.Int64.Not
+            case Type.BigInt => SemanticOperator.BigInt.Not
+            case t => throw InternalCompilerException(s"Unexpected type: '$t' near ${loc.format}.")
+          }
+          case UnaryOperator.Plus =>
+            throw InternalCompilerException(s"Impossible.")
+          case UnaryOperator.Minus => e.tpe match {
+            case Type.Float32 => SemanticOperator.Float32.Neg
+            case Type.Float64 => SemanticOperator.Float64.Neg
             case Type.Int8 => SemanticOperator.Int8.Neg
             case Type.Int16 => SemanticOperator.Int16.Neg
             case Type.Int32 => SemanticOperator.Int32.Neg
             case Type.Int64 => SemanticOperator.Int64.Neg
             case Type.BigInt => SemanticOperator.BigInt.Neg
-            case t => throw InternalCompilerException(s"Unexpected type: '$t' near ${loc.format}.")
-          }
-          case UnaryOperator.Plus => e.tpe match {
-            case Type.Float32 => SemanticOperator.Float32.Plus
-            case Type.Float64 => SemanticOperator.Float64.Plus
-            case Type.Int8 => SemanticOperator.Int8.Plus
-            case Type.Int16 => SemanticOperator.Int16.Plus
-            case Type.Int32 => SemanticOperator.Int32.Plus
-            case Type.Int64 => SemanticOperator.Int64.Plus
-            case Type.BigInt => SemanticOperator.BigInt.Plus
-            case t => throw InternalCompilerException(s"Unexpected type: '$t' near ${loc.format}.")
-          }
-          case UnaryOperator.Minus => e.tpe match {
-            case Type.Float32 => SemanticOperator.Float32.Minus
-            case Type.Float64 => SemanticOperator.Float64.Minus
-            case Type.Int8 => SemanticOperator.Int8.Minus
-            case Type.Int16 => SemanticOperator.Int16.Minus
-            case Type.Int32 => SemanticOperator.Int32.Minus
-            case Type.Int64 => SemanticOperator.Int64.Minus
-            case Type.BigInt => SemanticOperator.BigInt.Minus
             case t => throw InternalCompilerException(s"Unexpected type: '$t' near ${loc.format}.")
           }
         }
