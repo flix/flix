@@ -21,25 +21,6 @@ sealed trait SemanticOperator
 object SemanticOperator {
 
   /**
-    * Unit Operators.
-    */
-  sealed trait Unit extends SemanticOperator
-
-  object Unit {
-
-    /**
-      * Equality.
-      */
-    case object Eq extends Unit
-
-    /**
-      * Inequality.
-      */
-    case object Neq extends Unit
-
-  }
-
-  /**
     * Boolean Operators.
     */
   sealed trait Bool extends SemanticOperator

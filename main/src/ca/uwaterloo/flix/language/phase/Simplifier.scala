@@ -168,6 +168,20 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         SimplifiedAst.Expression.Unary(sop, op, simplify(e), tpe, loc)
 
       case TypedAst.Expression.Binary(op, e1, e2, tpe, eff, loc) =>
+
+        /*
+         * Special Case 1: Unit
+         */
+        (op, e1.tpe, e2.tpe) match {
+          case (BinaryOperator.Equal, Type.Unit, Type.Unit) =>
+            // Unit is always equal to itself.
+            return SimplifiedAst.Expression.True
+          case (BinaryOperator.NotEqual, Type.Unit, Type.Unit) =>
+            // Unit is never not equal to itself.
+            return SimplifiedAst.Expression.False
+          case _ => // fallthrough
+        }
+
         /*
          * Compute the semantic operator based on types.
          */
@@ -278,7 +292,6 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
             case t => throw InternalCompilerException(s"Unexpected type: '$t' near ${loc.format}.")
           }
           case BinaryOperator.Equal => e1.tpe match {
-            case Type.Unit => SemanticOperator.Unit.Eq
             case Type.Bool => SemanticOperator.Bool.Eq
             case Type.Char => SemanticOperator.Char.Eq
             case Type.Float32 => SemanticOperator.Float32.Eq
@@ -294,7 +307,6 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
             case t => throw InternalCompilerException(s"Unexpected type: '$t' near ${loc.format}.")
           }
           case BinaryOperator.NotEqual => e1.tpe match {
-            case Type.Unit => SemanticOperator.Unit.Neq
             case Type.Bool => SemanticOperator.Bool.Neq
             case Type.Char => SemanticOperator.Char.Neq
             case Type.Float32 => SemanticOperator.Float32.Neq
@@ -568,7 +580,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         */
       case (lit :: ps, v :: vs) if isLiteral(lit) =>
         val exp = simplify(ps, vs, guard, succ, fail)
-        val cond = SExp.Binary(getEqualOp(lit.tpe), Equal, pat2exp(lit), SExp.Var(v, lit.tpe, lit.loc), Type.Bool, lit.loc)
+        val cond = mkEqual(pat2exp(lit), SExp.Var(v, lit.tpe, lit.loc), lit.loc)
         SExp.IfThenElse(cond, exp, fail, succ.tpe, lit.loc)
 
       /**
@@ -634,23 +646,39 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
     }
 
     /**
-      * Returns the equality operator corresponding to the given type `tpe`.
-      **/
-    private def getEqualOp(tpe: Type): SemanticOperator = tpe match {
-      case Type.Unit => SemanticOperator.Unit.Eq
-      case Type.Bool => SemanticOperator.Bool.Eq
-      case Type.Char => SemanticOperator.Char.Eq
-      case Type.Float32 => SemanticOperator.Float32.Eq
-      case Type.Float64 => SemanticOperator.Float64.Eq
-      case Type.Int8 => SemanticOperator.Int8.Eq
-      case Type.Int16 => SemanticOperator.Int16.Eq
-      case Type.Int32 => SemanticOperator.Int32.Eq
-      case Type.Int64 => SemanticOperator.Int64.Eq
-      case Type.BigInt => SemanticOperator.BigInt.Eq
-      case Type.Str => SemanticOperator.Str.Eq
-      case t if t.isEnum => SemanticOperator.Tag.Eq
-      case t if t.isTuple => SemanticOperator.Tuple.Eq
-      case t => throw InternalCompilerException(s"Unexpected type: '$t'.")
+      *
+      */
+    private def mkEqual(e1: SimplifiedAst.Expression, e2: SimplifiedAst.Expression, loc: SourceLocation): SimplifiedAst.Expression = {
+      /*
+       * Special Case 1: Unit
+       */
+      (e1.tpe, e2.tpe) match {
+        case (Type.Unit, Type.Unit) =>
+          // Unit is always equal to itself.
+          return SimplifiedAst.Expression.True
+        case _ => // fallthrough
+      }
+
+      /*
+       * Compute the semantic operator.
+       */
+      val sop = e1.tpe match {
+        case Type.Bool => SemanticOperator.Bool.Eq
+        case Type.Char => SemanticOperator.Char.Eq
+        case Type.Float32 => SemanticOperator.Float32.Eq
+        case Type.Float64 => SemanticOperator.Float64.Eq
+        case Type.Int8 => SemanticOperator.Int8.Eq
+        case Type.Int16 => SemanticOperator.Int16.Eq
+        case Type.Int32 => SemanticOperator.Int32.Eq
+        case Type.Int64 => SemanticOperator.Int64.Eq
+        case Type.BigInt => SemanticOperator.BigInt.Eq
+        case Type.Str => SemanticOperator.Str.Eq
+        case t if t.isEnum => SemanticOperator.Tag.Eq
+        case t if t.isTuple => SemanticOperator.Tuple.Eq
+        case t => throw InternalCompilerException(s"Unexpected type: '$t'.")
+      }
+
+      SExp.Binary(sop, BinaryOperator.Equal, e1, e2, Type.Bool, loc)
     }
 
   }
