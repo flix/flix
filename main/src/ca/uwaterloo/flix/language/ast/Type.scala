@@ -288,7 +288,12 @@ object Type {
   /**
     * Constructs the tuple type (A, B, ...) where the types are drawn from the list `ts`.
     */
-  def mkFTuple(ts: List[Type]): Type = Apply(FTuple(ts.length), ts)
+  def mkTuple(ts: Type*): Type = mkTuple(ts.toList)
+
+  /**
+    * Constructs the tuple type (A, B, ...) where the types are drawn from the list `ts`.
+    */
+  def mkTuple(ts: List[Type]): Type = Apply(FTuple(ts.length), ts)
 
   /**
     * Constructs the set type of A.

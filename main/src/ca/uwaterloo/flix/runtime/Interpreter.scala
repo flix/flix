@@ -413,13 +413,6 @@ object Interpreter {
         case SemanticOperator.StringOp.Concat => Value.Str(cast2str(v1) + cast2str(v2))
         case SemanticOperator.StringOp.Eq => mkBool(cast2str(v1) == cast2str(v2))
         case SemanticOperator.StringOp.Neq => mkBool(cast2str(v1) != cast2str(v2))
-
-        case SemanticOperator.TagOp.Eq => mkBool(Value.equal(v1, v2))
-        case SemanticOperator.TagOp.Neq => mkBool(!Value.equal(v1, v2))
-
-        case SemanticOperator.TupleOp.Eq => mkBool(Value.equal(v1, v2))
-        case SemanticOperator.TupleOp.Neq => mkBool(!Value.equal(v1, v2))
-
         case _ => throw InternalRuntimeException(s"Unexpected Semantic Operator: '$sop'.")
       }
     }

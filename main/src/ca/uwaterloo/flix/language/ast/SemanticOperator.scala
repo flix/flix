@@ -762,45 +762,6 @@ object SemanticOperator {
   }
 
   /**
-    * Tag Operators.
-    */
-  sealed trait TagOp extends SemanticOperator
-
-  object TagOp {
-
-    /**
-      * Equality.
-      */
-    case object Eq extends TagOp
-
-    /**
-      * Inequality.
-      */
-    case object Neq extends TagOp
-
-  }
-
-
-  /**
-    * Tuple Operators.
-    */
-  sealed trait TupleOp extends SemanticOperator
-
-  object TupleOp {
-
-    /**
-      * Equality.
-      */
-    case object Eq extends TupleOp
-
-    /**
-      * Inequality.
-      */
-    case object Neq extends TupleOp
-
-  }
-
-  /**
     * String Operators.
     */
   sealed trait StringOp extends SemanticOperator

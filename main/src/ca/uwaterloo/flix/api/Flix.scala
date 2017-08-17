@@ -208,6 +208,7 @@ class Flix {
         Documentor |>
         Stratifier |>
         Monomorph |>
+        Synthesize |>
         Simplifier |>
         Uncurrier |>
         LambdaLift |>

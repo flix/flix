@@ -871,7 +871,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
             DuplicateAnnotation(x.ident.name, mkSL(otherAnn.sp1, otherAnn.sp2), mkSL(x.sp1, x.sp2)).toFailure
         }
       }
-      @@(result) map Ast.Annotations
+      @@(result).map(as => Ast.Annotations(as))
     }
 
     /**

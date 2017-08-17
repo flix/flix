@@ -303,8 +303,6 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
             case Type.Int64 => SemanticOperator.Int64Op.Eq
             case Type.BigInt => SemanticOperator.BigIntOp.Eq
             case Type.Str => SemanticOperator.StringOp.Eq
-            case t if t.isEnum => SemanticOperator.TagOp.Eq
-            case t if t.isTuple => SemanticOperator.TupleOp.Eq
             case t => throw InternalCompilerException(s"Unexpected type: '$t' near ${loc.format}.")
           }
           case BinaryOperator.NotEqual => e1.tpe match {
@@ -318,8 +316,6 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
             case Type.Int64 => SemanticOperator.Int64Op.Neq
             case Type.BigInt => SemanticOperator.BigIntOp.Neq
             case Type.Str => SemanticOperator.StringOp.Neq
-            case t if t.isEnum => SemanticOperator.TagOp.Neq
-            case t if t.isTuple => SemanticOperator.TupleOp.Neq
             case t => throw InternalCompilerException(s"Unexpected type: '$t' near ${loc.format}.")
           }
           case BinaryOperator.LogicalAnd => e1.tpe match {
@@ -674,8 +670,6 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         case Type.Int64 => SemanticOperator.Int64Op.Eq
         case Type.BigInt => SemanticOperator.BigIntOp.Eq
         case Type.Str => SemanticOperator.StringOp.Eq
-        case t if t.isEnum => SemanticOperator.TagOp.Eq
-        case t if t.isTuple => SemanticOperator.TupleOp.Eq
         case t => throw InternalCompilerException(s"Unexpected type: '$t'.")
       }
 
@@ -847,8 +841,6 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
     case TypedAst.Pattern.Int64(lit, loc) => true
     case TypedAst.Pattern.BigInt(lit, loc) => true
     case TypedAst.Pattern.Str(lit, loc) => true
-    case TypedAst.Pattern.Tag(_, _, p, _, _) => isLiteral(p)
-    case TypedAst.Pattern.Tuple(elms, _, _) => elms forall isLiteral
     case _ => false
   }
 

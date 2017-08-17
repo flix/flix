@@ -681,7 +681,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         case ResolvedAst.Expression.Tuple(elms, tvar, loc) =>
           for (
             elementTypes <- seqM(elms.map(visitExp));
-            resultType <- unifyM(tvar, Type.mkFTuple(elementTypes), loc)
+            resultType <- unifyM(tvar, Type.mkTuple(elementTypes), loc)
           ) yield resultType
 
         /*
@@ -1091,7 +1091,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         case ResolvedAst.Pattern.Tuple(elms, tvar, loc) =>
           for (
             elementTypes <- seqM(elms map visit);
-            resultType <- unifyM(tvar, Type.mkFTuple(elementTypes), loc)
+            resultType <- unifyM(tvar, Type.mkTuple(elementTypes), loc)
           ) yield resultType
       }
 
