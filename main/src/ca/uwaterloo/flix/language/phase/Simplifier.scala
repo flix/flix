@@ -568,7 +568,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         */
       case (lit :: ps, v :: vs) if isLiteral(lit) =>
         val exp = simplify(ps, vs, guard, succ, fail)
-        val cond = SExp.Binary(null, Equal, pat2exp(lit), SExp.Var(v, lit.tpe, lit.loc), Type.Bool, lit.loc)
+        val cond = SExp.Binary(getEqualOp(lit.tpe), Equal, pat2exp(lit), SExp.Var(v, lit.tpe, lit.loc), Type.Bool, lit.loc)
         SExp.IfThenElse(cond, exp, fail, succ.tpe, lit.loc)
 
       /**
@@ -631,6 +631,26 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case TypedAst.Pattern.Tuple(elms, tpe, loc) =>
         val es = elms map translate
         SimplifiedAst.Pattern.Tuple(es, tpe, loc)
+    }
+
+    /**
+      * Returns the equality operator corresponding to the given type `tpe`.
+      **/
+    private def getEqualOp(tpe: Type): SemanticOperator = tpe match {
+      case Type.Unit => SemanticOperator.Unit.Eq
+      case Type.Bool => SemanticOperator.Bool.Eq
+      case Type.Char => SemanticOperator.Char.Eq
+      case Type.Float32 => SemanticOperator.Float32.Eq
+      case Type.Float64 => SemanticOperator.Float64.Eq
+      case Type.Int8 => SemanticOperator.Int8.Eq
+      case Type.Int16 => SemanticOperator.Int16.Eq
+      case Type.Int32 => SemanticOperator.Int32.Eq
+      case Type.Int64 => SemanticOperator.Int64.Eq
+      case Type.BigInt => SemanticOperator.BigInt.Eq
+      case Type.Str => SemanticOperator.Str.Eq
+      case t if t.isEnum => SemanticOperator.Tag.Eq
+      case t if t.isTuple => SemanticOperator.Tuple.Eq
+      case t => throw InternalCompilerException(s"Unexpected type: '$t'.")
     }
 
   }
