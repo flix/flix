@@ -33,7 +33,7 @@ import org.objectweb.asm.Opcodes._
   * At this phase, we create java classes representing a class which is a fusion of both tuples and
   * enum cases. Fusion classes include all methods in both tuple and enum case.
   * When we generate an enum which has a tuple as it's field, we will generate a fusion object instead of generating
-  * one tuple object and one enum object.
+  * one tuple object and one enum object as an optimization.
   *
   * The steps that we take to generate enums is as follows:
   *
@@ -86,27 +86,96 @@ object EnumTupleFusionGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] 
     val byteCodes: Map[EnumSym, Map[String, Map[List[WrappedType], Array[Byte]]]] = enumTupleFusions.map{ case (sym, cases) =>
       val underlying = cases.map{ case (tag, types) =>
           val tpeToByteCode = types.map{ tpe =>
-            val qualName = ETFClassName(sym, tag, tpe)
-            val tupleInterfaceName = TupleInterfaceName(tpe)
-            val enumInterface = EnumCaseInterfaceName(sym, tag, WrappedNonPrimitives(Set()))
-            tpe -> compileEnumTupleFusion(qualName, tupleInterfaceName, enumInterface, tpe)
+            val qualName = ETFClassName(sym, tag, tpe) // Qualified name of the fusion class
+            val tupleInterfaceName = TupleInterfaceName(tpe) // Qualified name of the interface of the tuple part of the fusion
+            val enumInterface = EnumCaseInterfaceName(sym, tag, WrappedNonPrimitives(Set())) // Qualified name of the interface of the enum part of the fusion
+            tpe -> compileEnumTupleFusion(qualName, tupleInterfaceName, enumInterface, tpe) // bytecode of the fusion class
           }.toMap
           tag -> tpeToByteCode
-      }.toMap
+      }.toMap // Despite IDE highlighting, this is actually necessary.
       sym -> underlying
-    }.toMap
+    }.toMap // Despite IDE highlighting, this is actually necessary.
 
     val e =  System.nanoTime() - t
-    root.copy(byteCodes = root.byteCodes.copy(ETFusionByteCode = byteCodes), time = root.time.copy(tupleGen = e)).toSuccess
+    root.copy(byteCodes = root.byteCodes.copy(ETFusionByteCode = byteCodes), time = root.time.copy(fusionGen = e)).toSuccess
   }
 
   /**
+    * We generate bytecode of the class identified by `clazzName` QualName. This class implements both `tupleInterfaceName`
+    * and `enumInterfaceName`.
     *
-    * @param clazzName
-    * @param tupleInterfaceName
-    * @param enumInterfaceName
-    * @param fieldTypes
-    * @return
+    * First, we precede with creating a field for each element of the tuple on the class. We use `compileField` helper with
+    * name = `field${ind}` with `ind` being the index of the element in tuple and with descriptor obtained from `getWrappedTypeDescriptor`.
+    * For example, if the second element of type is of type `WrappedPrimitive(Bool)`, we create the following
+    * field on the class:
+    *
+    * private boolean field1;
+    *
+    * and if the 5th element of the tuple if of type `WrappedNonPrimitives(Set(..))` we create the following field on the class:
+    *
+    * private Object field4;
+    *
+    * Each field has a getter and a setter which the first one returns the field. For example the following field:
+    *
+    * private Object field4;
+    *
+    * has the following getters and setters:
+    *
+    * public Object getIndex4() {
+    *   return field4;
+    * }
+    *
+    * public void setIndex4(Object obj) {
+    *   field4 = obj;
+    * }
+    *
+    * Second, we generate the `hashCode` function which is similar to the hashCode of `Tuple` classes.
+    * We initialize the hashValue to be `hashCode` of the qualifiedName. Then we loop over elements of the tuple and at
+    * each step of the loop, we first multiply the current value of hash by 7, then we add the hashCode of the current
+    * element at this step of the loop to the hashValue if the element is an object and if the element is not a primitive,
+    * then we will cast the value of the element to int and add it to hashValue.
+    * For example, for `(WrappedPrimitive(Int32), WrappedNonPrimitives(Set(..)), WrappedPrimitive(Int32))` we will
+    * generate the following `hashCode()` method:
+    *
+    * public int hashCode() {
+    *   return ((`hashValue` * 7 + this.field0) * 7 + this.field1.hashCode()) * 7 + this.field2;
+    * }
+    *
+    * Now we generate fields and methods for the enum part of the class. This means that we have to generate `getValue`,
+    * `getTag`, `getBoxedEnumField`, `toString` and `equals`.
+    * `getTag()` is the function which returns the name of the enum case. `getValue()` returns the value of enum part of the
+    *  fusion object which is really the object itself so we just return `this`.
+    * `getBoxedEnumField()` returns the `value` field but the result is boxed inside an object. As an example, `getValue()` and
+    * `getBoxedEnumField()` of the class representing `Ok[(Int32, Int32)]` is as follows:
+    *
+    * public final Object getValue() {
+    *   return this;
+    * }
+    *
+    * public final Object getBoxedEnumField() {
+    *   return this;
+    * }
+    *
+    * Next, we will generate the `toString()` method which will always throws an exception, since `toString` should not be called.
+    * The `toString` method is always the following:
+    *
+    * public String toString() throws Exception {
+    *   throw new Exception("equals method shouldn't be called")
+    * }
+    *
+    * Finally, we generate the `equals(Obj)` method which will always throws an exception, since `equals` should not be called.
+    * The `equals` method is always the following:
+    *
+    * public boolean equals(Object var1) throws Exception {
+    *   throw new Exception("equals method shouldn't be called");
+    * }
+    *
+    *
+    * @param clazzName Qualified name of the fusion class to be generated
+    * @param tupleInterfaceName Qualified name of the tuple interface of the fusion
+    * @param enumInterfaceName Qualified name of the enum interface of the fusion
+    * @param fieldTypes type of fields of the fusion
+    * @return Bytecode of the generated class
     */
   private def compileEnumTupleFusion(clazzName: ETFClassName,
                                      tupleInterfaceName: TupleInterfaceName,
@@ -156,6 +225,12 @@ object EnumTupleFusionGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] 
     // Emit the code for `getBoxedValue()` method for Tuple
     compileGetBoxedValueMethod(visitor, clazzName, fieldTypes)
 
+    // Emit code for `hashCode()` method
+    TupleGen.compileHashCodeMethod(visitor, clazzName, fieldTypes)
+
+    // Emit code for the constructor
+    TupleGen.compileTupleConstructor(visitor, clazzName, fieldTypes)
+
     /**
       * Fields and Methods for Enum part of the class
       */
@@ -171,27 +246,24 @@ object EnumTupleFusionGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] 
     // Generate `getBoxedEnumField` method
     compileGetBoxedEnumFieldMethod(visitor, clazzName, enumFieldType)
 
-    /**
-      * Specialized methods
-      */
-
-    compileFusionConstructor(visitor, clazzName, fieldTypes, enumFieldType)
-
     // Generate `toString` method
     val stringDescriptor = asm.Type.getDescriptor(Constants.stringClass)
     exceptionThrowerMethod(visitor, ACC_PUBLIC + ACC_FINAL, "toString", s"()$stringDescriptor", "toString method shouldn't be called")
 
-
-    //compileFusionEqualsMethod(visitor, clazzName, enumInterfaceName, tupleInterfaceName, fieldTypes, enumFieldType)
+    // Generate `equals` method
     val clazz = Constants.objectClass
     exceptionThrowerMethod(visitor, ACC_PUBLIC + ACC_FINAL, "equals", s"(${asm.Type.getDescriptor(clazz)})Z", "Equals method shouldn't be called")
-
-    compileFusionHashCodeMethod(visitor, clazzName, fieldTypes, enumFieldType)
 
     visitor.visitEnd()
     visitor.toByteArray
   }
 
+  /**
+    * This will generate a method for class identified by `qualName` which return the `value` of the field of the enum
+    * which is just `this`.
+    * @param visitor ClassWriter to emit method to the class
+    * @param qualName Qualified name of the tuple class
+    */
   def compileGetEnumValueMethod(visitor: ClassWriter, qualName: QualName) : Unit = {
     val objectDescriptor = asm.Type.getDescriptor(Constants.objectClass)
     val method = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, "getValue", s"()$objectDescriptor", null, null)
@@ -199,84 +271,6 @@ object EnumTupleFusionGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] 
     method.visitCode()
     method.visitVarInsn(ALOAD, 0)
     method.visitInsn(ARETURN)
-    method.visitMaxs(1, 1)
-    method.visitEnd()
-  }
-
-  private def compileFusionConstructor(visitor: ClassWriter,
-                                       className: ETFClassName,
-                                       fields: List[WrappedType],
-                                       enumField: WrappedType): Unit = {
-    val desc = fields.map(getWrappedTypeDescriptor).mkString
-
-    val constructor = visitor.visitMethod(ACC_PUBLIC, "<init>", s"($desc)V", null, null)
-    val clazz = Constants.objectClass
-    val ctor = clazz.getConstructor()
-
-    constructor.visitCode()
-
-    constructor.visitVarInsn(ALOAD, 0)
-
-    // Call the super (java.lang.Object) constructor
-    constructor.visitMethodInsn(INVOKESPECIAL, asm.Type.getInternalName(clazz), "<init>",
-      asm.Type.getConstructorDescriptor(ctor), false)
-
-    var offset : Int = 1
-    fields.zipWithIndex.foreach{ case (field, ind) =>
-      val desc = getWrappedTypeDescriptor(field)
-      val iLoad = getLoadInstruction(field)
-
-      constructor.visitVarInsn(ALOAD, 0)
-      constructor.visitVarInsn(iLoad, offset)
-      constructor.visitFieldInsn(PUTFIELD, decorate(className), s"field$ind",desc)
-
-      field match {
-        case WrappedPrimitive(Type.Int64) | WrappedPrimitive(Type.Float64) => offset += 2
-        case _ => offset += 1
-      }
-    }
-
-    // Return
-    constructor.visitInsn(RETURN)
-
-    // Parameters of visit max are thrown away because visitor will calculate the frame and variable stack size
-    constructor.visitMaxs(65535, 65535)
-    constructor.visitEnd()
-  }
-
-  private def compileFusionHashCodeMethod(visitor: ClassWriter,
-                                          className: ETFClassName,
-                                          fields: List[WrappedType],
-                                          enumField: WrappedType): Unit = {
-    val method = visitor.visitMethod(ACC_PUBLIC, "hashCode", "()I", null, null)
-
-    method.visitCode()
-    method.visitLdcInsn(className.hashCode())
-
-    // Now we loop over fields to compute the hash value
-    fields.zipWithIndex.foreach { case (field, ind) =>
-      // Multiplying the current hash value by 7
-      method.visitLdcInsn(7)
-      method.visitInsn(IMUL)
-
-      // descriptor of the current field
-      val desc = getWrappedTypeDescriptor(field)
-
-      // Fetching the field
-      method.visitVarInsn(ALOAD, 0)
-      method.visitFieldInsn(GETFIELD, decorate(className), s"field$ind", desc)
-
-      // Getting the hashCode of the field
-      getHashCodeOrConvertToInt(method, field)
-
-      // Adding the hash code to the accumulator
-      method.visitInsn(IADD)
-    }
-
-    // Returning the hash
-    method.visitInsn(IRETURN)
-
-    // Parameters of visit max are thrown away because visitor will calculate the frame and variable stack size
     method.visitMaxs(1, 1)
     method.visitEnd()
   }

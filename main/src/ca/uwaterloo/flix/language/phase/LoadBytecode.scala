@@ -57,11 +57,14 @@ object LoadBytecode extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     * 5. Load Enum classes
     * We load enum classes which are generated at CodeGen. if debug option is set, we dump the bytecode as well.
     *
-    * 6. Load bytecodes of flix functions
+    * 6. Load Fusion classes.
+    * We load fusion classes which are generated at EnumTupleFusionGen. if debug option is set, we dump the bytecode as well.
+    *
+    * 7. Load bytecodes of flix functions
     * We load classes which include flix expressions which are generated at CodeGen. if debug option is set,
     * we dump the bytecode as well. We also set the `flix` field of these classes to flix object.
     *
-    * 7. Load the methods.
+    * 8. Load the methods.
     * For each constant, we use reflection to get the corresponding java.lang.reflect.Method object.
     * This is actually a bit tricky. We need the rewritten lambda types (non-functions -> 0-arg functions, free
     * variables eliminated) to perform the reflection lookup, so we iterate over constantsMap. However, we want to
@@ -136,8 +139,7 @@ object LoadBytecode extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
       sym -> (loadedPrimEnums, loadedObjEnums)
     }
 
-    // 5.5 Fusion
-    // Map[EnumSym, Map[String, Map[List[WrappedType], Array[Byte]]]]
+    // 6. Load Fusion classes
     val loadedFusions : Map[EnumSym, Map[String, Map[ETFClassName, Class[_]]]] = root.byteCodes.ETFusionByteCode.map{ case (sym, cases) =>
       val casesResult : Map[String, Map[ETFClassName, Class[_]]] = cases.map{ case (tag, fieldTypeMap) =>
         val fieldTypeMapResult : Map[ETFClassName, Class[_]] = fieldTypeMap.map{ case (fieldTypes, byteCode) =>
@@ -152,7 +154,7 @@ object LoadBytecode extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
       sym -> casesResult
     }.toMap
 
-    // 6. Load bytecodes of flix functions
+    // 7. Load bytecodes of flix functions
     val loadedClasses: Map[QualName, Class[_]] = root.byteCodes.classByteCodes.map { case (prefix, bytecode) =>
       if (flix.options.debug) {
         dump(prefix, bytecode)
@@ -163,7 +165,7 @@ object LoadBytecode extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
       prefix -> clazz
     }.toMap // Despite IDE highlighting, this is actually necessary.
 
-    // 7. Load the methods.
+    // 8. Load the methods.
     // TODO: Here we filter laws, since the backend does not support existentials/universals, but could we fix that?
     for ((prefix, consts) <- constantsMap; const <- consts; if !const.ann.isLaw) {
       val Type.Apply(Type.Arrow(l), ts) = const.tpe

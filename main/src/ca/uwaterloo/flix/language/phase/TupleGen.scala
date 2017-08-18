@@ -108,11 +108,25 @@ object TupleGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
     * For example, if the second element of type is of type `WrappedPrimitive(Bool)`, we create the following
     * field on the class:
     *
-    * public boolean field1;
+    * private boolean field1;
     *
     * and if the 5th element of the tuple if of type `WrappedNonPrimitives(Set(..))` we create the following field on the class:
     *
-    * public Object field4;
+    * private Object field4;
+    *
+    * Each field has a getter and a setter which the first one returns the field. For example the following field:
+    *
+    * private Object field4;
+    *
+    * has the following getters and setters:
+    *
+    * public Object getIndex4() {
+    *   return field4;
+    * }
+    *
+    * public void setIndex4(Object obj) {
+    *   field4 = obj;
+    * }
     *
     * Then we precede with generating the code for constructor. Number of arguments on this constructor is equal number
     * of elements in the tuple. Each of these arguments will be used to set a field on the class.
@@ -288,7 +302,7 @@ object TupleGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
     * @param className Qualified name of the class of tuple
     * @param fields fields on the tuple class
     */
-  private def compileTupleConstructor(visitor: ClassWriter, className: TupleClassName, fields: List[WrappedType]) = {
+   def compileTupleConstructor(visitor: ClassWriter, className: QualName, fields: List[WrappedType]) = {
     val desc = fields.map(getWrappedTypeDescriptor).mkString
 
     val constructor = visitor.visitMethod(ACC_PUBLIC, "<init>", s"($desc)V", null, null)
@@ -334,20 +348,20 @@ object TupleGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
     * the following `hashCode()` method:
     *
     * public int hashCode() {
-    *   return ((0 * 7 + this.field0) * 7 + this.field1.hashCode()) * 7 + this.field2;
+    *   return (('nameHash' * 7 + this.field0) * 7 + this.field1.hashCode()) * 7 + this.field2;
     * }
-    *
+    * *** `nameHash` is the hashCode of `className`
     * @param visitor ClassWriter to emit method to the class
     * @param className Qualified name of the class
     * @param fields Fields of the class
     */
-  private def compileHashCodeMethod(visitor: ClassWriter, className: TupleClassName, fields: List[WrappedType]) = {
+  def compileHashCodeMethod(visitor: ClassWriter, className: QualName, fields: List[WrappedType]) = {
     // header of the `hashCode` function
     val method = visitor.visitMethod(ACC_PUBLIC, "hashCode", "()I", null, null)
 
     method.visitCode()
     // Initial value of the accumulator
-    method.visitInsn(ICONST_0)
+    method.visitLdcInsn(className.hashCode())
 
     // Now we loop over fields to compute the hash value
     fields.zipWithIndex.foreach { case (field, ind) =>

@@ -223,11 +223,28 @@ object CodegenHelper {
     case _ => WrappedNonPrimitives(Set(tpe))
   }
 
+  /**
+    * At this method, we group `tuples` that have the same field representation so we only generate one class for them.
+    * If a field is a primitive, then it can be represented by it's primitive but if the field is not a primitive then it
+    * has to be represented using an object.
+    * For example, `(List[Int32], Bool)` and `(Result[Int32,Int32], Bool)` have the same representation since the first field
+    * of both of them is an object and the second field is a `Bool`. So we only create one tuple class for both of these
+    * tuples.
+    */
   def groupTuplesByFieldTypes(tuples: List[Type]): List[List[List[Type]]] = tuples.map{
     case Type.Apply(_, ts) => ts
     case y => throw InternalCompilerException(s"Unexpected type: `$y'.")
   }.groupBy(_.map(typeSpecifier)).values.toList
 
+  /**
+    * At this method, we generate representation of  all the tuple classes that we have to create. If a field is a primitive
+    * then we wrap the field inside `WrappedPrimitive` and if the field is not a primitive then we wrap all the types that
+    * will be represented using `object` on this tuple inside `WrappedNonPrimitives`.
+    * For example for tuples with element type `(Int, Int)`, we represent this with
+    * `List(WrappedPrimitive(Int32), WrappedPrimitive(In32))`. If we have to represent tuples of type `(List[Int32], Bool)` and
+    * `(Result[Int32,Int32], Bool)` then we represent the class that can represent both of these tuples by
+    * `List(WrappedNonPrimitives(List(Result[Int32,Int32], List[Int32]), WrappedPrimitive(Bool)))`
+    */
   def groupedFieldsToWrappedFields(groupedFields: List[List[List[Type]]]): Set[List[WrappedType]] = groupedFields.map{grp =>
     val len = grp.head.length
     (0 until len).map{ind =>
@@ -240,6 +257,14 @@ object CodegenHelper {
     }.toList
   }.toSet
 
+  /**
+    * 
+    * @param visitor class visitor
+    * @param modifiers Modifiers of the class
+    * @param methodName name of the method to be generated
+    * @param descriptor descriptor of the method
+    * @param message message of the exception
+    */
   def exceptionThrowerMethod(visitor: ClassWriter,
                              modifiers: Int,
                              methodName: String,

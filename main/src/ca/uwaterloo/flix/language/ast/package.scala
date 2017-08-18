@@ -155,6 +155,7 @@ package object ast {
       enumGen = 0,
       codeGen = 0,
       tupleGen = 0,
+      fusionGen = 0,
       loadByteCode = 0,
       solver = 0)
   }
@@ -185,6 +186,7 @@ package object ast {
                   enumGen: Long,
                   codeGen: Long,
                   tupleGen: Long,
+                  fusionGen: Long,
                   loadByteCode: Long,
                   solver: Long)
 
