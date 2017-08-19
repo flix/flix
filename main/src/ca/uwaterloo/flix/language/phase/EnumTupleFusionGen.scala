@@ -267,9 +267,12 @@ object EnumTupleFusionGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] 
   def compileGetEnumValueMethod(visitor: ClassWriter, qualName: QualName) : Unit = {
     val objectDescriptor = asm.Type.getDescriptor(Constants.objectClass)
     val method = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, "getValue", s"()$objectDescriptor", null, null)
-
     method.visitCode()
+
+    // load `this`
     method.visitVarInsn(ALOAD, 0)
+
+    // return this
     method.visitInsn(ARETURN)
     method.visitMaxs(1, 1)
     method.visitEnd()

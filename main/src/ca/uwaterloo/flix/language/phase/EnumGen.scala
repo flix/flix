@@ -416,7 +416,7 @@ object EnumGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     * @param visitor class visitor
     * @param className Qualified name of the class
     */
-  def compileGetTagMethod(visitor: ClassWriter, className: EnumName) = {
+  def compileGetTagMethod(visitor: ClassWriter, className: EnumCaseName) = {
     val descriptor = asm.Type.getDescriptor(Constants.stringClass)
     val method = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, "getTag", s"()$descriptor", null, null)
     method.visitLdcInsn(className.tag)

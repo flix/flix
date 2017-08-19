@@ -552,6 +552,25 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
       // We check if the enum is `instanceof` the class
       visitor.visitTypeInsn(INSTANCEOF, decorate(clazz))
 
+    // Fusion of Tag and Tuple
+    case Expression.Tag(enum, tag, Expression.Tuple(elms, _, _), tpe, loc) =>
+      // Adding source line number for debugging
+      addSourceLine(visitor, loc)
+      // Transforming types of elements of the tuple to the appropriate type
+      val fieldTypes : List[WrappedType] = elms.map(x => typeToWrappedType(x.tpe)).toList
+      // Descriptor of the parameters of the constructor of the tuple class
+      val desc = fieldTypes.map(getWrappedTypeDescriptor).mkString
+      // Qualified name of the class that can represent this tuple
+      val clazzName = ETFClassName(enum, tag, fieldTypes)
+      // Creating a new instance of the class
+      visitor.visitTypeInsn(NEW, decorate(clazzName))
+      // Duplicating the class
+      visitor.visitInsn(DUP)
+      // Evaluating all the elements to be stored in the tuple class
+      elms.foreach{compileExpression(prefix, functions, declarations, interfaces, enums, visitor, entryPoint)(_)}
+      // Invoking the constructor
+      visitor.visitMethodInsn(INVOKESPECIAL, decorate(clazzName), "<init>", s"(${desc})V", false)
+
     case Expression.Tag(enum, tag, exp, tpe, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
@@ -578,6 +597,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
         // Calling the constructor of the class
         visitor.visitMethodInsn(INVOKESPECIAL, decorate(clazzName), "<init>", s"(${desc})V", false)
       }
+
     case Expression.Untag(enum, tag, exp, tpe, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
