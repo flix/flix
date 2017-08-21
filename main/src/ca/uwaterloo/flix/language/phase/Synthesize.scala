@@ -226,6 +226,9 @@ object Synthesize extends Phase[Root, Root] {
       * If no such definition exists, it is created.
       */
     def getOrMkEq(tpe: Type): Symbol.DefnSym = eq.getOrElse(tpe, {
+
+      // TODO: XXX: We should lookup the existence of any "eq" operator here. And not during monomorphization.
+
       // Introduce a fresh symbol for the equality operator.
       val sym = Symbol.freshDefnSym("eq")
 
@@ -535,8 +538,6 @@ object Synthesize extends Phase[Root, Root] {
     val defs = root.defs.map {
       case (sym, defn) => sym -> visitDef(defn)
     }
-
-    // TODO: Wrap all functions inside here.
 
     // TODO: Timings
 
