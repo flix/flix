@@ -70,6 +70,12 @@ sealed trait Type {
     case _ => false
   }
 
+  def isRef: Boolean = this match {
+    case Type.Ref => true
+    case Type.Apply(t, ts) => t.isRef
+    case _ => false
+  }
+
   /**
     * Returns a human readable string representation of `this` type.
     */

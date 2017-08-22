@@ -16,6 +16,7 @@
 
 package ca.uwaterloo.flix.language.phase
 
+import ca.uwaterloo.flix.api.cell._
 import ca.uwaterloo.flix.api.{Unit => UnitClass, _}
 import ca.uwaterloo.flix.language.GenSym
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Expression
@@ -465,6 +466,24 @@ object CodegenHelper {
   }
 
   /**
+    * This method returns the appropriate reference class based on the given type
+    * @param tpe the given type
+    * @return the appropriate reference class for the given type.
+    */
+  def getReferenceClazz(tpe: Type): Class[_] = tpe match {
+    case Type.Apply(Type.Ref, List(Type.Bool)) => Constants.cell$Bool
+    case Type.Apply(Type.Ref, List(Type.Char)) => Constants.cell$Char
+    case Type.Apply(Type.Ref, List(Type.Int8)) => Constants.cell$Int8
+    case Type.Apply(Type.Ref, List(Type.Int16)) => Constants.cell$Int16
+    case Type.Apply(Type.Ref, List(Type.Int32)) => Constants.cell$Int32
+    case Type.Apply(Type.Ref, List(Type.Int64)) =>  Constants.cell$Int64
+    case Type.Apply(Type.Ref, List(Type.Float32)) => Constants.cell$Float32
+    case Type.Apply(Type.Ref, List(Type.Float64)) => Constants.cell$Float64
+    case Type.Apply(Type.Ref, List(_)) => Constants.cell$Obj
+    case _ => throw InternalCompilerException(s"Unexpected type: `$tpe`")
+  }
+
+  /**
     * Returns true if the Type corresponds to a primitive in Java
     */
   def isPrimitive(tpe: Type): Boolean = tpe match {
@@ -497,7 +516,7 @@ object CodegenHelper {
   def decorate(qualName: QualName): String = qualName.ref.mkString("/")
 
   /**
-    * Returns the internal name of the JVM type that `tpe` maps to.
+    * Returns the descriptor of the JVM type that `tpe` maps to.
     *
     * The descriptor of a type must be associated with a Context, because the descriptor of a closure object (i.e. a
     * lambda function and not a JVM method) is the descriptor of a generated interface.
@@ -535,6 +554,7 @@ object CodegenHelper {
           case _ => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
         }
         s"L${decorate(EnumInterfName(sym))};"
+      case Type.Apply(Type.Ref, List(ts)) => asm.Type.getDescriptor(getReferenceClazz(tpe))
       case _ => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
     }
 
@@ -542,6 +562,30 @@ object CodegenHelper {
       case Type.Apply(Type.Arrow(l), ts) => s"(${ts.take(l - 1).map(inner).mkString})${inner(ts.last)}"
       case _ => inner(tpe)
     }
+  }
+
+  /**
+    * Returns the internal name of the JVM class that `tpe` maps to.
+    */
+  def internalName(tpe: Type, interfaces: Map[Type, FlixClassName]): String = tpe match {
+    case Type.Var(id, kind) => throw InternalCompilerException(s"Non-monomorphed type variable '$id in type '$tpe'.")
+    case Type.Unit => asm.Type.getInternalName(Constants.unitClass)
+    case Type.BigInt => asm.Type.getInternalName(Constants.bigIntegerClass)
+    case Type.Str => asm.Type.getInternalName(Constants.stringClass)
+    case Type.Native => asm.Type.getInternalName(Constants.objectClass)
+    case Type.Apply(Type.Arrow(l), _) => decorate(interfaces(tpe))
+    case Type.Apply(Type.FTuple(l), lst) =>
+      val clazzName = TupleClassName(lst.map(typeToWrappedType))
+      decorate(clazzName)
+    case _ if tpe.isEnum =>
+      val sym = tpe match {
+        case Type.Apply(Type.Enum(s, _), _) => s
+        case Type.Enum(s, _) => s
+        case _ => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
+      }
+      decorate(EnumInterfName(sym))
+    case Type.Apply(Type.Ref, List(ts)) => asm.Type.getInternalName(getReferenceClazz(tpe))
+    case _ => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
   }
 
   /**
@@ -572,6 +616,15 @@ object CodegenHelper {
     val flixClass : Class[_] = classOf[Flix]
 
     val unitClass : Class[_] = classOf[UnitClass]
+    val cell$Bool : Class[_] = classOf[Cell$Bool]
+    val cell$Char : Class[_] = classOf[Cell$Char]
+    val cell$Int8 : Class[_] = classOf[Cell$Int8]
+    val cell$Int16 : Class[_] = classOf[Cell$Int16]
+    val cell$Int32 : Class[_] = classOf[Cell$Int32]
+    val cell$Int64 : Class[_] = classOf[Cell$Int64]
+    val cell$Float32: Class[_] = classOf[Cell$Float32]
+    val cell$Float64: Class[_] = classOf[Cell$Float64]
+    val cell$Obj : Class[_] = classOf[Cell$Obj]
     val tupleClass : Class[_] = classOf[Tuple]
     val scalaPredef = "scala/Predef$"
     val scalaMathPkg = "scala/math/package$"
@@ -615,9 +668,9 @@ object CodegenHelper {
       case Expression.Untag(sym, tag, exp, tpe, loc) => visit(exp)
       case Expression.Index(base, offset, tpe, loc) => visit(base)
       case Expression.Tuple(elms, tpe, loc) => elms.flatMap(visit).toSet
-      case Expression.Ref(exp, tpe, loc) => ??? // TODO
-      case Expression.Deref(exp, tpe, loc) => ??? // TODO
-      case Expression.Assign(exp1, exp2, tpe, loc) => ??? // TODO
+      case Expression.Ref(exp, tpe, loc) => visit(exp)
+      case Expression.Deref(exp, tpe, loc) => visit(exp)
+      case Expression.Assign(exp1, exp2, tpe, loc) => visit(exp1) ++ visit(exp2)
       case Expression.Existential(params, exp, loc) =>
         ???
       case Expression.Universal(params, exp, loc) =>
@@ -673,9 +726,9 @@ object CodegenHelper {
     case Expression.Untag(sym, tag, exp, tpe, loc)  => List((exp.tpe, (tag, tpe))) ::: findEnumCases(exp)
     case Expression.Index(base, offset, tpe, loc) => findEnumCases(base)
     case Expression.Tuple(elms, tpe, loc) => elms.flatMap(findEnumCases).toList
-    case Expression.Ref(exp, tpe, loc) => ??? // TODO
-    case Expression.Deref(exp, tpe, loc) => ??? // TODO
-    case Expression.Assign(exp1, exp2, tpe, loc) => ??? // TODO
+    case Expression.Ref(exp, tpe, loc) => findEnumCases(exp)
+    case Expression.Deref(exp, tpe, loc) => findEnumCases(exp)
+    case Expression.Assign(exp1, exp2, tpe, loc) => findEnumCases(exp1) ::: findEnumCases(exp2)
     case Expression.LetRec(sym, exp1, exp2, tpe, loc) => ??? // TODO
     case Expression.Existential(params, exp, loc) => findEnumCases(exp)
     case Expression.Universal(params, exp, loc) => findEnumCases(exp)
