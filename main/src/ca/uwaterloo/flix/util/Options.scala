@@ -30,7 +30,7 @@ object Options {
     impure = false,
     invariants = false,
     monitor = false,
-    optimize = false,
+    optimizations = Optimization.All,
     quickchecker = false,
     safe = false,
     timeout = Duration.Inf,
@@ -54,7 +54,6 @@ object Options {
   * @param evaluation   selects the evaluation strategy.
   * @param impure       enables impure functions.
   * @param invariants   enables checking of compiler invariants.
-  * @param optimize     enables compiler optimizations.
   * @param monitor      enables the debugger and profiler.
   * @param quickchecker enables the quickchecker.
   * @param safe         disables unsafe operations.
@@ -63,7 +62,20 @@ object Options {
   * @param verbosity    selects the level of verbosity.
   * @param verifier     enables the verifier.
   */
-case class Options(core: Boolean, debug: Boolean, documentor: Boolean, evaluation: Evaluation, impure: Boolean, invariants: Boolean, optimize: Boolean, monitor: Boolean, quickchecker: Boolean, safe: Boolean, timeout: Duration, threads: Int, verbosity: Verbosity, verifier: Boolean)
+case class Options(core: Boolean,
+                   debug: Boolean,
+                   documentor: Boolean,
+                   evaluation: Evaluation,
+                   impure: Boolean,
+                   invariants: Boolean,
+                   optimizations: Set[Optimization],
+                   monitor: Boolean,
+                   quickchecker: Boolean,
+                   safe: Boolean,
+                   timeout: Duration,
+                   threads: Int,
+                   verbosity: Verbosity,
+                   verifier: Boolean)
 
 /**
   * An option to control the level of verbosity.
@@ -105,5 +117,47 @@ object Evaluation {
     * Disables JVM code generation of Flix functions.
     */
   case object Interpreted extends Evaluation
+
+}
+
+/**
+  * A common super-type for optimizations.
+  */
+sealed trait Optimization
+
+object Optimization {
+
+  /**
+    * All optimization supported by the compiler.
+    */
+  val All: Set[Optimization] = Set(ClosureElimination, EnumCompaction, TagTupleFusion, TailRecursion, Uncurrying)
+
+  /**
+    * Enables closure elimination.
+    */
+  case object ClosureElimination extends Optimization
+
+  /**
+    * Enables compilation of compact enums into nulls and a single class.
+    */
+  case object EnumCompaction extends Optimization
+
+  /**
+    * Enables compilation of tags and tuples into a single class.
+    */
+  case object TagTupleFusion extends Optimization
+
+  /**
+    * Enables compilation of tail recursive calls into loops.
+    *
+    * Note: General tail call optimization is always enabled.
+    * This optimization handles the special case where a function calls itself in a tail recursive way.
+    */
+  case object TailRecursion extends Optimization
+
+  /**
+    * Enables compilation of curried functions into uncurried functions.
+    */
+  case object Uncurrying extends Optimization
 
 }

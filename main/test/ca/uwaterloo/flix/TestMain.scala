@@ -98,12 +98,6 @@ class TestMain extends FunSuite {
     assert(opts.pipe)
   }
 
-  test("--optimize") {
-    val args = Array("--optimize", "p.flix")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.optimize)
-  }
-
   test("--print foo") {
     val args = Array("--print", "foo", "p.flix")
     val opts = Main.parseCmdOpts(args).get
@@ -199,6 +193,42 @@ class TestMain extends FunSuite {
     val args = Array("--Xinvariants", "p.flix")
     val opts = Main.parseCmdOpts(args).get
     assert(opts.xinvariants)
+  }
+
+  test("--Xno-closure-elim") {
+    val args = Array("--Xno-closure-elim", "p.flix")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.xnoclosureelim)
+  }
+
+  test("--Xno-compact") {
+    val args = Array("--Xno-compact", "p.flix")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.xnocompact)
+  }
+
+  test("--Xno-fusion") {
+    val args = Array("--Xno-fusion", "p.flix")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.xnofusion)
+  }
+
+  test("--Xno-inline") {
+    val args = Array("--Xno-inline", "p.flix")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.xnoinline)
+  }
+
+  test("--Xno-tailrec") {
+    val args = Array("--Xno-tailrec", "p.flix")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.xnotailrec)
+  }
+
+  test("--Xno-uncurry") {
+    val args = Array("--Xno-uncurry", "p.flix")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.xnouncurry)
   }
 
   test("--Xsafe") {
