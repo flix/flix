@@ -14,9 +14,9 @@
  *  limitations under the License.
  */
 
-package ca.uwaterloo.flix.runtime
+package ca.uwaterloo.flix.runtime.Benchmark
 
-object ScalaListBenchmarks {
+object ScalaAppleToOrangeListBenchmarkTests {
 
   val tests: List[() => Any] = List(
     benchmark01,

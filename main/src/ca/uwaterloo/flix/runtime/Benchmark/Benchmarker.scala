@@ -14,7 +14,7 @@
  *  limitations under the License.
  */
 
-package ca.uwaterloo.flix.runtime
+package ca.uwaterloo.flix.runtime.Benchmark
 
 trait Benchmarker {
 

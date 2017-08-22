@@ -14,9 +14,9 @@
  *  limitations under the License.
  */
 
-package ca.uwaterloo.flix.runtime
+package ca.uwaterloo.flix.runtime.Benchmark
 
-object ScalaBenchmark extends Benchmarker{
+object ScalaAppleToAppleBenchmark extends Benchmarker {
 
   val WarmupRounds: Int = 100
 
@@ -25,7 +25,7 @@ object ScalaBenchmark extends Benchmarker{
   def main(args: Array[String]): Unit = {
     Console.println(s"-- Benchmarks for List --")
     Console.println(s"    Warmup Rounds: $WarmupRounds")
-    for ((defn, ind) <- ScalaListBenchmarks.tests.zipWithIndex) {
+    for ((defn, ind) <- ScalaAppleToAppleListBenchmarkTests.tests.zipWithIndex) {
       val index = ind + 1
       val suffix = if(index.toString.length == 1) "0".concat(index.toString) else index.toString
       Console.print("      ")
@@ -44,7 +44,7 @@ object ScalaBenchmark extends Benchmarker{
      */
     Console.println(s"    Actual Rounds: $ActualRounds")
     Console.println(s"      Name:                Median (ms)")
-    for ((defn, ind) <- ScalaListBenchmarks.tests.zipWithIndex) {
+    for ((defn, ind) <- ScalaAppleToAppleListBenchmarkTests.tests.zipWithIndex) {
       val index = ind + 1
       val suffix = if(index.toString.length == 1) "0".concat(index.toString) else index.toString
       val timings = run(defn, ActualRounds)
