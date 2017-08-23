@@ -45,9 +45,10 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       properties <- Declarations.Properties.typecheck(program)
     } yield {
       val strata = List(TypedAst.Stratum(constraints))
+      val specialOps = Map.empty[SpecialOperator, Map[Type, Symbol.DefnSym]]
       val currentTime = System.nanoTime()
       val time = program.time.copy(typer = currentTime - startTime)
-      TypedAst.Root(definitions, enums, lattices, tables, indexes, strata, properties, program.reachable, time)
+      TypedAst.Root(definitions, enums, lattices, tables, indexes, strata, properties, specialOps, program.reachable, time)
     }
 
     result match {

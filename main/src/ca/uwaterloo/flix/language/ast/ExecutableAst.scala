@@ -36,6 +36,7 @@ object ExecutableAst {
                   indexes: Map[Symbol.TableSym, ExecutableAst.Index],
                   constraints: List[ExecutableAst.Constraint],
                   properties: List[ExecutableAst.Property],
+                  specialOps: Map[SpecialOperator, Map[Type, Symbol.DefnSym]],
                   reachable: Set[Symbol.DefnSym],
                   byteCodes: ByteCodes,
                   time: Time,

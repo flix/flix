@@ -34,7 +34,8 @@ import scala.collection.mutable
   * (b) Appears in a fact or a rule as a filter/transfer function.
   * (c) Appears in a lattice declaration.
   * (d) Appears in a property declaration.
-  * (e) Appears in a function which itself is reachable.
+  * (e) Appears as a special op.
+  * (f) Appears in a function which itself is reachable.
   */
 
 object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
@@ -235,7 +236,14 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     /*
      * Find reachable functions that:
      *
-     * (e) Appear in a function which itself is reachable.
+     * (e) Appear as a special op.
+     */
+    reachableFunctions ++= root.specialOps.values.flatMap(_.values)
+
+    /*
+     * Find reachable functions that:
+     *
+     * (f) Appear in a function which itself is reachable.
      */
     reachableFunctions.foreach {
       root.defs.get(_) match {

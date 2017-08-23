@@ -29,6 +29,7 @@ object SimplifiedAst {
                   indexes: Map[Symbol.TableSym, SimplifiedAst.Index],
                   strata: List[SimplifiedAst.Stratum],
                   properties: List[SimplifiedAst.Property],
+                  specialOps: Map[SpecialOperator, Map[Type, Symbol.DefnSym]],
                   reachable: Set[Symbol.DefnSym],
                   time: Time) extends SimplifiedAst
 

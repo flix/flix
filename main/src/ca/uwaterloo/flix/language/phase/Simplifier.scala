@@ -56,11 +56,12 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
     val indexes = root.indexes.map { case (k, v) => k -> simplify(v) }
     val strata = root.strata.map(s => simplify(s, toplevel))
     val properties = root.properties.map { p => simplify(p) }
+    val specialOps = root.specialOps
     val reachable = root.reachable
     val time = root.time
 
     val e = System.nanoTime() - t
-    SimplifiedAst.Root(defns ++ toplevel, enums, lattices, collections, indexes, strata, properties, reachable, time.copy(simplifier = e)).toSuccess
+    SimplifiedAst.Root(defns ++ toplevel, enums, lattices, collections, indexes, strata, properties, specialOps, reachable, time.copy(simplifier = e)).toSuccess
   }
 
   object Table {
