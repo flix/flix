@@ -766,7 +766,8 @@ object Synthesize extends Phase[Root, Root] {
      * Introduce a ToString operator for every return type of attribute of a table.
      */
     val toStringOps = (typesInDefs ++ typesInTables).foldLeft(Map.empty[Type, Symbol.DefnSym]) {
-      case (macc, tpe) => macc + (tpe -> getOrMkToString(tpe))
+      case (macc, tpe) => macc
+      case (macc, tpe) if tpe.isArrow => macc + (tpe -> getOrMkToString(tpe))
     }
 
     /*

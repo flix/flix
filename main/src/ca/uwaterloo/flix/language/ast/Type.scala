@@ -53,6 +53,14 @@ sealed trait Type {
   }
 
   /**
+    * Returns `true` if `this` type is an arrow type.
+    */
+  def isArrow: Boolean = this match {
+    case Type.Apply(Type.Arrow(l), ts) => true
+    case _ => false
+  }
+
+  /**
     * Returns `true` if `this` type is an enum type.
     */
   def isEnum: Boolean = this match {
