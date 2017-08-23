@@ -88,6 +88,11 @@ package object ast {
     */
   object SourceLocation {
     /**
+      * Represents a generated source location.
+      */
+    val Generated: SourceLocation = mk(SourcePosition.Unknown, SourcePosition.Unknown)
+
+    /**
       * Represents an unknown source location.
       */
     val Unknown: SourceLocation = mk(SourcePosition.Unknown, SourcePosition.Unknown)
