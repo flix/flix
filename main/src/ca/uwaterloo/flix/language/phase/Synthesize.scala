@@ -741,6 +741,11 @@ object Synthesize extends Phase[Root, Root] {
     }.toSet
 
     /*
+     * Every type that appears as some lattice type.
+     */
+    val typesInLattices: Set[Type] = root.lattices.keySet
+
+    /*
      * Rewrite every equality expression in a definition to explicitly call the equality operator.
      */
     val defs = root.defs.map {
@@ -750,7 +755,7 @@ object Synthesize extends Phase[Root, Root] {
     /*
      * Introduce an Equality operator for every attribute of a table.
      */
-    val equalityOps = typesInTables.foldLeft(Map.empty[Type, Symbol.DefnSym]) {
+    val equalityOps = (typesInTables ++ typesInLattices).foldLeft(Map.empty[Type, Symbol.DefnSym]) {
       case (macc, tpe) => macc + (tpe -> getOrMkEq(tpe))
     }
 
