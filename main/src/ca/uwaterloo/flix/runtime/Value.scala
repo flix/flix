@@ -192,38 +192,4 @@ object Value {
       throw InternalRuntimeException(s"Unable to compare '$tpe1' and '$tpe2'.")
   }
 
-  /////////////////////////////////////////////////////////////////////////////
-  // Pretty Printing                                                         //
-  /////////////////////////////////////////////////////////////////////////////
-
-  /**
-    * Returns a pretty printed formatting of the given Flix `ref`.
-    */
-  // TODO: Replace by built in native operator.
-  def pretty(ref: AnyRef): String = ref match {
-    case Value.Unit => "()"
-    case Value.True => "true"
-    case Value.False => "false"
-    case Value.Char(lit) => lit.toString
-    case Value.Int8(lit) => lit.toString
-    case Value.Int16(lit) => lit.toString
-    case Value.Int32(lit) => lit.toString
-    case Value.Int64(lit) => lit.toString
-    case Value.BigInt(lit) => lit.toString
-    case Value.Str(lit) => lit
-    case Value.Tag(enum, "Cons", Value.Tuple(elms)) => pretty(elms(0)) + " :: " + pretty(elms(1))
-    case Value.Tag(enum, tag, Value.Unit) => tag
-    case Value.Tag(enum, tag, value: Value.Tuple) => tag + pretty(value)
-    case Value.Tag(enum, tag, value) => tag + "(" + pretty(value) + ")"
-    case Value.Tuple(elms) => "(" + elms.mkString(", ") + ")"
-    case o: java.lang.Boolean => o.booleanValue().toString
-    case o: java.lang.Character => o.charValue().toString
-    case o: java.lang.Byte => o.byteValue().toString
-    case o: java.lang.Short => o.shortValue().toString
-    case o: java.lang.Integer => o.intValue().toString
-    case o: java.lang.Long => o.longValue().toString
-    case o: java.lang.String => "\"" + o + "\""
-    case _ => ref.toString
-  }
-
 }

@@ -349,7 +349,6 @@ class TestSolver extends FunSuite {
       """.stripMargin
 
     val model = new Flix().setOptions(opts).addStr(Parity.Definition).addStr(s).solve().get
-    val A = model.getLattice("A").toMap
   }
 
   test("Lattice02") {
@@ -362,7 +361,6 @@ class TestSolver extends FunSuite {
       """.stripMargin
 
     val model = new Flix().setOptions(opts).addStr(Parity.Definition).addStr(s).solve().get
-    val A = model.getLattice("A").toMap
   }
 
   test("Lattice03") {
@@ -377,7 +375,6 @@ class TestSolver extends FunSuite {
       """.stripMargin
 
     val model = new Flix().setOptions(opts).addStr(Parity.Definition).addStr(s).solve().get
-    val A = model.getLattice("A").toMap
   }
 
   test("NotEqual01") {

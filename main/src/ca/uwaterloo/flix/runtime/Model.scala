@@ -16,8 +16,8 @@
 
 package ca.uwaterloo.flix.runtime
 
-import ca.uwaterloo.flix.api
-import ca.uwaterloo.flix.language.ast.{ExecutableAst, SpecialOperator, Symbol, Time, Type}
+import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.ast.ExecutableAst._
 import ca.uwaterloo.flix.util.InternalRuntimeException
 
 /**
@@ -28,7 +28,7 @@ import ca.uwaterloo.flix.util.InternalRuntimeException
   * @param relations   the relational facts in the model.
   * @param lattices    the lattice facts in the model.
   */
-class Model(root: ExecutableAst.Root,
+class Model(root: Root,
             time: Time,
             definitions: Map[Symbol.DefnSym, () => AnyRef],
             relations: Map[Symbol.TableSym, Iterable[List[AnyRef]]],
@@ -37,7 +37,7 @@ class Model(root: ExecutableAst.Root,
   /**
     * Returns the root AST.
     */
-  def getRoot: ExecutableAst.Root = root
+  def getRoot: Root = root
 
   /**
     * Returns all the benchmark functions in the program.
@@ -102,28 +102,28 @@ class Model(root: ExecutableAst.Root,
     }
   }
 
-  /**
-    * Returns the fully-qualified names of all relations in the program.
-    */
-  def getRelationNames: Set[String] = relations.keySet.map(_.toString)
+  def getRelations: Map[String, (List[String], Iterable[List[String]])] = relations map {
+    case (sym, rows) =>
+      val attributes = root.tables(sym) match {
+        case Table.Relation(_, attr, _) => attr.toList
+        case Table.Lattice(_, keys, value, _) => keys.toList ::: value :: Nil
+      }
 
-  /**
-    * Returns the fully-qualified names of all lattices in the program.
-    */
-  def getLatticeNames: Set[String] = lattices.keySet.map(_.toString)
+      val rows = ???
 
+      (attributes.map(_.name), rows)
+      ???
+  }
 
+  def getLattices: Map[String, (List[String], Iterable[List[String]])] = ???
+
+  @deprecated("to be removed", "0.2.0")
   def getRelation(name: String): Iterable[List[AnyRef]] =
     getRelationOpt(name).get
 
-  def getRelationOpt(name: String): Option[Iterable[List[AnyRef]]] =
+  @deprecated("to be removed", "0.2.0")
+  private def getRelationOpt(name: String): Option[Iterable[List[AnyRef]]] =
     relations.get(Symbol.mkTableSym(name))
-
-  def getLattice(name: String): Iterable[(List[AnyRef], AnyRef)] =
-    getLatticeOpt(name).get
-
-  def getLatticeOpt(name: String): Option[Iterable[(List[AnyRef], AnyRef)]] =
-    lattices.get(Symbol.mkTableSym(name))
 
   /**
     * Returns a string representation of the given reference `ref` formatted according to the given type `tpe`.

@@ -22,47 +22,35 @@ import ca.uwaterloo.flix.runtime.{Value, Model}
 
 object PrettyPrint {
 
-  def print(name: String, model: Model): Unit = {
-    val sym = Symbol.mkTableSym(name)
+  def print(fqn: String, model: Model): Unit = {
+    val sym = Symbol.mkTableSym(fqn)
 
     var found = false
 
-    // TODO
-//    model.constants.get(sym) match {
-//      case None => // nop
-//      case Some(v) =>
-//        found = true
-//        Value.pretty(v)
-//    }
-
-    model.getRelationOpt(name) match {
+    model.getRelations.get(fqn) match {
       case None => // nop
-      case Some(xs) =>
-        val r = model.getRoot.tables(sym).asInstanceOf[ExecutableAst.Table.Relation]
-        val cols = r.attributes.map(_.name)
-        val ascii = new AsciiTable().withCols(cols: _*)
-        for (row <- xs.toSeq.sortBy(_.head.toString)) {
-          ascii.mkRow(row.toList map Value.pretty)
+      case Some((attributes, rows)) =>
+        val ascii = new AsciiTable().withCols(attributes: _*)
+        for (row <- rows) {
+          ascii.mkRow(row)
         }
 
-        Console.println(r.sym)
+        Console.println(fqn)
         ascii.write(System.out)
         Console.println()
         Console.println()
         found = true
     }
 
-    model.getLatticeOpt(name) match {
+    model.getLattices.get(fqn) match {
       case None => // nop
-      case Some(xs) =>
-        val l = model.getRoot.tables(sym).asInstanceOf[ExecutableAst.Table.Lattice]
-        val cols = l.keys.map(_.name).toList ::: l.value.name :: Nil
-        val ascii = new AsciiTable().withCols(cols: _*)
-        for ((keys, elm) <- xs.toSeq.sortBy(_._1.head.toString)) {
-          ascii.mkRow((keys map Value.pretty) ++ List(Value.pretty(elm)))
+      case Some((attributes, rows)) =>
+        val ascii = new AsciiTable().withCols(attributes: _*)
+        for (row <- rows) {
+          ascii.mkRow(row)
         }
 
-        Console.println(l.sym)
+        Console.println(fqn)
         ascii.write(System.out)
         Console.println()
         Console.println()
@@ -70,7 +58,7 @@ object PrettyPrint {
     }
 
     if (!found)
-      Console.println("No such name: " + name)
+      Console.println("No such name: " + fqn)
   }
 
 }
