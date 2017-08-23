@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language.phase
 
-import ca.uwaterloo.flix.api.{Unit => UnitClass, _}
+import ca.uwaterloo.flix.api
 import ca.uwaterloo.flix.language.GenSym
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Expression
 import ca.uwaterloo.flix.language.ast.Symbol.EnumSym
@@ -569,13 +569,13 @@ object CodegenHelper {
     val bigIntegerClass : Class[_]= classOf[java.math.BigInteger]
     val arrayObjectClass : Class[_] = classOf[Array[Object]]
     val setClass : Class[_] = classOf[scala.collection.immutable.Set[Object]]
-    val flixClass : Class[_] = classOf[Flix]
+    val flixClass : Class[_] = classOf[api.Flix]
 
-    val unitClass : Class[_] = classOf[UnitClass]
-    val tupleClass : Class[_] = classOf[Tuple]
+    val unitClass : Class[_] = classOf[api.Unit]
+    val tupleClass : Class[_] = classOf[api.Tuple]
     val scalaPredef = "scala/Predef$"
     val scalaMathPkg = "scala/math/package$"
-    val tagInterface : Class[_] = classOf[Enum]
+    val tagInterface : Class[_] = classOf[api.Enum]
   }
 
   // This constant is used in LoadBytecode, so we can't put it in the private Constants object.
