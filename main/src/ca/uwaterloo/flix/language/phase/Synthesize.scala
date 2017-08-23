@@ -465,7 +465,7 @@ object Synthesize extends Phase[Root, Root] {
       val exp = mkToStringExp(tpe, freshX)
 
       // The definition type.
-      val lambdaType = Type.mkArrow(List(tpe), Type.Bool)
+      val lambdaType = Type.mkArrow(List(tpe), Type.Str)
 
       // Assemble the definition.
       val defn = Def(None, ann, mod, sym, tparams, fparams, exp, lambdaType, Eff.Pure, sl)
@@ -589,7 +589,7 @@ object Synthesize extends Phase[Root, Root] {
                 MatchRule(p, g, b)
             }
 
-            return Expression.Match(matchValue, rs, Type.Bool, Eff.Pure, loc)
+            return Expression.Match(matchValue, rs, Type.Str, Eff.Pure, loc)
           }
 
           // TODO: Rename Constructor to Tag.
@@ -644,7 +644,7 @@ object Synthesize extends Phase[Root, Root] {
             val rule = MatchRule(p, g, b)
 
             // Return a match expression with the singular rule.
-            return Expression.Match(matchValue, rule :: Nil, Type.Bool, Eff.Pure, loc)
+            return Expression.Match(matchValue, rule :: Nil, Type.Str, Eff.Pure, loc)
           }
 
           throw InternalCompilerException(s"Unknown type '$tpe'.")
