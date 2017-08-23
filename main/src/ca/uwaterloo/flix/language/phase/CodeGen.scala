@@ -317,7 +317,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
       case Type.Float64 => visitor.visitVarInsn(DLOAD, sym.getStackOffset)
       case Type.Unit | Type.BigInt | Type.Str | Type.Native | Type.Enum(_, _) | Type.Apply(Type.Arrow(_), _) |
            Type.Apply(Type.Enum(_, _), _) => visitor.visitVarInsn(ALOAD, sym.getStackOffset)
-      case _ if tpe.isTuple => visitor.visitVarInsn(ALOAD, sym.getStackOffset)
+      case _ if tpe.isTuple | tpe.isRef => visitor.visitVarInsn(ALOAD, sym.getStackOffset)
       case _ => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
     }
 
@@ -630,11 +630,65 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
       // Invoking the constructor
       visitor.visitMethodInsn(INVOKESPECIAL, decorate(clazzName), "<init>", s"(${desc})V", false)
 
-    case Expression.Ref(exp, tpe, loc) => ??? // TODO
+    case Expression.Ref(exp, tpe, loc) =>
+      // Adding source line number for debugging
+      addSourceLine(visitor, loc)
+      // Class appropriate reference class
+      val clazz = getReferenceClazz(tpe)
+      // Get internal name of the class
+      val clazzInternalName = asm.Type.getInternalName(clazz)
+      // Get constructor of the class
+      val constructorDescriptor = asm.Type.getConstructorDescriptor(clazz.getConstructors.last)
+      // Create a new reference object
+      visitor.visitTypeInsn(NEW, clazzInternalName)
+      // Duplicate it since one instance will get consumed by constructor
+      visitor.visitInsn(DUP)
+      // Evaluate the underlying expression
+      compileExpression(prefix, functions, declarations, interfaces, enums, visitor, entryPoint)(exp)
+      // Call the constructor
+      visitor.visitMethodInsn(INVOKESPECIAL, clazzInternalName, "<init>", constructorDescriptor, false)
 
-    case Expression.Deref(exp, tpe, loc) => ??? // TODO
+    case Expression.Deref(exp, tpe, loc) =>
+      // Adding source line number for debugging
+      addSourceLine(visitor, loc)
+      // Evaluate the exp
+      compileExpression(prefix, functions, declarations, interfaces, enums, visitor, entryPoint)(exp)
+      // Class appropriate reference class
+      val clazz = getReferenceClazz(exp.tpe)
+      // Get internal name of the class
+      val clazzInternalName = asm.Type.getInternalName(clazz)
+      // Get descriptor of `getValue` method
+      val methodDescriptor = asm.Type.getMethodDescriptor(clazz.getMethod("getValue"))
+      // Dereference the expression
+      visitor.visitMethodInsn(INVOKEVIRTUAL, clazzInternalName, "getValue", methodDescriptor, false)
+      // Cast underlying value to the correct type if the underlying type is Object
+      tpe match {
+        case Type.Bool | Type.Char | Type.Int8 | Type.Int16 | Type.Int32 | Type.Int64 | Type.Float32 | Type.Float64 => // no need to cast primitives
+        case _ =>
+          val name = internalName(tpe, interfaces)
+          visitor.visitTypeInsn(CHECKCAST, name)
+      }
 
-    case Expression.Assign(exp1, exp2, tpe, loc) => ??? // TODO
+    case Expression.Assign(exp1, exp2, tpe, loc) =>
+      // Adding source line number for debugging
+      addSourceLine(visitor, loc)
+      // Evaluate the reference address
+      compileExpression(prefix, functions, declarations, interfaces, enums, visitor, entryPoint)(exp1)
+      // Evaluating the value to be assigned to the reference
+      compileExpression(prefix, functions, declarations, interfaces, enums, visitor, entryPoint)(exp2)
+      // Class appropriate reference class
+      val clazz = getReferenceClazz(exp1.tpe)
+      // Get internal name of the class
+      val clazzInternalName = asm.Type.getInternalName(clazz)
+      // Get descriptor of `setValue` method
+      val methodDescriptor = asm.Type.getMethodDescriptor(clazz.getMethods.filter(m => m.getName == "setValue").last)
+      // Invoke `setValue` method to set the value to the given number
+      visitor.visitMethodInsn(INVOKEVIRTUAL, clazzInternalName, "setValue", methodDescriptor, false)
+      // Since the return type is unit, we put an instance of unit on top of the stack
+      val unitGetInstance = Constants.unitClass.getMethod("getInstance")
+      visitor.visitMethodInsn(INVOKESTATIC, asm.Type.getInternalName(Constants.unitClass), unitGetInstance.getName,
+        asm.Type.getMethodDescriptor(unitGetInstance), false)
+
 
     case Expression.Existential(params, exp, loc) =>
       throw InternalCompilerException(s"Unexpected expression: '$expr' at ${loc.source.format}.")

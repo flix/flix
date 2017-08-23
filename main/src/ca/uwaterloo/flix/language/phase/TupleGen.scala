@@ -546,9 +546,9 @@ object TupleGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
     case Expression.Untag(sym, tag, exp, tpe, loc) => findTuplesInExps(exp) ++ findTuplesInTypes(tpe)
     case Expression.Index(base, offset, tpe, loc) => findTuplesInExps(base) ++ findTuplesInTypes(tpe)
     case Expression.Tuple(elms, tpe, loc) => elms.foldLeft(findTuplesInTypes(tpe) + tpe)((acc, elem) => acc ++ findTuplesInExps(elem))
-    case Expression.Ref(exp, tpe, loc) => ??? // TODO
-    case Expression.Deref(exp, tpe, loc) => ??? // TODO
-    case Expression.Assign(exp1, exp2, tpe, loc) => ??? // TODO
+    case Expression.Ref(exp, tpe, loc) => findTuplesInExps(exp) ++ findTuplesInTypes(tpe)
+    case Expression.Deref(exp, tpe, loc) => findTuplesInExps(exp) ++ findTuplesInTypes(tpe)
+    case Expression.Assign(exp1, exp2, tpe, loc) => findTuplesInExps(exp1) ++ findTuplesInExps(exp2) ++ findTuplesInTypes(tpe)
     case Expression.LetRec(sym, exp1, exp2, tpe, loc) => ??? // TODO
     case Expression.Existential(params, exp, loc) => findTuplesInExps(exp)
     case Expression.Universal(params, exp, loc) => findTuplesInExps(exp)

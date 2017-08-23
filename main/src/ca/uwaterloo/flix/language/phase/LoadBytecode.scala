@@ -185,6 +185,7 @@ object LoadBytecode extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
       val clazzName = TupleClassName(lst.map(typeToWrappedType))
       loadedTuples(clazzName)
     case Type.Apply(Type.Arrow(l), _) => interfaces(tpe)
+    case Type.Apply(Type.Ref, List(ts)) => getReferenceClazz(tpe)
     case _ => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
   }
 }
