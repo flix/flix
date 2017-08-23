@@ -340,6 +340,7 @@ class RestServer(solver: Solver) {
       JObject(List(JField("name", JString("Documentor")), JField("time", JInt(solver.root.time.documentor / 1000000)))),
       JObject(List(JField("name", JString("Stratifier")), JField("time", JInt(solver.root.time.stratifier / 1000000)))),
       JObject(List(JField("name", JString("Monomorph")), JField("time", JInt(solver.root.time.monomorph / 1000000)))),
+      JObject(List(JField("name", JString("Synthesize")), JField("time", JInt(solver.root.time.synthesize / 1000000)))),
       JObject(List(JField("name", JString("PropertyGen")), JField("time", JInt(solver.root.time.propertyGen / 1000000)))),
       JObject(List(JField("name", JString("Verifier")), JField("time", JInt(solver.root.time.verifier / 1000000)))),
       JObject(List(JField("name", JString("LambdaLift")), JField("time", JInt(solver.root.time.lambdaLift / 1000000)))),
