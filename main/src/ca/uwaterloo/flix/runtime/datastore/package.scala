@@ -211,7 +211,7 @@ package object datastore {
     * @param idx the index (in binary).
     * @param pat the pattern.
     */
-  def keyOf[ValueType](idx: Int, pat: Array[ValueType]): Key[ValueType] = {
+  def keyOf[ValueType](idx: Int, pat: Array[ValueType], equality: Array[(AnyRef, AnyRef) => Boolean]): Key[ValueType] = {
     val columns = Integer.bitCount(idx)
     val i1 = idx
     (columns: @switch) match {
