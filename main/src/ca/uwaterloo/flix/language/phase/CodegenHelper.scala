@@ -161,8 +161,8 @@ object CodegenHelper {
       case Type.Native => objectStr
       case Type.Ref => objectStr
       case Type.Arrow(l) => objectStr
-      case Type.FTuple(l) => objectStr
-      case Type.Apply(Type.FTuple(l), ts) =>objectStr
+      case Type.Tuple(l) => objectStr
+      case Type.Apply(Type.Tuple(l), ts) =>objectStr
       case Type.Apply(Type.Arrow(l), ts) => objectStr
       case Type.Apply(t, ts) => objectStr
       case Type.Enum(enum, kind) => objectStr
@@ -483,8 +483,8 @@ object CodegenHelper {
     case Type.Native => false
     case Type.Ref => false
     case Type.Arrow(l) => false
-    case Type.FTuple(l) => false
-    case Type.Apply(Type.FTuple(l), ts) => false
+    case Type.Tuple(l) => false
+    case Type.Apply(Type.Tuple(l), ts) => false
     case Type.Apply(Type.Arrow(l), ts) => false
     case Type.Apply(t, ts) => false
     case Type.Enum(enum, kind) => false
@@ -525,7 +525,7 @@ object CodegenHelper {
       case Type.Str => asm.Type.getDescriptor(Constants.stringClass)
       case Type.Native => asm.Type.getDescriptor(Constants.objectClass)
       case Type.Apply(Type.Arrow(l), _) => s"L${decorate(interfaces(tpe))};"
-      case Type.Apply(Type.FTuple(l), lst) =>
+      case Type.Apply(Type.Tuple(l), lst) =>
         val clazzName = TupleClassName(lst.map(typeToWrappedType))
         s"L${decorate(clazzName)};"
       case _ if tpe.isEnum =>

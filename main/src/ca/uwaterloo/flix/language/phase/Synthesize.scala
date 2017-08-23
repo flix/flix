@@ -493,7 +493,6 @@ object Synthesize extends Phase[Root, Root] {
     // TODO: DOC
     def mkToStringExp(tpe: Type, varX: Symbol.VarSym): Expression = {
 
-
       /*
        * The source location used for the generated expressions.
        */
@@ -543,6 +542,10 @@ object Synthesize extends Phase[Root, Root] {
           Expression.NativeMethod(method, List(exp0), Type.Str, Eff.Pure, loc)
 
         case Type.Str => exp0
+
+        case Type.Apply(Type.Ref, _) => Expression.Str("<<ref>>", loc)
+
+        case Type.Apply(Type.Arrow(l), _) => Expression.Str("<<clo>>", loc)
 
         case _ =>
           //
@@ -684,7 +687,7 @@ object Synthesize extends Phase[Root, Root] {
       * Returns the element types of the given tuple type `tpe`.
       */
     def getElementTypes(tpe: Type): List[Type] = tpe match {
-      case Type.Apply(Type.FTuple(l), ts) => ts
+      case Type.Apply(Type.Tuple(l), ts) => ts
       case _ => throw InternalCompilerException(s"The given type '$tpe' is not a tuple type.")
     }
 

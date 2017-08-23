@@ -258,7 +258,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
       case Type.Int64 => mv.visitInsn(LRETURN)
       case Type.Float32 => mv.visitInsn(FRETURN)
       case Type.Float64 => mv.visitInsn(DRETURN)
-      case Type.Unit | Type.BigInt | Type.Str | Type.Native | Type.Enum(_, _) | Type.Apply(Type.FTuple(_), _) | Type.Apply(Type.Arrow(_), _) |
+      case Type.Unit | Type.BigInt | Type.Str | Type.Native | Type.Enum(_, _) | Type.Apply(Type.Tuple(_), _) | Type.Apply(Type.Arrow(_), _) |
            Type.Apply(_, _) => mv.visitInsn(ARETURN)
       case _ => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
     }
@@ -533,7 +533,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
         case Type.Int64 => visitor.visitVarInsn(LSTORE, sym.getStackOffset)
         case Type.Float32 => visitor.visitVarInsn(FSTORE, sym.getStackOffset)
         case Type.Float64 => visitor.visitVarInsn(DSTORE, sym.getStackOffset)
-        case Type.Unit | Type.BigInt | Type.Str | Type.Native | Type.Enum(_, _) | Type.Apply(Type.FTuple(_), _) | Type.Apply(Type.Arrow(_), _) => visitor.visitVarInsn(ASTORE, sym.getStackOffset)
+        case Type.Unit | Type.BigInt | Type.Str | Type.Native | Type.Enum(_, _) | Type.Apply(Type.Tuple(_), _) | Type.Apply(Type.Arrow(_), _) => visitor.visitVarInsn(ASTORE, sym.getStackOffset)
         case Type.Apply(_, _) => visitor.visitVarInsn(ASTORE, sym.getStackOffset)
         case tpe => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
       }
@@ -602,7 +602,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
       val desc = getWrappedTypeDescriptor(typeToWrappedType(tpe))
       // Qualified name of the class defining the tuple
       val clazzName = base.tpe match {
-        case Type.Apply(Type.FTuple(_), lst) => TupleClassName(lst.map(typeToWrappedType))
+        case Type.Apply(Type.Tuple(_), lst) => TupleClassName(lst.map(typeToWrappedType))
         case _ => throw InternalCompilerException(s"Unexpected type: `${base.tpe}`")
       }
       // evaluating the `base`
@@ -795,7 +795,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
         compileExpression(prefix, functions, declarations, interfaces, enums, visitor, entryPoint)(exp)
         visitor.visitMethodInsn(INVOKESPECIAL, longInternalName, "<init>", "(J)V", false)
 
-      case Type.Unit | Type.BigInt | Type.Str | Type.Native | Type.Enum(_, _) | Type.Apply(Type.FTuple(_), _) | Type.Apply(Type.Arrow(_), _) |
+      case Type.Unit | Type.BigInt | Type.Str | Type.Native | Type.Enum(_, _) | Type.Apply(Type.Tuple(_), _) | Type.Apply(Type.Arrow(_), _) |
            Type.Apply(Type.Enum(_, _), _) => compileExpression(prefix, functions, declarations, interfaces, enums, visitor, entryPoint)(exp)
 
       case tpe => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
@@ -844,7 +844,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
 
     case Type.Native => // Don't need to cast AnyRef to anything
 
-    case Type.Apply(Type.FTuple(l), lst) =>
+    case Type.Apply(Type.Tuple(l), lst) =>
       val clazzName = TupleClassName(lst.map(typeToWrappedType))
 
 
@@ -1120,7 +1120,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
                                     visitor: MethodVisitor, entryPoint: Label)
                                    (o: ComparisonOperator, e1: Expression, e2: Expression): Unit = {
     e1.tpe match {
-      case Type.Enum(_, _) | Type.Apply(Type.FTuple(_), _) | Type.Apply(Type.Enum(_, _), _) if o == BinaryOperator.Equal || o == BinaryOperator.NotEqual =>
+      case Type.Enum(_, _) | Type.Apply(Type.Tuple(_), _) | Type.Apply(Type.Enum(_, _), _) if o == BinaryOperator.Equal || o == BinaryOperator.NotEqual =>
         (e1.tpe: @unchecked) match {
           case Type.Enum(_, _) | Type.Apply(Type.Enum(_, _), _) =>
             compileExpression(prefix, functions, declarations, interfaces, enums, visitor, entryPoint)(e1)
@@ -1128,7 +1128,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
             val clazz = Constants.objectClass
             val method = clazz.getMethod("equals", clazz)
             visitor.visitMethodInsn(INVOKEVIRTUAL, asm.Type.getInternalName(clazz), method.getName, asm.Type.getMethodDescriptor(method), false)
-          case Type.Apply(Type.FTuple(_), _) =>
+          case Type.Apply(Type.Tuple(_), _) =>
             compileExpression(prefix, functions, declarations, interfaces, enums, visitor, entryPoint)(e1)
             compileExpression(prefix, functions, declarations, interfaces, enums, visitor, entryPoint)(e2)
             val clazz = Constants.objectClass
@@ -1351,7 +1351,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
     case Type.Str => visitor.visitTypeInsn(CHECKCAST, asm.Type.getInternalName(Constants.stringClass))
     case Type.Native => visitor.visitTypeInsn(CHECKCAST, asm.Type.getInternalName(Constants.objectClass))
     case Type.Apply(Type.Arrow(l), _) => visitor.visitTypeInsn(CHECKCAST, decorate(interfaces(tpe)))
-    case Type.Apply(Type.FTuple(l), lst) =>
+    case Type.Apply(Type.Tuple(l), lst) =>
       val clazzName = TupleClassName(lst.map(typeToWrappedType))
       visitor.visitTypeInsn(CHECKCAST, decorate(clazzName))
     case _ if tpe.isEnum =>
