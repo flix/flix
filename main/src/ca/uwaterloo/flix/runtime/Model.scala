@@ -117,13 +117,13 @@ class Model(root: Root,
 
   def getLattices: Map[String, (List[String], Iterable[List[String]])] = ???
 
-  @deprecated("to be removed", "0.2.0")
-  def getRelation(name: String): Iterable[List[AnyRef]] =
-    getRelationOpt(name).get
-
-  @deprecated("to be removed", "0.2.0")
-  private def getRelationOpt(name: String): Option[Iterable[List[AnyRef]]] =
-    relations.get(Symbol.mkTableSym(name))
+  /**
+    * Returns the result type of the given lambda type.
+    */
+  private def getResultType(tpe: Type): Type = tpe match {
+    case Type.Apply(Type.Arrow(_), ts) => ts.last
+    case _ => tpe
+  }
 
   /**
     * Returns a string representation of the given reference `ref` formatted according to the given type `tpe`.
@@ -138,14 +138,6 @@ class Model(root: Root,
           case o => throw InternalRuntimeException("Unexpected non-string value returned by 'toString' special operator.")
         }
     }
-  }
-
-  /**
-    * Returns the result type of the given lambda type.
-    */
-  private def getResultType(tpe: Type): Type = tpe match {
-    case Type.Apply(Type.Arrow(_), ts) => ts.last
-    case _ => tpe
   }
 
 }
