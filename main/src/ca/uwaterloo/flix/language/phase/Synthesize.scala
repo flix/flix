@@ -437,6 +437,19 @@ object Synthesize extends Phase[Root, Root] {
       }
     }
 
+    // TODO: DOC
+    def mkApplyToString(exp0: Expression): Expression = {
+      val tpe = exp0.tpe
+
+      // Construct the symbol of the toString definition.
+      val sym = getOrMkToString(tpe)
+
+      // Construct a call to the symbol passing the argument `exp`.
+      val e = Expression.Def(sym, Type.mkArrow(List(tpe), Type.Str), Eff.Pure, sl)
+      val args = exp0 :: Nil
+      Expression.Apply(e, args, Type.Str, Eff.Pure, sl)
+    }
+
     // TODO
     def getOrMkToString(tpe: Type): Symbol.DefnSym = mutToStringOps.getOrElse(tpe, {
       // Introduce a fresh symbol for the toString operator.
@@ -579,11 +592,12 @@ object Synthesize extends Phase[Root, Root] {
                 val g = Expression.True(loc)
 
                 // Generate the rule body.
-                val b = concat(
+                val b = concatAll(List(
                   Expression.Str(tag, loc),
-                  // TODO: Recurse
-                  Expression.Str("todo", loc)
-                )
+                  Expression.Str("(", loc),
+                  mkApplyToString(Expression.Var(freshX, caseType, Eff.Pure, loc)),
+                  Expression.Str(")", loc),
+                ))
 
                 // Put everything together.
                 MatchRule(p, g, b)
@@ -604,7 +618,7 @@ object Synthesize extends Phase[Root, Root] {
             // then we generate the expression:
             //
             //   match exp0 with {
-            //     case (x1, x2, x3) => "(" + recurse(x1, y1) + ", " + recurse(x2, y2) + ", " + recurse(x2, y2) + ")"
+            //     case (x1, x2, x3) => "(" + recurse(x1) + ", " + recurse(x2) + ", " + recurse(x3) + ")"
             //   }
             //
             // where recurse is a recursive call to this procedure.
@@ -622,23 +636,24 @@ object Synthesize extends Phase[Root, Root] {
             // Compute the components of the singular rule.
 
             // The pattern of the rule.
-            val xs = Pattern.Tuple((freshVarsX zip elementTypes).map {
-              case (freshVar, t) => Pattern.Var(freshVar, t, loc)
+            val p = Pattern.Tuple((freshVarsX zip elementTypes).map {
+              case (freshVar, elmType) => Pattern.Var(freshVar, elmType, loc)
             }, tpe, loc)
-
-            val p = Pattern.Tuple(List(xs), tpe, loc)
 
             // The guard of the rule.
             val g = Expression.True(loc)
 
-            // The body of the rule.
-            val b = (freshVarsX zip elementTypes).foldRight(Expression.Str(")", loc): Expression) {
-              case ((freshX, elementType), eacc) =>
-                val expX = Expression.Var(freshX, elementType, Eff.Pure, loc)
-
-                // TODO: Recurse
-                concat(eacc, Expression.Str(" ,", loc))
+            // The elements of the tuple.
+            val inner = (freshVarsX zip elementTypes).map {
+              case (freshX, elementType) => mkApplyToString(Expression.Var(freshX, elementType, Eff.Pure, loc))
             }
+
+            // Construct the string expression (e1, e2, e3, ...)
+            val b = concatAll(
+              Expression.Str("(", loc) ::
+                intersperse(inner, Expression.Str(", ", loc)) :::
+                Expression.Str(")", loc) :: Nil
+            )
 
             // Put the components together.
             val rule = MatchRule(p, g, b)
@@ -692,6 +707,21 @@ object Synthesize extends Phase[Root, Root] {
       */
     def concat(exp1: Expression, exp2: Expression): Expression =
       Expression.Binary(BinaryOperator.Plus, exp1, exp2, Type.Str, Eff.Pure, SourceLocation.Unknown)
+
+    /**
+      * Returns an expression that is the string concatenation of the given expressions `exps`.
+      */
+    def concatAll(exps: List[Expression]): Expression =
+      exps.foldLeft(Expression.Str("", SourceLocation.Unknown): Expression)(concat)
+
+    /**
+      * Inserts the element `a` between every element of `l`.
+      */
+    def intersperse[A](l: List[A], a: A): List[A] = l match {
+      case Nil => Nil
+      case x :: Nil => x :: Nil
+      case x :: y :: xs => x :: a :: intersperse(y :: xs, a)
+    }
 
     ///////////////////////////////////////////////////////////////////////////
     /// Main body of `run`                                                  ///
