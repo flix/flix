@@ -574,7 +574,7 @@ object CodegenHelper {
     case Type.Str => asm.Type.getInternalName(Constants.stringClass)
     case Type.Native => asm.Type.getInternalName(Constants.objectClass)
     case Type.Apply(Type.Arrow(l), _) => decorate(interfaces(tpe))
-    case Type.Apply(Type.FTuple(l), lst) =>
+    case Type.Apply(Type.Tuple(l), lst) =>
       val clazzName = TupleClassName(lst.map(typeToWrappedType))
       decorate(clazzName)
     case _ if tpe.isEnum =>
