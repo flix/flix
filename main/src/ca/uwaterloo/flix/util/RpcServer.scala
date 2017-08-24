@@ -20,7 +20,6 @@ import java.net.InetSocketAddress
 import java.util.concurrent.{Executors, TimeUnit}
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.runtime.Value
 import ca.uwaterloo.flix.util.Validation.{Failure, Success}
 import ca.uwaterloo.flix.util.vt.TerminalContext
 import com.sun.net.httpserver.{HttpExchange, HttpHandler, HttpServer}
@@ -67,23 +66,23 @@ class RpcServer(port: Int) {
           case Success(model, _) =>
 
             // Evaluate the main function.
-            val result = model.getConstant("f")
+            val result = model.evalToString("f")
 
             // Translate the computed relations to JSON data.
-            val relations = model.getRelationNames.toList.sorted.map {
-              case fqn => relation2json(fqn, model.getRelation(fqn))
+            val relations = model.getRelations.map {
+              case (fqn, (attributes, rows)) => relation2json(fqn, rows)
             }
 
             // Translate the computed lattices to JSON data.
-            val lattices = model.getLatticeNames.toList.sorted.map {
-              case fqn => lattice2json(fqn, model.getLattice(fqn))
+            val lattices = model.getLattices.map {
+              case (fqn, (attributes, rows)) => lattice2json(fqn, rows)
             }
 
             JObject(
               JField("status", JString("success")),
-              JField("result", if (result == null) JNull else JString(Value.pretty(result))),
-              JField("relations", JArray(relations)),
-              JField("lattices", JArray(lattices))
+              JField("result", if (result == null) JNull else JString(result)),
+              JField("relations", JArray(relations.toList)),
+              JField("lattices", JArray(lattices.toList))
             )
           case Failure(errors) =>
             JObject(
@@ -130,9 +129,9 @@ class RpcServer(port: Int) {
     /**
       * Returns the relation with the name `fqn` and the rows `rs` as a JSON object.
       */
-    private def relation2json(fqn: String, rs: Iterable[List[AnyRef]]): JValue = {
+    private def relation2json(fqn: String, rs: Iterable[List[String]]): JValue = {
       val rows = rs.map {
-        case row => JArray(row.map(v => JString(Value.pretty(v))))
+        case row => JArray(row.map(v => JString(v)))
       }
       JObject(JField("name", JString(fqn)), JField("rows", JArray(rows.toList)))
     }
@@ -140,11 +139,9 @@ class RpcServer(port: Int) {
     /**
       * Returns the lattice with the name `fqn` and the rows `rs` as a JSON object.
       */
-    private def lattice2json(fqn: String, rs: Iterable[(List[AnyRef], AnyRef)]): JValue = {
+    private def lattice2json(fqn: String, rs: Iterable[List[String]]): JValue = {
       val rows = rs.map {
-        case row =>
-          val (keys, elm) = row
-          JArray(keys.map(v => JString(Value.pretty(v))) ::: JString(Value.pretty(elm)) :: Nil)
+        case row => JArray(row.map(v => JString(v)))
       }
       JObject(JField("name", JString(fqn)), JField("rows", JArray(rows.toList)))
     }

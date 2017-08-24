@@ -88,6 +88,11 @@ package object ast {
     */
   object SourceLocation {
     /**
+      * Represents a generated source location.
+      */
+    val Generated: SourceLocation = mk(SourcePosition.Unknown, SourcePosition.Unknown)
+
+    /**
       * Represents an unknown source location.
       */
     val Unknown: SourceLocation = mk(SourcePosition.Unknown, SourcePosition.Unknown)
@@ -143,6 +148,7 @@ package object ast {
       documentor = 0,
       stratifier = 0,
       monomorph = 0,
+      synthesize = 0,
       simplifier = 0,
       uncurrier = 0,
       propertyGen = 0,
@@ -173,6 +179,7 @@ package object ast {
                   documentor: Long,
                   stratifier: Long,
                   monomorph: Long,
+                  synthesize: Long,
                   simplifier: Long,
                   uncurrier: Long,
                   propertyGen: Long,

@@ -155,8 +155,8 @@ object Uncurrier extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         case ApplyTail(sym, formals, actuals, tpe, loc) => ApplyTail(sym, formals, actuals.map(substitute(_, env0)), tpe, loc)
         case ApplyHook(hook, args, tpe, loc) => ApplyHook(hook, args.map(substitute(_, env0)), tpe, loc)
         case Apply(exp, args, tpe, loc) => Apply(substitute(exp, env0), args.map(a => substitute(a, env0)), tpe, loc)
-        case Unary(op, exp, tpe, loc) => Unary(op, substitute(exp, env0), tpe, loc)
-        case Binary(op, exp1, exp2, tpe, loc) => Binary(op, substitute(exp1, env0), substitute(exp2, env0), tpe, loc)
+        case Unary(sop, op, exp, tpe, loc) => Unary(sop, op, substitute(exp, env0), tpe, loc)
+        case Binary(sop, op, exp1, exp2, tpe, loc) => Binary(sop, op, substitute(exp1, env0), substitute(exp2, env0), tpe, loc)
         case IfThenElse(exp1, exp2, exp3, tpe, loc) => IfThenElse(substitute(exp1, env0), substitute(exp1, env0), substitute(exp3, env0), tpe, loc)
         case Let(sym, exp1, exp2, tpe, loc) => Let(replace(sym), substitute(exp1, env0), substitute(exp2, env0), tpe, loc)
         case LetRec(sym, exp1, exp2, tpe, loc) => LetRec(replace(sym), substitute(exp1, env0), substitute(exp2, env0), tpe, loc)
@@ -221,8 +221,8 @@ object Uncurrier extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
             }
           case _ => a
         }
-      case Unary(op, exp, tpe, loc) => Unary(op, uncurry(exp, newSyms, root), tpe, loc)
-      case Binary(op, exp1, exp2, tpe, loc) => Binary(op, uncurry(exp1, newSyms, root), uncurry(exp2, newSyms, root), tpe, loc)
+      case Unary(sop, op, exp, tpe, loc) => Unary(sop, op, uncurry(exp, newSyms, root), tpe, loc)
+      case Binary(sop, op, exp1, exp2, tpe, loc) => Binary(sop, op, uncurry(exp1, newSyms, root), uncurry(exp2, newSyms, root), tpe, loc)
       case IfThenElse(exp1, exp2, exp3, tpe, loc) => IfThenElse(uncurry(exp1, newSyms, root), uncurry(exp2, newSyms, root), uncurry(exp3, newSyms, root), tpe, loc)
       case Let(sym, exp1, exp2, tpe, loc) => Let(sym, uncurry(exp1, newSyms, root), uncurry(exp2, newSyms, root), tpe, loc)
       case LetRec(sym, exp1, exp2, tpe, loc) => LetRec(sym, uncurry(exp1, newSyms, root), uncurry(exp2, newSyms, root), tpe, loc)

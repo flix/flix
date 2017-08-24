@@ -16,8 +16,8 @@
 
 package ca.uwaterloo.flix.language.phase
 
+import ca.uwaterloo.flix.api
 import ca.uwaterloo.flix.api.cell._
-import ca.uwaterloo.flix.api.{Unit => UnitClass, _}
 import ca.uwaterloo.flix.language.GenSym
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Expression
 import ca.uwaterloo.flix.language.ast.Symbol.EnumSym
@@ -162,8 +162,8 @@ object CodegenHelper {
       case Type.Native => objectStr
       case Type.Ref => objectStr
       case Type.Arrow(l) => objectStr
-      case Type.FTuple(l) => objectStr
-      case Type.Apply(Type.FTuple(l), ts) =>objectStr
+      case Type.Tuple(l) => objectStr
+      case Type.Apply(Type.Tuple(l), ts) =>objectStr
       case Type.Apply(Type.Arrow(l), ts) => objectStr
       case Type.Apply(t, ts) => objectStr
       case Type.Enum(enum, kind) => objectStr
@@ -502,8 +502,8 @@ object CodegenHelper {
     case Type.Native => false
     case Type.Ref => false
     case Type.Arrow(l) => false
-    case Type.FTuple(l) => false
-    case Type.Apply(Type.FTuple(l), ts) => false
+    case Type.Tuple(l) => false
+    case Type.Apply(Type.Tuple(l), ts) => false
     case Type.Apply(Type.Arrow(l), ts) => false
     case Type.Apply(t, ts) => false
     case Type.Enum(enum, kind) => false
@@ -544,7 +544,7 @@ object CodegenHelper {
       case Type.Str => asm.Type.getDescriptor(Constants.stringClass)
       case Type.Native => asm.Type.getDescriptor(Constants.objectClass)
       case Type.Apply(Type.Arrow(l), _) => s"L${decorate(interfaces(tpe))};"
-      case Type.Apply(Type.FTuple(l), lst) =>
+      case Type.Apply(Type.Tuple(l), lst) =>
         val clazzName = TupleClassName(lst.map(typeToWrappedType))
         s"L${decorate(clazzName)};"
       case _ if tpe.isEnum =>
@@ -574,7 +574,7 @@ object CodegenHelper {
     case Type.Str => asm.Type.getInternalName(Constants.stringClass)
     case Type.Native => asm.Type.getInternalName(Constants.objectClass)
     case Type.Apply(Type.Arrow(l), _) => decorate(interfaces(tpe))
-    case Type.Apply(Type.FTuple(l), lst) =>
+    case Type.Apply(Type.Tuple(l), lst) =>
       val clazzName = TupleClassName(lst.map(typeToWrappedType))
       decorate(clazzName)
     case _ if tpe.isEnum =>
@@ -613,9 +613,10 @@ object CodegenHelper {
     val bigIntegerClass : Class[_]= classOf[java.math.BigInteger]
     val arrayObjectClass : Class[_] = classOf[Array[Object]]
     val setClass : Class[_] = classOf[scala.collection.immutable.Set[Object]]
-    val flixClass : Class[_] = classOf[Flix]
+    val flixClass : Class[_] = classOf[api.Flix]
 
-    val unitClass : Class[_] = classOf[UnitClass]
+    val unitClass : Class[_] = classOf[api.Unit]
+    val tupleClass : Class[_] = classOf[api.Tuple]
     val cell$Bool : Class[_] = classOf[Cell$Bool]
     val cell$Char : Class[_] = classOf[Cell$Char]
     val cell$Int8 : Class[_] = classOf[Cell$Int8]
@@ -625,10 +626,10 @@ object CodegenHelper {
     val cell$Float32: Class[_] = classOf[Cell$Float32]
     val cell$Float64: Class[_] = classOf[Cell$Float64]
     val cell$Obj : Class[_] = classOf[Cell$Obj]
-    val tupleClass : Class[_] = classOf[Tuple]
+
     val scalaPredef = "scala/Predef$"
     val scalaMathPkg = "scala/math/package$"
-    val tagInterface : Class[_] = classOf[Enum]
+    val tagInterface : Class[_] = classOf[api.Enum]
   }
 
   // This constant is used in LoadBytecode, so we can't put it in the private Constants object.
@@ -658,8 +659,8 @@ object CodegenHelper {
       case Expression.ApplyTail(name, formals, actuals, tpe, loc) => actuals.flatMap(visit).toSet
       case Expression.ApplyHook(hook, args, tpe, loc) => args.flatMap(visit).toSet
       case Expression.ApplyClosure(exp, args, tpe, loc) => visit(exp) ++ args.flatMap(visit)
-      case Expression.Unary(op, exp, tpe, loc) => visit(exp)
-      case Expression.Binary(op, exp1, exp2, tpe, loc) => visit(exp1) ++ visit(exp2)
+      case Expression.Unary(sop, op, exp, tpe, loc) => visit(exp)
+      case Expression.Binary(sop, op, exp1, exp2, tpe, loc) => visit(exp1) ++ visit(exp2)
       case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) => visit(exp1) ++ visit(exp2) ++ visit(exp3)
       case Expression.Let(sym, exp1, exp2, tpe, loc) => visit(exp1) ++ visit(exp2)
       case Expression.LetRec(sym, exp1, exp2, tpe, loc) => visit(exp1) ++ visit(exp2)
@@ -717,8 +718,8 @@ object CodegenHelper {
     case Expression.ApplyTail(name, formals, actuals, tpe, loc) => actuals.flatMap(findEnumCases)
     case Expression.ApplyHook(hook, args, tpe, loc) => args.flatMap(findEnumCases)
     case Expression.ApplyClosure(exp, args, tpe, loc) => findEnumCases(exp) ::: args.flatMap(findEnumCases)
-    case Expression.Unary(op, exp, tpe, loc) => findEnumCases(exp)
-    case Expression.Binary(op, exp1, exp2, tpe, loc) => findEnumCases(exp1) ::: findEnumCases(exp2)
+    case Expression.Unary(sop, op, exp, tpe, loc) => findEnumCases(exp)
+    case Expression.Binary(sop, op, exp1, exp2, tpe, loc) => findEnumCases(exp1) ::: findEnumCases(exp2)
     case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) => findEnumCases(exp1) ::: findEnumCases(exp2) ::: findEnumCases(exp3)
     case Expression.Let(sym, exp1, exp2, tpe, loc) => findEnumCases(exp1) ::: findEnumCases(exp2)
     case Expression.Is(sym, tag, exp, loc) => findEnumCases(exp)

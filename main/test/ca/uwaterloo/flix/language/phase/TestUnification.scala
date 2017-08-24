@@ -221,7 +221,7 @@ class TestUnification extends FunSuite {
   }
 
   test("Unify.FTuple") {
-    val result = Unification.unify(Type.FTuple(42), Type.FTuple(42))
+    val result = Unification.unify(Type.Tuple(42), Type.Tuple(42))
     assert(result.isOk)
   }
 
@@ -386,12 +386,12 @@ class TestUnification extends FunSuite {
     val subst0 = Substitution.empty
     val res1 = Unification.unifyM(Type.Var(1, Kind.Star), Type.Bool, SL)
     val res2 = Unification.unifyM(Type.Var(2, Kind.Star), Type.Char, SL)
-    val res3 = Unification.unifyM(Type.Var(3, Kind.Star), Type.mkFTuple(List(Type.Var(1, Kind.Star), Type.Var(2, Kind.Star))), SL)
+    val res3 = Unification.unifyM(Type.Var(3, Kind.Star), Type.mkTuple(List(Type.Var(1, Kind.Star), Type.Var(2, Kind.Star))), SL)
     val result = seqM(List(res1, res2, res3)).run(subst0)
     val (subst, tpe) = result.get
     assertResult(Type.Bool)(subst.m(Type.Var(1, Kind.Star)))
     assertResult(Type.Char)(subst.m(Type.Var(2, Kind.Star)))
-    assertResult(Type.mkFTuple(List(Type.Bool, Type.Char)))(subst.m(Type.Var(3, Kind.Star)))
+    assertResult(Type.mkTuple(List(Type.Bool, Type.Char)))(subst.m(Type.Var(3, Kind.Star)))
   }
 
 }

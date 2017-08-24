@@ -212,9 +212,6 @@ namespace Option {
 
 
 
-
-
-
     ///
     /// Returns `true` if and only if `o1` and `o2` and equal.
     ///
@@ -223,4 +220,5 @@ namespace Option {
         case (Some(v1), Some(v2)) => v1 == v2
         case _ => false
     }
+
 }

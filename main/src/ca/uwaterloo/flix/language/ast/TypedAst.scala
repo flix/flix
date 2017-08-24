@@ -29,6 +29,7 @@ object TypedAst {
                   indexes: Map[Symbol.TableSym, TypedAst.Index],
                   strata: List[TypedAst.Stratum],
                   properties: List[TypedAst.Property],
+                  specialOps: Map[SpecialOperator, Map[Type, Symbol.DefnSym]],
                   reachable: Set[Symbol.DefnSym],
                   time: Time) extends TypedAst
 

@@ -74,13 +74,8 @@ object Interpreter {
         case (macc, (formal, actual)) => macc + (formal.sym.toString -> actual)
       }
       eval(constant.exp, root, env2)
-    case Expression.Unary(op, exp, _, _) => evalUnary(op, exp, root, env0)
-    case Expression.Binary(op, exp1, exp2, _, _) => op match {
-      case o: ArithmeticOperator => evalArithmetic(o, exp1, exp2, root, env0)
-      case o: ComparisonOperator => evalComparison(o, exp1, exp2, root, env0)
-      case o: LogicalOperator => evalLogical(o, exp1, exp2, root, env0)
-      case o: BitwiseOperator => evalBitwise(o, exp1, exp2, root, env0)
-    }
+    case Expression.Unary(sop, op, exp, _, _) => evalUnary(sop, exp, env0, root)
+    case Expression.Binary(sop, op, exp1, exp2, _, _) => evalBinary(sop, exp1, exp2, env0, root)
     case Expression.IfThenElse(exp1, exp2, exp3, tpe, _) =>
       val cond = cast2bool(eval(exp1, root, env0))
       if (cond) eval(exp2, root, env0) else eval(exp3, root, env0)
@@ -159,222 +154,283 @@ object Interpreter {
   }
 
   /**
-    * Applies the given unary operator `op` to the value of the expression `exp0` under the environment `env0`
+    * Applies the given unary semantic operator `sop` to the value of the expression `exp0` under the environment `env0`
     */
-  private def evalUnary(op: UnaryOperator, exp0: Expression, root: Root, env0: Map[String, AnyRef]): AnyRef = {
+  private def evalUnary(sop: SemanticOperator, exp0: Expression, env0: Map[String, AnyRef], root: Root): AnyRef = {
+    // Evaluate the operand.
     val v = eval(exp0, root, env0)
-    op match {
-      case UnaryOperator.LogicalNot => mkBool(!cast2bool(v))
-      case UnaryOperator.Plus => v // nop
-      case UnaryOperator.Minus => exp0.tpe match {
-        case Type.Float32 => Value.Float32(-cast2float32(v))
-        case Type.Float64 => Value.Float64(-cast2float64(v))
-        case Type.Int8 => Value.Int8((-cast2int8(v)).toByte)
-        case Type.Int16 => Value.Int16((-cast2int16(v)).toShort)
-        case Type.Int32 => Value.Int32(-cast2int32(v))
-        case Type.Int64 => Value.Int64(-cast2int64(v))
-        case Type.BigInt => Value.BigInt(cast2bigInt(v).negate)
-        case _ => throw InternalRuntimeException(s"Can't apply UnaryOperator.$op to type ${exp0.tpe}.")
-      }
-      case UnaryOperator.BitwiseNegate => exp0.tpe match {
-        // NB: Despite what Intellij Idea says, the .toByte and toShort are required.
-        case Type.Int8 => Value.Int8((~cast2int8(v)).toByte)
-        case Type.Int16 => Value.Int16((~cast2int16(v)).toShort)
-        case Type.Int32 => Value.Int32(~cast2int32(v))
-        case Type.Int64 => Value.Int64(~cast2int64(v))
-        case Type.BigInt => Value.BigInt(cast2bigInt(v).not)
-        case _ => throw InternalRuntimeException(s"Can't apply UnaryOperator.$op to type ${exp0.tpe}.")
-      }
+
+    // Apply the operator.
+    sop match {
+      case SemanticOperator.BoolOp.Not => mkBool(!cast2bool(v))
+
+      case SemanticOperator.Float32Op.Neg => Value.Float32(-cast2float32(v))
+
+      case SemanticOperator.Float64Op.Neg => Value.Float64(-cast2float64(v))
+
+      case SemanticOperator.Int8Op.Neg => Value.Int8((-cast2int8(v)).toByte)
+      case SemanticOperator.Int8Op.Not => Value.Int8((~cast2int8(v)).toByte)
+
+      case SemanticOperator.Int16Op.Neg => Value.Int16((-cast2int16(v)).toShort)
+      case SemanticOperator.Int16Op.Not => Value.Int16((~cast2int16(v)).toShort)
+
+      case SemanticOperator.Int32Op.Neg => Value.Int32(-cast2int32(v))
+      case SemanticOperator.Int32Op.Not => Value.Int32(~cast2int32(v))
+
+      case SemanticOperator.Int64Op.Neg => Value.Int64(-cast2int64(v))
+      case SemanticOperator.Int64Op.Not => Value.Int64(~cast2int64(v))
+
+      case SemanticOperator.BigIntOp.Neg => Value.BigInt(cast2bigInt(v).negate)
+      case SemanticOperator.BigIntOp.Not => Value.BigInt(cast2bigInt(v).not)
+
+      case _ => throw InternalRuntimeException(s"Unexpected Semantic Operator: '$sop'.")
     }
   }
 
   /**
-    * Applies the given arithmetic operator `op` to the values of the two expressions `exp1` and `exp2` under the environment `env0`
+    * Applies the given binary semantic operator `sop`  to the values of the two expressions `exp1` and `exp2` under the environment `env0`
     */
-  private def evalArithmetic(op: ArithmeticOperator, exp1: Expression, exp2: Expression, root: Root, env0: Map[String, AnyRef]): AnyRef = {
-    val v1 = eval(exp1, root, env0)
-    val v2 = eval(exp2, root, env0)
-    op match {
-      case BinaryOperator.Plus => exp1.tpe match {
-        case Type.Float32 => Value.Float32(cast2float32(v1) + cast2float32(v2))
-        case Type.Float64 => Value.Float64(cast2float64(v1) + cast2float64(v2))
-        case Type.Int8 => Value.Int8((cast2int8(v1) + cast2int8(v2)).toByte)
-        case Type.Int16 => Value.Int16((cast2int16(v1) + cast2int16(v2)).toShort)
-        case Type.Int32 => Value.Int32(cast2int32(v1) + cast2int32(v2))
-        case Type.Int64 => Value.Int64(cast2int64(v1) + cast2int64(v2))
-        case Type.BigInt => Value.BigInt(cast2bigInt(v1) add cast2bigInt(v2))
-        case Type.Str =>
-          val s1 = cast2str(v1)
-          val s2 = cast2str(v2)
-          Value.Str(s1 + s2)
+  private def evalBinary(sop: SemanticOperator, exp1: Expression, exp2: Expression, env0: Map[String, AnyRef], root: Root): AnyRef = {
 
-        case _ => throw InternalRuntimeException(s"Can't apply BinaryOperator.$op to type ${exp1.tpe}.")
-      }
-      case BinaryOperator.Minus => exp1.tpe match {
-        case Type.Float32 => Value.Float32(cast2float32(v1) - cast2float32(v2))
-        case Type.Float64 => Value.Float64(cast2float64(v1) - cast2float64(v2))
-        case Type.Int8 => Value.Int8((cast2int8(v1) - cast2int8(v2)).toByte)
-        case Type.Int16 => Value.Int16((cast2int16(v1) - cast2int16(v2)).toShort)
-        case Type.Int32 => Value.Int32(cast2int32(v1) - cast2int32(v2))
-        case Type.Int64 => Value.Int64(cast2int64(v1) - cast2int64(v2))
-        case Type.BigInt => Value.BigInt(cast2bigInt(v1) subtract cast2bigInt(v2))
-        case _ => throw InternalRuntimeException(s"Can't apply BinaryOperator.$op to type ${exp1.tpe}.")
-      }
-      case BinaryOperator.Times => exp1.tpe match {
-        case Type.Float32 => Value.Float32(cast2float32(v1) * cast2float32(v2))
-        case Type.Float64 => Value.Float64(cast2float64(v1) * cast2float64(v2))
-        case Type.Int8 => Value.Int8((cast2int8(v1) * cast2int8(v2)).toByte)
-        case Type.Int16 => Value.Int16((cast2int16(v1) * cast2int16(v2)).toShort)
-        case Type.Int32 => Value.Int32(cast2int32(v1) * cast2int32(v2))
-        case Type.Int64 => Value.Int64(cast2int64(v1) * cast2int64(v2))
-        case Type.BigInt => Value.BigInt(cast2bigInt(v1) multiply cast2bigInt(v2))
-        case _ => throw InternalRuntimeException(s"Can't apply BinaryOperator.$op to type ${exp1.tpe}.")
-      }
-      case BinaryOperator.Divide => exp1.tpe match {
-        case Type.Float32 => Value.Float32(cast2float32(v1) / cast2float32(v2))
-        case Type.Float64 => Value.Float64(cast2float64(v1) / cast2float64(v2))
-        case Type.Int8 => Value.Int8((cast2int8(v1) / cast2int8(v2)).toByte)
-        case Type.Int16 => Value.Int16((cast2int16(v1) / cast2int16(v2)).toShort)
-        case Type.Int32 => Value.Int32(cast2int32(v1) / cast2int32(v2))
-        case Type.Int64 => Value.Int64(cast2int64(v1) / cast2int64(v2))
-        case Type.BigInt => Value.BigInt(cast2bigInt(v1) divide cast2bigInt(v2))
-        case _ => throw InternalRuntimeException(s"Can't apply BinaryOperator.$op to type ${exp1.tpe}.")
-      }
-      case BinaryOperator.Modulo => exp1.tpe match {
-        case Type.Float32 => Value.Float32(cast2float32(v1) % cast2float32(v2))
-        case Type.Float64 => Value.Float64(cast2float64(v1) % cast2float64(v2))
-        case Type.Int8 => Value.Int8((cast2int8(v1) % cast2int8(v2)).toByte)
-        case Type.Int16 => Value.Int16((cast2int16(v1) % cast2int16(v2)).toShort)
-        case Type.Int32 => Value.Int32(cast2int32(v1) % cast2int32(v2))
-        case Type.Int64 => Value.Int64(cast2int64(v1) % cast2int64(v2))
-        case Type.BigInt => Value.BigInt(cast2bigInt(v1) remainder cast2bigInt(v2))
-        case _ => throw InternalRuntimeException(s"Can't apply BinaryOperator.$op to type ${exp1.tpe}.")
-      }
-      case BinaryOperator.Exponentiate => exp1.tpe match {
-        case Type.Float32 => Value.Float32(math.pow(cast2float32(v1), cast2float32(v2)).toFloat)
-        case Type.Float64 => Value.Float64(math.pow(cast2float64(v1), cast2float64(v2)))
-        case Type.Int8 => Value.Int8(math.pow(cast2int8(v1), cast2int8(v2)).toByte)
-        case Type.Int16 => Value.Int16(math.pow(cast2int16(v1), cast2int16(v2)).toShort)
-        case Type.Int32 => Value.Int32(math.pow(cast2int32(v1), cast2int32(v2)).toInt)
-        case Type.Int64 => Value.Int64(math.pow(cast2int64(v1), cast2int64(v2)).toLong)
-        case _ => throw InternalRuntimeException(s"Can't apply BinaryOperator.$op to type ${exp1.tpe}.")
+    def evalBoolOp(sop: SemanticOperator.BoolOp): AnyRef = {
+      // Evaluate the left operand.
+      val v1 = cast2bool(eval(exp1, root, env0))
+
+      sop match {
+        // Lazy operators.
+        case SemanticOperator.BoolOp.And if v1 => mkBool(cast2bool(eval(exp2, root, env0)))
+        case SemanticOperator.BoolOp.And => mkBool(false)
+
+        // Lazy operators.
+        case SemanticOperator.BoolOp.Or if v1 => mkBool(true)
+        case SemanticOperator.BoolOp.Or => mkBool(cast2bool(eval(exp2, root, env0)))
+
+        case SemanticOperator.BoolOp.Eq => mkBool(v1 == cast2bool(eval(exp2, root, env0)))
+        case SemanticOperator.BoolOp.Neq => mkBool(v1 != cast2bool(eval(exp2, root, env0)))
+        case _ => throw InternalRuntimeException(s"Unexpected Semantic Operator: '$sop'.")
       }
     }
-  }
 
-  /**
-    * Applies the given comparison operator `op` to the values of the two expressions `exp1` and `exp2` under the environment `env0`
-    */
-  private def evalComparison(op: ComparisonOperator, exp1: Expression, exp2: Expression, root: Root, env0: Map[String, AnyRef]): AnyRef = {
-    val v1 = eval(exp1, root, env0)
-    val v2 = eval(exp2, root, env0)
-    op match {
-      case BinaryOperator.Less => exp1.tpe match {
-        case Type.Char => mkBool(cast2char(v1) < cast2char(v2))
-        case Type.Float32 => mkBool(cast2float32(v1) < cast2float32(v2))
-        case Type.Float64 => mkBool(cast2float64(v1) < cast2float64(v2))
-        case Type.Int8 => mkBool(cast2int8(v1) < cast2int8(v2))
-        case Type.Int16 => mkBool(cast2int16(v1) < cast2int16(v2))
-        case Type.Int32 => mkBool(cast2int32(v1) < cast2int32(v2))
-        case Type.Int64 => mkBool(cast2int64(v1) < cast2int64(v2))
-        case Type.BigInt => mkBool((cast2bigInt(v1) compareTo cast2bigInt(v2)) < 0)
-        case _ => throw InternalRuntimeException(s"Can't apply BinaryOperator.$op to type ${exp1.tpe}.")
+    def evalCharOp(sop: SemanticOperator.CharOp): AnyRef = {
+      // Evaluate the operands.
+      val v1 = eval(exp1, root, env0)
+      val v2 = eval(exp2, root, env0)
+
+      sop match {
+        case SemanticOperator.CharOp.Eq => mkBool(cast2char(v1) == cast2char(v2))
+        case SemanticOperator.CharOp.Neq => mkBool(cast2char(v1) != cast2char(v2))
+        case SemanticOperator.CharOp.Lt => mkBool(cast2char(v1) < cast2char(v2))
+        case SemanticOperator.CharOp.Le => mkBool(cast2char(v1) <= cast2char(v2))
+        case SemanticOperator.CharOp.Gt => mkBool(cast2char(v1) > cast2char(v2))
+        case SemanticOperator.CharOp.Ge => mkBool(cast2char(v1) >= cast2char(v2))
+        case _ => throw InternalRuntimeException(s"Unexpected Semantic Operator: '$sop'.")
       }
-      case BinaryOperator.LessEqual => exp1.tpe match {
-        case Type.Char => mkBool(cast2char(v1) <= cast2char(v2))
-        case Type.Float32 => mkBool(cast2float32(v1) <= cast2float32(v2))
-        case Type.Float64 => mkBool(cast2float64(v1) <= cast2float64(v2))
-        case Type.Int8 => mkBool(cast2int8(v1) <= cast2int8(v2))
-        case Type.Int16 => mkBool(cast2int16(v1) <= cast2int16(v2))
-        case Type.Int32 => mkBool(cast2int32(v1) <= cast2int32(v2))
-        case Type.Int64 => mkBool(cast2int64(v1) <= cast2int64(v2))
-        case Type.BigInt => mkBool((cast2bigInt(v1) compareTo cast2bigInt(v2)) <= 0)
-        case _ => throw InternalRuntimeException(s"Can't apply BinaryOperator.$op to type ${exp1.tpe}.")
-      }
-      case BinaryOperator.Greater => exp1.tpe match {
-        case Type.Char => mkBool(cast2char(v1) > cast2char(v2))
-        case Type.Float32 => mkBool(cast2float32(v1) > cast2float32(v2))
-        case Type.Float64 => mkBool(cast2float64(v1) > cast2float64(v2))
-        case Type.Int8 => mkBool(cast2int8(v1) > cast2int8(v2))
-        case Type.Int16 => mkBool(cast2int16(v1) > cast2int16(v2))
-        case Type.Int32 => mkBool(cast2int32(v1) > cast2int32(v2))
-        case Type.Int64 => mkBool(cast2int64(v1) > cast2int64(v2))
-        case Type.BigInt => mkBool((cast2bigInt(v1) compareTo cast2bigInt(v2)) > 0)
-        case _ => throw InternalRuntimeException(s"Can't apply BinaryOperator.$op to type ${exp1.tpe}.")
-      }
-      case BinaryOperator.GreaterEqual => exp1.tpe match {
-        case Type.Char => mkBool(cast2char(v1) >= cast2char(v2))
-        case Type.Float32 => mkBool(cast2float32(v1) >= cast2float32(v2))
-        case Type.Float64 => mkBool(cast2float64(v1) >= cast2float64(v2))
-        case Type.Int8 => mkBool(cast2int8(v1) >= cast2int8(v2))
-        case Type.Int16 => mkBool(cast2int16(v1) >= cast2int16(v2))
-        case Type.Int32 => mkBool(cast2int32(v1) >= cast2int32(v2))
-        case Type.Int64 => mkBool(cast2int64(v1) >= cast2int64(v2))
-        case Type.BigInt => mkBool((cast2bigInt(v1) compareTo cast2bigInt(v2)) >= 0)
-        case _ => throw InternalRuntimeException(s"Can't apply BinaryOperator.$op to type ${exp1.tpe}.")
-      }
-      case BinaryOperator.Equal => mkBool(Value.equal(v1, v2))
-      case BinaryOperator.NotEqual => mkBool(!Value.equal(v1, v2))
     }
-  }
 
-  /**
-    * Applies the given logical operator `op` to the values of the two expressions `exp1` and `exp2` under the environment `env0`
-    */
-  private def evalLogical(op: LogicalOperator, exp1: Expression, exp2: Expression, root: Root, env0: Map[String, AnyRef]): AnyRef = op match {
-    case BinaryOperator.LogicalAnd =>
-      if (cast2bool(eval(exp1, root, env0))) eval(exp2, root, env0) else Value.False
-    case BinaryOperator.LogicalOr =>
-      if (cast2bool(eval(exp1, root, env0))) Value.True else eval(exp2, root, env0)
-  }
+    def evalFloat32Op(sop: SemanticOperator.Float32Op): AnyRef = {
+      // Evaluate the operands.
+      val v1 = eval(exp1, root, env0)
+      val v2 = eval(exp2, root, env0)
 
-  /**
-    * Applies the given bitwise operator `op` to the values of the two expressions `exp1` and `exp2` under the environment `env0`
-    */
-  private def evalBitwise(op: BitwiseOperator, exp1: Expression, exp2: Expression, root: Root, env0: Map[String, AnyRef]): AnyRef = {
-    val v1 = eval(exp1, root, env0)
-    val v2 = eval(exp2, root, env0)
-    op match {
-      case BinaryOperator.BitwiseAnd => exp1.tpe match {
-        case Type.Int8 => Value.Int8((cast2int8(v1) & cast2int8(v2)).toByte)
-        case Type.Int16 => Value.Int16((cast2int16(v1) & cast2int16(v2)).toShort)
-        case Type.Int32 => Value.Int32(cast2int32(v1) & cast2int32(v2))
-        case Type.Int64 => Value.Int64(cast2int64(v1) & cast2int64(v2))
-        case Type.BigInt => Value.BigInt(cast2bigInt(v1) and cast2bigInt(v2))
-        case _ => throw InternalRuntimeException(s"Can't apply BinaryOperator.$op to type ${exp1.tpe}.")
+      sop match {
+        case SemanticOperator.Float32Op.Add => Value.Float32(cast2float32(v1) + cast2float32(v2))
+        case SemanticOperator.Float32Op.Sub => Value.Float32(cast2float32(v1) - cast2float32(v2))
+        case SemanticOperator.Float32Op.Mul => Value.Float32(cast2float32(v1) * cast2float32(v2))
+        case SemanticOperator.Float32Op.Div => Value.Float32(cast2float32(v1) / cast2float32(v2))
+        case SemanticOperator.Float32Op.Rem => Value.Float32(cast2float32(v1) % cast2float32(v2))
+        case SemanticOperator.Float32Op.Exp => Value.Float32(math.pow(cast2float32(v1), cast2float32(v2)).toFloat)
+        case SemanticOperator.Float32Op.Eq => mkBool(cast2float32(v1) == cast2float32(v2))
+        case SemanticOperator.Float32Op.Neq => mkBool(cast2float32(v1) != cast2float32(v2))
+        case SemanticOperator.Float32Op.Lt => mkBool(cast2float32(v1) < cast2float32(v2))
+        case SemanticOperator.Float32Op.Le => mkBool(cast2float32(v1) <= cast2float32(v2))
+        case SemanticOperator.Float32Op.Gt => mkBool(cast2float32(v1) > cast2float32(v2))
+        case SemanticOperator.Float32Op.Ge => mkBool(cast2float32(v1) >= cast2float32(v2))
+        case _ => throw InternalRuntimeException(s"Unexpected Semantic Operator: '$sop'.")
       }
-      case BinaryOperator.BitwiseOr => exp1.tpe match {
-        case Type.Int8 => Value.Int8((cast2int8(v1) | cast2int8(v2)).toByte)
-        case Type.Int16 => Value.Int16((cast2int16(v1) | cast2int16(v2)).toShort)
-        case Type.Int32 => Value.Int32(cast2int32(v1) | cast2int32(v2))
-        case Type.Int64 => Value.Int64(cast2int64(v1) | cast2int64(v2))
-        case Type.BigInt => Value.BigInt(cast2bigInt(v1) or cast2bigInt(v2))
-        case _ => throw InternalRuntimeException(s"Can't apply BinaryOperator.$op to type ${exp1.tpe}.")
+    }
+
+    def evalFloat64Op(sop: SemanticOperator.Float64Op): AnyRef = {
+      // Evaluate the operands.
+      val v1 = eval(exp1, root, env0)
+      val v2 = eval(exp2, root, env0)
+
+      sop match {
+        case SemanticOperator.Float64Op.Add => Value.Float64(cast2float64(v1) + cast2float64(v2))
+        case SemanticOperator.Float64Op.Sub => Value.Float64(cast2float64(v1) - cast2float64(v2))
+        case SemanticOperator.Float64Op.Mul => Value.Float64(cast2float64(v1) * cast2float64(v2))
+        case SemanticOperator.Float64Op.Div => Value.Float64(cast2float64(v1) / cast2float64(v2))
+        case SemanticOperator.Float64Op.Rem => Value.Float64(cast2float64(v1) % cast2float64(v2))
+        case SemanticOperator.Float64Op.Exp => Value.Float64(math.pow(cast2float64(v1), cast2float64(v2)))
+        case SemanticOperator.Float64Op.Eq => mkBool(cast2float64(v1) == cast2float64(v2))
+        case SemanticOperator.Float64Op.Neq => mkBool(cast2float64(v1) != cast2float64(v2))
+        case SemanticOperator.Float64Op.Lt => mkBool(cast2float64(v1) < cast2float64(v2))
+        case SemanticOperator.Float64Op.Le => mkBool(cast2float64(v1) <= cast2float64(v2))
+        case SemanticOperator.Float64Op.Gt => mkBool(cast2float64(v1) > cast2float64(v2))
+        case SemanticOperator.Float64Op.Ge => mkBool(cast2float64(v1) >= cast2float64(v2))
+        case _ => throw InternalRuntimeException(s"Unexpected Semantic Operator: '$sop'.")
       }
-      case BinaryOperator.BitwiseXor => exp1.tpe match {
-        case Type.Int8 => Value.Int8((cast2int8(v1) ^ cast2int8(v2)).toByte)
-        case Type.Int16 => Value.Int16((cast2int16(v1) ^ cast2int16(v2)).toShort)
-        case Type.Int32 => Value.Int32(cast2int32(v1) ^ cast2int32(v2))
-        case Type.Int64 => Value.Int64(cast2int64(v1) ^ cast2int64(v2))
-        case Type.BigInt => Value.BigInt(cast2bigInt(v1) xor cast2bigInt(v2))
-        case _ => throw InternalRuntimeException(s"Can't apply BinaryOperator.$op to type ${exp1.tpe}.")
+    }
+
+    def evalInt8Op(sop: SemanticOperator.Int8Op): AnyRef = {
+      // Evaluate the operands.
+      val v1 = eval(exp1, root, env0)
+      val v2 = eval(exp2, root, env0)
+
+      sop match {
+        case SemanticOperator.Int8Op.Add => Value.Int8((cast2int8(v1) + cast2int8(v2)).toByte)
+        case SemanticOperator.Int8Op.Sub => Value.Int8((cast2int8(v1) - cast2int8(v2)).toByte)
+        case SemanticOperator.Int8Op.Mul => Value.Int8((cast2int8(v1) * cast2int8(v2)).toByte)
+        case SemanticOperator.Int8Op.Div => Value.Int8((cast2int8(v1) / cast2int8(v2)).toByte)
+        case SemanticOperator.Int8Op.Rem => Value.Int8((cast2int8(v1) % cast2int8(v2)).toByte)
+        case SemanticOperator.Int8Op.Exp => Value.Int8(math.pow(cast2int8(v1), cast2int8(v2)).toByte)
+        case SemanticOperator.Int8Op.And => Value.Int8((cast2int8(v1) & cast2int8(v2)).toByte)
+        case SemanticOperator.Int8Op.Or => Value.Int8((cast2int8(v1) | cast2int8(v2)).toByte)
+        case SemanticOperator.Int8Op.Xor => Value.Int8((cast2int8(v1) ^ cast2int8(v2)).toByte)
+        case SemanticOperator.Int8Op.Shl => Value.Int8((cast2int8(v1) << cast2int32(v2)).toByte)
+        case SemanticOperator.Int8Op.Shr => Value.Int8((cast2int8(v1) >> cast2int32(v2)).toByte)
+        case SemanticOperator.Int8Op.Eq => mkBool(cast2int8(v1) == cast2int8(v2))
+        case SemanticOperator.Int8Op.Neq => mkBool(cast2int8(v1) != cast2int8(v2))
+        case SemanticOperator.Int8Op.Lt => mkBool(cast2int8(v1) < cast2int8(v2))
+        case SemanticOperator.Int8Op.Le => mkBool(cast2int8(v1) <= cast2int8(v2))
+        case SemanticOperator.Int8Op.Gt => mkBool(cast2int8(v1) > cast2int8(v2))
+        case SemanticOperator.Int8Op.Ge => mkBool(cast2int8(v1) >= cast2int8(v2))
+        case _ => throw InternalRuntimeException(s"Unexpected Semantic Operator: '$sop'.")
       }
-      case BinaryOperator.BitwiseLeftShift => exp1.tpe match {
-        case Type.Int8 => Value.Int8((cast2int8(v1) << cast2int32(v2)).toByte)
-        case Type.Int16 => Value.Int16((cast2int16(v1) << cast2int32(v2)).toShort)
-        case Type.Int32 => Value.Int32(cast2int32(v1) << cast2int32(v2))
-        case Type.Int64 => Value.Int64(cast2int64(v1) << cast2int32(v2))
-        case Type.BigInt => Value.BigInt(cast2bigInt(v1) shiftLeft cast2int32(v2))
-        case _ => throw InternalRuntimeException(s"Can't apply BinaryOperator.$op to type ${exp1.tpe}.")
+    }
+
+    def evalInt16Op(sop: SemanticOperator.Int16Op): AnyRef = {
+      // Evaluate the operands.
+      val v1 = eval(exp1, root, env0)
+      val v2 = eval(exp2, root, env0)
+
+      sop match {
+        case SemanticOperator.Int16Op.Add => Value.Int16((cast2int16(v1) + cast2int16(v2)).toShort)
+        case SemanticOperator.Int16Op.Sub => Value.Int16((cast2int16(v1) - cast2int16(v2)).toShort)
+        case SemanticOperator.Int16Op.Mul => Value.Int16((cast2int16(v1) * cast2int16(v2)).toShort)
+        case SemanticOperator.Int16Op.Div => Value.Int16((cast2int16(v1) / cast2int16(v2)).toShort)
+        case SemanticOperator.Int16Op.Rem => Value.Int16((cast2int16(v1) % cast2int16(v2)).toShort)
+        case SemanticOperator.Int16Op.Exp => Value.Int16(math.pow(cast2int16(v1), cast2int16(v2)).toShort)
+        case SemanticOperator.Int16Op.And => Value.Int16((cast2int16(v1) & cast2int16(v2)).toShort)
+        case SemanticOperator.Int16Op.Or => Value.Int16((cast2int16(v1) | cast2int16(v2)).toShort)
+        case SemanticOperator.Int16Op.Xor => Value.Int16((cast2int16(v1) ^ cast2int16(v2)).toShort)
+        case SemanticOperator.Int16Op.Shl => Value.Int16((cast2int16(v1) << cast2int32(v2)).toShort)
+        case SemanticOperator.Int16Op.Shr => Value.Int16((cast2int16(v1) >> cast2int32(v2)).toShort)
+        case SemanticOperator.Int16Op.Eq => mkBool(cast2int16(v1) == cast2int16(v2))
+        case SemanticOperator.Int16Op.Neq => mkBool(cast2int16(v1) != cast2int16(v2))
+        case SemanticOperator.Int16Op.Lt => mkBool(cast2int16(v1) < cast2int16(v2))
+        case SemanticOperator.Int16Op.Le => mkBool(cast2int16(v1) <= cast2int16(v2))
+        case SemanticOperator.Int16Op.Gt => mkBool(cast2int16(v1) > cast2int16(v2))
+        case SemanticOperator.Int16Op.Ge => mkBool(cast2int16(v1) >= cast2int16(v2))
+        case _ => throw InternalRuntimeException(s"Unexpected Semantic Operator: '$sop'.")
       }
-      case BinaryOperator.BitwiseRightShift => exp1.tpe match {
-        case Type.Int8 => Value.Int8((cast2int8(v1) >> cast2int32(v2)).toByte)
-        case Type.Int16 => Value.Int16((cast2int16(v1) >> cast2int32(v2)).toShort)
-        case Type.Int32 => Value.Int32(cast2int32(v1) >> cast2int32(v2))
-        case Type.Int64 => Value.Int64(cast2int64(v1) >> cast2int32(v2))
-        case Type.BigInt => Value.BigInt(cast2bigInt(v1) shiftRight cast2int32(v2))
-        case _ => throw InternalRuntimeException(s"Can't apply BinaryOperator.$op to type ${exp1.tpe}.")
+    }
+
+    def evalInt32Op(sop: SemanticOperator.Int32Op): AnyRef = {
+      // Evaluate the operands.
+      val v1 = eval(exp1, root, env0)
+      val v2 = eval(exp2, root, env0)
+
+      sop match {
+        case SemanticOperator.Int32Op.Add => Value.Int32(cast2int32(v1) + cast2int32(v2))
+        case SemanticOperator.Int32Op.Sub => Value.Int32(cast2int32(v1) - cast2int32(v2))
+        case SemanticOperator.Int32Op.Mul => Value.Int32(cast2int32(v1) * cast2int32(v2))
+        case SemanticOperator.Int32Op.Div => Value.Int32(cast2int32(v1) / cast2int32(v2))
+        case SemanticOperator.Int32Op.Rem => Value.Int32(cast2int32(v1) % cast2int32(v2))
+        case SemanticOperator.Int32Op.Exp => Value.Int32(math.pow(cast2int32(v1), cast2int32(v2)).toInt)
+        case SemanticOperator.Int32Op.And => Value.Int32(cast2int32(v1) & cast2int32(v2))
+        case SemanticOperator.Int32Op.Or => Value.Int32(cast2int32(v1) | cast2int32(v2))
+        case SemanticOperator.Int32Op.Xor => Value.Int32(cast2int32(v1) ^ cast2int32(v2))
+        case SemanticOperator.Int32Op.Shl => Value.Int32(cast2int32(v1) << cast2int32(v2))
+        case SemanticOperator.Int32Op.Shr => Value.Int32(cast2int32(v1) >> cast2int32(v2))
+        case SemanticOperator.Int32Op.Eq => mkBool(cast2int32(v1) == cast2int32(v2))
+        case SemanticOperator.Int32Op.Neq => mkBool(cast2int32(v1) != cast2int32(v2))
+        case SemanticOperator.Int32Op.Lt => mkBool(cast2int32(v1) < cast2int32(v2))
+        case SemanticOperator.Int32Op.Le => mkBool(cast2int32(v1) <= cast2int32(v2))
+        case SemanticOperator.Int32Op.Gt => mkBool(cast2int32(v1) > cast2int32(v2))
+        case SemanticOperator.Int32Op.Ge => mkBool(cast2int32(v1) >= cast2int32(v2))
+        case _ => throw InternalRuntimeException(s"Unexpected Semantic Operator: '$sop'.")
       }
+    }
+
+    def evalInt64Op(sop: SemanticOperator.Int64Op): AnyRef = {
+      // Evaluate the operands.
+      val v1 = eval(exp1, root, env0)
+      val v2 = eval(exp2, root, env0)
+
+      sop match {
+        case SemanticOperator.Int64Op.Add => Value.Int64(cast2int64(v1) + cast2int64(v2))
+        case SemanticOperator.Int64Op.Sub => Value.Int64(cast2int64(v1) - cast2int64(v2))
+        case SemanticOperator.Int64Op.Mul => Value.Int64(cast2int64(v1) * cast2int64(v2))
+        case SemanticOperator.Int64Op.Div => Value.Int64(cast2int64(v1) / cast2int64(v2))
+        case SemanticOperator.Int64Op.Rem => Value.Int64(cast2int64(v1) % cast2int64(v2))
+        case SemanticOperator.Int64Op.Exp => Value.Int64(math.pow(cast2int64(v1), cast2int64(v2)).toLong)
+        case SemanticOperator.Int64Op.And => Value.Int64(cast2int64(v1) & cast2int64(v2))
+        case SemanticOperator.Int64Op.Or => Value.Int64(cast2int64(v1) | cast2int64(v2))
+        case SemanticOperator.Int64Op.Xor => Value.Int64(cast2int64(v1) ^ cast2int64(v2))
+        case SemanticOperator.Int64Op.Shl => Value.Int64(cast2int64(v1) << cast2int32(v2))
+        case SemanticOperator.Int64Op.Shr => Value.Int64(cast2int64(v1) >> cast2int32(v2))
+        case SemanticOperator.Int64Op.Eq => mkBool(cast2int64(v1) == cast2int64(v2))
+        case SemanticOperator.Int64Op.Neq => mkBool(cast2int64(v1) != cast2int64(v2))
+        case SemanticOperator.Int64Op.Lt => mkBool(cast2int64(v1) < cast2int64(v2))
+        case SemanticOperator.Int64Op.Le => mkBool(cast2int64(v1) <= cast2int64(v2))
+        case SemanticOperator.Int64Op.Gt => mkBool(cast2int64(v1) > cast2int64(v2))
+        case SemanticOperator.Int64Op.Ge => mkBool(cast2int64(v1) >= cast2int64(v2))
+        case _ => throw InternalRuntimeException(s"Unexpected Semantic Operator: '$sop'.")
+      }
+    }
+
+    def evalBigIntOp(sop: SemanticOperator.BigIntOp): AnyRef = {
+      // Evaluate the operands.
+      val v1 = eval(exp1, root, env0)
+      val v2 = eval(exp2, root, env0)
+
+      sop match {
+        case SemanticOperator.BigIntOp.Add => Value.BigInt(cast2bigInt(v1) add cast2bigInt(v2))
+        case SemanticOperator.BigIntOp.Sub => Value.BigInt(cast2bigInt(v1) subtract cast2bigInt(v2))
+        case SemanticOperator.BigIntOp.Mul => Value.BigInt(cast2bigInt(v1) multiply cast2bigInt(v2))
+        case SemanticOperator.BigIntOp.Div => Value.BigInt(cast2bigInt(v1) divide cast2bigInt(v2))
+        case SemanticOperator.BigIntOp.Rem => Value.BigInt(cast2bigInt(v1) remainder cast2bigInt(v2))
+        case SemanticOperator.BigIntOp.Exp => Value.BigInt(cast2bigInt(v1) pow cast2int32(v2))
+        case SemanticOperator.BigIntOp.And => Value.BigInt(cast2bigInt(v1) and cast2bigInt(v2))
+        case SemanticOperator.BigIntOp.Or => Value.BigInt(cast2bigInt(v1) or cast2bigInt(v2))
+        case SemanticOperator.BigIntOp.Xor => Value.BigInt(cast2bigInt(v1) xor cast2bigInt(v2))
+        case SemanticOperator.BigIntOp.Shl => Value.BigInt(cast2bigInt(v1) shiftLeft cast2int32(v2))
+        case SemanticOperator.BigIntOp.Shr => Value.BigInt(cast2bigInt(v1) shiftRight cast2int32(v2))
+        case SemanticOperator.BigIntOp.Eq => mkBool(cast2bigInt(v1) == cast2bigInt(v2))
+        case SemanticOperator.BigIntOp.Neq => mkBool(cast2bigInt(v1) != cast2bigInt(v2))
+        case SemanticOperator.BigIntOp.Lt => mkBool((cast2bigInt(v1) compareTo cast2bigInt(v2)) < 0)
+        case SemanticOperator.BigIntOp.Le => mkBool((cast2bigInt(v1) compareTo cast2bigInt(v2)) <= 0)
+        case SemanticOperator.BigIntOp.Gt => mkBool((cast2bigInt(v1) compareTo cast2bigInt(v2)) > 0)
+        case SemanticOperator.BigIntOp.Ge => mkBool((cast2bigInt(v1) compareTo cast2bigInt(v2)) >= 0)
+        case _ => throw InternalRuntimeException(s"Unexpected Semantic Operator: '$sop'.")
+      }
+    }
+
+    def evalOtherOp(sop: SemanticOperator): AnyRef = {
+      // Evaluate the operands.
+      val v1 = eval(exp1, root, env0)
+      val v2 = eval(exp2, root, env0)
+
+      sop match {
+        case SemanticOperator.StringOp.Concat => Value.Str(cast2str(v1) + cast2str(v2))
+        case SemanticOperator.StringOp.Eq => mkBool(cast2str(v1) == cast2str(v2))
+        case SemanticOperator.StringOp.Neq => mkBool(cast2str(v1) != cast2str(v2))
+        case _ => throw InternalRuntimeException(s"Unexpected Semantic Operator: '$sop'.")
+      }
+    }
+
+    // Apply the operator.
+    sop match {
+      case op: SemanticOperator.BoolOp => evalBoolOp(op)
+      case op: SemanticOperator.CharOp => evalCharOp(op)
+      case op: SemanticOperator.Float32Op => evalFloat32Op(op)
+      case op: SemanticOperator.Float64Op => evalFloat64Op(op)
+      case op: SemanticOperator.Int8Op => evalInt8Op(op)
+      case op: SemanticOperator.Int16Op => evalInt16Op(op)
+      case op: SemanticOperator.Int32Op => evalInt32Op(op)
+      case op: SemanticOperator.Int64Op => evalInt64Op(op)
+      case op: SemanticOperator.BigIntOp => evalBigIntOp(op)
+      case _ => evalOtherOp(sop)
     }
   }
 

@@ -90,8 +90,8 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.Apply(exp, args, tpe, loc) =>
         val i = visitExp(exp, i0)
         visitExps(args, i)
-      case Expression.Unary(op, exp, tpe, loc) => visitExp(exp, i0)
-      case Expression.Binary(op, exp1, exp2, tpe, loc) =>
+      case Expression.Unary(sop, op, exp, tpe, loc) => visitExp(exp, i0)
+      case Expression.Binary(sop, op, exp1, exp2, tpe, loc) =>
         val i1 = visitExp(exp1, i0)
         visitExp(exp2, i1)
       case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>

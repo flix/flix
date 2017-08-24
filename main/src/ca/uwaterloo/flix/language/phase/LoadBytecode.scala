@@ -181,7 +181,7 @@ object LoadBytecode extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     case Type.Native => classOf[java.lang.Object]
     case Type.Enum(s, _) => enums(s)
     case Type.Apply(Type.Enum(s, _), _) => enums(s)
-    case Type.Apply(Type.FTuple(_), lst) =>
+    case Type.Apply(Type.Tuple(_), lst) =>
       val clazzName = TupleClassName(lst.map(typeToWrappedType))
       loadedTuples(clazzName)
     case Type.Apply(Type.Arrow(l), _) => interfaces(tpe)

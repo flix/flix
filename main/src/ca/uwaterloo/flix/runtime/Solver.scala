@@ -860,7 +860,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
         env0(sym.getStackOffset) = v0
         true
       } else {
-        Value.equal(v0, v2)
+        ??? // TODO
       }
     case (Pattern.Unit(_), Value.Unit) => true
     case (Pattern.True(_), java.lang.Boolean.TRUE) => true

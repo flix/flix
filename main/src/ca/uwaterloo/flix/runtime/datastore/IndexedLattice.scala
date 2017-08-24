@@ -24,7 +24,7 @@ import scala.annotation.switch
 import scala.collection.mutable
 import scala.reflect.ClassTag
 
-class IndexedLattice[ValueType <: AnyRef](val lattice: ExecutableAst.Table.Lattice, indexes: Set[Int], root: ExecutableAst.Root)(implicit m: ClassTag[ValueType]) extends IndexedCollection[ValueType] {
+class IndexedLattice[ValueType <: AnyRef](val lattice: ExecutableAst.Table.Lattice, equality: Array[(AnyRef, AnyRef) => Boolean], indexes: Set[Int], root: ExecutableAst.Root)(implicit m: ClassTag[ValueType]) extends IndexedCollection[ValueType] {
   /**
     * A map from indexes to a map from keys to rows (represented as map from keys to an element):
     *
@@ -68,9 +68,9 @@ class IndexedLattice[ValueType <: AnyRef](val lattice: ExecutableAst.Table.Latti
     assert(idx != 0)
 
     // Lookup the lattice map (create it, if it doesn't exist).
-    val ikey = keyOf(idx, fact)
+    val ikey = keyOf(idx, fact, equalityOf(idx, equality))
     val map = store(idx).getOrElseUpdate(ikey, mutable.Map.empty)
-    val key = keysOf(fact)
+    val key = keysOf(fact, equality)
 
     // Lookup the old element (create it, if it doesn't exist).
     val newElm = elmOf(fact)
@@ -81,7 +81,7 @@ class IndexedLattice[ValueType <: AnyRef](val lattice: ExecutableAst.Table.Latti
     if (!latticeOps.leq(result, oldElm)) {
       // Update all indexes.
       for (idx <- indexes) {
-        val ikey = keyOf(idx, fact)
+        val ikey = keyOf(idx, fact, equalityOf(idx, equality))
         val map = store(idx).getOrElseUpdate(ikey, mutable.Map.empty)
         map(key) = result
       }
@@ -105,14 +105,14 @@ class IndexedLattice[ValueType <: AnyRef](val lattice: ExecutableAst.Table.Latti
     var idx = getExactIndex(indexes, pat)
     val table = if (idx != 0) {
       // use exact index.
-      val ikey = keyOf(idx, pat)
+      val ikey = keyOf(idx, pat, equality)
       getOrEmptyIterator(store(idx).get(ikey))
     } else {
       // check if there is an approximate index.
       idx = getApproximateIndex(indexes, pat)
       if (idx != 0) {
         // use approximate index.
-        val ikey = keyOf(idx, pat)
+        val ikey = keyOf(idx, pat, equalityOf(idx, equality))
         getOrEmptyIterator(store(idx).get(ikey))
       } else {
         // perform full table scan.
@@ -153,13 +153,13 @@ class IndexedLattice[ValueType <: AnyRef](val lattice: ExecutableAst.Table.Latti
   /**
     * Returns the key part of the given array `a`.
     */
-  private def keysOf(a: Array[ValueType]): Key[ValueType] = {
+  private def keysOf(a: Array[ValueType], eq: Array[(AnyRef, AnyRef) => Boolean]): Key[ValueType] = {
     (numberOfKeys: @switch) match {
-      case 1 => new Key1(a(0))
-      case 2 => new Key2(a(0), a(1))
-      case 3 => new Key3(a(0), a(1), a(2))
-      case 4 => new Key4(a(0), a(1), a(2), a(3))
-      case 5 => new Key5(a(0), a(1), a(2), a(3), a(4))
+      case 1 => new Key1(a(0), equalityOf(1, eq))
+      case 2 => new Key2(a(0), a(1), equalityOf(1 + 2, eq))
+      case 3 => new Key3(a(0), a(1), a(2), equalityOf(1 + 2 + 4, eq))
+      case 4 => new Key4(a(0), a(1), a(2), a(3), equalityOf(1 + 2 + 4 + 8, eq))
+      case 5 => new Key5(a(0), a(1), a(2), a(3), a(4), equalityOf(1 + 2 + 4 + 8, eq))
       case _ => throw new RuntimeException("Internal Error. Keys longer than 5 not supported.");
     }
   }
@@ -180,8 +180,9 @@ class IndexedLattice[ValueType <: AnyRef](val lattice: ExecutableAst.Table.Latti
     var i = 0
     while (i < numberOfKeys) {
       val pv = pat(i)
+      val eq = equality(i)
       if (pv != null)
-        if (pv != row(i))
+        if (!eq(pv, row(i)))
           return false
       i = i + 1
     }

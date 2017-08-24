@@ -127,7 +127,6 @@ object Value {
     * Flix internal representation of tags.
     */
   case class Tag(enum: Symbol.EnumSym, tag: String, value: AnyRef) extends Value with api.Enum {
-
     def getTag: String = tag
 
     def getBoxedValue: AnyRef = value
@@ -143,7 +142,6 @@ object Value {
     * A Tuple value.
     */
   case class Tuple(elms: List[AnyRef]) extends Value with api.Tuple {
-
     def getBoxedValue: Array[AnyRef] = elms.toArray
 
     final override def equals(obj: scala.Any): Boolean = throw InternalRuntimeException(s"Value.Tuple does not support `equals`.")
@@ -151,79 +149,6 @@ object Value {
     final override def hashCode(): Int = throw InternalRuntimeException(s"Value.Tuple does not support `hashCode`.")
 
     final override def toString: String = throw InternalRuntimeException(s"Value.Tuple does not support `toString`.")
-  }
-
-  /////////////////////////////////////////////////////////////////////////////
-  // Equality                                                                //
-  /////////////////////////////////////////////////////////////////////////////
-  /**
-    * Returns `true` if the values of the two given references `ref1` and `ref2` are equal.
-    *
-    * NB: The type system ensures that only values of the same type can be compared.
-    * Hence it is sufficient to only inspect the type of the first argument.
-    */
-  // TODO: Replace by built in native operator.
-  def equal(ref1: AnyRef, ref2: AnyRef): Boolean = (ref1, ref2) match {
-    case (Value.Unit, Value.Unit) => true
-    case (Value.True, Value.True) => true
-    case (Value.False, Value.False) => true
-    case (Value.True, Value.False) => false
-    case (Value.False, Value.True) => false
-    case (Value.Char(lit1), Value.Char(lit2)) => lit1 == lit2
-    case (Value.Float32(lit1), Value.Float32(lit2)) => lit1 == lit2
-    case (Value.Float64(lit1), Value.Float64(lit2)) => lit1 == lit2
-    case (Value.Int8(lit1), Value.Int8(lit2)) => lit1 == lit2
-    case (Value.Int16(lit1), Value.Int16(lit2)) => lit1 == lit2
-    case (Value.Int32(lit1), Value.Int32(lit2)) => lit1 == lit2
-    case (Value.Int64(lit1), Value.Int64(lit2)) => lit1 == lit2
-    case (Value.BigInt(lit1), Value.BigInt(lit2)) => lit1 == lit2
-    case (Value.Str(lit1), Value.Str(lit2)) => lit1 == lit2
-    case (Value.Tag(_, tag1, v1), Value.Tag(_, tag2, v2)) => tag1 == tag2 && equal(v1, v2)
-    case (Value.Tuple(elms1), Value.Tuple(elms2)) => elms1.zip(elms2).forall {
-      case ((e1, e2)) => equal(e1, e2)
-    }
-    case (b1: Value.Box, b2: Value.Box) =>
-      throw InternalRuntimeException(s"Unable to compare Boxes.")
-    case (c1: Value.Closure, c2: Value.Closure) =>
-      throw InternalRuntimeException(s"Unable to compare Closures.")
-    case _ =>
-      val tpe1 = ref1.getClass.getCanonicalName
-      val tpe2 = ref2.getClass.getCanonicalName
-      throw InternalRuntimeException(s"Unable to compare '$tpe1' and '$tpe2'.")
-  }
-
-  /////////////////////////////////////////////////////////////////////////////
-  // Pretty Printing                                                         //
-  /////////////////////////////////////////////////////////////////////////////
-
-  /**
-    * Returns a pretty printed formatting of the given Flix `ref`.
-    */
-  // TODO: Replace by built in native operator.
-  def pretty(ref: AnyRef): String = ref match {
-    case Value.Unit => "()"
-    case Value.True => "true"
-    case Value.False => "false"
-    case Value.Char(lit) => lit.toString
-    case Value.Int8(lit) => lit.toString
-    case Value.Int16(lit) => lit.toString
-    case Value.Int32(lit) => lit.toString
-    case Value.Int64(lit) => lit.toString
-    case Value.BigInt(lit) => lit.toString
-    case Value.Str(lit) => lit
-    case Value.Tag(enum, "Cons", Value.Tuple(elms)) => pretty(elms(0)) + " :: " + pretty(elms(1))
-    case Value.Tag(enum, tag, Value.Unit) => tag
-    case Value.Tag(enum, tag, value: Value.Tuple) => tag + pretty(value)
-    case Value.Tag(enum, tag, value) => tag + "(" + pretty(value) + ")"
-    case Value.Tuple(elms) => "(" + elms.mkString(", ") + ")"
-    case o: java.lang.Boolean => o.booleanValue().toString
-    case o: java.lang.Character => o.charValue().toString
-    case o: java.lang.Byte => o.byteValue().toString
-    case o: java.lang.Short => o.shortValue().toString
-    case o: java.lang.Integer => o.intValue().toString
-    case o: java.lang.Long => o.longValue().toString
-    case o: java.lang.String => "\"" + o + "\""
-    case _ => ref.toString
   }
 
 }

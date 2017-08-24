@@ -507,7 +507,7 @@ object Verifier extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
             case e => SymVal.Tag(tag, e)
           }
         }.toList
-      case Type.Apply(Type.FTuple(_), elms) =>
+      case Type.Apply(Type.Tuple(_), elms) =>
         def visitn(xs: List[Type]): List[List[SymVal]] = xs match {
           case Nil => List(Nil)
           case t :: ts => visitn(ts) flatMap {

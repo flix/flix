@@ -237,9 +237,8 @@ class RestServer(solver: Solver) {
   class ListRelation(relation: IndexedRelation[AnyRef]) extends JsonHandler {
     def json: JValue = JObject(
       JField("cols", JArray(relation.relation.attributes.toList.map(a => JString(a.name)))),
-      JField("rows", JArray(relation.scan.toList.map {
-        case row => JArray(row.toList.map(e => JString(Value.pretty(e))))
-      })))
+      JField("rows", JArray(Nil)) // TODO: Currently broken.
+    )
   }
 
   /**
@@ -250,9 +249,8 @@ class RestServer(solver: Solver) {
   class ListLattice(lattice: IndexedLattice[AnyRef]) extends JsonHandler {
     def json: JValue = JObject(
       JField("cols", JArray(lattice.lattice.keys.toList.map(a => JString(a.name)) ::: JString(lattice.lattice.value.name) :: Nil)),
-      JField("rows", JArray(lattice.scan.toList.map {
-        case (key, elm) => JArray(key.toArray.map(k => JString(Value.pretty(k))).toList ::: JString(Value.pretty(elm)) :: Nil)
-      })))
+      JField("rows", JArray(Nil)) // TODO: Currently broken.
+    )
   }
 
   /**
@@ -342,13 +340,14 @@ class RestServer(solver: Solver) {
       JObject(List(JField("name", JString("Documentor")), JField("time", JInt(solver.root.time.documentor / 1000000)))),
       JObject(List(JField("name", JString("Stratifier")), JField("time", JInt(solver.root.time.stratifier / 1000000)))),
       JObject(List(JField("name", JString("Monomorph")), JField("time", JInt(solver.root.time.monomorph / 1000000)))),
+      JObject(List(JField("name", JString("Synthesize")), JField("time", JInt(solver.root.time.synthesize / 1000000)))),
       JObject(List(JField("name", JString("PropertyGen")), JField("time", JInt(solver.root.time.propertyGen / 1000000)))),
       JObject(List(JField("name", JString("Verifier")), JField("time", JInt(solver.root.time.verifier / 1000000)))),
       JObject(List(JField("name", JString("LambdaLift")), JField("time", JInt(solver.root.time.lambdaLift / 1000000)))),
       JObject(List(JField("name", JString("TailRec")), JField("time", JInt(solver.root.time.tailrec / 1000000)))),
       JObject(List(JField("name", JString("Inliner")), JField("time", JInt(solver.root.time.inliner / 1000000)))),
       JObject(List(JField("name", JString("Simplifier")), JField("time", JInt(solver.root.time.simplifier / 1000000)))),
-      JObject(List(JField("name", JString("Uncurrier")), JField("time", JInt(solver.root.time.uncurrier/ 1000000)))),
+      JObject(List(JField("name", JString("Uncurrier")), JField("time", JInt(solver.root.time.uncurrier / 1000000)))),
       JObject(List(JField("name", JString("TreeShaker")), JField("time", JInt(solver.root.time.treeshaker / 1000000)))),
       JObject(List(JField("name", JString("VarNumbering")), JField("time", JInt(solver.root.time.varNumbering / 1000000)))),
       JObject(List(JField("name", JString("TupleGen")), JField("time", JInt(solver.root.time.tupleGen / 1000000)))),

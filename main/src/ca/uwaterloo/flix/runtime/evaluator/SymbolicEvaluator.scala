@@ -224,7 +224,7 @@ object SymbolicEvaluator {
       /**
         * Unary.
         */
-      case Expression.Unary(op, exp, _, _) =>
+      case Expression.Unary(sop, op, exp, _, _) =>
         eval(pc0, exp, env0, qua0) flatMap {
           case (pc, qua, v) => op match {
             /**
@@ -304,7 +304,7 @@ object SymbolicEvaluator {
       /**
         * Binary.
         */
-      case Expression.Binary(op, exp1, exp2, _, _) =>
+      case Expression.Binary(sop, op, exp1, exp2, _, _) =>
         eval2(pc0, exp1, exp2, env0, qua0) flatMap {
           case (pc, qua, (v1, v2)) => op match {
 
