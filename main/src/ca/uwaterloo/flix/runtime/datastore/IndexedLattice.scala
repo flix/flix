@@ -70,7 +70,7 @@ class IndexedLattice[ValueType <: AnyRef](val lattice: ExecutableAst.Table.Latti
     // Lookup the lattice map (create it, if it doesn't exist).
     val ikey = keyOf(idx, fact, equality)
     val map = store(idx).getOrElseUpdate(ikey, mutable.Map.empty)
-    val key = keysOf(fact)
+    val key = keysOf(fact, equality)
 
     // Lookup the old element (create it, if it doesn't exist).
     val newElm = elmOf(fact)
@@ -153,13 +153,13 @@ class IndexedLattice[ValueType <: AnyRef](val lattice: ExecutableAst.Table.Latti
   /**
     * Returns the key part of the given array `a`.
     */
-  private def keysOf(a: Array[ValueType]): Key[ValueType] = {
+  private def keysOf(a: Array[ValueType], eq: Array[(AnyRef, AnyRef) => Boolean]): Key[ValueType] = {
     (numberOfKeys: @switch) match {
-      case 1 => new Key1(a(0))
-      case 2 => new Key2(a(0), a(1))
-      case 3 => new Key3(a(0), a(1), a(2))
-      case 4 => new Key4(a(0), a(1), a(2), a(3))
-      case 5 => new Key5(a(0), a(1), a(2), a(3), a(4))
+      case 1 => new Key1(a(0), eq)
+      case 2 => new Key2(a(0), a(1), eq)
+      case 3 => new Key3(a(0), a(1), a(2), eq)
+      case 4 => new Key4(a(0), a(1), a(2), a(3), eq)
+      case 5 => new Key5(a(0), a(1), a(2), a(3), a(4), eq)
       case _ => throw new RuntimeException("Internal Error. Keys longer than 5 not supported.");
     }
   }
@@ -180,8 +180,9 @@ class IndexedLattice[ValueType <: AnyRef](val lattice: ExecutableAst.Table.Latti
     var i = 0
     while (i < numberOfKeys) {
       val pv = pat(i)
+      val eq = equality(i)
       if (pv != null)
-        if (pv != row(i))  // TODO: Must use equality.
+        if (!eq(pv, row(i)))
           return false
       i = i + 1
     }

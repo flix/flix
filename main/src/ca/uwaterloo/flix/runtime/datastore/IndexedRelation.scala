@@ -199,8 +199,9 @@ final class IndexedRelation[ValueType](val relation: ExecutableAst.Table.Relatio
     var i = 0
     while (i < pat.length) {
       val pv = pat(i)
+      val eq = equality(i)
       if (pv != null)
-        if (pv != row(i)) // TODO: Must use equality.
+        if (!eq(pv.asInstanceOf[AnyRef], row(i).asInstanceOf[AnyRef]))
           return false
       i = i + 1
     }
