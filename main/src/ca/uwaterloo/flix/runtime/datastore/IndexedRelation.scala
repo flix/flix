@@ -168,7 +168,7 @@ final class IndexedRelation[ValueType](val relation: ExecutableAst.Table.Relatio
         // case 2.1: An approximate index exists. Use it.
         indexHits.update(idx, indexHits(idx) + 1)
         indexedScans += 1
-        val key = keyOf(idx, pat, equality)
+        val key = keyOf(idx, pat, equalityOf(idx, equality))
         getOrEmptyIterator(store(idx).get(key))
       } else {
         // case 2.2: No usable index. Perform a full table scan.
