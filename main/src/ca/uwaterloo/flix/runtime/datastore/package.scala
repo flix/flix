@@ -217,6 +217,7 @@ package object datastore {
   /**
     * Returns an array of equality operations corresponding to the given index.
     */
+  // TODO: This is a gruesome hack which is unfortunately necessary at the moment.
   def equalityOf(idx: Int, eq: Array[(AnyRef, AnyRef) => Boolean]): Array[(AnyRef, AnyRef) => Boolean] = {
     val size = Integer.bitCount(idx)
     val result = Array.ofDim[(AnyRef, AnyRef) => Boolean](size)
