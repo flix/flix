@@ -251,7 +251,7 @@ object Synthesize extends Phase[Root, Root] {
       // TODO: [Equality]: We need to lookup the existence of any eq operator here. This may require monomorphization.
 
       // Introduce a fresh symbol for the equality operator.
-      val sym = Symbol.freshDefnSym("eq")
+      val sym = Symbol.freshDefnSym("synth$eq")
 
       // Immediately add the symbol to the equality map.
       // This is necessary to support recursive data types.
@@ -474,7 +474,7 @@ object Synthesize extends Phase[Root, Root] {
       */
     def getOrMkToString(tpe: Type): Symbol.DefnSym = mutToStringOps.getOrElse(tpe, {
       // Introduce a fresh symbol for the toString operator.
-      val sym = Symbol.freshDefnSym("toString")
+      val sym = Symbol.freshDefnSym("synth$toString")
 
       // Immediately add the symbol to the toString map.
       // This is necessary to support recursive data types.
@@ -771,14 +771,15 @@ object Synthesize extends Phase[Root, Root] {
     val typesInLattices: Set[Type] = root.lattices.keySet
 
     /*
-     * Explicitly introduce an Equality operator for every attribute of a table.
+     * Introduce Equality special operators.
      */
     val equalityOps = (typesInTables ++ typesInLattices).foldLeft(Map.empty[Type, Symbol.DefnSym]) {
-      case (macc, tpe) => macc + (tpe -> getOrMkEq(tpe))
+      case (macc, tpe) if !tpe.isArrow => macc + (tpe -> getOrMkEq(tpe))
+      case (macc, tpe) => macc
     }
 
     /*
-     * Explicitly introduce a ToString operator for every type of an attribute of a table.
+     * Introduce ToString special operators.
      */
     val toStringOps = (typesInDefs ++ typesInTables).foldLeft(Map.empty[Type, Symbol.DefnSym]) {
       case (macc, tpe) if !tpe.isArrow => macc + (tpe -> getOrMkToString(tpe))

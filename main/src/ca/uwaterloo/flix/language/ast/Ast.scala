@@ -108,7 +108,7 @@ object Ast {
     */
   object Annotations {
     /**
-      * The empty sequence of modifiers.
+      * The empty sequence of annotations.
       */
     val Empty: Annotations = Annotations(Nil)
   }

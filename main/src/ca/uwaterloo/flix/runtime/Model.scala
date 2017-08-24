@@ -131,7 +131,7 @@ class Model(root: Root,
   def getLattices: Map[String, (List[String], Iterable[List[String]])] = relations.foldLeft(Map.empty[String, (List[String], Iterable[List[String]])]) {
     case (macc, (sym, rows)) =>
       root.tables(sym) match {
-        case Table.Relation(_, attr, _) => macc // top
+        case Table.Relation(_, attr, _) => macc // Nop
 
         case Table.Lattice(_, keys, value, _) =>
           // Compute the attributes of the table.

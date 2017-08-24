@@ -193,18 +193,20 @@ object Interpreter {
   private def evalBinary(sop: SemanticOperator, exp1: Expression, exp2: Expression, env0: Map[String, AnyRef], root: Root): AnyRef = {
 
     def evalBoolOp(sop: SemanticOperator.BoolOp): AnyRef = {
-      // Evaluate the operands.
-      val v1 = eval(exp1, root, env0)
+      // Evaluate the left operand.
+      val v1 = cast2bool(eval(exp1, root, env0))
 
       sop match {
-        case SemanticOperator.BoolOp.And if cast2bool(v1) => mkBool(cast2bool(eval(exp2, root, env0)))
+        // Lazy operators.
+        case SemanticOperator.BoolOp.And if v1 => mkBool(cast2bool(eval(exp2, root, env0)))
         case SemanticOperator.BoolOp.And => mkBool(false)
 
-        case SemanticOperator.BoolOp.Or if cast2bool(v1) => mkBool(true)
+        // Lazy operators.
+        case SemanticOperator.BoolOp.Or if v1 => mkBool(true)
         case SemanticOperator.BoolOp.Or => mkBool(cast2bool(eval(exp2, root, env0)))
 
-        case SemanticOperator.BoolOp.Eq => mkBool(cast2bool(v1) == cast2bool(eval(exp2, root, env0)))
-        case SemanticOperator.BoolOp.Neq => mkBool(cast2bool(v1) != cast2bool(eval(exp2, root, env0)))
+        case SemanticOperator.BoolOp.Eq => mkBool(v1 == cast2bool(eval(exp2, root, env0)))
+        case SemanticOperator.BoolOp.Neq => mkBool(v1 != cast2bool(eval(exp2, root, env0)))
         case _ => throw InternalRuntimeException(s"Unexpected Semantic Operator: '$sop'.")
       }
     }

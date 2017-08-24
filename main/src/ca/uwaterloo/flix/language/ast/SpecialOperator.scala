@@ -26,7 +26,7 @@ object SpecialOperator {
   case object Equality extends SpecialOperator
 
   /**
-    * The string coercion for a given type.
+    * The string coercion operator for a given type.
     */
   case object ToString extends SpecialOperator
 

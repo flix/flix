@@ -106,6 +106,9 @@ class DataStore[ValueType <: AnyRef](root: ExecutableAst.Root)(implicit m: Class
       relation.getNumberOfFullScans)
   }.toSeq.sortBy(_._3).reverse.toList
 
+  /**
+    * Returns the equality operator for the given type `tpe` as a function.
+    */
   private def getEqualityOp(tpe: Type, root: ExecutableAst.Root): (AnyRef, AnyRef) => Boolean =
     root.specialOps(SpecialOperator.Equality).get(tpe) match {
       case None => throw InternalRuntimeException(s"Undefined equality operator the type '$tpe'.")
