@@ -912,8 +912,9 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case SimplifiedAst.Expression.Def(name, tpe, loc) => e
       case SimplifiedAst.Expression.Lambda(fparams, body, tpe, loc) => ??? // TODO
       case SimplifiedAst.Expression.Hook(hook, tpe, loc) => e
-      case SimplifiedAst.Expression.MkClosureDef(ref, freeVars, tpe, loc) => e
-      case SimplifiedAst.Expression.MkClosure(lambda, freeVars, tpe, loc) => ??? // TODO
+      case SimplifiedAst.Expression.Closure(ref, freeVars, tpe, loc) => e
+      case SimplifiedAst.Expression.LambdaClosure(lambda, freeVars, tpe, loc) => ??? // TODO
+      case SimplifiedAst.Expression.ApplyClo(exp, args, tpe, loc) => ??? // TODO, should not exist.
       case SimplifiedAst.Expression.ApplyDef(name, args, tpe, loc) =>
         SimplifiedAst.Expression.ApplyDef(name, args.map(visit), tpe, loc)
       case SimplifiedAst.Expression.ApplyTail(name, formals, args, tpe, loc) =>

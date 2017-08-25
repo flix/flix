@@ -180,12 +180,17 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
         throw InternalCompilerException("Lambdas should have been converted to closures and lifted.")
       case SimplifiedAst.Expression.Hook(hook, tpe, loc) =>
         throw InternalCompilerException("Hooks should have been inlined into ApplyHooks or wrapped inside lambdas.")
-      case SimplifiedAst.Expression.MkClosure(lambda, freeVars, tpe, loc) =>
+      case SimplifiedAst.Expression.LambdaClosure(lambda, freeVars, tpe, loc) =>
         throw InternalCompilerException("MkClosure should have been replaced by MkClosureRef after lambda lifting.")
-      case SimplifiedAst.Expression.MkClosureDef(ref, freeVars, tpe, loc) =>
+      case SimplifiedAst.Expression.Apply(exp, args, tpe, loc) =>
+        throw InternalCompilerException("Apply should have been replaced by ClosureConv.") // TODO: Doc
+      case SimplifiedAst.Expression.Closure(ref, freeVars, tpe, loc) =>
         val e = toExecutable(ref)
         val fvs = freeVars.map(CreateExecutableAst.toExecutable).toArray
         ExecutableAst.Expression.MkClosureDef(e.asInstanceOf[ExecutableAst.Expression.Def], fvs, tpe, loc)
+      case SimplifiedAst.Expression.ApplyClo(exp, args, tpe, loc) =>
+        val argsArray = args.map(toExecutable)
+        ExecutableAst.Expression.ApplyClosure(toExecutable(exp), argsArray, tpe, loc)
       case SimplifiedAst.Expression.ApplyDef(name, args, tpe, loc) =>
         val argsArray = args.map(toExecutable)
         ExecutableAst.Expression.ApplyDef(name, argsArray, tpe, loc)
@@ -194,9 +199,6 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
       case SimplifiedAst.Expression.ApplyHook(hook, args, tpe, loc) =>
         val argsArray = args.map(toExecutable)
         ExecutableAst.Expression.ApplyHook(hook, argsArray, tpe, loc)
-      case SimplifiedAst.Expression.Apply(exp, args, tpe, loc) =>
-        val argsArray = args.map(toExecutable)
-        ExecutableAst.Expression.ApplyClosure(toExecutable(exp), argsArray, tpe, loc)
       case SimplifiedAst.Expression.Unary(sop, op, exp, tpe, loc) =>
         ExecutableAst.Expression.Unary(sop, op, toExecutable(exp), tpe, loc)
       case SimplifiedAst.Expression.Binary(sop, op, exp1, exp2, tpe, loc) =>

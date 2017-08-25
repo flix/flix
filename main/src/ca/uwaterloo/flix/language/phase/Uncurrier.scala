@@ -149,8 +149,9 @@ object Uncurrier extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
           val newMapping = args.map(f => f.sym).zip(newFormals.map(f => f.sym)).toMap
           Lambda(newFormals, substitute(body, env0 ++ newMapping), tpe, loc)
         case e: Hook => e
-        case MkClosure(lambda, freeVars, tpe, loc) => MkClosure(substitute(lambda, env0).asInstanceOf[SimplifiedAst.Expression.Lambda], freeVars, tpe, loc)
-        case e: MkClosureDef => e
+        case LambdaClosure(lambda, freeVars, tpe, loc) => LambdaClosure(substitute(lambda, env0).asInstanceOf[SimplifiedAst.Expression.Lambda], freeVars, tpe, loc)
+        case e: Closure => e
+        case ApplyClo(exp, args, tpe, loc) => ??? // TODO: Impossible?
         case ApplyDef(sym, args, tpe, loc) => ApplyDef(sym, args.map(substitute(_, env0)), tpe, loc)
         case ApplyTail(sym, formals, actuals, tpe, loc) => ApplyTail(sym, formals, actuals.map(substitute(_, env0)), tpe, loc)
         case ApplyHook(hook, args, tpe, loc) => ApplyHook(hook, args.map(substitute(_, env0)), tpe, loc)
@@ -199,8 +200,9 @@ object Uncurrier extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Def(sym, tpe, loc) => exp0
       case Lambda(args, body, tpe, loc) => Lambda(args, uncurry(body, newSyms, root), tpe, loc)
       case Hook(hook, tpe, loc) => exp0
-      case MkClosure(lambda, freeVars, tpe, loc) => exp0
-      case MkClosureDef(ref, freeVars, tpe, loc) => exp0
+      case LambdaClosure(lambda, freeVars, tpe, loc) => exp0
+      case Closure(ref, freeVars, tpe, loc) => exp0
+      case ApplyClo(exp, args, tpe, loc) => ??? // Impossible.
       case ApplyDef(sym, args, tpe, loc) => exp0
       case ApplyTail(sym, formals, actuals, tpe, loc) => exp0
       case ApplyHook(hook, args, tpe, loc) => exp0
@@ -303,8 +305,9 @@ object Uncurrier extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
           case _: Def => 0
           case _: Lambda => 0
           case _: Hook => 0
-          case _: MkClosure => 0
-          case _: MkClosureDef => 0
+          case _: LambdaClosure => 0
+          case _: Closure => 0
+          case _: ApplyClo => ??? // TODO: Impossible?
           case _: ApplyDef => 0
           case _: ApplyTail => 0
           case _: ApplyHook => 0

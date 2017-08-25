@@ -219,4 +219,14 @@ object Ast {
 
   }
 
+  /**
+    * Represents that the annotated element is introduced by the class `clazz`.
+    */
+  case class IntroducedBy(clazz: java.lang.Class[_]) extends scala.annotation.StaticAnnotation
+
+  /**
+    * Represents that the annotated element is elimnated by the class `clazz`.
+    */
+  case class EliminatedBy(clazz: java.lang.Class[_]) extends scala.annotation.StaticAnnotation
+
 }

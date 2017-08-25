@@ -48,8 +48,8 @@ object ClosureConv {
       // If we encounter a Ref that has a lambda type (and is not being called in an Apply),
       // i.e. the Ref will evaluate to a lambda, we replace it with a MkClosureRef. Otherwise we leave it alone.
       e.tpe match {
-        case t@Type.Apply(Type.Arrow(_), _) => SimplifiedAst.Expression.MkClosureDef(e, List.empty, t, e.loc)
-        case _ => e
+        case t@Type.Apply(Type.Arrow(_), _) => SimplifiedAst.Expression.Closure(e, List.empty, t, e.loc)
+        case _ => e // TODO: Does this ever happen? Is the Def node not eliminated by this phase?
       }
 
     case SimplifiedAst.Expression.Lambda(args, body, tpe, loc) =>
@@ -92,7 +92,7 @@ object ClosureConv {
       // bound values are passed as arguments.
       // Note that MkClosure keeps the old lambda type.
       // In a later phase, we will lift the lambda to a top-level definition.
-      SimplifiedAst.Expression.MkClosure(lambda, freeVars.map(v => SimplifiedAst.FreeVar(v._1, v._2)), tpe, loc)
+      SimplifiedAst.Expression.LambdaClosure(lambda, freeVars.map(v => SimplifiedAst.FreeVar(v._1, v._2)), tpe, loc)
 
     case SimplifiedAst.Expression.Hook(hook, tpe, loc) =>
       // Retrieve the type of the function.
@@ -107,12 +107,10 @@ object ClosureConv {
 
       // Closure convert the lambda.
       convert(lambda)
-    case SimplifiedAst.Expression.MkClosure(lambda, freeVars, tpe, loc) =>
-      throw InternalCompilerException(s"Illegal expression during closure conversion: '$exp0'.")
-    case SimplifiedAst.Expression.MkClosureDef(ref, freeVars, tpe, loc) =>
-      throw InternalCompilerException(s"Illegal expression during closure conversion: '$exp0'.")
-    case SimplifiedAst.Expression.ApplyDef(name, args, tpe, loc) =>
-      throw InternalCompilerException(s"Illegal expression during closure conversion: '$exp0'.")
+    case SimplifiedAst.Expression.LambdaClosure(lambda, freeVars, tpe, loc) =>
+      throw InternalCompilerException(s"Illegal expression during closure conversion: '$exp0'.") // TODO
+    case SimplifiedAst.Expression.Closure(ref, freeVars, tpe, loc) =>
+      throw InternalCompilerException(s"Illegal expression during closure conversion: '$exp0'.") // TODO
 
     case SimplifiedAst.Expression.Apply(e, args, tpe, loc) =>
       // We're trying to call some expression `e`. If `e` is a Ref, then it's a top-level function, so we directly call
@@ -121,10 +119,13 @@ object ClosureConv {
       e match {
         case SimplifiedAst.Expression.Def(name, _, _) => SimplifiedAst.Expression.ApplyDef(name, args.map(convert), tpe, loc)
         case SimplifiedAst.Expression.Hook(hook, _, _) => SimplifiedAst.Expression.ApplyHook(hook, args.map(convert), tpe, loc)
-        case _ => SimplifiedAst.Expression.Apply(convert(e), args.map(convert), tpe, loc)
+        case _ => SimplifiedAst.Expression.ApplyClo(convert(e), args.map(convert), tpe, loc)
       }
-    case SimplifiedAst.Expression.ApplyTail(name, formals, actuals, tpe, loc) => exp0
-    case SimplifiedAst.Expression.ApplyHook(hook, args, tpe, loc) => exp0
+
+    case SimplifiedAst.Expression.ApplyClo(e, args, tpe, loc) => throw InternalCompilerException("Impossible. Introduced by this phase.")
+    case SimplifiedAst.Expression.ApplyDef(name, args, tpe, loc) => throw InternalCompilerException("Impossible. Introduced by this phase.")
+    case SimplifiedAst.Expression.ApplyHook(hook, args, tpe, loc) => throw InternalCompilerException("Impossible. Introduced by this phase.")
+    case SimplifiedAst.Expression.ApplyTail(name, formals, actuals, tpe, loc) => throw InternalCompilerException("Impossible. Introduced by a later phase.")
 
     case SimplifiedAst.Expression.Unary(sop, op, e, tpe, loc) =>
       SimplifiedAst.Expression.Unary(sop, op, convert(e), tpe, loc)
@@ -195,10 +196,11 @@ object ClosureConv {
       val bound = args.map(_.sym)
       freeVariables(body).filterNot { v => bound.contains(v._1) }
     case SimplifiedAst.Expression.Hook(hook, tpe, loc) => mutable.LinkedHashSet.empty
-    case SimplifiedAst.Expression.MkClosure(lambda, freeVars, tpe, loc) =>
+    case SimplifiedAst.Expression.LambdaClosure(lambda, freeVars, tpe, loc) =>
       throw InternalCompilerException(s"Unexpected expression: '$e'.")
-    case SimplifiedAst.Expression.MkClosureDef(ref, freeVars, tpe, loc) =>
+    case SimplifiedAst.Expression.Closure(ref, freeVars, tpe, loc) =>
       throw InternalCompilerException(s"Unexpected expression: '$e'.")
+    case SimplifiedAst.Expression.ApplyClo(exp, args, tpe, loc) => throw InternalCompilerException("Impossible. Introduced by this phase.")
     case SimplifiedAst.Expression.ApplyDef(name, args, tpe, loc) => mutable.LinkedHashSet.empty ++ args.flatMap(freeVariables)
     case SimplifiedAst.Expression.ApplyHook(hook, args, tpe, loc) => mutable.LinkedHashSet.empty ++ args.flatMap(freeVariables)
     case SimplifiedAst.Expression.ApplyTail(name, formals, actuals, tpe, loc) => mutable.LinkedHashSet.empty ++ actuals.flatMap(freeVariables)
@@ -262,10 +264,12 @@ object ClosureConv {
         val e = visit(exp)
         Expression.Lambda(fs, e, tpe, loc)
       case Expression.Hook(hook, tpe, loc) => e
-      case Expression.MkClosureDef(ref, freeVars, tpe, loc) => e
-      case Expression.MkClosure(exp, freeVars, tpe, loc) =>
+      case Expression.Closure(ref, freeVars, tpe, loc) => e
+      case Expression.LambdaClosure(exp, freeVars, tpe, loc) =>
         val e = visit(exp).asInstanceOf[Expression.Lambda]
-        Expression.MkClosure(e, freeVars, tpe, loc)
+        Expression.LambdaClosure(e, freeVars, tpe, loc)
+      case Expression.ApplyClo(exp, args, tpe, loc) =>
+        throw InternalCompilerException("Impossible. Introduced by this phase.")
       case Expression.ApplyDef(sym, args, tpe, loc) =>
         val as = args map visit
         Expression.ApplyDef(sym, as, tpe, loc)

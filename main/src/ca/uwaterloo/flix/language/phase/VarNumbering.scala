@@ -83,13 +83,14 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.Var(sym, tpe, loc) => i0
       case Expression.Def(name, tpe, loc) => i0
       case Expression.Hook(hook, tpe, loc) => i0
-      case Expression.MkClosureDef(ref, freeVars, tpe, loc) => i0
+      case Expression.Closure(ref, freeVars, tpe, loc) => i0
+      case Expression.Apply(exp, args, tpe, loc) => ??? // Impossible
+      case Expression.ApplyClo(exp, args, tpe, loc) =>
+        val i = visitExp(exp, i0)
+        visitExps(args, i)
       case Expression.ApplyDef(name, args, tpe, loc) => visitExps(args, i0)
       case Expression.ApplyTail(name, formals, args, tpe, loc) => visitExps(args, i0)
       case Expression.ApplyHook(hook, args, tpe, loc) => visitExps(args, i0)
-      case Expression.Apply(exp, args, tpe, loc) =>
-        val i = visitExp(exp, i0)
-        visitExps(args, i)
       case Expression.Unary(sop, op, exp, tpe, loc) => visitExp(exp, i0)
       case Expression.Binary(sop, op, exp1, exp2, tpe, loc) =>
         val i1 = visitExp(exp1, i0)
@@ -145,7 +146,7 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.SwitchError(tpe, loc) => i0
       case Expression.Lambda(args, body, tpe, loc) =>
         throw InternalCompilerException("Lambdas should have been converted to closures and lifted.")
-      case Expression.MkClosure(lambda, freeVars, tpe, loc) =>
+      case Expression.LambdaClosure(lambda, freeVars, tpe, loc) =>
         throw InternalCompilerException("MkClosure should have been replaced by MkClosureRef after lambda lifting.")
     }
 

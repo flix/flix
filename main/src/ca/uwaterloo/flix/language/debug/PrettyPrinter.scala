@@ -61,6 +61,7 @@ object PrettyPrinter {
         case Expression.Str(lit) => vt.text("\"").text(lit).text("\"")
         case Expression.Var(sym, tpe, loc) => fmtSym(sym, vt)
         case Expression.Def(sym, tpe, loc) => fmtSym(sym, vt)
+
         case Expression.Lambda(fparams, body, tpe, loc) =>
           vt.text("(")
           for (fparam <- fparams) {
@@ -71,10 +72,29 @@ object PrettyPrinter {
           vt.text(" -> ")
           visitExp(body)
 
+        case Expression.Apply(exp, args, tpe, loc) =>
+          visitExp(exp)
+          vt.text("(")
+          for (arg <- args) {
+            visitExp(arg)
+            vt.text(", ")
+          }
+          vt.text(")")
+
         case Expression.Hook(hook, tpe, loc) => vt.text(hook.sym.toString)
 
-        case Expression.MkClosureDef(ref, freeVars, tpe, loc) =>
-          vt.text("MkClosureRef(")
+        case Expression.LambdaClosure(lambda, freeVars, tpe, loc) =>
+          vt.text("LambdaClosure(")
+          visitExp(lambda)
+          vt.text(", [")
+          for (freeVar <- freeVars) {
+            fmtSym(freeVar.sym, vt)
+            vt.text(", ")
+          }
+          vt.text("])")
+
+        case Expression.Closure(ref, freeVars, tpe, loc) =>
+          vt.text("Closure(")
           visitExp(ref)
           vt.text(", [")
           for (freeVar <- freeVars) {
@@ -83,15 +103,14 @@ object PrettyPrinter {
           }
           vt.text("])")
 
-        case Expression.MkClosure(lambda, freeVars, tpe, loc) =>
-          vt.text("MkClosure(")
-          visitExp(lambda)
-          vt.text(", [")
-          for (freeVar <- freeVars) {
-            fmtSym(freeVar.sym, vt)
+        case Expression.ApplyClo(exp, args, tpe, loc) =>
+          visitExp(exp)
+          vt.text("(")
+          for (arg <- args) {
+            visitExp(arg)
             vt.text(", ")
           }
-          vt.text("])")
+          vt.text(")")
 
         case Expression.ApplyDef(sym, args, tpe, loc) =>
           fmtSym(sym, vt)
@@ -113,15 +132,6 @@ object PrettyPrinter {
 
         case Expression.ApplyHook(hook, args, tpe, loc) =>
           fmtSym(hook.sym, vt)
-          vt.text("(")
-          for (arg <- args) {
-            visitExp(arg)
-            vt.text(", ")
-          }
-          vt.text(")")
-
-        case Expression.Apply(exp, args, tpe, loc) =>
-          visitExp(exp)
           vt.text("(")
           for (arg <- args) {
             visitExp(arg)
