@@ -121,7 +121,25 @@ object PrettyPrinter {
           }
           vt.text(")")
 
-        case Expression.ApplyTail(name, formals, args, tpe, loc) =>
+        case Expression.ApplyCloTail(exp, args, tpe, loc) =>
+          visitExp(exp)
+          vt.text("(")
+          for (arg <- args) {
+            visitExp(arg)
+            vt.text(", ")
+          }
+          vt.text(")")
+
+        case Expression.ApplyDefTail(sym, args, tpe, loc) =>
+          fmtSym(sym, vt)
+          vt.text("(")
+          for (arg <- args) {
+            visitExp(arg)
+            vt.text(", ")
+          }
+          vt.text(")")
+
+        case Expression.ApplySelfTail(name, formals, args, tpe, loc) =>
           vt.text("ApplyTail")
           vt.text("(")
           for (arg <- args) {

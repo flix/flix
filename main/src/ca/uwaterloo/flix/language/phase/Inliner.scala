@@ -106,6 +106,15 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
               Expression.ApplyDef(sym, args1, tpe, loc)
             }
         }
+
+      case Expression.ApplyCloTail(exp1, args, tpe, loc) =>
+        // Do not inline tail calls.
+        Expression.ApplyCloTail(visit(exp1), args.map(visit), tpe, loc)
+
+      case Expression.ApplyDefTail(sym, args, tpe, loc) =>
+        // Do not inline tail calls.
+        Expression.ApplyDefTail(sym, args, tpe, loc)
+
       /* Inline inside expression */
       case Expression.Closure(ref, freeVars, tpe, loc) =>
         Expression.Closure(ref, freeVars, tpe, loc)
@@ -126,8 +135,8 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.Lambda(args, body, tpe, loc) =>
         Expression.Lambda(args, visit(body), tpe, loc)
       case Expression.Hook(_, _, _) => exp
-      case Expression.ApplyTail(sym, formals, actuals, tpe, loc) =>
-        Expression.ApplyTail(sym, formals, actuals.map(visit), tpe, loc)
+      case Expression.ApplySelfTail(sym, formals, actuals, tpe, loc) =>
+        Expression.ApplySelfTail(sym, formals, actuals.map(visit), tpe, loc)
       case Expression.ApplyHook(hook, args, tpe, loc) =>
         Expression.ApplyHook(hook, args.map(visit), tpe, loc)
       case Expression.Apply(exp1, args, tpe, loc) => ??? // TODO: Impossible.
@@ -204,8 +213,12 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       Expression.ApplyClo(renameAndSubstitute(exp1, sub), args.map(renameAndSubstitute(_, sub)), tpe, loc)
     case Expression.ApplyDef(sym, args, tpe, loc) =>
       Expression.ApplyDef(sym, args.map(renameAndSubstitute(_, sub)), tpe, loc)
-    case Expression.ApplyTail(sym, formals, actuals, tpe, loc) =>
-      Expression.ApplyTail(sym, formals, actuals.map(renameAndSubstitute(_, sub)), tpe, loc)
+    case Expression.ApplyCloTail(exp1, args, tpe, loc) =>
+      Expression.ApplyCloTail(renameAndSubstitute(exp1, sub), args.map(renameAndSubstitute(_, sub)), tpe, loc)
+    case Expression.ApplyDefTail(sym, args, tpe, loc) =>
+      Expression.ApplyDefTail(sym, args.map(renameAndSubstitute(_, sub)), tpe, loc)
+    case Expression.ApplySelfTail(sym, formals, actuals, tpe, loc) =>
+      Expression.ApplySelfTail(sym, formals, actuals.map(renameAndSubstitute(_, sub)), tpe, loc)
     case Expression.ApplyHook(hook, args, tpe, loc) =>
       Expression.ApplyHook(hook, args.map(renameAndSubstitute(_, sub)), tpe, loc)
     case Expression.Apply(exp1, args, tpe, loc) => ??? // Impossible
@@ -300,7 +313,7 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.Closure(ref, freeVars, _, _) => 1 + freeVars.length + exprScore(ref)
       case Expression.ApplyClo(exp, args, _, _) => 1 + exprScore(exp) + args.map(exprScore).sum
       case Expression.ApplyDef(sym, args, _, _) => 1 + args.map(exprScore).sum
-      case Expression.ApplyTail(sym, formals, actuals, _, _) =>
+      case Expression.ApplySelfTail(sym, formals, actuals, _, _) =>
         // Not to be inlined
         MaxScore + 1 + formals.length + actuals.map(exprScore).sum
       case Expression.ApplyHook(hook, args, _, _) => 1 + args.map(exprScore).sum

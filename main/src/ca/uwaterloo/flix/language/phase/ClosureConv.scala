@@ -122,10 +122,13 @@ object ClosureConv {
         case _ => SimplifiedAst.Expression.ApplyClo(convert(e), args.map(convert), tpe, loc)
       }
 
+    // TODO: Exception
     case SimplifiedAst.Expression.ApplyClo(e, args, tpe, loc) => throw InternalCompilerException("Impossible. Introduced by this phase.")
     case SimplifiedAst.Expression.ApplyDef(name, args, tpe, loc) => throw InternalCompilerException("Impossible. Introduced by this phase.")
+    case SimplifiedAst.Expression.ApplyCloTail(e, args, tpe, loc) => throw InternalCompilerException("Impossible. Introduced by this phase.")
+    case SimplifiedAst.Expression.ApplyDefTail(name, args, tpe, loc) => throw InternalCompilerException("Impossible. Introduced by this phase.")
+    case SimplifiedAst.Expression.ApplySelfTail(name, formals, actuals, tpe, loc) => throw InternalCompilerException("Impossible. Introduced by a later phase.")
     case SimplifiedAst.Expression.ApplyHook(hook, args, tpe, loc) => throw InternalCompilerException("Impossible. Introduced by this phase.")
-    case SimplifiedAst.Expression.ApplyTail(name, formals, actuals, tpe, loc) => throw InternalCompilerException("Impossible. Introduced by a later phase.")
 
     case SimplifiedAst.Expression.Unary(sop, op, e, tpe, loc) =>
       SimplifiedAst.Expression.Unary(sop, op, convert(e), tpe, loc)
@@ -200,10 +203,12 @@ object ClosureConv {
       throw InternalCompilerException(s"Unexpected expression: '$e'.")
     case SimplifiedAst.Expression.Closure(ref, freeVars, tpe, loc) =>
       throw InternalCompilerException(s"Unexpected expression: '$e'.")
-    case SimplifiedAst.Expression.ApplyClo(exp, args, tpe, loc) => throw InternalCompilerException("Impossible. Introduced by this phase.")
+    case SimplifiedAst.Expression.ApplyClo(exp, args, tpe, loc) => throw InternalCompilerException("Impossible. Introduced by this phase.") // TODO: Exception
     case SimplifiedAst.Expression.ApplyDef(name, args, tpe, loc) => mutable.LinkedHashSet.empty ++ args.flatMap(freeVariables)
+    case SimplifiedAst.Expression.ApplyCloTail(exp, args, tpe, loc) => throw InternalCompilerException("Impossible. Introduced by this phase.") // TODO: Exception
+    case SimplifiedAst.Expression.ApplyDefTail(name, args, tpe, loc) => throw InternalCompilerException("Impossible. Introduced by this phase.") // TODO: Exception
     case SimplifiedAst.Expression.ApplyHook(hook, args, tpe, loc) => mutable.LinkedHashSet.empty ++ args.flatMap(freeVariables)
-    case SimplifiedAst.Expression.ApplyTail(name, formals, actuals, tpe, loc) => mutable.LinkedHashSet.empty ++ actuals.flatMap(freeVariables)
+    case SimplifiedAst.Expression.ApplySelfTail(name, formals, actuals, tpe, loc) => mutable.LinkedHashSet.empty ++ actuals.flatMap(freeVariables)
     case SimplifiedAst.Expression.Apply(exp, args, tpe, loc) =>
       freeVariables(exp) ++ args.flatMap(freeVariables)
     case SimplifiedAst.Expression.Unary(sop, op, exp, tpe, loc) => freeVariables(exp)
@@ -269,13 +274,17 @@ object ClosureConv {
         val e = visit(exp).asInstanceOf[Expression.Lambda]
         Expression.LambdaClosure(e, freeVars, tpe, loc)
       case Expression.ApplyClo(exp, args, tpe, loc) =>
-        throw InternalCompilerException("Impossible. Introduced by this phase.")
+        throw InternalCompilerException("Impossible. Introduced by this phase.") // TODO
       case Expression.ApplyDef(sym, args, tpe, loc) =>
         val as = args map visit
         Expression.ApplyDef(sym, as, tpe, loc)
-      case Expression.ApplyTail(sym, fparams, args, tpe, loc) =>
+      case Expression.ApplyCloTail(exp, args, tpe, loc) =>
+        throw InternalCompilerException("Impossible. Introduced by this phase.") // TODO
+      case Expression.ApplyDefTail(sym, args, tpe, loc) =>
+        throw InternalCompilerException("Impossible. Introduced by this phase.") // TODO
+      case Expression.ApplySelfTail(sym, fparams, args, tpe, loc) =>
         val as = args map visit
-        Expression.ApplyTail(sym, fparams, as, tpe, loc)
+        Expression.ApplySelfTail(sym, fparams, as, tpe, loc)
       case Expression.ApplyHook(hook, args, tpe, loc) =>
         val as = args map visit
         Expression.ApplyHook(hook, as, tpe, loc)

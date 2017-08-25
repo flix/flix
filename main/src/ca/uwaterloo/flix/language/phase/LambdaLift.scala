@@ -124,6 +124,9 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.Hook(hook, tpe, loc) => e
       case Expression.Closure(ref, freeVars, tpe, loc) => e
 
+      case Expression.ApplyCloTail(exp, args, tpe, loc) => ??? // TODO: Impossible
+      case Expression.ApplyDefTail(sym, args, tpe, loc) => ??? // TODO: Impossible
+
       case Expression.Apply(exp, args, tpe, loc) =>
         Expression.Apply(visit(exp), args.map(visit), tpe, loc)
 
@@ -139,8 +142,8 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         Expression.ApplyClo(visit(exp), args.map(visit), tpe, loc)
       case Expression.ApplyDef(name, args, tpe, loc) =>
         Expression.ApplyDef(name, args.map(visit), tpe, loc)
-      case Expression.ApplyTail(name, formals, args, tpe, loc) =>
-        Expression.ApplyTail(name, formals, args.map(visit), tpe, loc)
+      case Expression.ApplySelfTail(name, formals, args, tpe, loc) =>
+        Expression.ApplySelfTail(name, formals, args.map(visit), tpe, loc)
       case Expression.ApplyHook(hook, args, tpe, loc) =>
         Expression.ApplyHook(hook, args.map(visit), tpe, loc)
       case Expression.Unary(sop, op, exp, tpe, loc) =>

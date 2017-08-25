@@ -153,7 +153,9 @@ object Uncurrier extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         case e: Closure => e
         case ApplyClo(exp, args, tpe, loc) => ??? // TODO: Impossible?
         case ApplyDef(sym, args, tpe, loc) => ApplyDef(sym, args.map(substitute(_, env0)), tpe, loc)
-        case ApplyTail(sym, formals, actuals, tpe, loc) => ApplyTail(sym, formals, actuals.map(substitute(_, env0)), tpe, loc)
+        case ApplyCloTail(exp, args, tpe, loc) => ??? // TODO: Impossible
+        case ApplyDefTail(sym, args, tpe, loc) => ??? // TODO: Impossible
+        case ApplySelfTail(sym, formals, actuals, tpe, loc) => ApplySelfTail(sym, formals, actuals.map(substitute(_, env0)), tpe, loc)
         case ApplyHook(hook, args, tpe, loc) => ApplyHook(hook, args.map(substitute(_, env0)), tpe, loc)
         case Apply(exp, args, tpe, loc) => Apply(substitute(exp, env0), args.map(a => substitute(a, env0)), tpe, loc)
         case Unary(sop, op, exp, tpe, loc) => Unary(sop, op, substitute(exp, env0), tpe, loc)
@@ -203,8 +205,10 @@ object Uncurrier extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case LambdaClosure(lambda, freeVars, tpe, loc) => exp0
       case Closure(ref, freeVars, tpe, loc) => exp0
       case ApplyClo(exp, args, tpe, loc) => ??? // Impossible.
+      case ApplyCloTail(exp, args, tpe, loc) => ??? // Impossible.
+      case ApplyDefTail(exp, args, tpe, loc) => ??? // Impossible.
       case ApplyDef(sym, args, tpe, loc) => exp0
-      case ApplyTail(sym, formals, actuals, tpe, loc) => exp0
+      case ApplySelfTail(sym, formals, actuals, tpe, loc) => exp0
       case ApplyHook(hook, args, tpe, loc) => exp0
       case a: Apply =>
         val uncurryCount = maximalUncurry(a)
@@ -308,8 +312,10 @@ object Uncurrier extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
           case _: LambdaClosure => 0
           case _: Closure => 0
           case _: ApplyClo => ??? // TODO: Impossible?
+          case _: ApplyCloTail => ??? // Impossible.
+          case _: ApplyDefTail => ??? // Impossible.
           case _: ApplyDef => 0
-          case _: ApplyTail => 0
+          case _: ApplySelfTail => 0
           case _: ApplyHook => 0
           case a: Apply => 1 + maximalUncurry(a)
           case _: Unary => 0

@@ -45,35 +45,34 @@ object Interpreter {
       case None => throw InternalRuntimeException(s"Key '${sym.toString}' not found in environment: '${env0.mkString(",")}'.")
       case Some(v) => v
     }
+
     case Expression.Def(name, _, _) => eval(root.defs(name).exp, root, env0)
-    case Expression.MkClosureDef(ref, freeVars, _, _) =>
+
+    case Expression.Closure(ref, freeVars, _, _) =>
       allocateClosure(ref, freeVars, env0)
-    case Expression.ApplyDef(sym, args0, _, _) =>
-      val args = evalArgs(args0, root, env0)
-      Linker.link(sym, root).invoke(args.toArray)
-    case Expression.ApplyTail(sym, _, args0, _, _) =>
-      val args = evalArgs(args0, root, env0)
-      Linker.link(sym, root).invoke(args.toArray)
+
+    case Expression.ApplyClo(exp, args, tpe, loc) =>
+      invokeClo(exp, args, env0, root)
+
+    case Expression.ApplyDef(sym, args, _, _) =>
+      invokeDef(sym, args, env0, root)
+
+    case Expression.ApplyCloTail(exp, args, _, _) =>
+      invokeClo(exp, args, env0, root)
+
+    case Expression.ApplyDefTail(sym, args, _, _) =>
+      invokeDef(sym, args, env0, root)
+
+    case Expression.ApplySelfTail(sym, _, args, _, _) =>
+      invokeDef(sym, args, env0, root)
+
     case Expression.ApplyHook(hook, args0, _, _) =>
       val args = evalArgs(args0, root, env0)
       hook match {
         case Ast.Hook.Unsafe(name, inv, _) =>
           inv(args.toArray)
       }
-    case Expression.ApplyClosure(exp, args0, tpe, loc) =>
-      val clo = cast2closure(eval(exp, root, env0))
-      val Value.Closure(name, bindings) = clo
-      val args = evalArgs(args0, root, env0)
-      val constant = root.defs(name)
-      // Bindings for the capture variables are passed as arguments.
-      val env1 = constant.formals.take(bindings.length).zip(bindings).foldLeft(env0) {
-        case (macc, (formal, actual)) => macc + (formal.sym.toString -> actual)
-      }
-      // Now pass the actual arguments supplied by the caller.
-      val env2 = constant.formals.drop(bindings.length).zip(args).foldLeft(env1) {
-        case (macc, (formal, actual)) => macc + (formal.sym.toString -> actual)
-      }
-      eval(constant.exp, root, env2)
+
     case Expression.Unary(sop, op, exp, _, _) => evalUnary(sop, exp, env0, root)
     case Expression.Binary(sop, op, exp1, exp2, _, _) => evalBinary(sop, exp1, exp2, env0, root)
     case Expression.IfThenElse(exp1, exp2, exp3, tpe, _) =>
@@ -84,7 +83,7 @@ object Interpreter {
       eval(exp2, root, newEnv)
 
     case Expression.LetRec(sym, exp1, exp2, _, _) => exp1 match {
-      case Expression.MkClosureDef(ref, freeVars, _, _) =>
+      case Expression.Closure(ref, freeVars, _, _) =>
         // Allocate a circular closure.
         val closure = allocateClosure(ref, freeVars, env0)
         closure.bindings(sym.getStackOffset) = closure
@@ -435,6 +434,33 @@ object Interpreter {
   }
 
   /**
+    * Invokes the given closure expression `exp` with the given arguments `args` under the given environment `env0`..
+    */
+  private def invokeClo(exp: Expression, args: List[Expression], env0: Map[String, AnyRef], root: Root): AnyRef = {
+    val clo = cast2closure(eval(exp, root, env0))
+    val Value.Closure(name, bindings) = clo
+    val as = evalArgs(args, root, env0)
+    val constant = root.defs(name)
+    // Bindings for the capture variables are passed as arguments.
+    val env1 = constant.formals.take(bindings.length).zip(bindings).foldLeft(env0) {
+      case (macc, (formal, actual)) => macc + (formal.sym.toString -> actual)
+    }
+    // Now pass the actual arguments supplied by the caller.
+    val env2 = constant.formals.drop(bindings.length).zip(as).foldLeft(env1) {
+      case (macc, (formal, actual)) => macc + (formal.sym.toString -> actual)
+    }
+    eval(constant.exp, root, env2)
+  }
+
+  /**
+    * Invokes the given definition `sym` with the given arguments `args` under the given environment `env0`..
+    */
+  private def invokeDef(sym: Symbol.DefnSym, args: List[Expression], env0: Map[String, AnyRef], root: Root): AnyRef = {
+    val as = evalArgs(args, root, env0)
+    Linker.link(sym, root).invoke(as.toArray)
+  }
+
+  /**
     * Evaluates the given list of expressions `exps` under the given environment `env` to a list of values.
     */
   private def evalArgs(exps: List[Expression], root: Root, env: Map[String, AnyRef]): List[AnyRef] = {
@@ -581,6 +607,7 @@ object Interpreter {
     * Constructs a bool from the given boolean `b`.
     */
   private def mkBool(b: Boolean): AnyRef = if (b) Value.True else Value.False
+
 
   /**
     * Returns the given reference `ref` as a Java object.

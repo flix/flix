@@ -175,7 +175,8 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
       case SimplifiedAst.Expression.Str(lit) => ExecutableAst.Expression.Str(lit)
       case SimplifiedAst.Expression.Var(sym, tpe, loc) =>
         ExecutableAst.Expression.Var(sym, tpe, loc)
-      case SimplifiedAst.Expression.Def(name, tpe, loc) => ExecutableAst.Expression.Def(name, tpe, loc)
+      case SimplifiedAst.Expression.Def(name, tpe, loc) =>
+        ExecutableAst.Expression.Def(name, tpe, loc)
       case SimplifiedAst.Expression.Lambda(args, body, tpe, loc) =>
         throw InternalCompilerException("Lambdas should have been converted to closures and lifted.")
       case SimplifiedAst.Expression.Hook(hook, tpe, loc) =>
@@ -187,15 +188,21 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
       case SimplifiedAst.Expression.Closure(ref, freeVars, tpe, loc) =>
         val e = toExecutable(ref)
         val fvs = freeVars.map(CreateExecutableAst.toExecutable).toArray
-        ExecutableAst.Expression.MkClosureDef(e.asInstanceOf[ExecutableAst.Expression.Def], fvs, tpe, loc)
+        ExecutableAst.Expression.Closure(e.asInstanceOf[ExecutableAst.Expression.Def], fvs, tpe, loc)
       case SimplifiedAst.Expression.ApplyClo(exp, args, tpe, loc) =>
         val argsArray = args.map(toExecutable)
-        ExecutableAst.Expression.ApplyClosure(toExecutable(exp), argsArray, tpe, loc)
+        ExecutableAst.Expression.ApplyClo(toExecutable(exp), argsArray, tpe, loc)
       case SimplifiedAst.Expression.ApplyDef(name, args, tpe, loc) =>
         val argsArray = args.map(toExecutable)
         ExecutableAst.Expression.ApplyDef(name, argsArray, tpe, loc)
-      case SimplifiedAst.Expression.ApplyTail(name, formals, actuals, tpe, loc) =>
-        ExecutableAst.Expression.ApplyTail(name, formals.map(CreateExecutableAst.toExecutable), actuals.map(toExecutable), tpe, loc)
+      case SimplifiedAst.Expression.ApplyCloTail(exp, args, tpe, loc) =>
+        val argsArray = args.map(toExecutable)
+        ExecutableAst.Expression.ApplyCloTail(toExecutable(exp), argsArray, tpe, loc)
+      case SimplifiedAst.Expression.ApplyDefTail(name, args, tpe, loc) =>
+        val argsArray = args.map(toExecutable)
+        ExecutableAst.Expression.ApplyDefTail(name, argsArray, tpe, loc)
+      case SimplifiedAst.Expression.ApplySelfTail(name, formals, actuals, tpe, loc) =>
+        ExecutableAst.Expression.ApplySelfTail(name, formals.map(CreateExecutableAst.toExecutable), actuals.map(toExecutable), tpe, loc)
       case SimplifiedAst.Expression.ApplyHook(hook, args, tpe, loc) =>
         val argsArray = args.map(toExecutable)
         ExecutableAst.Expression.ApplyHook(hook, argsArray, tpe, loc)

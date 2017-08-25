@@ -917,8 +917,12 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case SimplifiedAst.Expression.ApplyClo(exp, args, tpe, loc) => ??? // TODO, should not exist.
       case SimplifiedAst.Expression.ApplyDef(name, args, tpe, loc) =>
         SimplifiedAst.Expression.ApplyDef(name, args.map(visit), tpe, loc)
-      case SimplifiedAst.Expression.ApplyTail(name, formals, args, tpe, loc) =>
-        SimplifiedAst.Expression.ApplyTail(name, formals, args.map(visit), tpe, loc)
+      case SimplifiedAst.Expression.ApplyCloTail(exp, args, tpe, loc) =>
+        ??? // TODO: Impossible.
+      case SimplifiedAst.Expression.ApplyDefTail(name, args, tpe, loc) =>
+        ??? // TODO: Impossible.
+      case SimplifiedAst.Expression.ApplySelfTail(name, formals, args, tpe, loc) =>
+        SimplifiedAst.Expression.ApplySelfTail(name, formals, args.map(visit), tpe, loc)
       case SimplifiedAst.Expression.ApplyHook(hook, args, tpe, loc) =>
         SimplifiedAst.Expression.ApplyHook(hook, args.map(visit), tpe, loc)
       case SimplifiedAst.Expression.Apply(exp, args, tpe, loc) =>
