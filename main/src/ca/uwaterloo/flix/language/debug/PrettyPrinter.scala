@@ -81,8 +81,6 @@ object PrettyPrinter {
           }
           vt.text(")")
 
-        case Expression.Hook(hook, tpe, loc) => vt.text(hook.sym.toString)
-
         case Expression.LambdaClosure(lambda, freeVars, tpe, loc) =>
           vt.text("LambdaClosure(")
           visitExp(lambda)
@@ -147,6 +145,8 @@ object PrettyPrinter {
             vt.text(", ")
           }
           vt.text(")")
+
+        case Expression.Hook(hook, tpe, loc) => vt.text(hook.sym.toString)
 
         case Expression.ApplyHook(hook, args, tpe, loc) =>
           fmtSym(hook.sym, vt)
