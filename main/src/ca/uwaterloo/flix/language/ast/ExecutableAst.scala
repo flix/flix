@@ -200,9 +200,6 @@ object ExecutableAst {
 
     case class Var(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
-    // TODO: Can a def even occur?
-    case class Def(sym: Symbol.DefnSym, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
-
     // TODO: Get rid of the fnType here.
     case class Closure(sym: Symbol.DefnSym, freeVars: List[FreeVar], fnType: Type, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 

@@ -144,16 +144,6 @@ object SymbolicEvaluator {
       case Expression.Var(sym, tpe, loc) => lift(pc0, qua0, env0(sym))
 
       /**
-        * Reference.
-        */
-      case Expression.Def(name, tpe, loc) =>
-        // Lookup and evaluate the definition.
-        root.defs.get(name) match {
-          case None => throw InternalCompilerException(s"Type Error: Unresolved reference '$name'.")
-          case Some(defn) => eval(pc0, defn.exp, env0, qua0)
-        }
-
-      /**
         * Closure.
         */
       case Expression.Closure(sym, freeVars, _, _, _) =>

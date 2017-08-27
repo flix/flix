@@ -537,7 +537,6 @@ object TupleGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     case Expression.BigInt(lit) => Set.empty
     case Expression.Str(lit) => Set.empty
     case Expression.Var(sym, tpe, loc) => findTuplesInTypes(tpe)
-    case Expression.Def(name, tpe, loc) => findTuplesInTypes(tpe)
     case Expression.Closure(ref, freeVars, _, tpe, loc) => findTuplesInTypes(tpe)
     case Expression.ApplyClo(exp, args, tpe, loc) => findTuplesInExps(exp) ++ args.foldLeft(findTuplesInTypes(tpe))((acc, elem) => acc ++ findTuplesInExps(elem))
     case Expression.ApplyDef(name, args, tpe, loc) => args.foldLeft(findTuplesInTypes(tpe))((acc, elem) => acc ++ findTuplesInExps(elem))

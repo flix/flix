@@ -46,8 +46,6 @@ object Interpreter {
       case Some(v) => v
     }
 
-    case Expression.Def(name, _, _) => eval(root.defs(name).exp, root, env0)
-
     case Expression.Closure(sym, freeVars, _, _, _) =>
       allocateClosure(sym, freeVars.toArray, env0)
 
