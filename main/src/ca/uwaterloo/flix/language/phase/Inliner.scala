@@ -139,7 +139,6 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         Expression.ApplySelfTail(sym, formals, actuals.map(visit), tpe, loc)
       case Expression.ApplyHook(hook, args, tpe, loc) =>
         Expression.ApplyHook(hook, args.map(visit), tpe, loc)
-      case Expression.Apply(exp1, args, tpe, loc) => ??? // TODO: Impossible.
       case Expression.Unary(sop, op, exp1, tpe, loc) =>
         Expression.Unary(sop, op, visit(exp1), tpe, loc)
       case Expression.Binary(sop, op, exp1, exp2, tpe, loc) =>
@@ -179,8 +178,9 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.MatchError(_, _) => exp
       case Expression.SwitchError(_, _) => exp
       /* Error */
-      case Expression.LambdaClosure(_, _, _, _) =>
-        throw InternalCompilerException(s"Unexpected expression $exp after lambda lifting")
+      case Expression.LambdaClosure(_, _, _, _) => throw InternalCompilerException(s"Unexpected expression: '${exp.getClass.getSimpleName}'.")
+      case Expression.Apply(exp1, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp.getClass.getSimpleName}'.")
+
     }
   }
 
@@ -221,7 +221,6 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       Expression.ApplySelfTail(sym, formals, actuals.map(renameAndSubstitute(_, sub)), tpe, loc)
     case Expression.ApplyHook(hook, args, tpe, loc) =>
       Expression.ApplyHook(hook, args.map(renameAndSubstitute(_, sub)), tpe, loc)
-    case Expression.Apply(exp1, args, tpe, loc) => ??? // Impossible
     case Expression.Unary(sop, op, exp1, tpe, loc) =>
       Expression.Unary(sop, op, renameAndSubstitute(exp1, sub), tpe, loc)
     case Expression.Binary(sop, op, exp1, exp2, tpe, loc) =>
@@ -268,8 +267,9 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     case Expression.UserError(_, _) => exp
     case Expression.MatchError(_, _) => exp
     case Expression.SwitchError(_, _) => exp
-    case Expression.LambdaClosure(_, _, _, _) =>
-      throw InternalCompilerException(s"Unexpected expression $exp after lambda lifting")
+
+    case Expression.LambdaClosure(_, _, _, _) => throw InternalCompilerException(s"Unexpected expression: '${exp.getClass.getSimpleName}'.")
+    case Expression.Apply(exp1, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp.getClass.getSimpleName}'.")
   }
 
   /**
@@ -292,8 +292,8 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
   /**
     * Returns the score of the given expression `exp`.
     */
-  def exprScore(exp: Expression): Int = {
-    exp match {
+  def exprScore(exp0: Expression): Int = {
+    exp0 match {
       case Expression.Unit => 0
       case Expression.True => 0
       case Expression.False => 0
@@ -317,7 +317,6 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         // Not to be inlined
         MaxScore + 1 + formals.length + actuals.map(exprScore).sum
       case Expression.ApplyHook(hook, args, _, _) => 1 + args.map(exprScore).sum
-      case Expression.Apply(exp1, args, _, _) => ??? // TODO Impossible?
       case Expression.Unary(sop, op, exp1, _, _) => 1 + exprScore(exp1)
       case Expression.Binary(sop, op, exp1, exp2, _, _) => 1 + exprScore(exp1) + exprScore(exp2)
       case Expression.IfThenElse(exp1, exp2, exp3, _, _) => exprScore(exp1) + (2 * (exprScore(exp2) + exprScore(exp3)))
@@ -339,8 +338,9 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.UserError(_, _) => 0
       case Expression.MatchError(_, _) => 0
       case Expression.SwitchError(_, _) => 0
-      case Expression.LambdaClosure(_, _, _, _) =>
-        throw InternalCompilerException(s"Unexpected expression $exp after lambda lifting")
+      case Expression.LambdaClosure(_, _, _, _) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
+      case Expression.Apply(_, _, _, _) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
+
     }
   }
 }
