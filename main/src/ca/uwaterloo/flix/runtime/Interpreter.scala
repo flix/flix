@@ -48,8 +48,8 @@ object Interpreter {
 
     case Expression.Def(name, _, _) => eval(root.defs(name).exp, root, env0)
 
-    case Expression.Closure(ref, freeVars, _, _) =>
-      allocateClosure(ref, freeVars, env0)
+    case Expression.Closure(sym, freeVars, _, _, _) =>
+      allocateClosure(sym, freeVars.toArray, env0)
 
     case Expression.ApplyClo(exp, args, tpe, loc) =>
       invokeClo(exp, args, env0, root)
@@ -83,9 +83,9 @@ object Interpreter {
       eval(exp2, root, newEnv)
 
     case Expression.LetRec(sym, exp1, exp2, _, _) => exp1 match {
-      case Expression.Closure(ref, freeVars, _, _) =>
+      case Expression.Closure(ref, freeVars, _, _, _) =>
         // Allocate a circular closure.
-        val closure = allocateClosure(ref, freeVars, env0)
+        val closure = allocateClosure(ref, freeVars.toArray, env0)
         closure.bindings(sym.getStackOffset) = closure
 
         // Evaluate the body expression under the extended environment.
@@ -468,9 +468,9 @@ object Interpreter {
   }
 
   /**
-    * Allocates a closure for the given reference `ref` with free variables `freeVars` under the given environment `env0`.
+    * Allocates a closure for the given definition `sym` with free variables `freeVars` under the given environment `env0`.
     */
-  private def allocateClosure(ref: Expression.Def, freeVars: Array[ExecutableAst.FreeVar], env0: Map[String, AnyRef]): Value.Closure = {
+  private def allocateClosure(sym: Symbol.DefnSym, freeVars: Array[ExecutableAst.FreeVar], env0: Map[String, AnyRef]): Value.Closure = {
     // Save the values of the free variables in the Value.Closure structure.
     // When the closure is called, these values will be provided at the beginning of the argument list.
     val bindings = new Array[AnyRef](freeVars.length)
@@ -484,7 +484,7 @@ object Interpreter {
       }
       i = i + 1
     }
-    Value.Closure(ref.sym, bindings)
+    Value.Closure(sym, bindings)
   }
 
   /////////////////////////////////////////////////////////////////////////////

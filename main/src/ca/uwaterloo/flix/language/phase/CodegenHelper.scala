@@ -654,7 +654,7 @@ object CodegenHelper {
       case Expression.Str(lit) => Set.empty
       case Expression.Var(sym, tpe, loc) => Set.empty
       case Expression.Def(name, tpe, loc) => Set.empty
-      case Expression.Closure(ref, freeVars, tpe, loc) => Set(tpe)
+      case Expression.Closure(ref, freeVars, _, tpe, loc) => Set(tpe)
       case Expression.ApplyClo(exp, args, tpe, loc) => visit(exp) ++ args.flatMap(visit)
       case Expression.ApplyDef(name, args, tpe, loc) => args.flatMap(visit).toSet
       case Expression.ApplyCloTail(exp, args, tpe, loc) => visit(exp) ++ args.flatMap(visit)
@@ -715,7 +715,7 @@ object CodegenHelper {
     case Expression.Str(lit) => Nil
     case Expression.Var(sym, tpe, loc) => Nil
     case Expression.Def(name, tpe, loc) => Nil
-    case Expression.Closure(ref, freeVars, tpe, loc) => Nil
+    case Expression.Closure(ref, freeVars, _, tpe, loc) => Nil
     case Expression.ApplyClo(exp, args, tpe, loc) => findEnumCases(exp) ::: args.flatMap(findEnumCases)
     case Expression.ApplyDef(name, args, tpe, loc) => args.flatMap(findEnumCases)
     case Expression.ApplyCloTail(exp, args, tpe, loc) => findEnumCases(exp) ::: args.flatMap(findEnumCases)

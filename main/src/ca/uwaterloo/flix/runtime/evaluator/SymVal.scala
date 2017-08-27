@@ -130,10 +130,10 @@ object SymVal {
   /**
     * A closure value.
     *
-    * @param exp      the expression of the closure.
+    * @param sym      the definition symbol.
     * @param bindings the closure environment.
     */
-  case class Closure(exp: Expression.Def, bindings: Array[SymVal]) extends SymVal
+  case class Closure(sym: Symbol.DefnSym, bindings: Array[SymVal]) extends SymVal
 
   /**
     * Returns a stringified model of the given quantifier map `qua` with free variables replaced by the optional Z3 model.

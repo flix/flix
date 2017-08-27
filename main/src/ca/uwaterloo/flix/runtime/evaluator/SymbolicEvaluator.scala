@@ -156,12 +156,12 @@ object SymbolicEvaluator {
       /**
         * Closure.
         */
-      case Expression.Closure(ref, freeVars, _, _) =>
+      case Expression.Closure(sym, freeVars, _, _, _) =>
         // Save the values of the free variables in a list.
         // When the closure is called, these values will be provided at the beginning of the argument list.
         val bindings = freeVars.map(f => env0(f.sym))
         // Construct the closure.
-        val clo = SymVal.Closure(ref, bindings)
+        val clo = SymVal.Closure(sym, bindings.toArray)
         lift(pc0, qua0, clo)
 
       /**
@@ -662,7 +662,7 @@ object SymbolicEvaluator {
         * LetRec-binding.
         */
       case Expression.LetRec(sym, exp1, exp2, _, _) => exp1 match {
-        case Expression.Closure(ref, freeVars, _, _) =>
+        case Expression.Closure(ref, freeVars, _, _, _) =>
           // Save the values of the free variables in a list.
           // When the closure is called, these values will be provided at the beginning of the argument list.
           val bindings = Array.ofDim[SymVal](freeVars.length)
@@ -992,9 +992,9 @@ object SymbolicEvaluator {
     def invokeClo(pc0: PathConstraint, exp: Expression, args: List[Expression], env0: Environment, qua0: Quantifiers): Context = {
       // Evaluate the closure.
       eval(pc0, exp, env0, qua0) flatMap {
-        case (pc, qua, SymVal.Closure(ref, bindings)) =>
+        case (pc, qua, SymVal.Closure(sym, bindings)) =>
           // Lookup the definition
-          val defn = root.defs(ref.sym)
+          val defn = root.defs(sym)
           // Evaluate all the arguments.
           evaln(pc, args, env0, qua) flatMap {
             case (pc1, qua1, actuals) =>

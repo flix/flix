@@ -203,8 +203,8 @@ object ExecutableAst {
     // TODO: Can a def even occur?
     case class Def(sym: Symbol.DefnSym, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
-    // TODO: Update to be a symbol
-    case class Closure(ref: ExecutableAst.Expression.Def, freeVars: Array[FreeVar], tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
+    // TODO: Get rid of the fnType here.
+    case class Closure(sym: Symbol.DefnSym, freeVars: List[FreeVar], fnType: Type, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
     case class ApplyClo(exp: ExecutableAst.Expression, args: List[ExecutableAst.Expression], tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
