@@ -33,48 +33,48 @@ import CodegenHelper._
 
 import scala.language.existentials
 
-object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
+object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
 
   // This constant is used in LoadBytecode, so we can't put it in the private Constants object.
   val flixObject = "flixObject"
 
-/**
-  * Generate bytecode of expression in Flix.
-  * There are a number of steps we take before and after the actual code generation.
-  *
-  * 1. Group constants and transform non-functions.
-  * We group all constants by their prefixes to determine which methods are compiled into which classes. Also, we
-  * transform all non-function constants into 0-arg functions, since codegen only compiles methods.
-  * Example 1: given a root with constants A.B.C/f, A.B/g, A.B.C/h, we want to generate two classes, A.B.C
-  * (containing methods f and h) and A.B (containing method g).
-  * Example 2: (in pseudocode) the constant `def x = UserError` is converted to `def x() = UserError`.
-  *
-  * 2. Create a declarations map of names to types.
-  * We need to know the type of function f in order to generate code that calls f.
-  *
-  * 3. Create Enum Type info
-  * We create type information for each enum case. That is, given the type and tag name of each enum case, the map
-  * returns the Qualified name of the the class corresponding to the enum case.
-  *
-  * 4. Generate functional interfaces.
-  * Our implementation of closures requires the lambda function to be called through an interface (which is
-  * annotated with @FunctionalInterface). Instead of using functional interfaces provided by Java or Scala (which
-  * are too specific or too general), we create our own.
-  * In this step, we generate names for the functional interfaces, placing each interface in the package
-  *    ca.uwaterloo.flix.runtime. We iterate over the entire AST to determine which function types are used in
-  * MkClosureRef, remove duplicate types, and then generate names. We want the type of MkClosureRef, which is the
-  * type of the closure, not the type of the lambda, since its underlying implementation method will have its
-  * argument list modified for capture variables.
-  * Note that this includes synthetic functions that were lambda lifted, as well as user-defined functions being
-  * passed around as closures.
-  * Finally, we generate bytecode for each name. We keep the types and names in an interfaces map, so that given
-  * a closure's signature, we can lookup the functional interface it's called through.
-  *
-  * 5. Generate bytecode for classes.
-  * As of this step, we have grouped the constants into separate classes, transformed non-functions into 0-arg
-  * functions, collected all the declarations in a map, and created functional interfaces and collected
-  * them in a map.
-  */
+  /**
+    * Generate bytecode of expression in Flix.
+    * There are a number of steps we take before and after the actual code generation.
+    *
+    * 1. Group constants and transform non-functions.
+    * We group all constants by their prefixes to determine which methods are compiled into which classes. Also, we
+    * transform all non-function constants into 0-arg functions, since codegen only compiles methods.
+    * Example 1: given a root with constants A.B.C/f, A.B/g, A.B.C/h, we want to generate two classes, A.B.C
+    * (containing methods f and h) and A.B (containing method g).
+    * Example 2: (in pseudocode) the constant `def x = UserError` is converted to `def x() = UserError`.
+    *
+    * 2. Create a declarations map of names to types.
+    * We need to know the type of function f in order to generate code that calls f.
+    *
+    * 3. Create Enum Type info
+    * We create type information for each enum case. That is, given the type and tag name of each enum case, the map
+    * returns the Qualified name of the the class corresponding to the enum case.
+    *
+    * 4. Generate functional interfaces.
+    * Our implementation of closures requires the lambda function to be called through an interface (which is
+    * annotated with @FunctionalInterface). Instead of using functional interfaces provided by Java or Scala (which
+    * are too specific or too general), we create our own.
+    * In this step, we generate names for the functional interfaces, placing each interface in the package
+    *    ca.uwaterloo.flix.runtime. We iterate over the entire AST to determine which function types are used in
+    * MkClosureRef, remove duplicate types, and then generate names. We want the type of MkClosureRef, which is the
+    * type of the closure, not the type of the lambda, since its underlying implementation method will have its
+    * argument list modified for capture variables.
+    * Note that this includes synthetic functions that were lambda lifted, as well as user-defined functions being
+    * passed around as closures.
+    * Finally, we generate bytecode for each name. We keep the types and names in an interfaces map, so that given
+    * a closure's signature, we can lookup the functional interface it's called through.
+    *
+    * 5. Generate bytecode for classes.
+    * As of this step, we have grouped the constants into separate classes, transformed non-functions into 0-arg
+    * functions, collected all the declarations in a map, and created functional interfaces and collected
+    * them in a map.
+    */
   def run(root: ExecutableAst.Root)(implicit flix: Flix): Validation[ExecutableAst.Root, CompilationError] = {
     implicit val _ = flix.genSym
 
@@ -98,10 +98,10 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
     val declarations: Map[Symbol.DefnSym, Type] = constantsList.map(f => f.sym -> f.tpe).toMap
 
     // 3. Create Enum Type info
-    val allEnums : List[(Type, (String, Type))] = root.defs.values.flatMap(x => CodegenHelper.findEnumCases(x.exp)).toList
+    val allEnums: List[(Type, (String, Type))] = root.defs.values.flatMap(x => CodegenHelper.findEnumCases(x.exp)).toList
 
-    val enumTypeInfo: Map[(Type, String), (QualName, ExecutableAst.Case)] = allEnums.map{ case (tpe, (name, subType)) =>
-      val sym =  tpe match {
+    val enumTypeInfo: Map[(Type, String), (QualName, ExecutableAst.Case)] = allEnums.map { case (tpe, (name, subType)) =>
+      val sym = tpe match {
         case Type.Apply(Type.Enum(s, _), _) => s
         case Type.Enum(s, _) => s
         case _ => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
@@ -129,6 +129,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
     root.copy(time = root.time.copy(codeGen = e),
       byteCodes = root.byteCodes.copy(functionalInterfaceByteCodes = interfaceByteCodes, classByteCodes = classByteCodes)).toSuccess
   }
+
   /*
    * Compile an interface with a single abstract method `apply` whose signature matches the given type. Furthermore, we
    * annotate the interface with @FunctionalInterface.
@@ -167,18 +168,18 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
      * Initialize the class writer. We override `getCommonSuperClass` method because `asm` implementation of this
      * function requires types to loaded so that they can be compared to each other.
      */
-    val classWriter = new ClassWriter(ClassWriter.COMPUTE_FRAMES){
-      override def getCommonSuperClass(tpe1: String, tpe2: String) : String = {
+    val classWriter = new ClassWriter(ClassWriter.COMPUTE_FRAMES) {
+      override def getCommonSuperClass(tpe1: String, tpe2: String): String = {
         asm.Type.getInternalName(Constants.objectClass)
       }
     }
 
     // Wrap the class writer in a CheckClassAdapter if compiler invariants are enabled.
     val visitor =
-    if (options.invariants)
-      new CheckClassAdapter(classWriter)
-    else
-      classWriter
+      if (options.invariants)
+        new CheckClassAdapter(classWriter)
+      else
+        classWriter
 
     // Initialize the visitor to create a class.
     visitor.visit(JavaVersion, ACC_PUBLIC + ACC_SUPER, decorate(prefix), null,
@@ -253,7 +254,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
     }
 
     tpe match {
-      case Type.Var(id, kind) =>  throw InternalCompilerException(s"Non-monomorphed type variable '$id in type '$tpe'.")
+      case Type.Var(id, kind) => throw InternalCompilerException(s"Non-monomorphed type variable '$id in type '$tpe'.")
       case Type.Bool | Type.Char | Type.Int8 | Type.Int16 | Type.Int32 => mv.visitInsn(IRETURN)
       case Type.Int64 => mv.visitInsn(LRETURN)
       case Type.Float32 => mv.visitInsn(FRETURN)
@@ -310,7 +311,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
     case Expression.Str(s) => visitor.visitLdcInsn(s)
 
     case Expression.Var(sym, tpe, _) => tpe match {
-      case Type.Var(id, kind) =>  throw InternalCompilerException(s"Non-monomorphed type variable '$id in type '$tpe'.")
+      case Type.Var(id, kind) => throw InternalCompilerException(s"Non-monomorphed type variable '$id in type '$tpe'.")
       case Type.Bool | Type.Char | Type.Int8 | Type.Int16 | Type.Int32 => visitor.visitVarInsn(ILOAD, sym.getStackOffset)
       case Type.Int64 => visitor.visitVarInsn(LLOAD, sym.getStackOffset)
       case Type.Float32 => visitor.visitVarInsn(FLOAD, sym.getStackOffset)
@@ -321,16 +322,9 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
       case _ => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
     }
 
-    case Expression.Def(name, _, loc) =>
+    case Expression.Closure(sym, freeVars, fnType, tpe, loc) =>
       // Adding source line number for debugging
-      addSourceLine(visitor,loc)
-      // Reference to a top-level definition that isn't used in a MkClosureRef or ApplyRef, so it's a 0-arg function.
-      val targetTpe = declarations(name)
-      visitor.visitMethodInsn(INVOKESTATIC, decorate(FlixClassName(name.prefix)), name.suffix, descriptor(targetTpe, interfaces), false)
-
-    case Expression.MkClosureDef(ref, freeVars, tpe, loc) =>
-      // Adding source line number for debugging
-      addSourceLine(visitor,loc)
+      addSourceLine(visitor, loc)
       // We create a closure the same way Java 8 does. We use InvokeDynamic and the LambdaMetafactory. The idea is that
       // LambdaMetafactory creates a CallSite (linkage), and then the CallSite target is invoked (capture) to create a
       // function object. Later, at ApplyRef, the function object is called (invocation).
@@ -359,7 +353,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
       // `java.lang.invoke.LambdaMetafactory.metafactory(...)`.
       val clazz = classOf[java.lang.invoke.LambdaMetafactory]
       val method = clazz.getMethods.filter(m => m.getName == "metafactory").head
-      val bsmHandle = new Handle(H_INVOKESTATIC, asm.Type.getInternalName(clazz), method.getName, asm.Type.getMethodDescriptor(method))
+      val bsmHandle = new Handle(H_INVOKESTATIC, asm.Type.getInternalName(clazz), method.getName, asm.Type.getMethodDescriptor(method), false)
 
       // The arguments array for the bootstrap method. Note that the JVM automatically provides the first three
       // arguments (caller, invokedName, invokedType). We need to explicitly provide the remaining three arguments:
@@ -378,12 +372,26 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
       // object, while implMethod takes a descriptor string and represents the implementation method's type (that is,
       // with the capture variables included in the arguments list).
       val samMethodType = asm.Type.getType(descriptor(tpe, interfaces))
-      val implMethod = new Handle(H_INVOKESTATIC, decorate(FlixClassName(ref.sym.prefix)), ref.sym.suffix, descriptor(ref.tpe, interfaces))
+      val implMethod = new Handle(H_INVOKESTATIC, decorate(FlixClassName(sym.prefix)), sym.suffix, descriptor(fnType, interfaces), false)
       val instantiatedMethodType = asm.Type.getType(descriptor(tpe, interfaces))
       val bsmArgs = Array(samMethodType, implMethod, instantiatedMethodType)
 
       // Finally, generate the InvokeDynamic instruction.
       visitor.visitInvokeDynamicInsn(invokedName, invokedType, bsmHandle, bsmArgs: _*)
+
+    case Expression.ApplyClo(exp, args, _, loc) =>
+      // Adding source line number for debugging
+      addSourceLine(visitor, loc)
+      // Lambdas are called through an interface. We don't know what function we're calling, but we know its type,
+      // so we can lookup the interface we're calling through.
+      val name = interfaces(exp.tpe)
+
+      // Evaluate the function we're calling.
+      compileExpression(prefix, functions, declarations, interfaces, enums, visitor, entryPoint)(exp)
+
+      // Evaluate arguments left-to-right and push them onto the stack. Then make the interface call.
+      args.foreach(compileExpression(prefix, functions, declarations, interfaces, enums, visitor, entryPoint))
+      visitor.visitMethodInsn(INVOKEINTERFACE, decorate(name), "apply", descriptor(exp.tpe, interfaces), true)
 
     case Expression.ApplyDef(name, args, _, loc) =>
       // Adding source line number for debugging
@@ -395,7 +403,35 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
       args.foreach(compileExpression(prefix, functions, declarations, interfaces, enums, visitor, entryPoint))
       visitor.visitMethodInsn(INVOKESTATIC, decorate(FlixClassName(name.prefix)), name.suffix, descriptor(targetTpe, interfaces), false)
 
-    case Expression.ApplyTail(name, formals, actuals, _, loc) =>
+    case Expression.ApplyCloTail(exp, args, _, loc) =>
+      // TODO: Duplicated from Expression.ApplyClo. Pending rewrite related to IFOs.
+
+      // Adding source line number for debugging
+      addSourceLine(visitor, loc)
+      // Lambdas are called through an interface. We don't know what function we're calling, but we know its type,
+      // so we can lookup the interface we're calling through.
+      val name = interfaces(exp.tpe)
+
+      // Evaluate the function we're calling.
+      compileExpression(prefix, functions, declarations, interfaces, enums, visitor, entryPoint)(exp)
+
+      // Evaluate arguments left-to-right and push them onto the stack. Then make the interface call.
+      args.foreach(compileExpression(prefix, functions, declarations, interfaces, enums, visitor, entryPoint))
+      visitor.visitMethodInsn(INVOKEINTERFACE, decorate(name), "apply", descriptor(exp.tpe, interfaces), true)
+
+    case Expression.ApplyDefTail(name, args, _, loc) =>
+      // TODO: Duplicated from Expression.ApplyDef. Pending rewrite related to IFOs.
+
+      // Adding source line number for debugging
+      addSourceLine(visitor, loc)
+      // We know what function we're calling, so we can look up its signature.
+      val targetTpe = declarations(name)
+
+      // Evaluate arguments left-to-right and push them onto the stack. Then make the call.
+      args.foreach(compileExpression(prefix, functions, declarations, interfaces, enums, visitor, entryPoint))
+      visitor.visitMethodInsn(INVOKESTATIC, decorate(FlixClassName(name.prefix)), name.suffix, descriptor(targetTpe, interfaces), false)
+
+    case Expression.ApplySelfTail(name, formals, actuals, _, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
       // Evaluate each argument and push the result on the stack.
@@ -483,20 +519,6 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
       // Unbox the result, if necessary.
       compileUnbox(interfaces, visitor)(tpe)
 
-    case Expression.ApplyClosure(exp, args, _, loc) =>
-      // Adding source line number for debugging
-      addSourceLine(visitor, loc)
-      // Lambdas are called through an interface. We don't know what function we're calling, but we know its type,
-      // so we can lookup the interface we're calling through.
-      val name = interfaces(exp.tpe)
-
-      // Evaluate the function we're calling.
-      compileExpression(prefix, functions, declarations, interfaces, enums, visitor, entryPoint)(exp)
-
-      // Evaluate arguments left-to-right and push them onto the stack. Then make the interface call.
-      args.foreach(compileExpression(prefix, functions, declarations, interfaces, enums, visitor, entryPoint))
-      visitor.visitMethodInsn(INVOKEINTERFACE, decorate(name), "apply", descriptor(exp.tpe, interfaces), true)
-
     case Expression.Unary(sop, op, exp, _, _) => compileUnaryExpr(prefix, functions, declarations, interfaces, enums,
       visitor, entryPoint)(op, exp)
     case Expression.Binary(sop, op, exp1, exp2, _, _) => op match {
@@ -528,7 +550,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
       addSourceLine(visitor, loc)
       compileExpression(prefix, functions, declarations, interfaces, enums, visitor, entryPoint)(exp1)
       exp1.tpe match {
-        case Type.Var(id, kind) =>  throw InternalCompilerException(s"Non-monomorphed type variable '$id.")
+        case Type.Var(id, kind) => throw InternalCompilerException(s"Non-monomorphed type variable '$id.")
         case Type.Bool | Type.Char | Type.Int8 | Type.Int16 | Type.Int32 => visitor.visitVarInsn(ISTORE, sym.getStackOffset)
         case Type.Int64 => visitor.visitVarInsn(LSTORE, sym.getStackOffset)
         case Type.Float32 => visitor.visitVarInsn(FSTORE, sym.getStackOffset)
@@ -562,7 +584,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
        there is only one instance of the class initiated as a field. We have to fetch this field instead of instantiating
        a new one.
        */
-      if(isSingletonEnum(enumCase)) {
+      if (isSingletonEnum(enumCase)) {
         visitor.visitFieldInsn(GETSTATIC, decorate(clazzName), "unitInstance", s"L${decorate(clazzName)};")
       } else {
         /*
@@ -611,12 +633,12 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
       visitor.visitMethodInsn(INVOKEVIRTUAL, decorate(clazzName), s"getIndex$offset", s"()$desc", false)
       // Cast the object to it's type if it's not a primitive
       castIfNotPrim(tpe, interfaces, visitor)
-      
+
     case Expression.Tuple(elms, _, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
       // Transforming types of elements of the tuple to the appropriate type
-      val fieldTypes : List[WrappedType] = elms.map(x => typeToWrappedType(x.tpe)).toList
+      val fieldTypes: List[WrappedType] = elms.map(x => typeToWrappedType(x.tpe)).toList
       // Descriptor of the parameters of the constructor of the tuple class
       val desc = fieldTypes.map(getWrappedTypeDescriptor).mkString
       // Qualified name of the class that can represent this tuple
@@ -626,7 +648,9 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
       // Duplicating the class
       visitor.visitInsn(DUP)
       // Evaluating all the elements to be stored in the tuple class
-      elms.foreach{compileExpression(prefix, functions, declarations, interfaces, enums, visitor, entryPoint)(_)}
+      elms.foreach {
+        compileExpression(prefix, functions, declarations, interfaces, enums, visitor, entryPoint)(_)
+      }
       // Invoking the constructor
       visitor.visitMethodInsn(INVOKESPECIAL, decorate(clazzName), "<init>", s"(${desc})V", false)
 
@@ -718,7 +742,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
       val declaration = asm.Type.getInternalName(field.getDeclaringClass)
       val name = field.getName
       // Use GETSTATIC if the field is static and GETFIELD if the field is on an object
-      val getInsn = if(Modifier.isStatic(field.getModifiers)) GETSTATIC else GETFIELD
+      val getInsn = if (Modifier.isStatic(field.getModifiers)) GETSTATIC else GETFIELD
       visitor.visitFieldInsn(getInsn, declaration, name, descriptor(tpe, interfaces))
 
     case Expression.NativeMethod(method, args, tpe, loc) =>
@@ -733,7 +757,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
       val invokeInsn = if (Modifier.isStatic(method.getModifiers)) INVOKESTATIC else INVOKEVIRTUAL
       visitor.visitMethodInsn(invokeInsn, declaration, name, descriptor, false)
       // If the method is void, put a unit on top of the stack
-      if(asm.Type.getType(method.getReturnType) == asm.Type.VOID_TYPE) {
+      if (asm.Type.getType(method.getReturnType) == asm.Type.VOID_TYPE) {
         val clazz = Constants.unitClass
         val method = clazz.getMethod("getInstance")
         visitor.visitMethodInsn(INVOKESTATIC, asm.Type.getInternalName(clazz), method.getName, asm.Type.getMethodDescriptor(method), false)
@@ -1380,8 +1404,8 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
   /*
    * Adding the source of the line for debugging
    */
-  private def addSourceLine(visitor : MethodVisitor, loc: SourceLocation) : Unit = {
-    val label =  new Label()
+  private def addSourceLine(visitor: MethodVisitor, loc: SourceLocation): Unit = {
+    val label = new Label()
     visitor.visitLabel(label)
     visitor.visitLineNumber(loc.beginLine, label)
   }
@@ -1390,7 +1414,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
    * `tpe` is type of value on top of the stack. If the value is not primitive, then we cast it to it's specific type,
    * if the value is a primitive then since there is no boxing, then no casting is necessary.
    */
-  private def castIfNotPrim(tpe: Type, interfaces: Map[Type, FlixClassName], visitor: MethodVisitor) : Unit = tpe match {
+  private def castIfNotPrim(tpe: Type, interfaces: Map[Type, FlixClassName], visitor: MethodVisitor): Unit = tpe match {
     case Type.Var(id, kind) => throw InternalCompilerException(s"Non-monomorphed type variable '$id in type '$tpe'.")
     case Type.Unit => visitor.visitTypeInsn(CHECKCAST, asm.Type.getInternalName(Constants.unitClass))
     case Type.Bool => ()

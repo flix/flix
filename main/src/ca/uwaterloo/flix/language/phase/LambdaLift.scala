@@ -122,24 +122,25 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         SimplifiedAst.Expression.Def(freshSymbol, tpe, loc)
 
       case Expression.Hook(hook, tpe, loc) => e
-      case Expression.MkClosureDef(ref, freeVars, tpe, loc) => e
+      case Expression.Closure(ref, freeVars, tpe, loc) => e
 
-      case SimplifiedAst.Expression.MkClosure(lambda, freeVars, tpe, loc) =>
+      case Expression.Apply(exp, args, tpe, loc) =>
+        Expression.Apply(visit(exp), args.map(visit), tpe, loc)
+
+      case SimplifiedAst.Expression.LambdaClosure(lambda, freeVars, tpe, loc) =>
         // Replace the MkClosure node with a MkClosureRef node, since the Lambda has been replaced by a Ref.
         visit(lambda) match {
           case ref: SimplifiedAst.Expression.Def =>
-            SimplifiedAst.Expression.MkClosureDef(ref, freeVars, tpe, loc)
+            SimplifiedAst.Expression.Closure(ref, freeVars, tpe, loc)
           case _ => throw InternalCompilerException(s"Unexpected expression: '$lambda'.")
         }
 
+      case Expression.ApplyClo(exp, args, tpe, loc) =>
+        Expression.ApplyClo(visit(exp), args.map(visit), tpe, loc)
       case Expression.ApplyDef(name, args, tpe, loc) =>
         Expression.ApplyDef(name, args.map(visit), tpe, loc)
-      case Expression.ApplyTail(name, formals, args, tpe, loc) =>
-        Expression.ApplyTail(name, formals, args.map(visit), tpe, loc)
       case Expression.ApplyHook(hook, args, tpe, loc) =>
         Expression.ApplyHook(hook, args.map(visit), tpe, loc)
-      case Expression.Apply(exp, args, tpe, loc) =>
-        Expression.Apply(visit(exp), args.map(visit), tpe, loc)
       case Expression.Unary(sop, op, exp, tpe, loc) =>
         Expression.Unary(sop, op, visit(exp), tpe, loc)
       case Expression.Binary(sop, op, exp1, exp2, tpe, loc) =>
@@ -180,6 +181,10 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.UserError(tpe, loc) => e
       case Expression.MatchError(tpe, loc) => e
       case Expression.SwitchError(tpe, loc) => e
+
+      case Expression.ApplyCloTail(exp, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
+      case Expression.ApplyDefTail(sym, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
+      case Expression.ApplySelfTail(sym, formals, actuals, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
     }
 
     visit(exp0)

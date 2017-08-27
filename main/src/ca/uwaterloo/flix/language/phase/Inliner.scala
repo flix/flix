@@ -86,6 +86,9 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     def visit = inline(definitions, scores, _: Expression)
 
     exp match {
+      case Expression.ApplyClo(exp1, args, tpe, loc) =>
+        Expression.ApplyClo(visit(exp1), args.map(visit), tpe, loc)
+
       /* Inline application */
       case Expression.ApplyDef(sym, args, tpe, loc) =>
         //inline arguments
@@ -103,9 +106,18 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
               Expression.ApplyDef(sym, args1, tpe, loc)
             }
         }
+
+      case Expression.ApplyCloTail(exp1, args, tpe, loc) =>
+        // Do not inline tail calls.
+        Expression.ApplyCloTail(visit(exp1), args.map(visit), tpe, loc)
+
+      case Expression.ApplyDefTail(sym, args, tpe, loc) =>
+        // Do not inline tail calls.
+        Expression.ApplyDefTail(sym, args, tpe, loc)
+
       /* Inline inside expression */
-      case Expression.MkClosureDef(ref, freeVars, tpe, loc) =>
-        Expression.MkClosureDef(ref, freeVars, tpe, loc)
+      case Expression.Closure(ref, freeVars, tpe, loc) =>
+        Expression.Closure(ref, freeVars, tpe, loc)
       case Expression.Unit => exp
       case Expression.True => exp
       case Expression.False => exp
@@ -123,12 +135,10 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.Lambda(args, body, tpe, loc) =>
         Expression.Lambda(args, visit(body), tpe, loc)
       case Expression.Hook(_, _, _) => exp
-      case Expression.ApplyTail(sym, formals, actuals, tpe, loc) =>
-        Expression.ApplyTail(sym, formals, actuals.map(visit), tpe, loc)
+      case Expression.ApplySelfTail(sym, formals, actuals, tpe, loc) =>
+        Expression.ApplySelfTail(sym, formals, actuals.map(visit), tpe, loc)
       case Expression.ApplyHook(hook, args, tpe, loc) =>
         Expression.ApplyHook(hook, args.map(visit), tpe, loc)
-      case Expression.Apply(exp1, args, tpe, loc) =>
-        Expression.Apply(visit(exp1), args.map(visit), tpe, loc)
       case Expression.Unary(sop, op, exp1, tpe, loc) =>
         Expression.Unary(sop, op, visit(exp1), tpe, loc)
       case Expression.Binary(sop, op, exp1, exp2, tpe, loc) =>
@@ -168,8 +178,9 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.MatchError(_, _) => exp
       case Expression.SwitchError(_, _) => exp
       /* Error */
-      case Expression.MkClosure(_, _, _, _) =>
-        throw InternalCompilerException(s"Unexpected expression $exp after lambda lifting")
+      case Expression.LambdaClosure(_, _, _, _) => throw InternalCompilerException(s"Unexpected expression: '${exp.getClass.getSimpleName}'.")
+      case Expression.Apply(exp1, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp.getClass.getSimpleName}'.")
+
     }
   }
 
@@ -196,16 +207,20 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       val sub1 = args.map(f => f.sym).zip(formals.map(f => f.sym)).foldLeft(sub) { case (macc, (from, to)) => macc + (from -> to) }
       Expression.Lambda(args = formals, renameAndSubstitute(body, sub1), tpe, loc)
     case Expression.Hook(_, _, _) => exp
-    case Expression.MkClosureDef(ref, freeVars, tpe, loc) =>
-      Expression.MkClosureDef(ref, freeVars.map(fv => fv.copy(sym = sub(fv.sym))), tpe, loc)
+    case Expression.Closure(ref, freeVars, tpe, loc) =>
+      Expression.Closure(ref, freeVars.map(fv => fv.copy(sym = sub(fv.sym))), tpe, loc)
+    case Expression.ApplyClo(exp1, args, tpe, loc) =>
+      Expression.ApplyClo(renameAndSubstitute(exp1, sub), args.map(renameAndSubstitute(_, sub)), tpe, loc)
     case Expression.ApplyDef(sym, args, tpe, loc) =>
       Expression.ApplyDef(sym, args.map(renameAndSubstitute(_, sub)), tpe, loc)
-    case Expression.ApplyTail(sym, formals, actuals, tpe, loc) =>
-      Expression.ApplyTail(sym, formals, actuals.map(renameAndSubstitute(_, sub)), tpe, loc)
+    case Expression.ApplyCloTail(exp1, args, tpe, loc) =>
+      Expression.ApplyCloTail(renameAndSubstitute(exp1, sub), args.map(renameAndSubstitute(_, sub)), tpe, loc)
+    case Expression.ApplyDefTail(sym, args, tpe, loc) =>
+      Expression.ApplyDefTail(sym, args.map(renameAndSubstitute(_, sub)), tpe, loc)
+    case Expression.ApplySelfTail(sym, formals, actuals, tpe, loc) =>
+      Expression.ApplySelfTail(sym, formals, actuals.map(renameAndSubstitute(_, sub)), tpe, loc)
     case Expression.ApplyHook(hook, args, tpe, loc) =>
       Expression.ApplyHook(hook, args.map(renameAndSubstitute(_, sub)), tpe, loc)
-    case Expression.Apply(exp1, args, tpe, loc) =>
-      Expression.Apply(renameAndSubstitute(exp1, sub), args.map(renameAndSubstitute(_, sub)), tpe, loc)
     case Expression.Unary(sop, op, exp1, tpe, loc) =>
       Expression.Unary(sop, op, renameAndSubstitute(exp1, sub), tpe, loc)
     case Expression.Binary(sop, op, exp1, exp2, tpe, loc) =>
@@ -252,8 +267,9 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     case Expression.UserError(_, _) => exp
     case Expression.MatchError(_, _) => exp
     case Expression.SwitchError(_, _) => exp
-    case Expression.MkClosure(_, _, _, _) =>
-      throw InternalCompilerException(s"Unexpected expression $exp after lambda lifting")
+
+    case Expression.LambdaClosure(_, _, _, _) => throw InternalCompilerException(s"Unexpected expression: '${exp.getClass.getSimpleName}'.")
+    case Expression.Apply(exp1, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp.getClass.getSimpleName}'.")
   }
 
   /**
@@ -276,8 +292,8 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
   /**
     * Returns the score of the given expression `exp`.
     */
-  def exprScore(exp: Expression): Int = {
-    exp match {
+  def exprScore(exp0: Expression): Int = {
+    exp0 match {
       case Expression.Unit => 0
       case Expression.True => 0
       case Expression.False => 0
@@ -294,13 +310,15 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.Def(_, _, _) => 1
       case Expression.Lambda(args, body, _, _) => 1 + args.length + exprScore(body)
       case Expression.Hook(_, _, _) => 1
-      case Expression.MkClosureDef(ref, freeVars, _, _) => 1 + freeVars.length + exprScore(ref)
+      case Expression.Closure(ref, freeVars, _, _) => 1 + freeVars.length + exprScore(ref)
+      case Expression.ApplyClo(exp, args, _, _) => 1 + exprScore(exp) + args.map(exprScore).sum
       case Expression.ApplyDef(sym, args, _, _) => 1 + args.map(exprScore).sum
-      case Expression.ApplyTail(sym, formals, actuals, _, _) =>
+      case Expression.ApplyCloTail(exp, args, _, _) => 1 + exprScore(exp) + args.map(exprScore).sum
+      case Expression.ApplyDefTail(sym, args, _, _) => 1 + args.map(exprScore).sum
+      case Expression.ApplySelfTail(sym, formals, actuals, _, _) =>
         // Not to be inlined
         MaxScore + 1 + formals.length + actuals.map(exprScore).sum
       case Expression.ApplyHook(hook, args, _, _) => 1 + args.map(exprScore).sum
-      case Expression.Apply(exp1, args, _, _) => 1 + exprScore(exp1) + args.map(exprScore).sum
       case Expression.Unary(sop, op, exp1, _, _) => 1 + exprScore(exp1)
       case Expression.Binary(sop, op, exp1, exp2, _, _) => 1 + exprScore(exp1) + exprScore(exp2)
       case Expression.IfThenElse(exp1, exp2, exp3, _, _) => exprScore(exp1) + (2 * (exprScore(exp2) + exprScore(exp3)))
@@ -322,8 +340,9 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.UserError(_, _) => 0
       case Expression.MatchError(_, _) => 0
       case Expression.SwitchError(_, _) => 0
-      case Expression.MkClosure(_, _, _, _) =>
-        throw InternalCompilerException(s"Unexpected expression $exp after lambda lifting")
+      case Expression.LambdaClosure(_, _, _, _) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
+      case Expression.Apply(_, _, _, _) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
+
     }
   }
 }

@@ -165,7 +165,6 @@ def f23(x: Int): Int32 =
 @test
 def testLet23(): Bool = assertEq!(f23(0), 6)
 
-@test
 def f24(x: Int): Int64 =
   let x = x + 1;
   let x = 40i64;

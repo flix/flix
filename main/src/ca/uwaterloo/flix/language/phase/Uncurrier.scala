@@ -149,10 +149,8 @@ object Uncurrier extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
           val newMapping = args.map(f => f.sym).zip(newFormals.map(f => f.sym)).toMap
           Lambda(newFormals, substitute(body, env0 ++ newMapping), tpe, loc)
         case e: Hook => e
-        case MkClosure(lambda, freeVars, tpe, loc) => MkClosure(substitute(lambda, env0).asInstanceOf[SimplifiedAst.Expression.Lambda], freeVars, tpe, loc)
-        case e: MkClosureDef => e
-        case ApplyDef(sym, args, tpe, loc) => ApplyDef(sym, args.map(substitute(_, env0)), tpe, loc)
-        case ApplyTail(sym, formals, actuals, tpe, loc) => ApplyTail(sym, formals, actuals.map(substitute(_, env0)), tpe, loc)
+        case LambdaClosure(lambda, freeVars, tpe, loc) => LambdaClosure(substitute(lambda, env0).asInstanceOf[SimplifiedAst.Expression.Lambda], freeVars, tpe, loc)
+        case e: Closure => e
         case ApplyHook(hook, args, tpe, loc) => ApplyHook(hook, args.map(substitute(_, env0)), tpe, loc)
         case Apply(exp, args, tpe, loc) => Apply(substitute(exp, env0), args.map(a => substitute(a, env0)), tpe, loc)
         case Unary(sop, op, exp, tpe, loc) => Unary(sop, op, substitute(exp, env0), tpe, loc)
@@ -173,9 +171,15 @@ object Uncurrier extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         case NativeConstructor(constructor, args, tpe, loc) => NativeConstructor(constructor, args.map(a => substitute(a, env0)), tpe, loc)
         case e: NativeField => e
         case NativeMethod(method, args, tpe, loc) => NativeMethod(method, args.map(a => substitute(a, env0)), tpe, loc)
-        case e: UserError => e
-        case e: MatchError => e
-        case e: SwitchError => e
+        case UserError(tpe, loc) => exp0
+        case MatchError(tpe, loc) => exp0
+        case SwitchError(tpe, loc) => exp0
+
+        case ApplyClo(exp, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
+        case ApplyDef(sym, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
+        case ApplyCloTail(exp, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
+        case ApplyDefTail(sym, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
+        case ApplySelfTail(sym, formals, actuals, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
       }
     }
 
@@ -199,10 +203,8 @@ object Uncurrier extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Def(sym, tpe, loc) => exp0
       case Lambda(args, body, tpe, loc) => Lambda(args, uncurry(body, newSyms, root), tpe, loc)
       case Hook(hook, tpe, loc) => exp0
-      case MkClosure(lambda, freeVars, tpe, loc) => exp0
-      case MkClosureDef(ref, freeVars, tpe, loc) => exp0
-      case ApplyDef(sym, args, tpe, loc) => exp0
-      case ApplyTail(sym, formals, actuals, tpe, loc) => exp0
+      case LambdaClosure(lambda, freeVars, tpe, loc) => exp0
+      case Closure(ref, freeVars, tpe, loc) => exp0
       case ApplyHook(hook, args, tpe, loc) => exp0
       case a: Apply =>
         val uncurryCount = maximalUncurry(a)
@@ -210,11 +212,10 @@ object Uncurrier extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
           case Apply(Def(sym1, tp1, loc1), args2, tpe2, loc2) =>
             newSyms.get(sym1) match {
               case Some(m) => m.get(uncurryCount) match {
-                case Some(newSym) => {
+                case Some(newSym) =>
                   Apply(Def(newSym, tp1, loc1), args2 map {
                     uncurry(_, newSyms, root)
                   }, tpe2, loc2)
-                }
                 case None => a
               }
               case None => a
@@ -255,6 +256,11 @@ object Uncurrier extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case UserError(tpe, loc) => exp0
       case MatchError(tpe, loc) => exp0
       case SwitchError(tpe, loc) => exp0
+      case ApplyClo(exp, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
+      case ApplyDef(sym, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
+      case ApplyCloTail(exp, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
+      case ApplyDefTail(sym, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
+      case ApplySelfTail(sym, formals, actuals, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
     }
 
     /**
@@ -303,10 +309,8 @@ object Uncurrier extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
           case _: Def => 0
           case _: Lambda => 0
           case _: Hook => 0
-          case _: MkClosure => 0
-          case _: MkClosureDef => 0
-          case _: ApplyDef => 0
-          case _: ApplyTail => 0
+          case _: LambdaClosure => 0
+          case _: Closure => 0
           case _: ApplyHook => 0
           case a: Apply => 1 + maximalUncurry(a)
           case _: Unary => 0
@@ -330,6 +334,11 @@ object Uncurrier extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
           case _: UserError => 0
           case _: MatchError => 0
           case _: SwitchError => 0
+          case _: ApplyClo => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
+          case _: ApplyDef => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
+          case _: ApplyCloTail => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
+          case _: ApplyDefTail => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
+          case _: ApplySelfTail => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
         }
     }
   }

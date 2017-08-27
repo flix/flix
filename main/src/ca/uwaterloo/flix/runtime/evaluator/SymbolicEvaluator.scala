@@ -144,82 +144,46 @@ object SymbolicEvaluator {
       case Expression.Var(sym, tpe, loc) => lift(pc0, qua0, env0(sym))
 
       /**
-        * Reference.
-        */
-      case Expression.Def(name, tpe, loc) =>
-        // Lookup and evaluate the definition.
-        root.defs.get(name) match {
-          case None => throw InternalCompilerException(s"Type Error: Unresolved reference '$name'.")
-          case Some(defn) => eval(pc0, defn.exp, env0, qua0)
-        }
-
-      /**
         * Closure.
         */
-      case Expression.MkClosureDef(ref, freeVars, _, _) =>
+      case Expression.Closure(sym, freeVars, _, _, _) =>
         // Save the values of the free variables in a list.
         // When the closure is called, these values will be provided at the beginning of the argument list.
         val bindings = freeVars.map(f => env0(f.sym))
         // Construct the closure.
-        val clo = SymVal.Closure(ref, bindings)
+        val clo = SymVal.Closure(sym, bindings.toArray)
         lift(pc0, qua0, clo)
-
-      /**
-        * Apply Reference.
-        */
-      case Expression.ApplyDef(name, args, _, _) =>
-        // Lookup the reference.
-        val defn = root.defs(name)
-        // Evaluate all the arguments.
-        evaln(pc0, args, env0, qua0) flatMap {
-          case (pc, qua, as) =>
-            // Bind the actual arguments to the formal variables.
-            val newEnv = (defn.formals zip as).foldLeft(Map.empty: Environment) {
-              case (macc, (formal, actual)) => macc + (formal.sym -> actual)
-            }
-            // Evaluate the body under the new environment.
-            eval(pc, defn.exp, newEnv, qua)
-        }
-
-      /**
-        * Apply Tail. (similar to ApplyRef).
-        */
-      case Expression.ApplyTail(name, _, args, _, _) =>
-        // Lookup the reference.
-        val defn = root.defs(name)
-        // Evaluate all the arguments.
-        evaln(pc0, args, env0, qua0) flatMap {
-          case (pc, qua, as) =>
-            // Bind the actual arguments to the formal variables.
-            val newEnv = (defn.formals zip as).foldLeft(Map.empty: Environment) {
-              case (macc, (formal, actual)) => macc + (formal.sym -> actual)
-            }
-            // Evaluate the body under the new environment.
-            eval(pc, defn.exp, newEnv, qua)
-        }
 
       /**
         * Apply Closure.
         */
-      // TODO: check this implementation.
-      case Expression.ApplyClosure(exp, args, _, _) =>
-        // Evaluate the closure.
-        eval(pc0, exp, env0, qua0) flatMap {
-          case (pc, qua, SymVal.Closure(ref, bindings)) =>
-            // Lookup the definition
-            val defn = root.defs(ref.sym)
-            // Evaluate all the arguments.
-            evaln(pc, args, env0, qua) flatMap {
-              case (pc1, qua1, actuals) =>
-                // Construct the environment
-                val newArgs = bindings ++ actuals
-                val newEnv = (defn.formals zip newArgs).foldLeft(Map.empty: Environment) {
-                  case (macc, (formal, actual)) => macc + (formal.sym -> actual)
-                }
-                eval(pc1, defn.exp, newEnv, qua1)
-            }
-          case (_, _, v) => throw InternalCompilerException(s"Type Error: Unexpected value: '$v'.")
-        }
+      case Expression.ApplyClo(exp, args, _, _) =>
+        invokeClo(pc0, exp, args, env0, qua0)
+
+      /**
+        * Apply Def.
+        */
+      case Expression.ApplyDef(sym, args, _, _) =>
+        invokeDef(pc0, sym, args, env0, qua0)
+
+      /**
+        * Apply Closure Tail.
+        */
+      case Expression.ApplyCloTail(exp, args, _, _) =>
+        invokeClo(pc0, exp, args, env0, qua0)
+
+      /**
+        * Apply Def Tail.
+        */
+      case Expression.ApplyDefTail(sym, args, _, _) =>
+        invokeDef(pc0, sym, args, env0, qua0)
+
+      /**
+        * Apply Self Tail.
+        */
+      case Expression.ApplySelfTail(sym, _, args, _, _) =>
+        invokeDef(pc0, sym, args, env0, qua0)
+
 
       /**
         * Unary.
@@ -688,7 +652,7 @@ object SymbolicEvaluator {
         * LetRec-binding.
         */
       case Expression.LetRec(sym, exp1, exp2, _, _) => exp1 match {
-        case Expression.MkClosureDef(ref, freeVars, _, _) =>
+        case Expression.Closure(ref, freeVars, _, _, _) =>
           // Save the values of the free variables in a list.
           // When the closure is called, these values will be provided at the beginning of the argument list.
           val bindings = Array.ofDim[SymVal](freeVars.length)
@@ -992,7 +956,7 @@ object SymbolicEvaluator {
       }
 
     /**
-      * Evaluates the list of expressions `xs` under the path constraint `pc` and environment `env0`.
+      * Evaluates the list of expressions `xs` under the path constraint `pc0` and environment `env0`.
       *
       * Evaluates from left to right.
       */
@@ -1010,6 +974,47 @@ object SymbolicEvaluator {
       }
 
       visit(pc0, xs.toList, env0, qua0)
+    }
+
+    /**
+      * Invokes the given closure expression `exp` with `args` under the path constraint `pc0` and environment `env0`.
+      */
+    def invokeClo(pc0: PathConstraint, exp: Expression, args: List[Expression], env0: Environment, qua0: Quantifiers): Context = {
+      // Evaluate the closure.
+      eval(pc0, exp, env0, qua0) flatMap {
+        case (pc, qua, SymVal.Closure(sym, bindings)) =>
+          // Lookup the definition
+          val defn = root.defs(sym)
+          // Evaluate all the arguments.
+          evaln(pc, args, env0, qua) flatMap {
+            case (pc1, qua1, actuals) =>
+              // Construct the environment
+              val newArgs = bindings ++ actuals
+              val newEnv = (defn.formals zip newArgs).foldLeft(Map.empty: Environment) {
+                case (macc, (formal, actual)) => macc + (formal.sym -> actual)
+              }
+              eval(pc1, defn.exp, newEnv, qua1)
+          }
+        case (_, _, v) => throw InternalCompilerException(s"Type Error: Unexpected value: '$v'.")
+      }
+    }
+
+    /**
+      * Invokes the given definition `sym`  with `args` under the path constraint `pc0` and environment `env0`.
+      */
+    def invokeDef(pc0: PathConstraint, sym: Symbol.DefnSym, args: List[Expression], env0: Environment, qua0: Quantifiers): Context = {
+      // Lookup the reference.
+      val defn = root.defs(sym)
+      // Evaluate all the arguments.
+      evaln(pc0, args, env0, qua0) flatMap {
+        case (pc, qua, as) =>
+          // Bind the actual arguments to the formal variables.
+          val newEnv = (defn.formals zip as).foldLeft(Map.empty: Environment) {
+            case (macc, (formal, actual)) => macc + (formal.sym -> actual)
+          }
+          // Evaluate the body under the new environment.
+          eval(pc, defn.exp, newEnv, qua)
+      }
     }
 
     // Start

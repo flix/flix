@@ -910,16 +910,9 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         case Some(replacement) => SimplifiedAst.Expression.Var(replacement, tpe, loc)
       }
       case SimplifiedAst.Expression.Def(name, tpe, loc) => e
-      case SimplifiedAst.Expression.Lambda(fparams, body, tpe, loc) => ??? // TODO
+      case SimplifiedAst.Expression.Lambda(fparams, body, tpe, loc) =>
+        SimplifiedAst.Expression.Lambda(fparams, visit(body), tpe, loc)
       case SimplifiedAst.Expression.Hook(hook, tpe, loc) => e
-      case SimplifiedAst.Expression.MkClosureDef(ref, freeVars, tpe, loc) => e
-      case SimplifiedAst.Expression.MkClosure(lambda, freeVars, tpe, loc) => ??? // TODO
-      case SimplifiedAst.Expression.ApplyDef(name, args, tpe, loc) =>
-        SimplifiedAst.Expression.ApplyDef(name, args.map(visit), tpe, loc)
-      case SimplifiedAst.Expression.ApplyTail(name, formals, args, tpe, loc) =>
-        SimplifiedAst.Expression.ApplyTail(name, formals, args.map(visit), tpe, loc)
-      case SimplifiedAst.Expression.ApplyHook(hook, args, tpe, loc) =>
-        SimplifiedAst.Expression.ApplyHook(hook, args.map(visit), tpe, loc)
       case SimplifiedAst.Expression.Apply(exp, args, tpe, loc) =>
         SimplifiedAst.Expression.Apply(visit(exp), args.map(visit), tpe, loc)
       case SimplifiedAst.Expression.Unary(sop, op, exp, tpe, loc) =>
@@ -963,6 +956,15 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case SimplifiedAst.Expression.UserError(tpe, loc) => e
       case SimplifiedAst.Expression.MatchError(tpe, loc) => e
       case SimplifiedAst.Expression.SwitchError(tpe, loc) => e
+
+      case SimplifiedAst.Expression.Closure(ref, freeVars, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
+      case SimplifiedAst.Expression.LambdaClosure(lambda, freeVars, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
+      case SimplifiedAst.Expression.ApplyClo(exp, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
+      case SimplifiedAst.Expression.ApplyDef(name, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
+      case SimplifiedAst.Expression.ApplyCloTail(exp, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
+      case SimplifiedAst.Expression.ApplyDefTail(sym, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
+      case SimplifiedAst.Expression.ApplySelfTail(name, formals, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
+      case SimplifiedAst.Expression.ApplyHook(hook, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
     }
 
     visit(exp0)
