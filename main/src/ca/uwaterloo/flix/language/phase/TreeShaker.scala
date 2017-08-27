@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.{SimplifiedAst, Symbol}
 import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expression
-import ca.uwaterloo.flix.util.Validation
+import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 import ca.uwaterloo.flix.util.Validation._
 
 import scala.collection.mutable
@@ -128,8 +128,6 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.Def(sym, tpe, loc) => Set(sym)
       case Expression.Lambda(args, body, tpe, loc) => visitExp(body)
       case Expression.Hook(hook, tpe, loc) => Set(hook.sym)
-      case Expression.Apply(exp, args, tpe, loc) => ??? // TODO: Impossible
-      case Expression.LambdaClosure(lambda, freeVars, tpe, loc) => visitExp(lambda)
       case Expression.Closure(ref, freeVars, tpe, loc) => visitExp(ref)
       case Expression.ApplyClo(exp, args, tpe, loc) => visitExps(args) ++ visitExp(exp)
       case Expression.ApplyDef(sym, args, tpe, loc) => visitExps(args) + sym
@@ -158,6 +156,9 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.UserError(tpe, loc) => Set.empty
       case Expression.MatchError(tpe, loc) => Set.empty
       case Expression.SwitchError(tpe, loc) => Set.empty
+
+      case Expression.LambdaClosure(lambda, freeVars, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${e0.getClass.getSimpleName}'.")
+      case Expression.Apply(exp, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${e0.getClass.getSimpleName}'.")
     }
 
     /**

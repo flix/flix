@@ -313,6 +313,8 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.Closure(ref, freeVars, _, _) => 1 + freeVars.length + exprScore(ref)
       case Expression.ApplyClo(exp, args, _, _) => 1 + exprScore(exp) + args.map(exprScore).sum
       case Expression.ApplyDef(sym, args, _, _) => 1 + args.map(exprScore).sum
+      case Expression.ApplyCloTail(exp, args, _, _) => 1 + exprScore(exp) + args.map(exprScore).sum
+      case Expression.ApplyDefTail(sym, args, _, _) => 1 + args.map(exprScore).sum
       case Expression.ApplySelfTail(sym, formals, actuals, _, _) =>
         // Not to be inlined
         MaxScore + 1 + formals.length + actuals.map(exprScore).sum

@@ -84,7 +84,6 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.Def(name, tpe, loc) => i0
       case Expression.Hook(hook, tpe, loc) => i0
       case Expression.Closure(ref, freeVars, tpe, loc) => i0
-      case Expression.Apply(exp, args, tpe, loc) => ??? // Impossible
       case Expression.ApplyClo(exp, args, tpe, loc) =>
         val i = visitExp(exp, i0)
         visitExps(args, i)
@@ -148,10 +147,10 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.UserError(tpe, loc) => i0
       case Expression.MatchError(tpe, loc) => i0
       case Expression.SwitchError(tpe, loc) => i0
-      case Expression.Lambda(args, body, tpe, loc) =>
-        throw InternalCompilerException("Lambdas should have been converted to closures and lifted.")
-      case Expression.LambdaClosure(lambda, freeVars, tpe, loc) =>
-        throw InternalCompilerException("MkClosure should have been replaced by MkClosureRef after lambda lifting.")
+
+      case Expression.Lambda(args, body, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${e0.getClass.getSimpleName}'.")
+      case Expression.LambdaClosure(lambda, freeVars, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${e0.getClass.getSimpleName}'.")
+      case Expression.Apply(exp, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${e0.getClass.getSimpleName}'.")
     }
 
     /**
