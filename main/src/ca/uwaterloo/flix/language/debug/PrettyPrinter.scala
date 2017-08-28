@@ -186,7 +186,9 @@ object PrettyPrinter {
           vt << Bold("let") << " "
           fmtSym(sym, vt)
           vt.text(" = ")
+          vt << Indent << NewLine
           visitExp(exp1)
+          vt << Dedent
           vt << ";" << NewLine
           visitExp(exp2)
 
