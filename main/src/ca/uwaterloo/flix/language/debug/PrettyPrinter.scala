@@ -186,7 +186,9 @@ object PrettyPrinter {
           vt << Bold("let") << " "
           fmtSym(sym, vt)
           vt.text(" = ")
+          vt << Indent << NewLine
           visitExp(exp1)
+          vt << Dedent
           vt << ";" << NewLine
           visitExp(exp2)
 
@@ -267,7 +269,7 @@ object PrettyPrinter {
         case Expression.NativeField(field, tpe, loc) => vt << field.toString
 
         case Expression.NativeMethod(method, args, tpe, loc) =>
-          vt.text(method.toString)
+          vt.text(method.getDeclaringClass.getCanonicalName + "." + method.getName)
           vt.text("(")
           for (e <- args) {
             visitExp(e)
