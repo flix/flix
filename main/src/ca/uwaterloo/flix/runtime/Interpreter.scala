@@ -96,12 +96,10 @@ object Interpreter {
     //
     // Block expressions.
     //
-    case Expression.Block(branches, default, tpe, loc) =>
-      val exp = branches.get(default) match {
-        case None => throw InternalRuntimeException(s"Unknown label: '$default'.")
-        case Some(e) => e
-      }
-      eval(exp, env0, branches, root)
+    case Expression.Block(branches, default, tpe, loc) => branches.get(default) match {
+      case None => throw InternalRuntimeException(s"Unknown label: '$default'.")
+      case Some(e) => eval(e, env0, branches, root)
+    }
 
     //
     // Jump expressions.
@@ -519,7 +517,7 @@ object Interpreter {
     val env2 = constant.formals.drop(bindings.length).zip(as).foldLeft(env1) {
       case (macc, (formal, actual)) => macc + (formal.sym.toString -> actual)
     }
-    eval(constant.exp, env2, lenv0, root)
+    eval(constant.exp, env2, Map.empty, root)
   }
 
   /**
