@@ -221,6 +221,10 @@ object ExecutableAst {
 
     case class IfThenElse(exp1: ExecutableAst.Expression, exp2: ExecutableAst.Expression, exp3: ExecutableAst.Expression, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
+    case class Block(branches: Map[Symbol.LabelSym, ExecutableAst.Expression], default: Symbol.LabelSym, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
+
+    case class Jump(sym: Symbol.LabelSym, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
+
     case class Let(sym: Symbol.VarSym, exp1: ExecutableAst.Expression, exp2: ExecutableAst.Expression, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
     // NB: After lambda lifting and closure conversion `exp1` is guaranteed to be a MkClosureDef.

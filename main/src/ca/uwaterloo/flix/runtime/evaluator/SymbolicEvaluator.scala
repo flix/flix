@@ -638,6 +638,16 @@ object SymbolicEvaluator {
         }
 
       /**
+        * Block.
+        */
+      case Expression.Block(branches, default, tpe, loc) => ??? // TODO
+
+      /**
+        * Jump.
+        */
+      case Expression.Jump(sym, tpe, loc) => ??? // TODO
+
+      /**
         * Let-binding.
         */
       case Expression.Let(sym, exp1, exp2, _, _) =>

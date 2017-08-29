@@ -61,10 +61,10 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     * Traverses through `exp` and performs inlining using
     * definitions and sizes from `scores`
     */
-  private def inline(definitions: Map[Symbol.DefnSym, SimplifiedAst.Def], candidates: Set[Symbol.DefnSym], exp: Expression)(implicit genSym: GenSym): Expression = {
+  private def inline(definitions: Map[Symbol.DefnSym, SimplifiedAst.Def], candidates: Set[Symbol.DefnSym], exp0: Expression)(implicit genSym: GenSym): Expression = {
     def visit = inline(definitions, candidates, _: Expression)
 
-    exp match {
+    exp0 match {
       case Expression.ApplyClo(exp1, args, tpe, loc) =>
         Expression.ApplyClo(visit(exp1), args.map(visit), tpe, loc)
 
@@ -97,23 +97,23 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       /* Inline inside expression */
       case Expression.Closure(ref, freeVars, tpe, loc) =>
         Expression.Closure(ref, freeVars, tpe, loc)
-      case Expression.Unit => exp
-      case Expression.True => exp
-      case Expression.False => exp
-      case Expression.Char(_) => exp
-      case Expression.Float32(_) => exp
-      case Expression.Float64(_) => exp
-      case Expression.Int8(_) => exp
-      case Expression.Int16(_) => exp
-      case Expression.Int32(_) => exp
-      case Expression.Int64(_) => exp
-      case Expression.BigInt(_) => exp
-      case Expression.Str(_) => exp
-      case Expression.Var(_, _, _) => exp
-      case Expression.Def(_, _, _) => exp
+      case Expression.Unit => exp0
+      case Expression.True => exp0
+      case Expression.False => exp0
+      case Expression.Char(_) => exp0
+      case Expression.Float32(_) => exp0
+      case Expression.Float64(_) => exp0
+      case Expression.Int8(_) => exp0
+      case Expression.Int16(_) => exp0
+      case Expression.Int32(_) => exp0
+      case Expression.Int64(_) => exp0
+      case Expression.BigInt(_) => exp0
+      case Expression.Str(_) => exp0
+      case Expression.Var(_, _, _) => exp0
+      case Expression.Def(_, _, _) => exp0
       case Expression.Lambda(args, body, tpe, loc) =>
         Expression.Lambda(args, visit(body), tpe, loc)
-      case Expression.Hook(_, _, _) => exp
+      case Expression.Hook(_, _, _) => exp0
       case Expression.ApplySelfTail(sym, formals, actuals, tpe, loc) =>
         Expression.ApplySelfTail(sym, formals, actuals.map(visit), tpe, loc)
       case Expression.ApplyHook(hook, args, tpe, loc) =>
@@ -124,6 +124,12 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         Expression.Binary(sop, op, visit(exp1), visit(exp2), tpe, loc)
       case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
         Expression.IfThenElse(visit(exp1), visit(exp2), visit(exp3), tpe, loc)
+      case Expression.Block(branches, default, tpe, loc) =>
+        val br = branches map {
+          case (sym, exp) => sym -> visit(exp)
+        }
+        Expression.Block(br, default, tpe, loc)
+      case Expression.Jump(sym, tpe, loc) => Expression.Jump(sym, tpe, loc)
       case Expression.Let(sym, exp1, exp2, tpe, loc) =>
         Expression.Let(sym, visit(exp1), visit(exp2), tpe, loc)
       case Expression.LetRec(sym, exp1, exp2, tpe, loc) => None
@@ -150,15 +156,15 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         Expression.Universal(fparam, visit(exp1), loc)
       case Expression.NativeConstructor(constructor, args, tpe, loc) =>
         Expression.NativeConstructor(constructor, args.map(visit), tpe, loc)
-      case Expression.NativeField(_, _, _) => exp
+      case Expression.NativeField(_, _, _) => exp0
       case Expression.NativeMethod(method, args, tpe, loc) =>
         Expression.NativeMethod(method, args.map(visit), tpe, loc)
-      case Expression.UserError(_, _) => exp
-      case Expression.MatchError(_, _) => exp
-      case Expression.SwitchError(_, _) => exp
+      case Expression.UserError(_, _) => exp0
+      case Expression.MatchError(_, _) => exp0
+      case Expression.SwitchError(_, _) => exp0
       /* Error */
-      case Expression.LambdaClosure(_, _, _, _) => throw InternalCompilerException(s"Unexpected expression: '${exp.getClass.getSimpleName}'.")
-      case Expression.Apply(exp1, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp.getClass.getSimpleName}'.")
+      case Expression.LambdaClosure(_, _, _, _) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
+      case Expression.Apply(exp1, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
     }
   }
 
@@ -200,6 +206,12 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       Expression.Binary(sop, op, renameAndSubstitute(exp1, env0), renameAndSubstitute(exp2, env0), tpe, loc)
     case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
       Expression.IfThenElse(renameAndSubstitute(exp1, env0), renameAndSubstitute(exp2, env0), renameAndSubstitute(exp3, env0), tpe, loc)
+    case Expression.Block(branches, default, tpe, loc) =>
+      val br = branches map {
+        case (sym, exp) => sym -> renameAndSubstitute(exp, env0)
+      }
+      Expression.Block(br, default, tpe, loc)
+    case Expression.Jump(sym, tpe, loc) => Expression.Jump(sym, tpe, loc)
     case Expression.Let(sym, exp1, exp2, tpe, loc) =>
       val newSym = Symbol.freshVarSym(sym)
       val sub1 = env0 + (sym -> newSym)
@@ -315,6 +327,16 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     // If-then-else expressions are never atomic.
     //
     case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) => false
+
+    //
+    // Blocks are never atomic.
+    //
+    case Expression.Block(branches, default, tpe, loc) => false
+
+    //
+    // Jumps are never atomic.
+    //
+    case Expression.Jump(sym, tpe, loc) => false
 
     //
     // Let expressions are atomic if the component expressions are.

@@ -155,7 +155,17 @@ object Uncurrier extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         case Apply(exp, args, tpe, loc) => Apply(substitute(exp, env0), args.map(a => substitute(a, env0)), tpe, loc)
         case Unary(sop, op, exp, tpe, loc) => Unary(sop, op, substitute(exp, env0), tpe, loc)
         case Binary(sop, op, exp1, exp2, tpe, loc) => Binary(sop, op, substitute(exp1, env0), substitute(exp2, env0), tpe, loc)
+
         case IfThenElse(exp1, exp2, exp3, tpe, loc) => IfThenElse(substitute(exp1, env0), substitute(exp1, env0), substitute(exp3, env0), tpe, loc)
+
+        case Block(branches, default, tpe, loc) =>
+          val br = branches map {
+            case (sym, exp) => sym -> substitute(exp, env0)
+          }
+          Block(br, default, tpe, loc)
+
+        case Jump(sym, tpe, loc) => Jump(sym, tpe, loc)
+
         case Let(sym, exp1, exp2, tpe, loc) => Let(replace(sym), substitute(exp1, env0), substitute(exp2, env0), tpe, loc)
         case LetRec(sym, exp1, exp2, tpe, loc) => LetRec(replace(sym), substitute(exp1, env0), substitute(exp2, env0), tpe, loc)
         case Is(sym, tag, exp, loc) => Is(sym, tag, substitute(exp, env0), loc)
@@ -225,6 +235,12 @@ object Uncurrier extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Unary(sop, op, exp, tpe, loc) => Unary(sop, op, uncurry(exp, newSyms, root), tpe, loc)
       case Binary(sop, op, exp1, exp2, tpe, loc) => Binary(sop, op, uncurry(exp1, newSyms, root), uncurry(exp2, newSyms, root), tpe, loc)
       case IfThenElse(exp1, exp2, exp3, tpe, loc) => IfThenElse(uncurry(exp1, newSyms, root), uncurry(exp2, newSyms, root), uncurry(exp3, newSyms, root), tpe, loc)
+      case Block(branches, default, tpe, loc) =>
+        val br = branches map {
+          case (sym, exp) => sym -> uncurry(exp, newSyms, root)
+        }
+        Block(br, default, tpe, loc)
+      case Jump(sym, tpe, loc) => Jump(sym, tpe, loc)
       case Let(sym, exp1, exp2, tpe, loc) => Let(sym, uncurry(exp1, newSyms, root), uncurry(exp2, newSyms, root), tpe, loc)
       case LetRec(sym, exp1, exp2, tpe, loc) => LetRec(sym, uncurry(exp1, newSyms, root), uncurry(exp2, newSyms, root), tpe, loc)
       case Is(sym, tag, exp, loc) => Is(sym, tag, uncurry(exp, newSyms, root), loc)
@@ -316,6 +332,8 @@ object Uncurrier extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
           case _: Unary => 0
           case _: Binary => 0
           case _: IfThenElse => 0
+          case _: Block => 0
+          case _: Jump => 0
           case _: Let => 0
           case _: LetRec => 0
           case _: Is => 0

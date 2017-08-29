@@ -663,6 +663,11 @@ object CodegenHelper {
       case Expression.Unary(sop, op, exp, tpe, loc) => visit(exp)
       case Expression.Binary(sop, op, exp1, exp2, tpe, loc) => visit(exp1) ++ visit(exp2)
       case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) => visit(exp1) ++ visit(exp2) ++ visit(exp3)
+      case Expression.Block(branches, default, tpe, loc) =>
+        (branches flatMap {
+          case (sym, exp) => visit(exp)
+        }).toSet
+      case Expression.Jump(sym, tpe, loc) => Set.empty
       case Expression.Let(sym, exp1, exp2, tpe, loc) => visit(exp1) ++ visit(exp2)
       case Expression.LetRec(sym, exp1, exp2, tpe, loc) => visit(exp1) ++ visit(exp2)
       case Expression.Is(sym, tag, exp, loc) => visit(exp)
@@ -723,6 +728,8 @@ object CodegenHelper {
     case Expression.Unary(sop, op, exp, tpe, loc) => findEnumCases(exp)
     case Expression.Binary(sop, op, exp1, exp2, tpe, loc) => findEnumCases(exp1) ::: findEnumCases(exp2)
     case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) => findEnumCases(exp1) ::: findEnumCases(exp2) ::: findEnumCases(exp3)
+    case Expression.Block(branches, default, tpe, loc) => branches.values.flatMap(findEnumCases).toList
+    case Expression.Jump(sym, tpe, loc) => Nil
     case Expression.Let(sym, exp1, exp2, tpe, loc) => findEnumCases(exp1) ::: findEnumCases(exp2)
     case Expression.Is(sym, tag, exp, loc) => findEnumCases(exp)
     case Expression.Tag(enum, tag, exp, tpe, loc) => List((tpe, (tag, exp.tpe))) ::: findEnumCases(exp)

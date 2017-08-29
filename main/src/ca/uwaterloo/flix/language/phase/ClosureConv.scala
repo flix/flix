@@ -120,24 +120,43 @@ object ClosureConv {
 
     case Expression.Unary(sop, op, e, tpe, loc) =>
       Expression.Unary(sop, op, convert(e), tpe, loc)
+
     case Expression.Binary(sop, op, e1, e2, tpe, loc) =>
       Expression.Binary(sop, op, convert(e1), convert(e2), tpe, loc)
+
     case Expression.IfThenElse(e1, e2, e3, tpe, loc) =>
       Expression.IfThenElse(convert(e1), convert(e2), convert(e3), tpe, loc)
+
+    case Expression.Block(branches, default, tpe, loc) =>
+      val br = branches map {
+        case (sym, exp) => sym -> convert(exp)
+      }
+      Expression.Block(br, default, tpe, loc)
+
+    case Expression.Jump(sym, tpe, loc) =>
+      Expression.Jump(sym, tpe, loc)
+
     case Expression.Let(sym, e1, e2, tpe, loc) =>
       Expression.Let(sym, convert(e1), convert(e2), tpe, loc)
+
     case Expression.LetRec(sym, e1, e2, tpe, loc) =>
       Expression.LetRec(sym, convert(e1), convert(e2), tpe, loc)
+
     case Expression.Is(sym, tag, e, loc) =>
       Expression.Is(sym, tag, convert(e), loc)
+
     case Expression.Tag(enum, tag, e, tpe, loc) =>
       Expression.Tag(enum, tag, convert(e), tpe, loc)
+
     case Expression.Untag(sym, tag, e, tpe, loc) =>
       Expression.Untag(sym, tag, convert(e), tpe, loc)
+
     case Expression.Index(e, offset, tpe, loc) =>
       Expression.Index(convert(e), offset, tpe, loc)
+
     case Expression.Tuple(elms, tpe, loc) =>
       Expression.Tuple(elms.map(convert), tpe, loc)
+
     case Expression.Ref(exp, tpe, loc) =>
       val e = convert(exp)
       Expression.Ref(e, tpe, loc)
@@ -203,6 +222,11 @@ object ClosureConv {
       freeVariables(exp1) ++ freeVariables(exp2)
     case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
       freeVariables(exp1) ++ freeVariables(exp2) ++ freeVariables(exp3)
+    case Expression.Block(branches, default, tpe, loc) =>
+      mutable.LinkedHashSet.empty ++ branches flatMap {
+        case (sym, exp) => freeVariables(exp)
+      }
+    case Expression.Jump(sym, tpe, loc) => mutable.LinkedHashSet.empty
     case Expression.Let(sym, exp1, exp2, tpe, loc) =>
       val bound = sym
       freeVariables(exp1) ++ freeVariables(exp2).filterNot { v => bound == v._1 }
@@ -295,6 +319,13 @@ object ClosureConv {
         val e2 = visit(exp2)
         val e3 = visit(exp3)
         Expression.IfThenElse(e1, e2, e3, tpe, loc)
+      case Expression.Block(branches, default, tpe, loc) =>
+        val br = branches map {
+          case (sym, exp) => sym -> visit(exp)
+        }
+        Expression.Block(br, default, tpe, loc)
+      case Expression.Jump(sym, tpe, loc) =>
+        Expression.Jump(sym, tpe, loc)
       case Expression.Let(sym, exp1, exp2, tpe, loc) =>
         val e1 = visit(exp1)
         val e2 = visit(exp2)

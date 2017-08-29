@@ -182,6 +182,21 @@ object PrettyPrinter {
           vt << Dedent << NewLine
           vt.text("}")
 
+        case Expression.Block(branches, default, tpe, loc) =>
+          vt << "Block" << "("
+          fmtSym(default, vt)
+          vt << ")" << NewLine
+          for ((sym, exp) <- branches) {
+            fmtSym(sym, vt)
+            vt << ":" << Indent << NewLine
+            visitExp(exp)
+            vt << Dedent << NewLine
+          }
+
+        case Expression.Jump(sym, tpe, loc) =>
+          vt << "jump" << " "
+          fmtSym(sym, vt)
+
         case Expression.Let(sym, exp1, exp2, tpe, loc) =>
           vt << Bold("let") << " "
           fmtSym(sym, vt)
@@ -291,12 +306,16 @@ object PrettyPrinter {
       vt.text(p.tpe.toString)
     }
 
+    def fmtSym(sym: Symbol.VarSym, vt: VirtualTerminal): Unit = {
+      vt << Cyan(sym.toString)
+    }
+
     def fmtSym(sym: Symbol.DefnSym, vt: VirtualTerminal): Unit = {
       vt << Blue(sym.toString)
     }
 
-    def fmtSym(sym: Symbol.VarSym, vt: VirtualTerminal): Unit = {
-      vt << Cyan(sym.toString)
+    def fmtSym(sym: Symbol.LabelSym, vt: VirtualTerminal): Unit = {
+      vt << Magenta(sym.toString)
     }
 
     def fmtUnaryOp(op: UnaryOperator, vt: VirtualTerminal): Unit = op match {
