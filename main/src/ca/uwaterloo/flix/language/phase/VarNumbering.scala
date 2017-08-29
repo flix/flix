@@ -104,10 +104,11 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         val i2 = visitExp(exp2, i1)
         visitExp(exp3, i2)
 
-      case Expression.Block(branches, default, tpe, loc) =>
-        visitExps(branches.values.toList, i0)
+      case Expression.Branch(exp, branches, tpe, loc) =>
+        val i1 = visitExp(exp, i0)
+        visitExps(branches.values.toList, i1)
 
-      case Expression.Jump(sym, tpe, loc) =>
+      case Expression.JumpTo(sym, tpe, loc) =>
         i0
 
       case Expression.Let(sym, exp1, exp2, tpe, loc) =>

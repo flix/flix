@@ -545,10 +545,10 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
       compileExpression(prefix, functions, declarations, interfaces, enums, visitor, entryPoint)(exp3)
       visitor.visitLabel(ifEnd)
 
-    case Expression.Block(branches, default, tpe, loc) =>
+    case Expression.Branch(branches, default, tpe, loc) =>
       ??? // TODO
 
-    case Expression.Jump(sym, tpe, loc) =>
+    case Expression.JumpTo(sym, tpe, loc) =>
       ??? // TODO
 
     case Expression.Let(sym, exp1, exp2, _, loc) =>

@@ -96,15 +96,12 @@ object Interpreter {
     //
     // Block expressions.
     //
-    case Expression.Block(branches, default, tpe, loc) => branches.get(default) match {
-      case None => throw InternalRuntimeException(s"Unknown label: '$default'.")
-      case Some(e) => eval(e, env0, branches, root)
-    }
+    case Expression.Branch(exp, branches, tpe, loc) => eval(exp, env0, branches, root)
 
     //
     // Jump expressions.
     //
-    case Expression.Jump(sym, tpe, loc) =>
+    case Expression.JumpTo(sym, tpe, loc) =>
       lenv0.get(sym) match {
         case None => throw InternalRuntimeException(s"Unknown label: '$sym' in label environment ${lenv0.mkString(" ,")}.")
         case Some(e) => eval(e, env0, lenv0, root)

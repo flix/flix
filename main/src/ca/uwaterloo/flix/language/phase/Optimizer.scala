@@ -162,17 +162,18 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       //
       // Block Expressions.
       //
-      case Expression.Block(branches, default, tpe, loc) =>
-        val br = branches map {
-          case (sym, exp) => sym -> visitExp(exp, env0)
+      case Expression.Branch(exp, branches, tpe, loc) =>
+        val e = visitExp(exp, env0)
+        val bs = branches map {
+          case (sym, br) => sym -> visitExp(br, env0)
         }
-        Expression.Block(br, default, tpe, loc)
+        Expression.Branch(e, bs, tpe, loc)
 
       //
       // Jump Expressions.
       //
-      case Expression.Jump(sym, tpe, loc) =>
-        Expression.Jump(sym, tpe, loc)
+      case Expression.JumpTo(sym, tpe, loc) =>
+        Expression.JumpTo(sym, tpe, loc)
 
       //
       // Let Expressions.

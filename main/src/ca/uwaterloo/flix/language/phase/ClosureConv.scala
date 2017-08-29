@@ -127,14 +127,15 @@ object ClosureConv {
     case Expression.IfThenElse(e1, e2, e3, tpe, loc) =>
       Expression.IfThenElse(convert(e1), convert(e2), convert(e3), tpe, loc)
 
-    case Expression.Block(branches, default, tpe, loc) =>
-      val br = branches map {
-        case (sym, exp) => sym -> convert(exp)
+    case Expression.Branch(exp, branches, tpe, loc) =>
+      val e = convert(exp)
+      val bs = branches map {
+        case (sym, br) => sym -> convert(br)
       }
-      Expression.Block(br, default, tpe, loc)
+      Expression.Branch(e, bs, tpe, loc)
 
-    case Expression.Jump(sym, tpe, loc) =>
-      Expression.Jump(sym, tpe, loc)
+    case Expression.JumpTo(sym, tpe, loc) =>
+      Expression.JumpTo(sym, tpe, loc)
 
     case Expression.Let(sym, e1, e2, tpe, loc) =>
       Expression.Let(sym, convert(e1), convert(e2), tpe, loc)
@@ -222,11 +223,11 @@ object ClosureConv {
       freeVariables(exp1) ++ freeVariables(exp2)
     case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
       freeVariables(exp1) ++ freeVariables(exp2) ++ freeVariables(exp3)
-    case Expression.Block(branches, default, tpe, loc) =>
-      mutable.LinkedHashSet.empty ++ branches flatMap {
-        case (sym, exp) => freeVariables(exp)
-      }
-    case Expression.Jump(sym, tpe, loc) => mutable.LinkedHashSet.empty
+    case Expression.Branch(exp, branches, tpe, loc) =>
+      mutable.LinkedHashSet.empty ++ freeVariables(exp) ++ (branches flatMap {
+        case (sym, br) => freeVariables(br)
+      })
+    case Expression.JumpTo(sym, tpe, loc) => mutable.LinkedHashSet.empty
     case Expression.Let(sym, exp1, exp2, tpe, loc) =>
       val bound = sym
       freeVariables(exp1) ++ freeVariables(exp2).filterNot { v => bound == v._1 }
@@ -319,13 +320,14 @@ object ClosureConv {
         val e2 = visit(exp2)
         val e3 = visit(exp3)
         Expression.IfThenElse(e1, e2, e3, tpe, loc)
-      case Expression.Block(branches, default, tpe, loc) =>
-        val br = branches map {
-          case (sym, exp) => sym -> visit(exp)
+      case Expression.Branch(exp, branches, tpe, loc) =>
+        val e = visit(exp)
+        val bs = branches map {
+          case (sym, br) => sym -> visit(br)
         }
-        Expression.Block(br, default, tpe, loc)
-      case Expression.Jump(sym, tpe, loc) =>
-        Expression.Jump(sym, tpe, loc)
+        Expression.Branch(e, bs, tpe, loc)
+      case Expression.JumpTo(sym, tpe, loc) =>
+        Expression.JumpTo(sym, tpe, loc)
       case Expression.Let(sym, exp1, exp2, tpe, loc) =>
         val e1 = visit(exp1)
         val e2 = visit(exp2)

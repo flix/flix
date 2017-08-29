@@ -647,15 +647,12 @@ object SymbolicEvaluator {
       /**
         * Block.
         */
-      case Expression.Block(branches, default, tpe, loc) => branches.get(default) match {
-        case None => throw InternalCompilerException(s"Unknown label: '$default'.")
-        case Some(e) => eval(pc0, e, env0, lenv0, qua0)
-      }
+      case Expression.Branch(exp, branches, tpe, loc) => eval(pc0, exp, env0, lenv0, qua0)
 
       /**
         * Jump.
         */
-      case Expression.Jump(sym, tpe, loc) => lenv0.get(sym) match {
+      case Expression.JumpTo(sym, tpe, loc) => lenv0.get(sym) match {
         case None => throw InternalCompilerException(s"Unknown label: '$sym' in label environment ${lenv0.mkString(" ,")}.")
         case Some(e) => eval(pc0, e, env0, lenv0, qua0)
       }

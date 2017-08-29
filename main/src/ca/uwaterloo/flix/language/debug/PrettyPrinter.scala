@@ -182,18 +182,19 @@ object PrettyPrinter {
           vt << Dedent << NewLine
           vt.text("}")
 
-        case Expression.Block(branches, default, tpe, loc) =>
-          vt << "Block" << "("
-          fmtSym(default, vt)
-          vt << ")" << NewLine
-          for ((sym, exp) <- branches) {
+        case Expression.Branch(exp, branches, tpe, loc) =>
+          vt << "branch {" << Indent << NewLine
+          visitExp(exp)
+          vt << Dedent << NewLine
+          for ((sym, b) <- branches) {
             fmtSym(sym, vt)
             vt << ":" << Indent << NewLine
-            visitExp(exp)
+            visitExp(b)
             vt << Dedent << NewLine
           }
+          vt << "}" << NewLine
 
-        case Expression.Jump(sym, tpe, loc) =>
+        case Expression.JumpTo(sym, tpe, loc) =>
           vt << "jump" << " "
           fmtSym(sym, vt)
 
