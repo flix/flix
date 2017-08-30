@@ -195,7 +195,7 @@ object PrettyPrinter {
           vt << "}" << NewLine
 
         case Expression.JumpTo(sym, tpe, loc) =>
-          vt << "jump" << " "
+          vt << "jumpto" << " "
           fmtSym(sym, vt)
 
         case Expression.Let(sym, exp1, exp2, tpe, loc) =>

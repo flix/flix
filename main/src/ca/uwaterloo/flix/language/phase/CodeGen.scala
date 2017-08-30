@@ -545,7 +545,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
       compileExpression(prefix, functions, declarations, interfaces, enums, visitor, entryPoint)(exp3)
       visitor.visitLabel(ifEnd)
 
-    case Expression.Branch(branches, default, tpe, loc) =>
+    case Expression.Branch(exp, branches, tpe, loc) =>
       ??? // TODO
 
     case Expression.JumpTo(sym, tpe, loc) =>
