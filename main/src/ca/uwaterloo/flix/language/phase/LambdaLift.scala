@@ -147,6 +147,13 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         Expression.Binary(sop, op, visit(exp1), visit(exp2), tpe, loc)
       case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
         Expression.IfThenElse(visit(exp1), visit(exp2), visit(exp3), tpe, loc)
+      case Expression.Branch(exp, branches, tpe, loc) =>
+        val e = visit(exp)
+        val bs = branches map {
+          case (sym, br) => sym -> visit(br)
+        }
+        Expression.Branch(e, bs, tpe, loc)
+      case Expression.JumpTo(sym, tpe, loc) => Expression.JumpTo(sym, tpe, loc)
       case Expression.Let(sym, exp1, exp2, tpe, loc) =>
         Expression.Let(sym, visit(exp1), visit(exp2), tpe, loc)
       case Expression.LetRec(sym, exp1, exp2, tpe, loc) =>

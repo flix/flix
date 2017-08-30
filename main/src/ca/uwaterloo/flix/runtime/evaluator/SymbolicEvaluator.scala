@@ -42,9 +42,16 @@ object SymbolicEvaluator {
   /**
     * The type of environments.
     *
-    * An environment is map from variable symbols to symbolic values.
+    * An environment is a map from variable symbols to symbolic values.
     */
   type Environment = Map[Symbol.VarSym, SymVal]
+
+  /**
+    * The type of label environments.
+    *
+    * A label environment is a map from label symbols to expressions.
+    */
+  type LabelEnv = Map[Symbol.LabelSym, Expression]
 
   /**
     * The type of instantiated quantified variables.
@@ -73,11 +80,11 @@ object SymbolicEvaluator {
   /**
     * Evaluates the given expression `exp0` under the given environment `env0`.
     */
-  def eval(exp0: Expression, env0: Environment, enumerator: Enumerator, root: ExecutableAst.Root)(implicit genSym: GenSym): Context = {
+  def eval(exp0: Expression, env0: Environment, lenv0: LabelEnv, enumerator: Enumerator, root: ExecutableAst.Root)(implicit genSym: GenSym): Context = {
     /*
       * Local visitor.
       */
-    def eval(pc0: PathConstraint, exp0: Expression, env0: Environment, qua0: Quantifiers)(implicit genSym: GenSym): Context = exp0 match {
+    def eval(pc0: PathConstraint, exp0: Expression, env0: Environment, lenv0: LabelEnv, qua0: Quantifiers)(implicit genSym: GenSym): Context = exp0 match {
       /**
         * Unit.
         */
@@ -158,38 +165,38 @@ object SymbolicEvaluator {
         * Apply Closure.
         */
       case Expression.ApplyClo(exp, args, _, _) =>
-        invokeClo(pc0, exp, args, env0, qua0)
+        invokeClo(pc0, exp, args, env0, lenv0, qua0)
 
       /**
         * Apply Def.
         */
       case Expression.ApplyDef(sym, args, _, _) =>
-        invokeDef(pc0, sym, args, env0, qua0)
+        invokeDef(pc0, sym, args, env0, lenv0, qua0)
 
       /**
         * Apply Closure Tail.
         */
       case Expression.ApplyCloTail(exp, args, _, _) =>
-        invokeClo(pc0, exp, args, env0, qua0)
+        invokeClo(pc0, exp, args, env0, lenv0, qua0)
 
       /**
         * Apply Def Tail.
         */
       case Expression.ApplyDefTail(sym, args, _, _) =>
-        invokeDef(pc0, sym, args, env0, qua0)
+        invokeDef(pc0, sym, args, env0, lenv0, qua0)
 
       /**
         * Apply Self Tail.
         */
       case Expression.ApplySelfTail(sym, _, args, _, _) =>
-        invokeDef(pc0, sym, args, env0, qua0)
+        invokeDef(pc0, sym, args, env0, lenv0, qua0)
 
 
       /**
         * Unary.
         */
       case Expression.Unary(sop, op, exp, _, _) =>
-        eval(pc0, exp, env0, qua0) flatMap {
+        eval(pc0, exp, env0, lenv0, qua0) flatMap {
           case (pc, qua, v) => op match {
             /**
               * Unary Not.
@@ -269,7 +276,7 @@ object SymbolicEvaluator {
         * Binary.
         */
       case Expression.Binary(sop, op, exp1, exp2, _, _) =>
-        eval2(pc0, exp1, exp2, env0, qua0) flatMap {
+        eval2(pc0, exp1, exp2, env0, lenv0, qua0) flatMap {
           case (pc, qua, (v1, v2)) => op match {
 
             /**
@@ -624,28 +631,41 @@ object SymbolicEvaluator {
         * If-then-else.
         */
       case Expression.IfThenElse(exp1, exp2, exp3, _, _) =>
-        eval(pc0, exp1, env0, qua0) flatMap {
+        eval(pc0, exp1, env0, lenv0, qua0) flatMap {
           case (pc, qua, c) => c match {
-            case SymVal.True => eval(pc, exp2, env0, qua)
-            case SymVal.False => eval(pc, exp3, env0, qua)
+            case SymVal.True => eval(pc, exp2, env0, lenv0, qua)
+            case SymVal.False => eval(pc, exp3, env0, lenv0, qua)
             case SymVal.AtomicVar(id, _) =>
               // Evaluate both branches under different path constraints.
-              val consequent = eval(SmtExpr.Var(id, Type.Bool) :: pc, exp2, env0, qua)
-              val alternative = eval(SmtExpr.Not(SmtExpr.Var(id, Type.Bool)) :: pc, exp3, env0, qua)
+              val consequent = eval(SmtExpr.Var(id, Type.Bool) :: pc, exp2, env0, lenv0, qua)
+              val alternative = eval(SmtExpr.Not(SmtExpr.Var(id, Type.Bool)) :: pc, exp3, env0, lenv0, qua)
               consequent ++ alternative
             case v => throw InternalCompilerException(s"Type Error: Unexpected value: '$v'.")
           }
         }
 
       /**
+        * Block.
+        */
+      case Expression.Branch(exp, branches, tpe, loc) => eval(pc0, exp, env0, lenv0, qua0)
+
+      /**
+        * Jump.
+        */
+      case Expression.JumpTo(sym, tpe, loc) => lenv0.get(sym) match {
+        case None => throw InternalCompilerException(s"Unknown label: '$sym' in label environment ${lenv0.mkString(" ,")}.")
+        case Some(e) => eval(pc0, e, env0, lenv0, qua0)
+      }
+
+      /**
         * Let-binding.
         */
       case Expression.Let(sym, exp1, exp2, _, _) =>
-        eval(pc0, exp1, env0, qua0) flatMap {
+        eval(pc0, exp1, env0, lenv0, qua0) flatMap {
           case (pc, qua, v1) =>
             // Bind the variable to the value of `exp1` which is `v1`.
             val newEnv = env0 + (sym -> v1)
-            eval(pc, exp2, newEnv, qua)
+            eval(pc, exp2, newEnv, lenv0, qua)
         }
 
       /**
@@ -676,7 +696,7 @@ object SymbolicEvaluator {
         * Is Tag.
         */
       case Expression.Is(sym, tag, exp, _) =>
-        eval(pc0, exp, env0, qua0) flatMap {
+        eval(pc0, exp, env0, lenv0, qua0) flatMap {
           case (pc, qua, SymVal.Tag(tag2, _)) =>
             if (tag == tag2)
               lift(pc, qua, SymVal.True)
@@ -689,7 +709,7 @@ object SymbolicEvaluator {
         * Tag.
         */
       case Expression.Tag(sym, tag, exp, _, _) =>
-        eval(pc0, exp, env0, qua0) flatMap {
+        eval(pc0, exp, env0, lenv0, qua0) flatMap {
           case (pc, qua, v) => lift(pc, qua, SymVal.Tag(tag, v))
         }
 
@@ -697,7 +717,7 @@ object SymbolicEvaluator {
         * Untag.
         */
       case Expression.Untag(sym, tag, exp, _, _) =>
-        eval(pc0, exp, env0, qua0) flatMap {
+        eval(pc0, exp, env0, lenv0, qua0) flatMap {
           case (pc, qua, SymVal.Tag(_, v)) => lift(pc, qua, v)
           case v => throw InternalCompilerException(s"Type Error: Unexpected value: '$v'.")
         }
@@ -706,7 +726,7 @@ object SymbolicEvaluator {
         * Tuple.
         */
       case Expression.Tuple(elms, _, _) =>
-        evaln(pc0, elms, env0, qua0) flatMap {
+        evaln(pc0, elms, env0, lenv0, qua0) flatMap {
           case (pc, qua, es) => lift(pc, qua, SymVal.Tuple(es))
         }
 
@@ -714,7 +734,7 @@ object SymbolicEvaluator {
         * Index (into tuple).
         */
       case Expression.Index(base, offset, _, _) =>
-        eval(pc0, base, env0, qua0) flatMap {
+        eval(pc0, base, env0, lenv0, qua0) flatMap {
           case (pc, qua, SymVal.Tuple(elms)) => lift(pc, qua, elms(offset))
           case v => throw InternalCompilerException(s"Type Error: Unexpected value: '$v'.")
         }
@@ -745,7 +765,7 @@ object SymbolicEvaluator {
       case Expression.Universal(fparam, exp, _) =>
         // Enumerate the possible symbolic values of the formal parameter.
         enumerator(fparam.sym, fparam.tpe) flatMap {
-          case value => eval(pc0, exp, env0 + (fparam.sym -> value), qua0 + (fparam.sym -> value))
+          case value => eval(pc0, exp, env0 + (fparam.sym -> value), lenv0, qua0 + (fparam.sym -> value))
         }
 
       /**
@@ -948,9 +968,9 @@ object SymbolicEvaluator {
       *
       * Evaluates `x` first and then `y` second.
       */
-    def eval2(pc0: PathConstraint, x: Expression, y: Expression, env0: Environment, qua0: Quantifiers): List[(PathConstraint, Quantifiers, (SymVal, SymVal))] =
-      eval(pc0, x, env0, qua0) flatMap {
-        case (pcx, quax, vx) => eval(pcx, y, env0, quax) map {
+    def eval2(pc0: PathConstraint, x: Expression, y: Expression, env0: Environment, lenv0: LabelEnv, qua0: Quantifiers): List[(PathConstraint, Quantifiers, (SymVal, SymVal))] =
+      eval(pc0, x, env0, lenv0, qua0) flatMap {
+        case (pcx, quax, vx) => eval(pcx, y, env0, lenv0, quax) map {
           case (pcy, quay, vy) => (pcy, quay, (vx, vy))
         }
       }
@@ -960,40 +980,40 @@ object SymbolicEvaluator {
       *
       * Evaluates from left to right.
       */
-    def evaln(pc0: PathConstraint, xs: Traversable[Expression], env0: Environment, qua0: Quantifiers): List[(PathConstraint, Quantifiers, List[SymVal])] = {
+    def evaln(pc0: PathConstraint, xs: Traversable[Expression], env0: Environment, lenv0: LabelEnv, qua0: Quantifiers): List[(PathConstraint, Quantifiers, List[SymVal])] = {
       /*
        * Local visitor.
        */
-      def visit(pc: PathConstraint, xs: List[Expression], env: Environment, qua: Quantifiers): List[(PathConstraint, Quantifiers, List[SymVal])] = xs match {
+      def visit(pc: PathConstraint, xs: List[Expression], env: Environment, lenv: LabelEnv, qua: Quantifiers): List[(PathConstraint, Quantifiers, List[SymVal])] = xs match {
         case Nil => List((pc, qua, Nil))
-        case r :: rs => eval(pc, r, env, qua) flatMap {
-          case (pc1, qua1, v) => visit(pc1, rs, env, qua1) map {
+        case r :: rs => eval(pc, r, env, lenv, qua) flatMap {
+          case (pc1, qua1, v) => visit(pc1, rs, env, lenv, qua1) map {
             case (pc2, qua2, vs) => (pc2, qua2, v :: vs)
           }
         }
       }
 
-      visit(pc0, xs.toList, env0, qua0)
+      visit(pc0, xs.toList, env0, Map.empty, qua0)
     }
 
     /**
       * Invokes the given closure expression `exp` with `args` under the path constraint `pc0` and environment `env0`.
       */
-    def invokeClo(pc0: PathConstraint, exp: Expression, args: List[Expression], env0: Environment, qua0: Quantifiers): Context = {
+    def invokeClo(pc0: PathConstraint, exp: Expression, args: List[Expression], env0: Environment, lenv0: LabelEnv, qua0: Quantifiers): Context = {
       // Evaluate the closure.
-      eval(pc0, exp, env0, qua0) flatMap {
+      eval(pc0, exp, env0, lenv0, qua0) flatMap {
         case (pc, qua, SymVal.Closure(sym, bindings)) =>
           // Lookup the definition
           val defn = root.defs(sym)
           // Evaluate all the arguments.
-          evaln(pc, args, env0, qua) flatMap {
+          evaln(pc, args, env0, lenv0, qua) flatMap {
             case (pc1, qua1, actuals) =>
               // Construct the environment
               val newArgs = bindings ++ actuals
               val newEnv = (defn.formals zip newArgs).foldLeft(Map.empty: Environment) {
                 case (macc, (formal, actual)) => macc + (formal.sym -> actual)
               }
-              eval(pc1, defn.exp, newEnv, qua1)
+              eval(pc1, defn.exp, newEnv, Map.empty, qua1)
           }
         case (_, _, v) => throw InternalCompilerException(s"Type Error: Unexpected value: '$v'.")
       }
@@ -1002,23 +1022,23 @@ object SymbolicEvaluator {
     /**
       * Invokes the given definition `sym`  with `args` under the path constraint `pc0` and environment `env0`.
       */
-    def invokeDef(pc0: PathConstraint, sym: Symbol.DefnSym, args: List[Expression], env0: Environment, qua0: Quantifiers): Context = {
+    def invokeDef(pc0: PathConstraint, sym: Symbol.DefnSym, args: List[Expression], env0: Environment, lenv0: LabelEnv, qua0: Quantifiers): Context = {
       // Lookup the reference.
       val defn = root.defs(sym)
       // Evaluate all the arguments.
-      evaln(pc0, args, env0, qua0) flatMap {
+      evaln(pc0, args, env0, lenv0, qua0) flatMap {
         case (pc, qua, as) =>
           // Bind the actual arguments to the formal variables.
           val newEnv = (defn.formals zip as).foldLeft(Map.empty: Environment) {
             case (macc, (formal, actual)) => macc + (formal.sym -> actual)
           }
           // Evaluate the body under the new environment.
-          eval(pc, defn.exp, newEnv, qua)
+          eval(pc, defn.exp, newEnv, Map.empty, qua)
       }
     }
 
     // Start
-    eval(Nil, exp0, env0, Quantifiers(Map.empty))
+    eval(Nil, exp0, env0, Map.empty, Quantifiers(Map.empty))
   }
 
   /**

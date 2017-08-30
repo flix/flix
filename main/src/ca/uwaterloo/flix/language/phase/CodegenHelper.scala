@@ -50,6 +50,7 @@ object CodegenHelper {
 
   /**
     * A wrapper around a primitive type.
+    *
     * @param prim The wrapped primitive
     */
   case class WrappedPrimitive(prim: Type) extends WrappedType
@@ -58,6 +59,7 @@ object CodegenHelper {
     * A wrapper around types which needs to be represented by an object which is any type which cannot be represented by
     * a primitive. Note that `underlying` includes all the wrapped types when it is created in TupleGen or EnumGen but
     * in CodeGen and LoadbyteCode it may not include all the wrapped types.
+    *
     * @param underlying underlying types
     */
   case class WrappedNonPrimitives(underlying: Set[Type]) extends WrappedType
@@ -67,7 +69,7 @@ object CodegenHelper {
     * Note that QualName represent a unique address to a class, so two QualName instances with the same address are
     * the same.
     */
-  sealed trait QualName{
+  sealed trait QualName {
     /**
       * A list representing the qualified name of a class
       */
@@ -75,17 +77,19 @@ object CodegenHelper {
 
     /**
       * Returning hashCode of the `ref` since QualName is just a wrapper around it
+      *
       * @return hashCode
       */
     override def hashCode(): Int = ref.hashCode()
 
     /**
       * Override equality to just check for equality of references
+      *
       * @param obj objects to be compared to each other
       * @return `true` if they are equal
       */
     override def equals(obj: scala.Any): Boolean = obj match {
-      case q : QualName => ref == q.ref
+      case q: QualName => ref == q.ref
       case _ => false
     }
   }
@@ -97,6 +101,7 @@ object CodegenHelper {
 
   /**
     * Qualified name of an enum class
+    *
     * @param sym symbol of the enum
     * @param tag tag of the enum
     * @param tpe tpe of the field of the enum
@@ -110,6 +115,7 @@ object CodegenHelper {
 
   /**
     * Qualified name of an enum interface
+    *
     * @param sym symbol of the enum
     */
   case class EnumInterfName(sym: EnumSym) extends QualName {
@@ -118,10 +124,11 @@ object CodegenHelper {
 
   /**
     * Qualified name of a tuple class
+    *
     * @param fields fields of the tuple
     */
   case class TupleClassName(fields: List[WrappedType]) extends QualName {
-    val ref: List[String] = fixedTuplePrefix ::: fields.map{
+    val ref: List[String] = fixedTuplePrefix ::: fields.map {
       case WrappedPrimitive(tpe) => typeSpecifier(tpe)
       case WrappedNonPrimitives(_) => "object"
     } ::: List("Tuple")
@@ -129,9 +136,10 @@ object CodegenHelper {
 
   /**
     * Base filename of a file specified by the given qualified name
+    *
     * @param qualName Qualified name of the file
     */
-  def baseFileName(qualName: QualName) : String = qualName match {
+  def baseFileName(qualName: QualName): String = qualName match {
     case FlixClassName(ref) => s"${ref.last}.flix"
     case EnumClassName(sym, _, _) => sym.loc.source.format
     case EnumInterfName(sym) => sym.loc.source.format
@@ -142,9 +150,10 @@ object CodegenHelper {
     * This method returns a string which uniquely specifies the give type. If the type can be represented by a primitive,
     * then the name of that primitive is returned, otherwise if the type has to be represented by an object then string
     * `object` is return
+    *
     * @param tpe type to be specified
     */
-  def typeSpecifier(tpe: Type) : String = {
+  def typeSpecifier(tpe: Type): String = {
     val objectStr = "object"
     tpe match {
       case Type.Var(x, k) => throw InternalCompilerException(s"Unexpected type: $tpe")
@@ -163,7 +172,7 @@ object CodegenHelper {
       case Type.Ref => objectStr
       case Type.Arrow(l) => objectStr
       case Type.Tuple(l) => objectStr
-      case Type.Apply(Type.Tuple(l), ts) =>objectStr
+      case Type.Apply(Type.Tuple(l), ts) => objectStr
       case Type.Apply(Type.Arrow(l), ts) => objectStr
       case Type.Apply(t, ts) => objectStr
       case Type.Enum(enum, kind) => objectStr
@@ -173,6 +182,7 @@ object CodegenHelper {
   /**
     * If a type is primitive, we wrap it in `WrappedPrimitive`, else if the type requires an object to be represented, we
     * wrap it inside `WrappedNonPrimitives`
+    *
     * @param tpe the type to be transformed
     */
   def typeToWrappedType(tpe: Type): WrappedType = tpe match {
@@ -198,22 +208,22 @@ object CodegenHelper {
     *
     * public static Nil unitInstance;
     *
-    * @param visitor class visitor
-    * @param name name of the field
+    * @param visitor    class visitor
+    * @param name       name of the field
     * @param descriptor descriptor of field
-    * @param isStatic if this is true the the field is static
-    * @param isPrivate if this is set then the field is private
+    * @param isStatic   if this is true the the field is static
+    * @param isPrivate  if this is set then the field is private
     */
-  def compileField(visitor: ClassWriter, name: String, descriptor: String, isStatic: Boolean, isPrivate: Boolean) : Unit = {
+  def compileField(visitor: ClassWriter, name: String, descriptor: String, isStatic: Boolean, isPrivate: Boolean): Unit = {
     val visibility =
-      if(isPrivate) {
+      if (isPrivate) {
         ACC_PRIVATE
       } else {
         ACC_PUBLIC
       }
 
     val fieldType =
-      if(isStatic) {
+      if (isStatic) {
         ACC_STATIC
       } else {
         0
@@ -229,17 +239,17 @@ object CodegenHelper {
     * For example, `Val[Char]` has following `getValue()`method:
     *
     * public final char getValue() {
-    *   return this.value;
+    * return this.value;
     * }
     *
-    * @param visitor class visitor
-    * @param qualName Qualified name of the class
-    * @param fieldName name of the field
+    * @param visitor    class visitor
+    * @param qualName   Qualified name of the class
+    * @param fieldName  name of the field
     * @param methodName method name of getter of `fieldName`
-    * @param iReturn opcode for returning the value of the field
+    * @param iReturn    opcode for returning the value of the field
     */
   def compileGetFieldMethod(visitor: ClassWriter, qualName: QualName, descriptor: String, fieldName: String,
-                                    methodName: String, iReturn: Int) : Unit = {
+                            methodName: String, iReturn: Int): Unit = {
     val method = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, methodName, s"()$descriptor", null, null)
 
     method.visitCode()
@@ -259,14 +269,14 @@ object CodegenHelper {
     *   this.field0 = var;
     * }
     *
-    * @param visitor class visitor
-    * @param qualName Qualified name of the class
-    * @param fieldName name of the field
+    * @param visitor    class visitor
+    * @param qualName   Qualified name of the class
+    * @param fieldName  name of the field
     * @param methodName method name of getter of `fieldName`
-    * @param iLoad opcode for loading the single parameter of the method
+    * @param iLoad      opcode for loading the single parameter of the method
     */
   def compileSetFieldMethod(visitor: ClassWriter, qualName: QualName, descriptor: String, fieldName: String,
-                            methodName: String, iLoad: Int) : Unit = {
+                            methodName: String, iLoad: Int): Unit = {
     val method = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, methodName, s"($descriptor)V", null, null)
 
     method.visitCode()
@@ -280,10 +290,11 @@ object CodegenHelper {
 
   /**
     * Returns the load instruction corresponding to the `fType`, if it is `None` then the type can be represented by an object
+    *
     * @param fType type
     * @return A load instruction
     */
-  def getReturnInsn(fType: WrappedType) : Int = fType match {
+  def getReturnInsn(fType: WrappedType): Int = fType match {
     case WrappedPrimitive(Type.Bool) | WrappedPrimitive(Type.Char) | WrappedPrimitive(Type.Int8) | WrappedPrimitive(Type.Int16) |
          WrappedPrimitive(Type.Int32) => IRETURN
     case WrappedPrimitive(Type.Int64) => LRETURN
@@ -294,10 +305,11 @@ object CodegenHelper {
 
   /**
     * Returns the load instruction for the value of the type specified by `tpe`
+    *
     * @param tpe Wrapped type to be loaded
     * @return Appropriate load instruction for the given type
     */
-  def getLoadInstruction(tpe: WrappedType) : Int = tpe match {
+  def getLoadInstruction(tpe: WrappedType): Int = tpe match {
     case WrappedPrimitive(Type.Bool) => ILOAD
     case WrappedPrimitive(Type.Char) => ILOAD
     case WrappedPrimitive(Type.Int8) => ILOAD
@@ -313,11 +325,12 @@ object CodegenHelper {
     * This function is called to compare two values on top of the stack with the type `tpe`.
     * We will pick the appropriate comparison between the two values, if they are not equal, we
     * jump to the `label`, otherwise we continue with the current control flow.
+    *
     * @param method MethodVisitor used to emit the code to a method
-    * @param tpe Wrapped type of the value on top of the stack
-    * @param label label in case that values on top of the stack are not equal
+    * @param tpe    Wrapped type of the value on top of the stack
+    * @param label  label in case that values on top of the stack are not equal
     */
-  def branchIfNotEqual(method: MethodVisitor, tpe: WrappedType, label: Label) : Unit = {
+  def branchIfNotEqual(method: MethodVisitor, tpe: WrappedType, label: Label): Unit = {
     val clazz = Constants.objectClass
     val objectEqualsMethod = clazz.getMethod("equals", clazz)
 
@@ -343,9 +356,10 @@ object CodegenHelper {
 
   /**
     * Returns true if the case has a unit field, which means the case can be a singleton. It returns false otherwise.
+    *
     * @param cs Enum Case
     */
-  def isSingletonEnum(cs: ExecutableAst.Case) : Boolean = {
+  def isSingletonEnum(cs: ExecutableAst.Case): Boolean = {
     cs.tpe == Type.Unit
   }
 
@@ -353,8 +367,9 @@ object CodegenHelper {
     * This method is used to represent the value on top of the stack to as a string
     * If the value is a primitive, then we use`valueOf` method in `String` class
     * If the value is an object, we invoke `toString` method on the value on top of the stack
+    *
     * @param method MethodVisitor used to emit the code to a method
-    * @param tpe Wrapped type of the value on top of the stack
+    * @param tpe    Wrapped type of the value on top of the stack
     */
   def javaValueToString(method: MethodVisitor, tpe: WrappedType): Unit = {
     val objectInternalName = asm.Type.getInternalName(Constants.objectClass)
@@ -396,10 +411,11 @@ object CodegenHelper {
     * This method will get the descriptor of the type of the `field`.
     * If field = `WrappedNonPrimitives(Set(..))` then the field is not a primitive and should be represented by an object, hence we return
     * the descriptor of the object class otherwise the field is a primitive and we return descriptor of that primitive.
+    *
     * @param fType Wrapped type of the field
     * @return descriptor of the field
     */
-  def getWrappedTypeDescriptor(fType: WrappedType) : String = fType match {
+  def getWrappedTypeDescriptor(fType: WrappedType): String = fType match {
     case WrappedPrimitive(tpe) => descriptor(tpe, Map())
     case WrappedNonPrimitives(_) => asm.Type.getDescriptor(Constants.objectClass)
   }
@@ -408,17 +424,19 @@ object CodegenHelper {
     * This method box a field with name `name` with type `tpe` on the class `className`
     * If the field is a primitive then it is boxed using the appropriate java type, if it is not a primitive
     * then we just return the field
-    * @param method MethodVisitor used to emit the code to a method
-    * @param tpe Wrapped type of the field to be boxed
+    *
+    * @param method    MethodVisitor used to emit the code to a method
+    * @param tpe       Wrapped type of the field to be boxed
     * @param className qualified name of the class that the field is defined on
-    * @param name name of the field to be boxed
+    * @param name      name of the field to be boxed
     */
-  def boxField(method: MethodVisitor, tpe: WrappedType, className: QualName, name: String) : Unit = {
+  def boxField(method: MethodVisitor, tpe: WrappedType, className: QualName, name: String): Unit = {
 
     /**
       * This method will box the primitive on top of the stack
+      *
       * @param boxedObjectDescriptor descriptor of the boxed version of the primitive
-      * @param signature signature of the constructor of the boxer
+      * @param signature             signature of the constructor of the boxer
       */
     def box(boxedObjectDescriptor: String, signature: String) = {
       method.visitTypeInsn(NEW, boxedObjectDescriptor)
@@ -447,10 +465,11 @@ object CodegenHelper {
   /**
     * If an object is on the top of the stack, then this method will replace it with the hashCode of that object
     * if a primitive is on top of the stack, then the primitive is casted to an int.
+    *
     * @param method MethodVisitor used to emit the code to a method
-    * @param tpe Wrapped type of the field
+    * @param tpe    Wrapped type of the field
     */
-  def getHashCodeOrConvertToInt(method: MethodVisitor, tpe: WrappedType) : Unit = {
+  def getHashCodeOrConvertToInt(method: MethodVisitor, tpe: WrappedType): Unit = {
     val clazz = Constants.objectClass
     val objectMethod = clazz.getMethod("hashCode")
 
@@ -467,6 +486,7 @@ object CodegenHelper {
 
   /**
     * This method returns the appropriate reference class based on the given type
+    *
     * @param tpe the given type
     * @return the appropriate reference class for the given type.
     */
@@ -476,7 +496,7 @@ object CodegenHelper {
     case Type.Apply(Type.Ref, List(Type.Int8)) => Constants.cell$Int8
     case Type.Apply(Type.Ref, List(Type.Int16)) => Constants.cell$Int16
     case Type.Apply(Type.Ref, List(Type.Int32)) => Constants.cell$Int32
-    case Type.Apply(Type.Ref, List(Type.Int64)) =>  Constants.cell$Int64
+    case Type.Apply(Type.Ref, List(Type.Int64)) => Constants.cell$Int64
     case Type.Apply(Type.Ref, List(Type.Float32)) => Constants.cell$Float32
     case Type.Apply(Type.Ref, List(Type.Float64)) => Constants.cell$Float64
     case Type.Apply(Type.Ref, List(_)) => Constants.cell$Obj
@@ -608,28 +628,28 @@ object CodegenHelper {
     * TODO: Refactor the Value object to be Java-like style so reflection is easier. Or use run-time reflection?
     */
   object Constants {
-    val objectClass : Class[_] = classOf[Object]
-    val stringClass : Class[_] = classOf[java.lang.String]
-    val bigIntegerClass : Class[_]= classOf[java.math.BigInteger]
-    val arrayObjectClass : Class[_] = classOf[Array[Object]]
-    val setClass : Class[_] = classOf[scala.collection.immutable.Set[Object]]
-    val flixClass : Class[_] = classOf[api.Flix]
+    val objectClass: Class[_] = classOf[Object]
+    val stringClass: Class[_] = classOf[java.lang.String]
+    val bigIntegerClass: Class[_] = classOf[java.math.BigInteger]
+    val arrayObjectClass: Class[_] = classOf[Array[Object]]
+    val setClass: Class[_] = classOf[scala.collection.immutable.Set[Object]]
+    val flixClass: Class[_] = classOf[api.Flix]
 
-    val unitClass : Class[_] = classOf[api.Unit]
-    val tupleClass : Class[_] = classOf[api.Tuple]
-    val cell$Bool : Class[_] = classOf[Cell$Bool]
-    val cell$Char : Class[_] = classOf[Cell$Char]
-    val cell$Int8 : Class[_] = classOf[Cell$Int8]
-    val cell$Int16 : Class[_] = classOf[Cell$Int16]
-    val cell$Int32 : Class[_] = classOf[Cell$Int32]
-    val cell$Int64 : Class[_] = classOf[Cell$Int64]
+    val unitClass: Class[_] = classOf[api.Unit]
+    val tupleClass: Class[_] = classOf[api.Tuple]
+    val cell$Bool: Class[_] = classOf[Cell$Bool]
+    val cell$Char: Class[_] = classOf[Cell$Char]
+    val cell$Int8: Class[_] = classOf[Cell$Int8]
+    val cell$Int16: Class[_] = classOf[Cell$Int16]
+    val cell$Int32: Class[_] = classOf[Cell$Int32]
+    val cell$Int64: Class[_] = classOf[Cell$Int64]
     val cell$Float32: Class[_] = classOf[Cell$Float32]
     val cell$Float64: Class[_] = classOf[Cell$Float64]
-    val cell$Obj : Class[_] = classOf[Cell$Obj]
+    val cell$Obj: Class[_] = classOf[Cell$Obj]
 
     val scalaPredef = "scala/Predef$"
     val scalaMathPkg = "scala/math/package$"
-    val tagInterface : Class[_] = classOf[api.Enum]
+    val tagInterface: Class[_] = classOf[api.Enum]
   }
 
   // This constant is used in LoadBytecode, so we can't put it in the private Constants object.
@@ -663,6 +683,11 @@ object CodegenHelper {
       case Expression.Unary(sop, op, exp, tpe, loc) => visit(exp)
       case Expression.Binary(sop, op, exp1, exp2, tpe, loc) => visit(exp1) ++ visit(exp2)
       case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) => visit(exp1) ++ visit(exp2) ++ visit(exp3)
+      case Expression.Branch(exp, branches, tpe, loc) =>
+        visit(exp) ++ (branches flatMap {
+          case (sym, br) => visit(br)
+        }).toSet
+      case Expression.JumpTo(sym, tpe, loc) => Set.empty
       case Expression.Let(sym, exp1, exp2, tpe, loc) => visit(exp1) ++ visit(exp2)
       case Expression.LetRec(sym, exp1, exp2, tpe, loc) => visit(exp1) ++ visit(exp2)
       case Expression.Is(sym, tag, exp, loc) => visit(exp)
@@ -696,6 +721,7 @@ object CodegenHelper {
 
   /**
     * Find any appearance of an enum case in the give expression `e`
+    *
     * @param e expression
     * @return List of enum cases in the expression, each element of the list is of form (EnumType, (CaseName, EnumFieldType))
     */
@@ -723,10 +749,12 @@ object CodegenHelper {
     case Expression.Unary(sop, op, exp, tpe, loc) => findEnumCases(exp)
     case Expression.Binary(sop, op, exp1, exp2, tpe, loc) => findEnumCases(exp1) ::: findEnumCases(exp2)
     case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) => findEnumCases(exp1) ::: findEnumCases(exp2) ::: findEnumCases(exp3)
+    case Expression.Branch(exp, branches, tpe, loc) => findEnumCases(exp) ::: branches.values.flatMap(findEnumCases).toList
+    case Expression.JumpTo(sym, tpe, loc) => Nil
     case Expression.Let(sym, exp1, exp2, tpe, loc) => findEnumCases(exp1) ::: findEnumCases(exp2)
     case Expression.Is(sym, tag, exp, loc) => findEnumCases(exp)
     case Expression.Tag(enum, tag, exp, tpe, loc) => List((tpe, (tag, exp.tpe))) ::: findEnumCases(exp)
-    case Expression.Untag(sym, tag, exp, tpe, loc)  => List((exp.tpe, (tag, tpe))) ::: findEnumCases(exp)
+    case Expression.Untag(sym, tag, exp, tpe, loc) => List((exp.tpe, (tag, tpe))) ::: findEnumCases(exp)
     case Expression.Index(base, offset, tpe, loc) => findEnumCases(base)
     case Expression.Tuple(elms, tpe, loc) => elms.flatMap(findEnumCases).toList
     case Expression.Ref(exp, tpe, loc) => findEnumCases(exp)

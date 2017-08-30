@@ -98,10 +98,18 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.Binary(sop, op, exp1, exp2, tpe, loc) =>
         val i1 = visitExp(exp1, i0)
         visitExp(exp2, i1)
+
       case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
         val i1 = visitExp(exp1, i0)
         val i2 = visitExp(exp2, i1)
         visitExp(exp3, i2)
+
+      case Expression.Branch(exp, branches, tpe, loc) =>
+        val i1 = visitExp(exp, i0)
+        visitExps(branches.values.toList, i1)
+
+      case Expression.JumpTo(sym, tpe, loc) =>
+        i0
 
       case Expression.Let(sym, exp1, exp2, tpe, loc) =>
         // Set the stack offset for the symbol.

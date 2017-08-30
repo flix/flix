@@ -18,7 +18,8 @@ package ca.uwaterloo.flix.runtime
 
 import java.lang.reflect.InvocationTargetException
 
-import ca.uwaterloo.flix.language.ast.{ExecutableAst, Symbol}
+import ca.uwaterloo.flix.language.ast.ExecutableAst._
+import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.util.InternalRuntimeException
 
 object Linker {
@@ -26,7 +27,7 @@ object Linker {
   /**
     * Returns an invocation target for the Flix function corresponding to the given symbol `sym`.
     */
-  def link(sym: Symbol.DefnSym, root: ExecutableAst.Root): InvocationTarget = {
+  def link(sym: Symbol.DefnSym, root: Root): InvocationTarget = {
     // Lookup the definition symbol in the program.
     root.defs.get(sym) match {
       case None => throw InternalRuntimeException(s"Undefined symbol: '$sym'.")
@@ -43,20 +44,22 @@ object Linker {
   /**
     * Returns an invocation target for the given definition `defn` that is interpreted.
     */
-  private def linkInterpreted(defn: ExecutableAst.Def, root: ExecutableAst.Root): InvocationTarget = new InvocationTarget {
+  private def linkInterpreted(defn: Def, root: Root): InvocationTarget = new InvocationTarget {
     override def invoke(args: Array[AnyRef]): AnyRef = {
       // Extend the environment with the values of the actual arguments.
-      val env = defn.formals.zip(args).foldLeft(Map.empty[String, AnyRef]) {
-        case (macc, (ExecutableAst.FormalParam(name, tpe), actual)) => macc + (name.toString -> actual)
+      val env0 = defn.formals.zip(args).foldLeft(Map.empty[String, AnyRef]) {
+        case (macc, (FormalParam(name, tpe), actual)) => macc + (name.toString -> actual)
       }
-      Interpreter.eval(defn.exp, root, env)
+      // The initial label environment is empty.
+      val lenv0 = Map.empty[Symbol.LabelSym, Expression]
+      Interpreter.eval(defn.exp, env0, Map.empty, root)
     }
   }
 
   /**
     * Returns an invocation target for the given definition `defn` that is compiled.
     */
-  private def linkCompiled(defn: ExecutableAst.Def): InvocationTarget = new InvocationTarget {
+  private def linkCompiled(defn: Def): InvocationTarget = new InvocationTarget {
     override def invoke(args: Array[AnyRef]): AnyRef =
       try {
         // Java Reflective Call.

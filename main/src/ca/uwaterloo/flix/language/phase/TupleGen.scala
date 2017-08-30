@@ -547,6 +547,8 @@ object TupleGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     case Expression.Unary(sop, op, exp, tpe, loc) => findTuplesInExps(exp) ++ findTuplesInTypes(tpe)
     case Expression.Binary(sop, op, exp1, exp2, tpe, loc) => findTuplesInExps(exp1) ++ findTuplesInExps(exp2) ++ findTuplesInTypes(tpe)
     case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) => findTuplesInExps(exp1) ++ findTuplesInExps(exp2) ++ findTuplesInExps(exp3)
+    case Expression.Branch(exp, branches, tpe, loc) => findTuplesInExps(exp) ++ branches.values.flatMap(findTuplesInExps).toSet
+    case Expression.JumpTo(sym, tpe, loc) => Set.empty
     case Expression.Let(sym, exp1, exp2, tpe, loc) => findTuplesInExps(exp1) ++ findTuplesInExps(exp2) ++ findTuplesInTypes(tpe)
     case Expression.Is(sym, tag, exp, loc) => findTuplesInExps(exp)
     case Expression.Tag(enum, tag, exp, tpe, loc) => findTuplesInExps(exp) ++ findTuplesInTypes(tpe)
