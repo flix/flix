@@ -27,7 +27,7 @@ import org.objectweb.asm
 import org.objectweb.asm.{ClassWriter, Label}
 import org.objectweb.asm.Opcodes._
 
-object TupleGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
+object TupleGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
 
   /**
     * Generate bytecode for tuples.
@@ -76,7 +76,7 @@ object TupleGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
     }
 
     // 1. Extract all tuple types from definitions.
-    val allTuples : List[Type] = root.defs.values.flatMap(x => findTuplesInExps(x.exp) ++ findTuplesInTypes(x.tpe)).toList
+    val allTuples: List[Type] = root.defs.values.flatMap(x => findTuplesInExps(x.exp) ++ findTuplesInTypes(x.tpe)).toList
 
 
     // 2. Group tuples based on representation of their fields.
@@ -89,7 +89,7 @@ object TupleGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
     val tupleClassByteCode : Map[List[WrappedType], (Array[Byte], Array[Byte])] = wrappedFields.map{ fields =>
       fields -> (compileTupleInterface(fields), compileTupleClass(fields))}.toMap
 
-    val e =  System.nanoTime() - t
+    val e = System.nanoTime() - t
     root.copy(byteCodes = root.byteCodes.copy(tupleByteCode = tupleClassByteCode), time = root.time.copy(tupleGen = e)).toSuccess
   }
 
@@ -149,14 +149,14 @@ object TupleGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
     * generate the following `hashCode()` method:
     *
     * public int hashCode() {
-    *   return ((0 * 7 + this.field0) * 7 + this.field1.hashCode()) * 7 + this.field2;
+    * return ((0 * 7 + this.field0) * 7 + this.field1.hashCode()) * 7 + this.field2;
     * }
     *
     * Next, we will generate the `toString()` method which will always throws an exception, since `toString` should not be called.
     * The `toString` method is always the following:
     *
-    * public String toString() throws Exception {
-    *   throw new Exception("equals method shouldn't be called")
+    * public String toString() {
+    *   return "Tuple(".concat(String.valueOf(this.field0)).concat(", ").concat(this.field1.toString()).concat(", ").concat(String.valueOf(this.field2)).concat(")");
     * }
     *
     * Finally, we generate the `equals(Obj)` method which will always throws an exception, since `equals` should not be called.
@@ -174,8 +174,8 @@ object TupleGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
      * Initialize the class writer. We override `getCommonSuperClass` method because `asm` implementation of this
      * function requires types to loaded so that they can be compared to each other.
      */
-    val visitor = new ClassWriter(ClassWriter.COMPUTE_FRAMES){
-      override def getCommonSuperClass(tpe1: String, tpe2: String) : String = {
+    val visitor = new ClassWriter(ClassWriter.COMPUTE_FRAMES) {
+      override def getCommonSuperClass(tpe1: String, tpe2: String): String = {
         asm.Type.getInternalName(Constants.objectClass)
       }
     }
@@ -186,7 +186,7 @@ object TupleGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
     val clazzName = TupleClassName(fields)
 
     // Super descriptor
-    val superDescriptor =  asm.Type.getInternalName(Constants.objectClass)
+    val superDescriptor = asm.Type.getInternalName(Constants.objectClass)
 
     // Descriptors of implemented interfaces
     val interfaceDescriptors = Array(decorate(interfName))
@@ -197,7 +197,7 @@ object TupleGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
     // Source of the class
     visitor.visitSource(decorate(clazzName), null)
 
-    fields.zipWithIndex.foreach{ case (field, ind) =>
+    fields.zipWithIndex.foreach { case (field, ind) =>
       // Descriptor of the field
       val desc = getWrappedTypeDescriptor(field)
 
@@ -298,9 +298,10 @@ object TupleGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
     *   this.field0 = var1;
     *   this.field1 = var2;
     * }
-    * @param visitor ClassWrite for emitting the code
+    *
+    * @param visitor   ClassWrite for emitting the code
     * @param className Qualified name of the class of tuple
-    * @param fields fields on the tuple class
+    * @param fields    fields on the tuple class
     */
    def compileTupleConstructor(visitor: ClassWriter, className: QualName, fields: List[WrappedType]) = {
     val desc = fields.map(getWrappedTypeDescriptor).mkString
@@ -316,14 +317,14 @@ object TupleGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
     constructor.visitMethodInsn(INVOKESPECIAL, asm.Type.getInternalName(clazz), "<init>",
       asm.Type.getConstructorDescriptor(ctor), false)
 
-    var offset : Int = 1
-    fields.zipWithIndex.foreach{ case (field, ind) =>
+    var offset: Int = 1
+    fields.zipWithIndex.foreach { case (field, ind) =>
       val desc = getWrappedTypeDescriptor(field)
       val iLoad = getLoadInstruction(field)
 
       constructor.visitVarInsn(ALOAD, 0)
       constructor.visitVarInsn(iLoad, offset)
-      constructor.visitFieldInsn(PUTFIELD, decorate(className), s"field$ind",desc)
+      constructor.visitFieldInsn(PUTFIELD, decorate(className), s"field$ind", desc)
 
       field match {
         case WrappedPrimitive(Type.Int64) | WrappedPrimitive(Type.Float64) => offset += 2
@@ -336,6 +337,68 @@ object TupleGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
     // Parameters of visit max are thrown away because visitor will calculate the frame and variable stack size
     constructor.visitMaxs(65535, 65535)
     constructor.visitEnd()
+  }
+
+  /**
+    * This method generates the `equals(Obj)` method which will return true if the object that implement the method `equals(Obj)`
+    * is equal to `Obj` and will return `false` otherwise. For doing this, at first we check that `Obj` is instance of
+    * the class that we are generating. Then we will check that the value of each field is equal for both `Obj` and `this`.
+    * If the field has a primitive type then we will use `==` to compare the field otherwise we will invoke `equals(Obj)`
+    * on one field with the other field as the parameter of `equals` method.
+    * For example for `(WrappedPrimitive(Bool), WrappedNonPrimitives(Set(..)))` we will create the following `equals` method:
+    *
+    * public boolean equals(Object var1) {
+    *   return var1 instanceof Tuple && ((Tuple)var1).field0 == this.field0 && ((Tuple)var1).field1.equals(this.field1);
+    * }
+    *
+    * @param visitor ClassWriter for emitting the code to the class
+    * @param className Qualified name of the class
+    * @param fields fields of the class
+    */
+  private def compileEqualsMethod(visitor: ClassWriter, className: TupleClassName, fields: List[WrappedType]) = {
+    val clazz = Constants.objectClass
+
+    // label for when the object is not instanceof tag case
+    val instNotEq = new Label()
+    // label for when the result of comparing an element of a tuple is false
+    val valueNotEq = new Label()
+    // MethodWriter to emit the code for method body
+    val method = visitor.visitMethod(ACC_PUBLIC, "equals", s"(${asm.Type.getDescriptor(clazz)})Z", null, null)
+
+    method.visitCode()
+
+    method.visitVarInsn(ALOAD, 1)
+    method.visitTypeInsn(INSTANCEOF, decorate(className)) // compare the types
+    method.visitJumpInsn(IFEQ, instNotEq) // if types don't match go to `instNotEq`
+
+    // We cast the argument to current type only once, then we just duplicate the top of the stack.
+    method.visitVarInsn(ALOAD, 1)
+    method.visitTypeInsn(CHECKCAST, decorate(className)) // cast to the current class
+
+    // Now we chack that all elements of tuple have equal values
+    fields.zipWithIndex.foreach { case (field, ind) =>
+      val desc = getWrappedTypeDescriptor(field)
+
+      method.visitInsn(DUP)
+      method.visitFieldInsn(GETFIELD, decorate(className), s"field$ind", desc)
+      method.visitVarInsn(ALOAD, 0)
+      method.visitFieldInsn(GETFIELD, decorate(className), s"field$ind", desc)
+      branchIfNotEqual(method, field, valueNotEq)
+    }
+    method.visitInsn(POP) // Popping the casted version of the argument
+    method.visitInsn(ICONST_1)
+    method.visitInsn(IRETURN)
+    method.visitLabel(valueNotEq) // if the code reaches here, it means that underlying values were not equal
+    method.visitInsn(POP) // Popping the casted version of the argument
+    method.visitLabel(instNotEq) // if we jump to this label it means the `instanceof` has returned false.
+    method.visitInsn(ICONST_0)
+
+    // Return
+    method.visitInsn(IRETURN)
+
+    // Parameters of visit max are thrown away because visitor will calculate the frame and variable stack size
+    method.visitMaxs(65535, 65535)
+    method.visitEnd()
   }
 
   /**
@@ -353,7 +416,7 @@ object TupleGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
     * *** `nameHash` is the hashCode of `className`
     * @param visitor ClassWriter to emit method to the class
     * @param className Qualified name of the class
-    * @param fields Fields of the class
+    * @param fields    Fields of the class
     */
   def compileHashCodeMethod(visitor: ClassWriter, className: QualName, fields: List[WrappedType]) = {
     // header of the `hashCode` function
@@ -395,9 +458,10 @@ object TupleGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
     * This method emits the code for `getBoxedValue()` method. This method returns an array of objects containing all the
     * elements of the tuple in the same order that they appear on the tuple but if the element is a primitive then it will
     * box the value.
-    * @param visitor ClassWriter to emit method to the class
+    *
+    * @param visitor   ClassWriter to emit method to the class
     * @param className Qualified name of the tuple class
-    * @param fields Fields of the class
+    * @param fields    Fields of the class
     */
   def compileGetBoxedValueMethod(visitor: ClassWriter, className: QualName, fields: List[WrappedType]) : Unit = {
     // header of the method
@@ -434,17 +498,19 @@ object TupleGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
 
   /**
     * This method search in the type for a tuple type
+    *
     * @param tpe type to be searched
     * @return tuple types nested in the type
     */
-  def findTuplesInTypes(tpe: Type) : Set[Type] = tpe match {
+  def findTuplesInTypes(tpe: Type): Set[Type] = tpe match {
     case Type.Apply(t, ts) if tpe.isTuple => ts.foldLeft(Set(tpe))((acc, tp) => acc ++ findTuplesInTypes(tp))
-    case Type.Apply(t, ts) =>  ts.foldLeft(Set.empty[Type])((acc, tp) => acc ++ findTuplesInTypes(tp))
+    case Type.Apply(t, ts) => ts.foldLeft(Set.empty[Type])((acc, tp) => acc ++ findTuplesInTypes(tp))
     case _ => Set.empty
   }
 
   /**
     * Find tuples from the given expression
+    *
     * @param e expression
     * @return A list containing all the tuples in the given expression
     */
@@ -462,24 +528,27 @@ object TupleGen extends Phase[ExecutableAst.Root, ExecutableAst.Root]{
     case Expression.BigInt(lit) => Set.empty
     case Expression.Str(lit) => Set.empty
     case Expression.Var(sym, tpe, loc) => findTuplesInTypes(tpe)
-    case Expression.Def(name, tpe, loc) => findTuplesInTypes(tpe)
-    case Expression.MkClosureDef(ref, freeVars, tpe, loc) => findTuplesInTypes(tpe)
+    case Expression.Closure(ref, freeVars, _, tpe, loc) => findTuplesInTypes(tpe)
+    case Expression.ApplyClo(exp, args, tpe, loc) => findTuplesInExps(exp) ++ args.foldLeft(findTuplesInTypes(tpe))((acc, elem) => acc ++ findTuplesInExps(elem))
     case Expression.ApplyDef(name, args, tpe, loc) => args.foldLeft(findTuplesInTypes(tpe))((acc, elem) => acc ++ findTuplesInExps(elem))
-    case Expression.ApplyTail(name, formals, actuals, tpe, loc) => actuals.foldLeft(findTuplesInTypes(tpe))((acc, elem) => acc ++ findTuplesInExps(elem))
+    case Expression.ApplyCloTail(exp, args, tpe, loc) => findTuplesInExps(exp) ++ args.foldLeft(findTuplesInTypes(tpe))((acc, elem) => acc ++ findTuplesInExps(elem))
+    case Expression.ApplyDefTail(name, args, tpe, loc) => args.foldLeft(findTuplesInTypes(tpe))((acc, elem) => acc ++ findTuplesInExps(elem))
+    case Expression.ApplySelfTail(name, formals, actuals, tpe, loc) => actuals.foldLeft(findTuplesInTypes(tpe))((acc, elem) => acc ++ findTuplesInExps(elem))
     case Expression.ApplyHook(hook, args, tpe, loc) => args.foldLeft(findTuplesInTypes(tpe))((acc, elem) => acc ++ findTuplesInExps(elem))
-    case Expression.ApplyClosure(exp, args, tpe, loc) => findTuplesInExps(exp) ++ args.foldLeft(findTuplesInTypes(tpe))((acc, elem) => acc ++ findTuplesInExps(elem))
-    case Expression.Unary(op, exp, tpe, loc) => findTuplesInExps(exp) ++ findTuplesInTypes(tpe)
-    case Expression.Binary(op, exp1, exp2, tpe, loc) => findTuplesInExps(exp1) ++ findTuplesInExps(exp2) ++ findTuplesInTypes(tpe)
+    case Expression.Unary(sop, op, exp, tpe, loc) => findTuplesInExps(exp) ++ findTuplesInTypes(tpe)
+    case Expression.Binary(sop, op, exp1, exp2, tpe, loc) => findTuplesInExps(exp1) ++ findTuplesInExps(exp2) ++ findTuplesInTypes(tpe)
     case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) => findTuplesInExps(exp1) ++ findTuplesInExps(exp2) ++ findTuplesInExps(exp3)
+    case Expression.Branch(exp, branches, tpe, loc) => findTuplesInExps(exp) ++ branches.values.flatMap(findTuplesInExps).toSet
+    case Expression.JumpTo(sym, tpe, loc) => Set.empty
     case Expression.Let(sym, exp1, exp2, tpe, loc) => findTuplesInExps(exp1) ++ findTuplesInExps(exp2) ++ findTuplesInTypes(tpe)
     case Expression.Is(sym, tag, exp, loc) => findTuplesInExps(exp)
     case Expression.Tag(enum, tag, exp, tpe, loc) => findTuplesInExps(exp) ++ findTuplesInTypes(tpe)
     case Expression.Untag(sym, tag, exp, tpe, loc) => findTuplesInExps(exp) ++ findTuplesInTypes(tpe)
     case Expression.Index(base, offset, tpe, loc) => findTuplesInExps(base) ++ findTuplesInTypes(tpe)
     case Expression.Tuple(elms, tpe, loc) => elms.foldLeft(findTuplesInTypes(tpe) + tpe)((acc, elem) => acc ++ findTuplesInExps(elem))
-    case Expression.Ref(exp, tpe, loc) => ??? // TODO
-    case Expression.Deref(exp, tpe, loc) => ??? // TODO
-    case Expression.Assign(exp1, exp2, tpe, loc) => ??? // TODO
+    case Expression.Ref(exp, tpe, loc) => findTuplesInExps(exp) ++ findTuplesInTypes(tpe)
+    case Expression.Deref(exp, tpe, loc) => findTuplesInExps(exp) ++ findTuplesInTypes(tpe)
+    case Expression.Assign(exp1, exp2, tpe, loc) => findTuplesInExps(exp1) ++ findTuplesInExps(exp2) ++ findTuplesInTypes(tpe)
     case Expression.LetRec(sym, exp1, exp2, tpe, loc) => ??? // TODO
     case Expression.Existential(params, exp, loc) => findTuplesInExps(exp)
     case Expression.Universal(params, exp, loc) => findTuplesInExps(exp)

@@ -45,9 +45,10 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       properties <- Declarations.Properties.typecheck(program)
     } yield {
       val strata = List(TypedAst.Stratum(constraints))
+      val specialOps = Map.empty[SpecialOperator, Map[Type, Symbol.DefnSym]]
       val currentTime = System.nanoTime()
       val time = program.time.copy(typer = currentTime - startTime)
-      TypedAst.Root(definitions, enums, lattices, tables, indexes, strata, properties, program.reachable, time)
+      TypedAst.Root(definitions, enums, lattices, tables, indexes, strata, properties, specialOps, program.reachable, time)
     }
 
     result match {
@@ -681,7 +682,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         case ResolvedAst.Expression.Tuple(elms, tvar, loc) =>
           for (
             elementTypes <- seqM(elms.map(visitExp));
-            resultType <- unifyM(tvar, Type.mkFTuple(elementTypes), loc)
+            resultType <- unifyM(tvar, Type.mkTuple(elementTypes), loc)
           ) yield resultType
 
         /*
@@ -1091,7 +1092,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         case ResolvedAst.Pattern.Tuple(elms, tvar, loc) =>
           for (
             elementTypes <- seqM(elms map visit);
-            resultType <- unifyM(tvar, Type.mkFTuple(elementTypes), loc)
+            resultType <- unifyM(tvar, Type.mkTuple(elementTypes), loc)
           ) yield resultType
       }
 

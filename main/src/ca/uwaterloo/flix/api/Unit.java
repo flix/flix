@@ -19,11 +19,17 @@ package ca.uwaterloo.flix.api;
 /**
  * UnitClass which is used to represent `Unit`
  */
-public class Unit {
+public final class Unit {
     /**
      * Instance of `Unit`
      */
     private static Unit INSTANCE = new Unit();
+
+    /**
+     * Private constructor
+     */
+    private Unit() {
+    }
 
     /**
      * Getter of `INSTANCE`
@@ -48,8 +54,4 @@ public class Unit {
         return obj == this;
     }
 
-    /**
-     * Private constructor
-     */
-    private Unit() {}
 }

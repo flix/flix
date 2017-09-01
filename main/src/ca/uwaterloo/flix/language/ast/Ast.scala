@@ -104,6 +104,16 @@ object Ast {
   }
 
   /**
+    * Companion object of [[Annotations]].
+    */
+  object Annotations {
+    /**
+      * The empty sequence of annotations.
+      */
+    val Empty: Annotations = Annotations(Nil)
+  }
+
+  /**
     * A sequence of annotations.
     */
   case class Annotations(annotations: List[Annotation]) {
@@ -208,5 +218,15 @@ object Ast {
     case object Inline extends Modifier
 
   }
+
+  /**
+    * Represents that the annotated element is introduced by the class `clazz`.
+    */
+  case class IntroducedBy(clazz: java.lang.Class[_]) extends scala.annotation.StaticAnnotation
+
+  /**
+    * Represents that the annotated element is eliminated by the class `clazz`.
+    */
+  case class EliminatedBy(clazz: java.lang.Class[_]) extends scala.annotation.StaticAnnotation
 
 }

@@ -61,6 +61,7 @@ object PrettyPrinter {
         case Expression.Str(lit) => vt.text("\"").text(lit).text("\"")
         case Expression.Var(sym, tpe, loc) => fmtSym(sym, vt)
         case Expression.Def(sym, tpe, loc) => fmtSym(sym, vt)
+
         case Expression.Lambda(fparams, body, tpe, loc) =>
           vt.text("(")
           for (fparam <- fparams) {
@@ -71,10 +72,27 @@ object PrettyPrinter {
           vt.text(" -> ")
           visitExp(body)
 
-        case Expression.Hook(hook, tpe, loc) => vt.text(hook.sym.toString)
+        case Expression.Apply(exp, args, tpe, loc) =>
+          visitExp(exp)
+          vt.text("(")
+          for (arg <- args) {
+            visitExp(arg)
+            vt.text(", ")
+          }
+          vt.text(")")
 
-        case Expression.MkClosureDef(ref, freeVars, tpe, loc) =>
-          vt.text("MkClosureRef(")
+        case Expression.LambdaClosure(lambda, freeVars, tpe, loc) =>
+          vt.text("LambdaClosure(")
+          visitExp(lambda)
+          vt.text(", [")
+          for (freeVar <- freeVars) {
+            fmtSym(freeVar.sym, vt)
+            vt.text(", ")
+          }
+          vt.text("])")
+
+        case Expression.Closure(ref, freeVars, tpe, loc) =>
+          vt.text("Closure(")
           visitExp(ref)
           vt.text(", [")
           for (freeVar <- freeVars) {
@@ -83,15 +101,14 @@ object PrettyPrinter {
           }
           vt.text("])")
 
-        case Expression.MkClosure(lambda, freeVars, tpe, loc) =>
-          vt.text("MkClosure(")
-          visitExp(lambda)
-          vt.text(", [")
-          for (freeVar <- freeVars) {
-            fmtSym(freeVar.sym, vt)
+        case Expression.ApplyClo(exp, args, tpe, loc) =>
+          visitExp(exp)
+          vt.text("(")
+          for (arg <- args) {
+            visitExp(arg)
             vt.text(", ")
           }
-          vt.text("])")
+          vt.text(")")
 
         case Expression.ApplyDef(sym, args, tpe, loc) =>
           fmtSym(sym, vt)
@@ -102,7 +119,25 @@ object PrettyPrinter {
           }
           vt.text(")")
 
-        case Expression.ApplyTail(name, formals, args, tpe, loc) =>
+        case Expression.ApplyCloTail(exp, args, tpe, loc) =>
+          visitExp(exp)
+          vt.text("(")
+          for (arg <- args) {
+            visitExp(arg)
+            vt.text(", ")
+          }
+          vt.text(")")
+
+        case Expression.ApplyDefTail(sym, args, tpe, loc) =>
+          fmtSym(sym, vt)
+          vt.text("(")
+          for (arg <- args) {
+            visitExp(arg)
+            vt.text(", ")
+          }
+          vt.text(")")
+
+        case Expression.ApplySelfTail(name, formals, args, tpe, loc) =>
           vt.text("ApplyTail")
           vt.text("(")
           for (arg <- args) {
@@ -110,6 +145,8 @@ object PrettyPrinter {
             vt.text(", ")
           }
           vt.text(")")
+
+        case Expression.Hook(hook, tpe, loc) => vt.text(hook.sym.toString)
 
         case Expression.ApplyHook(hook, args, tpe, loc) =>
           fmtSym(hook.sym, vt)
@@ -120,20 +157,11 @@ object PrettyPrinter {
           }
           vt.text(")")
 
-        case Expression.Apply(exp, args, tpe, loc) =>
-          visitExp(exp)
-          vt.text("(")
-          for (arg <- args) {
-            visitExp(arg)
-            vt.text(", ")
-          }
-          vt.text(")")
-
-        case Expression.Unary(op, exp, tpe, loc) =>
+        case Expression.Unary(sop, op, exp, tpe, loc) =>
           fmtUnaryOp(op, vt)
           visitExp(exp)
 
-        case Expression.Binary(op, exp1, exp2, tpe, loc) =>
+        case Expression.Binary(sop, op, exp1, exp2, tpe, loc) =>
           visitExp(exp1)
           vt.text(" ")
           fmtBinaryOp(op, vt)
@@ -154,11 +182,29 @@ object PrettyPrinter {
           vt << Dedent << NewLine
           vt.text("}")
 
+        case Expression.Branch(exp, branches, tpe, loc) =>
+          vt << "branch {" << Indent << NewLine
+          visitExp(exp)
+          vt << Dedent << NewLine
+          for ((sym, b) <- branches) {
+            fmtSym(sym, vt)
+            vt << ":" << Indent << NewLine
+            visitExp(b)
+            vt << Dedent << NewLine
+          }
+          vt << "}" << NewLine
+
+        case Expression.JumpTo(sym, tpe, loc) =>
+          vt << "jumpto" << " "
+          fmtSym(sym, vt)
+
         case Expression.Let(sym, exp1, exp2, tpe, loc) =>
           vt << Bold("let") << " "
           fmtSym(sym, vt)
           vt.text(" = ")
+          vt << Indent << NewLine
           visitExp(exp1)
+          vt << Dedent
           vt << ";" << NewLine
           visitExp(exp2)
 
@@ -239,7 +285,7 @@ object PrettyPrinter {
         case Expression.NativeField(field, tpe, loc) => vt << field.toString
 
         case Expression.NativeMethod(method, args, tpe, loc) =>
-          vt.text(method.toString)
+          vt.text(method.getDeclaringClass.getCanonicalName + "." + method.getName)
           vt.text("(")
           for (e <- args) {
             visitExp(e)
@@ -261,12 +307,16 @@ object PrettyPrinter {
       vt.text(p.tpe.toString)
     }
 
+    def fmtSym(sym: Symbol.VarSym, vt: VirtualTerminal): Unit = {
+      vt << Cyan(sym.toString)
+    }
+
     def fmtSym(sym: Symbol.DefnSym, vt: VirtualTerminal): Unit = {
       vt << Blue(sym.toString)
     }
 
-    def fmtSym(sym: Symbol.VarSym, vt: VirtualTerminal): Unit = {
-      vt << Cyan(sym.toString)
+    def fmtSym(sym: Symbol.LabelSym, vt: VirtualTerminal): Unit = {
+      vt << Magenta(sym.toString)
     }
 
     def fmtUnaryOp(op: UnaryOperator, vt: VirtualTerminal): Unit = op match {

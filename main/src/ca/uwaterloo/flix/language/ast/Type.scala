@@ -47,9 +47,17 @@ sealed trait Type {
     case Type.Native => Set.empty
     case Type.Ref => Set.empty
     case Type.Arrow(l) => Set.empty
-    case Type.FTuple(l) => Set.empty
+    case Type.Tuple(l) => Set.empty
     case Type.Enum(enumName, kind) => Set.empty
     case Type.Apply(t, ts) => t.typeVars ++ ts.flatMap(_.typeVars)
+  }
+
+  /**
+    * Returns `true` if `this` type is an arrow type.
+    */
+  def isArrow: Boolean = this match {
+    case Type.Apply(Type.Arrow(l), ts) => true
+    case _ => false
   }
 
   /**
@@ -65,8 +73,14 @@ sealed trait Type {
     * Returns `true` if `this` type is a tuple type.
     */
   def isTuple: Boolean = this match {
-    case Type.FTuple(l) => true
+    case Type.Tuple(l) => true
     case Type.Apply(t, ts) => t.isTuple
+    case _ => false
+  }
+
+  def isRef: Boolean = this match {
+    case Type.Ref => true
+    case Type.Apply(t, ts) => t.isRef
     case _ => false
   }
 
@@ -89,8 +103,8 @@ sealed trait Type {
     case Type.Native => "Native"
     case Type.Ref => "Ref"
     case Type.Arrow(l) => s"Arrow($l)"
-    case Type.FTuple(l) => s"Tuple($l)"
-    case Type.Apply(Type.FTuple(l), ts) => "(" + ts.mkString(", ") + ")"
+    case Type.Tuple(l) => s"Tuple($l)"
+    case Type.Apply(Type.Tuple(l), ts) => "(" + ts.mkString(", ") + ")"
     case Type.Apply(Type.Arrow(l), ts) => ts.mkString(" -> ")
     case Type.Apply(t, ts) => s"$t[${ts.mkString(", ")}]"
     case Type.Enum(enum, kind) => enum.toString
@@ -239,7 +253,7 @@ object Type {
   /**
     * A type constructor that represents tuples of the given `length`.
     */
-  case class FTuple(length: Int) extends Type {
+  case class Tuple(length: Int) extends Type {
     def kind: Kind = Kind.Arrow((0 until length).map(_ => Kind.Star).toList, Kind.Star)
   }
 
@@ -288,7 +302,12 @@ object Type {
   /**
     * Constructs the tuple type (A, B, ...) where the types are drawn from the list `ts`.
     */
-  def mkFTuple(ts: List[Type]): Type = Apply(FTuple(ts.length), ts)
+  def mkTuple(ts: Type*): Type = mkTuple(ts.toList)
+
+  /**
+    * Constructs the tuple type (A, B, ...) where the types are drawn from the list `ts`.
+    */
+  def mkTuple(ts: List[Type]): Type = Apply(Tuple(ts.length), ts)
 
   /**
     * Constructs the set type of A.
@@ -323,7 +342,7 @@ object Type {
       case Type.Native => Type.Native
       case Type.Ref => Type.Ref
       case Type.Arrow(l) => Type.Arrow(l)
-      case Type.FTuple(l) => Type.FTuple(l)
+      case Type.Tuple(l) => Type.Tuple(l)
       case Type.Apply(t, ts) => Type.Apply(visit(t), ts map visit)
       case Type.Enum(enum, kind) => Type.Enum(enum, kind)
     }

@@ -18,7 +18,6 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.{CompilationError, GenSym}
-import ca.uwaterloo.flix.language.ast.BinaryOperator.Equal
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.Validation
@@ -57,11 +56,12 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
     val indexes = root.indexes.map { case (k, v) => k -> simplify(v) }
     val strata = root.strata.map(s => simplify(s, toplevel))
     val properties = root.properties.map { p => simplify(p) }
+    val specialOps = root.specialOps
     val reachable = root.reachable
     val time = root.time
 
     val e = System.nanoTime() - t
-    SimplifiedAst.Root(defns ++ toplevel, enums, lattices, collections, indexes, strata, properties, reachable, time.copy(simplifier = e)).toSuccess
+    SimplifiedAst.Root(defns ++ toplevel, enums, lattices, collections, indexes, strata, properties, specialOps, reachable, time.copy(simplifier = e)).toSuccess
   }
 
   object Table {
@@ -128,10 +128,249 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         SimplifiedAst.Expression.Lambda(args map Simplifier.simplify, simplify(body), tpe, loc)
       case TypedAst.Expression.Apply(e, args, tpe, eff, loc) =>
         SimplifiedAst.Expression.Apply(simplify(e), args map simplify, tpe, loc)
+
       case TypedAst.Expression.Unary(op, e, tpe, eff, loc) =>
-        SimplifiedAst.Expression.Unary(op, simplify(e), tpe, loc)
+        /*
+         * Special Case 1: Unary Plus.
+         */
+        (op, e.tpe) match {
+          case (UnaryOperator.Plus, _) =>
+            // A unary plus has no semantic effect.
+            return simplify(e)
+          case _ => // fallthrough
+        }
+
+        /*
+         * Compute the semantic operator based on types.
+         */
+        val sop = op match {
+          case UnaryOperator.LogicalNot => SemanticOperator.BoolOp.Not
+          case UnaryOperator.BitwiseNegate => e.tpe match {
+            case Type.Int8 => SemanticOperator.Int8Op.Not
+            case Type.Int16 => SemanticOperator.Int16Op.Not
+            case Type.Int32 => SemanticOperator.Int32Op.Not
+            case Type.Int64 => SemanticOperator.Int64Op.Not
+            case Type.BigInt => SemanticOperator.BigIntOp.Not
+            case t => throw InternalCompilerException(s"Unexpected type: '$t' near ${loc.format}.")
+          }
+          case UnaryOperator.Plus =>
+            throw InternalCompilerException(s"Impossible.")
+          case UnaryOperator.Minus => e.tpe match {
+            case Type.Float32 => SemanticOperator.Float32Op.Neg
+            case Type.Float64 => SemanticOperator.Float64Op.Neg
+            case Type.Int8 => SemanticOperator.Int8Op.Neg
+            case Type.Int16 => SemanticOperator.Int16Op.Neg
+            case Type.Int32 => SemanticOperator.Int32Op.Neg
+            case Type.Int64 => SemanticOperator.Int64Op.Neg
+            case Type.BigInt => SemanticOperator.BigIntOp.Neg
+            case t => throw InternalCompilerException(s"Unexpected type: '$t' near ${loc.format}.")
+          }
+        }
+
+        SimplifiedAst.Expression.Unary(sop, op, simplify(e), tpe, loc)
+
       case TypedAst.Expression.Binary(op, e1, e2, tpe, eff, loc) =>
-        SimplifiedAst.Expression.Binary(op, simplify(e1), simplify(e2), tpe, loc)
+
+        /*
+         * Special Case 1: Unit
+         */
+        (op, e1.tpe, e2.tpe) match {
+          case (BinaryOperator.Equal, Type.Unit, Type.Unit) =>
+            // Unit is always equal to itself.
+            return SimplifiedAst.Expression.True
+          case (BinaryOperator.NotEqual, Type.Unit, Type.Unit) =>
+            // Unit is never not equal to itself.
+            return SimplifiedAst.Expression.False
+          case _ => // fallthrough
+        }
+
+        /*
+         * Compute the semantic operator based on types.
+         */
+        val sop = op match {
+          case BinaryOperator.Plus => e1.tpe match {
+            case Type.Float32 => SemanticOperator.Float32Op.Add
+            case Type.Float64 => SemanticOperator.Float64Op.Add
+            case Type.Int8 => SemanticOperator.Int8Op.Add
+            case Type.Int16 => SemanticOperator.Int16Op.Add
+            case Type.Int32 => SemanticOperator.Int32Op.Add
+            case Type.Int64 => SemanticOperator.Int64Op.Add
+            case Type.BigInt => SemanticOperator.BigIntOp.Add
+            case Type.Str => SemanticOperator.StringOp.Concat
+            case t => throw InternalCompilerException(s"Unexpected type: '$t' near ${loc.format}.")
+          }
+          case BinaryOperator.Minus => e1.tpe match {
+            case Type.Float32 => SemanticOperator.Float32Op.Sub
+            case Type.Float64 => SemanticOperator.Float64Op.Sub
+            case Type.Int8 => SemanticOperator.Int8Op.Sub
+            case Type.Int16 => SemanticOperator.Int16Op.Sub
+            case Type.Int32 => SemanticOperator.Int32Op.Sub
+            case Type.Int64 => SemanticOperator.Int64Op.Sub
+            case Type.BigInt => SemanticOperator.BigIntOp.Sub
+            case t => throw InternalCompilerException(s"Unexpected type: '$t' near ${loc.format}.")
+          }
+          case BinaryOperator.Times => e1.tpe match {
+            case Type.Float32 => SemanticOperator.Float32Op.Mul
+            case Type.Float64 => SemanticOperator.Float64Op.Mul
+            case Type.Int8 => SemanticOperator.Int8Op.Mul
+            case Type.Int16 => SemanticOperator.Int16Op.Mul
+            case Type.Int32 => SemanticOperator.Int32Op.Mul
+            case Type.Int64 => SemanticOperator.Int64Op.Mul
+            case Type.BigInt => SemanticOperator.BigIntOp.Mul
+            case t => throw InternalCompilerException(s"Unexpected type: '$t' near ${loc.format}.")
+          }
+          case BinaryOperator.Divide => e1.tpe match {
+            case Type.Float32 => SemanticOperator.Float32Op.Div
+            case Type.Float64 => SemanticOperator.Float64Op.Div
+            case Type.Int8 => SemanticOperator.Int8Op.Div
+            case Type.Int16 => SemanticOperator.Int16Op.Div
+            case Type.Int32 => SemanticOperator.Int32Op.Div
+            case Type.Int64 => SemanticOperator.Int64Op.Div
+            case Type.BigInt => SemanticOperator.BigIntOp.Div
+            case t => throw InternalCompilerException(s"Unexpected type: '$t' near ${loc.format}.")
+          }
+          case BinaryOperator.Modulo => e1.tpe match {
+            case Type.Float32 => SemanticOperator.Float32Op.Rem
+            case Type.Float64 => SemanticOperator.Float64Op.Rem
+            case Type.Int8 => SemanticOperator.Int8Op.Rem
+            case Type.Int16 => SemanticOperator.Int16Op.Rem
+            case Type.Int32 => SemanticOperator.Int32Op.Rem
+            case Type.Int64 => SemanticOperator.Int64Op.Rem
+            case Type.BigInt => SemanticOperator.BigIntOp.Rem
+            case t => throw InternalCompilerException(s"Unexpected type: '$t' near ${loc.format}.")
+          }
+          case BinaryOperator.Exponentiate => e1.tpe match {
+            case Type.Float32 => SemanticOperator.Float32Op.Exp
+            case Type.Float64 => SemanticOperator.Float64Op.Exp
+            case Type.Int8 => SemanticOperator.Int8Op.Exp
+            case Type.Int16 => SemanticOperator.Int16Op.Exp
+            case Type.Int32 => SemanticOperator.Int32Op.Exp
+            case Type.Int64 => SemanticOperator.Int64Op.Exp
+            case Type.BigInt => SemanticOperator.BigIntOp.Exp
+            case t => throw InternalCompilerException(s"Unexpected type: '$t' near ${loc.format}.")
+          }
+          case BinaryOperator.Less => e1.tpe match {
+            case Type.Char => SemanticOperator.CharOp.Lt
+            case Type.Float32 => SemanticOperator.Float32Op.Lt
+            case Type.Float64 => SemanticOperator.Float64Op.Lt
+            case Type.Int8 => SemanticOperator.Int8Op.Lt
+            case Type.Int16 => SemanticOperator.Int16Op.Lt
+            case Type.Int32 => SemanticOperator.Int32Op.Lt
+            case Type.Int64 => SemanticOperator.Int64Op.Lt
+            case Type.BigInt => SemanticOperator.BigIntOp.Lt
+            case t => throw InternalCompilerException(s"Unexpected type: '$t' near ${loc.format}.")
+          }
+          case BinaryOperator.LessEqual => e1.tpe match {
+            case Type.Char => SemanticOperator.CharOp.Le
+            case Type.Float32 => SemanticOperator.Float32Op.Le
+            case Type.Float64 => SemanticOperator.Float64Op.Le
+            case Type.Int8 => SemanticOperator.Int8Op.Le
+            case Type.Int16 => SemanticOperator.Int16Op.Le
+            case Type.Int32 => SemanticOperator.Int32Op.Le
+            case Type.Int64 => SemanticOperator.Int64Op.Le
+            case Type.BigInt => SemanticOperator.BigIntOp.Le
+            case t => throw InternalCompilerException(s"Unexpected type: '$t' near ${loc.format}.")
+          }
+          case BinaryOperator.Greater => e1.tpe match {
+            case Type.Char => SemanticOperator.CharOp.Gt
+            case Type.Float32 => SemanticOperator.Float32Op.Gt
+            case Type.Float64 => SemanticOperator.Float64Op.Gt
+            case Type.Int8 => SemanticOperator.Int8Op.Gt
+            case Type.Int16 => SemanticOperator.Int16Op.Gt
+            case Type.Int32 => SemanticOperator.Int32Op.Gt
+            case Type.Int64 => SemanticOperator.Int64Op.Gt
+            case Type.BigInt => SemanticOperator.BigIntOp.Gt
+            case t => throw InternalCompilerException(s"Unexpected type: '$t' near ${loc.format}.")
+          }
+          case BinaryOperator.GreaterEqual => e1.tpe match {
+            case Type.Char => SemanticOperator.CharOp.Ge
+            case Type.Float32 => SemanticOperator.Float32Op.Ge
+            case Type.Float64 => SemanticOperator.Float64Op.Ge
+            case Type.Int8 => SemanticOperator.Int8Op.Ge
+            case Type.Int16 => SemanticOperator.Int16Op.Ge
+            case Type.Int32 => SemanticOperator.Int32Op.Ge
+            case Type.Int64 => SemanticOperator.Int64Op.Ge
+            case Type.BigInt => SemanticOperator.BigIntOp.Ge
+            case t => throw InternalCompilerException(s"Unexpected type: '$t' near ${loc.format}.")
+          }
+          case BinaryOperator.Equal => e1.tpe match {
+            case Type.Bool => SemanticOperator.BoolOp.Eq
+            case Type.Char => SemanticOperator.CharOp.Eq
+            case Type.Float32 => SemanticOperator.Float32Op.Eq
+            case Type.Float64 => SemanticOperator.Float64Op.Eq
+            case Type.Int8 => SemanticOperator.Int8Op.Eq
+            case Type.Int16 => SemanticOperator.Int16Op.Eq
+            case Type.Int32 => SemanticOperator.Int32Op.Eq
+            case Type.Int64 => SemanticOperator.Int64Op.Eq
+            case Type.BigInt => SemanticOperator.BigIntOp.Eq
+            case Type.Str => SemanticOperator.StringOp.Eq
+            case t => throw InternalCompilerException(s"Unexpected type: '$t' near ${loc.format}.")
+          }
+          case BinaryOperator.NotEqual => e1.tpe match {
+            case Type.Bool => SemanticOperator.BoolOp.Neq
+            case Type.Char => SemanticOperator.CharOp.Neq
+            case Type.Float32 => SemanticOperator.Float32Op.Neq
+            case Type.Float64 => SemanticOperator.Float64Op.Neq
+            case Type.Int8 => SemanticOperator.Int8Op.Neq
+            case Type.Int16 => SemanticOperator.Int16Op.Neq
+            case Type.Int32 => SemanticOperator.Int32Op.Neq
+            case Type.Int64 => SemanticOperator.Int64Op.Neq
+            case Type.BigInt => SemanticOperator.BigIntOp.Neq
+            case Type.Str => SemanticOperator.StringOp.Neq
+            case t => throw InternalCompilerException(s"Unexpected type: '$t' near ${loc.format}.")
+          }
+          case BinaryOperator.LogicalAnd => e1.tpe match {
+            case Type.Bool => SemanticOperator.BoolOp.And
+            case t => throw InternalCompilerException(s"Unexpected type: '$t' near ${loc.format}.")
+          }
+          case BinaryOperator.LogicalOr => e1.tpe match {
+            case Type.Bool => SemanticOperator.BoolOp.Or
+            case t => throw InternalCompilerException(s"Unexpected type: '$t' near ${loc.format}.")
+          }
+          case BinaryOperator.BitwiseAnd => e1.tpe match {
+            case Type.Int8 => SemanticOperator.Int8Op.And
+            case Type.Int16 => SemanticOperator.Int16Op.And
+            case Type.Int32 => SemanticOperator.Int32Op.And
+            case Type.Int64 => SemanticOperator.Int64Op.And
+            case Type.BigInt => SemanticOperator.BigIntOp.And
+            case t => throw InternalCompilerException(s"Unexpected type: '$t' near ${loc.format}.")
+          }
+          case BinaryOperator.BitwiseOr => e1.tpe match {
+            case Type.Int8 => SemanticOperator.Int8Op.Or
+            case Type.Int16 => SemanticOperator.Int16Op.Or
+            case Type.Int32 => SemanticOperator.Int32Op.Or
+            case Type.Int64 => SemanticOperator.Int64Op.Or
+            case Type.BigInt => SemanticOperator.BigIntOp.Or
+            case t => throw InternalCompilerException(s"Unexpected type: '$t' near ${loc.format}.")
+          }
+          case BinaryOperator.BitwiseXor => e1.tpe match {
+            case Type.Int8 => SemanticOperator.Int8Op.Xor
+            case Type.Int16 => SemanticOperator.Int16Op.Xor
+            case Type.Int32 => SemanticOperator.Int32Op.Xor
+            case Type.Int64 => SemanticOperator.Int64Op.Xor
+            case Type.BigInt => SemanticOperator.BigIntOp.Xor
+            case t => throw InternalCompilerException(s"Unexpected type: '$t' near ${loc.format}.")
+          }
+          case BinaryOperator.BitwiseLeftShift => e1.tpe match {
+            case Type.Int8 => SemanticOperator.Int8Op.Shl
+            case Type.Int16 => SemanticOperator.Int16Op.Shl
+            case Type.Int32 => SemanticOperator.Int32Op.Shl
+            case Type.Int64 => SemanticOperator.Int64Op.Shl
+            case Type.BigInt => SemanticOperator.BigIntOp.Shl
+            case t => throw InternalCompilerException(s"Unexpected type: '$t' near ${loc.format}.")
+          }
+          case BinaryOperator.BitwiseRightShift => e1.tpe match {
+            case Type.Int8 => SemanticOperator.Int8Op.Shr
+            case Type.Int16 => SemanticOperator.Int16Op.Shr
+            case Type.Int32 => SemanticOperator.Int32Op.Shr
+            case Type.Int64 => SemanticOperator.Int64Op.Shr
+            case Type.BigInt => SemanticOperator.BigIntOp.Shr
+            case t => throw InternalCompilerException(s"Unexpected type: '$t' near ${loc.format}.")
+          }
+        }
+
+        SimplifiedAst.Expression.Binary(sop, op, simplify(e1), simplify(e2), tpe, loc)
+
       case TypedAst.Expression.IfThenElse(e1, e2, e3, tpe, eff, loc) =>
         SimplifiedAst.Expression.IfThenElse(simplify(e1), simplify(e2), simplify(e3), tpe, loc)
       case TypedAst.Expression.Switch(rules, tpe, eff, loc) =>
@@ -339,7 +578,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         */
       case (lit :: ps, v :: vs) if isLiteral(lit) =>
         val exp = simplify(ps, vs, guard, succ, fail)
-        val cond = SExp.Binary(Equal, pat2exp(lit), SExp.Var(v, lit.tpe, lit.loc), Type.Bool, lit.loc)
+        val cond = mkEqual(pat2exp(lit), SExp.Var(v, lit.tpe, lit.loc), lit.loc)
         SExp.IfThenElse(cond, exp, fail, succ.tpe, lit.loc)
 
       /**
@@ -402,6 +641,40 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case TypedAst.Pattern.Tuple(elms, tpe, loc) =>
         val es = elms map translate
         SimplifiedAst.Pattern.Tuple(es, tpe, loc)
+    }
+
+    /**
+      * Returns an expression that compares the two given expressions `e1` and `e2` for equality.
+      */
+    private def mkEqual(e1: SimplifiedAst.Expression, e2: SimplifiedAst.Expression, loc: SourceLocation): SimplifiedAst.Expression = {
+      /*
+       * Special Case 1: Unit
+       */
+      (e1.tpe, e2.tpe) match {
+        case (Type.Unit, Type.Unit) =>
+          // Unit is always equal to itself.
+          return SimplifiedAst.Expression.True
+        case _ => // fallthrough
+      }
+
+      /*
+       * Compute the semantic operator.
+       */
+      val sop = e1.tpe match {
+        case Type.Bool => SemanticOperator.BoolOp.Eq
+        case Type.Char => SemanticOperator.CharOp.Eq
+        case Type.Float32 => SemanticOperator.Float32Op.Eq
+        case Type.Float64 => SemanticOperator.Float64Op.Eq
+        case Type.Int8 => SemanticOperator.Int8Op.Eq
+        case Type.Int16 => SemanticOperator.Int16Op.Eq
+        case Type.Int32 => SemanticOperator.Int32Op.Eq
+        case Type.Int64 => SemanticOperator.Int64Op.Eq
+        case Type.BigInt => SemanticOperator.BigIntOp.Eq
+        case Type.Str => SemanticOperator.StringOp.Eq
+        case t => throw InternalCompilerException(s"Unexpected type: '$t'.")
+      }
+
+      SExp.Binary(sop, BinaryOperator.Equal, e1, e2, Type.Bool, loc)
     }
 
   }
@@ -569,8 +842,6 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
     case TypedAst.Pattern.Int64(lit, loc) => true
     case TypedAst.Pattern.BigInt(lit, loc) => true
     case TypedAst.Pattern.Str(lit, loc) => true
-    case TypedAst.Pattern.Tag(_, _, p, _, _) => isLiteral(p)
-    case TypedAst.Pattern.Tuple(elms, _, _) => elms forall isLiteral
     case _ => false
   }
 
@@ -639,24 +910,25 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         case Some(replacement) => SimplifiedAst.Expression.Var(replacement, tpe, loc)
       }
       case SimplifiedAst.Expression.Def(name, tpe, loc) => e
-      case SimplifiedAst.Expression.Lambda(fparams, body, tpe, loc) => ??? // TODO
+      case SimplifiedAst.Expression.Lambda(fparams, body, tpe, loc) =>
+        SimplifiedAst.Expression.Lambda(fparams, visit(body), tpe, loc)
       case SimplifiedAst.Expression.Hook(hook, tpe, loc) => e
-      case SimplifiedAst.Expression.MkClosureDef(ref, freeVars, tpe, loc) => e
-      case SimplifiedAst.Expression.MkClosure(lambda, freeVars, tpe, loc) => ??? // TODO
-      case SimplifiedAst.Expression.ApplyDef(name, args, tpe, loc) =>
-        SimplifiedAst.Expression.ApplyDef(name, args.map(visit), tpe, loc)
-      case SimplifiedAst.Expression.ApplyTail(name, formals, args, tpe, loc) =>
-        SimplifiedAst.Expression.ApplyTail(name, formals, args.map(visit), tpe, loc)
-      case SimplifiedAst.Expression.ApplyHook(hook, args, tpe, loc) =>
-        SimplifiedAst.Expression.ApplyHook(hook, args.map(visit), tpe, loc)
       case SimplifiedAst.Expression.Apply(exp, args, tpe, loc) =>
         SimplifiedAst.Expression.Apply(visit(exp), args.map(visit), tpe, loc)
-      case SimplifiedAst.Expression.Unary(op, exp, tpe, loc) =>
-        SimplifiedAst.Expression.Unary(op, visit(exp), tpe, loc)
-      case SimplifiedAst.Expression.Binary(op, exp1, exp2, tpe, loc) =>
-        SimplifiedAst.Expression.Binary(op, visit(exp1), visit(exp2), tpe, loc)
+      case SimplifiedAst.Expression.Unary(sop, op, exp, tpe, loc) =>
+        SimplifiedAst.Expression.Unary(sop, op, visit(exp), tpe, loc)
+      case SimplifiedAst.Expression.Binary(sop, op, exp1, exp2, tpe, loc) =>
+        SimplifiedAst.Expression.Binary(sop, op, visit(exp1), visit(exp2), tpe, loc)
       case SimplifiedAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
         SimplifiedAst.Expression.IfThenElse(visit(exp1), visit(exp2), visit(exp3), tpe, loc)
+      case SimplifiedAst.Expression.Branch(exp, branches, tpe, loc) =>
+        val e = visit(exp)
+        val bs = branches map {
+          case (sym, br) => sym -> br
+        }
+        SimplifiedAst.Expression.Branch(e, bs, tpe, loc)
+      case SimplifiedAst.Expression.JumpTo(sym, tpe, loc) =>
+        SimplifiedAst.Expression.JumpTo(sym, tpe, loc)
       case SimplifiedAst.Expression.Let(sym, exp1, exp2, tpe, loc) =>
         SimplifiedAst.Expression.Let(sym, visit(exp1), visit(exp2), tpe, loc)
       case SimplifiedAst.Expression.LetRec(sym, exp1, exp2, tpe, loc) =>
@@ -692,6 +964,15 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case SimplifiedAst.Expression.UserError(tpe, loc) => e
       case SimplifiedAst.Expression.MatchError(tpe, loc) => e
       case SimplifiedAst.Expression.SwitchError(tpe, loc) => e
+
+      case SimplifiedAst.Expression.Closure(ref, freeVars, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
+      case SimplifiedAst.Expression.LambdaClosure(lambda, freeVars, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
+      case SimplifiedAst.Expression.ApplyClo(exp, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
+      case SimplifiedAst.Expression.ApplyDef(name, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
+      case SimplifiedAst.Expression.ApplyCloTail(exp, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
+      case SimplifiedAst.Expression.ApplyDefTail(sym, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
+      case SimplifiedAst.Expression.ApplySelfTail(name, formals, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
+      case SimplifiedAst.Expression.ApplyHook(hook, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
     }
 
     visit(exp0)

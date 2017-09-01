@@ -52,37 +52,6 @@ class TestBackend extends FunSuite {
       this
     }
 
-    def recursiveGetBoxed(res : AnyRef) : AnyRef = res match {
-      case r : Enum if r.isInstanceOf[Tuple] => {
-        val boxedEnumField = r.asInstanceOf[Tuple].getBoxedValue().map(recursiveGetBoxed)
-        new Value.Tag(null, r.getTag, boxedEnumField)
-      }
-      case r : Enum => {
-        new Value.Tag(null, r.getTag, recursiveGetBoxed(r.getBoxedEnumField()))
-      }
-      case r : Tuple => {
-        r.getBoxedValue().map(recursiveGetBoxed)
-      }
-      case r : UnitClass => Value.Unit
-      case x => x
-    }
-
-
-    def runTest(expected: AnyRef, const: String): Unit = {
-      withClue(s"interpreted value $const:") { interpreted.getConstant(const) }
-      withClue(s"compiled value $const:") { recursiveGetBoxed(compiled.getConstant(const)) }
-    }
-
-    def runInterceptTest[T <: AnyRef](const:String)(implicit manifest: Manifest[T]): Unit = {
-      withClue(s"interpreted value $const:") { intercept[T](interpreted.getConstant(const)) }
-      withClue(s"compiled value $const:") { intercept[T](compiled.getConstant(const)) }
-    }
-
-    def checkModel(expected: AnyRef, model: String): Unit = {
-      withClue(s"interpreted model $model:") { assertResult(expected)(interpreted.getRelation(model).toSet) }
-      withClue(s"compiled model $model:") { assertResult(expected)(compiled.getRelation(model).map(x => x.map(recursiveGetBoxed)).toSet) }
-    }
-
     // By default, solve the Flix program immediately.
     // But in some cases we want to defer solving, so we can add initially reachable function symbols or hooks to native functions.
     if (solve) run()

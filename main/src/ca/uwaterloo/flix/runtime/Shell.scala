@@ -227,8 +227,8 @@ class Shell(files: List[File], main: Option[String], options: Options) {
           model = m
           if (main.nonEmpty) {
             val name = main.get
-            val evalTimer = new Timer(m.getConstant(name))
-            Console.println(s"$name returned `${Value.pretty(evalTimer.getResult)}' (compile: ${timer.fmt}, execute: ${evalTimer.fmt})")
+            val evalTimer = new Timer(m.evalToString(name))
+            Console.println(s"$name returned `${evalTimer.getResult}' (compile: ${timer.fmt}, execute: ${evalTimer.fmt})")
           }
         case Validation.Failure(errors) =>
           errors.foreach(e => println(e.message.fmt))

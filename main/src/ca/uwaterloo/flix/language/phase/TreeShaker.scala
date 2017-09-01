@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.{SimplifiedAst, Symbol}
 import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expression
-import ca.uwaterloo.flix.util.Validation
+import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 import ca.uwaterloo.flix.util.Validation._
 
 import scala.collection.mutable
@@ -34,7 +34,8 @@ import scala.collection.mutable
   * (b) Appears in a fact or a rule as a filter/transfer function.
   * (c) Appears in a lattice declaration.
   * (d) Appears in a property declaration.
-  * (e) Appears in a function which itself is reachable.
+  * (e) Appears as a special op.
+  * (f) Appears in a function which itself is reachable.
   */
 
 object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
@@ -127,15 +128,18 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.Def(sym, tpe, loc) => Set(sym)
       case Expression.Lambda(args, body, tpe, loc) => visitExp(body)
       case Expression.Hook(hook, tpe, loc) => Set(hook.sym)
-      case Expression.MkClosure(lambda, freeVars, tpe, loc) => visitExp(lambda)
-      case Expression.MkClosureDef(ref, freeVars, tpe, loc) => visitExp(ref)
+      case Expression.Closure(ref, freeVars, tpe, loc) => visitExp(ref)
+      case Expression.ApplyClo(exp, args, tpe, loc) => visitExps(args) ++ visitExp(exp)
       case Expression.ApplyDef(sym, args, tpe, loc) => visitExps(args) + sym
-      case Expression.ApplyTail(sym, formals, actuals, tpe, loc) => visitExps(actuals) + sym
+      case Expression.ApplyCloTail(exp, args, tpe, loc) => visitExps(args) ++ visitExp(exp)
+      case Expression.ApplyDefTail(sym, args, tpe, loc) => visitExps(args) + sym
+      case Expression.ApplySelfTail(sym, formals, actuals, tpe, loc) => visitExps(actuals) + sym
       case Expression.ApplyHook(hook, args, tpe, loc) => visitExps(args)
-      case Expression.Apply(exp, args, tpe, loc) => visitExps(args) ++ visitExp(exp)
-      case Expression.Unary(op, exp, tpe, loc) => visitExp(exp)
-      case Expression.Binary(op, exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2)
+      case Expression.Unary(sop, op, exp, tpe, loc) => visitExp(exp)
+      case Expression.Binary(sop, op, exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2)
       case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
+      case Expression.Branch(exp, branches, tpe, loc) => visitExp(exp) ++ visitExps(branches.values.toList)
+      case Expression.JumpTo(sym, tpe, loc) => Set.empty
       case Expression.Let(sym, exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2)
       case Expression.LetRec(sym, exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2)
       case Expression.Is(sym, tag, exp, loc) => visitExp(exp)
@@ -154,6 +158,9 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.UserError(tpe, loc) => Set.empty
       case Expression.MatchError(tpe, loc) => Set.empty
       case Expression.SwitchError(tpe, loc) => Set.empty
+
+      case Expression.LambdaClosure(lambda, freeVars, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${e0.getClass.getSimpleName}'.")
+      case Expression.Apply(exp, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${e0.getClass.getSimpleName}'.")
     }
 
     /**
@@ -235,7 +242,14 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     /*
      * Find reachable functions that:
      *
-     * (e) Appear in a function which itself is reachable.
+     * (e) Appear as a special op.
+     */
+    reachableFunctions ++= root.specialOps.values.flatMap(_.values)
+
+    /*
+     * Find reachable functions that:
+     *
+     * (f) Appear in a function which itself is reachable.
      */
     reachableFunctions.foreach {
       root.defs.get(_) match {

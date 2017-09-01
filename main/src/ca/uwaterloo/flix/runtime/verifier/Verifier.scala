@@ -159,7 +159,7 @@ object Verifier extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     val env0 = Map.empty: SymbolicEvaluator.Environment
 
     // perform symbolic execution to obtain all possible paths.
-    val contexts = SymbolicEvaluator.eval(p.exp, env0, enumerate(root, genSym), root)
+    val contexts = SymbolicEvaluator.eval(p.exp, env0, Map.empty, enumerate(root, genSym), root)
 
     // a boolean to indicate whether to continue checking path satisfiability.
     var continue: Boolean = true
@@ -507,7 +507,7 @@ object Verifier extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
             case e => SymVal.Tag(tag, e)
           }
         }.toList
-      case Type.Apply(Type.FTuple(_), elms) =>
+      case Type.Apply(Type.Tuple(_), elms) =>
         def visitn(xs: List[Type]): List[List[SymVal]] = xs match {
           case Nil => List(Nil)
           case t :: ts => visitn(ts) flatMap {

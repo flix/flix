@@ -62,6 +62,15 @@ object Main {
       System.exit(1)
     }
 
+    // compute the enabled optimizations.
+    val optimizations = Optimization.All.filter {
+      case Optimization.ClosureElimination => !cmdOpts.xnoclosureelim
+      case Optimization.EnumCompaction => !cmdOpts.xnocompact
+      case Optimization.TagTupleFusion => !cmdOpts.xnofusion
+      case Optimization.TailRecursion => !cmdOpts.xnotailrec
+      case Optimization.Uncurrying => !cmdOpts.xnouncurry
+    }
+
     // construct flix options.
     val options = Options.Default.copy(
       core = cmdOpts.xcore,
@@ -69,7 +78,7 @@ object Main {
       documentor = cmdOpts.documentor,
       evaluation = if (cmdOpts.xinterpreter) Evaluation.Interpreted else Evaluation.Compiled,
       impure = cmdOpts.ximpure,
-      optimize = cmdOpts.optimize,
+      optimizations = Optimization.All,
       monitor = cmdOpts.monitor,
       quickchecker = cmdOpts.quickchecker,
       safe = cmdOpts.xsafe,
@@ -131,8 +140,8 @@ object Main {
           val main = cmdOpts.main
           if (main.nonEmpty) {
             val name = main.get
-            val evalTimer = new Timer(model.getConstant(name))
-            Console.println(s"$name returned `${Value.pretty(evalTimer.getResult)}' (compile: ${timer.fmt}, execute: ${evalTimer.fmt})")
+            val evalTimer = new Timer(model.evalToString(name))
+            Console.println(s"$name returned `${evalTimer.getResult}' (compile: ${timer.fmt}, execute: ${evalTimer.fmt})")
           }
 
           if (cmdOpts.benchmark) {
@@ -190,7 +199,6 @@ object Main {
                      listen: Option[Int] = None,
                      main: Option[String] = None,
                      monitor: Boolean = false,
-                     optimize: Boolean = false,
                      pipe: Boolean = false,
                      print: Seq[String] = Seq(),
                      quickchecker: Boolean = false,
@@ -205,6 +213,12 @@ object Main {
                      ximpure: Boolean = false,
                      xinterpreter: Boolean = false,
                      xinvariants: Boolean = false,
+                     xnoclosureelim: Boolean = false,
+                     xnocompact: Boolean = false,
+                     xnofusion: Boolean = false,
+                     xnoinline: Boolean = false,
+                     xnotailrec: Boolean = false,
+                     xnouncurry: Boolean = false,
                      xsafe: Boolean = false,
                      files: Seq[File] = Seq())
 
@@ -252,10 +266,6 @@ object Main {
       // Monitor.
       opt[Unit]("monitor").action((_, c) => c.copy(monitor = true)).
         text("enables the debugger and profiler.")
-
-      // Optimize.
-      opt[Unit]("optimize").action((_, c) => c.copy(optimize = true))
-        .text("enables compiler optimizations.")
 
       // Pipe.
       opt[Unit]("pipe").action((_, c) => c.copy(pipe = true)).
@@ -324,6 +334,30 @@ object Main {
       // Xinvariants.
       opt[Unit]("Xinvariants").action((_, c) => c.copy(xinvariants = true)).
         text("[experimental] enables compiler invariants.")
+
+      // Xno-closure-elim
+      opt[Unit]("Xno-closure-elim").action((_, c) => c.copy(xnoclosureelim = true)).
+        text("[experimental] disables closure elimination.")
+
+      // Xno-compact
+      opt[Unit]("Xno-compact").action((_, c) => c.copy(xnocompact = true)).
+        text("[experimental] disables compact enums.")
+
+      // Xno-fusion
+      opt[Unit]("Xno-fusion").action((_, c) => c.copy(xnofusion = true)).
+        text("[experimental] disables tag and tuple fusion.")
+
+      // Xno-inline
+      opt[Unit]("Xno-inline").action((_, c) => c.copy(xnoinline = true)).
+        text("[experimental] disables inlining.")
+
+      // Xno-tailrec
+      opt[Unit]("Xno-tailrec").action((_, c) => c.copy(xnotailrec = true)).
+        text("[experimental] disables tail recursion optimization.")
+
+      // Xno-uncurry
+      opt[Unit]("Xno-uncurry").action((_, c) => c.copy(xnouncurry = true)).
+        text("[experimental] disables uncurrying.")
 
       // Xsafe.
       opt[Unit]("Xsafe").action((_, c) => c.copy(xsafe = true)).

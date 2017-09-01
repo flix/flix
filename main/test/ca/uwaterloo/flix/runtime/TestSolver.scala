@@ -93,7 +93,6 @@ class TestSolver extends FunSuite {
       """.stripMargin
 
     val model = new Flix().setOptions(opts).addStr(s).solve().get
-    val A = model.getRelation("A").toList
   }
 
   test("Cross02") {
@@ -109,7 +108,6 @@ class TestSolver extends FunSuite {
       """.stripMargin
 
     val model = new Flix().setOptions(opts).addStr(s).solve().get
-    val A = model.getRelation("A").toList
   }
 
   test("Cross03") {
@@ -124,7 +122,6 @@ class TestSolver extends FunSuite {
       """.stripMargin
 
     val model = new Flix().setOptions(opts).addStr(s).solve().get
-    val A = model.getRelation("A").toList
   }
 
   test("Cross04") {
@@ -139,7 +136,6 @@ class TestSolver extends FunSuite {
       """.stripMargin
 
     val model = new Flix().setOptions(opts).addStr(s).solve().get
-    val A = model.getRelation("A").toList
   }
 
   test("Cross05") {
@@ -155,7 +151,6 @@ class TestSolver extends FunSuite {
       """.stripMargin
 
     val model = new Flix().setOptions(opts).addStr(s).solve().get
-    val A = model.getRelation("A").toList
   }
 
   test("Cross06") {
@@ -170,7 +165,6 @@ class TestSolver extends FunSuite {
       """.stripMargin
 
     val model = new Flix().setOptions(opts).addStr(s).solve().get
-    val A = model.getRelation("A").toList
   }
 
   test("Cross07") {
@@ -185,7 +179,6 @@ class TestSolver extends FunSuite {
       """.stripMargin
 
     val model = new Flix().setOptions(opts).addStr(s).solve().get
-    val A = model.getRelation("A").toList
   }
 
   test("Cross08") {
@@ -201,7 +194,6 @@ class TestSolver extends FunSuite {
       """.stripMargin
 
     val model = new Flix().setOptions(opts).addStr(s).solve().get
-    val R = model.getRelation("R").toList
   }
 
   test("Cross09") {
@@ -220,7 +212,6 @@ class TestSolver extends FunSuite {
       """.stripMargin
 
     val model = new Flix().setOptions(opts).addStr(s).solve().get
-    val R = model.getRelation("R").toList
   }
 
   test("Cross10") {
@@ -239,7 +230,6 @@ class TestSolver extends FunSuite {
       """.stripMargin
 
     val model = new Flix().setOptions(opts).addStr(s).solve().get
-    val R = model.getRelation("R").toList
   }
 
   test("Cross11") {
@@ -256,7 +246,6 @@ class TestSolver extends FunSuite {
       """.stripMargin
 
     val model = new Flix().setOptions(opts).addStr(s).solve().get
-    val R = model.getRelation("R").toList
   }
 
   test("Cross12") {
@@ -275,7 +264,6 @@ class TestSolver extends FunSuite {
       """.stripMargin
 
     val model = new Flix().setOptions(opts).addStr(s).solve().get
-    val R = model.getRelation("R").toList
   }
 
   test("Cross13") {
@@ -294,9 +282,6 @@ class TestSolver extends FunSuite {
       """.stripMargin
 
     val model = new Flix().setOptions(opts).addStr(s).solve().get
-    val A = model.getRelation("A").toList
-    val B = model.getRelation("B").toList
-    val C = model.getRelation("C").toList
   }
 
   test("Cross14") {
@@ -315,8 +300,6 @@ class TestSolver extends FunSuite {
       """.stripMargin
 
     val model = new Flix().setOptions(opts).addStr(s).solve().get
-    val R = model.getRelation("R").toList
-    assert(R.isEmpty)
   }
 
   test("Wildcard01") {
@@ -335,7 +318,6 @@ class TestSolver extends FunSuite {
       """.stripMargin
 
     val model = new Flix().setOptions(opts).addStr(s).solve().get
-    val C = model.getRelation("C").toList
   }
 
   test("Lattice01") {
@@ -349,7 +331,6 @@ class TestSolver extends FunSuite {
       """.stripMargin
 
     val model = new Flix().setOptions(opts).addStr(Parity.Definition).addStr(s).solve().get
-    val A = model.getLattice("A").toMap
   }
 
   test("Lattice02") {
@@ -362,7 +343,6 @@ class TestSolver extends FunSuite {
       """.stripMargin
 
     val model = new Flix().setOptions(opts).addStr(Parity.Definition).addStr(s).solve().get
-    val A = model.getLattice("A").toMap
   }
 
   test("Lattice03") {
@@ -377,7 +357,6 @@ class TestSolver extends FunSuite {
       """.stripMargin
 
     val model = new Flix().setOptions(opts).addStr(Parity.Definition).addStr(s).solve().get
-    val A = model.getLattice("A").toMap
   }
 
   test("NotEqual01") {
@@ -393,7 +372,6 @@ class TestSolver extends FunSuite {
       """.stripMargin
 
     val model = new Flix().setOptions(opts).addStr(s).solve().get
-    val B = model.getRelation("B").toList
   }
 
   test("NotEqual02") {
@@ -410,7 +388,6 @@ class TestSolver extends FunSuite {
       """.stripMargin
 
     val model = new Flix().setOptions(opts).addStr(s).solve().get
-    val B = model.getRelation("B").toList
   }
 
   test("NotEqual03") {
@@ -428,7 +405,6 @@ class TestSolver extends FunSuite {
       """.stripMargin
 
     val model = new Flix().setOptions(opts).addStr(s).solve().get
-    val B = model.getRelation("B").toList
   }
 
   test("Timeout") {
@@ -455,8 +431,6 @@ class TestSolver extends FunSuite {
 
     val flix = new Flix().addStr(s).setOptions(opts)
     val model = flix.solve().get
-
-    val A = model.getRelation("A").toSet
   }
 
   test("Transfer02") {
@@ -471,8 +445,6 @@ class TestSolver extends FunSuite {
 
     val flix = new Flix().addStr(s).setOptions(opts)
     val model = flix.solve().get
-
-    val A = model.getRelation("A").toSet
   }
 
   test("Transfer03") {
@@ -488,8 +460,6 @@ class TestSolver extends FunSuite {
 
     val flix = new Flix().addStr(s).setOptions(opts)
     val model = flix.solve().get
-
-    val A = model.getRelation("A").toSet
   }
 
 }

@@ -481,7 +481,7 @@ def step(e0: Expression, m0: State): Outcome =
         //
         case (Print(v), State(h0, s0, f0, r0, q0)) =>
             // Discard the value in the sequence.
-            Next(recompose(println!(v), ec), State(h0, s0, f0, r0, q0))
+            Next(recompose(v, ec), State(h0, s0, f0, r0, q0))
 
         //
         //  E-Promisify
@@ -671,7 +671,7 @@ def alpha(e0: Expression, m: Map[Variable, Variable]): Expression = match e0 wit
 ///
 /// Repeatedly performs one-step reductions until the state `s0` reaches a fixed-point.
 ///
-def eval(e0: Expression, m0: State): Result[(Expression, State), Str] = match println!(step(e0, m0)) with {
+def eval(e0: Expression, m0: State): Result[(Expression, State), Str] = match step(e0, m0) with {
     case Next(e, m) => eval(e, m)
     case Done(e, m) => Ok((e, m))
     case Abort(e)   => Err(e)

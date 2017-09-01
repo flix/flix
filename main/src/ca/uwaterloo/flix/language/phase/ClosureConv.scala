@@ -29,30 +29,30 @@ object ClosureConv {
     * Performs closure conversion on the given expression `e`.
     */
   def convert(exp0: SimplifiedAst.Expression)(implicit genSym: GenSym): SimplifiedAst.Expression = exp0 match {
-    case SimplifiedAst.Expression.Unit => exp0
-    case SimplifiedAst.Expression.True => exp0
-    case SimplifiedAst.Expression.False => exp0
-    case SimplifiedAst.Expression.Char(lit) => exp0
-    case SimplifiedAst.Expression.Float32(lit) => exp0
-    case SimplifiedAst.Expression.Float64(lit) => exp0
-    case SimplifiedAst.Expression.Int8(lit) => exp0
-    case SimplifiedAst.Expression.Int16(lit) => exp0
-    case SimplifiedAst.Expression.Int32(lit) => exp0
-    case SimplifiedAst.Expression.Int64(lit) => exp0
-    case SimplifiedAst.Expression.BigInt(lit) => exp0
-    case SimplifiedAst.Expression.Str(lit) => exp0
+    case Expression.Unit => exp0
+    case Expression.True => exp0
+    case Expression.False => exp0
+    case Expression.Char(lit) => exp0
+    case Expression.Float32(lit) => exp0
+    case Expression.Float64(lit) => exp0
+    case Expression.Int8(lit) => exp0
+    case Expression.Int16(lit) => exp0
+    case Expression.Int32(lit) => exp0
+    case Expression.Int64(lit) => exp0
+    case Expression.BigInt(lit) => exp0
+    case Expression.Str(lit) => exp0
 
-    case SimplifiedAst.Expression.Var(sym, tpe, loc) => exp0
+    case Expression.Var(sym, tpe, loc) => exp0
 
-    case e: SimplifiedAst.Expression.Def =>
+    case e: Expression.Def =>
       // If we encounter a Ref that has a lambda type (and is not being called in an Apply),
       // i.e. the Ref will evaluate to a lambda, we replace it with a MkClosureRef. Otherwise we leave it alone.
       e.tpe match {
-        case t@Type.Apply(Type.Arrow(_), _) => SimplifiedAst.Expression.MkClosureDef(e, List.empty, t, e.loc)
-        case _ => e
+        case t@Type.Apply(Type.Arrow(_), _) => Expression.Closure(e, List.empty, t, e.loc)
+        case _ => e // TODO: Does this ever happen? Is the Def node not eliminated by this phase?
       }
 
-    case SimplifiedAst.Expression.Lambda(args, body, tpe, loc) =>
+    case Expression.Lambda(args, body, tpe, loc) =>
       // Retrieve the type of the function.
       val Type.Apply(Type.Arrow(l), ts) = tpe
       val (targs, tresult) = (ts.take(l - 1), ts.last)
@@ -80,7 +80,7 @@ object ClosureConv {
       val newTpe = Type.mkArrow(argTpes, tresult)
 
       // We rewrite the lambda with its new arguments list and new body, with any nested lambdas also converted.
-      val lambda = SimplifiedAst.Expression.Lambda(newArgs, convert(replace(body, subst.toMap)), newTpe, loc)
+      val lambda = Expression.Lambda(newArgs, convert(replace(body, subst.toMap)), newTpe, loc)
 
       // At this point, `lambda` is the original lambda expression, but with all free variables converted to new
       // arguments, prepended to the original arguments list. Additionally, any lambdas within the body have also been
@@ -92,83 +92,104 @@ object ClosureConv {
       // bound values are passed as arguments.
       // Note that MkClosure keeps the old lambda type.
       // In a later phase, we will lift the lambda to a top-level definition.
-      SimplifiedAst.Expression.MkClosure(lambda, freeVars.map(v => SimplifiedAst.FreeVar(v._1, v._2)), tpe, loc)
+      Expression.LambdaClosure(lambda, freeVars.map(v => SimplifiedAst.FreeVar(v._1, v._2)), tpe, loc)
 
-    case SimplifiedAst.Expression.Hook(hook, tpe, loc) =>
+    case Expression.Hook(hook, tpe, loc) =>
       // Retrieve the type of the function.
       val Type.Apply(Type.Arrow(l), ts) = tpe
       val (targs, tresult) = (ts.take(l - 1), ts.last)
 
       // Wrap the hook inside a lambda, so we can create a closure.
       val args = targs.map { t => SimplifiedAst.FormalParam(Symbol.freshVarSym("hookArg"), Ast.Modifiers.Empty, t, SourceLocation.Unknown) }
-      val hookArgs = args.map { f => SimplifiedAst.Expression.Var(f.sym, f.tpe, loc) }
-      val body = SimplifiedAst.Expression.ApplyHook(hook, hookArgs, tresult, loc)
-      val lambda = SimplifiedAst.Expression.Lambda(args, body, hook.tpe, loc)
+      val hookArgs = args.map { f => Expression.Var(f.sym, f.tpe, loc) }
+      val body = Expression.ApplyHook(hook, hookArgs, tresult, loc)
+      val lambda = Expression.Lambda(args, body, hook.tpe, loc)
 
       // Closure convert the lambda.
       convert(lambda)
-    case SimplifiedAst.Expression.MkClosure(lambda, freeVars, tpe, loc) =>
-      throw InternalCompilerException(s"Illegal expression during closure conversion: '$exp0'.")
-    case SimplifiedAst.Expression.MkClosureDef(ref, freeVars, tpe, loc) =>
-      throw InternalCompilerException(s"Illegal expression during closure conversion: '$exp0'.")
-    case SimplifiedAst.Expression.ApplyDef(name, args, tpe, loc) =>
-      throw InternalCompilerException(s"Illegal expression during closure conversion: '$exp0'.")
 
-    case SimplifiedAst.Expression.Apply(e, args, tpe, loc) =>
+    case Expression.Apply(e, args, tpe, loc) =>
       // We're trying to call some expression `e`. If `e` is a Ref, then it's a top-level function, so we directly call
       // it with ApplyRef. We remove the Ref node and don't recurse on it to avoid creating a closure.
       // We do something similar if `e` is a Hook, where we transform Apply to ApplyHook.
       e match {
-        case SimplifiedAst.Expression.Def(name, _, _) => SimplifiedAst.Expression.ApplyDef(name, args.map(convert), tpe, loc)
-        case SimplifiedAst.Expression.Hook(hook, _, _) => SimplifiedAst.Expression.ApplyHook(hook, args.map(convert), tpe, loc)
-        case _ => SimplifiedAst.Expression.Apply(convert(e), args.map(convert), tpe, loc)
+        case Expression.Def(name, _, _) => Expression.ApplyDef(name, args.map(convert), tpe, loc)
+        case Expression.Hook(hook, _, _) => Expression.ApplyHook(hook, args.map(convert), tpe, loc)
+        case _ => Expression.ApplyClo(convert(e), args.map(convert), tpe, loc)
       }
-    case SimplifiedAst.Expression.ApplyTail(name, formals, actuals, tpe, loc) => exp0
-    case SimplifiedAst.Expression.ApplyHook(hook, args, tpe, loc) => exp0
 
-    case SimplifiedAst.Expression.Unary(op, e, tpe, loc) =>
-      SimplifiedAst.Expression.Unary(op, convert(e), tpe, loc)
-    case SimplifiedAst.Expression.Binary(op, e1, e2, tpe, loc) =>
-      SimplifiedAst.Expression.Binary(op, convert(e1), convert(e2), tpe, loc)
-    case SimplifiedAst.Expression.IfThenElse(e1, e2, e3, tpe, loc) =>
-      SimplifiedAst.Expression.IfThenElse(convert(e1), convert(e2), convert(e3), tpe, loc)
-    case SimplifiedAst.Expression.Let(sym, e1, e2, tpe, loc) =>
-      SimplifiedAst.Expression.Let(sym, convert(e1), convert(e2), tpe, loc)
-    case SimplifiedAst.Expression.LetRec(sym, e1, e2, tpe, loc) =>
-      SimplifiedAst.Expression.LetRec(sym, convert(e1), convert(e2), tpe, loc)
-    case SimplifiedAst.Expression.Is(sym, tag, e, loc) =>
-      SimplifiedAst.Expression.Is(sym, tag, convert(e), loc)
-    case SimplifiedAst.Expression.Tag(enum, tag, e, tpe, loc) =>
-      SimplifiedAst.Expression.Tag(enum, tag, convert(e), tpe, loc)
-    case SimplifiedAst.Expression.Untag(sym, tag, e, tpe, loc) =>
-      SimplifiedAst.Expression.Untag(sym, tag, convert(e), tpe, loc)
-    case SimplifiedAst.Expression.Index(e, offset, tpe, loc) =>
-      SimplifiedAst.Expression.Index(convert(e), offset, tpe, loc)
-    case SimplifiedAst.Expression.Tuple(elms, tpe, loc) =>
-      SimplifiedAst.Expression.Tuple(elms.map(convert), tpe, loc)
-    case SimplifiedAst.Expression.Ref(exp, tpe, loc) =>
+    case Expression.Unary(sop, op, e, tpe, loc) =>
+      Expression.Unary(sop, op, convert(e), tpe, loc)
+
+    case Expression.Binary(sop, op, e1, e2, tpe, loc) =>
+      Expression.Binary(sop, op, convert(e1), convert(e2), tpe, loc)
+
+    case Expression.IfThenElse(e1, e2, e3, tpe, loc) =>
+      Expression.IfThenElse(convert(e1), convert(e2), convert(e3), tpe, loc)
+
+    case Expression.Branch(exp, branches, tpe, loc) =>
       val e = convert(exp)
-      SimplifiedAst.Expression.Ref(e, tpe, loc)
+      val bs = branches map {
+        case (sym, br) => sym -> convert(br)
+      }
+      Expression.Branch(e, bs, tpe, loc)
 
-    case SimplifiedAst.Expression.Deref(exp, tpe, loc) =>
+    case Expression.JumpTo(sym, tpe, loc) =>
+      Expression.JumpTo(sym, tpe, loc)
+
+    case Expression.Let(sym, e1, e2, tpe, loc) =>
+      Expression.Let(sym, convert(e1), convert(e2), tpe, loc)
+
+    case Expression.LetRec(sym, e1, e2, tpe, loc) =>
+      Expression.LetRec(sym, convert(e1), convert(e2), tpe, loc)
+
+    case Expression.Is(sym, tag, e, loc) =>
+      Expression.Is(sym, tag, convert(e), loc)
+
+    case Expression.Tag(enum, tag, e, tpe, loc) =>
+      Expression.Tag(enum, tag, convert(e), tpe, loc)
+
+    case Expression.Untag(sym, tag, e, tpe, loc) =>
+      Expression.Untag(sym, tag, convert(e), tpe, loc)
+
+    case Expression.Index(e, offset, tpe, loc) =>
+      Expression.Index(convert(e), offset, tpe, loc)
+
+    case Expression.Tuple(elms, tpe, loc) =>
+      Expression.Tuple(elms.map(convert), tpe, loc)
+
+    case Expression.Ref(exp, tpe, loc) =>
       val e = convert(exp)
-      SimplifiedAst.Expression.Deref(e, tpe, loc)
+      Expression.Ref(e, tpe, loc)
 
-    case SimplifiedAst.Expression.Assign(exp1, exp2, tpe, loc) =>
+    case Expression.Deref(exp, tpe, loc) =>
+      val e = convert(exp)
+      Expression.Deref(e, tpe, loc)
+
+    case Expression.Assign(exp1, exp2, tpe, loc) =>
       val e1 = convert(exp1)
       val e2 = convert(exp2)
-      SimplifiedAst.Expression.Assign(e1, e2, tpe, loc)
+      Expression.Assign(e1, e2, tpe, loc)
 
-    case SimplifiedAst.Expression.Existential(params, e, loc) =>
-      SimplifiedAst.Expression.Existential(params, convert(e), loc)
-    case SimplifiedAst.Expression.Universal(params, e, loc) =>
-      SimplifiedAst.Expression.Universal(params, convert(e), loc)
-    case SimplifiedAst.Expression.NativeConstructor(constructor, args, tpe, loc) => exp0
-    case SimplifiedAst.Expression.NativeField(field, tpe, loc) => exp0
-    case SimplifiedAst.Expression.NativeMethod(method, args, tpe, loc) => exp0
-    case SimplifiedAst.Expression.UserError(tpe, loc) => exp0
-    case SimplifiedAst.Expression.MatchError(tpe, loc) => exp0
-    case SimplifiedAst.Expression.SwitchError(tpe, loc) => exp0
+    case Expression.Existential(params, e, loc) =>
+      Expression.Existential(params, convert(e), loc)
+    case Expression.Universal(params, e, loc) =>
+      Expression.Universal(params, convert(e), loc)
+    case Expression.NativeConstructor(constructor, args, tpe, loc) => exp0
+    case Expression.NativeField(field, tpe, loc) => exp0
+    case Expression.NativeMethod(method, args, tpe, loc) => exp0
+    case Expression.UserError(tpe, loc) => exp0
+    case Expression.MatchError(tpe, loc) => exp0
+    case Expression.SwitchError(tpe, loc) => exp0
+
+    case Expression.Closure(ref, freeVars, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
+    case Expression.LambdaClosure(lambda, freeVars, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
+    case Expression.ApplyClo(e, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
+    case Expression.ApplyDef(name, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
+    case Expression.ApplyCloTail(e, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
+    case Expression.ApplyDefTail(name, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
+    case Expression.ApplySelfTail(name, formals, actuals, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
+    case Expression.ApplyHook(hook, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
   }
 
   /**
@@ -176,63 +197,70 @@ object ClosureConv {
     * Does a left-to-right traversal of the AST, collecting free variables in order, in a LinkedHashSet.
     */
   // TODO: Use immutable, but sorted data structure?
-  def freeVariables(e: SimplifiedAst.Expression): mutable.LinkedHashSet[(Symbol.VarSym, Type)] = e match {
-    case SimplifiedAst.Expression.Unit => mutable.LinkedHashSet.empty
-    case SimplifiedAst.Expression.True => mutable.LinkedHashSet.empty
-    case SimplifiedAst.Expression.False => mutable.LinkedHashSet.empty
-    case SimplifiedAst.Expression.Char(lit) => mutable.LinkedHashSet.empty
-    case SimplifiedAst.Expression.Float32(lit) => mutable.LinkedHashSet.empty
-    case SimplifiedAst.Expression.Float64(lit) => mutable.LinkedHashSet.empty
-    case SimplifiedAst.Expression.Int8(lit) => mutable.LinkedHashSet.empty
-    case SimplifiedAst.Expression.Int16(lit) => mutable.LinkedHashSet.empty
-    case SimplifiedAst.Expression.Int32(lit) => mutable.LinkedHashSet.empty
-    case SimplifiedAst.Expression.Int64(lit) => mutable.LinkedHashSet.empty
-    case SimplifiedAst.Expression.BigInt(lit) => mutable.LinkedHashSet.empty
-    case SimplifiedAst.Expression.Str(lit) => mutable.LinkedHashSet.empty
-    case SimplifiedAst.Expression.Var(sym, tpe, loc) => mutable.LinkedHashSet((sym, tpe))
-    case SimplifiedAst.Expression.Def(name, tpe, loc) => mutable.LinkedHashSet.empty
-    case SimplifiedAst.Expression.Lambda(args, body, tpe, loc) =>
+  def freeVariables(exp0: SimplifiedAst.Expression): mutable.LinkedHashSet[(Symbol.VarSym, Type)] = exp0 match {
+    case Expression.Unit => mutable.LinkedHashSet.empty
+    case Expression.True => mutable.LinkedHashSet.empty
+    case Expression.False => mutable.LinkedHashSet.empty
+    case Expression.Char(lit) => mutable.LinkedHashSet.empty
+    case Expression.Float32(lit) => mutable.LinkedHashSet.empty
+    case Expression.Float64(lit) => mutable.LinkedHashSet.empty
+    case Expression.Int8(lit) => mutable.LinkedHashSet.empty
+    case Expression.Int16(lit) => mutable.LinkedHashSet.empty
+    case Expression.Int32(lit) => mutable.LinkedHashSet.empty
+    case Expression.Int64(lit) => mutable.LinkedHashSet.empty
+    case Expression.BigInt(lit) => mutable.LinkedHashSet.empty
+    case Expression.Str(lit) => mutable.LinkedHashSet.empty
+    case Expression.Var(sym, tpe, loc) => mutable.LinkedHashSet((sym, tpe))
+    case Expression.Def(name, tpe, loc) => mutable.LinkedHashSet.empty
+    case Expression.Lambda(args, body, tpe, loc) =>
       val bound = args.map(_.sym)
       freeVariables(body).filterNot { v => bound.contains(v._1) }
-    case SimplifiedAst.Expression.Hook(hook, tpe, loc) => mutable.LinkedHashSet.empty
-    case SimplifiedAst.Expression.MkClosure(lambda, freeVars, tpe, loc) =>
-      throw InternalCompilerException(s"Unexpected expression: '$e'.")
-    case SimplifiedAst.Expression.MkClosureDef(ref, freeVars, tpe, loc) =>
-      throw InternalCompilerException(s"Unexpected expression: '$e'.")
-    case SimplifiedAst.Expression.ApplyDef(name, args, tpe, loc) => mutable.LinkedHashSet.empty ++ args.flatMap(freeVariables)
-    case SimplifiedAst.Expression.ApplyHook(hook, args, tpe, loc) => mutable.LinkedHashSet.empty ++ args.flatMap(freeVariables)
-    case SimplifiedAst.Expression.ApplyTail(name, formals, actuals, tpe, loc) => mutable.LinkedHashSet.empty ++ actuals.flatMap(freeVariables)
-    case SimplifiedAst.Expression.Apply(exp, args, tpe, loc) =>
+    case Expression.Hook(hook, tpe, loc) => mutable.LinkedHashSet.empty
+    case Expression.Apply(exp, args, tpe, loc) =>
       freeVariables(exp) ++ args.flatMap(freeVariables)
-    case SimplifiedAst.Expression.Unary(op, exp, tpe, loc) => freeVariables(exp)
-    case SimplifiedAst.Expression.Binary(op, exp1, exp2, tpe, loc) =>
+    case Expression.Unary(sop, op, exp, tpe, loc) => freeVariables(exp)
+    case Expression.Binary(sop, op, exp1, exp2, tpe, loc) =>
       freeVariables(exp1) ++ freeVariables(exp2)
-    case SimplifiedAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
+    case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
       freeVariables(exp1) ++ freeVariables(exp2) ++ freeVariables(exp3)
-    case SimplifiedAst.Expression.Let(sym, exp1, exp2, tpe, loc) =>
+    case Expression.Branch(exp, branches, tpe, loc) =>
+      mutable.LinkedHashSet.empty ++ freeVariables(exp) ++ (branches flatMap {
+        case (sym, br) => freeVariables(br)
+      })
+    case Expression.JumpTo(sym, tpe, loc) => mutable.LinkedHashSet.empty
+    case Expression.Let(sym, exp1, exp2, tpe, loc) =>
       val bound = sym
       freeVariables(exp1) ++ freeVariables(exp2).filterNot { v => bound == v._1 }
-    case SimplifiedAst.Expression.LetRec(sym, exp1, exp2, tpe, loc) =>
+    case Expression.LetRec(sym, exp1, exp2, tpe, loc) =>
       val bound = sym
       (freeVariables(exp1) ++ freeVariables(exp2)).filterNot { v => bound == v._1 }
-    case SimplifiedAst.Expression.Is(sym, tag, exp, loc) => freeVariables(exp)
-    case SimplifiedAst.Expression.Untag(sym, tag, exp, tpe, loc) => freeVariables(exp)
-    case SimplifiedAst.Expression.Tag(enum, tag, exp, tpe, loc) => freeVariables(exp)
-    case SimplifiedAst.Expression.Index(base, offset, tpe, loc) => freeVariables(base)
-    case SimplifiedAst.Expression.Tuple(elms, tpe, loc) => mutable.LinkedHashSet.empty ++ elms.flatMap(freeVariables)
-    case SimplifiedAst.Expression.Ref(exp, tpe, loc) => freeVariables(exp)
-    case SimplifiedAst.Expression.Deref(exp, tpe, loc) => freeVariables(exp)
-    case SimplifiedAst.Expression.Assign(exp1, exp2, tpe, loc) => freeVariables(exp1) ++ freeVariables(exp2)
-    case SimplifiedAst.Expression.Existential(fparam, exp, loc) =>
+    case Expression.Is(sym, tag, exp, loc) => freeVariables(exp)
+    case Expression.Untag(sym, tag, exp, tpe, loc) => freeVariables(exp)
+    case Expression.Tag(enum, tag, exp, tpe, loc) => freeVariables(exp)
+    case Expression.Index(base, offset, tpe, loc) => freeVariables(base)
+    case Expression.Tuple(elms, tpe, loc) => mutable.LinkedHashSet.empty ++ elms.flatMap(freeVariables)
+    case Expression.Ref(exp, tpe, loc) => freeVariables(exp)
+    case Expression.Deref(exp, tpe, loc) => freeVariables(exp)
+    case Expression.Assign(exp1, exp2, tpe, loc) => freeVariables(exp1) ++ freeVariables(exp2)
+    case Expression.Existential(fparam, exp, loc) =>
       freeVariables(exp).filterNot { v => v._1 == fparam.sym }
-    case SimplifiedAst.Expression.Universal(fparam, exp, loc) =>
+    case Expression.Universal(fparam, exp, loc) =>
       freeVariables(exp).filterNot { v => v._1 == fparam.sym }
-    case SimplifiedAst.Expression.NativeConstructor(constructor, args, tpe, loc) => mutable.LinkedHashSet.empty ++ args.flatMap(freeVariables)
-    case SimplifiedAst.Expression.NativeField(field, tpe, loc) => mutable.LinkedHashSet.empty
-    case SimplifiedAst.Expression.NativeMethod(method, args, tpe, loc) => mutable.LinkedHashSet.empty ++ args.flatMap(freeVariables)
-    case SimplifiedAst.Expression.UserError(tpe, loc) => mutable.LinkedHashSet.empty
-    case SimplifiedAst.Expression.MatchError(tpe, loc) => mutable.LinkedHashSet.empty
-    case SimplifiedAst.Expression.SwitchError(tpe, loc) => mutable.LinkedHashSet.empty
+    case Expression.NativeConstructor(constructor, args, tpe, loc) => mutable.LinkedHashSet.empty ++ args.flatMap(freeVariables)
+    case Expression.NativeField(field, tpe, loc) => mutable.LinkedHashSet.empty
+    case Expression.NativeMethod(method, args, tpe, loc) => mutable.LinkedHashSet.empty ++ args.flatMap(freeVariables)
+    case Expression.UserError(tpe, loc) => mutable.LinkedHashSet.empty
+    case Expression.MatchError(tpe, loc) => mutable.LinkedHashSet.empty
+    case Expression.SwitchError(tpe, loc) => mutable.LinkedHashSet.empty
+
+    case Expression.LambdaClosure(lambda, freeVars, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
+    case Expression.Closure(ref, freeVars, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
+    case Expression.ApplyClo(exp, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
+    case Expression.ApplyDef(name, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
+    case Expression.ApplyCloTail(exp, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
+    case Expression.ApplyDefTail(name, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
+    case Expression.ApplySelfTail(name, formals, actuals, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
+    case Expression.ApplyHook(hook, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
   }
 
   /**
@@ -262,16 +290,17 @@ object ClosureConv {
         val e = visit(exp)
         Expression.Lambda(fs, e, tpe, loc)
       case Expression.Hook(hook, tpe, loc) => e
-      case Expression.MkClosureDef(ref, freeVars, tpe, loc) => e
-      case Expression.MkClosure(exp, freeVars, tpe, loc) =>
+      case Expression.Closure(ref, freeVars, tpe, loc) => e
+      case Expression.LambdaClosure(exp, freeVars, tpe, loc) =>
         val e = visit(exp).asInstanceOf[Expression.Lambda]
-        Expression.MkClosure(e, freeVars, tpe, loc)
+        Expression.LambdaClosure(e, freeVars, tpe, loc)
+      case Expression.ApplyClo(exp, args, tpe, loc) =>
+        val e = visit(exp)
+        val as = args map visit
+        Expression.ApplyClo(e, as, tpe, loc)
       case Expression.ApplyDef(sym, args, tpe, loc) =>
         val as = args map visit
         Expression.ApplyDef(sym, as, tpe, loc)
-      case Expression.ApplyTail(sym, fparams, args, tpe, loc) =>
-        val as = args map visit
-        Expression.ApplyTail(sym, fparams, as, tpe, loc)
       case Expression.ApplyHook(hook, args, tpe, loc) =>
         val as = args map visit
         Expression.ApplyHook(hook, as, tpe, loc)
@@ -279,18 +308,26 @@ object ClosureConv {
         val e = visit(exp)
         val as = args map visit
         Expression.Apply(e, as, tpe, loc)
-      case Expression.Unary(op, exp, tpe, loc) =>
+      case Expression.Unary(sop, op, exp, tpe, loc) =>
         val e = visit(exp)
-        Expression.Unary(op, e, tpe, loc)
-      case Expression.Binary(op, exp1, exp2, tpe, loc) =>
+        Expression.Unary(sop, op, e, tpe, loc)
+      case Expression.Binary(sop, op, exp1, exp2, tpe, loc) =>
         val e1 = visit(exp1)
         val e2 = visit(exp2)
-        Expression.Binary(op, e1, e2, tpe, loc)
+        Expression.Binary(sop, op, e1, e2, tpe, loc)
       case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
         val e1 = visit(exp1)
         val e2 = visit(exp2)
         val e3 = visit(exp3)
         Expression.IfThenElse(e1, e2, e3, tpe, loc)
+      case Expression.Branch(exp, branches, tpe, loc) =>
+        val e = visit(exp)
+        val bs = branches map {
+          case (sym, br) => sym -> visit(br)
+        }
+        Expression.Branch(e, bs, tpe, loc)
+      case Expression.JumpTo(sym, tpe, loc) =>
+        Expression.JumpTo(sym, tpe, loc)
       case Expression.Let(sym, exp1, exp2, tpe, loc) =>
         val e1 = visit(exp1)
         val e2 = visit(exp2)
@@ -348,6 +385,10 @@ object ClosureConv {
       case Expression.UserError(tpe, loc) => e
       case Expression.MatchError(tpe, loc) => e
       case Expression.SwitchError(tpe, loc) => e
+
+      case Expression.ApplyCloTail(exp, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${e.getClass.getSimpleName}'.")
+      case Expression.ApplyDefTail(sym, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${e.getClass.getSimpleName}'.")
+      case Expression.ApplySelfTail(sym, fparams, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${e.getClass.getSimpleName}'.")
     }
 
     visit(e0)

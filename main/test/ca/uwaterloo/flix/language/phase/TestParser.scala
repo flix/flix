@@ -628,7 +628,7 @@ class TestParser extends FunSuite with TestUtils {
         |def f(): Int = 1 `add` 2
       """.stripMargin
     val model = run(input)
-    assertResult(3)(model.getConstant("f"))
+    assertResult(3)(model.eval("f"))
   }
 
   test("Expression.Infix.02") {
@@ -640,7 +640,7 @@ class TestParser extends FunSuite with TestUtils {
         |def f(): Int = 1 `add` 2 `sub` 3 `mul` 4
       """.stripMargin
     val model = run(input)
-    assertResult(0)(model.getConstant("f"))
+    assertResult(0)(model.eval("f"))
   }
 
   test("Expression.Postfix.01") {
@@ -650,7 +650,7 @@ class TestParser extends FunSuite with TestUtils {
         |def f(): Int = 1.abs()
       """.stripMargin
     val model = run(input)
-    assertResult(1)(model.getConstant("f"))
+    assertResult(1)(model.eval("f"))
   }
 
   test("Expression.Postfix.02") {
@@ -662,7 +662,7 @@ class TestParser extends FunSuite with TestUtils {
         |def f(): Int = 1.abs().inc().dec()
       """.stripMargin
     val model = run(input)
-    assertResult(1)(model.getConstant("f"))
+    assertResult(1)(model.eval("f"))
   }
 
   test("Expression.Postfix.03") {
@@ -672,7 +672,7 @@ class TestParser extends FunSuite with TestUtils {
         |def f(): Int = 1.add(2)
       """.stripMargin
     val model = run(input)
-    assertResult(3)(model.getConstant("f"))
+    assertResult(3)(model.eval("f"))
   }
 
   test("Expression.Postfix.04") {
@@ -685,7 +685,7 @@ class TestParser extends FunSuite with TestUtils {
       """.stripMargin
     run(input)
     val model = run(input)
-    assertResult(0)(model.getConstant("f"))
+    assertResult(0)(model.eval("f"))
   }
 
   test("Expression.Postfix.05") {
@@ -695,7 +695,7 @@ class TestParser extends FunSuite with TestUtils {
         |def f(): Int = 1.add(2, 3)
       """.stripMargin
     val model = run(input)
-    assertResult(6)(model.getConstant("f"))
+    assertResult(6)(model.eval("f"))
   }
 
   test("Expression.Postfix.06") {

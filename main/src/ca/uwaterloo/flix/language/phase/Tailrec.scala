@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.SimplifiedAst
+import ca.uwaterloo.flix.language.ast.SimplifiedAst._
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
 
@@ -28,12 +28,12 @@ import ca.uwaterloo.flix.util.Validation._
   * Specifically, it replaces `ApplyRef` AST nodes with `ApplyTail` AST nodes
   * when the `ApplyRef` node calls the same function and occurs in tail position.
   */
-object Tailrec extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
+object Tailrec extends Phase[Root, Root] {
 
   /**
     * Identifies tail recursive calls in the given AST `root`.
     */
-  def run(root: SimplifiedAst.Root)(implicit flix: Flix): Validation[SimplifiedAst.Root, CompilationError] = {
+  def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationError] = {
     val b = System.nanoTime()
 
     val defns = root.defs.map {
@@ -48,40 +48,47 @@ object Tailrec extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
   /**
     * Identifies tail recursive calls in the given definition `defn`.
     */
-  private def tailrec(defn: SimplifiedAst.Def): SimplifiedAst.Def = {
+  private def tailrec(defn: Def): Def = {
     /**
       * Introduces tail recursive calls in the given expression `exp0`.
       *
       * Replaces every `ApplyRef`, which calls the same function and occurs in tail position, with `ApplyTail`.
       */
-    def visit(exp0: SimplifiedAst.Expression): SimplifiedAst.Expression = exp0 match {
+    def visit(exp0: Expression): Expression = exp0 match {
       /*
        * Let: The body expression is in tail position.
        * (The value expression is *not* in tail position).
        */
-      case SimplifiedAst.Expression.Let(sym, exp1, exp2, tpe, loc) =>
+      case Expression.Let(sym, exp1, exp2, tpe, loc) =>
         val e2 = visit(exp2)
-        SimplifiedAst.Expression.Let(sym, exp1, e2, tpe, loc)
+        Expression.Let(sym, exp1, e2, tpe, loc)
 
       /*
        * If-Then-Else: Consequent and alternative are both in tail position.
        * (The condition is *not* in tail position).
        */
-      case SimplifiedAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
+      case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
         val e2 = visit(exp2)
         val e3 = visit(exp3)
-        SimplifiedAst.Expression.IfThenElse(exp1, e2, e3, tpe, loc)
+        Expression.IfThenElse(exp1, e2, e3, tpe, loc)
 
       /*
-       * ApplyRef: Check if the `ApplyRef` is a tail recursive call.
+       * ApplyClo.
        */
-      case SimplifiedAst.Expression.ApplyDef(name, args, tpe, loc) =>
-        if (defn.sym == name) {
-          // Case 1: Tail-recursive call. Replace node.
-          SimplifiedAst.Expression.ApplyTail(name, defn.formals, args, tpe, loc)
+      case Expression.ApplyClo(exp, args, tpe, loc) =>
+        Expression.ApplyCloTail(exp, args, tpe, loc)
+
+      /*
+       * ApplyDef.
+       */
+      case Expression.ApplyDef(sym, args, tpe, loc) =>
+        // Check whether this is a self recursive call.
+        if (defn.sym != sym) {
+          // Case 1: Tail recursive call.
+          Expression.ApplyDefTail(sym, args, tpe, loc)
         } else {
-          // Case 2: Non-tail recursive call.
-          exp0
+          // Case 2: Self recursive call.
+          Expression.ApplySelfTail(sym, defn.formals, args, tpe, loc)
         }
 
       /*

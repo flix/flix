@@ -16,7 +16,9 @@
 
 package ca.uwaterloo.flix.runtime
 
-import ca.uwaterloo.flix.language.ast.{ExecutableAst, Symbol, Time}
+import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.ast.ExecutableAst._
+import ca.uwaterloo.flix.util.InternalRuntimeException
 
 /**
   * A class representing the minimal model.
@@ -26,13 +28,16 @@ import ca.uwaterloo.flix.language.ast.{ExecutableAst, Symbol, Time}
   * @param relations   the relational facts in the model.
   * @param lattices    the lattice facts in the model.
   */
-class Model(root: ExecutableAst.Root,
+class Model(root: Root,
             time: Time,
             definitions: Map[Symbol.DefnSym, () => AnyRef],
             relations: Map[Symbol.TableSym, Iterable[List[AnyRef]]],
             lattices: Map[Symbol.TableSym, Iterable[(List[AnyRef], AnyRef)]]) {
 
-  def getRoot: ExecutableAst.Root = root
+  /**
+    * Returns the root AST.
+    */
+  def getRoot: Root = root
 
   /**
     * Returns all the benchmark functions in the program.
@@ -53,34 +58,120 @@ class Model(root: ExecutableAst.Root,
   }
 
   /**
-    * Returns the fully-qualified names of all relations in the program.
+    * Returns the time taken by each compiler phase.
     */
-  def getRelationNames: Set[String] = relations.keySet.map(_.toString)
-
-  /**
-    * Returns the fully-qualified names of all lattices in the program.
-    */
-  def getLatticeNames: Set[String] = lattices.keySet.map(_.toString)
-
   def getTime: Time = time
 
-  def getConstant(sym: Symbol.DefnSym): AnyRef = definitions.get(sym) match {
-    case None => null
-    case Some(fn) => fn()
+  /**
+    * Immediately evaluates the given fully-qualified name `fqn`.
+    *
+    * Returns the raw result.
+    */
+  def eval(fqn: String): AnyRef = {
+    // Construct the definition symbol.
+    val sym = Symbol.mkDefnSym(fqn)
+
+    // Retrieve the function and call it.
+    definitions.get(sym) match {
+      case None => throw new IllegalArgumentException(s"Undefined fully-qualified name: '$fqn'.")
+      case Some(fn) => fn()
+    }
   }
 
-  def getConstant(name: String): AnyRef = getConstant(Symbol.mkDefnSym(name))
+  /**
+    * Immediately evaluates the given fully-qualified name `fqn`.
+    *
+    * Returns a string representation of the result.
+    */
+  def evalToString(fqn: String): String = {
+    // Construct the definition symbol.
+    val sym = Symbol.mkDefnSym(fqn)
 
-  def getRelation(name: String): Iterable[List[AnyRef]] =
-    getRelationOpt(name).get
+    // Retrieve the definition.
+    root.defs.get(sym) match {
+      case None => throw new IllegalArgumentException(s"Undefined fully-qualified name: '$fqn'.")
+      case Some(defn) =>
+        // Retrieve the function and call it.
+        val resultValue = definitions(sym)()
 
-  def getRelationOpt(name: String): Option[Iterable[List[AnyRef]]] =
-    relations.get(Symbol.mkTableSym(name))
+        // Retrieve the result type.
+        val resultType = getResultType(defn.tpe)
 
-  def getLattice(name: String): Iterable[(List[AnyRef], AnyRef)] =
-    getLatticeOpt(name).get
+        // Compute and return a string representation of the result.
+        toString(resultValue, resultType)
+    }
+  }
 
-  def getLatticeOpt(name: String): Option[Iterable[(List[AnyRef], AnyRef)]] =
-    lattices.get(Symbol.mkTableSym(name))
+  /**
+    * Returns a map from fully-qualified relation names to a pair of an attribute list and a set of rows for that table.
+    */
+  def getRelations: Map[String, (List[String], Iterable[List[String]])] =
+    relations.foldLeft(Map.empty[String, (List[String], Iterable[List[String]])]) {
+      case (macc, (sym, rows)) =>
+        root.tables(sym) match {
+          case Table.Relation(_, attr, _) =>
+            // Compute the attributes names.
+            val attributes: List[String] = attr.map(_.name).toList
+
+            // Compute the rows of the table.
+            val rows: Iterable[List[String]] = relations(sym).map {
+              case row => (row zip attr) map {
+                case (obj, Attribute(_, tpe)) => toString(obj, tpe)
+              }
+            }
+
+            macc + (sym.toString -> (attributes, rows))
+          case Table.Lattice(_, _, _, _) => macc // Nop
+        }
+    }
+
+  /**
+    * Returns a map from fully-qualified lattices names to a pair of an attribute list and a set of rows for that table.
+    */
+  def getLattices: Map[String, (List[String], Iterable[List[String]])] = relations.foldLeft(Map.empty[String, (List[String], Iterable[List[String]])]) {
+    case (macc, (sym, rows)) =>
+      root.tables(sym) match {
+        case Table.Relation(_, attr, _) => macc // Nop
+
+        case Table.Lattice(_, keys, value, _) =>
+          // Compute the attributes of the table.
+          val attr = keys.toList ::: value :: Nil
+
+          // Compute the attribute names.
+          val attributes: List[String] = attr.map(_.name)
+
+          // Compute the rows of the table.
+          val rows: Iterable[List[String]] = relations(sym).map {
+            case row => (row zip attr) map {
+              case (obj, Attribute(_, tpe)) => toString(obj, tpe)
+            }
+          }
+
+          macc + (sym.toString -> (attributes, rows))
+      }
+  }
+
+  /**
+    * Returns the result type of the given lambda type.
+    */
+  private def getResultType(tpe: Type): Type = tpe match {
+    case Type.Apply(Type.Arrow(_), ts) => ts.last
+    case _ => tpe
+  }
+
+  /**
+    * Returns a string representation of the given reference `ref` formatted according to the given type `tpe`.
+    */
+  private def toString(ref: AnyRef, tpe: Type): String = {
+    // Retrieve the toString special operator.
+    root.specialOps(SpecialOperator.ToString).get(tpe) match {
+      case None => throw InternalRuntimeException(s"Undefined 'toString' special operator for the given type: '$tpe'.")
+      case Some(sym) => val target = Linker.link(sym, root)
+        target.invoke(Array(ref)) match {
+          case s: String => s
+          case o => throw InternalRuntimeException("Unexpected non-string value returned by 'toString' special operator.")
+        }
+    }
+  }
 
 }

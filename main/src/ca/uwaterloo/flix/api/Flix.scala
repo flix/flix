@@ -192,8 +192,6 @@ class Flix {
 
     // Add built-in hooks.
     addGenSymHook()
-    addPrintHook()
-    addPrintlnHook()
 
     // Construct the compiler pipeline.
     val pipeline =
@@ -208,6 +206,7 @@ class Flix {
         Documentor |>
         Stratifier |>
         Monomorph |>
+        Synthesize |>
         Simplifier |>
         Uncurrier |>
         LambdaLift |>
@@ -296,50 +295,6 @@ class Flix {
         if (!options.impure)
           throw new IllegalStateException("Illegal call to impure function. Requires --Ximpure.")
         new java.lang.Integer(gen.freshId())
-      }
-    }
-
-    // Add the function to the hooks.
-    hooks.put(sym, Ast.Hook.Unsafe(sym, inv, tpe))
-  }
-
-  /**
-    * Adds a hook for the built-in `print` function.
-    */
-  private def addPrintHook(): scala.Unit = {
-    // Symbol, type, and hook.
-    implicit val _ = genSym
-    val sym = Symbol.mkDefnSym("printHook")
-    val tpe = Type.mkArrow(Type.freshTypeVar(), Type.freshTypeVar())
-    val inv = new InvokableUnsafe {
-      def apply(args: Array[AnyRef]): AnyRef = {
-        if (!options.impure)
-          throw new IllegalStateException("Illegal call to impure function. Requires --Ximpure.")
-        val value = args(0)
-        Console.print(Value.pretty(value))
-        value
-      }
-    }
-
-    // Add the function to the hooks.
-    hooks.put(sym, Ast.Hook.Unsafe(sym, inv, tpe))
-  }
-
-  /**
-    * Adds a hook for the built-in `println` function.
-    */
-  private def addPrintlnHook(): scala.Unit = {
-    // Symbol, type, and hook.
-    implicit val _ = genSym
-    val sym = Symbol.mkDefnSym("printlnHook")
-    val tpe = Type.mkArrow(Type.freshTypeVar(), Type.freshTypeVar())
-    val inv = new InvokableUnsafe {
-      def apply(args: Array[AnyRef]): AnyRef = {
-        if (!options.impure)
-          throw new IllegalStateException("Illegal call to impure function. Requires --Ximpure.")
-        val value = args(0)
-        Console.println(Value.pretty(value))
-        value
       }
     }
 

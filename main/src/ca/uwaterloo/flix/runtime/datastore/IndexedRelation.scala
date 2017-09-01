@@ -29,10 +29,11 @@ import scala.collection.mutable.ArrayBuffer
   * An index on the first and third columns corresponds to 0b0000...0101.
   *
   * @param relation the relation.
+  * @param equality a map from attribute indices to equality operators.
   * @param indexes  the indexes.
   * @param default  the default index.
   */
-final class IndexedRelation[ValueType](val relation: ExecutableAst.Table.Relation, indexes: Set[Int], default: Int) extends IndexedCollection[ValueType] {
+final class IndexedRelation[ValueType](val relation: ExecutableAst.Table.Relation, equality: Array[(AnyRef, AnyRef) => Boolean], indexes: Set[Int], default: Int) extends IndexedCollection[ValueType] {
 
   /**
     * A map from indexes to keys to rows of values.
@@ -134,7 +135,7 @@ final class IndexedRelation[ValueType](val relation: ExecutableAst.Table.Relatio
   private def newFact(fact: Array[ValueType]): Unit = {
     // loop through all the indexes and update the tables.
     for (idx <- indexes) {
-      val key = keyOf(idx, fact)
+      val key = keyOf(idx, fact, equality)
       val table = store(idx).getOrElseUpdate(key, mutable.ArrayBuffer.empty[Array[ValueType]])
       table += fact
     }
@@ -155,7 +156,7 @@ final class IndexedRelation[ValueType](val relation: ExecutableAst.Table.Relatio
       indexedLookups += 1
       // NB: It is too expensive to count indexed lookups.
       // indexHits.update(idx, indexHits(idx) + 1)
-      val key = keyOf(idx, pat)
+      val key = keyOf(idx, pat, equality)
       getOrEmptyIterator(store(idx).get(key))
     } else {
       // case 2: No exact index available. Check if there is an approximate index.
@@ -167,7 +168,7 @@ final class IndexedRelation[ValueType](val relation: ExecutableAst.Table.Relatio
         // case 2.1: An approximate index exists. Use it.
         indexHits.update(idx, indexHits(idx) + 1)
         indexedScans += 1
-        val key = keyOf(idx, pat)
+        val key = keyOf(idx, pat, equalityOf(idx, equality))
         getOrEmptyIterator(store(idx).get(key))
       } else {
         // case 2.2: No usable index. Perform a full table scan.
@@ -198,8 +199,9 @@ final class IndexedRelation[ValueType](val relation: ExecutableAst.Table.Relatio
     var i = 0
     while (i < pat.length) {
       val pv = pat(i)
+      val eq = equality(i)
       if (pv != null)
-        if (pv != row(i))
+        if (!eq(pv.asInstanceOf[AnyRef], row(i).asInstanceOf[AnyRef]))
           return false
       i = i + 1
     }

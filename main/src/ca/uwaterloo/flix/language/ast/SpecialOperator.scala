@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Magnus Madsen
+ * Copyright 2017 Magnus Madsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,21 +14,20 @@
  * limitations under the License.
  */
 
-package ca.uwaterloo.flix.language.phase
+package ca.uwaterloo.flix.language.ast
 
-import org.scalatest.{ParallelTestExecution, Suites}
+trait SpecialOperator
 
-class PhaseSuite extends Suites(
-  new TestOptimizer,
-  new TestParser,
-  new TestNamer,
-  new TestResolver,
-  new TestTailrec,
-  new TestTyper,
-  new TestUnification,
-  new TestWeeder,
-  new TestPatExhaustiveness,
-  new TestStratifier
-) with ParallelTestExecution {
-  /* left empty */
+object SpecialOperator {
+
+  /**
+    * The equality operator for a given type.
+    */
+  case object Equality extends SpecialOperator
+
+  /**
+    * The string coercion operator for a given type.
+    */
+  case object ToString extends SpecialOperator
+
 }

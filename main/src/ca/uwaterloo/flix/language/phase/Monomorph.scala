@@ -17,9 +17,9 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.CompilationError
+import ca.uwaterloo.flix.language.{CompilationError, GenSym}
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, Pattern, Root}
-import ca.uwaterloo.flix.language.ast.{BinaryOperator, Symbol, Type, TypedAst, UnaryOperator}
+import ca.uwaterloo.flix.language.ast.{BinaryOperator, Eff, SourceLocation, Symbol, Type, TypedAst, UnaryOperator}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 import ca.uwaterloo.flix.util.Validation._
 
@@ -90,7 +90,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         case Type.Native => Type.Native
         case Type.Ref => Type.Ref
         case Type.Arrow(l) => Type.Arrow(l)
-        case Type.FTuple(l) => Type.FTuple(l)
+        case Type.Tuple(l) => Type.Tuple(l)
         case Type.Enum(name, kind) => Type.Enum(name, kind)
         case Type.Apply(t1, t2) => Type.Apply(apply(t1), t2.map(apply))
       }
@@ -202,9 +202,9 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
             case None =>
               // No equality function found. Use a regular equality / inequality expression.
               if (op == BinaryOperator.Equal) {
-                Expression.Binary(BinaryOperator.Equal, e1, e2, subst0(tpe), eff, loc)
+                Expression.Binary(BinaryOperator.Equal, e1, e2, Type.Bool, eff, loc)
               } else {
-                Expression.Binary(BinaryOperator.NotEqual, e1, e2, subst0(tpe), eff, loc)
+                Expression.Binary(BinaryOperator.NotEqual, e1, e2, Type.Bool, eff, loc)
               }
             case Some(eqSym) =>
               // Equality function found. Specialize and generate a call to it.

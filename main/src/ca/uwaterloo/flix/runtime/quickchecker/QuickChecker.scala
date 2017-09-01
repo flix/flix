@@ -235,7 +235,7 @@ object QuickChecker extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
      * Run the symbolic evaluator on the generated environment.
      */
     val results = try {
-      SymbolicEvaluator.eval(p.exp, env0, enumerate(limit, root, genSym, random), root) map {
+      SymbolicEvaluator.eval(p.exp, env0, Map.empty, enumerate(limit, root, genSym, random), root) map {
         case (Nil, qua, SymVal.True) =>
           success += PathResult.Success
         case (Nil, qua, SymVal.False) =>
@@ -323,7 +323,7 @@ object QuickChecker extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
         }
         oneOf(elms.toArray: _*)
 
-      case Type.Apply(Type.FTuple(l), elms) => new Generator[SymVal] {
+      case Type.Apply(Type.Tuple(l), elms) => new Generator[SymVal] {
         def mk(r: Random): SymVal = {
           val vals = elms.map(t => new ArbSymVal(t, root).gen.mk(r))
           SymVal.Tuple(vals)
