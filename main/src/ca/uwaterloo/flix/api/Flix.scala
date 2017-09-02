@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.api
 
 import java.nio.charset.Charset
 import java.nio.file.{Files, Path, Paths}
+import java.util.concurrent.Executors
 
 import ca.uwaterloo.flix.language.ast.Ast.Hook
 import ca.uwaterloo.flix.language.ast._
@@ -86,11 +87,6 @@ class Flix {
   private val hooks = mutable.Map.empty[Symbol.DefnSym, Ast.Hook]
 
   /**
-    * The execution context for `this` Flix instance.
-    */
-  val ec: ExecutionContext = scala.concurrent.ExecutionContext.global
-
-  /**
     * The default assumed charset.
     */
   val defaultCharset: Charset = Charset.forName("UTF-8")
@@ -99,6 +95,11 @@ class Flix {
     * The current Flix options.
     */
   var options = Options.Default
+
+  /**
+    * The execution context for `this` Flix instance.
+    */
+  var ec: ExecutionContext = ExecutionContext.fromExecutorService(Executors.newFixedThreadPool(options.threads))
 
   /**
     * The symbol generator associated with this Flix instance.
@@ -180,6 +181,7 @@ class Flix {
     if (opts == null)
       throw new IllegalArgumentException("'opts' must be non-null.")
     options = opts
+    ec = ExecutionContext.fromExecutorService(Executors.newFixedThreadPool(opts.threads))
     this
   }
 
