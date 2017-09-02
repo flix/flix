@@ -921,6 +921,14 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         SimplifiedAst.Expression.Binary(sop, op, visit(exp1), visit(exp2), tpe, loc)
       case SimplifiedAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
         SimplifiedAst.Expression.IfThenElse(visit(exp1), visit(exp2), visit(exp3), tpe, loc)
+      case SimplifiedAst.Expression.Branch(exp, branches, tpe, loc) =>
+        val e = visit(exp)
+        val bs = branches map {
+          case (sym, br) => sym -> br
+        }
+        SimplifiedAst.Expression.Branch(e, bs, tpe, loc)
+      case SimplifiedAst.Expression.JumpTo(sym, tpe, loc) =>
+        SimplifiedAst.Expression.JumpTo(sym, tpe, loc)
       case SimplifiedAst.Expression.Let(sym, exp1, exp2, tpe, loc) =>
         SimplifiedAst.Expression.Let(sym, visit(exp1), visit(exp2), tpe, loc)
       case SimplifiedAst.Expression.LetRec(sym, exp1, exp2, tpe, loc) =>

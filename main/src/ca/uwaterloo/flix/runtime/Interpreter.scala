@@ -28,7 +28,10 @@ object Interpreter {
   /**
     * Evaluates the given expression `exp0` under the given environment `env0`.
     */
-  def eval(exp0: Expression, root: Root, env0: Map[String, AnyRef]): AnyRef = exp0 match {
+  def eval(exp0: Expression, env0: Map[String, AnyRef], lenv0: Map[Symbol.LabelSym, Expression], root: Root): AnyRef = exp0 match {
+    //
+    // Literal expressions.
+    //
     case Expression.Unit => Value.Unit
     case Expression.True => Value.True
     case Expression.False => Value.False
@@ -41,45 +44,79 @@ object Interpreter {
     case Expression.Int64(lit) => Value.Int64(lit)
     case Expression.BigInt(lit) => Value.BigInt(lit)
     case Expression.Str(lit) => Value.Str(lit)
+
+    //
+    // Variable expressions.
+    //
     case Expression.Var(sym, _, loc) => env0.get(sym.toString) match {
       case None => throw InternalRuntimeException(s"Key '${sym.toString}' not found in environment: '${env0.mkString(",")}'.")
       case Some(v) => v
     }
 
+    //
+    // Closure expressions.
+    //
     case Expression.Closure(sym, freeVars, _, _, _) =>
       allocateClosure(sym, freeVars.toArray, env0)
 
-    case Expression.ApplyClo(exp, args, tpe, loc) =>
-      invokeClo(exp, args, env0, root)
-
-    case Expression.ApplyDef(sym, args, _, _) =>
-      invokeDef(sym, args, env0, root)
-
-    case Expression.ApplyCloTail(exp, args, _, _) =>
-      invokeClo(exp, args, env0, root)
-
-    case Expression.ApplyDefTail(sym, args, _, _) =>
-      invokeDef(sym, args, env0, root)
-
-    case Expression.ApplySelfTail(sym, _, args, _, _) =>
-      invokeDef(sym, args, env0, root)
+    //
+    // Apply* expressions.
+    //
+    case Expression.ApplyClo(exp, args, _, _) => invokeClo(exp, args, env0, lenv0, root)
+    case Expression.ApplyDef(sym, args, _, _) => invokeDef(sym, args, env0, lenv0, root)
+    case Expression.ApplyCloTail(exp, args, _, _) => invokeClo(exp, args, env0, lenv0, root)
+    case Expression.ApplyDefTail(sym, args, _, _) => invokeDef(sym, args, env0, lenv0, root)
+    case Expression.ApplySelfTail(sym, _, args, _, _) => invokeDef(sym, args, env0, lenv0, root)
 
     case Expression.ApplyHook(hook, args0, _, _) =>
-      val args = evalArgs(args0, root, env0)
+      val args = evalArgs(args0, env0, lenv0, root)
       hook match {
         case Ast.Hook.Unsafe(name, inv, _) =>
           inv(args.toArray)
       }
 
-    case Expression.Unary(sop, op, exp, _, _) => evalUnary(sop, exp, env0, root)
-    case Expression.Binary(sop, op, exp1, exp2, _, _) => evalBinary(sop, exp1, exp2, env0, root)
-    case Expression.IfThenElse(exp1, exp2, exp3, tpe, _) =>
-      val cond = cast2bool(eval(exp1, root, env0))
-      if (cond) eval(exp2, root, env0) else eval(exp3, root, env0)
-    case Expression.Let(sym, exp1, exp2, _, _) =>
-      val newEnv = env0 + (sym.toString -> eval(exp1, root, env0))
-      eval(exp2, root, newEnv)
+    //
+    // Unary expressions.
+    //
+    case Expression.Unary(sop, op, exp, _, _) =>
+      evalUnary(sop, exp, env0, lenv0, root)
 
+    //
+    // Binary expressions.
+    //
+    case Expression.Binary(sop, op, exp1, exp2, _, _) => evalBinary(sop, exp1, exp2, env0, lenv0, root)
+
+    //
+    // If-then-else expressions.
+    //
+    case Expression.IfThenElse(exp1, exp2, exp3, tpe, _) =>
+      val cond = cast2bool(eval(exp1, env0, lenv0, root))
+      if (cond) eval(exp2, env0, lenv0, root) else eval(exp3, env0, lenv0, root)
+
+    //
+    // Block expressions.
+    //
+    case Expression.Branch(exp, branches, tpe, loc) => eval(exp, env0, branches, root)
+
+    //
+    // Jump expressions.
+    //
+    case Expression.JumpTo(sym, tpe, loc) =>
+      lenv0.get(sym) match {
+        case None => throw InternalRuntimeException(s"Unknown label: '$sym' in label environment ${lenv0.mkString(" ,")}.")
+        case Some(e) => eval(e, env0, lenv0, root)
+      }
+
+    //
+    // Let expressions.
+    //
+    case Expression.Let(sym, exp1, exp2, _, _) =>
+      val newEnv = env0 + (sym.toString -> eval(exp1, env0, lenv0, root))
+      eval(exp2, newEnv, lenv0, root)
+
+    //
+    // Let-rec expressions.
+    //
     case Expression.LetRec(sym, exp1, exp2, _, _) => exp1 match {
       case Expression.Closure(ref, freeVars, _, _, _) =>
         // Allocate a circular closure.
@@ -88,52 +125,75 @@ object Interpreter {
 
         // Evaluate the body expression under the extended environment.
         val newEnv = env0 + (sym.toString -> closure)
-        eval(exp2, root, newEnv)
+        eval(exp2, newEnv, lenv0, root)
       case _ => throw InternalRuntimeException(s"Non-closure letrec value: ${exp1.getClass.getCanonicalName}.")
     }
 
-    case Expression.Is(sym, tag, exp, _) => mkBool(cast2tag(eval(exp, root, env0)).tag == tag)
+    //
+    // Is, Tag, and Untag expressions.
+    //
+    case Expression.Is(sym, tag, exp, _) => mkBool(cast2tag(eval(exp, env0, lenv0, root)).tag == tag)
+    case Expression.Tag(sym, tag, exp, _, _) => Value.Tag(sym, tag, eval(exp, env0, lenv0, root))
+    case Expression.Untag(sym, tag, exp, _, _) => cast2tag(eval(exp, env0, lenv0, root)).value
 
-    case Expression.Tag(sym, tag, exp, _, _) => Value.Tag(sym, tag, eval(exp, root, env0))
-
-    case Expression.Untag(sym, tag, exp, _, _) => cast2tag(eval(exp, root, env0)).value
-
+    //
+    // Index expressions.
+    //
     case Expression.Index(base, offset, _, _) =>
-      val tuple = cast2tuple(eval(base, root, env0))
+      val tuple = cast2tuple(eval(base, env0, lenv0, root))
       tuple.elms(offset)
-    case Expression.Tuple(elms, _, _) =>
-      Value.Tuple(elms.map(e => eval(e, root, env0)).toList)
 
+    //
+    // Tuple expressions.
+    //
+    case Expression.Tuple(elms, _, _) =>
+      Value.Tuple(elms.map(e => eval(e, env0, lenv0, root)).toList)
+
+    //
+    // Reference expressions.
+    //
     case Expression.Ref(exp, tpe, loc) =>
       val box = new Value.Box()
-      val value = eval(exp, root, env0)
+      val value = eval(exp, env0, lenv0, root)
       box.setValue(value)
       box
 
+    //
+    // Dereference expressions.
+    //
     case Expression.Deref(exp, tpe, loc) =>
-      val box = cast2box(eval(exp, root, env0))
+      val box = cast2box(eval(exp, env0, lenv0, root))
       box.getValue
 
+    //
+    // Assign expressions.
+    //
     case Expression.Assign(exp1, exp2, tpe, loc) =>
-      val box = cast2box(eval(exp1, root, env0))
-      val value = eval(exp2, root, env0)
+      val box = cast2box(eval(exp1, env0, lenv0, root))
+      val value = eval(exp2, env0, lenv0, root)
       box.setValue(value)
       Value.Unit
 
-    case Expression.Existential(params, exp, loc) => throw InternalRuntimeException(s"Unexpected expression: '$exp' at ${loc.source.format}.")
-    case Expression.Universal(params, exp, loc) => throw InternalRuntimeException(s"Unexpected expression: '$exp' at ${loc.source.format}.")
-
+    //
+    // NativeConstructor expressions.
+    //
     case Expression.NativeConstructor(constructor, args, tpe, loc) =>
-      val values = evalArgs(args, root, env0).map(toJava)
+      val values = evalArgs(args, env0, lenv0, root).map(toJava)
       val arguments = values.toArray
       fromJava(constructor.newInstance(arguments: _*).asInstanceOf[AnyRef])
 
+    //
+    // NativeField expressions.
+    //
     case Expression.NativeField(field, tpe, loc) =>
       val clazz = field.getDeclaringClass
       fromJava(field.get(clazz))
 
+    //
+    // NativeMethod expressions.
+    //
     case Expression.NativeMethod(method, args, tpe, loc) =>
-      val values = evalArgs(args, root, env0).map(toJava)
+      val values = evalArgs(args, env0, lenv0, root).map(toJava)
       if (Modifier.isStatic(method.getModifiers)) {
         val arguments = values.toArray
         fromJava(method.invoke(null, arguments: _*))
@@ -143,19 +203,26 @@ object Interpreter {
         fromJava(method.invoke(thisObj, arguments: _*))
       }
 
+    //
+    // Error expressions.
+    //
     case Expression.UserError(_, loc) => throw UserException("User exception.", loc)
-
     case Expression.MatchError(_, loc) => throw MatchException("Non-exhaustive match expression.", loc)
-
     case Expression.SwitchError(_, loc) => throw SwitchException("Non-exhaustive switch expression.", loc)
+
+    //
+    // Unexpected expressions.
+    //
+    case Expression.Existential(params, exp, loc) => throw InternalRuntimeException(s"Unexpected expression: '$exp' at ${loc.source.format}.")
+    case Expression.Universal(params, exp, loc) => throw InternalRuntimeException(s"Unexpected expression: '$exp' at ${loc.source.format}.")
   }
 
   /**
     * Applies the given unary semantic operator `sop` to the value of the expression `exp0` under the environment `env0`
     */
-  private def evalUnary(sop: SemanticOperator, exp0: Expression, env0: Map[String, AnyRef], root: Root): AnyRef = {
+  private def evalUnary(sop: SemanticOperator, exp0: Expression, env0: Map[String, AnyRef], lenv0: Map[Symbol.LabelSym, Expression], root: Root): AnyRef = {
     // Evaluate the operand.
-    val v = eval(exp0, root, env0)
+    val v = eval(exp0, env0, lenv0, root)
 
     // Apply the operator.
     sop match {
@@ -187,31 +254,31 @@ object Interpreter {
   /**
     * Applies the given binary semantic operator `sop`  to the values of the two expressions `exp1` and `exp2` under the environment `env0`
     */
-  private def evalBinary(sop: SemanticOperator, exp1: Expression, exp2: Expression, env0: Map[String, AnyRef], root: Root): AnyRef = {
+  private def evalBinary(sop: SemanticOperator, exp1: Expression, exp2: Expression, env0: Map[String, AnyRef], lenv0: Map[Symbol.LabelSym, Expression], root: Root): AnyRef = {
 
     def evalBoolOp(sop: SemanticOperator.BoolOp): AnyRef = {
       // Evaluate the left operand.
-      val v1 = cast2bool(eval(exp1, root, env0))
+      val v1 = cast2bool(eval(exp1, env0, lenv0, root))
 
       sop match {
         // Lazy operators.
-        case SemanticOperator.BoolOp.And if v1 => mkBool(cast2bool(eval(exp2, root, env0)))
+        case SemanticOperator.BoolOp.And if v1 => mkBool(cast2bool(eval(exp2, env0, lenv0, root)))
         case SemanticOperator.BoolOp.And => mkBool(false)
 
         // Lazy operators.
         case SemanticOperator.BoolOp.Or if v1 => mkBool(true)
-        case SemanticOperator.BoolOp.Or => mkBool(cast2bool(eval(exp2, root, env0)))
+        case SemanticOperator.BoolOp.Or => mkBool(cast2bool(eval(exp2, env0, lenv0, root)))
 
-        case SemanticOperator.BoolOp.Eq => mkBool(v1 == cast2bool(eval(exp2, root, env0)))
-        case SemanticOperator.BoolOp.Neq => mkBool(v1 != cast2bool(eval(exp2, root, env0)))
+        case SemanticOperator.BoolOp.Eq => mkBool(v1 == cast2bool(eval(exp2, env0, lenv0, root)))
+        case SemanticOperator.BoolOp.Neq => mkBool(v1 != cast2bool(eval(exp2, env0, lenv0, root)))
         case _ => throw InternalRuntimeException(s"Unexpected Semantic Operator: '$sop'.")
       }
     }
 
     def evalCharOp(sop: SemanticOperator.CharOp): AnyRef = {
       // Evaluate the operands.
-      val v1 = eval(exp1, root, env0)
-      val v2 = eval(exp2, root, env0)
+      val v1 = eval(exp1, env0, lenv0, root)
+      val v2 = eval(exp2, env0, lenv0, root)
 
       sop match {
         case SemanticOperator.CharOp.Eq => mkBool(cast2char(v1) == cast2char(v2))
@@ -226,8 +293,8 @@ object Interpreter {
 
     def evalFloat32Op(sop: SemanticOperator.Float32Op): AnyRef = {
       // Evaluate the operands.
-      val v1 = eval(exp1, root, env0)
-      val v2 = eval(exp2, root, env0)
+      val v1 = eval(exp1, env0, lenv0, root)
+      val v2 = eval(exp2, env0, lenv0, root)
 
       sop match {
         case SemanticOperator.Float32Op.Add => Value.Float32(cast2float32(v1) + cast2float32(v2))
@@ -248,8 +315,8 @@ object Interpreter {
 
     def evalFloat64Op(sop: SemanticOperator.Float64Op): AnyRef = {
       // Evaluate the operands.
-      val v1 = eval(exp1, root, env0)
-      val v2 = eval(exp2, root, env0)
+      val v1 = eval(exp1, env0, lenv0, root)
+      val v2 = eval(exp2, env0, lenv0, root)
 
       sop match {
         case SemanticOperator.Float64Op.Add => Value.Float64(cast2float64(v1) + cast2float64(v2))
@@ -270,8 +337,8 @@ object Interpreter {
 
     def evalInt8Op(sop: SemanticOperator.Int8Op): AnyRef = {
       // Evaluate the operands.
-      val v1 = eval(exp1, root, env0)
-      val v2 = eval(exp2, root, env0)
+      val v1 = eval(exp1, env0, lenv0, root)
+      val v2 = eval(exp2, env0, lenv0, root)
 
       sop match {
         case SemanticOperator.Int8Op.Add => Value.Int8((cast2int8(v1) + cast2int8(v2)).toByte)
@@ -297,8 +364,8 @@ object Interpreter {
 
     def evalInt16Op(sop: SemanticOperator.Int16Op): AnyRef = {
       // Evaluate the operands.
-      val v1 = eval(exp1, root, env0)
-      val v2 = eval(exp2, root, env0)
+      val v1 = eval(exp1, env0, lenv0, root)
+      val v2 = eval(exp2, env0, lenv0, root)
 
       sop match {
         case SemanticOperator.Int16Op.Add => Value.Int16((cast2int16(v1) + cast2int16(v2)).toShort)
@@ -324,8 +391,8 @@ object Interpreter {
 
     def evalInt32Op(sop: SemanticOperator.Int32Op): AnyRef = {
       // Evaluate the operands.
-      val v1 = eval(exp1, root, env0)
-      val v2 = eval(exp2, root, env0)
+      val v1 = eval(exp1, env0, lenv0, root)
+      val v2 = eval(exp2, env0, lenv0, root)
 
       sop match {
         case SemanticOperator.Int32Op.Add => Value.Int32(cast2int32(v1) + cast2int32(v2))
@@ -351,8 +418,8 @@ object Interpreter {
 
     def evalInt64Op(sop: SemanticOperator.Int64Op): AnyRef = {
       // Evaluate the operands.
-      val v1 = eval(exp1, root, env0)
-      val v2 = eval(exp2, root, env0)
+      val v1 = eval(exp1, env0, lenv0, root)
+      val v2 = eval(exp2, env0, lenv0, root)
 
       sop match {
         case SemanticOperator.Int64Op.Add => Value.Int64(cast2int64(v1) + cast2int64(v2))
@@ -378,8 +445,8 @@ object Interpreter {
 
     def evalBigIntOp(sop: SemanticOperator.BigIntOp): AnyRef = {
       // Evaluate the operands.
-      val v1 = eval(exp1, root, env0)
-      val v2 = eval(exp2, root, env0)
+      val v1 = eval(exp1, env0, lenv0, root)
+      val v2 = eval(exp2, env0, lenv0, root)
 
       sop match {
         case SemanticOperator.BigIntOp.Add => Value.BigInt(cast2bigInt(v1) add cast2bigInt(v2))
@@ -405,8 +472,8 @@ object Interpreter {
 
     def evalOtherOp(sop: SemanticOperator): AnyRef = {
       // Evaluate the operands.
-      val v1 = eval(exp1, root, env0)
-      val v2 = eval(exp2, root, env0)
+      val v1 = eval(exp1, env0, lenv0, root)
+      val v2 = eval(exp2, env0, lenv0, root)
 
       sop match {
         case SemanticOperator.StringOp.Concat => Value.Str(cast2str(v1) + cast2str(v2))
@@ -434,10 +501,10 @@ object Interpreter {
   /**
     * Invokes the given closure expression `exp` with the given arguments `args` under the given environment `env0`..
     */
-  private def invokeClo(exp: Expression, args: List[Expression], env0: Map[String, AnyRef], root: Root): AnyRef = {
-    val clo = cast2closure(eval(exp, root, env0))
+  private def invokeClo(exp: Expression, args: List[Expression], env0: Map[String, AnyRef], lenv0: Map[Symbol.LabelSym, Expression], root: Root): AnyRef = {
+    val clo = cast2closure(eval(exp, env0, lenv0, root), lenv0, root)
     val Value.Closure(name, bindings) = clo
-    val as = evalArgs(args, root, env0)
+    val as = evalArgs(args, env0, lenv0, root)
     val constant = root.defs(name)
     // Bindings for the capture variables are passed as arguments.
     val env1 = constant.formals.take(bindings.length).zip(bindings).foldLeft(env0) {
@@ -447,22 +514,22 @@ object Interpreter {
     val env2 = constant.formals.drop(bindings.length).zip(as).foldLeft(env1) {
       case (macc, (formal, actual)) => macc + (formal.sym.toString -> actual)
     }
-    eval(constant.exp, root, env2)
+    eval(constant.exp, env2, Map.empty, root)
   }
 
   /**
     * Invokes the given definition `sym` with the given arguments `args` under the given environment `env0`..
     */
-  private def invokeDef(sym: Symbol.DefnSym, args: List[Expression], env0: Map[String, AnyRef], root: Root): AnyRef = {
-    val as = evalArgs(args, root, env0)
+  private def invokeDef(sym: Symbol.DefnSym, args: List[Expression], env0: Map[String, AnyRef], lenv0: Map[Symbol.LabelSym, Expression], root: Root): AnyRef = {
+    val as = evalArgs(args, env0, lenv0, root)
     Linker.link(sym, root).invoke(as.toArray)
   }
 
   /**
-    * Evaluates the given list of expressions `exps` under the given environment `env` to a list of values.
+    * Evaluates the given list of expressions `exps` under the given environment `env0` to a list of values.
     */
-  private def evalArgs(exps: List[Expression], root: Root, env: Map[String, AnyRef]): List[AnyRef] = {
-    exps.map(a => eval(a, root, env))
+  private def evalArgs(exps: List[Expression], env0: Map[String, AnyRef], lenv0: Map[Symbol.LabelSym, Expression], root: Root): List[AnyRef] = {
+    exps.map(a => eval(a, env0, lenv0, root))
   }
 
   /**

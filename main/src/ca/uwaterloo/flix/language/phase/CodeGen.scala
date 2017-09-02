@@ -545,6 +545,12 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
       compileExpression(prefix, functions, declarations, interfaces, enums, visitor, entryPoint)(exp3)
       visitor.visitLabel(ifEnd)
 
+    case Expression.Branch(exp, branches, tpe, loc) =>
+      ??? // TODO
+
+    case Expression.JumpTo(sym, tpe, loc) =>
+      ??? // TODO
+
     case Expression.Let(sym, exp1, exp2, _, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)

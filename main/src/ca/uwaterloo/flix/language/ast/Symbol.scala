@@ -69,6 +69,20 @@ object Symbol {
   }
 
   /**
+    * Returns a label symbol with the given text.
+    */
+  def freshLabel(text: String)(implicit genSym: GenSym): LabelSym = {
+    new LabelSym(genSym.freshId(), text)
+  }
+
+  /**
+    * Returns a fresh label symbol with the same text as the given label.
+    */
+  def freshLabel(sym: LabelSym)(implicit genSym: GenSym): LabelSym = {
+    new LabelSym(genSym.freshId(), sym.text)
+  }
+
+  /**
     * Returns the definition symbol for the given name `ident` in the given namespace `ns`.
     */
   def mkDefnSym(ns: NName, ident: Ident): DefnSym = {
@@ -333,6 +347,29 @@ object Symbol {
       * Human readable representation.
       */
     override def toString: String = if (namespace.isEmpty) name else namespace.mkString("/") + "." + name
+  }
+
+  /**
+    * Label Symbol.
+    */
+  final class LabelSym(val id: Int, val text: String) {
+    /**
+      * Returns `true` if this symbol is equal to `that` symbol.
+      */
+    override def equals(obj: scala.Any): Boolean = obj match {
+      case that: LabelSym => this.id == that.id
+      case _ => false
+    }
+
+    /**
+      * Returns the hash code of this symbol.
+      */
+    override val hashCode: Int = 7 * id
+
+    /**
+      * Human readable representation.
+      */
+    override def toString: String = text + id
   }
 
   /**
