@@ -729,7 +729,7 @@ object CodegenHelper {
         case Type.Enum(s, _) => s
         case _ => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
       }
-      decorate(EnumInterfName(sym))
+      decorate(EnumTypeInterfaceName(sym))
     case Type.Apply(Type.Ref, List(ts)) => asm.Type.getInternalName(getReferenceClazz(tpe))
     case _ => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
   }
