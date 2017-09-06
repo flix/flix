@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.api
 
 import java.nio.charset.Charset
 import java.nio.file.{Files, Path, Paths}
+import java.util.concurrent.{ExecutorService, Executors}
 
 import ca.uwaterloo.flix.language.ast.Ast.Hook
 import ca.uwaterloo.flix.language.ast._
@@ -25,7 +26,7 @@ import ca.uwaterloo.flix.language.phase._
 import ca.uwaterloo.flix.language.{CompilationError, GenSym}
 import ca.uwaterloo.flix.runtime.quickchecker.QuickChecker
 import ca.uwaterloo.flix.runtime.verifier.Verifier
-import ca.uwaterloo.flix.runtime.{DeltaSolver, Model, Solver, Value}
+import ca.uwaterloo.flix.runtime.{DeltaSolver, Model, Solver}
 import ca.uwaterloo.flix.util.{LocalResource, Options, Validation}
 
 import scala.collection.mutable
@@ -86,11 +87,6 @@ class Flix {
   private val hooks = mutable.Map.empty[Symbol.DefnSym, Ast.Hook]
 
   /**
-    * The execution context for `this` Flix instance.
-    */
-  val ec: ExecutionContext = scala.concurrent.ExecutionContext.global
-
-  /**
     * The default assumed charset.
     */
   val defaultCharset: Charset = Charset.forName("UTF-8")
@@ -99,6 +95,11 @@ class Flix {
     * The current Flix options.
     */
   var options = Options.Default
+
+  /**
+    * The execution context for `this` Flix instance.
+    */
+  var ec: ExecutionContext = mkExecutionContext(threads = 1)
 
   /**
     * The symbol generator associated with this Flix instance.
@@ -179,6 +180,7 @@ class Flix {
   def setOptions(opts: Options): Flix = {
     if (opts == null)
       throw new IllegalArgumentException("'opts' must be non-null.")
+    ec = mkExecutionContext(threads = opts.threads)
     options = opts
     this
   }
@@ -300,6 +302,25 @@ class Flix {
 
     // Add the function to the hooks.
     hooks.put(sym, Ast.Hook.Unsafe(sym, inv, tpe))
+  }
+
+  /**
+    * Returns an execution context fixed to the given number of `threads`.
+    */
+  private def mkExecutionContext(threads: Int): ExecutionContext = {
+    val service = mkExecutorService(threads)
+    ExecutionContext.fromExecutorService(service)
+  }
+
+  /**
+    * Returns an executor service fixed to the given number of `threads`.
+    */
+  private def mkExecutorService(threads: Int): ExecutorService = {
+    Executors.newFixedThreadPool(threads, (r: Runnable) => {
+      val t = new Thread(r)
+      t.setDaemon(true)
+      t
+    })
   }
 
 }
