@@ -442,19 +442,18 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
             case rs => WeededAst.Expression.Switch(rs, mkSL(sp1, sp2))
           }
 
-        case ParsedAst.Expression.Tag(sp1, qname, o, sp2) =>
-          /*
-           * Introduce implicit unit, if needed.
-           */
+        case ParsedAst.Expression.Tag(sp1, qname, expOpt, sp2) =>
           val (enum, tag) = asTag(qname)
-          o match {
+
+          expOpt match {
             case None =>
-              val loc = mkSL(sp1, sp2)
-              val exp = WeededAst.Expression.Unit(loc)
-              WeededAst.Expression.Tag(enum, tag, exp, loc).toSuccess
-            case Some(exp) => visit(exp, unsafe) map {
-              case e => WeededAst.Expression.Tag(enum, tag, e, mkSL(sp1, sp2))
-            }
+              // Case 1: The tag does not have an expression. Nothing more to be done.
+              WeededAst.Expression.Tag(enum, tag, None, mkSL(sp1, sp2)).toSuccess
+            case Some(exp) =>
+              // Case 2: The tag has an expression. Perform weeding on it.
+              visit(exp, unsafe) map {
+                case e => WeededAst.Expression.Tag(enum, tag, Some(e), mkSL(sp1, sp2))
+              }
           }
 
         case ParsedAst.Expression.Tuple(sp1, elms, sp2) =>
@@ -475,7 +474,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
            */
           val tag = Name.Ident(sp1, "Nil", sp2)
           val exp = WeededAst.Expression.Unit(mkSL(sp1, sp2))
-          WeededAst.Expression.Tag(None, tag, exp, mkSL(sp1, sp2)).toSuccess
+          WeededAst.Expression.Tag(None, tag, Some(exp), mkSL(sp1, sp2)).toSuccess
 
         case ParsedAst.Expression.FCons(hd, sp1, sp2, tl) =>
           /*
@@ -485,7 +484,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
             case (e1, e2) =>
               val tag = Name.Ident(sp1, "Cons", sp2)
               val exp = WeededAst.Expression.Tuple(List(e1, e2), mkSL(sp1, sp2))
-              WeededAst.Expression.Tag(None, tag, exp, mkSL(sp1, sp2))
+              WeededAst.Expression.Tag(None, tag, Some(exp), mkSL(sp1, sp2))
           }
 
         case ParsedAst.Expression.FAppend(fst, sp1, sp2, snd) =>

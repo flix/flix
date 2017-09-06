@@ -409,8 +409,15 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
         case rs => NamedAst.Expression.Switch(rs, Type.freshTypeVar(), loc)
       }
 
-      case WeededAst.Expression.Tag(enum, tag, exp, loc) => namer(exp, env0, tenv0) map {
-        case e => NamedAst.Expression.Tag(enum, tag, e, Type.freshTypeVar(), loc)
+      case WeededAst.Expression.Tag(enum, tag, expOpt, loc) => expOpt match {
+        case None =>
+          // Case 1: The tag does not have an expression. Nothing more to be done.
+          NamedAst.Expression.Tag(enum, tag, None, Type.freshTypeVar(), loc).toSuccess
+        case Some(exp) =>
+          // Case 2: The tag has an expression. Perform naming on it.
+          namer(exp, env0, tenv0) map {
+            case e => NamedAst.Expression.Tag(enum, tag, Some(e), Type.freshTypeVar(), loc)
+          }
       }
 
       case WeededAst.Expression.Tuple(elms, loc) =>
@@ -513,7 +520,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
       case WeededAst.Expression.Switch(rules, loc) => rules flatMap {
         case (cond, body) => freeVars(cond) ++ freeVars(body)
       }
-      case WeededAst.Expression.Tag(enum, tag, exp, loc) => freeVars(exp)
+      case WeededAst.Expression.Tag(enum, tag, expOpt, loc) => expOpt.map(freeVars).getOrElse(Nil)
       case WeededAst.Expression.Tuple(elms, loc) => elms.flatMap(freeVars)
       case WeededAst.Expression.Ref(exp, loc) => freeVars(exp)
       case WeededAst.Expression.Deref(exp, loc) => freeVars(exp)
