@@ -124,10 +124,11 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
     * @param root The AST root
     */
   def checkPats(tast: TypedAst.Lattice, root: TypedAst.Root)(implicit genSym: GenSym): Validation[TypedAst.Lattice, CompilationError] = tast match {
-    case TypedAst.Lattice(_, bot0, top0, leq0, lub0, glb0, _) =>
+    case TypedAst.Lattice(_, bot0, top0, equ0, leq0, lub0, glb0, _) =>
       for {
         _ <- Expressions.checkPats(bot0, root)
         _ <- Expressions.checkPats(top0, root)
+        _ <- Expressions.checkPats(equ0, root)
         _ <- Expressions.checkPats(leq0, root)
         _ <- Expressions.checkPats(lub0, root)
         _ <- Expressions.checkPats(glb0, root)

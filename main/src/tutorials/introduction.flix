@@ -41,6 +41,11 @@ enum Constant {
 }
 
 //
+// We define equality of two lattice elements by structural equality.
+//
+def equ(e1: Constant, e2: Constant): Bool = e1 == e2
+
+//
 // The next task is to define the partial order on Constant.
 // This is straightforward with pattern matching on the arguments:
 //
@@ -75,7 +80,7 @@ def glb(e1: Constant, e2: Constant): Constant = match (e1, e2) with {
 // This complete the specification of the lattice. We associate the
 // lattice components with the Constant type in the following way:
 //
-let Constant<> = (Bot, Top, leq, lub, glb)
+let Constant<> = (Bot, Top, equ, leq, lub, glb)
 // NB: In the future, this syntax is subject to change.
 
 //

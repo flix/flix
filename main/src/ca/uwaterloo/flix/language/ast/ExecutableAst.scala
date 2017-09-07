@@ -112,7 +112,7 @@ object ExecutableAst {
 
   case class Enum(sym: Symbol.EnumSym, cases: Map[String, ExecutableAst.Case], loc: SourceLocation) extends ExecutableAst
 
-  case class Lattice(tpe: Type, bot: Symbol.DefnSym, top: Symbol.DefnSym, leq: Symbol.DefnSym, lub: Symbol.DefnSym, glb: Symbol.DefnSym, loc: SourceLocation) extends ExecutableAst
+  case class Lattice(tpe: Type, bot: Symbol.DefnSym, top: Symbol.DefnSym, equ: Symbol.DefnSym, leq: Symbol.DefnSym, lub: Symbol.DefnSym, glb: Symbol.DefnSym, loc: SourceLocation) extends ExecutableAst
 
   case class Index(name: Symbol.TableSym, indexes: Seq[Seq[Name.Ident]], loc: SourceLocation) extends ExecutableAst
 

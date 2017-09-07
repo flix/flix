@@ -16,6 +16,11 @@ namespace Belnap {
     }
 
     ///
+    /// Returns `true` iff `e1` is equal to `e2`.
+    ///
+    def equ(e1: Belnap, e2: Belnap): Bool = e1 == e2
+
+    ///
     /// Returns `true` iff `e1` is less than or equal to `e2`.
     ///
     #reflexive #antiSymmetric #transitive #leastElement(Bot) #greatestElement(Top)
@@ -158,7 +163,7 @@ namespace Belnap {
         case _              => Top
     }
 
-    let Belnap<> = (Bot, Top, leq, lub, glb)
+    let Belnap<> = (Bot, Top, equ, leq, lub, glb)
 
     //
     // ## Specialized Laws

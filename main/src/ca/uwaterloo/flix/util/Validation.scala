@@ -157,43 +157,54 @@ object Validation {
     * Merges 2 validations.
     */
   def @@[A, B, X](a: Validation[A, X], b: Validation[B, X]): Validation[(A, B), X] =
-  (a, b) match {
-    case (Success(valueA, altA), Success(valueB, altB)) =>
-      Success((valueA, valueB), altB #::: altA)
-    case _ => Failure(b.errors #::: a.errors)
-  }
+    (a, b) match {
+      case (Success(valueA, altA), Success(valueB, altB)) =>
+        Success((valueA, valueB), altB #::: altA)
+      case _ => Failure(b.errors #::: a.errors)
+    }
 
   /**
     * Merges 3 validations.
     */
   def @@[A, B, C, X](a: Validation[A, X], b: Validation[B, X], c: Validation[C, X]): Validation[(A, B, C), X] =
-  (@@(a, b), c) match {
-    case (Success((valueA, valueB), altAB), Success(valueC, altC)) =>
-      Success((valueA, valueB, valueC), altC #::: altAB)
-    case (that, _) => Failure(c.errors #::: that.errors)
-  }
+    (@@(a, b), c) match {
+      case (Success((valueA, valueB), altAB), Success(valueC, altC)) =>
+        Success((valueA, valueB, valueC), altC #::: altAB)
+      case (that, _) => Failure(c.errors #::: that.errors)
+    }
 
   /**
     * Merges 4 validations.
     */
   def @@[A, B, C, D, X](a: Validation[A, X], b: Validation[B, X], c: Validation[C, X],
                         d: Validation[D, X]): Validation[(A, B, C, D), X] =
-  (@@(a, b, c), d) match {
-    case (Success((valueA, valueB, valueC), altABC), Success(valueD, altD)) =>
-      Success((valueA, valueB, valueC, valueD), altD #::: altABC)
-    case (that, _) => Failure(d.errors #::: that.errors)
-  }
+    (@@(a, b, c), d) match {
+      case (Success((valueA, valueB, valueC), altABC), Success(valueD, altD)) =>
+        Success((valueA, valueB, valueC, valueD), altD #::: altABC)
+      case (that, _) => Failure(d.errors #::: that.errors)
+    }
 
   /**
     * Merges 5 validations.
     */
   def @@[A, B, C, D, E, X](a: Validation[A, X], b: Validation[B, X], c: Validation[C, X],
                            d: Validation[D, X], e: Validation[E, X]): Validation[(A, B, C, D, E), X] =
-  (@@(a, b, c, d), e) match {
-    case (Success((valueA, valueB, valueC, valueD), altABCD), Success(valueE, altE)) =>
-      Success((valueA, valueB, valueC, valueD, valueE), altE #::: altABCD)
-    case (that, _) => Failure(e.errors #::: that.errors)
-  }
+    (@@(a, b, c, d), e) match {
+      case (Success((valueA, valueB, valueC, valueD), altABCD), Success(valueE, altE)) =>
+        Success((valueA, valueB, valueC, valueD, valueE), altE #::: altABCD)
+      case (that, _) => Failure(e.errors #::: that.errors)
+    }
+
+  /**
+    * Merges 6 validations.
+    */
+  def @@[A, B, C, D, E, F, X](a: Validation[A, X], b: Validation[B, X], c: Validation[C, X],
+                              d: Validation[D, X], e: Validation[E, X], f: Validation[F, X]): Validation[(A, B, C, D, E, F), X] =
+    (@@(a, b, c, d, e), f) match {
+      case (Success((valueA, valueB, valueC, valueD, valueE), altABCDE), Success(valueF, altF)) =>
+        Success((valueA, valueB, valueC, valueD, valueE, valueF), altF #::: altABCDE)
+      case (that, _) => Failure(e.errors #::: that.errors)
+    }
 
   /**
     * Add implicit `toSuccess` method.
