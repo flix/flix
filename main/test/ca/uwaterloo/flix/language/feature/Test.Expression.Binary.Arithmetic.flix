@@ -579,151 +579,151 @@ def testBinaryDivide44(): Bool = assertEq!(-3ii / 1200000000000000000000ii, 0ii)
 def testBinaryDivide45(): Bool = assertEq!(-9223372036854775809ii / -1ii, 9223372036854775809ii)
 
 @test
-def testBinaryModule01(): Bool = assertEq!(1200000 % 200000, 0)
+def testBinaryModulo01(): Bool = assertEq!(1200000 % 200000, 0)
 
 @test
-def testBinaryModule02(): Bool = assertEq!(1200000 % 500000, 200000)
+def testBinaryModulo02(): Bool = assertEq!(1200000 % 500000, 200000)
 
 @test
-def testBinaryModule03(): Bool = assertEq!(-1200000 % 500000, -200000)
+def testBinaryModulo03(): Bool = assertEq!(-1200000 % 500000, -200000)
 
 @test
-def testBinaryModule04(): Bool = assertEq!(1200000 % -500000, 200000)
+def testBinaryModulo04(): Bool = assertEq!(1200000 % -500000, 200000)
 
 @test
-def testBinaryModule05(): Bool = assertEq!(-1200000 % -500000, -200000)
+def testBinaryModulo05(): Bool = assertEq!(-1200000 % -500000, -200000)
 
 @test
-def testBinaryModule06(): Bool = assertEq!(12i8 % 2i8, 0i8)
+def testBinaryModulo06(): Bool = assertEq!(12i8 % 2i8, 0i8)
 
 @test
-def testBinaryModule07(): Bool = assertEq!(12i8 % 5i8, 2i8)
+def testBinaryModulo07(): Bool = assertEq!(12i8 % 5i8, 2i8)
 
 @test
-def testBinaryModule08(): Bool = assertEq!(-12i8 % 5i8, -2i8)
+def testBinaryModulo08(): Bool = assertEq!(-12i8 % 5i8, -2i8)
 
 @test
-def testBinaryModule09(): Bool = assertEq!(12i8 % -5i8, 2i8)
+def testBinaryModulo09(): Bool = assertEq!(12i8 % -5i8, 2i8)
 
 @test
-def testBinaryModule10(): Bool = assertEq!(-12i8 % -5i8, -2i8)
+def testBinaryModulo10(): Bool = assertEq!(-12i8 % -5i8, -2i8)
 
 @test
-def testBinaryModule11(): Bool = assertEq!(12000i16 % 2000i16, 0i16)
+def testBinaryModulo11(): Bool = assertEq!(12000i16 % 2000i16, 0i16)
 
 @test
-def testBinaryModule12(): Bool = assertEq!(12000i16 % 5000i16, 2000i16)
+def testBinaryModulo12(): Bool = assertEq!(12000i16 % 5000i16, 2000i16)
 
 @test
-def testBinaryModule13(): Bool = assertEq!(-12000i16 % 5000i16, -2000i16)
+def testBinaryModulo13(): Bool = assertEq!(-12000i16 % 5000i16, -2000i16)
 
 @test
-def testBinaryModule14(): Bool = assertEq!(12000i16 % -5000i16, 2000i16)
+def testBinaryModulo14(): Bool = assertEq!(12000i16 % -5000i16, 2000i16)
 
 @test
-def testBinaryModule15(): Bool = assertEq!(-12000i16 % -5000i16, -2000i16)
+def testBinaryModulo15(): Bool = assertEq!(-12000i16 % -5000i16, -2000i16)
 
 @test
-def testBinaryModule16(): Bool = assertEq!(1200000i32 % 200000i32, 0i32)
+def testBinaryModulo16(): Bool = assertEq!(1200000i32 % 200000i32, 0i32)
 
 @test
-def testBinaryModule17(): Bool = assertEq!(1200000i32 % 500000i32, 200000i32)
+def testBinaryModulo17(): Bool = assertEq!(1200000i32 % 500000i32, 200000i32)
 
 @test
-def testBinaryModule18(): Bool = assertEq!(-1200000i32 % 500000i32, -200000i32)
+def testBinaryModulo18(): Bool = assertEq!(-1200000i32 % 500000i32, -200000i32)
 
 @test
-def testBinaryModule19(): Bool = assertEq!(1200000i32 % -500000i32, 200000i32)
+def testBinaryModulo19(): Bool = assertEq!(1200000i32 % -500000i32, 200000i32)
 
 @test
-def testBinaryModule20(): Bool = assertEq!(-1200000i32 % -500000i32, -200000i32)
+def testBinaryModulo20(): Bool = assertEq!(-1200000i32 % -500000i32, -200000i32)
 
 @test
-def testBinaryModule21(): Bool = assertEq!(120000000000i64 % 20000000000i64, 0i64)
+def testBinaryModulo21(): Bool = assertEq!(120000000000i64 % 20000000000i64, 0i64)
 
 @test
-def testBinaryModule22(): Bool = assertEq!(120000000000i64 % 50000000000i64, 20000000000i64)
+def testBinaryModulo22(): Bool = assertEq!(120000000000i64 % 50000000000i64, 20000000000i64)
 
 @test
-def testBinaryModule23(): Bool = assertEq!(-120000000000i64 % 50000000000i64, -20000000000i64)
+def testBinaryModulo23(): Bool = assertEq!(-120000000000i64 % 50000000000i64, -20000000000i64)
 
 @test
-def testBinaryModule24(): Bool = assertEq!(120000000000i64 % -50000000000i64, 20000000000i64)
+def testBinaryModulo24(): Bool = assertEq!(120000000000i64 % -50000000000i64, 20000000000i64)
 
 @test
-def testBinaryModule25(): Bool = assertEq!(-120000000000i64 % -50000000000i64, -20000000000i64)
+def testBinaryModulo25(): Bool = assertEq!(-120000000000i64 % -50000000000i64, -20000000000i64)
 
 @test
-def testBinaryModule26(): Bool = assertEq!(12.34 % 56.78, 12.34)
+def testBinaryModulo26(): Bool = assertEq!(12.34 % 56.78, 12.34)
 
 @test
-def testBinaryModule27(): Bool = assertEq!(1234567890000000000000000000000000000000000000000.987654321 % 222.222,
+def testBinaryModulo27(): Bool = assertEq!(1234567890000000000000000000000000000000000000000.987654321 % 222.222,
                                            88.53722751835619)
 
 @test
-def testBinaryModule28(): Bool = assertEq!(-1234567890000000000000000000000000000000000000000.987654321 % 222.222,
+def testBinaryModulo28(): Bool = assertEq!(-1234567890000000000000000000000000000000000000000.987654321 % 222.222,
                                            -88.53722751835619)
 
 @test
-def testBinaryModule29(): Bool = assertEq!(0.0000000000000000000000000000000000000000987654321 % 0.222,
+def testBinaryModulo29(): Bool = assertEq!(0.0000000000000000000000000000000000000000987654321 % 0.222,
                                            0.0000000000000000000000000000000000000000987654321)
 
 @test
-def testBinaryModule30(): Bool = assertEq!(-0.0000000000000000000000000000000000000000987654321 % 0.222,
+def testBinaryModulo30(): Bool = assertEq!(-0.0000000000000000000000000000000000000000987654321 % 0.222,
                                            -0.0000000000000000000000000000000000000000987654321)
 
 @test
-def testBinaryModule31(): Bool = assertEq!(12.34f32 % 56.78f32, 12.34f32)
+def testBinaryModulo31(): Bool = assertEq!(12.34f32 % 56.78f32, 12.34f32)
 
 @test
-def testBinaryModule32(): Bool = assertEq!(123456789000000000000000000000000000000.987654321f32 % 222.222f32,
+def testBinaryModulo32(): Bool = assertEq!(123456789000000000000000000000000000000.987654321f32 % 222.222f32,
                                            29.297333f32)
 
 @test
-def testBinaryModule33(): Bool = assertEq!(-123456789000000000000000000000000000000.987654321f32 % 222.222f32,
+def testBinaryModulo33(): Bool = assertEq!(-123456789000000000000000000000000000000.987654321f32 % 222.222f32,
                                            -29.297333f32)
 
 @test
-def testBinaryModule34(): Bool = assertEq!(0.000000000000000000000000000000987654321f32 % 0.222f32,
+def testBinaryModulo34(): Bool = assertEq!(0.000000000000000000000000000000987654321f32 % 0.222f32,
                                            0.000000000000000000000000000000987654321f32)
 
 @test
-def testBinaryModule35(): Bool = assertEq!(-0.00000000000000000000000000000987654321f32 % 0.222f32,
+def testBinaryModulo35(): Bool = assertEq!(-0.00000000000000000000000000000987654321f32 % 0.222f32,
                                            -0.00000000000000000000000000000987654321f32)
 
 @test
-def testBinaryModule36(): Bool = assertEq!(12.34f64 % 56.78f64, 12.34f64)
+def testBinaryModulo36(): Bool = assertEq!(12.34f64 % 56.78f64, 12.34f64)
 
 @test
-def testBinaryModule37(): Bool = assertEq!(1234567890000000000000000000000000000000000000000.987654321f64 % 222.222f64,
+def testBinaryModulo37(): Bool = assertEq!(1234567890000000000000000000000000000000000000000.987654321f64 % 222.222f64,
                                            88.53722751835619f64)
 
 @test
-def testBinaryModule38(): Bool = assertEq!(-1234567890000000000000000000000000000000000000000.987654321f64 % 222.222f64,
+def testBinaryModulo38(): Bool = assertEq!(-1234567890000000000000000000000000000000000000000.987654321f64 % 222.222f64,
                                            -88.53722751835619f64)
 
 @test
-def testBinaryModule39(): Bool = assertEq!(0.0000000000000000000000000000000000000000987654321f64 % 0.222f64,
+def testBinaryModulo39(): Bool = assertEq!(0.0000000000000000000000000000000000000000987654321f64 % 0.222f64,
                                            0.0000000000000000000000000000000000000000987654321f64)
 
 @test
-def testBinaryModule40(): Bool = assertEq!(-0.0000000000000000000000000000000000000000987654321f64 % 0.222f64,
+def testBinaryModulo40(): Bool = assertEq!(-0.0000000000000000000000000000000000000000987654321f64 % 0.222f64,
                                            -0.0000000000000000000000000000000000000000987654321f64)
 
 @test
-def testBinaryModule41(): Bool = assertEq!(1200000000000000000000ii % 200000000000000000000ii, 0ii)
+def testBinaryModulo41(): Bool = assertEq!(1200000000000000000000ii % 200000000000000000000ii, 0ii)
 
 @test
-def testBinaryModule42(): Bool = assertEq!(1200000000000000000000ii % 500000000000000000000ii, 200000000000000000000ii)
+def testBinaryModulo42(): Bool = assertEq!(1200000000000000000000ii % 500000000000000000000ii, 200000000000000000000ii)
 
 @test
-def testBinaryModule43(): Bool = assertEq!(-1200000000000000000000ii % 500000000000000000000ii, -200000000000000000000ii)
+def testBinaryModulo43(): Bool = assertEq!(-1200000000000000000000ii % 500000000000000000000ii, -200000000000000000000ii)
 
 @test
-def testBinaryModule44(): Bool = assertEq!(1200000000000000000000ii % -500000000000000000000ii, 200000000000000000000ii)
+def testBinaryModulo44(): Bool = assertEq!(1200000000000000000000ii % -500000000000000000000ii, 200000000000000000000ii)
 
 @test
-def testBinaryModule45(): Bool = assertEq!(-1200000000000000000000ii % -500000000000000000000ii, -200000000000000000000ii)
+def testBinaryModulo45(): Bool = assertEq!(-1200000000000000000000ii % -500000000000000000000ii, -200000000000000000000ii)
 
 @test
 def testBinaryExponentiate01(): Bool = assertEq!(2 ** 0, 1)

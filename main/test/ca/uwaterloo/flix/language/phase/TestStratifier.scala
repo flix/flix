@@ -19,18 +19,9 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.errors.StratificationError
-import ca.uwaterloo.flix.runtime.Model
-import ca.uwaterloo.flix.util.Options
 import org.scalatest.FunSuite
 
 class TestStratifier extends FunSuite with TestUtils {
-
-  /**
-    * Runs Flix on the given input string `s`.
-    */
-  def run(s: String, core: Boolean = true): Model = {
-    new Flix().setOptions(Options.DefaultTest.copy(core = core)).addStr(s).solve().get
-  }
 
   /////////////////////////////////////////////////////////////////////////////
   // Patterns                                                                //
