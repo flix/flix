@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.GenSym
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.ResolutionError
 import ca.uwaterloo.flix.util.Validation._
@@ -33,6 +34,8 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
     * Performs name resolution on the given program `prog0`.
     */
   def run(prog0: NamedAst.Program)(implicit flix: Flix): Validation[ResolvedAst.Program, ResolutionError] = {
+
+    implicit val _ = flix.genSym
 
     val b = System.nanoTime()
 
@@ -103,14 +106,14 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
     /**
       * Performs name resolution on the given `constraints` in the given namespace `ns0`.
       */
-    def resolve(constraints: List[NamedAst.Constraint], ns0: Name.NName, prog0: NamedAst.Program): Validation[List[ResolvedAst.Constraint], ResolutionError] = {
+    def resolve(constraints: List[NamedAst.Constraint], ns0: Name.NName, prog0: NamedAst.Program)(implicit genSym: GenSym): Validation[List[ResolvedAst.Constraint], ResolutionError] = {
       seqM(constraints.map(c => resolve(c, ns0, prog0)))
     }
 
     /**
       * Performs name resolution on the given constraint `c0` in the given namespace `ns0`.
       */
-    def resolve(c0: NamedAst.Constraint, ns0: Name.NName, prog0: NamedAst.Program): Validation[ResolvedAst.Constraint, ResolutionError] = {
+    def resolve(c0: NamedAst.Constraint, ns0: Name.NName, prog0: NamedAst.Program)(implicit genSym: GenSym): Validation[ResolvedAst.Constraint, ResolutionError] = {
       for {
         ps <- seqM(c0.cparams.map(p => Params.resolve(p, ns0, prog0)))
         h <- Predicates.Head.resolve(c0.head, ns0, prog0)
@@ -123,7 +126,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
   /**
     * Performs name resolution on the given definition `d0` in the given namespace `ns0`.
     */
-  def resolve(d0: NamedAst.Def, ns0: Name.NName, prog0: NamedAst.Program): Validation[ResolvedAst.Def, ResolutionError] = {
+  def resolve(d0: NamedAst.Def, ns0: Name.NName, prog0: NamedAst.Program)(implicit genSym: GenSym): Validation[ResolvedAst.Def, ResolutionError] = {
     val schemeVal = for {
       base <- lookupType(d0.sc.base, ns0, prog0)
     } yield Scheme(d0.sc.quantifiers, base)
@@ -140,7 +143,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
   /**
     * Performs name resolution on the given enum `e0` in the given namespace `ns0`.
     */
-  def resolve(e0: NamedAst.Enum, ns0: Name.NName, prog0: NamedAst.Program): Validation[ResolvedAst.Enum, ResolutionError] = {
+  def resolve(e0: NamedAst.Enum, ns0: Name.NName, prog0: NamedAst.Program)(implicit genSym: GenSym): Validation[ResolvedAst.Enum, ResolutionError] = {
     val casesVal = e0.cases.map {
       case (name, NamedAst.Case(enum, tag, tpe)) =>
         for {
@@ -158,7 +161,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
   /**
     * Performs name resolution on the given index `i0` in the given namespace `ns0`.
     */
-  def resolve(i0: NamedAst.Index, ns0: Name.NName, prog0: NamedAst.Program): Validation[ResolvedAst.Index, ResolutionError] = {
+  def resolve(i0: NamedAst.Index, ns0: Name.NName, prog0: NamedAst.Program)(implicit genSym: GenSym): Validation[ResolvedAst.Index, ResolutionError] = {
     for {
       d <- lookupTable(i0.qname, ns0, prog0)
     } yield ResolvedAst.Index(d.sym, i0.indexes, i0.loc)
@@ -167,7 +170,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
   /**
     * Performs name resolution on the given lattice `l0` in the given namespace `ns0`.
     */
-  def resolve(l0: NamedAst.Lattice, ns0: Name.NName, prog0: NamedAst.Program): Validation[ResolvedAst.Lattice, ResolutionError] = {
+  def resolve(l0: NamedAst.Lattice, ns0: Name.NName, prog0: NamedAst.Program)(implicit genSym: GenSym): Validation[ResolvedAst.Lattice, ResolutionError] = {
     for {
       tpe <- lookupType(l0.tpe, ns0, prog0)
       bot <- Expressions.resolve(l0.bot, ns0, prog0)
@@ -183,7 +186,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
     /**
       * Performs name resolution on the given table `t0` in the given namespace `ns0`.
       */
-    def resolve(t0: NamedAst.Table, ns0: Name.NName, prog0: NamedAst.Program): Validation[ResolvedAst.Table, ResolutionError] = t0 match {
+    def resolve(t0: NamedAst.Table, ns0: Name.NName, prog0: NamedAst.Program)(implicit genSym: GenSym): Validation[ResolvedAst.Table, ResolutionError] = t0 match {
       case NamedAst.Table.Relation(doc, sym, attr, loc) =>
         for {
           as <- seqM(attr.map(a => resolve(a, ns0, prog0)))
@@ -199,7 +202,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
     /**
       * Performs name resolution on the given attribute `a0` in the given namespace `ns0`.
       */
-    private def resolve(a0: NamedAst.Attribute, ns0: Name.NName, prog0: NamedAst.Program): Validation[ResolvedAst.Attribute, ResolutionError] = {
+    private def resolve(a0: NamedAst.Attribute, ns0: Name.NName, prog0: NamedAst.Program)(implicit genSym: GenSym): Validation[ResolvedAst.Attribute, ResolutionError] = {
       for {
         tpe <- lookupType(a0.tpe, ns0, prog0)
       } yield ResolvedAst.Attribute(a0.ident, tpe, a0.loc)
@@ -212,7 +215,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
     /**
       * Performs name resolution on the given expression `exp0` in the namespace `ns0`.
       */
-    def resolve(exp0: NamedAst.Expression, ns0: Name.NName, prog0: NamedAst.Program): Validation[ResolvedAst.Expression, ResolutionError] = {
+    def resolve(exp0: NamedAst.Expression, ns0: Name.NName, prog0: NamedAst.Program)(implicit genSym: GenSym): Validation[ResolvedAst.Expression, ResolutionError] = {
       /**
         * Local visitor.
         */
@@ -318,11 +321,49 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
             case rs => ResolvedAst.Expression.Switch(rs, tvar, loc)
           }
 
-        case NamedAst.Expression.Tag(enum, tag, exp, tvar, loc) =>
-          for {
-            d <- lookupEnumByTag(enum, tag, ns0, prog0)
-            e <- visit(exp)
-          } yield ResolvedAst.Expression.Tag(d.sym, tag.name, e, tvar, loc)
+        case NamedAst.Expression.Tag(enum, tag, expOpt, tvar, loc) => expOpt match {
+          case None =>
+            // Case 1: The tag has does not have an expression.
+            // Either it is implicitly Unit or the tag is used as a function.
+
+            // Lookup the enum to determine the type of the tag.
+            lookupEnumByTag(enum, tag, ns0, prog0) map {
+              case decl =>
+                // Retrieve the relevant case.
+                val caze = decl.cases(tag.name)
+
+                // Check if the tag value has Unit type.
+                if (isUnitType(caze.tpe)) {
+                  // Case 1.1: The tag value has Unit type. Construct the Unit expression.
+                  val e = ResolvedAst.Expression.Unit(loc)
+                  ResolvedAst.Expression.Tag(decl.sym, tag.name, e, tvar, loc)
+                } else {
+                  // Case 1.2: The tag has a non-Unit type. Hence the tag is used as a function.
+                  // If the tag is `Some` we construct the lambda: x -> Some(x).
+
+                  // Construct a fresh symbol for the formal parameter.
+                  val freshVar = Symbol.freshVarSym("x")
+
+                  // Construct the formal parameter for the fresh symbol.
+                  val freshParam = ResolvedAst.FormalParam(freshVar, Ast.Modifiers.Empty, Type.freshTypeVar(), loc)
+
+                  // Construct a variable expression for the fresh symbol.
+                  val varExp = ResolvedAst.Expression.Var(freshVar, loc)
+
+                  // Construct the tag expression on the fresh symbol expression.
+                  val tagExp = ResolvedAst.Expression.Tag(decl.sym, caze.tag.name, varExp, Type.freshTypeVar(), loc)
+
+                  // Assemble the lambda expressions.
+                  ResolvedAst.Expression.Lambda(List(freshParam), tagExp, Type.freshTypeVar(), loc)
+                }
+            }
+          case Some(exp) =>
+            // Case 2: The tag has an expression. Perform resolution on it.
+            for {
+              d <- lookupEnumByTag(enum, tag, ns0, prog0)
+              e <- visit(exp)
+            } yield ResolvedAst.Expression.Tag(d.sym, tag.name, e, tvar, loc)
+        }
 
         case NamedAst.Expression.Tuple(elms, tvar, loc) =>
           for {
@@ -448,7 +489,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
       /**
         * Performs name resolution on the given head predicate `h0` in the given namespace `ns0`.
         */
-      def resolve(h0: NamedAst.Predicate.Head, ns0: Name.NName, prog0: NamedAst.Program): Validation[ResolvedAst.Predicate.Head, ResolutionError] = h0 match {
+      def resolve(h0: NamedAst.Predicate.Head, ns0: Name.NName, prog0: NamedAst.Program)(implicit genSym: GenSym): Validation[ResolvedAst.Predicate.Head, ResolutionError] = h0 match {
         case NamedAst.Predicate.Head.True(loc) => ResolvedAst.Predicate.Head.True(loc).toSuccess
 
         case NamedAst.Predicate.Head.False(loc) => ResolvedAst.Predicate.Head.False(loc).toSuccess
@@ -471,7 +512,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
       /**
         * Performs name resolution on the given body predicate `b0` in the given namespace `ns0`.
         */
-      def resolve(b0: NamedAst.Predicate.Body, ns0: Name.NName, prog0: NamedAst.Program): Validation[ResolvedAst.Predicate.Body, ResolutionError] = b0 match {
+      def resolve(b0: NamedAst.Predicate.Body, ns0: Name.NName, prog0: NamedAst.Program)(implicit genSym: GenSym): Validation[ResolvedAst.Predicate.Body, ResolutionError] = b0 match {
         case NamedAst.Predicate.Body.Positive(qname, terms, loc) =>
           for {
             d <- lookupTable(qname, ns0, prog0)
@@ -508,14 +549,14 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
     /**
       * Performs name resolution on each of the given `properties` in the given namespace `ns0`.
       */
-    def resolve(properties: List[NamedAst.Property], ns0: Name.NName, prog0: NamedAst.Program): Validation[List[ResolvedAst.Property], ResolutionError] = {
+    def resolve(properties: List[NamedAst.Property], ns0: Name.NName, prog0: NamedAst.Program)(implicit genSym: GenSym): Validation[List[ResolvedAst.Property], ResolutionError] = {
       seqM(properties.map(p => resolve(p, ns0, prog0)))
     }
 
     /**
       * Performs name resolution on the given property `p0` in the given namespace `ns0`.
       */
-    def resolve(p0: NamedAst.Property, ns0: Name.NName, prog0: NamedAst.Program): Validation[ResolvedAst.Property, ResolutionError] = {
+    def resolve(p0: NamedAst.Property, ns0: Name.NName, prog0: NamedAst.Program)(implicit genSym: GenSym): Validation[ResolvedAst.Property, ResolutionError] = {
       for {
         e <- Expressions.resolve(p0.exp, ns0, prog0)
       } yield ResolvedAst.Property(p0.law, p0.defn, e, p0.loc)
@@ -682,6 +723,14 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
         case Some(table) => table.toSuccess
       }
     }
+  }
+
+  /**
+    * Returns `true` iff the given type `tpe0` is the Unit type.
+    */
+  def isUnitType(tpe: NamedAst.Type): Boolean = tpe match {
+    case NamedAst.Type.Unit(loc) => true
+    case _ => false
   }
 
   /**

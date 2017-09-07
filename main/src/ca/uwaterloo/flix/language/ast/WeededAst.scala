@@ -112,7 +112,7 @@ object WeededAst {
 
     case class Switch(rules: List[(WeededAst.Expression, WeededAst.Expression)], loc: SourceLocation) extends WeededAst.Expression
 
-    case class Tag(enum: Option[Name.QName], tag: Name.Ident, exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+    case class Tag(enum: Option[Name.QName], tag: Name.Ident, expOpt: Option[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
 
     case class Tuple(elms: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
 
