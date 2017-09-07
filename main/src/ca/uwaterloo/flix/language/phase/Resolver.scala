@@ -326,32 +326,34 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
             // Case 1: The tag has does not have an expression.
             // Either it is implicitly Unit or the tag is used as a function.
 
-            // Lookup the enum and to determine the type of the tag.
+            // Lookup the enum to determine the type of the tag.
             lookupEnumByTag(enum, tag, ns0, prog0) map {
               case decl =>
-                // Check if the tag value has Unit type.
+                // Retrieve the relevant case.
                 val caze = decl.cases(tag.name)
+
+                // Check if the tag value has Unit type.
                 if (isUnitType(caze.tpe)) {
                   // Case 1.1: The tag value has Unit type. Construct the Unit expression.
                   val e = ResolvedAst.Expression.Unit(loc)
                   ResolvedAst.Expression.Tag(decl.sym, tag.name, e, tvar, loc)
                 } else {
                   // Case 1.2: The tag has a non-Unit type. Hence the tag is used as a function.
-                  // If the tag is `Some` we construct the lambda: x -> Cons(x).
+                  // If the tag is `Some` we construct the lambda: x -> Some(x).
 
                   // Construct a fresh symbol for the formal parameter.
                   val freshVar = Symbol.freshVarSym("x")
 
-                  // Construct the formal parameter with the fresh symbol.
+                  // Construct the formal parameter for the fresh symbol.
                   val freshParam = ResolvedAst.FormalParam(freshVar, Ast.Modifiers.Empty, Type.freshTypeVar(), loc)
 
                   // Construct a variable expression for the fresh symbol.
                   val varExp = ResolvedAst.Expression.Var(freshVar, loc)
 
-                  // Construct the tag expression inside the lambda.
+                  // Construct the tag expression on the fresh symbol expression.
                   val tagExp = ResolvedAst.Expression.Tag(decl.sym, caze.tag.name, varExp, Type.freshTypeVar(), loc)
 
-                  // Finally assemble the lambda expressions.
+                  // Assemble the lambda expressions.
                   ResolvedAst.Expression.Lambda(List(freshParam), tagExp, Type.freshTypeVar(), loc)
                 }
             }
