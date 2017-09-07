@@ -77,18 +77,18 @@ object ResolutionError {
   }
 
   /**
-    * Unresolved Reference Error.
+    * Unresolved Definition Error.
     *
-    * @param qn  the unresolved reference name.
+    * @param qn  the unresolved definition name.
     * @param ns  the current namespace.
     * @param loc the location where the error occurred.
     */
-  case class UndefinedRef(qn: Name.QName, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
+  case class UndefinedDef(qn: Name.QName, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
     val source: Source = loc.source
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
-      vt << ">> Undefined reference '" << Red(qn.toString) << "'." << NewLine
+      vt << ">> Undefined definition '" << Red(qn.toString) << "'." << NewLine
       vt << NewLine
       vt << Code(loc, "name not found") << NewLine
       vt << NewLine

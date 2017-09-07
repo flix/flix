@@ -20,6 +20,11 @@ namespace Domain/ParitySign {
     }
 
     ///
+    /// Returns `true` iff `e1` is equal to `e2`.
+    ///
+    def equ(e1: ParitySign, e2: ParitySign): Bool = e1 == e2
+
+    ///
     /// Returns `true` iff `e1` is less than or equal to `e2`.
     ///
     def leq(x: ParitySign, y: ParitySign): Bool = match (x, y) with {
@@ -118,6 +123,6 @@ namespace Domain/ParitySign {
         case _                                  => Top
     }
 
-    let ParitySign<> = (Bot, Top, leq, lub, glb)
+    let ParitySign<> = (Bot, Top, equ, leq, lub, glb)
 
 }

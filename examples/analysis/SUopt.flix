@@ -37,6 +37,8 @@
     case Bottom // kill everything
   }
 
+  def equ(e1: SULattice, e2: SULattice): Bool = e1 == e2
+
   def leq(e1: SULattice, e2: SULattice): Bool = match (e1, e2) with {
     case (SULattice.Bottom, _) => true
     case (_, SULattice.Top) => true
@@ -55,7 +57,7 @@
     case (SULattice.Single(s1), SULattice.Single(s2)) => if (s1 == s2) SULattice.Single(s1) else SULattice.Bottom
     case _ => SULattice.Bottom
   }
-  let SULattice<> = (SULattice.Bottom, SULattice.Top, leq, lub, glb)
+  let SULattice<> = (SULattice.Bottom, SULattice.Top, equ, leq, lub, glb)
 
   lat SU(location: Str, object: Str, target: SULattice)
 

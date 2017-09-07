@@ -622,7 +622,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
         case (None, None) =>
           // Try the global namespace.
           prog0.defs.getOrElse(Name.RootNS, Map.empty).get(qname.ident.name) match {
-            case None => ResolutionError.UndefinedRef(qname, ns0, qname.loc).toFailure
+            case None => ResolutionError.UndefinedDef(qname, ns0, qname.loc).toFailure
             case Some(defn) => RefTarget.Defn(Name.RootNS, defn).toSuccess
           }
         case (Some(defn), Some(hook)) => ResolutionError.AmbiguousRef(qname, ns0, qname.loc).toFailure
@@ -635,7 +635,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
       (defnOpt, hookOpt) match {
         case (Some(defn), None) => RefTarget.Defn(qname.namespace, defn).toSuccess
         case (None, Some(hook)) => RefTarget.Hook(hook).toSuccess
-        case (None, None) => ResolutionError.UndefinedRef(qname, ns0, qname.loc).toFailure
+        case (None, None) => ResolutionError.UndefinedDef(qname, ns0, qname.loc).toFailure
         case (Some(defn), Some(hook)) => ResolutionError.AmbiguousRef(qname, ns0, qname.loc).toFailure
       }
     }

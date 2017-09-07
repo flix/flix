@@ -32,7 +32,7 @@ class TestResolver extends FunSuite with TestUtils {
          |R(x).
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    expectError[ResolutionError.UndefinedRef](result)
+    expectError[ResolutionError.UndefinedDef](result)
   }
 
   // TODO
@@ -44,7 +44,7 @@ class TestResolver extends FunSuite with TestUtils {
          |R(42, x).
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    expectError[ResolutionError.UndefinedRef](result)
+    expectError[ResolutionError.UndefinedDef](result)
   }
 
   // TODO
@@ -56,7 +56,7 @@ class TestResolver extends FunSuite with TestUtils {
          |R(42, x, 21).
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    expectError[ResolutionError.UndefinedRef](result)
+    expectError[ResolutionError.UndefinedDef](result)
   }
 
   // TODO
@@ -68,7 +68,7 @@ class TestResolver extends FunSuite with TestUtils {
          |R(x) :- R(y).
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    expectError[ResolutionError.UndefinedRef](result)
+    expectError[ResolutionError.UndefinedDef](result)
   }
 
   // TODO
@@ -80,7 +80,7 @@ class TestResolver extends FunSuite with TestUtils {
          |R(x, y) :- R(x, z).
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    expectError[ResolutionError.UndefinedRef](result)
+    expectError[ResolutionError.UndefinedDef](result)
   }
 
   // TODO
@@ -92,7 +92,7 @@ class TestResolver extends FunSuite with TestUtils {
          |R(x, y, z) :- R(x, w, z).
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    expectError[ResolutionError.UndefinedRef](result)
+    expectError[ResolutionError.UndefinedDef](result)
   }
 
   test("AmbiguousTag.01") {
@@ -129,7 +129,24 @@ class TestResolver extends FunSuite with TestUtils {
     expectError[ResolutionError.AmbiguousTag](result)
   }
 
-  test("UnresolvedEnum.01") {
+  test("UndefinedDef.01") {
+    val input = "def f(): Int = x"
+    val result = new Flix().addStr(input).compile()
+    expectError[ResolutionError.UndefinedDef](result)
+  }
+
+  test("UndefinedDef.02") {
+    val input =
+      s"""
+         |namespace A {
+         |  def f(x: Int, y: Int): Int = x + y + z
+         |}
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[ResolutionError.UndefinedDef](result)
+  }
+
+  test("UndefinedTag.01") {
     val input =
       s"""
          |namespace A {
@@ -140,7 +157,7 @@ class TestResolver extends FunSuite with TestUtils {
     expectError[ResolutionError.UndefinedTag](result)
   }
 
-  test("UnresolvedEnum.02") {
+  test("UndefinedTag.02") {
     val input =
       s"""
          |namespace A {
@@ -151,7 +168,7 @@ class TestResolver extends FunSuite with TestUtils {
     expectError[ResolutionError.UndefinedTag](result)
   }
 
-  test("UnresolvedTag.01") {
+  test("UndefinedTag.03") {
     val input =
       s"""
          |enum A {
@@ -165,7 +182,7 @@ class TestResolver extends FunSuite with TestUtils {
     expectError[ResolutionError.UndefinedTag](result)
   }
 
-  test("UnresolvedTag.02") {
+  test("UndefinedTag.04") {
     val input =
       s"""
          |namespace A {
@@ -181,7 +198,7 @@ class TestResolver extends FunSuite with TestUtils {
     expectError[ResolutionError.UndefinedTag](result)
   }
 
-  test("UnresolvedTag.03") {
+  test("UndefinedTag.05") {
     val input =
       s"""
          |namespace A {
@@ -199,13 +216,35 @@ class TestResolver extends FunSuite with TestUtils {
     expectError[ResolutionError.UndefinedTag](result)
   }
 
-  test("UnresolvedType.01") {
+  test("UndefinedTable.01") {
+    val input = "VarPointsTo(1, 2)."
+    val result = new Flix().addStr(input).compile()
+    expectError[ResolutionError.UndefinedTable](result)
+  }
+
+  test("UndefinedTable.02") {
+    val input =
+      s"""namespace A {
+         |  VarPointsTo(1, 2).
+         |}
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[ResolutionError.UndefinedTable](result)
+  }
+
+  test("UndefinedTable.03") {
+    val input = "index AddrOf({foo, bar})"
+    val result = new Flix().addStr(input).compile()
+    expectError[ResolutionError.UndefinedTable](result)
+  }
+
+  test("UndefinedType.01") {
     val input = "def x(): Foo = 42"
     val result = new Flix().addStr(input).compile()
     expectError[ResolutionError.UndefinedType](result)
   }
 
-  test("UnresolvedType.02") {
+  test("UndefinedType.02") {
     val input =
       s"""namespace A {
          |  def foo(bar: Baz, baz: Baz): Qux = bar

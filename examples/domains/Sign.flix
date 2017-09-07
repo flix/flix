@@ -21,6 +21,11 @@ namespace Domain/Sign {
     }
 
     ///
+    /// Returns `true` iff `e1` is equal to `e2`.
+    ///
+    def equ(e1: Sign, e2: Sign): Bool = e1 == e2
+
+    ///
     /// Returns `true` iff `e1` is less than or equal to `e2`.
     ///
     #reflexive #antiSymmetric #transitive #leastElement(Bot) #greatestElement(Top)
@@ -366,7 +371,7 @@ namespace Domain/Sign {
     #PartialOrder.monotone2(leq, leq, Belnap.leq)
     def lessEqual(e1: Sign, e2: Sign): Belnap.Belnap = Belnap.or(e1 `less` e2, e1 `eq` e2)
 
-    let Sign<> = (Bot, Top, leq, lub, glb)
+    let Sign<> = (Bot, Top, equ, leq, lub, glb)
 
     //
     // ## Specialized Laws
