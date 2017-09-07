@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.runtime.datastore
 
 import ca.uwaterloo.flix.language.ast.ExecutableAst
-import ca.uwaterloo.flix.runtime.{InvocationTarget, Linker, Value}
+import ca.uwaterloo.flix.runtime.{InvocationTarget, Linker}
 
 import scala.reflect.ClassTag
 
@@ -32,6 +32,11 @@ class LatticeImpl[ValueType <: AnyRef](lattice: ExecutableAst.Table.Lattice, roo
     * The bottom element.
     */
   private val Bot: ValueType = Linker.link(latticeOps.bot, root).invoke(Array.empty).asInstanceOf[ValueType]
+
+  /**
+    * The equality operator.
+    */
+  private val Equ: InvocationTarget = Linker.link(latticeOps.equ, root)
 
   /**
     * The partial order operator.
@@ -56,7 +61,15 @@ class LatticeImpl[ValueType <: AnyRef](lattice: ExecutableAst.Table.Lattice, roo
   /**
     * Returns `true` if `x` is equal to `y` according to the partial order of the lattice.
     */
-  def equal(x: ValueType, y: ValueType): Boolean = x.equals(y)
+  def equal(x: ValueType, y: ValueType): Boolean = {
+    // if `x` and `y` are the same object then they must be equal.
+    if (x eq y) return true
+
+    // evaluate the equality function passing the arguments `x` and `y`.
+    val args = Array(x, y).asInstanceOf[Array[AnyRef]]
+    val result = Equ.invoke(args)
+    return result.asInstanceOf[java.lang.Boolean].booleanValue()
+  }
 
   /**
     * Returns `true` if `x` is less than or equal to `y` according to the partial order of the lattice.

@@ -36,6 +36,8 @@ class TestSolver extends FunSuite {
         |                  case Bot
         |    }
         |
+        |    def equ(e1: Parity, e2: Parity): Bool = e1 == e2
+        |
         |    def leq(e1: Parity, e2: Parity): Bool = match (e1, e2) with {
         |        case (Parity.Bot, _)              => true
         |        case (Parity.Odd, Parity.Odd)     => true
@@ -77,7 +79,7 @@ class TestSolver extends FunSuite {
         |        case Parity.Top    => true
         |    }
         |
-        |    let Parity<> = (Parity.Bot, Parity.Top, leq, lub, glb)
+        |    let Parity<> = (Parity.Bot, Parity.Top, equ, leq, lub, glb)
       """.stripMargin
 
   }

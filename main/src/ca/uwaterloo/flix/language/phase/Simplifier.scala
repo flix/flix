@@ -91,9 +91,9 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
   }
 
   def simplify(tast: TypedAst.Lattice)(implicit genSym: GenSym): SimplifiedAst.Lattice = tast match {
-    case TypedAst.Lattice(tpe, bot, top, leq, lub, glb, loc) =>
+    case TypedAst.Lattice(tpe, bot, top, equ, leq, lub, glb, loc) =>
       import Expression.{simplify => s}
-      SimplifiedAst.Lattice(tpe, s(bot), s(top), s(leq), s(lub), s(glb), loc)
+      SimplifiedAst.Lattice(tpe, s(bot), s(top), s(equ), s(leq), s(lub), s(glb), loc)
   }
 
   def simplify(tast: TypedAst.Def)(implicit genSym: GenSym): SimplifiedAst.Def = {

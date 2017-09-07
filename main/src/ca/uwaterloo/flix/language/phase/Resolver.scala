@@ -175,10 +175,11 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
       tpe <- lookupType(l0.tpe, ns0, prog0)
       bot <- Expressions.resolve(l0.bot, ns0, prog0)
       top <- Expressions.resolve(l0.top, ns0, prog0)
+      equ <- Expressions.resolve(l0.equ, ns0, prog0)
       leq <- Expressions.resolve(l0.leq, ns0, prog0)
       lub <- Expressions.resolve(l0.lub, ns0, prog0)
       glb <- Expressions.resolve(l0.glb, ns0, prog0)
-    } yield ResolvedAst.Lattice(tpe, bot, top, leq, lub, glb, ns0, l0.loc)
+    } yield ResolvedAst.Lattice(tpe, bot, top, equ, leq, lub, glb, ns0, l0.loc)
   }
 
   object Tables {

@@ -268,7 +268,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           * Performs type inference and reassembly on the given `lattice`.
           */
         def visitLattice(lattice: ResolvedAst.Lattice): Result[(Type, TypedAst.Lattice), TypeError] = lattice match {
-          case ResolvedAst.Lattice(tpe, e1, e2, e3, e4, e5, ns, loc) =>
+          case ResolvedAst.Lattice(tpe, e1, e2, e3, e4, e5, e6, ns, loc) =>
             // Perform type resolution on the declared type.
             val declaredType = lattice.tpe
 
@@ -276,11 +276,13 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
             val m = for {
               botType <- Expressions.infer(e1, program)
               topType <- Expressions.infer(e2, program)
-              leqType <- Expressions.infer(e3, program)
-              lubType <- Expressions.infer(e4, program)
-              glbType <- Expressions.infer(e5, program)
+              equType <- Expressions.infer(e3, program)
+              leqType <- Expressions.infer(e4, program)
+              lubType <- Expressions.infer(e5, program)
+              glbType <- Expressions.infer(e6, program)
               _______ <- unifyM(botType, declaredType, loc)
               _______ <- unifyM(topType, declaredType, loc)
+              _______ <- unifyM(equType, Type.mkArrow(List(declaredType, declaredType), Type.Bool), loc)
               _______ <- unifyM(leqType, Type.mkArrow(List(declaredType, declaredType), Type.Bool), loc)
               _______ <- unifyM(lubType, Type.mkArrow(List(declaredType, declaredType), declaredType), loc)
               _______ <- unifyM(glbType, Type.mkArrow(List(declaredType, declaredType), declaredType), loc)
@@ -292,11 +294,12 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
                 // Reassemble the lattice components.
                 val bot = Expressions.reassemble(e1, program, subst)
                 val top = Expressions.reassemble(e2, program, subst)
-                val leq = Expressions.reassemble(e3, program, subst)
-                val lub = Expressions.reassemble(e4, program, subst)
-                val glb = Expressions.reassemble(e5, program, subst)
+                val equ = Expressions.reassemble(e3, program, subst)
+                val leq = Expressions.reassemble(e4, program, subst)
+                val lub = Expressions.reassemble(e5, program, subst)
+                val glb = Expressions.reassemble(e6, program, subst)
 
-                declaredType -> TypedAst.Lattice(declaredType, bot, top, leq, lub, glb, loc)
+                declaredType -> TypedAst.Lattice(declaredType, bot, top, equ, leq, lub, glb, loc)
             }
 
         }
