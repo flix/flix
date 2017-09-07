@@ -39,11 +39,6 @@ class TestTutorials extends FunSuite {
     new Flix().setOptions(opts.copy(core = false)).addPath(path).solve().get
   }
 
-  test("lambda-calculus-promises.flix") {
-    val path = "main/src/tutorials/lambda-calculus-promises.flix"
-    new Flix().setOptions(opts.copy(core = false)).addPath(path).solve().get
-  }
-
   test("delta-debugging.flix") {
     intercept[RuleException] {
       val path = "main/src/tutorials/delta-debugging.flix"

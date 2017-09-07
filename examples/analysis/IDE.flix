@@ -6,6 +6,8 @@ namespace IDE {
         case Bot
     }
 
+    def equ(e1: Value, e2: Value): Bool = e1 == e2
+
     def lub(e1: Value, e2: Value): Value = match (e1, e2) with {
         case (Value.Bot, x) => x
         case (x, Value.Bot) => x
@@ -39,7 +41,7 @@ namespace IDE {
         case _ => Value.Bot
     }
 
-    let Value<> = (Value.Bot, Value.Top, leq, lub, glb)
+    let Value<> = (Value.Bot, Value.Top, equ, leq, lub, glb)
 
     enum Transformer {
         case BotTrans,
@@ -79,11 +81,13 @@ namespace IDE {
          else ???: Transformer
     }
 
+    def transequ(e1: Transformer, e2: Transformer): Bool = e1 == e2
+
     def transleq(e1: Transformer, e2: Transformer): Bool = e2 == translub(e1, e2)
 
     def transglb(e1: Transformer, e2: Transformer): Transformer = ???: Transformer
 
-    let Transformer<> = (Transformer.BotTrans, ???: Transformer, transleq, translub, transglb)
+    let Transformer<> = (Transformer.BotTrans, ???: Transformer, transequ, transleq, translub, transglb)
 
     // Inputs
     lat EshIntra(node: Str, infact: Str, outfact: Str, transformer: Transformer)

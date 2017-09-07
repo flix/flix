@@ -17,6 +17,11 @@ enum Dist {
 // Lattice operations
 
 ///
+/// Returns `true` iff `e1` is equal to `e2`.
+///
+def equ(e1: Dist, e2: Dist): Bool = e1 == e2
+
+///
 /// Returns `true` if the distance `e1` is greater than or equal to the distance `e2`.
 ///
 def leq(e1: Dist, e2: Dist): Bool = match (e1, e2) with {
@@ -46,7 +51,7 @@ def glb(e1: Dist, e2: Dist): Dist = match (e1, e2) with {
   case _ => Bot
 }
 
-let Dist<> = (Bot, Top, leq, lub, glb)
+let Dist<> = (Bot, Top, equ, leq, lub, glb)
 
 // Copy input relation into the ShortestDist lattice
 ShortestDist(a, b, Dst(d)) :- Edge(a, b, d).

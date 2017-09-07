@@ -24,8 +24,6 @@ class TestExamples extends FunSuite {
   test("Belnap.flix") {
     val input =
       """namespace Belnap {
-        |    let Belnap<> = (Bot, Top, leq, lub, glb)
-        |    
         |    lat A(k: Int, v: Belnap)
         |
         |    A(1, True).
@@ -49,13 +47,12 @@ class TestExamples extends FunSuite {
     new Flix()
       .addPath("./examples/domains/Belnap.flix")
       .addStr(input)
-      .solve()
+      .solve().get
   }
 
   test("Constant.flix") {
     val input =
       """namespace Domain/Constant {
-        |    let Constant<> = (Bot, Top, leq, lub, glb)
         |    lat A(k: Int, v: Constant)
         |
         |    A(0, Cst(0)).
@@ -77,13 +74,12 @@ class TestExamples extends FunSuite {
       .addPath("./examples/domains/Belnap.flix")
       .addPath("./examples/domains/Constant.flix")
       .addStr(input)
-      .solve()
+      .solve().get
   }
 
   test("ConstantSign.flix") {
     val input =
       """namespace Domain/ConstantSign {
-        |    let ConstantSign<> = (Bot, Top, leq, lub, glb)
         |    lat A(k: Int, v: ConstantSign)
         |
         |    A(1, Cst(-1ii)).
@@ -110,7 +106,7 @@ class TestExamples extends FunSuite {
       .addPath("./examples/domains/Belnap.flix")
       .addPath("./examples/domains/ConstantSign.flix")
       .addStr(input)
-      .solve()
+      .solve().get
   }
 
   test("ConstantParity.flix") {
@@ -120,7 +116,7 @@ class TestExamples extends FunSuite {
       .addPath("./examples/domains/Belnap.flix")
       .addPath("./examples/domains/ConstantParity.flix")
       .addStr(input)
-      .solve()
+      .solve().get
 
     // TODO: Exercise lattice.
   }
@@ -132,7 +128,7 @@ class TestExamples extends FunSuite {
       .addPath("./examples/domains/Belnap.flix")
       .addPath("./examples/domains/Mod3.flix")
       .addStr(input)
-      .solve()
+      .solve().get
 
     // TODO: Exercise lattice.
   }
@@ -140,7 +136,6 @@ class TestExamples extends FunSuite {
   test("Parity.flix") {
     val input =
       """namespace Domain/Parity {
-        |    let Parity<> = (Bot, Top, leq, lub, glb)
         |    lat A(k: Int, v: Parity)
         |
         |    A(1, Odd).
@@ -165,7 +160,7 @@ class TestExamples extends FunSuite {
       .addPath("./examples/domains/Belnap.flix")
       .addPath("./examples/domains/Parity.flix")
       .addStr(input)
-      .solve()
+      .solve().get
   }
 
   test("ParitySign.flix") {
@@ -175,7 +170,7 @@ class TestExamples extends FunSuite {
       .addPath("./examples/domains/Belnap.flix")
       .addPath("./examples/domains/ParitySign.flix")
       .addStr(input)
-      .solve()
+      .solve().get
 
     // TODO: Exercise lattice.
   }
@@ -187,7 +182,7 @@ class TestExamples extends FunSuite {
       .addPath("./examples/domains/Belnap.flix")
       .addPath("./examples/domains/PrefixSuffix.flix")
       .addStr(input)
-      .solve()
+      .solve().get
 
     // TODO: Exercise lattice.
   }
@@ -199,7 +194,7 @@ class TestExamples extends FunSuite {
       .addPath("./examples/domains/Belnap.flix")
       .addPath("./examples/domains/Sign.flix")
       .addStr(input)
-      .solve()
+      .solve().get
 
     // TODO: Exercise lattice.
   }
@@ -207,7 +202,6 @@ class TestExamples extends FunSuite {
   test("StrictSign.flix") {
     val input =
       """namespace Domain/StrictSign {
-        |    let Sign<> = (Bot, Top, leq, lub, glb)
         |    lat A(k: Int, v: Sign)
         |
         |    A(1, Neg).
@@ -232,31 +226,31 @@ class TestExamples extends FunSuite {
       .addPath("./examples/domains/Belnap.flix")
       .addPath("./examples/domains/StrictSign.flix")
       .addStr(input)
-      .solve()
+      .solve().get
   }
 
   test("IFDS.flix") {
     val t = new Flix()
       .addPath("./examples/analysis/IFDS.flix")
-      .solve()
+      .solve().get
   }
 
   test("IDE.flix") {
     val t = new Flix()
       .addPath("./examples/analysis/IDE.flix")
-      .solve()
+      .solve().get
   }
 
   test("SUOpt.flix") {
     val t = new Flix()
       .addPath("./examples/analysis/SUopt.flix")
-      .solve()
+      .solve().get
   }
 
   test("FloydWarshall.flix") {
     val t = new Flix()
       .addPath("./examples/misc/FloydWarshall.flix")
-      .solve()
+      .solve().get
   }
 
 }

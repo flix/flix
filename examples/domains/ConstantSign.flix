@@ -17,6 +17,11 @@ namespace Domain/ConstantSign {
     }
 
     ///
+    /// Returns `true` iff `e1` is equal to `e2`.
+    ///
+    def equ(e1: ConstantSign, e2: ConstantSign): Bool = e1 == e2
+
+    ///
     /// Returns `true` iff `e1` is less than or equal to `e2`.
     ///
     #reflexive #antiSymmetric #transitive #leastElement(Bot) #greatestElement(Top)
@@ -248,7 +253,7 @@ namespace Domain/ConstantSign {
     #PartialOrder.monotone2(leq, leq, Belnap.leq)
     def lessEqual(e1: ConstantSign, e2: ConstantSign): Belnap.Belnap = Belnap.or(e1 `less` e2, e1 `eq` e2)
 
-    let ConstantSign<> = (Bot, Top, leq, lub, glb)
+    let ConstantSign<> = (Bot, Top, equ, leq, lub, glb)
 
 
     //

@@ -17,6 +17,11 @@ namespace Domain/ConstantParity {
     }
 
     ///
+    /// Returns `true` iff `e1` is equal to `e2`.
+    ///
+    def equ(e1: ConstantParity, e2: ConstantParity): Bool = e1 == e2
+
+    ///
     /// Returns `true` iff `e1` is less than or equal to `e2`.
     ///
     #reflexive #antiSymmetric #transitive #leastElement(Bot) #greatestElement(Top)
@@ -250,7 +255,7 @@ namespace Domain/ConstantParity {
     ///
     def isEven(n: BigInt): Bool = !isOdd(n)
 
-    let ConstantParity<> = (Bot, Top, leq, lub, glb)
+    let ConstantParity<> = (Bot, Top, equ, leq, lub, glb)
 
     //
     // ## Specialized Laws

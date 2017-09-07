@@ -17,6 +17,11 @@ namespace Domain/PrefixSuffix {
     }
 
     ///
+    /// Returns `true` iff `e1` is equal to `e2`.
+    ///
+    def equ(e1: PrefixSuffix, e2: PrefixSuffix): Bool = e1 == e2
+
+    ///
     /// Returns `true` iff `e1` is less than or equal to `e2`.
     ///
     #reflexive #antiSymmetric #transitive #leastElement(Bot) #greatestElement(Top)
@@ -126,7 +131,7 @@ namespace Domain/PrefixSuffix {
     #commutative
     def neq(e1: PrefixSuffix, e2: PrefixSuffix): Belnap.Belnap = Belnap.not(eq(e1, e2))
 
-    let PrefixSuffix<> = (Bot, Top, leq, lub, glb)
+    let PrefixSuffix<> = (Bot, Top, equ, leq, lub, glb)
 
     //
     // ## Specialized Laws
