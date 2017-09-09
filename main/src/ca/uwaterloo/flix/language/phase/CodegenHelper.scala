@@ -100,17 +100,39 @@ object CodegenHelper {
   case class FlixClassName(ref: List[String]) extends QualName
 
   /**
-    * Qualified name of an enum class
-    *
+    * This trait will get extended by all classes and interfaces that represent an enum case.
+    * All these classes include a field representing `tag`
+    */
+  sealed trait EnumCaseName extends QualName {
+    def tag : String
+  }
+
+  /**
+    * Qualified name of an enum case class
     * @param sym symbol of the enum
     * @param tag tag of the enum
     * @param tpe tpe of the field of the enum
     */
-  case class EnumClassName(sym: EnumSym, tag: String, tpe: WrappedType) extends QualName {
+  case class SECClassName(sym: EnumSym, tag: String, tpe: WrappedType) extends EnumCaseName {
     val ref: List[String] = tpe match {
-      case WrappedPrimitive(t) => CodegenHelper.fixedEnumPrefix ::: sym.namespace ::: List(sym.name, typeSpecifier(t), tag)
-      case _ => CodegenHelper.fixedEnumPrefix ::: sym.namespace ::: List(sym.name, "object", tag)
+      case WrappedPrimitive(t) => CodegenHelper.fixedEnumPrefix ::: sym.namespace ::: List(sym.name, "clazz", typeSpecifier(t), tag)
+      case _ => CodegenHelper.fixedEnumPrefix ::: sym.namespace ::: List(sym.name, "clazz", "obj", tag)
     }
+  }
+
+  /**
+    * Qualified name of an enum case class
+    * @param sym symbol of the enum
+    * @param tag tag of the enum
+    * @param fields tpe of the field of the enum
+    */
+  case class ETFClassName(sym: EnumSym, tag: String, fields: List[WrappedType]) extends EnumCaseName {
+    private val desc: List[String] = fields.map{
+      case WrappedPrimitive(t) => typeSpecifier(t)
+      case _ => "obj"
+    }
+
+    val ref: List[String] = CodegenHelper.fixedEnumPrefix ::: sym.namespace ::: List(sym.name, "fusionClazz") ::: desc ::: List(tag)
   }
 
   /**
@@ -118,8 +140,8 @@ object CodegenHelper {
     *
     * @param sym symbol of the enum
     */
-  case class EnumInterfName(sym: EnumSym) extends QualName {
-    val ref: List[String] = CodegenHelper.fixedEnumPrefix ::: sym.namespace ::: List(sym.name, "EnumInterface")
+  case class EnumTypeInterfaceName(sym: EnumSym) extends QualName {
+    val ref: List[String] = CodegenHelper.fixedEnumPrefix ::: sym.namespace ::: List(sym.name, "EnumTypeInterface")
   }
 
   /**
@@ -127,22 +149,58 @@ object CodegenHelper {
     *
     * @param fields fields of the tuple
     */
+  case class TupleInterfaceName(fields: List[WrappedType]) extends QualName {
+    val ref: List[String] = fixedTuplePrefix ::: fields.map{
+      case WrappedPrimitive(tpe) => typeSpecifier(tpe)
+      case WrappedNonPrimitives(_) => "object"
+    } ::: List("interf", "Tuple")
+  }
+
+  /**
+    * Qualified name of a tuple class
+    * @param fields fields of the tuple
+    */
   case class TupleClassName(fields: List[WrappedType]) extends QualName {
     val ref: List[String] = fixedTuplePrefix ::: fields.map {
       case WrappedPrimitive(tpe) => typeSpecifier(tpe)
       case WrappedNonPrimitives(_) => "object"
-    } ::: List("Tuple")
+    } ::: List("clazz", "Tuple")
   }
 
-  /**
+  def exceptionThrowerMethod(visitor: ClassWriter,
+                             modifiers: Int,
+                             methodName: String,
+                             descriptor: String,
+                             message: String) : Unit = {
+    val method = visitor.visitMethod(modifiers, methodName, descriptor, null, Array("java/lang/Exception"))
+    method.visitCode()
+
+    // Create a new `Exception` object
+    method.visitTypeInsn(NEW, "java/lang/UnsupportedOperationException")
+    method.visitInsn(DUP)
+
+    // add the message to the stack
+    method.visitLdcInsn(message)
+
+    // invoke the constructor of the `Exception` object
+    method.visitMethodInsn(INVOKESPECIAL, "java/lang/UnsupportedOperationException", "<init>", "(Ljava/lang/String;)V", false)
+
+    // throw the exception
+    method.visitInsn(ATHROW)
+
+    method.visitMaxs(3, 0)
+    method.visitEnd()
+  }
+
+    /**
     * Base filename of a file specified by the given qualified name
     *
     * @param qualName Qualified name of the file
     */
   def baseFileName(qualName: QualName): String = qualName match {
     case FlixClassName(ref) => s"${ref.last}.flix"
-    case EnumClassName(sym, _, _) => sym.loc.source.format
-    case EnumInterfName(sym) => sym.loc.source.format
+    case SECClassName(sym, _, _) => sym.loc.source.format
+    case EnumTypeInterfaceName(sym) => sym.loc.source.format
     case _ => throw InternalCompilerException(s"QualName $qualName does not have a base file")
   }
 
@@ -189,6 +247,40 @@ object CodegenHelper {
     case t if isPrimitive(t) => WrappedPrimitive(t)
     case _ => WrappedNonPrimitives(Set(tpe))
   }
+
+  /**
+    * At this method, we group `tuples` that have the same field representation so we only generate one class for them.
+    * If a field is a primitive, then it can be represented by it's primitive but if the field is not a primitive then it
+    * has to be represented using an object.
+    * For example, `(List[Int32], Bool)` and `(Result[Int32,Int32], Bool)` have the same representation since the first field
+    * of both of them is an object and the second field is a `Bool`. So we only create one tuple class for both of these
+    * tuples.
+    */
+  def groupTuplesByFieldTypes(tuples: List[Type]): List[List[List[Type]]] = tuples.map{
+    case Type.Apply(_, ts) => ts
+    case y => throw InternalCompilerException(s"Unexpected type: `$y'.")
+  }.groupBy(_.map(typeSpecifier)).values.toList
+
+  /**
+    * At this method, we generate representation of  all the tuple classes that we have to create. If a field is a primitive
+    * then we wrap the field inside `WrappedPrimitive` and if the field is not a primitive then we wrap all the types that
+    * will be represented using `object` on this tuple inside `WrappedNonPrimitives`.
+    * For example for tuples with element type `(Int, Int)`, we represent this with
+    * `List(WrappedPrimitive(Int32), WrappedPrimitive(In32))`. If we have to represent tuples of type `(List[Int32], Bool)` and
+    * `(Result[Int32,Int32], Bool)` then we represent the class that can represent both of these tuples by
+    * `List(WrappedNonPrimitives(List(Result[Int32,Int32], List[Int32]), WrappedPrimitive(Bool)))`
+    */
+  def groupedFieldsToWrappedFields(groupedFields: List[List[List[Type]]]): Set[List[WrappedType]] = groupedFields.map{grp =>
+    val len = grp.head.length
+    (0 until len).map{ind =>
+      val underlyings = grp.map(tuple => tuple(ind))
+      if(isPrimitive(underlyings.head)) {
+        WrappedPrimitive(underlyings.head)
+      } else {
+        WrappedNonPrimitives(underlyings.toSet)
+      }
+    }.toList
+  }.toSet
 
   /**
     * Generates a field for the class with with name `name`, with descriptor `descriptor` using `visitor`. If `isStatic = true`
@@ -420,6 +512,7 @@ object CodegenHelper {
     case WrappedNonPrimitives(_) => asm.Type.getDescriptor(Constants.objectClass)
   }
 
+
   /**
     * This method box a field with name `name` with type `tpe` on the class `className`
     * If the field is a primitive then it is boxed using the appropriate java type, if it is not a primitive
@@ -428,9 +521,9 @@ object CodegenHelper {
     * @param method    MethodVisitor used to emit the code to a method
     * @param tpe       Wrapped type of the field to be boxed
     * @param className qualified name of the class that the field is defined on
-    * @param name      name of the field to be boxed
+    * @param getterName name of the field to be boxed
     */
-  def boxField(method: MethodVisitor, tpe: WrappedType, className: QualName, name: String): Unit = {
+  def boxField(method: MethodVisitor, tpe: WrappedType, className: QualName, getterName: String) : Unit = {
 
     /**
       * This method will box the primitive on top of the stack
@@ -442,7 +535,7 @@ object CodegenHelper {
       method.visitTypeInsn(NEW, boxedObjectDescriptor)
       method.visitInsn(DUP)
       method.visitVarInsn(ALOAD, 0)
-      method.visitFieldInsn(GETFIELD, decorate(className), name, getWrappedTypeDescriptor(tpe))
+      method.visitMethodInsn(INVOKESPECIAL, decorate(className), getterName, s"()${getWrappedTypeDescriptor(tpe)}", false)
       method.visitMethodInsn(INVOKESPECIAL, boxedObjectDescriptor, "<init>", signature, false)
     }
 
@@ -458,9 +551,10 @@ object CodegenHelper {
       case WrappedPrimitive(Type.Float64) => box("java/lang/Double", "(D)V")
       case _ =>
         method.visitVarInsn(ALOAD, 0)
-        method.visitFieldInsn(GETFIELD, decorate(className), name, getWrappedTypeDescriptor(tpe))
+        method.visitMethodInsn(INVOKESPECIAL, decorate(className), getterName, s"()${getWrappedTypeDescriptor(tpe)}", false)
     }
   }
+
 
   /**
     * If an object is on the top of the stack, then this method will replace it with the hashCode of that object
@@ -565,7 +659,7 @@ object CodegenHelper {
       case Type.Native => asm.Type.getDescriptor(Constants.objectClass)
       case Type.Apply(Type.Arrow(l), _) => s"L${decorate(interfaces(tpe))};"
       case Type.Apply(Type.Tuple(l), lst) =>
-        val clazzName = TupleClassName(lst.map(typeToWrappedType))
+        val clazzName = TupleInterfaceName(lst.map(typeToWrappedType))
         s"L${decorate(clazzName)};"
       case _ if tpe.isEnum =>
         val sym = tpe match {
@@ -573,7 +667,7 @@ object CodegenHelper {
           case Type.Enum(s, _) => s
           case _ => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
         }
-        s"L${decorate(EnumInterfName(sym))};"
+        s"L${decorate(EnumTypeInterfaceName(sym))};"
       case Type.Apply(Type.Ref, List(ts)) => asm.Type.getDescriptor(getReferenceClazz(tpe))
       case _ => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
     }
@@ -595,7 +689,7 @@ object CodegenHelper {
     case Type.Native => asm.Type.getInternalName(Constants.objectClass)
     case Type.Apply(Type.Arrow(l), _) => decorate(interfaces(tpe))
     case Type.Apply(Type.Tuple(l), lst) =>
-      val clazzName = TupleClassName(lst.map(typeToWrappedType))
+      val clazzName = TupleInterfaceName(lst.map(typeToWrappedType))
       decorate(clazzName)
     case _ if tpe.isEnum =>
       val sym = tpe match {
@@ -603,7 +697,7 @@ object CodegenHelper {
         case Type.Enum(s, _) => s
         case _ => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
       }
-      decorate(EnumInterfName(sym))
+      decorate(EnumTypeInterfaceName(sym))
     case Type.Apply(Type.Ref, List(ts)) => asm.Type.getInternalName(getReferenceClazz(tpe))
     case _ => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
   }
@@ -649,11 +743,12 @@ object CodegenHelper {
 
     val scalaPredef = "scala/Predef$"
     val scalaMathPkg = "scala/math/package$"
-    val tagInterface: Class[_] = classOf[api.Enum]
+    val tagInterface: Class[_] = classOf[api.Tag]
   }
 
   // This constant is used in LoadBytecode, so we can't put it in the private Constants object.
   val flixObject = "flixObject"
+
 
   /**
     * Generates all the names of the functional interfaces used in the Flix program.

@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.api;
 /**
  * A common super-type for all generated Java interfaces and classes that represent Flix enums.
  */
-public interface Enum {
+public interface Tag {
     /**
      * Returns the tag of `this`.
      */
@@ -28,5 +28,5 @@ public interface Enum {
     /**
      * Returns the value of `this`.
      */
-    Object getBoxedValue();
+    Object getBoxedTagValue();
 }
