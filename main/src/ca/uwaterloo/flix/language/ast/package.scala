@@ -158,10 +158,10 @@ package object ast {
       inliner = 0,
       treeshaker = 0,
       varNumbering = 0,
+      tupleGen = 0,
       enumGen = 0,
       fusionGen = 0,
       codeGen = 0,
-      tupleGen = 0,
       loadByteCode = 0,
       solver = 0)
   }
@@ -190,10 +190,10 @@ package object ast {
                   inliner: Long,
                   treeshaker: Long,
                   varNumbering: Long,
+                  tupleGen: Long,
                   enumGen: Long,
                   fusionGen: Long,
                   codeGen: Long,
-                  tupleGen: Long,
                   loadByteCode: Long,
                   solver: Long)
 
