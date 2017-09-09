@@ -16,22 +16,75 @@
 
 package ca.uwaterloo.flix.runtime.Benchmark
 
-trait Benchmarker {
+import ca.uwaterloo.flix.runtime.Model
+
+object Benchmarker {
 
   /**
     * The number of times to evaluate the benchmark before measurements.
     */
-  def WarmupRounds: Int
+  val WarmupRounds = 100
 
   /**
     * The number of times to evaluate the benchmark to compute the average.
     */
-  def ActualRounds: Int
+  val ActualRounds = 50
+
+  /**
+    * Evaluates all benchmarks in the given `model`.
+    */
+  def benchmark(model: Model): Unit = {
+    /*
+      * Group benchmarks by namespace.
+      */
+    val benchmarksByNamespace = model.getBenchmarks.groupBy(_._1.namespace)
+
+    /*
+     * Iterate through each namespace and evaluate each benchmark.
+     */
+    for ((ns, benchmarks) <- benchmarksByNamespace) {
+      if (ns.isEmpty) {
+        Console.println(s"-- Benchmarks for root -- ")
+      } else {
+        Console.println(s"-- Benchmarks for '${ns.mkString(".")}' -- ")
+      }
+
+      /*
+       * Warmup Rounds.
+       */
+      Console.println(s"    Warmup Rounds: $WarmupRounds")
+      for ((sym, defn) <- benchmarks.toList.sortBy(_._1.loc)) {
+        Console.print("      ")
+        Console.print(sym.name)
+        Console.print(": ")
+        for (i <- 0 until WarmupRounds) {
+          Console.print(".")
+          defn()
+        }
+        Console.println()
+      }
+      Console.println()
+
+      /*
+       * Actual Rounds.
+       */
+      Console.println(s"    Actual Rounds: $ActualRounds")
+      Console.println(s"      Name:                Median (ms)")
+      for ((sym, defn) <- benchmarks.toList.sortBy(_._1.loc)) {
+        val timings = run(defn, ActualRounds)
+        val medianInMiliSeconds = median(timings).toDouble / (1000.0 * 1000.0)
+        Console.println(f"      ${sym.name} $medianInMiliSeconds%20.1f")
+        sleepAndGC()
+      }
+
+      Console.println()
+    }
+  }
 
   /**
     * Returns the timings of evaluating `f` over `n` rounds.
     */
-  protected def run(f: () => Any, n: Int): List[Long] = {
+  private def run(f: () => AnyRef, n: Int): List[Long] = {
     var result = List.empty[Long]
     var i = 0
     while (i < n) {
@@ -47,7 +100,7 @@ trait Benchmarker {
   /**
     * Returns the median of the given list of longs.
     */
-  protected def median(xs: List[Long]): Long = {
+  private def median(xs: List[Long]): Long = {
     if (xs.isEmpty) throw new IllegalArgumentException("Empty list.")
     if (xs.length == 1) return xs.head
 
@@ -65,9 +118,10 @@ trait Benchmarker {
   /**
     * Sleeps for a little while and tries to run the garbage collector.
     */
-  protected def sleepAndGC(): Unit = {
+  private def sleepAndGC(): Unit = {
     Thread.sleep(500)
     System.gc()
     Thread.sleep(500)
   }
+
 }
