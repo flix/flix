@@ -20,7 +20,6 @@ import ca.uwaterloo.flix.api.Flix
 import org.scalatest.FunSuite
 
 class TestExamples extends FunSuite {
-
   test("Belnap.flix") {
     val input =
       """namespace Belnap {
@@ -252,5 +251,4 @@ class TestExamples extends FunSuite {
       .addPath("./examples/misc/FloydWarshall.flix")
       .solve().get
   }
-
 }

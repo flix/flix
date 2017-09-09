@@ -129,7 +129,7 @@ object Value {
   case class Tag(enum: Symbol.EnumSym, tag: String, value: AnyRef) extends Value with api.Enum {
     def getTag: String = tag
 
-    def getBoxedValue: AnyRef = value
+    def getBoxedEnumField: AnyRef = value
 
     final override def equals(obj: scala.Any): Boolean = throw InternalRuntimeException(s"Value.Tag does not support `equals`.")
 

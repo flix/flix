@@ -20,7 +20,7 @@ import java.lang.reflect.{Constructor, Field, Method}
 import java.util.concurrent.atomic.{AtomicInteger, AtomicLong}
 
 import ca.uwaterloo.flix.language.ast.Symbol.EnumSym
-import ca.uwaterloo.flix.language.phase.CodegenHelper.{FlixClassName, QualName, TupleClassName}
+import ca.uwaterloo.flix.language.phase.CodegenHelper._
 import ca.uwaterloo.flix.runtime.InvocationTarget
 
 sealed trait ExecutableAst
@@ -42,11 +42,12 @@ object ExecutableAst {
                   time: Time,
                   dependenciesOf: Map[Symbol.TableSym, Set[(Constraint, ExecutableAst.Predicate.Body.Positive)]]) extends ExecutableAst
 
-  case class ByteCodes(enumInterfaceByteCodes: Map[EnumSym, (QualName, Array[Byte])],
-                       enumClassByteCodes: Map[EnumSym, (Map[(String, Type), Array[Byte]], Map[String, Array[Byte]])],
+  case class ByteCodes(enumInterfaceByteCodes:  Map[EnumSym, (EnumTypeInterfaceName, Array[Byte])],
+                       enumClassByteCodes: Map[EnumSym, (Map[(String, Type), (Array[Byte], Array[Byte])], Map[String, (Array[Byte], Array[Byte])])],
                        functionalInterfaceByteCodes: Map[Type, (FlixClassName, Array[Byte])],
                        classByteCodes: Map[FlixClassName, Array[Byte]],
-                       tupleByteCode: Map[TupleClassName, Array[Byte]])
+                       tupleByteCode: Map[List[WrappedType], (Array[Byte], Array[Byte])],
+                       ETFusionByteCode: Map[EnumSym, Map[String, Map[List[WrappedType], Array[Byte]]]])
 
 
   case class Constraint(cparams: List[ConstraintParam], head: Predicate.Head, body: List[Predicate.Body]) extends ExecutableAst {

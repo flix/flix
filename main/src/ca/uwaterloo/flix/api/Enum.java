@@ -28,5 +28,5 @@ public interface Enum {
     /**
      * Returns the value of `this`.
      */
-    Object getBoxedValue();
+    Object getBoxedEnumField();
 }
