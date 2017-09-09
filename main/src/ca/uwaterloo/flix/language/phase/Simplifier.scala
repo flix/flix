@@ -26,24 +26,83 @@ import ca.uwaterloo.flix.util.Validation._
 import scala.collection.mutable
 
 /**
-  * A phase that simplifies a Typed AST by:
-  *
-  * - Compiles literals to expressions.
-  * - Eliminates match expressions.
-  * - Numbers every variable.
+  * A phase that simplifies the TypedAst by elimination of pattern matching and other rewritings.
   */
 object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
 
   type TopLevel = mutable.Map[Symbol.DefnSym, SimplifiedAst.Def]
 
   def run(root: TypedAst.Root)(implicit flix: Flix): Validation[SimplifiedAst.Root, CompilationError] = {
+    // Put GenSym into the implicit scope.
     implicit val _ = flix.genSym
 
+    // Measure elapsed time.
     val t = System.nanoTime()
 
+    // A mutable map to contain fresh top-level definitions.
     val toplevel: TopLevel = mutable.Map.empty
 
-    val defns = root.defs.map { case (k, v) => k -> simplify(v) }
+    /**
+      * Translates the given `constraint0` to the SimplifiedAst.
+      */
+    def visitConstraint(constraint0: TypedAst.Constraint): SimplifiedAst.Constraint = {
+      val head = Predicate.Head.simplify(constraint0.head, constraint0.cparams, toplevel)
+      val body = constraint0.body.map(p => Predicate.Body.simplify(p, constraint0.cparams, toplevel))
+      val cparams = constraint0.cparams.map {
+        case TypedAst.ConstraintParam.HeadParam(sym, tpe, loc) => SimplifiedAst.ConstraintParam.HeadParam(sym, tpe, loc)
+        case TypedAst.ConstraintParam.RuleParam(sym, tpe, loc) => SimplifiedAst.ConstraintParam.RuleParam(sym, tpe, loc)
+      }
+
+      SimplifiedAst.Constraint(cparams, head, body)
+    }
+
+    /**
+      * Translates the given definition `def0` to the SimplifiedAst.
+      */
+    def visitDef(def0: TypedAst.Def): SimplifiedAst.Def = {
+      val fs = def0.fparams.map(simplify)
+      val exp = Expression.simplify(def0.exp)
+      SimplifiedAst.Def(def0.ann, def0.mod, def0.sym, fs, exp, isSynthetic = false, def0.tpe, def0.loc)
+    }
+
+    /**
+      * Translates the given `index0` to the SimplifiedAst.
+      */
+    def visitIndex(index0: TypedAst.Index): SimplifiedAst.Index =
+      SimplifiedAst.Index(index0.sym, index0.indexes, index0.loc)
+
+    /**
+      * Translates the given `lattice0` to the SimplifiedAst.
+      */
+    def visitLattice(lattice0: TypedAst.Lattice): SimplifiedAst.Lattice = lattice0 match {
+      case TypedAst.Lattice(tpe, bot0, top0, equ0, leq0, lub0, glb0, loc) =>
+        val bot = Expression.simplify(bot0)
+        val top = Expression.simplify(top0)
+        val equ = Expression.simplify(equ0)
+        val leq = Expression.simplify(leq0)
+        val lub = Expression.simplify(lub0)
+        val glb = Expression.simplify(glb0)
+        SimplifiedAst.Lattice(tpe, bot, top, equ, leq, lub, glb, loc)
+    }
+
+    /**
+      * Translates the given `stratum0` to the SimplifiedAst.
+      */
+    def visitStratum(stratum0: TypedAst.Stratum): SimplifiedAst.Stratum =
+      SimplifiedAst.Stratum(stratum0.constraints.map(c => visitConstraint(c)))
+
+    /**
+      * Translates the given `table0` to the SimplifiedAst.
+      */
+    def visitTable(table0: TypedAst.Table): SimplifiedAst.Table = table0 match {
+      case TypedAst.Table.Relation(doc, symbol, attributes, loc) =>
+        SimplifiedAst.Table.Relation(symbol, attributes.map(Simplifier.simplify), loc)
+      case TypedAst.Table.Lattice(doc, name, keys, value, loc) =>
+        SimplifiedAst.Table.Lattice(name, keys.map(Simplifier.simplify), Simplifier.simplify(value), loc)
+    }
+
+
+    val defns = root.defs.map { case (k, v) => k -> visitDef(v) }
     val enums = root.enums.map {
       case (k, TypedAst.Enum(doc, sym, cases0, sc, loc)) =>
         val cases = cases0 map {
@@ -51,10 +110,10 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         }
         k -> SimplifiedAst.Enum(sym, cases, loc)
     }
-    val lattices = root.lattices.map { case (k, v) => k -> simplify(v) }
-    val collections = root.tables.map { case (k, v) => k -> Table.simplify(v) }
-    val indexes = root.indexes.map { case (k, v) => k -> simplify(v) }
-    val strata = root.strata.map(s => simplify(s, toplevel))
+    val lattices = root.lattices.map { case (k, v) => k -> visitLattice(v) }
+    val collections = root.tables.map { case (k, v) => k -> visitTable(v) }
+    val indexes = root.indexes.map { case (k, v) => k -> visitIndex(v) }
+    val strata = root.strata.map(visitStratum)
     val properties = root.properties.map { p => simplify(p) }
     val specialOps = root.specialOps
     val reachable = root.reachable
@@ -63,48 +122,6 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
     val e = System.nanoTime() - t
     SimplifiedAst.Root(defns ++ toplevel, enums, lattices, collections, indexes, strata, properties, specialOps, reachable, time.copy(simplifier = e)).toSuccess
   }
-
-  object Table {
-    def simplify(tast: TypedAst.Table)(implicit genSym: GenSym): SimplifiedAst.Table = tast match {
-      case TypedAst.Table.Relation(doc, symbol, attributes, loc) =>
-        SimplifiedAst.Table.Relation(symbol, attributes.map(Simplifier.simplify), loc)
-      case TypedAst.Table.Lattice(doc, name, keys, value, loc) =>
-        SimplifiedAst.Table.Lattice(name, keys.map(Simplifier.simplify), Simplifier.simplify(value), loc)
-    }
-  }
-
-  object Declarations {
-
-    object Constraints {
-      def simplify(constraint: TypedAst.Constraint, toplevel: TopLevel)(implicit genSym: GenSym): SimplifiedAst.Constraint = {
-        val head = Predicate.Head.simplify(constraint.head, constraint.cparams, toplevel)
-        val body = constraint.body.map(p => Predicate.Body.simplify(p, constraint.cparams, toplevel))
-        val cparams = constraint.cparams.map {
-          case TypedAst.ConstraintParam.HeadParam(sym, tpe, loc) => SimplifiedAst.ConstraintParam.HeadParam(sym, tpe, loc)
-          case TypedAst.ConstraintParam.RuleParam(sym, tpe, loc) => SimplifiedAst.ConstraintParam.RuleParam(sym, tpe, loc)
-        }
-
-        SimplifiedAst.Constraint(cparams, head, body)
-      }
-    }
-
-  }
-
-  def simplify(tast: TypedAst.Lattice)(implicit genSym: GenSym): SimplifiedAst.Lattice = tast match {
-    case TypedAst.Lattice(tpe, bot, top, equ, leq, lub, glb, loc) =>
-      import Expression.{simplify => s}
-      SimplifiedAst.Lattice(tpe, s(bot), s(top), s(equ), s(leq), s(lub), s(glb), loc)
-  }
-
-  def simplify(tast: TypedAst.Def)(implicit genSym: GenSym): SimplifiedAst.Def = {
-    val formals = tast.fparams.map {
-      case TypedAst.FormalParam(sym, mod, tpe, loc) => SimplifiedAst.FormalParam(sym, mod, tpe, loc)
-    }
-    SimplifiedAst.Def(tast.ann, tast.mod, tast.sym, formals, Expression.simplify(tast.exp), isSynthetic = false, tast.tpe, tast.loc)
-  }
-
-  def simplify(tast: TypedAst.Index)(implicit genSym: GenSym): SimplifiedAst.Index =
-    SimplifiedAst.Index(tast.sym, tast.indexes, tast.loc)
 
   object Expression {
     def simplify(tast: TypedAst.Expression)(implicit genSym: GenSym): SimplifiedAst.Expression = tast match {
@@ -822,9 +839,6 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
 
   def simplify(p: TypedAst.Property)(implicit genSym: GenSym): SimplifiedAst.Property =
     SimplifiedAst.Property(p.law, p.defn, Expression.simplify(p.exp))
-
-  def simplify(s: TypedAst.Stratum, toplevel: TopLevel)(implicit genSym: GenSym): SimplifiedAst.Stratum =
-    SimplifiedAst.Stratum(s.constraints.map(d => Declarations.Constraints.simplify(d, toplevel)))
 
   /**
     * Returns `true` if the given pattern `pat0` is a literal.
