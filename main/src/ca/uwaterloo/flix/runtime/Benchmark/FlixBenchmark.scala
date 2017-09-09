@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017 Magnus Madsen
+ *  Copyright 2017 Ramin Zarifi
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -14,19 +14,15 @@
  *  limitations under the License.
  */
 
-package ca.uwaterloo.flix.runtime
+package ca.uwaterloo.flix.runtime.Benchmark
 
-object Benchmarker {
+import ca.uwaterloo.flix.runtime.Model
 
-  /**
-    * The number of times to evaluate the benchmark before measurements.
-    */
-  val WarmupRounds = 100
+object FlixBenchmark extends Benchmarker{
 
-  /**
-    * The number of times to evaluate the benchmark to compute the average.
-    */
-  val ActualRounds = 50
+  val WarmupRounds: Int = 100
+
+  val ActualRounds: Int = 50
 
   /**
     * Evaluates all benchmarks in the given `model`.
@@ -78,48 +74,4 @@ object Benchmarker {
       Console.println()
     }
   }
-
-  /**
-    * Returns the timings of evaluating `f` over `n` rounds.
-    */
-  private def run(f: () => AnyRef, n: Int): List[Long] = {
-    var result = List.empty[Long]
-    var i = 0
-    while (i < n) {
-      val t = System.nanoTime()
-      f()
-      val e = System.nanoTime() - t
-      i = i + 1
-      result = e :: result
-    }
-    result
-  }
-
-  /**
-    * Returns the median of the given list of longs.
-    */
-  private def median(xs: List[Long]): Long = {
-    if (xs.isEmpty) throw new IllegalArgumentException("Empty list.")
-    if (xs.length == 1) return xs.head
-
-    val l = xs.sorted
-    val n = xs.length
-    if (n % 2 == 0) {
-      val index = n / 2
-      l(index)
-    } else {
-      val index = n / 2
-      (l(index) + l(index + 1)) / 2
-    }
-  }
-
-  /**
-    * Sleeps for a little while and tries to run the garbage collector.
-    */
-  private def sleepAndGC(): Unit = {
-    Thread.sleep(500)
-    System.gc()
-    Thread.sleep(500)
-  }
-
 }

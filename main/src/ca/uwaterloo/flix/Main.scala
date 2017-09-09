@@ -19,7 +19,8 @@ package ca.uwaterloo.flix
 import java.io.File
 
 import ca.uwaterloo.flix.api.{Flix, MatchException, RuleException, SwitchException, UserException}
-import ca.uwaterloo.flix.runtime.{Benchmarker, Shell, Tester, Value}
+import ca.uwaterloo.flix.runtime.Benchmark.FlixBenchmark
+import ca.uwaterloo.flix.runtime._
 import ca.uwaterloo.flix.util._
 import ca.uwaterloo.flix.util.vt.VirtualString.{Code, Line, NewLine}
 import ca.uwaterloo.flix.util.vt._
@@ -145,7 +146,7 @@ object Main {
           }
 
           if (cmdOpts.benchmark) {
-            Benchmarker.benchmark(model)
+            FlixBenchmark.benchmark(model)
           }
 
           if (cmdOpts.test) {
