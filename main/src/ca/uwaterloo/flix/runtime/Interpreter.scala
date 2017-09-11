@@ -502,8 +502,8 @@ object Interpreter {
     * Invokes the given closure expression `exp` with the given arguments `args` under the given environment `env0`..
     */
   private def invokeClo(exp: Expression, args: List[Expression], env0: Map[String, AnyRef], lenv0: Map[Symbol.LabelSym, Expression], root: Root): AnyRef = {
-    val clo = cast2closure(eval(exp, env0, lenv0, root), lenv0, root)
-    val Value.Closure(name, bindings) = clo
+    val v = eval(exp, env0, lenv0, root)
+    val Value.Closure(name, bindings) = cast2closure(v)
     val as = evalArgs(args, env0, lenv0, root)
     val constant = root.defs(name)
     // Bindings for the capture variables are passed as arguments.
