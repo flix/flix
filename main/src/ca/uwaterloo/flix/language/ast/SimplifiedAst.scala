@@ -38,7 +38,7 @@ object SimplifiedAst {
 
   case class Constraint(cparams: List[SimplifiedAst.ConstraintParam], head: SimplifiedAst.Predicate.Head, body: List[SimplifiedAst.Predicate.Body]) extends SimplifiedAst
 
-  case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, formals: List[SimplifiedAst.FormalParam], exp: SimplifiedAst.Expression, isSynthetic: Boolean, tpe: Type, loc: SourceLocation) extends SimplifiedAst
+  case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, fparams: List[SimplifiedAst.FormalParam], exp: SimplifiedAst.Expression, isSynthetic: Boolean, tpe: Type, loc: SourceLocation) extends SimplifiedAst
 
   case class Enum(sym: Symbol.EnumSym, cases: Map[String, SimplifiedAst.Case], loc: SourceLocation) extends SimplifiedAst
 

@@ -67,6 +67,7 @@ object Main {
       case Optimization.ClosureElimination => !cmdOpts.xnoclosureelim
       case Optimization.EnumCompaction => !cmdOpts.xnocompact
       case Optimization.PatMatchLabels => !cmdOpts.xpatmatchlambda
+      case Optimization.SingleCaseEnum => true
       case Optimization.TagTupleFusion => !cmdOpts.xnofusion
       case Optimization.TailRecursion => !cmdOpts.xnotailrec
       case Optimization.Uncurrying => !cmdOpts.xnouncurry

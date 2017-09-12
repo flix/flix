@@ -130,7 +130,7 @@ object Optimization {
   /**
     * All optimization supported by the compiler.
     */
-  val All: Set[Optimization] = Set(ClosureElimination, EnumCompaction, TagTupleFusion, TailRecursion, Uncurrying)
+  val All: Set[Optimization] = Set(ClosureElimination, EnumCompaction, SingleCaseEnum, TagTupleFusion, TailRecursion, Uncurrying)
 
   /**
     * Enables closure elimination.
@@ -146,6 +146,11 @@ object Optimization {
     * Enables compilation of pattern matching to labels and jumps.
     */
   case object PatMatchLabels extends Optimization
+
+  /**
+    * Enables compilation of single-case enums to nothingness.
+    */
+  case object SingleCaseEnum extends Optimization
 
   /**
     * Enables compilation of tags and tuples into a single class.
