@@ -33,6 +33,7 @@ import ca.uwaterloo.flix.util.vt._
   * - Elimination of dead branches (e.g. if (true) e1 else e2).
   * - Copy propagation (e.g. let z = w; let y = z; let x = y; x -> w)
   * - Propagates closures.
+  * - Eliminates single-case enums.
   */
 object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
 
@@ -336,6 +337,45 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     }
 
     /**
+      * Performs intra-procedural optimization on the terms of the given head predicate `p0`.
+      */
+    def visitHeadPred(p0: Predicate.Head): Predicate.Head = p0 match {
+      case Predicate.Head.True(loc) => p0
+      case Predicate.Head.False(loc) => p0
+      case Predicate.Head.Positive(sym, terms, loc) => Predicate.Head.Positive(sym, terms map visitHeadTerm, loc)
+      case Predicate.Head.Negative(sym, terms, loc) => ??? // TODO: Impossible.
+    }
+
+    /**
+      * Performs intra-procedural optimization on the terms of the given body predicate `p0`.
+      */
+    def visitBodyPred(p0: Predicate.Body): Predicate.Body = p0 match {
+      case Predicate.Body.Positive(sym, terms, loc) => Predicate.Body.Positive(sym, terms map visitBodyTerm, loc)
+      case Predicate.Body.Negative(sym, terms, loc) => Predicate.Body.Negative(sym, terms map visitBodyTerm, loc)
+      case Predicate.Body.Filter(sym, terms, loc) => Predicate.Body.Filter(sym, terms map visitBodyTerm, loc)
+      case Predicate.Body.Loop(sym, term, loc) => Predicate.Body.Loop(sym, visitHeadTerm(term), loc)
+    }
+
+    /**
+      * Performs intra-procedural optimization on the given head term `t0`.
+      */
+    def visitHeadTerm(h0: Term.Head): Term.Head = h0 match {
+      case Term.Head.Var(sym, tpe, loc) => Term.Head.Var(sym, adjustType(tpe), loc)
+      case Term.Head.Lit(lit, tpe, loc) => Term.Head.Lit(visitExp(lit, Map.empty), adjustType(tpe), loc)
+      case Term.Head.App(sym, args, tpe, loc) => Term.Head.App(sym, args, adjustType(tpe), loc)
+    }
+
+    /**
+      * Performs intra-procedural optimization on the given body term `t0`.
+      */
+    def visitBodyTerm(b0: Term.Body): Term.Body = b0 match {
+      case Term.Body.Wild(tpe, loc) => Term.Body.Wild(adjustType(tpe), loc)
+      case Term.Body.Var(sym, tpe, loc) => Term.Body.Var(sym, adjustType(tpe), loc)
+      case Term.Body.Lit(exp, tpe, loc) => Term.Body.Lit(visitExp(exp, Map.empty), adjustType(tpe), loc)
+      case Term.Body.Pat(pat, tpe, loc) => Term.Body.Pat(adjustPat(pat), adjustType(tpe), loc)
+    }
+
+    /**
       * Returns `true` if the enum associated with the given symbol `sym` is a single-case enum.
       */
     def isSingleCaseEnum(sym: Symbol.EnumSym): Boolean = root.enums(sym).cases.size == 1
@@ -348,10 +388,51 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     }
 
     /**
-      * Adjusts the type of `f0` to remove any references to a single-cased enum.
+      * Adjusts the type of `p0` to remove any references to a single-cased enum.
       */
-    def adjustFormalParam(f0: SimplifiedAst.FormalParam): SimplifiedAst.FormalParam = f0 match {
+    def adjustConstraintParam(p0: SimplifiedAst.ConstraintParam): ConstraintParam = p0 match {
+      case ConstraintParam.HeadParam(sym, tpe, loc) => ConstraintParam.HeadParam(sym, adjustType(tpe), loc)
+      case ConstraintParam.RuleParam(sym, tpe, loc) => ConstraintParam.RuleParam(sym, adjustType(tpe), loc)
+    }
+
+    /**
+      * Adjusts the type of `p0` to remove any references to a single-cased enum.
+      */
+    def adjustFormalParam(p0: SimplifiedAst.FormalParam): FormalParam = p0 match {
       case FormalParam(sym, mod, tpe, loc) => FormalParam(sym, mod, adjustType(tpe), loc)
+    }
+
+    /**
+      * Adjusts the type of `p0` to remove any references to a single-cased enum.
+      */
+    def adjustPat(p0: Pattern): Pattern = p0 match {
+      case Pattern.Wild(tpe, loc) => Pattern.Wild(adjustType(tpe), loc)
+      case Pattern.Var(sym, tpe, loc) => Pattern.Var(sym, adjustType(tpe), loc)
+      case Pattern.Unit(loc) => p0
+      case Pattern.True(loc) => p0
+      case Pattern.False(loc) => p0
+      case Pattern.Char(lit, loc) => p0
+      case Pattern.Float32(lit, loc) => p0
+      case Pattern.Float64(lit, loc) => p0
+      case Pattern.Int8(lit, loc) => p0
+      case Pattern.Int16(lit, loc) => p0
+      case Pattern.Int32(lit, loc) => p0
+      case Pattern.Int64(lit, loc) => p0
+      case Pattern.BigInt(lit, loc) => p0
+      case Pattern.Str(lit, loc) => p0
+      case Pattern.Tag(sym, tag, pat, tpe, loc) =>
+        //
+        // Check if this is a single-case enum subject to elimination.
+        //
+        if ((flix.options.optimizations contains Optimization.SingleCaseEnum) && isSingleCaseEnum(sym)) {
+          return adjustPat(pat)
+        }
+        val p = adjustPat(pat)
+        Pattern.Tag(sym, tag, p, adjustType(tpe), loc)
+
+      case Pattern.Tuple(elms, tpe, loc) =>
+        val es = elms map adjustPat
+        Pattern.Tuple(es, adjustType(tpe), loc)
     }
 
     /**
@@ -387,8 +468,55 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         sym -> defn.copy(fparams = ps, exp = exp, tpe = tpe)
     }
 
+    // Visit every enum in the program.
+    val enums = root.enums.map {
+      case (sym, enum) =>
+        val cases = enum.cases map {
+          case (tag, caze) => tag -> caze.copy(tpe = adjustType(caze.tpe))
+        }
+        sym -> enum.copy(cases = cases)
+    }
+
+    // Visit every lattice in the program.
+    val lattices = root.lattices.map {
+      case (tpe, Lattice(t, bot0, top0, equ0, leq0, lub0, glb0, loc)) =>
+        val bot = visitExp(bot0, Map.empty)
+        val top = visitExp(top0, Map.empty)
+        val equ = visitExp(equ0, Map.empty)
+        val leq = visitExp(leq0, Map.empty)
+        val lub = visitExp(lub0, Map.empty)
+        val glb = visitExp(glb0, Map.empty)
+        // TODO: It seems unsafe to adjust the type here?
+        adjustType(tpe) -> SimplifiedAst.Lattice(adjustType(tpe), bot, top, equ, leq, lub, glb, loc)
+    }
+
+    // Visit every stratum in the program.
+    val strata = root.strata.map {
+      case Stratum(constraints) =>
+        val cs = constraints map {
+          case Constraint(cparams, head, body) =>
+            Constraint(cparams map adjustConstraintParam, visitHeadPred(head), body map visitBodyPred)
+        }
+        Stratum(cs)
+    }
+
+    // Visit every property in the program.
+    val properties = root.properties.map {
+      case property =>
+        val exp = visitExp(property.exp, Map.empty)
+        property.copy(exp = exp)
+    }
+
+    // TODO: Special ops?
+
     // Reassemble the ast root.
-    val result = root.copy(defs = defs)
+    val result = root.copy(
+      defs = defs,
+      enums = enums,
+      lattices = lattices,
+      strata = strata,
+      properties = properties
+    )
 
     // Print the ast if debugging is enabled.
     if (flix.options.debug) {
