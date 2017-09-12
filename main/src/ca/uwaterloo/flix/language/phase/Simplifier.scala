@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
+import ca.uwaterloo.flix.util.{InternalCompilerException, Optimization, Validation}
 import ca.uwaterloo.flix.util.Validation._
 
 import scala.collection.mutable
@@ -353,8 +353,14 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         SimplifiedAst.Expression.LetRec(sym, visitExp(e1), visitExp(e2), tpe, loc)
 
       case TypedAst.Expression.Match(exp0, rules, tpe, eff, loc) =>
-        // TODO: Introduce switch
-        patternMatchWithLabels(exp0, rules, tpe, loc)
+        //
+        // Check whether to compile pattern matches to lambdas-and-calls or to labels-and-jumps.
+        //
+        if (flix.options.optimizations contains Optimization.PatMatchLabels) {
+          patternMatchWithLabels(exp0, rules, tpe, loc)
+        } else {
+          patternMatchWithLambda(exp0, rules, tpe, loc)
+        }
 
       case TypedAst.Expression.Tag(sym, tag, e, tpe, eff, loc) =>
         SimplifiedAst.Expression.Tag(sym, tag, visitExp(e), tpe, loc)

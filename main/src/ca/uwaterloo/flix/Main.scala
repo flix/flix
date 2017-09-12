@@ -66,6 +66,7 @@ object Main {
     val optimizations = Optimization.All.filter {
       case Optimization.ClosureElimination => !cmdOpts.xnoclosureelim
       case Optimization.EnumCompaction => !cmdOpts.xnocompact
+      case Optimization.PatMatchLabels => !cmdOpts.xpatmatchlambda
       case Optimization.TagTupleFusion => !cmdOpts.xnofusion
       case Optimization.TailRecursion => !cmdOpts.xnotailrec
       case Optimization.Uncurrying => !cmdOpts.xnouncurry
@@ -213,6 +214,7 @@ object Main {
                      ximpure: Boolean = false,
                      xinterpreter: Boolean = false,
                      xinvariants: Boolean = false,
+                     xpatmatchlambda: Boolean = false,
                      xnoclosureelim: Boolean = false,
                      xnocompact: Boolean = false,
                      xnofusion: Boolean = false,
@@ -334,6 +336,10 @@ object Main {
       // Xinvariants.
       opt[Unit]("Xinvariants").action((_, c) => c.copy(xinvariants = true)).
         text("[experimental] enables compiler invariants.")
+
+      // Xpatmatch-lambda
+      opt[Unit]("Xpatmatch-lambda").action((_, c) => c.copy(xpatmatchlambda = true)).
+        text("[experimental] compile pattern matching to lambdas.")
 
       // Xno-closure-elim
       opt[Unit]("Xno-closure-elim").action((_, c) => c.copy(xnoclosureelim = true)).
