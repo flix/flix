@@ -19,8 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.util.InternalCompilerException
-import ca.uwaterloo.flix.util.Validation
+import ca.uwaterloo.flix.util.{InternalCompilerException, Optimization, Validation}
 import ca.uwaterloo.flix.util.Validation._
 
 import scala.collection.mutable
@@ -354,7 +353,14 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         SimplifiedAst.Expression.LetRec(sym, visitExp(e1), visitExp(e2), tpe, loc)
 
       case TypedAst.Expression.Match(exp0, rules, tpe, eff, loc) =>
-        patternMatchWithLambda(exp0, rules, tpe, loc)
+        //
+        // Check whether to compile pattern matches to lambdas-and-calls or to labels-and-jumps.
+        //
+        if (flix.options.optimizations contains Optimization.PatMatchLabels) {
+          patternMatchWithLabels(exp0, rules, tpe, loc)
+        } else {
+          patternMatchWithLambda(exp0, rules, tpe, loc)
+        }
 
       case TypedAst.Expression.Tag(sym, tag, e, tpe, eff, loc) =>
         SimplifiedAst.Expression.Tag(sym, tag, visitExp(e), tpe, loc)
@@ -704,6 +710,84 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       }
 
       SimplifiedAst.Expression.Binary(sop, BinaryOperator.Equal, e1, e2, Type.Bool, loc)
+    }
+
+    /**
+      * Eliminates pattern matching by translations to labels and jumps.
+      */
+    def patternMatchWithLabels(exp0: TypedAst.Expression, rules: List[TypedAst.MatchRule], tpe: Type, loc: SourceLocation): SimplifiedAst.Expression = {
+      //
+      // Given the code:
+      //
+      // match x with {
+      //   case PATTERN_1 => BODY_1
+      //   case PATTERN_2 => BODY_2
+      //   ...
+      //   case PATTERN_N => BODY_N
+      // }
+      //
+      // The structure of the generated code is as follows:
+      //
+      // let matchVar = x ;
+      //
+      //   branch {
+      //     jumpto label$1
+      //
+      //     label$1:
+      //       ...
+      //     label$2:
+      //       ...
+      //     default:
+      //       MatchError
+      //   }
+      //
+
+      // Generate a fresh variable to hold the result of the match expression.
+      val matchVar = Symbol.freshVarSym("matchVar")
+
+      // Translate the match expression.
+      val matchExp = visitExp(exp0)
+
+      // Generate a fresh label for the default fall through case.
+      val defaultLab = Symbol.freshLabel("default")
+
+      // Generate a label for each rule.
+      val ruleLabels = rules.map(_ => Symbol.freshLabel("case"))
+
+      // Construct a map from each label to the label of the next case.
+      // The default label is the next label of the last case.
+      val nextLabel = (ruleLabels zip (ruleLabels.drop(1) ::: defaultLab :: Nil)).toMap
+
+      // Create a branch for each rule.
+      val branches = (ruleLabels zip rules) map {
+        // Process each (label, rule) pair.
+        case (label, TypedAst.MatchRule(pat, guard, body)) =>
+          // Retrieve the label of the next rule.
+          // If this rule is the last, the next label is the default label.
+          val next = nextLabel(label)
+
+          // Success case: evaluate the match body.
+          val success = visitExp(body)
+
+          // Failure case: Jump to the next label.
+          val failure = SimplifiedAst.Expression.JumpTo(next, tpe, loc)
+
+          // Return the branch with its label.
+          label -> patternMatchList(List(pat), List(matchVar), guard, success, failure
+          )
+      }
+
+      // Construct the error branch.
+      val errorBranch = defaultLab -> SimplifiedAst.Expression.MatchError(tpe, loc)
+
+      // The initial expression simply jumps to the first label.
+      val entry = SimplifiedAst.Expression.JumpTo(ruleLabels.head, tpe, loc)
+
+      // Assemble all the branches together.
+      val branch = SimplifiedAst.Expression.Branch(entry, branches.toMap + errorBranch, tpe, loc)
+
+      // Wrap the branches inside a let-binding for the match variable.
+      SimplifiedAst.Expression.Let(matchVar, matchExp, branch, tpe, loc)
     }
 
     /**

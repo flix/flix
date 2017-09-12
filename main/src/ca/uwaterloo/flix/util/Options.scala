@@ -143,6 +143,11 @@ object Optimization {
   case object EnumCompaction extends Optimization
 
   /**
+    * Enables compilation of pattern matching to labels and jumps.
+    */
+  case object PatMatchLabels extends Optimization
+
+  /**
     * Enables compilation of tags and tuples into a single class.
     */
   case object TagTupleFusion extends Optimization
