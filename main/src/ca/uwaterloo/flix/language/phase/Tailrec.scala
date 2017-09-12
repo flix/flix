@@ -72,7 +72,14 @@ object Tailrec extends Phase[Root, Root] {
         val e3 = visit(exp3)
         Expression.IfThenElse(exp1, e2, e3, tpe, loc)
 
-      // TODO: Branch
+      /*
+       * Branch: Each branch is in tail position.
+       */
+      case Expression.Branch(e0, br0, tpe, loc) =>
+        val br = br0 map {
+          case (sym, exp) => sym -> visit(exp)
+        }
+        Expression.Branch(e0, br, tpe, loc)
 
       /*
        * ApplyClo.

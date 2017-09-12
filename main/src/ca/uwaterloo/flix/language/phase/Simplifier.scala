@@ -742,13 +742,13 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       //   }
       //
 
-      // Generate variable to hold the value of the match expression.
+      // Generate a fresh variable to hold the result of the match expression.
       val matchVar = Symbol.freshVarSym("matchVar")
 
       // Translate the match expression.
       val matchExp = visitExp(exp0)
 
-      // Generate a fresh label for fall through.
+      // Generate a fresh label for the default fall through case.
       val defaultLab = Symbol.freshLabel("default")
 
       // Generate a label for each rule.
@@ -766,12 +766,10 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
           // If this rule is the last, the next label is the default label.
           val next = nextLabel(label)
 
-          // Generate code for the pattern match itself.
-
-          // Success: evaluate the match body.
+          // Success case: evaluate the match body.
           val success = visitExp(body)
 
-          // Failure: Jump to the next label.
+          // Failure case: Jump to the next label.
           val failure = SimplifiedAst.Expression.JumpTo(next, tpe, loc)
 
           // Return the branch with its label.
