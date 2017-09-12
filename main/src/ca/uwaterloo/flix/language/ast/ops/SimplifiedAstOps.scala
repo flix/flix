@@ -77,6 +77,16 @@ object SimplifiedAstOps {
         checkType(tpe)
 
       //
+      // Apply Expressions.
+      //
+      case Expression.Apply(exp, args, tpe, loc) =>
+        checkExp(exp)
+        for (arg <- args) {
+          checkExp(arg)
+        }
+        checkType(tpe)
+
+      //
       // ApplyClo Expressions.
       //
       case Expression.ApplyClo(exp, args, tpe, loc) =>
@@ -300,7 +310,6 @@ object SimplifiedAstOps {
       case Expression.LambdaClosure(lambda, freeVars, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
       case Expression.Lambda(args, body, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
       case Expression.Hook(hook, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
-      case Expression.Apply(exp, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
     }
 
     /**
@@ -377,7 +386,7 @@ object SimplifiedAstOps {
       */
     def checkBodyTerm(t0: Term.Body) = t0 match {
       case Term.Body.Wild(tpe, loc) =>
-        checkType(tpe)
+        // TODO: What is the type allowed to be here?
       case Term.Body.Var(sym, tpe, loc) =>
         checkType(tpe)
       case Term.Body.Lit(exp, tpe, loc) =>
@@ -436,7 +445,13 @@ object SimplifiedAstOps {
       * Checks invariants of the given type `tpe0`.
       */
     def checkType(tpe0: Type): Unit = tpe0 match {
-      case Type.Var(id, kind) => assert(assertion = false, "Unexpected type variable.")
+      case Type.Var(id, kind) =>
+        assert(assertion = false, "Unexpected type variable.")
+      case Type.Apply(t, ts) =>
+        checkType(t)
+        for (tpe <- ts) {
+          checkType(tpe)
+        }
       case _ => // OK
     }
 

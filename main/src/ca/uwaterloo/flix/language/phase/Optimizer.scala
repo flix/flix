@@ -382,9 +382,22 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
 
     /**
       * Returns the inner type of the given single-case enum associated with the symbol `sym`.
+      *
+      * Here `tpe` is the instantiated type of the enum.
       */
-    def getSingleCaseType(sym: Symbol.EnumSym): Type = root.enums(sym).cases.head match {
-      case (_, SimplifiedAst.Case(enum, tag, tpe)) => tpe
+    def getSingleCaseType(sym: Symbol.EnumSym, actualType: Type): Type = {
+      // Retrieve the enum.
+      val enum = root.enums(sym)
+
+      // Retrieve the enum type (with type parameters).
+      val enumType = enum.tpe
+
+      // Retrieve the case.
+      enum.cases.head match {
+        case (_, SimplifiedAst.Case(_, tag, caseType)) =>
+          val subst = Unification.unify(enumType, actualType).get
+          subst(caseType)
+      }
     }
 
     /**
@@ -449,10 +462,10 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       // Adjust the type.
       tpe0 match {
         // Check if the enum is single-cased.
-        case Type.Enum(sym, kind) if isSingleCaseEnum(sym) => adjustType(getSingleCaseType(sym))
+        case Type.Enum(sym, kind) if isSingleCaseEnum(sym) => adjustType(getSingleCaseType(sym, tpe0))
         case Type.Apply(t, ts) => t match {
           // NB: This case is necessary if the single-cased enum is polymorphic.
-          case Type.Enum(sym, kind) if isSingleCaseEnum(sym) => adjustType(getSingleCaseType(sym))
+          case Type.Enum(sym, kind) if isSingleCaseEnum(sym) => adjustType(getSingleCaseType(sym, tpe0))
           case _ => Type.Apply(adjustType(t), ts.map(adjustType))
         }
         case _ => tpe0
