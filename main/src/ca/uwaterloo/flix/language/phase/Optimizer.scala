@@ -472,7 +472,8 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     val enums = root.enums.map {
       case (sym, enum) =>
         val cases = enum.cases map {
-          case (tag, caze) => tag -> caze.copy(tpe = adjustType(caze.tpe))
+          // TODO: What to do here?
+          case (tag, caze) => tag -> caze.copy(tpe = caze.tpe)
         }
         sym -> enum.copy(cases = cases)
     }
