@@ -847,8 +847,8 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
             // Construct the lambda that represents the current case:
             //   fn() = if `matchVar` matches `pat`, return `body`, else call `next()`
             val lambda = SimplifiedAst.Expression.Lambda(
-              args = List(),
-              body = patternMatchList(
+              fparams = List(),
+              exp = patternMatchList(
                 xs = List(pat),
                 ys = List(matchVar),
                 guard,

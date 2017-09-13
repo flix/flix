@@ -17,8 +17,8 @@
 package ca.uwaterloo.flix.language.ast.ops
 
 import ca.uwaterloo.flix.language.ast.SimplifiedAst._
+import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.ast.Type
-import ca.uwaterloo.flix.util.InternalCompilerException
 
 object SimplifiedAstOps {
 
@@ -34,13 +34,16 @@ object SimplifiedAstOps {
       for (param <- defn0.fparams) {
         checkFormalParam(param)
       }
-      checkExp(defn0.exp)
+      val env0 = defn0.fparams.map {
+        case FormalParam(sym, mod, tpe, loc) => sym
+      }
+      checkExp(exp0 = defn0.exp, env0 = env0.toSet, ienv0 = Set.empty)
     }
 
     /**
-      * Checks invariants of the given expression `exp0`.
+      * Checks invariants of the given expression `exp0` with the local variables in `env0` defined and the labels in `ienv0` defined.
       */
-    def checkExp(exp0: Expression): Unit = exp0 match {
+    def checkExp(exp0: Expression, env0: Set[Symbol.VarSym], ienv0: Set[Symbol.LabelSym]): Unit = exp0 match {
       //
       // Literal Expressions.
       //
@@ -61,38 +64,59 @@ object SimplifiedAstOps {
       // Variable Expressions.
       //
       case Expression.Var(sym, tpe, loc) =>
+        assert(env0 contains sym, s"Undefined local variable symbol: '$sym'.")
         checkType(tpe)
 
       //
       // Def Expressions.
       //
       case Expression.Def(sym, tpe, loc) =>
+        assert(root.defs contains sym, s"Undefined definition symbol: '$sym'.")
+        checkType(tpe)
+
+      //
+      // Lambda Expressions.
+      //
+      case Expression.Lambda(fparams, exp, tpe, loc) =>
+        checkExp(exp, env0 ++ fparams.map(_.sym), ienv0)
+
+      //
+      // Hook Expressions.
+      //
+      case Expression.Hook(hook, tpe, loc) =>
         checkType(tpe)
 
       //
       // Closure Expressions.
       //
       case Expression.Closure(exp, freeVars, tpe, loc) =>
-        checkExp(exp)
+        checkExp(exp, env0, ienv0)
         checkType(tpe)
 
       //
       // Apply Expressions.
       //
       case Expression.Apply(exp, args, tpe, loc) =>
-        checkExp(exp)
+        checkExp(exp, env0, ienv0)
         for (arg <- args) {
-          checkExp(arg)
+          checkExp(arg, env0, ienv0)
         }
+        checkType(tpe)
+
+      //
+      // LambdaClosure.
+      //
+      case Expression.LambdaClosure(lambda, freeVars, tpe, loc) =>
+        checkExp(exp0, env0, ienv0)
         checkType(tpe)
 
       //
       // ApplyClo Expressions.
       //
       case Expression.ApplyClo(exp, args, tpe, loc) =>
-        checkExp(exp)
+        checkExp(exp, env0, ienv0)
         for (arg <- args) {
-          checkExp(arg)
+          checkExp(arg, env0, ienv0)
         }
         checkType(tpe)
 
@@ -100,8 +124,9 @@ object SimplifiedAstOps {
       // ApplyDef Expressions.
       //
       case Expression.ApplyDef(sym, args, tpe, loc) =>
+        assert(root.defs contains sym, s"Undefined definition symbol: '$sym'.")
         for (arg <- args) {
-          checkExp(arg)
+          checkExp(arg, env0, ienv0)
         }
         checkType(tpe)
 
@@ -109,9 +134,9 @@ object SimplifiedAstOps {
       // ApplyCloTail Expressions.
       //
       case Expression.ApplyCloTail(exp, args, tpe, loc) =>
-        checkExp(exp)
+        checkExp(exp, env0, ienv0)
         for (arg <- args) {
-          checkExp(arg)
+          checkExp(arg, env0, ienv0)
         }
         checkType(tpe)
 
@@ -119,8 +144,9 @@ object SimplifiedAstOps {
       // ApplyDefTail Expressions.
       //
       case Expression.ApplyDefTail(sym, args, tpe, loc) =>
+        assert(root.defs contains sym, s"Undefined definition symbol: '$sym'.")
         for (arg <- args) {
-          checkExp(arg)
+          checkExp(arg, env0, ienv0)
         }
         checkType(tpe)
 
@@ -128,11 +154,12 @@ object SimplifiedAstOps {
       // ApplySelfTail Expressions.
       //
       case Expression.ApplySelfTail(sym, formals, actuals, tpe, loc) =>
+        assert(root.defs contains sym, s"Undefined definition symbol: '$sym'.")
         for (param <- formals) {
           checkFormalParam(param)
         }
         for (arg <- actuals) {
-          checkExp(arg)
+          checkExp(arg, env0, ienv0)
         }
         checkType(tpe)
 
@@ -141,40 +168,40 @@ object SimplifiedAstOps {
       //
       case Expression.ApplyHook(hook, args, tpe, loc) =>
         for (arg <- args) {
-          checkExp(arg)
+          checkExp(arg, env0, ienv0)
         }
 
       //
       // Unary Expressions.
       //
       case Expression.Unary(sop, op, exp, tpe, loc) =>
-        checkExp(exp)
+        checkExp(exp, env0, ienv0)
         checkType(tpe)
 
       //
       // Binary Expressions.
       //
       case Expression.Binary(sop, op, exp1, exp2, tpe, loc) =>
-        checkExp(exp1)
-        checkExp(exp2)
+        checkExp(exp1, env0, ienv0)
+        checkExp(exp2, env0, ienv0)
         checkType(tpe)
 
       //
       // If-then-else Expressions.
       //
       case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
-        checkExp(exp1)
-        checkExp(exp2)
-        checkExp(exp3)
+        checkExp(exp1, env0, ienv0)
+        checkExp(exp2, env0, ienv0)
+        checkExp(exp3, env0, ienv0)
         checkType(tpe)
 
       //
       // Block Expressions.
       //
       case Expression.Branch(exp, branches, tpe, loc) =>
-        checkExp(exp)
+        checkExp(exp, env0, ienv0)
         for ((label, branch) <- branches) {
-          checkExp(branch)
+          checkExp(branch, env0, ienv0 ++ branches.keySet)
         }
         checkType(tpe)
 
@@ -182,49 +209,53 @@ object SimplifiedAstOps {
       // Jump Expressions.
       //
       case Expression.JumpTo(sym, tpe, loc) =>
+        assert(ienv0 contains sym, s"Undefined label symbol: '$sym'.")
         checkType(tpe)
 
       //
       // Let Expressions.
       //
       case Expression.Let(sym, exp1, exp2, tpe, loc) =>
-        checkExp(exp1)
-        checkExp(exp2)
+        checkExp(exp1, env0, ienv0)
+        checkExp(exp2, env0 + sym, ienv0)
         checkType(tpe)
 
       //
       // LetRec Expressions.
       //
       case Expression.LetRec(sym, exp1, exp2, tpe, loc) =>
-        checkExp(exp1)
-        checkExp(exp2)
+        checkExp(exp1, env0 + sym, ienv0)
+        checkExp(exp2, env0 + sym, ienv0)
         checkType(tpe)
 
       //
       // Is Expressions.
       //
       case Expression.Is(sym, tag, exp, loc) =>
-        checkExp(exp)
+        assert(root.enums contains sym, s"Undefined enum symbol: '$sym'.")
+        checkExp(exp, env0, ienv0)
 
       //
       // Tag Expressions.
       //
       case Expression.Tag(sym, tag, exp, tpe, loc) =>
-        checkExp(exp)
+        assert(root.enums contains sym, s"Undefined enum symbol: '$sym'.")
+        checkExp(exp, env0, ienv0)
         checkType(tpe)
 
       //
       // Check if this is a single-case enum subject to elimination.
       //
       case Expression.Untag(sym, tag, exp, tpe, loc) =>
-        checkExp(exp)
+        assert(root.enums contains sym, s"Undefined enum symbol: '$sym'.")
+        checkExp(exp, env0, ienv0)
         checkType(tpe)
 
       //
       // Index Expressions.
       //
       case Expression.Index(base, offset, tpe, loc) =>
-        checkExp(base)
+        checkExp(base, env0, ienv0)
         checkType(tpe)
 
       //
@@ -232,7 +263,7 @@ object SimplifiedAstOps {
       //
       case Expression.Tuple(elms, tpe, loc) =>
         for (elm <- elms) {
-          checkExp(elm)
+          checkExp(elm, env0, ienv0)
         }
         checkType(tpe)
 
@@ -240,22 +271,22 @@ object SimplifiedAstOps {
       // Reference Expressions.
       //
       case Expression.Ref(exp, tpe, loc) =>
-        checkExp(exp)
+        checkExp(exp, env0, ienv0)
         checkType(tpe)
 
       //
       // Dereference Expressions.
       //
       case Expression.Deref(exp, tpe, loc) =>
-        checkExp(exp)
+        checkExp(exp, env0, ienv0)
         checkType(tpe)
 
       //
       // Assign Expressions.
       //
       case Expression.Assign(exp1, exp2, tpe, loc) =>
-        checkExp(exp1)
-        checkExp(exp2)
+        checkExp(exp1, env0, ienv0)
+        checkExp(exp2, env0, ienv0)
         checkType(tpe)
 
       //
@@ -263,21 +294,21 @@ object SimplifiedAstOps {
       //
       case Expression.Existential(fparam, exp, loc) =>
         checkFormalParam(fparam)
-        checkExp(exp)
+        checkExp(exp, env0 + fparam.sym, ienv0)
 
       //
       // Universal Expressions.
       //
       case Expression.Universal(fparam, exp, loc) =>
         checkFormalParam(fparam)
-        checkExp(exp)
+        checkExp(exp, env0 + fparam.sym, ienv0)
 
       //
       // Native Constructor.
       //
       case Expression.NativeConstructor(constructor, args, tpe, loc) =>
         for (arg <- args) {
-          checkExp(arg)
+          checkExp(arg, env0, ienv0)
         }
         checkType(tpe)
 
@@ -292,7 +323,7 @@ object SimplifiedAstOps {
       //
       case Expression.NativeMethod(method, args, tpe, loc) =>
         for (arg <- args) {
-          checkExp(arg)
+          checkExp(arg, env0, ienv0)
         }
         checkType(tpe)
 
@@ -302,14 +333,6 @@ object SimplifiedAstOps {
       case Expression.UserError(tpe, loc) => checkType(tpe)
       case Expression.MatchError(tpe, loc) => checkType(tpe)
       case Expression.SwitchError(tpe, loc) => checkType(tpe)
-
-      //
-      // Unexpected Expressions.
-      //
-      // TODO: These should be allowed.
-      case Expression.LambdaClosure(lambda, freeVars, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
-      case Expression.Lambda(args, body, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
-      case Expression.Hook(hook, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
     }
 
     /**
@@ -319,9 +342,16 @@ object SimplifiedAstOps {
       for (param <- c0.cparams) {
         checkConstraintParam(param)
       }
-      checkHeadPred(c0.head)
+      val envHead = c0.cparams.collect {
+        case ConstraintParam.HeadParam(sym, tpe, loc) => sym
+      }
+      val ruleEnv = c0.cparams.map {
+        case ConstraintParam.HeadParam(sym, tpe, loc) => sym
+        case ConstraintParam.RuleParam(sym, tpe, loc) => sym
+      }
+      checkHeadPred(c0.head, envHead.toSet)
       for (bodyPred <- c0.body) {
-        checkBodyPred(bodyPred)
+        checkBodyPred(bodyPred, ruleEnv.toSet)
       }
     }
 
@@ -338,12 +368,12 @@ object SimplifiedAstOps {
     /**
       * Checks invariants of the given head predicate `h0`.
       */
-    def checkHeadPred(h0: Predicate.Head): Unit = h0 match {
+    def checkHeadPred(h0: Predicate.Head, env0: Set[Symbol.VarSym]): Unit = h0 match {
       case Predicate.Head.True(loc) => // nop
       case Predicate.Head.False(loc) => // nop
       case Predicate.Head.Positive(sym, terms, loc) =>
         for (term <- terms) {
-          checkHeadTerm(term)
+          checkHeadTerm(term, env0)
         }
       case Predicate.Head.Negative(sym, term, loc) => ??? // TODO: Impossible
     }
@@ -351,31 +381,31 @@ object SimplifiedAstOps {
     /**
       * Checks invariants of the given body predicate `b0`.
       */
-    def checkBodyPred(b0: Predicate.Body): Unit = b0 match {
+    def checkBodyPred(b0: Predicate.Body, env0: Set[Symbol.VarSym]): Unit = b0 match {
       case Predicate.Body.Positive(sym, terms, loc) =>
         for (term <- terms) {
-          checkBodyTerm(term)
+          checkBodyTerm(term, env0)
         }
       case Predicate.Body.Negative(sym, terms, loc) =>
         for (term <- terms) {
-          checkBodyTerm(term)
+          checkBodyTerm(term, env0)
         }
       case Predicate.Body.Filter(sym, terms, loc) =>
         for (term <- terms) {
-          checkBodyTerm(term)
+          checkBodyTerm(term, env0)
         }
       case Predicate.Body.Loop(sym, term, loc) =>
-        checkHeadTerm(term)
+        checkHeadTerm(term, env0)
     }
 
     /**
       * Checks invariants of the given head term `t0`.
       */
-    def checkHeadTerm(t0: Term.Head): Unit = t0 match {
+    def checkHeadTerm(t0: Term.Head, env0: Set[Symbol.VarSym]): Unit = t0 match {
       case Term.Head.Var(sym, tpe, loc) =>
         checkType(tpe)
       case Term.Head.Lit(exp, tpe, loc) =>
-        checkExp(exp)
+        checkExp(exp0 = exp, env0 = env0, ienv0 = Set.empty)
         checkType(tpe)
       case Term.Head.App(sym, args, tpe, loc) =>
         checkType(tpe)
@@ -384,13 +414,13 @@ object SimplifiedAstOps {
     /**
       * Checks invariants of the given body term `t0`.
       */
-    def checkBodyTerm(t0: Term.Body) = t0 match {
+    def checkBodyTerm(t0: Term.Body, env0: Set[Symbol.VarSym]) = t0 match {
       case Term.Body.Wild(tpe, loc) =>
-        // TODO: What is the type allowed to be here?
+      // TODO: What is the type allowed to be here?
       case Term.Body.Var(sym, tpe, loc) =>
         checkType(tpe)
       case Term.Body.Lit(exp, tpe, loc) =>
-        checkExp(exp)
+        checkExp(exp0 = exp, env0 = env0, ienv0 = Set.empty)
         checkType(tpe)
       case Term.Body.Pat(pat, tpe, loc) =>
         checkPat(pat)
@@ -469,19 +499,19 @@ object SimplifiedAstOps {
       assert(tpe1 == tpe2)
       checkType(tpe1)
       checkType(tpe2)
-      checkExp(bot)
-      checkExp(top)
-      checkExp(equ)
-      checkExp(leq)
-      checkExp(lub)
-      checkExp(glb)
+      checkExp(exp0 = bot, env0 = Set.empty, ienv0 = Set.empty)
+      checkExp(exp0 = top, env0 = Set.empty, ienv0 = Set.empty)
+      checkExp(exp0 = equ, env0 = Set.empty, ienv0 = Set.empty)
+      checkExp(exp0 = leq, env0 = Set.empty, ienv0 = Set.empty)
+      checkExp(exp0 = lub, env0 = Set.empty, ienv0 = Set.empty)
+      checkExp(exp0 = glb, env0 = Set.empty, ienv0 = Set.empty)
     }
 
     //
     // Check all properties in the program.
     //
     for (Property(law, defn, exp) <- root.properties) {
-      checkExp(exp)
+      checkExp(exp0 = exp, env0 = Set.empty, ienv0 = Set.empty)
     }
 
     //
