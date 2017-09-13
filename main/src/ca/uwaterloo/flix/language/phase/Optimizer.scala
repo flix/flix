@@ -32,8 +32,7 @@ import ca.uwaterloo.flix.util.vt._
   *
   * - Elimination of dead branches (e.g. if (true) e1 else e2).
   * - Copy propagation (e.g. let z = w; let y = z; let x = y; x -> w)
-  * - Propagates closures.
-  * - Eliminates single-case enums.
+  * - Elimination of single-case enums.
   */
 object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
 
@@ -210,9 +209,11 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         //
         // Check if this is a single-case enum subject to elimination.
         //
-        if ((flix.options.optimizations contains Optimization.SingleCaseEnum) && isSingleCaseEnum(sym)) {
-          // A single-case enum only has one tag.
-          return Expression.True
+        if (isSingleCaseEnum(sym)) {
+          if (flix.options.optimizations contains Optimization.SingleCaseEnum) {
+            // A single-case enum only has one tag.
+            return Expression.True
+          }
         }
 
         // Otherwise keep the is.
@@ -226,8 +227,10 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         //
         // Check if this is a single-case enum subject to elimination.
         //
-        if ((flix.options.optimizations contains Optimization.SingleCaseEnum) && isSingleCaseEnum(sym)) {
-          return visitExp(exp, env0)
+        if (isSingleCaseEnum(sym)) {
+          if (flix.options.optimizations contains Optimization.SingleCaseEnum) {
+            return visitExp(exp, env0)
+          }
         }
 
         // Otherwise keep the tag.
@@ -241,8 +244,10 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         //
         // Check if NewType optimization is enabled and if this is a single-case enum.
         //
-        if ((flix.options.optimizations contains Optimization.SingleCaseEnum) && isSingleCaseEnum(sym)) {
-          return visitExp(exp, env0)
+        if (isSingleCaseEnum(sym)) {
+          if (flix.options.optimizations contains Optimization.SingleCaseEnum) {
+            return visitExp(exp, env0)
+          }
         }
 
         // Otherwise keep the untag.
@@ -395,13 +400,18 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       // Retrieve the case.
       enum.cases.head match {
         case (_, SimplifiedAst.Case(_, tag, caseType)) =>
+          // Unify the enum type with actual type to ensure that the case type does not have free type variables.
           val subst = Unification.unify(enumType, actualType).get
-          subst(caseType)
+          val result = subst(caseType)
+
+          // Check that the result does not have free variables.
+          assert(result.isDeterminate)
+          result
       }
     }
 
     /**
-      * Adjusts the type of `p0` to remove any references to a single-cased enum.
+      * Adjusts the type of `p0` to remove any references to a single-case enum.
       */
     def adjustConstraintParam(p0: SimplifiedAst.ConstraintParam): ConstraintParam = p0 match {
       case ConstraintParam.HeadParam(sym, tpe, loc) => ConstraintParam.HeadParam(sym, adjustType(tpe), loc)
@@ -409,14 +419,14 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     }
 
     /**
-      * Adjusts the type of `p0` to remove any references to a single-cased enum.
+      * Adjusts the type of `p0` to remove any references to a single-case enum.
       */
     def adjustFormalParam(p0: SimplifiedAst.FormalParam): FormalParam = p0 match {
       case FormalParam(sym, mod, tpe, loc) => FormalParam(sym, mod, adjustType(tpe), loc)
     }
 
     /**
-      * Adjusts the type of `p0` to remove any references to a single-cased enum.
+      * Adjusts the type of `p0` to remove any references to a single-case enum.
       */
     def adjustPat(p0: Pattern): Pattern = p0 match {
       case Pattern.Wild(tpe, loc) => Pattern.Wild(adjustType(tpe), loc)
@@ -437,8 +447,10 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         //
         // Check if this is a single-case enum subject to elimination.
         //
-        if ((flix.options.optimizations contains Optimization.SingleCaseEnum) && isSingleCaseEnum(sym)) {
-          return adjustPat(pat)
+        if (isSingleCaseEnum(sym)) {
+          if (flix.options.optimizations contains Optimization.SingleCaseEnum) {
+            return adjustPat(pat)
+          }
         }
         val p = adjustPat(pat)
         Pattern.Tag(sym, tag, p, adjustType(tpe), loc)
@@ -449,7 +461,7 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     }
 
     /**
-      * Adjusts the given `tpe0` to remove any references to a single-cased enum.
+      * Adjusts the given `tpe0` to remove any references to a single-case enum.
       *
       * NB: Returns the same type if the single-case enum elimination optimization is not enabled.
       */
@@ -461,10 +473,10 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
 
       // Adjust the type.
       tpe0 match {
-        // Check if the enum is single-cased.
+        // Check if the enum is single-case.
         case Type.Enum(sym, kind) if isSingleCaseEnum(sym) => adjustType(getSingleCaseType(sym, tpe0))
         case Type.Apply(t, ts) => t match {
-          // NB: This case is necessary if the single-cased enum is polymorphic.
+          // NB: This case is necessary if the single-case enum is polymorphic.
           case Type.Enum(sym, kind) if isSingleCaseEnum(sym) => adjustType(getSingleCaseType(sym, tpe0))
           case _ => Type.Apply(adjustType(t), ts.map(adjustType))
         }
@@ -485,8 +497,7 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     val enums = root.enums.map {
       case (sym, enum) =>
         val cases = enum.cases map {
-          // TODO: What to do here?
-          case (tag, caze) => tag -> caze.copy(tpe = caze.tpe)
+          case (tag, caze) => tag -> caze.copy(tpe = adjustType(caze.tpe))
         }
         sym -> enum.copy(cases = cases)
     }
@@ -500,7 +511,7 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         val leq = visitExp(leq0, Map.empty)
         val lub = visitExp(lub0, Map.empty)
         val glb = visitExp(glb0, Map.empty)
-        // TODO: It seems unsafe to adjust the type here?
+        // TODO: We need to compile the lattice abstraction away and instead equip the attributes with references to the definition symbols.
         adjustType(tpe) -> SimplifiedAst.Lattice(adjustType(tpe), bot, top, equ, leq, lub, glb, loc)
     }
 
@@ -521,7 +532,8 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         property.copy(exp = exp)
     }
 
-    // TODO: Special ops?
+    // TODO: We need to compile the specialOps away and instead equip each attribute with the definition symbols of the equality operators.
+    // Similarly for toString, although that might be more tricky.
 
     // Reassemble the ast root.
     val result = root.copy(
