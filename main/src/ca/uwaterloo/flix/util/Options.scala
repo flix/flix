@@ -130,7 +130,13 @@ object Optimization {
   /**
     * All optimization supported by the compiler.
     */
-  val All: Set[Optimization] = Set(ClosureElimination, EnumCompaction, SingleCaseEnum, TagTupleFusion, TailRecursion, Uncurrying)
+  val All: Set[Optimization] = Set(
+    ClosureElimination,
+    EnumCompaction,
+    // SingleCaseEnum // TODO: Disabled due to unsoundness with types as keys in ASTs.
+    TagTupleFusion,
+    TailRecursion,
+    Uncurrying)
 
   /**
     * Enables closure elimination.

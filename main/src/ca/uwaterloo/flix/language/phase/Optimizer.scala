@@ -532,7 +532,8 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         property.copy(exp = exp)
     }
 
-    // TODO: We need to compile the specialOps away and instead equip each attribute with the definition symbols of the equality operators.
+    // TODO: Unsoundness due to use of types as keys.
+    // We need to compile the specialOps away and instead equip each attribute with the definition symbols of the equality operators.
     // Similarly for toString, although that might be more tricky.
 
     // Reassemble the ast root.
