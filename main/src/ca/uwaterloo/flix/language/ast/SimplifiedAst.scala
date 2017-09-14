@@ -38,9 +38,9 @@ object SimplifiedAst {
 
   case class Constraint(cparams: List[SimplifiedAst.ConstraintParam], head: SimplifiedAst.Predicate.Head, body: List[SimplifiedAst.Predicate.Body]) extends SimplifiedAst
 
-  case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, formals: List[SimplifiedAst.FormalParam], exp: SimplifiedAst.Expression, isSynthetic: Boolean, tpe: Type, loc: SourceLocation) extends SimplifiedAst
+  case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, fparams: List[SimplifiedAst.FormalParam], exp: SimplifiedAst.Expression, isSynthetic: Boolean, tpe: Type, loc: SourceLocation) extends SimplifiedAst
 
-  case class Enum(sym: Symbol.EnumSym, cases: Map[String, SimplifiedAst.Case], loc: SourceLocation) extends SimplifiedAst
+  case class Enum(sym: Symbol.EnumSym, cases: Map[String, SimplifiedAst.Case], tpe: Type, loc: SourceLocation) extends SimplifiedAst
 
   case class Lattice(tpe: Type, bot: SimplifiedAst.Expression, top: SimplifiedAst.Expression, equ: SimplifiedAst.Expression, leq: SimplifiedAst.Expression, lub: SimplifiedAst.Expression, glb: SimplifiedAst.Expression, loc: SourceLocation) extends SimplifiedAst
 
@@ -133,7 +133,7 @@ object SimplifiedAst {
     case class Def(sym: Symbol.DefnSym, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
     @EliminatedBy(LambdaLift.getClass)
-    case class Lambda(args: List[SimplifiedAst.FormalParam], body: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
+    case class Lambda(fparams: List[SimplifiedAst.FormalParam], exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
     @EliminatedBy(LambdaLift.getClass)
     case class Hook(hook: Ast.Hook, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression

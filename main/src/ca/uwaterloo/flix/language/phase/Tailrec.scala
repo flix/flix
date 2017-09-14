@@ -97,7 +97,7 @@ object Tailrec extends Phase[Root, Root] {
           Expression.ApplyDefTail(sym, args, tpe, loc)
         } else {
           // Case 2: Self recursive call.
-          Expression.ApplySelfTail(sym, defn.formals, args, tpe, loc)
+          Expression.ApplySelfTail(sym, defn.fparams, args, tpe, loc)
         }
 
       /*

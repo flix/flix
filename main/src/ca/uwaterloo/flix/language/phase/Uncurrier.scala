@@ -87,9 +87,9 @@ object Uncurrier extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
           }
 
           // Create new VarSyms for our function
-          val formals1 = (curriedDef.formals ::: args).map(f => f.copy(sym = Symbol.freshVarSym(f.sym)))
+          val formals1 = (curriedDef.fparams ::: args).map(f => f.copy(sym = Symbol.freshVarSym(f.sym)))
           // Replace the old VarSyms in the body
-          val varMapping = (curriedDef.formals ::: args).map(f => f.sym).zip(formals1.map(f => f.sym)).toMap
+          val varMapping = (curriedDef.fparams ::: args).map(f => f.sym).zip(formals1.map(f => f.sym)).toMap
           val body1 = Expressions.substitute(body0, varMapping)
 
           val unCurriedDef = SimplifiedAst.Def(

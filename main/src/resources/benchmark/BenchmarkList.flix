@@ -120,4 +120,28 @@ namespace BenchmarkList {
     @benchmark
     def benchmark18(): Option[Int] = List.findRight(x -> x == 50 * 1000, List.range(0, 100 * 1000))
 
+    ///
+    /// creates a list of integers (in celsius) and sums them (as integers).
+    ///
+    @benchmark
+    def benchmark19(): Int =
+        let f = (x, y) -> match y with {
+            case Celsius(z) => x + z
+        };
+        List.foldLeft(f, 0, List.map(Celsius, List.range(0, 100 * 1000)))
+
+    ///
+    /// creates a list of integers (in celsius) and sums them (as celsius).
+    ///
+    @benchmark
+    def benchmark20(): Celsius =
+        let f = (x, y) ->
+            let Celsius(a) = x;
+            let Celsius(b) = y;
+                Celsius(a + b);
+        List.foldLeft(f, Celsius(0), List.map(Celsius, List.range(0, 100 * 1000)))
+
+    // A type safe wrapper of integers.
+    type Celsius = Celsius(Int)
+
 }
