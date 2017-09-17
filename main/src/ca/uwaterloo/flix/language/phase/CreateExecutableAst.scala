@@ -45,7 +45,7 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
     val constants = root.defs.map { case (k, v) => k -> toExecutable(v) }
 
     val enums = root.enums.map {
-      case (sym, SimplifiedAst.Enum(_, cases0, loc)) =>
+      case (sym, SimplifiedAst.Enum(_, cases0, _, loc)) =>
         val cases = cases0.map {
           case (tag, SimplifiedAst.Case(enumName, tagName, tpe)) => tag -> ExecutableAst.Case(enumName, tagName, tpe)
         }
@@ -95,7 +95,7 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
   }
 
   def toExecutable(sast: SimplifiedAst.Def): ExecutableAst.Def = {
-    val formals = sast.formals.map {
+    val formals = sast.fparams.map {
       case SimplifiedAst.FormalParam(sym, mod, tpe, loc) => ExecutableAst.FormalParam(sym, tpe)
     }.toArray
 

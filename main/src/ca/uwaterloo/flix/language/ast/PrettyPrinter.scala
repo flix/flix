@@ -19,25 +19,6 @@ package ca.uwaterloo.flix.language.ast
 object PrettyPrinter {
 
   /**
-    * Returns a string representation of the given expression.
-    */
-  def fmt(e: ExecutableAst.Expression, sb: StringBuilder): StringBuilder = e match {
-    case ExecutableAst.Expression.Unit => sb.append("()")
-    case ExecutableAst.Expression.True => sb.append("true")
-    case ExecutableAst.Expression.False => sb.append("false")
-    case ExecutableAst.Expression.Char(c) => sb.append("'").append(c).append("'")
-    case ExecutableAst.Expression.Float32(f) => sb.append(f).append("f32")
-    case ExecutableAst.Expression.Float64(f) => sb.append(f).append("f64")
-    case ExecutableAst.Expression.Int8(i) => sb.append(i.toString).append("i8")
-    case ExecutableAst.Expression.Int16(i) => sb.append(i.toString).append("i16")
-    case ExecutableAst.Expression.Int32(i) => sb.append(i.toString).append("i32")
-    case ExecutableAst.Expression.Int64(i) => sb.append(i.toString).append("i64")
-    case ExecutableAst.Expression.BigInt(i) => sb.append(i.toString).append("ii")
-    case ExecutableAst.Expression.Str(s) => sb.append("\"").append(s).append("\"")
-    case _ => ???
-  }
-
-  /**
     * Returns a string representation of the given constraint.
     */
   def fmt(f: ExecutableAst.Constraint, sb: StringBuilder): StringBuilder = f.head match {

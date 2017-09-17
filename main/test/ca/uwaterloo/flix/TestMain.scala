@@ -195,6 +195,12 @@ class TestMain extends FunSuite {
     assert(opts.xinvariants)
   }
 
+  test("--Xpatmatch-lambda") {
+    val args = Array("--Xpatmatch-lambda", "p.flix")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.xpatmatchlambda)
+  }
+
   test("--Xno-closure-elim") {
     val args = Array("--Xno-closure-elim", "p.flix")
     val opts = Main.parseCmdOpts(args).get
@@ -217,6 +223,12 @@ class TestMain extends FunSuite {
     val args = Array("--Xno-inline", "p.flix")
     val opts = Main.parseCmdOpts(args).get
     assert(opts.xnoinline)
+  }
+
+  test("--Xno-single-case") {
+    val args = Array("--Xno-single-case", "p.flix")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.xnosinglecase)
   }
 
   test("--Xno-tailrec") {
