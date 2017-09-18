@@ -555,6 +555,8 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
       compileExpression(prefix, functions, declarations, interfaces, enums, visitor, updatedJumpLabels, entryPoint)(exp)
       // Label for the end of all branches
       val endLabel = new Label()
+      // Skip branches if `exp` does not jump
+      visitor.visitJumpInsn(GOTO, endLabel)
       // Compiling branches
       branches.foreach{ case (sym, branchExp) =>
         // Label for the start of the branch
