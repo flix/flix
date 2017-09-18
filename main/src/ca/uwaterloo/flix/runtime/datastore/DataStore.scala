@@ -116,7 +116,7 @@ class DataStore[ValueType <: AnyRef](root: ExecutableAst.Root)(implicit m: Class
         (x, y) =>
           Linker.link(sym, root).invoke(Array(x, y)) match {
             case b: java.lang.Boolean => b.booleanValue()
-            case o => throw InternalRuntimeException(s"Unexpected non-boolean return value by equality operator for the type: '$tpe'.")
+            case o => throw InternalRuntimeException(s"Unexpected non-boolean value '${o.getClass.getSimpleName}' returned by equality operator for the type: '$tpe'.")
           }
     }
 

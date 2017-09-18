@@ -78,10 +78,22 @@ sealed trait Type {
     case _ => false
   }
 
+  /**
+    * Returns `true` if `this` type is a reference type.
+    */
   def isRef: Boolean = this match {
     case Type.Ref => true
     case Type.Apply(t, ts) => t.isRef
     case _ => false
+  }
+
+  /**
+    * Returns `true` if `this` type does not contain type variables.
+    */
+  def isDeterminate: Boolean = this match {
+    case Type.Var(id, kind) => false
+    case Type.Apply(t, ts) => t.isDeterminate && ts.forall(_.isDeterminate)
+    case _ => true
   }
 
   /**

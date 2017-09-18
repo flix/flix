@@ -369,7 +369,7 @@ object Symbol {
     /**
       * Human readable representation.
       */
-    override def toString: String = text + id
+    override def toString: String = text + "$" + id
   }
 
   /**

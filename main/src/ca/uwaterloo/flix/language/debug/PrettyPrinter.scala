@@ -29,7 +29,7 @@ object PrettyPrinter {
       val vt = new VirtualTerminal()
       for ((sym, defn) <- root.defs.toList.sortBy(_._1.loc)) {
         vt << Bold("def") << " " << Blue(sym.toString) << "("
-        for (fparam <- defn.formals) {
+        for (fparam <- defn.fparams) {
           fmtParam(fparam, vt)
           vt << ", "
         }
@@ -185,14 +185,14 @@ object PrettyPrinter {
         case Expression.Branch(exp, branches, tpe, loc) =>
           vt << "branch {" << Indent << NewLine
           visitExp(exp)
-          vt << Dedent << NewLine
+          vt << NewLine
           for ((sym, b) <- branches) {
             fmtSym(sym, vt)
             vt << ":" << Indent << NewLine
             visitExp(b)
             vt << Dedent << NewLine
           }
-          vt << "}" << NewLine
+          vt << "}" << Dedent << NewLine
 
         case Expression.JumpTo(sym, tpe, loc) =>
           vt << "jumpto" << " "

@@ -48,11 +48,16 @@ object Linker {
     override def invoke(args: Array[AnyRef]): AnyRef = {
       // Extend the environment with the values of the actual arguments.
       val env0 = defn.formals.zip(args).foldLeft(Map.empty[String, AnyRef]) {
-        case (macc, (FormalParam(name, tpe), actual)) => macc + (name.toString -> actual)
+        case (macc, (FormalParam(name, tpe), actual)) => macc + (name.toString -> Interpreter.fromJava(actual))
       }
       // The initial label environment is empty.
       val lenv0 = Map.empty[Symbol.LabelSym, Expression]
-      Interpreter.eval(defn.exp, env0, Map.empty, root)
+
+      // Evaluate the function body.
+      val result = Interpreter.eval(defn.exp, env0, Map.empty, root)
+
+      // Convert the result to its Java representation.
+      Interpreter.toJava(result)
     }
   }
 

@@ -67,6 +67,8 @@ object Main {
     val optimizations = Optimization.All.filter {
       case Optimization.ClosureElimination => !cmdOpts.xnoclosureelim
       case Optimization.EnumCompaction => !cmdOpts.xnocompact
+      case Optimization.PatMatchLabels => !cmdOpts.xpatmatchlambda
+      case Optimization.SingleCaseEnum => !cmdOpts.xnosinglecase
       case Optimization.TagTupleFusion => !cmdOpts.xnofusion
       case Optimization.TailRecursion => !cmdOpts.xnotailrec
       case Optimization.Uncurrying => !cmdOpts.xnouncurry
@@ -79,7 +81,7 @@ object Main {
       documentor = cmdOpts.documentor,
       evaluation = if (cmdOpts.xinterpreter) Evaluation.Interpreted else Evaluation.Compiled,
       impure = cmdOpts.ximpure,
-      optimizations = Optimization.All,
+      optimizations = optimizations,
       monitor = cmdOpts.monitor,
       quickchecker = cmdOpts.quickchecker,
       safe = cmdOpts.xsafe,
@@ -214,10 +216,12 @@ object Main {
                      ximpure: Boolean = false,
                      xinterpreter: Boolean = false,
                      xinvariants: Boolean = false,
+                     xpatmatchlambda: Boolean = false,
                      xnoclosureelim: Boolean = false,
                      xnocompact: Boolean = false,
                      xnofusion: Boolean = false,
                      xnoinline: Boolean = false,
+                     xnosinglecase: Boolean = false,
                      xnotailrec: Boolean = false,
                      xnouncurry: Boolean = false,
                      xsafe: Boolean = false,
@@ -336,6 +340,10 @@ object Main {
       opt[Unit]("Xinvariants").action((_, c) => c.copy(xinvariants = true)).
         text("[experimental] enables compiler invariants.")
 
+      // Xpatmatch-lambda
+      opt[Unit]("Xpatmatch-lambda").action((_, c) => c.copy(xpatmatchlambda = true)).
+        text("[experimental] compile pattern matching to lambdas.")
+
       // Xno-closure-elim
       opt[Unit]("Xno-closure-elim").action((_, c) => c.copy(xnoclosureelim = true)).
         text("[experimental] disables closure elimination.")
@@ -351,6 +359,10 @@ object Main {
       // Xno-inline
       opt[Unit]("Xno-inline").action((_, c) => c.copy(xnoinline = true)).
         text("[experimental] disables inlining.")
+
+      // Xno-single-case
+      opt[Unit]("Xno-single-case").action((_, c) => c.copy(xnosinglecase = true)).
+        text("[experimental] disables single case elimination.")
 
       // Xno-tailrec
       opt[Unit]("Xno-tailrec").action((_, c) => c.copy(xnotailrec = true)).
