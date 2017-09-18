@@ -276,8 +276,6 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
                                 interfaces: Map[Type, FlixClassName],
                                 enums: Map[(Type, String), (ExecutableAst.Case, Type)],
                                 visitor: MethodVisitor,
-                                
-                                entryPoint: Label)(expr: Expression): Unit = expr match {
                                 jumpLabels: Map[Symbol.LabelSym, Label],
                                 entryPoint: Label,
                                 options: Options)(expr: Expression): Unit = expr match {
@@ -556,7 +554,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
       // Calculating the updated jumpLabels map
       val updatedJumpLabels = branches.foldLeft(jumpLabels)((map, branch) => map + (branch._1 -> new Label()))
       // Compiling the exp
-      compileExpression(prefix, functions, declarations, interfaces, enums, visitor, updatedJumpLabels, entryPoint)(exp)
+      compileExpression(prefix, functions, declarations, interfaces, enums, visitor, updatedJumpLabels, entryPoint, options)(exp)
       // Label for the end of all branches
       val endLabel = new Label()
       // Skip branches if `exp` does not jump
@@ -566,7 +564,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
         // Label for the start of the branch
         visitor.visitLabel(updatedJumpLabels(sym))
         // evaluating the expression for the branch
-        compileExpression(prefix, functions, declarations, interfaces, enums, visitor, updatedJumpLabels, entryPoint)(branchExp)
+        compileExpression(prefix, functions, declarations, interfaces, enums, visitor, updatedJumpLabels, entryPoint, options)(branchExp)
         // Skip the rest of the branches
         visitor.visitJumpInsn(GOTO, endLabel)
       }
@@ -630,7 +628,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
       // Duplicating the class
       visitor.visitInsn(DUP)
       // Evaluating all the elements to be stored in the tuple class
-      elms.foreach{compileExpression(prefix, functions, declarations, interfaces, enums, visitor, entryPoint, options)(_)}
+      elms.foreach{compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint, options)(_)}
       // Invoking the constructor
       visitor.visitMethodInsn(INVOKESPECIAL, decorate(clazzName), "<init>", s"(${desc})V", false)
 
@@ -650,7 +648,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
       // Duplication the class
       visitor.visitInsn(DUP)
       // Evaluating the expression for the value of the tag
-      compileExpression(prefix, functions, declarations, interfaces, enums, visitor, entryPoint, options)(exp)
+      compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint, options)(exp)
       // QualName of the interface of value of the tag which is a tuple
       val tupleName = TupleInterfaceName(fieldTypes)
       // Extracting all indices of the tuple
@@ -696,7 +694,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
       }
 
     case Expression.Untag(enum, tag, exp, tpe, loc) if tpe.isTuple && withFusion(options) =>
-      compileExpression(prefix, functions, declarations, interfaces, enums, visitor, entryPoint, options)(exp)
+      compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint, options)(exp)
 
     case Expression.Untag(enum, tag, exp, tpe, loc) =>
       // Adding source line number for debugging
@@ -1298,7 +1296,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
                                     functions: List[ExecutableAst.Def],
                                     declarations: Map[Symbol.DefnSym, Type],
                                     interfaces: Map[Type, FlixClassName],
-                                    enums: Map[(Type, String), (QualName, ExecutableAst.Case)],
+                                    enums: Map[(Type, String), (ExecutableAst.Case, Type)],
                                     visitor: MethodVisitor,
                                     jumpLabels: Map[Symbol.LabelSym, Label],
                                     entryPoint: Label,
