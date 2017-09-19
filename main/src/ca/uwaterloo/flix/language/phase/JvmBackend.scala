@@ -79,6 +79,8 @@ object JvmBackend extends Phase[Root, Root] {
     def getJvmName: JvmName = ???
   }
 
+  // TODO: We should probably just use list of JvmClass?
+
   /**
     * Emits JVM bytecode for the given AST `root`.
     */
@@ -118,11 +120,12 @@ object JvmBackend extends Phase[Root, Root] {
     //
     // Emit functional interfaces for each function type in the program.
     //
-    for (tpe <- instantiatedTypes) {
-      if (isFunction(tpe)) {
-        // ...
-      }
-    }
+    val functionalInterfaces = genFunctionalInterfaces(instantiatedTypes)
+
+    //
+    // Emit functional classes for each function in the program.
+    //
+    val functionalClasses = genFunctionalClasses(root.defs)
 
     // Expression.Tag(tagName, exp, tpe)
     // if (p(tpe)) {
@@ -140,38 +143,85 @@ object JvmBackend extends Phase[Root, Root] {
   /**
     * Returns the set of all instantiated types in the given AST `root`.
     */
-  private def instantiatedTypesOf(root: Root)(implicit flix: Flix): Set[Type] = ???
+  private def instantiatedTypesOf(root: Root): Set[Type] = ???
 
   /**
     * Returns the given Flix type `tpe` as JVM type.
     */
-  private def getJvmType(tpe: Type): JvmType = ???
-
+  private def getJvmType(tpe: Type, root: Root): JvmType = ???
 
   /**
-    * Returns `true` if the given type `tpe` is an enum type.
+    * Returns the type constructor of a given type `tpe`.
     */
-  private def isEnum(tpe: Type): Boolean = ???
+  private def getTypeConstructor(tpe: Type): Type = ???
 
   /**
-    * Returns `true` if the given type `tpe` is a function type.
+    * Returns the type arguments of a given type `tpe`.
     */
-  private def isFunction(tpe: Type): Boolean = ???
+  private def getTypeArguments(tpe: Type): List[Type] = tpe match {
+    case Type.Apply(Type.Enum(sym, kind), arguments) => arguments
+    case _ => ??? // TODO: Rest
+  }
 
   /**
-    * Returns `true` if the given type `tpe` is a tuple type.
-    */
-  private def isTuple(tpe: Type): Boolean = ???
-
-  /**
-    * A tag and the type of the tagged expression determines the JVM name.
+    * Returns the JVM type of the given enum symbol `sym` with `tag` and inner type `tpe`.
     *
-    * For example, Some(42) -> Some (and the expression has type Int), so you get the name Some$42.
+    * For example, if the symbol is `Option`, the tag `Some` and the inner type is `Int` then the result is None$Int.
     */
-  private def tagAndType2jvmName(tag: String, tpe: Type): JvmName = ???
+  private def getJvmNameFromTagAndEnum(sym: Symbol.EnumSym, tag: String, tpe: Type): JvmType = ???
 
-
+  // TODO:
   private def type2constructor(tpe: Type): Set[Constructor] = ???
+
+
+  /**
+    * Returns the set of functional interfaces for the given set of types `ts`.
+    */
+  private def genFunctionalInterfaces(ts: Set[Type]): Set[JvmClass] = ???
+
+  /**
+    * Optionally returns the functional interface of the given type `tpe`.
+    *
+    * Returns `[[None]]` if the type is not a function type.
+    */
+  private def genFunctionalInterface(tpe: Type): Option[JvmClass] = {
+    // Compute the type constructor and type arguments.
+    val base = getTypeConstructor(tpe)
+    val args = getTypeArguments(tpe)
+
+    // Check if the type constructor is a function type.
+    if (base.isArrow) {
+      // The function arity is simply the number of type arguments.
+      val arity = args.length
+
+      // The name of the functional interface is of the form:
+      // Fn1$Int$Bool,
+      // Fn2$Int$Int$Bool,
+      // Fn3$Obj$Obj$Obj$Bool, etc.
+      // TODO: Probably use a helper function to compute this?
+      val name = "Fn" + arity + "$"
+
+      for (arg <- args) {
+        // do something with the arguments ...
+
+      }
+
+    }
+
+    // The tpe is a non-function type.
+    None
+  }
+
+  /**
+    * Returns the set of functional classes for the given set of definitions `defs`.
+    */
+  def genFunctionalClasses(defs: Map[Symbol.DefnSym, Def]): Set[JvmClass] = ???
+
+  /**
+    * Returns the functional class for the given definition.
+    */
+  def genFunctionalClass(defn: Def): Set[JvmClass] = ???
+
 
 
 }
