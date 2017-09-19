@@ -50,7 +50,12 @@ object JvmBackend extends Phase[Root, Root] {
     *
     * A JVM type is either one of the primitive types or a reference type.
     */
-  sealed trait JvmType
+  sealed trait JvmType {
+    /**
+      * Returns the type descriptor of `this` Java name.
+      */
+    def toDescriptor: String = ???
+  }
 
   object JvmType {
 
@@ -74,12 +79,10 @@ object JvmBackend extends Phase[Root, Root] {
     */
   case class JvmClass(name: JvmName, bytecode: Array[Byte])
 
-  // Name: None or Some.
-  case class Constructor(enum: Symbol.EnumSym, tag: String, tpe: Type, tparams: Map[Type.Var, Type]) {
-    def getJvmName: JvmName = ???
-  }
-
-  // TODO: We should probably just use list of JvmClass?
+  /**
+    * A derived class used to hold information about the tag of an enum.
+    */
+  case class TagInfo(enum: Symbol.EnumSym, tag: String, tpe: Type, tparams: List[Type])
 
   /**
     * Emits JVM bytecode for the given AST `root`.
@@ -88,62 +91,52 @@ object JvmBackend extends Phase[Root, Root] {
     //
     // Compute the set of instantiated types in the program.
     //
-    val instantiatedTypes = instantiatedTypesOf(root)
+    val types = typesOf(root)
 
-    /**
-      * enum Option[a]() {
-      * case None,
-      * case Some(a)
-      * }
-      *
-      * def f(x: Int): Option[Int] = Some(x) // Apply(Option, List(Int)) (Flix types)
-      *
-      * interface Option
-      * class None extends Option
-      * class Some$Int(x: Int) extends Option
-      */
+    //
+    // Emit the Global class. TODO: Need better name.
+    //
+    // ...
 
-    /**
-      * def f(x: Str): Option[Str] = Some(x) // Apply(Option, List(Str)) (Flix types)
-      *
-      * interface Option
-      * class None extends Option               // optimized -> null
-      * class Some$Str(x: Str) extends Option   // optimized -> x
-      *
-      * Is (instanceof), Tag (new), and Untag (checkcast, followed by getInnerValue)
-      */
     //
-    // Compute the set of instantiated constructors.
+    // Emit the namespace classes.
     //
-    val instantiatedConstructors: Set[Constructor] = instantiatedTypes flatMap type2constructor
+    // ...
+
 
     //
     // Emit functional interfaces for each function type in the program.
     //
-    val functionalInterfaces = genFunctionalInterfaces(instantiatedTypes)
+    val functionalInterfaces = genFunctionalInterfaces(types)
 
     //
     // Emit functional classes for each function in the program.
     //
     val functionalClasses = genFunctionalClasses(root.defs)
 
-    // Expression.Tag(tagName, exp, tpe)
-    // if (p(tpe)) {
-    //   ~> new (...) (codeGen(exp))
-    //} else {
-    // ...
     //
-
-    // Expression.Tuple(exps, tpe)
-
+    // Emit tagged tuple classes for each tag tuple type in the program.
+    //
+    val taggedTupleClasses = genTaggedTupleClasses(types)
 
     root.toSuccess
   }
 
   /**
     * Returns the set of all instantiated types in the given AST `root`.
+    *
+    * This include type components. For example, if the program contains
+    * the type (Bool, (Char, Int)) this includes the type (Char, Int).
     */
-  private def instantiatedTypesOf(root: Root): Set[Type] = ???
+  private def typesOf(root: Root): Set[Type] = ???
+
+  /**
+    * Returns all the type components of the given type `tpe`.
+    *
+    * For example, if the given type is `Option[(Bool, Char, Int)]`
+    * this returns the set `Bool`, `Char`, `Int`, `(Bool, Char, Int)`, and `Option[(Bool, Char, Int)]`.
+    */
+  private def typesOf(tpe: Type): Set[Type] = ???
 
   /**
     * Returns the given Flix type `tpe` as JVM type.
@@ -168,16 +161,22 @@ object JvmBackend extends Phase[Root, Root] {
     *
     * For example, if the symbol is `Option`, the tag `Some` and the inner type is `Int` then the result is None$Int.
     */
-  private def getJvmNameFromTagAndEnum(sym: Symbol.EnumSym, tag: String, tpe: Type): JvmType = ???
+  private def getJvmTypeFromEnumAndTag(sym: Symbol.EnumSym, tag: String, tpe: Type): JvmType = ???
 
-  // TODO:
-  private def type2constructor(tpe: Type): Set[Constructor] = ???
+  /**
+    * Returns the information about the tags of the given type `tpe`.
+    */
+  private def getTagsOf(tpe: Type): Set[TagInfo] = ???
 
+  /**
+    * Returns the JVM type of the given tag info `i`.
+    */
+  private def getJvmType(i: TagInfo, root: Root): JvmType = ???
 
   /**
     * Returns the set of functional interfaces for the given set of types `ts`.
     */
-  private def genFunctionalInterfaces(ts: Set[Type]): Set[JvmClass] = ???
+  private def genFunctionalInterfaces(ts: Set[Type]): Map[JvmName, JvmClass] = ???
 
   /**
     * Optionally returns the functional interface of the given type `tpe`.
@@ -215,13 +214,17 @@ object JvmBackend extends Phase[Root, Root] {
   /**
     * Returns the set of functional classes for the given set of definitions `defs`.
     */
-  def genFunctionalClasses(defs: Map[Symbol.DefnSym, Def]): Set[JvmClass] = ???
+  def genFunctionalClasses(defs: Map[Symbol.DefnSym, Def]): Map[JvmName, JvmClass] = ???
 
   /**
     * Returns the functional class for the given definition.
     */
-  def genFunctionalClass(defn: Def): Set[JvmClass] = ???
+  def genFunctionalClass(defn: Def): JvmClass = ???
 
+  /**
+    * Returns the set of tagged tuple classes for the given set of types `ts`.
+    */
+  def genTaggedTupleClasses(ts: Set[Type]): Map[JvmName, JvmClass] = ???
 
 
 }
