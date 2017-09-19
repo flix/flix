@@ -614,8 +614,16 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
        * to jvm null.
        */
       if(isNullOptimizable(enums, tpe)) {
-        if(exp.tpe == Type.Unit) {
-          // If the type of the field is Unit, we push a NULL to the top of the stack
+        if(exp == Expression.Unit) {
+          // If the field is Unit, we push a NULL to the top of the stack
+          visitor.visitInsn(ACONST_NULL)
+        } else if (exp.tpe == Type.Unit) {
+          /*
+           * If the field type is Unit, we first evaluate the expression, then we pop the result from the top of the
+           * stack and push a NULL to the top of the stack.
+           */
+          compileExpression(prefix, functions, declarations, interfaces, enums, visitor, entryPoint)(exp)
+          visitor.visitInsn(POP)
           visitor.visitInsn(ACONST_NULL)
         } else {
           // Otherwise, we just compile the expression for the field and leave it as it is
@@ -653,20 +661,28 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
        * to jvm null.
        */
       if(isNullOptimizable(enums, exp.tpe)) {
-        if(tpe == Type.Unit) {
-          /*
-           * If the type of the expression is unit, there is no reason to compile the expression, we can simply put an
-           * instance of Unit on top of the stack
-           */
-          val unitGetInstance = Constants.unitClass.getMethod("getInstance")
-          visitor.visitMethodInsn(INVOKESTATIC, asm.Type.getInternalName(Constants.unitClass), unitGetInstance.getName,
-            asm.Type.getMethodDescriptor(unitGetInstance), false)
-        } else {
-          /*
-           * If the type is not unit, then the expression itself should compile to the field of the enum case since due
-           * to the optimization, we don't wrap the field inside the class for the enum case
-           */
-          compileExpression(prefix, functions, declarations, interfaces, enums, visitor, entryPoint)(exp)
+        exp match {
+          case Expression.Var(_, _, _) if tpe == Type.Unit =>
+            /*
+             * If sub expression is a var, then that expression has already been evaluated. Since the result is just NULL,
+             * we will not evaluate the sub expression and we will directly put a Unit on top of the stack.
+             */
+            val unitGetInstance = Constants.unitClass.getMethod("getInstance")
+            visitor.visitMethodInsn(INVOKESTATIC, asm.Type.getInternalName(Constants.unitClass), unitGetInstance.getName,
+              asm.Type.getMethodDescriptor(unitGetInstance), false)
+          case _ if tpe == Type.Unit =>
+            /*
+             * If the sub expression is of type Unit, we evaluate the expression, pop it off the stack and then we will put
+             * a Unit on top of the stack
+             */
+            compileExpression(prefix, functions, declarations, interfaces, enums, visitor, entryPoint)(exp)
+            visitor.visitInsn(POP)
+            val unitGetInstance = Constants.unitClass.getMethod("getInstance")
+            visitor.visitMethodInsn(INVOKESTATIC, asm.Type.getInternalName(Constants.unitClass), unitGetInstance.getName,
+              asm.Type.getMethodDescriptor(unitGetInstance), false)
+          case _ =>
+            // Else we just evaluate the expression
+            compileExpression(prefix, functions, declarations, interfaces, enums, visitor, entryPoint)(exp)
         }
       }
       else {
