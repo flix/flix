@@ -140,11 +140,30 @@ object JvmBackend extends Phase[Root, Root] {
 
   /**
     * Returns the given Flix type `tpe` as JVM type.
+    *
+    * For example, if the type is:
+    *
+    * Bool                  =>      Boolean
+    * Char                  =>      Char
+    * Option[Int]           =>      Option$Int
+    * Result[Bool, Int]     =>      Result$Bool$Int
+    * Int -> Bool           =>      Fn1$Int$Bool
+    * (Int, Int) -> Bool    =>      Fn2$Int$Int$Bool
     */
   private def getJvmType(tpe: Type, root: Root): JvmType = ???
 
   /**
     * Returns the type constructor of a given type `tpe`.
+    *
+    * For example, if the type is:
+    *
+    * Celsius                   =>      Celsius
+    * Option[Int]               =>      Option
+    * Result[Bool, Int]         =>      Result
+    * Result[Bool][Int]         =>      Result
+    * Arrow[Bool, Char, Int]    =>      Arrow
+    * Arrow[Bool, Char][Int]    =>      Arrow
+    * Option[Result[Bool, Int]] =>      Option
     */
   private def getTypeConstructor(tpe: Type): Type = ???
 
