@@ -502,8 +502,8 @@ object Interpreter {
     * Invokes the given closure expression `exp` with the given arguments `args` under the given environment `env0`..
     */
   private def invokeClo(exp: Expression, args: List[Expression], env0: Map[String, AnyRef], lenv0: Map[Symbol.LabelSym, Expression], root: Root): AnyRef = {
-    val clo = cast2closure(eval(exp, env0, lenv0, root), lenv0, root)
-    val Value.Closure(name, bindings) = clo
+    val v = eval(exp, env0, lenv0, root)
+    val Value.Closure(name, bindings) = cast2closure(v)
     val as = evalArgs(args, env0, lenv0, root)
     val constant = root.defs(name)
     // Bindings for the capture variables are passed as arguments.
@@ -522,7 +522,8 @@ object Interpreter {
     */
   private def invokeDef(sym: Symbol.DefnSym, args: List[Expression], env0: Map[String, AnyRef], lenv0: Map[Symbol.LabelSym, Expression], root: Root): AnyRef = {
     val as = evalArgs(args, env0, lenv0, root)
-    Linker.link(sym, root).invoke(as.toArray)
+    // TODO: Using the linker here is quite a hack.
+    fromJava(Linker.link(sym, root).invoke(as.toArray))
   }
 
   /**
@@ -677,7 +678,7 @@ object Interpreter {
   /**
     * Returns the given reference `ref` as a Java object.
     */
-  private def toJava(ref: AnyRef): AnyRef = ref match {
+  def toJava(ref: AnyRef): AnyRef = ref match {
     case Value.Unit => scala.Unit
     case Value.True => java.lang.Boolean.TRUE
     case Value.False => java.lang.Boolean.FALSE
@@ -688,17 +689,13 @@ object Interpreter {
     case Value.Int64(lit) => new java.lang.Long(lit)
     case Value.BigInt(lit) => lit
     case Value.Str(lit) => lit
-    case v: Value.Box => throw InternalRuntimeException(s"Unexpected non-primitive value: ${ref.getClass.getCanonicalName}.")
-    case v: Value.Closure => throw InternalRuntimeException(s"Unexpected non-primitive value: ${ref.getClass.getCanonicalName}.")
-    case v: Value.Tag => throw InternalRuntimeException(s"Unexpected non-primitive value: ${ref.getClass.getCanonicalName}.")
-    case v: Value.Tuple => throw InternalRuntimeException(s"Unexpected non-primitive value: ${ref.getClass.getCanonicalName}.")
     case _ => ref
   }
 
   /**
     * Returns the given reference `ref` as a Value object.
     */
-  private def fromJava(ref: AnyRef): AnyRef = ref match {
+  def fromJava(ref: AnyRef): AnyRef = ref match {
     case scala.Unit => Value.Unit
     case o: java.lang.Boolean => if (o.booleanValue()) Value.True else Value.False
     case o: java.lang.Character => Value.Char(o.charValue())

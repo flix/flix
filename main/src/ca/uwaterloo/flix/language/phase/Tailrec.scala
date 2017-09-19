@@ -73,6 +73,15 @@ object Tailrec extends Phase[Root, Root] {
         Expression.IfThenElse(exp1, e2, e3, tpe, loc)
 
       /*
+       * Branch: Each branch is in tail position.
+       */
+      case Expression.Branch(e0, br0, tpe, loc) =>
+        val br = br0 map {
+          case (sym, exp) => sym -> visit(exp)
+        }
+        Expression.Branch(e0, br, tpe, loc)
+
+      /*
        * ApplyClo.
        */
       case Expression.ApplyClo(exp, args, tpe, loc) =>
@@ -88,7 +97,7 @@ object Tailrec extends Phase[Root, Root] {
           Expression.ApplyDefTail(sym, args, tpe, loc)
         } else {
           // Case 2: Self recursive call.
-          Expression.ApplySelfTail(sym, defn.formals, args, tpe, loc)
+          Expression.ApplySelfTail(sym, defn.fparams, args, tpe, loc)
         }
 
       /*
