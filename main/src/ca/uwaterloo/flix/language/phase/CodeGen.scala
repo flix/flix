@@ -708,8 +708,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
             // Else we just evaluate the expression
             compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint)(exp)
         }
-      }
-      else {
+      } else {
         /*
          * We get the descriptor of the type of the `value` field of enum, if type if primitive we use the corresponding
          * primitive in java otherwise we use the descriptor of object.
