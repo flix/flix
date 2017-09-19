@@ -78,7 +78,7 @@ object EnumTupleFusionGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] 
         case (sym, li) =>
           val enumsWithTupleFields = li.filter(_._2._2.isTuple)
             .groupBy(x => x._2._1)
-            .map(x => (x._1, groupedFieldsToWrappedFields(groupTuplesByFieldTypes(x._2.map(_._2._2))).toList))
+            .map(x => (x._1, groupedFieldsToWrappedFields(x._2.map(_._2._2)).toList))
           sym -> enumsWithTupleFields
       }.toMap // Despite IDE highlighting, this is actually necessary.
 

@@ -36,7 +36,7 @@ object TupleGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     * 1. Extract all tuple types from definitions.
     * At this step, we use `findTuple` method to extract all tuples from all the definitions available at this stage
     *
-    * 2. Group tuples based on representation of their fields.
+    * 2. Gather unique tuple representations
     * At this step we group tuples that have the same field representation so we only generate one class for them.
     * If a field is a primitive, then it can be represented by it's primitive but if the field is not a primitive then it
     * has to be represented using an object.
@@ -44,8 +44,7 @@ object TupleGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     * of both of them is an object and the second field is a `Bool`. So we only create one tuple class for both of these
     * tuples.
     *
-    * 3. Gather unique tuple representations.
-    * At this step, we generate representation of  all the tuple classes that we have to create. If a field is a primitive
+    * Then, we generate representation of  all the tuple classes that we have to create. If a field is a primitive
     * then we wrap the field inside `WrappedPrimitive` and if the field is not a primitive then we wrap all the types that
     * will be represented using `object` on this tuple inside `WrappedNonPrimitives`.
     * For example for tuples with element type `(Int, Int)`, we represent this with
@@ -78,14 +77,10 @@ object TupleGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     // 1. Extract all tuple types from definitions.
     val allTuples: List[Type] = root.defs.values.flatMap(x => findTuplesInExps(x.exp) ++ findTuplesInTypes(x.tpe)).toList
 
+    // 2. Gather unique tuple representations.
+    val wrappedFields: Set[List[WrappedType]] = groupedFieldsToWrappedFields(allTuples)
 
-    // 2. Group tuples based on representation of their fields.
-    val groupedFields : List[List[List[Type]]] = groupTuplesByFieldTypes(allTuples)
-
-    // 3. Gather unique tuple representations.
-    val wrappedFields: Set[List[WrappedType]] = groupedFieldsToWrappedFields(groupedFields)
-
-    // 4. Emit code for tuple classes
+    // 3. Emit code for tuple classes
     val tupleClassByteCode : Map[List[WrappedType], (Array[Byte], Array[Byte])] = wrappedFields.map{ fields =>
       fields -> (compileTupleInterface(fields), compileTupleClass(fields))}.toMap
 

@@ -167,6 +167,13 @@ object CodegenHelper {
     } ::: List("clazz", "Tuple")
   }
 
+  /**
+    * This will generate a method which will throw an exception in case of getting called.
+    * @param modifiers Modifiers of the generated method
+    * @param methodName Name of the method
+    * @param descriptor Descriptor of the method
+    * @param message Message of the exception to be thrown
+    */
   def exceptionThrowerMethod(visitor: ClassWriter,
                              modifiers: Int,
                              methodName: String,
@@ -192,7 +199,7 @@ object CodegenHelper {
     method.visitEnd()
   }
 
-    /**
+  /**
     * Base filename of a file specified by the given qualified name
     *
     * @param qualName Qualified name of the file
@@ -256,7 +263,7 @@ object CodegenHelper {
     * of both of them is an object and the second field is a `Bool`. So we only create one tuple class for both of these
     * tuples.
     */
-  def groupTuplesByFieldTypes(tuples: List[Type]): List[List[List[Type]]] = tuples.map{
+  private def groupTuplesByFieldTypes(tuples: List[Type]): List[List[List[Type]]] = tuples.map{
     case Type.Apply(_, ts) => ts
     case y => throw InternalCompilerException(s"Unexpected type: `$y'.")
   }.groupBy(_.map(typeSpecifier)).values.toList
@@ -270,17 +277,22 @@ object CodegenHelper {
     * `(Result[Int32,Int32], Bool)` then we represent the class that can represent both of these tuples by
     * `List(WrappedNonPrimitives(List(Result[Int32,Int32], List[Int32]), WrappedPrimitive(Bool)))`
     */
-  def groupedFieldsToWrappedFields(groupedFields: List[List[List[Type]]]): Set[List[WrappedType]] = groupedFields.map{grp =>
-    val len = grp.head.length
-    (0 until len).map{ind =>
-      val underlyings = grp.map(tuple => tuple(ind))
-      if(isPrimitive(underlyings.head)) {
-        WrappedPrimitive(underlyings.head)
-      } else {
-        WrappedNonPrimitives(underlyings.toSet)
-      }
-    }.toList
-  }.toSet
+  def groupedFieldsToWrappedFields(tuples: List[Type]): Set[List[WrappedType]] = {
+    // Grouping tuples by their field types
+    val groupedFields = groupTuplesByFieldTypes(tuples)
+    // Wrap and group tuple types using `WrappedType`s
+    groupedFields.map{grp =>
+      val len = grp.head.length
+      (0 until len).map{ind =>
+        val underlyings = grp.map(tuple => tuple(ind))
+        if(isPrimitive(underlyings.head)) {
+          WrappedPrimitive(underlyings.head)
+        } else {
+          WrappedNonPrimitives(underlyings.toSet)
+        }
+      }.toList
+    }.toSet
+  }
 
   /**
     * Generates a field for the class with with name `name`, with descriptor `descriptor` using `visitor`. If `isStatic = true`
