@@ -14,9 +14,7 @@
  *  limitations under the License.
  */
 
-package ca.uwaterloo.flix.runtime.Benchmark
-
-import ca.uwaterloo.flix.runtime.Model
+package ca.uwaterloo.flix.runtime
 
 object Benchmarker {
 
