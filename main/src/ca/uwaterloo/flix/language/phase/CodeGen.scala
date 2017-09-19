@@ -384,7 +384,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
 
       // Evaluate arguments left-to-right and push them onto the stack. Then make the interface call.
       args.foreach(compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint))
-      visitor.visitMethodInsn(INVOKEINTERFACE, decorate(name), "apply", descriptor(exp.tpe, interfaces), true)
+      visitor.visitMethodInsn(INVOKEINTERFACE, decorate(name), "apply", descriptor(exp.tpe, interfaces, enums), true)
 
     case Expression.ApplyDef(name, args, _, loc) =>
       // Adding source line number for debugging
@@ -394,7 +394,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
 
       // Evaluate arguments left-to-right and push them onto the stack. Then make the call.
       args.foreach(compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint))
-      visitor.visitMethodInsn(INVOKESTATIC, decorate(FlixClassName(name.prefix)), name.suffix, descriptor(targetTpe, interfaces), false)
+      visitor.visitMethodInsn(INVOKESTATIC, decorate(FlixClassName(name.prefix)), name.suffix, descriptor(targetTpe, interfaces, enums), false)
 
     case Expression.ApplyCloTail(exp, args, _, loc) =>
       // TODO: Duplicated from Expression.ApplyClo. Pending rewrite related to IFOs.
@@ -410,7 +410,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
 
       // Evaluate arguments left-to-right and push them onto the stack. Then make the interface call.
       args.foreach(compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint))
-      visitor.visitMethodInsn(INVOKEINTERFACE, decorate(name), "apply", descriptor(exp.tpe, interfaces), true)
+      visitor.visitMethodInsn(INVOKEINTERFACE, decorate(name), "apply", descriptor(exp.tpe, interfaces, enums), true)
 
     case Expression.ApplyDefTail(name, args, _, loc) =>
       // TODO: Duplicated from Expression.ApplyDef. Pending rewrite related to IFOs.
@@ -422,7 +422,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
 
       // Evaluate arguments left-to-right and push them onto the stack. Then make the call.
       args.foreach(compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint))
-      visitor.visitMethodInsn(INVOKESTATIC, decorate(FlixClassName(name.prefix)), name.suffix, descriptor(targetTpe, interfaces), false)
+      visitor.visitMethodInsn(INVOKESTATIC, decorate(FlixClassName(name.prefix)), name.suffix, descriptor(targetTpe, interfaces, enums), false)
 
     case Expression.ApplySelfTail(name, formals, actuals, _, loc) =>
       // Adding source line number for debugging
@@ -646,12 +646,12 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
            * If the field type is Unit, we first evaluate the expression, then we pop the result from the top of the
            * stack and push a NULL to the top of the stack.
            */
-          compileExpression(prefix, functions, declarations, interfaces, enums, visitor, entryPoint)(exp)
+          compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint)(exp)
           visitor.visitInsn(POP)
           visitor.visitInsn(ACONST_NULL)
         } else {
           // Otherwise, we just compile the expression for the field and leave it as it is
-          compileExpression(prefix, functions, declarations, interfaces, enums, visitor, entryPoint)(exp)
+          compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint)(exp)
         }
       }
       /*
@@ -699,7 +699,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
              * If the sub expression is of type Unit, we evaluate the expression, pop it off the stack and then we will put
              * a Unit on top of the stack
              */
-            compileExpression(prefix, functions, declarations, interfaces, enums, visitor, entryPoint)(exp)
+            compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint)(exp)
             visitor.visitInsn(POP)
             val unitGetInstance = Constants.unitClass.getMethod("getInstance")
             visitor.visitMethodInsn(INVOKESTATIC, asm.Type.getInternalName(Constants.unitClass), unitGetInstance.getName,
@@ -718,7 +718,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
         // Qualified name of the enum
         val clazz = EnumClassName(enum, tag, typeToWrappedType(tpe))
         // Evaluate the exp
-        compileExpression(prefix, functions, declarations, interfaces, enums, visitor, entryPoint)(exp)
+        compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint)(exp)
         // Cast the exp to the type of the tag
         visitor.visitTypeInsn(CHECKCAST, decorate(clazz))
         // Invoke `getValue()` method to extract the field of the tag
