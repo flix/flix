@@ -26,7 +26,15 @@ object GenFunctionInterfaces {
     * Returns the set of function interfaces for the given set of types `ts`.
     */
   def gen(ts: Set[Type], root: Root)(implicit flix: Flix): Map[JvmName, JvmClass] = {
-    Map.empty // TODO
+    //
+    // Generate a function interface for each type and collect the results in a map.
+    //
+    ts.foldLeft(Map.empty[JvmName, JvmClass]) {
+      case (macc, tpe) => genFunctionalInterface(tpe, root) match {
+        case None => macc
+        case Some(clazz) => macc + (clazz.name -> clazz)
+      }
+    }
   }
 
   /**
@@ -34,32 +42,32 @@ object GenFunctionInterfaces {
     *
     * Returns `[[None]]` if the type is not a function type.
     */
-  private def genFunctionalInterface(tpe: Type): Option[JvmClass] = {
+  private def genFunctionalInterface(tpe: Type, root: Root)(implicit flix: Flix): Option[JvmClass] = {
     // Compute the type constructor and type arguments.
     val base = JvmOps.getTypeConstructor(tpe)
     val args = JvmOps.getTypeArguments(tpe)
 
-    // Check if the type constructor is a function type.
-    if (base.isArrow) {
-      // The function arity is simply the number of type arguments.
-      val arity = args.length
+    // Immediately return None if the type is a non-function type.
+    if (!base.isArrow) {
+      return None
+    }
 
-      // The name of the functional interface is of the form:
-      // Fn1$Int$Bool,
-      // Fn2$Int$Int$Bool,
-      // Fn3$Obj$Obj$Obj$Bool, etc.
-      // TODO: Probably use a helper function to compute this?
-      val name = "Fn" + arity + "$"
+    // The function arity is simply the number of type arguments.
+    val arity = args.length
 
-      for (arg <- args) {
-        // do something with the arguments ...
+    // The name of the functional interface is of the form:
+    // Fn1$Int$Bool,
+    // Fn2$Int$Int$Bool,
+    // Fn3$Obj$Obj$Obj$Bool, etc.
+    // TODO: Probably use a helper function to compute this?
+    val name = "Fn" + arity + "$"
 
-      }
+    for (arg <- args) {
+      // do something with the arguments ...
 
     }
 
-    // The tpe is a non-function type.
-    None
+    ???
   }
 
 
