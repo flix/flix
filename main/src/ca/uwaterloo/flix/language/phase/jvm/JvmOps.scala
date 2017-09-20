@@ -16,10 +16,11 @@
 
 package ca.uwaterloo.flix.language.phase.jvm
 
-import java.nio.file.Path
+import java.nio.file.{Files, Path}
 
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Root
 import ca.uwaterloo.flix.language.ast.{Symbol, Type}
+import ca.uwaterloo.flix.util.InternalCompilerException
 
 object JvmOps {
 
@@ -60,17 +61,16 @@ object JvmOps {
   /**
     * Returns the type constructor of a given type `tpe`.
     *
-    * For example, if the type is:
+    * For example,
     *
-    * Celsius                   =>      Celsius
-    * Option[Int]               =>      Option
-    * Result[Bool, Int]         =>      Result
-    * Result[Bool][Int]         =>      Result
-    * Arrow[Bool, Char, Int]    =>      Arrow
-    * Arrow[Bool, Char][Int]    =>      Arrow
-    * Option[Result[Bool, Int]] =>      Option
+    * Celsius                       =>      Celsius
+    * Option[Int]                   =>      Option
+    * Arrow[Bool, Char]             =>      Arrow
+    * Tuple[Bool, Int]              =>      Tuple
+    * Result[Bool, Int]             =>      Result
+    * Result[Bool][Int]             =>      Result
+    * Option[Result[Bool, Int]]     =>      Option
     */
-  // TODO: Verify implementation.
   def getTypeConstructor(tpe: Type): Type = tpe match {
     case Type.Apply(base, _) => getTypeConstructor(base)
     case _ => tpe
@@ -78,16 +78,20 @@ object JvmOps {
 
   /**
     * Returns the type arguments of a given type `tpe`.
+    *
+    * For example,
+    *
+    * Celsius                       =>      Nil
+    * Option[Int]                   =>      Int :: Nil
+    * Arrow[Bool, Char]             =>      Bool :: Char :: Nil
+    * Tuple[Bool, Int]              =>      Bool :: Int :: Nil
+    * Result[Bool, Int]             =>      Bool :: Int :: Nil
+    * Result[Bool][Int]             =>      Bool :: Int :: Nil
+    * Option[Result[Bool, Int]]     =>      Result[Bool, Int] :: Nil
     */
-  def getTypeArguments(tpe: Type): List[Type] = {
-    // TODO: Temporary placeholder.
-    return Nil
-
-    // TODO: Verify implementation.
-    tpe match {
-      case Type.Apply(Type.Enum(sym, kind), arguments) => arguments
-      case _ => ??? // TODO: Rest
-    }
+  def getTypeArguments(tpe: Type): List[Type] = tpe match {
+    case Type.Apply(base, arguments) => arguments ::: getTypeArguments(base)
+    case _ => Nil
   }
 
   /**
@@ -108,15 +112,47 @@ object JvmOps {
   def getJvmType(i: TagInfo, root: Root): JvmType = ???
 
   /**
-    * Writes the given JVM class `clazz` to its proper location under the given `path`.
+    * Writes the given JVM class `clazz` to a sub path under the given `prefixPath`.
     *
-    * For example, if the prefix is `/tmp/` and the class name is Foo.Bar.Baz
+    * For example, if the prefix path is `/tmp/` and the class name is Foo.Bar.Baz
     * then the bytecode is written to the path `/tmp/Foo/Bar/Baz.class` provided
-    * that this path does not exist or if it does that it is a JVM class file.
+    * that this path either does not exist or is already a JVM class file.
     */
-  def emitClass(path: Path, clazz: JvmClass): Unit = {
-    // TODO:
+  def emitClass(prefixPath: Path, clazz: JvmClass): Unit = {
+    // Compute the absolute path of the class file to write.
+    val path = prefixPath.resolve(clazz.name.toPath).toAbsolutePath
+
+    // Create all parent directories (in case they don't exist).
+    Files.createDirectories(path.getParent)
+
+    // Check if the file already exists.
+    if (Files.exists(path)) {
+      if (!isClassFile(path)) {
+        throw InternalCompilerException(s"Refusing to overwrite non-class file: '$path'.")
+      }
+    }
+
+    // Write the bytecode.
+    Files.write(path, clazz.bytecode)
   }
 
+  /**
+    * Returns `true` if the given `path` exists and is a Java Virtual Machine class file.
+    */
+  def isClassFile(path: Path): Boolean = {
+    if (Files.exists(path) && Files.isReadable(path) && Files.isRegularFile(path)) {
+      // Read the first four bytes of the file.
+      val is = Files.newInputStream(path)
+      val b1 = is.read()
+      val b2 = is.read()
+      val b3 = is.read()
+      val b4 = is.read()
+      is.close()
+
+      // Check if the four first bytes match CAFE BABE.
+      return b1 == 0xCA && b2 == 0xFE && b3 == 0xBA && b4 == 0xBE
+    }
+    false
+  }
 
 }
