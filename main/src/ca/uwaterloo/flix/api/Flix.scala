@@ -222,6 +222,7 @@ class Flix {
         JvmBackend |>
         TupleGen |>
         EnumGen |>
+        EnumTupleFusionGen |>
         CodeGen |>
         LoadBytecode |>
         QuickChecker |>

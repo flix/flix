@@ -36,7 +36,7 @@ object TupleGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     * 1. Extract all tuple types from definitions.
     * At this step, we use `findTuple` method to extract all tuples from all the definitions available at this stage
     *
-    * 2. Group tuples based on representation of their fields.
+    * 2. Gather unique tuple representations
     * At this step we group tuples that have the same field representation so we only generate one class for them.
     * If a field is a primitive, then it can be represented by it's primitive but if the field is not a primitive then it
     * has to be represented using an object.
@@ -44,8 +44,7 @@ object TupleGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     * of both of them is an object and the second field is a `Bool`. So we only create one tuple class for both of these
     * tuples.
     *
-    * 3. Gather unique tuple representations.
-    * At this step, we generate representation of  all the tuple classes that we have to create. If a field is a primitive
+    * Then, we generate representation of  all the tuple classes that we have to create. If a field is a primitive
     * then we wrap the field inside `WrappedPrimitive` and if the field is not a primitive then we wrap all the types that
     * will be represented using `object` on this tuple inside `WrappedNonPrimitives`.
     * For example for tuples with element type `(Int, Int)`, we represent this with
@@ -54,7 +53,12 @@ object TupleGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     * `List(WrappedNonPrimitives(List(Result[Int32,Int32], List[Int32]), WrappedPrimitive(Bool)))`
     *
     * 3. Emit code for tuple classes
-    * At this step, we emit code for tuple classes.
+    * At this step, we emit code for tuple classes and tuple interfaces. Each tuple type has one tuple interface and one
+    * tuple class.
+    *
+    * Each tuple interface includes getter and setter methods for each index of the tuple. This interface will be extended by the tuple
+    * class generated for the same tuple type. This interface extends `Tuple` interface.
+    *
     * Each tuple class includes a field corresponding to each of the parameters of the tuple which either has the primitive
     * type representing the tuple or they have the general type object. Tuple classes include `getBoxedValue()` method which
     * will return an array of object which each object in the array represent the boxed value of a field of the class. It also
@@ -73,30 +77,12 @@ object TupleGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     // 1. Extract all tuple types from definitions.
     val allTuples: List[Type] = root.defs.values.flatMap(x => findTuplesInExps(x.exp) ++ findTuplesInTypes(x.tpe)).toList
 
+    // 2. Gather unique tuple representations.
+    val wrappedFields: Set[List[WrappedType]] = groupedFieldsToWrappedFields(allTuples)
 
-    // 2. Group tuples based on representation of their fields.
-    val groupedFields: List[List[List[Type]]] = allTuples.map {
-      case Type.Apply(_, ts) => ts
-      case y => throw InternalCompilerException(s"Unexpected type: `$y'.")
-    }.groupBy(_.map(typeSpecifier)).values.toList
-
-    // 3. Gather unique tuple representations.
-    val wrappedFields: Set[List[WrappedType]] = groupedFields.map { grp =>
-      val len = grp.head.length
-      (0 until len).map { ind =>
-        val underlyings = grp.map(tuple => tuple(ind))
-        if (isPrimitive(underlyings.head)) {
-          WrappedPrimitive(underlyings.head)
-        } else {
-          WrappedNonPrimitives(underlyings.toSet)
-        }
-      }.toList
-    }.toSet
-
-    // 4. Emit code for tuple classes
-    val tupleClassByteCode: Map[TupleClassName, Array[Byte]] = wrappedFields.map { fields =>
-      TupleClassName(fields) -> compileTuple(fields)
-    }.toMap
+    // 3. Emit code for tuple classes
+    val tupleClassByteCode : Map[List[WrappedType], (Array[Byte], Array[Byte])] = wrappedFields.map{ fields =>
+      fields -> (compileTupleInterface(fields), compileTupleClass(fields))}.toMap
 
     val e = System.nanoTime() - t
     root.copy(byteCodes = root.byteCodes.copy(tupleByteCode = tupleClassByteCode), time = root.time.copy(tupleGen = e)).toSuccess
@@ -117,11 +103,25 @@ object TupleGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     * For example, if the second element of type is of type `WrappedPrimitive(Bool)`, we create the following
     * field on the class:
     *
-    * public boolean field1;
+    * private boolean field1;
     *
     * and if the 5th element of the tuple if of type `WrappedNonPrimitives(Set(..))` we create the following field on the class:
     *
-    * public Object field4;
+    * private Object field4;
+    *
+    * Each field has a getter and a setter which the first one returns the field. For example the following field:
+    *
+    * private Object field4;
+    *
+    * has the following getters and setters:
+    *
+    * public Object getIndex4() {
+    *   return field4;
+    * }
+    *
+    * public void setIndex4(Object obj) {
+    *   field4 = obj;
+    * }
     *
     * Then we precede with generating the code for constructor. Number of arguments on this constructor is equal number
     * of elements in the tuple. Each of these arguments will be used to set a field on the class.
@@ -135,44 +135,31 @@ object TupleGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     * Then we generate the `getBoxedValue()` method which will return an array containing all the elements of the represented
     * tuple but all elements are boxed if their type is not a primitive.
     *
-    * Next we generate the `equals(Obj)` method which will return true if the object that implement the method `equals(Obj)`
-    * is equal to `Obj` and will return `false` otherwise. For doing this, at first we check that `Obj` is instance of
-    * the class that we are generating. Then we will check that the value of each field is equal for both `Obj` and `this`.
-    * If the field has a primitive type then we will use `==` to compare the field otherwise we will invoke `equals(Obj)`
-    * on one field with the other field as the parameter of `equals` method.
-    * For example for `(WrappedPrimitive(Bool), WrappedNonPrimitives(Set(..)))` we will create the following `equals` method:
+    * Next, we will generate the `toString()` method which will always throws an exception, since `toString` should not be called.
+    * The `toString` method is always the following:
     *
-    * public boolean equals(Object var1) {
-    * return var1 instanceof Tuple && ((Tuple)var1).field0 == this.field0 && ((Tuple)var1).field1.equals(this.field1);
+    * public string toString(Object var1) throws Exception {
+    *   throw new Exception("toString method shouldn't be called");
     * }
     *
-    * Then we generate the `hashCode()` of the object. The hash value of the tuple is defined as follows:
-    * First we initialize the hashValue to be 0. Then we loop over elements of the tuple and at each step of the loop,
-    * we first multiply the current value of hash by 7, then we add the hashCode of the current element at this step of
-    * the loop to the hashValue if the element is an object and if the element is not a primitive, then we will cast
-    * the value of the element to int and add it to hashValue.
-    * For example, for `(WrappedPrimitive(Int32), WrappedNonPrimitives(Set(..)), WrappedPrimitive(Int32))` we will
-    * generate the following `hashCode()` method:
+    * Then, we will generate the `hashCode()` method which will always throws an exception, since `hashCode` should not be called.
+    * The `hashCode` method is always the following:
     *
-    * public int hashCode() {
-    * return ((0 * 7 + this.field0) * 7 + this.field1.hashCode()) * 7 + this.field2;
+    * public int hashCode(Object var1) throws Exception {
+    *   throw new Exception("hashCode method shouldn't be called");
     * }
     *
-    * Finally, we will generate the `toString()` method of the class. For each tuple (x_1, x_2, ..., x_n) it will return
-    * the string `Tuple(rep(x_1), rep(x_2), ..., rep(x_n))` which `rep(x_i)` is string representation of element `x_i` of
-    * the tuple which if the element is primitive, we use `valueOf` static method on string class to get string representation
-    * of the element and if the element is an object then we call `toString` method on the object.
-    * For example, for `((WrappedPrimitive(Int32), WrappedNonPrimitives(Set(..)), WrappedPrimitive(Int32))` we will generate
-    * the following `toString()` method:
+    * Finally, we generate the `equals(Obj)` method which will always throws an exception, since `equals` should not be called.
+    * The `equals` method is always the following:
     *
-    * public String toString() {
-    * return "Tuple(".concat(String.valueOf(this.field0)).concat(", ").concat(this.field1.toString()).concat(", ").concat(String.valueOf(this.field2)).concat(")");
+    * public boolean equals(Object var1) throws Exception {
+    *   throw new Exception("equals method shouldn't be called");
     * }
     *
     * @param fields fields of the tuple to be generated
     * @return bytecode of the class representing the tuple
     */
-  private def compileTuple(fields: List[WrappedType]): Array[Byte] = {
+  private def compileTupleClass(fields: List[WrappedType]) : Array[Byte] = {
     /*
      * Initialize the class writer. We override `getCommonSuperClass` method because `asm` implementation of this
      * function requires types to loaded so that they can be compared to each other.
@@ -183,20 +170,22 @@ object TupleGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
       }
     }
 
+    val interfName = TupleInterfaceName(fields)
+
     // Qualified name of the class that will be generated by this method
-    val qualName = TupleClassName(fields)
+    val clazzName = TupleClassName(fields)
 
     // Super descriptor
     val superDescriptor = asm.Type.getInternalName(Constants.objectClass)
 
     // Descriptors of implemented interfaces
-    val interfaceDesctiptors = Array(asm.Type.getInternalName(Constants.tupleClass))
+    val interfaceDescriptors = Array(decorate(interfName))
 
     // Initialize the visitor to create a class.
-    visitor.visit(JavaVersion, ACC_PUBLIC + ACC_FINAL, decorate(qualName), null, superDescriptor, interfaceDesctiptors)
+    visitor.visit(JavaVersion, ACC_PUBLIC + ACC_FINAL, decorate(clazzName), null, superDescriptor, interfaceDescriptors)
 
     // Source of the class
-    visitor.visitSource(decorate(qualName), null)
+    visitor.visitSource(decorate(clazzName), null)
 
     fields.zipWithIndex.foreach { case (field, ind) =>
       // Descriptor of the field
@@ -209,26 +198,82 @@ object TupleGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
       compileField(visitor, fieldName, desc, isStatic = false, isPrivate = true)
 
       // Emitting getter for each field
-      compileGetFieldMethod(visitor, qualName, desc, fieldName, s"getIndex$ind", getReturnInsn(field))
+      compileGetFieldMethod(visitor, clazzName, desc, fieldName, s"getIndex$ind", getReturnInsn(field))
 
       // Emitting setter for each field
-      compileSetFieldMethod(visitor, qualName, desc, fieldName, s"setIndex$ind", getLoadInstruction(field))
+      compileSetFieldMethod(visitor, clazzName, desc, fieldName, s"setIndex$ind", getLoadInstruction(field))
     }
 
     // Emit the code for the constructor
-    compileTupleConstructor(visitor, qualName, fields)
+    compileTupleConstructor(visitor, clazzName, fields)
 
     // Emit the code for `getBoxedValue()` method
-    compileGetBoxedValueMethod(visitor, qualName, fields)
+    compileGetBoxedValueMethod(visitor, clazzName, fields)
 
-    // Emit the code for `equals(obj)` method
-    compileEqualsMethod(visitor, qualName, fields)
+    // Generate `toString` method
+    val stringDescriptor = asm.Type.getDescriptor(Constants.stringClass)
+    exceptionThrowerMethod(visitor, ACC_PUBLIC + ACC_FINAL, "toString", s"()$stringDescriptor", "toString method shouldn't be called")
 
-    // Emit the code for `hashCode()` method
-    compileHashCodeMethod(visitor, qualName, fields)
+    // Generate `hashCode` method
+    exceptionThrowerMethod(visitor, ACC_PUBLIC + ACC_FINAL, "hashCode", s"()I", "hashCode method shouldn't be called")
 
-    // Emit the code for `toString()` method
-    compileToStringMethod(visitor, qualName, fields)
+    // Generate `equals` method
+    val objectDescriptor = asm.Type.getDescriptor(Constants.objectClass)
+    exceptionThrowerMethod(visitor, ACC_PUBLIC + ACC_FINAL, "equals", s"($objectDescriptor)Z", "equals method shouldn't be called")
+
+
+    visitor.visitEnd()
+    visitor.toByteArray
+  }
+
+  /**
+    * This method will generate code for a tuple interface.
+    * There is a getter and a setter method for each element of `fields` on this interface.
+    * After creating a tuple object using a tuple class which corresponds to the same tuple type as this interface,
+    * the class type should never be used to reference to that object and this interface should be used for all interactions
+    * with that object.
+    *
+    * @param fields Fields of the tuple
+    * @return Bytecode of the class
+    */
+  private def compileTupleInterface(fields: List[WrappedType]) : Array[Byte] = {
+    /*
+     * Initialize the class writer. We override `getCommonSuperClass` method because `asm` implementation of this
+     * function requires types to loaded so that they can be compared to each other.
+     */
+    val visitor = new ClassWriter(ClassWriter.COMPUTE_FRAMES){
+      override def getCommonSuperClass(tpe1: String, tpe2: String) : String = {
+        asm.Type.getInternalName(Constants.objectClass)
+      }
+    }
+
+    // Qualified name of the class that will be generated by this method
+    val qualName = TupleInterfaceName(fields)
+
+    // Super descriptor
+    val superDescriptor =  asm.Type.getInternalName(Constants.objectClass)
+
+    // Descriptors of implemented interfaces
+    val interfaceDescriptors = Array(asm.Type.getInternalName(Constants.tupleClass))
+
+    // Initialize the visitor to create a class.
+    visitor.visit(JavaVersion, ACC_PUBLIC + ACC_ABSTRACT + ACC_INTERFACE, decorate(qualName), null, superDescriptor, interfaceDescriptors)
+
+    // Source of the class
+    visitor.visitSource(decorate(qualName), null)
+
+    fields.zipWithIndex.foreach{ case (field, ind) =>
+      // Descriptor of the field
+      val desc = getWrappedTypeDescriptor(field)
+
+      // Emitting getter for each field
+      val getter = visitor.visitMethod(ACC_PUBLIC + ACC_ABSTRACT, s"getIndex$ind", s"()$desc", null, null)
+      getter.visitEnd()
+
+      // Emitting setter for each field
+      val setter = visitor.visitMethod(ACC_PUBLIC + ACC_ABSTRACT, s"setIndex$ind", s"($desc)V", null, null)
+      setter.visitEnd()
+    }
 
     visitor.visitEnd()
     visitor.toByteArray
@@ -248,7 +293,7 @@ object TupleGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     * @param className Qualified name of the class of tuple
     * @param fields    fields on the tuple class
     */
-  private def compileTupleConstructor(visitor: ClassWriter, className: TupleClassName, fields: List[WrappedType]) = {
+  def compileTupleConstructor(visitor: ClassWriter, className: QualName, fields: List[WrappedType]) = {
     val desc = fields.map(getWrappedTypeDescriptor).mkString
 
     val constructor = visitor.visitMethod(ACC_PUBLIC, "<init>", s"($desc)V", null, null)
@@ -293,12 +338,12 @@ object TupleGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     * For example for `(WrappedPrimitive(Bool), WrappedNonPrimitives(Set(..)))` we will create the following `equals` method:
     *
     * public boolean equals(Object var1) {
-    * return var1 instanceof Tuple && ((Tuple)var1).field0 == this.field0 && ((Tuple)var1).field1.equals(this.field1);
+    *   return var1 instanceof Tuple && ((Tuple)var1).field0 == this.field0 && ((Tuple)var1).field1.equals(this.field1);
     * }
     *
-    * @param visitor   ClassWriter for emitting the code to the class
+    * @param visitor ClassWriter for emitting the code to the class
     * @param className Qualified name of the class
-    * @param fields    fields of the class
+    * @param fields fields of the class
     */
   private def compileEqualsMethod(visitor: ClassWriter, className: TupleClassName, fields: List[WrappedType]) = {
     val clazz = Constants.objectClass
@@ -347,123 +392,6 @@ object TupleGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
   }
 
   /**
-    * The hash value of the tuple is defined as follows:
-    * For tuple `(x_1, x_2, ..., x_n)` we define the hash of this tuple to be
-    * `hash(x_1) * 7^{n - 1} + hash(x_2) * 7^{n - 2} + ... + hash(x_n)`
-    * we define `hash(x_i)` to be `x_i` casted to `int` if `x_i` is a primitive or `hashCode` of the value if the value
-    * is an object. Final result which is an integer will be return on invocation of this method.
-    * For example, for `(WrappedPrimitive(Int32), WrappedNonPrimitive(Set(..)), WrappedPrimitive(Int32))` we will generate
-    * the following `hashCode()` method:
-    *
-    * public int hashCode() {
-    * return ((0 * 7 + this.field0) * 7 + this.field1.hashCode()) * 7 + this.field2;
-    * }
-    *
-    * @param visitor   ClassWriter to emit method to the class
-    * @param className Qualified name of the class
-    * @param fields    Fields of the class
-    */
-  private def compileHashCodeMethod(visitor: ClassWriter, className: TupleClassName, fields: List[WrappedType]) = {
-    // header of the `hashCode` function
-    val method = visitor.visitMethod(ACC_PUBLIC, "hashCode", "()I", null, null)
-
-    method.visitCode()
-    // Initial value of the accumulator
-    method.visitInsn(ICONST_0)
-
-    // Now we loop over fields to compute the hash value
-    fields.zipWithIndex.foreach { case (field, ind) =>
-      // Multiplying the current hash value by 7
-      method.visitLdcInsn(7)
-      method.visitInsn(IMUL)
-
-      // descriptor of the current field
-      val desc = getWrappedTypeDescriptor(field)
-
-      // Fetching the field
-      method.visitVarInsn(ALOAD, 0)
-      method.visitFieldInsn(GETFIELD, decorate(className), s"field$ind", desc)
-
-      // Getting the hashCode of the field
-      getHashCodeOrConvertToInt(method, field)
-
-      // Adding the hash code to the accumulator
-      method.visitInsn(IADD)
-    }
-
-    // Returning the hash
-    method.visitInsn(IRETURN)
-
-    // Parameters of visit max are thrown away because visitor will calculate the frame and variable stack size
-    method.visitMaxs(1, 1)
-    method.visitEnd()
-  }
-
-  /**
-    * This method will generate `toString()` method of the class. For each tuple (x_1, x_2, ..., x_n) it will return
-    * the string `Tuple(rep(x_1), rep(x_2), ..., rep(x_n))` which `rep(x_i)` is string representation of element `x_i` of
-    * the tuple which if the element is primitive, we use `valueOf` static method on string class to get string representation
-    * of the element and if the element is an object then we call `toString` method on the object.
-    * For example, for `(WrappedPrimitive(Int32), WrappedNonPrimitive(Set(..)), WrappedPrimitive(Int32))` we will
-    * generate the following `toString()` method:
-    *
-    * public String toString() {
-    * return "Tuple(".concat(String.valueOf(this.field0)).concat(", ").concat(this.field1.toString()).concat(", ").concat(String.valueOf(this.field2)).concat(")");
-    * }
-    *
-    * @param visitor   ClassWriter to emit method to the class
-    * @param className Qualified name of the class
-    * @param fields    Fields of the class
-    */
-  private def compileToStringMethod(visitor: ClassWriter, className: TupleClassName, fields: List[WrappedType]) = {
-    val stringInternalName = asm.Type.getInternalName(Constants.stringClass)
-    val stringConcatMethod = Constants.stringClass.getMethod("concat", Constants.stringClass)
-
-    // Headers of the method
-    val method = visitor.visitMethod(ACC_PUBLIC, "toString", s"()${asm.Type.getDescriptor(Constants.stringClass)}", null, null)
-
-    method.visitCode()
-
-    // Initial accumulator of the result
-    method.visitLdcInsn("(")
-
-    // We loop over each field, convert the field to string and concat the result to the accumulator
-    fields.zipWithIndex.foreach { case (field, ind) =>
-      // descriptor of the field
-      val desc = getWrappedTypeDescriptor(field)
-
-      // Fetching the field
-      method.visitVarInsn(ALOAD, 0)
-      method.visitFieldInsn(GETFIELD, decorate(className), s"field$ind", desc)
-
-      // Converting the field to string
-      javaValueToString(method, field)
-
-      // Concatenating the string to the rest of the accumulator
-      method.visitMethodInsn(INVOKEVIRTUAL, stringInternalName, stringConcatMethod.getName,
-        asm.Type.getMethodDescriptor(stringConcatMethod), false)
-
-      // If this is not the last element of the tuple, then concat the separator `, ` to the accumulated string on the stack
-      if (ind < fields.length - 1) {
-        method.visitLdcInsn(", ")
-        method.visitMethodInsn(INVOKEVIRTUAL, stringInternalName, stringConcatMethod.getName,
-          asm.Type.getMethodDescriptor(stringConcatMethod), false)
-      }
-    }
-
-    method.visitLdcInsn(")")
-    method.visitMethodInsn(INVOKEVIRTUAL, stringInternalName, stringConcatMethod.getName,
-      asm.Type.getMethodDescriptor(stringConcatMethod), false)
-
-    // Return the string
-    method.visitInsn(ARETURN)
-
-    // Parameters of visit max are thrown away because visitor will calculate the frame and variable stack size
-    method.visitMaxs(1, 10)
-    method.visitEnd()
-  }
-
-  /**
     * This method emits the code for `getBoxedValue()` method. This method returns an array of objects containing all the
     * elements of the tuple in the same order that they appear on the tuple but if the element is a primitive then it will
     * box the value.
@@ -472,7 +400,7 @@ object TupleGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     * @param className Qualified name of the tuple class
     * @param fields    Fields of the class
     */
-  private def compileGetBoxedValueMethod(visitor: ClassWriter, className: TupleClassName, fields: List[WrappedType]) = {
+  def compileGetBoxedValueMethod(visitor: ClassWriter, className: QualName, fields: List[WrappedType]) : Unit = {
     // header of the method
     val method = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, "getBoxedValue", s"()[Ljava/lang/Object;", null, null)
 
@@ -491,7 +419,7 @@ object TupleGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
       method.visitLdcInsn(ind)
 
       // Boxing the field
-      boxField(method, field, className, s"field$ind")
+      boxField(method, field, className, s"getIndex$ind")
 
       // Storing the value inside the array
       method.visitInsn(AASTORE)

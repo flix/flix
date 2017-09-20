@@ -23,13 +23,14 @@ import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.Ast.Hook
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Expression
 import ca.uwaterloo.flix.language.ast.{Type, _}
-import ca.uwaterloo.flix.util.{Evaluation, InternalCompilerException, Options, Validation}
+import ca.uwaterloo.flix.util._
 import org.objectweb.asm
 import org.objectweb.asm.Opcodes._
 import org.objectweb.asm.util.CheckClassAdapter
 import org.objectweb.asm.{Type => _, _}
 import ca.uwaterloo.flix.util.Validation._
 import CodegenHelper._
+import ca.uwaterloo.flix.language.ast.Type.{Apply, Tuple}
 
 import scala.language.existentials
 
@@ -54,14 +55,14 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     *
     * 3. Create Enum Type info
     * We create type information for each enum case. That is, given the type and tag name of each enum case, the map
-    * returns the Qualified name of the the class corresponding to the enum case.
+    * returns the expression case and the type of value of enum.
     *
     * 4. Generate functional interfaces.
     * Our implementation of closures requires the lambda function to be called through an interface (which is
     * annotated with @FunctionalInterface). Instead of using functional interfaces provided by Java or Scala (which
     * are too specific or too general), we create our own.
     * In this step, we generate names for the functional interfaces, placing each interface in the package
-    *    ca.uwaterloo.flix.runtime. We iterate over the entire AST to determine which function types are used in
+    * ca.uwaterloo.flix.runtime. We iterate over the entire AST to determine which function types are used in
     * MkClosureRef, remove duplicate types, and then generate names. We want the type of MkClosureRef, which is the
     * type of the closure, not the type of the lambda, since its underlying implementation method will have its
     * argument list modified for capture variables.
@@ -79,7 +80,6 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     implicit val _ = flix.genSym
 
     val t = System.nanoTime()
-
     if (flix.options.evaluation == Evaluation.Interpreted) {
       return root.toSuccess
     }
@@ -100,14 +100,14 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     // 3. Create Enum Type info
     val allEnums: List[(Type, (String, Type))] = root.defs.values.flatMap(x => CodegenHelper.findEnumCases(x.exp)).toList
 
-    val enumTypeInfo: Map[(Type, String), (QualName, ExecutableAst.Case)] = allEnums.map { case (tpe, (name, subType)) =>
+    val enumTypeInfo: Map[(Type, String), (ExecutableAst.Case, Type)] = allEnums.map { case (tpe, (name, subType)) =>
       val sym = tpe match {
         case Type.Apply(Type.Enum(s, _), _) => s
         case Type.Enum(s, _) => s
         case _ => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
       }
       val enumCase = root.enums(sym).cases(name)
-      (tpe, name) -> (EnumClassName(sym, name, typeToWrappedType(subType)), enumCase)
+      (tpe, name) -> (enumCase, subType)
     }.toMap
 
     // 4. Generate functional interfaces.
@@ -162,7 +162,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
               functions: List[ExecutableAst.Def],
               declarations: Map[Symbol.DefnSym, Type],
               interfaces: Map[Type, FlixClassName],
-              enums: Map[(Type, String), (QualName, ExecutableAst.Case)],
+              enums: Map[(Type, String), (ExecutableAst.Case, Type)],
               options: Options): Array[Byte] = {
     /*
      * Initialize the class writer. We override `getCommonSuperClass` method because `asm` implementation of this
@@ -191,7 +191,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     compileStaticFlixField(prefix, visitor)
     compileConstructor(visitor)
     // TODO: Here we filter laws, since the backend does not support existentials/universals, but could we fix that?
-    functions.filterNot(_.ann.isLaw).foreach(compileFunction(prefix, functions, declarations, interfaces, enums, visitor))
+    functions.filterNot(_.ann.isLaw).foreach(compileFunction(prefix, functions, declarations, interfaces, enums, visitor, options))
 
     visitor.visitEnd()
 
@@ -237,8 +237,9 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
                               functions: List[ExecutableAst.Def],
                               declarations: Map[Symbol.DefnSym, Type],
                               interfaces: Map[Type, FlixClassName],
-                              enums: Map[(Type, String), (QualName, ExecutableAst.Case)],
-                              visitor: ClassVisitor)(function: ExecutableAst.Def): Unit = {
+                              enums: Map[(Type, String), (ExecutableAst.Case, Type)],
+                              visitor: ClassVisitor,
+                              options: Options)(function: ExecutableAst.Def): Unit = {
     val flags = if (function.isSynthetic) ACC_PUBLIC + ACC_STATIC + ACC_SYNTHETIC else ACC_PUBLIC + ACC_STATIC
     val mv = visitor.visitMethod(flags, function.sym.suffix, descriptor(function.tpe, interfaces), null, null)
     mv.visitCode()
@@ -246,7 +247,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     val entryPoint = new Label()
     mv.visitLabel(entryPoint)
 
-    compileExpression(prefix, functions, declarations, interfaces, enums, mv, Map(), entryPoint)(function.exp)
+    compileExpression(prefix, functions, declarations, interfaces, enums, mv, Map(), entryPoint, options)(function.exp)
 
     val tpe = function.tpe match {
       case Type.Apply(Type.Arrow(l), ts) => ts.last
@@ -273,10 +274,11 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
                                 functions: List[ExecutableAst.Def],
                                 declarations: Map[Symbol.DefnSym, Type],
                                 interfaces: Map[Type, FlixClassName],
-                                enums: Map[(Type, String), (QualName, ExecutableAst.Case)],
+                                enums: Map[(Type, String), (ExecutableAst.Case, Type)],
                                 visitor: MethodVisitor,
                                 jumpLabels: Map[Symbol.LabelSym, Label],
-                                entryPoint: Label)(expr: Expression): Unit = expr match {
+                                entryPoint: Label,
+                                options: Options)(expr: Expression): Unit = expr match {
     case Expression.Unit =>
       val clazz = Constants.unitClass
       val method = clazz.getMethod("getInstance")
@@ -339,7 +341,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
       // We construct Expression.Var nodes and compile them as expected.
       for (f <- freeVars) {
         val v = Expression.Var(f.sym, f.tpe, loc)
-        compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint)(v)
+        compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint, options)(v)
       }
 
       // The name of the method implemented by the lambda.
@@ -388,10 +390,10 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
       val name = interfaces(exp.tpe)
 
       // Evaluate the function we're calling.
-      compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint)(exp)
+      compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint, options)(exp)
 
       // Evaluate arguments left-to-right and push them onto the stack. Then make the interface call.
-      args.foreach(compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint))
+      args.foreach(compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint, options))
       visitor.visitMethodInsn(INVOKEINTERFACE, decorate(name), "apply", descriptor(exp.tpe, interfaces), true)
 
     case Expression.ApplyDef(name, args, _, loc) =>
@@ -401,7 +403,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
       val targetTpe = declarations(name)
 
       // Evaluate arguments left-to-right and push them onto the stack. Then make the call.
-      args.foreach(compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint))
+      args.foreach(compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint, options))
       visitor.visitMethodInsn(INVOKESTATIC, decorate(FlixClassName(name.prefix)), name.suffix, descriptor(targetTpe, interfaces), false)
 
     case Expression.ApplyCloTail(exp, args, _, loc) =>
@@ -414,10 +416,10 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
       val name = interfaces(exp.tpe)
 
       // Evaluate the function we're calling.
-      compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint)(exp)
+      compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint, options)(exp)
 
       // Evaluate arguments left-to-right and push them onto the stack. Then make the interface call.
-      args.foreach(compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint))
+      args.foreach(compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint, options))
       visitor.visitMethodInsn(INVOKEINTERFACE, decorate(name), "apply", descriptor(exp.tpe, interfaces), true)
 
     case Expression.ApplyDefTail(name, args, _, loc) =>
@@ -429,7 +431,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
       val targetTpe = declarations(name)
 
       // Evaluate arguments left-to-right and push them onto the stack. Then make the call.
-      args.foreach(compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint))
+      args.foreach(compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint, options))
       visitor.visitMethodInsn(INVOKESTATIC, decorate(FlixClassName(name.prefix)), name.suffix, descriptor(targetTpe, interfaces), false)
 
     case Expression.ApplySelfTail(name, formals, actuals, _, loc) =>
@@ -440,7 +442,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
       var globalOffset: Int = 0
       for (arg <- actuals) {
         // Evaluate the argument and push the result on the stack.
-        compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint)(arg)
+        compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint, options)(arg)
 
         // Update stack height used by the argument.
         arg.tpe match {
@@ -506,7 +508,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
         visitor.visitInsn(DUP)
         compileInt(visitor)(i)
 
-        compileBoxedExpr(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint)(e)
+        compileBoxedExpr(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint, options)(e)
         visitor.visitInsn(AASTORE)
       }
 
@@ -521,16 +523,16 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
       compileUnbox(interfaces, visitor)(tpe)
 
     case Expression.Unary(sop, op, exp, _, _) => compileUnaryExpr(prefix, functions, declarations, interfaces, enums,
-      visitor, jumpLabels, entryPoint)(op, exp)
+      visitor, jumpLabels, entryPoint, options)(op, exp)
     case Expression.Binary(sop, op, exp1, exp2, _, _) => op match {
       case o: ArithmeticOperator => compileArithmeticExpr(prefix, functions, declarations, interfaces, enums,
-        visitor, jumpLabels, entryPoint)(o, exp1, exp2)
+        visitor, jumpLabels, entryPoint, options)(o, exp1, exp2)
       case o: ComparisonOperator => compileComparisonExpr(prefix, functions, declarations, interfaces, enums,
-        visitor, jumpLabels, entryPoint)(o, exp1, exp2)
+        visitor, jumpLabels, entryPoint, options)(o, exp1, exp2)
       case o: LogicalOperator => compileLogicalExpr(prefix, functions, declarations, interfaces, enums,
-        visitor, jumpLabels, entryPoint)(o, exp1, exp2)
+        visitor, jumpLabels, entryPoint, options)(o, exp1, exp2)
       case o: BitwiseOperator => compileBitwiseExpr(prefix, functions, declarations, interfaces, enums, visitor,
-        jumpLabels, entryPoint)(o, exp1, exp2)
+        jumpLabels, entryPoint, options)(o, exp1, exp2)
     }
 
     case Expression.IfThenElse(exp1, exp2, exp3, _, loc) =>
@@ -538,12 +540,12 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
       addSourceLine(visitor, loc)
       val ifElse = new Label()
       val ifEnd = new Label()
-      compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint)(exp1)
+      compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint, options)(exp1)
       visitor.visitJumpInsn(IFEQ, ifElse)
-      compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint)(exp2)
+      compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint, options)(exp2)
       visitor.visitJumpInsn(GOTO, ifEnd)
       visitor.visitLabel(ifElse)
-      compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint)(exp3)
+      compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint, options)(exp3)
       visitor.visitLabel(ifEnd)
 
     case Expression.Branch(exp, branches, tpe, loc) =>
@@ -552,7 +554,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
       // Calculating the updated jumpLabels map
       val updatedJumpLabels = branches.foldLeft(jumpLabels)((map, branch) => map + (branch._1 -> new Label()))
       // Compiling the exp
-      compileExpression(prefix, functions, declarations, interfaces, enums, visitor, updatedJumpLabels, entryPoint)(exp)
+      compileExpression(prefix, functions, declarations, interfaces, enums, visitor, updatedJumpLabels, entryPoint, options)(exp)
       // Label for the end of all branches
       val endLabel = new Label()
       // Skip branches if `exp` does not jump
@@ -562,7 +564,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
         // Label for the start of the branch
         visitor.visitLabel(updatedJumpLabels(sym))
         // evaluating the expression for the branch
-        compileExpression(prefix, functions, declarations, interfaces, enums, visitor, updatedJumpLabels, entryPoint)(branchExp)
+        compileExpression(prefix, functions, declarations, interfaces, enums, visitor, updatedJumpLabels, entryPoint, options)(branchExp)
         // Skip the rest of the branches
         visitor.visitJumpInsn(GOTO, endLabel)
       }
@@ -578,7 +580,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     case Expression.Let(sym, exp1, exp2, _, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
-      compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint)(exp1)
+      compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint, options)(exp1)
       exp1.tpe match {
         case Type.Var(id, kind) => throw InternalCompilerException(s"Non-monomorphed type variable '$id.")
         case Type.Bool | Type.Char | Type.Int8 | Type.Int16 | Type.Int32 => visitor.visitVarInsn(ISTORE, sym.getStackOffset)
@@ -589,7 +591,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
         case Type.Apply(_, _) => visitor.visitVarInsn(ASTORE, sym.getStackOffset)
         case tpe => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
       }
-      compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint)(exp2)
+      compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint, options)(exp2)
 
     case Expression.LetRec(sym, exp1, exp2, _, _) =>
       ??? // TODO: Add support for LetRec.
@@ -598,17 +600,77 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
       // First we compile the `exp`
-      compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint)(exp)
-      // We look in the enum map to find the qualified name of the class of the enum case
-      val clazz = enums(exp.tpe, tag)._1
-      // We check if the enum is `instanceof` the class
-      visitor.visitTypeInsn(INSTANCEOF, decorate(clazz))
+      compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint, options)(exp)
+      // We look in the enum map to find the subType and case corresponding to the tag
+      val (enumCase, subType) = enums(exp.tpe, tag)
+      // QualName of the class specified by tag and enum based on the Fusion flag
+      val clazzName = subType match {
+        case Apply(Tuple(_), ts) if withFusion(options) => // If the subType is Tuple and Fusion is enabled QualName is of `ETFClassName`
+          val fields = ts.map(typeToWrappedType)
+          ETFClassName(enum, tag, fields)
+        case _ => SECClassName(enum, tag, typeToWrappedType(subType)) // Otherwise QualName is just a normal enum case class name
+      }
+      // We check if the object is `instanceof` clazzName
+      visitor.visitTypeInsn(INSTANCEOF, decorate(clazzName))
+
+    // Fusion of Tag and Tuple if the sub expression is creating a tuple directly, only performed if Fusion option is set.
+    case Expression.Tag(enum, tag, Expression.Tuple(elms, _, _), tpe, loc) if withFusion(options) =>
+      // Adding source line number for debugging
+      addSourceLine(visitor, loc)
+      // Transforming types of elements of the tuple to the appropriate type
+      val fieldTypes : List[WrappedType] = elms.map(x => typeToWrappedType(x.tpe)).toList
+      // Descriptor of the parameters of the constructor of the tuple class
+      val desc = fieldTypes.map(getWrappedTypeDescriptor).mkString
+      // Qualified name of the class that can represent this tuple
+      val clazzName = ETFClassName(enum, tag, fieldTypes)
+      // Creating a new instance of the case
+      visitor.visitTypeInsn(NEW, decorate(clazzName))
+      // Duplicating the class
+      visitor.visitInsn(DUP)
+      // Evaluating all the elements to be stored in the tuple class
+      elms.foreach{compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint, options)(_)}
+      // Invoking the constructor
+      visitor.visitMethodInsn(INVOKESPECIAL, decorate(clazzName), "<init>", s"(${desc})V", false)
+
+    // Fusion of Tag and Tuple if the sub expression is a reference to a tuple, only performed if Fusion option is set.
+    case Expression.Tag(enum, tag, exp, tpe, loc) if exp.tpe.isTuple && withFusion(options) =>
+      // Adding source line number for debugging
+      addSourceLine(visitor, loc)
+      // fields of the value of enum which is a tuple
+      val fieldTypes = exp.tpe match {
+        case Apply(Tuple(_), ts) => ts.map(typeToWrappedType)
+        case _ => throw new InternalCompilerException(s"Unexpected type ${exp.tpe}")
+      }
+      // QualName of the object
+      val qualName = ETFClassName(enum, tag, fieldTypes)
+      // Creating a new instance of the case
+      visitor.visitTypeInsn(NEW, decorate(qualName))
+      // Duplication the class
+      visitor.visitInsn(DUP)
+      // Evaluating the expression for the value of the tag
+      compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint, options)(exp)
+      // QualName of the interface of value of the tag which is a tuple
+      val tupleName = TupleInterfaceName(fieldTypes)
+      // Extracting all indices of the tuple
+      fieldTypes.zipWithIndex.foreach{ case (tpe, index) =>
+        // Duplicating the reference since the function call will consume one reference
+        visitor.visitInsn(DUP)
+        // Extracting value of `index` index from the tuple
+        visitor.visitMethodInsn(INVOKEINTERFACE, decorate(tupleName), s"getIndex$index", s"()${getWrappedTypeDescriptor(tpe)}", true)
+        // Bringing the reference to the tuple to the top of the stack
+        visitor.visitInsn(SWAP)
+      }
+      // Popping the reference to the tuple from the stack
+      visitor.visitInsn(POP)
+      // Invoking the constructor
+      visitor.visitMethodInsn(INVOKESPECIAL, decorate(qualName), "<init>", s"(${fieldTypes.map(getWrappedTypeDescriptor).mkString})V", false)
 
     case Expression.Tag(enum, tag, exp, tpe, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
       //  We look in the enum map to find the qualified name of the class of the enum case
-      val (clazzName, enumCase) = enums(tpe, tag)
+      val (enumCase, subType) = enums(tpe, tag)
+      val clazzName = SECClassName(enum, tag, typeToWrappedType(subType))
       /*
        If the definition of the enum case has a `Unit` field, then it is represented by singleton pattern which means
        there is only one instance of the class initiated as a field. We have to fetch this field instead of instantiating
@@ -622,14 +684,18 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
          * primitive in java otherwise we use the descriptor of object.
          */
         val desc = getWrappedTypeDescriptor(typeToWrappedType(exp.tpe))
-        // Creating a new instance of the class
+        // Creating a new instance of the case
         visitor.visitTypeInsn(NEW, decorate(clazzName))
         visitor.visitInsn(DUP)
         // Evaluating the single argument of the class constructor
-        compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint)(exp)
+        compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint, options)(exp)
         // Calling the constructor of the class
         visitor.visitMethodInsn(INVOKESPECIAL, decorate(clazzName), "<init>", s"(${desc})V", false)
       }
+
+    case Expression.Untag(enum, tag, exp, tpe, loc) if tpe.isTuple && withFusion(options) =>
+      compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint, options)(exp)
+
     case Expression.Untag(enum, tag, exp, tpe, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
@@ -639,9 +705,9 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
        */
       val desc = getWrappedTypeDescriptor(typeToWrappedType(tpe))
       // Qualified name of the enum
-      val clazz = EnumClassName(enum, tag, typeToWrappedType(tpe))
+      val clazz = SECClassName(enum, tag, typeToWrappedType(tpe))
       // Evaluate the exp
-      compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint)(exp)
+      compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint, options)(exp)
       // Cast the exp to the type of the tag
       visitor.visitTypeInsn(CHECKCAST, decorate(clazz))
       // Invoke `getValue()` method to extract the field of the tag
@@ -654,13 +720,13 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
       val desc = getWrappedTypeDescriptor(typeToWrappedType(tpe))
       // Qualified name of the class defining the tuple
       val clazzName = base.tpe match {
-        case Type.Apply(Type.Tuple(_), lst) => TupleClassName(lst.map(typeToWrappedType))
+        case Type.Apply(Type.Tuple(_), lst) => TupleInterfaceName(lst.map(typeToWrappedType))
         case _ => throw InternalCompilerException(s"Unexpected type: `${base.tpe}`")
       }
       // evaluating the `base`
-      compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint)(base)
+      compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint, options)(base)
       // Invoking `getField${offset}()` method for fetching the field
-      visitor.visitMethodInsn(INVOKEVIRTUAL, decorate(clazzName), s"getIndex$offset", s"()$desc", false)
+      visitor.visitMethodInsn(INVOKEINTERFACE, decorate(clazzName), s"getIndex$offset", s"()$desc", true)
       // Cast the object to it's type if it's not a primitive
       castIfNotPrim(tpe, interfaces, visitor)
 
@@ -679,7 +745,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
       visitor.visitInsn(DUP)
       // Evaluating all the elements to be stored in the tuple class
       elms.foreach {
-        compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint)(_)
+        compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint, options)(_)
       }
       // Invoking the constructor
       visitor.visitMethodInsn(INVOKESPECIAL, decorate(clazzName), "<init>", s"(${desc})V", false)
@@ -698,7 +764,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
       // Duplicate it since one instance will get consumed by constructor
       visitor.visitInsn(DUP)
       // Evaluate the underlying expression
-      compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint)(exp)
+      compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint, options)(exp)
       // Call the constructor
       visitor.visitMethodInsn(INVOKESPECIAL, clazzInternalName, "<init>", constructorDescriptor, false)
 
@@ -706,7 +772,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
       // Evaluate the exp
-      compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint)(exp)
+      compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint, options)(exp)
       // Class appropriate reference class
       val clazz = getReferenceClazz(exp.tpe)
       // Get internal name of the class
@@ -727,9 +793,9 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
       // Evaluate the reference address
-      compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint)(exp1)
+      compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint, options)(exp1)
       // Evaluating the value to be assigned to the reference
-      compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint)(exp2)
+      compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint, options)(exp2)
       // Class appropriate reference class
       val clazz = getReferenceClazz(exp1.tpe)
       // Get internal name of the class
@@ -761,7 +827,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
       // Duplicate the reference since the first argument for a constructor call is the reference to the object
       visitor.visitInsn(DUP)
       // Evaluate arguments left-to-right and push them onto the stack.
-      args.foreach(compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint))
+      args.foreach(compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint, options))
       // Call the constructor
       visitor.visitMethodInsn(INVOKESPECIAL, declaration, "<init>", descriptor, false)
 
@@ -779,7 +845,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
       // Evaluate arguments left-to-right and push them onto the stack.
-      args.foreach(compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint))
+      args.foreach(compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint, options))
       val declaration = asm.Type.getInternalName(method.getDeclaringClass)
       val name = method.getName
       val descriptor = asm.Type.getMethodDescriptor(method)
@@ -834,10 +900,11 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
                                functions: List[ExecutableAst.Def],
                                declarations: Map[Symbol.DefnSym, Type],
                                interfaces: Map[Type, FlixClassName],
-                               enums: Map[(Type, String), (QualName, ExecutableAst.Case)],
+                               enums: Map[(Type, String), (ExecutableAst.Case, Type)],
                                visitor: MethodVisitor,
                                jumpLabels: Map[Symbol.LabelSym, Label],
-                               entryPoint: Label)(exp: Expression): Unit = {
+                               entryPoint: Label,
+                               options: Options)(exp: Expression): Unit = {
     // Adding source line number for debugging
     addSourceLine(visitor, exp.loc)
 
@@ -851,7 +918,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
           case _ =>
             visitor.visitTypeInsn(NEW, booleanInternalName)
             visitor.visitInsn(DUP)
-            compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint)(exp)
+            compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint, options)(exp)
             visitor.visitMethodInsn(INVOKESPECIAL, booleanInternalName, "<init>", "(Z)V", false)
         }
 
@@ -859,53 +926,53 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
         val charInternalName = "java/lang/Character"
         visitor.visitTypeInsn(NEW, charInternalName)
         visitor.visitInsn(DUP)
-        compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint)(exp)
+        compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint, options)(exp)
         visitor.visitMethodInsn(INVOKESPECIAL, charInternalName, "<init>", "(C)V", false)
 
       case Type.Float32 =>
         val floatInternalName = "java/lang/Float"
         visitor.visitTypeInsn(NEW, floatInternalName)
         visitor.visitInsn(DUP)
-        compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint)(exp)
+        compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint, options)(exp)
         visitor.visitMethodInsn(INVOKESPECIAL, floatInternalName, "<init>", "(F)V", false)
 
       case Type.Float64 =>
         val doubleInternalName = "java/lang/Double"
         visitor.visitTypeInsn(NEW, doubleInternalName)
         visitor.visitInsn(DUP)
-        compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint)(exp)
+        compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint, options)(exp)
         visitor.visitMethodInsn(INVOKESPECIAL, doubleInternalName, "<init>", "(D)V", false)
 
       case Type.Int8 =>
         val byteInternalName = "java/lang/Byte"
         visitor.visitTypeInsn(NEW, byteInternalName)
         visitor.visitInsn(DUP)
-        compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint)(exp)
+        compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint, options)(exp)
         visitor.visitMethodInsn(INVOKESPECIAL, byteInternalName, "<init>", "(B)V", false)
 
       case Type.Int16 =>
         val shortInternalName = "java/lang/Short"
         visitor.visitTypeInsn(NEW, shortInternalName)
         visitor.visitInsn(DUP)
-        compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint)(exp)
+        compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint, options)(exp)
         visitor.visitMethodInsn(INVOKESPECIAL, shortInternalName, "<init>", "(S)V", false)
 
       case Type.Int32 =>
         val intInternalName = "java/lang/Integer"
         visitor.visitTypeInsn(NEW, intInternalName)
         visitor.visitInsn(DUP)
-        compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint)(exp)
+        compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint, options)(exp)
         visitor.visitMethodInsn(INVOKESPECIAL, intInternalName, "<init>", "(I)V", false)
 
       case Type.Int64 =>
         val longInternalName = "java/lang/Long"
         visitor.visitTypeInsn(NEW, longInternalName)
         visitor.visitInsn(DUP)
-        compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint)(exp)
+        compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint, options)(exp)
         visitor.visitMethodInsn(INVOKESPECIAL, longInternalName, "<init>", "(J)V", false)
 
       case Type.Unit | Type.BigInt | Type.Str | Type.Native | Type.Enum(_, _) | Type.Apply(Type.Tuple(_), _) | Type.Apply(Type.Arrow(_), _) |
-           Type.Apply(Type.Enum(_, _), _) => compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint)(exp)
+           Type.Apply(Type.Enum(_, _), _) => compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint, options)(exp)
 
       case tpe => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
     }
@@ -942,8 +1009,8 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
       val name = tpe match {
         case Type.BigInt => asm.Type.getInternalName(Constants.bigIntegerClass)
         case Type.Str => asm.Type.getInternalName(Constants.stringClass)
-        case Type.Enum(sym, _) => decorate(EnumInterfName(sym))
-        case Type.Apply(Type.Enum(sym, _), _) => decorate(EnumInterfName(sym))
+        case Type.Enum(sym, _) => decorate(EnumTypeInterfaceName(sym))
+        case Type.Apply(Type.Enum(sym, _), _) => decorate(EnumTypeInterfaceName(sym))
         case Type.Apply(Type.Arrow(l), _) =>
           // TODO: Is this correct? Need to write a test when we can write lambda expressions.
           decorate(interfaces(tpe))
@@ -954,7 +1021,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     case Type.Native => // Don't need to cast AnyRef to anything
 
     case Type.Apply(Type.Tuple(l), lst) =>
-      val clazzName = TupleClassName(lst.map(typeToWrappedType))
+      val clazzName = TupleInterfaceName(lst.map(typeToWrappedType))
 
 
       visitor.visitTypeInsn(CHECKCAST, decorate(clazzName))
@@ -993,14 +1060,15 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
                                functions: List[ExecutableAst.Def],
                                declarations: Map[Symbol.DefnSym, Type],
                                interfaces: Map[Type, FlixClassName],
-                               enums: Map[(Type, String), (QualName, ExecutableAst.Case)],
+                               enums: Map[(Type, String), (ExecutableAst.Case, Type)],
                                visitor: MethodVisitor,
                                jumpLabels: Map[Symbol.LabelSym, Label],
-                               entryPoint: Label)(op: UnaryOperator, e: Expression): Unit = {
+                               entryPoint: Label,
+                               options: Options)(op: UnaryOperator, e: Expression): Unit = {
     // Adding source line number for debugging
     addSourceLine(visitor, e.loc)
 
-    compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint)(e)
+    compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint, options)(e)
     op match {
       case UnaryOperator.LogicalNot =>
         val condElse = new Label()
@@ -1039,7 +1107,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
                                     functions: List[ExecutableAst.Def],
                                     declarations: Map[Symbol.DefnSym, Type],
                                     interfaces: Map[Type, FlixClassName],
-                                    enums: Map[(Type, String), (QualName, ExecutableAst.Case)],
+                                    enums: Map[(Type, String), (ExecutableAst.Case, Type)],
                                     visitor: MethodVisitor)(tpe: Type): Unit = tpe match {
     case Type.Float32 => visitor.visitInsn(FNEG)
     case Type.Float64 => visitor.visitInsn(DNEG)
@@ -1118,10 +1186,11 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
                                     functions: List[ExecutableAst.Def],
                                     declarations: Map[Symbol.DefnSym, Type],
                                     interfaces: Map[Type, FlixClassName],
-                                    enums: Map[(Type, String), (QualName, ExecutableAst.Case)],
+                                    enums: Map[(Type, String), (ExecutableAst.Case, Type)],
                                     visitor: MethodVisitor,
                                     jumpLabels: Map[Symbol.LabelSym, Label],
-                                    entryPoint: Label)(o: ArithmeticOperator, e1: Expression, e2: Expression): Unit = {
+                                    entryPoint: Label,
+                                    options: Options)(o: ArithmeticOperator, e1: Expression, e2: Expression): Unit = {
     if (o == BinaryOperator.Exponentiate) {
       val (castToDouble, castFromDouble) = e1.tpe match {
         case Type.Float32 => (F2D, D2F)
@@ -1131,9 +1200,9 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
         case _ => throw InternalCompilerException(s"Can't apply $o to type ${e1.tpe}.")
       }
       visitor.visitFieldInsn(GETSTATIC, Constants.scalaMathPkg, "MODULE$", s"L${Constants.scalaMathPkg};")
-      compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint)(e1)
+      compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint, options)(e1)
       visitor.visitInsn(castToDouble)
-      compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint)(e2)
+      compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint, options)(e2)
       visitor.visitInsn(castToDouble)
       visitor.visitMethodInsn(INVOKEVIRTUAL, Constants.scalaMathPkg, "pow", "(DD)D", false)
       visitor.visitInsn(castFromDouble)
@@ -1143,8 +1212,8 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
         case Type.Float32 | Type.Float64 | Type.Int32 | Type.Int64 => visitor.visitInsn(NOP)
       }
     } else {
-      compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint)(e1)
-      compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint)(e2)
+      compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint, options)(e1)
+      compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint, options)(e2)
       val (intOp, longOp, floatOp, doubleOp, bigIntOp) = o match {
         case BinaryOperator.Plus => (IADD, LADD, FADD, DADD, "add")
         case BinaryOperator.Minus => (ISUB, LSUB, FSUB, DSUB, "subtract")
@@ -1227,23 +1296,24 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
                                     functions: List[ExecutableAst.Def],
                                     declarations: Map[Symbol.DefnSym, Type],
                                     interfaces: Map[Type, FlixClassName],
-                                    enums: Map[(Type, String), (QualName, ExecutableAst.Case)],
+                                    enums: Map[(Type, String), (ExecutableAst.Case, Type)],
                                     visitor: MethodVisitor,
                                     jumpLabels: Map[Symbol.LabelSym, Label],
-                                    entryPoint: Label)
+                                    entryPoint: Label,
+                                    options: Options)
                                    (o: ComparisonOperator, e1: Expression, e2: Expression): Unit = {
     e1.tpe match {
       case Type.Enum(_, _) | Type.Apply(Type.Tuple(_), _) | Type.Apply(Type.Enum(_, _), _) if o == BinaryOperator.Equal || o == BinaryOperator.NotEqual =>
         (e1.tpe: @unchecked) match {
           case Type.Enum(_, _) | Type.Apply(Type.Enum(_, _), _) =>
-            compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint)(e1)
-            compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint)(e2)
+            compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint, options)(e1)
+            compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint, options)(e2)
             val clazz = Constants.objectClass
             val method = clazz.getMethod("equals", clazz)
             visitor.visitMethodInsn(INVOKEVIRTUAL, asm.Type.getInternalName(clazz), method.getName, asm.Type.getMethodDescriptor(method), false)
           case Type.Apply(Type.Tuple(_), _) =>
-            compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint)(e1)
-            compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint)(e2)
+            compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint, options)(e1)
+            compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint, options)(e2)
             val clazz = Constants.objectClass
             val method = clazz.getMethod("equals", clazz)
             visitor.visitMethodInsn(INVOKEVIRTUAL, asm.Type.getInternalName(clazz), method.getName, asm.Type.getMethodDescriptor(method), false)
@@ -1259,8 +1329,8 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
           visitor.visitLabel(condEnd)
         }
       case _ =>
-        compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint)(e1)
-        compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint)(e2)
+        compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint, options)(e1)
+        compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint, options)(e2)
         val condElse = new Label()
         val condEnd = new Label()
         val (intOp, floatOp, doubleOp, cmp) = o match {
@@ -1329,16 +1399,17 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
                                  functions: List[ExecutableAst.Def],
                                  declarations: Map[Symbol.DefnSym, Type],
                                  interfaces: Map[Type, FlixClassName],
-                                 enums: Map[(Type, String), (QualName, ExecutableAst.Case)],
+                                 enums: Map[(Type, String), (ExecutableAst.Case, Type)],
                                  visitor: MethodVisitor,
                                  jumpLabels: Map[Symbol.LabelSym, Label],
-                                 entryPoint: Label)(o: LogicalOperator, e1: Expression, e2: Expression): Unit = o match {
+                                 entryPoint: Label,
+                                 options: Options)(o: LogicalOperator, e1: Expression, e2: Expression): Unit = o match {
     case BinaryOperator.LogicalAnd =>
       val andFalseBranch = new Label()
       val andEnd = new Label()
-      compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint)(e1)
+      compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint, options)(e1)
       visitor.visitJumpInsn(IFEQ, andFalseBranch)
-      compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint)(e2)
+      compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint, options)(e2)
       visitor.visitJumpInsn(IFEQ, andFalseBranch)
       visitor.visitInsn(ICONST_1)
       visitor.visitJumpInsn(GOTO, andEnd)
@@ -1349,9 +1420,9 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
       val orTrueBranch = new Label()
       val orFalseBranch = new Label()
       val orEnd = new Label()
-      compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint)(e1)
+      compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint, options)(e1)
       visitor.visitJumpInsn(IFNE, orTrueBranch)
-      compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint)(e2)
+      compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint, options)(e2)
       visitor.visitJumpInsn(IFEQ, orFalseBranch)
       visitor.visitLabel(orTrueBranch)
       visitor.visitInsn(ICONST_1)
@@ -1408,12 +1479,13 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
                                  functions: List[ExecutableAst.Def],
                                  declarations: Map[Symbol.DefnSym, Type],
                                  interfaces: Map[Type, FlixClassName],
-                                 enums: Map[(Type, String), (QualName, ExecutableAst.Case)],
+                                 enums: Map[(Type, String), (ExecutableAst.Case, Type)],
                                  visitor: MethodVisitor,
                                  jumpLabels: Map[Symbol.LabelSym, Label],
-                                 entryPoint: Label)(o: BitwiseOperator, e1: Expression, e2: Expression): Unit = {
-    compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint)(e1)
-    compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint)(e2)
+                                 entryPoint: Label,
+                                 options: Options)(o: BitwiseOperator, e1: Expression, e2: Expression): Unit = {
+    compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint, options)(e1)
+    compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint, options)(e2)
     val (intOp, longOp, bigintOp) = o match {
       case BinaryOperator.BitwiseAnd => (IAND, LAND, "and")
       case BinaryOperator.BitwiseOr => (IOR, LOR, "or")
@@ -1467,7 +1539,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     case Type.Native => visitor.visitTypeInsn(CHECKCAST, asm.Type.getInternalName(Constants.objectClass))
     case Type.Apply(Type.Arrow(l), _) => visitor.visitTypeInsn(CHECKCAST, decorate(interfaces(tpe)))
     case Type.Apply(Type.Tuple(l), lst) =>
-      val clazzName = TupleClassName(lst.map(typeToWrappedType))
+      val clazzName = TupleInterfaceName(lst.map(typeToWrappedType))
       visitor.visitTypeInsn(CHECKCAST, decorate(clazzName))
     case _ if tpe.isEnum =>
       val sym = tpe match {
@@ -1476,8 +1548,15 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
         case _ => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
       }
 
-      val fullName = EnumInterfName(sym)
+      val fullName = EnumTypeInterfaceName(sym)
       visitor.visitTypeInsn(CHECKCAST, decorate(fullName))
     case _ => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
+  }
+
+  /*
+   * Returns true if Fusion is available
+   */
+  private def withFusion(options: Options) : Boolean = {
+    options.optimizations.contains(Optimization.TagTupleFusion)
   }
 }
