@@ -31,6 +31,11 @@ sealed trait JvmType {
 object JvmType {
 
   /**
+    * Alias for the `java.lang.Object` type.
+    */
+  val Obj: JvmType = Reference(JvmName(List("java", "lang"), "Object"))
+
+  /**
     * Represents the primitive boolean type.
     */
   case object PrimBool extends JvmType

@@ -56,7 +56,27 @@ object JvmOps {
     * Int -> Bool           =>      Fn1$Int$Bool
     * (Int, Int) -> Bool    =>      Fn2$Int$Int$Bool
     */
-  def getJvmType(tpe: Type, root: Root): JvmType = ??? // TODO
+  def getJvmType(tpe: Type, root: Root): JvmType = {
+    def simpleType(t: Type): String = t match {
+      case Type.Bool => "Bool"
+      case _ => "Obj"
+    }
+
+    val base = getTypeConstructor(tpe)
+    val args = getTypeArguments(tpe)
+
+    base match {
+      case Type.Arrow(arity) =>
+        // Compute a name of the form:
+        // Fn1$Int$Bool
+        // Fn2$Int$Int$Bool
+        // Fn3$Char$Int$Int$Bool
+        val name = "Fn" + arity + "$" + args.map(simpleType).mkString("$")
+        JvmType.Reference(JvmName(Nil, name))
+      case Type.Enum(sym, _) => ???
+      case _ => ???
+    }
+  }
 
   /**
     * Returns the type constructor of a given type `tpe`.
