@@ -16,6 +16,8 @@
 
 package ca.uwaterloo.flix.language.phase.jvm
 
+import java.nio.file.Path
+
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Root
 import ca.uwaterloo.flix.language.ast.{Symbol, Type}
 
@@ -27,7 +29,11 @@ object JvmOps {
     * This include type components. For example, if the program contains
     * the type (Bool, (Char, Int)) this includes the type (Char, Int).
     */
-  def typesOf(root: Root): Set[Type] = Set.empty // TODO
+  def typesOf(root: Root): Set[Type] = {
+    // TODO: Temporary implementation which just returns some types to get us started.
+
+    root.defs.map(_._2.tpe).toSet
+  }
 
   /**
     * Returns all the type components of the given type `tpe`.
@@ -35,7 +41,7 @@ object JvmOps {
     * For example, if the given type is `Option[(Bool, Char, Int)]`
     * this returns the set `Bool`, `Char`, `Int`, `(Bool, Char, Int)`, and `Option[(Bool, Char, Int)]`.
     */
-  def typesOf(tpe: Type): Set[Type] = ???
+  def typesOf(tpe: Type): Set[Type] = ??? // TODO
 
   /**
     * Returns the given Flix type `tpe` as JVM type.
@@ -49,7 +55,7 @@ object JvmOps {
     * Int -> Bool           =>      Fn1$Int$Bool
     * (Int, Int) -> Bool    =>      Fn2$Int$Int$Bool
     */
-  def getJvmType(tpe: Type, root: Root): JvmType = ???
+  def getJvmType(tpe: Type, root: Root): JvmType = ??? // TODO
 
   /**
     * Returns the type constructor of a given type `tpe`.
@@ -64,14 +70,24 @@ object JvmOps {
     * Arrow[Bool, Char][Int]    =>      Arrow
     * Option[Result[Bool, Int]] =>      Option
     */
-  def getTypeConstructor(tpe: Type): Type = ???
+  // TODO: Verify implementation.
+  def getTypeConstructor(tpe: Type): Type = tpe match {
+    case Type.Apply(base, _) => getTypeConstructor(base)
+    case _ => tpe
+  }
 
   /**
     * Returns the type arguments of a given type `tpe`.
     */
-  def getTypeArguments(tpe: Type): List[Type] = tpe match {
-    case Type.Apply(Type.Enum(sym, kind), arguments) => arguments
-    case _ => ??? // TODO: Rest
+  def getTypeArguments(tpe: Type): List[Type] = {
+    // TODO: Temporary placeholder.
+    return Nil
+
+    // TODO: Verify implementation.
+    tpe match {
+      case Type.Apply(Type.Enum(sym, kind), arguments) => arguments
+      case _ => ??? // TODO: Rest
+    }
   }
 
   /**
@@ -90,5 +106,17 @@ object JvmOps {
     * Returns the JVM type of the given tag info `i`.
     */
   def getJvmType(i: TagInfo, root: Root): JvmType = ???
+
+  /**
+    * Writes the given JVM class `clazz` to its proper location under the given `path`.
+    *
+    * For example, if the prefix is `/tmp/` and the class name is Foo.Bar.Baz
+    * then the bytecode is written to the path `/tmp/Foo/Bar/Baz.class` provided
+    * that this path does not exist or if it does that it is a JVM class file.
+    */
+  def emitClass(path: Path, clazz: JvmClass): Unit = {
+    // TODO:
+  }
+
 
 }

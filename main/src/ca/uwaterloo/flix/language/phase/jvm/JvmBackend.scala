@@ -16,6 +16,8 @@
 
 package ca.uwaterloo.flix.language.phase.jvm
 
+import java.nio.file.{Path, Paths}
+
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.ExecutableAst._
@@ -24,6 +26,11 @@ import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
 
 object JvmBackend extends Phase[Root, Root] {
+
+  /**
+    * The directory where to place the generated class files.
+    */
+  val TargetDirectory: Path = Paths.get("./target/flix/")
 
   /**
     * Emits JVM bytecode for the given AST `root`.
@@ -63,7 +70,7 @@ object JvmBackend extends Phase[Root, Root] {
     // Emit each class (and interface) to disk.
     //
     for ((name, clazz) <- allClasses) {
-      println(s"Writing to file ${name.toPath}")
+      JvmOps.emitClass(TargetDirectory, clazz)
     }
 
     root.toSuccess
