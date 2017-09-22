@@ -128,7 +128,7 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.Def(sym, tpe, loc) => Set(sym)
       case Expression.Lambda(args, body, tpe, loc) => visitExp(body)
       case Expression.Hook(hook, tpe, loc) => Set(hook.sym)
-      case Expression.Closure(ref, freeVars, tpe, loc) => visitExp(ref)
+      case Expression.Closure(sym, freeVars, tpe, loc) => Set(sym)
       case Expression.ApplyClo(exp, args, tpe, loc) => visitExps(args) ++ visitExp(exp)
       case Expression.ApplyDef(sym, args, tpe, loc) => visitExps(args) + sym
       case Expression.ApplyCloTail(exp, args, tpe, loc) => visitExps(args) ++ visitExp(exp)

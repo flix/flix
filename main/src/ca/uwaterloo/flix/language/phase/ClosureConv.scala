@@ -44,14 +44,10 @@ object ClosureConv {
 
     case Expression.Var(sym, tpe, loc) => exp0
 
-    case e: Expression.Def =>
-      // If we encounter a Def that has a lambda type (and is not being called in an Apply),
-      // i.e. the Def will evaluate to a lambda, we replace it with a Closure. Otherwise we leave it alone.
-      e.tpe match {
-          // TODO: This seems very fishy.
-        case t@Type.Apply(Type.Arrow(_), _) => Expression.Closure(e, List.empty, t, e.loc)
-        case _ => ??? // TODO: Does this ever happen? Is the Def node not eliminated by this phase?
-      }
+    case Expression.Def(sym, tpe, loc) =>
+      // The Def expression did not occur in an Apply expression.
+      // We must create a closure, without free variables, of the definition symbol.
+      Expression.Closure(sym, List.empty, tpe, loc)
 
     case Expression.Lambda(args, body, tpe, loc) =>
       // Retrieve the type of the function.
@@ -67,7 +63,7 @@ object ClosureConv {
 
       // We prepend the free variables to the arguments list. Thus all variables within the lambda body will be treated
       // uniformly. The implementation will supply values for the free variables, without any effort from the caller.
-      // We introduce new symbols for each introduced parameter and replace their occurence in the body.
+      // We introduce new symbols for each introduced parameter and replace their occurrence in the body.
       val subst = mutable.Map.empty[Symbol.VarSym, Symbol.VarSym]
       val newArgs = freeVars.map {
         case (oldSym, ptype) =>

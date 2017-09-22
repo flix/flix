@@ -91,9 +91,9 @@ object PrettyPrinter {
           }
           vt.text("])")
 
-        case Expression.Closure(ref, freeVars, tpe, loc) =>
+        case Expression.Closure(sym, freeVars, tpe, loc) =>
           vt.text("Closure(")
-          visitExp(ref)
+          fmtSym(sym, vt)
           vt.text(", [")
           for (freeVar <- freeVars) {
             fmtSym(freeVar.sym, vt)

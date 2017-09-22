@@ -79,12 +79,11 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       //
       // Closure Expressions.
       //
-      case Expression.Closure(exp, freeVars, tpe, loc) =>
-        val e = visitExp(exp, env0)
+      case Expression.Closure(sym, freeVars, tpe, loc) =>
         val fvs = freeVars map {
-          case FreeVar(sym, varType) => FreeVar(env0.getOrElse(sym, sym), adjustType(varType))
+          case FreeVar(s, varType) => FreeVar(env0.getOrElse(s, s), adjustType(varType))
         }
-        Expression.Closure(e.asInstanceOf[Expression.Def], fvs, adjustType(tpe), loc)
+        Expression.Closure(sym, fvs, adjustType(tpe), loc)
 
       //
       // ApplyClo Expressions.

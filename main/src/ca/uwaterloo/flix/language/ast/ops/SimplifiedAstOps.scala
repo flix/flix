@@ -89,8 +89,7 @@ object SimplifiedAstOps {
       //
       // Closure Expressions.
       //
-      case Expression.Closure(exp, freeVars, tpe, loc) =>
-        checkExp(exp, env0, ienv0)
+      case Expression.Closure(sym, freeVars, tpe, loc) =>
         checkType(tpe)
 
       //

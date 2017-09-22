@@ -176,7 +176,6 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
       case SimplifiedAst.Expression.Str(lit) => ExecutableAst.Expression.Str(lit)
       case SimplifiedAst.Expression.Var(sym, tpe, loc) =>
         ExecutableAst.Expression.Var(sym, tpe, loc)
-      case SimplifiedAst.Expression.Def(name, tpe, loc) => ???
       case SimplifiedAst.Expression.Lambda(args, body, tpe, loc) =>
         throw InternalCompilerException("Lambdas should have been converted to closures and lifted.")
       case SimplifiedAst.Expression.Hook(hook, tpe, loc) =>
@@ -185,10 +184,9 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
         throw InternalCompilerException("MkClosure should have been replaced by MkClosureRef after lambda lifting.")
       case SimplifiedAst.Expression.Apply(exp, args, tpe, loc) =>
         throw InternalCompilerException("Apply should have been replaced by ClosureConv.") // TODO: Doc
-      case SimplifiedAst.Expression.Closure(exp, freeVars, tpe, loc) =>
+      case SimplifiedAst.Expression.Closure(sym, freeVars, tpe, loc) =>
         val fvs = freeVars.map(CreateExecutableAst.toExecutable)
-        val d = exp.asInstanceOf[SimplifiedAst.Expression.Def]
-        ExecutableAst.Expression.Closure(d.sym, fvs, d.tpe, tpe, loc)
+        ExecutableAst.Expression.Closure(sym, fvs, tpe, tpe, loc)
       case SimplifiedAst.Expression.ApplyClo(exp, args, tpe, loc) =>
         val argsArray = args.map(toExecutable)
         ExecutableAst.Expression.ApplyClo(toExecutable(exp), argsArray, tpe, loc)
@@ -261,6 +259,8 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
       case SimplifiedAst.Expression.UserError(tpe, loc) => ExecutableAst.Expression.UserError(tpe, loc)
       case SimplifiedAst.Expression.MatchError(tpe, loc) => ExecutableAst.Expression.MatchError(tpe, loc)
       case SimplifiedAst.Expression.SwitchError(tpe, loc) => ExecutableAst.Expression.SwitchError(tpe, loc)
+      case SimplifiedAst.Expression.Def(name, tpe, loc) =>
+        throw InternalCompilerException(s"Unexpected expression: '$sast'.")
     }
   }
 
