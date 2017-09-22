@@ -228,7 +228,7 @@ object WeededAst {
 
     case class Arrow(tparams: List[WeededAst.Type], retType: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
 
-    case class Apply(base: WeededAst.Type, targ: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
+    case class Apply(t1: WeededAst.Type, t2: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
 
   }
 
