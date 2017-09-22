@@ -182,7 +182,7 @@ object QuickChecker extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     /*
      * Initialize a shared random instance.
      */
-    implicit val random = new Random()
+    implicit val random: Random = new Random()
 
     /*
      * Quick check each property.
@@ -312,7 +312,8 @@ object QuickChecker extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
       case Type.BigInt => ArbBigInt.gen
       case Type.Str => ArbStr.gen
 
-      case Type.Enum(sym, kind) =>
+      case _ if tpe.isEnum =>
+        val Type.Enum(sym, _) = tpe.getTypeConstructor
         val decl = root.enums(sym)
         val elms = decl.cases.map {
           case (tag, caze) =>
@@ -323,13 +324,10 @@ object QuickChecker extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
         }
         oneOf(elms.toArray: _*)
 
-      case Type.Apply(Type.Tuple(l), elms) => new Generator[SymVal] {
-        def mk(r: Random): SymVal = {
-          // TODO: FIXME
-          //val vals = elms.map(t => new ArbSymVal(t, root).gen.mk(r))
-          //SymVal.Tuple(vals)
-          ???
-        }
+      case _ if tpe.isTuple => (r: Random) => {
+        val args = tpe.getTypeArguments
+        val vals = args.map(t => new ArbSymVal(t, root).gen.mk(r))
+        SymVal.Tuple(vals)
       }
 
       case _ => throw InternalCompilerException(s"Unable to generate values of type `$tpe'.")
@@ -629,8 +627,6 @@ object QuickChecker extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
   /**
     * A generator combinator that randomly selects one of the given generators `gs`.
     */
-  private def oneOf[A](gs: Generator[A]*): Generator[A] = new Generator[A] {
-    def mk(r: Random): A = gs(r.nextInt(gs.length)).mk(r)
-  }
+  private def oneOf[A](gs: Generator[A]*): Generator[A] = (r: Random) => gs(r.nextInt(gs.length)).mk(r)
 
 }

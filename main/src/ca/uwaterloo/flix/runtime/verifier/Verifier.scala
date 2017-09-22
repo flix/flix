@@ -499,15 +499,16 @@ object Verifier extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
       case Type.Int64 => List(SymVal.AtomicVar(Symbol.freshVarSym(sym), Type.Int64))
       case Type.BigInt => List(SymVal.AtomicVar(Symbol.freshVarSym(sym), Type.BigInt))
       case Type.Str => List(SymVal.AtomicVar(Symbol.freshVarSym(sym), Type.Str))
-      case Type.Enum(enumSym, kind) =>
-        val decl = root.enums(enumSym)
+      case _ if tpe.isEnum =>
+        val Type.Enum(sym, _) = tpe.getTypeConstructor
+        val decl = root.enums(sym)
         decl.cases.flatMap {
           // TODO: Assumes non-polymorphic type.
           case (tag, caze) => visit(caze.tpe) map {
             case e => SymVal.Tag(tag, e)
           }
         }.toList
-      case Type.Apply(Type.Tuple(_), elms) =>
+      case _ if tpe.isTuple =>
         def visitn(xs: List[Type]): List[List[SymVal]] = xs match {
           case Nil => List(Nil)
           case t :: ts => visitn(ts) flatMap {
@@ -517,9 +518,8 @@ object Verifier extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
           }
         }
 
-        // TODO: FIXME
-        //visitn(elms).map(es => SymVal.Tuple(es))
-        ???
+        val args = tpe.getTypeArguments
+        visitn(args).map(es => SymVal.Tuple(es))
       case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
     }
 
