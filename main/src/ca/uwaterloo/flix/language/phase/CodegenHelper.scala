@@ -567,13 +567,9 @@ object CodegenHelper {
         val clazzName = TupleClassName(targs.map(typeToWrappedType))
         s"L${decorate(clazzName)};"
       case _ if tpe.isEnum =>
-        val sym = tpe match {
-          case Type.Apply(Type.Enum(s, _), _) => s
-          case Type.Enum(s, _) => s
-          case _ => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
-        }
+        val Type.Enum(sym, _) = tpe.getTypeConstructor
         s"L${decorate(EnumInterfName(sym))};"
-      case Type.Apply(Type.Ref, t2) => asm.Type.getDescriptor(getReferenceClazz(tpe))
+      case _ if tpe.isRef => asm.Type.getDescriptor(getReferenceClazz(tpe))
       case _ => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
     }
 
@@ -600,11 +596,7 @@ object CodegenHelper {
       val clazzName = TupleClassName(targs.map(typeToWrappedType))
       decorate(clazzName)
     case _ if tpe.isEnum =>
-      val sym = tpe match {
-        case Type.Apply(Type.Enum(s, _), _) => s
-        case Type.Enum(s, _) => s
-        case _ => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
-      }
+      val Type.Enum(sym, _) = tpe.getTypeConstructor
       decorate(EnumInterfName(sym))
     case _ if tpe.isRef => asm.Type.getInternalName(getReferenceClazz(tpe))
     case _ => throw InternalCompilerException(s"Unexpected type: `$tpe'.")

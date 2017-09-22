@@ -66,7 +66,7 @@ sealed trait Type {
     * Option[Result[Bool, Int]]     =>      Option
     */
   def getTypeConstructor: Type = this match {
-    case Type.Apply(base, _) => base.getTypeConstructor
+    case Type.Apply(t1, _) => t1.getTypeConstructor
     case _ => this
   }
 
@@ -84,7 +84,7 @@ sealed trait Type {
     * Option[Result[Bool, Int]]     =>      Result[Bool, Int] :: Nil
     */
   def getTypeArguments: List[Type] = this match {
-    case Type.Apply(base, arg) => base.getTypeArguments ::: arg :: Nil
+    case Type.Apply(t1, t2) => t1.getTypeArguments ::: t2 :: Nil
     case _ => Nil
   }
 
@@ -366,7 +366,9 @@ object Type {
   /**
     * Constructs the set type of A.
     */
-  def mkFSet(a: Type): Type = Type.Apply(Type.Enum(Symbol.mkEnumSym("Set"), Kind.Arrow(List(Kind.Star), Kind.Star)), a)
+  def mkFSet(a: Type): Type = {
+    Type.Apply(Type.Enum(Symbol.mkEnumSym("Set"), Kind.Arrow(List(Kind.Star), Kind.Star)), a)
+  }
 
   /**
     * Replaces every free occurrence of a type variable in `typeVars`

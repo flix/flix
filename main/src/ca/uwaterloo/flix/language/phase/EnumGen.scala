@@ -142,9 +142,9 @@ object EnumGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     val allEnums: List[(Type, (String, Type))] = root.defs.values.flatMap(x => findEnumCases(x.exp)).toList
 
     val enumsGroupedBySymbol: Map[EnumSym, List[(Type, (String, Type))]] = allEnums.groupBy{ case (tpe, _) => tpe match {
-      case Type.Apply(Type.Enum(s, _), _) => s
-      case Type.Enum(s, _) => s
-      case _ => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
+      case t =>
+        val Type.Enum(sym, _) = t.getTypeConstructor
+        sym
     }}
 
     // 2. Generate byteCodes of Enum Interface.

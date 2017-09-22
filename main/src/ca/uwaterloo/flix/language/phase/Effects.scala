@@ -69,12 +69,7 @@ object Effects extends Phase[Root, Root] {
      * Infer the effects of the formal parameters.
      */
     val env0 = defn0.fparams.foldLeft(Map.empty[Symbol.VarSym, Eff]) {
-      case (macc, TypedAst.FormalParam(sym, _, tpe, _)) => tpe match {
-        case Type.Apply(Type.Arrow(_), _) =>
-          // TODO: [Effects] Assumes that every function argument is pure.
-          macc + (sym -> Eff.Arrow(Eff.Pure, EffectSet.Bot, Eff.Pure, EffectSet.Bot))
-        case _ => macc
-      }
+      case (macc, TypedAst.FormalParam(sym, _, tpe, _)) => macc // TODO
     }
 
     /*

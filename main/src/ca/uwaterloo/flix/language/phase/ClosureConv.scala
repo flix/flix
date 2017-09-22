@@ -45,11 +45,12 @@ object ClosureConv {
     case Expression.Var(sym, tpe, loc) => exp0
 
     case e: Expression.Def =>
-      // If we encounter a Ref that has a lambda type (and is not being called in an Apply),
-      // i.e. the Ref will evaluate to a lambda, we replace it with a MkClosureRef. Otherwise we leave it alone.
+      // If we encounter a Def that has a lambda type (and is not being called in an Apply),
+      // i.e. the Def will evaluate to a lambda, we replace it with a Closure. Otherwise we leave it alone.
       e.tpe match {
+          // TODO: This seems very fishy.
         case t@Type.Apply(Type.Arrow(_), _) => Expression.Closure(e, List.empty, t, e.loc)
-        case _ => e // TODO: Does this ever happen? Is the Def node not eliminated by this phase?
+        case _ => ??? // TODO: Does this ever happen? Is the Def node not eliminated by this phase?
       }
 
     case Expression.Lambda(args, body, tpe, loc) =>

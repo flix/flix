@@ -686,10 +686,9 @@ object Synthesize extends Phase[Root, Root] {
     /**
       * Returns the enum symbol of the given enum type `tpe`.
       */
-    def getEnumSym(tpe: Type): Symbol.EnumSym = tpe match {
-      case Type.Enum(sym, kind) => sym
-      case Type.Apply(inner, _) => getEnumSym(inner)
-      case _ => throw InternalCompilerException(s"The given type '$tpe' is not an enum type.")
+    def getEnumSym(tpe: Type): Symbol.EnumSym = {
+      val Type.Enum(sym, _) = tpe.getTypeConstructor
+      sym
     }
 
     /**

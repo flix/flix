@@ -994,10 +994,10 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         // Construct the type: base[tpe1][tpe2]
         WeededAst.Type.Apply(WeededAst.Type.Apply(weed(base0), weed(tpe1), loc), weed(tpe2), loc)
 
-      case ParsedAst.Type.Apply(sp1, base, args, sp2) =>
+      case ParsedAst.Type.Apply(sp1, t1, args, sp2) =>
         // Curry the type arguments.
-        args.foldLeft(weed(base)) {
-          case (acc, t) => WeededAst.Type.Apply(acc, weed(t), mkSL(sp1, sp2))
+        args.foldLeft(weed(t1)) {
+          case (acc, t2) => WeededAst.Type.Apply(acc, weed(t2), mkSL(sp1, sp2))
         }
     }
 

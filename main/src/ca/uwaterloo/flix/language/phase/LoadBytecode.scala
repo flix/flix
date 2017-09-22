@@ -81,6 +81,7 @@ object LoadBytecode extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     // 1. Group constants and transform non-functions.
     val constantsMap: Map[QualName, List[ExecutableAst.Def]] = root.defs.values.map { f =>
       f.tpe match {
+          // TODO: No idea what this does.
         case Type.Apply(Type.Arrow(l), _) => f
         case t => f.copy(tpe = Type.mkArrow(List(), t))
       }
