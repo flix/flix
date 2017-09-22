@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expression._
 import ca.uwaterloo.flix.language.{CompilationError, GenSym}
-import ca.uwaterloo.flix.language.ast.{Type, _}
+import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 import ca.uwaterloo.flix.util.Validation._
 
@@ -99,7 +99,7 @@ object Uncurrier extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
             formals1,
             body1,
             curriedDef.isSynthetic,
-            uncurryType(curriedDef.tpe),
+            curriedDef.tpe,
             curriedDef.loc)
 
           // Create the other levels of uncurrying
@@ -291,7 +291,7 @@ object Uncurrier extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
           uncurryN(exp2, n - 1) match {
             // Transform add(3)(4) -> add$uncurried(3,4)
             case Apply(Def(sym4, tpe4, loc4), args3, _, _) =>
-              Apply(Def(sym4, uncurryType(tpe4), loc4), args3 ::: args2, tpe2, loc2)
+              Apply(Def(sym4, tpe4, loc4), args3 ::: args2, tpe2, loc2)
             // Transform ((x,y) -> x+y)(3)(4) -> ((x,y) -> x+y)(3,4)
             case Apply(Lambda(args, body, tpe, loc), args3, _, _) =>
               Apply(Lambda(args, body, tpe, loc), args3 ::: args2, tpe2, loc2)
@@ -363,9 +363,4 @@ object Uncurrier extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     }
   }
 
-  /**
-    * Uncurry the type of a function. Given a type like a x b -> (c -> d), turn it
-    * into a x b x c -> d
-    */
-  def uncurryType(tpe: Type): Type = tpe // TODO: Remove
 }

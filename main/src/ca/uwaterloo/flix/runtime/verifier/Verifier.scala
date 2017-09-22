@@ -487,40 +487,46 @@ object Verifier extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     /*
      * Local visitor. Enumerates the symbolic values of a type.
      */
-    def visit(tpe: Type): List[SymVal] = tpe match {
-      case Type.Unit => List(SymVal.Unit)
-      case Type.Bool => List(SymVal.True, SymVal.False)
-      case Type.Char => List(SymVal.AtomicVar(Symbol.freshVarSym(sym), Type.Char))
-      case Type.Float32 => List(SymVal.AtomicVar(Symbol.freshVarSym(sym), Type.Float32))
-      case Type.Float64 => List(SymVal.AtomicVar(Symbol.freshVarSym(sym), Type.Float64))
-      case Type.Int8 => List(SymVal.AtomicVar(Symbol.freshVarSym(sym), Type.Int8))
-      case Type.Int16 => List(SymVal.AtomicVar(Symbol.freshVarSym(sym), Type.Int16))
-      case Type.Int32 => List(SymVal.AtomicVar(Symbol.freshVarSym(sym), Type.Int32))
-      case Type.Int64 => List(SymVal.AtomicVar(Symbol.freshVarSym(sym), Type.Int64))
-      case Type.BigInt => List(SymVal.AtomicVar(Symbol.freshVarSym(sym), Type.BigInt))
-      case Type.Str => List(SymVal.AtomicVar(Symbol.freshVarSym(sym), Type.Str))
-      case _ if tpe.isEnum =>
-        val Type.Enum(sym, _) = tpe.getTypeConstructor
-        val decl = root.enums(sym)
-        decl.cases.flatMap {
-          // TODO: Assumes non-polymorphic type.
-          case (tag, caze) => visit(caze.tpe) map {
-            case e => SymVal.Tag(tag, e)
-          }
-        }.toList
-      case _ if tpe.isTuple =>
-        def visitn(xs: List[Type]): List[List[SymVal]] = xs match {
-          case Nil => List(Nil)
-          case t :: ts => visitn(ts) flatMap {
-            case ls => visit(t) map {
-              case l => l :: ls
+    def visit(tpe: Type): List[SymVal] = {
+      val base = tpe.getTypeConstructor
+      val args = tpe.getTypeArguments
+
+      base match {
+        case Type.Unit => List(SymVal.Unit)
+        case Type.Bool => List(SymVal.True, SymVal.False)
+        case Type.Char => List(SymVal.AtomicVar(Symbol.freshVarSym(sym), Type.Char))
+        case Type.Float32 => List(SymVal.AtomicVar(Symbol.freshVarSym(sym), Type.Float32))
+        case Type.Float64 => List(SymVal.AtomicVar(Symbol.freshVarSym(sym), Type.Float64))
+        case Type.Int8 => List(SymVal.AtomicVar(Symbol.freshVarSym(sym), Type.Int8))
+        case Type.Int16 => List(SymVal.AtomicVar(Symbol.freshVarSym(sym), Type.Int16))
+        case Type.Int32 => List(SymVal.AtomicVar(Symbol.freshVarSym(sym), Type.Int32))
+        case Type.Int64 => List(SymVal.AtomicVar(Symbol.freshVarSym(sym), Type.Int64))
+        case Type.BigInt => List(SymVal.AtomicVar(Symbol.freshVarSym(sym), Type.BigInt))
+        case Type.Str => List(SymVal.AtomicVar(Symbol.freshVarSym(sym), Type.Str))
+
+        case Type.Enum(enumSym, _) =>
+          val decl = root.enums(enumSym)
+          decl.cases.flatMap {
+            // TODO: Assumes non-polymorphic type.
+            case (tag, caze) => visit(caze.tpe) map {
+              case e => SymVal.Tag(tag, e)
+            }
+          }.toList
+
+        case Type.Tuple(l) =>
+          def visitn(xs: List[Type]): List[List[SymVal]] = xs match {
+            case Nil => List(Nil)
+            case t :: ts => visitn(ts) flatMap {
+              case ls => visit(t) map {
+                case l => l :: ls
+              }
             }
           }
-        }
 
-        val args = tpe.getTypeArguments
-        visitn(args).map(es => SymVal.Tuple(es))
-      case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+          visitn(args).map(es => SymVal.Tuple(es))
+
+        case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+      }
     }
 
     visit(tpe)
