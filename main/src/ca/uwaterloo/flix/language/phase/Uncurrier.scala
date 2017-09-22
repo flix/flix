@@ -367,22 +367,5 @@ object Uncurrier extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     * Uncurry the type of a function. Given a type like a x b -> (c -> d), turn it
     * into a x b x c -> d
     */
-  def uncurryType(tpe: Type): Type = tpe match {
-    case Type.Apply(Type.Arrow(len), ts) =>
-      // We're given an application which looks like
-      // List(From, From, From, To), where there are one are more From
-      // types, and the result is the To type.
-      //
-      // When we are uncurrying, the To type will also be an apply, we then
-      // transform List(From1, From2, List(From3, From4, To)) to
-      // List(From1, From2, From3, From4, To)
-      //
-      val from = ts.take(ts.size - 1)
-      val to = ts.last
-      ts.last match {
-        case Type.Apply(_, ts2) => Type.Apply(Type.Arrow(len + 1), from ::: ts2)
-        case _ => throw InternalCompilerException(s"Cannot uncurry type $tpe")
-      }
-    case _ => throw InternalCompilerException(s"Cannot uncurry type $tpe")
-  }
+  def uncurryType(tpe: Type): Type = tpe // TODO: Remove
 }

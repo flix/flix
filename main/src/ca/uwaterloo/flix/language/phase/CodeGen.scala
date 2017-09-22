@@ -248,10 +248,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
 
     compileExpression(prefix, functions, declarations, interfaces, enums, mv, Map(), entryPoint)(function.exp)
 
-    val tpe = function.tpe match {
-      case Type.Apply(Type.Arrow(l), ts) => ts.last
-      case _ => throw InternalCompilerException(s"Constant ${function.sym} should have been converted to a function.")
-    }
+    val tpe = function.tpe.getTypeArguments.last
 
     tpe match {
       case Type.Var(id, kind) => throw InternalCompilerException(s"Non-monomorphed type variable '$id in type '$tpe'.")
@@ -653,10 +650,8 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
       // Descriptor of the field of the element in the tuple specified by the `offset`
       val desc = getWrappedTypeDescriptor(typeToWrappedType(tpe))
       // Qualified name of the class defining the tuple
-      val clazzName = base.tpe match {
-        case Type.Apply(Type.Tuple(_), lst) => TupleClassName(lst.map(typeToWrappedType))
-        case _ => throw InternalCompilerException(s"Unexpected type: `${base.tpe}`")
-      }
+      val targs = tpe.getTypeArguments
+      val clazzName = TupleClassName(targs.map(typeToWrappedType))
       // evaluating the `base`
       compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint)(base)
       // Invoking `getField${offset}()` method for fetching the field
@@ -953,9 +948,9 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
 
     case Type.Native => // Don't need to cast AnyRef to anything
 
-    case Type.Apply(Type.Tuple(l), lst) =>
-      val clazzName = TupleClassName(lst.map(typeToWrappedType))
-
+    case _ if tpe.isTuple =>
+      val targs = tpe.getTypeArguments
+      val clazzName = TupleClassName(targs.map(typeToWrappedType))
 
       visitor.visitTypeInsn(CHECKCAST, decorate(clazzName))
 
@@ -1465,9 +1460,10 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     case Type.BigInt => visitor.visitTypeInsn(CHECKCAST, asm.Type.getInternalName(Constants.bigIntegerClass))
     case Type.Str => visitor.visitTypeInsn(CHECKCAST, asm.Type.getInternalName(Constants.stringClass))
     case Type.Native => visitor.visitTypeInsn(CHECKCAST, asm.Type.getInternalName(Constants.objectClass))
-    case Type.Apply(Type.Arrow(l), _) => visitor.visitTypeInsn(CHECKCAST, decorate(interfaces(tpe)))
-    case Type.Apply(Type.Tuple(l), lst) =>
-      val clazzName = TupleClassName(lst.map(typeToWrappedType))
+    case _ if tpe.isArrow => visitor.visitTypeInsn(CHECKCAST, decorate(interfaces(tpe)))
+    case _ if tpe.isTuple =>
+      val targs = tpe.getTypeArguments
+      val clazzName = TupleClassName(targs.map(typeToWrappedType))
       visitor.visitTypeInsn(CHECKCAST, decorate(clazzName))
     case _ if tpe.isEnum =>
       val sym = tpe match {

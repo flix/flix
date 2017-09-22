@@ -517,7 +517,9 @@ object Verifier extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
           }
         }
 
-        visitn(elms).map(es => SymVal.Tuple(es))
+        // TODO: FIXME
+        //visitn(elms).map(es => SymVal.Tuple(es))
+        ???
       case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
     }
 

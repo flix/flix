@@ -143,8 +143,7 @@ object LoadBytecode extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     // 7. Load the methods.
     // TODO: Here we filter laws, since the backend does not support existentials/universals, but could we fix that?
     for ((prefix, consts) <- constantsMap; const <- consts; if !const.ann.isLaw) {
-      val Type.Apply(Type.Arrow(l), ts) = const.tpe
-      val targs = ts.take(l - 1)
+      val targs = const.tpe.getTypeArguments.init
 
       val clazz = loadedClasses(prefix)
       val argTpes = targs.map(t => toJavaClass(t, loadedInterfaces, loadedEnumInterfaces, loadedTuples))
@@ -179,13 +178,15 @@ object LoadBytecode extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     case Type.BigInt => classOf[java.math.BigInteger]
     case Type.Str => classOf[java.lang.String]
     case Type.Native => classOf[java.lang.Object]
-    case Type.Enum(s, _) => enums(s)
-    case Type.Apply(Type.Enum(s, _), _) => enums(s)
-    case Type.Apply(Type.Tuple(_), lst) =>
-      val clazzName = TupleClassName(lst.map(typeToWrappedType))
+    case _ if tpe.isArrow => interfaces(tpe)
+    case _ if tpe.isEnum =>
+      val Type.Enum(sym, _) = tpe.getTypeConstructor
+      enums(sym)
+    case _ if tpe.isTuple =>
+      val targs = tpe.getTypeArguments
+      val clazzName = TupleClassName(targs.map(typeToWrappedType))
       loadedTuples(clazzName)
-    case Type.Apply(Type.Arrow(l), _) => interfaces(tpe)
-    case Type.Apply(Type.Ref, List(ts)) => getReferenceClazz(tpe)
+    case _ if tpe.isRef => getReferenceClazz(tpe)
     case _ => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
   }
 }

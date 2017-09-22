@@ -62,8 +62,8 @@ object JvmOps {
       case _ => "Obj"
     }
 
-    val base = getTypeConstructor(tpe)
-    val args = getTypeArguments(tpe)
+    val base = tpe.getTypeConstructor
+    val args = tpe.getTypeArguments
 
     base match {
       case Type.Arrow(arity) =>
@@ -76,42 +76,6 @@ object JvmOps {
       case Type.Enum(sym, _) => ???
       case _ => ???
     }
-  }
-
-  /**
-    * Returns the type constructor of a given type `tpe`.
-    *
-    * For example,
-    *
-    * Celsius                       =>      Celsius
-    * Option[Int]                   =>      Option
-    * Arrow[Bool, Char]             =>      Arrow
-    * Tuple[Bool, Int]              =>      Tuple
-    * Result[Bool, Int]             =>      Result
-    * Result[Bool][Int]             =>      Result
-    * Option[Result[Bool, Int]]     =>      Option
-    */
-  def getTypeConstructor(tpe: Type): Type = tpe match {
-    case Type.Apply(base, _) => getTypeConstructor(base)
-    case _ => tpe
-  }
-
-  /**
-    * Returns the type arguments of a given type `tpe`.
-    *
-    * For example,
-    *
-    * Celsius                       =>      Nil
-    * Option[Int]                   =>      Int :: Nil
-    * Arrow[Bool, Char]             =>      Bool :: Char :: Nil
-    * Tuple[Bool, Int]              =>      Bool :: Int :: Nil
-    * Result[Bool, Int]             =>      Bool :: Int :: Nil
-    * Result[Bool][Int]             =>      Bool :: Int :: Nil
-    * Option[Result[Bool, Int]]     =>      Result[Bool, Int] :: Nil
-    */
-  def getTypeArguments(tpe: Type): List[Type] = tpe match {
-    case Type.Apply(base, arguments) => arguments ::: getTypeArguments(base)
-    case _ => Nil
   }
 
   /**

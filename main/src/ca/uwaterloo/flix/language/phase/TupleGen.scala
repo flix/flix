@@ -76,8 +76,7 @@ object TupleGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
 
     // 2. Group tuples based on representation of their fields.
     val groupedFields: List[List[List[Type]]] = allTuples.map {
-      case Type.Apply(_, ts) => ts
-      case y => throw InternalCompilerException(s"Unexpected type: `$y'.")
+      case t => t.getTypeArguments
     }.groupBy(_.map(typeSpecifier)).values.toList
 
     // 3. Gather unique tuple representations.
@@ -511,10 +510,14 @@ object TupleGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     * @param tpe type to be searched
     * @return tuple types nested in the type
     */
-  def findTuplesInTypes(tpe: Type): Set[Type] = tpe match {
-    case Type.Apply(t, ts) if tpe.isTuple => ts.foldLeft(Set(tpe))((acc, tp) => acc ++ findTuplesInTypes(tp))
-    case Type.Apply(t, ts) => ts.foldLeft(Set.empty[Type])((acc, tp) => acc ++ findTuplesInTypes(tp))
-    case _ => Set.empty
+  def findTuplesInTypes(tpe: Type): Set[Type] = {
+    val base = tpe.getTypeConstructor
+    val args = tpe.getTypeArguments
+    if (base.isTuple) {
+      Set(tpe) ++ args.flatMap(findTuplesInTypes)
+    } else {
+      args.flatMap(findTuplesInTypes).toSet
+    }
   }
 
   /**

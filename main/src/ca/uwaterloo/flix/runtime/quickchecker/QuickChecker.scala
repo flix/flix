@@ -325,8 +325,10 @@ object QuickChecker extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
 
       case Type.Apply(Type.Tuple(l), elms) => new Generator[SymVal] {
         def mk(r: Random): SymVal = {
-          val vals = elms.map(t => new ArbSymVal(t, root).gen.mk(r))
-          SymVal.Tuple(vals)
+          // TODO: FIXME
+          //val vals = elms.map(t => new ArbSymVal(t, root).gen.mk(r))
+          //SymVal.Tuple(vals)
+          ???
         }
       }
 

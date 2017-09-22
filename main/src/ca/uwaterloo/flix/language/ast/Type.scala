@@ -49,41 +49,74 @@ sealed trait Type {
     case Type.Arrow(l) => Set.empty
     case Type.Tuple(l) => Set.empty
     case Type.Enum(enumName, kind) => Set.empty
-    case Type.Apply(t, ts) => t.typeVars ++ ts.flatMap(_.typeVars)
+    case Type.Apply(t1, t2) => t1.typeVars ++ t2.typeVars
+  }
+
+  /**
+    * Returns the type constructor of `this` type.
+    *
+    * For example,
+    *
+    * Celsius                       =>      Celsius
+    * Option[Int]                   =>      Option
+    * Arrow[Bool, Char]             =>      Arrow
+    * Tuple[Bool, Int]              =>      Tuple
+    * Result[Bool, Int]             =>      Result
+    * Result[Bool][Int]             =>      Result
+    * Option[Result[Bool, Int]]     =>      Option
+    */
+  def getTypeConstructor: Type = this match {
+    case Type.Apply(base, _) => base.getTypeConstructor
+    case _ => this
+  }
+
+  /**
+    * Returns the type arguments of `this` type.
+    *
+    * For example,
+    *
+    * Celsius                       =>      Nil
+    * Option[Int]                   =>      Int :: Nil
+    * Arrow[Bool, Char]             =>      Bool :: Char :: Nil
+    * Tuple[Bool, Int]              =>      Bool :: Int :: Nil
+    * Result[Bool, Int]             =>      Bool :: Int :: Nil
+    * Result[Bool][Int]             =>      Bool :: Int :: Nil
+    * Option[Result[Bool, Int]]     =>      Result[Bool, Int] :: Nil
+    */
+  def getTypeArguments: List[Type] = this match {
+    case Type.Apply(base, arg) => base.getTypeArguments ::: arg :: Nil
+    case _ => Nil
   }
 
   /**
     * Returns `true` if `this` type is an arrow type.
     */
-  def isArrow: Boolean = this match {
-    case Type.Apply(Type.Arrow(l), ts) => true
+  def isArrow: Boolean = getTypeConstructor match {
+    case Type.Arrow(l) => true
     case _ => false
   }
 
   /**
     * Returns `true` if `this` type is an enum type.
     */
-  def isEnum: Boolean = this match {
+  def isEnum: Boolean = getTypeConstructor match {
     case Type.Enum(sym, kind) => true
-    case Type.Apply(t, ts) => t.isEnum
     case _ => false
   }
 
   /**
     * Returns `true` if `this` type is a tuple type.
     */
-  def isTuple: Boolean = this match {
+  def isTuple: Boolean = getTypeConstructor match {
     case Type.Tuple(l) => true
-    case Type.Apply(t, ts) => t.isTuple
     case _ => false
   }
 
   /**
     * Returns `true` if `this` type is a reference type.
     */
-  def isRef: Boolean = this match {
+  def isRef: Boolean = getTypeConstructor match {
     case Type.Ref => true
-    case Type.Apply(t, ts) => t.isRef
     case _ => false
   }
 
@@ -92,7 +125,7 @@ sealed trait Type {
     */
   def isDeterminate: Boolean = this match {
     case Type.Var(id, kind) => false
-    case Type.Apply(t, ts) => t.isDeterminate && ts.forall(_.isDeterminate)
+    case Type.Apply(t1, t2) => t1.isDeterminate && t2.isDeterminate
     case _ => true
   }
 
@@ -115,11 +148,9 @@ sealed trait Type {
     case Type.Native => "Native"
     case Type.Ref => "Ref"
     case Type.Arrow(l) => s"Arrow($l)"
-    case Type.Tuple(l) => s"Tuple($l)"
-    case Type.Apply(Type.Tuple(l), ts) => "(" + ts.mkString(", ") + ")"
-    case Type.Apply(Type.Arrow(l), ts) => ts.mkString(" -> ")
-    case Type.Apply(t, ts) => s"$t[${ts.mkString(", ")}]"
     case Type.Enum(enum, kind) => enum.toString
+    case Type.Tuple(l) => s"Tuple($l)"
+    case Type.Apply(t1, t2) => s"$t1[$t2]"
   }
 }
 
@@ -280,7 +311,7 @@ object Type {
   /**
     * A type expression that represents the application of `ts` to `t`.
     */
-  case class Apply(t: Type, ts: List[Type]) extends Type {
+  case class Apply(t: Type, t2: Type) extends Type {
     /**
       * Returns the kind of `this` type.
       *
@@ -304,12 +335,18 @@ object Type {
   /**
     * Constructs the function type A -> B where `A` is the given type `a` and `B` is the given type `b`.
     */
-  def mkArrow(a: Type, b: Type): Type = Apply(Arrow(2), List(a, b))
+  def mkArrow(a: Type, b: Type): Type = Apply(Apply(Arrow(2), a), b)
 
   /**
     * Constructs the function type [A] -> B where `A` is the given sequence of types `as` and `B` is the given type `b`.
     */
-  def mkArrow(as: List[Type], b: Type): Type = Apply(Arrow(as.length + 1), as ::: b :: Nil)
+  def mkArrow(as: List[Type], b: Type): Type = {
+    val arrow = Arrow(as.length + 1)
+    val inner = as.foldLeft(arrow: Type) {
+      case (acc, x) => Apply(acc, x)
+    }
+    Apply(inner, b)
+  }
 
   /**
     * Constructs the tuple type (A, B, ...) where the types are drawn from the list `ts`.
@@ -319,12 +356,17 @@ object Type {
   /**
     * Constructs the tuple type (A, B, ...) where the types are drawn from the list `ts`.
     */
-  def mkTuple(ts: List[Type]): Type = Apply(Tuple(ts.length), ts)
+  def mkTuple(ts: List[Type]): Type = {
+    val tuple = Tuple(ts.length)
+    ts.foldLeft(tuple: Type) {
+      case (acc, x) => Apply(acc, x)
+    }
+  }
 
   /**
     * Constructs the set type of A.
     */
-  def mkFSet(a: Type): Type = Type.Apply(Type.Enum(Symbol.mkEnumSym("Set"), Kind.Arrow(List(Kind.Star), Kind.Star)), List(a))
+  def mkFSet(a: Type): Type = Type.Apply(Type.Enum(Symbol.mkEnumSym("Set"), Kind.Arrow(List(Kind.Star), Kind.Star)), a)
 
   /**
     * Replaces every free occurrence of a type variable in `typeVars`
@@ -355,7 +397,7 @@ object Type {
       case Type.Ref => Type.Ref
       case Type.Arrow(l) => Type.Arrow(l)
       case Type.Tuple(l) => Type.Tuple(l)
-      case Type.Apply(t, ts) => Type.Apply(visit(t), ts map visit)
+      case Type.Apply(t1, t2) => Type.Apply(visit(t1), visit(t2))
       case Type.Enum(enum, kind) => Type.Enum(enum, kind)
     }
 

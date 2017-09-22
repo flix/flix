@@ -793,11 +793,11 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
         tparams <- seqM(tparams0.map(tpe => lookupType(tpe, ns0, prog0)));
         tresult <- lookupType(tresult0, ns0, prog0)
       ) yield Type.mkArrow(tparams, tresult)
-    case NamedAst.Type.Apply(base0, tparams0, loc) =>
+    case NamedAst.Type.Apply(base0, targ0, loc) =>
       for (
         baseType <- lookupType(base0, ns0, prog0);
-        argTypes <- seqM(tparams0.map(tpe => lookupType(tpe, ns0, prog0)))
-      ) yield Type.Apply(baseType, argTypes)
+        argType <- lookupType(targ0, ns0, prog0)
+      ) yield Type.Apply(baseType, argType)
 
   }
 

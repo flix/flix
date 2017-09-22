@@ -165,7 +165,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     }
 
     // Compute return type.
-    val returnType = prettify(getReturnType(d.tpe))
+    val returnType = prettify(d.tpe.getTypeArguments.last)
 
     JObject(List(
       JField("name", JString(d.sym.name)),
@@ -255,14 +255,6 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
   private def getComment(o: Option[Ast.Documentation]): String = o match {
     case None => ""
     case Some(doc) => doc.text
-  }
-
-  /**
-    * Extracts the return type of the given arrow type `tpe`.
-    */
-  private def getReturnType(tpe: Type): Type = tpe match {
-    case Type.Apply(Type.Arrow(l), ts) => ts.last
-    case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
   }
 
   /**

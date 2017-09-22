@@ -44,8 +44,8 @@ object GenFunctionInterfaces {
     */
   private def genFunctionalInterface(tpe: Type, root: Root)(implicit flix: Flix): Option[JvmClass] = {
     // Compute the type constructor and type arguments.
-    val base = JvmOps.getTypeConstructor(tpe)
-    val args = JvmOps.getTypeArguments(tpe)
+    val base = tpe.getTypeConstructor
+    val args = tpe.getTypeArguments
 
     // Immediately return None if the type is a non-function type.
     if (!base.isArrow) {
@@ -67,7 +67,7 @@ object GenFunctionInterfaces {
 
     }
 
-    ???
+    None // TODO
   }
 
 

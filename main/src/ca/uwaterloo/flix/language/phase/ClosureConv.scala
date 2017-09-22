@@ -54,8 +54,8 @@ object ClosureConv {
 
     case Expression.Lambda(args, body, tpe, loc) =>
       // Retrieve the type of the function.
-      val Type.Apply(Type.Arrow(l), ts) = tpe
-      val (targs, tresult) = (ts.take(l - 1), ts.last)
+      val ts = tpe.getTypeArguments
+      val (targs, tresult) = (ts.init, ts.last)
 
       // Convert lambdas to closures. This is the main part of the `convert` function.
       // Closure conversion happens as follows:
@@ -96,8 +96,8 @@ object ClosureConv {
 
     case Expression.Hook(hook, tpe, loc) =>
       // Retrieve the type of the function.
-      val Type.Apply(Type.Arrow(l), ts) = tpe
-      val (targs, tresult) = (ts.take(l - 1), ts.last)
+      val ts = tpe.getTypeArguments
+      val (targs, tresult) = (ts.init, ts.last)
 
       // Wrap the hook inside a lambda, so we can create a closure.
       val args = targs.map { t => SimplifiedAst.FormalParam(Symbol.freshVarSym("hookArg"), Ast.Modifiers.Empty, t, SourceLocation.Unknown) }

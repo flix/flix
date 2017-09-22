@@ -477,11 +477,9 @@ object SimplifiedAstOps {
     def checkType(tpe0: Type): Unit = tpe0 match {
       case Type.Var(id, kind) =>
         assert(assertion = false, "Unexpected type variable.")
-      case Type.Apply(t, ts) =>
-        checkType(t)
-        for (tpe <- ts) {
-          checkType(tpe)
-        }
+      case Type.Apply(t1, t2) =>
+        checkType(t1)
+        checkType(t2)
       case _ => // OK
     }
 

@@ -118,21 +118,9 @@ object TypeError {
     case (Type.Arrow(l1), Type.Arrow(l2)) if l1 == l2 => TypeDiff.Star
     case (Type.Tuple(l1), Type.Tuple(l2)) if l1 == l2 => TypeDiff.Star
     case (Type.Enum(name1, kind1), Type.Enum(name2, kind2)) if name1 == name2 => TypeDiff.Star
-    case (Type.Apply(Type.Arrow(l1), ts1), Type.Apply(Type.Arrow(l2), ts2)) =>
-      TypeDiff.Arrow(diffAll(ts1, ts2))
-    case (Type.Apply(Type.Tuple(l1), ts1), Type.Apply(Type.Tuple(l2), ts2)) =>
-      TypeDiff.Tuple(diffAll(ts1, ts2))
+    case (Type.Apply(Type.Arrow(l1), ts1), Type.Apply(Type.Arrow(l2), ts2)) => ??? // TODO
+    case (Type.Apply(Type.Tuple(l1), ts1), Type.Apply(Type.Tuple(l2), ts2)) => ??? // TODO
     case _ => TypeDiff.Error(tpe1, tpe2)
-  }
-
-  /**
-    * Returns a string that represents the type difference between the two given type lists.
-    */
-  private def diffAll(ts1: List[Type], ts2: List[Type]): List[TypeDiff] = (ts1, ts2) match {
-    case (Nil, Nil) => Nil
-    case (Nil, rs2) => Nil
-    case (rs1, Nil) => rs1.map(_ => TypeDiff.Missing)
-    case (t1 :: rs1, t2 :: rs2) => diff(t1, t2) :: diffAll(rs1, rs2)
   }
 
   /**
@@ -146,7 +134,7 @@ object TypeError {
 
     case object Missing extends TypeDiff
 
-    case class Arrow(ts: List[TypeDiff]) extends TypeDiff
+    case class Arrow(t: TypeDiff) extends TypeDiff
 
     case class Tuple(ts: List[TypeDiff]) extends TypeDiff
 
@@ -163,11 +151,7 @@ object TypeError {
     def visit(d: TypeDiff): Unit = d match {
       case TypeDiff.Star => vt << "..."
       case TypeDiff.Missing => vt << "???"
-      case TypeDiff.Arrow(xs) =>
-        vt << "("
-        xs.init.foreach(visit)
-        vt << ")" << " -> "
-        visit(xs.last)
+      case TypeDiff.Arrow(xs) => ??? // TODO
       case TypeDiff.Tuple(xs) =>
         vt << "("
         for (x <- xs) {

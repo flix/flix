@@ -699,7 +699,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           //
           for {
             tpe <- visitExp(exp)
-            resultType <- unifyM(tvar, Type.Apply(Type.Ref, List(tpe)), loc)
+            resultType <- unifyM(tvar, Type.Apply(Type.Ref, tpe), loc)
           } yield resultType
 
         /*
@@ -713,7 +713,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           //
           for {
             tpe <- visitExp(exp)
-            _ <- unifyM(tpe, Type.Apply(Type.Ref, List(tvar)), loc)
+            _ <- unifyM(tpe, Type.Apply(Type.Ref, tvar), loc)
           } yield tvar
 
         /*
@@ -728,7 +728,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           for {
             tpe1 <- visitExp(exp1)
             tpe2 <- visitExp(exp2)
-            _ <- unifyM(tpe1, Type.Apply(Type.Ref, List(tpe2)), loc)
+            _ <- unifyM(tpe1, Type.Apply(Type.Ref, tpe2), loc)
             resultType <- unifyM(tvar, Type.Unit, loc)
           } yield resultType
 

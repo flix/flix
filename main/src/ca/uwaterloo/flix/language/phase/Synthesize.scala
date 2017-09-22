@@ -700,10 +700,7 @@ object Synthesize extends Phase[Root, Root] {
     /**
       * Returns the element types of the given tuple type `tpe`.
       */
-    def getElementTypes(tpe: Type): List[Type] = tpe match {
-      case Type.Apply(Type.Tuple(l), ts) => ts
-      case _ => throw InternalCompilerException(s"The given type '$tpe' is not a tuple type.")
-    }
+    def getElementTypes(tpe: Type): List[Type] = tpe.getTypeArguments
 
     /**
       * Returns an association list of the (tag, type)s of the given `enum` specialized to the given type `tpe`.
