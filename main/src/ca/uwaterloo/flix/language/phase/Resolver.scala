@@ -495,17 +495,11 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
 
         case NamedAst.Predicate.Head.False(loc) => ResolvedAst.Predicate.Head.False(loc).toSuccess
 
-        case NamedAst.Predicate.Head.Positive(qname, terms, loc) =>
+        case NamedAst.Predicate.Head.Atom(qname, terms, loc) =>
           for {
             t <- lookupTable(qname, ns0, prog0)
             ts <- seqM(terms.map(t => Expressions.resolve(t, ns0, prog0)))
-          } yield ResolvedAst.Predicate.Head.Positive(t.sym, ts, loc)
-
-        case NamedAst.Predicate.Head.Negative(qname, terms, loc) =>
-          for {
-            d <- lookupTable(qname, ns0, prog0)
-            ts <- seqM(terms.map(t => Expressions.resolve(t, ns0, prog0)))
-          } yield ResolvedAst.Predicate.Head.Negative(d.sym, ts, loc)
+          } yield ResolvedAst.Predicate.Head.Atom(t.sym, ts, loc)
       }
     }
 
@@ -514,17 +508,11 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
         * Performs name resolution on the given body predicate `b0` in the given namespace `ns0`.
         */
       def resolve(b0: NamedAst.Predicate.Body, ns0: Name.NName, prog0: NamedAst.Program)(implicit genSym: GenSym): Validation[ResolvedAst.Predicate.Body, ResolutionError] = b0 match {
-        case NamedAst.Predicate.Body.Positive(qname, terms, loc) =>
+        case NamedAst.Predicate.Body.Atom(qname, polarity, terms, loc) =>
           for {
             d <- lookupTable(qname, ns0, prog0)
             ts <- seqM(terms.map(t => Patterns.resolve(t, ns0, prog0)))
-          } yield ResolvedAst.Predicate.Body.Positive(d.sym, ts, loc)
-
-        case NamedAst.Predicate.Body.Negative(qname, terms, loc) =>
-          for {
-            d <- lookupTable(qname, ns0, prog0)
-            ts <- seqM(terms.map(t => Patterns.resolve(t, ns0, prog0)))
-          } yield ResolvedAst.Predicate.Body.Negative(d.sym, ts, loc)
+          } yield ResolvedAst.Predicate.Body.Atom(d.sym, polarity, ts, loc)
 
         case NamedAst.Predicate.Body.Filter(qname, terms, loc) =>
           lookupRef(qname, ns0, prog0) flatMap {
