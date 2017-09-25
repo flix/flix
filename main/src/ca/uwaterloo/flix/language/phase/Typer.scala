@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.Ast.Polarity
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.Unification._
@@ -1196,9 +1197,12 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       * Applies the given substitution `subst0` to the given body predicate `body0`.
       */
     def reassemble(body0: ResolvedAst.Predicate.Body, program: ResolvedAst.Program, subst0: Substitution): TypedAst.Predicate.Body = body0 match {
-      case ResolvedAst.Predicate.Body.Atom(sym, polarity, terms, loc) =>
+      case ResolvedAst.Predicate.Body.Atom(sym, Polarity.Positive, terms, loc) =>
         val ts = terms.map(t => Patterns.reassemble(t, program, subst0))
         TypedAst.Predicate.Body.Positive(sym, ts, loc)
+      case ResolvedAst.Predicate.Body.Atom(sym, Polarity.Negative, terms, loc) =>
+        val ts = terms.map(t => Patterns.reassemble(t, program, subst0))
+        TypedAst.Predicate.Body.Negative(sym, ts, loc)
       case ResolvedAst.Predicate.Body.Filter(sym, terms, loc) =>
         val defn = program.defs(sym)
         val ts = terms.map(t => Expressions.reassemble(t, program, subst0))
