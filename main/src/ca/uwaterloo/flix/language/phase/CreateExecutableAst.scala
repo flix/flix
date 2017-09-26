@@ -297,21 +297,13 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
         case SimplifiedAst.Predicate.Head.False(loc) => ExecutableAst.Predicate.Head.False(loc)
 
         case SimplifiedAst.Predicate.Head.Atom(name, terms, loc) =>
-          val ts = terms.map(t => Terms.translate(t, m)).toArray
+          val ts = terms.map(t => Terms.translate(t, m))
           ExecutableAst.Predicate.Head.Atom(name, ts, loc)
       }
     }
 
     object Body {
-      // TODO: Should we move this to the Indexer (the only place that accesses freeVars)?
       // Also, figure out the actual implementation for Predicate.Body.Loop
-      // TODO: Should not return strings!
-      private def freeVars(terms: List[SimplifiedAst.Term.Body]): Set[String] = terms.foldLeft(Set.empty[String]) {
-        case (xs, t: SimplifiedAst.Term.Body.Wild) => xs
-        case (xs, t: SimplifiedAst.Term.Body.Var) => xs + t.sym.toString
-        case (xs, t: SimplifiedAst.Term.Body.Lit) => xs
-        case (xs, t: SimplifiedAst.Term.Body.Pat) => xs // TODO ????
-      }
 
       def toExecutable(sast: SimplifiedAst.Predicate.Body, m: TopLevel)(implicit genSym: GenSym): ExecutableAst.Predicate.Body = sast match {
         case SimplifiedAst.Predicate.Body.Atom(sym, polarity, terms, loc) =>
@@ -329,14 +321,13 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
             }
             r
           }
-          ExecutableAst.Predicate.Body.Atom(sym, polarity, termsArray, index2var, freeVars(terms), loc)
+          ExecutableAst.Predicate.Body.Atom(sym, polarity, termsArray, index2var, loc)
 
         case SimplifiedAst.Predicate.Body.Filter(name, terms, loc) =>
           val termsArray = terms.map(t => Terms.Body.translate(t, m)).toArray
-          ExecutableAst.Predicate.Body.Filter(name, termsArray, freeVars(terms), loc)
+          ExecutableAst.Predicate.Body.Filter(name, termsArray, loc)
         case SimplifiedAst.Predicate.Body.Loop(sym, term, loc) =>
-          val freeVars = Set.empty[String] // TODO
-          ExecutableAst.Predicate.Body.Loop(sym, Terms.translate(term, m), freeVars, loc)
+          ExecutableAst.Predicate.Body.Loop(sym, Terms.translate(term, m), loc)
       }
     }
 

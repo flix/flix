@@ -321,34 +321,28 @@ object ExecutableAst {
 
       case class False(loc: SourceLocation) extends ExecutableAst.Predicate.Head
 
-      case class Atom(sym: Symbol.TableSym, terms: Array[ExecutableAst.Term.Head], loc: SourceLocation) extends ExecutableAst.Predicate.Head {
+      case class Atom(sym: Symbol.TableSym, terms: List[ExecutableAst.Term.Head], loc: SourceLocation) extends ExecutableAst.Predicate.Head {
         val arity: Int = terms.length
+        val termsAsArray: Array[ExecutableAst.Term.Head] = terms.toArray
       }
 
     }
 
-    sealed trait Body extends ExecutableAst.Predicate {
-      val freeVars: Set[String]
-    }
+    sealed trait Body extends ExecutableAst.Predicate
 
     object Body {
 
-      // TODO: Remove freeVars
+      // TODO: Avoid arrays
 
-      case class Atom(sym: Symbol.TableSym, polarity: Ast.Polarity, terms: Array[ExecutableAst.Term.Body], index2sym: Array[Symbol.VarSym], freeVars: Set[String], loc: SourceLocation) extends ExecutableAst.Predicate.Body {
+      case class Atom(sym: Symbol.TableSym, polarity: Ast.Polarity, terms: Array[ExecutableAst.Term.Body], index2sym: Array[Symbol.VarSym], loc: SourceLocation) extends ExecutableAst.Predicate.Body {
         val arity: Int = terms.length
       }
 
-      case class Filter(sym: Symbol.DefnSym, terms: Array[ExecutableAst.Term.Body], freeVars: Set[String], loc: SourceLocation) extends ExecutableAst.Predicate.Body {
-
-        /**
-          * A reference to the invocation target of this filter function. Initially `null`.
-          */
+      case class Filter(sym: Symbol.DefnSym, terms: Array[ExecutableAst.Term.Body], loc: SourceLocation) extends ExecutableAst.Predicate.Body {
         var target: InvocationTarget = _
-
       }
 
-      case class Loop(sym: Symbol.VarSym, term: ExecutableAst.Term.Head, freeVars: Set[String], loc: SourceLocation) extends ExecutableAst.Predicate.Body
+      case class Loop(sym: Symbol.VarSym, term: ExecutableAst.Term.Head, loc: SourceLocation) extends ExecutableAst.Predicate.Body
 
     }
 
@@ -364,7 +358,7 @@ object ExecutableAst {
 
       case class Lit(lit: AnyRef, tpe: Type, loc: SourceLocation) extends ExecutableAst.Term.Head
 
-      case class Cst(ref: Symbol.DefnSym, tpe: Type, loc: SourceLocation) extends ExecutableAst.Term.Head
+      case class Cst(sym: Symbol.DefnSym, tpe: Type, loc: SourceLocation) extends ExecutableAst.Term.Head
 
       case class App(sym: Symbol.DefnSym, args: Array[Symbol.VarSym], tpe: Type, loc: SourceLocation) extends ExecutableAst.Term.Head
 
@@ -380,7 +374,7 @@ object ExecutableAst {
 
       case class Lit(lit: AnyRef, tpe: Type, loc: SourceLocation) extends ExecutableAst.Term.Body
 
-      case class Cst(ref: Symbol.DefnSym, tpe: Type, loc: SourceLocation) extends ExecutableAst.Term.Body
+      case class Cst(sym: Symbol.DefnSym, tpe: Type, loc: SourceLocation) extends ExecutableAst.Term.Body
 
       case class Pat(pat: ExecutableAst.Pattern, tpe: Type, loc: SourceLocation) extends ExecutableAst.Term.Body
 

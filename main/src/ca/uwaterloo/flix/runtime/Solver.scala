@@ -370,7 +370,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
     case Nil =>
       // cross product complete, now filter
       evalLoop(rule, rule.loops, env, interp)
-    case (p@Predicate.Body.Atom(_, Polarity.Positive, _, _, _, _)) :: xs =>
+    case (p@Predicate.Body.Atom(_, Polarity.Positive, _, _, _)) :: xs =>
       // lookup the relation or lattice.
       val table = root.tables(p.sym) match {
         case r: Table.Relation => dataStore.relations(p.sym)
@@ -438,7 +438,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
           evalCross(rule, xs, newRow, interp)
         }
       }
-    case (p@Predicate.Body.Atom(_, Polarity.Negative, _, _, _, _)) :: xs => ()
+    case (p@Predicate.Body.Atom(_, Polarity.Negative, _, _, _)) :: xs => ()
     //throw InternalRuntimeException("Negated predicates not yet supported")
 
     case p => throw InternalRuntimeException(s"Unmatched predicate: '$p'.")
@@ -449,7 +449,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
     */
   private def evalLoop(rule: Constraint, ps: List[Predicate.Body.Loop], env: Env, interp: Interpretation): Unit = ps match {
     case Nil => evalAllFilters(rule, env, interp)
-    case Predicate.Body.Loop(sym, term, _, _) :: rest =>
+    case Predicate.Body.Loop(sym, term, _) :: rest =>
       val value = evalHeadTerm(term, root, env)
       for (x <- iteratorOf(value)) {
         val newRow = copy(env)
@@ -488,7 +488,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
     * Evaluates the given `filter` and returns its result.
     */
   private def evalFilter(filter: Predicate.Body.Filter, env: Env): Boolean = filter match {
-    case Predicate.Body.Filter(sym, terms, _, _) =>
+    case Predicate.Body.Filter(sym, terms, _) =>
       // Evaluate the arguments of the filter function predicate.
       val args = new Array[AnyRef](terms.length)
       var j = 0
@@ -534,7 +534,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
     */
   private def evalHead(p: Predicate.Head, env: Env, interp: Interpretation): Unit = p match {
     case p: Predicate.Head.Atom =>
-      val terms = p.terms
+      val terms = p.termsAsArray
       val fact = new Array[AnyRef](p.arity)
       var i = 0
       while (i < fact.length) {

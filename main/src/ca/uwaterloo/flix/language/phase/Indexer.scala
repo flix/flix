@@ -23,7 +23,7 @@ import scala.collection.mutable
 
 object Indexer {
 
-  // TODO: Ensure that everything has at least one index.
+  // TODO: This class is most likely currently broken. Rewrite from scratch!
 
   /**
     * Returns an index selection strategy based on left-to-right evaluation of constraint rules.
@@ -34,11 +34,11 @@ object Indexer {
     // iterate through each rule.
     for (constraint <- root.constraints) {
       // maintain set of bound variables in each rule.
-      val bound = mutable.Set.empty[String]
+      val bound = mutable.Set.empty[Symbol.VarSym]
       // iterate through each table predicate in the body.
       for (body <- constraint.body) {
         body match {
-          case Predicate.Body.Atom(name, polarity, pterms, _, _, _) =>
+          case Predicate.Body.Atom(name, polarity, pterms, _, _) =>
             // determine the terms usable for indexing based on whether the predicate refers to a relation or lattice.
             val terms = root.tables(name) match {
               case r: ExecutableAst.Table.Relation => pterms
@@ -49,10 +49,12 @@ object Indexer {
             val determinate = terms.zipWithIndex.foldLeft(Seq.empty[Int]) {
               case (xs, (t: Term.Body.Wild, i)) => xs
               case (xs, (t: Term.Body.Var, i)) =>
-                if (bound contains t.sym.text) // TODO: Correctness
-                  xs :+ i
-                else
-                  xs
+                xs
+              // TODO: Someone needs to carefully analyse this code.
+              //                if (bound contains t.sym)
+              //                  xs :+ i
+              //                else
+              //                  xs
               case (xs, (t: Term.Body.Lit, i)) => xs :+ i
               case (xs, (t: Term.Body.Cst, i)) => xs :+ i
               case (xs, (t: Term.Body.Pat, i)) => xs :+ i
@@ -65,7 +67,7 @@ object Indexer {
             }
 
             // update the set of bound variables.
-            bound ++= body.freeVars
+            bound ++= freeVars(body)
           case _ => // nop
         }
       }
@@ -109,4 +111,49 @@ object Indexer {
     }
     throw new RuntimeException // TODO
   }
+
+  private def freeVars(body: ExecutableAst.Predicate.Body): Set[Symbol.VarSym] = body match {
+    case ExecutableAst.Predicate.Body.Atom(sym, polarity, terms, index2sym, loc) => terms.foldLeft(Set.empty[Symbol.VarSym]) {
+      case (sacc, term) => sacc ++ freeVars(term)
+    }
+    case ExecutableAst.Predicate.Body.Filter(sym, terms, loc) => terms.foldLeft(Set.empty[Symbol.VarSym]) {
+      case (sacc, term) => sacc ++ freeVars(term)
+    }
+    case ExecutableAst.Predicate.Body.Loop(sym, term, loc) => freeVars(term)
+  }
+
+  private def freeVars(t0: ExecutableAst.Term.Head): Set[Symbol.VarSym] = t0 match {
+    case ExecutableAst.Term.Head.Var(sym, tpe, loc) => Set(sym)
+    case ExecutableAst.Term.Head.Lit(lit, tpe, loc) => Set.empty
+    case ExecutableAst.Term.Head.Cst(sym, tpe, loc) => Set.empty
+    case ExecutableAst.Term.Head.App(sym, args, tpe, loc) => args.toSet
+  }
+
+  private def freeVars(t0: ExecutableAst.Term.Body): Set[Symbol.VarSym] = t0 match {
+    case ExecutableAst.Term.Body.Wild(tpe, loc) => Set.empty
+    case ExecutableAst.Term.Body.Var(sym, tpe, loc) => Set(sym)
+    case ExecutableAst.Term.Body.Lit(lit, tpe, loc) => Set.empty
+    case ExecutableAst.Term.Body.Cst(sym, tpe, loc) => Set.empty
+    case ExecutableAst.Term.Body.Pat(pat, tpe, loc) => freeVars(pat)
+  }
+
+  private def freeVars(p0: ExecutableAst.Pattern): Set[Symbol.VarSym] = p0 match {
+    case ExecutableAst.Pattern.Wild(tpe, loc) => Set.empty
+    case ExecutableAst.Pattern.Var(sym, tpe, loc) => Set(sym)
+    case ExecutableAst.Pattern.Unit(loc) => Set.empty
+    case ExecutableAst.Pattern.True(loc) => Set.empty
+    case ExecutableAst.Pattern.False(loc) => Set.empty
+    case ExecutableAst.Pattern.Char(lit, loc) => Set.empty
+    case ExecutableAst.Pattern.Float32(lit, loc) => Set.empty
+    case ExecutableAst.Pattern.Float64(lit, loc) => Set.empty
+    case ExecutableAst.Pattern.Int8(lit, loc) => Set.empty
+    case ExecutableAst.Pattern.Int16(lit, loc) => Set.empty
+    case ExecutableAst.Pattern.Int32(lit, loc) => Set.empty
+    case ExecutableAst.Pattern.Int64(lit, loc) => Set.empty
+    case ExecutableAst.Pattern.BigInt(lit, loc) => Set.empty
+    case ExecutableAst.Pattern.Str(lit, loc) => Set.empty
+    case ExecutableAst.Pattern.Tag(sym, tag, pat, tpe, loc) => freeVars(pat)
+    case ExecutableAst.Pattern.Tuple(elms, tpe, loc) => (elms flatMap freeVars).toSet
+  }
+
 }
