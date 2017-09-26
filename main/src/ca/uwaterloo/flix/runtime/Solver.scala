@@ -78,7 +78,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
   type Interpretation = mutable.ArrayBuffer[(Symbol.TableSym, Array[AnyRef])]
 
   /**
-    * The type of dependencies between symbols and constraints.
+    * The type of the dependency graph, a map from symbols to (constraint, atom) pairs.
     */
   type DependencyGraph = mutable.Map[Symbol.TableSym, Set[(Constraint, Predicate.Body.Atom)]]
 
@@ -104,7 +104,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
   val keyCache = new KeyCache()
 
   /**
-    * The dependencies of the program.
+    * The dependencies of the program. Populated by [[initDependencies]].
     */
   val dependenciesOf: DependencyGraph = mutable.Map.empty
 
@@ -224,7 +224,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
     // initialize the datastore.
     initDataStore()
 
-    // compute the fixedpoint for each stratum.
+    // compute the fixedpoint for each stratum, in sequence.
     for (stratum <- root.strata) {
       // initialize the worklist.
       initWorkList(stratum)
@@ -293,8 +293,11 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
     */
   private def initDataStore(): Unit = {
     val t = System.nanoTime()
+    // retrieve the first stratum.
+    val stratum0 = root.strata.head
+
     // iterate through all facts.
-    for (constraint <- root.strata.head.constraints) {
+    for (constraint <- stratum0.constraints) {
       if (constraint.isFact) {
         // evaluate the head of each fact.
         val interp = mkInterpretation()
@@ -390,7 +393,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
       // Compute the rows that match the atom.
       val rows = evalAtom(p, env)
 
-      // Check whether the atom is positive or negative.
+      // Case split on whether the atom is positive or negative.
       p.polarity match {
         case Polarity.Positive =>
           // Case 1: The atom is positive. Recurse on all matched rows.
@@ -399,7 +402,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
           }
 
         case Polarity.Negative =>
-          // Check that every term has a value.
+          // Assertion: Check that every variable has been assigned a value.
           for (t <- p.terms) {
             t match {
               case Term.Body.Var(sym, tpe, loc) =>
@@ -417,6 +420,9 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
     case p => throw InternalRuntimeException(s"Unmatched predicate: '$p'.")
   }
 
+  /**
+    * Returns a sequence of rows matched by the given atom `p`.
+    */
   private def evalAtom(p: ExecutableAst.Predicate.Body.Atom, env: Env): Traversable[Env] = {
     // lookup the relation or lattice.
     val table = root.tables(p.sym) match {
@@ -481,7 +487,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
         i = i + 1
       }
 
-      // Check whether to evaluate the rest of the rule.
+      // Check whether the row was successfully matched.
       if (!skip) {
         result += newRow
       }
@@ -891,17 +897,15 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
   /**
     * Computes the dependencies of the constraints in the program.
     *
-    * A dependency between constraints can only occur in the same strata.
+    * A dependency between two constraints can only occur in the same strata.
     */
   private def initDependencies(): Unit = {
-    // !!! Note that a dependency can *only* exist between two constraints in the same stratum.
-
     // Iterate through each stratum.
     for (stratum <- root.strata) {
-      // Retrieve the constraints for the current stratum.
+      // Retrieve the constraints in the current stratum.
       val constraints = stratum.constraints
 
-      // Initialize the dependencies of every table symbol to the empty set.
+      // Initialize the dependencies of every symbol to the empty set.
       for (rule <- constraints) {
         rule.head match {
           case ExecutableAst.Predicate.Head.Atom(sym, _, _) => dependenciesOf.update(sym, Set.empty)
@@ -913,9 +917,12 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
       for (outerRule <- constraints if outerRule.isRule) {
         for (innerRule <- constraints if innerRule.isRule) {
           for (body <- innerRule.body) {
+            // Loop through the atoms of the inner rule.
             (outerRule.head, body) match {
               case (outer: ExecutableAst.Predicate.Head.Atom, inner: ExecutableAst.Predicate.Body.Atom) =>
+                // We have found a head and body atom. Check if they share the same symbol.
                 if (outer.sym == inner.sym) {
+                  // The symbol is the same. Update the dependencies.
                   val deps = dependenciesOf(outer.sym)
                   dependenciesOf(outer.sym) = deps + ((innerRule, inner))
                 }
@@ -924,7 +931,6 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
           }
         }
       }
-
     }
   }
 
