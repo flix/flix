@@ -399,11 +399,19 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
           }
 
         case Polarity.Negative =>
+          // Check that every term has a value.
+          for (t <- p.terms) {
+            t match {
+              case Term.Body.Var(sym, tpe, loc) =>
+                assert(env(sym.getStackOffset) != null, s"Unbound variable in negated atom near: ${p.loc.format}")
+              case _ => // Nop
+            }
+          }
+
           // Case 2: The atom is negative. Recurse on the original environment if *no* rows were matched.
-          ()
-//          if (rows.isEmpty) {
-//            evalCross(rule, xs, env, interp)
-//          }
+          if (rows.isEmpty) {
+            evalCross(rule, xs, env, interp)
+          }
       }
 
     case p => throw InternalRuntimeException(s"Unmatched predicate: '$p'.")
@@ -882,30 +890,41 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
   /////////////////////////////////////////////////////////////////////////////
   /**
     * Computes the dependencies of the constraints in the program.
+    *
+    * A dependency between constraints can only occur in the same strata.
     */
   private def initDependencies(): Unit = {
-    val constraints = root.strata.head.constraints
+    // !!! Note that a dependency can *only* exist between two constraints in the same stratum.
 
-    for (rule <- constraints) {
-      rule.head match {
-        case ExecutableAst.Predicate.Head.Atom(sym, _, _) => dependenciesOf.update(sym, Set.empty)
-        case _ => // nop
+    // Iterate through each stratum.
+    for (stratum <- root.strata) {
+      // Retrieve the constraints for the current stratum.
+      val constraints = stratum.constraints
+
+      // Initialize the dependencies of every table symbol to the empty set.
+      for (rule <- constraints) {
+        rule.head match {
+          case ExecutableAst.Predicate.Head.Atom(sym, _, _) => dependenciesOf.update(sym, Set.empty)
+          case _ => // nop
+        }
       }
-    }
 
-    for (outerRule <- constraints if outerRule.isRule) {
-      for (innerRule <- constraints if innerRule.isRule) {
-        for (body <- innerRule.body) {
-          (outerRule.head, body) match {
-            case (outer: ExecutableAst.Predicate.Head.Atom, inner: ExecutableAst.Predicate.Body.Atom) =>
-              if (outer.sym == inner.sym) {
-                val deps = dependenciesOf(outer.sym)
-                dependenciesOf(outer.sym) = deps + ((innerRule, inner))
-              }
-            case _ => // nop
+      // Compute the dependencies via cross product.
+      for (outerRule <- constraints if outerRule.isRule) {
+        for (innerRule <- constraints if innerRule.isRule) {
+          for (body <- innerRule.body) {
+            (outerRule.head, body) match {
+              case (outer: ExecutableAst.Predicate.Head.Atom, inner: ExecutableAst.Predicate.Body.Atom) =>
+                if (outer.sym == inner.sym) {
+                  val deps = dependenciesOf(outer.sym)
+                  dependenciesOf(outer.sym) = deps + ((innerRule, inner))
+                }
+              case _ => // nop
+            }
           }
         }
       }
+
     }
   }
 

@@ -44,4 +44,3 @@ rel V(x: Int)
 T(x) :- U(x), V(x).
 T(x) :- !U(x), V(x).
 T(x) :- U(x), !V(x).
-T(x) :- !U(x), !V(x).
