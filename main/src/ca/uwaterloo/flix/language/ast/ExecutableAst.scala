@@ -70,6 +70,13 @@ object ExecutableAst {
     val isRule: Boolean = body.nonEmpty
 
     /**
+      * Returns the atoms predicates in the body of the constraint.
+      */
+    val atoms: List[ExecutableAst.Predicate.Body.Atom] = body.collect {
+      case p: ExecutableAst.Predicate.Body.Atom => p
+    }
+
+    /**
       * Returns the filter predicates in the body of the constraint.
       */
     val filters: Array[ExecutableAst.Predicate.Body.Filter] = body.collect {

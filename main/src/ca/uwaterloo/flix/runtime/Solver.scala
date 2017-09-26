@@ -355,7 +355,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
     val t = System.nanoTime()
 
     val interp = mkInterpretation()
-    evalCross(rule, rule.body, env, interp)
+    evalCross(rule, rule.atoms, env, interp)
 
     rule.hits.incrementAndGet()
     rule.time.addAndGet(System.nanoTime() - t)
@@ -441,7 +441,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
     case (p@Predicate.Body.Atom(_, Polarity.Negative, _, _, _, _)) :: xs => ()
     //throw InternalRuntimeException("Negated predicates not yet supported")
 
-    case _ => throw InternalRuntimeException(s"Unmatched predicate?")
+    case p => throw InternalRuntimeException(s"Unmatched predicate: '$p'.")
   }
 
   /**
