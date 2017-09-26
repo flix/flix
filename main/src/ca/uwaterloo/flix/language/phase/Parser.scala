@@ -730,7 +730,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   // Predicates                                                              //
   /////////////////////////////////////////////////////////////////////////////
   def HeadPredicate: Rule1[ParsedAst.Predicate.Head] = rule {
-    Predicates.Head.True | Predicates.Head.False | Predicates.Head.Positive | Predicates.Head.Negative
+    Predicates.Head.True | Predicates.Head.False | Predicates.Head.Atom
   }
 
   def BodyPredicate: Rule1[ParsedAst.Predicate.Body] = rule {
@@ -748,13 +748,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         SP ~ atomic("false") ~ SP ~> ParsedAst.Predicate.Head.False
       }
 
-      def Positive: Rule1[ParsedAst.Predicate.Head.Positive] = rule {
-        SP ~ Names.QualifiedTable ~ optWS ~ NonEmptyArgumentList ~ SP ~> ParsedAst.Predicate.Head.Positive
+      def Atom: Rule1[ParsedAst.Predicate.Head.Atom] = rule {
+        SP ~ Names.QualifiedTable ~ optWS ~ NonEmptyArgumentList ~ SP ~> ParsedAst.Predicate.Head.Atom
       }
 
-      def Negative: Rule1[ParsedAst.Predicate.Head.Negative] = rule {
-        SP ~ "!" ~ optWS ~ Names.QualifiedTable ~ optWS ~ NonEmptyArgumentList ~ SP ~> ParsedAst.Predicate.Head.Negative
-      }
     }
 
     object Body {
@@ -762,8 +759,14 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         SP ~ Names.QualifiedTable ~ optWS ~ NonEmptyPatternList ~ SP ~> ParsedAst.Predicate.Body.Positive
       }
 
-      def Negative: Rule1[ParsedAst.Predicate.Body.Negative] = rule {
-        SP ~ "!" ~ optWS ~ Names.QualifiedTable ~ optWS ~ NonEmptyPatternList ~ SP ~> ParsedAst.Predicate.Body.Negative
+      def Negative: Rule1[ParsedAst.Predicate.Body.Negative] = {
+        def Not: Rule0 = rule {
+          "!" | (atomic("not") ~ WS)
+        }
+
+        rule {
+          SP ~ Not ~ optWS ~ Names.QualifiedTable ~ optWS ~ NonEmptyPatternList ~ SP ~> ParsedAst.Predicate.Body.Negative
+        }
       }
 
       def Filter: Rule1[ParsedAst.Predicate.Body.Filter] = rule {

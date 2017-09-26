@@ -802,7 +802,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
         case ParsedAst.Predicate.Head.False(sp1, sp2) => WeededAst.Predicate.Head.False(mkSL(sp1, sp2)).toSuccess
 
-        case ParsedAst.Predicate.Head.Positive(sp1, qname, terms, sp2) =>
+        case ParsedAst.Predicate.Head.Atom(sp1, qname, terms, sp2) =>
           @@(terms.map(t => Expressions.weed(t))) map {
             case ts => WeededAst.Predicate.Head.Atom(qname, ts, mkSL(sp1, sp2))
           }
