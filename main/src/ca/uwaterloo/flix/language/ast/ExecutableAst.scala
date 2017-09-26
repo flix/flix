@@ -34,7 +34,7 @@ object ExecutableAst {
                   lattices: Map[Type, ExecutableAst.Lattice],
                   tables: Map[Symbol.TableSym, ExecutableAst.Table],
                   indexes: Map[Symbol.TableSym, ExecutableAst.Index],
-                  constraints: List[ExecutableAst.Constraint],
+                  strata: List[ExecutableAst.Stratum],
                   properties: List[ExecutableAst.Property],
                   specialOps: Map[SpecialOperator, Map[Type, Symbol.DefnSym]],
                   reachable: Set[Symbol.DefnSym],
@@ -118,6 +118,8 @@ object ExecutableAst {
   case class Property(law: Symbol.DefnSym, defn: Symbol.DefnSym, exp: ExecutableAst.Expression) extends ExecutableAst {
     def loc: SourceLocation = defn.loc
   }
+
+  case class Stratum(constraints: List[ExecutableAst.Constraint]) extends ExecutableAst
 
   sealed trait Table extends ExecutableAst
 

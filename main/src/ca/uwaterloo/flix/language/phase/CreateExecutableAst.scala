@@ -56,8 +56,8 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
     val lattices = root.lattices.map { case (k, v) => k -> toExecutable(v, m) }
     val tables = root.tables.map { case (k, v) => k -> Table.toExecutable(v) }
     val indexes = root.indexes.map { case (k, v) => k -> toExecutable(v) }
-    // TODO: Assumes one stratum
     val constraints = root.strata.head.constraints.map(c => Constraint.toConstraint(c, m))
+    val strata = root.strata.map(s => ExecutableAst.Stratum(s.constraints.map(c => Constraint.toConstraint(c, m))))
     val properties = root.properties.map(p => toExecutable(p))
     val specialOps = root.specialOps
     val reachable = root.reachable
@@ -90,7 +90,7 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
       result.toMap
     }
 
-    ExecutableAst.Root(constants ++ m, enums, lattices, tables, indexes, constraints, properties, specialOps,
+    ExecutableAst.Root(constants ++ m, enums, lattices, tables, indexes, strata, properties, specialOps,
       reachable, ByteCodes(Map(), Map(), Map(), Map(), Map()), time, dependenciesOf).toSuccess
   }
 

@@ -78,12 +78,6 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
   type Interpretation = mutable.ArrayBuffer[(Symbol.TableSym, Array[AnyRef])]
 
   //
-  // The facts and rules of the program.
-  //
-  val facts: List[Constraint] = root.constraints.filter(_.isFact)
-  val rules: List[Constraint] = root.constraints.filter(_.isRule)
-
-  //
   // State of the solver:
   //
 
@@ -217,22 +211,25 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
     // initialize the datastore.
     initDataStore()
 
-    // initialize the worklist.
-    initWorkList()
+    // compute the fixedpoint for each stratum.
+    for (stratum <- root.strata) {
+      // initialize the worklist.
+      initWorkList(stratum)
 
-    // iterate until fixpoint.
-    while (worklist.nonEmpty) {
-      // check if the solver has been paused.
-      checkPaused()
+      // iterate until fixpoint.
+      while (worklist.nonEmpty) {
+        // check if the solver has been paused.
+        checkPaused()
 
-      // check soft timeout.
-      checkTimeout()
+        // check soft timeout.
+        checkTimeout()
 
-      // evaluate the rules in parallel.
-      val interps = parallelEval()
+        // evaluate the rules in parallel.
+        val interps = parallelEval()
 
-      // update the datastore in parallel.
-      parallelUpdate(interps)
+        // update the datastore in parallel.
+        parallelUpdate(interps)
+      }
     }
 
     // stop the solver.
@@ -255,10 +252,12 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
     */
   def getModel: Model = model
 
-  def getRuleStats: List[(Constraint, Int, Long)] =
-    root.constraints.filter(_.isRule).sortBy(_.time.get()).reverse.map {
+  def getRuleStats: List[(Constraint, Int, Long)] = {
+    val constraints = root.strata.flatMap(_.constraints)
+    constraints.filter(_.isRule).sortBy(_.time.get()).reverse.map {
       case r => (r, r.hits.get(), r.time.get())
     }
+  }
 
   /**
     * Initialize the solver by starting the monitor, debugger, etc.
@@ -276,23 +275,27 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
 
   /**
     * Initialize the datastore with all the facts in the program.
+    *
+    * A fact is always in the lowest stratum.
     */
   private def initDataStore(): Unit = {
     val t = System.nanoTime()
     // iterate through all facts.
-    for (fact <- facts) {
-      // evaluate the head of each fact.
-      val interp = mkInterpretation()
-      evalHead(fact.head, Array.empty, interp)
+    for (constraint <- root.strata.head.constraints) {
+      if (constraint.isFact) {
+        // evaluate the head of each fact.
+        val interp = mkInterpretation()
+        evalHead(constraint.head, Array.empty, interp)
 
-      // iterate through the interpretation.
-      for ((sym, fact) <- interp) {
-        // update the datastore, but don't compute any dependencies.
-        root.tables(sym) match {
-          case r: ExecutableAst.Table.Relation =>
-            dataStore.relations(sym).inferredFact(fact)
-          case l: ExecutableAst.Table.Lattice =>
-            dataStore.lattices(sym).inferredFact(fact)
+        // iterate through the interpretation.
+        for ((sym, fact) <- interp) {
+          // update the datastore, but don't compute any dependencies.
+          root.tables(sym) match {
+            case r: ExecutableAst.Table.Relation =>
+              dataStore.relations(sym).inferredFact(fact)
+            case l: ExecutableAst.Table.Lattice =>
+              dataStore.lattices(sym).inferredFact(fact)
+          }
         }
       }
     }
@@ -300,11 +303,11 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
   }
 
   /**
-    * Initialize the worklist with every rule (under the empty environment).
+    * Initialize the worklist with every rule (under the empty environment) in the given `stratum`.
     */
-  private def initWorkList(): Unit = {
+  private def initWorkList(stratum: Stratum): Unit = {
     // add all rules to the worklist (under empty environments).
-    for (rule <- rules) {
+    for (rule <- stratum.constraints) {
       worklist.push((rule, new Array[AnyRef](rule.arity)))
     }
   }
@@ -337,7 +340,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
       val initMiliSeconds = initTime / 1000000
       val readersMiliSeconds = readersTime / 1000000
       val writersMiliSeconds = writersTime / 1000000
-      val initialFacts = facts.length
+      val initialFacts = root.strata.head.constraints.count(_.isFact)
       val totalFacts = dataStore.numberOfFacts
       val throughput = ((1000.0 * totalFacts.toDouble) / (solverTime.toDouble + 1.0)).toInt
       Console.println(f"Solved in $solverTime%,d msec. (init: $initMiliSeconds%,d msec, readers: $readersMiliSeconds%,d msec, writers: $writersMiliSeconds%,d msec)")
@@ -366,82 +369,100 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
   /**
     * Computes the cross product of all collections in the body.
     */
-  private def evalCross(rule: Constraint, ps: List[Predicate.Body], env: Env, interp: Interpretation): Unit = ps match {
+  private def evalCross(rule: Constraint, ps: List[Predicate.Body.Atom], env: Env, interp: Interpretation): Unit = ps match {
     case Nil =>
       // cross product complete, now filter
       evalLoop(rule, rule.loops, env, interp)
-    case (p@Predicate.Body.Atom(_, Polarity.Positive, _, _, _)) :: xs =>
-      // lookup the relation or lattice.
-      val table = root.tables(p.sym) match {
-        case r: Table.Relation => dataStore.relations(p.sym)
-        case l: Table.Lattice => dataStore.lattices(p.sym)
+    case p :: xs =>
+      // Compute the rows that match the atom.
+      val rows = evalAtom(p, env)
+
+      // Check the polarity.
+      p.polarity match {
+        case Polarity.Positive =>
+          for (newRow <- rows) {
+            evalCross(rule, xs, newRow, interp)
+          }
+
+        case Polarity.Negative =>
+          // throw InternalRuntimeException("Negated predicates not yet supported")
+          () // TODO
       }
 
-      // evaluate all terms in the predicate.
-      val pat = new Array[AnyRef](p.arity)
+    case p => throw InternalRuntimeException(s"Unmatched predicate: '$p'.")
+  }
+
+  private def evalAtom(p: ExecutableAst.Predicate.Body.Atom, env: Env): Traversable[Env] = {
+    // lookup the relation or lattice.
+    val table = root.tables(p.sym) match {
+      case r: Table.Relation => dataStore.relations(p.sym)
+      case l: Table.Lattice => dataStore.lattices(p.sym)
+    }
+
+    // evaluate all terms in the predicate.
+    val pat = new Array[AnyRef](p.arity)
+    var i = 0
+    while (i < pat.length) {
+      val value = p.terms(i) match {
+        case ExecutableAst.Term.Body.Var(sym, _, _) =>
+          // A variable is replaced by its value from the environment (or null if unbound).
+          env(sym.getStackOffset)
+        case ExecutableAst.Term.Body.Lit(lit, _, _) =>
+          lit
+        case ExecutableAst.Term.Body.Cst(litSym, _, _) =>
+          // Every literal is lifted to a function definition and its value is obtained by invoking it.
+          Linker.link(litSym, root).invoke(Array.emptyObjectArray)
+        case ExecutableAst.Term.Body.Wild(_, _) =>
+          // A wildcard places no restrictions on the value.
+          null
+        case ExecutableAst.Term.Body.Pat(_, _, _) =>
+          // A pattern places no restrictions on the value, but is filtered later.
+          null
+      }
+      pat(i) = value
+      i = i + 1
+    }
+
+    // a mutable collection to hold the matched results.
+    val result = mutable.ArrayBuffer.empty[Env]
+
+    // lookup all matching rows.
+    for (matchedRow <- table.lookup(pat)) {
+      // copy the environment for every row.
+      val newRow = copy(env)
+
+      // A matched row may still fail to unify with a pattern term.
+      // We use this boolean variable to track whether that is the case.
+      var skip = false
+
       var i = 0
-      while (i < pat.length) {
-        val value = p.terms(i) match {
-          case ExecutableAst.Term.Body.Var(sym, _, _) =>
-            // A variable is replaced by its value from the environment (or null if unbound).
-            env(sym.getStackOffset)
-          case ExecutableAst.Term.Body.Lit(lit, _, _) =>
-            lit
-          case ExecutableAst.Term.Body.Cst(litSym, _, _) =>
-            // Every literal is lifted to a function definition and its value is obtained by invoking it.
-            Linker.link(litSym, root).invoke(Array.emptyObjectArray)
-          case ExecutableAst.Term.Body.Wild(_, _) =>
-            // A wildcard places no restrictions on the value.
-            null
-          case ExecutableAst.Term.Body.Pat(_, _, _) =>
-            // A pattern places no restrictions on the value, but is filtered later.
-            null
+      while (i < matchedRow.length) {
+
+        // Check if the term is pattern term.
+        // If so, we must checked whether the pattern can be unified with the value.
+        p.terms(i) match {
+          case term: Pat =>
+            val value = matchedRow(i)
+            if (!unify(term.pat, value, env)) {
+              // Value does not unify with the pattern term. We should skip this row.
+              skip = true
+            }
+          case _ => // nop
         }
-        pat(i) = value
+
+        val sym = p.index2sym(i)
+        if (sym != null)
+          newRow.update(sym.getStackOffset, matchedRow(i))
         i = i + 1
       }
 
-      // lookup all matching rows.
-      for (matchedRow <- table.lookup(pat)) {
-        // copy the environment for every row.
-        val newRow = copy(env)
-
-        // A matched row may still fail to unify with a pattern term.
-        // We use this boolean variable to track whether that is the case.
-        var skip = false
-
-        var i = 0
-        while (i < matchedRow.length) {
-
-          // Check if the term is pattern term.
-          // If so, we must checked whether the pattern can be unified with the value.
-          p.terms(i) match {
-            case term: Pat =>
-              val value = matchedRow(i)
-              if (!unify(term.pat, value, env)) {
-                // Value does not unify with the pattern term. We should skip this row.
-                skip = true
-              }
-            case _ => // nop
-          }
-
-          val sym = p.index2sym(i)
-          if (sym != null)
-            newRow.update(sym.getStackOffset, matchedRow(i))
-          i = i + 1
-        }
-
-        // Check whether to evaluate the rest of the rule.
-        if (!skip) {
-          // compute the cross product of the remaining
-          // collections under the new environment.
-          evalCross(rule, xs, newRow, interp)
-        }
+      // Check whether to evaluate the rest of the rule.
+      if (!skip) {
+        result += newRow
       }
-    case (p@Predicate.Body.Atom(_, Polarity.Negative, _, _, _)) :: xs => ()
-    //throw InternalRuntimeException("Negated predicates not yet supported")
+    }
 
-    case p => throw InternalRuntimeException(s"Unmatched predicate: '$p'.")
+    result
   }
 
   /**
