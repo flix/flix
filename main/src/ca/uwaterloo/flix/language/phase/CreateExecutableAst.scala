@@ -63,12 +63,12 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
     val reachable = root.reachable
     val time = root.time
 
-    val dependenciesOf: Map[Symbol.TableSym, Set[(ExecutableAst.Constraint, ExecutableAst.Predicate.Body.Positive)]] = {
-      val result = mutable.Map.empty[Symbol.TableSym, Set[(ExecutableAst.Constraint, ExecutableAst.Predicate.Body.Positive)]]
+    val dependenciesOf: Map[Symbol.TableSym, Set[(ExecutableAst.Constraint, ExecutableAst.Predicate.Body.Atom)]] = {
+      val result = mutable.Map.empty[Symbol.TableSym, Set[(ExecutableAst.Constraint, ExecutableAst.Predicate.Body.Atom)]]
 
       for (rule <- constraints) {
         rule.head match {
-          case ExecutableAst.Predicate.Head.Positive(sym, _, _) => result.update(sym, Set.empty)
+          case ExecutableAst.Predicate.Head.Atom(sym, _, _) => result.update(sym, Set.empty)
           case _ => // nop
         }
       }
@@ -77,7 +77,7 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
         for (innerRule <- constraints if innerRule.isRule) {
           for (body <- innerRule.body) {
             (outerRule.head, body) match {
-              case (outer: ExecutableAst.Predicate.Head.Positive, inner: ExecutableAst.Predicate.Body.Positive) =>
+              case (outer: ExecutableAst.Predicate.Head.Atom, inner: ExecutableAst.Predicate.Body.Atom) =>
                 if (outer.sym == inner.sym) {
                   val deps = result(outer.sym)
                   result(outer.sym) = deps + ((innerRule, inner))
@@ -296,13 +296,9 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
         case SimplifiedAst.Predicate.Head.True(loc) => ExecutableAst.Predicate.Head.True(loc)
         case SimplifiedAst.Predicate.Head.False(loc) => ExecutableAst.Predicate.Head.False(loc)
 
-        case SimplifiedAst.Predicate.Head.Positive(name, terms, loc) =>
+        case SimplifiedAst.Predicate.Head.Atom(name, terms, loc) =>
           val ts = terms.map(t => Terms.translate(t, m)).toArray
-          ExecutableAst.Predicate.Head.Positive(name, ts, loc)
-
-        case SimplifiedAst.Predicate.Head.Negative(name, terms, loc) =>
-          val ts = terms.map(t => Terms.translate(t, m)).toArray
-          ExecutableAst.Predicate.Head.Negative(name, ts, loc)
+          ExecutableAst.Predicate.Head.Atom(name, ts, loc)
       }
     }
 
@@ -318,7 +314,7 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
       }
 
       def toExecutable(sast: SimplifiedAst.Predicate.Body, m: TopLevel)(implicit genSym: GenSym): ExecutableAst.Predicate.Body = sast match {
-        case SimplifiedAst.Predicate.Body.Positive(sym, terms, loc) =>
+        case SimplifiedAst.Predicate.Body.Atom(sym, polarity, terms, loc) =>
           val termsArray = terms.map(t => Terms.Body.translate(t, m)).toArray
           val index2var: Array[Symbol.VarSym] = {
             val r = new Array[Symbol.VarSym](termsArray.length)
@@ -333,25 +329,7 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
             }
             r
           }
-          ExecutableAst.Predicate.Body.Positive(sym, termsArray, index2var, freeVars(terms), loc)
-
-        case SimplifiedAst.Predicate.Body.Negative(sym, terms, loc) =>
-          val termsArray = terms.map(t => Terms.Body.translate(t, m)).toArray
-          val index2var: Array[Symbol.VarSym] = {
-            val r = new Array[Symbol.VarSym](termsArray.length)
-            var i = 0
-            while (i < r.length) {
-              termsArray(i) match {
-                case ExecutableAst.Term.Body.Var(sym, _, _) =>
-                  r(i) = sym
-                case _ => // nop
-              }
-              i = i + 1
-            }
-            r
-          }
-          ExecutableAst.Predicate.Body.Negative(sym, termsArray, index2var, freeVars(terms), loc)
-
+          ExecutableAst.Predicate.Body.Atom(sym, polarity, termsArray, index2var, freeVars(terms), loc)
 
         case SimplifiedAst.Predicate.Body.Filter(name, terms, loc) =>
           val termsArray = terms.map(t => Terms.Body.translate(t, m)).toArray

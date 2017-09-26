@@ -40,7 +40,7 @@ object ExecutableAst {
                   reachable: Set[Symbol.DefnSym],
                   byteCodes: ByteCodes,
                   time: Time,
-                  dependenciesOf: Map[Symbol.TableSym, Set[(Constraint, ExecutableAst.Predicate.Body.Positive)]]) extends ExecutableAst
+                  dependenciesOf: Map[Symbol.TableSym, Set[(Constraint, ExecutableAst.Predicate.Body.Atom)]]) extends ExecutableAst
 
   case class ByteCodes(enumInterfaceByteCodes: Map[EnumSym, (QualName, Array[Byte])],
                        enumClassByteCodes: Map[EnumSym, (Map[(String, Type), Array[Byte]], Map[String, Array[Byte]])],
@@ -68,14 +68,6 @@ object ExecutableAst {
       * Returns `true` if the constraint is a rule.
       */
     val isRule: Boolean = body.nonEmpty
-
-    /**
-      * Returns the tables referenced by the body predicates of the constraint.
-      */
-    val tables: List[ExecutableAst.Predicate.Body] = body.collect {
-      case p: ExecutableAst.Predicate.Body.Positive => p
-      case p: ExecutableAst.Predicate.Body.Negative => p
-    }
 
     /**
       * Returns the filter predicates in the body of the constraint.
@@ -322,11 +314,7 @@ object ExecutableAst {
 
       case class False(loc: SourceLocation) extends ExecutableAst.Predicate.Head
 
-      case class Positive(sym: Symbol.TableSym, terms: Array[ExecutableAst.Term.Head], loc: SourceLocation) extends ExecutableAst.Predicate.Head {
-        val arity: Int = terms.length
-      }
-
-      case class Negative(sym: Symbol.TableSym, terms: Array[ExecutableAst.Term.Head], loc: SourceLocation) extends ExecutableAst.Predicate.Head {
+      case class Atom(sym: Symbol.TableSym, terms: Array[ExecutableAst.Term.Head], loc: SourceLocation) extends ExecutableAst.Predicate.Head {
         val arity: Int = terms.length
       }
 
@@ -340,11 +328,7 @@ object ExecutableAst {
 
       // TODO: Remove freeVars
 
-      case class Positive(sym: Symbol.TableSym, terms: Array[ExecutableAst.Term.Body], index2sym: Array[Symbol.VarSym], freeVars: Set[String], loc: SourceLocation) extends ExecutableAst.Predicate.Body {
-        val arity: Int = terms.length
-      }
-
-      case class Negative(sym: Symbol.TableSym, terms: Array[ExecutableAst.Term.Body], index2sym: Array[Symbol.VarSym], freeVars: Set[String], loc: SourceLocation) extends ExecutableAst.Predicate.Body {
+      case class Atom(sym: Symbol.TableSym, polarity: Ast.Polarity, terms: Array[ExecutableAst.Term.Body], index2sym: Array[Symbol.VarSym], freeVars: Set[String], loc: SourceLocation) extends ExecutableAst.Predicate.Body {
         val arity: Int = terms.length
       }
 

@@ -277,9 +277,7 @@ object TypedAst {
 
       case class False(loc: SourceLocation) extends TypedAst.Predicate.Head
 
-      case class Positive(sym: Symbol.TableSym, terms: List[TypedAst.Expression], loc: SourceLocation) extends TypedAst.Predicate.Head
-
-      case class Negative(sym: Symbol.TableSym, terms: List[TypedAst.Expression], loc: SourceLocation) extends TypedAst.Predicate.Head
+      case class Atom(sym: Symbol.TableSym, terms: List[TypedAst.Expression], loc: SourceLocation) extends TypedAst.Predicate.Head
 
     }
 
@@ -287,9 +285,7 @@ object TypedAst {
 
     object Body {
 
-      case class Positive(sym: Symbol.TableSym, terms: List[TypedAst.Pattern], loc: SourceLocation) extends TypedAst.Predicate.Body
-
-      case class Negative(sym: Symbol.TableSym, terms: List[TypedAst.Pattern], loc: SourceLocation) extends TypedAst.Predicate.Body
+      case class Atom(sym: Symbol.TableSym, polarity: Ast.Polarity, terms: List[TypedAst.Pattern], loc: SourceLocation) extends TypedAst.Predicate.Body
 
       case class Filter(name: Symbol.DefnSym, terms: List[TypedAst.Expression], loc: SourceLocation) extends TypedAst.Predicate.Body
 

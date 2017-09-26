@@ -1190,19 +1190,16 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       case ResolvedAst.Predicate.Head.False(loc) => TypedAst.Predicate.Head.False(loc)
       case ResolvedAst.Predicate.Head.Atom(sym, terms, loc) =>
         val ts = terms.map(t => Expressions.reassemble(t, program, subst0))
-        TypedAst.Predicate.Head.Positive(sym, ts, loc)
+        TypedAst.Predicate.Head.Atom(sym, ts, loc)
     }
 
     /**
       * Applies the given substitution `subst0` to the given body predicate `body0`.
       */
     def reassemble(body0: ResolvedAst.Predicate.Body, program: ResolvedAst.Program, subst0: Substitution): TypedAst.Predicate.Body = body0 match {
-      case ResolvedAst.Predicate.Body.Atom(sym, Polarity.Positive, terms, loc) =>
+      case ResolvedAst.Predicate.Body.Atom(sym, polarity, terms, loc) =>
         val ts = terms.map(t => Patterns.reassemble(t, program, subst0))
-        TypedAst.Predicate.Body.Positive(sym, ts, loc)
-      case ResolvedAst.Predicate.Body.Atom(sym, Polarity.Negative, terms, loc) =>
-        val ts = terms.map(t => Patterns.reassemble(t, program, subst0))
-        TypedAst.Predicate.Body.Negative(sym, ts, loc)
+        TypedAst.Predicate.Body.Atom(sym, polarity, ts, loc)
       case ResolvedAst.Predicate.Body.Filter(sym, terms, loc) =>
         val defn = program.defs(sym)
         val ts = terms.map(t => Expressions.reassemble(t, program, subst0))

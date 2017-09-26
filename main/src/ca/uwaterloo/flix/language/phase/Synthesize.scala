@@ -62,16 +62,14 @@ object Synthesize extends Phase[Root, Root] {
     def visitHead(h0: Predicate.Head): Predicate.Head = h0 match {
       case Predicate.Head.True(loc) => h0
       case Predicate.Head.False(loc) => h0
-      case Predicate.Head.Positive(sym, terms, loc) => Predicate.Head.Positive(sym, terms map visitExp, loc)
-      case Predicate.Head.Negative(sym, terms, loc) => ??? // TODO: deprecated.
+      case Predicate.Head.Atom(sym, terms, loc) => Predicate.Head.Atom(sym, terms map visitExp, loc)
     }
 
     /**
       * Performs synthesis on the given body predicate `h0`.
       */
     def visitBody(b0: Predicate.Body): Predicate.Body = b0 match {
-      case Predicate.Body.Positive(sym, pats, loc) => b0
-      case Predicate.Body.Negative(sym, pats, loc) => b0
+      case Predicate.Body.Atom(sym, polarity, pats, loc) => b0
       case Predicate.Body.Filter(sym, terms, loc) => Predicate.Body.Filter(sym, terms map visitExp, loc)
       case Predicate.Body.Loop(sym, term, loc) => Predicate.Body.Loop(sym, visitExp(term), loc)
     }

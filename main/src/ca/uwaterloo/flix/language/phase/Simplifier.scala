@@ -421,26 +421,18 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
 
       case TypedAst.Predicate.Head.False(loc) => SimplifiedAst.Predicate.Head.False(loc)
 
-      case TypedAst.Predicate.Head.Positive(sym, terms, loc) =>
+      case TypedAst.Predicate.Head.Atom(sym, terms, loc) =>
         val ts = terms.map(t => exp2HeadTerm(t, cparams))
-        SimplifiedAst.Predicate.Head.Positive(sym, ts, loc)
-
-      case TypedAst.Predicate.Head.Negative(sym, terms, loc) =>
-        val ts = terms.map(t => exp2HeadTerm(t, cparams))
-        SimplifiedAst.Predicate.Head.Negative(sym, ts, loc)
+        SimplifiedAst.Predicate.Head.Atom(sym, ts, loc)
     }
 
     /**
       * Translates the given `body` predicate to the SimplifiedAst.
       */
     def visitBodyPred(body: TypedAst.Predicate.Body, cparams: List[TypedAst.ConstraintParam]): SimplifiedAst.Predicate.Body = body match {
-      case TypedAst.Predicate.Body.Positive(sym, terms, loc) =>
+      case TypedAst.Predicate.Body.Atom(sym, polarity, terms, loc) =>
         val ts = terms map pat2BodyTerm
-        SimplifiedAst.Predicate.Body.Positive(sym, ts, loc)
-
-      case TypedAst.Predicate.Body.Negative(sym, terms, loc) =>
-        val ts = terms map pat2BodyTerm
-        SimplifiedAst.Predicate.Body.Negative(sym, ts, loc)
+        SimplifiedAst.Predicate.Body.Atom(sym, polarity, ts, loc)
 
       case TypedAst.Predicate.Body.Filter(sym, terms, loc) =>
         SimplifiedAst.Predicate.Body.Filter(sym, terms map exp2BodyTerm, loc)

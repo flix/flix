@@ -813,7 +813,7 @@ object ParsedAst {
       case class False(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Predicate.Head
 
       /**
-        * Positive Predicate.
+        * Atom Predicate.
         *
         * @param sp1   the position of the first character in the predicate.
         * @param name  the qualified name of the table.

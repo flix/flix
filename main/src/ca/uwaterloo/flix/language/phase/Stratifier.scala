@@ -18,11 +18,12 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
+import ca.uwaterloo.flix.language.ast.Ast.Polarity
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body.{Filter, Loop}
-import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Head.{False, Negative, Positive, True}
+import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Head.{Atom, False, True}
 import ca.uwaterloo.flix.language.ast.TypedAst.{Root, Stratum}
 import ca.uwaterloo.flix.language.errors.StratificationError
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
@@ -83,11 +84,11 @@ object Stratifier extends Phase[TypedAst.Root, TypedAst.Root] {
       changes = false
       for (pred <- constraints) {
         pred.head match {
-          case Positive(headSym, terms, loc) =>
+          case Atom(headSym, terms, loc) =>
             val currStratum = stratumOf(headSym)
             for (subGoal <- pred.body) {
               subGoal match {
-                case Body.Positive(subGoalSym, _, _) =>
+                case Body.Atom(subGoalSym, Polarity.Positive, _, _) =>
                   val newStratum = math.max(stratumOf(headSym), stratumOf(subGoalSym))
                   if (newStratum > numRules) {
                     // If we create more stratum than there are rules then
@@ -99,7 +100,7 @@ object Stratifier extends Phase[TypedAst.Root, TypedAst.Root] {
                     stratumOf += (headSym -> newStratum)
                     changes = true
                   }
-                case Body.Negative(subGoalSym, _, _) =>
+                case Body.Atom(subGoalSym, Polarity.Negative, _, _) =>
                   val newStratum = math.max(stratumOf(headSym), stratumOf(subGoalSym) + 1)
 
                   if (newStratum > numRules) {
@@ -118,8 +119,6 @@ object Stratifier extends Phase[TypedAst.Root, TypedAst.Root] {
             }
           case _: True => // Do nothing
           case _: False => // Do nothing
-          // TODO: Negative head predicates will be removed in the future
-          case _: Negative => ???
         }
       }
     }
@@ -136,8 +135,13 @@ object Stratifier extends Phase[TypedAst.Root, TypedAst.Root] {
       * Reorder a rule so that negated literals occur last
       */
     def reorder(rule: TypedAst.Constraint): TypedAst.Constraint = {
-      val negated = rule.body filter (x => x.isInstanceOf[Body.Negative])
-      val nonNegated = rule.body filter (x => !x.isInstanceOf[Body.Negative])
+      def isNegative(p: Body): Boolean = p match {
+        case Body.Atom(_ , Polarity.Negative, _, _) => true
+        case _ => false
+      }
+
+      val negated = rule.body filter isNegative
+      val nonNegated = rule.body filter (x => !isNegative(x))
       rule.copy(body = nonNegated ::: negated)
     }
 
@@ -147,11 +151,9 @@ object Stratifier extends Phase[TypedAst.Root, TypedAst.Root] {
     def separate(constraints: List[TypedAst.Constraint], currLevel: Int): List[List[TypedAst.Constraint]] = {
       // We consider the True and False atoms to be in the first stratum
       def getLevel(c: TypedAst.Constraint): Int = c.head match {
-        case Positive(sym, _, _) => stratumOf(sym)
+        case Atom(sym, _, _) => stratumOf(sym)
         case True(_) => 1
         case False(_) => 1
-        // TODO: Negative head predicates will be removed in the future
-        case _: Negative => ???
       }
 
       constraints match {
@@ -162,8 +164,11 @@ object Stratifier extends Phase[TypedAst.Root, TypedAst.Root] {
           currStrata :: separate(remStrata, currLevel + 1)
       }
     }
+
     val separated = separate(constraints, 1)
-    val reordered = separated map {_ map reorder}
+    val reordered = separated map {
+      _ map reorder
+    }
     val strata = reordered.map(Stratum) match {
       case Nil => List(Stratum(Nil))
       case lst => lst
@@ -212,20 +217,18 @@ object Stratifier extends Phase[TypedAst.Root, TypedAst.Root] {
     */
   def createGraph(constraints: List[TypedAst.Constraint]): Graph = {
     constraints.foldRight(new Graph)((constraint: TypedAst.Constraint, graph: Graph) => constraint.head match {
-      case TypedAst.Predicate.Head.Positive(headSym, _, _) =>
+      case TypedAst.Predicate.Head.Atom(headSym, _, _) =>
         // As well as creating the graph out of the given constraints, we also add a source node which
         // has a directed edge to all nodes
         graph.insert(null, headSym, constraint, 0)
         constraint.body.foldRight(graph)((pred: TypedAst.Predicate.Body, graph: Graph) => pred match {
-          case TypedAst.Predicate.Body.Negative(predSym, _, _) =>
-            graph.insert(headSym, predSym, constraint, -1)
-          case TypedAst.Predicate.Body.Positive(predSym, _, _) =>
+          case TypedAst.Predicate.Body.Atom(predSym, Polarity.Positive, _, _) =>
             graph.insert(headSym, predSym, constraint, 0)
+          case TypedAst.Predicate.Body.Atom(predSym, Polarity.Negative, _, _) =>
+            graph.insert(headSym, predSym, constraint, -1)
           case _: TypedAst.Predicate.Body.Filter => graph
           case _: TypedAst.Predicate.Body.Loop => graph
         })
-      // TODO: Negative head predicates will be removed in the future
-      case _:TypedAst.Predicate.Head.Negative => ???
       case TypedAst.Predicate.Head.True(_) => graph
       case TypedAst.Predicate.Head.False(_) => graph
     })
@@ -276,19 +279,17 @@ object Stratifier extends Phase[TypedAst.Root, TypedAst.Root] {
           witness = firstEdge :: witness
 
           var fromConstraint = distPred(firstEdge.head match {
-            case Positive(sym, _, _) => sym
-            case Negative(sym, _, _) => sym
-            case _:False => throw InternalCompilerException("Encountered the False atom while looking for negative cyles which should never happen")
-            case _:True => throw InternalCompilerException("Encountered the True atom while looking for negative cyles which should never happen")
+            case Atom(sym, _, _) => sym
+            case _: False => throw InternalCompilerException("Encountered the False atom while looking for negative cyles which should never happen")
+            case _: True => throw InternalCompilerException("Encountered the True atom while looking for negative cyles which should never happen")
           })._2
 
           while (fromConstraint != null && fromConstraint != firstEdge) {
             witness = fromConstraint :: witness
             fromConstraint = distPred(fromConstraint.head match {
-            case Positive(sym, _, _) => sym
-            case Negative(sym, _, _) => sym
-            case _:False => throw InternalCompilerException("Encountered the False atom while looking for negative cyles which should never happen")
-            case _:True => throw InternalCompilerException("Encountered the True atom while looking for negative cyles which should never happen")
+              case Atom(sym, _, _) => sym
+              case _: False => throw InternalCompilerException("Encountered the False atom while looking for negative cyles which should never happen")
+              case _: True => throw InternalCompilerException("Encountered the True atom while looking for negative cyles which should never happen")
             })._2
           }
           return witness

@@ -20,6 +20,7 @@ import java.util.concurrent._
 import java.util.concurrent.atomic.AtomicInteger
 
 import ca.uwaterloo.flix.api.{Enum, RuleException, TimeoutException}
+import ca.uwaterloo.flix.language.ast.Ast.Polarity
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Term.Body.Pat
 import ca.uwaterloo.flix.language.ast.ExecutableAst._
 import ca.uwaterloo.flix.language.ast.{ExecutableAst, Symbol}
@@ -354,7 +355,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
     val t = System.nanoTime()
 
     val interp = mkInterpretation()
-    evalCross(rule, rule.tables, env, interp)
+    evalCross(rule, rule.body, env, interp)
 
     rule.hits.incrementAndGet()
     rule.time.addAndGet(System.nanoTime() - t)
@@ -369,7 +370,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
     case Nil =>
       // cross product complete, now filter
       evalLoop(rule, rule.loops, env, interp)
-    case (p: Predicate.Body.Positive) :: xs =>
+    case (p@Predicate.Body.Atom(_, Polarity.Positive, _, _, _, _)) :: xs =>
       // lookup the relation or lattice.
       val table = root.tables(p.sym) match {
         case r: Table.Relation => dataStore.relations(p.sym)
@@ -437,8 +438,8 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
           evalCross(rule, xs, newRow, interp)
         }
       }
-    case (p: Predicate.Body.Negative) :: xs => ()
-      //throw InternalRuntimeException("Negated predicates not yet supported")
+    case (p@Predicate.Body.Atom(_, Polarity.Negative, _, _, _, _)) :: xs => ()
+    //throw InternalRuntimeException("Negated predicates not yet supported")
 
     case _ => throw InternalRuntimeException(s"Unmatched predicate?")
   }
@@ -532,7 +533,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
     * Evaluates the given head predicate `p` under the given environment `env0`.
     */
   private def evalHead(p: Predicate.Head, env: Env, interp: Interpretation): Unit = p match {
-    case p: Predicate.Head.Positive =>
+    case p: Predicate.Head.Atom =>
       val terms = p.terms
       val fact = new Array[AnyRef](p.arity)
       var i = 0
@@ -547,9 +548,6 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
       }
 
       interp += ((p.sym, fact))
-    case p: Predicate.Head.Negative =>
-      val terms = p.terms
-      throw InternalRuntimeException("Negation not implemented yet.")
     case Predicate.Head.True(loc) => // nop
     case Predicate.Head.False(loc) => throw RuleException(s"The integrity rule defined at ${loc.format} is violated.", loc)
   }
