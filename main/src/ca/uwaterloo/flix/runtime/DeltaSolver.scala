@@ -59,10 +59,14 @@ object DeltaSolver {
     */
   def solve(root: ExecutableAst.Root, options: Options, path: Path): Unit = {
     /*
-     * Retrieve the facts and rules.
+     * Retrieve the lowest stratum.
      */
-    val initialFacts = root.strata.head.constraints.filter(_.isFact) // TODO: Does not work with stratification.
-    val initialRules = root.strata.head.constraints.filter(_.isRule) // TODO: Does not work with stratification.
+    val stratum0 = root.strata.head
+
+    /*
+     * Retrieve the facts of the program. These are always in the lowest stratum.
+     */
+    val initialFacts = stratum0.constraints.filter(_.isFact)
 
     /*
      * Refuse to overwrite existing file.
@@ -110,8 +114,14 @@ object DeltaSolver {
         // every fact except for those in the current block.
         facts = facts - block
 
-        // try to solve the program.
-        trySolve(root.copy(strata = List(Stratum(initialRules ++ facts.flatten))), options, exception) match {
+        // reconstruct the constraints in the lowest stratum.
+        val s0 = facts.flatten.toList ::: stratum0.constraints.filter(_.isRule)
+
+        // reconstruct the strata.
+        val strata = Stratum(s0) :: root.strata.tail
+
+        // try to solve the reconstructed program.
+        trySolve(root.copy(strata = strata), options, exception) match {
           case SolverResult.Success =>
             // the program successfully completed. Must backtrack.
             Console.println(f"    [block $round%3d] ${block.size}%5d fact(s) retained (program ran successfully).") // TODO: Red
