@@ -39,8 +39,7 @@ object ExecutableAst {
                   specialOps: Map[SpecialOperator, Map[Type, Symbol.DefnSym]],
                   reachable: Set[Symbol.DefnSym],
                   byteCodes: ByteCodes,
-                  time: Time,
-                  dependenciesOf: Map[Symbol.TableSym, Set[(Constraint, ExecutableAst.Predicate.Body.Atom)]]) extends ExecutableAst
+                  time: Time) extends ExecutableAst
 
   case class ByteCodes(enumInterfaceByteCodes: Map[EnumSym, (QualName, Array[Byte])],
                        enumClassByteCodes: Map[EnumSym, (Map[(String, Type), Array[Byte]], Map[String, Array[Byte]])],

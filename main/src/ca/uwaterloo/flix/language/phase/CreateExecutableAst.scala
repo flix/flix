@@ -56,42 +56,14 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
     val lattices = root.lattices.map { case (k, v) => k -> toExecutable(v, m) }
     val tables = root.tables.map { case (k, v) => k -> Table.toExecutable(v) }
     val indexes = root.indexes.map { case (k, v) => k -> toExecutable(v) }
-    val constraints = root.strata.head.constraints.map(c => Constraint.toConstraint(c, m))
     val strata = root.strata.map(s => ExecutableAst.Stratum(s.constraints.map(c => Constraint.toConstraint(c, m))))
     val properties = root.properties.map(p => toExecutable(p))
     val specialOps = root.specialOps
     val reachable = root.reachable
     val time = root.time
 
-    val dependenciesOf: Map[Symbol.TableSym, Set[(ExecutableAst.Constraint, ExecutableAst.Predicate.Body.Atom)]] = {
-      val result = mutable.Map.empty[Symbol.TableSym, Set[(ExecutableAst.Constraint, ExecutableAst.Predicate.Body.Atom)]]
-
-      for (rule <- constraints) {
-        rule.head match {
-          case ExecutableAst.Predicate.Head.Atom(sym, _, _) => result.update(sym, Set.empty)
-          case _ => // nop
-        }
-      }
-
-      for (outerRule <- constraints if outerRule.isRule) {
-        for (innerRule <- constraints if innerRule.isRule) {
-          for (body <- innerRule.body) {
-            (outerRule.head, body) match {
-              case (outer: ExecutableAst.Predicate.Head.Atom, inner: ExecutableAst.Predicate.Body.Atom) =>
-                if (outer.sym == inner.sym) {
-                  val deps = result(outer.sym)
-                  result(outer.sym) = deps + ((innerRule, inner))
-                }
-              case _ => // nop
-            }
-          }
-        }
-      }
-      result.toMap
-    }
-
     ExecutableAst.Root(constants ++ m, enums, lattices, tables, indexes, strata, properties, specialOps,
-      reachable, ByteCodes(Map(), Map(), Map(), Map(), Map()), time, dependenciesOf).toSuccess
+      reachable, ByteCodes(Map(), Map(), Map(), Map(), Map()), time).toSuccess
   }
 
   def toExecutable(sast: SimplifiedAst.Def): ExecutableAst.Def = {

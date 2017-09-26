@@ -77,6 +77,11 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
     */
   type Interpretation = mutable.ArrayBuffer[(Symbol.TableSym, Array[AnyRef])]
 
+  /**
+    * The type of dependencies between symbols and constraints.
+    */
+  type DependencyGraph = mutable.Map[Symbol.TableSym, Set[(Constraint, Predicate.Body.Atom)]]
+
   //
   // State of the solver:
   //
@@ -97,6 +102,11 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
     * Reading and writing to the cache is guaranteed to be thread-safe.
     */
   val keyCache = new KeyCache()
+
+  /**
+    * The dependencies of the program.
+    */
+  val dependenciesOf: DependencyGraph = mutable.Map.empty
 
   /**
     * The thread pool where rule evaluation takes place.
@@ -207,6 +217,9 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
   def solve(): Model = try {
     // initialize the solver.
     initSolver()
+
+    // initialize the dependencies.
+    initDependencies()
 
     // initialize the datastore.
     initDataStore()
@@ -377,16 +390,20 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
       // Compute the rows that match the atom.
       val rows = evalAtom(p, env)
 
-      // Check the polarity.
+      // Check whether the atom is positive or negative.
       p.polarity match {
         case Polarity.Positive =>
+          // Case 1: The atom is positive. Recurse on all matched rows.
           for (newRow <- rows) {
             evalCross(rule, xs, newRow, interp)
           }
 
         case Polarity.Negative =>
-          // throw InternalRuntimeException("Negated predicates not yet supported")
-          () // TODO
+          // Case 2: The atom is negative. Recurse on the original environment if *no* rows were matched.
+          ()
+//          if (rows.isEmpty) {
+//            evalCross(rule, xs, env, interp)
+//          }
       }
 
     case p => throw InternalRuntimeException(s"Unmatched predicate: '$p'.")
@@ -547,7 +564,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
       val result = filter.target.invoke(args)
 
       // Return the result.
-      return result.asInstanceOf[java.lang.Boolean].booleanValue()
+      result.asInstanceOf[java.lang.Boolean].booleanValue()
   }
 
   /**
@@ -595,14 +612,12 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
   /**
     * Returns a callable to process a collection of inferred `facts` for the relation or lattice with the symbol `sym`.
     */
-  private def inferredFacts(sym: Symbol.TableSym, facts: ArrayBuffer[Array[AnyRef]]): Callable[WorkList] = new Callable[WorkList] {
-    def call(): WorkList = {
-      val localWorkList = mkWorkList()
-      for (fact <- facts) {
-        inferredFact(sym, fact, localWorkList)
-      }
-      localWorkList
+  private def inferredFacts(sym: Symbol.TableSym, facts: ArrayBuffer[Array[AnyRef]]): Callable[WorkList] = () => {
+    val localWorkList = mkWorkList()
+    for (fact <- facts) {
+      inferredFact(sym, fact, localWorkList)
     }
+    localWorkList
   }
 
   /**
@@ -642,7 +657,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
 
     root.tables(sym) match {
       case r: ExecutableAst.Table.Relation =>
-        for ((rule, p) <- root.dependenciesOf(sym)) {
+        for ((rule, p) <- dependenciesOf(sym)) {
           // unify all terms with their values.
           val env = unify(p.index2sym, fact, fact.length, rule.arity)
           if (env != null) {
@@ -651,7 +666,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
         }
 
       case l: ExecutableAst.Table.Lattice =>
-        for ((rule, p) <- root.dependenciesOf(sym)) {
+        for ((rule, p) <- dependenciesOf(sym)) {
           // unify only key terms with their values.
           val numberOfKeys = l.keys.length
           val env = unify(p.index2sym, fact, numberOfKeys, rule.arity)
@@ -862,6 +877,37 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
     dst
   }
 
+  /////////////////////////////////////////////////////////////////////////////
+  // Dependencies                                                            //
+  /////////////////////////////////////////////////////////////////////////////
+  /**
+    * Computes the dependencies of the constraints in the program.
+    */
+  private def initDependencies(): Unit = {
+    val constraints = root.strata.head.constraints
+
+    for (rule <- constraints) {
+      rule.head match {
+        case ExecutableAst.Predicate.Head.Atom(sym, _, _) => dependenciesOf.update(sym, Set.empty)
+        case _ => // nop
+      }
+    }
+
+    for (outerRule <- constraints if outerRule.isRule) {
+      for (innerRule <- constraints if innerRule.isRule) {
+        for (body <- innerRule.body) {
+          (outerRule.head, body) match {
+            case (outer: ExecutableAst.Predicate.Head.Atom, inner: ExecutableAst.Predicate.Body.Atom) =>
+              if (outer.sym == inner.sym) {
+                val deps = dependenciesOf(outer.sym)
+                dependenciesOf(outer.sym) = deps + ((innerRule, inner))
+              }
+            case _ => // nop
+          }
+        }
+      }
+    }
+  }
 
   /////////////////////////////////////////////////////////////////////////////
   // Unification                                                             //

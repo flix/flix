@@ -28,12 +28,6 @@ Foo8(c) :- Foo9(c).
 Foo9(c) :- Foo10(c).
 Foo10(c) :- Foo1(c).
 
-// Both B if A and B if !A can be true
-rel A(c:Int)
-rel B(c:Int)
-B(c) :- A(c).
-B(c) :- !A(c).
-
 // Should be stratified since Q depends on P, but but P does not depend on Q
 rel P(x: Int)
 rel Q(x: Int)
