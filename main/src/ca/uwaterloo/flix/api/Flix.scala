@@ -206,6 +206,7 @@ class Flix {
         Typer |>
         Effects |>
         PatternExhaustiveness |>
+        Safety |>
         Documentor |>
         Stratifier |>
         Monomorph |>
