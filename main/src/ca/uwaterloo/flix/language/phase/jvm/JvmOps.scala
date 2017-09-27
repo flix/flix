@@ -25,26 +25,6 @@ import ca.uwaterloo.flix.util.InternalCompilerException
 object JvmOps {
 
   /**
-    * Returns the set of all instantiated types in the given AST `root`.
-    *
-    * This include type components. For example, if the program contains
-    * the type (Bool, (Char, Int)) this includes the type (Char, Int).
-    */
-  def typesOf(root: Root): Set[Type] = {
-    // TODO: Temporary implementation which just returns some types to get us started.
-
-    root.defs.map(_._2.tpe).toSet
-  }
-
-  /**
-    * Returns all the type components of the given type `tpe`.
-    *
-    * For example, if the given type is `Option[(Bool, Char, Int)]`
-    * this returns the set `Bool`, `Char`, `Int`, `(Bool, Char, Int)`, and `Option[(Bool, Char, Int)]`.
-    */
-  def typesOf(tpe: Type): Set[Type] = ??? // TODO
-
-  /**
     * Returns the given Flix type `tpe` as JVM type.
     *
     * For example, if the type is:
@@ -79,6 +59,11 @@ object JvmOps {
   }
 
   /**
+    * TODO
+    */
+  def getJvmTypeForContinuation(tpe: Type): JvmType = ???
+
+  /**
     * Returns the JVM type of the given enum symbol `sym` with `tag` and inner type `tpe`.
     *
     * For example, if the symbol is `Option`, the tag `Some` and the inner type is `Int` then the result is None$Int.
@@ -102,9 +87,13 @@ object JvmOps {
     * then the bytecode is written to the path `/tmp/Foo/Bar/Baz.class` provided
     * that this path either does not exist or is already a JVM class file.
     */
-  def emitClass(prefixPath: Path, clazz: JvmClass): Unit = {
+  def writeClass(prefixPath: Path, clazz: JvmClass): Unit = {
     // Compute the absolute path of the class file to write.
     val path = prefixPath.resolve(clazz.name.toPath).toAbsolutePath
+
+    // TODO: For safety, let us not write anything yet.
+    println(path)
+    return
 
     // Create all parent directories (in case they don't exist).
     Files.createDirectories(path.getParent)
@@ -138,5 +127,26 @@ object JvmOps {
     }
     false
   }
+
+
+  /**
+    * Returns the set of all instantiated types in the given AST `root`.
+    *
+    * This include type components. For example, if the program contains
+    * the type (Bool, (Char, Int)) this includes the type (Char, Int).
+    */
+  def typesOf(root: Root): Set[Type] = {
+    // TODO: Temporary implementation which just returns some types to get us started.
+
+    root.defs.map(_._2.tpe).toSet
+  }
+
+  /**
+    * Returns all the type components of the given type `tpe`.
+    *
+    * For example, if the given type is `Option[(Bool, Char, Int)]`
+    * this returns the set `Bool`, `Char`, `Int`, `(Bool, Char, Int)`, and `Option[(Bool, Char, Int)]`.
+    */
+  def typesOf(tpe: Type): Set[Type] = ??? // TODO
 
 }
