@@ -1,46 +1,155 @@
-// Basic :- shouldn't cause an error
-rel Foo(c: Int)
-rel Bar(c: Int)
-Foo(c) :- Foo(c).
-Bar(c) :- Bar(c).
-Foo(c) :- Bar(c).
-Bar(c) :- Foo(c).
+namespace StratifiedNegation {
 
-// Long chains shouldn't error
-rel Foo1(c: Int)
-rel Foo2(c: Int)
-rel Foo3(c: Int)
-rel Foo4(c: Int)
-rel Foo5(c: Int)
-rel Foo6(c: Int)
-rel Foo7(c: Int)
-rel Foo8(c: Int)
-rel Foo9(c: Int)
-rel Foo10(c: Int)
-Foo1(c) :- Foo2(c).
-Foo2(c) :- Foo3(c).
-Foo3(c) :- Foo4(c).
-Foo4(c) :- Foo5(c).
-Foo5(c) :- Foo6(c).
-Foo6(c) :- Foo7(c).
-Foo7(c) :- Foo8(c).
-Foo8(c) :- Foo9(c).
-Foo9(c) :- Foo10(c).
-Foo10(c) :- Foo1(c).
+    namespace Test01 {
+        rel A(x: Int)
+        rel B(x: Int)
+        rel R(x: Int)
 
-// Should be stratified since Q depends on P, but but P does not depend on Q
-rel P(x: Int)
-rel Q(x: Int)
-rel R(x: Int)
-rel S(x: Int)
-P(x) :- R(x).
-P(x) :- P(x).
-Q(x) :- S(x), !P(x).
+        A(1).
+        A(2).
+        A(3).
 
-// We should be able to handle negation in any order
-rel T(x: Int)
-rel U(x: Int)
-rel V(x: Int)
-T(x) :- U(x), V(x).
-T(x) :- !U(x), V(x).
-T(x) :- U(x), !V(x).
+        B(3).
+
+        R(x) :- A(x), not B(x).
+    }
+
+    namespace Test02 {
+        rel A(x: Int)
+        rel B(x: Int)
+        rel R(x: Int)
+
+        A(1).
+        A(2).
+        A(3).
+
+        B(3).
+
+        R(x) :- not A(x), B(x).
+    }
+
+    namespace Test03 {
+        rel A(x: Int)
+        rel B(x: Int)
+        rel C(x: Int)
+        rel R(x: Int)
+
+        A(1).
+        A(2).
+        A(3).
+
+        B(3).
+
+        C(3).
+
+        R(x) :- A(x), not B(x), not C(x).
+    }
+
+    namespace Test04 {
+        rel A(x: Int)
+        rel B(x: Int)
+        rel C(x: Int)
+        rel R(x: Int)
+
+        A(1).
+        A(2).
+        A(3).
+
+        B(3).
+
+        C(3).
+
+        R(x) :- not A(x), B(x), not C(x).
+    }
+
+    namespace Test05 {
+        rel A(x: Int, y: Int)
+        rel B(x: Int, y: Int)
+        rel R(x: Int, y: Int)
+
+        A(1, 1).
+        A(2, 2).
+        A(3, 3).
+
+        B(3, 3).
+
+        R(x, y) :- A(x, y), not B(x, y).
+    }
+
+    namespace Test06 {
+        rel A(x: Int)
+        rel B(x: Int)
+        rel C(x: Int)
+        rel R(x: Int)
+
+        A(1).
+        A(2).
+        B(3).
+
+        C(x) :- A(x).
+        C(x) :- B(x).
+        R(x) :- C(x), not A(x).
+    }
+
+    namespace Test07 {
+        rel A(x: Int)
+        rel B(x: Int)
+        rel C(x: Int)
+        rel D(x: Int)
+        rel R(x: Int)
+
+        A(1).
+        A(2).
+        B(3).
+
+        C(x) :- A(x).
+        C(x) :- B(x).
+        D(x) :- C(x), not A(x).
+        R(x) :- A(x), not D(x).
+    }
+
+    namespace Test08 {
+        rel A(x: Int)
+        rel B(x: Int)
+        rel C(x: Int)
+        rel D(x: Int)
+        rel E(x: Int)
+        rel R(x: Int)
+
+        A(1).
+        A(2).
+        B(3).
+
+        C(x) :- A(x).
+        C(x) :- B(x).
+        D(x) :- C(x), not A(x).
+        E(x) :- B(x), not D(x).
+        R(x) :- E(x).
+    }
+
+    namespace Test09 {
+        rel A(x: Int)
+
+        A(1).
+        A(2).
+        A(3).
+
+        false :- not A(1).
+        false :- not A(2).
+        false :- not A(3).
+    }
+
+    namespace Test10 {
+        rel A(x: Int)
+        rel B(x: Int)
+
+        A(1).
+        A(2).
+        B(1).
+        B(2).
+
+        false :- not A(1), not B(1).
+        false :- not A(2), not B(2).
+    }
+
+}
