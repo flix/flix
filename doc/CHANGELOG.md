@@ -1,6 +1,18 @@
 # Changelog
 
 HEAD:
+    - Added stratified negation.
+    - Pattern matching now compiled to labels and jumps (~1.5x speedup).
+    - Typechecking is now performed in parallel.
+    - Parsing is now performed in parallel.
+    - Added operations on character and strings.
+    - Pattern match exhaustiveness enforced.
+    - Added interop from Flix to Java.
+    - Added simple intra-procedural optimiser.
+    - Constructors (tags) may now be used as functions.
+    - Added references (ref and deref).
+    - Upgrade to Scala 2.12.
+    - Many other small improvements.
 
 Version 0.1
     - Added standard library.

@@ -147,7 +147,7 @@ object TypedAst {
 
     case class Hook(hook: Ast.Hook, tpe: Type, eff: Eff, loc: SourceLocation) extends TypedAst.Expression
 
-    case class Lambda(args: List[TypedAst.FormalParam], body: TypedAst.Expression, tpe: Type, eff: Eff, loc: SourceLocation) extends TypedAst.Expression
+    case class Lambda(fparams: List[TypedAst.FormalParam], exp: TypedAst.Expression, tpe: Type, eff: Eff, loc: SourceLocation) extends TypedAst.Expression
 
     case class Apply(exp: TypedAst.Expression, args: List[TypedAst.Expression], tpe: Type, eff: Eff, loc: SourceLocation) extends TypedAst.Expression
 
@@ -277,9 +277,7 @@ object TypedAst {
 
       case class False(loc: SourceLocation) extends TypedAst.Predicate.Head
 
-      case class Positive(sym: Symbol.TableSym, terms: List[TypedAst.Expression], loc: SourceLocation) extends TypedAst.Predicate.Head
-
-      case class Negative(sym: Symbol.TableSym, terms: List[TypedAst.Expression], loc: SourceLocation) extends TypedAst.Predicate.Head
+      case class Atom(sym: Symbol.TableSym, terms: List[TypedAst.Expression], loc: SourceLocation) extends TypedAst.Predicate.Head
 
     }
 
@@ -287,11 +285,9 @@ object TypedAst {
 
     object Body {
 
-      case class Positive(sym: Symbol.TableSym, terms: List[TypedAst.Pattern], loc: SourceLocation) extends TypedAst.Predicate.Body
+      case class Atom(sym: Symbol.TableSym, polarity: Ast.Polarity, terms: List[TypedAst.Pattern], loc: SourceLocation) extends TypedAst.Predicate.Body
 
-      case class Negative(sym: Symbol.TableSym, terms: List[TypedAst.Pattern], loc: SourceLocation) extends TypedAst.Predicate.Body
-
-      case class Filter(name: Symbol.DefnSym, terms: List[TypedAst.Expression], loc: SourceLocation) extends TypedAst.Predicate.Body
+      case class Filter(sym: Symbol.DefnSym, terms: List[TypedAst.Expression], loc: SourceLocation) extends TypedAst.Predicate.Body
 
       case class Loop(sym: Symbol.VarSym, term: TypedAst.Expression, loc: SourceLocation) extends TypedAst.Predicate.Body
 

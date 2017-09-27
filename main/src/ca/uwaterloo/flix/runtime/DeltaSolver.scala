@@ -19,7 +19,8 @@ package ca.uwaterloo.flix.runtime
 import java.nio.file.StandardOpenOption._
 import java.nio.file.{Files, Path}
 
-import ca.uwaterloo.flix.api.{MatchException, RuleException, SwitchException, UserException, TimeoutException}
+import ca.uwaterloo.flix.api.{MatchException, RuleException, SwitchException, TimeoutException, UserException}
+import ca.uwaterloo.flix.language.ast.ExecutableAst.Stratum
 import ca.uwaterloo.flix.language.ast.{ExecutableAst, PrettyPrinter}
 import ca.uwaterloo.flix.util.{Options, Verbosity}
 
@@ -58,10 +59,14 @@ object DeltaSolver {
     */
   def solve(root: ExecutableAst.Root, options: Options, path: Path): Unit = {
     /*
-     * Retrieve the facts and rules.
+     * Retrieve the lowest stratum.
      */
-    val initialFacts = root.constraints.filter(_.isFact)
-    val initialRules = root.constraints.filter(_.isRule)
+    val stratum0 = root.strata.head
+
+    /*
+     * Retrieve the facts of the program. These are always in the lowest stratum.
+     */
+    val initialFacts = stratum0.constraints.filter(_.isFact)
 
     /*
      * Refuse to overwrite existing file.
@@ -109,19 +114,25 @@ object DeltaSolver {
         // every fact except for those in the current block.
         facts = facts - block
 
-        // try to solve the program.
-        trySolve(root.copy(constraints = initialRules ++ facts.flatten), options, exception) match {
+        // reconstruct the constraints in the lowest stratum.
+        val s0 = facts.flatten.toList ::: stratum0.constraints.filter(_.isRule)
+
+        // reconstruct the strata.
+        val strata = Stratum(s0) :: root.strata.tail
+
+        // try to solve the reconstructed program.
+        trySolve(root.copy(strata = strata), options, exception) match {
           case SolverResult.Success =>
             // the program successfully completed. Must backtrack.
             Console.println(f"    [block $round%3d] ${block.size}%5d fact(s) retained (program ran successfully).") // TODO: Red
             facts = facts + block // put the block back
           case SolverResult.FailDiffException =>
             // the program failed with a different exception. Must backtrack.
-            Console.println(f"    [block $round%3d] ${block.size}%5d fact(s) retained (different exception).")  // TODO: Red
+            Console.println(f"    [block $round%3d] ${block.size}%5d fact(s) retained (different exception).") // TODO: Red
             facts = facts + block // put the block back
           case SolverResult.FailSameException =>
             // the program failed with the same exception. Continue minimization.
-            Console.println(f"    [block $round%3d] ${block.size}%5d fact(s) discarded.")  // TODO: Red
+            Console.println(f"    [block $round%3d] ${block.size}%5d fact(s) discarded.") // TODO: Red
         }
 
         round += 1
@@ -143,7 +154,7 @@ object DeltaSolver {
     }
 
     Console.println(s"    >>> Delta Debugging Complete! <<<") // TODO: Green
-    Console.println(s"    >>> Output written to `$path'. <<<")// TODO: Green
+    Console.println(s"    >>> Output written to `$path'. <<<") // TODO: Green
 
     Console.println()
   }

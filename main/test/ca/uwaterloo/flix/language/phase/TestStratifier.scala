@@ -29,8 +29,9 @@ class TestStratifier extends FunSuite with TestUtils {
   test("Stratification.01") {
     val input =
       """
-        |rel Foo(c: Int)
-        |Foo(c) :- !Foo(c).
+        |rel A(c: Int)
+        |rel X(c: Int)
+        |A(c) :- X(c), !A(c).
       """.stripMargin
     expectError[StratificationError](new Flix().addStr(input).compile())
   }
@@ -38,10 +39,11 @@ class TestStratifier extends FunSuite with TestUtils {
   test("Stratification.02") {
     val input =
       """
-        |rel Foo(c: Int)
-        |rel Bar(c: Int)
-        |Foo(c) :- Bar(c).
-        |Bar(c) :- !Foo(c).
+        |rel A(c: Int)
+        |rel B(c: Int)
+        |rel X(c: Int)
+        |A(c) :- X(c), B(c).
+        |B(c) :- X(c), !A(c).
       """.stripMargin
     expectError[StratificationError](new Flix().addStr(input).compile())
   }
@@ -49,10 +51,11 @@ class TestStratifier extends FunSuite with TestUtils {
   test("Stratification.03") {
     val input =
       """
-        |rel Foo(c: Int)
-        |rel Bar(c: Int)
-        |Foo(c) :- !Bar(c).
-        |Bar(c) :- Foo(c).
+        |rel A(c: Int)
+        |rel B(c: Int)
+        |rel X(c: Int)
+        |A(c) :- X(c), !B(c).
+        |B(c) :- X(c), A(c).
       """.stripMargin
     expectError[StratificationError](new Flix().addStr(input).compile())
   }
@@ -60,28 +63,29 @@ class TestStratifier extends FunSuite with TestUtils {
   test("Stratification.04") {
     val input =
       """
-        |rel Foo(c: Int)
-        |rel Foo1(c: Int)
-        |rel Foo2(c: Int)
-        |rel Foo3(c: Int)
-        |rel Foo4(c: Int)
-        |rel Foo5(c: Int)
-        |rel Foo6(c: Int)
-        |rel Foo7(c: Int)
-        |rel Foo8(c: Int)
-        |rel Foo9(c: Int)
-        |rel Foo10(c: Int)
-        |Foo(c) :- Foo1(c).
-        |Foo1(c) :- Foo2(c).
-        |Foo2(c) :- Foo3(c).
-        |Foo3(c) :- Foo4(c).
-        |Foo4(c) :- Foo5(c).
-        |Foo5(c) :- Foo6(c).
-        |Foo6(c) :- Foo7(c).
-        |Foo7(c) :- Foo8(c).
-        |Foo8(c) :- Foo9(c).
-        |Foo9(c) :- Foo10(c).
-        |Foo10(c) :- !Foo(c).
+        |rel A(c: Int)
+        |rel B(c: Int)
+        |rel C(c: Int)
+        |rel D(c: Int)
+        |rel E(c: Int)
+        |rel F(c: Int)
+        |rel G(c: Int)
+        |rel H(c: Int)
+        |rel I(c: Int)
+        |rel J(c: Int)
+        |rel K(c: Int)
+        |rel X(c: Int)
+        |A(c) :- B(c).
+        |B(c) :- C(c).
+        |C(c) :- D(c).
+        |D(c) :- E(c).
+        |E(c) :- F(c).
+        |F(c) :- G(c).
+        |G(c) :- H(c).
+        |H(c) :- I(c).
+        |I(c) :- J(c).
+        |J(c) :- K(c).
+        |K(c) :- X(c), !A(c).
       """.stripMargin
     expectError[StratificationError](new Flix().addStr(input).compile())
   }
@@ -89,11 +93,12 @@ class TestStratifier extends FunSuite with TestUtils {
   test("Stratification.05") {
     val input =
       """
-        |rel Foo(c: Int)
-        |rel Bar(c: Int)
-        |rel Baz(c: Int)
-        |Baz(c) :- !Foo(c).
-        |Foo(c) :- Bar(c), Baz(c).
+        |rel A(c: Int)
+        |rel B(c: Int)
+        |rel C(c: Int)
+        |rel X(c: Int)
+        |C(c) :- X(c), !A(c).
+        |A(c) :- B(c), C(c).
       """.stripMargin
     expectError[StratificationError](new Flix().addStr(input).compile())
   }
@@ -103,8 +108,9 @@ class TestStratifier extends FunSuite with TestUtils {
       """
         |rel A(c: Int)
         |rel B(c: Int)
-        |A(c) :- !A(c).
-        |B(c) :- !B(c).
+        |rel X(c: Int)
+        |A(c) :- X(c), !A(c).
+        |B(c) :- X(c), !B(c).
       """.stripMargin
     expectError[StratificationError](new Flix().addStr(input).compile())
   }
@@ -117,11 +123,12 @@ class TestStratifier extends FunSuite with TestUtils {
         |rel C(c: Int)
         |rel D(c: Int)
         |rel E(c: Int)
-        |A(c) :- B(c).
-        |B(c) :- C(c).
-        |C(c) :- !A(c).
-        |B(c) :- D(c).
-        |D(c) :- !A(c).
+        |rel X(c: Int)
+        |A(c) :- X(c), B(c).
+        |B(c) :- X(c), C(c).
+        |C(c) :- X(c), !A(c).
+        |B(c) :- X(c), D(c).
+        |D(c) :- X(c), !A(c).
       """.stripMargin
     expectError[StratificationError](new Flix().addStr(input).compile())
   }

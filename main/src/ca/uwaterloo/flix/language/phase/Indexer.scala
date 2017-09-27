@@ -17,13 +17,14 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.language.ast.ExecutableAst.{Predicate, Term}
+import ca.uwaterloo.flix.language.ast.ops.ExecutableAstOps
 import ca.uwaterloo.flix.language.ast.{ExecutableAst, Symbol}
 
 import scala.collection.mutable
 
 object Indexer {
 
-  // TODO: Ensure that everything has at least one index.
+  // TODO: This class is most likely currently broken. Rewrite from scratch!
 
   /**
     * Returns an index selection strategy based on left-to-right evaluation of constraint rules.
@@ -31,42 +32,47 @@ object Indexer {
   def index(root: ExecutableAst.Root): Map[Symbol.TableSym, Set[Seq[Int]]] = {
     val indexes = mutable.Map.empty[Symbol.TableSym, Set[Seq[Int]]]
 
-    // iterate through each rule.
-    for (constraint <- root.constraints) {
-      // maintain set of bound variables in each rule.
-      val bound = mutable.Set.empty[String]
-      // iterate through each table predicate in the body.
-      for (body <- constraint.body) {
-        body match {
-          case Predicate.Body.Positive(name, pterms, _, _, _) =>
-            // determine the terms usable for indexing based on whether the predicate refers to a relation or lattice.
-            val terms = root.tables(name) match {
-              case r: ExecutableAst.Table.Relation => pterms
-              case l: ExecutableAst.Table.Lattice => pterms take l.keys.length
-            }
+    // iterate through each stratum.
+    for (stratum <- root.strata) {
+      // iterate through each constraint in the stratum.
+      for (constraint <- stratum.constraints) {
+        // maintain set of bound variables in each rule.
+        val bound = mutable.Set.empty[Symbol.VarSym]
+        // iterate through each table predicate in the body.
+        for (body <- constraint.body) {
+          body match {
+            case Predicate.Body.Atom(name, polarity, pterms, _, _) =>
+              // determine the terms usable for indexing based on whether the predicate refers to a relation or lattice.
+              val terms = root.tables(name) match {
+                case r: ExecutableAst.Table.Relation => pterms
+                case l: ExecutableAst.Table.Lattice => pterms take l.keys.length
+              }
 
-            // compute the indices of the determinate (i.e. known) terms.
-            val determinate = terms.zipWithIndex.foldLeft(Seq.empty[Int]) {
-              case (xs, (t: Term.Body.Wild, i)) => xs
-              case (xs, (t: Term.Body.Var, i)) =>
-                if (bound contains t.sym.text) // TODO: Correctness
-                  xs :+ i
-                else
+              // compute the indices of the determinate (i.e. known) terms.
+              val determinate = terms.zipWithIndex.foldLeft(Seq.empty[Int]) {
+                case (xs, (t: Term.Body.Wild, i)) => xs
+                case (xs, (t: Term.Body.Var, i)) =>
                   xs
-              case (xs, (t: Term.Body.Lit, i)) => xs :+ i
-              case (xs, (t: Term.Body.Cst, i)) => xs :+ i
-              case (xs, (t: Term.Body.Pat, i)) => xs :+ i
-            }
+                // TODO: Someone needs to carefully analyse this code.
+                //                if (bound contains t.sym)
+                //                  xs :+ i
+                //                else
+                //                  xs
+                case (xs, (t: Term.Body.Lit, i)) => xs :+ i
+                case (xs, (t: Term.Body.Cst, i)) => xs :+ i
+                case (xs, (t: Term.Body.Pat, i)) => xs :+ i
+              }
 
-            // if one or more terms are determinate then an index would be useful.
-            if (determinate.nonEmpty) {
-              val idxs = indexes.getOrElse(name, Set.empty)
-              indexes(name) = idxs + determinate
-            }
+              // if one or more terms are determinate then an index would be useful.
+              if (determinate.nonEmpty) {
+                val idxs = indexes.getOrElse(name, Set.empty)
+                indexes(name) = idxs + determinate
+              }
 
-            // update the set of bound variables.
-            bound ++= body.freeVars
-          case _ => // nop
+              // update the set of bound variables.
+              bound ++= freeVars(body)
+            case _ => // nop
+          }
         }
       }
     }
@@ -109,4 +115,16 @@ object Indexer {
     }
     throw new RuntimeException // TODO
   }
+
+  private def freeVars(body: ExecutableAst.Predicate.Body): Set[Symbol.VarSym] = body match {
+    case ExecutableAst.Predicate.Body.Atom(sym, polarity, terms, index2sym, loc) => terms.foldLeft(Set.empty[Symbol.VarSym]) {
+      case (sacc, term) => sacc ++ ExecutableAstOps.freeVarsOf(term)
+    }
+    case ExecutableAst.Predicate.Body.Filter(sym, terms, loc) => terms.foldLeft(Set.empty[Symbol.VarSym]) {
+      case (sacc, term) => sacc ++ ExecutableAstOps.freeVarsOf(term)
+    }
+    case ExecutableAst.Predicate.Body.Loop(sym, term, loc) => ExecutableAstOps.freeVarsOf(term)
+  }
+
+
 }

@@ -220,6 +220,25 @@ object Ast {
   }
 
   /**
+    * A common super-type for the polarity of an atom.
+    */
+  sealed trait Polarity
+
+  object Polarity {
+
+    /**
+      * The atom is positive.
+      */
+    case object Positive extends Polarity
+
+    /**
+      * The atom is negative.
+      */
+    case object Negative extends Polarity
+
+  }
+
+  /**
     * Represents that the annotated element is introduced by the class `clazz`.
     */
   case class IntroducedBy(clazz: java.lang.Class[_]) extends scala.annotation.StaticAnnotation
