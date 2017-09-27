@@ -8,7 +8,7 @@ object TypedAstOps {
   /**
     * Returns the free variables in the given pattern `pat0`.
     */
-  def freeVars(pat0: Pattern): Set[Symbol.VarSym] = pat0 match {
+  def freeVarsOf(pat0: Pattern): Set[Symbol.VarSym] = pat0 match {
     case Pattern.Wild(tpe, loc) => Set.empty
     case Pattern.Var(sym, tpe, loc) => Set(sym)
     case Pattern.Unit(loc) => Set.empty
@@ -23,8 +23,8 @@ object TypedAstOps {
     case Pattern.Int64(lit, loc) => Set.empty
     case Pattern.BigInt(lit, loc) => Set.empty
     case Pattern.Str(lit, loc) => Set.empty
-    case Pattern.Tag(sym, tag, pat, tpe, loc) => freeVars(pat)
-    case Pattern.Tuple(elms, tpe, loc) => elms.flatMap(freeVars).toSet
+    case Pattern.Tag(sym, tag, pat, tpe, loc) => freeVarsOf(pat)
+    case Pattern.Tuple(elms, tpe, loc) => (elms flatMap freeVarsOf).toSet
   }
 
 }

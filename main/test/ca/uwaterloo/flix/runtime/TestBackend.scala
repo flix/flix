@@ -135,7 +135,7 @@ class TestBackend extends FunSuite {
     val t = new Tester(input)
   }
 
-  ignore("Term.Head.Exp.08") { // TODO: Require special equality on sets.
+  test("Term.Head.Exp.08") { // TODO: Require special equality on sets.
     val input =
       """rel A(x: (Int, Str))
         |
@@ -154,7 +154,7 @@ class TestBackend extends FunSuite {
     val t = new Tester(input)
   }
 
-  ignore("Term.Head.Exp.10") {  // TODO: Require special equality on sets.
+  test("Term.Head.Exp.10") {
     val input =
       """rel A(x: (Int, Int))
         |
@@ -293,7 +293,7 @@ class TestBackend extends FunSuite {
     val t = new Tester(input)
   }
 
-  ignore("Term.Head.Apply.08") { //  // TODO: Require special equality on sets.
+  test("Term.Head.Apply.08") {
     val input =
       """rel A(x: (Int, Str))
         |def f(x: Int): (Int, Str) = (x, "one")
@@ -314,7 +314,7 @@ class TestBackend extends FunSuite {
     val t = new Tester(input)
   }
 
-  ignore("Term.Head.Apply.10") { //  // TODO: Require special equality on sets.
+  test("Term.Head.Apply.10") {
     val input =
       """rel A(x: (Int, Int))
         |def f(x: Int, y: Int): (Int, Int) = (x, y)

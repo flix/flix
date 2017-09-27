@@ -293,7 +293,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
     */
   private def initDataStore(): Unit = {
     val t = System.nanoTime()
-    // retrieve the first stratum.
+    // retrieve the lowest stratum.
     val stratum0 = root.strata.head
 
     // iterate through all facts.

@@ -5,18 +5,18 @@ import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.Ast.Polarity
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.ast.TypedAst.{Constraint, Predicate, Root, Stratum}
-import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
+import ca.uwaterloo.flix.language.ast.ops.TypedAstOps._
 import ca.uwaterloo.flix.language.errors.SafetyError
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
 
 /**
-  * Performs safety and well-formedness checks post type checking.
+  * Performs safety and well-formedness checks on a typed ast.
   */
 object Safety extends Phase[Root, Root] {
 
   /**
-    * Performs safety and well-formedness checks post type checking.
+    * Performs safety and well-formedness checks on a typed ast.
     */
   def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationError] = {
     //
@@ -41,8 +41,8 @@ object Safety extends Phase[Root, Root] {
   /**
     * Performs safety and well-formedness checks on the given stratum `st0`.
     */
-  private def checkStratum(stratum: Stratum): List[CompilationError] = {
-    stratum.constraints flatMap checkConstraint
+  private def checkStratum(st0: Stratum): List[CompilationError] = {
+    st0.constraints flatMap checkConstraint
   }
 
   /**
@@ -60,7 +60,6 @@ object Safety extends Phase[Root, Root] {
     c0.body.flatMap(checkBodyPredicate(_, posVars))
   }
 
-
   /**
     * Performs safety and well-formedness checks on the given body predicate `p0`
     * with the given positively defined variable symbols `posVars`.
@@ -70,7 +69,7 @@ object Safety extends Phase[Root, Root] {
       case Polarity.Positive => Nil
       case Polarity.Negative =>
         // Compute the free variables in the terms.
-        val freeVars = terms.flatMap(TypedAstOps.freeVars).toSet
+        val freeVars = terms.flatMap(freeVarsOf).toSet
 
         // Check if any free variables are not positively bound.
         ((freeVars -- posVars) map {
@@ -93,7 +92,7 @@ object Safety extends Phase[Root, Root] {
     case Predicate.Body.Atom(sym, polarity, terms, loc) => polarity match {
       case Polarity.Positive =>
         // Case 1: A positive atom positively defines all its free variables.
-        terms.flatMap(TypedAstOps.freeVars).toSet
+        terms.flatMap(freeVarsOf).toSet
       case Polarity.Negative =>
         // Case 2: A negative atom does not positively define any variables.
         Set.empty

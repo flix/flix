@@ -126,22 +126,6 @@ class TestNamer extends FunSuite with TestUtils {
     expectError[NameError.DuplicateIndex](result)
   }
 
-  // TODO: DuplicateIndex in different namespaces.
-  ignore("DuplicateIndex.03") {
-    val input =
-      s"""
-         |namespace a {
-         |  rel R(x: Int)
-         |
-         |  index R({x})
-         |}
-         |
-         |index a/R({x})
-       """.stripMargin
-    val result = new Flix().addStr(input).compile()
-    expectError[NameError.DuplicateIndex](result)
-  }
-
   test("UndefinedNativeClass.01") {
     val input = "def f(): Int = unsafe native field java.lang.Foo"
     val result = new Flix().addStr(input).compile()

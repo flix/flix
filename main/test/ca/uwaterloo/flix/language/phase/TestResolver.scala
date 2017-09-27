@@ -23,8 +23,7 @@ import org.scalatest.FunSuite
 
 class TestResolver extends FunSuite with TestUtils {
 
-  // TODO
-  ignore("UnsafeFact.01") {
+  test("UnsafeFact.01") {
     val input =
       s"""
          |rel R(x: Int)
@@ -35,8 +34,7 @@ class TestResolver extends FunSuite with TestUtils {
     expectError[ResolutionError.UndefinedDef](result)
   }
 
-  // TODO
-  ignore("UnsafeFact.02") {
+  test("UnsafeFact.02") {
     val input =
       s"""
          |rel R(x: Int, y: Int)
@@ -47,8 +45,7 @@ class TestResolver extends FunSuite with TestUtils {
     expectError[ResolutionError.UndefinedDef](result)
   }
 
-  // TODO
-  ignore("UnsafeFact.03") {
+  test("UnsafeFact.03") {
     val input =
       s"""
          |rel R(x: Int, y: Int, z: Int)
@@ -59,8 +56,7 @@ class TestResolver extends FunSuite with TestUtils {
     expectError[ResolutionError.UndefinedDef](result)
   }
 
-  // TODO
-  ignore("UnsafeRule.01") {
+  test("UnsafeRule.01") {
     val input =
       s"""
          |rel R(x: Int)
@@ -71,8 +67,7 @@ class TestResolver extends FunSuite with TestUtils {
     expectError[ResolutionError.UndefinedDef](result)
   }
 
-  // TODO
-  ignore("UnsafeRule.02") {
+  test("UnsafeRule.02") {
     val input =
       s"""
          |rel R(x: Int, y: Int)
@@ -83,8 +78,7 @@ class TestResolver extends FunSuite with TestUtils {
     expectError[ResolutionError.UndefinedDef](result)
   }
 
-  // TODO
-  ignore("UnsafeRule.03") {
+  test("UnsafeRule.03") {
     val input =
       s"""
          |rel R(x: Int, y: Int, z: Int)
