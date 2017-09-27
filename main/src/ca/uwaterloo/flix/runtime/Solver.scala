@@ -895,9 +895,9 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
   // Dependencies                                                            //
   /////////////////////////////////////////////////////////////////////////////
   /**
-    * Computes the dependencies of the constraints in the program.
+    * Computes the dependencies between rules in the program.
     *
-    * A dependency between two constraints can only occur in the same strata.
+    * A dependency can only exist between two rules in the same stratum.
     */
   private def initDependencies(): Unit = {
     // Iterate through each stratum.
@@ -908,7 +908,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
       // Initialize the dependencies of every symbol to the empty set.
       for (rule <- constraints) {
         rule.head match {
-          case ExecutableAst.Predicate.Head.Atom(sym, _, _) => dependenciesOf.update(sym, Set.empty)
+          case Predicate.Head.Atom(sym, _, _) => dependenciesOf.update(sym, Set.empty)
           case _ => // nop
         }
       }
@@ -919,7 +919,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
           for (body <- innerRule.body) {
             // Loop through the atoms of the inner rule.
             (outerRule.head, body) match {
-              case (outer: ExecutableAst.Predicate.Head.Atom, inner: ExecutableAst.Predicate.Body.Atom) =>
+              case (outer: Predicate.Head.Atom, inner: Predicate.Body.Atom) =>
                 // We have found a head and body atom. Check if they share the same symbol.
                 if (outer.sym == inner.sym) {
                   // The symbol is the same. Update the dependencies.
