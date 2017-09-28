@@ -147,6 +147,91 @@ object CodegenHelper {
   }
 
   /**
+    * This case class holds all the information required for an Enum case
+    * @param qualName Qualified Name of the cas
+    * @param executableCase Representation in the AST
+    * @param fieldType Type of the field of the case
+    */
+  case class EnumCaseInfo(qualName: EnumClassName, executableCase: ExecutableAst.Case, fieldType: Type)
+
+  /**
+    * Generates that holds all information required for enums
+    * @param root Root of the executable AST
+    */
+  def generateEnumTypeInfoMap(root: ExecutableAst.Root): Map[Type, Map[String, EnumCaseInfo]] = {
+    // This list contains all enum cases with their type and with the type of their field
+    val allEnums: List[(Type, (String, Type))] = root.defs.values.flatMap(x => CodegenHelper.findEnumCases(x.exp)).toList
+
+    // We first group enum cases by their type
+    allEnums.groupBy(_._1).map { case (tpe, enumCases) =>
+      // Then for enum cases with the same type, we generate a map from the tag of the case to `EnumCaseInfo` of that case
+      val caseMap = enumCases.map{ case (tpe, (tag, fieldType)) =>
+        // Symbol of the enum
+        val sym = tpe match {
+          case Type.Apply(Type.Enum(s, _), _) => s
+          case Type.Enum(s, _) => s
+          case _ => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
+        }
+        // AST representation of the case
+        val enumCase = root.enums(sym).cases(tag)
+        // Qualified name of the case
+        val qualName = EnumClassName(sym, tag, typeToWrappedType(fieldType))
+        tag -> EnumCaseInfo(qualName, enumCase, fieldType)
+      }.toMap
+      tpe -> caseMap
+    }.toMap // Despite IDE highlighting, this is actually necessary.
+  }
+
+  /**
+    * @param enumTypeInfo Information required about enums
+    * @param tpe type of the enum
+    * @return This returns `true` if the enum has two cases, one with a unit field and one with an object field
+    */
+  private def enumWithUnitAndObjectCases(enumTypeInfo: Map[Type, Map[String, EnumCaseInfo]], tpe: Type): Boolean = {
+    if(tpe.isEnum) {
+      val cases = enumTypeInfo(tpe)
+      if(cases.size == 2) {
+        val tpe1 = cases.head._2.fieldType
+        val tpe2 = cases.last._2.fieldType
+        (tpe1 == Type.Unit && !isPrimitive(tpe2)) || (tpe2 == Type.Unit && !isPrimitive(tpe1))
+      } else {
+        false
+      }
+    } else {
+      true
+    }
+  }
+
+  /**
+    * If an enum has two cases, and the field type of one of the cases is an object and the field type of the other
+    * case is Unit, we compile the case with an object field type to itself and we compile the case with Unit field type
+    * to jvm null. This way, we save generating new objects to wrap fields into.
+    * @param enumTypeInfo Information required about enums
+    * @param tpe type of the enum
+    * @return If the enum can be optimized
+    */
+  def isNullOptimizable(enumTypeInfo: Map[Type, Map[String, EnumCaseInfo]], tpe: Type): Boolean = {
+    // First, check if the enum has two cases, one with a unit field and one with an object field
+    if(enumWithUnitAndObjectCases(enumTypeInfo, tpe)) {
+      // Gather fields that are not Unit
+      val noneUnitTypes = enumTypeInfo(tpe).map(_._2.fieldType).filterNot(_ == Type.Unit)
+      // Make sure there is exactly 1 case with none unit field
+      if(noneUnitTypes.size == 1) {
+        // Type of the none unit case
+        val tpe = noneUnitTypes.head
+        // This can be optimized if either field type is not another enum, or if it is another enum, the enum cannot be
+        // null optimized. If the field type is another enum that can be null optimized, then null will get mapped to
+        // more than 1 enum case.
+        !tpe.isEnum || !enumWithUnitAndObjectCases(enumTypeInfo, tpe)
+      } else {
+        false
+      }
+    } else {
+      false
+    }
+  }
+
+  /**
     * This method returns a string which uniquely specifies the give type. If the type can be represented by a primitive,
     * then the name of that primitive is returned, otherwise if the type has to be represented by an object then string
     * `object` is return
@@ -416,7 +501,7 @@ object CodegenHelper {
     * @return descriptor of the field
     */
   def getWrappedTypeDescriptor(fType: WrappedType): String = fType match {
-    case WrappedPrimitive(tpe) => descriptor(tpe, Map())
+    case WrappedPrimitive(tpe) => descriptor(tpe, Map(), Map())
     case WrappedNonPrimitives(_) => asm.Type.getDescriptor(Constants.objectClass)
   }
 
@@ -548,7 +633,7 @@ object CodegenHelper {
     * generated for that closure, and not its JVM type descriptor. We don't want a type descriptor to look like
     * `((II)I)I`.
     */
-  def descriptor(tpe: Type, interfaces: Map[Type, FlixClassName]): String = {
+  def descriptor(tpe: Type, interfaces: Map[Type, FlixClassName], enums: Map[Type, Map[String, EnumCaseInfo]]): String = {
     def inner(tpe: Type): String = tpe match {
       case Type.Var(id, kind) => throw InternalCompilerException(s"Non-monomorphed type variable '$id in type '$tpe'.")
       case Type.Unit => asm.Type.getDescriptor(Constants.unitClass)
@@ -567,6 +652,11 @@ object CodegenHelper {
       case Type.Apply(Type.Tuple(l), lst) =>
         val clazzName = TupleClassName(lst.map(typeToWrappedType))
         s"L${decorate(clazzName)};"
+      case _ if tpe.isEnum && isNullOptimizable(enums, tpe) =>
+        // If the enum is null optimizable, then we find the case which doesn't have the Unit field
+        val notUnitCase = enums(tpe).filterNot(_._2.fieldType == Type.Unit)
+        // The type of the object will be the type of the case without Unit field
+        descriptor(notUnitCase.head._2.fieldType, interfaces, enums)
       case _ if tpe.isEnum =>
         val sym = tpe match {
           case Type.Apply(Type.Enum(s, _), _) => s
@@ -587,7 +677,7 @@ object CodegenHelper {
   /**
     * Returns the internal name of the JVM class that `tpe` maps to.
     */
-  def internalName(tpe: Type, interfaces: Map[Type, FlixClassName]): String = tpe match {
+  def internalName(tpe: Type, interfaces: Map[Type, FlixClassName], enums: Map[Type, Map[String, EnumCaseInfo]]): String = tpe match {
     case Type.Var(id, kind) => throw InternalCompilerException(s"Non-monomorphed type variable '$id in type '$tpe'.")
     case Type.Unit => asm.Type.getInternalName(Constants.unitClass)
     case Type.BigInt => asm.Type.getInternalName(Constants.bigIntegerClass)
@@ -597,6 +687,11 @@ object CodegenHelper {
     case Type.Apply(Type.Tuple(l), lst) =>
       val clazzName = TupleClassName(lst.map(typeToWrappedType))
       decorate(clazzName)
+    case _ if tpe.isEnum && isNullOptimizable(enums, tpe) =>
+      // If the enum is null optimizable, then we find the case which doesn't have the Unit field
+      val notUnitCase = enums(tpe).filterNot(_._2.fieldType == Type.Unit).head
+      // The type of the object will be the type of the case without Unit field
+      internalName(notUnitCase._2.fieldType, interfaces, enums)
     case _ if tpe.isEnum =>
       val sym = tpe match {
         case Type.Apply(Type.Enum(s, _), _) => s
