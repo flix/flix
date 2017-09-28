@@ -44,7 +44,7 @@ object Uncurrier extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
   def run(root: SimplifiedAst.Root)(implicit flix: Flix): Validation[SimplifiedAst.Root, CompilationError] = {
     implicit val _ = flix.genSym
     val startTime = System.nanoTime()
-
+    return root.toSuccess
     val (defns, uncurriedSyms) = root.defs.foldLeft(Map.empty[Symbol.DefnSym, SimplifiedAst.Def],
       Map.empty[Symbol.DefnSym, Map[Int, Symbol.DefnSym]])((acc, defnEntry) => {
       val (defs, uncurriedSyms) = Defs.mkUncurriedDef(defnEntry._1, defnEntry._2, 1, acc._2, root)

@@ -88,8 +88,8 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     val constantsMap: Map[FlixClassName, List[ExecutableAst.Def]] = root.defs.values.map { f =>
       f.tpe match {
           // TODO: No idea what this does.
-        case Type.Apply(Type.Arrow(l), _) => f
-        case t => f.copy(tpe = Type.mkArrow(List(), t))
+        case tpe if tpe.isArrow => f
+        case tpe => f.copy(tpe = Type.mkArrow(List(), tpe))
       }
     }.toList.groupBy(cst => FlixClassName(cst.sym.prefix))
     // TODO: Here we filter laws, since the backend does not support existentials/universals, but could we fix that?
@@ -650,7 +650,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
       // Descriptor of the field of the element in the tuple specified by the `offset`
       val desc = getWrappedTypeDescriptor(typeToWrappedType(tpe))
       // Qualified name of the class defining the tuple
-      val targs = tpe.getTypeArguments
+      val targs = base.tpe.getTypeArguments
       val clazzName = TupleClassName(targs.map(typeToWrappedType))
       // evaluating the `base`
       compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint)(base)

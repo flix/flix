@@ -82,8 +82,8 @@ object LoadBytecode extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     val constantsMap: Map[QualName, List[ExecutableAst.Def]] = root.defs.values.map { f =>
       f.tpe match {
           // TODO: No idea what this does.
-        case Type.Apply(Type.Arrow(l), _) => f
-        case t => f.copy(tpe = Type.mkArrow(List(), t))
+        case tpe if tpe.isArrow => f
+        case tpe => f.copy(tpe = Type.mkArrow(List(), tpe))
       }
     }.toList.groupBy(cst => FlixClassName(cst.sym.prefix))
 
