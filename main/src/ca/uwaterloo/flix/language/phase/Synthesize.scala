@@ -712,7 +712,7 @@ object Synthesize extends Phase[Root, Root] {
 
       // Apply the substitution to each case.
       enum.cases.map {
-        case (tag, Case(_, _, caseType)) => tag -> subst(caseType)
+        case (tag, Case(enumSym, tagName, tagType, tagLoc)) => tag -> subst(tagType)
       }.toList
     }
 

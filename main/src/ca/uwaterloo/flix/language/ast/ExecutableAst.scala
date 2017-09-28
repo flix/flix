@@ -385,7 +385,7 @@ object ExecutableAst {
 
   case class Attribute(name: String, tpe: Type) extends ExecutableAst
 
-  case class Case(enum: Name.Ident, tag: Name.Ident, tpe: Type) extends ExecutableAst
+  case class Case(sym: Symbol.EnumSym, tag: Name.Ident, tpe: Type, loc: SourceLocation) extends ExecutableAst
 
   sealed trait ConstraintParam
 

@@ -965,7 +965,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
     val enums = root.enums.map {
       case (k, TypedAst.Enum(doc, sym, cases0, enumType, loc)) =>
         val cases = cases0 map {
-          case (tag, TypedAst.Case(enum, tagName, tagType)) => tag -> SimplifiedAst.Case(enum, tagName, tagType)
+          case (tag, TypedAst.Case(enumSym, tagName, tagType, tagLoc)) => tag -> SimplifiedAst.Case(enumSym, tagName, tagType, tagLoc)
         }
         k -> SimplifiedAst.Enum(sym, cases, enumType, loc)
     }

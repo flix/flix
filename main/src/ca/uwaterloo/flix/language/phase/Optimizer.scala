@@ -397,10 +397,10 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
 
       // Retrieve the case.
       enum.cases.head match {
-        case (_, SimplifiedAst.Case(_, tag, caseType)) =>
+        case (_, SimplifiedAst.Case(enumSym, tagName, tagType, tagLoc)) =>
           // Unify the enum type with actual type to ensure that the case type does not have free type variables.
           val subst = Unification.unify(enumType, actualType).get
-          val result = subst(caseType)
+          val result = subst(tagType)
 
           // Check that the result does not have free variables.
           assert(result.isDeterminate)

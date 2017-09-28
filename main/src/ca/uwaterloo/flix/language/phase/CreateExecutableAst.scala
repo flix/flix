@@ -47,7 +47,7 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
     val enums = root.enums.map {
       case (sym, SimplifiedAst.Enum(_, cases0, _, loc)) =>
         val cases = cases0.map {
-          case (tag, SimplifiedAst.Case(enumName, tagName, tpe)) => tag -> ExecutableAst.Case(enumName, tagName, tpe)
+          case (tag, SimplifiedAst.Case(enumSym, tagName, tagType, tagLoc)) => tag -> ExecutableAst.Case(enumSym, tagName, tagType, tagLoc)
         }
         sym -> ExecutableAst.Enum(sym, cases, loc)
     }

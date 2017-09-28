@@ -297,7 +297,7 @@ object TypedAst {
 
   case class Attribute(name: String, tpe: Type, loc: SourceLocation) extends TypedAst
 
-  case class Case(enum: Name.Ident, tag: Name.Ident, tpe: Type) extends TypedAst
+  case class Case(sym: Symbol.EnumSym, tag: Name.Ident, tpe: Type, loc: SourceLocation) extends TypedAst
 
   sealed trait ConstraintParam
 

@@ -324,7 +324,7 @@ object SimplifiedAst {
 
   case class Attribute(name: String, tpe: Type) extends SimplifiedAst
 
-  case class Case(enum: Name.Ident, tag: Name.Ident, tpe: Type) extends SimplifiedAst
+  case class Case(sym: Symbol.EnumSym, tag: Name.Ident, tpe: Type, loc: SourceLocation) extends SimplifiedAst
 
   sealed trait ConstraintParam
 
