@@ -546,7 +546,7 @@ object CodegenHelper {
     * generated for that closure, and not its JVM type descriptor. We don't want a type descriptor to look like
     * `((II)I)I`.
     */
-  def descriptor(tpe: Type, interfaces: Map[Type, FlixClassName]): String = {
+  def descriptor(tpes: Type, interfaces: Map[Type, FlixClassName]): String = {
     def inner(tpe: Type): String = tpe match {
       case Type.Var(id, kind) => throw InternalCompilerException(s"Non-monomorphed type variable '$id in type '$tpe'.")
       case Type.Unit => asm.Type.getDescriptor(Constants.unitClass)
@@ -561,7 +561,12 @@ object CodegenHelper {
       case Type.BigInt => asm.Type.getDescriptor(Constants.bigIntegerClass)
       case Type.Str => asm.Type.getDescriptor(Constants.stringClass)
       case Type.Native => asm.Type.getDescriptor(Constants.objectClass)
-      case _ if tpe.isArrow => s"L${decorate(interfaces(tpe))};"
+      case _ if tpe.isArrow => {
+        if(!interfaces.contains(tpe)){
+          true
+        }
+        s"L${decorate(interfaces(tpe))};"
+      }
       case _ if tpe.isTuple =>
         val targs = tpe.getTypeArguments
         val clazzName = TupleClassName(targs.map(typeToWrappedType))
@@ -573,11 +578,11 @@ object CodegenHelper {
       case _ => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
     }
 
-    tpe match {
-      case _ if tpe.isArrow =>
-        val ts = tpe.getTypeArguments
+    tpes match {
+      case _ if tpes.isArrow =>
+        val ts = tpes.getTypeArguments
         s"(${ts.init.map(inner).mkString})${inner(ts.last)}"
-      case _ => inner(tpe)
+      case _ => inner(tpes)
     }
   }
 
