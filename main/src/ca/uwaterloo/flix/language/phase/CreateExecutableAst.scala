@@ -186,7 +186,15 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
         throw InternalCompilerException("Apply should have been replaced by ClosureConv.") // TODO: Doc
       case SimplifiedAst.Expression.Closure(sym, freeVars, tpe, loc) =>
         val fvs = freeVars.map(CreateExecutableAst.toExecutable)
-        ExecutableAst.Expression.Closure(sym, fvs, tpe, tpe, loc)
+
+        // TODO: Temporary fix to compute the function interface type (as opposed to the closure interface type).
+        // In the future this "computation" should not be performed here.
+        val base = tpe.getTypeConstructor
+        val targs = tpe.getTypeArguments
+        val freeArgs = fvs.map(_.tpe)
+        val fnType = Type.mkArrow(freeArgs ::: targs.init, targs.last)
+
+        ExecutableAst.Expression.Closure(sym, fvs, tpe, fnType, loc)
       case SimplifiedAst.Expression.ApplyClo(exp, args, tpe, loc) =>
         val argsArray = args.map(toExecutable)
         ExecutableAst.Expression.ApplyClo(toExecutable(exp), argsArray, tpe, loc)
