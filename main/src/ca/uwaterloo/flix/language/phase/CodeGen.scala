@@ -370,6 +370,9 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
       val instantiatedMethodType = asm.Type.getType(descriptor(tpe, interfaces))
       val bsmArgs = Array(samMethodType, implMethod, instantiatedMethodType)
 
+      if(sym.prefix.contains("Root") && sym.suffix.contains("lt$lt$9287")) {
+        true
+      }
       // Finally, generate the InvokeDynamic instruction.
       visitor.visitInvokeDynamicInsn(invokedName, invokedType, bsmHandle, bsmArgs: _*)
 
