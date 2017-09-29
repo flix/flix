@@ -546,7 +546,7 @@ object CodegenHelper {
     * generated for that closure, and not its JVM type descriptor. We don't want a type descriptor to look like
     * `((II)I)I`.
     */
-  def descriptor(tpes: Type, interfaces: Map[Type, FlixClassName]): String = {
+  def descriptor(tpe: Type, interfaces: Map[Type, FlixClassName]): String = {
     def inner(tpe: Type): String = tpe match {
       case Type.Var(id, kind) => throw InternalCompilerException(s"Non-monomorphed type variable '$id in type '$tpe'.")
       case Type.Unit => asm.Type.getDescriptor(Constants.unitClass)
@@ -561,12 +561,7 @@ object CodegenHelper {
       case Type.BigInt => asm.Type.getDescriptor(Constants.bigIntegerClass)
       case Type.Str => asm.Type.getDescriptor(Constants.stringClass)
       case Type.Native => asm.Type.getDescriptor(Constants.objectClass)
-      case _ if tpe.isArrow => {
-        if(!interfaces.contains(tpe)){
-          true
-        }
-        s"L${decorate(interfaces(tpe))};"
-      }
+      case _ if tpe.isArrow => s"L${decorate(interfaces(tpe))};"
       case _ if tpe.isTuple =>
         val targs = tpe.getTypeArguments
         val clazzName = TupleClassName(targs.map(typeToWrappedType))
@@ -578,11 +573,11 @@ object CodegenHelper {
       case _ => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
     }
 
-    tpes match {
-      case _ if tpes.isArrow =>
-        val ts = tpes.getTypeArguments
+    tpe match {
+      case _ if tpe.isArrow =>
+        val ts = tpe.getTypeArguments
         s"(${ts.init.map(inner).mkString})${inner(ts.last)}"
-      case _ => inner(tpes)
+      case _ => inner(tpe)
     }
   }
 
@@ -658,17 +653,6 @@ object CodegenHelper {
     * Generates all the names of the functional interfaces used in the Flix program.
     */
   def generateInterfaceNames(consts: List[ExecutableAst.Def])(implicit genSym: GenSym): Map[Type, FlixClassName] = {
-    def visitType(tpe: Type): Set[Type] = tpe match {
-      case _ if tpe.isArrow =>
-        val targs = tpe.getTypeArguments
-        val arrows = targs.filter(_.isArrow).toSet
-        val underlying = targs.flatMap(visitType).toSet
-        arrows ++ underlying
-      case _ if tpe.isTuple => tpe.getTypeArguments.flatMap(visitType).toSet
-      case _ if tpe.isEnum => tpe.getTypeArguments.flatMap(visitType).toSet
-      case _ => Set.empty
-    }
-
     def visit(e: Expression): Set[Type] = e match {
       case Expression.Unit => Set.empty
       case Expression.True => Set.empty
@@ -682,45 +666,45 @@ object CodegenHelper {
       case Expression.Int64(lit) => Set.empty
       case Expression.BigInt(lit) => Set.empty
       case Expression.Str(lit) => Set.empty
-      case Expression.Var(sym, tpe, loc) => visitType(tpe)
-      case Expression.Closure(ref, freeVars, _, tpe, loc) => Set(tpe) ++ visitType(tpe)
-      case Expression.ApplyClo(exp, args, tpe, loc) => visit(exp) ++ args.flatMap(visit) ++ visitType(tpe)
-      case Expression.ApplyDef(name, args, tpe, loc) => args.flatMap(visit).toSet ++ visitType(tpe)
-      case Expression.ApplyCloTail(exp, args, tpe, loc) => visit(exp) ++ args.flatMap(visit) ++ visitType(tpe)
-      case Expression.ApplyDefTail(name, args, tpe, loc) => args.flatMap(visit).toSet ++ visitType(tpe)
-      case Expression.ApplySelfTail(name, formals, actuals, tpe, loc) => actuals.flatMap(visit).toSet ++ visitType(tpe)
-      case Expression.ApplyHook(hook, args, tpe, loc) => args.flatMap(visit).toSet ++ visitType(tpe)
-      case Expression.Unary(sop, op, exp, tpe, loc) => visit(exp) ++ visitType(tpe)
-      case Expression.Binary(sop, op, exp1, exp2, tpe, loc) => visit(exp1) ++ visit(exp2) ++ visitType(tpe)
-      case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) => visit(exp1) ++ visit(exp2) ++ visit(exp3) ++ visitType(tpe)
+      case Expression.Var(sym, tpe, loc) => Set.empty
+      case Expression.Closure(ref, freeVars, _, tpe, loc) => Set(tpe)
+      case Expression.ApplyClo(exp, args, tpe, loc) => visit(exp) ++ args.flatMap(visit)
+      case Expression.ApplyDef(name, args, tpe, loc) => args.flatMap(visit).toSet
+      case Expression.ApplyCloTail(exp, args, tpe, loc) => visit(exp) ++ args.flatMap(visit)
+      case Expression.ApplyDefTail(name, args, tpe, loc) => args.flatMap(visit).toSet
+      case Expression.ApplySelfTail(name, formals, actuals, tpe, loc) => actuals.flatMap(visit).toSet
+      case Expression.ApplyHook(hook, args, tpe, loc) => args.flatMap(visit).toSet
+      case Expression.Unary(sop, op, exp, tpe, loc) => visit(exp)
+      case Expression.Binary(sop, op, exp1, exp2, tpe, loc) => visit(exp1) ++ visit(exp2)
+      case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) => visit(exp1) ++ visit(exp2) ++ visit(exp3)
       case Expression.Branch(exp, branches, tpe, loc) =>
         visit(exp) ++ (branches flatMap {
           case (sym, br) => visit(br)
-        }).toSet ++ visitType(tpe)
+        }).toSet
       case Expression.JumpTo(sym, tpe, loc) => Set.empty
-      case Expression.Let(sym, exp1, exp2, tpe, loc) => visit(exp1) ++ visit(exp2) ++ visitType(tpe)
-      case Expression.LetRec(sym, exp1, exp2, tpe, loc) => visit(exp1) ++ visit(exp2) ++ visitType(tpe)
+      case Expression.Let(sym, exp1, exp2, tpe, loc) => visit(exp1) ++ visit(exp2)
+      case Expression.LetRec(sym, exp1, exp2, tpe, loc) => visit(exp1) ++ visit(exp2)
       case Expression.Is(sym, tag, exp, loc) => visit(exp)
-      case Expression.Tag(enum, tag, exp, tpe, loc) => visit(exp) ++ visitType(tpe)
-      case Expression.Untag(sym, tag, exp, tpe, loc) => visit(exp) ++ visitType(tpe)
-      case Expression.Index(base, offset, tpe, loc) => visit(base) ++ visitType(tpe)
-      case Expression.Tuple(elms, tpe, loc) => elms.flatMap(visit).toSet ++ visitType(tpe)
-      case Expression.Ref(exp, tpe, loc) => visit(exp) ++ visitType(tpe)
-      case Expression.Deref(exp, tpe, loc) => visit(exp) ++ visitType(tpe)
-      case Expression.Assign(exp1, exp2, tpe, loc) => visit(exp1) ++ visit(exp2) ++ visitType(tpe)
+      case Expression.Tag(enum, tag, exp, tpe, loc) => visit(exp)
+      case Expression.Untag(sym, tag, exp, tpe, loc) => visit(exp)
+      case Expression.Index(base, offset, tpe, loc) => visit(base)
+      case Expression.Tuple(elms, tpe, loc) => elms.flatMap(visit).toSet
+      case Expression.Ref(exp, tpe, loc) => visit(exp)
+      case Expression.Deref(exp, tpe, loc) => visit(exp)
+      case Expression.Assign(exp1, exp2, tpe, loc) => visit(exp1) ++ visit(exp2)
       case Expression.Existential(params, exp, loc) =>
         ???
       case Expression.Universal(params, exp, loc) =>
         ???
-      case Expression.NativeConstructor(constructor, args, tpe, loc) => args.flatMap(visit).toSet ++ visitType(tpe)
-      case Expression.NativeField(field, tpe, loc) => Set.empty ++ visitType(tpe)
-      case Expression.NativeMethod(method, args, tpe, loc) => args.flatMap(visit).toSet ++ visitType(tpe)
-      case Expression.UserError(tpe, loc) => Set.empty ++ visitType(tpe)
-      case Expression.MatchError(tpe, loc) => Set.empty ++ visitType(tpe)
-      case Expression.SwitchError(tpe, loc) => Set.empty ++ visitType(tpe)
+      case Expression.NativeConstructor(constructor, args, tpe, loc) => args.flatMap(visit).toSet
+      case Expression.NativeField(field, tpe, loc) => Set.empty
+      case Expression.NativeMethod(method, args, tpe, loc) => args.flatMap(visit).toSet
+      case Expression.UserError(tpe, loc) => Set.empty
+      case Expression.MatchError(tpe, loc) => Set.empty
+      case Expression.SwitchError(tpe, loc) => Set.empty
     }
 
-    val types = consts.flatMap(x => visit(x.exp) ++ visitType(x.tpe)).toSet
+    val types = consts.flatMap(x => visit(x.exp)).toSet
     types.map { t =>
       val name = Symbol.freshVarSym("FnItf").toString
       val prefix = FlixClassName(List("ca", "uwaterloo", "flix", "runtime", name))
