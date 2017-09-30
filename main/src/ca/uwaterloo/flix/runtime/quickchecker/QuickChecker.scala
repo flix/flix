@@ -182,7 +182,7 @@ object QuickChecker extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     /*
      * Initialize a shared random instance.
      */
-    implicit val random = new Random()
+    implicit val random: Random = new Random()
 
     /*
      * Quick check each property.
@@ -299,38 +299,41 @@ object QuickChecker extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     * An arbitrary for symbolic values based on the given type `tpe`.
     */
   class ArbSymVal(tpe: Type, root: Root) extends Arbitrary[SymVal] {
-    def gen: Generator[SymVal] = tpe match {
-      case Type.Unit => ArbUnit.gen
-      case Type.Bool => ArbBool.gen
-      case Type.Char => ArbChar.gen
-      case Type.Float32 => ArbFloat32.gen
-      case Type.Float64 => ArbFloat64.gen
-      case Type.Int8 => ArbInt8.gen
-      case Type.Int16 => ArbInt16.gen
-      case Type.Int32 => ArbInt32.gen
-      case Type.Int64 => ArbInt64.gen
-      case Type.BigInt => ArbBigInt.gen
-      case Type.Str => ArbStr.gen
+    def gen: Generator[SymVal] = {
+      val base = tpe.typeConstructor
+      val args = tpe.typeArguments
 
-      case Type.Enum(sym, kind) =>
-        val decl = root.enums(sym)
-        val elms = decl.cases.map {
-          case (tag, caze) =>
-            val innerType = caze.tpe // TODO: Assumes that the enum is non-polymorphic.
-            new Generator[SymVal] {
-              def mk(r: Random): SymVal = SymVal.Tag(tag, new ArbSymVal(innerType, root).gen.mk(r))
-            }
-        }
-        oneOf(elms.toArray: _*)
+      base match {
+        case Type.Unit => ArbUnit.gen
+        case Type.Bool => ArbBool.gen
+        case Type.Char => ArbChar.gen
+        case Type.Float32 => ArbFloat32.gen
+        case Type.Float64 => ArbFloat64.gen
+        case Type.Int8 => ArbInt8.gen
+        case Type.Int16 => ArbInt16.gen
+        case Type.Int32 => ArbInt32.gen
+        case Type.Int64 => ArbInt64.gen
+        case Type.BigInt => ArbBigInt.gen
+        case Type.Str => ArbStr.gen
 
-      case Type.Apply(Type.Tuple(l), elms) => new Generator[SymVal] {
-        def mk(r: Random): SymVal = {
-          val vals = elms.map(t => new ArbSymVal(t, root).gen.mk(r))
+        case Type.Enum(sym, _) =>
+          val decl = root.enums(sym)
+          val elms = decl.cases.map {
+            case (tag, caze) =>
+              val innerType = caze.tpe // TODO: Assumes that the enum is non-polymorphic.
+              new Generator[SymVal] {
+                def mk(r: Random): SymVal = SymVal.Tag(tag, new ArbSymVal(innerType, root).gen.mk(r))
+              }
+          }
+          oneOf(elms.toArray: _*)
+
+        case Type.Tuple(l) => (r: Random) => {
+          val vals = args.map(t => new ArbSymVal(t, root).gen.mk(r))
           SymVal.Tuple(vals)
         }
-      }
 
-      case _ => throw InternalCompilerException(s"Unable to generate values of type `$tpe'.")
+        case _ => throw InternalCompilerException(s"Unable to generate values of type `$tpe'.")
+      }
     }
   }
 
@@ -627,8 +630,6 @@ object QuickChecker extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
   /**
     * A generator combinator that randomly selects one of the given generators `gs`.
     */
-  private def oneOf[A](gs: Generator[A]*): Generator[A] = new Generator[A] {
-    def mk(r: Random): A = gs(r.nextInt(gs.length)).mk(r)
-  }
+  private def oneOf[A](gs: Generator[A]*): Generator[A] = (r: Random) => gs(r.nextInt(gs.length)).mk(r)
 
 }

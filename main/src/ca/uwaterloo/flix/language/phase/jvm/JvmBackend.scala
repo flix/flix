@@ -42,35 +42,40 @@ object JvmBackend extends Phase[Root, Root] {
     val types = JvmOps.typesOf(root)
 
     //
-    // Emit the Global class.
+    // Emit the Context class.
     //
-    val global = GenGlobal.gen(types, root)
+    val context = GenContext.gen(types, root)
 
     //
     // Emit the namespace classes.
     //
-    val namespaces = GenNamespaces.gen(types, root)
+    val namespaceClasses = GenNamespaces.gen(types, root)
 
     //
-    // Emit functional interfaces for each function type in the program.
+    // Emit continuation interfaces for each function type in the program.
     //
-    val functionalInterfaces = GenFunctionInterfaces.gen(types, root)
+    val continuationInterfaces = GenContinuationInterfaces.gen(types, root)
 
     //
-    // Emit functional classes for each function in the program.
+    // Emit function interfaces for each function type in the program.
     //
-    val functionalClasses = GenFunctionClasses.gen(root.defs, root)
+    val functionInterfaces = GenFunctionInterfaces.gen(types, root)
+
+    //
+    // Emit function classes for each function in the program.
+    //
+    val functionClasses = GenFunctionClasses.gen(root.defs, root)
 
     //
     // Collect all the classes and interfaces together.
     //
-    val allClasses = global ++ namespaces ++ functionalInterfaces ++ functionalClasses
+    val allClasses = context ++ namespaceClasses ++ continuationInterfaces ++ functionInterfaces ++ functionClasses
 
     //
-    // Emit each class (and interface) to disk.
+    // Write each class (and interface) to disk.
     //
     for ((name, clazz) <- allClasses) {
-      JvmOps.emitClass(TargetDirectory, clazz)
+      JvmOps.writeClass(TargetDirectory, clazz)
     }
 
     root.toSuccess

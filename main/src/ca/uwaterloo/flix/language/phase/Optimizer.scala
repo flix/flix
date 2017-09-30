@@ -79,12 +79,11 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       //
       // Closure Expressions.
       //
-      case Expression.Closure(exp, freeVars, tpe, loc) =>
-        val e = visitExp(exp, env0)
+      case Expression.Closure(sym, freeVars, tpe, loc) =>
         val fvs = freeVars map {
-          case FreeVar(sym, varType) => FreeVar(env0.getOrElse(sym, sym), adjustType(varType))
+          case FreeVar(s, varType) => FreeVar(env0.getOrElse(s, s), adjustType(varType))
         }
-        Expression.Closure(e.asInstanceOf[Expression.Def], fvs, adjustType(tpe), loc)
+        Expression.Closure(sym, fvs, adjustType(tpe), loc)
 
       //
       // ApplyClo Expressions.
@@ -473,10 +472,10 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       tpe0 match {
         // Check if the enum is single-case.
         case Type.Enum(sym, kind) if isSingleCaseEnum(sym) => adjustType(getSingleCaseType(sym, tpe0))
-        case Type.Apply(t, ts) => t match {
+        case Type.Apply(tpe1, tpe2) => tpe1 match {
           // NB: This case is necessary if the single-case enum is polymorphic.
           case Type.Enum(sym, kind) if isSingleCaseEnum(sym) => adjustType(getSingleCaseType(sym, tpe0))
-          case _ => Type.Apply(adjustType(t), ts.map(adjustType))
+          case _ => Type.Apply(adjustType(tpe1), adjustType(tpe2))
         }
         case _ => tpe0
       }

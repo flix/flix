@@ -169,13 +169,11 @@ object CodegenHelper {
       case Type.BigInt => objectStr
       case Type.Str => objectStr
       case Type.Native => objectStr
-      case Type.Ref => objectStr
-      case Type.Arrow(l) => objectStr
-      case Type.Tuple(l) => objectStr
-      case Type.Apply(Type.Tuple(l), ts) => objectStr
-      case Type.Apply(Type.Arrow(l), ts) => objectStr
-      case Type.Apply(t, ts) => objectStr
-      case Type.Enum(enum, kind) => objectStr
+
+      case _ if tpe.isArrow => objectStr
+      case _ if tpe.isEnum => objectStr
+      case _ if tpe.isRef => objectStr
+      case _ if tpe.isTuple => objectStr
     }
   }
 
@@ -491,15 +489,15 @@ object CodegenHelper {
     * @return the appropriate reference class for the given type.
     */
   def getReferenceClazz(tpe: Type): Class[_] = tpe match {
-    case Type.Apply(Type.Ref, List(Type.Bool)) => Constants.cell$Bool
-    case Type.Apply(Type.Ref, List(Type.Char)) => Constants.cell$Char
-    case Type.Apply(Type.Ref, List(Type.Int8)) => Constants.cell$Int8
-    case Type.Apply(Type.Ref, List(Type.Int16)) => Constants.cell$Int16
-    case Type.Apply(Type.Ref, List(Type.Int32)) => Constants.cell$Int32
-    case Type.Apply(Type.Ref, List(Type.Int64)) => Constants.cell$Int64
-    case Type.Apply(Type.Ref, List(Type.Float32)) => Constants.cell$Float32
-    case Type.Apply(Type.Ref, List(Type.Float64)) => Constants.cell$Float64
-    case Type.Apply(Type.Ref, List(_)) => Constants.cell$Obj
+    case Type.Apply(Type.Ref, Type.Bool) => Constants.cell$Bool
+    case Type.Apply(Type.Ref, Type.Char) => Constants.cell$Char
+    case Type.Apply(Type.Ref, Type.Int8) => Constants.cell$Int8
+    case Type.Apply(Type.Ref, Type.Int16) => Constants.cell$Int16
+    case Type.Apply(Type.Ref, Type.Int32) => Constants.cell$Int32
+    case Type.Apply(Type.Ref, Type.Int64) => Constants.cell$Int64
+    case Type.Apply(Type.Ref, Type.Float32) => Constants.cell$Float32
+    case Type.Apply(Type.Ref, Type.Float64) => Constants.cell$Float64
+    case Type.Apply(Type.Ref, _) => Constants.cell$Obj
     case _ => throw InternalCompilerException(s"Unexpected type: `$tpe`")
   }
 
@@ -563,23 +561,22 @@ object CodegenHelper {
       case Type.BigInt => asm.Type.getDescriptor(Constants.bigIntegerClass)
       case Type.Str => asm.Type.getDescriptor(Constants.stringClass)
       case Type.Native => asm.Type.getDescriptor(Constants.objectClass)
-      case Type.Apply(Type.Arrow(l), _) => s"L${decorate(interfaces(tpe))};"
-      case Type.Apply(Type.Tuple(l), lst) =>
-        val clazzName = TupleClassName(lst.map(typeToWrappedType))
+      case _ if tpe.isArrow => s"L${decorate(interfaces(tpe))};"
+      case _ if tpe.isTuple =>
+        val targs = tpe.typeArguments
+        val clazzName = TupleClassName(targs.map(typeToWrappedType))
         s"L${decorate(clazzName)};"
       case _ if tpe.isEnum =>
-        val sym = tpe match {
-          case Type.Apply(Type.Enum(s, _), _) => s
-          case Type.Enum(s, _) => s
-          case _ => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
-        }
+        val Type.Enum(sym, _) = tpe.typeConstructor
         s"L${decorate(EnumInterfName(sym))};"
-      case Type.Apply(Type.Ref, List(ts)) => asm.Type.getDescriptor(getReferenceClazz(tpe))
+      case _ if tpe.isRef => asm.Type.getDescriptor(getReferenceClazz(tpe))
       case _ => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
     }
 
     tpe match {
-      case Type.Apply(Type.Arrow(l), ts) => s"(${ts.take(l - 1).map(inner).mkString})${inner(ts.last)}"
+      case _ if tpe.isArrow =>
+        val ts = tpe.typeArguments
+        s"(${ts.init.map(inner).mkString})${inner(ts.last)}"
       case _ => inner(tpe)
     }
   }
@@ -593,18 +590,15 @@ object CodegenHelper {
     case Type.BigInt => asm.Type.getInternalName(Constants.bigIntegerClass)
     case Type.Str => asm.Type.getInternalName(Constants.stringClass)
     case Type.Native => asm.Type.getInternalName(Constants.objectClass)
-    case Type.Apply(Type.Arrow(l), _) => decorate(interfaces(tpe))
-    case Type.Apply(Type.Tuple(l), lst) =>
-      val clazzName = TupleClassName(lst.map(typeToWrappedType))
+    case _ if tpe.isArrow => decorate(interfaces(tpe))
+    case _ if tpe.isTuple =>
+      val targs = tpe.typeArguments
+      val clazzName = TupleClassName(targs.map(typeToWrappedType))
       decorate(clazzName)
     case _ if tpe.isEnum =>
-      val sym = tpe match {
-        case Type.Apply(Type.Enum(s, _), _) => s
-        case Type.Enum(s, _) => s
-        case _ => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
-      }
+      val Type.Enum(sym, _) = tpe.typeConstructor
       decorate(EnumInterfName(sym))
-    case Type.Apply(Type.Ref, List(ts)) => asm.Type.getInternalName(getReferenceClazz(tpe))
+    case _ if tpe.isRef => asm.Type.getInternalName(getReferenceClazz(tpe))
     case _ => throw InternalCompilerException(s"Unexpected type: `$tpe'.")
   }
 

@@ -89,8 +89,7 @@ object SimplifiedAstOps {
       //
       // Closure Expressions.
       //
-      case Expression.Closure(exp, freeVars, tpe, loc) =>
-        checkExp(exp, env0, ienv0)
+      case Expression.Closure(sym, freeVars, tpe, loc) =>
         checkType(tpe)
 
       //
@@ -472,11 +471,9 @@ object SimplifiedAstOps {
     def checkType(tpe0: Type): Unit = tpe0 match {
       case Type.Var(id, kind) =>
         assert(assertion = false, "Unexpected type variable.")
-      case Type.Apply(t, ts) =>
-        checkType(t)
-        for (tpe <- ts) {
-          checkType(tpe)
-        }
+      case Type.Apply(tpe1, tpe2) =>
+        checkType(tpe1)
+        checkType(tpe2)
       case _ => // OK
     }
 

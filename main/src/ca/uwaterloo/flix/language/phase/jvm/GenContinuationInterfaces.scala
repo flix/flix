@@ -20,11 +20,14 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Root
 import ca.uwaterloo.flix.language.ast.Type
 
-object GenGlobal {
+object GenContinuationInterfaces {
 
-  // TODO: Documentation and signature
+  /**
+    * Returns the set of continuation interfaces for the given set of types `ts`.
+    */
   def gen(ts: Set[Type], root: Root)(implicit flix: Flix): Map[JvmName, JvmClass] = {
-    Map.empty // TODO
+    // TODO
+    Map.empty
   }
 
 }

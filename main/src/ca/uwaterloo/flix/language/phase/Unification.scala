@@ -183,9 +183,9 @@ object Unification {
       case (Type.Arrow(l1), Type.Arrow(l2)) if l1 == l2 => Result.Ok(Substitution.empty)
       case (Type.Tuple(l1), Type.Tuple(l2)) if l1 == l2 => Result.Ok(Substitution.empty)
       case (Type.Enum(name1, kind1), Type.Enum(name2, kind2)) if name1 == name2 => Result.Ok(Substitution.empty)
-      case (Type.Apply(t1, ts1), Type.Apply(t2, ts2)) =>
-        unifyTypes(t1, t2) match {
-          case Result.Ok(subst1) => unifyAll(subst1(ts1), subst1(ts2)) match {
+      case (Type.Apply(t11, t12), Type.Apply(t21, t22)) =>
+        unifyTypes(t11, t21) match {
+          case Result.Ok(subst1) => unify(subst1(t12), subst1(t22)) match {
             case Result.Ok(subst2) => Result.Ok(subst2 @@ subst1)
             case Result.Err(e) => Result.Err(e)
           }

@@ -25,26 +25,6 @@ import ca.uwaterloo.flix.util.InternalCompilerException
 object JvmOps {
 
   /**
-    * Returns the set of all instantiated types in the given AST `root`.
-    *
-    * This include type components. For example, if the program contains
-    * the type (Bool, (Char, Int)) this includes the type (Char, Int).
-    */
-  def typesOf(root: Root): Set[Type] = {
-    // TODO: Temporary implementation which just returns some types to get us started.
-
-    root.defs.map(_._2.tpe).toSet
-  }
-
-  /**
-    * Returns all the type components of the given type `tpe`.
-    *
-    * For example, if the given type is `Option[(Bool, Char, Int)]`
-    * this returns the set `Bool`, `Char`, `Int`, `(Bool, Char, Int)`, and `Option[(Bool, Char, Int)]`.
-    */
-  def typesOf(tpe: Type): Set[Type] = ??? // TODO
-
-  /**
     * Returns the given Flix type `tpe` as JVM type.
     *
     * For example, if the type is:
@@ -62,8 +42,8 @@ object JvmOps {
       case _ => "Obj"
     }
 
-    val base = getTypeConstructor(tpe)
-    val args = getTypeArguments(tpe)
+    val base = tpe.typeConstructor
+    val args = tpe.typeArguments
 
     base match {
       case Type.Arrow(arity) =>
@@ -79,40 +59,9 @@ object JvmOps {
   }
 
   /**
-    * Returns the type constructor of a given type `tpe`.
-    *
-    * For example,
-    *
-    * Celsius                       =>      Celsius
-    * Option[Int]                   =>      Option
-    * Arrow[Bool, Char]             =>      Arrow
-    * Tuple[Bool, Int]              =>      Tuple
-    * Result[Bool, Int]             =>      Result
-    * Result[Bool][Int]             =>      Result
-    * Option[Result[Bool, Int]]     =>      Option
+    * TODO
     */
-  def getTypeConstructor(tpe: Type): Type = tpe match {
-    case Type.Apply(base, _) => getTypeConstructor(base)
-    case _ => tpe
-  }
-
-  /**
-    * Returns the type arguments of a given type `tpe`.
-    *
-    * For example,
-    *
-    * Celsius                       =>      Nil
-    * Option[Int]                   =>      Int :: Nil
-    * Arrow[Bool, Char]             =>      Bool :: Char :: Nil
-    * Tuple[Bool, Int]              =>      Bool :: Int :: Nil
-    * Result[Bool, Int]             =>      Bool :: Int :: Nil
-    * Result[Bool][Int]             =>      Bool :: Int :: Nil
-    * Option[Result[Bool, Int]]     =>      Result[Bool, Int] :: Nil
-    */
-  def getTypeArguments(tpe: Type): List[Type] = tpe match {
-    case Type.Apply(base, arguments) => arguments ::: getTypeArguments(base)
-    case _ => Nil
-  }
+  def getJvmTypeForContinuation(tpe: Type): JvmType = ???
 
   /**
     * Returns the JVM type of the given enum symbol `sym` with `tag` and inner type `tpe`.
@@ -138,9 +87,13 @@ object JvmOps {
     * then the bytecode is written to the path `/tmp/Foo/Bar/Baz.class` provided
     * that this path either does not exist or is already a JVM class file.
     */
-  def emitClass(prefixPath: Path, clazz: JvmClass): Unit = {
+  def writeClass(prefixPath: Path, clazz: JvmClass): Unit = {
     // Compute the absolute path of the class file to write.
     val path = prefixPath.resolve(clazz.name.toPath).toAbsolutePath
+
+    // TODO: For safety, let us not write anything yet.
+    println(path)
+    return
 
     // Create all parent directories (in case they don't exist).
     Files.createDirectories(path.getParent)
@@ -174,5 +127,26 @@ object JvmOps {
     }
     false
   }
+
+
+  /**
+    * Returns the set of all instantiated types in the given AST `root`.
+    *
+    * This include type components. For example, if the program contains
+    * the type (Bool, (Char, Int)) this includes the type (Char, Int).
+    */
+  def typesOf(root: Root): Set[Type] = {
+    // TODO: Temporary implementation which just returns some types to get us started.
+
+    root.defs.map(_._2.tpe).toSet
+  }
+
+  /**
+    * Returns all the type components of the given type `tpe`.
+    *
+    * For example, if the given type is `Option[(Bool, Char, Int)]`
+    * this returns the set `Bool`, `Char`, `Int`, `(Bool, Char, Int)`, and `Option[(Bool, Char, Int)]`.
+    */
+  def typesOf(tpe: Type): Set[Type] = ??? // TODO
 
 }

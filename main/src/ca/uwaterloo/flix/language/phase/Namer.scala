@@ -146,8 +146,12 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
             val quantifiers = tparams.map(_.tpe).map(x => NamedAst.Type.Var(x, loc))
             val enumType = if (quantifiers.isEmpty)
               NamedAst.Type.Enum(sym)
-            else
-              NamedAst.Type.Apply(NamedAst.Type.Enum(sym), quantifiers, loc)
+            else {
+              val base = NamedAst.Type.Enum(sym)
+              quantifiers.foldLeft(base: NamedAst.Type) {
+                case (tacc, tvar) => NamedAst.Type.Apply(tacc, tvar, loc)
+              }
+            }
             val enum = NamedAst.Enum(doc, sym, tparams, casesOf(cases, tenv), enumType, loc)
             val enums = enums0 + (ident.name -> enum)
             prog0.copy(enums = prog0.enums + (ns0 -> enums)).toSuccess
@@ -696,7 +700,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
             NamedAst.Type.Ref(qname, loc)
         case WeededAst.Type.Tuple(elms, loc) => NamedAst.Type.Tuple(elms.map(e => visit(e, env)), loc)
         case WeededAst.Type.Arrow(tparams, tresult, loc) => NamedAst.Type.Arrow(tparams.map(t => visit(t, env)), visit(tresult, env), loc)
-        case WeededAst.Type.Apply(base, tparams, loc) => NamedAst.Type.Apply(visit(base, env), tparams.map(t => visit(t, env)), loc)
+        case WeededAst.Type.Apply(tpe1, tpe2, loc) => NamedAst.Type.Apply(visit(tpe1, env), visit(tpe2, env), loc)
       }
 
       visit(tpe, tenv0)

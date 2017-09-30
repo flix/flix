@@ -44,18 +44,15 @@ object ClosureConv {
 
     case Expression.Var(sym, tpe, loc) => exp0
 
-    case e: Expression.Def =>
-      // If we encounter a Ref that has a lambda type (and is not being called in an Apply),
-      // i.e. the Ref will evaluate to a lambda, we replace it with a MkClosureRef. Otherwise we leave it alone.
-      e.tpe match {
-        case t@Type.Apply(Type.Arrow(_), _) => Expression.Closure(e, List.empty, t, e.loc)
-        case _ => e // TODO: Does this ever happen? Is the Def node not eliminated by this phase?
-      }
+    case Expression.Def(sym, tpe, loc) =>
+      // The Def expression did not occur in an Apply expression.
+      // We must create a closure, without free variables, of the definition symbol.
+      Expression.Closure(sym, List.empty, tpe, loc)
 
     case Expression.Lambda(args, body, tpe, loc) =>
       // Retrieve the type of the function.
-      val Type.Apply(Type.Arrow(l), ts) = tpe
-      val (targs, tresult) = (ts.take(l - 1), ts.last)
+      val ts = tpe.typeArguments
+      val (targs, tresult) = (ts.init, ts.last)
 
       // Convert lambdas to closures. This is the main part of the `convert` function.
       // Closure conversion happens as follows:
@@ -66,7 +63,7 @@ object ClosureConv {
 
       // We prepend the free variables to the arguments list. Thus all variables within the lambda body will be treated
       // uniformly. The implementation will supply values for the free variables, without any effort from the caller.
-      // We introduce new symbols for each introduced parameter and replace their occurence in the body.
+      // We introduce new symbols for each introduced parameter and replace their occurrence in the body.
       val subst = mutable.Map.empty[Symbol.VarSym, Symbol.VarSym]
       val newArgs = freeVars.map {
         case (oldSym, ptype) =>
@@ -96,8 +93,8 @@ object ClosureConv {
 
     case Expression.Hook(hook, tpe, loc) =>
       // Retrieve the type of the function.
-      val Type.Apply(Type.Arrow(l), ts) = tpe
-      val (targs, tresult) = (ts.take(l - 1), ts.last)
+      val ts = tpe.typeArguments
+      val (targs, tresult) = (ts.init, ts.last)
 
       // Wrap the hook inside a lambda, so we can create a closure.
       val args = targs.map { t => SimplifiedAst.FormalParam(Symbol.freshVarSym("hookArg"), Ast.Modifiers.Empty, t, SourceLocation.Unknown) }

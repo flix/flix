@@ -16,22 +16,15 @@
 
 package ca.uwaterloo.flix.language.phase.jvm
 
-import java.nio.file.{Path, Paths}
+import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.ExecutableAst.Root
+import ca.uwaterloo.flix.language.ast.Type
 
-/**
-  * Represents the name of a Java class or interface.
-  *
-  * @param pkg  the package name.
-  * @param name the class or interface name.
-  */
-case class JvmName(pkg: List[String], name: String) {
-  /**
-    * Returns the type descriptor of `this` Java name.
-    */
-  def toDescriptor: String = "L" + pkg.mkString("/") + name
+object GenContext {
 
-  /**
-    * Returns the relative path of `this` Java name.
-    */
-  def toPath: Path = Paths.get(pkg.mkString("/"), name + ".class")
+  // TODO: Documentation and signature
+  def gen(ts: Set[Type], root: Root)(implicit flix: Flix): Map[JvmName, JvmClass] = {
+    Map.empty // TODO
+  }
+
 }

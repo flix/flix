@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expression._
 import ca.uwaterloo.flix.language.{CompilationError, GenSym}
-import ca.uwaterloo.flix.language.ast.{Type, _}
+import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 import ca.uwaterloo.flix.util.Validation._
 
@@ -42,6 +42,10 @@ import ca.uwaterloo.flix.util.Validation._
 object Uncurrier extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
 
   def run(root: SimplifiedAst.Root)(implicit flix: Flix): Validation[SimplifiedAst.Root, CompilationError] = {
+
+    // TODO
+    return root.toSuccess
+
     implicit val _ = flix.genSym
     val startTime = System.nanoTime()
 
@@ -99,7 +103,7 @@ object Uncurrier extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
             formals1,
             body1,
             curriedDef.isSynthetic,
-            uncurryType(curriedDef.tpe),
+            curriedDef.tpe, // TODO: Call uncurry type.
             curriedDef.loc)
 
           // Create the other levels of uncurrying
@@ -288,10 +292,11 @@ object Uncurrier extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case 0 => exp0
       case n => exp0 match {
         case Apply(exp2, args2, tpe2, loc2) =>
+          // TODO: Not sure this is correct?
           uncurryN(exp2, n - 1) match {
             // Transform add(3)(4) -> add$uncurried(3,4)
             case Apply(Def(sym4, tpe4, loc4), args3, _, _) =>
-              Apply(Def(sym4, uncurryType(tpe4), loc4), args3 ::: args2, tpe2, loc2)
+              Apply(Def(sym4, tpe4, loc4), args3 ::: args2, tpe2, loc2) // TODO: Here was a call to uncurryType.
             // Transform ((x,y) -> x+y)(3)(4) -> ((x,y) -> x+y)(3,4)
             case Apply(Lambda(args, body, tpe, loc), args3, _, _) =>
               Apply(Lambda(args, body, tpe, loc), args3 ::: args2, tpe2, loc2)
@@ -363,26 +368,28 @@ object Uncurrier extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     }
   }
 
-  /**
-    * Uncurry the type of a function. Given a type like a x b -> (c -> d), turn it
-    * into a x b x c -> d
-    */
-  def uncurryType(tpe: Type): Type = tpe match {
-    case Type.Apply(Type.Arrow(len), ts) =>
-      // We're given an application which looks like
-      // List(From, From, From, To), where there are one are more From
-      // types, and the result is the To type.
-      //
-      // When we are uncurrying, the To type will also be an apply, we then
-      // transform List(From1, From2, List(From3, From4, To)) to
-      // List(From1, From2, From3, From4, To)
-      //
-      val from = ts.take(ts.size - 1)
-      val to = ts.last
-      ts.last match {
-        case Type.Apply(_, ts2) => Type.Apply(Type.Arrow(len + 1), from ::: ts2)
-        case _ => throw InternalCompilerException(s"Cannot uncurry type $tpe")
-      }
-    case _ => throw InternalCompilerException(s"Cannot uncurry type $tpe")
-  }
+  // TODO: Need to be adjusted.
+  //    /**
+  //  -    * Uncurry the type of a function. Given a type like a x b -> (c -> d), turn it
+  // -    * into a x b x c -> d
+  // -    */
+  //    -  def uncurryType(tpe: Type): Type = tpe match {
+  //  -    case Type.Apply(Type.Arrow(len), ts) =>
+  //      -      // We're given an application which looks like
+  //        -      // List(From, From, From, To), where there are one are more From
+  //      -      // types, and the result is the To type.
+  //        -      //
+  //      -      // When we are uncurrying, the To type will also be an apply, we then
+  //        -      // transform List(From1, From2, List(From3, From4, To)) to
+  //      -      // List(From1, From2, From3, From4, To)
+  //        -      //
+  //  -      val from = ts.take(ts.size - 1)
+  //  -      val to = ts.last
+  //  -      ts.last match {
+  //  -        case Type.Apply(_, ts2) => Type.Apply(Type.Arrow(len + 1), from ::: ts2)
+  //  -        case _ => throw InternalCompilerException(s"Cannot uncurry type $tpe")
+  //  -      }
+  //  -    case _ => throw InternalCompilerException(s"Cannot uncurry type $tpe")
+  //  -  }
+
 }
