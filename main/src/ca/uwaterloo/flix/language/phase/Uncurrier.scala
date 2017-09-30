@@ -42,6 +42,10 @@ import ca.uwaterloo.flix.util.Validation._
 object Uncurrier extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
 
   def run(root: SimplifiedAst.Root)(implicit flix: Flix): Validation[SimplifiedAst.Root, CompilationError] = {
+
+    // TODO
+    return root.toSuccess
+
     implicit val _ = flix.genSym
     val startTime = System.nanoTime()
 

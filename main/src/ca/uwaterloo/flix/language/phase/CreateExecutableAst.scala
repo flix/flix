@@ -194,7 +194,7 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
         val freeArgs = fvs.map(_.tpe)
         val fnType = Type.mkArrow(freeArgs ::: targs.init, targs.last)
 
-        ExecutableAst.Expression.Closure(sym, fvs, tpe, fnType, loc)
+        ExecutableAst.Expression.Closure(sym, fvs, fnType, tpe, loc)
       case SimplifiedAst.Expression.ApplyClo(exp, args, tpe, loc) =>
         val argsArray = args.map(toExecutable)
         ExecutableAst.Expression.ApplyClo(toExecutable(exp), argsArray, tpe, loc)
