@@ -143,7 +143,7 @@ object EnumGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
 
     val enumsGroupedBySymbol: Map[EnumSym, List[(Type, (String, Type))]] = allEnums.groupBy{ case (tpe, _) => tpe match {
       case t =>
-        val Type.Enum(sym, _) = t.getTypeConstructor
+        val Type.Enum(sym, _) = t.typeConstructor
         sym
     }}
 

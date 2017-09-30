@@ -65,8 +65,8 @@ sealed trait Type {
     * Result[Bool][Int]             =>      Result
     * Option[Result[Bool, Int]]     =>      Option
     */
-  def getTypeConstructor: Type = this match {
-    case Type.Apply(t1, _) => t1.getTypeConstructor
+  def typeConstructor: Type = this match {
+    case Type.Apply(t1, _) => t1.typeConstructor
     case _ => this
   }
 
@@ -83,15 +83,15 @@ sealed trait Type {
     * Result[Bool][Int]             =>      Bool :: Int :: Nil
     * Option[Result[Bool, Int]]     =>      Result[Bool, Int] :: Nil
     */
-  def getTypeArguments: List[Type] = this match {
-    case Type.Apply(t1, t2) => t1.getTypeArguments ::: t2 :: Nil
+  def typeArguments: List[Type] = this match {
+    case Type.Apply(t1, t2) => t1.typeArguments ::: t2 :: Nil
     case _ => Nil
   }
 
   /**
     * Returns `true` if `this` type is an arrow type.
     */
-  def isArrow: Boolean = getTypeConstructor match {
+  def isArrow: Boolean = typeConstructor match {
     case Type.Arrow(l) => true
     case _ => false
   }
@@ -99,7 +99,7 @@ sealed trait Type {
   /**
     * Returns `true` if `this` type is an enum type.
     */
-  def isEnum: Boolean = getTypeConstructor match {
+  def isEnum: Boolean = typeConstructor match {
     case Type.Enum(sym, kind) => true
     case _ => false
   }
@@ -107,7 +107,7 @@ sealed trait Type {
   /**
     * Returns `true` if `this` type is a tuple type.
     */
-  def isTuple: Boolean = getTypeConstructor match {
+  def isTuple: Boolean = typeConstructor match {
     case Type.Tuple(l) => true
     case _ => false
   }
@@ -115,7 +115,7 @@ sealed trait Type {
   /**
     * Returns `true` if `this` type is a reference type.
     */
-  def isRef: Boolean = getTypeConstructor match {
+  def isRef: Boolean = typeConstructor match {
     case Type.Ref => true
     case _ => false
   }
@@ -309,16 +309,16 @@ object Type {
   case class Enum(sym: Symbol.EnumSym, kind: Kind) extends Type
 
   /**
-    * A type expression that represents the application of `ts` to `t`.
+    * A type expression that a type application t1[t2].
     */
-  case class Apply(t: Type, t2: Type) extends Type {
+  case class Apply(t1: Type, t2: Type) extends Type {
     /**
       * Returns the kind of `this` type.
       *
       * The kind of a type application can unique be determined
-      * from the kind of the first type argument `t`.
+      * from the kind of the first type argument `t1`.
       */
-    def kind: Kind = t.kind match {
+    def kind: Kind = t1.kind match {
       case Kind.Star => throw InternalCompilerException("Illegal kind.")
       case Kind.Arrow(_, k) => k
     }

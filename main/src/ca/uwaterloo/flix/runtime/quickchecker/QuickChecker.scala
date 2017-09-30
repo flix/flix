@@ -300,8 +300,8 @@ object QuickChecker extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     */
   class ArbSymVal(tpe: Type, root: Root) extends Arbitrary[SymVal] {
     def gen: Generator[SymVal] = {
-      val base = tpe.getTypeConstructor
-      val args = tpe.getTypeArguments
+      val base = tpe.typeConstructor
+      val args = tpe.typeArguments
 
       base match {
         case Type.Unit => ArbUnit.gen

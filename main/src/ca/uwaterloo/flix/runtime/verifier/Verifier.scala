@@ -488,8 +488,8 @@ object Verifier extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
      * Local visitor. Enumerates the symbolic values of a type.
      */
     def visit(tpe: Type): List[SymVal] = {
-      val base = tpe.getTypeConstructor
-      val args = tpe.getTypeArguments
+      val base = tpe.typeConstructor
+      val args = tpe.typeArguments
 
       base match {
         case Type.Unit => List(SymVal.Unit)

@@ -102,7 +102,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     val allEnums: List[(Type, (String, Type))] = root.defs.values.flatMap(x => CodegenHelper.findEnumCases(x.exp)).toList
 
     val enumTypeInfo: Map[(Type, String), (QualName, ExecutableAst.Case)] = allEnums.map { case (tpe, (name, subType)) =>
-      val Type.Enum(sym, _) = tpe.getTypeConstructor
+      val Type.Enum(sym, _) = tpe.typeConstructor
       val enumCase = root.enums(sym).cases(name)
       (tpe, name) -> (EnumClassName(sym, name, typeToWrappedType(subType)), enumCase)
     }.toMap
@@ -245,7 +245,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
 
     compileExpression(prefix, functions, declarations, interfaces, enums, mv, Map(), entryPoint)(function.exp)
 
-    val tpe = function.tpe.getTypeArguments.last
+    val tpe = function.tpe.typeArguments.last
 
     tpe match {
       case Type.Var(id, kind) => throw InternalCompilerException(s"Non-monomorphed type variable '$id in type '$tpe'.")
@@ -650,7 +650,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
       // Descriptor of the field of the element in the tuple specified by the `offset`
       val desc = getWrappedTypeDescriptor(typeToWrappedType(tpe))
       // Qualified name of the class defining the tuple
-      val targs = base.tpe.getTypeArguments
+      val targs = base.tpe.typeArguments
       val clazzName = TupleClassName(targs.map(typeToWrappedType))
       // evaluating the `base`
       compileExpression(prefix, functions, declarations, interfaces, enums, visitor, jumpLabels, entryPoint)(base)
@@ -953,7 +953,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     case Type.Native => // Don't need to cast AnyRef to anything
 
     case _ if tpe.isTuple =>
-      val targs = tpe.getTypeArguments
+      val targs = tpe.typeArguments
       val clazzName = TupleClassName(targs.map(typeToWrappedType))
 
       visitor.visitTypeInsn(CHECKCAST, decorate(clazzName))
@@ -1466,11 +1466,11 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     case Type.Native => visitor.visitTypeInsn(CHECKCAST, asm.Type.getInternalName(Constants.objectClass))
     case _ if tpe.isArrow => visitor.visitTypeInsn(CHECKCAST, decorate(interfaces(tpe)))
     case _ if tpe.isTuple =>
-      val targs = tpe.getTypeArguments
+      val targs = tpe.typeArguments
       val clazzName = TupleClassName(targs.map(typeToWrappedType))
       visitor.visitTypeInsn(CHECKCAST, decorate(clazzName))
     case _ if tpe.isEnum =>
-      val Type.Enum(sym, _) = tpe.getTypeConstructor
+      val Type.Enum(sym, _) = tpe.typeConstructor
       val fullName = EnumInterfName(sym)
       visitor.visitTypeInsn(CHECKCAST, decorate(fullName))
     case _ => throw InternalCompilerException(s"Unexpected type: `$tpe'.")

@@ -687,7 +687,7 @@ object Synthesize extends Phase[Root, Root] {
       * Returns the enum symbol of the given enum type `tpe`.
       */
     def getEnumSym(tpe: Type): Symbol.EnumSym = {
-      val Type.Enum(sym, _) = tpe.getTypeConstructor
+      val Type.Enum(sym, _) = tpe.typeConstructor
       sym
     }
 
@@ -699,7 +699,7 @@ object Synthesize extends Phase[Root, Root] {
     /**
       * Returns the element types of the given tuple type `tpe`.
       */
-    def getElementTypes(tpe: Type): List[Type] = tpe.getTypeArguments
+    def getElementTypes(tpe: Type): List[Type] = tpe.typeArguments
 
     /**
       * Returns an association list of the (tag, type)s of the given `enum` specialized to the given type `tpe`.

@@ -76,7 +76,7 @@ object TupleGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
 
     // 2. Group tuples based on representation of their fields.
     val groupedFields: List[List[List[Type]]] = allTuples.map {
-      case t => t.getTypeArguments
+      case t => t.typeArguments
     }.groupBy(_.map(typeSpecifier)).values.toList
 
     // 3. Gather unique tuple representations.
@@ -511,8 +511,8 @@ object TupleGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     * @return tuple types nested in the type
     */
   def findTuplesInTypes(tpe: Type): Set[Type] = {
-    val base = tpe.getTypeConstructor
-    val args = tpe.getTypeArguments
+    val base = tpe.typeConstructor
+    val args = tpe.typeArguments
     if (base.isTuple) {
       Set(tpe) ++ args.flatMap(findTuplesInTypes)
     } else {

@@ -154,7 +154,7 @@ class Model(root: Root,
   /**
     * Returns the result type of the given lambda type.
     */
-  private def getResultType(tpe: Type): Type = tpe.getTypeArguments.last
+  private def getResultType(tpe: Type): Type = tpe.typeArguments.last
 
   /**
     * Returns a string representation of the given reference `ref` formatted according to the given type `tpe`.

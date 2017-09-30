@@ -165,7 +165,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     }
 
     // Compute return type.
-    val returnType = prettify(d.tpe.getTypeArguments.last)
+    val returnType = prettify(d.tpe.typeArguments.last)
 
     JObject(List(
       JField("name", JString(d.sym.name)),

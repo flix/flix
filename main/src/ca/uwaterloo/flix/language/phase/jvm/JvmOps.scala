@@ -42,8 +42,8 @@ object JvmOps {
       case _ => "Obj"
     }
 
-    val base = tpe.getTypeConstructor
-    val args = tpe.getTypeArguments
+    val base = tpe.typeConstructor
+    val args = tpe.typeArguments
 
     base match {
       case Type.Arrow(arity) =>

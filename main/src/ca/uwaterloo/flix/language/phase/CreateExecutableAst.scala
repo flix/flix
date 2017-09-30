@@ -189,8 +189,8 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
 
         // TODO: Temporary fix to compute the function interface type (as opposed to the closure interface type).
         // In the future this "computation" should not be performed here.
-        val base = tpe.getTypeConstructor
-        val targs = tpe.getTypeArguments
+        val base = tpe.typeConstructor
+        val targs = tpe.typeArguments
         val freeArgs = fvs.map(_.tpe)
         val fnType = Type.mkArrow(freeArgs ::: targs.init, targs.last)
 
