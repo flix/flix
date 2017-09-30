@@ -710,7 +710,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
             NamedAst.Type.Ref(qname, loc)
         case WeededAst.Type.Tuple(elms, loc) => NamedAst.Type.Tuple(elms.map(e => visit(e, env)), loc)
         case WeededAst.Type.Arrow(tparams, tresult, loc) => NamedAst.Type.Arrow(tparams.map(t => visit(t, env)), visit(tresult, env), loc)
-        case WeededAst.Type.Apply(t1, t2, loc) => NamedAst.Type.Apply(visit(t1, env), visit(t2, env), loc)
+        case WeededAst.Type.Apply(tpe1, tpe2, loc) => NamedAst.Type.Apply(visit(tpe1, env), visit(tpe2, env), loc)
       }
 
       visit(tpe, tenv0)

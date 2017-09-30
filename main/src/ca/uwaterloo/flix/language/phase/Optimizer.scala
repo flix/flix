@@ -474,10 +474,10 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       tpe0 match {
         // Check if the enum is single-case.
         case Type.Enum(sym, kind) if isSingleCaseEnum(sym) => adjustType(getSingleCaseType(sym, tpe0))
-        case Type.Apply(t1, t2) => t1 match {
+        case Type.Apply(tpe1, tpe2) => tpe1 match {
           // NB: This case is necessary if the single-case enum is polymorphic.
           case Type.Enum(sym, kind) if isSingleCaseEnum(sym) => adjustType(getSingleCaseType(sym, tpe0))
-          case _ => Type.Apply(adjustType(t1), adjustType(t2))
+          case _ => Type.Apply(adjustType(tpe1), adjustType(tpe2))
         }
         case _ => tpe0
       }

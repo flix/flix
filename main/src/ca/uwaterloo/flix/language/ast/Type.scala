@@ -49,7 +49,7 @@ sealed trait Type {
     case Type.Arrow(l) => Set.empty
     case Type.Tuple(l) => Set.empty
     case Type.Enum(enumName, kind) => Set.empty
-    case Type.Apply(t1, t2) => t1.typeVars ++ t2.typeVars
+    case Type.Apply(tpe1, tpe2) => tpe1.typeVars ++ tpe2.typeVars
   }
 
   /**
@@ -84,7 +84,7 @@ sealed trait Type {
     * Option[Result[Bool, Int]]     =>      Result[Bool, Int] :: Nil
     */
   def typeArguments: List[Type] = this match {
-    case Type.Apply(t1, t2) => t1.typeArguments ::: t2 :: Nil
+    case Type.Apply(tpe1, tpe2) => tpe1.typeArguments ::: tpe2 :: Nil
     case _ => Nil
   }
 
@@ -125,7 +125,7 @@ sealed trait Type {
     */
   def isDeterminate: Boolean = this match {
     case Type.Var(id, kind) => false
-    case Type.Apply(t1, t2) => t1.isDeterminate && t2.isDeterminate
+    case Type.Apply(tpe1, tpe2) => tpe1.isDeterminate && tpe2.isDeterminate
     case _ => true
   }
 
@@ -150,7 +150,7 @@ sealed trait Type {
     case Type.Arrow(l) => s"Arrow($l)"
     case Type.Enum(enum, kind) => enum.toString
     case Type.Tuple(l) => s"Tuple($l)"
-    case Type.Apply(t1, t2) => s"$t1[$t2]"
+    case Type.Apply(tpe1, tpe2) => s"$tpe1[$tpe2]"
   }
 }
 
@@ -309,16 +309,16 @@ object Type {
   case class Enum(sym: Symbol.EnumSym, kind: Kind) extends Type
 
   /**
-    * A type expression that a type application t1[t2].
+    * A type expression that a type application tpe1[tpe2].
     */
-  case class Apply(t1: Type, t2: Type) extends Type {
+  case class Apply(tpe1: Type, tpe2: Type) extends Type {
     /**
       * Returns the kind of `this` type.
       *
       * The kind of a type application can unique be determined
       * from the kind of the first type argument `t1`.
       */
-    def kind: Kind = t1.kind match {
+    def kind: Kind = tpe1.kind match {
       case Kind.Star => throw InternalCompilerException("Illegal kind.")
       case Kind.Arrow(_, k) => k
     }
@@ -399,7 +399,7 @@ object Type {
       case Type.Ref => Type.Ref
       case Type.Arrow(l) => Type.Arrow(l)
       case Type.Tuple(l) => Type.Tuple(l)
-      case Type.Apply(t1, t2) => Type.Apply(visit(t1), visit(t2))
+      case Type.Apply(tpe1, tpe2) => Type.Apply(visit(tpe1), visit(tpe2))
       case Type.Enum(enum, kind) => Type.Enum(enum, kind)
     }
 

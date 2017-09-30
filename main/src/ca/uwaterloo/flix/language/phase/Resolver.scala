@@ -795,9 +795,9 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
       ) yield Type.mkArrow(tparams, tresult)
     case NamedAst.Type.Apply(base0, targ0, loc) =>
       for (
-        baseType <- lookupType(base0, ns0, prog0);
-        argType <- lookupType(targ0, ns0, prog0)
-      ) yield Type.Apply(baseType, argType)
+        tpe1 <- lookupType(base0, ns0, prog0);
+        tpe2 <- lookupType(targ0, ns0, prog0)
+      ) yield Type.Apply(tpe1, tpe2)
 
   }
 
