@@ -21,8 +21,10 @@ import java.nio.file._
 import java.util.concurrent.Executors
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.util.vt.TerminalContext
+import ca.uwaterloo.flix.language.ast.ExecutableAst.{Def, Root}
+import ca.uwaterloo.flix.util.vt.{TerminalContext, VirtualTerminal}
 import ca.uwaterloo.flix.util._
+import ca.uwaterloo.flix.util.vt.VirtualString.{Blue, Cyan, NewLine}
 
 import scala.collection.JavaConverters._
 
@@ -56,49 +58,59 @@ class Shell(files: List[File], main: Option[String], options: Options) {
   /**
     * A common super-type for input commands.
     */
-  sealed trait Input
+  sealed trait Command
 
-  object Input {
+  object Command {
 
     /**
-      * Does literally nothing.
+      * No input.
       */
-    case object Nop extends Input
+    case object Nop extends Command
+
+    /**
+      * End of input.
+      */
+    case object Eof extends Command
+
+    /**
+      * Browse the definitions in the given namespace.
+      */
+    case class Browse(ns: String) extends Command
 
     /**
       * Runs the current program.
       */
-    case object Run extends Input
+    case object Run extends Command
 
     /**
       * Prints information about the available commands.
       */
-    case object Help extends Input
+    case object Help extends Command
 
     /**
       * Prints the given constant, relation or lattice.
       */
-    case class Print(name: String) extends Input
+    case class Print(name: String) extends Command
 
     /**
       * Gracefully terminates Flix.
       */
-    case object Exit extends Input
+    case object Quit extends Command
 
     /**
-      * Gracefully terminates Flix.
+      * Watch loaded paths for changes.
       */
-    case object Quit extends Input
+    case object Watch extends Command
 
     /**
-      * Watches files for changes.
+      * Unwatch loaded paths for changes.
       */
-    case object Watch extends Input
+    case object Unwatch extends Command
 
     /**
       * A command that was not unknown. Possibly a typo.
       */
-    case class Unknown(line: String) extends Input
+    case class Unknown(line: String) extends Command
 
   }
 
@@ -128,48 +140,68 @@ class Shell(files: List[File], main: Option[String], options: Options) {
   /**
     * Parses the string `line` into a command.
     */
-  private def parse(line: String): Input = line match {
-    case null => Input.Exit
-    case "" => Input.Nop
-    case "run" => Input.Run
-    case "help" => Input.Help
-    case "exit" => Input.Exit
-    case "quit" => Input.Quit
-    case "watch" => Input.Watch
-    case s if s.startsWith("print") => Input.Print(s.substring("print ".length))
-    case _ => Input.Unknown(line)
+  private def parse(line: String): Command = {
+    if (line == null)
+      return Command.Eof
+
+    if (line == "")
+      return Command.Nop
+
+    if (line.startsWith(":browse")) {
+      return Command.Browse(line.substring(":browse".length).trim)
+    }
+
+    line match {
+      case "run" => Command.Run
+      case ":help" | ":h" | ":?" => Command.Help
+      case ":quit" | ":q" => Command.Quit
+      case ":watch" | ":w" => Command.Watch
+      case ":unwatch" => Command.Unwatch
+      case s if s.startsWith("print") => Command.Print(s.substring("print ".length))
+      case _ => Command.Unknown(line)
+    }
   }
 
   /**
     * Executes the given command `cmd`
     */
-  private def execute(cmd: Input): Unit = cmd match {
-    case Input.Nop => // nop
+  private def execute(cmd: Command): Unit = cmd match {
+    case Command.Nop => // nop
 
-    case Input.Run =>
+    case Command.Eof | Command.Quit =>
+      Console.println("Thanks, and goodbye.")
+      Thread.currentThread().interrupt()
+
+    case Command.Run =>
       val future = executorService.submit(new CompilerThread())
       future.get()
 
-    case Input.Exit =>
-      Thread.currentThread().interrupt()
+    case Command.Browse(ns) =>
+      // TODO: Annotations/Modifiers should tell whether a def is synthetic.
+      val vt = new VirtualTerminal
+      val matchedDefs = getDefinitionsByNamespace(ns, model.getRoot)
+      for (defn <- matchedDefs.sortBy(_.sym.name)) {
+        vt << "def " << Blue(defn.sym.toString) << ": " << Cyan(defn.tpe.toString) << NewLine
+      }
+      Console.print(vt.fmt)
 
-    case Input.Quit =>
-      Thread.currentThread().interrupt()
-
-    case Input.Print(name) =>
+    case Command.Print(name) =>
       if (model == null)
         Console.println("Model not yet computed.")
       else
         PrettyPrint.print(name, model)
 
-    case Input.Help =>
-      Console.println("Available commands:")
-      Console.println("  run        -- compile and run.")
-      Console.println("  print      -- print a relation/lattice.")
-      Console.println("  exit       -- graceful shutdown.")
-      Console.println("  quit       -- graceful shutdown.")
+    case Command.Help =>
+      Console.println("  Command    Alias    Arguments        Description")
+      Console.println()
+      Console.println("  run                                  compile and run.")
+      Console.println("  print                                print a relation/lattice.")
+      Console.println("  :browse             <ns>             shows the definitions in the given namespace.")
+      Console.println("  :quit      :q                        shutdown.")
+      Console.println("  :watch     :w                        watch loaded paths for changes.")
+      Console.println("  :unwatch   :w                        unwatch loaded paths for changes.")
 
-    case Input.Watch =>
+    case Command.Watch =>
       // Check if the watcher is already initialized.
       if (watcher != null)
         return
@@ -186,7 +218,11 @@ class Shell(files: List[File], main: Option[String], options: Options) {
       watcher = new WatcherThread(directories)
       watcher.start()
 
-    case Input.Unknown(s) => Console.println(s"Unknown command '$s'. Try `help'.")
+    case Command.Unwatch =>
+      watcher.interrupt()
+      Console.println("Unwatched loaded paths.")
+
+    case Command.Unknown(s) => Console.println(s"Unknown command '$s'. Try `help'.")
   }
 
   /**
@@ -201,6 +237,26 @@ class Shell(files: List[File], main: Option[String], options: Options) {
     * Prints the prompt.
     */
   private def prompt: String = "flix> "
+
+  /**
+    * Returns the definitions in the given namespace.
+    */
+  private def getDefinitionsByNamespace(ns: String, root: Root): List[Def] = {
+    val namespace: List[String] = if (ns == "" || ns == ".")
+      Nil
+    else if (!ns.contains(".")) {
+      List(ns)
+    } else {
+      val index = ns.indexOf('.')
+      ns.substring(0, index).split('/').toList
+    }
+
+    root.defs.foldLeft(Nil: List[Def]) {
+      case (xs, (sym, defn)) if sym.namespace == namespace && !defn.isSynthetic =>
+        defn :: xs
+      case (xs, _) => xs
+    }
+  }
 
   /**
     * A thread to run the Flix compiler in.
@@ -251,7 +307,7 @@ class Shell(files: List[File], main: Option[String], options: Options) {
       }
     }
 
-    override def run(): Unit = {
+    override def run(): Unit = try {
       // Record the last timestamp of a change.
       var lastChanged = System.nanoTime()
 
@@ -280,6 +336,8 @@ class Shell(files: List[File], main: Option[String], options: Options) {
         // Reset the watch key.
         watchKey.reset()
       }
+    } catch {
+      case ex: InterruptedException => // nop, shutdown.
     }
 
   }
