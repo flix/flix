@@ -25,6 +25,11 @@ import ca.uwaterloo.flix.util.InternalCompilerException
 object JvmOps {
 
   /**
+    * The root package name.
+    */
+  val RootPackage: List[String] = Nil
+
+  /**
     * Returns the given Flix type `tpe` as JVM type.
     *
     * For example, if the type is:
@@ -37,10 +42,7 @@ object JvmOps {
     * (Int, Int) -> Bool    =>      Fn2$Int$Int$Bool
     */
   def getJvmType(tpe: Type, root: Root): JvmType = {
-    def simpleType(t: Type): String = t match {
-      case Type.Bool => "Bool"
-      case _ => "Obj"
-    }
+
 
     val base = tpe.typeConstructor
     val args = tpe.typeArguments
@@ -51,7 +53,7 @@ object JvmOps {
         // Fn1$Int$Bool
         // Fn2$Int$Int$Bool
         // Fn3$Char$Int$Int$Bool
-        val name = "Fn" + arity + "$" + args.map(simpleType).mkString("$")
+        val name = "Fn" + arity + "$" + args.map(getSimpleTypeAsString).mkString("$")
         JvmType.Reference(JvmName(Nil, name))
       case Type.Enum(sym, _) => ???
       case _ => ???
@@ -59,9 +61,24 @@ object JvmOps {
   }
 
   /**
-    * TODO
+    * Returns the continuation type `Cont$X` of the given type `tpe`.
+    *
+    * NB: The given type `tpe` must be an arrow type.
     */
-  def getJvmTypeForContinuation(tpe: Type): JvmType = ???
+  def getJvmTypeForContinuation(tpe: Type): JvmType = {
+    if (!tpe.typeConstructor.isArrow)
+      throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+
+    if (tpe.typeArguments.isEmpty)
+      throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+
+    // The return type is the last type argument.
+    val returnType = tpe.typeArguments.last
+
+    // The name of the continuation class is Cont$SimpleType
+    val name = "Cont$" + getSimpleTypeAsString(returnType)
+    JvmType.Reference(JvmName(RootPackage, name))
+  }
 
   /**
     * Returns the JVM type of the given enum symbol `sym` with `tag` and inner type `tpe`.
@@ -79,6 +96,46 @@ object JvmOps {
     * Returns the JVM type of the given tag info `i`.
     */
   def getJvmType(i: TagInfo, root: Root): JvmType = ???
+
+  /**
+    * Returns the string name of the given type constructor `tpe`.
+    *
+    * Returns the name of the primitive types and `Obj` for reference types.
+    *
+    * NB: The type must be a type constructor.
+    */
+  private def getSimpleTypeAsString(tpe: Type): String = tpe match {
+    case Type.Bool => "Bool"
+    case Type.Char => "Char"
+    case Type.Float32 => "Float32"
+    case Type.Float64 => "Float64"
+    case Type.Int8 => "Int8"
+    case Type.Int16 => "Int16"
+    case Type.Int32 => "Int32"
+    case Type.Int64 => "Int64"
+    case _ => "Obj"
+  }
+
+  /**
+    * Returns the set of all instantiated types in the given AST `root`.
+    *
+    * This include type components. For example, if the program contains
+    * the type (Bool, (Char, Int)) this includes the type (Char, Int).
+    */
+  def typesOf(root: Root): Set[Type] = {
+    // TODO: Temporary implementation which just returns some types to get us started.
+
+    root.defs.map(_._2.tpe).toSet
+  }
+
+  /**
+    * Returns all the type components of the given type `tpe`.
+    *
+    * For example, if the given type is `Option[(Bool, Char, Int)]`
+    * this returns the set `Bool`, `Char`, `Int`, `(Bool, Char, Int)`, and `Option[(Bool, Char, Int)]`.
+    */
+  def typesOf(tpe: Type): Set[Type] = ??? // TODO
+
 
   /**
     * Writes the given JVM class `clazz` to a sub path under the given `prefixPath`.
@@ -127,26 +184,5 @@ object JvmOps {
     }
     false
   }
-
-
-  /**
-    * Returns the set of all instantiated types in the given AST `root`.
-    *
-    * This include type components. For example, if the program contains
-    * the type (Bool, (Char, Int)) this includes the type (Char, Int).
-    */
-  def typesOf(root: Root): Set[Type] = {
-    // TODO: Temporary implementation which just returns some types to get us started.
-
-    root.defs.map(_._2.tpe).toSet
-  }
-
-  /**
-    * Returns all the type components of the given type `tpe`.
-    *
-    * For example, if the given type is `Option[(Bool, Char, Int)]`
-    * this returns the set `Bool`, `Char`, `Int`, `(Bool, Char, Int)`, and `Option[(Bool, Char, Int)]`.
-    */
-  def typesOf(tpe: Type): Set[Type] = ??? // TODO
 
 }
