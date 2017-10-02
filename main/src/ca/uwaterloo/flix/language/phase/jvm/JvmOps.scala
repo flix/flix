@@ -53,7 +53,7 @@ object JvmOps {
         // Fn1$Int$Bool
         // Fn2$Int$Int$Bool
         // Fn3$Char$Int$Int$Bool
-        val name = "Fn" + arity + "$" + args.map(getSimpleTypeAsString).mkString("$")
+        val name = "Fn" + arity + "$" + args.map(tpe => getSimpleName(getErasedType(tpe))).mkString("$")
         JvmType.Reference(JvmName(Nil, name))
       case Type.Enum(sym, _) => ???
       case _ => ???
@@ -78,7 +78,7 @@ object JvmOps {
     val returnType = tpe.typeArguments.last
 
     // The name of the continuation class is Cont$SimpleType
-    val name = "Cont$" + getSimpleTypeAsString(returnType)
+    val name = "Cont$" + getSimpleName(getErasedType(returnType))
     JvmType.Reference(JvmName(RootPackage, name))
   }
 
@@ -100,6 +100,27 @@ object JvmOps {
   def getJvmType(i: TagInfo, root: Root): JvmType = ???
 
   /**
+    * Returns the erased JvmType of the given Flix type.
+    *
+    * In Flix every primitive type is mapped to itself and every other type is mapped to java.lang.Object.
+    *
+    * For example,
+    *
+    * TODO
+    */
+  def getErasedType(tpe: Type): JvmType = tpe match {
+    case Type.Bool => JvmType.PrimBool
+    case Type.Char => ???
+    case Type.Float32 => ???
+    case Type.Float64 => ???
+    case Type.Int8 => ???
+    case Type.Int16 => ???
+    case Type.Int32 => ???
+    case Type.Int64 => ???
+    case _ => JvmType.Obj
+  }
+
+  /**
     * Returns the string name of the given type constructor `tpe`.
     *
     * Returns the name of the primitive types and `Obj` for reference types.
@@ -107,17 +128,11 @@ object JvmOps {
     * NB: The type must be a type constructor.
     */
   // TODO: Rename to ErasedType and introduce a ADT or something?
-  private def getSimpleTypeAsString(tpe: Type): String = tpe match {
-    case Type.Bool => "Bool"
-    case Type.Char => "Char"
-    case Type.Float32 => "Float32"
-    case Type.Float64 => "Float64"
-    case Type.Int8 => "Int8"
-    case Type.Int16 => "Int16"
-    case Type.Int32 => "Int32"
-    case Type.Int64 => "Int64"
-    case _ => "Obj"
+  private def getSimpleName(tpe: JvmType): String = tpe match {
+    case JvmType.PrimBool => "Bool"
+    case JvmType.Reference(jvmName) => "Obj"
   }
+
 
   /**
     * Returns the set of all instantiated types in the given AST `root`.
