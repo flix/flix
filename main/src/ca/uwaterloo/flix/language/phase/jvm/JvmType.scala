@@ -40,7 +40,40 @@ object JvmType {
     */
   case object PrimBool extends JvmType
 
-  // TODO
+  /**
+    * Represents the primitive character type.
+    */
+  case object PrimChar extends JvmType
+
+  /**
+    * Represents the primitive byte type.
+    */
+  case object PrimByte extends JvmType
+
+  /**
+    * Represents the primitive short type.
+    */
+  case object PrimShort extends JvmType
+
+  /**
+    * Represents the primitive int type.
+    */
+  case object PrimInt extends JvmType
+
+  /**
+    * Represents the primitive long type.
+    */
+  case object PrimLong extends JvmType
+
+  /**
+    * Represents the primitive float type.
+    */
+  case object PrimFloat extends JvmType
+
+  /**
+    * Represents the primitive double type.
+    */
+  case object PrimDouble extends JvmType
 
   /**
     * Represents a reference type of the given `name`.

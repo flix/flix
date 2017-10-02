@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language.phase.jvm
 
-import java.nio.file.{Files, Path}
+import java.nio.file.{Files, LinkOption, Path}
 
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Root
 import ca.uwaterloo.flix.language.ast.{Symbol, Type}
@@ -53,7 +53,7 @@ object JvmOps {
         // Fn1$Int$Bool
         // Fn2$Int$Int$Bool
         // Fn3$Char$Int$Int$Bool
-        val name = "Fn" + arity + "$" + args.map(tpe => getSimpleName(getErasedType(tpe))).mkString("$")
+        val name = "Fn" + arity + "$" + args.map(tpe => stringify(getErasedType(tpe))).mkString("$")
         JvmType.Reference(JvmName(Nil, name))
       case Type.Enum(sym, _) => ???
       case _ => ???
@@ -65,7 +65,7 @@ object JvmOps {
     *
     * NB: The given type `tpe` must be an arrow type.
     */
-  def getContinuationType(tpe: Type): JvmType = {
+  def getContinuationType(tpe: Type): JvmType.Reference = {
     // Check that the given type is an arrow type.
     if (!tpe.typeConstructor.isArrow)
       throw InternalCompilerException(s"Unexpected type: '$tpe'.")
@@ -78,7 +78,7 @@ object JvmOps {
     val returnType = tpe.typeArguments.last
 
     // The name of the continuation class is Cont$SimpleType
-    val name = "Cont$" + getSimpleName(getErasedType(returnType))
+    val name = "Cont$" + stringify(getErasedType(returnType))
     JvmType.Reference(JvmName(RootPackage, name))
   }
 
@@ -100,39 +100,38 @@ object JvmOps {
   def getJvmType(i: TagInfo, root: Root): JvmType = ???
 
   /**
-    * Returns the erased JvmType of the given Flix type.
+    * Returns the erased JvmType of the given Flix type `tpe`.
     *
-    * In Flix every primitive type is mapped to itself and every other type is mapped to java.lang.Object.
-    *
-    * For example,
-    *
-    * TODO
+    * Every primitive type is mapped to itself and every other type is mapped to Object.
     */
   def getErasedType(tpe: Type): JvmType = tpe match {
     case Type.Bool => JvmType.PrimBool
-    case Type.Char => ???
-    case Type.Float32 => ???
-    case Type.Float64 => ???
-    case Type.Int8 => ???
-    case Type.Int16 => ???
-    case Type.Int32 => ???
-    case Type.Int64 => ???
+    case Type.Char => JvmType.PrimChar
+    case Type.Float32 => JvmType.PrimFloat
+    case Type.Float64 => JvmType.PrimDouble
+    case Type.Int8 => JvmType.PrimByte
+    case Type.Int16 => JvmType.PrimShort
+    case Type.Int32 => JvmType.PrimInt
+    case Type.Int64 => JvmType.PrimLong
     case _ => JvmType.Obj
   }
 
   /**
-    * Returns the string name of the given type constructor `tpe`.
+    * Returns stringified name of the given JvmType `tpe`.
     *
-    * Returns the name of the primitive types and `Obj` for reference types.
-    *
-    * NB: The type must be a type constructor.
+    * The stringified name is short hand used for generation of interface and class names.
     */
-  // TODO: Rename to ErasedType and introduce a ADT or something?
-  private def getSimpleName(tpe: JvmType): String = tpe match {
+  def stringify(tpe: JvmType): String = tpe match {
     case JvmType.PrimBool => "Bool"
+    case JvmType.PrimChar => "Char"
+    case JvmType.PrimFloat => "Float32"
+    case JvmType.PrimDouble => "Float64"
+    case JvmType.PrimByte => "Int8"
+    case JvmType.PrimShort => "Int16"
+    case JvmType.PrimInt => "Int32"
+    case JvmType.PrimLong => "Int64"
     case JvmType.Reference(jvmName) => "Obj"
   }
-
 
   /**
     * Returns the set of all instantiated types in the given AST `root`.
@@ -154,36 +153,6 @@ object JvmOps {
     */
   def typesOf(tpe: Type): Set[Type] = ??? // TODO
 
-
-  /**
-    * Writes the given JVM class `clazz` to a sub path under the given `prefixPath`.
-    *
-    * For example, if the prefix path is `/tmp/` and the class name is Foo.Bar.Baz
-    * then the bytecode is written to the path `/tmp/Foo/Bar/Baz.class` provided
-    * that this path either does not exist or is already a JVM class file.
-    */
-  def writeClass(prefixPath: Path, clazz: JvmClass): Unit = {
-    // Compute the absolute path of the class file to write.
-    val path = prefixPath.resolve(clazz.name.toPath).toAbsolutePath
-
-    // TODO: For safety, let us not write anything yet.
-    println(path)
-    return
-
-    // Create all parent directories (in case they don't exist).
-    Files.createDirectories(path.getParent)
-
-    // Check if the file already exists.
-    if (Files.exists(path)) {
-      if (!isClassFile(path)) {
-        throw InternalCompilerException(s"Refusing to overwrite non-class file: '$path'.")
-      }
-    }
-
-    // Write the bytecode.
-    Files.write(path, clazz.bytecode)
-  }
-
   /**
     * Returns `true` if the given `path` exists and is a Java Virtual Machine class file.
     */
@@ -201,6 +170,42 @@ object JvmOps {
       return b1 == 0xCA && b2 == 0xFE && b3 == 0xBA && b4 == 0xBE
     }
     false
+  }
+
+  /**
+    * Writes the given JVM class `clazz` to a sub path under the given `prefixPath`.
+    *
+    * For example, if the prefix path is `/tmp/` and the class name is Foo.Bar.Baz
+    * then the bytecode is written to the path `/tmp/Foo/Bar/Baz.class` provided
+    * that this path either does not exist or is already a JVM class file.
+    */
+  def writeClass(prefixPath: Path, clazz: JvmClass): Unit = {
+    // Compute the absolute path of the class file to write.
+    val path = prefixPath.resolve(clazz.name.toPath).toAbsolutePath
+
+    // Create all parent directories (in case they don't exist).
+    Files.createDirectories(path.getParent)
+
+    // Check if the file already exists.
+    if (Files.exists(path)) {
+      // Check that the file is a regular file.
+      if (!Files.isRegularFile(path, LinkOption.NOFOLLOW_LINKS)) {
+        throw InternalCompilerException(s"Unable to write to non-regular file: '$path'.")
+      }
+
+      // Check if the file is writable.
+      if (!Files.isWritable(path)) {
+        throw InternalCompilerException(s"Unable to write to read-only file: '$path'.")
+      }
+
+      // Check that the file is a class file.
+      if (!isClassFile(path)) {
+        throw InternalCompilerException(s"Refusing to overwrite non-class file: '$path'.")
+      }
+    }
+
+    // Write the bytecode.
+    Files.write(path, clazz.bytecode)
   }
 
 }

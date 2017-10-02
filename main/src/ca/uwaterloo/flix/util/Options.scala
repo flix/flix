@@ -33,6 +33,7 @@ object Options {
     optimizations = Optimization.All,
     quickchecker = false,
     safe = false,
+    test = false,
     timeout = Duration.Inf,
     threads = Runtime.getRuntime.availableProcessors(),
     verbosity = Verbosity.Normal,
@@ -42,7 +43,7 @@ object Options {
   /**
     * Default test options.
     */
-  val DefaultTest: Options = Default.copy(core = true, verbosity = Verbosity.Silent)
+  val DefaultTest: Options = Default.copy(core = true, test = true, verbosity = Verbosity.Silent)
 }
 
 /**
@@ -56,6 +57,7 @@ object Options {
   * @param invariants   enables checking of compiler invariants.
   * @param monitor      enables the debugger and profiler.
   * @param quickchecker enables the quickchecker.
+  * @param test         enables test mode.
   * @param safe         disables unsafe operations.
   * @param timeout      selects the solver timeout.
   * @param threads      selects the number of threads to use.
@@ -72,6 +74,7 @@ case class Options(core: Boolean,
                    monitor: Boolean,
                    quickchecker: Boolean,
                    safe: Boolean,
+                   test: Boolean,
                    timeout: Duration,
                    threads: Int,
                    verbosity: Verbosity,
