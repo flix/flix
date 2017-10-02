@@ -21,6 +21,7 @@ import java.nio.file.{Files, LinkOption, Path}
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Root
 import ca.uwaterloo.flix.language.ast.{Symbol, Type}
 import ca.uwaterloo.flix.util.InternalCompilerException
+import org.objectweb.asm.Opcodes.V1_8
 
 object JvmOps {
 
@@ -28,6 +29,12 @@ object JvmOps {
     * The root package name.
     */
   val RootPackage: List[String] = Nil
+
+  /**
+    * Version of Jave
+    */
+  val JavaVersion = V1_8
+
 
   /**
     * Returns the given Flix type `tpe` as JVM type.

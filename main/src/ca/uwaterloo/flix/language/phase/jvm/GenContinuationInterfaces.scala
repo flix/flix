@@ -19,6 +19,8 @@ package ca.uwaterloo.flix.language.phase.jvm
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Root
 import ca.uwaterloo.flix.language.ast.Type
+import org.objectweb.asm.ClassWriter
+import org.objectweb.asm.Opcodes._
 
 object GenContinuationInterfaces {
 
@@ -64,8 +66,22 @@ object GenContinuationInterfaces {
     // We can use `getErasedType` to map it down into one of the primitive types or to Object.
     //
 
+    // Class visitor
+    val visitor = new ClassWriter(0)
+    visitor.visit(JvmOps.JavaVersion, ACC_PUBLIC + ACC_ABSTRACT + ACC_INTERFACE, interfaceType.name.toInternalName, null,
+      JvmType.Obj.name.toInternalName, null)
 
-    List(0xCA.toByte, 0xFE.toByte, 0xBA.toByte, 0xBE.toByte).toArray
+    // `getResult()` method
+    val getResultMethod = visitor.visitMethod(ACC_PUBLIC + ACC_ABSTRACT, "getResult", s"()${resultType.toDescriptor}", null, null)
+    getResultMethod.visitEnd()
+    getResultMethod.visitEnd()
+
+    // `apply()` method
+    val applyMethod = visitor.visitMethod(ACC_PUBLIC + ACC_ABSTRACT, "apply", s"(${JvmType.Context.toDescriptor})V", null, null)
+    applyMethod.visitEnd()
+
+    visitor.visitEnd()
+    visitor.toByteArray
   }
 
 }

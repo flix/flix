@@ -39,6 +39,11 @@ object JvmType {
   val Obj: JvmType.Reference = Reference(JvmName(List("java", "lang"), "Object"))
 
   /**
+    * Represent Context object
+    */
+  val Context: JvmType.Reference = Reference(JvmName(List("ca", "uwaterloo"), "Context"))
+
+  /**
     * Represents the primitive boolean type.
     */
   case object PrimBool extends JvmType
