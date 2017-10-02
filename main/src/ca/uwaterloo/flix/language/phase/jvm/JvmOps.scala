@@ -61,14 +61,16 @@ object JvmOps {
   }
 
   /**
-    * Returns the continuation type `Cont$X` of the given type `tpe`.
+    * Returns the continuation type `Cont$X` for the given type `tpe`.
     *
     * NB: The given type `tpe` must be an arrow type.
     */
-  def getJvmTypeForContinuation(tpe: Type): JvmType = {
+  def getContinuationType(tpe: Type): JvmType = {
+    // Check that the given type is an arrow type.
     if (!tpe.typeConstructor.isArrow)
       throw InternalCompilerException(s"Unexpected type: '$tpe'.")
 
+    // Check that the given type has at least one type argument.
     if (tpe.typeArguments.isEmpty)
       throw InternalCompilerException(s"Unexpected type: '$tpe'.")
 
@@ -104,6 +106,7 @@ object JvmOps {
     *
     * NB: The type must be a type constructor.
     */
+  // TODO: Rename to ErasedType and introduce a ADT or something?
   private def getSimpleTypeAsString(tpe: Type): String = tpe match {
     case Type.Bool => "Bool"
     case Type.Char => "Char"
