@@ -33,7 +33,12 @@ object JvmType {
   /**
     * Alias for the `java.lang.Object` type.
     */
-  val Obj: JvmType = Reference(JvmName(List("java", "lang"), "Object"))
+  val Obj: JvmType.Reference = Reference(JvmName(List("java", "lang"), "Object"))
+
+  /**
+    * Represent Context object
+    */
+  val Context: JvmType.Reference = Reference(JvmName(List("ca", "uwaterloo"), "Context"))
 
   /**
     * Represents the primitive boolean type.
