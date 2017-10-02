@@ -41,7 +41,7 @@ object JvmOps {
     * Int -> Bool           =>      Fn1$Int$Bool
     * (Int, Int) -> Bool    =>      Fn2$Int$Int$Bool
     */
-  def getJvmType(tpe: Type, root: Root): JvmType = {
+  def getJvmType(tpe: Type): JvmType = {
 
 
     val base = tpe.typeConstructor
@@ -55,9 +55,25 @@ object JvmOps {
         // Fn3$Char$Int$Int$Bool
         val name = "Fn" + arity + "$" + args.map(tpe => stringify(getErasedType(tpe))).mkString("$")
         JvmType.Reference(JvmName(Nil, name))
-      case Type.Enum(sym, _) => ???
-      case _ => ???
+      case _ => JvmType.PrimBool // TODO: Incorrect for now.
     }
+  }
+
+  /**
+    * Returns the result type of the given type `tpe`.
+    *
+    * NB: The given type `tpe` must be an arrow type.
+    */
+  def getResultType(tpe: Type): JvmType = {
+    // Check that the given type is an arrow type.
+    if (!tpe.typeConstructor.isArrow)
+      throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+
+    // Check that the given type has at least one type argument.
+    if (tpe.typeArguments.isEmpty)
+      throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+
+    getJvmType(tpe.typeArguments.last)
   }
 
   /**
@@ -77,8 +93,37 @@ object JvmOps {
     // The return type is the last type argument.
     val returnType = tpe.typeArguments.last
 
-    // The name of the continuation class is Cont$SimpleType
+    // The JVM name is of the form Cont$ErasedType
     val name = "Cont$" + stringify(getErasedType(returnType))
+
+    // The type resides in the root package.
+    JvmType.Reference(JvmName(RootPackage, name))
+  }
+
+  /**
+    * Returns the function type `FnX$Y$Z` for the given type `tpe`.
+    *
+    * NB: The given type `tpe` must be an arrow type.
+    */
+  def getFunctionType(tpe: Type): JvmType.Reference = {
+    // Check that the given type is an arrow type.
+    if (!tpe.typeConstructor.isArrow)
+      throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+
+    // Check that the given type has at least one type argument.
+    if (tpe.typeArguments.isEmpty)
+      throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+
+    // Compute the arity of the function interface.
+    val arity = tpe.typeArguments.length
+
+    // Compute the stringified erased type of each type argument.
+    val args = tpe.typeArguments.map(tpe => stringify(getErasedType(tpe)))
+
+    // The JVM name is of the form FnArity$Arg0$Arg1$Arg2
+    val name = "Fn" + arity + "$" + args.mkString("$")
+
+    // The type resides in the root package.
     JvmType.Reference(JvmName(RootPackage, name))
   }
 

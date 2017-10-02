@@ -28,7 +28,12 @@ case class JvmName(pkg: List[String], name: String) {
   /**
     * Returns the type descriptor of `this` Java name.
     */
-  def toDescriptor: String = "L" + pkg.mkString("/") + name
+  def toDescriptor: String = "L" + pkg.mkString("/") + name + ";"
+
+  /**
+    * Returns the internal name of `this` Java name.
+    */
+  def toInternalName: String = pkg.mkString("/") + "/" + name
 
   /**
     * Returns the relative path of `this` Java name.

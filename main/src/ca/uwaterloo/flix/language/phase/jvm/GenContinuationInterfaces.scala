@@ -32,7 +32,8 @@ object GenContinuationInterfaces {
         // Construct continuation interface.
         val jvmType = JvmOps.getContinuationType(tpe)
         val jvmName = jvmType.name
-        val bytecode = genByteCode()
+        val resultType = JvmOps.getResultType(tpe)
+        val bytecode = genByteCode(jvmType, resultType)
         macc + (jvmName -> JvmClass(jvmName, bytecode))
       case (macc, tpe) =>
         // Case 2: The type constructor is a non-arrow.
@@ -44,6 +45,27 @@ object GenContinuationInterfaces {
   /**
     * Returns the bytecode for the given continuation interface.
     */
-  private def genByteCode(): Array[Byte] = List(0xCA.toByte, 0xFE.toByte, 0xBA.toByte, 0xBE.toByte).toArray
+  private def genByteCode(interfaceType: JvmType.Reference, resultType: JvmType): Array[Byte] = {
+
+    // Pseudo code to generate:
+    //
+    // interface Cont$Bool {
+    //   boolean getResult();
+    //   void apply(Context c);
+    // }
+    //
+    // The names `getResult` and `apply` are fixed and can be used as strings.
+    //
+    // The type Cont$Bool is available as the jvmType argument.
+    //
+    // From the type, the JvmName can be extract and from this we can get the internal name of Cont$Bool.
+    //
+    // The result type (here bool) we is provided as an argument. It could be primitive or some compound type.
+    // We can use `getErasedType` to map it down into one of the primitive types or to Object.
+    //
+
+
+    List(0xCA.toByte, 0xFE.toByte, 0xBA.toByte, 0xBE.toByte).toArray
+  }
 
 }
