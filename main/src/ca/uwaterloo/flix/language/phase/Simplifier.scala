@@ -67,7 +67,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
     def visitDef(def0: TypedAst.Def): SimplifiedAst.Def = {
       val fs = def0.fparams.map(visitFormalParam)
       val exp = visitExp(def0.exp)
-      SimplifiedAst.Def(def0.ann, def0.mod, def0.sym, fs, exp, isSynthetic = false, def0.tpe, def0.loc)
+      SimplifiedAst.Def(def0.ann, def0.mod, def0.sym, fs, exp, def0.tpe, def0.loc)
     }
 
     /**
@@ -490,7 +490,9 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
           val arrowType = Type.mkArrow(freshSymbols.map(_._2._2), e0.tpe)
 
           // Assemble the fresh definition.
-          val defn = SimplifiedAst.Def(Ast.Annotations(Nil), Ast.Modifiers.Empty, freshSym, formals, exp, isSynthetic = true, arrowType, e0.loc)
+          val ann = Ast.Annotations.Empty
+          val mod = Ast.Modifiers(List(Ast.Modifier.Synthetic))
+          val defn = SimplifiedAst.Def(ann, mod, freshSym, formals, exp, arrowType, e0.loc)
 
           // Add the fresh definition to the top-level.
           toplevel += freshSym -> defn

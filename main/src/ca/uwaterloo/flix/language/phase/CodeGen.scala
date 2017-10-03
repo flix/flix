@@ -87,7 +87,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     // 1. Group constants and transform non-functions.
     val constantsMap: Map[FlixClassName, List[ExecutableAst.Def]] = root.defs.values.map { f =>
       f.tpe match {
-          // TODO: No idea what this does.
+        // TODO: No idea what this does.
         case tpe if tpe.isArrow => f
         case tpe => f.copy(tpe = Type.mkArrow(List(), tpe))
       }
@@ -236,7 +236,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
                               interfaces: Map[Type, FlixClassName],
                               enums: Map[(Type, String), (QualName, ExecutableAst.Case)],
                               visitor: ClassVisitor)(function: ExecutableAst.Def): Unit = {
-    val flags = if (function.isSynthetic) ACC_PUBLIC + ACC_STATIC + ACC_SYNTHETIC else ACC_PUBLIC + ACC_STATIC
+    val flags = if (function.mod.isSynthetic) ACC_PUBLIC + ACC_STATIC + ACC_SYNTHETIC else ACC_PUBLIC + ACC_STATIC
     val mv = visitor.visitMethod(flags, function.sym.suffix, descriptor(function.tpe, interfaces), null, null)
     mv.visitCode()
 

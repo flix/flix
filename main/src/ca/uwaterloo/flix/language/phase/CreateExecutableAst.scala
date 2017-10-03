@@ -71,7 +71,7 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
       case SimplifiedAst.FormalParam(sym, mod, tpe, loc) => ExecutableAst.FormalParam(sym, tpe)
     }.toArray
 
-    ExecutableAst.Def(sast.ann, sast.sym, formals, Expression.toExecutable(sast.exp), sast.isSynthetic, sast.tpe, sast.loc)
+    ExecutableAst.Def(sast.ann, sast.mod, sast.sym, formals, Expression.toExecutable(sast.exp), sast.tpe, sast.loc)
   }
 
   def toExecutable(sast: SimplifiedAst.Lattice, m: TopLevel)(implicit genSym: GenSym): ExecutableAst.Lattice = sast match {
@@ -91,8 +91,10 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
       val botSym = Symbol.freshDefnSym("bot")
       val topSym = Symbol.freshDefnSym("top")
 
-      val botConst = ExecutableAst.Def(Ast.Annotations(Nil), botSym, formals = Array(), t(bot), isSynthetic = true, bot.tpe, bot.loc)
-      val topConst = ExecutableAst.Def(Ast.Annotations(Nil), topSym, formals = Array(), t(top), isSynthetic = true, top.tpe, top.loc)
+      val ann = Ast.Annotations.Empty
+      val mod = Ast.Modifiers(List(Ast.Modifier.Synthetic))
+      val botConst = ExecutableAst.Def(ann, mod, botSym, formals = Array(), t(bot), bot.tpe, bot.loc)
+      val topConst = ExecutableAst.Def(ann, mod, topSym, formals = Array(), t(top), top.tpe, top.loc)
 
       // Update the map of definitions
       m ++= Map(botSym -> botConst, topSym -> topConst)
@@ -379,7 +381,9 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
     // Generate a top-level function for the constant.
     val sym = Symbol.freshDefnSym("lit")
     val lit = Expression.toExecutable(exp0)
-    val defn = ExecutableAst.Def(Ast.Annotations(Nil), sym, formals = Array(), lit, isSynthetic = true, exp0.tpe, exp0.loc)
+    val ann = Ast.Annotations.Empty
+    val mod = Ast.Modifiers(List(Ast.Modifier.Synthetic))
+    val defn = ExecutableAst.Def(ann, mod, sym, formals = Array(), lit, exp0.tpe, exp0.loc)
     m += (sym -> defn)
     sym
   }

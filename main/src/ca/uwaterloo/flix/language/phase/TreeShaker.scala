@@ -67,7 +67,7 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       * (a) Appears in the global namespaces, takes zero arguments, and is not marked as synthetic.
       */
     def isReachableRoot(defn: SimplifiedAst.Def): Boolean = {
-      (defn.sym.namespace.isEmpty && defn.fparams.isEmpty && !defn.isSynthetic) || defn.ann.isBenchmark
+      (defn.sym.namespace.isEmpty && defn.fparams.isEmpty && !defn.mod.isSynthetic) || defn.ann.isBenchmark
     }
 
     /**

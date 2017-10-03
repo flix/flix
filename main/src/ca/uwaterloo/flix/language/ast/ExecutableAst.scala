@@ -101,7 +101,7 @@ object ExecutableAst {
 
   }
 
-  case class Def(ann: Ast.Annotations, sym: Symbol.DefnSym, formals: Array[ExecutableAst.FormalParam], exp: ExecutableAst.Expression, isSynthetic: Boolean, tpe: Type, loc: SourceLocation) extends ExecutableAst {
+  case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, formals: Array[ExecutableAst.FormalParam], exp: ExecutableAst.Expression, tpe: Type, loc: SourceLocation) extends ExecutableAst {
     /**
       * Pointer to generated code.
       */

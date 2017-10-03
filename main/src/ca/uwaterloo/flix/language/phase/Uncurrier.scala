@@ -102,7 +102,6 @@ object Uncurrier extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
             uncurriedSym,
             formals1,
             body1,
-            curriedDef.isSynthetic,
             curriedDef.tpe, // TODO: Call uncurry type.
             curriedDef.loc)
 

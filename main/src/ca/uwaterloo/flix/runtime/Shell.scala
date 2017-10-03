@@ -177,7 +177,6 @@ class Shell(files: List[File], main: Option[String], options: Options) {
       future.get()
 
     case Command.Browse(ns) =>
-      // TODO: Annotations/Modifiers should tell whether a def is synthetic.
       val vt = new VirtualTerminal
       val matchedDefs = getDefinitionsByNamespace(ns, model.getRoot)
       for (defn <- matchedDefs.sortBy(_.sym.name)) {
@@ -252,7 +251,7 @@ class Shell(files: List[File], main: Option[String], options: Options) {
     }
 
     root.defs.foldLeft(Nil: List[Def]) {
-      case (xs, (sym, defn)) if sym.namespace == namespace && !defn.isSynthetic =>
+      case (xs, (sym, defn)) if sym.namespace == namespace && !defn.mod.isSynthetic =>
         defn :: xs
       case (xs, _) => xs
     }

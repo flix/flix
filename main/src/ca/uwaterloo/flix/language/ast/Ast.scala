@@ -157,6 +157,8 @@ object Ast {
     */
   case class Documentation(text: String, loc: SourceLocation)
 
+
+
   /**
     * A common super-type for hooks.
     */
@@ -203,6 +205,11 @@ object Ast {
       * Returns `true` if these modifiers contain the inline modifier.
       */
     def isInline: Boolean = mod contains Modifier.Inline
+
+    /**
+      * Returns `true` if these modifiers contain the synthetic modifier.
+      */
+    def isSynthetic: Boolean = mod contains Modifier.Synthetic
   }
 
   /**
@@ -216,6 +223,11 @@ object Ast {
       * The inline modifier.
       */
     case object Inline extends Modifier
+
+    /**
+      * The synthetic modifier.
+      */
+    case object Synthetic extends Modifier
 
   }
 
