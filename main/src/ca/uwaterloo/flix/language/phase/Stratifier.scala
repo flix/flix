@@ -62,6 +62,24 @@ object Stratifier extends Phase[TypedAst.Root, TypedAst.Root] {
   }
 
   /**
+    * A small case class to allow us to abstract over the possible heads in a
+    * constraint
+    */
+  trait ConstrHead
+  object ConstrHead {
+    case class Atom(symbol: Symbol.TableSym) extends ConstrHead
+    case class True() extends ConstrHead
+    case class False() extends ConstrHead
+  }
+
+  def makeConstrHead(constr: TypedAst.Constraint): ConstrHead = constr.head match {
+    case True(_) => ConstrHead.True()
+    case False(_) => ConstrHead.False()
+    case Atom(sym, _, _) => ConstrHead.Atom(sym)
+  }
+
+
+  /**
     * Stratify the graph
     */
   def stratify(constraints: List[TypedAst.Constraint], syms: List[Symbol.TableSym]): Validation[List[Stratum], StratificationError] = {
@@ -69,7 +87,8 @@ object Stratifier extends Phase[TypedAst.Root, TypedAst.Root] {
     // Ullman, Algorithm 3.5 p 133
 
     /// Start by creating a mapping from predicates to stratum
-    var stratumOf: Map[Symbol.TableSym, Int] = syms.map(x => (x, 1)).toMap
+    var stratumOf: Map[ConstrHead, Int] = (syms.map(x => (ConstrHead.Atom(x), 1))
+      ++ List((ConstrHead.True(), 1), (ConstrHead.False(), 1))).toMap
     val numRules = constraints.size
 
     // We repeatedly examine the rules. We move the head predicate to
@@ -83,42 +102,39 @@ object Stratifier extends Phase[TypedAst.Root, TypedAst.Root] {
     while (changes) {
       changes = false
       for (pred <- constraints) {
-        pred.head match {
-          case Atom(headSym, terms, loc) =>
-            val currStratum = stratumOf(headSym)
-            for (subGoal <- pred.body) {
-              subGoal match {
-                case Body.Atom(subGoalSym, Polarity.Positive, _, _) =>
-                  val newStratum = math.max(stratumOf(headSym), stratumOf(subGoalSym))
-                  if (newStratum > numRules) {
-                    // If we create more stratum than there are rules then
-                    // we know there must be a negative cycle.
-                    return StratificationError(findNegCycle(constraints)).toFailure
-                  }
-                  if (currStratum != newStratum) {
-                    // Update the strata of the predicate
-                    stratumOf += (headSym -> newStratum)
-                    changes = true
-                  }
-                case Body.Atom(subGoalSym, Polarity.Negative, _, _) =>
-                  val newStratum = math.max(stratumOf(headSym), stratumOf(subGoalSym) + 1)
+        val headSym = makeConstrHead(pred)
+        val currStratum = stratumOf(headSym)
 
-                  if (newStratum > numRules) {
-                    // If we create more stratum than there are rules then
-                    // we know there must be a negative cycle
-                    return StratificationError(findNegCycle(constraints)).toFailure
-                  }
-                  if (currStratum != newStratum) {
-                    // Update the strata of the predicate
-                    stratumOf += (headSym -> newStratum)
-                    changes = true
-                  }
-                case _: Filter => // Do Nothing
-                case _: Loop => // Do Nothing
+        for (subGoal <- pred.body) {
+          subGoal match {
+            case Body.Atom(subGoalSym, Polarity.Positive, _, _) =>
+              val newStratum = math.max(currStratum, stratumOf(ConstrHead.Atom(subGoalSym)))
+              if (newStratum > numRules) {
+                // If we create more stratum than there are rules then
+                // we know there must be a negative cycle.
+                return StratificationError(findNegCycle(constraints)).toFailure
               }
-            }
-          case _: True => // Do nothing
-          case _: False => // Do nothing
+              if (currStratum != newStratum) {
+                // Update the strata of the predicate
+                stratumOf += (headSym -> newStratum)
+                changes = true
+              }
+            case Body.Atom(subGoalSym, Polarity.Negative, _, _) =>
+              val newStratum = math.max(stratumOf(headSym), stratumOf(ConstrHead.Atom(subGoalSym)) + 1)
+
+              if (newStratum > numRules) {
+                // If we create more stratum than there are rules then
+                // we know there must be a negative cycle
+                return StratificationError(findNegCycle(constraints)).toFailure
+              }
+              if (currStratum != newStratum) {
+                // Update the strata of the predicate
+                stratumOf += (headSym -> newStratum)
+                changes = true
+              }
+            case _: Filter => // Do Nothing
+            case _: Loop => // Do Nothing
+          }
         }
       }
     }
@@ -150,11 +166,7 @@ object Stratifier extends Phase[TypedAst.Root, TypedAst.Root] {
       */
     def separate(constraints: List[TypedAst.Constraint], currLevel: Int): List[List[TypedAst.Constraint]] = {
       // We consider the True and False atoms to be in the first stratum
-      def getLevel(c: TypedAst.Constraint): Int = c.head match {
-        case Atom(sym, _, _) => stratumOf(sym)
-        case True(_) => 1
-        case False(_) => 1
-      }
+      def getLevel(c: TypedAst.Constraint): Int = stratumOf(makeConstrHead(c))
 
       constraints match {
         case Nil => Nil
