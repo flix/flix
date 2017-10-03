@@ -67,7 +67,13 @@ object GenContinuationInterfaces {
     //
 
     // Class visitor
-    val visitor = new ClassWriter(0)
+    val visitor = new ClassWriter(ClassWriter.COMPUTE_FRAMES){
+      override def getCommonSuperClass(tpe1: String, tpe2: String) : String = {
+        JvmType.Obj.name.toInternalName
+      }
+    }
+
+    // Class header
     visitor.visit(JvmOps.JavaVersion, ACC_PUBLIC + ACC_ABSTRACT + ACC_INTERFACE, interfaceType.name.toInternalName, null,
       JvmType.Obj.name.toInternalName, null)
 
