@@ -36,6 +36,7 @@ object JvmBackend extends Phase[Root, Root] {
     * Emits JVM bytecode for the given AST `root`.
     */
   def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationError] = {
+    return root.toSuccess
     //
     // Compute the set of types in the program.
     //
