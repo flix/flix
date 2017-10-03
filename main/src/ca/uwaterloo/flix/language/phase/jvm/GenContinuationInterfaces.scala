@@ -30,7 +30,7 @@ object GenContinuationInterfaces {
       case (macc, tpe) if tpe.typeConstructor.isArrow =>
         // Case 1: The type constructor is an arrow.
         // Construct continuation interface.
-        val jvmType = JvmOps.getContinuationType(tpe)
+        val jvmType = JvmOps.getContinuationInterfaceType(tpe)
         val jvmName = jvmType.name
         val resultType = JvmOps.getResultType(tpe)
         val bytecode = genByteCode(jvmType, resultType)

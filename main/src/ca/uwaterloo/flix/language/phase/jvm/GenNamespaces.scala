@@ -22,9 +22,25 @@ import ca.uwaterloo.flix.language.ast.Type
 
 object GenNamespaces {
 
-  // TODO: Documentation and signature
-  def gen(ts: Set[Type], root: Root)(implicit flix: Flix): Map[JvmName, JvmClass] = {
-    Map.empty // TODO
+  /**
+    * Returns the set of namespaces classes for the given set of namespaces.
+    */
+  def gen(nss: Set[NamespaceInfo], root: Root)(implicit flix: Flix): Map[JvmName, JvmClass] = {
+    //
+    // Generate a namespace class for each namespace and collect the results in a map.
+    //
+    nss.foldLeft(Map.empty[JvmName, JvmClass]) {
+      case (macc, ns) =>
+        val clazz = genNamespaceClass(ns, root)
+        macc + (clazz.name -> clazz)
+    }
+  }
+
+  /**
+    * Returns the namespace class for the given namespace `ns`.
+    */
+  private def genNamespaceClass(ns: NamespaceInfo, root: Root)(implicit flix: Flix): JvmClass = {
+    ???
   }
 
 }

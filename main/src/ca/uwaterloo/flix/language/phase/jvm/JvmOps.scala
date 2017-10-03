@@ -77,11 +77,11 @@ object JvmOps {
   }
 
   /**
-    * Returns the continuation type `Cont$X` for the given type `tpe`.
+    * Returns the continuation interface type `Cont$X` for the given type `tpe`.
     *
     * NB: The given type `tpe` must be an arrow type.
     */
-  def getContinuationType(tpe: Type): JvmType.Reference = {
+  def getContinuationInterfaceType(tpe: Type): JvmType.Reference = {
     // Check that the given type is an arrow type.
     if (!tpe.typeConstructor.isArrow)
       throw InternalCompilerException(s"Unexpected type: '$tpe'.")
@@ -101,11 +101,11 @@ object JvmOps {
   }
 
   /**
-    * Returns the function type `FnX$Y$Z` for the given type `tpe`.
+    * Returns the function interface type `FnX$Y$Z` for the given type `tpe`.
     *
     * NB: The given type `tpe` must be an arrow type.
     */
-  def getFunctionType(tpe: Type): JvmType.Reference = {
+  def getFunctionInterfaceType(tpe: Type): JvmType.Reference = {
     // Check that the given type is an arrow type.
     if (!tpe.typeConstructor.isArrow)
       throw InternalCompilerException(s"Unexpected type: '$tpe'.")
@@ -125,6 +125,19 @@ object JvmOps {
 
     // The type resides in the root package.
     JvmType.Reference(JvmName(RootPackage, name))
+  }
+
+  // TODO
+  def getFunctionDefinitionClassType(sym: Symbol.DefnSym): JvmType.Reference = {
+
+    ???
+  }
+
+  /**
+    * Returns the namespace type for the given namespace `ns`.
+    */
+  def getNamespaceClassType(ns: NamespaceInfo): JvmType.Reference = {
+    JvmType.Reference(JvmName(ns.ns, "Ns"))
   }
 
   /**
@@ -176,6 +189,16 @@ object JvmOps {
     case JvmType.PrimInt => "Int32"
     case JvmType.PrimLong => "Int64"
     case JvmType.Reference(jvmName) => "Obj"
+  }
+
+  /**
+    * Returns the set of namespaces in the given AST `root`.
+    */
+  def namespacesOf(root: Root): Set[NamespaceInfo] = {
+    // Group every symbol by namespace.
+    root.defs.groupBy(_._1.namespace).map {
+      case (ns, defs) => NamespaceInfo(ns, defs)
+    }.toSet
   }
 
   /**

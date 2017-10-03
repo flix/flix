@@ -25,7 +25,10 @@ sealed trait JvmType {
   /**
     * Returns the type descriptor of `this` Java name.
     */
-  def toDescriptor: String = ??? // TODO
+  def toDescriptor: String = this match {
+    case JvmType.PrimBool => "Z"
+    case _ => ??? // TODO
+  }
 }
 
 object JvmType {
@@ -33,7 +36,7 @@ object JvmType {
   /**
     * Alias for the `java.lang.Object` type.
     */
-  val Obj: JvmType = Reference(JvmName(List("java", "lang"), "Object"))
+  val Obj: JvmType.Reference = Reference(JvmName(List("java", "lang"), "Object"))
 
   /**
     * Represents the primitive boolean type.

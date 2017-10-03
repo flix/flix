@@ -19,6 +19,6 @@ package ca.uwaterloo.flix.language.phase.jvm
 import ca.uwaterloo.flix.language.ast.{Symbol, Type}
 
 /**
-  * A derived class used to hold information about the tag of an enum.
+  * Meta information about a tag.
   */
 case class TagInfo(enum: Symbol.EnumSym, tag: String, tpe: Type, tparams: List[Type])
