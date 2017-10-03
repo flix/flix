@@ -44,12 +44,12 @@ object JvmBackend extends Phase[Root, Root] {
     //
     // Emit the Context class.
     //
-    val context = GenContext.gen(types, root)
+    val context = GenContext.gen(root.defs)
 
     //
     // Emit the namespace classes.
     //
-    val namespaceClasses = GenNamespaces.gen(types, root)
+    val namespaceClasses = GenNamespaces.gen(root.defs)
 
     //
     // Emit continuation interfaces for each function type in the program.
@@ -69,7 +69,7 @@ object JvmBackend extends Phase[Root, Root] {
     //
     // Collect all the classes and interfaces together.
     //
-    val allClasses = context ++ namespaceClasses ++ continuationInterfaces ++ functionInterfaces ++ functionClasses
+    val allClasses = namespaceClasses ++ context ++ continuationInterfaces ++ functionInterfaces ++ functionClasses
 
     //
     // Write each class (and interface) to disk.
