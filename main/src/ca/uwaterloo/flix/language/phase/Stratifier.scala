@@ -65,16 +65,19 @@ object Stratifier extends Phase[TypedAst.Root, TypedAst.Root] {
     * A small case class to allow us to abstract over the possible heads in a
     * constraint
     */
-  trait ConstrHead
+  sealed trait ConstrHead
   object ConstrHead {
-    case class Atom(symbol: Symbol.TableSym) extends ConstrHead
-    case class True() extends ConstrHead
-    case class False() extends ConstrHead
+    case object True extends ConstrHead
+    case object False extends ConstrHead
+    case class Atom(sym: Symbol.TableSym) extends ConstrHead
   }
 
+  /**
+    * Create a ConstrHead type out of the head of a given constraint
+    */
   def makeConstrHead(constr: TypedAst.Constraint): ConstrHead = constr.head match {
-    case True(_) => ConstrHead.True()
-    case False(_) => ConstrHead.False()
+    case True(_) => ConstrHead.True
+    case False(_) => ConstrHead.False
     case Atom(sym, _, _) => ConstrHead.Atom(sym)
   }
 
@@ -88,7 +91,7 @@ object Stratifier extends Phase[TypedAst.Root, TypedAst.Root] {
 
     /// Start by creating a mapping from predicates to stratum
     var stratumOf: Map[ConstrHead, Int] = (syms.map(x => (ConstrHead.Atom(x), 1))
-      ++ List((ConstrHead.True(), 1), (ConstrHead.False(), 1))).toMap
+      ++ List((ConstrHead.True, 1), (ConstrHead.False, 1))).toMap
     val numRules = constraints.size
 
     // We repeatedly examine the rules. We move the head predicate to
