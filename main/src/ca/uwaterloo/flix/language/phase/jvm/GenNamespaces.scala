@@ -25,14 +25,16 @@ object GenNamespaces {
   /**
     * Returns the set of namespaces classes for the given set of namespaces.
     */
-  def gen(nss: Set[NamespaceInfo], root: Root)(implicit flix: Flix): Map[JvmName, JvmClass] = {
+  def gen(namespaces: Set[NamespaceInfo], root: Root)(implicit flix: Flix): Map[JvmName, JvmClass] = {
     //
     // Generate a namespace class for each namespace and collect the results in a map.
     //
-    nss.foldLeft(Map.empty[JvmName, JvmClass]) {
+    namespaces.foldLeft(Map.empty[JvmName, JvmClass]) {
       case (macc, ns) =>
-        val clazz = genNamespaceClass(ns, root)
-        macc + (clazz.name -> clazz)
+        // TODO: Incomment the below when the function below has been implemented.
+        //val clazz = genNamespaceClass(ns, root)
+        //macc + (clazz.name -> clazz)
+        macc
     }
   }
 

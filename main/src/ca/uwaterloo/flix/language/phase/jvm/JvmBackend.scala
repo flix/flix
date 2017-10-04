@@ -39,9 +39,7 @@ object JvmBackend extends Phase[Root, Root] {
     //
     // Compute the set of namespaces in the program.
     //
-    // TODO: Use empty until everything is implemented.
-    //val namespaces = JvmOps.namespacesOf(root)
-    val namespaces = Set.empty[NamespaceInfo]
+    val namespaces = JvmOps.namespacesOf(root)
 
     //
     // Compute the set of types in the program.
@@ -51,7 +49,7 @@ object JvmBackend extends Phase[Root, Root] {
     //
     // Emit the Context class.
     //
-    val context = GenContext.gen(types, root)
+    val contextClass = GenContext.gen(types, root)
 
     //
     // Emit the namespace classes.
@@ -76,7 +74,7 @@ object JvmBackend extends Phase[Root, Root] {
     //
     // Collect all the classes and interfaces together.
     //
-    val allClasses = context ++ namespaceClasses ++ continuationInterfaces ++ functionInterfaces ++ functionClasses
+    val allClasses = contextClass ++ namespaceClasses ++ continuationInterfaces ++ functionInterfaces ++ functionClasses
 
     //
     // Write each class (and interface) to disk.

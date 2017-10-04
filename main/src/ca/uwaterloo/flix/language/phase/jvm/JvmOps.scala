@@ -42,20 +42,31 @@ object JvmOps {
     * (Int, Int) -> Bool    =>      Fn2$Int$Int$Bool
     */
   def getJvmType(tpe: Type): JvmType = {
-
-
+    // Retrieve the type constructor.
     val base = tpe.typeConstructor
+
+    // Retrieve the type arguments.
     val args = tpe.typeArguments
 
+    // Match on the type constructor.
     base match {
-      case Type.Arrow(arity) =>
-        // Compute a name of the form:
-        // Fn1$Int$Bool
-        // Fn2$Int$Int$Bool
-        // Fn3$Char$Int$Int$Bool
-        val name = "Fn" + arity + "$" + args.map(tpe => stringify(getErasedType(tpe))).mkString("$")
-        JvmType.Reference(JvmName(Nil, name))
-      case _ => JvmType.PrimBool // TODO: Incorrect for now.
+      case Type.Unit => JvmType.Reference(JvmName(RootPackage, "Unit")) // TODO: For now we pretend there is such a class
+      case Type.Bool => JvmType.PrimBool
+      case Type.Char => JvmType.PrimChar
+      case Type.Float32 => JvmType.PrimFloat
+      case Type.Float64 => JvmType.PrimDouble
+      case Type.Int8 => JvmType.PrimByte
+      case Type.Int16 => JvmType.PrimShort
+      case Type.Int32 => JvmType.PrimInt
+      case Type.Int64 => JvmType.PrimLong
+      case Type.BigInt => JvmType.BigInteger
+      case Type.Str => JvmType.String
+      case Type.Native => ??? // TODO
+      case Type.Ref => ??? // TODO
+      case Type.Arrow(l) => getFunctionInterfaceType(tpe)
+      case Type.Tuple(l) => getTupleInterfaceType(tpe)
+      case Type.Enum(sym, kind) => JvmType.PrimBool // TODO: Incorrect, pending implementation.
+      case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
     }
   }
 
@@ -73,11 +84,15 @@ object JvmOps {
     if (tpe.typeArguments.isEmpty)
       throw InternalCompilerException(s"Unexpected type: '$tpe'.")
 
+    // Return result type is the last type argument.
     getJvmType(tpe.typeArguments.last)
   }
 
   /**
     * Returns the continuation interface type `Cont$X` for the given type `tpe`.
+    *
+    * Int -> Int          =>  Cont$Int
+    * (Int, Int) -> Int   =>  Cont$Int
     *
     * NB: The given type `tpe` must be an arrow type.
     */
@@ -103,6 +118,11 @@ object JvmOps {
   /**
     * Returns the function interface type `FnX$Y$Z` for the given type `tpe`.
     *
+    * For example:
+    *
+    * Int -> Int          =>  Fn2$Int$Int
+    * (Int, Int) -> Int   =>  Fn3$Int$Int$Int
+    *
     * NB: The given type `tpe` must be an arrow type.
     */
   def getFunctionInterfaceType(tpe: Type): JvmType.Reference = {
@@ -127,17 +147,61 @@ object JvmOps {
     JvmType.Reference(JvmName(RootPackage, name))
   }
 
-  // TODO
-  def getFunctionDefinitionClassType(sym: Symbol.DefnSym): JvmType.Reference = {
+  /**
+    * Returns the tuple interface type `TX$Y$Z` for the given type `tpe`.
+    *
+    * NB: The given type `tpe` must be a tuple type.
+    */
+  def getTupleInterfaceType(tpe: Type): JvmType.Reference = {
+    // Check that the given type is an tuple type.
+    if (!tpe.typeConstructor.isArrow)
+      throw InternalCompilerException(s"Unexpected type: '$tpe'.")
 
-    ???
+    // Check that the given type has at least one type argument.
+    if (tpe.typeArguments.isEmpty)
+      throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+
+    // Compute the arity of the tuple.
+    val arity = tpe.typeArguments.length
+
+    // Compute the stringified erased type of each type argument.
+    val args = tpe.typeArguments.map(tpe => stringify(getErasedType(tpe)))
+
+    // The JVM name is of the form TArity$Arg0$Arg1$Arg2
+    val name = "T" + arity + "$" + args.mkString("$")
+
+    // The type resides in the root package.
+    JvmType.Reference(JvmName(RootPackage, name))
+  }
+
+  /** *
+    * Returns the function definition class for the given symbol.
+    *
+    * For example:
+    *
+    * print         =>  Def$print
+    * List.length   =>  List.Def$length
+    */
+  def getFunctionDefinitionClassType(sym: Symbol.DefnSym): JvmType.Reference = {
+    val pkg = sym.namespace
+    val name = "Def$" + sym.name
+    JvmType.Reference(JvmName(pkg, name))
   }
 
   /**
     * Returns the namespace type for the given namespace `ns`.
+    *
+    * For example:
+    *
+    * <root>      =>  Ns
+    * Foo         =>  Foo.Ns
+    * Foo.Bar     =>  Foo.Bar.Ns
+    * Foo.Bar.Baz =>  Foo.Bar.Baz.Ns
     */
   def getNamespaceClassType(ns: NamespaceInfo): JvmType.Reference = {
-    JvmType.Reference(JvmName(ns.ns, "Ns"))
+    val pkg = ns.ns
+    val name = "Ns"
+    JvmType.Reference(JvmName(pkg, name))
   }
 
   /**
@@ -171,7 +235,7 @@ object JvmOps {
     case Type.Int16 => JvmType.PrimShort
     case Type.Int32 => JvmType.PrimInt
     case Type.Int64 => JvmType.PrimLong
-    case _ => JvmType.Obj
+    case _ => JvmType.Object
   }
 
   /**

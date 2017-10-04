@@ -27,16 +27,33 @@ sealed trait JvmType {
     */
   def toDescriptor: String = this match {
     case JvmType.PrimBool => "Z"
-    case _ => ??? // TODO
+    case JvmType.PrimChar => "C"
+    case JvmType.PrimByte => "B"
+    case JvmType.PrimShort => "S"
+    case JvmType.PrimInt => "I"
+    case JvmType.PrimLong => "J"
+    case JvmType.PrimFloat => "F"
+    case JvmType.PrimDouble => "D"
+    case JvmType.Reference(name) => name.toDescriptor
   }
 }
 
 object JvmType {
 
   /**
-    * Alias for the `java.lang.Object` type.
+    * The `java.lang.BigInteger` type.
     */
-  val Obj: JvmType.Reference = Reference(JvmName(List("java", "lang"), "Object"))
+  val BigInteger: JvmType.Reference = Reference(JvmName.BigInteger)
+
+  /**
+    * The `java.lang.Object` type.
+    */
+  val Object: JvmType.Reference = Reference(JvmName.Object)
+
+  /**
+    * The `java.lang.String` type.
+    */
+  val String: JvmType.Reference = Reference(JvmName.String)
 
   /**
     * Represents the primitive boolean type.
