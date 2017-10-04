@@ -36,7 +36,11 @@ object JvmBackend extends Phase[Root, Root] {
     * Emits JVM bytecode for the given AST `root`.
     */
   def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationError] = {
-    return root.toSuccess
+    //
+    // Compute the set of namespaces in the program.
+    //
+    val namespaces = JvmOps.namespacesOf(root)
+
     //
     // Compute the set of types in the program.
     //
@@ -45,12 +49,12 @@ object JvmBackend extends Phase[Root, Root] {
     //
     // Emit the Context class.
     //
-    val context = GenContext.gen(root.defs)
+    val contextClass = GenContext.gen(types, root)
 
     //
     // Emit the namespace classes.
     //
-    val namespaceClasses = GenNamespaces.gen(root.defs)
+    val namespaceClasses = GenNamespaces.gen(namespaces, root)
 
     //
     // Emit continuation interfaces for each function type in the program.
@@ -70,7 +74,7 @@ object JvmBackend extends Phase[Root, Root] {
     //
     // Collect all the classes and interfaces together.
     //
-    val allClasses = namespaceClasses ++ context ++ continuationInterfaces ++ functionInterfaces ++ functionClasses
+    val allClasses = contextClass ++ namespaceClasses ++ continuationInterfaces ++ functionInterfaces ++ functionClasses
 
     //
     // Write each class (and interface) to disk.

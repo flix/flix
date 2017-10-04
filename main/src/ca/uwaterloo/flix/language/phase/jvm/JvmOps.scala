@@ -21,8 +21,6 @@ import java.nio.file.{Files, LinkOption, Path}
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Root
 import ca.uwaterloo.flix.language.ast.{Symbol, Type}
 import ca.uwaterloo.flix.util.InternalCompilerException
-import org.objectweb.asm.ClassWriter
-import org.objectweb.asm.Opcodes._
 
 object JvmOps {
 
@@ -30,12 +28,6 @@ object JvmOps {
     * The root package name.
     */
   val RootPackage: List[String] = Nil
-
-  /**
-    * Version of Jave
-    */
-  val JavaVersion = V1_8
-
 
   /**
     * Returns the given Flix type `tpe` as JVM type.
@@ -50,20 +42,31 @@ object JvmOps {
     * (Int, Int) -> Bool    =>      Fn2$Int$Int$Bool
     */
   def getJvmType(tpe: Type): JvmType = {
-
-
+    // Retrieve the type constructor.
     val base = tpe.typeConstructor
+
+    // Retrieve the type arguments.
     val args = tpe.typeArguments
 
+    // Match on the type constructor.
     base match {
-      case Type.Arrow(arity) =>
-        // Compute a name of the form:
-        // Fn1$Int$Bool
-        // Fn2$Int$Int$Bool
-        // Fn3$Char$Int$Int$Bool
-        val name = "Fn" + arity + "$" + args.map(tpe => stringify(getErasedType(tpe))).mkString("$")
-        JvmType.Reference(JvmName(Nil, name))
-      case _ => JvmType.PrimBool // TODO: Incorrect for now.
+      case Type.Unit => JvmType.Reference(JvmName(RootPackage, "Unit")) // TODO: For now we pretend there is such a class
+      case Type.Bool => JvmType.PrimBool
+      case Type.Char => JvmType.PrimChar
+      case Type.Float32 => JvmType.PrimFloat
+      case Type.Float64 => JvmType.PrimDouble
+      case Type.Int8 => JvmType.PrimByte
+      case Type.Int16 => JvmType.PrimShort
+      case Type.Int32 => JvmType.PrimInt
+      case Type.Int64 => JvmType.PrimLong
+      case Type.BigInt => JvmType.BigInteger
+      case Type.Str => JvmType.String
+      case Type.Native => ??? // TODO
+      case Type.Ref => ??? // TODO
+      case Type.Arrow(l) => getFunctionInterfaceType(tpe)
+      case Type.Tuple(l) => getTupleInterfaceType(tpe)
+      case Type.Enum(sym, kind) => JvmType.PrimBool // TODO: Incorrect, pending implementation.
+      case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
     }
   }
 
@@ -81,15 +84,19 @@ object JvmOps {
     if (tpe.typeArguments.isEmpty)
       throw InternalCompilerException(s"Unexpected type: '$tpe'.")
 
+    // Return result type is the last type argument.
     getJvmType(tpe.typeArguments.last)
   }
 
   /**
-    * Returns the continuation type `Cont$X` for the given type `tpe`.
+    * Returns the continuation interface type `Cont$X` for the given type `tpe`.
+    *
+    * Int -> Int          =>  Cont$Int
+    * (Int, Int) -> Int   =>  Cont$Int
     *
     * NB: The given type `tpe` must be an arrow type.
     */
-  def getContinuationType(tpe: Type): JvmType.Reference = {
+  def getContinuationInterfaceType(tpe: Type): JvmType.Reference = {
     // Check that the given type is an arrow type.
     if (!tpe.typeConstructor.isArrow)
       throw InternalCompilerException(s"Unexpected type: '$tpe'.")
@@ -109,18 +116,16 @@ object JvmOps {
   }
 
   /**
-    * Returns the reference to a Namespace class
-    */
-  def getNamespaceType(prefix: List[String]): JvmType.Reference = {
-    JvmType.Reference(JvmName(JvmOps.RootPackage ++ prefix, "Namespace"))
-  }
-
-  /**
-    * Returns the function type `FnX$Y$Z` for the given type `tpe`.
+    * Returns the function interface type `FnX$Y$Z` for the given type `tpe`.
+    *
+    * For example:
+    *
+    * Int -> Int          =>  Fn2$Int$Int
+    * (Int, Int) -> Int   =>  Fn3$Int$Int$Int
     *
     * NB: The given type `tpe` must be an arrow type.
     */
-  def getFunctionType(tpe: Type): JvmType.Reference = {
+  def getFunctionInterfaceType(tpe: Type): JvmType.Reference = {
     // Check that the given type is an arrow type.
     if (!tpe.typeConstructor.isArrow)
       throw InternalCompilerException(s"Unexpected type: '$tpe'.")
@@ -140,6 +145,63 @@ object JvmOps {
 
     // The type resides in the root package.
     JvmType.Reference(JvmName(RootPackage, name))
+  }
+
+  /**
+    * Returns the tuple interface type `TX$Y$Z` for the given type `tpe`.
+    *
+    * NB: The given type `tpe` must be a tuple type.
+    */
+  def getTupleInterfaceType(tpe: Type): JvmType.Reference = {
+    // Check that the given type is an tuple type.
+    if (!tpe.typeConstructor.isArrow)
+      throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+
+    // Check that the given type has at least one type argument.
+    if (tpe.typeArguments.isEmpty)
+      throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+
+    // Compute the arity of the tuple.
+    val arity = tpe.typeArguments.length
+
+    // Compute the stringified erased type of each type argument.
+    val args = tpe.typeArguments.map(tpe => stringify(getErasedType(tpe)))
+
+    // The JVM name is of the form TArity$Arg0$Arg1$Arg2
+    val name = "T" + arity + "$" + args.mkString("$")
+
+    // The type resides in the root package.
+    JvmType.Reference(JvmName(RootPackage, name))
+  }
+
+  /** *
+    * Returns the function definition class for the given symbol.
+    *
+    * For example:
+    *
+    * print         =>  Def$print
+    * List.length   =>  List.Def$length
+    */
+  def getFunctionDefinitionClassType(sym: Symbol.DefnSym): JvmType.Reference = {
+    val pkg = sym.namespace
+    val name = "Def$" + sym.name
+    JvmType.Reference(JvmName(pkg, name))
+  }
+
+  /**
+    * Returns the namespace type for the given namespace `ns`.
+    *
+    * For example:
+    *
+    * <root>      =>  Ns
+    * Foo         =>  Foo.Ns
+    * Foo.Bar     =>  Foo.Bar.Ns
+    * Foo.Bar.Baz =>  Foo.Bar.Baz.Ns
+    */
+  def getNamespaceClassType(ns: NamespaceInfo): JvmType.Reference = {
+    val pkg = ns.ns
+    val name = "Ns"
+    JvmType.Reference(JvmName(pkg, name))
   }
 
   /**
@@ -173,7 +235,7 @@ object JvmOps {
     case Type.Int16 => JvmType.PrimShort
     case Type.Int32 => JvmType.PrimInt
     case Type.Int64 => JvmType.PrimLong
-    case _ => JvmType.Obj
+    case _ => JvmType.Object
   }
 
   /**
@@ -191,6 +253,16 @@ object JvmOps {
     case JvmType.PrimInt => "Int32"
     case JvmType.PrimLong => "Int64"
     case JvmType.Reference(jvmName) => "Obj"
+  }
+
+  /**
+    * Returns the set of namespaces in the given AST `root`.
+    */
+  def namespacesOf(root: Root): Set[NamespaceInfo] = {
+    // Group every symbol by namespace.
+    root.defs.groupBy(_._1.namespace).map {
+      case (ns, defs) => NamespaceInfo(ns, defs)
+    }.toSet
   }
 
   /**
@@ -266,49 +338,6 @@ object JvmOps {
 
     // Write the bytecode.
     Files.write(path, clazz.bytecode)
-  }
-
-  /**
-    * Generates a field for the class with with name `name`, with descriptor `descriptor` using `visitor`. If `isStatic = true`
-    * then the field is static, otherwise the field will be non-static.
-    * For example calling this method with name = `field01`, descriptor = `I`, isStatic = `false` and isPrivate = `true`
-    * creates the following field:
-    *
-    * private int field01;
-    *
-    * calling this method with name = `value`, descriptor = `java/lang/Object`, isStatic = `false` and isPrivate = `true`
-    * creates the following:
-    *
-    * private Object value;
-    *
-    * calling this method with name = `unitInstance`, descriptor = `ca/waterloo/flix/enums/List/object/Nil`, `isStatic = true`
-    * and isPrivate = `false` generates the following:
-    *
-    * public static Nil unitInstance;
-    *
-    * @param visitor    class visitor
-    * @param name       name of the field
-    * @param descriptor descriptor of field
-    * @param isStatic   if this is true the the field is static
-    * @param isPrivate  if this is set then the field is private
-    */
-  def compileField(visitor: ClassWriter, name: String, descriptor: String, isStatic: Boolean, isPrivate: Boolean): Unit = {
-    val visibility =
-      if (isPrivate) {
-        ACC_PRIVATE
-      } else {
-        ACC_PUBLIC
-      }
-
-    val fieldType =
-      if (isStatic) {
-        ACC_STATIC
-      } else {
-        0
-      }
-
-    val field = visitor.visitField(visibility + fieldType, name, descriptor, null, null)
-    field.visitEnd()
   }
 
 }
