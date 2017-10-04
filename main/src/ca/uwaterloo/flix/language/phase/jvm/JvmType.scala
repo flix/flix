@@ -26,6 +26,7 @@ sealed trait JvmType {
     * Returns the type descriptor of `this` Java name.
     */
   def toDescriptor: String = this match {
+    case JvmType.Void => "V"
     case JvmType.PrimBool => "Z"
     case JvmType.PrimChar => "C"
     case JvmType.PrimByte => "B"
@@ -54,6 +55,11 @@ object JvmType {
     * The `java.lang.String` type.
     */
   val String: JvmType.Reference = Reference(JvmName.String)
+
+  /**
+    * Represents the void type.
+    */
+  case object Void extends JvmType
 
   /**
     * Represents the primitive boolean type.

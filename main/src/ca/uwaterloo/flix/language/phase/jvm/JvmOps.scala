@@ -239,11 +239,18 @@ object JvmOps {
   }
 
   /**
+    * Returns the descriptor of a method take takes the given `argumentTypes` and returns the given `resultType`.
+    */
+  def getMethodDescriptor(argumentTypes: List[JvmType], resultType: JvmType): String =
+    ??? // TODO
+
+  /**
     * Returns stringified name of the given JvmType `tpe`.
     *
     * The stringified name is short hand used for generation of interface and class names.
     */
   def stringify(tpe: JvmType): String = tpe match {
+    case JvmType.Void => "Void"
     case JvmType.PrimBool => "Bool"
     case JvmType.PrimChar => "Char"
     case JvmType.PrimFloat => "Float32"
