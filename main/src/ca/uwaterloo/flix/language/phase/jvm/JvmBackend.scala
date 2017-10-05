@@ -52,6 +52,11 @@ object JvmBackend extends Phase[Root, Root] {
     val types = JvmOps.typesOf(root)
 
     //
+    // Compute the set of instantiated tags in the program.
+    //
+    val tags = JvmOps.tagsOf(root)
+
+    //
     // Generate the Context class.
     //
     val contextClass = GenContext.gen(types)
@@ -82,6 +87,11 @@ object JvmBackend extends Phase[Root, Root] {
     val enumInterfaces = GenEnumInterfaces.gen(types)
 
     //
+    // Generate tag classes for each enum instantiation in the program.
+    //
+    val tagClasses = GenTagClasses.gen(tags)
+
+    //
     // Generate tuple interfaces for each tuple type in the program.
     //
     val tupleInterfaces = GenTupleInterfaces.gen(types)
@@ -106,7 +116,7 @@ object JvmBackend extends Phase[Root, Root] {
     //
     // TODO: Re-order
     val allClasses = contextClass ++ namespaceClasses ++ continuationInterfaces ++ functionInterfaces ++
-      functionClasses ++ enumInterfaces ++ tupleInterfaces ++ tupleClasses ++ mainClass
+      functionClasses ++ enumInterfaces ++ tupleInterfaces ++ tupleClasses ++ tagClasses ++ mainClass
 
     //
     // Write each class (and interface) to disk.

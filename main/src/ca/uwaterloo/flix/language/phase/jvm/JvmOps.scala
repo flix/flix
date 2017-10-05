@@ -19,8 +19,9 @@ package ca.uwaterloo.flix.language.phase.jvm
 import java.nio.file.{Files, LinkOption, Path}
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.ExecutableAst.{Expression, Root}
+import ca.uwaterloo.flix.language.ast.ExecutableAst.{Case, Expression, Root}
 import ca.uwaterloo.flix.language.ast.{Symbol, Type}
+import ca.uwaterloo.flix.language.phase.Unification
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 object JvmOps {
@@ -176,6 +177,20 @@ object JvmOps {
   }
 
   /**
+    * TODO: DOC + Examples
+    */
+  def getTagClassType(tag: TagInfo)(implicit root: Root, flix: Flix): JvmType.Reference = {
+    // The JVM name is of the form Tag$Arg0$Arg1$Arg2
+    val name = if (tag.tparams.isEmpty)
+      tag.tag
+    else
+      tag.tag + "$" + tag.tparams.mkString("$")
+
+    // The tag resides in its namespace package.
+    JvmType.Reference(JvmName(tag.sym.namespace, name))
+  }
+
+  /**
     * Returns the tuple interface type `TX$Y$Z` for the given type `tpe`.
     *
     * TODO: Add examples
@@ -290,23 +305,6 @@ object JvmOps {
   }
 
   /**
-    * Returns the JVM type of the given enum symbol `sym` with `tag` and inner type `tpe`.
-    *
-    * For example, if the symbol is `Option`, the tag `Some` and the inner type is `Int` then the result is None$Int.
-    */
-  def getJvmTypeFromEnumAndTag(sym: Symbol.EnumSym, tag: String, tpe: Type): JvmType = ???
-
-  /**
-    * Returns the information about the tags of the given type `tpe`.
-    */
-  def getTagsOf(tpe: Type): Set[TagInfo] = ???
-
-  /**
-    * Returns the JVM type of the given tag info `i`.
-    */
-  def getJvmType(i: TagInfo, root: Root): JvmType = ???
-
-  /**
     * Returns the erased JvmType of the given Flix type `tpe`.
     *
     * Every primitive type is mapped to itself and every other type is mapped to Object.
@@ -355,6 +353,40 @@ object JvmOps {
     root.defs.groupBy(_._1.namespace).map {
       case (ns, defs) => NamespaceInfo(ns, defs)
     }.toSet
+  }
+
+  /**
+    * Returns the set of tags in the given AST `root`.
+    */
+  def tagsOf(root: Root): Set[TagInfo] = {
+    /**
+      * Returns the set of tags associated with the given type.
+      */
+    def visitType(tpe: Type): Set[TagInfo] = {
+      // Return the empty set if the type is not an enum.
+      if (!tpe.isEnum) {
+        return Set.empty
+      }
+
+      // Retrieve the enum symbol and type arguments.
+      val enumType = tpe.typeConstructor.asInstanceOf[Type.Enum]
+      val args = tpe.typeArguments
+
+      // Retrieve the enum.
+      val enum = root.enums(enumType.sym)
+
+      // Compute the tag info.
+      enum.cases.foldLeft(Set.empty[TagInfo]) {
+        case (sacc, (_, Case(enumSym, tagName, uninstantiatedTagType, loc))) =>
+          // TODO: It would be nice if this information could be stored somewhere...
+          val subst = Unification.unify(enum.tpe, tpe).get
+          val tagType = subst(uninstantiatedTagType)
+
+          sacc + TagInfo(enumSym, tagName.name, args, tpe, tagType)
+      }
+    }
+
+    typesOf(root).flatMap(visitType)
   }
 
   /**

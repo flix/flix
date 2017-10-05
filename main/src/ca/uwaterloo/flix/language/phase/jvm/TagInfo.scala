@@ -21,4 +21,19 @@ import ca.uwaterloo.flix.language.ast.{Symbol, Type}
 /**
   * Meta information about a tag.
   */
-case class TagInfo(enum: Symbol.EnumSym, tag: String, tpe: Type, tparams: List[Type])
+// TODO: Order of components?
+// TODO: Can some of this be folded into Case?
+case class TagInfo(sym: Symbol.EnumSym, tag: String, tparams: List[Type], enumType: Type, tagType: Type) {
+  /**
+    * Returns the hash code of `this` tag info.
+    */
+  override def hashCode(): Int = 7 * sym.hashCode + 11 * tag.hashCode
+
+  /**
+    * Returns `true` if the given `obj` is the same enum and tag as this tag info.
+    */
+  override def equals(obj: scala.Any): Boolean = obj match {
+    case that: TagInfo => this.sym == that.sym && this.tag == that.tag
+    case _ => false
+  }
+}
