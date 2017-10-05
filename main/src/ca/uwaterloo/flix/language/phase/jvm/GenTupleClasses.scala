@@ -18,10 +18,17 @@ package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Root
+import ca.uwaterloo.flix.language.ast.Type
 
+/**
+  * Generates bytecode for the tuple classes.
+  */
 object GenTupleClasses {
 
-  def gen()(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
+  /**
+    * Returns the set of tuple classes for the given set of types.
+    */
+  def gen(ts: Set[Type])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
     Map.empty // TODO
   }
 

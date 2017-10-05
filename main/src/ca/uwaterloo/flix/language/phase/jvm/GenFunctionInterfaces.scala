@@ -20,6 +20,9 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Root
 import ca.uwaterloo.flix.language.ast.Type
 
+/**
+  * Generates bytecode for the function interfaces.
+  */
 object GenFunctionInterfaces {
 
   /**

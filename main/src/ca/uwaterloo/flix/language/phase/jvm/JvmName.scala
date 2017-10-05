@@ -24,19 +24,24 @@ import java.nio.file.{Path, Paths}
 object JvmName {
 
   /**
+    * The Flix Context class.
+    */
+  val Context: JvmName = JvmName(Nil, "Context")
+
+  /**
     * The `java.lang.BigInteger` name.
     */
-  def BigInteger: JvmName = JvmName(List("java", "math"), "BigInteger")
+  val BigInteger: JvmName = JvmName(List("java", "math"), "BigInteger")
 
   /**
     * The `java.lang.Object` name.
     */
-  def Object: JvmName = JvmName(List("java", "lang"), "Object")
+  val Object: JvmName = JvmName(List("java", "lang"), "Object")
 
   /**
     * The `java.lang.String` name.
     */
-  def String: JvmName = JvmName(List("java", "lang"), "String")
+  val String: JvmName = JvmName(List("java", "lang"), "String")
 
 }
 

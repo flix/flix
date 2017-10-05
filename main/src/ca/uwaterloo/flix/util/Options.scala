@@ -34,6 +34,7 @@ object Options {
     quickchecker = false,
     safe = false,
     test = false,
+    target = JvmTarget.Version18,
     timeout = Duration.Inf,
     threads = Runtime.getRuntime.availableProcessors(),
     verbosity = Verbosity.Normal,
@@ -59,6 +60,7 @@ object Options {
   * @param quickchecker enables the quickchecker.
   * @param test         enables test mode.
   * @param safe         disables unsafe operations.
+  * @param target       the target JVM.
   * @param timeout      selects the solver timeout.
   * @param threads      selects the number of threads to use.
   * @param verbosity    selects the level of verbosity.
@@ -74,35 +76,12 @@ case class Options(core: Boolean,
                    monitor: Boolean,
                    quickchecker: Boolean,
                    safe: Boolean,
+                   target: JvmTarget,
                    test: Boolean,
                    timeout: Duration,
                    threads: Int,
                    verbosity: Verbosity,
                    verifier: Boolean)
-
-/**
-  * An option to control the level of verbosity.
-  */
-sealed trait Verbosity
-
-object Verbosity {
-
-  /**
-    * Output verbose information. Useful for debugging.
-    */
-  case object Verbose extends Verbosity
-
-  /**
-    * Output condensed information. The default.
-    */
-  case object Normal extends Verbosity
-
-  /**
-    * Output nothing. Useful for when Flix is used as a library.
-    */
-  case object Silent extends Verbosity
-
-}
 
 /**
   * An option to control the evaluation strategy.
@@ -178,5 +157,58 @@ object Optimization {
     * Enables compilation of curried functions into uncurried functions.
     */
   case object Uncurrying extends Optimization
+
+}
+
+/**
+  * An option to control the version of emitted JVM bytecode.
+  */
+sealed trait JvmTarget
+
+object JvmTarget {
+
+  /**
+    * Emit bytecode for Java 1.6.
+    */
+  object Version16 extends JvmTarget
+
+  /**
+    * Emit bytecode for Java 1.7.
+    */
+  object Version17 extends JvmTarget
+
+  /**
+    * Emit bytecode for Java 1.8.
+    */
+  object Version18 extends JvmTarget
+
+  /**
+    * Emit bytecode for Java 1.9.
+    */
+  object Version19 extends JvmTarget
+
+}
+
+/**
+  * An option to control the level of verbosity.
+  */
+sealed trait Verbosity
+
+object Verbosity {
+
+  /**
+    * Output verbose information. Useful for debugging.
+    */
+  case object Verbose extends Verbosity
+
+  /**
+    * Output condensed information. The default.
+    */
+  case object Normal extends Verbosity
+
+  /**
+    * Output nothing. Useful for when Flix is used as a library.
+    */
+  case object Silent extends Verbosity
 
 }

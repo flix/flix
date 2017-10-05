@@ -42,6 +42,11 @@ sealed trait JvmType {
 object JvmType {
 
   /**
+    * The Flix Context class.
+    */
+  val Context: JvmType.Reference = Reference(JvmName.Context)
+
+  /**
     * The `java.lang.BigInteger` type.
     */
   val BigInteger: JvmType.Reference = Reference(JvmName.BigInteger)
