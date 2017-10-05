@@ -356,6 +356,8 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
     Console.println("  :run       :r                        compile and run.")
     Console.println("  :print                               print a relation/lattice.")
     Console.println("  :browse             <ns>             shows the definitions in the given namespace.")
+    Console.println("  :load               <path>           loads the given path.")
+    Console.println("  :unload             <path>           unloads the given path.")
     Console.println("  :quit      :q                        shutdown.")
     Console.println("  :watch     :w                        watch loaded paths for changes.")
     Console.println("  :unwatch   :w                        unwatch loaded paths for changes.")
