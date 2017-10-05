@@ -42,7 +42,7 @@ object GenTupleInterfaces {
   }
 
   /**
-    * Returns the bytecode for the given tuple interface.
+    * Returns the bytecode for the given tuple interface type.
     */
   private def genByteCode(interfaceType: JvmType.Reference): Array[Byte] = {
     List(0xCA.toByte, 0xFE.toByte, 0xBA.toByte, 0xBE.toByte).toArray

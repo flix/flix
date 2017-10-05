@@ -25,6 +25,8 @@ import ca.uwaterloo.flix.util.InternalCompilerException
 
 object JvmOps {
 
+  // TODO: Sort functions.
+
   /**
     * The root package name.
     */
@@ -151,6 +153,8 @@ object JvmOps {
   /**
     * Returns the enum interface type `Enum$X$Y$Z` for the given type `tpe`.
     *
+    * TODO: Add examples
+    *
     * NB: The given type `tpe` must be an enum type.
     */
   def getEnumInterfaceType(tpe: Type)(implicit root: Root, flix: Flix): JvmType.Reference = {
@@ -173,6 +177,8 @@ object JvmOps {
 
   /**
     * Returns the tuple interface type `TX$Y$Z` for the given type `tpe`.
+    *
+    * TODO: Add examples
     *
     * NB: The given type `tpe` must be a tuple type.
     */
@@ -201,6 +207,8 @@ object JvmOps {
   /**
     * Returns the tuple class type `TupleX$Y$Z` for the given type `tpe`.
     *
+    * TODO: Add examples
+    *
     * NB: The given type `tpe` must be a tuple type.
     */
   def getTupleClassType(tpe: Type)(implicit root: Root, flix: Flix): JvmType.Reference = {
@@ -227,6 +235,8 @@ object JvmOps {
 
   /**
     * Returns cell class type for the given type `tpe`.
+    *
+    * TODO: Add examples
     *
     * NB: The type must be a reference type.
     */

@@ -79,7 +79,7 @@ object JvmBackend extends Phase[Root, Root] {
     //
     // Generate enum interfaces for each enum type in the program.
     //
-    val enumInterfaces = GenEnumInterfaces.gen()
+    val enumInterfaces = GenEnumInterfaces.gen(types)
 
     //
     // Generate tuple interfaces for each tuple type in the program.
