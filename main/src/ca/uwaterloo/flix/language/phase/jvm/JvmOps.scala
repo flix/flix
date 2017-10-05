@@ -154,7 +154,11 @@ object JvmOps {
   /**
     * Returns the enum interface type `Enum$X$Y$Z` for the given type `tpe`.
     *
-    * TODO: Add examples
+    * For example,
+    *
+    * Color                 =>      Color
+    * Option[Int]           =>      Option$Int
+    * Result[Char, Int]     =>      Result$Char$Int
     *
     * NB: The given type `tpe` must be an enum type.
     */
@@ -177,8 +181,17 @@ object JvmOps {
   }
 
   /**
-    * TODO: DOC + Examples
+    * Returns the tag class `Tag$X$Y$Z` for the given tag.
+    *
+    * For example,
+    *
+    * None: Option[Int]         =>    None
+    * Some: Option[Char]        =>    Some$Char
+    * Some: Option[Int]         =>    Some$Int
+    * Ok: Result[Bool, Char]    =>    Ok$Bool$Char
+    * Err: Result[Bool, Char]   =>    Err$Bool$Char
     */
+  // TODO: Can we improve the representation w.r.t. unused type variables?
   def getTagClassType(tag: TagInfo)(implicit root: Root, flix: Flix): JvmType.Reference = {
     // Retrieve the tag name.
     val tagName = tag.tag
@@ -196,7 +209,11 @@ object JvmOps {
   /**
     * Returns the tuple interface type `TX$Y$Z` for the given type `tpe`.
     *
-    * TODO: Add examples
+    * For example,
+    *
+    * (Int, Int)              =>    T2$Int$Int
+    * (Int, Int, Int)         =>    T3$Int$Int$Int
+    * (Bool, Char, Int)       =>    T3$Bool$Char$Int
     *
     * NB: The given type `tpe` must be a tuple type.
     */
@@ -225,7 +242,13 @@ object JvmOps {
   /**
     * Returns the tuple class type `TupleX$Y$Z` for the given type `tpe`.
     *
-    * TODO: Add examples
+    * For example,
+    *
+    * (Int, Int)              =>    Tuple2$Int$Int
+    * (Int, Int, Int)         =>    Tuple3$Int$Int$Int
+    * (Bool, Char, Int)       =>    Tuple3$Bool$Char$Int
+    * (Bool, List[Int])       =>    Tuple2$Bool$Obj
+    * (Bool, (Int, Int))      =>    Tuple2$Bool$Obj
     *
     * NB: The given type `tpe` must be a tuple type.
     */
@@ -254,7 +277,8 @@ object JvmOps {
   /**
     * Returns cell class type for the given type `tpe`.
     *
-    * TODO: Add examples
+    * Ref[Bool]              =>    Ref$Bool
+    * Ref[List[Int]          =>    Ref$Obj
     *
     * NB: The type must be a reference type.
     */
