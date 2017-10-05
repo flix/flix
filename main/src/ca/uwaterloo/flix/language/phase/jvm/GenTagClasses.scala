@@ -19,6 +19,9 @@ package ca.uwaterloo.flix.language.phase.jvm
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Root
 
+/**
+  * Generates bytecode for the tag classes.
+  */
 object GenTagClasses {
 
   /**

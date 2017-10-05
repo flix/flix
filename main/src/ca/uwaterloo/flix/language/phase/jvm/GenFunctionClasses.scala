@@ -20,6 +20,9 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ExecutableAst._
 import ca.uwaterloo.flix.language.ast.Symbol
 
+/**
+  * Generates bytecode for the function classes.
+  */
 object GenFunctionClasses {
 
   /**

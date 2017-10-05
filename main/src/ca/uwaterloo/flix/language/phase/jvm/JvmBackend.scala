@@ -59,7 +59,7 @@ object JvmBackend extends Phase[Root, Root] {
     //
     // Generate the Context class.
     //
-    val contextClass = GenContext.gen(types)
+    val contextClass = GenContext.gen(namespaces)
 
     //
     // Generate the namespace classes.

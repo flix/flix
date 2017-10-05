@@ -18,12 +18,16 @@ package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Root
-import ca.uwaterloo.flix.language.ast.Type
 
+/**
+  * Generates bytecode for the `Context` class.
+  */
 object GenContext {
 
-  // TODO: Documentation and signature
-  def gen(ts: Set[Type])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
+  /**
+    * Returns the `Context` class.
+    */
+  def gen(ns: Set[NamespaceInfo])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
     Map.empty // TODO
   }
 

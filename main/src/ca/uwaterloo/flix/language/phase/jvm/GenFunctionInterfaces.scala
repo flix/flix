@@ -22,6 +22,9 @@ import ca.uwaterloo.flix.language.ast.Type
 import org.objectweb.asm.ClassWriter
 import org.objectweb.asm.Opcodes._
 
+/**
+  * Generates bytecode for the function interfaces.
+  */
 object GenFunctionInterfaces {
 
   /**

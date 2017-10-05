@@ -19,8 +19,14 @@ package ca.uwaterloo.flix.language.phase.jvm
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Root
 
+/**
+  * Generates bytecode for the main class.
+  */
 object GenMain {
 
+  /**
+    * Returns the main class.
+    */
   def gen()(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
     Map.empty // TODO
   }

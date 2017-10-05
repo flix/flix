@@ -16,6 +16,9 @@
 
 package ca.uwaterloo.flix.language.phase.jvm
 
+/**
+  * Generates bytecode for the fusion classes.
+  */
 object GenFusionClasses {
 
   def gen(): Map[JvmName, JvmClass] = {

@@ -20,6 +20,9 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Root
 import ca.uwaterloo.flix.language.ast.Type
 
+/**
+  * Generates bytecode for the namespace classes.
+  */
 object GenNamespaces {
 
   /**
@@ -31,18 +34,18 @@ object GenNamespaces {
     //
     namespaces.foldLeft(Map.empty[JvmName, JvmClass]) {
       case (macc, ns) =>
-        // TODO: Incomment the below when the function below has been implemented.
-        //val clazz = genNamespaceClass(ns, root)
-        //macc + (clazz.name -> clazz)
-        macc
+        val jvmType = JvmOps.getNamespaceClassType(ns)
+        val jvmName = jvmType.name
+        val bytecode = genBytecode(ns)
+        macc + (jvmName -> JvmClass(jvmName, bytecode))
     }
   }
 
   /**
     * Returns the namespace class for the given namespace `ns`.
     */
-  private def genNamespaceClass(ns: NamespaceInfo)(implicit root: Root, flix: Flix): JvmClass = {
-    ???
+  private def genBytecode(ns: NamespaceInfo)(implicit root: Root, flix: Flix): Array[Byte] = {
+    List(0xCA.toByte, 0xFE.toByte, 0xBA.toByte, 0xBE.toByte).toArray
   }
 
 }
