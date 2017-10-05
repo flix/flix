@@ -75,7 +75,7 @@ class Shell(files: List[File], main: Option[String], options: Options) {
     /**
       * Browse the definitions in the given namespace.
       */
-    case class Browse(ns: String) extends Command
+    case class Browse(ns: Option[String]) extends Command
 
     /**
       * Evaluate the given expression `s`.
@@ -154,7 +154,11 @@ class Shell(files: List[File], main: Option[String], options: Options) {
       return Command.Nop
 
     if (line.startsWith(":browse")) {
-      return Command.Browse(line.substring(":browse".length).trim)
+      if (line == ":browse") {
+        return Command.Browse(None)
+      }
+      val ns = line.substring(":browse".length).trim
+      return Command.Browse(Some(ns))
     }
 
     line match {
@@ -186,7 +190,27 @@ class Shell(files: List[File], main: Option[String], options: Options) {
       val future = executorService.submit(new CompilerThread())
       future.get()
 
-    case Command.Browse(ns) =>
+    case Command.Browse(None) =>
+      // Case 1: Browse available namespaces.
+
+      // Construct a new virtual terminal.
+      val vt = new VirtualTerminal
+
+      // Find the available namespaces.
+      val namespaces = namespacesOf(model.getRoot)
+
+      vt << Bold("Namespaces:") << Indent << NewLine << NewLine
+      for (namespace <- namespaces.toList.sorted) {
+        vt << namespace << NewLine
+      }
+      vt << Dedent << NewLine
+
+      // Print the virtual terminal to the console.
+      Console.print(vt.fmt)
+
+    case Command.Browse(Some(ns)) =>
+      // Case 2: Browse a specific namespace.
+
       // Construct a new virtual terminal.
       val vt = new VirtualTerminal
 
@@ -195,7 +219,7 @@ class Shell(files: List[File], main: Option[String], options: Options) {
       if (matchedDefs.nonEmpty) {
         vt << Bold("Definitions:") << Indent << NewLine << NewLine
         for (defn <- matchedDefs.sortBy(_.sym.name)) {
-          vt << Bold("def ") << Blue(defn.sym.toString) << "("
+          vt << Bold("def ") << Blue(defn.sym.name) << "("
           if (defn.formals.nonEmpty) {
             vt << defn.formals.head.sym.text << ": " << Cyan(defn.formals.head.tpe.toString)
             for (fparam <- defn.formals.tail) {
@@ -292,6 +316,15 @@ class Shell(files: List[File], main: Option[String], options: Options) {
     * Prints the prompt.
     */
   private def prompt: String = "flix> "
+
+  /**
+    * Returns the namespaces in the given AST `root`.
+    */
+  private def namespacesOf(root: Root): Set[String] = {
+    val ns1 = root.defs.keySet.map(_.namespace.mkString("/"))
+    val ns2 = root.tables.keySet.map(_.namespace.mkString("/"))
+    (ns1 ++ ns2) - ""
+  }
 
   /**
     * Returns the definitions in the given namespace.
