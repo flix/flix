@@ -18,11 +18,33 @@ package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Root
+import ca.uwaterloo.flix.language.ast.Type
 
 object GenEnumInterfaces {
 
-  def gen()(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
-    Map.empty // TODO
+  /**
+    * Returns the set of enum interfaces for the given set of types `ts`.
+    */
+  def gen(ts: Set[Type])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
+    ts.foldLeft(Map.empty[JvmName, JvmClass]) {
+      case (macc, tpe) if tpe.typeConstructor.isEnum =>
+        // Case 1: The type constructor is an enum.
+        // Construct enum interface.
+        val jvmType = JvmOps.getEnumInterfaceType(tpe)
+        val jvmName = jvmType.name
+        val bytecode = genByteCode(jvmType)
+        macc + (jvmName -> JvmClass(jvmName, bytecode))
+      case (macc, tpe) =>
+        // Case 2: The type constructor is a non-enum.
+        // Nothing to be done. Return the map.
+        macc
+    }
   }
 
+  /**
+    * Returns the bytecode for the given enum interface type.
+    */
+  private def genByteCode(interfaceType: JvmType.Reference): Array[Byte] = {
+    List(0xCA.toByte, 0xFE.toByte, 0xBA.toByte, 0xBE.toByte).toArray
+  }
 }
