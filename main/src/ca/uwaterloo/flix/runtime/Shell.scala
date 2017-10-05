@@ -190,7 +190,58 @@ class Shell(files: List[File], main: Option[String], options: Options) {
       val future = executorService.submit(new CompilerThread())
       future.get()
 
-    case Command.Browse(None) =>
+    case Command.Browse(nsOpt) => execBrowse(nsOpt)
+
+    case Command.Print(name) =>
+      if (model == null)
+        Console.println("Model not yet computed.")
+      else
+        PrettyPrint.print(name, model)
+
+    case Command.Help => execHelp()
+
+    case Command.Watch =>
+      // Check if the watcher is already initialized.
+      if (watcher != null)
+        return
+
+      // Compute the set of directories to watch.
+      val directories = files.map(_.toPath.toAbsolutePath.getParent)
+
+      // Print debugging information.
+      Console.println("Watching Directories:")
+      for (directory <- directories) {
+        Console.println(s"  $directory")
+      }
+
+      watcher = new WatcherThread(directories)
+      watcher.start()
+
+    case Command.Unwatch =>
+      watcher.interrupt()
+      Console.println("Unwatched loaded paths.")
+
+    case Command.Unknown(s) => Console.println(s"Unknown command '$s'. Try `help'.")
+  }
+
+  /**
+    * Prints the welcome banner to the console.
+    */
+  private def printWelcomeBanner(): Unit = {
+    Console.println(s"Welcome to Flix ${Version.CurrentVersion}!  Type 'help' for more information.")
+    Console.println(s"Enter a command and hit return. Type 'exit' or press ctrl+d to quit.")
+  }
+
+  /**
+    * Prints the prompt.
+    */
+  private def prompt: String = "flix> "
+
+  /**
+    * Executes the browse command.
+    */
+  private def execBrowse(nsOpt: Option[String]): Unit = nsOpt match {
+    case None =>
       // Case 1: Browse available namespaces.
 
       // Construct a new virtual terminal.
@@ -208,7 +259,7 @@ class Shell(files: List[File], main: Option[String], options: Options) {
       // Print the virtual terminal to the console.
       Console.print(vt.fmt)
 
-    case Command.Browse(Some(ns)) =>
+    case Some(ns) =>
       // Case 2: Browse a specific namespace.
 
       // Construct a new virtual terminal.
@@ -263,59 +314,21 @@ class Shell(files: List[File], main: Option[String], options: Options) {
 
       // Print the virtual terminal to the console.
       Console.print(vt.fmt)
-
-    case Command.Print(name) =>
-      if (model == null)
-        Console.println("Model not yet computed.")
-      else
-        PrettyPrint.print(name, model)
-
-    case Command.Help =>
-      Console.println("  Command    Alias    Arguments        Description")
-      Console.println()
-      Console.println("  :run       :r                        compile and run.")
-      Console.println("  :print                               print a relation/lattice.")
-      Console.println("  :browse             <ns>             shows the definitions in the given namespace.")
-      Console.println("  :quit      :q                        shutdown.")
-      Console.println("  :watch     :w                        watch loaded paths for changes.")
-      Console.println("  :unwatch   :w                        unwatch loaded paths for changes.")
-
-    case Command.Watch =>
-      // Check if the watcher is already initialized.
-      if (watcher != null)
-        return
-
-      // Compute the set of directories to watch.
-      val directories = files.map(_.toPath.toAbsolutePath.getParent)
-
-      // Print debugging information.
-      Console.println("Watching Directories:")
-      for (directory <- directories) {
-        Console.println(s"  $directory")
-      }
-
-      watcher = new WatcherThread(directories)
-      watcher.start()
-
-    case Command.Unwatch =>
-      watcher.interrupt()
-      Console.println("Unwatched loaded paths.")
-
-    case Command.Unknown(s) => Console.println(s"Unknown command '$s'. Try `help'.")
   }
 
   /**
-    * Prints the welcome banner to the console.
+    * Executes the help command.
     */
-  private def printWelcomeBanner(): Unit = {
-    Console.println(s"Welcome to Flix ${Version.CurrentVersion}!  Type 'help' for more information.")
-    Console.println(s"Enter a command and hit return. Type 'exit' or press ctrl+d to quit.")
+  private def execHelp(): Unit = {
+    Console.println("  Command    Alias    Arguments        Description")
+    Console.println()
+    Console.println("  :run       :r                        compile and run.")
+    Console.println("  :print                               print a relation/lattice.")
+    Console.println("  :browse             <ns>             shows the definitions in the given namespace.")
+    Console.println("  :quit      :q                        shutdown.")
+    Console.println("  :watch     :w                        watch loaded paths for changes.")
+    Console.println("  :unwatch   :w                        unwatch loaded paths for changes.")
   }
-
-  /**
-    * Prints the prompt.
-    */
-  private def prompt: String = "flix> "
 
   /**
     * Returns the namespaces in the given AST `root`.
