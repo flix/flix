@@ -24,6 +24,8 @@ import ca.uwaterloo.flix.util.InternalCompilerException
 
 object JvmOps {
 
+  // TODO: Add root argument everywhere?
+
   /**
     * The root package name.
     */
@@ -41,7 +43,7 @@ object JvmOps {
     * Int -> Bool           =>      Fn1$Int$Bool
     * (Int, Int) -> Bool    =>      Fn2$Int$Int$Bool
     */
-  def getJvmType(tpe: Type): JvmType = {
+  def getJvmType(tpe: Type, root: Root): JvmType = {
     // Retrieve the type constructor.
     val base = tpe.typeConstructor
 
@@ -50,7 +52,7 @@ object JvmOps {
 
     // Match on the type constructor.
     base match {
-      case Type.Unit => JvmType.Reference(JvmName(RootPackage, "Unit")) // TODO: For now we pretend there is such a class
+      case Type.Unit => JvmType.Reference(JvmName(List("ca", "uwaterloo", "flix", "api"), "Unit"))
       case Type.Bool => JvmType.PrimBool
       case Type.Char => JvmType.PrimChar
       case Type.Float32 => JvmType.PrimFloat
@@ -65,7 +67,7 @@ object JvmOps {
       case Type.Ref => getCellClassType(tpe)
       case Type.Arrow(l) => getFunctionInterfaceType(tpe)
       case Type.Tuple(l) => getTupleInterfaceType(tpe)
-      case Type.Enum(sym, kind) => JvmType.PrimBool // TODO: Incorrect, pending implementation.
+      case Type.Enum(sym, kind) => getEnumInterfaceType(tpe, root)
       case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
     }
   }
@@ -75,7 +77,7 @@ object JvmOps {
     *
     * NB: The given type `tpe` must be an arrow type.
     */
-  def getResultType(tpe: Type): JvmType = {
+  def getResultType(tpe: Type, root: Root): JvmType = {
     // Check that the given type is an arrow type.
     if (!tpe.typeConstructor.isArrow)
       throw InternalCompilerException(s"Unexpected type: '$tpe'.")
@@ -85,7 +87,7 @@ object JvmOps {
       throw InternalCompilerException(s"Unexpected type: '$tpe'.")
 
     // Return result type is the last type argument.
-    getJvmType(tpe.typeArguments.last)
+    getJvmType(tpe.typeArguments.last, root)
   }
 
   /**
@@ -145,6 +147,29 @@ object JvmOps {
 
     // The type resides in the root package.
     JvmType.Reference(JvmName(RootPackage, name))
+  }
+
+  /**
+    * Returns the enum interface type `Enum$X$Y$Z` for the given type `tpe`.
+    *
+    * NB: The given type `tpe` must be an enum type.
+    */
+  def getEnumInterfaceType(tpe: Type, root: Root): JvmType.Reference = {
+    // Check that the given type is an enum type.
+    if (!tpe.typeConstructor.isEnum)
+      throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+
+    // Retrieve the enum symbol.
+    val sym = tpe.typeConstructor.asInstanceOf[Type.Enum].sym
+
+    // Compute the stringified erased type of each type argument.
+    val args = tpe.typeArguments.map(tpe => stringify(getErasedType(tpe)))
+
+    // The JVM name is of the form Enum$Arg0$Arg1$Arg2
+    val name = sym.name + "$" + args.mkString("$")
+
+    // The enum resides in its namespace package.
+    JvmType.Reference(JvmName(sym.namespace, name))
   }
 
   /**
