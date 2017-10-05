@@ -27,12 +27,12 @@ object GenFunctionInterfaces {
   /**
     * Returns the set of function interfaces for the given set of types `ts`.
     */
-  def gen(ts: Set[Type], root: Root)(implicit flix: Flix): Map[JvmName, JvmClass] = {
+  def gen(ts: Set[Type])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
     //
     // Generate a function interface for each type and collect the results in a map.
     //
     ts.foldLeft(Map.empty[JvmName, JvmClass]) {
-      case (macc, tpe) => genFunctionalInterface(tpe, root) match {
+      case (macc, tpe) => genFunctionalInterface(tpe) match {
         case None => macc
         case Some(clazz) => macc + (clazz.name -> clazz)
       }
@@ -44,7 +44,7 @@ object GenFunctionInterfaces {
     *
     * Returns `[[None]]` if the type is not a function type.
     */
-  private def genFunctionalInterface(tpe: Type, root: Root)(implicit flix: Flix): Option[JvmClass] = {
+  private def genFunctionalInterface(tpe: Type)(implicit root: Root, flix: Flix): Option[JvmClass] = {
     // Compute the type constructor and type arguments.
     val base = tpe.typeConstructor
     val args = tpe.typeArguments

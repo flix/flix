@@ -25,7 +25,7 @@ object GenNamespaces {
   /**
     * Returns the set of namespaces classes for the given set of namespaces.
     */
-  def gen(namespaces: Set[NamespaceInfo], root: Root)(implicit flix: Flix): Map[JvmName, JvmClass] = {
+  def gen(namespaces: Set[NamespaceInfo])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
     //
     // Generate a namespace class for each namespace and collect the results in a map.
     //
@@ -41,7 +41,7 @@ object GenNamespaces {
   /**
     * Returns the namespace class for the given namespace `ns`.
     */
-  private def genNamespaceClass(ns: NamespaceInfo, root: Root)(implicit flix: Flix): JvmClass = {
+  private def genNamespaceClass(ns: NamespaceInfo)(implicit root: Root, flix: Flix): JvmClass = {
     ???
   }
 

@@ -214,7 +214,7 @@ object ExecutableAst {
 
     case class ApplyDefTail(sym: Symbol.DefnSym, args: List[ExecutableAst.Expression], tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
-    case class ApplySelfTail(name: Symbol.DefnSym, formals: List[ExecutableAst.FormalParam], actuals: List[ExecutableAst.Expression], tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
+    case class ApplySelfTail(sym: Symbol.DefnSym, formals: List[ExecutableAst.FormalParam], actuals: List[ExecutableAst.Expression], tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
     case class ApplyHook(hook: Ast.Hook, args: List[ExecutableAst.Expression], tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
