@@ -170,7 +170,7 @@ object JvmOps {
     val args = tpe.typeArguments.map(tpe => stringify(getErasedType(tpe)))
 
     // The JVM name is of the form Enum$Arg0$Arg1$Arg2
-    val name = sym.name + "$" + args.mkString("$")
+    val name = if (args.isEmpty) sym.name else sym.name + "$" + args.mkString("$")
 
     // The enum resides in its namespace package.
     JvmType.Reference(JvmName(sym.namespace, name))
@@ -180,13 +180,16 @@ object JvmOps {
     * TODO: DOC + Examples
     */
   def getTagClassType(tag: TagInfo)(implicit root: Root, flix: Flix): JvmType.Reference = {
-    // The JVM name is of the form Tag$Arg0$Arg1$Arg2
-    val name = if (tag.tparams.isEmpty)
-      tag.tag
-    else
-      tag.tag + "$" + tag.tparams.mkString("$")
+    // Retrieve the tag name.
+    val tagName = tag.tag
 
-    // The tag resides in its namespace package.
+    // Retrieve the type arguments.
+    val args = tag.tparams
+
+    // The JVM name is of the form Tag$Arg0$Arg1$Arg2
+    val name = if (args.isEmpty) tagName else tagName + "$" + args.mkString("$")
+
+    // The tag class resides in its namespace package.
     JvmType.Reference(JvmName(tag.sym.namespace, name))
   }
 
