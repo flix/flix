@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.ast.Type
 object GenContext {
 
   // TODO: Documentation and signature
-  def gen(ts: Set[Type], root: Root)(implicit flix: Flix): Map[JvmName, JvmClass] = {
+  def gen(ts: Set[Type])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
     Map.empty // TODO
   }
 

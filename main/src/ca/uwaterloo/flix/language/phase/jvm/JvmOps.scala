@@ -18,13 +18,12 @@ package ca.uwaterloo.flix.language.phase.jvm
 
 import java.nio.file.{Files, LinkOption, Path}
 
-import ca.uwaterloo.flix.language.ast.ExecutableAst.Root
+import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.ExecutableAst.{Expression, Root}
 import ca.uwaterloo.flix.language.ast.{Symbol, Type}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 object JvmOps {
-
-  // TODO: Add root argument everywhere?
 
   /**
     * The root package name.
@@ -43,7 +42,7 @@ object JvmOps {
     * Int -> Bool           =>      Fn1$Int$Bool
     * (Int, Int) -> Bool    =>      Fn2$Int$Int$Bool
     */
-  def getJvmType(tpe: Type, root: Root): JvmType = {
+  def getJvmType(tpe: Type)(implicit root: Root, flix: Flix): JvmType = {
     // Retrieve the type constructor.
     val base = tpe.typeConstructor
 
@@ -67,7 +66,7 @@ object JvmOps {
       case Type.Ref => getCellClassType(tpe)
       case Type.Arrow(l) => getFunctionInterfaceType(tpe)
       case Type.Tuple(l) => getTupleInterfaceType(tpe)
-      case Type.Enum(sym, kind) => getEnumInterfaceType(tpe, root)
+      case Type.Enum(sym, kind) => getEnumInterfaceType(tpe)
       case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
     }
   }
@@ -77,7 +76,7 @@ object JvmOps {
     *
     * NB: The given type `tpe` must be an arrow type.
     */
-  def getResultType(tpe: Type, root: Root): JvmType = {
+  def getResultType(tpe: Type)(implicit root: Root, flix: Flix): JvmType = {
     // Check that the given type is an arrow type.
     if (!tpe.typeConstructor.isArrow)
       throw InternalCompilerException(s"Unexpected type: '$tpe'.")
@@ -87,7 +86,7 @@ object JvmOps {
       throw InternalCompilerException(s"Unexpected type: '$tpe'.")
 
     // Return result type is the last type argument.
-    getJvmType(tpe.typeArguments.last, root)
+    getJvmType(tpe.typeArguments.last)
   }
 
   /**
@@ -98,7 +97,7 @@ object JvmOps {
     *
     * NB: The given type `tpe` must be an arrow type.
     */
-  def getContinuationInterfaceType(tpe: Type): JvmType.Reference = {
+  def getContinuationInterfaceType(tpe: Type)(implicit root: Root, flix: Flix): JvmType.Reference = {
     // Check that the given type is an arrow type.
     if (!tpe.typeConstructor.isArrow)
       throw InternalCompilerException(s"Unexpected type: '$tpe'.")
@@ -127,7 +126,7 @@ object JvmOps {
     *
     * NB: The given type `tpe` must be an arrow type.
     */
-  def getFunctionInterfaceType(tpe: Type): JvmType.Reference = {
+  def getFunctionInterfaceType(tpe: Type)(implicit root: Root, flix: Flix): JvmType.Reference = {
     // Check that the given type is an arrow type.
     if (!tpe.typeConstructor.isArrow)
       throw InternalCompilerException(s"Unexpected type: '$tpe'.")
@@ -154,7 +153,7 @@ object JvmOps {
     *
     * NB: The given type `tpe` must be an enum type.
     */
-  def getEnumInterfaceType(tpe: Type, root: Root): JvmType.Reference = {
+  def getEnumInterfaceType(tpe: Type)(implicit root: Root, flix: Flix): JvmType.Reference = {
     // Check that the given type is an enum type.
     if (!tpe.typeConstructor.isEnum)
       throw InternalCompilerException(s"Unexpected type: '$tpe'.")
@@ -177,7 +176,7 @@ object JvmOps {
     *
     * NB: The given type `tpe` must be a tuple type.
     */
-  def getTupleInterfaceType(tpe: Type): JvmType.Reference = {
+  def getTupleInterfaceType(tpe: Type)(implicit root: Root, flix: Flix): JvmType.Reference = {
     // Check that the given type is an tuple type.
     if (!tpe.typeConstructor.isArrow)
       throw InternalCompilerException(s"Unexpected type: '$tpe'.")
@@ -204,7 +203,7 @@ object JvmOps {
     *
     * NB: The type must be a reference type.
     */
-  def getCellClassType(tpe: Type): JvmType.Reference = {
+  def getCellClassType(tpe: Type)(implicit root: Root, flix: Flix): JvmType.Reference = {
     // Check that the given type is an tuple type.
     if (!tpe.typeConstructor.isRef)
       throw InternalCompilerException(s"Unexpected type: '$tpe'.")
@@ -231,7 +230,7 @@ object JvmOps {
     * print         =>  Def$print
     * List.length   =>  List.Def$length
     */
-  def getFunctionDefinitionClassType(sym: Symbol.DefnSym): JvmType.Reference = {
+  def getFunctionDefinitionClassType(sym: Symbol.DefnSym)(implicit root: Root, flix: Flix): JvmType.Reference = {
     val pkg = sym.namespace
     val name = "Def$" + sym.name
     JvmType.Reference(JvmName(pkg, name))
@@ -247,7 +246,7 @@ object JvmOps {
     * Foo.Bar     =>  Foo.Bar.Ns
     * Foo.Bar.Baz =>  Foo.Bar.Baz.Ns
     */
-  def getNamespaceClassType(ns: NamespaceInfo): JvmType.Reference = {
+  def getNamespaceClassType(ns: NamespaceInfo)(implicit root: Root, flix: Flix): JvmType.Reference = {
     val pkg = ns.ns
     val name = "Ns"
     JvmType.Reference(JvmName(pkg, name))
@@ -275,7 +274,7 @@ object JvmOps {
     *
     * Every primitive type is mapped to itself and every other type is mapped to Object.
     */
-  def getErasedType(tpe: Type): JvmType = tpe match {
+  def getErasedType(tpe: Type)(implicit root: Root, flix: Flix): JvmType = tpe match {
     case Type.Bool => JvmType.PrimBool
     case Type.Char => JvmType.PrimChar
     case Type.Float32 => JvmType.PrimFloat
@@ -328,9 +327,102 @@ object JvmOps {
     * the type (Bool, (Char, Int)) this includes the type (Char, Int).
     */
   def typesOf(root: Root): Set[Type] = {
-    // TODO: Temporary implementation which just returns some types to get us started.
+    /**
+      * Returns the set of types which occur in the given expression `exp0`.
+      */
+    def visitExp(exp0: Expression): Set[Type] = exp0 match {
+      case Expression.Unit => Set(Type.Unit)
+      case Expression.True => Set(Type.Bool)
+      case Expression.False => Set(Type.Bool)
+      case Expression.Char(lit) => Set(Type.Char)
+      case Expression.Float32(lit) => Set(Type.Float32)
+      case Expression.Float64(lit) => Set(Type.Float64)
+      case Expression.Int8(lit) => Set(Type.Int8)
+      case Expression.Int16(lit) => Set(Type.Int16)
+      case Expression.Int32(lit) => Set(Type.Int32)
+      case Expression.Int64(lit) => Set(Type.Int64)
+      case Expression.BigInt(lit) => Set(Type.BigInt)
+      case Expression.Str(lit) => Set(Type.Str)
+      case Expression.Var(sym, tpe, loc) => Set(tpe)
 
-    root.defs.map(_._2.tpe).toSet
+      case Expression.Closure(sym, freeVars, fnType, tpe, loc) => Set(tpe)
+
+      case Expression.ApplyClo(exp, args, tpe, loc) => args.foldLeft(visitExp(exp) + tpe) {
+        case (sacc, e) => sacc ++ visitExp(e)
+      }
+
+      case Expression.ApplyDef(sym, args, tpe, loc) => args.foldLeft(Set(tpe)) {
+        case (sacc, e) => sacc ++ visitExp(e)
+      }
+
+      case Expression.ApplyCloTail(exp, args, tpe, loc) => args.foldLeft(visitExp(exp) + tpe) {
+        case (sacc, e) => sacc ++ visitExp(e)
+      }
+
+      case Expression.ApplyDefTail(sym, args, tpe, loc) => args.foldLeft(Set(tpe)) {
+        case (sacc, e) => sacc ++ visitExp(e)
+      }
+
+      case Expression.ApplySelfTail(sym, fparams, args, tpe, loc) => args.foldLeft(Set(tpe)) {
+        case (sacc, e) => sacc ++ visitExp(e)
+      }
+
+      case Expression.ApplyHook(hook, args, tpe, loc) => args.foldLeft(Set(tpe)) {
+        case (sacc, e) => sacc ++ visitExp(e)
+      }
+
+      case Expression.Unary(sop, op, exp, tpe, loc) =>
+        visitExp(exp) + tpe
+
+      case Expression.Binary(sop, op, exp1, exp2, tpe, loc) =>
+        visitExp(exp1) ++ visitExp(exp2) + tpe
+
+      case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
+        visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
+
+      case Expression.Branch(exp, branches, tpe, loc) => branches.foldLeft(visitExp(exp)) {
+        case (sacc, (_, e)) => sacc ++ visitExp(e)
+      }
+      case Expression.JumpTo(sym, tpe, loc) => Set(tpe)
+
+      case Expression.Let(sym, exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2) + tpe
+      case Expression.LetRec(sym, exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2) + tpe
+
+      case Expression.Is(sym, tag, exp, loc) => visitExp(exp)
+      case Expression.Tag(sym, tag, exp, tpe, loc) => visitExp(exp) + tpe
+      case Expression.Untag(sym, tag, exp, tpe, loc) => visitExp(exp) + tpe
+
+      case Expression.Index(base, offset, tpe, loc) => visitExp(base) + tpe
+      case Expression.Tuple(elms, tpe, loc) => elms.foldLeft(Set(tpe)) {
+        case (sacc, e) => sacc ++ visitExp(e)
+      }
+
+      case Expression.Ref(exp, tpe, loc) => visitExp(exp) + tpe
+      case Expression.Deref(exp, tpe, loc) => visitExp(exp) + tpe
+      case Expression.Assign(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2) + tpe
+
+      case Expression.Existential(fparam, exp, loc) => visitExp(exp) + fparam.tpe
+      case Expression.Universal(fparam, exp, loc) => visitExp(exp) + fparam.tpe
+
+      case Expression.NativeConstructor(constructor, args, tpe, loc) => args.foldLeft(Set(tpe)) {
+        case (sacc, e) => sacc ++ visitExp(e)
+      }
+      case Expression.NativeField(field, tpe, loc) => Set(tpe)
+      case Expression.NativeMethod(method, args, tpe, loc) => args.foldLeft(Set(tpe)) {
+        case (sacc, e) => sacc ++ visitExp(e)
+      }
+
+      case Expression.UserError(tpe, loc) => Set(tpe)
+      case Expression.MatchError(tpe, loc) => Set(tpe)
+      case Expression.SwitchError(tpe, loc) => Set(tpe)
+    }
+
+    // TODO: Look for types in other places.
+
+    // Visit every definition.
+    root.defs.foldLeft(Set.empty[Type]) {
+      case (sacc, (_, defn)) => sacc ++ visitExp(defn.exp) + defn.tpe
+    }
   }
 
   /**

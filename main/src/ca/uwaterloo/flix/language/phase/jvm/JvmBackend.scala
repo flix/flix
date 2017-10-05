@@ -37,6 +37,11 @@ object JvmBackend extends Phase[Root, Root] {
     */
   def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationError] = {
     //
+    // Put the AST root into implicit scope.
+    //
+    implicit val _ = root
+
+    //
     // Compute the set of namespaces in the program.
     //
     val namespaces = JvmOps.namespacesOf(root)
@@ -49,27 +54,27 @@ object JvmBackend extends Phase[Root, Root] {
     //
     // Emit the Context class.
     //
-    val contextClass = GenContext.gen(types, root)
+    val contextClass = GenContext.gen(types)
 
     //
     // Emit the namespace classes.
     //
-    val namespaceClasses = GenNamespaces.gen(namespaces, root)
+    val namespaceClasses = GenNamespaces.gen(namespaces)
 
     //
     // Emit continuation interfaces for each function type in the program.
     //
-    val continuationInterfaces = GenContinuationInterfaces.gen(types, root)
+    val continuationInterfaces = GenContinuationInterfaces.gen(types)
 
     //
     // Emit function interfaces for each function type in the program.
     //
-    val functionInterfaces = GenFunctionInterfaces.gen(types, root)
+    val functionInterfaces = GenFunctionInterfaces.gen(types)
 
     //
     // Emit function classes for each function in the program.
     //
-    val functionClasses = GenFunctionClasses.gen(root.defs, root)
+    val functionClasses = GenFunctionClasses.gen(root.defs)
 
     //
     // Collect all the classes and interfaces together.

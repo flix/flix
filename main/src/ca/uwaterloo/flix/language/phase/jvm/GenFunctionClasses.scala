@@ -16,6 +16,7 @@
 
 package ca.uwaterloo.flix.language.phase.jvm
 
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ExecutableAst._
 import ca.uwaterloo.flix.language.ast.Symbol
 
@@ -24,7 +25,7 @@ object GenFunctionClasses {
   /**
     * Returns the set of function classes for the given set of definitions `defs`.
     */
-  def gen(defs: Map[Symbol.DefnSym, Def], root: Root): Map[JvmName, JvmClass] = {
+  def gen(defs: Map[Symbol.DefnSym, Def])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
     Map.empty // TODO
   }
 
