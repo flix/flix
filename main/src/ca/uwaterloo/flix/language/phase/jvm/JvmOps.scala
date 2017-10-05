@@ -178,7 +178,7 @@ object JvmOps {
     */
   def getTupleInterfaceType(tpe: Type)(implicit root: Root, flix: Flix): JvmType.Reference = {
     // Check that the given type is an tuple type.
-    if (!tpe.typeConstructor.isArrow)
+    if (!tpe.typeConstructor.isTuple)
       throw InternalCompilerException(s"Unexpected type: '$tpe'.")
 
     // Check that the given type has at least one type argument.
@@ -193,6 +193,33 @@ object JvmOps {
 
     // The JVM name is of the form TArity$Arg0$Arg1$Arg2
     val name = "T" + arity + "$" + args.mkString("$")
+
+    // The type resides in the root package.
+    JvmType.Reference(JvmName(RootPackage, name))
+  }
+
+  /**
+    * Returns the tuple class type `TupleX$Y$Z` for the given type `tpe`.
+    *
+    * NB: The given type `tpe` must be a tuple type.
+    */
+  def getTupleClassType(tpe: Type)(implicit root: Root, flix: Flix): JvmType.Reference = {
+    // Check that the given type is an tuple type.
+    if (!tpe.typeConstructor.isArrow)
+      throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+
+    // Check that the given type has at least one type argument.
+    if (tpe.typeArguments.isEmpty)
+      throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+
+    // Compute the arity of the tuple.
+    val arity = tpe.typeArguments.length
+
+    // Compute the stringified erased type of each type argument.
+    val args = tpe.typeArguments.map(tpe => stringify(getErasedType(tpe)))
+
+    // The JVM name is of the form TupleArity$Arg0$Arg1$Arg2
+    val name = "Tuple" + arity + "$" + args.mkString("$")
 
     // The type resides in the root package.
     JvmType.Reference(JvmName(RootPackage, name))

@@ -52,34 +52,61 @@ object JvmBackend extends Phase[Root, Root] {
     val types = JvmOps.typesOf(root)
 
     //
-    // Emit the Context class.
+    // Generate the Context class.
     //
     val contextClass = GenContext.gen(types)
 
     //
-    // Emit the namespace classes.
+    // Generate the namespace classes.
     //
     val namespaceClasses = GenNamespaces.gen(namespaces)
 
     //
-    // Emit continuation interfaces for each function type in the program.
+    // Generate continuation interfaces for each function type in the program.
     //
     val continuationInterfaces = GenContinuationInterfaces.gen(types)
 
     //
-    // Emit function interfaces for each function type in the program.
+    // Generate function interfaces for each function type in the program.
     //
     val functionInterfaces = GenFunctionInterfaces.gen(types)
 
     //
-    // Emit function classes for each function in the program.
+    // Generate function classes for each function in the program.
     //
     val functionClasses = GenFunctionClasses.gen(root.defs)
 
     //
+    // Generate enum interfaces for each enum type in the program.
+    //
+    val enumInterfaces = GenEnumInterfaces.gen()
+
+    //
+    // Generate tuple interfaces for each tuple type in the program.
+    //
+    val tupleInterfaces = GenTupleInterfaces.gen(types)
+
+    //
+    // Generate tuple classes for each tuple type in the program.
+    //
+    val tupleClasses = GenTupleClasses.gen()
+
+    //
+    // Generate tag-tuple fusion classes for tag-tuple in the program.
+    //
+    val fusionClasses = GenFusionClasses.gen()
+
+    //
+    // Generate the main class.
+    //
+    val mainClass = GenMain.gen()
+
+    //
     // Collect all the classes and interfaces together.
     //
-    val allClasses = contextClass ++ namespaceClasses ++ continuationInterfaces ++ functionInterfaces ++ functionClasses
+    // TODO: Re-order
+    val allClasses = contextClass ++ namespaceClasses ++ continuationInterfaces ++ functionInterfaces ++
+      functionClasses ++ enumInterfaces ++ tupleInterfaces ++ tupleClasses ++ mainClass
 
     //
     // Write each class (and interface) to disk.
