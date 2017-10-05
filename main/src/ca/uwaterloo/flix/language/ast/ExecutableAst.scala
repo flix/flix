@@ -126,7 +126,10 @@ object ExecutableAst {
 
     case class Relation(sym: Symbol.TableSym, attributes: Array[ExecutableAst.Attribute], loc: SourceLocation) extends ExecutableAst.Table
 
-    case class Lattice(sym: Symbol.TableSym, keys: Array[ExecutableAst.Attribute], value: ExecutableAst.Attribute, loc: SourceLocation) extends ExecutableAst.Table
+    case class Lattice(sym: Symbol.TableSym, keys: Array[ExecutableAst.Attribute], value: ExecutableAst.Attribute, loc: SourceLocation) extends ExecutableAst.Table {
+      // TODO: Refactor
+      def attributes: List[ExecutableAst.Attribute] = keys.toList ::: value :: Nil
+    }
 
   }
 

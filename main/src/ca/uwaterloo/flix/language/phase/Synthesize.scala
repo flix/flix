@@ -265,7 +265,7 @@ object Synthesize extends Phase[Root, Root] {
 
       // Annotations and modifiers.
       val ann = Ast.Annotations.Empty
-      val mod = Ast.Modifiers.Empty
+      val mod = Ast.Modifiers(Ast.Modifier.Synthetic :: Nil)
 
       // Type and formal parameters.
       val tparams = Nil
@@ -486,7 +486,7 @@ object Synthesize extends Phase[Root, Root] {
 
       // Annotations and modifiers.
       val ann = Ast.Annotations.Empty
-      val mod = Ast.Modifiers.Empty
+      val mod = Ast.Modifiers(Ast.Modifier.Synthetic :: Nil)
 
       // Type and formal parameters.
       val tparams = Nil

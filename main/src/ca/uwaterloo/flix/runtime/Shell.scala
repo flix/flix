@@ -21,10 +21,10 @@ import java.nio.file._
 import java.util.concurrent.Executors
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.ExecutableAst.{Def, Root}
+import ca.uwaterloo.flix.language.ast.ExecutableAst.{Def, Root, Table}
 import ca.uwaterloo.flix.util.vt.{TerminalContext, VirtualTerminal}
 import ca.uwaterloo.flix.util._
-import ca.uwaterloo.flix.util.vt.VirtualString.{Blue, Cyan, NewLine}
+import ca.uwaterloo.flix.util.vt.VirtualString._
 
 import scala.collection.JavaConverters._
 
@@ -78,8 +78,14 @@ class Shell(files: List[File], main: Option[String], options: Options) {
     case class Browse(ns: String) extends Command
 
     /**
+      * Evaluate the given expression `s`.
+      */
+    case class Eval(s: String) extends Command
+
+    /**
       * Runs the current program.
       */
+    // TODO: Rename to reload.
     case object Run extends Command
 
     /**
@@ -152,13 +158,14 @@ class Shell(files: List[File], main: Option[String], options: Options) {
     }
 
     line match {
-      case "run" => Command.Run
+      case ":r" | ":run" => Command.Run
       case ":help" | ":h" | ":?" => Command.Help
       case ":quit" | ":q" => Command.Quit
       case ":watch" | ":w" => Command.Watch
       case ":unwatch" => Command.Unwatch
-      case s if s.startsWith("print") => Command.Print(s.substring("print ".length))
-      case _ => Command.Unknown(line)
+      case s if s.startsWith(":print") => Command.Print(s.substring(":print ".length))
+      case s if s.startsWith(":") => Command.Unknown(line)
+      case s => Command.Eval(s)
     }
   }
 
@@ -172,16 +179,65 @@ class Shell(files: List[File], main: Option[String], options: Options) {
       Console.println("Thanks, and goodbye.")
       Thread.currentThread().interrupt()
 
+    case Command.Eval(s) =>
+      Console.println(s"Eval not implemented yet: ${s}")
+
     case Command.Run =>
       val future = executorService.submit(new CompilerThread())
       future.get()
 
     case Command.Browse(ns) =>
+      // Construct a new virtual terminal.
       val vt = new VirtualTerminal
+
+      // Print the matched definitions.
       val matchedDefs = getDefinitionsByNamespace(ns, model.getRoot)
-      for (defn <- matchedDefs.sortBy(_.sym.name)) {
-        vt << "def " << Blue(defn.sym.toString) << ": " << Cyan(defn.tpe.toString) << NewLine
+      if (matchedDefs.nonEmpty) {
+        vt << Bold("Definitions:") << Indent << NewLine << NewLine
+        for (defn <- matchedDefs.sortBy(_.sym.name)) {
+          vt << Bold("def ") << Blue(defn.sym.toString) << "("
+          if (defn.formals.nonEmpty) {
+            vt << defn.formals.head.sym.text << ": " << Cyan(defn.formals.head.tpe.toString)
+            for (fparam <- defn.formals.tail) {
+              vt << ", " << fparam.sym.text << ": " << Cyan(fparam.tpe.toString)
+            }
+          }
+          vt << "): " << Cyan(defn.tpe.typeArguments.last.toString) << NewLine
+        }
+        vt << Dedent << NewLine
       }
+
+      // Print the matched relations.
+      val matchedRels = getRelationsByNamespace(ns, model.getRoot)
+      if (matchedRels.nonEmpty) {
+        vt << Bold("Relations:") << Indent << NewLine << NewLine
+        for (rel <- matchedRels.sortBy(_.sym.name)) {
+          vt << Bold("rel ") << Blue(rel.sym.toString) << "("
+          vt << rel.attributes.head.name << ": " << Cyan(rel.attributes.head.tpe.toString)
+          for (attr <- rel.attributes.tail) {
+            vt << ", " << attr.name << ": " << Cyan(attr.tpe.toString)
+          }
+          vt << ")" << NewLine
+        }
+        vt << Dedent << NewLine
+      }
+
+      // Print the matched lattices.
+      val matchedLats = getLatticesByNamespace(ns, model.getRoot)
+      if (matchedLats.nonEmpty) {
+        vt << Bold("Lattices:") << Indent << NewLine << NewLine
+        for (lat <- matchedLats.sortBy(_.sym.name)) {
+          vt << Bold("lat ") << Blue(lat.sym.toString) << "("
+          vt << lat.attributes.head.name << ": " << Cyan(lat.attributes.head.tpe.toString)
+          for (attr <- lat.attributes.tail) {
+            vt << ", " << attr.name << ": " << Cyan(attr.tpe.toString)
+          }
+          vt << ")" << NewLine
+        }
+        vt << Dedent << NewLine
+      }
+
+      // Print the virtual terminal to the console.
       Console.print(vt.fmt)
 
     case Command.Print(name) =>
@@ -193,8 +249,8 @@ class Shell(files: List[File], main: Option[String], options: Options) {
     case Command.Help =>
       Console.println("  Command    Alias    Arguments        Description")
       Console.println()
-      Console.println("  run                                  compile and run.")
-      Console.println("  print                                print a relation/lattice.")
+      Console.println("  :run       :r                        compile and run.")
+      Console.println("  :print                               print a relation/lattice.")
       Console.println("  :browse             <ns>             shows the definitions in the given namespace.")
       Console.println("  :quit      :q                        shutdown.")
       Console.println("  :watch     :w                        watch loaded paths for changes.")
@@ -241,19 +297,52 @@ class Shell(files: List[File], main: Option[String], options: Options) {
     * Returns the definitions in the given namespace.
     */
   private def getDefinitionsByNamespace(ns: String, root: Root): List[Def] = {
-    val namespace: List[String] = if (ns == "" || ns == ".")
-      Nil
-    else if (!ns.contains(".")) {
-      List(ns)
-    } else {
-      val index = ns.indexOf('.')
-      ns.substring(0, index).split('/').toList
-    }
-
+    val namespace: List[String] = getNameSpace(ns)
     root.defs.foldLeft(Nil: List[Def]) {
       case (xs, (sym, defn)) if sym.namespace == namespace && !defn.mod.isSynthetic =>
         defn :: xs
       case (xs, _) => xs
+    }
+  }
+
+  /**
+    * Returns the relations in the given namespace.
+    */
+  private def getRelationsByNamespace(ns: String, root: Root): List[Table.Relation] = {
+    val namespace: List[String] = getNameSpace(ns)
+    root.tables.foldLeft(Nil: List[Table.Relation]) {
+      case (xs, (sym, t: Table.Relation)) if sym.namespace == namespace =>
+        t :: xs
+      case (xs, _) => xs
+    }
+  }
+
+  /**
+    * Returns the lattices in the given namespace.
+    */
+  private def getLatticesByNamespace(ns: String, root: Root): List[Table.Lattice] = {
+    val namespace: List[String] = getNameSpace(ns)
+    root.tables.foldLeft(Nil: List[Table.Lattice]) {
+      case (xs, (sym, t: Table.Lattice)) if sym.namespace == namespace =>
+        t :: xs
+      case (xs, _) => xs
+    }
+  }
+
+  /**
+    * Interprets the given string `ns` as a namespace.
+    */
+  private def getNameSpace(ns: String): List[String] = {
+    if (ns == "" || ns == ".")
+    // Case 1: The empty namespace.
+      Nil
+    else if (!ns.contains(".")) {
+      // Case 2: A simple namespace.
+      List(ns)
+    } else {
+      // Case 3: A complex namespace.
+      val index = ns.indexOf('.')
+      ns.substring(0, index).split('/').toList
     }
   }
 

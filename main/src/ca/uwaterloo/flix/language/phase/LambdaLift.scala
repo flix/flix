@@ -114,8 +114,8 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
 
         // Create a new top-level definition, using the fresh name and lifted body.
         val ann = Ast.Annotations.Empty
-        val mod = Ast.Modifiers(List(Ast.Modifier.Synthetic))
-        val defn = SimplifiedAst.Def(ann, Ast.Modifiers.Empty, freshSymbol, fparams, liftedBody, tpe, loc)
+        val mod = Ast.Modifiers(Ast.Modifier.Synthetic :: Nil)
+        val defn = SimplifiedAst.Def(ann, mod, freshSymbol, fparams, liftedBody, tpe, loc)
 
         // Update the map that holds newly-generated definitions
         m += (freshSymbol -> defn)
