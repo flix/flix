@@ -16,7 +16,6 @@
 
 package ca.uwaterloo.flix.runtime
 
-import java.io.File
 import java.nio.file._
 import java.util.concurrent.Executors
 
@@ -26,9 +25,10 @@ import ca.uwaterloo.flix.util.vt.{TerminalContext, VirtualTerminal}
 import ca.uwaterloo.flix.util._
 import ca.uwaterloo.flix.util.vt.VirtualString._
 
+import scala.collection.mutable
 import scala.collection.JavaConverters._
 
-class Shell(files: List[File], main: Option[String], options: Options) {
+class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
 
   /**
     * The minimum amount of time between runs of the compiler.
@@ -44,6 +44,11 @@ class Shell(files: List[File], main: Option[String], options: Options) {
     * The executor service.
     */
   private val executorService = Executors.newSingleThreadExecutor()
+
+  /**
+    * The mutable set of paths to load.
+    */
+  private val currentPaths = mutable.Set.empty[Path] ++ initialPaths
 
   /**
     * The current model (if any).
@@ -81,6 +86,16 @@ class Shell(files: List[File], main: Option[String], options: Options) {
       * Evaluate the given expression `s`.
       */
     case class Eval(s: String) extends Command
+
+    /**
+      * Loads the given path `s`.
+      */
+    case class Load(s: String) extends Command
+
+    /**
+      * Unloads the given path `s`.
+      */
+    case class Unload(s: String) extends Command
 
     /**
       * Runs the current program.
@@ -161,6 +176,16 @@ class Shell(files: List[File], main: Option[String], options: Options) {
       return Command.Browse(Some(ns))
     }
 
+    if (line.startsWith(":load")) {
+      val path = line.substring(":load".length).trim
+      return Command.Load(path)
+    }
+
+    if (line.startsWith(":unload")) {
+      val path = line.substring(":unload".length).trim
+      return Command.Unload(path)
+    }
+
     line match {
       case ":r" | ":run" => Command.Run
       case ":help" | ":h" | ":?" => Command.Help
@@ -186,6 +211,12 @@ class Shell(files: List[File], main: Option[String], options: Options) {
     case Command.Eval(s) =>
       Console.println(s"Eval not implemented yet: ${s}")
 
+    case Command.Load(s) =>
+      execLoad(s)
+
+    case Command.Unload(s) =>
+      execUnload(s)
+
     case Command.Run =>
       val future = executorService.submit(new CompilerThread())
       future.get()
@@ -206,7 +237,7 @@ class Shell(files: List[File], main: Option[String], options: Options) {
         return
 
       // Compute the set of directories to watch.
-      val directories = files.map(_.toPath.toAbsolutePath.getParent)
+      val directories = currentPaths.map(_.toAbsolutePath.getParent).toList
 
       // Print debugging information.
       Console.println("Watching Directories:")
@@ -331,6 +362,32 @@ class Shell(files: List[File], main: Option[String], options: Options) {
   }
 
   /**
+    * Executes the load command.
+    */
+  private def execLoad(s: String): Unit = {
+    val path = Paths.get(s)
+    if (!Files.exists(path) || !Files.isRegularFile(path)) {
+      Console.println(s"Path '$path' does not exist or is not a regular file.")
+      return
+    }
+    currentPaths += path
+    Console.println(s"Path '$path' was loaded.")
+  }
+
+  /**
+    * Executes the unload command.
+    */
+  private def execUnload(s: String): Unit = {
+    val path = Paths.get(s)
+    if (!(currentPaths contains path)) {
+      Console.println(s"Path '$path' was not loaded.")
+      return
+    }
+    currentPaths -= path
+    Console.println(s"Path '$path' was unloaded.")
+  }
+
+  /**
     * Returns the namespaces in the given AST `root`.
     */
   private def namespacesOf(root: Root): Set[String] = {
@@ -400,8 +457,8 @@ class Shell(files: List[File], main: Option[String], options: Options) {
       // configure Flix and add the paths.
       val flix = new Flix()
       flix.setOptions(options)
-      for (file <- files) {
-        flix.addPath(file.toPath)
+      for (path <- currentPaths) {
+        flix.addPath(path)
       }
 
       // check if a main function was given.
