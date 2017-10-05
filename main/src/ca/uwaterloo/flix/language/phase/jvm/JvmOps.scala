@@ -61,8 +61,8 @@ object JvmOps {
       case Type.Int64 => JvmType.PrimLong
       case Type.BigInt => JvmType.BigInteger
       case Type.Str => JvmType.String
-      case Type.Native => ??? // TODO
-      case Type.Ref => ??? // TODO
+      case Type.Native => JvmType.Object
+      case Type.Ref => getCellClassType(tpe)
       case Type.Arrow(l) => getFunctionInterfaceType(tpe)
       case Type.Tuple(l) => getTupleInterfaceType(tpe)
       case Type.Enum(sym, kind) => JvmType.PrimBool // TODO: Incorrect, pending implementation.
@@ -174,7 +174,31 @@ object JvmOps {
     JvmType.Reference(JvmName(RootPackage, name))
   }
 
-  /** *
+  /**
+    * Returns cell class type for the given type `tpe`.
+    *
+    * NB: The type must be a reference type.
+    */
+  def getCellClassType(tpe: Type): JvmType.Reference = {
+    // Check that the given type is an tuple type.
+    if (!tpe.typeConstructor.isRef)
+      throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+
+    // Check that the given type has at least one type argument.
+    if (tpe.typeArguments.isEmpty)
+      throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+
+    // Compute the stringified erased type of the argument.
+    val arg = stringify(getErasedType(tpe.typeArguments.head))
+
+    // The JVM name is of the form TArity$Arg0$Arg1$Arg2
+    val name = "Cell" + "$" + arg
+
+    // The type resides in the ca.uwaterloo.flix.api.cell package.
+    JvmType.Reference(JvmName(List("ca.uwaterloo.flix.api.cell"), name))
+  }
+
+  /**
     * Returns the function definition class for the given symbol.
     *
     * For example:
@@ -242,7 +266,7 @@ object JvmOps {
     * Returns the descriptor of a method take takes the given `argumentTypes` and returns the given `resultType`.
     */
   def getMethodDescriptor(argumentTypes: List[JvmType], resultType: JvmType): String =
-    ??? // TODO
+    ??? // TODO: Ramin
 
   /**
     * Returns stringified name of the given JvmType `tpe`.
