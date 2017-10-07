@@ -119,11 +119,6 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
     case object Help extends Command
 
     /**
-      * Prints the given constant, relation or lattice.
-      */
-    case class Print(name: String) extends Command
-
-    /**
       * Gracefully terminates Flix.
       */
     case object Quit extends Command
@@ -242,7 +237,6 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
       case ":quit" | ":q" => Command.Quit
       case ":watch" | ":w" => Command.Watch
       case ":unwatch" => Command.Unwatch
-      case s if s.startsWith(":print") => Command.Print(s.substring(":print ".length))
       case s if s.startsWith(":") => Command.Unknown(line)
       case s => Command.Eval(s)
     }
@@ -278,12 +272,6 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
       future.get()
 
     case Command.Browse(nsOpt) => execBrowse(nsOpt)
-
-    case Command.Print(name) =>
-      if (model == null)
-        Console.println("Model not yet computed.")
-      else
-        PrettyPrint.print(name, model)
 
     case Command.Help => execHelp()
 
@@ -416,10 +404,11 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
     Console.println("  Command    Alias    Arguments        Description")
     Console.println()
     Console.println("  :run       :r                        compile and run.")
-    Console.println("  :print                               print a relation/lattice.")
     Console.println("  :browse             <ns>             shows the definitions in the given namespace.")
     Console.println("  :load               <path>           loads the given path.")
     Console.println("  :unload             <path>           unloads the given path.")
+    Console.println("  :rel                [fqn]            shows all relations or the content of one relation.")
+    Console.println("  :lat                [fqn]            shows all lattices or the content of one lattice.")
     Console.println("  :quit      :q                        shutdown.")
     Console.println("  :watch     :w                        watch loaded paths for changes.")
     Console.println("  :unwatch   :w                        unwatch loaded paths for changes.")
