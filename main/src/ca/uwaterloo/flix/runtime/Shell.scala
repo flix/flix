@@ -124,6 +124,11 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
     case object Quit extends Command
 
     /**
+      * Searches for a symbol with the given name.
+      */
+    case class Search(s: String) extends Command
+
+    /**
       * Shows the rows in the given relation `fqn` that matches the given `needle`.
       */
     case class ShowRel(fqn: String, needle: Option[String]) extends Command
@@ -231,6 +236,11 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
       return Command.Unload(path)
     }
 
+    if (line.startsWith(":search")) {
+      val needle = line.substring(":search".length).trim
+      return Command.Search(needle)
+    }
+
     line match {
       case ":r" | ":run" => Command.Run
       case ":help" | ":h" | ":?" => Command.Help
@@ -255,31 +265,23 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
     case Command.Eval(s) =>
       Console.println(s"Eval not implemented yet: ${s}")
 
-    case Command.ListRel =>
-      execListRel()
+    case Command.ListRel => execListRel()
 
-    case Command.ListLat =>
-      execListLat()
+    case Command.ListLat => execListLat()
 
-    case Command.Load(s) =>
-      execLoad(s)
+    case Command.Load(s) => execLoad(s)
 
-    case Command.Unload(s) =>
-      execUnload(s)
+    case Command.Unload(s) => execUnload(s)
 
     case Command.Run =>
       val future = executorService.submit(new CompilerThread())
       future.get()
 
     case Command.Browse(nsOpt) => execBrowse(nsOpt)
-
     case Command.Help => execHelp()
-
-    case Command.ShowRel(fqn, needle) =>
-      execShowRel(fqn, needle)
-
-    case Command.ShowLat(fqn, needle) =>
-      execShowLat(fqn, needle)
+    case Command.Search(s) => execSearch(s)
+    case Command.ShowRel(fqn, needle) => execShowRel(fqn, needle)
+    case Command.ShowLat(fqn, needle) => execShowLat(fqn, needle)
 
     case Command.Watch =>
       // Check if the watcher is already initialized.
@@ -403,7 +405,7 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
   private def execHelp(): Unit = {
     Console.println("  Command    Alias    Arguments        Description")
     Console.println()
-    Console.println("  :run       :r                        compile and run.")
+    Console.println("  :reload    :r                        reload and compile the loaded paths.")
     Console.println("  :browse             <ns>             shows the definitions in the given namespace.")
     Console.println("  :load               <path>           loads the given path.")
     Console.println("  :unload             <path>           unloads the given path.")
@@ -447,6 +449,7 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
   private def execListLat(): Unit = {
     // Construct a new virtual terminal.
     val vt = new VirtualTerminal
+
     vt << Bold("Lattices:") << Indent << NewLine << NewLine
     // Iterate through all tables in the program.
     for ((_, table) <- model.getRoot.tables) {
@@ -464,6 +467,7 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
       }
     }
     vt << Dedent << NewLine
+
     // Print the virtual terminal to the console.
     Console.print(vt.fmt)
   }
@@ -493,6 +497,32 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
     }
     currentPaths -= path
     Console.println(s"Path '$path' was unloaded.")
+  }
+
+  /**
+    * Searches for the given `needle`.
+    */
+  private def execSearch(needle: String): Unit = {
+    // Construct a new virtual terminal.
+    val vt = new VirtualTerminal
+    vt << Bold("Definitions:") << Indent << NewLine << NewLine
+    // TODO: Group by namespace.
+    for ((sym, defn) <- model.getRoot.defs) {
+      if (sym.name.toLowerCase().contains(needle)) {
+        vt << Bold("def ") << Blue(defn.sym.name) << "("
+        if (defn.formals.nonEmpty) {
+          vt << defn.formals.head.sym.text << ": " << Cyan(defn.formals.head.tpe.toString)
+          for (fparam <- defn.formals.tail) {
+            vt << ", " << fparam.sym.text << ": " << Cyan(fparam.tpe.toString)
+          }
+        }
+        vt << "): " << Cyan(defn.tpe.typeArguments.last.toString) << NewLine
+      }
+    }
+
+    vt << Dedent << NewLine
+    // Print the virtual terminal to the console.
+    Console.print(vt.fmt)
   }
 
   /**
