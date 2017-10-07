@@ -29,6 +29,7 @@ import ca.uwaterloo.flix.runtime.quickchecker.QuickChecker
 import ca.uwaterloo.flix.runtime.verifier.Verifier
 import ca.uwaterloo.flix.runtime.{DeltaSolver, Model, Solver}
 import ca.uwaterloo.flix.util.{LocalResource, Options, Validation}
+import ca.uwaterloo.flix.util.Validation._
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
@@ -187,9 +188,9 @@ class Flix {
   }
 
   /**
-    * Compiles the Flix program and returns the typed ast.
+    * Compiles the Flix program and returns a typed ast.
     */
-  def compile(): Validation[ExecutableAst.Root, CompilationError] = {
+  def check(): Validation[TypedAst.Root, CompilationError] = {
     if (strings.isEmpty && paths.isEmpty)
       throw new IllegalStateException("No input specified. Please add at least one string or path input.")
 
@@ -206,39 +207,62 @@ class Flix {
         Typer |>
         Effects |>
         PatternExhaustiveness |>
-        Safety |>
-        Documentor |>
-        Stratifier |>
-        Monomorph |>
-        Synthesize |>
-        Simplifier |>
-        Uncurrier |>
-        LambdaLift |>
-        Tailrec |>
-        Inliner |>
-        Optimizer |>
-        TreeShaker |>
-        VarNumbering |>
-        CreateExecutableAst |>
-        JvmBackend |>
-        TupleGen |>
-        EnumGen |>
-        CodeGen |>
-        LoadBytecode |>
-        QuickChecker |>
-        Verifier
+        Safety
 
     // Apply the pipeline to the parsed AST.
     pipeline.run((getInputs, hooks.toMap))(this)
+  }
 
+  /**
+    * Compiles the given typed ast to an executable ast.
+    */
+  def codeGen(typedAst: TypedAst.Root): Validation[ExecutableAst.Root, CompilationError] = {
+    // Construct the compiler pipeline.
+    val pipeline = Documentor |>
+      Stratifier |>
+      Monomorph |>
+      Synthesize |>
+      Simplifier |>
+      Uncurrier |>
+      LambdaLift |>
+      Tailrec |>
+      Inliner |>
+      Optimizer |>
+      TreeShaker |>
+      VarNumbering |>
+      CreateExecutableAst |>
+      JvmBackend |>
+      TupleGen |>
+      EnumGen |>
+      CodeGen |>
+      LoadBytecode |>
+      QuickChecker |>
+      Verifier
+
+    // Apply the pipeline to the parsed AST.
+    pipeline.run(typedAst)(this)
+
+  }
+
+  /**
+    * Compiles the given typed ast to an executable ast.
+    */
+  def compile(): Validation[ExecutableAst.Root, CompilationError] = {
+    check() flatMap {
+      case typedAst => codeGen(typedAst)
+    }
   }
 
   /**
     * Runs the Flix fixed point solver on the program and returns the minimal model.
     */
-  def solve(): Validation[Model, CompilationError] = compile().map {
-    case root => new Solver(root, options).solve()
-  }
+  def solve(): Validation[Model, CompilationError] = compile() flatMap solve
+
+  /**
+    * Runs the Flix fixed point solver on the program and returns the minimal model.
+    */
+  def solve(root: ExecutableAst.Root): Validation[Model, CompilationError] =
+    new Solver(root, options).solve().toSuccess
 
   /**
     * Runs the Flix fixed point solver on the program trying to minimize the

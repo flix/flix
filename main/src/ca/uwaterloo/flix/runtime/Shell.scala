@@ -20,7 +20,7 @@ import java.nio.file._
 import java.util.concurrent.Executors
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.ExecutableAst.{Def, Root, Table}
+import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.util.vt.{TerminalContext, VirtualTerminal}
 import ca.uwaterloo.flix.util._
 import ca.uwaterloo.flix.util.vt.VirtualString._
@@ -49,6 +49,16 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
     * The mutable set of paths to load.
     */
   private val currentPaths = mutable.Set.empty[Path] ++ initialPaths
+
+  /**
+    * The current flix instance (initialized on startup).
+    */
+  private var flix: Flix = _
+
+  /**
+    * The current typed ast root (initialized on startup).
+    */
+  private var root: Root = _
 
   /**
     * The current model (if any).
@@ -108,10 +118,9 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
     case class Unload(s: String) extends Command
 
     /**
-      * Runs the current program.
+      * (Re)loads the current program.
       */
-    // TODO: Rename to reload.
-    case object Run extends Command
+    case object Reload extends Command
 
     /**
       * Prints information about the available commands.
@@ -122,6 +131,8 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
       * Gracefully terminates Flix.
       */
     case object Quit extends Command
+
+    // TODO: Add command to compute the fixpoint.
 
     /**
       * Searches for a symbol with the given name.
@@ -162,6 +173,9 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
     // Print welcome banner.
     printWelcomeBanner()
 
+    // Initialize flix.
+    execReload()
+
     // Loop forever.
     while (!Thread.currentThread().isInterrupted) {
       Console.print(prompt)
@@ -194,6 +208,10 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
       }
       val ns = line.substring(":browse".length).trim
       return Command.Browse(Some(ns))
+    }
+
+    if (line == ":r" || line == ":reload") {
+      return Command.Reload
     }
 
     if (line.startsWith(":rel")) {
@@ -241,8 +259,8 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
       return Command.Search(needle)
     }
 
+    // TODO: Refactor
     line match {
-      case ":r" | ":run" => Command.Run
       case ":help" | ":h" | ":?" => Command.Help
       case ":quit" | ":q" => Command.Quit
       case ":watch" | ":w" => Command.Watch
@@ -273,7 +291,7 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
 
     case Command.Unload(s) => execUnload(s)
 
-    case Command.Run =>
+    case Command.Reload =>
       val future = executorService.submit(new CompilerThread())
       future.get()
 
@@ -311,8 +329,16 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
     * Prints the welcome banner to the console.
     */
   private def printWelcomeBanner(): Unit = {
-    Console.println(s"Welcome to Flix ${Version.CurrentVersion}!  Type 'help' for more information.")
-    Console.println(s"Enter a command and hit return. Type 'exit' or press ctrl+d to quit.")
+    val banner =
+      """     __  _  _
+        |    / _|| |(_)            Welcome to Flix __VERSION__
+        |   | |_ | | _ __  __
+        |   |  _|| || |\ \/ /      Enter a command and hit return.
+        |   | |  | || | >  <       Type ':help' for more information.
+        |   |_|  |_||_|/_/\_\      Type ':quit' or press ctrl+d to exit.
+      """.stripMargin
+
+    Console.println(banner.replaceAll("__VERSION__", Version.CurrentVersion.toString))
   }
 
   /**
@@ -331,7 +357,7 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
       val vt = new VirtualTerminal
 
       // Find the available namespaces.
-      val namespaces = namespacesOf(model.getRoot)
+      val namespaces = namespacesOf(root)
 
       vt << Bold("Namespaces:") << Indent << NewLine << NewLine
       for (namespace <- namespaces.toList.sorted) {
@@ -349,14 +375,14 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
       val vt = new VirtualTerminal
 
       // Print the matched definitions.
-      val matchedDefs = getDefinitionsByNamespace(ns, model.getRoot)
+      val matchedDefs = getDefinitionsByNamespace(ns, root)
       if (matchedDefs.nonEmpty) {
         vt << Bold("Definitions:") << Indent << NewLine << NewLine
         for (defn <- matchedDefs.sortBy(_.sym.name)) {
           vt << Bold("def ") << Blue(defn.sym.name) << "("
-          if (defn.formals.nonEmpty) {
-            vt << defn.formals.head.sym.text << ": " << Cyan(defn.formals.head.tpe.toString)
-            for (fparam <- defn.formals.tail) {
+          if (defn.fparams.nonEmpty) {
+            vt << defn.fparams.head.sym.text << ": " << Cyan(defn.fparams.head.tpe.toString)
+            for (fparam <- defn.fparams.tail) {
               vt << ", " << fparam.sym.text << ": " << Cyan(fparam.tpe.toString)
             }
           }
@@ -366,7 +392,7 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
       }
 
       // Print the matched relations.
-      val matchedRels = getRelationsByNamespace(ns, model.getRoot)
+      val matchedRels = getRelationsByNamespace(ns, root)
       if (matchedRels.nonEmpty) {
         vt << Bold("Relations:") << Indent << NewLine << NewLine
         for (rel <- matchedRels.sortBy(_.sym.name)) {
@@ -381,7 +407,7 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
       }
 
       // Print the matched lattices.
-      val matchedLats = getLatticesByNamespace(ns, model.getRoot)
+      val matchedLats = getLatticesByNamespace(ns, root)
       if (matchedLats.nonEmpty) {
         vt << Bold("Lattices:") << Indent << NewLine << NewLine
         for (lat <- matchedLats.sortBy(_.sym.name)) {
@@ -403,6 +429,7 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
     * Executes the help command.
     */
   private def execHelp(): Unit = {
+    // TODO: Updte
     Console.println("  Command    Alias    Arguments        Description")
     Console.println()
     Console.println("  :reload    :r                        reload and compile the loaded paths.")
@@ -424,9 +451,9 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
     val vt = new VirtualTerminal
     vt << Bold("Relations:") << Indent << NewLine << NewLine
     // Iterate through all tables in the program.
-    for ((_, table) <- model.getRoot.tables) {
+    for ((_, table) <- root.tables) {
       table match {
-        case Table.Relation(sym, attributes, loc) =>
+        case Table.Relation(doc, sym, attributes, loc) =>
           vt << Blue(sym.name) << "("
           vt << attributes.head.name << ": " << Cyan(attributes.head.tpe.toString)
           for (attribute <- attributes.tail) {
@@ -434,7 +461,7 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
             vt << attribute.name << ": " << Cyan(attribute.tpe.toString)
           }
           vt << ")" << NewLine
-        case Table.Lattice(sym, keys, value, loc) => // nop
+        case Table.Lattice(doc, sym, keys, value, loc) => // nop
       }
     }
     vt << Dedent << NewLine
@@ -452,11 +479,11 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
 
     vt << Bold("Lattices:") << Indent << NewLine << NewLine
     // Iterate through all tables in the program.
-    for ((_, table) <- model.getRoot.tables) {
+    for ((_, table) <- root.tables) {
       table match {
-        case Table.Relation(sym, attributes, loc) => // nop
-        case Table.Lattice(sym, keys, value, loc) =>
-          val attributes = keys.toList ::: value :: Nil
+        case Table.Relation(doc, sym, attributes, loc) => // nop
+        case Table.Lattice(doc, sym, keys, value, loc) =>
+          val attributes = keys ::: value :: Nil
           vt << Blue(sym.name) << "("
           vt << attributes.head.name << ": " << Cyan(attributes.head.tpe.toString)
           for (attribute <- attributes.tail) {
@@ -500,6 +527,33 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
   }
 
   /**
+    * Reloads every loaded path.
+    */
+  private def execReload(): Unit = {
+    // Instantiate a fresh flix instance.
+    flix = new Flix()
+    flix.setOptions(options)
+    for (path <- currentPaths) {
+      flix.addPath(path)
+    }
+
+    // Check if a main function was given.
+    if (main.nonEmpty) {
+      val name = main.get
+      flix.addReachableRoot(name)
+    }
+
+    // Print the error messages (if any).
+    flix.check() match {
+      case Validation.Success(ast, _) =>
+        this.root = ast
+      case Validation.Failure(errors) =>
+        errors.foreach(e => println(e.message.fmt))
+    }
+
+  }
+
+  /**
     * Searches for the given `needle`.
     */
   private def execSearch(needle: String): Unit = {
@@ -507,12 +561,12 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
     val vt = new VirtualTerminal
     vt << Bold("Definitions:") << Indent << NewLine << NewLine
     // TODO: Group by namespace.
-    for ((sym, defn) <- model.getRoot.defs) {
+    for ((sym, defn) <- root.defs) {
       if (sym.name.toLowerCase().contains(needle)) {
         vt << Bold("def ") << Blue(defn.sym.name) << "("
-        if (defn.formals.nonEmpty) {
-          vt << defn.formals.head.sym.text << ": " << Cyan(defn.formals.head.tpe.toString)
-          for (fparam <- defn.formals.tail) {
+        if (defn.fparams.nonEmpty) {
+          vt << defn.fparams.head.sym.text << ": " << Cyan(defn.fparams.head.tpe.toString)
+          for (fparam <- defn.fparams.tail) {
             vt << ", " << fparam.sym.text << ": " << Cyan(fparam.tpe.toString)
           }
         }
@@ -556,7 +610,6 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
         ascii.write(System.out)
     }
   }
-
 
   /**
     * Returns the namespaces in the given AST `root`.
@@ -625,19 +678,6 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
     */
   class CompilerThread() extends Runnable {
     override def run(): Unit = {
-      // configure Flix and add the paths.
-      val flix = new Flix()
-      flix.setOptions(options)
-      for (path <- currentPaths) {
-        flix.addPath(path)
-      }
-
-      // check if a main function was given.
-      if (main.nonEmpty) {
-        val name = main.get
-        flix.addReachableRoot(name)
-      }
-
       // compute the least model.
       val timer = new Timer(flix.solve())
       timer.getResult match {
