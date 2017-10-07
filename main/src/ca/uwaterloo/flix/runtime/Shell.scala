@@ -88,6 +88,16 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
     case class Eval(s: String) extends Command
 
     /**
+      * Lists all relations in the program.
+      */
+    case object ListRel extends Command
+
+    /**
+      * Lists all lattices in the program.
+      */
+    case object ListLat extends Command
+
+    /**
       * Loads the given path `s`.
       */
     case class Load(s: String) extends Command
@@ -117,6 +127,16 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
       * Gracefully terminates Flix.
       */
     case object Quit extends Command
+
+    /**
+      * Shows the rows in the given relation `fqn` that matches the given `needle`.
+      */
+    case class ShowRel(fqn: String, needle: Option[String]) extends Command
+
+    /**
+      * Shows the rows in the given lattice `fqn` that matches the given `needle`.
+      */
+    case class ShowLat(fqn: String, needle: Option[String]) extends Command
 
     /**
       * Watch loaded paths for changes.
@@ -176,6 +196,36 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
       return Command.Browse(Some(ns))
     }
 
+    if (line.startsWith(":rel")) {
+      // Check if any arguments were passed.
+      val args = line.substring(":rel".length).trim
+      if (args.isEmpty) {
+        return Command.ListRel
+      }
+
+      // Split the arguments into fqn and needle.
+      val split = args.split(" ")
+      if (args.length == 1)
+        return Command.ShowRel(split(0), None)
+      else
+        return Command.ShowRel(split(0), Some(split(1)))
+    }
+
+    if (line.startsWith(":lat")) {
+      // Check if any arguments were passed.
+      val args = line.substring(":lat".length).trim
+      if (args.isEmpty) {
+        return Command.ListLat
+      }
+
+      // Split the arguments into fqn and needle.
+      val split = args.split(" ")
+      if (args.length == 1)
+        return Command.ShowLat(split(0), None)
+      else
+        return Command.ShowLat(split(0), Some(split(1)))
+    }
+
     if (line.startsWith(":load")) {
       val path = line.substring(":load".length).trim
       return Command.Load(path)
@@ -211,6 +261,12 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
     case Command.Eval(s) =>
       Console.println(s"Eval not implemented yet: ${s}")
 
+    case Command.ListRel =>
+      execListRel()
+
+    case Command.ListLat =>
+      execListLat()
+
     case Command.Load(s) =>
       execLoad(s)
 
@@ -230,6 +286,12 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
         PrettyPrint.print(name, model)
 
     case Command.Help => execHelp()
+
+    case Command.ShowRel(fqn, needle) =>
+      execShowRel(fqn, needle)
+
+    case Command.ShowLat(fqn, needle) =>
+      execShowLat(fqn, needle)
 
     case Command.Watch =>
       // Check if the watcher is already initialized.
@@ -364,6 +426,61 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
   }
 
   /**
+    * Lists all relations in the program.
+    */
+  private def execListRel(): Unit = {
+    // Construct a new virtual terminal.
+    val vt = new VirtualTerminal
+    vt << Bold("Relations:") << Indent << NewLine << NewLine
+    // Iterate through all tables in the program.
+    for ((_, table) <- model.getRoot.tables) {
+      table match {
+        case Table.Relation(sym, attributes, loc) =>
+          vt << Blue(sym.name) << "("
+          vt << attributes.head.name << ": " << Cyan(attributes.head.tpe.toString)
+          for (attribute <- attributes.tail) {
+            vt << ", "
+            vt << attribute.name << ": " << Cyan(attribute.tpe.toString)
+          }
+          vt << ")" << NewLine
+        case Table.Lattice(sym, keys, value, loc) => // nop
+      }
+    }
+    vt << Dedent << NewLine
+    // Print the virtual terminal to the console.
+    Console.print(vt.fmt)
+  }
+
+
+  /**
+    * Lists all lattices in the program.
+    */
+  private def execListLat(): Unit = {
+    // Construct a new virtual terminal.
+    val vt = new VirtualTerminal
+    vt << Bold("Lattices:") << Indent << NewLine << NewLine
+    // Iterate through all tables in the program.
+    for ((_, table) <- model.getRoot.tables) {
+      table match {
+        case Table.Relation(sym, attributes, loc) => // nop
+        case Table.Lattice(sym, keys, value, loc) =>
+          val attributes = keys.toList ::: value :: Nil
+          vt << Blue(sym.name) << "("
+          vt << attributes.head.name << ": " << Cyan(attributes.head.tpe.toString)
+          for (attribute <- attributes.tail) {
+            vt << ", "
+            vt << attribute.name << ": " << Cyan(attribute.tpe.toString)
+          }
+          vt << ")" << NewLine
+      }
+    }
+    vt << Dedent << NewLine
+    // Print the virtual terminal to the console.
+    Console.print(vt.fmt)
+  }
+
+
+  /**
     * Executes the load command.
     */
   private def execLoad(s: String): Unit = {
@@ -388,6 +505,39 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
     currentPaths -= path
     Console.println(s"Path '$path' was unloaded.")
   }
+
+  /**
+    * Shows the rows in the given relation `fqn` that match the optional `needle`.
+    */
+  private def execShowRel(fqn: String, needle: Option[String]): Unit = {
+    model.getRelations.get(fqn) match {
+      case None =>
+        Console.println(s"Undefined relation: '$fqn'.")
+      case Some((attributes, rows)) =>
+        val ascii = new AsciiTable().withCols(attributes: _*).withFilter(needle)
+        for (row <- rows) {
+          ascii.mkRow(row)
+        }
+        ascii.write(System.out)
+    }
+  }
+
+  /**
+    * Shows the rows in the given lattice `fqn` that match the optional `needle`.
+    */
+  private def execShowLat(fqn: String, needle: Option[String]): Unit = {
+    model.getLattices.get(fqn) match {
+      case None =>
+        Console.println(s"Undefined lattice: '$fqn'.")
+      case Some((attributes, rows)) =>
+        val ascii = new AsciiTable().withCols(attributes: _*).withFilter(needle)
+        for (row <- rows) {
+          ascii.mkRow(row)
+        }
+        ascii.write(System.out)
+    }
+  }
+
 
   /**
     * Returns the namespaces in the given AST `root`.
