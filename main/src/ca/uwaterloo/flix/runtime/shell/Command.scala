@@ -79,6 +79,11 @@ object Command {
   case class Browse(ns: Option[String]) extends Command
 
   /**
+    * Show Doc for the given name.
+    */
+  case class Doc(fqn: String) extends Command
+
+  /**
     * Evaluates the expression `s`.
     */
   case class Eval(exp: String) extends Command
@@ -196,6 +201,18 @@ object Command {
       }
       val ns = input.substring(":browse".length).trim
       return Command.Browse(Some(ns))
+    }
+
+    //
+    // Doc
+    //
+    if (input.startsWith(":doc")) {
+      val fqn = input.substring(":doc".length).trim
+      if (fqn.isEmpty) {
+        Console.println("Missing argument for command :doc.")
+        return Command.Nop
+      }
+      return Command.Doc(fqn)
     }
 
     //

@@ -145,6 +145,8 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
       Console.println("Thanks, and goodbye.")
       Thread.currentThread().interrupt()
 
+    case Command.Doc(fqn) => execDoc(fqn)
+
     case Command.Eval(s) =>
       expression = s.trim
       execReload()
@@ -301,6 +303,24 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
 
       // Print the virtual terminal to the console.
       Console.print(vt.fmt)
+  }
+
+  /**
+    * Executes the doc command.
+    */
+  private def execDoc(fqn: String): Unit = {
+    val sym = Symbol.mkDefnSym(fqn)
+    root.defs.get(sym) match {
+      case None =>
+        Console.println(s"Undefined symbol: '$sym'.")
+      case Some(defn) => defn.doc match {
+        case None =>
+          Console.println(s"No documentation for: '$sym'.")
+        case Some(doc) =>
+          Console.println(doc.text)
+      }
+
+    }
   }
 
   /**
