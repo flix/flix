@@ -114,85 +114,85 @@ object Command {
   case class Unknown(s: String) extends Command
 
   /**
-    * Parses the given string `line` into a command.
+    * Parses the given `input` into a command.
     */
-  def parse(line: String): Command = {
+  def parse(input: String): Command = {
     //
     // Eof
     //
-    if (line == null)
+    if (input == null)
       return Command.Eof
 
     //
     // Nop
     //
-    if (line.trim == "")
+    if (input.trim == "")
       return Command.Nop
 
     //
     // Help
     //
-    if (line == ":help" || line == ":h" || line == ":?")
+    if (input == ":help" || input == ":h" || input == ":?")
       return Command.Help
 
     //
     // ListRel
     //
-    if (line == ":rel")
+    if (input == ":rel")
       return Command.ListRel
 
     //
     // ListLat
     //
-    if (line == ":lat")
+    if (input == ":lat")
       return Command.ListLat
 
     //
     // Reload
     //
-    if (line == ":r" || line == ":reload")
+    if (input == ":r" || input == ":reload")
       return Command.Reload
 
     //
     // Quit
     //
-    if (line == ":quit" || line == ":q")
+    if (input == ":quit" || input == ":q")
       return Command.Quit
 
     //
     // Solve
     //
-    if (line == ":solve")
+    if (input == ":solve")
       return Command.Solve
 
     //
     // Watch
     //
-    if (line == ":watch" || line == ":w")
+    if (input == ":watch" || input == ":w")
       return Command.Watch
 
     //
     // Unwatch
     //
-    if (line == ":unwatch")
+    if (input == ":unwatch")
       return Command.Unwatch
 
     //
     // Browse
     //
-    if (line.startsWith(":browse")) {
-      if (line == ":browse") {
+    if (input.startsWith(":browse")) {
+      if (input == ":browse") {
         return Command.Browse(None)
       }
-      val ns = line.substring(":browse".length).trim
+      val ns = input.substring(":browse".length).trim
       return Command.Browse(Some(ns))
     }
 
     //
     // Load
     //
-    if (line.startsWith(":load")) {
-      val path = line.substring(":load".length).trim
+    if (input.startsWith(":load")) {
+      val path = input.substring(":load".length).trim
       if (path.isEmpty) {
         Console.println("Missing argument for command :load.")
         return Command.Nop
@@ -203,8 +203,8 @@ object Command {
     //
     // Unload
     //
-    if (line.startsWith(":unload")) {
-      val path = line.substring(":unload".length).trim
+    if (input.startsWith(":unload")) {
+      val path = input.substring(":unload".length).trim
       if (path.isEmpty) {
         Console.println("Missing argument for command :unload.")
         return Command.Nop
@@ -215,8 +215,8 @@ object Command {
     //
     // Search
     //
-    if (line.startsWith(":search")) {
-      val needle = line.substring(":search".length).trim
+    if (input.startsWith(":search")) {
+      val needle = input.substring(":search".length).trim
       if (needle.isEmpty) {
         Console.println("Missing argument for command :search.")
         return Command.Nop
@@ -227,9 +227,9 @@ object Command {
     //
     // ShowRel
     //
-    if (line.startsWith(":rel")) {
+    if (input.startsWith(":rel")) {
       // Check if any arguments were passed.
-      val args = line.substring(":rel".length).trim
+      val args = input.substring(":rel".length).trim
 
       // Split the arguments into fqn and needle.
       val split = args.split(" ")
@@ -242,9 +242,9 @@ object Command {
     //
     // ShowLat
     //
-    if (line.startsWith(":lat")) {
+    if (input.startsWith(":lat")) {
       // Check if any arguments were passed.
-      val args = line.substring(":lat".length).trim
+      val args = input.substring(":lat".length).trim
 
       // Split the arguments into fqn and needle.
       val split = args.split(" ")
@@ -257,13 +257,13 @@ object Command {
     //
     // Unknown
     //
-    if (line.startsWith(":"))
-      return Command.Unknown(line)
+    if (input.startsWith(":"))
+      return Command.Unknown(input)
 
     //
     // Eval
     //
-    Command.Eval(line)
+    Command.Eval(input)
   }
 
 }

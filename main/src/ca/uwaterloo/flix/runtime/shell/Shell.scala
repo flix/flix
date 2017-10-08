@@ -91,8 +91,15 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
     while (!Thread.currentThread().isInterrupted) {
       Console.print(prompt)
       Console.flush()
-      val line = scala.io.StdIn.readLine()
-      val cmd = Command.parse(line)
+
+      // Read one or more lines. A multi line input is delimited by \\.
+      val lines = readMultiLineInput(Nil)
+
+      // Construct the entire input string.
+      val input = if (lines == null) null else lines.reverse.mkString("\n")
+
+      // Parse the command.
+      val cmd = Command.parse(input)
       try {
         execute(cmd)
       } catch {
@@ -100,6 +107,28 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
           Console.println(e.getMessage)
           e.printStackTrace()
       }
+    }
+  }
+
+  /**
+    * Attempts to a (possibly) multi line input.
+    *
+    * Returns `null` if the end-of-stream is reached.
+    *
+    * Otherwise returns a list, in reverse order, of read lines.
+    */
+  private def readMultiLineInput(acc: List[String]): List[String] = {
+    // Read a line from the input.
+    val line = scala.io.StdIn.readLine()
+
+    // Check if the end-of-stream has been reached, if so, return null.
+    if (line == null) return null
+
+    // Check if the line ends with \\ in which case we read more input.
+    if (!line.endsWith("\\")) {
+      line :: acc
+    } else {
+      readMultiLineInput(line.substring(0, line.length - 1) :: acc)
     }
   }
 
