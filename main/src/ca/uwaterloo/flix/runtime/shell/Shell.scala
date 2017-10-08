@@ -153,10 +153,6 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
       execSolve()
       Console.println(model.evalToString("$1"))
 
-    case Command.ListRel => execListRel()
-
-    case Command.ListLat => execListLat()
-
     case Command.Load(s) => execLoad(s)
 
     case Command.Unload(s) => execUnload(s)
@@ -171,14 +167,14 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
 
     case Command.Solve => execSolve()
 
-    case Command.ShowRel(fqn, needle) => execShowRel(fqn, needle)
+    case Command.Rel(fqn, needle) => execShowRel(fqn, needle)
 
-    case Command.ShowLat(fqn, needle) => execShowLat(fqn, needle)
+    case Command.Lat(fqn, needle) => execShowLat(fqn, needle)
 
-    case Command.ShowKind(exp) =>
+    case Command.KindOf(exp) =>
       execShowKind(exp)
 
-    case Command.ShowType(exp) =>
+    case Command.TypeOf(exp) =>
       execShowType(exp)
 
     case Command.Watch =>
@@ -348,63 +344,6 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
     Console.println("  :help :h :?                     Shows this helpful information.")
     Console.println()
   }
-
-  /**
-    * Lists all relations in the program.
-    */
-  private def execListRel(): Unit = {
-    // Construct a new virtual terminal.
-    val vt = new VirtualTerminal
-    vt << Bold("Relations:") << Indent << NewLine << NewLine
-    // Iterate through all tables in the program.
-    for ((_, table) <- root.tables) {
-      table match {
-        case Table.Relation(doc, sym, attributes, loc) =>
-          vt << Blue(sym.name) << "("
-          vt << attributes.head.name << ": " << Cyan(attributes.head.tpe.show)
-          for (attribute <- attributes.tail) {
-            vt << ", "
-            vt << attribute.name << ": " << Cyan(attribute.tpe.show)
-          }
-          vt << ")" << NewLine
-        case Table.Lattice(doc, sym, keys, value, loc) => // nop
-      }
-    }
-    vt << Dedent << NewLine
-    // Print the virtual terminal to the console.
-    Console.print(vt.fmt)
-  }
-
-
-  /**
-    * Lists all lattices in the program.
-    */
-  private def execListLat(): Unit = {
-    // Construct a new virtual terminal.
-    val vt = new VirtualTerminal
-
-    vt << Bold("Lattices:") << Indent << NewLine << NewLine
-    // Iterate through all tables in the program.
-    for ((_, table) <- root.tables) {
-      table match {
-        case Table.Relation(doc, sym, attributes, loc) => // nop
-        case Table.Lattice(doc, sym, keys, value, loc) =>
-          val attributes = keys ::: value :: Nil
-          vt << Blue(sym.name) << "("
-          vt << attributes.head.name << ": " << Cyan(attributes.head.tpe.show)
-          for (attribute <- attributes.tail) {
-            vt << ", "
-            vt << attribute.name << ": " << Cyan(attribute.tpe.show)
-          }
-          vt << ")" << NewLine
-      }
-    }
-    vt << Dedent << NewLine
-
-    // Print the virtual terminal to the console.
-    Console.print(vt.fmt)
-  }
-
 
   /**
     * Executes the load command.

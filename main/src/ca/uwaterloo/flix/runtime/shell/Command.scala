@@ -24,29 +24,54 @@ sealed trait Command
 object Command {
 
   /**
-    * End of input.
-    */
-  case object Eof extends Command
-
-  /**
-    * Prints helpful information about the available commands.
-    */
-  case object Help extends Command
-
-  /**
     * Does literally nothing.
     */
   case object Nop extends Command
 
   /**
-    * Lists all relations.
+    * End of input.
     */
-  case object ListRel extends Command
+  case object Eof extends Command
 
   /**
-    * Lists all lattices.
+    * Evaluates the given expression `exp`.
     */
-  case object ListLat extends Command
+  case class Eval(exp: String) extends Command
+
+  /**
+    * Shows the type of the given expression `exp`.
+    */
+  case class TypeOf(exp: String) extends Command
+
+  /**
+    * Shows the kind of the given expression `exp`.
+    */
+  case class KindOf(exp: String) extends Command
+
+  /**
+    * Shows the definitions, relations, and lattices in the given namespace.
+    */
+  case class Browse(ns: Option[String]) extends Command
+
+  /**
+    * Show the documentation for the given fully-qualified name.
+    */
+  case class Doc(fqn: String) extends Command
+
+  /**
+    * Searches for a definition symbol which contains `needle` as part of its name.
+    */
+  case class Search(needle: String) extends Command
+
+  /**
+    * Adds the given `path` to the set of source paths.
+    */
+  case class Load(path: String) extends Command
+
+  /**
+    * Removes the given `path` from the set of source paths.
+    */
+  case class Unload(path: String) extends Command
 
   /**
     * Reload all source paths.
@@ -54,14 +79,19 @@ object Command {
   case object Reload extends Command
 
   /**
-    * Terminates the shell.
-    */
-  case object Quit extends Command
-
-  /**
-    * Computes the least fixed point.
+    * Computes the least fixed point of the program.
     */
   case object Solve extends Command
+
+  /**
+    * Shows the rows in the relation `fqn` that matches the optional `needle`.
+    */
+  case class Rel(fqn: String, needle: Option[String]) extends Command
+
+  /**
+    * Shows the rows in the lattice `fqn` that matches the optional `needle`.
+    */
+  case class Lat(fqn: String, needle: Option[String]) extends Command
 
   /**
     * Watches source paths for changes.
@@ -74,54 +104,14 @@ object Command {
   case object Unwatch extends Command
 
   /**
-    * Browses the definitions in the optional namespace `ns`.
+    * Terminates the shell.
     */
-  case class Browse(ns: Option[String]) extends Command
+  case object Quit extends Command
 
   /**
-    * Show Doc for the given name.
+    * Prints helpful information about the available commands.
     */
-  case class Doc(fqn: String) extends Command
-
-  /**
-    * Evaluates the expression `s`.
-    */
-  case class Eval(exp: String) extends Command
-
-  /**
-    * Add the `path` to the set of source paths.
-    */
-  case class Load(path: String) extends Command
-
-  /**
-    * Remove the `path` from the set of source paths.
-    */
-  case class Unload(path: String) extends Command
-
-  /**
-    * Searches for a symbol with name `needle`.
-    */
-  case class Search(needle: String) extends Command
-
-  /**
-    * Shows the rows in the relation `fqn` that matches the given `needle`.
-    */
-  case class ShowRel(fqn: String, needle: Option[String]) extends Command
-
-  /**
-    * Shows the rows in the lattice `fqn` that matches the given `needle`.
-    */
-  case class ShowLat(fqn: String, needle: Option[String]) extends Command
-
-  /**
-    * Shows the kind of the given expression `exp`.
-    */
-  case class ShowKind(exp: String) extends Command
-
-  /**
-    * Shows the type of the given expression `exp`.
-    */
-  case class ShowType(exp: String) extends Command
+  case object Help extends Command
 
   /**
     * Unknown command.
@@ -145,58 +135,34 @@ object Command {
       return Command.Nop
 
     //
-    // Help
+    // Type
     //
-    if (input == ":help" || input == ":h" || input == ":?")
-      return Command.Help
+    if (input.startsWith(":type")) {
+      val exp = input.substring(":type".length).trim
+      return Command.TypeOf(exp)
+    }
+    if (input.startsWith(":t")) {
+      val exp = input.substring(":t".length).trim
+      return Command.TypeOf(exp)
+    }
 
     //
-    // ListRel
+    // Kind
     //
-    if (input == ":rel")
-      return Command.ListRel
-
-    //
-    // ListLat
-    //
-    if (input == ":lat")
-      return Command.ListLat
-
-    //
-    // Reload
-    //
-    if (input == ":r" || input == ":reload")
-      return Command.Reload
-
-    //
-    // Quit
-    //
-    if (input == ":quit" || input == ":q")
-      return Command.Quit
-
-    //
-    // Solve
-    //
-    if (input == ":solve")
-      return Command.Solve
-
-    //
-    // Watch
-    //
-    if (input == ":watch" || input == ":w")
-      return Command.Watch
-
-    //
-    // Unwatch
-    //
-    if (input == ":unwatch")
-      return Command.Unwatch
+    if (input.startsWith(":kind")) {
+      val exp = input.substring(":kind".length).trim
+      return Command.TypeOf(exp)
+    }
+    if (input.startsWith(":k")) {
+      val exp = input.substring(":k".length).trim
+      return Command.KindOf(exp)
+    }
 
     //
     // Browse
     //
     if (input.startsWith(":browse")) {
-      if (input == ":browse") {
+      if (input.trim == ":browse") {
         return Command.Browse(None)
       }
       val ns = input.substring(":browse".length).trim
@@ -213,6 +179,18 @@ object Command {
         return Command.Nop
       }
       return Command.Doc(fqn)
+    }
+
+    //
+    // Search
+    //
+    if (input.startsWith(":search")) {
+      val needle = input.substring(":search".length).trim
+      if (needle.isEmpty) {
+        Console.println("Missing argument for command :search.")
+        return Command.Nop
+      }
+      return Command.Search(needle)
     }
 
     //
@@ -240,70 +218,78 @@ object Command {
     }
 
     //
-    // Search
+    // Reload
     //
-    if (input.startsWith(":search")) {
-      val needle = input.substring(":search".length).trim
-      if (needle.isEmpty) {
-        Console.println("Missing argument for command :search.")
-        return Command.Nop
-      }
-      return Command.Search(needle)
-    }
+    if (input == ":r" || input == ":reload")
+      return Command.Reload
 
     //
-    // ShowRel
+    // Solve
+    //
+    if (input == ":solve")
+      return Command.Solve
+
+    //
+    // Rel
     //
     if (input.startsWith(":rel")) {
       // Check if any arguments were passed.
       val args = input.substring(":rel".length).trim
+      if (args.isEmpty) {
+        Console.println("Missing argument for command :rel.")
+        return Command.Nop
+      }
 
       // Split the arguments into fqn and needle.
       val split = args.split(" ")
       if (args.length == 1)
-        return Command.ShowRel(split(0), None)
+        return Command.Rel(split(0), None)
       else
-        return Command.ShowRel(split(0), Some(split(1)))
+        return Command.Rel(split(0), Some(split(1)))
     }
 
     //
-    // ShowLat
+    // Lat
     //
     if (input.startsWith(":lat")) {
       // Check if any arguments were passed.
       val args = input.substring(":lat".length).trim
+      if (args.isEmpty) {
+        Console.println("Missing argument for command :lat.")
+        return Command.Nop
+      }
 
       // Split the arguments into fqn and needle.
       val split = args.split(" ")
       if (args.length == 1)
-        return Command.ShowLat(split(0), None)
+        return Command.Lat(split(0), None)
       else
-        return Command.ShowLat(split(0), Some(split(1)))
+        return Command.Lat(split(0), Some(split(1)))
     }
 
     //
-    // ShowType
+    // Watch
     //
-    if (input.startsWith(":type")) {
-      val exp = input.substring(":type".length).trim
-      return Command.ShowType(exp)
-    }
-    if (input.startsWith(":t")) {
-      val exp = input.substring(":t".length).trim
-      return Command.ShowType(exp)
-    }
+    if (input == ":watch" || input == ":w")
+      return Command.Watch
 
     //
-    // ShowKind
+    // Unwatch
     //
-    if (input.startsWith(":kind")) {
-      val exp = input.substring(":kind".length).trim
-      return Command.ShowType(exp)
-    }
-    if (input.startsWith(":k")) {
-      val exp = input.substring(":k".length).trim
-      return Command.ShowKind(exp)
-    }
+    if (input == ":unwatch")
+      return Command.Unwatch
+
+    //
+    // Quit
+    //
+    if (input == ":quit" || input == ":q")
+      return Command.Quit
+
+    //
+    // Help
+    //
+    if (input == ":help" || input == ":h" || input == ":?")
+      return Command.Help
 
     //
     // Unknown
