@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.GenSym
 import ca.uwaterloo.flix.util.InternalCompilerException
+import ca.uwaterloo.flix.util.tc.Show
 
 /**
   * Representation of types.
@@ -404,6 +405,16 @@ object Type {
     }
 
     visit(tpe)
+  }
+
+  /**
+    * Show instance for Type.
+    */
+  implicit object ShowInstance extends Show[Type] {
+    def show(a: Type): String = {
+      // TODO
+      a.toString
+    }
   }
 
 }

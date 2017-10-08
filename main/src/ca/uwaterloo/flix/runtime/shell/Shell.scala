@@ -20,10 +20,11 @@ import java.nio.file._
 import java.util.concurrent.Executors
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Symbol
+import ca.uwaterloo.flix.language.ast.{Symbol, Type}
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.runtime.Model
 import ca.uwaterloo.flix.util._
+import ca.uwaterloo.flix.util.tc.Show
 import ca.uwaterloo.flix.util.vt.VirtualString._
 import ca.uwaterloo.flix.util.vt.{TerminalContext, VirtualTerminal}
 
@@ -502,14 +503,14 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
   /**
     * Shows the type of the given expression `exp`.
     */
-  private def execShowType(exp: String): Unit = {
+  private def execShowType(exp: String)(implicit s: Show[Type]): Unit = {
     val sym = Symbol.mkDefnSym("$1")
     expression = exp
     execReload()
-    val tpe = root.defs(sym).tpe
+    val tpe = root.defs(sym).tpe.typeArguments.last
 
     val vt = new VirtualTerminal
-    vt << Cyan(tpe.toString) << NewLine
+    vt << Cyan(s.show(tpe)) << NewLine
     Console.print(vt.fmt)
   }
 
