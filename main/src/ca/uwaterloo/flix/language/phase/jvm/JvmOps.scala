@@ -141,7 +141,8 @@ object JvmOps {
       throw InternalCompilerException(s"Unexpected type: '$tpe'.")
 
     // Compute the arity of the function interface.
-    val arity = tpe.typeArguments.length
+    // We subtract one since the last argument is the return type.
+    val arity = tpe.typeArguments.length - 1
 
     // Compute the stringified erased type of each type argument.
     val args = tpe.typeArguments.map(tpe => stringify(getErasedType(tpe)))
