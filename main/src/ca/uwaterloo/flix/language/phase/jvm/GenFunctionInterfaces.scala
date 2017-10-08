@@ -58,10 +58,10 @@ object GenFunctionInterfaces {
     }
 
     // `JvmType` of the continuation interface for `tpe`
-    val continuationType = JvmOps.getContinuationType(tpe)
+    val continuationType = JvmOps.getContinuationInterfaceType(tpe)
 
     // `JvmType` of the functional interface for `tpe`
-    val functionType = JvmOps.getFunctionType(tpe)
+    val functionType = JvmOps.getFunctionInterfaceType(tpe)
 
     // Class visitor
     val visitor = new ClassWriter(0)
@@ -71,14 +71,15 @@ object GenFunctionInterfaces {
 
     // Class visitor
     visitor.visit(JvmOps.JavaVersion, ACC_PUBLIC + ACC_ABSTRACT + ACC_INTERFACE, functionType.name.toInternalName, null,
-      JvmType.Obj.name.toInternalName, extendedInterfaced)
+      JvmName.Object.toInternalName, extendedInterfaced)
 
-    // Adding setters for each arg
-    args.zipWithIndex.foreach{ case (arg, ind) =>
+    // Adding setters for each argument of the function
+    for((arg, ind) <- args.init.zipWithIndex) {
       // `JvmType` of `arg`
       val argType = JvmOps.getJvmType(arg)
+
       // `setArg$ind()` method
-      val setArgMethod = visitor.visitMethod(ACC_PUBLIC + ACC_ABSTRACT, s"setArg$ind", s"(${argType.toDescriptor})V", null, null)
+      val setArgMethod = visitor.visitMethod(ACC_PUBLIC + ACC_ABSTRACT, s"setArg$ind", AsmOps.getMethodDescriptor(List(argType)), null, null)
       setArgMethod.visitEnd()
     }
 

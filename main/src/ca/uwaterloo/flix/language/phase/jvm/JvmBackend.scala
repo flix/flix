@@ -36,7 +36,7 @@ object JvmBackend extends Phase[Root, Root] {
     * Emits JVM bytecode for the given AST `root`.
     */
   def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationError] = {
-    return root.toSuccess
+    // return root.toSuccess
     //
     // Put the AST root into implicit scope.
     //
@@ -100,7 +100,7 @@ object JvmBackend extends Phase[Root, Root] {
     //
     // Generate tuple classes for each tuple type in the program.
     //
-    val tupleClasses = GenTupleClasses.gen()
+    val tupleClasses = GenTupleClasses.gen(Set())
 
     //
     // Generate tag-tuple fusion classes for tag-tuple in the program.
@@ -117,13 +117,14 @@ object JvmBackend extends Phase[Root, Root] {
     //
     // TODO: Re-order
     val allClasses = contextClass ++ namespaceClasses ++ continuationInterfaces ++ functionInterfaces ++
-      functionClasses ++ enumInterfaces ++ tupleInterfaces ++ tupleClasses ++ tagClasses ++ mainClass
+      functionClasses ++ enumInterfaces ++ tupleInterfaces ++ tupleClasses ++ tagClasses ++ mainClass ++
+      fusionClasses
 
     //
     // Write each class (and interface) to disk.
     //
     // NB: In test mode we skip writing the files to disk.
-    if (!flix.options.test) {
+    if (true) {
       for ((name, clazz) <- allClasses) {
         JvmOps.writeClass(TargetDirectory, clazz)
       }

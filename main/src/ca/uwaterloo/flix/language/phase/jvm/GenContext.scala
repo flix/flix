@@ -32,57 +32,58 @@ object GenContext {
     */
   def gen(ns: Set[NamespaceInfo])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
     // Class visitor
-    val visitor = new ClassWriter(ClassWriter.COMPUTE_FRAMES){
-      override def getCommonSuperClass(tpe1: String, tpe2: String) : String = {
-    // Class header
-    }
-        JvmType.Obj.name.toInternalName
-      }
+    val visitor = AsmOps.mkClassWriter()
 
-    visitor.visit(JvmOps.JavaVersion, ACC_PUBLIC + ACC_FINAL, JvmType.Context.name.toInternalName, null,
-      JvmType.Obj.name.toInternalName, null)
-    val namespaces = defns.keys.map(_.prefix).toSet
-    // Namespaces
-
+    visitor.visit(JvmOps.JavaVersion, ACC_PUBLIC + ACC_FINAL, JvmName.Context.toInternalName, null,
+      JvmName.Object.toInternalName, null)
 
     // Adding continuation field
-    JvmOps.compileField(visitor, "continuation", JvmType.Obj.toDescriptor, isStatic = false, isPrivate = false)
+    AsmOps.compileField(visitor, "continuation", JvmType.Object.toDescriptor, isStatic = false, isPrivate = false)
 
     // Adding field for each namespace
-    namespaces.foreach{ namespace =>
-      val namespaceRef = JvmOps.getNamespaceType(namespace)
-      JvmOps.compileField(visitor, namespaceRef.name.name, namespaceRef.toDescriptor, isStatic = false, isPrivate = false)
+    for(namespace <- ns) {
+      // JvmType of the namespace
+      val namespaceRef = JvmOps.getNamespaceClassType(namespace)
+
+      // Name of the field for the `namespace` on the Context object
+      val fieldName = JvmOps.getContextFieldName(namespace)
+
+      // Descriptor
+      val desc = namespaceRef.toDescriptor
+
+      // Adding the field
+      AsmOps.compileField(visitor, fieldName, desc, isStatic = false, isPrivate = false)
     }
 
-
     // Add the constructor
-    compileContextConstructor(visitor, namespaces)
+    compileContextConstructor(visitor, ns)
 
-    Map(JvmType.Context.name -> JvmClass(JvmType.Context.name, visitor.toByteArray))
     visitor.visitEnd()
+    Map(JvmType.Context.name -> JvmClass(JvmType.Context.name, visitor.toByteArray))
   }
 
   /**
     * Add the constructor for the class which initializes each field
     */
-  private def compileContextConstructor(visitor: ClassWriter, namespaces: Set[List[String]]): Unit = {
+  private def compileContextConstructor(visitor: ClassWriter, ns: Set[NamespaceInfo])(implicit root: Root, flix: Flix): Unit = {
 
     // Method header
-    val constructor = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, "<init>", "()V", null, null)
+    val constructor = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, "<init>", AsmOps.getMethodDescriptor(Nil), null, null)
     constructor.visitCode()
 
     constructor.visitCode()
     constructor.visitVarInsn(ALOAD, 0)
 
     // Call the super (java.lang.Object) constructor
-    constructor.visitMethodInsn(INVOKESPECIAL, JvmType.Obj.name.toInternalName, "<init>",
-      "()V", false)
+    constructor.visitMethodInsn(INVOKESPECIAL, JvmName.Object.toInternalName, "<init>", AsmOps.getMethodDescriptor(Nil), false)
 
     // Initializing each field
-    namespaces.foreach{ namespace =>
-
+    for(namespace <- ns) {
       // JvmType of the namespace
-      val namespaceRef = JvmOps.getNamespaceType(namespace)
+      val namespaceRef = JvmOps.getNamespaceClassType(namespace)
+
+      // Name of the field for the `namespace` on the Context object
+      val fieldName = JvmOps.getContextFieldName(namespace)
 
       // Setting the field for `namespace`
       constructor.visitVarInsn(ALOAD, 0)
@@ -90,10 +91,9 @@ object GenContext {
       constructor.visitInsn(DUP)
 
       // Calling the constructor of `namespace` class
-      constructor.visitMethodInsn(INVOKESPECIAL, namespaceRef.name.toInternalName, "<init>",
-        "()V", false)
+      constructor.visitMethodInsn(INVOKESPECIAL, namespaceRef.name.toInternalName, "<init>", AsmOps.getMethodDescriptor(Nil), false)
 
-      constructor.visitFieldInsn(PUTFIELD, JvmType.Context.name.toInternalName, namespaceRef.name.name, namespaceRef.toDescriptor)
+      constructor.visitFieldInsn(PUTFIELD, JvmName.Context.toInternalName, fieldName, namespaceRef.toDescriptor)
     }
 
     // Return

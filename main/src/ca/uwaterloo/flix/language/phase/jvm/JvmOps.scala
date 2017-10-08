@@ -128,13 +128,6 @@ object JvmOps {
   }
 
   /**
-    * Returns the reference to a Namespace class
-    */
-  def getNamespaceType(prefix: List[String]): JvmType.Reference = {
-    JvmType.Reference(JvmName(JvmOps.RootPackage ++ prefix, "Namespace"))
-  }
-
-  /**
     * Returns the function interface type `FnX$Y$Z` for the given type `tpe`.
     *
     * For example:
@@ -347,6 +340,30 @@ object JvmOps {
   }
 
   /**
+    * Returns the name of the field corresponding to `ns` on context object
+    *
+    * For example:
+    *
+    * <root>      =>  Ns
+    * Foo         =>  Foo$Ns
+    * Foo.Bar     =>  Foo$Bar$Ns
+    * Foo.Bar.Baz =>  Foo$Bar$Baz$Ns
+    */
+  def getContextFieldName(ns: NamespaceInfo): String = ns.ns.mkString("$") + "$Ns"
+
+  /**
+    * Returns the name of the field corresponding to `sym` on context object
+    *
+    * For example:
+    *
+    * <root>.X()      =>  $X
+    * Foo.X()         =>  Foo$Ns$X
+    * Foo.Bar.X()     =>  Foo$Bar$Ns$X
+    * Foo.Bar.Baz.Y() =>  Foo$Bar$Baz$Ns$X
+    */
+  def getNamespaceFieldName(sym: Symbol.DefnSym): String = sym.prefix.mkString("$") + '$' + sym.suffix
+
+  /**
     * Returns the erased JvmType of the given Flix type `tpe`.
     *
     * Every primitive type is mapped to itself and every other type is mapped to Object.
@@ -362,12 +379,6 @@ object JvmOps {
     case Type.Int64 => JvmType.PrimLong
     case _ => JvmType.Object
   }
-
-  /**
-    * Returns the descriptor of a method take takes the given `argumentTypes` and returns the given `resultType`.
-    */
-  def getMethodDescriptor(argumentTypes: List[JvmType], resultType: JvmType): String =
-    ??? // TODO: Ramin
 
   /**
     * Returns stringified name of the given JvmType `tpe`.
@@ -597,49 +608,6 @@ object JvmOps {
 
     // Write the bytecode.
     Files.write(path, clazz.bytecode)
-  }
-
-  /**
-    * Generates a field for the class with with name `name`, with descriptor `descriptor` using `visitor`. If `isStatic = true`
-    * then the field is static, otherwise the field will be non-static.
-    * For example calling this method with name = `field01`, descriptor = `I`, isStatic = `false` and isPrivate = `true`
-    * creates the following field:
-    *
-    * private int field01;
-    *
-    * calling this method with name = `value`, descriptor = `java/lang/Object`, isStatic = `false` and isPrivate = `true`
-    * creates the following:
-    *
-    * private Object value;
-    *
-    * calling this method with name = `unitInstance`, descriptor = `ca/waterloo/flix/enums/List/object/Nil`, `isStatic = true`
-    * and isPrivate = `false` generates the following:
-    *
-    * public static Nil unitInstance;
-    *
-    * @param visitor    class visitor
-    * @param name       name of the field
-    * @param descriptor descriptor of field
-    * @param isStatic   if this is true the the field is static
-    * @param isPrivate  if this is set then the field is private
-    */
-  def compileField(visitor: ClassWriter, name: String, descriptor: String, isStatic: Boolean, isPrivate: Boolean): Unit = {
-    val visibility =
-      if (isPrivate) {
-        ACC_PRIVATE
-      } else {
-        ACC_PUBLIC
-      }
-
-    val fieldType =
-      if (isStatic) {
-        ACC_STATIC
-      } else {
-        0
-      }
-
-    val field = visitor.visitField(visibility + fieldType, name, descriptor, null, null)
-    field.visitEnd()
   }
 
 }
