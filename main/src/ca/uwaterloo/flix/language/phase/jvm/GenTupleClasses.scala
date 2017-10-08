@@ -17,18 +17,18 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.ExecutableAst._
-import ca.uwaterloo.flix.language.ast.Symbol
+import ca.uwaterloo.flix.language.ast.ExecutableAst.Root
+import ca.uwaterloo.flix.language.ast.Type
 
 /**
-  * Generates bytecode for the function classes.
+  * Generates bytecode for the tuple classes.
   */
-object GenFunctionClasses {
+object GenTupleClasses {
 
   /**
-    * Returns the set of function classes for the given set of definitions `defs`.
+    * Returns the set of tuple classes for the given set of types.
     */
-  def gen(defs: Map[Symbol.DefnSym, Def])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
+  def gen(ts: Set[Type])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
     Map.empty // TODO
   }
 

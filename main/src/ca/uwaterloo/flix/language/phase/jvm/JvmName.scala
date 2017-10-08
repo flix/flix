@@ -19,6 +19,33 @@ package ca.uwaterloo.flix.language.phase.jvm
 import java.nio.file.{Path, Paths}
 
 /**
+  * Companion object for the [[JvmName]] class.
+  */
+object JvmName {
+
+  /**
+    * The Flix Context class.
+    */
+  val Context: JvmName = JvmName(Nil, "Context")
+
+  /**
+    * The `java.lang.BigInteger` name.
+    */
+  val BigInteger: JvmName = JvmName(List("java", "math"), "BigInteger")
+
+  /**
+    * The `java.lang.Object` name.
+    */
+  val Object: JvmName = JvmName(List("java", "lang"), "Object")
+
+  /**
+    * The `java.lang.String` name.
+    */
+  val String: JvmName = JvmName(List("java", "lang"), "String")
+
+}
+
+/**
   * Represents the name of a Java class or interface.
   *
   * @param pkg  the package name.

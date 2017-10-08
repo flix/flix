@@ -20,25 +20,30 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{ExecutableAst, Symbol}
 import org.objectweb.asm.ClassWriter
 import org.objectweb.asm.Opcodes._
+import ca.uwaterloo.flix.language.ast.ExecutableAst.Root
 
+/**
+  * Generates bytecode for the `Context` class.
+  */
 object GenContext {
 
-  // TODO: Documentation and signature
-  def gen(defns: Map[Symbol.DefnSym, ExecutableAst.Def])(implicit flix: Flix): Map[JvmName, JvmClass] = {
-
+  /**
+    * Returns the `Context` class.
+    */
+  def gen(ns: Set[NamespaceInfo])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
     // Class visitor
     val visitor = new ClassWriter(ClassWriter.COMPUTE_FRAMES){
       override def getCommonSuperClass(tpe1: String, tpe2: String) : String = {
+    // Class header
+    }
         JvmType.Obj.name.toInternalName
       }
-    }
 
-    // Class header
     visitor.visit(JvmOps.JavaVersion, ACC_PUBLIC + ACC_FINAL, JvmType.Context.name.toInternalName, null,
       JvmType.Obj.name.toInternalName, null)
-
-    // Namespaces
     val namespaces = defns.keys.map(_.prefix).toSet
+    // Namespaces
+
 
     // Adding continuation field
     JvmOps.compileField(visitor, "continuation", JvmType.Obj.toDescriptor, isStatic = false, isPrivate = false)
@@ -53,8 +58,8 @@ object GenContext {
     // Add the constructor
     compileContextConstructor(visitor, namespaces)
 
-    visitor.visitEnd()
     Map(JvmType.Context.name -> JvmClass(JvmType.Context.name, visitor.toByteArray))
+    visitor.visitEnd()
   }
 
   /**

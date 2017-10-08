@@ -38,39 +38,86 @@ object JvmBackend extends Phase[Root, Root] {
   def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationError] = {
     return root.toSuccess
     //
+    // Put the AST root into implicit scope.
+    //
+    implicit val _ = root
+
+    //
+    // Compute the set of namespaces in the program.
+    //
+    val namespaces = JvmOps.namespacesOf(root)
+
+    //
     // Compute the set of types in the program.
     //
     val types = JvmOps.typesOf(root)
 
     //
-    // Emit the Context class.
+    // Compute the set of instantiated tags in the program.
     //
-    val context = GenContext.gen(root.defs)
+    val tags = JvmOps.tagsOf(root)
 
     //
-    // Emit the namespace classes.
+    // Generate the Context class.
     //
-    val namespaceClasses = GenNamespaces.gen(root.defs)
+    val contextClass = GenContext.gen(namespaces)
 
     //
-    // Emit continuation interfaces for each function type in the program.
+    // Generate the namespace classes.
     //
-    val continuationInterfaces = GenContinuationInterfaces.gen(types, root)
+    val namespaceClasses = GenNamespaces.gen(namespaces)
 
     //
-    // Emit function interfaces for each function type in the program.
+    // Generate continuation interfaces for each function type in the program.
     //
-    val functionInterfaces = GenFunctionInterfaces.gen(types, root)
+    val continuationInterfaces = GenContinuationInterfaces.gen(types)
 
     //
-    // Emit function classes for each function in the program.
+    // Generate function interfaces for each function type in the program.
     //
-    val functionClasses = GenFunctionClasses.gen(root.defs, root)
+    val functionInterfaces = GenFunctionInterfaces.gen(types)
+
+    //
+    // Generate function classes for each function in the program.
+    //
+    val functionClasses = GenFunctionClasses.gen(root.defs)
+
+    //
+    // Generate enum interfaces for each enum type in the program.
+    //
+    val enumInterfaces = GenEnumInterfaces.gen(types)
+
+    //
+    // Generate tag classes for each enum instantiation in the program.
+    //
+    val tagClasses = GenTagClasses.gen(tags)
+
+    //
+    // Generate tuple interfaces for each tuple type in the program.
+    //
+    val tupleInterfaces = GenTupleInterfaces.gen(types)
+
+    //
+    // Generate tuple classes for each tuple type in the program.
+    //
+    val tupleClasses = GenTupleClasses.gen()
+
+    //
+    // Generate tag-tuple fusion classes for tag-tuple in the program.
+    //
+    val fusionClasses = GenFusionClasses.gen()
+
+    //
+    // Generate the main class.
+    //
+    val mainClass = GenMain.gen()
 
     //
     // Collect all the classes and interfaces together.
     //
-    val allClasses = namespaceClasses ++ context ++ continuationInterfaces ++ functionInterfaces ++ functionClasses
+    // TODO: Re-order
+    val allClasses = contextClass ++ namespaceClasses ++ continuationInterfaces ++ functionInterfaces ++
+      functionClasses ++ enumInterfaces ++ tupleInterfaces ++ tupleClasses ++ tagClasses ++ mainClass
 
     //
     // Write each class (and interface) to disk.

@@ -22,21 +22,25 @@ import org.objectweb.asm.ClassWriter
 import org.objectweb.asm.Opcodes._
 import ca.uwaterloo.flix.language.ast.Symbol
 
+/**
+  * Generates bytecode for the namespace classes.
+  */
 object GenNamespaces {
 
-  // TODO: Documentation and signature
-  def gen(defns: Map[Symbol.DefnSym, ExecutableAst.Def])(implicit flix: Flix): Map[JvmName, JvmClass] = {
-
-    // Defns grouped by their path
-    val groupedDefns = defns.groupBy{ case (sym, defn) =>
-      sym.prefix
+  /**
+    * Returns the set of namespaces classes for the given set of namespaces.
+    */
+  def gen(namespaces: Set[NamespaceInfo])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
+    //
+    // Generate a namespace class for each namespace and collect the results in a map.
+    //
+    namespaces.foldLeft(Map.empty[JvmName, JvmClass]) {
+      case (macc, ns) =>
+        val jvmType = JvmOps.getNamespaceClassType(ns)
+        val jvmName = jvmType.name
+        val bytecode = genBytecode(ns)
+        macc + (jvmName -> JvmClass(jvmName, bytecode))
     }
-
-    // Generate each of the namespaces
-    groupedDefns.map{ case (prefix, defnMap) =>
-      val namespace = genNameSpace(prefix, defnMap.values.toList)
-      namespace.name -> namespace
-    }.toMap
   }
 
   def genNameSpace(prefix: List[String], defns: List[ExecutableAst.Def])(implicit flix: Flix): JvmClass = {
@@ -108,6 +112,13 @@ object GenNamespaces {
     constructor.visitInsn(RETURN)
     constructor.visitMaxs(65535, 65535)
     constructor.visitEnd()
+  }
+
+  /**
+    * Returns the namespace class for the given namespace `ns`.
+    */
+  private def genBytecode(ns: NamespaceInfo)(implicit root: Root, flix: Flix): Array[Byte] = {
+    List(0xCA.toByte, 0xFE.toByte, 0xBA.toByte, 0xBE.toByte).toArray
   }
 
 }
