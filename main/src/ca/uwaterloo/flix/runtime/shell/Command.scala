@@ -74,24 +74,24 @@ object Command {
   case object Unwatch extends Command
 
   /**
-    * Browse the definitions in the optional namespace `ns`.
+    * Browses the definitions in the optional namespace `ns`.
     */
   case class Browse(ns: Option[String]) extends Command
 
   /**
-    * Evaluate the expression `s`.
+    * Evaluates the expression `s`.
     */
-  case class Eval(s: String) extends Command
+  case class Eval(exp: String) extends Command
 
   /**
-    * Add the path `p` to the set of source paths.
+    * Add the `path` to the set of source paths.
     */
-  case class Load(p: String) extends Command
+  case class Load(path: String) extends Command
 
   /**
-    * Remove the path `p` from the set of source paths.
+    * Remove the `path` from the set of source paths.
     */
-  case class Unload(s: String) extends Command
+  case class Unload(path: String) extends Command
 
   /**
     * Searches for a symbol with name `needle`.
@@ -107,6 +107,11 @@ object Command {
     * Shows the rows in the lattice `fqn` that matches the given `needle`.
     */
   case class ShowLat(fqn: String, needle: Option[String]) extends Command
+
+  /**
+    * Shows the type of the given expression `exp`.
+    */
+  case class ShowType(exp: String) extends Command
 
   /**
     * Unknown command.
@@ -252,6 +257,18 @@ object Command {
         return Command.ShowLat(split(0), None)
       else
         return Command.ShowLat(split(0), Some(split(1)))
+    }
+
+    //
+    // ShowType
+    //
+    if (input.startsWith(":type")) {
+      val exp = input.substring(":type".length).trim
+      return Command.ShowType(exp)
+    }
+    if (input.startsWith(":t")) {
+      val exp = input.substring(":t".length).trim
+      return Command.ShowType(exp)
     }
 
     //

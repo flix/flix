@@ -171,6 +171,9 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
 
     case Command.ShowLat(fqn, needle) => execShowLat(fqn, needle)
 
+    case Command.ShowType(exp) =>
+      execShowType(exp)
+
     case Command.Watch =>
       // Check if the watcher is already initialized.
       if (watcher != null)
@@ -409,6 +412,7 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
       flix.addPath(path)
     }
     if (expression != null) {
+      // TODO: Refactor
       flix.addNamedExp(Symbol.mkDefnSym("$1"), expression)
     }
 
@@ -493,6 +497,20 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
         }
         ascii.write(System.out)
     }
+  }
+
+  /**
+    * Shows the type of the given expression `exp`.
+    */
+  private def execShowType(exp: String): Unit = {
+    val sym = Symbol.mkDefnSym("$1")
+    expression = exp
+    execReload()
+    val tpe = root.defs(sym).tpe
+
+    val vt = new VirtualTerminal
+    vt << Cyan(tpe.toString) << NewLine
+    Console.print(vt.fmt)
   }
 
   /**
