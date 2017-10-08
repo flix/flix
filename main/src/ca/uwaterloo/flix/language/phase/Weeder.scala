@@ -39,10 +39,15 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     */
   def run(program: ParsedAst.Program)(implicit flix: Flix): Validation[WeededAst.Program, WeederError] = {
     val b = System.nanoTime()
-    @@(program.roots map weed) map {
-      case roots =>
+    val roots = @@(program.roots map weed)
+    val named = @@(program.named.map {
+      case (sym, exp) => Expressions.weed(exp).map(e => sym -> e)
+    })
+
+    @@(roots, named) map {
+      case (rs, ne) =>
         val e = System.nanoTime() - b
-        WeededAst.Program(roots, program.hooks, flix.getReachableRoots, program.time.copy(weeder = e))
+        WeededAst.Program(rs, program.hooks, ne.toMap, flix.getReachableRoots, program.time.copy(weeder = e))
     }
   }
 

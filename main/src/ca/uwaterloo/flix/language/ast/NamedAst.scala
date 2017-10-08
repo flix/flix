@@ -33,6 +33,7 @@ object NamedAst {
                      tables: Map[Name.NName, Map[String, NamedAst.Table]],
                      constraints: Map[Name.NName, List[NamedAst.Constraint]],
                      hooks: Map[Symbol.DefnSym, Ast.Hook],
+                     named: Map[Symbol.DefnSym, NamedAst.Expression],
                      properties: Map[Name.NName, List[NamedAst.Property]],
                      reachable: Set[Symbol.DefnSym],
                      time: Time) extends NamedAst

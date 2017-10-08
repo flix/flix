@@ -20,6 +20,7 @@ import java.nio.file._
 import java.util.concurrent.Executors
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.util.vt.{TerminalContext, VirtualTerminal}
 import ca.uwaterloo.flix.util._
@@ -69,6 +70,11 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
     * The current watcher (if any).
     */
   private var watcher: WatcherThread = _
+
+  /**
+    * The current expression (if any).
+    */
+  private var expression: String = _
 
   /**
     * A common super-type for input commands.
@@ -132,8 +138,6 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
       */
     case object Quit extends Command
 
-    // TODO: Add command to compute the fixpoint.
-
     /**
       * Searches for a symbol with the given name.
       */
@@ -148,6 +152,11 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
       * Shows the rows in the given lattice `fqn` that matches the given `needle`.
       */
     case class ShowLat(fqn: String, needle: Option[String]) extends Command
+
+    /**
+      * Computes the fixed point.
+      */
+    case object Solve extends Command
 
     /**
       * Watch loaded paths for changes.
@@ -259,6 +268,10 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
       return Command.Search(needle)
     }
 
+    if (line == ":solve") {
+      return Command.Solve
+    }
+
     // TODO: Refactor
     line match {
       case ":help" | ":h" | ":?" => Command.Help
@@ -281,7 +294,10 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
       Thread.currentThread().interrupt()
 
     case Command.Eval(s) =>
-      Console.println(s"Eval not implemented yet: ${s}")
+      expression = s.trim
+      execReload()
+      execSolve()
+      Console.println(model.evalToString("$1"))
 
     case Command.ListRel => execListRel()
 
@@ -291,14 +307,18 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
 
     case Command.Unload(s) => execUnload(s)
 
-    case Command.Reload =>
-      val future = executorService.submit(new CompilerThread())
-      future.get()
+    case Command.Reload => execReload()
 
     case Command.Browse(nsOpt) => execBrowse(nsOpt)
+
     case Command.Help => execHelp()
+
     case Command.Search(s) => execSearch(s)
+
+    case Command.Solve => execSolve()
+
     case Command.ShowRel(fqn, needle) => execShowRel(fqn, needle)
+
     case Command.ShowLat(fqn, needle) => execShowLat(fqn, needle)
 
     case Command.Watch =>
@@ -438,6 +458,8 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
     Console.println("  :unload             <path>           unloads the given path.")
     Console.println("  :rel                [fqn]            shows all relations or the content of one relation.")
     Console.println("  :lat                [fqn]            shows all lattices or the content of one lattice.")
+    Console.println("  :search             name             search for a symbol with the given name.")
+    Console.println("  :solve                               computes the least fixed point.")
     Console.println("  :quit      :q                        shutdown.")
     Console.println("  :watch     :w                        watch loaded paths for changes.")
     Console.println("  :unwatch   :w                        unwatch loaded paths for changes.")
@@ -536,8 +558,12 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
     for (path <- currentPaths) {
       flix.addPath(path)
     }
+    if (expression != null) {
+      flix.addNamedExp(Symbol.mkDefnSym("$1"), expression)
+    }
 
     // Check if a main function was given.
+    // TODO: Deprecated.
     if (main.nonEmpty) {
       val name = main.get
       flix.addReachableRoot(name)
@@ -577,6 +603,14 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
     vt << Dedent << NewLine
     // Print the virtual terminal to the console.
     Console.print(vt.fmt)
+  }
+
+  /**
+    * Computes the least fixed point.
+    */
+  private def execSolve(): Unit = {
+    val future = executorService.submit(new SolverThread())
+    future.get()
   }
 
   /**
@@ -674,9 +708,9 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
   }
 
   /**
-    * A thread to run the Flix compiler in.
+    * A thread to run the fixed point solver in.
     */
-  class CompilerThread() extends Runnable {
+  class SolverThread() extends Runnable {
     override def run(): Unit = {
       // compute the least model.
       val timer = new Timer(flix.solve())
@@ -732,7 +766,9 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
           lastChanged = currentTime
           // Allow a short delay before running the compiler.
           Thread.sleep(50)
-          executorService.submit(new CompilerThread())
+          executorService.submit(new Runnable {
+            def run(): Unit = execReload()
+          })
         }
 
         // Reset the watch key.

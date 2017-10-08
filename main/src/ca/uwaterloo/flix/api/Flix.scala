@@ -51,6 +51,11 @@ class Flix {
   private val paths = ListBuffer.empty[Path]
 
   /**
+    * A map of named expressions.
+    */
+  private val named = mutable.Map.empty[Symbol.DefnSym, String]
+
+  /**
     * A set of reachable root definitions.
     */
   private val reachableRoots = mutable.Set.empty[Symbol.DefnSym]
@@ -96,7 +101,7 @@ class Flix {
   /**
     * The current Flix options.
     */
-  var options = Options.Default
+  var options: Options = Options.Default
 
   /**
     * The execution context for `this` Flix instance.
@@ -143,6 +148,13 @@ class Flix {
 
     paths += p
     this
+  }
+
+  /**
+    * Adds the given named expression.
+    */
+  def addNamedExp(sym: Symbol.DefnSym, exp: String): scala.Unit = {
+    named += (sym -> exp)
   }
 
   /**
@@ -210,7 +222,7 @@ class Flix {
         Safety
 
     // Apply the pipeline to the parsed AST.
-    pipeline.run((getInputs, hooks.toMap))(this)
+    pipeline.run((getInputs, hooks.toMap, named.toMap))(this)
   }
 
   /**

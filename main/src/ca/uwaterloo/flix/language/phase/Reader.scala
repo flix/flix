@@ -29,17 +29,17 @@ import ca.uwaterloo.flix.util.Validation._
 /**
   * A phase to read inputs into memory.
   */
-object Reader extends Phase[(List[Input], Map[Symbol.DefnSym, Ast.Hook]), (List[Source], Long, Map[Symbol.DefnSym, Ast.Hook])] {
+object Reader extends Phase[(List[Input], Map[Symbol.DefnSym, Ast.Hook], Map[Symbol.DefnSym, String]), (List[Source], Long, Map[Symbol.DefnSym, Ast.Hook], Map[Symbol.DefnSym, String])] {
 
   /**
     * Reads the given source inputs into memory.
     */
-  def run(arg: (List[Input], Map[Symbol.DefnSym, Ast.Hook]))(implicit flix: Flix): Validation[(List[Source], Long, Map[Symbol.DefnSym, Ast.Hook]), CompilationError] = {
+  def run(arg: (List[Input], Map[Symbol.DefnSym, Ast.Hook], Map[Symbol.DefnSym, String]))(implicit flix: Flix): Validation[(List[Source], Long, Map[Symbol.DefnSym, Ast.Hook], Map[Symbol.DefnSym, String]), CompilationError] = {
     // Measure time
     val t = System.nanoTime()
 
     // Pattern match the argument into the inputs and the hooks.
-    val (input, hooks) = arg
+    val (input, hooks, named) = arg
 
     // Compute the sources.
     val sources = input map {
@@ -75,7 +75,7 @@ object Reader extends Phase[(List[Input], Map[Symbol.DefnSym, Ast.Hook]), (List[
     val e = System.nanoTime() - t
 
     // Return a triple of inputs, elapsed time, and hooks.
-    (sources, e, hooks).toSuccess
+    (sources, e, hooks, named).toSuccess
   }
 
 }

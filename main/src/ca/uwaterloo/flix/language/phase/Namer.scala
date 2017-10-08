@@ -51,6 +51,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
       indexes = Map.empty,
       tables = Map.empty,
       constraints = Map.empty,
+      named = Map.empty,
       hooks = program.hooks,
       properties = Map.empty,
       reachable = program.reachable,
@@ -65,12 +66,17 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
       case (pacc, decl) => Declarations.namer(decl, Name.RootNS, pacc)
     }
 
+    // fold over the named expressions.
+    val named = @@(program.named.map {
+      case (sym, exp) => Expressions.namer(exp, Map.empty, Map.empty).map(e => sym -> e)
+    })
+
     // compute elapsed time.
     val e = System.nanoTime() - b
 
-    result map {
+    @@(result, named) map {
       // update elapsed time.
-      case p => p.copy(time = p.time.copy(namer = e))
+      case (p, ne) => p.copy(named = ne.toMap, time = p.time.copy(namer = e))
     }
   }
 
