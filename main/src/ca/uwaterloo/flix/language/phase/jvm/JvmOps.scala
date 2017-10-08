@@ -334,7 +334,7 @@ object JvmOps {
   }
 
   /**
-    * Returns the name of the field corresponding to `ns` on context object
+    * Returns the field name of a namespace as used in the Context class.
     *
     * For example:
     *
@@ -343,14 +343,14 @@ object JvmOps {
     * Foo.Bar     =>  Foo$Bar$Ns
     * Foo.Bar.Baz =>  Foo$Bar$Baz$Ns
     */
-  def getContextFieldName(ns: NamespaceInfo): String =
+  def getNamespaceFieldNameInContext(ns: NamespaceInfo): String =
     if (ns.isRoot)
       "ns$Root$"
     else
       "ns$" + ns.ns.mkString("$")
 
   /**
-    * Returns the name of the field corresponding to `sym` on context object
+    * Returns the field name of a defn as used in a namespace class.
     *
     * For example:
     *
@@ -359,7 +359,8 @@ object JvmOps {
     * Foo.Bar.X()     =>  Foo$Bar$Ns$X
     * Foo.Bar.Baz.Y() =>  Foo$Bar$Baz$Ns$X
     */
-  def getNamespaceFieldName(sym: Symbol.DefnSym): String = sym.suffix + '$' + sym.prefix.mkString("$")
+  // TODO: We should move "suffix" and "prefix" into helpers inside JvmOps.
+  def getDefFieldNameInNamespace(sym: Symbol.DefnSym): String = sym.suffix + '$' + sym.prefix.mkString("$")
 
   /**
     * Returns the erased JvmType of the given Flix type `tpe`.
@@ -377,6 +378,30 @@ object JvmOps {
     case Type.Int64 => JvmType.PrimLong
     case _ => JvmType.Object
   }
+
+  /**
+    * Performs name mangling on the given string `s` to avoid issues with special characters.
+    */
+  def mangle(s: String): String = s.
+    replace("+", "$plus").
+    replace("-", "$minus").
+    replace("*", "$times").
+    replace("/", "$divide").
+    replace("%", "$modulo").
+    replace("**", "$exponentiate").
+    replace("<", "$lt").
+    replace("<=", "$le").
+    replace(">", "$gt").
+    replace(">=", "$ge").
+    replace("==", "$eq").
+    replace("!=", "$neq").
+    replace("&&", "$land").
+    replace("||", "$lor").
+    replace("&", "$band").
+    replace("|", "$bor").
+    replace("^", "$bxor").
+    replace("<<", "$lshift").
+    replace(">>", "$rshift")
 
   /**
     * Returns stringified name of the given JvmType `tpe`.

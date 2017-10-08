@@ -60,7 +60,7 @@ case class JvmName(pkg: List[String], name: String) {
   /**
     * Returns the internal name of `this` Java name.
     */
-  def toInternalName: String = pkg.mkString("/") + "/" + name
+  def toInternalName: String = if (pkg.isEmpty) name else pkg.mkString("/") + "/" + name
 
   /**
     * Returns the relative path of `this` Java name.

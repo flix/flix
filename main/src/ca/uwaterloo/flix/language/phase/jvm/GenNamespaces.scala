@@ -62,7 +62,7 @@ object GenNamespaces {
       val jvmType = JvmOps.getFunctionDefinitionClassType(sym)
 
       // Name of the field on namespace
-      val fieldName = JvmOps.getNamespaceFieldName(sym)
+      val fieldName = JvmOps.getDefFieldNameInNamespace(sym)
 
       // Adding the field for functional interface for `tpe`
       AsmOps.compileField(visitor, fieldName, jvmType.toDescriptor, isStatic = false, isPrivate = false)
@@ -100,7 +100,7 @@ object GenNamespaces {
       val jvmType = JvmOps.getFunctionDefinitionClassType(sym)
 
       // Name of the field on namespace
-      val fieldName = JvmOps.getNamespaceFieldName(sym)
+      val fieldName = JvmOps.getDefFieldNameInNamespace(sym)
 
       // Instantiating a new instance of the class
       constructor.visitVarInsn(ALOAD, 0)

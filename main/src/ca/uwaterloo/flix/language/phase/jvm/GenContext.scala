@@ -46,7 +46,7 @@ object GenContext {
       val namespaceRef = JvmOps.getNamespaceClassType(namespace)
 
       // Name of the field for the `namespace` on the Context object
-      val fieldName = JvmOps.getContextFieldName(namespace)
+      val fieldName = JvmOps.getNamespaceFieldNameInContext(namespace)
 
       // Descriptor
       val desc = namespaceRef.toDescriptor
@@ -82,7 +82,7 @@ object GenContext {
       val namespaceRef = JvmOps.getNamespaceClassType(namespace)
 
       // Name of the field for the `namespace` on the Context object
-      val fieldName = JvmOps.getContextFieldName(namespace)
+      val fieldName = JvmOps.getNamespaceFieldNameInContext(namespace)
 
       // Setting the field for `namespace`
       constructor.visitVarInsn(ALOAD, 0)
