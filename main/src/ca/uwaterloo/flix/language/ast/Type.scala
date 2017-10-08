@@ -412,6 +412,72 @@ object Type {
     */
   implicit object ShowInstance extends Show[Type] {
     def show(a: Type): String = {
+      /**
+        * Local visitor.
+        */
+      def visit(tpe: Type, m: Map[Int, String]): String = {
+        // Retrieve the type constructor and type arguments.
+        val base = tpe.typeConstructor
+        val args = tpe.typeArguments
+
+        base match {
+          //
+          // Type Variable.
+          //
+          case Type.Var(id, kind) => m(id)
+
+          //
+          // Primitive Types.
+          //
+          case Type.Unit => "Unit"
+          case Type.Bool => "Bool"
+          case Type.Char => "Char"
+          case Type.Float32 => "Float32"
+          case Type.Float64 => "Float64"
+          case Type.Int8 => "Int8"
+          case Type.Int16 => "Int16"
+          case Type.Int32 => "Int32"
+          case Type.Int64 => "Int64"
+          case Type.BigInt => "BigInt"
+          case Type.Str => "String"
+          case Type.Native => "Native"
+          case Type.Ref => "Ref"
+
+          //
+          // Arrow.
+          //
+          case Type.Arrow(l) =>
+            val argumentTypes = args.init
+            val resultType = args.last
+            if (argumentTypes.length == 1) {
+              visit(argumentTypes.head, m) + " -> " + visit(resultType, m)
+            } else {
+              "(" + argumentTypes.map(visit(_, m)).mkString(", ") + ") -> " + visit(resultType, m)
+            }
+
+          //
+          // Tuple.
+          //
+          case Type.Tuple(l) =>
+            "(" + args.map(visit(_, m)).mkString(", ") + ")"
+
+          //
+          // Enum.
+          //
+          case Type.Enum(sym, kind) =>
+            if (args.isEmpty) {
+              sym.toString
+            } else {
+              sym.toString + "[" + args.map(visit(_, m)).mkString(", ") + "]"
+            }
+
+          //
+          // Type Application.
+          //
+          case Type.Apply(tpe1, tpe2) => visit(tpe1, m) + "[" + visit(tpe2, m) + "]"
+        }
+      }
+
       //
       // Compute a mapping from type variables to human readable variable names.
       //
@@ -422,66 +488,7 @@ object Type {
         case (tvar, index) => tvar.id -> (index + 'a').toChar.toString
       }.toMap
 
-      // Retrieve the type constructor and type arguments.
-      val base = a.typeConstructor
-      val args = a.typeArguments
-
-      base match {
-        //
-        // Type Variable.
-        //
-        case Type.Var(id, kind) => var2str(id)
-
-        //
-        // Primitive Types.
-        //
-        case Type.Unit => "Unit"
-        case Type.Bool => "Bool"
-        case Type.Char => "Char"
-        case Type.Float32 => "Float32"
-        case Type.Float64 => "Float64"
-        case Type.Int8 => "Int8"
-        case Type.Int16 => "Int16"
-        case Type.Int32 => "Int32"
-        case Type.Int64 => "Int64"
-        case Type.BigInt => "BigInt"
-        case Type.Str => "String"
-        case Type.Native => "Native"
-        case Type.Ref => "Ref"
-
-        //
-        // Arrow.
-        //
-        case Type.Arrow(l) =>
-          val argumentTypes = args.init
-          val resultType = args.last
-          if (argumentTypes.length == 1) {
-            show(argumentTypes.head) + " -> " + show(resultType)
-          } else {
-            "(" + argumentTypes.map(show).mkString(", ") + ") -> " + show(resultType)
-          }
-
-        //
-        // Tuple.
-        //
-        case Type.Tuple(l) =>
-          "(" + args.map(show).mkString(", ") + ")"
-
-        //
-        // Enum.
-        //
-        case Type.Enum(sym, kind) =>
-          if (args.isEmpty) {
-            sym.toString
-          } else {
-            sym.toString + "[" + args.map(show).mkString(", ") + "]"
-          }
-
-        //
-        // Type Application.
-        //
-        case Type.Apply(tpe1, tpe2) => show(tpe1) + "[" + show(tpe2) + "]"
-      }
+      visit(a, var2str)
     }
   }
 
