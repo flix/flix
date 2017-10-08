@@ -92,7 +92,7 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
       Console.print(prompt)
       Console.flush()
       val line = scala.io.StdIn.readLine()
-      val cmd = parse(line)
+      val cmd = Command.parse(line)
       try {
         execute(cmd)
       } catch {
@@ -103,87 +103,6 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
     }
   }
 
-  /**
-    * Parses the string `line` into a command.
-    */
-  private def parse(line: String): Command = {
-    if (line == null)
-      return Command.Eof
-
-    if (line == "")
-      return Command.Nop
-
-    if (line.startsWith(":browse")) {
-      if (line == ":browse") {
-        return Command.Browse(None)
-      }
-      val ns = line.substring(":browse".length).trim
-      return Command.Browse(Some(ns))
-    }
-
-    if (line == ":r" || line == ":reload") {
-      return Command.Reload
-    }
-
-    if (line.startsWith(":rel")) {
-      // Check if any arguments were passed.
-      val args = line.substring(":rel".length).trim
-      if (args.isEmpty) {
-        return Command.ListRel
-      }
-
-      // Split the arguments into fqn and needle.
-      val split = args.split(" ")
-      if (args.length == 1)
-        return Command.ShowRel(split(0), None)
-      else
-        return Command.ShowRel(split(0), Some(split(1)))
-    }
-
-    if (line.startsWith(":lat")) {
-      // Check if any arguments were passed.
-      val args = line.substring(":lat".length).trim
-      if (args.isEmpty) {
-        return Command.ListLat
-      }
-
-      // Split the arguments into fqn and needle.
-      val split = args.split(" ")
-      if (args.length == 1)
-        return Command.ShowLat(split(0), None)
-      else
-        return Command.ShowLat(split(0), Some(split(1)))
-    }
-
-    if (line.startsWith(":load")) {
-      val path = line.substring(":load".length).trim
-      return Command.Load(path)
-    }
-
-    if (line.startsWith(":unload")) {
-      val path = line.substring(":unload".length).trim
-      return Command.Unload(path)
-    }
-
-    if (line.startsWith(":search")) {
-      val needle = line.substring(":search".length).trim
-      return Command.Search(needle)
-    }
-
-    if (line == ":solve") {
-      return Command.Solve
-    }
-
-    // TODO: Refactor
-    line match {
-      case ":help" | ":h" | ":?" => Command.Help
-      case ":quit" | ":q" => Command.Quit
-      case ":watch" | ":w" => Command.Watch
-      case ":unwatch" => Command.Unwatch
-      case s if s.startsWith(":") => Command.Unknown(line)
-      case s => Command.Eval(s)
-    }
-  }
 
   /**
     * Executes the given command `cmd`

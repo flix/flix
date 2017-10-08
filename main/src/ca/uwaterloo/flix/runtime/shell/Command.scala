@@ -113,4 +113,157 @@ object Command {
     */
   case class Unknown(s: String) extends Command
 
+  /**
+    * Parses the given string `line` into a command.
+    */
+  def parse(line: String): Command = {
+    //
+    // Eof
+    //
+    if (line == null)
+      return Command.Eof
+
+    //
+    // Nop
+    //
+    if (line.trim == "")
+      return Command.Nop
+
+    //
+    // Help
+    //
+    if (line == ":help" || line == ":h" || line == ":?")
+      return Command.Help
+
+    //
+    // ListRel
+    //
+    if (line == ":rel")
+      return Command.ListRel
+
+    //
+    // ListLat
+    //
+    if (line == ":lat")
+      return Command.ListLat
+
+    //
+    // Reload
+    //
+    if (line == ":r" || line == ":reload")
+      return Command.Reload
+
+    //
+    // Quit
+    //
+    if (line == ":quit" || line == ":q")
+      return Command.Quit
+
+    //
+    // Solve
+    //
+    if (line == ":solve")
+      return Command.Solve
+
+    //
+    // Watch
+    //
+    if (line == ":watch" || line == ":w")
+      return Command.Watch
+
+    //
+    // Unwatch
+    //
+    if (line == ":unwatch")
+      return Command.Unwatch
+
+    //
+    // Browse
+    //
+    if (line.startsWith(":browse")) {
+      if (line == ":browse") {
+        return Command.Browse(None)
+      }
+      val ns = line.substring(":browse".length).trim
+      return Command.Browse(Some(ns))
+    }
+
+    //
+    // Load
+    //
+    if (line.startsWith(":load")) {
+      val path = line.substring(":load".length).trim
+      if (path.isEmpty) {
+        Console.println("Missing argument for command :load.")
+        return Command.Nop
+      }
+      return Command.Load(path)
+    }
+
+    //
+    // Unload
+    //
+    if (line.startsWith(":unload")) {
+      val path = line.substring(":unload".length).trim
+      if (path.isEmpty) {
+        Console.println("Missing argument for command :unload.")
+        return Command.Nop
+      }
+      return Command.Unload(path)
+    }
+
+    //
+    // Search
+    //
+    if (line.startsWith(":search")) {
+      val needle = line.substring(":search".length).trim
+      if (needle.isEmpty) {
+        Console.println("Missing argument for command :search.")
+        return Command.Nop
+      }
+      return Command.Search(needle)
+    }
+
+    //
+    // ShowRel
+    //
+    if (line.startsWith(":rel")) {
+      // Check if any arguments were passed.
+      val args = line.substring(":rel".length).trim
+
+      // Split the arguments into fqn and needle.
+      val split = args.split(" ")
+      if (args.length == 1)
+        return Command.ShowRel(split(0), None)
+      else
+        return Command.ShowRel(split(0), Some(split(1)))
+    }
+
+    //
+    // ShowLat
+    //
+    if (line.startsWith(":lat")) {
+      // Check if any arguments were passed.
+      val args = line.substring(":lat".length).trim
+
+      // Split the arguments into fqn and needle.
+      val split = args.split(" ")
+      if (args.length == 1)
+        return Command.ShowLat(split(0), None)
+      else
+        return Command.ShowLat(split(0), Some(split(1)))
+    }
+
+    //
+    // Unknown
+    //
+    if (line.startsWith(":"))
+      return Command.Unknown(line)
+
+    //
+    // Eval
+    //
+    Command.Eval(line)
+  }
+
 }
