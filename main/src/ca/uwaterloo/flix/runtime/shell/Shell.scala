@@ -200,6 +200,7 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
 
     case Command.Unwatch =>
       watcher.interrupt()
+      watcher = null
       Console.println("Unwatched loaded paths.")
 
     case Command.Unknown(s) => Console.println(s"Unknown command '$s'. Try `help'.")
@@ -210,12 +211,12 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
     */
   private def printWelcomeBanner(): Unit = {
     val banner =
-      """     __  _  _
-        |    / _|| |(_)            Welcome to Flix __VERSION__
-        |   | |_ | | _ __  __
-        |   |  _|| || |\ \/ /      Enter a command and hit return.
-        |   | |  | || | >  <       Type ':help' for more information.
-        |   |_|  |_||_|/_/\_\      Type ':quit' or press ctrl+d to exit.
+      """     __   _   _
+        |    / _| | | (_)             Welcome to Flix __VERSION__
+        |   | |_  | |  _  __  __
+        |   |  _| | | | | \ \/ /      Enter an expression or command, and hit return.
+        |   | |   | | | |  >  <       Type ':help' for more information.
+        |   |_|   |_| |_| /_/\_\      Type ':quit' or press 'ctrl + d' to exit.
       """.stripMargin
 
     Console.println(banner.replaceAll("__VERSION__", Version.CurrentVersion.toString))
@@ -327,20 +328,25 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
     * Executes the help command.
     */
   private def execHelp(): Unit = {
-    // TODO: Updte
-    Console.println("  Command    Alias    Arguments        Description")
+    Console.println("  Command       Arguments         Purpose")
     Console.println()
-    Console.println("  :reload    :r                        reload and compile the loaded paths.")
-    Console.println("  :browse             <ns>             shows the definitions in the given namespace.")
-    Console.println("  :load               <path>           loads the given path.")
-    Console.println("  :unload             <path>           unloads the given path.")
-    Console.println("  :rel                [fqn]            shows all relations or the content of one relation.")
-    Console.println("  :lat                [fqn]            shows all lattices or the content of one lattice.")
-    Console.println("  :search             name             search for a symbol with the given name.")
-    Console.println("  :solve                               computes the least fixed point.")
-    Console.println("  :quit      :q                        shutdown.")
-    Console.println("  :watch     :w                        watch loaded paths for changes.")
-    Console.println("  :unwatch   :w                        unwatch loaded paths for changes.")
+    Console.println("  <expr>                          Evaluates the expression <expr>.")
+    Console.println("  :type :t      <expr>            Shows the type of <expr>.")
+    Console.println("  :kind :k      <expr>            Shows the kind of <expr>.")
+    Console.println("  :browse       <ns>              Shows all entities in <ns>.")
+    Console.println("  :doc          <fqn>             Shows documentation for <fqn>.")
+    Console.println("  :search       <needle>          Shows all entities that match <needle>.")
+    Console.println("  :load         <path>            Adds <path> as a source file.")
+    Console.println("  :unload       <path>            Removes <path> as a source file.")
+    Console.println("  :reload :r                      Recompiles every source file.")
+    Console.println("  :solve                          Computes the least fixed point.")
+    Console.println("  :rel          <fqn> [needle]    Shows all rows in the relation <fqn> that match <needle>.")
+    Console.println("  :lat          <fqn> [needle]    Shows all rows in the lattice <fqn> that match <needle>.")
+    Console.println("  :watch :w                       Watches all source files for changes.")
+    Console.println("  :unwatch                        Unwatches all source files for changes.")
+    Console.println("  :quit :q                        Terminates the Flix shell.")
+    Console.println("  :help :h :?                     Shows this helpful information.")
+    Console.println()
   }
 
   /**
