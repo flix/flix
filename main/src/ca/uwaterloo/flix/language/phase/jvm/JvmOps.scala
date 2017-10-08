@@ -341,7 +341,7 @@ object JvmOps {
     * Foo.Bar     =>  Foo$Bar$Ns
     * Foo.Bar.Baz =>  Foo$Bar$Baz$Ns
     */
-  def getContextFieldName(ns: NamespaceInfo): String = ns.ns.mkString("$") + "$Ns"
+  def getContextFieldName(ns: NamespaceInfo): String = "ns$" + ns.ns.mkString("$")
 
   /**
     * Returns the name of the field corresponding to `sym` on context object
@@ -353,7 +353,7 @@ object JvmOps {
     * Foo.Bar.X()     =>  Foo$Bar$Ns$X
     * Foo.Bar.Baz.Y() =>  Foo$Bar$Baz$Ns$X
     */
-  def getNamespaceFieldName(sym: Symbol.DefnSym): String = sym.prefix.mkString("$") + '$' + sym.suffix
+  def getNamespaceFieldName(sym: Symbol.DefnSym): String = sym.suffix + '$' + sym.prefix.mkString("$")
 
   /**
     * Returns the erased JvmType of the given Flix type `tpe`.
