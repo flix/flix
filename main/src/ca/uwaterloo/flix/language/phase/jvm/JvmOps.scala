@@ -79,7 +79,7 @@ object JvmOps {
     *
     * NB: The given type `tpe` must be an arrow type.
     */
-  def getResultType(tpe: Type)(implicit root: Root, flix: Flix): JvmType = {
+  def getResultType(tpe: Type)(implicit root: Root, flix: Flix): Type = {
     // Check that the given type is an arrow type.
     if (!tpe.typeConstructor.isArrow)
       throw InternalCompilerException(s"Unexpected type: '$tpe'.")
@@ -88,8 +88,7 @@ object JvmOps {
     if (tpe.typeArguments.isEmpty)
       throw InternalCompilerException(s"Unexpected type: '$tpe'.")
 
-    // Return result type is the last type argument.
-    getJvmType(tpe.typeArguments.last)
+    tpe.typeArguments.last
   }
 
   /**
@@ -110,7 +109,7 @@ object JvmOps {
       throw InternalCompilerException(s"Unexpected type: '$tpe'.")
 
     // The return type is the last type argument.
-    val returnType = tpe.typeArguments.last
+    val returnType = getResultType(tpe)
 
     // The JVM name is of the form Cont$ErasedType
     val name = "Cont$" + stringify(getErasedType(returnType))
