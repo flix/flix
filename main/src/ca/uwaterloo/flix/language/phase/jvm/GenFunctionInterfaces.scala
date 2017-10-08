@@ -64,22 +64,22 @@ object GenFunctionInterfaces {
     val functionType = JvmOps.getFunctionInterfaceType(tpe)
 
     // Class visitor
-    val visitor = new ClassWriter(0)
+    val visitor = AsmOps.mkClassWriter()
 
-    // Interfaces to be extended
-    val extendedInterfaced = Array(continuationType.name.toInternalName)
+    // The super interface.
+    val superInterface = Array(continuationType.name.toInternalName)
 
     // Class visitor
-    visitor.visit(JvmOps.JavaVersion, ACC_PUBLIC + ACC_ABSTRACT + ACC_INTERFACE, functionType.name.toInternalName, null,
-      JvmName.Object.toInternalName, extendedInterfaced)
+    visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_ABSTRACT + ACC_INTERFACE, functionType.name.toInternalName, null,
+      JvmName.Object.toInternalName, superInterface)
 
     // Adding setters for each argument of the function
-    for((arg, ind) <- args.init.zipWithIndex) {
+    for((arg, index) <- args.init.zipWithIndex) {
       // `JvmType` of `arg`
       val argType = JvmOps.getErasedType(arg)
 
       // `setArg$ind()` method
-      val setArgMethod = visitor.visitMethod(ACC_PUBLIC + ACC_ABSTRACT, s"setArg$ind", AsmOps.getMethodDescriptor(List(argType)), null, null)
+      val setArgMethod = visitor.visitMethod(ACC_PUBLIC + ACC_ABSTRACT, s"setArg$index", AsmOps.getMethodDescriptor(List(argType)), null, null)
       setArgMethod.visitEnd()
     }
 

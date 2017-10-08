@@ -50,7 +50,7 @@ object GenContinuationInterfaces {
   /**
     * Returns the bytecode for the given continuation interface.
     */
-  private def genByteCode(interfaceType: JvmType.Reference, resultType: JvmType): Array[Byte] = {
+  private def genByteCode(interfaceType: JvmType.Reference, resultType: JvmType)(implicit root: Root, flix: Flix): Array[Byte] = {
 
     // Pseudo code to generate:
     //
@@ -73,7 +73,7 @@ object GenContinuationInterfaces {
     val visitor = AsmOps.mkClassWriter()
 
     // Class header
-    visitor.visit(JvmOps.JavaVersion, ACC_PUBLIC + ACC_ABSTRACT + ACC_INTERFACE, interfaceType.name.toInternalName, null,
+    visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_ABSTRACT + ACC_INTERFACE, interfaceType.name.toInternalName, null,
       JvmName.Object.toInternalName, null)
 
     // `getResult()` method

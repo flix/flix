@@ -8,7 +8,7 @@ import org.objectweb.asm.Opcodes._
 object AsmOps {
 
   /**
-    * Returns the JVM target version.
+    * Returns the target JVM version.
     */
   def JavaVersion(implicit flix: Flix): Int = flix.options.target match {
     case JvmTarget.Version16 => V1_6
@@ -31,11 +31,7 @@ object AsmOps {
     */
   def getMethodDescriptor(argumentTypes: List[JvmType], resultType: Option[JvmType] = None): String = {
     // Descriptor of result
-    val resultDescriptor = if(resultType.isDefined) {
-      resultType.get.toDescriptor
-    } else {
-      "V"
-    }
+    val resultDescriptor = resultType.map(_.toDescriptor).getOrElse("V")
 
     // Descriptor of arguments
     val argumentDescriptor = argumentTypes.map(_.toDescriptor).mkString
@@ -69,12 +65,14 @@ object AsmOps {
     * @param isPrivate  if this is set then the field is private
     */
   def compileField(visitor: ClassWriter, name: String, descriptor: String, isStatic: Boolean, isPrivate: Boolean): Unit = {
+    // TODO: Why can the descriptor not be a JvmType?
+    // TODO: isStatic and isPrivate should be ADTs.
     val visibility =
-      if (isPrivate) {
-        ACC_PRIVATE
-      } else {
-        ACC_PUBLIC
-      }
+    if (isPrivate) {
+      ACC_PRIVATE
+    } else {
+      ACC_PUBLIC
+    }
 
     val fieldType =
       if (isStatic) {

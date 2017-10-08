@@ -46,7 +46,6 @@ object GenNamespaces {
     * Returns the namespace class for the given namespace `ns`.
     */
   private def genBytecode(ns: NamespaceInfo)(implicit root: Root, flix: Flix): Array[Byte] = {
-
     // JvmType for namespace
     val namespaceRef = JvmOps.getNamespaceClassType(ns)
 
@@ -54,11 +53,11 @@ object GenNamespaces {
     val visitor = AsmOps.mkClassWriter()
 
     // Class header
-    visitor.visit(JvmOps.JavaVersion, ACC_PUBLIC + ACC_FINAL, namespaceRef.name.toInternalName, null,
+    visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_FINAL, namespaceRef.name.toInternalName, null,
       JvmName.Object.toInternalName, null)
 
     // Adding fields for each function in `ns`
-    for((sym, defn) <- ns.defs) {
+    for ((sym, defn) <- ns.defs) {
       // JvmType of `defn`
       val jvmType = JvmOps.getFunctionDefinitionClassType(sym)
 
@@ -95,7 +94,7 @@ object GenNamespaces {
     constructor.visitMethodInsn(INVOKESPECIAL, JvmName.Object.toInternalName, "<init>", AsmOps.getMethodDescriptor(Nil), false)
 
     // Initializing each field
-    for((sym, defn) <- ns.defs) {
+    for ((sym, defn) <- ns.defs) {
 
       // JvmType for the `sym`
       val jvmType = JvmOps.getFunctionDefinitionClassType(sym)
