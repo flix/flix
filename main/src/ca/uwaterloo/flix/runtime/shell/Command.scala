@@ -109,6 +109,11 @@ object Command {
   case class ShowLat(fqn: String, needle: Option[String]) extends Command
 
   /**
+    * Shows the kind of the given expression `exp`.
+    */
+  case class ShowKind(exp: String) extends Command
+
+  /**
     * Shows the type of the given expression `exp`.
     */
   case class ShowType(exp: String) extends Command
@@ -269,6 +274,18 @@ object Command {
     if (input.startsWith(":t")) {
       val exp = input.substring(":t".length).trim
       return Command.ShowType(exp)
+    }
+
+    //
+    // ShowKind
+    //
+    if (input.startsWith(":kind")) {
+      val exp = input.substring(":kind".length).trim
+      return Command.ShowType(exp)
+    }
+    if (input.startsWith(":k")) {
+      val exp = input.substring(":k".length).trim
+      return Command.ShowKind(exp)
     }
 
     //

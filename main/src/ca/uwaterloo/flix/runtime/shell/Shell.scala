@@ -25,6 +25,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.runtime.Model
 import ca.uwaterloo.flix.util._
 import ca.uwaterloo.flix.util.tc.Show
+import ca.uwaterloo.flix.util.tc.Show._
 import ca.uwaterloo.flix.util.vt.VirtualString._
 import ca.uwaterloo.flix.util.vt.{TerminalContext, VirtualTerminal}
 
@@ -172,6 +173,9 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
 
     case Command.ShowLat(fqn, needle) => execShowLat(fqn, needle)
 
+    case Command.ShowKind(exp) =>
+      execShowKind(exp)
+
     case Command.ShowType(exp) =>
       execShowType(exp)
 
@@ -255,12 +259,12 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
         for (defn <- matchedDefs.sortBy(_.sym.name)) {
           vt << Bold("def ") << Blue(defn.sym.name) << "("
           if (defn.fparams.nonEmpty) {
-            vt << defn.fparams.head.sym.text << ": " << Cyan(defn.fparams.head.tpe.toString)
+            vt << defn.fparams.head.sym.text << ": " << Cyan(defn.fparams.head.tpe.show)
             for (fparam <- defn.fparams.tail) {
-              vt << ", " << fparam.sym.text << ": " << Cyan(fparam.tpe.toString)
+              vt << ", " << fparam.sym.text << ": " << Cyan(fparam.tpe.show)
             }
           }
-          vt << "): " << Cyan(defn.tpe.typeArguments.last.toString) << NewLine
+          vt << "): " << Cyan(defn.tpe.typeArguments.last.show) << NewLine
         }
         vt << Dedent << NewLine
       }
@@ -271,9 +275,9 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
         vt << Bold("Relations:") << Indent << NewLine << NewLine
         for (rel <- matchedRels.sortBy(_.sym.name)) {
           vt << Bold("rel ") << Blue(rel.sym.toString) << "("
-          vt << rel.attributes.head.name << ": " << Cyan(rel.attributes.head.tpe.toString)
+          vt << rel.attributes.head.name << ": " << Cyan(rel.attributes.head.tpe.show)
           for (attr <- rel.attributes.tail) {
-            vt << ", " << attr.name << ": " << Cyan(attr.tpe.toString)
+            vt << ", " << attr.name << ": " << Cyan(attr.tpe.show)
           }
           vt << ")" << NewLine
         }
@@ -286,9 +290,9 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
         vt << Bold("Lattices:") << Indent << NewLine << NewLine
         for (lat <- matchedLats.sortBy(_.sym.name)) {
           vt << Bold("lat ") << Blue(lat.sym.toString) << "("
-          vt << lat.attributes.head.name << ": " << Cyan(lat.attributes.head.tpe.toString)
+          vt << lat.attributes.head.name << ": " << Cyan(lat.attributes.head.tpe.show)
           for (attr <- lat.attributes.tail) {
-            vt << ", " << attr.name << ": " << Cyan(attr.tpe.toString)
+            vt << ", " << attr.name << ": " << Cyan(attr.tpe.show)
           }
           vt << ")" << NewLine
         }
@@ -331,10 +335,10 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
       table match {
         case Table.Relation(doc, sym, attributes, loc) =>
           vt << Blue(sym.name) << "("
-          vt << attributes.head.name << ": " << Cyan(attributes.head.tpe.toString)
+          vt << attributes.head.name << ": " << Cyan(attributes.head.tpe.show)
           for (attribute <- attributes.tail) {
             vt << ", "
-            vt << attribute.name << ": " << Cyan(attribute.tpe.toString)
+            vt << attribute.name << ": " << Cyan(attribute.tpe.show)
           }
           vt << ")" << NewLine
         case Table.Lattice(doc, sym, keys, value, loc) => // nop
@@ -361,10 +365,10 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
         case Table.Lattice(doc, sym, keys, value, loc) =>
           val attributes = keys ::: value :: Nil
           vt << Blue(sym.name) << "("
-          vt << attributes.head.name << ": " << Cyan(attributes.head.tpe.toString)
+          vt << attributes.head.name << ": " << Cyan(attributes.head.tpe.show)
           for (attribute <- attributes.tail) {
             vt << ", "
-            vt << attribute.name << ": " << Cyan(attribute.tpe.toString)
+            vt << attribute.name << ": " << Cyan(attribute.tpe.show)
           }
           vt << ")" << NewLine
       }
@@ -446,12 +450,12 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
       if (sym.name.toLowerCase().contains(needle)) {
         vt << Bold("def ") << Blue(defn.sym.name) << "("
         if (defn.fparams.nonEmpty) {
-          vt << defn.fparams.head.sym.text << ": " << Cyan(defn.fparams.head.tpe.toString)
+          vt << defn.fparams.head.sym.text << ": " << Cyan(defn.fparams.head.tpe.show)
           for (fparam <- defn.fparams.tail) {
-            vt << ", " << fparam.sym.text << ": " << Cyan(fparam.tpe.toString)
+            vt << ", " << fparam.sym.text << ": " << Cyan(fparam.tpe.show)
           }
         }
-        vt << "): " << Cyan(defn.tpe.typeArguments.last.toString) << NewLine
+        vt << "): " << Cyan(defn.tpe.typeArguments.last.show) << NewLine
       }
     }
 
@@ -501,6 +505,20 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
   }
 
   /**
+    * Shows the kind of the given expression `exp`.
+    */
+  private def execShowKind(exp: String)(implicit s: Show[Type]): Unit = {
+    val sym = Symbol.mkDefnSym("$1")
+    expression = exp
+    execReload()
+    val kind = root.defs(sym).tpe.kind
+
+    val vt = new VirtualTerminal
+    vt << Magenta(kind.toString) << NewLine
+    Console.print(vt.fmt)
+  }
+
+  /**
     * Shows the type of the given expression `exp`.
     */
   private def execShowType(exp: String)(implicit s: Show[Type]): Unit = {
@@ -510,7 +528,7 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
     val tpe = root.defs(sym).tpe.typeArguments.last
 
     val vt = new VirtualTerminal
-    vt << Cyan(s.show(tpe)) << NewLine
+    vt << Cyan(tpe.show) << NewLine
     Console.print(vt.fmt)
   }
 

@@ -295,19 +295,19 @@ object Type {
   }
 
   /**
-    * A type constructor that represents tuples of the given `length`.
-    */
-  case class Tuple(length: Int) extends Type {
-    def kind: Kind = Kind.Arrow((0 until length).map(_ => Kind.Star).toList, Kind.Star)
-  }
-
-  /**
     * A type constructor that represents enums.
     *
     * @param sym  the symbol of the enum.
     * @param kind the kind of the enum.
     */
   case class Enum(sym: Symbol.EnumSym, kind: Kind) extends Type
+
+  /**
+    * A type constructor that represents tuples of the given `length`.
+    */
+  case class Tuple(length: Int) extends Type {
+    def kind: Kind = Kind.Arrow((0 until length).map(_ => Kind.Star).toList, Kind.Star)
+  }
 
   /**
     * A type expression that a type application tpe1[tpe2].
@@ -412,16 +412,46 @@ object Type {
     */
   implicit object ShowInstance extends Show[Type] {
     def show(a: Type): String = {
+      //
       // Compute a mapping from type variables to human readable variable names.
+      //
+      // E.g. the type variable 8192 might be mapped to 'a'.
+      //  and the type variable 8193 might be mapped to 'b'.
+      //
       val var2str = a.typeVars.toList.sortBy(_.id).zipWithIndex.map {
         case (tvar, index) => tvar.id -> (index + 'a').toChar.toString
       }.toMap
 
+      // Retrieve the type constructor and type arguments.
       val base = a.typeConstructor
       val args = a.typeArguments
 
       base match {
+        //
+        // Type Variable.
+        //
         case Type.Var(id, kind) => var2str(id)
+
+        //
+        // Primitive Types.
+        //
+        case Type.Unit => "Unit"
+        case Type.Bool => "Bool"
+        case Type.Char => "Char"
+        case Type.Float32 => "Float32"
+        case Type.Float64 => "Float64"
+        case Type.Int8 => "Int8"
+        case Type.Int16 => "Int16"
+        case Type.Int32 => "Int32"
+        case Type.Int64 => "Int64"
+        case Type.BigInt => "BigInt"
+        case Type.Str => "String"
+        case Type.Native => "Native"
+        case Type.Ref => "Ref"
+
+        //
+        // Arrow.
+        //
         case Type.Arrow(l) =>
           val argumentTypes = args.init
           val resultType = args.last
@@ -430,13 +460,27 @@ object Type {
           } else {
             "(" + argumentTypes.map(show).mkString(", ") + ") -> " + show(resultType)
           }
+
+        //
+        // Tuple.
+        //
+        case Type.Tuple(l) =>
+          "(" + args.map(show).mkString(", ") + ")"
+
+        //
+        // Enum.
+        //
         case Type.Enum(sym, kind) =>
           if (args.isEmpty) {
             sym.toString
           } else {
             sym.toString + "[" + args.map(show).mkString(", ") + "]"
           }
-        case _ => a.toString
+
+        //
+        // Type Application.
+        //
+        case Type.Apply(tpe1, tpe2) => show(tpe1) + "[" + show(tpe2) + "]"
       }
     }
   }

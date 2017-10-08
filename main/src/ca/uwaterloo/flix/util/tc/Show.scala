@@ -20,5 +20,22 @@ package ca.uwaterloo.flix.util.tc
   * Type class for values that can be shown.
   */
 trait Show[A] {
+  /**
+    * Returns a string representation of `a`.
+    */
   def show(a: A): String
+}
+
+/**
+  * Companion object of [[Show]].
+  */
+object Show {
+
+  /**
+    * Adds a `show` method to every instance of [[Show]].
+    */
+  implicit class ShowableSyntax[A: Show](a: A) {
+    def show: String = implicitly[Show[A]].show(a)
+  }
+
 }
