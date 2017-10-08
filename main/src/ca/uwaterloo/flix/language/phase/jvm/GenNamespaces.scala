@@ -18,7 +18,8 @@ package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Root
-import ca.uwaterloo.flix.language.ast.Type
+import org.objectweb.asm.ClassWriter
+import org.objectweb.asm.Opcodes._
 
 /**
   * Generates bytecode for the namespace classes.
@@ -45,7 +46,79 @@ object GenNamespaces {
     * Returns the namespace class for the given namespace `ns`.
     */
   private def genBytecode(ns: NamespaceInfo)(implicit root: Root, flix: Flix): Array[Byte] = {
-    List(0xCA.toByte, 0xFE.toByte, 0xBA.toByte, 0xBE.toByte).toArray
+
+    // JvmType for namespace
+    val namespaceRef = JvmOps.getNamespaceClassType(ns)
+
+    // Class visitor
+    val visitor = AsmOps.mkClassWriter()
+
+    // Class header
+    visitor.visit(JvmOps.JavaVersion, ACC_PUBLIC + ACC_FINAL, namespaceRef.name.toInternalName, null,
+      JvmName.Object.toInternalName, null)
+
+    // Adding fields for each function in `ns`
+    for((sym, defn) <- ns.defs) {
+      // JvmType of `defn`
+      val jvmType = JvmOps.getFunctionDefinitionClassType(sym)
+
+      // Name of the field on namespace
+      val fieldName = JvmOps.getNamespaceFieldName(sym)
+
+      // Adding the field for functional interface for `tpe`
+      AsmOps.compileField(visitor, fieldName, jvmType.toDescriptor, isStatic = false, isPrivate = false)
+    }
+
+    // Add the constructor
+    compileNamespaceConstructor(visitor, ns)
+
+    visitor.visitEnd()
+    visitor.toByteArray
+  }
+
+  /**
+    * Add the constructor for the class which initializes each field
+    */
+  private def compileNamespaceConstructor(visitor: ClassWriter, ns: NamespaceInfo)(implicit root: Root, flix: Flix): Unit = {
+
+    // JvmType for `ns`
+    val namespaceRef = JvmOps.getNamespaceClassType(ns)
+
+    // Method header
+    val constructor = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, "<init>", AsmOps.getMethodDescriptor(Nil), null, null)
+    constructor.visitCode()
+
+    constructor.visitCode()
+    constructor.visitVarInsn(ALOAD, 0)
+
+    // Call the super (java.lang.Object) constructor
+    constructor.visitMethodInsn(INVOKESPECIAL, JvmName.Object.toInternalName, "<init>", AsmOps.getMethodDescriptor(Nil), false)
+
+    // Initializing each field
+    for((sym, defn) <- ns.defs) {
+
+      // JvmType for the `sym`
+      val jvmType = JvmOps.getFunctionDefinitionClassType(sym)
+
+      // Name of the field on namespace
+      val fieldName = JvmOps.getNamespaceFieldName(sym)
+
+      // Instantiating a new instance of the class
+      constructor.visitVarInsn(ALOAD, 0)
+      constructor.visitTypeInsn(NEW, jvmType.name.toInternalName)
+      constructor.visitInsn(DUP)
+
+      // Calling the constructor of `namespace` class
+      constructor.visitMethodInsn(INVOKESPECIAL, jvmType.name.toInternalName, "<init>", AsmOps.getMethodDescriptor(Nil), false)
+
+      // Initializing the field
+      constructor.visitFieldInsn(PUTFIELD, namespaceRef.name.toInternalName, fieldName, jvmType.toDescriptor)
+    }
+
+    // Return
+    constructor.visitInsn(RETURN)
+    constructor.visitMaxs(65535, 65535)
+    constructor.visitEnd()
   }
 
 }

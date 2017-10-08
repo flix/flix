@@ -70,23 +70,20 @@ object GenContinuationInterfaces {
     //
 
     // Class visitor
-    val visitor = new ClassWriter(ClassWriter.COMPUTE_FRAMES){
-      override def getCommonSuperClass(tpe1: String, tpe2: String) : String = {
-        JvmType.Obj.name.toInternalName
-      }
-    }
+    val visitor = AsmOps.mkClassWriter()
 
     // Class header
     visitor.visit(JvmOps.JavaVersion, ACC_PUBLIC + ACC_ABSTRACT + ACC_INTERFACE, interfaceType.name.toInternalName, null,
-      JvmType.Obj.name.toInternalName, null)
+      JvmName.Object.toInternalName, null)
 
     // `getResult()` method
-    val getResultMethod = visitor.visitMethod(ACC_PUBLIC + ACC_ABSTRACT, "getResult", s"()${resultType.toDescriptor}", null, null)
-    getResultMethod.visitEnd()
+    val getResultMethod = visitor.visitMethod(ACC_PUBLIC + ACC_ABSTRACT, "getResult", AsmOps.getMethodDescriptor(Nil, Some(resultType)),
+      null, null)
     getResultMethod.visitEnd()
 
     // `apply()` method
-    val applyMethod = visitor.visitMethod(ACC_PUBLIC + ACC_ABSTRACT, "apply", s"(${JvmType.Context.toDescriptor})V", null, null)
+    val applyMethod = visitor.visitMethod(ACC_PUBLIC + ACC_ABSTRACT, "apply", AsmOps.getMethodDescriptor(List(JvmType.Context)),
+      null, null)
     applyMethod.visitEnd()
 
     visitor.visitEnd()

@@ -17,6 +17,9 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.{ExecutableAst, Symbol}
+import org.objectweb.asm.ClassWriter
+import org.objectweb.asm.Opcodes._
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Root
 
 /**
@@ -28,7 +31,75 @@ object GenContext {
     * Returns the `Context` class.
     */
   def gen(ns: Set[NamespaceInfo])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
-    Map.empty // TODO
+    // Class visitor
+    val visitor = AsmOps.mkClassWriter()
+
+    visitor.visit(JvmOps.JavaVersion, ACC_PUBLIC + ACC_FINAL, JvmName.Context.toInternalName, null,
+      JvmName.Object.toInternalName, null)
+
+    // Adding continuation field
+    AsmOps.compileField(visitor, "continuation", JvmType.Object.toDescriptor, isStatic = false, isPrivate = false)
+
+    // Adding field for each namespace
+    for(namespace <- ns) {
+      // JvmType of the namespace
+      val namespaceRef = JvmOps.getNamespaceClassType(namespace)
+
+      // Name of the field for the `namespace` on the Context object
+      val fieldName = JvmOps.getContextFieldName(namespace)
+
+      // Descriptor
+      val desc = namespaceRef.toDescriptor
+
+      // Adding the field
+      AsmOps.compileField(visitor, fieldName, desc, isStatic = false, isPrivate = false)
+    }
+
+    // Add the constructor
+    compileContextConstructor(visitor, ns)
+
+    visitor.visitEnd()
+    Map(JvmType.Context.name -> JvmClass(JvmType.Context.name, visitor.toByteArray))
+  }
+
+  /**
+    * Add the constructor for the class which initializes each field
+    */
+  private def compileContextConstructor(visitor: ClassWriter, ns: Set[NamespaceInfo])(implicit root: Root, flix: Flix): Unit = {
+
+    // Method header
+    val constructor = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, "<init>", AsmOps.getMethodDescriptor(Nil), null, null)
+    constructor.visitCode()
+
+    constructor.visitCode()
+    constructor.visitVarInsn(ALOAD, 0)
+
+    // Call the super (java.lang.Object) constructor
+    constructor.visitMethodInsn(INVOKESPECIAL, JvmName.Object.toInternalName, "<init>", AsmOps.getMethodDescriptor(Nil), false)
+
+    // Initializing each field
+    for(namespace <- ns) {
+      // JvmType of the namespace
+      val namespaceRef = JvmOps.getNamespaceClassType(namespace)
+
+      // Name of the field for the `namespace` on the Context object
+      val fieldName = JvmOps.getContextFieldName(namespace)
+
+      // Setting the field for `namespace`
+      constructor.visitVarInsn(ALOAD, 0)
+      constructor.visitTypeInsn(NEW, namespaceRef.name.toInternalName)
+      constructor.visitInsn(DUP)
+
+      // Calling the constructor of `namespace` class
+      constructor.visitMethodInsn(INVOKESPECIAL, namespaceRef.name.toInternalName, "<init>", AsmOps.getMethodDescriptor(Nil), false)
+
+      constructor.visitFieldInsn(PUTFIELD, JvmName.Context.toInternalName, fieldName, namespaceRef.toDescriptor)
+    }
+
+    // Return
+    constructor.visitInsn(RETURN)
+    constructor.visitMaxs(65535, 65535)
+    constructor.visitEnd()
   }
 
 }

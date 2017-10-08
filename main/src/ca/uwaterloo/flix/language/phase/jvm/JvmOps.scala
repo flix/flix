@@ -332,6 +332,30 @@ object JvmOps {
   }
 
   /**
+    * Returns the name of the field corresponding to `ns` on context object
+    *
+    * For example:
+    *
+    * <root>      =>  Ns
+    * Foo         =>  Foo$Ns
+    * Foo.Bar     =>  Foo$Bar$Ns
+    * Foo.Bar.Baz =>  Foo$Bar$Baz$Ns
+    */
+  def getContextFieldName(ns: NamespaceInfo): String = ns.ns.mkString("$") + "$Ns"
+
+  /**
+    * Returns the name of the field corresponding to `sym` on context object
+    *
+    * For example:
+    *
+    * <root>.X()      =>  $X
+    * Foo.X()         =>  Foo$Ns$X
+    * Foo.Bar.X()     =>  Foo$Bar$Ns$X
+    * Foo.Bar.Baz.Y() =>  Foo$Bar$Baz$Ns$X
+    */
+  def getNamespaceFieldName(sym: Symbol.DefnSym): String = sym.prefix.mkString("$") + '$' + sym.suffix
+
+  /**
     * Returns the erased JvmType of the given Flix type `tpe`.
     *
     * Every primitive type is mapped to itself and every other type is mapped to Object.
@@ -347,12 +371,6 @@ object JvmOps {
     case Type.Int64 => JvmType.PrimLong
     case _ => JvmType.Object
   }
-
-  /**
-    * Returns the descriptor of a method take takes the given `argumentTypes` and returns the given `resultType`.
-    */
-  def getMethodDescriptor(argumentTypes: List[JvmType], resultType: JvmType): String =
-    ??? // TODO: Ramin
 
   /**
     * Returns stringified name of the given JvmType `tpe`.
