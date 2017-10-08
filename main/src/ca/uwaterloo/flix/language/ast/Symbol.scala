@@ -220,6 +220,7 @@ object Symbol {
       * A symbol "f" corresponds to "Root/f", so its prefix is List("Root").
       */
     // TODO: Possibly remove?
+    @deprecated("DO NOT USE", "0.2.0")
     def prefix: List[String] = namespace match {
       case Nil => List("Root")
       case xs => xs
@@ -230,6 +231,7 @@ object Symbol {
       * For example, the suffix of the symbol "A.B.C/f" is "f".
       */
     // TODO: Possibly remove?
+    @deprecated("DO NOT USE", "0.2.0")
     def suffix: String = name.
       // Mangle the name w.r.t Java conventions.
       replace("+", "$plus").
