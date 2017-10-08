@@ -19,6 +19,8 @@ package ca.uwaterloo.flix.language.phase.jvm
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Root
 import ca.uwaterloo.flix.language.ast.Type
+import org.objectweb.asm.ClassWriter
+import org.objectweb.asm.Opcodes._
 
 /**
   * Generates bytecode for the continuation interfaces.
@@ -67,8 +69,25 @@ object GenContinuationInterfaces {
     // We can use `getErasedType` to map it down into one of the primitive types or to Object.
     //
 
+    // Class visitor
+    val visitor = AsmOps.mkClassWriter()
 
-    List(0xCA.toByte, 0xFE.toByte, 0xBA.toByte, 0xBE.toByte).toArray
+    // Class header
+    visitor.visit(JvmOps.JavaVersion, ACC_PUBLIC + ACC_ABSTRACT + ACC_INTERFACE, interfaceType.name.toInternalName, null,
+      JvmName.Object.toInternalName, null)
+
+    // `getResult()` method
+    val getResultMethod = visitor.visitMethod(ACC_PUBLIC + ACC_ABSTRACT, "getResult", AsmOps.getMethodDescriptor(Nil, Some(resultType)),
+      null, null)
+    getResultMethod.visitEnd()
+
+    // `apply()` method
+    val applyMethod = visitor.visitMethod(ACC_PUBLIC + ACC_ABSTRACT, "apply", AsmOps.getMethodDescriptor(List(JvmType.Context)),
+      null, null)
+    applyMethod.visitEnd()
+
+    visitor.visitEnd()
+    visitor.toByteArray
   }
 
 }

@@ -19,6 +19,8 @@ package ca.uwaterloo.flix.language.phase.jvm
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Root
 import ca.uwaterloo.flix.language.ast.Type
+import org.objectweb.asm.ClassWriter
+import org.objectweb.asm.Opcodes._
 
 /**
   * Generates bytecode for the function interfaces.
@@ -55,23 +57,36 @@ object GenFunctionInterfaces {
       return None
     }
 
-    // The function arity is simply the number of type arguments.
-    val arity = args.length
+    // `JvmType` of the continuation interface for `tpe`
+    val continuationType = JvmOps.getContinuationInterfaceType(tpe)
 
-    // The name of the functional interface is of the form:
-    // Fn1$Int$Bool,
-    // Fn2$Int$Int$Bool,
-    // Fn3$Obj$Obj$Obj$Bool, etc.
-    // TODO: Probably use a helper function to compute this?
-    val name = "Fn" + arity + "$"
+    // `JvmType` of the functional interface for `tpe`
+    val functionType = JvmOps.getFunctionInterfaceType(tpe)
 
-    for (arg <- args) {
-      // do something with the arguments ...
+    // Class visitor
+    val visitor = new ClassWriter(0)
 
+    // Interfaces to be extended
+    val extendedInterfaced = Array(continuationType.name.toInternalName)
+
+    // Class visitor
+    visitor.visit(JvmOps.JavaVersion, ACC_PUBLIC + ACC_ABSTRACT + ACC_INTERFACE, functionType.name.toInternalName, null,
+      JvmName.Object.toInternalName, extendedInterfaced)
+
+    // Adding setters for each argument of the function
+    for((arg, ind) <- args.init.zipWithIndex) {
+      // `JvmType` of `arg`
+      val argType = JvmOps.getErasedType(arg)
+
+      // `setArg$ind()` method
+      val setArgMethod = visitor.visitMethod(ACC_PUBLIC + ACC_ABSTRACT, s"setArg$ind", AsmOps.getMethodDescriptor(List(argType)), null, null)
+      setArgMethod.visitEnd()
     }
 
-    None // TODO
+    visitor.visitEnd()
+    // `JvmClass` of the interface
+    val jvmClass = JvmClass(functionType.name ,visitor.toByteArray)
+    Some(jvmClass)
   }
-
 
 }
