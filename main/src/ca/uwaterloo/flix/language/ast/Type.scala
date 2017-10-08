@@ -412,8 +412,32 @@ object Type {
     */
   implicit object ShowInstance extends Show[Type] {
     def show(a: Type): String = {
-      // TODO
-      a.toString
+      // Compute a mapping from type variables to human readable variable names.
+      val var2str = a.typeVars.toList.sortBy(_.id).zipWithIndex.map {
+        case (tvar, index) => tvar.id -> (index + 'a').toChar.toString
+      }.toMap
+
+      val base = a.typeConstructor
+      val args = a.typeArguments
+
+      base match {
+        case Type.Var(id, kind) => var2str(id)
+        case Type.Arrow(l) =>
+          val argumentTypes = args.init
+          val resultType = args.last
+          if (argumentTypes.length == 1) {
+            show(argumentTypes.head) + " -> " + show(resultType)
+          } else {
+            "(" + argumentTypes.map(show).mkString(", ") + ") -> " + show(resultType)
+          }
+        case Type.Enum(sym, kind) =>
+          if (args.isEmpty) {
+            sym.toString
+          } else {
+            sym.toString + "[" + args.map(show).mkString(", ") + "]"
+          }
+        case _ => a.toString
+      }
     }
   }
 
