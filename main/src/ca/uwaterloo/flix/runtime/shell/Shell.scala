@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Magnus Madsen
+ * Copyright 2017 Magnus Madsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package ca.uwaterloo.flix.runtime
+package ca.uwaterloo.flix.runtime.shell
 
 import java.nio.file._
 import java.util.concurrent.Executors
@@ -22,12 +22,13 @@ import java.util.concurrent.Executors
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.util.vt.{TerminalContext, VirtualTerminal}
+import ca.uwaterloo.flix.runtime.Model
 import ca.uwaterloo.flix.util._
 import ca.uwaterloo.flix.util.vt.VirtualString._
+import ca.uwaterloo.flix.util.vt.{TerminalContext, VirtualTerminal}
 
-import scala.collection.mutable
 import scala.collection.JavaConverters._
+import scala.collection.mutable
 
 class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
 
@@ -49,7 +50,7 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
   /**
     * The mutable set of paths to load.
     */
-  private val currentPaths = mutable.Set.empty[Path] ++ initialPaths
+  private val sourcePaths = mutable.Set.empty[Path] ++ initialPaths
 
   /**
     * The current flix instance (initialized on startup).
@@ -75,105 +76,6 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
     * The current expression (if any).
     */
   private var expression: String = _
-
-  /**
-    * A common super-type for input commands.
-    */
-  sealed trait Command
-
-  object Command {
-
-    /**
-      * No input.
-      */
-    case object Nop extends Command
-
-    /**
-      * End of input.
-      */
-    case object Eof extends Command
-
-    /**
-      * Browse the definitions in the given namespace.
-      */
-    case class Browse(ns: Option[String]) extends Command
-
-    /**
-      * Evaluate the given expression `s`.
-      */
-    case class Eval(s: String) extends Command
-
-    /**
-      * Lists all relations in the program.
-      */
-    case object ListRel extends Command
-
-    /**
-      * Lists all lattices in the program.
-      */
-    case object ListLat extends Command
-
-    /**
-      * Loads the given path `s`.
-      */
-    case class Load(s: String) extends Command
-
-    /**
-      * Unloads the given path `s`.
-      */
-    case class Unload(s: String) extends Command
-
-    /**
-      * (Re)loads the current program.
-      */
-    case object Reload extends Command
-
-    /**
-      * Prints information about the available commands.
-      */
-    case object Help extends Command
-
-    /**
-      * Gracefully terminates Flix.
-      */
-    case object Quit extends Command
-
-    /**
-      * Searches for a symbol with the given name.
-      */
-    case class Search(s: String) extends Command
-
-    /**
-      * Shows the rows in the given relation `fqn` that matches the given `needle`.
-      */
-    case class ShowRel(fqn: String, needle: Option[String]) extends Command
-
-    /**
-      * Shows the rows in the given lattice `fqn` that matches the given `needle`.
-      */
-    case class ShowLat(fqn: String, needle: Option[String]) extends Command
-
-    /**
-      * Computes the fixed point.
-      */
-    case object Solve extends Command
-
-    /**
-      * Watch loaded paths for changes.
-      */
-    case object Watch extends Command
-
-    /**
-      * Unwatch loaded paths for changes.
-      */
-    case object Unwatch extends Command
-
-    /**
-      * A command that was not unknown. Possibly a typo.
-      */
-    case class Unknown(line: String) extends Command
-
-  }
 
   /**
     * Continuously reads a line of input from the input stream, parses and executes it.
@@ -327,7 +229,7 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
         return
 
       // Compute the set of directories to watch.
-      val directories = currentPaths.map(_.toAbsolutePath.getParent).toList
+      val directories = sourcePaths.map(_.toAbsolutePath.getParent).toList
 
       // Print debugging information.
       Console.println("Watching Directories:")
@@ -531,7 +433,7 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
       Console.println(s"Path '$path' does not exist or is not a regular file.")
       return
     }
-    currentPaths += path
+    sourcePaths += path
     Console.println(s"Path '$path' was loaded.")
   }
 
@@ -540,11 +442,11 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
     */
   private def execUnload(s: String): Unit = {
     val path = Paths.get(s)
-    if (!(currentPaths contains path)) {
+    if (!(sourcePaths contains path)) {
       Console.println(s"Path '$path' was not loaded.")
       return
     }
-    currentPaths -= path
+    sourcePaths -= path
     Console.println(s"Path '$path' was unloaded.")
   }
 
@@ -555,7 +457,7 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
     // Instantiate a fresh flix instance.
     flix = new Flix()
     flix.setOptions(options)
-    for (path <- currentPaths) {
+    for (path <- sourcePaths) {
       flix.addPath(path)
     }
     if (expression != null) {
