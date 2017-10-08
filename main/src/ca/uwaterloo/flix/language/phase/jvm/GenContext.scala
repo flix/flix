@@ -34,14 +34,14 @@ object GenContext {
     // Class visitor
     val visitor = AsmOps.mkClassWriter()
 
-    visitor.visit(JvmOps.JavaVersion, ACC_PUBLIC + ACC_FINAL, JvmName.Context.toInternalName, null,
+    visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_FINAL, JvmName.Context.toInternalName, null,
       JvmName.Object.toInternalName, null)
 
     // Adding continuation field
     AsmOps.compileField(visitor, "continuation", JvmType.Object.toDescriptor, isStatic = false, isPrivate = false)
 
     // Adding field for each namespace
-    for(namespace <- ns) {
+    for (namespace <- ns) {
       // JvmType of the namespace
       val namespaceRef = JvmOps.getNamespaceClassType(namespace)
 
@@ -66,7 +66,6 @@ object GenContext {
     * Add the constructor for the class which initializes each field
     */
   private def compileContextConstructor(visitor: ClassWriter, ns: Set[NamespaceInfo])(implicit root: Root, flix: Flix): Unit = {
-
     // Method header
     val constructor = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, "<init>", AsmOps.getMethodDescriptor(Nil), null, null)
     constructor.visitCode()
@@ -78,7 +77,7 @@ object GenContext {
     constructor.visitMethodInsn(INVOKESPECIAL, JvmName.Object.toInternalName, "<init>", AsmOps.getMethodDescriptor(Nil), false)
 
     // Initializing each field
-    for(namespace <- ns) {
+    for (namespace <- ns) {
       // JvmType of the namespace
       val namespaceRef = JvmOps.getNamespaceClassType(namespace)
 

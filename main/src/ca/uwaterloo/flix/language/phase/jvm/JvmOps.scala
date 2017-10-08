@@ -36,12 +36,6 @@ object JvmOps {
   val RootPackage: List[String] = Nil
 
   /**
-    * Version of Jave
-    */
-  val JavaVersion = V1_8
-
-
-  /**
     * Returns the given Flix type `tpe` as JVM type.
     *
     * For example, if the type is:
@@ -344,12 +338,16 @@ object JvmOps {
     *
     * For example:
     *
-    * <root>      =>  Ns
+    * <root>      =>  Ns$Root$
     * Foo         =>  Foo$Ns
     * Foo.Bar     =>  Foo$Bar$Ns
     * Foo.Bar.Baz =>  Foo$Bar$Baz$Ns
     */
-  def getContextFieldName(ns: NamespaceInfo): String = "ns$" + ns.ns.mkString("$")
+  def getContextFieldName(ns: NamespaceInfo): String =
+    if (ns.isRoot)
+      "ns$Root$"
+    else
+      "ns$" + ns.ns.mkString("$")
 
   /**
     * Returns the name of the field corresponding to `sym` on context object
