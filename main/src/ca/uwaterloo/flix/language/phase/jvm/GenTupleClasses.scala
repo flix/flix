@@ -144,11 +144,11 @@ object GenTupleClasses {
       AsmOps.compileField(visitor, fieldName, field.toDescriptor, isStatic = false, isPrivate = true)
 
       // Emitting getter for each field
-      AsmOps.compileGetFieldMethod(visitor, classType.name.toInternalName, field.toDescriptor, fieldName,
+      AsmOps.compileGetFieldMethod(visitor, classType.name.toInternalName, field, fieldName,
         s"getIndex$ind", AsmOps.getReturnInsn(field))
 
       // Emitting setter for each field
-      AsmOps.compileSetFieldMethod(visitor, classType.name.toInternalName, field.toDescriptor, fieldName,
+      AsmOps.compileSetFieldMethod(visitor, classType.name.toInternalName, field, fieldName,
         s"setIndex$ind", AsmOps.getLoadInstruction(field))
     }
 

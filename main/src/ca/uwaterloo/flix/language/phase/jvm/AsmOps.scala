@@ -96,17 +96,17 @@ object AsmOps {
     *
     * @param visitor    class visitor
     * @param internalName   Internal name of the class
-    * @param fieldName  name of the field
+    * @param fieldType  JvmType of the field
     * @param methodName method name of getter of `fieldName`
     * @param iReturn    opcode for returning the value of the field
     */
-  def compileGetFieldMethod(visitor: ClassWriter, internalName: String, descriptor: String, fieldName: String,
+  def compileGetFieldMethod(visitor: ClassWriter, internalName: String, fieldType: JvmType, fieldName: String,
                             methodName: String, iReturn: Int): Unit = {
-    val method = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, methodName, s"()$descriptor", null, null)
+    val method = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, methodName, getMethodDescriptor(List(fieldType)), null, null)
 
     method.visitCode()
     method.visitVarInsn(ALOAD, 0)
-    method.visitFieldInsn(GETFIELD, internalName, fieldName, descriptor)
+    method.visitFieldInsn(GETFIELD, internalName, fieldName, fieldType.toDescriptor)
     method.visitInsn(iReturn)
     method.visitMaxs(1, 1)
     method.visitEnd()
@@ -123,18 +123,18 @@ object AsmOps {
     *
     * @param visitor    class visitor
     * @param internalName   Internal name of the class
-    * @param fieldName  name of the field
+    * @param fieldType  JvmType of the field
     * @param methodName method name of getter of `fieldName`
     * @param iLoad      opcode for loading the single parameter of the method
     */
-  def compileSetFieldMethod(visitor: ClassWriter, internalName: String, descriptor: String, fieldName: String,
+  def compileSetFieldMethod(visitor: ClassWriter, internalName: String, fieldType: JvmType, fieldName: String,
                             methodName: String, iLoad: Int): Unit = {
-    val method = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, methodName, s"($descriptor)V", null, null)
+    val method = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, methodName, getMethodDescriptor(List(fieldType)), null, null)
 
     method.visitCode()
     method.visitVarInsn(ALOAD, 0)
     method.visitVarInsn(iLoad, 1)
-    method.visitFieldInsn(PUTFIELD, internalName, fieldName, descriptor)
+    method.visitFieldInsn(PUTFIELD, internalName, fieldName, fieldType.toDescriptor)
     method.visitInsn(RETURN)
     method.visitMaxs(1, 1)
     method.visitEnd()
@@ -180,18 +180,19 @@ object AsmOps {
                              methodName: String,
                              descriptor: String,
                              message: String) : Unit = {
-    val method = visitor.visitMethod(modifiers, methodName, descriptor, null, Array("java/lang/Exception"))
+    val method = visitor.visitMethod(modifiers, methodName, descriptor, null, Array(JvmName.Exception.toInternalName))
     method.visitCode()
 
     // Create a new `Exception` object
-    method.visitTypeInsn(NEW, "java/lang/UnsupportedOperationException")
+    method.visitTypeInsn(NEW, JvmName.UnsupportedOperationException.toInternalName)
     method.visitInsn(DUP)
 
     // add the message to the stack
     method.visitLdcInsn(message)
 
     // invoke the constructor of the `Exception` object
-    method.visitMethodInsn(INVOKESPECIAL, "java/lang/UnsupportedOperationException", "<init>", "(Ljava/lang/String;)V", false)
+    method.visitMethodInsn(INVOKESPECIAL, JvmName.UnsupportedOperationException.toInternalName, "<init>",
+      getMethodDescriptor(List(JvmType.String)), false)
 
     // throw the exception
     method.visitInsn(ATHROW)
@@ -215,30 +216,30 @@ object AsmOps {
     /**
       * This method will box the primitive on top of the stack
       *
-      * @param boxedObjectDescriptor descriptor of the boxed version of the primitive
+      * @param boxedObjectInternalName descriptor of the boxed version of the primitive
       * @param signature             signature of the constructor of the boxer
       */
-    def box(boxedObjectDescriptor: String, signature: String) = {
-      method.visitTypeInsn(NEW, boxedObjectDescriptor)
+    def box(boxedObjectInternalName: String, signature: String) = {
+      method.visitTypeInsn(NEW, boxedObjectInternalName)
       method.visitInsn(DUP)
       method.visitVarInsn(ALOAD, 0)
-      method.visitMethodInsn(INVOKESPECIAL, classType.name.toInternalName, getterName, AsmOps.getMethodDescriptor(Nil, fieldType), false)
-      method.visitMethodInsn(INVOKESPECIAL, boxedObjectDescriptor, "<init>", signature, false)
+      method.visitMethodInsn(INVOKESPECIAL, classType.name.toInternalName, getterName, getMethodDescriptor(Nil, fieldType), false)
+      method.visitMethodInsn(INVOKESPECIAL, boxedObjectInternalName, "<init>", signature, false)
     }
 
     // based on the type of the field, we pick the appropriate class that boxes the primitive
     fieldType match {
-      case JvmType.PrimBool => box("java/lang/Boolean", "(Z)V")
-      case JvmType.PrimChar => box("java/lang/Character", "(C)V")
-      case JvmType.PrimByte => box("java/lang/Byte", "(B)V")
-      case JvmType.PrimShort => box("java/lang/Short", "(S)V")
-      case JvmType.PrimInt => box("java/lang/Integer", "(I)V")
-      case JvmType.PrimLong=> box("java/lang/Long", "(J)V")
-      case JvmType.PrimFloat => box("java/lang/Float", "(F)V")
-      case JvmType.PrimDouble => box("java/lang/Double", "(D)V")
+      case JvmType.PrimBool => box(JvmName.Boolean.toInternalName, getMethodDescriptor(List(JvmType.PrimBool), JvmType.Void))
+      case JvmType.PrimChar => box(JvmName.Character.toInternalName, getMethodDescriptor(List(JvmType.PrimChar), JvmType.Void))
+      case JvmType.PrimByte => box(JvmName.Byte.toInternalName, getMethodDescriptor(List(JvmType.PrimByte), JvmType.Void))
+      case JvmType.PrimShort => box(JvmName.Short.toInternalName, getMethodDescriptor(List(JvmType.PrimShort), JvmType.Void))
+      case JvmType.PrimInt => box(JvmName.Integer.toInternalName, getMethodDescriptor(List(JvmType.PrimInt), JvmType.Void))
+      case JvmType.PrimLong=> box(JvmName.Long.toInternalName, getMethodDescriptor(List(JvmType.PrimLong), JvmType.Void))
+      case JvmType.PrimFloat => box(JvmName.Float.toInternalName, getMethodDescriptor(List(JvmType.PrimFloat), JvmType.Void))
+      case JvmType.PrimDouble => box(JvmName.Double.toInternalName, getMethodDescriptor(List(JvmType.PrimDouble), JvmType.Void))
       case _ =>
         method.visitVarInsn(ALOAD, 0)
-        method.visitMethodInsn(INVOKESPECIAL, classType.name.toInternalName, getterName, AsmOps.getMethodDescriptor(Nil, fieldType), false)
+        method.visitMethodInsn(INVOKESPECIAL, classType.name.toInternalName, getterName, getMethodDescriptor(Nil, fieldType), false)
     }
   }
 
