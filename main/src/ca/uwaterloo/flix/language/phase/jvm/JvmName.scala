@@ -43,6 +43,10 @@ object JvmName {
     */
   val String: JvmName = JvmName(List("java", "lang"), "String")
 
+  /**
+    * The `ca.uwaterloo.flix.api.Tuple` name
+    */
+  val Tuple: JvmName = JvmName(List("ca", "waterloo", "flix", "api"), "Tuple")
 }
 
 /**

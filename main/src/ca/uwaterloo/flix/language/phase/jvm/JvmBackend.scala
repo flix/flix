@@ -100,7 +100,7 @@ object JvmBackend extends Phase[Root, Root] {
     //
     // Generate tuple classes for each tuple type in the program.
     //
-    val tupleClasses = GenTupleClasses.gen(Set())
+    val tupleClasses = GenTupleClasses.gen(types)
 
     //
     // Generate tag-tuple fusion classes for tag-tuple in the program.

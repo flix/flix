@@ -77,7 +77,7 @@ object GenContinuationInterfaces {
       JvmName.Object.toInternalName, null)
 
     // `getResult()` method
-    val getResultMethod = visitor.visitMethod(ACC_PUBLIC + ACC_ABSTRACT, "getResult", AsmOps.getMethodDescriptor(Nil, Some(resultType)),
+    val getResultMethod = visitor.visitMethod(ACC_PUBLIC + ACC_ABSTRACT, "getResult", AsmOps.getMethodDescriptor(Nil, resultType),
       null, null)
     getResultMethod.visitEnd()
 

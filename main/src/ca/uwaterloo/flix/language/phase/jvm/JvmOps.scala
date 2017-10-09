@@ -254,7 +254,7 @@ object JvmOps {
     */
   def getTupleClassType(tpe: Type)(implicit root: Root, flix: Flix): JvmType.Reference = {
     // Check that the given type is an tuple type.
-    if (!tpe.typeConstructor.isArrow)
+    if (!tpe.typeConstructor.isTuple)
       throw InternalCompilerException(s"Unexpected type: '$tpe'.")
 
     // Check that the given type has at least one type argument.
