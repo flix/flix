@@ -29,9 +29,49 @@ object JvmName {
   val Context: JvmName = JvmName(Nil, "Context")
 
   /**
-    * The `java.lang.BigInteger` name.
+    * The `java.math.BigInteger` name.
     */
   val BigInteger: JvmName = JvmName(List("java", "math"), "BigInteger")
+
+  /**
+    * The `java.lang.Boolean` name.
+    */
+  val Boolean: JvmName = JvmName(List("java", "lang"), "Boolean")
+
+  /**
+    * The `java.lang.Character` name.
+    */
+  val Character: JvmName = JvmName(List("java", "lang"), "Character")
+
+  /**
+    * The `java.lang.Byte` name.
+    */
+  val Byte: JvmName = JvmName(List("java", "lang"), "Byte")
+
+  /**
+    * The `java.lang.Short` name.
+    */
+  val Short: JvmName = JvmName(List("java", "lang"), "Short")
+
+  /**
+    * The `java.lang.Integer` name.
+    */
+  val Integer: JvmName = JvmName(List("java", "lang"), "Integer")
+
+  /**
+    * The `java.lang.Long` name.
+    */
+  val Long: JvmName = JvmName(List("java", "lang"), "Long")
+
+  /**
+    * The `java.lang.Float` name.
+    */
+  val Float: JvmName = JvmName(List("java", "lang"), "Float")
+
+  /**
+    * The `java.lang.Double` name.
+    */
+  val Double: JvmName = JvmName(List("java", "lang"), "Double")
 
   /**
     * The `java.lang.Object` name.
@@ -43,6 +83,20 @@ object JvmName {
     */
   val String: JvmName = JvmName(List("java", "lang"), "String")
 
+  /**
+    * The `ca.uwaterloo.flix.api.Tuple` name
+    */
+  val Tuple: JvmName = JvmName(List("ca", "waterloo", "flix", "api"), "Tuple")
+
+  /**
+    * The `java.lang.Exception` name
+    */
+  val Exception: JvmName = JvmName(List("java", "lang"), "Exception")
+
+  /**
+    * The `java.lang.Exception` name
+    */
+  val UnsupportedOperationException: JvmName = JvmName(List("java", "lang"), "UnsupportedOperationException")
 }
 
 /**
