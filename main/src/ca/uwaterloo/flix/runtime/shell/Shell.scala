@@ -421,7 +421,7 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
   /**
     * Reloads every loaded path.
     */
-  private def execReload(): Unit = {
+  private def execReload()(implicit terminal: Terminal): Unit = {
     // Instantiate a fresh flix instance.
     flix = new Flix()
     flix.setOptions(options)
@@ -429,8 +429,7 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
       flix.addPath(path)
     }
     if (expression != null) {
-      // TODO: Refactor
-      flix.addNamedExp(Symbol.mkDefnSym("$1"), expression)
+      flix.addNamedExp(symbol, expression)
     }
 
     // Check if a main function was given.
@@ -445,7 +444,9 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
       case Validation.Success(ast, _) =>
         this.root = ast
       case Validation.Failure(errors) =>
-        errors.foreach(e => println(e.message.fmt))
+        for (error <- errors) {
+          terminal.writer().print(error.message.fmt)
+        }
     }
 
   }
@@ -516,7 +517,7 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
     }
   }
 
-  private def execWatch(): Unit = {
+  private def execWatch()(implicit terminal: Terminal): Unit = {
     // Check if the watcher is already initialized.
     if (watcher != null)
       return
@@ -630,7 +631,7 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
   /**
     * A thread to watch over changes in a collection of directories.
     */
-  class WatcherThread(paths: List[Path]) extends Thread {
+  class WatcherThread(paths: List[Path])(implicit terminal: Terminal) extends Thread {
 
     // Initialize a new watcher service.
     val watchService: WatchService = FileSystems.getDefault.newWatchService
