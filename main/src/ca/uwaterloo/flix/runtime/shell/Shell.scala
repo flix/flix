@@ -162,6 +162,7 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
     case Command.Eval(s) => execEval(s)
     case Command.TypeOf(exp) => execTypeOf(exp)
     case Command.KindOf(exp) => execKindOf(exp)
+    case Command.EffectOf(exp) => execEffectOf(exp)
     case Command.Browse(ns) => execBrowse(ns)
     case Command.Doc(fqn) => execDoc(fqn)
     case Command.Search(s) => execSearch(s)
@@ -238,7 +239,29 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
 
     // Print the kind to the console.
     val vt = new VirtualTerminal
-    vt << Magenta(kind.toString) << NewLine
+    vt << Green(kind.toString) << NewLine
+    terminal.writer().print(vt.fmt)
+  }
+
+  /**
+    * Shows the effect of the given expression `exp`.
+    */
+  private def execEffectOf(exp: String)(implicit terminal: Terminal, s: Show[Type]): Unit = {
+    // Set the expression.
+    expression = exp
+
+    // Recompile the program.
+    execReload()
+
+    // Retrieve the definition.
+    val defn = root.defs(symbol)
+
+    // Retrieve the effect.
+    val effect = defn.eff
+
+    // Print the effect to the console.
+    val vt = new VirtualTerminal
+    vt << Magenta(effect.toString) << NewLine
     terminal.writer().print(vt.fmt)
   }
 
@@ -348,6 +371,7 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
     Console.println("  <expr>                          Evaluates the expression <expr>.")
     Console.println("  :type :t      <expr>            Shows the type of <expr>.")
     Console.println("  :kind :k      <expr>            Shows the kind of <expr>.")
+    Console.println("  :effect :e    <expr>            Shows the effect of <expr>.")
     Console.println("  :browse       <ns>              Shows all entities in <ns>.")
     Console.println("  :doc          <fqn>             Shows documentation for <fqn>.")
     Console.println("  :search       <needle>          Shows all entities that match <needle>.")
