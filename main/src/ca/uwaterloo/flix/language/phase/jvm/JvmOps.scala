@@ -597,6 +597,15 @@ object JvmOps {
   }
 
   /**
+    * Returns true if the case has a unit field, which means the case can be a singleton. It returns false otherwise.
+    *
+    * @param tag Enum Case
+    */
+  def isSingletonEnum(tag: TagInfo): Boolean = {
+    tag.tparams.last == Type.Unit
+  }
+
+  /**
     * Writes the given JVM class `clazz` to a sub path under the given `prefixPath`.
     *
     * For example, if the prefix path is `/tmp/` and the class name is Foo.Bar.Baz

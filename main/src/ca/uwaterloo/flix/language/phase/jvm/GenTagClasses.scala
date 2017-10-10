@@ -18,6 +18,8 @@ package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Root
+import org.objectweb.asm.Opcodes._
+import org.objectweb.asm.ClassWriter
 
 /**
   * Generates bytecode for the tag classes.
@@ -37,11 +39,253 @@ object GenTagClasses {
     }
   }
 
-  /**
-    * Returns the bytecode for the given tag.
+  /** Generate bytecode for each enum case.
+    *
+    * First we generate bytecode for enum case interface:
+    * This interface will generate a single method called `getValue` which does not have a parameter and returns the value
+    * of the enum.
+    *
+    * Second we generate bytecode for enum case class:
+    *
+    * A class will be generated for each enum case.
+    * This class will extend the enum case interface generated for the same enum case with the same field type.
+    * This class contains one field: `value`. `value` contains the field of the case.
+    * If the field is primitive, then `value` is of the type of that primitive, otherwise, `value` is just an object.
+    * For example, for the case `Ok[Int32]` we generate:
+    *
+    * public int value;
+    *
+    * but for the case `Ok[List[Int32]]` we generate:
+    *
+    * public Object value;
+    *
+    * Classes generated at this step implements the interface corresponding the symbol of the enum case and they include
+    * implementations of following methods: `getTag()`, `getValue()`, `getBoxedTagValue()`,`toString()`, `hashCode()` and
+    * `equals(Object)`.
+    * `getTag()` is the function which returns the name of the enum case. `getValue()` returns the value of `value` field.
+    * `getBoxedTagValue()` returns the `value` field but the result is boxed inside an object. As an example, `getValue()` and
+    * `getBoxedTagValue()` of the class representing `Ok[Int32]` is as follows:
+    *
+    * public final int getValue() {
+    *   return this.value;
+    * }
+    *
+    * public final Object getBoxedTagValue() {
+    *   return new Integer(this.value);
+    * }
+    *
+    * Next, we will generate the `toString()` method which will always throws an exception, since `toString` should not be called.
+    * The `toString` method is always the following:
+    *
+    * public String toString() throws Exception {
+    *   throw new Exception("equals method shouldn't be called")
+    * }
+    *
+    * Next, we will generate the `hashCode()` method which will always throws an exception, since `hashCode` should not be called.
+    * The `hashCode` method is always the following:
+    *
+    * public String hashCode() throws Exception {
+    *   throw new Exception("hashCode method shouldn't be called")
+    * }
+    *
+    * Finally, we generate the `equals(Obj)` method which will always throws an exception, since `equals` should not be called.
+    * The `equals` method is always the following:
+    *
+    * public boolean equals(Object var1) throws Exception {
+    *   throw new Exception("equals method shouldn't be called");
+    * }
     */
-  private def genByteCode(tag: TagInfo): Array[Byte] = {
-    List(0xCA.toByte, 0xFE.toByte, 0xBA.toByte, 0xBE.toByte).toArray
+  private def genByteCode(tag: TagInfo)(implicit root: Root, flix: Flix): Array[Byte] = {
+    // Class writer
+    val visitor = AsmOps.mkClassWriter()
+
+    // Initialize the visitor to create a class.
+    // Super class of the class
+    val superClass = JvmName.Object.toInternalName
+
+    // JvmType of the interface for enum of `tag`
+    val superType = JvmOps.getEnumInterfaceType(tag.enumType)
+
+    // JvmType of the class for `tag`
+    val classType = JvmOps.getTagClassType(tag)
+
+    // Erased JvmType of the value of `tag`
+    val valueType = JvmOps.getErasedType(tag.tparams.last)
+
+    // Interfaces to be implemented
+    val implementedInterfaces = Array(superType.name.toInternalName)
+    visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_FINAL, classType.name.toInternalName, null, superClass, implementedInterfaces)
+
+    // Source of the class
+    visitor.visitSource(classType.name.toInternalName, null)
+
+    // Generate value field
+    AsmOps.compileField(visitor, "value", valueType.toDescriptor, isStatic = false, isPrivate = true)
+
+    // Generate static `INSTANCE` field if it is a singleton
+    if(JvmOps.isSingletonEnum(tag)) {
+      AsmOps.compileField(visitor, "unitInstance", classType.toDescriptor, isStatic = true, isPrivate = false)
+    }
+
+    // Generate the constructor of the class
+    compileEnumConstructor(visitor, classType, valueType, isSingleton = JvmOps.isSingletonEnum(tag))
+
+    // Initialize the static field if it is a singleton
+    if(JvmOps.isSingletonEnum(tag)){
+      compileUnitInstance(visitor, classType)
+    }
+
+    // Generate the `getValue` method
+    AsmOps.compileGetFieldMethod(visitor, classType.name.toInternalName, valueType, "value", "getValue", AsmOps.getReturnInsn(valueType))
+
+    // Generate `getBoxedTagValue` method
+    compileGetBoxedTagValueMethod(visitor, classType, valueType)
+
+    // Generate `getTag` method
+    compileGetTagMethod(visitor, classType)
+
+    // Generate `toString` method
+    AsmOps.exceptionThrowerMethod(visitor, ACC_PUBLIC + ACC_FINAL, "toString", AsmOps.getMethodDescriptor(Nil, JvmType.String),
+      "toString method shouldn't be called")
+
+    // Generate `hashCode` method
+    AsmOps.exceptionThrowerMethod(visitor, ACC_PUBLIC + ACC_FINAL, "hashCode", AsmOps.getMethodDescriptor(Nil, JvmType.PrimInt),
+      "hashCode method shouldn't be called")
+
+    // Generate `equals` method
+    AsmOps.exceptionThrowerMethod(visitor, ACC_PUBLIC + ACC_FINAL, "equals", AsmOps.getMethodDescriptor(List(JvmType.Object), JvmType.PrimBool),
+      "equals method shouldn't be called")
+
+    visitor.visitEnd()
+    visitor.toByteArray
+  }
+
+  /**
+    * Creates the single argument constructor of the enum case class which is named `classType`.
+    * The only argument required to instantiate the class is the `value`.
+    * The type of the field of the case is give by `descriptor`.
+    * If the `valueType` is only `Unit`, then we can make the constructor private since the `unitInstance` field
+    * can be used to obtain an instance of the case.
+    *
+    * @param visitor class visitor
+    * @param classType name of the class
+    * @param valueType type of the `value` field
+    * @param isSingleton if the class is a singleton this flag is set
+    */
+  private def compileEnumConstructor(visitor: ClassWriter,
+                                     classType: JvmType.Reference,
+                                     valueType: JvmType,
+                                     isSingleton: Boolean)(implicit root: Root, flix: Flix) = {
+    // If this is a singleton then we should make the constructor private
+    val specifier =
+      if(isSingleton) {
+        ACC_PRIVATE
+      } else {
+        ACC_PUBLIC
+      }
+
+    val constructor = visitor.visitMethod(specifier, "<init>", AsmOps.getMethodDescriptor(List(valueType)), null, null)
+
+    constructor.visitCode()
+    constructor.visitVarInsn(ALOAD, 0)
+
+    // Call the super (java.lang.Object) constructor
+    constructor.visitMethodInsn(INVOKESPECIAL, JvmName.Object.toInternalName, "<init>", AsmOps.getMethodDescriptor(Nil), false)
+
+    // Load instruction for type of `value`
+    val iLoad = AsmOps.getLoadInstruction(valueType)
+
+    // Put the object given to the constructor on the `value` field
+    constructor.visitVarInsn(ALOAD, 0)
+    constructor.visitVarInsn(iLoad, 1)
+    constructor.visitFieldInsn(PUTFIELD, classType.name.toInternalName, "value", valueType.toDescriptor)
+
+    // Return
+    constructor.visitInsn(RETURN)
+    constructor.visitMaxs(65535, 65535)
+    constructor.visitEnd()
+  }
+
+  /**
+    * Generates the `getTag()` method of the class which is the implementation of `getTag` method on `tagInterface`.
+    * This methods returns an string containing the tag name.
+    * For example, `Val[Char]` has following `getTag()`method:
+    *
+    * public final String getTag() {
+    *   return "Var";
+    * }
+    *
+    * @param visitor class visitor
+    * @param classType JvmType.Reference name of the class
+    */
+  private def compileGetTagMethod(visitor: ClassWriter, classType: JvmType.Reference)(implicit root: Root, flix: Flix) = {
+    val method = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, "getTag", AsmOps.getMethodDescriptor(Nil, JvmType.String), null, null)
+    method.visitLdcInsn(classType.name.name)
+    method.visitInsn(ARETURN)
+    method.visitMaxs(1, 1)
+    method.visitEnd()
+  }
+
+  /**
+    * Generate the `getBoxedTagValue` method which returns the boxed value of `value` field of the class.
+    * The generated method will return the `value` field if the field is of object type, otherwise, it will
+    * box the object using the appropriate type.
+    * For example, we generate the following method for `Ok[Int32]`:
+    *
+    * public final Object getBoxedTagValue() {
+    *   return new Integer(this.value);
+    * }
+    *
+    * And we generate the following method for `Ok[List[Int32]]`
+    *
+    * public final Object getBoxedTagValue() {
+    *   return this.value;
+    * }
+    *
+    * @param visitor class visitor
+    * @param classType JvmType.Reference of the class
+    * @param valueType JvmType of the `value` field of the class
+    */
+  def compileGetBoxedTagValueMethod(visitor: ClassWriter,
+                                    classType: JvmType.Reference,
+                                    valueType: JvmType)(implicit root: Root, flix: Flix) = {
+    val method = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, "getBoxedTagValue", AsmOps.getMethodDescriptor(Nil, JvmType.Object), null, null)
+
+    method.visitCode()
+
+    AsmOps.boxField(method, valueType, classType, "getValue")
+
+    method.visitInsn(ARETURN)
+    method.visitMaxs(1, 1)
+    method.visitEnd()
+  }
+
+  /**
+    * Initializing `getInstance` static field if the `value` field can be `Unit`
+    * @param visitor class visitor
+    * @param classType JvmType.Reference of the class
+    */
+  private def compileUnitInstance(visitor: ClassWriter, classType: JvmType.Reference)(implicit root: Root, flix: Flix) = {
+    val method = visitor.visitMethod(ACC_STATIC, "<clinit>", "()V", null, null)
+    method.visitCode()
+
+    // Instantiating the object
+    method.visitTypeInsn(NEW, classType.name.toInternalName)
+    method.visitInsn(DUP)
+
+    // Getting instance of `UnitClass`
+    method.visitMethodInsn(INVOKESTATIC, JvmName.Unit.toInternalName, "getInstance", AsmOps.getMethodDescriptor(Nil, JvmType.Unit), false)
+
+    // Calling constructor on the object
+    method.visitMethodInsn(INVOKESPECIAL, classType.name.toInternalName, "<init>", AsmOps.getMethodDescriptor(List(JvmType.Object)), false)
+
+    // Initializing the static field
+    method.visitFieldInsn(PUTSTATIC, classType.name.toInternalName, "unitInstance", classType.toDescriptor)
+
+    // Return
+    method.visitInsn(RETURN)
+    method.visitMaxs(2, 0)
+    method.visitEnd()
   }
 
 }

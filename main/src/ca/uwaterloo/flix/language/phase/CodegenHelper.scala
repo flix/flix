@@ -644,7 +644,7 @@ object CodegenHelper {
 
     val scalaPredef = "scala/Predef$"
     val scalaMathPkg = "scala/math/package$"
-    val tagInterface: Class[_] = classOf[api.Enum]
+    val tagInterface: Class[_] = classOf[api.Tag]
   }
 
   // This constant is used in LoadBytecode, so we can't put it in the private Constants object.
