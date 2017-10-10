@@ -41,7 +41,7 @@ object EnumGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     *
     * 2. Generate byteCodes of Enum Interface.
     * At this stage, we generate an interface for each enum symbol. All cases of that symbol will implement this interface.
-    * This interface extends `tagInterface` interface which has two methods: `getBoxedValue()` and `getTag()`. For example,
+    * This interface extends `tagInterface` interface which has two methods: `getBoxedTagValue()` and `getTag()`. For example,
     * for enum result defined as follows:
     *
     * enum Result[t, e] {
@@ -76,17 +76,17 @@ object EnumGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     * public Object value;
     *
     * Classes generated at this step implements the interface corresponding the symbol of the enum case and they include
-    * implementations of following methods: `getTag()`, `getValue()`, `getBoxedValue()`,`toString()`, `hashCode()` and
+    * implementations of following methods: `getTag()`, `getValue()`, `getBoxedTagValue()`,`toString()`, `hashCode()` and
     * `equals(Object)`.
     * `getTag()` is the function which returns the name of the enum case. `getValue()` returns the value of `value` field.
-    * `getBoxedValue()` returns the `value` field but the result is boxed inside an object. As an example, `getValue()` and
-    * `getBoxedValue()` of the class representing `Ok[Int32]` is as follows:
+    * `getBoxedTagValue()` returns the `value` field but the result is boxed inside an object. As an example, `getValue()` and
+    * `getBoxedTagValue()` of the class representing `Ok[Int32]` is as follows:
     *
     * public final int getValue() {
     *   return this.value;
     * }
     *
-    * public final Object getBoxedValue() {
+    * public final Object getBoxedTagValue() {
     *   return new Integer(this.value);
     * }
     *
@@ -268,7 +268,7 @@ object EnumGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     // Generate the `getValue` method
     compileGetFieldMethod(visitor, className, getWrappedTypeDescriptor(fType), "value", "getValue", getReturnInsn(fType))
 
-    // Generate `getBoxedValue` method
+    // Generate `getBoxedTagValue` method
     compileGetBoxedValueMethod(visitor, className, fType)
 
     // Generate `getTag` method
@@ -389,18 +389,18 @@ object EnumGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
   }
 
   /**
-    * Generate the `getBoxedValue` method which returns the boxed value of `value` field of the class.
+    * Generate the `getBoxedTagValue` method which returns the boxed value of `value` field of the class.
     * The generated method will return the `value` field if the field is of object type, otherwise, it will
     * box the object using the appropriate type.
     * For example, we generate the following method for `Ok[Int32]`:
     *
-    * public final Object getBoxedValue() {
+    * public final Object getBoxedTagValue() {
     *   return new Integer(this.value);
     * }
     *
     * And we generate the following method for `Ok[List[Int32]]`
     *
-    * public final Object getBoxedValue() {
+    * public final Object getBoxedTagValue() {
     *   return this.value;
     * }
     *
@@ -409,7 +409,7 @@ object EnumGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     * @param fType type of the `value` field of the class
     */
   private def compileGetBoxedValueMethod(visitor: ClassWriter, qualName: QualName, fType: WrappedType) = {
-    val method = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, "getBoxedValue", s"()Ljava/lang/Object;", null, null)
+    val method = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, "getBoxedTagValue", s"()Ljava/lang/Object;", null, null)
 
     method.visitCode()
 
@@ -479,7 +479,7 @@ object EnumGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     * }
     *
     * 2. When the enum case is `Cons` of `List`, we hack to represent it with `::` which is also hacked into the system.
-    * We first get the `value` field of the case, then since we know it's a tuple we cast it and use `getBoxedValue` to get
+    * We first get the `value` field of the case, then since we know it's a tuple we cast it and use `getBoxedTagValue` to get
     * an array of length two. Then we invoke `toString` on the first element of the array, append " :: " to the string and
     * put it on top of the stack then we invoke `toString` on the second element of the array and then concatenate this to
     * the string on top of the stack.
@@ -487,7 +487,7 @@ object EnumGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     * The code we generate is equivalent to:
     *
     * public String toString() {
-    *   Object[] var10000 = ((Tuple)this.value).getBoxedValue();
+    *   Object[] var10000 = ((Tuple)this.value).getBoxedTagValue();
     *   return var10000[0].toString().concat(" :: ".concat(var10000[1].toString()));
     * }
     *
@@ -516,7 +516,7 @@ object EnumGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
       // Cast the field to tuple interface
       method.visitTypeInsn(CHECKCAST, asm.Type.getInternalName(Constants.tupleClass))
 
-      // Call `getBoxedValue()` on the object
+      // Call `getBoxedTagValue()` on the object
       method.visitMethodInsn(INVOKEINTERFACE, asm.Type.getInternalName(tupleClazz), getBoxedValueMethod.getName,
         asm.Type.getMethodDescriptor(getBoxedValueMethod), true)
 

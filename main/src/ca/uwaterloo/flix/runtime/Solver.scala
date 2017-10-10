@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.runtime
 import java.util.concurrent._
 import java.util.concurrent.atomic.AtomicInteger
 
-import ca.uwaterloo.flix.api.{Enum, RuleException, TimeoutException}
+import ca.uwaterloo.flix.api.{Tag, RuleException, TimeoutException}
 import ca.uwaterloo.flix.language.ast.Ast.Polarity
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Term.Body.Pat
 import ca.uwaterloo.flix.language.ast.ExecutableAst._
@@ -965,7 +965,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
     case (Pattern.BigInt(lit, _), o: java.math.BigInteger) => lit.equals(o)
     case (Pattern.Str(lit, _), o: java.lang.String) => lit.equals(o)
     case (Pattern.Tag(enum, tag, p, _, _), o: Value.Tag) => if (tag.equals(o.tag)) unify(p, o.value, env0) else false
-    case (Pattern.Tag(enum, tag, p, _, _), o: Enum) => if (tag == o.getTag) unify(p, o.getBoxedValue, env0) else false
+    case (Pattern.Tag(enum, tag, p, _, _), o: Tag) => if (tag == o.getTag) unify(p, o.getBoxedTagValue, env0) else false
     case (Pattern.Tuple(elms, _, _), o: Array[AnyRef]) =>
       if (elms.length != o.length)
         return false
