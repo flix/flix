@@ -602,7 +602,7 @@ object JvmOps {
     * @param tag Enum Case
     */
   def isSingletonEnum(tag: TagInfo): Boolean = {
-    tag.tparams.last == Type.Unit
+    tag.tagType == Type.Unit
   }
 
   /**

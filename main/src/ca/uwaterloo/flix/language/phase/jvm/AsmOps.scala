@@ -105,7 +105,7 @@ object AsmOps {
   def compileGetFieldMethod(visitor: ClassWriter, internalName: String, fieldType: JvmType, fieldName: String,
                             methodName: String, iReturn: Int): Unit = {
     // TODO: Derive iReturn from fieldType.
-    val method = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, methodName, getMethodDescriptor(List(fieldType)), null, null)
+    val method = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, methodName, getMethodDescriptor(Nil, fieldType), null, null)
     method.visitCode()
     method.visitVarInsn(ALOAD, 0)
     method.visitFieldInsn(GETFIELD, internalName, fieldName, fieldType.toDescriptor)
