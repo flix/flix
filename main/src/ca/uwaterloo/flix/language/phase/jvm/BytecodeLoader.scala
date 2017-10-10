@@ -17,32 +17,33 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 /**
-  * Loads generated JVM bytecode classes into a custom class loader.
+  * Loads generated JVM bytecode classes using a custom class loader.
   */
 object BytecodeLoader {
-
-  class FlixClassLoader extends ClassLoader {
-    def define(name: String, bytes: Array[Byte]): Class[_] = {
-      println(s"Define: $name")
-      val clazz = defineClass(name, bytes, 0, bytes.length)
-      println(s"Defined $name")
-      clazz
-    }
-  }
 
   /**
     * Loads the given JVM `classes` using a custom class loader.
     */
   def loadAll(classes: Map[JvmName, JvmClass]): Map[JvmName, Class[_]] = {
-    // Construct a fresh class loader.
-    val loader = new FlixClassLoader
-
-    // Load each class.
-    val loadedClasses = classes.foldLeft(Map.empty[JvmName, Class[_]]) {
-      case (macc, (jvmName, jvmClass)) =>
-        val clazz = loader.define(jvmName.toInternalName, jvmClass.bytecode)
-        macc + (jvmName -> clazz)
+    //
+    // Compute a map from internal names (strings) to JvmClasses.
+    //
+    val m = classes.foldLeft(Map.empty[String, JvmClass]) {
+      case (macc, (jvmName, jvmClass)) => macc + (jvmName.toInternalName -> jvmClass)
     }
+
+    //
+    // Instantiate the Flix class loader with this map.
+    //
+    val loader = new FlixClassLoader(m)
+
+    //
+    // Attempt to load each class using its internal name.
+    //
+    for ((jvmName, jvmClass) <- classes) {
+      val clazz = loader.loadClass(jvmName.toInternalName)
+    }
+
 
     // TODO: Retrieve the method object for each Def$ and assign it to the appropriate AST.
 

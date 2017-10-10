@@ -121,12 +121,6 @@ object JvmBackend extends Phase[Root, Root] {
       fusionClasses
 
     //
-    // Load each class into the JVM in a separate class loader.
-    //
-    // TODO
-    //val loadedClasses = BytecodeLoader.loadAll(allClasses)
-
-    //
     // Write each class (and interface) to disk.
     //
     // NB: In test mode we skip writing the files to disk.
@@ -135,6 +129,12 @@ object JvmBackend extends Phase[Root, Root] {
         JvmOps.writeClass(TargetDirectory, clazz)
       }
     }
+
+    //
+    // Load each class into the JVM in a separate class loader.
+    //
+    // TODO
+    //val loadedClasses = BytecodeLoader.loadAll(allClasses)
 
     root.toSuccess
   }
