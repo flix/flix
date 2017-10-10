@@ -110,7 +110,7 @@ object GenTagClasses {
     val classType = JvmOps.getTagClassType(tag)
 
     // Erased JvmType of the value of `tag`
-    val valueType = JvmOps.getErasedType(tag.tparams.last)
+    val valueType = JvmOps.getErasedType(tag.tagType)
 
     // Interfaces to be implemented
     val implementedInterfaces = Array(superType.name.toInternalName)
@@ -142,7 +142,7 @@ object GenTagClasses {
     compileGetBoxedTagValueMethod(visitor, classType, valueType)
 
     // Generate `getTag` method
-    compileGetTagMethod(visitor, classType)
+    compileGetTagMethod(visitor, tag.tag)
 
     // Generate `toString` method
     AsmOps.exceptionThrowerMethod(visitor, ACC_PUBLIC + ACC_FINAL, "toString", AsmOps.getMethodDescriptor(Nil, JvmType.String),
@@ -216,11 +216,11 @@ object GenTagClasses {
     * }
     *
     * @param visitor class visitor
-    * @param classType JvmType.Reference name of the class
+    * @param tag tag String
     */
-  private def compileGetTagMethod(visitor: ClassWriter, classType: JvmType.Reference)(implicit root: Root, flix: Flix) = {
+  private def compileGetTagMethod(visitor: ClassWriter, tag: String)(implicit root: Root, flix: Flix) = {
     val method = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, "getTag", AsmOps.getMethodDescriptor(Nil, JvmType.String), null, null)
-    method.visitLdcInsn(classType.name.name)
+    method.visitLdcInsn(tag)
     method.visitInsn(ARETURN)
     method.visitMaxs(1, 1)
     method.visitEnd()
