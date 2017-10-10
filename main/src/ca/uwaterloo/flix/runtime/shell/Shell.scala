@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.runtime.shell
 
 import java.nio.file._
 import java.util.concurrent.Executors
+import java.util.logging.Level
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{Symbol, Type}
@@ -28,6 +29,8 @@ import ca.uwaterloo.flix.util.tc.Show
 import ca.uwaterloo.flix.util.tc.Show._
 import ca.uwaterloo.flix.util.vt.VirtualString._
 import ca.uwaterloo.flix.util.vt.{TerminalContext, VirtualTerminal}
+import org.jline.reader.{EndOfFileException, LineReaderBuilder, UserInterruptException}
+import org.jline.terminal.{Terminal, TerminalBuilder}
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable
@@ -83,33 +86,42 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
     * Continuously reads a line of input from the input stream, parses and executes it.
     */
   def loop(): Unit = {
-    // Print welcome banner.
-    printWelcomeBanner()
+    // Initialize the terminal.
+    val terminal = TerminalBuilder.builder().system(true).build()
+
+    // Initialize the terminal line reader.
+    val reader = LineReaderBuilder.builder().appName("flix").terminal(terminal).build()
+
+    // Print the welcome banner.
+    printWelcomeBanner(terminal)
 
     // Initialize flix.
     execReload()
 
-    // Loop forever.
-    while (!Thread.currentThread().isInterrupted) {
-      Console.print(prompt)
-      Console.flush()
+    try {
+      // Repeatedly read input from the line reader.
+      while (!Thread.currentThread().isInterrupted) {
+        // Try to read a command.
+        val line = reader.readLine(prompt)
 
-      // Read one or more lines. A multi line input is delimited by \\.
-      val lines = readMultiLineInput(Nil)
-
-      // Construct the entire input string.
-      val input = if (lines == null) null else lines.reverse.mkString("\n")
-
-      // Parse the command.
-      val cmd = Command.parse(input)
-      try {
-        execute(cmd)
-      } catch {
-        case e: Exception =>
-          Console.println(e.getMessage)
-          e.printStackTrace()
+        // Parse the command.
+        val cmd = Command.parse(line)
+        try {
+          // Try to execute the command. Catch any exception.
+          execute(cmd, terminal)
+        } catch {
+          case e: Exception =>
+            Console.println(e.getMessage)
+            e.printStackTrace()
+        }
       }
+    } catch {
+      case ex: UserInterruptException => // nop, exit gracefully.
+      case ex: EndOfFileException => // nop, exit gracefully.
     }
+
+    // Print goodbye message.
+    terminal.writer().println("Thanks, and goodbye.")
   }
 
   /**
@@ -138,11 +150,11 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
   /**
     * Executes the given command `cmd`
     */
-  private def execute(cmd: Command): Unit = cmd match {
+  private def execute(cmd: Command, term: Terminal): Unit = cmd match {
     case Command.Nop => // nop
 
+    // TODO: Remove?
     case Command.Eof | Command.Quit =>
-      Console.println("Thanks, and goodbye.")
       Thread.currentThread().interrupt()
 
     case Command.Doc(fqn) => execDoc(fqn)
@@ -159,7 +171,7 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
 
     case Command.Reload => execReload()
 
-    case Command.Browse(nsOpt) => execBrowse(nsOpt)
+    case Command.Browse(nsOpt) => execBrowse(nsOpt, term)
 
     case Command.Help => execHelp()
 
@@ -205,7 +217,7 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
   /**
     * Prints the welcome banner to the console.
     */
-  private def printWelcomeBanner(): Unit = {
+  private def printWelcomeBanner(terminal: Terminal): Unit = {
     val banner =
       """     __   _   _
         |    / _| | | (_)             Welcome to Flix __VERSION__
@@ -215,7 +227,8 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
         |   |_|   |_| |_| /_/\_\      Type ':quit' or press 'ctrl + d' to exit.
       """.stripMargin
 
-    Console.println(banner.replaceAll("__VERSION__", Version.CurrentVersion.toString))
+    terminal.writer().println(banner.replaceAll("__VERSION__", Version.CurrentVersion.toString))
+    terminal.flush()
   }
 
   /**
@@ -226,7 +239,7 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
   /**
     * Executes the browse command.
     */
-  private def execBrowse(nsOpt: Option[String]): Unit = nsOpt match {
+  private def execBrowse(nsOpt: Option[String], term: Terminal): Unit = nsOpt match {
     case None =>
       // Case 1: Browse available namespaces.
 
@@ -243,7 +256,7 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
       vt << Dedent << NewLine
 
       // Print the virtual terminal to the console.
-      Console.print(vt.fmt)
+      term.writer().print(vt.fmt)
 
     case Some(ns) =>
       // Case 2: Browse a specific namespace.
@@ -299,7 +312,7 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
       }
 
       // Print the virtual terminal to the console.
-      Console.print(vt.fmt)
+      term.writer().print(vt.fmt)
   }
 
   /**
