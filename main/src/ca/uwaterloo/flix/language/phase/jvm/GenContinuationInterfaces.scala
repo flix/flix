@@ -73,17 +73,14 @@ object GenContinuationInterfaces {
     val visitor = AsmOps.mkClassWriter()
 
     // Class header
-    visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_ABSTRACT + ACC_INTERFACE, interfaceType.name.toInternalName, null,
-      JvmName.Object.toInternalName, null)
+    visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_ABSTRACT + ACC_INTERFACE, interfaceType.name.toInternalName, null, JvmName.Object.toInternalName, null)
 
     // `getResult()` method
-    val getResultMethod = visitor.visitMethod(ACC_PUBLIC + ACC_ABSTRACT, "getResult", AsmOps.getMethodDescriptor(Nil, resultType),
-      null, null)
+    val getResultMethod = visitor.visitMethod(ACC_PUBLIC + ACC_ABSTRACT, "getResult", AsmOps.getMethodDescriptor(Nil, resultType), null, null)
     getResultMethod.visitEnd()
 
     // `apply()` method
-    val applyMethod = visitor.visitMethod(ACC_PUBLIC + ACC_ABSTRACT, "apply", AsmOps.getMethodDescriptor(List(JvmType.Context)),
-      null, null)
+    val applyMethod = visitor.visitMethod(ACC_PUBLIC + ACC_ABSTRACT, "apply", AsmOps.getMethodDescriptor(List(JvmType.Context)), null, null)
     applyMethod.visitEnd()
 
     visitor.visitEnd()

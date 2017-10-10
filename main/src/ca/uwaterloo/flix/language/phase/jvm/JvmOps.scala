@@ -341,7 +341,7 @@ object JvmOps {
     * Foo.Bar     =>  Foo$Bar$Ns
     * Foo.Bar.Baz =>  Foo$Bar$Baz$Ns
     */
-  def getNamespaceFieldNameInContext(ns: NamespaceInfo): String =
+  def getNamespaceFieldNameInContextClass(ns: NamespaceInfo): String =
     if (ns.isRoot)
       "ns$Root$"
     else
@@ -358,7 +358,7 @@ object JvmOps {
     * Foo.Bar.Baz.Y() =>  Foo$Bar$Baz$Ns$X
     */
   // TODO: We should move "suffix" and "prefix" into helpers inside JvmOps.
-  def getDefFieldNameInNamespace(sym: Symbol.DefnSym): String = sym.suffix + '$' + sym.prefix.mkString("$")
+  def getDefFieldNameInNamespaceClass(sym: Symbol.DefnSym): String = sym.suffix + '$' + sym.prefix.mkString("$")
 
   /**
     * Returns the erased JvmType of the given Flix type `tpe`.
@@ -380,6 +380,7 @@ object JvmOps {
   /**
     * Performs name mangling on the given string `s` to avoid issues with special characters.
     */
+  // TODO: Use this in appropriate places.
   def mangle(s: String): String = s.
     replace("+", "$plus").
     replace("-", "$minus").
