@@ -29,11 +29,6 @@ object Command {
   case object Nop extends Command
 
   /**
-    * End of input.
-    */
-  case object Eof extends Command
-
-  /**
     * Evaluates the given expression `exp`.
     */
   case class Eval(exp: String) extends Command
@@ -126,7 +121,7 @@ object Command {
     // Eof
     //
     if (input == null)
-      return Command.Eof
+      return Command.Quit
 
     //
     // Nop

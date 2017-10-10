@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.runtime.shell
 
 import java.nio.file._
 import java.util.concurrent.Executors
-import java.util.logging.Level
+import java.util.logging.{Level, Logger}
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{Symbol, Type}
@@ -78,6 +78,11 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
   private var watcher: WatcherThread = _
 
   /**
+    * The definition symbol to use for the expression.
+    */
+  private val symbol: Symbol.DefnSym = Symbol.mkDefnSym("$1")
+
+  /**
     * The current expression (if any).
     */
   private var expression: String = _
@@ -86,20 +91,23 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
     * Continuously reads a line of input from the input stream, parses and executes it.
     */
   def loop(): Unit = {
+    // Silence JLine warnings about terminal type.
+    Logger.getLogger("org.jline").setLevel(Level.OFF)
+
     // Initialize the terminal.
-    val terminal = TerminalBuilder.builder().system(true).build()
+    implicit val terminal: Terminal = TerminalBuilder.builder().system(true).build()
 
     // Initialize the terminal line reader.
     val reader = LineReaderBuilder.builder().appName("flix").terminal(terminal).build()
 
     // Print the welcome banner.
-    printWelcomeBanner(terminal)
+    printWelcomeBanner()
 
-    // Initialize flix.
+    // Trigger a compilation of the source input files.
     execReload()
 
     try {
-      // Repeatedly read input from the line reader.
+      // Repeatedly try to read an input from the line reader.
       while (!Thread.currentThread().isInterrupted) {
         // Try to read a command.
         val line = reader.readLine(prompt)
@@ -108,7 +116,7 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
         val cmd = Command.parse(line)
         try {
           // Try to execute the command. Catch any exception.
-          execute(cmd, terminal)
+          execute(cmd)
         } catch {
           case e: Exception =>
             Console.println(e.getMessage)
@@ -125,99 +133,9 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
   }
 
   /**
-    * Attempts to a (possibly) multi line input.
-    *
-    * Returns `null` if the end-of-stream is reached.
-    *
-    * Otherwise returns a list, in reverse order, of read lines.
+    * Prints the welcome banner to the terminal.
     */
-  private def readMultiLineInput(acc: List[String]): List[String] = {
-    // Read a line from the input.
-    val line = scala.io.StdIn.readLine()
-
-    // Check if the end-of-stream has been reached, if so, return null.
-    if (line == null) return null
-
-    // Check if the line ends with \\ in which case we read more input.
-    if (!line.endsWith("\\")) {
-      line :: acc
-    } else {
-      readMultiLineInput(line.substring(0, line.length - 1) :: acc)
-    }
-  }
-
-
-  /**
-    * Executes the given command `cmd`
-    */
-  private def execute(cmd: Command, term: Terminal): Unit = cmd match {
-    case Command.Nop => // nop
-
-    // TODO: Remove?
-    case Command.Eof | Command.Quit =>
-      Thread.currentThread().interrupt()
-
-    case Command.Doc(fqn) => execDoc(fqn)
-
-    case Command.Eval(s) =>
-      expression = s.trim
-      execReload()
-      execSolve()
-      Console.println(model.evalToString("$1"))
-
-    case Command.Load(s) => execLoad(s)
-
-    case Command.Unload(s) => execUnload(s)
-
-    case Command.Reload => execReload()
-
-    case Command.Browse(nsOpt) => execBrowse(nsOpt, term)
-
-    case Command.Help => execHelp()
-
-    case Command.Search(s) => execSearch(s)
-
-    case Command.Solve => execSolve()
-
-    case Command.Rel(fqn, needle) => execShowRel(fqn, needle)
-
-    case Command.Lat(fqn, needle) => execShowLat(fqn, needle)
-
-    case Command.KindOf(exp) =>
-      execShowKind(exp)
-
-    case Command.TypeOf(exp) =>
-      execShowType(exp)
-
-    case Command.Watch =>
-      // Check if the watcher is already initialized.
-      if (watcher != null)
-        return
-
-      // Compute the set of directories to watch.
-      val directories = sourcePaths.map(_.toAbsolutePath.getParent).toList
-
-      // Print debugging information.
-      Console.println("Watching Directories:")
-      for (directory <- directories) {
-        Console.println(s"  $directory")
-      }
-
-      watcher = new WatcherThread(directories)
-      watcher.start()
-
-    case Command.Unwatch =>
-      watcher.interrupt()
-      watcher = null
-      Console.println("Unwatched loaded paths.")
-
-    case Command.Unknown(s) => Console.println(s"Unknown command '$s'. Try `help'.")
-  }
-
-  /**
-    * Prints the welcome banner to the console.
-    */
-  private def printWelcomeBanner(terminal: Terminal): Unit = {
+  private def printWelcomeBanner()(implicit terminal: Terminal): Unit = {
     val banner =
       """     __   _   _
         |    / _| | | (_)             Welcome to Flix __VERSION__
@@ -232,14 +150,102 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
   }
 
   /**
-    * Prints the prompt.
+    * Returns the Flix prompt.
     */
   private def prompt: String = "flix> "
 
   /**
+    * Executes the given command `cmd`.
+    */
+  private def execute(cmd: Command)(implicit terminal: Terminal): Unit = cmd match {
+    case Command.Nop => // nop
+    case Command.Eval(s) => execEval(s)
+    case Command.TypeOf(exp) => execTypeOf(exp)
+    case Command.KindOf(exp) => execKindOf(exp)
+    case Command.Browse(ns) => execBrowse(ns)
+    case Command.Doc(fqn) => execDoc(fqn)
+    case Command.Search(s) => execSearch(s)
+    case Command.Load(s) => execLoad(s)
+    case Command.Unload(s) => execUnload(s)
+    case Command.Reload => execReload()
+    case Command.Solve => execSolve()
+    case Command.Rel(fqn, needle) => execRel(fqn, needle)
+    case Command.Lat(fqn, needle) => execLat(fqn, needle)
+    case Command.Watch => execWatch()
+    case Command.Unwatch => execUnwatch()
+    case Command.Quit => execQuit()
+    case Command.Help => execHelp()
+    case Command.Unknown(s) => execUnknown(s)
+  }
+
+  /**
+    * Executes the eval command.
+    */
+  private def execEval(s: String)(implicit terminal: Terminal): Unit = {
+    // Set the expression.
+    expression = s.trim
+
+    // Recompile the program.
+    execReload()
+
+    // Solve the program (to retrieve the model).
+    execSolve()
+
+    // Evaluate the function and get the result.
+    val result = model.evalToString(symbol.toString)
+
+    // Write the result to the terminal.
+    terminal.writer().println(result)
+  }
+
+  /**
+    * Shows the type of the given expression `exp`.
+    */
+  private def execTypeOf(exp: String)(implicit terminal: Terminal, s: Show[Type]): Unit = {
+    // Set the expression.
+    expression = exp
+
+    // Recompile the program.
+    execReload()
+
+    // Retrieve the definition.
+    val defn = root.defs(symbol)
+
+    // Compute the result type, i.e. the last type argument.
+    val tpe = defn.tpe.typeArguments.last
+
+    // Print the type to the console.
+    val vt = new VirtualTerminal
+    vt << Cyan(tpe.show) << NewLine
+    terminal.writer().print(vt.fmt)
+  }
+
+  /**
+    * Shows the kind of the given expression `exp`.
+    */
+  private def execKindOf(exp: String)(implicit terminal: Terminal, s: Show[Type]): Unit = {
+    // Set the expression.
+    expression = exp
+
+    // Recompile the program.
+    execReload()
+
+    // Retrieve the definition.
+    val defn = root.defs(symbol)
+
+    // Retrieve the kind.
+    val kind = defn.tpe.kind
+
+    // Print the kind to the console.
+    val vt = new VirtualTerminal
+    vt << Magenta(kind.toString) << NewLine
+    terminal.writer().print(vt.fmt)
+  }
+
+  /**
     * Executes the browse command.
     */
-  private def execBrowse(nsOpt: Option[String], term: Terminal): Unit = nsOpt match {
+  private def execBrowse(nsOpt: Option[String])(implicit terminal: Terminal): Unit = nsOpt match {
     case None =>
       // Case 1: Browse available namespaces.
 
@@ -256,7 +262,7 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
       vt << Dedent << NewLine
 
       // Print the virtual terminal to the console.
-      term.writer().print(vt.fmt)
+      terminal.writer().print(vt.fmt)
 
     case Some(ns) =>
       // Case 2: Browse a specific namespace.
@@ -312,7 +318,7 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
       }
 
       // Print the virtual terminal to the console.
-      term.writer().print(vt.fmt)
+      terminal.writer().print(vt.fmt)
   }
 
   /**
@@ -356,6 +362,10 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
     Console.println("  :quit :q                        Terminates the Flix shell.")
     Console.println("  :help :h :?                     Shows this helpful information.")
     Console.println()
+  }
+
+  private def execUnknown(s: String): Unit = {
+    Console.println(s"Unknown command '$s'. Try `:help'.")
   }
 
   /**
@@ -453,7 +463,7 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
   /**
     * Shows the rows in the given relation `fqn` that match the optional `needle`.
     */
-  private def execShowRel(fqn: String, needle: Option[String]): Unit = {
+  private def execRel(fqn: String, needle: Option[String]): Unit = {
     model.getRelations.get(fqn) match {
       case None =>
         Console.println(s"Undefined relation: '$fqn'.")
@@ -469,7 +479,7 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
   /**
     * Shows the rows in the given lattice `fqn` that match the optional `needle`.
     */
-  private def execShowLat(fqn: String, needle: Option[String]): Unit = {
+  private def execLat(fqn: String, needle: Option[String]): Unit = {
     model.getLattices.get(fqn) match {
       case None =>
         Console.println(s"Undefined lattice: '$fqn'.")
@@ -482,32 +492,32 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
     }
   }
 
-  /**
-    * Shows the kind of the given expression `exp`.
-    */
-  private def execShowKind(exp: String)(implicit s: Show[Type]): Unit = {
-    val sym = Symbol.mkDefnSym("$1")
-    expression = exp
-    execReload()
-    val kind = root.defs(sym).tpe.kind
+  private def execWatch(): Unit = {
+    // Check if the watcher is already initialized.
+    if (watcher != null)
+      return
 
-    val vt = new VirtualTerminal
-    vt << Magenta(kind.toString) << NewLine
-    Console.print(vt.fmt)
+    // Compute the set of directories to watch.
+    val directories = sourcePaths.map(_.toAbsolutePath.getParent).toList
+
+    // Print debugging information.
+    Console.println("Watching Directories:")
+    for (directory <- directories) {
+      Console.println(s"  $directory")
+    }
+
+    watcher = new WatcherThread(directories)
+    watcher.start()
   }
 
-  /**
-    * Shows the type of the given expression `exp`.
-    */
-  private def execShowType(exp: String)(implicit s: Show[Type]): Unit = {
-    val sym = Symbol.mkDefnSym("$1")
-    expression = exp
-    execReload()
-    val tpe = root.defs(sym).tpe.typeArguments.last
+  private def execUnwatch(): Unit = {
+    watcher.interrupt()
+    watcher = null
+    Console.println("Unwatched loaded paths.")
+  }
 
-    val vt = new VirtualTerminal
-    vt << Cyan(tpe.show) << NewLine
-    Console.print(vt.fmt)
+  private def execQuit(): Unit = {
+    Thread.currentThread().interrupt()
   }
 
   /**
