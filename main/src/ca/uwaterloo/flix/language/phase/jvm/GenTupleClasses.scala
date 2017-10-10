@@ -76,11 +76,11 @@ object GenTupleClasses {
     * has the following getters and setters:
     *
     * public Object getIndex4() {
-    *   return field4;
+    * return field4;
     * }
     *
     * public void setIndex4(Object obj) {
-    *   field4 = obj;
+    * field4 = obj;
     * }
     *
     * Then we precede with generating the code for constructor. Number of arguments on this constructor is equal number
@@ -88,8 +88,8 @@ object GenTupleClasses {
     * For example for tuple (Char, Int8) we create the following constructor:
     *
     * public Tuple(char var1, byte var2) {
-    *   this.field0 = var1;
-    *   this.field1 = var2;
+    * this.field0 = var1;
+    * this.field1 = var2;
     * }
     *
     * Then we generate the `getBoxedValue()` method which will return an array containing all the elements of the represented
@@ -99,43 +99,41 @@ object GenTupleClasses {
     * The `toString` method is always the following:
     *
     * public string toString(Object var1) throws Exception {
-    *   throw new Exception("toString method shouldn't be called");
+    * throw new Exception("toString method shouldn't be called");
     * }
     *
     * Then, we will generate the `hashCode()` method which will always throws an exception, since `hashCode` should not be called.
     * The `hashCode` method is always the following:
     *
     * public int hashCode(Object var1) throws Exception {
-    *   throw new Exception("hashCode method shouldn't be called");
+    * throw new Exception("hashCode method shouldn't be called");
     * }
     *
     * Finally, we generate the `equals(Obj)` method which will always throws an exception, since `equals` should not be called.
     * The `equals` method is always the following:
     *
     * public boolean equals(Object var1) throws Exception {
-    *   throw new Exception("equals method shouldn't be called");
+    * throw new Exception("equals method shouldn't be called");
     * }
     *
     */
-  private def genByteCode(classType: JvmType.Reference,
-                          interfaceType: JvmType.Reference,
-                          targs: List[JvmType])(implicit root: Root, flix: Flix): Array[Byte] = {
+  private def genByteCode(classType: JvmType.Reference, interfaceType: JvmType.Reference, targs: List[JvmType])(implicit root: Root, flix: Flix): Array[Byte] = {
     // class writer
     val visitor = AsmOps.mkClassWriter()
 
     // internal name of super
-    val superInternalName = JvmName.Object.toInternalName
+    val superClass = JvmName.Object.toInternalName
 
     // internal name of interfaces to be implemented
     val implementedInterfaces = Array(interfaceType.name.toInternalName)
 
     // Initialize the visitor to create a class.
-    visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_FINAL, classType.name.toInternalName, null,
-      superInternalName, implementedInterfaces)
+    visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_FINAL, classType.name.toInternalName, null, superClass, implementedInterfaces)
 
     // Source of the class
     visitor.visitSource(classType.name.toInternalName, null)
 
+    // TODO: Use for.
     targs.zipWithIndex.foreach { case (field, ind) =>
       // Name of the field
       val fieldName = s"field$ind"
@@ -184,9 +182,7 @@ object GenTupleClasses {
     * @param classType Type of the tuple class
     * @param fields    Fields of the class
     */
-  private def compileGetBoxedValueMethod(visitor: ClassWriter,
-                                         classType: JvmType.Reference,
-                                         fields: List[JvmType])(implicit root: Root, flix: Flix) = {
+  private def compileGetBoxedValueMethod(visitor: ClassWriter, classType: JvmType.Reference, fields: List[JvmType])(implicit root: Root, flix: Flix): Unit = {
     // header of the method
     val method = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, "getBoxedValue", s"()[Ljava/lang/Object;", null, null)
 
@@ -233,9 +229,7 @@ object GenTupleClasses {
     * @param classType JvmType of the class of tuple
     * @param fields    fields on the tuple class
     */
-  def compileTupleConstructor(visitor: ClassWriter,
-                              classType: JvmType.Reference,
-                              fields: List[JvmType])(implicit root: Root, flix: Flix) = {
+  def compileTupleConstructor(visitor: ClassWriter, classType: JvmType.Reference, fields: List[JvmType])(implicit root: Root, flix: Flix): Unit = {
 
     val constructor = visitor.visitMethod(ACC_PUBLIC, "<init>", AsmOps.getMethodDescriptor(fields, JvmType.Void), null, null)
 
@@ -246,6 +240,7 @@ object GenTupleClasses {
     constructor.visitMethodInsn(INVOKESPECIAL, JvmName.Object.toInternalName, "<init>", AsmOps.getMethodDescriptor(Nil, JvmType.Void), false)
 
     var offset: Int = 1
+    // TODO: For loop.
     fields.zipWithIndex.foreach { case (field, ind) =>
       val iLoad = AsmOps.getLoadInstruction(field)
 

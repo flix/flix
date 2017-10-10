@@ -30,6 +30,8 @@ object AsmOps {
     * Returns the descriptor of a method take takes the given `argumentTypes` and returns the given `resultType`.
     */
   def getMethodDescriptor(argumentTypes: List[JvmType], resultType: JvmType = JvmType.Void): String = {
+    // TODO: Avoid use of default arguments.
+
     // Descriptor of result
     val resultDescriptor = resultType.toDescriptor
 
@@ -94,16 +96,16 @@ object AsmOps {
     * return this.value;
     * }
     *
-    * @param visitor    class visitor
-    * @param internalName   Internal name of the class
-    * @param fieldType  JvmType of the field
-    * @param methodName method name of getter of `fieldName`
-    * @param iReturn    opcode for returning the value of the field
+    * @param visitor      class visitor
+    * @param internalName Internal name of the class
+    * @param fieldType    JvmType of the field
+    * @param methodName   method name of getter of `fieldName`
+    * @param iReturn      opcode for returning the value of the field
     */
   def compileGetFieldMethod(visitor: ClassWriter, internalName: String, fieldType: JvmType, fieldName: String,
                             methodName: String, iReturn: Int): Unit = {
+    // TODO: Derive iReturn from fieldType.
     val method = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, methodName, getMethodDescriptor(List(fieldType)), null, null)
-
     method.visitCode()
     method.visitVarInsn(ALOAD, 0)
     method.visitFieldInsn(GETFIELD, internalName, fieldName, fieldType.toDescriptor)
@@ -121,16 +123,16 @@ object AsmOps {
     *   this.field0 = var;
     * }
     *
-    * @param visitor    class visitor
-    * @param internalName   Internal name of the class
-    * @param fieldType  JvmType of the field
-    * @param methodName method name of getter of `fieldName`
-    * @param iLoad      opcode for loading the single parameter of the method
+    * @param visitor      class visitor
+    * @param internalName Internal name of the class
+    * @param fieldType    JvmType of the field
+    * @param methodName   method name of getter of `fieldName`
+    * @param iLoad        opcode for loading the single parameter of the method
     */
   def compileSetFieldMethod(visitor: ClassWriter, internalName: String, fieldType: JvmType, fieldName: String,
                             methodName: String, iLoad: Int): Unit = {
+    // TODO: Derive iReturn from fieldType.
     val method = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, methodName, getMethodDescriptor(List(fieldType)), null, null)
-
     method.visitCode()
     method.visitVarInsn(ALOAD, 0)
     method.visitVarInsn(iLoad, 1)
@@ -170,16 +172,14 @@ object AsmOps {
 
   /**
     * This will generate a method which will throw an exception in case of getting called.
-    * @param modifiers Modifiers of the generated method
+    *
+    * @param modifiers  Modifiers of the generated method
     * @param methodName Name of the method
     * @param descriptor Descriptor of the method
-    * @param message Message of the exception to be thrown
+    * @param message    Message of the exception to be thrown
     */
-  def exceptionThrowerMethod(visitor: ClassWriter,
-                             modifiers: Int,
-                             methodName: String,
-                             descriptor: String,
-                             message: String) : Unit = {
+  def exceptionThrowerMethod(visitor: ClassWriter, modifiers: Int, methodName: String, descriptor: String, message: String): Unit = {
+    // Method visitor.
     val method = visitor.visitMethod(modifiers, methodName, descriptor, null, Array(JvmName.Exception.toInternalName))
     method.visitCode()
 
@@ -206,20 +206,20 @@ object AsmOps {
     * If the field is a primitive then it is boxed using the appropriate java type, if it is not a primitive
     * then we just return the field
     *
-    * @param method   MethodVisitor used to emit the code to a method
-    * @param fieldType   type of the field to be boxed
+    * @param method     MethodVisitor used to emit the code to a method
+    * @param fieldType  type of the field to be boxed
     * @param classType  class that the field is defined on
-    * @param getterName   name of the field to be boxed
+    * @param getterName name of the field to be boxed
     */
-  def boxField(method: MethodVisitor, fieldType: JvmType, classType: JvmType.Reference, getterName: String) : Unit = {
+  def boxField(method: MethodVisitor, fieldType: JvmType, classType: JvmType.Reference, getterName: String): Unit = {
 
     /**
       * This method will box the primitive on top of the stack
       *
       * @param boxedObjectInternalName descriptor of the boxed version of the primitive
-      * @param signature             signature of the constructor of the boxer
+      * @param signature               signature of the constructor of the boxer
       */
-    def box(boxedObjectInternalName: String, signature: String) = {
+    def box(boxedObjectInternalName: String, signature: String): Unit = {
       method.visitTypeInsn(NEW, boxedObjectInternalName)
       method.visitInsn(DUP)
       method.visitVarInsn(ALOAD, 0)
@@ -234,7 +234,7 @@ object AsmOps {
       case JvmType.PrimByte => box(JvmName.Byte.toInternalName, getMethodDescriptor(List(JvmType.PrimByte)))
       case JvmType.PrimShort => box(JvmName.Short.toInternalName, getMethodDescriptor(List(JvmType.PrimShort)))
       case JvmType.PrimInt => box(JvmName.Integer.toInternalName, getMethodDescriptor(List(JvmType.PrimInt)))
-      case JvmType.PrimLong=> box(JvmName.Long.toInternalName, getMethodDescriptor(List(JvmType.PrimLong)))
+      case JvmType.PrimLong => box(JvmName.Long.toInternalName, getMethodDescriptor(List(JvmType.PrimLong)))
       case JvmType.PrimFloat => box(JvmName.Float.toInternalName, getMethodDescriptor(List(JvmType.PrimFloat)))
       case JvmType.PrimDouble => box(JvmName.Double.toInternalName, getMethodDescriptor(List(JvmType.PrimDouble)))
       case _ =>

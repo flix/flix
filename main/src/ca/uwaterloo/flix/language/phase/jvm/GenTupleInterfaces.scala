@@ -46,31 +46,31 @@ object GenTupleInterfaces {
     }
   }
 
-/**
-  * This method will generate code for a tuple interface.
-  * There is a getter and a setter method for each element of `fields` on this interface.
-  * After creating a tuple object using a tuple class which corresponds to the same tuple type as this interface,
-  * the class type should never be used to reference to that object and this interface should be used for all interactions
-  * with that object.
-  */
+  /**
+    * This method will generate code for a tuple interface.
+    * There is a getter and a setter method for each element of `fields` on this interface.
+    * After creating a tuple object using a tuple class which corresponds to the same tuple type as this interface,
+    * the class type should never be used to reference to that object and this interface should be used for all interactions
+    * with that object.
+    */
   private def genByteCode(interfaceType: JvmType.Reference, targs: List[JvmType])(implicit root: Root, flix: Flix): Array[Byte] = {
     // class writer
     val visitor = AsmOps.mkClassWriter()
 
     // Super descriptor
-    val superInternalName =  JvmName.Object.toInternalName
+    val superClass = JvmName.Object.toInternalName
 
     // Descriptors of implemented interfaces
     val implementedInterfaces = Array(JvmName.Tuple.toInternalName)
 
     // Initialize the visitor to create a class.
-    visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_ABSTRACT + ACC_INTERFACE, interfaceType.name.toInternalName, null,
-      superInternalName, implementedInterfaces)
+    visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_ABSTRACT + ACC_INTERFACE, interfaceType.name.toInternalName, null, superClass, implementedInterfaces)
 
     // Source of the class
     visitor.visitSource(interfaceType.name.toInternalName, null)
 
-    targs.zipWithIndex.foreach{ case (arg, ind) =>
+    // TODO: Use for loop
+    targs.zipWithIndex.foreach { case (arg, ind) =>
       // Emitting getter for each field
       val getter = visitor.visitMethod(ACC_PUBLIC + ACC_ABSTRACT, s"getIndex$ind", AsmOps.getMethodDescriptor(Nil, arg), null, null)
       getter.visitEnd()
