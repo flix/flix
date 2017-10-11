@@ -23,7 +23,7 @@ import java.util.logging.{Level, Logger}
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{Symbol, Type}
 import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.runtime.{Model, Tester}
+import ca.uwaterloo.flix.runtime.{Benchmarker, Model, Tester}
 import ca.uwaterloo.flix.util._
 import ca.uwaterloo.flix.util.tc.Show
 import ca.uwaterloo.flix.util.tc.Show._
@@ -172,6 +172,7 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
     case Command.Solve => execSolve()
     case Command.Rel(fqn, needle) => execRel(fqn, needle)
     case Command.Lat(fqn, needle) => execLat(fqn, needle)
+    case Command.Benchmark => execBenchmark()
     case Command.Test => execTest()
     case Command.Watch => execWatch()
     case Command.Unwatch => execUnwatch()
@@ -508,7 +509,21 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
   }
 
   /**
-    * Runs all test cases.
+    * Run all benchmarks in the program.
+    */
+  private def execBenchmark()(implicit terminal: Terminal): Unit = {
+    // Check that the model has been computed.
+    if (model == null) {
+      terminal.writer().println(s"The model has not been computed. Run :solve.")
+      return
+    }
+
+    // Run all benchmarks.
+    Benchmarker.benchmark(model)
+  }
+
+  /**
+    * Run all unit tests in the program.
     */
   private def execTest()(implicit terminal: Terminal): Unit = {
     // Check that the model has been computed.
@@ -517,7 +532,7 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
       return
     }
 
-    // Run all tests.
+    // Run all unit tests.
     val vt = Tester.test(model)
 
     // Print the result to the terminal.
@@ -584,6 +599,8 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
     w.println("  :solve                          Computes the least fixed point.")
     w.println("  :rel          <fqn> [needle]    Shows all rows in the relation <fqn> that match <needle>.")
     w.println("  :lat          <fqn> [needle]    Shows all rows in the lattice <fqn> that match <needle>.")
+    w.println("  :benchmark                      Run all benchmarks in the program and show the results.")
+    w.println("  :test                           Run all unit tests in the program and show the results.")
     w.println("  :watch :w                       Watches all source files for changes.")
     w.println("  :unwatch                        Unwatches all source files for changes.")
     w.println("  :quit :q                        Terminates the Flix shell.")

@@ -16,6 +16,9 @@
 
 package ca.uwaterloo.flix.runtime
 
+/**
+  * Evaluates all benchmarks in a model.
+  */
 object Benchmarker {
 
   /**

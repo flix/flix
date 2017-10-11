@@ -94,7 +94,12 @@ object Command {
   case class Lat(fqn: String, needle: Option[String]) extends Command
 
   /**
-    * Runs all test cases.
+    * Run benchmarks in the program.
+    */
+  case object Benchmark extends Command
+
+  /**
+    * Run all unit tests in the program.
     */
   case object Test extends Command
 
@@ -285,11 +290,16 @@ object Command {
     }
 
     //
+    // Benchmark
+    //
+    if (input == ":benchmark")
+      return Command.Benchmark
+
+    //
     // Test
     //
-    if (input == ":test") {
+    if (input == ":test")
       return Command.Test
-    }
 
     //
     // Watch

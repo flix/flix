@@ -21,6 +21,9 @@ import ca.uwaterloo.flix.language.ast.{Source, Symbol}
 import ca.uwaterloo.flix.util.vt.VirtualString.{Blue, Dedent, Green, Indent, Line, NewLine, Red}
 import ca.uwaterloo.flix.util.vt.VirtualTerminal
 
+/**
+  * Evaluates all tests in a model.
+  */
 object Tester {
 
   /**
