@@ -16,6 +16,8 @@
 
 package ca.uwaterloo.flix.runtime
 
+import java.io.PrintWriter
+
 /**
   * Evaluates all benchmarks in a model.
   */
@@ -34,7 +36,7 @@ object Benchmarker {
   /**
     * Evaluates all benchmarks in the given `model`.
     */
-  def benchmark(model: Model): Unit = {
+  def benchmark(model: Model, writer: PrintWriter): Unit = {
     /*
       * Group benchmarks by namespace.
       */
@@ -45,40 +47,40 @@ object Benchmarker {
      */
     for ((ns, benchmarks) <- benchmarksByNamespace) {
       if (ns.isEmpty) {
-        Console.println(s"-- Benchmarks for root -- ")
+        writer.println(s"-- Benchmarks for root -- ")
       } else {
-        Console.println(s"-- Benchmarks for '${ns.mkString(".")}' -- ")
+        writer.println(s"-- Benchmarks for '${ns.mkString(".")}' -- ")
       }
 
       /*
        * Warmup Rounds.
        */
-      Console.println(s"    Warmup Rounds: $WarmupRounds")
+      writer.println(s"    Warmup Rounds: $WarmupRounds")
       for ((sym, defn) <- benchmarks.toList.sortBy(_._1.loc)) {
-        Console.print("      ")
-        Console.print(sym.name)
-        Console.print(": ")
+        writer.print("      ")
+        writer.print(sym.name)
+        writer.print(": ")
         for (i <- 0 until WarmupRounds) {
-          Console.print(".")
+          writer.print(".")
           defn()
         }
-        Console.println()
+        writer.println()
       }
-      Console.println()
+      writer.println()
 
       /*
        * Actual Rounds.
        */
-      Console.println(s"    Actual Rounds: $ActualRounds")
-      Console.println(s"      Name:                Median (ms)")
+      writer.println(s"    Actual Rounds: $ActualRounds")
+      writer.println(s"      Name:                Median (ms)")
       for ((sym, defn) <- benchmarks.toList.sortBy(_._1.loc)) {
         val timings = run(defn, ActualRounds)
         val medianInMiliSeconds = median(timings).toDouble / (1000.0 * 1000.0)
-        Console.println(f"      ${sym.name} $medianInMiliSeconds%20.1f")
+        writer.println(f"      ${sym.name} $medianInMiliSeconds%20.1f")
         sleepAndGC()
       }
 
-      Console.println()
+      writer.println()
     }
   }
 

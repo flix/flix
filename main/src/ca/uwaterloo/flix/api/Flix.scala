@@ -151,7 +151,7 @@ class Flix {
   }
 
   /**
-    * Adds the given named expression.
+    * Adds the given expression `exp` with the given name `sym`.
     */
   def addNamedExp(sym: Symbol.DefnSym, exp: String): scala.Unit = {
     named += (sym -> exp)

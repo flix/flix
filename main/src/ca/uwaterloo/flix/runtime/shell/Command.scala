@@ -16,6 +16,8 @@
 
 package ca.uwaterloo.flix.runtime.shell
 
+import org.jline.terminal.Terminal
+
 /**
   * A common super-type for commands.
   */
@@ -74,7 +76,7 @@ object Command {
   case class Unload(path: String) extends Command
 
   /**
-    * Reload all source paths.
+    * Reloads all source paths.
     */
   case object Reload extends Command
 
@@ -94,12 +96,12 @@ object Command {
   case class Lat(fqn: String, needle: Option[String]) extends Command
 
   /**
-    * Run benchmarks in the program.
+    * Runs all benchmarks in the program.
     */
   case object Benchmark extends Command
 
   /**
-    * Run all unit tests in the program.
+    * Runs all unit tests in the program.
     */
   case object Test extends Command
 
@@ -131,7 +133,7 @@ object Command {
   /**
     * Parses the given `input` into a command.
     */
-  def parse(input: String): Command = {
+  def parse(input: String)(implicit terminal: Terminal): Command = {
     //
     // Eof
     //
@@ -197,7 +199,7 @@ object Command {
     if (input.startsWith(":doc ")) {
       val fqn = input.substring(":doc ".length).trim
       if (fqn.isEmpty) {
-        Console.println("Missing argument for command :doc.")
+        terminal.writer().println("Missing argument for command :doc.")
         return Command.Nop
       }
       return Command.Doc(fqn)
@@ -209,7 +211,7 @@ object Command {
     if (input.startsWith(":search ")) {
       val needle = input.substring(":search ".length).trim
       if (needle.isEmpty) {
-        Console.println("Missing argument for command :search.")
+        terminal.writer().println("Missing argument for command :search.")
         return Command.Nop
       }
       return Command.Search(needle)
@@ -221,7 +223,7 @@ object Command {
     if (input.startsWith(":load ")) {
       val path = input.substring(":load ".length).trim
       if (path.isEmpty) {
-        Console.println("Missing argument for command :load.")
+        terminal.writer().println("Missing argument for command :load.")
         return Command.Nop
       }
       return Command.Load(path)
@@ -233,7 +235,7 @@ object Command {
     if (input.startsWith(":unload ")) {
       val path = input.substring(":unload ".length).trim
       if (path.isEmpty) {
-        Console.println("Missing argument for command :unload.")
+        terminal.writer().println("Missing argument for command :unload.")
         return Command.Nop
       }
       return Command.Unload(path)
@@ -258,7 +260,7 @@ object Command {
       // Check if any arguments were passed.
       val args = input.substring(":rel ".length).trim
       if (args.isEmpty) {
-        Console.println("Missing argument for command :rel.")
+        terminal.writer().println("Missing argument for command :rel.")
         return Command.Nop
       }
 
@@ -277,7 +279,7 @@ object Command {
       // Check if any arguments were passed.
       val args = input.substring(":lat ".length).trim
       if (args.isEmpty) {
-        Console.println("Missing argument for command :lat.")
+        terminal.writer().println("Missing argument for command :lat.")
         return Command.Nop
       }
 

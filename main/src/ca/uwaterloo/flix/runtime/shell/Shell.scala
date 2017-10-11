@@ -73,32 +73,39 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
   private var model: Model = _
 
   /**
+    * The definition symbol to use for the expression.
+    */
+  private val sym: Symbol.DefnSym = Symbol.mkDefnSym("$1")
+
+  /**
+    * The current expression (if any).
+    */
+  private var exp: String = _
+
+  /**
     * The current watcher (if any).
     */
   private var watcher: WatcherThread = _
 
   /**
-    * The definition symbol to use for the expression.
-    */
-  private val symbol: Symbol.DefnSym = Symbol.mkDefnSym("$1")
-
-  /**
-    * The current expression (if any).
-    */
-  private var expression: String = _
-
-  /**
-    * Continuously reads a line of input from the input stream, parses and executes it.
+    * Continuously reads a line of input from the terminal, parses and executes it.
     */
   def loop(): Unit = {
     // Silence JLine warnings about terminal type.
     Logger.getLogger("org.jline").setLevel(Level.OFF)
 
     // Initialize the terminal.
-    implicit val terminal: Terminal = TerminalBuilder.builder().system(true).build()
+    implicit val terminal: Terminal = TerminalBuilder
+      .builder()
+      .system(true)
+      .build()
 
     // Initialize the terminal line reader.
-    val reader = LineReaderBuilder.builder().appName("flix").terminal(terminal).build()
+    val reader = LineReaderBuilder
+      .builder()
+      .appName("flix")
+      .terminal(terminal)
+      .build()
 
     // Print the welcome banner.
     printWelcomeBanner()
@@ -186,7 +193,7 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
     */
   private def execEval(s: String)(implicit terminal: Terminal): Unit = {
     // Set the expression.
-    expression = s.trim
+    this.exp = s.trim
 
     // Recompile the program.
     execReload()
@@ -195,7 +202,7 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
     execSolve()
 
     // Evaluate the function and get the result.
-    val result = model.evalToString(symbol.toString)
+    val result = this.model.evalToString(this.sym.toString)
 
     // Write the result to the terminal.
     terminal.writer().println(result)
@@ -206,13 +213,13 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
     */
   private def execTypeOf(exp: String)(implicit terminal: Terminal, s: Show[Type]): Unit = {
     // Set the expression.
-    expression = exp
+    this.exp = exp
 
     // Recompile the program.
     execReload()
 
     // Retrieve the definition.
-    val defn = root.defs(symbol)
+    val defn = this.root.defs(this.sym)
 
     // Compute the result type, i.e. the last type argument.
     val tpe = defn.tpe.typeArguments.last
@@ -228,13 +235,13 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
     */
   private def execKindOf(exp: String)(implicit terminal: Terminal, s: Show[Type]): Unit = {
     // Set the expression.
-    expression = exp
+    this.exp = exp
 
     // Recompile the program.
     execReload()
 
     // Retrieve the definition.
-    val defn = root.defs(symbol)
+    val defn = this.root.defs(this.sym)
 
     // Retrieve the kind.
     val kind = defn.tpe.kind
@@ -250,13 +257,13 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
     */
   private def execEffectOf(exp: String)(implicit terminal: Terminal, s: Show[Type]): Unit = {
     // Set the expression.
-    expression = exp
+    this.exp = exp
 
     // Recompile the program.
     execReload()
 
     // Retrieve the definition.
-    val defn = root.defs(symbol)
+    val defn = this.root.defs(this.sym)
 
     // Retrieve the effect.
     val effect = defn.eff
@@ -279,7 +286,7 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
       val vt = new VirtualTerminal
 
       // Find the available namespaces.
-      val namespaces = namespacesOf(root)
+      val namespaces = namespacesOf(this.root)
 
       vt << Bold("Namespaces:") << Indent << NewLine << NewLine
       for (namespace <- namespaces.toList.sorted) {
@@ -297,7 +304,7 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
       val vt = new VirtualTerminal
 
       // Print the matched definitions.
-      val matchedDefs = getDefinitionsByNamespace(ns, root)
+      val matchedDefs = getDefinitionsByNamespace(ns, this.root)
       if (matchedDefs.nonEmpty) {
         vt << Bold("Definitions:") << Indent << NewLine << NewLine
         for (defn <- matchedDefs.sortBy(_.sym.name)) {
@@ -307,7 +314,7 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
       }
 
       // Print the matched relations.
-      val matchedRels = getRelationsByNamespace(ns, root)
+      val matchedRels = getRelationsByNamespace(ns, this.root)
       if (matchedRels.nonEmpty) {
         vt << Bold("Relations:") << Indent << NewLine << NewLine
         for (rel <- matchedRels.sortBy(_.sym.name)) {
@@ -317,7 +324,7 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
       }
 
       // Print the matched lattices.
-      val matchedLats = getLatticesByNamespace(ns, root)
+      val matchedLats = getLatticesByNamespace(ns, this.root)
       if (matchedLats.nonEmpty) {
         vt << Bold("Lattices:") << Indent << NewLine << NewLine
         for (lat <- matchedLats.sortBy(_.sym.name)) {
@@ -335,7 +342,7 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
     */
   private def execDoc(fqn: String)(implicit terminal: Terminal): Unit = {
     val sym = Symbol.mkDefnSym(fqn)
-    root.defs.get(sym) match {
+    this.root.defs.get(sym) match {
       case None =>
         // Case 1: Symbol not found.
         terminal.writer().println(s"Undefined symbol: '$sym'.")
@@ -373,7 +380,7 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
     vt << Bold("Definitions:") << Indent << NewLine << NewLine
 
     // Group definitions by namespace.
-    val defsByNamespace = root.defs.values.groupBy(_.sym.namespace).toList
+    val defsByNamespace = this.root.defs.values.groupBy(_.sym.namespace).toList
 
     // Loop through each namespace.
     for ((ns, defns) <- defsByNamespace) {
@@ -404,7 +411,7 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
       terminal.writer().println(s"Path '$path' does not exist or is not a regular file.")
       return
     }
-    sourcePaths += path
+    this.sourcePaths += path
     terminal.writer().println(s"Path '$path' was loaded.")
   }
 
@@ -413,11 +420,11 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
     */
   private def execUnload(s: String)(implicit terminal: Terminal): Unit = {
     val path = Paths.get(s)
-    if (!(sourcePaths contains path)) {
+    if (!(this.sourcePaths contains path)) {
       terminal.writer().println(s"Path '$path' was not loaded.")
       return
     }
-    sourcePaths -= path
+    this.sourcePaths -= path
     terminal.writer().println(s"Path '$path' was unloaded.")
   }
 
@@ -426,21 +433,21 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
     */
   private def execReload()(implicit terminal: Terminal): Unit = {
     // Instantiate a fresh flix instance.
-    flix = new Flix()
-    flix.setOptions(options)
+    this.flix = new Flix()
+    this.flix.setOptions(options)
 
     // Add each path to Flix.
-    for (path <- sourcePaths) {
-      flix.addPath(path)
+    for (path <- this.sourcePaths) {
+      this.flix.addPath(path)
     }
 
     // Add the named expression (if any).
-    if (expression != null) {
-      flix.addNamedExp(symbol, expression)
+    if (this.exp != null) {
+      this.flix.addNamedExp(this.sym, this.exp)
     }
 
     // Type check and print the error messages (if any).
-    flix.check() match {
+    this.flix.check() match {
       case Validation.Success(ast, _) =>
         this.root = ast
       case Validation.Failure(errors) =>
@@ -454,7 +461,7 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
     * Computes the least fixed point.
     */
   private def execSolve()(implicit terminal: Terminal): Unit = {
-    val future = executorService.submit(new SolverThread())
+    val future = this.executorService.submit(new SolverThread())
     future.get()
   }
 
@@ -463,13 +470,13 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
     */
   private def execRel(fqn: String, needle: Option[String])(implicit terminal: Terminal): Unit = {
     // Check that the model has been computed.
-    if (model == null) {
+    if (this.model == null) {
       terminal.writer().println(s"The model has not been computed. Run :solve.")
       return
     }
 
     // Lookup the relation.
-    model.getRelations.get(fqn) match {
+    this.model.getRelations.get(fqn) match {
       case None =>
         // Case 1: The relation was not found.
         terminal.writer().println(s"Undefined relation: '$fqn'.")
@@ -488,13 +495,13 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
     */
   private def execLat(fqn: String, needle: Option[String])(implicit terminal: Terminal): Unit = {
     // Check that the model has been computed.
-    if (model == null) {
+    if (this.model == null) {
       terminal.writer().println(s"The model has not been computed. Run :solve.")
       return
     }
 
     // Lookup the lattice.
-    model.getLattices.get(fqn) match {
+    this.model.getLattices.get(fqn) match {
       case None =>
         // Case 1: The lattice was not found.
         terminal.writer().println(s"Undefined lattice: '$fqn'.")
@@ -513,13 +520,13 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
     */
   private def execBenchmark()(implicit terminal: Terminal): Unit = {
     // Check that the model has been computed.
-    if (model == null) {
+    if (this.model == null) {
       terminal.writer().println(s"The model has not been computed. Run :solve.")
       return
     }
 
     // Run all benchmarks.
-    Benchmarker.benchmark(model)
+    Benchmarker.benchmark(this.model, terminal.writer())
   }
 
   /**
@@ -527,13 +534,13 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
     */
   private def execTest()(implicit terminal: Terminal): Unit = {
     // Check that the model has been computed.
-    if (model == null) {
+    if (this.model == null) {
       terminal.writer().println(s"The model has not been computed. Run :solve.")
       return
     }
 
     // Run all unit tests.
-    val vt = Tester.test(model)
+    val vt = Tester.test(this.model)
 
     // Print the result to the terminal.
     terminal.writer().print(vt.output.fmt)
@@ -544,7 +551,7 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
     */
   private def execWatch()(implicit terminal: Terminal): Unit = {
     // Check if the watcher is already initialized.
-    if (watcher != null) {
+    if (this.watcher != null) {
       terminal.writer().println("Already watching for changes.")
       return
     }
@@ -558,16 +565,16 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
       terminal.writer().println(s"  $directory")
     }
 
-    watcher = new WatcherThread(directories)
-    watcher.start()
+    this.watcher = new WatcherThread(directories)
+    this.watcher.start()
   }
 
   /**
     * Unwatches source paths for changes.
     */
   private def execUnwatch()(implicit terminal: Terminal): Unit = {
-    watcher.interrupt()
-    watcher = null
+    this.watcher.interrupt()
+    this.watcher = null
     terminal.writer().println("No longer watching for changes.")
   }
 
@@ -630,7 +637,7 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
   private def getDefinitionsByNamespace(ns: String, root: Root): List[Def] = {
     val namespace: List[String] = getNameSpace(ns)
     root.defs.foldLeft(Nil: List[Def]) {
-      case (xs, (sym, defn)) if sym.namespace == namespace && !defn.ann.isInternal && !defn.mod.isSynthetic =>
+      case (xs, (s, defn)) if s.namespace == namespace && !defn.ann.isInternal && !defn.mod.isSynthetic =>
         defn :: xs
       case (xs, _) => xs
     }
@@ -642,7 +649,7 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
   private def getRelationsByNamespace(ns: String, root: Root): List[Table.Relation] = {
     val namespace: List[String] = getNameSpace(ns)
     root.tables.foldLeft(Nil: List[Table.Relation]) {
-      case (xs, (sym, t: Table.Relation)) if sym.namespace == namespace =>
+      case (xs, (s, t: Table.Relation)) if s.namespace == namespace =>
         t :: xs
       case (xs, _) => xs
     }
@@ -654,7 +661,7 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
   private def getLatticesByNamespace(ns: String, root: Root): List[Table.Lattice] = {
     val namespace: List[String] = getNameSpace(ns)
     root.tables.foldLeft(Nil: List[Table.Lattice]) {
-      case (xs, (sym, t: Table.Lattice)) if sym.namespace == namespace =>
+      case (xs, (s, t: Table.Lattice)) if s.namespace == namespace =>
         t :: xs
       case (xs, _) => xs
     }

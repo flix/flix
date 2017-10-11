@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix
 
-import java.io.File
+import java.io.{File, PrintWriter}
 
 import ca.uwaterloo.flix.api.{Flix, MatchException, RuleException, SwitchException, UserException}
 import ca.uwaterloo.flix.runtime.shell.Shell
@@ -147,7 +147,7 @@ object Main {
           }
 
           if (cmdOpts.benchmark) {
-            Benchmarker.benchmark(model)
+            Benchmarker.benchmark(model, new PrintWriter(System.out))
           }
 
           if (cmdOpts.test) {
