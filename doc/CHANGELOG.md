@@ -1,7 +1,10 @@
 # Changelog
 
 HEAD:
-    - Added stratified negation.
+
+
+Version 0.2:
+    - Added stratified negation (thanks Jason Mittertreiner).
     - Pattern matching now compiled to labels and jumps (~1.5x speedup).
     - Typechecking is now performed in parallel.
     - Parsing is now performed in parallel.
@@ -14,7 +17,7 @@ HEAD:
     - Upgrade to Scala 2.12.
     - Many other small improvements.
 
-Version 0.1
+Version 0.1:
     - Added standard library.
     - Added support for pattern matching in rules.
     - Added if guards.

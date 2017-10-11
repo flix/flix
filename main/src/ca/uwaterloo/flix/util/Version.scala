@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.util
 
 object Version {
-  val CurrentVersion = Version(major = 0, minor = 1, revision = 0)
+  val CurrentVersion = Version(major = 0, minor = 2, revision = 0)
 }
 
 case class Version(major: Int, minor: Int, revision: Int) {
