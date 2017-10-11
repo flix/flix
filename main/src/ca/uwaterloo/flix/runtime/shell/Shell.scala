@@ -671,16 +671,12 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
     * Interprets the given string `ns` as a namespace.
     */
   private def getNameSpace(ns: String): List[String] = {
-    if (ns == "" || ns == ".")
-    // Case 1: The empty namespace.
+    if (ns == "" || ns == ".") {
+      // Case 1: The empty namespace.
       Nil
-    else if (!ns.contains(".")) {
-      // Case 2: A simple namespace.
-      List(ns)
     } else {
-      // Case 3: A complex namespace.
-      val index = ns.indexOf('.')
-      ns.substring(0, index).split('/').toList
+      // Case 2: A (possibly) qualified namespace.
+      ns.split("/").toList
     }
   }
 
