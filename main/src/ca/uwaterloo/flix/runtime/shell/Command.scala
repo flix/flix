@@ -94,6 +94,11 @@ object Command {
   case class Lat(fqn: String, needle: Option[String]) extends Command
 
   /**
+    * Runs all test cases.
+    */
+  case object Test extends Command
+
+  /**
     * Watches source paths for changes.
     */
   case object Watch extends Command
@@ -137,36 +142,36 @@ object Command {
     //
     // Type
     //
-    if (input.startsWith(":type")) {
-      val exp = input.substring(":type".length).trim
+    if (input.startsWith(":type ")) {
+      val exp = input.substring(":type ".length).trim
       return Command.TypeOf(exp)
     }
-    if (input.startsWith(":t")) {
-      val exp = input.substring(":t".length).trim
+    if (input.startsWith(":t ")) {
+      val exp = input.substring(":t ".length).trim
       return Command.TypeOf(exp)
     }
 
     //
     // Kind
     //
-    if (input.startsWith(":kind")) {
-      val exp = input.substring(":kind".length).trim
+    if (input.startsWith(":kind ")) {
+      val exp = input.substring(":kind ".length).trim
       return Command.TypeOf(exp)
     }
-    if (input.startsWith(":k")) {
-      val exp = input.substring(":k".length).trim
+    if (input.startsWith(":k ")) {
+      val exp = input.substring(":k ".length).trim
       return Command.KindOf(exp)
     }
 
     //
     // Kind
     //
-    if (input.startsWith(":effect")) {
-      val exp = input.substring(":effect".length).trim
+    if (input.startsWith(":effect ")) {
+      val exp = input.substring(":effect ".length).trim
       return Command.EffectOf(exp)
     }
-    if (input.startsWith(":e")) {
-      val exp = input.substring(":e".length).trim
+    if (input.startsWith(":e ")) {
+      val exp = input.substring(":e ".length).trim
       return Command.EffectOf(exp)
     }
 
@@ -184,8 +189,8 @@ object Command {
     //
     // Doc
     //
-    if (input.startsWith(":doc")) {
-      val fqn = input.substring(":doc".length).trim
+    if (input.startsWith(":doc ")) {
+      val fqn = input.substring(":doc ".length).trim
       if (fqn.isEmpty) {
         Console.println("Missing argument for command :doc.")
         return Command.Nop
@@ -196,8 +201,8 @@ object Command {
     //
     // Search
     //
-    if (input.startsWith(":search")) {
-      val needle = input.substring(":search".length).trim
+    if (input.startsWith(":search ")) {
+      val needle = input.substring(":search ".length).trim
       if (needle.isEmpty) {
         Console.println("Missing argument for command :search.")
         return Command.Nop
@@ -208,8 +213,8 @@ object Command {
     //
     // Load
     //
-    if (input.startsWith(":load")) {
-      val path = input.substring(":load".length).trim
+    if (input.startsWith(":load ")) {
+      val path = input.substring(":load ".length).trim
       if (path.isEmpty) {
         Console.println("Missing argument for command :load.")
         return Command.Nop
@@ -220,8 +225,8 @@ object Command {
     //
     // Unload
     //
-    if (input.startsWith(":unload")) {
-      val path = input.substring(":unload".length).trim
+    if (input.startsWith(":unload ")) {
+      val path = input.substring(":unload ".length).trim
       if (path.isEmpty) {
         Console.println("Missing argument for command :unload.")
         return Command.Nop
@@ -244,9 +249,9 @@ object Command {
     //
     // Rel
     //
-    if (input.startsWith(":rel")) {
+    if (input.startsWith(":rel ")) {
       // Check if any arguments were passed.
-      val args = input.substring(":rel".length).trim
+      val args = input.substring(":rel ".length).trim
       if (args.isEmpty) {
         Console.println("Missing argument for command :rel.")
         return Command.Nop
@@ -263,9 +268,9 @@ object Command {
     //
     // Lat
     //
-    if (input.startsWith(":lat")) {
+    if (input.startsWith(":lat ")) {
       // Check if any arguments were passed.
-      val args = input.substring(":lat".length).trim
+      val args = input.substring(":lat ".length).trim
       if (args.isEmpty) {
         Console.println("Missing argument for command :lat.")
         return Command.Nop
@@ -277,6 +282,13 @@ object Command {
         return Command.Lat(split(0), None)
       else
         return Command.Lat(split(0), Some(split(1)))
+    }
+
+    //
+    // Test
+    //
+    if (input == ":test") {
+      return Command.Test
     }
 
     //

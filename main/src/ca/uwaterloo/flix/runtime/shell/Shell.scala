@@ -23,7 +23,7 @@ import java.util.logging.{Level, Logger}
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{Symbol, Type}
 import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.runtime.Model
+import ca.uwaterloo.flix.runtime.{Model, Tester}
 import ca.uwaterloo.flix.util._
 import ca.uwaterloo.flix.util.tc.Show
 import ca.uwaterloo.flix.util.tc.Show._
@@ -138,11 +138,11 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
   private def printWelcomeBanner()(implicit terminal: Terminal): Unit = {
     val banner =
       """     __   _   _
-        |    / _| | | (_)             Welcome to Flix __VERSION__
+        |    / _| | | (_)            Welcome to Flix __VERSION__
         |   | |_  | |  _  __  __
-        |   |  _| | | | | \ \/ /      Enter an expression or command, and hit return.
-        |   | |   | | | |  >  <       Type ':help' for more information.
-        |   |_|   |_| |_| /_/\_\      Type ':quit' or press 'ctrl + d' to exit.
+        |   |  _| | | | | \ \/ /     Enter an expression or command, and hit return.
+        |   | |   | | | |  >  <      Type ':help' for more information.
+        |   |_|   |_| |_| /_/\_\     Type ':quit' or press 'ctrl + d' to exit.
       """.stripMargin
 
     terminal.writer().println(banner.replaceAll("__VERSION__", Version.CurrentVersion.toString))
@@ -172,6 +172,7 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
     case Command.Solve => execSolve()
     case Command.Rel(fqn, needle) => execRel(fqn, needle)
     case Command.Lat(fqn, needle) => execLat(fqn, needle)
+    case Command.Test => execTest()
     case Command.Watch => execWatch()
     case Command.Unwatch => execUnwatch()
     case Command.Quit => execQuit()
@@ -504,6 +505,23 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
         }
         ascii.write(terminal.writer())
     }
+  }
+
+  /**
+    * Runs all test cases.
+    */
+  private def execTest()(implicit terminal: Terminal): Unit = {
+    // Check that the model has been computed.
+    if (model == null) {
+      terminal.writer().println(s"The model has not been computed. Run :solve.")
+      return
+    }
+
+    // Run all tests.
+    val vt = Tester.test(model)
+
+    // Print the result to the terminal.
+    terminal.writer().print(vt.output.fmt)
   }
 
   /**

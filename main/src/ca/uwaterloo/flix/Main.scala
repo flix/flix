@@ -152,7 +152,7 @@ object Main {
 
           if (cmdOpts.test) {
             val results = Tester.test(model)
-            Console.println(results.getMessage.fmt)
+            Console.println(results.output.fmt)
           }
 
           val print = cmdOpts.print
