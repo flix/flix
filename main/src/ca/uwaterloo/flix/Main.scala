@@ -16,10 +16,11 @@
 
 package ca.uwaterloo.flix
 
-import java.io.File
+import java.io.{File, PrintWriter}
 
 import ca.uwaterloo.flix.api.{Flix, MatchException, RuleException, SwitchException, UserException}
-import ca.uwaterloo.flix.runtime.{Benchmarker, Shell, Tester, Value}
+import ca.uwaterloo.flix.runtime.shell.Shell
+import ca.uwaterloo.flix.runtime.{Benchmarker, Tester, Value}
 import ca.uwaterloo.flix.util._
 import ca.uwaterloo.flix.util.vt.VirtualString.{Code, Line, NewLine}
 import ca.uwaterloo.flix.util.vt._
@@ -37,7 +38,7 @@ object Main {
   def main(argv: Array[String]): Unit = {
 
     // parse command line options.
-    val cmdOpts: CmdOpts = parseCmdOpts(argv).getOrElse {
+    var cmdOpts: CmdOpts = parseCmdOpts(argv).getOrElse {
       Console.err.println("Unable to parse command line arguments. Will now exit.")
       System.exit(1)
       null
@@ -56,10 +57,9 @@ object Main {
       System.exit(0)
     }
 
-    // check that some input files were passed.
+    // enable interactive mode if no input paths were given.
     if (cmdOpts.files.isEmpty && !cmdOpts.pipe) {
-      Console.err.println("No input. Try --help.")
-      System.exit(1)
+      cmdOpts = cmdOpts.copy(interactive = true)
     }
 
     // compute the enabled optimizations.
@@ -92,7 +92,7 @@ object Main {
 
     // check if running in interactive mode.
     if (cmdOpts.interactive) {
-      val shell = new Shell(cmdOpts.files.toList, cmdOpts.main, options)
+      val shell = new Shell(cmdOpts.files.toList.map(_.toPath), cmdOpts.main, options)
       shell.loop()
       System.exit(0)
     }
@@ -147,12 +147,12 @@ object Main {
           }
 
           if (cmdOpts.benchmark) {
-            Benchmarker.benchmark(model)
+            Benchmarker.benchmark(model, new PrintWriter(System.out))
           }
 
           if (cmdOpts.test) {
             val results = Tester.test(model)
-            Console.println(results.getMessage.fmt)
+            Console.println(results.output.fmt)
           }
 
           val print = cmdOpts.print

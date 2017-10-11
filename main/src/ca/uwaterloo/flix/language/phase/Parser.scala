@@ -31,25 +31,30 @@ import scala.concurrent.{Await, Future}
 /**
   * A phase to transform source files into abstract syntax trees.
   */
-object Parser extends Phase[(List[Source], Long, Map[Symbol.DefnSym, Ast.Hook]), ParsedAst.Program] {
+object Parser extends Phase[(List[Source], Long, Map[Symbol.DefnSym, Ast.Hook], Map[Symbol.DefnSym, String]), ParsedAst.Program] {
 
   /**
     * Parses the given source inputs into an abstract syntax tree.
     */
-  def run(arg: (List[Source], Long, Map[Symbol.DefnSym, Ast.Hook]))(implicit flix: Flix): Validation[ParsedAst.Program, CompilationError] = {
+  def run(arg: (List[Source], Long, Map[Symbol.DefnSym, Ast.Hook], Map[Symbol.DefnSym, String]))(implicit flix: Flix): Validation[ParsedAst.Program, CompilationError] = {
     // The argument consists of a list of sources, the time spent by the reader, and the map of hooks.
-    val (sources, reader, hooks) = arg
+    val (sources, reader, hooks, namedExp) = arg
 
     // Retrieve the execution context.
     implicit val _ = flix.ec
 
     val timer = new Timer({
       // Parse each source in parallel.
-      val results = ParOps.parMap(parse, sources)
+      val roots = @@(ParOps.parMap(parseRoot, sources))
+
+      // Parse each named expression.
+      val named = @@(namedExp.map {
+        case (sym, s) => parseExp(Source("<unknown>", s.toCharArray)).map(exp => (sym -> exp))
+      })
 
       // Sequence and combine the ASTs into one abstract syntax tree.
-      @@(results) map {
-        case asts => ParsedAst.Program(asts, hooks, Time.Default)
+      @@(roots, named) map {
+        case (as, ne) => ParsedAst.Program(as, hooks, ne.toMap, Time.Default)
       }
     })
 
@@ -60,11 +65,26 @@ object Parser extends Phase[(List[Source], Long, Map[Symbol.DefnSym, Ast.Hook]),
   }
 
   /**
-    * Returns the AST of the given source input `source`.
+    * Attempts to parse the given `source` as a root.
     */
-  def parse(source: Source): Validation[ParsedAst.Root, CompilationError] = {
+  def parseRoot(source: Source): Validation[ParsedAst.Root, CompilationError] = {
     val parser = new Parser(source)
     parser.Root.run() match {
+      case scala.util.Success(ast) =>
+        ast.toSuccess
+      case scala.util.Failure(e: org.parboiled2.ParseError) =>
+        ca.uwaterloo.flix.language.errors.ParseError(parser.formatError(e), source).toFailure
+      case scala.util.Failure(e) =>
+        ca.uwaterloo.flix.language.errors.ParseError(e.getMessage, source).toFailure
+    }
+  }
+
+  /**
+    * Attempts to parse the given `source` as an expression.
+    */
+  def parseExp(source: Source): Validation[ParsedAst.Expression, CompilationError] = {
+    val parser = new Parser(source)
+    parser.Expression.run() match {
       case scala.util.Success(ast) =>
         ast.toSuccess
       case scala.util.Failure(e: org.parboiled2.ParseError) =>

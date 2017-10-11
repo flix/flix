@@ -47,6 +47,23 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
       }
     }
 
+    val namedVal = prog0.named.map {
+      case (sym, exp0) => Expressions.resolve(exp0, Name.RootNS, prog0).map {
+        case exp =>
+          // Introduce a synthetic definition for the expression.
+          val doc = None
+          val ann = Ast.Annotations.Empty
+          val mod = Ast.Modifiers.Empty
+          val tparams = Nil
+          val fparams = Nil
+          val sc = Scheme(Nil, Type.freshTypeVar())
+          val eff = Eff.Pure
+          val loc = SourceLocation.Unknown
+          val defn = ResolvedAst.Def(doc, ann, mod, sym, tparams, fparams, exp, sc, eff, loc)
+          sym -> defn
+      }
+    }
+
     val enumsVal = prog0.enums.flatMap {
       case (ns0, enums) => enums.map {
         case (_, enum) => resolve(enum, ns0, prog0) map {
@@ -91,13 +108,14 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
 
     for {
       definitions <- seqM(definitionsVal)
+      named <- seqM(namedVal)
       enums <- seqM(enumsVal)
       lattices <- seqM(latticesVal)
       indexes <- seqM(indexesVal)
       tables <- seqM(tablesVal)
       constraints <- seqM(constraintsVal)
       properties <- seqM(propertiesVal)
-    } yield ResolvedAst.Program(definitions.toMap, enums.toMap, lattices.toMap, indexes.toMap, tables.toMap, constraints.flatten, prog0.hooks, properties.flatten, prog0.reachable, prog0.time.copy(resolver = e))
+    } yield ResolvedAst.Program(definitions.toMap ++ named.toMap, enums.toMap, lattices.toMap, indexes.toMap, tables.toMap, constraints.flatten, prog0.hooks, properties.flatten, prog0.reachable, prog0.time.copy(resolver = e))
 
   }
 

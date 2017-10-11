@@ -21,19 +21,31 @@ import ca.uwaterloo.flix.language.ast.{Source, Symbol}
 import ca.uwaterloo.flix.util.vt.VirtualString.{Blue, Dedent, Green, Indent, Line, NewLine, Red}
 import ca.uwaterloo.flix.util.vt.VirtualTerminal
 
+/**
+  * Evaluates all tests in a model.
+  */
 object Tester {
 
   /**
     * Represents the outcome of a single test.
     */
   sealed trait TestResult {
+    /**
+      * The symbol associated with the test.
+      */
     def sym: Symbol.DefnSym
   }
 
   object TestResult {
 
+    /**
+      * Represents a successful test case.
+      */
     case class Success(sym: Symbol.DefnSym, msg: String) extends TestResult
 
+    /**
+      * Represents a failed test case.
+      */
     case class Failure(sym: Symbol.DefnSym, msg: String) extends TestResult
 
   }
@@ -42,7 +54,7 @@ object Tester {
     * Represents the results of running all the tests in a given model.
     */
   case class TestResults(results: List[TestResult]) {
-    def getMessage: VirtualTerminal = {
+    def output: VirtualTerminal = {
       val vt = new VirtualTerminal()
       for ((ns, tests) <- results.groupBy(_.sym.namespace)) {
         val namespace = if (ns.isEmpty) "root" else ns.mkString("/")
@@ -71,14 +83,11 @@ object Tester {
     val results = model.getTests.toList.map {
       case (sym, defn) =>
         try {
-          val result = defn()
-          // NB: IntellijIDEA warns about unrelated types. This is not a problem.
-          if (result.isInstanceOf[java.lang.Boolean] && result == java.lang.Boolean.TRUE)
-            TestResult.Success(sym, "Returned true.")
-          else if (result.isInstanceOf[java.lang.Boolean] && result == java.lang.Boolean.FALSE)
-            TestResult.Failure(sym, "Returned false.")
-          else
-            TestResult.Success(sym, "Returned non-false boolean value.")
+          defn() match {
+            case java.lang.Boolean.TRUE => TestResult.Success(sym, "Returned true.")
+            case java.lang.Boolean.FALSE => TestResult.Failure(sym, "Returned false.")
+            case _ => TestResult.Success(sym, "Returned non-boolean value.")
+          }
         } catch {
           case ex: FlixException =>
             TestResult.Failure(sym, ex.getMessage)

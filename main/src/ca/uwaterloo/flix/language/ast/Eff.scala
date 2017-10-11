@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.util.InternalCompilerException
+import ca.uwaterloo.flix.util.tc.Show
 
 /**
   * Represents the computational effect of an expression.
@@ -102,5 +103,12 @@ object Eff {
     * As a picture: (e1 ---latent---> e2) @ eff
     */
   case class Arrow(e1: Eff, latent: EffectSet, e2: Eff, eff: EffectSet) extends Eff
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Type Class Instances                                                    //
+  /////////////////////////////////////////////////////////////////////////////
+  implicit object ShowInstance extends Show[Eff] {
+    def show(a: Eff): String = a.toString
+  }
 
 }

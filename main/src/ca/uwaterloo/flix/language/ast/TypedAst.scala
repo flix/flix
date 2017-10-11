@@ -53,7 +53,10 @@ object TypedAst {
 
     case class Relation(doc: Option[Ast.Documentation], sym: Symbol.TableSym, attributes: List[TypedAst.Attribute], loc: SourceLocation) extends TypedAst.Table
 
-    case class Lattice(doc: Option[Ast.Documentation], sym: Symbol.TableSym, keys: List[TypedAst.Attribute], value: TypedAst.Attribute, loc: SourceLocation) extends TypedAst.Table
+    case class Lattice(doc: Option[Ast.Documentation], sym: Symbol.TableSym, keys: List[TypedAst.Attribute], value: TypedAst.Attribute, loc: SourceLocation) extends TypedAst.Table {
+      // TODO: To be refactored.
+      def attributes: List[TypedAst.Attribute] = keys ::: value :: Nil
+    }
 
   }
 

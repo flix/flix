@@ -128,7 +128,7 @@ class Model(root: Root,
   /**
     * Returns a map from fully-qualified lattices names to a pair of an attribute list and a set of rows for that table.
     */
-  def getLattices: Map[String, (List[String], Iterable[List[String]])] = relations.foldLeft(Map.empty[String, (List[String], Iterable[List[String]])]) {
+  def getLattices: Map[String, (List[String], Iterable[List[String]])] = lattices.foldLeft(Map.empty[String, (List[String], Iterable[List[String]])]) {
     case (macc, (sym, rows)) =>
       root.tables(sym) match {
         case Table.Relation(_, attr, _) => macc // Nop
@@ -141,8 +141,8 @@ class Model(root: Root,
           val attributes: List[String] = attr.map(_.name)
 
           // Compute the rows of the table.
-          val rows: Iterable[List[String]] = relations(sym).map {
-            case row => (row zip attr) map {
+          val rows: Iterable[List[String]] = lattices(sym).map {
+            case (ks, v) => ((ks :: v :: Nil) zip attr) map {
               case (obj, Attribute(_, tpe)) => toString(obj, tpe)
             }
           }

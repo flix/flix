@@ -16,18 +16,14 @@
 
 package ca.uwaterloo.flix.language.ast
 
+import ca.uwaterloo.flix.util.tc.Show
+
 /**
   * A kind represents the "type" of a type expression.
   */
 trait Kind {
 
-  override def toString: String = this match {
-    case Kind.Star => "*"
-    case Kind.Arrow(List(Kind.Star), Kind.Star) => "* -> *"
-    case Kind.Arrow(List(Kind.Star), kr) => s"* -> ($kr)"
-    case Kind.Arrow(kparams, Kind.Star) => s"(${kparams.mkString(", ")}) -> *"
-    case Kind.Arrow(kparams, kr) => s"(${kparams.mkString(", ")}) -> ($kr)"
-  }
+  override def toString: String = Kind.ShowInstance.show(this)
 
 }
 
@@ -43,6 +39,23 @@ object Kind {
     */
   case class Arrow(kparams: List[Kind], kr: Kind) extends Kind {
     assert(kparams.nonEmpty)
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // Type Class Instances                                                    //
+  /////////////////////////////////////////////////////////////////////////////
+
+  /**
+    * Show instance for Type.
+    */
+  implicit object ShowInstance extends Show[Kind] {
+    def show(a: Kind): String = a match {
+      case Kind.Star => "*"
+      case Kind.Arrow(List(Kind.Star), Kind.Star) => "* -> *"
+      case Kind.Arrow(List(Kind.Star), kr) => s"* -> ($kr)"
+      case Kind.Arrow(kparams, Kind.Star) => s"(${kparams.mkString(", ")}) -> *"
+      case Kind.Arrow(kparams, kr) => s"(${kparams.mkString(", ")}) -> ($kr)"
+    }
   }
 
 }

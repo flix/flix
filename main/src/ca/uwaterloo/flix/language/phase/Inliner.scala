@@ -73,7 +73,7 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         //inline arguments
         val args1 = args.map(visit)
         definitions(sym) match {
-          case SimplifiedAst.Def(_, _, _, formals, exp1, _, _, _) =>
+          case SimplifiedAst.Def(_, _, _, formals, exp1, _, _) =>
             if (candidates.contains(sym)) {
               // Inline the body of the function
               val sub = formals.map(f => f.sym -> Symbol.freshVarSym(f.sym)).toMap
