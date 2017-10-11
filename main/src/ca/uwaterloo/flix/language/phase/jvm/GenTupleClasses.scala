@@ -240,8 +240,8 @@ object GenTupleClasses {
     constructor.visitMethodInsn(INVOKESPECIAL, JvmName.Object.toInternalName, "<init>", AsmOps.getMethodDescriptor(Nil, JvmType.Void), false)
 
     var offset: Int = 1
-    // TODO: For loop.
-    fields.zipWithIndex.foreach { case (field, ind) =>
+
+    for((field, ind) <- fields.zipWithIndex) {
       val iLoad = AsmOps.getLoadInstruction(field)
 
       constructor.visitVarInsn(ALOAD, 0)

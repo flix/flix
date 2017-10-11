@@ -89,6 +89,16 @@ object JvmName {
   val Tuple: JvmName = JvmName(List("ca", "waterloo", "flix", "api"), "Tuple")
 
   /**
+    * The `ca.uwaterloo.flix.api.Tag` name
+    */
+  val Tag: JvmName = JvmName(List("ca", "waterloo", "flix", "api"), "Tag")
+
+  /**
+    * The `ca.uwaterloo.flix.api.Unit` name
+    */
+  val Unit: JvmName = JvmName(List("ca", "waterloo", "flix", "api"), "Unit")
+
+  /**
     * The `java.lang.Exception` name
     */
   val Exception: JvmName = JvmName(List("java", "lang"), "Exception")

@@ -67,6 +67,11 @@ object JvmType {
   val Tuple: JvmType.Reference = Reference(JvmName.Tuple)
 
   /**
+    * The `ca.uwaterloo.flix.api.Unit` type
+    */
+  val Unit: JvmType.Reference = Reference(JvmName.Unit)
+
+  /**
     * Represents the void type.
     */
   case object Void extends JvmType

@@ -23,8 +23,6 @@ import ca.uwaterloo.flix.language.ast.ExecutableAst.{Case, Expression, Root}
 import ca.uwaterloo.flix.language.ast.{Symbol, Type}
 import ca.uwaterloo.flix.language.phase.Unification
 import ca.uwaterloo.flix.util.InternalCompilerException
-import org.objectweb.asm.ClassWriter
-import org.objectweb.asm.Opcodes._
 
 object JvmOps {
 
@@ -596,6 +594,15 @@ object JvmOps {
       return b1 == 0xCA && b2 == 0xFE && b3 == 0xBA && b4 == 0xBE
     }
     false
+  }
+
+  /**
+    * Returns true if the case has a unit field, which means the case can be a singleton. It returns false otherwise.
+    *
+    * @param tag Enum Case
+    */
+  def isSingletonEnum(tag: TagInfo): Boolean = {
+    tag.tagType == Type.Unit
   }
 
   /**

@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Root
 import ca.uwaterloo.flix.language.ast.Type
+import org.objectweb.asm.Opcodes._
 
 /**
   * Generates bytecode for the Enum interfaces.
@@ -45,9 +46,31 @@ object GenEnumInterfaces {
   }
 
   /**
-    * Returns the bytecode for the given enum interface type.
+    * Generates an interface for each enum.
+    * Each case of the enum implements this interface. This interface extends `Enum`.
+    * For example, for enum `Result` we create:
+    *
+    * package ca.waterloo.flix.enums.Result;
+    * import ca.uwaterloo.flix.api.Enum;
+    * public interface EnumInterface extends Enum {
+    * }
+    *
+    * @param interfaceType JvmType.Reference of the interface to be generated
+    * @return byte code representation of the class
     */
-  private def genByteCode(interfaceType: JvmType.Reference): Array[Byte] = {
-    List(0xCA.toByte, 0xFE.toByte, 0xBA.toByte, 0xBE.toByte).toArray
+  private def genByteCode(interfaceType: JvmType.Reference)(implicit root: Root, flix: Flix): Array[Byte] = {
+    val visitor = AsmOps.mkClassWriter()
+
+    // Super class of the class
+    val superClass = JvmName.Object.toInternalName
+    // Interfaces to be extended
+    val extendedInterfaced = Array(JvmName.Tag.toInternalName)
+    visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_ABSTRACT + ACC_INTERFACE, interfaceType.name.toInternalName, null,
+      superClass, extendedInterfaced)
+    // Source of the class
+    visitor.visitSource(interfaceType.name.toInternalName, null)
+
+    visitor.visitEnd()
+    visitor.toByteArray
   }
 }
