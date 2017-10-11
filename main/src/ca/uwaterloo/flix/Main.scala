@@ -38,7 +38,7 @@ object Main {
   def main(argv: Array[String]): Unit = {
 
     // parse command line options.
-    val cmdOpts: CmdOpts = parseCmdOpts(argv).getOrElse {
+    var cmdOpts: CmdOpts = parseCmdOpts(argv).getOrElse {
       Console.err.println("Unable to parse command line arguments. Will now exit.")
       System.exit(1)
       null
@@ -57,10 +57,9 @@ object Main {
       System.exit(0)
     }
 
-    // check that some input files were passed.
+    // enable interactive mode if no input paths were given.
     if (cmdOpts.files.isEmpty && !cmdOpts.pipe) {
-      Console.err.println("No input. Try --help.")
-      System.exit(1)
+      cmdOpts = cmdOpts.copy(interactive = true)
     }
 
     // compute the enabled optimizations.
