@@ -119,8 +119,8 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
           execute(cmd)
         } catch {
           case e: Exception =>
-            Console.println(e.getMessage)
-            e.printStackTrace()
+            terminal.writer().print(e.getMessage)
+            e.printStackTrace(terminal.writer())
         }
       }
     } catch {
@@ -215,7 +215,7 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
     // Compute the result type, i.e. the last type argument.
     val tpe = defn.tpe.typeArguments.last
 
-    // Print the type to the console.
+    // Print the type to the terminal.
     val vt = new VirtualTerminal
     vt << Cyan(tpe.show) << NewLine
     terminal.writer().print(vt.fmt)
@@ -237,9 +237,9 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
     // Retrieve the kind.
     val kind = defn.tpe.kind
 
-    // Print the kind to the console.
+    // Print the kind to the terminal.
     val vt = new VirtualTerminal
-    vt << Green(kind.toString) << NewLine
+    vt << Green(kind.show) << NewLine
     terminal.writer().print(vt.fmt)
   }
 
@@ -259,11 +259,12 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
     // Retrieve the effect.
     val effect = defn.eff
 
-    // Print the effect to the console.
+    // Print the effect to the terminal.
     val vt = new VirtualTerminal
-    vt << Magenta(effect.toString) << NewLine
+    vt << Magenta(effect.show) << NewLine
     terminal.writer().print(vt.fmt)
   }
+
 
   /**
     * Executes the browse command.
@@ -284,7 +285,7 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
       }
       vt << Dedent << NewLine
 
-      // Print the virtual terminal to the console.
+      // Print the result to the terminal.
       terminal.writer().print(vt.fmt)
 
     case Some(ns) =>
@@ -298,14 +299,7 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
       if (matchedDefs.nonEmpty) {
         vt << Bold("Definitions:") << Indent << NewLine << NewLine
         for (defn <- matchedDefs.sortBy(_.sym.name)) {
-          vt << Bold("def ") << Blue(defn.sym.name) << "("
-          if (defn.fparams.nonEmpty) {
-            vt << defn.fparams.head.sym.text << ": " << Cyan(defn.fparams.head.tpe.show)
-            for (fparam <- defn.fparams.tail) {
-              vt << ", " << fparam.sym.text << ": " << Cyan(fparam.tpe.show)
-            }
-          }
-          vt << "): " << Cyan(defn.tpe.typeArguments.last.show) << NewLine
+          prettyPrintDef(defn, vt)
         }
         vt << Dedent << NewLine
       }
@@ -315,12 +309,7 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
       if (matchedRels.nonEmpty) {
         vt << Bold("Relations:") << Indent << NewLine << NewLine
         for (rel <- matchedRels.sortBy(_.sym.name)) {
-          vt << Bold("rel ") << Blue(rel.sym.toString) << "("
-          vt << rel.attributes.head.name << ": " << Cyan(rel.attributes.head.tpe.show)
-          for (attr <- rel.attributes.tail) {
-            vt << ", " << attr.name << ": " << Cyan(attr.tpe.show)
-          }
-          vt << ")" << NewLine
+          prettyPrintRel(rel, vt)
         }
         vt << Dedent << NewLine
       }
@@ -330,116 +319,125 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
       if (matchedLats.nonEmpty) {
         vt << Bold("Lattices:") << Indent << NewLine << NewLine
         for (lat <- matchedLats.sortBy(_.sym.name)) {
-          vt << Bold("lat ") << Blue(lat.sym.toString) << "("
-          vt << lat.attributes.head.name << ": " << Cyan(lat.attributes.head.tpe.show)
-          for (attr <- lat.attributes.tail) {
-            vt << ", " << attr.name << ": " << Cyan(attr.tpe.show)
-          }
-          vt << ")" << NewLine
+          prettyPrintLat(lat, vt)
         }
         vt << Dedent << NewLine
       }
 
-      // Print the virtual terminal to the console.
+      // Print the result to the terminal.
       terminal.writer().print(vt.fmt)
   }
 
   /**
     * Executes the doc command.
     */
-  private def execDoc(fqn: String): Unit = {
+  private def execDoc(fqn: String)(implicit terminal: Terminal): Unit = {
     val sym = Symbol.mkDefnSym(fqn)
     root.defs.get(sym) match {
       case None =>
-        Console.println(s"Undefined symbol: '$sym'.")
+        // Case 1: Symbol not found.
+        terminal.writer().println(s"Undefined symbol: '$sym'.")
       case Some(defn) => defn.doc match {
         case None =>
-          Console.println(s"No documentation for: '$sym'.")
+          // Case 2: Symbol has no documentation.
+          terminal.writer().println(s"No documentation for: '$sym'.")
         case Some(doc) =>
-          Console.println(doc.text)
+          // Case 3: Symbol found and has documentation.
+
+          // Construct a new virtual terminal.
+          val vt = new VirtualTerminal
+          prettyPrintDef(defn, vt)
+          vt << doc.text
+          vt << NewLine
+
+          // Print the result to the terminal.
+          terminal.writer().print(vt.fmt)
       }
 
     }
   }
 
   /**
-    * Executes the help command.
+    * Searches for the given `needle`.
     */
-  private def execHelp(): Unit = {
-    Console.println("  Command       Arguments         Purpose")
-    Console.println()
-    Console.println("  <expr>                          Evaluates the expression <expr>.")
-    Console.println("  :type :t      <expr>            Shows the type of <expr>.")
-    Console.println("  :kind :k      <expr>            Shows the kind of <expr>.")
-    Console.println("  :effect :e    <expr>            Shows the effect of <expr>.")
-    Console.println("  :browse       <ns>              Shows all entities in <ns>.")
-    Console.println("  :doc          <fqn>             Shows documentation for <fqn>.")
-    Console.println("  :search       <needle>          Shows all entities that match <needle>.")
-    Console.println("  :load         <path>            Adds <path> as a source file.")
-    Console.println("  :unload       <path>            Removes <path> as a source file.")
-    Console.println("  :reload :r                      Recompiles every source file.")
-    Console.println("  :solve                          Computes the least fixed point.")
-    Console.println("  :rel          <fqn> [needle]    Shows all rows in the relation <fqn> that match <needle>.")
-    Console.println("  :lat          <fqn> [needle]    Shows all rows in the lattice <fqn> that match <needle>.")
-    Console.println("  :watch :w                       Watches all source files for changes.")
-    Console.println("  :unwatch                        Unwatches all source files for changes.")
-    Console.println("  :quit :q                        Terminates the Flix shell.")
-    Console.println("  :help :h :?                     Shows this helpful information.")
-    Console.println()
-  }
+  private def execSearch(needle: String)(implicit terminal: Terminal): Unit = {
+    /**
+      * Returns `true` if the definition `d` is matched by the `needle`.
+      */
+    def isMatched(d: Def): Boolean = d.sym.name.toLowerCase.contains(needle.toLowerCase)
 
-  private def execUnknown(s: String): Unit = {
-    Console.println(s"Unknown command '$s'. Try `:help'.")
+    // Construct a new virtual terminal.
+    val vt = new VirtualTerminal
+    vt << Bold("Definitions:") << Indent << NewLine << NewLine
+
+    // Group definitions by namespace.
+    val defsByNamespace = root.defs.values.groupBy(_.sym.namespace).toList
+
+    // Loop through each namespace.
+    for ((ns, defns) <- defsByNamespace) {
+      // Compute the matched definitions.
+      val matchedDefs = defns.filter(isMatched)
+
+      // Print the namespace.
+      if (matchedDefs.nonEmpty) {
+        vt << Bold(ns.mkString("/")) << Indent << NewLine
+        for (defn <- matchedDefs) {
+          prettyPrintDef(defn, vt)
+        }
+        vt << Dedent << NewLine
+      }
+    }
+    vt << Dedent << NewLine
+
+    // Print the result to the terminal.
+    terminal.writer().print(vt.fmt)
   }
 
   /**
     * Executes the load command.
     */
-  private def execLoad(s: String): Unit = {
+  private def execLoad(s: String)(implicit terminal: Terminal): Unit = {
     val path = Paths.get(s)
     if (!Files.exists(path) || !Files.isRegularFile(path)) {
-      Console.println(s"Path '$path' does not exist or is not a regular file.")
+      terminal.writer().println(s"Path '$path' does not exist or is not a regular file.")
       return
     }
     sourcePaths += path
-    Console.println(s"Path '$path' was loaded.")
+    terminal.writer().println(s"Path '$path' was loaded.")
   }
 
   /**
     * Executes the unload command.
     */
-  private def execUnload(s: String): Unit = {
+  private def execUnload(s: String)(implicit terminal: Terminal): Unit = {
     val path = Paths.get(s)
     if (!(sourcePaths contains path)) {
-      Console.println(s"Path '$path' was not loaded.")
+      terminal.writer().println(s"Path '$path' was not loaded.")
       return
     }
     sourcePaths -= path
-    Console.println(s"Path '$path' was unloaded.")
+    terminal.writer().println(s"Path '$path' was unloaded.")
   }
 
   /**
-    * Reloads every loaded path.
+    * Reloads every source path.
     */
   private def execReload()(implicit terminal: Terminal): Unit = {
     // Instantiate a fresh flix instance.
     flix = new Flix()
     flix.setOptions(options)
+
+    // Add each path to Flix.
     for (path <- sourcePaths) {
       flix.addPath(path)
     }
+
+    // Add the named expression (if any).
     if (expression != null) {
       flix.addNamedExp(symbol, expression)
     }
 
-    // Check if a main function was given.
-    // TODO: Deprecated.
-    if (main.nonEmpty) {
-      val name = main.get
-      flix.addReachableRoot(name)
-    }
-
-    // Print the error messages (if any).
+    // Type check and print the error messages (if any).
     flix.check() match {
       case Validation.Success(ast, _) =>
         this.root = ast
@@ -448,39 +446,12 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
           terminal.writer().print(error.message.fmt)
         }
     }
-
-  }
-
-  /**
-    * Searches for the given `needle`.
-    */
-  private def execSearch(needle: String): Unit = {
-    // Construct a new virtual terminal.
-    val vt = new VirtualTerminal
-    vt << Bold("Definitions:") << Indent << NewLine << NewLine
-    // TODO: Group by namespace.
-    for ((sym, defn) <- root.defs) {
-      if (sym.name.toLowerCase().contains(needle)) {
-        vt << Bold("def ") << Blue(defn.sym.name) << "("
-        if (defn.fparams.nonEmpty) {
-          vt << defn.fparams.head.sym.text << ": " << Cyan(defn.fparams.head.tpe.show)
-          for (fparam <- defn.fparams.tail) {
-            vt << ", " << fparam.sym.text << ": " << Cyan(fparam.tpe.show)
-          }
-        }
-        vt << "): " << Cyan(defn.tpe.typeArguments.last.show) << NewLine
-      }
-    }
-
-    vt << Dedent << NewLine
-    // Print the virtual terminal to the console.
-    Console.print(vt.fmt)
   }
 
   /**
     * Computes the least fixed point.
     */
-  private def execSolve(): Unit = {
+  private def execSolve()(implicit terminal: Terminal): Unit = {
     val future = executorService.submit(new SolverThread())
     future.get()
   }
@@ -488,61 +459,125 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
   /**
     * Shows the rows in the given relation `fqn` that match the optional `needle`.
     */
-  private def execRel(fqn: String, needle: Option[String]): Unit = {
+  private def execRel(fqn: String, needle: Option[String])(implicit terminal: Terminal): Unit = {
+    // Check that the model has been computed.
+    if (model == null) {
+      terminal.writer().println(s"The model has not been computed. Run :solve.")
+      return
+    }
+
+    // Lookup the relation.
     model.getRelations.get(fqn) match {
       case None =>
-        Console.println(s"Undefined relation: '$fqn'.")
+        // Case 1: The relation was not found.
+        terminal.writer().println(s"Undefined relation: '$fqn'.")
       case Some((attributes, rows)) =>
+        // Case 2: The relation was found.
         val ascii = new AsciiTable().withCols(attributes: _*).withFilter(needle)
         for (row <- rows) {
           ascii.mkRow(row)
         }
-        ascii.write(System.out)
+        ascii.write(terminal.writer())
     }
   }
 
   /**
     * Shows the rows in the given lattice `fqn` that match the optional `needle`.
     */
-  private def execLat(fqn: String, needle: Option[String]): Unit = {
+  private def execLat(fqn: String, needle: Option[String])(implicit terminal: Terminal): Unit = {
+    // Check that the model has been computed.
+    if (model == null) {
+      terminal.writer().println(s"The model has not been computed. Run :solve.")
+      return
+    }
+
+    // Lookup the lattice.
     model.getLattices.get(fqn) match {
       case None =>
-        Console.println(s"Undefined lattice: '$fqn'.")
+        // Case 1: The lattice was not found.
+        terminal.writer().println(s"Undefined lattice: '$fqn'.")
       case Some((attributes, rows)) =>
+        // Case 1: The lattice was found.
         val ascii = new AsciiTable().withCols(attributes: _*).withFilter(needle)
         for (row <- rows) {
           ascii.mkRow(row)
         }
-        ascii.write(System.out)
+        ascii.write(terminal.writer())
     }
   }
 
+  /**
+    * Watches source paths for changes.
+    */
   private def execWatch()(implicit terminal: Terminal): Unit = {
     // Check if the watcher is already initialized.
-    if (watcher != null)
+    if (watcher != null) {
+      terminal.writer().println("Already watching for changes.")
       return
+    }
 
     // Compute the set of directories to watch.
     val directories = sourcePaths.map(_.toAbsolutePath.getParent).toList
 
     // Print debugging information.
-    Console.println("Watching Directories:")
+    terminal.writer().println("Watching Directories:")
     for (directory <- directories) {
-      Console.println(s"  $directory")
+      terminal.writer().println(s"  $directory")
     }
 
     watcher = new WatcherThread(directories)
     watcher.start()
   }
 
-  private def execUnwatch(): Unit = {
+  /**
+    * Unwatches source paths for changes.
+    */
+  private def execUnwatch()(implicit terminal: Terminal): Unit = {
     watcher.interrupt()
     watcher = null
-    Console.println("Unwatched loaded paths.")
+    terminal.writer().println("No longer watching for changes.")
   }
 
-  private def execQuit(): Unit = {
+  /**
+    * Exits the shell.
+    */
+  private def execQuit()(implicit terminal: Terminal): Unit = {
     Thread.currentThread().interrupt()
+  }
+
+  /**
+    * Executes the help command.
+    */
+  private def execHelp()(implicit terminal: Terminal): Unit = {
+    val w = terminal.writer()
+
+    w.println("  Command       Arguments         Purpose")
+    w.println()
+    w.println("  <expr>                          Evaluates the expression <expr>.")
+    w.println("  :type :t      <expr>            Shows the type of <expr>.")
+    w.println("  :kind :k      <expr>            Shows the kind of <expr>.")
+    w.println("  :effect :e    <expr>            Shows the effect of <expr>.")
+    w.println("  :browse       <ns>              Shows all entities in <ns>.")
+    w.println("  :doc          <fqn>             Shows documentation for <fqn>.")
+    w.println("  :search       <needle>          Shows all entities that match <needle>.")
+    w.println("  :load         <path>            Adds <path> as a source file.")
+    w.println("  :unload       <path>            Removes <path> as a source file.")
+    w.println("  :reload :r                      Recompiles every source file.")
+    w.println("  :solve                          Computes the least fixed point.")
+    w.println("  :rel          <fqn> [needle]    Shows all rows in the relation <fqn> that match <needle>.")
+    w.println("  :lat          <fqn> [needle]    Shows all rows in the lattice <fqn> that match <needle>.")
+    w.println("  :watch :w                       Watches all source files for changes.")
+    w.println("  :unwatch                        Unwatches all source files for changes.")
+    w.println("  :quit :q                        Terminates the Flix shell.")
+    w.println("  :help :h :?                     Shows this helpful information.")
+    w.println()
+  }
+
+  /**
+    * Reports unknown command.
+    */
+  private def execUnknown(s: String)(implicit terminal: Terminal): Unit = {
+    terminal.writer().println(s"Unknown command '$s'. Try `:help'.")
   }
 
   /**
@@ -560,7 +595,7 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
   private def getDefinitionsByNamespace(ns: String, root: Root): List[Def] = {
     val namespace: List[String] = getNameSpace(ns)
     root.defs.foldLeft(Nil: List[Def]) {
-      case (xs, (sym, defn)) if sym.namespace == namespace && !defn.mod.isSynthetic =>
+      case (xs, (sym, defn)) if sym.namespace == namespace && !defn.ann.isInternal && !defn.mod.isSynthetic =>
         defn :: xs
       case (xs, _) => xs
     }
@@ -608,9 +643,47 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
   }
 
   /**
+    * Pretty prints the given definition `defn` to the given virtual terminal `vt`.
+    */
+  private def prettyPrintDef(defn: Def, vt: VirtualTerminal): Unit = {
+    vt << Bold("def ") << Blue(defn.sym.name) << "("
+    if (defn.fparams.nonEmpty) {
+      vt << defn.fparams.head.sym.text << ": " << Cyan(defn.fparams.head.tpe.show)
+      for (fparam <- defn.fparams.tail) {
+        vt << ", " << fparam.sym.text << ": " << Cyan(fparam.tpe.show)
+      }
+    }
+    vt << "): " << Cyan(defn.tpe.typeArguments.last.show) << NewLine
+  }
+
+  /**
+    * Pretty prints the given relation `rel` to the given virtual terminal `vt`.
+    */
+  private def prettyPrintRel(rel: Table.Relation, vt: VirtualTerminal): Unit = {
+    vt << Bold("rel ") << Blue(rel.sym.toString) << "("
+    vt << rel.attributes.head.name << ": " << Cyan(rel.attributes.head.tpe.show)
+    for (attr <- rel.attributes.tail) {
+      vt << ", " << attr.name << ": " << Cyan(attr.tpe.show)
+    }
+    vt << ")" << NewLine
+  }
+
+  /**
+    * Pretty prints the given lattice `lat` to the given virtual terminal `vt`.
+    */
+  private def prettyPrintLat(lat: Table.Lattice, vt: VirtualTerminal): Unit = {
+    vt << Bold("lat ") << Blue(lat.sym.toString) << "("
+    vt << lat.attributes.head.name << ": " << Cyan(lat.attributes.head.tpe.show)
+    for (attr <- lat.attributes.tail) {
+      vt << ", " << attr.name << ": " << Cyan(attr.tpe.show)
+    }
+    vt << ")" << NewLine
+  }
+
+  /**
     * A thread to run the fixed point solver in.
     */
-  class SolverThread() extends Runnable {
+  class SolverThread()(implicit terminal: Terminal) extends Runnable {
     override def run(): Unit = {
       // compute the least model.
       val timer = new Timer(flix.solve())
@@ -620,10 +693,12 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
           if (main.nonEmpty) {
             val name = main.get
             val evalTimer = new Timer(m.evalToString(name))
-            Console.println(s"$name returned `${evalTimer.getResult}' (compile: ${timer.fmt}, execute: ${evalTimer.fmt})")
+            terminal.writer().println(s"$name returned `${evalTimer.getResult}' (compile: ${timer.fmt}, execute: ${evalTimer.fmt})")
           }
         case Validation.Failure(errors) =>
-          errors.foreach(e => println(e.message.fmt))
+          for (error <- errors) {
+            terminal.writer().print(error.message.fmt)
+          }
       }
     }
   }
@@ -632,7 +707,6 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
     * A thread to watch over changes in a collection of directories.
     */
   class WatcherThread(paths: List[Path])(implicit terminal: Terminal) extends Thread {
-
     // Initialize a new watcher service.
     val watchService: WatchService = FileSystems.getDefault.newWatchService
 
@@ -656,7 +730,9 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
           // Check if a file with ".flix" extension changed.
           val changedPath = event.context().asInstanceOf[Path]
           if (changedPath.toString.endsWith(".flix")) {
-            println(s"File: '$changedPath' changed.")
+            terminal.writer().println()
+            terminal.writer().println(s"File: '$changedPath' changed.")
+            terminal.flush()
           }
         }
 

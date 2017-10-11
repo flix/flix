@@ -16,8 +16,10 @@
 
 package ca.uwaterloo.flix.util
 
-import ca.uwaterloo.flix.language.ast.{ExecutableAst, Symbol}
-import ca.uwaterloo.flix.runtime.{Value, Model}
+import java.io.PrintWriter
+
+import ca.uwaterloo.flix.language.ast.Symbol
+import ca.uwaterloo.flix.runtime.Model
 
 
 object PrettyPrint {
@@ -36,7 +38,7 @@ object PrettyPrint {
         }
 
         Console.println(fqn)
-        ascii.write(System.out)
+        ascii.write(new PrintWriter(System.out))
         Console.println()
         Console.println()
         found = true
@@ -51,7 +53,7 @@ object PrettyPrint {
         }
 
         Console.println(fqn)
-        ascii.write(System.out)
+        ascii.write(new PrintWriter(System.out))
         Console.println()
         Console.println()
         found = true

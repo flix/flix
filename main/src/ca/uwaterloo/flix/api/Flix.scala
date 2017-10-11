@@ -203,9 +203,6 @@ class Flix {
     * Compiles the Flix program and returns a typed ast.
     */
   def check(): Validation[TypedAst.Root, CompilationError] = {
-    if (strings.isEmpty && paths.isEmpty)
-      throw new IllegalStateException("No input specified. Please add at least one string or path input.")
-
     // Add built-in hooks.
     addGenSymHook()
 

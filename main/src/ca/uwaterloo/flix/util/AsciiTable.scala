@@ -80,7 +80,7 @@ class AsciiTable {
   /**
    * Writes the table to the given `stream`.
    */
-  def write(stream: PrintStream): Unit = {
+  def write(stream: PrintWriter): Unit = {
     val xs = rows
     val ys = columns
     val ws = columnWidths(ys :: xs)
