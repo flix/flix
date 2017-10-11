@@ -67,95 +67,98 @@ object GenTagClasses {
     * `getBoxedTagValue()` of the class representing `Ok[Int32]` is as follows:
     *
     * public final int getValue() {
-    *   return this.value;
+    * return this.value;
     * }
     *
     * public final Object getBoxedTagValue() {
-    *   return new Integer(this.value);
+    * return new Integer(this.value);
     * }
     *
     * Next, we will generate the `toString()` method which will always throws an exception, since `toString` should not be called.
     * The `toString` method is always the following:
     *
     * public String toString() throws Exception {
-    *   throw new Exception("equals method shouldn't be called")
+    * throw new Exception("equals method shouldn't be called")
     * }
     *
     * Next, we will generate the `hashCode()` method which will always throws an exception, since `hashCode` should not be called.
     * The `hashCode` method is always the following:
     *
     * public String hashCode() throws Exception {
-    *   throw new Exception("hashCode method shouldn't be called")
+    * throw new Exception("hashCode method shouldn't be called")
     * }
     *
     * Finally, we generate the `equals(Obj)` method which will always throws an exception, since `equals` should not be called.
     * The `equals` method is always the following:
     *
     * public boolean equals(Object var1) throws Exception {
-    *   throw new Exception("equals method shouldn't be called");
+    * throw new Exception("equals method shouldn't be called");
     * }
     */
   private def genByteCode(tag: TagInfo)(implicit root: Root, flix: Flix): Array[Byte] = {
-    // Class writer
-    val visitor = AsmOps.mkClassWriter()
-
-    // Initialize the visitor to create a class.
-    // Super class of the class
-    val superClass = JvmName.Object.toInternalName
-
-    // JvmType of the interface for enum of `tag`
+    // The JvmType of the interface for enum of `tag`.
     val superType = JvmOps.getEnumInterfaceType(tag.enumType)
 
-    // JvmType of the class for `tag`
+    // The JvmType of the class for `tag`..
     val classType = JvmOps.getTagClassType(tag)
 
-    // Erased JvmType of the value of `tag`
+    // The erased JvmType of the value of `tag`.
     val valueType = JvmOps.getErasedType(tag.tagType)
 
-    // Interfaces to be implemented
+    // Create a new class writer.
+    val visitor = AsmOps.mkClassWriter()
+
+    // The super class of the generated class.
+    val superClass = JvmName.Object.toInternalName
+
+    // The interfaces implemented by the generated class.
     val implementedInterfaces = Array(superType.name.toInternalName)
+
+    // The class header.
     visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_FINAL, classType.name.toInternalName, null, superClass, implementedInterfaces)
 
-    // Source of the class
+    // The source of the generated class.
     visitor.visitSource(classType.name.toInternalName, null)
 
-    // Generate value field
+    // Generate the value field.
     AsmOps.compileField(visitor, "value", valueType.toDescriptor, isStatic = false, isPrivate = true)
 
     // Generate static `INSTANCE` field if it is a singleton
-    if(JvmOps.isSingletonEnum(tag)) {
+    if (JvmOps.isSingletonEnum(tag)) {
+      // TODO: Determine if this optimization goes here, and whether we should still have a value field if it is applied.
       AsmOps.compileField(visitor, "unitInstance", classType.toDescriptor, isStatic = true, isPrivate = false)
     }
 
-    // Generate the constructor of the class
+    // Generate the constructor of the generated class.
     compileEnumConstructor(visitor, classType, valueType, isSingleton = JvmOps.isSingletonEnum(tag))
 
-    // Initialize the static field if it is a singleton
-    if(JvmOps.isSingletonEnum(tag)){
+    // Initialize the static field if it is a singleton.
+    if (JvmOps.isSingletonEnum(tag)) {
       compileUnitInstance(visitor, classType)
     }
 
-    // Generate the `getValue` method
-    AsmOps.compileGetFieldMethod(visitor, classType.name.toInternalName, valueType, "value", "getValue")
+    // Generate the `getValue` method.
+    AsmOps.compileGetFieldMethod(visitor, classType.name.toInternalName, valueType, "value", "getValue", AsmOps.getReturnInsn(valueType))
 
-    // Generate `getBoxedTagValue` method
+    // Generate the `getBoxedTagValue` method.
     compileGetBoxedTagValueMethod(visitor, classType, valueType)
 
-    // Generate `getTag` method
+    // Generate the `getTag` method.
     compileGetTagMethod(visitor, tag.tag)
 
-    // Generate `toString` method
+    // Generate the `toString` method.
     AsmOps.exceptionThrowerMethod(visitor, ACC_PUBLIC + ACC_FINAL, "toString", AsmOps.getMethodDescriptor(Nil, JvmType.String),
       "toString method shouldn't be called")
 
-    // Generate `hashCode` method
+    // Generate the `hashCode` method.
     AsmOps.exceptionThrowerMethod(visitor, ACC_PUBLIC + ACC_FINAL, "hashCode", AsmOps.getMethodDescriptor(Nil, JvmType.PrimInt),
       "hashCode method shouldn't be called")
 
-    // Generate `equals` method
+    // Generate the `equals` method.
     AsmOps.exceptionThrowerMethod(visitor, ACC_PUBLIC + ACC_FINAL, "equals", AsmOps.getMethodDescriptor(List(JvmType.Object), JvmType.PrimBool),
       "equals method shouldn't be called")
 
+    // Complete the visitor and get the bytecode.
     visitor.visitEnd()
     visitor.toByteArray
   }
@@ -167,9 +170,9 @@ object GenTagClasses {
     * If the `valueType` is only `Unit`, then we can make the constructor private since the `unitInstance` field
     * can be used to obtain an instance of the case.
     *
-    * @param visitor class visitor
-    * @param classType name of the class
-    * @param valueType type of the `value` field
+    * @param visitor     class visitor
+    * @param classType   name of the class
+    * @param valueType   type of the `value` field
     * @param isSingleton if the class is a singleton this flag is set
     */
   private def compileEnumConstructor(visitor: ClassWriter,
@@ -178,21 +181,19 @@ object GenTagClasses {
                                      isSingleton: Boolean)(implicit root: Root, flix: Flix) = {
     // If this is a singleton then we should make the constructor private
     val specifier =
-      if(isSingleton) {
+      if (isSingleton) {
         ACC_PRIVATE
       } else {
         ACC_PUBLIC
       }
 
-    val constructor = visitor.visitMethod(specifier, "<init>", AsmOps.getMethodDescriptor(List(valueType), JvmType.Void),
-      null, null)
+    val constructor = visitor.visitMethod(specifier, "<init>", AsmOps.getMethodDescriptor(List(valueType)), null, null)
 
     constructor.visitCode()
     constructor.visitVarInsn(ALOAD, 0)
 
     // Call the super (java.lang.Object) constructor
-    constructor.visitMethodInsn(INVOKESPECIAL, JvmName.Object.toInternalName, "<init>",
-      AsmOps.getMethodDescriptor(Nil, JvmType.Void), false)
+    constructor.visitMethodInsn(INVOKESPECIAL, JvmName.Object.toInternalName, "<init>", AsmOps.getMethodDescriptor(Nil), false)
 
     // Load instruction for type of `value`
     val iLoad = AsmOps.getLoadInstruction(valueType)
@@ -214,11 +215,11 @@ object GenTagClasses {
     * For example, `Val[Char]` has following `getTag()`method:
     *
     * public final String getTag() {
-    *   return "Var";
+    * return "Var";
     * }
     *
     * @param visitor class visitor
-    * @param tag tag String
+    * @param tag     tag String
     */
   private def compileGetTagMethod(visitor: ClassWriter, tag: String)(implicit root: Root, flix: Flix) = {
     val method = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, "getTag", AsmOps.getMethodDescriptor(Nil, JvmType.String), null, null)
@@ -235,20 +236,20 @@ object GenTagClasses {
     * For example, we generate the following method for `Ok[Int32]`:
     *
     * public final Object getBoxedTagValue() {
-    *   return new Integer(this.value);
+    * return new Integer(this.value);
     * }
     *
     * And we generate the following method for `Ok[List[Int32]]`
     *
     * public final Object getBoxedTagValue() {
-    *   return this.value;
+    * return this.value;
     * }
     *
-    * @param visitor class visitor
+    * @param visitor   class visitor
     * @param classType JvmType.Reference of the class
     * @param valueType JvmType of the `value` field of the class
     */
-  private def compileGetBoxedTagValueMethod(visitor: ClassWriter,
+  def compileGetBoxedTagValueMethod(visitor: ClassWriter,
                                     classType: JvmType.Reference,
                                     valueType: JvmType)(implicit root: Root, flix: Flix) = {
     val method = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, "getBoxedTagValue", AsmOps.getMethodDescriptor(Nil, JvmType.Object), null, null)
@@ -264,7 +265,8 @@ object GenTagClasses {
 
   /**
     * Initializing `getInstance` static field if the `value` field can be `Unit`
-    * @param visitor class visitor
+    *
+    * @param visitor   class visitor
     * @param classType JvmType.Reference of the class
     */
   private def compileUnitInstance(visitor: ClassWriter, classType: JvmType.Reference)(implicit root: Root, flix: Flix) = {
@@ -276,12 +278,10 @@ object GenTagClasses {
     method.visitInsn(DUP)
 
     // Getting instance of `UnitClass`
-    method.visitMethodInsn(INVOKESTATIC, JvmName.Unit.toInternalName, "getInstance",
-      AsmOps.getMethodDescriptor(Nil, JvmType.Unit), false)
+    method.visitMethodInsn(INVOKESTATIC, JvmName.Unit.toInternalName, "getInstance", AsmOps.getMethodDescriptor(Nil, JvmType.Unit), false)
 
     // Calling constructor on the object
-    method.visitMethodInsn(INVOKESPECIAL, classType.name.toInternalName, "<init>",
-      AsmOps.getMethodDescriptor(List(JvmType.Object), JvmType.Void), false)
+    method.visitMethodInsn(INVOKESPECIAL, classType.name.toInternalName, "<init>", AsmOps.getMethodDescriptor(List(JvmType.Object)), false)
 
     // Initializing the static field
     method.visitFieldInsn(PUTSTATIC, classType.name.toInternalName, "unitInstance", classType.toDescriptor)
