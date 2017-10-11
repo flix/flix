@@ -84,14 +84,16 @@ object GenNamespaces {
     val namespaceRef = JvmOps.getNamespaceClassType(ns)
 
     // Method header
-    val constructor = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, "<init>", AsmOps.getMethodDescriptor(Nil), null, null)
+    val constructor = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, "<init>",
+      AsmOps.getMethodDescriptor(Nil, JvmType.Void), null, null)
     constructor.visitCode()
 
     constructor.visitCode()
     constructor.visitVarInsn(ALOAD, 0)
 
     // Call the super (java.lang.Object) constructor
-    constructor.visitMethodInsn(INVOKESPECIAL, JvmName.Object.toInternalName, "<init>", AsmOps.getMethodDescriptor(Nil), false)
+    constructor.visitMethodInsn(INVOKESPECIAL, JvmName.Object.toInternalName, "<init>",
+      AsmOps.getMethodDescriptor(Nil, JvmType.Void), false)
 
     // Initializing each field
     for ((sym, defn) <- ns.defs) {
@@ -108,7 +110,8 @@ object GenNamespaces {
       constructor.visitInsn(DUP)
 
       // Calling the constructor of `namespace` class
-      constructor.visitMethodInsn(INVOKESPECIAL, jvmType.name.toInternalName, "<init>", AsmOps.getMethodDescriptor(Nil), false)
+      constructor.visitMethodInsn(INVOKESPECIAL, jvmType.name.toInternalName, "<init>",
+        AsmOps.getMethodDescriptor(Nil, JvmType.Void), false)
 
       // Initializing the field
       constructor.visitFieldInsn(PUTFIELD, namespaceRef.name.toInternalName, fieldName, jvmType.toDescriptor)

@@ -133,8 +133,8 @@ object GenTupleClasses {
     // Source of the class
     visitor.visitSource(classType.name.toInternalName, null)
 
-    // TODO: Use for.
-    targs.zipWithIndex.foreach { case (field, ind) =>
+    // Adding fields and getters and setters to the class
+    for((field, ind) <- targs.zipWithIndex){
       // Name of the field
       val fieldName = s"field$ind"
 
@@ -142,12 +142,10 @@ object GenTupleClasses {
       AsmOps.compileField(visitor, fieldName, field.toDescriptor, isStatic = false, isPrivate = true)
 
       // Emitting getter for each field
-      AsmOps.compileGetFieldMethod(visitor, classType.name.toInternalName, field, fieldName,
-        s"getIndex$ind", AsmOps.getReturnInsn(field))
+      AsmOps.compileGetFieldMethod(visitor, classType.name.toInternalName, field, fieldName, s"getIndex$ind")
 
       // Emitting setter for each field
-      AsmOps.compileSetFieldMethod(visitor, classType.name.toInternalName, field, fieldName,
-        s"setIndex$ind", AsmOps.getLoadInstruction(field))
+      AsmOps.compileSetFieldMethod(visitor, classType.name.toInternalName, field, fieldName, s"setIndex$ind")
     }
 
     // Emit the code for the constructor
@@ -165,7 +163,7 @@ object GenTupleClasses {
       "hashCode method shouldn't be called")
 
     // Generate `equals` method
-    AsmOps.exceptionThrowerMethod(visitor, ACC_PUBLIC + ACC_FINAL, "equals", AsmOps.getMethodDescriptor(List(JvmType.Object)),
+    AsmOps.exceptionThrowerMethod(visitor, ACC_PUBLIC + ACC_FINAL, "equals", AsmOps.getMethodDescriptor(List(JvmType.Object), JvmType.Void),
       "equals method shouldn't be called")
 
 
