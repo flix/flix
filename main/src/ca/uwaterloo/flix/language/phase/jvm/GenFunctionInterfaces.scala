@@ -79,7 +79,8 @@ object GenFunctionInterfaces {
       val argType = JvmOps.getErasedType(arg)
 
       // `setArg$ind()` method
-      val setArgMethod = visitor.visitMethod(ACC_PUBLIC + ACC_ABSTRACT, s"setArg$index", AsmOps.getMethodDescriptor(List(argType)), null, null)
+      val setArgMethod = visitor.visitMethod(ACC_PUBLIC + ACC_ABSTRACT, s"setArg$index",
+        AsmOps.getMethodDescriptor(List(argType), JvmType.Void), null, null)
       setArgMethod.visitEnd()
     }
 
