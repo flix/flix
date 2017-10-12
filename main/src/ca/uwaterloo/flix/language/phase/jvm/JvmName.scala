@@ -99,9 +99,30 @@ object JvmName {
   val Unit: JvmName = JvmName(List("ca", "waterloo", "flix", "api"), "Unit")
 
   /**
+    * The `scala.math.package$` name
+    */
+  val ScalaMathPkg: JvmName = JvmName(List("scala", "math"), "package$")
+
+  /**
     * The `java.lang.Exception` name
     */
   val Exception: JvmName = JvmName(List("java", "lang"), "Exception")
+
+  /**
+    * The `ca.uwaterloo.flix.api.UserException$` name
+    */
+  val UserException: JvmName = JvmName(List("ca", "uwaterloo", "flix", "api"), "UserException$")
+
+  /**
+    * The `ca.uwaterloo.flix.api.MatchException$` name
+    */
+  val MatchException: JvmName = JvmName(List("ca", "uwaterloo", "flix", "api"), "MatchException$")
+
+
+  /**
+    * The `ca.uwaterloo.flix.api.SwitchException$` name
+    */
+  val SwitchException: JvmName = JvmName(List("ca", "uwaterloo", "flix", "api"), "SwitchException$")
 
   /**
     * The `java.lang.Exception` name

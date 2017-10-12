@@ -465,6 +465,31 @@ object JvmOps {
   }
 
   /**
+    * Returns the tag info for the given `tpe` and `tag`
+    */
+  def getTagInfo(tpe: Type, tag: String, root: Root): TagInfo = {
+    // Throw an exception if `tpe` is not an enum type
+    if(!tpe.isEnum) {
+      throw new InternalCompilerException(s"Unexpected type: $tpe")
+    }
+
+    // Retrieve the enum symbol and type arguments.
+    val enumType = tpe.typeConstructor.asInstanceOf[Type.Enum]
+    val args = tpe.typeArguments
+
+    // Retrieve the enum.
+    val enum = root.enums(enumType.sym)
+
+    // Retrive the case
+    val enumCase = enum.cases(tag)
+
+    val subst = Unification.unify(enum.tpe, tpe).get
+    val tagType = subst(enumCase.tpe)
+
+    TagInfo(enumCase.sym, tag, args, tpe, tagType)
+  }
+
+  /**
     * Returns the set of all instantiated types in the given AST `root`.
     *
     * This include type components. For example, if the program contains
