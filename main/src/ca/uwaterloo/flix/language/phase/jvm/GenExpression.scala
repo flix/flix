@@ -157,7 +157,7 @@ object GenExpression {
       // First we compile the `exp`
       compileExpression(currentClassType, exp, jumpLabels, entryPoint, visitor)
       // We get the `TagInfo` for the tag
-      val tagInfo = JvmOps.getTagInfo(exp.tpe, tag, root)
+      val tagInfo = JvmOps.getTagInfo(exp.tpe, tag)
       // We get the JvmType of the class for tag
       val classType = JvmOps.getTagClassType(tagInfo)
       // We check if the enum is `instanceof` the class
@@ -167,7 +167,7 @@ object GenExpression {
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
       // We get the `TagInfo` for the tag
-      val tagInfo = JvmOps.getTagInfo(tpe, tag, root)
+      val tagInfo = JvmOps.getTagInfo(tpe, tag)
       // We get the JvmType of the class for tag
       val classType = JvmOps.getTagClassType(tagInfo)
       /*
@@ -193,7 +193,7 @@ object GenExpression {
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
       // We get the `TagInfo` for the tag
-      val tagInfo = JvmOps.getTagInfo(exp.tpe, tag, root)
+      val tagInfo = JvmOps.getTagInfo(exp.tpe, tag)
       // We get the JvmType of the class for the tag
       val classType = JvmOps.getTagClassType(tagInfo)
       // Evaluate the exp
