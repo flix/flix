@@ -22,6 +22,8 @@ import ca.uwaterloo.flix.language.ast.{Type, _}
 import org.objectweb.asm._
 import org.objectweb.asm.Opcodes._
 import ca.uwaterloo.flix.util.InternalCompilerException
+import org.objectweb.asm
+import java.lang.reflect.Modifier
 
 /**
   * Generate expression
@@ -296,7 +298,6 @@ object GenExpression {
     case Expression.NativeConstructor(constructor, args, tpe, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
-      import org.objectweb.asm
       val descriptor = asm.Type.getConstructorDescriptor(constructor)
       val declaration = asm.Type.getInternalName(constructor.getDeclaringClass)
       // Create a new object of the declaration type
@@ -312,8 +313,6 @@ object GenExpression {
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
       // Fetch a field from an object
-      import org.objectweb.asm
-      import java.lang.reflect.Modifier
       val declaration = asm.Type.getInternalName(field.getDeclaringClass)
       val name = field.getName
       // Use GETSTATIC if the field is static and GETFIELD if the field is on an object
@@ -325,8 +324,6 @@ object GenExpression {
       addSourceLine(visitor, loc)
       // Evaluate arguments left-to-right and push them onto the stack.
       args.foreach(compileExpression(currentClassType, _, jumpLabels, entryPoint, visitor))
-      import org.objectweb.asm
-      import java.lang.reflect.Modifier
       val declaration = asm.Type.getInternalName(method.getDeclaringClass)
       val name = method.getName
       val descriptor = asm.Type.getMethodDescriptor(method)
