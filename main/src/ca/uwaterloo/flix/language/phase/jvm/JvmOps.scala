@@ -467,7 +467,7 @@ object JvmOps {
   /**
     * Returns the tag info for the given `tpe` and `tag`
     */
-  def getTagInfo(tpe: Type, tag: String, root: Root): TagInfo = {
+  def getTagInfo(tpe: Type, tag: String)(implicit root: Root, flix: Flix): TagInfo = {
     // Throw an exception if `tpe` is not an enum type
     if(!tpe.isEnum) {
       throw new InternalCompilerException(s"Unexpected type: $tpe")
