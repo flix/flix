@@ -121,7 +121,6 @@ object JvmName {
     */
   val MatchException: JvmName = JvmName(List("ca", "uwaterloo", "flix", "api"), "MatchException$")
 
-
   /**
     * The `ca.uwaterloo.flix.api.SwitchException$` name
     */
