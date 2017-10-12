@@ -72,6 +72,11 @@ object JvmType {
   val Unit: JvmType.Reference = Reference(JvmName.Unit)
 
   /**
+    * The `scala.math.package$` type
+    */
+  val ScalaMathPkg: JvmType.Reference = Reference(JvmName.ScalaMathPkg)
+
+  /**
     * Represents the void type.
     */
   case object Void extends JvmType
