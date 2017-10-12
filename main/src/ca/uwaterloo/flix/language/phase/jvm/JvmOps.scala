@@ -69,7 +69,14 @@ object JvmOps {
       case Type.Ref => getCellClassType(tpe)
       case Type.Arrow(l) => getFunctionInterfaceType(tpe)
       case Type.Tuple(l) => getTupleInterfaceType(tpe)
-      case Type.Enum(sym, kind) => getEnumInterfaceType(tpe)
+      case Type.Enum(sym, kind) =>
+        if (isNullaryEnum(tpe)) {
+          // TODO
+          println(s"Found nullary enum: ${tpe}")
+          getEnumInterfaceType(tpe)
+        } else {
+          getEnumInterfaceType(tpe)
+        }
       case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
     }
   }
@@ -365,6 +372,7 @@ object JvmOps {
     *
     * Every primitive type is mapped to itself and every other type is mapped to Object.
     */
+  // TODO: How should this interact with nullary etc?
   def getErasedType(tpe: Type)(implicit root: Root, flix: Flix): JvmType = tpe match {
     case Type.Bool => JvmType.PrimBool
     case Type.Char => JvmType.PrimChar
@@ -376,6 +384,60 @@ object JvmOps {
     case Type.Int64 => JvmType.PrimLong
     case _ => JvmType.Object
   }
+
+
+  /**
+    * Returns `true` if the given enum type `tpe` is nullable.
+    *
+    * An enum is nullable if it has exactly two constructors:
+    *
+    * One which takes unit and one which takes a non-primitive type.
+    *
+    * NB: The type must be an enum type.
+    */
+  private def isNullaryEnum(tpe: Type)(implicit root: Root, flix: Flix): Boolean = {
+    // Check that the given type is an enum type.
+    if (!tpe.typeConstructor.isEnum)
+      throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+
+    // Retrieve the enum type.
+    val enumType = tpe.typeConstructor.asInstanceOf[Type.Enum]
+
+    // Retrieve the enum declaration.
+    val enum = root.enums(enumType.sym)
+
+    // Check whether the enum is nullary.
+    if (enum.cases.size == 2) {
+      val case1 = enum.cases.head._2
+      val case2 = enum.cases.init.head._2
+
+      return isNullaryCase(case1) && isNonPrimitiveCase(case2) || isNullaryCase(case1) && isNonPrimitiveCase(case2)
+    }
+
+    // The enum is not nullary.
+    false
+  }
+
+  /**
+    * Returns the inner type of a nullable enum type `tpe`.
+    *
+    * NB: The type must be a nullable enum type.
+    */
+  private def getNullaryTypeFromEnum(tpe: Type)(implicit root: Root, flix: Flix): JvmType = ???
+
+  /**
+    * Returns `true` if the given `caze` can be represented by `null`.
+    *
+    * In other words, if the inner type of the given `caze` is Unit.
+    */
+  // TODO: Does this need to be recursive?
+  private def isNullaryCase(caze: Case): Boolean = caze.tpe == Type.Unit
+
+  /**
+    * Returns `true` if the given `caze` can be represented as a non-null value.
+    */
+  private def isNonPrimitiveCase(caze: Case): Boolean = ???
+
 
   /**
     * Performs name mangling on the given string `s` to avoid issues with special characters.
@@ -626,6 +688,7 @@ object JvmOps {
     *
     * @param tag Enum Case
     */
+  // TODO: Rename
   def isSingletonEnum(tag: TagInfo): Boolean = {
     tag.tagType == Type.Unit
   }
