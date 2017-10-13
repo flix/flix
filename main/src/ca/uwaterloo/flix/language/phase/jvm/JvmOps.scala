@@ -70,7 +70,12 @@ object JvmOps {
       case Type.Arrow(l) => getFunctionInterfaceType(tpe)
       case Type.Tuple(l) => getTupleInterfaceType(tpe)
       case Type.Enum(sym, kind) =>
-        if (isNullaryEnum(tpe)) {
+        if (isSingleCaseEnum(sym)) {
+          val result = getSingleCaseEnumType(tpe)
+          println("Found singlecase enum " + tpe + " inner type: " + result.toDescriptor)
+          result
+        }
+        else if (isNullaryEnum(tpe)) {
           // TODO
           println(s"Found nullary enum: ${tpe}")
           getEnumInterfaceType(tpe)
@@ -392,6 +397,27 @@ object JvmOps {
   // TODO: We should move "suffix" and "prefix" into helpers inside JvmOps.
   def getDefFieldNameInNamespaceClass(sym: Symbol.DefnSym): String = sym.suffix + '$' + sym.prefix.mkString("$")
 
+
+  // TODO
+  private def isSingleCaseEnum(sym: Symbol.EnumSym)(implicit root: Root, flix: Flix): Boolean = {
+    val enum = root.enums(sym)
+
+    enum.cases.values.size == 1
+  }
+
+  // TODO
+  private def getSingleCaseEnumType(tpe: Type)(implicit root: Root, flix: Flix): JvmType = {
+    // Check that the given type is an enum type.
+    if (!tpe.typeConstructor.isEnum)
+      throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+
+    // Retrieve the single tag.
+    val tag = getTagsOf(tpe).head
+
+    getJvmType(tag.tagType)
+  }
+
+  // TODO: Deal with fusion too.
 
   /**
     * Returns `true` if the given enum type `tpe` is nullable.
