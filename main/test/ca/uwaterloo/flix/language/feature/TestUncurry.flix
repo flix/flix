@@ -113,3 +113,28 @@ def nestedDef01(): Bool = {
   id(4) `assertEq!` 4
 }
 
+
+// Some curried definitions
+def add3Curried(): Int -> Int -> Int -> Int = {
+    x -> y -> z -> x + y + z
+}
+def add2Curried(): Int -> Int -> Int = add3Curried()(3)
+def add1aCurried(): Int -> Int = x -> add2Curried()(4)(x)
+def add1bCurried(): Int -> Int = x -> add3Curried()(3)(4)(x)
+
+@test
+def testSimpleCurried01(): Bool =
+    add3Curried()(3)(4)(5) `assertEq!` 12
+
+@test
+def testSimpleCurried02(): Bool =
+    add2Curried()(4)(5) `assertEq!` 12
+
+@test
+def testSimpleCurried03(): Bool =
+    add1aCurried()(5) `assertEq!` 12
+
+@test
+def testSimpleCurried04(): Bool =
+    add1bCurried()(5) `assertEq!` 12
+

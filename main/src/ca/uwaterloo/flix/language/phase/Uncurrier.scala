@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expression._
+import ca.uwaterloo.flix.language.ast.Type.Arrow
 import ca.uwaterloo.flix.language.{CompilationError, GenSym}
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
@@ -43,37 +44,70 @@ object Uncurrier extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
 
   def run(root: SimplifiedAst.Root)(implicit flix: Flix): Validation[SimplifiedAst.Root, CompilationError] = {
 
-    // TODO
-    return root.toSuccess
-
     implicit val _ = flix.genSym
     val startTime = System.nanoTime()
 
-    val (defns, uncurriedSyms) = root.defs.foldLeft(Map.empty[Symbol.DefnSym, SimplifiedAst.Def],
+    /*
+     * We generate uncurried versions of each function definition. We
+     * generate two mappings:
+     * - a map of the created symbols to the created bodies
+     * - a map of the old symbols to the corresponding uncurried definitions
+     */
+    val (createdDefs, defsToUncurriedDefs) = root.defs.foldLeft(
+      Map.empty[Symbol.DefnSym, SimplifiedAst.Def],
       Map.empty[Symbol.DefnSym, Map[Int, Symbol.DefnSym]])((acc, defnEntry) => {
-      val (defs, uncurriedSyms) = Defs.mkUncurriedDef(defnEntry._1, defnEntry._2, 1, acc._2, root)
-      (acc._1 ++ defs, uncurriedSyms)
+      val (defs, uncurriedSyms) = Defs.mkUncurriedDef(defnEntry._1, defnEntry._2)
+      (acc._1 ++ defs, acc._2 ++ uncurriedSyms)
     })
+    val defs1 = root.defs ++ createdDefs
 
-    val uncurriedDefs = defns map { case (k, v) => k -> Defs.uncurry(v, uncurriedSyms, root) }
+    // Now using the uncurried version of the functions we made, we replace function calls in the actual definition
+    // as needed
+    val uncurriedDefs = defs1 map { case (k, v) => k -> Defs.uncurry(v, defsToUncurriedDefs) }
 
-    val currentTime = System.nanoTime()
-    val time = root.time.copy(uncurrier = currentTime - startTime)
+    val time = root.time.copy(uncurrier = System.nanoTime() - startTime)
     root.copy(defs = uncurriedDefs).copy(time = time).toSuccess
   }
 
   object Defs {
+    /**
+      * Insert a new function in to the uncurried definitions map
+      */
+    def insertSym(curriedSym: Symbol.DefnSym,
+                  uncurriedSym: Symbol.DefnSym,
+                  uncurriedLvl: Int,
+                  defns: Map[Symbol.DefnSym, Map[Int, Symbol.DefnSym]]):
+    Map[Symbol.DefnSym, Map[Int, Symbol.DefnSym]] =
+      defns + (defns.get(curriedSym) match {
+        case Some(e) => curriedSym -> (e + (uncurriedLvl -> uncurriedSym))
+        case None => curriedSym -> (Map.empty + (uncurriedLvl -> uncurriedSym))
+      })
+
+
+    /**
+      * Wrapper function to create all the uncurried versions of a function
+      *
+      * @return the update functions, as well as a map from functions to their uncurried versions by level of
+      *         "uncurriedness"
+      */
+    def mkUncurriedDef(sym: Symbol.DefnSym,
+                       curriedDef: SimplifiedAst.Def)
+                      (implicit genSym: GenSym)
+    : (Map[Symbol.DefnSym, SimplifiedAst.Def], Map[Symbol.DefnSym, Map[Int, Symbol.DefnSym]]) = {
+      mkUncurriedDef(sym, curriedDef, 1)
+    }
+
     /**
       * Creates all the uncurried versions of a function
       *
       * @return the update functions, as well as a map from functions to their uncurried versions by level of
       *         "uncurriedness"
       */
-    def mkUncurriedDef(sym: Symbol.DefnSym,
-                       curriedDef: SimplifiedAst.Def, uncurryLevel: Int,
-                       newSyms0: Map[Symbol.DefnSym, Map[Int, Symbol.DefnSym]],
-                       root: SimplifiedAst.Root)(implicit genSym: GenSym)
-    : (Map[Symbol.DefnSym, SimplifiedAst.Def], Map[Symbol.DefnSym, Map[Int, Symbol.DefnSym]]) = {
+    def mkUncurriedDef(baseSym: Symbol.DefnSym,
+                       curriedDef: SimplifiedAst.Def,
+                       uncurryLevel: Int)
+                      (implicit genSym: GenSym)
+    : (Map[Symbol.DefnSym, SimplifiedAst.Def], Map[Symbol.DefnSym, Map[Int, Symbol.DefnSym]]) =
       curriedDef.exp match {
         // If the body is a lambda, then we have a curried function
         // definition, so we need to create an uncurried version.
@@ -82,41 +116,41 @@ object Uncurrier extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         // formal parameters
         case Lambda(args, body0, _, _) =>
           // Create a new definition for our function
-          val uncurriedSym = Symbol.freshDefnSym(sym)
+          val uncurriedSym = Symbol.freshDefnSym(baseSym)
 
-          // Insert the created symbol into our map of uncurried symbols
-          val newSyms1 = newSyms0.get(sym) match {
-            case Some(e) => newSyms0 + (sym -> (e + (uncurryLevel -> uncurriedSym)))
-            case None => newSyms0 + (sym -> (Map.empty[Int, Symbol.DefnSym] + (uncurryLevel -> uncurriedSym)))
-          }
 
           // Create new VarSyms for our function
           val formals1 = (curriedDef.fparams ::: args).map(f => f.copy(sym = Symbol.freshVarSym(f.sym)))
           // Replace the old VarSyms in the body
-          val varMapping = (curriedDef.fparams ::: args).map(f => f.sym).zip(formals1.map(f => f.sym)).toMap
+          val varMapping = (curriedDef.fparams ::: args).map(_.sym).zip(formals1.map(_.sym)).toMap
           val body1 = Expressions.substitute(body0, varMapping)
 
+          // Assemble the new definition
           val unCurriedDef = SimplifiedAst.Def(
             curriedDef.ann,
             curriedDef.mod,
             uncurriedSym,
             formals1,
             body1,
-            curriedDef.tpe, // TODO: Call uncurry type.
+            uncurryType(curriedDef.tpe),
             curriedDef.loc)
 
           // Create the other levels of uncurrying
-          val (uncurriedDefs, newSyms2) = mkUncurriedDef(sym, unCurriedDef, uncurryLevel + 1, newSyms1, root)
-          (uncurriedDefs + (uncurriedSym -> unCurriedDef), newSyms2)
-        case _ => (Map.empty[Symbol.DefnSym, SimplifiedAst.Def] + (sym -> root.defs(sym)), newSyms0)
+          val (uncurriedDefs, uncurriedMapping0) = mkUncurriedDef(baseSym, unCurriedDef, uncurryLevel + 1)
+          // Insert the created symbol into our map of uncurried symbols
+          val uncurriedMapping1 = insertSym(baseSym, uncurriedSym, uncurryLevel, uncurriedMapping0)
+          val createdFunctions = uncurriedDefs + (uncurriedSym -> unCurriedDef)
+          (createdFunctions, uncurriedMapping1)
+
+        case _ => (Map.empty, Map.empty)
       }
-    }
+
 
     /**
       * Uncurry a definition constant
       */
-    def uncurry(cst: SimplifiedAst.Def, newSyms0: Map[Symbol.DefnSym, Map[Int, Symbol.DefnSym]], root: SimplifiedAst.Root): SimplifiedAst.Def = {
-      cst.copy(exp = Expressions.uncurry(cst.exp, newSyms0, root))
+    def uncurry(cst: SimplifiedAst.Def, newSyms0: Map[Symbol.DefnSym, Map[Int, Symbol.DefnSym]]): SimplifiedAst.Def = {
+      cst.copy(exp = Expressions.uncurry(cst.exp, newSyms0))
     }
   }
 
@@ -134,15 +168,15 @@ object Uncurrier extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         case Unit => Unit
         case True => True
         case False => False
-        case Char(lit) => Char(lit)
-        case Float32(lit) => Float32(lit)
-        case Float64(lit) => Float64(lit)
-        case Int8(lit) => Int8(lit)
-        case Int16(lit) => Int16(lit)
-        case Int32(lit) => Int32(lit)
-        case Int64(lit) => Int64(lit)
-        case BigInt(lit) => BigInt(lit)
-        case Str(lit) => Str(lit)
+        case e: Char => e
+        case e: Float32 => e
+        case e: Float64 => e
+        case e: Int8 => e
+        case e: Int16 => e
+        case e: Int32 => e
+        case e: Int64 => e
+        case e: BigInt => e
+        case e: Str => e
         case Var(sym, tpe, loc) => Var(replace(sym), tpe, loc)
         case e: Def => e
         // For lambdas, we have to replace the formal arguments with new formal
@@ -159,7 +193,7 @@ object Uncurrier extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         case Unary(sop, op, exp, tpe, loc) => Unary(sop, op, substitute(exp, env0), tpe, loc)
         case Binary(sop, op, exp1, exp2, tpe, loc) => Binary(sop, op, substitute(exp1, env0), substitute(exp2, env0), tpe, loc)
 
-        case IfThenElse(exp1, exp2, exp3, tpe, loc) => IfThenElse(substitute(exp1, env0), substitute(exp1, env0), substitute(exp3, env0), tpe, loc)
+        case IfThenElse(exp1, exp2, exp3, tpe, loc) => IfThenElse(substitute(exp1, env0), substitute(exp2, env0), substitute(exp3, env0), tpe, loc)
 
         case Branch(exp, branches, tpe, loc) =>
           val e = substitute(exp, env0)
@@ -185,103 +219,99 @@ object Uncurrier extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         case NativeConstructor(constructor, args, tpe, loc) => NativeConstructor(constructor, args.map(a => substitute(a, env0)), tpe, loc)
         case e: NativeField => e
         case NativeMethod(method, args, tpe, loc) => NativeMethod(method, args.map(a => substitute(a, env0)), tpe, loc)
-        case UserError(tpe, loc) => exp0
-        case MatchError(tpe, loc) => exp0
-        case SwitchError(tpe, loc) => exp0
+        case e: UserError => e
+        case e: MatchError => e
+        case e: SwitchError => e
 
-        case ApplyClo(exp, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
-        case ApplyDef(sym, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
-        case ApplyCloTail(exp, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
-        case ApplyDefTail(sym, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
-        case ApplySelfTail(sym, formals, actuals, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
+        case _: ApplyClo => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
+        case _: ApplyDef => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
+        case _: ApplyCloTail => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
+        case _: ApplyDefTail => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
+        case _: ApplySelfTail => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
       }
     }
 
     /**
       * Uncurry an expression
       */
-    def uncurry(exp0: SimplifiedAst.Expression, newSyms: Map[Symbol.DefnSym, Map[Int, Symbol.DefnSym]], root: SimplifiedAst.Root): SimplifiedAst.Expression = exp0 match {
-      case Unit => exp0
-      case True => exp0
-      case False => exp0
-      case Char(lit) => exp0
-      case Float32(lit) => exp0
-      case Float64(lit) => exp0
-      case Int8(lit) => exp0
-      case Int16(lit) => exp0
-      case Int32(lit) => exp0
-      case Int64(lit) => exp0
-      case BigInt(lit) => exp0
-      case Str(lit) => exp0
-      case Var(sym, tpe, loc) => exp0
-      case Def(sym, tpe, loc) => exp0
-      case Lambda(args, body, tpe, loc) => Lambda(args, uncurry(body, newSyms, root), tpe, loc)
-      case Hook(hook, tpe, loc) => exp0
-      case LambdaClosure(lambda, freeVars, tpe, loc) => exp0
-      case Closure(ref, freeVars, tpe, loc) => exp0
-      case ApplyHook(hook, args, tpe, loc) => exp0
-      case a: Apply =>
-        val uncurryCount = maximalUncurry(a)
-        uncurryN(exp0, uncurryCount) match {
+    def uncurry(exp0: SimplifiedAst.Expression, newSyms: Map[Symbol.DefnSym, Map[Int, Symbol.DefnSym]]): SimplifiedAst.Expression = exp0 match {
+      case Unit => Unit
+      case True => True
+      case False => False
+      case e: Char => e
+      case e: Float32 => e
+      case e: Float64 => e
+      case e: Int8 => e
+      case e: Int16 => e
+      case e: Int32 => e
+      case e: Int64 => e
+      case e: BigInt => e
+      case e: Str => e
+      case e: Var => e
+      case e: Def => e
+      case Lambda(args, body, tpe, loc) => Lambda(args, uncurry(body, newSyms), tpe, loc)
+      case e: Hook => e
+      case e: LambdaClosure => e
+      case e: Closure => e
+      case e: ApplyHook => e
+      case e: Apply =>
+        val uncurryCount = maximalUncurry(e)
+        uncurryN(e, uncurryCount) match {
           case Apply(Def(sym1, tp1, loc1), args2, tpe2, loc2) =>
             newSyms.get(sym1) match {
               case Some(m) => m.get(uncurryCount) match {
                 case Some(newSym) =>
                   Apply(Def(newSym, tp1, loc1), args2 map {
-                    uncurry(_, newSyms, root)
+                    uncurry(_, newSyms)
                   }, tpe2, loc2)
-                case None => a
+                case None => e
               }
-              case None => a
+              case None => e
             }
-          case _ => a
+          case _ => e
         }
-      case Unary(sop, op, exp, tpe, loc) => Unary(sop, op, uncurry(exp, newSyms, root), tpe, loc)
-      case Binary(sop, op, exp1, exp2, tpe, loc) => Binary(sop, op, uncurry(exp1, newSyms, root), uncurry(exp2, newSyms, root), tpe, loc)
-      case IfThenElse(exp1, exp2, exp3, tpe, loc) => IfThenElse(uncurry(exp1, newSyms, root), uncurry(exp2, newSyms, root), uncurry(exp3, newSyms, root), tpe, loc)
+      case Unary(sop, op, exp, tpe, loc) => Unary(sop, op, uncurry(exp, newSyms), tpe, loc)
+      case Binary(sop, op, exp1, exp2, tpe, loc) => Binary(sop, op, uncurry(exp1, newSyms), uncurry(exp2, newSyms), tpe, loc)
+      case IfThenElse(exp1, exp2, exp3, tpe, loc) => IfThenElse(uncurry(exp1, newSyms), uncurry(exp2, newSyms), uncurry(exp3, newSyms), tpe, loc)
       case Branch(exp, branches, tpe, loc) =>
-        val e = uncurry(exp, newSyms, root)
+        val e = uncurry(exp, newSyms)
         val bs = branches map {
-          case (sym, br) => sym -> uncurry(br, newSyms, root)
+          case (sym, br) => sym -> uncurry(br, newSyms)
         }
         Branch(e, bs, tpe, loc)
-      case JumpTo(sym, tpe, loc) => JumpTo(sym, tpe, loc)
-      case Let(sym, exp1, exp2, tpe, loc) => Let(sym, uncurry(exp1, newSyms, root), uncurry(exp2, newSyms, root), tpe, loc)
-      case LetRec(sym, exp1, exp2, tpe, loc) => LetRec(sym, uncurry(exp1, newSyms, root), uncurry(exp2, newSyms, root), tpe, loc)
-      case Is(sym, tag, exp, loc) => Is(sym, tag, uncurry(exp, newSyms, root), loc)
-      case Tag(sym, tag, exp, tpe, loc) => Tag(sym, tag, uncurry(exp, newSyms, root), tpe, loc)
-      case Untag(sym, tag, exp, tpe, loc) => Untag(sym, tag, uncurry(exp, newSyms, root), tpe, loc)
-      case Index(base, offset, tpe, loc) => exp0
+      case e: JumpTo => e
+      case Let(sym, exp1, exp2, tpe, loc) => Let(sym, uncurry(exp1, newSyms), uncurry(exp2, newSyms), tpe, loc)
+      case LetRec(sym, exp1, exp2, tpe, loc) => LetRec(sym, uncurry(exp1, newSyms), uncurry(exp2, newSyms), tpe, loc)
+      case Is(sym, tag, exp, loc) => Is(sym, tag, uncurry(exp, newSyms), loc)
+      case Tag(sym, tag, exp, tpe, loc) => Tag(sym, tag, uncurry(exp, newSyms), tpe, loc)
+      case Untag(sym, tag, exp, tpe, loc) => Untag(sym, tag, uncurry(exp, newSyms), tpe, loc)
+      case e: Index => e
       case Tuple(elms, tpe, loc) => Tuple(elms map {
-        uncurry(_, newSyms, root)
+        uncurry(_, newSyms)
       }, tpe, loc)
-      case Ref(exp, tpe, loc) =>
-        val e = uncurry(exp, newSyms, root)
-        Ref(e, tpe, loc)
-      case Deref(exp, tpe, loc) =>
-        val e = uncurry(exp, newSyms, root)
-        Deref(e, tpe, loc)
+      case Ref(exp, tpe, loc) => Ref(uncurry(exp, newSyms), tpe, loc)
+      case Deref(exp, tpe, loc) => Deref(uncurry(exp, newSyms), tpe, loc)
       case Assign(exp1, exp2, tpe, loc) =>
-        val e1 = uncurry(exp1, newSyms, root)
-        val e2 = uncurry(exp2, newSyms, root)
+        val e1 = uncurry(exp1, newSyms)
+        val e2 = uncurry(exp2, newSyms)
         Assign(e1, e2, tpe, loc)
-      case Existential(fparam, exp, loc) => Existential(fparam, uncurry(exp, newSyms, root), loc)
-      case Universal(fparam, exp, loc) => Universal(fparam, uncurry(exp, newSyms, root), loc)
+      case Existential(fparam, exp, loc) => Existential(fparam, uncurry(exp, newSyms), loc)
+      case Universal(fparam, exp, loc) => Universal(fparam, uncurry(exp, newSyms), loc)
       case NativeConstructor(constructor, args, tpe, loc) => NativeConstructor(constructor, args map {
-        uncurry(_, newSyms, root)
+        uncurry(_, newSyms)
       }, tpe, loc)
-      case NativeField(field, tpe, loc) => exp0
+      case e: NativeField => e
       case NativeMethod(method, args, tpe, loc) => NativeMethod(method, args map {
-        uncurry(_, newSyms, root)
+        uncurry(_, newSyms)
       }, tpe, loc)
-      case UserError(tpe, loc) => exp0
-      case MatchError(tpe, loc) => exp0
-      case SwitchError(tpe, loc) => exp0
-      case ApplyClo(exp, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
-      case ApplyDef(sym, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
-      case ApplyCloTail(exp, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
-      case ApplyDefTail(sym, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
-      case ApplySelfTail(sym, formals, actuals, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
+      case e: UserError => e
+      case e: MatchError => e
+      case e: SwitchError => e
+      case e: ApplyClo => throw InternalCompilerException(s"Unexpected expression: '${e.getClass.getSimpleName}'.")
+      case e: ApplyDef => throw InternalCompilerException(s"Unexpected expression: '${e.getClass.getSimpleName}'.")
+      case e: ApplyCloTail => throw InternalCompilerException(s"Unexpected expression: '${e.getClass.getSimpleName}'.")
+      case e: ApplyDefTail => throw InternalCompilerException(s"Unexpected expression: '${e.getClass.getSimpleName}'.")
+      case e: ApplySelfTail => throw InternalCompilerException(s"Unexpected expression: '${e.getClass.getSimpleName}'.")
     }
 
     /**
@@ -290,18 +320,17 @@ object Uncurrier extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     def uncurryN(exp0: SimplifiedAst.Expression, count: Int): SimplifiedAst.Expression = count match {
       case 0 => exp0
       case n => exp0 match {
-        case Apply(exp2, args2, tpe2, loc2) =>
-          // TODO: Not sure this is correct?
-          uncurryN(exp2, n - 1) match {
+        case Apply(exp1, args1, tpe1, loc1) =>
+          uncurryN(exp1, n - 1) match {
             // Transform add(3)(4) -> add$uncurried(3,4)
-            case Apply(Def(sym4, tpe4, loc4), args3, _, _) =>
-              Apply(Def(sym4, tpe4, loc4), args3 ::: args2, tpe2, loc2) // TODO: Here was a call to uncurryType.
+            case Apply(Def(sym2, tpe2, loc2), args2, _, _) =>
+              Apply(Def(sym2, tpe2, loc2), args2 ::: args1, tpe1, loc1)
             // Transform ((x,y) -> x+y)(3)(4) -> ((x,y) -> x+y)(3,4)
             case Apply(Lambda(args, body, tpe, loc), args3, _, _) =>
-              Apply(Lambda(args, body, tpe, loc), args3 ::: args2, tpe2, loc2)
+              Apply(Lambda(args, body, tpe, loc), args3 ::: args1, tpe1, loc1)
             // Transform var(3)(4) -> var(3,4)
             case Apply(Var(sym, tpe, loc), args3, _, _) =>
-              Apply(Var(sym, tpe, loc), args3 ::: args2, tpe2, loc2)
+              Apply(Var(sym, tpe, loc), args3 ::: args1, tpe1, loc1)
 
             case _ => throw InternalCompilerException(s"Can't uncurry expression : $exp0")
           }
@@ -334,7 +363,7 @@ object Uncurrier extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
           case _: LambdaClosure => 0
           case _: Closure => 0
           case _: ApplyHook => 0
-          case a: Apply => 1 + maximalUncurry(a)
+          case e: Apply => 1 + maximalUncurry(e)
           case _: Unary => 0
           case _: Binary => 0
           case _: IfThenElse => 0
@@ -367,28 +396,53 @@ object Uncurrier extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     }
   }
 
-  // TODO: Need to be adjusted.
-  //    /**
-  //  -    * Uncurry the type of a function. Given a type like a x b -> (c -> d), turn it
-  // -    * into a x b x c -> d
-  // -    */
-  //    -  def uncurryType(tpe: Type): Type = tpe match {
-  //  -    case Type.Apply(Type.Arrow(len), ts) =>
-  //      -      // We're given an application which looks like
-  //        -      // List(From, From, From, To), where there are one are more From
-  //      -      // types, and the result is the To type.
-  //        -      //
-  //      -      // When we are uncurrying, the To type will also be an apply, we then
-  //        -      // transform List(From1, From2, List(From3, From4, To)) to
-  //      -      // List(From1, From2, From3, From4, To)
-  //        -      //
-  //  -      val from = ts.take(ts.size - 1)
-  //  -      val to = ts.last
-  //  -      ts.last match {
-  //  -        case Type.Apply(_, ts2) => Type.Apply(Type.Arrow(len + 1), from ::: ts2)
-  //  -        case _ => throw InternalCompilerException(s"Cannot uncurry type $tpe")
-  //  -      }
-  //  -    case _ => throw InternalCompilerException(s"Cannot uncurry type $tpe")
-  //  -  }
+  /**
+    * Uncurry the type of a function. For example, given a function like f(a, b)(c) -> d, turn it
+    * into f(a,b,c) -> d. Alternatively, Given Arrow3[Int, Int, Arrow2[Int, Int]],
+    * turn in into Arrow4[Int, Int, Int, Int].
+    */
+  def uncurryType(tpe: Type): Type = tpe match {
+    // We're looking to uncurry a type like Apply(Apply(Arrow(2), Char), Apply(Apply(Arrow(2), Int), Bool) (Char -> Int -> Bool)
+    // to a type like Apply(Apply(Apply(Arrow(3), Char), Int), Bool) (Char x Int -> Bool)
+    // Simple case a -> b -> c => a x b -> c
+    case Type.Apply(a, b) =>
+      Type.Apply(Type.Apply(incrementArrow(a), getInnerMostType(b)), decrementArrow(b))
+    case _ => throw InternalCompilerException(s"Cannot uncurry type $tpe")
+  }
 
+  /**
+    * Given a function type, increase its arity
+    *
+    * e.g. Arrow2[a][b] -> Arrow3[a][b]
+    */
+  def incrementArrow(tpe: Type): Type = tpe match {
+    case Arrow(n) => Arrow(n + 1)
+    case Type.Apply(tpe1, tpe2) => Type.Apply(incrementArrow(tpe1), tpe2)
+    case _ => throw InternalCompilerException(s"Cannot increment the arrow arity of type '$tpe'")
+  }
+
+  /**
+    * Given a function type, decrease its arity and drop it's inner most argument
+    *
+    * e.g. Arrow3[a][b][c] -> Arrow3[b][c]
+    */
+  def decrementArrow(tpe: Type): Type = tpe match {
+    case Type.Apply(Arrow(n), a) => Arrow(n - 1)
+    case Type.Apply(tpe1, tpe2) => decrementArrow(tpe1) match {
+      case Arrow(1) => tpe2
+      case t => Type.Apply(t, tpe2)
+    }
+    case _ => throw InternalCompilerException(s"Cannot decrement the arrow arity of type '$tpe'")
+  }
+
+  /**
+    * Get the first applied type to a function type
+    *
+    * e.g. Arrow3[a][b][c] -> a
+    */
+  def getInnerMostType(tpe: Type): Type = tpe match {
+    case Type.Apply(Arrow(n), a) => a
+    case Type.Apply(a, _) => getInnerMostType(a)
+    case _ => throw InternalCompilerException(s"Cannot get the innermost type of '$tpe'")
+  }
 }
