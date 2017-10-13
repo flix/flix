@@ -54,7 +54,7 @@ object JvmOps {
 
     // Match on the type constructor.
     base match {
-      case Type.Unit => JvmType.Reference(JvmName(List("ca", "uwaterloo", "flix", "api"), "Unit"))
+      case Type.Unit => JvmType.Unit
       case Type.Bool => JvmType.PrimBool
       case Type.Char => JvmType.PrimChar
       case Type.Float32 => JvmType.PrimFloat
@@ -80,6 +80,31 @@ object JvmOps {
       case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
     }
   }
+
+  /**
+    * Returns the erased JvmType of the given JvmType `tpe`.
+    *
+    * Every primitive type is mapped to itself and every other type is mapped to Object.
+    */
+  // TODO: Move closer to getJvmType?
+  def getErasedType(tpe: JvmType)(implicit root: Root, flix: Flix): JvmType = tpe match {
+    case JvmType.Void => JvmType.Void
+    case JvmType.PrimBool => JvmType.PrimBool
+    case JvmType.PrimChar => JvmType.PrimChar
+    case JvmType.PrimByte => JvmType.PrimByte
+    case JvmType.PrimShort => JvmType.PrimShort
+    case JvmType.PrimInt => JvmType.PrimInt
+    case JvmType.PrimLong => JvmType.PrimLong
+    case JvmType.PrimFloat => JvmType.PrimFloat
+    case JvmType.PrimDouble => JvmType.PrimDouble
+    case JvmType.Reference(jvmName) => JvmType.Object
+  }
+
+  /**
+    * Returns the erased JvmType of the given Flix type `tpe`.
+    */
+  // TODO: Delete?
+  def getErasedType(tpe: Type)(implicit root: Root, flix: Flix): JvmType = getErasedType(getJvmType(tpe))
 
   /**
     * Returns the result type of the given type `tpe`.
@@ -367,24 +392,6 @@ object JvmOps {
   // TODO: We should move "suffix" and "prefix" into helpers inside JvmOps.
   def getDefFieldNameInNamespaceClass(sym: Symbol.DefnSym): String = sym.suffix + '$' + sym.prefix.mkString("$")
 
-  /**
-    * Returns the erased JvmType of the given Flix type `tpe`.
-    *
-    * Every primitive type is mapped to itself and every other type is mapped to Object.
-    */
-  // TODO: How should this interact with nullary etc?
-  def getErasedType(tpe: Type)(implicit root: Root, flix: Flix): JvmType = tpe match {
-    case Type.Bool => JvmType.PrimBool
-    case Type.Char => JvmType.PrimChar
-    case Type.Float32 => JvmType.PrimFloat
-    case Type.Float64 => JvmType.PrimDouble
-    case Type.Int8 => JvmType.PrimByte
-    case Type.Int16 => JvmType.PrimShort
-    case Type.Int32 => JvmType.PrimInt
-    case Type.Int64 => JvmType.PrimLong
-    case _ => JvmType.Object
-  }
-
 
   /**
     * Returns `true` if the given enum type `tpe` is nullable.
@@ -400,22 +407,21 @@ object JvmOps {
     if (!tpe.typeConstructor.isEnum)
       throw InternalCompilerException(s"Unexpected type: '$tpe'.")
 
-    // Retrieve the enum type.
-    val enumType = tpe.typeConstructor.asInstanceOf[Type.Enum]
-
-    // Retrieve the enum declaration.
-    val enum = root.enums(enumType.sym)
+    // Retrieve the tags of the enum.
+    val tags = getTagsOf(tpe).toList
 
     // Check whether the enum is nullary.
-    if (enum.cases.size == 2) {
-      val case1 = enum.cases.head._2
-      val case2 = enum.cases.init.head._2
-
-      return isNullaryCase(case1) && isNonPrimitiveCase(case2) || isNullaryCase(case1) && isNonPrimitiveCase(case2)
+    tags match {
+      case tag1 :: tag2 :: Nil =>
+        // Case 1: The enum has exactly two tags.
+        // Check if the enum is nullable.
+        (isNullaryTag(tag1) && isNonPrimitiveTag(tag2)) ||
+          (isNullaryTag(tag2) && isNonPrimitiveTag(tag1))
+      case _ =>
+        // Case 2: The enum has zero, one, or more than two tags.
+        // It cannot be nullable.
+        false
     }
-
-    // The enum is not nullary.
-    false
   }
 
   /**
@@ -423,21 +429,87 @@ object JvmOps {
     *
     * NB: The type must be a nullable enum type.
     */
-  private def getNullaryTypeFromEnum(tpe: Type)(implicit root: Root, flix: Flix): JvmType = ???
+  private def getNullaryType(tpe: Type)(implicit root: Root, flix: Flix): JvmType = {
+    // Check that the type is nullary.
+    if (!isNullaryEnum(tpe))
+      throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+
+    // Retrieve the tags of the enum.
+    val tags = getTagsOf(tpe).toList
+
+    // Retrieve the two tags.
+    val tag1 :: tag2 :: Nil = tags
+
+    // Determine the non-primitive tag.
+    val nonPrimitiveTag = if (isNonPrimitiveTag(tag1)) tag1 else tag2
+
+    // Return the inner tag type.
+    getJvmType(nonPrimitiveTag.tagType)
+  }
 
   /**
-    * Returns `true` if the given `caze` can be represented by `null`.
+    * Returns `true` if the given `tag` can be represented by `null`.
     *
-    * In other words, if the inner type of the given `caze` is Unit.
+    * In other words, if the inner type of the given `tag` is Unit.
     */
-  // TODO: Does this need to be recursive?
-  private def isNullaryCase(caze: Case): Boolean = caze.tpe == Type.Unit
+  private def isNullaryTag(tag: TagInfo)(implicit root: Root, flix: Flix): Boolean = {
+    // NB: We cannot call getJvmType on `tag.tagType` because that would not be well-founded.
+    // Instead, we must take the type constructor apart here.
+    tag.tagType.typeConstructor match {
+      case Type.Unit => true
+      case Type.Bool => false
+      case Type.Char => false
+      case Type.Float32 => false
+      case Type.Float64 => false
+      case Type.Int8 => false
+      case Type.Int16 => false
+      case Type.Int32 => false
+      case Type.Int64 => false
+      case Type.BigInt => false
+      case Type.Str => false
+      case Type.Native => false
+      case Type.Ref => false
+      case Type.Arrow(l) => false
+      case Type.Tuple(l) => false
+      case Type.Enum(sym, kind) =>
+        // TODO: We have to be careful, because the enum could be recursive.
+        // But also because the enum could be subject to removal if it is a newtype.
+        // For now we just assume that it is non-primitive.
+        false
+      case base => throw InternalCompilerException(s"Unexpected type: '$base'.")
+    }
+  }
 
   /**
-    * Returns `true` if the given `caze` can be represented as a non-null value.
+    * Returns `true` if the given `tag` can be represented as a non-null value.
     */
-  private def isNonPrimitiveCase(caze: Case): Boolean = ???
-
+  private def isNonPrimitiveTag(tag: TagInfo)(implicit root: Root, flix: Flix): Boolean = {
+    // NB: We cannot call getJvmType on `tag.tagType` because that would not be well-founded.
+    // Instead, we must take the type constructor apart here.
+    tag.tagType.typeConstructor match {
+      case Type.Unit => true
+      case Type.Bool => false
+      case Type.Char => false
+      case Type.Float32 => false
+      case Type.Float64 => false
+      case Type.Int8 => false
+      case Type.Int16 => false
+      case Type.Int32 => false
+      case Type.Int64 => false
+      case Type.BigInt => false
+      case Type.Str => true
+      case Type.Native => true
+      case Type.Ref => true
+      case Type.Arrow(l) => true
+      case Type.Tuple(l) => true
+      case Type.Enum(sym, kind) =>
+        // TODO: We have to be careful, because the enum could be recursive.
+        // But also because the enum could be subject to removal if it is a newtype.
+        // For now we just assume that it is non-primitive.
+        true
+      case base => throw InternalCompilerException(s"Unexpected type: '$base'.")
+    }
+  }
 
   /**
     * Performs name mangling on the given string `s` to avoid issues with special characters.
@@ -493,37 +565,37 @@ object JvmOps {
   }
 
   /**
-    * Returns the set of tags in the given AST `root`.
+    * Returns the set of tags associated with the given type.
     */
-  def tagsOf(root: Root): Set[TagInfo] = {
-    /**
-      * Returns the set of tags associated with the given type.
-      */
-    def visitType(tpe: Type): Set[TagInfo] = {
-      // Return the empty set if the type is not an enum.
-      if (!tpe.isEnum) {
-        return Set.empty
-      }
-
-      // Retrieve the enum symbol and type arguments.
-      val enumType = tpe.typeConstructor.asInstanceOf[Type.Enum]
-      val args = tpe.typeArguments
-
-      // Retrieve the enum.
-      val enum = root.enums(enumType.sym)
-
-      // Compute the tag info.
-      enum.cases.foldLeft(Set.empty[TagInfo]) {
-        case (sacc, (_, Case(enumSym, tagName, uninstantiatedTagType, loc))) =>
-          // TODO: It would be nice if this information could be stored somewhere...
-          val subst = Unification.unify(enum.tpe, tpe).get
-          val tagType = subst(uninstantiatedTagType)
-
-          sacc + TagInfo(enumSym, tagName.name, args, tpe, tagType)
-      }
+  def getTagsOf(tpe: Type)(implicit root: Root, flix: Flix): Set[TagInfo] = {
+    // Return the empty set if the type is not an enum.
+    if (!tpe.isEnum) {
+      return Set.empty
     }
 
-    typesOf(root).flatMap(visitType)
+    // Retrieve the enum symbol and type arguments.
+    val enumType = tpe.typeConstructor.asInstanceOf[Type.Enum]
+    val args = tpe.typeArguments
+
+    // Retrieve the enum.
+    val enum = root.enums(enumType.sym)
+
+    // Compute the tag info.
+    enum.cases.foldLeft(Set.empty[TagInfo]) {
+      case (sacc, (_, Case(enumSym, tagName, uninstantiatedTagType, loc))) =>
+        // TODO: It would be nice if this information could be stored somewhere...
+        val subst = Unification.unify(enum.tpe, tpe).get
+        val tagType = subst(uninstantiatedTagType)
+
+        sacc + TagInfo(enumSym, tagName.name, args, tpe, tagType)
+    }
+  }
+
+  /**
+    * Returns the set of tags in the given AST `root`.
+    */
+  def tagsOf(root: Root)(implicit flix: Flix): Set[TagInfo] = {
+    typesOf(root).flatMap(tpe => getTagsOf(tpe)(root, flix))
   }
 
   /**
