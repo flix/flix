@@ -73,8 +73,8 @@ object JvmOps {
       case Type.Enum(sym, kind) =>
         if (!nullary && isNullaryEnum(tpe)) {
           // TODO
-          val nullaryType = getNullaryType(tpe)
-          println(s"Nullary type $tpe to be represented as: ${nullaryType.toDescriptor}")
+          //val nullaryType = getNullaryType(tpe)
+          //println(s"Nullary type $tpe to be represented as: ${nullaryType.toDescriptor}")
           getEnumInterfaceType(tpe)
         } else {
           getEnumInterfaceType(tpe)
