@@ -136,6 +136,11 @@ object JvmBackend extends Phase[Root, Root] {
     // TODO
     //val loadedClasses = BytecodeLoader.loadAll(allClasses)
 
+    // TODO: Temporary testing infrastructure
+    for (tpe <- types) {
+      JvmOps.getJvmType(tpe)
+    }
+
     root.toSuccess
   }
 
