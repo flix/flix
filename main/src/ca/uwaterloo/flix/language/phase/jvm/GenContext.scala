@@ -67,14 +67,16 @@ object GenContext {
     */
   private def compileContextConstructor(visitor: ClassWriter, ns: Set[NamespaceInfo])(implicit root: Root, flix: Flix): Unit = {
     // Method header
-    val constructor = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, "<init>", AsmOps.getMethodDescriptor(Nil), null, null)
+    val constructor = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, "<init>",
+      AsmOps.getMethodDescriptor(Nil, JvmType.Void), null, null)
     constructor.visitCode()
 
     constructor.visitCode()
     constructor.visitVarInsn(ALOAD, 0)
 
     // Call the super (java.lang.Object) constructor
-    constructor.visitMethodInsn(INVOKESPECIAL, JvmName.Object.toInternalName, "<init>", AsmOps.getMethodDescriptor(Nil), false)
+    constructor.visitMethodInsn(INVOKESPECIAL, JvmName.Object.toInternalName, "<init>",
+      AsmOps.getMethodDescriptor(Nil, JvmType.Void), false)
 
     // Initializing each field
     for (namespace <- ns) {
@@ -90,7 +92,8 @@ object GenContext {
       constructor.visitInsn(DUP)
 
       // Calling the constructor of `namespace` class
-      constructor.visitMethodInsn(INVOKESPECIAL, namespaceRef.name.toInternalName, "<init>", AsmOps.getMethodDescriptor(Nil), false)
+      constructor.visitMethodInsn(INVOKESPECIAL, namespaceRef.name.toInternalName, "<init>",
+        AsmOps.getMethodDescriptor(Nil, JvmType.Void), false)
 
       constructor.visitFieldInsn(PUTFIELD, JvmName.Context.toInternalName, fieldName, namespaceRef.toDescriptor)
     }
