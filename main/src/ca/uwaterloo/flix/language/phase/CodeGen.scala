@@ -30,6 +30,7 @@ import org.objectweb.asm.util.CheckClassAdapter
 import org.objectweb.asm.{Type => _, _}
 import ca.uwaterloo.flix.util.Validation._
 import CodegenHelper._
+import ca.uwaterloo.flix.language.ast.SemanticOperator._
 
 import scala.language.existentials
 
@@ -517,16 +518,16 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
       compileUnbox(interfaces, visitor)(tpe)
 
     case Expression.Unary(sop, op, exp, _, _) => compileUnaryExpr(prefix, declarations, interfaces, enums,
-      visitor, jumpLabels, entryPoint)(op, exp)
+      visitor, jumpLabels, entryPoint)(op, sop, exp)
     case Expression.Binary(sop, op, exp1, exp2, _, _) => op match {
       case o: ArithmeticOperator => compileArithmeticExpr(prefix, declarations, interfaces, enums,
-        visitor, jumpLabels, entryPoint)(o, exp1, exp2)
+        visitor, jumpLabels, entryPoint)(o, sop, exp1, exp2)
       case o: ComparisonOperator => compileComparisonExpr(prefix, declarations, interfaces, enums,
-        visitor, jumpLabels, entryPoint)(o, exp1, exp2)
+        visitor, jumpLabels, entryPoint)(o, sop, exp1, exp2)
       case o: LogicalOperator => compileLogicalExpr(prefix, declarations, interfaces, enums,
         visitor, jumpLabels, entryPoint)(o, exp1, exp2)
       case o: BitwiseOperator => compileBitwiseExpr(prefix, declarations, interfaces, enums, visitor,
-        jumpLabels, entryPoint)(o, exp1, exp2)
+        jumpLabels, entryPoint)(o, sop, exp1, exp2)
     }
 
     case Expression.IfThenElse(exp1, exp2, exp3, _, loc) =>
@@ -987,7 +988,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
                                enums: Map[(Type, String), (QualName, ExecutableAst.Case)],
                                visitor: MethodVisitor,
                                jumpLabels: Map[Symbol.LabelSym, Label],
-                               entryPoint: Label)(op: UnaryOperator, e: Expression): Unit = {
+                               entryPoint: Label)(op: UnaryOperator, sop: SemanticOperator, e: Expression): Unit = {
     // Adding source line number for debugging
     addSourceLine(visitor, e.loc)
 
@@ -1003,8 +1004,8 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
         visitor.visitInsn(ICONST_0)
         visitor.visitLabel(condEnd)
       case UnaryOperator.Plus => // nop
-      case UnaryOperator.Minus => compileUnaryMinusExpr(prefix, declarations, interfaces, enums, visitor)(e.tpe)
-      case UnaryOperator.BitwiseNegate => compileUnaryNegateExpr(visitor)(e.tpe)
+      case UnaryOperator.Minus => compileUnaryMinusExpr(prefix, declarations, interfaces, enums, visitor)(sop)
+      case UnaryOperator.BitwiseNegate => compileUnaryNegateExpr(visitor)(sop)
     }
   }
 
@@ -1030,23 +1031,23 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
                                     declarations: Map[Symbol.DefnSym, Type],
                                     interfaces: Map[Type, FlixClassName],
                                     enums: Map[(Type, String), (QualName, ExecutableAst.Case)],
-                                    visitor: MethodVisitor)(tpe: Type): Unit = tpe match {
-    case Type.Float32 => visitor.visitInsn(FNEG)
-    case Type.Float64 => visitor.visitInsn(DNEG)
-    case Type.Int8 =>
+                                    visitor: MethodVisitor)(sop: SemanticOperator): Unit = sop match {
+    case Float32Op.Neg => visitor.visitInsn(FNEG)
+    case Float64Op.Neg => visitor.visitInsn(DNEG)
+    case Int8Op.Neg =>
       visitor.visitInsn(INEG)
       visitor.visitInsn(I2B)
-    case Type.Int16 =>
+    case Int16Op.Neg =>
       visitor.visitInsn(INEG)
       visitor.visitInsn(I2S)
-    case Type.Int32 => visitor.visitInsn(INEG)
-    case Type.Int64 => visitor.visitInsn(LNEG)
-    case Type.BigInt =>
+    case Int32Op.Neg => visitor.visitInsn(INEG)
+    case Int64Op.Neg => visitor.visitInsn(LNEG)
+    case BigIntOp.Neg =>
       // java.math.BigInteger.negate() method
       val clazz = Constants.bigIntegerClass
       val method = clazz.getMethod("negate")
       visitor.visitMethodInsn(INVOKEVIRTUAL, asm.Type.getInternalName(clazz), method.getName, asm.Type.getMethodDescriptor(method), false);
-    case _ => throw InternalCompilerException(s"Can't apply UnaryOperator.Minus to type $tpe.")
+    case _ => throw InternalCompilerException(s"UnaryOperator.Minus cannot be applied with $sop.")
   }
 
   /*
@@ -1064,20 +1065,20 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
    *
    * Note that sign extending and then negating a value is equal to negating and then sign extending it.
    */
-  private def compileUnaryNegateExpr(visitor: MethodVisitor)(tpe: Type): Unit = tpe match {
-    case Type.Int8 | Type.Int16 | Type.Int32 =>
+  private def compileUnaryNegateExpr(visitor: MethodVisitor)(sop: SemanticOperator): Unit = sop match {
+    case Int8Op.Not | Int16Op.Not | Int32Op.Not =>
       visitor.visitInsn(ICONST_M1)
       visitor.visitInsn(IXOR)
-    case Type.Int64 =>
+    case Int64Op.Not =>
       visitor.visitInsn(ICONST_M1)
       visitor.visitInsn(I2L)
       visitor.visitInsn(LXOR)
-    case Type.BigInt =>
+    case BigIntOp.Not =>
       // java.math.BigInteger.not() method
       val clazz = Constants.bigIntegerClass
       val method = clazz.getMethod("not")
       visitor.visitMethodInsn(INVOKEVIRTUAL, asm.Type.getInternalName(clazz), method.getName, asm.Type.getMethodDescriptor(method), false);
-    case _ => throw InternalCompilerException(s"Can't apply UnaryOperator.Negate to type $tpe.")
+    case _ => throw InternalCompilerException(s"UnaryOperator.Negate cannot be applied with $sop.")
   }
 
   /*
@@ -1110,14 +1111,14 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
                                     enums: Map[(Type, String), (QualName, ExecutableAst.Case)],
                                     visitor: MethodVisitor,
                                     jumpLabels: Map[Symbol.LabelSym, Label],
-                                    entryPoint: Label)(o: ArithmeticOperator, e1: Expression, e2: Expression): Unit = {
+                                    entryPoint: Label)(o: ArithmeticOperator, sop: SemanticOperator, e1: Expression, e2: Expression): Unit = {
     if (o == BinaryOperator.Exponentiate) {
-      val (castToDouble, castFromDouble) = e1.tpe match {
-        case Type.Float32 => (F2D, D2F)
-        case Type.Float64 => (NOP, NOP) // already a double
-        case Type.Int8 | Type.Int16 | Type.Int32 => (I2D, D2I)
-        case Type.Int64 => (L2D, D2L)
-        case _ => throw InternalCompilerException(s"Can't apply $o to type ${e1.tpe}.")
+      val (castToDouble, castFromDouble) = sop match {
+        case Float32Op.Exp => (F2D, D2F)
+        case Float64Op.Exp => (NOP, NOP) // already a double
+        case Int8Op.Exp | Int16Op.Exp | Int32Op.Exp => (I2D, D2I)
+        case Int64Op.Exp => (L2D, D2L)
+        case _ => throw InternalCompilerException(s"Unexpected semantic operator: $sop.")
       }
       visitor.visitFieldInsn(GETSTATIC, Constants.scalaMathPkg, "MODULE$", s"L${Constants.scalaMathPkg};")
       compileExpression(prefix, declarations, interfaces, enums, visitor, jumpLabels, entryPoint)(e1)
@@ -1126,10 +1127,11 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
       visitor.visitInsn(castToDouble)
       visitor.visitMethodInsn(INVOKEVIRTUAL, Constants.scalaMathPkg, "pow", "(DD)D", false)
       visitor.visitInsn(castFromDouble)
-      (e1.tpe: @unchecked) match {
-        case Type.Int8 => visitor.visitInsn(I2B)
-        case Type.Int16 => visitor.visitInsn(I2S)
-        case Type.Float32 | Type.Float64 | Type.Int32 | Type.Int64 => visitor.visitInsn(NOP)
+      sop match {
+        case Int8Op.Exp => visitor.visitInsn(I2B)
+        case Int16Op.Exp => visitor.visitInsn(I2S)
+        case Float32Op.Exp | Float64Op.Exp | Int32Op.Exp | Int64Op.Exp => visitor.visitInsn(NOP)
+        case _ => throw InternalCompilerException(s"Unexpected semantic operator: $sop.")
       }
     } else {
       compileExpression(prefix, declarations, interfaces, enums, visitor, jumpLabels, entryPoint)(e1)
@@ -1142,30 +1144,27 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
         case BinaryOperator.Modulo => (IREM, LREM, FREM, DREM, "remainder")
         case BinaryOperator.Exponentiate => throw InternalCompilerException("BinaryOperator.Exponentiate already handled.")
       }
-      e1.tpe match {
-        case Type.Float32 => visitor.visitInsn(floatOp)
-        case Type.Float64 => visitor.visitInsn(doubleOp)
-        case Type.Int8 =>
+      sop match {
+        case Float32Op.Add | Float32Op.Sub | Float32Op.Mul | Float32Op.Div | Float32Op.Rem => visitor.visitInsn(floatOp)
+        case Float64Op.Add | Float64Op.Sub | Float64Op.Mul | Float64Op.Div | Float64Op.Rem => visitor.visitInsn(doubleOp)
+        case Int8Op.Add | Int8Op.Sub | Int8Op.Mul | Int8Op.Div | Int8Op.Rem =>
           visitor.visitInsn(intOp)
           visitor.visitInsn(I2B)
-        case Type.Int16 =>
+        case Int16Op.Add | Int16Op.Sub | Int16Op.Mul | Int16Op.Div | Int16Op.Rem =>
           visitor.visitInsn(intOp)
           visitor.visitInsn(I2S)
-        case Type.Int32 => visitor.visitInsn(intOp)
-        case Type.Int64 => visitor.visitInsn(longOp)
-        case Type.BigInt =>
+        case Int32Op.Add | Int32Op.Sub | Int32Op.Mul | Int32Op.Div | Int32Op.Rem => visitor.visitInsn(intOp)
+        case Int64Op.Add | Int64Op.Sub | Int64Op.Mul | Int64Op.Div | Int64Op.Rem => visitor.visitInsn(longOp)
+        case BigIntOp.Add | BigIntOp.Sub | BigIntOp.Mul | BigIntOp.Div | BigIntOp.Rem =>
           // java.math.BigInteger.{bigIntOp}() method
           val clazz = Constants.bigIntegerClass
           val method = clazz.getMethod(bigIntOp, clazz)
           visitor.visitMethodInsn(INVOKEVIRTUAL, asm.Type.getInternalName(clazz), bigIntOp, asm.Type.getMethodDescriptor(method), false);
-        case Type.Str => (e2.tpe, o) match {
-          case (Type.Str, BinaryOperator.Plus) =>
-            val clazz = Constants.stringClass
-            val method = clazz.getMethod("concat", Constants.stringClass)
-            visitor.visitMethodInsn(INVOKEVIRTUAL, asm.Type.getInternalName(clazz), method.getName, asm.Type.getMethodDescriptor(method), false)
-          case _ => throw InternalCompilerException(s"Can't apply $o to type ${e1.tpe} near ${e1.loc.format}")
-        }
-        case _ => throw InternalCompilerException(s"Can't apply $o to type ${e1.tpe} near ${e1.loc.format}")
+        case StringOp.Concat =>
+          val clazz = Constants.stringClass
+          val method = clazz.getMethod("concat", Constants.stringClass)
+          visitor.visitMethodInsn(INVOKEVIRTUAL, asm.Type.getInternalName(clazz), method.getName, asm.Type.getMethodDescriptor(method), false)
+        case _ => throw InternalCompilerException(s"Unexpected semantic operator: $sop.")
       }
     }
   }
@@ -1219,94 +1218,57 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
                                     visitor: MethodVisitor,
                                     jumpLabels: Map[Symbol.LabelSym, Label],
                                     entryPoint: Label)
-                                   (o: ComparisonOperator, e1: Expression, e2: Expression): Unit = {
-    e1.tpe match {
-      case _ if e1.tpe.isEnum && (o == BinaryOperator.Equal || o == BinaryOperator.NotEqual) =>
-        (e1.tpe: @unchecked) match {
-          case _ if e1.tpe.isEnum =>
-            compileExpression(prefix, declarations, interfaces, enums, visitor, jumpLabels, entryPoint)(e1)
-            compileExpression(prefix, declarations, interfaces, enums, visitor, jumpLabels, entryPoint)(e2)
-            val clazz = Constants.objectClass
-            val method = clazz.getMethod("equals", clazz)
-            visitor.visitMethodInsn(INVOKEVIRTUAL, asm.Type.getInternalName(clazz), method.getName, asm.Type.getMethodDescriptor(method), false)
-          case Type.Apply(Type.Tuple(_), _) =>
-            compileExpression(prefix, declarations, interfaces, enums, visitor, jumpLabels, entryPoint)(e1)
-            compileExpression(prefix, declarations, interfaces, enums, visitor, jumpLabels, entryPoint)(e2)
-            val clazz = Constants.objectClass
-            val method = clazz.getMethod("equals", clazz)
-            visitor.visitMethodInsn(INVOKEVIRTUAL, asm.Type.getInternalName(clazz), method.getName, asm.Type.getMethodDescriptor(method), false)
-        }
-        if (o == BinaryOperator.NotEqual) {
-          val condElse = new Label()
-          val condEnd = new Label()
-          visitor.visitJumpInsn(IFEQ, condElse)
-          visitor.visitInsn(ICONST_0)
-          visitor.visitJumpInsn(GOTO, condEnd)
-          visitor.visitLabel(condElse)
-          visitor.visitInsn(ICONST_1)
-          visitor.visitLabel(condEnd)
-        }
-      case _ =>
-        compileExpression(prefix, declarations, interfaces, enums, visitor, jumpLabels, entryPoint)(e1)
-        compileExpression(prefix, declarations, interfaces, enums, visitor, jumpLabels, entryPoint)(e2)
-        val condElse = new Label()
-        val condEnd = new Label()
-        val (intOp, floatOp, doubleOp, cmp) = o match {
-          case BinaryOperator.Less => (IF_ICMPGE, FCMPG, DCMPG, IFGE)
-          case BinaryOperator.LessEqual => (IF_ICMPGT, FCMPG, DCMPG, IFGT)
-          case BinaryOperator.Greater => (IF_ICMPLE, FCMPL, DCMPL, IFLE)
-          case BinaryOperator.GreaterEqual => (IF_ICMPLT, FCMPL, DCMPL, IFLT)
-          case BinaryOperator.Equal => (IF_ICMPNE, FCMPG, DCMPG, IFNE)
-          case BinaryOperator.NotEqual => (IF_ICMPEQ, FCMPG, DCMPG, IFEQ)
-        }
-        e1.tpe match {
-          case Type.Unit if o == BinaryOperator.Equal || o == BinaryOperator.NotEqual =>
-            // Unit can only be equal to unit, so objects are poped from the top of the stack
-            visitor.visitInsn(POP)
-            visitor.visitInsn(POP)
-            // A unit value is always equal itself, so no need to branch.
-            // A unit value is never unequal to itself, so always branch to else label.
-            e2.tpe match {
-              case Type.Unit if o == BinaryOperator.NotEqual => visitor.visitJumpInsn(GOTO, condElse)
-              case Type.Unit if o == BinaryOperator.Equal =>
-              case _ if o == BinaryOperator.Equal => visitor.visitJumpInsn(GOTO, condElse)
-              case _ =>
-            }
-          case Type.Str if o == BinaryOperator.Equal || o == BinaryOperator.NotEqual =>
-            // String can be compared using Object's `equal` method
-            val clazz = Constants.objectClass
-            val method = clazz.getMethod("equals", clazz)
-            visitor.visitMethodInsn(INVOKEVIRTUAL, asm.Type.getInternalName(clazz), method.getName, asm.Type.getMethodDescriptor(method), false)
-            visitor.visitInsn(ICONST_1)
-            visitor.visitJumpInsn(intOp, condElse)
-          case Type.Bool if o == BinaryOperator.Equal || o == BinaryOperator.NotEqual =>
-            // Bool can be (value) compared for equality.
-            visitor.visitJumpInsn(intOp, condElse)
-          case Type.Float32 =>
-            visitor.visitInsn(floatOp)
-            visitor.visitJumpInsn(cmp, condElse)
-          case Type.Float64 =>
-            visitor.visitInsn(doubleOp)
-            visitor.visitJumpInsn(cmp, condElse)
-          case Type.Char | Type.Int8 | Type.Int16 | Type.Int32 => visitor.visitJumpInsn(intOp, condElse)
-          case Type.Int64 =>
-            visitor.visitInsn(LCMP)
-            visitor.visitJumpInsn(cmp, condElse)
-          case Type.BigInt =>
-            // java.math.BigInteger.compareTo(java.math.BigInteger)
-            val clazz = Constants.bigIntegerClass
-            val method = clazz.getMethod("compareTo", clazz)
-            visitor.visitMethodInsn(INVOKEVIRTUAL, asm.Type.getInternalName(clazz), method.getName, asm.Type.getMethodDescriptor(method), false)
-            visitor.visitInsn(ICONST_0)
-            visitor.visitJumpInsn(intOp, condElse)
-          case _ => throw InternalCompilerException(s"Can't apply $o to type ${e1.tpe} near ${e1.loc.format}")
-        }
-        visitor.visitInsn(ICONST_1)
-        visitor.visitJumpInsn(GOTO, condEnd)
-        visitor.visitLabel(condElse)
-        visitor.visitInsn(ICONST_0)
-        visitor.visitLabel(condEnd)
+                                   (o: ComparisonOperator, sop: SemanticOperator, e1: Expression, e2: Expression): Unit = {
+    compileExpression(prefix, declarations, interfaces, enums, visitor, jumpLabels, entryPoint)(e1)
+    compileExpression(prefix, declarations, interfaces, enums, visitor, jumpLabels, entryPoint)(e2)
+    val condElse = new Label()
+    val condEnd = new Label()
+    val (intOp, floatOp, doubleOp, cmp) = o match {
+      case BinaryOperator.Less => (IF_ICMPGE, FCMPG, DCMPG, IFGE)
+      case BinaryOperator.LessEqual => (IF_ICMPGT, FCMPG, DCMPG, IFGT)
+      case BinaryOperator.Greater => (IF_ICMPLE, FCMPL, DCMPL, IFLE)
+      case BinaryOperator.GreaterEqual => (IF_ICMPLT, FCMPL, DCMPL, IFLT)
+      case BinaryOperator.Equal => (IF_ICMPNE, FCMPG, DCMPG, IFNE)
+      case BinaryOperator.NotEqual => (IF_ICMPEQ, FCMPG, DCMPG, IFEQ)
     }
+    sop match {
+      case StringOp.Eq | StringOp.Neq =>
+        // String can be compared using Object's `equal` method
+        val clazz = Constants.objectClass
+        val method = clazz.getMethod("equals", clazz)
+        visitor.visitMethodInsn(INVOKEVIRTUAL, asm.Type.getInternalName(clazz), method.getName, asm.Type.getMethodDescriptor(method), false)
+        visitor.visitInsn(ICONST_1)
+        visitor.visitJumpInsn(intOp, condElse)
+      case BoolOp.Eq | BoolOp.Neq =>
+        // Bool can be (value) compared for equality.
+        visitor.visitJumpInsn(intOp, condElse)
+      case Float32Op.Lt | Float32Op.Le | Float32Op.Gt | Float32Op.Ge | Float32Op.Eq | Float32Op.Neq =>
+        visitor.visitInsn(floatOp)
+        visitor.visitJumpInsn(cmp, condElse)
+      case Float64Op.Lt | Float64Op.Le | Float64Op.Gt | Float64Op.Ge | Float64Op.Eq | Float64Op.Neq =>
+        visitor.visitInsn(doubleOp)
+        visitor.visitJumpInsn(cmp, condElse)
+      case CharOp.Lt | CharOp.Le | CharOp.Gt | CharOp.Ge | CharOp.Eq | CharOp.Neq => visitor.visitJumpInsn(intOp, condElse)
+      case Int8Op.Lt | Int8Op.Le | Int8Op.Gt | Int8Op.Ge | Int8Op.Eq | Int8Op.Neq => visitor.visitJumpInsn(intOp, condElse)
+      case Int16Op.Lt | Int16Op.Le | Int16Op.Gt | Int16Op.Ge | Int16Op.Eq | Int16Op.Neq => visitor.visitJumpInsn(intOp, condElse)
+      case Int32Op.Lt | Int32Op.Le | Int32Op.Gt | Int32Op.Ge | Int32Op.Eq | Int32Op.Neq => visitor.visitJumpInsn(intOp, condElse)
+      case Int64Op.Lt | Int64Op.Le | Int64Op.Gt | Int64Op.Ge | Int64Op.Eq | Int64Op.Neq =>
+        visitor.visitInsn(LCMP)
+        visitor.visitJumpInsn(cmp, condElse)
+      case BigIntOp.Lt | BigIntOp.Le | BigIntOp.Gt | BigIntOp.Ge | BigIntOp.Eq | BigIntOp.Neq =>
+        // java.math.BigInteger.compareTo(java.math.BigInteger)
+        val clazz = Constants.bigIntegerClass
+        val method = clazz.getMethod("compareTo", clazz)
+        visitor.visitMethodInsn(INVOKEVIRTUAL, asm.Type.getInternalName(clazz), method.getName, asm.Type.getMethodDescriptor(method), false)
+        visitor.visitInsn(ICONST_0)
+        visitor.visitJumpInsn(intOp, condElse)
+      case _ => throw InternalCompilerException(s"Unexpected semantic operator: $sop.")
+    }
+    visitor.visitInsn(ICONST_1)
+    visitor.visitJumpInsn(GOTO, condEnd)
+    visitor.visitLabel(condElse)
+    visitor.visitInsn(ICONST_0)
+    visitor.visitLabel(condEnd)
   }
 
   /*
@@ -1397,7 +1359,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
                                  enums: Map[(Type, String), (QualName, ExecutableAst.Case)],
                                  visitor: MethodVisitor,
                                  jumpLabels: Map[Symbol.LabelSym, Label],
-                                 entryPoint: Label)(o: BitwiseOperator, e1: Expression, e2: Expression): Unit = {
+                                 entryPoint: Label)(o: BitwiseOperator, sop: SemanticOperator, e1: Expression, e2: Expression): Unit = {
     compileExpression(prefix, declarations, interfaces, enums, visitor, jumpLabels, entryPoint)(e1)
     compileExpression(prefix, declarations, interfaces, enums, visitor, jumpLabels, entryPoint)(e2)
     val (intOp, longOp, bigintOp) = o match {
@@ -1407,20 +1369,20 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
       case BinaryOperator.BitwiseLeftShift => (ISHL, LSHL, "shiftLeft")
       case BinaryOperator.BitwiseRightShift => (ISHR, LSHR, "shiftRight")
     }
-    e1.tpe match {
-      case Type.Int8 =>
+    sop match {
+      case Int8Op.And | Int8Op.Or | Int8Op.Xor | Int8Op.Shl | Int8Op.Shr =>
         visitor.visitInsn(intOp)
         if (intOp == ISHL) visitor.visitInsn(I2B)
-      case Type.Int16 =>
+      case Int16Op.And | Int16Op.Or | Int16Op.Xor | Int16Op.Shl | Int16Op.Shr =>
         visitor.visitInsn(intOp)
         if (intOp == ISHL) visitor.visitInsn(I2S)
-      case Type.Int32 => visitor.visitInsn(intOp)
-      case Type.Int64 => visitor.visitInsn(longOp)
-      case Type.BigInt =>
+      case Int32Op.And | Int32Op.Or | Int32Op.Xor | Int32Op.Shl | Int32Op.Shr => visitor.visitInsn(intOp)
+      case Int64Op.And | Int64Op.Or | Int64Op.Xor | Int64Op.Shl | Int64Op.Shr => visitor.visitInsn(longOp)
+      case BigIntOp.And | BigIntOp.Or | BigIntOp.Xor | BigIntOp.Shl | BigIntOp.Shr =>
         val clazz = Constants.bigIntegerClass
         val method = clazz.getMethods.filter(m => m.getName == bigintOp).head
         visitor.visitMethodInsn(INVOKEVIRTUAL, asm.Type.getInternalName(clazz), bigintOp, asm.Type.getMethodDescriptor(method), false);
-      case _ => throw InternalCompilerException(s"Can't apply $o to type ${e1.tpe}.")
+      case _ => throw InternalCompilerException(s"Unexpected semantic operator: $sop.")
     }
   }
 
@@ -1450,7 +1412,8 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     case Type.Int64 => ()
     case Type.BigInt => visitor.visitTypeInsn(CHECKCAST, asm.Type.getInternalName(Constants.bigIntegerClass))
     case Type.Str => visitor.visitTypeInsn(CHECKCAST, asm.Type.getInternalName(Constants.stringClass))
-    case Type.Native => visitor.visitTypeInsn(CHECKCAST, asm.Type.getInternalName(Constants.objectClass))
+    case Type.Native =>
+      visitor.visitTypeInsn(CHECKCAST, asm.Type.getInternalName(Constants.objectClass))
     case _ if tpe.isArrow => visitor.visitTypeInsn(CHECKCAST, decorate(interfaces(tpe)))
     case _ if tpe.isTuple =>
       val targs = tpe.typeArguments

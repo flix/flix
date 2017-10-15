@@ -153,7 +153,7 @@ object AsmOps {
   /**
     * Returns the load instruction for the value of the type specified by `tpe`
     *
-    * @param tpe Wrapped type to be loaded
+    * @param tpe Jvm Type of value to be loaded
     * @return Appropriate load instruction for the given type
     */
   def getLoadInstruction(tpe: JvmType): Int = tpe match {
@@ -162,6 +162,34 @@ object AsmOps {
     case JvmType.PrimFloat => FLOAD
     case JvmType.PrimDouble => DLOAD
     case _ => ALOAD
+  }
+
+  /**
+    * Returns the store instruction for the value of the type specified by `tpe`
+    *
+    * @param tpe Jvm Type of value to be stored
+    * @return Appropriate store instruction for the given type
+    */
+  def getStoreInstruction(tpe: JvmType): Int = tpe match {
+    case JvmType.PrimBool | JvmType.PrimChar | JvmType.PrimByte | JvmType.PrimShort | JvmType.PrimInt => ISTORE
+    case JvmType.PrimLong => LSTORE
+    case JvmType.PrimFloat => FSTORE
+    case JvmType.PrimDouble => DSTORE
+    case _ => ASTORE
+  }
+
+  /**
+    * Generates code which instantiate an exception object and then throws it.
+    */
+  def compileException(visitor: MethodVisitor, className: JvmName, msg: String): Unit = {
+    visitor.visitTypeInsn(NEW, className.toInternalName)
+    visitor.visitInsn(DUP)
+    visitor.visitLdcInsn(msg)
+    // TODO: Load actual source location or change the exception
+    visitor.visitFieldInsn(GETSTATIC, "ca/uwaterloo/flix/language/ast/package$SourceLocation$", "MODULE$", "Lca/uwaterloo/flix/language/ast/package$SourceLocation$;")
+    visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/language/ast/package$SourceLocation$", "Unknown", "()Lca/uwaterloo/flix/language/ast/package$SourceLocation;", false)
+    visitor.visitMethodInsn(INVOKESPECIAL, className.toInternalName, "<init>", "(Ljava/lang/String;Lca/uwaterloo/flix/language/ast/package$SourceLocation;)V", false)
+    visitor.visitInsn(ATHROW)
   }
 
   /**
@@ -235,6 +263,26 @@ object AsmOps {
         method.visitVarInsn(ALOAD, 0)
         method.visitMethodInsn(INVOKESPECIAL, classType.name.toInternalName, getterName, getMethodDescriptor(Nil, fieldType), false)
     }
+  }
+
+  /**
+    * `tpe` is jvm type of value on top of the stack. If the value is not primitive, then we cast it to it's specific type,
+    * if the value is a primitive then since there is no boxing, then no casting is necessary.
+    *
+    * @param tpe     Jvm type to be casted
+    * @param visitor Class visitor
+    */
+  def castIfNotPrim(tpe: JvmType, visitor: MethodVisitor): Unit = tpe match {
+    case JvmType.PrimBool => ()
+    case JvmType.PrimChar => ()
+    case JvmType.PrimFloat => ()
+    case JvmType.PrimDouble => ()
+    case JvmType.PrimByte => ()
+    case JvmType.PrimShort => ()
+    case JvmType.PrimInt => ()
+    case JvmType.PrimLong => ()
+    case JvmType.Void => ()
+    case JvmType.Reference(name) => visitor.visitTypeInsn(CHECKCAST, name.toInternalName)
   }
 
 }
