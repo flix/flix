@@ -652,36 +652,26 @@ object JvmOps {
     }
   }
 
+
+  /**
+    * Returns the tag info for the given `tpe` and `tag`
+    */
+  // TODO: Should use getTags and then just find the correct tag.
+  def getTagInfo(tpe: Type, tag: String)(implicit root: Root, flix: Flix): TagInfo = {
+    // Throw an exception if `tpe` is not an enum type
+    if (!tpe.isEnum) {
+      throw InternalCompilerException(s"Unexpected type: $tpe")
+    }
+
+    val tags = getTagsOf(tpe)
+    tags.find(_.tag == tag).get
+  }
+
   /**
     * Returns the set of tags in the given AST `root`.
     */
   def tagsOf(root: Root)(implicit flix: Flix): Set[TagInfo] = {
     typesOf(root).flatMap(tpe => getTagsOf(tpe)(root, flix))
-  }
-
-  /**
-    * Returns the tag info for the given `tpe` and `tag`
-    */
-  def getTagInfo(tpe: Type, tag: String)(implicit root: Root, flix: Flix): TagInfo = {
-    // Throw an exception if `tpe` is not an enum type
-    if(!tpe.isEnum) {
-      throw new InternalCompilerException(s"Unexpected type: $tpe")
-    }
-
-    // Retrieve the enum symbol and type arguments.
-    val enumType = tpe.typeConstructor.asInstanceOf[Type.Enum]
-    val args = tpe.typeArguments
-
-    // Retrieve the enum.
-    val enum = root.enums(enumType.sym)
-
-    // Retrive the case
-    val enumCase = enum.cases(tag)
-
-    val subst = Unification.unify(enum.tpe, tpe).get
-    val tagType = subst(enumCase.tpe)
-
-    TagInfo(enumCase.sym, tag, args, tpe, tagType)
   }
 
   /**

@@ -66,27 +66,40 @@ object GenExpression {
     case Expression.Str(s) => visitor.visitLdcInsn(s)
 
     case Expression.Var(sym, tpe, _) =>
-      // Jvm Type of te sym
+      // TODO: Deal with closure variales in the future.
       val jvmType = JvmOps.getJvmType(tpe)
       val iLoad = AsmOps.getLoadInstruction(jvmType)
       visitor.visitVarInsn(iLoad, sym.getStackOffset)
 
     case Expression.Closure(sym, freeVars, fnType, tpe, loc) => ???
-    case Expression.ApplyClo(exp, args, _, loc) => ???
-    case Expression.ApplyDef(name, args, _, loc) => ???
-    case Expression.ApplyCloTail(exp, args, _, loc) => ???
-    case Expression.ApplyDefTail(name, args, _, loc) => ???
-    case Expression.ApplySelfTail(name, formals, actuals, _, loc) => ???
-    case Expression.ApplyHook(hook, args, tpe, loc) => ???
 
-    case Expression.Unary(sop, op, exp, _, _) => compileUnaryExpr(exp, currentClassType, visitor, jumpLabels, entryPoint, op, sop)
+    case Expression.ApplyClo(exp, args, tpe, loc) => ???
 
-    case Expression.Binary(sop, op, exp1, exp2, _, _) => op match {
-      case o: ArithmeticOperator => compileArithmeticExpr(exp1, exp2, currentClassType, visitor, jumpLabels, entryPoint, o, sop)
-      case o: ComparisonOperator => compileComparisonExpr(exp1, exp2, currentClassType, visitor, jumpLabels, entryPoint, o, sop)
-      case o: LogicalOperator => compileLogicalExpr(exp1, exp2, currentClassType, visitor, jumpLabels, entryPoint, o)
-      case o: BitwiseOperator => compileBitwiseExpr(exp1, exp2, currentClassType, visitor, jumpLabels, entryPoint, o, sop)
-    }
+    case Expression.ApplyDef(name, args, tpe, loc) => ???
+
+    case Expression.ApplyCloTail(exp, args, tpe, loc) => ???
+
+    case Expression.ApplyDefTail(name, args, tpe, loc) => ???
+
+    case Expression.ApplySelfTail(name, formals, actuals, tpe, loc) => ???
+
+    case Expression.ApplyHook(hook, args, tpe, loc) =>
+      // TODO: Remove hooks before final merge into maste  r.
+      ???
+
+    case Expression.Unary(sop, op, exp, _, _) =>
+      // TODO: Should not use op, as it will be removed.
+      compileUnaryExpr(exp, currentClassType, visitor, jumpLabels, entryPoint, op, sop)
+
+    case Expression.Binary(sop, op, exp1, exp2, _, _) =>
+      // TODO: Should not use op, as it will be removed.
+      // Probably better to group these methods by type, e.g. compileFloat32Exp.
+      op match {
+        case o: ArithmeticOperator => compileArithmeticExpr(exp1, exp2, currentClassType, visitor, jumpLabels, entryPoint, o, sop)
+        case o: ComparisonOperator => compileComparisonExpr(exp1, exp2, currentClassType, visitor, jumpLabels, entryPoint, o, sop)
+        case o: LogicalOperator => compileLogicalExpr(exp1, exp2, currentClassType, visitor, jumpLabels, entryPoint, o)
+        case o: BitwiseOperator => compileBitwiseExpr(exp1, exp2, currentClassType, visitor, jumpLabels, entryPoint, o, sop)
+      }
 
     case Expression.IfThenElse(exp1, exp2, exp3, _, loc) =>
       // Adding source line number for debugging
@@ -268,7 +281,7 @@ object GenExpression {
       // Evaluate the reference address
       compileExpression(exp1, currentClassType, jumpLabels, entryPoint, visitor)
       // Evaluating the value to be assigned to the reference
-      compileExpression(exp2, currentClassType, jumpLabels, entryPoint,visitor)
+      compileExpression(exp2, currentClassType, jumpLabels, entryPoint, visitor)
       // JvmType of the reference class
       val classType = JvmOps.getCellClassType(exp1.tpe)
       // Get descriptor of `setValue` method
@@ -772,5 +785,5 @@ object GenExpression {
     visitor.visitLabel(label)
     visitor.visitLineNumber(loc.beginLine, label)
   }
-  
+
 }

@@ -142,6 +142,7 @@ object AsmOps {
     * @param fType type
     * @return A load instruction
     */
+  // TODO: If possible should not use wildcards.
   def getReturnInsn(fType: JvmType): Int = fType match {
     case JvmType.PrimBool | JvmType.PrimChar | JvmType.PrimByte | JvmType.PrimShort | JvmType.PrimInt => IRETURN
     case JvmType.PrimLong => LRETURN
@@ -156,6 +157,7 @@ object AsmOps {
     * @param tpe Jvm Type of value to be loaded
     * @return Appropriate load instruction for the given type
     */
+  // TODO: If possible should not use wildcards.
   def getLoadInstruction(tpe: JvmType): Int = tpe match {
     case JvmType.PrimBool | JvmType.PrimChar | JvmType.PrimByte | JvmType.PrimShort | JvmType.PrimInt => ILOAD
     case JvmType.PrimLong => LLOAD
