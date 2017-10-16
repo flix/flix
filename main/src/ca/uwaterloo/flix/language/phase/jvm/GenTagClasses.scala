@@ -121,12 +121,12 @@ object GenTagClasses {
     visitor.visitSource(classType.name.toInternalName, null)
 
     // Generate the value field.
-    AsmOps.compileField(visitor, "value", valueType.toDescriptor, isStatic = false, isPrivate = true)
+    AsmOps.compileField(visitor, "value", valueType, isStatic = false, isPrivate = true)
 
     // Generate static `INSTANCE` field if it is a singleton
     if (JvmOps.isSingletonEnum(tag)) {
       // TODO: Determine if this optimization goes here, and whether we should still have a value field if it is applied.
-      AsmOps.compileField(visitor, "unitInstance", classType.toDescriptor, isStatic = true, isPrivate = false)
+      AsmOps.compileField(visitor, "unitInstance", classType, isStatic = true, isPrivate = false)
     }
 
     // Generate the constructor of the generated class.
@@ -138,7 +138,7 @@ object GenTagClasses {
     }
 
     // Generate the `getValue` method
-    AsmOps.compileGetFieldMethod(visitor, classType.name.toInternalName, valueType, "value", "getValue")
+    AsmOps.compileGetFieldMethod(visitor, classType.name, valueType, "value", "getValue")
 
     // Generate the `getBoxedTagValue` method.
     compileGetBoxedTagValueMethod(visitor, classType, valueType)

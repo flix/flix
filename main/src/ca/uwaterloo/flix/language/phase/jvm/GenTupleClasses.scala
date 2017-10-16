@@ -139,13 +139,13 @@ object GenTupleClasses {
       val fieldName = s"field$ind"
 
       // Defining fields of the tuple
-      AsmOps.compileField(visitor, fieldName, field.toDescriptor, isStatic = false, isPrivate = true)
+      AsmOps.compileField(visitor, fieldName, field, isStatic = false, isPrivate = true)
 
       // Emitting getter for each field
-      AsmOps.compileGetFieldMethod(visitor, classType.name.toInternalName, field, fieldName, s"getIndex$ind")
+      AsmOps.compileGetFieldMethod(visitor, classType.name, field, fieldName, s"getIndex$ind")
 
       // Emitting setter for each field
-      AsmOps.compileSetFieldMethod(visitor, classType.name.toInternalName, field, fieldName, s"setIndex$ind")
+      AsmOps.compileSetFieldMethod(visitor, classType.name, field, fieldName, s"setIndex$ind")
     }
 
     // Emit the code for the constructor
