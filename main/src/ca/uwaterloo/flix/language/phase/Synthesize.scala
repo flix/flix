@@ -269,7 +269,7 @@ object Synthesize extends Phase[Root, Root] {
       // TODO: [Equality]: We need to lookup the existence of any eq operator here. This may require monomorphization.
 
       // Introduce a fresh symbol for the equality operator.
-      val sym = Symbol.freshDefnSym("synth$eq")
+      val sym = Symbol.freshDefnSym("eq")
 
       // Immediately add the symbol to the equality map.
       // This is necessary to support recursive data types.
@@ -492,7 +492,7 @@ object Synthesize extends Phase[Root, Root] {
       */
     def getOrMkToString(tpe: Type): Symbol.DefnSym = mutToStringOps.getOrElse(tpe, {
       // Introduce a fresh symbol for the toString operator.
-      val sym = Symbol.freshDefnSym("synth$toString")
+      val sym = Symbol.freshDefnSym("toString")
 
       // Immediately add the symbol to the toString map.
       // This is necessary to support recursive data types.

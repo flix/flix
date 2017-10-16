@@ -394,7 +394,7 @@ object JvmOps {
   /**
     * Returns the field name of a defn as used in a namespace class.
     *
-    * TODO: How does this make sense??
+    * TODO: How does these examples make sense?
     *
     * For example:
     *
@@ -404,7 +404,7 @@ object JvmOps {
     * Foo.Bar.Baz.Y() =>  Foo$Bar$Baz$Ns$X
     */
   // TODO: We should move "suffix" and "prefix" into helpers inside JvmOps.
-  def getDefFieldNameInNamespaceClass(sym: Symbol.DefnSym): String = sym.suffix + '$' + sym.prefix.mkString("$")
+  def getDefFieldNameInNamespaceClass(sym: Symbol.DefnSym): String = "f_" + mangle(sym.name)
 
   /**
     * Returns the method name of a defn as used in a namespace class.

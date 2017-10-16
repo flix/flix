@@ -26,18 +26,16 @@ object Symbol {
     * Returns a fresh definition symbol with the given text.
     */
   def freshDefnSym(text: String)(implicit genSym: GenSym): DefnSym = {
-    val id = genSym.freshId()
-    val name = text + "$" + id
-    new DefnSym(Nil, name, SourceLocation.Unknown)
+    val id = Some(genSym.freshId())
+    new DefnSym(id, Nil, text, SourceLocation.Unknown)
   }
 
   /**
     * Returns a fresh definition symbol based on the given symbol.
     */
   def freshDefnSym(sym: DefnSym)(implicit genSym: GenSym): DefnSym = {
-    val id = genSym.freshId()
-    val name = sym.name + "$" + id
-    new DefnSym(sym.namespace, name, sym.loc)
+    val id = Some(genSym.freshId())
+    new DefnSym(id, sym.namespace, sym.text, sym.loc)
   }
 
   /**
@@ -86,15 +84,15 @@ object Symbol {
     * Returns the definition symbol for the given name `ident` in the given namespace `ns`.
     */
   def mkDefnSym(ns: NName, ident: Ident): DefnSym = {
-    new DefnSym(ns.parts, ident.name, ident.loc)
+    new DefnSym(None, ns.parts, ident.name, ident.loc)
   }
 
   /**
     * Returns the definition symbol for the given fully qualified name.
     */
   def mkDefnSym(fqn: String): DefnSym = split(fqn) match {
-    case None => new DefnSym(Nil, fqn, SourceLocation.Unknown)
-    case Some((ns, name)) => new DefnSym(ns, name, SourceLocation.Unknown)
+    case None => new DefnSym(None, Nil, fqn, SourceLocation.Unknown)
+    case Some((ns, name)) => new DefnSym(None, ns, name, SourceLocation.Unknown)
   }
 
   /**
@@ -212,7 +210,15 @@ object Symbol {
   /**
     * Definition Symbol.
     */
-  final class DefnSym(val namespace: List[String], val name: String, val loc: SourceLocation) {
+  final class DefnSym(val id: Option[Int], val namespace: List[String], val text: String, val loc: SourceLocation) {
+
+    /**
+      * Returns the name of `this` symbol.
+      */
+    def name: String = id match {
+      case None => text
+      case Some(i) => text + "$" + i
+    }
 
     /**
       * Returns the prefix as a list of strings.
@@ -258,14 +264,14 @@ object Symbol {
       * Returns `true` if this symbol is equal to `that` symbol.
       */
     override def equals(obj: scala.Any): Boolean = obj match {
-      case that: DefnSym => this.namespace == that.namespace && this.name == that.name
+      case that: DefnSym => this.id == that.id && this.namespace == that.namespace && this.text == that.text
       case _ => false
     }
 
     /**
       * Returns the hash code of this symbol.
       */
-    override val hashCode: Int = 7 * namespace.hashCode() + 11 * name.hashCode
+    override val hashCode: Int = 5 * id.hashCode() + 7 * namespace.hashCode() + 11 * text.hashCode()
 
     /**
       * Human readable representation.
