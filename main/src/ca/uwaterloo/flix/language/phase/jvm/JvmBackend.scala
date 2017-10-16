@@ -83,6 +83,11 @@ object JvmBackend extends Phase[Root, Root] {
     val functionClasses = GenFunctionClasses.gen(root.defs)
 
     //
+    // Generate closure classes for each closure in the program.
+    //
+    val closureClasses = GenClosureClasses.gen(root.defs)
+
+    //
     // Generate enum interfaces for each enum type in the program.
     //
     val enumInterfaces = GenEnumInterfaces.gen(types)
@@ -117,8 +122,8 @@ object JvmBackend extends Phase[Root, Root] {
     //
     // TODO: Re-order
     val allClasses = contextClass ++ namespaceClasses ++ continuationInterfaces ++ functionInterfaces ++
-      functionClasses ++ enumInterfaces ++ tupleInterfaces ++ tupleClasses ++ tagClasses ++ mainClass ++
-      fusionClasses
+      functionClasses ++ closureClasses ++ enumInterfaces ++ tupleInterfaces ++ tupleClasses ++ tagClasses ++
+      mainClass ++ fusionClasses
 
     //
     // Write each class (and interface) to disk.
