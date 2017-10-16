@@ -402,6 +402,12 @@ object JvmOps {
   // TODO: Deal with fusion too.
 
   /**
+    * Returns the variable type of the given variable symbol `sym`.
+    */
+  def getVariableType(sym: Symbol.VarSym): VariableType =
+    VariableType.ArgumentVar(sym.getStackOffset) // TODO: Implement.
+
+  /**
     * Returns `true` if the given enum type `tpe` is nullable.
     *
     * An enum is nullable if it has exactly two constructors:
