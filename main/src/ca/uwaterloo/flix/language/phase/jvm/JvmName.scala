@@ -142,7 +142,8 @@ case class JvmName(pkg: List[String], name: String) {
   /**
     * Returns the type descriptor of `this` Java name.
     */
-  def toDescriptor: String = "L" + pkg.mkString("/") + "/" + name + ";"
+  def toDescriptor: String =
+    if (pkg.isEmpty) "L" + name + ";" else "L" + pkg.mkString("/") + "/" + name + ";"
 
   /**
     * Returns the binary name of `this` Java name.
@@ -151,14 +152,16 @@ case class JvmName(pkg: List[String], name: String) {
     *
     * The binary name is rarely used. Mostly likely you need the [[toInternalName]].
     */
-  def toBinaryName: String = if (pkg.isEmpty) name else pkg.mkString(".") + "." + name
+  def toBinaryName: String =
+    if (pkg.isEmpty) name else pkg.mkString(".") + "." + name
 
   /**
     * Returns the internal name of `this` Java name.
     *
     * The internal name is of the form `java/lang/String`.
     */
-  def toInternalName: String = if (pkg.isEmpty) name else pkg.mkString("/") + "/" + name
+  def toInternalName: String =
+    if (pkg.isEmpty) name else pkg.mkString("/") + "/" + name
 
   /**
     * Returns the relative path of `this` Java name.

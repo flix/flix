@@ -394,6 +394,8 @@ object JvmOps {
   /**
     * Returns the field name of a defn as used in a namespace class.
     *
+    * TODO: How does this make sense??
+    *
     * For example:
     *
     * <root>.X()      =>  $X
@@ -407,7 +409,8 @@ object JvmOps {
   /**
     * Returns the method name of a defn as used in a namespace class.
     */
-  def getDefMethodNameInNamespaceClass(sym: Symbol.DefnSym): String = "m" + sym.suffix + '$' + sym.prefix.mkString("$")
+  // TODO: Cleanup
+  def getDefMethodNameInNamespaceClass(sym: Symbol.DefnSym): String = "m_" + mangle(sym.name)
 
   // TODO: Deal with fusion too.
 
@@ -650,7 +653,7 @@ object JvmOps {
     * Returns the namespace info of the given definition symbol `sym`.
     */
   def getNamespace(sym: Symbol.DefnSym)(implicit root: Root, flix: Flix): NamespaceInfo = {
-    ??? // TODO
+    NamespaceInfo(sym.namespace, Map.empty) // TODO.
   }
 
   /**
