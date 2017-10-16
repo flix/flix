@@ -336,6 +336,16 @@ object JvmOps {
   }
 
   /**
+    * Returns the closure class `Clo$Name` for the given closure.
+    *
+    * TODO: Examples
+    */
+  def getClosureClassType(closure: ClosureInfo)(implicit root: Root, flix: Flix): JvmType.Reference = {
+    // TODO
+    ???
+  }
+
+  /**
     * Returns the function definition class for the given symbol.
     *
     * For example:
