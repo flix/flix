@@ -87,13 +87,13 @@ object JvmName {
     * The `ca.uwaterloo.flix.api.Tuple` name
     */
   // TODO: Determine whether we even want this interface.
-  val Tuple: JvmName = JvmName(List("ca", "waterloo", "flix", "api"), "Tuple")
+  val Tuple: JvmName = JvmName(List("ca", "uwaterloo", "flix", "api"), "Tuple")
 
   /**
     * The `ca.uwaterloo.flix.api.Tag` name
     */
   // TODO: Determine whether we even want this interface.
-  val Tag: JvmName = JvmName(List("ca", "waterloo", "flix", "api"), "Tag")
+  val Tag: JvmName = JvmName(List("ca", "uwaterloo", "flix", "api"), "Tag")
 
   /**
     * The `ca.uwaterloo.flix.api.Unit` name
