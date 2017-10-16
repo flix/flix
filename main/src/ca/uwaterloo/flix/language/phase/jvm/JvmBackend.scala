@@ -85,7 +85,7 @@ object JvmBackend extends Phase[Root, Root] {
     //
     // Generate closure classes for each closure in the program.
     //
-    val closureClasses = GenClosureClasses.gen(root.defs)
+    val closureClasses = GenClosureClasses.gen(Set.empty /* TODO */)
 
     //
     // Generate enum interfaces for each enum type in the program.

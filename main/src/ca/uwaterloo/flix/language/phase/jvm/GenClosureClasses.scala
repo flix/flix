@@ -12,13 +12,19 @@ object GenClosureClasses {
   /**
     * Returns the set of closures classes for the given set of definitions `defs`.
     */
-  def gen(defs: Map[Symbol.DefnSym, Def])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
+  def gen(closures: Set[ClosureInfo])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
     //
     // Generate a closure class for each closure and collect the results in a map.
     //
     // TODO: Do we need a mechanism to find each closure expression?
-    defs.foldLeft(Map.empty[JvmName, JvmClass]) {
-      case (macc, _) => macc // TODO
+    closures.foldLeft(Map.empty[JvmName, JvmClass]) {
+      case (macc, closure) =>
+      macc
+      // TODO
+        //val jvmType = JvmOps.getClosureClassType(closure)
+        //val jvmName = jvmType.name
+        //val bytecode = genByteCode(closure)
+        //macc + (jvmName -> JvmClass(jvmName, bytecode))
     }
   }
 
@@ -51,8 +57,7 @@ object GenClosureClasses {
     *
     *
     */
-  // TODO: Probably needs more arguments.
-  private def genByteCode(sym: Symbol.DefnSym, freeVars: List[FreeVar])(implicit root: Root, flix: Flix): Array[Byte] = {
+  private def genByteCode(closure: ClosureInfo)(implicit root: Root, flix: Flix): Array[Byte] = {
     List(0xCA.toByte, 0xFE.toByte, 0xBA.toByte, 0xBE.toByte).toArray
   }
 
