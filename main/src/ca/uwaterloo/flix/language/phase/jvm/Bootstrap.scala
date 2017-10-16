@@ -4,7 +4,7 @@ import java.lang.reflect.Method
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Root
-import ca.uwaterloo.flix.util.InternalCompilerException
+import ca.uwaterloo.flix.util.{InternalCompilerException, Verbosity}
 
 /**
   * Loads all the generated classes into the JVM and decorates the AST.
@@ -20,8 +20,10 @@ object Bootstrap {
     //
     val loadedClasses = BytecodeLoader.loadAll(classes)
 
-    // TODO: Debugging.
-    println(s"Loaded: ${loadedClasses.size} classes.")
+    // Debugging.
+    if (flix.options.debug && flix.options.verbosity == Verbosity.Verbose) {
+      println(s"Loaded: ${loadedClasses.size} classes.")
+    }
 
     //
     // Decorate each defn in the ast with its method object.
