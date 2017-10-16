@@ -394,6 +394,11 @@ object JvmOps {
   // TODO: We should move "suffix" and "prefix" into helpers inside JvmOps.
   def getDefFieldNameInNamespaceClass(sym: Symbol.DefnSym): String = sym.suffix + '$' + sym.prefix.mkString("$")
 
+  /**
+    * Returns the method name of a defn as used in a namespace class.
+    */
+  def getDefMethodNameInNamespaceClass(sym: Symbol.DefnSym): String = "m" + sym.suffix + '$' + sym.prefix.mkString("$")
+
   // TODO: Deal with fusion too.
 
   /**
@@ -623,6 +628,13 @@ object JvmOps {
     root.defs.groupBy(_._1.namespace).map {
       case (ns, defs) => NamespaceInfo(ns, defs)
     }.toSet
+  }
+
+  /**
+    * Returns the namespace info of the given definition symbol `sym`.
+    */
+  def getNamespace(sym: Symbol.DefnSym)(implicit root: Root, flix: Flix): NamespaceInfo = {
+    ??? // TODO
   }
 
   /**

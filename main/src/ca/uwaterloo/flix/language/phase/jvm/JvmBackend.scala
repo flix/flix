@@ -125,16 +125,15 @@ object JvmBackend extends Phase[Root, Root] {
     //
     // NB: In test mode we skip writing the files to disk.
     if (!flix.options.test) {
-      for ((name, clazz) <- allClasses) {
-        JvmOps.writeClass(TargetDirectory, clazz)
+      for ((jvmName, jvmClass) <- allClasses) {
+        JvmOps.writeClass(TargetDirectory, jvmClass)
       }
     }
 
     //
-    // Load each class into the JVM in a separate class loader.
+    // Loads all the generated classes into the JVM and decorates the AST.
     //
-    // TODO
-    val loadedClasses = BytecodeLoader.loadAll(allClasses)
+    Bootstrap.bootstrap(allClasses)
 
     // TODO: Temporary testing infrastructure
     for (tpe <- types) {
