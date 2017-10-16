@@ -134,7 +134,7 @@ object JvmBackend extends Phase[Root, Root] {
     // Load each class into the JVM in a separate class loader.
     //
     // TODO
-    //val loadedClasses = BytecodeLoader.loadAll(allClasses)
+    val loadedClasses = BytecodeLoader.loadAll(allClasses)
 
     // TODO: Temporary testing infrastructure
     for (tpe <- types) {

@@ -47,13 +47,13 @@ object GenNamespaces {
     */
   private def genBytecode(ns: NamespaceInfo)(implicit root: Root, flix: Flix): Array[Byte] = {
     // JvmType for namespace
-    val namespaceRef = JvmOps.getNamespaceClassType(ns)
+    val namespaceClassType = JvmOps.getNamespaceClassType(ns)
 
     // Class visitor
     val visitor = AsmOps.mkClassWriter()
 
     // Class header
-    visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_FINAL, namespaceRef.name.toInternalName, null,
+    visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_FINAL, namespaceClassType.name.toInternalName, null,
       JvmName.Object.toInternalName, null)
 
     // Adding fields for each function in `ns`

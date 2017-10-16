@@ -42,8 +42,8 @@ class FlixClassLoader(classes: Map[String, JvmClass]) extends ClassLoader {
         // Case 1: The class was not defined. Lookup the bytecode.
         classes.get(name) match {
           case None =>
-            // Case 1.1: The internal name does not exist. Error.
-            throw InternalRuntimeException(s"Unknown internal name: '$name'.")
+            // Case 1.1: The internal name does not exist. Try the super loader.
+            super.findClass(name)
           case Some(jvmClass) =>
             // Case 1.2: The internal name was found. Define the class using its bytecode.
             defineClass(name, jvmClass.bytecode, 0, jvmClass.bytecode.length)
