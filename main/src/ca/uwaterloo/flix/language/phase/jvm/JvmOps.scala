@@ -190,7 +190,7 @@ object JvmOps {
     *
     * For example,
     *
-    * Color                 =>      Color
+    * Color                 =>      Color$
     * Option[Int]           =>      Option$Int
     * Result[Char, Int]     =>      Result$Char$Int
     *
@@ -207,8 +207,8 @@ object JvmOps {
     // Compute the stringified erased type of each type argument.
     val args = tpe.typeArguments.map(tpe => stringify(getErasedType(tpe)))
 
-    // The JVM name is of the form Enum$Arg0$Arg1$Arg2
-    val name = if (args.isEmpty) sym.name else sym.name + "$" + args.mkString("$")
+    // The JVM name is of the form Option$ or Option$Int
+    val name = if (args.isEmpty) sym.name + "$" else sym.name + "$" + args.mkString("$")
 
     // The enum resides in its namespace package.
     JvmType.Reference(JvmName(sym.namespace, name))

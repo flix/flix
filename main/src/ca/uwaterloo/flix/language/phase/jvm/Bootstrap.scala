@@ -20,6 +20,9 @@ object Bootstrap {
     //
     val loadedClasses = BytecodeLoader.loadAll(classes)
 
+    // TODO: Debugging.
+    println(s"Loaded: ${loadedClasses.size} classes.")
+
     //
     // Decorate each defn in the ast with its method object.
     //

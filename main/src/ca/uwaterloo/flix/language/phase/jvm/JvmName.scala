@@ -145,7 +145,18 @@ case class JvmName(pkg: List[String], name: String) {
   def toDescriptor: String = "L" + pkg.mkString("/") + "/" + name + ";"
 
   /**
+    * Returns the binary name of `this` Java name.
+    *
+    * The binary name is of the form `java.lang.String`.
+    *
+    * The binary name is rarely used. Mostly likely you need the [[toInternalName]].
+    */
+  def toBinaryName: String = if (pkg.isEmpty) name else pkg.mkString(".") + "." + name
+
+  /**
     * Returns the internal name of `this` Java name.
+    *
+    * The internal name is of the form `java/lang/String`.
     */
   def toInternalName: String = if (pkg.isEmpty) name else pkg.mkString("/") + "/" + name
 

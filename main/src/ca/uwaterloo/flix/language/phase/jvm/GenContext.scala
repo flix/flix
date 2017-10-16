@@ -64,8 +64,7 @@ object GenContext {
     */
   private def compileContextConstructor(visitor: ClassWriter, ns: Set[NamespaceInfo])(implicit root: Root, flix: Flix): Unit = {
     // Method header
-    val constructor = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, "<init>",
-      AsmOps.getMethodDescriptor(Nil, JvmType.Void), null, null)
+    val constructor = visitor.visitMethod(ACC_PUBLIC, "<init>", AsmOps.getMethodDescriptor(Nil, JvmType.Void), null, null)
     constructor.visitCode()
 
     constructor.visitCode()
