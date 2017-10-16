@@ -38,7 +38,7 @@ object GenContext {
       JvmName.Object.toInternalName, null)
 
     // Adding continuation field
-    AsmOps.compileField(visitor, "continuation", JvmType.Object.toDescriptor, isStatic = false, isPrivate = false)
+    AsmOps.compileField(visitor, "continuation", JvmType.Object, isStatic = false, isPrivate = false)
 
     // Adding field for each namespace
     for (namespace <- ns) {
@@ -48,11 +48,8 @@ object GenContext {
       // Name of the field for the `namespace` on the Context object
       val fieldName = JvmOps.getNamespaceFieldNameInContextClass(namespace)
 
-      // Descriptor
-      val desc = namespaceRef.toDescriptor
-
       // Adding the field
-      AsmOps.compileField(visitor, fieldName, desc, isStatic = false, isPrivate = false)
+      AsmOps.compileField(visitor, fieldName, namespaceRef, isStatic = false, isPrivate = false)
     }
 
     // Add the constructor

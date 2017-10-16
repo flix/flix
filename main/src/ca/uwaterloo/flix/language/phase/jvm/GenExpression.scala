@@ -38,7 +38,7 @@ object GenExpression {
                         visitor: MethodVisitor)(implicit root: Root, flix: Flix): Unit = expr match {
     case Expression.Unit =>
       visitor.visitMethodInsn(INVOKESTATIC, JvmName.Unit.toInternalName, "getInstance",
-        AsmOps.getMethodDescriptor(List(JvmType.Void), JvmType.Unit), false)
+        AsmOps.getMethodDescriptor(Nil, JvmType.Unit), false)
     case Expression.True => visitor.visitInsn(ICONST_1)
     case Expression.False => visitor.visitInsn(ICONST_0)
     case Expression.Char(c) => compileInt(visitor, c)

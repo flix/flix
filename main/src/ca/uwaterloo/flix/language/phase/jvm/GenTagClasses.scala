@@ -121,12 +121,12 @@ object GenTagClasses {
     visitor.visitSource(classType.name.toInternalName, null)
 
     // Generate the value field.
-    AsmOps.compileField(visitor, "value", valueType.toDescriptor, isStatic = false, isPrivate = true)
+    AsmOps.compileField(visitor, "value", valueType, isStatic = false, isPrivate = true)
 
     // Generate static `INSTANCE` field if it is a singleton
     if (JvmOps.isSingletonEnum(tag)) {
       // TODO: Determine if this optimization goes here, and whether we should still have a value field if it is applied.
-      AsmOps.compileField(visitor, "unitInstance", classType.toDescriptor, isStatic = true, isPrivate = false)
+      AsmOps.compileField(visitor, "unitInstance", classType, isStatic = true, isPrivate = false)
     }
 
     // Generate the constructor of the generated class.
@@ -137,8 +137,8 @@ object GenTagClasses {
       compileUnitInstance(visitor, classType)
     }
 
-    // Generate the `getValue` method.
-    AsmOps.compileGetFieldMethod(visitor, classType.name.toInternalName, valueType, "value", "getValue", AsmOps.getReturnInsn(valueType))
+    // Generate the `getValue` method
+    AsmOps.compileGetFieldMethod(visitor, classType.name, valueType, "value", "getValue")
 
     // Generate the `getBoxedTagValue` method.
     compileGetBoxedTagValueMethod(visitor, classType, valueType)
@@ -187,13 +187,15 @@ object GenTagClasses {
         ACC_PUBLIC
       }
 
-    val constructor = visitor.visitMethod(specifier, "<init>", AsmOps.getMethodDescriptor(List(valueType)), null, null)
+    val constructor = visitor.visitMethod(specifier, "<init>", AsmOps.getMethodDescriptor(List(valueType), JvmType.Void),
+      null, null)
 
     constructor.visitCode()
     constructor.visitVarInsn(ALOAD, 0)
 
     // Call the super (java.lang.Object) constructor
-    constructor.visitMethodInsn(INVOKESPECIAL, JvmName.Object.toInternalName, "<init>", AsmOps.getMethodDescriptor(Nil), false)
+    constructor.visitMethodInsn(INVOKESPECIAL, JvmName.Object.toInternalName, "<init>",
+      AsmOps.getMethodDescriptor(Nil, JvmType.Void), false)
 
     // Load instruction for type of `value`
     val iLoad = AsmOps.getLoadInstruction(valueType)
@@ -249,7 +251,7 @@ object GenTagClasses {
     * @param classType JvmType.Reference of the class
     * @param valueType JvmType of the `value` field of the class
     */
-  def compileGetBoxedTagValueMethod(visitor: ClassWriter,
+  private def compileGetBoxedTagValueMethod(visitor: ClassWriter,
                                     classType: JvmType.Reference,
                                     valueType: JvmType)(implicit root: Root, flix: Flix) = {
     val method = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, "getBoxedTagValue", AsmOps.getMethodDescriptor(Nil, JvmType.Object), null, null)
@@ -278,10 +280,12 @@ object GenTagClasses {
     method.visitInsn(DUP)
 
     // Getting instance of `UnitClass`
-    method.visitMethodInsn(INVOKESTATIC, JvmName.Unit.toInternalName, "getInstance", AsmOps.getMethodDescriptor(Nil, JvmType.Unit), false)
+    method.visitMethodInsn(INVOKESTATIC, JvmName.Unit.toInternalName, "getInstance",
+      AsmOps.getMethodDescriptor(Nil, JvmType.Unit), false)
 
     // Calling constructor on the object
-    method.visitMethodInsn(INVOKESPECIAL, classType.name.toInternalName, "<init>", AsmOps.getMethodDescriptor(List(JvmType.Object)), false)
+    method.visitMethodInsn(INVOKESPECIAL, classType.name.toInternalName, "<init>",
+      AsmOps.getMethodDescriptor(List(JvmType.Object), JvmType.Void), false)
 
     // Initializing the static field
     method.visitFieldInsn(PUTSTATIC, classType.name.toInternalName, "unitInstance", classType.toDescriptor)

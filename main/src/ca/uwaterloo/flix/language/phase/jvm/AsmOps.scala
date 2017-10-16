@@ -60,12 +60,11 @@ object AsmOps {
     *
     * @param visitor    class visitor
     * @param name       name of the field
-    * @param descriptor descriptor of field
+    * @param jvmType    Jvm Type of the field
     * @param isStatic   if this is true the the field is static
     * @param isPrivate  if this is set then the field is private
     */
-  def compileField(visitor: ClassWriter, name: String, descriptor: String, isStatic: Boolean, isPrivate: Boolean): Unit = {
-    // TODO: Why can the descriptor not be a JvmType?
+  def compileField(visitor: ClassWriter, name: String, jvmType: JvmType, isStatic: Boolean, isPrivate: Boolean): Unit = {
     // TODO: isStatic and isPrivate should be ADTs.
     val visibility =
     if (isPrivate) {
@@ -81,7 +80,7 @@ object AsmOps {
         0
       }
 
-    val field = visitor.visitField(visibility + fieldType, name, descriptor, null, null)
+    val field = visitor.visitField(visibility + fieldType, name, jvmType.toDescriptor, null, null)
     field.visitEnd()
   }
 
@@ -95,16 +94,16 @@ object AsmOps {
     * }
     *
     * @param visitor      class visitor
-    * @param internalName Internal name of the class
+    * @param classType    Name of the class containing the field
     * @param fieldType    JvmType of the field
     * @param methodName   method name of getter of `fieldName`
     */
-  def compileGetFieldMethod(visitor: ClassWriter, internalName: String, fieldType: JvmType, fieldName: String, methodName: String): Unit = {
+  def compileGetFieldMethod(visitor: ClassWriter, classType: JvmName, fieldType: JvmType, fieldName: String, methodName: String): Unit = {
     val method = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, methodName, getMethodDescriptor(Nil, fieldType), null, null)
 
     method.visitCode()
     method.visitVarInsn(ALOAD, 0)
-    method.visitFieldInsn(GETFIELD, internalName, fieldName, fieldType.toDescriptor)
+    method.visitFieldInsn(GETFIELD, classType.toInternalName, fieldName, fieldType.toDescriptor)
     method.visitInsn(getReturnInsn(fieldType))
     method.visitMaxs(1, 1)
     method.visitEnd()
@@ -120,17 +119,17 @@ object AsmOps {
     * }
     *
     * @param visitor      class visitor
-    * @param internalName Internal name of the class
+    * @param classType    Name of the class containing the field
     * @param fieldType    JvmType of the field
     * @param methodName   method name of getter of `fieldName`
     */
-  def compileSetFieldMethod(visitor: ClassWriter, internalName: String, fieldType: JvmType, fieldName: String, methodName: String): Unit = {
+  def compileSetFieldMethod(visitor: ClassWriter, classType: JvmName, fieldType: JvmType, fieldName: String, methodName: String): Unit = {
     val method = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, methodName, getMethodDescriptor(List(fieldType), JvmType.Void), null, null)
 
     method.visitCode()
     method.visitVarInsn(ALOAD, 0)
     method.visitVarInsn(getLoadInstruction(fieldType), 1)
-    method.visitFieldInsn(PUTFIELD, internalName, fieldName, fieldType.toDescriptor)
+    method.visitFieldInsn(PUTFIELD, classType.toInternalName, fieldName, fieldType.toDescriptor)
     method.visitInsn(RETURN)
     method.visitMaxs(1, 1)
     method.visitEnd()
