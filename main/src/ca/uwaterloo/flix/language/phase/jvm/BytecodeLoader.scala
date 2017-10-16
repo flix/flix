@@ -26,10 +26,10 @@ object BytecodeLoader {
     */
   def loadAll(classes: Map[JvmName, JvmClass]): Map[JvmName, Class[_]] = {
     //
-    // Compute a map from internal names (strings) to JvmClasses.
+    // Compute a map from binary names (strings) to JvmClasses.
     //
     val m = classes.foldLeft(Map.empty[String, JvmClass]) {
-      case (macc, (jvmName, jvmClass)) => macc + (jvmName.toInternalName -> jvmClass)
+      case (macc, (jvmName, jvmClass)) => macc + (jvmName.toBinaryName -> jvmClass)
     }
 
     //
@@ -41,7 +41,7 @@ object BytecodeLoader {
     // Attempt to load each class using its internal name.
     //
     classes.foldLeft(Map.empty[JvmName, Class[_]]) {
-      case (macc, (jvmName, jvmClass)) => macc + (jvmName -> loader.loadClass(jvmName.toInternalName))
+      case (macc, (jvmName, jvmClass)) => macc + (jvmName -> loader.loadClass(jvmName.toBinaryName))
     }
   }
 
