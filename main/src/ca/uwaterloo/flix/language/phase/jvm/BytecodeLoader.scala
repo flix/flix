@@ -16,6 +16,10 @@
 
 package ca.uwaterloo.flix.language.phase.jvm
 
+import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.ExecutableAst.Root
+import ca.uwaterloo.flix.util.Verbosity
+
 /**
   * Loads generated JVM bytecode classes using a custom class loader.
   */
@@ -24,7 +28,7 @@ object BytecodeLoader {
   /**
     * Loads the given JVM `classes` using a custom class loader.
     */
-  def loadAll(classes: Map[JvmName, JvmClass]): Map[JvmName, Class[_]] = {
+  def loadAll(classes: Map[JvmName, JvmClass])(implicit flix: Flix, root: Root): Map[JvmName, Class[_]] = {
     //
     // Compute a map from binary names (strings) to JvmClasses.
     //
@@ -41,7 +45,17 @@ object BytecodeLoader {
     // Attempt to load each class using its internal name.
     //
     classes.foldLeft(Map.empty[JvmName, Class[_]]) {
-      case (macc, (jvmName, jvmClass)) => macc + (jvmName -> loader.loadClass(jvmName.toBinaryName))
+      case (macc, (jvmName, jvmClass)) =>
+        // Attempt to load class.
+        val loadedClass = loader.loadClass(jvmName.toBinaryName)
+
+        // Debugging.
+        if (flix.options.debug && flix.options.verbosity == Verbosity.Verbose) {
+          println(s"Loaded: '${jvmName.toBinaryName}'.")
+        }
+
+        // Update map.
+        macc + (jvmName -> loadedClass)
     }
   }
 
