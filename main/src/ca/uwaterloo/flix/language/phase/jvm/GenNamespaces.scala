@@ -72,7 +72,7 @@ object GenNamespaces {
       // TODO: Same problem as GenFunctionClasses, we should handle not defs with non arrow type
       if(defn.tpe.isArrow) {
         // Args of the function
-    //    compileShillMethod(visitor, defn, sym, namespaceClassType, jvmType, ns)
+        compileShillMethod(visitor, defn, sym, namespaceClassType, jvmType, ns)
       }
     }
 
