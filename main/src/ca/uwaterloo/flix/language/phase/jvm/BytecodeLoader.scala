@@ -40,14 +40,9 @@ object BytecodeLoader {
     //
     // Attempt to load each class using its internal name.
     //
-    for ((jvmName, jvmClass) <- classes) {
-      val clazz = loader.loadClass(jvmName.toInternalName)
+    classes.foldLeft(Map.empty[JvmName, Class[_]]) {
+      case (macc, (jvmName, jvmClass)) => macc + (jvmName -> loader.loadClass(jvmName.toInternalName))
     }
-
-
-    // TODO: Retrieve the method object for each Def$ and assign it to the appropriate AST.
-
-    Map.empty // TODO
   }
 
 }
