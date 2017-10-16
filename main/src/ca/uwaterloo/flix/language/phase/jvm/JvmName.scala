@@ -19,6 +19,120 @@ package ca.uwaterloo.flix.language.phase.jvm
 import java.nio.file.{Path, Paths}
 
 /**
+  * Companion object for the [[JvmName]] class.
+  */
+object JvmName {
+
+  /**
+    * The Flix Context class.
+    */
+  val Context: JvmName = JvmName(Nil, "Context")
+
+  /**
+    * The `java.math.BigInteger` name.
+    */
+  val BigInteger: JvmName = JvmName(List("java", "math"), "BigInteger")
+
+  /**
+    * The `java.lang.Boolean` name.
+    */
+  val Boolean: JvmName = JvmName(List("java", "lang"), "Boolean")
+
+  /**
+    * The `java.lang.Character` name.
+    */
+  val Character: JvmName = JvmName(List("java", "lang"), "Character")
+
+  /**
+    * The `java.lang.Byte` name.
+    */
+  val Byte: JvmName = JvmName(List("java", "lang"), "Byte")
+
+  /**
+    * The `java.lang.Short` name.
+    */
+  val Short: JvmName = JvmName(List("java", "lang"), "Short")
+
+  /**
+    * The `java.lang.Integer` name.
+    */
+  val Integer: JvmName = JvmName(List("java", "lang"), "Integer")
+
+  /**
+    * The `java.lang.Long` name.
+    */
+  val Long: JvmName = JvmName(List("java", "lang"), "Long")
+
+  /**
+    * The `java.lang.Float` name.
+    */
+  val Float: JvmName = JvmName(List("java", "lang"), "Float")
+
+  /**
+    * The `java.lang.Double` name.
+    */
+  val Double: JvmName = JvmName(List("java", "lang"), "Double")
+
+  /**
+    * The `java.lang.Object` name.
+    */
+  val Object: JvmName = JvmName(List("java", "lang"), "Object")
+
+  /**
+    * The `java.lang.String` name.
+    */
+  val String: JvmName = JvmName(List("java", "lang"), "String")
+
+  /**
+    * The `ca.uwaterloo.flix.api.Tuple` name
+    */
+  // TODO: Determine whether we even want this interface.
+  val Tuple: JvmName = JvmName(List("ca", "uwaterloo", "flix", "api"), "Tuple")
+
+  /**
+    * The `ca.uwaterloo.flix.api.Tag` name
+    */
+  // TODO: Determine whether we even want this interface.
+  val Tag: JvmName = JvmName(List("ca", "uwaterloo", "flix", "api"), "Tag")
+
+  /**
+    * The `ca.uwaterloo.flix.api.Unit` name
+    */
+  // TODO: Determine whether we event want this class (or if we could just optimize unit differently?)
+  val Unit: JvmName = JvmName(List("ca", "waterloo", "flix", "api"), "Unit")
+
+  /**
+    * The `scala.math.package$` name
+    */
+  val ScalaMathPkg: JvmName = JvmName(List("scala", "math"), "package$")
+
+  /**
+    * The `java.lang.Exception` name
+    */
+  val Exception: JvmName = JvmName(List("java", "lang"), "Exception")
+
+  /**
+    * The `ca.uwaterloo.flix.api.UserException$` name
+    */
+  val UserException: JvmName = JvmName(List("ca", "uwaterloo", "flix", "api"), "UserException$")
+
+  /**
+    * The `ca.uwaterloo.flix.api.MatchException$` name
+    */
+  val MatchException: JvmName = JvmName(List("ca", "uwaterloo", "flix", "api"), "MatchException$")
+
+  /**
+    * The `ca.uwaterloo.flix.api.SwitchException$` name
+    */
+  val SwitchException: JvmName = JvmName(List("ca", "uwaterloo", "flix", "api"), "SwitchException$")
+
+  /**
+    * The `java.lang.Exception` name
+    */
+  val UnsupportedOperationException: JvmName = JvmName(List("java", "lang"), "UnsupportedOperationException")
+}
+
+/**
   * Represents the name of a Java class or interface.
   *
   * @param pkg  the package name.
@@ -28,12 +142,26 @@ case class JvmName(pkg: List[String], name: String) {
   /**
     * Returns the type descriptor of `this` Java name.
     */
-  def toDescriptor: String = "L" + pkg.mkString("/") + name + ";"
+  def toDescriptor: String =
+    if (pkg.isEmpty) "L" + name + ";" else "L" + pkg.mkString("/") + "/" + name + ";"
+
+  /**
+    * Returns the binary name of `this` Java name.
+    *
+    * The binary name is of the form `java.lang.String`.
+    *
+    * The binary name is rarely used. Mostly likely you need the [[toInternalName]].
+    */
+  def toBinaryName: String =
+    if (pkg.isEmpty) name else pkg.mkString(".") + "." + name
 
   /**
     * Returns the internal name of `this` Java name.
+    *
+    * The internal name is of the form `java/lang/String`.
     */
-  def toInternalName: String = pkg.mkString("/") + "/" + name
+  def toInternalName: String =
+    if (pkg.isEmpty) name else pkg.mkString("/") + "/" + name
 
   /**
     * Returns the relative path of `this` Java name.

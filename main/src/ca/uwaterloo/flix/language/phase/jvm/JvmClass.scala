@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 /**
-  * Represents a Java class (or interface)
+  * Represents a Java class (or interface).
   *
   * @param name     the name of the class (or interface).
   * @param bytecode the bytecode of the class (or interface).

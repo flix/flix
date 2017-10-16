@@ -26,17 +26,60 @@ sealed trait JvmType {
     * Returns the type descriptor of `this` Java name.
     */
   def toDescriptor: String = this match {
+    case JvmType.Void => "V"
     case JvmType.PrimBool => "Z"
-    case _ => ??? // TODO
+    case JvmType.PrimChar => "C"
+    case JvmType.PrimByte => "B"
+    case JvmType.PrimShort => "S"
+    case JvmType.PrimInt => "I"
+    case JvmType.PrimLong => "J"
+    case JvmType.PrimFloat => "F"
+    case JvmType.PrimDouble => "D"
+    case JvmType.Reference(name) => name.toDescriptor
   }
 }
 
 object JvmType {
 
   /**
-    * Alias for the `java.lang.Object` type.
+    * The Flix Context class.
     */
-  val Obj: JvmType.Reference = Reference(JvmName(List("java", "lang"), "Object"))
+  val Context: JvmType.Reference = Reference(JvmName.Context)
+
+  /**
+    * The `java.lang.BigInteger` type.
+    */
+  val BigInteger: JvmType.Reference = Reference(JvmName.BigInteger)
+
+  /**
+    * The `java.lang.Object` type.
+    */
+  val Object: JvmType.Reference = Reference(JvmName.Object)
+
+  /**
+    * The `java.lang.String` type.
+    */
+  val String: JvmType.Reference = Reference(JvmName.String)
+
+  /**
+    * The `ca.uwaterloo.flix.api.Tuple` type
+    */
+  val Tuple: JvmType.Reference = Reference(JvmName.Tuple)
+
+  /**
+    * The `ca.uwaterloo.flix.api.Unit` type
+    */
+  val Unit: JvmType.Reference = Reference(JvmName.Unit)
+
+  /**
+    * The `scala.math.package$` type
+    */
+  val ScalaMathPkg: JvmType.Reference = Reference(JvmName.ScalaMathPkg)
+
+  /**
+    * Represents the void type.
+    */
+  case object Void extends JvmType
 
   /**
     * Represents the primitive boolean type.

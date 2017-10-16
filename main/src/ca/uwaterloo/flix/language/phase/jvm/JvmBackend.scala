@@ -36,12 +36,16 @@ object JvmBackend extends Phase[Root, Root] {
     * Emits JVM bytecode for the given AST `root`.
     */
   def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationError] = {
+    // return root.toSuccess
+    //
+    // Put the AST root into implicit scope.
+    //
+    implicit val _ = root
+
     //
     // Compute the set of namespaces in the program.
     //
-    // TODO: Use empty until everything is implemented.
-    //val namespaces = JvmOps.namespacesOf(root)
-    val namespaces = Set.empty[NamespaceInfo]
+    val namespaces = JvmOps.namespacesOf(root)
 
     //
     // Compute the set of types in the program.
@@ -49,43 +53,96 @@ object JvmBackend extends Phase[Root, Root] {
     val types = JvmOps.typesOf(root)
 
     //
-    // Emit the Context class.
+    // Compute the set of instantiated tags in the program.
     //
-    val context = GenContext.gen(types, root)
+    val tags = JvmOps.tagsOf(root)
 
     //
-    // Emit the namespace classes.
+    // Generate the Context class.
     //
-    val namespaceClasses = GenNamespaces.gen(namespaces, root)
+    val contextClass = GenContext.gen(namespaces)
 
     //
-    // Emit continuation interfaces for each function type in the program.
+    // Generate the namespace classes.
     //
-    val continuationInterfaces = GenContinuationInterfaces.gen(types, root)
+    val namespaceClasses = GenNamespaces.gen(namespaces)
 
     //
-    // Emit function interfaces for each function type in the program.
+    // Generate continuation interfaces for each function type in the program.
     //
-    val functionInterfaces = GenFunctionInterfaces.gen(types, root)
+    val continuationInterfaces = GenContinuationInterfaces.gen(types)
 
     //
-    // Emit function classes for each function in the program.
+    // Generate function interfaces for each function type in the program.
     //
-    val functionClasses = GenFunctionClasses.gen(root.defs, root)
+    val functionInterfaces = GenFunctionInterfaces.gen(types)
+
+    //
+    // Generate function classes for each function in the program.
+    //
+    val functionClasses = GenFunctionClasses.gen(root.defs)
+
+    //
+    // Generate closure classes for each closure in the program.
+    //
+    val closureClasses = GenClosureClasses.gen(Set.empty /* TODO */)
+
+    //
+    // Generate enum interfaces for each enum type in the program.
+    //
+    val enumInterfaces = GenEnumInterfaces.gen(types)
+
+    //
+    // Generate tag classes for each enum instantiation in the program.
+    //
+    val tagClasses = GenTagClasses.gen(tags)
+
+    //
+    // Generate tuple interfaces for each tuple type in the program.
+    //
+    val tupleInterfaces = GenTupleInterfaces.gen(types)
+
+    //
+    // Generate tuple classes for each tuple type in the program.
+    //
+    val tupleClasses = GenTupleClasses.gen(types)
+
+    //
+    // Generate tag-tuple fusion classes for tag-tuple in the program.
+    //
+    val fusionClasses = GenFusionClasses.gen()
+
+    //
+    // Generate the main class.
+    //
+    val mainClass = GenMain.gen()
 
     //
     // Collect all the classes and interfaces together.
     //
-    val allClasses = context ++ namespaceClasses ++ continuationInterfaces ++ functionInterfaces ++ functionClasses
+    // TODO: Re-order
+    val allClasses = contextClass ++ namespaceClasses ++ continuationInterfaces ++ functionInterfaces ++
+      functionClasses ++ closureClasses ++ enumInterfaces ++ tupleInterfaces ++ tupleClasses ++ tagClasses ++
+      mainClass ++ fusionClasses
 
     //
     // Write each class (and interface) to disk.
     //
     // NB: In test mode we skip writing the files to disk.
     if (!flix.options.test) {
-      for ((name, clazz) <- allClasses) {
-        JvmOps.writeClass(TargetDirectory, clazz)
+      for ((jvmName, jvmClass) <- allClasses) {
+        JvmOps.writeClass(TargetDirectory, jvmClass)
       }
+    }
+
+    //
+    // Loads all the generated classes into the JVM and decorates the AST.
+    //
+    //  Bootstrap.bootstrap(allClasses)
+
+    // TODO: Temporary testing infrastructure
+    for (tpe <- types) {
+      JvmOps.getJvmType(tpe)
     }
 
     root.toSuccess

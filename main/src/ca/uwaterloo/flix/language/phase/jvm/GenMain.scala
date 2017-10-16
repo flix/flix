@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 Ramin Zarifi
+ * Copyright 2017 Magnus Madsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,19 +14,21 @@
  * limitations under the License.
  */
 
-package ca.uwaterloo.flix.api;
+package ca.uwaterloo.flix.language.phase.jvm
+
+import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.ExecutableAst.Root
 
 /**
- * A common super-type for all generated Java interfaces and classes that represent Flix enums.
- */
-public interface Enum {
-    /**
-     * Returns the tag of `this`.
-     */
-    String getTag();
+  * Generates bytecode for the main class.
+  */
+object GenMain {
 
-    /**
-     * Returns the value of `this`.
-     */
-    Object getBoxedValue();
+  /**
+    * Returns the main class.
+    */
+  def gen()(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
+    Map.empty // TODO
+  }
+
 }

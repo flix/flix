@@ -19,20 +19,25 @@ package ca.uwaterloo.flix.language.phase.jvm
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Root
 import ca.uwaterloo.flix.language.ast.Type
+import org.objectweb.asm.ClassWriter
+import org.objectweb.asm.Opcodes._
 
+/**
+  * Generates bytecode for the continuation interfaces.
+  */
 object GenContinuationInterfaces {
 
   /**
     * Returns the set of continuation interfaces for the given set of types `ts`.
     */
-  def gen(ts: Set[Type], root: Root)(implicit flix: Flix): Map[JvmName, JvmClass] = {
+  def gen(ts: Set[Type])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
     ts.foldLeft(Map.empty[JvmName, JvmClass]) {
       case (macc, tpe) if tpe.typeConstructor.isArrow =>
         // Case 1: The type constructor is an arrow.
         // Construct continuation interface.
         val jvmType = JvmOps.getContinuationInterfaceType(tpe)
         val jvmName = jvmType.name
-        val resultType = JvmOps.getResultType(tpe)
+        val resultType = JvmOps.getErasedType(JvmOps.getResultType(tpe))
         val bytecode = genByteCode(jvmType, resultType)
         macc + (jvmName -> JvmClass(jvmName, bytecode))
       case (macc, tpe) =>
@@ -45,7 +50,7 @@ object GenContinuationInterfaces {
   /**
     * Returns the bytecode for the given continuation interface.
     */
-  private def genByteCode(interfaceType: JvmType.Reference, resultType: JvmType): Array[Byte] = {
+  private def genByteCode(interfaceType: JvmType.Reference, resultType: JvmType)(implicit root: Root, flix: Flix): Array[Byte] = {
 
     // Pseudo code to generate:
     //
@@ -64,8 +69,25 @@ object GenContinuationInterfaces {
     // We can use `getErasedType` to map it down into one of the primitive types or to Object.
     //
 
+    // Class visitor
+    val visitor = AsmOps.mkClassWriter()
 
-    List(0xCA.toByte, 0xFE.toByte, 0xBA.toByte, 0xBE.toByte).toArray
+    // Class header
+    visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_ABSTRACT + ACC_INTERFACE,
+      interfaceType.name.toInternalName, null, JvmName.Object.toInternalName, null)
+
+    // `getResult()` method
+    val getResultMethod = visitor.visitMethod(ACC_PUBLIC + ACC_ABSTRACT, "getResult",
+      AsmOps.getMethodDescriptor(Nil, resultType), null, null)
+    getResultMethod.visitEnd()
+
+    // `apply()` method
+    val applyMethod = visitor.visitMethod(ACC_PUBLIC + ACC_ABSTRACT, "apply",
+      AsmOps.getMethodDescriptor(List(JvmType.Context), JvmType.Void), null, null)
+    applyMethod.visitEnd()
+
+    visitor.visitEnd()
+    visitor.toByteArray
   }
 
 }
