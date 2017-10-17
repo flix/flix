@@ -63,6 +63,11 @@ object JvmBackend extends Phase[Root, Root] {
     val types = JvmOps.typesOf(root)
 
     //
+    // Generate the main class.
+    //
+    val mainClass = GenMain.gen()
+
+    //
     // Generate the Context class.
     //
     val contextClass = GenContext.gen(namespaces)
@@ -118,17 +123,22 @@ object JvmBackend extends Phase[Root, Root] {
     val fusionClasses = GenFusionClasses.gen()
 
     //
-    // Generate the main class.
-    //
-    val mainClass = GenMain.gen()
-
-    //
     // Collect all the classes and interfaces together.
     //
-    // TODO: Re-order
-    val allClasses = contextClass ++ namespaceClasses ++ continuationInterfaces ++ functionInterfaces ++
-      functionClasses ++ closureClasses ++ enumInterfaces ++ tupleInterfaces ++ tupleClasses ++ tagClasses ++
-      mainClass ++ fusionClasses
+    val allClasses = List(
+      mainClass,
+      contextClass,
+      namespaceClasses,
+      continuationInterfaces,
+      functionInterfaces,
+      functionClasses,
+      closureClasses,
+      enumInterfaces,
+      tagClasses,
+      tupleInterfaces,
+      tupleClasses,
+      fusionClasses
+    ).reduce(_ ++ _)
 
     //
     // Write each class (and interface) to disk.

@@ -17,7 +17,8 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.ExecutableAst.Root
+import ca.uwaterloo.flix.language.ast.Symbol
+import ca.uwaterloo.flix.language.ast.ExecutableAst.{Def, Root}
 
 /**
   * Generates bytecode for the main class.
@@ -27,8 +28,26 @@ object GenMain {
   /**
     * Returns the main class.
     */
-  def gen()(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
-    Map.empty // TODO
+  def gen()(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = getMain(root) match {
+    case None => Map.empty
+    case Some(defn) =>
+      // TODO: Emit a main class with a call to the main method shim.
+      Map.empty
+  }
+
+  /**
+    * Optionally returns the main definition in the given AST `root`.
+    */
+  private def getMain(root: Root): Option[Def] = {
+    // The main function must be called `main` and occur in the root namespace.
+    val sym = Symbol.mkDefnSym("main")
+
+    // Check if the main function exists.
+    root.defs.get(sym) flatMap {
+      case defn =>
+        // The main function must take zero arguments.
+        if (defn.formals.isEmpty) Some(defn) else None
+    }
   }
 
 }

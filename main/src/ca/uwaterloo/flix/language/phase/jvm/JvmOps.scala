@@ -222,6 +222,7 @@ object JvmOps {
     * None: Option[Int]         =>    None
     * Some: Option[Char]        =>    Some$Char
     * Some: Option[Int]         =>    Some$Int
+    * Some: Option[String]      =>    Some$Obj
     * Ok: Result[Bool, Char]    =>    Ok$Bool$Char
     * Err: Result[Bool, Char]   =>    Err$Bool$Char
     */
@@ -231,7 +232,7 @@ object JvmOps {
     val tagName = tag.tag
 
     // Retrieve the type arguments.
-    val args = tag.tparams
+    val args = tag.tparams.map(tpe => stringify(getErasedType(tpe)))
 
     // The JVM name is of the form Tag$Arg0$Arg1$Arg2
     val name = if (args.isEmpty) tagName else tagName + "$" + args.mkString("$")
