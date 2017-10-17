@@ -43,19 +43,24 @@ object JvmBackend extends Phase[Root, Root] {
     implicit val _ = root
 
     //
+    // Compute the set of closures in the program.
+    //
+    val closures = JvmOps.closuresOf(root)
+
+    //
     // Compute the set of namespaces in the program.
     //
     val namespaces = JvmOps.namespacesOf(root)
 
     //
-    // Compute the set of types in the program.
-    //
-    val types = JvmOps.typesOf(root)
-
-    //
     // Compute the set of instantiated tags in the program.
     //
     val tags = JvmOps.tagsOf(root)
+
+    //
+    // Compute the set of types in the program.
+    //
+    val types = JvmOps.typesOf(root)
 
     //
     // Generate the Context class.
@@ -85,7 +90,7 @@ object JvmBackend extends Phase[Root, Root] {
     //
     // Generate closure classes for each closure in the program.
     //
-    val closureClasses = GenClosureClasses.gen(Set.empty /* TODO */)
+    val closureClasses = GenClosureClasses.gen(closures)
 
     //
     // Generate enum interfaces for each enum type in the program.
