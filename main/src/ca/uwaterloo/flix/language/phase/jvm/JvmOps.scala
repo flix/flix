@@ -45,8 +45,7 @@ object JvmOps {
     * Int -> Bool           =>      Fn1$Int$Bool
     * (Int, Int) -> Bool    =>      Fn2$Int$Int$Bool
     */
-  // TODO: DOcument nullary flag
-  def getJvmType(tpe: Type, nullary: Boolean = false)(implicit root: Root, flix: Flix): JvmType = {
+  def getJvmType(tpe: Type)(implicit root: Root, flix: Flix): JvmType = {
     // Retrieve the type constructor.
     val base = tpe.typeConstructor
 
@@ -71,7 +70,7 @@ object JvmOps {
       case Type.Arrow(l) => getFunctionInterfaceType(tpe)
       case Type.Tuple(l) => getTupleInterfaceType(tpe)
       case Type.Enum(sym, kind) =>
-        if (!nullary && isNullaryEnum(tpe)) {
+        if (isNullaryEnum(tpe)) {
           // TODO
           //val nullaryType = getNullaryType(tpe)
           //println(s"Nullary type $tpe to be represented as: ${nullaryType.toDescriptor}")
@@ -88,7 +87,6 @@ object JvmOps {
     *
     * Every primitive type is mapped to itself and every other type is mapped to Object.
     */
-  // TODO: Move closer to getJvmType?
   def getErasedType(tpe: JvmType)(implicit root: Root, flix: Flix): JvmType = tpe match {
     case JvmType.Void => JvmType.Void
     case JvmType.PrimBool => JvmType.PrimBool
@@ -105,7 +103,7 @@ object JvmOps {
   /**
     * Returns the erased JvmType of the given Flix type `tpe`.
     */
-  // TODO: Delete?
+  // TODO: Delete this alias?
   def getErasedType(tpe: Type)(implicit root: Root, flix: Flix): JvmType = getErasedType(getJvmType(tpe))
 
   /**
@@ -113,6 +111,7 @@ object JvmOps {
     *
     * NB: The given type `tpe` must be an arrow type.
     */
+  // TODO: Should this simply return a JvmType?
   def getResultType(tpe: Type)(implicit root: Root, flix: Flix): Type = {
     // Check that the given type is an arrow type.
     if (!tpe.typeConstructor.isArrow)
@@ -180,6 +179,37 @@ object JvmOps {
 
     // The JVM name is of the form FnArity$Arg0$Arg1$Arg2
     val name = "Fn" + arity + "$" + args.mkString("$")
+
+    // The type resides in the root package.
+    JvmType.Reference(JvmName(RootPackage, name))
+  }
+
+  /**
+    * Returns the closure class `Clo$Name` for the given closure.
+    *
+    * TODO: Examples
+    */
+  def getClosureClassType(closure: ClosureInfo)(implicit root: Root, flix: Flix): JvmType.Reference = {
+    // Retrieve the arrow type of the closure.
+    val tpe = closure.tpe
+
+    // Check that the given type is an arrow type.
+    if (!tpe.typeConstructor.isArrow)
+      throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+
+    // Check that the given type has at least one type argument.
+    if (tpe.typeArguments.isEmpty)
+      throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+
+    // Compute the arity of the function interface.
+    // We subtract one since the last argument is the return type.
+    val arity = tpe.typeArguments.length - 1
+
+    // Compute the stringified erased type of each type argument.
+    val args = tpe.typeArguments.map(tpe => stringify(getErasedType(tpe)))
+
+    // The JVM name is of the form CloArity$Arg0$Arg1$Arg2
+    val name = "Clo" + arity + "$" + args.mkString("$")
 
     // The type resides in the root package.
     JvmType.Reference(JvmName(RootPackage, name))
@@ -337,16 +367,6 @@ object JvmOps {
   }
 
   /**
-    * Returns the closure class `Clo$Name` for the given closure.
-    *
-    * TODO: Examples
-    */
-  def getClosureClassType(closure: ClosureInfo)(implicit root: Root, flix: Flix): JvmType.Reference = {
-    // TODO
-    ???
-  }
-
-  /**
     * Returns the function definition class for the given symbol.
     *
     * For example:
@@ -475,7 +495,7 @@ object JvmOps {
     val innerTagType = getUnwrappedType(referenceTag.tagType)
 
     // And translate it to a JVM type.
-    getJvmType(referenceTag.tagType, nullary = true)
+    getJvmType(referenceTag.tagType)
   }
 
   /**

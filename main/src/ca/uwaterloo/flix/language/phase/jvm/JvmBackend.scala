@@ -131,7 +131,7 @@ object JvmBackend extends Phase[Root, Root] {
       continuationInterfaces,
       functionInterfaces,
       functionClasses,
-      closureClasses,
+     // closureClasses, // TODO: Currently not implemented.
       enumInterfaces,
       tagClasses,
       tupleInterfaces,

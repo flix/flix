@@ -16,15 +16,12 @@ object GenClosureClasses {
     //
     // Generate a closure class for each closure and collect the results in a map.
     //
-    // TODO: Do we need a mechanism to find each closure expression?
     closures.foldLeft(Map.empty[JvmName, JvmClass]) {
       case (macc, closure) =>
-      macc
-      // TODO
-        //val jvmType = JvmOps.getClosureClassType(closure)
-        //val jvmName = jvmType.name
-        //val bytecode = genByteCode(closure)
-        //macc + (jvmName -> JvmClass(jvmName, bytecode))
+        val jvmType = JvmOps.getClosureClassType(closure)
+        val jvmName = jvmType.name
+        val bytecode = genByteCode(closure)
+        macc + (jvmName -> JvmClass(jvmName, bytecode))
     }
   }
 
