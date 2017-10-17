@@ -266,7 +266,7 @@ object Command {
 
       // Split the arguments into fqn and needle.
       val split = args.split(" ")
-      if (args.length == 1)
+      if (split.length == 1)
         return Command.Rel(split(0), None)
       else
         return Command.Rel(split(0), Some(split(1)))
@@ -285,7 +285,7 @@ object Command {
 
       // Split the arguments into fqn and needle.
       val split = args.split(" ")
-      if (args.length == 1)
+      if (split.length == 1)
         return Command.Lat(split(0), None)
       else
         return Command.Lat(split(0), Some(split(1)))
