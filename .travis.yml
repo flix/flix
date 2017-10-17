@@ -29,6 +29,7 @@ script:
     - ant test-jar
 
 notifications:
+  email: false
   webhooks:
     urls:
       - https://webhooks.gitter.im/e/b81189a7f14b5bbc65ed
