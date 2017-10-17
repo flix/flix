@@ -639,6 +639,118 @@ object JvmOps {
     case JvmType.Reference(jvmName) => "Obj"
   }
 
+
+  /**
+    * Returns the set of closures in the given AST `root`.
+    */
+  def closuresOf(root: Root): Set[ClosureInfo] = {
+    /**
+      * Returns the set of closures in the given expression `exp0`.
+      */
+    def visitExp(exp0: Expression): Set[ClosureInfo] = exp0 match {
+      case Expression.Unit => Set.empty
+      case Expression.True => Set.empty
+      case Expression.False => Set.empty
+      case Expression.Char(lit) => Set.empty
+      case Expression.Float32(lit) => Set.empty
+      case Expression.Float64(lit) => Set.empty
+      case Expression.Int8(lit) => Set.empty
+      case Expression.Int16(lit) => Set.empty
+      case Expression.Int32(lit) => Set.empty
+      case Expression.Int64(lit) => Set.empty
+      case Expression.BigInt(lit) => Set.empty
+      case Expression.Str(lit) => Set.empty
+      case Expression.Var(sym, tpe, loc) => Set.empty
+
+      case Expression.Closure(sym, freeVars, fnType, tpe, loc) =>
+        Set(ClosureInfo(sym, freeVars, tpe))
+
+      case Expression.ApplyClo(exp, args, tpe, loc) => args.foldLeft(visitExp(exp)) {
+        case (sacc, e) => sacc ++ visitExp(e)
+      }
+
+      case Expression.ApplyDef(sym, args, tpe, loc) => args.foldLeft(Set.empty[ClosureInfo]) {
+        case (sacc, e) => sacc ++ visitExp(e)
+      }
+
+      case Expression.ApplyCloTail(exp, args, tpe, loc) => args.foldLeft(visitExp(exp)) {
+        case (sacc, e) => sacc ++ visitExp(e)
+      }
+
+      case Expression.ApplyDefTail(sym, args, tpe, loc) => args.foldLeft(Set.empty[ClosureInfo]) {
+        case (sacc, e) => sacc ++ visitExp(e)
+      }
+
+      case Expression.ApplySelfTail(sym, fparams, args, tpe, loc) => args.foldLeft(Set.empty[ClosureInfo]) {
+        case (sacc, e) => sacc ++ visitExp(e)
+      }
+
+      case Expression.ApplyHook(hook, args, tpe, loc) => args.foldLeft(Set.empty[ClosureInfo]) {
+        case (sacc, e) => sacc ++ visitExp(e)
+      }
+
+      case Expression.Unary(sop, op, exp, tpe, loc) =>
+        visitExp(exp)
+
+      case Expression.Binary(sop, op, exp1, exp2, tpe, loc) =>
+        visitExp(exp1) ++ visitExp(exp2)
+
+      case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
+        visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
+
+      case Expression.Branch(exp, branches, tpe, loc) => branches.foldLeft(visitExp(exp)) {
+        case (sacc, (_, e)) => sacc ++ visitExp(e)
+      }
+      case Expression.JumpTo(sym, tpe, loc) => Set.empty
+
+      case Expression.Let(sym, exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2)
+      case Expression.LetRec(sym, exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2)
+
+      case Expression.Is(sym, tag, exp, loc) => visitExp(exp)
+      case Expression.Tag(sym, tag, exp, tpe, loc) => visitExp(exp)
+      case Expression.Untag(sym, tag, exp, tpe, loc) => visitExp(exp)
+
+      case Expression.Index(base, offset, tpe, loc) => visitExp(base)
+      case Expression.Tuple(elms, tpe, loc) => elms.foldLeft(Set.empty[ClosureInfo]) {
+        case (sacc, e) => sacc ++ visitExp(e)
+      }
+
+      case Expression.Ref(exp, tpe, loc) => visitExp(exp)
+      case Expression.Deref(exp, tpe, loc) => visitExp(exp)
+      case Expression.Assign(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2)
+
+      case Expression.Existential(fparam, exp, loc) => visitExp(exp)
+      case Expression.Universal(fparam, exp, loc) => visitExp(exp)
+
+      case Expression.NativeConstructor(constructor, args, tpe, loc) => args.foldLeft(Set.empty[ClosureInfo]) {
+        case (sacc, e) => sacc ++ visitExp(e)
+      }
+      case Expression.NativeField(field, tpe, loc) => Set.empty
+      case Expression.NativeMethod(method, args, tpe, loc) => args.foldLeft(Set.empty[ClosureInfo]) {
+        case (sacc, e) => sacc ++ visitExp(e)
+      }
+
+      case Expression.UserError(tpe, loc) => Set.empty
+      case Expression.MatchError(tpe, loc) => Set.empty
+      case Expression.SwitchError(tpe, loc) => Set.empty
+    }
+
+
+    // TODO: Look for closures in other places.
+
+    // Visit every definition.
+    root.defs.foldLeft(Set.empty[ClosureInfo]) {
+      case (sacc, (sym, defn)) => sacc ++ visitExp(defn.exp)
+    }
+  }
+
+  /**
+    * Returns the namespace info of the given definition symbol `sym`.
+    */
+  def getNamespace(sym: Symbol.DefnSym)(implicit root: Root, flix: Flix): NamespaceInfo = {
+    NamespaceInfo(sym.namespace, Map.empty) // TODO.
+  }
+
   /**
     * Returns the set of namespaces in the given AST `root`.
     */
@@ -647,13 +759,6 @@ object JvmOps {
     root.defs.groupBy(_._1.namespace).map {
       case (ns, defs) => NamespaceInfo(ns, defs)
     }.toSet
-  }
-
-  /**
-    * Returns the namespace info of the given definition symbol `sym`.
-    */
-  def getNamespace(sym: Symbol.DefnSym)(implicit root: Root, flix: Flix): NamespaceInfo = {
-    NamespaceInfo(sym.namespace, Map.empty) // TODO.
   }
 
   /**
