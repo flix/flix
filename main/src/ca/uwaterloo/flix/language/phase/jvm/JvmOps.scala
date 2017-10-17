@@ -190,9 +190,9 @@ object JvmOps {
     *
     * For example,
     *
-    * Color                 =>      Color$
-    * Option[Int]           =>      Option$Int
-    * Result[Char, Int]     =>      Result$Char$Int
+    * Color                 =>      IColor
+    * Option[Int]           =>      IOption$Int
+    * Result[Char, Int]     =>      IResult$Char$Int
     *
     * NB: The given type `tpe` must be an enum type.
     */
@@ -208,7 +208,7 @@ object JvmOps {
     val args = tpe.typeArguments.map(tpe => stringify(getErasedType(tpe)))
 
     // The JVM name is of the form Option$ or Option$Int
-    val name = if (args.isEmpty) sym.name + "$" else sym.name + "$" + args.mkString("$")
+    val name = if (args.isEmpty) "I" + sym.name else "I" + sym.name + "$" + args.mkString("$")
 
     // The enum resides in its namespace package.
     JvmType.Reference(JvmName(sym.namespace, name))
