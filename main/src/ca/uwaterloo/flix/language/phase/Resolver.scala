@@ -251,6 +251,10 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
               ResolvedAst.Expression.Hook(hook, hook.tpe, loc)
           }
 
+        case NamedAst.Expression.Hole(name, tpe, loc) =>
+          val sym = Symbol.mkHoleSym(ns0, name)
+          ResolvedAst.Expression.Hole(sym, tpe, loc).toSuccess
+
         case NamedAst.Expression.Unit(loc) => ResolvedAst.Expression.Unit(loc).toSuccess
 
         case NamedAst.Expression.True(loc) => ResolvedAst.Expression.True(loc).toSuccess

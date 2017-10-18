@@ -164,6 +164,10 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
       */
     def checkPats(tast: TypedAst.Expression, root: TypedAst.Root)(implicit genSym: GenSym): Validation[TypedAst.Expression, CompilationError] = {
       tast match {
+        case Expression.Wild(_, _, _) => tast.toSuccess
+        case Expression.Var(_, _, _, _) => tast.toSuccess
+        case Expression.Def(_, _, _, _) => tast.toSuccess
+        case Expression.Hole(_, _, _, _) => tast.toSuccess
         case Expression.Unit(_) => tast.toSuccess
         case Expression.True(_) => tast.toSuccess
         case Expression.False(_) => tast.toSuccess
@@ -176,9 +180,6 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
         case Expression.Int64(_, _) => tast.toSuccess
         case Expression.BigInt(_, _) => tast.toSuccess
         case Expression.Str(_, _) => tast.toSuccess
-        case Expression.Wild(_, _, _) => tast.toSuccess
-        case Expression.Var(_, _, _, _) => tast.toSuccess
-        case Expression.Def(_, _, _, _) => tast.toSuccess
         case Expression.Hook(_, _, _, _) => tast.toSuccess
         case Expression.Lambda(_, body, _, _, _) => checkPats(body, root).map(const(tast))
         case Expression.Apply(exp, args, tpe, _, loc) => for {

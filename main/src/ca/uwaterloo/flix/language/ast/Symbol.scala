@@ -127,6 +127,13 @@ object Symbol {
   }
 
   /**
+    * Returns the hole symbol for the given name `ident` in the given namespace `ns`.
+    */
+  def mkHoleSym(ns: NName, ident: Ident): HoleSym = {
+    new HoleSym(ns.parts, ident.name, ident.loc)
+  }
+
+  /**
     * Returns the table symbol for the given name `ident` in the given namespace `ns`.
     */
   def mkTableSym(ns: NName, ident: Ident): TableSym = {
@@ -370,6 +377,29 @@ object Symbol {
       * Human readable representation.
       */
     override def toString: String = text + "$" + id
+  }
+
+  /**
+    * Hole Symbol.
+    */
+  final class HoleSym(val namespace: List[String], val name: String, val loc: SourceLocation) {
+    /**
+      * Returns `true` if this symbol is equal to `that` symbol.
+      */
+    override def equals(obj: scala.Any): Boolean = obj match {
+      case that: EnumSym => this.namespace == that.namespace && this.name == that.name
+      case _ => false
+    }
+
+    /**
+      * Returns the hash code of this symbol.
+      */
+    override val hashCode: Int = 7 * namespace.hashCode() + 11 * name.hashCode
+
+    /**
+      * Human readable representation.
+      */
+    override def toString: String = "?" + (if (namespace.isEmpty) name else namespace.mkString("/") + name)
   }
 
   /**

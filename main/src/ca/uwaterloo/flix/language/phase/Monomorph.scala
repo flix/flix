@@ -145,6 +145,17 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         * Specializes the given expression `e0` under the environment `env0`. w.r.t. the current substitution.
         */
       def visitExp(e0: Expression, env0: Map[Symbol.VarSym, Symbol.VarSym]): Expression = e0 match {
+        case Expression.Wild(tpe, eff, loc) => Expression.Wild(subst0(tpe), eff, loc)
+        case Expression.Var(sym, tpe, eff, loc) => Expression.Var(env0(sym), subst0(tpe), eff, loc)
+
+        case Expression.Def(sym, tpe, eff, loc) =>
+          /*
+           * !! This is where all the magic happens !!
+           */
+          val newSym = specializeSym(sym, subst0(tpe))
+          Expression.Def(newSym, subst0(tpe), eff, loc)
+
+        case Expression.Hole(sym, tpe, eff, loc) => Expression.Hole(sym, tpe, eff, loc)
         case Expression.Unit(loc) => Expression.Unit(loc)
         case Expression.True(loc) => Expression.True(loc)
         case Expression.False(loc) => Expression.False(loc)
@@ -157,16 +168,6 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         case Expression.Int64(lit, loc) => Expression.Int64(lit, loc)
         case Expression.BigInt(lit, loc) => Expression.BigInt(lit, loc)
         case Expression.Str(lit, loc) => Expression.Str(lit, loc)
-        case Expression.Wild(tpe, eff, loc) => Expression.Wild(subst0(tpe), eff, loc)
-        case Expression.Var(sym, tpe, eff, loc) => Expression.Var(env0(sym), subst0(tpe), eff, loc)
-
-        case Expression.Def(sym, tpe, eff, loc) =>
-          /*
-           * !! This is where all the magic happens !!
-           */
-          val newSym = specializeSym(sym, subst0(tpe))
-          Expression.Def(newSym, subst0(tpe), eff, loc)
-
         case Expression.Hook(hook, tpe, eff, loc) => Expression.Hook(hook, subst0(tpe), eff, loc)
 
         case Expression.Lambda(fparams, body, tpe, eff, loc) =>

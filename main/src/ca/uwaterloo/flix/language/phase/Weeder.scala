@@ -289,6 +289,9 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         case ParsedAst.Expression.QName(sp1, qname, sp2) =>
           WeededAst.Expression.VarOrDef(qname, mkSL(sp1, sp2)).toSuccess
 
+        case ParsedAst.Expression.Hole(sp1, name, sp2) =>
+          WeededAst.Expression.Hole(name, mkSL(sp1, sp2)).toSuccess
+
         case ParsedAst.Expression.Lit(sp1, lit, sp2) => toExp(lit)
 
         case ParsedAst.Expression.Apply(lambda, args, sp2) =>
@@ -1167,6 +1170,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.Wild(sp1, _) => sp1
     case ParsedAst.Expression.SName(sp1, _, _) => sp1
     case ParsedAst.Expression.QName(sp1, _, _) => sp1
+    case ParsedAst.Expression.Hole(sp1, _, _) => sp1
     case ParsedAst.Expression.Lit(sp1, _, _) => sp1
     case ParsedAst.Expression.Apply(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.Infix(e1, _, _, _) => leftMostSourcePosition(e1)

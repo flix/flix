@@ -23,6 +23,7 @@ import java.util.logging.{Level, Logger}
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{Symbol, Type}
 import ca.uwaterloo.flix.language.ast.TypedAst._
+import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.runtime.{Benchmarker, Model, Tester}
 import ca.uwaterloo.flix.util._
 import ca.uwaterloo.flix.util.tc.Show
@@ -92,7 +93,7 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
     */
   def loop(): Unit = {
     // Silence JLine warnings about terminal type.
-    Logger.getLogger("org.jline").setLevel(Level.OFF)
+    Logger.getLogger("org.jline.utils").setLevel(Level.OFF)
 
     // Initialize the terminal.
     implicit val terminal: Terminal = TerminalBuilder
@@ -167,9 +168,10 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
   private def execute(cmd: Command)(implicit terminal: Terminal): Unit = cmd match {
     case Command.Nop => // nop
     case Command.Eval(s) => execEval(s)
-    case Command.TypeOf(exp) => execTypeOf(exp)
-    case Command.KindOf(exp) => execKindOf(exp)
-    case Command.EffectOf(exp) => execEffectOf(exp)
+    case Command.TypeOf(e) => execTypeOf(e)
+    case Command.KindOf(e) => execKindOf(e)
+    case Command.EffectOf(e) => execEffectOf(e)
+    case Command.Hole(fqn) => execHole(fqn)
     case Command.Browse(ns) => execBrowse(ns)
     case Command.Doc(fqn) => execDoc(fqn)
     case Command.Search(s) => execSearch(s)
@@ -274,6 +276,13 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
     terminal.writer().print(vt.fmt)
   }
 
+  /**
+    * Shows the hole context of the given `fqn`.
+    */
+  private def execHole(fqn: String)(implicit terminal: Terminal, s: Show[Type]): Unit = {
+    // TODO
+    println(TypedAstOps.holesOf(root))
+  }
 
   /**
     * Executes the browse command.
@@ -597,6 +606,7 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
     w.println("  :type :t      <expr>            Shows the type of <expr>.")
     w.println("  :kind :k      <expr>            Shows the kind of <expr>.")
     w.println("  :effect :e    <expr>            Shows the effect of <expr>.")
+    w.println("  :hole         <fqn>             Shows the hole context of <fqn>.")
     w.println("  :browse       <ns>              Shows all entities in <ns>.")
     w.println("  :doc          <fqn>             Shows documentation for <fqn>.")
     w.println("  :search       <needle>          Shows all entities that match <needle>.")

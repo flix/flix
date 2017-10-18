@@ -340,6 +340,13 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
         NamedAst.Expression.Def(name, Type.freshTypeVar(), loc).toSuccess
 
       /*
+       * Holes.
+       */
+      case WeededAst.Expression.Hole(name, loc) =>
+        val tpe = Type.freshTypeVar()
+        NamedAst.Expression.Hole(name, tpe, loc).toSuccess
+
+      /*
        * Literals.
        */
       case WeededAst.Expression.Unit(loc) => NamedAst.Expression.Unit(loc).toSuccess
