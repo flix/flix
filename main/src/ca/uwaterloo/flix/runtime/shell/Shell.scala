@@ -459,6 +459,8 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
     this.flix.check() match {
       case Validation.Success(ast, _) =>
         this.root = ast
+        // Pretty print the holes (if any).
+        prettyPrintHoles()
       case Validation.Failure(errors) =>
         for (error <- errors) {
           terminal.writer().print(error.message.fmt)
@@ -726,6 +728,28 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
       vt << ", " << attr.name << ": " << Cyan(attr.tpe.show)
     }
     vt << ")" << NewLine
+  }
+
+  /**
+    * Pretty prints the holes in the program.
+    */
+  private def prettyPrintHoles()(implicit terminal: Terminal): Unit = {
+    // Print holes, if any.
+    val holes = TypedAstOps.holesOf(root)
+    val vt = new VirtualTerminal
+
+    // Check if any holes are present.
+    if (holes.nonEmpty) {
+      vt << Bold("Holes:") << Indent << NewLine
+      // Print each hole and its type.
+      for ((sym, ctx) <- holes) {
+        vt << Blue(sym.toString) << ": " << Cyan(ctx.tpe.show) << NewLine
+      }
+      vt << Dedent << NewLine
+    }
+
+    // Print the result to the terminal.
+    terminal.writer().print(vt.fmt)
   }
 
   /**
