@@ -134,6 +134,14 @@ object Symbol {
   }
 
   /**
+    * Returns the hole symbol for the given fully qualified name.
+    */
+  def mkHoleSym(fqn: String): HoleSym = split(fqn) match {
+    case None => new HoleSym(Nil, fqn, SourceLocation.Unknown)
+    case Some((ns, name)) => new HoleSym(ns, name, SourceLocation.Unknown)
+  }
+
+  /**
     * Returns the table symbol for the given name `ident` in the given namespace `ns`.
     */
   def mkTableSym(ns: NName, ident: Ident): TableSym = {
@@ -387,7 +395,7 @@ object Symbol {
       * Returns `true` if this symbol is equal to `that` symbol.
       */
     override def equals(obj: scala.Any): Boolean = obj match {
-      case that: EnumSym => this.namespace == that.namespace && this.name == that.name
+      case that: HoleSym => this.namespace == that.namespace && this.name == that.name
       case _ => false
     }
 

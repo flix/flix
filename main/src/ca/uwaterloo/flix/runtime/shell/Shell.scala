@@ -21,6 +21,7 @@ import java.util.concurrent.Executors
 import java.util.logging.{Level, Logger}
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.Ast.HoleContext
 import ca.uwaterloo.flix.language.ast.{Symbol, Type}
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
@@ -280,8 +281,35 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
     * Shows the hole context of the given `fqn`.
     */
   private def execHole(fqn: String)(implicit terminal: Terminal, s: Show[Type]): Unit = {
-    // TODO
-    println(TypedAstOps.holesOf(root))
+    // Compute the hole symbol.
+    val sym = Symbol.mkHoleSym(fqn)
+
+    // Retrieve all the holes in the program.
+    val holes = TypedAstOps.holesOf(root)
+
+    // Lookup the hole symbol.
+    holes.get(sym) match {
+      case None =>
+        // Case 1: Hole not found.
+        terminal.writer().println(s"Undefined hole: '$fqn'.")
+      case Some(HoleContext(_, holeType, env)) =>
+        // Case 2: Hole found.
+        val vt = new VirtualTerminal
+
+        // Iterate through the premises, i.e. the variable symbols in scope.
+        for ((varSym, varType) <- env) {
+          vt << Blue(varSym.text) << ": " << Cyan(varType.show) << " " * 6
+        }
+
+        // Print the divider.
+        vt << NewLine << "-" * 80 << NewLine
+
+        // Print the goal.
+        vt << Blue(sym.toString) << ": " << Cyan(holeType.show) << NewLine
+
+        // Print the result to the terminal.
+        terminal.writer().print(vt.fmt)
+    }
   }
 
   /**
@@ -745,7 +773,6 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
       for ((sym, ctx) <- holes) {
         vt << Blue(sym.toString) << ": " << Cyan(ctx.tpe.show) << NewLine
       }
-      vt << Dedent << NewLine
     }
 
     // Print the result to the terminal.
