@@ -768,11 +768,12 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
 
     // Check if any holes are present.
     if (holes.nonEmpty) {
-      vt << Bold("Holes:") << Indent << NewLine
+      vt << Bold("Holes:") << Indent
       // Print each hole and its type.
       for ((sym, ctx) <- holes) {
-        vt << Blue(sym.toString) << ": " << Cyan(ctx.tpe.show) << NewLine
+        vt << NewLine << Blue(sym.toString) << ": " << Cyan(ctx.tpe.show)
       }
+      vt << Dedent << NewLine
     }
 
     // Print the result to the terminal.
