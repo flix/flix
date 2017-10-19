@@ -4,7 +4,7 @@ import java.rmi.MarshalledObject
 
 import ca.uwaterloo.flix.language.ast.Ast.HoleContext
 import ca.uwaterloo.flix.language.ast.{Symbol, Type}
-import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, MatchRule, Pattern, Root}
+import ca.uwaterloo.flix.language.ast.TypedAst._
 
 object TypedAstOps {
 
@@ -38,7 +38,7 @@ object TypedAstOps {
     /**
       * Finds the holes and hole contexts in the given expression `exp0`.
       */
-    def visitExp(exp0: Expression, env0: Set[(Symbol.VarSym, Type)]): Map[Symbol.HoleSym, HoleContext] = exp0 match {
+    def visitExp(exp0: Expression, env0: Map[Symbol.VarSym, Type]): Map[Symbol.HoleSym, HoleContext] = exp0 match {
       case Expression.Wild(tpe, eff, loc) => Map.empty
       case Expression.Var(sym, tpe, eff, loc) => Map.empty
       case Expression.Def(sym, tpe, eff, loc) => Map.empty
@@ -143,32 +143,40 @@ object TypedAstOps {
     /**
       * Returns the set of variable symbols bound by the given pattern `pat0`.
       */
-    def binds(pat0: Pattern): Set[(Symbol.VarSym, Type)] = pat0 match {
-      case Pattern.Wild(tpe, loc) => Set.empty
-      case Pattern.Var(sym, tpe, loc) => Set((sym, tpe))
-      case Pattern.Unit(loc) => Set.empty
-      case Pattern.True(loc) => Set.empty
-      case Pattern.False(loc) => Set.empty
-      case Pattern.Char(lit, loc) => Set.empty
-      case Pattern.Float32(lit, loc) => Set.empty
-      case Pattern.Float64(lit, loc) => Set.empty
-      case Pattern.Int8(lit, loc) => Set.empty
-      case Pattern.Int16(lit, loc) => Set.empty
-      case Pattern.Int32(lit, loc) => Set.empty
-      case Pattern.Int64(lit, loc) => Set.empty
-      case Pattern.BigInt(lit, loc) => Set.empty
-      case Pattern.Str(lit, loc) => Set.empty
+    def binds(pat0: Pattern): Map[Symbol.VarSym, Type] = pat0 match {
+      case Pattern.Wild(tpe, loc) => Map.empty
+      case Pattern.Var(sym, tpe, loc) => Map(sym -> tpe)
+      case Pattern.Unit(loc) => Map.empty
+      case Pattern.True(loc) => Map.empty
+      case Pattern.False(loc) => Map.empty
+      case Pattern.Char(lit, loc) => Map.empty
+      case Pattern.Float32(lit, loc) => Map.empty
+      case Pattern.Float64(lit, loc) => Map.empty
+      case Pattern.Int8(lit, loc) => Map.empty
+      case Pattern.Int16(lit, loc) => Map.empty
+      case Pattern.Int32(lit, loc) => Map.empty
+      case Pattern.Int64(lit, loc) => Map.empty
+      case Pattern.BigInt(lit, loc) => Map.empty
+      case Pattern.Str(lit, loc) => Map.empty
       case Pattern.Tag(sym, tag, pat, tpe, loc) => binds(pat)
-      case Pattern.Tuple(elms, tpe, loc) => elms.foldLeft(Set.empty[(Symbol.VarSym, Type)]) {
+      case Pattern.Tuple(elms, tpe, loc) => elms.foldLeft(Map.empty[Symbol.VarSym, Type]) {
         case (macc, elm) => macc ++ binds(elm)
       }
     }
+
+    /**
+      * Returns the set of variables bound by the given list of formal parameters `fparams`.
+      */
+    def getEnvFromParams(fparams: List[FormalParam]): Map[Symbol.VarSym, Type] =
+      fparams.foldLeft(Map.empty[Symbol.VarSym, Type]) {
+        case (macc, FormalParam(sym, mod, tpe, loc)) => macc + (sym -> tpe)
+      }
 
     // TODO: Need release flag?
 
     // Visit every definition.
     root.defs.foldLeft(Map.empty[Symbol.HoleSym, HoleContext]) {
-      case (macc, (sym, defn)) => macc ++ visitExp(defn.exp, Set.empty)
+      case (macc, (sym, defn)) => macc ++ visitExp(defn.exp, getEnvFromParams(defn.fparams))
     }
   }
 

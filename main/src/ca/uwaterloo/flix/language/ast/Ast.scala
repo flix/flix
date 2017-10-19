@@ -250,9 +250,9 @@ object Ast {
   }
 
   /**
-    * A hole context consists of a hole symbol and a set of local variables in scope.
+    * A hole context consists of a hole symbol and its type together with the local environment.
     */
-  case class HoleContext(sym: Symbol.HoleSym, tpe: Type, env: Set[(Symbol.VarSym, Type)])
+  case class HoleContext(sym: Symbol.HoleSym, tpe: Type, env: Map[Symbol.VarSym, Type])
 
   /**
     * Represents that the annotated element is introduced by the class `clazz`.
