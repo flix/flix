@@ -300,6 +300,24 @@ object WeederError {
   }
 
   /**
+    * An error raised to indicate the presence of a hole which is illegal in release mode.
+    *
+    * @param loc the location where the illegal expression occurs.
+    */
+  case class IllegalHole(loc: SourceLocation) extends WeederError {
+    val source: Source = loc.source
+    val message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Hole expressions are not allowed in release mode." << NewLine
+      vt << NewLine
+      vt << Code(loc, "illegal hole.") << NewLine
+      vt << NewLine
+      vt << Underline("Tip:") << " Implement the hole or disable release mode." << NewLine
+    }
+  }
+
+  /**
     * An error raised to indicate that an index declaration defines an index on zero attributes.
     *
     * @param loc the location where the illegal index occurs.

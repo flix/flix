@@ -402,7 +402,7 @@ object Symbol {
     /**
       * Returns the hash code of this symbol.
       */
-    override val hashCode: Int = 7 * namespace.hashCode() + 11 * name.hashCode
+    override val hashCode: Int = 7 * namespace.hashCode() + 11 * name.hashCode()
 
     /**
       * Human readable representation.

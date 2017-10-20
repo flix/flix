@@ -83,6 +83,7 @@ object Main {
       optimizations = optimizations,
       monitor = cmdOpts.monitor,
       quickchecker = cmdOpts.quickchecker,
+      release = cmdOpts.release,
       safe = cmdOpts.xsafe,
       timeout = cmdOpts.timeout,
       threads = if (cmdOpts.threads == -1) Options.Default.threads else cmdOpts.threads,
@@ -204,6 +205,7 @@ object Main {
                      pipe: Boolean = false,
                      print: Seq[String] = Seq(),
                      quickchecker: Boolean = false,
+                     release: Boolean = false,
                      threads: Int = -1,
                      test: Boolean = false,
                      timeout: Duration = Duration.Inf,
@@ -283,6 +285,10 @@ object Main {
       // Quickchecker.
       opt[Unit]("quickchecker").action((_, c) => c.copy(quickchecker = true)).
         text("enables the quickchecker.")
+
+      // Release.
+      opt[Unit]("release").action((_, c) => c.copy(release = true)).
+        text("enables the release mode.")
 
       // Test.
       opt[Unit]("test").action((_, c) => c.copy(test = true)).

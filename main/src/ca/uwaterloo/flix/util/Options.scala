@@ -32,6 +32,7 @@ object Options {
     monitor = false,
     optimizations = Optimization.All,
     quickchecker = false,
+    release = false,
     safe = false,
     test = false,
     timeout = Duration.Inf,
@@ -57,6 +58,7 @@ object Options {
   * @param invariants   enables checking of compiler invariants.
   * @param monitor      enables the debugger and profiler.
   * @param quickchecker enables the quickchecker.
+  * @param release      enables release mode.
   * @param test         enables test mode.
   * @param safe         disables unsafe operations.
   * @param timeout      selects the solver timeout.
@@ -73,6 +75,7 @@ case class Options(core: Boolean,
                    optimizations: Set[Optimization],
                    monitor: Boolean,
                    quickchecker: Boolean,
+                   release: Boolean,
                    safe: Boolean,
                    test: Boolean,
                    timeout: Duration,

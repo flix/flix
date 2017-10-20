@@ -1,7 +1,5 @@
 package ca.uwaterloo.flix.language.ast.ops
 
-import java.rmi.MarshalledObject
-
 import ca.uwaterloo.flix.language.ast.Ast.HoleContext
 import ca.uwaterloo.flix.language.ast.{Symbol, Type}
 import ca.uwaterloo.flix.language.ast.TypedAst._
@@ -33,7 +31,6 @@ object TypedAstOps {
   /**
     * Returns a map of the holes in the given ast `root`.
     */
-  // TODO: What about similarly named holes?
   def holesOf(root: Root): Map[Symbol.HoleSym, HoleContext] = {
     /**
       * Finds the holes and hole contexts in the given expression `exp0`.
@@ -171,8 +168,6 @@ object TypedAstOps {
       fparams.foldLeft(Map.empty[Symbol.VarSym, Type]) {
         case (macc, FormalParam(sym, mod, tpe, loc)) => macc + (sym -> tpe)
       }
-
-    // TODO: Need release flag?
 
     // Visit every definition.
     root.defs.foldLeft(Map.empty[Symbol.HoleSym, HoleContext]) {

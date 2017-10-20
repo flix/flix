@@ -290,7 +290,14 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           WeededAst.Expression.VarOrDef(qname, mkSL(sp1, sp2)).toSuccess
 
         case ParsedAst.Expression.Hole(sp1, name, sp2) =>
-          WeededAst.Expression.Hole(name, mkSL(sp1, sp2)).toSuccess
+          val loc = mkSL(sp1, sp2)
+          /*
+           * Checks for `IllegalHole`.
+           */
+          if (flix.options.release) {
+            return IllegalHole(loc).toFailure
+          }
+          WeededAst.Expression.Hole(name, loc).toSuccess
 
         case ParsedAst.Expression.Lit(sp1, lit, sp2) => toExp(lit)
 
