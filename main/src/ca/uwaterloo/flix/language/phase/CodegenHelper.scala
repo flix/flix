@@ -667,6 +667,7 @@ object CodegenHelper {
       case Expression.BigInt(lit) => Set.empty
       case Expression.Str(lit) => Set.empty
       case Expression.Var(sym, tpe, loc) => Set.empty
+      case Expression.HoleError(sym, tpe, loc) => Set.empty
       case Expression.Closure(ref, freeVars, _, tpe, loc) => Set(tpe)
       case Expression.ApplyClo(exp, args, tpe, loc) => visit(exp) ++ args.flatMap(visit)
       case Expression.ApplyDef(name, args, tpe, loc) => args.flatMap(visit).toSet
@@ -761,6 +762,7 @@ object CodegenHelper {
     case Expression.NativeField(field, tpe, loc) => Nil
     case Expression.NativeMethod(method, args, tpe, loc) => args.flatMap(findEnumCases)
     case Expression.UserError(tpe, loc) => Nil
+    case Expression.HoleError(sym, tpe, loc) => Nil
     case Expression.MatchError(tpe, loc) => Nil
     case Expression.SwitchError(tpe, loc) => Nil
   }

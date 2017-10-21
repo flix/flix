@@ -51,6 +51,11 @@ object Command {
   case class EffectOf(exp: String) extends Command
 
   /**
+    * Shows the context for the given hole `fqn`.
+    */
+  case class Hole(fqn: String) extends Command
+
+  /**
     * Shows the definitions, relations, and lattices in the given namespace.
     */
   case class Browse(ns: Option[String]) extends Command
@@ -171,7 +176,7 @@ object Command {
     }
 
     //
-    // Kind
+    // Effect
     //
     if (input.startsWith(":effect ")) {
       val exp = input.substring(":effect ".length).trim
@@ -180,6 +185,14 @@ object Command {
     if (input.startsWith(":e ")) {
       val exp = input.substring(":e ".length).trim
       return Command.EffectOf(exp)
+    }
+
+    //
+    // Hole
+    //
+    if (input.startsWith(":hole ")) {
+      val fqn = input.substring(":hole ".length).trim
+      return Command.Hole(fqn)
     }
 
     //

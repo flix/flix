@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.ast.Ast.Polarity
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.WeederError
 import ca.uwaterloo.flix.language.errors.WeederError._
-import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
+import ca.uwaterloo.flix.util.{CompilationMode, InternalCompilerException, Validation}
 import ca.uwaterloo.flix.util.Validation._
 
 import scala.collection.immutable.Seq
@@ -288,6 +288,16 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
         case ParsedAst.Expression.QName(sp1, qname, sp2) =>
           WeededAst.Expression.VarOrDef(qname, mkSL(sp1, sp2)).toSuccess
+
+        case ParsedAst.Expression.Hole(sp1, name, sp2) =>
+          val loc = mkSL(sp1, sp2)
+          /*
+           * Checks for `IllegalHole`.
+           */
+          if (flix.options.mode == CompilationMode.Release) {
+            return IllegalHole(loc).toFailure
+          }
+          WeededAst.Expression.Hole(name, loc).toSuccess
 
         case ParsedAst.Expression.Lit(sp1, lit, sp2) => toExp(lit)
 
@@ -1167,6 +1177,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.Wild(sp1, _) => sp1
     case ParsedAst.Expression.SName(sp1, _, _) => sp1
     case ParsedAst.Expression.QName(sp1, _, _) => sp1
+    case ParsedAst.Expression.Hole(sp1, _, _) => sp1
     case ParsedAst.Expression.Lit(sp1, _, _) => sp1
     case ParsedAst.Expression.Apply(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.Infix(e1, _, _, _) => leftMostSourcePosition(e1)

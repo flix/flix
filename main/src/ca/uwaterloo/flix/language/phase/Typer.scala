@@ -423,6 +423,12 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           unifyM(tvar, Scheme.instantiate(defn.sc), loc)
 
         /*
+         * Hole expression.
+         */
+        case ResolvedAst.Expression.Hole(sym, tpe, loc) =>
+          liftM(tpe)
+
+        /*
          * Hook expression.
          */
         case ResolvedAst.Expression.Hook(hook, tpe, loc) =>
@@ -832,6 +838,12 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
          */
         case ResolvedAst.Expression.Def(sym, tvar, loc) =>
           TypedAst.Expression.Def(sym, subst0(tvar), Eff.Bot, loc)
+
+        /*
+         * Hole expression.
+         */
+        case ResolvedAst.Expression.Hole(sym, tpe, loc) =>
+          TypedAst.Expression.Hole(sym, subst0(tpe), Eff.Bot, loc)
 
         /*
          * Hook expression.

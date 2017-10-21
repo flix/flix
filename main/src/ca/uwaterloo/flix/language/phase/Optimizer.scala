@@ -328,6 +328,7 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       // Error Expressions.
       //
       case Expression.UserError(tpe, loc) => Expression.UserError(adjustType(tpe), loc)
+      case Expression.HoleError(sym, tpe, eff, loc) => Expression.HoleError(sym, adjustType(tpe), eff, loc)
       case Expression.MatchError(tpe, loc) => Expression.MatchError(adjustType(tpe), loc)
       case Expression.SwitchError(tpe, loc) => Expression.SwitchError(adjustType(tpe), loc)
 

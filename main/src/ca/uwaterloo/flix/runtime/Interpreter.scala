@@ -207,6 +207,7 @@ object Interpreter {
     // Error expressions.
     //
     case Expression.UserError(_, loc) => throw UserException("User exception.", loc)
+    case Expression.HoleError(sym, _, loc) => throw HoleException(sym.toString, loc)
     case Expression.MatchError(_, loc) => throw MatchException("Non-exhaustive match expression.", loc)
     case Expression.SwitchError(_, loc) => throw SwitchException("Non-exhaustive switch expression.", loc)
 

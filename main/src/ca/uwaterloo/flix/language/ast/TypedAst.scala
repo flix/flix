@@ -148,6 +148,8 @@ object TypedAst {
 
     case class Def(sym: Symbol.DefnSym, tpe: Type, eff: Eff, loc: SourceLocation) extends TypedAst.Expression
 
+    case class Hole(sym: Symbol.HoleSym, tpe: Type, eff: Eff, loc: SourceLocation) extends TypedAst.Expression
+
     case class Hook(hook: Ast.Hook, tpe: Type, eff: Eff, loc: SourceLocation) extends TypedAst.Expression
 
     case class Lambda(fparams: List[TypedAst.FormalParam], exp: TypedAst.Expression, tpe: Type, eff: Eff, loc: SourceLocation) extends TypedAst.Expression

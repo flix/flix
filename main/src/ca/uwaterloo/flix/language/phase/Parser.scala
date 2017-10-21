@@ -517,7 +517,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Primary: Rule1[ParsedAst.Expression] = rule {
       LetRec | LetMatch | IfThenElse | Match | LambdaMatch | Switch | Unsafe | Native | Lambda | Tuple | FNil | FSet | FMap | Literal |
-        Existential | Universal | UnaryLambda | QName | Wild | Tag | SName | UserError
+        Existential | Universal | UnaryLambda | QName | Wild | Tag | SName | Hole | UserError
     }
 
     def Literal: Rule1[ParsedAst.Expression.Lit] = rule {
@@ -638,6 +638,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def QName: Rule1[ParsedAst.Expression.QName] = rule {
       SP ~ Names.QualifiedDefinition ~ SP ~> ParsedAst.Expression.QName
+    }
+
+    def Hole: Rule1[ParsedAst.Expression.Hole] = rule {
+      SP ~ atomic("?") ~ Names.Hole ~ SP ~> ParsedAst.Expression.Hole
     }
 
     def UnaryLambda: Rule1[ParsedAst.Expression.Lambda] = rule {
@@ -1032,6 +1036,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Effect: Rule1[Name.Ident] = UpperCaseName
+
+    def Hole: Rule1[Name.Ident] = rule {
+      LowerCaseName
+    }
 
     def QualifiedDefinition: Rule1[Name.QName] = LowerCaseQName // TODO: Greek letters?
 

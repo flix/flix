@@ -158,7 +158,6 @@ object Ast {
   case class Documentation(text: String, loc: SourceLocation)
 
 
-
   /**
     * A common super-type for hooks.
     */
@@ -249,6 +248,11 @@ object Ast {
     case object Negative extends Polarity
 
   }
+
+  /**
+    * A hole context consists of a hole symbol and its type together with the local environment.
+    */
+  case class HoleContext(sym: Symbol.HoleSym, tpe: Type, env: Map[Symbol.VarSym, Type])
 
   /**
     * Represents that the annotated element is introduced by the class `clazz`.

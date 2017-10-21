@@ -185,7 +185,9 @@ object Uncurrier extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         case NativeConstructor(constructor, args, tpe, loc) => NativeConstructor(constructor, args.map(a => substitute(a, env0)), tpe, loc)
         case e: NativeField => e
         case NativeMethod(method, args, tpe, loc) => NativeMethod(method, args.map(a => substitute(a, env0)), tpe, loc)
+
         case UserError(tpe, loc) => exp0
+        case HoleError(sym, tpe, eff, loc) => HoleError(sym, tpe, eff, loc)
         case MatchError(tpe, loc) => exp0
         case SwitchError(tpe, loc) => exp0
 
@@ -275,6 +277,7 @@ object Uncurrier extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         uncurry(_, newSyms, root)
       }, tpe, loc)
       case UserError(tpe, loc) => exp0
+      case HoleError(sym, tpe, eff, loc) => exp0
       case MatchError(tpe, loc) => exp0
       case SwitchError(tpe, loc) => exp0
       case ApplyClo(exp, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
@@ -356,6 +359,7 @@ object Uncurrier extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
           case _: NativeField => 0
           case _: NativeMethod => 0
           case _: UserError => 0
+          case _: HoleError => 0
           case _: MatchError => 0
           case _: SwitchError => 0
           case _: ApplyClo => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")

@@ -172,10 +172,13 @@ object ClosureConv {
       Expression.Existential(params, convert(e), loc)
     case Expression.Universal(params, e, loc) =>
       Expression.Universal(params, convert(e), loc)
+
     case Expression.NativeConstructor(constructor, args, tpe, loc) => exp0
     case Expression.NativeField(field, tpe, loc) => exp0
     case Expression.NativeMethod(method, args, tpe, loc) => exp0
+
     case Expression.UserError(tpe, loc) => exp0
+    case Expression.HoleError(sym, tpe, eff, loc) => exp0
     case Expression.MatchError(tpe, loc) => exp0
     case Expression.SwitchError(tpe, loc) => exp0
 
@@ -208,7 +211,7 @@ object ClosureConv {
     case Expression.BigInt(lit) => mutable.LinkedHashSet.empty
     case Expression.Str(lit) => mutable.LinkedHashSet.empty
     case Expression.Var(sym, tpe, loc) => mutable.LinkedHashSet((sym, tpe))
-    case Expression.Def(name, tpe, loc) => mutable.LinkedHashSet.empty
+    case Expression.Def(sym, tpe, loc) => mutable.LinkedHashSet.empty
     case Expression.Lambda(args, body, tpe, loc) =>
       val bound = args.map(_.sym)
       freeVariables(body).filterNot { v => bound.contains(v._1) }
@@ -246,7 +249,9 @@ object ClosureConv {
     case Expression.NativeConstructor(constructor, args, tpe, loc) => mutable.LinkedHashSet.empty ++ args.flatMap(freeVariables)
     case Expression.NativeField(field, tpe, loc) => mutable.LinkedHashSet.empty
     case Expression.NativeMethod(method, args, tpe, loc) => mutable.LinkedHashSet.empty ++ args.flatMap(freeVariables)
+
     case Expression.UserError(tpe, loc) => mutable.LinkedHashSet.empty
+    case Expression.HoleError(sym, tpe, eff, loc) => mutable.LinkedHashSet.empty
     case Expression.MatchError(tpe, loc) => mutable.LinkedHashSet.empty
     case Expression.SwitchError(tpe, loc) => mutable.LinkedHashSet.empty
 
@@ -281,7 +286,7 @@ object ClosureConv {
         case None => Expression.Var(sym, tpe, loc)
         case Some(newSym) => Expression.Var(newSym, tpe, loc)
       }
-      case Expression.Def(name, tpe, loc) => e
+      case Expression.Def(sym, tpe, loc) => e
       case Expression.Lambda(fparams, exp, tpe, loc) =>
         val fs = fparams.map(fparam => replace(fparam, subst))
         val e = visit(exp)
@@ -379,7 +384,9 @@ object ClosureConv {
       case Expression.NativeMethod(method, args, tpe, loc) =>
         val es = args map visit
         Expression.NativeMethod(method, es, tpe, loc)
+
       case Expression.UserError(tpe, loc) => e
+      case Expression.HoleError(sym, tpe, eff, loc) => e
       case Expression.MatchError(tpe, loc) => e
       case Expression.SwitchError(tpe, loc) => e
 

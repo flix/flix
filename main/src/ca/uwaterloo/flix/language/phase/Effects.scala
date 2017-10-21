@@ -137,6 +137,11 @@ object Effects extends Phase[Root, Root] {
           Expression.Var(sym, tpe, eff, loc).toSuccess
 
         /**
+          * Hole Expression.
+          */
+        case Expression.Hole(sym, tpe, eff, loc) => ??? // TODO
+
+        /**
           * Ref Expression.
           */
         case Expression.Def(sym, tpe, _, loc) =>

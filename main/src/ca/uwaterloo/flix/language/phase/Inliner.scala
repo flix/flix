@@ -161,6 +161,7 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.NativeMethod(method, args, tpe, loc) =>
         Expression.NativeMethod(method, args.map(visit), tpe, loc)
       case Expression.UserError(_, _) => exp0
+      case Expression.HoleError(_, _, _, _) => exp0
       case Expression.MatchError(_, _) => exp0
       case Expression.SwitchError(_, _) => exp0
       /* Error */
@@ -251,7 +252,9 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     case Expression.NativeField(_, _, _) => exp0
     case Expression.NativeMethod(method, args, tpe, loc) =>
       Expression.NativeMethod(method, args.map(renameAndSubstitute(_, env0)), tpe, loc)
+
     case Expression.UserError(_, _) => exp0
+    case Expression.HoleError(_, _, _, _) => exp0
     case Expression.MatchError(_, _) => exp0
     case Expression.SwitchError(_, _) => exp0
 
@@ -421,6 +424,7 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     // Errors are atomic.
     //
     case Expression.UserError(tpe, loc) => true
+    case Expression.HoleError(sym, tpe, eff, loc) => true
     case Expression.MatchError(tpe, loc) => true
     case Expression.SwitchError(tpe, loc) => true
 

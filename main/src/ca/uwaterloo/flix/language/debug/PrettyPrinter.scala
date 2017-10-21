@@ -59,6 +59,7 @@ object PrettyPrinter {
         case Expression.Int64(lit) => vt.text(lit.toString).text("i64")
         case Expression.BigInt(lit) => vt.text(lit.toString()).text("ii")
         case Expression.Str(lit) => vt.text("\"").text(lit).text("\"")
+
         case Expression.Var(sym, tpe, loc) => fmtSym(sym, vt)
         case Expression.Def(sym, tpe, loc) => fmtSym(sym, vt)
 
@@ -294,6 +295,7 @@ object PrettyPrinter {
           vt.text(")")
 
         case Expression.UserError(tpe, loc) => vt << Red("UserError")
+        case Expression.HoleError(sym, tpe, eff, loc) => Red("HoleError")
         case Expression.MatchError(tpe, loc) => vt << Red("MatchError")
         case Expression.SwitchError(tpe, loc) => vt << Red("SwitchError")
       }

@@ -29,6 +29,7 @@ object Options {
     evaluation = Evaluation.Compiled,
     impure = false,
     invariants = false,
+    mode = CompilationMode.Development,
     monitor = false,
     optimizations = Optimization.All,
     quickchecker = false,
@@ -55,6 +56,7 @@ object Options {
   * @param evaluation   selects the evaluation strategy.
   * @param impure       enables impure functions.
   * @param invariants   enables checking of compiler invariants.
+  * @param mode         the compilation mode.
   * @param monitor      enables the debugger and profiler.
   * @param quickchecker enables the quickchecker.
   * @param test         enables test mode.
@@ -71,6 +73,7 @@ case class Options(core: Boolean,
                    impure: Boolean,
                    invariants: Boolean,
                    optimizations: Set[Optimization],
+                   mode: CompilationMode,
                    monitor: Boolean,
                    quickchecker: Boolean,
                    safe: Boolean,
@@ -178,5 +181,25 @@ object Optimization {
     * Enables compilation of curried functions into uncurried functions.
     */
   case object Uncurrying extends Optimization
+
+}
+
+/**
+  * A common super-type for the compilation mode.
+  */
+sealed trait CompilationMode
+
+object CompilationMode {
+
+  /**
+    * Enables the development mode of the compiler.
+    */
+  case object Development extends CompilationMode
+
+
+  /**
+    * Enables the release mode of the compiler.
+    */
+  case object Release extends CompilationMode
 
 }

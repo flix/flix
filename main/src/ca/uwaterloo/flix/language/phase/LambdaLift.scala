@@ -98,7 +98,7 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.BigInt(lit) => e
       case Expression.Str(lit) => e
       case Expression.Var(sym, tpe, loc) => e
-      case Expression.Def(name, tpe, loc) => e
+      case Expression.Def(sym, tpe, loc) => e
 
       case Expression.Lambda(fparams, body, tpe, loc) =>
         // Lift the lambda to a top-level definition, and replacing the Lambda expression with a Ref.
@@ -187,7 +187,9 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.NativeMethod(method, args, tpe, loc) =>
         val es = args.map(e => visit(e))
         Expression.NativeMethod(method, es, tpe, loc)
+
       case Expression.UserError(tpe, loc) => e
+      case Expression.HoleError(sym, tpe, eff, loc) => e
       case Expression.MatchError(tpe, loc) => e
       case Expression.SwitchError(tpe, loc) => e
 

@@ -360,6 +360,15 @@ object ParsedAst {
     case class QName(sp1: SourcePosition, name: Name.QName, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
+      * Hole Expression.
+      *
+      * @param sp1   the position of the first character in the expression
+      * @param ident the name of the hole.
+      * @param sp2   the position of the last character in the expression.
+      */
+    case class Hole(sp1: SourcePosition, ident: Name.Ident, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
       * Literal Expression.
       *
       * @param sp1 the position of the first character in the expression.

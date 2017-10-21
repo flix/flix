@@ -80,6 +80,10 @@ object Synthesize extends Phase[Root, Root] {
       * Rewrites equality operations to call generated equality functions.
       */
     def visitExp(exp0: Expression): Expression = exp0 match {
+      case Expression.Wild(tpe, eff, loc) => exp0
+      case Expression.Var(sym, tpe, eff, loc) => exp0
+      case Expression.Def(sym, tpe, eff, loc) => exp0
+      case Expression.Hole(sym, tpe, eff, loc) => exp0
       case Expression.Unit(loc) => exp0
       case Expression.True(loc) => exp0
       case Expression.False(loc) => exp0
@@ -92,9 +96,6 @@ object Synthesize extends Phase[Root, Root] {
       case Expression.Int64(lit, loc) => exp0
       case Expression.BigInt(lit, loc) => exp0
       case Expression.Str(lit, loc) => exp0
-      case Expression.Wild(tpe, eff, loc) => exp0
-      case Expression.Var(sym, tpe, eff, loc) => exp0
-      case Expression.Def(sym, tpe, eff, loc) => exp0
       case Expression.Hook(hook, tpe, eff, loc) => exp0
 
       case Expression.Lambda(fparams, exp, tpe, eff, loc) =>

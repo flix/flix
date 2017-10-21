@@ -76,6 +76,8 @@ object NamedAst {
 
     case class Def(ref: Name.QName, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
+    case class Hole(name: Name.Ident, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
+
     case class Unit(loc: SourceLocation) extends NamedAst.Expression
 
     case class True(loc: SourceLocation) extends NamedAst.Expression

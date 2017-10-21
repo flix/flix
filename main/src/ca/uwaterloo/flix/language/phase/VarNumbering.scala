@@ -81,7 +81,7 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.BigInt(lit) => i0
       case Expression.Str(lit) => i0
       case Expression.Var(sym, tpe, loc) => i0
-      case Expression.Def(name, tpe, loc) => i0
+      case Expression.Def(sym, tpe, loc) => i0
       case Expression.Hook(hook, tpe, loc) => i0
       case Expression.Closure(ref, freeVars, tpe, loc) => i0
       case Expression.ApplyClo(exp, args, tpe, loc) =>
@@ -152,7 +152,9 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.NativeConstructor(constructor, args, tpe, loc) => visitExps(args, i0)
       case Expression.NativeField(field, tpe, loc) => i0
       case Expression.NativeMethod(method, args, tpe, loc) => visitExps(args, i0)
+
       case Expression.UserError(tpe, loc) => i0
+      case Expression.HoleError(sym, tpe, eff, loc) => i0
       case Expression.MatchError(tpe, loc) => i0
       case Expression.SwitchError(tpe, loc) => i0
 

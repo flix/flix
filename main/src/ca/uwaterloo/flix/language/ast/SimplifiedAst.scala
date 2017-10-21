@@ -215,6 +215,8 @@ object SimplifiedAst {
 
     case class UserError(tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
+    case class HoleError(sym: Symbol.HoleSym, tpe: Type, eff: Eff, loc: SourceLocation) extends SimplifiedAst.Expression
+
     case class MatchError(tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
     case class SwitchError(tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression

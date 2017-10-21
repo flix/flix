@@ -340,6 +340,13 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
         NamedAst.Expression.Def(name, Type.freshTypeVar(), loc).toSuccess
 
       /*
+       * Holes.
+       */
+      case WeededAst.Expression.Hole(name, loc) =>
+        val tpe = Type.freshTypeVar()
+        NamedAst.Expression.Hole(name, tpe, loc).toSuccess
+
+      /*
        * Literals.
        */
       case WeededAst.Expression.Unit(loc) => NamedAst.Expression.Unit(loc).toSuccess
@@ -506,6 +513,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
     def freeVars(exp0: WeededAst.Expression): List[Name.Ident] = exp0 match {
       case WeededAst.Expression.Wild(loc) => Nil
       case WeededAst.Expression.VarOrDef(qname, loc) => List(qname.ident)
+      case WeededAst.Expression.Hole(name, loc) => Nil
       case WeededAst.Expression.Unit(loc) => Nil
       case WeededAst.Expression.True(loc) => Nil
       case WeededAst.Expression.False(loc) => Nil

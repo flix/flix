@@ -21,8 +21,10 @@ import java.util.concurrent.Executors
 import java.util.logging.{Level, Logger}
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.Ast.HoleContext
 import ca.uwaterloo.flix.language.ast.{Symbol, Type}
 import ca.uwaterloo.flix.language.ast.TypedAst._
+import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.runtime.{Benchmarker, Model, Tester}
 import ca.uwaterloo.flix.util._
 import ca.uwaterloo.flix.util.tc.Show
@@ -167,9 +169,10 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
   private def execute(cmd: Command)(implicit terminal: Terminal): Unit = cmd match {
     case Command.Nop => // nop
     case Command.Eval(s) => execEval(s)
-    case Command.TypeOf(exp) => execTypeOf(exp)
-    case Command.KindOf(exp) => execKindOf(exp)
-    case Command.EffectOf(exp) => execEffectOf(exp)
+    case Command.TypeOf(e) => execTypeOf(e)
+    case Command.KindOf(e) => execKindOf(e)
+    case Command.EffectOf(e) => execEffectOf(e)
+    case Command.Hole(fqn) => execHole(fqn)
     case Command.Browse(ns) => execBrowse(ns)
     case Command.Doc(fqn) => execDoc(fqn)
     case Command.Search(s) => execSearch(s)
@@ -274,6 +277,43 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
     terminal.writer().print(vt.fmt)
   }
 
+  /**
+    * Shows the hole context of the given `fqn`.
+    */
+  private def execHole(fqn: String)(implicit terminal: Terminal, s: Show[Type]): Unit = {
+    // Compute the hole symbol.
+    val sym = Symbol.mkHoleSym(fqn)
+
+    // Retrieve all the holes in the program.
+    val holes = TypedAstOps.holesOf(root)
+
+    // Lookup the hole symbol.
+    holes.get(sym) match {
+      case None =>
+        // Case 1: Hole not found.
+        terminal.writer().println(s"Undefined hole: '$fqn'.")
+      case Some(HoleContext(_, holeType, env)) =>
+        // Case 2: Hole found.
+        val vt = new VirtualTerminal
+
+        // Indent
+        vt << "  "
+
+        // Iterate through the premises, i.e. the variable symbols in scope.
+        for ((varSym, varType) <- env) {
+          vt << Blue(varSym.text) << ": " << Cyan(varType.show) << " " * 6
+        }
+
+        // Print the divider.
+        vt << NewLine << "-" * 80 << NewLine
+
+        // Print the goal.
+        vt << Blue(sym.toString) << ": " << Cyan(holeType.show) << NewLine
+
+        // Print the result to the terminal.
+        terminal.writer().print(vt.fmt)
+    }
+  }
 
   /**
     * Executes the browse command.
@@ -450,6 +490,8 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
     this.flix.check() match {
       case Validation.Success(ast, _) =>
         this.root = ast
+        // Pretty print the holes (if any).
+        prettyPrintHoles()
       case Validation.Failure(errors) =>
         for (error <- errors) {
           terminal.writer().print(error.message.fmt)
@@ -597,6 +639,7 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
     w.println("  :type :t      <expr>            Shows the type of <expr>.")
     w.println("  :kind :k      <expr>            Shows the kind of <expr>.")
     w.println("  :effect :e    <expr>            Shows the effect of <expr>.")
+    w.println("  :hole         <fqn>             Shows the hole context of <fqn>.")
     w.println("  :browse       <ns>              Shows all entities in <ns>.")
     w.println("  :doc          <fqn>             Shows documentation for <fqn>.")
     w.println("  :search       <needle>          Shows all entities that match <needle>.")
@@ -716,6 +759,28 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
       vt << ", " << attr.name << ": " << Cyan(attr.tpe.show)
     }
     vt << ")" << NewLine
+  }
+
+  /**
+    * Pretty prints the holes in the program.
+    */
+  private def prettyPrintHoles()(implicit terminal: Terminal): Unit = {
+    // Print holes, if any.
+    val holes = TypedAstOps.holesOf(root)
+    val vt = new VirtualTerminal
+
+    // Check if any holes are present.
+    if (holes.nonEmpty) {
+      vt << Bold("Holes:") << Indent
+      // Print each hole and its type.
+      for ((sym, ctx) <- holes) {
+        vt << NewLine << Blue(sym.toString) << ": " << Cyan(ctx.tpe.show)
+      }
+      vt << Dedent << NewLine
+    }
+
+    // Print the result to the terminal.
+    terminal.writer().print(vt.fmt)
   }
 
   /**

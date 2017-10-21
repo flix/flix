@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.runtime.evaluator
 
 import java.math.BigInteger
 
-import ca.uwaterloo.flix.api.{MatchException, SwitchException, UserException}
+import ca.uwaterloo.flix.api.{HoleException, MatchException, SwitchException, UserException}
 import ca.uwaterloo.flix.language.GenSym
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Expression
 import ca.uwaterloo.flix.language.ast._
@@ -787,6 +787,11 @@ object SymbolicEvaluator {
         * User Error.
         */
       case Expression.UserError(tpe, loc) => throw UserException("User Error.", loc)
+
+      /**
+        * Hole Error.
+        */
+      case Expression.HoleError(sym, tpe, loc) => throw HoleException(sym.toString, loc)
 
       /**
         * Match Error.

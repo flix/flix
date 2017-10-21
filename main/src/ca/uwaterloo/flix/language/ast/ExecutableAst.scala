@@ -267,6 +267,8 @@ object ExecutableAst {
 
     case class UserError(tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
+    case class HoleError(sym: Symbol.HoleSym, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
+
     case class MatchError(tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
     case class SwitchError(tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
