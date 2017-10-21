@@ -94,7 +94,7 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
     */
   def loop(): Unit = {
     // Silence JLine warnings about terminal type.
-    Logger.getLogger("org.jline.utils").setLevel(Level.OFF)
+    Logger.getLogger("org.jline").setLevel(Level.OFF)
 
     // Initialize the terminal.
     implicit val terminal: Terminal = TerminalBuilder
@@ -295,6 +295,9 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
       case Some(HoleContext(_, holeType, env)) =>
         // Case 2: Hole found.
         val vt = new VirtualTerminal
+
+        // Indent
+        vt << "  "
 
         // Iterate through the premises, i.e. the variable symbols in scope.
         for ((varSym, varType) <- env) {

@@ -300,7 +300,7 @@ object WeederError {
   }
 
   /**
-    * An error raised to indicate the presence of a hole which is illegal in release mode.
+    * An error raised to indicate the presence of a hole in release mode.
     *
     * @param loc the location where the illegal expression occurs.
     */

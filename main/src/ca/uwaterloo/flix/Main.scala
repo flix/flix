@@ -288,7 +288,7 @@ object Main {
 
       // Release.
       opt[Unit]("release").action((_, c) => c.copy(release = true)).
-        text("enables the release mode.")
+        text("enables release mode.")
 
       // Test.
       opt[Unit]("test").action((_, c) => c.copy(test = true)).
