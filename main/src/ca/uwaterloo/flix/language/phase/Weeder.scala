@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.ast.Ast.Polarity
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.WeederError
 import ca.uwaterloo.flix.language.errors.WeederError._
-import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
+import ca.uwaterloo.flix.util.{CompilationMode, InternalCompilerException, Validation}
 import ca.uwaterloo.flix.util.Validation._
 
 import scala.collection.immutable.Seq
@@ -294,7 +294,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           /*
            * Checks for `IllegalHole`.
            */
-          if (flix.options.release) {
+          if (flix.options.mode == CompilationMode.Release) {
             return IllegalHole(loc).toFailure
           }
           WeededAst.Expression.Hole(name, loc).toSuccess
