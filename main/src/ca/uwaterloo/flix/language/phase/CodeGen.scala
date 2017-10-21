@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import java.lang.reflect.Modifier
 
-import ca.uwaterloo.flix.api.{Flix, MatchException, SwitchException, UserException}
+import ca.uwaterloo.flix.api.{Flix, HoleException, MatchException, SwitchException, UserException}
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.Ast.Hook
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Expression
@@ -794,6 +794,12 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
       val name = asm.Type.getInternalName(classOf[UserException])
       val msg = s"User exception: ${loc.format}."
       compileException(visitor, name, msg)
+
+    case Expression.HoleError(sym, tpe, loc) =>
+      // Adding source line number for debugging
+      addSourceLine(visitor, loc)
+      val name = asm.Type.getInternalName(classOf[HoleException])
+      compileException(visitor, name, sym.toString)
 
     case Expression.MatchError(_, loc) =>
       // Adding source line number for debugging

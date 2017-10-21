@@ -156,6 +156,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           Expression.Def(newSym, subst0(tpe), eff, loc)
 
         case Expression.Hole(sym, tpe, eff, loc) => Expression.Hole(sym, tpe, eff, loc)
+
         case Expression.Unit(loc) => Expression.Unit(loc)
         case Expression.True(loc) => Expression.True(loc)
         case Expression.False(loc) => Expression.False(loc)

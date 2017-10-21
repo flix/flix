@@ -568,6 +568,7 @@ object TupleGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     case Expression.NativeField(field, tpe, loc) => findTuplesInTypes(tpe)
     case Expression.NativeMethod(method, args, tpe, loc) => args.foldLeft(findTuplesInTypes(tpe))((acc, elem) => acc ++ findTuplesInExps(elem))
     case Expression.UserError(tpe, loc) => findTuplesInTypes(tpe)
+    case Expression.HoleError(sym, tpe, loc) => findTuplesInTypes(tpe)
     case Expression.MatchError(tpe, loc) => findTuplesInTypes(tpe)
     case Expression.SwitchError(tpe, loc) => findTuplesInTypes(tpe)
   }
