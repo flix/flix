@@ -98,6 +98,9 @@ object GenFunctionClasses {
     visitor.toByteArray
   }
 
+  /**
+    * Apply method for the given `defn` and `classType`.
+    */
   private def compileApplyMethod(visitor: ClassWriter, classType: JvmType.Reference, defn: Def): Unit = {
     val applyMethod = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, "apply",
       AsmOps.getMethodDescriptor(List(JvmType.Context), JvmType.Void), null, null)

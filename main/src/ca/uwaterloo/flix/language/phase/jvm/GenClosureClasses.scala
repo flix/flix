@@ -3,6 +3,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ExecutableAst.{Def, FreeVar, Root}
 import ca.uwaterloo.flix.language.ast.Symbol
+import org.objectweb.asm.Opcodes._
 
 /**
   * Generates byte code for the closure classes.
@@ -55,6 +56,55 @@ object GenClosureClasses {
     *
     */
   private def genByteCode(closure: ClosureInfo)(implicit root: Root, flix: Flix): Array[Byte] = {
+    // Class visitor
+    val visitor = AsmOps.mkClassWriter()
+
+    // Args of the function
+    val args = closure.tpe.typeArguments
+
+    // `JvmType` of the interface for `closure.tpe`
+    val functionInterface = JvmOps.getFunctionInterfaceType(closure.tpe)
+
+    // The super interface.
+    val superInterface = Array(functionInterface.name.toInternalName)
+
+    // `JvmType` of the class for `defn`
+    val classType = JvmOps.getClosureClassType(closure)
+
+    // Class visitor
+    visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_FINAL, classType.name.toInternalName, null,
+      JvmName.Object.toInternalName, superInterface)
+
+    // Adding a setter and a field for each argument of the function
+    for((arg, index) <- args.init.zipWithIndex) {
+      // `JvmType` of `arg`
+      val argType = JvmOps.getErasedType(arg)
+
+      // `arg$index` field
+      AsmOps.compileField(visitor, s"arg$index", argType, isStatic = false, isPrivate = true)
+
+      // `setArg$index()` method
+      AsmOps.compileSetFieldMethod(visitor, classType.name, argType, s"arg$index", s"setArg$index")
+    }
+
+    // Jvm type of the result of the function
+    val resultType = JvmOps.getErasedType(args.last)
+
+    // Field for the result
+    AsmOps.compileField(visitor, "result", resultType, isStatic = false, isPrivate = true)
+
+    // Getter for the result field
+    AsmOps.compileGetFieldMethod(visitor, classType.name, resultType, "result", "getResult")
+
+    for(freeVar <- closure.freeVars) {
+      // `JvmType` of `freeVar`
+      val varType = JvmOps.getErasedType(freeVar.tpe)
+
+      // `arg$index` field
+      AsmOps.compileField(visitor, JvmOps.getVariableName(freeVar.sym), varType, isStatic = false, isPrivate = true)
+    }
+
+
     List(0xCA.toByte, 0xFE.toByte, 0xBA.toByte, 0xBE.toByte).toArray
   }
 

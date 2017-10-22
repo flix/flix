@@ -435,6 +435,8 @@ object JvmOps {
 
   // TODO: Deal with fusion too.
 
+  def getVariableName(sym: Symbol.VarSym): String = "v_" + mangle(sym.text)
+
   /**
     * Returns the variable type of the given variable symbol `sym`.
     */
