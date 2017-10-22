@@ -267,6 +267,25 @@ object AsmOps {
   }
 
   /**
+    * Returns the size of a variable of type `tpe` in jvm.
+    * @param tpe Jvm type of the variable
+    * @return    Size of the variable in jvm
+    */
+  def getStackSpace(tpe: JvmType): Int = tpe match {
+    case JvmType.PrimBool => 1
+    case JvmType.PrimChar => 1
+    case JvmType.PrimFloat => 1
+    case JvmType.PrimDouble => 2
+    case JvmType.PrimByte => 1
+    case JvmType.PrimShort => 1
+    case JvmType.PrimInt => 1
+    case JvmType.PrimLong => 2
+    case JvmType.Void => throw InternalCompilerException(s"Unexpected type: $tpe")
+    case JvmType.Reference(_) => 1
+  }
+
+
+  /**
     * `tpe` is jvm type of value on top of the stack. If the value is not primitive, then we cast it to it's specific type,
     * if the value is a primitive then since there is no boxing, then no casting is necessary.
     *
