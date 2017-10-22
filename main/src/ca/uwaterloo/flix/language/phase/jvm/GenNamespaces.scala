@@ -72,7 +72,7 @@ object GenNamespaces {
       // TODO: Same problem as GenFunctionClasses, we should handle not defs with non arrow type
       if(defn.tpe.isArrow) {
         // Args of the function
-        compileShillMethod(visitor, defn, sym, namespaceClassType, jvmType, ns)
+        compileShillMethod(visitor, defn, jvmType, ns)
       }
     }
 
@@ -88,22 +88,19 @@ object GenNamespaces {
     */
   private def compileShillMethod(visitor: ClassWriter,
                                  defn: Def,
-                                 sym: Symbol.DefnSym,
-                                 nsClassType: JvmType.Reference,
                                  ifoType: JvmType.Reference,
                                  ns: NamespaceInfo)(implicit root: Root, flix: Flix): Unit = {
     // Name of the shill
-    val name = JvmOps.getDefMethodNameInNamespaceClass(sym)
+    val name = JvmOps.getDefMethodNameInNamespaceClass(defn.sym)
+
+    // JvmType for namespace
+    val namespaceClassType = JvmOps.getNamespaceClassType(ns)
 
     // Jvm type of method args
     val args = defn.tpe.typeArguments.map(JvmOps.getErasedType)
 
     // Length of args in local
-    val varLen = args.init.map{
-      case JvmType.PrimLong | JvmType.PrimDouble => 2
-      case _ => 1
-    }.sum
-
+    val stackSize = args.init.map(AsmOps.getStackSpace).sum
 
     // Method header
     val method = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL + ACC_STATIC, name, AsmOps.getMethodDescriptor(args.init, args.last), null, null)
@@ -121,25 +118,25 @@ object GenNamespaces {
     // creating a local variable for context
     val label = new Label
     method.visitLabel(label)
-    method.visitLocalVariable("context", JvmType.Context.toDescriptor, null, label, label, varLen)
+    method.visitLocalVariable("context", JvmType.Context.toDescriptor, null, label, label, stackSize)
 
     // Putting another reference of context on top of the stack
     method.visitInsn(DUP)
 
     // Storing Context on the variable
-    method.visitVarInsn(ASTORE, varLen)
+    method.visitVarInsn(ASTORE, stackSize)
 
     // Name of the field for namespace on context object
     val nsFieldName = JvmOps.getNamespaceFieldNameInContextClass(ns)
 
     // Name of the field for IFO of defn on namespace
-    val defnFieldName = JvmOps.getDefFieldNameInNamespaceClass(sym)
+    val defnFieldName = JvmOps.getDefFieldNameInNamespaceClass(defn.sym)
 
     // Extracting the namespace field from the context object
-    method.visitFieldInsn(GETFIELD, JvmName.Context.toInternalName, nsFieldName, nsClassType.toDescriptor)
+    method.visitFieldInsn(GETFIELD, JvmName.Context.toInternalName, nsFieldName, namespaceClassType.toDescriptor)
 
     // Extracting the ifo from namespace
-    method.visitFieldInsn(GETFIELD, nsClassType.name.toInternalName, defnFieldName, ifoType.toDescriptor)
+    method.visitFieldInsn(GETFIELD, namespaceClassType.name.toInternalName, defnFieldName, ifoType.toDescriptor)
 
     // Offset for each parameter
     var offset: Int = 0
@@ -158,16 +155,13 @@ object GenNamespaces {
         AsmOps.getMethodDescriptor(List(arg), JvmType.Void), false)
 
       // Incrementing the offset
-      arg match {
-        case JvmType.PrimLong | JvmType.PrimDouble => offset += 2
-        case _ => offset += 1
-      }
+      offset += AsmOps.getStackSpace(arg)
     }
 
     // TODO: Replace this with an appropriate while loop, for now we just call the apply
     // Loading context object
     method.visitInsn(DUP)
-    method.visitVarInsn(ALOAD, varLen)
+    method.visitVarInsn(ALOAD, stackSize)
     method.visitMethodInsn(INVOKEVIRTUAL, ifoType.name.toInternalName, "apply",
       AsmOps.getMethodDescriptor(List(JvmType.Context), JvmType.Void), false)
 
