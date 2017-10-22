@@ -45,8 +45,7 @@ object JvmOps {
     * Int -> Bool           =>      Fn1$Int$Bool
     * (Int, Int) -> Bool    =>      Fn2$Int$Int$Bool
     */
-  // TODO: DOcument nullary flag
-  def getJvmType(tpe: Type, nullary: Boolean = false)(implicit root: Root, flix: Flix): JvmType = {
+  def getJvmType(tpe: Type)(implicit root: Root, flix: Flix): JvmType = {
     // Retrieve the type constructor.
     val base = tpe.typeConstructor
 
@@ -71,7 +70,7 @@ object JvmOps {
       case Type.Arrow(l) => getFunctionInterfaceType(tpe)
       case Type.Tuple(l) => getTupleInterfaceType(tpe)
       case Type.Enum(sym, kind) =>
-        if (!nullary && isNullaryEnum(tpe)) {
+        if (isNullaryEnum(tpe)) {
           // TODO
           //val nullaryType = getNullaryType(tpe)
           //println(s"Nullary type $tpe to be represented as: ${nullaryType.toDescriptor}")
@@ -88,7 +87,6 @@ object JvmOps {
     *
     * Every primitive type is mapped to itself and every other type is mapped to Object.
     */
-  // TODO: Move closer to getJvmType?
   def getErasedType(tpe: JvmType)(implicit root: Root, flix: Flix): JvmType = tpe match {
     case JvmType.Void => JvmType.Void
     case JvmType.PrimBool => JvmType.PrimBool
@@ -105,7 +103,7 @@ object JvmOps {
   /**
     * Returns the erased JvmType of the given Flix type `tpe`.
     */
-  // TODO: Delete?
+  // TODO: Delete this alias?
   def getErasedType(tpe: Type)(implicit root: Root, flix: Flix): JvmType = getErasedType(getJvmType(tpe))
 
   /**
@@ -113,6 +111,7 @@ object JvmOps {
     *
     * NB: The given type `tpe` must be an arrow type.
     */
+  // TODO: Should this simply return a JvmType?
   def getResultType(tpe: Type)(implicit root: Root, flix: Flix): Type = {
     // Check that the given type is an arrow type.
     if (!tpe.typeConstructor.isArrow)
@@ -186,13 +185,44 @@ object JvmOps {
   }
 
   /**
+    * Returns the closure class `Clo$Name` for the given closure.
+    *
+    * TODO: Examples
+    */
+  def getClosureClassType(closure: ClosureInfo)(implicit root: Root, flix: Flix): JvmType.Reference = {
+    // Retrieve the arrow type of the closure.
+    val tpe = closure.tpe
+
+    // Check that the given type is an arrow type.
+    if (!tpe.typeConstructor.isArrow)
+      throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+
+    // Check that the given type has at least one type argument.
+    if (tpe.typeArguments.isEmpty)
+      throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+
+    // Compute the arity of the function interface.
+    // We subtract one since the last argument is the return type.
+    val arity = tpe.typeArguments.length - 1
+
+    // Compute the stringified erased type of each type argument.
+    val args = tpe.typeArguments.map(tpe => stringify(getErasedType(tpe)))
+
+    // The JVM name is of the form CloArity$Arg0$Arg1$Arg2
+    val name = "Clo" + arity + "$" + args.mkString("$")
+
+    // The type resides in the root package.
+    JvmType.Reference(JvmName(RootPackage, name))
+  }
+
+  /**
     * Returns the enum interface type `Enum$X$Y$Z` for the given type `tpe`.
     *
     * For example,
     *
-    * Color                 =>      Color$
-    * Option[Int]           =>      Option$Int
-    * Result[Char, Int]     =>      Result$Char$Int
+    * Color                 =>      IColor
+    * Option[Int]           =>      IOption$Int
+    * Result[Char, Int]     =>      IResult$Char$Int
     *
     * NB: The given type `tpe` must be an enum type.
     */
@@ -208,7 +238,7 @@ object JvmOps {
     val args = tpe.typeArguments.map(tpe => stringify(getErasedType(tpe)))
 
     // The JVM name is of the form Option$ or Option$Int
-    val name = if (args.isEmpty) sym.name + "$" else sym.name + "$" + args.mkString("$")
+    val name = if (args.isEmpty) "I" + sym.name else "I" + sym.name + "$" + args.mkString("$")
 
     // The enum resides in its namespace package.
     JvmType.Reference(JvmName(sym.namespace, name))
@@ -222,6 +252,7 @@ object JvmOps {
     * None: Option[Int]         =>    None
     * Some: Option[Char]        =>    Some$Char
     * Some: Option[Int]         =>    Some$Int
+    * Some: Option[String]      =>    Some$Obj
     * Ok: Result[Bool, Char]    =>    Ok$Bool$Char
     * Err: Result[Bool, Char]   =>    Err$Bool$Char
     */
@@ -231,7 +262,7 @@ object JvmOps {
     val tagName = tag.tag
 
     // Retrieve the type arguments.
-    val args = tag.tparams
+    val args = tag.tparams.map(tpe => stringify(getErasedType(tpe)))
 
     // The JVM name is of the form Tag$Arg0$Arg1$Arg2
     val name = if (args.isEmpty) tagName else tagName + "$" + args.mkString("$")
@@ -333,16 +364,6 @@ object JvmOps {
 
     // The type resides in the ca.uwaterloo.flix.api.cell package.
     JvmType.Reference(JvmName(List("ca.uwaterloo.flix.api.cell"), name))
-  }
-
-  /**
-    * Returns the closure class `Clo$Name` for the given closure.
-    *
-    * TODO: Examples
-    */
-  def getClosureClassType(closure: ClosureInfo)(implicit root: Root, flix: Flix): JvmType.Reference = {
-    // TODO
-    ???
   }
 
   /**
@@ -474,7 +495,7 @@ object JvmOps {
     val innerTagType = getUnwrappedType(referenceTag.tagType)
 
     // And translate it to a JVM type.
-    getJvmType(referenceTag.tagType, nullary = true)
+    getJvmType(referenceTag.tagType)
   }
 
   /**
@@ -639,6 +660,118 @@ object JvmOps {
     case JvmType.Reference(jvmName) => "Obj"
   }
 
+
+  /**
+    * Returns the set of closures in the given AST `root`.
+    */
+  def closuresOf(root: Root): Set[ClosureInfo] = {
+    /**
+      * Returns the set of closures in the given expression `exp0`.
+      */
+    def visitExp(exp0: Expression): Set[ClosureInfo] = exp0 match {
+      case Expression.Unit => Set.empty
+      case Expression.True => Set.empty
+      case Expression.False => Set.empty
+      case Expression.Char(lit) => Set.empty
+      case Expression.Float32(lit) => Set.empty
+      case Expression.Float64(lit) => Set.empty
+      case Expression.Int8(lit) => Set.empty
+      case Expression.Int16(lit) => Set.empty
+      case Expression.Int32(lit) => Set.empty
+      case Expression.Int64(lit) => Set.empty
+      case Expression.BigInt(lit) => Set.empty
+      case Expression.Str(lit) => Set.empty
+      case Expression.Var(sym, tpe, loc) => Set.empty
+
+      case Expression.Closure(sym, freeVars, fnType, tpe, loc) =>
+        Set(ClosureInfo(sym, freeVars, tpe))
+
+      case Expression.ApplyClo(exp, args, tpe, loc) => args.foldLeft(visitExp(exp)) {
+        case (sacc, e) => sacc ++ visitExp(e)
+      }
+
+      case Expression.ApplyDef(sym, args, tpe, loc) => args.foldLeft(Set.empty[ClosureInfo]) {
+        case (sacc, e) => sacc ++ visitExp(e)
+      }
+
+      case Expression.ApplyCloTail(exp, args, tpe, loc) => args.foldLeft(visitExp(exp)) {
+        case (sacc, e) => sacc ++ visitExp(e)
+      }
+
+      case Expression.ApplyDefTail(sym, args, tpe, loc) => args.foldLeft(Set.empty[ClosureInfo]) {
+        case (sacc, e) => sacc ++ visitExp(e)
+      }
+
+      case Expression.ApplySelfTail(sym, fparams, args, tpe, loc) => args.foldLeft(Set.empty[ClosureInfo]) {
+        case (sacc, e) => sacc ++ visitExp(e)
+      }
+
+      case Expression.ApplyHook(hook, args, tpe, loc) => args.foldLeft(Set.empty[ClosureInfo]) {
+        case (sacc, e) => sacc ++ visitExp(e)
+      }
+
+      case Expression.Unary(sop, op, exp, tpe, loc) =>
+        visitExp(exp)
+
+      case Expression.Binary(sop, op, exp1, exp2, tpe, loc) =>
+        visitExp(exp1) ++ visitExp(exp2)
+
+      case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
+        visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
+
+      case Expression.Branch(exp, branches, tpe, loc) => branches.foldLeft(visitExp(exp)) {
+        case (sacc, (_, e)) => sacc ++ visitExp(e)
+      }
+      case Expression.JumpTo(sym, tpe, loc) => Set.empty
+
+      case Expression.Let(sym, exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2)
+      case Expression.LetRec(sym, exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2)
+
+      case Expression.Is(sym, tag, exp, loc) => visitExp(exp)
+      case Expression.Tag(sym, tag, exp, tpe, loc) => visitExp(exp)
+      case Expression.Untag(sym, tag, exp, tpe, loc) => visitExp(exp)
+
+      case Expression.Index(base, offset, tpe, loc) => visitExp(base)
+      case Expression.Tuple(elms, tpe, loc) => elms.foldLeft(Set.empty[ClosureInfo]) {
+        case (sacc, e) => sacc ++ visitExp(e)
+      }
+
+      case Expression.Ref(exp, tpe, loc) => visitExp(exp)
+      case Expression.Deref(exp, tpe, loc) => visitExp(exp)
+      case Expression.Assign(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2)
+
+      case Expression.Existential(fparam, exp, loc) => visitExp(exp)
+      case Expression.Universal(fparam, exp, loc) => visitExp(exp)
+
+      case Expression.NativeConstructor(constructor, args, tpe, loc) => args.foldLeft(Set.empty[ClosureInfo]) {
+        case (sacc, e) => sacc ++ visitExp(e)
+      }
+      case Expression.NativeField(field, tpe, loc) => Set.empty
+      case Expression.NativeMethod(method, args, tpe, loc) => args.foldLeft(Set.empty[ClosureInfo]) {
+        case (sacc, e) => sacc ++ visitExp(e)
+      }
+
+      case Expression.UserError(tpe, loc) => Set.empty
+      case Expression.MatchError(tpe, loc) => Set.empty
+      case Expression.SwitchError(tpe, loc) => Set.empty
+    }
+
+
+    // TODO: Look for closures in other places.
+
+    // Visit every definition.
+    root.defs.foldLeft(Set.empty[ClosureInfo]) {
+      case (sacc, (sym, defn)) => sacc ++ visitExp(defn.exp)
+    }
+  }
+
+  /**
+    * Returns the namespace info of the given definition symbol `sym`.
+    */
+  def getNamespace(sym: Symbol.DefnSym)(implicit root: Root, flix: Flix): NamespaceInfo = {
+    NamespaceInfo(sym.namespace, Map.empty) // TODO.
+  }
+
   /**
     * Returns the set of namespaces in the given AST `root`.
     */
@@ -647,13 +780,6 @@ object JvmOps {
     root.defs.groupBy(_._1.namespace).map {
       case (ns, defs) => NamespaceInfo(ns, defs)
     }.toSet
-  }
-
-  /**
-    * Returns the namespace info of the given definition symbol `sym`.
-    */
-  def getNamespace(sym: Symbol.DefnSym)(implicit root: Root, flix: Flix): NamespaceInfo = {
-    NamespaceInfo(sym.namespace, Map.empty) // TODO.
   }
 
   /**

@@ -36,11 +36,15 @@ object JvmBackend extends Phase[Root, Root] {
     * Emits JVM bytecode for the given AST `root`.
     */
   def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationError] = {
-    // return root.toSuccess
     //
     // Put the AST root into implicit scope.
     //
     implicit val _ = root
+
+    //
+    // Compute the set of closures in the program.
+    //
+    val closures = JvmOps.closuresOf(root)
 
     //
     // Compute the set of namespaces in the program.
@@ -48,14 +52,19 @@ object JvmBackend extends Phase[Root, Root] {
     val namespaces = JvmOps.namespacesOf(root)
 
     //
+    // Compute the set of instantiated tags in the program.
+    //
+    val tags = JvmOps.tagsOf(root)
+
+    //
     // Compute the set of types in the program.
     //
     val types = JvmOps.typesOf(root)
 
     //
-    // Compute the set of instantiated tags in the program.
+    // Generate the main class.
     //
-    val tags = JvmOps.tagsOf(root)
+    val mainClass = GenMain.gen()
 
     //
     // Generate the Context class.
@@ -85,7 +94,7 @@ object JvmBackend extends Phase[Root, Root] {
     //
     // Generate closure classes for each closure in the program.
     //
-    val closureClasses = GenClosureClasses.gen(Set.empty /* TODO */)
+    val closureClasses = GenClosureClasses.gen(closures)
 
     //
     // Generate enum interfaces for each enum type in the program.
@@ -113,17 +122,22 @@ object JvmBackend extends Phase[Root, Root] {
     val fusionClasses = GenFusionClasses.gen()
 
     //
-    // Generate the main class.
-    //
-    val mainClass = GenMain.gen()
-
-    //
     // Collect all the classes and interfaces together.
     //
-    // TODO: Re-order
-    val allClasses = contextClass ++ namespaceClasses ++ continuationInterfaces ++ functionInterfaces ++
-      functionClasses ++ closureClasses ++ enumInterfaces ++ tupleInterfaces ++ tupleClasses ++ tagClasses ++
-      mainClass ++ fusionClasses
+    val allClasses = List(
+      mainClass,
+      contextClass,
+      namespaceClasses,
+      continuationInterfaces,
+      functionInterfaces,
+      functionClasses,
+     // closureClasses, // TODO: Currently not implemented.
+      enumInterfaces,
+      tagClasses,
+      tupleInterfaces,
+      tupleClasses,
+      fusionClasses
+    ).reduce(_ ++ _)
 
     //
     // Write each class (and interface) to disk.
