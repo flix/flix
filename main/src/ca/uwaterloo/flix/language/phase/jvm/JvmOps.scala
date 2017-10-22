@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 import java.nio.file.{Files, LinkOption, Path}
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.ExecutableAst.{Case, Expression, Root}
+import ca.uwaterloo.flix.language.ast.ExecutableAst.{Case, Expression, FreeVar, Root}
 import ca.uwaterloo.flix.language.ast.{Symbol, Type}
 import ca.uwaterloo.flix.language.phase.Unification
 import ca.uwaterloo.flix.util.InternalCompilerException
@@ -438,10 +438,14 @@ object JvmOps {
   def getVariableName(sym: Symbol.VarSym): String = "v_" + mangle(sym.text)
 
   /**
-    * Returns the variable type of the given variable symbol `sym`.
+    * Returns information about the given variable symbol `sym`
+    * given the free variables `freeVars` of the definition in which `sym` occurs.
     */
-  def getVariableType(sym: Symbol.VarSym): VariableType =
-    VariableType.ArgumentVar(sym.getStackOffset) // TODO: Implement.
+  def getVariableInfo(sym: Symbol.VarSym, freeVars: List[FreeVar]): VariableInfo =
+    if (freeVars.exists(v => v.sym == sym))
+      VariableInfo.CloField("arg" + sym.getStackOffset)
+    else
+      VariableInfo.IfoField("clo" + sym.getStackOffset)
 
   /**
     * Returns `true` if the given enum type `tpe` is nullable.
