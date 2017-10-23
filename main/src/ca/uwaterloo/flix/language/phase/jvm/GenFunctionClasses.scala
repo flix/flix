@@ -93,7 +93,11 @@ object GenFunctionClasses {
     // Getter for the result field
     AsmOps.compileGetFieldMethod(visitor, classType.name, resultType, "result", "getResult")
 
+    // Apply method of the class
     compileApplyMethod(visitor, classType, defn)
+
+    // Constructor of the class
+    compileConstructor(visitor)
 
     visitor.toByteArray
   }
@@ -101,7 +105,9 @@ object GenFunctionClasses {
   /**
     * Apply method for the given `defn` and `classType`.
     */
-  private def compileApplyMethod(visitor: ClassWriter, classType: JvmType.Reference, defn: Def): Unit = {
+  private def compileApplyMethod(visitor: ClassWriter,
+                                 classType: JvmType.Reference,
+                                 defn: Def)(implicit root: Root, flix: Flix): Unit = {
     val applyMethod = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, "apply",
       AsmOps.getMethodDescriptor(List(JvmType.Context), JvmType.Void), null, null)
 
@@ -110,6 +116,21 @@ object GenFunctionClasses {
     applyMethod.visitInsn(RETURN)
     applyMethod.visitMaxs(1, 1)
     applyMethod.visitEnd()
+  }
+
+  /**
+    * Constructor of the class
+    */
+  private def compileConstructor(visitor: ClassWriter): Unit = {
+    val constructor = visitor.visitMethod(ACC_PUBLIC, "<init>", AsmOps.getMethodDescriptor(Nil, JvmType.Void), null, null)
+
+    constructor.visitVarInsn(ALOAD, 0)
+    constructor.visitMethodInsn(INVOKESPECIAL, JvmName.Object.toInternalName, "<init>",
+      AsmOps.getMethodDescriptor(Nil, JvmType.Void), false)
+
+    constructor.visitInsn(RETURN)
+    constructor.visitMaxs(1, 1)
+    constructor.visitEnd()
   }
 
 }
