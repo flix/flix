@@ -19,33 +19,33 @@ namespace Int8 {
     ///
     /// Returns the number of bits used to represent an `Int8`.
     ///
-    def size(): Int32 = 8
+    pub def size(): Int32 = 8
 
     ///
     /// Returns the minimum number representable by an `Int8`.
     ///
-    def minValue(): Int8 = 1i8 <<< (size() - 1)
+    pub def minValue(): Int8 = 1i8 <<< (size() - 1)
 
     ///
     /// Returns the maximum number representable by an `Int8`.
     ///
-    def maxValue(): Int8 = ~~~minValue()
+    pub def maxValue(): Int8 = ~~~minValue()
 
     ///
     /// Returns the smaller of `x` and `y`.
     ///
-    def min(x: Int8, y: Int8): Int8 = if (x <= y) x else y
+    pub def min(x: Int8, y: Int8): Int8 = if (x <= y) x else y
 
     ///
     /// Returns the larger of `x` and `y`.
     ///
-    def max(x: Int8, y: Int8): Int8 = if (x >= y) x else y
+    pub def max(x: Int8, y: Int8): Int8 = if (x >= y) x else y
 
     ///
     /// Returns the absolute value of `x`.
     /// If the absolute value exceeds maxValue(), -1 is returned.
     ///
-    def abs(x: Int8): Int8 = switch {
+    pub def abs(x: Int8): Int8 = switch {
         case x >= 0i8           => x
         case x == minValue()    => -1i8
         case x != minValue()    => -x
@@ -55,7 +55,7 @@ namespace Int8 {
     /// Returns the distance between `x` and `y`.
     /// If this distance exceeds maxValue(), -1 is returned.
     ///
-    def dist(x: Int8, y: Int8): Int8 = switch {
+    pub def dist(x: Int8, y: Int8): Int8 = switch {
         case x >= 0i8 && y >= 0i8                   => abs(x - y)
         case x < 0i8 && y < 0i8                     => abs(x - y)
         case x == minValue() || y == minValue()     => -1i8
@@ -67,7 +67,7 @@ namespace Int8 {
     /// Returns 1 if x > y, -1 if x < y, and 0 if x = y.
     /// The sign of x - y.
     ///
-    def compare(x: Int8, y: Int8): Int32 = switch {
+    pub def compare(x: Int8, y: Int8): Int32 = switch {
         case x == y  => 0
         case x < y   => -1
         case x > y   => 1
@@ -77,14 +77,14 @@ namespace Int8 {
     /// Returns 1 if x > 0, -1 if x < 0, and 0 if x = 0.
     /// The sign of x.
     ///
-    def signum(x: Int8): Int32 = compare(x, 0i8)
+    pub def signum(x: Int8): Int32 = compare(x, 0i8)
 
     ///
     /// Returns the logical right shift of `x` by `distance`.
     /// Only the rightmost 5 bits of `distance` are considered (ie. `distance % 32`).
     /// A zero is shifted into the leftmost position regardless of sign extension.
     ///
-    def logicalRightShift(x: Int8, distance: Int32): Int8 =
+    pub def logicalRightShift(x: Int8, distance: Int32): Int8 =
         if (x < 0i8 && distance % 32 != 0)
             ((x >>> 1) &&& maxValue()) >>> (distance - 1)
         else
@@ -94,7 +94,7 @@ namespace Int8 {
     /// Returns the number of one-bits in the two's complement binary
     /// representation of `x`.
     ///
-    def bitCount(x: Int8): Int32 = switch {
+    pub def bitCount(x: Int8): Int32 = switch {
         case x == 0i8       => 0
         case x % 2i8 != 0i8 => bitCount(logicalRightShift(x, 1)) + 1
         case x % 2i8 == 0i8 => bitCount(logicalRightShift(x, 1))
@@ -104,7 +104,7 @@ namespace Int8 {
     /// Returns the the value obtained by rotating the two's complement
     /// binary representation of `x` right by `distance` bits.
     ///
-    def rotateRight(x: Int8, distance: Int32): Int8 =
+    pub def rotateRight(x: Int8, distance: Int32): Int8 =
         let rem = distance % size();
         let rot = if (rem >= 0) rem else rem + size();
         (logicalRightShift(x, rot)) ||| (x <<< (size() - rot))
@@ -113,7 +113,7 @@ namespace Int8 {
     /// Returns the the value obtained by rotating the two's complement
     /// binary representation of `x` left by `distance` bits.
     ///
-    def rotateLeft(x: Int8, distance: Int32): Int8 =
+    pub def rotateLeft(x: Int8, distance: Int32): Int8 =
         let rem = distance % size();
         let rot = if (rem >= 0) rem else rem + size();
         (logicalRightShift(x, size() - rot)) ||| (x <<< rot)
@@ -122,7 +122,7 @@ namespace Int8 {
     /// Returns the value obtained by reversing the bits in the
     /// two's complement binary representation of `x`.
     ///
-    def reverse(x: Int8): Int8 = reverseHelper(x, 0, size()-1)
+    pub def reverse(x: Int8): Int8 = reverseHelper(x, 0, size()-1)
 
     ///
     /// Helper function for `reverse`.
@@ -146,7 +146,7 @@ namespace Int8 {
     /// Possible return values: 0 (rightmost bit) - 7 (leftmost bit)
     ///                         -1 if x = 0
     ///
-    def highestOneBitPosition(x: Int8): Int32 =
+    pub def highestOneBitPosition(x: Int8): Int32 =
         // Start at bit 7 and scan right
         oneBitPositionHelper(x, size() - 1, -1)
 
@@ -155,7 +155,7 @@ namespace Int8 {
     /// Possible return values: 0 (rightmost bit) - 7 (leftmost bit)
     ///                         -1 if x = 0
     ///
-    def lowestOneBitPosition(x: Int8): Int32 =
+    pub def lowestOneBitPosition(x: Int8): Int32 =
         // Start at bit 0 and scan left
         oneBitPositionHelper(x, 0, 1)
 
@@ -178,7 +178,7 @@ namespace Int8 {
     /// of the highest-order/leftmost one-bit in `x`.
     /// Returns 0 if x=0.
     ///
-    def highestOneBit(x: Int8): Int8 =
+    pub def highestOneBit(x: Int8): Int8 =
         bitPositionToInt(highestOneBitPosition(x))
 
     ///
@@ -186,7 +186,7 @@ namespace Int8 {
     /// of the highest-order/leftmost one-bit in `x`.
     /// Returns 0 if x=0.
     ///
-    def lowestOneBit(x: Int8): Int8 =
+    pub def lowestOneBit(x: Int8): Int8 =
         bitPositionToInt(lowestOneBitPosition(x))
 
     ///
@@ -203,7 +203,7 @@ namespace Int8 {
     /// highest-order/leftmost one-bit in `x`.
     /// Returns 8 if x=0.
     ///
-    def numberOfLeadingZeros(x: Int8): Int32 =
+    pub def numberOfLeadingZeros(x: Int8): Int32 =
         if (x == 0i8) size() else size() - 1 - highestOneBitPosition(x)
 
     ///
@@ -211,7 +211,7 @@ namespace Int8 {
     /// lowest-order/rightmost one-bit in `x`.
     /// Returns 8 if x=0.
     ///
-    def numberOfTrailingZeros(x: Int8): Int32 =
+    pub def numberOfTrailingZeros(x: Int8): Int32 =
         if (x == 0i8) size() else lowestOneBitPosition(x)
 
     ///
@@ -219,7 +219,7 @@ namespace Int8 {
     /// Considers the 5 rightmost bits of `position` (`position` mod 32).
     /// The bits of x have positions: 0 (rightmost bit) - 7 (leftmost bit)
     ///
-    def getBit(x: Int8, position: Int32): Int32 =
+    pub def getBit(x: Int8, position: Int32): Int32 =
         if ((x >>> position) % 2i8 == 0i8) 0 else 1
 
     ///
@@ -227,19 +227,19 @@ namespace Int8 {
     /// Considers the 5 rightmost bits of `position` (`position` mod 32).
     /// The bits of x have positions: 0 (rightmost bit) - 7 (leftmost bit)
     ///
-    def setBit(x: Int8, position: Int32): Int8 = x ||| (1i8 <<< position)
+    pub def setBit(x: Int8, position: Int32): Int8 = x ||| (1i8 <<< position)
 
     ///
     /// Returns `x` with the bit at position `position` cleared (to 0).
     /// Considers the 5 rightmost bits of `position` (`position` mod 32).
     /// The bits of x have positions: 0 (rightmost bit) - 7 (leftmost bit)
     ///
-    def clearBit(x: Int8, position: Int32): Int8 = x &&& ~~~(1i8 <<< position)
+    pub def clearBit(x: Int8, position: Int32): Int8 = x &&& ~~~(1i8 <<< position)
 
     ///
     /// Returns `x` with the bit at position `position` flipped.
     /// Considers the 5 rightmost bits of `position` (`position` mod 32).
     /// The bits of x have positions: 0 (rightmost bit) - 7 (leftmost bit)
     ///
-    def flipBit(x: Int8, position: Int32): Int8 = x ^^^ (1i8 <<< position)
+    pub def flipBit(x: Int8, position: Int32): Int8 = x ^^^ (1i8 <<< position)
 }

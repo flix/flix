@@ -15,35 +15,35 @@
 /////////////////////////////////////////////////////////////////////////////
 
 namespace Foo01/Bar01 {
-    def x(): Bool = false
-    def f(): Str = "foo"
+    pub def x(): Bool = false
+    pub def f(): Str = "foo"
 }
 
 @test
 def testDef01(): Bool = assertEq!(Foo01/Bar01.f(), "foo")
 
 namespace Foo02 {
-    def f(): Int = 5
-    def g(): Int = f()
+    pub def f(): Int = 5
+    pub def g(): Int = f()
 }
 
 @test
 def testDef02(): Bool = assertEq!(Foo02.g(), 5)
 
 namespace Foo03 {
-    def x(): Bool = true
-    def y(): Bool = false
-    def f(): Bool = y()
+    pub def x(): Bool = true
+    pub def y(): Bool = false
+    pub def f(): Bool = y()
 }
 
 @test
 def testDef03(): Bool = assertEq!(Foo03.f(), false)
 
 namespace Foo04 {
-    def x(): Str = "hello"
+    pub def x(): Str = "hello"
 }
 namespace Bar04 {
-    def x(): Str = Foo04.x()
+    pub def x(): Str = Foo04.x()
 }
 
 @test
@@ -55,17 +55,17 @@ def x05(): Int = 42
 def testDef05(): Bool = assertEq!(x05(), 42)
 
 namespace A06/B06 {
-    def a(): Bool = false
+    pub def a(): Bool = false
 }
 namespace A06 {
-    def b(): Bool = !A06/B06.a()
+    pub def b(): Bool = !A06/B06.a()
 }
 namespace A06 {
     namespace B06 {
-        def c(): Int = 0
+        pub def c(): Int = 0
 
         namespace C06 {
-            def d(): Int = 42
+            pub def d(): Int = 42
         }
     }
 }

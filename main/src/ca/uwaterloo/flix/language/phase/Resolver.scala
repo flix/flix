@@ -643,7 +643,14 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
       val hookOpt = prog0.hooks.get(Symbol.mkDefnSym(qname.namespace, qname.ident))
 
       (defnOpt, hookOpt) match {
-        case (Some(defn), None) => RefTarget.Defn(qname.namespace, defn).toSuccess
+        case (Some(defn), None) =>
+          //
+          // Check whether the symbol is accessible.
+          //
+          if (isAccessible(defn, ns0))
+            RefTarget.Defn(qname.namespace, defn).toSuccess
+          else
+            ResolutionError.InaccessibleDef(defn.sym, ns0, qname.loc).toFailure
         case (None, Some(hook)) => RefTarget.Hook(hook).toSuccess
         case (None, None) => ResolutionError.UndefinedDef(qname, ns0, qname.loc).toFailure
         case (Some(defn), Some(hook)) => ResolutionError.AmbiguousRef(qname, ns0, qname.loc).toFailure
@@ -809,6 +816,39 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
         tpe2 <- lookupType(targ0, ns0, prog0)
       ) yield Type.Apply(tpe1, tpe2)
 
+  }
+
+  /**
+    * Returns `true` if the given definition `defn0` is accessible from the given namespace `ns0`.
+    *
+    * A definition `defn0` is accessible from a namespace `ns0` if:
+    *
+    * (a) The definition is marked public.
+    * (b) The definition is defined in the namespace `ns0`.
+    * (c) The definition is defined in a parent namespace of `ns0`.
+    *  - A special case of this rule ensures that every definition in the root namespace is accessible.
+    */
+  def isAccessible(defn0: NamedAst.Def, ns0: Name.NName): Boolean = {
+    //
+    // Check if the definition is marked public.
+    //
+    if (defn0.mod.isPublic)
+      return true
+
+    //
+    // Check if the definition occurs in `ns0` or as a parent of `ns0`.
+    //
+    // NB: A special case of this ensures that every definition in the root namespace is accessible.
+    //
+    val prefixNs = defn0.sym.namespace
+    val targetNs = ns0.idents.map(_.name)
+    if (targetNs.startsWith(prefixNs))
+      return true
+
+    //
+    // The definition is not accessible.
+    //
+    false
   }
 
 }

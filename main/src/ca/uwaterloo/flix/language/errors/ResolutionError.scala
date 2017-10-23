@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationError
+import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.ast.{Name, Source, SourceLocation}
 import ca.uwaterloo.flix.util.vt.VirtualString._
 import ca.uwaterloo.flix.util.vt.VirtualTerminal
@@ -73,6 +74,26 @@ object ResolutionError {
         vt << Code(l, "tag is defined in this enum.") << NewLine
       }
       vt << Underline("Tip:") << " Prefix the tag with the enum name." << NewLine
+    }
+  }
+
+  /**
+    * Inaccessible Definition Error.
+    *
+    * @param sym the definition symbol.
+    * @param ns  the namespace where the symbol is not accessible.
+    * @param loc the location where the error occurred.
+    */
+  case class InaccessibleDef(sym: Symbol.DefnSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
+    val source: Source = loc.source
+    val message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Definition '" << Red(sym.toString) << s"' is not accessible from the namespace '" << Cyan(ns.toString) << "'." << NewLine
+      vt << NewLine
+      vt << Code(loc, "inaccessible definition.") << NewLine
+      vt << NewLine
+      vt << Underline("Tip:") << " Mark the definition as public." << NewLine
     }
   }
 

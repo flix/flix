@@ -19,33 +19,33 @@ namespace Int64 {
     ///
     /// Returns the number of bits used to represent an `Int64`.
     ///
-    def size(): Int32 = 64
+    pub def size(): Int32 = 64
 
     ///
     /// Returns the minimum number representable by an `Int64`.
     ///
-    def minValue(): Int64 = 1i64 <<< (size() - 1)
+    pub def minValue(): Int64 = 1i64 <<< (size() - 1)
 
     ///
     /// Returns the maximum number representable by an `Int64`.
     ///
-    def maxValue(): Int64 = ~~~minValue()
+    pub def maxValue(): Int64 = ~~~minValue()
 
     ///
     /// Returns the smaller of `x` and `y`.
     ///
-    def min(x: Int64, y: Int64): Int64 = if (x <= y) x else y
+    pub def min(x: Int64, y: Int64): Int64 = if (x <= y) x else y
 
     ///
     /// Returns the larger of `x` and `y`.
     ///
-    def max(x: Int64, y: Int64): Int64 = if (x >= y) x else y
+    pub def max(x: Int64, y: Int64): Int64 = if (x >= y) x else y
 
     ///
     /// Returns the absolute value of `x`.
     /// If the absolute value exceeds maxValue(), -1 is returned.
     ///
-    def abs(x: Int64): Int64 = switch {
+    pub def abs(x: Int64): Int64 = switch {
         case x >= 0i64          => x
         case x == minValue()    => -1i64
         case x != minValue()    => -x
@@ -55,7 +55,7 @@ namespace Int64 {
     /// Returns the distance between `x` and `y`.
     /// If this distance exceeds maxValue(), -1 is returned.
     ///
-    def dist(x: Int64, y: Int64): Int64 = switch {
+    pub def dist(x: Int64, y: Int64): Int64 = switch {
         case x >= 0i64 && y >= 0i64                 => abs(x - y)
         case x < 0i64 && y < 0i64                   => abs(x - y)
         case x == minValue() || y == minValue()     => -1i64
@@ -67,7 +67,7 @@ namespace Int64 {
     /// Returns 1 if x > y, -1 if x < y, and 0 if x = y.
     /// The sign of x - y.
     ///
-    def compare(x: Int64, y: Int64): Int32 = switch {
+    pub def compare(x: Int64, y: Int64): Int32 = switch {
         case x == y  => 0
         case x < y   => -1
         case x > y   => 1
@@ -77,14 +77,14 @@ namespace Int64 {
     /// Returns 1 if x > 0, -1 if x < 0, and 0 if x = 0.
     /// The sign of x.
     ///
-    def signum(x: Int64): Int32 = compare(x, 0i64)
+    pub def signum(x: Int64): Int32 = compare(x, 0i64)
 
     ///
     /// Returns the logical right shift of `x` by `distance`.
     /// Only the rightmost 6 bits of `distance` are considered (ie. `distance % 64`).
     /// A zero is shifted into the leftmost position regardless of sign extension.
     ///
-    def logicalRightShift(x: Int64, distance: Int32): Int64 =
+    pub def logicalRightShift(x: Int64, distance: Int32): Int64 =
         if (x < 0i64 && distance % size() != 0)
             ((x >>> 1) &&& maxValue()) >>> (distance - 1)
         else
@@ -94,7 +94,7 @@ namespace Int64 {
     /// Returns the number of one-bits in the two's complement binary
     /// representation of `x`.
     ///
-    def bitCount(x: Int64): Int32 = switch {
+    pub def bitCount(x: Int64): Int32 = switch {
         case x == 0i64          => 0
         case x % 2i64 != 0i64   => bitCount(logicalRightShift(x, 1)) + 1
         case x % 2i64 == 0i64   => bitCount(logicalRightShift(x, 1))
@@ -104,21 +104,21 @@ namespace Int64 {
     /// Returns the the value obtained by rotating the two's complement
     /// binary representation of `x` right by `distance` bits.
     ///
-    def rotateRight(x: Int64, distance: Int32): Int64 =
+    pub def rotateRight(x: Int64, distance: Int32): Int64 =
         (logicalRightShift(x, distance)) ||| (x <<< -distance)
 
     ///
     /// Returns the the value obtained by rotating the two's complement
     /// binary representation of `x` left by `distance` bits.
     ///
-    def rotateLeft(x: Int64, distance: Int32): Int64 =
+    pub def rotateLeft(x: Int64, distance: Int32): Int64 =
         (logicalRightShift(x, -distance)) ||| (x <<< distance)
 
     ///
     /// Returns the value obtained by reversing the bits in the
     /// two's complement binary representation of `x`.
     ///
-    def reverse(x: Int64): Int64 = reverseHelper(x, 0, size()-1)
+    pub def reverse(x: Int64): Int64 = reverseHelper(x, 0, size()-1)
 
     ///
     /// Helper function for `reverse`.
@@ -142,7 +142,7 @@ namespace Int64 {
     /// Possible return values: 0 (rightmost bit) - 63 (leftmost bit)
     ///                         -1 if x = 0
     ///
-    def highestOneBitPosition(x: Int64): Int32 =
+    pub def highestOneBitPosition(x: Int64): Int32 =
         // Start at bit 63 and scan right
         oneBitPositionHelper(x, size() - 1, -1)
 
@@ -151,7 +151,7 @@ namespace Int64 {
     /// Possible return values: 0 (rightmost bit) - 63 (leftmost bit)
     ///                         -1 if x = 0
     ///
-    def lowestOneBitPosition(x: Int64): Int32 =
+    pub def lowestOneBitPosition(x: Int64): Int32 =
         // Start at bit 0 and scan left
         oneBitPositionHelper(x, 0, 1)
 
@@ -174,7 +174,7 @@ namespace Int64 {
     /// of the highest-order/leftmost one-bit in `x`.
     /// Returns 0 if x=0.
     ///
-    def highestOneBit(x: Int64): Int64 =
+    pub def highestOneBit(x: Int64): Int64 =
         bitPositionToInt(highestOneBitPosition(x))
 
     ///
@@ -182,7 +182,7 @@ namespace Int64 {
     /// of the highest-order/leftmost one-bit in `x`.
     /// Returns 0 if x=0.
     ///
-    def lowestOneBit(x: Int64): Int64 =
+    pub def lowestOneBit(x: Int64): Int64 =
         bitPositionToInt(lowestOneBitPosition(x))
 
     ///
@@ -199,7 +199,7 @@ namespace Int64 {
     /// highest-order/leftmost one-bit in `x`.
     /// Returns 64 if x=0.
     ///
-    def numberOfLeadingZeros(x: Int64): Int32 =
+    pub def numberOfLeadingZeros(x: Int64): Int32 =
         if (x == 0i64) size() else size() - 1 - highestOneBitPosition(x)
 
     ///
@@ -207,7 +207,7 @@ namespace Int64 {
     /// lowest-order/rightmost one-bit in `x`.
     /// Returns 64 if x=0.
     ///
-    def numberOfTrailingZeros(x: Int64): Int32 =
+    pub def numberOfTrailingZeros(x: Int64): Int32 =
         if (x == 0i64) size() else lowestOneBitPosition(x)
 
     ///
@@ -215,7 +215,7 @@ namespace Int64 {
     /// Considers the 6 rightmost bits of `position` (`position` mod 64).
     /// The bits of x have positions: 0 (rightmost bit) - 63 (leftmost bit).
     ///
-    def getBit(x: Int64, position: Int32): Int32 =
+    pub def getBit(x: Int64, position: Int32): Int32 =
         if ((x >>> position) % 2i64 == 0i64) 0 else 1
 
     ///
@@ -223,19 +223,19 @@ namespace Int64 {
     /// Considers the 6 rightmost bits of `position` (`position` mod 64).
     /// The bits of x have positions: 0 (rightmost bit) - 63 (leftmost bit)
     ///
-    def setBit(x: Int64, position: Int32): Int64 = x ||| (1i64 <<< position)
+    pub def setBit(x: Int64, position: Int32): Int64 = x ||| (1i64 <<< position)
 
     ///
     /// Returns `x` with the bit at position `position` cleared (to 0).
     /// Considers the 6 rightmost bits of `position` (`position` mod 64).
     /// The bits of x have positions: 0 (rightmost bit) - 63 (leftmost bit)
     ///
-    def clearBit(x: Int64, position: Int32): Int64 = x &&& ~~~(1i64 <<< position)
+    pub def clearBit(x: Int64, position: Int32): Int64 = x &&& ~~~(1i64 <<< position)
 
     ///
     /// Returns `x` with the bit at position `position` flipped.
     /// Considers the 6 rightmost bits of `position` (`position` mod 64).
     /// The bits of x have positions: 0 (rightmost bit) - 63 (leftmost bit)
     ///
-    def flipBit(x: Int64, position: Int32): Int64 = x ^^^ (1i64 <<< position)
+    pub def flipBit(x: Int64, position: Int32): Int64 = x ^^^ (1i64 <<< position)
 }

@@ -18,17 +18,17 @@ namespace Console {
     ///
     /// Alias for `Console.StdIn.readLine`.
     ///
-    def readLine(u: Unit): Str @ IO = Console/StdIn.readLine(())
+    pub def readLine(u: Unit): Str @ IO = Console/StdIn.readLine(())
 
     ///
     /// Alias for `Console.StdOut.print`.
     ///
-    def print(s: Str): Unit @ IO = Console/StdOut.print(s)
+    pub def print(s: Str): Unit @ IO = Console/StdOut.print(s)
 
     ///
     /// Alias for `Console.StdOut.printLine`.
     ///
-    def printLine(s: Str): Unit @ IO = Console/StdOut.printLine(s)
+    pub def printLine(s: Str): Unit @ IO = Console/StdOut.printLine(s)
 
     ///
     /// Operations on the Standard Input Stream.
@@ -38,7 +38,7 @@ namespace Console {
         ///
         /// Returns the next line read from the standard input stream.
         ///
-        def readLine(u: Unit): Str @ IO = unsafe native method ca.uwaterloo.flix.runtime.library.Console.readLine() as Str @ IO
+        pub def readLine(u: Unit): Str @ IO = unsafe native method ca.uwaterloo.flix.runtime.library.Console.readLine() as Str @ IO
 
     }
 
@@ -50,22 +50,22 @@ namespace Console {
         ///
         /// Prints the given string `s` to the standard output stream.
         ///
-        def print(s: Str): Unit @ IO = unsafe native method ca.uwaterloo.flix.runtime.library.Console.printStdOut(s) as Unit @ IO
+        pub def print(s: Str): Unit @ IO = unsafe native method ca.uwaterloo.flix.runtime.library.Console.printStdOut(s) as Unit @ IO
 
         ///
         /// Prints the given string `s` and a newline to the standard output stream.
         ///
-        def printLine(s: Str): Unit @ IO = unsafe native method ca.uwaterloo.flix.runtime.library.Console.printLineStdOut(s) as Unit @ IO
+        pub def printLine(s: Str): Unit @ IO = unsafe native method ca.uwaterloo.flix.runtime.library.Console.printLineStdOut(s) as Unit @ IO
 
         ///
         /// Prints a newline to the standard output stream.
         ///
-        def newLine(u: Unit): Unit @ IO = unsafe native method ca.uwaterloo.flix.runtime.library.Console.newLineStdOut() as Unit @ IO
+        pub def newLine(u: Unit): Unit @ IO = unsafe native method ca.uwaterloo.flix.runtime.library.Console.newLineStdOut() as Unit @ IO
 
         ///
         /// Flushes the standard output stream.
         ///
-        def flush(u: Unit): Unit @ IO = unsafe native method ca.uwaterloo.flix.runtime.library.Console.flushStdOut() as Unit @ IO
+        pub def flush(u: Unit): Unit @ IO = unsafe native method ca.uwaterloo.flix.runtime.library.Console.flushStdOut() as Unit @ IO
 
     }
 
@@ -77,22 +77,22 @@ namespace Console {
         ///
         /// Prints the given string `s` to the standard error stream.
         ///
-        def print(s: Str): Unit @ IO = unsafe native method ca.uwaterloo.flix.runtime.library.Console.printStdErr(s) as Unit @ IO
+        pub def print(s: Str): Unit @ IO = unsafe native method ca.uwaterloo.flix.runtime.library.Console.printStdErr(s) as Unit @ IO
 
         ///
         /// Prints the given string `s` and a newline to the standard error stream.
         ///
-        def printLine(s: Str): Unit @ IO  = unsafe native method ca.uwaterloo.flix.runtime.library.Console.printLineStdErr(s) as Unit @ IO
+        pub def printLine(s: Str): Unit @ IO  = unsafe native method ca.uwaterloo.flix.runtime.library.Console.printLineStdErr(s) as Unit @ IO
 
         ///
         /// Prints a newline to the standard error stream.
         ///
-        def newLine(u: Unit): Unit @ IO  = unsafe native method ca.uwaterloo.flix.runtime.library.Console.newLineStdErr() as Unit @ IO
+        pub def newLine(u: Unit): Unit @ IO  = unsafe native method ca.uwaterloo.flix.runtime.library.Console.newLineStdErr() as Unit @ IO
 
         ///
         /// Flushes the standard error stream.
         ///
-        def flush(u: Unit): Unit @ IO  = unsafe native method ca.uwaterloo.flix.runtime.library.Console.flushStdErr() as Unit @ IO
+        pub def flush(u: Unit): Unit @ IO  = unsafe native method ca.uwaterloo.flix.runtime.library.Console.flushStdErr() as Unit @ IO
 
     }
 

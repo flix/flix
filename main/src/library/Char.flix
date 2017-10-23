@@ -3,60 +3,60 @@ namespace Char {
     ///
     ///  Returns `true` if the given char `c` is an ascii character.
     ///
-    def isAscii(c: Char): Bool = unsafe native method ca.uwaterloo.flix.runtime.library.Char.isAscii(c)
+    pub def isAscii(c: Char): Bool = unsafe native method ca.uwaterloo.flix.runtime.library.Char.isAscii(c)
 
     ///
     /// Returns `true` if the given char `c` is a letter character.
     ///
-    def isLetter(c: Char): Bool = unsafe native method ca.uwaterloo.flix.runtime.library.Char.isLetter(c)
+    pub def isLetter(c: Char): Bool = unsafe native method ca.uwaterloo.flix.runtime.library.Char.isLetter(c)
 
     ///
     /// Returns `true` if the given char `c` is in the range 0...9.
     ///
-    def isDigit(c: Char): Bool = unsafe native method ca.uwaterloo.flix.runtime.library.Char.isDigit(c)
+    pub def isDigit(c: Char): Bool = unsafe native method ca.uwaterloo.flix.runtime.library.Char.isDigit(c)
 
     ///
     /// Returns `true` if the given char `c` is in the range 0...7.
     ///
-    def isOctDigit(c: Char): Bool = unsafe native method ca.uwaterloo.flix.runtime.library.Char.isOctDigit(c)
+    pub def isOctDigit(c: Char): Bool = unsafe native method ca.uwaterloo.flix.runtime.library.Char.isOctDigit(c)
 
     ///
     /// Returns `true` if the given char `c` is in the range 0...F.
     ///
-    def isHexDigit(c: Char): Bool = unsafe native method ca.uwaterloo.flix.runtime.library.Char.isHexDigit(c)
+    pub def isHexDigit(c: Char): Bool = unsafe native method ca.uwaterloo.flix.runtime.library.Char.isHexDigit(c)
 
     ///
     /// Returns `true` if the given char `c` is lowercase.
     ///
-    def isLowerCase(c: Char): Bool = unsafe native method ca.uwaterloo.flix.runtime.library.Char.isLowerCase(c)
+    pub def isLowerCase(c: Char): Bool = unsafe native method ca.uwaterloo.flix.runtime.library.Char.isLowerCase(c)
 
     ///
     /// Returns `true` if the given char `c` is uppercase.
     ///
-    def isUpperCase(c: Char): Bool = unsafe native method ca.uwaterloo.flix.runtime.library.Char.isUpperCase(c)
+    pub def isUpperCase(c: Char): Bool = unsafe native method ca.uwaterloo.flix.runtime.library.Char.isUpperCase(c)
 
     ///
     /// Returns `true` if the given char `c` is a white space character.
     ///
-    def isWhiteSpace(c: Char): Bool = unsafe native method ca.uwaterloo.flix.runtime.library.Char.isWhiteSpace(c)
+    pub def isWhiteSpace(c: Char): Bool = unsafe native method ca.uwaterloo.flix.runtime.library.Char.isWhiteSpace(c)
 
     ///
     /// Converts a letter to its lowercase version.
     ///
     /// Returns the original character if it does not have a lowercase version.
     ///
-    def toLowerCase(c: Char): Char = unsafe native method ca.uwaterloo.flix.runtime.library.Char.toLowerCase(c)
+    pub def toLowerCase(c: Char): Char = unsafe native method ca.uwaterloo.flix.runtime.library.Char.toLowerCase(c)
 
     ///
     /// Converts a letter to its uppercase version.
     ///
     /// Returns the original character if it does not have a uppercase version.
     ///
-    def toUpperCase(c: Char): Char = unsafe native method ca.uwaterloo.flix.runtime.library.Char.toUpperCase(c)
+    pub def toUpperCase(c: Char): Char = unsafe native method ca.uwaterloo.flix.runtime.library.Char.toUpperCase(c)
 
     ///
     /// Returns the character `c` as a string.
     ///
-    def toString(c: Char): Str = unsafe native method ca.uwaterloo.flix.runtime.library.Char.toString(c)
+    pub def toString(c: Char): Str = unsafe native method ca.uwaterloo.flix.runtime.library.Char.toString(c)
 
 }

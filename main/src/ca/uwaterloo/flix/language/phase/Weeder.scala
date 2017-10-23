@@ -93,7 +93,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       case ParsedAst.Declaration.Law(docOpt, sp1, ident, tparams0, fparams0, tpe, exp, sp2) =>
         val loc = mkSL(sp1, sp2)
         val doc = docOpt.map(d => Ast.Documentation(d.text.mkString(" "), loc))
-        val mod = Ast.Modifiers.Empty
+        val mod = Ast.Modifiers(Ast.Modifier.Public :: Nil)
 
         /*
          * Check for `DuplicateFormal`.
