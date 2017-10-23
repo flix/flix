@@ -123,6 +123,108 @@ class TestResolver extends FunSuite with TestUtils {
     expectError[ResolutionError.AmbiguousTag](result)
   }
 
+  test("InaccessibleDef.01") {
+    val input =
+      s"""
+         |namespace A {
+         |  def f(): Int = 42
+         |}
+         |
+         |namespace B {
+         |  def g(): Int = A.f()
+         |}
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[ResolutionError.InaccessibleDef](result)
+  }
+
+  test("InaccessibleDef.02") {
+    val input =
+      s"""
+         |namespace A {
+         |  def f(): Int = A/B/C.g()
+         |
+         |  namespace B/C {
+         |    def g(): Int = A.f()
+         |  }
+         |}
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[ResolutionError.InaccessibleDef](result)
+  }
+
+  test("InaccessibleEnum.01") {
+    val input =
+      s"""
+         |namespace A {
+         |  enum Color {
+         |    case Blu,
+         |    case Red
+         |  }
+         |}
+         |
+         |namespace B {
+         |  def g(): A.Color = A/Color.Red
+         |}
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[ResolutionError.InaccessibleEnum](result)
+  }
+
+  test("InaccessibleEnum.02") {
+    val input =
+      s"""
+         |namespace A {
+         |  enum Color {
+         |    case Blu,
+         |    case Red
+         |  }
+         |}
+         |
+         |namespace B {
+         |  def g(): A.Color = ???
+         |}
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[ResolutionError.InaccessibleEnum](result)
+  }
+
+  test("InaccessibleEnum.03") {
+    val input =
+      s"""
+         |namespace A {
+         |  def f(): A/B/C.Color = A/B/C/Color.Blu
+         |
+         |  namespace B/C {
+         |    enum Color {
+         |      case Blu,
+         |      case Red
+         |    }
+         |  }
+         |}
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[ResolutionError.InaccessibleEnum](result)
+  }
+
+  test("InaccessibleEnum.04") {
+    val input =
+      s"""
+         |namespace A {
+         |  def f(): A/B/C.Color = ???
+         |
+         |  namespace B/C {
+         |    enum Color {
+         |      case Blu,
+         |      case Red
+         |    }
+         |  }
+         |}
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[ResolutionError.InaccessibleEnum](result)
+  }
+
   test("UndefinedDef.01") {
     val input = "def f(): Int = x"
     val result = new Flix().addStr(input).compile()
