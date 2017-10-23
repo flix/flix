@@ -134,18 +134,20 @@ object ParsedAst {
       * Enum Declaration.
       *
       * @param doc     the optional comment associated with the declaration.
+      * @param mod     the associated modifiers.
       * @param sp1     the position of the first character in the declaration.
       * @param ident   the name of the enum.
       * @param tparams the type parameters.
       * @param cases   the cases of the enum.
       * @param sp2     the position of the last character in the declaration.
       */
-    case class Enum(doc: Option[ParsedAst.Documentation], sp1: SourcePosition, ident: Name.Ident, tparams: Seq[ParsedAst.ContextBound], cases: Seq[ParsedAst.Case], sp2: SourcePosition) extends ParsedAst.Declaration
+    case class Enum(doc: Option[ParsedAst.Documentation], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: Seq[ParsedAst.ContextBound], cases: Seq[ParsedAst.Case], sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
       * Type Declaration. A type declaration is syntactic sugar for a singleton enum declaration.
       *
       * @param doc   the optional comment associated with the declaration.
+      * @param mod   the associated modifiers.
       * @param sp1   the position of the first character in the declaration.
       * @param ident the name of the type.
       * @param caze  the singleton case of the type.

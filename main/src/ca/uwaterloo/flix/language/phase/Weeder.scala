@@ -108,24 +108,29 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           List(WeededAst.Declaration.Def(doc, ann, mod, ident, tparams0.map(_.ident).toList, fs, e, t, Eff.Pure, loc))
         }
 
-      case ParsedAst.Declaration.Enum(docOpt, sp1, ident, tparams0, cases, sp2) =>
+      case ParsedAst.Declaration.Enum(docOpt, mods, sp1, ident, tparams0, cases, sp2) =>
         val doc = docOpt.map(d => Ast.Documentation(d.text.mkString(" "), mkSL(d.sp1, d.sp2)))
+        val modVal = Modifiers.visitModifiers(mods, legalModifiers = Set(Ast.Modifier.Public))
         val tparams = tparams0.toList.map(_.ident)
-        /*
-         * Check for `DuplicateTag`.
-         */
-        Validation.fold[ParsedAst.Case, Map[String, WeededAst.Case], WeederError](cases, Map.empty) {
-          case (macc, caze: ParsedAst.Case) =>
-            val tagName = caze.ident.name
-            macc.get(tagName) match {
-              case None => (macc + (tagName -> WeededAst.Case(ident, caze.ident, Types.weed(caze.tpe)))).toSuccess
-              case Some(otherTag) =>
-                val loc1 = otherTag.tag.loc
-                val loc2 = mkSL(caze.ident.sp1, caze.ident.sp2)
-                DuplicateTag(ident.name, tagName, loc1, loc2).toFailure
+
+        modVal flatMap {
+          case mod =>
+            /*
+             * Check for `DuplicateTag`.
+             */
+            Validation.fold[ParsedAst.Case, Map[String, WeededAst.Case], WeederError](cases, Map.empty) {
+              case (macc, caze: ParsedAst.Case) =>
+                val tagName = caze.ident.name
+                macc.get(tagName) match {
+                  case None => (macc + (tagName -> WeededAst.Case(ident, caze.ident, Types.weed(caze.tpe)))).toSuccess
+                  case Some(otherTag) =>
+                    val loc1 = otherTag.tag.loc
+                    val loc2 = mkSL(caze.ident.sp1, caze.ident.sp2)
+                    DuplicateTag(ident.name, tagName, loc1, loc2).toFailure
+                }
+            } map {
+              case m => List(WeededAst.Declaration.Enum(doc, mod, ident, tparams, m, mkSL(sp1, sp2)))
             }
-        } map {
-          case m => List(WeededAst.Declaration.Enum(doc, ident, tparams, m, mkSL(sp1, sp2)))
         }
 
       case ParsedAst.Declaration.Type(docOpt, mods, sp1, ident, caze, sp2) =>
@@ -138,7 +143,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         modVal map {
           case mod =>
             val cases = Map(caze.ident.name -> WeededAst.Case(ident, caze.ident, Types.weed(caze.tpe)))
-            List(WeededAst.Declaration.Enum(doc, ident, Nil, cases, mkSL(sp1, sp2)))
+            List(WeededAst.Declaration.Enum(doc, mod, ident, Nil, cases, mkSL(sp1, sp2)))
         }
 
       case ParsedAst.Declaration.Relation(docOpt, sp1, ident, attrs, sp2) =>
