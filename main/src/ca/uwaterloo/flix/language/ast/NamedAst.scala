@@ -224,9 +224,9 @@ object NamedAst {
 
     case class Var(tpe: ast.Type.Var, loc: SourceLocation) extends NamedAst.Type
 
-    case class Unit(loc: SourceLocation) extends NamedAst.Type
+    case class Ambiguous(name: Name.QName, loc: SourceLocation) extends NamedAst.Type
 
-    case class Ref(name: Name.QName, loc: SourceLocation) extends NamedAst.Type
+    case class Unit(loc: SourceLocation) extends NamedAst.Type
 
     case class Enum(name: Symbol.EnumSym) extends NamedAst.Type
 

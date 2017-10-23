@@ -831,7 +831,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Ref: Rule1[ParsedAst.Type] = rule {
-      SP ~ Names.QualifiedType ~ SP ~> ParsedAst.Type.Ref
+      SP ~ Names.QualifiedType ~ SP ~> ParsedAst.Type.Ambiguous
     }
 
     def Tuple: Rule1[ParsedAst.Type] = {

@@ -704,14 +704,14 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
       def visit(tpe: WeededAst.Type, env: Map[String, Type.Var]): NamedAst.Type = tpe match {
         case WeededAst.Type.Unit(loc) => NamedAst.Type.Unit(loc)
         case WeededAst.Type.Var(ident, loc) => NamedAst.Type.Var(env(ident.name), loc)
-        case WeededAst.Type.Ref(qname, loc) =>
+        case WeededAst.Type.Ambiguous(qname, loc) =>
           if (qname.isUnqualified)
             env.get(qname.ident.name) match {
-              case None => NamedAst.Type.Ref(qname, loc)
+              case None => NamedAst.Type.Ambiguous(qname, loc)
               case Some(tvar) => NamedAst.Type.Var(tvar, loc)
             }
           else
-            NamedAst.Type.Ref(qname, loc)
+            NamedAst.Type.Ambiguous(qname, loc)
         case WeededAst.Type.Tuple(elms, loc) => NamedAst.Type.Tuple(elms.map(e => visit(e, env)), loc)
         case WeededAst.Type.Arrow(tparams, tresult, loc) => NamedAst.Type.Arrow(tparams.map(t => visit(t, env)), visit(tresult, env), loc)
         case WeededAst.Type.Apply(tpe1, tpe2, loc) => NamedAst.Type.Apply(visit(tpe1, env), visit(tpe2, env), loc)

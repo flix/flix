@@ -751,7 +751,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
   def lookupType(tpe0: NamedAst.Type, ns0: Name.NName, prog0: NamedAst.Program): Validation[Type, ResolutionError] = tpe0 match {
     case NamedAst.Type.Var(tvar, loc) => tvar.toSuccess
     case NamedAst.Type.Unit(loc) => Type.Unit.toSuccess
-    case NamedAst.Type.Ref(qname, loc) if qname.isUnqualified => qname.ident.name match {
+    case NamedAst.Type.Ambiguous(qname, loc) if qname.isUnqualified => qname.ident.name match {
       // Basic Types
       case "Unit" => Type.Unit.toSuccess
       case "Bool" => Type.Bool.toSuccess
@@ -793,7 +793,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
             }
         }
     }
-    case NamedAst.Type.Ref(qname, loc) if qname.isQualified =>
+    case NamedAst.Type.Ambiguous(qname, loc) if qname.isQualified =>
       // Lookup the enum using the namespace.
       val decls = prog0.enums.getOrElse(qname.namespace, Map.empty)
       decls.get(qname.ident.name) match {
