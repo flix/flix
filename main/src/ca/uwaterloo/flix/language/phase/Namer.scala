@@ -139,7 +139,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
       /*
        * Enum.
        */
-      case WeededAst.Declaration.Enum(doc, ident, tparams0, cases, loc) =>
+      case WeededAst.Declaration.Enum(doc, mod, ident, tparams0, cases, loc) =>
         val enums0 = prog0.enums.getOrElse(ns0, Map.empty)
         enums0.get(ident.name) match {
           case None =>
@@ -158,7 +158,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
                 case (tacc, tvar) => NamedAst.Type.Apply(tacc, tvar, loc)
               }
             }
-            val enum = NamedAst.Enum(doc, sym, tparams, casesOf(cases, tenv), enumType, loc)
+            val enum = NamedAst.Enum(doc, mod, sym, tparams, casesOf(cases, tenv), enumType, loc)
             val enums = enums0 + (ident.name -> enum)
             prog0.copy(enums = prog0.enums + (ns0 -> enums)).toSuccess
           case Some(enum) =>

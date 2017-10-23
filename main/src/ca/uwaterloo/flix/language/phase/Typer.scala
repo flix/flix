@@ -196,13 +196,13 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           * Performs type resolution on the given enum and its cases.
           */
         def visitEnum(enum: ResolvedAst.Enum): Result[(Symbol.EnumSym, TypedAst.Enum), TypeError] = enum match {
-          case ResolvedAst.Enum(doc, enumSym, tparams, cases0, tpe, loc) =>
+          case ResolvedAst.Enum(doc, mod, enumSym, tparams, cases0, tpe, loc) =>
             val cases = cases0 map {
               case (name, ResolvedAst.Case(_, tagName, tagType)) =>
                 name -> TypedAst.Case(enumSym, tagName, tagType, tagName.loc)
             }
 
-            Ok(enumSym -> TypedAst.Enum(doc, enumSym, cases, enum.tpe, loc))
+            Ok(enumSym -> TypedAst.Enum(doc, mod, enumSym, cases, enum.tpe, loc))
         }
 
         // Visit every enum in the program.

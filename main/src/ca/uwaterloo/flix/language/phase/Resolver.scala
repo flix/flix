@@ -173,7 +173,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
       tparams <- seqM(e0.tparams.map(p => Params.resolve(p, ns0, prog0)))
       cases <- seqM(casesVal)
       tpe <- lookupType(e0.tpe, ns0, prog0)
-    } yield ResolvedAst.Enum(e0.doc, e0.sym, tparams, cases.toMap, tpe, e0.loc)
+    } yield ResolvedAst.Enum(e0.doc, e0.mod, e0.sym, tparams, cases.toMap, tpe, e0.loc)
   }
 
   /**
