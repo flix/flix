@@ -206,6 +206,16 @@ object Ast {
     def isInline: Boolean = mod contains Modifier.Inline
 
     /**
+      * Returns `true` if these modifiers contain the public modifier.
+      */
+    def isPublic: Boolean = mod contains Modifier.Public
+
+    /**
+      * Returns `true` if these modifiers do not contain the public modifier.
+      */
+    def isPrivate: Boolean = !isPublic
+
+    /**
       * Returns `true` if these modifiers contain the synthetic modifier.
       */
     def isSynthetic: Boolean = mod contains Modifier.Synthetic
@@ -222,6 +232,11 @@ object Ast {
       * The inline modifier.
       */
     case object Inline extends Modifier
+
+    /**
+      * The public modifier.
+      */
+    case object Public extends Modifier
 
     /**
       * The synthetic modifier.

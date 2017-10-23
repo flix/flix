@@ -75,7 +75,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         val loc = mkSL(ident.sp1, ident.sp2)
         val doc = docOpt.map(d => Ast.Documentation(d.text.mkString(" "), loc))
         val annVal = Annotations.weed(ann)
-        val modVal = Modifiers.weed(mods)
+        val modVal = Modifiers.visitModifiers(mods, legalModifiers = Set(Ast.Modifier.Inline, Ast.Modifier.Public))
         val expVal = Expressions.weed(exp)
         val tparams = tparams0.toList.map(_.ident)
         val effVal = Effects.weed(effOpt)
@@ -910,14 +910,14 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     /**
       * Weeds the given sequence of parsed modifiers `xs`.
       */
-    def weed(xs: Seq[ParsedAst.Modifier]): Validation[Ast.Modifiers, WeederError] = {
+    def visitModifiers(xs: Seq[ParsedAst.Modifier], legalModifiers: Set[Ast.Modifier]): Validation[Ast.Modifiers, WeederError] = {
       val seen = mutable.Map.empty[String, ParsedAst.Modifier]
       val modifiersVal = xs map {
         modifier =>
           seen.get(modifier.name) match {
             case None =>
               seen += (modifier.name -> modifier)
-              weed(modifier)
+              visitModifier(modifier, legalModifiers)
             case Some(other) =>
               val loc1 = mkSL(other.sp1, other.sp2)
               val loc2 = mkSL(modifier.sp1, modifier.sp2)
@@ -936,11 +936,21 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     /**
       * Weeds the given parsed modifier `m`.
       */
-    def weed(m: ParsedAst.Modifier): Validation[Ast.Modifier, WeederError] = m.name match {
-      case "inline" => Ast.Modifier.Inline.toSuccess
-      case s => throw InternalCompilerException(s"Unknown modifier '$s' near ${mkSL(m.sp1, m.sp2).format}.")
-    }
+    def visitModifier(m: ParsedAst.Modifier, legalModifiers: Set[Ast.Modifier]): Validation[Ast.Modifier, WeederError] = {
+      val modifier = m.name match {
+        case "inline" => Ast.Modifier.Inline
+        case "pub" => Ast.Modifier.Public
+        case s => throw InternalCompilerException(s"Unknown modifier '$s' near ${mkSL(m.sp1, m.sp2).format}.")
+      }
 
+      //
+      // Check for `IllegalModifier`.
+      //
+      if (legalModifiers contains modifier)
+        modifier.toSuccess
+      else
+        IllegalModifier(mkSL(m.sp1, m.sp2)).toFailure
+    }
   }
 
   object Properties {
@@ -1067,7 +1077,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         case param@ParsedAst.FormalParam(sp1, mods, ident, typeOpt, sp2) => seen.get(ident.name) match {
           case None =>
             seen += (ident.name -> param)
-            Modifiers.weed(mods) flatMap {
+            Modifiers.visitModifiers(mods, legalModifiers = Set(Ast.Modifier.Inline)) flatMap {
               case mod =>
                 if (typeRequired && typeOpt.isEmpty)
                   IllegalFormalParameter(ident.name, mkSL(sp1, sp2)).toFailure

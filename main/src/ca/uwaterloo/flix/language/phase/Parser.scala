@@ -910,8 +910,16 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   }
 
   def Modifiers: Rule1[Seq[ParsedAst.Modifier]] = {
-    def Modifier: Rule1[ParsedAst.Modifier] = rule {
+    def Inline: Rule1[ParsedAst.Modifier] = rule {
       SP ~ capture(atomic("inline")) ~ SP ~> ParsedAst.Modifier
+    }
+
+    def Public: Rule1[ParsedAst.Modifier] = rule {
+      SP ~ capture(atomic("pub")) ~ SP ~> ParsedAst.Modifier
+    }
+
+    def Modifier: Rule1[ParsedAst.Modifier] = rule {
+      Inline | Public
     }
 
     rule {

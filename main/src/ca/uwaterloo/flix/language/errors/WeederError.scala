@@ -357,6 +357,22 @@ object WeederError {
   }
 
   /**
+    * An error raised to indicate an illegal modifier.
+    *
+    * @param loc the location where the illegal modifier occurs.
+    */
+  case class IllegalModifier(loc: SourceLocation) extends WeederError {
+    val source: Source = loc.source
+    val message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Illegal modifier." << NewLine
+      vt << NewLine
+      vt << Code(loc, "illegal modifier.") << NewLine
+    }
+  }
+
+  /**
     * An error raised to indicate an illegal native field or method name.
     *
     * @param loc the location of the name.
