@@ -101,7 +101,7 @@ object Name {
     /**
       * Human readable representation.
       */
-    override def toString: String = idents.mkString("/")
+    override def toString: String = if (idents.isEmpty) "/" else idents.mkString("/")
   }
 
   /**

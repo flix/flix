@@ -98,6 +98,26 @@ object ResolutionError {
   }
 
   /**
+    * Inaccessible Enum Error.
+    *
+    * @param sym the enum symbol.
+    * @param ns  the namespace where the symbol is not accessible.
+    * @param loc the location where the error occurred.
+    */
+  case class InaccessibleEnum(sym: Symbol.EnumSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
+    val source: Source = loc.source
+    val message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Enum '" << Red(sym.toString) << s"' is not accessible from the namespace '" << Cyan(ns.toString) << "'." << NewLine
+      vt << NewLine
+      vt << Code(loc, "inaccessible enum.") << NewLine
+      vt << NewLine
+      vt << Underline("Tip:") << " Mark the definition as public." << NewLine
+    }
+  }
+
+  /**
     * Unresolved Definition Error.
     *
     * @param qn  the unresolved definition name.

@@ -7,7 +7,7 @@ namespace Belnap {
     ///
     /// The elements of the boolean lattice.
     ///
-    enum Belnap {
+    pub enum Belnap {
                   case Top,
 
         case True,         case False,

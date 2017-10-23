@@ -671,7 +671,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
 
     // Case 1: Exact match found. Simply return it.
     if (globalMatches.size == 1) {
-      return globalMatches.head.toSuccess
+      return getIfAccessible(globalMatches.head, ns, tag.loc)
     }
 
     // Case 2: No or multiple matches found.
@@ -692,7 +692,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
 
     // Case 2.1: Exact match found in namespace. Simply return it.
     if (namespaceMatches.size == 1) {
-      return namespaceMatches.head.toSuccess
+      return getIfAccessible(namespaceMatches.head, ns, tag.loc)
     }
 
     // Case 2.2: No matches found in namespace.
@@ -709,7 +709,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
     // Case 2.4: Multiple matches found in namespace and an enum name is available.
     val filteredMatches = namespaceMatches.filter(_.sym.name == qname.get.ident.name)
     if (filteredMatches.size == 1) {
-      return filteredMatches.head.toSuccess
+      return getIfAccessible(filteredMatches.head, ns, tag.loc)
     }
 
     ResolutionError.UndefinedTag(tag.name, ns, tag.loc).toFailure
@@ -812,14 +812,14 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
   }
 
   /**
-    * Returns the given definition `defn0` if it is accessible from the given namespace `ns0`.
+    * Successfully returns the given definition `defn0` if it is accessible from the given namespace `ns0`.
+    *
+    * Otherwise fails with a resolution error.
     *
     * A definition `defn0` is accessible from a namespace `ns0` if:
     *
     * (a) the definition is marked public, or
-    * (b) the definition is defined in the namespace `ns0`, or
-    * (c) the definition is defined in a parent namespace of `ns0`.
-    *  - A special case of this rule is that every definition in the root namespace is accessible.
+    * (b) the definition is defined in the namespace `ns0` itself or in a parent of `ns0`.
     */
   def getIfAccessible(defn0: NamedAst.Def, ns0: Name.NName, loc: SourceLocation): Validation[DefTarget, ResolutionError] = {
     //
@@ -829,9 +829,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
       return DefTarget.Defn(defn0).toSuccess
 
     //
-    // Check if the definition occurs in `ns0` or as a parent of `ns0`.
-    //
-    // NB: A special case of this ensures that every definition in the root namespace is accessible.
+    // Check if the definition is defined in `ns0` or in a parent of `ns0`.
     //
     val prefixNs = defn0.sym.namespace
     val targetNs = ns0.idents.map(_.name)
@@ -844,6 +842,36 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
     ResolutionError.InaccessibleDef(defn0.sym, ns0, loc).toFailure
   }
 
+  /**
+    * Successfully returns the given `enum0` if it is accessible from the given namespace `ns0`.
+    *
+    * Otherwise fails with a resolution error.
+    *
+    * An enum is accessible from a namespace `ns0` if:
+    *
+    * (a) the definition is marked public, or
+    * (b) the definition is defined in the namespace `ns0` itself or in a parent of `ns0`.
+    */
+  def getIfAccessible(enum0: NamedAst.Enum, ns0: Name.NName, loc: SourceLocation): Validation[NamedAst.Enum, ResolutionError] = {
 
+    //
+    // Check if the definition is marked public.
+    //
+    if (enum0.mod.isPublic)
+      return enum0.toSuccess
+
+    //
+    // Check if the enum is defined in `ns0` or in a parent of `ns0`.
+    //
+    val prefixNs = enum0.sym.namespace
+    val targetNs = ns0.idents.map(_.name)
+    if (targetNs.startsWith(prefixNs))
+      return enum0.toSuccess
+
+    //
+    // The enum is not accessible.
+    //
+    ResolutionError.InaccessibleEnum(enum0.sym, ns0, loc).toFailure
+  }
 
 }
