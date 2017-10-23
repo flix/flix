@@ -780,9 +780,17 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
             val rootDecls = prog0.enums.getOrElse(Name.RootNS, Map.empty)
             rootDecls.get(typeName) match {
               case None => ResolutionError.UndefinedType(qname, ns0, loc).toFailure
-              case Some(enum) => Type.Enum(enum.sym, Kind.Star).toSuccess
+              case Some(enum) =>
+                // Check accessibility.
+                getIfAccessible(enum, ns0, ns0.loc) map {
+                  case _ => Type.Enum(enum.sym, Kind.Star)
+                }
             }
-          case Some(enum) => Type.Enum(enum.sym, Kind.Star).toSuccess
+          case Some(enum) =>
+            // Check accessibility.
+            getIfAccessible(enum, ns0, ns0.loc) map {
+              case _ => Type.Enum(enum.sym, Kind.Star)
+            }
         }
     }
     case NamedAst.Type.Ref(qname, loc) if qname.isQualified =>
@@ -790,7 +798,11 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
       val decls = prog0.enums.getOrElse(qname.namespace, Map.empty)
       decls.get(qname.ident.name) match {
         case None => ResolutionError.UndefinedType(qname, ns0, loc).toFailure
-        case Some(enum) => Type.Enum(enum.sym, Kind.Star).toSuccess
+        case Some(enum) =>
+          // Check accessibility.
+          getIfAccessible(enum, ns0, ns0.loc) map {
+            case _ => Type.Enum(enum.sym, Kind.Star)
+          }
       }
     case NamedAst.Type.Enum(sym) =>
       Type.Enum(sym, Kind.Star).toSuccess
