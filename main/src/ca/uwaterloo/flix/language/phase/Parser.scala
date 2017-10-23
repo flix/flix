@@ -209,7 +209,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
       rule {
         // NB: NestedCase must be parsed before UnitCase.
-        Documentation ~ SP ~ atomic("type") ~ WS ~ Names.Type ~ WS ~ "=" ~ WS ~ (NestedCase | UnitCase) ~ SP ~> ParsedAst.Declaration.Type
+        Documentation ~ Modifiers ~ SP ~ atomic("type") ~ WS ~ Names.Type ~ WS ~ "=" ~ WS ~ (NestedCase | UnitCase) ~ SP ~> ParsedAst.Declaration.Type
       }
     }
 
