@@ -244,10 +244,10 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
         case NamedAst.Expression.Var(sym, loc) => ResolvedAst.Expression.Var(sym, loc).toSuccess
 
         case NamedAst.Expression.Def(ref, tvar, loc) =>
-          lookupRef(ref, ns0, prog0) map {
-            case RefTarget.Defn(ns, defn) =>
+          lookupDef(ref, ns0, prog0) map {
+            case DefTarget.Defn(defn) =>
               ResolvedAst.Expression.Def(defn.sym, tvar, loc)
-            case RefTarget.Hook(hook) =>
+            case DefTarget.Hook(hook) =>
               ResolvedAst.Expression.Hook(hook, hook.tpe, loc)
           }
 
@@ -537,12 +537,12 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
           } yield ResolvedAst.Predicate.Body.Atom(d.sym, polarity, ts, loc)
 
         case NamedAst.Predicate.Body.Filter(qname, terms, loc) =>
-          lookupRef(qname, ns0, prog0) flatMap {
-            case RefTarget.Defn(ns, defn) =>
+          lookupDef(qname, ns0, prog0) flatMap {
+            case DefTarget.Defn(defn) =>
               for {
                 ts <- seqM(terms.map(t => Expressions.resolve(t, ns0, prog0)))
               } yield ResolvedAst.Predicate.Body.Filter(defn.sym, ts, loc)
-            case RefTarget.Hook(hook) => throw InternalCompilerException(s"Hook not allowed here: ${loc.format}")
+            case DefTarget.Hook(hook) => throw InternalCompilerException(s"Hook not allowed here: ${loc.format}")
           }
 
         case NamedAst.Predicate.Body.Loop(pat, term, loc) =>
@@ -604,36 +604,36 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
   }
 
   /**
-    * The result of a reference lookup.
+    * The result of a definition lookup.
     */
-  sealed trait RefTarget
+  sealed trait DefTarget
 
-  object RefTarget {
+  object DefTarget {
 
-    case class Defn(ns: Name.NName, defn: NamedAst.Def) extends RefTarget
+    case class Defn(defn: NamedAst.Def) extends DefTarget
 
-    case class Hook(hook: Ast.Hook) extends RefTarget
+    case class Hook(hook: Ast.Hook) extends DefTarget
 
   }
 
   /**
     * Finds the definition with the qualified name `qname` in the namespace `ns0`.
     */
-  def lookupRef(qname: Name.QName, ns0: Name.NName, prog0: NamedAst.Program): Validation[RefTarget, ResolutionError] = {
-    // check whether the reference is fully-qualified.
+  def lookupDef(qname: Name.QName, ns0: Name.NName, prog0: NamedAst.Program): Validation[DefTarget, ResolutionError] = {
+    // check whether the name is fully-qualified.
     if (qname.isUnqualified) {
-      // Case 1: Unqualified reference. Lookup both the definition and the hook.
+      // Case 1: Unqualified name. Lookup both the definition and the hook.
       val defnOpt = prog0.defs.getOrElse(ns0, Map.empty).get(qname.ident.name)
       val hookOpt = prog0.hooks.get(Symbol.mkDefnSym(ns0, qname.ident))
 
       (defnOpt, hookOpt) match {
-        case (Some(defn), None) => RefTarget.Defn(ns0, defn).toSuccess
-        case (None, Some(hook)) => RefTarget.Hook(hook).toSuccess
+        case (Some(defn), None) => DefTarget.Defn(defn).toSuccess
+        case (None, Some(hook)) => DefTarget.Hook(hook).toSuccess
         case (None, None) =>
           // Try the global namespace.
           prog0.defs.getOrElse(Name.RootNS, Map.empty).get(qname.ident.name) match {
             case None => ResolutionError.UndefinedDef(qname, ns0, qname.loc).toFailure
-            case Some(defn) => RefTarget.Defn(Name.RootNS, defn).toSuccess
+            case Some(defn) => DefTarget.Defn(defn).toSuccess
           }
         case (Some(defn), Some(hook)) => ResolutionError.AmbiguousRef(qname, ns0, qname.loc).toFailure
       }
@@ -643,15 +643,8 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
       val hookOpt = prog0.hooks.get(Symbol.mkDefnSym(qname.namespace, qname.ident))
 
       (defnOpt, hookOpt) match {
-        case (Some(defn), None) =>
-          //
-          // Check whether the symbol is accessible.
-          //
-          if (isAccessible(defn, ns0))
-            RefTarget.Defn(qname.namespace, defn).toSuccess
-          else
-            ResolutionError.InaccessibleDef(defn.sym, ns0, qname.loc).toFailure
-        case (None, Some(hook)) => RefTarget.Hook(hook).toSuccess
+        case (Some(defn), None) => getIfAccessible(defn, ns0, qname.loc)
+        case (None, Some(hook)) => DefTarget.Hook(hook).toSuccess
         case (None, None) => ResolutionError.UndefinedDef(qname, ns0, qname.loc).toFailure
         case (Some(defn), Some(hook)) => ResolutionError.AmbiguousRef(qname, ns0, qname.loc).toFailure
       }
@@ -819,21 +812,21 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
   }
 
   /**
-    * Returns `true` if the given definition `defn0` is accessible from the given namespace `ns0`.
+    * Returns the given definition `defn0` if it is accessible from the given namespace `ns0`.
     *
     * A definition `defn0` is accessible from a namespace `ns0` if:
     *
-    * (a) The definition is marked public.
-    * (b) The definition is defined in the namespace `ns0`.
-    * (c) The definition is defined in a parent namespace of `ns0`.
-    *  - A special case of this rule ensures that every definition in the root namespace is accessible.
+    * (a) the definition is marked public, or
+    * (b) the definition is defined in the namespace `ns0`, or
+    * (c) the definition is defined in a parent namespace of `ns0`.
+    *  - A special case of this rule is that every definition in the root namespace is accessible.
     */
-  def isAccessible(defn0: NamedAst.Def, ns0: Name.NName): Boolean = {
+  def getIfAccessible(defn0: NamedAst.Def, ns0: Name.NName, loc: SourceLocation): Validation[DefTarget, ResolutionError] = {
     //
     // Check if the definition is marked public.
     //
     if (defn0.mod.isPublic)
-      return true
+      return DefTarget.Defn(defn0).toSuccess
 
     //
     // Check if the definition occurs in `ns0` or as a parent of `ns0`.
@@ -843,12 +836,14 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
     val prefixNs = defn0.sym.namespace
     val targetNs = ns0.idents.map(_.name)
     if (targetNs.startsWith(prefixNs))
-      return true
+      return DefTarget.Defn(defn0).toSuccess
 
     //
     // The definition is not accessible.
     //
-    false
+    ResolutionError.InaccessibleDef(defn0.sym, ns0, loc).toFailure
   }
+
+
 
 }
