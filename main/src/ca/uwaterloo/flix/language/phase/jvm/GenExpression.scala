@@ -66,10 +66,10 @@ object GenExpression {
     case Expression.Str(s) => visitor.visitLdcInsn(s)
 
     case Expression.Var(sym, tpe, _) =>
-      // TODO: Deal with closure variales in the future.
+      // TODO: StackOffset should be changed since it goes up by 2 for Double and Long
       val jvmType = JvmOps.getJvmType(tpe)
-      val iLoad = AsmOps.getLoadInstruction(jvmType)
-      visitor.visitVarInsn(iLoad, sym.getStackOffset)
+      visitor.visitVarInsn(ALOAD, 0)
+      visitor.visitFieldInsn(GETFIELD, currentClassType.name.toInternalName, s"arg${sym.getStackOffset}",jvmType.toDescriptor)
 
     case Expression.Closure(sym, freeVars, fnType, tpe, loc) => ???
 
@@ -84,7 +84,7 @@ object GenExpression {
     case Expression.ApplySelfTail(name, formals, actuals, tpe, loc) => ???
 
     case Expression.ApplyHook(hook, args, tpe, loc) =>
-      // TODO: Remove hooks before final merge into maste  r.
+      // TODO: Remove hooks before final merge into master.
       ???
 
     case Expression.Unary(sop, op, exp, _, _) =>
