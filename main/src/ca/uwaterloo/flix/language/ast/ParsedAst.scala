@@ -901,6 +901,14 @@ object ParsedAst {
   object Type {
 
     /**
+      * Unit type.
+      *
+      * @param sp1 the position of the first character in the type.
+      * @param sp2 the position of the last character in the type.
+      */
+    case class Unit(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Type
+
+    /**
       * Type Variable.
       *
       * @param sp1   the position of the first character in the type.
@@ -919,15 +927,7 @@ object ParsedAst {
     case class Ambiguous(sp1: SourcePosition, qname: Name.QName, sp2: SourcePosition) extends ParsedAst.Type
 
     /**
-      * Unit type.
-      *
-      * @param sp1 the position of the first character in the type.
-      * @param sp2 the position of the last character in the type.
-      */
-    case class Unit(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Type
-
-    /**
-      * Tuple type.
+      * Tuple Type.
       *
       * @param sp1  the position of the first character in the type.
       * @param elms the types of the elements.
@@ -936,7 +936,7 @@ object ParsedAst {
     case class Tuple(sp1: SourcePosition, elms: Seq[ParsedAst.Type], sp2: SourcePosition) extends ParsedAst.Type
 
     /**
-      * Lambda type.
+      * Arrow Type.
       *
       * @param sp1     the position of the first character in the type.
       * @param tparams the arguments types.
@@ -946,7 +946,7 @@ object ParsedAst {
     case class Arrow(sp1: SourcePosition, tparams: Seq[ParsedAst.Type], tresult: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Type
 
     /**
-      * Infix type application.
+      * Infix Type Application.
       *
       * @param tpe1 the first type parameter.
       * @param base the base type.
@@ -956,14 +956,22 @@ object ParsedAst {
     case class Infix(tpe1: ParsedAst.Type, base: ParsedAst.Type, tpe2: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Type
 
     /**
-      * Regular type application.
+      * Native Type.
       *
-      * @param sp1     the position of the first character in the type.
+      * @param sp1 the position of the first character in the type.
+      * @param fqn the fully qualified Java name.
+      * @param sp2 the position of the last character in the type.
+      */
+    case class Native(sp1: SourcePosition, fqn: Seq[String], sp2: SourcePosition) extends ParsedAst.Type
+
+    /**
+      * Type Application.
+      *
       * @param base    the base type.
       * @param tparams the type parameters.
       * @param sp2     the position of the last character in the type.
       */
-    case class Apply(sp1: SourcePosition, base: ParsedAst.Type, tparams: Seq[ParsedAst.Type], sp2: SourcePosition) extends ParsedAst.Type
+    case class Apply(base: ParsedAst.Type, tparams: Seq[ParsedAst.Type], sp2: SourcePosition) extends ParsedAst.Type
 
   }
 

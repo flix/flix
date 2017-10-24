@@ -1016,6 +1016,9 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       case ParsedAst.Type.Var(sp1, ident, sp2) => WeededAst.Type.Var(ident, mkSL(sp1, sp2))
       case ParsedAst.Type.Ambiguous(sp1, qname, sp2) => WeededAst.Type.Ambiguous(qname, mkSL(sp1, sp2))
       case ParsedAst.Type.Tuple(sp1, elms, sp2) => WeededAst.Type.Tuple(elms.toList.map(weed), mkSL(sp1, sp2))
+      case ParsedAst.Type.Native(sp1, fqn, sp2) =>
+        Console.println(fqn.toString())
+        ??? // TODO
       case ParsedAst.Type.Arrow(sp1, tparams, tresult, sp2) => WeededAst.Type.Arrow(tparams.toList.map(weed), weed(tresult), mkSL(sp1, sp2))
       case ParsedAst.Type.Infix(tpe1, base0, tpe2, sp2) =>
         /*
@@ -1025,8 +1028,9 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         // Construct the type: base[tpe1][tpe2]
         WeededAst.Type.Apply(WeededAst.Type.Apply(weed(base0), weed(tpe1), loc), weed(tpe2), loc)
 
-      case ParsedAst.Type.Apply(sp1, t1, args, sp2) =>
+      case ParsedAst.Type.Apply(t1, args, sp2) =>
         // Curry the type arguments.
+        val sp1 = leftMostSourcePosition(t1)
         args.foldLeft(weed(t1)) {
           case (acc, t2) => WeededAst.Type.Apply(acc, weed(t2), mkSL(sp1, sp2))
         }
@@ -1239,9 +1243,10 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Type.Var(sp1, _, _) => sp1
     case ParsedAst.Type.Ambiguous(sp1, _, _) => sp1
     case ParsedAst.Type.Tuple(sp1, _, _) => sp1
+    case ParsedAst.Type.Native(sp1, _, _) => sp1
     case ParsedAst.Type.Arrow(sp1, _, _, _) => sp1
     case ParsedAst.Type.Infix(tpe1, _, _, _) => leftMostSourcePosition(tpe1)
-    case ParsedAst.Type.Apply(sp1, _, _, _) => sp1
+    case ParsedAst.Type.Apply(tpe1, _, _) => leftMostSourcePosition(tpe1)
   }
 
   /**

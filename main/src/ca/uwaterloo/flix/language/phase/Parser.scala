@@ -561,24 +561,16 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Native: Rule1[ParsedAst.Expression] = {
-      def JavaIdentifier: Rule1[String] = rule {
-        capture(CharPredicate.Alpha ~ zeroOrMore(CharPredicate.AlphaNum))
-      }
-
-      def JavaName: Rule1[Seq[String]] = rule {
-        oneOrMore(JavaIdentifier).separatedBy(".")
-      }
-
       def NativeConstructor: Rule1[ParsedAst.Expression.NativeConstructor] = rule {
-        atomic("new") ~ WS ~ SP ~ JavaName ~ optWS ~ ArgumentList ~ SP ~> ParsedAst.Expression.NativeConstructor
+        atomic("new") ~ WS ~ SP ~ Names.JavaName ~ optWS ~ ArgumentList ~ SP ~> ParsedAst.Expression.NativeConstructor
       }
 
       def NativeField: Rule1[ParsedAst.Expression.NativeField] = rule {
-        atomic("field") ~ WS ~ SP ~ JavaName ~ SP ~> ParsedAst.Expression.NativeField
+        atomic("field") ~ WS ~ SP ~ Names.JavaName ~ SP ~> ParsedAst.Expression.NativeField
       }
 
       def NativeMethod: Rule1[ParsedAst.Expression.NativeMethod] = rule {
-        atomic("method") ~ WS ~ SP ~ JavaName ~ optWS ~ ArgumentList ~ SP ~> ParsedAst.Expression.NativeMethod
+        atomic("method") ~ WS ~ SP ~ Names.JavaName ~ optWS ~ ArgumentList ~ SP ~> ParsedAst.Expression.NativeMethod
       }
 
       rule {
@@ -818,20 +810,27 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
   object Types {
 
+    def UnaryArrow: Rule1[ParsedAst.Type] = rule {
+      SP ~ Infix ~ optional(optWS ~ atomic("->") ~ optWS ~ Type) ~ SP ~> ((sp1: SourcePosition, t: ParsedAst.Type, o: Option[ParsedAst.Type], sp2: SourcePosition) => o match {
+        case None => t
+        case Some(r) => ParsedAst.Type.Arrow(sp1, List(t), r, sp2) // TODO: Maybe need to reverse order???
+      })
+    }
+
     def Infix: Rule1[ParsedAst.Type] = rule {
-      Primary ~ optional(optWS ~ "`" ~ Ref ~ "`" ~ optWS ~ Primary ~ SP ~> ParsedAst.Type.Infix)
+      Apply ~ optional(optWS ~ "`" ~ Ambiguous ~ "`" ~ optWS ~ Apply ~ SP ~> ParsedAst.Type.Infix)
+    }
+
+    def Apply: Rule1[ParsedAst.Type] = rule {
+      Primary ~ zeroOrMore(TypeArguments ~ SP ~> ParsedAst.Type.Apply)
     }
 
     def Primary: Rule1[ParsedAst.Type] = rule {
-      Arrow | Tuple | Apply | Var | Ref
+      Arrow | Tuple | Native | Var | Ambiguous
     }
 
-    def Var: Rule1[ParsedAst.Type] = rule {
-      SP ~ Names.Variable ~ SP ~> ParsedAst.Type.Var
-    }
-
-    def Ref: Rule1[ParsedAst.Type] = rule {
-      SP ~ Names.QualifiedType ~ SP ~> ParsedAst.Type.Ambiguous
+    def Arrow: Rule1[ParsedAst.Type] = rule {
+      SP ~ "(" ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ optWS ~ atomic("->") ~ optWS ~ Type ~ SP ~> ParsedAst.Type.Arrow
     }
 
     def Tuple: Rule1[ParsedAst.Type] = {
@@ -852,19 +851,20 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
     }
 
-    def UnaryArrow: Rule1[ParsedAst.Type] = rule {
-      SP ~ Infix ~ optional(optWS ~ atomic("->") ~ optWS ~ Type) ~ SP ~> ((sp1: SourcePosition, t: ParsedAst.Type, o: Option[ParsedAst.Type], sp2: SourcePosition) => o match {
-        case None => t
-        case Some(r) => ParsedAst.Type.Arrow(sp1, List(t), r, sp2) // TODO: Maybe need to reverse order???
-      })
+    def Native: Rule1[ParsedAst.Type] = rule {
+      SP ~ atomic("##") ~ Names.JavaName ~ SP ~> ParsedAst.Type.Native
     }
 
-    def Arrow: Rule1[ParsedAst.Type] = rule {
-      SP ~ "(" ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ optWS ~ atomic("->") ~ optWS ~ Type ~ SP ~> ParsedAst.Type.Arrow
+    def Var: Rule1[ParsedAst.Type] = rule {
+      SP ~ Names.Variable ~ SP ~> ParsedAst.Type.Var
     }
 
-    def Apply: Rule1[ParsedAst.Type] = rule {
-      SP ~ Ref ~ optWS ~ "[" ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]" ~ SP ~ optWS ~> ParsedAst.Type.Apply
+    def Ambiguous: Rule1[ParsedAst.Type] = rule {
+      SP ~ Names.QualifiedType ~ SP ~> ParsedAst.Type.Ambiguous
+    }
+
+    def TypeArguments: Rule1[Seq[ParsedAst.Type]] = rule {
+      "[" ~ optWS ~ zeroOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]"
     }
   }
 
@@ -1065,6 +1065,16 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Variable: Rule1[Name.Ident] = rule {
       LowerCaseName | GreekName | MathName
+    }
+
+    def JavaName: Rule1[Seq[String]] = {
+      def JavaIdentifier: Rule1[String] = rule {
+        capture(CharPredicate.Alpha ~ zeroOrMore(CharPredicate.AlphaNum))
+      }
+
+      rule {
+        oneOrMore(JavaIdentifier).separatedBy(".")
+      }
     }
 
   }
