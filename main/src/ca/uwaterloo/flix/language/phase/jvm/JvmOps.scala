@@ -208,8 +208,8 @@ object JvmOps {
     // Compute the stringified erased type of each type argument.
     val args = tpe.typeArguments.map(tpe => stringify(getErasedType(tpe)))
 
-    // The JVM name is of the form CloArity$Arg0$Arg1$Arg2
-    val name = "Clo" + arity + "$" + args.mkString("$")
+    // The JVM name is of the form Clo$sym.name
+    val name = "Clo" + "$" + closure.sym.name
 
     // The type resides in the root package.
     JvmType.Reference(JvmName(RootPackage, name))
