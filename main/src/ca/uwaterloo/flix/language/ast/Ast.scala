@@ -42,17 +42,6 @@ object Ast {
     }
 
     /**
-      * An AST node that represents an `@internal` annotation.
-      *
-      * An `internal` function is a non-public function hidden from view.
-      *
-      * @param loc the source location of the annotation.
-      */
-    case class Internal(loc: SourceLocation) extends Annotation {
-      override def toString: String = "@internal"
-    }
-
-    /**
       * An AST node that represents a `@law` annotation.
       *
       * A `law` function is a property (theorem) about the behaviour of one or more functions.
@@ -122,11 +111,6 @@ object Ast {
       * Returns `true` if `this` sequence contains the `@benchmark` annotation.
       */
     def isBenchmark: Boolean = annotations exists (_.isInstanceOf[Annotation.Benchmark])
-
-    /**
-      * Returns `true` if `this` sequence contains the `@internal` annotation.
-      */
-    def isInternal: Boolean = annotations exists (_.isInstanceOf[Annotation.Internal])
 
     /**
       * Returns `true` if `this` sequence contains the `@law` annotation.

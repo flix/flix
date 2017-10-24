@@ -127,14 +127,12 @@ namespace Int16 {
     ///
     /// Helper function for `reverse`.
     ///
-    @internal
     def reverseHelper(x: Int16, l: Int32, r: Int32): Int16 =
         if (l >= r) x else reverseHelper(swap(x, l, r), l+1, r-1)
 
     ///
     /// Helper function for `reverse`.
     ///
-    @internal
     def swap(x: Int16, l: Int32, r: Int32): Int16 = match (getBit(x, l), getBit(x, r)) with {
         case (1, 0) => clearBit(setBit(x, r), l)
         case (0, 1) => clearBit(setBit(x, l), r)
@@ -164,7 +162,6 @@ namespace Int16 {
     /// If `x` has a one-bit at `position`, return that position.
     /// Otherwise recursively check the next bit in the same way.
     ///
-    @internal
     def oneBitPositionHelper(x: Int16, position: Int32, delta: Int32): Int32 = switch {
         case position < 0                   => -1
         case position > (size() - 1)        => -1
@@ -194,7 +191,6 @@ namespace Int16 {
     /// Returns a value with a single one-bit at bit number `position`.
     /// Returns 0 if `position` is outside the range 0-15 inclusive.
     ///
-    @internal
     def bitPositionToInt(position: Int32): Int16 =
         if (position < 0 || position > size() - 1) 0i16 else 1i16 <<< position
 

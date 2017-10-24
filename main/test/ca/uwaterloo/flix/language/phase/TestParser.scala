@@ -2350,14 +2350,6 @@ class TestParser extends FunSuite with TestUtils {
   /////////////////////////////////////////////////////////////////////////////
   // Annotations                                                             //
   /////////////////////////////////////////////////////////////////////////////
-  test("Annotation.@internal") {
-    val input =
-      """@internal
-        |def f(x: Int, y: Int): Int = 21
-      """.stripMargin
-    run(input)
-  }
-
   test("Annotation.@test") {
     val input =
       """@test

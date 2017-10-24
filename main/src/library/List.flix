@@ -88,7 +88,6 @@ namespace List {
     ///
     /// Helper function for `indexOf`.
     ///
-    @internal
     def indexOfHelper[a](a: a, xs: List[a], acc: Int32): Int32 = match xs with {
         case Nil => -1
         case x :: rs => if (x == a) acc else indexOfHelper(a, rs, acc+1)
@@ -146,7 +145,6 @@ namespace List {
     ///
     /// Helper function for `scanLeft`.
     ///
-    @internal
     def scanLeftHelper[a,b](f: (b, a) -> b, s: b, xs: List[a]): List[b] = match xs with {
         case Nil => Nil
         case x :: rs => f(s, x) :: scanLeftHelper(f, f(s, x), rs)
@@ -187,7 +185,6 @@ namespace List {
     ///
     /// Helper function for `mapWithIndex`.
     ///
-    @internal
     def mapWithIndexHelper[a,b](f: (a, Int32) -> b, xs: List[a], i: Int32): List[b] = match xs with {
         case Nil => Nil
         case x :: rs => f(x, i) :: mapWithIndexHelper(f, rs, i+1)
@@ -209,7 +206,6 @@ namespace List {
     ///
     /// Helper function for `reverse`.
     ///
-    @internal
     def reverseHelper[a](xs: List[a], acc: List[a]): List[a] = match xs with {
         case Nil => acc
         case x :: rs => reverseHelper(rs, x :: acc)
@@ -260,7 +256,6 @@ namespace List {
     ///
     /// Helper function for `patch`.
     ///
-    @internal
     def patchHelper[a](i: Int32, n: Int32, xs: List[a], ys: List[a], c: Int32): List[a] = match (xs, ys) with {
         case (x :: qs, y :: rs) => if (c >= i && c < i+n) x :: patchHelper(i, n, qs, rs, c+1) else y :: patchHelper(i, n, xs, rs, c+1)
         case _ => ys
@@ -279,7 +274,6 @@ namespace List {
     /// Helper function for `permutations`.
     /// Returns all permutations of `xs` starting with an element at or after index `i`.
     ///
-    @internal
     def permutationHelper[a](i: Int32, xs: List[a]): List[List[a]] =
         if (i == length(xs)) Nil
         else applyHelper(at(i, xs), permutations(removeIndex(i, xs))) ::: permutationHelper(i+1, xs)
@@ -287,7 +281,6 @@ namespace List {
     ///
     /// Helper function for `permutations`.
     ///
-    @internal
     def at[a](i: Int32, xs: List[a]): a = match (i, xs) with {
         case (0, x :: _) => x
         case (p, x :: rs) => at(p - 1, rs)
@@ -297,7 +290,6 @@ namespace List {
     ///
     /// Helper function for `permutations`.
     ///
-    @internal
     def removeIndex[a](i: Int32, xs: List[a]): List[a] = match (i, xs) with {
         case (_, Nil) => xs
         case (0, x :: rs) => rs
@@ -319,7 +311,6 @@ namespace List {
     /// Helper function for `permutations` and `subsequences`.
     /// Returns `xs` with `a` added to the beginning of each element in `xs`.
     ///
-    @internal
     def applyHelper[a](a: a, xs: List[List[a]]): List[List[a]] = match xs with {
         case Nil => Nil
         case x :: rs => (a :: x) :: applyHelper(a, rs)
@@ -357,7 +348,6 @@ namespace List {
     ///
     /// Helper function for `transpose`.
     ///
-    @internal
     def uniformHelper[a](xs: List[List[a]], l: Int32): Bool = match xs with {
         case Nil => true
         case x :: rs => if (length(x) == l) uniformHelper(rs, l) else false
@@ -366,7 +356,6 @@ namespace List {
     ///
     /// Helper function for `transpose`.
     ///
-    @internal
     def transposeHelper[a](xs: List[List[a]], l: Int32): List[List[a]] = match xs with {
         case Nil => repeat(Nil, l)
         case x :: rs => applyListHelper(x, transposeHelper(rs, l))
@@ -375,7 +364,6 @@ namespace List {
     ///
     /// Helper function for `transpose`.
     ///
-    @internal
     def applyListHelper[a](xs: List[a], ys: List[List[a]]): List[List[a]] = match (xs, ys) with {
         case (Nil, Nil) => Nil
         case (x :: rs, y :: qs) => (x :: y) :: applyListHelper(rs, qs)
@@ -531,7 +519,6 @@ namespace List {
     ///
     /// Helper function for `slice`.
     ///
-    @internal
     def sliceHelper[a](b: Int32, e: Int32, xs: List[a], i: Int32): List[a] = match xs with {
         case Nil => Nil
         case x :: rs =>
@@ -623,7 +610,6 @@ namespace List {
     ///
     /// Helper function for `groupBy`.
     ///
-    @internal
     def extractHelper[a](f: (a, a) -> Bool, xs: List[a], ps: List[a], ns: List[a]): (List[a], List[a]) = match xs with {
         case Nil => (reverse(ps), reverse(ns))
         case x :: rs => if (agreeHelper(f, x, ps)) extractHelper(f, rs, x :: ps, ns) else extractHelper(f, rs, ps, x :: ns)
@@ -632,7 +618,6 @@ namespace List {
     ///
     /// Helper function for `groupBy`.
     ///
-    @internal
     def agreeHelper[a](f: (a, a) -> Bool, a: a, xs: List[a]): Bool = match xs with {
         case Nil => true
         case x :: rs => if (f(x, a) && f(a, x)) agreeHelper(f, a, rs) else false
@@ -721,7 +706,6 @@ namespace List {
     ///
     /// Helper function for `foldRight2`.
     ///
-    @internal
     def foldRight2Helper[a,b,c](f: (a, b, c) -> c, c: c, xs: List[a], ys: List[b]): c = match (xs, ys) with {
         case (x :: rs, y :: qs) => f(x, y, foldRight2(f, c, rs, qs))
         case _ => c

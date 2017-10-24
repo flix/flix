@@ -32,15 +32,6 @@ class TestWeeder extends FunSuite with TestUtils {
     expectError[WeederError.DuplicateAnnotation](result)
   }
 
-  test("DuplicateAnnotation.02") {
-    val input =
-      """@test @internal @test @internal
-        |def foo(x: Int): Int = 42
-      """.stripMargin
-    val result = new Flix().addStr(input).compile()
-    expectError[WeederError.DuplicateAnnotation](result)
-  }
-
   test("DuplicateAttribute.01") {
     val input = "rel A(x: Int, x: Int)"
     val result = new Flix().addStr(input).compile()
