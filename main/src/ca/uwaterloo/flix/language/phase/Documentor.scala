@@ -33,7 +33,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
   /**
     * The directory where to write the generated HTML documentation (and its resources).
     */
-  val OutputDirectory: Path = Paths.get("./build/api")
+  val OutputDirectory: Path = Paths.get("./target/api")
 
   /**
     * Generates documentation for the given program `p`.
@@ -45,7 +45,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     if (flix.options.documentor) {
       // Collect the definitions.
       val defnsByNS = root.defs.filterNot {
-        case (sym, defn) => defn.ann.isLaw || defn.ann.isTest || defn.ann.isInternal
+        case (sym, defn) => defn.ann.isLaw || defn.ann.isTest || !defn.mod.isPublic
       }.groupBy(_._1.namespace)
 
       // Collect the laws.

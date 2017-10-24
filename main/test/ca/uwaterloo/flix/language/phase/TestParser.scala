@@ -85,7 +85,7 @@ class TestParser extends FunSuite with TestUtils {
         |  namespace B {
         |    namespace C {
         |      namespace A/B/C {
-        |        def f(x: Int): Int = x + 42
+        |        pub def f(x: Int): Int = x + 42
         |      }
         |    }
         |  }
@@ -102,7 +102,7 @@ class TestParser extends FunSuite with TestUtils {
         |  namespace B/C {
         |    namespace D {
         |      namespace E/F/G {
-        |        def h(x: Int): Int = x + 42
+        |        pub def h(x: Int): Int = x + 42
         |      }
         |    }
         |  }
@@ -118,7 +118,7 @@ class TestParser extends FunSuite with TestUtils {
       """namespace A {
         |  namespace B {
         |    namespace C {
-        |      def f(x: Int): Int = x + 42
+        |      pub def f(x: Int): Int = x + 42
         |    }
         |  }
         |}
@@ -149,17 +149,17 @@ class TestParser extends FunSuite with TestUtils {
       """namespace A {
         |  namespace B {
         |    namespace C {
-        |      def u(x: Int): Int = x + 42
+        |      pub def u(x: Int): Int = x + 42
         |    }
         |  }
         |
         |  namespace B/C {
-        |    def v(x: Int): Int = x + 21
+        |    pub def v(x: Int): Int = x + 21
         |  }
         |}
         |
         |namespace A/B/C {
-        |  def w(x: Int): Int = x + 11
+        |  pub def w(x: Int): Int = x + 11
         |}
         |
         |def r(): Int = A/B/C.u(1) + A/B/C.v(2) + A/B/C.w(3)
@@ -2350,14 +2350,6 @@ class TestParser extends FunSuite with TestUtils {
   /////////////////////////////////////////////////////////////////////////////
   // Annotations                                                             //
   /////////////////////////////////////////////////////////////////////////////
-  test("Annotation.@internal") {
-    val input =
-      """@internal
-        |def f(x: Int, y: Int): Int = 21
-      """.stripMargin
-    run(input)
-  }
-
   test("Annotation.@test") {
     val input =
       """@test

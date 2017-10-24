@@ -42,7 +42,7 @@ object NamedAst {
 
   case class Def(doc: Option[Ast.Documentation], ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, tparams: List[NamedAst.TypeParam], fparams: List[NamedAst.FormalParam], exp: NamedAst.Expression, sc: NamedAst.Scheme, eff: Eff, loc: SourceLocation) extends NamedAst
 
-  case class Enum(doc: Option[Ast.Documentation], sym: Symbol.EnumSym, tparams: List[NamedAst.TypeParam], cases: Map[String, NamedAst.Case], tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst
+  case class Enum(doc: Option[Ast.Documentation], mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: List[NamedAst.TypeParam], cases: Map[String, NamedAst.Case], tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst
 
   case class Index(qname: Name.QName, indexes: List[List[Name.Ident]], loc: SourceLocation) extends NamedAst
 
@@ -224,9 +224,9 @@ object NamedAst {
 
     case class Var(tpe: ast.Type.Var, loc: SourceLocation) extends NamedAst.Type
 
-    case class Unit(loc: SourceLocation) extends NamedAst.Type
+    case class Ambiguous(name: Name.QName, loc: SourceLocation) extends NamedAst.Type
 
-    case class Ref(name: Name.QName, loc: SourceLocation) extends NamedAst.Type
+    case class Unit(loc: SourceLocation) extends NamedAst.Type
 
     case class Enum(name: Symbol.EnumSym) extends NamedAst.Type
 

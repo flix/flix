@@ -31,7 +31,7 @@ namespace Option {
     ///
     /// Returns `true` iff `o` is `None`.
     ///
-    def isEmpty[a](o: Option[a]): Bool = match o with {
+    pub def isEmpty[a](o: Option[a]): Bool = match o with {
         case None => true
         case Some(v) => false
     }
@@ -39,7 +39,7 @@ namespace Option {
     ///
     /// Returns `true` iff `o` is `None`.
     ///
-    def isNone[a](o: Option[a]): Bool = match o with {
+    pub def isNone[a](o: Option[a]): Bool = match o with {
         case None => true
         case Some(v) => false
     }
@@ -47,7 +47,7 @@ namespace Option {
     ///
     /// Returns `true` iff `o` is `Some(v)`.
     ///
-    def isSome[a](o: Option[a]): Bool = match o with {
+    pub def isSome[a](o: Option[a]): Bool = match o with {
         case None => false
         case Some(v) => true
     }
@@ -55,7 +55,7 @@ namespace Option {
     ///
     /// Returns `v` if `o` is `Some(v).` Otherwise returns `d`.
     ///
-    def getWithDefault[a](o: Option[a], d: a): a = match o with {
+    pub def getWithDefault[a](o: Option[a], d: a): a = match o with {
         case None => d
         case Some(v) => v
     }
@@ -63,7 +63,7 @@ namespace Option {
     ///
     /// Returns `o1` if it is `Some(v)`. Otherwise returns `o2`.
     ///
-    def withDefault[a](o1: Option[a], o2: Option[a]): Option[a] = match o1 with {
+    pub def withDefault[a](o1: Option[a], o2: Option[a]): Option[a] = match o1 with {
         case None => o2
         case Some(v) => o1
     }
@@ -71,7 +71,7 @@ namespace Option {
     ///
     /// Returns `Some(y)` if `o` is `Some(x)`. Otherwise returns `o`.
     ///
-    def replace[a](x: a, y: a, o: Option[a]): Option[a] = match o with {
+    pub def replace[a](x: a, y: a, o: Option[a]): Option[a] = match o with {
         case None => o
         case Some(v) => Some(if (v == x) y else v)
     }
@@ -79,18 +79,18 @@ namespace Option {
     ///
     /// Returns `true` if `o` is `Some(v)` and the predicate `f(v)` evaluates to `true`. Otherwise returns `false`.
     ///
-    def exists[a](f: a -> Bool, o: Option[a]): Bool = getWithDefault(map(f, o), false)
+    pub def exists[a](f: a -> Bool, o: Option[a]): Bool = getWithDefault(map(f, o), false)
 
     ///
     /// Returns `true` if `o` is `Some(v)` and the predicate `f(v)` evaluates to `true` or if `o` is `None`.
     /// Otherwise returns `false`.
     ///
-    def forall[a](f: a -> Bool, o: Option[a]): Bool = getWithDefault(map(f, o), true)
+    pub def forall[a](f: a -> Bool, o: Option[a]): Bool = getWithDefault(map(f, o), true)
 
     ///
     /// Returns `o` if `o` is `Some(v)` and the predicate `f(v)` is true. Otherwise returns `None`.
     ///
-    def filter[a](f: a -> Bool, o: Option[a]): Option[a] = match o with {
+    pub def filter[a](f: a -> Bool, o: Option[a]): Option[a] = match o with {
         case None => None
         case Some(v) => if (f(v)) o else None
     }
@@ -98,7 +98,7 @@ namespace Option {
     ///
     /// Returns `Some(f(v))` if `o` is `Some(v)`. Otherwise returns `None`.
     ///
-    def map[a, b](f: a -> b, o: Option[a]): Option[b] = match o with {
+    pub def map[a, b](f: a -> b, o: Option[a]): Option[b] = match o with {
         case None => None
         case Some(v) => Some(f(v))
     }
@@ -106,7 +106,7 @@ namespace Option {
     ///
     /// Returns `Some(f(v1, v2))` if `o1` is `Some(v1)` and `o2` is `Some(v2)`. Otherwise returns `None`.
     ///
-    def map2[a, b, c](f: (a, b) -> c, o1: Option[a], o2: Option[b]): Option[c] = match (o1, o2) with {
+    pub def map2[a, b, c](f: (a, b) -> c, o1: Option[a], o2: Option[b]): Option[c] = match (o1, o2) with {
         case (None, _) => None
         case (_, None) => None
         case (Some(v1), Some(v2)) => Some(f(v1, v2))
@@ -115,7 +115,7 @@ namespace Option {
     ///
     /// Returns `f(v)` if `o` is `Some(v)`. Otherwise returns `None`.
     ///
-    def flatMap[a, b](f: a -> Option[b], o: Option[a]): Option[b] = match o with {
+    pub def flatMap[a, b](f: a -> Option[b], o: Option[a]): Option[b] = match o with {
         case None => None
         case Some(v) => f(v)
     }
@@ -123,7 +123,7 @@ namespace Option {
     ///
     /// Returns `f(v1, v2)` if `o1` is `Some(v1)` and `o2` is `Some(v2)`. Otherwise returns `None`.
     ///
-    def flatMap2[a, b, c](f: (a, b) -> Option[c], o1: Option[a], o2: Option[b]): Option[c] = match (o1, o2) with {
+    pub def flatMap2[a, b, c](f: (a, b) -> Option[c], o1: Option[a], o2: Option[b]): Option[c] = match (o1, o2) with {
         case (None, _) => None
         case (_, None) => None
         case (Some(v1), Some(v2)) => f(v1, v2)
@@ -132,7 +132,7 @@ namespace Option {
     ///
     /// Returns `1` if `o` is `Some(v)` and the predicate `f(v)` evaluates to `true`. Otherwise returns `0`.
     ///
-    def count[a](f: a -> Bool, o: Option[a]): Int32 = match o with {
+    pub def count[a](f: a -> Bool, o: Option[a]): Int32 = match o with {
         case None => 0
         case Some(v) => if (f(v)) 1 else 0
     }
@@ -140,7 +140,7 @@ namespace Option {
     ///
     /// Returns `o` if `o` is `Some(v)` and the predicate `f(v)` evaluates to `true`. Otherwise returns `None`.
     ///
-    def find[a](f: a -> Bool, o: Option[a]): Option[a] = match o with {
+    pub def find[a](f: a -> Bool, o: Option[a]): Option[a] = match o with {
         case None => None
         case Some(v) => if (f(v)) o else None
     }
@@ -148,7 +148,7 @@ namespace Option {
     ///
     /// Returns `v` if `o` is `Some(v)`. Otherwise returns `None`.
     ///
-    def flatten[a](o: Option[Option[a]]): Option[a] = match o with {
+    pub def flatten[a](o: Option[Option[a]]): Option[a] = match o with {
         case None => None
         case Some(v) => v
     }
@@ -156,7 +156,7 @@ namespace Option {
     ///
     /// Returns `f(z, v)` if `o` is `Some(v)`. Otherwise returns `z`.
     ///
-    def foldLeft[a, b](f: (b, a) -> b, z: b, o: Option[a]): b = match o with {
+    pub def foldLeft[a, b](f: (b, a) -> b, z: b, o: Option[a]): b = match o with {
         case None => z
         case Some(v) => f(z, v)
     }
@@ -164,7 +164,7 @@ namespace Option {
     ///
     /// Returns `f(v, z)` if `o` is `Some(v)`. Otherwise returns `z`.
     ///
-    def foldRight[a, b](f: (a, b) -> b, o: Option[a], z: b): b = match o with {
+    pub def foldRight[a, b](f: (a, b) -> b, o: Option[a], z: b): b = match o with {
         case None => z
         case Some(v) => f(v, z)
     }
@@ -172,7 +172,7 @@ namespace Option {
     ///
     /// Returns a one-element list of the value `v` if `o` is `Some(v)`. Otherwise returns the empty list.
     ///
-    def toList[a](o: Option[a]): List[a] = match o with {
+    pub def toList[a](o: Option[a]): List[a] = match o with {
         case None => Nil
         case Some(v) => v :: Nil
     }
@@ -180,7 +180,7 @@ namespace Option {
     ///
     /// Returns a one-element set of the value `v` if `o` is `Some(v)`. Otherwise returns the empty set.
     ///
-    def toSet[a](o: Option[a]): Set[a] = match o with {
+    pub def toSet[a](o: Option[a]): Set[a] = match o with {
         case None => #{}
         case Some(v) => #{v}
     }
@@ -188,7 +188,7 @@ namespace Option {
     ///
     /// Returns a singleton map with the mapping `k -> v` if `o` is `Some((k, v))`. Otherwise returns the empty map.
     ///
-    def toMap[k,v](o: Option[(k, v)]): Map[k, v] = match o with {
+    pub def toMap[k,v](o: Option[(k, v)]): Map[k, v] = match o with {
         case None => @{}
         case Some((k, v)) => Map.singleton(k, v)
     }
@@ -196,7 +196,7 @@ namespace Option {
     ///
     /// Returns `Some((v1, v2))` if `o1` is `Some(v1)` and `o2` is `Some(v2)`. Otherwise returns `None`.
     ///
-    def zip[a, b](o1: Option[a], o2: Option[b]): Option[(a, b)] = match (o1, o2) with {
+    pub def zip[a, b](o1: Option[a], o2: Option[b]): Option[(a, b)] = match (o1, o2) with {
         case (None, _) => None
         case (_, None) => None
         case (Some(v1), Some(v2)) => Some((v1, v2))
@@ -205,7 +205,7 @@ namespace Option {
     ///
     /// Returns `(Some(v1), Some(v2))` if `o` is `Some((v1, v2))`. Otherwise returns `(None, None)`.
     ///
-    def unzip[a, b](o: Option[(a, b)]): (Option[a], Option[b]) = match o with {
+    pub def unzip[a, b](o: Option[(a, b)]): (Option[a], Option[b]) = match o with {
         case None => (None, None)
         case Some((v1, v2)) => (Some(v1), Some(v2))
     }
@@ -215,7 +215,7 @@ namespace Option {
     ///
     /// Returns `true` if and only if `o1` and `o2` and equal.
     ///
-    def eq[a](o1: Option[a], o2: Option[a]): Bool = match (o1, o2) with {
+    pub def eq[a](o1: Option[a], o2: Option[a]): Bool = match (o1, o2) with {
         case (None, None) => true
         case (Some(v1), Some(v2)) => v1 == v2
         case _ => false

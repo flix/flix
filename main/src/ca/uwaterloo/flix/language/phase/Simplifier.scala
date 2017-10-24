@@ -966,11 +966,11 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
     //
     val defns = root.defs.map { case (k, v) => k -> visitDef(v) }
     val enums = root.enums.map {
-      case (k, TypedAst.Enum(doc, sym, cases0, enumType, loc)) =>
+      case (k, TypedAst.Enum(doc, mod, sym, cases0, enumType, loc)) =>
         val cases = cases0 map {
           case (tag, TypedAst.Case(enumSym, tagName, tagType, tagLoc)) => tag -> SimplifiedAst.Case(enumSym, tagName, tagType, tagLoc)
         }
-        k -> SimplifiedAst.Enum(sym, cases, enumType, loc)
+        k -> SimplifiedAst.Enum(mod, sym, cases, enumType, loc)
     }
     val lattices = root.lattices.map { case (k, v) => k -> visitLattice(v) }
     val collections = root.tables.map { case (k, v) => k -> visitTable(v) }

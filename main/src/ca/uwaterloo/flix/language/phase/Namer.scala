@@ -139,7 +139,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
       /*
        * Enum.
        */
-      case WeededAst.Declaration.Enum(doc, ident, tparams0, cases, loc) =>
+      case WeededAst.Declaration.Enum(doc, mod, ident, tparams0, cases, loc) =>
         val enums0 = prog0.enums.getOrElse(ns0, Map.empty)
         enums0.get(ident.name) match {
           case None =>
@@ -158,7 +158,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
                 case (tacc, tvar) => NamedAst.Type.Apply(tacc, tvar, loc)
               }
             }
-            val enum = NamedAst.Enum(doc, sym, tparams, casesOf(cases, tenv), enumType, loc)
+            val enum = NamedAst.Enum(doc, mod, sym, tparams, casesOf(cases, tenv), enumType, loc)
             val enums = enums0 + (ident.name -> enum)
             prog0.copy(enums = prog0.enums + (ns0 -> enums)).toSuccess
           case Some(enum) =>
@@ -704,14 +704,14 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
       def visit(tpe: WeededAst.Type, env: Map[String, Type.Var]): NamedAst.Type = tpe match {
         case WeededAst.Type.Unit(loc) => NamedAst.Type.Unit(loc)
         case WeededAst.Type.Var(ident, loc) => NamedAst.Type.Var(env(ident.name), loc)
-        case WeededAst.Type.Ref(qname, loc) =>
+        case WeededAst.Type.Ambiguous(qname, loc) =>
           if (qname.isUnqualified)
             env.get(qname.ident.name) match {
-              case None => NamedAst.Type.Ref(qname, loc)
+              case None => NamedAst.Type.Ambiguous(qname, loc)
               case Some(tvar) => NamedAst.Type.Var(tvar, loc)
             }
           else
-            NamedAst.Type.Ref(qname, loc)
+            NamedAst.Type.Ambiguous(qname, loc)
         case WeededAst.Type.Tuple(elms, loc) => NamedAst.Type.Tuple(elms.map(e => visit(e, env)), loc)
         case WeededAst.Type.Arrow(tparams, tresult, loc) => NamedAst.Type.Arrow(tparams.map(t => visit(t, env)), visit(tresult, env), loc)
         case WeededAst.Type.Apply(tpe1, tpe2, loc) => NamedAst.Type.Apply(visit(tpe1, env), visit(tpe2, env), loc)

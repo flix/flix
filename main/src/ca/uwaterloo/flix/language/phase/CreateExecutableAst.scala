@@ -45,11 +45,11 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
     val constants = root.defs.map { case (k, v) => k -> toExecutable(v) }
 
     val enums = root.enums.map {
-      case (sym, SimplifiedAst.Enum(_, cases0, _, loc)) =>
+      case (sym, SimplifiedAst.Enum(mod, _, cases0, _, loc)) =>
         val cases = cases0.map {
           case (tag, SimplifiedAst.Case(enumSym, tagName, tagType, tagLoc)) => tag -> ExecutableAst.Case(enumSym, tagName, tagType, tagLoc)
         }
-        sym -> ExecutableAst.Enum(sym, cases, loc)
+        sym -> ExecutableAst.Enum(mod, sym, cases, loc)
     }
 
     // Converting lattices to ExecutableAst will create new top-level definitions in the map `m`.

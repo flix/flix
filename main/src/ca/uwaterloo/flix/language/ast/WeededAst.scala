@@ -34,7 +34,7 @@ object WeededAst {
 
     case class Def(doc: Option[Ast.Documentation], ann: Ast.Annotations, mod: Ast.Modifiers, ident: Name.Ident, tparams: List[Name.Ident], fparams: List[WeededAst.FormalParam], exp: WeededAst.Expression, tpe: WeededAst.Type, eff: Eff, loc: SourceLocation) extends WeededAst.Declaration
 
-    case class Enum(doc: Option[Ast.Documentation], ident: Name.Ident, tparams: List[Name.Ident], cases: Map[String, WeededAst.Case], loc: SourceLocation) extends WeededAst.Declaration
+    case class Enum(doc: Option[Ast.Documentation], mod: Ast.Modifiers, ident: Name.Ident, tparams: List[Name.Ident], cases: Map[String, WeededAst.Case], loc: SourceLocation) extends WeededAst.Declaration
 
     case class Property(law: Name.QName, defn: Name.Ident, exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Declaration
 
@@ -216,11 +216,11 @@ object WeededAst {
 
   object Type {
 
-    case class Unit(loc: SourceLocation) extends WeededAst.Type
-
     case class Var(qname: Name.Ident, loc: SourceLocation) extends WeededAst.Type
 
-    case class Ref(qname: Name.QName, loc: SourceLocation) extends WeededAst.Type
+    case class Ambiguous(qname: Name.QName, loc: SourceLocation) extends WeededAst.Type
+
+    case class Unit(loc: SourceLocation) extends WeededAst.Type
 
     case class Tuple(elms: List[WeededAst.Type], loc: SourceLocation) extends WeededAst.Type
 

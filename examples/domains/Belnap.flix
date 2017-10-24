@@ -7,7 +7,7 @@ namespace Belnap {
     ///
     /// The elements of the boolean lattice.
     ///
-    enum Belnap {
+    pub enum Belnap {
                   case Top,
 
         case True,         case False,
@@ -18,13 +18,13 @@ namespace Belnap {
     ///
     /// Returns `true` iff `e1` is equal to `e2`.
     ///
-    def equ(e1: Belnap, e2: Belnap): Bool = e1 == e2
+    pub def equ(e1: Belnap, e2: Belnap): Bool = e1 == e2
 
     ///
     /// Returns `true` iff `e1` is less than or equal to `e2`.
     ///
     #reflexive #antiSymmetric #transitive #leastElement(Bot) #greatestElement(Top)
-    def leq(e1: Belnap, e2: Belnap): Bool = match (e1, e2) with {
+    pub def leq(e1: Belnap, e2: Belnap): Bool = match (e1, e2) with {
         case (Bot, _)       => true
         case (True, True)   => true
         case (False, False) => true
@@ -36,7 +36,7 @@ namespace Belnap {
     /// Returns the least upper bound of `e1` and `e2`.
     ///
     #upperBound #leastUpperBound #commutative #associative
-    def lub(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
+    pub def lub(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
         case (Bot, x)       => x
         case (x, Bot)       => x
         case (True, True)   => True
@@ -48,7 +48,7 @@ namespace Belnap {
     /// Returns the greatest lower bound of `e1` and `e2`.
     ///
     #lowerBound #greatestLowerBound #commutative #associative
-    def glb(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
+    pub def glb(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
         case (Top, x)       => x
         case (x, Top)       => x
         case (True, True)   => True
@@ -59,14 +59,14 @@ namespace Belnap {
     ///
     /// Abstracts a concrete boolean into the Belnap domain.
     ///
-    def alpha(b: Bool): Belnap = if (b) True else False
+    pub def alpha(b: Bool): Belnap = if (b) True else False
 
     ///
     /// Over-approximates the logical `not` operator.
     ///
     #safe1(x -> !x)
     #strict1 #monotone1
-    def not(e: Belnap): Belnap = match e with {
+    pub def not(e: Belnap): Belnap = match e with {
         case Bot    => Bot
         case True   => False
         case False  => True
@@ -78,7 +78,7 @@ namespace Belnap {
     ///
     #safe2((x, y) -> x && y)
     #strict2 #monotone2 #commutative #associative
-    def and(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
+    pub def and(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
         case (Bot, _)       => Bot
         case (_, Bot)       => Bot
         case (True, True)   => True
@@ -93,7 +93,7 @@ namespace Belnap {
     ///
     #safe2((x, y) -> x || y)
     #strict2 #monotone2 #commutative #associative
-    def or(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
+    pub def or(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
         case (Bot, _)       => Bot
         case (_, Bot)       => Bot
         case (True, True)   => True
@@ -108,7 +108,7 @@ namespace Belnap {
     ///
     #safe2((x, y) -> x ⊕ y)
     #strict2 #monotone2 #commutative #associative
-    def xor(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
+    pub def xor(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
         case (Bot, _)       => Bot
         case (_, Bot)       => Bot
         case (True, True)   => False
@@ -123,7 +123,7 @@ namespace Belnap {
     ///
     #safe2((x, y) -> x → y)
     #strict2 #monotone2
-    def implies(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
+    pub def implies(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
         case (Bot, _)         => Bot
         case (_, Bot)         => Bot
         case (True, True)     => True
@@ -138,7 +138,7 @@ namespace Belnap {
     ///
     #safe2((x, y) -> x ↔ y)
     #strict2 #monotone2 #commutative #associative
-    def bicondition(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
+    pub def bicondition(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
         case (Bot, _)       => Bot
         case (_, Bot)       => Bot
         case (True, True)   => True
@@ -153,7 +153,7 @@ namespace Belnap {
     ///
     #safe2((x, y) -> x ↑ y)
     #strict2 #monotone2 #commutative // NB: Commutative, but not associative!
-    def nand(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
+    pub def nand(e1: Belnap, e2: Belnap): Belnap = match (e1, e2) with {
         case (Bot, _)       => Bot
         case (_, Bot)       => Bot
         case (True, True)   => False

@@ -193,7 +193,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       rule {
-        Documentation ~ SP ~ atomic("enum") ~ WS ~ Names.Type ~ TypeParams ~ optWS ~ "{" ~ optWS ~ Cases ~ optWS ~ "}" ~ SP ~> ParsedAst.Declaration.Enum
+        Documentation ~ Modifiers ~ SP ~ atomic("enum") ~ WS ~ Names.Type ~ TypeParams ~ optWS ~ "{" ~ optWS ~ Cases ~ optWS ~ "}" ~ SP ~> ParsedAst.Declaration.Enum
       }
     }
 
@@ -209,7 +209,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
       rule {
         // NB: NestedCase must be parsed before UnitCase.
-        Documentation ~ SP ~ atomic("type") ~ WS ~ Names.Type ~ WS ~ "=" ~ WS ~ (NestedCase | UnitCase) ~ SP ~> ParsedAst.Declaration.Type
+        Documentation ~ Modifiers ~ SP ~ atomic("type") ~ WS ~ Names.Type ~ WS ~ "=" ~ WS ~ (NestedCase | UnitCase) ~ SP ~> ParsedAst.Declaration.Type
       }
     }
 
@@ -831,7 +831,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Ref: Rule1[ParsedAst.Type] = rule {
-      SP ~ Names.QualifiedType ~ SP ~> ParsedAst.Type.Ref
+      SP ~ Names.QualifiedType ~ SP ~> ParsedAst.Type.Ambiguous
     }
 
     def Tuple: Rule1[ParsedAst.Type] = {
@@ -910,8 +910,16 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   }
 
   def Modifiers: Rule1[Seq[ParsedAst.Modifier]] = {
-    def Modifier: Rule1[ParsedAst.Modifier] = rule {
+    def Inline: Rule1[ParsedAst.Modifier] = rule {
       SP ~ capture(atomic("inline")) ~ SP ~> ParsedAst.Modifier
+    }
+
+    def Public: Rule1[ParsedAst.Modifier] = rule {
+      SP ~ capture(atomic("pub")) ~ SP ~> ParsedAst.Modifier
+    }
+
+    def Modifier: Rule1[ParsedAst.Modifier] = rule {
+      Inline | Public
     }
 
     rule {

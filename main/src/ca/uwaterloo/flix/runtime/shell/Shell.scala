@@ -680,7 +680,7 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
   private def getDefinitionsByNamespace(ns: String, root: Root): List[Def] = {
     val namespace: List[String] = getNameSpace(ns)
     root.defs.foldLeft(Nil: List[Def]) {
-      case (xs, (s, defn)) if s.namespace == namespace && !defn.ann.isInternal && !defn.mod.isSynthetic =>
+      case (xs, (s, defn)) if s.namespace == namespace && defn.mod.isPublic && !defn.mod.isSynthetic =>
         defn :: xs
       case (xs, _) => xs
     }
