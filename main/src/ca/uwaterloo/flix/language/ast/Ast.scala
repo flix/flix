@@ -211,11 +211,6 @@ object Ast {
     def isPublic: Boolean = mod contains Modifier.Public
 
     /**
-      * Returns `true` if these modifiers do not contain the public modifier.
-      */
-    def isPrivate: Boolean = !isPublic
-
-    /**
       * Returns `true` if these modifiers contain the synthetic modifier.
       */
     def isSynthetic: Boolean = mod contains Modifier.Synthetic

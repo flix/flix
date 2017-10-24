@@ -175,24 +175,6 @@ class TestResolver extends FunSuite with TestUtils {
     val input =
       s"""
          |namespace A {
-         |  enum Color {
-         |    case Blu,
-         |    case Red
-         |  }
-         |}
-         |
-         |namespace B {
-         |  def g(): A.Color = ???
-         |}
-       """.stripMargin
-    val result = new Flix().addStr(input).compile()
-    expectError[ResolutionError.InaccessibleEnum](result)
-  }
-
-  test("InaccessibleEnum.03") {
-    val input =
-      s"""
-         |namespace A {
          |  def f(): A/B/C.Color = A/B/C/Color.Blu
          |
          |  namespace B/C {
@@ -207,7 +189,25 @@ class TestResolver extends FunSuite with TestUtils {
     expectError[ResolutionError.InaccessibleEnum](result)
   }
 
-  test("InaccessibleEnum.04") {
+  test("InaccessibleType.01") {
+    val input =
+      s"""
+         |namespace A {
+         |  enum Color {
+         |    case Blu,
+         |    case Red
+         |  }
+         |}
+         |
+         |namespace B {
+         |  def g(): A.Color = ???
+         |}
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[ResolutionError.InaccessibleEnum](result)
+  }
+
+  test("InaccessibleType.02") {
     val input =
       s"""
          |namespace A {

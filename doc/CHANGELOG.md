@@ -1,7 +1,10 @@
 # Changelog
 
 HEAD:
-
+    - Added pub keyword.
+    - Added expression holes.
+    - Vastly improved repl. (--interactive).
+    
 
 Version 0.2:
     - Added stratified negation (thanks Jason Mittertreiner).

@@ -643,7 +643,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
       val hookOpt = prog0.hooks.get(Symbol.mkDefnSym(qname.namespace, qname.ident))
 
       (defnOpt, hookOpt) match {
-        case (Some(defn), None) => getIfAccessible(defn, ns0, qname.loc)
+        case (Some(defn), None) => getDefIfAccessible(defn, ns0, qname.loc)
         case (None, Some(hook)) => DefTarget.Hook(hook).toSuccess
         case (None, None) => ResolutionError.UndefinedDef(qname, ns0, qname.loc).toFailure
         case (Some(defn), Some(hook)) => ResolutionError.AmbiguousRef(qname, ns0, qname.loc).toFailure
@@ -671,7 +671,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
 
     // Case 1: Exact match found. Simply return it.
     if (globalMatches.size == 1) {
-      return getIfAccessible(globalMatches.head, ns, tag.loc)
+      return getEnumIfAccessible(globalMatches.head, ns, tag.loc)
     }
 
     // Case 2: No or multiple matches found.
@@ -692,7 +692,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
 
     // Case 2.1: Exact match found in namespace. Simply return it.
     if (namespaceMatches.size == 1) {
-      return getIfAccessible(namespaceMatches.head, ns, tag.loc)
+      return getEnumIfAccessible(namespaceMatches.head, ns, tag.loc)
     }
 
     // Case 2.2: No matches found in namespace.
@@ -709,7 +709,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
     // Case 2.4: Multiple matches found in namespace and an enum name is available.
     val filteredMatches = namespaceMatches.filter(_.sym.name == qname.get.ident.name)
     if (filteredMatches.size == 1) {
-      return getIfAccessible(filteredMatches.head, ns, tag.loc)
+      return getEnumIfAccessible(filteredMatches.head, ns, tag.loc)
     }
 
     ResolutionError.UndefinedTag(tag.name, ns, tag.loc).toFailure
@@ -780,17 +780,9 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
             val rootDecls = prog0.enums.getOrElse(Name.RootNS, Map.empty)
             rootDecls.get(typeName) match {
               case None => ResolutionError.UndefinedType(qname, ns0, loc).toFailure
-              case Some(enum) =>
-                // Check accessibility.
-                getIfAccessible(enum, ns0, ns0.loc) map {
-                  case _ => Type.Enum(enum.sym, Kind.Star)
-                }
+              case Some(enum) => getTypeIfAccessible(enum, ns0, ns0.loc)
             }
-          case Some(enum) =>
-            // Check accessibility.
-            getIfAccessible(enum, ns0, ns0.loc) map {
-              case _ => Type.Enum(enum.sym, Kind.Star)
-            }
+          case Some(enum) => getTypeIfAccessible(enum, ns0, ns0.loc)
         }
     }
     case NamedAst.Type.Ambiguous(qname, loc) if qname.isQualified =>
@@ -798,11 +790,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
       val decls = prog0.enums.getOrElse(qname.namespace, Map.empty)
       decls.get(qname.ident.name) match {
         case None => ResolutionError.UndefinedType(qname, ns0, loc).toFailure
-        case Some(enum) =>
-          // Check accessibility.
-          getIfAccessible(enum, ns0, ns0.loc) map {
-            case _ => Type.Enum(enum.sym, Kind.Star)
-          }
+        case Some(enum) => getTypeIfAccessible(enum, ns0, ns0.loc)
       }
     case NamedAst.Type.Enum(sym) =>
       Type.Enum(sym, Kind.Star).toSuccess
@@ -833,7 +821,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
     * (a) the definition is marked public, or
     * (b) the definition is defined in the namespace `ns0` itself or in a parent of `ns0`.
     */
-  def getIfAccessible(defn0: NamedAst.Def, ns0: Name.NName, loc: SourceLocation): Validation[DefTarget, ResolutionError] = {
+  def getDefIfAccessible(defn0: NamedAst.Def, ns0: Name.NName, loc: SourceLocation): Validation[DefTarget, ResolutionError] = {
     //
     // Check if the definition is marked public.
     //
@@ -864,8 +852,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
     * (a) the definition is marked public, or
     * (b) the definition is defined in the namespace `ns0` itself or in a parent of `ns0`.
     */
-  def getIfAccessible(enum0: NamedAst.Enum, ns0: Name.NName, loc: SourceLocation): Validation[NamedAst.Enum, ResolutionError] = {
-
+  def getEnumIfAccessible(enum0: NamedAst.Enum, ns0: Name.NName, loc: SourceLocation): Validation[NamedAst.Enum, ResolutionError] = {
     //
     // Check if the definition is marked public.
     //
@@ -886,4 +873,16 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
     ResolutionError.InaccessibleEnum(enum0.sym, ns0, loc).toFailure
   }
 
+  /**
+    * Successfully returns the type of the given `enum0` if it is accessible from the given namespace `ns0`.
+    *
+    * Otherwise fails with a resolution error.
+    *
+    * Internally uses [[getEnumIfAccessible]].
+    */
+  def getTypeIfAccessible(enum0: NamedAst.Enum, ns0: Name.NName, loc: SourceLocation): Validation[Type, ResolutionError] =
+    getEnumIfAccessible(enum0, ns0, loc) map {
+      case enum => Type.Enum(enum.sym, Kind.Star)
+    }
 }
+
