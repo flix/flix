@@ -149,7 +149,8 @@ object LoadBytecode extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
       val clazz = loadedClasses(prefix)
       val argTpes = targs.map(t => toJavaClass(t, loadedInterfaces, loadedEnumInterfaces, loadedTuples))
       // Note: Update the original constant in root.constants, not the temporary one in constantsMap!
-      root.defs(const.sym).method = clazz.getMethod(const.sym.suffix, argTpes: _*)
+      // TODO: In preparation for new backend, don't overwrite .method.
+      // root.defs(const.sym).method = clazz.getMethod(const.sym.suffix, argTpes: _*)
     }
 
     val e = System.nanoTime() - t
