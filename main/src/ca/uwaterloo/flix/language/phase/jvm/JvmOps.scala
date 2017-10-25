@@ -208,6 +208,8 @@ object JvmOps {
     // Compute the stringified erased type of each type argument.
     val args = tpe.typeArguments.map(tpe => stringify(getErasedType(tpe)))
 
+    // TODO: Need to take arity into account. Two closures could have different arity.
+
     // The JVM name is of the form Clo$sym.name
     val name = "Clo" + "$" + closure.sym.name
 
