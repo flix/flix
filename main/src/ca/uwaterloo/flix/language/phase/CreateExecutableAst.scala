@@ -399,7 +399,8 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
     val lit = Expression.toExecutable(exp0)
     val ann = Ast.Annotations.Empty
     val mod = Ast.Modifiers(List(Ast.Modifier.Synthetic))
-    val defn = ExecutableAst.Def(ann, mod, sym, formals = Array(), lit, exp0.tpe, exp0.loc)
+    val tpe = Type.Apply(Type.Arrow(1), exp0.tpe)
+    val defn = ExecutableAst.Def(ann, mod, sym, formals = Array(), lit, tpe, exp0.loc)
     m += (sym -> defn)
     sym
   }
