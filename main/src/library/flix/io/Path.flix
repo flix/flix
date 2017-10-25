@@ -4,6 +4,13 @@ type Path           =   Path(##java.nio.file.Path)
 type InputStream    =   InputStream(##java.io.InputStream)
 type OutputStream   =   OutputStream(##java.io.OutputStream)
 
+// TODO: Overall challenges.
+// 1. How to deal with variadic methods that take optional arguments? Suggestion => Hack around it with reflection.
+// 2. How to support the above without overloading in Flix? Suggestion => Use `withXYZ` suffix.
+// 3. How to deal with different types of IOErrors, e.g. FileNotFound, FileIsDirectory etc.? Suggestion introduce IOError? Look at rust?
+// 4. How to deal with nulls? Suggestion return Option[X].
+// 5. How to deal with overloaded java methods? Suggestion => Allow ascription of arguments.
+ 
 // TODO: We need or want this?
 pub enum IOError {
     case FileNotFound
@@ -13,6 +20,7 @@ namespace Path {
 
     pub def getPath(s: Str): Path =
         // TODO: Notice this ugly hack because we lack array literals...
+        // TODO: It is possible to determine if method has varargs and then rewrite to call it with the empty array.
         let fileObj = unsafe native new java.io.File(s: Str);
         let pathObj = unsafe native method java.io.File.toPath(fileObj: ##java.io.File);
             Path(pathObj)
@@ -20,12 +28,14 @@ namespace Path {
     pub def isExecutable(p: Path): Result[Bool, IOError] @ IO =
         p |> unwrapPath |> isExecutableX
 
+    // TODO: What namespace does such as function belong in?
     pub def copyStreamToPath(i: /*unique*/ InputStream, p: Path): Result[(), IOError] @ IO =
         let InputStream(realInputStream) = i;
         let Path(realPath) = p;
             copyStreamToPathX(realInputStream, realPath)
 
-    pub def copyPathToStream(is: /*unique*/ InputStream, /* borrow*/ os: OutputStream): Result[(), IOError] @ IO =
+    // TODO: What namespace does such as function belong in?
+    pub def copyStreamToStream(is: unique InputStream, os: borrow OutputStream): Result[(), IOError] @ IO =
         ???
 
     // TODO: What about OpenOption? Probably needs a `newInputStreamWith` ...

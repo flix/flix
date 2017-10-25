@@ -826,7 +826,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Primary: Rule1[ParsedAst.Type] = rule {
-      Arrow | Tuple | Native | Var | Ambiguous
+      Arrow | Tuple | Native | Borrow | Unique | Var | Ambiguous
     }
 
     def Arrow: Rule1[ParsedAst.Type] = rule {
@@ -861,6 +861,14 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Ambiguous: Rule1[ParsedAst.Type] = rule {
       SP ~ Names.QualifiedType ~ SP ~> ParsedAst.Type.Ambiguous
+    }
+
+    def Borrow: Rule1[ParsedAst.Type] = rule {
+      SP ~ atomic("borrow") ~ WS ~ Type ~ SP ~> ParsedAst.Type.Borrow
+    }
+
+    def Unique: Rule1[ParsedAst.Type] = rule {
+      SP ~ atomic("unique") ~ WS ~ Type ~ SP ~> ParsedAst.Type.Unique
     }
 
     def TypeArguments: Rule1[Seq[ParsedAst.Type]] = rule {

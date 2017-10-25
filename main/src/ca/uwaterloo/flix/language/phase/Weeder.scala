@@ -1032,6 +1032,8 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         args.foldLeft(weed(t1)) {
           case (acc, t2) => WeededAst.Type.Apply(acc, weed(t2), mkSL(sp1, sp2))
         }
+      case ParsedAst.Type.Borrow(sp1, borrowedType, sp2) => weed(borrowedType)
+      case ParsedAst.Type.Unique(sp1, uniqueType, sp2) => weed(uniqueType)
     }
 
   }
@@ -1245,6 +1247,8 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Type.Arrow(sp1, _, _, _) => sp1
     case ParsedAst.Type.Infix(tpe1, _, _, _) => leftMostSourcePosition(tpe1)
     case ParsedAst.Type.Apply(tpe1, _, _) => leftMostSourcePosition(tpe1)
+    case ParsedAst.Type.Borrow(sp1, _, _) => sp1
+    case ParsedAst.Type.Unique(sp1, _, _) => sp1
   }
 
   /**

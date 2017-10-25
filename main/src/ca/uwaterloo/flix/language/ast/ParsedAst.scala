@@ -973,6 +973,24 @@ object ParsedAst {
       */
     case class Apply(base: ParsedAst.Type, tparams: Seq[ParsedAst.Type], sp2: SourcePosition) extends ParsedAst.Type
 
+    /**
+      * Borrowed Type.
+      *
+      * @param sp1 the position of the first character in the type.
+      * @param tpe the borrowed type.
+      * @param sp2 the position of the last character in the type.
+      */
+    case class Borrow(sp1: SourcePosition, tpe: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Type
+
+    /**
+      * Unique Type.
+      *
+      * @param sp1 the position of the first character in the type.
+      * @param tpe the unique type.
+      * @param sp2 the position of the last character in the type.
+      */
+    case class Unique(sp1: SourcePosition, tpe: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Type
+    
   }
 
   /**
