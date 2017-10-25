@@ -798,6 +798,9 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
       for (
         elms <- seqM(elms0.map(tpe => lookupType(tpe, ns0, prog0)))
       ) yield Type.mkTuple(elms)
+    case NamedAst.Type.Native(fqn, loc) =>
+      // TODO: needs more precise type.
+      Type.Native.toSuccess
     case NamedAst.Type.Arrow(tparams0, tresult0, loc) =>
       for (
         tparams <- seqM(tparams0.map(tpe => lookupType(tpe, ns0, prog0)));

@@ -481,8 +481,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
       }
 
       case WeededAst.Expression.NativeConstructor(className, args, loc) =>
-        val arity = args.length
-        lookupNativeConstructor(className, arity, loc) match {
+        lookupNativeConstructor(className, args, loc) match {
           case Ok(constructor) => @@(args.map(e => namer(e, env0, tenv0))) map {
             case es => NamedAst.Expression.NativeConstructor(constructor, es, Type.freshTypeVar(), loc)
           }
@@ -496,8 +495,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
         }
 
       case WeededAst.Expression.NativeMethod(className, methodName, args, loc) =>
-        val arity = args.length
-        lookupNativeMethod(className, methodName, arity, loc) match {
+        lookupNativeMethod(className, methodName, args, loc) match {
           case Ok(method) => @@(args.map(e => namer(e, env0, tenv0))) map {
             case es => NamedAst.Expression.NativeMethod(method, es, Type.freshTypeVar(), loc)
           }
@@ -713,6 +711,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
           else
             NamedAst.Type.Ambiguous(qname, loc)
         case WeededAst.Type.Tuple(elms, loc) => NamedAst.Type.Tuple(elms.map(e => visit(e, env)), loc)
+        case WeededAst.Type.Native(fqn, loc) => NamedAst.Type.Native(fqn, loc)
         case WeededAst.Type.Arrow(tparams, tresult, loc) => NamedAst.Type.Arrow(tparams.map(t => visit(t, env)), visit(tresult, env), loc)
         case WeededAst.Type.Apply(tpe1, tpe2, loc) => NamedAst.Type.Apply(visit(tpe1, env), visit(tpe2, env), loc)
       }
@@ -787,7 +786,22 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
   /**
     * Returns the result of looking up the given `methodName` on the given `className` with the given `arity`.
     */
-  def lookupNativeMethod(className: String, methodName: String, arity: Int, loc: SourceLocation): Result[Method, NameError] = try {
+  def lookupNativeMethod(className: String, methodName: String, args: List[WeededAst.Expression], loc: SourceLocation): Result[Method, NameError] = try {
+    // TODO: Possibly all this needs to take place in the resolver.
+
+    // Compute the argument types.
+    val argumentTypes = args map {
+      case WeededAst.Expression.Ascribe(_, tpe, _, _) =>
+        // The argument is ascribed. Try to determine its type.
+        lookupNativeType(tpe)
+      case _ =>
+        // The argument is not ascribed. We do not know its type.
+        None
+    }
+
+    // compute the arity.
+    val arity = argumentTypes.length
+
     // retrieve class object.
     val clazz = Class.forName(className)
 
@@ -798,12 +812,15 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
 
     // retrieve the static methods.
     val staticMethods = matchedMethods.filter {
-      case method => Modifier.isStatic(method.getModifiers) && method.getParameterCount == arity
+      case method => Modifier.isStatic(method.getModifiers) &&
+        method.getParameterCount == arity &&
+        parameterTypeMatch(argumentTypes, method.getParameterTypes.toList)
     }
 
     // retrieve the object methods.
     val objectMethods = matchedMethods.filter {
-      case method => !Modifier.isStatic(method.getModifiers) && method.getParameterCount == (arity - 1)
+      case method => !Modifier.isStatic(method.getModifiers) && method.getParameterCount == (arity - 1) &&
+        parameterTypeMatch(argumentTypes.tail, method.getParameterTypes.toList)
     }
 
     // static and object methods.
@@ -822,13 +839,26 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
   /**
     * Returns the result of looking up the constructor on the given `className` with the given `arity`.
     */
-  def lookupNativeConstructor(className: String, arity: Int, loc: SourceLocation): Result[Constructor[_], NameError] = try {
+  def lookupNativeConstructor(className: String, args: List[WeededAst.Expression], loc: SourceLocation): Result[Constructor[_], NameError] = try {
+    // Compute the argument types.
+    val argumentTypes = args map {
+      case WeededAst.Expression.Ascribe(_, tpe, _, _) =>
+        // The argument is ascribed. Try to determine its type.
+        lookupNativeType(tpe)
+      case _ =>
+        // The argument is not ascribed. We do not know its type.
+        None
+    }
+
+    // compute the arity.
+    val arity = argumentTypes.length
+
     // retrieve class object.
     val clazz = Class.forName(className)
 
     // retrieve the constructors of the appropriate arity.
     val constructors = clazz.getDeclaredConstructors.toList.filter {
-      case constructor => constructor.getParameterCount == arity
+      case constructor => constructor.getParameterCount == arity && parameterTypeMatch(argumentTypes, constructor.getParameterTypes.toList)
     }
 
     // match on the number of methods.
@@ -840,5 +870,37 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
   } catch {
     case ex: ClassNotFoundException => Err(UndefinedNativeClass(className, loc))
   }
+
+  /**
+    * Optionally returns the native type of the given type `tpe`.
+    *
+    * May return `None` if not information about `tpe` is known.
+    */
+  def lookupNativeType(tpe: WeededAst.Type): Option[Class[_]] = tpe match {
+    case WeededAst.Type.Native(fqn, loc) => lookupClass(fqn.mkString("."))
+    case WeededAst.Type.Ambiguous(qname, loc) =>
+      // TODO: Ugly incorrect hack. Must take place in the resolver.
+      if (qname.ident.name == "Str") Some(classOf[String]) else None
+    // TODO: Would be useful to handle primitive types too.
+    case _ => None
+  }
+
+  /**
+    * Optionally returns the class reflection object for the given `className`.
+    */
+  def lookupClass(className: String): Option[Class[_]] = try {
+    Some(Class.forName(className))
+  } catch {
+    case ex: ClassNotFoundException => None // TODO: Need to return a proper validation instead?
+  }
+
+  /**
+    * Returns `true` if the class types present in `expected` equals those in `actual`.
+    */
+  def parameterTypeMatch(expected: List[Option[Class[_]]], actual: List[Class[_]]): Boolean =
+    (expected zip actual) forall {
+      case (None, _) => true
+      case (Some(clazz1), clazz2) => clazz1 == clazz2
+    }
 
 }

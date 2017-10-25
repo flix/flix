@@ -232,6 +232,8 @@ object NamedAst {
 
     case class Tuple(elms: List[NamedAst.Type], loc: SourceLocation) extends NamedAst.Type
 
+    case class Native(fqn: List[String], loc: SourceLocation) extends NamedAst.Type
+
     case class Arrow(params: List[NamedAst.Type], ret: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
 
     case class Apply(tpe1: NamedAst.Type, tpe2: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type

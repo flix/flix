@@ -557,6 +557,10 @@ object Synthesize extends Phase[Root, Root] {
           val method = classOf[java.math.BigInteger].getMethod("toString")
           Expression.NativeMethod(method, List(exp0), Type.Str, Eff.Pure, sl)
 
+        case Type.Native =>
+          val method = classOf[java.lang.Object].getMethod("toString")
+          Expression.NativeMethod(method, List(exp0), Type.Str, Eff.Pure, sl)
+
         case Type.Str => exp0
 
         case Type.Apply(Type.Ref, _) => Expression.Str("<<ref>>", sl)
