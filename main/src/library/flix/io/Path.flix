@@ -1,9 +1,3 @@
-def f(): Path = Path.getPath("./foo.flix")
-
-type Path           =   Path(##java.nio.file.Path)
-type InputStream    =   InputStream(##java.io.InputStream)
-type OutputStream   =   OutputStream(##java.io.OutputStream)
-
 // TODO: Overall challenges.
 // 1. How to deal with variadic methods that take optional arguments? Suggestion => Hack around it with reflection.
 // 2. How to support the above without overloading in Flix? Suggestion => Use `withXYZ` suffix.
@@ -16,31 +10,65 @@ pub enum IOError {
     case FileNotFound
 }
 
+type Path           =   Path(##java.nio.file.Path)
+type InputStream    =   InputStream(##java.io.InputStream)
+type OutputStream   =   OutputStream(##java.io.OutputStream)
+
 namespace Path {
 
-    pub def getPath(s: Str): Path =
+    def f(): Result[Bool, IOError] = Path.new("./foo.flix").isExecutable()
+
+    ///
+    /// Returns a Path from the given string `s`.
+    ///
+    pub def new(s: Str): Path =
         // TODO: Notice this ugly hack because we lack array literals...
         // TODO: It is possible to determine if method has varargs and then rewrite to call it with the empty array.
         let fileObj = unsafe native new java.io.File(s: Str);
         let pathObj = unsafe native method java.io.File.toPath(fileObj: ##java.io.File);
             Path(pathObj)
 
-    pub def isExecutable(p: Path): Result[Bool, IOError] @ IO =
-        p |> unwrapPath |> isExecutableX
+
+
+    ///
+    /// Returns `true` if the given path `p` exists.
+    ///
+    pub def exists(p: Path): Result[Bool, IOError] @ IO = match p with {
+        case Path(realPath) =>
+            Ok(unsafe native method java.nio.file.Files.exists(realPath: ##java.nio.file.Path, /* TODO */ ???))
+    }
+
+    ///
+    /// Returns `true` if the given path `p` is readable.
+    ///
+    pub def isReadable(p: Path): Result[Bool, IOError] @ IO = match p with {
+        case Path(realPath) =>
+            Ok(unsafe native method java.nio.file.Files.isReadable(realPath: ##java.nio.file.Path))
+    }
+
+    ///
+    /// Returns `true` if the given path `p` exists and is executable.
+    ///
+    pub def isExecutable(p: Path): Result[Bool, IOError] @ IO = match p with {
+        case Path(realPath) =>
+            Ok(unsafe native method java.nio.file.Files.isExecutable(realPath: ##java.nio.file.Path))
+    }
+
+
 
     // TODO: What namespace does such as function belong in?
-    pub def copyStreamToPath(i: /*unique*/ InputStream, p: Path): Result[(), IOError] @ IO =
+    pub def copyToPath(i: unique InputStream, p: Path): Result[(), IOError] @ IO =
         let InputStream(realInputStream) = i;
         let Path(realPath) = p;
             copyStreamToPathX(realInputStream, realPath)
 
     // TODO: What namespace does such as function belong in?
-    pub def copyStreamToStream(is: unique InputStream, os: borrow OutputStream): Result[(), IOError] @ IO =
+    pub def copyToStream(is: unique InputStream, os: borrow OutputStream): Result[(), IOError] @ IO =
         ???
 
     // TODO: What about OpenOption? Probably needs a `newInputStreamWith` ...
     // TODO: Shape of result?
-    pub def newInputStream(p: Path): /*unique*/ Result[InputStream, IOError] @ IO =
+    pub def newInputStream(p: Path): unique Result[InputStream, IOError] @ IO =
         p |> unwrapPath |> (x -> ???)
 
     // TODO: Need a withCharset variant.
@@ -51,11 +79,6 @@ namespace Path {
     // TODO: Need an array
     pub def write(p: Path, bytes: List[Int8]): Result[(), IOError] @ IO = ???
 
-    // TODO: Think about return type.
-    def isExecutableX(p: ##java.nio.file.Path): Result[Bool, IOError] =
-        unsafe {
-            native method java.nio.file.Files.isExecutable(p: ##java.nio.file.Path)
-        }
 
     def copyStreamToPathX(i: ##java.io.InputStream, p: ##java.nio.file.Path): Result[(), IOError] = ???
     // TODO: The below will not work because copy takes three arguments, the last which is an array, which we currently lack.

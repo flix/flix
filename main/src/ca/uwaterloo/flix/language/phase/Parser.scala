@@ -578,12 +578,12 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
     }
 
-    def Apply: Rule1[ParsedAst.Expression] = rule {
-      Postfix ~ zeroOrMore(ArgumentList ~ SP ~> ParsedAst.Expression.Apply)
+    def Postfix: Rule1[ParsedAst.Expression] = rule {
+      Apply ~ zeroOrMore(optWS ~ "." ~ Names.Definition ~ ArgumentList ~ SP ~> ParsedAst.Expression.Postfix)
     }
 
-    def Postfix: Rule1[ParsedAst.Expression] = rule {
-      Primary ~ zeroOrMore(optWS ~ "." ~ Names.Definition ~ ArgumentList ~ SP ~> ParsedAst.Expression.Postfix)
+    def Apply: Rule1[ParsedAst.Expression] = rule {
+      Primary ~ zeroOrMore(ArgumentList ~ SP ~> ParsedAst.Expression.Apply)
     }
 
     def Tag: Rule1[ParsedAst.Expression.Tag] = rule {
@@ -603,7 +603,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def FList: Rule1[ParsedAst.Expression] = rule {
-      Apply ~ optional(optWS ~ SP ~ atomic("::") ~ SP ~ optWS ~ Expression ~> ParsedAst.Expression.FCons)
+      Postfix ~ optional(optWS ~ SP ~ atomic("::") ~ SP ~ optWS ~ Expression ~> ParsedAst.Expression.FCons)
     }
 
     def FSet: Rule1[ParsedAst.Expression.FSet] = rule {
