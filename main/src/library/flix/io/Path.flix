@@ -7,7 +7,8 @@
  
 // TODO: We need or want this?
 pub enum IOError {
-    case FileNotFound
+    case FileNotFound,
+    case IOErrorMsg(Str)
 }
 
 type Path           =   Path(##java.nio.file.Path)
@@ -33,10 +34,14 @@ namespace Path {
     ///
     /// Returns `true` if the given path `p` exists.
     ///
-    pub def exists(p: Path): Result[Bool, IOError] @ IO = match p with {
+    pub def exists(p: Path): Result[Bool, IOError] @ IO = unsafe match p with {
         case Path(realPath) =>
-            Ok(unsafe native method java.nio.file.Files.exists(realPath: ##java.nio.file.Path, /* TODO */ ???))
-    }
+            let result = native method java.nio.file.Files.exists(realPath: ##java.nio.file.Path, /* TODO */ ???);
+                match result with {
+                    case Ok(bool) => Ok(bool)
+                    case Err(ex)  => Err(IOErrorMsg("get msg from ex"))
+                }
+        }
 
     ///
     /// Returns `true` if the given path `p` is readable.
