@@ -15,6 +15,8 @@ type Path           =   Path(##java.nio.file.Path)
 type InputStream    =   InputStream(##java.io.InputStream)
 type OutputStream   =   OutputStream(##java.io.OutputStream)
 
+// import ##java.io.File (makes File available as ##File)
+
 namespace Path {
 
     def f(): Result[Bool, IOError] = Path.new("./foo.flix").isExecutable()
@@ -29,7 +31,7 @@ namespace Path {
         let pathObj = unsafe native method java.io.File.toPath(fileObj: ##java.io.File);
             Path(pathObj)
 
-
+    // TODO: Reason arrays: [|1, 2, 3|], empty array [||]
 
     ///
     /// Returns `true` if the given path `p` exists.
@@ -39,7 +41,9 @@ namespace Path {
             let result = native method java.nio.file.Files.exists(realPath: ##java.nio.file.Path, /* TODO */ ???);
                 match result with {
                     case Ok(bool) => Ok(bool)
-                    case Err(ex)  => Err(IOErrorMsg("get msg from ex"))
+                    case Err(ex)  =>
+                        // TODO: Do we need to introduce an instance of check here? `is`?
+                        Err(IOErrorMsg("get msg from ex"))
                 }
         }
 
