@@ -525,6 +525,34 @@ object ParsedAst {
     case class Tuple(sp1: SourcePosition, elms: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
+      * Array Expression.
+      *
+      * @param sp1  the position of the first character in the expression.
+      * @param elms the elements of the array.
+      * @param sp2  the position of the last character in the expression.
+      */
+    case class Array(sp1: SourcePosition, elms: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
+      * Array Load Expression.
+      *
+      * @param base  the array expression.
+      * @param index the index expression.
+      * @param sp2   the position of the last character in the expression.
+      */
+    case class ArrayLoad(base: ParsedAst.Expression, index: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
+      * Array Store Expression.
+      *
+      * @param base  the array expression.
+      * @param index the index expression.
+      * @param value the value expression.
+      * @param sp2   the position of the last character in the expression.
+      */
+    case class ArrayStore(base: ParsedAst.Expression, index: ParsedAst.Expression, value: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
       * Nil Expression (of list).
       *
       * @param sp1 the position of the first character in the expression.
@@ -990,7 +1018,7 @@ object ParsedAst {
       * @param sp2 the position of the last character in the type.
       */
     case class Unique(sp1: SourcePosition, tpe: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Type
-    
+
   }
 
   /**

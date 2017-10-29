@@ -393,6 +393,24 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
             es <- seqM(elms map visit)
           } yield ResolvedAst.Expression.Tuple(es, tvar, loc)
 
+        case NamedAst.Expression.Array(elms, tvar, loc) =>
+          for {
+            es <- seqM(elms map visit)
+          } yield ResolvedAst.Expression.Array(es, tvar, loc)
+
+        case NamedAst.Expression.ArrayLoad(base, index, tvar, loc) =>
+          for {
+            b <- visit(base)
+            i <- visit(index)
+          } yield ResolvedAst.Expression.ArrayLoad(b, i, tvar, loc)
+
+        case NamedAst.Expression.ArrayStore(base, index, value, tvar, loc) =>
+          for {
+            b <- visit(base)
+            i <- visit(index)
+            v <- visit(value)
+          } yield ResolvedAst.Expression.ArrayStore(b, i, v, tvar, loc)
+
         case NamedAst.Expression.Ref(exp, tvar, loc) =>
           for {
             e <- visit(exp)
@@ -766,6 +784,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
       case "Int64" => Type.Int64.toSuccess
       case "BigInt" => Type.BigInt.toSuccess
       case "Str" => Type.Str.toSuccess
+      case "Array" => Type.Array.toSuccess
       case "Native" => Type.Native.toSuccess
       case "Ref" => Type.Ref.toSuccess
 

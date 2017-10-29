@@ -19,15 +19,12 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.{ParsedAst, _}
-import ca.uwaterloo.flix.util.{ParOps, StreamOps, Timer, Validation}
+import ca.uwaterloo.flix.util.{ParOps, Timer, Validation}
 import ca.uwaterloo.flix.util.Validation._
 import org.parboiled2
 import org.parboiled2._
 
 import scala.collection.immutable.Seq
-import scala.concurrent.duration.Duration
-import scala.concurrent.{Await, Future}
-
 /**
   * A phase to transform source files into abstract syntax trees.
   */
@@ -516,7 +513,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Primary: Rule1[ParsedAst.Expression] = rule {
-      LetRec | LetMatch | IfThenElse | Match | LambdaMatch | Switch | Unsafe | Native | Lambda | Tuple | FNil | FSet | FMap | Literal |
+      LetRec | LetMatch | IfThenElse | Match | LambdaMatch | Switch | Unsafe | Native | Lambda | Tuple |
+        Array | FNil | FSet | FMap | Literal |
         Existential | Universal | UnaryLambda | QName | Wild | Tag | SName | Hole | UserError
     }
 
@@ -583,7 +581,11 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Apply: Rule1[ParsedAst.Expression] = rule {
-      Primary ~ zeroOrMore(ArgumentList ~ SP ~> ParsedAst.Expression.Apply)
+      ArrayLoad ~ zeroOrMore(ArgumentList ~ SP ~> ParsedAst.Expression.Apply)
+    }
+
+    def ArrayLoad: Rule1[ParsedAst.Expression] = rule {
+      Primary ~ zeroOrMore(optWS ~ "[" ~ optWS ~ Expression ~ optWS ~ "]" ~ SP ~> ParsedAst.Expression.ArrayLoad)
     }
 
     def Tag: Rule1[ParsedAst.Expression.Tag] = rule {
@@ -592,6 +594,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Tuple: Rule1[ParsedAst.Expression] = rule {
       SP ~ "(" ~ optWS ~ zeroOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ SP ~> ParsedAst.Expression.Tuple
+    }
+
+    def Array: Rule1[ParsedAst.Expression] = rule {
+      SP ~ "[|" ~ optWS ~ zeroOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "|]" ~ SP ~> ParsedAst.Expression.Array
     }
 
     def FNil: Rule1[ParsedAst.Expression.FNil] = rule {

@@ -696,6 +696,22 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           ) yield resultType
 
         /*
+         * Array expression.
+         */
+        case ResolvedAst.Expression.Array(elms, tvar, loc) =>
+          //
+          //  elms[i] : t
+          //  ----------------
+          //  [| elms |] : Array[t]
+          //
+          // TODO: What is the type of the empty array?
+          for {
+            elementTypes <- seqM(elms.map(visitExp))
+            elementType <- unifyM(Type.freshTypeVar() :: elementTypes, loc)
+            resultType <- unifyM(tvar, Type.mkArray(elementType), loc)
+          } yield resultType
+
+        /*
          * Reference expression.
          */
         case ResolvedAst.Expression.Ref(exp, tvar, loc) =>
@@ -962,6 +978,13 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         case ResolvedAst.Expression.Tuple(elms, tvar, loc) =>
           val es = elms.map(e => visitExp(e, subst0))
           TypedAst.Expression.Tuple(es, subst0(tvar), Eff.Bot, loc)
+
+        /*
+         * Array expression.
+         */
+        case ResolvedAst.Expression.Array(elms, tvar, loc) =>
+          val es = elms.map(e => visitExp(e, subst0))
+          TypedAst.Expression.Array(es, subst0(tvar), Eff.Bot, loc)
 
         /*
          * Reference expression.

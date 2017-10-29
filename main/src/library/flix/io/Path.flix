@@ -33,6 +33,18 @@ namespace Path {
 
     // TODO: Reason arrays: [|1, 2, 3|], empty array [||]
 
+    // TODO: It would be interesting to have a try block to eliminate exception effects, e.g.
+    //
+    // def foo(): Int @ Exc(IOException)
+    //
+    // def bar(): Int = try foo() catch { ... }
+    //
+
+    // TODO: What effect should arrays have ?
+    //
+    // def write(a: borrow Array[Int]): Array[Int] @ IO ???
+    //
+
     ///
     /// Returns `true` if the given path `p` exists.
     ///

@@ -443,6 +443,21 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
           case es => NamedAst.Expression.Tuple(es, Type.freshTypeVar(), loc)
         }
 
+      case WeededAst.Expression.Array(elms, loc) =>
+        @@(elms map (e => namer(e, env0, tenv0))) map {
+          case es => NamedAst.Expression.Array(es, Type.freshTypeVar(), loc)
+        }
+
+      case WeededAst.Expression.ArrayLoad(base, index, loc) =>
+        @@(namer(base, env0, tenv0), namer(base, env0, tenv0)) map {
+          case (b, i) => NamedAst.Expression.ArrayLoad(b, i, Type.freshTypeVar(), loc)
+        }
+
+      case WeededAst.Expression.ArrayStore(base, index, value, loc) =>
+        @@(namer(base, env0, tenv0), namer(base, env0, tenv0), namer(value, env0, tenv0)) map {
+          case (b, i, v) => NamedAst.Expression.ArrayStore(b, i, v, Type.freshTypeVar(), loc)
+        }
+
       case WeededAst.Expression.Ref(exp, loc) =>
         namer(exp, env0, tenv0) map {
           case e => NamedAst.Expression.Ref(e, Type.freshTypeVar(), loc)
