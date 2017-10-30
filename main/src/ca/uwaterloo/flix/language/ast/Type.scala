@@ -458,6 +458,7 @@ object Type {
           case Type.Int64 => "Int64"
           case Type.BigInt => "BigInt"
           case Type.Str => "String"
+          case Type.Array => "Array"
           case Type.Native => "Native"
           case Type.Ref => "Ref"
 

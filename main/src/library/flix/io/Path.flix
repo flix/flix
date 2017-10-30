@@ -33,6 +33,8 @@ namespace Path {
 
     // TODO: Reason arrays: [|1, 2, 3|], empty array [||]
 
+    // TODO: What is the effect of array index out of bounds?
+
     // TODO: It would be interesting to have a try block to eliminate exception effects, e.g.
     //
     // def foo(): Int @ Exc(IOException)
@@ -50,7 +52,7 @@ namespace Path {
     ///
     pub def exists(p: Path): Result[Bool, IOError] @ IO = unsafe match p with {
         case Path(realPath) =>
-            let result = native method java.nio.file.Files.exists(realPath: ##java.nio.file.Path, /* TODO */ ???);
+            let result = native method java.nio.file.Files.exists(realPath: ##java.nio.file.Path, [| |]);
                 match result with {
                     case Ok(bool) => Ok(bool)
                     case Err(ex)  =>

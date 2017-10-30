@@ -164,6 +164,21 @@ object Synthesize extends Phase[Root, Root] {
         val es = elms map visitExp
         Expression.Tuple(es, tpe, eff, loc)
 
+      case Expression.Array(elms, tpe, eff, loc) =>
+        val es = elms map visitExp
+        Expression.Array(es, tpe, eff, loc)
+
+      case Expression.ArrayLoad(base, index, tpe, eff, loc) =>
+        val b = visitExp(base)
+        val i = visitExp(index)
+        Expression.ArrayLoad(b, i, tpe, eff, loc)
+
+      case Expression.ArrayStore(base, index, value, tpe, eff, loc) =>
+        val b = visitExp(base)
+        val i = visitExp(index)
+        val v = visitExp(value)
+        Expression.ArrayStore(b, i, v, tpe, eff, loc)
+
       case Expression.Ref(exp, tpe, eff, loc) =>
         val e = visitExp(exp)
         Expression.Ref(e, tpe, eff, loc)

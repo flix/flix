@@ -700,15 +700,52 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
          */
         case ResolvedAst.Expression.Array(elms, tvar, loc) =>
           //
-          //  elms[i] : t
+          //  e_1, ..., e_n : t
           //  ----------------
-          //  [| elms |] : Array[t]
+          //  [| e_1, ..., e_n |] : Array[t]
           //
-          // TODO: What is the type of the empty array?
+
+          // We generate a fresh type variable, for the elements, in case the array is empty.
+          val freshVar = Type.freshTypeVar()
           for {
             elementTypes <- seqM(elms.map(visitExp))
-            elementType <- unifyM(Type.freshTypeVar() :: elementTypes, loc)
+            elementType <- unifyM(freshVar :: elementTypes, loc)
             resultType <- unifyM(tvar, Type.mkArray(elementType), loc)
+          } yield resultType
+
+        /*
+         * ArrayLoad expression.
+         */
+        case ResolvedAst.Expression.ArrayLoad(base, index, tvar, loc) =>
+          //
+          //  base : Array[t]    index: Int32
+          //  -------------------------------
+          //  base[index] : t
+          //
+          for {
+            baseType <- visitExp(base)
+            indexType <- visitExp(index)
+            indexType <- unifyM(Type.Int32, indexType, loc)
+            resultType <- unifyM(baseType, Type.mkArray(tvar), loc)
+          } yield resultType
+
+
+        /*
+         * ArrayLoad expression.
+         */
+        case ResolvedAst.Expression.ArrayStore(base, index, value, tvar, loc) =>
+          //
+          //  base : Array[t]    index: Int32    value : t
+          //  --------------------------------------------
+          //  base[index] = v : Unit
+          //
+          for {
+            baseType <- visitExp(base)
+            indexType <- visitExp(index)
+            valueType <- visitExp(value)
+            indexType <- unifyM(Type.Int32, indexType, loc)
+            arrayType <- unifyM(baseType, Type.mkArray(valueType), loc)
+            resultType <- unifyM(tvar, Type.Unit, loc)
           } yield resultType
 
         /*
@@ -985,6 +1022,23 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         case ResolvedAst.Expression.Array(elms, tvar, loc) =>
           val es = elms.map(e => visitExp(e, subst0))
           TypedAst.Expression.Array(es, subst0(tvar), Eff.Bot, loc)
+
+        /*
+         * ArrayLoad expression.
+         */
+        case ResolvedAst.Expression.ArrayLoad(base, index, tvar, loc) =>
+          val b = visitExp(base, subst0)
+          val i = visitExp(index, subst0)
+          TypedAst.Expression.ArrayLoad(b, i, subst0(tvar), Eff.Bot, loc)
+
+        /*
+         * ArrayStore expression.
+         */
+        case ResolvedAst.Expression.ArrayStore(base, index, value, tvar, loc) =>
+          val b = visitExp(base, subst0)
+          val i = visitExp(index, subst0)
+          val v = visitExp(value, subst0)
+          TypedAst.Expression.ArrayStore(b, i, v, subst0(tvar), Eff.Bot, loc)
 
         /*
          * Reference expression.

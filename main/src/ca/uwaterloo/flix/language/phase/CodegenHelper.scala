@@ -517,6 +517,7 @@ object CodegenHelper {
     case Type.Int64 => true
     case Type.BigInt => false
     case Type.Str => false
+    case Type.Array => false
     case Type.Native => false
     case Type.Ref => false
     case Type.Arrow(l) => false
