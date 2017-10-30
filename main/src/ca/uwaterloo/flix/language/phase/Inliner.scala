@@ -384,6 +384,21 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     case Expression.Tuple(elms, tpe, loc) => elms forall isAtomic
 
     //
+    // Array expressions are atomic if the elements are.
+    //
+    case Expression.Array(elms, tpe, loc) => elms forall isAtomic
+
+    //
+    // ArrayLoad expressions are atomic if the elements are.
+    //
+    case Expression.ArrayLoad(base, index, tpe, loc) => isAtomic(base) && isAtomic(index)
+
+    //
+    // ArrayStore expressions are atomic if the elements are.
+    //
+    case Expression.ArrayStore(base, index, value, tpe, loc) => isAtomic(base) && isAtomic(index) && isAtomic(value)
+
+    //
     // Reference expressions are atomic.
     //
     case Expression.Ref(exp, tpe, loc) => isAtomic(exp)
