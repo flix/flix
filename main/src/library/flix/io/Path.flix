@@ -42,7 +42,33 @@ namespace Path {
     // def bar(): Int = try foo() catch { ... }
     //
 
-    // TODO: What effect should arrays have ?
+    // ~~~ Arrays ~~~
+    //
+    // We can construct an array:
+    //
+    // let a: unique Array[Int] = [| 1, 2, 3 |]
+    // let b: unique Array[Str] = [| "hello", "world" |]
+    //
+    // How should we deal with element accesses that are out of bounds?
+    //
+    // We *could* make an array access x[i] return Option[t] but that could be expensive.
+    // (1) We may have to allocate None/Some objects if the array is primitive.
+    // (2) We may have to perform index checks ourselves.
+    //
+    // An alternative is to carry an effect @ OutOfBounds, so
+    //
+    // a[42] : Int32 @ Exc(OutOfBounds)
+    //
+    // Of course carrying that effect sort-of sucks, but absent of a proof, what can be done?
+    //
+    // It may not be too bad if the effect is mostly inferred.
+    //
+    // We can convert the exception into a value with a try block.
+    //
+    // However higher-order functions, such as map and fold, could expose array traversal without effects.
+    // (But their implementation would have to be unsafe?)
+
+
     //
     // def write(a: borrow Array[Int]): Array[Int] @ IO ???
     //

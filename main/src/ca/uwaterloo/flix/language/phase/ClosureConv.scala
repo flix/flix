@@ -155,6 +155,21 @@ object ClosureConv {
     case Expression.Tuple(elms, tpe, loc) =>
       Expression.Tuple(elms.map(convert), tpe, loc)
 
+    case Expression.Array(elms, tpe, loc) =>
+      val es = elms.mapConserve(convert)
+      Expression.Array(es, tpe, loc)
+
+    case Expression.ArrayLoad(base, index, tpe, loc) =>
+      val b = convert(base)
+      val i = convert(i)
+      Expression.ArrayLoad(b, i, tpe, loc)
+
+    case Expression.ArrayStore(base, index, value, tpe, loc) =>
+      val b = convert(base)
+      val i = convert(i)
+      val v = convert(value)
+      Expression.ArrayStore(b, i, v, tpe, loc)
+
     case Expression.Ref(exp, tpe, loc) =>
       val e = convert(exp)
       Expression.Ref(e, tpe, loc)
