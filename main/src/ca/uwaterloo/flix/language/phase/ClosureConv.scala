@@ -161,12 +161,12 @@ object ClosureConv {
 
     case Expression.ArrayLoad(base, index, tpe, loc) =>
       val b = convert(base)
-      val i = convert(i)
+      val i = convert(index)
       Expression.ArrayLoad(b, i, tpe, loc)
 
     case Expression.ArrayStore(base, index, value, tpe, loc) =>
       val b = convert(base)
-      val i = convert(i)
+      val i = convert(index)
       val v = convert(value)
       Expression.ArrayStore(b, i, v, tpe, loc)
 
