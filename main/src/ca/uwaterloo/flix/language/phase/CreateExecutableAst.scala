@@ -379,7 +379,8 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
     // Generate a top-level function for the constant.
     val sym = Symbol.freshDefnSym("lit")
     val lit = Expression.toExecutable(exp0)
-    val defn = ExecutableAst.Def(Ast.Annotations(Nil), sym, formals = Array(), lit, isSynthetic = true, exp0.tpe, exp0.loc)
+    val tpe = Type.Apply(Type.Arrow(1), exp0.tpe)
+    val defn = ExecutableAst.Def(Ast.Annotations(Nil), sym, formals = Array(), lit, isSynthetic = true, tpe, exp0.loc)
     m += (sym -> defn)
     sym
   }
