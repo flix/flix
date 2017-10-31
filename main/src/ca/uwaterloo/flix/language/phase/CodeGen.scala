@@ -679,6 +679,10 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
       // Invoking the constructor
       visitor.visitMethodInsn(INVOKESPECIAL, decorate(clazzName), "<init>", s"(${desc})V", false)
 
+    case Expression.Arr(elms, tpe, loc) => ??? // TODO
+    case Expression.ArrayLoad(base, index, tpe, loc) => ??? // TODO
+    case Expression.ArrayStore(base, index, value, tpe, loc) => ??? // TODO
+
     case Expression.Ref(exp, tpe, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)

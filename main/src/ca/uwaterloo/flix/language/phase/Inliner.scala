@@ -236,6 +236,12 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       Expression.Index(renameAndSubstitute(base, env0), offset, tpe, loc)
     case Expression.Tuple(elms, tpe, loc) =>
       Expression.Tuple(elms.map(renameAndSubstitute(_, env0)), tpe, loc)
+    case Expression.Array(elms, tpe, loc) =>
+      Expression.Array(elms.map(renameAndSubstitute(_, env0)), tpe, loc)
+    case Expression.ArrayLoad(base, index, tpe, loc) =>
+      Expression.ArrayLoad(renameAndSubstitute(base, env0), renameAndSubstitute(index, env0), tpe, loc)
+    case Expression.ArrayStore(base, index, value, tpe, loc) =>
+      Expression.ArrayStore(renameAndSubstitute(base, env0), renameAndSubstitute(index, env0), renameAndSubstitute(value, env0), tpe, loc)
     case Expression.Ref(exp1, tpe, loc) =>
       Expression.Ref(renameAndSubstitute(exp1, env0), tpe, loc)
     case Expression.Deref(exp1, tpe, loc) =>

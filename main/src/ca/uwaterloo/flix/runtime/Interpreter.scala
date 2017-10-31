@@ -147,7 +147,28 @@ object Interpreter {
     // Tuple expressions.
     //
     case Expression.Tuple(elms, _, _) =>
-      Value.Tuple(elms.map(e => eval(e, env0, lenv0, root)).toList)
+      val es = elms.map(e => eval(e, env0, lenv0, root)).toList
+      Value.Tuple(es)
+
+    //
+    // Array expressions.
+    //
+    case Expression.Arr(elms, tpe, loc) =>
+      val es = elms.map(e => eval(e, env0, lenv0, root)).toArray
+      Value.Arr(es)
+
+    //
+    // ArrayLoad expressions.
+    //
+    case Expression.ArrayLoad(base, index, tpe, loc) =>
+      val b = cast2array(eval(base, env0, lenv0, root))
+      val i = cast2int32(eval(index, env0, lenv0, root))
+      if (i < b.elms.length)
+        b.elms(i)
+      else
+        throw InternalRuntimeException(s"Array index out of bounds: $i. Array length: ${b.elms.length}.")
+
+
 
     //
     // Reference expressions.
@@ -668,6 +689,14 @@ object Interpreter {
   private def cast2tuple(ref: AnyRef): Value.Tuple = ref match {
     case v: Value.Tuple => v
     case _ => throw InternalRuntimeException(s"Unexpected non-tuple value: ${ref.getClass.getCanonicalName}.")
+  }
+
+  /**
+    * Casts the given reference `ref` to an array value.
+    */
+  private def cast2array(ref: AnyRef): Value.Arr = ref match {
+    case v: Value.Arr => v
+    case _ => throw InternalRuntimeException(s"Unexpected non-array value: ${ref.getClass.getCanonicalName}.")
   }
 
   /**

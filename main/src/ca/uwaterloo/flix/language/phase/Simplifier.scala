@@ -1056,6 +1056,12 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         SimplifiedAst.Expression.Index(visit(exp), offset, tpe, loc)
       case SimplifiedAst.Expression.Tuple(elms, tpe, loc) =>
         SimplifiedAst.Expression.Tuple(elms.map(visit), tpe, loc)
+      case SimplifiedAst.Expression.Array(elms, tpe, loc) =>
+        SimplifiedAst.Expression.Array(elms map visit, tpe, loc)
+      case SimplifiedAst.Expression.ArrayLoad(base, index, tpe, loc) =>
+        SimplifiedAst.Expression.ArrayLoad(visit(base), visit(index), tpe, loc)
+      case SimplifiedAst.Expression.ArrayStore(base, index, value, tpe, loc) =>
+        SimplifiedAst.Expression.ArrayStore(visit(base), visit(index), visit(value), tpe, loc)
       case SimplifiedAst.Expression.Ref(exp, tpe, loc) =>
         SimplifiedAst.Expression.Ref(visit(exp), tpe, loc)
       case SimplifiedAst.Expression.Deref(exp, tpe, loc) =>

@@ -723,12 +723,11 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           //  base[index] : t
           //
           for {
-            baseType <- visitExp(base)
-            indexType <- visitExp(index)
-            indexType <- unifyM(Type.Int32, indexType, loc)
-            resultType <- unifyM(baseType, Type.mkArray(tvar), loc)
-          } yield resultType
-
+            actualBaseType <- visitExp(base)
+            actualIndexType <- visitExp(index)
+            indexType <- unifyM(Type.Int32, actualIndexType, loc)
+            arrayType <- unifyM(actualBaseType, Type.mkArray(tvar), loc)
+          } yield tvar
 
         /*
          * ArrayLoad expression.
