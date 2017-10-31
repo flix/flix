@@ -69,15 +69,7 @@ object JvmOps {
       case Type.Ref => getCellClassType(tpe)
       case Type.Arrow(l) => getFunctionInterfaceType(tpe)
       case Type.Tuple(l) => getTupleInterfaceType(tpe)
-      case Type.Enum(sym, kind) =>
-        if (isNullaryEnum(tpe)) {
-          // TODO
-          //val nullaryType = getNullaryType(tpe)
-          //println(s"Nullary type $tpe to be represented as: ${nullaryType.toDescriptor}")
-          getEnumInterfaceType(tpe)
-        } else {
-          getEnumInterfaceType(tpe)
-        }
+      case Type.Enum(sym, kind) => getEnumInterfaceType(tpe)
       case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
     }
   }
@@ -446,7 +438,7 @@ object JvmOps {
       VariableInfo.CloField("arg" + sym.getStackOffset)
     else
       VariableInfo.IfoField("clo" + sym.getStackOffset)
-
+/*
   /**
     * Returns `true` if the given enum type `tpe` is nullable.
     *
@@ -477,7 +469,8 @@ object JvmOps {
         false
     }
   }
-
+  */
+/*
   /**
     * Returns the inner type of a nullable enum type `tpe`.
     *
@@ -502,8 +495,8 @@ object JvmOps {
 
     // And translate it to a JVM type.
     getJvmType(referenceTag.tagType)
-  }
-
+  }*/
+/*
   /**
     * Returns `true` if the given `tag` can be represented by `null`.
     *
@@ -522,7 +515,7 @@ object JvmOps {
       case _ => false
     }
   }
-
+*/ /*
   /**
     * Returns `true` if the given `tag` can be represented as a non-null value.
     *
@@ -558,8 +551,8 @@ object JvmOps {
       // Unexpected type.
       case tpe => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
     }
-  }
-
+  } */
+/*
   /**
     * Returns the given Flix type `tpe` where every single-case enum has been eliminated.
     *
@@ -622,7 +615,7 @@ object JvmOps {
 
     args.foldLeft(base)(Type.Apply)
   }
-
+*/
   /**
     * Performs name mangling on the given string `s` to avoid issues with special characters.
     */
@@ -809,7 +802,7 @@ object JvmOps {
       case (sacc, (_, Case(enumSym, tagName, uninstantiatedTagType, loc))) =>
         // TODO: It would be nice if this information could be stored somewhere...
         val subst = Unification.unify(enum.tpe, tpe).get
-        val tagType = subst(uninstantiatedTagType)
+        val tagType = getErasedType(subst(uninstantiatedTagType))
 
         sacc + TagInfo(enumSym, tagName.name, args, tpe, tagType)
     }
@@ -976,7 +969,7 @@ object JvmOps {
     */
   // TODO: Rename
   def isSingletonEnum(tag: TagInfo): Boolean = {
-    tag.tagType == Type.Unit
+    tag.tagType == JvmType.Unit
   }
 
   /**
