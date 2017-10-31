@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.ast.{Symbol, Type}
   */
 // TODO: Order of components?
 // TODO: Can some of this be folded into Case?
-case class TagInfo(sym: Symbol.EnumSym, tag: String, tparams: List[Type], enumType: Type, tagType: Type) {
+case class TagInfo(sym: Symbol.EnumSym, tag: String, tparams: List[Type], enumType: Type, tagType: JvmType) {
   /**
     * Returns the hash code of `this` tag info.
     */

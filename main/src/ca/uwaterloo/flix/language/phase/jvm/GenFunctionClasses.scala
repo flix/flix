@@ -119,7 +119,7 @@ object GenFunctionClasses {
     GenExpression.compileExpression(defn.exp, classType, Map(), enterLabel, Nil, defn.formals.map(_.sym).toList, applyMethod)
     applyMethod.visitFieldInsn(PUTFIELD, classType.name.toInternalName , "result", resultType.toDescriptor)
     applyMethod.visitInsn(RETURN)
-    applyMethod.visitMaxs(1, 1)
+    applyMethod.visitMaxs(65535, 65535)
     applyMethod.visitEnd()
   }
 

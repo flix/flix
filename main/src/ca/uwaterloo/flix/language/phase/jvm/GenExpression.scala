@@ -72,16 +72,18 @@ object GenExpression {
     case Expression.Var(sym, tpe, _) =>
       val clos = funFreeVars.zipWithIndex.filter(_._1.sym == sym)
       val args = funVars.zipWithIndex.filter(_._1 == sym)
-      val jvmType = JvmOps.getJvmType(tpe)
+      val jvmType = JvmOps.getErasedType(tpe)
       if(args.nonEmpty) {
         visitor.visitVarInsn(ALOAD, 0)
         visitor.visitFieldInsn(GETFIELD, currentClassType.name.toInternalName, s"arg${args.last._2}", jvmType.toDescriptor)
+        AsmOps.castIfNotPrim(JvmOps.getJvmType(tpe), visitor)
       } else if (clos.nonEmpty) {
         visitor.visitVarInsn(ALOAD, 0)
         visitor.visitFieldInsn(GETFIELD, currentClassType.name.toInternalName, s"clo${clos.last._2}", jvmType.toDescriptor)
+        AsmOps.castIfNotPrim(JvmOps.getJvmType(tpe), visitor)
       } else {
         val iLOAD = AsmOps.getLoadInstruction(jvmType)
-        visitor.visitVarInsn(iLOAD, sym.getStackOffset)
+        visitor.visitVarInsn(iLOAD, sym.getStackOffset + 1)
       }
 
     case Expression.Closure(sym, freeVars, fnType, tpe, loc) =>
@@ -103,28 +105,124 @@ object GenExpression {
       visitor.visitMethodInsn(INVOKESPECIAL, jvmType.name.toInternalName, "<init>", AsmOps.getMethodDescriptor(varTypes, JvmType.Void), false)
 
     case Expression.ApplyClo(exp, args, tpe, loc) =>
-      compileExpression(exp, currentClassType, jumpLabels, entryPoint, funFreeVars, funVars, visitor)
+      // Label for the loop
+      val loop = new Label
+      // Type of the continuation interface
       val cont = JvmOps.getContinuationInterfaceType(exp.tpe)
+      // Result type
       val resultType = JvmOps.getErasedType(tpe)
+      // Put the closure on `continuation` field of `Context`
+      visitor.visitVarInsn(ALOAD, 1)
+      compileExpression(exp, currentClassType, jumpLabels, entryPoint, funFreeVars, funVars, visitor)
+      visitor.visitFieldInsn(PUTFIELD, JvmName.Context.toInternalName, "continuation", JvmType.Object.toDescriptor)
+      // This is necessary since the loop has to pop a value from the stack!
+      visitor.visitInsn(ACONST_NULL)
+      // Begin of the loop
+      visitor.visitLabel(loop)
+      // Pop a value from a stack
+      visitor.visitInsn(POP)
+      // Getting `continuation` field on `Context`
+      visitor.visitVarInsn(ALOAD, 1)
+      visitor.visitFieldInsn(GETFIELD, JvmName.Context.toInternalName, "continuation", JvmType.Object.toDescriptor)
+      // Setting `continuation` field of global to `null
+      visitor.visitVarInsn(ALOAD, 1)
+      visitor.visitInsn(ACONST_NULL)
+      visitor.visitFieldInsn(PUTFIELD, JvmName.Context.toInternalName, "continuation", JvmType.Object.toDescriptor)
+      // Cast to the continuation
       visitor.visitTypeInsn(CHECKCAST, cont.name.toInternalName)
+      // Duplicate
+      visitor.visitInsn(DUP)
+      // Call apply
+      visitor.visitVarInsn(ALOAD, 1)
+      visitor.visitMethodInsn(INVOKEINTERFACE, cont.name.toInternalName, "apply", AsmOps.getMethodDescriptor(List(JvmType.Context), JvmType.Void), true)
+      // Getting `continuation` field on `Context`
+      visitor.visitVarInsn(ALOAD, 1)
+      visitor.visitFieldInsn(GETFIELD, JvmName.Context.toInternalName, "continuation", JvmType.Object.toDescriptor)
+      visitor.visitJumpInsn(IFNONNULL, loop)
+
       visitor.visitMethodInsn(INVOKEINTERFACE, cont.name.toInternalName, "getResult", AsmOps.getMethodDescriptor(Nil, resultType), true)
       AsmOps.castIfNotPrim(JvmOps.getJvmType(tpe), visitor)
 
     case Expression.ApplyDef(name, args, tpe, loc) =>
-      val cont = JvmOps.getContinuationInterfaceType(exp.tpe)
-      val resultType = JvmOps.getErasedType(tpe)
-      visitor.visitTypeInsn(CHECKCAST, cont.name.toInternalName)
-      visitor.visitMethodInsn(INVOKEINTERFACE, cont.name.toInternalName, "getResult", AsmOps.getMethodDescriptor(Nil, resultType), true)
-      AsmOps.castIfNotPrim(JvmOps.getJvmType(tpe), visitor)
-    case Expression.ApplyCloTail(exp, args, tpe, loc) => AsmOps.compileException(visitor, JvmName.Exception, "ApplyCloTail is not implemented")
+      val message =  "ApplyDef is not implemented"
+      // Create a new `Exception` object
+      visitor.visitTypeInsn(NEW, JvmName.UnsupportedOperationException.toInternalName)
+      visitor.visitInsn(DUP)
 
-    case Expression.ApplyDefTail(name, args, tpe, loc) => AsmOps.compileException(visitor, JvmName.Exception, "ApplyDefTail is not implemented")
+      // add the message to the stack
+      visitor.visitLdcInsn(message)
 
-    case Expression.ApplySelfTail(name, formals, actuals, tpe, loc) => AsmOps.compileException(visitor, JvmName.Exception, "ApplySelfTail is not implemented")
+      // invoke the constructor of the `Exception` object
+      visitor.visitMethodInsn(INVOKESPECIAL, JvmName.UnsupportedOperationException.toInternalName, "<init>",
+        AsmOps.getMethodDescriptor(List(JvmType.String), JvmType.Void), false)
+
+      // throw the exception
+      visitor.visitInsn(ATHROW)
+
+    case Expression.ApplyCloTail(exp, args, tpe, loc) =>
+      val message =  "ApplyCloTail is not implemented"
+      // Create a new `Exception` object
+      visitor.visitTypeInsn(NEW, JvmName.UnsupportedOperationException.toInternalName)
+      visitor.visitInsn(DUP)
+
+      // add the message to the stack
+      visitor.visitLdcInsn(message)
+
+      // invoke the constructor of the `Exception` object
+      visitor.visitMethodInsn(INVOKESPECIAL, JvmName.UnsupportedOperationException.toInternalName, "<init>",
+        AsmOps.getMethodDescriptor(List(JvmType.String), JvmType.Void), false)
+
+      // throw the exception
+      visitor.visitInsn(ATHROW)
+
+    case Expression.ApplyDefTail(name, args, tpe, loc) =>
+      val message =  "ApplyDefTail is not implemented"
+      // Create a new `Exception` object
+      visitor.visitTypeInsn(NEW, JvmName.UnsupportedOperationException.toInternalName)
+      visitor.visitInsn(DUP)
+
+      // add the message to the stack
+      visitor.visitLdcInsn(message)
+
+      // invoke the constructor of the `Exception` object
+      visitor.visitMethodInsn(INVOKESPECIAL, JvmName.UnsupportedOperationException.toInternalName, "<init>",
+        AsmOps.getMethodDescriptor(List(JvmType.String), JvmType.Void), false)
+
+      // throw the exception
+      visitor.visitInsn(ATHROW)
+
+    case Expression.ApplySelfTail(name, formals, actuals, tpe, loc) =>
+      val message =  "ApplySelfTail is not implemented"
+      // Create a new `Exception` object
+      visitor.visitTypeInsn(NEW, JvmName.UnsupportedOperationException.toInternalName)
+      visitor.visitInsn(DUP)
+
+      // add the message to the stack
+      visitor.visitLdcInsn(message)
+
+      // invoke the constructor of the `Exception` object
+      visitor.visitMethodInsn(INVOKESPECIAL, JvmName.UnsupportedOperationException.toInternalName, "<init>",
+        AsmOps.getMethodDescriptor(List(JvmType.String), JvmType.Void), false)
+
+      // throw the exception
+      visitor.visitInsn(ATHROW)
 
     case Expression.ApplyHook(hook, args, tpe, loc) =>
       // TODO: Remove hooks before final merge into master.
-      AsmOps.compileException(visitor, JvmName.Exception, "ApplyHook is not implemented")
+      val message =  "ApplyHook is not implemented"
+      // Create a new `Exception` object
+      visitor.visitTypeInsn(NEW, JvmName.UnsupportedOperationException.toInternalName)
+      visitor.visitInsn(DUP)
+
+      // add the message to the stack
+      visitor.visitLdcInsn(message)
+
+      // invoke the constructor of the `Exception` object
+      visitor.visitMethodInsn(INVOKESPECIAL, JvmName.UnsupportedOperationException.toInternalName, "<init>",
+        AsmOps.getMethodDescriptor(List(JvmType.String), JvmType.Void), false)
+
+      // throw the exception
+      visitor.visitInsn(ATHROW)
 
     case Expression.Unary(sop, op, exp, _, _) =>
       // TODO: Should not use op, as it will be removed.
@@ -190,7 +288,7 @@ object GenExpression {
       val jvmType = JvmOps.getJvmType(exp1.tpe)
       // Store instruction for `jvmType`
       val iStore = AsmOps.getStoreInstruction(jvmType)
-      visitor.visitVarInsn(iStore, sym.getStackOffset)
+      visitor.visitVarInsn(iStore, sym.getStackOffset + 1)
       compileExpression(exp2, currentClassType, jumpLabels, entryPoint, funFreeVars, funVars, visitor)
 
     case Expression.LetRec(sym, exp1, exp2, _, _) =>
@@ -254,13 +352,13 @@ object GenExpression {
 
     case Expression.Index(base, offset, tpe, _) =>
       // We get the JvmType of the class for the tuple
-      val classType = JvmOps.getTupleClassType(base.tpe)
+      val classType = JvmOps.getTupleInterfaceType(base.tpe)
       // evaluating the `base`
       compileExpression(base, currentClassType, jumpLabels, entryPoint, funFreeVars, funVars, visitor)
       // Descriptor of the method
       val methodDescriptor = AsmOps.getMethodDescriptor(Nil, JvmOps.getErasedType(tpe))
       // Invoking `getField${offset}()` method for fetching the field
-      visitor.visitMethodInsn(INVOKEVIRTUAL, classType.name.toInternalName, s"getIndex$offset", methodDescriptor, false)
+      visitor.visitMethodInsn(INVOKEINTERFACE, classType.name.toInternalName, s"getIndex$offset", methodDescriptor, true)
       // Cast the object to it's type if it's not a primitive
       AsmOps.castIfNotPrim(JvmOps.getJvmType(tpe), visitor)
 
