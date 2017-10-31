@@ -106,14 +106,14 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.ApplyCloTail(exp, args, tpe, loc) =>
         val e = visitExp(exp, env0)
         val as = args map (visitExp(_, env0))
-        Expression.ApplyClo(e, as, adjustType(tpe), loc)
+        Expression.ApplyCloTail(e, as, adjustType(tpe), loc)
 
       //
       // ApplyDefTail Expressions.
       //
       case Expression.ApplyDefTail(sym, args, tpe, loc) =>
         val as = args map (visitExp(_, env0))
-        Expression.ApplyDef(sym, as, adjustType(tpe), loc)
+        Expression.ApplyDefTail(sym, as, adjustType(tpe), loc)
 
       //
       // ApplySelfTail Expressions.
