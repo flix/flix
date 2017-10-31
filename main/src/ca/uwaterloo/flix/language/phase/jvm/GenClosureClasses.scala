@@ -3,7 +3,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ExecutableAst.{Def, FreeVar, Root}
 import org.objectweb.asm.Opcodes._
-import org.objectweb.asm.ClassWriter
+import org.objectweb.asm.{ClassWriter, Label}
 
 /**
   * Generates byte code for the closure classes.
@@ -105,7 +105,7 @@ object GenClosureClasses {
     AsmOps.compileGetFieldMethod(visitor, classType.name, resultType, "result", "getResult")
 
     // Apply method of the class
-    compileApplyMethod(visitor, classType, root.defs(closure.sym))
+    compileApplyMethod(visitor, classType, root.defs(closure.sym), closure.freeVars, resultType)
 
     // Constructor of the class
     compileConstructor(visitor, closure.freeVars, classType)
@@ -118,12 +118,21 @@ object GenClosureClasses {
     */
   private def compileApplyMethod(visitor: ClassWriter,
                                  classType: JvmType.Reference,
-                                 defn: Def)(implicit root: Root, flix: Flix): Unit = {
+                                 defn: Def,
+                                 freeVars: List[FreeVar],
+                                 resultType: JvmType)(implicit root: Root, flix: Flix): Unit = {
     val applyMethod = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, "apply",
       AsmOps.getMethodDescriptor(List(JvmType.Context), JvmType.Void), null, null)
 
-    // TODO: This should call into `GenExpression`
+    val frees = defn.formals.take(freeVars.length).map(x => FreeVar(x.sym, x.tpe))
+
+    val rest = defn.formals.takeRight(defn.formals.length - freeVars.length).map(_.sym)
+
+    val enterLabel = new Label()
     applyMethod.visitCode()
+    applyMethod.visitVarInsn(ALOAD, 0)
+    GenExpression.compileExpression(defn.exp, classType, Map(), enterLabel, frees.toList, rest.toList, applyMethod)
+    applyMethod.visitFieldInsn(PUTFIELD, classType.name.toInternalName , "result", resultType.toDescriptor)
     applyMethod.visitInsn(RETURN)
     applyMethod.visitMaxs(1, 1)
     applyMethod.visitEnd()
