@@ -365,7 +365,7 @@ object JvmOps {
     val name = "Cell" + "$" + arg
 
     // The type resides in the ca.uwaterloo.flix.api.cell package.
-    JvmType.Reference(JvmName(List("ca.uwaterloo.flix.api.cell"), name))
+    JvmType.Reference(JvmName(List("ca", "uwaterloo", "flix", "api", "cell"), name))
   }
 
   /**

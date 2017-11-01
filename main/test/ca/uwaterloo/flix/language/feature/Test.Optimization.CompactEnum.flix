@@ -20,7 +20,6 @@ def nested06(): Bool =
     let o1 = Some(Some(true));
     let o2 = Option.getWithDefault(o1, Some(false));
         Option.getWithDefault(o2, false)
-
 @test
 def nested07(): Bool =
     let o1 = Some(Some(Some(true)));

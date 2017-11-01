@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ExecutableAst._
 import ca.uwaterloo.flix.language.ast.Symbol
 import org.objectweb.asm.Opcodes._
-import org.objectweb.asm.ClassWriter
+import org.objectweb.asm.{ClassWriter, Label}
 
 /**
   * Generates bytecode for the function classes.
@@ -36,7 +36,8 @@ object GenFunctionClasses {
     //
     defs.foldLeft(Map.empty[JvmName, JvmClass]) { case (macc, (sym, defn)) =>
       // TODO Magnus: Should we make all the defs a function like before? Not sure what to do when there is non arrow function.
-      if(defn.tpe.isArrow) {
+      // TODO We filter laws here.
+      if(defn.tpe.isArrow && !defn.ann.isLaw) {
 
         // `JvmType` of the interface for `def.tpe`
         val functionInterface = JvmOps.getFunctionInterfaceType(defn.tpe)
@@ -94,7 +95,7 @@ object GenFunctionClasses {
     AsmOps.compileGetFieldMethod(visitor, classType.name, resultType, "result", "getResult")
 
     // Apply method of the class
-    compileApplyMethod(visitor, classType, defn)
+    compileApplyMethod(visitor, classType, defn, resultType)
 
     // Constructor of the class
     compileConstructor(visitor)
@@ -107,14 +108,19 @@ object GenFunctionClasses {
     */
   private def compileApplyMethod(visitor: ClassWriter,
                                  classType: JvmType.Reference,
-                                 defn: Def)(implicit root: Root, flix: Flix): Unit = {
+                                 defn: Def,
+                                 resultType: JvmType)(implicit root: Root, flix: Flix): Unit = {
     val applyMethod = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, "apply",
       AsmOps.getMethodDescriptor(List(JvmType.Context), JvmType.Void), null, null)
 
-    // TODO: This should call into `GenExpression`
+    val enterLabel = new Label()
     applyMethod.visitCode()
+    applyMethod.visitVarInsn(ALOAD, 0)
+    applyMethod.visitLabel(enterLabel)
+    GenExpression.compileExpression(defn.exp, classType, Map(), enterLabel, Nil, defn.formals.map(_.sym).toList, applyMethod)
+    applyMethod.visitFieldInsn(PUTFIELD, classType.name.toInternalName , "result", resultType.toDescriptor)
     applyMethod.visitInsn(RETURN)
-    applyMethod.visitMaxs(1, 1)
+    applyMethod.visitMaxs(65535, 65535)
     applyMethod.visitEnd()
   }
 

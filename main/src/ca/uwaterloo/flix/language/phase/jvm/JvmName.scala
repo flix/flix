@@ -99,7 +99,7 @@ object JvmName {
     * The `ca.uwaterloo.flix.api.Unit` name
     */
   // TODO: Determine whether we event want this class (or if we could just optimize unit differently?)
-  val Unit: JvmName = JvmName(List("ca", "waterloo", "flix", "api"), "Unit")
+  val Unit: JvmName = JvmName(List("ca", "uwaterloo", "flix", "api"), "Unit")
 
   /**
     * The `scala.math.package$` name
@@ -114,17 +114,17 @@ object JvmName {
   /**
     * The `ca.uwaterloo.flix.api.UserException$` name
     */
-  val UserException: JvmName = JvmName(List("ca", "uwaterloo", "flix", "api"), "UserException$")
+  val UserException: JvmName = JvmName(List("ca", "uwaterloo", "flix", "api"), "UserException")
 
   /**
     * The `ca.uwaterloo.flix.api.MatchException$` name
     */
-  val MatchException: JvmName = JvmName(List("ca", "uwaterloo", "flix", "api"), "MatchException$")
+  val MatchException: JvmName = JvmName(List("ca", "uwaterloo", "flix", "api"), "MatchException")
 
   /**
     * The `ca.uwaterloo.flix.api.SwitchException$` name
     */
-  val SwitchException: JvmName = JvmName(List("ca", "uwaterloo", "flix", "api"), "SwitchException$")
+  val SwitchException: JvmName = JvmName(List("ca", "uwaterloo", "flix", "api"), "SwitchException")
 
   /**
     * The `java.lang.Exception` name
