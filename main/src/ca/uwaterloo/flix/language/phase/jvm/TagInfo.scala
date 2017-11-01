@@ -23,7 +23,8 @@ import ca.uwaterloo.flix.language.ast.{Symbol, Type}
   */
 // TODO: Order of components?
 // TODO: Can some of this be folded into Case?
-case class TagInfo(sym: Symbol.EnumSym, tag: String, tparams: List[Type], enumType: Type, tagType: JvmType) {
+// TODO: The equal method is potentially wrong!
+case class TagInfo(sym: Symbol.EnumSym, tag: String, tparams: List[Type], enumType: Type, tagType: Type) {
   /**
     * Returns the hash code of `this` tag info.
     */
@@ -33,7 +34,7 @@ case class TagInfo(sym: Symbol.EnumSym, tag: String, tparams: List[Type], enumTy
     * Returns `true` if the given `obj` is the same enum and tag as this tag info.
     */
   override def equals(obj: scala.Any): Boolean = obj match {
-    case that: TagInfo => this.sym == that.sym && this.tag == that.tag
+    case that: TagInfo => this.sym == that.sym && this.tag == that.tag && this.tparams == that.tparams
     case _ => false
   }
 }

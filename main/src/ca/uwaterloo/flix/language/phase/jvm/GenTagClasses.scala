@@ -181,11 +181,8 @@ object GenTagClasses {
                                      isSingleton: Boolean)(implicit root: Root, flix: Flix) = {
     // If this is a singleton then we should make the constructor private
     val specifier =
-      if (isSingleton) {
-        ACC_PRIVATE
-      } else {
         ACC_PUBLIC
-      }
+
 
     val constructor = visitor.visitMethod(specifier, "<init>", AsmOps.getMethodDescriptor(List(valueType), JvmType.Void),
       null, null)

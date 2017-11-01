@@ -1,4 +1,3 @@
-/*
 @test
 def nested01(): Bool = Option.isNone(None: Option[Option[Int]])
 
@@ -15,13 +14,12 @@ def nested04(): Bool = Option.isSome(Some(Some(Some(42))))
 def nested05(): Bool =
     let o1 = Some(true);
         Option.getWithDefault(o1, false)
-*/
+
 @test
 def nested06(): Bool =
     let o1 = Some(Some(true));
     let o2 = Option.getWithDefault(o1, Some(false));
         Option.getWithDefault(o2, false)
-/*
 @test
 def nested07(): Bool =
     let o1 = Some(Some(Some(true)));
@@ -35,5 +33,3 @@ def nested08(): Bool =
     let o2 = Option.flatten(o1);
     let o3 = Option.flatten(o2);
         Option.getWithDefault(o3, false)
-
-*/
