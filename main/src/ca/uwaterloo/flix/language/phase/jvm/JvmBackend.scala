@@ -37,6 +37,11 @@ object JvmBackend extends Phase[Root, Root] {
     */
   def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationError] = {
     //
+    // Measure compilation time.
+    //
+    val t = System.nanoTime()
+
+    //
     // Put the AST root into implicit scope.
     //
     implicit val _ = root
@@ -159,7 +164,12 @@ object JvmBackend extends Phase[Root, Root] {
       JvmOps.getJvmType(tpe)
     }
 
-    root.toSuccess
+    //
+    // Measure elapsed time.
+    //
+    val e = System.nanoTime() - t
+
+    root.copy(time = root.time.copy(backend = e)).toSuccess
   }
 
 }

@@ -112,7 +112,7 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
       _ <- seqM(root.defs.map { case (_, v) => checkPats(v, root) })
     } yield {
       val currentTime = System.nanoTime()
-      val time = root.time.copy(patsExhaustive = currentTime - startTime)
+      val time = root.time.copy(patmatch = currentTime - startTime)
       root.copy(time = time)
     }
   }

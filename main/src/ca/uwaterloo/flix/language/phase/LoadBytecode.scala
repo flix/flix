@@ -154,7 +154,7 @@ object LoadBytecode extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     }
 
     val e = System.nanoTime() - t
-    root.copy(time = root.time.copy(loadByteCode = e)).toSuccess
+    root.toSuccess
   }
 
   private def dump(qualName: QualName, code: Array[Byte]): Unit = Files.write(Paths.get(qualName.ref.mkString("", "$", ".class")), code)

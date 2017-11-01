@@ -98,7 +98,7 @@ object TupleGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     }.toMap
 
     val e = System.nanoTime() - t
-    root.copy(byteCodes = root.byteCodes.copy(tupleByteCode = tupleClassByteCode), time = root.time.copy(tupleGen = e)).toSuccess
+    root.copy(byteCodes = root.byteCodes.copy(tupleByteCode = tupleClassByteCode)).toSuccess
   }
 
   /**

@@ -144,7 +144,7 @@ package object ast {
       resolver = 0,
       typer = 0,
       effects = 0,
-      patsExhaustive = 0,
+      patmatch = 0,
       documentor = 0,
       stratifier = 0,
       monomorph = 0,
@@ -158,10 +158,7 @@ package object ast {
       inliner = 0,
       treeshaker = 0,
       varNumbering = 0,
-      enumGen = 0,
-      codeGen = 0,
-      tupleGen = 0,
-      loadByteCode = 0,
+      backend = 0,
       solver = 0)
   }
 
@@ -175,7 +172,7 @@ package object ast {
                   resolver: Long,
                   typer: Long,
                   effects: Long,
-                  patsExhaustive: Long,
+                  patmatch: Long,
                   documentor: Long,
                   stratifier: Long,
                   monomorph: Long,
@@ -189,10 +186,7 @@ package object ast {
                   inliner: Long,
                   treeshaker: Long,
                   varNumbering: Long,
-                  enumGen: Long,
-                  codeGen: Long,
-                  tupleGen: Long,
-                  loadByteCode: Long,
+                  backend: Long,
                   solver: Long)
 
 }

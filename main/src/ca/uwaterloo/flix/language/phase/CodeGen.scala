@@ -124,7 +124,7 @@ object CodeGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     }.toMap // Despite IDE highlighting, this is actually necessary.
 
     val e = System.nanoTime() - t
-    root.copy(time = root.time.copy(codeGen = e),
+    root.copy(
       byteCodes = root.byteCodes.copy(functionalInterfaceByteCodes = interfaceByteCodes, classByteCodes = classByteCodes)).toSuccess
   }
 
