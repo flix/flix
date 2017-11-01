@@ -32,6 +32,10 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     * Performs inlining on the given AST `root`.
     */
   def run(root: SimplifiedAst.Root)(implicit flix: Flix): Validation[SimplifiedAst.Root, CompilationError] = {
+
+    // TODO: Inliner disabled for now.
+    return root.toSuccess
+
     implicit val genSym: GenSym = flix.genSym
 
     val t = System.nanoTime()
