@@ -116,6 +116,7 @@ object GenFunctionClasses {
     val enterLabel = new Label()
     applyMethod.visitCode()
     applyMethod.visitVarInsn(ALOAD, 0)
+    applyMethod.visitLabel(enterLabel)
     GenExpression.compileExpression(defn.exp, classType, Map(), enterLabel, Nil, defn.formals.map(_.sym).toList, applyMethod)
     applyMethod.visitFieldInsn(PUTFIELD, classType.name.toInternalName , "result", resultType.toDescriptor)
     applyMethod.visitInsn(RETURN)

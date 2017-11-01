@@ -158,16 +158,48 @@ object GenNamespaces {
       offset += AsmOps.getStackSpace(arg)
     }
 
-    // TODO: Replace this with an appropriate while loop, for now we just call the apply
-    // Loading context object
-    method.visitInsn(DUP)
+    // Label for the loop
+    val loop = new Label
+    // Type of the continuation interface
+    val cont = JvmOps.getContinuationInterfaceType(defn.tpe)
+    // Type of the function interface
+    val functionInterface = JvmOps.getFunctionInterfaceType(defn.tpe)
+    // Result type
+    val resultType = args.last
+    // Put the closure on `continuation` field of `Context`
     method.visitVarInsn(ALOAD, stackSize)
-    method.visitMethodInsn(INVOKEVIRTUAL, ifoType.name.toInternalName, "apply",
-      AsmOps.getMethodDescriptor(List(JvmType.Context), JvmType.Void), false)
+    // Swap top of the stack
+    method.visitInsn(SWAP)
+    // Casting to JvmType of FunctionInterface
+    method.visitTypeInsn(CHECKCAST, functionInterface.name.toInternalName)
 
-    // Calling `getResult` method on IFO
-    method.visitMethodInsn(INVOKEVIRTUAL, ifoType.name.toInternalName, "getResult",
-      AsmOps.getMethodDescriptor(Nil, args.last), false)
+    method.visitFieldInsn(PUTFIELD, JvmName.Context.toInternalName, "continuation", JvmType.Object.toDescriptor)
+    // This is necessary since the loop has to pop a value from the stack!
+    method.visitInsn(ACONST_NULL)
+    // Begin of the loop
+    method.visitLabel(loop)
+    // Pop a value from a stack
+    method.visitInsn(POP)
+    // Getting `continuation` field on `Context`
+    method.visitVarInsn(ALOAD, stackSize)
+    method.visitFieldInsn(GETFIELD, JvmName.Context.toInternalName, "continuation", JvmType.Object.toDescriptor)
+    // Setting `continuation` field of global to `null`
+    method.visitVarInsn(ALOAD, stackSize)
+    method.visitInsn(ACONST_NULL)
+    method.visitFieldInsn(PUTFIELD, JvmName.Context.toInternalName, "continuation", JvmType.Object.toDescriptor)
+    // Cast to the continuation
+    method.visitTypeInsn(CHECKCAST, cont.name.toInternalName)
+    // Duplicate
+    method.visitInsn(DUP)
+    // Call apply
+    method.visitVarInsn(ALOAD, stackSize)
+    method.visitMethodInsn(INVOKEINTERFACE, cont.name.toInternalName, "apply", AsmOps.getMethodDescriptor(List(JvmType.Context), JvmType.Void), true)
+    // Getting `continuation` field on `Context`
+    method.visitVarInsn(ALOAD, stackSize)
+    method.visitFieldInsn(GETFIELD, JvmName.Context.toInternalName, "continuation", JvmType.Object.toDescriptor)
+    method.visitJumpInsn(IFNONNULL, loop)
+
+    method.visitMethodInsn(INVOKEINTERFACE, cont.name.toInternalName, "getResult", AsmOps.getMethodDescriptor(Nil, resultType), true)
 
     // Return
     method.visitInsn(AsmOps.getReturnInsn(args.last))
