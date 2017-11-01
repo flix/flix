@@ -18,13 +18,15 @@ package ca.uwaterloo.flix.runtime.datastore
 
 import java.util
 
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ExecutableAst
 
 import scala.annotation.switch
 import scala.collection.mutable
 import scala.reflect.ClassTag
 
-class IndexedLattice[ValueType <: AnyRef](val lattice: ExecutableAst.Table.Lattice, equality: Array[(AnyRef, AnyRef) => Boolean], indexes: Set[Int], root: ExecutableAst.Root)(implicit m: ClassTag[ValueType]) extends IndexedCollection[ValueType] {
+class IndexedLattice[ValueType <: AnyRef](val lattice: ExecutableAst.Table.Lattice, equality: Array[(AnyRef, AnyRef) => Boolean], indexes: Set[Int], root: ExecutableAst.Root)
+                                         (implicit m: ClassTag[ValueType], flix: Flix) extends IndexedCollection[ValueType] {
   /**
     * A map from indexes to a map from keys to rows (represented as map from keys to an element):
     *

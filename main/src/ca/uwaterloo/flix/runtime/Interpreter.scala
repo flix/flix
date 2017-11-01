@@ -28,7 +28,7 @@ object Interpreter {
   /**
     * Evaluates the given expression `exp0` under the given environment `env0`.
     */
-  def eval(exp0: Expression, env0: Map[String, AnyRef], lenv0: Map[Symbol.LabelSym, Expression], root: Root): AnyRef = exp0 match {
+  def eval(exp0: Expression, env0: Map[String, AnyRef], lenv0: Map[Symbol.LabelSym, Expression], root: Root)(implicit flix: Flix): AnyRef = exp0 match {
     //
     // Literal expressions.
     //
@@ -220,7 +220,7 @@ object Interpreter {
   /**
     * Applies the given unary semantic operator `sop` to the value of the expression `exp0` under the environment `env0`
     */
-  private def evalUnary(sop: SemanticOperator, exp0: Expression, env0: Map[String, AnyRef], lenv0: Map[Symbol.LabelSym, Expression], root: Root): AnyRef = {
+  private def evalUnary(sop: SemanticOperator, exp0: Expression, env0: Map[String, AnyRef], lenv0: Map[Symbol.LabelSym, Expression], root: Root)(implicit flix: Flix): AnyRef = {
     // Evaluate the operand.
     val v = eval(exp0, env0, lenv0, root)
 
@@ -254,7 +254,7 @@ object Interpreter {
   /**
     * Applies the given binary semantic operator `sop`  to the values of the two expressions `exp1` and `exp2` under the environment `env0`
     */
-  private def evalBinary(sop: SemanticOperator, exp1: Expression, exp2: Expression, env0: Map[String, AnyRef], lenv0: Map[Symbol.LabelSym, Expression], root: Root): AnyRef = {
+  private def evalBinary(sop: SemanticOperator, exp1: Expression, exp2: Expression, env0: Map[String, AnyRef], lenv0: Map[Symbol.LabelSym, Expression], root: Root)(implicit flix: Flix): AnyRef = {
 
     def evalBoolOp(sop: SemanticOperator.BoolOp): AnyRef = {
       // Evaluate the left operand.
@@ -501,7 +501,7 @@ object Interpreter {
   /**
     * Invokes the given closure expression `exp` with the given arguments `args` under the given environment `env0`..
     */
-  private def invokeClo(exp: Expression, args: List[Expression], env0: Map[String, AnyRef], lenv0: Map[Symbol.LabelSym, Expression], root: Root): AnyRef = {
+  private def invokeClo(exp: Expression, args: List[Expression], env0: Map[String, AnyRef], lenv0: Map[Symbol.LabelSym, Expression], root: Root)(implicit flix: Flix): AnyRef = {
     val v = eval(exp, env0, lenv0, root)
     val Value.Closure(name, bindings) = cast2closure(v)
     val as = evalArgs(args, env0, lenv0, root)
@@ -520,7 +520,7 @@ object Interpreter {
   /**
     * Invokes the given definition `sym` with the given arguments `args` under the given environment `env0`..
     */
-  private def invokeDef(sym: Symbol.DefnSym, args: List[Expression], env0: Map[String, AnyRef], lenv0: Map[Symbol.LabelSym, Expression], root: Root): AnyRef = {
+  private def invokeDef(sym: Symbol.DefnSym, args: List[Expression], env0: Map[String, AnyRef], lenv0: Map[Symbol.LabelSym, Expression], root: Root)(implicit flix: Flix): AnyRef = {
     val as = evalArgs(args, env0, lenv0, root)
     // TODO: Using the linker here is quite a hack.
     fromJava(Linker.link(sym, root).invoke(as.toArray))
@@ -529,7 +529,7 @@ object Interpreter {
   /**
     * Evaluates the given list of expressions `exps` under the given environment `env0` to a list of values.
     */
-  private def evalArgs(exps: List[Expression], env0: Map[String, AnyRef], lenv0: Map[Symbol.LabelSym, Expression], root: Root): List[AnyRef] = {
+  private def evalArgs(exps: List[Expression], env0: Map[String, AnyRef], lenv0: Map[Symbol.LabelSym, Expression], root: Root)(implicit flix: Flix): List[AnyRef] = {
     exps.map(a => eval(a, env0, lenv0, root))
   }
 

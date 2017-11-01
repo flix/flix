@@ -28,7 +28,7 @@ object Bootstrap {
     //
     // Decorate each defn in the ast with its method object.
     //
-    for ((sym, defn) <- root.defs) {
+    for ((sym, defn) <- root.defs; if !JvmOps.isLaw(defn)) {
       // Retrieve the namespace info of sym.
       val nsInfo = JvmOps.getNamespace(sym)
 
@@ -56,11 +56,7 @@ object Bootstrap {
     */
   private def findMethod(needle: String, haystack: Array[Method]): Method = {
     haystack.find(_.getName == needle) match {
-      case None =>
-        Console.println(s"Unable to find method: $needle")
-        null
-      // TODO
-      // throw InternalCompilerException(s"Method not found: '$needle'.")
+      case None => throw InternalCompilerException(s"Method not found: '$needle'.")
       case Some(m) => m
     }
   }

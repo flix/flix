@@ -16,6 +16,7 @@
 
 package ca.uwaterloo.flix.runtime.datastore
 
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Table
 import ca.uwaterloo.flix.language.ast.{ExecutableAst, SpecialOperator, Symbol, Type}
 import ca.uwaterloo.flix.language.phase.Indexer
@@ -28,7 +29,7 @@ import scala.reflect.ClassTag
 /**
   * A class implementing a data store for indexed relations and lattices.
   */
-class DataStore[ValueType <: AnyRef](root: ExecutableAst.Root)(implicit m: ClassTag[ValueType]) {
+class DataStore[ValueType <: AnyRef](root: ExecutableAst.Root)(implicit m: ClassTag[ValueType], flix: Flix) {
 
   /**
     * A map from names to indexed relations.

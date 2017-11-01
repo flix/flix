@@ -16,12 +16,13 @@
 
 package ca.uwaterloo.flix.runtime.datastore
 
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ExecutableAst
 import ca.uwaterloo.flix.runtime.{InvocationTarget, Linker}
 
 import scala.reflect.ClassTag
 
-class LatticeImpl[ValueType <: AnyRef](lattice: ExecutableAst.Table.Lattice, root: ExecutableAst.Root)(implicit m: ClassTag[ValueType]) extends Lattice[ValueType] {
+class LatticeImpl[ValueType <: AnyRef](lattice: ExecutableAst.Table.Lattice, root: ExecutableAst.Root)(implicit m: ClassTag[ValueType], flix: Flix) extends Lattice[ValueType] {
 
   /**
     * The lattice operations associated with each lattice.

@@ -221,10 +221,11 @@ class Flix {
         VarNumbering |>
         CreateExecutableAst |>
         JvmBackend |>
-        TupleGen |>
-        EnumGen |>
-        CodeGen |>
-        LoadBytecode |>
+        // TODO
+        //TupleGen |>
+        //EnumGen |>
+        //CodeGen |>
+        //LoadBytecode |>
         QuickChecker |>
         Verifier
 
@@ -237,7 +238,7 @@ class Flix {
     * Runs the Flix fixed point solver on the program and returns the minimal model.
     */
   def solve(): Validation[Model, CompilationError] = compile().map {
-    case root => new Solver(root, options).solve()
+    case root => new Solver(root, options)(this).solve()
   }
 
   /**
@@ -247,7 +248,7 @@ class Flix {
     * @param path the path to write the minimized facts to.
     */
   def deltaSolve(path: Path): Validation[scala.Unit, CompilationError] = compile().map {
-    case root => DeltaSolver.solve(root, options, path)
+    case root => DeltaSolver.solve(root, options, path)(this)
   }
 
   /**

@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.runtime
 import java.util.concurrent._
 import java.util.concurrent.atomic.AtomicInteger
 
-import ca.uwaterloo.flix.api.{Tag, RuleException, TimeoutException}
+import ca.uwaterloo.flix.api.{Flix, RuleException, Tag, TimeoutException}
 import ca.uwaterloo.flix.language.ast.Ast.Polarity
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Term.Body.Pat
 import ca.uwaterloo.flix.language.ast.ExecutableAst._
@@ -39,7 +39,7 @@ import scala.concurrent.duration.{Duration, _}
   *
   * The solver computes the least fixed point of the rules in the given program.
   */
-class Solver(val root: ExecutableAst.Root, options: Options) {
+class Solver(val root: ExecutableAst.Root, options: Options)(implicit flix: Flix) {
 
   /**
     * Controls the number of batches per thread. A value of one means one batch per thread.

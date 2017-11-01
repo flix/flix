@@ -16,6 +16,7 @@
 
 package ca.uwaterloo.flix.runtime
 
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.ast.ExecutableAst._
 import ca.uwaterloo.flix.util.InternalRuntimeException
@@ -32,7 +33,8 @@ class Model(root: Root,
             time: Time,
             definitions: Map[Symbol.DefnSym, () => AnyRef],
             relations: Map[Symbol.TableSym, Iterable[List[AnyRef]]],
-            lattices: Map[Symbol.TableSym, Iterable[(List[AnyRef], AnyRef)]]) {
+            lattices: Map[Symbol.TableSym, Iterable[(List[AnyRef], AnyRef)]])
+           (implicit flix: Flix) {
 
   /**
     * Returns the root AST.
