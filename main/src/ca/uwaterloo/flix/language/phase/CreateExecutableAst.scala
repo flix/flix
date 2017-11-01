@@ -91,8 +91,9 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
       val botSym = Symbol.freshDefnSym("bot")
       val topSym = Symbol.freshDefnSym("top")
 
-      val botConst = ExecutableAst.Def(Ast.Annotations(Nil), botSym, formals = Array(), t(bot), isSynthetic = true, bot.tpe, bot.loc)
-      val topConst = ExecutableAst.Def(Ast.Annotations(Nil), topSym, formals = Array(), t(top), isSynthetic = true, top.tpe, top.loc)
+      // TODO: Should probably occur earlier?
+      val botConst = ExecutableAst.Def(Ast.Annotations(Nil), botSym, formals = Array(), t(bot), isSynthetic = true, Type.mkArrow(Nil, bot.tpe), bot.loc)
+      val topConst = ExecutableAst.Def(Ast.Annotations(Nil), topSym, formals = Array(), t(top), isSynthetic = true, Type.mkArrow(Nil, top.tpe), top.loc)
 
       // Update the map of definitions
       m ++= Map(botSym -> botConst, topSym -> topConst)

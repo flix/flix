@@ -56,7 +56,8 @@ object Bootstrap {
     */
   private def findMethod(needle: String, haystack: Array[Method]): Method = {
     haystack.find(_.getName == needle) match {
-      case None => throw InternalCompilerException(s"Method not found: '$needle'.")
+      case None =>
+        throw InternalCompilerException(s"Method not found: '$needle'.")
       case Some(m) => m
     }
   }
