@@ -449,12 +449,12 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
         }
 
       case WeededAst.Expression.ArrayLoad(base, index, loc) =>
-        @@(namer(base, env0, tenv0), namer(base, env0, tenv0)) map {
+        @@(namer(base, env0, tenv0), namer(index, env0, tenv0)) map {
           case (b, i) => NamedAst.Expression.ArrayLoad(b, i, Type.freshTypeVar(), loc)
         }
 
       case WeededAst.Expression.ArrayStore(base, index, value, loc) =>
-        @@(namer(base, env0, tenv0), namer(base, env0, tenv0), namer(value, env0, tenv0)) map {
+        @@(namer(base, env0, tenv0), namer(index, env0, tenv0), namer(value, env0, tenv0)) map {
           case (b, i, v) => NamedAst.Expression.ArrayStore(b, i, v, Type.freshTypeVar(), loc)
         }
 
