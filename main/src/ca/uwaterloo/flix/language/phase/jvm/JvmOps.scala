@@ -447,6 +447,45 @@ object JvmOps {
       VariableInfo.IfoField("clo" + sym.getStackOffset)
 
   /**
+    * Optionally returns the given `tag` as a fusion `tag`.
+    */
+  def getFusionTag(tag: TagInfo): Option[FusionTagInfo] = {
+    // Retrieve the tag type.
+    val innerType = tag.tagType
+
+    // Return none if the tag type is a non-tuple.
+    if (!innerType.isTuple)
+      return None
+
+    // Retrieve the element types of the tuple.
+    val elementTypes = innerType.typeArguments
+
+    // Construct the fusion tag.
+    Some(FusionTagInfo(tag.sym, tag.tag, tag.tparams))
+  }
+
+  /**
+    * TODO: DOC
+    */
+  def getFusionClassType(tag: TagInfo)(implicit root: Root, flix: Flix): JvmType.Reference = {
+    // TODO
+
+    //    // Retrieve the tag name.
+    //    val tagName = tag.tag
+    //
+    //    // Retrieve the type arguments.
+    //    val args = tag.tparams.map(tpe => stringify(getErasedType(tpe)))
+    //
+    //    // The JVM name is of the form Tag$Arg0$Arg1$Arg2
+    //    val name = if (args.isEmpty) tagName else tagName + "$" + args.mkString("$")
+    //
+    //    // The tag class resides in its namespace package.
+    //    JvmType.Reference(JvmName(tag.sym.namespace, name))
+    ???
+  }
+
+
+  /**
     * Represents the nullability of a type.
     */
   sealed trait Nullability
