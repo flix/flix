@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 import java.nio.file.{Files, LinkOption, Path}
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.ExecutableAst.{Case, Expression, FreeVar, Root}
+import ca.uwaterloo.flix.language.ast.ExecutableAst._
 import ca.uwaterloo.flix.language.ast.{Symbol, Type}
 import ca.uwaterloo.flix.language.phase.Unification
 import ca.uwaterloo.flix.util.InternalCompilerException
@@ -69,15 +69,7 @@ object JvmOps {
       case Type.Ref => getCellClassType(tpe)
       case Type.Arrow(l) => getFunctionInterfaceType(tpe)
       case Type.Tuple(l) => getTupleInterfaceType(tpe)
-      case Type.Enum(sym, kind) =>
-        if (isNullaryEnum(tpe)) {
-          // TODO
-          //val nullaryType = getNullaryType(tpe)
-          //println(s"Nullary type $tpe to be represented as: ${nullaryType.toDescriptor}")
-          getEnumInterfaceType(tpe)
-        } else {
-          getEnumInterfaceType(tpe)
-        }
+      case Type.Enum(sym, kind) => getEnumInterfaceType(tpe)
       case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
     }
   }
@@ -456,6 +448,7 @@ object JvmOps {
     *
     * NB: The type must be an enum type.
     */
+  // TODO: Currently broken and unused.
   private def isNullaryEnum(tpe: Type)(implicit root: Root, flix: Flix): Boolean = {
     // Check that the given type is an enum type.
     if (!tpe.typeConstructor.isEnum)
@@ -483,6 +476,7 @@ object JvmOps {
     *
     * NB: The type must be a nullable enum type.
     */
+  // TODO: Currently broken and unused.
   private def getNullaryType(tpe: Type)(implicit root: Root, flix: Flix): JvmType = {
     // Check that the type is nullary.
     if (!isNullaryEnum(tpe))
@@ -512,6 +506,7 @@ object JvmOps {
     * NB: BE WARNED: It is *NOT TRUE* that `isNullaryTag(tag) = !(isReferenceTag(tag))`.
     * Specifically, both return `true` for Unit.
     */
+  // TODO: Currently broken and unused.
   private def isNullaryTag(tag: TagInfo)(implicit root: Root, flix: Flix): Boolean = {
     // Unwrap the inner tag type.
     val tagType = getUnwrappedType(tag.tagType)
@@ -529,6 +524,7 @@ object JvmOps {
     * NB: BE WARNED: It is *NOT TRUE* that `isNullaryTag(tag) = !(isReferenceTag(tag))`
     * Specifically, both return `true` for Unit.
     */
+  // TODO: Currently broken and unused.
   private def isReferenceTag(tag: TagInfo)(implicit root: Root, flix: Flix): Boolean = {
     // Unwrap the inner tag type.
     val tagType = getUnwrappedType(tag.tagType)
@@ -666,7 +662,6 @@ object JvmOps {
     case JvmType.Reference(jvmName) => "Obj"
   }
 
-
   /**
     * Returns the set of closures in the given AST `root`.
     */
@@ -784,7 +779,12 @@ object JvmOps {
   def namespacesOf(root: Root): Set[NamespaceInfo] = {
     // Group every symbol by namespace.
     root.defs.groupBy(_._1.namespace).map {
-      case (ns, defs) => NamespaceInfo(ns, defs)
+      case (ns, defs) =>
+        // Collect all non-law definitions.
+        val nonLaws = defs filter {
+          case (sym, defn) => !isLaw(defn)
+        }
+        NamespaceInfo(ns, nonLaws)
     }.toSet
   }
 
@@ -937,9 +937,11 @@ object JvmOps {
     // TODO: Look for types in other places.
 
     // Visit every definition.
-    root.defs.foldLeft(Set.empty[Type]) {
+    val result = root.defs.foldLeft(Set.empty[Type]) {
       case (sacc, (_, defn)) => sacc ++ visitExp(defn.exp) + defn.tpe
     }
+
+    result.flatMap(typesOf)
   }
 
   /**
@@ -948,7 +950,7 @@ object JvmOps {
     * For example, if the given type is `Option[(Bool, Char, Int)]`
     * this returns the set `Bool`, `Char`, `Int`, `(Bool, Char, Int)`, and `Option[(Bool, Char, Int)]`.
     */
-  def typesOf(tpe: Type): Set[Type] = ??? // TODO
+  def typesOf(tpe: Type): Set[Type] = Set(tpe) // TODO
 
   /**
     * Returns `true` if the given `path` exists and is a Java Virtual Machine class file.
@@ -1014,5 +1016,11 @@ object JvmOps {
     // Write the bytecode.
     Files.write(path, clazz.bytecode)
   }
+
+  /**
+    * Returns `true` if the given definition `defn` is a law.
+    */
+  // TODO: Ensure this is used in all the correct places.
+  def isLaw(defn: Def): Boolean = !defn.ann.isLaw
 
 }
