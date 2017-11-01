@@ -168,7 +168,19 @@ object Interpreter {
       else
         throw InternalRuntimeException(s"Array index out of bounds: $i. Array length: ${b.elms.length}.")
 
-
+    //
+    // ArrayStore expressions.
+    //
+    case Expression.ArrayStore(base, index, value, tpe, loc) =>
+      val b = cast2array(eval(base, env0, lenv0, root))
+      val i = cast2int32(eval(index, env0, lenv0, root))
+      val v = eval(value, env0, lenv0, root)
+      if (i < b.elms.length) {
+        b.elms(i) = v
+        b
+      } else {
+        throw InternalRuntimeException(s"Array index out of bounds: $i. Array length: ${b.elms.length}.")
+      }
 
     //
     // Reference expressions.
