@@ -21,7 +21,8 @@ package ca.uwaterloo.flix.language.phase.jvm
   */
 object GenFusionClasses {
 
-  def gen(): Map[JvmName, JvmClass] = {
+  def gen(tags: Set[FusionTagInfo]): Map[JvmName, JvmClass] = {
+    println(tags)
     Map.empty // TODO
   }
 
