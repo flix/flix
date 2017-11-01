@@ -398,12 +398,19 @@ object GenExpression {
       ??? // TODO: Add support for LetRec.
 
     case Expression.Is(enum, tag, exp, loc) =>
+      // Case 1: Check for unwrappability.
+      if (JvmOps.isUnwrappable(enum)) {
+        // TODO
+        Console.println(s"The enum ${enum} can be unwrapped. The check can be replaced by true.")
+      }
 
-      // Check for nullability.
+      // Case 2: Check for nullability.
       if (JvmOps.isNullable(exp.tpe)) {
         // TODO
         Console.println(s"The type ${exp.tpe} is nullable. I should just check for null.")
       }
+
+      // Case 3: Ordinary enum.
 
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
@@ -417,12 +424,19 @@ object GenExpression {
       visitor.visitTypeInsn(INSTANCEOF, classType.name.toInternalName)
 
     case Expression.Tag(enum, tag, exp, tpe, loc) =>
+      // Case 1: Check for unwrappability.
+      if (JvmOps.isUnwrappable(enum)) {
+        // TODO
+        Console.println(s"The enum ${enum} can be unwrapped. Compute the inner expression.")
+      }
 
-      // Check for nullability.
+      // Case 2: Check for nullability.
       if (JvmOps.isNullable(tpe)) {
         // TODO
-        Console.println(s"The type ${tpe} is nullable. I should create the inner exp.")
+        Console.println(s"The type ${tpe} is nullable. Compute the inner expression.")
       }
+
+      // Case 3: Ordinary enum.
 
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
@@ -450,12 +464,19 @@ object GenExpression {
       }
 
     case Expression.Untag(enum, tag, exp, tpe, loc) =>
+      // Case 1: Check for unwrappability.
+      if (JvmOps.isUnwrappable(enum)) {
+        // TODO
+        Console.println(s"The enum ${enum} can be unwrapped. Do not do anything.")
+      }
 
-      // Check for nullability.
+      // Case 2: Check for nullability.
       if (JvmOps.isNullable(exp.tpe)) {
         // TODO
-        Console.println(s"The type ${exp.tpe} is nullable. I should do nothing.")
+        Console.println(s"The type ${exp.tpe} is nullable. Do not do anything.")
       }
+
+      // Case 3: Ordinary enum.
 
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
