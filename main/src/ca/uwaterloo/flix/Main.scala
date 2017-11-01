@@ -148,7 +148,7 @@ object Main {
           }
 
           if (cmdOpts.benchmark) {
-            Benchmarker.benchmark(model, new PrintWriter(System.out))
+            Benchmarker.benchmark(model, new PrintWriter(System.out, true))
           }
 
           if (cmdOpts.test) {
