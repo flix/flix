@@ -16,13 +16,24 @@
 
 package ca.uwaterloo.flix.language.phase.jvm
 
+import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.ExecutableAst.Root
+
 /**
   * Generates bytecode for the fusion classes.
   */
 object GenFusionClasses {
 
-  def gen(tags: Set[FusionTagInfo]): Map[JvmName, JvmClass] = {
-    println(tags)
+  /**
+    * Returns the set of fusion classes for the given set of fusion tags `tags`.
+    */
+  def gen(tags: Set[FusionTagInfo])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
+
+    for (tag <- tags) {
+      val jvmType = JvmOps.getFusionClassType(tag)
+      println(jvmType)
+    }
+
     Map.empty // TODO
   }
 
