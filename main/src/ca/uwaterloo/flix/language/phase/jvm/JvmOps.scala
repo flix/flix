@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ExecutableAst._
 import ca.uwaterloo.flix.language.ast.{Symbol, Type}
 import ca.uwaterloo.flix.language.phase.Unification
-import ca.uwaterloo.flix.util.InternalCompilerException
+import ca.uwaterloo.flix.util.{InternalCompilerException, Optimization}
 
 object JvmOps {
 
@@ -485,6 +485,10 @@ object JvmOps {
     * Returns the nullability of the given type `tpe`.
     */
   def getNullability(tpe: Type)(implicit root: Root, flix: Flix): Nullability = {
+    // Check if the optimization is enabled.
+    if (!(flix.options.optimizations contains Optimization.EnumCompaction))
+      return Nullability.NonNullable(tpe)
+
     // Retrieve the type constructor.
     val base = tpe.typeConstructor
 
@@ -535,9 +539,12 @@ object JvmOps {
   /**
     * Returns `true` if the given enum symbol `sym` is a single-case enum.
     */
-  // TODO: Rely on these instead of the phase in optimizer.
+  // TODO: Remove this optimization from the Optimizer phase.
   def isUnwrappable(sym: Symbol.EnumSym)(implicit root: Root, flix: Flix): Boolean = {
-    // TODO: Check options
+    // Check if the optimization is enabled.
+    if (!(flix.options.optimizations contains Optimization.SingleCaseEnum)) {
+      return false
+    }
 
     // Retrieve the enum declaration.
     val enum = root.enums(sym)
@@ -568,7 +575,10 @@ object JvmOps {
     * NB: This function assumes that a single-case enum is non-recursive.
     */
   def getUnwrappedType(tpe: Type)(implicit root: Root, flix: Flix): Type = {
-    // TODO: Check options.
+    // Check if the optimization is enabled.
+    if (!(flix.options.optimizations contains Optimization.SingleCaseEnum)) {
+      return tpe
+    }
 
     // Retrieve the type constructor.
     val base = tpe.typeConstructor
