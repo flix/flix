@@ -73,7 +73,7 @@ object GenExpression {
       val clos = funFreeVars.zipWithIndex.filter(_._1.sym == sym)
       val args = funVars.zipWithIndex.filter(_._1 == sym)
       val jvmType = JvmOps.getErasedType(tpe)
-      if(args.nonEmpty) {
+      if (args.nonEmpty) {
         visitor.visitVarInsn(ALOAD, 0)
         visitor.visitFieldInsn(GETFIELD, currentClassType.name.toInternalName, s"arg${args.last._2}", jvmType.toDescriptor)
         AsmOps.castIfNotPrim(JvmOps.getJvmType(tpe), visitor)
@@ -119,7 +119,7 @@ object GenExpression {
       // Casting to JvmType of FunctionInterface
       visitor.visitTypeInsn(CHECKCAST, functionInterface.name.toInternalName)
       // Setting arguments
-      for((arg, ind) <- args.zipWithIndex) {
+      for ((arg, ind) <- args.zipWithIndex) {
         visitor.visitInsn(DUP)
         compileExpression(arg, currentClassType, jumpLabels, entryPoint, funFreeVars, funVars, visitor)
         val argErasedType = JvmOps.getErasedType(arg.tpe)
@@ -187,7 +187,7 @@ object GenExpression {
       // Casting to JvmType of FunctionInterface
       visitor.visitTypeInsn(CHECKCAST, functionInterface.name.toInternalName)
       // Setting arguments
-      for((arg, ind) <- args.zipWithIndex) {
+      for ((arg, ind) <- args.zipWithIndex) {
         visitor.visitInsn(DUP)
         compileExpression(arg, currentClassType, jumpLabels, entryPoint, funFreeVars, funVars, visitor)
         val argErasedType = JvmOps.getErasedType(arg.tpe)
@@ -235,7 +235,7 @@ object GenExpression {
       // Casting to JvmType of FunctionInterface
       visitor.visitTypeInsn(CHECKCAST, functionInterface.name.toInternalName)
       // Setting arguments
-      for((arg, ind) <- args.zipWithIndex) {
+      for ((arg, ind) <- args.zipWithIndex) {
         visitor.visitInsn(DUP)
         // Evaluating the expression
         compileExpression(arg, currentClassType, jumpLabels, entryPoint, funFreeVars, funVars, visitor)
@@ -281,7 +281,7 @@ object GenExpression {
       // Casting to JvmType of FunctionInterface
       visitor.visitTypeInsn(CHECKCAST, functionInterface.name.toInternalName)
       // Setting arguments
-      for((arg, ind) <- args.zipWithIndex) {
+      for ((arg, ind) <- args.zipWithIndex) {
         visitor.visitInsn(DUP)
         compileExpression(arg, currentClassType, jumpLabels, entryPoint, funFreeVars, funVars, visitor)
         val argErasedType = JvmOps.getErasedType(arg.tpe)
@@ -296,7 +296,7 @@ object GenExpression {
 
     case Expression.ApplySelfTail(name, formals, actuals, tpe, loc) =>
       // Evaluate each argument and push the result on the stack.
-      for(arg <- actuals) {
+      for (arg <- actuals) {
         visitor.visitVarInsn(ALOAD, 0)
         // Evaluate the argument and push the result on the stack.
         compileExpression(arg, currentClassType, jumpLabels, entryPoint, funFreeVars, funVars, visitor)
@@ -312,7 +312,7 @@ object GenExpression {
 
     case Expression.ApplyHook(hook, args, tpe, loc) =>
       // TODO: Remove hooks before final merge into master.
-      val message =  "ApplyHook is not implemented"
+      val message = "ApplyHook is not implemented"
       // Create a new `Exception` object
       visitor.visitTypeInsn(NEW, JvmName.UnsupportedOperationException.toInternalName)
       visitor.visitInsn(DUP)
@@ -398,6 +398,13 @@ object GenExpression {
       ??? // TODO: Add support for LetRec.
 
     case Expression.Is(enum, tag, exp, loc) =>
+
+      // Check for nullability.
+      if (JvmOps.isNullable(exp.tpe)) {
+        // TODO
+        Console.println(s"The type ${exp.tpe} is nullable. I should just check for null.")
+      }
+
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
       // First we compile the `exp`
@@ -410,6 +417,13 @@ object GenExpression {
       visitor.visitTypeInsn(INSTANCEOF, classType.name.toInternalName)
 
     case Expression.Tag(enum, tag, exp, tpe, loc) =>
+
+      // Check for nullability.
+      if (JvmOps.isNullable(tpe)) {
+        // TODO
+        Console.println(s"The type ${tpe} is nullable. I should create the inner exp.")
+      }
+
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
       // We get the `TagInfo` for the tag
@@ -436,6 +450,13 @@ object GenExpression {
       }
 
     case Expression.Untag(enum, tag, exp, tpe, loc) =>
+
+      // Check for nullability.
+      if (JvmOps.isNullable(exp.tpe)) {
+        // TODO
+        Console.println(s"The type ${exp.tpe} is nullable. I should do nothing.")
+      }
+
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
       // We get the `TagInfo` for the tag

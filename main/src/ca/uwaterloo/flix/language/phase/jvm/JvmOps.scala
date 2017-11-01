@@ -69,7 +69,14 @@ object JvmOps {
       case Type.Ref => getCellClassType(tpe)
       case Type.Arrow(l) => getFunctionInterfaceType(tpe)
       case Type.Tuple(l) => getTupleInterfaceType(tpe)
-      case Type.Enum(sym, kind) => getEnumInterfaceType(tpe)
+      case Type.Enum(sym, kind) =>
+        getNullability(tpe) match {
+          case Nullability.Nullable(t) =>
+          case Nullability.NonNullable(t) =>
+          case Nullability.Primitive(t) => throw InternalCompilerException(s"Unexpected primtive type: '$tpe'.")
+        }
+
+        getEnumInterfaceType(tpe)
       case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
     }
   }
@@ -440,120 +447,103 @@ object JvmOps {
       VariableInfo.IfoField("clo" + sym.getStackOffset)
 
   /**
-    * Returns `true` if the given enum type `tpe` is nullable.
-    *
-    * An enum is nullable if it has exactly two constructors:
-    *
-    * One which takes unit and one which takes a non-primitive type.
-    *
-    * NB: The type must be an enum type.
+    * Represents the nullability of a type.
     */
-  // TODO: Currently broken and unused.
-  private def isNullaryEnum(tpe: Type)(implicit root: Root, flix: Flix): Boolean = {
-    // Check that the given type is an enum type.
-    if (!tpe.typeConstructor.isEnum)
-      throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+  sealed trait Nullability
 
-    // Retrieve the tags of the enum.
-    val tags = getTagsOf(tpe).toList
+  object Nullability {
 
-    // Check whether the enum is nullary.
-    tags match {
-      case tag1 :: tag2 :: Nil =>
-        // Case 1: The enum has exactly two tags.
-        // Check if the enum is nullable.
-        (isNullaryTag(tag1) && isReferenceTag(tag2)) ||
-          (isNullaryTag(tag2) && isReferenceTag(tag1))
-      case _ =>
-        // Case 2: The enum has zero, one, or more than two tags.
-        // It cannot be nullable.
-        false
-    }
+    /**
+      * Represents a nullable type `tpe`.
+      *
+      * The type is the inner type of a nullable enum.
+      */
+    case class Nullable(tpe: Type) extends Nullability
+
+    /**
+      * Represents a non-nullable primitive type `tpe`.
+      */
+    case class Primitive(tpe: Type) extends Nullability
+
+    /**
+      * Represents a non-nullable type `tpe`.
+      */
+    case class NonNullable(tpe: Type) extends Nullability
+
   }
 
   /**
-    * Returns the inner type of a nullable enum type `tpe`.
-    *
-    * NB: The type must be a nullable enum type.
+    * Returns `true` if the given type `tpe` is nullable.
     */
-  // TODO: Currently broken and unused.
-  private def getNullaryType(tpe: Type)(implicit root: Root, flix: Flix): JvmType = {
-    // Check that the type is nullary.
-    if (!isNullaryEnum(tpe))
-      throw InternalCompilerException(s"Unexpected type: '$tpe'.")
-
-    // Retrieve the tags of the enum.
-    val tags = getTagsOf(tpe).toList
-
-    // Retrieve the two tags.
-    val tag1 :: tag2 :: Nil = tags
-
-    // Determine the reference tag.
-    val referenceTag = if (isNullaryTag(tag1)) tag2 else tag1
-
-    // Unwrap the inner tag type.
-    val innerTagType = getUnwrappedType(referenceTag.tagType)
-
-    // And translate it to a JVM type.
-    getJvmType(referenceTag.tagType)
+  def isNullable(tpe: Type)(implicit root: Root, flix: Flix): Boolean = getNullability(tpe) match {
+    case Nullability.Nullable(t) => true
+    case Nullability.Primitive(t) => false
+    case Nullability.NonNullable(t) => false
   }
 
   /**
-    * Returns `true` if the given `tag` can be represented by `null`.
-    *
-    * In other words, if the inner type of the given `tag` is Unit.
-    *
-    * NB: BE WARNED: It is *NOT TRUE* that `isNullaryTag(tag) = !(isReferenceTag(tag))`.
-    * Specifically, both return `true` for Unit.
+    * Returns the nullability of the given type `tpe`.
     */
-  // TODO: Currently broken and unused.
-  private def isNullaryTag(tag: TagInfo)(implicit root: Root, flix: Flix): Boolean = {
-    // Unwrap the inner tag type.
-    val tagType = getUnwrappedType(tag.tagType)
+  def getNullability(tpe: Type)(implicit root: Root, flix: Flix): Nullability = {
+    // Retrieve the type constructor.
+    val base = tpe.typeConstructor
 
-    // Check if the type is Unit.
-    tagType match {
-      case Type.Unit => true
-      case _ => false
-    }
-  }
+    // Retrieve the type arguments.
+    val args = tpe.typeArguments
 
-  /**
-    * Returns `true` if the given `tag` can be represented as a non-null value.
-    *
-    * NB: BE WARNED: It is *NOT TRUE* that `isNullaryTag(tag) = !(isReferenceTag(tag))`
-    * Specifically, both return `true` for Unit.
-    */
-  // TODO: Currently broken and unused.
-  private def isReferenceTag(tag: TagInfo)(implicit root: Root, flix: Flix): Boolean = {
-    // Unwrap the inner tag type.
-    val tagType = getUnwrappedType(tag.tagType)
-
-    // Check if the type is a primitive or reference type.
-    tagType.typeConstructor match {
+    // Match on the type constructor.
+    base match {
       // Primitive types.
-      case Type.Bool => false
-      case Type.Char => false
-      case Type.Float32 => false
-      case Type.Float64 => false
-      case Type.Int8 => false
-      case Type.Int16 => false
-      case Type.Int32 => false
-      case Type.Int64 => false
+      case Type.Unit => Nullability.Primitive(tpe)
+      case Type.Bool => Nullability.Primitive(tpe)
+      case Type.Char => Nullability.Primitive(tpe)
+      case Type.Float32 => Nullability.Primitive(tpe)
+      case Type.Float64 => Nullability.Primitive(tpe)
+      case Type.Int8 => Nullability.Primitive(tpe)
+      case Type.Int16 => Nullability.Primitive(tpe)
+      case Type.Int32 => Nullability.Primitive(tpe)
+      case Type.Int64 => Nullability.Primitive(tpe)
 
-      // Reference types.
-      case Type.Unit => true
-      case Type.BigInt => true
-      case Type.Str => true
-      case Type.Native => true
-      case Type.Ref => true
-      case Type.Arrow(l) => true
-      case Type.Tuple(l) => true
-      case Type.Enum(sym, kind) => true
+      // Nullable types.
+      case Type.BigInt => Nullability.Nullable(tpe)
+      case Type.Str => Nullability.Nullable(tpe)
+      case Type.Native => Nullability.Nullable(tpe)
+      case Type.Ref => Nullability.Nullable(tpe)
+      case Type.Arrow(l) => Nullability.Nullable(tpe)
+      case Type.Tuple(l) => Nullability.Nullable(tpe)
 
-      // Unexpected type.
-      case tpe => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
+      // Enum types.
+      case Type.Enum(sym, kind) =>
+        // Check if the enum is the Option type.
+        if (sym.name != "Option") {
+          return Nullability.NonNullable(tpe)
+        }
+
+        // The Option type has exactly one type argument.
+        val elementType = args.head
+
+        // Determine if the element type is nullable.
+        getNullability(elementType) match {
+          case Nullability.Nullable(t) => Nullability.NonNullable(tpe)
+          case Nullability.Primitive(t) => Nullability.NonNullable(tpe)
+          case Nullability.NonNullable(t) => Nullability.Nullable(elementType)
+        }
+      case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
     }
+  }
+
+  /**
+    * Returns `true` if the given enum symbol `sym` is a single-case enum.
+    */
+  // TODO: Rely on these instead of the phase in optimizer.
+  def isUnwrappable(sym: Symbol.EnumSym)(implicit root: Root, flix: Flix): Boolean = {
+    // TODO: Check options
+
+    // Retrieve the enum declaration.
+    val enum = root.enums(sym)
+
+    // Check whether the enum is single-cased.
+    enum.cases.size == 1
   }
 
   /**
@@ -578,12 +568,15 @@ object JvmOps {
     * NB: This function assumes that a single-case enum is non-recursive.
     */
   def getUnwrappedType(tpe: Type)(implicit root: Root, flix: Flix): Type = {
+    // TODO: Check options.
+
     // Retrieve the type constructor.
     val base = tpe.typeConstructor
 
     // Retrieve the type arguments.
     val args = tpe.typeArguments
 
+    // Match on the base type.
     val result = base match {
       case Type.Unit => Type.Unit
       case Type.Bool => Type.Bool
@@ -604,10 +597,10 @@ object JvmOps {
         // Retrieve the tags of the enum.
         val tags = getTagsOf(tpe).toList
 
-        // Check whether the enum is nullary.
+        // Check whether the enum is single-cased.
         tags match {
           case tag :: Nil =>
-            // Case 1: The enum has exactly one tag. Retrieve the inner type, recursively.
+            // Case 1: The enum has exactly one case. Retrieve the inner type, recursively.
             getUnwrappedType(tag.tagType)
           case _ =>
             // Case 2: The enum has zero, one, or more than two tags.
@@ -616,6 +609,7 @@ object JvmOps {
       case _ => throw InternalCompilerException(s"Unexpected type: '$base'.")
     }
 
+    // Reconstruct the type.
     args.foldLeft(base)(Type.Apply)
   }
 
