@@ -1021,6 +1021,6 @@ object JvmOps {
     * Returns `true` if the given definition `defn` is a law.
     */
   // TODO: Ensure this is used in all the correct places.
-  def isLaw(defn: Def): Boolean = !defn.ann.isLaw
+  def isLaw(defn: Def): Boolean = defn.ann.isLaw
 
 }

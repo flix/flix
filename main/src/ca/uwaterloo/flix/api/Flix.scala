@@ -280,7 +280,7 @@ class Flix {
     * @param path the path to write the minimized facts to.
     */
   def deltaSolve(path: Path): Validation[scala.Unit, CompilationError] = compile().map {
-    case root => DeltaSolver.solve(root, options, path)
+    case root => DeltaSolver.solve(root, options, path)(this)
   }
 
   /**
