@@ -184,7 +184,7 @@ object EnumGen extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     }
 
     val e = System.nanoTime() - t
-    root.copy(time = root.time.copy(enumGen = e),
+    root.copy(
       byteCodes = root.byteCodes.copy(enumInterfaceByteCodes = enumInterfaces, enumClassByteCodes = enumByteCodes)).toSuccess
   }
 
