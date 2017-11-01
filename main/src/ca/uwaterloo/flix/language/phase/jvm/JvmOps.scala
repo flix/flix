@@ -299,7 +299,7 @@ object JvmOps {
     val args = tpe.typeArguments.map(tpe => stringify(getErasedType(tpe)))
 
     // The JVM name is of the form TArity$Arg0$Arg1$Arg2
-    val name = "T" + arity + "$" + args.mkString("$")
+    val name = "ITuple" + arity + "$" + args.mkString("$")
 
     // The type resides in the root package.
     JvmType.Reference(JvmName(RootPackage, name))
@@ -461,29 +461,29 @@ object JvmOps {
     val elementTypes = innerType.typeArguments
 
     // Construct the fusion tag.
-    Some(FusionTagInfo(tag.sym, tag.tag, tag.tparams))
+    Some(FusionTagInfo(tag.sym, tag.tag, elementTypes))
   }
 
   /**
-    * TODO: DOC
+    * Returns the fusion class type `Cons$X$Y$Z` for the given type `tpe`.
+    *
+    * For example,
+    *
+    * Some((Int, Int))      =>    Some$2$Int$Int
     */
-  def getFusionClassType(tag: TagInfo)(implicit root: Root, flix: Flix): JvmType.Reference = {
-    // TODO
+  def getFusionClassType(tag: FusionTagInfo)(implicit root: Root, flix: Flix): JvmType.Reference = {
+    // Retrieve the tag name.
+    val tagName = tag.tag
 
-    //    // Retrieve the tag name.
-    //    val tagName = tag.tag
-    //
-    //    // Retrieve the type arguments.
-    //    val args = tag.tparams.map(tpe => stringify(getErasedType(tpe)))
-    //
-    //    // The JVM name is of the form Tag$Arg0$Arg1$Arg2
-    //    val name = if (args.isEmpty) tagName else tagName + "$" + args.mkString("$")
-    //
-    //    // The tag class resides in its namespace package.
-    //    JvmType.Reference(JvmName(tag.sym.namespace, name))
-    ???
+    // Retrieve the type arguments.
+    val args = tag.elms.map(tpe => stringify(getErasedType(tpe)))
+
+    // The JVM name is of the form Tag$Arg0$Arg1$Arg2
+    val name = if (args.isEmpty) tagName else tagName + "$" + args.length + "$" + args.mkString("$")
+
+    // The tag class resides in its namespace package.
+    JvmType.Reference(JvmName(tag.sym.namespace, name))
   }
-
 
   /**
     * Represents the nullability of a type.
