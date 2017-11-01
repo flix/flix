@@ -93,8 +93,8 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
 
       val ann = Ast.Annotations.Empty
       val mod = Ast.Modifiers(List(Ast.Modifier.Synthetic))
-      val botConst = ExecutableAst.Def(ann, mod, botSym, formals = Array(), t(bot), bot.tpe, bot.loc)
-      val topConst = ExecutableAst.Def(ann, mod, topSym, formals = Array(), t(top), top.tpe, top.loc)
+      val botConst = ExecutableAst.Def(ann, mod, botSym, formals = Array(), t(bot), Type.mkArrow(Nil, bot.tpe), bot.loc)
+      val topConst = ExecutableAst.Def(ann, mod, topSym, formals = Array(), t(top), Type.mkArrow(Nil, bot.tpe), top.loc)
 
       // Update the map of definitions
       m ++= Map(botSym -> botConst, topSym -> topConst)
