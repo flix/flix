@@ -126,7 +126,7 @@ object GenClosureClasses {
 
     val frees = defn.formals.take(freeVars.length).map(x => FreeVar(x.sym, x.tpe))
 
-    val rest = defn.formals.takeRight(defn.formals.length - freeVars.length).map(_.sym)
+    val rest = defn.formals.takeRight(defn.formals.length - freeVars.length)
 
     val enterLabel = new Label()
     applyMethod.visitCode()
