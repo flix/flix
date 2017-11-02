@@ -65,6 +65,7 @@ class FeatureSuite extends Suites(
   new FlixTest("Test.Expression.Postfix", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Postfix.flix"),
   new FlixTest("Test.Optimization.CompactEnum", "main/test/ca/uwaterloo/flix/language/feature/Test.Optimization.CompactEnum.flix"),
   new FlixTest("Test.Optimization.SingleCaseEnum", "main/test/ca/uwaterloo/flix/language/feature/Test.Optimization.SingleCaseEnum.flix"),
+  new FlixTest("TestTailCallElimination", "main/test/ca/uwaterloo/flix/language/feature/TestTailCallElimination.flix"),
   new FlixTest("TestUncurry", "main/test/ca/uwaterloo/flix/language/feature/TestUncurry.flix"),
   new FlixTest("TestStratifiedNegation", "main/test/ca/uwaterloo/flix/language/feature/TestStratifiedNegation.flix")
 ) with ParallelTestExecution {
