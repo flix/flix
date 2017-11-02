@@ -37,7 +37,7 @@ object GenExpression {
                         jumpLabels: Map[Symbol.LabelSym, Label],
                         entryPoint: Label,
                         funFreeVars: List[FreeVar], //TODO: FIND A BETTER WAY FOR VARS
-                        funVars: List[Symbol.VarSym], //TODO: FIND A BETTER WAY FOR VARS
+                        funVars: List[ExecutableAst.FormalParam], //TODO: FIND A BETTER WAY FOR VARS
                         visitor: MethodVisitor)(implicit root: Root, flix: Flix): Unit = expr match {
     case Expression.Unit =>
       visitor.visitMethodInsn(INVOKESTATIC, JvmName.Unit.toInternalName, "getInstance",
@@ -71,7 +71,7 @@ object GenExpression {
     // TODO: This should change
     case Expression.Var(sym, tpe, _) =>
       val clos = funFreeVars.zipWithIndex.filter(_._1.sym == sym)
-      val args = funVars.zipWithIndex.filter(_._1 == sym)
+      val args = funVars.zipWithIndex.filter(_._1.sym == sym)
       val jvmType = JvmOps.getErasedType(tpe)
       if (args.nonEmpty) {
         visitor.visitVarInsn(ALOAD, 0)
@@ -83,7 +83,7 @@ object GenExpression {
         AsmOps.castIfNotPrim(JvmOps.getJvmType(tpe), visitor)
       } else {
         val iLOAD = AsmOps.getLoadInstruction(jvmType)
-        visitor.visitVarInsn(iLOAD, sym.getStackOffset + 2)
+        visitor.visitVarInsn(iLOAD, sym.getStackOffset + 2) // This is `+2` because the first 2 are reserved!
       }
 
     case Expression.Closure(sym, freeVars, fnType, tpe, loc) =>
@@ -118,10 +118,26 @@ object GenExpression {
       compileExpression(exp, currentClassType, jumpLabels, entryPoint, funFreeVars, funVars, visitor)
       // Casting to JvmType of FunctionInterface
       visitor.visitTypeInsn(CHECKCAST, functionInterface.name.toInternalName)
-      // Setting arguments
-      for ((arg, ind) <- args.zipWithIndex) {
+      // Saving the continuation so we don't have to use calculate this again
+      visitor.visitInsn(DUP)
+      // Putting args on the stack
+      for (arg <- args) {
+        // Duplicate the FunctionInterface
         visitor.visitInsn(DUP)
+        // Erased Type
+        val argErasedType = JvmOps.getErasedType(arg.tpe)
+        // Evaluating the expression
         compileExpression(arg, currentClassType, jumpLabels, entryPoint, funFreeVars, funVars, visitor)
+        if(AsmOps.getStackSpace(argErasedType) == 1) {
+          visitor.visitInsn(SWAP)
+        } else {
+          visitor.visitInsn(DUP2_X1)
+          visitor.visitInsn(POP2)
+        }
+      }
+      visitor.visitInsn(POP)
+      // Saving args on the continuation interface in reverse
+      for ((arg, ind) <- args.zipWithIndex.reverse) {
         val argErasedType = JvmOps.getErasedType(arg.tpe)
         visitor.visitMethodInsn(INVOKEINTERFACE, functionInterface.name.toInternalName, s"setArg$ind",
           AsmOps.getMethodDescriptor(List(argErasedType), JvmType.Void), true)
@@ -186,10 +202,25 @@ object GenExpression {
       val resultType = JvmOps.getErasedType(tpe)
       // Casting to JvmType of FunctionInterface
       visitor.visitTypeInsn(CHECKCAST, functionInterface.name.toInternalName)
-      // Setting arguments
-      for ((arg, ind) <- args.zipWithIndex) {
+      visitor.visitInsn(DUP)
+      // Putting args on the stack
+      for (arg <- args) {
+        // Duplicate the FunctionInterface
         visitor.visitInsn(DUP)
+        // Erased Type
+        val argErasedType = JvmOps.getErasedType(arg.tpe)
+        // Evaluating the expression
         compileExpression(arg, currentClassType, jumpLabels, entryPoint, funFreeVars, funVars, visitor)
+        if(AsmOps.getStackSpace(argErasedType) == 1) {
+          visitor.visitInsn(SWAP)
+        } else {
+          visitor.visitInsn(DUP2_X1)
+          visitor.visitInsn(POP2)
+        }
+      }
+      visitor.visitInsn(POP)
+      // Saving args on the continuation interface in reverse
+      for ((arg, ind) <- args.zipWithIndex.reverse) {
         val argErasedType = JvmOps.getErasedType(arg.tpe)
         visitor.visitMethodInsn(INVOKEINTERFACE, functionInterface.name.toInternalName, s"setArg$ind",
           AsmOps.getMethodDescriptor(List(argErasedType), JvmType.Void), true)
@@ -234,12 +265,26 @@ object GenExpression {
       compileExpression(exp, currentClassType, jumpLabels, entryPoint, funFreeVars, funVars, visitor)
       // Casting to JvmType of FunctionInterface
       visitor.visitTypeInsn(CHECKCAST, functionInterface.name.toInternalName)
-      // Setting arguments
-      for ((arg, ind) <- args.zipWithIndex) {
+      // Saving the continuation so we don't have to use calculate this again
+      visitor.visitInsn(DUP)
+      // Putting args on the stack
+      for (arg <- args) {
+        // Duplicate the FunctionInterface
         visitor.visitInsn(DUP)
+        // Erased Type
+        val argErasedType = JvmOps.getErasedType(arg.tpe)
         // Evaluating the expression
         compileExpression(arg, currentClassType, jumpLabels, entryPoint, funFreeVars, funVars, visitor)
-        // Erased type of the arg
+        if(AsmOps.getStackSpace(argErasedType) == 1) {
+          visitor.visitInsn(SWAP)
+        } else {
+          visitor.visitInsn(DUP2_X1)
+          visitor.visitInsn(POP2)
+        }
+      }
+      visitor.visitInsn(POP)
+      // Saving args to continuation in reverse order
+      for ((arg, ind) <- args.zipWithIndex.reverse) {
         val argErasedType = JvmOps.getErasedType(arg.tpe)
         // Setting the arg
         visitor.visitMethodInsn(INVOKEINTERFACE, functionInterface.name.toInternalName, s"setArg$ind",
@@ -248,8 +293,7 @@ object GenExpression {
       // Placing the interface on continuation field of `Context`
       visitor.visitFieldInsn(PUTFIELD, JvmName.Context.toInternalName, "continuation", JvmType.Object.toDescriptor)
       // Dummy value, since we have to put a result on top of the arg, this will be thrown away
-      visitor.visitVarInsn(ALOAD, 0)
-      visitor.visitMethodInsn(INVOKEVIRTUAL, currentClassType.name.toInternalName, "getResult", AsmOps.getMethodDescriptor(Nil, resultType), false)
+      pushDummyValue(visitor, resultType)
 
     case Expression.ApplyDefTail(name, args, tpe, loc) =>
       // Namespace of the Def
@@ -280,10 +324,25 @@ object GenExpression {
       val resultType = JvmOps.getErasedType(tpe)
       // Casting to JvmType of FunctionInterface
       visitor.visitTypeInsn(CHECKCAST, functionInterface.name.toInternalName)
-      // Setting arguments
-      for ((arg, ind) <- args.zipWithIndex) {
+      // Putting args on the stack
+      visitor.visitInsn(DUP)
+      for (arg <- args) {
+        // Duplicate the FunctionInterface
         visitor.visitInsn(DUP)
+        // Erased Type
+        val argErasedType = JvmOps.getErasedType(arg.tpe)
+        // Evaluating the expression
         compileExpression(arg, currentClassType, jumpLabels, entryPoint, funFreeVars, funVars, visitor)
+        if(AsmOps.getStackSpace(argErasedType) == 1) {
+          visitor.visitInsn(SWAP)
+        } else {
+          visitor.visitInsn(DUP2_X1)
+          visitor.visitInsn(POP2)
+        }
+      }
+      visitor.visitInsn(POP)
+      // Saving args on the continuation in reverse order
+      for ((arg, ind) <- args.zipWithIndex.reverse) {
         val argErasedType = JvmOps.getErasedType(arg.tpe)
         visitor.visitMethodInsn(INVOKEINTERFACE, functionInterface.name.toInternalName, s"setArg$ind",
           AsmOps.getMethodDescriptor(List(argErasedType), JvmType.Void), true)
@@ -291,8 +350,7 @@ object GenExpression {
       // Placing the interface on continuation field of `Context`
       visitor.visitFieldInsn(PUTFIELD, JvmName.Context.toInternalName, "continuation", JvmType.Object.toDescriptor)
       // Dummy value, since we have to put a result on top of the arg, this will be thrown away
-      visitor.visitVarInsn(ALOAD, 0)
-      visitor.visitMethodInsn(INVOKEVIRTUAL, currentClassType.name.toInternalName, "getResult", AsmOps.getMethodDescriptor(Nil, resultType), false)
+      pushDummyValue(visitor, resultType)
 
     case Expression.ApplySelfTail(name, formals, actuals, tpe, loc) =>
       // Evaluate each argument and push the result on the stack.
@@ -641,6 +699,27 @@ object GenExpression {
   }
 
   /*
+   * Pushes a dummy value of type `jvmType` to the top of the stack
+   */
+  private def pushDummyValue(visitor: MethodVisitor, jvmType: JvmType)(implicit root: Root, flix: Flix): Unit = {
+    val erasedType = JvmOps.getErasedType(jvmType)
+    erasedType match {
+      case JvmType.Void => throw InternalCompilerException(s"Unexpected type: $erasedType")
+      case JvmType.PrimBool => visitor.visitInsn(ICONST_1)
+      case JvmType.PrimChar => visitor.visitInsn(ICONST_M1)
+      case JvmType.PrimByte => visitor.visitInsn(ICONST_M1)
+      case JvmType.PrimShort => visitor.visitInsn(ICONST_M1)
+      case JvmType.PrimInt => visitor.visitInsn(ICONST_M1)
+      case JvmType.PrimLong =>
+        visitor.visitInsn(ICONST_M1)
+        visitor.visitInsn(I2L)
+      case JvmType.PrimFloat => visitor.visitInsn(FCONST_1)
+      case JvmType.PrimDouble => visitor.visitInsn(DCONST_1)
+      case JvmType.Reference(_) => visitor.visitInsn(ACONST_NULL)
+    }
+  }
+
+  /*
    * Generate code to load an integer constant.
    *
    * Uses the smallest number of bytes necessary, e.g. ICONST_0 takes 1 byte to load a 0, but BIPUSH 7 takes 2 bytes to
@@ -673,7 +752,7 @@ object GenExpression {
                                jumpLabels: Map[Symbol.LabelSym, Label],
                                entryPoint: Label,
                                funFreeVars: List[FreeVar],
-                               funVars: List[Symbol.VarSym],
+                               funVars: List[ExecutableAst.FormalParam],
                                op: UnaryOperator,
                                sop: SemanticOperator)(implicit root: Root, flix: Flix): Unit = {
     // Adding source line number for debugging
@@ -791,7 +870,7 @@ object GenExpression {
                                     jumpLabels: Map[Symbol.LabelSym, Label],
                                     entryPoint: Label,
                                     funFreeVars: List[FreeVar],
-                                    funVars: List[Symbol.VarSym],
+                                    funVars: List[ExecutableAst.FormalParam],
                                     o: ArithmeticOperator,
                                     sop: SemanticOperator)(implicit root: Root, flix: Flix): Unit = {
     if (o == BinaryOperator.Exponentiate) {
@@ -898,7 +977,7 @@ object GenExpression {
                                     jumpLabels: Map[Symbol.LabelSym, Label],
                                     entryPoint: Label,
                                     funFreeVars: List[FreeVar],
-                                    funVars: List[Symbol.VarSym],
+                                    funVars: List[ExecutableAst.FormalParam],
                                     o: ComparisonOperator,
                                     sop: SemanticOperator)(implicit root: Root, flix: Flix): Unit = {
     compileExpression(e1, currentClassType, jumpLabels, entryPoint, funFreeVars, funVars, visitor)
@@ -961,7 +1040,7 @@ object GenExpression {
                                  jumpLabels: Map[Symbol.LabelSym, Label],
                                  entryPoint: Label,
                                  funFreeVars: List[FreeVar],
-                                 funVars: List[Symbol.VarSym],
+                                 funVars: List[ExecutableAst.FormalParam],
                                  o: LogicalOperator)(implicit root: Root, flix: Flix): Unit = o match {
     case BinaryOperator.LogicalAnd =>
       val andFalseBranch = new Label()
@@ -1041,7 +1120,7 @@ object GenExpression {
                                  jumpLabels: Map[Symbol.LabelSym, Label],
                                  entryPoint: Label,
                                  funFreeVars: List[FreeVar],
-                                 funVars: List[Symbol.VarSym],
+                                 funVars: List[ExecutableAst.FormalParam],
                                  o: BitwiseOperator,
                                  sop: SemanticOperator)(implicit root: Root, flix: Flix): Unit = {
     compileExpression(e1, currentClassType, jumpLabels, entryPoint, funFreeVars, funVars, visitor)
