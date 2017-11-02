@@ -234,7 +234,7 @@ object TypedAst {
     }
 
     case class Int8(lit: scala.Byte, loc: SourceLocation) extends TypedAst.Pattern {
-      def tpe: Type = Type.Int16
+      def tpe: Type = Type.Int8
     }
 
     case class Int16(lit: scala.Short, loc: SourceLocation) extends TypedAst.Pattern {
