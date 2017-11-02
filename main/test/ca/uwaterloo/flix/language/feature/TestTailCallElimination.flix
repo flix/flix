@@ -48,3 +48,24 @@ def a1(x: Int, f: Int -> Int): Bool = b1(f(x), y -> y - 1)
 def b1(x: Int, f: Int -> Int): Bool = c1(f(x), y -> y == 42)
 
 def c1(x: Int, f: Int -> Bool): Bool = f(x)
+
+@test
+def testTCE10(): Int =  ping(123, x -> x)
+
+@test
+def testTCE11(): Int =  ping(12345, x -> x)
+
+@test
+def testTCE12(): Int =  ping(1234567, x -> x)
+
+def ping(n: Int, c: Int -> Int): Int = match n with {
+    case 0 => c(0)
+    case 1 => c(1)
+    case x => pong(x - 1, z -> c(z + 1))
+}
+
+def pong(n: Int, c: Int -> Int): Int = match n with {
+    case 0 => c(0)
+    case 1 => c(1)
+    case x => ping(x - 1, z -> c(z + 1))
+}
