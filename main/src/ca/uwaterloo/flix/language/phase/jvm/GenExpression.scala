@@ -83,7 +83,7 @@ object GenExpression {
         AsmOps.castIfNotPrim(JvmOps.getJvmType(tpe), visitor)
       } else {
         val iLOAD = AsmOps.getLoadInstruction(jvmType)
-        visitor.visitVarInsn(iLOAD, sym.getStackOffset + 5) // This is `+3` because the first 3 are reserved!
+        visitor.visitVarInsn(iLOAD, sym.getStackOffset + 2) // This is `+2` because the first 2 are reserved!
       }
 
     case Expression.Closure(sym, freeVars, fnType, tpe, loc) =>
@@ -449,7 +449,7 @@ object GenExpression {
       val jvmType = JvmOps.getJvmType(exp1.tpe)
       // Store instruction for `jvmType`
       val iStore = AsmOps.getStoreInstruction(jvmType)
-      visitor.visitVarInsn(iStore, sym.getStackOffset + 5)
+      visitor.visitVarInsn(iStore, sym.getStackOffset + 2)
       compileExpression(exp2, currentClassType, jumpLabels, entryPoint, funFreeVars, funVars, visitor)
 
     case Expression.LetRec(sym, exp1, exp2, _, _) =>
