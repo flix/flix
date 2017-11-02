@@ -131,14 +131,8 @@ object GenExpression {
         if(AsmOps.getStackSpace(argErasedType) == 1) {
           visitor.visitInsn(SWAP)
         } else {
-          val iLOAD = AsmOps.getLoadInstruction(argErasedType)
-          val iSTORE = AsmOps.getStoreInstruction(argErasedType)
-          // Load the arg at memory offset 2
-          visitor.visitVarInsn(iSTORE, 2)
-          // Load the interface at offset 4
-          visitor.visitVarInsn(ASTORE, 4)
-          visitor.visitVarInsn(iLOAD, 2)
-          visitor.visitVarInsn(ALOAD, 4)
+          visitor.visitInsn(DUP2_X1)
+          visitor.visitInsn(POP2)
         }
       }
       visitor.visitInsn(POP)
@@ -220,14 +214,8 @@ object GenExpression {
         if(AsmOps.getStackSpace(argErasedType) == 1) {
           visitor.visitInsn(SWAP)
         } else {
-          val iLOAD = AsmOps.getLoadInstruction(argErasedType)
-          val iSTORE = AsmOps.getStoreInstruction(argErasedType)
-          // Load the arg at memory offset 2
-          visitor.visitVarInsn(iSTORE, 2)
-          // Load the interface at offset 4
-          visitor.visitVarInsn(ASTORE, 4)
-          visitor.visitVarInsn(iLOAD, 2)
-          visitor.visitVarInsn(ALOAD, 4)
+          visitor.visitInsn(DUP2_X1)
+          visitor.visitInsn(POP2)
         }
       }
       visitor.visitInsn(POP)
@@ -290,14 +278,8 @@ object GenExpression {
         if(AsmOps.getStackSpace(argErasedType) == 1) {
           visitor.visitInsn(SWAP)
         } else {
-          val iLOAD = AsmOps.getLoadInstruction(argErasedType)
-          val iSTORE = AsmOps.getStoreInstruction(argErasedType)
-          // Load the arg at memory offset 2
-          visitor.visitVarInsn(iSTORE, 2)
-          // Load the interface at offset 4
-          visitor.visitVarInsn(ASTORE, 4)
-          visitor.visitVarInsn(iLOAD, 2)
-          visitor.visitVarInsn(ALOAD, 4)
+          visitor.visitInsn(DUP2_X1)
+          visitor.visitInsn(POP2)
         }
       }
       visitor.visitInsn(POP)
@@ -311,8 +293,7 @@ object GenExpression {
       // Placing the interface on continuation field of `Context`
       visitor.visitFieldInsn(PUTFIELD, JvmName.Context.toInternalName, "continuation", JvmType.Object.toDescriptor)
       // Dummy value, since we have to put a result on top of the arg, this will be thrown away
-      visitor.visitVarInsn(ALOAD, 0)
-      visitor.visitMethodInsn(INVOKEVIRTUAL, currentClassType.name.toInternalName, "getResult", AsmOps.getMethodDescriptor(Nil, resultType), false)
+      pushDummyValue(visitor, resultType)
 
     case Expression.ApplyDefTail(name, args, tpe, loc) =>
       // Namespace of the Def
@@ -355,14 +336,8 @@ object GenExpression {
         if(AsmOps.getStackSpace(argErasedType) == 1) {
           visitor.visitInsn(SWAP)
         } else {
-          val iLOAD = AsmOps.getLoadInstruction(argErasedType)
-          val iSTORE = AsmOps.getStoreInstruction(argErasedType)
-          // Load the arg at memory offset 2
-          visitor.visitVarInsn(iSTORE, 2)
-          // Load the interface at offset 4
-          visitor.visitVarInsn(ASTORE, 4)
-          visitor.visitVarInsn(iLOAD, 2)
-          visitor.visitVarInsn(ALOAD, 4)
+          visitor.visitInsn(DUP2_X1)
+          visitor.visitInsn(POP2)
         }
       }
       visitor.visitInsn(POP)
@@ -375,8 +350,7 @@ object GenExpression {
       // Placing the interface on continuation field of `Context`
       visitor.visitFieldInsn(PUTFIELD, JvmName.Context.toInternalName, "continuation", JvmType.Object.toDescriptor)
       // Dummy value, since we have to put a result on top of the arg, this will be thrown away
-      visitor.visitVarInsn(ALOAD, 0)
-      visitor.visitMethodInsn(INVOKEVIRTUAL, currentClassType.name.toInternalName, "getResult", AsmOps.getMethodDescriptor(Nil, resultType), false)
+      pushDummyValue(visitor, resultType)
 
     case Expression.ApplySelfTail(name, formals, actuals, tpe, loc) =>
       // Evaluate each argument and push the result on the stack.
@@ -722,6 +696,27 @@ object GenExpression {
       addSourceLine(visitor, loc)
       val msg = s"Non-exhaustive switch expression: ${loc.format}."
       AsmOps.compileException(visitor, JvmName.SwitchException, msg)
+  }
+
+  /*
+   * Pushes a dummy value of type `jvmType` to the top of the stack
+   */
+  private def pushDummyValue(visitor: MethodVisitor, jvmType: JvmType)(implicit root: Root, flix: Flix): Unit = {
+    val erasedType = JvmOps.getErasedType(jvmType)
+    erasedType match {
+      case JvmType.Void => throw InternalCompilerException(s"Unexpected type: $erasedType")
+      case JvmType.PrimBool => visitor.visitInsn(ICONST_1)
+      case JvmType.PrimChar => visitor.visitInsn(ICONST_M1)
+      case JvmType.PrimByte => visitor.visitInsn(ICONST_M1)
+      case JvmType.PrimShort => visitor.visitInsn(ICONST_M1)
+      case JvmType.PrimInt => visitor.visitInsn(ICONST_M1)
+      case JvmType.PrimLong =>
+        visitor.visitInsn(ICONST_M1)
+        visitor.visitInsn(I2L)
+      case JvmType.PrimFloat => visitor.visitInsn(FCONST_1)
+      case JvmType.PrimDouble => visitor.visitInsn(DCONST_1)
+      case JvmType.Reference(_) => visitor.visitInsn(ACONST_NULL)
+    }
   }
 
   /*
