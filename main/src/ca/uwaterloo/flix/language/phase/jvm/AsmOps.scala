@@ -305,4 +305,31 @@ object AsmOps {
     case JvmType.Reference(name) => visitor.visitTypeInsn(CHECKCAST, name.toInternalName)
   }
 
+
+  def javaValueToString(method: MethodVisitor, tpe: JvmType): Unit = {
+    tpe match {
+      case JvmType.PrimBool =>
+        method.visitMethodInsn(INVOKESTATIC, JvmName.String.toInternalName, "valueOf",
+          AsmOps.getMethodDescriptor(List(JvmType.PrimBool), JvmType.String), false)
+      case JvmType.PrimChar =>
+        method.visitMethodInsn(INVOKESTATIC, JvmName.String.toInternalName, "valueOf",
+          AsmOps.getMethodDescriptor(List(JvmType.PrimChar), JvmType.String), false)
+      case JvmType.PrimByte | JvmType.PrimShort | JvmType.PrimInt =>
+        method.visitMethodInsn(INVOKESTATIC, JvmName.String.toInternalName, "valueOf",
+          AsmOps.getMethodDescriptor(List(JvmType.PrimInt), JvmType.String), false)
+      case JvmType.PrimLong =>
+        method.visitMethodInsn(INVOKESTATIC, JvmName.String.toInternalName, "valueOf",
+          AsmOps.getMethodDescriptor(List(JvmType.PrimLong), JvmType.String), false)
+      case JvmType.PrimFloat =>
+        method.visitMethodInsn(INVOKESTATIC, JvmName.String.toInternalName, "valueOf",
+          AsmOps.getMethodDescriptor(List(JvmType.PrimFloat), JvmType.String), false)
+      case JvmType.PrimDouble =>
+        method.visitMethodInsn(INVOKESTATIC, JvmName.String.toInternalName, "valueOf",
+          AsmOps.getMethodDescriptor(List(JvmType.PrimDouble), JvmType.String), false)
+      case _ =>
+        method.visitMethodInsn(INVOKEVIRTUAL, JvmName.Object.toInternalName, "toString",
+          AsmOps.getMethodDescriptor(Nil, JvmType.String), false)
+    }
+  }
+
 }
