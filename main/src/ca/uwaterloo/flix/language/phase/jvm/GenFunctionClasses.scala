@@ -110,15 +110,39 @@ object GenFunctionClasses {
                                  classType: JvmType.Reference,
                                  defn: Def,
                                  resultType: JvmType)(implicit root: Root, flix: Flix): Unit = {
+    // Method header
     val applyMethod = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, "apply",
       AsmOps.getMethodDescriptor(List(JvmType.Context), JvmType.Void), null, null)
 
+    // Enter label
     val enterLabel = new Label()
+
     applyMethod.visitCode()
     applyMethod.visitVarInsn(ALOAD, 0)
+
+    // visiting the label
     applyMethod.visitLabel(enterLabel)
-    GenExpression.compileExpression(defn.exp, classType, Map(), enterLabel, Nil, defn.formals.toList, applyMethod)
+
+    // Saving parameters on variable stack
+    for((FormalParam(sym, tpe), ind) <- defn.formals.zipWithIndex) {
+      // Erased type of the parameter
+      val erasedType = JvmOps.getErasedType(tpe)
+
+      // Getting the parameter from the field
+      applyMethod.visitVarInsn(ALOAD, 0)
+      applyMethod.visitFieldInsn(GETFIELD, classType.name.toInternalName, s"arg$ind", erasedType.toDescriptor)
+
+      // Storing the parameter on variable stack
+      val iSTORE = AsmOps.getStoreInstruction(erasedType)
+      applyMethod.visitVarInsn(iSTORE, sym.getStackOffset + 2)
+    }
+
+    // Generating the expression
+    GenExpression.compileExpression(defn.exp, classType, Map(), enterLabel, applyMethod)
+
+    // Saving the result on the `result` field of IFO
     applyMethod.visitFieldInsn(PUTFIELD, classType.name.toInternalName , "result", resultType.toDescriptor)
+
     applyMethod.visitInsn(RETURN)
     applyMethod.visitMaxs(65535, 65535)
     applyMethod.visitEnd()
