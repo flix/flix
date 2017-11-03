@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.ExecutableAst.{Def, FreeVar, Root}
+import ca.uwaterloo.flix.language.ast.ExecutableAst.{Def, FormalParam, FreeVar, Root}
 import org.objectweb.asm.Opcodes._
 import org.objectweb.asm.{ClassWriter, Label}
 
@@ -121,17 +121,50 @@ object GenClosureClasses {
                                  defn: Def,
                                  freeVars: List[FreeVar],
                                  resultType: JvmType)(implicit root: Root, flix: Flix): Unit = {
+    // Method header
     val applyMethod = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, "apply",
       AsmOps.getMethodDescriptor(List(JvmType.Context), JvmType.Void), null, null)
 
+    // Free variables
     val frees = defn.formals.take(freeVars.length).map(x => FreeVar(x.sym, x.tpe))
 
-    val rest = defn.formals.takeRight(defn.formals.length - freeVars.length)
+    // Function parameters
+    val params = defn.formals.takeRight(defn.formals.length - freeVars.length)
 
+    // Enter label
     val enterLabel = new Label()
     applyMethod.visitCode()
     applyMethod.visitVarInsn(ALOAD, 0)
-    GenExpression.compileExpression(defn.exp, classType, Map(), enterLabel, frees.toList, rest.toList, applyMethod)
+
+    // Saving free variables on variable stack
+    for((FreeVar(sym, tpe), ind) <- frees.zipWithIndex) {
+      // Erased type of the free variable
+      val erasedType = JvmOps.getErasedType(tpe)
+
+      // Getting the free variable from IFO
+      applyMethod.visitVarInsn(ALOAD, 0)
+      applyMethod.visitFieldInsn(GETFIELD, classType.name.toInternalName, s"clo$ind", erasedType.toDescriptor)
+
+      // Saving the free variable on variable stack
+      val iSTORE = AsmOps.getStoreInstruction(erasedType)
+      applyMethod.visitVarInsn(iSTORE, sym.getStackOffset + 2)
+    }
+
+    // Saving parameters on variable stack
+    for((FormalParam(sym, tpe), ind) <-  params.zipWithIndex){
+      // Erased type of the parameter
+      val erasedType = JvmOps.getErasedType(tpe)
+
+      // Getting the parameter from IFO
+      applyMethod.visitVarInsn(ALOAD, 0)
+      applyMethod.visitFieldInsn(GETFIELD, classType.name.toInternalName, s"arg$ind", erasedType.toDescriptor)
+
+      // Saving the parameter on variable stack
+      val iSTORE = AsmOps.getStoreInstruction(erasedType)
+      applyMethod.visitVarInsn(iSTORE, sym.getStackOffset + 2)
+    }
+
+    GenExpression.compileExpression(defn.exp, classType, Map(), enterLabel, applyMethod)
     applyMethod.visitFieldInsn(PUTFIELD, classType.name.toInternalName , "result", resultType.toDescriptor)
     applyMethod.visitInsn(RETURN)
     applyMethod.visitMaxs(1, 1)

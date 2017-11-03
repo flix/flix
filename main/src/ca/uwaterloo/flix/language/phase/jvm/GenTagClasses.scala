@@ -20,6 +20,8 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Root
 import org.objectweb.asm.Opcodes._
 import org.objectweb.asm.ClassWriter
+import org.objectweb.asm.MethodVisitor
+
 
 /**
   * Generates bytecode for the tag classes.
@@ -162,6 +164,9 @@ object GenTagClasses {
     visitor.visitEnd()
     visitor.toByteArray
   }
+
+
+
 
   /**
     * Creates the single argument constructor of the enum case class which is named `classType`.
