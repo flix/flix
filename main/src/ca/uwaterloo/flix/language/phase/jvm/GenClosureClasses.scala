@@ -146,7 +146,7 @@ object GenClosureClasses {
 
       // Saving the free variable on variable stack
       val iSTORE = AsmOps.getStoreInstruction(erasedType)
-      applyMethod.visitVarInsn(iSTORE, sym.getStackOffset + 2)
+      applyMethod.visitVarInsn(iSTORE, sym.getStackOffset + 3)
     }
 
     // Saving parameters on variable stack
@@ -160,7 +160,7 @@ object GenClosureClasses {
 
       // Saving the parameter on variable stack
       val iSTORE = AsmOps.getStoreInstruction(erasedType)
-      applyMethod.visitVarInsn(iSTORE, sym.getStackOffset + 2)
+      applyMethod.visitVarInsn(iSTORE, sym.getStackOffset + 3)
     }
 
     // Generating the expression
