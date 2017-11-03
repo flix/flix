@@ -116,9 +116,7 @@ object GenFunctionClasses {
 
     // Enter label
     val enterLabel = new Label()
-
     applyMethod.visitCode()
-    applyMethod.visitVarInsn(ALOAD, 0)
 
     // visiting the label
     applyMethod.visitLabel(enterLabel)
@@ -140,9 +138,21 @@ object GenFunctionClasses {
     // Generating the expression
     GenExpression.compileExpression(defn.exp, classType, Map(), enterLabel, applyMethod)
 
+    // Loading `this`
+    applyMethod.visitVarInsn(ALOAD, 0)
+
+    // Swapping `this` and result of the expression
+    if(AsmOps.getStackSpace(resultType) == 1) {
+      applyMethod.visitInsn(SWAP)
+    } else {
+      applyMethod.visitInsn(DUP_X2)
+      applyMethod.visitInsn(POP)
+    }
+
     // Saving the result on the `result` field of IFO
     applyMethod.visitFieldInsn(PUTFIELD, classType.name.toInternalName , "result", resultType.toDescriptor)
 
+    // Return
     applyMethod.visitInsn(RETURN)
     applyMethod.visitMaxs(65535, 65535)
     applyMethod.visitEnd()
