@@ -125,7 +125,6 @@ object GenClosureClasses {
     val applyMethod = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, "apply",
       AsmOps.getMethodDescriptor(List(JvmType.Context), JvmType.Void), null, null)
 
-
     // Free variables
     val frees = defn.formals.take(freeVars.length).map(x => FreeVar(x.sym, x.tpe))
 
@@ -164,7 +163,6 @@ object GenClosureClasses {
       val iSTORE = AsmOps.getStoreInstruction(erasedType)
       applyMethod.visitVarInsn(iSTORE, sym.getStackOffset + 2)
     }
-
 
     GenExpression.compileExpression(defn.exp, classType, Map(), enterLabel, applyMethod)
     applyMethod.visitFieldInsn(PUTFIELD, classType.name.toInternalName , "result", resultType.toDescriptor)
