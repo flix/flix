@@ -128,7 +128,7 @@ object GenExpression {
         val argErasedType = JvmOps.getErasedType(arg.tpe)
         // Evaluating the expression
         compileExpression(arg, currentClassType, jumpLabels, entryPoint, funFreeVars, funVars, visitor)
-        if(AsmOps.getStackSpace(argErasedType) == 1) {
+        if (AsmOps.getStackSpace(argErasedType) == 1) {
           visitor.visitInsn(SWAP)
         } else {
           visitor.visitInsn(DUP2_X1)
@@ -211,7 +211,7 @@ object GenExpression {
         val argErasedType = JvmOps.getErasedType(arg.tpe)
         // Evaluating the expression
         compileExpression(arg, currentClassType, jumpLabels, entryPoint, funFreeVars, funVars, visitor)
-        if(AsmOps.getStackSpace(argErasedType) == 1) {
+        if (AsmOps.getStackSpace(argErasedType) == 1) {
           visitor.visitInsn(SWAP)
         } else {
           visitor.visitInsn(DUP2_X1)
@@ -275,7 +275,7 @@ object GenExpression {
         val argErasedType = JvmOps.getErasedType(arg.tpe)
         // Evaluating the expression
         compileExpression(arg, currentClassType, jumpLabels, entryPoint, funFreeVars, funVars, visitor)
-        if(AsmOps.getStackSpace(argErasedType) == 1) {
+        if (AsmOps.getStackSpace(argErasedType) == 1) {
           visitor.visitInsn(SWAP)
         } else {
           visitor.visitInsn(DUP2_X1)
@@ -333,7 +333,7 @@ object GenExpression {
         val argErasedType = JvmOps.getErasedType(arg.tpe)
         // Evaluating the expression
         compileExpression(arg, currentClassType, jumpLabels, entryPoint, funFreeVars, funVars, visitor)
-        if(AsmOps.getStackSpace(argErasedType) == 1) {
+        if (AsmOps.getStackSpace(argErasedType) == 1) {
           visitor.visitInsn(SWAP)
         } else {
           visitor.visitInsn(DUP2_X1)
@@ -464,8 +464,14 @@ object GenExpression {
 
       // Case 2: Check for nullability.
       if (JvmOps.isNullable(exp.tpe)) {
-        // TODO
-        Console.println(s"The type ${exp.tpe} is nullable. I should just check for null.")
+        Console.println(s"Found nullable type: ${exp.tpe}.")
+
+        // Check if the tag is nullable.
+        if (JvmOps.isNullTag(enum, tag)) {
+          Console.println(s" Found nullable tag: $tag. Push")
+        } else {
+          Console.println(s" Found non-nullable tag: $tag. Compute inner expression.")
+        }
       }
 
       // Case 3: Ordinary enum.
@@ -490,8 +496,14 @@ object GenExpression {
 
       // Case 2: Check for nullability.
       if (JvmOps.isNullable(tpe)) {
-        // TODO
-        Console.println(s"The type ${tpe} is nullable. Compute the inner expression.")
+        Console.println(s"Found nullable type: $tpe.")
+
+        // Check if the tag is nullable.
+        if (JvmOps.isNullTag(enum, tag)) {
+          Console.println(s" Found nullable tag: $tag. Push")
+        } else {
+          Console.println(s" Found non-nullable tag: $tag. Compute inner expression.")
+        }
       }
 
       // Case 3: Ordinary enum.
@@ -530,8 +542,11 @@ object GenExpression {
 
       // Case 2: Check for nullability.
       if (JvmOps.isNullable(exp.tpe)) {
-        // TODO
-        Console.println(s"The type ${exp.tpe} is nullable. Do not do anything.")
+        if (JvmOps.isNullTag(enum, tag)) {
+          Console.println(s" Found nullable tag: $tag. Push")
+        } else {
+          Console.println(s" Found non-nullable tag: $tag. Compute inner expression.")
+        }
       }
 
       // Case 3: Ordinary enum.
