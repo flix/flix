@@ -147,19 +147,18 @@ object GenTagClasses {
 
     // Generate the `getTag` method.
     compileGetTagMethod(visitor, tag.tag)
-    compileToStringMethod(visitor, classType, valueType)
 
     // Generate the `toString` method.
-    // AsmOps.exceptionThrowerMethod(visitor, ACC_PUBLIC + ACC_FINAL, "toString", AsmOps.getMethodDescriptor(Nil, JvmType.String),
-    //  "toString method shouldn't be called")
+    AsmOps.exceptionThrowerMethod(visitor, ACC_PUBLIC + ACC_FINAL, "toString", AsmOps.getMethodDescriptor(Nil, JvmType.String),
+      "toString method shouldn't be called")
 
     // Generate the `hashCode` method.
-    // AsmOps.exceptionThrowerMethod(visitor, ACC_PUBLIC + ACC_FINAL, "hashCode", AsmOps.getMethodDescriptor(Nil, JvmType.PrimInt),
-    //  "hashCode method shouldn't be called")
+    AsmOps.exceptionThrowerMethod(visitor, ACC_PUBLIC + ACC_FINAL, "hashCode", AsmOps.getMethodDescriptor(Nil, JvmType.PrimInt),
+      "hashCode method shouldn't be called")
 
     // Generate the `equals` method.
-    // AsmOps.exceptionThrowerMethod(visitor, ACC_PUBLIC + ACC_FINAL, "equals", AsmOps.getMethodDescriptor(List(JvmType.Object), JvmType.PrimBool),
-    //  "equals method shouldn't be called")
+    AsmOps.exceptionThrowerMethod(visitor, ACC_PUBLIC + ACC_FINAL, "equals", AsmOps.getMethodDescriptor(List(JvmType.Object), JvmType.PrimBool),
+      "equals method shouldn't be called")
 
     // Complete the visitor and get the bytecode.
     visitor.visitEnd()
@@ -296,37 +295,6 @@ object GenTagClasses {
     // Return
     method.visitInsn(RETURN)
     method.visitMaxs(2, 0)
-    method.visitEnd()
-  }
-
-
-  private def compileToStringMethod(visitor: ClassWriter, curr: JvmType.Reference, fType: JvmType)(implicit root: Root, flix: Flix)  = {
-    val method = visitor.visitMethod(ACC_PUBLIC, "toString", s"()${JvmType.String.toDescriptor}", null, null)
-
-    method.visitCode()
-
-    // Normal version of `toString`
-    method.visitLdcInsn(curr.name.name.concat("("))
-    method.visitVarInsn(ALOAD, 0)
-    method.visitFieldInsn(GETFIELD, curr.name.toInternalName, "value", fType.toDescriptor)
-
-    /*
-       * Converting `value` to String.
-       * If it's an object, we will call `toString` on the object.
-       * Otherwise, we use `valueOf` static method on String with the appropriate type.
-       */
-    AsmOps.javaValueToString(method, fType)
-
-    method.visitLdcInsn(")")
-
-    // We concatenate twice since there is 3 strings on the stack that we want to concat them together
-    for (_ <- 0 until 2) {
-      method.visitMethodInsn(INVOKEVIRTUAL, JvmName.String.toInternalName, "concat",
-        AsmOps.getMethodDescriptor(List(JvmType.String), JvmType.String), false)
-    }
-
-    method.visitInsn(ARETURN)
-    method.visitMaxs(1, 10)
     method.visitEnd()
   }
 

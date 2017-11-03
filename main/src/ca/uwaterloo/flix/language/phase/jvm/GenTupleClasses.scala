@@ -154,69 +154,21 @@ object GenTupleClasses {
     // Emit the code for `getBoxedValue()` method
     compileGetBoxedValueMethod(visitor, classType, targs)
 
-    compileToStringMethod(visitor, classType, targs.map(JvmOps.getErasedType))
-
     // Generate `toString` method
-   // AsmOps.exceptionThrowerMethod(visitor, ACC_PUBLIC + ACC_FINAL, "toString", AsmOps.getMethodDescriptor(Nil, JvmType.String),
-    //  "toString method shouldn't be called")
+    AsmOps.exceptionThrowerMethod(visitor, ACC_PUBLIC + ACC_FINAL, "toString", AsmOps.getMethodDescriptor(Nil, JvmType.String),
+      "toString method shouldn't be called")
 
     // Generate `hashCode` method
-    // AsmOps.exceptionThrowerMethod(visitor, ACC_PUBLIC + ACC_FINAL, "hashCode", AsmOps.getMethodDescriptor(Nil, JvmType.PrimInt),
-    //  "hashCode method shouldn't be called")
+    AsmOps.exceptionThrowerMethod(visitor, ACC_PUBLIC + ACC_FINAL, "hashCode", AsmOps.getMethodDescriptor(Nil, JvmType.PrimInt),
+      "hashCode method shouldn't be called")
 
     // Generate `equals` method
-    // AsmOps.exceptionThrowerMethod(visitor, ACC_PUBLIC + ACC_FINAL, "equals", AsmOps.getMethodDescriptor(List(JvmType.Object), JvmType.Void),
-    //  "equals method shouldn't be called")
+    AsmOps.exceptionThrowerMethod(visitor, ACC_PUBLIC + ACC_FINAL, "equals", AsmOps.getMethodDescriptor(List(JvmType.Object), JvmType.Void),
+      "equals method shouldn't be called")
 
 
     visitor.visitEnd()
     visitor.toByteArray
-  }
-
-  private def compileToStringMethod(visitor: ClassWriter, className: JvmType.Reference, fields: List[JvmType])(implicit root: Root, flix: Flix) = {
-
-    // Headers of the method
-    val method = visitor.visitMethod(ACC_PUBLIC, "toString", s"()${JvmType.String.toDescriptor}", null, null)
-
-    method.visitCode()
-
-    // Initial accumulator of the result
-    method.visitLdcInsn("(")
-
-    // We loop over each field, convert the field to string and concat the result to the accumulator
-    fields.zipWithIndex.foreach { case (field, ind) =>
-      // descriptor of the field
-      val desc = JvmOps.getErasedType(field).toDescriptor
-
-      // Fetching the field
-      method.visitVarInsn(ALOAD, 0)
-      method.visitFieldInsn(GETFIELD, className.name.toInternalName, s"field$ind", desc)
-
-      // Converting the field to string
-      AsmOps.javaValueToString(method, field)
-
-      // Concatenating the string to the rest of the accumulator
-      method.visitMethodInsn(INVOKEVIRTUAL, JvmName.String.toInternalName, "concat",
-        AsmOps.getMethodDescriptor(List(JvmType.String), JvmType.String), false)
-
-      // If this is not the last element of the tuple, then concat the separator `, ` to the accumulated string on the stack
-      if (ind < fields.length - 1) {
-        method.visitLdcInsn(", ")
-        method.visitMethodInsn(INVOKEVIRTUAL, JvmName.String.toInternalName, "concat",
-          AsmOps.getMethodDescriptor(List(JvmType.String), JvmType.String), false)
-      }
-    }
-
-    method.visitLdcInsn(")")
-    method.visitMethodInsn(INVOKEVIRTUAL, JvmName.String.toInternalName, "concat",
-      AsmOps.getMethodDescriptor(List(JvmType.String), JvmType.String), false)
-
-    // Return the string
-    method.visitInsn(ARETURN)
-
-    // Parameters of visit max are thrown away because visitor will calculate the frame and variable stack size
-    method.visitMaxs(1, 10)
-    method.visitEnd()
   }
 
   /**
