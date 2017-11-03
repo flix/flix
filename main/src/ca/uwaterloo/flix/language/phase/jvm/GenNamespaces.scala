@@ -102,6 +102,12 @@ object GenNamespaces {
     // Length of args in local
     val stackSize = args.init.map(AsmOps.getStackSpace).sum
 
+    // Address of continuation
+    val contextAddr = stackSize
+
+    // Address of the current IFO
+    val ifoAddr = stackSize + 1
+
     // Method header
     val method = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL + ACC_STATIC, name, AsmOps.getMethodDescriptor(args.init, args.last), null, null)
     method.visitCode()
@@ -114,17 +120,11 @@ object GenNamespaces {
     method.visitMethodInsn(INVOKESPECIAL, JvmName.Context.toInternalName, "<init>",
       AsmOps.getMethodDescriptor(Nil, JvmType.Void), false)
 
-
-    // creating a local variable for context
-    val label = new Label
-    method.visitLabel(label)
-    method.visitLocalVariable("context", JvmType.Context.toDescriptor, null, label, label, stackSize)
-
     // Putting another reference of context on top of the stack
     method.visitInsn(DUP)
 
     // Storing Context on the variable
-    method.visitVarInsn(ASTORE, stackSize)
+    method.visitVarInsn(ASTORE, contextAddr)
 
     // Name of the field for namespace on context object
     val nsFieldName = JvmOps.getNamespaceFieldNameInContextClass(ns)
@@ -138,13 +138,16 @@ object GenNamespaces {
     // Extracting the ifo from namespace
     method.visitFieldInsn(GETFIELD, namespaceClassType.name.toInternalName, defnFieldName, ifoType.toDescriptor)
 
+    // Strong the IFO on a local variable
+    method.visitVarInsn(ASTORE, ifoAddr)
+
     // Offset for each parameter
     var offset: Int = 0
 
     // Set arguments for the IFO
     for((arg, index) <- args.init.zipWithIndex) {
       // Duplicate the IFO reference
-      method.visitInsn(DUP)
+      method.visitVarInsn(ALOAD, ifoAddr)
 
       // Get the argument from the field
       val iLoad = AsmOps.getLoadInstruction(arg)
@@ -157,7 +160,6 @@ object GenNamespaces {
       // Incrementing the offset
       offset += AsmOps.getStackSpace(arg)
     }
-
     // Label for the loop
     val loop = new Label
     // Type of the continuation interface
@@ -167,38 +169,48 @@ object GenNamespaces {
     // Result type
     val resultType = args.last
     // Put the closure on `continuation` field of `Context`
-    method.visitVarInsn(ALOAD, stackSize)
-    // Swap top of the stack
-    method.visitInsn(SWAP)
+    method.visitVarInsn(ALOAD, contextAddr)
+    method.visitVarInsn(ALOAD, ifoAddr)
+
     // Casting to JvmType of FunctionInterface
     method.visitTypeInsn(CHECKCAST, functionInterface.name.toInternalName)
-
     method.visitFieldInsn(PUTFIELD, JvmName.Context.toInternalName, "continuation", JvmType.Object.toDescriptor)
+
     // This is necessary since the loop has to pop a value from the stack!
     method.visitInsn(ACONST_NULL)
+    method.visitVarInsn(ASTORE, ifoAddr)
+
     // Begin of the loop
     method.visitLabel(loop)
-    // Pop a value from a stack
-    method.visitInsn(POP)
+
     // Getting `continuation` field on `Context`
-    method.visitVarInsn(ALOAD, stackSize)
+    method.visitVarInsn(ALOAD, contextAddr)
     method.visitFieldInsn(GETFIELD, JvmName.Context.toInternalName, "continuation", JvmType.Object.toDescriptor)
+
     // Setting `continuation` field of global to `null`
-    method.visitVarInsn(ALOAD, stackSize)
+    method.visitVarInsn(ALOAD, contextAddr)
     method.visitInsn(ACONST_NULL)
     method.visitFieldInsn(PUTFIELD, JvmName.Context.toInternalName, "continuation", JvmType.Object.toDescriptor)
+
     // Cast to the continuation
     method.visitTypeInsn(CHECKCAST, cont.name.toInternalName)
     // Duplicate
     method.visitInsn(DUP)
+    // Storing the continuation on a local variable
+    method.visitVarInsn(ASTORE, ifoAddr)
+
     // Call apply
-    method.visitVarInsn(ALOAD, stackSize)
+    method.visitVarInsn(ALOAD, contextAddr)
     method.visitMethodInsn(INVOKEINTERFACE, cont.name.toInternalName, "apply", AsmOps.getMethodDescriptor(List(JvmType.Context), JvmType.Void), true)
+
     // Getting `continuation` field on `Context`
-    method.visitVarInsn(ALOAD, stackSize)
+    method.visitVarInsn(ALOAD, contextAddr)
     method.visitFieldInsn(GETFIELD, JvmName.Context.toInternalName, "continuation", JvmType.Object.toDescriptor)
     method.visitJumpInsn(IFNONNULL, loop)
 
+    // Loading the IFO
+    method.visitVarInsn(ALOAD, ifoAddr)
+    // Invoking the `getResult` method
     method.visitMethodInsn(INVOKEINTERFACE, cont.name.toInternalName, "getResult", AsmOps.getMethodDescriptor(Nil, resultType), true)
 
     // Return
@@ -219,7 +231,6 @@ object GenNamespaces {
 
     // Method header
     val constructor = visitor.visitMethod(ACC_PUBLIC, "<init>", AsmOps.getMethodDescriptor(Nil, JvmType.Void), null, null)
-    constructor.visitCode()
 
     constructor.visitCode()
     constructor.visitVarInsn(ALOAD, 0)
