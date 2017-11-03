@@ -69,7 +69,7 @@ object GenExpression {
     case Expression.Var(sym, tpe, _) =>
       val jvmType = JvmOps.getErasedType(tpe)
       val iLOAD = AsmOps.getLoadInstruction(jvmType)
-      visitor.visitVarInsn(iLOAD, sym.getStackOffset + 2) // This is `+2` because the first 2 are reserved!
+      visitor.visitVarInsn(iLOAD, sym.getStackOffset + 3) // This is `+2` because the first 2 are reserved!
       AsmOps.castIfNotPrim(JvmOps.getJvmType(tpe), visitor)
 
     case Expression.Closure(sym, freeVars, fnType, tpe, loc) =>
@@ -129,12 +129,8 @@ object GenExpression {
           AsmOps.getMethodDescriptor(List(argErasedType), JvmType.Void), true)
       }
       visitor.visitFieldInsn(PUTFIELD, JvmName.Context.toInternalName, "continuation", JvmType.Object.toDescriptor)
-      // This is necessary since the loop has to pop a value from the stack!
-      visitor.visitInsn(ACONST_NULL)
       // Begin of the loop
       visitor.visitLabel(loop)
-      // Pop a value from a stack
-      visitor.visitInsn(POP)
       // Getting `continuation` field on `Context`
       visitor.visitVarInsn(ALOAD, 1)
       visitor.visitFieldInsn(GETFIELD, JvmName.Context.toInternalName, "continuation", JvmType.Object.toDescriptor)
@@ -146,6 +142,8 @@ object GenExpression {
       visitor.visitTypeInsn(CHECKCAST, cont.name.toInternalName)
       // Duplicate
       visitor.visitInsn(DUP)
+      // Save it on the IFO local variable
+      visitor.visitVarInsn(ASTORE, 2)
       // Call apply
       visitor.visitVarInsn(ALOAD, 1)
       visitor.visitMethodInsn(INVOKEINTERFACE, cont.name.toInternalName, "apply", AsmOps.getMethodDescriptor(List(JvmType.Context), JvmType.Void), true)
@@ -153,7 +151,8 @@ object GenExpression {
       visitor.visitVarInsn(ALOAD, 1)
       visitor.visitFieldInsn(GETFIELD, JvmName.Context.toInternalName, "continuation", JvmType.Object.toDescriptor)
       visitor.visitJumpInsn(IFNONNULL, loop)
-
+      // Load IFO from local variable and invoke `getResult` on it
+      visitor.visitVarInsn(ALOAD, 2)
       visitor.visitMethodInsn(INVOKEINTERFACE, cont.name.toInternalName, "getResult", AsmOps.getMethodDescriptor(Nil, resultType), true)
       AsmOps.castIfNotPrim(JvmOps.getJvmType(tpe), visitor)
 
@@ -212,12 +211,8 @@ object GenExpression {
           AsmOps.getMethodDescriptor(List(argErasedType), JvmType.Void), true)
       }
       visitor.visitFieldInsn(PUTFIELD, JvmName.Context.toInternalName, "continuation", JvmType.Object.toDescriptor)
-      // This is necessary since the loop has to pop a value from the stack!
-      visitor.visitInsn(ACONST_NULL)
       // Begin of the loop
       visitor.visitLabel(loop)
-      // Pop a value from a stack
-      visitor.visitInsn(POP)
       // Getting `continuation` field on `Context`
       visitor.visitVarInsn(ALOAD, 1)
       visitor.visitFieldInsn(GETFIELD, JvmName.Context.toInternalName, "continuation", JvmType.Object.toDescriptor)
@@ -230,6 +225,8 @@ object GenExpression {
       visitor.visitTypeInsn(CHECKCAST, cont.name.toInternalName)
       // Duplicate
       visitor.visitInsn(DUP)
+      // Save it on the IFO local variable
+      visitor.visitVarInsn(ASTORE, 2)
       // Call apply
       visitor.visitVarInsn(ALOAD, 1)
       visitor.visitMethodInsn(INVOKEINTERFACE, cont.name.toInternalName, "apply", AsmOps.getMethodDescriptor(List(JvmType.Context), JvmType.Void), true)
@@ -237,7 +234,8 @@ object GenExpression {
       visitor.visitVarInsn(ALOAD, 1)
       visitor.visitFieldInsn(GETFIELD, JvmName.Context.toInternalName, "continuation", JvmType.Object.toDescriptor)
       visitor.visitJumpInsn(IFNONNULL, loop)
-
+      // Load IFO from local variable and invoke `getResult` on it
+      visitor.visitVarInsn(ALOAD, 2)
       visitor.visitMethodInsn(INVOKEINTERFACE, cont.name.toInternalName, "getResult", AsmOps.getMethodDescriptor(Nil, resultType), true)
       AsmOps.castIfNotPrim(JvmOps.getJvmType(tpe), visitor)
 
@@ -436,7 +434,7 @@ object GenExpression {
       val jvmType = JvmOps.getJvmType(exp1.tpe)
       // Store instruction for `jvmType`
       val iStore = AsmOps.getStoreInstruction(jvmType)
-      visitor.visitVarInsn(iStore, sym.getStackOffset + 2)
+      visitor.visitVarInsn(iStore, sym.getStackOffset + 3)
       compileExpression(exp2, currentClassType, jumpLabels, entryPoint, visitor)
 
     case Expression.LetRec(sym, exp1, exp2, _, _) =>
