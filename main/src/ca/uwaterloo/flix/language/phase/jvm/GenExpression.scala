@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.ExecutableAst.{Def, Expression, FreeVar, Root}
+import ca.uwaterloo.flix.language.ast.ExecutableAst.{ Expression, FreeVar, Root}
 import ca.uwaterloo.flix.language.ast.{Type, _}
 import org.objectweb.asm._
 import org.objectweb.asm.Opcodes._
@@ -36,8 +36,6 @@ object GenExpression {
                         currentClassType: JvmType.Reference,
                         jumpLabels: Map[Symbol.LabelSym, Label],
                         entryPoint: Label,
-                        funFreeVars: List[FreeVar], //TODO: FIND A BETTER WAY FOR VARS
-                        funVars: List[Symbol.VarSym], //TODO: FIND A BETTER WAY FOR VARS
                         visitor: MethodVisitor)(implicit root: Root, flix: Flix): Unit = expr match {
     case Expression.Unit =>
       visitor.visitMethodInsn(INVOKESTATIC, JvmName.Unit.toInternalName, "getInstance",
@@ -68,23 +66,11 @@ object GenExpression {
         AsmOps.getMethodDescriptor(List(JvmType.String), JvmType.Void), false)
     case Expression.Str(s) => visitor.visitLdcInsn(s)
 
-    // TODO: This should change
     case Expression.Var(sym, tpe, _) =>
-      val clos = funFreeVars.zipWithIndex.filter(_._1.sym == sym)
-      val args = funVars.zipWithIndex.filter(_._1 == sym)
       val jvmType = JvmOps.getErasedType(tpe)
-      if (args.nonEmpty) {
-        visitor.visitVarInsn(ALOAD, 0)
-        visitor.visitFieldInsn(GETFIELD, currentClassType.name.toInternalName, s"arg${args.last._2}", jvmType.toDescriptor)
-        AsmOps.castIfNotPrim(JvmOps.getJvmType(tpe), visitor)
-      } else if (clos.nonEmpty) {
-        visitor.visitVarInsn(ALOAD, 0)
-        visitor.visitFieldInsn(GETFIELD, currentClassType.name.toInternalName, s"clo${clos.last._2}", jvmType.toDescriptor)
-        AsmOps.castIfNotPrim(JvmOps.getJvmType(tpe), visitor)
-      } else {
-        val iLOAD = AsmOps.getLoadInstruction(jvmType)
-        visitor.visitVarInsn(iLOAD, sym.getStackOffset + 2)
-      }
+      val iLOAD = AsmOps.getLoadInstruction(jvmType)
+      visitor.visitVarInsn(iLOAD, sym.getStackOffset + 2) // This is `+2` because the first 2 are reserved!
+      AsmOps.castIfNotPrim(JvmOps.getJvmType(tpe), visitor)
 
     case Expression.Closure(sym, freeVars, fnType, tpe, loc) =>
       // ClosureInfo
@@ -98,7 +84,7 @@ object GenExpression {
       // Capturing free args
       for (f <- freeVars) {
         val v = Expression.Var(f.sym, f.tpe, loc)
-        compileExpression(v, currentClassType, jumpLabels, entryPoint, funFreeVars, funVars, visitor)
+        compileExpression(v, currentClassType, jumpLabels, entryPoint, visitor)
       }
       // Calling the constructor
       val varTypes = freeVars.map(_.tpe).map(JvmOps.getErasedType)
@@ -115,13 +101,29 @@ object GenExpression {
       val resultType = JvmOps.getErasedType(tpe)
       // Put the closure on `continuation` field of `Context`
       visitor.visitVarInsn(ALOAD, 1)
-      compileExpression(exp, currentClassType, jumpLabels, entryPoint, funFreeVars, funVars, visitor)
+      compileExpression(exp, currentClassType, jumpLabels, entryPoint, visitor)
       // Casting to JvmType of FunctionInterface
       visitor.visitTypeInsn(CHECKCAST, functionInterface.name.toInternalName)
-      // Setting arguments
-      for ((arg, ind) <- args.zipWithIndex) {
+      // Saving the continuation so we don't have to use calculate this again
+      visitor.visitInsn(DUP)
+      // Putting args on the stack
+      for (arg <- args) {
+        // Duplicate the FunctionInterface
         visitor.visitInsn(DUP)
-        compileExpression(arg, currentClassType, jumpLabels, entryPoint, funFreeVars, funVars, visitor)
+        // Erased Type
+        val argErasedType = JvmOps.getErasedType(arg.tpe)
+        // Evaluating the expression
+        compileExpression(arg, currentClassType, jumpLabels, entryPoint, visitor)
+        if(AsmOps.getStackSpace(argErasedType) == 1) {
+          visitor.visitInsn(SWAP)
+        } else {
+          visitor.visitInsn(DUP2_X1)
+          visitor.visitInsn(POP2)
+        }
+      }
+      visitor.visitInsn(POP)
+      // Saving args on the continuation interface in reverse
+      for ((arg, ind) <- args.zipWithIndex.reverse) {
         val argErasedType = JvmOps.getErasedType(arg.tpe)
         visitor.visitMethodInsn(INVOKEINTERFACE, functionInterface.name.toInternalName, s"setArg$ind",
           AsmOps.getMethodDescriptor(List(argErasedType), JvmType.Void), true)
@@ -186,10 +188,25 @@ object GenExpression {
       val resultType = JvmOps.getErasedType(tpe)
       // Casting to JvmType of FunctionInterface
       visitor.visitTypeInsn(CHECKCAST, functionInterface.name.toInternalName)
-      // Setting arguments
-      for ((arg, ind) <- args.zipWithIndex) {
+      visitor.visitInsn(DUP)
+      // Putting args on the stack
+      for (arg <- args) {
+        // Duplicate the FunctionInterface
         visitor.visitInsn(DUP)
-        compileExpression(arg, currentClassType, jumpLabels, entryPoint, funFreeVars, funVars, visitor)
+        // Erased Type
+        val argErasedType = JvmOps.getErasedType(arg.tpe)
+        // Evaluating the expression
+        compileExpression(arg, currentClassType, jumpLabels, entryPoint, visitor)
+        if(AsmOps.getStackSpace(argErasedType) == 1) {
+          visitor.visitInsn(SWAP)
+        } else {
+          visitor.visitInsn(DUP2_X1)
+          visitor.visitInsn(POP2)
+        }
+      }
+      visitor.visitInsn(POP)
+      // Saving args on the continuation interface in reverse
+      for ((arg, ind) <- args.zipWithIndex.reverse) {
         val argErasedType = JvmOps.getErasedType(arg.tpe)
         visitor.visitMethodInsn(INVOKEINTERFACE, functionInterface.name.toInternalName, s"setArg$ind",
           AsmOps.getMethodDescriptor(List(argErasedType), JvmType.Void), true)
@@ -204,6 +221,7 @@ object GenExpression {
       // Getting `continuation` field on `Context`
       visitor.visitVarInsn(ALOAD, 1)
       visitor.visitFieldInsn(GETFIELD, JvmName.Context.toInternalName, "continuation", JvmType.Object.toDescriptor)
+
       // Setting `continuation` field of global to `null`
       visitor.visitVarInsn(ALOAD, 1)
       visitor.visitInsn(ACONST_NULL)
@@ -231,15 +249,29 @@ object GenExpression {
       // Loading `Context`
       visitor.visitVarInsn(ALOAD, 1)
       // Evaluating the closure
-      compileExpression(exp, currentClassType, jumpLabels, entryPoint, funFreeVars, funVars, visitor)
+      compileExpression(exp, currentClassType, jumpLabels, entryPoint, visitor)
       // Casting to JvmType of FunctionInterface
       visitor.visitTypeInsn(CHECKCAST, functionInterface.name.toInternalName)
-      // Setting arguments
-      for ((arg, ind) <- args.zipWithIndex) {
+      // Saving the continuation so we don't have to use calculate this again
+      visitor.visitInsn(DUP)
+      // Putting args on the stack
+      for (arg <- args) {
+        // Duplicate the FunctionInterface
         visitor.visitInsn(DUP)
+        // Erased Type
+        val argErasedType = JvmOps.getErasedType(arg.tpe)
         // Evaluating the expression
-        compileExpression(arg, currentClassType, jumpLabels, entryPoint, funFreeVars, funVars, visitor)
-        // Erased type of the arg
+        compileExpression(arg, currentClassType, jumpLabels, entryPoint, visitor)
+        if(AsmOps.getStackSpace(argErasedType) == 1) {
+          visitor.visitInsn(SWAP)
+        } else {
+          visitor.visitInsn(DUP2_X1)
+          visitor.visitInsn(POP2)
+        }
+      }
+      visitor.visitInsn(POP)
+      // Saving args to continuation in reverse order
+      for ((arg, ind) <- args.zipWithIndex.reverse) {
         val argErasedType = JvmOps.getErasedType(arg.tpe)
         // Setting the arg
         visitor.visitMethodInsn(INVOKEINTERFACE, functionInterface.name.toInternalName, s"setArg$ind",
@@ -248,8 +280,7 @@ object GenExpression {
       // Placing the interface on continuation field of `Context`
       visitor.visitFieldInsn(PUTFIELD, JvmName.Context.toInternalName, "continuation", JvmType.Object.toDescriptor)
       // Dummy value, since we have to put a result on top of the arg, this will be thrown away
-      visitor.visitVarInsn(ALOAD, 0)
-      visitor.visitMethodInsn(INVOKEVIRTUAL, currentClassType.name.toInternalName, "getResult", AsmOps.getMethodDescriptor(Nil, resultType), false)
+      pushDummyValue(visitor, resultType)
 
     case Expression.ApplyDefTail(name, args, tpe, loc) =>
       // Namespace of the Def
@@ -280,10 +311,25 @@ object GenExpression {
       val resultType = JvmOps.getErasedType(tpe)
       // Casting to JvmType of FunctionInterface
       visitor.visitTypeInsn(CHECKCAST, functionInterface.name.toInternalName)
-      // Setting arguments
-      for ((arg, ind) <- args.zipWithIndex) {
+      // Putting args on the stack
+      visitor.visitInsn(DUP)
+      for (arg <- args) {
+        // Duplicate the FunctionInterface
         visitor.visitInsn(DUP)
-        compileExpression(arg, currentClassType, jumpLabels, entryPoint, funFreeVars, funVars, visitor)
+        // Erased Type
+        val argErasedType = JvmOps.getErasedType(arg.tpe)
+        // Evaluating the expression
+        compileExpression(arg, currentClassType, jumpLabels, entryPoint, visitor)
+        if(AsmOps.getStackSpace(argErasedType) == 1) {
+          visitor.visitInsn(SWAP)
+        } else {
+          visitor.visitInsn(DUP2_X1)
+          visitor.visitInsn(POP2)
+        }
+      }
+      visitor.visitInsn(POP)
+      // Saving args on the continuation in reverse order
+      for ((arg, ind) <- args.zipWithIndex.reverse) {
         val argErasedType = JvmOps.getErasedType(arg.tpe)
         visitor.visitMethodInsn(INVOKEINTERFACE, functionInterface.name.toInternalName, s"setArg$ind",
           AsmOps.getMethodDescriptor(List(argErasedType), JvmType.Void), true)
@@ -291,15 +337,14 @@ object GenExpression {
       // Placing the interface on continuation field of `Context`
       visitor.visitFieldInsn(PUTFIELD, JvmName.Context.toInternalName, "continuation", JvmType.Object.toDescriptor)
       // Dummy value, since we have to put a result on top of the arg, this will be thrown away
-      visitor.visitVarInsn(ALOAD, 0)
-      visitor.visitMethodInsn(INVOKEVIRTUAL, currentClassType.name.toInternalName, "getResult", AsmOps.getMethodDescriptor(Nil, resultType), false)
+      pushDummyValue(visitor, resultType)
 
     case Expression.ApplySelfTail(name, formals, actuals, tpe, loc) =>
       // Evaluate each argument and push the result on the stack.
       for (arg <- actuals) {
         visitor.visitVarInsn(ALOAD, 0)
         // Evaluate the argument and push the result on the stack.
-        compileExpression(arg, currentClassType, jumpLabels, entryPoint, funFreeVars, funVars, visitor)
+        compileExpression(arg, currentClassType, jumpLabels, entryPoint, visitor)
       }
       // The values are on the stack in reverse order, so we must iterate over the arguments in reverse order.
       for ((arg, ind) <- actuals.zipWithIndex.reverse) {
@@ -329,16 +374,16 @@ object GenExpression {
 
     case Expression.Unary(sop, op, exp, _, _) =>
       // TODO: Should not use op, as it will be removed.
-      compileUnaryExpr(exp, currentClassType, visitor, jumpLabels, entryPoint, funFreeVars, funVars, op, sop)
+      compileUnaryExpr(exp, currentClassType, visitor, jumpLabels, entryPoint, op, sop)
 
     case Expression.Binary(sop, op, exp1, exp2, _, _) =>
       // TODO: Should not use op, as it will be removed.
       // Probably better to group these methods by type, e.g. compileFloat32Exp.
       op match {
-        case o: ArithmeticOperator => compileArithmeticExpr(exp1, exp2, currentClassType, visitor, jumpLabels, entryPoint, funFreeVars, funVars, o, sop)
-        case o: ComparisonOperator => compileComparisonExpr(exp1, exp2, currentClassType, visitor, jumpLabels, entryPoint, funFreeVars, funVars, o, sop)
-        case o: LogicalOperator => compileLogicalExpr(exp1, exp2, currentClassType, visitor, jumpLabels, entryPoint, funFreeVars, funVars, o)
-        case o: BitwiseOperator => compileBitwiseExpr(exp1, exp2, currentClassType, visitor, jumpLabels, entryPoint, funFreeVars, funVars, o, sop)
+        case o: ArithmeticOperator => compileArithmeticExpr(exp1, exp2, currentClassType, visitor, jumpLabels, entryPoint, o, sop)
+        case o: ComparisonOperator => compileComparisonExpr(exp1, exp2, currentClassType, visitor, jumpLabels, entryPoint, o, sop)
+        case o: LogicalOperator => compileLogicalExpr(exp1, exp2, currentClassType, visitor, jumpLabels, entryPoint, o)
+        case o: BitwiseOperator => compileBitwiseExpr(exp1, exp2, currentClassType, visitor, jumpLabels, entryPoint, o, sop)
       }
 
     case Expression.IfThenElse(exp1, exp2, exp3, _, loc) =>
@@ -346,12 +391,12 @@ object GenExpression {
       addSourceLine(visitor, loc)
       val ifElse = new Label()
       val ifEnd = new Label()
-      compileExpression(exp1, currentClassType, jumpLabels, entryPoint, funFreeVars, funVars, visitor)
+      compileExpression(exp1, currentClassType, jumpLabels, entryPoint, visitor)
       visitor.visitJumpInsn(IFEQ, ifElse)
-      compileExpression(exp2, currentClassType, jumpLabels, entryPoint, funFreeVars, funVars, visitor)
+      compileExpression(exp2, currentClassType, jumpLabels, entryPoint, visitor)
       visitor.visitJumpInsn(GOTO, ifEnd)
       visitor.visitLabel(ifElse)
-      compileExpression(exp3, currentClassType, jumpLabels, entryPoint, funFreeVars, funVars, visitor)
+      compileExpression(exp3, currentClassType, jumpLabels, entryPoint, visitor)
       visitor.visitLabel(ifEnd)
 
     case Expression.Branch(exp, branches, tpe, loc) =>
@@ -360,7 +405,7 @@ object GenExpression {
       // Calculating the updated jumpLabels map
       val updatedJumpLabels = branches.foldLeft(jumpLabels)((map, branch) => map + (branch._1 -> new Label()))
       // Compiling the exp
-      compileExpression(exp, currentClassType, updatedJumpLabels, entryPoint, funFreeVars, funVars, visitor)
+      compileExpression(exp, currentClassType, updatedJumpLabels, entryPoint, visitor)
       // Label for the end of all branches
       val endLabel = new Label()
       // Skip branches if `exp` does not jump
@@ -370,7 +415,7 @@ object GenExpression {
         // Label for the start of the branch
         visitor.visitLabel(updatedJumpLabels(sym))
         // evaluating the expression for the branch
-        compileExpression(branchExp, currentClassType, updatedJumpLabels, entryPoint, funFreeVars, funVars, visitor)
+        compileExpression(branchExp, currentClassType, updatedJumpLabels, entryPoint, visitor)
         // Skip the rest of the branches
         visitor.visitJumpInsn(GOTO, endLabel)
       }
@@ -386,13 +431,13 @@ object GenExpression {
     case Expression.Let(sym, exp1, exp2, _, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
-      compileExpression(exp1, currentClassType, jumpLabels, entryPoint, funFreeVars, funVars, visitor)
+      compileExpression(exp1, currentClassType, jumpLabels, entryPoint, visitor)
       // Jvm Type of the `exp1`
       val jvmType = JvmOps.getJvmType(exp1.tpe)
       // Store instruction for `jvmType`
       val iStore = AsmOps.getStoreInstruction(jvmType)
       visitor.visitVarInsn(iStore, sym.getStackOffset + 2)
-      compileExpression(exp2, currentClassType, jumpLabels, entryPoint, funFreeVars, funVars, visitor)
+      compileExpression(exp2, currentClassType, jumpLabels, entryPoint, visitor)
 
     case Expression.LetRec(sym, exp1, exp2, _, _) =>
       ??? // TODO: Add support for LetRec.
@@ -406,8 +451,14 @@ object GenExpression {
 
       // Case 2: Check for nullability.
       if (JvmOps.isNullable(exp.tpe)) {
-        // TODO
-        Console.println(s"The type ${exp.tpe} is nullable. I should just check for null.")
+        Console.println(s"Found nullable type: ${exp.tpe}.")
+
+        // Check if the tag is nullable.
+        if (JvmOps.isNullTag(enum, tag)) {
+          Console.println(s" Found nullable tag: $tag. Push")
+        } else {
+          Console.println(s" Found non-nullable tag: $tag. Compute inner expression.")
+        }
       }
 
       // Case 3: Ordinary enum.
@@ -415,7 +466,7 @@ object GenExpression {
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
       // First we compile the `exp`
-      compileExpression(exp, currentClassType, jumpLabels, entryPoint, funFreeVars, funVars, visitor)
+      compileExpression(exp, currentClassType, jumpLabels, entryPoint, visitor)
       // We get the `TagInfo` for the tag
       val tagInfo = JvmOps.getTagInfo(exp.tpe, tag)
       // We get the JvmType of the class for tag
@@ -432,8 +483,14 @@ object GenExpression {
 
       // Case 2: Check for nullability.
       if (JvmOps.isNullable(tpe)) {
-        // TODO
-        Console.println(s"The type ${tpe} is nullable. Compute the inner expression.")
+        Console.println(s"Found nullable type: $tpe.")
+
+        // Check if the tag is nullable.
+        if (JvmOps.isNullTag(enum, tag)) {
+          Console.println(s" Found nullable tag: $tag. Push")
+        } else {
+          Console.println(s" Found non-nullable tag: $tag. Compute inner expression.")
+        }
       }
 
       // Case 3: Ordinary enum.
@@ -456,7 +513,7 @@ object GenExpression {
         visitor.visitTypeInsn(NEW, classType.name.toInternalName)
         visitor.visitInsn(DUP)
         // Evaluating the single argument of the class constructor
-        compileExpression(exp, currentClassType, jumpLabels, entryPoint, funFreeVars, funVars, visitor)
+        compileExpression(exp, currentClassType, jumpLabels, entryPoint, visitor)
         // Descriptor of the constructor
         val constructorDescriptor = AsmOps.getMethodDescriptor(List(JvmOps.getErasedType(tagInfo.tagType)), JvmType.Void)
         // Calling the constructor of the class
@@ -472,8 +529,11 @@ object GenExpression {
 
       // Case 2: Check for nullability.
       if (JvmOps.isNullable(exp.tpe)) {
-        // TODO
-        Console.println(s"The type ${exp.tpe} is nullable. Do not do anything.")
+        if (JvmOps.isNullTag(enum, tag)) {
+          Console.println(s" Found nullable tag: $tag. Push")
+        } else {
+          Console.println(s" Found non-nullable tag: $tag. Compute inner expression.")
+        }
       }
 
       // Case 3: Ordinary enum.
@@ -485,7 +545,7 @@ object GenExpression {
       // We get the JvmType of the class for the tag
       val classType = JvmOps.getTagClassType(tagInfo)
       // Evaluate the exp
-      compileExpression(exp, currentClassType, jumpLabels, entryPoint, funFreeVars, funVars, visitor)
+      compileExpression(exp, currentClassType, jumpLabels, entryPoint, visitor)
       // Cast the exp to the type of the tag
       visitor.visitTypeInsn(CHECKCAST, classType.name.toInternalName)
       // Descriptor of the method
@@ -499,7 +559,7 @@ object GenExpression {
       // We get the JvmType of the class for the tuple
       val classType = JvmOps.getTupleInterfaceType(base.tpe)
       // evaluating the `base`
-      compileExpression(base, currentClassType, jumpLabels, entryPoint, funFreeVars, funVars, visitor)
+      compileExpression(base, currentClassType, jumpLabels, entryPoint, visitor)
       // Descriptor of the method
       val methodDescriptor = AsmOps.getMethodDescriptor(Nil, JvmOps.getErasedType(tpe))
       // Invoking `getField${offset}()` method for fetching the field
@@ -517,7 +577,7 @@ object GenExpression {
       // Duplicating the class
       visitor.visitInsn(DUP)
       // Evaluating all the elements to be stored in the tuple class
-      elms.foreach(compileExpression(_, currentClassType, jumpLabels, entryPoint, funFreeVars, funVars, visitor))
+      elms.foreach(compileExpression(_, currentClassType, jumpLabels, entryPoint, visitor))
       // Erased type of `elms`
       val erasedElmTypes = elms.map(_.tpe).map(JvmOps.getErasedType).toList
       // Descriptor of constructor
@@ -535,7 +595,7 @@ object GenExpression {
       // Duplicate it since one instance will get consumed by constructor
       visitor.visitInsn(DUP)
       // Evaluate the underlying expression
-      compileExpression(exp, currentClassType, jumpLabels, entryPoint, funFreeVars, funVars, visitor)
+      compileExpression(exp, currentClassType, jumpLabels, entryPoint, visitor)
       // Erased type of the value of the reference
       val valueErasedType = JvmOps.getErasedType(tpe.typeArguments.head)
       // Constructor descriptor
@@ -547,7 +607,7 @@ object GenExpression {
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
       // Evaluate the exp
-      compileExpression(exp, currentClassType, jumpLabels, entryPoint, funFreeVars, funVars, visitor)
+      compileExpression(exp, currentClassType, jumpLabels, entryPoint, visitor)
       // JvmType of the reference class
       val classType = JvmOps.getCellClassType(exp.tpe)
       // Get descriptor of `getValue` method
@@ -561,9 +621,9 @@ object GenExpression {
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
       // Evaluate the reference address
-      compileExpression(exp1, currentClassType, jumpLabels, entryPoint, funFreeVars, funVars, visitor)
+      compileExpression(exp1, currentClassType, jumpLabels, entryPoint, visitor)
       // Evaluating the value to be assigned to the reference
-      compileExpression(exp2, currentClassType, jumpLabels, entryPoint, funFreeVars, funVars, visitor)
+      compileExpression(exp2, currentClassType, jumpLabels, entryPoint, visitor)
       // JvmType of the reference class
       val classType = JvmOps.getCellClassType(exp1.tpe)
       // Get descriptor of `setValue` method
@@ -590,7 +650,7 @@ object GenExpression {
       // Duplicate the reference since the first argument for a constructor call is the reference to the object
       visitor.visitInsn(DUP)
       // Evaluate arguments left-to-right and push them onto the stack.
-      args.foreach(compileExpression(_, currentClassType, jumpLabels, entryPoint, funFreeVars, funVars, visitor))
+      args.foreach(compileExpression(_, currentClassType, jumpLabels, entryPoint, visitor))
       // Call the constructor
       visitor.visitMethodInsn(INVOKESPECIAL, declaration, "<init>", descriptor, false)
 
@@ -608,7 +668,7 @@ object GenExpression {
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
       // Evaluate arguments left-to-right and push them onto the stack.
-      args.foreach(compileExpression(_, currentClassType, jumpLabels, entryPoint, funFreeVars, funVars, visitor))
+      args.foreach(compileExpression(_, currentClassType, jumpLabels, entryPoint, visitor))
       val declaration = asm.Type.getInternalName(method.getDeclaringClass)
       val name = method.getName
       val descriptor = asm.Type.getMethodDescriptor(method)
@@ -638,6 +698,27 @@ object GenExpression {
       addSourceLine(visitor, loc)
       val msg = s"Non-exhaustive switch expression: ${loc.format}."
       AsmOps.compileException(visitor, JvmName.SwitchException, msg)
+  }
+
+  /*
+   * Pushes a dummy value of type `jvmType` to the top of the stack
+   */
+  private def pushDummyValue(visitor: MethodVisitor, jvmType: JvmType)(implicit root: Root, flix: Flix): Unit = {
+    val erasedType = JvmOps.getErasedType(jvmType)
+    erasedType match {
+      case JvmType.Void => throw InternalCompilerException(s"Unexpected type: $erasedType")
+      case JvmType.PrimBool => visitor.visitInsn(ICONST_1)
+      case JvmType.PrimChar => visitor.visitInsn(ICONST_M1)
+      case JvmType.PrimByte => visitor.visitInsn(ICONST_M1)
+      case JvmType.PrimShort => visitor.visitInsn(ICONST_M1)
+      case JvmType.PrimInt => visitor.visitInsn(ICONST_M1)
+      case JvmType.PrimLong =>
+        visitor.visitInsn(ICONST_M1)
+        visitor.visitInsn(I2L)
+      case JvmType.PrimFloat => visitor.visitInsn(FCONST_1)
+      case JvmType.PrimDouble => visitor.visitInsn(DCONST_1)
+      case JvmType.Reference(_) => visitor.visitInsn(ACONST_NULL)
+    }
   }
 
   /*
@@ -672,14 +753,12 @@ object GenExpression {
                                visitor: MethodVisitor,
                                jumpLabels: Map[Symbol.LabelSym, Label],
                                entryPoint: Label,
-                               funFreeVars: List[FreeVar],
-                               funVars: List[Symbol.VarSym],
                                op: UnaryOperator,
                                sop: SemanticOperator)(implicit root: Root, flix: Flix): Unit = {
     // Adding source line number for debugging
     addSourceLine(visitor, e.loc)
 
-    compileExpression(e, currentClassType, jumpLabels, entryPoint, funFreeVars, funVars, visitor)
+    compileExpression(e, currentClassType, jumpLabels, entryPoint, visitor)
     op match {
       case UnaryOperator.LogicalNot =>
         val condElse = new Label()
@@ -790,8 +869,6 @@ object GenExpression {
                                     visitor: MethodVisitor,
                                     jumpLabels: Map[Symbol.LabelSym, Label],
                                     entryPoint: Label,
-                                    funFreeVars: List[FreeVar],
-                                    funVars: List[Symbol.VarSym],
                                     o: ArithmeticOperator,
                                     sop: SemanticOperator)(implicit root: Root, flix: Flix): Unit = {
     if (o == BinaryOperator.Exponentiate) {
@@ -803,9 +880,9 @@ object GenExpression {
         case _ => throw InternalCompilerException(s"Unexpected semantic operator: $sop.")
       }
       visitor.visitFieldInsn(GETSTATIC, JvmName.ScalaMathPkg.toInternalName, "MODULE$", JvmType.ScalaMathPkg.toDescriptor)
-      compileExpression(e1, currentClassType, jumpLabels, entryPoint, funFreeVars, funVars, visitor)
+      compileExpression(e1, currentClassType, jumpLabels, entryPoint, visitor)
       visitor.visitInsn(castToDouble)
-      compileExpression(e2, currentClassType, jumpLabels, entryPoint, funFreeVars, funVars, visitor)
+      compileExpression(e2, currentClassType, jumpLabels, entryPoint, visitor)
       visitor.visitInsn(castToDouble)
       visitor.visitMethodInsn(INVOKEVIRTUAL, JvmName.ScalaMathPkg.toInternalName, "pow",
         AsmOps.getMethodDescriptor(List(JvmType.PrimDouble, JvmType.PrimDouble), JvmType.PrimDouble), false)
@@ -817,8 +894,8 @@ object GenExpression {
         case _ => throw InternalCompilerException(s"Unexpected semantic operator: $sop.")
       }
     } else {
-      compileExpression(e1, currentClassType, jumpLabels, entryPoint, funFreeVars, funVars, visitor)
-      compileExpression(e2, currentClassType, jumpLabels, entryPoint, funFreeVars, funVars, visitor)
+      compileExpression(e1, currentClassType, jumpLabels, entryPoint, visitor)
+      compileExpression(e2, currentClassType, jumpLabels, entryPoint, visitor)
       val (intOp, longOp, floatOp, doubleOp, bigIntOp) = o match {
         case BinaryOperator.Plus => (IADD, LADD, FADD, DADD, "add")
         case BinaryOperator.Minus => (ISUB, LSUB, FSUB, DSUB, "subtract")
@@ -897,12 +974,10 @@ object GenExpression {
                                     visitor: MethodVisitor,
                                     jumpLabels: Map[Symbol.LabelSym, Label],
                                     entryPoint: Label,
-                                    funFreeVars: List[FreeVar],
-                                    funVars: List[Symbol.VarSym],
                                     o: ComparisonOperator,
                                     sop: SemanticOperator)(implicit root: Root, flix: Flix): Unit = {
-    compileExpression(e1, currentClassType, jumpLabels, entryPoint, funFreeVars, funVars, visitor)
-    compileExpression(e2, currentClassType, jumpLabels, entryPoint, funFreeVars, funVars, visitor)
+    compileExpression(e1, currentClassType, jumpLabels, entryPoint, visitor)
+    compileExpression(e2, currentClassType, jumpLabels, entryPoint, visitor)
     val condElse = new Label()
     val condEnd = new Label()
     val (intOp, floatOp, doubleOp, cmp) = o match {
@@ -960,15 +1035,13 @@ object GenExpression {
                                  visitor: MethodVisitor,
                                  jumpLabels: Map[Symbol.LabelSym, Label],
                                  entryPoint: Label,
-                                 funFreeVars: List[FreeVar],
-                                 funVars: List[Symbol.VarSym],
                                  o: LogicalOperator)(implicit root: Root, flix: Flix): Unit = o match {
     case BinaryOperator.LogicalAnd =>
       val andFalseBranch = new Label()
       val andEnd = new Label()
-      compileExpression(e1, currentClassType, jumpLabels, entryPoint, funFreeVars, funVars, visitor)
+      compileExpression(e1, currentClassType, jumpLabels, entryPoint, visitor)
       visitor.visitJumpInsn(IFEQ, andFalseBranch)
-      compileExpression(e2, currentClassType, jumpLabels, entryPoint, funFreeVars, funVars, visitor)
+      compileExpression(e2, currentClassType, jumpLabels, entryPoint, visitor)
       visitor.visitJumpInsn(IFEQ, andFalseBranch)
       visitor.visitInsn(ICONST_1)
       visitor.visitJumpInsn(GOTO, andEnd)
@@ -979,9 +1052,9 @@ object GenExpression {
       val orTrueBranch = new Label()
       val orFalseBranch = new Label()
       val orEnd = new Label()
-      compileExpression(e1, currentClassType, jumpLabels, entryPoint, funFreeVars, funVars, visitor)
+      compileExpression(e1, currentClassType, jumpLabels, entryPoint, visitor)
       visitor.visitJumpInsn(IFNE, orTrueBranch)
-      compileExpression(e2, currentClassType, jumpLabels, entryPoint, funFreeVars, funVars, visitor)
+      compileExpression(e2, currentClassType, jumpLabels, entryPoint, visitor)
       visitor.visitJumpInsn(IFEQ, orFalseBranch)
       visitor.visitLabel(orTrueBranch)
       visitor.visitInsn(ICONST_1)
@@ -1040,12 +1113,10 @@ object GenExpression {
                                  visitor: MethodVisitor,
                                  jumpLabels: Map[Symbol.LabelSym, Label],
                                  entryPoint: Label,
-                                 funFreeVars: List[FreeVar],
-                                 funVars: List[Symbol.VarSym],
                                  o: BitwiseOperator,
                                  sop: SemanticOperator)(implicit root: Root, flix: Flix): Unit = {
-    compileExpression(e1, currentClassType, jumpLabels, entryPoint, funFreeVars, funVars, visitor)
-    compileExpression(e2, currentClassType, jumpLabels, entryPoint, funFreeVars, funVars, visitor)
+    compileExpression(e1, currentClassType, jumpLabels, entryPoint, visitor)
+    compileExpression(e2, currentClassType, jumpLabels, entryPoint, visitor)
     val (intOp, longOp, bigintOp) = o match {
       case BinaryOperator.BitwiseAnd => (IAND, LAND, "and")
       case BinaryOperator.BitwiseOr => (IOR, LOR, "or")

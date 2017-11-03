@@ -512,6 +512,20 @@ object JvmOps {
   }
 
   /**
+    * Returns `true` if the given `tag` associated with the given enum symbol `sym` can be represented by null.
+    */
+  def isNullTag(sym: Symbol.EnumSym, tag: String)(implicit root: Root, flix: Flix): Boolean = {
+    // Retrieve the enum.
+    val enum = root.enums(sym)
+
+    // Retrieve the case.
+    val caze = enum.cases(tag)
+
+    // Check if the case is unit (i.e. can be represented by null).
+    caze.tpe == Type.Unit
+  }
+
+  /**
     * Returns `true` if the given type `tpe` is nullable.
     */
   def isNullable(tpe: Type)(implicit root: Root, flix: Flix): Boolean = getNullability(tpe) match {
