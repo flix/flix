@@ -47,6 +47,16 @@ object ApplesToApples {
       if (f(x)) ::(x, r) else r
   }
 
+  def findLeft[a](f: a => Boolean, xs: List[a]): Option[a] = xs match {
+    case Nil => None
+    case x :: rs => if (f(x)) Some(x) else findLeft(f, rs)
+  }
+
+  def findRight[a](f: a => Boolean, xs: List[a]): Option[a] = xs match {
+    case Nil => None
+    case x :: rs => findRight(f, rs).orElse(if (f(x)) Some(x) else None)
+  }
+
   def foldLeft[a, b](f: (b, a) => b, s: b, xs: List[a]): b = xs match {
     case Nil => s
     case x :: rs => foldLeft(f, f(s, x), rs)
@@ -159,44 +169,26 @@ object ApplesToApples {
     (length(xs) + length(ys)) == 200000
   }
 
+  def benchmark17(): Boolean = findLeft[Int](x => x == 50 * 1000, range(0, 100 * 1000)) == Some(50000)
 
-  //    ///
-  //    /// creates a list and searches for an item from the left.
-  //    ///
-  //    @benchmark
-  //    def benchmark17(): Bool = List.findLeft(x -> x == 50 * 1000, List.range(0, 100 * 1000)) `assertEq!` Some(50000)
-  //
-  //    ///
-  //    /// creates a list and searches for an item from the right.
-  //    ///
-  //    @benchmark
-  //    def benchmark18(): Bool = List.findRight(x -> x == 50 * 1000, List.range(0, 100 * 1000)) `assertEq!` Some(50000)
-  //
-  //    ///
-  //    /// creates a list of integers (in celsius) and sums them (as integers).
-  //    ///
-  //    @benchmark
-  //    def benchmark19(): Bool =
-  //      let f = (x, y) -> match y with {
-  //      case Celsius(z) => x + z
-  //    };
-  //    List.foldLeft(f, 0, List.map(Celsius, List.range(0, 100 * 1000))) `assertEq!` 704982704
-  //
-  //    ///
-  //    /// creates a list of integers (in celsius) and sums them (as celsius).
-  //    ///
-  //    @benchmark
-  //    def benchmark20(): Bool =
-  //      let f = (x, y) ->
-  //        let Celsius(a) = x;
-  //    let Celsius(b) = y;
-  //    Celsius(a + b);
-  //    List.foldLeft(f, Celsius(0), List.map(Celsius, List.range(0, 100 * 1000)))  `assertEq!` Celsius(704982704)
-  //
-  //    // A type safe wrapper of integers.
-  //    type Celsius = Celsius(Int)
-  //
-  //  }
+  def benchmark18(): Boolean = findRight[Int](x => x == 50 * 1000, range(0, 100 * 1000)) == Some(50000)
 
+  def benchmark19(): Boolean = {
+    val f: (Int, Celsius) => Int = (x, y) => y match {
+      case Celsius(z) => x + z
+    }
+    foldLeft(f, 0, map(Celsius, range(0, 100 * 1000))) == 704982704
+  }
+
+  def benchmark20(): Boolean = {
+    val f: (Celsius, Celsius) => Celsius = (x, y) => {
+      val Celsius(a) = x
+      val Celsius(b) = y
+      Celsius(a + b)
+    }
+    foldLeft(f, Celsius(0), map(Celsius, range(0, 100 * 1000))) == Celsius(704982704)
+  }
+
+  final case class Celsius(t: Int) extends AnyVal
 
 }

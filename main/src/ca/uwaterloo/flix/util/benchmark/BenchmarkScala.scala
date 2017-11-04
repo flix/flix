@@ -52,7 +52,11 @@ object BenchmarkScala {
       "benchmark13" -> ApplesToApples.benchmark13 _,
       "benchmark14" -> ApplesToApples.benchmark14 _,
       "benchmark15" -> ApplesToApples.benchmark15 _,
-      "benchmark16" -> ApplesToApples.benchmark16 _
+      "benchmark16" -> ApplesToApples.benchmark16 _,
+      "benchmark17" -> ApplesToApples.benchmark17 _,
+      "benchmark18" -> ApplesToApples.benchmark18 _,
+      "benchmark19" -> ApplesToApples.benchmark19 _,
+      "benchmark20" -> ApplesToApples.benchmark20 _
     )
     benchmark(apples2apples)
 
