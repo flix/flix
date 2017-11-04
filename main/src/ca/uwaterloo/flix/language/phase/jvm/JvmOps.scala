@@ -84,6 +84,7 @@ object JvmOps {
           case Nullability.Nullable(t) => getJvmType(args.head) //TODO: This only works for Options and similar enums
           case Nullability.NonNullable(t) => getEnumInterfaceType(tpe)
           case Nullability.Primitive(t) => throw InternalCompilerException(s"Unexpected primtive type: '$tpe'.")
+          case Nullability.Reference(t) => throw InternalCompilerException(s"Unexpected reference type: '$tpe'.")
         }
       case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
     }
@@ -513,6 +514,11 @@ object JvmOps {
     case class Primitive(tpe: Type) extends Nullability
 
     /**
+      * Represents a nullable reference type `tpe`.
+      */
+    case class Reference(tpe: Type) extends Nullability
+
+    /**
       * Represents a non-nullable type `tpe`.
       */
     case class NonNullable(tpe: Type) extends Nullability
@@ -536,10 +542,16 @@ object JvmOps {
   /**
     * Returns `true` if the given type `tpe` is nullable.
     */
-  def isNullable(tpe: Type)(implicit root: Root, flix: Flix): Boolean = getNullability(tpe) match {
-    case Nullability.Nullable(t) => true
-    case Nullability.Primitive(t) => false
-    case Nullability.NonNullable(t) => false
+  def isNullable(tpe: Type)(implicit root: Root, flix: Flix): Boolean = {
+    if (!tpe.isEnum)
+      throw InternalCompilerException(s"Unexpected type: $tpe")
+
+    getNullability(tpe) match {
+      case Nullability.Nullable(t) => true
+      case Nullability.Primitive(t) => false
+      case Nullability.Reference(t) => false
+      case Nullability.NonNullable(t) => false
+    }
   }
 
   /**
@@ -570,12 +582,12 @@ object JvmOps {
       case Type.Int64 => Nullability.Primitive(tpe)
 
       // Nullable types.
-      case Type.BigInt => Nullability.Nullable(tpe)
-      case Type.Str => Nullability.Nullable(tpe)
-      case Type.Native => Nullability.Nullable(tpe)
-      case Type.Ref => Nullability.Nullable(tpe)
-      case Type.Arrow(l) => Nullability.Nullable(tpe)
-      case Type.Tuple(l) => Nullability.Nullable(tpe)
+      case Type.BigInt => Nullability.Reference(tpe)
+      case Type.Str => Nullability.Reference(tpe)
+      case Type.Native => Nullability.Reference(tpe)
+      case Type.Ref => Nullability.Reference(tpe)
+      case Type.Arrow(l) => Nullability.Reference(tpe)
+      case Type.Tuple(l) => Nullability.Reference(tpe)
 
       // Enum types.
       case Type.Enum(sym, kind) =>
@@ -591,6 +603,7 @@ object JvmOps {
         getNullability(elementType) match {
           case Nullability.Nullable(t) => Nullability.NonNullable(tpe)
           case Nullability.Primitive(t) => Nullability.NonNullable(tpe)
+          case Nullability.Reference(t) => Nullability.Nullable(tpe)
           case Nullability.NonNullable(t) => Nullability.Nullable(elementType)
         }
       case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
@@ -887,9 +900,8 @@ object JvmOps {
   // TODO: Should use getTags and then just find the correct tag.
   def getTagInfo(tpe: Type, tag: String)(implicit root: Root, flix: Flix): TagInfo = {
     // Throw an exception if `tpe` is not an enum type
-    if (!tpe.isEnum) {
+    if (!tpe.isEnum)
       throw InternalCompilerException(s"Unexpected type: $tpe")
-    }
 
     val tags = getTagsOf(tpe)
     tags.find(_.tag == tag).get
