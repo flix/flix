@@ -459,7 +459,7 @@ object JvmOps {
     val elementTypes = innerType.typeArguments
 
     // Construct the fusion tag.
-    Some(FusionTagInfo(tag.sym, tag.enumType, tag.tagType ,tag.tag, elementTypes))
+    Some(FusionTagInfo(tag.sym, tag.enumType, tag.tagType, tag.tag, elementTypes))
   }
 
   /**
@@ -900,6 +900,22 @@ object JvmOps {
     */
   def typesOf(root: Root): Set[Type] = {
     /**
+      * Returns the set of types which occur in the given definition `defn0`.
+      */
+    def visitDefn(defn: Def): Set[Type] = {
+      // Compute the types in the formal parameters.
+      val formalParamTypes = defn.formals.foldLeft(Set.empty[Type]) {
+        case (sacc, FormalParam(sym, tpe)) => sacc + tpe
+      }
+
+      // Compute the types in the expression.
+      val expressionTypes = visitExp(defn.exp)
+
+      // Return the types in the defn.
+      formalParamTypes ++ expressionTypes + defn.tpe
+    }
+
+    /**
       * Returns the set of types which occur in the given expression `exp0`.
       */
     def visitExp(exp0: Expression): Set[Type] = exp0 match {
@@ -993,7 +1009,7 @@ object JvmOps {
 
     // Visit every definition.
     val result = root.defs.foldLeft(Set.empty[Type]) {
-      case (sacc, (_, defn)) => sacc ++ visitExp(defn.exp) + defn.tpe
+      case (sacc, (_, defn)) => sacc ++ visitDefn(defn)
     }
 
     result.flatMap(typesOf)
