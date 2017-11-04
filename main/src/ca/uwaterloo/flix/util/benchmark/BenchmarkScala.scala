@@ -30,7 +30,6 @@ object BenchmarkScala {
     */
   val ActualRounds = 50
 
-
   /**
     * Entry point.
     */
@@ -46,7 +45,17 @@ object BenchmarkScala {
       "benchmark07" -> ApplesToOranges.benchmark07 _,
       "benchmark08" -> ApplesToOranges.benchmark08 _,
       "benchmark09" -> ApplesToOranges.benchmark09 _,
-      "benchmark10" -> ApplesToOranges.benchmark10 _
+      "benchmark10" -> ApplesToOranges.benchmark10 _,
+      "benchmark11" -> ApplesToOranges.benchmark11 _,
+      "benchmark12" -> ApplesToOranges.benchmark12 _,
+      "benchmark13" -> ApplesToOranges.benchmark13 _,
+      "benchmark14" -> ApplesToOranges.benchmark14 _,
+      "benchmark15" -> ApplesToOranges.benchmark15 _,
+      "benchmark16" -> ApplesToOranges.benchmark16 _,
+      "benchmark17" -> ApplesToOranges.benchmark17 _,
+      "benchmark18" -> ApplesToOranges.benchmark18 _,
+      "benchmark19" -> ApplesToOranges.benchmark19 _,
+      "benchmark20" -> ApplesToOranges.benchmark20 _,
     )
 
     benchmark(bs)
