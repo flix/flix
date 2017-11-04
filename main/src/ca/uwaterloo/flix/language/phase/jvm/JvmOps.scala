@@ -1012,7 +1012,7 @@ object JvmOps {
       case (sacc, (_, defn)) => sacc ++ visitDefn(defn)
     }
 
-    result.flatMap(typesOf)
+    result.flatMap(nestedTypesOf)
   }
 
   /**
@@ -1021,7 +1021,14 @@ object JvmOps {
     * For example, if the given type is `Option[(Bool, Char, Int)]`
     * this returns the set `Bool`, `Char`, `Int`, `(Bool, Char, Int)`, and `Option[(Bool, Char, Int)]`.
     */
-  def typesOf(tpe: Type): Set[Type] = Set(tpe) // TODO
+  def nestedTypesOf(tpe: Type): Set[Type] = {
+    val base = tpe.typeConstructor
+    val args = tpe.typeArguments
+
+    args.foldLeft(Set(tpe)) {
+      case (sacc, arg) => sacc ++ nestedTypesOf(arg)
+    }
+  }
 
   /**
     * Returns `true` if the given `path` exists and is a Java Virtual Machine class file.
