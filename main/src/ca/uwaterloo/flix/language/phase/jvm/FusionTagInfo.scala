@@ -2,7 +2,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.language.ast.{Symbol, Type}
 
-case class FusionTagInfo(sym: Symbol.EnumSym, tag: String, elms: List[Type]) {
+case class FusionTagInfo(sym: Symbol.EnumSym, enumType: Type, tupleType: Type, tag: String, elms: List[Type]) {
   /**
     * Returns the hash code of `this` fusion info.
     */

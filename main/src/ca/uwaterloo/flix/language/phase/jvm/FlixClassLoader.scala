@@ -57,6 +57,8 @@ class FlixClassLoader(classes: Map[String, JvmClass]) extends ClassLoader {
     }
   } catch {
     case ex: ClassFormatError => throw InternalRuntimeException(s"Unable to load: '$name' class due to class format error: ${ex.getMessage}")
-    case ex: NoClassDefFoundError => throw InternalRuntimeException(s"Unable to load: '$name' class not found: ${ex.getMessage}")
+    case ex: NoClassDefFoundError => {
+      throw InternalRuntimeException(s"Unable to load: '$name' class not found: ${ex.getMessage}")
+    }
   }
 }

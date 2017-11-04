@@ -20,8 +20,6 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Root
 import org.objectweb.asm.Opcodes._
 import org.objectweb.asm.ClassWriter
-import org.objectweb.asm.MethodVisitor
-
 
 /**
   * Generates bytecode for the tag classes.
@@ -143,7 +141,7 @@ object GenTagClasses {
     AsmOps.compileGetFieldMethod(visitor, classType.name, valueType, "value", "getValue")
 
     // Generate the `getBoxedTagValue` method.
-    compileGetBoxedTagValueMethod(visitor, classType, valueType)
+    AsmOps.compileGetBoxedTagValueMethod(visitor, classType, valueType)
 
     // Generate the `getTag` method.
     compileGetTagMethod(visitor, tag.tag)
@@ -164,9 +162,6 @@ object GenTagClasses {
     visitor.visitEnd()
     visitor.toByteArray
   }
-
-
-
 
   /**
     * Creates the single argument constructor of the enum case class which is named `classType`.
@@ -225,43 +220,9 @@ object GenTagClasses {
     * @param visitor class visitor
     * @param tag     tag String
     */
-  private def compileGetTagMethod(visitor: ClassWriter, tag: String)(implicit root: Root, flix: Flix) = {
+  def compileGetTagMethod(visitor: ClassWriter, tag: String)(implicit root: Root, flix: Flix): Unit = {
     val method = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, "getTag", AsmOps.getMethodDescriptor(Nil, JvmType.String), null, null)
     method.visitLdcInsn(tag)
-    method.visitInsn(ARETURN)
-    method.visitMaxs(1, 1)
-    method.visitEnd()
-  }
-
-  /**
-    * Generate the `getBoxedTagValue` method which returns the boxed value of `value` field of the class.
-    * The generated method will return the `value` field if the field is of object type, otherwise, it will
-    * box the object using the appropriate type.
-    * For example, we generate the following method for `Ok[Int32]`:
-    *
-    * public final Object getBoxedTagValue() {
-    * return new Integer(this.value);
-    * }
-    *
-    * And we generate the following method for `Ok[List[Int32]]`
-    *
-    * public final Object getBoxedTagValue() {
-    * return this.value;
-    * }
-    *
-    * @param visitor   class visitor
-    * @param classType JvmType.Reference of the class
-    * @param valueType JvmType of the `value` field of the class
-    */
-  private def compileGetBoxedTagValueMethod(visitor: ClassWriter,
-                                    classType: JvmType.Reference,
-                                    valueType: JvmType)(implicit root: Root, flix: Flix) = {
-    val method = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, "getBoxedTagValue", AsmOps.getMethodDescriptor(Nil, JvmType.Object), null, null)
-
-    method.visitCode()
-
-    AsmOps.boxField(method, valueType, classType, "getValue")
-
     method.visitInsn(ARETURN)
     method.visitMaxs(1, 1)
     method.visitEnd()
