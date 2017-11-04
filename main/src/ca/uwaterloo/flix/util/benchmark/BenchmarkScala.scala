@@ -38,7 +38,13 @@ object BenchmarkScala {
     println("Apples 2 Apples")
     val apples2apples = List(
       "benchmark01" -> ApplesToApples.benchmark01 _,
-      "benchmark02" -> ApplesToApples.benchmark02 _
+      "benchmark02" -> ApplesToApples.benchmark02 _,
+      "benchmark03" -> ApplesToApples.benchmark03 _,
+      "benchmark04" -> ApplesToApples.benchmark04 _,
+      "benchmark05" -> ApplesToApples.benchmark05 _,
+      "benchmark06" -> ApplesToApples.benchmark06 _,
+      "benchmark07" -> ApplesToApples.benchmark07 _,
+      "benchmark08" -> ApplesToApples.benchmark08 _
     )
     benchmark(apples2apples)
 
