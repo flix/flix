@@ -35,6 +35,11 @@ object ApplesToApples {
     case (i, x :: rs) => drop(i - 1, rs)
   }
 
+  def exists[a](f: a => Boolean, xs: List[a]): Boolean = xs match {
+    case Nil => false
+    case x :: rs => if (f(x)) true else exists(f, rs)
+  }
+
   def filter[a](f: a => Boolean, xs: List[a]): List[a] = xs match {
     case Nil => Nil
     case x :: rs =>
@@ -52,6 +57,11 @@ object ApplesToApples {
     case x :: rs => f(x, foldRight(f, s, rs))
   }
 
+  def intersperse[a](a: a, xs: List[a]): List[a] = xs match {
+    case x1 :: x2 :: rs => ::(x1, ::(a, intersperse(a, ::(x2, rs))))
+    case _ => xs
+  }
+
   def length[a](xs: List[a]): Int = xs match {
     case Nil => 0
     case x :: rs => 1 + length(rs)
@@ -60,6 +70,11 @@ object ApplesToApples {
   def map[a, b](f: a => b, xs: List[a]): List[b] = xs match {
     case Nil => Nil
     case x :: rs => ::(f(x), map(f, rs))
+  }
+
+  def memberOf[a](a: a, xs: List[a]): Boolean = xs match {
+    case Nil => false
+    case x :: rs => if (x == a) true else memberOf(a, rs)
   }
 
   def flatMap[a, b](f: a => List[b], xs: List[a]): List[b] = xs match {
@@ -84,6 +99,18 @@ object ApplesToApples {
     case (i, x :: rs) => ::(x, take(i - 1, rs))
   }
 
+  def zip[a, b](xs: List[a], ys: List[b]): List[(a, b)] = (xs, ys) match {
+    case (x :: rs, y :: qs) => ::((x, y), zip(rs, qs))
+    case _ => Nil
+  }
+
+  def unzip[a, b](xs: List[(a, b)]): (List[a], List[b]) = xs match {
+    case Nil => (Nil, Nil)
+    case (x1, x2) :: rs =>
+      val (r1, r2) = unzip(rs);
+      (::(x1, r1), ::(x2, r2))
+  }
+
   def benchmark01(): Boolean = length(range(0, 100 * 1000)) == 100000
 
   def benchmark02(): Boolean = length(take(50 * 1000, range(0, 100 * 1000))) == 50000
@@ -104,54 +131,35 @@ object ApplesToApples {
 
   def benchmark10(): Boolean = foldRight[Int, Int]({ case (x, y) => x + y }, 0, range(0, 100 * 1000)) == 704982704
 
-  //    ///
-  //    /// create two lists of integers, zip them, and compute the length of the result.
-  //    ///
-  //    @benchmark
-  //    def benchmark11(): Bool = List.length(List.zip(List.range(0, 100 * 1000), List.range(0, 100 * 1000))) `assertEq!` 100000
-  //
-  //    ///
-  //    /// create a list of pairs, unzip it, and compute the length of the result.
-  //    ///
-  //    @benchmark
-  //    def benchmark12(): Bool =
-  //      let (xs, ys) = List.unzip(List.map(x -> (x, 2 * x), List.range(0, 100 * 1000)));
-  //    (List.length(xs) + List.length(ys)) `assertEq!` 200000
-  //
-  //    ///
-  //    /// create two lists of integers, check that each integer of the first list exists in the latter list.
-  //    ///
-  //    @benchmark
-  //    def benchmark13(): Bool =
-  //      let xs = List.range(0, 1000);
-  //    let ys = List.range(0, 1000);
-  //    let zs = List.map(y -> List.memberOf(y, xs), ys);
-  //    List.length(zs) `assertEq!` 1000
-  //
-  //    ///
-  //    /// create two lists of integers, check if the cube of each integer in the first list exists in the latter list.
-  //    ///
-  //    @benchmark
-  //    def benchmark14(): Bool =
-  //      let xs = List.range(0, 1000);
-  //    let ys = List.range(0, 1000);
-  //    let zs = List.map(y -> List.exists(x -> x * x == y, xs), ys);
-  //    List.length(zs) `assertEq!` 1000
-  //
-  //    ///
-  //    /// intersperses an integer into a list of integers.
-  //    ///
-  //    @benchmark
-  //    def benchmark15(): Bool = List.length(List.intersperse(42, List.range(0, 100 * 1000))) `assertEq!` 199999
-  //
-  //    ///
-  //    /// create two lists of integers, zip them, unzip them, and compute the length of the result.
-  //    ///
-  //    @benchmark
-  //    def benchmark16(): Bool =
-  //      let (xs, ys) = List.unzip(List.zip(List.range(0, 100 * 1000), List.range(0, 100 * 1000)));
-  //    (List.length(xs) + List.length(ys)) `assertEq!` 200000
-  //
+  def benchmark11(): Boolean = length(zip(range(0, 100 * 1000), range(0, 100 * 1000))) == 100000
+
+  def benchmark12(): Boolean = {
+    val (xs, ys) = unzip(map[Int, (Int, Int)](x => (x, 2 * x), range(0, 100 * 1000)))
+    (length(xs) + length(ys)) == 200000
+  }
+
+  def benchmark13(): Boolean = {
+    val xs = range(0, 1000)
+    val ys = range(0, 1000)
+    val zs = map[Int, Boolean](y => memberOf(y, xs), ys)
+    length(zs) == 1000
+  }
+
+  def benchmark14(): Boolean = {
+    val xs = range(0, 1000);
+    val ys = range(0, 1000);
+    val zs = map[Int, Boolean](y => exists[Int](x => x * x == y, xs), ys);
+    length(zs) == 1000
+  }
+
+  def benchmark15(): Boolean = length(intersperse(42, range(0, 100 * 1000))) == 199999
+
+  def benchmark16(): Boolean = {
+    val (xs, ys) = unzip(zip(range(0, 100 * 1000), range(0, 100 * 1000)));
+    (length(xs) + length(ys)) == 200000
+  }
+
+
   //    ///
   //    /// creates a list and searches for an item from the left.
   //    ///
