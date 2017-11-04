@@ -118,7 +118,7 @@ object Optimization {
   val All: Set[Optimization] = Set(
     NullableEnums,
     PatMatchLabels,
-    // SingleCaseEnums, // TODO: Currently broken?
+    SingleCaseEnums,
     TagTupleFusion,
     TailCalls
   )
