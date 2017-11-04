@@ -20,7 +20,7 @@ import java.io.{File, PrintWriter}
 
 import ca.uwaterloo.flix.api.{Flix, MatchException, RuleException, SwitchException, UserException}
 import ca.uwaterloo.flix.runtime.shell.Shell
-import ca.uwaterloo.flix.runtime.{Benchmarker, Tester, Value}
+import ca.uwaterloo.flix.runtime.{Benchmarker, Tester}
 import ca.uwaterloo.flix.util._
 import ca.uwaterloo.flix.util.vt.VirtualString.{Code, Line, NewLine}
 import ca.uwaterloo.flix.util.vt._
@@ -64,13 +64,11 @@ object Main {
 
     // compute the enabled optimizations.
     val optimizations = Optimization.All.filter {
-      case Optimization.ClosureElimination => !cmdOpts.xnoclosureelim
-      case Optimization.EnumCompaction => !cmdOpts.xnocompact
+      case Optimization.NullableEnums => !cmdOpts.xnonullable
       case Optimization.PatMatchLabels => !cmdOpts.xpatmatchlambda
-      case Optimization.SingleCaseEnum => !cmdOpts.xnosinglecase
+      case Optimization.SingleCaseEnums => !cmdOpts.xnosinglecase
       case Optimization.TagTupleFusion => !cmdOpts.xnofusion
-      case Optimization.TailRecursion => !cmdOpts.xnotailrec
-      case Optimization.Uncurrying => !cmdOpts.xnouncurry
+      case Optimization.TailCalls => !cmdOpts.xnotailcalls
     }
 
     // construct flix options.
@@ -218,13 +216,11 @@ object Main {
                      xinterpreter: Boolean = false,
                      xinvariants: Boolean = false,
                      xpatmatchlambda: Boolean = false,
-                     xnoclosureelim: Boolean = false,
-                     xnocompact: Boolean = false,
                      xnofusion: Boolean = false,
                      xnoinline: Boolean = false,
+                     xnonullable: Boolean = false,
                      xnosinglecase: Boolean = false,
-                     xnotailrec: Boolean = false,
-                     xnouncurry: Boolean = false,
+                     xnotailcalls: Boolean = false,
                      xsafe: Boolean = false,
                      files: Seq[File] = Seq())
 
@@ -349,14 +345,6 @@ object Main {
       opt[Unit]("Xpatmatch-lambda").action((_, c) => c.copy(xpatmatchlambda = true)).
         text("[experimental] compile pattern matching to lambdas.")
 
-      // Xno-closure-elim
-      opt[Unit]("Xno-closure-elim").action((_, c) => c.copy(xnoclosureelim = true)).
-        text("[experimental] disables closure elimination.")
-
-      // Xno-compact
-      opt[Unit]("Xno-compact").action((_, c) => c.copy(xnocompact = true)).
-        text("[experimental] disables compact enums.")
-
       // Xno-fusion
       opt[Unit]("Xno-fusion").action((_, c) => c.copy(xnofusion = true)).
         text("[experimental] disables tag and tuple fusion.")
@@ -365,17 +353,17 @@ object Main {
       opt[Unit]("Xno-inline").action((_, c) => c.copy(xnoinline = true)).
         text("[experimental] disables inlining.")
 
+      // Xno-nullable
+      opt[Unit]("Xno-nullable").action((_, c) => c.copy(xnonullable = true)).
+        text("[experimental] disables nullable enums.")
+
       // Xno-single-case
       opt[Unit]("Xno-single-case").action((_, c) => c.copy(xnosinglecase = true)).
         text("[experimental] disables single case elimination.")
 
-      // Xno-tailrec
-      opt[Unit]("Xno-tailrec").action((_, c) => c.copy(xnotailrec = true)).
-        text("[experimental] disables tail recursion optimization.")
-
-      // Xno-uncurry
-      opt[Unit]("Xno-uncurry").action((_, c) => c.copy(xnouncurry = true)).
-        text("[experimental] disables uncurrying.")
+      // Xno-tailcalls
+      opt[Unit]("Xno-tailcalls").action((_, c) => c.copy(xnotailcalls = true)).
+        text("[experimental] disables tail call elimination.")
 
       // Xsafe.
       opt[Unit]("Xsafe").action((_, c) => c.copy(xsafe = true)).

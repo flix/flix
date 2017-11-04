@@ -207,22 +207,16 @@ class TestMain extends FunSuite {
     assert(opts.xpatmatchlambda)
   }
 
-  test("--Xno-closure-elim") {
-    val args = Array("--Xno-closure-elim", "p.flix")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.xnoclosureelim)
-  }
-
-  test("--Xno-compact") {
-    val args = Array("--Xno-compact", "p.flix")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.xnocompact)
-  }
-
   test("--Xno-fusion") {
     val args = Array("--Xno-fusion", "p.flix")
     val opts = Main.parseCmdOpts(args).get
     assert(opts.xnofusion)
+  }
+
+  test("--Xno-nullable") {
+    val args = Array("--Xno-nullable", "p.flix")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.xnonullable)
   }
 
   test("--Xno-inline") {
@@ -237,16 +231,10 @@ class TestMain extends FunSuite {
     assert(opts.xnosinglecase)
   }
 
-  test("--Xno-tailrec") {
-    val args = Array("--Xno-tailrec", "p.flix")
+  test("--Xno-tailcalls") {
+    val args = Array("--Xno-tailcalls", "p.flix")
     val opts = Main.parseCmdOpts(args).get
-    assert(opts.xnotailrec)
-  }
-
-  test("--Xno-uncurry") {
-    val args = Array("--Xno-uncurry", "p.flix")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.xnouncurry)
+    assert(opts.xnotailcalls)
   }
 
   test("--Xsafe") {

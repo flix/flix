@@ -113,53 +113,42 @@ sealed trait Optimization
 object Optimization {
 
   /**
-    * All optimization supported by the compiler.
+    * All optimizations supported by the compiler.
     */
   val All: Set[Optimization] = Set(
-    ClosureElimination,
-    EnumCompaction,
-    // SingleCaseEnum // TODO: Disabled due to unsoundness with types as keys in ASTs.
+    NullableEnums,
+    PatMatchLabels,
+    // SingleCaseEnums, // TODO: Currently broken?
     TagTupleFusion,
-    TailRecursion,
-    Uncurrying)
+    TailCalls
+  )
 
   /**
-    * Enables closure elimination.
+    * Enables compilation with nullable enums.
+    *
+    * A nullable enum is an enum with exactly two cases where one case is the unit constructor.
     */
-  case object ClosureElimination extends Optimization
+  case object NullableEnums extends Optimization
 
   /**
-    * Enables compilation of compact enums into nulls and a single class.
-    */
-  case object EnumCompaction extends Optimization
-
-  /**
-    * Enables compilation of pattern matching to labels and jumps.
+    * Enables compilation of pattern matches to labels and jumps.
     */
   case object PatMatchLabels extends Optimization
 
   /**
-    * Enables compilation of single-case enums to nothingness.
+    * Enables compilation with elimination of single case enums.
     */
-  case object SingleCaseEnum extends Optimization
+  case object SingleCaseEnums extends Optimization
 
   /**
-    * Enables compilation of tags and tuples into a single class.
+    * Enables compilation with tag and tuple fusion.
     */
   case object TagTupleFusion extends Optimization
 
   /**
-    * Enables compilation of tail recursive calls into loops.
-    *
-    * Note: General tail call optimization is always enabled.
-    * This optimization handles the special case where a function calls itself in a tail recursive way.
+    * Enables compilation with full tail calls.
     */
-  case object TailRecursion extends Optimization
-
-  /**
-    * Enables compilation of curried functions into uncurried functions.
-    */
-  case object Uncurrying extends Optimization
+  case object TailCalls extends Optimization
 
 }
 
