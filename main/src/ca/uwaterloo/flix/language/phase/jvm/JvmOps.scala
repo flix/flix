@@ -71,12 +71,10 @@ object JvmOps {
       case Type.Tuple(l) => getTupleInterfaceType(tpe)
       case Type.Enum(sym, kind) =>
         getNullability(tpe) match {
-          case Nullability.Nullable(t) =>
-          case Nullability.NonNullable(t) =>
+          case Nullability.Nullable(t) => getJvmType(args.head)
+          case Nullability.NonNullable(t) => getEnumInterfaceType(tpe)
           case Nullability.Primitive(t) => throw InternalCompilerException(s"Unexpected primtive type: '$tpe'.")
         }
-
-        getEnumInterfaceType(tpe)
       case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
     }
   }
@@ -461,7 +459,7 @@ object JvmOps {
     val elementTypes = innerType.typeArguments
 
     // Construct the fusion tag.
-    Some(FusionTagInfo(tag.sym, tag.tag, elementTypes))
+    Some(FusionTagInfo(tag.sym, tag.enumType, tag.tagType ,tag.tag, elementTypes))
   }
 
   /**

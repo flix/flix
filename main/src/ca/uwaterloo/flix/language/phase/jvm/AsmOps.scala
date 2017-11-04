@@ -1,6 +1,7 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.ExecutableAst.Root
 import ca.uwaterloo.flix.util.{InternalCompilerException, JvmTarget}
 import org.objectweb.asm.{ClassWriter, MethodVisitor}
 import org.objectweb.asm.Opcodes._
@@ -105,6 +106,40 @@ object AsmOps {
     method.visitVarInsn(ALOAD, 0)
     method.visitFieldInsn(GETFIELD, classType.toInternalName, fieldName, fieldType.toDescriptor)
     method.visitInsn(getReturnInsn(fieldType))
+    method.visitMaxs(1, 1)
+    method.visitEnd()
+  }
+
+  /**
+    * Generate the `getBoxedTagValue` method which returns the boxed value of `value` field of the class.
+    * The generated method will return the `value` field if the field is of object type, otherwise, it will
+    * box the object using the appropriate type.
+    * For example, we generate the following method for `Ok[Int32]`:
+    *
+    * public final Object getBoxedTagValue() {
+    * return new Integer(this.value);
+    * }
+    *
+    * And we generate the following method for `Ok[List[Int32]]`
+    *
+    * public final Object getBoxedTagValue() {
+    * return this.value;
+    * }
+    *
+    * @param visitor   class visitor
+    * @param classType JvmType.Reference of the class
+    * @param valueType JvmType of the `value` field of the class
+    */
+  def compileGetBoxedTagValueMethod(visitor: ClassWriter,
+                                    classType: JvmType.Reference,
+                                    valueType: JvmType)(implicit root: Root, flix: Flix) = {
+    val method = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, "getBoxedTagValue", AsmOps.getMethodDescriptor(Nil, JvmType.Object), null, null)
+
+    method.visitCode()
+
+    AsmOps.boxField(method, valueType, classType, "getValue")
+
+    method.visitInsn(ARETURN)
     method.visitMaxs(1, 1)
     method.visitEnd()
   }
