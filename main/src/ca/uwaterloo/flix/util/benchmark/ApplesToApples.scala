@@ -24,12 +24,59 @@ object ApplesToApples {
 
   case class ::[A](x: A, xs: List[A]) extends List[A]
 
+  def append[a](xs: List[a], ys: List[a]): List[a] = xs match {
+    case Nil => ys
+    case x :: rs => ::(x, append(rs, ys))
+  }
+
+  def drop[a](n: Int, xs: List[a]): List[a] = if (n < 0) xs else (n, xs) match {
+    case (_, Nil) => Nil
+    case (0, _) => xs
+    case (i, x :: rs) => drop(i - 1, rs)
+  }
+
+  def filter[a](f: a => Boolean, xs: List[a]): List[a] = xs match {
+    case Nil => Nil
+    case x :: rs =>
+      val r = filter(f, rs);
+      if (f(x)) ::(x, r) else r
+  }
+
+  def foldLeft[a, b](f: (b, a) => b, s: b, xs: List[a]): b = xs match {
+    case Nil => s
+    case x :: rs => foldLeft(f, f(s, x), rs)
+  }
+
+  def foldRight[a, b](f: (a, b) => b, s: b, xs: List[a]): b = xs match {
+    case Nil => s
+    case x :: rs => f(x, foldRight(f, s, rs))
+  }
+
   def length[a](xs: List[a]): Int = xs match {
     case Nil => 0
     case x :: rs => 1 + length(rs)
   }
 
+  def map[a, b](f: a => b, xs: List[a]): List[b] = xs match {
+    case Nil => Nil
+    case x :: rs => ::(f(x), map(f, rs))
+  }
+
+  def flatMap[a, b](f: a => List[b], xs: List[a]): List[b] = xs match {
+    case Nil => Nil
+    case x :: rs => append(f(x), flatMap(f, rs))
+  }
+
   def range(b: Int, e: Int): List[Int] = if (b >= e) Nil else ::(b, range(b + 1, e))
+
+  def repeat[a](a: a, n: Int): List[a] = if (n <= 0) Nil else ::(a, repeat(a, n - 1))
+
+  def reverse[a](xs: List[a]): List[a] = reverseHelper(xs, Nil)
+
+  def reverseHelper[a](xs: List[a], acc: List[a]): List[a] = xs match {
+    case Nil => acc
+    case x :: rs => reverseHelper(rs, ::(x, acc))
+  }
 
   def take[a](n: Int, xs: List[a]): List[a] = if (n < 0) Nil else (n, xs) match {
     case (_, Nil) => Nil
@@ -37,66 +84,26 @@ object ApplesToApples {
     case (i, x :: rs) => ::(x, take(i - 1, rs))
   }
 
-
   def benchmark01(): Boolean = length(range(0, 100 * 1000)) == 100000
 
   def benchmark02(): Boolean = length(take(50 * 1000, range(0, 100 * 1000))) == 50000
 
+  def benchmark03(): Boolean = length(drop(50 * 1000, range(0, 100 * 1000))) == 50000
 
-  //    ///
-  //    /// create a list of integers and return the first half the elements.
-  //    ///
-  //    @benchmark
-  //    def benchmark02(): Bool = List.length(List.take(50 * 1000, List.range(0, 100 * 1000))) `assertEq!` 50000
-  //
-  //    ///
-  //    /// create a list of integers and return the last half the elements.
-  //    ///
-  //    @benchmark
-  //    def benchmark03(): Bool = List.length(List.drop(50 * 1000, List.range(0, 100 * 1000))) `assertEq!` 50000
-  //
-  //    ///
-  //    /// create a list of integers, reverse it, and compute the length of the result.
-  //    ///
-  //    @benchmark
-  //    def benchmark04(): Bool = List.length(List.reverse(List.range(0, 100 * 1000))) `assertEq!` 100000
-  //
-  //    ///
-  //    /// create a list of integers, filter all its even numbers, and compute the length of the result.
-  //    ///
-  //    @benchmark
-  //    def benchmark05(): Bool = List.length(List.filter(x -> x % 2 == 0, List.range(0, 100 * 1000))) `assertEq!` 50000
-  //
-  //    ///
-  //    /// create a list of integers, append it to a list of integers, and compute the length of the result.
-  //    ///
-  //    @benchmark
-  //    def benchmark06(): Bool = List.length(List.range(0, 100 * 1000) ::: List.range(0, 100 * 1000)) `assertEq!` 200000
-  //
-  //    ///
-  //    /// create a list of integers, increment each integer by one, and compute the length of the result.
-  //    ///
-  //    @benchmark
-  //    def benchmark07(): Bool = List.length(List.map(x -> x + 1, List.range(0, 100 * 1000))) `assertEq!` 100000
-  //
-  //    ///
-  //    /// create a list of integers, flatMap it over lists of integers, and compute the length of the result.
-  //    ///
-  //    @benchmark
-  //    def benchmark08(): Bool = List.length(List.flatMap(x -> List.repeat(x, 100), List.range(0, 1000))) `assertEq!` 100000
-  //
-  //    ///
-  //    /// create a list of integers and compute its sum via foldLeft.
-  //    ///
-  //    @benchmark
-  //    def benchmark09(): Bool = List.foldLeft((x, y) -> x + y, 0, List.range(0, 100 * 1000)) `assertEq!` 704982704
-  //
-  //    ///
-  //    /// create a list of integers and compute its sum via foldRight.
-  //    ///
-  //    @benchmark
-  //    def benchmark10(): Bool = List.foldRight((x, y) -> x + y, 0, List.range(0, 100 * 1000)) `assertEq!` 704982704
-  //
+  def benchmark04(): Boolean = length(reverse(range(0, 100 * 1000))) == 100000
+
+  def benchmark05(): Boolean = length(filter[Int](x => x % 2 == 0, range(0, 100 * 1000))) == 50000
+
+  def benchmark06(): Boolean = length(append[Int](range(0, 100 * 1000), range(0, 100 * 1000))) == 200000
+
+  def benchmark07(): Boolean = length(map[Int, Int](x => x + 1, range(0, 100 * 1000))) == 100000
+
+  def benchmark08(): Boolean = length(flatMap[Int, Int](x => repeat(x, 100), range(0, 1000))) == 100000
+
+  def benchmark09(): Boolean = foldLeft[Int, Int]({ case (x, y) => x + y }, 0, range(0, 100 * 1000)) == 704982704
+
+  def benchmark10(): Boolean = foldRight[Int, Int]({ case (x, y) => x + y }, 0, range(0, 100 * 1000)) == 704982704
+
   //    ///
   //    /// create two lists of integers, zip them, and compute the length of the result.
   //    ///
