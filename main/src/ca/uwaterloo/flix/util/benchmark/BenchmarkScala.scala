@@ -35,7 +35,23 @@ object BenchmarkScala {
     */
   def main(args: Array[String]): Unit = {
 
-    val bs = List(
+    println("Apples 2 Apples")
+    val apples2apples = List(
+      "benchmark01" -> ApplesToApples.benchmark01 _,
+      "benchmark02" -> ApplesToApples.benchmark02 _
+    )
+    benchmark(apples2apples)
+
+    println("")
+    println("")
+    println("#" * 120)
+    println("#" * 120)
+    println("#" * 120)
+    println("")
+    println("")
+
+    println("Apples 2 Oranges")
+    val apples2oranges = List(
       "benchmark01" -> ApplesToOranges.benchmark01 _,
       "benchmark02" -> ApplesToOranges.benchmark02 _,
       "benchmark03" -> ApplesToOranges.benchmark03 _,
@@ -57,8 +73,7 @@ object BenchmarkScala {
       "benchmark19" -> ApplesToOranges.benchmark19 _,
       "benchmark20" -> ApplesToOranges.benchmark20 _,
     )
-
-    benchmark(bs)
+    benchmark(apples2oranges)
 
   }
 
