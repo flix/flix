@@ -898,7 +898,7 @@ object JvmOps {
     * This include type components. For example, if the program contains
     * the type (Bool, (Char, Int)) this includes the type (Char, Int).
     */
-  def typesOf(root: Root): Set[Type] = {
+  def typesOf(root: Root)(implicit flix: Flix): Set[Type] = {
     /**
       * Returns the set of types which occur in the given definition `defn0`.
       */
@@ -1012,7 +1012,7 @@ object JvmOps {
       case (sacc, (_, defn)) => sacc ++ visitDefn(defn)
     }
 
-    result.flatMap(nestedTypesOf)
+    result.flatMap(t => nestedTypesOf(t)(root, flix))
   }
 
   /**
@@ -1021,12 +1021,31 @@ object JvmOps {
     * For example, if the given type is `Option[(Bool, Char, Int)]`
     * this returns the set `Bool`, `Char`, `Int`, `(Bool, Char, Int)`, and `Option[(Bool, Char, Int)]`.
     */
-  def nestedTypesOf(tpe: Type): Set[Type] = {
+  def nestedTypesOf(tpe: Type)(implicit root: Root, flix: Flix): Set[Type] = {
+    // Retrieve the type constructor.
     val base = tpe.typeConstructor
+
+    // Retrieve the type arguments.
     val args = tpe.typeArguments
 
-    args.foldLeft(Set(tpe)) {
-      case (sacc, arg) => sacc ++ nestedTypesOf(arg)
+    //
+    // Check if the tag is an enum and if so, extract the types of its tags.
+    // Usually this is not "necessary", but an enum might occur as a type,
+    // but not have all its tags constructed as expressions.
+    //
+    base match {
+      case Type.Enum(sym, _) =>
+        // Case 1: The nested types are the type itself, its type arguments, and the types of the tags.
+        val tagTypes = getTagsOf(tpe).map(_.tagType)
+
+        args.foldLeft(Set(tpe) ++ tagTypes) {
+          case (sacc, arg) => sacc ++ nestedTypesOf(arg)
+        }
+      case _ =>
+        // Case 2: The nested types are the type itself and its type arguments.
+        args.foldLeft(Set(tpe)) {
+          case (sacc, arg) => sacc ++ nestedTypesOf(arg)
+        }
     }
   }
 
