@@ -209,7 +209,7 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         // Check if this is a single-case enum subject to elimination.
         //
         if (isSingleCaseEnum(sym)) {
-          if (flix.options.optimizations contains Optimization.SingleCaseEnum) {
+          if (flix.options.optimizations contains Optimization.SingleCaseEnums) {
             // A single-case enum only has one tag.
             return Expression.True
           }
@@ -227,7 +227,7 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         // Check if this is a single-case enum subject to elimination.
         //
         if (isSingleCaseEnum(sym)) {
-          if (flix.options.optimizations contains Optimization.SingleCaseEnum) {
+          if (flix.options.optimizations contains Optimization.SingleCaseEnums) {
             return visitExp(exp, env0)
           }
         }
@@ -244,7 +244,7 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         // Check if NewType optimization is enabled and if this is a single-case enum.
         //
         if (isSingleCaseEnum(sym)) {
-          if (flix.options.optimizations contains Optimization.SingleCaseEnum) {
+          if (flix.options.optimizations contains Optimization.SingleCaseEnums) {
             return visitExp(exp, env0)
           }
         }
@@ -445,7 +445,7 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         // Check if this is a single-case enum subject to elimination.
         //
         if (isSingleCaseEnum(sym)) {
-          if (flix.options.optimizations contains Optimization.SingleCaseEnum) {
+          if (flix.options.optimizations contains Optimization.SingleCaseEnums) {
             return adjustPat(pat)
           }
         }
@@ -464,7 +464,7 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       */
     def adjustType(tpe0: Type): Type = {
       // Returns the type if single-case elimination is disabled.
-      if (!(flix.options.optimizations contains Optimization.SingleCaseEnum)) {
+      if (!(flix.options.optimizations contains Optimization.SingleCaseEnums)) {
         return tpe0
       }
 

@@ -444,7 +444,7 @@ object GenExpression {
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
       // Case 1: Check for unwrappability.
-      if (JvmOps.isUnwrappable(enum)) {
+      if (JvmOps.isSingleCaseEnum(enum)) {
         // TODO
         Console.println(s"The enum ${enum} can be unwrapped. The check can be replaced by true.")
       }
@@ -491,7 +491,7 @@ object GenExpression {
       addSourceLine(visitor, loc)
 
       // Case 1: Check for unwrappability.
-      if (JvmOps.isUnwrappable(enum)) {
+      if (JvmOps.isSingleCaseEnum(enum)) {
         // TODO
         Console.println(s"The enum ${enum} can be unwrapped. Do not do anything.")
       }
@@ -537,7 +537,7 @@ object GenExpression {
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
       // Case 1: Check for unwrappability.
-      if (JvmOps.isUnwrappable(enum)) {
+      if (JvmOps.isSingleCaseEnum(enum)) {
         // TODO
         Console.println(s"The enum ${enum} can be unwrapped. Do not do anything.")
       }
