@@ -209,7 +209,7 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         // Check if this is a single-case enum subject to elimination.
         //
         if (isSingleCaseEnum(sym)) {
-          if (flix.options.optimizations contains Optimization.SingleCaseEnum) {
+          if (flix.options.optimizations contains Optimization.SingleCaseEnums) {
             // A single-case enum only has one tag.
             return Expression.True
           }
@@ -227,7 +227,7 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         // Check if this is a single-case enum subject to elimination.
         //
         if (isSingleCaseEnum(sym)) {
-          if (flix.options.optimizations contains Optimization.SingleCaseEnum) {
+          if (flix.options.optimizations contains Optimization.SingleCaseEnums) {
             return visitExp(exp, env0)
           }
         }
@@ -244,7 +244,7 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         // Check if NewType optimization is enabled and if this is a single-case enum.
         //
         if (isSingleCaseEnum(sym)) {
-          if (flix.options.optimizations contains Optimization.SingleCaseEnum) {
+          if (flix.options.optimizations contains Optimization.SingleCaseEnums) {
             return visitExp(exp, env0)
           }
         }
@@ -380,30 +380,23 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     /**
       * Returns `true` if the enum associated with the given symbol `sym` is a single-case enum.
       */
-    def isSingleCaseEnum(sym: Symbol.EnumSym): Boolean = root.enums(sym).cases.size == 1
+    def isSingleCaseEnum(sym: Symbol.EnumSym): Boolean = {
+      // An enum is single-cased if it has a single case and is non-polymorphic.
+      val isSingleCased = root.enums(sym).cases.size == 1
+      val isPolymorphic = root.enums(sym).tpe.typeArguments.nonEmpty
+      isSingleCased && !isPolymorphic
+    }
 
     /**
       * Returns the inner type of the given single-case enum associated with the symbol `sym`.
-      *
-      * Here `tpe` is the instantiated type of the enum.
       */
-    def getSingleCaseType(sym: Symbol.EnumSym, actualType: Type): Type = {
-      // Retrieve the enum.
+    def getSingleCaseType(sym: Symbol.EnumSym): Type = {
+      // Retrieve the enum declaration.
       val enum = root.enums(sym)
-
-      // Retrieve the enum type (with type parameters).
-      val enumType = enum.tpe
 
       // Retrieve the case.
       enum.cases.head match {
-        case (_, SimplifiedAst.Case(enumSym, tagName, tagType, tagLoc)) =>
-          // Unify the enum type with actual type to ensure that the case type does not have free type variables.
-          val subst = Unification.unify(enumType, actualType).get
-          val result = subst(tagType)
-
-          // Check that the result does not have free variables.
-          assert(result.isDeterminate)
-          result
+        case (_, SimplifiedAst.Case(enumSym, tagName, tagType, tagLoc)) => tagType
       }
     }
 
@@ -445,7 +438,7 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         // Check if this is a single-case enum subject to elimination.
         //
         if (isSingleCaseEnum(sym)) {
-          if (flix.options.optimizations contains Optimization.SingleCaseEnum) {
+          if (flix.options.optimizations contains Optimization.SingleCaseEnums) {
             return adjustPat(pat)
           }
         }
@@ -464,17 +457,17 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       */
     def adjustType(tpe0: Type): Type = {
       // Returns the type if single-case elimination is disabled.
-      if (!(flix.options.optimizations contains Optimization.SingleCaseEnum)) {
+      if (!(flix.options.optimizations contains Optimization.SingleCaseEnums)) {
         return tpe0
       }
 
       // Adjust the type.
       tpe0 match {
         // Check if the enum is single-case.
-        case Type.Enum(sym, kind) if isSingleCaseEnum(sym) => adjustType(getSingleCaseType(sym, tpe0))
+        case Type.Enum(sym, kind) if isSingleCaseEnum(sym) => adjustType(getSingleCaseType(sym))
         case Type.Apply(tpe1, tpe2) => tpe1 match {
           // NB: This case is necessary if the single-case enum is polymorphic.
-          case Type.Enum(sym, kind) if isSingleCaseEnum(sym) => adjustType(getSingleCaseType(sym, tpe0))
+          case Type.Enum(sym, kind) if isSingleCaseEnum(sym) => adjustType(getSingleCaseType(sym))
           case _ => Type.Apply(adjustType(tpe1), adjustType(tpe2))
         }
         case _ => tpe0

@@ -459,7 +459,7 @@ object JvmOps {
     val elementTypes = innerType.typeArguments
 
     // Construct the fusion tag.
-    Some(FusionTagInfo(tag.sym, tag.enumType, tag.tagType ,tag.tag, elementTypes))
+    Some(FusionTagInfo(tag.sym, tag.enumType, tag.tagType, tag.tag, elementTypes))
   }
 
   /**
@@ -537,7 +537,7 @@ object JvmOps {
     */
   def getNullability(tpe: Type)(implicit root: Root, flix: Flix): Nullability = {
     // Check if the optimization is enabled.
-    if (!(flix.options.optimizations contains Optimization.EnumCompaction))
+    if (!(flix.options.optimizations contains Optimization.NullableEnums))
       return Nullability.NonNullable(tpe)
 
     // Retrieve the type constructor.
@@ -591,9 +591,9 @@ object JvmOps {
     * Returns `true` if the given enum symbol `sym` is a single-case enum.
     */
   // TODO: Remove this optimization from the Optimizer phase.
-  def isUnwrappable(sym: Symbol.EnumSym)(implicit root: Root, flix: Flix): Boolean = {
+  def isSingleCaseEnum(sym: Symbol.EnumSym)(implicit root: Root, flix: Flix): Boolean = {
     // Check if the optimization is enabled.
-    if (!(flix.options.optimizations contains Optimization.SingleCaseEnum)) {
+    if (!(flix.options.optimizations contains Optimization.SingleCaseEnums)) {
       return false
     }
 
@@ -625,9 +625,9 @@ object JvmOps {
     *
     * NB: This function assumes that a single-case enum is non-recursive.
     */
-  def getUnwrappedType(tpe: Type)(implicit root: Root, flix: Flix): Type = {
+  def getSingleCaseEnumType(tpe: Type)(implicit root: Root, flix: Flix): Type = {
     // Check if the optimization is enabled.
-    if (!(flix.options.optimizations contains Optimization.SingleCaseEnum)) {
+    if (!(flix.options.optimizations contains Optimization.SingleCaseEnums)) {
       return tpe
     }
 
@@ -662,7 +662,7 @@ object JvmOps {
         tags match {
           case tag :: Nil =>
             // Case 1: The enum has exactly one case. Retrieve the inner type, recursively.
-            getUnwrappedType(tag.tagType)
+            getSingleCaseEnumType(tag.tagType)
           case _ =>
             // Case 2: The enum has zero, one, or more than two tags.
             tpe
@@ -900,6 +900,22 @@ object JvmOps {
     */
   def typesOf(root: Root): Set[Type] = {
     /**
+      * Returns the set of types which occur in the given definition `defn0`.
+      */
+    def visitDefn(defn: Def): Set[Type] = {
+      // Compute the types in the formal parameters.
+      val formalParamTypes = defn.formals.foldLeft(Set.empty[Type]) {
+        case (sacc, FormalParam(sym, tpe)) => sacc + tpe
+      }
+
+      // Compute the types in the expression.
+      val expressionTypes = visitExp(defn.exp)
+
+      // Return the types in the defn.
+      formalParamTypes ++ expressionTypes + defn.tpe
+    }
+
+    /**
       * Returns the set of types which occur in the given expression `exp0`.
       */
     def visitExp(exp0: Expression): Set[Type] = exp0 match {
@@ -993,7 +1009,7 @@ object JvmOps {
 
     // Visit every definition.
     val result = root.defs.foldLeft(Set.empty[Type]) {
-      case (sacc, (_, defn)) => sacc ++ visitExp(defn.exp) + defn.tpe
+      case (sacc, (_, defn)) => sacc ++ visitDefn(defn)
     }
 
     result.flatMap(typesOf)
