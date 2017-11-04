@@ -18,6 +18,8 @@ package ca.uwaterloo.flix.util.benchmark
 
 object ApplesToApples {
 
+  // TODO: Temporary class to be deleted.
+
   sealed trait List[+A]
 
   case object Nil extends List[Nothing]

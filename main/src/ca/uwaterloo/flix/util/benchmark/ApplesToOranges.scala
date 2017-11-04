@@ -18,6 +18,8 @@ package ca.uwaterloo.flix.util.benchmark
 
 object ApplesToOranges {
 
+  // TODO: Temporary class to be deleted.
+
   //
   //  def benchmark01(): Bool = List.length(List.range(0, 100 * 1000)) `assertEq!` 100000
   //

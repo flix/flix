@@ -23,12 +23,12 @@ object BenchmarkScala {
   /**
     * The number of times to evaluate the benchmark before measurements.
     */
-  val WarmupRounds = 100
+  val WarmupRounds = 1000
 
   /**
     * The number of times to evaluate the benchmark to compute the average.
     */
-  val ActualRounds = 50
+  val ActualRounds = 1000
 
   /**
     * Entry point.
