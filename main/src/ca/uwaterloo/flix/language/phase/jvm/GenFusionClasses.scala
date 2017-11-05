@@ -35,9 +35,6 @@ object GenFusionClasses {
       println(jvmType)
       jvmType.name -> JvmClass(jvmType.name, genByteCode(tag))
     }.toMap
-
-    // TODO: Fix this Magnus
-    Map()
   }
 
   def genByteCode(tagInfo: FusionTagInfo)(implicit root: Root, flix: Flix): Array[Byte] = {
@@ -55,10 +52,6 @@ object GenFusionClasses {
 
     // Fusion type
     val fusionType = JvmOps.getFusionClassType(tagInfo)
-
-    if(fusionType.name.name == "Cons$2$Obj$Obj"){
-      true
-    }
 
     // Descriptors of implemented interfaces
     val interfaceDescriptors = Array(tupleInterface.name.toInternalName, enumInterface.name.toInternalName)

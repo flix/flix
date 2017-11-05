@@ -51,7 +51,17 @@ object JvmOps {
 
     // Retrieve the type arguments.
     val args = tpe.typeArguments
+/*
+    // Replace vars in a type with another type
+    def reconstruct(tpe: Type, map: Map[Type, Type]): Type = tpe match {
+      case x: Type.Var => map(x)
+      case Type.Arrow(l) => Set.empty
+      case Type.Tuple(l) => Set.empty
+      case Type.Enum(enumName, kind) => Set.empty
+      case Type.Apply(tpe1, tpe2) => tpe1.typeVars ++ tpe2.typeVars
+    }
 
+*/
     // Match on the type constructor.
     base match {
       case Type.Unit => JvmType.Unit
@@ -71,7 +81,7 @@ object JvmOps {
       case Type.Tuple(l) => getTupleInterfaceType(tpe)
       case Type.Enum(sym, kind) =>
         getNullability(tpe) match {
-          case Nullability.Nullable(t) => getJvmType(args.head)
+          case Nullability.Nullable(t) => getJvmType(args.head) //TODO: This only works for Options and similar enums
           case Nullability.NonNullable(t) => getEnumInterfaceType(tpe)
           case Nullability.Primitive(t) => throw InternalCompilerException(s"Unexpected primtive type: '$tpe'.")
         }
