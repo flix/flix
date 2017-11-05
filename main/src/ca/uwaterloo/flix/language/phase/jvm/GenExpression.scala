@@ -17,11 +17,11 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.ExecutableAst.{ Expression, FreeVar, Root}
+import ca.uwaterloo.flix.language.ast.ExecutableAst.{Expression, FreeVar, Root}
 import ca.uwaterloo.flix.language.ast.{Type, _}
 import org.objectweb.asm._
 import org.objectweb.asm.Opcodes._
-import ca.uwaterloo.flix.util.InternalCompilerException
+import ca.uwaterloo.flix.util.{InternalCompilerException, Optimization}
 import org.objectweb.asm
 import java.lang.reflect.Modifier
 
@@ -476,16 +476,87 @@ object GenExpression {
       }
       // Case 3: Ordinary enum.
       else {
-        // First we compile the `exp`
-        compileExpression(exp, currentClassType, jumpLabels, entryPoint, visitor)
         // We get the `TagInfo` for the tag
         val tagInfo = JvmOps.getTagInfo(exp.tpe, tag)
+        // Fusion info
+        val fusionInfo = JvmOps.getFusionTag(tagInfo)
         // We get the JvmType of the class for tag
-        val classType = JvmOps.getTagClassType(tagInfo)
+        val classType = if(fusionInfo.isDefined && flix.options.optimizations.contains(Optimization.TagTupleFusion)) {
+          JvmOps.getFusionClassType(fusionInfo.get)
+        } else {
+          JvmOps.getTagClassType(tagInfo)
+        }
+        // First we compile the `exp`
+        compileExpression(exp, currentClassType, jumpLabels, entryPoint, visitor)
         // We check if the enum is `instanceof` the class
         visitor.visitTypeInsn(INSTANCEOF, classType.name.toInternalName)
       }
 
+    // Fusion when we directly create a tuple
+    case Expression.Tag(enum, tag, exp@Expression.Tuple(elms, _, _), tpe, loc) if flix.options.optimizations.contains(Optimization.TagTupleFusion) =>
+      // Adding source line number for debugging
+      addSourceLine(visitor, loc)
+      // We get the `TagInfo` for the tag
+      val tagInfo = JvmOps.getTagInfo(tpe, tag)
+      // Fusion info
+      val fusionInfo = JvmOps.getFusionTag(tagInfo).get
+      // Jvm type of the class
+      val classType = JvmOps.getFusionClassType(fusionInfo)
+      // JvmType of `elms`
+      val fieldTypes = elms.map(elm => JvmOps.getErasedType(elm.tpe)).toList
+      // Creating a new instance of the case
+      visitor.visitTypeInsn(NEW, classType.name.toInternalName)
+      // Duplicating the class
+      visitor.visitInsn(DUP)
+      // Evaluating all the elements to be stored in the tuple class
+      elms.foreach{compileExpression(_, currentClassType, jumpLabels, entryPoint, visitor)}
+      // Invoking the constructor
+      visitor.visitMethodInsn(INVOKESPECIAL, classType.name.toInternalName, "<init>",
+        AsmOps.getMethodDescriptor(fieldTypes, JvmType.Void), false)
+
+    // Fusion when the tuple is already created
+    case Expression.Tag(enum, tag, exp, tpe, loc) if exp.tpe.isTuple && flix.options.optimizations.contains(Optimization.TagTupleFusion) =>
+      // Adding source line number for debugging
+      addSourceLine(visitor, loc)
+      // We get the `TagInfo` for the tag
+      val tagInfo = JvmOps.getTagInfo(tpe, tag)
+      // Fusion info
+      val fusionInfo = JvmOps.getFusionTag(tagInfo).get
+      // Jvm type of the class
+      val classType = JvmOps.getFusionClassType(fusionInfo)
+      // Jvm type of the tuple
+      val tupleType = JvmOps.getTupleInterfaceType(exp.tpe)
+      // JvmType of arguments of tuple
+      val fieldTypes = exp.tpe.typeArguments.map(JvmOps.getErasedType)
+      // Creating a new instance of the case
+      visitor.visitTypeInsn(NEW, classType.name.toInternalName)
+      // Duplicating the class
+      visitor.visitInsn(DUP)
+      // Evaluating the expression for the value of the tag
+      compileExpression(exp, currentClassType, jumpLabels, entryPoint, visitor)
+      // Extracting all indices of the tuple
+      for((jvmType, ind) <- fieldTypes.zipWithIndex) {
+        // Duplicating the reference since the function call will consume one reference
+        visitor.visitInsn(DUP)
+        // Extracting value of `index` index from the tuple
+        visitor.visitMethodInsn(INVOKEINTERFACE, tupleType.name.toInternalName, s"getIndex$ind",
+          AsmOps.getMethodDescriptor(Nil, jvmType), true)
+        // Bringing the reference to the tuple to the top of the stack
+        if(AsmOps.getStackSpace(jvmType) == 1) {
+          visitor.visitInsn(SWAP)
+        }
+        else {
+          visitor.visitInsn(DUP2_X1)
+          visitor.visitInsn(POP2)
+        }
+      }
+      // Popping the reference to the tuple from the stack
+      visitor.visitInsn(POP)
+      // Invoking the constructor
+      visitor.visitMethodInsn(INVOKESPECIAL, classType.name.toInternalName, "<init>",
+        AsmOps.getMethodDescriptor(fieldTypes, JvmType.Void), false)
+
+    // Normal Tag
     case Expression.Tag(enum, tag, exp, tpe, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
@@ -532,6 +603,9 @@ object GenExpression {
           visitor.visitMethodInsn(INVOKESPECIAL, classType.name.toInternalName, "<init>", constructorDescriptor, false)
         }
       }
+
+    case Expression.Untag(enum, tag, exp, tpe, loc) if tpe.isTuple && flix.options.optimizations.contains(Optimization.TagTupleFusion) =>
+      compileExpression(exp, currentClassType, jumpLabels, entryPoint, visitor)
 
     case Expression.Untag(enum, tag, exp, tpe, loc) =>
       // Adding source line number for debugging
