@@ -81,6 +81,7 @@ object GenExpression {
       visitor.visitTypeInsn(NEW, jvmType.name.toInternalName)
       // Duplicate
       visitor.visitInsn(DUP)
+      visitor.visitVarInsn(ALOAD, 1)
       // Capturing free args
       for (f <- freeVars) {
         val v = Expression.Var(f.sym, f.tpe, loc)
@@ -88,7 +89,7 @@ object GenExpression {
       }
       // Calling the constructor
       val varTypes = freeVars.map(_.tpe).map(JvmOps.getErasedType)
-      visitor.visitMethodInsn(INVOKESPECIAL, jvmType.name.toInternalName, "<init>", AsmOps.getMethodDescriptor(varTypes, JvmType.Void), false)
+      visitor.visitMethodInsn(INVOKESPECIAL, jvmType.name.toInternalName, "<init>", AsmOps.getMethodDescriptor(JvmType.Object +: varTypes, JvmType.Void), false)
 
     case Expression.ApplyClo(exp, args, tpe, loc) =>
       // Label for the loop
