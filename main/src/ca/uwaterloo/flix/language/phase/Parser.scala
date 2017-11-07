@@ -514,7 +514,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Primary: Rule1[ParsedAst.Expression] = rule {
       LetRec | LetMatch | IfThenElse | Match | LambdaMatch | Switch | Unsafe | Native | Lambda | Tuple |
-        Array | FNil | FSet | FMap | Literal |
+        ArrayLit | ArrayNew | FNil | FSet | FMap | Literal |
         Existential | Universal | UnaryLambda | QName | Wild | Tag | SName | Hole | UserError
     }
 
@@ -596,8 +596,12 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       SP ~ "(" ~ optWS ~ zeroOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ SP ~> ParsedAst.Expression.Tuple
     }
 
-    def Array: Rule1[ParsedAst.Expression] = rule {
-      SP ~ "[|" ~ optWS ~ zeroOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "|]" ~ SP ~> ParsedAst.Expression.Array
+    def ArrayLit: Rule1[ParsedAst.Expression] = rule {
+      SP ~ atomic("[|") ~ optWS ~ zeroOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ atomic("|]") ~ SP ~> ParsedAst.Expression.ArrayLit
+    }
+
+    def ArrayNew: Rule1[ParsedAst.Expression] = rule {
+      SP ~ atomic("[|") ~ optWS ~ Expression ~ optWS ~ ";" ~ optWS ~ Literals.IntDefault ~ optWS ~ atomic("|]") ~ SP ~> ParsedAst.Expression.ArrayNew
     }
 
     def FNil: Rule1[ParsedAst.Expression.FNil] = rule {

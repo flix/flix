@@ -494,10 +494,13 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
             case xs => WeededAst.Expression.Tuple(xs, mkSL(sp1, sp2))
           }
 
-        case ParsedAst.Expression.Array(sp1, elms, sp2) =>
+        case ParsedAst.Expression.ArrayLit(sp1, elms, sp2) =>
           @@(elms.map(e => visit(e, unsafe))) map {
-            case es => WeededAst.Expression.Array(es, mkSL(sp1, sp2))
+            case es => WeededAst.Expression.ArrayLit(es, mkSL(sp1, sp2))
           }
+
+        case ParsedAst.Expression.ArrayNew(sp1, elm, length, sp2) =>
+          ??? // TODO
 
         case ParsedAst.Expression.ArrayLoad(base, index, sp2) =>
           val sp1 = leftMostSourcePosition(base)
@@ -1233,7 +1236,8 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.Switch(sp1, _, _) => sp1
     case ParsedAst.Expression.Tag(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Tuple(sp1, _, _) => sp1
-    case ParsedAst.Expression.Array(sp1, _, _) => sp1
+    case ParsedAst.Expression.ArrayLit(sp1, _, _) => sp1
+    case ParsedAst.Expression.ArrayNew(sp1, _, _, _) => sp1
     case ParsedAst.Expression.ArrayLoad(base, _, _) => leftMostSourcePosition(base)
     case ParsedAst.Expression.ArrayStore(base, _, _, _) => leftMostSourcePosition(base)
     case ParsedAst.Expression.FNil(sp1, _) => sp1
