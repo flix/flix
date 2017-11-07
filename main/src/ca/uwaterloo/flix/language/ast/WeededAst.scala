@@ -120,6 +120,8 @@ object WeededAst {
 
     case class ArrayLit(elms: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
 
+    case class ArrayNew(elm: WeededAst.Expression, length: Int, loc: SourceLocation) extends WeededAst.Expression
+
     case class ArrayLoad(base: WeededAst.Expression, index: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     case class ArrayStore(base: WeededAst.Expression, index: WeededAst.Expression, value: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression

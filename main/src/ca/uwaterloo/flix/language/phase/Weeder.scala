@@ -500,7 +500,15 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           }
 
         case ParsedAst.Expression.ArrayNew(sp1, elm, length, sp2) =>
-          ??? // TODO
+          @@(visit(elm, unsafe), Patterns.weed(length)) flatMap {
+            case (e, len) => len match {
+              case WeededAst.Pattern.Int32(l, loc) =>
+                // TODO: Check if negative.
+                WeededAst.Expression.ArrayNew(e, l, mkSL(sp1, sp2)).toSuccess
+              case _ => ???
+              // TODO
+            }
+          }
 
         case ParsedAst.Expression.ArrayLoad(base, index, sp2) =>
           val sp1 = leftMostSourcePosition(base)
