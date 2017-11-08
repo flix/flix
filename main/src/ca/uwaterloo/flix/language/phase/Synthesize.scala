@@ -96,7 +96,6 @@ object Synthesize extends Phase[Root, Root] {
       case Expression.Int64(lit, loc) => exp0
       case Expression.BigInt(lit, loc) => exp0
       case Expression.Str(lit, loc) => exp0
-      case Expression.Hook(hook, tpe, eff, loc) => exp0
 
       case Expression.Lambda(fparams, exp, tpe, eff, loc) =>
         val e = visitExp(exp)

@@ -124,13 +124,6 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         Expression.ApplySelfTail(sym, fs, as, adjustType(tpe), loc)
 
       //
-      // ApplyHook Expressions.
-      //
-      case Expression.ApplyHook(hook, args, tpe, loc) =>
-        val as = args map (visitExp(_, env0))
-        Expression.ApplyHook(hook, as, adjustType(tpe), loc)
-
-      //
       // Unary Expressions.
       //
       case Expression.Unary(sop, op, exp, tpe, loc) =>
@@ -368,7 +361,6 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       //
       case Expression.LambdaClosure(lambda, freeVars, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
       case Expression.Lambda(args, body, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
-      case Expression.Hook(hook, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
       case Expression.Apply(exp, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
     }
 

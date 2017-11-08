@@ -117,11 +117,8 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.Def(_, _, _) => exp0
       case Expression.Lambda(args, body, tpe, loc) =>
         Expression.Lambda(args, visit(body), tpe, loc)
-      case Expression.Hook(_, _, _) => exp0
       case Expression.ApplySelfTail(sym, formals, actuals, tpe, loc) =>
         Expression.ApplySelfTail(sym, formals, actuals.map(visit), tpe, loc)
-      case Expression.ApplyHook(hook, args, tpe, loc) =>
-        Expression.ApplyHook(hook, args.map(visit), tpe, loc)
       case Expression.Unary(sop, op, exp1, tpe, loc) =>
         Expression.Unary(sop, op, visit(exp1), tpe, loc)
       case Expression.Binary(sop, op, exp1, exp2, tpe, loc) =>
@@ -208,8 +205,6 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       Expression.ApplyDefTail(sym, args.map(renameAndSubstitute(_, env0)), tpe, loc)
     case Expression.ApplySelfTail(sym, formals, actuals, tpe, loc) =>
       Expression.ApplySelfTail(sym, formals, actuals.map(renameAndSubstitute(_, env0)), tpe, loc)
-    case Expression.ApplyHook(hook, args, tpe, loc) =>
-      Expression.ApplyHook(hook, args.map(renameAndSubstitute(_, env0)), tpe, loc)
     case Expression.Unary(sop, op, exp1, tpe, loc) =>
       Expression.Unary(sop, op, renameAndSubstitute(exp1, env0), tpe, loc)
     case Expression.Binary(sop, op, exp1, exp2, tpe, loc) =>
@@ -275,7 +270,6 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     case Expression.SwitchError(_, _) => exp0
 
     case Expression.Lambda(_, _, _, _) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
-    case Expression.Hook(_, _, _) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
     case Expression.LambdaClosure(_, _, _, _) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
     case Expression.Apply(exp1, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
   }
@@ -332,7 +326,6 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     case Expression.ApplyCloTail(exp, args, tpe, loc) => false
     case Expression.ApplyDefTail(sym, args, tpe, loc) => false
     case Expression.ApplySelfTail(sym, formals, actuals, tpe, loc) => false
-    case Expression.ApplyHook(hook, args, tpe, loc) => false
 
     //
     // Unary expressions are atomic if the operand is atomic.
@@ -465,7 +458,6 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     case Expression.SwitchError(tpe, loc) => true
 
     case Expression.Lambda(_, _, _, _) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
-    case Expression.Hook(_, _, _) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
     case Expression.LambdaClosure(_, _, _, _) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
     case Expression.Apply(_, _, _, _) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
   }

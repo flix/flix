@@ -25,17 +25,18 @@ import org.parboiled2
 import org.parboiled2._
 
 import scala.collection.immutable.Seq
+
 /**
   * A phase to transform source files into abstract syntax trees.
   */
-object Parser extends Phase[(List[Source], Long, Map[Symbol.DefnSym, Ast.Hook], Map[Symbol.DefnSym, String]), ParsedAst.Program] {
+object Parser extends Phase[(List[Source], Long, Map[Symbol.DefnSym, String]), ParsedAst.Program] {
 
   /**
     * Parses the given source inputs into an abstract syntax tree.
     */
-  def run(arg: (List[Source], Long, Map[Symbol.DefnSym, Ast.Hook], Map[Symbol.DefnSym, String]))(implicit flix: Flix): Validation[ParsedAst.Program, CompilationError] = {
-    // The argument consists of a list of sources, the time spent by the reader, and the map of hooks.
-    val (sources, reader, hooks, namedExp) = arg
+  def run(arg: (List[Source], Long, Map[Symbol.DefnSym, String]))(implicit flix: Flix): Validation[ParsedAst.Program, CompilationError] = {
+    // The argument consists of a list of sources and the time spent by the reader.
+    val (sources, reader, namedExp) = arg
 
     // Retrieve the execution context.
     implicit val _ = flix.ec
@@ -51,7 +52,7 @@ object Parser extends Phase[(List[Source], Long, Map[Symbol.DefnSym, Ast.Hook], 
 
       // Sequence and combine the ASTs into one abstract syntax tree.
       @@(roots, named) map {
-        case (as, ne) => ParsedAst.Program(as, hooks, ne.toMap, Time.Default)
+        case (as, ne) => ParsedAst.Program(as, ne.toMap, Time.Default)
       }
     })
 

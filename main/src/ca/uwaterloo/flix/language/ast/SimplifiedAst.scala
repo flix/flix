@@ -135,9 +135,6 @@ object SimplifiedAst {
     @EliminatedBy(LambdaLift.getClass)
     case class Lambda(fparams: List[SimplifiedAst.FormalParam], exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
-    @EliminatedBy(LambdaLift.getClass)
-    case class Hook(hook: Ast.Hook, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
-
     @EliminatedBy(ClosureConv.getClass)
     case class Apply(exp: SimplifiedAst.Expression, args: List[SimplifiedAst.Expression], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
@@ -153,9 +150,6 @@ object SimplifiedAst {
 
     @IntroducedBy(ClosureConv.getClass)
     case class ApplyDef(sym: Symbol.DefnSym, args: List[SimplifiedAst.Expression], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
-
-    @IntroducedBy(ClosureConv.getClass)
-    case class ApplyHook(hook: Ast.Hook, args: List[SimplifiedAst.Expression], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
     @IntroducedBy(Tailrec.getClass)
     case class ApplyCloTail(exp: SimplifiedAst.Expression, args: List[SimplifiedAst.Expression], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression

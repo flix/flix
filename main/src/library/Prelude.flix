@@ -139,12 +139,6 @@ def assertNot!(b: Bool): Bool =
 def assertEq![a](x: a, y: a): Bool = if (x == y) true else ???
 
 ///
-/// Returns a freshly generated integer.
-/// Note: Requires the --Ximpure feature flag.
-///
-def genSym!(): Int = genSymHook()
-
-///
 /// The commutative law asserts that for a binary operator `f` the result of `f(x, y)` is equal to `f(y, x)`.
 ///
 law commutative[a, b](f: (a, a) -> b): Bool =

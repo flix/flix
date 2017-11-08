@@ -151,10 +151,8 @@ object Uncurrier extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
           val newFormals = args.map(f => f.copy(sym = Symbol.freshVarSym(f.sym)))
           val newMapping = args.map(f => f.sym).zip(newFormals.map(f => f.sym)).toMap
           Lambda(newFormals, substitute(body, env0 ++ newMapping), tpe, loc)
-        case e: Hook => e
         case LambdaClosure(lambda, freeVars, tpe, loc) => LambdaClosure(substitute(lambda, env0).asInstanceOf[SimplifiedAst.Expression.Lambda], freeVars, tpe, loc)
         case e: Closure => e
-        case ApplyHook(hook, args, tpe, loc) => ApplyHook(hook, args.map(substitute(_, env0)), tpe, loc)
         case Apply(exp, args, tpe, loc) => Apply(substitute(exp, env0), args.map(a => substitute(a, env0)), tpe, loc)
         case Unary(sop, op, exp, tpe, loc) => Unary(sop, op, substitute(exp, env0), tpe, loc)
         case Binary(sop, op, exp1, exp2, tpe, loc) => Binary(sop, op, substitute(exp1, env0), substitute(exp2, env0), tpe, loc)
@@ -222,10 +220,8 @@ object Uncurrier extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Var(sym, tpe, loc) => exp0
       case Def(sym, tpe, loc) => exp0
       case Lambda(args, body, tpe, loc) => Lambda(args, uncurry(body, newSyms, root), tpe, loc)
-      case Hook(hook, tpe, loc) => exp0
       case LambdaClosure(lambda, freeVars, tpe, loc) => exp0
       case Closure(ref, freeVars, tpe, loc) => exp0
-      case ApplyHook(hook, args, tpe, loc) => exp0
       case a: Apply =>
         val uncurryCount = maximalUncurry(a)
         uncurryN(exp0, uncurryCount) match {
@@ -350,10 +346,8 @@ object Uncurrier extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
           case _: Var => 0
           case _: Def => 0
           case _: Lambda => 0
-          case _: Hook => 0
           case _: LambdaClosure => 0
           case _: Closure => 0
-          case _: ApplyHook => 0
           case a: Apply => 1 + maximalUncurry(a)
           case _: Unary => 0
           case _: Binary => 0

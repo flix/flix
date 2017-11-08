@@ -141,35 +141,6 @@ object Ast {
     */
   case class Documentation(text: String, loc: SourceLocation)
 
-
-  /**
-    * A common super-type for hooks.
-    */
-  sealed trait Hook {
-    /**
-      * Returns the symbol of the hook.
-      */
-    def sym: Symbol.DefnSym
-
-    /**
-      * Returns the type of the hook.
-      */
-    def tpe: Type
-  }
-
-  object Hook {
-
-    /**
-      * A reference to an implementation of the [[InvokableUnsafe]] interface.
-      *
-      * @param sym the symbol of the hook.
-      * @param inv the functional object.
-      * @param tpe the type of the function.
-      */
-    case class Unsafe(sym: Symbol.DefnSym, inv: InvokableUnsafe, tpe: Type) extends Hook
-
-  }
-
   /**
     * Companion object of [[Modifiers]].
     */

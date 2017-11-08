@@ -352,23 +352,6 @@ object GenExpression {
       // Jump to the entry point of the method.
       visitor.visitJumpInsn(GOTO, entryPoint)
 
-    case Expression.ApplyHook(hook, args, tpe, loc) =>
-      // TODO: Magnus: Remove hooks.
-      val message = "ApplyHook is not implemented"
-      // Create a new `Exception` object
-      visitor.visitTypeInsn(NEW, JvmName.UnsupportedOperationException.toInternalName)
-      visitor.visitInsn(DUP)
-
-      // add the message to the stack
-      visitor.visitLdcInsn(message)
-
-      // invoke the constructor of the `Exception` object
-      visitor.visitMethodInsn(INVOKESPECIAL, JvmName.UnsupportedOperationException.toInternalName, "<init>",
-        AsmOps.getMethodDescriptor(List(JvmType.String), JvmType.Void), false)
-
-      // throw the exception
-      visitor.visitInsn(ATHROW)
-
     case Expression.Unary(sop, op, exp, _, _) =>
       // TODO: Ramin: Must not use `op`, should only use `sop`.
       compileUnaryExpr(exp, currentClass, visitor, lenv0, entryPoint, op, sop)

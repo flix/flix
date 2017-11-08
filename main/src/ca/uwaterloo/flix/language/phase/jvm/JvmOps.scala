@@ -745,10 +745,6 @@ object JvmOps {
         case (sacc, e) => sacc ++ visitExp(e)
       }
 
-      case Expression.ApplyHook(hook, args, tpe, loc) => args.foldLeft(Set.empty[ClosureInfo]) {
-        case (sacc, e) => sacc ++ visitExp(e)
-      }
-
       case Expression.Unary(sop, op, exp, tpe, loc) =>
         visitExp(exp)
 
@@ -943,10 +939,6 @@ object JvmOps {
       }
 
       case Expression.ApplySelfTail(sym, fparams, args, tpe, loc) => args.foldLeft(Set(tpe)) {
-        case (sacc, e) => sacc ++ visitExp(e)
-      }
-
-      case Expression.ApplyHook(hook, args, tpe, loc) => args.foldLeft(Set(tpe)) {
         case (sacc, e) => sacc ++ visitExp(e)
       }
 

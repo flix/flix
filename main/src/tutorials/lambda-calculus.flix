@@ -162,4 +162,4 @@ def testOmega(): Expression = eval(
 /// Returns a fresh variable name.
 /// (Relies on an unsafe and impure built-in Flix function!).
 ///
-def freshVar(): Int = 1000 + genSym!()
+def freshVar(): Int = ??? // TODO

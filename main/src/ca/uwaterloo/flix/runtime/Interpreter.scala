@@ -69,13 +69,6 @@ object Interpreter {
     case Expression.ApplyDefTail(sym, args, _, _) => invokeDef(sym, args, env0, lenv0, root)
     case Expression.ApplySelfTail(sym, _, args, _, _) => invokeDef(sym, args, env0, lenv0, root)
 
-    case Expression.ApplyHook(hook, args0, _, _) =>
-      val args = evalArgs(args0, env0, lenv0, root)
-      hook match {
-        case Ast.Hook.Unsafe(name, inv, _) =>
-          inv(args.toArray)
-      }
-
     //
     // Unary expressions.
     //

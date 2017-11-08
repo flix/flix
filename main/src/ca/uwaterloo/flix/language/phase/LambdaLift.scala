@@ -123,7 +123,6 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         // Finally, replace this current Lambda node with a Ref to the newly-generated name.
         SimplifiedAst.Expression.Def(freshSymbol, tpe, loc)
 
-      case Expression.Hook(hook, tpe, loc) => e
       case Expression.Closure(ref, freeVars, tpe, loc) => e
 
       case Expression.Apply(exp, args, tpe, loc) =>
@@ -141,8 +140,6 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         Expression.ApplyClo(visit(exp), args.map(visit), tpe, loc)
       case Expression.ApplyDef(name, args, tpe, loc) =>
         Expression.ApplyDef(name, args.map(visit), tpe, loc)
-      case Expression.ApplyHook(hook, args, tpe, loc) =>
-        Expression.ApplyHook(hook, args.map(visit), tpe, loc)
       case Expression.Unary(sop, op, exp, tpe, loc) =>
         Expression.Unary(sop, op, visit(exp), tpe, loc)
       case Expression.Binary(sop, op, exp1, exp2, tpe, loc) =>

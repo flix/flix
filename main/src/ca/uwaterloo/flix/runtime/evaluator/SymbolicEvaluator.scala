@@ -823,11 +823,6 @@ object SymbolicEvaluator {
         */
       case Expression.SwitchError(tpe, loc) => throw SwitchException("Switch Error", loc)
 
-      /**
-        * Unsupported expressions.
-        */
-      case e: Expression.ApplyHook => throw InternalCompilerException(s"Unsupported expression: '$e'.")
-
     }
 
     /**

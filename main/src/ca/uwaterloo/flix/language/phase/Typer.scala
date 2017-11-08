@@ -430,12 +430,6 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           liftM(tpe)
 
         /*
-         * Hook expression.
-         */
-        case ResolvedAst.Expression.Hook(hook, tpe, loc) =>
-          liftM(tpe)
-
-        /*
          * Literal expression.
          */
         case ResolvedAst.Expression.Unit(loc) => liftM(Type.Unit)
@@ -912,12 +906,6 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
          */
         case ResolvedAst.Expression.Hole(sym, tpe, loc) =>
           TypedAst.Expression.Hole(sym, subst0(tpe), Eff.Bot, loc)
-
-        /*
-         * Hook expression.
-         */
-        case ResolvedAst.Expression.Hook(hook, tpe, loc) =>
-          TypedAst.Expression.Hook(hook, subst0(tpe), Eff.Bot, loc)
 
         /*
          * Literal expression.

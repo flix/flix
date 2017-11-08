@@ -147,17 +147,6 @@ object PrettyPrinter {
           }
           vt.text(")")
 
-        case Expression.Hook(hook, tpe, loc) => vt.text(hook.sym.toString)
-
-        case Expression.ApplyHook(hook, args, tpe, loc) =>
-          fmtSym(hook.sym, vt)
-          vt.text("(")
-          for (arg <- args) {
-            visitExp(arg)
-            vt.text(", ")
-          }
-          vt.text(")")
-
         case Expression.Unary(sop, op, exp, tpe, loc) =>
           fmtUnaryOp(op, vt)
           visitExp(exp)

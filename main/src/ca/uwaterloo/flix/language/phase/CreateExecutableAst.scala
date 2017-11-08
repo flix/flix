@@ -149,8 +149,6 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
         ExecutableAst.Expression.Var(sym, tpe, loc)
       case SimplifiedAst.Expression.Lambda(args, body, tpe, loc) =>
         throw InternalCompilerException("Lambdas should have been converted to closures and lifted.")
-      case SimplifiedAst.Expression.Hook(hook, tpe, loc) =>
-        throw InternalCompilerException("Hooks should have been inlined into ApplyHooks or wrapped inside lambdas.")
       case SimplifiedAst.Expression.LambdaClosure(lambda, freeVars, tpe, loc) =>
         throw InternalCompilerException("MkClosure should have been replaced by MkClosureRef after lambda lifting.")
       case SimplifiedAst.Expression.Apply(exp, args, tpe, loc) =>
@@ -180,9 +178,6 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
         ExecutableAst.Expression.ApplyDefTail(name, argsArray, tpe, loc)
       case SimplifiedAst.Expression.ApplySelfTail(name, formals, actuals, tpe, loc) =>
         ExecutableAst.Expression.ApplySelfTail(name, formals.map(CreateExecutableAst.toExecutable), actuals.map(toExecutable), tpe, loc)
-      case SimplifiedAst.Expression.ApplyHook(hook, args, tpe, loc) =>
-        val argsArray = args.map(toExecutable)
-        ExecutableAst.Expression.ApplyHook(hook, argsArray, tpe, loc)
       case SimplifiedAst.Expression.Unary(sop, op, exp, tpe, loc) =>
         ExecutableAst.Expression.Unary(sop, op, toExecutable(exp), tpe, loc)
       case SimplifiedAst.Expression.Binary(sop, op, exp1, exp2, tpe, loc) =>
