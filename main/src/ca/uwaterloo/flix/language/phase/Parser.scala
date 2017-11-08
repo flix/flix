@@ -601,7 +601,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def ArrayNew: Rule1[ParsedAst.Expression] = rule {
-      SP ~ atomic("[|") ~ optWS ~ Expression ~ optWS ~ ";" ~ optWS ~ Literals.IntDefault ~ optWS ~ atomic("|]") ~ SP ~> ParsedAst.Expression.ArrayNew
+      SP ~ atomic("[|") ~ optWS ~ Expression ~ optWS ~ ";" ~ optWS ~ Literals.Int ~ optWS ~ atomic("|]") ~ SP ~> ParsedAst.Expression.ArrayNew
     }
 
     def FNil: Rule1[ParsedAst.Expression.FNil] = rule {

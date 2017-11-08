@@ -136,6 +136,36 @@ class TestWeeder extends FunSuite with TestUtils {
     expectError[WeederError.EmptyLattice](result)
   }
 
+  test("IllegalArrayLength.01") {
+    val input = "def f(): Array[Int] = [| 0; 42i8 |]"
+    val result = new Flix().addStr(input).compile()
+    expectError[WeederError.IllegalArrayLength](result)
+  }
+
+  test("IllegalArrayLength.02") {
+    val input = "def f(): Array[Int] = [| 0; 42i16 |]"
+    val result = new Flix().addStr(input).compile()
+    expectError[WeederError.IllegalArrayLength](result)
+  }
+
+  test("IllegalArrayLength.03") {
+    val input = "def f(): Array[Int] = [| 0; 42i64 |]"
+    val result = new Flix().addStr(input).compile()
+    expectError[WeederError.IllegalArrayLength](result)
+  }
+
+  test("IllegalArrayLength.04") {
+    val input = "def f(): Array[Int] = [| 0; 42ii |]"
+    val result = new Flix().addStr(input).compile()
+    expectError[WeederError.IllegalArrayLength](result)
+  }
+
+  test("IllegalArrayLength.05") {
+    val input = "def f(): Array[Int] = [| 0; -123 |]"
+    val result = new Flix().addStr(input).compile()
+    expectError[WeederError.IllegalArrayLength](result)
+  }
+
   test("IllegalEffect.01") {
     val input = "def f(): Bool @ Foo = true"
     val result = new Flix().addStr(input).compile()

@@ -497,11 +497,15 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         case ParsedAst.Expression.ArrayNew(sp1, elm, length, sp2) =>
           @@(visit(elm, unsafe), Patterns.weed(length)) flatMap {
             case (e, len) => len match {
+              //
+              // Check for [[IllegalArrayLength]].
+              //
               case WeededAst.Pattern.Int32(l, loc) =>
-                // TODO: Check if negative.
-                WeededAst.Expression.ArrayNew(e, l, mkSL(sp1, sp2)).toSuccess
-              case _ => ???
-              // TODO
+                if (l >= 0)
+                  WeededAst.Expression.ArrayNew(e, l, mkSL(sp1, sp2)).toSuccess
+                else
+                  IllegalArrayLength(mkSL(sp1, sp2)).toFailure
+              case _ => IllegalArrayLength(mkSL(sp1, sp2)).toFailure
             }
           }
 

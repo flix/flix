@@ -532,7 +532,7 @@ object ParsedAst {
       * @param len the length of the array.
       * @param sp2 the position of the last character in the expression.
       */
-    case class ArrayNew(sp1: SourcePosition, elm: ParsedAst.Expression, len: ParsedAst.Literal.Int32, sp2: SourcePosition) extends ParsedAst.Expression
+    case class ArrayNew(sp1: SourcePosition, elm: ParsedAst.Expression, len: ParsedAst.Literal, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * ArrayLit Expression.
