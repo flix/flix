@@ -33,6 +33,7 @@ object GenContext {
     // Class visitor
     val visitor = AsmOps.mkClassWriter()
 
+    // Class header.
     visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_FINAL, JvmName.Context.toInternalName, null,
       JvmName.Object.toInternalName, null)
 

@@ -136,7 +136,7 @@ object GenFunctionClasses {
     }
 
     // Generating the expression
-    GenExpression.compileExpression(defn.exp, classType, Map(), enterLabel, applyMethod)
+    GenExpression.compileExpression(defn.exp, applyMethod, classType, Map(), enterLabel)
 
     // Loading `this`
     applyMethod.visitVarInsn(ALOAD, 0)

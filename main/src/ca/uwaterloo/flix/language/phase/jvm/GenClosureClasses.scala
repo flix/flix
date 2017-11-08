@@ -53,7 +53,6 @@ object GenClosureClasses {
     * }
     * }
     *
-    *
     */
   private def genByteCode(closure: ClosureInfo)(implicit root: Root, flix: Flix): Array[Byte] = {
     // Class visitor
@@ -75,6 +74,7 @@ object GenClosureClasses {
     visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_FINAL, classType.name.toInternalName, null,
       JvmName.Object.toInternalName, superInterface)
 
+    // Generate a field for each closured captured variable.
     for ((freeVar, index) <- closure.freeVars.zipWithIndex) {
       // `JvmType` of `freeVar`
       val varType = JvmOps.getErasedType(freeVar.tpe)
@@ -108,7 +108,7 @@ object GenClosureClasses {
     compileApplyMethod(visitor, classType, root.defs(closure.sym), closure.freeVars, resultType)
 
     // Constructor of the class
-    compileConstructor(visitor, closure.freeVars, classType)
+    compileConstructor(visitor, classType, closure.freeVars)
 
     visitor.toByteArray
   }
@@ -116,11 +116,8 @@ object GenClosureClasses {
   /**
     * Apply method for the given `defn` and `classType`.
     */
-  private def compileApplyMethod(visitor: ClassWriter,
-                                 classType: JvmType.Reference,
-                                 defn: Def,
-                                 freeVars: List[FreeVar],
-                                 resultType: JvmType)(implicit root: Root, flix: Flix): Unit = {
+  private def compileApplyMethod(visitor: ClassWriter, classType: JvmType.Reference, defn: Def,
+                                 freeVars: List[FreeVar], resultType: JvmType)(implicit root: Root, flix: Flix): Unit = {
     // Method header
     val applyMethod = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, "apply",
       AsmOps.getMethodDescriptor(List(JvmType.Context), JvmType.Void), null, null)
@@ -164,12 +161,13 @@ object GenClosureClasses {
     }
 
     // Generating the expression
-    GenExpression.compileExpression(defn.exp, classType, Map(), enterLabel, applyMethod)
+    GenExpression.compileExpression(defn.exp, applyMethod, classType, Map(), enterLabel)
 
     // Loading `this`
     applyMethod.visitVarInsn(ALOAD, 0)
 
     // Swapping `this` and result of the expression
+    // TODO: Ramin could be extract this into a helper in AsmOps? It is used in several places, right?
     if (AsmOps.getStackSize(resultType) == 1) {
       applyMethod.visitInsn(SWAP)
     } else {
@@ -189,9 +187,7 @@ object GenClosureClasses {
   /**
     * Constructor of the class
     */
-  private def compileConstructor(visitor: ClassWriter,
-                                 freeVars: List[FreeVar],
-                                 classType: JvmType.Reference)(implicit root: Root, flix: Flix): Unit = {
+  private def compileConstructor(visitor: ClassWriter, classType: JvmType.Reference, freeVars: List[FreeVar])(implicit root: Root, flix: Flix): Unit = {
     val varTypes = freeVars.map(_.tpe).map(JvmOps.getErasedType)
 
     // Constructor header
@@ -207,8 +203,8 @@ object GenClosureClasses {
     for ((tpe, index) <- varTypes.zipWithIndex) {
       constructor.visitVarInsn(ALOAD, 0)
 
-      val iLoad = AsmOps.getLoadInstruction(tpe)
-      constructor.visitVarInsn(iLoad, offset)
+      val load = AsmOps.getLoadInstruction(tpe)
+      constructor.visitVarInsn(load, offset)
 
       constructor.visitFieldInsn(PUTFIELD, classType.name.toInternalName, s"clo$index", tpe.toDescriptor)
 
