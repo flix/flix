@@ -142,10 +142,10 @@ object GenTupleClasses {
       AsmOps.compileField(visitor, fieldName, field, isStatic = false, isPrivate = true)
 
       // Emitting getter for each field
-      AsmOps.compileGetFieldMethod(visitor, classType.name, field, fieldName, s"getIndex$ind")
+      AsmOps.compileGetFieldMethod(visitor, classType.name, fieldName, s"getIndex$ind", field)
 
       // Emitting setter for each field
-      AsmOps.compileSetFieldMethod(visitor, classType.name, field, fieldName, s"setIndex$ind")
+      AsmOps.compileSetFieldMethod(visitor, classType.name, fieldName, s"setIndex$ind", field)
     }
 
     // Emit the code for the constructor
@@ -155,15 +155,15 @@ object GenTupleClasses {
     compileGetBoxedValueMethod(visitor, classType, targs)
 
     // Generate `toString` method
-    AsmOps.exceptionThrowerMethod(visitor, ACC_PUBLIC + ACC_FINAL, "toString", AsmOps.getMethodDescriptor(Nil, JvmType.String),
+    AsmOps.compileExceptionThrowerMethod(visitor, ACC_PUBLIC + ACC_FINAL, "toString", AsmOps.getMethodDescriptor(Nil, JvmType.String),
       "toString method shouldn't be called")
 
     // Generate `hashCode` method
-    AsmOps.exceptionThrowerMethod(visitor, ACC_PUBLIC + ACC_FINAL, "hashCode", AsmOps.getMethodDescriptor(Nil, JvmType.PrimInt),
+    AsmOps.compileExceptionThrowerMethod(visitor, ACC_PUBLIC + ACC_FINAL, "hashCode", AsmOps.getMethodDescriptor(Nil, JvmType.PrimInt),
       "hashCode method shouldn't be called")
 
     // Generate `equals` method
-    AsmOps.exceptionThrowerMethod(visitor, ACC_PUBLIC + ACC_FINAL, "equals", AsmOps.getMethodDescriptor(List(JvmType.Object), JvmType.Void),
+    AsmOps.compileExceptionThrowerMethod(visitor, ACC_PUBLIC + ACC_FINAL, "equals", AsmOps.getMethodDescriptor(List(JvmType.Object), JvmType.Void),
       "equals method shouldn't be called")
 
 

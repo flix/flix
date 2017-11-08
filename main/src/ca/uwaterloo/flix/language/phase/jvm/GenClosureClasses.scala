@@ -92,7 +92,7 @@ object GenClosureClasses {
       AsmOps.compileField(visitor, s"arg$index", argType, isStatic = false, isPrivate = true)
 
       // `setArg$index()` method
-      AsmOps.compileSetFieldMethod(visitor, classType.name, argType, s"arg$index", s"setArg$index")
+      AsmOps.compileSetFieldMethod(visitor, classType.name, s"arg$index", s"setArg$index", argType)
     }
 
     // Jvm type of the result of the function
@@ -102,7 +102,7 @@ object GenClosureClasses {
     AsmOps.compileField(visitor, "result", resultType, isStatic = false, isPrivate = true)
 
     // Getter for the result field
-    AsmOps.compileGetFieldMethod(visitor, classType.name, resultType, "result", "getResult")
+    AsmOps.compileGetFieldMethod(visitor, classType.name, "result", "getResult", resultType)
 
     // Apply method of the class
     compileApplyMethod(visitor, classType, root.defs(closure.sym), closure.freeVars, resultType)
@@ -170,7 +170,7 @@ object GenClosureClasses {
     applyMethod.visitVarInsn(ALOAD, 0)
 
     // Swapping `this` and result of the expression
-    if (AsmOps.getStackSpace(resultType) == 1) {
+    if (AsmOps.getStackSize(resultType) == 1) {
       applyMethod.visitInsn(SWAP)
     } else {
       applyMethod.visitInsn(DUP_X2)
@@ -213,7 +213,7 @@ object GenClosureClasses {
       constructor.visitFieldInsn(PUTFIELD, classType.name.toInternalName, s"clo$index", tpe.toDescriptor)
 
       // Incrementing the offset
-      offset += AsmOps.getStackSpace(tpe)
+      offset += AsmOps.getStackSize(tpe)
     }
 
     constructor.visitInsn(RETURN)

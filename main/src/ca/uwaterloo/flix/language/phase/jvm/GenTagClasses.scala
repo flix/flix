@@ -138,7 +138,7 @@ object GenTagClasses {
     }
 
     // Generate the `getValue` method
-    AsmOps.compileGetFieldMethod(visitor, classType.name, valueType, "value", "getValue")
+    AsmOps.compileGetFieldMethod(visitor, classType.name, "value", "getValue", valueType)
 
     // Generate the `getBoxedTagValue` method.
     AsmOps.compileGetBoxedTagValueMethod(visitor, classType, valueType)
@@ -147,15 +147,15 @@ object GenTagClasses {
     compileGetTagMethod(visitor, tag.tag)
 
     // Generate the `toString` method.
-    AsmOps.exceptionThrowerMethod(visitor, ACC_PUBLIC + ACC_FINAL, "toString", AsmOps.getMethodDescriptor(Nil, JvmType.String),
+    AsmOps.compileExceptionThrowerMethod(visitor, ACC_PUBLIC + ACC_FINAL, "toString", AsmOps.getMethodDescriptor(Nil, JvmType.String),
       "toString method shouldn't be called")
 
     // Generate the `hashCode` method.
-    AsmOps.exceptionThrowerMethod(visitor, ACC_PUBLIC + ACC_FINAL, "hashCode", AsmOps.getMethodDescriptor(Nil, JvmType.PrimInt),
+    AsmOps.compileExceptionThrowerMethod(visitor, ACC_PUBLIC + ACC_FINAL, "hashCode", AsmOps.getMethodDescriptor(Nil, JvmType.PrimInt),
       "hashCode method shouldn't be called")
 
     // Generate the `equals` method.
-    AsmOps.exceptionThrowerMethod(visitor, ACC_PUBLIC + ACC_FINAL, "equals", AsmOps.getMethodDescriptor(List(JvmType.Object), JvmType.PrimBool),
+    AsmOps.compileExceptionThrowerMethod(visitor, ACC_PUBLIC + ACC_FINAL, "equals", AsmOps.getMethodDescriptor(List(JvmType.Object), JvmType.PrimBool),
       "equals method shouldn't be called")
 
     // Complete the visitor and get the bytecode.

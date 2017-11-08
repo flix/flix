@@ -70,7 +70,7 @@ object GenExpression {
       val jvmType = JvmOps.getErasedType(tpe)
       val iLOAD = AsmOps.getLoadInstruction(jvmType)
       visitor.visitVarInsn(iLOAD, sym.getStackOffset + 3) // This is `+2` because the first 2 are reserved!
-      AsmOps.castIfNotPrim(JvmOps.getJvmType(tpe), visitor)
+      AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
 
     case Expression.Closure(sym, freeVars, fnType, tpe, loc) =>
       // ClosureInfo
@@ -114,7 +114,7 @@ object GenExpression {
         val argErasedType = JvmOps.getErasedType(arg.tpe)
         // Evaluating the expression
         compileExpression(arg, currentClassType, jumpLabels, entryPoint, visitor)
-        if (AsmOps.getStackSpace(argErasedType) == 1) {
+        if (AsmOps.getStackSize(argErasedType) == 1) {
           visitor.visitInsn(SWAP)
         } else {
           visitor.visitInsn(DUP2_X1)
@@ -154,7 +154,7 @@ object GenExpression {
       // Load IFO from local variable and invoke `getResult` on it
       visitor.visitVarInsn(ALOAD, 2)
       visitor.visitMethodInsn(INVOKEINTERFACE, cont.name.toInternalName, "getResult", AsmOps.getMethodDescriptor(Nil, resultType), true)
-      AsmOps.castIfNotPrim(JvmOps.getJvmType(tpe), visitor)
+      AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
 
     case Expression.ApplyDef(name, args, tpe, loc) =>
       // Label for the loop
@@ -196,7 +196,7 @@ object GenExpression {
         val argErasedType = JvmOps.getErasedType(arg.tpe)
         // Evaluating the expression
         compileExpression(arg, currentClassType, jumpLabels, entryPoint, visitor)
-        if (AsmOps.getStackSpace(argErasedType) == 1) {
+        if (AsmOps.getStackSize(argErasedType) == 1) {
           visitor.visitInsn(SWAP)
         } else {
           visitor.visitInsn(DUP2_X1)
@@ -237,7 +237,7 @@ object GenExpression {
       // Load IFO from local variable and invoke `getResult` on it
       visitor.visitVarInsn(ALOAD, 2)
       visitor.visitMethodInsn(INVOKEINTERFACE, cont.name.toInternalName, "getResult", AsmOps.getMethodDescriptor(Nil, resultType), true)
-      AsmOps.castIfNotPrim(JvmOps.getJvmType(tpe), visitor)
+      AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
 
     case Expression.ApplyCloTail(exp, args, tpe, loc) =>
       // Type of the function interface
@@ -260,7 +260,7 @@ object GenExpression {
         val argErasedType = JvmOps.getErasedType(arg.tpe)
         // Evaluating the expression
         compileExpression(arg, currentClassType, jumpLabels, entryPoint, visitor)
-        if (AsmOps.getStackSpace(argErasedType) == 1) {
+        if (AsmOps.getStackSize(argErasedType) == 1) {
           visitor.visitInsn(SWAP)
         } else {
           visitor.visitInsn(DUP2_X1)
@@ -318,7 +318,7 @@ object GenExpression {
         val argErasedType = JvmOps.getErasedType(arg.tpe)
         // Evaluating the expression
         compileExpression(arg, currentClassType, jumpLabels, entryPoint, visitor)
-        if (AsmOps.getStackSpace(argErasedType) == 1) {
+        if (AsmOps.getStackSize(argErasedType) == 1) {
           visitor.visitInsn(SWAP)
         } else {
           visitor.visitInsn(DUP2_X1)
@@ -543,7 +543,7 @@ object GenExpression {
         visitor.visitMethodInsn(INVOKEINTERFACE, tupleType.name.toInternalName, s"getIndex$ind",
           AsmOps.getMethodDescriptor(Nil, jvmType), true)
         // Bringing the reference to the tuple to the top of the stack
-        if (AsmOps.getStackSpace(jvmType) == 1) {
+        if (AsmOps.getStackSize(jvmType) == 1) {
           visitor.visitInsn(SWAP)
         }
         else {
@@ -650,7 +650,7 @@ object GenExpression {
         // Invoke `getValue()` method to extract the field of the tag
         visitor.visitMethodInsn(INVOKEVIRTUAL, classType.name.toInternalName, "getValue", methodDescriptor, false)
         // Cast the object to it's type if it's not a primitive
-        AsmOps.castIfNotPrim(JvmOps.getJvmType(tpe), visitor)
+        AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
       }
 
     case Expression.Index(base, offset, tpe, _) =>
@@ -663,7 +663,7 @@ object GenExpression {
       // Invoking `getField${offset}()` method for fetching the field
       visitor.visitMethodInsn(INVOKEINTERFACE, classType.name.toInternalName, s"getIndex$offset", methodDescriptor, true)
       // Cast the object to it's type if it's not a primitive
-      AsmOps.castIfNotPrim(JvmOps.getJvmType(tpe), visitor)
+      AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
 
     case Expression.Tuple(elms, tpe, loc) =>
       // Adding source line number for debugging
@@ -721,7 +721,7 @@ object GenExpression {
       // Dereference the expression
       visitor.visitMethodInsn(INVOKEVIRTUAL, classType.name.toInternalName, "getValue", methodDescriptor, false)
       // Cast underlying value to the correct type if the underlying type is Object
-      AsmOps.castIfNotPrim(JvmOps.getJvmType(tpe), visitor)
+      AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
 
     case Expression.Assign(exp1, exp2, tpe, loc) =>
       // Adding source line number for debugging
@@ -791,19 +791,19 @@ object GenExpression {
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
       val msg = s"User exception: ${loc.format}."
-      AsmOps.compileException(visitor, JvmName.UserException, msg)
+      AsmOps.compileThrowException(visitor, JvmName.UserException, msg)
 
     case Expression.MatchError(_, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
       val msg = s"Non-exhaustive match expression: ${loc.format}."
-      AsmOps.compileException(visitor, JvmName.MatchException, msg)
+      AsmOps.compileThrowException(visitor, JvmName.MatchException, msg)
 
     case Expression.SwitchError(_, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
       val msg = s"Non-exhaustive switch expression: ${loc.format}."
-      AsmOps.compileException(visitor, JvmName.SwitchException, msg)
+      AsmOps.compileThrowException(visitor, JvmName.SwitchException, msg)
   }
 
   /*

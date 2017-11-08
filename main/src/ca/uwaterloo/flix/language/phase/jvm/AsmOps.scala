@@ -20,11 +20,65 @@ object AsmOps {
 
   /**
     * Returns a freshly created class writer object.
+    *
+    * The object is constructed to compute stack map frames automatically.
     */
   def mkClassWriter(): ClassWriter = new ClassWriter(ClassWriter.COMPUTE_FRAMES) {
     override def getCommonSuperClass(tpe1: String, tpe2: String): String = {
       JvmType.Object.name.toInternalName
     }
+  }
+
+  /**
+    * Returns the stack size of a variable of type `tpe` in jvm.
+    */
+  def getStackSize(tpe: JvmType): Int = tpe match {
+    case JvmType.PrimBool => 1
+    case JvmType.PrimChar => 1
+    case JvmType.PrimFloat => 1
+    case JvmType.PrimDouble => 2
+    case JvmType.PrimByte => 1
+    case JvmType.PrimShort => 1
+    case JvmType.PrimInt => 1
+    case JvmType.PrimLong => 2
+    case JvmType.Reference(_) => 1
+    case JvmType.Void => throw InternalCompilerException(s"Unexpected type: $tpe")
+  }
+
+  /**
+    * Returns the load instruction for the value of the type specified by `tpe`
+    */
+  // TODO: Ramin: Pattern match should not use wildcard.
+  def getLoadInstruction(tpe: JvmType): Int = tpe match {
+    case JvmType.PrimBool | JvmType.PrimChar | JvmType.PrimByte | JvmType.PrimShort | JvmType.PrimInt => ILOAD
+    case JvmType.PrimLong => LLOAD
+    case JvmType.PrimFloat => FLOAD
+    case JvmType.PrimDouble => DLOAD
+    case _ => ALOAD
+  }
+
+  /**
+    * Returns the store instruction for the value of the type specified by `tpe`
+    */
+  // TODO: Ramin: Pattern match should not use wildcard.
+  def getStoreInstruction(tpe: JvmType): Int = tpe match {
+    case JvmType.PrimBool | JvmType.PrimChar | JvmType.PrimByte | JvmType.PrimShort | JvmType.PrimInt => ISTORE
+    case JvmType.PrimLong => LSTORE
+    case JvmType.PrimFloat => FSTORE
+    case JvmType.PrimDouble => DSTORE
+    case _ => ASTORE
+  }
+
+  /**
+    * Returns the load instruction corresponding to the given type `tpe`
+    */
+  // TODO: Ramin: Pattern match should not use wildcard.
+  def getReturnInstruction(tpe: JvmType): Int = tpe match {
+    case JvmType.PrimBool | JvmType.PrimChar | JvmType.PrimByte | JvmType.PrimShort | JvmType.PrimInt => IRETURN
+    case JvmType.PrimLong => LRETURN
+    case JvmType.PrimFloat => FRETURN
+    case JvmType.PrimDouble => DRETURN
+    case _ => ARETURN
   }
 
   /**
@@ -42,8 +96,27 @@ object AsmOps {
   }
 
   /**
-    * Generates a field for the class with with name `name`, with descriptor `descriptor` using `visitor`. If `isStatic = true`
-    * then the field is static, otherwise the field will be non-static.
+    * `tpe` is jvm type of value on top of the stack. If the value is not primitive, then we cast it to it's specific type,
+    * if the value is a primitive then since there is no boxing, then no casting is necessary.
+    */
+  def castIfNotPrim(visitor: MethodVisitor, tpe: JvmType): Unit = tpe match {
+    case JvmType.PrimBool => ()
+    case JvmType.PrimChar => ()
+    case JvmType.PrimFloat => ()
+    case JvmType.PrimDouble => ()
+    case JvmType.PrimByte => ()
+    case JvmType.PrimShort => ()
+    case JvmType.PrimInt => ()
+    case JvmType.PrimLong => ()
+    case JvmType.Void => ()
+    case JvmType.Reference(name) => visitor.visitTypeInsn(CHECKCAST, name.toInternalName)
+  }
+
+  /**
+    * Generates a field for the class with with name `fieldName`, with descriptor `descriptor` using `visitor`.
+    *
+    * If `isStatic = true` then the field is static, otherwise the field will be non-static.
+    *
     * For example calling this method with name = `field01`, descriptor = `I`, isStatic = `false` and isPrivate = `true`
     * creates the following field:
     *
@@ -58,14 +131,8 @@ object AsmOps {
     * and isPrivate = `false` generates the following:
     *
     * public static Nil unitInstance;
-    *
-    * @param visitor   class visitor
-    * @param name      name of the field
-    * @param jvmType   Jvm Type of the field
-    * @param isStatic  if this is true the the field is static
-    * @param isPrivate if this is set then the field is private
     */
-  def compileField(visitor: ClassWriter, name: String, jvmType: JvmType, isStatic: Boolean, isPrivate: Boolean): Unit = {
+  def compileField(visitor: ClassWriter, fieldName: String, fieldType: JvmType, isStatic: Boolean, isPrivate: Boolean): Unit = {
     val visibility =
       if (isPrivate) {
         ACC_PRIVATE
@@ -73,14 +140,14 @@ object AsmOps {
         ACC_PUBLIC
       }
 
-    val fieldType =
+    val access =
       if (isStatic) {
         ACC_STATIC
       } else {
         0
       }
 
-    val field = visitor.visitField(visibility + fieldType, name, jvmType.toDescriptor, null, null)
+    val field = visitor.visitField(visibility + access, fieldName, fieldType.toDescriptor, null, null)
     field.visitEnd()
   }
 
@@ -92,19 +159,35 @@ object AsmOps {
     * public final char getValue() {
     * return this.value;
     * }
-    *
-    * @param visitor    class visitor
-    * @param classType  Name of the class containing the field
-    * @param fieldType  JvmType of the field
-    * @param methodName method name of getter of `fieldName`
     */
-  def compileGetFieldMethod(visitor: ClassWriter, classType: JvmName, fieldType: JvmType, fieldName: String, methodName: String): Unit = {
+  def compileGetFieldMethod(visitor: ClassWriter, className: JvmName, fieldName: String, methodName: String, fieldType: JvmType): Unit = {
     val method = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, methodName, getMethodDescriptor(Nil, fieldType), null, null)
 
     method.visitCode()
     method.visitVarInsn(ALOAD, 0)
-    method.visitFieldInsn(GETFIELD, classType.toInternalName, fieldName, fieldType.toDescriptor)
-    method.visitInsn(getReturnInsn(fieldType))
+    method.visitFieldInsn(GETFIELD, className.toInternalName, fieldName, fieldType.toDescriptor)
+    method.visitInsn(getReturnInstruction(fieldType))
+    method.visitMaxs(1, 1)
+    method.visitEnd()
+  }
+
+  /**
+    * Generate the `methodName` method for setting the `fieldName` field of the class.
+    * `name` is name of the class and `descriptor` is type of the `fieldName` field.
+    * For example, the class of `Tuple[Int32, Int32]` has the following `setField0` method:
+    *
+    * public final void setField0(int var) {
+    *   this.field0 = var;
+    * }
+    */
+  def compileSetFieldMethod(visitor: ClassWriter, classType: JvmName, fieldName: String, methodName: String, fieldType: JvmType): Unit = {
+    val method = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, methodName, getMethodDescriptor(List(fieldType), JvmType.Void), null, null)
+
+    method.visitCode()
+    method.visitVarInsn(ALOAD, 0)
+    method.visitVarInsn(getLoadInstruction(fieldType), 1)
+    method.visitFieldInsn(PUTFIELD, classType.toInternalName, fieldName, fieldType.toDescriptor)
+    method.visitInsn(RETURN)
     method.visitMaxs(1, 1)
     method.visitEnd()
   }
@@ -124,14 +207,8 @@ object AsmOps {
     * public final Object getBoxedTagValue() {
     * return this.value;
     * }
-    *
-    * @param visitor   class visitor
-    * @param classType JvmType.Reference of the class
-    * @param valueType JvmType of the `value` field of the class
     */
-  def compileGetBoxedTagValueMethod(visitor: ClassWriter,
-                                    classType: JvmType.Reference,
-                                    valueType: JvmType)(implicit root: Root, flix: Flix) = {
+  def compileGetBoxedTagValueMethod(visitor: ClassWriter, classType: JvmType.Reference, valueType: JvmType)(implicit root: Root, flix: Flix): Unit = {
     val method = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, "getBoxedTagValue", AsmOps.getMethodDescriptor(Nil, JvmType.Object), null, null)
 
     method.visitCode()
@@ -144,79 +221,9 @@ object AsmOps {
   }
 
   /**
-    * Generate the `methodName` method for setting the `fieldName` field of the class.
-    * `name` is name of the class and `descriptor` is type of the `fieldName` field.
-    * For example, the class of `Tuple[Int32, Int32]` has the following `setField0` method:
-    *
-    * public final void setField0(int var) {
-    *   this.field0 = var;
-    * }
-    *
-    * @param visitor    class visitor
-    * @param classType  Name of the class containing the field
-    * @param fieldType  JvmType of the field
-    * @param methodName method name of getter of `fieldName`
-    */
-  def compileSetFieldMethod(visitor: ClassWriter, classType: JvmName, fieldType: JvmType, fieldName: String, methodName: String): Unit = {
-    val method = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, methodName, getMethodDescriptor(List(fieldType), JvmType.Void), null, null)
-
-    method.visitCode()
-    method.visitVarInsn(ALOAD, 0)
-    method.visitVarInsn(getLoadInstruction(fieldType), 1)
-    method.visitFieldInsn(PUTFIELD, classType.toInternalName, fieldName, fieldType.toDescriptor)
-    method.visitInsn(RETURN)
-    method.visitMaxs(1, 1)
-    method.visitEnd()
-  }
-
-  /**
-    * Returns the load instruction corresponding to the given type `tpe`
-    *
-    * @param tpe type
-    * @return A load instruction
-    */
-  // TODO: Ramin: Pattern match should not use wildcard.
-  def getReturnInsn(tpe: JvmType): Int = tpe match {
-    case JvmType.PrimBool | JvmType.PrimChar | JvmType.PrimByte | JvmType.PrimShort | JvmType.PrimInt => IRETURN
-    case JvmType.PrimLong => LRETURN
-    case JvmType.PrimFloat => FRETURN
-    case JvmType.PrimDouble => DRETURN
-    case _ => ARETURN
-  }
-
-  /**
-    * Returns the load instruction for the value of the type specified by `tpe`
-    *
-    * @param tpe Jvm Type of value to be loaded
-    * @return Appropriate load instruction for the given type
-    */
-  // TODO: Ramin: Pattern match should not use wildcard.
-  def getLoadInstruction(tpe: JvmType): Int = tpe match {
-    case JvmType.PrimBool | JvmType.PrimChar | JvmType.PrimByte | JvmType.PrimShort | JvmType.PrimInt => ILOAD
-    case JvmType.PrimLong => LLOAD
-    case JvmType.PrimFloat => FLOAD
-    case JvmType.PrimDouble => DLOAD
-    case _ => ALOAD
-  }
-
-  /**
-    * Returns the store instruction for the value of the type specified by `tpe`
-    *
-    * @param tpe Jvm Type of value to be stored
-    * @return Appropriate store instruction for the given type
-    */
-  def getStoreInstruction(tpe: JvmType): Int = tpe match {
-    case JvmType.PrimBool | JvmType.PrimChar | JvmType.PrimByte | JvmType.PrimShort | JvmType.PrimInt => ISTORE
-    case JvmType.PrimLong => LSTORE
-    case JvmType.PrimFloat => FSTORE
-    case JvmType.PrimDouble => DSTORE
-    case _ => ASTORE
-  }
-
-  /**
     * Generates code which instantiate an exception object and then throws it.
     */
-  def compileException(visitor: MethodVisitor, className: JvmName, msg: String): Unit = {
+  def compileThrowException(visitor: MethodVisitor, className: JvmName, msg: String): Unit = {
     visitor.visitTypeInsn(NEW, className.toInternalName)
     visitor.visitInsn(DUP)
     visitor.visitLdcInsn(msg)
@@ -229,13 +236,9 @@ object AsmOps {
 
   /**
     * This will generate a method which will throw an exception in case of getting called.
-    *
-    * @param modifiers  Modifiers of the generated method
-    * @param methodName Name of the method
-    * @param descriptor Descriptor of the method
-    * @param message    Message of the exception to be thrown
     */
-  def exceptionThrowerMethod(visitor: ClassWriter, modifiers: Int, methodName: String, descriptor: String, message: String): Unit = {
+  def compileExceptionThrowerMethod(visitor: ClassWriter, modifiers: Int, methodName: String, descriptor: String, message: String): Unit = {
+    // TODO: Ramin: The descriptor argument should be a JvmType, not a string.
     // Method visitor.
     val method = visitor.visitMethod(modifiers, methodName, descriptor, null, Array(JvmName.Exception.toInternalName))
     method.visitCode()
@@ -272,9 +275,6 @@ object AsmOps {
 
     /**
       * This method will box the primitive on top of the stack
-      *
-      * @param boxedObjectInternalName descriptor of the boxed version of the primitive
-      * @param signature               signature of the constructor of the boxer
       */
     def box(boxedObjectInternalName: String, signature: String): Unit = {
       method.visitTypeInsn(NEW, boxedObjectInternalName)
@@ -295,49 +295,10 @@ object AsmOps {
       case JvmType.PrimFloat => box(JvmName.Float.toInternalName, getMethodDescriptor(List(JvmType.PrimFloat), JvmType.Void))
       case JvmType.PrimDouble => box(JvmName.Double.toInternalName, getMethodDescriptor(List(JvmType.PrimDouble), JvmType.Void))
       case _ =>
+        // TODO: Ramin: Pattern match should not use wildcard.
         method.visitVarInsn(ALOAD, 0)
         method.visitMethodInsn(INVOKESPECIAL, classType.name.toInternalName, getterName, getMethodDescriptor(Nil, fieldType), false)
     }
-  }
-
-  /**
-    * Returns the size of a variable of type `tpe` in jvm.
-    *
-    * @param tpe Jvm type of the variable
-    * @return Size of the variable in jvm
-    */
-  def getStackSpace(tpe: JvmType): Int = tpe match {
-    case JvmType.PrimBool => 1
-    case JvmType.PrimChar => 1
-    case JvmType.PrimFloat => 1
-    case JvmType.PrimDouble => 2
-    case JvmType.PrimByte => 1
-    case JvmType.PrimShort => 1
-    case JvmType.PrimInt => 1
-    case JvmType.PrimLong => 2
-    case JvmType.Void => throw InternalCompilerException(s"Unexpected type: $tpe")
-    case JvmType.Reference(_) => 1
-  }
-
-
-  /**
-    * `tpe` is jvm type of value on top of the stack. If the value is not primitive, then we cast it to it's specific type,
-    * if the value is a primitive then since there is no boxing, then no casting is necessary.
-    *
-    * @param tpe     Jvm type to be casted
-    * @param visitor Class visitor
-    */
-  def castIfNotPrim(tpe: JvmType, visitor: MethodVisitor): Unit = tpe match {
-    case JvmType.PrimBool => ()
-    case JvmType.PrimChar => ()
-    case JvmType.PrimFloat => ()
-    case JvmType.PrimDouble => ()
-    case JvmType.PrimByte => ()
-    case JvmType.PrimShort => ()
-    case JvmType.PrimInt => ()
-    case JvmType.PrimLong => ()
-    case JvmType.Void => ()
-    case JvmType.Reference(name) => visitor.visitTypeInsn(CHECKCAST, name.toInternalName)
   }
 
 }

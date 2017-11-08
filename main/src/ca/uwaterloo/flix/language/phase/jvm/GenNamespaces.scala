@@ -98,7 +98,7 @@ object GenNamespaces {
     val args = defn.tpe.typeArguments.map(JvmOps.getErasedType)
 
     // Length of args in local
-    val stackSize = args.init.map(AsmOps.getStackSpace).sum
+    val stackSize = args.init.map(AsmOps.getStackSize).sum
 
     // Address of continuation
     val contextAddr = stackSize
@@ -156,7 +156,7 @@ object GenNamespaces {
         AsmOps.getMethodDescriptor(List(arg), JvmType.Void), false)
 
       // Incrementing the offset
-      offset += AsmOps.getStackSpace(arg)
+      offset += AsmOps.getStackSize(arg)
     }
     // Label for the loop
     val loop = new Label
@@ -212,7 +212,7 @@ object GenNamespaces {
     method.visitMethodInsn(INVOKEINTERFACE, cont.name.toInternalName, "getResult", AsmOps.getMethodDescriptor(Nil, resultType), true)
 
     // Return
-    method.visitInsn(AsmOps.getReturnInsn(args.last))
+    method.visitInsn(AsmOps.getReturnInstruction(args.last))
 
     // Parameters of visit max are thrown away because visitor will calculate the frame and variable stack size
     method.visitMaxs(65535, 65535)

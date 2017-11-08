@@ -74,10 +74,10 @@ object GenFusionClasses {
       AsmOps.compileField(visitor, fieldName, jvmType, isStatic = false, isPrivate = true)
 
       // Emitting getter for each field
-      AsmOps.compileGetFieldMethod(visitor, fusionType.name, jvmType, fieldName, s"getIndex$ind")
+      AsmOps.compileGetFieldMethod(visitor, fusionType.name, fieldName, s"getIndex$ind", jvmType)
 
       // Emitting setter for each field
-      AsmOps.compileSetFieldMethod(visitor, fusionType.name, jvmType, fieldName, s"setIndex$ind")
+      AsmOps.compileSetFieldMethod(visitor, fusionType.name, fieldName, s"setIndex$ind", jvmType)
     }
 
     // Emit the code for `getBoxedValue()` method for Tuple
@@ -99,15 +99,15 @@ object GenFusionClasses {
     GenTagClasses.compileGetTagMethod(visitor, tagInfo.tag)
 
     // Generate the `toString` method.
-    AsmOps.exceptionThrowerMethod(visitor, ACC_PUBLIC + ACC_FINAL, "toString", AsmOps.getMethodDescriptor(Nil, JvmType.String),
+    AsmOps.compileExceptionThrowerMethod(visitor, ACC_PUBLIC + ACC_FINAL, "toString", AsmOps.getMethodDescriptor(Nil, JvmType.String),
       "toString method shouldn't be called")
 
     // Generate the `hashCode` method.
-    AsmOps.exceptionThrowerMethod(visitor, ACC_PUBLIC + ACC_FINAL, "hashCode", AsmOps.getMethodDescriptor(Nil, JvmType.PrimInt),
+    AsmOps.compileExceptionThrowerMethod(visitor, ACC_PUBLIC + ACC_FINAL, "hashCode", AsmOps.getMethodDescriptor(Nil, JvmType.PrimInt),
       "hashCode method shouldn't be called")
 
     // Generate the `equals` method.
-    AsmOps.exceptionThrowerMethod(visitor, ACC_PUBLIC + ACC_FINAL, "equals", AsmOps.getMethodDescriptor(List(JvmType.Object), JvmType.PrimBool),
+    AsmOps.compileExceptionThrowerMethod(visitor, ACC_PUBLIC + ACC_FINAL, "equals", AsmOps.getMethodDescriptor(List(JvmType.Object), JvmType.PrimBool),
       "equals method shouldn't be called")
 
     visitor.visitEnd()
