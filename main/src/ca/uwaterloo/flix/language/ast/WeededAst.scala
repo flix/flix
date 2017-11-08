@@ -118,9 +118,9 @@ object WeededAst {
 
     case class Tuple(elms: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
 
-    case class ArrayLit(elms: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
+    case class ArrayNew(elm: WeededAst.Expression, len: Int, loc: SourceLocation) extends WeededAst.Expression
 
-    case class ArrayNew(elm: WeededAst.Expression, length: Int, loc: SourceLocation) extends WeededAst.Expression
+    case class ArrayLit(elms: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
 
     case class ArrayLoad(base: WeededAst.Expression, index: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 

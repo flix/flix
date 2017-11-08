@@ -740,9 +740,14 @@ object SymbolicEvaluator {
         }
 
       /**
-        * Array.
+        * ArrayNew.
         */
-      case Expression.Arr(elms, _, _) => ??? // TODO
+      case Expression.ArrayNew(elm, _, _, _) => ??? // TODO
+
+      /**
+        * ArrayLit.
+        */
+      case Expression.ArrayLit(elms, _, _) => ??? // TODO
 
       /**
         * ArrayLoad.

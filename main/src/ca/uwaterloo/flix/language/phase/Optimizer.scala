@@ -268,11 +268,18 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         Expression.Tuple(es, adjustType(tpe), loc)
 
       //
-      // Array Expressions.
+      // ArrayNew Expressions.
       //
-      case Expression.Array(elms, tpe, loc) =>
+      case Expression.ArrayNew(elm, len, tpe, loc) =>
+        val e = visitExp(elm, env0)
+        Expression.ArrayNew(e, len, adjustType(tpe), loc)
+
+      //
+      // ArrayLit Expressions.
+      //
+      case Expression.ArrayLit(elms, tpe, loc) =>
         val es = elms map (visitExp(_, env0))
-        Expression.Array(es, adjustType(tpe), loc)
+        Expression.ArrayLit(es, adjustType(tpe), loc)
 
       //
       // ArrayLoad Expressions.

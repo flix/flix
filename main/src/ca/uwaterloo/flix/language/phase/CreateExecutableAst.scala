@@ -215,9 +215,12 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
       case SimplifiedAst.Expression.Tuple(elms, tpe, loc) =>
         val elmsArray = elms.map(toExecutable).toArray
         ExecutableAst.Expression.Tuple(elmsArray, tpe, loc)
-      case SimplifiedAst.Expression.Array(elms, tpe, loc) =>
+      case SimplifiedAst.Expression.ArrayNew(elm, len, tpe, loc) =>
+        val e = toExecutable(elm)
+        ExecutableAst.Expression.ArrayNew(e, len, tpe, loc)
+      case SimplifiedAst.Expression.ArrayLit(elms, tpe, loc) =>
         val es = elms map toExecutable
-        ExecutableAst.Expression.Arr(es, tpe, loc)
+        ExecutableAst.Expression.ArrayLit(es, tpe, loc)
       case SimplifiedAst.Expression.ArrayLoad(base, index, tpe, loc) =>
         val b = toExecutable(base)
         val i = toExecutable(index)

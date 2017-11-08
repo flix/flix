@@ -443,9 +443,14 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
           case es => NamedAst.Expression.Tuple(es, Type.freshTypeVar(), loc)
         }
 
+      case WeededAst.Expression.ArrayNew(elm, len, loc) =>
+        namer(elm, env0, tenv0) map {
+          case e => NamedAst.Expression.ArrayNew(e, len, Type.freshTypeVar(), loc)
+        }
+
       case WeededAst.Expression.ArrayLit(elms, loc) =>
         @@(elms map (e => namer(e, env0, tenv0))) map {
-          case es => NamedAst.Expression.Array(es, Type.freshTypeVar(), loc)
+          case es => NamedAst.Expression.ArrayLit(es, Type.freshTypeVar(), loc)
         }
 
       case WeededAst.Expression.ArrayLoad(base, index, loc) =>
@@ -554,6 +559,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
       }
       case WeededAst.Expression.Tag(enum, tag, expOpt, loc) => expOpt.map(freeVars).getOrElse(Nil)
       case WeededAst.Expression.Tuple(elms, loc) => elms.flatMap(freeVars)
+      case WeededAst.Expression.ArrayNew(elm, len, loc) => freeVars(elm)
       case WeededAst.Expression.ArrayLit(elms, loc) => elms.flatMap(freeVars)
       case WeededAst.Expression.ArrayLoad(base, index, loc) => freeVars(base) ++ freeVars(index)
       case WeededAst.Expression.ArrayStore(base, index, value, loc) => freeVars(base) ++ freeVars(index) ++ freeVars(value)

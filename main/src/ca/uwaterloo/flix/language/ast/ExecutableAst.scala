@@ -245,8 +245,9 @@ object ExecutableAst {
 
     case class Tuple(elms: Array[ExecutableAst.Expression], tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
-    // TODO: Name
-    case class Arr(elms: List[ExecutableAst.Expression], tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
+    case class ArrayNew(elm: ExecutableAst.Expression, len: Int, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
+
+    case class ArrayLit(elms: List[ExecutableAst.Expression], tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
     case class ArrayLoad(base: ExecutableAst.Expression, index: ExecutableAst.Expression, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 

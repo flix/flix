@@ -369,9 +369,13 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case TypedAst.Expression.Tuple(elms, tpe, eff, loc) =>
         SimplifiedAst.Expression.Tuple(elms map visitExp, tpe, loc)
 
-      case TypedAst.Expression.Array(elms, tpe, eff, loc) =>
+      case TypedAst.Expression.ArrayNew(elm, len, tpe, eff, loc) =>
+        val e = visitExp(elm)
+        SimplifiedAst.Expression.ArrayNew(e, len, tpe, loc)
+
+      case TypedAst.Expression.ArrayLit(elms, tpe, eff, loc) =>
         val es = elms map visitExp
-        SimplifiedAst.Expression.Array(es, tpe, loc)
+        SimplifiedAst.Expression.ArrayLit(es, tpe, loc)
 
       case TypedAst.Expression.ArrayLoad(base, index, tpe, eff, loc) =>
         val b = visitExp(base)
@@ -1056,8 +1060,10 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         SimplifiedAst.Expression.Index(visit(exp), offset, tpe, loc)
       case SimplifiedAst.Expression.Tuple(elms, tpe, loc) =>
         SimplifiedAst.Expression.Tuple(elms.map(visit), tpe, loc)
-      case SimplifiedAst.Expression.Array(elms, tpe, loc) =>
-        SimplifiedAst.Expression.Array(elms map visit, tpe, loc)
+      case SimplifiedAst.Expression.ArrayNew(elm, len, tpe, loc) =>
+        SimplifiedAst.Expression.ArrayNew(visit(elm), len, tpe, loc)
+      case SimplifiedAst.Expression.ArrayLit(elms, tpe, loc) =>
+        SimplifiedAst.Expression.ArrayLit(elms map visit, tpe, loc)
       case SimplifiedAst.Expression.ArrayLoad(base, index, tpe, loc) =>
         SimplifiedAst.Expression.ArrayLoad(visit(base), visit(index), tpe, loc)
       case SimplifiedAst.Expression.ArrayStore(base, index, value, tpe, loc) =>

@@ -174,7 +174,9 @@ object TypedAst {
 
     case class Tuple(elms: List[TypedAst.Expression], tpe: Type, eff: Eff, loc: SourceLocation) extends TypedAst.Expression
 
-    case class Array(elms: List[TypedAst.Expression], tpe: Type, eff: Eff, loc: SourceLocation) extends TypedAst.Expression
+    case class ArrayNew(elm: TypedAst.Expression, len: Int, tpe: Type, eff: Eff, loc: SourceLocation) extends TypedAst.Expression
+
+    case class ArrayLit(elms: List[TypedAst.Expression], tpe: Type, eff: Eff, loc: SourceLocation) extends TypedAst.Expression
 
     case class ArrayLoad(base: TypedAst.Expression, index: TypedAst.Expression, tpe: Type, eff: Eff, loc: SourceLocation) extends TypedAst.Expression
 

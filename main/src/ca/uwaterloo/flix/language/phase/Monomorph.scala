@@ -274,9 +274,13 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           val es = elms.map(e => visitExp(e, env0))
           Expression.Tuple(es, subst0(tpe), eff, loc)
 
-        case Expression.Array(elms, tpe, eff, loc) =>
+        case Expression.ArrayNew(elm, len, tpe, eff, loc) =>
+          val e = visitExp(elm, env0)
+          Expression.ArrayNew(e, len, subst0(tpe), eff, loc)
+
+        case Expression.ArrayLit(elms, tpe, eff, loc) =>
           val es = elms.map(e => visitExp(e, env0))
-          Expression.Array(es, subst0(tpe), eff, loc)
+          Expression.ArrayLit(es, subst0(tpe), eff, loc)
 
         case Expression.ArrayLoad(base, index, tpe, eff, loc) =>
           val b = visitExp(base, env0)

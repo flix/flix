@@ -267,9 +267,16 @@ object SimplifiedAstOps {
         checkType(tpe)
 
       //
-      // Array Expressions.
+      // ArrayNew Expressions.
       //
-      case Expression.Array(elms, tpe, loc) =>
+      case Expression.ArrayNew(elm, len, tpe, loc) =>
+        checkExp(elm, env0, ienv0)
+        checkType(tpe)
+
+      //
+      // ArrayLit Expressions.
+      //
+      case Expression.ArrayLit(elms, tpe, loc) =>
         for (elm <- elms) {
           checkExp(elm, env0, ienv0)
         }

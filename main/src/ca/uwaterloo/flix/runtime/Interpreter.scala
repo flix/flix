@@ -151,9 +151,20 @@ object Interpreter {
       Value.Tuple(es)
 
     //
-    // Array expressions.
+    // ArrayNew expressions.
     //
-    case Expression.Arr(elms, tpe, loc) =>
+    case Expression.ArrayNew(elm, len, tpe, loc) =>
+      val e = eval(elm, env0, lenv0, root)
+      val a = new Array[AnyRef](len)
+      for (i <- 0 until len) {
+        a(i) = e
+      }
+      Value.Arr(a)
+
+    //
+    // ArrayLit expressions.
+    //
+    case Expression.ArrayLit(elms, tpe, loc) =>
       val es = elms.map(e => eval(e, env0, lenv0, root)).toArray
       Value.Arr(es)
 

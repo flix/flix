@@ -220,7 +220,9 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
         case Expression.Tuple(elms, _, _, _) => seqM(elms map {
           checkPats(_, root)
         }).map(const(tast))
-        case Expression.Array(elms, _, _, _) => seqM(elms map {
+        case Expression.ArrayNew(elm, _, _, _, _) =>
+          checkPats(elm, root)
+        case Expression.ArrayLit(elms, _, _, _) => seqM(elms map {
           checkPats(_, root)
         }).map(const(tast))
         case Expression.ArrayLoad(base, index, _, _, _) =>

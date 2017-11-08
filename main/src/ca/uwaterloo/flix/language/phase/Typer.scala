@@ -696,9 +696,23 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           ) yield resultType
 
         /*
-         * Array expression.
+         * ArrayNew expression.
          */
-        case ResolvedAst.Expression.Array(elms, tvar, loc) =>
+        case ResolvedAst.Expression.ArrayNew(elm, len, tvar, loc) =>
+          //
+          //  [| elm; len |]  elm : t  len: Int32
+          //  -----------------------------------
+          //  [| elm |] : Array[t]
+          //
+          for {
+            elementType <- visitExp(elm)
+            resultType <- unifyM(tvar, Type.mkArray(elementType), loc)
+          } yield resultType
+
+        /*
+         * ArrayLit expression.
+         */
+        case ResolvedAst.Expression.ArrayLit(elms, tvar, loc) =>
           //
           //  e_1, ..., e_n : t
           //  ----------------
@@ -1016,11 +1030,18 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           TypedAst.Expression.Tuple(es, subst0(tvar), Eff.Bot, loc)
 
         /*
-         * Array expression.
+         * ArrayNew expression.
          */
-        case ResolvedAst.Expression.Array(elms, tvar, loc) =>
+        case ResolvedAst.Expression.ArrayNew(elm, len, tvar, loc) =>
+          val e = visitExp(elm, subst0)
+          TypedAst.Expression.ArrayNew(e, len, subst0(tvar), Eff.Bot, loc)
+
+        /*
+         * ArrayLit expression.
+         */
+        case ResolvedAst.Expression.ArrayLit(elms, tvar, loc) =>
           val es = elms.map(e => visitExp(e, subst0))
-          TypedAst.Expression.Array(es, subst0(tvar), Eff.Bot, loc)
+          TypedAst.Expression.ArrayLit(es, subst0(tvar), Eff.Bot, loc)
 
         /*
          * ArrayLoad expression.

@@ -249,7 +249,14 @@ object PrettyPrinter {
           }
           vt.text(")")
 
-        case Expression.Array(elms, tpe, loc) =>
+        case Expression.ArrayNew(elm, len, tpe, loc) =>
+          vt.text("[|")
+          visitExp(elm)
+          vt.text("; ")
+          vt.text(len.toString)
+          vt.text("|]")
+
+        case Expression.ArrayLit(elms, tpe, loc) =>
           vt.text("[|")
           for (elm <- elms) {
             visitExp(elm)

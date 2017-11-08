@@ -525,6 +525,16 @@ object ParsedAst {
     case class Tuple(sp1: SourcePosition, elms: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
+      * ArrayNew Expression.
+      *
+      * @param sp1 the position of the first character in the expression.
+      * @param elm the element of the array.
+      * @param len the length of the array.
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class ArrayNew(sp1: SourcePosition, elm: ParsedAst.Expression, len: ParsedAst.Literal.Int32, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
       * ArrayLit Expression.
       *
       * @param sp1  the position of the first character in the expression.
@@ -532,16 +542,6 @@ object ParsedAst {
       * @param sp2  the position of the last character in the expression.
       */
     case class ArrayLit(sp1: SourcePosition, elms: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
-
-    /**
-      * ArrayNew Expression.
-      *
-      * @param sp1    the position of the first character in the expression.
-      * @param elm    the element of the array.
-      * @param length the length of the array.
-      * @param sp2    the position of the last character in the expression.
-      */
-    case class ArrayNew(sp1: SourcePosition, elm: ParsedAst.Expression, length: ParsedAst.Literal.Int32, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Array Load Expression.

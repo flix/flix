@@ -127,7 +127,9 @@ object ResolvedAst {
 
     case class Tuple(elms: List[ResolvedAst.Expression], tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Array(elms: List[ResolvedAst.Expression], tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class ArrayNew(elm: ResolvedAst.Expression, len: Int, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+
+    case class ArrayLit(elms: List[ResolvedAst.Expression], tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class ArrayLoad(base: ResolvedAst.Expression, index: ResolvedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 

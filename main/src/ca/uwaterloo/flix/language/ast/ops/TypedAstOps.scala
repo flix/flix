@@ -101,7 +101,10 @@ object TypedAstOps {
           case (macc, elm) => macc ++ visitExp(elm, env0)
         }
 
-      case Expression.Array(elms, tpe, eff, loc) =>
+      case Expression.ArrayNew(elm, len, tpe, eff, loc) =>
+        visitExp(elm, env0)
+
+      case Expression.ArrayLit(elms, tpe, eff, loc) =>
         elms.foldLeft(Map.empty[Symbol.HoleSym, HoleContext]) {
           case (macc, elm) => macc ++ visitExp(elm, env0)
         }

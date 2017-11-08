@@ -393,10 +393,15 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
             es <- seqM(elms map visit)
           } yield ResolvedAst.Expression.Tuple(es, tvar, loc)
 
-        case NamedAst.Expression.Array(elms, tvar, loc) =>
+        case NamedAst.Expression.ArrayNew(elm, len, tvar, loc) =>
+          for {
+            e <- visit(elm)
+          } yield ResolvedAst.Expression.ArrayNew(e, len, tvar, loc)
+
+        case NamedAst.Expression.ArrayLit(elms, tvar, loc) =>
           for {
             es <- seqM(elms map visit)
-          } yield ResolvedAst.Expression.Array(es, tvar, loc)
+          } yield ResolvedAst.Expression.ArrayLit(es, tvar, loc)
 
         case NamedAst.Expression.ArrayLoad(base, index, tvar, loc) =>
           for {
