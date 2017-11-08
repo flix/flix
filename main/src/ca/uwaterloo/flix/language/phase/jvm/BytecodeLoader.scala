@@ -49,7 +49,9 @@ object BytecodeLoader {
         // Attempt to load class.
         val loadedClass = loader.loadClass(jvmName.toBinaryName)
 
-        // Debugging.
+        //
+        // Print when a class is loaded, if debugging and verbosity is enabled.
+        //
         if (flix.options.debug && flix.options.verbosity == Verbosity.Verbose) {
           Console.println(s"Loaded: '${jvmName.toBinaryName}'.")
         }

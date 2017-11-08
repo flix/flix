@@ -20,7 +20,9 @@ object Bootstrap {
     //
     val loadedClasses = BytecodeLoader.loadAll(classes)
 
-    // Debugging.
+    //
+    // Print the number of loaded classes, if debugging and verbosity is enabled.
+    //
     if (flix.options.debug && flix.options.verbosity == Verbosity.Verbose) {
       Console.println(s"Loaded: ${loadedClasses.size} classes.")
     }
@@ -28,7 +30,7 @@ object Bootstrap {
     //
     // Decorate each defn in the ast with its method object.
     //
-    for ((sym, defn) <- root.defs; if !JvmOps.isLaw(defn)) {
+    for ((sym, defn) <- root.defs; if JvmOps.nonLaw(defn)) {
       // Retrieve the namespace info of sym.
       val nsInfo = JvmOps.getNamespace(sym)
 

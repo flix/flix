@@ -37,7 +37,7 @@ object GenFunctionClasses {
     defs.foldLeft(Map.empty[JvmName, JvmClass]) {
       case (macc, (sym, defn)) =>
         // TODO: Magnus review the type filtering here.
-        if (defn.tpe.isArrow && !JvmOps.isLaw(defn)) {
+        if (defn.tpe.isArrow && JvmOps.nonLaw(defn)) {
 
           // `JvmType` of the interface for `def.tpe`
           val functionInterface = JvmOps.getFunctionInterfaceType(defn.tpe)

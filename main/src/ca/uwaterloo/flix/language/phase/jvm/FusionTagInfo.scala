@@ -2,11 +2,14 @@ package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.language.ast.{Symbol, Type}
 
-case class FusionTagInfo(sym: Symbol.EnumSym, enumType: Type, tupleType: Type, tag: String, elms: List[Type]) {
+/**
+  * Meta information about a fused tag and tuple.
+  */
+case class FusionTagInfo(sym: Symbol.EnumSym, tag: String, enumType: Type, tupleType: Type, elms: List[Type]) {
   /**
     * Returns the hash code of `this` fusion info.
     */
-  override def hashCode(): Int = 7 * sym.hashCode + 11 * tag.hashCode
+  override def hashCode(): Int = 7 * sym.hashCode + 11 * tag.hashCode + 13 * elms.hashCode()
 
   /**
     * Returns `true` if the given `obj` is the same fusion info.

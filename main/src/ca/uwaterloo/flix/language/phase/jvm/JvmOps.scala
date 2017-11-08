@@ -26,6 +26,8 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, Optimization}
 
 object JvmOps {
 
+  // TODO: Magnus: Implement curried functions.
+
   // TODO: Magnus: Organize functions.
 
   /**
@@ -458,7 +460,7 @@ object JvmOps {
     val elementTypes = innerType.typeArguments
 
     // Construct the fusion tag.
-    Some(FusionTagInfo(tag.sym, tag.enumType, tag.tagType, tag.tag, elementTypes))
+    Some(FusionTagInfo(tag.sym, tag.tag, tag.enumType, tag.tagType, elementTypes))
   }
 
   /**
@@ -856,7 +858,7 @@ object JvmOps {
       case (ns, defs) =>
         // Collect all non-law definitions.
         val nonLaws = defs filter {
-          case (sym, defn) => !isLaw(defn)
+          case (sym, defn) => nonLaw(defn)
         }
         NamespaceInfo(ns, nonLaws)
     }.toSet
@@ -1141,6 +1143,6 @@ object JvmOps {
     * Returns `true` if the given definition `defn` is a law.
     */
   // TODO: Magnus: Ensure this is used in all the correct places.
-  def isLaw(defn: Def): Boolean = defn.ann.isLaw
+  def nonLaw(defn: Def): Boolean = !defn.ann.isLaw
 
 }
