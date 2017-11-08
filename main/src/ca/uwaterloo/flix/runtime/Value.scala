@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.runtime
 
 import ca.uwaterloo.flix.api
-import ca.uwaterloo.flix.language.ast.Symbol
+import ca.uwaterloo.flix.language.ast.{Symbol, Type}
 import ca.uwaterloo.flix.util.InternalRuntimeException
 
 sealed trait Value
@@ -87,7 +87,7 @@ object Value {
   /**
     * An Array value.
     */
-  case class Arr(elms: Array[AnyRef]) {
+  case class Arr(elms: Array[AnyRef], tpe: Type) {
     final override def equals(obj: scala.Any): Boolean = throw InternalRuntimeException(s"Value.Arr does not support `equals`.")
 
     final override def hashCode(): Int = throw InternalRuntimeException(s"Value.Arr does not support `hashCode`.")

@@ -22,6 +22,7 @@ import ca.uwaterloo.flix.api._
 import ca.uwaterloo.flix.language.ast.ExecutableAst._
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.InternalRuntimeException
+import ca.uwaterloo.flix.util.tc.Show._
 
 object Interpreter {
 
@@ -159,14 +160,14 @@ object Interpreter {
       for (i <- 0 until len) {
         a(i) = e
       }
-      Value.Arr(a)
+      Value.Arr(a, tpe.typeArguments.head)
 
     //
     // ArrayLit expressions.
     //
     case Expression.ArrayLit(elms, tpe, loc) =>
       val es = elms.map(e => eval(e, env0, lenv0, root)).toArray
-      Value.Arr(es)
+      Value.Arr(es, tpe.typeArguments.head)
 
     //
     // ArrayLoad expressions.
@@ -742,6 +743,17 @@ object Interpreter {
     case Value.Int64(lit) => new java.lang.Long(lit)
     case Value.BigInt(lit) => lit
     case Value.Str(lit) => lit
+    case Value.Arr(elms, tpe) =>
+      tpe match {
+        case Type.Str =>
+          // Convert an object array to a string array.
+          val result = new Array[String](elms.length)
+          for (i <- elms.indices) {
+            result(i) = elms(i).asInstanceOf[String]
+          }
+          result
+        case _ => throw InternalRuntimeException(s"Unable to construct array of type: '${tpe.show}'.")
+      }
     case _ => ref
   }
 
