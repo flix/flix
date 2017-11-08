@@ -1,6 +1,7 @@
 # Changelog
 
 HEAD:
+    - Added completely new backend with full tail call support (thanks Ramin Zarifi)
     - Added pub keyword.
     - Added expression holes.
     - Vastly improved repl. (--interactive).
