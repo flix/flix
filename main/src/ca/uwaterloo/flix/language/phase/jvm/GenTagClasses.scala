@@ -175,14 +175,10 @@ object GenTagClasses {
     * @param valueType   type of the `value` field
     * @param isSingleton if the class is a singleton this flag is set
     */
-  private def compileEnumConstructor(visitor: ClassWriter,
-                                     classType: JvmType.Reference,
-                                     valueType: JvmType,
-                                     isSingleton: Boolean)(implicit root: Root, flix: Flix) = {
+  private def compileEnumConstructor(visitor: ClassWriter, classType: JvmType.Reference, valueType: JvmType, isSingleton: Boolean)(implicit root: Root, flix: Flix): Unit = {
     // If this is a singleton then we should make the constructor private
     val specifier =
       ACC_PUBLIC
-
 
     val constructor = visitor.visitMethod(specifier, "<init>", AsmOps.getMethodDescriptor(List(valueType), JvmType.Void),
       null, null)
@@ -234,7 +230,7 @@ object GenTagClasses {
     * @param visitor   class visitor
     * @param classType JvmType.Reference of the class
     */
-  private def compileUnitInstance(visitor: ClassWriter, classType: JvmType.Reference)(implicit root: Root, flix: Flix) = {
+  private def compileUnitInstance(visitor: ClassWriter, classType: JvmType.Reference)(implicit root: Root, flix: Flix): Unit = {
     val method = visitor.visitMethod(ACC_STATIC, "<clinit>", "()V", null, null)
     method.visitCode()
 

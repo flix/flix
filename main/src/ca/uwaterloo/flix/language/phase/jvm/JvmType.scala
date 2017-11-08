@@ -47,6 +47,11 @@ object JvmType {
   val Context: JvmType.Reference = Reference(JvmName.Context)
 
   /**
+    * The `ca.uwaterloo.flix.api.Unit` type
+    */
+  val Unit: JvmType.Reference = Reference(JvmName.Unit)
+
+  /**
     * The `java.lang.BigInteger` type.
     */
   val BigInteger: JvmType.Reference = Reference(JvmName.BigInteger)
@@ -65,11 +70,6 @@ object JvmType {
     * The `ca.uwaterloo.flix.api.Tuple` type
     */
   val Tuple: JvmType.Reference = Reference(JvmName.Tuple)
-
-  /**
-    * The `ca.uwaterloo.flix.api.Unit` type
-    */
-  val Unit: JvmType.Reference = Reference(JvmName.Unit)
 
   /**
     * The `scala.math.package$` type

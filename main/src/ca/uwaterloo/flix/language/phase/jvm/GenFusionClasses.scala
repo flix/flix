@@ -36,6 +36,9 @@ object GenFusionClasses {
     }.toMap
   }
 
+  /**
+    * Returns the fusion class for the given fusion info.
+    */
   def genByteCode(tagInfo: FusionTagInfo)(implicit root: Root, flix: Flix): Array[Byte] = {
     // Class visitor
     val visitor = AsmOps.mkClassWriter()

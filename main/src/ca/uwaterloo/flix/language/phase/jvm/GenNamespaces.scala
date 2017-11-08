@@ -18,8 +18,8 @@ package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ExecutableAst.{Def, Root}
-import org.objectweb.asm.{ClassWriter, Label}
 import org.objectweb.asm.Opcodes._
+import org.objectweb.asm.{ClassWriter, Label}
 
 /**
   * Generates bytecode for the namespace classes.
@@ -84,10 +84,7 @@ object GenNamespaces {
   /**
     * Adding a shill for the function `defn` on namespace `ns`
     */
-  private def compileShillMethod(visitor: ClassWriter,
-                                 defn: Def,
-                                 ifoType: JvmType.Reference,
-                                 ns: NamespaceInfo)(implicit root: Root, flix: Flix): Unit = {
+  private def compileShillMethod(visitor: ClassWriter, defn: Def, ifoType: JvmType.Reference, ns: NamespaceInfo)(implicit root: Root, flix: Flix): Unit = {
     // Name of the shill
     val name = JvmOps.getDefMethodNameInNamespaceClass(defn.sym)
 

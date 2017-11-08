@@ -13,32 +13,37 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package ca.uwaterloo.flix.language.phase.jvm
 
-import ca.uwaterloo.flix.language.ast.ExecutableAst.Def
-import ca.uwaterloo.flix.language.ast.Symbol
+import ca.uwaterloo.flix.language.ast.Type
 
 /**
-  * Meta information about a namespace.
+  * Represents the nullability of a type.
   */
-case class NamespaceInfo(ns: List[String], defs: Map[Symbol.DefnSym, Def]) {
+sealed trait Nullability
+
+object Nullability {
 
   /**
-    * Returns `true` if `this` is the root namespace.
+    * Represents a nullable type `tpe`.
+    *
+    * The type is the inner type of a nullable enum.
     */
-  def isRoot: Boolean = ns.isEmpty
+  case class Nullable(tpe: Type) extends Nullability
 
   /**
-    * Returns the hash code of `this` namespace.
+    * Represents a non-nullable primitive type `tpe`.
     */
-  override def hashCode(): Int = ns.hashCode()
+  case class Primitive(tpe: Type) extends Nullability
 
   /**
-    * Returns `true` if the given `obj` is the same namespace as `this`.
+    * Represents a nullable reference type `tpe`.
     */
-  override def equals(obj: scala.Any): Boolean = obj match {
-    case that: NamespaceInfo => this.ns == that.ns
-    case _ => false
-  }
+  case class Reference(tpe: Type) extends Nullability
+
+  /**
+    * Represents a non-nullable type `tpe`.
+    */
+  case class NonNullable(tpe: Type) extends Nullability
+
 }

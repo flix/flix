@@ -39,5 +39,5 @@ case class JvmClass(name: JvmName, bytecode: Array[Byte]) {
   /**
     * Returns a string representation of `this` JvmClass.
     */
-  override def toString: String = s"JvmClass($name, <code>)"
+  override def toString: String = s"JvmClass($name, ${bytecode.length} bytes)"
 }

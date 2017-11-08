@@ -439,11 +439,12 @@ object JvmOps {
     * Returns information about the given variable symbol `sym`
     * given the free variables `freeVars` of the definition in which `sym` occurs.
     */
+  // TODO: Magnus: Why is this not used?
   def getVariableInfo(sym: Symbol.VarSym, freeVars: List[FreeVar]): VariableInfo =
-    if (freeVars.exists(v => v.sym == sym))
-      VariableInfo.CloField("arg" + sym.getStackOffset)
-    else
-      VariableInfo.IfoField("clo" + sym.getStackOffset)
+  if (freeVars.exists(v => v.sym == sym))
+    VariableInfo.CloField("arg" + sym.getStackOffset)
+  else
+    VariableInfo.IfoField("clo" + sym.getStackOffset)
 
   /**
     * Optionally returns the given `tag` as a fusion `tag`.
@@ -482,37 +483,6 @@ object JvmOps {
 
     // The tag class resides in its namespace package.
     JvmType.Reference(JvmName(tag.sym.namespace, name))
-  }
-
-  /**
-    * Represents the nullability of a type.
-    */
-  sealed trait Nullability
-
-  object Nullability {
-
-    /**
-      * Represents a nullable type `tpe`.
-      *
-      * The type is the inner type of a nullable enum.
-      */
-    case class Nullable(tpe: Type) extends Nullability
-
-    /**
-      * Represents a non-nullable primitive type `tpe`.
-      */
-    case class Primitive(tpe: Type) extends Nullability
-
-    /**
-      * Represents a nullable reference type `tpe`.
-      */
-    case class Reference(tpe: Type) extends Nullability
-
-    /**
-      * Represents a non-nullable type `tpe`.
-      */
-    case class NonNullable(tpe: Type) extends Nullability
-
   }
 
   /**
@@ -829,6 +799,7 @@ object JvmOps {
       }
 
       case Expression.UserError(tpe, loc) => Set.empty
+      case Expression.HoleError(sym, tpe, loc) => Set.empty
       case Expression.MatchError(tpe, loc) => Set.empty
       case Expression.SwitchError(tpe, loc) => Set.empty
     }
@@ -1026,6 +997,7 @@ object JvmOps {
       }
 
       case Expression.UserError(tpe, loc) => Set(tpe)
+      case Expression.HoleError(sym, tpe, loc) => Set(tpe)
       case Expression.MatchError(tpe, loc) => Set(tpe)
       case Expression.SwitchError(tpe, loc) => Set(tpe)
     }
@@ -1075,6 +1047,16 @@ object JvmOps {
   }
 
   /**
+    * Returns true if the case has a unit field, which means the case can be a singleton. It returns false otherwise.
+    *
+    * @param tag Enum Case
+    */
+  // TODO: Magnus: Rename
+  def isSingletonEnum(tag: TagInfo): Boolean = {
+    tag.tagType == Type.Unit
+  }
+
+  /**
     * Returns `true` if the given `path` exists and is a Java Virtual Machine class file.
     */
   def isClassFile(path: Path): Boolean = {
@@ -1091,16 +1073,6 @@ object JvmOps {
       return b1 == 0xCA && b2 == 0xFE && b3 == 0xBA && b4 == 0xBE
     }
     false
-  }
-
-  /**
-    * Returns true if the case has a unit field, which means the case can be a singleton. It returns false otherwise.
-    *
-    * @param tag Enum Case
-    */
-  // TODO: Magnus: Rename
-  def isSingletonEnum(tag: TagInfo): Boolean = {
-    tag.tagType == Type.Unit
   }
 
   /**

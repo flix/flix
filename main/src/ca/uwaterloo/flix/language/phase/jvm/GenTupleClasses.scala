@@ -175,10 +175,6 @@ object GenTupleClasses {
     * This method emits the code for `getBoxedValue()` method. This method returns an array of objects containing all the
     * elements of the tuple in the same order that they appear on the tuple but if the element is a primitive then it will
     * box the value.
-    *
-    * @param visitor   ClassWriter to emit method to the class
-    * @param classType Type of the tuple class
-    * @param fields    Fields of the class
     */
   private def compileGetBoxedValueMethod(visitor: ClassWriter, classType: JvmType.Reference, fields: List[JvmType])(implicit root: Root, flix: Flix): Unit = {
     // header of the method
@@ -222,10 +218,6 @@ object GenTupleClasses {
     *   this.field0 = var1;
     *   this.field1 = var2;
     * }
-    *
-    * @param visitor   ClassWrite for emitting the code
-    * @param classType JvmType of the class of tuple
-    * @param fields    fields on the tuple class
     */
   def compileTupleConstructor(visitor: ClassWriter, classType: JvmType.Reference, fields: List[JvmType])(implicit root: Root, flix: Flix): Unit = {
 

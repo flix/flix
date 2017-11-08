@@ -5,6 +5,7 @@ package ca.uwaterloo.flix.language.phase.jvm
   */
 sealed trait VariableInfo
 
+// TODO: Magnus: Why is this not used?
 object VariableInfo {
 
   /**

@@ -29,6 +29,12 @@ object JvmName {
   val Context: JvmName = JvmName(Nil, "Context")
 
   /**
+    * The `ca.uwaterloo.flix.api.Unit` name
+    */
+  // TODO: Magnus: Determine whether we event want this class (or if we could just optimize unit differently?)
+  val Unit: JvmName = JvmName(List("ca", "uwaterloo", "flix", "api"), "Unit")
+
+  /**
     * The `java.math.BigInteger` name.
     */
   val BigInteger: JvmName = JvmName(List("java", "math"), "BigInteger")
@@ -39,14 +45,14 @@ object JvmName {
   val Boolean: JvmName = JvmName(List("java", "lang"), "Boolean")
 
   /**
-    * The `java.lang.Character` name.
-    */
-  val Character: JvmName = JvmName(List("java", "lang"), "Character")
-
-  /**
     * The `java.lang.Byte` name.
     */
   val Byte: JvmName = JvmName(List("java", "lang"), "Byte")
+
+  /**
+    * The `java.lang.Character` name.
+    */
+  val Character: JvmName = JvmName(List("java", "lang"), "Character")
 
   /**
     * The `java.lang.Short` name.
@@ -94,12 +100,6 @@ object JvmName {
     */
   // TODO: Magnus: Do we want to remove the Tag interface?
   val Tag: JvmName = JvmName(List("ca", "uwaterloo", "flix", "api"), "Tag")
-
-  /**
-    * The `ca.uwaterloo.flix.api.Unit` name
-    */
-  // TODO: Magnus: Determine whether we event want this class (or if we could just optimize unit differently?)
-  val Unit: JvmName = JvmName(List("ca", "uwaterloo", "flix", "api"), "Unit")
 
   /**
     * The `scala.math.package$` name

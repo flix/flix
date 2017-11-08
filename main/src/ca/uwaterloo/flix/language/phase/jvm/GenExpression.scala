@@ -792,6 +792,8 @@ object GenExpression {
       val msg = s"User exception: ${loc.format}."
       AsmOps.compileThrowException(visitor, JvmName.UserException, msg)
 
+    case Expression.HoleError(sym, _, loc) => ??? // TODO: Ramin: HoleError.
+
     case Expression.MatchError(_, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)

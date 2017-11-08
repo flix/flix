@@ -27,6 +27,9 @@ import ca.uwaterloo.flix.util.Validation._
 
 object JvmBackend extends Phase[Root, Root] {
 
+  // TODO: Ramin/Magnus: Can and should we make he backend completely independent from flix.api?
+  // Then we would need to generate CellX, Unit, and a collection of exceptions.
+
   /**
     * The directory where to place the generated class files.
     */
