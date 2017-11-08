@@ -118,6 +118,14 @@ object WeededAst {
 
     case class Tuple(elms: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
 
+    case class ArrayNew(elm: WeededAst.Expression, len: Int, loc: SourceLocation) extends WeededAst.Expression
+
+    case class ArrayLit(elms: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
+
+    case class ArrayLoad(base: WeededAst.Expression, index: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+
+    case class ArrayStore(base: WeededAst.Expression, index: WeededAst.Expression, value: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+
     case class Ref(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     case class Deref(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
@@ -223,6 +231,8 @@ object WeededAst {
     case class Unit(loc: SourceLocation) extends WeededAst.Type
 
     case class Tuple(elms: List[WeededAst.Type], loc: SourceLocation) extends WeededAst.Type
+
+    case class Native(fqn: List[String], loc: SourceLocation) extends WeededAst.Type
 
     case class Arrow(tparams: List[WeededAst.Type], retType: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
 

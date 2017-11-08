@@ -155,6 +155,25 @@ object ClosureConv {
     case Expression.Tuple(elms, tpe, loc) =>
       Expression.Tuple(elms.map(convert), tpe, loc)
 
+    case Expression.ArrayNew(elm, len, tpe, loc) =>
+      val e = convert(elm)
+      Expression.ArrayNew(e, len, tpe, loc)
+
+    case Expression.ArrayLit(elms, tpe, loc) =>
+      val es = elms.mapConserve(convert)
+      Expression.ArrayLit(es, tpe, loc)
+
+    case Expression.ArrayLoad(base, index, tpe, loc) =>
+      val b = convert(base)
+      val i = convert(index)
+      Expression.ArrayLoad(b, i, tpe, loc)
+
+    case Expression.ArrayStore(base, index, value, tpe, loc) =>
+      val b = convert(base)
+      val i = convert(index)
+      val v = convert(value)
+      Expression.ArrayStore(b, i, v, tpe, loc)
+
     case Expression.Ref(exp, tpe, loc) =>
       val e = convert(exp)
       Expression.Ref(e, tpe, loc)
@@ -239,6 +258,10 @@ object ClosureConv {
     case Expression.Tag(enum, tag, exp, tpe, loc) => freeVariables(exp)
     case Expression.Index(base, offset, tpe, loc) => freeVariables(base)
     case Expression.Tuple(elms, tpe, loc) => mutable.LinkedHashSet.empty ++ elms.flatMap(freeVariables)
+    case Expression.ArrayNew(elm, len, tpe, loc) => freeVariables(elm)
+    case Expression.ArrayLit(elms, tpe, loc) => mutable.LinkedHashSet.empty ++ elms.flatMap(freeVariables)
+    case Expression.ArrayLoad(base, index, tpe, loc) => freeVariables(base) ++ freeVariables(index)
+    case Expression.ArrayStore(base, index, value, tpe, loc) => freeVariables(base) ++ freeVariables(index) ++ freeVariables(value)
     case Expression.Ref(exp, tpe, loc) => freeVariables(exp)
     case Expression.Deref(exp, tpe, loc) => freeVariables(exp)
     case Expression.Assign(exp1, exp2, tpe, loc) => freeVariables(exp1) ++ freeVariables(exp2)
@@ -359,6 +382,21 @@ object ClosureConv {
       case Expression.Tuple(elms, tpe, loc) =>
         val es = elms map visit
         Expression.Tuple(es, tpe, loc)
+      case Expression.ArrayNew(elm, len, tpe, loc) =>
+        val e = visit(elm)
+        Expression.ArrayNew(e, len, tpe, loc)
+      case Expression.ArrayLit(elms, tpe, loc) =>
+        val es = elms map visit
+        Expression.ArrayLit(es, tpe, loc)
+      case Expression.ArrayLoad(base, index, tpe, loc) =>
+        val b = visit(base)
+        val i = visit(index)
+        Expression.ArrayLoad(b, i, tpe, loc)
+      case Expression.ArrayStore(base, index, value, tpe, loc) =>
+        val b = visit(base)
+        val i = visit(index)
+        val v = visit(value)
+        Expression.ArrayStore(b, i, v, tpe, loc)
       case Expression.Ref(exp, tpe, loc) =>
         val e = visit(exp)
         Expression.Ref(e, tpe, loc)

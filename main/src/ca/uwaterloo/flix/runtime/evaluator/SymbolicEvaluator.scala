@@ -740,6 +740,26 @@ object SymbolicEvaluator {
         }
 
       /**
+        * ArrayNew.
+        */
+      case Expression.ArrayNew(elm, _, _, _) => ??? // TODO
+
+      /**
+        * ArrayLit.
+        */
+      case Expression.ArrayLit(elms, _, _) => ??? // TODO
+
+      /**
+        * ArrayLoad.
+        */
+      case Expression.ArrayLoad(base, index, _, _) => ??? // TODO
+
+      /**
+        * ArrayStore.
+        */
+      case Expression.ArrayStore(base, index, value, _, _) => ??? // TODO
+
+      /**
         * Reference.
         */
       case Expression.Ref(exp, tpe, loc) => ??? // TODO

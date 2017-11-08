@@ -220,6 +220,22 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
         case Expression.Tuple(elms, _, _, _) => seqM(elms map {
           checkPats(_, root)
         }).map(const(tast))
+        case Expression.ArrayNew(elm, _, _, _, _) =>
+          checkPats(elm, root)
+        case Expression.ArrayLit(elms, _, _, _) => seqM(elms map {
+          checkPats(_, root)
+        }).map(const(tast))
+        case Expression.ArrayLoad(base, index, _, _, _) =>
+          for {
+            _ <- checkPats(base, root)
+            _ <- checkPats(index, root)
+          } yield tast
+        case Expression.ArrayStore(base, index, value, _, _, _) =>
+          for {
+            _ <- checkPats(base, root)
+            _ <- checkPats(index, root)
+            _ <- checkPats(value, root)
+          } yield tast
         case Expression.Ref(exp, _, _, _) =>
           checkPats(exp, root).map(const(tast))
         case Expression.Deref(exp, _, _, _) =>
@@ -553,6 +569,7 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
       case Type.Native => 0
       case Type.Ref => 0
       case Type.Arrow(length) => length
+      case Type.Array => 1
       case Type.Tuple(length) => length
       case Type.Enum(sym, kind) => 0
       case Type.Apply(tpe1, tpe2) => countTypeArgs(tpe1)

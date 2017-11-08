@@ -164,6 +164,25 @@ object Synthesize extends Phase[Root, Root] {
         val es = elms map visitExp
         Expression.Tuple(es, tpe, eff, loc)
 
+      case Expression.ArrayNew(elm, len, tpe, eff, loc) =>
+        val e = visitExp(elm)
+        Expression.ArrayNew(e, len, tpe, eff, loc)
+
+      case Expression.ArrayLit(elms, tpe, eff, loc) =>
+        val es = elms map visitExp
+        Expression.ArrayLit(es, tpe, eff, loc)
+
+      case Expression.ArrayLoad(base, index, tpe, eff, loc) =>
+        val b = visitExp(base)
+        val i = visitExp(index)
+        Expression.ArrayLoad(b, i, tpe, eff, loc)
+
+      case Expression.ArrayStore(base, index, value, tpe, eff, loc) =>
+        val b = visitExp(base)
+        val i = visitExp(index)
+        val v = visitExp(value)
+        Expression.ArrayStore(b, i, v, tpe, eff, loc)
+
       case Expression.Ref(exp, tpe, eff, loc) =>
         val e = visitExp(exp)
         Expression.Ref(e, tpe, eff, loc)
@@ -557,9 +576,19 @@ object Synthesize extends Phase[Root, Root] {
           val method = classOf[java.math.BigInteger].getMethod("toString")
           Expression.NativeMethod(method, List(exp0), Type.Str, Eff.Pure, sl)
 
+        case Type.Array =>
+          val method = classOf[java.lang.Object].getMethod("toString")
+          Expression.NativeMethod(method, List(exp0), Type.Str, Eff.Pure, sl)
+
+        case Type.Native =>
+          val method = classOf[java.lang.Object].getMethod("toString")
+          Expression.NativeMethod(method, List(exp0), Type.Str, Eff.Pure, sl)
+
         case Type.Str => exp0
 
         case Type.Apply(Type.Ref, _) => Expression.Str("<<ref>>", sl)
+
+        case Type.Apply(Type.Array, _) => Expression.Str("<<array>>", sl)
 
         case Type.Apply(Type.Arrow(l), _) => Expression.Str("<<clo>>", sl)
 

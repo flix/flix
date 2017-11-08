@@ -517,6 +517,7 @@ object CodegenHelper {
     case Type.Int64 => true
     case Type.BigInt => false
     case Type.Str => false
+    case Type.Array => false
     case Type.Native => false
     case Type.Ref => false
     case Type.Arrow(l) => false
@@ -690,6 +691,10 @@ object CodegenHelper {
       case Expression.Untag(sym, tag, exp, tpe, loc) => visit(exp)
       case Expression.Index(base, offset, tpe, loc) => visit(base)
       case Expression.Tuple(elms, tpe, loc) => elms.flatMap(visit).toSet
+      case Expression.ArrayNew(elm, len, tpe, loc) => ??? // TODO
+      case Expression.ArrayLit(elms, tpe, loc) => ??? // TODO
+      case Expression.ArrayLoad(base, index, tpe, loc) => ??? // TODO
+      case Expression.ArrayStore(base, index, value, tpe, loc) => ??? // TODO
       case Expression.Ref(exp, tpe, loc) => visit(exp)
       case Expression.Deref(exp, tpe, loc) => visit(exp)
       case Expression.Assign(exp1, exp2, tpe, loc) => visit(exp1) ++ visit(exp2)
@@ -752,6 +757,10 @@ object CodegenHelper {
     case Expression.Untag(sym, tag, exp, tpe, loc) => List((exp.tpe, (tag, tpe))) ::: findEnumCases(exp)
     case Expression.Index(base, offset, tpe, loc) => findEnumCases(base)
     case Expression.Tuple(elms, tpe, loc) => elms.flatMap(findEnumCases).toList
+    case Expression.ArrayNew(elm, len, tpe, loc) => ??? // TODO
+    case Expression.ArrayLit(elms, tpe, loc) => ??? // TODO
+    case Expression.ArrayLoad(base, index, tpe, loc) => ??? // TODO
+    case Expression.ArrayStore(base, index, value, tpe, loc) => ??? // TODO
     case Expression.Ref(exp, tpe, loc) => findEnumCases(exp)
     case Expression.Deref(exp, tpe, loc) => findEnumCases(exp)
     case Expression.Assign(exp1, exp2, tpe, loc) => findEnumCases(exp1) ::: findEnumCases(exp2)

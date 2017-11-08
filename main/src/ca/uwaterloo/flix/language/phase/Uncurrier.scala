@@ -177,6 +177,10 @@ object Uncurrier extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         case Untag(sym, tag, exp, tpe, loc) => Untag(sym, tag, substitute(exp, env0), tpe, loc)
         case Index(base, offset, tpe, loc) => Index(substitute(base, env0), offset, tpe, loc)
         case Tuple(elms, tpe, loc) => Tuple(elms.map(e => substitute(e, env0)), tpe, loc)
+        case ArrayNew(elm, len, tpe, loc) => ArrayNew(substitute(elm, env0), len, tpe, loc)
+        case ArrayLit(elms, tpe, loc) => ArrayLit(elms.map(e => substitute(e, env0)), tpe, loc)
+        case ArrayLoad(base, index, tpe, loc) => ArrayLoad(substitute(base, env0), substitute(index, env0), tpe, loc)
+        case ArrayStore(base, index, value, tpe, loc) => ArrayStore(substitute(base, env0), substitute(index, env0), substitute(value, env0), tpe, loc)
         case Ref(exp, tpe, loc) => Ref(substitute(exp, env0), tpe, loc)
         case Deref(exp, tpe, loc) => Deref(substitute(exp, env0), tpe, loc)
         case Assign(exp1, exp2, tpe, loc) => Assign(substitute(exp1, env0), substitute(exp2, env0), tpe, loc)
@@ -257,6 +261,19 @@ object Uncurrier extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Tuple(elms, tpe, loc) => Tuple(elms map {
         uncurry(_, newSyms, root)
       }, tpe, loc)
+      case ArrayNew(elm, len, tpe, loc) => ArrayNew(uncurry(elm, newSyms, root), len, tpe, loc)
+      case ArrayLit(elms, tpe, loc) => ArrayLit(elms map {
+        uncurry(_, newSyms, root)
+      }, tpe, loc)
+      case ArrayLoad(base, index, tpe, loc) =>
+        val b = uncurry(base, newSyms, root)
+        val i = uncurry(index, newSyms, root)
+        ArrayLoad(b, i, tpe, loc)
+      case ArrayStore(base, index, value, tpe, loc) =>
+        val b = uncurry(base, newSyms, root)
+        val i = uncurry(index, newSyms, root)
+        val v = uncurry(value, newSyms, root)
+        ArrayStore(b, i, v, tpe, loc)
       case Ref(exp, tpe, loc) =>
         val e = uncurry(exp, newSyms, root)
         Ref(e, tpe, loc)
@@ -350,6 +367,10 @@ object Uncurrier extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
           case _: Untag => 0
           case _: Index => 0
           case _: Tuple => 0
+          case _: ArrayNew => 0
+          case _: ArrayLit => 0
+          case _: ArrayLoad => 0
+          case _: ArrayStore => 0
           case _: Ref => 0
           case _: Deref => 0
           case _: Assign => 0

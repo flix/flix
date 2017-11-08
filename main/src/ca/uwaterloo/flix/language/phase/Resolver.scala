@@ -393,6 +393,29 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
             es <- seqM(elms map visit)
           } yield ResolvedAst.Expression.Tuple(es, tvar, loc)
 
+        case NamedAst.Expression.ArrayNew(elm, len, tvar, loc) =>
+          for {
+            e <- visit(elm)
+          } yield ResolvedAst.Expression.ArrayNew(e, len, tvar, loc)
+
+        case NamedAst.Expression.ArrayLit(elms, tvar, loc) =>
+          for {
+            es <- seqM(elms map visit)
+          } yield ResolvedAst.Expression.ArrayLit(es, tvar, loc)
+
+        case NamedAst.Expression.ArrayLoad(base, index, tvar, loc) =>
+          for {
+            b <- visit(base)
+            i <- visit(index)
+          } yield ResolvedAst.Expression.ArrayLoad(b, i, tvar, loc)
+
+        case NamedAst.Expression.ArrayStore(base, index, value, tvar, loc) =>
+          for {
+            b <- visit(base)
+            i <- visit(index)
+            v <- visit(value)
+          } yield ResolvedAst.Expression.ArrayStore(b, i, v, tvar, loc)
+
         case NamedAst.Expression.Ref(exp, tvar, loc) =>
           for {
             e <- visit(exp)
@@ -766,6 +789,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
       case "Int64" => Type.Int64.toSuccess
       case "BigInt" => Type.BigInt.toSuccess
       case "Str" => Type.Str.toSuccess
+      case "Array" => Type.Array.toSuccess
       case "Native" => Type.Native.toSuccess
       case "Ref" => Type.Ref.toSuccess
 
@@ -798,6 +822,9 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
       for (
         elms <- seqM(elms0.map(tpe => lookupType(tpe, ns0, prog0)))
       ) yield Type.mkTuple(elms)
+    case NamedAst.Type.Native(fqn, loc) =>
+      // TODO: needs more precise type.
+      Type.Native.toSuccess
     case NamedAst.Type.Arrow(tparams0, tresult0, loc) =>
       for (
         tparams <- seqM(tparams0.map(tpe => lookupType(tpe, ns0, prog0)));

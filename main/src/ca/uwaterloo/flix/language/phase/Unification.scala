@@ -69,6 +69,7 @@ object Unification {
       case Type.Int64 => Type.Int64
       case Type.BigInt => Type.BigInt
       case Type.Str => Type.Str
+      case Type.Array => Type.Array
       case Type.Native => Type.Native
       case Type.Ref => Type.Ref
       case Type.Arrow(l) => Type.Arrow(l)
@@ -178,6 +179,7 @@ object Unification {
       case (Type.Int64, Type.Int64) => Result.Ok(Substitution.empty)
       case (Type.BigInt, Type.BigInt) => Result.Ok(Substitution.empty)
       case (Type.Str, Type.Str) => Result.Ok(Substitution.empty)
+      case (Type.Array, Type.Array) => Result.Ok(Substitution.empty)
       case (Type.Native, Type.Native) => Result.Ok(Substitution.empty)
       case (Type.Ref, Type.Ref) => Result.Ok(Substitution.empty)
       case (Type.Arrow(l1), Type.Arrow(l2)) if l1 == l2 => Result.Ok(Substitution.empty)
@@ -226,6 +228,7 @@ object Unification {
           case (s, a) => (s, f(a))
         }
       }
+
       InferMonad(runNext)
     }
 
@@ -242,6 +245,7 @@ object Unification {
           }
         }
       }
+
       InferMonad(runNext)
     }
   }
@@ -297,12 +301,14 @@ object Unification {
     */
   def unifyM(ts: List[Type], loc: SourceLocation): InferMonad[Type] = {
     assert(ts.nonEmpty)
+
     def visit(x0: InferMonad[Type], xs: List[Type]): InferMonad[Type] = xs match {
       case Nil => x0
       case y :: ys => x0 flatMap {
         case tpe => visit(unifyM(tpe, y, loc), ys)
       }
     }
+
     visit(liftM(ts.head), ts.tail)
   }
 

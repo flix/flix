@@ -193,6 +193,22 @@ object WeederError {
   }
 
   /**
+    * An error raised to indicate an illegal array length,
+    *
+    * @param loc the location where the illegal array length occurs.
+    */
+  case class IllegalArrayLength(loc: SourceLocation) extends WeederError {
+    val source: Source = loc.source
+    val message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Illegal array length." << NewLine
+      vt << NewLine
+      vt << Code(loc, "illegal array length.") << NewLine
+    }
+  }
+
+  /**
     * An error raised to indicate that the formal parameter lacks a type declaration.
     *
     * @param name the name of the parameter.

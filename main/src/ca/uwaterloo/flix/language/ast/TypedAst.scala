@@ -174,6 +174,14 @@ object TypedAst {
 
     case class Tuple(elms: List[TypedAst.Expression], tpe: Type, eff: Eff, loc: SourceLocation) extends TypedAst.Expression
 
+    case class ArrayNew(elm: TypedAst.Expression, len: Int, tpe: Type, eff: Eff, loc: SourceLocation) extends TypedAst.Expression
+
+    case class ArrayLit(elms: List[TypedAst.Expression], tpe: Type, eff: Eff, loc: SourceLocation) extends TypedAst.Expression
+
+    case class ArrayLoad(base: TypedAst.Expression, index: TypedAst.Expression, tpe: Type, eff: Eff, loc: SourceLocation) extends TypedAst.Expression
+
+    case class ArrayStore(base: TypedAst.Expression, index: TypedAst.Expression, value: TypedAst.Expression, tpe: Type, eff: Eff, loc: SourceLocation) extends TypedAst.Expression
+
     case class Ref(exp: TypedAst.Expression, tpe: Type, eff: Eff, loc: SourceLocation) extends TypedAst.Expression
 
     case class Deref(exp: TypedAst.Expression, tpe: Type, eff: Eff, loc: SourceLocation) extends TypedAst.Expression

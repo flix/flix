@@ -22,6 +22,7 @@ import ca.uwaterloo.flix.api._
 import ca.uwaterloo.flix.language.ast.ExecutableAst._
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.InternalRuntimeException
+import ca.uwaterloo.flix.util.tc.Show._
 
 object Interpreter {
 
@@ -147,7 +148,51 @@ object Interpreter {
     // Tuple expressions.
     //
     case Expression.Tuple(elms, _, _) =>
-      Value.Tuple(elms.map(e => eval(e, env0, lenv0, root)).toList)
+      val es = elms.map(e => eval(e, env0, lenv0, root)).toList
+      Value.Tuple(es)
+
+    //
+    // ArrayNew expressions.
+    //
+    case Expression.ArrayNew(elm, len, tpe, loc) =>
+      val e = eval(elm, env0, lenv0, root)
+      val a = new Array[AnyRef](len)
+      for (i <- 0 until len) {
+        a(i) = e
+      }
+      Value.Arr(a, tpe.typeArguments.head)
+
+    //
+    // ArrayLit expressions.
+    //
+    case Expression.ArrayLit(elms, tpe, loc) =>
+      val es = elms.map(e => eval(e, env0, lenv0, root)).toArray
+      Value.Arr(es, tpe.typeArguments.head)
+
+    //
+    // ArrayLoad expressions.
+    //
+    case Expression.ArrayLoad(base, index, tpe, loc) =>
+      val b = cast2array(eval(base, env0, lenv0, root))
+      val i = cast2int32(eval(index, env0, lenv0, root))
+      if (i < b.elms.length)
+        b.elms(i)
+      else
+        throw InternalRuntimeException(s"Array index out of bounds: $i. Array length: ${b.elms.length}.")
+
+    //
+    // ArrayStore expressions.
+    //
+    case Expression.ArrayStore(base, index, value, tpe, loc) =>
+      val b = cast2array(eval(base, env0, lenv0, root))
+      val i = cast2int32(eval(index, env0, lenv0, root))
+      val v = eval(value, env0, lenv0, root)
+      if (i < b.elms.length) {
+        b.elms(i) = v
+        b
+      } else {
+        throw InternalRuntimeException(s"Array index out of bounds: $i. Array length: ${b.elms.length}.")
+      }
 
     //
     // Reference expressions.
@@ -671,6 +716,14 @@ object Interpreter {
   }
 
   /**
+    * Casts the given reference `ref` to an array value.
+    */
+  private def cast2array(ref: AnyRef): Value.Arr = ref match {
+    case v: Value.Arr => v
+    case _ => throw InternalRuntimeException(s"Unexpected non-array value: ${ref.getClass.getCanonicalName}.")
+  }
+
+  /**
     * Constructs a bool from the given boolean `b`.
     */
   private def mkBool(b: Boolean): AnyRef = if (b) Value.True else Value.False
@@ -690,6 +743,17 @@ object Interpreter {
     case Value.Int64(lit) => new java.lang.Long(lit)
     case Value.BigInt(lit) => lit
     case Value.Str(lit) => lit
+    case Value.Arr(elms, tpe) =>
+      tpe match {
+        case Type.Str =>
+          // Convert an object array to a string array.
+          val result = new Array[String](elms.length)
+          for (i <- elms.indices) {
+            result(i) = elms(i).asInstanceOf[String]
+          }
+          result
+        case _ => throw InternalRuntimeException(s"Unable to construct array of type: '${tpe.show}'.")
+      }
     case _ => ref
   }
 
