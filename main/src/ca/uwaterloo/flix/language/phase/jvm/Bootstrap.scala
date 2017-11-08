@@ -22,7 +22,7 @@ object Bootstrap {
 
     // Debugging.
     if (flix.options.debug && flix.options.verbosity == Verbosity.Verbose) {
-      println(s"Loaded: ${loadedClasses.size} classes.")
+      Console.println(s"Loaded: ${loadedClasses.size} classes.")
     }
 
     //

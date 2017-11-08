@@ -37,7 +37,7 @@ object GenFunctionClasses {
     defs.foldLeft(Map.empty[JvmName, JvmClass]) { case (macc, (sym, defn)) =>
       // TODO Magnus: Should we make all the defs a function like before? Not sure what to do when there is non arrow function.
       // TODO We filter laws here.
-      if(defn.tpe.isArrow && !JvmOps.isLaw(defn)) {
+      if (defn.tpe.isArrow && !JvmOps.isLaw(defn)) {
 
         // `JvmType` of the interface for `def.tpe`
         val functionInterface = JvmOps.getFunctionInterfaceType(defn.tpe)
@@ -74,7 +74,7 @@ object GenFunctionClasses {
       JvmName.Object.toInternalName, superInterface)
 
     // Adding a setter and a field for each argument of the function
-    for((arg, index) <- args.init.zipWithIndex) {
+    for ((arg, index) <- args.init.zipWithIndex) {
       // `JvmType` of `arg`
       val argType = JvmOps.getErasedType(arg)
 
@@ -122,7 +122,7 @@ object GenFunctionClasses {
     applyMethod.visitLabel(enterLabel)
 
     // Saving parameters on variable stack
-    for((FormalParam(sym, tpe), ind) <- defn.formals.zipWithIndex) {
+    for ((FormalParam(sym, tpe), ind) <- defn.formals.zipWithIndex) {
       // Erased type of the parameter
       val erasedType = JvmOps.getErasedType(tpe)
 
@@ -142,7 +142,7 @@ object GenFunctionClasses {
     applyMethod.visitVarInsn(ALOAD, 0)
 
     // Swapping `this` and result of the expression
-    if(AsmOps.getStackSpace(resultType) == 1) {
+    if (AsmOps.getStackSpace(resultType) == 1) {
       applyMethod.visitInsn(SWAP)
     } else {
       applyMethod.visitInsn(DUP_X2)
@@ -150,7 +150,7 @@ object GenFunctionClasses {
     }
 
     // Saving the result on the `result` field of IFO
-    applyMethod.visitFieldInsn(PUTFIELD, classType.name.toInternalName , "result", resultType.toDescriptor)
+    applyMethod.visitFieldInsn(PUTFIELD, classType.name.toInternalName, "result", resultType.toDescriptor)
 
     // Return
     applyMethod.visitInsn(RETURN)

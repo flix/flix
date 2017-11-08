@@ -17,10 +17,9 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{ExecutableAst, Symbol}
+import ca.uwaterloo.flix.language.ast.ExecutableAst.Root
 import org.objectweb.asm.ClassWriter
 import org.objectweb.asm.Opcodes._
-import ca.uwaterloo.flix.language.ast.ExecutableAst.Root
 
 /**
   * Generates bytecode for the `Context` class.

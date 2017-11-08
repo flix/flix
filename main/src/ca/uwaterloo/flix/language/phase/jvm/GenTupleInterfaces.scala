@@ -70,7 +70,7 @@ object GenTupleInterfaces {
     visitor.visitSource(interfaceType.name.toInternalName, null)
 
     // Adding getters and setters for each index of tuple.
-    for((arg, ind) <- targs.zipWithIndex) {
+    for ((arg, ind) <- targs.zipWithIndex) {
       // Emitting getter for each field
       val getter = visitor.visitMethod(ACC_PUBLIC + ACC_ABSTRACT, s"getIndex$ind", AsmOps.getMethodDescriptor(Nil, arg), null, null)
       getter.visitEnd()

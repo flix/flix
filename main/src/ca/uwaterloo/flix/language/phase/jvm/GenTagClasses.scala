@@ -18,8 +18,8 @@ package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Root
-import org.objectweb.asm.Opcodes._
 import org.objectweb.asm.ClassWriter
+import org.objectweb.asm.Opcodes._
 
 /**
   * Generates bytecode for the tag classes.
@@ -181,7 +181,7 @@ object GenTagClasses {
                                      isSingleton: Boolean)(implicit root: Root, flix: Flix) = {
     // If this is a singleton then we should make the constructor private
     val specifier =
-        ACC_PUBLIC
+      ACC_PUBLIC
 
 
     val constructor = visitor.visitMethod(specifier, "<init>", AsmOps.getMethodDescriptor(List(valueType), JvmType.Void),

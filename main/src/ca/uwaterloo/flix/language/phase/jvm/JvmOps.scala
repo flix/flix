@@ -51,17 +51,17 @@ object JvmOps {
 
     // Retrieve the type arguments.
     val args = tpe.typeArguments
-/*
-    // Replace vars in a type with another type
-    def reconstruct(tpe: Type, map: Map[Type, Type]): Type = tpe match {
-      case x: Type.Var => map(x)
-      case Type.Arrow(l) => Set.empty
-      case Type.Tuple(l) => Set.empty
-      case Type.Enum(enumName, kind) => Set.empty
-      case Type.Apply(tpe1, tpe2) => tpe1.typeVars ++ tpe2.typeVars
-    }
+    /*
+        // Replace vars in a type with another type
+        def reconstruct(tpe: Type, map: Map[Type, Type]): Type = tpe match {
+          case x: Type.Var => map(x)
+          case Type.Arrow(l) => Set.empty
+          case Type.Tuple(l) => Set.empty
+          case Type.Enum(enumName, kind) => Set.empty
+          case Type.Apply(tpe1, tpe2) => tpe1.typeVars ++ tpe2.typeVars
+        }
 
-*/
+    */
     // Match on the type constructor.
     base match {
       case Type.Unit => JvmType.Unit

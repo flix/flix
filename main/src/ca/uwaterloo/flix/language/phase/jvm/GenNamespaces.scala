@@ -18,10 +18,8 @@ package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ExecutableAst.{Def, Root}
-import org.objectweb.asm.ClassWriter
+import org.objectweb.asm.{ClassWriter, Label}
 import org.objectweb.asm.Opcodes._
-import ca.uwaterloo.flix.language.ast.Symbol
-import org.objectweb.asm.Label
 
 /**
   * Generates bytecode for the namespace classes.
@@ -70,7 +68,7 @@ object GenNamespaces {
       AsmOps.compileField(visitor, fieldName, jvmType, isStatic = false, isPrivate = false)
 
       // TODO: Same problem as GenFunctionClasses, we should handle not defs with non arrow type
-      if(defn.tpe.isArrow) {
+      if (defn.tpe.isArrow) {
         // Args of the function
         compileShillMethod(visitor, defn, jvmType, ns)
       }
@@ -145,7 +143,7 @@ object GenNamespaces {
     var offset: Int = 0
 
     // Set arguments for the IFO
-    for((arg, index) <- args.init.zipWithIndex) {
+    for ((arg, index) <- args.init.zipWithIndex) {
       // Duplicate the IFO reference
       method.visitVarInsn(ALOAD, ifoAddr)
 

@@ -16,16 +16,16 @@
 
 package ca.uwaterloo.flix.language.phase.jvm
 
-import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.ExecutableAst.{Expression, FreeVar, Root}
-import ca.uwaterloo.flix.language.ast.{Type, _}
-import org.objectweb.asm._
-import org.objectweb.asm.Opcodes._
-import ca.uwaterloo.flix.util.{InternalCompilerException, Optimization}
-import org.objectweb.asm
 import java.lang.reflect.Modifier
 
+import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.ExecutableAst.{Expression, Root}
 import ca.uwaterloo.flix.language.ast.SemanticOperator._
+import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.util.{InternalCompilerException, Optimization}
+import org.objectweb.asm
+import org.objectweb.asm.Opcodes._
+import org.objectweb.asm._
 
 /**
   * Generate expression
@@ -114,7 +114,7 @@ object GenExpression {
         val argErasedType = JvmOps.getErasedType(arg.tpe)
         // Evaluating the expression
         compileExpression(arg, currentClassType, jumpLabels, entryPoint, visitor)
-        if(AsmOps.getStackSpace(argErasedType) == 1) {
+        if (AsmOps.getStackSpace(argErasedType) == 1) {
           visitor.visitInsn(SWAP)
         } else {
           visitor.visitInsn(DUP2_X1)
@@ -196,7 +196,7 @@ object GenExpression {
         val argErasedType = JvmOps.getErasedType(arg.tpe)
         // Evaluating the expression
         compileExpression(arg, currentClassType, jumpLabels, entryPoint, visitor)
-        if(AsmOps.getStackSpace(argErasedType) == 1) {
+        if (AsmOps.getStackSpace(argErasedType) == 1) {
           visitor.visitInsn(SWAP)
         } else {
           visitor.visitInsn(DUP2_X1)
@@ -260,7 +260,7 @@ object GenExpression {
         val argErasedType = JvmOps.getErasedType(arg.tpe)
         // Evaluating the expression
         compileExpression(arg, currentClassType, jumpLabels, entryPoint, visitor)
-        if(AsmOps.getStackSpace(argErasedType) == 1) {
+        if (AsmOps.getStackSpace(argErasedType) == 1) {
           visitor.visitInsn(SWAP)
         } else {
           visitor.visitInsn(DUP2_X1)
@@ -318,7 +318,7 @@ object GenExpression {
         val argErasedType = JvmOps.getErasedType(arg.tpe)
         // Evaluating the expression
         compileExpression(arg, currentClassType, jumpLabels, entryPoint, visitor)
-        if(AsmOps.getStackSpace(argErasedType) == 1) {
+        if (AsmOps.getStackSpace(argErasedType) == 1) {
           visitor.visitInsn(SWAP)
         } else {
           visitor.visitInsn(DUP2_X1)
@@ -438,15 +438,14 @@ object GenExpression {
       compileExpression(exp2, currentClassType, jumpLabels, entryPoint, visitor)
 
     case Expression.LetRec(sym, exp1, exp2, _, _) =>
-      ??? // TODO: Add support for LetRec.
+      ??? // TODO: Ramin
 
     case Expression.Is(enum, tag, exp, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
       // Case 1: Check for unwrappability.
       if (JvmOps.isSingleCaseEnum(enum)) {
-        // TODO
-        Console.println(s"The enum ${enum} can be unwrapped. The check can be replaced by true.")
+        // TODO: Ramin
       }
       // Case 2: Check for nullability.
       if (JvmOps.isNullable(exp.tpe)) {
@@ -481,7 +480,7 @@ object GenExpression {
         // Fusion info
         val fusionInfo = JvmOps.getFusionTag(tagInfo)
         // We get the JvmType of the class for tag
-        val classType = if(fusionInfo.isDefined && flix.options.optimizations.contains(Optimization.TagTupleFusion)) {
+        val classType = if (fusionInfo.isDefined && flix.options.optimizations.contains(Optimization.TagTupleFusion)) {
           JvmOps.getFusionClassType(fusionInfo.get)
         } else {
           JvmOps.getTagClassType(tagInfo)
@@ -509,7 +508,9 @@ object GenExpression {
       // Duplicating the class
       visitor.visitInsn(DUP)
       // Evaluating all the elements to be stored in the tuple class
-      elms.foreach{compileExpression(_, currentClassType, jumpLabels, entryPoint, visitor)}
+      elms.foreach {
+        compileExpression(_, currentClassType, jumpLabels, entryPoint, visitor)
+      }
       // Invoking the constructor
       visitor.visitMethodInsn(INVOKESPECIAL, classType.name.toInternalName, "<init>",
         AsmOps.getMethodDescriptor(fieldTypes, JvmType.Void), false)
@@ -535,14 +536,14 @@ object GenExpression {
       // Evaluating the expression for the value of the tag
       compileExpression(exp, currentClassType, jumpLabels, entryPoint, visitor)
       // Extracting all indices of the tuple
-      for((jvmType, ind) <- fieldTypes.zipWithIndex) {
+      for ((jvmType, ind) <- fieldTypes.zipWithIndex) {
         // Duplicating the reference since the function call will consume one reference
         visitor.visitInsn(DUP)
         // Extracting value of `index` index from the tuple
         visitor.visitMethodInsn(INVOKEINTERFACE, tupleType.name.toInternalName, s"getIndex$ind",
           AsmOps.getMethodDescriptor(Nil, jvmType), true)
         // Bringing the reference to the tuple to the top of the stack
-        if(AsmOps.getStackSpace(jvmType) == 1) {
+        if (AsmOps.getStackSpace(jvmType) == 1) {
           visitor.visitInsn(SWAP)
         }
         else {
@@ -563,8 +564,7 @@ object GenExpression {
 
       // Case 1: Check for unwrappability.
       if (JvmOps.isSingleCaseEnum(enum)) {
-        // TODO
-        Console.println(s"The enum ${enum} can be unwrapped. Do not do anything.")
+        // TODO: Ramin
       }
       // Case 2: Check for nullability.
       if (JvmOps.isNullable(tpe)) {
@@ -612,8 +612,7 @@ object GenExpression {
       addSourceLine(visitor, loc)
       // Case 1: Check for unwrappability.
       if (JvmOps.isSingleCaseEnum(enum)) {
-        // TODO
-        Console.println(s"The enum ${enum} can be unwrapped. Do not do anything.")
+        // TODO: Ramin
       }
       // Case 2: Check for nullability.
       if (JvmOps.isNullable(exp.tpe)) {
@@ -637,7 +636,7 @@ object GenExpression {
           compileExpression(exp, currentClassType, jumpLabels, entryPoint, visitor)
         }
       } // Case 3: Ordinary enum.
-       else {
+      else {
         // We get the `TagInfo` for the tag
         val tagInfo = JvmOps.getTagInfo(exp.tpe, tag)
         // We get the JvmType of the class for the tag

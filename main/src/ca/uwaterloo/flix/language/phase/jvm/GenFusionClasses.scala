@@ -30,9 +30,8 @@ object GenFusionClasses {
     * Returns the set of fusion classes for the given set of fusion tags `tags`.
     */
   def gen(tags: Set[FusionTagInfo])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
-    tags.map{ tag =>
+    tags.map { tag =>
       val jvmType = JvmOps.getFusionClassType(tag)
-      println(jvmType)
       jvmType.name -> JvmClass(jvmType.name, genByteCode(tag))
     }.toMap
   }
@@ -64,7 +63,7 @@ object GenFusionClasses {
       * Fields and Methods for Tuple part of the class
       */
     // Adding fields and methods required for Tuple
-    for((elmType, ind) <- tagInfo.elms.zipWithIndex) {
+    for ((elmType, ind) <- tagInfo.elms.zipWithIndex) {
       // Erased type of the field
       val jvmType = JvmOps.getErasedType(elmType)
 
@@ -118,9 +117,10 @@ object GenFusionClasses {
   /**
     * This will generate a method for class identified by `qualName` which return the `value` of the field of the enum
     * which is just `this`.
+    *
     * @param visitor ClassWriter to emit method to the class
     */
-  def compileGetEnumValueMethod(visitor: ClassWriter) : Unit = {
+  def compileGetEnumValueMethod(visitor: ClassWriter): Unit = {
     val method = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, "getValue", AsmOps.getMethodDescriptor(Nil, JvmType.Object), null, null)
     method.visitCode()
 

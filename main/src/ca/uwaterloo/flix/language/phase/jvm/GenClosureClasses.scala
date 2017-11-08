@@ -32,25 +32,25 @@ object GenClosureClasses {
     * For example, given the symbol `mkAdder` with type (Int, Int) -> Int and the free variable `x`, we create:
     *
     * Clo$mkAdder extends Fn1$Int$Int {
-    *   private int x;
-    *   private int arg0;
-    *   private int res;
+    * private int x;
+    * private int arg0;
+    * private int res;
     *
-    *   public Clo$mkAdder(int x) {
+    * public Clo$mkAdder(int x) {
     *     this.x = x;
-    *   }
+    * }
     *
-    *   public setArg0(int arg0) {
+    * public setArg0(int arg0) {
     *     this.arg0 = arg0;
-    *   }
+    * }
     *
-    *   public int getResult() {
-    *     return this.res;
-    *   }
+    * public int getResult() {
+    * return this.res;
+    * }
     *
-    *   public void apply(Context ctx) {
+    * public void apply(Context ctx) {
     *     this.res = this.x + this.arg0;
-    *   }
+    * }
     * }
     *
     *
@@ -75,7 +75,7 @@ object GenClosureClasses {
     visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_FINAL, classType.name.toInternalName, null,
       JvmName.Object.toInternalName, superInterface)
 
-    for((freeVar, index) <- closure.freeVars.zipWithIndex) {
+    for ((freeVar, index) <- closure.freeVars.zipWithIndex) {
       // `JvmType` of `freeVar`
       val varType = JvmOps.getErasedType(freeVar.tpe)
 
@@ -84,7 +84,7 @@ object GenClosureClasses {
     }
 
     // Adding a setter and a field for each argument of the function
-    for((arg, index) <- args.init.zipWithIndex) {
+    for ((arg, index) <- args.init.zipWithIndex) {
       // `JvmType` of `arg`
       val argType = JvmOps.getErasedType(arg)
 
@@ -136,7 +136,7 @@ object GenClosureClasses {
     applyMethod.visitCode()
 
     // Saving free variables on variable stack
-    for((FreeVar(sym, tpe), ind) <- frees.zipWithIndex) {
+    for ((FreeVar(sym, tpe), ind) <- frees.zipWithIndex) {
       // Erased type of the free variable
       val erasedType = JvmOps.getErasedType(tpe)
 
@@ -150,7 +150,7 @@ object GenClosureClasses {
     }
 
     // Saving parameters on variable stack
-    for((FormalParam(sym, tpe), ind) <-  params.zipWithIndex){
+    for ((FormalParam(sym, tpe), ind) <- params.zipWithIndex) {
       // Erased type of the parameter
       val erasedType = JvmOps.getErasedType(tpe)
 
@@ -170,7 +170,7 @@ object GenClosureClasses {
     applyMethod.visitVarInsn(ALOAD, 0)
 
     // Swapping `this` and result of the expression
-    if(AsmOps.getStackSpace(resultType) == 1) {
+    if (AsmOps.getStackSpace(resultType) == 1) {
       applyMethod.visitInsn(SWAP)
     } else {
       applyMethod.visitInsn(DUP_X2)
@@ -178,7 +178,7 @@ object GenClosureClasses {
     }
 
     // Saving the result on the `result` field of IFO
-    applyMethod.visitFieldInsn(PUTFIELD, classType.name.toInternalName , "result", resultType.toDescriptor)
+    applyMethod.visitFieldInsn(PUTFIELD, classType.name.toInternalName, "result", resultType.toDescriptor)
 
     // Return
     applyMethod.visitInsn(RETURN)
@@ -204,7 +204,7 @@ object GenClosureClasses {
 
     // Setting up closure args
     var offset: Int = 1
-    for((tpe, index) <- varTypes.zipWithIndex) {
+    for ((tpe, index) <- varTypes.zipWithIndex) {
       constructor.visitVarInsn(ALOAD, 0)
 
       val iLoad = AsmOps.getLoadInstruction(tpe)

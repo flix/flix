@@ -51,7 +51,7 @@ object BytecodeLoader {
 
         // Debugging.
         if (flix.options.debug && flix.options.verbosity == Verbosity.Verbose) {
-          println(s"Loaded: '${jvmName.toBinaryName}'.")
+          Console.println(s"Loaded: '${jvmName.toBinaryName}'.")
         }
 
         // Update map.

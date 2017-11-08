@@ -3,8 +3,8 @@ package ca.uwaterloo.flix.language.phase.jvm
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Root
 import ca.uwaterloo.flix.util.{InternalCompilerException, JvmTarget}
-import org.objectweb.asm.{ClassWriter, MethodVisitor}
 import org.objectweb.asm.Opcodes._
+import org.objectweb.asm.{ClassWriter, MethodVisitor}
 
 object AsmOps {
 
@@ -59,20 +59,20 @@ object AsmOps {
     *
     * public static Nil unitInstance;
     *
-    * @param visitor    class visitor
-    * @param name       name of the field
-    * @param jvmType    Jvm Type of the field
-    * @param isStatic   if this is true the the field is static
-    * @param isPrivate  if this is set then the field is private
+    * @param visitor   class visitor
+    * @param name      name of the field
+    * @param jvmType   Jvm Type of the field
+    * @param isStatic  if this is true the the field is static
+    * @param isPrivate if this is set then the field is private
     */
   def compileField(visitor: ClassWriter, name: String, jvmType: JvmType, isStatic: Boolean, isPrivate: Boolean): Unit = {
     // TODO: isStatic and isPrivate should be ADTs.
     val visibility =
-    if (isPrivate) {
-      ACC_PRIVATE
-    } else {
-      ACC_PUBLIC
-    }
+      if (isPrivate) {
+        ACC_PRIVATE
+      } else {
+        ACC_PUBLIC
+      }
 
     val fieldType =
       if (isStatic) {
@@ -94,10 +94,10 @@ object AsmOps {
     * return this.value;
     * }
     *
-    * @param visitor      class visitor
-    * @param classType    Name of the class containing the field
-    * @param fieldType    JvmType of the field
-    * @param methodName   method name of getter of `fieldName`
+    * @param visitor    class visitor
+    * @param classType  Name of the class containing the field
+    * @param fieldType  JvmType of the field
+    * @param methodName method name of getter of `fieldName`
     */
   def compileGetFieldMethod(visitor: ClassWriter, classType: JvmName, fieldType: JvmType, fieldName: String, methodName: String): Unit = {
     val method = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, methodName, getMethodDescriptor(Nil, fieldType), null, null)
@@ -153,10 +153,10 @@ object AsmOps {
     *   this.field0 = var;
     * }
     *
-    * @param visitor      class visitor
-    * @param classType    Name of the class containing the field
-    * @param fieldType    JvmType of the field
-    * @param methodName   method name of getter of `fieldName`
+    * @param visitor    class visitor
+    * @param classType  Name of the class containing the field
+    * @param fieldType  JvmType of the field
+    * @param methodName method name of getter of `fieldName`
     */
   def compileSetFieldMethod(visitor: ClassWriter, classType: JvmName, fieldType: JvmType, fieldName: String, methodName: String): Unit = {
     val method = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, methodName, getMethodDescriptor(List(fieldType), JvmType.Void), null, null)
@@ -303,8 +303,9 @@ object AsmOps {
 
   /**
     * Returns the size of a variable of type `tpe` in jvm.
+    *
     * @param tpe Jvm type of the variable
-    * @return    Size of the variable in jvm
+    * @return Size of the variable in jvm
     */
   def getStackSpace(tpe: JvmType): Int = tpe match {
     case JvmType.PrimBool => 1

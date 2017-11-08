@@ -134,7 +134,7 @@ object GenTupleClasses {
     visitor.visitSource(classType.name.toInternalName, null)
 
     // Adding fields and getters and setters to the class
-    for((field, ind) <- targs.zipWithIndex){
+    for ((field, ind) <- targs.zipWithIndex) {
       // Name of the field
       val fieldName = s"field$ind"
 
@@ -239,7 +239,7 @@ object GenTupleClasses {
 
     var offset: Int = 1
 
-    for((field, ind) <- fields.zipWithIndex) {
+    for ((field, ind) <- fields.zipWithIndex) {
       val iLoad = AsmOps.getLoadInstruction(field)
 
       constructor.visitVarInsn(ALOAD, 0)

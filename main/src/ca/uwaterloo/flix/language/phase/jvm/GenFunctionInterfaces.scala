@@ -19,7 +19,6 @@ package ca.uwaterloo.flix.language.phase.jvm
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Root
 import ca.uwaterloo.flix.language.ast.Type
-import org.objectweb.asm.ClassWriter
 import org.objectweb.asm.Opcodes._
 
 /**
@@ -75,7 +74,7 @@ object GenFunctionInterfaces {
       JvmName.Object.toInternalName, superInterface)
 
     // Adding setters for each argument of the function
-    for((arg, index) <- args.init.zipWithIndex) {
+    for ((arg, index) <- args.init.zipWithIndex) {
       // `JvmType` of `arg`
       val argType = JvmOps.getErasedType(arg)
 
@@ -87,7 +86,7 @@ object GenFunctionInterfaces {
 
     visitor.visitEnd()
     // `JvmClass` of the interface
-    val jvmClass = JvmClass(functionType.name ,visitor.toByteArray)
+    val jvmClass = JvmClass(functionType.name, visitor.toByteArray)
     Some(jvmClass)
   }
 
