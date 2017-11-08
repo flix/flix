@@ -17,10 +17,8 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.ExecutableAst.ByteCodes
 import ca.uwaterloo.flix.language.{CompilationError, GenSym}
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.runtime.Interpreter
 import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
@@ -62,8 +60,7 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
     val reachable = root.reachable
     val time = root.time
 
-    ExecutableAst.Root(constants ++ m, enums, lattices, tables, indexes, strata, properties, specialOps,
-      reachable, ByteCodes(Map(), Map(), Map(), Map(), Map()), time).toSuccess
+    ExecutableAst.Root(constants ++ m, enums, lattices, tables, indexes, strata, properties, specialOps, reachable, time).toSuccess
   }
 
   def toExecutable(sast: SimplifiedAst.Def): ExecutableAst.Def = {

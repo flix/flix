@@ -241,10 +241,6 @@ class Flix {
       VarNumbering |>
       CreateExecutableAst |>
       JvmBackend |>
-      TupleGen |>
-      EnumGen |>
-      CodeGen |>
-      LoadBytecode |>
       QuickChecker |>
       Verifier
 
