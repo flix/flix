@@ -31,7 +31,7 @@ object GenMain {
   def gen()(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = getMain(root) match {
     case None => Map.empty
     case Some(defn) =>
-      // TODO: Emit a main class with a call to the main method shim.
+      // TODO: Ramin: Emit a main class with the appropriate method that calls the main shim.
       Map.empty
   }
 

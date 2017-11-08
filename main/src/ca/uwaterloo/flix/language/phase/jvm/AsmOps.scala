@@ -66,7 +66,6 @@ object AsmOps {
     * @param isPrivate if this is set then the field is private
     */
   def compileField(visitor: ClassWriter, name: String, jvmType: JvmType, isStatic: Boolean, isPrivate: Boolean): Unit = {
-    // TODO: isStatic and isPrivate should be ADTs.
     val visibility =
       if (isPrivate) {
         ACC_PRIVATE
@@ -171,13 +170,13 @@ object AsmOps {
   }
 
   /**
-    * Returns the load instruction corresponding to the `fType`
+    * Returns the load instruction corresponding to the given type `tpe`
     *
-    * @param fType type
+    * @param tpe type
     * @return A load instruction
     */
-  // TODO: If possible should not use wildcards.
-  def getReturnInsn(fType: JvmType): Int = fType match {
+  // TODO: Ramin: Pattern match should not use wildcard.
+  def getReturnInsn(tpe: JvmType): Int = tpe match {
     case JvmType.PrimBool | JvmType.PrimChar | JvmType.PrimByte | JvmType.PrimShort | JvmType.PrimInt => IRETURN
     case JvmType.PrimLong => LRETURN
     case JvmType.PrimFloat => FRETURN
@@ -191,7 +190,7 @@ object AsmOps {
     * @param tpe Jvm Type of value to be loaded
     * @return Appropriate load instruction for the given type
     */
-  // TODO: If possible should not use wildcards.
+  // TODO: Ramin: Pattern match should not use wildcard.
   def getLoadInstruction(tpe: JvmType): Int = tpe match {
     case JvmType.PrimBool | JvmType.PrimChar | JvmType.PrimByte | JvmType.PrimShort | JvmType.PrimInt => ILOAD
     case JvmType.PrimLong => LLOAD
@@ -221,7 +220,7 @@ object AsmOps {
     visitor.visitTypeInsn(NEW, className.toInternalName)
     visitor.visitInsn(DUP)
     visitor.visitLdcInsn(msg)
-    // TODO: Load actual source location or change the exception
+    // TODO: Ramin: We need to preserve the line number here, somehow. (I am not sure how to do it, we can talk about it).
     visitor.visitFieldInsn(GETSTATIC, "ca/uwaterloo/flix/language/ast/package$SourceLocation$", "MODULE$", "Lca/uwaterloo/flix/language/ast/package$SourceLocation$;")
     visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/language/ast/package$SourceLocation$", "Unknown", "()Lca/uwaterloo/flix/language/ast/package$SourceLocation;", false)
     visitor.visitMethodInsn(INVOKESPECIAL, className.toInternalName, "<init>", "(Ljava/lang/String;Lca/uwaterloo/flix/language/ast/package$SourceLocation;)V", false)

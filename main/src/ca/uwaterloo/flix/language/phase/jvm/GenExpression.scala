@@ -354,7 +354,7 @@ object GenExpression {
       visitor.visitJumpInsn(GOTO, entryPoint)
 
     case Expression.ApplyHook(hook, args, tpe, loc) =>
-      // TODO: Remove hooks before final merge into master.
+      // TODO: Magnus: Remove hooks.
       val message = "ApplyHook is not implemented"
       // Create a new `Exception` object
       visitor.visitTypeInsn(NEW, JvmName.UnsupportedOperationException.toInternalName)
@@ -371,12 +371,12 @@ object GenExpression {
       visitor.visitInsn(ATHROW)
 
     case Expression.Unary(sop, op, exp, _, _) =>
-      // TODO: Should not use op, as it will be removed.
+      // TODO: Ramin: Must not use `op`, should only use `sop`.
       compileUnaryExpr(exp, currentClassType, visitor, jumpLabels, entryPoint, op, sop)
 
     case Expression.Binary(sop, op, exp1, exp2, _, _) =>
-      // TODO: Should not use op, as it will be removed.
-      // Probably better to group these methods by type, e.g. compileFloat32Exp.
+      // TODO: Ramin: Must not use `op`, should only use `sop`.
+      // TODO: Ramin: Probably better to group these methods by type, e.g. compileFloat32Exp. (See interpreter for a possible structure).
       op match {
         case o: ArithmeticOperator => compileArithmeticExpr(exp1, exp2, currentClassType, visitor, jumpLabels, entryPoint, o, sop)
         case o: ComparisonOperator => compileComparisonExpr(exp1, exp2, currentClassType, visitor, jumpLabels, entryPoint, o, sop)
@@ -438,14 +438,14 @@ object GenExpression {
       compileExpression(exp2, currentClassType, jumpLabels, entryPoint, visitor)
 
     case Expression.LetRec(sym, exp1, exp2, _, _) =>
-      ??? // TODO: Ramin
+      ??? // TODO: Ramin: Implement let rec. (The signature of let rec might need to change.)
 
     case Expression.Is(enum, tag, exp, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
       // Case 1: Check for unwrappability.
       if (JvmOps.isSingleCaseEnum(enum)) {
-        // TODO: Ramin
+        // TODO: Ramin: Add support for single case enums?
       }
       // Case 2: Check for nullability.
       if (JvmOps.isNullable(exp.tpe)) {
@@ -564,7 +564,7 @@ object GenExpression {
 
       // Case 1: Check for unwrappability.
       if (JvmOps.isSingleCaseEnum(enum)) {
-        // TODO: Ramin
+        // TODO: Ramin: Add support for single case enums?
       }
       // Case 2: Check for nullability.
       if (JvmOps.isNullable(tpe)) {
@@ -612,7 +612,7 @@ object GenExpression {
       addSourceLine(visitor, loc)
       // Case 1: Check for unwrappability.
       if (JvmOps.isSingleCaseEnum(enum)) {
-        // TODO: Ramin
+        // TODO: Ramin: Add support for single case enums?
       }
       // Case 2: Check for nullability.
       if (JvmOps.isNullable(exp.tpe)) {
@@ -682,6 +682,14 @@ object GenExpression {
       val constructorDescriptor = AsmOps.getMethodDescriptor(erasedElmTypes, JvmType.Void)
       // Invoking the constructor
       visitor.visitMethodInsn(INVOKESPECIAL, classType.name.toInternalName, "<init>", constructorDescriptor, false)
+
+    case Expression.ArrayNew(elm, len, tpe, loc) => ??? // TODO: Ramin: Array
+
+    case Expression.ArrayLit(elms, tpe, loc) => ??? // TODO: Ramin: Array
+
+    case Expression.ArrayLoad(base, index, tpe, loc) => ??? // TODO: Ramin: Array
+
+    case Expression.ArrayStore(base, index, value, tpe, loc) => ??? // TODO: Ramin: Array
 
     case Expression.Ref(exp, tpe, loc) =>
       // Adding source line number for debugging

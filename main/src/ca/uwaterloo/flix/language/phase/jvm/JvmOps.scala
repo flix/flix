@@ -26,7 +26,7 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, Optimization}
 
 object JvmOps {
 
-  // TODO: Sort functions.
+  // TODO: Magnus: Organize functions.
 
   /**
     * The root package name.
@@ -51,17 +51,7 @@ object JvmOps {
 
     // Retrieve the type arguments.
     val args = tpe.typeArguments
-    /*
-        // Replace vars in a type with another type
-        def reconstruct(tpe: Type, map: Map[Type, Type]): Type = tpe match {
-          case x: Type.Var => map(x)
-          case Type.Arrow(l) => Set.empty
-          case Type.Tuple(l) => Set.empty
-          case Type.Enum(enumName, kind) => Set.empty
-          case Type.Apply(tpe1, tpe2) => tpe1.typeVars ++ tpe2.typeVars
-        }
 
-    */
     // Match on the type constructor.
     base match {
       case Type.Unit => JvmType.Unit
@@ -81,7 +71,7 @@ object JvmOps {
       case Type.Tuple(l) => getTupleInterfaceType(tpe)
       case Type.Enum(sym, kind) =>
         getNullability(tpe) match {
-          case Nullability.Nullable(t) => getJvmType(args.head) //TODO: This only works for Options and similar enums
+          case Nullability.Nullable(t) => getJvmType(args.head) //TODO: Magnus: This only works for Options and similar enums
           case Nullability.NonNullable(t) => getEnumInterfaceType(tpe)
           case Nullability.Primitive(t) => throw InternalCompilerException(s"Unexpected primtive type: '$tpe'.")
           case Nullability.Reference(t) => throw InternalCompilerException(s"Unexpected reference type: '$tpe'.")
@@ -111,7 +101,7 @@ object JvmOps {
   /**
     * Returns the erased JvmType of the given Flix type `tpe`.
     */
-  // TODO: Delete this alias?
+  // TODO: Magnus: Delete this alias?
   def getErasedType(tpe: Type)(implicit root: Root, flix: Flix): JvmType = getErasedType(getJvmType(tpe))
 
   /**
@@ -119,7 +109,7 @@ object JvmOps {
     *
     * NB: The given type `tpe` must be an arrow type.
     */
-  // TODO: Should this simply return a JvmType?
+  // TODO: Magnus: Should this simply return a JvmType?
   def getResultType(tpe: Type)(implicit root: Root, flix: Flix): Type = {
     // Check that the given type is an arrow type.
     if (!tpe.typeConstructor.isArrow)
@@ -195,7 +185,7 @@ object JvmOps {
   /**
     * Returns the closure class `Clo$Name` for the given closure.
     *
-    * TODO: Examples
+    * TODO: Magnus: Examples
     */
   def getClosureClassType(closure: ClosureInfo)(implicit root: Root, flix: Flix): JvmType.Reference = {
     // Retrieve the arrow type of the closure.
@@ -216,7 +206,7 @@ object JvmOps {
     // Compute the stringified erased type of each type argument.
     val args = tpe.typeArguments.map(tpe => stringify(getErasedType(tpe)))
 
-    // TODO: Need to take arity into account. Two closures could have different arity.
+    // TODO: Magnus: Need to take arity into account. Two closures could have different arity.
 
     // The JVM name is of the form Clo$sym.name
     val name = "Clo" + "$" + closure.sym.name
@@ -266,7 +256,7 @@ object JvmOps {
     * Ok: Result[Bool, Char]    =>    Ok$Bool$Char
     * Err: Result[Bool, Char]   =>    Err$Bool$Char
     */
-  // TODO: Can we improve the representation w.r.t. unused type variables?
+  // TODO: Magnus: Can we improve the representation w.r.t. unused type variables?
   def getTagClassType(tag: TagInfo)(implicit root: Root, flix: Flix): JvmType.Reference = {
     // Retrieve the tag name.
     val tagName = tag.tag
@@ -425,7 +415,7 @@ object JvmOps {
   /**
     * Returns the field name of a defn as used in a namespace class.
     *
-    * TODO: How does these examples make sense?
+    * TODO: Magnus: How does these examples make sense?
     *
     * For example:
     *
@@ -434,16 +424,14 @@ object JvmOps {
     * Foo.Bar.X()     =>  Foo$Bar$Ns$X
     * Foo.Bar.Baz.Y() =>  Foo$Bar$Baz$Ns$X
     */
-  // TODO: We should move "suffix" and "prefix" into helpers inside JvmOps.
+  // TODO: Magnus: We should move "suffix" and "prefix" into helpers inside JvmOps.
   def getDefFieldNameInNamespaceClass(sym: Symbol.DefnSym): String = "f_" + mangle(sym.name)
 
   /**
     * Returns the method name of a defn as used in a namespace class.
     */
-  // TODO: Cleanup
+  // TODO: Magnus: Cleanup
   def getDefMethodNameInNamespaceClass(sym: Symbol.DefnSym): String = "m_" + mangle(sym.name)
-
-  // TODO: Deal with fusion too.
 
   /**
     * Returns information about the given variable symbol `sym`
@@ -613,7 +601,7 @@ object JvmOps {
   /**
     * Returns `true` if the given enum symbol `sym` is a single-case enum.
     */
-  // TODO: Remove this optimization from the Optimizer phase.
+  // TODO: Magnus: Remove this optimization from the Optimizer phase.
   def isSingleCaseEnum(sym: Symbol.EnumSym)(implicit root: Root, flix: Flix): Boolean = {
     // Check if the optimization is enabled.
     if (!(flix.options.optimizations contains Optimization.SingleCaseEnums)) {
@@ -700,7 +688,7 @@ object JvmOps {
   /**
     * Performs name mangling on the given string `s` to avoid issues with special characters.
     */
-  // TODO: Use this in appropriate places.
+  // TODO: Magnus: Use this in appropriate places.
   def mangle(s: String): String = s.
     replace("+", "$plus").
     replace("-", "$minus").
@@ -815,6 +803,14 @@ object JvmOps {
         case (sacc, e) => sacc ++ visitExp(e)
       }
 
+      case Expression.ArrayNew(elm, len, tpe, loc) => ??? // TODO: Magnus: Array
+
+      case Expression.ArrayLit(elms, tpe, loc) => ??? // TODO: Magnus: Array
+
+      case Expression.ArrayLoad(base, index, tpe, loc) => ??? // TODO: Magnus: Array
+
+      case Expression.ArrayStore(base, index, value, tpe, loc) => ??? // TODO: Magnus: Array
+
       case Expression.Ref(exp, tpe, loc) => visitExp(exp)
       case Expression.Deref(exp, tpe, loc) => visitExp(exp)
       case Expression.Assign(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2)
@@ -836,7 +832,7 @@ object JvmOps {
     }
 
 
-    // TODO: Look for closures in other places.
+    // TODO: Magnus: Look for closures in other places.
 
     // Visit every definition.
     root.defs.foldLeft(Set.empty[ClosureInfo]) {
@@ -848,7 +844,7 @@ object JvmOps {
     * Returns the namespace info of the given definition symbol `sym`.
     */
   def getNamespace(sym: Symbol.DefnSym)(implicit root: Root, flix: Flix): NamespaceInfo = {
-    NamespaceInfo(sym.namespace, Map.empty) // TODO.
+    NamespaceInfo(sym.namespace, Map.empty) // TODO: Magnus: Empty map.
   }
 
   /**
@@ -885,7 +881,7 @@ object JvmOps {
     // Compute the tag info.
     enum.cases.foldLeft(Set.empty[TagInfo]) {
       case (sacc, (_, Case(enumSym, tagName, uninstantiatedTagType, loc))) =>
-        // TODO: It would be nice if this information could be stored somewhere...
+        // TODO: Magnus: It would be nice if this information could be stored somewhere...
         val subst = Unification.unify(enum.tpe, tpe).get
         val tagType = subst(uninstantiatedTagType)
 
@@ -897,7 +893,7 @@ object JvmOps {
   /**
     * Returns the tag info for the given `tpe` and `tag`
     */
-  // TODO: Should use getTags and then just find the correct tag.
+  // TODO: Magnus: Should use getTags and then just find the correct tag.
   def getTagInfo(tpe: Type, tag: String)(implicit root: Root, flix: Flix): TagInfo = {
     // Throw an exception if `tpe` is not an enum type
     if (!tpe.isEnum)
@@ -1007,6 +1003,11 @@ object JvmOps {
         case (sacc, e) => sacc ++ visitExp(e)
       }
 
+      case Expression.ArrayNew(elm, len, tpe, loc) => ??? // TODO: Magnus: Array
+      case Expression.ArrayLit(elms, tpe, loc) => ??? // TODO: Magnus: Array
+      case Expression.ArrayLoad(base, index, tpe, loc) => ??? // TODO: Magnus: Array
+      case Expression.ArrayStore(base, index, value, tpe, loc) => ??? // TODO: Magnus: Array
+
       case Expression.Ref(exp, tpe, loc) => visitExp(exp) + tpe
       case Expression.Deref(exp, tpe, loc) => visitExp(exp) + tpe
       case Expression.Assign(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2) + tpe
@@ -1027,7 +1028,7 @@ object JvmOps {
       case Expression.SwitchError(tpe, loc) => Set(tpe)
     }
 
-    // TODO: Look for types in other places.
+    // TODO: Magnus: Look for types in other places.
 
     // Visit every definition.
     val result = root.defs.foldLeft(Set.empty[Type]) {
@@ -1095,7 +1096,7 @@ object JvmOps {
     *
     * @param tag Enum Case
     */
-  // TODO: Rename
+  // TODO: Magnus: Rename
   def isSingletonEnum(tag: TagInfo): Boolean = {
     tag.tagType == Type.Unit
   }
@@ -1139,7 +1140,7 @@ object JvmOps {
   /**
     * Returns `true` if the given definition `defn` is a law.
     */
-  // TODO: Ensure this is used in all the correct places.
+  // TODO: Magnus: Ensure this is used in all the correct places.
   def isLaw(defn: Def): Boolean = defn.ann.isLaw
 
 }

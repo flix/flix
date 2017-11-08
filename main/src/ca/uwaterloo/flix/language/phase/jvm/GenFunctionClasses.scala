@@ -34,23 +34,23 @@ object GenFunctionClasses {
     //
     // Generate a function class for each def and collect the results in a map.
     //
-    defs.foldLeft(Map.empty[JvmName, JvmClass]) { case (macc, (sym, defn)) =>
-      // TODO Magnus: Should we make all the defs a function like before? Not sure what to do when there is non arrow function.
-      // TODO We filter laws here.
-      if (defn.tpe.isArrow && !JvmOps.isLaw(defn)) {
+    defs.foldLeft(Map.empty[JvmName, JvmClass]) {
+      case (macc, (sym, defn)) =>
+        // TODO: Magnus review the type filtering here.
+        if (defn.tpe.isArrow && !JvmOps.isLaw(defn)) {
 
-        // `JvmType` of the interface for `def.tpe`
-        val functionInterface = JvmOps.getFunctionInterfaceType(defn.tpe)
+          // `JvmType` of the interface for `def.tpe`
+          val functionInterface = JvmOps.getFunctionInterfaceType(defn.tpe)
 
-        // `JvmType` of the class for `defn`
-        val classType = JvmOps.getFunctionDefinitionClassType(sym)
+          // `JvmType` of the class for `defn`
+          val classType = JvmOps.getFunctionDefinitionClassType(sym)
 
-        // Name of the class
-        val className = classType.name
-        macc + (className -> JvmClass(className, genByteCode(classType, functionInterface, defn)))
-      } else {
-        macc
-      }
+          // Name of the class
+          val className = classType.name
+          macc + (className -> JvmClass(className, genByteCode(classType, functionInterface, defn)))
+        } else {
+          macc
+        }
     }
   }
 

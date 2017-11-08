@@ -125,7 +125,7 @@ object GenTagClasses {
 
     // Generate static `INSTANCE` field if it is a singleton
     if (JvmOps.isSingletonEnum(tag)) {
-      // TODO: Determine if this optimization goes here, and whether we should still have a value field if it is applied.
+      // TODO: Magnus: Think about this optimization.
       AsmOps.compileField(visitor, "unitInstance", classType, isStatic = true, isPrivate = false)
     }
 

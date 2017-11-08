@@ -42,7 +42,7 @@ object Bootstrap {
       val methodName = JvmOps.getDefMethodNameInNamespaceClass(sym)
 
       // Retrieve the method object.
-      // TODO: This has O(n^2) complexity. We should fix that.
+      // TODO: Magnus: This has O(n^2) complexity. We should fix that.
       val method = findMethod(methodName, nsClass.getMethods)
 
       // And finally assign the method object to the definition.

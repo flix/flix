@@ -21,9 +21,8 @@ import ca.uwaterloo.flix.language.ast.{Symbol, Type}
 /**
   * Meta information about a tag.
   */
-// TODO: Order of components?
-// TODO: Can some of this be folded into Case?
-// TODO: The equal method is potentially wrong!
+// TODO: Magnus: What components are needed here?
+// TODO: Magnus: Check the equality method.
 case class TagInfo(sym: Symbol.EnumSym, tag: String, tparams: List[Type], enumType: Type, tagType: Type) {
   /**
     * Returns the hash code of `this` tag info.

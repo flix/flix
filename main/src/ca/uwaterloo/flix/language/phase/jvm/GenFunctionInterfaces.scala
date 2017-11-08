@@ -46,7 +46,7 @@ object GenFunctionInterfaces {
     *
     * Returns `[[None]]` if the type is not a function type.
     */
-  // TODO: These should be total and throw exception if they get a wrong type.
+  // TODO: Magnus: This function should be total, and throw if given a non arrow type.
   private def genFunctionalInterface(tpe: Type)(implicit root: Root, flix: Flix): Option[JvmClass] = {
     // Compute the type constructor and type arguments.
     val base = tpe.typeConstructor

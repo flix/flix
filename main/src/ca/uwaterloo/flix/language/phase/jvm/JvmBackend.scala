@@ -164,11 +164,6 @@ object JvmBackend extends Phase[Root, Root] {
     //
     Bootstrap.bootstrap(allClasses)
 
-    // TODO: Temporary testing infrastructure
-    for (tpe <- types) {
-      JvmOps.getJvmType(tpe)
-    }
-
     //
     // Measure elapsed time.
     //

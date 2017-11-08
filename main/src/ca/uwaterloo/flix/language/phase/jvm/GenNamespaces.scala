@@ -67,7 +67,7 @@ object GenNamespaces {
       // Adding the field for functional interface for `tpe`
       AsmOps.compileField(visitor, fieldName, jvmType, isStatic = false, isPrivate = false)
 
-      // TODO: Same problem as GenFunctionClasses, we should handle not defs with non arrow type
+      // TODO: Magnus: Check the signatures/types here.
       if (defn.tpe.isArrow) {
         // Args of the function
         compileShillMethod(visitor, defn, jvmType, ns)
