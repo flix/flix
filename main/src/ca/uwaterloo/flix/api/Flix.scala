@@ -271,7 +271,7 @@ class Flix {
     * Runs the Flix fixed point solver on the program and returns the minimal model.
     */
   def solve(root: ExecutableAst.Root): Validation[Model, CompilationError] =
-    new Solver(root, options).solve().toSuccess
+    new Solver(root, options)(this).solve().toSuccess
 
   /**
     * Runs the Flix fixed point solver on the program trying to minimize the
