@@ -26,10 +26,6 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, Optimization}
 
 object JvmOps {
 
-  // TODO: Magnus: Implement curried functions.
-
-  // TODO: Magnus: Organize functions.
-
   /**
     * The root package name.
     */
@@ -73,9 +69,12 @@ object JvmOps {
       case Type.Tuple(l) => getTupleInterfaceType(tpe)
       case Type.Enum(sym, kind) =>
         getNullability(tpe) match {
-          case Nullability.Nullable(t) => getJvmType(args.head) //TODO: Magnus: This only works for Options and similar enums
+          case Nullability.Nullable(t) =>
+            // If the enum is nullable it means that it is the Option[a] type.
+            // Hence we extract the inner type, the 'a'.
+            getJvmType(args.head)
           case Nullability.NonNullable(t) => getEnumInterfaceType(tpe)
-          case Nullability.Primitive(t) => throw InternalCompilerException(s"Unexpected primtive type: '$tpe'.")
+          case Nullability.Primitive(t) => throw InternalCompilerException(s"Unexpected primitive type: '$tpe'.")
           case Nullability.Reference(t) => throw InternalCompilerException(s"Unexpected reference type: '$tpe'.")
         }
       case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
@@ -436,17 +435,6 @@ object JvmOps {
   def getDefMethodNameInNamespaceClass(sym: Symbol.DefnSym): String = "m_" + mangle(sym.name)
 
   /**
-    * Returns information about the given variable symbol `sym`
-    * given the free variables `freeVars` of the definition in which `sym` occurs.
-    */
-  // TODO: Magnus: Why is this not used?
-  def getVariableInfo(sym: Symbol.VarSym, freeVars: List[FreeVar]): VariableInfo =
-  if (freeVars.exists(v => v.sym == sym))
-    VariableInfo.CloField("arg" + sym.getStackOffset)
-  else
-    VariableInfo.IfoField("clo" + sym.getStackOffset)
-
-  /**
     * Optionally returns the given `tag` as a fusion `tag`.
     */
   def getFusionTag(tag: TagInfo): Option[FusionTagInfo] = {
@@ -771,13 +759,18 @@ object JvmOps {
         case (sacc, e) => sacc ++ visitExp(e)
       }
 
-      case Expression.ArrayNew(elm, len, tpe, loc) => ??? // TODO: Magnus: Array
+      case Expression.ArrayNew(elm, len, tpe, loc) =>
+        visitExp(elm)
 
-      case Expression.ArrayLit(elms, tpe, loc) => ??? // TODO: Magnus: Array
+      case Expression.ArrayLit(elms, tpe, loc) => elms.foldLeft(Set.empty[ClosureInfo]) {
+        case (sacc, e) => sacc ++ visitExp(e)
+      }
 
-      case Expression.ArrayLoad(base, index, tpe, loc) => ??? // TODO: Magnus: Array
+      case Expression.ArrayLoad(base, index, tpe, loc) =>
+        visitExp(base) ++ visitExp(index)
 
-      case Expression.ArrayStore(base, index, value, tpe, loc) => ??? // TODO: Magnus: Array
+      case Expression.ArrayStore(base, index, value, tpe, loc) =>
+        visitExp(base) ++ visitExp(index) ++ visitExp(value)
 
       case Expression.Ref(exp, tpe, loc) => visitExp(exp)
       case Expression.Deref(exp, tpe, loc) => visitExp(exp)
@@ -870,6 +863,13 @@ object JvmOps {
 
     val tags = getTagsOf(tpe)
     tags.find(_.tag == tag).get
+  }
+
+  /**
+    * Returns true if the value of the given `tag` is the unit value.
+    */
+  def isUnitTag(tag: TagInfo): Boolean = {
+    tag.tagType == Type.Unit
   }
 
   /**
@@ -968,10 +968,12 @@ object JvmOps {
         case (sacc, e) => sacc ++ visitExp(e)
       }
 
-      case Expression.ArrayNew(elm, len, tpe, loc) => ??? // TODO: Magnus: Array
-      case Expression.ArrayLit(elms, tpe, loc) => ??? // TODO: Magnus: Array
-      case Expression.ArrayLoad(base, index, tpe, loc) => ??? // TODO: Magnus: Array
-      case Expression.ArrayStore(base, index, value, tpe, loc) => ??? // TODO: Magnus: Array
+      case Expression.ArrayNew(elm, len, tpe, loc) => visitExp(elm) + tpe
+      case Expression.ArrayLit(elms, tpe, loc) => elms.foldLeft(Set(tpe)) {
+        case (sacc, e) => sacc ++ visitExp(e)
+      }
+      case Expression.ArrayLoad(base, index, tpe, loc) => visitExp(base) ++ visitExp(index) + tpe
+      case Expression.ArrayStore(base, index, value, tpe, loc) => visitExp(base) ++ visitExp(index) ++ visitExp(value) + tpe
 
       case Expression.Ref(exp, tpe, loc) => visitExp(exp) + tpe
       case Expression.Deref(exp, tpe, loc) => visitExp(exp) + tpe
@@ -1036,16 +1038,6 @@ object JvmOps {
           case (sacc, arg) => sacc ++ nestedTypesOf(arg)
         }
     }
-  }
-
-  /**
-    * Returns true if the case has a unit field, which means the case can be a singleton. It returns false otherwise.
-    *
-    * @param tag Enum Case
-    */
-  // TODO: Magnus: Rename
-  def isSingletonEnum(tag: TagInfo): Boolean = {
-    tag.tagType == Type.Unit
   }
 
   /**

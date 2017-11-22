@@ -124,15 +124,15 @@ object GenTagClasses {
     AsmOps.compileField(visitor, "value", valueType, isStatic = false, isPrivate = true)
 
     // Generate static `INSTANCE` field if it is a singleton
-    if (JvmOps.isSingletonEnum(tag)) {
+    if (JvmOps.isUnitTag(tag)) {
       AsmOps.compileField(visitor, "unitInstance", classType, isStatic = true, isPrivate = false)
     }
 
     // Generate the constructor of the generated class.
-    compileEnumConstructor(visitor, classType, valueType, isSingleton = JvmOps.isSingletonEnum(tag))
+    compileEnumConstructor(visitor, classType, valueType, isSingleton = JvmOps.isUnitTag(tag))
 
     // Initialize the static field if it is a singleton.
-    if (JvmOps.isSingletonEnum(tag)) {
+    if (JvmOps.isUnitTag(tag)) {
       compileUnitInstance(visitor, classType)
     }
 

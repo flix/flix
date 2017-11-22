@@ -571,7 +571,7 @@ object GenExpression {
        there is only one instance of the class initiated as a field. We have to fetch this field instead of instantiating
        a new one.
        */
-        if (JvmOps.isSingletonEnum(tagInfo)) {
+        if (JvmOps.isUnitTag(tagInfo)) {
           visitor.visitFieldInsn(GETSTATIC, classType.name.toInternalName, "unitInstance", classType.toDescriptor)
         } else {
           // Creating a new instance of the class
