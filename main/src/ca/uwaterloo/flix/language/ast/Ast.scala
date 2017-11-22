@@ -16,8 +16,6 @@
 
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.api.InvokableUnsafe
-
 /**
   * A collection of AST nodes that are shared across multiple ASTs.
   */

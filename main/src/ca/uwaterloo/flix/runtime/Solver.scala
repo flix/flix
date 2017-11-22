@@ -788,26 +788,28 @@ class Solver(val root: ExecutableAst.Root, options: Options)(implicit flix: Flix
     */
   private def mkModel(elapsed: Long): Model = {
     // construct the model.
-    val definitions = root.defs.foldLeft(Map.empty[Symbol.DefnSym, () => AnyRef]) {
+    val definitions = root.defs.foldLeft(Map.empty[Symbol.DefnSym, () => ProxyObject]) {
       case (macc, (sym, defn)) =>
         if (defn.formals.isEmpty)
-          macc + (sym -> (() => Linker.link(sym, root).invoke(Array.empty).getValue))
+          macc + (sym -> (() => Linker.link(sym, root).invoke(Array.empty)))
         else
           macc + (sym -> (() => throw InternalRuntimeException("Unable to evalaute non-constant top-level definition.")))
     }
 
-    val relations = dataStore.relations.foldLeft(Map.empty[Symbol.TableSym, Iterable[List[AnyRef]]]) {
+    val relations = dataStore.relations.foldLeft(Map.empty[Symbol.TableSym, Iterable[List[ProxyObject]]]) {
       case (macc, (sym, relation)) =>
         val table = relation.scan.toIterable.map(_.toList)
         macc + ((sym, table))
     }
-    val lattices = dataStore.lattices.foldLeft(Map.empty[Symbol.TableSym, Iterable[(List[AnyRef], AnyRef)]]) {
+
+    val lattices = dataStore.lattices.foldLeft(Map.empty[Symbol.TableSym, Iterable[(List[ProxyObject], ProxyObject)]]) {
       case (macc, (sym, lattice)) =>
         val table = lattice.scan.toIterable.map {
           case (keys, values) => (keys.toArray.toList, values)
         }
         macc + ((sym, table))
     }
+
     model = new Model(root, root.time.copy(solver = elapsed), definitions, relations, lattices)
     model
   }

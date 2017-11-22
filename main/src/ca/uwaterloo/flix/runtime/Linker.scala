@@ -114,7 +114,11 @@ object Linker {
     */
   private def getHashOp(tpe: Type, root: Root)(implicit flix: Flix): AnyRef => Int =
     (x: AnyRef) => {
-      42 // TODO
+      val sym = root.specialOps(SpecialOperator.HashCode)(tpe)
+      link(sym, root).invoke(Array(x)).getValue match {
+        case i: java.lang.Integer => i.intValue()
+        case v => throw InternalRuntimeException(s"Unexpected value: '$v'.")
+      }
     }
 
   /**

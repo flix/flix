@@ -18,10 +18,10 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
+import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.Validation._
+import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
 import scala.collection.mutable
 
@@ -42,6 +42,9 @@ object Synthesize extends Phase[Root, Root] {
 
     // A mutable map from types to their equality operator. Populated during traversal.
     val mutEqualityOps = mutable.Map.empty[Type, Symbol.DefnSym]
+
+    // A mutable map from types to their hash operator. Populated during traversal.
+    val mutHashOps = mutable.Map.empty[Type, Symbol.DefnSym]
 
     // A mutable map from types to their toString operator. Populated during traversal.
     val mutToStringOps = mutable.Map.empty[Type, Symbol.DefnSym]
@@ -469,6 +472,232 @@ object Synthesize extends Phase[Root, Root] {
     }
 
     /**
+      * Returns an expression that computes the hashCode of the value of the given expression `exp0`.
+      */
+    def mkApplyHash(exp0: Expression): Expression = {
+      // The type of the expression.
+      val tpe = exp0.tpe
+
+      // Construct the symbol of the toString operator.
+      val sym = getOrMkHash(tpe)
+
+      // Construct an expression to call the symbol with the argument `exp0`.
+      val e = Expression.Def(sym, Type.mkArrow(List(tpe), Type.Int32), Eff.Pure, sl)
+      val args = exp0 :: Nil
+      Expression.Apply(e, args, Type.Int32, Eff.Pure, sl)
+    }
+
+    /**
+      * Returns the symbol of the hash operator associated with the given type `tpe`.
+      *
+      * If no such definition exists, it is created.
+      */
+    def getOrMkHash(tpe: Type): Symbol.DefnSym = mutToStringOps.getOrElse(tpe, {
+      // Introduce a fresh symbol for the hash operator.
+      val sym = Symbol.freshDefnSym("hash")
+
+      // Immediately add the symbol to the hash map.
+      // This is necessary to support recursive data types.
+      mutHashOps += (tpe -> sym)
+
+      // Construct one fresh variable symbols for the formal parameter.
+      val freshX = Symbol.freshVarSym("x")
+
+      // Construct the formal parameter.
+      val paramX = FormalParam(freshX, Ast.Modifiers.Empty, tpe, sl)
+
+      // Annotations and modifiers.
+      val ann = Ast.Annotations.Empty
+      val mod = Ast.Modifiers(Ast.Modifier.Synthetic :: Nil)
+
+      // Type and formal parameters.
+      val tparams = Nil
+      val fparams = paramX :: Nil
+
+      // The body expression.
+      val exp = mkHashExp(tpe, freshX)
+
+      // The definition type.
+      val lambdaType = Type.mkArrow(List(tpe), Type.Int32)
+
+      // Assemble the definition.
+      val defn = Def(None, ann, mod, sym, tparams, fparams, exp, lambdaType, Eff.Pure, sl)
+
+      // Add it to the map of new definitions.
+      newDefs += (defn.sym -> defn)
+
+      // And return its symbol.
+      defn.sym
+    })
+
+    /**
+      * Returns an expression that computes the hashCode of the value of the given expression `exp0` of type `tpe`.
+      */
+    def mkHashExp(tpe: Type, varX: Symbol.VarSym): Expression = {
+      // An expression that evaluates to the value of varX.
+      val exp0 = Expression.Var(varX, tpe, Eff.Pure, sl)
+
+      // TODO: The quality of the generated hash function is not very good.
+
+      // TODO: Improve by adding coercion operator.
+
+      // Determine the hash code based on the type `tpe`.
+      tpe match {
+        case Type.Unit => Expression.Int32(123, sl)
+        case Type.Bool => Expression.Int32(123, sl)
+        case Type.Char => Expression.Int32(123, sl)
+        case Type.Float32 => Expression.Int32(123, sl)
+        case Type.Float64 => Expression.Int32(123, sl)
+        case Type.Int8 => Expression.Int32(123, sl)
+        case Type.Int16 => Expression.Int32(123, sl)
+
+        case Type.Int32 => exp0
+
+        case Type.Int64 => Expression.Int32(123, sl)
+
+        case Type.BigInt =>
+          val method = classOf[java.math.BigInteger].getMethod("hashCode")
+          Expression.NativeMethod(method, List(exp0), Type.Str, Eff.Pure, sl)
+
+        case Type.Native =>
+          val method = classOf[java.lang.Object].getMethod("hashCode")
+          Expression.NativeMethod(method, List(exp0), Type.Str, Eff.Pure, sl)
+
+        case Type.Str =>
+          val method = classOf[java.lang.String].getMethod("hashCode")
+          Expression.NativeMethod(method, List(exp0), Type.Str, Eff.Pure, sl)
+
+        case Type.Apply(Type.Ref, _) => Expression.Int32(123, sl)
+        case Type.Apply(Type.Array, _) => Expression.Int32(123, sl)
+        case Type.Apply(Type.Arrow(l), _) => Expression.Int32(123, sl)
+
+        case _ =>
+          //
+          // Enum case.
+          //
+          if (tpe.isEnum) {
+            //
+            // Assume we have an enum:
+            //
+            //   enum Option[Int] {
+            //     case None,
+            //     case Some(Int)
+            //    }
+            //
+            // then we generate the expression:
+            //
+            //   match e with {
+            //     case (None(freshX)) => 1 + recurse(freshX)
+            //     case (Some(freshX)) => 2 + recurse(freshX)
+            //   }
+            //
+            // where recurse is a recursive call to this procedure.
+            //
+            // Retrieve the enum symbol and enum declaration.
+            val enumSym = getEnumSym(tpe)
+            val enumDecl = root.enums(enumSym)
+
+            // The expression `exp0` to match against, simply `exp0`.
+            val matchValue = exp0
+
+            // Compute the cases specialized to the current type.
+            val cases = casesOf(enumDecl, tpe)
+
+            // Generate a match rule for each tag.
+            val rs = cases.zipWithIndex.map {
+              case ((tag, caseType), index) =>
+                // Generate a case of the form:
+                // (Tag(freshX)) => index + recurse(freshX)
+
+                // Generate a fresh variable symbols.
+                val freshX = Symbol.freshVarSym("x")
+
+                // Generate the tag pattern: Tag(freshX).
+                val p = Pattern.Tag(enumSym, tag, Pattern.Var(freshX, caseType, sl), tpe, sl)
+
+                // Generate the guard (simply true).
+                val g = Expression.True(sl)
+
+                // Generate the rule body.
+                val b = Expression.Binary(
+                  BinaryOperator.Plus,
+                  Expression.Int32(index, sl),
+                  mkApplyHash(Expression.Var(freshX, caseType, Eff.Pure, sl)),
+                  Type.Int32,
+                  Eff.Pure,
+                  sl
+                )
+
+                // Put the components together.
+                MatchRule(p, g, b)
+            }
+
+            // Assemble the entire match expression.
+            return Expression.Match(matchValue, rs, Type.Int32, Eff.Pure, sl)
+          }
+
+          //
+          // Tuple case.
+          //
+          if (tpe.isTuple) {
+            //
+            // Assume we have a tuple (a, b, c)
+            //
+            // then we generate the expression:
+            //
+            //   match exp0 with {
+            //     case (x1, x2, x3) => recurse(x1) + recurse(x2) + recurse(x3)
+            //   }
+            //
+            // where recurse is a recursive call to this procedure.
+            //
+
+            // The types of the tuple elements.
+            val elementTypes = getElementTypes(tpe)
+
+            // The expression `exp0` to match against, simply `exp0`.
+            val matchValue = exp0
+
+            // Introduce fresh variables for each component of the tuple.
+            val freshVarsX = (0 to getArity(tpe)).map(_ => Symbol.freshVarSym("x")).toList
+
+            // The pattern of the rule.
+            val p = Pattern.Tuple((freshVarsX zip elementTypes).map {
+              case (freshVar, elmType) => Pattern.Var(freshVar, elmType, sl)
+            }, tpe, sl)
+
+            // The guard of the rule (simply true).
+            val g = Expression.True(sl)
+
+            // The elements of the tuple.
+            val inner = (freshVarsX zip elementTypes).map {
+              case (freshX, elementType) => mkApplyHash(Expression.Var(freshX, elementType, Eff.Pure, sl))
+            }
+
+            // Construct the sum expression e1 + e2 + e3
+            val b = inner.foldLeft(Expression.Int32(0, sl): Expression) {
+              case (e1, e2) => Expression.Binary(
+                BinaryOperator.Plus,
+                e1,
+                e2,
+                Type.Int32,
+                Eff.Pure,
+                sl
+              )
+            }
+
+            // Put the components together.
+            val rule = MatchRule(p, g, b)
+
+            // Assemble the entire match expression.
+            return Expression.Match(matchValue, rule :: Nil, Type.Int32, Eff.Pure, sl)
+          }
+
+          throw InternalCompilerException(s"Unknown type '$tpe'.")
+      }
+    }
+
+    /**
       * Returns an expression that computes the string representation of the value of the given expression `exp0`.
       */
     def mkApplyToString(exp0: Expression): Expression = {
@@ -802,6 +1031,14 @@ object Synthesize extends Phase[Root, Root] {
     }
 
     /*
+     * Introduce Hash special operators.
+     */
+    val hashOps = (typesInTables ++ typesInLattices).foldLeft(Map.empty[Type, Symbol.DefnSym]) {
+      case (macc, tpe) if !tpe.isArrow => macc + (tpe -> getOrMkHash(tpe))
+      case (macc, tpe) => macc
+    }
+
+    /*
      * Introduce ToString special operators.
      */
     val toStringOps = (typesInDefs ++ typesInTables).foldLeft(Map.empty[Type, Symbol.DefnSym]) {
@@ -830,6 +1067,7 @@ object Synthesize extends Phase[Root, Root] {
      */
     val specialOps: Map[SpecialOperator, Map[Type, Symbol.DefnSym]] = Map(
       SpecialOperator.Equality -> equalityOps,
+      SpecialOperator.HashCode -> hashOps,
       SpecialOperator.ToString -> toStringOps
     )
 
