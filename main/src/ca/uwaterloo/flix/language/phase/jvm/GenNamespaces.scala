@@ -56,7 +56,7 @@ object GenNamespaces {
     visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_FINAL, namespaceClassType.name.toInternalName, null,
       JvmName.Object.toInternalName, null)
 
-    // Adding an IFO field and a shill method for each function in `ns`
+    // Adding an IFO field and a shim method for each function in `ns`
     for ((sym, defn) <- ns.defs) {
       // JvmType of `defn`
       val jvmType = JvmOps.getFunctionDefinitionClassType(sym)
@@ -67,11 +67,8 @@ object GenNamespaces {
       // Adding the field for functional interface for `tpe`
       AsmOps.compileField(visitor, fieldName, jvmType, isStatic = false, isPrivate = false)
 
-      // TODO: Magnus: Check the signatures/types here.
-      if (defn.tpe.isArrow) {
-        // Args of the function
-        compileShillMethod(visitor, defn, jvmType, ns)
-      }
+      // Compile the shim method.
+      compileShimMethod(visitor, defn, jvmType, ns)
     }
 
     // Add the constructor
@@ -82,10 +79,10 @@ object GenNamespaces {
   }
 
   /**
-    * Adding a shill for the function `defn` on namespace `ns`
+    * Adding a shim for the function `defn` on namespace `ns`
     */
-  private def compileShillMethod(visitor: ClassWriter, defn: Def, ifoType: JvmType.Reference, ns: NamespaceInfo)(implicit root: Root, flix: Flix): Unit = {
-    // Name of the shill
+  private def compileShimMethod(visitor: ClassWriter, defn: Def, ifoType: JvmType.Reference, ns: NamespaceInfo)(implicit root: Root, flix: Flix): Unit = {
+    // Name of the shim
     val name = JvmOps.getDefMethodNameInNamespaceClass(defn.sym)
 
     // JvmType for namespace

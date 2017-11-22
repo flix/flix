@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.ast.Symbol
 /**
   * Generates bytecode for the main class.
   */
-object GenMain {
+object GenMainClass {
 
   /**
     * Returns the main class.

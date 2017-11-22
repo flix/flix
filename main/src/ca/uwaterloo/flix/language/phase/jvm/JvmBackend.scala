@@ -77,7 +77,7 @@ object JvmBackend extends Phase[Root, Root] {
     //
     // Generate the main class.
     //
-    val mainClass = GenMain.gen()
+    val mainClass = GenMainClass.gen()
 
     //
     // Generate the Context class.

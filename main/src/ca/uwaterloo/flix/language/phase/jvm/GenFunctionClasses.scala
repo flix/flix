@@ -35,22 +35,18 @@ object GenFunctionClasses {
     // Generate a function class for each def and collect the results in a map.
     //
     defs.foldLeft(Map.empty[JvmName, JvmClass]) {
-      case (macc, (sym, defn)) =>
-        // TODO: Magnus review the type filtering here.
-        if (defn.tpe.isArrow && JvmOps.nonLaw(defn)) {
+      case (macc, (sym, defn)) if JvmOps.nonLaw(defn) =>
+        // `JvmType` of the interface for `def.tpe`
+        val functionInterface = JvmOps.getFunctionInterfaceType(defn.tpe)
 
-          // `JvmType` of the interface for `def.tpe`
-          val functionInterface = JvmOps.getFunctionInterfaceType(defn.tpe)
+        // `JvmType` of the class for `defn`
+        val classType = JvmOps.getFunctionDefinitionClassType(sym)
 
-          // `JvmType` of the class for `defn`
-          val classType = JvmOps.getFunctionDefinitionClassType(sym)
+        // Name of the class
+        val className = classType.name
+        macc + (className -> JvmClass(className, genByteCode(classType, functionInterface, defn)))
 
-          // Name of the class
-          val className = classType.name
-          macc + (className -> JvmClass(className, genByteCode(classType, functionInterface, defn)))
-        } else {
-          macc
-        }
+      case (macc, (sym, defn)) => macc
     }
   }
 

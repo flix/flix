@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Root
 import ca.uwaterloo.flix.language.ast.Type
+import ca.uwaterloo.flix.util.InternalRuntimeException
 import org.objectweb.asm.Opcodes._
 
 /**
@@ -34,10 +35,15 @@ object GenFunctionInterfaces {
     // Generate a function interface for each type and collect the results in a map.
     //
     ts.foldLeft(Map.empty[JvmName, JvmClass]) {
-      case (macc, tpe) => genFunctionalInterface(tpe) match {
-        case None => macc
-        case Some(clazz) => macc + (clazz.name -> clazz)
-      }
+      case (macc, tpe) if tpe.isArrow =>
+        // Case 1: The type constructor is an arrow type.
+        // Construct the functional interface.
+        val clazz = genFunctionalInterface(tpe)
+        macc + (clazz.name -> clazz)
+      case (macc, tpe) =>
+        // Case 2: The type constructor is a non-arrow.
+        // Nothing to be done. Return the map.
+        macc
     }
   }
 
@@ -46,15 +52,14 @@ object GenFunctionInterfaces {
     *
     * Returns `[[None]]` if the type is not a function type.
     */
-  // TODO: Magnus: This function should be total, and throw if given a non arrow type.
-  private def genFunctionalInterface(tpe: Type)(implicit root: Root, flix: Flix): Option[JvmClass] = {
+  private def genFunctionalInterface(tpe: Type)(implicit root: Root, flix: Flix): JvmClass = {
     // Compute the type constructor and type arguments.
     val base = tpe.typeConstructor
     val args = tpe.typeArguments
 
     // Immediately return None if the type is a non-function type.
     if (!base.isArrow) {
-      return None
+      throw InternalRuntimeException(s"Unexpected non-arrow type: '$tpe'.")
     }
 
     // `JvmType` of the continuation interface for `tpe`
@@ -85,9 +90,9 @@ object GenFunctionInterfaces {
     }
 
     visitor.visitEnd()
+
     // `JvmClass` of the interface
-    val jvmClass = JvmClass(functionType.name, visitor.toByteArray)
-    Some(jvmClass)
+    JvmClass(functionType.name, visitor.toByteArray)
   }
 
 }
