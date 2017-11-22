@@ -948,12 +948,8 @@ class Solver(val root: ExecutableAst.Root, options: Options)(implicit flix: Flix
     case (Pattern.Wild(_, _), _) => true
     case (Pattern.Var(sym, _, _), _) =>
       val v2 = env0(sym.getStackOffset)
-      if (v2 == null) {
-        env0(sym.getStackOffset) = ??? // TODO: Broken
-        true
-      } else {
-        ??? // TODO
-      }
+      // TODO: Value unification.
+      throw InternalRuntimeException(s"Currently broken.")
     case (Pattern.Unit(_), Value.Unit) => true
     case (Pattern.True(_), java.lang.Boolean.TRUE) => true
     case (Pattern.False(_), java.lang.Boolean.FALSE) => true
@@ -1004,11 +1000,10 @@ class Solver(val root: ExecutableAst.Root, options: Options)(implicit flix: Flix
       }
     }
 
-    val list = value.asInstanceOf[Value.Tag].value
-    visit(list).iterator
-
-    // TODO
-    ???
+    // val list = value.asInstanceOf[Value.Tag].value
+    // visit(list).iterator
+    // TODO: Loop predicate.
+    throw InternalRuntimeException(s"Currently broken.")
   }
 
 }
