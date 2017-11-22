@@ -561,7 +561,6 @@ object JvmOps {
   /**
     * Returns `true` if the given enum symbol `sym` is a single-case enum.
     */
-  // TODO: Magnus: Remove this optimization from the Optimizer phase.
   def isSingleCaseEnum(sym: Symbol.EnumSym)(implicit root: Root, flix: Flix): Boolean = {
     // Check if the optimization is enabled.
     if (!(flix.options.optimizations contains Optimization.SingleCaseEnums)) {

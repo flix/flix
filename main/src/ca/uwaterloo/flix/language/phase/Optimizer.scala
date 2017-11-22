@@ -18,10 +18,10 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.{SimplifiedAst, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{SimplifiedAst, Symbol}
 import ca.uwaterloo.flix.language.ast.SimplifiedAst._
 import ca.uwaterloo.flix.language.debug.PrettyPrinter
-import ca.uwaterloo.flix.util.{InternalCompilerException, Optimization, Validation}
+import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.vt._
 
@@ -32,7 +32,6 @@ import ca.uwaterloo.flix.util.vt._
   *
   * - Elimination of dead branches (e.g. if (true) e1 else e2).
   * - Copy propagation (e.g. let z = w; let y = z; let x = y; x -> w)
-  * - Elimination of single-case enums.
   */
 object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
 
@@ -67,23 +66,23 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.Var(sym, tpe, loc) =>
         // Lookup to see if the variable should be replaced by a copy.
         env0.get(sym) match {
-          case None => Expression.Var(sym, adjustType(tpe), loc)
-          case Some(srcSym) => Expression.Var(srcSym, adjustType(tpe), loc)
+          case None => Expression.Var(sym, tpe, loc)
+          case Some(srcSym) => Expression.Var(srcSym, tpe, loc)
         }
 
       //
       // Def Expressions.
       //
-      case Expression.Def(sym, tpe, loc) => Expression.Def(sym, adjustType(tpe), loc)
+      case Expression.Def(sym, tpe, loc) => Expression.Def(sym, tpe, loc)
 
       //
       // Closure Expressions.
       //
       case Expression.Closure(sym, freeVars, tpe, loc) =>
         val fvs = freeVars map {
-          case FreeVar(s, varType) => FreeVar(env0.getOrElse(s, s), adjustType(varType))
+          case FreeVar(s, varType) => FreeVar(env0.getOrElse(s, s), varType)
         }
-        Expression.Closure(sym, fvs, adjustType(tpe), loc)
+        Expression.Closure(sym, fvs, tpe, loc)
 
       //
       // ApplyClo Expressions.
@@ -91,14 +90,14 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.ApplyClo(exp, args, tpe, loc) =>
         val e = visitExp(exp, env0)
         val as = args map (visitExp(_, env0))
-        Expression.ApplyClo(e, as, adjustType(tpe), loc)
+        Expression.ApplyClo(e, as, tpe, loc)
 
       //
       // ApplyDef Expressions.
       //
       case Expression.ApplyDef(sym, args, tpe, loc) =>
         val as = args map (visitExp(_, env0))
-        Expression.ApplyDef(sym, as, adjustType(tpe), loc)
+        Expression.ApplyDef(sym, as, tpe, loc)
 
       //
       // ApplyCloTail Expressions.
@@ -106,29 +105,28 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.ApplyCloTail(exp, args, tpe, loc) =>
         val e = visitExp(exp, env0)
         val as = args map (visitExp(_, env0))
-        Expression.ApplyCloTail(e, as, adjustType(tpe), loc)
+        Expression.ApplyCloTail(e, as, tpe, loc)
 
       //
       // ApplyDefTail Expressions.
       //
       case Expression.ApplyDefTail(sym, args, tpe, loc) =>
         val as = args map (visitExp(_, env0))
-        Expression.ApplyDefTail(sym, as, adjustType(tpe), loc)
+        Expression.ApplyDefTail(sym, as, tpe, loc)
 
       //
       // ApplySelfTail Expressions.
       //
       case Expression.ApplySelfTail(sym, formals, actuals, tpe, loc) =>
-        val fs = formals map adjustFormalParam
         val as = actuals map (visitExp(_, env0))
-        Expression.ApplySelfTail(sym, fs, as, adjustType(tpe), loc)
+        Expression.ApplySelfTail(sym, formals, as, tpe, loc)
 
       //
       // Unary Expressions.
       //
       case Expression.Unary(sop, op, exp, tpe, loc) =>
         val e = visitExp(exp, env0)
-        Expression.Unary(sop, op, e, adjustType(tpe), loc)
+        Expression.Unary(sop, op, e, tpe, loc)
 
       //
       // Binary Expressions.
@@ -136,7 +134,7 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.Binary(sop, op, exp1, exp2, tpe, loc) =>
         val e1 = visitExp(exp1, env0)
         val e2 = visitExp(exp2, env0)
-        Expression.Binary(sop, op, e1, e2, adjustType(tpe), loc)
+        Expression.Binary(sop, op, e1, e2, tpe, loc)
 
       //
       // If-then-else Expressions.
@@ -149,7 +147,7 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         cond match {
           case Expression.True => consequent
           case Expression.False => alternative
-          case _ => Expression.IfThenElse(cond, consequent, alternative, adjustType(tpe), loc)
+          case _ => Expression.IfThenElse(cond, consequent, alternative, tpe, loc)
         }
 
       //
@@ -160,13 +158,13 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         val bs = branches map {
           case (sym, br) => sym -> visitExp(br, env0)
         }
-        Expression.Branch(e, bs, adjustType(tpe), loc)
+        Expression.Branch(e, bs, tpe, loc)
 
       //
       // Jump Expressions.
       //
       case Expression.JumpTo(sym, tpe, loc) =>
-        Expression.JumpTo(sym, adjustType(tpe), loc)
+        Expression.JumpTo(sym, tpe, loc)
 
       //
       // Let Expressions.
@@ -183,7 +181,7 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
             visitExp(exp2, env0 + (sym -> originalSym))
           case _ =>
             val e2 = visitExp(exp2, env0)
-            Expression.Let(sym, e1, e2, adjustType(tpe), loc)
+            Expression.Let(sym, e1, e2, tpe, loc)
         }
 
       //
@@ -192,23 +190,12 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.LetRec(sym, exp1, exp2, tpe, loc) =>
         val e1 = visitExp(exp1, env0)
         val e2 = visitExp(exp2, env0)
-        Expression.LetRec(sym, e1, e2, adjustType(tpe), loc)
+        Expression.LetRec(sym, e1, e2, tpe, loc)
 
       //
       // Is Expressions.
       //
       case Expression.Is(sym, tag, exp, loc) =>
-        //
-        // Check if this is a single-case enum subject to elimination.
-        //
-        if (isSingleCaseEnum(sym)) {
-          if (flix.options.optimizations contains Optimization.SingleCaseEnums) {
-            // A single-case enum only has one tag.
-            return Expression.True
-          }
-        }
-
-        // Otherwise keep the is.
         val e = visitExp(exp, env0)
         Expression.Is(sym, tag, e, loc)
 
@@ -216,63 +203,43 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       // Tag Expressions.
       //
       case Expression.Tag(sym, tag, exp, tpe, loc) =>
-        //
-        // Check if this is a single-case enum subject to elimination.
-        //
-        if (isSingleCaseEnum(sym)) {
-          if (flix.options.optimizations contains Optimization.SingleCaseEnums) {
-            return visitExp(exp, env0)
-          }
-        }
-
-        // Otherwise keep the tag.
         val e = visitExp(exp, env0)
-        Expression.Tag(sym, tag, e, adjustType(tpe), loc)
+        Expression.Tag(sym, tag, e, tpe, loc)
 
       //
       // Check if this is a single-case enum subject to elimination.
       //
       case Expression.Untag(sym, tag, exp, tpe, loc) =>
-        //
-        // Check if NewType optimization is enabled and if this is a single-case enum.
-        //
-        if (isSingleCaseEnum(sym)) {
-          if (flix.options.optimizations contains Optimization.SingleCaseEnums) {
-            return visitExp(exp, env0)
-          }
-        }
-
-        // Otherwise keep the untag.
         val e = visitExp(exp, env0)
-        Expression.Untag(sym, tag, e, adjustType(tpe), loc)
+        Expression.Untag(sym, tag, e, tpe, loc)
 
       //
       // Index Expressions.
       //
       case Expression.Index(base, offset, tpe, loc) =>
         val b = visitExp(base, env0)
-        Expression.Index(b, offset, adjustType(tpe), loc)
+        Expression.Index(b, offset, tpe, loc)
 
       //
       // Tuple Expressions.
       //
       case Expression.Tuple(elms, tpe, loc) =>
         val es = elms map (visitExp(_, env0))
-        Expression.Tuple(es, adjustType(tpe), loc)
+        Expression.Tuple(es, tpe, loc)
 
       //
       // ArrayNew Expressions.
       //
       case Expression.ArrayNew(elm, len, tpe, loc) =>
         val e = visitExp(elm, env0)
-        Expression.ArrayNew(e, len, adjustType(tpe), loc)
+        Expression.ArrayNew(e, len, tpe, loc)
 
       //
       // ArrayLit Expressions.
       //
       case Expression.ArrayLit(elms, tpe, loc) =>
         val es = elms map (visitExp(_, env0))
-        Expression.ArrayLit(es, adjustType(tpe), loc)
+        Expression.ArrayLit(es, tpe, loc)
 
       //
       // ArrayLoad Expressions.
@@ -296,14 +263,14 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       //
       case Expression.Ref(exp, tpe, loc) =>
         val e = visitExp(exp, env0)
-        Expression.Ref(e, adjustType(tpe), loc)
+        Expression.Ref(e, tpe, loc)
 
       //
       // Dereference Expressions.
       //
       case Expression.Deref(exp, tpe, loc) =>
         val e = visitExp(exp, env0)
-        Expression.Deref(e, adjustType(tpe), loc)
+        Expression.Deref(e, tpe, loc)
 
       //
       // Assign Expressions.
@@ -311,50 +278,48 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.Assign(exp1, exp2, tpe, loc) =>
         val e1 = visitExp(exp1, env0)
         val e2 = visitExp(exp2, env0)
-        Expression.Assign(e1, e2, adjustType(tpe), loc)
+        Expression.Assign(e1, e2, tpe, loc)
 
       //
       // Existential Expressions.
       //
       case Expression.Existential(fparam, exp, loc) =>
-        val p = adjustFormalParam(fparam)
         val e = visitExp(exp, env0)
-        Expression.Existential(p, e, loc)
+        Expression.Existential(fparam, e, loc)
 
       //
       // Universal Expressions.
       //
       case Expression.Universal(fparam, exp, loc) =>
-        val p = adjustFormalParam(fparam)
         val e = visitExp(exp, env0)
-        Expression.Universal(p, e, loc)
+        Expression.Universal(fparam, e, loc)
 
       //
       // Native Constructor.
       //
       case Expression.NativeConstructor(constructor, args, tpe, loc) =>
         val as = args map (visitExp(_, env0))
-        Expression.NativeConstructor(constructor, as, adjustType(tpe), loc)
+        Expression.NativeConstructor(constructor, as, tpe, loc)
 
       //
       // Native Field.
       //
-      case Expression.NativeField(field, tpe, loc) => Expression.NativeField(field, adjustType(tpe), loc)
+      case Expression.NativeField(field, tpe, loc) => Expression.NativeField(field, tpe, loc)
 
       //
       // Native Method.
       //
       case Expression.NativeMethod(method, args, tpe, loc) =>
         val as = args map (visitExp(_, env0))
-        Expression.NativeMethod(method, as, adjustType(tpe), loc)
+        Expression.NativeMethod(method, as, tpe, loc)
 
       //
       // Error Expressions.
       //
-      case Expression.UserError(tpe, loc) => Expression.UserError(adjustType(tpe), loc)
-      case Expression.HoleError(sym, tpe, eff, loc) => Expression.HoleError(sym, adjustType(tpe), eff, loc)
-      case Expression.MatchError(tpe, loc) => Expression.MatchError(adjustType(tpe), loc)
-      case Expression.SwitchError(tpe, loc) => Expression.SwitchError(adjustType(tpe), loc)
+      case Expression.UserError(tpe, loc) => Expression.UserError(tpe, loc)
+      case Expression.HoleError(sym, tpe, eff, loc) => Expression.HoleError(sym, tpe, eff, loc)
+      case Expression.MatchError(tpe, loc) => Expression.MatchError(tpe, loc)
+      case Expression.SwitchError(tpe, loc) => Expression.SwitchError(tpe, loc)
 
       //
       // Unexpected Expressions.
@@ -386,147 +351,24 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       * Performs intra-procedural optimization on the given head term `t0`.
       */
     def visitHeadTerm(h0: Term.Head): Term.Head = h0 match {
-      case Term.Head.Var(sym, tpe, loc) => Term.Head.Var(sym, adjustType(tpe), loc)
-      case Term.Head.Lit(lit, tpe, loc) => Term.Head.Lit(visitExp(lit, Map.empty), adjustType(tpe), loc)
-      case Term.Head.App(sym, args, tpe, loc) => Term.Head.App(sym, args, adjustType(tpe), loc)
+      case Term.Head.Var(sym, tpe, loc) => Term.Head.Var(sym, tpe, loc)
+      case Term.Head.Lit(lit, tpe, loc) => Term.Head.Lit(visitExp(lit, Map.empty), tpe, loc)
+      case Term.Head.App(sym, args, tpe, loc) => Term.Head.App(sym, args, tpe, loc)
     }
 
     /**
       * Performs intra-procedural optimization on the given body term `t0`.
       */
     def visitBodyTerm(b0: Term.Body): Term.Body = b0 match {
-      case Term.Body.Wild(tpe, loc) => Term.Body.Wild(adjustType(tpe), loc)
-      case Term.Body.Var(sym, tpe, loc) => Term.Body.Var(sym, adjustType(tpe), loc)
-      case Term.Body.Lit(exp, tpe, loc) => Term.Body.Lit(visitExp(exp, Map.empty), adjustType(tpe), loc)
-      case Term.Body.Pat(pat, tpe, loc) => Term.Body.Pat(adjustPat(pat), adjustType(tpe), loc)
-    }
-
-    /**
-      * Returns `true` if the enum associated with the given symbol `sym` is a single-case enum.
-      */
-    def isSingleCaseEnum(sym: Symbol.EnumSym): Boolean = {
-      // An enum is single-cased if it has a single case and is non-polymorphic.
-      val isSingleCased = root.enums(sym).cases.size == 1
-      val isPolymorphic = root.enums(sym).tpe.typeArguments.nonEmpty
-      isSingleCased && !isPolymorphic
-    }
-
-    /**
-      * Returns the inner type of the given single-case enum associated with the symbol `sym`.
-      */
-    def getSingleCaseType(sym: Symbol.EnumSym): Type = {
-      // Retrieve the enum declaration.
-      val enum = root.enums(sym)
-
-      // Retrieve the case.
-      enum.cases.head match {
-        case (_, SimplifiedAst.Case(enumSym, tagName, tagType, tagLoc)) => tagType
-      }
-    }
-
-    /**
-      * Adjusts the type of `p0` to remove any references to a single-case enum.
-      */
-    def adjustConstraintParam(p0: SimplifiedAst.ConstraintParam): ConstraintParam = p0 match {
-      case ConstraintParam.HeadParam(sym, tpe, loc) => ConstraintParam.HeadParam(sym, adjustType(tpe), loc)
-      case ConstraintParam.RuleParam(sym, tpe, loc) => ConstraintParam.RuleParam(sym, adjustType(tpe), loc)
-    }
-
-    /**
-      * Adjusts the type of `p0` to remove any references to a single-case enum.
-      */
-    def adjustFormalParam(p0: SimplifiedAst.FormalParam): FormalParam = p0 match {
-      case FormalParam(sym, mod, tpe, loc) => FormalParam(sym, mod, adjustType(tpe), loc)
-    }
-
-    /**
-      * Adjusts the type of `p0` to remove any references to a single-case enum.
-      */
-    def adjustPat(p0: Pattern): Pattern = p0 match {
-      case Pattern.Wild(tpe, loc) => Pattern.Wild(adjustType(tpe), loc)
-      case Pattern.Var(sym, tpe, loc) => Pattern.Var(sym, adjustType(tpe), loc)
-      case Pattern.Unit(loc) => p0
-      case Pattern.True(loc) => p0
-      case Pattern.False(loc) => p0
-      case Pattern.Char(lit, loc) => p0
-      case Pattern.Float32(lit, loc) => p0
-      case Pattern.Float64(lit, loc) => p0
-      case Pattern.Int8(lit, loc) => p0
-      case Pattern.Int16(lit, loc) => p0
-      case Pattern.Int32(lit, loc) => p0
-      case Pattern.Int64(lit, loc) => p0
-      case Pattern.BigInt(lit, loc) => p0
-      case Pattern.Str(lit, loc) => p0
-      case Pattern.Tag(sym, tag, pat, tpe, loc) =>
-        //
-        // Check if this is a single-case enum subject to elimination.
-        //
-        if (isSingleCaseEnum(sym)) {
-          if (flix.options.optimizations contains Optimization.SingleCaseEnums) {
-            return adjustPat(pat)
-          }
-        }
-        val p = adjustPat(pat)
-        Pattern.Tag(sym, tag, p, adjustType(tpe), loc)
-
-      case Pattern.Tuple(elms, tpe, loc) =>
-        val es = elms map adjustPat
-        Pattern.Tuple(es, adjustType(tpe), loc)
-    }
-
-    /**
-      * Adjusts the given `tpe0` to remove any references to a single-case enum.
-      *
-      * NB: Returns the same type if the single-case enum elimination optimization is not enabled.
-      */
-    def adjustType(tpe0: Type): Type = {
-      // Returns the type if single-case elimination is disabled.
-      if (!(flix.options.optimizations contains Optimization.SingleCaseEnums)) {
-        return tpe0
-      }
-
-      // Adjust the type.
-      tpe0 match {
-        // Check if the enum is single-case.
-        case Type.Enum(sym, kind) if isSingleCaseEnum(sym) => adjustType(getSingleCaseType(sym))
-        case Type.Apply(tpe1, tpe2) => tpe1 match {
-          // NB: This case is necessary if the single-case enum is polymorphic.
-          case Type.Enum(sym, kind) if isSingleCaseEnum(sym) => adjustType(getSingleCaseType(sym))
-          case _ => Type.Apply(adjustType(tpe1), adjustType(tpe2))
-        }
-        case _ => tpe0
-      }
+      case Term.Body.Wild(tpe, loc) => Term.Body.Wild(tpe, loc)
+      case Term.Body.Var(sym, tpe, loc) => Term.Body.Var(sym, tpe, loc)
+      case Term.Body.Lit(exp, tpe, loc) => Term.Body.Lit(visitExp(exp, Map.empty), tpe, loc)
+      case Term.Body.Pat(pat, tpe, loc) => Term.Body.Pat(pat, tpe, loc)
     }
 
     // Visit every definition in the program.
     val defs = root.defs.map {
-      case (sym, defn) =>
-        val ps = defn.fparams.map(adjustFormalParam)
-        val exp = visitExp(defn.exp, Map.empty)
-        val tpe = adjustType(defn.tpe)
-        sym -> defn.copy(fparams = ps, exp = exp, tpe = tpe)
-    }
-
-    // Visit every enum in the program.
-    val enums = root.enums.map {
-      case (sym, enum) =>
-        val cases = enum.cases map {
-          case (tag, caze) => tag -> caze.copy(tpe = adjustType(caze.tpe))
-        }
-        sym -> enum.copy(cases = cases)
-    }
-
-    // Visit every lattice in the program.
-    val lattices = root.lattices.map {
-      case (tpe, Lattice(t, bot0, top0, equ0, leq0, lub0, glb0, loc)) =>
-        val bot = visitExp(bot0, Map.empty)
-        val top = visitExp(top0, Map.empty)
-        val equ = visitExp(equ0, Map.empty)
-        val leq = visitExp(leq0, Map.empty)
-        val lub = visitExp(lub0, Map.empty)
-        val glb = visitExp(glb0, Map.empty)
-        // TODO: We need to compile the lattice abstraction away and instead equip the attributes with references to the definition symbols.
-        adjustType(tpe) -> SimplifiedAst.Lattice(adjustType(tpe), bot, top, equ, leq, lub, glb, loc)
+      case (sym, defn) => sym -> defn.copy(exp = visitExp(defn.exp, Map.empty))
     }
 
     // Visit every stratum in the program.
@@ -534,27 +376,19 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Stratum(constraints) =>
         val cs = constraints map {
           case Constraint(cparams, head, body) =>
-            Constraint(cparams map adjustConstraintParam, visitHeadPred(head), body map visitBodyPred)
+            Constraint(cparams, visitHeadPred(head), body map visitBodyPred)
         }
         Stratum(cs)
     }
 
     // Visit every property in the program.
     val properties = root.properties.map {
-      case property =>
-        val exp = visitExp(property.exp, Map.empty)
-        property.copy(exp = exp)
+      case property => property.copy(exp = visitExp(property.exp, Map.empty))
     }
-
-    // TODO: Unsoundness due to use of types as keys.
-    // We need to compile the specialOps away and instead equip each attribute with the definition symbols of the equality operators.
-    // Similarly for toString, although that might be more tricky.
 
     // Reassemble the ast root.
     val result = root.copy(
       defs = defs,
-      enums = enums,
-      lattices = lattices,
       strata = strata,
       properties = properties
     )
