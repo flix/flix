@@ -210,10 +210,13 @@ object JvmOps {
     val args = tpe.typeArguments.map(tpe => stringify(getErasedJvmType(tpe)))
 
     // The JVM name is of the form Clo$sym.name
-    val name = "Clo" + "$" + closure.sym.name
+    val name = "Clo" + "$" + mangle(closure.sym.name)
 
-    // The type resides in the root package.
-    JvmType.Reference(JvmName(closure.sym.namespace, name))
+    // The JVM package is the namespace of the symbol.
+    val pkg = closure.sym.namespace
+
+    // The result type.
+    JvmType.Reference(JvmName(pkg, name))
   }
 
   /**
@@ -377,7 +380,7 @@ object JvmOps {
     */
   def getFunctionDefinitionClassType(sym: Symbol.DefnSym)(implicit root: Root, flix: Flix): JvmType.Reference = {
     val pkg = sym.namespace
-    val name = "Def$" + sym.name
+    val name = "Def$" + mangle(sym.name)
     JvmType.Reference(JvmName(pkg, name))
   }
 
