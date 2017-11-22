@@ -17,10 +17,10 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.{CompilationError, GenSym}
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.util.InternalCompilerException
-import ca.uwaterloo.flix.util.Validation
+import ca.uwaterloo.flix.language.{CompilationError, GenSym}
+import ca.uwaterloo.flix.runtime.datastore.ProxyObject
+import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 import ca.uwaterloo.flix.util.Validation._
 
 import scala.collection.mutable
@@ -370,18 +370,18 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
   /**
     * Optionally returns the given expression `exp0` as a value reference.
     */
-  private def toValueOpt(exp0: SimplifiedAst.Expression): Option[AnyRef] = exp0 match {
-    case SimplifiedAst.Expression.True => Some(java.lang.Boolean.TRUE)
-    case SimplifiedAst.Expression.False => Some(java.lang.Boolean.FALSE)
-    case SimplifiedAst.Expression.Char(lit) => Some(new java.lang.Character(lit))
-    case SimplifiedAst.Expression.Float32(lit) => Some(new java.lang.Float(lit))
-    case SimplifiedAst.Expression.Float64(lit) => Some(new java.lang.Double(lit))
-    case SimplifiedAst.Expression.Int8(lit) => Some(new java.lang.Byte(lit))
-    case SimplifiedAst.Expression.Int16(lit) => Some(new java.lang.Short(lit))
-    case SimplifiedAst.Expression.Int32(lit) => Some(new java.lang.Integer(lit))
-    case SimplifiedAst.Expression.Int64(lit) => Some(new java.lang.Long(lit))
-    case SimplifiedAst.Expression.BigInt(lit) => Some(lit)
-    case SimplifiedAst.Expression.Str(lit) => Some(lit)
+  private def toValueOpt(exp0: SimplifiedAst.Expression): Option[ProxyObject] = exp0 match {
+    case SimplifiedAst.Expression.True => Some(new ProxyObject(java.lang.Boolean.TRUE, null, null, null))
+    case SimplifiedAst.Expression.False => Some(new ProxyObject(java.lang.Boolean.FALSE, null, null, null))
+    case SimplifiedAst.Expression.Char(lit) => Some(new ProxyObject(new java.lang.Character(lit), null, null, null))
+    case SimplifiedAst.Expression.Float32(lit) => Some(new ProxyObject(new java.lang.Float(lit), null, null, null))
+    case SimplifiedAst.Expression.Float64(lit) => Some(new ProxyObject(new java.lang.Double(lit), null, null, null))
+    case SimplifiedAst.Expression.Int8(lit) => Some(new ProxyObject(new java.lang.Byte(lit), null, null, null))
+    case SimplifiedAst.Expression.Int16(lit) => Some(new ProxyObject(new java.lang.Short(lit), null, null, null))
+    case SimplifiedAst.Expression.Int32(lit) => Some(new ProxyObject(new java.lang.Integer(lit), null, null, null))
+    case SimplifiedAst.Expression.Int64(lit) => Some(new ProxyObject(new java.lang.Long(lit), null, null, null))
+    case SimplifiedAst.Expression.BigInt(lit) => Some(new ProxyObject(lit, null, null, null))
+    case SimplifiedAst.Expression.Str(lit) => Some(new ProxyObject(lit, null, null, null))
     case _ => None
   }
 

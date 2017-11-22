@@ -1,3 +1,5 @@
+// TODO: Must be re-enabled in TestFeature
+
 @test
 def testHole01(): Int = if (true) 42 else ?hole
 
@@ -7,11 +9,12 @@ def testHole02(): Int = match Some(42) with {
     case Some(n) => n
 }
 
-@test
-def testHole03(): Int = match (None : Option[Int]) with {
-    case None    => 42
-    case Some(n) => 42 + ?hole
-}
+// TODO
+//@test
+//def testHole03(): Int = match (None : Option[Int]) with {
+//    case None    => 42
+//    case Some(n) => 42 + ?hole
+//}
 
 // TODO
 //@test
@@ -27,11 +30,12 @@ def testHole03(): Int = match (None : Option[Int]) with {
 //    case Some(n) => ?hole(n, n, n)
 //}
 
-@test
-def testHole06(): Int = match (None : Option[Int]) with {
-    case None    => 42
-    case Some(n) => List.length(?hole)
-}
+// TODO
+//@test
+//def testHole06(): Int = match (None : Option[Int]) with {
+//    case None    => 42
+//    case Some(n) => List.length(?hole)
+//}
 
 // TODO
 //@test

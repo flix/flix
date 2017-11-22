@@ -1,7 +1,7 @@
 //
 // # Unit
 //
-/*
+
 @test
 def eqUnit01(): Bool = assert!(() == ())
 
@@ -630,14 +630,14 @@ def neqTag08(): Bool = assert!(Ok(None) != Ok(Some(42)))
 
 @test
 def neqTag09(): Bool = assert!(Some((Ok(1) :: Err(2) :: Nil)) != Some((Err(1) :: Ok(2) :: Nil)))
-*/
+
 //
 // # Composition of Data Types
 //
 
-//@test
-//def eqCompose01(): Bool = assert!(Some(@{1 -> 2, 3 -> 4}) == Some(@{3 -> 4, 1 -> 2}))
-/*
+@test
+def eqCompose01(): Bool = assert!(Some(@{1 -> 2, 3 -> 4}) == Some(@{3 -> 4, 1 -> 2}))
+
 @test
 def eqCompose02(): Bool = assert!(Some(@{1 -> (1 :: 2 :: Nil), 3 -> (3 :: 4 :: Nil)}) ==
                                 Some(@{3 -> (3 :: 4 :: Nil), 1 -> (1 :: 2 :: Nil)}))
@@ -657,4 +657,3 @@ def eqCompose05(): Bool = assert!(Some(@{1 -> (#{1, 2, 3, 4, 5} :: #{2, 1} :: Ni
 @test
 def eqCompose06(): Bool = assert!((@{1 -> 4, 5 -> 6}, #{1, 2, 3, 4}, Err(#{9, 18})) ==
                                 (@{5 -> 6, 1 -> 4}, #{4, 2, 3, 1}, Err(#{18, 9})))
-*/

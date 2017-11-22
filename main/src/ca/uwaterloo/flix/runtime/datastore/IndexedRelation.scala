@@ -29,16 +29,15 @@ import scala.collection.mutable.ArrayBuffer
   * An index on the first and third columns corresponds to 0b0000...0101.
   *
   * @param relation the relation.
-  * @param equality a map from attribute indices to equality operators.
   * @param indexes  the indexes.
   * @param default  the default index.
   */
-final class IndexedRelation[ValueType](val relation: ExecutableAst.Table.Relation, equality: Array[(AnyRef, AnyRef) => Boolean], indexes: Set[Int], default: Int) extends IndexedCollection[ValueType] {
+final class IndexedRelation(val relation: ExecutableAst.Table.Relation, indexes: Set[Int], default: Int) extends IndexedCollection {
 
   /**
     * A map from indexes to keys to rows of values.
     */
-  private val store = mutable.Map.empty[Int, mutable.Map[Key[ValueType], mutable.ArrayBuffer[Array[ValueType]]]]
+  private val store = mutable.Map.empty[Int, mutable.Map[Key, mutable.ArrayBuffer[Array[ProxyObject]]]]
 
   /**
     * A map from indexes to number of index hits.
@@ -121,7 +120,7 @@ final class IndexedRelation[ValueType](val relation: ExecutableAst.Table.Relatio
     *
     * Returns `true` iff the fact did not already exist in the relation.
     */
-  def inferredFact(fact: Array[ValueType]): Boolean = {
+  def inferredFact(fact: Array[ProxyObject]): Boolean = {
     if (lookup(fact).isEmpty) {
       newFact(fact)
       return true
@@ -132,11 +131,11 @@ final class IndexedRelation[ValueType](val relation: ExecutableAst.Table.Relatio
   /**
     * Updates all indexes and tables with a new `fact`.
     */
-  private def newFact(fact: Array[ValueType]): Unit = {
+  private def newFact(fact: Array[ProxyObject]): Unit = {
     // loop through all the indexes and update the tables.
     for (idx <- indexes) {
-      val key = keyOf(idx, fact, equality)
-      val table = store(idx).getOrElseUpdate(key, mutable.ArrayBuffer.empty[Array[ValueType]])
+      val key = keyOf(idx, fact)
+      val table = store(idx).getOrElseUpdate(key, mutable.ArrayBuffer.empty[Array[ProxyObject]])
       table += fact
     }
   }
@@ -148,7 +147,7 @@ final class IndexedRelation[ValueType](val relation: ExecutableAst.Table.Relatio
     *
     * Returns an iterator over the matching rows.
     */
-  def lookup(pat: Array[ValueType]): Iterator[Array[ValueType]] = {
+  def lookup(pat: Array[ProxyObject]): Iterator[Array[ProxyObject]] = {
     // case 1: Check if there is an exact index.
     var idx = getExactIndex(indexes, pat)
     if (idx != 0) {
@@ -156,7 +155,7 @@ final class IndexedRelation[ValueType](val relation: ExecutableAst.Table.Relatio
       indexedLookups += 1
       // NB: It is too expensive to count indexed lookups.
       // indexHits.update(idx, indexHits(idx) + 1)
-      val key = keyOf(idx, pat, equality)
+      val key = keyOf(idx, pat)
       getOrEmptyIterator(store(idx).get(key))
     } else {
       // case 2: No exact index available. Check if there is an approximate index.
@@ -168,7 +167,7 @@ final class IndexedRelation[ValueType](val relation: ExecutableAst.Table.Relatio
         // case 2.1: An approximate index exists. Use it.
         indexHits.update(idx, indexHits(idx) + 1)
         indexedScans += 1
-        val key = keyOf(idx, pat, equalityOf(idx, equality))
+        val key = keyOf(idx, pat)
         getOrEmptyIterator(store(idx).get(key))
       } else {
         // case 2.2: No usable index. Perform a full table scan.
@@ -186,7 +185,7 @@ final class IndexedRelation[ValueType](val relation: ExecutableAst.Table.Relatio
   /**
     * Returns all rows in the relation using a table scan.
     */
-  def scan: Iterator[Array[ValueType]] = store(default).iterator.flatMap {
+  def scan: Iterator[Array[ProxyObject]] = store(default).iterator.flatMap {
     case (key, value) => value
   }
 
@@ -195,13 +194,12 @@ final class IndexedRelation[ValueType](val relation: ExecutableAst.Table.Relatio
     *
     * A pattern matches if all is non-null entries are equal to the row.
     */
-  private def matchRow(pat: Array[ValueType], row: Array[ValueType]): Boolean = {
+  private def matchRow(pat: Array[ProxyObject], row: Array[ProxyObject]): Boolean = {
     var i = 0
     while (i < pat.length) {
       val pv = pat(i)
-      val eq = equality(i)
       if (pv != null)
-        if (!eq(pv.asInstanceOf[AnyRef], row(i).asInstanceOf[AnyRef]))
+        if (pv != row(i))
           return false
       i = i + 1
     }
@@ -214,7 +212,7 @@ final class IndexedRelation[ValueType](val relation: ExecutableAst.Table.Relatio
     * Returns the empty iterator if the option is [[None]].
     */
   @inline
-  private def getOrEmptyIterator(opt: Option[ArrayBuffer[Array[ValueType]]]) = opt match {
+  private def getOrEmptyIterator(opt: Option[ArrayBuffer[Array[ProxyObject]]]) = opt match {
     case None => Iterator.empty
     case Some(xs) => xs.iterator
   }

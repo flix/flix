@@ -16,9 +16,11 @@
 
 package ca.uwaterloo.flix.runtime
 
+import ca.uwaterloo.flix.runtime.datastore.ProxyObject
+
 @FunctionalInterface
 trait InvocationTarget {
 
-  def invoke(args: Array[AnyRef]): AnyRef
+  def invoke(args: Array[AnyRef]): ProxyObject
 
 }

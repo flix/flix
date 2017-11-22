@@ -1,5 +1,3 @@
-/*
-
 /////////////////////////////////////////////////////////////////////////////
 // Native Constructor                                                      //
 /////////////////////////////////////////////////////////////////////////////
@@ -97,4 +95,4 @@ def nativeMethod13(): Bool @ Any =
     let x = unsafe native new java.util.BitSet();
     let y = unsafe native method java.util.BitSet.set(x, 10);
     let z = unsafe native method java.util.BitSet.set(x, 3);
-    assertEq!(unsafe native method java.util.BitSet.toString(x), "{3, 10}")*/
+    assertEq!(unsafe native method java.util.BitSet.toString(x), "{3, 10}")

@@ -41,8 +41,7 @@ class FeatureSuite extends Suites(
   new FlixTest("Test.Expression.Float", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Float.flix"),
   new FlixTest("Test.Expression.Float32", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Float32.flix"),
   new FlixTest("Test.Expression.Float64", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Float64.flix"),
-  // TODO
-  // new FlixTest("Test.Expression.Hole", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Hole.flix"),
+  //new FlixTest("Test.Expression.Hole", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Hole.flix"), // TODO
   new FlixTest("Test.Expression.Int", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Int.flix"),
   new FlixTest("Test.Expression.Int8", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Int8.flix"),
   new FlixTest("Test.Expression.Int16", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Int16.flix"),
@@ -53,7 +52,7 @@ class FeatureSuite extends Suites(
   new FlixTest("Test.Expression.Str", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Str.flix"),
   new FlixTest("Test.Expression.Def", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Def.flix"),
   new FlixTest("TestReferences", "main/test/ca/uwaterloo/flix/language/feature/TestReferences.flix"),
-  new FlixTest("TestNativeCall", "main/test/ca/uwaterloo/flix/language/feature/TestNativeCall.flix"),
+  //new FlixTest("TestNativeCall", "main/test/ca/uwaterloo/flix/language/feature/TestNativeCall.flix"), // TODO
   new FlixTest("TestPatternMatch", "main/test/ca/uwaterloo/flix/language/feature/TestPatternMatch.flix"),
   new FlixTest("Test.Expression.Unary", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Unary.flix"),
   new FlixTest("Test.Expression.IfThenElse", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.IfThenElse.flix"),

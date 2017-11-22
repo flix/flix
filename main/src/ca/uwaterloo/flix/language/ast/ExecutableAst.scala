@@ -20,6 +20,7 @@ import java.lang.reflect.{Constructor, Field, Method}
 import java.util.concurrent.atomic.{AtomicInteger, AtomicLong}
 
 import ca.uwaterloo.flix.runtime.InvocationTarget
+import ca.uwaterloo.flix.runtime.datastore.ProxyObject
 
 sealed trait ExecutableAst
 
@@ -358,7 +359,7 @@ object ExecutableAst {
 
       case class Var(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends ExecutableAst.Term.Head
 
-      case class Lit(lit: AnyRef, tpe: Type, loc: SourceLocation) extends ExecutableAst.Term.Head
+      case class Lit(lit: ProxyObject, tpe: Type, loc: SourceLocation) extends ExecutableAst.Term.Head
 
       case class Cst(sym: Symbol.DefnSym, tpe: Type, loc: SourceLocation) extends ExecutableAst.Term.Head
 
@@ -374,7 +375,7 @@ object ExecutableAst {
 
       case class Var(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends ExecutableAst.Term.Body
 
-      case class Lit(lit: AnyRef, tpe: Type, loc: SourceLocation) extends ExecutableAst.Term.Body
+      case class Lit(lit: ProxyObject, tpe: Type, loc: SourceLocation) extends ExecutableAst.Term.Body
 
       case class Cst(sym: Symbol.DefnSym, tpe: Type, loc: SourceLocation) extends ExecutableAst.Term.Body
 

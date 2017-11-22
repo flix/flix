@@ -161,18 +161,21 @@ class Model(root: Root,
   /**
     * Returns a string representation of the given reference `ref` formatted according to the given type `tpe`.
     */
-  private def toString(ref: AnyRef, tpe: Type): String = {
-    // Retrieve the toString special operator.
-    root.specialOps(SpecialOperator.ToString).get(tpe) match {
-      case None => throw InternalRuntimeException(s"Undefined 'toString' special operator for the given type: '$tpe'.")
-      case Some(sym) => val target = Linker.link(sym, root)
-        target.invoke(Array(ref)) match {
-          case null => throw InternalRuntimeException(s"Unexpected 'null' returned by 'toString' special operator.")
-          case s: String => s
-          case o: Value.Str => o.lit
-          case o => throw InternalRuntimeException(s"Unexpected non-string value: ${o.getClass.getCanonicalName} returned by 'toString' special operator.")
-        }
-    }
-  }
+  private def toString(ref: AnyRef, tpe: Type): String = ???
+
+  // TODO
+//  {
+//    // Retrieve the toString special operator.
+//    root.specialOps(SpecialOperator.ToString).get(tpe) match {
+//      case None => throw InternalRuntimeException(s"Undefined 'toString' special operator for the given type: '$tpe'.")
+//      case Some(sym) => val target = Linker.link(sym, root)
+//        target.invoke(Array(ref)) match {
+//          case null => throw InternalRuntimeException(s"Unexpected 'null' returned by 'toString' special operator.")
+//          case s: String => s
+//          case o: Value.Str => o.lit
+//          case o => throw InternalRuntimeException(s"Unexpected non-string value: ${o.getClass.getCanonicalName} returned by 'toString' special operator.")
+//        }
+//    }
+//  }
 
 }

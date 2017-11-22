@@ -321,7 +321,7 @@ class TestSolver extends FunSuite {
 
     val model = new Flix().setOptions(opts).addStr(s).solve().get
   }
-/*
+
   test("Lattice01") {
     val s =
       """lat A(x: Int, v: Parity)
@@ -463,5 +463,5 @@ class TestSolver extends FunSuite {
     val flix = new Flix().addStr(s).setOptions(opts)
     val model = flix.solve().get
   }
-*/
+
 }

@@ -234,7 +234,7 @@ class RestServer(solver: Solver) {
     *
     * @param relation a reference to the datastore backing the relation.
     */
-  class ListRelation(relation: IndexedRelation[AnyRef]) extends JsonHandler {
+  class ListRelation(relation: IndexedRelation) extends JsonHandler {
     def json: JValue = JObject(
       JField("cols", JArray(relation.relation.attributes.toList.map(a => JString(a.name)))),
       JField("rows", JArray(Nil)) // TODO: Currently broken.
@@ -246,7 +246,7 @@ class RestServer(solver: Solver) {
     *
     * @param lattice a reference to the datastore backing the lattice.
     */
-  class ListLattice(lattice: IndexedLattice[AnyRef]) extends JsonHandler {
+  class ListLattice(lattice: IndexedLattice) extends JsonHandler {
     def json: JValue = JObject(
       JField("cols", JArray(lattice.lattice.keys.toList.map(a => JString(a.name)) ::: JString(lattice.lattice.value.name) :: Nil)),
       JField("rows", JArray(Nil)) // TODO: Currently broken.
