@@ -186,7 +186,9 @@ object JvmOps {
   /**
     * Returns the closure class `Clo$Name` for the given closure.
     *
-    * TODO: Magnus: Examples
+    * String.charAt     =>    String/Clo$charAt
+    * List.length       =>    List/Clo$length
+    * List.map          =>    List/Clo$map
     */
   def getClosureClassType(closure: ClosureInfo)(implicit root: Root, flix: Flix): JvmType.Reference = {
     // Retrieve the arrow type of the closure.
@@ -207,13 +209,11 @@ object JvmOps {
     // Compute the stringified erased type of each type argument.
     val args = tpe.typeArguments.map(tpe => stringify(getErasedJvmType(tpe)))
 
-    // TODO: Magnus: Need to take arity into account. Two closures could have different arity.
-
     // The JVM name is of the form Clo$sym.name
     val name = "Clo" + "$" + closure.sym.name
 
     // The type resides in the root package.
-    JvmType.Reference(JvmName(RootPackage, name))
+    JvmType.Reference(JvmName(closure.sym.namespace, name))
   }
 
   /**
@@ -416,22 +416,21 @@ object JvmOps {
   /**
     * Returns the field name of a defn as used in a namespace class.
     *
-    * TODO: Magnus: How does these examples make sense?
-    *
     * For example:
     *
-    * <root>.X()      =>  $X
-    * Foo.X()         =>  Foo$Ns$X
-    * Foo.Bar.X()     =>  Foo$Bar$Ns$X
-    * Foo.Bar.Baz.Y() =>  Foo$Bar$Baz$Ns$X
+    * find      =>  f_find
+    * length    =>  f_length
     */
-  // TODO: Magnus: We should move "suffix" and "prefix" into helpers inside JvmOps.
   def getDefFieldNameInNamespaceClass(sym: Symbol.DefnSym): String = "f_" + mangle(sym.name)
 
   /**
     * Returns the method name of a defn as used in a namespace class.
+    *
+    * For example:
+    *
+    * find      =>  m_find
+    * length    =>  m_length
     */
-  // TODO: Magnus: Cleanup
   def getDefMethodNameInNamespaceClass(sym: Symbol.DefnSym): String = "m_" + mangle(sym.name)
 
   /**
