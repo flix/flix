@@ -31,7 +31,6 @@ object JvmName {
   /**
     * The `ca.uwaterloo.flix.api.Unit` name
     */
-  // TODO: Magnus: Determine whether we event want this class (or if we could just optimize unit differently?)
   val Unit: JvmName = JvmName(List("ca", "uwaterloo", "flix", "api"), "Unit")
 
   /**
@@ -92,13 +91,13 @@ object JvmName {
   /**
     * The `ca.uwaterloo.flix.api.Tuple` name
     */
-  // TODO: Magnus: Do we want to remove the Tuple interface?
+  // TODO: Magnus: Get rid of tuple interface.
   val Tuple: JvmName = JvmName(List("ca", "uwaterloo", "flix", "api"), "Tuple")
 
   /**
     * The `ca.uwaterloo.flix.api.Tag` name
     */
-  // TODO: Magnus: Do we want to remove the Tag interface?
+  // TODO: Magnus: Get rid of tag interface.
   val Tag: JvmName = JvmName(List("ca", "uwaterloo", "flix", "api"), "Tag")
 
   /**
