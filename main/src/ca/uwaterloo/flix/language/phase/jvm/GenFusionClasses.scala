@@ -68,7 +68,7 @@ object GenFusionClasses {
     // Adding fields and methods required for Tuple
     for ((elmType, ind) <- tagInfo.elms.zipWithIndex) {
       // Erased type of the field
-      val jvmType = JvmOps.getErasedType(elmType)
+      val jvmType = JvmOps.getErasedJvmType(elmType)
 
       // Name of the field
       val fieldName = s"field$ind"
@@ -87,7 +87,7 @@ object GenFusionClasses {
     AsmOps.compileGetBoxedTagValueMethod(visitor, fusionType, JvmType.Object)
 
     // Emit code for the constructor
-    GenTupleClasses.compileTupleConstructor(visitor, fusionType, tagInfo.elms.map(JvmOps.getErasedType))
+    GenTupleClasses.compileTupleConstructor(visitor, fusionType, tagInfo.elms.map(JvmOps.getErasedJvmType))
 
     /**
       * Fields and Methods for Enum part of the class

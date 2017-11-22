@@ -72,7 +72,7 @@ object GenFunctionClasses {
     // Adding a setter and a field for each argument of the function
     for ((arg, index) <- args.init.zipWithIndex) {
       // `JvmType` of `arg`
-      val argType = JvmOps.getErasedType(arg)
+      val argType = JvmOps.getErasedJvmType(arg)
 
       // `arg$index` field
       AsmOps.compileField(visitor, s"arg$index", argType, isStatic = false, isPrivate = true)
@@ -82,7 +82,7 @@ object GenFunctionClasses {
     }
 
     // Jvm type of the result of the function
-    val resultType = JvmOps.getErasedType(args.last)
+    val resultType = JvmOps.getErasedJvmType(args.last)
 
     // Field for the result
     AsmOps.compileField(visitor, "result", resultType, isStatic = false, isPrivate = true)
@@ -120,7 +120,7 @@ object GenFunctionClasses {
     // Saving parameters on variable stack
     for ((FormalParam(sym, tpe), ind) <- defn.formals.zipWithIndex) {
       // Erased type of the parameter
-      val erasedType = JvmOps.getErasedType(tpe)
+      val erasedType = JvmOps.getErasedJvmType(tpe)
 
       // Getting the parameter from the field
       applyMethod.visitVarInsn(ALOAD, 0)

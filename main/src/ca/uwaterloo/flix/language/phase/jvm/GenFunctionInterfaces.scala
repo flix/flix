@@ -81,7 +81,7 @@ object GenFunctionInterfaces {
     // Adding setters for each argument of the function
     for ((arg, index) <- args.init.zipWithIndex) {
       // `JvmType` of `arg`
-      val argType = JvmOps.getErasedType(arg)
+      val argType = JvmOps.getErasedJvmType(arg)
 
       // `setArg$ind()` method
       val setArgMethod = visitor.visitMethod(ACC_PUBLIC + ACC_ABSTRACT, s"setArg$index",

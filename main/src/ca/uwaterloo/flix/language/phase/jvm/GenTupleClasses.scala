@@ -38,7 +38,7 @@ object GenTupleClasses {
         val interfaceType = JvmOps.getTupleInterfaceType(tpe)
         val jvmType = JvmOps.getTupleClassType(tpe)
         val jvmName = jvmType.name
-        val targs = tpe.typeArguments.map(JvmOps.getErasedType)
+        val targs = tpe.typeArguments.map(JvmOps.getErasedJvmType)
         val bytecode = genByteCode(jvmType, interfaceType, targs)
         macc + (jvmName -> JvmClass(jvmName, bytecode))
       case (macc, tpe) =>

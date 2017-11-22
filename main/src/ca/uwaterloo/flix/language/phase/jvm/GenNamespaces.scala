@@ -89,7 +89,7 @@ object GenNamespaces {
     val namespaceClassType = JvmOps.getNamespaceClassType(ns)
 
     // Jvm type of method args
-    val args = defn.tpe.typeArguments.map(JvmOps.getErasedType)
+    val args = defn.tpe.typeArguments.map(JvmOps.getErasedJvmType)
 
     // Length of args in local
     val stackSize = args.init.map(AsmOps.getStackSize).sum

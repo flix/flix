@@ -82,28 +82,29 @@ object JvmOps {
   }
 
   /**
-    * Returns the erased JvmType of the given JvmType `tpe`.
-    *
-    * Every primitive type is mapped to itself and every other type is mapped to Object.
-    */
-  def getErasedType(tpe: JvmType)(implicit root: Root, flix: Flix): JvmType = tpe match {
-    case JvmType.Void => JvmType.Void
-    case JvmType.PrimBool => JvmType.PrimBool
-    case JvmType.PrimChar => JvmType.PrimChar
-    case JvmType.PrimByte => JvmType.PrimByte
-    case JvmType.PrimShort => JvmType.PrimShort
-    case JvmType.PrimInt => JvmType.PrimInt
-    case JvmType.PrimLong => JvmType.PrimLong
-    case JvmType.PrimFloat => JvmType.PrimFloat
-    case JvmType.PrimDouble => JvmType.PrimDouble
-    case JvmType.Reference(jvmName) => JvmType.Object
-  }
-
-  /**
     * Returns the erased JvmType of the given Flix type `tpe`.
     */
-  // TODO: Magnus: Delete this alias?
-  def getErasedType(tpe: Type)(implicit root: Root, flix: Flix): JvmType = getErasedType(getJvmType(tpe))
+  def getErasedJvmType(tpe: Type)(implicit root: Root, flix: Flix): JvmType = {
+    /**
+      * Returns the erased JvmType of the given JvmType `tpe`.
+      *
+      * Every primitive type is mapped to itself and every other type is mapped to Object.
+      */
+    def erase(tpe: JvmType): JvmType = tpe match {
+      case JvmType.Void => JvmType.Void
+      case JvmType.PrimBool => JvmType.PrimBool
+      case JvmType.PrimChar => JvmType.PrimChar
+      case JvmType.PrimByte => JvmType.PrimByte
+      case JvmType.PrimShort => JvmType.PrimShort
+      case JvmType.PrimInt => JvmType.PrimInt
+      case JvmType.PrimLong => JvmType.PrimLong
+      case JvmType.PrimFloat => JvmType.PrimFloat
+      case JvmType.PrimDouble => JvmType.PrimDouble
+      case JvmType.Reference(jvmName) => JvmType.Object
+    }
+
+    erase(getJvmType(tpe))
+  }
 
   /**
     * Returns the result type of the given type `tpe`.
@@ -144,7 +145,7 @@ object JvmOps {
     val returnType = getResultType(tpe)
 
     // The JVM name is of the form Cont$ErasedType
-    val name = "Cont$" + stringify(getErasedType(returnType))
+    val name = "Cont$" + stringify(getErasedJvmType(returnType))
 
     // The type resides in the root package.
     JvmType.Reference(JvmName(RootPackage, name))
@@ -174,7 +175,7 @@ object JvmOps {
     val arity = tpe.typeArguments.length - 1
 
     // Compute the stringified erased type of each type argument.
-    val args = tpe.typeArguments.map(tpe => stringify(getErasedType(tpe)))
+    val args = tpe.typeArguments.map(tpe => stringify(getErasedJvmType(tpe)))
 
     // The JVM name is of the form FnArity$Arg0$Arg1$Arg2
     val name = "Fn" + arity + "$" + args.mkString("$")
@@ -205,7 +206,7 @@ object JvmOps {
     val arity = tpe.typeArguments.length - 1
 
     // Compute the stringified erased type of each type argument.
-    val args = tpe.typeArguments.map(tpe => stringify(getErasedType(tpe)))
+    val args = tpe.typeArguments.map(tpe => stringify(getErasedJvmType(tpe)))
 
     // TODO: Magnus: Need to take arity into account. Two closures could have different arity.
 
@@ -236,7 +237,7 @@ object JvmOps {
     val sym = tpe.typeConstructor.asInstanceOf[Type.Enum].sym
 
     // Compute the stringified erased type of each type argument.
-    val args = tpe.typeArguments.map(tpe => stringify(getErasedType(tpe)))
+    val args = tpe.typeArguments.map(tpe => stringify(getErasedJvmType(tpe)))
 
     // The JVM name is of the form Option$ or Option$Int
     val name = if (args.isEmpty) "I" + sym.name else "I" + sym.name + "$" + args.mkString("$")
@@ -263,7 +264,7 @@ object JvmOps {
     val tagName = tag.tag
 
     // Retrieve the type arguments.
-    val args = tag.tparams.map(tpe => stringify(getErasedType(tpe)))
+    val args = tag.tparams.map(tpe => stringify(getErasedJvmType(tpe)))
 
     // The JVM name is of the form Tag$Arg0$Arg1$Arg2
     val name = if (args.isEmpty) tagName else tagName + "$" + args.mkString("$")
@@ -296,7 +297,7 @@ object JvmOps {
     val arity = tpe.typeArguments.length
 
     // Compute the stringified erased type of each type argument.
-    val args = tpe.typeArguments.map(tpe => stringify(getErasedType(tpe)))
+    val args = tpe.typeArguments.map(tpe => stringify(getErasedJvmType(tpe)))
 
     // The JVM name is of the form TArity$Arg0$Arg1$Arg2
     val name = "ITuple" + arity + "$" + args.mkString("$")
@@ -331,7 +332,7 @@ object JvmOps {
     val arity = tpe.typeArguments.length
 
     // Compute the stringified erased type of each type argument.
-    val args = tpe.typeArguments.map(tpe => stringify(getErasedType(tpe)))
+    val args = tpe.typeArguments.map(tpe => stringify(getErasedJvmType(tpe)))
 
     // The JVM name is of the form TupleArity$Arg0$Arg1$Arg2
     val name = "Tuple" + arity + "$" + args.mkString("$")
@@ -358,7 +359,7 @@ object JvmOps {
       throw InternalCompilerException(s"Unexpected type: '$tpe'.")
 
     // Compute the stringified erased type of the argument.
-    val arg = stringify(getErasedType(tpe.typeArguments.head))
+    val arg = stringify(getErasedJvmType(tpe.typeArguments.head))
 
     // The JVM name is of the form TArity$Arg0$Arg1$Arg2
     val name = "Cell" + "$" + arg
@@ -464,7 +465,7 @@ object JvmOps {
     val tagName = tag.tag
 
     // Retrieve the type arguments.
-    val args = tag.elms.map(tpe => stringify(getErasedType(tpe)))
+    val args = tag.elms.map(tpe => stringify(getErasedJvmType(tpe)))
 
     // The JVM name is of the form Tag$Arg0$Arg1$Arg2
     val name = if (args.isEmpty) tagName else tagName + "$" + args.length + "$" + args.mkString("$")

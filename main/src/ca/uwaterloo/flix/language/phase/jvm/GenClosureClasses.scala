@@ -77,7 +77,7 @@ object GenClosureClasses {
     // Generate a field for each closured captured variable.
     for ((freeVar, index) <- closure.freeVars.zipWithIndex) {
       // `JvmType` of `freeVar`
-      val varType = JvmOps.getErasedType(freeVar.tpe)
+      val varType = JvmOps.getErasedJvmType(freeVar.tpe)
 
       // `clo$index` field
       AsmOps.compileField(visitor, s"clo$index", varType, isStatic = false, isPrivate = true)
@@ -86,7 +86,7 @@ object GenClosureClasses {
     // Adding a setter and a field for each argument of the function
     for ((arg, index) <- args.init.zipWithIndex) {
       // `JvmType` of `arg`
-      val argType = JvmOps.getErasedType(arg)
+      val argType = JvmOps.getErasedJvmType(arg)
 
       // `arg$index` field
       AsmOps.compileField(visitor, s"arg$index", argType, isStatic = false, isPrivate = true)
@@ -96,7 +96,7 @@ object GenClosureClasses {
     }
 
     // Jvm type of the result of the function
-    val resultType = JvmOps.getErasedType(args.last)
+    val resultType = JvmOps.getErasedJvmType(args.last)
 
     // Field for the result
     AsmOps.compileField(visitor, "result", resultType, isStatic = false, isPrivate = true)
@@ -135,7 +135,7 @@ object GenClosureClasses {
     // Saving free variables on variable stack
     for ((FreeVar(sym, tpe), ind) <- frees.zipWithIndex) {
       // Erased type of the free variable
-      val erasedType = JvmOps.getErasedType(tpe)
+      val erasedType = JvmOps.getErasedJvmType(tpe)
 
       // Getting the free variable from IFO
       applyMethod.visitVarInsn(ALOAD, 0)
@@ -149,7 +149,7 @@ object GenClosureClasses {
     // Saving parameters on variable stack
     for ((FormalParam(sym, tpe), ind) <- params.zipWithIndex) {
       // Erased type of the parameter
-      val erasedType = JvmOps.getErasedType(tpe)
+      val erasedType = JvmOps.getErasedJvmType(tpe)
 
       // Getting the parameter from IFO
       applyMethod.visitVarInsn(ALOAD, 0)
@@ -188,7 +188,7 @@ object GenClosureClasses {
     * Constructor of the class
     */
   private def compileConstructor(visitor: ClassWriter, classType: JvmType.Reference, freeVars: List[FreeVar])(implicit root: Root, flix: Flix): Unit = {
-    val varTypes = freeVars.map(_.tpe).map(JvmOps.getErasedType)
+    val varTypes = freeVars.map(_.tpe).map(JvmOps.getErasedJvmType)
 
     // Constructor header
     val constructor = visitor.visitMethod(ACC_PUBLIC, "<init>", AsmOps.getMethodDescriptor(varTypes, JvmType.Void), null, null)
