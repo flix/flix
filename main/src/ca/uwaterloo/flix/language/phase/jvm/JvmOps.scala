@@ -107,12 +107,11 @@ object JvmOps {
   }
 
   /**
-    * Returns the result type of the given type `tpe`.
+    * Returns the erased result type of the given type `tpe`.
     *
     * NB: The given type `tpe` must be an arrow type.
     */
-  // TODO: Magnus: Should this simply return a JvmType?
-  def getResultType(tpe: Type)(implicit root: Root, flix: Flix): Type = {
+  def getErasedResultJvmType(tpe: Type)(implicit root: Root, flix: Flix): JvmType = {
     // Check that the given type is an arrow type.
     if (!tpe.typeConstructor.isArrow)
       throw InternalCompilerException(s"Unexpected type: '$tpe'.")
@@ -121,7 +120,7 @@ object JvmOps {
     if (tpe.typeArguments.isEmpty)
       throw InternalCompilerException(s"Unexpected type: '$tpe'.")
 
-    tpe.typeArguments.last
+    getErasedJvmType(tpe.typeArguments.last)
   }
 
   /**
@@ -142,10 +141,10 @@ object JvmOps {
       throw InternalCompilerException(s"Unexpected type: '$tpe'.")
 
     // The return type is the last type argument.
-    val returnType = getResultType(tpe)
+    val returnType = getErasedResultJvmType(tpe)
 
     // The JVM name is of the form Cont$ErasedType
-    val name = "Cont$" + stringify(getErasedJvmType(returnType))
+    val name = "Cont$" + stringify(returnType)
 
     // The type resides in the root package.
     JvmType.Reference(JvmName(RootPackage, name))
@@ -1098,7 +1097,6 @@ object JvmOps {
   /**
     * Returns `true` if the given definition `defn` is a law.
     */
-  // TODO: Magnus: Ensure this is used in all the correct places.
   def nonLaw(defn: Def): Boolean = !defn.ann.isLaw
 
 }

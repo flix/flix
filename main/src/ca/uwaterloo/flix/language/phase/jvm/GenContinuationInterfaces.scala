@@ -36,7 +36,7 @@ object GenContinuationInterfaces {
         // Construct continuation interface.
         val jvmType = JvmOps.getContinuationInterfaceType(tpe)
         val jvmName = jvmType.name
-        val resultType = JvmOps.getErasedJvmType(JvmOps.getResultType(tpe))
+        val resultType = JvmOps.getErasedResultJvmType(tpe)
         val bytecode = genByteCode(jvmType, resultType)
         macc + (jvmName -> JvmClass(jvmName, bytecode))
       case (macc, tpe) =>
