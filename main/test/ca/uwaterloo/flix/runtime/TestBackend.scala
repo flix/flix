@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.runtime
 
-import ca.uwaterloo.flix.api.{Unit => UnitClass, _}
+import ca.uwaterloo.flix.api._
 import ca.uwaterloo.flix.util._
 import org.scalatest.FunSuite
 

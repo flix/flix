@@ -366,9 +366,8 @@ object JvmOps {
     // The JVM name is of the form TArity$Arg0$Arg1$Arg2
     val name = "Cell" + "$" + arg
 
-    // TODO: Perhaps a better directory?
     // The type resides in the ca.uwaterloo.flix.api.cell package.
-    JvmType.Reference(JvmName(List("ca", "uwaterloo", "flix", "helps", "cell"), name))
+    JvmType.Reference(JvmName(List("ca", "uwaterloo", "flix"), name))
   }
 
   /**
