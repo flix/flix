@@ -31,7 +31,8 @@ object JvmName {
   /**
     * The `ca.uwaterloo.flix.api.Unit` name
     */
-  val Unit: JvmName = JvmName(List("ca", "uwaterloo", "flix", "api"), "Unit")
+  // TODO: Perhaps a better directory?
+  val Unit: JvmName = JvmName(List("ca", "uwaterloo", "flix", "helps"), "Unit")
 
   /**
     * The `java.math.BigInteger` name.
@@ -129,6 +130,18 @@ object JvmName {
     * The `java.lang.Exception` name
     */
   val UnsupportedOperationException: JvmName = JvmName(List("java", "lang"), "UnsupportedOperationException")
+
+  /**
+    * Get the class type for the cell with subtype `subType`
+    */
+  def getCellClassType(subType: JvmType): JvmType.Reference = {
+    val name = "Cell" + "$" + JvmOps.stringify(subType)
+
+    // TODO: Perhaps a better directory?
+    // The type resides in the ca.uwaterloo.flix.api.cell package.
+    JvmType.Reference(JvmName(List("ca", "uwaterloo", "flix", "helps", "cell"), name))
+  }
+
 }
 
 /**
