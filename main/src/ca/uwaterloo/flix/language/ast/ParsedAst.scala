@@ -118,6 +118,21 @@ object ParsedAst {
     case class Def(doc: Option[ParsedAst.Documentation], ann: Seq[ParsedAst.AnnotationOrProperty], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: Seq[ParsedAst.ContextBound], fparamsOpt: Seq[ParsedAst.FormalParam], tpe: ParsedAst.Type, eff: Option[ParsedAst.Effect], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
+      * Signature Declaration.
+      *
+      * @param doc        the optional comment associated with the definition.
+      * @param ann        the associated annotations.
+      * @param mod        the associated modifiers.
+      * @param sp1        the position of the first character in the declaration.
+      * @param ident      the name of the definition.
+      * @param tparams    the type parameters.
+      * @param fparamsOpt the formal parameters.
+      * @param tpe        the declared type.
+      * @param sp2        the position of the last character in the declaration.
+      */
+    case class Sig(doc: Option[ParsedAst.Documentation], ann: Seq[ParsedAst.AnnotationOrProperty], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: Seq[ParsedAst.ContextBound], fparamsOpt: Seq[ParsedAst.FormalParam], tpe: ParsedAst.Type, eff: Option[ParsedAst.Effect], sp2: SourcePosition) extends ParsedAst.Declaration
+
+    /**
       * Law Declaration.
       *
       * @param sp1        the position of the first character in the declaration.
@@ -202,13 +217,14 @@ object ParsedAst {
     /**
       * Class Declaration.
       *
-      * @param doc     the optional comment associated with the declaration.
-      * @param sp1     the position of the first character in the declaration.
-      * @param name    the name of the type class.
-      * @param tparams the  type parameters of the type class.
-      * @param sp2     the position of the last character in the declaration.
+      * @param doc        the optional comment associated with the declaration.
+      * @param sp1        the position of the first character in the declaration.
+      * @param ident      the name of the type class.
+      * @param tparams    the  type parameters of the type class.
+      * @param signatures the signatures of the type class.
+      * @param sp2        the position of the last character in the declaration.
       */
-    case class Class(doc: Option[ParsedAst.Documentation], sp1: SourcePosition, name: Name.Ident, tparams: Seq[Name.Ident], sp2: SourcePosition) extends ParsedAst.Declaration
+    case class Class(doc: Option[ParsedAst.Documentation], sp1: SourcePosition, ident: Name.Ident, tparams: Seq[Name.Ident], signatures: Seq[ParsedAst.Declaration.Sig], sp2: SourcePosition) extends ParsedAst.Declaration
 
   }
 

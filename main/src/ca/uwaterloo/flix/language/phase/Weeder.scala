@@ -23,8 +23,8 @@ import ca.uwaterloo.flix.language.ast.Ast.Polarity
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.WeederError
 import ca.uwaterloo.flix.language.errors.WeederError._
-import ca.uwaterloo.flix.util.{CompilationMode, InternalCompilerException, Validation}
 import ca.uwaterloo.flix.util.Validation._
+import ca.uwaterloo.flix.util.{CompilationMode, InternalCompilerException, Validation}
 
 import scala.collection.immutable.Seq
 import scala.collection.mutable
@@ -218,6 +218,11 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           case _ => IllegalLattice(mkSL(sp1, sp2)).toFailure
         }
 
+      case ParsedAst.Declaration.Class(docOpt, sp1, ident, tparams, signatures, sp2) =>
+        val doc = docOpt.map(d => Ast.Documentation(d.text.mkString(" "), mkSL(d.sp1, d.sp2)))
+        val loc = mkSL(sp1, sp2)
+
+        List(WeededAst.Declaration.Class(doc, ident, tparams.toList, loc)).toSuccess
     }
 
   }

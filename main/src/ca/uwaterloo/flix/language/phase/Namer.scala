@@ -252,6 +252,12 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
             prog0.copy(lattices = prog0.lattices + (Types.namer(tpe, Map.empty) -> lattice)) // NB: This just overrides any existing binding.
         }
 
+      //
+      // Class.
+      //
+      case WeededAst.Declaration.Class(doc, ident, tparams, loc) =>
+        ??? // TODO
+
       /*
        * Relation.
        */

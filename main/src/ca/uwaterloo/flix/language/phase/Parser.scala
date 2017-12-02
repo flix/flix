@@ -172,6 +172,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       Documentation ~ Annotations ~ Modifiers ~ SP ~ atomic("def") ~ WS ~ Names.Definition ~ optWS ~ TypeParams ~ FormalParamList ~ optWS ~ ":" ~ optWS ~ TypeAndEffect ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~> ParsedAst.Declaration.Def
     }
 
+    def Sig: Rule1[ParsedAst.Declaration.Sig] = rule {
+      Documentation ~ Annotations ~ Modifiers ~ SP ~ atomic("def") ~ WS ~ Names.Definition ~ optWS ~ TypeParams ~ FormalParamList ~ optWS ~ ":" ~ optWS ~ TypeAndEffect ~ SP ~> ParsedAst.Declaration.Sig
+    }
+
     def Law: Rule1[ParsedAst.Declaration.Law] = rule {
       Documentation ~ SP ~ atomic("law") ~ WS ~ Names.Definition ~ optWS ~ TypeParams ~ optWS ~ FormalParamList ~ optWS ~ ":" ~ optWS ~ Type ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~> ParsedAst.Declaration.Law
     }
@@ -268,12 +272,16 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         "[" ~ optWS ~ oneOrMore(Names.Variable).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]"
       }
 
-      def ClassBody: Rule0 = rule {
-        "{" ~ optWS ~ "}"
+      def ClassBody: Rule1[Seq[ParsedAst.Declaration.Sig]] = rule {
+        "{" ~ optWS ~ zeroOrMore(Declarations.Sig) ~ optWS ~ "}"
+      }
+
+      def ClassBodyOpt: Rule1[Seq[ParsedAst.Declaration.Sig]] = rule {
+        optional(ClassBody) ~> ((o: Option[Seq[ParsedAst.Declaration.Sig]]) => o.getOrElse(Seq.empty))
       }
 
       rule {
-        Documentation ~ SP ~ atomic("class") ~ WS ~ Names.Class ~ optWS ~ TypeParams ~ optWS ~ ClassBody ~ SP ~> ParsedAst.Declaration.Class
+        Documentation ~ SP ~ atomic("class") ~ WS ~ Names.Class ~ optWS ~ TypeParams ~ optWS ~ ClassBodyOpt ~ SP ~> ParsedAst.Declaration.Class
       }
     }
 

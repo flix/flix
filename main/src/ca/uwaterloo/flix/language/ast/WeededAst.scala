@@ -44,6 +44,8 @@ object WeededAst {
 
     case class Lattice(tpe: WeededAst.Type, bot: WeededAst.Expression, top: WeededAst.Expression, equ: WeededAst.Expression, leq: WeededAst.Expression, lub: WeededAst.Expression, glb: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Declaration
 
+    case class Class(doc: Option[Ast.Documentation], ident: Name.Ident, tparams: List[Name.Ident], loc: SourceLocation) extends WeededAst.Declaration
+
   }
 
   sealed trait Table extends WeededAst.Declaration {
