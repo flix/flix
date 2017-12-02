@@ -272,12 +272,12 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         "[" ~ optWS ~ oneOrMore(Names.Variable).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]"
       }
 
-      def ClassBody: Rule1[Seq[ParsedAst.Declaration.Sig]] = rule {
-        "{" ~ optWS ~ zeroOrMore(Declarations.Sig) ~ optWS ~ "}"
+      def ClassBody: Rule1[Seq[ParsedAst.Declaration]] = rule {
+        "{" ~ optWS ~ zeroOrMore(Declarations.Law | Declarations.Sig) ~ optWS ~ "}"
       }
 
-      def ClassBodyOpt: Rule1[Seq[ParsedAst.Declaration.Sig]] = rule {
-        optional(ClassBody) ~> ((o: Option[Seq[ParsedAst.Declaration.Sig]]) => o.getOrElse(Seq.empty))
+      def ClassBodyOpt: Rule1[Seq[ParsedAst.Declaration]] = rule {
+        optional(ClassBody) ~> ((o: Option[Seq[ParsedAst.Declaration]]) => o.getOrElse(Seq.empty))
       }
 
       rule {

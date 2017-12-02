@@ -217,14 +217,14 @@ object ParsedAst {
     /**
       * Class Declaration.
       *
-      * @param doc        the optional comment associated with the declaration.
-      * @param sp1        the position of the first character in the declaration.
-      * @param ident      the name of the type class.
-      * @param tparams    the  type parameters of the type class.
-      * @param signatures the signatures of the type class.
-      * @param sp2        the position of the last character in the declaration.
+      * @param doc     the optional comment associated with the declaration.
+      * @param sp1     the position of the first character in the declaration.
+      * @param ident   the name of the type class.
+      * @param tparams the type parameters of the type class.
+      * @param decls   the declarations of the type class.
+      * @param sp2     the position of the last character in the declaration.
       */
-    case class Class(doc: Option[ParsedAst.Documentation], sp1: SourcePosition, ident: Name.Ident, tparams: Seq[Name.Ident], signatures: Seq[ParsedAst.Declaration.Sig], sp2: SourcePosition) extends ParsedAst.Declaration
+    case class Class(doc: Option[ParsedAst.Documentation], sp1: SourcePosition, ident: Name.Ident, tparams: Seq[Name.Ident], decls: Seq[ParsedAst.Declaration], sp2: SourcePosition) extends ParsedAst.Declaration
 
   }
 

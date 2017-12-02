@@ -90,6 +90,9 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
             List(WeededAst.Declaration.Def(doc, as, mod, ident, tparams, fs, e, t, eff, loc))
         }
 
+      case ParsedAst.Declaration.Sig(docOpt, ann, mods, sp1, ident, tparams0, fparams0, tpe, effOpt, sp2) =>
+        ??? // TODO
+
       case ParsedAst.Declaration.Law(docOpt, sp1, ident, tparams0, fparams0, tpe, exp, sp2) =>
         val loc = mkSL(sp1, sp2)
         val doc = docOpt.map(d => Ast.Documentation(d.text.mkString(" "), loc))
@@ -218,12 +221,17 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           case _ => IllegalLattice(mkSL(sp1, sp2)).toFailure
         }
 
-      case ParsedAst.Declaration.Class(docOpt, sp1, ident, tparams, signatures, sp2) =>
+      case ParsedAst.Declaration.Class(docOpt, sp1, ident, tparams, decls, sp2) =>
         val doc = docOpt.map(d => Ast.Documentation(d.text.mkString(" "), mkSL(d.sp1, d.sp2)))
         val loc = mkSL(sp1, sp2)
 
-        @@(signatures.toList.map(visitSig)) map {
-          case sigs => List(WeededAst.Declaration.Class(doc, ident, tparams.toList, sigs, loc))
+        val declsVal = decls.toList.map {
+          case sig: ParsedAst.Declaration.Sig => visitSig(sig)
+          case _ => ??? // TODO
+        }
+
+        @@(declsVal) map {
+          case decls => List(WeededAst.Declaration.Class(doc, ident, tparams.toList, decls, loc))
         }
     }
 

@@ -46,7 +46,7 @@ object WeededAst {
 
     case class Lattice(tpe: WeededAst.Type, bot: WeededAst.Expression, top: WeededAst.Expression, equ: WeededAst.Expression, leq: WeededAst.Expression, lub: WeededAst.Expression, glb: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Declaration
 
-    case class Class(doc: Option[Ast.Documentation], ident: Name.Ident, tparams: List[Name.Ident], signatures: List[WeededAst.Declaration.Sig], loc: SourceLocation) extends WeededAst.Declaration
+    case class Class(doc: Option[Ast.Documentation], ident: Name.Ident, tparams: List[Name.Ident], decls: List[WeededAst.Declaration], loc: SourceLocation) extends WeededAst.Declaration
 
   }
 
