@@ -28,6 +28,7 @@ object NamedAst {
 
   case class Program(defs: Map[Name.NName, Map[String, NamedAst.Def]],
                      enums: Map[Name.NName, Map[String, NamedAst.Enum]],
+                     classes: Map[Name.NName, Map[String, NamedAst.Class]],
                      lattices: Map[NamedAst.Type, NamedAst.Lattice],
                      indexes: Map[Name.NName, Map[String, NamedAst.Index]],
                      tables: Map[Name.NName, Map[String, NamedAst.Table]],
@@ -43,6 +44,9 @@ object NamedAst {
   case class Def(doc: Option[Ast.Documentation], ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, tparams: List[NamedAst.TypeParam], fparams: List[NamedAst.FormalParam], exp: NamedAst.Expression, sc: NamedAst.Scheme, eff: Eff, loc: SourceLocation) extends NamedAst
 
   case class Enum(doc: Option[Ast.Documentation], mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: List[NamedAst.TypeParam], cases: Map[String, NamedAst.Case], tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst
+
+  // TODO Class
+  case class Class(sym: Symbol.ClassSym) extends NamedAst
 
   case class Index(qname: Name.QName, indexes: List[List[Name.Ident]], loc: SourceLocation) extends NamedAst
 

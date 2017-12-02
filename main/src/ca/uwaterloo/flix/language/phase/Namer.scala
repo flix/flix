@@ -47,6 +47,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
     val prog0 = NamedAst.Program(
       enums = Map.empty,
       defs = Map.empty,
+      classes = Map.empty,
       lattices = Map.empty,
       indexes = Map.empty,
       tables = Map.empty,
@@ -255,8 +256,30 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
       //
       // Class.
       //
-      case WeededAst.Declaration.Class(doc, ident, tparams, signatures, loc) =>
-        ??? // TODO
+      case WeededAst.Declaration.Class(doc, ident, tparams, decls, loc) =>
+        // check if the class already exists.
+        prog0.classes.get(ns0) match {
+          case None =>
+            // Case 1: The namespace does not yet exist. So the class does not yet exist.
+            val sym = Symbol.mkClassSym(ns0, ident)
+            val clazz = NamedAst.Class(sym)
+            val classes = Map(ident.name -> clazz)
+            prog0.copy(classes = prog0.classes + (ns0 -> classes)).toSuccess
+          case Some(classes0) =>
+            // Case 2: The namespace exists. Lookup the class.
+            classes0.get(ident.name) match {
+              case None =>
+                // Case 2.1: The class does not exist in the namespace. Update it.
+                val sym = Symbol.mkClassSym(ns0, ident)
+                val clazz = NamedAst.Class(sym)
+
+                val classes = classes0 + (ident.name -> clazz)
+                prog0.copy(classes = prog0.classes + (ns0 -> classes)).toSuccess
+              case Some(clazz) =>
+                // Case 2.2: Duplicate class.
+                ???
+            }
+        }
 
       /*
        * Relation.
