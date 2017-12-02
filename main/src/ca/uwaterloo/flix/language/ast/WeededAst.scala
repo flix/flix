@@ -34,6 +34,8 @@ object WeededAst {
 
     case class Def(doc: Option[Ast.Documentation], ann: Ast.Annotations, mod: Ast.Modifiers, ident: Name.Ident, tparams: List[Name.Ident], fparams: List[WeededAst.FormalParam], exp: WeededAst.Expression, tpe: WeededAst.Type, eff: Eff, loc: SourceLocation) extends WeededAst.Declaration
 
+    case class Sig(doc: Option[Ast.Documentation], ann: Ast.Annotations, mod: Ast.Modifiers, ident: Name.Ident, tparams: List[Name.Ident], fparams: List[WeededAst.FormalParam], tpe: WeededAst.Type, eff: Eff, loc: SourceLocation) extends WeededAst.Declaration
+
     case class Enum(doc: Option[Ast.Documentation], mod: Ast.Modifiers, ident: Name.Ident, tparams: List[Name.Ident], cases: Map[String, WeededAst.Case], loc: SourceLocation) extends WeededAst.Declaration
 
     case class Property(law: Name.QName, defn: Name.Ident, exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Declaration
@@ -44,7 +46,7 @@ object WeededAst {
 
     case class Lattice(tpe: WeededAst.Type, bot: WeededAst.Expression, top: WeededAst.Expression, equ: WeededAst.Expression, leq: WeededAst.Expression, lub: WeededAst.Expression, glb: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Declaration
 
-    case class Class(doc: Option[Ast.Documentation], ident: Name.Ident, tparams: List[Name.Ident], loc: SourceLocation) extends WeededAst.Declaration
+    case class Class(doc: Option[Ast.Documentation], ident: Name.Ident, tparams: List[Name.Ident], signatures: List[WeededAst.Declaration.Sig], loc: SourceLocation) extends WeededAst.Declaration
 
   }
 

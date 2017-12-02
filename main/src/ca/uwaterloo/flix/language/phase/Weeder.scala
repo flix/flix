@@ -222,7 +222,9 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         val doc = docOpt.map(d => Ast.Documentation(d.text.mkString(" "), mkSL(d.sp1, d.sp2)))
         val loc = mkSL(sp1, sp2)
 
-        List(WeededAst.Declaration.Class(doc, ident, tparams.toList, loc)).toSuccess
+        @@(signatures.toList.map(visitSig)) map {
+          case sigs => List(WeededAst.Declaration.Class(doc, ident, tparams.toList, sigs, loc))
+        }
     }
 
   }
@@ -1148,9 +1150,14 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   }
 
   /**
+    * Weeds the given signature `sig`.
+    */
+  private def visitSig(sig: ParsedAst.Declaration.Sig): Validation[WeededAst.Declaration.Sig, WeederError] = ??? // TODO
+
+  /**
     * Returns an apply expression for the given fully-qualified name `fqn` and the given arguments `args`.
     */
-  def mkApply(fqn: String, args: List[WeededAst.Expression], sp1: SourcePosition, sp2: SourcePosition): WeededAst.Expression = {
+  private def mkApply(fqn: String, args: List[WeededAst.Expression], sp1: SourcePosition, sp2: SourcePosition): WeededAst.Expression = {
     val lambda = WeededAst.Expression.VarOrDef(Name.mkQName(fqn, sp1, sp2), mkSL(sp1, sp2))
     WeededAst.Expression.Apply(lambda, args, mkSL(sp1, sp2))
   }
@@ -1158,7 +1165,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   /**
     * Attempts to parse the given float32 with `sign` digits `before` and `after` the comma.
     */
-  def toFloat32(sign: Boolean, before: String, after: String, loc: SourceLocation): Validation[Float, WeederError] = try {
+  private def toFloat32(sign: Boolean, before: String, after: String, loc: SourceLocation): Validation[Float, WeederError] = try {
     val s = if (sign) s"-$before.$after" else s"$before.$after"
     s.toFloat.toSuccess
   } catch {
@@ -1168,7 +1175,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   /**
     * Attempts to parse the given float64 with `sign` digits `before` and `after` the comma.
     */
-  def toFloat64(sign: Boolean, before: String, after: String, loc: SourceLocation): Validation[Double, WeederError] = try {
+  private def toFloat64(sign: Boolean, before: String, after: String, loc: SourceLocation): Validation[Double, WeederError] = try {
     val s = if (sign) s"-$before.$after" else s"$before.$after"
     s.toDouble.toSuccess
   } catch {
@@ -1178,7 +1185,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   /**
     * Attempts to parse the given int8 with `sign` and `digits`.
     */
-  def toInt8(sign: Boolean, digits: String, loc: SourceLocation): Validation[Byte, WeederError] = try {
+  private def toInt8(sign: Boolean, digits: String, loc: SourceLocation): Validation[Byte, WeederError] = try {
     val s = if (sign) "-" + digits else digits
     s.toByte.toSuccess
   } catch {
@@ -1188,7 +1195,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   /**
     * Attempts to parse the given int16 with `sign` and `digits`.
     */
-  def toInt16(sign: Boolean, digits: String, loc: SourceLocation): Validation[Short, WeederError] = try {
+  private def toInt16(sign: Boolean, digits: String, loc: SourceLocation): Validation[Short, WeederError] = try {
     val s = if (sign) "-" + digits else digits
     s.toShort.toSuccess
   } catch {
@@ -1198,7 +1205,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   /**
     * Attempts to parse the given int32 with `sign` and `digits`.
     */
-  def toInt32(sign: Boolean, digits: String, loc: SourceLocation): Validation[Int, WeederError] = try {
+  private def toInt32(sign: Boolean, digits: String, loc: SourceLocation): Validation[Int, WeederError] = try {
     val s = if (sign) "-" + digits else digits
     s.toInt.toSuccess
   } catch {
@@ -1208,7 +1215,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   /**
     * Attempts to parse the given int64 with `sign` and `digits`.
     */
-  def toInt64(sign: Boolean, digits: String, loc: SourceLocation): Validation[Long, WeederError] = try {
+  private def toInt64(sign: Boolean, digits: String, loc: SourceLocation): Validation[Long, WeederError] = try {
     val s = if (sign) "-" + digits else digits
     s.toLong.toSuccess
   } catch {
@@ -1218,7 +1225,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   /**
     * Attempts to parse the given BigInt with `sign` and `digits`.
     */
-  def toBigInt(sign: Boolean, digits: String, loc: SourceLocation): Validation[BigInteger, WeederError] = try {
+  private def toBigInt(sign: Boolean, digits: String, loc: SourceLocation): Validation[BigInteger, WeederError] = try {
     val s = if (sign) "-" + digits else digits
     new BigInteger(s).toSuccess
   } catch {

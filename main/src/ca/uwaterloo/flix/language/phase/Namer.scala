@@ -255,7 +255,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
       //
       // Class.
       //
-      case WeededAst.Declaration.Class(doc, ident, tparams, loc) =>
+      case WeededAst.Declaration.Class(doc, ident, tparams, signatures, loc) =>
         ??? // TODO
 
       /*
