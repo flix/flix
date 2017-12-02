@@ -199,8 +199,18 @@ object ParsedAst {
 
     case class BoundedLattice(sp1: SourcePosition, tpe: ParsedAst.Type, elms: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Declaration
 
-  }
+    /**
+      * Class Declaration.
+      *
+      * @param doc     the optional comment associated with the declaration.
+      * @param sp1     the position of the first character in the declaration.
+      * @param name    the name of the type class.
+      * @param tparams the  type parameters of the type class.
+      * @param sp2     the position of the last character in the declaration.
+      */
+    case class Class(doc: Option[ParsedAst.Documentation], sp1: SourcePosition, name: Name.Ident, tparams: Seq[Name.Ident], sp2: SourcePosition) extends ParsedAst.Declaration
 
+  }
 
   /**
     * Literals.

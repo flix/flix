@@ -25,6 +25,7 @@ import org.parboiled2
 import org.parboiled2._
 
 import scala.collection.immutable.Seq
+
 /**
   * A phase to transform source files into abstract syntax trees.
   */
@@ -157,7 +158,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       Declarations.Relation |
       Declarations.Lattice |
       Declarations.Index |
-      Declarations.Law
+      Declarations.Law |
+      Declarations.Class
   }
 
   object Declarations {
@@ -258,6 +260,20 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
       rule {
         optWS ~ SP ~ atomic("let") ~ optWS ~ Type ~ atomic("<>") ~ optWS ~ "=" ~ optWS ~ "(" ~ optWS ~ Elms ~ optWS ~ ")" ~ SP ~> ParsedAst.Declaration.BoundedLattice
+      }
+    }
+
+    def Class: Rule1[ParsedAst.Declaration] = {
+      def TypeParams: Rule1[Seq[Name.Ident]] = rule {
+        "[" ~ optWS ~ oneOrMore(Names.Variable).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]"
+      }
+
+      def ClassBody: Rule0 = rule {
+        "{" ~ optWS ~ "}"
+      }
+
+      rule {
+        Documentation ~ SP ~ atomic("class") ~ WS ~ Names.Class ~ optWS ~ TypeParams ~ optWS ~ ClassBody ~ SP ~> ParsedAst.Declaration.Class
       }
     }
 
@@ -1056,6 +1072,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     def Annotation: Rule1[Name.Ident] = LowerCaseName
 
     def Attribute: Rule1[Name.Ident] = LowerCaseName
+
+    def Class: Rule1[Name.Ident] = UpperCaseName
 
     def Definition: Rule1[Name.Ident] = rule {
       LowerCaseName | GreekName | MathName | OperatorName
