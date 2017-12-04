@@ -692,6 +692,15 @@ object ParsedAst {
     case class Assign(exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
+      * Handler expression.
+      *
+      * @param sp1 the position of the first character in the expression.
+      * @param hs  the sequences of effect handlers.
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class Handler(sp1: SourcePosition, hs: Seq[ParsedAst.EffectHandler], sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
       * Existentially Quantified Expression.
       *
       * @param sp1        the position of the first character in the expression.
@@ -1150,6 +1159,14 @@ object ParsedAst {
     * @param exp   the body expression of the rule.
     */
   case class MatchRule(pat: ParsedAst.Pattern, guard: Option[ParsedAst.Expression], exp: ParsedAst.Expression) extends ParsedAst
+
+  /**
+    * An effect handler.
+    *
+    * @param qname the fully-qualified name of the effect.
+    * @param exp   the effect handler expression.
+    */
+  case class EffectHandler(qname: Name.QName, exp: ParsedAst.Expression) extends ParsedAst
 
   /**
     * Modifier.

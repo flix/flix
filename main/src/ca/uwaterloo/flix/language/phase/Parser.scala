@@ -549,7 +549,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     def Primary: Rule1[ParsedAst.Expression] = rule {
       LetRec | LetMatch | IfThenElse | Match | LambdaMatch | Switch | Unsafe | Native | Lambda | Tuple |
         ArrayLit | ArrayNew | FNil | FSet | FMap | Literal |
-        Existential | Universal | UnaryLambda | QName | Wild | Tag | SName | Hole | UserError
+        Handler | Existential | Universal | UnaryLambda | QName | Wild | Tag | SName | Hole | UserError
     }
 
     def Literal: Rule1[ParsedAst.Expression.Lit] = rule {
@@ -695,6 +695,20 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def UserError: Rule1[ParsedAst.Expression] = rule {
       SP ~ atomic("???") ~ SP ~> ParsedAst.Expression.UserError
+    }
+
+    def Handler: Rule1[ParsedAst.Expression.Handler] = {
+      def EffectHandler: Rule1[ParsedAst.EffectHandler] = rule {
+        atomic("eff") ~ WS ~ Names.QualifiedEffect ~ optWS ~ "=" ~ optWS ~ Expression ~> ParsedAst.EffectHandler
+      }
+
+      def HandlerBody: Rule1[Seq[ParsedAst.EffectHandler]] = rule {
+        zeroOrMore(EffectHandler).separatedBy(optWS ~ "," ~ optWS)
+      }
+
+      rule {
+        SP ~ atomic("handler") ~ optWS ~ "{" ~ optWS ~ HandlerBody ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.Handler
+      }
     }
 
     def Existential: Rule1[ParsedAst.Expression.Existential] = rule {
@@ -1106,6 +1120,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     def Hole: Rule1[Name.Ident] = LowerCaseName
 
     def QualifiedDefinition: Rule1[Name.QName] = LowerCaseQName // TODO: Greek letters?
+
+    def QualifiedEffect: Rule1[Name.QName] = LowerCaseQName
 
     def Table: Rule1[Name.Ident] = UpperCaseName
 
