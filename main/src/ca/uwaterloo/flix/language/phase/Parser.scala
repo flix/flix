@@ -151,14 +151,15 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   def Declaration: Rule1[ParsedAst.Declaration] = rule {
     Declarations.Namespace |
       Declarations.Constraint |
-      Declarations.Definition |
+      Declarations.Def |
+      Declarations.Eff |
+      Declarations.Law |
       Declarations.Enum |
       Declarations.TypeDecl |
       Declarations.LetLattice |
       Declarations.Relation |
       Declarations.Lattice |
       Declarations.Index |
-      Declarations.Law |
       Declarations.Class
   }
 
@@ -168,8 +169,12 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       optWS ~ SP ~ atomic("namespace") ~ WS ~ Names.Namespace ~ optWS ~ '{' ~ zeroOrMore(Declaration) ~ optWS ~ '}' ~ SP ~> ParsedAst.Declaration.Namespace
     }
 
-    def Definition: Rule1[ParsedAst.Declaration.Def] = rule {
+    def Def: Rule1[ParsedAst.Declaration.Def] = rule {
       Documentation ~ Annotations ~ Modifiers ~ SP ~ atomic("def") ~ WS ~ Names.Definition ~ optWS ~ TypeParams ~ FormalParamList ~ optWS ~ ":" ~ optWS ~ TypeAndEffect ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~> ParsedAst.Declaration.Def
+    }
+
+    def Eff: Rule1[ParsedAst.Declaration.Eff] = rule {
+      Documentation ~ Annotations ~ Modifiers ~ SP ~ atomic("eff") ~ WS ~ Names.Definition ~ optWS ~ TypeParams ~ FormalParamList ~ optWS ~ ":" ~ optWS ~ TypeAndEffect ~ SP ~> ParsedAst.Declaration.Eff
     }
 
     def Sig: Rule1[ParsedAst.Declaration.Sig] = rule {

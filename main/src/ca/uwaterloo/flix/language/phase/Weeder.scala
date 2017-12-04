@@ -90,6 +90,24 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
             List(WeededAst.Declaration.Def(doc, as, mod, ident, tparams, fs, e, t, eff, loc))
         }
 
+      case ParsedAst.Declaration.Eff(docOpt, ann, mods, sp1, ident, tparams0, fparams0, tpe, effOpt, sp2) =>
+        val loc = mkSL(ident.sp1, ident.sp2)
+        val doc = docOpt.map(d => Ast.Documentation(d.text.mkString(" "), loc))
+        val annVal = Annotations.weed(ann)
+        val modVal = visitModifiers(mods, legalModifiers = Set(Ast.Modifier.Public))
+        val tparams = tparams0.toList.map(_.ident)
+        val effVal = Effects.weed(effOpt)
+
+        /*
+          * Check for `DuplicateFormal`.
+          */
+        val formalsVal = Formals.weed(fparams0, typeRequired = true)
+        @@(annVal, modVal, formalsVal, effVal) map {
+          case (as, mod, fs, eff) =>
+            val t = WeededAst.Type.Arrow(fs map (_.tpe.get), Types.weed(tpe), loc)
+            List(WeededAst.Declaration.Eff(doc, as, mod, ident, tparams, fs, t, eff, loc))
+        }
+
       case ParsedAst.Declaration.Law(docOpt, sp1, ident, tparams0, fparams0, tpe, exp, sp2) =>
         val loc = mkSL(sp1, sp2)
         val doc = docOpt.map(d => Ast.Documentation(d.text.mkString(" "), loc))
