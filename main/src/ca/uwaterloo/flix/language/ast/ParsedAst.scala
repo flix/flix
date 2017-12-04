@@ -692,6 +692,17 @@ object ParsedAst {
     case class Assign(exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
+      * HandleWith expression.
+      *
+      * @param sp1      the position of the first character in the expression.
+      * @param base     the base expression to evaluate.
+      * @param handlers the effect handlers.
+      * @param sp2      the position of the last character in the expression.
+      */
+    // TODO: Should handlers be first class or not? Their expressions are already first class.
+    case class HandleWith(sp1: SourcePosition, base: ParsedAst.Expression, handlers: ParsedAst.Expression.Handler, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
       * Handler expression.
       *
       * @param sp1 the position of the first character in the expression.

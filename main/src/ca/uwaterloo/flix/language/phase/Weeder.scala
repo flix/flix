@@ -637,6 +637,10 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
             e2 <- visit(exp2, unsafe)
           } yield WeededAst.Expression.Assign(e1, e2, mkSL(sp1, sp2))
 
+        case ParsedAst.Expression.HandleWith(sp1, base, handlers, sp2) =>
+          // TODO
+          WeededAst.Expression.UserError(mkSL(sp1, sp2)).toSuccess
+
         case ParsedAst.Expression.Handler(sp1, handlers, sp2) =>
           // TODO
           WeededAst.Expression.UserError(mkSL(sp1, sp2)).toSuccess
