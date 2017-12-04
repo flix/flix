@@ -68,6 +68,7 @@ class FeatureSuite extends Suites(
   new FlixTest("TestUncurry", "main/test/ca/uwaterloo/flix/language/feature/TestUncurry.flix"),
   new FlixTest("TestUniformFunctionCallSyntax", "main/test/ca/uwaterloo/flix/language/feature/TestUniformFunctionCallSyntax.flix"),
   new FlixTest("TestStratifiedNegation", "main/test/ca/uwaterloo/flix/language/feature/TestStratifiedNegation.flix")
+  // new FlixTest("TestEffects", "main/test/ca/uwaterloo/flix/language/feature/TestEffects.flix") // TODO
 ) with ParallelTestExecution {
   /* left empty */
 }

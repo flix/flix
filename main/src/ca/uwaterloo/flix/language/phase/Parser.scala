@@ -153,6 +153,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       Declarations.Constraint |
       Declarations.Def |
       Declarations.Eff |
+      Declarations.Handler |
       Declarations.Law |
       Declarations.Enum |
       Declarations.TypeDecl |
@@ -174,7 +175,11 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Eff: Rule1[ParsedAst.Declaration.Eff] = rule {
-      Documentation ~ Annotations ~ Modifiers ~ SP ~ atomic("eff") ~ WS ~ Names.Definition ~ optWS ~ TypeParams ~ FormalParamList ~ optWS ~ ":" ~ optWS ~ TypeAndEffect ~ SP ~> ParsedAst.Declaration.Eff
+      Documentation ~ Annotations ~ Modifiers ~ SP ~ atomic("eff") ~ WS ~ Names.Eff ~ optWS ~ TypeParams ~ FormalParamList ~ optWS ~ ":" ~ optWS ~ TypeAndEffect ~ SP ~> ParsedAst.Declaration.Eff
+    }
+
+    def Handler: Rule1[ParsedAst.Declaration.Handler] = rule {
+      Documentation ~ Annotations ~ Modifiers ~ SP ~ atomic("handler") ~ WS ~ Names.Handler ~ optWS ~ TypeParams ~ FormalParamList ~ optWS ~ ":" ~ optWS ~ TypeAndEffect ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~> ParsedAst.Declaration.Handler
     }
 
     def Sig: Rule1[ParsedAst.Declaration.Sig] = rule {
@@ -1092,11 +1097,13 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       LowerCaseName | GreekName | MathName | OperatorName
     }
 
+    def Eff: Rule1[Name.Ident] = LowerCaseName
+
+    def Handler: Rule1[Name.Ident] = LowerCaseName
+
     def Effect: Rule1[Name.Ident] = UpperCaseName
 
-    def Hole: Rule1[Name.Ident] = rule {
-      LowerCaseName
-    }
+    def Hole: Rule1[Name.Ident] = LowerCaseName
 
     def QualifiedDefinition: Rule1[Name.QName] = LowerCaseQName // TODO: Greek letters?
 
