@@ -33,6 +33,7 @@ eff h(x: Int, y: Int): Bool
 handler h(x: Int, y: Int): Bool = x == y
 
 
+
 ///
 /// Declares an effect with one argument.
 ///
@@ -41,4 +42,17 @@ eff i(x: Int): Bool
 ///
 /// Declares a complex handler which takes the continuation.
 ///
-handler i[a](x: Int, k: Bool -> a): a = k(x == 42)
+handler i[a](x: Int, k: Bool -> Bool): Bool = k(x == 42)
+
+
+
+///
+/// Declares an effect with two arguments.
+///
+eff j(x: Int, y: Int): Bool
+
+///
+/// Declares a complex handler which takes the continuation.
+///
+handler j[a](x: Int, k: Bool -> a): a = k(x == y)
+

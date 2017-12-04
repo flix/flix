@@ -138,6 +138,13 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
         }
 
       /*
+       * Eff.
+       */
+      case WeededAst.Declaration.Eff(doc, ann, mod, ident, tparams0, fparams0, tpe, eff, loc) =>
+        // TODO
+        prog0.toSuccess
+
+      /*
        * Enum.
        */
       case WeededAst.Declaration.Enum(doc, mod, ident, tparams0, cases, loc) =>

@@ -108,6 +108,9 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
             List(WeededAst.Declaration.Eff(doc, as, mod, ident, tparams, fs, t, eff, loc))
         }
 
+      case ParsedAst.Declaration.Handler(docOpt, ann, mods, sp1, ident, tparams0, fparams0, tpe, effOpt, exp, sp2) =>
+        Nil.toSuccess
+
       case ParsedAst.Declaration.Law(docOpt, sp1, ident, tparams0, fparams0, tpe, exp, sp2) =>
         val loc = mkSL(sp1, sp2)
         val doc = docOpt.map(d => Ast.Documentation(d.text.mkString(" "), loc))
@@ -240,10 +243,9 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         val doc = docOpt.map(d => Ast.Documentation(d.text.mkString(" "), mkSL(d.sp1, d.sp2)))
         val loc = mkSL(sp1, sp2)
 
-        val declsVal = decls.toList.map {
+        val declsVal = decls.toList.collect {
           case sig: ParsedAst.Declaration.Sig => visitSig(sig)
-          case law: ParsedAst.Declaration.Law => ??? // TODO
-          case _ => ??? // TODO
+            // TODO: Laws
         }
 
         @@(declsVal) map {
