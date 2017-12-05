@@ -52,6 +52,8 @@ object WeededAst {
 
     case class Class(doc: Option[Ast.Documentation], ident: Name.Ident, tparams: List[Name.Ident], decls: List[WeededAst.Declaration], loc: SourceLocation) extends WeededAst.Declaration
 
+    case class Impl(doc: Option[Ast.Documentation], head: ParsedAst.ClassAtom, body: Seq[ParsedAst.ClassAtom], defs: Seq[WeededAst.Declaration.Def], loc: SourceLocation) extends WeededAst.Declaration
+
   }
 
   sealed trait Table extends WeededAst.Declaration {
@@ -251,6 +253,8 @@ object WeededAst {
   case class Attribute(ident: Name.Ident, tpe: WeededAst.Type, loc: SourceLocation) extends WeededAst
 
   case class Case(enum: Name.Ident, tag: Name.Ident, tpe: WeededAst.Type) extends WeededAst
+
+  case class ClassAtom(ident: Name.Ident, targs: List[WeededAst.Type], loc: SourceLocation) extends WeededAst
 
   case class FormalParam(ident: Name.Ident, mod: Ast.Modifiers, tpe: Option[WeededAst.Type], loc: SourceLocation) extends WeededAst
 

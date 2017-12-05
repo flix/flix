@@ -266,7 +266,7 @@ object ParsedAst {
       * @param defs the implemented definitions.
       * @param sp2  the position of the last character in the declaration.
       */
-    case class Impl(doc: Option[ParsedAst.Documentation], sp1: SourcePosition, head: ParsedAst.ClassAtom, body: Seq[ParsedAst.ClassAtom], defs: Seq[ParsedAst.Declaration], sp2: SourcePosition) extends ParsedAst.Declaration
+    case class Impl(doc: Option[ParsedAst.Documentation], sp1: SourcePosition, head: ParsedAst.ClassAtom, body: Seq[ParsedAst.ClassAtom], defs: Seq[ParsedAst.Declaration.Def], sp2: SourcePosition) extends ParsedAst.Declaration
 
   }
 
@@ -1145,15 +1145,6 @@ object ParsedAst {
   case class Case(sp1: SourcePosition, ident: Name.Ident, tpe: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst
 
   /**
-    * Documentation.
-    *
-    * @param sp1  the position of the first character in the comment.
-    * @param text the text of the comment.
-    * @param sp2  the position of the last character in the comment.
-    */
-  case class Documentation(sp1: SourcePosition, text: Seq[String], sp2: SourcePosition) extends ParsedAst
-
-  /**
     * Class Atom.
     *
     * @param sp1   the position of the first character in the context bound.
@@ -1162,6 +1153,15 @@ object ParsedAst {
     * @param sp2   the position of the last character in the context bound.
     */
   case class ClassAtom(sp1: SourcePosition, ident: Name.Ident, targs: Seq[ParsedAst.Type], sp2: SourcePosition) extends ParsedAst
+
+  /**
+    * Documentation.
+    *
+    * @param sp1  the position of the first character in the comment.
+    * @param text the text of the comment.
+    * @param sp2  the position of the last character in the comment.
+    */
+  case class Documentation(sp1: SourcePosition, text: Seq[String], sp2: SourcePosition) extends ParsedAst
 
   /**
     * Context Bound.

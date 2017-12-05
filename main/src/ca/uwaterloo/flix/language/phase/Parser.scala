@@ -298,7 +298,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Impl: Rule1[ParsedAst.Declaration] = {
       def ClassAtom: Rule1[ParsedAst.ClassAtom] = rule {
-        SP ~ Names.Class ~ optWS ~ "[" ~ optWS ~ zeroOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]" ~ SP ~> ParsedAst.ClassAtom
+        SP ~ Names.Class ~ optWS ~ "[" ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]" ~ SP ~> ParsedAst.ClassAtom
       }
 
       def Head: Rule1[ParsedAst.ClassAtom] = ClassAtom
@@ -307,12 +307,12 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         optional(atomic(":-") ~ WS ~ oneOrMore(ClassAtom).separatedBy(optWS ~ "," ~ optWS)) ~> ((o: Option[Seq[ParsedAst.ClassAtom]]) => o.getOrElse(Seq.empty))
       }
 
-      def ImplBody: Rule1[Seq[ParsedAst.Declaration]] = rule {
-        optional("{" ~ optWS ~ zeroOrMore(Declarations.Def).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}") ~> ((o: Option[Seq[ParsedAst.Declaration]]) => o.getOrElse(Seq.empty))
+      def ImplBody: Rule1[Seq[ParsedAst.Declaration.Def]] = rule {
+        optional("{" ~ optWS ~ zeroOrMore(Declarations.Def).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}") ~> ((o: Option[Seq[ParsedAst.Declaration.Def]]) => o.getOrElse(Seq.empty))
       }
 
       rule {
-        Documentation ~ SP ~ atomic("impl") ~ WS ~ Head ~ optWS ~ Body ~ ImplBody ~ SP ~> ParsedAst.Declaration.Impl
+        Documentation ~ SP ~ atomic("impl") ~ WS ~ Head ~ optWS ~ Body ~ optWS ~ ImplBody ~ SP ~> ParsedAst.Declaration.Impl
       }
     }
 
