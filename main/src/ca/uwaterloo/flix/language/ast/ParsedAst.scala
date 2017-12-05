@@ -247,15 +247,15 @@ object ParsedAst {
     /**
       * Class Declaration.
       *
-      * @param doc     the optional comment associated with the declaration.
-      * @param sp1     the position of the first character in the declaration.
-      * @param mod     the associated modifiers.
-      * @param ident   the name of the class.
-      * @param tparams the type parameters of the type class.
-      * @param decls   the declarations of the type class.
-      * @param sp2     the position of the last character in the declaration.
+      * @param doc   the optional comment associated with the declaration.
+      * @param sp1   the position of the first character in the declaration.
+      * @param mod   the associated modifiers.
+      * @param head  the head class atom.
+      * @param body  the body class atoms.
+      * @param decls the declarations of the type class.
+      * @param sp2   the position of the last character in the declaration.
       */
-    case class Class(doc: ParsedAst.Doc, sp1: SourcePosition, mod: Seq[ParsedAst.Modifier], ident: Name.Ident, tparams: Seq[Name.Ident], decls: Seq[ParsedAst.Declaration], sp2: SourcePosition) extends ParsedAst.Declaration
+    case class Class(doc: ParsedAst.Doc, sp1: SourcePosition, mod: Seq[ParsedAst.Modifier], head: ParsedAst.SimpleClassAtom, body: Seq[ParsedAst.SimpleClassAtom], decls: Seq[ParsedAst.Declaration], sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
       * Impl Declaration.
@@ -1144,6 +1144,16 @@ object ParsedAst {
     * @param sp2   the position of the last character in the case declaration.
     */
   case class Case(sp1: SourcePosition, ident: Name.Ident, tpe: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst
+
+  /**
+    * Simple Class Atom.
+    *
+    * @param sp1   the position of the first character in the context bound.
+    * @param ident the class name.
+    * @param targs the type arguments.
+    * @param sp2   the position of the last character in the context bound.
+    */
+  case class SimpleClassAtom(sp1: SourcePosition, ident: Name.Ident, targs: Seq[Name.Ident], sp2: SourcePosition) extends ParsedAst
 
   /**
     * Class Atom.

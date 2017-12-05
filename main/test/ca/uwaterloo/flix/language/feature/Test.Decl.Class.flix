@@ -48,13 +48,29 @@ namespace Test03 {
 
 namespace Test04 {
 
+    class X[a]
+
+    class Y[a]
+
+    class Z[a]
+
+    class M[a] <= X[a]
+
+    class N[a] <= X[a], Y[a]
+
+    class O[a] <= X[a], Y[a], Z[a]
+
+}
+
+namespace Test05 {
+
     class W[a, b, c] {
         def f[d, e, f](x: a, y: f): Bool
     }
 
 }
 
-namespace Test05 {
+namespace Test06 {
 
     class X[a] {
         law f(): Bool = ???
@@ -63,7 +79,7 @@ namespace Test05 {
 
 }
 
-namespace Test06 {
+namespace Test07 {
 
     namespace A {
         class X[a] {

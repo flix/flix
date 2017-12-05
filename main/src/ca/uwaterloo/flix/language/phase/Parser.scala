@@ -279,8 +279,15 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Class: Rule1[ParsedAst.Declaration] = {
-      def TypeParams: Rule1[Seq[Name.Ident]] = rule {
-        "[" ~ optWS ~ oneOrMore(Names.Variable).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]"
+      def Atom: Rule1[ParsedAst.SimpleClassAtom] = rule {
+        SP ~ Names.Class ~ optWS ~"[" ~ optWS ~ oneOrMore(Names.Variable).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]" ~ SP ~> ParsedAst.SimpleClassAtom
+      }
+
+      def Head: Rule1[ParsedAst.SimpleClassAtom] = Atom
+
+      def Body: Rule1[Seq[ParsedAst.SimpleClassAtom]] = rule {
+        optional(optWS ~ atomic("<=") ~ optWS ~ oneOrMore(Atom).separatedBy(optWS ~ "," ~ optWS)) ~> (
+          (o: Option[Seq[ParsedAst.SimpleClassAtom]]) => o.getOrElse(Seq.empty))
       }
 
       def ClassBody: Rule1[Seq[ParsedAst.Declaration]] = rule {
@@ -292,7 +299,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       rule {
-        Documentation ~ SP ~ Modifiers ~ atomic("class") ~ WS ~ Names.Class ~ optWS ~ TypeParams ~ optWS ~ ClassBodyOpt ~ SP ~> ParsedAst.Declaration.Class
+        Documentation ~ SP ~ Modifiers ~ atomic("class") ~ WS ~ Head ~ optWS ~ Body ~ optWS ~ ClassBodyOpt ~ SP ~> ParsedAst.Declaration.Class
       }
     }
 
