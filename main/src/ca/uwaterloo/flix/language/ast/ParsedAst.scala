@@ -102,7 +102,7 @@ object ParsedAst {
     case class Namespace(sp1: SourcePosition, name: Name.NName, decls: Seq[ParsedAst.Declaration], sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
-      * Definition Declaration (top-level function or expression).
+      * Definition Declaration.
       *
       * @param doc        the optional comment associated with the definition.
       * @param ann        the associated annotations.
@@ -116,6 +116,51 @@ object ParsedAst {
       * @param sp2        the position of the last character in the declaration.
       */
     case class Def(doc: Option[ParsedAst.Documentation], ann: Seq[ParsedAst.AnnotationOrProperty], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: Seq[ParsedAst.ContextBound], fparamsOpt: Seq[ParsedAst.FormalParam], tpe: ParsedAst.Type, eff: Option[ParsedAst.Effect], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Declaration
+
+    /**
+      * Effect Declaration.
+      *
+      * @param doc        the optional comment associated with the definition.
+      * @param ann        the associated annotations.
+      * @param mod        the associated modifiers.
+      * @param sp1        the position of the first character in the declaration.
+      * @param ident      the name of the definition.
+      * @param tparams    the type parameters.
+      * @param fparamsOpt the formal parameters.
+      * @param tpe        the declared type.
+      * @param sp2        the position of the last character in the declaration.
+      */
+    case class Eff(doc: Option[ParsedAst.Documentation], ann: Seq[ParsedAst.AnnotationOrProperty], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: Seq[ParsedAst.ContextBound], fparamsOpt: Seq[ParsedAst.FormalParam], tpe: ParsedAst.Type, eff: Option[ParsedAst.Effect], sp2: SourcePosition) extends ParsedAst.Declaration
+
+    /**
+      * Handler Declaration.
+      *
+      * @param doc        the optional comment associated with the definition.
+      * @param ann        the associated annotations.
+      * @param mod        the associated modifiers.
+      * @param sp1        the position of the first character in the declaration.
+      * @param ident      the name of the definition.
+      * @param tparams    the type parameters.
+      * @param fparamsOpt the formal parameters.
+      * @param tpe        the declared type.
+      * @param sp2        the position of the last character in the declaration.
+      */
+    case class Handler(doc: Option[ParsedAst.Documentation], ann: Seq[ParsedAst.AnnotationOrProperty], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: Seq[ParsedAst.ContextBound], fparamsOpt: Seq[ParsedAst.FormalParam], tpe: ParsedAst.Type, eff: Option[ParsedAst.Effect], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Declaration
+
+    /**
+      * Signature Declaration.
+      *
+      * @param doc        the optional comment associated with the definition.
+      * @param ann        the associated annotations.
+      * @param mod        the associated modifiers.
+      * @param sp1        the position of the first character in the declaration.
+      * @param ident      the name of the definition.
+      * @param tparams    the type parameters.
+      * @param fparamsOpt the formal parameters.
+      * @param tpe        the declared type.
+      * @param sp2        the position of the last character in the declaration.
+      */
+    case class Sig(doc: Option[ParsedAst.Documentation], ann: Seq[ParsedAst.AnnotationOrProperty], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: Seq[ParsedAst.ContextBound], fparamsOpt: Seq[ParsedAst.FormalParam], tpe: ParsedAst.Type, eff: Option[ParsedAst.Effect], sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
       * Law Declaration.
@@ -199,8 +244,31 @@ object ParsedAst {
 
     case class BoundedLattice(sp1: SourcePosition, tpe: ParsedAst.Type, elms: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Declaration
 
-  }
+    /**
+      * Class Declaration.
+      *
+      * @param doc     the optional comment associated with the declaration.
+      * @param sp1     the position of the first character in the declaration.
+      * @param ident   the name of the type class.
+      * @param tparams the type parameters of the type class.
+      * @param decls   the declarations of the type class.
+      * @param sp2     the position of the last character in the declaration.
+      */
+    case class Class(doc: Option[ParsedAst.Documentation], sp1: SourcePosition, ident: Name.Ident, tparams: Seq[Name.Ident], decls: Seq[ParsedAst.Declaration], sp2: SourcePosition) extends ParsedAst.Declaration
 
+    /**
+      * Impl Declaration.
+      *
+      * @param doc  the optional comment associated with the declaration.
+      * @param sp1  the position of the first character in the declaration.
+      * @param head the head class atom.
+      * @param body the sequence of body atoms.
+      * @param defs the implemented definitions.
+      * @param sp2  the position of the last character in the declaration.
+      */
+    case class Impl(doc: Option[ParsedAst.Documentation], sp1: SourcePosition, head: ParsedAst.ClassAtom, body: Seq[ParsedAst.ClassAtom], defs: Seq[ParsedAst.Declaration.Def], sp2: SourcePosition) extends ParsedAst.Declaration
+
+  }
 
   /**
     * Literals.
@@ -636,6 +704,26 @@ object ParsedAst {
     case class Assign(exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
+      * HandleWith expression.
+      *
+      * @param sp1      the position of the first character in the expression.
+      * @param base     the base expression to evaluate.
+      * @param handlers the effect handlers.
+      * @param sp2      the position of the last character in the expression.
+      */
+    // TODO: Should handlers be first class or not? Their expressions are already first class.
+    case class HandleWith(sp1: SourcePosition, base: ParsedAst.Expression, handlers: ParsedAst.Expression.Handler, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
+      * Handler expression.
+      *
+      * @param sp1 the position of the first character in the expression.
+      * @param hs  the sequences of effect handlers.
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class Handler(sp1: SourcePosition, hs: Seq[ParsedAst.EffectHandler], sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
       * Existentially Quantified Expression.
       *
       * @param sp1        the position of the first character in the expression.
@@ -1057,6 +1145,16 @@ object ParsedAst {
   case class Case(sp1: SourcePosition, ident: Name.Ident, tpe: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst
 
   /**
+    * Class Atom.
+    *
+    * @param sp1   the position of the first character in the context bound.
+    * @param ident the name of the type class.
+    * @param targs the type arguments.
+    * @param sp2   the position of the last character in the context bound.
+    */
+  case class ClassAtom(sp1: SourcePosition, ident: Name.Ident, targs: Seq[ParsedAst.Type], sp2: SourcePosition) extends ParsedAst
+
+  /**
     * Documentation.
     *
     * @param sp1  the position of the first character in the comment.
@@ -1094,6 +1192,14 @@ object ParsedAst {
     * @param exp   the body expression of the rule.
     */
   case class MatchRule(pat: ParsedAst.Pattern, guard: Option[ParsedAst.Expression], exp: ParsedAst.Expression) extends ParsedAst
+
+  /**
+    * An effect handler.
+    *
+    * @param qname the fully-qualified name of the effect.
+    * @param exp   the effect handler expression.
+    */
+  case class EffectHandler(qname: Name.QName, exp: ParsedAst.Expression) extends ParsedAst
 
   /**
     * Modifier.

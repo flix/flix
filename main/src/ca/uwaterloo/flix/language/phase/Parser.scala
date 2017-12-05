@@ -151,14 +151,18 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   def Declaration: Rule1[ParsedAst.Declaration] = rule {
     Declarations.Namespace |
       Declarations.Constraint |
-      Declarations.Definition |
+      Declarations.Def |
+      Declarations.Eff |
+      Declarations.Handler |
+      Declarations.Law |
       Declarations.Enum |
       Declarations.TypeDecl |
       Declarations.LetLattice |
       Declarations.Relation |
       Declarations.Lattice |
       Declarations.Index |
-      Declarations.Law
+      Declarations.Class |
+      Declarations.Impl
   }
 
   object Declarations {
@@ -167,8 +171,20 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       optWS ~ SP ~ atomic("namespace") ~ WS ~ Names.Namespace ~ optWS ~ '{' ~ zeroOrMore(Declaration) ~ optWS ~ '}' ~ SP ~> ParsedAst.Declaration.Namespace
     }
 
-    def Definition: Rule1[ParsedAst.Declaration.Def] = rule {
+    def Def: Rule1[ParsedAst.Declaration.Def] = rule {
       Documentation ~ Annotations ~ Modifiers ~ SP ~ atomic("def") ~ WS ~ Names.Definition ~ optWS ~ TypeParams ~ FormalParamList ~ optWS ~ ":" ~ optWS ~ TypeAndEffect ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~> ParsedAst.Declaration.Def
+    }
+
+    def Eff: Rule1[ParsedAst.Declaration.Eff] = rule {
+      Documentation ~ Annotations ~ Modifiers ~ SP ~ atomic("eff") ~ WS ~ Names.Eff ~ optWS ~ TypeParams ~ FormalParamList ~ optWS ~ ":" ~ optWS ~ TypeAndEffect ~ SP ~> ParsedAst.Declaration.Eff
+    }
+
+    def Handler: Rule1[ParsedAst.Declaration.Handler] = rule {
+      Documentation ~ Annotations ~ Modifiers ~ SP ~ atomic("handler") ~ WS ~ Names.Handler ~ optWS ~ TypeParams ~ FormalParamList ~ optWS ~ ":" ~ optWS ~ TypeAndEffect ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~> ParsedAst.Declaration.Handler
+    }
+
+    def Sig: Rule1[ParsedAst.Declaration.Sig] = rule {
+      Documentation ~ Annotations ~ Modifiers ~ SP ~ atomic("def") ~ WS ~ Names.Definition ~ optWS ~ TypeParams ~ FormalParamList ~ optWS ~ ":" ~ optWS ~ TypeAndEffect ~ SP ~> ParsedAst.Declaration.Sig
     }
 
     def Law: Rule1[ParsedAst.Declaration.Law] = rule {
@@ -259,6 +275,44 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
       rule {
         optWS ~ SP ~ atomic("let") ~ optWS ~ Type ~ atomic("<>") ~ optWS ~ "=" ~ optWS ~ "(" ~ optWS ~ Elms ~ optWS ~ ")" ~ SP ~> ParsedAst.Declaration.BoundedLattice
+      }
+    }
+
+    def Class: Rule1[ParsedAst.Declaration] = {
+      def TypeParams: Rule1[Seq[Name.Ident]] = rule {
+        "[" ~ optWS ~ oneOrMore(Names.Variable).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]"
+      }
+
+      def ClassBody: Rule1[Seq[ParsedAst.Declaration]] = rule {
+        "{" ~ optWS ~ zeroOrMore(Declarations.Law | Declarations.Sig) ~ optWS ~ "}"
+      }
+
+      def ClassBodyOpt: Rule1[Seq[ParsedAst.Declaration]] = rule {
+        optional(ClassBody) ~> ((o: Option[Seq[ParsedAst.Declaration]]) => o.getOrElse(Seq.empty))
+      }
+
+      rule {
+        Documentation ~ SP ~ atomic("class") ~ WS ~ Names.Class ~ optWS ~ TypeParams ~ optWS ~ ClassBodyOpt ~ SP ~> ParsedAst.Declaration.Class
+      }
+    }
+
+    def Impl: Rule1[ParsedAst.Declaration] = {
+      def ClassAtom: Rule1[ParsedAst.ClassAtom] = rule {
+        SP ~ Names.Class ~ optWS ~ "[" ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]" ~ SP ~> ParsedAst.ClassAtom
+      }
+
+      def Head: Rule1[ParsedAst.ClassAtom] = ClassAtom
+
+      def Body: Rule1[Seq[ParsedAst.ClassAtom]] = rule {
+        optional(atomic(":-") ~ WS ~ oneOrMore(ClassAtom).separatedBy(optWS ~ "," ~ optWS)) ~> ((o: Option[Seq[ParsedAst.ClassAtom]]) => o.getOrElse(Seq.empty))
+      }
+
+      def ImplBody: Rule1[Seq[ParsedAst.Declaration.Def]] = rule {
+        optional("{" ~ optWS ~ zeroOrMore(Declarations.Def).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}") ~> ((o: Option[Seq[ParsedAst.Declaration.Def]]) => o.getOrElse(Seq.empty))
+      }
+
+      rule {
+        Documentation ~ SP ~ atomic("impl") ~ WS ~ Head ~ optWS ~ Body ~ optWS ~ ImplBody ~ SP ~> ParsedAst.Declaration.Impl
       }
     }
 
@@ -516,7 +570,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     def Primary: Rule1[ParsedAst.Expression] = rule {
       LetRec | LetMatch | IfThenElse | Match | LambdaMatch | Switch | Unsafe | Native | Lambda | Tuple |
         ArrayLit | ArrayNew | FNil | FSet | FMap | Literal |
-        Existential | Universal | UnaryLambda | QName | Wild | Tag | SName | Hole | UserError
+        Handler | HandleWith | Existential | Universal | UnaryLambda | QName | Wild | Tag | SName | Hole | UserError
     }
 
     def Literal: Rule1[ParsedAst.Expression.Lit] = rule {
@@ -662,6 +716,24 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def UserError: Rule1[ParsedAst.Expression] = rule {
       SP ~ atomic("???") ~ SP ~> ParsedAst.Expression.UserError
+    }
+
+    def HandleWith: Rule1[ParsedAst.Expression.HandleWith] = rule {
+      SP ~ atomic("handle") ~ WS ~ Expression ~ WS ~ atomic("with") ~ WS ~ Handler ~ SP ~> ParsedAst.Expression.HandleWith
+    }
+
+    def Handler: Rule1[ParsedAst.Expression.Handler] = {
+      def EffectHandler: Rule1[ParsedAst.EffectHandler] = rule {
+        atomic("eff") ~ WS ~ Names.QualifiedEffect ~ optWS ~ "=" ~ optWS ~ Expression ~> ParsedAst.EffectHandler
+      }
+
+      def HandlerBody: Rule1[Seq[ParsedAst.EffectHandler]] = rule {
+        zeroOrMore(EffectHandler).separatedBy(optWS ~ "," ~ optWS)
+      }
+
+      rule {
+        SP ~ atomic("handler") ~ optWS ~ "{" ~ optWS ~ HandlerBody ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.Handler
+      }
     }
 
     def Existential: Rule1[ParsedAst.Expression.Existential] = rule {
@@ -1058,17 +1130,23 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Attribute: Rule1[Name.Ident] = LowerCaseName
 
+    def Class: Rule1[Name.Ident] = UpperCaseName
+
     def Definition: Rule1[Name.Ident] = rule {
       LowerCaseName | GreekName | MathName | OperatorName
     }
 
+    def Eff: Rule1[Name.Ident] = LowerCaseName
+
+    def Handler: Rule1[Name.Ident] = LowerCaseName
+
     def Effect: Rule1[Name.Ident] = UpperCaseName
 
-    def Hole: Rule1[Name.Ident] = rule {
-      LowerCaseName
-    }
+    def Hole: Rule1[Name.Ident] = LowerCaseName
 
     def QualifiedDefinition: Rule1[Name.QName] = LowerCaseQName // TODO: Greek letters?
+
+    def QualifiedEffect: Rule1[Name.QName] = LowerCaseQName
 
     def Table: Rule1[Name.Ident] = UpperCaseName
 

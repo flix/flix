@@ -111,10 +111,10 @@ object Symbol {
   }
 
   /**
-    * Returns the class symbol for the given name `ident`.
+    * Returns the class symbol for the given name `ident` in the given namespace `ns`.
     */
-  def mkClassSym(ident: Ident): ClassSym = {
-    new ClassSym(ident.name, ident.loc)
+  def mkClassSym(ns: NName, ident: Ident): ClassSym = {
+    new ClassSym(ns.parts, ident.name, ident.loc)
   }
 
   /**
@@ -306,24 +306,24 @@ object Symbol {
   /**
     * Class Symbol.
     */
-  final class ClassSym(val name: String, val loc: SourceLocation) {
+  final class ClassSym(val namespace: List[String], val name: String, val loc: SourceLocation) {
     /**
       * Returns `true` if this symbol is equal to `that` symbol.
       */
     override def equals(obj: scala.Any): Boolean = obj match {
-      case that: ClassSym => this.name == that.name
+      case that: ClassSym => this.namespace == that.namespace && this.name == that.name
       case _ => false
     }
 
     /**
       * Returns the hash code of this symbol.
       */
-    override val hashCode: Int = 7 * name.hashCode
+    override val hashCode: Int = 7 * namespace.hashCode + 11 * name.hashCode
 
     /**
       * Human readable representation.
       */
-    override def toString: String = name
+    override def toString: String = if (namespace.isEmpty) name else namespace.mkString("/") + "." + name
   }
 
   /**

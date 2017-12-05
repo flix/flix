@@ -22,9 +22,9 @@ import java.util.logging.{Level, Logger}
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.HoleContext
-import ca.uwaterloo.flix.language.ast.{Symbol, Type}
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
+import ca.uwaterloo.flix.language.ast.{Symbol, Type}
 import ca.uwaterloo.flix.runtime.{Benchmarker, Model, Tester}
 import ca.uwaterloo.flix.util._
 import ca.uwaterloo.flix.util.tc.Show
@@ -386,23 +386,17 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
       case None =>
         // Case 1: Symbol not found.
         terminal.writer().println(s"Undefined symbol: '$sym'.")
-      case Some(defn) => defn.doc match {
-        case None =>
-          // Case 2: Symbol has no documentation.
-          terminal.writer().println(s"No documentation for: '$sym'.")
-        case Some(doc) =>
-          // Case 3: Symbol found and has documentation.
+      case Some(defn) =>
+        // Case 2: Symbol found.
 
-          // Construct a new virtual terminal.
-          val vt = new VirtualTerminal
-          prettyPrintDef(defn, vt)
-          vt << doc.text
-          vt << NewLine
+        // Construct a new virtual terminal.
+        val vt = new VirtualTerminal
+        prettyPrintDef(defn, vt)
+        vt << defn.doc.text
+        vt << NewLine
 
-          // Print the result to the terminal.
-          terminal.writer().print(vt.fmt)
-      }
-
+        // Print the result to the terminal.
+        terminal.writer().print(vt.fmt)
     }
   }
 
