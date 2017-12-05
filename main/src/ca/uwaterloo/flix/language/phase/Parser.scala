@@ -304,11 +304,15 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       def Head: Rule1[ParsedAst.ClassAtom] = ClassAtom
 
       def Body: Rule1[Seq[ParsedAst.ClassAtom]] = rule {
-        zeroOrMore(ClassAtom).separatedBy(optWS ~ "," ~ optWS)
+        optional(atomic(":-") ~ WS ~ oneOrMore(ClassAtom).separatedBy(optWS ~ "," ~ optWS)) ~> ((o: Option[Seq[ParsedAst.ClassAtom]]) => o.getOrElse(Seq.empty))
+      }
+
+      def ImplBody: Rule1[Seq[ParsedAst.Declaration]] = rule {
+        optional("{" ~ optWS ~ zeroOrMore(Declarations.Def).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}") ~> ((o: Option[Seq[ParsedAst.Declaration]]) => o.getOrElse(Seq.empty))
       }
 
       rule {
-        Documentation ~ SP ~ atomic("impl") ~ WS ~ Head ~ optWS ~ Body ~ SP ~> ParsedAst.Declaration.Impl
+        Documentation ~ SP ~ atomic("impl") ~ WS ~ Head ~ optWS ~ Body ~ ImplBody ~ SP ~> ParsedAst.Declaration.Impl
       }
     }
 

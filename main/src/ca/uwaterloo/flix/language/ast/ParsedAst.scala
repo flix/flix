@@ -263,9 +263,10 @@ object ParsedAst {
       * @param sp1  the position of the first character in the declaration.
       * @param head the head class atom.
       * @param body the sequence of body atoms.
+      * @param defs the implemented definitions.
       * @param sp2  the position of the last character in the declaration.
       */
-    case class Impl(doc: Option[ParsedAst.Documentation], sp1: SourcePosition, head: ParsedAst.ClassAtom, body: Seq[ParsedAst.ClassAtom], sp2: SourcePosition) extends ParsedAst.Declaration
+    case class Impl(doc: Option[ParsedAst.Documentation], sp1: SourcePosition, head: ParsedAst.ClassAtom, body: Seq[ParsedAst.ClassAtom], defs: Seq[ParsedAst.Declaration], sp2: SourcePosition) extends ParsedAst.Declaration
 
   }
 
