@@ -136,11 +136,12 @@ object Ast {
   /**
     * Documentation.
     *
-    * @param text the text of the documentation.
-    * @param loc  the source location of the text.
+    * @param lines the lines of the comments.
+    * @param loc   the source location of the text.
     */
-  case class Documentation(text: String, loc: SourceLocation)
-
+  case class Doc(lines: List[String], loc: SourceLocation) {
+    def text: String = lines.mkString("\n")
+  }
 
   /**
     * A common super-type for hooks.

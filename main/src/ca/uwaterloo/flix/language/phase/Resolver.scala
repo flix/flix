@@ -51,7 +51,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
       case (sym, exp0) => Expressions.resolve(exp0, Name.RootNS, prog0).map {
         case exp =>
           // Introduce a synthetic definition for the expression.
-          val doc = None
+          val doc = Ast.Doc(Nil, SourceLocation.Unknown)
           val ann = Ast.Annotations.Empty
           val mod = Ast.Modifiers.Empty
           val tparams = Nil

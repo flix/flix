@@ -73,7 +73,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
       case ParsedAst.Declaration.Def(docOpt, ann, mods, sp1, ident, tparams0, fparams0, tpe, effOpt, exp, sp2) =>
         val loc = mkSL(ident.sp1, ident.sp2)
-        val doc = docOpt.map(d => Ast.Documentation(d.text.mkString(" "), loc))
+        val doc = visitDoc(docOpt, loc)
         val annVal = Annotations.weed(ann)
         val modVal = visitModifiers(mods, legalModifiers = Set(Ast.Modifier.Inline, Ast.Modifier.Public))
         val expVal = Expressions.weed(exp)
@@ -92,7 +92,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
       case ParsedAst.Declaration.Eff(docOpt, ann, mods, sp1, ident, tparams0, fparams0, tpe, effOpt, sp2) =>
         val loc = mkSL(ident.sp1, ident.sp2)
-        val doc = docOpt.map(d => Ast.Documentation(d.text.mkString(" "), loc))
+        val doc = visitDoc(docOpt, loc)
         val annVal = Annotations.weed(ann)
         val modVal = visitModifiers(mods, legalModifiers = Set(Ast.Modifier.Public))
         val tparams = tparams0.toList.map(_.ident)
@@ -113,7 +113,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
       case ParsedAst.Declaration.Law(docOpt, sp1, ident, tparams0, fparams0, tpe, exp, sp2) =>
         val loc = mkSL(sp1, sp2)
-        val doc = docOpt.map(d => Ast.Documentation(d.text.mkString(" "), loc))
+        val doc = visitDoc(docOpt, loc)
         val mod = Ast.Modifiers(Ast.Modifier.Public :: Nil)
 
         /*
@@ -130,7 +130,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         }
 
       case ParsedAst.Declaration.Enum(docOpt, mods, sp1, ident, tparams0, cases, sp2) =>
-        val doc = docOpt.map(d => Ast.Documentation(d.text.mkString(" "), mkSL(d.sp1, d.sp2)))
+        val doc = visitDoc(docOpt, mkSL(sp1, sp2))
         val modVal = visitModifiers(mods, legalModifiers = Set(Ast.Modifier.Public))
         val tparams = tparams0.toList.map(_.ident)
 
@@ -158,7 +158,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         /*
          * Rewrites a type alias to a singleton enum declaration.
          */
-        val doc = docOpt.map(d => Ast.Documentation(d.text.mkString(" "), mkSL(d.sp1, d.sp2)))
+        val doc = visitDoc(docOpt, mkSL(sp1, sp2))
         val modVal = visitModifiers(mods, legalModifiers = Set(Ast.Modifier.Public))
 
         modVal map {
@@ -168,7 +168,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         }
 
       case ParsedAst.Declaration.Relation(docOpt, sp1, ident, attrs, sp2) =>
-        val doc = docOpt.map(d => Ast.Documentation(d.text.mkString(" "), mkSL(d.sp1, d.sp2)))
+        val doc = visitDoc(docOpt, mkSL(sp1, sp2))
 
         /*
          * Check for `EmptyRelation`
@@ -184,7 +184,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         }
 
       case ParsedAst.Declaration.Lattice(docOpt, sp1, ident, attrs, sp2) =>
-        val doc = docOpt.map(d => Ast.Documentation(d.text.mkString(" "), mkSL(d.sp1, d.sp2)))
+        val doc = visitDoc(docOpt, mkSL(sp1, sp2))
 
         /*
          * Check for `EmptyLattice`.
@@ -240,12 +240,12 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         }
 
       case ParsedAst.Declaration.Class(docOpt, sp1, ident, tparams, decls, sp2) =>
-        val doc = docOpt.map(d => Ast.Documentation(d.text.mkString(" "), mkSL(d.sp1, d.sp2)))
+        val doc = visitDoc(docOpt, mkSL(sp1, sp2))
         val loc = mkSL(sp1, sp2)
 
         val declsVal = decls.toList.collect {
           case sig: ParsedAst.Declaration.Sig => visitSig(sig)
-            // TODO: Laws
+          // TODO: Laws
         }
 
         @@(declsVal) map {
@@ -1189,12 +1189,20 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   }
 
   /**
+    * Weeds the given documentation.
+    */
+  private def visitDoc(docOpt: Option[ParsedAst.Documentation], loc: SourceLocation): Ast.Doc = docOpt match {
+    case None => Ast.Doc(Nil, loc)
+    case Some(lines) => Ast.Doc(lines.text.toList, loc)
+  }
+  
+  /**
     * Weeds the given signature `sig`.
     */
   private def visitSig(sig: ParsedAst.Declaration.Sig): Validation[WeededAst.Declaration.Sig, WeederError] = sig match {
     case ParsedAst.Declaration.Sig(docOpt, ann0, mod0, sp1, ident, tparams0, fparams0, tpe, effOpt, sp2) =>
       val loc = mkSL(ident.sp1, ident.sp2)
-      val doc = docOpt.map(d => Ast.Documentation(d.text.mkString(" "), loc))
+      val doc = visitDoc(docOpt, loc)
       val annVal = Annotations.weed(ann0)
       // TODO: legalAnnotations
       val modVal = visitModifiers(mod0, legalModifiers = Set.empty)
