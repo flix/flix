@@ -249,12 +249,13 @@ object ParsedAst {
       *
       * @param doc     the optional comment associated with the declaration.
       * @param sp1     the position of the first character in the declaration.
-      * @param ident   the name of the type class.
+      * @param mod     the associated modifiers.
+      * @param ident   the name of the class.
       * @param tparams the type parameters of the type class.
       * @param decls   the declarations of the type class.
       * @param sp2     the position of the last character in the declaration.
       */
-    case class Class(doc: ParsedAst.Doc, sp1: SourcePosition, ident: Name.Ident, tparams: Seq[Name.Ident], decls: Seq[ParsedAst.Declaration], sp2: SourcePosition) extends ParsedAst.Declaration
+    case class Class(doc: ParsedAst.Doc, sp1: SourcePosition, mod: Seq[ParsedAst.Modifier], ident: Name.Ident, tparams: Seq[Name.Ident], decls: Seq[ParsedAst.Declaration], sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
       * Impl Declaration.

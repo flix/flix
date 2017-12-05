@@ -284,7 +284,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       def ClassBody: Rule1[Seq[ParsedAst.Declaration]] = rule {
-        "{" ~ optWS ~ zeroOrMore(Declarations.Law | Declarations.Sig) ~ optWS ~ "}"
+        "{" ~ optWS ~ zeroOrMore(Declarations.Sig | Declarations.Law) ~ optWS ~ "}"
       }
 
       def ClassBodyOpt: Rule1[Seq[ParsedAst.Declaration]] = rule {
@@ -292,7 +292,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       rule {
-        Documentation ~ SP ~ atomic("class") ~ WS ~ Names.Class ~ optWS ~ TypeParams ~ optWS ~ ClassBodyOpt ~ SP ~> ParsedAst.Declaration.Class
+        Documentation ~ SP ~ Modifiers ~ atomic("class") ~ WS ~ Names.Class ~ optWS ~ TypeParams ~ optWS ~ ClassBodyOpt ~ SP ~> ParsedAst.Declaration.Class
       }
     }
 
