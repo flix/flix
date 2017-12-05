@@ -252,6 +252,10 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           case ds => List(WeededAst.Declaration.Class(doc, ident, tparams.toList, ds, loc))
         }
 
+      case ParsedAst.Declaration.Impl(docOpt, sp1, head, bodu, defs, sp2) =>
+        // TODO
+        Nil.toSuccess
+
       case ParsedAst.Declaration.Sig(docOpt, ann, mods, sp1, ident, tparams0, fparams0, tpe, effOpt, sp2) =>
         throw InternalCompilerException(s"Unexpected declaration")
     }
@@ -1326,6 +1330,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.Ref(sp1, _, _) => sp1
     case ParsedAst.Expression.Deref(sp1, _, _) => sp1
     case ParsedAst.Expression.Assign(e1, _, _) => leftMostSourcePosition(e1)
+    case ParsedAst.Expression.HandleWith(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Handler(sp1, _, _) => sp1
     case ParsedAst.Expression.Existential(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Universal(sp1, _, _, _) => sp1
