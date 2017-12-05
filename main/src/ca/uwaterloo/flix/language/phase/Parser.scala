@@ -161,7 +161,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       Declarations.Relation |
       Declarations.Lattice |
       Declarations.Index |
-      Declarations.Class
+      Declarations.Class |
+      Declarations.Impl
   }
 
   object Declarations {
@@ -292,6 +293,22 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
       rule {
         Documentation ~ SP ~ atomic("class") ~ WS ~ Names.Class ~ optWS ~ TypeParams ~ optWS ~ ClassBodyOpt ~ SP ~> ParsedAst.Declaration.Class
+      }
+    }
+
+    def Impl: Rule1[ParsedAst.Declaration] = {
+      def ClassAtom: Rule1[ParsedAst.ClassAtom] = rule {
+        SP ~ Names.Class ~ optWS ~ "[" ~ optWS ~ zeroOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]" ~ SP ~> ParsedAst.ClassAtom
+      }
+
+      def Head: Rule1[ParsedAst.ClassAtom] = ClassAtom
+
+      def Body: Rule1[Seq[ParsedAst.ClassAtom]] = rule {
+        zeroOrMore(ClassAtom).separatedBy(optWS ~ "," ~ optWS)
+      }
+
+      rule {
+        Documentation ~ SP ~ atomic("impl") ~ WS ~ Head ~ optWS ~ Body ~ SP ~> ParsedAst.Declaration.Impl
       }
     }
 
@@ -697,7 +714,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       SP ~ atomic("???") ~ SP ~> ParsedAst.Expression.UserError
     }
 
-    def HandleWith: Rule1[ParsedAst.Expression.HandleWith] =rule {
+    def HandleWith: Rule1[ParsedAst.Expression.HandleWith] = rule {
       SP ~ atomic("handle") ~ WS ~ Expression ~ WS ~ atomic("with") ~ WS ~ Handler ~ SP ~> ParsedAst.Expression.HandleWith
     }
 

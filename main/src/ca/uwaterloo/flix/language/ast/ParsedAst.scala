@@ -256,6 +256,17 @@ object ParsedAst {
       */
     case class Class(doc: Option[ParsedAst.Documentation], sp1: SourcePosition, ident: Name.Ident, tparams: Seq[Name.Ident], decls: Seq[ParsedAst.Declaration], sp2: SourcePosition) extends ParsedAst.Declaration
 
+    /**
+      * Impl Declaration.
+      *
+      * @param doc  the optional comment associated with the declaration.
+      * @param sp1  the position of the first character in the declaration.
+      * @param head the head class atom.
+      * @param body the sequence of body atoms.
+      * @param sp2  the position of the last character in the declaration.
+      */
+    case class Impl(doc: Option[ParsedAst.Documentation], sp1: SourcePosition, head: ParsedAst.ClassAtom, body: Seq[ParsedAst.ClassAtom], sp2: SourcePosition) extends ParsedAst.Declaration
+
   }
 
   /**
@@ -1140,6 +1151,16 @@ object ParsedAst {
     * @param sp2  the position of the last character in the comment.
     */
   case class Documentation(sp1: SourcePosition, text: Seq[String], sp2: SourcePosition) extends ParsedAst
+
+  /**
+    * Class Atom.
+    *
+    * @param sp1   the position of the first character in the context bound.
+    * @param ident the name of the type class.
+    * @param targs the type arguments.
+    * @param sp2   the position of the last character in the context bound.
+    */
+  case class ClassAtom(sp1: SourcePosition, ident: Name.Ident, targs: Seq[ParsedAst.Type], sp2: SourcePosition) extends ParsedAst
 
   /**
     * Context Bound.
