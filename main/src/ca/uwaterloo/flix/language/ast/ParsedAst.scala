@@ -115,7 +115,7 @@ object ParsedAst {
       * @param exp        the expression.
       * @param sp2        the position of the last character in the declaration.
       */
-    case class Def(doc: Option[ParsedAst.Documentation], ann: Seq[ParsedAst.AnnotationOrProperty], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: Seq[ParsedAst.ContextBound], fparamsOpt: Seq[ParsedAst.FormalParam], tpe: ParsedAst.Type, eff: Option[ParsedAst.Effect], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Declaration
+    case class Def(doc: ParsedAst.Doc, ann: Seq[ParsedAst.AnnotationOrProperty], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: Seq[ParsedAst.ContextBound], fparamsOpt: Seq[ParsedAst.FormalParam], tpe: ParsedAst.Type, eff: Option[ParsedAst.Effect], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
       * Effect Declaration.
@@ -130,7 +130,7 @@ object ParsedAst {
       * @param tpe        the declared type.
       * @param sp2        the position of the last character in the declaration.
       */
-    case class Eff(doc: Option[ParsedAst.Documentation], ann: Seq[ParsedAst.AnnotationOrProperty], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: Seq[ParsedAst.ContextBound], fparamsOpt: Seq[ParsedAst.FormalParam], tpe: ParsedAst.Type, eff: Option[ParsedAst.Effect], sp2: SourcePosition) extends ParsedAst.Declaration
+    case class Eff(doc: ParsedAst.Doc, ann: Seq[ParsedAst.AnnotationOrProperty], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: Seq[ParsedAst.ContextBound], fparamsOpt: Seq[ParsedAst.FormalParam], tpe: ParsedAst.Type, eff: Option[ParsedAst.Effect], sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
       * Handler Declaration.
@@ -145,7 +145,7 @@ object ParsedAst {
       * @param tpe        the declared type.
       * @param sp2        the position of the last character in the declaration.
       */
-    case class Handler(doc: Option[ParsedAst.Documentation], ann: Seq[ParsedAst.AnnotationOrProperty], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: Seq[ParsedAst.ContextBound], fparamsOpt: Seq[ParsedAst.FormalParam], tpe: ParsedAst.Type, eff: Option[ParsedAst.Effect], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Declaration
+    case class Handler(doc: ParsedAst.Doc, ann: Seq[ParsedAst.AnnotationOrProperty], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: Seq[ParsedAst.ContextBound], fparamsOpt: Seq[ParsedAst.FormalParam], tpe: ParsedAst.Type, eff: Option[ParsedAst.Effect], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
       * Signature Declaration.
@@ -160,7 +160,7 @@ object ParsedAst {
       * @param tpe        the declared type.
       * @param sp2        the position of the last character in the declaration.
       */
-    case class Sig(doc: Option[ParsedAst.Documentation], ann: Seq[ParsedAst.AnnotationOrProperty], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: Seq[ParsedAst.ContextBound], fparamsOpt: Seq[ParsedAst.FormalParam], tpe: ParsedAst.Type, eff: Option[ParsedAst.Effect], sp2: SourcePosition) extends ParsedAst.Declaration
+    case class Sig(doc: ParsedAst.Doc, ann: Seq[ParsedAst.AnnotationOrProperty], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: Seq[ParsedAst.ContextBound], fparamsOpt: Seq[ParsedAst.FormalParam], tpe: ParsedAst.Type, eff: Option[ParsedAst.Effect], sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
       * Law Declaration.
@@ -173,7 +173,7 @@ object ParsedAst {
       * @param exp        the expression.
       * @param sp2        the position of the last character in the declaration.
       */
-    case class Law(doc: Option[ParsedAst.Documentation], sp1: SourcePosition, ident: Name.Ident, tparams: Seq[ParsedAst.ContextBound], fparamsOpt: Seq[ParsedAst.FormalParam], tpe: ParsedAst.Type, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Declaration
+    case class Law(doc: ParsedAst.Doc, sp1: SourcePosition, ident: Name.Ident, tparams: Seq[ParsedAst.ContextBound], fparamsOpt: Seq[ParsedAst.FormalParam], tpe: ParsedAst.Type, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
       * Enum Declaration.
@@ -186,7 +186,7 @@ object ParsedAst {
       * @param cases   the cases of the enum.
       * @param sp2     the position of the last character in the declaration.
       */
-    case class Enum(doc: Option[ParsedAst.Documentation], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: Seq[ParsedAst.ContextBound], cases: Seq[ParsedAst.Case], sp2: SourcePosition) extends ParsedAst.Declaration
+    case class Enum(doc: ParsedAst.Doc, mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: Seq[ParsedAst.ContextBound], cases: Seq[ParsedAst.Case], sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
       * Type Declaration. A type declaration is syntactic sugar for a singleton enum declaration.
@@ -198,7 +198,7 @@ object ParsedAst {
       * @param caze  the singleton case of the type.
       * @param sp2   the position of the last character in the declaration.
       */
-    case class Type(doc: Option[ParsedAst.Documentation], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, caze: ParsedAst.Case, sp2: SourcePosition) extends ParsedAst.Declaration
+    case class Type(doc: ParsedAst.Doc, mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, caze: ParsedAst.Case, sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
       * Relation Declaration.
@@ -209,7 +209,7 @@ object ParsedAst {
       * @param attr  the attributes (columns) of the relation.
       * @param sp2   the position of the last character in the declaration.
       */
-    case class Relation(doc: Option[ParsedAst.Documentation], sp1: SourcePosition, ident: Name.Ident, attr: Seq[ParsedAst.Attribute], sp2: SourcePosition) extends ParsedAst.Declaration
+    case class Relation(doc: ParsedAst.Doc, sp1: SourcePosition, ident: Name.Ident, attr: Seq[ParsedAst.Attribute], sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
       * Lattice Declaration.
@@ -220,7 +220,7 @@ object ParsedAst {
       * @param attr  the attributes (columns) of the relation.
       * @param sp2   the position of the last character in the declaration.
       */
-    case class Lattice(doc: Option[ParsedAst.Documentation], sp1: SourcePosition, ident: Name.Ident, attr: Seq[ParsedAst.Attribute], sp2: SourcePosition) extends ParsedAst.Declaration
+    case class Lattice(doc: ParsedAst.Doc, sp1: SourcePosition, ident: Name.Ident, attr: Seq[ParsedAst.Attribute], sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
       * Index Declaration.
@@ -254,7 +254,7 @@ object ParsedAst {
       * @param decls   the declarations of the type class.
       * @param sp2     the position of the last character in the declaration.
       */
-    case class Class(doc: Option[ParsedAst.Documentation], sp1: SourcePosition, ident: Name.Ident, tparams: Seq[Name.Ident], decls: Seq[ParsedAst.Declaration], sp2: SourcePosition) extends ParsedAst.Declaration
+    case class Class(doc: ParsedAst.Doc, sp1: SourcePosition, ident: Name.Ident, tparams: Seq[Name.Ident], decls: Seq[ParsedAst.Declaration], sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
       * Impl Declaration.
@@ -266,7 +266,7 @@ object ParsedAst {
       * @param defs the implemented definitions.
       * @param sp2  the position of the last character in the declaration.
       */
-    case class Impl(doc: Option[ParsedAst.Documentation], sp1: SourcePosition, head: ParsedAst.ClassAtom, body: Seq[ParsedAst.ClassAtom], defs: Seq[ParsedAst.Declaration.Def], sp2: SourcePosition) extends ParsedAst.Declaration
+    case class Impl(doc: ParsedAst.Doc, sp1: SourcePosition, head: ParsedAst.ClassAtom, body: Seq[ParsedAst.ClassAtom], defs: Seq[ParsedAst.Declaration.Def], sp2: SourcePosition) extends ParsedAst.Declaration
 
   }
 
@@ -1157,11 +1157,11 @@ object ParsedAst {
   /**
     * Documentation.
     *
-    * @param sp1  the position of the first character in the comment.
-    * @param text the text of the comment.
-    * @param sp2  the position of the last character in the comment.
+    * @param sp1   the position of the first character in the comment.
+    * @param lines the lines of the comment.
+    * @param sp2   the position of the last character in the comment.
     */
-  case class Documentation(sp1: SourcePosition, text: Seq[String], sp2: SourcePosition) extends ParsedAst
+  case class Doc(sp1: SourcePosition, lines: Seq[String], sp2: SourcePosition) extends ParsedAst
 
   /**
     * Context Bound.

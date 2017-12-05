@@ -1197,20 +1197,24 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   /**
     * Optionally a parses a documentation comment.
     */
-  def Documentation: Rule1[Option[ParsedAst.Documentation]] = {
+  def Documentation: Rule1[ParsedAst.Doc] = {
     // Matches real whitespace.
     def PureWS: Rule0 = rule {
       zeroOrMore(" " | "\t" | NewLine)
     }
 
     // Matches triple dashed comments.
-    def TripleSlash: Rule1[ParsedAst.Documentation] = rule {
-      SP ~ oneOrMore(PureWS ~ "///" ~ capture(zeroOrMore(!NewLine ~ ANY)) ~ (NewLine | EOI)) ~ SP ~> ParsedAst.Documentation
+    def TripleSlash: Rule1[Seq[String]] = rule {
+      oneOrMore(PureWS ~ "///" ~ capture(zeroOrMore(!NewLine ~ ANY)) ~ (NewLine | EOI))
     }
 
     // Optionally matches a triple dashed comment and then any whitespace.
     rule {
-      optional(TripleSlash) ~ optWS
+      SP ~ optional(TripleSlash) ~ SP ~ optWS ~> (
+        (sp1: SourcePosition, o: Option[Seq[String]], sp2: SourcePosition) => o match {
+          case None => ParsedAst.Doc(sp1, Seq.empty, sp2)
+          case Some(lines) => ParsedAst.Doc(sp1, lines, sp2)
+        })
     }
   }
 
