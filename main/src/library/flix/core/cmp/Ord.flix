@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-class Ord[a] <= Eq[a] {
+pub class Ord[a] <= Eq[a] {
 
     ///
     /// Returns `true` if `x` is less than or equal to `y`.

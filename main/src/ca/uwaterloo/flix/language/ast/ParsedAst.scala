@@ -251,7 +251,7 @@ object ParsedAst {
       * @param sp1   the position of the first character in the declaration.
       * @param mod   the associated modifiers.
       * @param cc    the class constraint.
-      * @param decls the declarations of the type class.
+      * @param decls the declarations of the class.
       * @param sp2   the position of the last character in the declaration.
       */
     case class Class(doc: ParsedAst.Doc, sp1: SourcePosition, mod: Seq[ParsedAst.Modifier], cc: ParsedAst.ClassConstraint, decls: Seq[ParsedAst.Declaration], sp2: SourcePosition) extends ParsedAst.Declaration
@@ -259,14 +259,13 @@ object ParsedAst {
     /**
       * Impl Declaration.
       *
-      * @param doc  the optional comment associated with the declaration.
-      * @param sp1  the position of the first character in the declaration.
-      * @param head the head class atom.
-      * @param body the sequence of body atoms.
-      * @param defs the implemented definitions.
-      * @param sp2  the position of the last character in the declaration.
+      * @param doc   the optional comment associated with the declaration.
+      * @param sp1   the position of the first character in the declaration.
+      * @param ic    the impl constraint.
+      * @param decls the declarations of the instance.
+      * @param sp2   the position of the last character in the declaration.
       */
-    case class Impl(doc: ParsedAst.Doc, sp1: SourcePosition, head: ParsedAst.ComplexClassAtom, body: Seq[ParsedAst.ComplexClassAtom], defs: Seq[ParsedAst.Declaration.Def], sp2: SourcePosition) extends ParsedAst.Declaration
+    case class Impl(doc: ParsedAst.Doc, sp1: SourcePosition, ic: ParsedAst.ImplConstraint, decls: Seq[ParsedAst.Declaration.Def], sp2: SourcePosition) extends ParsedAst.Declaration
 
   }
 
@@ -1153,22 +1152,30 @@ object ParsedAst {
   case class ClassConstraint(head: ParsedAst.SimpleClassAtom, body: Seq[ParsedAst.SimpleClassAtom]) extends ParsedAst
 
   /**
+    * Impl Constraint.
+    *
+    * @param head the head atom of the constraint.
+    * @param body the sequence of body atoms of the constraint.
+    */
+  case class ImplConstraint(head: ParsedAst.ComplexClassAtom, body: Seq[ParsedAst.ComplexClassAtom]) extends ParsedAst
+
+  /**
     * Simple Class Atom.
     *
-    * @param sp1   the position of the first character in the context bound.
+    * @param sp1   the position of the first character in the atom.
     * @param ident the class name.
     * @param targs the type variables.
-    * @param sp2   the position of the last character in the context bound.
+    * @param sp2   the position of the last character in the atom.
     */
   case class SimpleClassAtom(sp1: SourcePosition, ident: Name.Ident, targs: Seq[Name.Ident], sp2: SourcePosition) extends ParsedAst
 
   /**
     * Complex Class Atom.
     *
-    * @param sp1   the position of the first character in the context bound.
-    * @param ident the name of the type class.
+    * @param sp1   the position of the first character in the atom.
+    * @param ident the class name.
     * @param targs the type arguments.
-    * @param sp2   the position of the last character in the context bound.
+    * @param sp2   the position of the last character in the atom.
     */
   case class ComplexClassAtom(sp1: SourcePosition, ident: Name.Ident, targs: Seq[ParsedAst.Type], sp2: SourcePosition) extends ParsedAst
 

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-class Eq[a] {
+pub class Eq[a] {
 
     ///
     /// Returns `true` if `x` is equal to `y`.

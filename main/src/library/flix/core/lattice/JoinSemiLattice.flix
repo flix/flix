@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-class JoinSemiLattice[a] {
+pub class JoinSemiLattice[a] {
 
     ///
     /// Returns the least upper bound of `x` and `y`.
