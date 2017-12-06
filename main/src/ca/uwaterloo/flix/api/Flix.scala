@@ -87,7 +87,9 @@ class Flix {
     "TotalOrder.flix" -> LocalResource.get("/library/TotalOrder.flix"),
     "Tuple.flix" -> LocalResource.get("/library/Tuple.flix"),
 
-    "flix/core/Eq.flix" -> LocalResource.get("/library/flix/core/Eq.flix")
+    "flix/core/cmp/Eq.flix" -> LocalResource.get("/library/flix/core/cmp/Eq.flix"),
+    "flix/core/cmp/Ord.flix" -> LocalResource.get("/library/flix/core/cmp/Ord.flix"),
+    "flix/core/lattice/JoinSemiLattice.flix" -> LocalResource.get("/library/flix/core/lattice/JoinSemiLattice.flix"),
   )
 
   /**

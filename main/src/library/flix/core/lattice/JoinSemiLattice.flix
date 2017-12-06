@@ -13,18 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-class Eq[a] {
+
+class JoinSemiLattice[a] {
 
     ///
-    /// Returns `true` if `x` is equal to `y`.
+    /// Returns the least upper bound of `x` and `y`.
     ///
-    def equal(x: a, y: a): Bool // TODO: Name
+    def lub(x: a, y: a): a
 
-    ///
-    /// Reflexivity: An element `a` must be equal to itself.
-    ///
-    law reflexive(): Bool = ∀(x: a). equal(x, x)
-
-    // TODO: More laws
+    // TODO: laws
 
 }
