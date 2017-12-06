@@ -261,11 +261,12 @@ object ParsedAst {
       *
       * @param doc   the optional comment associated with the declaration.
       * @param sp1   the position of the first character in the declaration.
+      * @param mod   the associated modifiers.
       * @param ic    the impl constraint.
       * @param decls the declarations of the instance.
       * @param sp2   the position of the last character in the declaration.
       */
-    case class Impl(doc: ParsedAst.Doc, sp1: SourcePosition, ic: ParsedAst.ImplConstraint, decls: Seq[ParsedAst.Declaration.Def], sp2: SourcePosition) extends ParsedAst.Declaration
+    case class Impl(doc: ParsedAst.Doc, sp1: SourcePosition, mod: Seq[ParsedAst.Modifier], ic: ParsedAst.ImplConstraint, decls: Seq[ParsedAst.Declaration.Def], sp2: SourcePosition) extends ParsedAst.Declaration
 
   }
 

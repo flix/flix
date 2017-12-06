@@ -280,18 +280,18 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Class: Rule1[ParsedAst.Declaration] = {
       def SimpleClassAtom: Rule1[ParsedAst.SimpleClassAtom] = rule {
-        SP ~ Names.Class ~ optWS ~"[" ~ optWS ~ oneOrMore(Names.Variable).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]" ~ SP ~> ParsedAst.SimpleClassAtom
+        SP ~ Names.Class ~ optWS ~ "[" ~ optWS ~ oneOrMore(Names.Variable).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]" ~ SP ~> ParsedAst.SimpleClassAtom
       }
 
-      def Head: Rule1[ParsedAst.SimpleClassAtom] = SimpleClassAtom
+      def HeadAtom: Rule1[ParsedAst.SimpleClassAtom] = SimpleClassAtom
 
-      def Body: Rule1[Seq[ParsedAst.SimpleClassAtom]] = rule {
+      def BodyAtom: Rule1[Seq[ParsedAst.SimpleClassAtom]] = rule {
         optional(optWS ~ atomic("<=") ~ optWS ~ oneOrMore(SimpleClassAtom).separatedBy(optWS ~ "," ~ optWS)) ~> (
           (o: Option[Seq[ParsedAst.SimpleClassAtom]]) => o.getOrElse(Seq.empty))
       }
 
       def ClassConstraint: Rule1[ParsedAst.ClassConstraint] = rule {
-        Head ~ optWS ~ Body ~> ParsedAst.ClassConstraint
+        HeadAtom ~ optWS ~ BodyAtom ~> ParsedAst.ClassConstraint
       }
 
       def ClassBody: Rule1[Seq[ParsedAst.Declaration]] = rule {
@@ -312,15 +312,15 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         SP ~ Names.Class ~ optWS ~ "[" ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]" ~ SP ~> ParsedAst.ComplexClassAtom
       }
 
-      def Head: Rule1[ParsedAst.ComplexClassAtom] = ComplexClassAtom
+      def HeadAtom: Rule1[ParsedAst.ComplexClassAtom] = ComplexClassAtom
 
-      def Body: Rule1[Seq[ParsedAst.ComplexClassAtom]] = rule {
+      def BodyAtom: Rule1[Seq[ParsedAst.ComplexClassAtom]] = rule {
         optional(atomic("<=") ~ WS ~ oneOrMore(ComplexClassAtom).separatedBy(optWS ~ "," ~ optWS)) ~> (
           (o: Option[Seq[ParsedAst.ComplexClassAtom]]) => o.getOrElse(Seq.empty))
       }
 
       def ImplConstraint: Rule1[ParsedAst.ImplConstraint] = rule {
-        Head ~ optWS ~ Body ~> ParsedAst.ImplConstraint
+        HeadAtom ~ optWS ~ BodyAtom ~> ParsedAst.ImplConstraint
       }
 
       def ImplBody: Rule1[Seq[ParsedAst.Declaration.Def]] = rule {
@@ -329,7 +329,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       rule {
-        Documentation ~ SP ~ atomic("impl") ~ WS ~ ImplConstraint ~ optWS ~ ImplBody ~ SP ~> ParsedAst.Declaration.Impl
+        Documentation ~ SP ~ Modifiers ~ atomic("impl") ~ WS ~ ImplConstraint ~ optWS ~ ImplBody ~ SP ~> ParsedAst.Declaration.Impl
       }
     }
 
