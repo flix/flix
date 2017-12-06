@@ -239,7 +239,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           case _ => IllegalLattice(mkSL(sp1, sp2)).toFailure
         }
 
-      case ParsedAst.Declaration.Class(doc0, sp1, mod, head, body, decls, sp2) =>
+      case ParsedAst.Declaration.Class(doc0, sp1, mod, cc, decls, sp2) =>
         val doc = visitDoc(doc0)
         val loc = mkSL(sp1, sp2)
 

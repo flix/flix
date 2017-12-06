@@ -52,7 +52,7 @@ object WeededAst {
 
     case class Class(doc: Ast.Doc, ident: Name.Ident, tparams: List[Name.Ident], decls: List[WeededAst.Declaration], loc: SourceLocation) extends WeededAst.Declaration
 
-    case class Impl(doc: Ast.Doc, head: ParsedAst.ClassAtom, body: Seq[ParsedAst.ClassAtom], defs: Seq[WeededAst.Declaration.Def], loc: SourceLocation) extends WeededAst.Declaration
+    case class Impl(doc: Ast.Doc, head: ParsedAst.ComplexClassAtom, body: Seq[ParsedAst.ComplexClassAtom], defs: Seq[WeededAst.Declaration.Def], loc: SourceLocation) extends WeededAst.Declaration
 
   }
 
