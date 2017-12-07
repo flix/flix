@@ -239,24 +239,32 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           case _ => IllegalLattice(mkSL(sp1, sp2)).toFailure
         }
 
-      case ParsedAst.Declaration.Class(doc0, sp1, mod, cc, decls, sp2) =>
-        val doc = visitDoc(doc0)
-        val loc = mkSL(sp1, sp2)
+      case ParsedAst.Declaration.Class(doc0, sp1, mod0, cc, decls, sp2) =>
+        val modVal = visitModifiers(mod0, legalModifiers = Set(Ast.Modifier.Public))
+        val ccVal = visitClassConstraint(cc)
 
-        val declsVal = decls.toList.collect {
+        // Collect all signatures.
+        val sigsVal = @@(decls.toList.collect {
           case sig: ParsedAst.Declaration.Sig => visitSig(sig)
-          // TODO: Laws
-        }
+        })
 
-        @@(declsVal) map {
-          case ds => Nil
+        // Collect all laws.
+        // TODO
+
+        @@(modVal, ccVal, sigsVal) map {
+          case (mod, (head, body), sigs) =>
+            val doc = visitDoc(doc0)
+            val loc = mkSL(sp1, sp2)
+            List(
+              WeededAst.Declaration.Class(doc, mod, head, body, sigs, loc)
+            )
         }
 
       case ParsedAst.Declaration.Impl(doc0, mod, sp1, ic, defs, sp2) =>
         // TODO
         Nil.toSuccess
 
-      case ParsedAst.Declaration.Forbid(doc0, sp, ic, sp2) =>
+      case ParsedAst.Declaration.Disallow(doc0, sp, ic, sp2) =>
         // TODO
         Nil.toSuccess
 
@@ -1196,6 +1204,25 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     * Weeds the given documentation.
     */
   private def visitDoc(doc0: ParsedAst.Doc): Ast.Doc = Ast.Doc(doc0.lines.toList, mkSL(doc0.sp1, doc0.sp2))
+
+  /**
+    * Weeds the given class constraint `cc`.
+    */
+  private def visitClassConstraint(cc: ParsedAst.ClassConstraint): Validation[(WeededAst.SimpleClass, List[WeededAst.SimpleClass]), WeederError] = cc match {
+    case ParsedAst.ClassConstraint(head0, body0) =>
+      val headVal = visitSimpleClass(head0)
+      val bodyVal = @@(body0 map visitSimpleClass)
+      @@(headVal, bodyVal)
+  }
+
+  /**
+    * Weeds the given simple class atom `a`.
+    */
+  private def visitSimpleClass(a: ParsedAst.SimpleClass): Validation[WeededAst.SimpleClass, WeederError] = a match {
+    case ParsedAst.SimpleClass(sp1, ident, targs, sp2) =>
+      val loc = mkSL(sp1, sp2)
+      WeededAst.SimpleClass(ident, targs.toList, loc).toSuccess
+  }
 
   /**
     * Weeds the given signature `sig`.

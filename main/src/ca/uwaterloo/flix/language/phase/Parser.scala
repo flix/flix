@@ -163,7 +163,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       Declarations.Index |
       Declarations.Class |
       Declarations.Impl |
-      Declarations.Forbid
+      Declarations.Disallow
   }
 
   object Declarations {
@@ -326,13 +326,13 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
     }
 
-    def Forbid: Rule1[ParsedAst.Declaration] = {
+    def Disallow: Rule1[ParsedAst.Declaration] = {
       def IntegrityConstraint: Rule1[ParsedAst.IntegrityConstraint] = rule {
         oneOrMore(PositiveClassAtom | NegativeClassAtom).separatedBy(optWS ~ "," ~ optWS) ~> ParsedAst.IntegrityConstraint
       }
 
       rule {
-        Documentation ~ SP ~ atomic("forbid") ~ WS ~ IntegrityConstraint ~ SP ~> ParsedAst.Declaration.Forbid
+        Documentation ~ SP ~ atomic("disallow") ~ WS ~ IntegrityConstraint ~ SP ~> ParsedAst.Declaration.Disallow
       }
     }
 

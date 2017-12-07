@@ -50,9 +50,12 @@ object WeededAst {
 
     case class Lattice(tpe: WeededAst.Type, bot: WeededAst.Expression, top: WeededAst.Expression, equ: WeededAst.Expression, leq: WeededAst.Expression, lub: WeededAst.Expression, glb: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Declaration
 
-    case class Class(doc: Ast.Doc, ident: Name.Ident, tparams: List[Name.Ident], decls: List[WeededAst.Declaration], loc: SourceLocation) extends WeededAst.Declaration
+    // TODO: Add laws ...
+    case class Class(doc: Ast.Doc, mod: Ast.Modifiers, head: WeededAst.SimpleClass, body: List[WeededAst.SimpleClass], sigs: List[WeededAst.Declaration.Sig], loc: SourceLocation) extends WeededAst.Declaration
 
-    case class Impl(doc: Ast.Doc, head: ParsedAst.ComplexClass, body: Seq[ParsedAst.ComplexClass], defs: Seq[WeededAst.Declaration.Def], loc: SourceLocation) extends WeededAst.Declaration
+    case class Impl(doc: Ast.Doc, mod: Ast.Modifiers, head: WeededAst.ComplexClass, body: Seq[WeededAst.ComplexClass], defs: Seq[WeededAst.Declaration.Def], loc: SourceLocation) extends WeededAst.Declaration
+
+    case class Disallow(doc: Ast.Doc, body: Seq[WeededAst.ComplexClass], loc: SourceLocation) extends WeededAst.Declaration
 
   }
 
@@ -254,7 +257,9 @@ object WeededAst {
 
   case class Case(enum: Name.Ident, tag: Name.Ident, tpe: WeededAst.Type) extends WeededAst
 
-  case class ClassAtom(ident: Name.Ident, targs: List[WeededAst.Type], loc: SourceLocation) extends WeededAst
+  case class SimpleClass(ident: Name.Ident, targs: List[Name.Ident], loc: SourceLocation) extends WeededAst
+
+  case class ComplexClass(ident: Name.Ident, polarity: Ast.Polarity, targs: List[WeededAst.Type], loc: SourceLocation) extends WeededAst
 
   case class FormalParam(ident: Name.Ident, mod: Ast.Modifiers, tpe: Option[WeededAst.Type], loc: SourceLocation) extends WeededAst
 

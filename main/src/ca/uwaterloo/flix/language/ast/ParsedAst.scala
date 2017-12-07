@@ -269,14 +269,14 @@ object ParsedAst {
     case class Impl(doc: ParsedAst.Doc, sp1: SourcePosition, mod: Seq[ParsedAst.Modifier], ic: ParsedAst.ImplConstraint, decls: Seq[ParsedAst.Declaration.Def], sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
-      * Forbid Declaration.
+      * Disallow Declaration.
       *
       * @param doc   the optional comment associated with the declaration.
       * @param sp1   the position of the first character in the declaration.
       * @param ic    the integrity constraint.
       * @param sp2   the position of the last character in the declaration.
       */
-    case class Forbid(doc: ParsedAst.Doc, sp1: SourcePosition, ic: ParsedAst.IntegrityConstraint, sp2: SourcePosition) extends ParsedAst.Declaration
+    case class Disallow(doc: ParsedAst.Doc, sp1: SourcePosition, ic: ParsedAst.IntegrityConstraint, sp2: SourcePosition) extends ParsedAst.Declaration
 
   }
 
@@ -1168,6 +1168,7 @@ object ParsedAst {
     * @param head the head atom of the constraint.
     * @param body the sequence of body atoms of the constraint.
     */
+  // TODO: Head class atoms must not be negated.
   case class ImplConstraint(head: ParsedAst.ComplexClass, body: Seq[ParsedAst.ComplexClass]) extends ParsedAst
 
   /**
