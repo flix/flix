@@ -51,7 +51,7 @@ namespace Path {
     // TODO: Add openoptions argument.
     pub def newInputStreamWithOpenOptions(p: Path): unique Result[InputStream, IOError] @ IO = ???
 
-    pub def readAllLines(p: Path): List[Str] @ IO = ???
+    pub eff readAllLines(p: Path): List[Str] @ IO
 
     // TODO: Add charset argument
     pub def readAllLinesWithCharset(p: Path): List[Str] @ IO = ???

@@ -289,10 +289,16 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
 //            }
 //        }
 
-        //
-        // Impl.
-        //
+      //
+      // Impl.
+      //
       case WeededAst.Declaration.Impl(doc, mod, head, body, defs, loc) =>
+        prog0.toSuccess
+
+      //
+      // Disallow.
+      //
+      case WeededAst.Declaration.Disallow(doc, body, loc) =>
         prog0.toSuccess
 
       /*
