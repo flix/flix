@@ -319,29 +319,6 @@ object Symbol {
   }
 
   /**
-    * Impl Symbol.
-    */
-  final class ImplSym(val name: String, val loc: SourceLocation) {
-    /**
-      * Returns `true` if this symbol is equal to `that` symbol.
-      */
-    override def equals(obj: scala.Any): Boolean = obj match {
-      case that: ImplSym => this.name == that.name
-      case _ => false
-    }
-
-    /**
-      * Returns the hash code of this symbol.
-      */
-    override val hashCode: Int = 7 * name.hashCode
-
-    /**
-      * Human readable representation.
-      */
-    override def toString: String = name
-  }
-
-  /**
     * Table Symbol.
     */
   final class TableSym(val namespace: List[String], val name: String, val loc: SourceLocation) {
