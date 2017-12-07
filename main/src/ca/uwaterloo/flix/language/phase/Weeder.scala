@@ -252,7 +252,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           case ds => Nil
         }
 
-      case ParsedAst.Declaration.Impl(doc0, sp1, ic, defs, sp2) =>
+      case ParsedAst.Declaration.Impl(doc0, mod, sp1, ic, defs, sp2) =>
         // TODO
         Nil.toSuccess
 
