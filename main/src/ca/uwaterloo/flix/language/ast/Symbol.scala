@@ -120,13 +120,6 @@ object Symbol {
   }
 
   /**
-    * Returns the impl symbol for the given name `ident` in the given namespace `ns`.
-    */
-  def mkImplSym(ident: Ident): ImplSym = {
-    new ImplSym(ident.name, ident.loc)
-  }
-
-  /**
     * Returns the hole symbol for the given name `ident` in the given namespace `ns`.
     */
   def mkHoleSym(ns: NName, ident: Ident): HoleSym = {
