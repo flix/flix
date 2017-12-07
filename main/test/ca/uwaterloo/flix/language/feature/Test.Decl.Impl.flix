@@ -123,11 +123,11 @@ namespace Test06 {
 
     class Z[a]
 
-    forbid X[a], Y[a]
+    disallow X[a], Y[a]
 
-    forbid X[a], not Y[a]
+    disallow X[a], not Y[a]
 
-    forbid X[a], Y[a], Z[a]
+    disallow X[a], Y[a], Z[a]
 
 }
 

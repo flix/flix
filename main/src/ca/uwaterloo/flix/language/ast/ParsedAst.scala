@@ -259,24 +259,24 @@ object ParsedAst {
     /**
       * Impl Declaration.
       *
-      * @param doc   the optional comment associated with the declaration.
-      * @param sp1   the position of the first character in the declaration.
-      * @param mod   the associated modifiers.
-      * @param ic    the impl constraint.
-      * @param decls the declarations of the instance.
-      * @param sp2   the position of the last character in the declaration.
+      * @param doc  the optional comment associated with the declaration.
+      * @param sp1  the position of the first character in the declaration.
+      * @param mod  the associated modifiers.
+      * @param ic   the impl constraint.
+      * @param defs the definitions of the instance.
+      * @param sp2  the position of the last character in the declaration.
       */
-    case class Impl(doc: ParsedAst.Doc, sp1: SourcePosition, mod: Seq[ParsedAst.Modifier], ic: ParsedAst.ImplConstraint, decls: Seq[ParsedAst.Declaration.Def], sp2: SourcePosition) extends ParsedAst.Declaration
+    case class Impl(doc: ParsedAst.Doc, sp1: SourcePosition, mod: Seq[ParsedAst.Modifier], ic: ParsedAst.ImplConstraint, defs: Seq[ParsedAst.Declaration.Def], sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
       * Disallow Declaration.
       *
-      * @param doc   the optional comment associated with the declaration.
-      * @param sp1   the position of the first character in the declaration.
-      * @param ic    the integrity constraint.
-      * @param sp2   the position of the last character in the declaration.
+      * @param doc the optional comment associated with the declaration.
+      * @param sp1 the position of the first character in the declaration.
+      * @param ic  the integrity constraint.
+      * @param sp2 the position of the last character in the declaration.
       */
-    case class Disallow(doc: ParsedAst.Doc, sp1: SourcePosition, ic: ParsedAst.IntegrityConstraint, sp2: SourcePosition) extends ParsedAst.Declaration
+    case class Disallow(doc: ParsedAst.Doc, sp1: SourcePosition, ic: ParsedAst.DisallowConstraint, sp2: SourcePosition) extends ParsedAst.Declaration
 
   }
 
@@ -1172,9 +1172,9 @@ object ParsedAst {
   case class ImplConstraint(head: ParsedAst.ComplexClass, body: Seq[ParsedAst.ComplexClass]) extends ParsedAst
 
   /**
-    * Integrity Constraint.
+    * Disallow Constraint.
     */
-  case class IntegrityConstraint(body: Seq[ParsedAst.ComplexClass]) extends ParsedAst
+  case class DisallowConstraint(body: Seq[ParsedAst.ComplexClass]) extends ParsedAst
 
   /**
     * Simple Class Atom.

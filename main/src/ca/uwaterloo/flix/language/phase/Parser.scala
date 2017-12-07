@@ -327,8 +327,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Disallow: Rule1[ParsedAst.Declaration] = {
-      def IntegrityConstraint: Rule1[ParsedAst.IntegrityConstraint] = rule {
-        oneOrMore(PositiveClassAtom | NegativeClassAtom).separatedBy(optWS ~ "," ~ optWS) ~> ParsedAst.IntegrityConstraint
+      def IntegrityConstraint: Rule1[ParsedAst.DisallowConstraint] = rule {
+        oneOrMore(PositiveClassAtom | NegativeClassAtom).separatedBy(optWS ~ "," ~ optWS) ~> ParsedAst.DisallowConstraint
       }
 
       rule {

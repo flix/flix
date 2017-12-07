@@ -289,6 +289,12 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
 //            }
 //        }
 
+        //
+        // Impl.
+        //
+      case WeededAst.Declaration.Impl(doc, mod, head, body, defs, loc) =>
+        prog0.toSuccess
+
       /*
        * Relation.
        */

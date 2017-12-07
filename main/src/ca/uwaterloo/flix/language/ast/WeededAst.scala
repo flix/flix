@@ -53,9 +53,9 @@ object WeededAst {
     // TODO: Add laws ...
     case class Class(doc: Ast.Doc, mod: Ast.Modifiers, head: WeededAst.SimpleClass, body: List[WeededAst.SimpleClass], sigs: List[WeededAst.Declaration.Sig], loc: SourceLocation) extends WeededAst.Declaration
 
-    case class Impl(doc: Ast.Doc, mod: Ast.Modifiers, head: WeededAst.ComplexClass, body: Seq[WeededAst.ComplexClass], defs: Seq[WeededAst.Declaration.Def], loc: SourceLocation) extends WeededAst.Declaration
+    case class Impl(doc: Ast.Doc, mod: Ast.Modifiers, head: WeededAst.ComplexClass, body: List[WeededAst.ComplexClass], defs: List[WeededAst.Declaration.Def], loc: SourceLocation) extends WeededAst.Declaration
 
-    case class Disallow(doc: Ast.Doc, body: Seq[WeededAst.ComplexClass], loc: SourceLocation) extends WeededAst.Declaration
+    case class Disallow(doc: Ast.Doc, body: List[WeededAst.ComplexClass], loc: SourceLocation) extends WeededAst.Declaration
 
   }
 

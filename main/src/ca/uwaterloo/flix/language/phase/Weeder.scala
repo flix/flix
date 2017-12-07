@@ -260,13 +260,35 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
             )
         }
 
-      case ParsedAst.Declaration.Impl(doc0, mod, sp1, ic, defs, sp2) =>
-        // TODO
-        Nil.toSuccess
+      case ParsedAst.Declaration.Impl(doc0, sp1, mod0, ic, defs0, sp2) =>
+        val modVal = visitModifiers(mod0, legalModifiers = Set(Ast.Modifier.Public))
+        val ccVal = visitImplConstraint(ic)
 
-      case ParsedAst.Declaration.Disallow(doc0, sp, ic, sp2) =>
-        // TODO
-        Nil.toSuccess
+        // Collect all signatures.
+        val defsVal = @@(defs0 map {
+          case defn => Declarations.weed(defn)
+        })
+
+        @@(modVal, ccVal, defsVal) map {
+          case (mod, (head, body), defs) =>
+            // TODO: Slightly ugly due to lack of a visitDef.
+            val ds = defs.flatten.asInstanceOf[List[WeededAst.Declaration.Def]]
+            val doc = visitDoc(doc0)
+            val loc = mkSL(sp1, sp2)
+            List(
+              WeededAst.Declaration.Impl(doc, mod, head, body, ds, loc)
+            )
+        }
+
+      case ParsedAst.Declaration.Disallow(doc0, sp1, ic, sp2) =>
+        visitDisallowConstraint(ic) map {
+          case (body) =>
+            val doc = visitDoc(doc0)
+            val loc = mkSL(sp1, sp2)
+            List(
+              WeededAst.Declaration.Disallow(doc, body, loc)
+            )
+        }
 
       case ParsedAst.Declaration.Sig(doc0, ann, mods, sp1, ident, tparams0, fparams0, tpe, effOpt, sp2) =>
         throw InternalCompilerException(s"Unexpected declaration")
@@ -1216,12 +1238,41 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   }
 
   /**
+    * Weeds the given impl constraint `ic`.
+    */
+  private def visitImplConstraint(ic: ParsedAst.ImplConstraint): Validation[(WeededAst.ComplexClass, List[WeededAst.ComplexClass]), WeederError] = ic match {
+    case ParsedAst.ImplConstraint(head0, body0) =>
+      // TODO: Negated head constraint should not be allowed.
+      val headVal = visitComplexClass(head0)
+      val bodyVal = @@(body0 map visitComplexClass)
+      @@(headVal, bodyVal)
+  }
+
+  /**
+    * Weeds the given integrity constraint `ic`.
+    */
+  private def visitDisallowConstraint(ic: ParsedAst.DisallowConstraint): Validation[List[WeededAst.ComplexClass], WeederError] = ic match {
+    case ParsedAst.DisallowConstraint(body0) => @@(body0 map visitComplexClass)
+  }
+
+  /**
     * Weeds the given simple class atom `a`.
     */
   private def visitSimpleClass(a: ParsedAst.SimpleClass): Validation[WeededAst.SimpleClass, WeederError] = a match {
     case ParsedAst.SimpleClass(sp1, ident, targs, sp2) =>
       val loc = mkSL(sp1, sp2)
       WeededAst.SimpleClass(ident, targs.toList, loc).toSuccess
+  }
+
+  /**
+    * Weeds the given complex class atom `a`.
+    */
+  private def visitComplexClass(a: ParsedAst.ComplexClass): Validation[WeededAst.ComplexClass, WeederError] = a match {
+    case ParsedAst.ComplexClass.Positive(sp1, ident, targs, sp2) =>
+      WeededAst.ComplexClass(ident, Polarity.Positive, (targs map Types.weed).toList, mkSL(sp1, sp2)).toSuccess
+
+    case ParsedAst.ComplexClass.Negative(sp1, ident, targs, sp2) =>
+      WeededAst.ComplexClass(ident, Polarity.Negative, (targs map Types.weed).toList, mkSL(sp1, sp2)).toSuccess
   }
 
   /**
