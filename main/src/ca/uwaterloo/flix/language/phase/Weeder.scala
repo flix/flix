@@ -256,6 +256,10 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         // TODO
         Nil.toSuccess
 
+      case ParsedAst.Declaration.Forbid(doc0, sp, ic, sp2) =>
+        // TODO
+        Nil.toSuccess
+
       case ParsedAst.Declaration.Sig(doc0, ann, mods, sp1, ident, tparams0, fparams0, tpe, effOpt, sp2) =>
         throw InternalCompilerException(s"Unexpected declaration")
     }

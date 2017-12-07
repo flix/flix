@@ -268,6 +268,16 @@ object ParsedAst {
       */
     case class Impl(doc: ParsedAst.Doc, sp1: SourcePosition, mod: Seq[ParsedAst.Modifier], ic: ParsedAst.ImplConstraint, decls: Seq[ParsedAst.Declaration.Def], sp2: SourcePosition) extends ParsedAst.Declaration
 
+    /**
+      * Forbid Declaration.
+      *
+      * @param doc   the optional comment associated with the declaration.
+      * @param sp1   the position of the first character in the declaration.
+      * @param ic    the integrity constraint.
+      * @param sp2   the position of the last character in the declaration.
+      */
+    case class Forbid(doc: ParsedAst.Doc, sp1: SourcePosition, ic: ParsedAst.IntegrityConstraint, sp2: SourcePosition) extends ParsedAst.Declaration
+
   }
 
   /**
@@ -1150,7 +1160,7 @@ object ParsedAst {
     * @param head the head atom of the constraint.
     * @param body the sequence of body atoms of the constraint.
     */
-  case class ClassConstraint(head: ParsedAst.SimpleClassAtom, body: Seq[ParsedAst.SimpleClassAtom]) extends ParsedAst
+  case class ClassConstraint(head: ParsedAst.SimpleClass, body: Seq[ParsedAst.SimpleClass]) extends ParsedAst
 
   /**
     * Impl Constraint.
@@ -1158,7 +1168,12 @@ object ParsedAst {
     * @param head the head atom of the constraint.
     * @param body the sequence of body atoms of the constraint.
     */
-  case class ImplConstraint(head: ParsedAst.ComplexClassAtom, body: Seq[ParsedAst.ComplexClassAtom]) extends ParsedAst
+  case class ImplConstraint(head: ParsedAst.ComplexClass, body: Seq[ParsedAst.ComplexClass]) extends ParsedAst
+
+  /**
+    * Integrity Constraint.
+    */
+  case class IntegrityConstraint(body: Seq[ParsedAst.ComplexClass]) extends ParsedAst
 
   /**
     * Simple Class Atom.
@@ -1168,11 +1183,11 @@ object ParsedAst {
     * @param targs the type variables.
     * @param sp2   the position of the last character in the atom.
     */
-  case class SimpleClassAtom(sp1: SourcePosition, ident: Name.Ident, targs: Seq[Name.Ident], sp2: SourcePosition) extends ParsedAst
+  case class SimpleClass(sp1: SourcePosition, ident: Name.Ident, targs: Seq[Name.Ident], sp2: SourcePosition) extends ParsedAst
 
-  sealed trait ComplexClassAtom
+  sealed trait ComplexClass
 
-  object ComplexClassAtom {
+  object ComplexClass {
 
     /**
       * Positive Complex Class Atom.
@@ -1182,7 +1197,7 @@ object ParsedAst {
       * @param targs the type arguments.
       * @param sp2   the position of the last character in the atom.
       */
-    case class Positive(sp1: SourcePosition, ident: Name.Ident, targs: Seq[ParsedAst.Type], sp2: SourcePosition) extends ParsedAst.ComplexClassAtom
+    case class Positive(sp1: SourcePosition, ident: Name.Ident, targs: Seq[ParsedAst.Type], sp2: SourcePosition) extends ParsedAst.ComplexClass
 
     /**
       * Negative Complex Class Atom.
@@ -1192,7 +1207,7 @@ object ParsedAst {
       * @param targs the type arguments.
       * @param sp2   the position of the last character in the atom.
       */
-    case class Negative(sp1: SourcePosition, ident: Name.Ident, targs: Seq[ParsedAst.Type], sp2: SourcePosition) extends ParsedAst.ComplexClassAtom
+    case class Negative(sp1: SourcePosition, ident: Name.Ident, targs: Seq[ParsedAst.Type], sp2: SourcePosition) extends ParsedAst.ComplexClass
 
   }
 

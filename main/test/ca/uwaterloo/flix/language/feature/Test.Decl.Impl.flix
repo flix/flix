@@ -115,5 +115,21 @@ namespace Test05 {
 
 }
 
+namespace Test06 {
+
+    class X[a]
+
+    class Y[a]
+
+    class Z[a]
+
+    forbid X[a], Y[a]
+
+    forbid X[a], not Y[a]
+
+    forbid X[a], Y[a], Z[a]
+
+}
+
 @test
 def empty(): Bool = true

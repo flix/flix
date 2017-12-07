@@ -162,7 +162,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       Declarations.Lattice |
       Declarations.Index |
       Declarations.Class |
-      Declarations.Impl
+      Declarations.Impl |
+      Declarations.Forbid
   }
 
   object Declarations {
@@ -279,19 +280,15 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Class: Rule1[ParsedAst.Declaration] = {
-      def SimpleClassAtom: Rule1[ParsedAst.SimpleClassAtom] = rule {
-        SP ~ Names.Class ~ optWS ~ "[" ~ optWS ~ oneOrMore(Names.Variable).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]" ~ SP ~> ParsedAst.SimpleClassAtom
-      }
+      def Head: Rule1[ParsedAst.SimpleClass] = SimpleClassAtom
 
-      def HeadAtom: Rule1[ParsedAst.SimpleClassAtom] = SimpleClassAtom
-
-      def BodyAtom: Rule1[Seq[ParsedAst.SimpleClassAtom]] = rule {
+      def Body: Rule1[Seq[ParsedAst.SimpleClass]] = rule {
         optional(optWS ~ atomic("<=") ~ optWS ~ oneOrMore(SimpleClassAtom).separatedBy(optWS ~ "," ~ optWS)) ~> (
-          (o: Option[Seq[ParsedAst.SimpleClassAtom]]) => o.getOrElse(Seq.empty))
+          (o: Option[Seq[ParsedAst.SimpleClass]]) => o.getOrElse(Seq.empty))
       }
 
       def ClassConstraint: Rule1[ParsedAst.ClassConstraint] = rule {
-        HeadAtom ~ optWS ~ BodyAtom ~> ParsedAst.ClassConstraint
+        Head ~ optWS ~ Body ~> ParsedAst.ClassConstraint
       }
 
       def ClassBody: Rule1[Seq[ParsedAst.Declaration]] = rule {
@@ -308,23 +305,15 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Impl: Rule1[ParsedAst.Declaration] = {
-      def PositiveClassAtom: Rule1[ParsedAst.ComplexClassAtom.Positive] = rule {
-        SP ~ Names.Class ~ optWS ~ "[" ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]" ~ SP ~> ParsedAst.ComplexClassAtom.Positive
-      }
+      def Head: Rule1[ParsedAst.ComplexClass] = PositiveClassAtom
 
-      def NegativeClassAtom: Rule1[ParsedAst.ComplexClassAtom.Negative] = rule {
-        SP ~ atomic("not") ~ WS ~ Names.Class ~ optWS ~ "[" ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]" ~ SP ~> ParsedAst.ComplexClassAtom.Negative
-      }
-
-      def HeadAtom: Rule1[ParsedAst.ComplexClassAtom] = PositiveClassAtom
-
-      def BodyAtom: Rule1[Seq[ParsedAst.ComplexClassAtom]] = rule {
+      def Body: Rule1[Seq[ParsedAst.ComplexClass]] = rule {
         optional(atomic("<=") ~ WS ~ oneOrMore(PositiveClassAtom | NegativeClassAtom).separatedBy(optWS ~ "," ~ optWS)) ~> (
-          (o: Option[Seq[ParsedAst.ComplexClassAtom]]) => o.getOrElse(Seq.empty))
+          (o: Option[Seq[ParsedAst.ComplexClass]]) => o.getOrElse(Seq.empty))
       }
 
       def ImplConstraint: Rule1[ParsedAst.ImplConstraint] = rule {
-        HeadAtom ~ optWS ~ BodyAtom ~> ParsedAst.ImplConstraint
+        Head ~ optWS ~ Body ~> ParsedAst.ImplConstraint
       }
 
       def ImplBody: Rule1[Seq[ParsedAst.Declaration.Def]] = rule {
@@ -335,6 +324,28 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       rule {
         Documentation ~ SP ~ Modifiers ~ atomic("impl") ~ WS ~ ImplConstraint ~ optWS ~ ImplBody ~ SP ~> ParsedAst.Declaration.Impl
       }
+    }
+
+    def Forbid: Rule1[ParsedAst.Declaration] = {
+      def IntegrityConstraint: Rule1[ParsedAst.IntegrityConstraint] = rule {
+        oneOrMore(PositiveClassAtom | NegativeClassAtom).separatedBy(optWS ~ "," ~ optWS) ~> ParsedAst.IntegrityConstraint
+      }
+
+      rule {
+        Documentation ~ SP ~ atomic("forbid") ~ WS ~ IntegrityConstraint ~ SP ~> ParsedAst.Declaration.Forbid
+      }
+    }
+
+    private def SimpleClassAtom: Rule1[ParsedAst.SimpleClass] = rule {
+      SP ~ Names.Class ~ optWS ~ "[" ~ optWS ~ oneOrMore(Names.Variable).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]" ~ SP ~> ParsedAst.SimpleClass
+    }
+
+    private def PositiveClassAtom: Rule1[ParsedAst.ComplexClass.Positive] = rule {
+      SP ~ Names.Class ~ optWS ~ "[" ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]" ~ SP ~> ParsedAst.ComplexClass.Positive
+    }
+
+    private def NegativeClassAtom: Rule1[ParsedAst.ComplexClass.Negative] = rule {
+      SP ~ atomic("not") ~ WS ~ Names.Class ~ optWS ~ "[" ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]" ~ SP ~> ParsedAst.ComplexClass.Negative
     }
 
     def TypeParams: Rule1[Seq[ParsedAst.ContextBound]] = {
