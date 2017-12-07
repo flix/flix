@@ -101,5 +101,19 @@ namespace Test04 {
 
 }
 
+namespace Test05 {
+
+    class X[a]
+
+    class Y[a]
+
+    class Z[a]
+
+    impl Z[Bool] <= X[Bool], not Y[Bool]
+
+    impl Z[Bool] <= not X[Bool], Y[Bool]
+
+}
+
 @test
 def empty(): Bool = true

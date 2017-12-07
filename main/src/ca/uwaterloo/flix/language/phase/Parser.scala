@@ -308,14 +308,18 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Impl: Rule1[ParsedAst.Declaration] = {
-      def ComplexClassAtom: Rule1[ParsedAst.ComplexClassAtom] = rule {
-        SP ~ Names.Class ~ optWS ~ "[" ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]" ~ SP ~> ParsedAst.ComplexClassAtom
+      def PositiveClassAtom: Rule1[ParsedAst.ComplexClassAtom.Positive] = rule {
+        SP ~ Names.Class ~ optWS ~ "[" ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]" ~ SP ~> ParsedAst.ComplexClassAtom.Positive
       }
 
-      def HeadAtom: Rule1[ParsedAst.ComplexClassAtom] = ComplexClassAtom
+      def NegativeClassAtom: Rule1[ParsedAst.ComplexClassAtom.Negative] = rule {
+        SP ~ atomic("not") ~ WS ~ Names.Class ~ optWS ~ "[" ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]" ~ SP ~> ParsedAst.ComplexClassAtom.Negative
+      }
+
+      def HeadAtom: Rule1[ParsedAst.ComplexClassAtom] = PositiveClassAtom
 
       def BodyAtom: Rule1[Seq[ParsedAst.ComplexClassAtom]] = rule {
-        optional(atomic("<=") ~ WS ~ oneOrMore(ComplexClassAtom).separatedBy(optWS ~ "," ~ optWS)) ~> (
+        optional(atomic("<=") ~ WS ~ oneOrMore(PositiveClassAtom | NegativeClassAtom).separatedBy(optWS ~ "," ~ optWS)) ~> (
           (o: Option[Seq[ParsedAst.ComplexClassAtom]]) => o.getOrElse(Seq.empty))
       }
 

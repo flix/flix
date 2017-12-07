@@ -1170,15 +1170,32 @@ object ParsedAst {
     */
   case class SimpleClassAtom(sp1: SourcePosition, ident: Name.Ident, targs: Seq[Name.Ident], sp2: SourcePosition) extends ParsedAst
 
-  /**
-    * Complex Class Atom.
-    *
-    * @param sp1   the position of the first character in the atom.
-    * @param ident the class name.
-    * @param targs the type arguments.
-    * @param sp2   the position of the last character in the atom.
-    */
-  case class ComplexClassAtom(sp1: SourcePosition, ident: Name.Ident, targs: Seq[ParsedAst.Type], sp2: SourcePosition) extends ParsedAst
+  sealed trait ComplexClassAtom
+
+  object ComplexClassAtom {
+
+    /**
+      * Positive Complex Class Atom.
+      *
+      * @param sp1   the position of the first character in the atom.
+      * @param ident the class name.
+      * @param targs the type arguments.
+      * @param sp2   the position of the last character in the atom.
+      */
+    case class Positive(sp1: SourcePosition, ident: Name.Ident, targs: Seq[ParsedAst.Type], sp2: SourcePosition) extends ParsedAst.ComplexClassAtom
+
+    /**
+      * Negative Complex Class Atom.
+      *
+      * @param sp1   the position of the first character in the atom.
+      * @param ident the class name.
+      * @param targs the type arguments.
+      * @param sp2   the position of the last character in the atom.
+      */
+    case class Negative(sp1: SourcePosition, ident: Name.Ident, targs: Seq[ParsedAst.Type], sp2: SourcePosition) extends ParsedAst.ComplexClassAtom
+
+  }
+
 
   /**
     * Documentation.
