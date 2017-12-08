@@ -1,17 +1,31 @@
 ///
 /// Represents the result of a comparison between two values.
 ///
-enum Ordering {
+pub enum Ordering {
     case Less,
     case Equal,
     case Greater
 }
 
-//
-//    fn lt(&self, other: &Rhs) -> bool { ... }
-//    fn le(&self, other: &Rhs) -> bool { ... }
-//    fn gt(&self, other: &Rhs) -> bool { ... }
-//    fn ge(&self, other: &Rhs) -> bool { ... }
+///
+/// Returns `true` if `x` is strictly less than `y`.
+///
+def lt[a: Ord](x: a, y: a): Bool = ??? // TODO
+
+///
+/// Returns `true` if `x` is less than or equal to `y`.
+///
+def le[a: Ord](x: a, y: a): Bool = ??? // TODO
+
+///
+/// Returns `true` if `x` is strictly greater than `y`.
+///
+def gt[a: Ord](x: a, y: a): Bool = ??? // TODO
+
+///
+/// Returns `true` if `x` is greater than or equal to `y`.
+///
+def ge[a: Ord](x: a, y: a): Bool = ??? // TODO
 
 ///
 /// Returns the smaller of `x` and `y`.

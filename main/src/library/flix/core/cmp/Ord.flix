@@ -19,7 +19,7 @@
  */
 pub class Ord[a] <= PartialOrd[a] {
 
-    // TODO: More laws
+    // TODO: Add more laws.
 
 }
 
