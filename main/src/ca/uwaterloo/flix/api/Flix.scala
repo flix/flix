@@ -89,9 +89,9 @@ class Flix {
 
     "flix/core/cmp/package.flix" -> LocalResource.get("/library/flix/core/cmp/package.flix"),
     "flix/core/cmp/Eq.flix" -> LocalResource.get("/library/flix/core/cmp/Eq.flix"),
-    "flix/core/cmp/PartialEq.flix" -> LocalResource.get("/library/flix/core/cmp/PartialEq.flix"),
     "flix/core/cmp/Ord.flix" -> LocalResource.get("/library/flix/core/cmp/Ord.flix"),
-    "flix/core/cmp/PartialOrd.flix" -> LocalResource.get("/library/flix/core/cmp/Ord.flix"),
+    "flix/core/cmp/PartialEq.flix" -> LocalResource.get("/library/flix/core/cmp/PartialEq.flix"),
+    "flix/core/cmp/PartialOrd.flix" -> LocalResource.get("/library/flix/core/cmp/PartialOrd.flix"),
     "flix/core/lattice/JoinSemiLattice.flix" -> LocalResource.get("/library/flix/core/lattice/JoinSemiLattice.flix"),
   )
 

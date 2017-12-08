@@ -20,6 +20,7 @@ import java.lang.reflect.{Constructor, Field, Method, Modifier}
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.GenSym
+import ca.uwaterloo.flix.language.ast.WeededAst.Declaration
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.NameError
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
@@ -134,7 +135,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
             }
           case Some(defn) =>
             // Case 2: Duplicate definition.
-            DuplicateDefinition(ident.name, defn.loc, ident.loc).toFailure
+            DuplicateDef(ident.name, defn.loc, ident.loc).toFailure
         }
 
       /*
@@ -171,7 +172,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
             prog0.copy(enums = prog0.enums + (ns0 -> enums)).toSuccess
           case Some(enum) =>
             // Case 2.2: Duplicate definition.
-            DuplicateDefinition(ident.name, enum.sym.loc, ident.loc).toFailure
+            DuplicateDef(ident.name, enum.sym.loc, ident.loc).toFailure
         }
 
       /*
@@ -263,31 +264,37 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
       //
       // Class.
       //
-      case WeededAst.Declaration.Class(doc, mod, head, body, sigs, loc) =>
-        prog0.toSuccess
-//        // check if the class already exists.
-//        prog0.classes.get(ns0) match {
-//          case None =>
-//            // Case 1: The namespace does not yet exist. So the class does not yet exist.
-//            val sym = Symbol.mkClassSym(ns0, ident)
-//            val clazz = NamedAst.Class(sym)
-//            val classes = Map(ident.name -> clazz)
-//            prog0.copy(classes = prog0.classes + (ns0 -> classes)).toSuccess
-//          case Some(classes0) =>
-//            // Case 2: The namespace exists. Lookup the class.
-//            classes0.get(ident.name) match {
-//              case None =>
-//                // Case 2.1: The class does not exist in the namespace. Update it.
-//                val sym = Symbol.mkClassSym(ns0, ident)
-//                val clazz = NamedAst.Class(sym)
-//
-//                val classes = classes0 + (ident.name -> clazz)
-//                prog0.copy(classes = prog0.classes + (ns0 -> classes)).toSuccess
-//              case Some(clazz) =>
-//                // Case 2.2: Duplicate class.
-//                ???
-//            }
-//        }
+      case decl@WeededAst.Declaration.Class(doc, mod, head0, body0, sigs0, laws0, loc) =>
+        // Check that the class name is not qualified.
+        if (head0.qname.isQualified) {
+          throw InternalCompilerException(s"Qualified class names are currently unsupported.")
+        }
+
+        // Retrieve the class name.
+        val ident = head0.qname.ident
+
+        // Check if the class already exists.
+        prog0.classes.get(ns0) match {
+          case None =>
+            // Case 1: The namespace does not yet exist. So the class does not yet exist.
+            val clazz = visitClassDecl(ns0, decl)
+            val classes = Map(ident.name -> clazz)
+            prog0.copy(classes = prog0.classes + (ns0 -> classes)).toSuccess
+          case Some(classes0) =>
+            // Case 2: The namespace exists. Lookup the class.
+            classes0.get(ident.name) match {
+              case None =>
+                // Case 2.1: The class does not exist in the namespace. Update it.
+                val clazz = visitClassDecl(ns0, decl)
+                val classes = classes0 + (ident.name -> clazz)
+                prog0.copy(classes = prog0.classes + (ns0 -> classes)).toSuccess
+              case Some(clazz) =>
+                // Case 2.2: Duplicate class.
+                val loc1 = clazz.head.qname.ident.loc
+                val loc2 = ident.loc
+                NameError.DuplicateClass(ident.name, loc1, loc2).toFailure
+            }
+        }
 
       //
       // Impl.
@@ -322,7 +329,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
                 prog0.copy(tables = prog0.tables + (ns0 -> tables)).toSuccess
               case Some(table) =>
                 // Case 2.2: Duplicate definition.
-                DuplicateDefinition(ident.name, table.loc, ident.loc).toFailure
+                DuplicateDef(ident.name, table.loc, ident.loc).toFailure
             }
         }
 
@@ -347,7 +354,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
                 prog0.copy(tables = prog0.tables + (ns0 -> tables)).toSuccess
               case Some(table) =>
                 // Case 2.2: Duplicate definition.
-                DuplicateDefinition(ident.name, table.loc, ident.loc).toFailure
+                DuplicateDef(ident.name, table.loc, ident.loc).toFailure
             }
         }
 
@@ -359,6 +366,31 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
     def casesOf(cases: Map[String, WeededAst.Case], tenv0: Map[String, Type.Var])(implicit genSym: GenSym): Map[String, NamedAst.Case] = cases.foldLeft(Map.empty[String, NamedAst.Case]) {
       case (macc, (name, WeededAst.Case(enum, tag, tpe))) =>
         macc + (name -> NamedAst.Case(enum, tag, Types.namer(tpe, tenv0)))
+    }
+
+    /**
+      * Performs naming on the given class declaration `decl0`.
+      */
+    def visitClassDecl(ns0: Name.NName, decl0: Declaration.Class): NamedAst.Class = decl0 match {
+      case Declaration.Class(doc, mod, head0, body0, sigs0, laws0, loc) =>
+        // TODO
+        val ident = decl0.head.qname.ident
+        val sym = Symbol.mkClassSym(ns0, ident)
+        val quantifiers = Nil
+        val head = visitSimpleClass(ns0, head0)
+        val body = Nil
+        val sigs = Nil
+        val laws = Nil
+        NamedAst.Class(doc, mod, sym, quantifiers, head, body, sigs, laws, loc)
+    }
+
+    /**
+      * Performs naming on the given simple class atom `a`.
+      */
+    def visitSimpleClass(ns0: Name.NName, a: WeededAst.SimpleClass): NamedAst.SimpleClass = a match {
+      case WeededAst.SimpleClass(qname, targs, loc) =>
+        // TODO: targs
+        NamedAst.SimpleClass(qname, Nil, loc)
     }
 
   }
