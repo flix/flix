@@ -14,18 +14,23 @@
  * limitations under the License.
  */
 
-pub class Eq[a] {
+pub class Eq[a] <= PartialEq[a] {
 
     ///
     /// Returns `true` if `x` is equal to `y`.
     ///
-    def equal(x: a, y: a): Bool // TODO: Name
+    def eq(x: a, y: a): Bool
 
     ///
-    /// Reflexivity: An element `a` must be equal to itself.
+    /// Reflexive Law: An element `x` must be equal to itself.
     ///
-    law reflexive(): Bool = ∀(x: a). equal(x, x)
-
-    // TODO: More laws
+    law reflexive(): Bool = ∀(x: a). eq(x, x)
 
 }
+
+impl Eq[Bool]
+
+impl Eq[Int32]
+
+impl Eq[(a, b)] <= Eq[a], Eq[b]
+
