@@ -250,13 +250,14 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
         // Collect all laws.
         // TODO
+        val laws = Nil
 
         @@(modVal, ccVal, sigsVal) map {
           case (mod, (head, body), sigs) =>
             val doc = visitDoc(doc0)
             val loc = mkSL(sp1, sp2)
             List(
-              WeededAst.Declaration.Class(doc, mod, head, body, sigs, loc)
+              WeededAst.Declaration.Class(doc, mod, head, body, sigs, laws, loc)
             )
         }
 
@@ -1242,7 +1243,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     */
   private def visitImplConstraint(ic: ParsedAst.ImplConstraint): Validation[(WeededAst.ComplexClass, List[WeededAst.ComplexClass]), WeederError] = ic match {
     case ParsedAst.ImplConstraint(head0, body0) =>
-      // TODO: Negated head constraint should not be allowed.
       val headVal = visitComplexClass(head0)
       val bodyVal = @@(body0 map visitComplexClass)
       @@(headVal, bodyVal)
