@@ -14,18 +14,29 @@
  * limitations under the License.
  */
 
-pub class Ord[a] <= Eq[a] {
-
-    ///
-    /// Returns `true` if `x` is less than or equal to `y`.
-    ///
-    def lessEqual(x: a, y: a): Bool // TODO: Name
-
-    ///
-    /// Reflexivity: An element `a` must be less than or equal to itself.
-    ///
-    law reflexive(): Bool = ∀(x: a). lessEqual(x, x)
+/**
+ * Total Order type class.
+ */
+pub class Ord[a] <= PartialOrd[a] {
 
     // TODO: More laws
 
 }
+
+impl Ord[Bool]
+
+impl Ord[Int32]
+
+impl Ord[(a, b)] <= Ord[a], Ord[b]
+
+impl Ord[Option[a]] <= Ord[a]
+
+impl Ord[List[a]] <= Ord[a]
+
+impl Ord[Result[a, b]] <= Eq[a], Eq[b]
+
+disallow Ord[Float32]
+
+disallow Ord[Float64]
+
+disallow Ord[a -> b]

@@ -15,35 +15,12 @@
  */
 
 /**
- * Total Equality type class.
+ * Partial Order type class.
  */
-pub class Eq[a] <= PartialEq[a] {
+pub class PartialOrd[a] <= PartialEq[a] {
 
-    ///
-    /// Reflexive Law: An element `x` must be equal to itself.
-    ///
-    law reflexive(): Bool = ∀(x: a). eq(x, x)
+
+    def partialCompare(x: a, y: a): Option[Ordering]
 
 }
-
-// TODO: Add remaining primitive types.
-// TODO: Add remaining compound types.
-
-impl Eq[Bool]
-
-impl Eq[Int32]
-
-impl Eq[(a, b)] <= Eq[a], Eq[b]
-
-impl Eq[Option[a]] <= Eq[a]
-
-impl Eq[List[a]] <= Eq[a]
-
-impl Eq[Result[a, b]] <= Eq[a], Eq[b]
-
-disallow Eq[Float32]
-
-disallow Eq[Float64]
-
-disallow Eq[a -> b]
 
