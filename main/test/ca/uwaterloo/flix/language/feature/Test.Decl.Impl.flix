@@ -117,17 +117,19 @@ namespace Test05 {
 
 namespace Test06 {
 
-    class X[a]
+    namespace A {
+        class X[a]
+    }
 
-    class Y[a]
+    namespace B {
+        class Y[a]
+    }
 
-    class Z[a]
+    namespace C {
+        class Z[a]
+    }
 
-    disallow X[a], Y[a]
-
-    disallow X[a], not Y[a]
-
-    disallow X[a], Y[a], Z[a]
+    impl Test06/A.X[a] <= Test06/B.Y[a], Test06/C.Z[a]
 
 }
 

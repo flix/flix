@@ -1168,7 +1168,6 @@ object ParsedAst {
     * @param head the head atom of the constraint.
     * @param body the sequence of body atoms of the constraint.
     */
-  // TODO: Head class atoms must not be negated.
   case class ImplConstraint(head: ParsedAst.ComplexClass, body: Seq[ParsedAst.ComplexClass]) extends ParsedAst
 
   /**
@@ -1180,11 +1179,11 @@ object ParsedAst {
     * Simple Class Atom.
     *
     * @param sp1   the position of the first character in the atom.
-    * @param ident the class name.
+    * @param qname the (qualified) class name.
     * @param targs the type variables.
     * @param sp2   the position of the last character in the atom.
     */
-  case class SimpleClass(sp1: SourcePosition, ident: Name.Ident, targs: Seq[Name.Ident], sp2: SourcePosition) extends ParsedAst
+  case class SimpleClass(sp1: SourcePosition, qname: Name.QName, targs: Seq[Name.Ident], sp2: SourcePosition) extends ParsedAst
 
   sealed trait ComplexClass
 
@@ -1194,21 +1193,21 @@ object ParsedAst {
       * Positive Complex Class Atom.
       *
       * @param sp1   the position of the first character in the atom.
-      * @param ident the class name.
+      * @param qname the (qualified) class name.
       * @param targs the type arguments.
       * @param sp2   the position of the last character in the atom.
       */
-    case class Positive(sp1: SourcePosition, ident: Name.Ident, targs: Seq[ParsedAst.Type], sp2: SourcePosition) extends ParsedAst.ComplexClass
+    case class Positive(sp1: SourcePosition, qname: Name.QName, targs: Seq[ParsedAst.Type], sp2: SourcePosition) extends ParsedAst.ComplexClass
 
     /**
       * Negative Complex Class Atom.
       *
       * @param sp1   the position of the first character in the atom.
-      * @param ident the class name.
+      * @param qname the (qualified) class name.
       * @param targs the type arguments.
       * @param sp2   the position of the last character in the atom.
       */
-    case class Negative(sp1: SourcePosition, ident: Name.Ident, targs: Seq[ParsedAst.Type], sp2: SourcePosition) extends ParsedAst.ComplexClass
+    case class Negative(sp1: SourcePosition, qname: Name.QName, targs: Seq[ParsedAst.Type], sp2: SourcePosition) extends ParsedAst.ComplexClass
 
   }
 

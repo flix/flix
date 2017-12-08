@@ -1259,20 +1259,20 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     * Weeds the given simple class atom `a`.
     */
   private def visitSimpleClass(a: ParsedAst.SimpleClass): Validation[WeededAst.SimpleClass, WeederError] = a match {
-    case ParsedAst.SimpleClass(sp1, ident, targs, sp2) =>
+    case ParsedAst.SimpleClass(sp1, qname, targs, sp2) =>
       val loc = mkSL(sp1, sp2)
-      WeededAst.SimpleClass(ident, targs.toList, loc).toSuccess
+      WeededAst.SimpleClass(qname, targs.toList, loc).toSuccess
   }
 
   /**
     * Weeds the given complex class atom `a`.
     */
   private def visitComplexClass(a: ParsedAst.ComplexClass): Validation[WeededAst.ComplexClass, WeederError] = a match {
-    case ParsedAst.ComplexClass.Positive(sp1, ident, targs, sp2) =>
-      WeededAst.ComplexClass(ident, Polarity.Positive, (targs map Types.weed).toList, mkSL(sp1, sp2)).toSuccess
+    case ParsedAst.ComplexClass.Positive(sp1, qname, targs, sp2) =>
+      WeededAst.ComplexClass(qname, Polarity.Positive, (targs map Types.weed).toList, mkSL(sp1, sp2)).toSuccess
 
-    case ParsedAst.ComplexClass.Negative(sp1, ident, targs, sp2) =>
-      WeededAst.ComplexClass(ident, Polarity.Negative, (targs map Types.weed).toList, mkSL(sp1, sp2)).toSuccess
+    case ParsedAst.ComplexClass.Negative(sp1, qname, targs, sp2) =>
+      WeededAst.ComplexClass(qname, Polarity.Negative, (targs map Types.weed).toList, mkSL(sp1, sp2)).toSuccess
   }
 
   /**

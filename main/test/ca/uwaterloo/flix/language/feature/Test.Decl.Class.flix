@@ -107,5 +107,21 @@ namespace Test07 {
 
 }
 
+namespace Test08 {
+
+    namespace A {
+        class X[a]
+    }
+
+    namespace B {
+        class Y[a] <= Test08/A.X[a]
+    }
+
+    namespace C {
+        class Z[a] <= Test08/A.X[a], Test08/B.Y[a]
+    }
+
+}
+
 @test
 def empty(): Bool = true

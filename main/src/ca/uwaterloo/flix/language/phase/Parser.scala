@@ -337,15 +337,15 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     private def SimpleClassAtom: Rule1[ParsedAst.SimpleClass] = rule {
-      SP ~ Names.Class ~ optWS ~ "[" ~ optWS ~ oneOrMore(Names.Variable).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]" ~ SP ~> ParsedAst.SimpleClass
+      SP ~ Names.QualifiedClass ~ optWS ~ "[" ~ optWS ~ oneOrMore(Names.Variable).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]" ~ SP ~> ParsedAst.SimpleClass
     }
 
     private def PositiveClassAtom: Rule1[ParsedAst.ComplexClass.Positive] = rule {
-      SP ~ Names.Class ~ optWS ~ "[" ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]" ~ SP ~> ParsedAst.ComplexClass.Positive
+      SP ~ Names.QualifiedClass ~ optWS ~ "[" ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]" ~ SP ~> ParsedAst.ComplexClass.Positive
     }
 
     private def NegativeClassAtom: Rule1[ParsedAst.ComplexClass.Negative] = rule {
-      SP ~ atomic("not") ~ WS ~ Names.Class ~ optWS ~ "[" ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]" ~ SP ~> ParsedAst.ComplexClass.Negative
+      SP ~ atomic("not") ~ WS ~ Names.QualifiedClass ~ optWS ~ "[" ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]" ~ SP ~> ParsedAst.ComplexClass.Negative
     }
 
     def TypeParams: Rule1[Seq[ParsedAst.ContextBound]] = {
@@ -1163,6 +1163,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     def Attribute: Rule1[Name.Ident] = LowerCaseName
 
     def Class: Rule1[Name.Ident] = UpperCaseName
+
+    def QualifiedClass: Rule1[Name.QName] = UpperCaseQName
 
     def Definition: Rule1[Name.Ident] = rule {
       LowerCaseName | GreekName | MathName | OperatorName
