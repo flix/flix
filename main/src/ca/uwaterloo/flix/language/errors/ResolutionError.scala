@@ -152,7 +152,7 @@ object ResolutionError {
       vt << NewLine
       vt << Code(loc, "name not found") << NewLine
       vt << NewLine
-      vt << Underline("Tip:") << " Possible typo or non-existent definition?" << NewLine
+      vt << Underline("Tip:") << " Possible typo or non-existent class?" << NewLine
     }
   }
 

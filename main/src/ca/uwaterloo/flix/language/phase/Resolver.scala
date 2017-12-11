@@ -55,6 +55,14 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
       }
     }
 
+    val implsVal = prog0.impls.flatMap {
+      case (ns0, impls) => impls.map {
+        case impl => resolveImpl(impl, ns0, prog0) map {
+          case c => c.head.sym -> c
+        }
+      }
+    }
+
     val namedVal = prog0.named.map {
       case (sym, exp0) => Expressions.resolve(exp0, Name.RootNS, prog0).map {
         case exp =>
@@ -119,13 +127,14 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
       named <- seqM(namedVal)
       enums <- seqM(enumsVal)
       classes <- seqM(classesVal)
+      impls <- seqM(implsVal)
       lattices <- seqM(latticesVal)
       indexes <- seqM(indexesVal)
       tables <- seqM(tablesVal)
       constraints <- seqM(constraintsVal)
       properties <- seqM(propertiesVal)
     } yield ResolvedAst.Program(
-      definitions.toMap ++ named.toMap, enums.toMap, classes.toMap, /* TODO */ Map.empty, lattices.toMap, indexes.toMap,
+      definitions.toMap ++ named.toMap, enums.toMap, classes.toMap, impls.toMap, lattices.toMap, indexes.toMap,
       tables.toMap, constraints.flatten, prog0.hooks, properties.flatten, prog0.reachable, prog0.time.copy(resolver = e))
 
   }
@@ -197,6 +206,19 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
         body <- seqM(body0.map(b => resolveSimpleClass(b, ns0, prog0)))
       } yield {
         ResolvedAst.Class(doc, mod, sym, quantifiers, head, body, loc)
+      }
+  }
+
+  /**
+    * Performs name resolution on the given impl constraint `impl0` in the given namespace `ns0`.
+    */
+  def resolveImpl(impl0: NamedAst.Impl, ns0: Name.NName, prog0: NamedAst.Program): Validation[ResolvedAst.Impl, ResolutionError] = impl0 match {
+    case NamedAst.Impl(doc, mod, head0, body0, defs, loc) =>
+      for {
+        head <- resolveComplexClass(head0, ns0, prog0)
+        body <- seqM(body0.map(resolveComplexClass(_, ns0, prog0)))
+      } yield {
+        ResolvedAst.Impl(doc, mod, head, body, /* TODO */ Nil, loc)
       }
   }
 
@@ -817,7 +839,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
 
     // Check whether the name is fully-qualified.
     if (qname.isUnqualified) {
-      // Lookup the definition in the current namespace.
+      // Lookup in the current namespace.
       prog0.classes.getOrElse(ns0, Map.empty).get(qname.ident.name) match {
         case Some(clazz) =>
           // Case 1.1 : The class is defined in the current namespace.
@@ -835,7 +857,15 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
           }
       }
     } else {
-      ResolutionError.UndefinedClass(qname, qname.namespace, qname.loc).toFailure
+      // Lookup in the qualified namespace.
+      prog0.classes.getOrElse(qname.namespace, Map.empty).get(qname.ident.name) match {
+        case Some(clazz) =>
+          // Case 2.1: The class was found in the qualified namespace.
+          getClassIfAccessible(clazz, ns0, qname.loc).map(_.sym)
+        case None =>
+          // Case 2.2: The class was not found in the qualified namespace.
+          ResolutionError.UndefinedClass(qname, qname.namespace, qname.loc).toFailure
+      }
     }
   }
 
