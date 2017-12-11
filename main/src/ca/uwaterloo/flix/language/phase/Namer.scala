@@ -299,7 +299,18 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
       //
       // Impl.
       //
-      case WeededAst.Declaration.Impl(doc, mod, head, body, defs, loc) =>
+      case WeededAst.Declaration.Impl(doc, mod, head0, body0, defs0, loc) =>
+
+        return prog0.toSuccess
+
+        // TODO: Compute a map of type variables.
+        val tenv0 = Map.empty[String, Type.Var]
+
+        val head = visitComplexClass(ns0, head0, tenv0)
+        val body = body0.map(b => visitComplexClass(ns0, b, tenv0))
+        val defs = Nil // TODO: must compute the defs.
+
+        NamedAst.Impl(doc, mod, head, body, defs, loc)
         prog0.toSuccess
 
       //
@@ -391,6 +402,15 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
       case WeededAst.SimpleClass(qname, targs, loc) =>
         // TODO: targs
         NamedAst.SimpleClass(qname, Nil, loc)
+    }
+
+    /**
+      * Performs naming on the given complex class atom `a`.
+      */
+    def visitComplexClass(ns0: Name.NName, a: WeededAst.ComplexClass, tenv0: Map[String, Type.Var])(implicit genSym: GenSym): NamedAst.ComplexClass = a match {
+      case WeededAst.ComplexClass(qname, polarity, targs0, loc) =>
+        val targs = targs0.map(t => Types.namer(t, tenv0)) // TODO: Empty map
+        NamedAst.ComplexClass(qname, polarity, targs, loc)
     }
 
   }
