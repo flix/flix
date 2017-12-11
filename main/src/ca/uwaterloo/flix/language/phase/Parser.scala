@@ -162,7 +162,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       Declarations.Lattice |
       Declarations.Index |
       Declarations.Class |
-      Declarations.Impl
+      Declarations.Impl |
+      Declarations.Disallow
   }
 
   object Declarations {
@@ -279,12 +280,19 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Class: Rule1[ParsedAst.Declaration] = {
-      def TypeParams: Rule1[Seq[Name.Ident]] = rule {
-        "[" ~ optWS ~ oneOrMore(Names.Variable).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]"
+      def Head: Rule1[ParsedAst.SimpleClass] = SimpleClassAtom
+
+      def Body: Rule1[Seq[ParsedAst.SimpleClass]] = rule {
+        optional(optWS ~ atomic("<=") ~ optWS ~ oneOrMore(SimpleClassAtom).separatedBy(optWS ~ "," ~ optWS)) ~> (
+          (o: Option[Seq[ParsedAst.SimpleClass]]) => o.getOrElse(Seq.empty))
+      }
+
+      def ClassConstraint: Rule1[ParsedAst.ClassConstraint] = rule {
+        Head ~ optWS ~ Body ~> ParsedAst.ClassConstraint
       }
 
       def ClassBody: Rule1[Seq[ParsedAst.Declaration]] = rule {
-        "{" ~ optWS ~ zeroOrMore(Declarations.Law | Declarations.Sig) ~ optWS ~ "}"
+        "{" ~ optWS ~ zeroOrMore(Declarations.Sig | Declarations.Law) ~ optWS ~ "}"
       }
 
       def ClassBodyOpt: Rule1[Seq[ParsedAst.Declaration]] = rule {
@@ -292,28 +300,52 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       rule {
-        Documentation ~ SP ~ atomic("class") ~ WS ~ Names.Class ~ optWS ~ TypeParams ~ optWS ~ ClassBodyOpt ~ SP ~> ParsedAst.Declaration.Class
+        Documentation ~ SP ~ Modifiers ~ atomic("class") ~ WS ~ ClassConstraint ~ optWS ~ ClassBodyOpt ~ SP ~> ParsedAst.Declaration.Class
       }
     }
 
     def Impl: Rule1[ParsedAst.Declaration] = {
-      def ClassAtom: Rule1[ParsedAst.ClassAtom] = rule {
-        SP ~ Names.Class ~ optWS ~ "[" ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]" ~ SP ~> ParsedAst.ClassAtom
+      def Head: Rule1[ParsedAst.ComplexClass] = PositiveClassAtom
+
+      def Body: Rule1[Seq[ParsedAst.ComplexClass]] = rule {
+        optional(atomic("<=") ~ WS ~ oneOrMore(PositiveClassAtom | NegativeClassAtom).separatedBy(optWS ~ "," ~ optWS)) ~> (
+          (o: Option[Seq[ParsedAst.ComplexClass]]) => o.getOrElse(Seq.empty))
       }
 
-      def Head: Rule1[ParsedAst.ClassAtom] = ClassAtom
-
-      def Body: Rule1[Seq[ParsedAst.ClassAtom]] = rule {
-        optional(atomic(":-") ~ WS ~ oneOrMore(ClassAtom).separatedBy(optWS ~ "," ~ optWS)) ~> ((o: Option[Seq[ParsedAst.ClassAtom]]) => o.getOrElse(Seq.empty))
+      def ImplConstraint: Rule1[ParsedAst.ImplConstraint] = rule {
+        Head ~ optWS ~ Body ~> ParsedAst.ImplConstraint
       }
 
       def ImplBody: Rule1[Seq[ParsedAst.Declaration.Def]] = rule {
-        optional("{" ~ optWS ~ zeroOrMore(Declarations.Def).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}") ~> ((o: Option[Seq[ParsedAst.Declaration.Def]]) => o.getOrElse(Seq.empty))
+        optional("{" ~ optWS ~ zeroOrMore(Declarations.Def).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}") ~> (
+          (o: Option[Seq[ParsedAst.Declaration.Def]]) => o.getOrElse(Seq.empty))
       }
 
       rule {
-        Documentation ~ SP ~ atomic("impl") ~ WS ~ Head ~ optWS ~ Body ~ optWS ~ ImplBody ~ SP ~> ParsedAst.Declaration.Impl
+        Documentation ~ SP ~ Modifiers ~ atomic("impl") ~ WS ~ ImplConstraint ~ optWS ~ ImplBody ~ SP ~> ParsedAst.Declaration.Impl
       }
+    }
+
+    def Disallow: Rule1[ParsedAst.Declaration] = {
+      def IntegrityConstraint: Rule1[ParsedAst.DisallowConstraint] = rule {
+        oneOrMore(PositiveClassAtom | NegativeClassAtom).separatedBy(optWS ~ "," ~ optWS) ~> ParsedAst.DisallowConstraint
+      }
+
+      rule {
+        Documentation ~ SP ~ atomic("disallow") ~ WS ~ IntegrityConstraint ~ SP ~> ParsedAst.Declaration.Disallow
+      }
+    }
+
+    private def SimpleClassAtom: Rule1[ParsedAst.SimpleClass] = rule {
+      SP ~ Names.QualifiedClass ~ optWS ~ "[" ~ optWS ~ oneOrMore(Names.Variable).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]" ~ SP ~> ParsedAst.SimpleClass
+    }
+
+    private def PositiveClassAtom: Rule1[ParsedAst.ComplexClass.Positive] = rule {
+      SP ~ Names.QualifiedClass ~ optWS ~ "[" ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]" ~ SP ~> ParsedAst.ComplexClass.Positive
+    }
+
+    private def NegativeClassAtom: Rule1[ParsedAst.ComplexClass.Negative] = rule {
+      SP ~ atomic("not") ~ WS ~ Names.QualifiedClass ~ optWS ~ "[" ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]" ~ SP ~> ParsedAst.ComplexClass.Negative
     }
 
     def TypeParams: Rule1[Seq[ParsedAst.ContextBound]] = {
@@ -1132,6 +1164,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Class: Rule1[Name.Ident] = UpperCaseName
 
+    def QualifiedClass: Rule1[Name.QName] = UpperCaseQName
+
     def Definition: Rule1[Name.Ident] = rule {
       LowerCaseName | GreekName | MathName | OperatorName
     }
@@ -1197,20 +1231,24 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   /**
     * Optionally a parses a documentation comment.
     */
-  def Documentation: Rule1[Option[ParsedAst.Documentation]] = {
+  def Documentation: Rule1[ParsedAst.Doc] = {
     // Matches real whitespace.
     def PureWS: Rule0 = rule {
       zeroOrMore(" " | "\t" | NewLine)
     }
 
     // Matches triple dashed comments.
-    def TripleSlash: Rule1[ParsedAst.Documentation] = rule {
-      SP ~ oneOrMore(PureWS ~ "///" ~ capture(zeroOrMore(!NewLine ~ ANY)) ~ (NewLine | EOI)) ~ SP ~> ParsedAst.Documentation
+    def TripleSlash: Rule1[Seq[String]] = rule {
+      oneOrMore(PureWS ~ "///" ~ capture(zeroOrMore(!NewLine ~ ANY)) ~ (NewLine | EOI))
     }
 
     // Optionally matches a triple dashed comment and then any whitespace.
     rule {
-      optional(TripleSlash) ~ optWS
+      SP ~ optional(TripleSlash) ~ SP ~ optWS ~> (
+        (sp1: SourcePosition, o: Option[Seq[String]], sp2: SourcePosition) => o match {
+          case None => ParsedAst.Doc(sp1, Seq.empty, sp2)
+          case Some(lines) => ParsedAst.Doc(sp1, lines, sp2)
+        })
     }
   }
 

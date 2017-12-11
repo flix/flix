@@ -36,6 +36,8 @@ object WeededAst {
 
     case class Def(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, ident: Name.Ident, tparams: List[Name.Ident], fparams: List[WeededAst.FormalParam], exp: WeededAst.Expression, tpe: WeededAst.Type, eff: ast.Eff, loc: SourceLocation) extends WeededAst.Declaration
 
+    case class Law(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, ident: Name.Ident, tparams: List[Name.Ident], fparams: List[WeededAst.FormalParam], exp: WeededAst.Expression, tpe: WeededAst.Type, eff: ast.Eff, loc: SourceLocation) extends WeededAst.Declaration
+
     case class Eff(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, ident: Name.Ident, tparams: List[Name.Ident], fparams: List[WeededAst.FormalParam], tpe: WeededAst.Type, eff: ast.Eff, loc: SourceLocation) extends WeededAst.Declaration
 
     case class Sig(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, ident: Name.Ident, tparams: List[Name.Ident], fparams: List[WeededAst.FormalParam], tpe: WeededAst.Type, eff: ast.Eff, loc: SourceLocation) extends WeededAst.Declaration
@@ -50,9 +52,11 @@ object WeededAst {
 
     case class Lattice(tpe: WeededAst.Type, bot: WeededAst.Expression, top: WeededAst.Expression, equ: WeededAst.Expression, leq: WeededAst.Expression, lub: WeededAst.Expression, glb: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Declaration
 
-    case class Class(doc: Ast.Doc, ident: Name.Ident, tparams: List[Name.Ident], decls: List[WeededAst.Declaration], loc: SourceLocation) extends WeededAst.Declaration
+    case class Class(doc: Ast.Doc, mod: Ast.Modifiers, head: WeededAst.SimpleClass, body: List[WeededAst.SimpleClass], sigs: List[WeededAst.Declaration.Sig], laws: List[WeededAst.Declaration.Law], loc: SourceLocation) extends WeededAst.Declaration
 
-    case class Impl(doc: Ast.Doc, head: ParsedAst.ClassAtom, body: Seq[ParsedAst.ClassAtom], defs: Seq[WeededAst.Declaration.Def], loc: SourceLocation) extends WeededAst.Declaration
+    case class Impl(doc: Ast.Doc, mod: Ast.Modifiers, head: WeededAst.ComplexClass, body: List[WeededAst.ComplexClass], defs: List[WeededAst.Declaration.Def], loc: SourceLocation) extends WeededAst.Declaration
+
+    case class Disallow(doc: Ast.Doc, body: List[WeededAst.ComplexClass], loc: SourceLocation) extends WeededAst.Declaration
 
   }
 
@@ -254,7 +258,9 @@ object WeededAst {
 
   case class Case(enum: Name.Ident, tag: Name.Ident, tpe: WeededAst.Type) extends WeededAst
 
-  case class ClassAtom(ident: Name.Ident, targs: List[WeededAst.Type], loc: SourceLocation) extends WeededAst
+  case class SimpleClass(qname: Name.QName, args: List[Name.Ident], loc: SourceLocation) extends WeededAst
+
+  case class ComplexClass(qname: Name.QName, polarity: Ast.Polarity, args: List[WeededAst.Type], loc: SourceLocation) extends WeededAst
 
   case class FormalParam(ident: Name.Ident, mod: Ast.Modifiers, tpe: Option[WeededAst.Type], loc: SourceLocation) extends WeededAst
 

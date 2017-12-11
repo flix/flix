@@ -118,13 +118,6 @@ object Symbol {
   }
 
   /**
-    * Returns the impl symbol for the given name `ident` in the given namespace `ns`.
-    */
-  def mkImplSym(ident: Ident): ImplSym = {
-    new ImplSym(ident.name, ident.loc)
-  }
-
-  /**
     * Returns the hole symbol for the given name `ident` in the given namespace `ns`.
     */
   def mkHoleSym(ns: NName, ident: Ident): HoleSym = {
@@ -324,29 +317,6 @@ object Symbol {
       * Human readable representation.
       */
     override def toString: String = if (namespace.isEmpty) name else namespace.mkString("/") + "." + name
-  }
-
-  /**
-    * Impl Symbol.
-    */
-  final class ImplSym(val name: String, val loc: SourceLocation) {
-    /**
-      * Returns `true` if this symbol is equal to `that` symbol.
-      */
-    override def equals(obj: scala.Any): Boolean = obj match {
-      case that: ImplSym => this.name == that.name
-      case _ => false
-    }
-
-    /**
-      * Returns the hash code of this symbol.
-      */
-    override val hashCode: Int = 7 * name.hashCode
-
-    /**
-      * Human readable representation.
-      */
-    override def toString: String = name
   }
 
   /**

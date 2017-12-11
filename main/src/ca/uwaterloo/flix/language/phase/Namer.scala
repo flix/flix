@@ -20,6 +20,7 @@ import java.lang.reflect.{Constructor, Field, Method, Modifier}
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.GenSym
+import ca.uwaterloo.flix.language.ast.WeededAst.Declaration
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.NameError
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
@@ -48,6 +49,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
       enums = Map.empty,
       defs = Map.empty,
       classes = Map.empty,
+      impls = Map.empty,
       lattices = Map.empty,
       indexes = Map.empty,
       tables = Map.empty,
@@ -133,7 +135,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
             }
           case Some(defn) =>
             // Case 2: Duplicate definition.
-            DuplicateDefinition(ident.name, defn.loc, ident.loc).toFailure
+            DuplicateDef(ident.name, defn.loc, ident.loc).toFailure
         }
 
       /*
@@ -170,7 +172,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
             prog0.copy(enums = prog0.enums + (ns0 -> enums)).toSuccess
           case Some(enum) =>
             // Case 2.2: Duplicate definition.
-            DuplicateDefinition(ident.name, enum.sym.loc, ident.loc).toFailure
+            DuplicateDef(ident.name, enum.sym.loc, ident.loc).toFailure
         }
 
       /*
@@ -262,13 +264,20 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
       //
       // Class.
       //
-      case WeededAst.Declaration.Class(doc, ident, tparams, decls, loc) =>
-        // check if the class already exists.
+      case decl@WeededAst.Declaration.Class(doc, mod, head0, body0, sigs0, laws0, loc) =>
+        // Check that the class name is not qualified.
+        if (head0.qname.isQualified) {
+          throw InternalCompilerException(s"Qualified class names are currently unsupported.")
+        }
+
+        // Retrieve the class name.
+        val ident = head0.qname.ident
+
+        // Check if the class already exists.
         prog0.classes.get(ns0) match {
           case None =>
             // Case 1: The namespace does not yet exist. So the class does not yet exist.
-            val sym = Symbol.mkClassSym(ns0, ident)
-            val clazz = NamedAst.Class(sym)
+            val clazz = visitClassDecl(ns0, decl)
             val classes = Map(ident.name -> clazz)
             prog0.copy(classes = prog0.classes + (ns0 -> classes)).toSuccess
           case Some(classes0) =>
@@ -276,16 +285,56 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
             classes0.get(ident.name) match {
               case None =>
                 // Case 2.1: The class does not exist in the namespace. Update it.
-                val sym = Symbol.mkClassSym(ns0, ident)
-                val clazz = NamedAst.Class(sym)
-
+                val clazz = visitClassDecl(ns0, decl)
                 val classes = classes0 + (ident.name -> clazz)
                 prog0.copy(classes = prog0.classes + (ns0 -> classes)).toSuccess
               case Some(clazz) =>
                 // Case 2.2: Duplicate class.
-                ???
+                val loc1 = clazz.head.qname.ident.loc
+                val loc2 = ident.loc
+                NameError.DuplicateClass(ident.name, loc1, loc2).toFailure
             }
         }
+
+      //
+      // Impl.
+      //
+      case WeededAst.Declaration.Impl(doc, mod, head0, body0, defs0, loc) =>
+        // Compute the free type variables in the head and body atoms.
+        val freeTypeVars: List[Name.Ident] = freeVars(head0) ++ (body0 flatMap freeVars)
+
+        // Introduce a fresh type variable for each free identifier.
+        val tenv0 = typeEnvFromFreeVars(freeTypeVars)
+
+        // Perform naming on the head and body class atoms.
+        val head = visitComplexClass(head0, ns0, tenv0)
+        val body = body0.map(b => visitComplexClass(b, ns0, tenv0))
+
+        // Perform naming on the definitions in the implementation.
+        val defs = Nil // TODO: must compute the defs.
+
+        // Reassemble the implementation.
+        val impl = NamedAst.Impl(doc, mod, head, body, defs, loc)
+
+        // Reassemble the implementations in the namespace.
+        val implsInNs = impl :: prog0.impls.getOrElse(ns0, Nil)
+        prog0.copy(impls = prog0.impls + (ns0 -> implsInNs)).toSuccess
+
+      //
+      // Disallow.
+      //
+      case WeededAst.Declaration.Disallow(doc, body0, loc) =>
+        // Compute the free type variables in the body atoms.
+        val freeTypeVars: List[Name.Ident] = body0 flatMap freeVars
+
+        // Introduce a fresh type variable for each free identifier.
+        val tenv0 = typeEnvFromFreeVars(freeTypeVars)
+
+        // Perform naming on the body class atoms.
+        val body = body0.map(b => visitComplexClass(b, ns0, tenv0))
+
+        // TODO: Decide if these should be separate or go with the impls?
+        prog0.toSuccess
 
       /*
        * Relation.
@@ -308,7 +357,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
                 prog0.copy(tables = prog0.tables + (ns0 -> tables)).toSuccess
               case Some(table) =>
                 // Case 2.2: Duplicate definition.
-                DuplicateDefinition(ident.name, table.loc, ident.loc).toFailure
+                DuplicateDef(ident.name, table.loc, ident.loc).toFailure
             }
         }
 
@@ -333,7 +382,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
                 prog0.copy(tables = prog0.tables + (ns0 -> tables)).toSuccess
               case Some(table) =>
                 // Case 2.2: Duplicate definition.
-                DuplicateDefinition(ident.name, table.loc, ident.loc).toFailure
+                DuplicateDef(ident.name, table.loc, ident.loc).toFailure
             }
         }
 
@@ -347,6 +396,79 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
         macc + (name -> NamedAst.Case(enum, tag, Types.namer(tpe, tenv0)))
     }
 
+    /**
+      * Performs naming on the given class declaration `decl0`.
+      */
+    def visitClassDecl(ns0: Name.NName, decl0: Declaration.Class)(implicit genSym: GenSym): NamedAst.Class = decl0 match {
+      case Declaration.Class(doc, mod, head0, body0, sigs0, laws0, loc) =>
+        // Compute the free type variables in the head and body atoms.
+        val freeTypeVars = freeVars(head0) ::: (body0 flatMap freeVars)
+
+        // Introduce a fresh type variable for each free identifier.
+        val tenv0 = typeEnvFromFreeVars(freeTypeVars)
+
+        // TODO
+        val ident = decl0.head.qname.ident
+        val sym = Symbol.mkClassSym(ns0, ident)
+        val quantifiers = Nil
+        val head = visitSimpleClass(head0, ns0, tenv0)
+        val body = body0.map(visitSimpleClass(_, ns0, tenv0))
+        val sigs = Nil
+        val laws = Nil
+        NamedAst.Class(doc, mod, sym, quantifiers, head, body, sigs, laws, loc)
+    }
+
+    /**
+      * Performs naming on the given simple class atom `a`.
+      */
+    def visitSimpleClass(a: WeededAst.SimpleClass, ns0: Name.NName, tenv0: Map[String, Type.Var]): NamedAst.SimpleClass = a match {
+      case WeededAst.SimpleClass(qname, targs0, loc) =>
+        val targs = targs0.map(ident => tenv0(ident.name))
+        NamedAst.SimpleClass(qname, targs, loc)
+    }
+
+    /**
+      * Performs naming on the given complex class atom `a`.
+      */
+    def visitComplexClass(a: WeededAst.ComplexClass, ns0: Name.NName, tenv0: Map[String, Type.Var])(implicit genSym: GenSym): NamedAst.ComplexClass = a match {
+      case WeededAst.ComplexClass(qname, polarity, targs0, loc) =>
+        val targs = targs0.map(t => Types.namer(t, tenv0))
+        NamedAst.ComplexClass(qname, polarity, targs, loc)
+    }
+
+    /**
+      * Returns the free variables in the given simple class atom `a`.
+      */
+    def freeVars(a: WeededAst.SimpleClass): List[Name.Ident] = a.args
+
+    /**
+      * Returns the free variables in the given complex class atom `a`.
+      */
+    def freeVars(a: WeededAst.ComplexClass): List[Name.Ident] = a.args.flatMap(freeVars)
+
+    /**
+      * Returns the free variables in the given type `tpe`.
+      */
+    def freeVars(tpe: WeededAst.Type): List[Name.Ident] = tpe match {
+      case WeededAst.Type.Var(ident, loc) => ident :: Nil
+      case WeededAst.Type.Ambiguous(qname, loc) => Nil
+      case WeededAst.Type.Unit(loc) => Nil
+      case WeededAst.Type.Tuple(elms, loc) => elms.flatMap(freeVars)
+      case WeededAst.Type.Native(fqm, loc) => Nil
+      case WeededAst.Type.Arrow(tparams, retType, loc) => tparams.flatMap(freeVars) ::: freeVars(retType)
+      case WeededAst.Type.Apply(tpe1, tpe2, loc) => freeVars(tpe1) ++ freeVars(tpe2)
+    }
+
+    /**
+      * Returns a fresh type environment constructed from the given identifiers `idents`.
+      */
+    def typeEnvFromFreeVars(idents: List[Name.Ident])(implicit genSym: GenSym): Map[String, Type.Var] =
+      idents.foldLeft(Map.empty[String, Type.Var]) {
+        case (macc, ident) => macc.get(ident.name) match {
+          case None => macc + (ident.name -> Type.freshTypeVar())
+          case Some(tvar) => macc
+        }
+      }
   }
 
   object Expressions {

@@ -26,6 +26,8 @@ object ResolvedAst {
 
   case class Program(defs: Map[Symbol.DefnSym, ResolvedAst.Def],
                      enums: Map[Symbol.EnumSym, ResolvedAst.Enum],
+                     classes: Map[Symbol.ClassSym, ResolvedAst.Class],
+                     impls: Map[Symbol.ClassSym, ResolvedAst.Impl],
                      lattices: Map[Type, ResolvedAst.Lattice],
                      indexes: Map[Symbol.TableSym, ResolvedAst.Index],
                      tables: Map[Symbol.TableSym, ResolvedAst.Table],
@@ -44,7 +46,14 @@ object ResolvedAst {
 
   case class Lattice(tpe: Type, bot: ResolvedAst.Expression, top: ResolvedAst.Expression, equ: ResolvedAst.Expression, leq: ResolvedAst.Expression, lub: ResolvedAst.Expression, glb: ResolvedAst.Expression, ns: Name.NName, loc: SourceLocation) extends ResolvedAst
 
-  case class Property(law: Symbol.DefnSym, defn: Symbol.DefnSym, exp: ResolvedAst.Expression, loc: SourceLocation) extends Ast.Annotation
+  case class Property(law: Symbol.DefnSym, defn: Symbol.DefnSym, exp: ResolvedAst.Expression, loc: SourceLocation)
+
+  // TODO: Add laws
+  case class Class(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.ClassSym, quantifiers: List[Type.Var], head: ResolvedAst.SimpleClass, body: List[ResolvedAst.SimpleClass], loc: SourceLocation) extends ResolvedAst
+
+  case class Impl(doc: Ast.Doc, mod: Ast.Modifiers, head: ResolvedAst.ComplexClass, body: List[ResolvedAst.ComplexClass], defs: List[ResolvedAst.Def], loc: SourceLocation) extends NamedAst
+
+  // TODO: Disallow.
 
   sealed trait Table extends ResolvedAst {
     def sym: Symbol.TableSym
@@ -239,6 +248,11 @@ object ResolvedAst {
     case class RuleParam(sym: Symbol.VarSym, tpe: Type.Var, loc: SourceLocation) extends ResolvedAst.ConstraintParam
 
   }
+
+
+  case class SimpleClass(sym: Symbol.ClassSym, args: List[Type.Var], loc: SourceLocation) extends NamedAst
+
+  case class ComplexClass(sym: Symbol.ClassSym, polarity: Ast.Polarity, args: List[Type], loc: SourceLocation) extends NamedAst
 
   case class FormalParam(sym: Symbol.VarSym, mod: Ast.Modifiers, tpe: Type, loc: SourceLocation) extends ResolvedAst
 

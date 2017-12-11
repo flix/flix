@@ -29,6 +29,7 @@ object NamedAst {
   case class Program(defs: Map[Name.NName, Map[String, NamedAst.Def]],
                      enums: Map[Name.NName, Map[String, NamedAst.Enum]],
                      classes: Map[Name.NName, Map[String, NamedAst.Class]],
+                     impls: Map[Name.NName, List[NamedAst.Impl]],
                      lattices: Map[NamedAst.Type, NamedAst.Lattice],
                      indexes: Map[Name.NName, Map[String, NamedAst.Index]],
                      tables: Map[Name.NName, Map[String, NamedAst.Table]],
@@ -42,16 +43,25 @@ object NamedAst {
 
   case class Def(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, tparams: List[NamedAst.TypeParam], fparams: List[NamedAst.FormalParam], exp: NamedAst.Expression, sc: NamedAst.Scheme, eff: Eff, loc: SourceLocation) extends NamedAst
 
-  case class Enum(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: List[NamedAst.TypeParam], cases: Map[String, NamedAst.Case], tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst
+  // TODO
+  case class Sig() extends NamedAst
 
-  // TODO Class
-  case class Class(sym: Symbol.ClassSym) extends NamedAst
+  // TODO
+  case class Law() extends NamedAst
+
+  case class Enum(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: List[NamedAst.TypeParam], cases: Map[String, NamedAst.Case], tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst
 
   case class Index(qname: Name.QName, indexes: List[List[Name.Ident]], loc: SourceLocation) extends NamedAst
 
   case class Lattice(tpe: NamedAst.Type, bot: NamedAst.Expression, top: NamedAst.Expression, equ: NamedAst.Expression, leq: NamedAst.Expression, lub: NamedAst.Expression, glb: NamedAst.Expression, ns: Name.NName, loc: SourceLocation) extends NamedAst
 
   case class Property(law: Symbol.DefnSym, defn: Symbol.DefnSym, exp: NamedAst.Expression, loc: SourceLocation) extends Ast.Annotation
+
+  case class Class(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.ClassSym, quantifiers: List[ast.Type.Var], head: NamedAst.SimpleClass, body: List[NamedAst.SimpleClass], sigs: List[NamedAst.Sig], laws: List[NamedAst.Law], loc: SourceLocation) extends NamedAst
+
+  case class Impl(doc: Ast.Doc, mod: Ast.Modifiers, head: NamedAst.ComplexClass, body: List[NamedAst.ComplexClass], defs: List[NamedAst.Def], loc: SourceLocation) extends NamedAst
+
+  case class Disallow(doc: Ast.Doc, body: List[NamedAst.ComplexClass], loc: SourceLocation) extends NamedAst
 
   sealed trait Table extends NamedAst {
     def sym: Symbol.TableSym
@@ -266,6 +276,10 @@ object NamedAst {
     case class RuleParam(sym: Symbol.VarSym, tpe: ast.Type.Var, loc: SourceLocation) extends NamedAst.ConstraintParam
 
   }
+
+  case class SimpleClass(qname: Name.QName, args: List[ast.Type.Var], loc: SourceLocation) extends NamedAst
+
+  case class ComplexClass(qname: Name.QName, polarity: Ast.Polarity, args: List[NamedAst.Type], loc: SourceLocation) extends NamedAst
 
   case class FormalParam(sym: Symbol.VarSym, mod: Ast.Modifiers, tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst
 

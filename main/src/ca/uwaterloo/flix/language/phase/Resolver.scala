@@ -47,6 +47,22 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
       }
     }
 
+    val classesVal = prog0.classes.flatMap {
+      case (ns0, classes) => classes.map {
+        case (_, clazz) => resolveClass(clazz, ns0, prog0) map {
+          case c => c.head.sym -> c
+        }
+      }
+    }
+
+    val implsVal = prog0.impls.flatMap {
+      case (ns0, impls) => impls.map {
+        case impl => resolveImpl(impl, ns0, prog0) map {
+          case c => c.head.sym -> c
+        }
+      }
+    }
+
     val namedVal = prog0.named.map {
       case (sym, exp0) => Expressions.resolve(exp0, Name.RootNS, prog0).map {
         case exp =>
@@ -110,13 +126,16 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
       definitions <- seqM(definitionsVal)
       named <- seqM(namedVal)
       enums <- seqM(enumsVal)
+      classes <- seqM(classesVal)
+      impls <- seqM(implsVal)
       lattices <- seqM(latticesVal)
       indexes <- seqM(indexesVal)
       tables <- seqM(tablesVal)
       constraints <- seqM(constraintsVal)
       properties <- seqM(propertiesVal)
-    } yield ResolvedAst.Program(definitions.toMap ++ named.toMap, enums.toMap, lattices.toMap, indexes.toMap, tables.toMap, constraints.flatten, properties.flatten, prog0.reachable, prog0.time.copy(resolver = e))
-
+    } yield ResolvedAst.Program(
+      definitions.toMap ++ named.toMap, enums.toMap, classes.toMap, impls.toMap, lattices.toMap, indexes.toMap,
+      tables.toMap, constraints.flatten, properties.flatten, prog0.reachable, prog0.time.copy(resolver = e))
   }
 
   object Constraints {
@@ -174,6 +193,57 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
       cases <- seqM(casesVal)
       tpe <- lookupType(e0.tpe, ns0, prog0)
     } yield ResolvedAst.Enum(e0.doc, e0.mod, e0.sym, tparams, cases.toMap, tpe, e0.loc)
+  }
+
+  /**
+    * Performs name resolution on the given class `clazz0` in the given namespace `ns0`.
+    */
+  def resolveClass(clazz0: NamedAst.Class, ns0: Name.NName, prog0: NamedAst.Program): Validation[ResolvedAst.Class, ResolutionError] = clazz0 match {
+    case NamedAst.Class(doc, mod, sym, quantifiers, head0, body0, sigs, laws, loc) =>
+      for {
+        head <- resolveSimpleClass(head0, ns0, prog0)
+        body <- seqM(body0.map(b => resolveSimpleClass(b, ns0, prog0)))
+      } yield {
+        ResolvedAst.Class(doc, mod, sym, quantifiers, head, body, loc)
+      }
+  }
+
+  /**
+    * Performs name resolution on the given impl constraint `impl0` in the given namespace `ns0`.
+    */
+  def resolveImpl(impl0: NamedAst.Impl, ns0: Name.NName, prog0: NamedAst.Program): Validation[ResolvedAst.Impl, ResolutionError] = impl0 match {
+    case NamedAst.Impl(doc, mod, head0, body0, defs, loc) =>
+      for {
+        head <- resolveComplexClass(head0, ns0, prog0)
+        body <- seqM(body0.map(resolveComplexClass(_, ns0, prog0)))
+      } yield {
+        ResolvedAst.Impl(doc, mod, head, body, /* TODO */ Nil, loc)
+      }
+  }
+
+  /**
+    * Performs name resolution on the given simple class atom `a` in the given namespace `ns0`.
+    */
+  def resolveSimpleClass(a: NamedAst.SimpleClass, ns0: Name.NName, prog0: NamedAst.Program): Validation[ResolvedAst.SimpleClass, ResolutionError] = a match {
+    case NamedAst.SimpleClass(qname, args, loc) =>
+      for {
+        sym <- lookupClass(qname, ns0, prog0)
+      } yield {
+        ResolvedAst.SimpleClass(sym, args, loc)
+      }
+  }
+
+  /**
+    * Performs name resolution on the given complex class atom `a` in the given namespace `ns0`.
+    */
+  def resolveComplexClass(a: NamedAst.ComplexClass, ns0: Name.NName, prog0: NamedAst.Program): Validation[ResolvedAst.ComplexClass, ResolutionError] = a match {
+    case NamedAst.ComplexClass(qname, polarity, args, loc) =>
+      for {
+        sym <- lookupClass(qname, ns0, prog0)
+        ts <- seqM(args.map(lookupType(_, ns0, prog0)))
+      } yield {
+        ResolvedAst.ComplexClass(sym, polarity, ts, loc)
+      }
   }
 
   /**
@@ -748,6 +818,45 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
   }
 
   /**
+    * Finds the class with the qualified name `qname` in the namespace `ns0`.
+    */
+  // TODO: Move
+  def lookupClass(qname: Name.QName, ns0: Name.NName, prog0: NamedAst.Program): Validation[Symbol.ClassSym, ResolutionError] = {
+    // TODO: Check that this implementation matches lookupDef.
+
+    // Check whether the name is fully-qualified.
+    if (qname.isUnqualified) {
+      // Lookup in the current namespace.
+      prog0.classes.getOrElse(ns0, Map.empty).get(qname.ident.name) match {
+        case Some(clazz) =>
+          // Case 1.1 : The class is defined in the current namespace.
+          getClassIfAccessible(clazz, ns0, qname.loc).map(_.sym)
+        case None =>
+          // Case 1.2: The class was not found in the current namespace.
+          // Try the root namespace.
+          prog0.classes.getOrElse(Name.RootNS, Map.empty).get(qname.ident.name) match {
+            case Some(clazz) =>
+              // Case 1.2.1: The class is defined in the root namespace.
+              getClassIfAccessible(clazz, ns0, qname.loc).map(_.sym)
+            case None =>
+              // Case 1.2.2: The class was not found. Neither in the current namespace nor in the root namespace.
+              ResolutionError.UndefinedClass(qname, qname.namespace, qname.loc).toFailure
+          }
+      }
+    } else {
+      // Lookup in the qualified namespace.
+      prog0.classes.getOrElse(qname.namespace, Map.empty).get(qname.ident.name) match {
+        case Some(clazz) =>
+          // Case 2.1: The class was found in the qualified namespace.
+          getClassIfAccessible(clazz, ns0, qname.loc).map(_.sym)
+        case None =>
+          // Case 2.2: The class was not found in the qualified namespace.
+          ResolutionError.UndefinedClass(qname, qname.namespace, qname.loc).toFailure
+      }
+    }
+  }
+
+  /**
     * Returns `true` iff the given type `tpe0` is the Unit type.
     */
   def isUnitType(tpe: NamedAst.Type): Boolean = tpe match {
@@ -824,6 +933,12 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
         tpe2 <- lookupType(targ0, ns0, prog0)
       ) yield Type.Apply(tpe1, tpe2)
 
+  }
+
+  // TODO: DOC
+  def getClassIfAccessible(class0: NamedAst.Class, ns0: Name.NName, loc: SourceLocation): Validation[NamedAst.Class, ResolutionError] = {
+    // TODO: Implement.
+    class0.toSuccess
   }
 
   /**

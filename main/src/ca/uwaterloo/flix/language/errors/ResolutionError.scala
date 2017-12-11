@@ -17,8 +17,7 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.Symbol
-import ca.uwaterloo.flix.language.ast.{Name, Source, SourceLocation}
+import ca.uwaterloo.flix.language.ast.{Name, Source, SourceLocation, Symbol}
 import ca.uwaterloo.flix.util.vt.VirtualString._
 import ca.uwaterloo.flix.util.vt.VirtualTerminal
 
@@ -134,6 +133,26 @@ object ResolutionError {
       vt << Code(loc, "name not found") << NewLine
       vt << NewLine
       vt << Underline("Tip:") << " Possible typo or non-existent definition?" << NewLine
+    }
+  }
+
+  /**
+    * Unresolved Class Error.
+    *
+    * @param qn  the unresolved definition name.
+    * @param ns  the current namespace.
+    * @param loc the location where the error occurred.
+    */
+  case class UndefinedClass(qn: Name.QName, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
+    val source: Source = loc.source
+    val message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Undefined class '" << Red(qn.toString) << "'." << NewLine
+      vt << NewLine
+      vt << Code(loc, "name not found") << NewLine
+      vt << NewLine
+      vt << Underline("Tip:") << " Possible typo or non-existent class?" << NewLine
     }
   }
 
