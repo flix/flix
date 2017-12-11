@@ -47,6 +47,14 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
       }
     }
 
+    val classesVal = prog0.classes.map {
+      case (ns0, classes) => classes.map {
+        case (_, clazz) => resolveClass(clazz, ns0, prog0) map {
+          case c => c.sym -> c
+        }
+      }
+    }
+
     val namedVal = prog0.named.map {
       case (sym, exp0) => Expressions.resolve(exp0, Name.RootNS, prog0).map {
         case exp =>
@@ -174,6 +182,18 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
       cases <- seqM(casesVal)
       tpe <- lookupType(e0.tpe, ns0, prog0)
     } yield ResolvedAst.Enum(e0.doc, e0.mod, e0.sym, tparams, cases.toMap, tpe, e0.loc)
+  }
+
+  /**
+    * Performs name resolution on the given class `clazz0` in the given namespace `ns0`.
+    */
+  def resolveClass(clazz0: NamedAst.Class, ns0: Name.NName, prog0: NamedAst.Program): Validation[ResolvedAst.Class, ResolutionError] = clazz0 match {
+    case NamedAst.Class(doc, mod, sym, quantifiers, head0, body0, sigs, laws, loc) =>
+
+
+      println(sym)
+
+      ResolvedAst.Class(doc, mod, sym).toSuccess
   }
 
   /**
