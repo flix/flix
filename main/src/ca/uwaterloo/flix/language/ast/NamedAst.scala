@@ -278,9 +278,9 @@ object NamedAst {
 
   }
 
-  case class SimpleClass(qname: Name.QName, targs: List[ast.Type.Var], loc: SourceLocation) extends NamedAst
+  case class SimpleClass(qname: Name.QName, args: List[ast.Type.Var], loc: SourceLocation) extends NamedAst
 
-  case class ComplexClass(qname: Name.QName, polarity: Ast.Polarity, targs: List[NamedAst.Type], loc: SourceLocation) extends NamedAst
+  case class ComplexClass(qname: Name.QName, polarity: Ast.Polarity, args: List[NamedAst.Type], loc: SourceLocation) extends NamedAst
 
   case class FormalParam(sym: Symbol.VarSym, mod: Ast.Modifiers, tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst
 

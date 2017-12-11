@@ -258,9 +258,9 @@ object WeededAst {
 
   case class Case(enum: Name.Ident, tag: Name.Ident, tpe: WeededAst.Type) extends WeededAst
 
-  case class SimpleClass(qname: Name.QName, targs: List[Name.Ident], loc: SourceLocation) extends WeededAst
+  case class SimpleClass(qname: Name.QName, args: List[Name.Ident], loc: SourceLocation) extends WeededAst
 
-  case class ComplexClass(qname: Name.QName, polarity: Ast.Polarity, targs: List[WeededAst.Type], loc: SourceLocation) extends WeededAst
+  case class ComplexClass(qname: Name.QName, polarity: Ast.Polarity, args: List[WeededAst.Type], loc: SourceLocation) extends WeededAst
 
   case class FormalParam(ident: Name.Ident, mod: Ast.Modifiers, tpe: Option[WeededAst.Type], loc: SourceLocation) extends WeededAst
 
