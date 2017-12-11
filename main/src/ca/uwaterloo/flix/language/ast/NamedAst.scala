@@ -29,6 +29,7 @@ object NamedAst {
   case class Program(defs: Map[Name.NName, Map[String, NamedAst.Def]],
                      enums: Map[Name.NName, Map[String, NamedAst.Enum]],
                      classes: Map[Name.NName, Map[String, NamedAst.Class]],
+                     impls: Map[Name.NName, List[NamedAst.Impl]],
                      lattices: Map[NamedAst.Type, NamedAst.Lattice],
                      indexes: Map[Name.NName, Map[String, NamedAst.Index]],
                      tables: Map[Name.NName, Map[String, NamedAst.Table]],

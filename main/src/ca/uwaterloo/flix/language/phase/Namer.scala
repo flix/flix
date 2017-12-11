@@ -49,6 +49,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
       enums = Map.empty,
       defs = Map.empty,
       classes = Map.empty,
+      impls = Map.empty,
       lattices = Map.empty,
       indexes = Map.empty,
       tables = Map.empty,
@@ -300,23 +301,40 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
       // Impl.
       //
       case WeededAst.Declaration.Impl(doc, mod, head0, body0, defs0, loc) =>
+        // Compute the free type variables in the head and body atoms.
+        val freeTypeVars: List[Name.Ident] = freeVars(head0) ++ (body0 flatMap freeVars)
 
-        return prog0.toSuccess
+        // Introduce a fresh type variable for each free identifier.
+        val tenv0 = typeEnvFromFreeVars(freeTypeVars)
 
-        // TODO: Compute a map of type variables.
-        val tenv0 = Map.empty[String, Type.Var]
-
+        // Perform naming on the head and body class atoms.
         val head = visitComplexClass(ns0, head0, tenv0)
         val body = body0.map(b => visitComplexClass(ns0, b, tenv0))
+
+        // Perform naming on the definitions in the implementation.
         val defs = Nil // TODO: must compute the defs.
 
-        NamedAst.Impl(doc, mod, head, body, defs, loc)
-        prog0.toSuccess
+        // Reassemble the implementation.
+        val impl = NamedAst.Impl(doc, mod, head, body, defs, loc)
+
+        // Reassemble the implementations in the namespace.
+        val implsInNs = impl :: prog0.impls.getOrElse(ns0, Nil)
+        prog0.copy(impls = prog0.impls + (ns0 -> implsInNs)).toSuccess
 
       //
       // Disallow.
       //
-      case WeededAst.Declaration.Disallow(doc, body, loc) =>
+      case WeededAst.Declaration.Disallow(doc, body0, loc) =>
+        // Compute the free type variables in the body atoms.
+        val freeTypeVars: List[Name.Ident] = body0 flatMap freeVars
+
+        // Introduce a fresh type variable for each free identifier.
+        val tenv0 = typeEnvFromFreeVars(freeTypeVars)
+
+        // Perform naming on the body class atoms.
+        val body = body0.map(b => visitComplexClass(ns0, b, tenv0))
+
+        // TODO: Decide if these should be separate or go with the impls?
         prog0.toSuccess
 
       /*
@@ -382,13 +400,19 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
     /**
       * Performs naming on the given class declaration `decl0`.
       */
-    def visitClassDecl(ns0: Name.NName, decl0: Declaration.Class): NamedAst.Class = decl0 match {
+    def visitClassDecl(ns0: Name.NName, decl0: Declaration.Class)(implicit genSym: GenSym): NamedAst.Class = decl0 match {
       case Declaration.Class(doc, mod, head0, body0, sigs0, laws0, loc) =>
+        // Compute the free type variables in the head and body atoms.
+        val freeTypeVars = freeVars(head0) ::: (body0 flatMap freeVars)
+
+        // Introduce a fresh type variable for each free identifier.
+        val tenv0 = typeEnvFromFreeVars(freeTypeVars)
+
         // TODO
         val ident = decl0.head.qname.ident
         val sym = Symbol.mkClassSym(ns0, ident)
         val quantifiers = Nil
-        val head = visitSimpleClass(ns0, head0)
+        val head = visitSimpleClass(ns0, head0, tenv0)
         val body = Nil
         val sigs = Nil
         val laws = Nil
@@ -398,10 +422,10 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
     /**
       * Performs naming on the given simple class atom `a`.
       */
-    def visitSimpleClass(ns0: Name.NName, a: WeededAst.SimpleClass): NamedAst.SimpleClass = a match {
-      case WeededAst.SimpleClass(qname, targs, loc) =>
-        // TODO: targs
-        NamedAst.SimpleClass(qname, Nil, loc)
+    def visitSimpleClass(ns0: Name.NName, a: WeededAst.SimpleClass, tenv0: Map[String, Type.Var]): NamedAst.SimpleClass = a match {
+      case WeededAst.SimpleClass(qname, targs0, loc) =>
+        val targs = targs0.map(ident => tenv0(ident.name))
+        NamedAst.SimpleClass(qname, targs, loc)
     }
 
     /**
@@ -409,10 +433,43 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
       */
     def visitComplexClass(ns0: Name.NName, a: WeededAst.ComplexClass, tenv0: Map[String, Type.Var])(implicit genSym: GenSym): NamedAst.ComplexClass = a match {
       case WeededAst.ComplexClass(qname, polarity, targs0, loc) =>
-        val targs = targs0.map(t => Types.namer(t, tenv0)) // TODO: Empty map
+        val targs = targs0.map(t => Types.namer(t, tenv0))
         NamedAst.ComplexClass(qname, polarity, targs, loc)
     }
 
+    /**
+      * Returns the free variables in the given simple class atom `a`.
+      */
+    def freeVars(a: WeededAst.SimpleClass): List[Name.Ident] = a.targs
+
+    /**
+      * Returns the free variables in the given complex class atom `a`.
+      */
+    def freeVars(a: WeededAst.ComplexClass): List[Name.Ident] = a.targs.flatMap(freeVars)
+
+    /**
+      * Returns the free variables in the given type `tpe`.
+      */
+    def freeVars(tpe: WeededAst.Type): List[Name.Ident] = tpe match {
+      case WeededAst.Type.Var(ident, loc) => ident :: Nil
+      case WeededAst.Type.Ambiguous(qname, loc) => Nil
+      case WeededAst.Type.Unit(loc) => Nil
+      case WeededAst.Type.Tuple(elms, loc) => elms.flatMap(freeVars)
+      case WeededAst.Type.Native(fqm, loc) => Nil
+      case WeededAst.Type.Arrow(tparams, retType, loc) => tparams.flatMap(freeVars) ::: freeVars(retType)
+      case WeededAst.Type.Apply(tpe1, tpe2, loc) => freeVars(tpe1) ++ freeVars(tpe2)
+    }
+
+    /**
+      * Returns a fresh type environment constructed from the given identifiers `idents`.
+      */
+    def typeEnvFromFreeVars(idents: List[Name.Ident])(implicit genSym: GenSym): Map[String, Type.Var] =
+      idents.foldLeft(Map.empty[String, Type.Var]) {
+        case (macc, ident) => macc.get(ident.name) match {
+          case None => macc + (ident.name -> Type.freshTypeVar())
+          case Some(tvar) => macc
+        }
+      }
   }
 
   object Expressions {
