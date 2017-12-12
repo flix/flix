@@ -242,6 +242,111 @@ class TestResolver extends FunSuite with TestUtils {
     expectError[ResolutionError.UndefinedDef](result)
   }
 
+  test("UndefinedClass.01") {
+    val input = "class X[a] <= Y[a]"
+    val result = new Flix().addStr(input).compile()
+    expectError[ResolutionError.UndefinedClass](result)
+  }
+
+  test("UndefinedClass.02") {
+    val input = "class X[a] <= X[a], Y[a]"
+    val result = new Flix().addStr(input).compile()
+    expectError[ResolutionError.UndefinedClass](result)
+  }
+
+  test("UndefinedClass.03") {
+    val input =
+      """
+        |namespace A {
+        |  class Y[a]
+        |}
+        |
+        |class X[a] <= Y[a]
+      """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[ResolutionError.UndefinedClass](result)
+  }
+
+  test("UndefinedClass.04") {
+    val input =
+      """
+        |namespace A {
+        |  class Y[a]
+        |}
+        |
+        |namespace B {
+        |  class X[a] <= Y[a]
+        |}
+      """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[ResolutionError.UndefinedClass](result)
+  }
+
+  test("UndefinedClass.05") {
+    val input =
+      """
+        |impl X[Bool]
+      """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[ResolutionError.UndefinedClass](result)
+  }
+
+  test("UndefinedClass.06") {
+    val input =
+      """
+        |impl Eq[Bool] <= X[Bool]
+      """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[ResolutionError.UndefinedClass](result)
+  }
+
+  test("UndefinedClass.07") {
+    val input =
+      """
+        |namespace A {
+        |  class X[a]
+        |}
+        |
+        |impl X[Bool]
+      """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[ResolutionError.UndefinedClass](result)
+  }
+
+  test("UndefinedClass.08") {
+    val input =
+      """
+        |namespace A {
+        |  class X[a]
+        |}
+        |
+        |namespace B {
+        |  class Y[a]
+        |
+        |  impl X[a] <= Y[a]
+        |}
+      """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[ResolutionError.UndefinedClass](result)
+  }
+
+  test("UndefinedClass.09") {
+    val input =
+      """
+        |namespace A {
+        |  class X[a]
+        |}
+        |
+        |namespace B {
+        |  class Y[a]
+        |
+        |  impl Y[a] <= X[a]
+        |}
+      """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[ResolutionError.UndefinedClass](result)
+  }
+
   test("UndefinedTag.01") {
     val input =
       s"""
