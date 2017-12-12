@@ -835,8 +835,6 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
     */
   // TODO: Move
   def lookupClass(qname: Name.QName, ns0: Name.NName, prog0: NamedAst.Program): Validation[Symbol.ClassSym, ResolutionError] = {
-    // TODO: Check that this implementation matches lookupDef.
-
     // Check whether the name is fully-qualified.
     if (qname.isUnqualified) {
       // Lookup in the current namespace.
@@ -948,10 +946,35 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
 
   }
 
-  // TODO: DOC
+  /**
+    * Successfully returns the given class `clazz0` if it is accessible from the given namespace `ns0`.
+    *
+    * Otherwise fails with a resolution error.
+    *
+    * A class `clazz0` is accessible from a namespace `ns0` if:
+    *
+    * (a) the class is marked public, or
+    * (b) the class is defined in the namespace `ns0` itself or in a parent of `ns0`.
+    */
   def getClassIfAccessible(class0: NamedAst.Class, ns0: Name.NName, loc: SourceLocation): Validation[NamedAst.Class, ResolutionError] = {
-    // TODO: Implement.
-    class0.toSuccess
+    //
+    // Check if the definition is marked public.
+    //
+    if (class0.mod.isPublic)
+      return class0.toSuccess
+
+    //
+    // Check if the definition is defined in `ns0` or in a parent of `ns0`.
+    //
+    val prefixNs = class0.sym.namespace
+    val targetNs = ns0.idents.map(_.name)
+    if (targetNs.startsWith(prefixNs))
+      return class0.toSuccess
+
+    //
+    // The definition is not accessible.
+    //
+    ResolutionError.InaccessibleClass(class0.sym, ns0, loc).toFailure
   }
 
   /**

@@ -110,11 +110,11 @@ namespace Test07 {
 namespace Test08 {
 
     namespace A {
-        class X[a]
+        pub class X[a]
     }
 
     namespace B {
-        class Y[a] <= Test08/A.X[a]
+        pub class Y[a] <= Test08/A.X[a]
     }
 
     namespace C {

@@ -118,15 +118,15 @@ namespace Test05 {
 namespace Test06 {
 
     namespace A {
-        class X[a]
+        pub class X[a]
     }
 
     namespace B {
-        class Y[a]
+        pub class Y[a]
     }
 
     namespace C {
-        class Z[a]
+        pub class Z[a]
     }
 
     impl Test06/A.X[a] <= Test06/B.Y[a], Test06/C.Z[a]

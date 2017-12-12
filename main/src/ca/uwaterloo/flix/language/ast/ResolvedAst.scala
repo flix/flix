@@ -49,7 +49,7 @@ object ResolvedAst {
 
   case class Property(law: Symbol.DefnSym, defn: Symbol.DefnSym, exp: ResolvedAst.Expression, loc: SourceLocation)
 
-  // TODO: Add laws
+  // TODO: Add sigs and laws
   case class Class(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.ClassSym, quantifiers: List[Type.Var], head: ResolvedAst.SimpleClass, body: List[ResolvedAst.SimpleClass], loc: SourceLocation) extends ResolvedAst
 
   case class Impl(doc: Ast.Doc, mod: Ast.Modifiers, head: ResolvedAst.ComplexClass, body: List[ResolvedAst.ComplexClass], defs: List[ResolvedAst.Def], loc: SourceLocation) extends NamedAst
