@@ -135,6 +135,13 @@ object Symbol {
   }
 
   /**
+    * Returns the signature symbol for the given name `ident` in the class associated with the given class symbol `classSym`.
+    */
+  def mkSigSym(classSym: ClassSym, ident: Name.Ident): SigSym = {
+    new SigSym(classSym, ident.name, ident.loc)
+  }
+
+  /**
     * Returns the table symbol for the given name `ident` in the given namespace `ns`.
     */
   def mkTableSym(ns: NName, ident: Ident): TableSym = {

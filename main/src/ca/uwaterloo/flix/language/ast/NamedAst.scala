@@ -45,10 +45,9 @@ object NamedAst {
   case class Def(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, tparams: List[NamedAst.TypeParam], fparams: List[NamedAst.FormalParam], exp: NamedAst.Expression, sc: NamedAst.Scheme, eff: Eff, loc: SourceLocation) extends NamedAst
 
   // TODO
-  case class Sig() extends NamedAst
-
-  // TODO
   case class Law() extends NamedAst
+
+  case class Sig(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.SigSym, tparams: List[NamedAst.TypeParam], fparams: List[NamedAst.FormalParam], sc: NamedAst.Scheme, eff: Eff, loc: SourceLocation) extends NamedAst
 
   case class Enum(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: List[NamedAst.TypeParam], cases: Map[String, NamedAst.Case], tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst
 

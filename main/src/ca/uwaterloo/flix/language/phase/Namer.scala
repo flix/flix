@@ -109,20 +109,13 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
             // Case 1: The definition does not already exist. Update it.
 
             // Compute the type environment from the formal type parameters.
-            val tparams = tparams0.map {
-              case p =>
-                // Generate a fresh type variable for the type parameter.
-                val tvar = Type.freshTypeVar()
-                // Remember the original textual name.
-                tvar.setText(p.name)
-                NamedAst.TypeParam(p, tvar, p.loc)
-            }
+            val tparams = getTypeParams(tparams0)
 
             // Compute the type environment.
-            val tenv0 = tparams.map(p => p.name.name -> p.tpe).toMap
+            val tenv0 = getTypeEnv(tparams)
 
             // Introduce variable symbols for each formal parameter.
-            val fparams = fparams0.map(p => Params.namer(p, tenv0))
+            val fparams = getFormalParams(fparams0, tenv0)
 
             // Compute the local variable environment from the formal parameters.
             val env0 = fparams.map(p => p.sym.text -> p.sym).toMap
@@ -130,7 +123,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
             Expressions.namer(exp, env0, tenv0) map {
               case e =>
                 val sym = Symbol.mkDefnSym(ns0, ident)
-                val sc = NamedAst.Scheme(tparams.map(_.tpe), Types.namer(tpe, tenv0))
+                val sc = getScheme(tparams, tpe, tenv0)
                 val defn = NamedAst.Def(doc, ann, mod, sym, tparams, fparams, e, sc, eff, loc)
                 prog0.copy(defs = prog0.defs + (ns0 -> (defns + (ident.name -> defn))))
             }
@@ -278,7 +271,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
         prog0.classes.get(ns0) match {
           case None =>
             // Case 1: The namespace does not yet exist. So the class does not yet exist.
-            val clazz = visitClassDecl(ns0, decl)
+            val clazz = visitClassDecl(decl, ns0)
             val classes = Map(ident.name -> clazz)
             prog0.copy(classes = prog0.classes + (ns0 -> classes)).toSuccess
           case Some(classes0) =>
@@ -286,7 +279,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
             classes0.get(ident.name) match {
               case None =>
                 // Case 2.1: The class does not exist in the namespace. Update it.
-                val clazz = visitClassDecl(ns0, decl)
+                val clazz = visitClassDecl(decl, ns0)
                 val classes = classes0 + (ident.name -> clazz)
                 prog0.copy(classes = prog0.classes + (ns0 -> classes)).toSuccess
               case Some(clazz) =>
@@ -398,9 +391,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
     }
 
     /**
-      * Performs naming on the given class declaration `decl0`.
+      * Performs naming on the given class declaration `decl0` in the given namespace `ns0`.
       */
-    def visitClassDecl(ns0: Name.NName, decl0: Declaration.Class)(implicit genSym: GenSym): NamedAst.Class = decl0 match {
+    def visitClassDecl(decl0: Declaration.Class, ns0: Name.NName)(implicit genSym: GenSym): NamedAst.Class = decl0 match {
       case Declaration.Class(doc, mod, head0, body0, sigs0, laws0, loc) =>
         // Compute the free type variables in the head and body atoms.
         val freeTypeVars = freeVars(head0) ::: (body0 flatMap freeVars)
@@ -411,12 +404,25 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
         // TODO
         val ident = decl0.head.qname.ident
         val sym = Symbol.mkClassSym(ns0, ident)
-        val quantifiers = Nil
+        val quantifiers = tenv0.values.toList
         val head = visitSimpleClass(head0, ns0, tenv0)
         val body = body0.map(visitSimpleClass(_, ns0, tenv0))
-        val sigs = Nil
+        val sigs = sigs0.map(visitSig(_, sym, tenv0, ns0))
         val laws = Nil
         NamedAst.Class(doc, mod, sym, quantifiers, head, body, sigs, laws, loc)
+    }
+
+    /**
+      * Performs naming on the given signature declaration `sig0` in the given namespace `ns0`.
+      */
+    def visitSig(sig0: WeededAst.Declaration.Sig, classSym: Symbol.ClassSym, tenv0: Map[String, Type.Var], ns0: Name.NName)(implicit genSym: GenSym): NamedAst.Sig = sig0 match {
+      case WeededAst.Declaration.Sig(doc, ann, mod, ident, tparams0, fparams0, tpe, eff, loc) =>
+        val sym = Symbol.mkSigSym(classSym, ident)
+        val tparams = getTypeParams(tparams0)
+        val tenv = tenv0 ++ getTypeEnv(tparams)
+        val fparams = getFormalParams(fparams0, tenv)
+        val sc = getScheme(tparams, tpe, tenv)
+        NamedAst.Sig(doc, ann, mod, sym, tparams, fparams, sc, eff, loc)
     }
 
     /**
@@ -1084,5 +1090,38 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
       case (None, _) => true
       case (Some(clazz1), clazz2) => clazz1 == clazz2
     }
+
+  /**
+    * Performs naming on the given formal parameters `fparam0` under the given type environment `tenv0`.
+    */
+  def getFormalParams(fparams0: List[WeededAst.FormalParam], tenv0: Map[String, Type.Var])(implicit genSym: GenSym): List[NamedAst.FormalParam] = {
+    fparams0.map(p => Params.namer(p, tenv0))
+  }
+
+  /**
+    * Performs naming on the given type parameters `tparams0`.
+    */
+  def getTypeParams(tparams0: List[Name.Ident])(implicit genSym: GenSym): List[NamedAst.TypeParam] = tparams0 map {
+    case p =>
+      // Generate a fresh type variable for the type parameter.
+      val tvar = Type.freshTypeVar()
+      // Remember the original textual name.
+      tvar.setText(p.name)
+      NamedAst.TypeParam(p, tvar, p.loc)
+  }
+
+  /**
+    * Returns a type environment constructed from the given type parameters `tparams0`.
+    */
+  def getTypeEnv(tparams0: List[NamedAst.TypeParam]): Map[String, Type.Var] = {
+    tparams0.map(p => p.name.name -> p.tpe).toMap
+  }
+
+  /**
+    * Returns the type scheme for the given type parameters `tparams0` and type `tpe` under the given type environment `tenv0`.
+    */
+  def getScheme(tparams0: List[NamedAst.TypeParam], tpe: WeededAst.Type, tenv0: Map[String, Type.Var])(implicit genSym: GenSym): NamedAst.Scheme = {
+    NamedAst.Scheme(tparams0.map(_.tpe), Types.namer(tpe, tenv0))
+  }
 
 }

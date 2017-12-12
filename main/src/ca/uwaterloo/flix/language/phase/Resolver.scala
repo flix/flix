@@ -200,10 +200,11 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
     * Performs name resolution on the given class `clazz0` in the given namespace `ns0`.
     */
   def resolveClass(clazz0: NamedAst.Class, ns0: Name.NName, prog0: NamedAst.Program): Validation[ResolvedAst.Class, ResolutionError] = clazz0 match {
-    case NamedAst.Class(doc, mod, sym, quantifiers, head0, body0, sigs, laws, loc) =>
+    case NamedAst.Class(doc, mod, sym, quantifiers, head0, body0, sigs0, laws, loc) =>
       for {
         head <- resolveSimpleClass(head0, ns0, prog0)
-        body <- seqM(body0.map(b => resolveSimpleClass(b, ns0, prog0)))
+        body <- seqM(body0.map(resolveSimpleClass(_, ns0, prog0)))
+        sigs <- seqM(sigs0.map(resolveSig(_, ns0, prog0)))
       } yield {
         ResolvedAst.Class(doc, mod, sym, quantifiers, head, body, /* TODO */ Map.empty, /* TODO */ Nil, loc)
       }
@@ -245,6 +246,13 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
       } yield {
         ResolvedAst.ComplexClass(sym, polarity, ts, loc)
       }
+  }
+
+  /**
+    * Performs name resolution on the given signature `sig0` in the given namespace `ns0`.
+    */
+  def resolveSig(sig0: NamedAst.Sig, ns0: Name.NName, prog0: NamedAst.Program): Validation[ResolvedAst.Sig, ResolutionError] = {
+    ResolvedAst.Sig().toSuccess
   }
 
   /**
@@ -880,7 +888,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
 
     // Look through each class to see if it contains a usable signature.
     for (NamedAst.Class(doc, mod, sym, quantifiers, head, body, sigs, laws, loc) <- classes) {
-      for (NamedAst.Sig() <- sigs) {
+      for (NamedAst.Sig(doc, ann, mod, sym, tparams, fparams, sc, eff, loc) <- sigs) {
         // TODO: If ....
       }
     }
