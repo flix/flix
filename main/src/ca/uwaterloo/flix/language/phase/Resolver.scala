@@ -205,7 +205,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
         head <- resolveSimpleClass(head0, ns0, prog0)
         body <- seqM(body0.map(b => resolveSimpleClass(b, ns0, prog0)))
       } yield {
-        ResolvedAst.Class(doc, mod, sym, quantifiers, head, body, loc)
+        ResolvedAst.Class(doc, mod, sym, quantifiers, head, body, /* TODO */ Map.empty, /* TODO */ Nil, loc)
       }
   }
 
@@ -866,6 +866,41 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
       }
     }
   }
+
+  /**
+    * TODO: DOC
+    */
+  // TODO: Can you access a signature by qualified name???
+  def lookupSig(ident: Name.Ident, ns0: Name.NName, prog0: NamedAst.Program): Validation[Option[Symbol.SigSym], ResolutionError] = {
+    // Compute all classes visible in the current namespace.
+    val classes = getClassesInScope()
+
+    // A mutable collection of candidate signatures.
+    val candidates = mutable.Set.empty[Symbol.SigSym]
+
+    // Look through each class to see if it contains a usable signature.
+    for (NamedAst.Class(doc, mod, sym, quantifiers, head, body, sigs, laws, loc) <- classes) {
+      for (NamedAst.Sig() <- sigs) {
+        // TODO: If ....
+      }
+    }
+
+    // Check how many candidate signatures were found.
+    if (candidates.isEmpty) {
+      // Case 1: No candidate signatures.
+      None.toSuccess
+    } else if (candidates.size == 1) {
+      // Case 2: Exactly one candidate signature.
+      Some(candidates.head).toSuccess
+    } else {
+      // Case 3: Multiple candidate signatures.
+      // TODO: Ambiguius
+      ???
+    }
+  }
+
+  // TODO: DOC
+  def getClassesInScope(): List[NamedAst.Class] = Nil
 
   /**
     * Returns `true` iff the given type `tpe0` is the Unit type.

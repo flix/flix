@@ -312,6 +312,29 @@ object Symbol {
   }
 
   /**
+    * Signature Symbol.
+    */
+  final class SigSym(val clazz: Symbol.ClassSym, val name: String, val loc: SourceLocation) {
+    /**
+      * Returns `true` if this symbol is equal to `that` symbol.
+      */
+    override def equals(obj: scala.Any): Boolean = obj match {
+      case that: SigSym => this.clazz == that.clazz && this.name == that.name
+      case _ => false
+    }
+
+    /**
+      * Returns the hash code of this symbol.
+      */
+    override val hashCode: Int = 7 * clazz.hashCode + 11 * name.hashCode
+
+    /**
+      * Human readable representation.
+      */
+    override def toString: String = if (clazz.namespace.isEmpty) name else clazz.namespace.mkString("/") + "." + "@" + name
+  }
+
+  /**
     * Table Symbol.
     */
   final class TableSym(val namespace: List[String], val name: String, val loc: SourceLocation) {
