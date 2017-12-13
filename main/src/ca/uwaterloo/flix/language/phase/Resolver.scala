@@ -47,6 +47,14 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
       }
     }
 
+    val effsVal = prog0.effs.flatMap {
+      case (ns0, effs) => effs.map {
+        case (_, eff) => resolveEff(eff, ns0, prog0) map {
+          case d => d.sym -> d
+        }
+      }
+    }
+
     val handlersVal = prog0.handlers.flatMap {
       case (ns0, handlers) => handlers.map {
         case (_, handler) => resolveHandler(handler, ns0, prog0) map {
@@ -132,7 +140,9 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
 
     for {
       definitions <- seqM(definitionsVal)
+      effs <- seqM(effsVal)
       handlers <- seqM(handlersVal)
+      _ <- checkDefaultHandlers(effs, handlers)
       named <- seqM(namedVal)
       enums <- seqM(enumsVal)
       classes <- seqM(classesVal)
@@ -185,6 +195,18 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
       sc <- schemeVal
     } yield ResolvedAst.Def(d0.doc, d0.ann, d0.mod, d0.sym, tparams, fparams, e, sc, d0.eff, d0.loc)
 
+  }
+
+  /**
+    * Performs name resolution on the given effect `eff0` in the given namespace `ns0`.
+    */
+  def resolveEff(eff0: NamedAst.Eff, ns0: Name.NName, prog0: NamedAst.Program): Validation[ResolvedAst.Eff, ResolutionError] = eff0 match {
+    case NamedAst.Eff(doc, ann, mod, sym, tparams0, fparams0, sc0, eff, loc) =>
+
+      // TODO: Rest
+      for {
+        tparams <- resolveTypeParams(tparams0, ns0, prog0)
+      } yield ResolvedAst.Eff(sym)
   }
 
   /**
@@ -872,8 +894,29 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
 
   // TODO: Move
   /**
+    * Ensures that every declared effect in `effs` has one handler in `handlers`.
+    */
+  def checkDefaultHandlers(effs: List[(Symbol.EffSym, ResolvedAst.Eff)], handlers: List[(Symbol.EffSym, ResolvedAst.Handler)]): Validation[Unit, ResolutionError] = {
+    //
+    // Compute the declared and handled effects.
+    //
+    val declaredEffects = effs.map(_._1)
+    val declaredHandlers = handlers.map(_._1)
+
+    //
+    // Check if there are any unhandled effects.
+    //
+    val unhandledEffects = declaredEffects.toSet -- declaredHandlers.toSet
+    if (unhandledEffects.isEmpty)
+      ().toSuccess
+    else
+      ResolutionError.UnhandledEffect(unhandledEffects.head).toFailure
+  }
+
+  /**
     * Finds the given effect with the qualified name `qname` in the namespace `ns0`.
     */
+  // TODO: Move
   def lookupEff(qname: Name.QName, ns0: Name.NName, prog0: NamedAst.Program): Validation[Symbol.EffSym, ResolutionError] = {
 
     // TODO: Replace by real implementation.

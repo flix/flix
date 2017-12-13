@@ -18,6 +18,8 @@ package ca.uwaterloo.flix.language.ast
 
 import java.lang.reflect.{Constructor, Field, Method}
 
+import ca.uwaterloo.flix.language.ast
+
 import scala.collection.immutable.List
 
 trait ResolvedAst
@@ -39,7 +41,9 @@ object ResolvedAst {
 
   case class Constraint(cparams: List[ResolvedAst.ConstraintParam], head: ResolvedAst.Predicate.Head, body: List[ResolvedAst.Predicate.Body], loc: SourceLocation) extends ResolvedAst
 
-  case class Def(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, tparams: List[ResolvedAst.TypeParam], fparams: List[ResolvedAst.FormalParam], exp: ResolvedAst.Expression, sc: Scheme, eff: Eff, loc: SourceLocation) extends ResolvedAst
+  case class Def(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, tparams: List[ResolvedAst.TypeParam], fparams: List[ResolvedAst.FormalParam], exp: ResolvedAst.Expression, sc: Scheme, eff: ast.Eff, loc: SourceLocation) extends ResolvedAst
+
+  case class Eff(sym: Symbol.EffSym) extends ResolvedAst
 
   case class Handler(sym: Symbol.EffSym) extends ResolvedAst
 
@@ -161,9 +165,9 @@ object ResolvedAst {
 
     case class Universal(fparam: ResolvedAst.FormalParam, exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Ascribe(exp: ResolvedAst.Expression, tpe: Type, eff: Eff, loc: SourceLocation) extends ResolvedAst.Expression
+    case class Ascribe(exp: ResolvedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Cast(exp: ResolvedAst.Expression, tpe: Type, eff: Eff, loc: SourceLocation) extends ResolvedAst.Expression
+    case class Cast(exp: ResolvedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class NativeConstructor(method: Constructor[_], args: List[ResolvedAst.Expression], tpe: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 

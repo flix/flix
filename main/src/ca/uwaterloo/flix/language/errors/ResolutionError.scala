@@ -256,4 +256,22 @@ object ResolutionError {
     }
   }
 
+  /**
+    * Unhandled Effect Error.
+    *
+    * @param sym the unhandled effect symbol.
+    */
+  case class UnhandledEffect(sym: Symbol.EffSym) extends ResolutionError {
+    val source: Source = sym.loc.source
+    val message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Unhandled effect '" << Red(sym.toString) << "'." << NewLine
+      vt << NewLine
+      vt << Code(sym.loc, "no default handler.") << NewLine
+      vt << NewLine
+      vt << Underline("Tip:") << " Possible typo or non-existent effect handler?" << NewLine
+    }
+  }
+
 }

@@ -485,4 +485,24 @@ class TestResolver extends FunSuite with TestUtils {
     expectError[ResolutionError.UndefinedType](result)
   }
 
+  test("UnhandledEffect.01") {
+    val input =
+      s"""
+         |eff f(): Int
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[ResolutionError.UnhandledEffect](result)
+  }
+
+  test("UnhandledEffect.02") {
+    val input =
+      s"""
+         |namespace A {
+         |  eff f(): Int
+         |}
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[ResolutionError.UnhandledEffect](result)
+  }
+
 }
