@@ -54,5 +54,5 @@ eff j(x: Int, y: Int): Bool
 ///
 /// Declares a complex handler which takes the continuation.
 ///
-handler j[a](x: Int, k: Bool -> a): a = k(x == y)
+handler j[a](x: Int, k: Bool -> a): a = k(x == x)
 

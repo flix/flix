@@ -183,37 +183,33 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
   /**
     * Performs name resolution on the given definition `d0` in the given namespace `ns0`.
     */
-  def resolve(d0: NamedAst.Def, ns0: Name.NName, prog0: NamedAst.Program)(implicit genSym: GenSym): Validation[ResolvedAst.Def, ResolutionError] = {
-    val schemeVal = for {
-      base <- lookupType(d0.sc.base, ns0, prog0)
-    } yield Scheme(d0.sc.quantifiers, base)
-
-    for {
-      tparams <- resolveTypeParams(d0.tparams, ns0, prog0)
-      fparams <- seqM(d0.fparams.map(fparam => Params.resolve(fparam, ns0, prog0)))
-      e <- Expressions.resolve(d0.exp, ns0, prog0)
-      sc <- schemeVal
-    } yield ResolvedAst.Def(d0.doc, d0.ann, d0.mod, d0.sym, tparams, fparams, e, sc, d0.eff, d0.loc)
-
+  def resolve(d0: NamedAst.Def, ns0: Name.NName, prog0: NamedAst.Program)(implicit genSym: GenSym): Validation[ResolvedAst.Def, ResolutionError] = d0 match {
+    case NamedAst.Def(doc, ann, mod, sym, tparams0, fparams0, exp0, sc0, eff0, loc) =>
+      for {
+        fparams <- resolveFormalParams(fparams0, ns0, prog0)
+        tparams <- resolveTypeParams(tparams0, ns0, prog0)
+        exp <- Expressions.resolve(exp0, ns0, prog0)
+        scheme <- resolveScheme(sc0, ns0, prog0)
+      } yield ResolvedAst.Def(doc, ann, mod, sym, tparams, fparams, exp, scheme, eff0, loc)
   }
 
   /**
     * Performs name resolution on the given effect `eff0` in the given namespace `ns0`.
     */
-  def resolveEff(eff0: NamedAst.Eff, ns0: Name.NName, prog0: NamedAst.Program): Validation[ResolvedAst.Eff, ResolutionError] = eff0 match {
-    case NamedAst.Eff(doc, ann, mod, sym, tparams0, fparams0, sc0, eff, loc) =>
-
-      // TODO: Rest
+  def resolveEff(eff0: NamedAst.Eff, ns0: Name.NName, prog0: NamedAst.Program)(implicit genSym: GenSym): Validation[ResolvedAst.Eff, ResolutionError] = eff0 match {
+    case NamedAst.Eff(doc, ann, mod, sym, tparams0, fparams0, sc0, eff0, loc) =>
       for {
+        fparams <- resolveFormalParams(fparams0, ns0, prog0)
         tparams <- resolveTypeParams(tparams0, ns0, prog0)
-      } yield ResolvedAst.Eff(sym)
+        scheme <- resolveScheme(sc0, ns0, prog0)
+      } yield ResolvedAst.Eff(doc, ann, mod, sym, tparams, fparams, scheme, eff0, loc)
   }
 
   /**
     * Performs name resolution on the given handler `handler0` in the given namespace `ns0`.
     */
-  def resolveHandler(handler0: NamedAst.Handler, ns0: Name.NName, prog0: NamedAst.Program): Validation[ResolvedAst.Handler, ResolutionError] = handler0 match {
-    case NamedAst.Handler(doc, ann, mod, ident, tparams0, fparams0, exp, sc, eff, loc) =>
+  def resolveHandler(handler0: NamedAst.Handler, ns0: Name.NName, prog0: NamedAst.Program)(implicit genSym: GenSym): Validation[ResolvedAst.Handler, ResolutionError] = handler0 match {
+    case NamedAst.Handler(doc, ann, mod, ident, tparams0, fparams0, exp0, sc0, eff, loc) =>
 
       val qname = Name.mkQName(ident)
 
@@ -221,7 +217,10 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
 
       for {
         sym <- lookupEff(qname, ns0, prog0)
+        fparams <- resolveFormalParams(fparams0, ns0, prog0)
         tparams <- resolveTypeParams(tparams0, ns0, prog0)
+        exp <- Expressions.resolve(exp0, ns0, prog0)
+        scheme <- resolveScheme(sc0, ns0, prog0)
       } yield ResolvedAst.Handler(sym) // TODO
   }
 
@@ -753,11 +752,26 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
   }
 
   /**
+    * Performs name resolution on the given formal parameters `fparams0`.
+    */
+  def resolveFormalParams(fparams0: List[NamedAst.FormalParam], ns0: Name.NName, prog0: NamedAst.Program): Validation[List[ResolvedAst.FormalParam], ResolutionError] = {
+    seqM(fparams0.map(fparam => Params.resolve(fparam, ns0, prog0)))
+  }
+
+  /**
     * Performs name resolution on the given type parameters `tparams0`.
     */
   def resolveTypeParams(tparams0: List[NamedAst.TypeParam], ns0: Name.NName, prog0: NamedAst.Program): Validation[List[ResolvedAst.TypeParam], ResolutionError] =
     seqM(tparams0.map(tparam => Params.resolve(tparam, ns0, prog0)))
 
+  /**
+    * Performs name resolution on the given scheme `sc0`.
+    */
+  def resolveScheme(sc0: NamedAst.Scheme, ns0: Name.NName, prog0: NamedAst.Program): Validation[Scheme, ResolutionError] = {
+    for {
+      base <- lookupType(sc0.base, ns0, prog0)
+    } yield Scheme(sc0.quantifiers, base)
+  }
 
   /**
     * The result of a definition lookup.
