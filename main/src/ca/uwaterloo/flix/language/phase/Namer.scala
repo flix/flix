@@ -168,7 +168,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
               case e =>
                 val sym = Symbol.mkEffSym(ns0, ident)
                 val sc = getScheme(tparams, tpe, tenv0)
-                val handler = NamedAst.Handler(doc, ann, mod, sym, tparams, fparams, e, sc, eff0, loc)
+                val handler = NamedAst.Handler(doc, ann, mod, ident, tparams, fparams, e, sc, eff0, loc)
                 prog0.copy(handlers = prog0.handlers + (ns0 -> (handlers + (ident.name -> handler))))
             }
           case Some(handler) =>

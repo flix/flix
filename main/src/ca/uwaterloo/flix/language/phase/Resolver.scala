@@ -47,6 +47,14 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
       }
     }
 
+    val handlersVal = prog0.handlers.flatMap {
+      case (ns0, handlers) => handlers.map {
+        case (_, handler) => resolveHandler(handler, ns0, prog0) map {
+          case d => d.sym -> d
+        }
+      }
+    }
+
     val classesVal = prog0.classes.flatMap {
       case (ns0, classes) => classes.map {
         case (_, clazz) => resolveClass(clazz, ns0, prog0) map {
@@ -124,6 +132,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
 
     for {
       definitions <- seqM(definitionsVal)
+      handlers <- seqM(handlersVal)
       named <- seqM(namedVal)
       enums <- seqM(enumsVal)
       classes <- seqM(classesVal)
@@ -170,12 +179,28 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
     } yield Scheme(d0.sc.quantifiers, base)
 
     for {
-      tparams <- seqM(d0.tparams.map(tparam => Params.resolve(tparam, ns0, prog0)))
+      tparams <- resolveTypeParams(d0.tparams, ns0, prog0)
       fparams <- seqM(d0.fparams.map(fparam => Params.resolve(fparam, ns0, prog0)))
       e <- Expressions.resolve(d0.exp, ns0, prog0)
       sc <- schemeVal
     } yield ResolvedAst.Def(d0.doc, d0.ann, d0.mod, d0.sym, tparams, fparams, e, sc, d0.eff, d0.loc)
 
+  }
+
+  /**
+    * Performs name resolution on the given handler `handler0` in the given namespace `ns0`.
+    */
+  def resolveHandler(handler0: NamedAst.Handler, ns0: Name.NName, prog0: NamedAst.Program): Validation[ResolvedAst.Handler, ResolutionError] = handler0 match {
+    case NamedAst.Handler(doc, ann, mod, ident, tparams0, fparams0, exp, sc, eff, loc) =>
+
+      val qname = Name.mkQName(ident)
+
+      // TODO: Rest
+
+      for {
+        sym <- lookupEff(qname, ns0, prog0)
+        tparams <- resolveTypeParams(tparams0, ns0, prog0)
+      } yield ResolvedAst.Handler(sym) // TODO
   }
 
   /**
@@ -706,6 +731,13 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
   }
 
   /**
+    * Performs name resolution on the given type parameters `tparams0`.
+    */
+  def resolveTypeParams(tparams0: List[NamedAst.TypeParam], ns0: Name.NName, prog0: NamedAst.Program): Validation[List[ResolvedAst.TypeParam], ResolutionError] =
+    seqM(tparams0.map(tparam => Params.resolve(tparam, ns0, prog0)))
+
+
+  /**
     * The result of a definition lookup.
     */
   sealed trait DefTarget
@@ -835,6 +867,22 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
         case None => ResolutionError.UndefinedTable(qname, qname.namespace, qname.loc).toFailure
         case Some(table) => table.toSuccess
       }
+    }
+  }
+
+  // TODO: Move
+  /**
+    * Finds the given effect with the qualified name `qname` in the namespace `ns0`.
+    */
+  def lookupEff(qname: Name.QName, ns0: Name.NName, prog0: NamedAst.Program): Validation[Symbol.EffSym, ResolutionError] = {
+
+    // TODO: Replace by real implementation.
+
+    prog0.effs.getOrElse(ns0, Map.empty).get(qname.ident.name) match {
+      case Some(eff) =>
+        eff.sym.toSuccess
+      case None =>
+        ResolutionError.UndefinedEff(qname, ns0, qname.loc).toFailure
     }
   }
 

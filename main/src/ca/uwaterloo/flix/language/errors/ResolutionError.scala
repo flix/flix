@@ -157,9 +157,9 @@ object ResolutionError {
   }
 
   /**
-    * Unresolved Definition Error.
+    * Undefined Definition Error.
     *
-    * @param qn  the unresolved definition name.
+    * @param qn  the unresolved name.
     * @param ns  the current namespace.
     * @param loc the location where the error occurred.
     */
@@ -173,6 +173,26 @@ object ResolutionError {
       vt << Code(loc, "name not found") << NewLine
       vt << NewLine
       vt << Underline("Tip:") << " Possible typo or non-existent definition?" << NewLine
+    }
+  }
+
+  /**
+    * Undefined Effect Error.
+    *
+    * @param qn  the unresolved name.
+    * @param ns  the current namespace.
+    * @param loc the location where the error occurred.
+    */
+  case class UndefinedEff(qn: Name.QName, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
+    val source: Source = loc.source
+    val message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Undefined effect '" << Red(qn.toString) << "'." << NewLine
+      vt << NewLine
+      vt << Code(loc, "name not found") << NewLine
+      vt << NewLine
+      vt << Underline("Tip:") << " Possible typo or non-existent effect?" << NewLine
     }
   }
 
