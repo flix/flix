@@ -98,6 +98,13 @@ object Symbol {
   }
 
   /**
+    * Returns the effect symbol for the given name `ident` in the given namespace `ns`.
+    */
+  def mkEffSym(ns: NName, ident: Ident): EffSym = {
+    new EffSym(ns.parts, ident.name, ident.loc)
+  }
+
+  /**
     * Returns the enum symbol for the given name `ident` in the given namespace `ns`.
     */
   def mkEnumSym(ns: NName, ident: Ident): EnumSym = {
@@ -271,6 +278,28 @@ object Symbol {
     override def toString: String = if (namespace.isEmpty) name else namespace.mkString("/") + "." + name
   }
 
+  /**
+    * Effect Symbol.
+    */
+  final class EffSym(val namespace: List[String], val name: String, val loc: SourceLocation) {
+    /**
+      * Returns `true` if this symbol is equal to `that` symbol.
+      */
+    override def equals(obj: scala.Any): Boolean = obj match {
+      case that: EffSym => this.namespace == that.namespace && this.name == that.name
+      case _ => false
+    }
+
+    /**
+      * Returns the hash code of this symbol.
+      */
+    override val hashCode: Int = 7 * namespace.hashCode() + 11 * name.hashCode
+
+    /**
+      * Human readable representation.
+      */
+    override def toString: String = if (namespace.isEmpty) name else namespace.mkString("/") + "." + name
+  }
 
   /**
     * Enum Symbol.
@@ -338,7 +367,7 @@ object Symbol {
     /**
       * Human readable representation.
       */
-    override def toString: String = if (clazz.namespace.isEmpty) name else clazz.namespace.mkString("/") + "." + "@" + name
+    override def toString: String = if (clazz.namespace.isEmpty) name else clazz.namespace.mkString("/") + "." + name
   }
 
   /**

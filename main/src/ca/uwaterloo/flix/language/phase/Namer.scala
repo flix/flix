@@ -46,8 +46,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
 
     // make an empty program to fold over.
     val prog0 = NamedAst.Program(
-      enums = Map.empty,
       defs = Map.empty,
+      effs = Map.empty,
+      enums = Map.empty,
       classes = Map.empty,
       impls = Map.empty,
       lattices = Map.empty,
@@ -101,30 +102,23 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
       /*
        * Definition.
        */
-      case WeededAst.Declaration.Def(doc, ann, mod, ident, tparams0, fparams0, exp, tpe, eff, loc) =>
-        // check if the definition already exists.
+      case WeededAst.Declaration.Def(doc, ann, mod, ident, tparams0, fparams0, exp, tpe, eff0, loc) =>
+        // Check if the definition already exists.
         val defns = prog0.defs.getOrElse(ns0, Map.empty)
         defns.get(ident.name) match {
           case None =>
             // Case 1: The definition does not already exist. Update it.
 
-            // Compute the type environment from the formal type parameters.
             val tparams = getTypeParams(tparams0)
-
-            // Compute the type environment.
             val tenv0 = getTypeEnv(tparams)
-
-            // Introduce variable symbols for each formal parameter.
             val fparams = getFormalParams(fparams0, tenv0)
-
-            // Compute the local variable environment from the formal parameters.
-            val env0 = fparams.map(p => p.sym.text -> p.sym).toMap
+            val env0 = getVarEnv(fparams)
 
             Expressions.namer(exp, env0, tenv0) map {
               case e =>
                 val sym = Symbol.mkDefnSym(ns0, ident)
                 val sc = getScheme(tparams, tpe, tenv0)
-                val defn = NamedAst.Def(doc, ann, mod, sym, tparams, fparams, e, sc, eff, loc)
+                val defn = NamedAst.Def(doc, ann, mod, sym, tparams, fparams, e, sc, eff0, loc)
                 prog0.copy(defs = prog0.defs + (ns0 -> (defns + (ident.name -> defn))))
             }
           case Some(defn) =>
@@ -135,9 +129,32 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
       /*
        * Eff.
        */
-      case WeededAst.Declaration.Eff(doc, ann, mod, ident, tparams0, fparams0, tpe, eff, loc) =>
-        // TODO
+      case WeededAst.Declaration.Eff(doc, ann, mod, ident, tparams0, fparams0, tpe, eff0, loc) =>
+        // Check if the effect already exists.
+        val effs = prog0.effs.getOrElse(ns0, Map.empty)
+        effs.get(ident.name) match {
+          case None =>
+            // Case 1: The effect does not already exist. Update it.
+            val tparams = getTypeParams(tparams0)
+            val tenv0 = getTypeEnv(tparams)
+            val fparams = getFormalParams(fparams0, tenv0)
+            val env0 = getVarEnv(fparams)
+
+            val sym = Symbol.mkEffSym(ns0, ident)
+            val sc = getScheme(tparams, tpe, tenv0)
+            val eff = NamedAst.Eff(doc, ann, mod, sym, tparams, fparams, sc, eff0, loc)
+            prog0.copy(effs = prog0.effs + (ns0 -> (effs + (ident.name -> eff)))).toSuccess
+          case Some(eff) =>
+            // Case 2: Duplicate effect.
+            DuplicateEff(ident.name, eff.loc, ident.loc).toFailure
+        }
+
+      /*
+       * Handler.
+       */
+      case WeededAst.Declaration.Handler(doc, ann, mod, ident, tparams, fparams, exp, tpe, eff, loc) =>
         prog0.toSuccess
+
 
       /*
        * Enum.
@@ -1108,6 +1125,13 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
       // Remember the original textual name.
       tvar.setText(p.name)
       NamedAst.TypeParam(p, tvar, p.loc)
+  }
+
+  /**
+    * Returns a variable environment constructed from the given formal parameters `fparams0`.
+    */
+  def getVarEnv(fparams0: List[NamedAst.FormalParam]): Map[String, Symbol.VarSym] = {
+    fparams0.map(p => p.sym.text -> p.sym).toMap
   }
 
   /**
