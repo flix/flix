@@ -125,6 +125,31 @@ class TestNamer extends FunSuite with TestUtils {
     expectError[NameError.DuplicateEff](result)
   }
 
+  test("DuplicateHandler.01") {
+    val input =
+      s"""
+         |handler f(): Int = 42
+         |handler f(): Int = 21
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[NameError.DuplicateHandler](result)
+  }
+
+  test("DuplicateHandler.02") {
+    val input =
+      s"""
+         |namespace A {
+         |  handler f(): Int = 42
+         |}
+         |
+         |namespace A {
+         |  handler f(): Int = 21
+         |}
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[NameError.DuplicateHandler](result)
+  }
+
   test("DuplicateClass.01") {
     val input =
       s"""

@@ -48,6 +48,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
     val prog0 = NamedAst.Program(
       defs = Map.empty,
       effs = Map.empty,
+      handlers = Map.empty,
       enums = Map.empty,
       classes = Map.empty,
       impls = Map.empty,
@@ -152,9 +153,28 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
       /*
        * Handler.
        */
-      case WeededAst.Declaration.Handler(doc, ann, mod, ident, tparams, fparams, exp, tpe, eff, loc) =>
-        prog0.toSuccess
+      case WeededAst.Declaration.Handler(doc, ann, mod, ident, tparams0, fparams0, exp, tpe, eff0, loc) =>
+        // Check if the handler already exists.
+        val handlers = prog0.handlers.getOrElse(ns0, Map.empty)
+        handlers.get(ident.name) match {
+          case None =>
+            // Case 1: The handler does not already exist. Update it.
+            val tparams = getTypeParams(tparams0)
+            val tenv0 = getTypeEnv(tparams)
+            val fparams = getFormalParams(fparams0, tenv0)
+            val env0 = getVarEnv(fparams)
 
+            Expressions.namer(exp, env0, tenv0) map {
+              case e =>
+                val sym = Symbol.mkEffSym(ns0, ident)
+                val sc = getScheme(tparams, tpe, tenv0)
+                val handler = NamedAst.Handler(doc, ann, mod, sym, tparams, fparams, e, sc, eff0, loc)
+                prog0.copy(handlers = prog0.handlers + (ns0 -> (handlers + (ident.name -> handler))))
+            }
+          case Some(handler) =>
+            // Case 2: Duplicate handler.
+            DuplicateHandler(ident.name, handler.loc, ident.loc).toFailure
+        }
 
       /*
        * Enum.

@@ -28,6 +28,7 @@ object NamedAst {
 
   case class Program(defs: Map[Name.NName, Map[String, NamedAst.Def]],
                      effs: Map[Name.NName, Map[String, NamedAst.Eff]],
+                     handlers: Map[Name.NName, Map[String, NamedAst.Handler]],
                      enums: Map[Name.NName, Map[String, NamedAst.Enum]],
                      classes: Map[Name.NName, Map[String, NamedAst.Class]],
                      impls: Map[Name.NName, List[NamedAst.Impl]],
@@ -46,6 +47,8 @@ object NamedAst {
   case class Def(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, tparams: List[NamedAst.TypeParam], fparams: List[NamedAst.FormalParam], exp: NamedAst.Expression, sc: NamedAst.Scheme, eff: ast.Eff, loc: SourceLocation) extends NamedAst
 
   case class Eff(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EffSym, tparams: List[NamedAst.TypeParam], fparams: List[NamedAst.FormalParam], sc: NamedAst.Scheme, eff: ast.Eff, loc: SourceLocation) extends NamedAst
+
+  case class Handler(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EffSym, tparams: List[NamedAst.TypeParam], fparams: List[NamedAst.FormalParam], exp: NamedAst.Expression, sc: NamedAst.Scheme, eff: ast.Eff, loc: SourceLocation) extends NamedAst
 
   // TODO
   case class Law() extends NamedAst
