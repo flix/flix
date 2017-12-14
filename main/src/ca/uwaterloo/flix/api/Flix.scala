@@ -92,6 +92,11 @@ class Flix {
     "flix/core/cmp/PartialEq.flix" -> LocalResource.get("/library/flix/core/cmp/PartialEq.flix"),
     "flix/core/cmp/PartialOrd.flix" -> LocalResource.get("/library/flix/core/cmp/PartialOrd.flix"),
     "flix/core/lattice/JoinSemiLattice.flix" -> LocalResource.get("/library/flix/core/lattice/JoinSemiLattice.flix"),
+
+    "flix/io/Path.flix" -> LocalResource.get("/library/flix/io/Path.flix"),
+    "flix/io/InputStream.flix" -> LocalResource.get("/library/flix/io/InputStream.flix"),
+    "flix/io/OutputStream.flix" -> LocalResource.get("/library/flix/io/OutputStream.flix"),
+
   )
 
   /**

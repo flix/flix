@@ -1,27 +1,12 @@
-// Challenges and solutions:
-//
-// 1. How to deal with variadic methods: Use array literals [| ... |]
-// 2. How to port overloaded methods? Use `withXYZ` style.
-// 3. How to deal with null? Fields and method calls should return Option[X].
-// 4. How to deal with overloaded methods? Use ascription of type arguments.
-// 5. How to deal with different types of IOErrors, e.g. FileNotFound, FileIsDirectory etc.? Open question
+type Path = Path(##java.nio.file.Path)
 
-// TODO: What should the structure of this enum be?
-pub enum IOError {
-    case FileNotFound,
-    case IOErrorMsg(Str)
-}
+// TODO: Where and how to define this?
+type IOError = IOError(Str)
 
-type Path           =   Path(##java.nio.file.Path)
-type InputStream    =   InputStream(##java.io.InputStream)
-type OutputStream   =   OutputStream(##java.io.OutputStream)
-
-// TODO: It would be nice to have imports like:  import ##java.io.File (makes File available as ##File)
+// TODO: Where and how to define this?
+type Charset = Charset(Str)
 
 namespace Path {
-
-    // dummy test method.
-    def f(): Result[Bool, IOError] = Path.new("./foo.flix").isReadable()
 
     ///
     /// Returns a Path from the given string `s`.
@@ -31,29 +16,122 @@ namespace Path {
     }
 
     ///
-    /// Returns `true` if the given path `p` is readable.
+    /// Effectfully returns `true` if the given path `p` is a directory.
     ///
-    pub def isReadable(p: Path): Result[Bool, IOError] @ IO = match p with {
-        case Path(realPath) =>
-            Ok(unsafe native method java.nio.file.Files.isReadable(realPath))
-    }
+    pub eff isDirectory(p: Path): Result[Bool, IOError]
 
-    // TODO: Where should the function below be organized?
+    ///
+    /// Effectfully returns `true` if the given path `p` is executable.
+    ///
+    pub eff isExecutable(p: Path): Result[Bool, IOError]
 
-    pub def copyToPath(i: unique InputStream, p: Path): Result[(), IOError] @ IO = ???
+    ///
+    /// Effectfully returns `true` if the given path `p` is hidden.
+    ///
+    pub eff isHidden(p: Path): Result[Bool, IOError]
 
-    // TODO: What namespace does such as function belong in?
+    ///
+    /// Effectfully returns `true` if the given path `p` is readable.
+    ///
+    pub eff isReadable(p: Path): Result[Bool, IOError]
 
-    pub def copyToStream(is: unique InputStream, os: borrow OutputStream): Result[(), IOError] @ IO = ???
+    ///
+    /// Effectfully returns `true` if the given path `p` is a regular file.
+    ///
+    pub eff isRegularFile(p: Path): Result[Bool, IOError]
 
-    pub def newInputStream(p: Path): unique Result[InputStream, IOError] @ IO = ???
+    ///
+    /// Effectfully returns `true` if the two given paths `p1` and `p2` refers to the same file.
+    ///
+    pub eff isSameFile(p1: Path, p2: Path): Result[Bool, IOError]
 
-    // TODO: Add openoptions argument.
-    pub def newInputStreamWithOpenOptions(p: Path): unique Result[InputStream, IOError] @ IO = ???
+    ///
+    /// Effectfully returns `true` if the given path `p` is a symbolic link.
+    ///
+    pub eff isSymbolicLink(p: Path): Result[Bool, IOError]
 
-    pub eff readAllLines(p: Path): List[Str] @ IO
+    ///
+    /// Effectfully returns `true` if the given path `p` is writable.
+    ///
+    pub eff isWritable(p: Path): Result[Bool, IOError]
 
-    // TODO: Add charset argument
-    pub def readAllLinesWithCharset(p: Path): List[Str] @ IO = ???
+    ///
+    /// Effectfully returns a list of all lines in the given text file denoted by path `p`.
+    ///
+    pub eff readLines(p: Path): Result[List[Str], IOError]
+
+    ///
+    /// Effectfully returns a list of all lines in the given text file denoted by path `p` parsed with the given charset `cs`.
+    ///
+    pub eff readLinesWithCharset(p: Path, cs: Charset): Result[List[Str], IOError]
+
+
+
+
+    ///
+    /// Default handler for `isDirectory`.
+    ///
+    handler isDirectory[a](p: Path, k: Result[Bool, IOError] -> a): a = ??? // TODO: Implement
+
+    ///
+    /// Default handler for `isExecutable`.
+    ///
+    handler isExecutable[a](p: Path, k: Result[Bool, IOError] -> a): a = ??? // TODO: Implement
+
+    ///
+    /// Default handler for `isHidden`.
+    ///
+    handler isHidden[a](p: Path, k: Result[Bool, IOError] -> a): a = ??? // TODO: Implement
+
+    ///
+    /// Default handler for `isReadable`.
+    ///
+    handler isReadable[a](p: Path, k: Result[Bool, IOError] -> a): a = ??? // TODO: Implement
+
+    ///
+    /// Default handler for `isRegularFile`.
+    ///
+    handler isRegularFile[a](p: Path, k: Result[Bool, IOError] -> a): a = ??? // TODO: Implement
+
+    ///
+    /// Default handler for `isSameFile`.
+    ///
+    handler isSameFile[a](p: Path, k: Result[Bool, IOError] -> a): a = ??? // TODO: Implement
+
+    ///
+    /// Default handler for `isSymbolicLink`.
+    ///
+    handler isSymbolicLink[a](p: Path, k: Result[Bool, IOError] -> a): a = ??? // TODO: Implement
+
+    ///
+    /// Default handler for `isWritable`.
+    ///
+    handler isWritable[a](p: Path, k: Result[Bool, IOError] -> a): a = ??? // TODO: Implement
+
+    ///
+    /// Default handler for `readLines`.
+    ///
+    handler readLines[a](p: Path, k: Result[List[Str], IOError] -> a): a = ??? // TODO: Implement
+
+    ///
+    /// Default handler for `readLinesWithCharset`.
+    ///
+    handler readLinesWithCharset[a](p: Path, cs: Charset, k: Result[List[Str], IOError] -> a): a = ??? // TODO: Implement
 
 }
+
+
+
+
+
+// Challenges and solutions:
+//
+// 1. How to deal with variadic methods: Use array literals [| ... |]
+// 2. How to port overloaded methods? Use `withXYZ` style.
+// 3. How to deal with null? Fields and method calls should return Option[X].
+// 4. How to deal with overloaded methods? Use ascription of type arguments.
+// 5. How to deal with different types of IOErrors, e.g. FileNotFound, FileIsDirectory etc.? Open question
+
+//    pub def copyToPath(i: unique InputStream, p: Path): Result[(), IOError] @ IO = ???
+//
+//    pub def copyToStream(is: unique InputStream, os: borrow OutputStream): Result[(), IOError] @ IO = ???
