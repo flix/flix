@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.SimplifiedAst._
-import ca.uwaterloo.flix.util.Validation
+import ca.uwaterloo.flix.util.{Optimization, Validation}
 import ca.uwaterloo.flix.util.Validation._
 
 /**
@@ -34,14 +34,20 @@ object Tailrec extends Phase[Root, Root] {
     * Identifies tail recursive calls in the given AST `root`.
     */
   def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationError] = {
-    val b = System.nanoTime()
+    //
+    // Check if tail call elimination is enabled.
+    //
+    if (!(flix.options.optimizations contains Optimization.TailCalls))
+      return root.toSuccess
 
+    //
+    // Rewrite tail calls.
+    //
+    val b = System.nanoTime()
     val defns = root.defs.map {
       case (sym, defn) => sym -> tailrec(defn)
     }
-
     val e = System.nanoTime() - b
-
     root.copy(defs = defns, time = root.time.copy(tailrec = e)).toSuccess
   }
 

@@ -20,8 +20,8 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.GenSym
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.ResolutionError
+import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
-import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
 import scala.collection.mutable
 
@@ -154,8 +154,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
       properties <- seqM(propertiesVal)
     } yield ResolvedAst.Program(
       definitions.toMap ++ named.toMap, enums.toMap, classes.toMap, impls.toMap, lattices.toMap, indexes.toMap,
-      tables.toMap, constraints.flatten, prog0.hooks, properties.flatten, prog0.reachable, prog0.time.copy(resolver = e))
-
+      tables.toMap, constraints.flatten, properties.flatten, prog0.reachable, prog0.time.copy(resolver = e))
   }
 
   object Constraints {
@@ -370,10 +369,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
 
         case NamedAst.Expression.Def(ref, tvar, loc) =>
           lookupDef(ref, ns0, prog0) map {
-            case DefTarget.Defn(defn) =>
-              ResolvedAst.Expression.Def(defn.sym, tvar, loc)
-            case DefTarget.Hook(hook) =>
-              ResolvedAst.Expression.Hook(hook, hook.tpe, loc)
+            case DefTarget.Defn(defn) => ResolvedAst.Expression.Def(defn.sym, tvar, loc)
           }
 
         case NamedAst.Expression.Hole(name, tpe, loc) =>
@@ -690,7 +686,6 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
               for {
                 ts <- seqM(terms.map(t => Expressions.resolve(t, ns0, prog0)))
               } yield ResolvedAst.Predicate.Body.Filter(defn.sym, ts, loc)
-            case DefTarget.Hook(hook) => throw InternalCompilerException(s"Hook not allowed here: ${loc.format}")
           }
 
         case NamedAst.Predicate.Body.Loop(pat, term, loc) =>
@@ -782,8 +777,6 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
 
     case class Defn(defn: NamedAst.Def) extends DefTarget
 
-    case class Hook(hook: Ast.Hook) extends DefTarget
-
   }
 
   /**
@@ -792,31 +785,25 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
   def lookupDef(qname: Name.QName, ns0: Name.NName, prog0: NamedAst.Program): Validation[DefTarget, ResolutionError] = {
     // check whether the name is fully-qualified.
     if (qname.isUnqualified) {
-      // Case 1: Unqualified name. Lookup both the definition and the hook.
+      // Case 1: Unqualified name. Lookup the definition.
       val defnOpt = prog0.defs.getOrElse(ns0, Map.empty).get(qname.ident.name)
-      val hookOpt = prog0.hooks.get(Symbol.mkDefnSym(ns0, qname.ident))
 
-      (defnOpt, hookOpt) match {
-        case (Some(defn), None) => DefTarget.Defn(defn).toSuccess
-        case (None, Some(hook)) => DefTarget.Hook(hook).toSuccess
-        case (None, None) =>
+      defnOpt match {
+        case None =>
           // Try the global namespace.
           prog0.defs.getOrElse(Name.RootNS, Map.empty).get(qname.ident.name) match {
             case None => ResolutionError.UndefinedDef(qname, ns0, qname.loc).toFailure
             case Some(defn) => DefTarget.Defn(defn).toSuccess
           }
-        case (Some(defn), Some(hook)) => ResolutionError.AmbiguousRef(qname, ns0, qname.loc).toFailure
+        case Some(defn) => DefTarget.Defn(defn).toSuccess
       }
     } else {
-      // Case 2: Qualified. Lookup both the definition and the hook.
+      // Case 2: Qualified. Lookup both the definition.
       val defnOpt = prog0.defs.getOrElse(qname.namespace, Map.empty).get(qname.ident.name)
-      val hookOpt = prog0.hooks.get(Symbol.mkDefnSym(qname.namespace, qname.ident))
 
-      (defnOpt, hookOpt) match {
-        case (Some(defn), None) => getDefIfAccessible(defn, ns0, qname.loc)
-        case (None, Some(hook)) => DefTarget.Hook(hook).toSuccess
-        case (None, None) => ResolutionError.UndefinedDef(qname, ns0, qname.loc).toFailure
-        case (Some(defn), Some(hook)) => ResolutionError.AmbiguousRef(qname, ns0, qname.loc).toFailure
+      defnOpt match {
+        case None => ResolutionError.UndefinedDef(qname, ns0, qname.loc).toFailure
+        case Some(defn) => getDefIfAccessible(defn, ns0, qname.loc)
       }
     }
   }

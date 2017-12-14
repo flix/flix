@@ -81,12 +81,6 @@ object SimplifiedAstOps {
         checkExp(exp, env0 ++ fparams.map(_.sym), ienv0)
 
       //
-      // Hook Expressions.
-      //
-      case Expression.Hook(hook, tpe, loc) =>
-        checkType(tpe)
-
-      //
       // Closure Expressions.
       //
       case Expression.Closure(sym, freeVars, tpe, loc) =>
@@ -161,14 +155,6 @@ object SimplifiedAstOps {
           checkExp(arg, env0, ienv0)
         }
         checkType(tpe)
-
-      //
-      // ApplyHook Expressions.
-      //
-      case Expression.ApplyHook(hook, args, tpe, loc) =>
-        for (arg <- args) {
-          checkExp(arg, env0, ienv0)
-        }
 
       //
       // Unary Expressions.

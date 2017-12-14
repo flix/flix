@@ -25,6 +25,11 @@ import ca.uwaterloo.flix.language.ast.Symbol
 case class NamespaceInfo(ns: List[String], defs: Map[Symbol.DefnSym, Def]) {
 
   /**
+    * Returns `true` if `this` is the root namespace.
+    */
+  def isRoot: Boolean = ns.isEmpty
+
+  /**
     * Returns the hash code of `this` namespace.
     */
   override def hashCode(): Int = ns.hashCode()
@@ -37,4 +42,3 @@ case class NamespaceInfo(ns: List[String], defs: Map[Symbol.DefnSym, Def]) {
     case _ => false
   }
 }
-

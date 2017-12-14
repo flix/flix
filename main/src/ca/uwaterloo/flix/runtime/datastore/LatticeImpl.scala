@@ -16,12 +16,11 @@
 
 package ca.uwaterloo.flix.runtime.datastore
 
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ExecutableAst
 import ca.uwaterloo.flix.runtime.{InvocationTarget, Linker}
 
-import scala.reflect.ClassTag
-
-class LatticeImpl[ValueType <: AnyRef](lattice: ExecutableAst.Table.Lattice, root: ExecutableAst.Root)(implicit m: ClassTag[ValueType]) extends Lattice[ValueType] {
+class LatticeImpl(lattice: ExecutableAst.Table.Lattice, root: ExecutableAst.Root)(implicit flix: Flix) extends Lattice[ProxyObject] {
 
   /**
     * The lattice operations associated with each lattice.
@@ -31,7 +30,7 @@ class LatticeImpl[ValueType <: AnyRef](lattice: ExecutableAst.Table.Lattice, roo
   /**
     * The bottom element.
     */
-  private val Bot: ValueType = Linker.link(latticeOps.bot, root).invoke(Array.empty).asInstanceOf[ValueType]
+  private val Bot: ProxyObject = Linker.link(latticeOps.bot, root).invoke(Array.empty)
 
   /**
     * The equality operator.
@@ -56,56 +55,72 @@ class LatticeImpl[ValueType <: AnyRef](lattice: ExecutableAst.Table.Lattice, roo
   /**
     * Returns the bottom element of the lattice.
     */
-  def bot: ValueType = Bot
+  def bot: ProxyObject = Bot
 
   /**
     * Returns `true` if `x` is equal to `y` according to the partial order of the lattice.
     */
-  def equal(x: ValueType, y: ValueType): Boolean = {
+  def equal(e1: ProxyObject, e2: ProxyObject): Boolean = {
+    // Unwrap the proxy objects.
+    val x = e1.getValue
+    val y = e2.getValue
+
     // if `x` and `y` are the same object then they must be equal.
     if (x eq y) return true
 
     // evaluate the equality function passing the arguments `x` and `y`.
-    val args = Array(x, y).asInstanceOf[Array[AnyRef]]
-    val result = Equ.invoke(args)
+    val args = Array(x, y)
+    val result = Equ.invoke(args).getValue
     return result.asInstanceOf[java.lang.Boolean].booleanValue()
   }
 
   /**
     * Returns `true` if `x` is less than or equal to `y` according to the partial order of the lattice.
     */
-  def leq(x: ValueType, y: ValueType): Boolean = {
+  def leq(e1: ProxyObject, e2: ProxyObject): Boolean = {
+    // Unwrap the proxy objects.
+    val x = e1.getValue
+    val y = e2.getValue
+
     // if `x` and `y` are the same object then they must be equal.
     if (x eq y) return true
 
     // evaluate the partial order function passing the arguments `x` and `y`.
-    val args = Array(x, y).asInstanceOf[Array[AnyRef]]
-    val result = Leq.invoke(args)
+    val args = Array(x, y)
+    val result = Leq.invoke(args).getValue
     return result.asInstanceOf[java.lang.Boolean].booleanValue()
   }
 
   /**
     * Returns the least upper bound of `x` and `y` according to the partial order of the lattice.
     */
-  def lub(x: ValueType, y: ValueType): ValueType = {
+  def lub(e1: ProxyObject, e2: ProxyObject): ProxyObject = {
+    // Unwrap the proxy objects.
+    val x = e1.getValue
+    val y = e2.getValue
+
     // if `x` and `y` are the same object then there is no need to compute the lub.
-    if (x eq y) return x
+    if (x eq y) return e1
 
     // evaluate the least upper bound function passing the arguments `x` and `y`.
-    val args = Array(x, y).asInstanceOf[Array[AnyRef]]
-    Lub.invoke(args).asInstanceOf[ValueType]
+    val args = Array(x, y)
+    Lub.invoke(args)
   }
 
   /**
     * Returns the greatest lower bound of `x` and `y` according to the partial order of the lattice.
     */
-  def glb(x: ValueType, y: ValueType): ValueType = {
+  def glb(e1: ProxyObject, e2: ProxyObject): ProxyObject = {
+    // Unwrap the proxy objects.
+    val x = e1.getValue
+    val y = e2.getValue
+
     // if `x` and `y` are the same object then there is no need to compute the glb.
-    if (x eq y) return x
+    if (x eq y) return e1
 
     // evaluate the greatest lower bound function passing the arguments `x` and `y`.
-    val args = Array(x, y).asInstanceOf[Array[AnyRef]]
-    Glb.invoke(args).asInstanceOf[ValueType]
+    val args = Array(x, y)
+    Glb.invoke(args)
   }
 
 }

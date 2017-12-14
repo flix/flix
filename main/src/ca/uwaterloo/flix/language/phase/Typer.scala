@@ -16,8 +16,9 @@
 
 package ca.uwaterloo.flix.language.phase
 
+import java.lang.reflect.Field
+
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Ast.Polarity
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.Unification._
@@ -426,12 +427,6 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
          * Hole expression.
          */
         case ResolvedAst.Expression.Hole(sym, tpe, loc) =>
-          liftM(tpe)
-
-        /*
-         * Hook expression.
-         */
-        case ResolvedAst.Expression.Hook(hook, tpe, loc) =>
           liftM(tpe)
 
         /*
@@ -851,9 +846,10 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
          */
         case ResolvedAst.Expression.NativeConstructor(constructor, actuals, tvar, loc) =>
           // TODO: Check types.
-          for (
+          for {
             inferredArgumentTypes <- seqM(actuals.map(visitExp))
-          ) yield tvar
+            resultType <- unifyM(tvar, Type.Native, loc)
+          } yield resultType
 
         /*
          * Native Field expression.
@@ -910,12 +906,6 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
          */
         case ResolvedAst.Expression.Hole(sym, tpe, loc) =>
           TypedAst.Expression.Hole(sym, subst0(tpe), Eff.Bot, loc)
-
-        /*
-         * Hook expression.
-         */
-        case ResolvedAst.Expression.Hook(hook, tpe, loc) =>
-          TypedAst.Expression.Hook(hook, subst0(tpe), Eff.Bot, loc)
 
         /*
          * Literal expression.
@@ -1376,5 +1366,8 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         macc ++ Substitution.singleton(sym.tvar, declaredType)
     }
   }
+
+
+  def getTypeFromField(field: Field): Type = ??? // TODO
 
 }

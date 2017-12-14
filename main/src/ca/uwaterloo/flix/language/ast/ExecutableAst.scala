@@ -19,9 +19,8 @@ package ca.uwaterloo.flix.language.ast
 import java.lang.reflect.{Constructor, Field, Method}
 import java.util.concurrent.atomic.{AtomicInteger, AtomicLong}
 
-import ca.uwaterloo.flix.language.ast.Symbol.EnumSym
-import ca.uwaterloo.flix.language.phase.CodegenHelper.{FlixClassName, QualName, TupleClassName}
 import ca.uwaterloo.flix.runtime.InvocationTarget
+import ca.uwaterloo.flix.runtime.datastore.ProxyObject
 
 sealed trait ExecutableAst
 
@@ -38,15 +37,7 @@ object ExecutableAst {
                   properties: List[ExecutableAst.Property],
                   specialOps: Map[SpecialOperator, Map[Type, Symbol.DefnSym]],
                   reachable: Set[Symbol.DefnSym],
-                  byteCodes: ByteCodes,
                   time: Time) extends ExecutableAst
-
-  case class ByteCodes(enumInterfaceByteCodes: Map[EnumSym, (QualName, Array[Byte])],
-                       enumClassByteCodes: Map[EnumSym, (Map[(String, Type), Array[Byte]], Map[String, Array[Byte]])],
-                       functionalInterfaceByteCodes: Map[Type, (FlixClassName, Array[Byte])],
-                       classByteCodes: Map[FlixClassName, Array[Byte]],
-                       tupleByteCode: Map[TupleClassName, Array[Byte]])
-
 
   case class Constraint(cparams: List[ConstraintParam], head: Predicate.Head, body: List[Predicate.Body]) extends ExecutableAst {
 
@@ -108,7 +99,7 @@ object ExecutableAst {
     var method: Method = null
   }
 
-  case class Enum(mod: Ast.Modifiers, sym: Symbol.EnumSym, cases: Map[String, ExecutableAst.Case], loc: SourceLocation) extends ExecutableAst
+  case class Enum(mod: Ast.Modifiers, sym: Symbol.EnumSym, cases: Map[String, ExecutableAst.Case], tpe: Type, loc: SourceLocation) extends ExecutableAst
 
   case class Lattice(tpe: Type, bot: Symbol.DefnSym, top: Symbol.DefnSym, equ: Symbol.DefnSym, leq: Symbol.DefnSym, lub: Symbol.DefnSym, glb: Symbol.DefnSym, loc: SourceLocation) extends ExecutableAst
 
@@ -214,9 +205,7 @@ object ExecutableAst {
 
     case class ApplyDefTail(sym: Symbol.DefnSym, args: List[ExecutableAst.Expression], tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
-    case class ApplySelfTail(name: Symbol.DefnSym, formals: List[ExecutableAst.FormalParam], actuals: List[ExecutableAst.Expression], tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
-
-    case class ApplyHook(hook: Ast.Hook, args: List[ExecutableAst.Expression], tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
+    case class ApplySelfTail(sym: Symbol.DefnSym, formals: List[ExecutableAst.FormalParam], actuals: List[ExecutableAst.Expression], tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
     case class Unary(sop: SemanticOperator, op: UnaryOperator, exp: ExecutableAst.Expression, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
@@ -370,7 +359,7 @@ object ExecutableAst {
 
       case class Var(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends ExecutableAst.Term.Head
 
-      case class Lit(lit: AnyRef, tpe: Type, loc: SourceLocation) extends ExecutableAst.Term.Head
+      case class Lit(lit: ProxyObject, tpe: Type, loc: SourceLocation) extends ExecutableAst.Term.Head
 
       case class Cst(sym: Symbol.DefnSym, tpe: Type, loc: SourceLocation) extends ExecutableAst.Term.Head
 
@@ -386,7 +375,7 @@ object ExecutableAst {
 
       case class Var(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends ExecutableAst.Term.Body
 
-      case class Lit(lit: AnyRef, tpe: Type, loc: SourceLocation) extends ExecutableAst.Term.Body
+      case class Lit(lit: ProxyObject, tpe: Type, loc: SourceLocation) extends ExecutableAst.Term.Body
 
       case class Cst(sym: Symbol.DefnSym, tpe: Type, loc: SourceLocation) extends ExecutableAst.Term.Body
 

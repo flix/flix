@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Magnus Madsen, Ming-Ho Yee
+ * Copyright 2017 Ramin Zarifi
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,21 +14,19 @@
  * limitations under the License.
  */
 
-package ca.uwaterloo.flix.api
+package ca.uwaterloo.flix.api;
 
 /**
-  * A Java functional interface for unsafe JVM methods that are invokable by Flix.
-  */
-@FunctionalInterface
-trait InvokableUnsafe {
+ * A common super-type for all generated Java interfaces and classes that represent Flix enums.
+ */
+public interface Tag {
+    /**
+     * Returns the tag of `this`.
+     */
+    String getTag();
 
-  /**
-    * Invokes the method with the given Flix arguments `args`.
-    *
-    * The arguments are passed using the internal Flix representation of values.
-    *
-    * Similarly the returned value must correspond to Flix' internal representation of values.
-    */
-  def apply(args: Array[AnyRef]): AnyRef
-
+    /**
+     * Returns the value of `this`.
+     */
+    Object getBoxedTagValue();
 }

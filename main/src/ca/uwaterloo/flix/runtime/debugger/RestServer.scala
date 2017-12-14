@@ -234,7 +234,7 @@ class RestServer(solver: Solver) {
     *
     * @param relation a reference to the datastore backing the relation.
     */
-  class ListRelation(relation: IndexedRelation[AnyRef]) extends JsonHandler {
+  class ListRelation(relation: IndexedRelation) extends JsonHandler {
     def json: JValue = JObject(
       JField("cols", JArray(relation.relation.attributes.toList.map(a => JString(a.name)))),
       JField("rows", JArray(Nil)) // TODO: Currently broken.
@@ -246,7 +246,7 @@ class RestServer(solver: Solver) {
     *
     * @param lattice a reference to the datastore backing the lattice.
     */
-  class ListLattice(lattice: IndexedLattice[AnyRef]) extends JsonHandler {
+  class ListLattice(lattice: IndexedLattice) extends JsonHandler {
     def json: JValue = JObject(
       JField("cols", JArray(lattice.lattice.keys.toList.map(a => JString(a.name)) ::: JString(lattice.lattice.value.name) :: Nil)),
       JField("rows", JArray(Nil)) // TODO: Currently broken.
@@ -336,7 +336,7 @@ class RestServer(solver: Solver) {
       JObject(List(JField("name", JString("Resolver")), JField("time", JInt(solver.root.time.resolver / 1000000)))),
       JObject(List(JField("name", JString("Typer")), JField("time", JInt(solver.root.time.typer / 1000000)))),
       JObject(List(JField("name", JString("Effects")), JField("time", JInt(solver.root.time.effects / 1000000)))),
-      JObject(List(JField("name", JString("Pattern Exhaustiveness")), JField("time", JInt(solver.root.time.patsExhaustive / 1000000)))),
+      JObject(List(JField("name", JString("PatMatch")), JField("time", JInt(solver.root.time.patmatch / 1000000)))),
       JObject(List(JField("name", JString("Documentor")), JField("time", JInt(solver.root.time.documentor / 1000000)))),
       JObject(List(JField("name", JString("Stratifier")), JField("time", JInt(solver.root.time.stratifier / 1000000)))),
       JObject(List(JField("name", JString("Monomorph")), JField("time", JInt(solver.root.time.monomorph / 1000000)))),
@@ -350,10 +350,7 @@ class RestServer(solver: Solver) {
       JObject(List(JField("name", JString("Uncurrier")), JField("time", JInt(solver.root.time.uncurrier / 1000000)))),
       JObject(List(JField("name", JString("TreeShaker")), JField("time", JInt(solver.root.time.treeshaker / 1000000)))),
       JObject(List(JField("name", JString("VarNumbering")), JField("time", JInt(solver.root.time.varNumbering / 1000000)))),
-      JObject(List(JField("name", JString("TupleGen")), JField("time", JInt(solver.root.time.tupleGen / 1000000)))),
-      JObject(List(JField("name", JString("EnumGen")), JField("time", JInt(solver.root.time.enumGen / 1000000)))),
-      JObject(List(JField("name", JString("CodeGen")), JField("time", JInt(solver.root.time.codeGen / 1000000)))),
-      JObject(List(JField("name", JString("LoadByteCode")), JField("time", JInt(solver.root.time.loadByteCode / 1000000))))
+      JObject(List(JField("name", JString("Backend")), JField("time", JInt(solver.root.time.backend / 1000000))))
     ))
   }
 

@@ -55,7 +55,6 @@ object TypedAstOps {
       case Expression.Int64(lit, loc) => Map.empty
       case Expression.BigInt(lit, loc) => Map.empty
       case Expression.Str(lit, loc) => Map.empty
-      case Expression.Hook(hook, tpe, eff, loc) => Map.empty
 
       case Expression.Lambda(fparams, exp, tpe, eff, loc) =>
         val env1 = fparams.map(p => p.sym -> p.tpe).toSet

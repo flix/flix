@@ -19,21 +19,31 @@ package ca.uwaterloo.flix.language.phase.jvm
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Root
 import ca.uwaterloo.flix.language.ast.Type
+import ca.uwaterloo.flix.util.InternalRuntimeException
+import org.objectweb.asm.Opcodes._
 
+/**
+  * Generates bytecode for the function interfaces.
+  */
 object GenFunctionInterfaces {
 
   /**
     * Returns the set of function interfaces for the given set of types `ts`.
     */
-  def gen(ts: Set[Type], root: Root)(implicit flix: Flix): Map[JvmName, JvmClass] = {
+  def gen(ts: Set[Type])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
     //
     // Generate a function interface for each type and collect the results in a map.
     //
     ts.foldLeft(Map.empty[JvmName, JvmClass]) {
-      case (macc, tpe) => genFunctionalInterface(tpe, root) match {
-        case None => macc
-        case Some(clazz) => macc + (clazz.name -> clazz)
-      }
+      case (macc, tpe) if tpe.isArrow =>
+        // Case 1: The type constructor is an arrow type.
+        // Construct the functional interface.
+        val clazz = genFunctionalInterface(tpe)
+        macc + (clazz.name -> clazz)
+      case (macc, tpe) =>
+        // Case 2: The type constructor is a non-arrow.
+        // Nothing to be done. Return the map.
+        macc
     }
   }
 
@@ -42,33 +52,47 @@ object GenFunctionInterfaces {
     *
     * Returns `[[None]]` if the type is not a function type.
     */
-  private def genFunctionalInterface(tpe: Type, root: Root)(implicit flix: Flix): Option[JvmClass] = {
+  private def genFunctionalInterface(tpe: Type)(implicit root: Root, flix: Flix): JvmClass = {
     // Compute the type constructor and type arguments.
     val base = tpe.typeConstructor
     val args = tpe.typeArguments
 
     // Immediately return None if the type is a non-function type.
     if (!base.isArrow) {
-      return None
+      throw InternalRuntimeException(s"Unexpected non-arrow type: '$tpe'.")
     }
 
-    // The function arity is simply the number of type arguments.
-    val arity = args.length
+    // `JvmType` of the continuation interface for `tpe`
+    val continuationType = JvmOps.getContinuationInterfaceType(tpe)
 
-    // The name of the functional interface is of the form:
-    // Fn1$Int$Bool,
-    // Fn2$Int$Int$Bool,
-    // Fn3$Obj$Obj$Obj$Bool, etc.
-    // TODO: Probably use a helper function to compute this?
-    val name = "Fn" + arity + "$"
+    // `JvmType` of the functional interface for `tpe`
+    val functionType = JvmOps.getFunctionInterfaceType(tpe)
 
-    for (arg <- args) {
-      // do something with the arguments ...
+    // Class visitor
+    val visitor = AsmOps.mkClassWriter()
 
+    // The super interface.
+    val superInterface = Array(continuationType.name.toInternalName)
+
+    // Class visitor
+    visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_ABSTRACT + ACC_INTERFACE, functionType.name.toInternalName, null,
+      JvmName.Object.toInternalName, superInterface)
+
+    // Adding setters for each argument of the function
+    for ((arg, index) <- args.init.zipWithIndex) {
+      // `JvmType` of `arg`
+      val argType = JvmOps.getErasedJvmType(arg)
+
+      // `setArg$ind()` method
+      val setArgMethod = visitor.visitMethod(ACC_PUBLIC + ACC_ABSTRACT, s"setArg$index",
+        AsmOps.getMethodDescriptor(List(argType), JvmType.Void), null, null)
+      setArgMethod.visitEnd()
     }
 
-    None // TODO
+    visitor.visitEnd()
+
+    // `JvmClass` of the interface
+    JvmClass(functionType.name, visitor.toByteArray)
   }
-
 
 }

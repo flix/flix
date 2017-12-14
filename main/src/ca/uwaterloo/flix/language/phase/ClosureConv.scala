@@ -91,27 +91,12 @@ object ClosureConv {
       // In a later phase, we will lift the lambda to a top-level definition.
       Expression.LambdaClosure(lambda, freeVars.map(v => SimplifiedAst.FreeVar(v._1, v._2)), tpe, loc)
 
-    case Expression.Hook(hook, tpe, loc) =>
-      // Retrieve the type of the function.
-      val ts = tpe.typeArguments
-      val (targs, tresult) = (ts.init, ts.last)
-
-      // Wrap the hook inside a lambda, so we can create a closure.
-      val args = targs.map { t => SimplifiedAst.FormalParam(Symbol.freshVarSym("hookArg"), Ast.Modifiers.Empty, t, SourceLocation.Unknown) }
-      val hookArgs = args.map { f => Expression.Var(f.sym, f.tpe, loc) }
-      val body = Expression.ApplyHook(hook, hookArgs, tresult, loc)
-      val lambda = Expression.Lambda(args, body, hook.tpe, loc)
-
-      // Closure convert the lambda.
-      convert(lambda)
-
     case Expression.Apply(e, args, tpe, loc) =>
       // We're trying to call some expression `e`. If `e` is a Ref, then it's a top-level function, so we directly call
       // it with ApplyRef. We remove the Ref node and don't recurse on it to avoid creating a closure.
       // We do something similar if `e` is a Hook, where we transform Apply to ApplyHook.
       e match {
         case Expression.Def(name, _, _) => Expression.ApplyDef(name, args.map(convert), tpe, loc)
-        case Expression.Hook(hook, _, _) => Expression.ApplyHook(hook, args.map(convert), tpe, loc)
         case _ => Expression.ApplyClo(convert(e), args.map(convert), tpe, loc)
       }
 
@@ -208,7 +193,6 @@ object ClosureConv {
     case Expression.ApplyCloTail(e, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
     case Expression.ApplyDefTail(name, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
     case Expression.ApplySelfTail(name, formals, actuals, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
-    case Expression.ApplyHook(hook, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
   }
 
   /**
@@ -234,7 +218,6 @@ object ClosureConv {
     case Expression.Lambda(args, body, tpe, loc) =>
       val bound = args.map(_.sym)
       freeVariables(body).filterNot { v => bound.contains(v._1) }
-    case Expression.Hook(hook, tpe, loc) => mutable.LinkedHashSet.empty
     case Expression.Apply(exp, args, tpe, loc) =>
       freeVariables(exp) ++ args.flatMap(freeVariables)
     case Expression.Unary(sop, op, exp, tpe, loc) => freeVariables(exp)
@@ -285,7 +268,6 @@ object ClosureConv {
     case Expression.ApplyCloTail(exp, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
     case Expression.ApplyDefTail(name, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
     case Expression.ApplySelfTail(name, formals, actuals, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
-    case Expression.ApplyHook(hook, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
   }
 
   /**
@@ -314,7 +296,6 @@ object ClosureConv {
         val fs = fparams.map(fparam => replace(fparam, subst))
         val e = visit(exp)
         Expression.Lambda(fs, e, tpe, loc)
-      case Expression.Hook(hook, tpe, loc) => e
       case Expression.Closure(ref, freeVars, tpe, loc) => e
       case Expression.LambdaClosure(exp, freeVars, tpe, loc) =>
         val e = visit(exp).asInstanceOf[Expression.Lambda]
@@ -326,9 +307,6 @@ object ClosureConv {
       case Expression.ApplyDef(sym, args, tpe, loc) =>
         val as = args map visit
         Expression.ApplyDef(sym, as, tpe, loc)
-      case Expression.ApplyHook(hook, args, tpe, loc) =>
-        val as = args map visit
-        Expression.ApplyHook(hook, as, tpe, loc)
       case Expression.Apply(exp, args, tpe, loc) =>
         val e = visit(exp)
         val as = args map visit

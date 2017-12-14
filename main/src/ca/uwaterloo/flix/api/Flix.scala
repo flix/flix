@@ -20,7 +20,6 @@ import java.nio.charset.Charset
 import java.nio.file.{Files, Path, Paths}
 import java.util.concurrent.{ExecutorService, Executors}
 
-import ca.uwaterloo.flix.language.ast.Ast.Hook
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.phase._
 import ca.uwaterloo.flix.language.phase.jvm.JvmBackend
@@ -94,11 +93,6 @@ class Flix {
     "flix/core/cmp/PartialOrd.flix" -> LocalResource.get("/library/flix/core/cmp/PartialOrd.flix"),
     "flix/core/lattice/JoinSemiLattice.flix" -> LocalResource.get("/library/flix/core/lattice/JoinSemiLattice.flix"),
   )
-
-  /**
-    * A map of hooks to JVM invokable methods.
-    */
-  private val hooks = mutable.Map.empty[Symbol.DefnSym, Ast.Hook]
 
   /**
     * The default assumed charset.
@@ -177,25 +171,6 @@ class Flix {
   def getReachableRoots: Set[Symbol.DefnSym] = reachableRoots.toSet
 
   /**
-    * Calls the unsafe invokable with the given name `name`, passing the given `args.`
-    *
-    * @param fqn  the fully qualified name for the invokable.
-    * @param args the array of arguments passed to the invokable.
-    */
-  def invokeUnsafe(fqn: String, args: Array[AnyRef]): AnyRef = {
-    if (fqn == null)
-      throw new IllegalArgumentException("'name' must be non-null.")
-    if (args == null)
-      throw new IllegalArgumentException("'args' must be non-null.")
-
-    val sym = Symbol.mkDefnSym(fqn)
-    hooks.get(sym) match {
-      case None => throw new NoSuchElementException(s"Hook '$fqn' does not exist.")
-      case Some(hook: Hook.Unsafe) => hook.inv(args)
-    }
-  }
-
-  /**
     * Sets the options used for this Flix instance.
     */
   def setOptions(opts: Options): Flix = {
@@ -210,9 +185,6 @@ class Flix {
     * Compiles the Flix program and returns a typed ast.
     */
   def check(): Validation[TypedAst.Root, CompilationError] = {
-    // Add built-in hooks.
-    addGenSymHook()
-
     // Construct the compiler pipeline.
     val pipeline =
       Reader |>
@@ -226,7 +198,7 @@ class Flix {
         Safety
 
     // Apply the pipeline to the parsed AST.
-    pipeline.run((getInputs, hooks.toMap, named.toMap))(this)
+    pipeline.run((getInputs, named.toMap))(this)
   }
 
   /**
@@ -248,10 +220,6 @@ class Flix {
       VarNumbering |>
       CreateExecutableAst |>
       JvmBackend |>
-      TupleGen |>
-      EnumGen |>
-      CodeGen |>
-      LoadBytecode |>
       QuickChecker |>
       Verifier
 
@@ -278,7 +246,7 @@ class Flix {
     * Runs the Flix fixed point solver on the program and returns the minimal model.
     */
   def solve(root: ExecutableAst.Root): Validation[Model, CompilationError] =
-    new Solver(root, options).solve().toSuccess
+    new Solver(root, options)(this).solve().toSuccess
 
   /**
     * Runs the Flix fixed point solver on the program trying to minimize the
@@ -287,7 +255,7 @@ class Flix {
     * @param path the path to write the minimized facts to.
     */
   def deltaSolve(path: Path): Validation[scala.Unit, CompilationError] = compile().map {
-    case root => DeltaSolver.solve(root, options, path)
+    case root => DeltaSolver.solve(root, options, path)(this)
   }
 
   /**
@@ -322,28 +290,6 @@ class Flix {
     */
   private def getStandardLibraryInputs: List[Input] = library.foldLeft(List.empty[Input]) {
     case (xs, (name, text)) => Input.Internal(name, text) :: xs
-  }
-
-  /**
-    * Adds a hook for the built-in `genSym` function.
-    */
-  private def addGenSymHook(): scala.Unit = {
-    // Instantiate a fresh gen sym for the Flix program itself.
-    val gen = new GenSym()
-
-    // Symbol, type, and hook.
-    val sym = Symbol.mkDefnSym("genSymHook")
-    val tpe = Type.mkArrow(Nil, Type.Int32)
-    val inv = new InvokableUnsafe {
-      def apply(args: Array[AnyRef]): AnyRef = {
-        if (!options.impure)
-          throw new IllegalStateException("Illegal call to impure function. Requires --Ximpure.")
-        new java.lang.Integer(gen.freshId())
-      }
-    }
-
-    // Add the function to the hooks.
-    hooks.put(sym, Ast.Hook.Unsafe(sym, inv, tpe))
   }
 
   /**

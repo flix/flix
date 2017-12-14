@@ -25,51 +25,50 @@ package object datastore {
   /**
     * A common super-type for keys.
     */
-  sealed trait Key[ValueType] {
+  sealed trait Key {
 
-    def toArray: Array[ValueType] = this match {
-      case k: Key1[_] =>
-        val a = new Array[Any](1)
+    def toArray: Array[ProxyObject] = this match {
+      case k: Key1 =>
+        val a = new Array[ProxyObject](1)
         a(0) = k.v0
-        a.asInstanceOf[Array[ValueType]]
-      case k: Key2[_] =>
-        val a = new Array[Any](2)
+        a
+      case k: Key2 =>
+        val a = new Array[ProxyObject](2)
         a(0) = k.v0
         a(1) = k.v1
-        a.asInstanceOf[Array[ValueType]]
-      case k: Key3[_] =>
-        val a = new Array[Any](3)
+        a
+      case k: Key3 =>
+        val a = new Array[ProxyObject](3)
         a(0) = k.v0
         a(1) = k.v1
         a(2) = k.v2
-        a.asInstanceOf[Array[ValueType]]
-      case k: Key4[_] =>
-        val a = new Array[Any](4)
+        a
+      case k: Key4 =>
+        val a = new Array[ProxyObject](4)
         a(0) = k.v0
         a(1) = k.v1
         a(2) = k.v2
         a(3) = k.v3
-        a.asInstanceOf[Array[ValueType]]
-      case k: Key5[_] =>
-        val a = new Array[Any](5)
+        a
+      case k: Key5 =>
+        val a = new Array[ProxyObject](5)
         a(0) = k.v0
         a(1) = k.v1
         a(2) = k.v2
         a(3) = k.v3
         a(4) = k.v4
-        a.asInstanceOf[Array[ValueType]]
+        a
     }
   }
 
   /**
     * A key with one value.
     */
-  final class Key1[ValueType](val v0: ValueType, eq: Array[(AnyRef, AnyRef) => Boolean]) extends Key[ValueType] {
-    assert(eq.length == 1)
+  final class Key1(val v0: ProxyObject) extends Key {
 
     override def equals(o: scala.Any): Boolean = o match {
-      case that: Key1[_] =>
-        eq(0)(this.v0.asInstanceOf[AnyRef], that.v0.asInstanceOf[AnyRef])
+      case that: Key1 =>
+        this.v0 == that.v0
       case _ => false
     }
 
@@ -79,13 +78,11 @@ package object datastore {
   /**
     * A key with two values.
     */
-  final class Key2[ValueType](val v0: ValueType, val v1: ValueType, eq: Array[(AnyRef, AnyRef) => Boolean]) extends Key[ValueType] {
-    assert(eq.length == 2)
-
+  final class Key2(val v0: ProxyObject, val v1: ProxyObject) extends Key {
     override def equals(o: scala.Any): Boolean = o match {
-      case that: Key2[_] =>
-        eq(0)(this.v0.asInstanceOf[AnyRef], that.v0.asInstanceOf[AnyRef]) &&
-          eq(1)(this.v1.asInstanceOf[AnyRef], that.v1.asInstanceOf[AnyRef])
+      case that: Key5 =>
+        this.v0 == that.v0 &&
+          this.v1 == that.v1
       case _ => false
     }
 
@@ -95,14 +92,12 @@ package object datastore {
   /**
     * A key with three values.
     */
-  final class Key3[ValueType](val v0: ValueType, val v1: ValueType, val v2: ValueType, eq: Array[(AnyRef, AnyRef) => Boolean]) extends Key[ValueType] {
-    assert(eq.length == 3)
-
+  final class Key3(val v0: ProxyObject, val v1: ProxyObject, val v2: ProxyObject) extends Key {
     override def equals(o: scala.Any): Boolean = o match {
-      case that: Key3[_] =>
-        eq(0)(this.v0.asInstanceOf[AnyRef], that.v0.asInstanceOf[AnyRef]) &&
-          eq(1)(this.v1.asInstanceOf[AnyRef], that.v1.asInstanceOf[AnyRef]) &&
-          eq(2)(this.v2.asInstanceOf[AnyRef], that.v2.asInstanceOf[AnyRef])
+      case that: Key5 =>
+        this.v0 == that.v0 &&
+          this.v1 == that.v1 &&
+          this.v2 == that.v2
       case _ => false
     }
 
@@ -112,15 +107,13 @@ package object datastore {
   /**
     * A key with four values.
     */
-  final class Key4[ValueType](val v0: ValueType, val v1: ValueType, val v2: ValueType, val v3: ValueType, eq: Array[(AnyRef, AnyRef) => Boolean]) extends Key[ValueType] {
-    assert(eq.length == 4)
-
+  final class Key4(val v0: ProxyObject, val v1: ProxyObject, val v2: ProxyObject, val v3: ProxyObject) extends Key {
     override def equals(o: scala.Any): Boolean = o match {
-      case that: Key4[_] =>
-        eq(0)(this.v0.asInstanceOf[AnyRef], that.v0.asInstanceOf[AnyRef]) &&
-          eq(1)(this.v1.asInstanceOf[AnyRef], that.v1.asInstanceOf[AnyRef]) &&
-          eq(2)(this.v2.asInstanceOf[AnyRef], that.v2.asInstanceOf[AnyRef]) &&
-          eq(3)(this.v3.asInstanceOf[AnyRef], that.v3.asInstanceOf[AnyRef])
+      case that: Key5 =>
+        this.v0 == that.v0 &&
+          this.v1 == that.v1 &&
+          this.v2 == that.v2 &&
+          this.v3 == that.v3
       case _ => false
     }
 
@@ -130,16 +123,14 @@ package object datastore {
   /**
     * A key with five values.
     */
-  final class Key5[ValueType](val v0: ValueType, val v1: ValueType, val v2: ValueType, val v3: ValueType, val v4: ValueType, eq: Array[(AnyRef, AnyRef) => Boolean]) extends Key[ValueType] {
-    assert(eq.length == 5)
-
+  final class Key5(val v0: ProxyObject, val v1: ProxyObject, val v2: ProxyObject, val v3: ProxyObject, val v4: ProxyObject) extends Key {
     override def equals(o: scala.Any): Boolean = o match {
-      case that: Key5[_] =>
-        eq(0)(this.v0.asInstanceOf[AnyRef], that.v0.asInstanceOf[AnyRef]) &&
-          eq(1)(this.v1.asInstanceOf[AnyRef], that.v1.asInstanceOf[AnyRef]) &&
-          eq(2)(this.v2.asInstanceOf[AnyRef], that.v2.asInstanceOf[AnyRef]) &&
-          eq(3)(this.v3.asInstanceOf[AnyRef], that.v3.asInstanceOf[AnyRef]) &&
-          eq(4)(this.v4.asInstanceOf[AnyRef], that.v4.asInstanceOf[AnyRef])
+      case that: Key5 =>
+        this.v0 == that.v0 &&
+          this.v1 == that.v1 &&
+          this.v2 == that.v2 &&
+          this.v3 == that.v3 &&
+          this.v4 == that.v4
       case _ => false
     }
 
@@ -215,25 +206,6 @@ package object datastore {
   }
 
   /**
-    * Returns an array of equality operations corresponding to the given index.
-    */
-  // TODO: This is a gruesome hack which is unfortunately necessary at the moment.
-  def equalityOf(idx: Int, eq: Array[(AnyRef, AnyRef) => Boolean]): Array[(AnyRef, AnyRef) => Boolean] = {
-    val size = Integer.bitCount(idx)
-    val result = Array.ofDim[(AnyRef, AnyRef) => Boolean](size)
-    var i: Int = 0
-    var j: Int = 0
-    while (i < eq.length) {
-      if (BitOps.getBit(vec = idx, bit = i)) {
-        result(j) = eq(i)
-        j = j + 1
-      }
-      i = i + 1
-    }
-    result
-  }
-
-  /**
     * Returns the key for the given index `idx` and pattern `pat`.
     *
     * The pattern must be non-null for all columns in the index.
@@ -241,19 +213,19 @@ package object datastore {
     * @param idx the index (in binary).
     * @param pat the pattern.
     */
-  def keyOf[ValueType](idx: Int, pat: Array[ValueType], eq: Array[(AnyRef, AnyRef) => Boolean]): Key[ValueType] = {
+  def keyOf(idx: Int, pat: Array[ProxyObject]): Key = {
     val columns = Integer.bitCount(idx)
     val i1 = idx
     (columns: @switch) match {
       case 1 =>
         val c1 = BitOps.positionOfLeastSignificantBit(i1)
-        new Key1(pat(c1), equalityOf(idx, eq))
+        new Key1(pat(c1))
 
       case 2 =>
         val c1 = BitOps.positionOfLeastSignificantBit(i1)
         val i2 = BitOps.clearBit(vec = i1, bit = c1)
         val c2 = BitOps.positionOfLeastSignificantBit(i2)
-        new Key2(pat(c1), pat(c2), equalityOf(idx, eq))
+        new Key2(pat(c1), pat(c2))
 
       case 3 =>
         val c1 = BitOps.positionOfLeastSignificantBit(i1)
@@ -261,7 +233,7 @@ package object datastore {
         val c2 = BitOps.positionOfLeastSignificantBit(i2)
         val i3 = BitOps.clearBit(vec = i2, bit = c2)
         val c3 = BitOps.positionOfLeastSignificantBit(i3)
-        new Key3(pat(c1), pat(c2), pat(c3), equalityOf(idx, eq))
+        new Key3(pat(c1), pat(c2), pat(c3))
 
       case 4 =>
         val c1 = BitOps.positionOfLeastSignificantBit(i1)
@@ -271,7 +243,7 @@ package object datastore {
         val c3 = BitOps.positionOfLeastSignificantBit(i3)
         val i4 = BitOps.clearBit(vec = i3, bit = c3)
         val c4 = BitOps.positionOfLeastSignificantBit(i4)
-        new Key4(pat(c1), pat(c2), pat(c3), pat(c4), equalityOf(idx, eq))
+        new Key4(pat(c1), pat(c2), pat(c3), pat(c4))
 
       case 5 =>
         val c1 = BitOps.positionOfLeastSignificantBit(i1)
@@ -283,7 +255,7 @@ package object datastore {
         val c4 = BitOps.positionOfLeastSignificantBit(i4)
         val i5 = BitOps.clearBit(vec = i4, bit = c4)
         val c5 = BitOps.positionOfLeastSignificantBit(i5)
-        new Key5(pat(c1), pat(c2), pat(c3), pat(c4), pat(c5), equalityOf(idx, eq))
+        new Key5(pat(c1), pat(c2), pat(c3), pat(c4), pat(c5))
 
       case _ => throw new RuntimeException("Indexes on more than five keys are currently not supported.")
     }

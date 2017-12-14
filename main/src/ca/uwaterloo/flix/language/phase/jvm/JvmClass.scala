@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 /**
-  * Represents a Java class (or interface)
+  * Represents a Java class (or interface).
   *
   * @param name     the name of the class (or interface).
   * @param bytecode the bytecode of the class (or interface).
@@ -39,5 +39,5 @@ case class JvmClass(name: JvmName, bytecode: Array[Byte]) {
   /**
     * Returns a string representation of `this` JvmClass.
     */
-  override def toString: String = s"JvmClass($name, <code>)"
+  override def toString: String = s"JvmClass($name, ${bytecode.length} bytes)"
 }

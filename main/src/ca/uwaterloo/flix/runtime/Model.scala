@@ -16,9 +16,10 @@
 
 package ca.uwaterloo.flix.runtime
 
-import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ExecutableAst._
-import ca.uwaterloo.flix.util.InternalRuntimeException
+import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.runtime.datastore.ProxyObject
 
 /**
   * A class representing the minimal model.
@@ -30,9 +31,10 @@ import ca.uwaterloo.flix.util.InternalRuntimeException
   */
 class Model(root: Root,
             time: Time,
-            definitions: Map[Symbol.DefnSym, () => AnyRef],
-            relations: Map[Symbol.TableSym, Iterable[List[AnyRef]]],
-            lattices: Map[Symbol.TableSym, Iterable[(List[AnyRef], AnyRef)]]) {
+            definitions: Map[Symbol.DefnSym, () => ProxyObject],
+            relations: Map[Symbol.TableSym, Iterable[List[ProxyObject]]],
+            lattices: Map[Symbol.TableSym, Iterable[(List[ProxyObject], ProxyObject)]])
+           (implicit flix: Flix) {
 
   /**
     * Returns the root AST.
@@ -74,7 +76,7 @@ class Model(root: Root,
     // Retrieve the function and call it.
     definitions.get(sym) match {
       case None => throw new IllegalArgumentException(s"Undefined fully-qualified name: '$fqn'.")
-      case Some(fn) => fn()
+      case Some(fn) => fn().getValue
     }
   }
 
@@ -94,11 +96,7 @@ class Model(root: Root,
         // Retrieve the function and call it.
         val resultValue = definitions(sym)()
 
-        // Retrieve the result type.
-        val resultType = getResultType(defn.tpe)
-
-        // Compute and return a string representation of the result.
-        toString(resultValue, resultType)
+        resultValue.toString
     }
   }
 
@@ -116,7 +114,7 @@ class Model(root: Root,
             // Compute the rows of the table.
             val rows: Iterable[List[String]] = relations(sym).map {
               case row => (row zip attr) map {
-                case (obj, Attribute(_, tpe)) => toString(obj, tpe)
+                case (obj, Attribute(_, tpe)) => obj.toString
               }
             }
 
@@ -143,7 +141,7 @@ class Model(root: Root,
           // Compute the rows of the table.
           val rows: Iterable[List[String]] = lattices(sym).map {
             case (ks, v) => ((ks :: v :: Nil) zip attr) map {
-              case (obj, Attribute(_, tpe)) => toString(obj, tpe)
+              case (obj, Attribute(_, tpe)) => obj.toString
             }
           }
 
@@ -155,21 +153,5 @@ class Model(root: Root,
     * Returns the result type of the given lambda type.
     */
   private def getResultType(tpe: Type): Type = tpe.typeArguments.last
-
-  /**
-    * Returns a string representation of the given reference `ref` formatted according to the given type `tpe`.
-    */
-  private def toString(ref: AnyRef, tpe: Type): String = {
-    // Retrieve the toString special operator.
-    root.specialOps(SpecialOperator.ToString).get(tpe) match {
-      case None => throw InternalRuntimeException(s"Undefined 'toString' special operator for the given type: '$tpe'.")
-      case Some(sym) => val target = Linker.link(sym, root)
-        target.invoke(Array(ref)) match {
-          case s: String => s
-          case o: Value.Str => o.lit
-          case o => throw InternalRuntimeException(s"Unexpected non-string value: ${o.getClass.getCanonicalName} returned by 'toString' special operator.")
-        }
-    }
-  }
 
 }

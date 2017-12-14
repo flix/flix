@@ -35,6 +35,7 @@ object Options {
     quickchecker = false,
     safe = false,
     test = false,
+    target = JvmTarget.Version18,
     timeout = Duration.Inf,
     threads = Runtime.getRuntime.availableProcessors(),
     verbosity = Verbosity.Normal,
@@ -61,6 +62,7 @@ object Options {
   * @param quickchecker enables the quickchecker.
   * @param test         enables test mode.
   * @param safe         disables unsafe operations.
+  * @param target       the target JVM.
   * @param timeout      selects the solver timeout.
   * @param threads      selects the number of threads to use.
   * @param verbosity    selects the level of verbosity.
@@ -77,35 +79,12 @@ case class Options(core: Boolean,
                    monitor: Boolean,
                    quickchecker: Boolean,
                    safe: Boolean,
+                   target: JvmTarget,
                    test: Boolean,
                    timeout: Duration,
                    threads: Int,
                    verbosity: Verbosity,
                    verifier: Boolean)
-
-/**
-  * An option to control the level of verbosity.
-  */
-sealed trait Verbosity
-
-object Verbosity {
-
-  /**
-    * Output verbose information. Useful for debugging.
-    */
-  case object Verbose extends Verbosity
-
-  /**
-    * Output condensed information. The default.
-    */
-  case object Normal extends Verbosity
-
-  /**
-    * Output nothing. Useful for when Flix is used as a library.
-    */
-  case object Silent extends Verbosity
-
-}
 
 /**
   * An option to control the evaluation strategy.
@@ -134,53 +113,42 @@ sealed trait Optimization
 object Optimization {
 
   /**
-    * All optimization supported by the compiler.
+    * All optimizations supported by the compiler.
     */
   val All: Set[Optimization] = Set(
-    ClosureElimination,
-    EnumCompaction,
-    // SingleCaseEnum // TODO: Disabled due to unsoundness with types as keys in ASTs.
+    NullableEnums,
+    PatMatchLabels,
+    SingleCaseEnums,
     TagTupleFusion,
-    TailRecursion,
-    Uncurrying)
+    TailCalls
+  )
 
   /**
-    * Enables closure elimination.
+    * Enables compilation with nullable enums.
+    *
+    * A nullable enum is an enum with exactly two cases where one case is the unit constructor.
     */
-  case object ClosureElimination extends Optimization
+  case object NullableEnums extends Optimization
 
   /**
-    * Enables compilation of compact enums into nulls and a single class.
-    */
-  case object EnumCompaction extends Optimization
-
-  /**
-    * Enables compilation of pattern matching to labels and jumps.
+    * Enables compilation of pattern matches to labels and jumps.
     */
   case object PatMatchLabels extends Optimization
 
   /**
-    * Enables compilation of single-case enums to nothingness.
+    * Enables compilation with elimination of single case enums.
     */
-  case object SingleCaseEnum extends Optimization
+  case object SingleCaseEnums extends Optimization
 
   /**
-    * Enables compilation of tags and tuples into a single class.
+    * Enables compilation with tag and tuple fusion.
     */
   case object TagTupleFusion extends Optimization
 
   /**
-    * Enables compilation of tail recursive calls into loops.
-    *
-    * Note: General tail call optimization is always enabled.
-    * This optimization handles the special case where a function calls itself in a tail recursive way.
+    * Enables compilation with full tail calls.
     */
-  case object TailRecursion extends Optimization
-
-  /**
-    * Enables compilation of curried functions into uncurried functions.
-    */
-  case object Uncurrying extends Optimization
+  case object TailCalls extends Optimization
 
 }
 
@@ -201,5 +169,58 @@ object CompilationMode {
     * Enables the release mode of the compiler.
     */
   case object Release extends CompilationMode
+
+}
+
+/**
+  * An option to control the version of emitted JVM bytecode.
+  */
+sealed trait JvmTarget
+
+object JvmTarget {
+
+  /**
+    * Emit bytecode for Java 1.6.
+    */
+  object Version16 extends JvmTarget
+
+  /**
+    * Emit bytecode for Java 1.7.
+    */
+  object Version17 extends JvmTarget
+
+  /**
+    * Emit bytecode for Java 1.8.
+    */
+  object Version18 extends JvmTarget
+
+  /**
+    * Emit bytecode for Java 1.9.
+    */
+  object Version19 extends JvmTarget
+
+}
+
+/**
+  * An option to control the level of verbosity.
+  */
+sealed trait Verbosity
+
+object Verbosity {
+
+  /**
+    * Output verbose information. Useful for debugging.
+    */
+  case object Verbose extends Verbosity
+
+  /**
+    * Output condensed information. The default.
+    */
+  case object Normal extends Verbosity
+
+  /**
+    * Output nothing. Useful for when Flix is used as a library.
+    */
+  case object Silent extends Verbosity
 
 }

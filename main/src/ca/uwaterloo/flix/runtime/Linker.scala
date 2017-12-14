@@ -18,25 +18,30 @@ package ca.uwaterloo.flix.runtime
 
 import java.lang.reflect.InvocationTargetException
 
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ExecutableAst._
-import ca.uwaterloo.flix.language.ast.Symbol
-import ca.uwaterloo.flix.util.InternalRuntimeException
+import ca.uwaterloo.flix.language.ast.{SpecialOperator, Symbol, Type}
+import ca.uwaterloo.flix.runtime.datastore.ProxyObject
+import ca.uwaterloo.flix.util.{Evaluation, InternalRuntimeException}
 
 object Linker {
 
   /**
     * Returns an invocation target for the Flix function corresponding to the given symbol `sym`.
     */
-  def link(sym: Symbol.DefnSym, root: Root): InvocationTarget = {
+  def link(sym: Symbol.DefnSym, root: Root)(implicit flix: Flix): InvocationTarget = {
     // Lookup the definition symbol in the program.
     root.defs.get(sym) match {
       case None => throw InternalRuntimeException(s"Undefined symbol: '$sym'.")
       case Some(defn) =>
         // Determine whether to invoke the interpreted or compiled code.
-        if (defn.method == null) {
-          linkInterpreted(defn, root)
-        } else {
-          linkCompiled(defn)
+        flix.options.evaluation match {
+          case Evaluation.Interpreted => linkInterpreted(defn, root)
+          case Evaluation.Compiled =>
+            if (defn.method == null) {
+              throw InternalRuntimeException(s"Undefined reflective method object for symbol: '$sym'.")
+            }
+            linkCompiled(defn, root)
         }
     }
   }
@@ -44,8 +49,8 @@ object Linker {
   /**
     * Returns an invocation target for the given definition `defn` that is interpreted.
     */
-  private def linkInterpreted(defn: Def, root: Root): InvocationTarget = new InvocationTarget {
-    override def invoke(args: Array[AnyRef]): AnyRef = {
+  private def linkInterpreted(defn: Def, root: Root)(implicit flix: Flix): InvocationTarget = new InvocationTarget {
+    override def invoke(args: Array[AnyRef]): ProxyObject = {
       // Extend the environment with the values of the actual arguments.
       val env0 = defn.formals.zip(args).foldLeft(Map.empty[String, AnyRef]) {
         case (macc, (FormalParam(name, tpe), actual)) => macc + (name.toString -> Interpreter.fromJava(actual))
@@ -54,26 +59,78 @@ object Linker {
       val lenv0 = Map.empty[Symbol.LabelSym, Expression]
 
       // Evaluate the function body.
-      val result = Interpreter.eval(defn.exp, env0, Map.empty, root)
+      val result = Interpreter.toJava(Interpreter.eval(defn.exp, env0, Map.empty, root))
 
-      // Convert the result to its Java representation.
-      Interpreter.toJava(result)
+      // Eq, Hash, and toString
+      val resultType = defn.tpe.typeArguments.last
+      val eq = getEqOp(resultType, root)
+      val hash = getHashOp(resultType, root)
+      val toString = getToStrOp(resultType, root)
+
+      // Create the proxy object.
+      new ProxyObject(result, eq, hash, toString)
     }
   }
 
   /**
     * Returns an invocation target for the given definition `defn` that is compiled.
     */
-  private def linkCompiled(defn: Def): InvocationTarget = new InvocationTarget {
-    override def invoke(args: Array[AnyRef]): AnyRef =
+  private def linkCompiled(defn: Def, root: Root)(implicit flix: Flix): InvocationTarget = new InvocationTarget {
+    override def invoke(args: Array[AnyRef]): ProxyObject =
       try {
         // Java Reflective Call.
-        defn.method.invoke(null, args: _*)
+        val result = defn.method.invoke(null, args: _*)
+
+        // Eq, Hash, and toString
+        val resultType = defn.tpe.typeArguments.last
+        val eq = getEqOp(resultType, root)
+        val hash = getHashOp(resultType, root)
+        val toString = getToStrOp(resultType, root)
+
+        // Create the proxy object.
+        new ProxyObject(result, eq, hash, toString)
       } catch {
         case e: InvocationTargetException =>
           // Rethrow the underlying exception.
           throw e.getTargetException
       }
   }
+
+  /**
+    * Returns a Scala function that computes equality of two raw Flix values.
+    */
+  private def getEqOp(tpe: Type, root: Root)(implicit flix: Flix): (AnyRef, AnyRef) => Boolean =
+    (x: AnyRef, y: AnyRef) => {
+      val sym = root.specialOps(SpecialOperator.Equality)(tpe)
+      link(sym, root).invoke(Array(x, y)).getValue match {
+        case java.lang.Boolean.TRUE => true
+        case java.lang.Boolean.FALSE => false
+        case v => throw InternalRuntimeException(s"Unexpected value: '$v'.")
+      }
+    }
+
+  /**
+    * Returns a Scala function that computes the hashCode of a raw Flix value.
+    */
+  private def getHashOp(tpe: Type, root: Root)(implicit flix: Flix): AnyRef => Int =
+    (x: AnyRef) => {
+      val sym = root.specialOps(SpecialOperator.HashCode)(tpe)
+      link(sym, root).invoke(Array(x)).getValue match {
+        case i: java.lang.Integer => i.intValue()
+        case v => throw InternalRuntimeException(s"Unexpected value: '$v'.")
+      }
+    }
+
+  /**
+    * Returns a Scala function that computes the string representation of a raw Flix value.
+    */
+  private def getToStrOp(tpe: Type, root: Root)(implicit flix: Flix): AnyRef => String =
+    (x: AnyRef) => {
+      val sym = root.specialOps(SpecialOperator.ToString)(tpe)
+      link(sym, root).invoke(Array(x)).getValue match {
+        case s: java.lang.String => s
+        case v => throw InternalRuntimeException(s"Unexpected value: '$v'.")
+      }
+    }
 
 }

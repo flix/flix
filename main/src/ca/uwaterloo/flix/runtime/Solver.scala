@@ -19,12 +19,12 @@ package ca.uwaterloo.flix.runtime
 import java.util.concurrent._
 import java.util.concurrent.atomic.AtomicInteger
 
-import ca.uwaterloo.flix.api.{Enum, RuleException, TimeoutException}
+import ca.uwaterloo.flix.api.{Flix, RuleException, Tag, TimeoutException}
 import ca.uwaterloo.flix.language.ast.Ast.Polarity
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Term.Body.Pat
 import ca.uwaterloo.flix.language.ast.ExecutableAst._
 import ca.uwaterloo.flix.language.ast.{ExecutableAst, Symbol}
-import ca.uwaterloo.flix.runtime.datastore.{DataStore, KeyCache}
+import ca.uwaterloo.flix.runtime.datastore.{DataStore, KeyCache, ProxyObject}
 import ca.uwaterloo.flix.runtime.debugger.RestServer
 import ca.uwaterloo.flix.util._
 
@@ -39,7 +39,7 @@ import scala.concurrent.duration.{Duration, _}
   *
   * The solver computes the least fixed point of the rules in the given program.
   */
-class Solver(val root: ExecutableAst.Root, options: Options) {
+class Solver(val root: ExecutableAst.Root, options: Options)(implicit flix: Flix) {
 
   /**
     * Controls the number of batches per thread. A value of one means one batch per thread.
@@ -60,7 +60,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
     *
     * An environment is map from variables to values.
     */
-  type Env = Array[AnyRef]
+  type Env = Array[ProxyObject]
 
   /**
     * The type of work lists.
@@ -75,7 +75,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
     *
     * An interpretation is collection of facts (a table symbol associated with an array of facts).
     */
-  type Interpretation = mutable.ArrayBuffer[(Symbol.TableSym, Array[AnyRef])]
+  type Interpretation = mutable.ArrayBuffer[(Symbol.TableSym, Array[ProxyObject])]
 
   /**
     * The type of the dependency graph, a map from symbols to (constraint, atom) pairs.
@@ -324,7 +324,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
   private def initWorkList(stratum: Stratum): Unit = {
     // add all rules to the worklist (under empty environments).
     for (rule <- stratum.constraints) {
-      worklist.push((rule, new Array[AnyRef](rule.arity)))
+      worklist.push((rule, new Array[ProxyObject](rule.arity)))
     }
   }
 
@@ -431,10 +431,10 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
     }
 
     // evaluate all terms in the predicate.
-    val pat = new Array[AnyRef](p.arity)
+    val pat = new Array[ProxyObject](p.arity)
     var i = 0
     while (i < pat.length) {
-      val value = p.terms(i) match {
+      val value: ProxyObject = p.terms(i) match {
         case ExecutableAst.Term.Body.Var(sym, _, _) =>
           // A variable is replaced by its value from the environment (or null if unbound).
           env(sym.getStackOffset)
@@ -565,7 +565,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
         }
 
         // Store the value of the term into the argument array.
-        args(j) = value
+        args(j) = value.getValue
         j = j + 1
       }
 
@@ -575,7 +575,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
       }
 
       // Evaluate the filter function passing the arguments.
-      val result = filter.target.invoke(args)
+      val result = filter.target.invoke(args).getValue
 
       // Return the result.
       result.asInstanceOf[java.lang.Boolean].booleanValue()
@@ -587,10 +587,10 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
   private def evalHead(p: Predicate.Head, env: Env, interp: Interpretation): Unit = p match {
     case p: Predicate.Head.Atom =>
       val terms = p.termsAsArray
-      val fact = new Array[AnyRef](p.arity)
+      val fact = new Array[ProxyObject](p.arity)
       var i = 0
       while (i < fact.length) {
-        val term = evalHeadTerm(terms(i), root, env)
+        val term: ProxyObject = evalHeadTerm(terms(i), root, env)
         fact(i) = term
         i = i + 1
 
@@ -607,7 +607,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
   /**
     * Evaluates the given head term `t` under the given environment `env0`
     */
-  def evalHeadTerm(t: Term.Head, root: Root, env: Env): AnyRef = t match {
+  def evalHeadTerm(t: Term.Head, root: Root, env: Env): ProxyObject = t match {
     case Term.Head.Var(sym, _, _) => env(sym.getStackOffset)
     case Term.Head.Lit(lit, _, _) => lit
     case Term.Head.Cst(litSym, _, _) =>
@@ -617,7 +617,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
       val args = new Array[AnyRef](syms.length)
       var i = 0
       while (i < args.length) {
-        args(i) = env(syms(i).getStackOffset)
+        args(i) = env(syms(i).getStackOffset).getValue
         i = i + 1
       }
       Linker.link(sym, root).invoke(args)
@@ -626,7 +626,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
   /**
     * Returns a callable to process a collection of inferred `facts` for the relation or lattice with the symbol `sym`.
     */
-  private def inferredFacts(sym: Symbol.TableSym, facts: ArrayBuffer[Array[AnyRef]]): Callable[WorkList] = () => {
+  private def inferredFacts(sym: Symbol.TableSym, facts: ArrayBuffer[Array[ProxyObject]]): Callable[WorkList] = () => {
     val localWorkList = mkWorkList()
     for (fact <- facts) {
       inferredFact(sym, fact, localWorkList)
@@ -637,7 +637,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
   /**
     * Processes an inferred `fact` for the relation or lattice with the symbol `sym`.
     */
-  private def inferredFact(sym: Symbol.TableSym, fact: Array[AnyRef], localWorkList: WorkList): Unit = root.tables(sym) match {
+  private def inferredFact(sym: Symbol.TableSym, fact: Array[ProxyObject], localWorkList: WorkList): Unit = root.tables(sym) match {
     case r: ExecutableAst.Table.Relation =>
       val changed = dataStore.relations(sym).inferredFact(fact)
       if (changed) {
@@ -654,10 +654,10 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
   /**
     * Returns all dependencies of the given symbol `sym` along with an environment.
     */
-  private def dependencies(sym: Symbol.TableSym, fact: Array[AnyRef], localWorkList: WorkList): Unit = {
+  private def dependencies(sym: Symbol.TableSym, fact: Array[ProxyObject], localWorkList: WorkList): Unit = {
 
-    def unify(pat: Array[Symbol.VarSym], fact: Array[AnyRef], limit: Int, len: Int): Env = {
-      val env: Env = new Array[AnyRef](len)
+    def unify(pat: Array[Symbol.VarSym], fact: Array[ProxyObject], limit: Int, len: Int): Env = {
+      val env: Env = new Array[ProxyObject](len)
       var i = 0
       while (i < limit) {
         val varName = pat(i)
@@ -771,8 +771,8 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
   /**
     * Sorts the given facts by their table symbol.
     */
-  private def groupFactsBySymbol(iter: Iterator[Interpretation]): mutable.Map[Symbol.TableSym, ArrayBuffer[Array[AnyRef]]] = {
-    val result = mutable.Map.empty[Symbol.TableSym, ArrayBuffer[Array[AnyRef]]]
+  private def groupFactsBySymbol(iter: Iterator[Interpretation]): mutable.Map[Symbol.TableSym, ArrayBuffer[Array[ProxyObject]]] = {
+    val result = mutable.Map.empty[Symbol.TableSym, ArrayBuffer[Array[ProxyObject]]]
     while (iter.hasNext) {
       val interp = iter.next()
       for ((symbol, fact) <- interp) {
@@ -788,7 +788,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
     */
   private def mkModel(elapsed: Long): Model = {
     // construct the model.
-    val definitions = root.defs.foldLeft(Map.empty[Symbol.DefnSym, () => AnyRef]) {
+    val definitions = root.defs.foldLeft(Map.empty[Symbol.DefnSym, () => ProxyObject]) {
       case (macc, (sym, defn)) =>
         if (defn.formals.isEmpty)
           macc + (sym -> (() => Linker.link(sym, root).invoke(Array.empty)))
@@ -796,18 +796,20 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
           macc + (sym -> (() => throw InternalRuntimeException("Unable to evalaute non-constant top-level definition.")))
     }
 
-    val relations = dataStore.relations.foldLeft(Map.empty[Symbol.TableSym, Iterable[List[AnyRef]]]) {
+    val relations = dataStore.relations.foldLeft(Map.empty[Symbol.TableSym, Iterable[List[ProxyObject]]]) {
       case (macc, (sym, relation)) =>
         val table = relation.scan.toIterable.map(_.toList)
         macc + ((sym, table))
     }
-    val lattices = dataStore.lattices.foldLeft(Map.empty[Symbol.TableSym, Iterable[(List[AnyRef], AnyRef)]]) {
+
+    val lattices = dataStore.lattices.foldLeft(Map.empty[Symbol.TableSym, Iterable[(List[ProxyObject], ProxyObject)]]) {
       case (macc, (sym, lattice)) =>
         val table = lattice.scan.toIterable.map {
           case (keys, values) => (keys.toArray.toList, values)
         }
         macc + ((sym, table))
     }
+
     model = new Model(root, root.time.copy(solver = elapsed), definitions, relations, lattices)
     model
   }
@@ -856,7 +858,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
   /**
     * Returns a fresh (empty) interpretation.
     */
-  private def mkInterpretation(): Interpretation = new mutable.ArrayBuffer[(Symbol.TableSym, Array[AnyRef])]()
+  private def mkInterpretation(): Interpretation = new mutable.ArrayBuffer[(Symbol.TableSym, Array[ProxyObject])]()
 
   /**
     * Checks if the solver is paused, and if so, waits for an interrupt.
@@ -885,8 +887,8 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
     * Returns a shallow copy of the given array `src`.
     */
   @inline
-  def copy(src: Array[AnyRef]): Array[AnyRef] = {
-    val dst = new Array[AnyRef](src.length)
+  def copy(src: Array[ProxyObject]): Array[ProxyObject] = {
+    val dst = new Array[ProxyObject](src.length)
     System.arraycopy(src, 0, dst, 0, src.length)
     dst
   }
@@ -942,16 +944,12 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
     *
     * Mutates the given map. Returns `true` if unification was successful.
     */
-  private def unify(p0: Pattern, v0: AnyRef, env0: Array[AnyRef]): Boolean = (p0, v0) match {
+  private def unify(p0: Pattern, v0: AnyRef, env0: Array[ProxyObject]): Boolean = (p0, v0) match {
     case (Pattern.Wild(_, _), _) => true
     case (Pattern.Var(sym, _, _), _) =>
       val v2 = env0(sym.getStackOffset)
-      if (v2 == null) {
-        env0(sym.getStackOffset) = v0
-        true
-      } else {
-        ??? // TODO
-      }
+      // TODO: Value unification.
+      throw InternalRuntimeException(s"Currently broken.")
     case (Pattern.Unit(_), Value.Unit) => true
     case (Pattern.True(_), java.lang.Boolean.TRUE) => true
     case (Pattern.False(_), java.lang.Boolean.FALSE) => true
@@ -965,7 +963,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
     case (Pattern.BigInt(lit, _), o: java.math.BigInteger) => lit.equals(o)
     case (Pattern.Str(lit, _), o: java.lang.String) => lit.equals(o)
     case (Pattern.Tag(enum, tag, p, _, _), o: Value.Tag) => if (tag.equals(o.tag)) unify(p, o.value, env0) else false
-    case (Pattern.Tag(enum, tag, p, _, _), o: Enum) => if (tag == o.getTag) unify(p, o.getBoxedValue, env0) else false
+    case (Pattern.Tag(enum, tag, p, _, _), o: Tag) => if (tag == o.getTag) unify(p, o.getBoxedTagValue, env0) else false
     case (Pattern.Tuple(elms, _, _), o: Array[AnyRef]) =>
       if (elms.length != o.length)
         return false
@@ -990,7 +988,7 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
   /**
     * Return an iterator over the given Set.
     */
-  private def iteratorOf(value: AnyRef): Iterator[AnyRef] = {
+  private def iteratorOf(value: AnyRef): Iterator[ProxyObject] = {
     def visit(o: AnyRef): List[AnyRef] = {
       val taggedValue = o.asInstanceOf[Value.Tag]
       if (taggedValue.tag == "Nil") {
@@ -1002,8 +1000,10 @@ class Solver(val root: ExecutableAst.Root, options: Options) {
       }
     }
 
-    val list = value.asInstanceOf[Value.Tag].value
-    visit(list).iterator
+    // val list = value.asInstanceOf[Value.Tag].value
+    // visit(list).iterator
+    // TODO: Loop predicate.
+    throw InternalRuntimeException(s"Currently broken.")
   }
 
 }

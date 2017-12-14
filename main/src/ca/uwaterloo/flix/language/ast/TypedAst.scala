@@ -150,8 +150,6 @@ object TypedAst {
 
     case class Hole(sym: Symbol.HoleSym, tpe: Type, eff: Eff, loc: SourceLocation) extends TypedAst.Expression
 
-    case class Hook(hook: Ast.Hook, tpe: Type, eff: Eff, loc: SourceLocation) extends TypedAst.Expression
-
     case class Lambda(fparams: List[TypedAst.FormalParam], exp: TypedAst.Expression, tpe: Type, eff: Eff, loc: SourceLocation) extends TypedAst.Expression
 
     case class Apply(exp: TypedAst.Expression, args: List[TypedAst.Expression], tpe: Type, eff: Eff, loc: SourceLocation) extends TypedAst.Expression
@@ -247,7 +245,7 @@ object TypedAst {
     }
 
     case class Int8(lit: scala.Byte, loc: SourceLocation) extends TypedAst.Pattern {
-      def tpe: Type = Type.Int16
+      def tpe: Type = Type.Int8
     }
 
     case class Int16(lit: scala.Short, loc: SourceLocation) extends TypedAst.Pattern {

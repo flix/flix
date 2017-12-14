@@ -170,7 +170,6 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         case Expression.Int64(lit, loc) => Expression.Int64(lit, loc)
         case Expression.BigInt(lit, loc) => Expression.BigInt(lit, loc)
         case Expression.Str(lit, loc) => Expression.Str(lit, loc)
-        case Expression.Hook(hook, tpe, eff, loc) => Expression.Hook(hook, subst0(tpe), eff, loc)
 
         case Expression.Lambda(fparams, body, tpe, eff, loc) =>
           val (fs, env1) = specializeFormalParams(fparams, subst0)

@@ -27,6 +27,9 @@ import ca.uwaterloo.flix.util.Validation._
 
 object JvmBackend extends Phase[Root, Root] {
 
+  // TODO: Ramin/Magnus: Can and should we make he backend completely independent from flix.api?
+  // Then we would need to generate CellX, Unit, and a collection of exceptions.
+
   /**
     * The directory where to place the generated class files.
     */
@@ -37,11 +40,34 @@ object JvmBackend extends Phase[Root, Root] {
     */
   def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationError] = {
     //
+    // Measure compilation time.
+    //
+    val t = System.nanoTime()
+
+    //
+    // Put the AST root into implicit scope.
+    //
+    implicit val _ = root
+
+    //
+    // Compute the set of closures in the program.
+    //
+    val closures = JvmOps.closuresOf(root)
+
+    //
     // Compute the set of namespaces in the program.
     //
-    // TODO: Use empty until everything is implemented.
-    //val namespaces = JvmOps.namespacesOf(root)
-    val namespaces = Set.empty[NamespaceInfo]
+    val namespaces = JvmOps.namespacesOf(root)
+
+    //
+    // Compute the set of instantiated tags in the program.
+    //
+    val tags = JvmOps.tagsOf(root)
+
+    //
+    // Compute the set of fusion tags in the program.
+    //
+    val fusionTags = tags.flatMap(JvmOps.getFusionTag)
 
     //
     // Compute the set of types in the program.
@@ -49,46 +75,122 @@ object JvmBackend extends Phase[Root, Root] {
     val types = JvmOps.typesOf(root)
 
     //
-    // Emit the Context class.
+    // Generate the main class.
     //
-    val context = GenContext.gen(types, root)
+    val mainClass = GenMainClass.gen()
 
     //
-    // Emit the namespace classes.
+    // Generate the Unit class.
     //
-    val namespaceClasses = GenNamespaces.gen(namespaces, root)
+    val unitClass = GenUnitClass.gen()
 
     //
-    // Emit continuation interfaces for each function type in the program.
+    // Generate the Context class.
     //
-    val continuationInterfaces = GenContinuationInterfaces.gen(types, root)
+    val contextClass = GenContext.gen(namespaces)
 
     //
-    // Emit function interfaces for each function type in the program.
+    // Generate the namespace classes.
     //
-    val functionInterfaces = GenFunctionInterfaces.gen(types, root)
+    val namespaceClasses = GenNamespaces.gen(namespaces)
 
     //
-    // Emit function classes for each function in the program.
+    // Generate continuation interfaces for each function type in the program.
     //
-    val functionClasses = GenFunctionClasses.gen(root.defs, root)
+    val continuationInterfaces = GenContinuationInterfaces.gen(types)
+
+    //
+    // Generate function interfaces for each function type in the program.
+    //
+    val functionInterfaces = GenFunctionInterfaces.gen(types)
+
+    //
+    // Generate function classes for each function in the program.
+    //
+    val functionClasses = GenFunctionClasses.gen(root.defs)
+
+    //
+    // Generate closure classes for each closure in the program.
+    //
+    val closureClasses = GenClosureClasses.gen(closures)
+
+    //
+    // Generate enum interfaces for each enum type in the program.
+    //
+    val enumInterfaces = GenEnumInterfaces.gen(types)
+
+    //
+    // Generate tag classes for each enum instantiation in the program.
+    //
+    val tagClasses = GenTagClasses.gen(tags)
+
+    //
+    // Generate tuple interfaces for each tuple type in the program.
+    //
+    val tupleInterfaces = GenTupleInterfaces.gen(types)
+
+    //
+    // Generate tuple classes for each tuple type in the program.
+    //
+    val tupleClasses = GenTupleClasses.gen(types)
+
+    //
+    // Generate tag-tuple fusion classes for tag-tuple in the program.
+    //
+    val fusionClasses = GenFusionClasses.gen(fusionTags)
+
+    //
+    // Generate cell classes.
+    //
+    val cellClasses = GenCellClasses.gen()
+
+    //
+    // Generate exception classes.
+    //
+    val exceptionClasses = GenExceptionClasses.gen()
 
     //
     // Collect all the classes and interfaces together.
     //
-    val allClasses = context ++ namespaceClasses ++ continuationInterfaces ++ functionInterfaces ++ functionClasses
+    val allClasses = List(
+      mainClass,
+      unitClass,
+      contextClass,
+      namespaceClasses,
+      continuationInterfaces,
+      functionInterfaces,
+      functionClasses,
+      closureClasses,
+      enumInterfaces,
+      tagClasses,
+      tupleInterfaces,
+      tupleClasses,
+      fusionClasses,
+      cellClasses,
+      exceptionClasses
+    ).reduce(_ ++ _)
 
     //
     // Write each class (and interface) to disk.
     //
     // NB: In test mode we skip writing the files to disk.
     if (!flix.options.test) {
-      for ((name, clazz) <- allClasses) {
-        JvmOps.writeClass(TargetDirectory, clazz)
+      for ((jvmName, jvmClass) <- allClasses) {
+        JvmOps.writeClass(TargetDirectory, jvmClass)
       }
     }
 
-    root.toSuccess
+    //
+    // Loads all the generated classes into the JVM and decorates the AST.
+    //
+    Bootstrap.bootstrap(allClasses)
+
+    //
+    // Measure elapsed time.
+    //
+    val e = System.nanoTime() - t
+
+    root.copy(time = root.time.copy(backend = e)).toSuccess
   }
 
 }

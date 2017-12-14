@@ -16,8 +16,6 @@
 
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.api.InvokableUnsafe
-
 /**
   * A collection of AST nodes that are shared across multiple ASTs.
   */
@@ -141,34 +139,6 @@ object Ast {
     */
   case class Doc(lines: List[String], loc: SourceLocation) {
     def text: String = lines.mkString("\n")
-  }
-
-  /**
-    * A common super-type for hooks.
-    */
-  sealed trait Hook {
-    /**
-      * Returns the symbol of the hook.
-      */
-    def sym: Symbol.DefnSym
-
-    /**
-      * Returns the type of the hook.
-      */
-    def tpe: Type
-  }
-
-  object Hook {
-
-    /**
-      * A reference to an implementation of the [[InvokableUnsafe]] interface.
-      *
-      * @param sym the symbol of the hook.
-      * @param inv the functional object.
-      * @param tpe the type of the function.
-      */
-    case class Unsafe(sym: Symbol.DefnSym, inv: InvokableUnsafe, tpe: Type) extends Hook
-
   }
 
   /**

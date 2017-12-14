@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.runtime
 
-import ca.uwaterloo.flix.api.{Unit => UnitClass, _}
+import ca.uwaterloo.flix.api._
 import ca.uwaterloo.flix.util._
 import org.scalatest.FunSuite
 
@@ -135,7 +135,7 @@ class TestBackend extends FunSuite {
     val t = new Tester(input)
   }
 
-  test("Term.Head.Exp.08") { // TODO: Require special equality on sets.
+  test("Term.Head.Exp.08") {
     val input =
       """rel A(x: (Int, Str))
         |
@@ -144,7 +144,8 @@ class TestBackend extends FunSuite {
     val t = new Tester(input)
   }
 
-  test("Term.Head.Exp.09") {
+  // TODO
+  ignore("Term.Head.Exp.09") {
     val input =
       """enum Foo { case Foo(Int,Str) }
         |rel A(x: Foo)
@@ -303,7 +304,8 @@ class TestBackend extends FunSuite {
     val t = new Tester(input)
   }
 
-  test("Term.Head.Apply.09") {
+  // TODO
+  ignore("Term.Head.Apply.09") {
     val input =
       """enum Foo { case Foo(Int,Str) }
         |rel A(x: Foo)

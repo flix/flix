@@ -21,8 +21,8 @@ package ca.uwaterloo.flix.runtime.datastore
 // and partial indexes:
 // http://www.postgresql.org/docs/9.1/static/indexes-partial.html
 
-trait IndexedCollection[ValueType] {
+trait IndexedCollection {
 
-  def lookup(pat: Array[ValueType]): Iterator[Array[ValueType]]
+  def lookup(pat: Array[ProxyObject]): Iterator[Array[ProxyObject]]
 
 }

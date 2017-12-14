@@ -21,25 +21,24 @@ import java.util.zip.ZipFile
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.{Ast, Input, Source, Symbol}
-import ca.uwaterloo.flix.util.StreamOps
-import ca.uwaterloo.flix.util.Validation
+import ca.uwaterloo.flix.language.ast.{Input, Source, Symbol}
 import ca.uwaterloo.flix.util.Validation._
+import ca.uwaterloo.flix.util.{StreamOps, Validation}
 
 /**
   * A phase to read inputs into memory.
   */
-object Reader extends Phase[(List[Input], Map[Symbol.DefnSym, Ast.Hook], Map[Symbol.DefnSym, String]), (List[Source], Long, Map[Symbol.DefnSym, Ast.Hook], Map[Symbol.DefnSym, String])] {
+object Reader extends Phase[(List[Input], Map[Symbol.DefnSym, String]), (List[Source], Long, Map[Symbol.DefnSym, String])] {
 
   /**
     * Reads the given source inputs into memory.
     */
-  def run(arg: (List[Input], Map[Symbol.DefnSym, Ast.Hook], Map[Symbol.DefnSym, String]))(implicit flix: Flix): Validation[(List[Source], Long, Map[Symbol.DefnSym, Ast.Hook], Map[Symbol.DefnSym, String]), CompilationError] = {
+  def run(arg: (List[Input], Map[Symbol.DefnSym, String]))(implicit flix: Flix): Validation[(List[Source], Long, Map[Symbol.DefnSym, String]), CompilationError] = {
     // Measure time
     val t = System.nanoTime()
 
-    // Pattern match the argument into the inputs and the hooks.
-    val (input, hooks, named) = arg
+    // Pattern match the argument into the inputs and the named expressions.
+    val (input, named) = arg
 
     // Compute the sources.
     val sources = input map {
@@ -74,8 +73,8 @@ object Reader extends Phase[(List[Input], Map[Symbol.DefnSym, Ast.Hook], Map[Sym
 
     val e = System.nanoTime() - t
 
-    // Return a triple of inputs, elapsed time, and hooks.
-    (sources, e, hooks, named).toSuccess
+    // Return a triple of inputs, elapsed time, and named expressions.
+    (sources, e, named).toSuccess
   }
 
 }

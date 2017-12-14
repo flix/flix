@@ -34,7 +34,6 @@ object ResolvedAst {
                      indexes: Map[Symbol.TableSym, ResolvedAst.Index],
                      tables: Map[Symbol.TableSym, ResolvedAst.Table],
                      constraints: List[ResolvedAst.Constraint],
-                     hooks: Map[Symbol.DefnSym, Ast.Hook],
                      properties: List[ResolvedAst.Property],
                      reachable: Set[Symbol.DefnSym],
                      time: Time) extends ResolvedAst
@@ -98,8 +97,6 @@ object ResolvedAst {
     case class Def(sym: Symbol.DefnSym, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Hole(sym: Symbol.HoleSym, tpe: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
-
-    case class Hook(hook: Ast.Hook, tpe: Type, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Unit(loc: SourceLocation) extends ResolvedAst.Expression
 
