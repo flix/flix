@@ -27,6 +27,8 @@ trait ResolvedAst
 object ResolvedAst {
 
   case class Program(defs: Map[Symbol.DefnSym, ResolvedAst.Def],
+                     effs: Map[Symbol.EffSym, ResolvedAst.Eff],
+                     handlers: Map[Symbol.EffSym, ResolvedAst.Handler],
                      enums: Map[Symbol.EnumSym, ResolvedAst.Enum],
                      classes: Map[Symbol.ClassSym, ResolvedAst.Class],
                      impls: Map[Symbol.ClassSym, ResolvedAst.Impl],
@@ -44,7 +46,7 @@ object ResolvedAst {
 
   case class Eff(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EffSym, tparams: List[ResolvedAst.TypeParam], fparams: List[ResolvedAst.FormalParam], sc: Scheme, eff: ast.Eff, loc: SourceLocation) extends ResolvedAst
 
-  case class Handler(sym: Symbol.EffSym) extends ResolvedAst
+  case class Handler(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EffSym, tparams: List[ResolvedAst.TypeParam], fparams: List[ResolvedAst.FormalParam], exp: ResolvedAst.Expression, sc: Scheme, eff: ast.Eff, loc: SourceLocation) extends ResolvedAst
 
   // TODO
   case class Law() extends ResolvedAst

@@ -153,8 +153,9 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
       constraints <- seqM(constraintsVal)
       properties <- seqM(propertiesVal)
     } yield ResolvedAst.Program(
-      definitions.toMap ++ named.toMap, enums.toMap, classes.toMap, impls.toMap, lattices.toMap, indexes.toMap,
-      tables.toMap, constraints.flatten, properties.flatten, prog0.reachable, prog0.time.copy(resolver = e))
+      definitions.toMap ++ named.toMap, effs.toMap, handlers.toMap, enums.toMap, classes.toMap, impls.toMap,
+      lattices.toMap, indexes.toMap, tables.toMap, constraints.flatten, properties.flatten, prog0.reachable,
+      prog0.time.copy(resolver = e))
   }
 
   object Constraints {
@@ -208,11 +209,9 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
     * Performs name resolution on the given handler `handler0` in the given namespace `ns0`.
     */
   def resolveHandler(handler0: NamedAst.Handler, ns0: Name.NName, prog0: NamedAst.Program)(implicit genSym: GenSym): Validation[ResolvedAst.Handler, ResolutionError] = handler0 match {
-    case NamedAst.Handler(doc, ann, mod, ident, tparams0, fparams0, exp0, sc0, eff, loc) =>
-
+    case NamedAst.Handler(doc, ann, mod, ident, tparams0, fparams0, exp0, sc0, eff0, loc) =>
+      // Compute the qualified name of the ident, since we need it to call lookupEff.
       val qname = Name.mkQName(ident)
-
-      // TODO: Rest
 
       for {
         sym <- lookupEff(qname, ns0, prog0)
@@ -220,7 +219,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
         tparams <- resolveTypeParams(tparams0, ns0, prog0)
         exp <- Expressions.resolve(exp0, ns0, prog0)
         scheme <- resolveScheme(sc0, ns0, prog0)
-      } yield ResolvedAst.Handler(sym) // TODO
+      } yield ResolvedAst.Handler(doc, ann, mod, sym, tparams, fparams, exp, scheme, eff0, loc)
   }
 
   /**

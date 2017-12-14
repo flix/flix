@@ -39,6 +39,8 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
 
     val result = for {
       definitions <- Declarations.Definitions.typecheck(program)
+      effs <- Declarations.typecheckEffects(program)
+      handlers <- Declarations.typecheckHandlers(program)
       enums <- Declarations.Enums.typecheck(program)
       lattices <- Declarations.Lattices.typecheck(program)
       tables <- Declarations.Tables.typecheck(program)
@@ -50,7 +52,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       val specialOps = Map.empty[SpecialOperator, Map[Type, Symbol.DefnSym]]
       val currentTime = System.nanoTime()
       val time = program.time.copy(typer = currentTime - startTime)
-      TypedAst.Root(definitions, enums, lattices, tables, indexes, strata, properties, specialOps, program.reachable, time)
+      TypedAst.Root(definitions, Map.empty, Map.empty, enums, lattices, tables, indexes, strata, properties, specialOps, program.reachable, time)
     }
 
     result match {
@@ -390,6 +392,32 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         Result.seqM(results).map(_.sortBy(_.loc))
       }
 
+    }
+
+    /**
+      * Infers the types of the effects in the given program.
+      */
+    def typecheckEffects(program: ResolvedAst.Program)(implicit flix: Flix): Result[Map[Symbol.EffSym, TypedAst.Eff], TypeError] = {
+
+      // TODO
+      program.effs.foreach {
+        case (sym, eff) => println(s"Typecheck effect: $sym")
+      }
+
+      Ok(Map.empty)
+    }
+
+    /**
+      * Infers the types of the handlers in the given program.
+      */
+    def typecheckHandlers(program: ResolvedAst.Program)(implicit flix: Flix): Result[Map[Symbol.EffSym, TypedAst.Handler], TypeError] = {
+
+      // TODO
+      program.handlers.foreach {
+        case (sym, eff) => println(s"Typecheck handler: $sym")
+      }
+
+      Ok(Map.empty)
     }
 
   }
