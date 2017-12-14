@@ -696,10 +696,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           // TODO
           WeededAst.Expression.UserError(mkSL(sp1, sp2)).toSuccess
 
-        case ParsedAst.Expression.Handler(sp1, handlers, sp2) =>
-          // TODO
-          WeededAst.Expression.UserError(mkSL(sp1, sp2)).toSuccess
-
         case ParsedAst.Expression.Existential(sp1, fparams, exp, sp2) =>
           /*
            * Checks for `IllegalExistential`.
@@ -1434,7 +1430,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.Deref(sp1, _, _) => sp1
     case ParsedAst.Expression.Assign(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.HandleWith(sp1, _, _, _) => sp1
-    case ParsedAst.Expression.Handler(sp1, _, _) => sp1
     case ParsedAst.Expression.Existential(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Universal(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Ascribe(e1, _, _, _) => leftMostSourcePosition(e1)
