@@ -34,9 +34,29 @@ namespace Path {
     }
 
     ///
+    /// Returns the extension of the given path `p`.
+    ///
+    pub def extension(p: Path): Option[Str] = ??? // TODO
+
+    ///
     /// Effectfully returns `true` if the given path `p` is a directory.
     ///
     pub eff isDirectory(p: Path): Result[Bool, IOError]
+
+    ///
+    /// Default handler for `isDirectory`.
+    ///
+    handler isDirectory[a](p: Path, k: Result[Bool, IOError] -> a): a = ??? // TODO: Implement
+
+    ///
+    /// Effectfully returns `true` if the given path `p` does not exist or is an empty file or directory.
+    ///
+    pub eff isEmpty(p: Path): Result[Bool, IOError]
+
+    ///
+    /// Default handler for `isEmpty`.
+    ///
+    handler isEmpty[a](p: Path, k: Result[Bool, IOError] -> a): a = ??? // TODO: Implement
 
     ///
     /// Effectfully returns `true` if the given path `p` is executable.
@@ -44,9 +64,19 @@ namespace Path {
     pub eff isExecutable(p: Path): Result[Bool, IOError]
 
     ///
+    /// Default handler for `isExecutable`.
+    ///
+    handler isExecutable[a](p: Path, k: Result[Bool, IOError] -> a): a = ??? // TODO: Implement
+
+    ///
     /// Effectfully returns `true` if the given path `p` is hidden.
     ///
     pub eff isHidden(p: Path): Result[Bool, IOError]
+
+    ///
+    /// Default handler for `isHidden`.
+    ///
+    handler isHidden[a](p: Path, k: Result[Bool, IOError] -> a): a = ??? // TODO: Implement
 
     ///
     /// Effectfully returns `true` if the given path `p` is readable.
@@ -54,9 +84,19 @@ namespace Path {
     pub eff isReadable(p: Path): Result[Bool, IOError]
 
     ///
+    /// Default handler for `isReadable`.
+    ///
+    handler isReadable[a](p: Path, k: Result[Bool, IOError] -> a): a = ??? // TODO: Implement
+
+    ///
     /// Effectfully returns `true` if the given path `p` is a regular file.
     ///
     pub eff isRegularFile(p: Path): Result[Bool, IOError]
+
+    ///
+    /// Default handler for `isRegularFile`.
+    ///
+    handler isRegularFile[a](p: Path, k: Result[Bool, IOError] -> a): a = ??? // TODO: Implement
 
     ///
     /// Effectfully returns `true` if the two given paths `p1` and `p2` refers to the same file.
@@ -64,9 +104,19 @@ namespace Path {
     pub eff isSameFile(p1: Path, p2: Path): Result[Bool, IOError]
 
     ///
+    /// Default handler for `isSameFile`.
+    ///
+    handler isSameFile[a](p: Path, k: Result[Bool, IOError] -> a): a = ??? // TODO: Implement
+
+    ///
     /// Effectfully returns `true` if the given path `p` is a symbolic link.
     ///
     pub eff isSymbolicLink(p: Path): Result[Bool, IOError]
+
+    ///
+    /// Default handler for `isSymbolicLink`.
+    ///
+    handler isSymbolicLink[a](p: Path, k: Result[Bool, IOError] -> a): a = ??? // TODO: Implement
 
     ///
     /// Effectfully returns `true` if the given path `p` is writable.
@@ -74,9 +124,19 @@ namespace Path {
     pub eff isWritable(p: Path): Result[Bool, IOError]
 
     ///
+    /// Default handler for `isWritable`.
+    ///
+    handler isWritable[a](p: Path, k: Result[Bool, IOError] -> a): a = ??? // TODO: Implement
+
+    ///
     /// Effectfully returns a list of all lines in the given text file denoted by path `p`.
     ///
     pub eff readLines(p: Path): Result[List[Str], IOError]
+
+    ///
+    /// Default handler for `readLines`.
+    ///
+    handler readLines[a](p: Path, k: Result[List[Str], IOError] -> a): a = ??? // TODO: Implement
 
     ///
     /// Effectfully returns a list of all lines in the given text file denoted by path `p` parsed with the given charset `cs`.
@@ -84,9 +144,19 @@ namespace Path {
     pub eff readLinesWithCharset(p: Path, cs: Charset): Result[List[Str], IOError]
 
     ///
+    /// Default handler for `readLinesWithCharset`.
+    ///
+    handler readLinesWithCharset[a](p: Path, cs: Charset, k: Result[List[Str], IOError] -> a): a = ??? // TODO: Implement
+
+    ///
     /// Effectfully creates a new and empty file for the given path `p`.
     ///
     pub eff createFile(p: Path): Result[Path, IOError]
+
+    ///
+    /// Default handler for `createFile`.
+    ///
+    handler createFile[a](p: Path, k: Result[Bool, IOError] -> a): a = ??? // TODO: Implement
 
     ///
     /// Effectfully creates a new directory for the given path `p`.
@@ -96,6 +166,11 @@ namespace Path {
     pub eff createDirectory(p: Path): Result[Path, IOError]
 
     ///
+    /// Default handler for `createDirectory`.
+    ///
+    handler createDirectory[a](p: Path, k: Result[Bool, IOError] -> a): a = ??? // TODO: Implement
+
+    ///
     /// Effectfully creates a new directory for the given path `p`.
     ///
     /// Creates all parent directories as needed.
@@ -103,101 +178,113 @@ namespace Path {
     pub eff createDirectories(p: Path): Result[Path, IOError]
 
     ///
+    /// Default handler for `createDirectories`.
+    ///
+    handler createDirectories[a](p: Path, k: Result[Bool, IOError] -> a): a = ??? // TODO: Implement
+
+    ///
     /// Effectfully copies the source file path `src` to the destination path `dst`.
     ///
     pub eff copyFileTo(src: Path, dst: Path): Result[(), IOError]
+
+    ///
+    /// Default handler for `copyFileTo`.
+    ///
+    handler copyFileTo[a](p: Path, dst: Path, k: Result[Bool, IOError] -> a): a = ??? // TODO: Implement
 
     ///
     /// Effectfully copies the source directory path `src` to the destination directory `dst`.
     ///
     pub eff copyDirectoryTo(src: Path, dst: Path): Result[(), IOError]
 
-
-// TODO: move.
-// File.newTemporaryDirectory()
-   //File.newTemporaryFile()
+    ///
+    /// Default handler for `copyDirectoryTo`.
+    ///
+    handler copyDirectoryTo[a](p: Path, k: Result[Bool, IOError] -> a): a = ??? // TODO: Implement
 
     ///
-    /// Effectfully deletes the for the given path `p`.
+    /// Effectfully moves the file from the `src` path to the `dst` path.
+    ///
+    pub eff moveFile(src: Path, dst: Path): Result[(), IOError]
+
+    ///
+    /// Default handler for `moveFile`.
+    ///
+    handler moveFile[a](p: Path, k: Result[Bool, IOError] -> a): a = ??? // TODO: Implement
+
+    ///
+    /// Effectfully moves the directory from the `src` path to the `dst` path.
+    ///
+    pub eff moveDirectory(src: Path, dst: Path): Result[(), IOError]
+
+    ///
+    /// Default handler for `moveFile`.
+    ///
+    handler moveDirectory[a](p: Path, k: Result[Bool, IOError] -> a): a = ??? // TODO: Implement
+
+    ///
+    /// Effectfully deletes the file for the given path `p`.
     ///
     pub eff deleteFile(p: Path): Result[Path, IOError]
+
+    ///
+    /// Default handler for `deleteFile`.
+    ///
+    handler deleteFile[a](p: Path, k: Result[Bool, IOError] -> a): a = ??? // TODO: Implement
 
     ///
     /// Effectfully deletes the directory (and its sub-directories) for the given path `p`.
     ///
     pub eff deleteDirectory(p: Path): Result[Path, IOError]
 
-// TODO: size
+    ///
+    /// Default handler for `deleteDirectory`.
+    ///
+    handler deleteDirectory[a](p: Path, k: Result[Bool, IOError] -> a): a = ??? // TODO: Implement
 
-//file.extension
-//file.contentType
-//isEmpty
+    ///
+    /// Effectfully returns the size of the given path `p`.
+    ///
+    pub eff size(p: Path): Result[Int64, IOError]
+
+    ///
+    /// Default handler for `size`.
+    ///
+    handler size[a](p: Path, k: Result[Int64, IOError] -> a): a = ??? // TODO: Implement
+
+    ///
+    /// Effectfully returns a path that references a new temporary directory.
+    ///
+    pub eff newTemporaryDirectory(): Result[Path, IOError]
+
+    ///
+    /// Default handler for `newTemporaryDirectory`.
+    ///
+    handler newTemporaryDirectory[a](k: Result[Path, IOError] -> a): a = ??? // TODO: Implement
+
+    ///
+    /// Effectfully returns a path that references a new temporary file.
+    ///
+    pub eff newTemporaryFile(): Result[Path, IOError]
+
+    ///
+    /// Default handler for `newTemporaryFile`.
+    ///
+    handler newTemporaryFile[a](k: Result[Path, IOError] -> a): a = ??? // TODO: Implement
+
+
+
 // file.isParentOf; file.isChildOf; file.isSiblingOf; file.siblings
 // file.append(text)
 // file.appendText
 // file.appendLine(text)
 // file.appendByreArray
-// bytes // byteArray
 // children
 // contains
-// contentType
 // isChildOf.
 // isParentOf
-// lines
-// nonEmpty?
-// renameTo
 // writeText
 // writeByteArray
 // writeBytes
-
-    ///
-    /// Default handler for `isDirectory`.
-    ///
-    handler isDirectory[a](p: Path, k: Result[Bool, IOError] -> a): a = ??? // TODO: Implement
-
-    ///
-    /// Default handler for `isExecutable`.
-    ///
-    handler isExecutable[a](p: Path, k: Result[Bool, IOError] -> a): a = ??? // TODO: Implement
-
-    ///
-    /// Default handler for `isHidden`.
-    ///
-    handler isHidden[a](p: Path, k: Result[Bool, IOError] -> a): a = ??? // TODO: Implement
-
-    ///
-    /// Default handler for `isReadable`.
-    ///
-    handler isReadable[a](p: Path, k: Result[Bool, IOError] -> a): a = ??? // TODO: Implement
-
-    ///
-    /// Default handler for `isRegularFile`.
-    ///
-    handler isRegularFile[a](p: Path, k: Result[Bool, IOError] -> a): a = ??? // TODO: Implement
-
-    ///
-    /// Default handler for `isSameFile`.
-    ///
-    handler isSameFile[a](p: Path, k: Result[Bool, IOError] -> a): a = ??? // TODO: Implement
-
-    ///
-    /// Default handler for `isSymbolicLink`.
-    ///
-    handler isSymbolicLink[a](p: Path, k: Result[Bool, IOError] -> a): a = ??? // TODO: Implement
-
-    ///
-    /// Default handler for `isWritable`.
-    ///
-    handler isWritable[a](p: Path, k: Result[Bool, IOError] -> a): a = ??? // TODO: Implement
-
-    ///
-    /// Default handler for `readLines`.
-    ///
-    handler readLines[a](p: Path, k: Result[List[Str], IOError] -> a): a = ??? // TODO: Implement
-
-    ///
-    /// Default handler for `readLinesWithCharset`.
-    ///
-    handler readLinesWithCharset[a](p: Path, cs: Charset, k: Result[List[Str], IOError] -> a): a = ??? // TODO: Implement
 
 }
