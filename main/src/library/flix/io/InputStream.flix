@@ -1,11 +1,5 @@
 type InputStream = InputStream(##java.io.InputStream)
 
-// TODO: Probably move somewhere...
-enum OpenOption {
-    case Read,
-    case Write
-}
-
 namespace InputStream {
 
     // TODO: Uniqueness.
@@ -32,5 +26,11 @@ namespace InputStream {
     /// Default handler for `newWithOpts`.
     ///
     handler newWithOpts[a](p: Path, k: Result[InputStream, IOError] -> a): a = ??? // TODO: Implement
+
+    // TODO def buffered: BufferedInputStream
+    // TODO: def bytes: Iterator[Byte]
+    // TODO: def lines(implicit charset: Charset = DefaultCharset): Iterator[String]
+    // TODO: final def pipeTo(out: OutputStream, buffer: Array[Byte]):
+    // TODO: def pipeTo(out: OutputStream, bufferSize: Int =
 
 }

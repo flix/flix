@@ -93,9 +93,12 @@ class Flix {
     "flix/core/cmp/PartialOrd.flix" -> LocalResource.get("/library/flix/core/cmp/PartialOrd.flix"),
     "flix/core/lattice/JoinSemiLattice.flix" -> LocalResource.get("/library/flix/core/lattice/JoinSemiLattice.flix"),
 
-    "flix/io/Path.flix" -> LocalResource.get("/library/flix/io/Path.flix"),
+    "flix/io/BufferedReader.flix" -> LocalResource.get("/library/flix/io/BufferedReader.flix"),
+    "flix/io/BufferedWriter.flix" -> LocalResource.get("/library/flix/io/BufferedWriter.flix"),
     "flix/io/InputStream.flix" -> LocalResource.get("/library/flix/io/InputStream.flix"),
+    "flix/io/OpenOption.flix" -> LocalResource.get("/library/flix/io/OpenOption.flix"),
     "flix/io/OutputStream.flix" -> LocalResource.get("/library/flix/io/OutputStream.flix"),
+    "flix/io/Path.flix" -> LocalResource.get("/library/flix/io/Path.flix"),
 
   )
 

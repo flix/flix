@@ -1,10 +1,28 @@
-type Path = Path(##java.nio.file.Path)
+// Challenges and solutions:
+//
+// 1. How to deal with variadic methods: Use array literals [| ... |]
+// 2. How to port overloaded methods? Use `withXYZ` style.
+// 3. How to deal with null? Fields and method calls should return Option[X].
+// 4. How to deal with overloaded methods? Use ascription of type arguments.
+// 5. How to deal with different types of IOErrors, e.g. FileNotFound, FileIsDirectory etc.? Open question
+
+//    pub def copyToPath(i: unique InputStream, p: Path): Result[(), IOError] @ IO = ???
+//    pub def copyToStream(is: unique InputStream, os: borrow OutputStream): Result[(), IOError] @ IO = ???
+
+// TODO: Need some kind of walker... and how does that work with algebraic effects?
+//public static Path walkFileTree(Path start,
+                //Set<FileVisitOption> options,
+                //int maxDepth,
+                //FileVisitor<? super Path> visitor)
+                         //throws IOException
 
 // TODO: Where and how to define this?
 type IOError = IOError(Str)
 
 // TODO: Where and how to define this?
 type Charset = Charset(Str)
+
+type Path = Path(##java.nio.file.Path)
 
 namespace Path {
 
@@ -65,8 +83,72 @@ namespace Path {
     ///
     pub eff readLinesWithCharset(p: Path, cs: Charset): Result[List[Str], IOError]
 
+    ///
+    /// Effectfully creates a new and empty file for the given path `p`.
+    ///
+    pub eff createFile(p: Path): Result[Path, IOError]
+
+    ///
+    /// Effectfully creates a new directory for the given path `p`.
+    ///
+    /// Requires that the path directory of the path `p` exists.
+    ///
+    pub eff createDirectory(p: Path): Result[Path, IOError]
+
+    ///
+    /// Effectfully creates a new directory for the given path `p`.
+    ///
+    /// Creates all parent directories as needed.
+    ///
+    pub eff createDirectories(p: Path): Result[Path, IOError]
+
+    ///
+    /// Effectfully copies the source file path `src` to the destination path `dst`.
+    ///
+    pub eff copyFileTo(src: Path, dst: Path): Result[(), IOError]
+
+    ///
+    /// Effectfully copies the source directory path `src` to the destination directory `dst`.
+    ///
+    pub eff copyDirectoryTo(src: Path, dst: Path): Result[(), IOError]
 
 
+// TODO: move.
+// File.newTemporaryDirectory()
+   //File.newTemporaryFile()
+
+    ///
+    /// Effectfully deletes the for the given path `p`.
+    ///
+    pub eff deleteFile(p: Path): Result[Path, IOError]
+
+    ///
+    /// Effectfully deletes the directory (and its sub-directories) for the given path `p`.
+    ///
+    pub eff deleteDirectory(p: Path): Result[Path, IOError]
+
+// TODO: size
+
+//file.extension
+//file.contentType
+//isEmpty
+// file.isParentOf; file.isChildOf; file.isSiblingOf; file.siblings
+// file.append(text)
+// file.appendText
+// file.appendLine(text)
+// file.appendByreArray
+// bytes // byteArray
+// children
+// contains
+// contentType
+// isChildOf.
+// isParentOf
+// lines
+// nonEmpty?
+// renameTo
+// writeText
+// writeByteArray
+// writeBytes
 
     ///
     /// Default handler for `isDirectory`.
@@ -119,19 +201,3 @@ namespace Path {
     handler readLinesWithCharset[a](p: Path, cs: Charset, k: Result[List[Str], IOError] -> a): a = ??? // TODO: Implement
 
 }
-
-
-
-
-
-// Challenges and solutions:
-//
-// 1. How to deal with variadic methods: Use array literals [| ... |]
-// 2. How to port overloaded methods? Use `withXYZ` style.
-// 3. How to deal with null? Fields and method calls should return Option[X].
-// 4. How to deal with overloaded methods? Use ascription of type arguments.
-// 5. How to deal with different types of IOErrors, e.g. FileNotFound, FileIsDirectory etc.? Open question
-
-//    pub def copyToPath(i: unique InputStream, p: Path): Result[(), IOError] @ IO = ???
-//
-//    pub def copyToStream(is: unique InputStream, os: borrow OutputStream): Result[(), IOError] @ IO = ???
