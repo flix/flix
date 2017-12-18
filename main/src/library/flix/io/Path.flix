@@ -39,6 +39,48 @@ namespace Path {
     pub def extension(p: Path): Option[Str] = ??? // TODO
 
     ///
+    /// Effectfully returns a list of files in the given directory `path`.
+    ///
+    pub eff children(path: Path): Result[List[Path], IOError]
+
+    ///
+    /// Default handler for `isParentOf`.
+    ///
+    handler children[a](path: Path, k: Result[List[Path], IOError] -> a): a = ??? // TODO: Implement
+
+// TODO file.siblings
+
+    ///
+    /// Effectfully returns `true` if the given path `parent` is the direct parent of the path `child`.
+    ///
+    pub eff isParentOf(parent: Path, child: Path): Result[Bool, IOError]
+
+    ///
+    /// Default handler for `isParentOf`.
+    ///
+    handler isParentOf[a](parent: Path, child: Path, k: Result[Bool, IOError] -> a): a = ??? // TODO: Implement
+
+    ///
+    /// Effectfully returns `true` if the given path `child` is a direct child of the path `parent`.
+    ///
+    pub eff isChildOf(child: Path, parent: Path): Result[Bool, IOError]
+
+    ///
+    /// Default handler for `isChildOf`.
+    ///
+    handler isChildOf[a](child: Path, parent: Path, k: Result[Bool, IOError] -> a): a = ??? // TODO: Implement
+
+    ///
+    /// Effectfully returns `true` if the given path `p1` is a sibling of the path `p2`.
+    ///
+    pub eff isSiblingOf(p1: Path, p2: Path): Result[Bool, IOError]
+
+    ///
+    /// Default handler for `isSiblingOf`.
+    ///
+    handler isSiblingOf[a](p1: Path, p2: Path, k: Result[Bool, IOError] -> a): a = ??? // TODO: Implement
+
+    ///
     /// Effectfully returns `true` if the given path `p` is a directory.
     ///
     pub eff isDirectory(p: Path): Result[Bool, IOError]
@@ -272,17 +314,10 @@ namespace Path {
     ///
     handler newTemporaryFile[a](k: Result[Path, IOError] -> a): a = ??? // TODO: Implement
 
-
-
-// file.isParentOf; file.isChildOf; file.isSiblingOf; file.siblings
 // file.append(text)
 // file.appendText
 // file.appendLine(text)
 // file.appendByreArray
-// children
-// contains
-// isChildOf.
-// isParentOf
 // writeText
 // writeByteArray
 // writeBytes
