@@ -86,6 +86,8 @@ class Flix {
     "TotalOrder.flix" -> LocalResource.get("/library/TotalOrder.flix"),
     "Tuple.flix" -> LocalResource.get("/library/Tuple.flix"),
 
+    "flix/core/Functor.flix" -> LocalResource.get("/library/flix/core/Functor.flix"),
+
     "flix/core/cmp/package.flix" -> LocalResource.get("/library/flix/core/cmp/package.flix"),
     "flix/core/cmp/Eq.flix" -> LocalResource.get("/library/flix/core/cmp/Eq.flix"),
     "flix/core/cmp/Ord.flix" -> LocalResource.get("/library/flix/core/cmp/Ord.flix"),

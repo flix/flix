@@ -401,7 +401,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
 
       // TODO
       program.effs.foreach {
-        case (sym, eff) => println(s"Typecheck effect: $sym")
+        case (sym, eff) => //println(s"Typecheck effect: $sym")
       }
 
       Ok(Map.empty)
@@ -414,7 +414,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
 
       // TODO
       program.handlers.foreach {
-        case (sym, eff) => println(s"Typecheck handler: $sym")
+        case (sym, eff) => //println(s"Typecheck handler: $sym")
       }
 
       Ok(Map.empty)
