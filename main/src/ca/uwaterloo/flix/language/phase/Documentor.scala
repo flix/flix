@@ -24,6 +24,7 @@ import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.{Type, TypedAst}
 import ca.uwaterloo.flix.util.Validation._
+import ca.uwaterloo.flix.util.tc.Show._
 import ca.uwaterloo.flix.util.{LocalResource, StreamOps, Validation}
 import org.json4s.JsonAST._
 import org.json4s.native.JsonMethods
@@ -44,8 +45,13 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     // Check whether to generate documentation.
     if (flix.options.documentor) {
       // Collect the definitions.
-      val defnsByNS = root.defs.filterNot {
+      val defsByNS = root.defs.filterNot {
         case (sym, defn) => defn.ann.isLaw || defn.ann.isTest || !defn.mod.isPublic
+      }.groupBy(_._1.namespace)
+
+      // Collect the effects.
+      val effsByNS = root.effs.filterNot {
+        case (sym, defn) => !defn.mod.isPublic
       }.groupBy(_._1.namespace)
 
       // Collect the laws.
@@ -78,13 +84,14 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
       }
 
       // Compute the set of all available namespaces.
-      val namespaces = defnsByNS.keySet ++ lawsByNS.keySet ++ testsByNS.keySet ++ enumsByNS.keySet ++ tablesByNS.keySet
+      val namespaces = defsByNS.keySet ++ effsByNS.keySet ++ lawsByNS.keySet ++ testsByNS.keySet ++ enumsByNS.keySet ++ tablesByNS.keySet
 
       // Process each namespace.
       val data = namespaces map {
         case ns =>
-          val defns = defnsByNS.getOrElse(ns, Nil).toList.map(kv => mkDefn(kv._2))
+          val defs = defsByNS.getOrElse(ns, Nil).toList.map(kv => mkDefn(kv._2))
           val laws = lawsByNS.getOrElse(ns, Nil).toList.map(kv => mkDefn(kv._2))
+          val effs = effsByNS.getOrElse(ns, Nil).toList.map(kv => mkEff(kv._2))
           val tests = testsByNS.getOrElse(ns, Nil).toList.map(kv => mkDefn(kv._2))
           val enums = enumsByNS.getOrElse(ns, Nil).toList.map(kv => mkEnum(kv._2))
           val relations = relationsByNS.getOrElse(ns, Nil) map mkRelation
@@ -93,7 +100,8 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
           ns -> JObject(
             JField("namespace", JString(ns.mkString("."))),
             JField("types", JArray(enums)),
-            JField("definitions", JArray(defns)),
+            JField("definitions", JArray(defs)),
+            JField("effs", JArray(effs)),
             JField("laws", JArray(laws)),
             JField("tests", JArray(tests)),
             JField("relations", JArray(relations)),
@@ -178,6 +186,38 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
   }
 
   /**
+    * Returns the given effect `d` as a JSON object.
+    */
+  private def mkEff(eff: TypedAst.Eff): JObject = {
+    // Process type parameters.
+    val tparams = eff.tparams.map {
+      case TypeParam(ident, tpe, loc) => JObject(List(
+        JField("name", JString(ident.name))
+      ))
+    }
+
+    // Process formal parameters.
+    val fparams = eff.fparams.map {
+      case FormalParam(psym, mod, tpe, loc) => JObject(
+        JField("name", JString(psym.text)),
+        JField("tpe", JString(prettify(tpe)))
+      )
+    }
+
+    // Compute return type.
+    val returnType = prettify(eff.tpe.typeArguments.last)
+
+    JObject(List(
+      JField("name", JString(eff.sym.name)),
+      JField("tparams", JArray(tparams)),
+      JField("fparams", JArray(fparams)),
+      JField("result", JString(returnType)),
+      JField("comment", JString(eff.doc.text))
+    ))
+
+  }
+
+  /**
     * Returns the given enum `e` as a JSON object.
     */
   private def mkEnum(e: TypedAst.Enum): JObject = {
@@ -247,7 +287,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
   /**
     * Converts the given type into a pretty string.
     */
-  private def prettify(t: Type): String = t.toString
+  private def prettify(t: Type): String = t.show
 
   /**
     * Returns the HTML fragment to use for the given namespace `ns`.
