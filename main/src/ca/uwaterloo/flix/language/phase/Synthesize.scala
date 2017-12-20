@@ -86,6 +86,7 @@ object Synthesize extends Phase[Root, Root] {
       case Expression.Wild(tpe, eff, loc) => exp0
       case Expression.Var(sym, tpe, eff, loc) => exp0
       case Expression.Def(sym, tpe, eff, loc) => exp0
+      case Expression.Eff(sym, tpe, eff, loc) => exp0
       case Expression.Hole(sym, tpe, eff, loc) => exp0
       case Expression.Unit(loc) => exp0
       case Expression.True(loc) => exp0

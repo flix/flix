@@ -445,11 +445,18 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         case ResolvedAst.Expression.Var(sym, loc) => liftM(sym.tvar)
 
         /*
-         * Reference expression.
+         * Def expression.
          */
         case ResolvedAst.Expression.Def(sym, tvar, loc) =>
           val defn = program.defs(sym)
           unifyM(tvar, Scheme.instantiate(defn.sc), loc)
+
+        /*
+         * Eff expression.
+         */
+        case ResolvedAst.Expression.Eff(sym, tvar, loc) =>
+          val eff = program.effs(sym)
+          unifyM(tvar, Scheme.instantiate(eff.sc), loc)
 
         /*
          * Hole expression.
@@ -924,10 +931,16 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         case ResolvedAst.Expression.Var(sym, loc) => TypedAst.Expression.Var(sym, subst0(sym.tvar), Eff.Bot, loc)
 
         /*
-         * Reference expression.
+         * Def expression.
          */
         case ResolvedAst.Expression.Def(sym, tvar, loc) =>
           TypedAst.Expression.Def(sym, subst0(tvar), Eff.Bot, loc)
+
+        /*
+         * Eff expression.
+         */
+        case ResolvedAst.Expression.Eff(sym, tvar, loc) =>
+          TypedAst.Expression.Eff(sym, subst0(tvar), Eff.Bot, loc)
 
         /*
          * Hole expression.

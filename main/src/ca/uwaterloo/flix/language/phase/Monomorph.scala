@@ -156,6 +156,10 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           val newSym = specializeSym(sym, subst0(tpe))
           Expression.Def(newSym, subst0(tpe), eff, loc)
 
+        case Expression.Eff(sym, tpe, eff, loc) =>
+          // TODO: Specialize effect symbols?
+          Expression.Eff(sym, subst0(tpe), eff, loc)
+
         case Expression.Hole(sym, tpe, eff, loc) => Expression.Hole(sym, tpe, eff, loc)
 
         case Expression.Unit(loc) => Expression.Unit(loc)

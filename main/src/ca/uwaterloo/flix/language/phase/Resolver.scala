@@ -369,7 +369,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
         case NamedAst.Expression.Def(qname, tvar, loc) =>
           lookupQName(qname, ns0, prog0) map {
             case LookupResult.Def(sym) => ResolvedAst.Expression.Def(sym, tvar, loc)
-            case LookupResult.Eff(sym) => ??? // TODO
+            case LookupResult.Eff(sym) => ResolvedAst.Expression.Eff(sym, tvar, loc)
           }
 
         case NamedAst.Expression.Hole(name, tpe, loc) =>

@@ -39,6 +39,7 @@ object TypedAstOps {
       case Expression.Wild(tpe, eff, loc) => Map.empty
       case Expression.Var(sym, tpe, eff, loc) => Map.empty
       case Expression.Def(sym, tpe, eff, loc) => Map.empty
+      case Expression.Eff(sym, tpe, eff, loc) => Map.empty
 
       case Expression.Hole(sym, tpe, eff, loc) =>
         Map(sym -> HoleContext(sym, tpe, env0))

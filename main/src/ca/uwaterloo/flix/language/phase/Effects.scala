@@ -143,7 +143,7 @@ object Effects extends Phase[Root, Root] {
         case Expression.Hole(sym, tpe, eff, loc) => ??? // TODO
 
         /**
-          * Ref Expression.
+          * Def Expression.
           */
         case Expression.Def(sym, tpe, _, loc) =>
           // The effect of a ref is its declared effect.
@@ -151,6 +151,11 @@ object Effects extends Phase[Root, Root] {
           val latent = defn.eff.eff
           val eff = ast.Eff.Arrow(ast.Eff.Pure, latent, ast.Eff.Pure, EffectSet.Bot)
           Expression.Def(sym, tpe, eff, loc).toSuccess
+
+        /**
+          * Def Expression.
+          */
+        case Expression.Eff(sym, tpe, _, loc) => ??? // TODO
 
         /**
           * Lambda Expression.

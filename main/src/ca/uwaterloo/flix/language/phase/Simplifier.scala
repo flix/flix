@@ -76,6 +76,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
     def visitExp(expr: TypedAst.Expression): SimplifiedAst.Expression = expr match {
       case TypedAst.Expression.Var(sym, tpe, eff, loc) => SimplifiedAst.Expression.Var(sym, tpe, loc)
       case TypedAst.Expression.Def(sym, tpe, eff, loc) => SimplifiedAst.Expression.Def(sym, tpe, loc)
+      case TypedAst.Expression.Eff(sym, tpe, eff, loc) => ??? // TODO
       case TypedAst.Expression.Hole(sym, tpe, eff, loc) => SimplifiedAst.Expression.HoleError(sym, tpe, eff, loc)
       case TypedAst.Expression.Unit(loc) => SimplifiedAst.Expression.Unit
       case TypedAst.Expression.True(loc) => SimplifiedAst.Expression.True
