@@ -2,8 +2,6 @@ type OutputStream = OutputStream(##java.io.OutputStream)
 
 namespace OutputStream {
 
-    // TODO: Uniqueness.
-
     ///
     /// Effectfully returns an output stream for the given path `s`.
     ///
@@ -24,5 +22,6 @@ namespace OutputStream {
     ///
     handler newWithOpts[a](p: Path, opts: Set[OpenOption], k: Result[OutputStream, IOError] -> a): a = ??? // TODO: Implement
 
+    // TODO: Uniqueness.
 
 }
