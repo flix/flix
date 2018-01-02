@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Magnus Madsen, Ming-Ho Yee
+ * Copyright 2017 Magnus Madsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package ca.uwaterloo.flix.runtime
+package ca.uwaterloo.flix.runtime.interpreter
 
 import ca.uwaterloo.flix.api
 import ca.uwaterloo.flix.language.ast.{Symbol, Type}

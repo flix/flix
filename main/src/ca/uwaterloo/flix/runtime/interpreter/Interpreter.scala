@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Ming-Ho Yee
+ * Copyright 2017 Magnus Madsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,13 +14,14 @@
  * limitations under the License.
  */
 
-package ca.uwaterloo.flix.runtime
+package ca.uwaterloo.flix.runtime.interpreter
 
 import java.lang.reflect.Modifier
 
 import ca.uwaterloo.flix.api._
 import ca.uwaterloo.flix.language.ast.ExecutableAst._
 import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.runtime.Linker
 import ca.uwaterloo.flix.util.InternalRuntimeException
 import ca.uwaterloo.flix.util.tc.Show._
 
