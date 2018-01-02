@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.ExecutableAst._
 import ca.uwaterloo.flix.language.phase.Phase
-import ca.uwaterloo.flix.util.Validation
+import ca.uwaterloo.flix.util.{Evaluation, Validation}
 import ca.uwaterloo.flix.util.Validation._
 
 object JvmBackend extends Phase[Root, Root] {
@@ -39,6 +39,13 @@ object JvmBackend extends Phase[Root, Root] {
     * Emits JVM bytecode for the given AST `root`.
     */
   def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationError] = {
+    //
+    // Immediately return if in interpreted mode.
+    //
+    if (flix.options.evaluation == Evaluation.Interpreted) {
+      return root.toSuccess
+    }
+
     //
     // Measure compilation time.
     //

@@ -18,8 +18,9 @@ package ca.uwaterloo.flix.language.ast
 
 import java.lang.reflect.{Constructor, Field, Method}
 
+import ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.language.ast.Ast.{EliminatedBy, IntroducedBy}
-import ca.uwaterloo.flix.language.phase.{ClosureConv, LambdaLift, Tailrec}
+import ca.uwaterloo.flix.language.phase.{ClosureConv, LambdaLift, Simplifier, Tailrec}
 
 sealed trait SimplifiedAst
 
@@ -132,6 +133,8 @@ object SimplifiedAst {
 
     case class Def(sym: Symbol.DefnSym, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
+    case class Eff(sym: Symbol.EffSym, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
+
     @EliminatedBy(LambdaLift.getClass)
     case class Lambda(fparams: List[SimplifiedAst.FormalParam], exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
@@ -151,11 +154,17 @@ object SimplifiedAst {
     @IntroducedBy(ClosureConv.getClass)
     case class ApplyDef(sym: Symbol.DefnSym, args: List[SimplifiedAst.Expression], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
+    @IntroducedBy(ClosureConv.getClass)
+    case class ApplyEff(sym: Symbol.EffSym, args: List[SimplifiedAst.Expression], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
+
     @IntroducedBy(Tailrec.getClass)
     case class ApplyCloTail(exp: SimplifiedAst.Expression, args: List[SimplifiedAst.Expression], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
     @IntroducedBy(Tailrec.getClass)
     case class ApplyDefTail(sym: Symbol.DefnSym, args: List[SimplifiedAst.Expression], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
+
+    @IntroducedBy(Tailrec.getClass)
+    case class ApplyEffTail(sym: Symbol.EffSym, args: List[SimplifiedAst.Expression], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
     @IntroducedBy(Tailrec.getClass)
     case class ApplySelfTail(sym: Symbol.DefnSym, formals: List[SimplifiedAst.FormalParam], actuals: List[SimplifiedAst.Expression], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
@@ -217,7 +226,7 @@ object SimplifiedAst {
 
     case class UserError(tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
-    case class HoleError(sym: Symbol.HoleSym, tpe: Type, eff: Eff, loc: SourceLocation) extends SimplifiedAst.Expression
+    case class HoleError(sym: Symbol.HoleSym, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends SimplifiedAst.Expression
 
     case class MatchError(tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 

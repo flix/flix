@@ -96,9 +96,12 @@ object ClosureConv {
       // it with ApplyRef. We remove the Ref node and don't recurse on it to avoid creating a closure.
       // We do something similar if `e` is a Hook, where we transform Apply to ApplyHook.
       e match {
-        case Expression.Def(name, _, _) => Expression.ApplyDef(name, args.map(convert), tpe, loc)
+        case Expression.Def(sym, _, _) => Expression.ApplyDef(sym, args.map(convert), tpe, loc)
+        case Expression.Eff(sym, _, _) =>  Expression.ApplyEff(sym, args.map(convert), tpe, loc)
         case _ => Expression.ApplyClo(convert(e), args.map(convert), tpe, loc)
       }
+
+
 
     case Expression.Unary(sop, op, e, tpe, loc) =>
       Expression.Unary(sop, op, convert(e), tpe, loc)
@@ -192,6 +195,7 @@ object ClosureConv {
     case Expression.ApplyDef(name, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
     case Expression.ApplyCloTail(e, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
     case Expression.ApplyDefTail(name, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
+    case Expression.ApplyEffTail(name, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
     case Expression.ApplySelfTail(name, formals, actuals, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
   }
 
@@ -215,6 +219,7 @@ object ClosureConv {
     case Expression.Str(lit) => mutable.LinkedHashSet.empty
     case Expression.Var(sym, tpe, loc) => mutable.LinkedHashSet((sym, tpe))
     case Expression.Def(sym, tpe, loc) => mutable.LinkedHashSet.empty
+    case Expression.Eff(sym, tpe, loc) => mutable.LinkedHashSet.empty
     case Expression.Lambda(args, body, tpe, loc) =>
       val bound = args.map(_.sym)
       freeVariables(body).filterNot { v => bound.contains(v._1) }
@@ -292,6 +297,7 @@ object ClosureConv {
         case Some(newSym) => Expression.Var(newSym, tpe, loc)
       }
       case Expression.Def(sym, tpe, loc) => e
+      case Expression.Eff(sym, tpe, loc) => e
       case Expression.Lambda(fparams, exp, tpe, loc) =>
         val fs = fparams.map(fparam => replace(fparam, subst))
         val e = visit(exp)

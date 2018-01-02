@@ -238,6 +238,9 @@ object GenExpression {
       visitor.visitMethodInsn(INVOKEINTERFACE, cont.name.toInternalName, "getResult", AsmOps.getMethodDescriptor(Nil, resultType), true)
       AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
 
+    case Expression.ApplyEff(sym, args, tpe, loc) =>
+      throw InternalCompilerException(s"ApplyEff not implemented in JVM backend!")
+
     case Expression.ApplyCloTail(exp, args, tpe, loc) =>
       // Type of the function interface
       val functionInterface = JvmOps.getFunctionInterfaceType(exp.tpe)

@@ -138,8 +138,10 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
 
       case Expression.ApplyClo(exp, args, tpe, loc) =>
         Expression.ApplyClo(visit(exp), args.map(visit), tpe, loc)
-      case Expression.ApplyDef(name, args, tpe, loc) =>
-        Expression.ApplyDef(name, args.map(visit), tpe, loc)
+      case Expression.ApplyDef(sym, args, tpe, loc) =>
+        Expression.ApplyDef(sym, args.map(visit), tpe, loc)
+      case Expression.ApplyEff(sym, args, tpe, loc) =>
+        Expression.ApplyEff(sym, args.map(visit), tpe, loc)
       case Expression.Unary(sop, op, exp, tpe, loc) =>
         Expression.Unary(sop, op, visit(exp), tpe, loc)
       case Expression.Binary(sop, op, exp1, exp2, tpe, loc) =>

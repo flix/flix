@@ -100,6 +100,13 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         Expression.ApplyDef(sym, as, tpe, loc)
 
       //
+      // ApplyEff Expressions.
+      //
+      case Expression.ApplyEff(sym, args, tpe, loc) =>
+        val as = args map (visitExp(_, env0))
+        Expression.ApplyEff(sym, as, tpe, loc)
+
+      //
       // ApplyCloTail Expressions.
       //
       case Expression.ApplyCloTail(exp, args, tpe, loc) =>

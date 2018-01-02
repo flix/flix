@@ -86,12 +86,13 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.ApplyClo(exp, args, tpe, loc) =>
         val i = visitExp(exp, i0)
         visitExps(args, i)
-      case Expression.ApplyDef(name, args, tpe, loc) => visitExps(args, i0)
+      case Expression.ApplyDef(sym, args, tpe, loc) => visitExps(args, i0)
+      case Expression.ApplyEff(sym, args, tpe, loc) => visitExps(args, i0)
       case Expression.ApplyCloTail(exp, args, tpe, loc) =>
         val i = visitExp(exp, i0)
         visitExps(args, i)
-      case Expression.ApplyDefTail(name, args, tpe, loc) => visitExps(args, i0)
-      case Expression.ApplySelfTail(name, formals, args, tpe, loc) => visitExps(args, i0)
+      case Expression.ApplyDefTail(sym, args, tpe, loc) => visitExps(args, i0)
+      case Expression.ApplySelfTail(sym, formals, args, tpe, loc) => visitExps(args, i0)
       case Expression.Unary(sop, op, exp, tpe, loc) => visitExp(exp, i0)
       case Expression.Binary(sop, op, exp1, exp2, tpe, loc) =>
         val i1 = visitExp(exp1, i0)

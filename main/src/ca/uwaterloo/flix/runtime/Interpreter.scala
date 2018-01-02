@@ -65,6 +65,7 @@ object Interpreter {
     //
     case Expression.ApplyClo(exp, args, _, _) => invokeClo(exp, args, env0, lenv0, root)
     case Expression.ApplyDef(sym, args, _, _) => invokeDef(sym, args, env0, lenv0, root)
+    case Expression.ApplyEff(sym, args, tpe, loc) => invokeEff(sym, args, env0, lenv0, root)
     case Expression.ApplyCloTail(exp, args, _, _) => invokeClo(exp, args, env0, lenv0, root)
     case Expression.ApplyDefTail(sym, args, _, _) => invokeDef(sym, args, env0, lenv0, root)
     case Expression.ApplySelfTail(sym, _, args, _, _) => invokeDef(sym, args, env0, lenv0, root)
@@ -563,6 +564,15 @@ object Interpreter {
     val as = evalArgs(args, env0, lenv0, root)
     // TODO: Using the linker here is quite a hack.
     fromJava(Linker.link(sym, root).invoke(as.toArray))
+  }
+
+  /**
+    * Invokes the given definition `sym` with the given arguments `args` under the given environment `env0`..
+    */
+  private def invokeEff(sym: Symbol.EffSym, args: List[Expression], env0: Map[String, AnyRef], lenv0: Map[Symbol.LabelSym, Expression], root: Root)(implicit flix: Flix): AnyRef = {
+    val as = evalArgs(args, env0, lenv0, root)
+
+    ???
   }
 
   /**
