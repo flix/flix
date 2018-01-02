@@ -29,6 +29,8 @@ object ExecutableAst {
   // TODO: Get rid of most uses of array.
 
   case class Root(defs: Map[Symbol.DefnSym, ExecutableAst.Def],
+                  effs: Map[Symbol.EffSym, ExecutableAst.Eff],
+                  handlers: Map[Symbol.EffSym, ExecutableAst.Handler],
                   enums: Map[Symbol.EnumSym, ExecutableAst.Enum],
                   lattices: Map[Type, ExecutableAst.Lattice],
                   tables: Map[Symbol.TableSym, ExecutableAst.Table],
@@ -98,6 +100,10 @@ object ExecutableAst {
       */
     var method: Method = null
   }
+
+  case class Eff(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EffSym, fparams: List[ExecutableAst.FormalParam], tpe: Type, loc: SourceLocation) extends ExecutableAst
+
+  case class Handler(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EffSym, fparams: List[ExecutableAst.FormalParam], exp: ExecutableAst.Expression, tpe: Type, loc: SourceLocation) extends ExecutableAst
 
   case class Enum(mod: Ast.Modifiers, sym: Symbol.EnumSym, cases: Map[String, ExecutableAst.Case], tpe: Type, loc: SourceLocation) extends ExecutableAst
 

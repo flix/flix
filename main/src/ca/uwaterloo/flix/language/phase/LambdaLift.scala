@@ -47,11 +47,14 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     val definitions = root.defs.map {
       case (name, decl) => name -> lift(decl, m)
     }
+    val handlers = root.handlers.map {
+      case (k, v) => k -> lift(v, m)
+    }
     val properties = root.properties.map(p => lift(p, m))
 
     // Return the updated AST root.
     val e = System.nanoTime() - t
-    root.copy(defs = definitions ++ m, properties = properties, time = root.time.copy(lambdaLift = e)).toSuccess
+    root.copy(defs = definitions ++ m, handlers = handlers, properties = properties, time = root.time.copy(lambdaLift = e)).toSuccess
   }
 
   /**
@@ -64,6 +67,18 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     val convExp = ClosureConv.convert(decl.exp)
     val liftExp = lift(convExp, m, Some(decl.sym))
     decl.copy(exp = liftExp)
+  }
+
+  /**
+    * Performs lambda lifting on the given handler `handler`.
+    *
+    * The handler's expression is closure converted, and then the lifted definitions are added to the mutable map `m`.
+    * The updated definition is then returned.
+    */
+  private def lift(handler: SimplifiedAst.Handler, m: TopLevel)(implicit genSym: GenSym): SimplifiedAst.Handler = {
+    val convExp = ClosureConv.convert(handler.exp)
+    val liftExp = lift(convExp, m, None)
+    handler.copy(exp = liftExp)
   }
 
   /**

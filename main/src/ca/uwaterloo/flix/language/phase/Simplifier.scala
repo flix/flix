@@ -71,6 +71,23 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
     }
 
     /**
+      * Translates the given effect `eff0` to the SimplifiedAst.
+      */
+    def visitEff(eff0: TypedAst.Eff): SimplifiedAst.Eff = {
+      val fs = eff0.fparams.map(visitFormalParam)
+      SimplifiedAst.Eff(eff0.ann, eff0.mod, eff0.sym, fs, eff0.tpe, eff0.loc)
+    }
+
+    /**
+      * Translates the given handler `handler0` to the SimplifiedAst.
+      */
+    def visitHandler(handler0: TypedAst.Handler): SimplifiedAst.Handler = {
+      val fs = handler0.fparams.map(visitFormalParam)
+      val exp = visitExp(handler0.exp)
+      SimplifiedAst.Handler(handler0.ann, handler0.mod, handler0.sym, fs, exp, handler0.tpe, handler0.loc)
+    }
+
+    /**
       * Translates the given expression `exp` to the SimplifiedAst.
       */
     def visitExp(expr: TypedAst.Expression): SimplifiedAst.Expression = expr match {
@@ -984,6 +1001,8 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
     // Main computation.
     //
     val defns = root.defs.map { case (k, v) => k -> visitDef(v) }
+    val effs = root.effs.map { case (k, v) => k -> visitEff(v) }
+    val handlers = root.handlers.map { case (k, v) => k -> visitHandler(v) }
     val enums = root.enums.map {
       case (k, TypedAst.Enum(doc, mod, sym, cases0, enumType, loc)) =>
         val cases = cases0 map {
@@ -1001,7 +1020,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
     val time = root.time
 
     val elapsed = System.nanoTime() - start
-    SimplifiedAst.Root(defns ++ toplevel, enums, lattices, collections, indexes, strata, properties, specialOps, reachable, time.copy(simplifier = elapsed)).toSuccess
+    SimplifiedAst.Root(defns ++ toplevel, effs, handlers, enums, lattices, collections, indexes, strata, properties, specialOps, reachable, time.copy(simplifier = elapsed)).toSuccess
   }
 
   /**

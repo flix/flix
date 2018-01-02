@@ -20,13 +20,15 @@ import java.lang.reflect.{Constructor, Field, Method}
 
 import ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.language.ast.Ast.{EliminatedBy, IntroducedBy}
-import ca.uwaterloo.flix.language.phase.{ClosureConv, LambdaLift, Simplifier, Tailrec}
+import ca.uwaterloo.flix.language.phase.{ClosureConv, LambdaLift, Tailrec}
 
 sealed trait SimplifiedAst
 
 object SimplifiedAst {
 
   case class Root(defs: Map[Symbol.DefnSym, SimplifiedAst.Def],
+                  effs: Map[Symbol.EffSym, SimplifiedAst.Eff],
+                  handlers: Map[Symbol.EffSym, SimplifiedAst.Handler],
                   enums: Map[Symbol.EnumSym, SimplifiedAst.Enum],
                   lattices: Map[Type, SimplifiedAst.Lattice],
                   tables: Map[Symbol.TableSym, SimplifiedAst.Table],
@@ -40,6 +42,11 @@ object SimplifiedAst {
   case class Constraint(cparams: List[SimplifiedAst.ConstraintParam], head: SimplifiedAst.Predicate.Head, body: List[SimplifiedAst.Predicate.Body]) extends SimplifiedAst
 
   case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, fparams: List[SimplifiedAst.FormalParam], exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst
+
+  case class Eff(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EffSym, fparams: List[SimplifiedAst.FormalParam], tpe: Type, loc: SourceLocation) extends SimplifiedAst
+
+  // TODO: Handlers must be passed through all phases.
+  case class Handler(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EffSym, fparams: List[SimplifiedAst.FormalParam], exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst
 
   case class Enum(mod: Ast.Modifiers, sym: Symbol.EnumSym, cases: Map[String, SimplifiedAst.Case], tpe: Type, loc: SourceLocation) extends SimplifiedAst
 

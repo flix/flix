@@ -106,7 +106,7 @@ object Linker {
       link(sym, root).invoke(Array(x, y)).getValue match {
         case java.lang.Boolean.TRUE => true
         case java.lang.Boolean.FALSE => false
-        case v => throw InternalRuntimeException(s"Unexpected value: '$v'.")
+        case v => throw InternalRuntimeException(s"Unexpected value: '$v' of type '${v.getClass.getName}'.")
       }
     }
 
@@ -118,7 +118,7 @@ object Linker {
       val sym = root.specialOps(SpecialOperator.HashCode)(tpe)
       link(sym, root).invoke(Array(x)).getValue match {
         case i: java.lang.Integer => i.intValue()
-        case v => throw InternalRuntimeException(s"Unexpected value: '$v'.")
+        case v => throw InternalRuntimeException(s"Unexpected value: '$v' of type '${v.getClass.getName}'.")
       }
     }
 
@@ -130,7 +130,7 @@ object Linker {
       val sym = root.specialOps(SpecialOperator.ToString)(tpe)
       link(sym, root).invoke(Array(x)).getValue match {
         case s: java.lang.String => s
-        case v => throw InternalRuntimeException(s"Unexpected value: '$v'.")
+        case v => throw InternalRuntimeException(s"Unexpected value: '$v' of type '${v.getClass.getName}'.")
       }
     }
 

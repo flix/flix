@@ -122,7 +122,7 @@ object Interpreter {
         // Evaluate the body expression under the extended environment.
         val newEnv = env0 + (sym.toString -> closure)
         eval(exp2, newEnv, lenv0, root)
-      case _ => throw InternalRuntimeException(s"Non-closure letrec value: ${exp1.getClass.getCanonicalName}.")
+      case _ => throw InternalRuntimeException(s"Non-closure letrec value: ${exp1.getClass.getName}.")
     }
 
     //
@@ -559,7 +559,7 @@ object Interpreter {
   }
 
   /**
-    * Invokes the given definition `sym` with the given arguments `args` under the given environment `env0`..
+    * Invokes the given definition `sym` with the given arguments `args` under the given environment `env0`.
     */
   private def invokeDef(sym: Symbol.DefnSym, args: List[Expression], env0: Map[String, AnyRef], lenv0: Map[Symbol.LabelSym, Expression], root: Root)(implicit flix: Flix): AnyRef = {
     val as = evalArgs(args, env0, lenv0, root)
@@ -568,12 +568,25 @@ object Interpreter {
   }
 
   /**
-    * Invokes the given definition `sym` with the given arguments `args` under the given environment `env0`..
+    * Invokes the given definition `sym` with the given arguments `args` under the given environment `env0`.
     */
   private def invokeEff(sym: Symbol.EffSym, args: List[Expression], env0: Map[String, AnyRef], lenv0: Map[Symbol.LabelSym, Expression], root: Root)(implicit flix: Flix): AnyRef = {
     val as = evalArgs(args, env0, lenv0, root)
 
-    ???
+    // TODO: Need stack of handlers.
+    root.handlers.get(sym) match {
+      case None => ???
+      case Some(defaultHandler) =>
+        // Case 1: Found default handler.
+
+        // Bind arguments to formal parameters.
+        val env = defaultHandler.fparams.zip(as).foldLeft(Map.empty[String, AnyRef]) {
+          case (macc, (fparam, value)) => macc + (fparam.sym.toString -> value)
+        }
+
+        // Evaluate the body of the handler.
+        eval(defaultHandler.exp, env, Map.empty, root)
+    }
   }
 
   /**
@@ -612,7 +625,7 @@ object Interpreter {
   private def cast2bool(ref: Any): Boolean = ref match {
     case Value.True => true
     case Value.False => false
-    case _ => throw InternalRuntimeException(s"Unexpected non-bool value: ${ref.getClass.getCanonicalName}.")
+    case _ => throw InternalRuntimeException(s"Unexpected non-bool value: ${ref.getClass.getName}.")
   }
 
   /**
@@ -620,7 +633,7 @@ object Interpreter {
     */
   private def cast2char(ref: AnyRef): Char = ref match {
     case Value.Char(lit) => lit
-    case _ => throw InternalRuntimeException(s"Unexpected non-char value: ${ref.getClass.getCanonicalName}.")
+    case _ => throw InternalRuntimeException(s"Unexpected non-char value: ${ref.getClass.getName}.")
   }
 
   /**
@@ -628,7 +641,7 @@ object Interpreter {
     */
   private def cast2float32(ref: AnyRef): Float = ref match {
     case Value.Float32(lit) => lit
-    case _ => throw InternalRuntimeException(s"Unexpected non-float32 value: ${ref.getClass.getCanonicalName}.")
+    case _ => throw InternalRuntimeException(s"Unexpected non-float32 value: ${ref.getClass.getName}.")
   }
 
   /**
@@ -636,7 +649,7 @@ object Interpreter {
     */
   private def cast2float64(ref: AnyRef): Double = ref match {
     case Value.Float64(lit) => lit
-    case _ => throw InternalRuntimeException(s"Unexpected non-float64 value: ${ref.getClass.getCanonicalName}.")
+    case _ => throw InternalRuntimeException(s"Unexpected non-float64 value: ${ref.getClass.getName}.")
   }
 
   /**
@@ -644,7 +657,7 @@ object Interpreter {
     */
   private def cast2int8(ref: AnyRef): Byte = ref match {
     case Value.Int8(lit) => lit
-    case _ => throw InternalRuntimeException(s"Unexpected non-int8 value: ${ref.getClass.getCanonicalName}.")
+    case _ => throw InternalRuntimeException(s"Unexpected non-int8 value: ${ref.getClass.getName}.")
   }
 
   /**
@@ -652,7 +665,7 @@ object Interpreter {
     */
   private def cast2int16(ref: AnyRef): Short = ref match {
     case Value.Int16(lit) => lit
-    case _ => throw InternalRuntimeException(s"Unexpected non-int16 value: ${ref.getClass.getCanonicalName}.")
+    case _ => throw InternalRuntimeException(s"Unexpected non-int16 value: ${ref.getClass.getName}.")
   }
 
   /**
@@ -660,7 +673,7 @@ object Interpreter {
     */
   private def cast2int32(ref: AnyRef): Int = ref match {
     case Value.Int32(lit) => lit
-    case _ => throw InternalRuntimeException(s"Unexpected non-int32 value: ${ref.getClass.getCanonicalName}.")
+    case _ => throw InternalRuntimeException(s"Unexpected non-int32 value: ${ref.getClass.getName}.")
   }
 
   /**
@@ -668,7 +681,7 @@ object Interpreter {
     */
   private def cast2int64(ref: AnyRef): Long = ref match {
     case Value.Int64(lit) => lit
-    case _ => throw InternalRuntimeException(s"Unexpected non-int64 value: ${ref.getClass.getCanonicalName}.")
+    case _ => throw InternalRuntimeException(s"Unexpected non-int64 value: ${ref.getClass.getName}.")
   }
 
   /**
@@ -676,7 +689,7 @@ object Interpreter {
     */
   private def cast2bigInt(ref: AnyRef): java.math.BigInteger = ref match {
     case Value.BigInt(lit) => lit
-    case _ => throw InternalRuntimeException(s"Unexpected non-bigint value: ${ref.getClass.getCanonicalName}.")
+    case _ => throw InternalRuntimeException(s"Unexpected non-bigint value: ${ref.getClass.getName}.")
   }
 
   /**
@@ -684,7 +697,7 @@ object Interpreter {
     */
   private def cast2str(ref: AnyRef): String = ref match {
     case Value.Str(lit) => lit
-    case _ => throw InternalRuntimeException(s"Unexpected non-str value: ${ref.getClass.getCanonicalName}.")
+    case _ => throw InternalRuntimeException(s"Unexpected non-str value: ${ref.getClass.getName}.")
   }
 
   /**
@@ -692,7 +705,7 @@ object Interpreter {
     */
   private def cast2box(ref: AnyRef): Value.Box = ref match {
     case v: Value.Box => v
-    case _ => throw InternalRuntimeException(s"Unexpected non-box value: ${ref.getClass.getCanonicalName}.")
+    case _ => throw InternalRuntimeException(s"Unexpected non-box value: ${ref.getClass.getName}.")
   }
 
   /**
@@ -700,7 +713,7 @@ object Interpreter {
     */
   private def cast2closure(ref: AnyRef): Value.Closure = ref match {
     case v: Value.Closure => v
-    case _ => throw InternalRuntimeException(s"Unexpected non-closure value: ${ref.getClass.getCanonicalName}.")
+    case _ => throw InternalRuntimeException(s"Unexpected non-closure value: ${ref.getClass.getName}.")
   }
 
   /**
@@ -708,7 +721,7 @@ object Interpreter {
     */
   private def cast2tag(ref: AnyRef): Value.Tag = ref match {
     case v: Value.Tag => v
-    case _ => throw InternalRuntimeException(s"Unexpected non-tag value: ${ref.getClass.getCanonicalName}.")
+    case _ => throw InternalRuntimeException(s"Unexpected non-tag value: ${ref.getClass.getName}.")
   }
 
   /**
@@ -716,7 +729,7 @@ object Interpreter {
     */
   private def cast2tuple(ref: AnyRef): Value.Tuple = ref match {
     case v: Value.Tuple => v
-    case _ => throw InternalRuntimeException(s"Unexpected non-tuple value: ${ref.getClass.getCanonicalName}.")
+    case _ => throw InternalRuntimeException(s"Unexpected non-tuple value: ${ref.getClass.getName}.")
   }
 
   /**
@@ -724,7 +737,7 @@ object Interpreter {
     */
   private def cast2array(ref: AnyRef): Value.Arr = ref match {
     case v: Value.Arr => v
-    case _ => throw InternalRuntimeException(s"Unexpected non-array value: ${ref.getClass.getCanonicalName}.")
+    case _ => throw InternalRuntimeException(s"Unexpected non-array value: ${ref.getClass.getName}.")
   }
 
   /**

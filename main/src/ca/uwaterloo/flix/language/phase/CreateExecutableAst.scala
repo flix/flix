@@ -42,6 +42,9 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
 
     val constants = root.defs.map { case (k, v) => k -> toExecutable(v) }
 
+    val effs = root.effs.map { case (k, v) => k -> visitEff(v) }
+    val handlers = root.handlers.map { case (k, v) => k -> visitHandler(v) }
+
     val enums = root.enums.map {
       case (sym, SimplifiedAst.Enum(mod, _, cases0, tpe, loc)) =>
         val cases = cases0.map {
@@ -60,7 +63,7 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
     val reachable = root.reachable
     val time = root.time
 
-    ExecutableAst.Root(constants ++ m, enums, lattices, tables, indexes, strata, properties, specialOps, reachable, time).toSuccess
+    ExecutableAst.Root(constants ++ m, effs, handlers, enums, lattices, tables, indexes, strata, properties, specialOps, reachable, time).toSuccess
   }
 
   def toExecutable(sast: SimplifiedAst.Def): ExecutableAst.Def = {
@@ -69,6 +72,17 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
     }.toArray
 
     ExecutableAst.Def(sast.ann, sast.mod, sast.sym, formals, Expression.toExecutable(sast.exp), sast.tpe, sast.loc)
+  }
+
+  def visitEff(eff0: SimplifiedAst.Eff): ExecutableAst.Eff = {
+    val fparams = eff0.fparams.map(toExecutable)
+    ExecutableAst.Eff(eff0.ann, eff0.mod, eff0.sym, fparams, eff0.tpe, eff0.loc)
+  }
+
+  def visitHandler(handler0: SimplifiedAst.Handler): ExecutableAst.Handler = {
+    val fparams = handler0.fparams.map(toExecutable)
+    val exp = Expression.toExecutable(handler0.exp)
+    ExecutableAst.Handler(handler0.ann, handler0.mod, handler0.sym, fparams, exp, handler0.tpe, handler0.loc)
   }
 
   def toExecutable(sast: SimplifiedAst.Lattice, m: TopLevel)(implicit genSym: GenSym): ExecutableAst.Lattice = sast match {

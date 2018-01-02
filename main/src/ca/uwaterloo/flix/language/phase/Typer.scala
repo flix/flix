@@ -387,9 +387,9 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     /**
       * Infers the types of the effects in the given program.
       */
-    def typecheckEffects(program: ResolvedAst.Program)(implicit flix: Flix): Result[Map[Symbol.EffSym, TypedAst.Eff], TypeError] = {
+    def typecheckEffects(program0: ResolvedAst.Program)(implicit flix: Flix): Result[Map[Symbol.EffSym, TypedAst.Eff], TypeError] = {
       // Typecheck every effect in the program.
-      val effs = program.effs.toList.map {
+      val effs = program0.effs.toList.map {
         case (sym, eff0) => typecheckEff(eff0) map (e => sym -> e)
       }
 
@@ -416,15 +416,40 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     /**
       * Infers the types of the handlers in the given program.
       */
-    def typecheckHandlers(program: ResolvedAst.Program)(implicit flix: Flix): Result[Map[Symbol.EffSym, TypedAst.Handler], TypeError] = {
-
-      // TODO
-      program.handlers.foreach {
-        case (sym, eff) => //println(s"Typecheck handler: $sym")
+    def typecheckHandlers(program0: ResolvedAst.Program)(implicit flix: Flix): Result[Map[Symbol.EffSym, TypedAst.Handler], TypeError] = {
+      // Typecheck every handler in the program.
+      val effs = program0.handlers.toList.map {
+        case (sym, handler0) => typecheckHandler(handler0, program0) map (e => sym -> e)
       }
 
-      Ok(Map.empty)
+      // Sequence the results and convert them back to a map.
+      Result.seqM(effs).map(_.toMap)
     }
+
+    /**
+      * Infers the the type of the given handler `handler0`.
+      */
+    def typecheckHandler(handler0: ResolvedAst.Handler, program0: ResolvedAst.Program)(implicit flix: Flix): Result[TypedAst.Handler, TypeError] = handler0 match {
+      case ResolvedAst.Handler(doc, ann, mod, sym, tparams0, fparams0, exp0, sc, eff, loc) =>
+
+        val argumentTypes = fparams0.map(_.tpe)
+        val resultType = Scheme.instantiate(sc)(flix.genSym)
+        val tpe = Type.mkArrow(argumentTypes, resultType)
+
+        val subst0 = getSubstFromParams(fparams0)
+        val tparams = getTypeParams(tparams0)
+        val fparams = getFormalParams(fparams0, subst0)
+
+        // TODO: Proper type checking...
+        val result = Expressions.infer(exp0, program0)(flix.genSym)
+
+        result.run(Substitution.empty) map {
+          case (subst, unifiedType) =>
+            val exp = Expressions.reassemble(exp0, program0, subst)
+            TypedAst.Handler(doc, ann, mod, sym, tparams, fparams, exp, subst(unifiedType), eff, loc)
+        }
+    }
+
 
   }
 
