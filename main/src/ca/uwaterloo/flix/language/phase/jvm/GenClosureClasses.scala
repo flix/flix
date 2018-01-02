@@ -167,7 +167,6 @@ object GenClosureClasses {
     applyMethod.visitVarInsn(ALOAD, 0)
 
     // Swapping `this` and result of the expression
-    // TODO: Ramin could be extract this into a helper in AsmOps? It is used in several places, right?
     if (AsmOps.getStackSize(resultType) == 1) {
       applyMethod.visitInsn(SWAP)
     } else {
