@@ -23,17 +23,17 @@ import org.scalatest.FunSuite
 
 class TestNamer extends FunSuite with TestUtils {
 
-  test("DuplicateDefinition.01") {
+  test("DuplicateDef.01") {
     val input =
       s"""
          |def f(): Int = 42
          |def f(): Int = 21
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    expectError[NameError.DuplicateDefinition](result)
+    expectError[NameError.DuplicateDef](result)
   }
 
-  test("DuplicateDefinition.02") {
+  test("DuplicateDef.02") {
     val input =
       s"""
          |def f(): Int = 42
@@ -41,10 +41,10 @@ class TestNamer extends FunSuite with TestUtils {
          |def f(): Int = 11
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    expectError[NameError.DuplicateDefinition](result)
+    expectError[NameError.DuplicateDef](result)
   }
 
-  test("DuplicateDefinition.03") {
+  test("DuplicateDef.03") {
     val input =
       s"""
          |def f(x: Int): Int = 42
@@ -52,10 +52,10 @@ class TestNamer extends FunSuite with TestUtils {
          |def f(x: Int): Int = 11
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    expectError[NameError.DuplicateDefinition](result)
+    expectError[NameError.DuplicateDef](result)
   }
 
-  test("DuplicateDefinition.04") {
+  test("DuplicateDef.04") {
     val input =
       s"""
          |def f(): Int = 42
@@ -63,10 +63,10 @@ class TestNamer extends FunSuite with TestUtils {
          |def f(x: Bool, y: Int, z: String): Int = 11
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    expectError[NameError.DuplicateDefinition](result)
+    expectError[NameError.DuplicateDef](result)
   }
 
-  test("DuplicateDefinition.05") {
+  test("DuplicateDef.05") {
     val input =
       s"""
          |namespace A {
@@ -78,10 +78,10 @@ class TestNamer extends FunSuite with TestUtils {
          |}
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    expectError[NameError.DuplicateDefinition](result)
+    expectError[NameError.DuplicateDef](result)
   }
 
-  test("DuplicateDefinition.06") {
+  test("DuplicateDef.06") {
     val input =
       s"""
          |namespace A/B/C {
@@ -97,7 +97,94 @@ class TestNamer extends FunSuite with TestUtils {
          |}
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    expectError[NameError.DuplicateDefinition](result)
+    expectError[NameError.DuplicateDef](result)
+  }
+
+  test("DuplicateEff.01") {
+    val input =
+      s"""
+         |eff f(): Int
+         |eff f(): Int
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[NameError.DuplicateEff](result)
+  }
+
+  test("DuplicateEff.02") {
+    val input =
+      s"""
+         |namespace A {
+         |  eff f(): Int
+         |}
+         |
+         |namespace A {
+         |  eff f(): Int
+         |}
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[NameError.DuplicateEff](result)
+  }
+
+  test("DuplicateHandler.01") {
+    val input =
+      s"""
+         |handler f(): Int = 42
+         |handler f(): Int = 21
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[NameError.DuplicateHandler](result)
+  }
+
+  test("DuplicateHandler.02") {
+    val input =
+      s"""
+         |namespace A {
+         |  handler f(): Int = 42
+         |}
+         |
+         |namespace A {
+         |  handler f(): Int = 21
+         |}
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[NameError.DuplicateHandler](result)
+  }
+
+  test("DuplicateClass.01") {
+    val input =
+      s"""
+         |class X[a]
+         |class X[a]
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[NameError.DuplicateClass](result)
+  }
+
+  test("DuplicateClass.02") {
+    val input =
+      s"""
+         |namespace A {
+         |  class X[a]
+         |  class X[a]
+         |}
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[NameError.DuplicateClass](result)
+  }
+
+  test("DuplicateClass.03") {
+    val input =
+      s"""
+         |namespace A {
+         |  class X[a]
+         |}
+         |
+         |namespace A {
+         |  class X[a]
+         |}
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[NameError.DuplicateClass](result)
   }
 
   test("DuplicateIndex.01") {

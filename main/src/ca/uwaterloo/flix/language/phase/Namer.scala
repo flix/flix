@@ -20,6 +20,7 @@ import java.lang.reflect.{Constructor, Field, Method, Modifier}
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.GenSym
+import ca.uwaterloo.flix.language.ast.WeededAst.Declaration
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.NameError
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
@@ -45,8 +46,12 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
 
     // make an empty program to fold over.
     val prog0 = NamedAst.Program(
-      enums = Map.empty,
       defs = Map.empty,
+      effs = Map.empty,
+      handlers = Map.empty,
+      enums = Map.empty,
+      classes = Map.empty,
+      impls = Map.empty,
       lattices = Map.empty,
       indexes = Map.empty,
       tables = Map.empty,
@@ -97,42 +102,77 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
       /*
        * Definition.
        */
-      case WeededAst.Declaration.Def(doc, ann, mod, ident, tparams0, fparams0, exp, tpe, eff, loc) =>
-        // check if the definition already exists.
+      case WeededAst.Declaration.Def(doc, ann, mod, ident, tparams0, fparams0, exp, tpe, eff0, loc) =>
+        // Check if the definition already exists.
         val defns = prog0.defs.getOrElse(ns0, Map.empty)
         defns.get(ident.name) match {
           case None =>
             // Case 1: The definition does not already exist. Update it.
 
-            // Compute the type environment from the formal type parameters.
-            val tparams = tparams0.map {
-              case p =>
-                // Generate a fresh type variable for the type parameter.
-                val tvar = Type.freshTypeVar()
-                // Remember the original textual name.
-                tvar.setText(p.name)
-                NamedAst.TypeParam(p, tvar, p.loc)
-            }
-
-            // Compute the type environment.
-            val tenv0 = tparams.map(p => p.name.name -> p.tpe).toMap
-
-            // Introduce variable symbols for each formal parameter.
-            val fparams = fparams0.map(p => Params.namer(p, tenv0))
-
-            // Compute the local variable environment from the formal parameters.
-            val env0 = fparams.map(p => p.sym.text -> p.sym).toMap
+            val tparams = getTypeParams(tparams0)
+            val tenv0 = getTypeEnv(tparams)
+            val fparams = getFormalParams(fparams0, tenv0)
+            val env0 = getVarEnv(fparams)
 
             Expressions.namer(exp, env0, tenv0) map {
               case e =>
                 val sym = Symbol.mkDefnSym(ns0, ident)
-                val sc = NamedAst.Scheme(tparams.map(_.tpe), Types.namer(tpe, tenv0))
-                val defn = NamedAst.Def(doc, ann, mod, sym, tparams, fparams, e, sc, eff, loc)
+                val sc = getScheme(tparams, tpe, tenv0)
+                val defn = NamedAst.Def(doc, ann, mod, sym, tparams, fparams, e, sc, eff0, loc)
                 prog0.copy(defs = prog0.defs + (ns0 -> (defns + (ident.name -> defn))))
             }
           case Some(defn) =>
             // Case 2: Duplicate definition.
-            DuplicateDefinition(ident.name, defn.loc, ident.loc).toFailure
+            DuplicateDef(ident.name, defn.loc, ident.loc).toFailure
+        }
+
+      /*
+       * Eff.
+       */
+      case WeededAst.Declaration.Eff(doc, ann, mod, ident, tparams0, fparams0, tpe, eff0, loc) =>
+        // Check if the effect already exists.
+        val effs = prog0.effs.getOrElse(ns0, Map.empty)
+        effs.get(ident.name) match {
+          case None =>
+            // Case 1: The effect does not already exist. Update it.
+            val tparams = getTypeParams(tparams0)
+            val tenv0 = getTypeEnv(tparams)
+            val fparams = getFormalParams(fparams0, tenv0)
+            val env0 = getVarEnv(fparams)
+
+            val sym = Symbol.mkEffSym(ns0, ident)
+            val sc = getScheme(tparams, tpe, tenv0)
+            val eff = NamedAst.Eff(doc, ann, mod, sym, tparams, fparams, sc, eff0, loc)
+            prog0.copy(effs = prog0.effs + (ns0 -> (effs + (ident.name -> eff)))).toSuccess
+          case Some(eff) =>
+            // Case 2: Duplicate effect.
+            DuplicateEff(ident.name, eff.loc, ident.loc).toFailure
+        }
+
+      /*
+       * Handler.
+       */
+      case WeededAst.Declaration.Handler(doc, ann, mod, ident, tparams0, fparams0, exp, tpe, eff0, loc) =>
+        // Check if the handler already exists.
+        val handlers = prog0.handlers.getOrElse(ns0, Map.empty)
+        handlers.get(ident.name) match {
+          case None =>
+            // Case 1: The handler does not already exist. Update it.
+            val tparams = getTypeParams(tparams0)
+            val tenv0 = getTypeEnv(tparams)
+            val fparams = getFormalParams(fparams0, tenv0)
+            val env0 = getVarEnv(fparams)
+
+            Expressions.namer(exp, env0, tenv0) map {
+              case e =>
+                val sym = Symbol.mkEffSym(ns0, ident)
+                val sc = getScheme(tparams, tpe, tenv0)
+                val handler = NamedAst.Handler(doc, ann, mod, ident, tparams, fparams, e, sc, eff0, loc)
+                prog0.copy(handlers = prog0.handlers + (ns0 -> (handlers + (ident.name -> handler))))
+            }
+          case Some(handler) =>
+            // Case 2: Duplicate handler.
+            DuplicateHandler(ident.name, handler.loc, ident.loc).toFailure
         }
 
       /*
@@ -162,7 +202,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
             prog0.copy(enums = prog0.enums + (ns0 -> enums)).toSuccess
           case Some(enum) =>
             // Case 2.2: Duplicate definition.
-            DuplicateDefinition(ident.name, enum.sym.loc, ident.loc).toFailure
+            DuplicateDef(ident.name, enum.sym.loc, ident.loc).toFailure
         }
 
       /*
@@ -251,6 +291,81 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
             prog0.copy(lattices = prog0.lattices + (Types.namer(tpe, Map.empty) -> lattice)) // NB: This just overrides any existing binding.
         }
 
+      //
+      // Class.
+      //
+      case decl@WeededAst.Declaration.Class(doc, mod, head0, body0, sigs0, laws0, loc) =>
+        // Check that the class name is not qualified.
+        if (head0.qname.isQualified) {
+          throw InternalCompilerException(s"Qualified class names are currently unsupported.")
+        }
+
+        // Retrieve the class name.
+        val ident = head0.qname.ident
+
+        // Check if the class already exists.
+        prog0.classes.get(ns0) match {
+          case None =>
+            // Case 1: The namespace does not yet exist. So the class does not yet exist.
+            val clazz = visitClassDecl(decl, ns0)
+            val classes = Map(ident.name -> clazz)
+            prog0.copy(classes = prog0.classes + (ns0 -> classes)).toSuccess
+          case Some(classes0) =>
+            // Case 2: The namespace exists. Lookup the class.
+            classes0.get(ident.name) match {
+              case None =>
+                // Case 2.1: The class does not exist in the namespace. Update it.
+                val clazz = visitClassDecl(decl, ns0)
+                val classes = classes0 + (ident.name -> clazz)
+                prog0.copy(classes = prog0.classes + (ns0 -> classes)).toSuccess
+              case Some(clazz) =>
+                // Case 2.2: Duplicate class.
+                val loc1 = clazz.head.qname.ident.loc
+                val loc2 = ident.loc
+                NameError.DuplicateClass(ident.name, loc1, loc2).toFailure
+            }
+        }
+
+      //
+      // Impl.
+      //
+      case WeededAst.Declaration.Impl(doc, mod, head0, body0, defs0, loc) =>
+        // Compute the free type variables in the head and body atoms.
+        val freeTypeVars: List[Name.Ident] = freeVars(head0) ++ (body0 flatMap freeVars)
+
+        // Introduce a fresh type variable for each free identifier.
+        val tenv0 = typeEnvFromFreeVars(freeTypeVars)
+
+        // Perform naming on the head and body class atoms.
+        val head = visitComplexClass(head0, ns0, tenv0)
+        val body = body0.map(b => visitComplexClass(b, ns0, tenv0))
+
+        // Perform naming on the definitions in the implementation.
+        val defs = Nil // TODO: must compute the defs.
+
+        // Reassemble the implementation.
+        val impl = NamedAst.Impl(doc, mod, head, body, defs, loc)
+
+        // Reassemble the implementations in the namespace.
+        val implsInNs = impl :: prog0.impls.getOrElse(ns0, Nil)
+        prog0.copy(impls = prog0.impls + (ns0 -> implsInNs)).toSuccess
+
+      //
+      // Disallow.
+      //
+      case WeededAst.Declaration.Disallow(doc, body0, loc) =>
+        // Compute the free type variables in the body atoms.
+        val freeTypeVars: List[Name.Ident] = body0 flatMap freeVars
+
+        // Introduce a fresh type variable for each free identifier.
+        val tenv0 = typeEnvFromFreeVars(freeTypeVars)
+
+        // Perform naming on the body class atoms.
+        val body = body0.map(b => visitComplexClass(b, ns0, tenv0))
+
+        // TODO: Decide if these should be separate or go with the impls?
+        prog0.toSuccess
+
       /*
        * Relation.
        */
@@ -272,7 +387,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
                 prog0.copy(tables = prog0.tables + (ns0 -> tables)).toSuccess
               case Some(table) =>
                 // Case 2.2: Duplicate definition.
-                DuplicateDefinition(ident.name, table.loc, ident.loc).toFailure
+                DuplicateDef(ident.name, table.loc, ident.loc).toFailure
             }
         }
 
@@ -297,7 +412,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
                 prog0.copy(tables = prog0.tables + (ns0 -> tables)).toSuccess
               case Some(table) =>
                 // Case 2.2: Duplicate definition.
-                DuplicateDefinition(ident.name, table.loc, ident.loc).toFailure
+                DuplicateDef(ident.name, table.loc, ident.loc).toFailure
             }
         }
 
@@ -311,6 +426,92 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
         macc + (name -> NamedAst.Case(enum, tag, Types.namer(tpe, tenv0)))
     }
 
+    /**
+      * Performs naming on the given class declaration `decl0` in the given namespace `ns0`.
+      */
+    def visitClassDecl(decl0: Declaration.Class, ns0: Name.NName)(implicit genSym: GenSym): NamedAst.Class = decl0 match {
+      case Declaration.Class(doc, mod, head0, body0, sigs0, laws0, loc) =>
+        // Compute the free type variables in the head and body atoms.
+        val freeTypeVars = freeVars(head0) ::: (body0 flatMap freeVars)
+
+        // Introduce a fresh type variable for each free identifier.
+        val tenv0 = typeEnvFromFreeVars(freeTypeVars)
+
+        // TODO
+        val ident = decl0.head.qname.ident
+        val sym = Symbol.mkClassSym(ns0, ident)
+        val quantifiers = tenv0.values.toList
+        val head = visitSimpleClass(head0, ns0, tenv0)
+        val body = body0.map(visitSimpleClass(_, ns0, tenv0))
+        val sigs = sigs0.map(visitSig(_, sym, tenv0, ns0))
+        val laws = Nil
+        NamedAst.Class(doc, mod, sym, quantifiers, head, body, sigs, laws, loc)
+    }
+
+    /**
+      * Performs naming on the given signature declaration `sig0` in the given namespace `ns0`.
+      */
+    def visitSig(sig0: WeededAst.Declaration.Sig, classSym: Symbol.ClassSym, tenv0: Map[String, Type.Var], ns0: Name.NName)(implicit genSym: GenSym): NamedAst.Sig = sig0 match {
+      case WeededAst.Declaration.Sig(doc, ann, mod, ident, tparams0, fparams0, tpe, eff, loc) =>
+        val sym = Symbol.mkSigSym(classSym, ident)
+        val tparams = getTypeParams(tparams0)
+        val tenv = tenv0 ++ getTypeEnv(tparams)
+        val fparams = getFormalParams(fparams0, tenv)
+        val sc = getScheme(tparams, tpe, tenv)
+        NamedAst.Sig(doc, ann, mod, sym, tparams, fparams, sc, eff, loc)
+    }
+
+    /**
+      * Performs naming on the given simple class atom `a`.
+      */
+    def visitSimpleClass(a: WeededAst.SimpleClass, ns0: Name.NName, tenv0: Map[String, Type.Var]): NamedAst.SimpleClass = a match {
+      case WeededAst.SimpleClass(qname, targs0, loc) =>
+        val targs = targs0.map(ident => tenv0(ident.name))
+        NamedAst.SimpleClass(qname, targs, loc)
+    }
+
+    /**
+      * Performs naming on the given complex class atom `a`.
+      */
+    def visitComplexClass(a: WeededAst.ComplexClass, ns0: Name.NName, tenv0: Map[String, Type.Var])(implicit genSym: GenSym): NamedAst.ComplexClass = a match {
+      case WeededAst.ComplexClass(qname, polarity, targs0, loc) =>
+        val targs = targs0.map(t => Types.namer(t, tenv0))
+        NamedAst.ComplexClass(qname, polarity, targs, loc)
+    }
+
+    /**
+      * Returns the free variables in the given simple class atom `a`.
+      */
+    def freeVars(a: WeededAst.SimpleClass): List[Name.Ident] = a.args
+
+    /**
+      * Returns the free variables in the given complex class atom `a`.
+      */
+    def freeVars(a: WeededAst.ComplexClass): List[Name.Ident] = a.args.flatMap(freeVars)
+
+    /**
+      * Returns the free variables in the given type `tpe`.
+      */
+    def freeVars(tpe: WeededAst.Type): List[Name.Ident] = tpe match {
+      case WeededAst.Type.Var(ident, loc) => ident :: Nil
+      case WeededAst.Type.Ambiguous(qname, loc) => Nil
+      case WeededAst.Type.Unit(loc) => Nil
+      case WeededAst.Type.Tuple(elms, loc) => elms.flatMap(freeVars)
+      case WeededAst.Type.Native(fqm, loc) => Nil
+      case WeededAst.Type.Arrow(tparams, retType, loc) => tparams.flatMap(freeVars) ::: freeVars(retType)
+      case WeededAst.Type.Apply(tpe1, tpe2, loc) => freeVars(tpe1) ++ freeVars(tpe2)
+    }
+
+    /**
+      * Returns a fresh type environment constructed from the given identifiers `idents`.
+      */
+    def typeEnvFromFreeVars(idents: List[Name.Ident])(implicit genSym: GenSym): Map[String, Type.Var] =
+      idents.foldLeft(Map.empty[String, Type.Var]) {
+        case (macc, ident) => macc.get(ident.name) match {
+          case None => macc + (ident.name -> Type.freshTypeVar())
+          case Some(tvar) => macc
+        }
+      }
   }
 
   object Expressions {
@@ -925,5 +1126,45 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
       case (None, _) => true
       case (Some(clazz1), clazz2) => clazz1 == clazz2
     }
+
+  /**
+    * Performs naming on the given formal parameters `fparam0` under the given type environment `tenv0`.
+    */
+  def getFormalParams(fparams0: List[WeededAst.FormalParam], tenv0: Map[String, Type.Var])(implicit genSym: GenSym): List[NamedAst.FormalParam] = {
+    fparams0.map(p => Params.namer(p, tenv0))
+  }
+
+  /**
+    * Performs naming on the given type parameters `tparams0`.
+    */
+  def getTypeParams(tparams0: List[Name.Ident])(implicit genSym: GenSym): List[NamedAst.TypeParam] = tparams0 map {
+    case p =>
+      // Generate a fresh type variable for the type parameter.
+      val tvar = Type.freshTypeVar()
+      // Remember the original textual name.
+      tvar.setText(p.name)
+      NamedAst.TypeParam(p, tvar, p.loc)
+  }
+
+  /**
+    * Returns a variable environment constructed from the given formal parameters `fparams0`.
+    */
+  def getVarEnv(fparams0: List[NamedAst.FormalParam]): Map[String, Symbol.VarSym] = {
+    fparams0.map(p => p.sym.text -> p.sym).toMap
+  }
+
+  /**
+    * Returns a type environment constructed from the given type parameters `tparams0`.
+    */
+  def getTypeEnv(tparams0: List[NamedAst.TypeParam]): Map[String, Type.Var] = {
+    tparams0.map(p => p.name.name -> p.tpe).toMap
+  }
+
+  /**
+    * Returns the type scheme for the given type parameters `tparams0` and type `tpe` under the given type environment `tenv0`.
+    */
+  def getScheme(tparams0: List[NamedAst.TypeParam], tpe: WeededAst.Type, tenv0: Map[String, Type.Var])(implicit genSym: GenSym): NamedAst.Scheme = {
+    NamedAst.Scheme(tparams0.map(_.tpe), Types.namer(tpe, tenv0))
+  }
 
 }

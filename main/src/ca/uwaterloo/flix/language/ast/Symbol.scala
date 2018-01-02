@@ -96,6 +96,13 @@ object Symbol {
   }
 
   /**
+    * Returns the effect symbol for the given name `ident` in the given namespace `ns`.
+    */
+  def mkEffSym(ns: NName, ident: Ident): EffSym = {
+    new EffSym(ns.parts, ident.name, ident.loc)
+  }
+
+  /**
     * Returns the enum symbol for the given name `ident` in the given namespace `ns`.
     */
   def mkEnumSym(ns: NName, ident: Ident): EnumSym = {
@@ -111,17 +118,10 @@ object Symbol {
   }
 
   /**
-    * Returns the class symbol for the given name `ident`.
+    * Returns the class symbol for the given name `ident` in the given namespace `ns`.
     */
-  def mkClassSym(ident: Ident): ClassSym = {
-    new ClassSym(ident.name, ident.loc)
-  }
-
-  /**
-    * Returns the impl symbol for the given name `ident` in the given namespace `ns`.
-    */
-  def mkImplSym(ident: Ident): ImplSym = {
-    new ImplSym(ident.name, ident.loc)
+  def mkClassSym(ns: NName, ident: Ident): ClassSym = {
+    new ClassSym(ns.parts, ident.name, ident.loc)
   }
 
   /**
@@ -137,6 +137,13 @@ object Symbol {
   def mkHoleSym(fqn: String): HoleSym = split(fqn) match {
     case None => new HoleSym(Nil, fqn, SourceLocation.Unknown)
     case Some((ns, name)) => new HoleSym(ns, name, SourceLocation.Unknown)
+  }
+
+  /**
+    * Returns the signature symbol for the given name `ident` in the class associated with the given class symbol `classSym`.
+    */
+  def mkSigSym(classSym: ClassSym, ident: Name.Ident): SigSym = {
+    new SigSym(classSym, ident.name, ident.loc)
   }
 
   /**
@@ -279,6 +286,28 @@ object Symbol {
     override def toString: String = if (namespace.isEmpty) name else namespace.mkString("/") + "." + name
   }
 
+  /**
+    * Effect Symbol.
+    */
+  final class EffSym(val namespace: List[String], val name: String, val loc: SourceLocation) {
+    /**
+      * Returns `true` if this symbol is equal to `that` symbol.
+      */
+    override def equals(obj: scala.Any): Boolean = obj match {
+      case that: EffSym => this.namespace == that.namespace && this.name == that.name
+      case _ => false
+    }
+
+    /**
+      * Returns the hash code of this symbol.
+      */
+    override val hashCode: Int = 7 * namespace.hashCode() + 11 * name.hashCode
+
+    /**
+      * Human readable representation.
+      */
+    override def toString: String = if (namespace.isEmpty) name else namespace.mkString("/") + "." + name
+  }
 
   /**
     * Enum Symbol.
@@ -306,47 +335,47 @@ object Symbol {
   /**
     * Class Symbol.
     */
-  final class ClassSym(val name: String, val loc: SourceLocation) {
+  final class ClassSym(val namespace: List[String], val name: String, val loc: SourceLocation) {
     /**
       * Returns `true` if this symbol is equal to `that` symbol.
       */
     override def equals(obj: scala.Any): Boolean = obj match {
-      case that: ClassSym => this.name == that.name
+      case that: ClassSym => this.namespace == that.namespace && this.name == that.name
       case _ => false
     }
 
     /**
       * Returns the hash code of this symbol.
       */
-    override val hashCode: Int = 7 * name.hashCode
+    override val hashCode: Int = 7 * namespace.hashCode + 11 * name.hashCode
 
     /**
       * Human readable representation.
       */
-    override def toString: String = name
+    override def toString: String = if (namespace.isEmpty) name else namespace.mkString("/") + "." + name
   }
 
   /**
-    * Impl Symbol.
+    * Signature Symbol.
     */
-  final class ImplSym(val name: String, val loc: SourceLocation) {
+  final class SigSym(val clazz: Symbol.ClassSym, val name: String, val loc: SourceLocation) {
     /**
       * Returns `true` if this symbol is equal to `that` symbol.
       */
     override def equals(obj: scala.Any): Boolean = obj match {
-      case that: ImplSym => this.name == that.name
+      case that: SigSym => this.clazz == that.clazz && this.name == that.name
       case _ => false
     }
 
     /**
       * Returns the hash code of this symbol.
       */
-    override val hashCode: Int = 7 * name.hashCode
+    override val hashCode: Int = 7 * clazz.hashCode + 11 * name.hashCode
 
     /**
       * Human readable representation.
       */
-    override def toString: String = name
+    override def toString: String = if (clazz.namespace.isEmpty) name else clazz.namespace.mkString("/") + "." + name
   }
 
   /**

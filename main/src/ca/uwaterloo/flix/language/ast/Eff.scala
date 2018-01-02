@@ -19,6 +19,8 @@ package ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.tc.Show
 
+// TODO: Likely rename to Purity?
+
 /**
   * Represents the computational effect of an expression.
   */

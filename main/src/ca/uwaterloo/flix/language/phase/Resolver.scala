@@ -47,11 +47,43 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
       }
     }
 
+    val effsVal = prog0.effs.flatMap {
+      case (ns0, effs) => effs.map {
+        case (_, eff) => resolveEff(eff, ns0, prog0) map {
+          case d => d.sym -> d
+        }
+      }
+    }
+
+    val handlersVal = prog0.handlers.flatMap {
+      case (ns0, handlers) => handlers.map {
+        case (_, handler) => resolveHandler(handler, ns0, prog0) map {
+          case d => d.sym -> d
+        }
+      }
+    }
+
+    val classesVal = prog0.classes.flatMap {
+      case (ns0, classes) => classes.map {
+        case (_, clazz) => resolveClass(clazz, ns0, prog0) map {
+          case c => c.head.sym -> c
+        }
+      }
+    }
+
+    val implsVal = prog0.impls.flatMap {
+      case (ns0, impls) => impls.map {
+        case impl => resolveImpl(impl, ns0, prog0) map {
+          case c => c.head.sym -> c
+        }
+      }
+    }
+
     val namedVal = prog0.named.map {
       case (sym, exp0) => Expressions.resolve(exp0, Name.RootNS, prog0).map {
         case exp =>
           // Introduce a synthetic definition for the expression.
-          val doc = None
+          val doc = Ast.Doc(Nil, SourceLocation.Unknown)
           val ann = Ast.Annotations.Empty
           val mod = Ast.Modifiers.Empty
           val tparams = Nil
@@ -108,15 +140,21 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
 
     for {
       definitions <- seqM(definitionsVal)
+      effs <- seqM(effsVal)
+      handlers <- seqM(handlersVal)
+      _ <- checkDefaultHandlers(effs, handlers)
       named <- seqM(namedVal)
       enums <- seqM(enumsVal)
+      classes <- seqM(classesVal)
+      impls <- seqM(implsVal)
       lattices <- seqM(latticesVal)
       indexes <- seqM(indexesVal)
       tables <- seqM(tablesVal)
       constraints <- seqM(constraintsVal)
       properties <- seqM(propertiesVal)
-    } yield ResolvedAst.Program(definitions.toMap ++ named.toMap, enums.toMap, lattices.toMap, indexes.toMap, tables.toMap, constraints.flatten, properties.flatten, prog0.reachable, prog0.time.copy(resolver = e))
-
+    } yield ResolvedAst.Program(
+      definitions.toMap ++ named.toMap, enums.toMap, classes.toMap, impls.toMap, lattices.toMap, indexes.toMap,
+      tables.toMap, constraints.flatten, properties.flatten, prog0.reachable, prog0.time.copy(resolver = e))
   }
 
   object Constraints {
@@ -144,18 +182,45 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
   /**
     * Performs name resolution on the given definition `d0` in the given namespace `ns0`.
     */
-  def resolve(d0: NamedAst.Def, ns0: Name.NName, prog0: NamedAst.Program)(implicit genSym: GenSym): Validation[ResolvedAst.Def, ResolutionError] = {
-    val schemeVal = for {
-      base <- lookupType(d0.sc.base, ns0, prog0)
-    } yield Scheme(d0.sc.quantifiers, base)
+  def resolve(d0: NamedAst.Def, ns0: Name.NName, prog0: NamedAst.Program)(implicit genSym: GenSym): Validation[ResolvedAst.Def, ResolutionError] = d0 match {
+    case NamedAst.Def(doc, ann, mod, sym, tparams0, fparams0, exp0, sc0, eff0, loc) =>
+      for {
+        fparams <- resolveFormalParams(fparams0, ns0, prog0)
+        tparams <- resolveTypeParams(tparams0, ns0, prog0)
+        exp <- Expressions.resolve(exp0, ns0, prog0)
+        scheme <- resolveScheme(sc0, ns0, prog0)
+      } yield ResolvedAst.Def(doc, ann, mod, sym, tparams, fparams, exp, scheme, eff0, loc)
+  }
 
-    for {
-      tparams <- seqM(d0.tparams.map(tparam => Params.resolve(tparam, ns0, prog0)))
-      fparams <- seqM(d0.fparams.map(fparam => Params.resolve(fparam, ns0, prog0)))
-      e <- Expressions.resolve(d0.exp, ns0, prog0)
-      sc <- schemeVal
-    } yield ResolvedAst.Def(d0.doc, d0.ann, d0.mod, d0.sym, tparams, fparams, e, sc, d0.eff, d0.loc)
+  /**
+    * Performs name resolution on the given effect `eff0` in the given namespace `ns0`.
+    */
+  def resolveEff(eff0: NamedAst.Eff, ns0: Name.NName, prog0: NamedAst.Program)(implicit genSym: GenSym): Validation[ResolvedAst.Eff, ResolutionError] = eff0 match {
+    case NamedAst.Eff(doc, ann, mod, sym, tparams0, fparams0, sc0, eff0, loc) =>
+      for {
+        fparams <- resolveFormalParams(fparams0, ns0, prog0)
+        tparams <- resolveTypeParams(tparams0, ns0, prog0)
+        scheme <- resolveScheme(sc0, ns0, prog0)
+      } yield ResolvedAst.Eff(doc, ann, mod, sym, tparams, fparams, scheme, eff0, loc)
+  }
 
+  /**
+    * Performs name resolution on the given handler `handler0` in the given namespace `ns0`.
+    */
+  def resolveHandler(handler0: NamedAst.Handler, ns0: Name.NName, prog0: NamedAst.Program)(implicit genSym: GenSym): Validation[ResolvedAst.Handler, ResolutionError] = handler0 match {
+    case NamedAst.Handler(doc, ann, mod, ident, tparams0, fparams0, exp0, sc0, eff, loc) =>
+
+      val qname = Name.mkQName(ident)
+
+      // TODO: Rest
+
+      for {
+        sym <- lookupEff(qname, ns0, prog0)
+        fparams <- resolveFormalParams(fparams0, ns0, prog0)
+        tparams <- resolveTypeParams(tparams0, ns0, prog0)
+        exp <- Expressions.resolve(exp0, ns0, prog0)
+        scheme <- resolveScheme(sc0, ns0, prog0)
+      } yield ResolvedAst.Handler(sym) // TODO
   }
 
   /**
@@ -174,6 +239,65 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
       cases <- seqM(casesVal)
       tpe <- lookupType(e0.tpe, ns0, prog0)
     } yield ResolvedAst.Enum(e0.doc, e0.mod, e0.sym, tparams, cases.toMap, tpe, e0.loc)
+  }
+
+  /**
+    * Performs name resolution on the given class `clazz0` in the given namespace `ns0`.
+    */
+  def resolveClass(clazz0: NamedAst.Class, ns0: Name.NName, prog0: NamedAst.Program): Validation[ResolvedAst.Class, ResolutionError] = clazz0 match {
+    case NamedAst.Class(doc, mod, sym, quantifiers, head0, body0, sigs0, laws, loc) =>
+      for {
+        head <- resolveSimpleClass(head0, ns0, prog0)
+        body <- seqM(body0.map(resolveSimpleClass(_, ns0, prog0)))
+        sigs <- seqM(sigs0.map(resolveSig(_, ns0, prog0)))
+      } yield {
+        ResolvedAst.Class(doc, mod, sym, quantifiers, head, body, /* TODO */ Map.empty, /* TODO */ Nil, loc)
+      }
+  }
+
+  /**
+    * Performs name resolution on the given impl constraint `impl0` in the given namespace `ns0`.
+    */
+  def resolveImpl(impl0: NamedAst.Impl, ns0: Name.NName, prog0: NamedAst.Program): Validation[ResolvedAst.Impl, ResolutionError] = impl0 match {
+    case NamedAst.Impl(doc, mod, head0, body0, defs, loc) =>
+      for {
+        head <- resolveComplexClass(head0, ns0, prog0)
+        body <- seqM(body0.map(resolveComplexClass(_, ns0, prog0)))
+      } yield {
+        ResolvedAst.Impl(doc, mod, head, body, /* TODO */ Nil, loc)
+      }
+  }
+
+  /**
+    * Performs name resolution on the given simple class atom `a` in the given namespace `ns0`.
+    */
+  def resolveSimpleClass(a: NamedAst.SimpleClass, ns0: Name.NName, prog0: NamedAst.Program): Validation[ResolvedAst.SimpleClass, ResolutionError] = a match {
+    case NamedAst.SimpleClass(qname, args, loc) =>
+      for {
+        sym <- lookupClass(qname, ns0, prog0)
+      } yield {
+        ResolvedAst.SimpleClass(sym, args, loc)
+      }
+  }
+
+  /**
+    * Performs name resolution on the given complex class atom `a` in the given namespace `ns0`.
+    */
+  def resolveComplexClass(a: NamedAst.ComplexClass, ns0: Name.NName, prog0: NamedAst.Program): Validation[ResolvedAst.ComplexClass, ResolutionError] = a match {
+    case NamedAst.ComplexClass(qname, polarity, args, loc) =>
+      for {
+        sym <- lookupClass(qname, ns0, prog0)
+        ts <- seqM(args.map(lookupType(_, ns0, prog0)))
+      } yield {
+        ResolvedAst.ComplexClass(sym, polarity, ts, loc)
+      }
+  }
+
+  /**
+    * Performs name resolution on the given signature `sig0` in the given namespace `ns0`.
+    */
+  def resolveSig(sig0: NamedAst.Sig, ns0: Name.NName, prog0: NamedAst.Program): Validation[ResolvedAst.Sig, ResolutionError] = {
+    ResolvedAst.Sig().toSuccess
   }
 
   /**
@@ -623,6 +747,28 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
   }
 
   /**
+    * Performs name resolution on the given formal parameters `fparams0`.
+    */
+  def resolveFormalParams(fparams0: List[NamedAst.FormalParam], ns0: Name.NName, prog0: NamedAst.Program): Validation[List[ResolvedAst.FormalParam], ResolutionError] = {
+    seqM(fparams0.map(fparam => Params.resolve(fparam, ns0, prog0)))
+  }
+
+  /**
+    * Performs name resolution on the given type parameters `tparams0`.
+    */
+  def resolveTypeParams(tparams0: List[NamedAst.TypeParam], ns0: Name.NName, prog0: NamedAst.Program): Validation[List[ResolvedAst.TypeParam], ResolutionError] =
+    seqM(tparams0.map(tparam => Params.resolve(tparam, ns0, prog0)))
+
+  /**
+    * Performs name resolution on the given scheme `sc0`.
+    */
+  def resolveScheme(sc0: NamedAst.Scheme, ns0: Name.NName, prog0: NamedAst.Program): Validation[Scheme, ResolutionError] = {
+    for {
+      base <- lookupType(sc0.base, ns0, prog0)
+    } yield Scheme(sc0.quantifiers, base)
+  }
+
+  /**
     * The result of a definition lookup.
     */
   sealed trait DefTarget
@@ -747,6 +893,115 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
     }
   }
 
+  // TODO: Move
+  /**
+    * Ensures that every declared effect in `effs` has one handler in `handlers`.
+    */
+  def checkDefaultHandlers(effs: List[(Symbol.EffSym, ResolvedAst.Eff)], handlers: List[(Symbol.EffSym, ResolvedAst.Handler)]): Validation[Unit, ResolutionError] = {
+    //
+    // Compute the declared and handled effects.
+    //
+    val declaredEffects = effs.map(_._1)
+    val declaredHandlers = handlers.map(_._1)
+
+    //
+    // Check if there are any unhandled effects.
+    //
+    val unhandledEffects = declaredEffects.toSet -- declaredHandlers.toSet
+    if (unhandledEffects.isEmpty)
+      ().toSuccess
+    else
+      ResolutionError.UnhandledEffect(unhandledEffects.head).toFailure
+  }
+
+  /**
+    * Finds the given effect with the qualified name `qname` in the namespace `ns0`.
+    */
+  // TODO: Move
+  def lookupEff(qname: Name.QName, ns0: Name.NName, prog0: NamedAst.Program): Validation[Symbol.EffSym, ResolutionError] = {
+
+    // TODO: Replace by real implementation.
+
+    prog0.effs.getOrElse(ns0, Map.empty).get(qname.ident.name) match {
+      case Some(eff) =>
+        eff.sym.toSuccess
+      case None =>
+        ResolutionError.UndefinedEff(qname, ns0, qname.loc).toFailure
+    }
+  }
+
+  /**
+    * Finds the class with the qualified name `qname` in the namespace `ns0`.
+    */
+  // TODO: Move
+  def lookupClass(qname: Name.QName, ns0: Name.NName, prog0: NamedAst.Program): Validation[Symbol.ClassSym, ResolutionError] = {
+    // Check whether the name is fully-qualified.
+    if (qname.isUnqualified) {
+      // Lookup in the current namespace.
+      prog0.classes.getOrElse(ns0, Map.empty).get(qname.ident.name) match {
+        case Some(clazz) =>
+          // Case 1.1 : The class is defined in the current namespace.
+          getClassIfAccessible(clazz, ns0, qname.loc).map(_.sym)
+        case None =>
+          // Case 1.2: The class was not found in the current namespace.
+          // Try the root namespace.
+          prog0.classes.getOrElse(Name.RootNS, Map.empty).get(qname.ident.name) match {
+            case Some(clazz) =>
+              // Case 1.2.1: The class is defined in the root namespace.
+              getClassIfAccessible(clazz, ns0, qname.loc).map(_.sym)
+            case None =>
+              // Case 1.2.2: The class was not found. Neither in the current namespace nor in the root namespace.
+              ResolutionError.UndefinedClass(qname, qname.namespace, qname.loc).toFailure
+          }
+      }
+    } else {
+      // Lookup in the qualified namespace.
+      prog0.classes.getOrElse(qname.namespace, Map.empty).get(qname.ident.name) match {
+        case Some(clazz) =>
+          // Case 2.1: The class was found in the qualified namespace.
+          getClassIfAccessible(clazz, ns0, qname.loc).map(_.sym)
+        case None =>
+          // Case 2.2: The class was not found in the qualified namespace.
+          ResolutionError.UndefinedClass(qname, qname.namespace, qname.loc).toFailure
+      }
+    }
+  }
+
+  /**
+    * TODO: DOC
+    */
+  // TODO: Can you access a signature by qualified name???
+  def lookupSig(ident: Name.Ident, ns0: Name.NName, prog0: NamedAst.Program): Validation[Option[Symbol.SigSym], ResolutionError] = {
+    // Compute all classes visible in the current namespace.
+    val classes = getClassesInScope()
+
+    // A mutable collection of candidate signatures.
+    val candidates = mutable.Set.empty[Symbol.SigSym]
+
+    // Look through each class to see if it contains a usable signature.
+    for (NamedAst.Class(doc, mod, sym, quantifiers, head, body, sigs, laws, loc) <- classes) {
+      for (NamedAst.Sig(doc, ann, mod, sym, tparams, fparams, sc, eff, loc) <- sigs) {
+        // TODO: If ....
+      }
+    }
+
+    // Check how many candidate signatures were found.
+    if (candidates.isEmpty) {
+      // Case 1: No candidate signatures.
+      None.toSuccess
+    } else if (candidates.size == 1) {
+      // Case 2: Exactly one candidate signature.
+      Some(candidates.head).toSuccess
+    } else {
+      // Case 3: Multiple candidate signatures.
+      // TODO: Ambiguius
+      ???
+    }
+  }
+
+  // TODO: DOC
+  def getClassesInScope(): List[NamedAst.Class] = Nil
+
   /**
     * Returns `true` iff the given type `tpe0` is the Unit type.
     */
@@ -824,6 +1079,37 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
         tpe2 <- lookupType(targ0, ns0, prog0)
       ) yield Type.Apply(tpe1, tpe2)
 
+  }
+
+  /**
+    * Successfully returns the given class `clazz0` if it is accessible from the given namespace `ns0`.
+    *
+    * Otherwise fails with a resolution error.
+    *
+    * A class `clazz0` is accessible from a namespace `ns0` if:
+    *
+    * (a) the class is marked public, or
+    * (b) the class is defined in the namespace `ns0` itself or in a parent of `ns0`.
+    */
+  def getClassIfAccessible(class0: NamedAst.Class, ns0: Name.NName, loc: SourceLocation): Validation[NamedAst.Class, ResolutionError] = {
+    //
+    // Check if the definition is marked public.
+    //
+    if (class0.mod.isPublic)
+      return class0.toSuccess
+
+    //
+    // Check if the definition is defined in `ns0` or in a parent of `ns0`.
+    //
+    val prefixNs = class0.sym.namespace
+    val targetNs = ns0.idents.map(_.name)
+    if (targetNs.startsWith(prefixNs))
+      return class0.toSuccess
+
+    //
+    // The definition is not accessible.
+    //
+    ResolutionError.InaccessibleClass(class0.sym, ns0, loc).toFailure
   }
 
   /**

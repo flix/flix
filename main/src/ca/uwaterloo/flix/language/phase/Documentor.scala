@@ -22,9 +22,9 @@ import java.nio.file.{Files, Path, Paths}
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.TypedAst._
-import ca.uwaterloo.flix.language.ast.{Ast, Type, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Type, TypedAst}
 import ca.uwaterloo.flix.util.Validation._
-import ca.uwaterloo.flix.util.{InternalCompilerException, LocalResource, StreamOps, Validation}
+import ca.uwaterloo.flix.util.{LocalResource, StreamOps, Validation}
 import org.json4s.JsonAST._
 import org.json4s.native.JsonMethods
 
@@ -172,7 +172,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
       JField("tparams", JArray(tparams)),
       JField("fparams", JArray(fparams)),
       JField("result", JString(returnType)),
-      JField("comment", JString(getComment(d.doc)))
+      JField("comment", JString(d.doc.text))
     ))
 
   }
@@ -183,7 +183,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
   private def mkEnum(e: TypedAst.Enum): JObject = {
     JObject(List(
       JField("name", JString(e.sym.name)),
-      JField("comment", JString(getComment(e.doc)))
+      JField("comment", JString(e.doc.text))
     ))
   }
 
@@ -201,7 +201,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     JObject(List(
       JField("name", JString(r.sym.name)),
       JField("attributes", JArray(attributes)),
-      JField("comment", JString(getComment(r.doc)))
+      JField("comment", JString(r.doc.text))
     ))
   }
 
@@ -219,7 +219,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     JObject(List(
       JField("name", JString(l.sym.name)),
       JField("attributes", JArray(attributes)),
-      JField("comment", JString(getComment(l.doc)))
+      JField("comment", JString(l.doc.text))
     ))
   }
 
@@ -248,14 +248,6 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     * Converts the given type into a pretty string.
     */
   private def prettify(t: Type): String = t.toString
-
-  /**
-    * Extract the comment from the given optional documentation.
-    */
-  private def getComment(o: Option[Ast.Documentation]): String = o match {
-    case None => ""
-    case Some(doc) => doc.text
-  }
 
   /**
     * Returns the HTML fragment to use for the given namespace `ns`.
