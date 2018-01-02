@@ -165,10 +165,10 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         // TODO: See if this can be rewritten nicer
         result match {
           case InferMonad(run) =>
-            val subst = getSubstFromParams(defn0.fparams)
-            run(subst) match {
-              case Ok((subst0, resultType)) =>
-                val exp = Expressions.reassemble(defn0.exp, program, subst0)
+            val subst0 = getSubstFromParams(defn0.fparams)
+            run(subst0) match {
+              case Ok((subst, resultType)) =>
+                val exp = Expressions.reassemble(defn0.exp, program, subst)
                 val tparams = getTypeParams(defn0.tparams)
                 val fparams = getFormalParams(defn0.fparams, subst)
                 Ok(TypedAst.Def(defn0.doc, defn0.ann, defn0.mod, defn0.sym, tparams, fparams, exp, resultType, defn0.eff, defn0.loc))
