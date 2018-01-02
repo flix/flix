@@ -62,6 +62,11 @@ object Linker {
       // Evaluate the function body.
       val result = Interpreter.toJava(Interpreter.eval(defn.exp, env0, Map.empty, root))
 
+      // Immediately return the result if it is already a proxy object.
+      if (result.isInstanceOf[ProxyObject]) {
+        return result.asInstanceOf[ProxyObject]
+      }
+
       // Eq, Hash, and toString
       val resultType = defn.tpe.typeArguments.last
       val eq = getEqOp(resultType, root)
