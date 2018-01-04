@@ -718,10 +718,10 @@ object ParsedAst {
       *
       * @param sp1      the position of the first character in the expression.
       * @param base     the base expression.
-      * @param handlers the effect handlers.
+      * @param bindings the effect handler bindings.
       * @param sp2      the position of the last character in the expression.
       */
-    case class HandleWith(sp1: SourcePosition, base: ParsedAst.Expression, handlers: Seq[ParsedAst.EffectHandler], sp2: SourcePosition) extends ParsedAst.Expression
+    case class HandleWith(sp1: SourcePosition, base: ParsedAst.Expression, bindings: Seq[ParsedAst.EffectBinding], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Existentially Quantified Expression.
@@ -1242,12 +1242,12 @@ object ParsedAst {
   case class MatchRule(pat: ParsedAst.Pattern, guard: Option[ParsedAst.Expression], exp: ParsedAst.Expression) extends ParsedAst
 
   /**
-    * An effect handler.
+    * A binding of an effect to a handler expression.
     *
     * @param qname the fully-qualified name of the effect.
     * @param exp   the expression with which to handle the effect.
     */
-  case class EffectHandler(qname: Name.QName, exp: ParsedAst.Expression) extends ParsedAst
+  case class EffectBinding(qname: Name.QName, exp: ParsedAst.Expression) extends ParsedAst
 
   /**
     * Modifier.
