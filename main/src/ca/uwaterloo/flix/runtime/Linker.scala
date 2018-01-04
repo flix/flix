@@ -60,7 +60,7 @@ object Linker {
       val lenv0 = Map.empty[Symbol.LabelSym, Expression]
 
       // Evaluate the function body.
-      val result = Interpreter.toJava(Interpreter.eval(defn.exp, env0, Map.empty, root))
+      val result = Interpreter.toJava(Interpreter.eval(defn.exp, env0, Map.empty, Map.empty, root))
 
       // Immediately return the result if it is already a proxy object.
       if (result.isInstanceOf[ProxyObject]) {
