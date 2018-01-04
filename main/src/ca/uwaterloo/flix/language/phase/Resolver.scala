@@ -553,6 +553,12 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
             e2 <- visit(exp2)
           } yield ResolvedAst.Expression.Assign(e1, e2, tvar, loc)
 
+        case NamedAst.Expression.HandleWith(exp, bindings, tvar, loc) =>
+          for {
+            e <- visit(exp)
+            bs <- resolveHandlerBindings(bindings, ns0, prog0)
+          } yield ResolvedAst.Expression.HandleWith(e, bs, tvar, loc)
+
         case NamedAst.Expression.Existential(fparam, exp, loc) =>
           for {
             fp <- Params.resolve(fparam, ns0, prog0)
@@ -761,6 +767,25 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
     */
   def resolveTypeParams(tparams0: List[NamedAst.TypeParam], ns0: Name.NName, prog0: NamedAst.Program): Validation[List[ResolvedAst.TypeParam], ResolutionError] =
     seqM(tparams0.map(tparam => Params.resolve(tparam, ns0, prog0)))
+
+  /**
+    * Performs name resolution on the given handler bindings `bs0`.
+    */
+  def resolveHandlerBindings(bs0: List[NamedAst.HandlerBinding], ns0: Name.NName, prog0: NamedAst.Program)(implicit genSym: GenSym): Validation[List[ResolvedAst.HandlerBinding], ResolutionError] = {
+    // TODO: Check that there is no overlap?
+    seqM(bs0.map(b => resolveHandlerBindings(b, ns0, prog0)))
+  }
+
+  /**
+    * Performs name resolution on the given handler binding `b0`.
+    */
+  def resolveHandlerBindings(b0: NamedAst.HandlerBinding, ns0: Name.NName, prog0: NamedAst.Program)(implicit genSym: GenSym): Validation[ResolvedAst.HandlerBinding, ResolutionError] = b0 match {
+    case NamedAst.HandlerBinding(qname, exp0) =>
+      for {
+        eff <- lookupEff(qname, ns0, prog0)
+        exp <- Expressions.resolve(exp0, ns0, prog0)
+      } yield ResolvedAst.HandlerBinding(eff.sym, exp)
+  }
 
   /**
     * Performs name resolution on the given scheme `sc0`.

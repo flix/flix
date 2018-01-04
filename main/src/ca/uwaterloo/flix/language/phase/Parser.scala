@@ -751,11 +751,11 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def HandleWith: Rule1[ParsedAst.Expression.HandleWith] = {
-      def EffectHandler: Rule1[ParsedAst.EffectBinding] = rule {
-        atomic("eff") ~ WS ~ Names.QualifiedEffect ~ optWS ~ "=" ~ optWS ~ Expression ~> ParsedAst.EffectBinding
+      def EffectHandler: Rule1[ParsedAst.HandlerBinding] = rule {
+        atomic("eff") ~ WS ~ Names.QualifiedEffect ~ optWS ~ "=" ~ optWS ~ Expression ~> ParsedAst.HandlerBinding
       }
 
-      def HandlerBody: Rule1[Seq[ParsedAst.EffectBinding]] = rule {
+      def HandlerBody: Rule1[Seq[ParsedAst.HandlerBinding]] = rule {
         atomic("{") ~ optWS ~ oneOrMore(EffectHandler).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ atomic("}")
       }
 

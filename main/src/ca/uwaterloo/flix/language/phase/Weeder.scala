@@ -692,9 +692,11 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
             e2 <- visit(exp2, unsafe)
           } yield WeededAst.Expression.Assign(e1, e2, mkSL(sp1, sp2))
 
-        case ParsedAst.Expression.HandleWith(sp1, base, handlers, sp2) =>
-          // TODO
-          WeededAst.Expression.UserError(mkSL(sp1, sp2)).toSuccess
+        case ParsedAst.Expression.HandleWith(sp1, exp, handlers, sp2) =>
+          for {
+            e <- visit(exp, unsafe)
+            bs <- visitHandlers(handlers)
+          } yield WeededAst.Expression.HandleWith(e, bs, mkSL(sp1, sp2))
 
         case ParsedAst.Expression.Existential(sp1, fparams, exp, sp2) =>
           /*
@@ -1309,6 +1311,23 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           val t = WeededAst.Type.Arrow(fs map (_.tpe.get), Types.weed(tpe), loc)
           WeededAst.Declaration.Sig(doc, ann, mod, ident, tparams, fs, t, eff, loc)
       }
+  }
+
+  /**
+    * Weeds the given effect handler bindings `bs0`.
+    */
+  def visitHandlers(bs0: Seq[ParsedAst.HandlerBinding])(implicit flix: Flix): Validation[List[WeededAst.HandlerBinding], WeederError] = {
+    seqM(bs0 map visitHandler)
+  }
+
+  /**
+    * Weeds the given effect handler binding `b0`.
+    */
+  def visitHandler(b0: ParsedAst.HandlerBinding)(implicit flix: Flix): Validation[WeededAst.HandlerBinding, WeederError] = b0 match {
+    case ParsedAst.HandlerBinding(qname, exp) =>
+      for {
+        e <- Expressions.weed(exp)
+      } yield WeededAst.HandlerBinding(qname, e)
   }
 
   /**

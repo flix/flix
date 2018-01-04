@@ -678,6 +678,18 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
           case (e1, e2) => NamedAst.Expression.Assign(e1, e2, Type.freshTypeVar(), loc)
         }
 
+      case WeededAst.Expression.HandleWith(exp, bindings, loc) =>
+        val baseVal = namer(exp, env0, tenv0)
+        val bindingsVal = @@(bindings map {
+          case WeededAst.HandlerBinding(qname, exp) =>
+            namer(exp, env0, tenv0) map {
+              case e => NamedAst.HandlerBinding(qname, e)
+            }
+        })
+        @@(baseVal, bindingsVal) map {
+          case (b, bs) => NamedAst.Expression.HandleWith(b, bs, Type.freshTypeVar(), loc)
+        }
+
       case WeededAst.Expression.Existential(param, exp, loc) =>
         val p = Params.namer(param, tenv0)
         namer(exp, env0 + (p.sym.text -> p.sym), tenv0) map {

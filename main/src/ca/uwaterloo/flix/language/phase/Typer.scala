@@ -867,6 +867,16 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           } yield resultType
 
         /*
+         * Assignment expression.
+         */
+        case ResolvedAst.Expression.HandleWith(exp, bindings, tvar, loc) =>
+          // TODO: Typer: HandleWith: TypeCheck bindings.
+          for {
+            tpe <- visitExp(exp)
+            resultType <- unifyM(tvar, tpe, loc)
+          } yield resultType
+
+        /*
          * Existential expression.
          */
         case ResolvedAst.Expression.Existential(fparam, exp, loc) =>
