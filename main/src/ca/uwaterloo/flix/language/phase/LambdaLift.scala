@@ -17,11 +17,10 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.{CompilationError, GenSym}
-import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expression
+import ca.uwaterloo.flix.language.ast.SimplifiedAst.{Expression, HandlerBinding}
 import ca.uwaterloo.flix.language.ast.{Ast, SimplifiedAst, Symbol}
-import ca.uwaterloo.flix.util.InternalCompilerException
-import ca.uwaterloo.flix.util.Validation
+import ca.uwaterloo.flix.language.{CompilationError, GenSym}
+import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 import ca.uwaterloo.flix.util.Validation._
 
 import scala.collection.mutable
@@ -198,6 +197,12 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         Expression.Deref(visit(exp), tpe, loc)
       case Expression.Assign(exp1, exp2, tpe, loc) =>
         Expression.Assign(visit(exp1), visit(exp2), tpe, loc)
+      case Expression.HandleWith(exp, bindings, tpe, loc) =>
+        val e = visit(exp)
+        val bs = bindings map {
+          case HandlerBinding(sym, body) => HandlerBinding(sym, visit(body))
+        }
+        Expression.HandleWith(e, bs, tpe, loc)
       case Expression.Existential(params, exp, loc) =>
         Expression.Existential(params, visit(exp), loc)
       case Expression.Universal(params, exp, loc) =>

@@ -153,6 +153,7 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.Ref(exp, tpe, loc) => visitExp(exp)
       case Expression.Deref(exp, tpe, loc) => visitExp(exp)
       case Expression.Assign(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2)
+      case Expression.HandleWith(exp, bindings, tpe, loc) => visitExp(exp) ++ visitExps(bindings.map(_.exp))
       case Expression.Existential(fparam, exp, loc) => visitExp(exp)
       case Expression.Universal(fparam, exp, loc) => visitExp(exp)
       case Expression.NativeConstructor(constructor, args, tpe, loc) => visitExps(args)

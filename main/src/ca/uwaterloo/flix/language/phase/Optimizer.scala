@@ -18,12 +18,12 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.{SimplifiedAst, Symbol}
 import ca.uwaterloo.flix.language.ast.SimplifiedAst._
+import ca.uwaterloo.flix.language.ast.{SimplifiedAst, Symbol}
 import ca.uwaterloo.flix.language.debug.PrettyPrinter
-import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.vt._
+import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
 /**
   * The Optimization phase performs intra-procedural optimizations.
@@ -286,6 +286,16 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         val e1 = visitExp(exp1, env0)
         val e2 = visitExp(exp2, env0)
         Expression.Assign(e1, e2, tpe, loc)
+
+      //
+      // HandleWith Expressions.
+      //
+      case Expression.HandleWith(exp, bindings, tpe, loc) =>
+        val e = visitExp(exp, env0)
+        val bs = bindings map {
+          case HandlerBinding(sym, body) => HandlerBinding(sym, visitExp(body, env0))
+        }
+        Expression.HandleWith(e, bs, tpe, loc)
 
       //
       // Existential Expressions.

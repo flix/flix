@@ -256,6 +256,8 @@ object ExecutableAst {
 
     case class Assign(exp1: ExecutableAst.Expression, exp2: ExecutableAst.Expression, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
+    case class HandleWith(exp: ExecutableAst.Expression, bindings: List[ExecutableAst.HandlerBinding], tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
+
     case class Existential(fparam: ExecutableAst.FormalParam, exp: ExecutableAst.Expression, loc: SourceLocation) extends ExecutableAst.Expression {
       def tpe: Type = Type.Bool
     }
@@ -410,5 +412,7 @@ object ExecutableAst {
   case class FormalParam(sym: Symbol.VarSym, tpe: Type) extends ExecutableAst
 
   case class FreeVar(sym: Symbol.VarSym, tpe: Type) extends ExecutableAst
+
+  case class HandlerBinding(sym: Symbol.EffSym, exp: ExecutableAst.Expression) extends ExecutableAst
 
 }

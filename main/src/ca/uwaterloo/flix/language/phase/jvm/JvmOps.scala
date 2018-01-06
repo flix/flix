@@ -781,6 +781,8 @@ object JvmOps {
       case Expression.Deref(exp, tpe, loc) => visitExp(exp)
       case Expression.Assign(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2)
 
+      case Expression.HandleWith(exp, bindings, tpe, loc) => ??? // TODO
+
       case Expression.Existential(fparam, exp, loc) => visitExp(exp)
       case Expression.Universal(fparam, exp, loc) => visitExp(exp)
 

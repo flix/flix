@@ -30,7 +30,7 @@ object Interpreter {
   /**
     * Evaluates the given expression `exp0` under the given environment `env0`.
     */
-  def eval(exp0: Expression, env0: Map[String, AnyRef], henv0: Map[Symbol.EffSym, Handler], lenv0: Map[Symbol.LabelSym, Expression], root: Root)(implicit flix: Flix): AnyRef = exp0 match {
+  def eval(exp0: Expression, env0: Map[String, AnyRef], henv0: Map[Symbol.EffSym, AnyRef], lenv0: Map[Symbol.LabelSym, Expression], root: Root)(implicit flix: Flix): AnyRef = exp0 match {
     //
     // Literal expressions.
     //
@@ -215,6 +215,17 @@ object Interpreter {
       Value.Unit
 
     //
+    // HandleWith expressions.
+    //
+    case Expression.HandleWith(exp, bindings, tpe, loc) =>
+      // Evaluate each handler expression and construct the new handler environment.
+      val henv = bindings.foldLeft(henv0) {
+        case (macc, HandlerBinding(sym, handler)) => macc + (sym -> eval(handler, env0, henv0, lenv0, root))
+      }
+      // Evaluate the expression in the new handler environment.
+      eval(exp, env0, henv, lenv0, root)
+
+    //
     // NativeConstructor expressions.
     //
     case Expression.NativeConstructor(constructor, args, tpe, loc) =>
@@ -261,7 +272,7 @@ object Interpreter {
   /**
     * Applies the given unary semantic operator `sop` to the value of the expression `exp0` under the environment `env0`
     */
-  private def evalUnary(sop: SemanticOperator, exp0: Expression, env0: Map[String, AnyRef], henv0: Map[Symbol.EffSym, Handler], lenv0: Map[Symbol.LabelSym, Expression], root: Root)(implicit flix: Flix): AnyRef = {
+  private def evalUnary(sop: SemanticOperator, exp0: Expression, env0: Map[String, AnyRef], henv0: Map[Symbol.EffSym, AnyRef], lenv0: Map[Symbol.LabelSym, Expression], root: Root)(implicit flix: Flix): AnyRef = {
     // Evaluate the operand.
     val v = eval(exp0, env0, henv0, lenv0, root)
 
@@ -295,7 +306,7 @@ object Interpreter {
   /**
     * Applies the given binary semantic operator `sop`  to the values of the two expressions `exp1` and `exp2` under the environment `env0`
     */
-  private def evalBinary(sop: SemanticOperator, exp1: Expression, exp2: Expression, env0: Map[String, AnyRef], henv0: Map[Symbol.EffSym, Handler], lenv0: Map[Symbol.LabelSym, Expression], root: Root)(implicit flix: Flix): AnyRef = {
+  private def evalBinary(sop: SemanticOperator, exp1: Expression, exp2: Expression, env0: Map[String, AnyRef], henv0: Map[Symbol.EffSym, AnyRef], lenv0: Map[Symbol.LabelSym, Expression], root: Root)(implicit flix: Flix): AnyRef = {
 
     def evalBoolOp(sop: SemanticOperator.BoolOp): AnyRef = {
       // Evaluate the left operand.
@@ -542,7 +553,7 @@ object Interpreter {
   /**
     * Invokes the given closure expression `exp` with the given arguments `args` under the given environment `env0`..
     */
-  private def invokeClo(exp: Expression, args: List[Expression], env0: Map[String, AnyRef], henv0: Map[Symbol.EffSym, Handler], lenv0: Map[Symbol.LabelSym, Expression], root: Root)(implicit flix: Flix): AnyRef = {
+  private def invokeClo(exp: Expression, args: List[Expression], env0: Map[String, AnyRef], henv0: Map[Symbol.EffSym, AnyRef], lenv0: Map[Symbol.LabelSym, Expression], root: Root)(implicit flix: Flix): AnyRef = {
     val v = eval(exp, env0, henv0, lenv0, root)
     val Value.Closure(name, bindings) = cast2closure(v)
     val as = evalArgs(args, env0, henv0, lenv0, root)
@@ -561,7 +572,7 @@ object Interpreter {
   /**
     * Invokes the given definition `sym` with the given arguments `args` under the given environment `env0`.
     */
-  private def invokeDef(sym: Symbol.DefnSym, args: List[Expression], env0: Map[String, AnyRef], henv0: Map[Symbol.EffSym, Handler], lenv0: Map[Symbol.LabelSym, Expression], root: Root)(implicit flix: Flix): AnyRef = {
+  private def invokeDef(sym: Symbol.DefnSym, args: List[Expression], env0: Map[String, AnyRef], henv0: Map[Symbol.EffSym, AnyRef], lenv0: Map[Symbol.LabelSym, Expression], root: Root)(implicit flix: Flix): AnyRef = {
     val as = evalArgs(args, env0, henv0, lenv0, root)
     // TODO: Using the linker here is quite a hack.
     fromJava(Linker.link(sym, root).invoke(as.toArray))
@@ -570,30 +581,35 @@ object Interpreter {
   /**
     * Invokes the given definition `sym` with the given arguments `args` under the given environment `env0`.
     */
-  private def invokeEff(sym: Symbol.EffSym, args: List[Expression], env0: Map[String, AnyRef], henv0: Map[Symbol.EffSym, Handler], lenv0: Map[Symbol.LabelSym, Expression], root: Root)(implicit flix: Flix): AnyRef = {
+  private def invokeEff(sym: Symbol.EffSym, args: List[Expression], env0: Map[String, AnyRef], henv0: Map[Symbol.EffSym, AnyRef], lenv0: Map[Symbol.LabelSym, Expression], root: Root)(implicit flix: Flix): AnyRef = {
     // Evaluate the arguments.
     val as = evalArgs(args, env0, henv0, lenv0, root)
 
-    // Lookup the effect symbol in the handler environment.
-    // If that fails, try the default handlers.
-    val handler = henv0.getOrElse(sym,
-      root.handlers.getOrElse(sym,
-        throw InternalRuntimeException(s"Undefined handler for effect symbol: '$sym'.")))
-
-    // Bind arguments to formal parameters.
-    val env = handler.fparams.zip(as).foldLeft(Map.empty[String, AnyRef]) {
-      case (macc, (fparam, value)) => macc + (fparam.sym.toString -> value)
+    // Lookup the effect symbol in the current handler environment.
+    henv0.get(sym) match {
+      case Some(value) =>
+        // Case 1: Handler found.
+        ???
+      case None =>
+        // Case 2: No handler found. Try the default handler.
+        root.handlers.get(sym) match {
+          case None => throw InternalRuntimeException(s"No default effect handler for: '$sym'.")
+          case Some(handler) =>
+            // Bind arguments to formal parameters.
+            val env = handler.fparams.zip(as).foldLeft(Map.empty[String, AnyRef]) {
+              case (macc, (fparam, value)) => macc + (fparam.sym.toString -> value)
+            }
+            // Evaluate the body of the handler.
+            // TODO: What handler environment should be used here?
+            eval(handler.exp, env, henv0, Map.empty, root)
+        }
     }
-
-    // Evaluate the body of the handler.
-    // TODO: What handler environment should be used here?
-    eval(handler.exp, env, henv0, Map.empty, root)
   }
 
   /**
     * Evaluates the given list of expressions `exps` under the given environment `env0` to a list of values.
     */
-  private def evalArgs(exps: List[Expression], env0: Map[String, AnyRef], henv0: Map[Symbol.EffSym, Handler], lenv0: Map[Symbol.LabelSym, Expression], root: Root)(implicit flix: Flix): List[AnyRef] = {
+  private def evalArgs(exps: List[Expression], env0: Map[String, AnyRef], henv0: Map[Symbol.EffSym, AnyRef], lenv0: Map[Symbol.LabelSym, Expression], root: Root)(implicit flix: Flix): List[AnyRef] = {
     exps.map(a => eval(a, env0, henv0, lenv0, root))
   }
 

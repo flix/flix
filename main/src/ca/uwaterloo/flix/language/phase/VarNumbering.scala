@@ -20,8 +20,8 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.SimplifiedAst._
 import ca.uwaterloo.flix.language.ast.{SimplifiedAst, Type}
-import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 import ca.uwaterloo.flix.util.Validation._
+import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
 /**
   * Assigns stack offsets to each variable symbol in the program.
@@ -155,6 +155,9 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.Assign(exp1, exp2, tpe, loc) =>
         val i1 = visitExp(exp1, i0)
         visitExp(exp2, i1)
+      case Expression.HandleWith(exp, bindings, tpe, loc) =>
+        val i1 = visitExp(exp, i0)
+        visitExps(bindings.map(_.exp), i1)
       case Expression.Existential(params, exp, loc) => visitExp(exp, i0)
       case Expression.Universal(params, exp, loc) => visitExp(exp, i0)
       case Expression.NativeConstructor(constructor, args, tpe, loc) => visitExps(args, i0)

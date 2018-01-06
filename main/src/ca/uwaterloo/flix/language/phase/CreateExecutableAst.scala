@@ -20,8 +20,8 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.{CompilationError, GenSym}
 import ca.uwaterloo.flix.runtime.datastore.ProxyObject
-import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 import ca.uwaterloo.flix.util.Validation._
+import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
 import scala.collection.mutable
 
@@ -249,6 +249,12 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
         val e1 = toExecutable(exp1)
         val e2 = toExecutable(exp2)
         ExecutableAst.Expression.Assign(e1, e2, tpe, loc)
+      case SimplifiedAst.Expression.HandleWith(exp, bindings, tpe, loc) =>
+        val e = toExecutable(exp)
+        val bs = bindings map {
+          case SimplifiedAst.HandlerBinding(sym, body) => ExecutableAst.HandlerBinding(sym, toExecutable(body))
+        }
+        ExecutableAst.Expression.HandleWith(e, bs, tpe, loc)
       case SimplifiedAst.Expression.Existential(fparam, exp, loc) =>
         val p = ExecutableAst.FormalParam(fparam.sym, fparam.tpe)
         ExecutableAst.Expression.Existential(p, toExecutable(exp), loc)
