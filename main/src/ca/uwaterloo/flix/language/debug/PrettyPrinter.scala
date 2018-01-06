@@ -119,6 +119,16 @@ object PrettyPrinter {
             vt.text(", ")
           }
           vt.text(")")
+          vt.text(")")
+
+        case Expression.ApplyEff(sym, args, tpe, loc) =>
+          fmtSym(sym, vt)
+          vt.text("(")
+          for (arg <- args) {
+            visitExp(arg)
+            vt.text(", ")
+          }
+          vt.text(")")
 
         case Expression.ApplyCloTail(exp, args, tpe, loc) =>
           visitExp(exp)
@@ -130,6 +140,15 @@ object PrettyPrinter {
           vt.text(")")
 
         case Expression.ApplyDefTail(sym, args, tpe, loc) =>
+          fmtSym(sym, vt)
+          vt.text("*(")
+          for (arg <- args) {
+            visitExp(arg)
+            vt.text(", ")
+          }
+          vt.text(")")
+
+        case Expression.ApplyEffTail(sym, args, tpe, loc) =>
           fmtSym(sym, vt)
           vt.text("*(")
           for (arg <- args) {
@@ -333,6 +352,10 @@ object PrettyPrinter {
 
     def fmtSym(sym: Symbol.DefnSym, vt: VirtualTerminal): Unit = {
       vt << Blue(sym.toString)
+    }
+
+    def fmtSym(sym: Symbol.EffSym, vt: VirtualTerminal): Unit = {
+      vt << Red(sym.toString)
     }
 
     def fmtSym(sym: Symbol.LabelSym, vt: VirtualTerminal): Unit = {

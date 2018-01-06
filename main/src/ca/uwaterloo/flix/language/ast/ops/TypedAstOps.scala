@@ -1,8 +1,8 @@
 package ca.uwaterloo.flix.language.ast.ops
 
 import ca.uwaterloo.flix.language.ast.Ast.HoleContext
-import ca.uwaterloo.flix.language.ast.{Symbol, Type}
 import ca.uwaterloo.flix.language.ast.TypedAst._
+import ca.uwaterloo.flix.language.ast.{Symbol, Type}
 
 object TypedAstOps {
 
@@ -123,6 +123,11 @@ object TypedAstOps {
 
       case Expression.Assign(exp1, exp2, tpe, eff, loc) =>
         visitExp(exp1, env0) ++ visitExp(exp2, env0)
+
+      case Expression.HandleWith(exp, bindings, tpe, eff, loc) =>
+        bindings.foldLeft(visitExp(exp, env0)) {
+          case (macc, HandlerBinding(sym, body)) => macc ++ visitExp(body, env0)
+        }
 
       case Expression.Existential(fparam, exp, eff, loc) =>
         visitExp(exp, env0 + (fparam.sym -> fparam.tpe))

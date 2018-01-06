@@ -400,6 +400,11 @@ object Effects extends Phase[Root, Root] {
           }
 
         /**
+          * HandleWith Expression.
+          */
+        case Expression.HandleWith(exp, bindings, tpe, eff, loc) => ??? // TODO
+
+        /**
           * Existential Expression.
           */
         case Expression.Existential(fparam, exp, _, loc) =>

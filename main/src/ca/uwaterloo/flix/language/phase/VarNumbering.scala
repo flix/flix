@@ -82,6 +82,7 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.Str(lit) => i0
       case Expression.Var(sym, tpe, loc) => i0
       case Expression.Def(sym, tpe, loc) => i0
+      case Expression.Eff(sym, tpe, loc) => i0
       case Expression.Closure(ref, freeVars, tpe, loc) => i0
       case Expression.ApplyClo(exp, args, tpe, loc) =>
         val i = visitExp(exp, i0)
@@ -92,6 +93,7 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         val i = visitExp(exp, i0)
         visitExps(args, i)
       case Expression.ApplyDefTail(sym, args, tpe, loc) => visitExps(args, i0)
+      case Expression.ApplyEffTail(sym, args, tpe, loc) => visitExps(args, i0)
       case Expression.ApplySelfTail(sym, formals, args, tpe, loc) => visitExps(args, i0)
       case Expression.Unary(sop, op, exp, tpe, loc) => visitExp(exp, i0)
       case Expression.Binary(sop, op, exp1, exp2, tpe, loc) =>

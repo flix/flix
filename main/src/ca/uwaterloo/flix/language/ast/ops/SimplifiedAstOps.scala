@@ -17,8 +17,7 @@
 package ca.uwaterloo.flix.language.ast.ops
 
 import ca.uwaterloo.flix.language.ast.SimplifiedAst._
-import ca.uwaterloo.flix.language.ast.Symbol
-import ca.uwaterloo.flix.language.ast.Type
+import ca.uwaterloo.flix.language.ast.{Symbol, Type}
 
 object SimplifiedAstOps {
 
@@ -305,6 +304,16 @@ object SimplifiedAstOps {
       case Expression.Assign(exp1, exp2, tpe, loc) =>
         checkExp(exp1, env0, ienv0)
         checkExp(exp2, env0, ienv0)
+        checkType(tpe)
+
+      //
+      // HandleWith Expressions.
+      //
+      case Expression.HandleWith(exp, bindings, tpe, loc) =>
+        checkExp(exp, env0, ienv0)
+        for (HandlerBinding(sym, handler) <- bindings) {
+          checkExp(handler, env0, ienv0)
+        }
         checkType(tpe)
 
       //

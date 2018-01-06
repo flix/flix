@@ -76,6 +76,11 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.Def(sym, tpe, loc) => Expression.Def(sym, tpe, loc)
 
       //
+      // Eff Expressions.
+      //
+      case Expression.Eff(sym, tpe, loc) => Expression.Eff(sym, tpe, loc)
+
+      //
       // Closure Expressions.
       //
       case Expression.Closure(sym, freeVars, tpe, loc) =>
@@ -120,6 +125,13 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.ApplyDefTail(sym, args, tpe, loc) =>
         val as = args map (visitExp(_, env0))
         Expression.ApplyDefTail(sym, as, tpe, loc)
+
+      //
+      // ApplyEffTail Expressions.
+      //
+      case Expression.ApplyEffTail(sym, args, tpe, loc) =>
+        val as = args map (visitExp(_, env0))
+        Expression.ApplyEffTail(sym, as, tpe, loc)
 
       //
       // ApplySelfTail Expressions.

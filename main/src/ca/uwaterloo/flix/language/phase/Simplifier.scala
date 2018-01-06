@@ -1052,7 +1052,8 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         case None => SimplifiedAst.Expression.Var(sym, tpe, loc)
         case Some(replacement) => SimplifiedAst.Expression.Var(replacement, tpe, loc)
       }
-      case SimplifiedAst.Expression.Def(name, tpe, loc) => e
+      case SimplifiedAst.Expression.Def(sym, tpe, loc) => e
+      case SimplifiedAst.Expression.Eff(sym, tpe, loc) => e
       case SimplifiedAst.Expression.Lambda(fparams, body, tpe, loc) =>
         SimplifiedAst.Expression.Lambda(fparams, visit(body), tpe, loc)
       case SimplifiedAst.Expression.Apply(exp, args, tpe, loc) =>

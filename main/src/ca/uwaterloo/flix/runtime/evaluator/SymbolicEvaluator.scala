@@ -174,6 +174,11 @@ object SymbolicEvaluator {
         invokeDef(pc0, sym, args, env0, lenv0, qua0)
 
       /**
+        * Apply Eff.
+        */
+      case Expression.ApplyEff(sym, args, _, _) => ??? // TODO
+
+      /**
         * Apply Closure Tail.
         */
       case Expression.ApplyCloTail(exp, args, _, _) =>
@@ -773,6 +778,11 @@ object SymbolicEvaluator {
         * Assignment.
         */
       case Expression.Assign(exp1, exp2, tpe, loc) => ??? // TODO
+
+      /**
+        * HandleWith.
+        */
+      case Expression.HandleWith(exp, bindings, tpe, loc) => ??? // TODO
 
       /**
         * Existential Quantifier.
