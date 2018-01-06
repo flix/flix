@@ -870,9 +870,16 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
          * Assignment expression.
          */
         case ResolvedAst.Expression.HandleWith(exp, bindings, tvar, loc) =>
-          // TODO: Typer: HandleWith: TypeCheck bindings.
+          // TODO: Check that Handlers match their declared signatures.
+
+          val bs = bindings map {
+            case ResolvedAst.HandlerBinding(sym, handler) =>
+              visitExp(handler)
+          }
+
           for {
             tpe <- visitExp(exp)
+            handlers <- seqM(bs)
             resultType <- unifyM(tvar, tpe, loc)
           } yield resultType
 
