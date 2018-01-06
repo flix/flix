@@ -1159,6 +1159,16 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           TypedAst.Expression.Assign(e1, e2, subst0(tvar), Eff.Top, loc)
 
         /*
+         * HandleWith expression.
+         */
+        case ResolvedAst.Expression.HandleWith(exp, bindings, tvar, loc) =>
+          val e = visitExp(exp, subst0)
+          val bs = bindings map {
+            case ResolvedAst.HandlerBinding(sym, e0) => TypedAst.HandlerBinding(sym, visitExp(e0, subst0))
+          }
+          TypedAst.Expression.HandleWith(e, bs, subst0(tvar), Eff.Top, loc)
+
+        /*
          * Existential expression.
          */
         case ResolvedAst.Expression.Existential(fparam, exp, loc) =>

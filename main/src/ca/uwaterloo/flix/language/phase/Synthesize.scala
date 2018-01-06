@@ -17,9 +17,9 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.{CompilationError, ast}
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.{CompilationError, ast}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
@@ -198,6 +198,13 @@ object Synthesize extends Phase[Root, Root] {
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
         Expression.Assign(e1, e2, tpe, eff, loc)
+
+      case Expression.HandleWith(exp, bindings, tpe, eff, loc) =>
+        val e = visitExp(exp)
+        val bs = bindings map {
+          case HandlerBinding(sym, body) => HandlerBinding(sym, visitExp(body))
+        }
+        Expression.HandleWith(e, bs, tpe, eff, loc)
 
       case Expression.Existential(fparam, exp, eff, loc) =>
         val e = visitExp(exp)

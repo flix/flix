@@ -19,8 +19,8 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.util.{InternalCompilerException, Optimization, Validation}
 import ca.uwaterloo.flix.util.Validation._
+import ca.uwaterloo.flix.util.{InternalCompilerException, Optimization, Validation}
 
 import scala.collection.mutable
 
@@ -417,6 +417,13 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
         SimplifiedAst.Expression.Assign(e1, e2, tpe, loc)
+
+      case TypedAst.Expression.HandleWith(exp, bindings, tpe, eff, loc) =>
+        val e = visitExp(exp)
+        val bs = bindings map {
+          case TypedAst.HandlerBinding(sym, body) => SimplifiedAst.HandlerBinding(sym, visitExp(body))
+        }
+        SimplifiedAst.Expression.HandleWith(e, bs, tpe, loc)
 
       case TypedAst.Expression.Existential(fparam, exp, eff, loc) =>
         val p = SimplifiedAst.FormalParam(fparam.sym, fparam.mod, fparam.tpe, fparam.loc)

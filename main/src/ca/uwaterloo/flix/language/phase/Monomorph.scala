@@ -17,10 +17,10 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.{CompilationError, GenSym}
+import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, Pattern, Root}
-import ca.uwaterloo.flix.language.ast.{BinaryOperator, Eff, SourceLocation, Symbol, Type, TypedAst, UnaryOperator}
-import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
+import ca.uwaterloo.flix.language.ast.{BinaryOperator, Symbol, Type, TypedAst, UnaryOperator}
+import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
 
 import scala.collection.mutable
@@ -308,6 +308,13 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           val e1 = visitExp(exp1, env0)
           val e2 = visitExp(exp2, env0)
           Expression.Assign(e1, e2, tpe, eff, loc)
+
+        case Expression.HandleWith(exp, bindings, tpe, eff, loc) =>
+          val e = visitExp(exp, env0)
+          val bs = bindings map {
+            case b => TypedAst.HandlerBinding(b.sym, visitExp(b.exp, env0))
+          }
+          Expression.HandleWith(e, bs, tpe, eff, loc)
 
         case Expression.Existential(fparam, exp, eff, loc) =>
           val (param, env1) = specializeFormalParam(fparam, subst0)

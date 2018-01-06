@@ -217,6 +217,8 @@ object SimplifiedAst {
 
     case class Assign(exp1: SimplifiedAst.Expression, exp2: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
+    case class HandleWith(exp: SimplifiedAst.Expression, bindings: List[SimplifiedAst.HandlerBinding], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
+
     case class Existential(fparam: SimplifiedAst.FormalParam, exp: SimplifiedAst.Expression, loc: SourceLocation) extends SimplifiedAst.Expression {
       def tpe: Type = Type.Bool
     }
@@ -358,5 +360,7 @@ object SimplifiedAst {
   case class FormalParam(sym: Symbol.VarSym, mod: Ast.Modifiers, tpe: Type, loc: SourceLocation) extends SimplifiedAst
 
   case class FreeVar(sym: Symbol.VarSym, tpe: Type) extends SimplifiedAst
+
+  case class HandlerBinding(sym: Symbol.EffSym, exp: SimplifiedAst.Expression) extends SimplifiedAst
 
 }

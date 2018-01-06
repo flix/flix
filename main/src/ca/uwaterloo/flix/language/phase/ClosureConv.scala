@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.language.GenSym
-import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expression
+import ca.uwaterloo.flix.language.ast.SimplifiedAst.{Expression, HandlerBinding}
 import ca.uwaterloo.flix.language.ast.{Ast, SimplifiedAst, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
@@ -97,10 +97,9 @@ object ClosureConv {
       // We do something similar if `e` is a Hook, where we transform Apply to ApplyHook.
       e match {
         case Expression.Def(sym, _, _) => Expression.ApplyDef(sym, args.map(convert), tpe, loc)
-        case Expression.Eff(sym, _, _) =>  Expression.ApplyEff(sym, args.map(convert), tpe, loc)
+        case Expression.Eff(sym, _, _) => Expression.ApplyEff(sym, args.map(convert), tpe, loc)
         case _ => Expression.ApplyClo(convert(e), args.map(convert), tpe, loc)
       }
-
 
 
     case Expression.Unary(sop, op, e, tpe, loc) =>
@@ -174,6 +173,13 @@ object ClosureConv {
       val e1 = convert(exp1)
       val e2 = convert(exp2)
       Expression.Assign(e1, e2, tpe, loc)
+
+    case Expression.HandleWith(exp, bindings, tpe, loc) =>
+      val e = convert(exp)
+      val bs = bindings map {
+        case HandlerBinding(sym, body) => HandlerBinding(sym, convert(body))
+      }
+      Expression.HandleWith(e, bs, tpe, loc)
 
     case Expression.Existential(params, e, loc) =>
       Expression.Existential(params, convert(e), loc)
