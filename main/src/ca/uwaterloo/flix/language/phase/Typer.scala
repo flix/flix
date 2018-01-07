@@ -435,9 +435,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         val eff = program0.effs(sym)
         val effectType = Scheme.instantiate(eff.sc)(flix.genSym)
 
-        val argumentTypes = fparams0.map(_.tpe)
-        val resultType = Scheme.instantiate(sc)(flix.genSym)
-        val declaredType = Type.mkArrow(argumentTypes, resultType)
+        val declaredType = Scheme.instantiate(sc)(flix.genSym)
 
         val subst0 = getSubstFromParams(fparams0)
         val tparams = getTypeParams(tparams0)

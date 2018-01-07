@@ -1,58 +1,40 @@
 ///
-/// Declares a simple effect.
+/// Declares an effect.
 ///
-eff f(): Bool
+eff f[a](k: Bool -> a): a
 
 ///
-/// Declares a handler for the effect `f`.
+/// Declares a default handler for the effect `f`.
 ///
-handler f(): Bool = true
-
-
+handler f[a](k: Bool -> a): a = k(true)
 
 ///
-/// Declares an effect with one argument.
+/// Declares an effect.
 ///
-eff g(x: Int): Bool
+eff g[a](x: Int, k: Bool -> a): a
 
 ///
-/// Declares a handler for the effect `g`.
+/// Declares a default handler for the effect `g`.
 ///
-handler g(x: Int): Bool = x == 42
-
-
+handler g[a](x: Int, k: Bool -> a): a = if (x == 0) k(true) else k(false)
 
 ///
-/// Declares an effect with two arguments.
+/// Declares an effect.
 ///
-eff h(x: Int, y: Int): Bool
+eff h[a](x: Int, y: Int, k: Bool -> a): a
 
 ///
-/// Declares a handler for the effect `h`.
+/// Declares a default handler for the effect `h`.
 ///
-handler h(x: Int, y: Int): Bool = x == y
-
-
+handler h[a](x: Int, y: Int, k: Bool -> a): a = if (x == y) k(true) else k(false)
 
 ///
-/// Declares an effect with one argument.
+/// Declares an effect.
 ///
-eff i(x: Int): Bool
+eff i[a](x: Bool, y: Bool, k: (Int, Int) -> a): a
 
 ///
-/// Declares a complex handler which takes the continuation.
+/// Declares a default handler for the effect `h`.
 ///
-handler i[a](x: Int, k: Bool -> Bool): Bool = k(x == 42)
-
-
-
-///
-/// Declares an effect with two arguments.
-///
-eff j(x: Int, y: Int): Bool
-
-///
-/// Declares a complex handler which takes the continuation.
-///
-handler j[a](x: Int, k: Bool -> a): a = k(x == x)
+handler i[a](x: Bool, y: Bool, k: (Int, Int) -> a): a = if (x && y) k((1, 2)) else k((2, 3))
 
