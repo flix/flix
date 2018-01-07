@@ -38,8 +38,7 @@ eff i[a](x: Bool, y: Bool, k: (Int, Int) -> a): a
 ///
 handler i[a](x: Bool, y: Bool, k: (Int, Int) -> a): a = if (x && y) k((1, 2)) else k((2, 3))
 
-
-
+//
 /////
 ///// Effectfully returns `true` if the given path `p` is readable.
 /////
@@ -68,13 +67,17 @@ handler i[a](x: Bool, y: Bool, k: (Int, Int) -> a): a = if (x && y) k((1, 2)) el
 //       k(Ok(result))
 //}
 //
-//def pureMain(): Str =
+//eff default[a, b](x: a): b
+//
+//handler default[a, b](x: a): b = x
+//
+//def pureMain[a](): a =
 //    let p = Path.new("foo.flix");
 //        isReadable(p, ra ->
 //            isWritable(p,
 //                rw -> match (ra, rw) with {
-//                    case (Ok(true), Ok(true)) => "Yes, the file is readable and writable."
-//                    case _                    => "No,  the file is not readable and writable."
+//                    case (Ok(true), Ok(true)) => default("Yes, the file is readable and writable.")
+//                    case _                    => default("No,  the file is not readable and writable.")
 //                }
 //            ))
 //
@@ -83,13 +86,25 @@ handler i[a](x: Bool, y: Bool, k: (Int, Int) -> a): a = if (x && y) k((1, 2)) el
 //def main2(): Str = do
 //        pureMain()
 //    with {
+//        eff default = (x: Str) -> "hello world",
+//        eff isReadable = (p: Path, k: Result[Bool, IOError] -> Str) -> k(Ok(true)) : Str,
+//        eff isWritable = (p: Path, k: Result[Bool, IOError] -> Str) -> k(Ok(true)) : Str
+//    }
+//
+//def main3(): Str = do
+//        pureMain()
+//    with {
+//        eff default = (x: Str) -> x,
 //        eff isReadable = (p: Path, k: Result[Bool, IOError] -> Str) -> k(Ok(true)) : Str,
 //        eff isWritable = (p: Path, k: Result[Bool, IOError] -> Str) -> k(Ok(false)) : Str
 //    }
 //
-//def main3(): List[Str] = do
-//        pureMain()
+//def main(): List[Str] = do
+//        pureMain() : List[Str]
 //    with {
-//        eff isReadable = (p: Path, k: Result[Bool, IOError] -> List[Str]) -> (k(Ok(true)) :: k(Ok(false)) :: Nil) : List[Str],
-//        eff isWritable = (p: Path, k: Result[Bool, IOError] -> List[Str]) -> (k(Ok(true)) :: k(Ok(false)) :: Nil) : List[Str]
+//        eff default = (x: Str) -> (x :: Nil) : List[Str],
+//        eff isReadable = (p: Path, k: Result[Bool, IOError] -> List[Str]) -> k(Ok(true)) : List[Str],
+//        eff isWritable = (p: Path, k: Result[Bool, IOError] -> List[Str]) -> k(Ok(true)) ::: k(Ok(true)) : List[Str]
 //    }
+//
+
