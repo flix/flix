@@ -61,7 +61,10 @@ object PrettyPrinter {
         case Expression.Str(lit) => vt.text("\"").text(lit).text("\"")
 
         case Expression.Var(sym, tpe, loc) => fmtSym(sym, vt)
+
         case Expression.Def(sym, tpe, loc) => fmtSym(sym, vt)
+
+        case Expression.Eff(sym, tpe, loc) => fmtSym(sym, vt)
 
         case Expression.Lambda(fparams, body, tpe, loc) =>
           vt.text("(")
@@ -298,6 +301,19 @@ object PrettyPrinter {
           visitExp(exp1)
           vt.text(" := ")
           visitExp(exp2)
+
+        case Expression.HandleWith(exp, bindings, tpe, loc) =>
+          vt << "do" << Indent << NewLine
+          visitExp(exp)
+          vt.text("with {")
+          for (HandlerBinding(sym, handler) <- bindings) {
+            vt << "eff "
+            fmtSym(sym, vt)
+            vt << " = "
+            visitExp(handler)
+          }
+          vt.text("}")
+          vt << Dedent << NewLine
 
         case Expression.Existential(fparam, exp, loc) =>
           vt.text("∃(")

@@ -70,7 +70,14 @@ object SimplifiedAstOps {
       // Def Expressions.
       //
       case Expression.Def(sym, tpe, loc) =>
-        assert(root.defs contains sym, s"Undefined definition symbol: '$sym'.")
+        assert(root.defs contains sym, s"Undefined def symbol: '$sym'.")
+        checkType(tpe)
+
+      //
+      // Eff Expressions.
+      //
+      case Expression.Eff(sym, tpe, loc) =>
+        assert(root.effs contains sym, s"Undefined effect symbol: '$sym'.")
         checkType(tpe)
 
       //
@@ -116,7 +123,17 @@ object SimplifiedAstOps {
       // ApplyDef Expressions.
       //
       case Expression.ApplyDef(sym, args, tpe, loc) =>
-        assert(root.defs contains sym, s"Undefined definition symbol: '$sym'.")
+        assert(root.defs contains sym, s"Undefined def symbol: '$sym'.")
+        for (arg <- args) {
+          checkExp(arg, env0, ienv0)
+        }
+        checkType(tpe)
+
+      //
+      // ApplyEff Expressions.
+      //
+      case Expression.ApplyEff(sym, args, tpe, loc) =>
+        assert(root.effs contains sym, s"Undefined eff symbol: '$sym'.")
         for (arg <- args) {
           checkExp(arg, env0, ienv0)
         }
@@ -136,7 +153,17 @@ object SimplifiedAstOps {
       // ApplyDefTail Expressions.
       //
       case Expression.ApplyDefTail(sym, args, tpe, loc) =>
-        assert(root.defs contains sym, s"Undefined definition symbol: '$sym'.")
+        assert(root.defs contains sym, s"Undefined def symbol: '$sym'.")
+        for (arg <- args) {
+          checkExp(arg, env0, ienv0)
+        }
+        checkType(tpe)
+
+      //
+      // ApplyEffTail Expressions.
+      //
+      case Expression.ApplyEffTail(sym, args, tpe, loc) =>
+        assert(root.effs contains sym, s"Undefined eff symbol: '$sym'.")
         for (arg <- args) {
           checkExp(arg, env0, ienv0)
         }
