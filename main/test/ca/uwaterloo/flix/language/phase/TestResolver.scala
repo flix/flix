@@ -187,7 +187,7 @@ class TestResolver extends FunSuite with TestUtils {
     val input =
       s"""
          |namespace A {
-         |  eff f(): Int = 42
+         |  eff f(): Int
          |}
          |
          |namespace B {
@@ -202,10 +202,10 @@ class TestResolver extends FunSuite with TestUtils {
     val input =
       s"""
          |namespace A {
-         |  eff f(): Int = A/B/C.g()
+         |  def f(): Int = A/B/C.g()
          |
          |  namespace B/C {
-         |    def g(): Int = A.f()
+         |    eff g(): Int
          |  }
          |}
        """.stripMargin
