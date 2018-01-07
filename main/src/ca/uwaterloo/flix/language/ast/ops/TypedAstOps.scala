@@ -126,7 +126,7 @@ object TypedAstOps {
 
       case Expression.HandleWith(exp, bindings, tpe, eff, loc) =>
         bindings.foldLeft(visitExp(exp, env0)) {
-          case (macc, HandlerBinding(sym, body)) => macc ++ visitExp(body, env0)
+          case (macc, HandlerBinding(sym, handler)) => macc ++ visitExp(handler, env0)
         }
 
       case Expression.Existential(fparam, exp, eff, loc) =>

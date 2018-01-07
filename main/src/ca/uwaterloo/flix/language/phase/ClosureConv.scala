@@ -179,7 +179,7 @@ object ClosureConv {
     case Expression.HandleWith(exp, bindings, tpe, loc) =>
       val e = convert(exp)
       val bs = bindings map {
-        case HandlerBinding(sym, body) => HandlerBinding(sym, convert(body))
+        case HandlerBinding(sym, handler) => HandlerBinding(sym, convert(handler))
       }
       Expression.HandleWith(e, bs, tpe, loc)
 
