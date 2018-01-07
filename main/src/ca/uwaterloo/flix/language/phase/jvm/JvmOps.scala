@@ -734,6 +734,10 @@ object JvmOps {
         case (sacc, e) => sacc ++ visitExp(e)
       }
 
+      case Expression.ApplyEffTail(sym, args, tpe, loc) => args.foldLeft(Set.empty[ClosureInfo]) {
+        case (sacc, e) => sacc ++ visitExp(e)
+      }
+
       case Expression.ApplySelfTail(sym, fparams, args, tpe, loc) => args.foldLeft(Set.empty[ClosureInfo]) {
         case (sacc, e) => sacc ++ visitExp(e)
       }
@@ -946,6 +950,10 @@ object JvmOps {
       }
 
       case Expression.ApplyDefTail(sym, args, tpe, loc) => args.foldLeft(Set(tpe)) {
+        case (sacc, e) => sacc ++ visitExp(e)
+      }
+
+      case Expression.ApplyEffTail(sym, args, tpe, loc) => args.foldLeft(Set(tpe)) {
         case (sacc, e) => sacc ++ visitExp(e)
       }
 

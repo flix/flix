@@ -49,6 +49,8 @@ object ClosureConv {
       // We must create a closure, without free variables, of the definition symbol.
       Expression.Closure(sym, List.empty, tpe, loc)
 
+    case Expression.Eff(sym, tpe, loc) => ??? // TODO
+
     case Expression.Lambda(args, body, tpe, loc) =>
       // Retrieve the type of the function.
       val ts = tpe.typeArguments
@@ -199,6 +201,7 @@ object ClosureConv {
     case Expression.LambdaClosure(lambda, freeVars, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
     case Expression.ApplyClo(e, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
     case Expression.ApplyDef(name, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
+    case Expression.ApplyEff(name, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
     case Expression.ApplyCloTail(e, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
     case Expression.ApplyDefTail(name, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
     case Expression.ApplyEffTail(name, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
@@ -259,6 +262,7 @@ object ClosureConv {
     case Expression.Ref(exp, tpe, loc) => freeVariables(exp)
     case Expression.Deref(exp, tpe, loc) => freeVariables(exp)
     case Expression.Assign(exp1, exp2, tpe, loc) => freeVariables(exp1) ++ freeVariables(exp2)
+    case Expression.HandleWith(exp, bindings, tpe, loc) => freeVariables(exp) ++ bindings.flatMap(b => freeVariables(b.exp))
     case Expression.Existential(fparam, exp, loc) =>
       freeVariables(exp).filterNot { v => v._1 == fparam.sym }
     case Expression.Universal(fparam, exp, loc) =>
@@ -275,10 +279,12 @@ object ClosureConv {
     case Expression.LambdaClosure(lambda, freeVars, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
     case Expression.Closure(ref, freeVars, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
     case Expression.ApplyClo(exp, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
-    case Expression.ApplyDef(name, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
-    case Expression.ApplyCloTail(exp, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
-    case Expression.ApplyDefTail(name, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
-    case Expression.ApplySelfTail(name, formals, actuals, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
+    case Expression.ApplyDef(sym, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
+    case Expression.ApplyEff(sym, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
+    case Expression.ApplyCloTail(sym, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
+    case Expression.ApplyDefTail(sym, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
+    case Expression.ApplyEffTail(sym, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
+    case Expression.ApplySelfTail(sym, formals, actuals, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
   }
 
   /**
@@ -319,6 +325,9 @@ object ClosureConv {
       case Expression.ApplyDef(sym, args, tpe, loc) =>
         val as = args map visit
         Expression.ApplyDef(sym, as, tpe, loc)
+      case Expression.ApplyEff(sym, args, tpe, loc) =>
+        val as = args map visit
+        Expression.ApplyEff(sym, as, tpe, loc)
       case Expression.Apply(exp, args, tpe, loc) =>
         val e = visit(exp)
         val as = args map visit
@@ -397,6 +406,12 @@ object ClosureConv {
         val e1 = visit(exp1)
         val e2 = visit(exp2)
         Expression.Assign(e1, e2, tpe, loc)
+      case Expression.HandleWith(exp, bindings, tpe, loc) =>
+        val e = visit(exp)
+        val bs = bindings map {
+          case HandlerBinding(sym, handler) => HandlerBinding(sym, visit(handler))
+        }
+        Expression.HandleWith(e, bs, tpe, loc)
       case Expression.Existential(fparam, exp, loc) =>
         val fs = replace(fparam, subst)
         val e = visit(exp)
@@ -420,6 +435,7 @@ object ClosureConv {
 
       case Expression.ApplyCloTail(exp, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${e.getClass.getSimpleName}'.")
       case Expression.ApplyDefTail(sym, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${e.getClass.getSimpleName}'.")
+      case Expression.ApplyEffTail(sym, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${e.getClass.getSimpleName}'.")
       case Expression.ApplySelfTail(sym, fparams, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${e.getClass.getSimpleName}'.")
     }
 

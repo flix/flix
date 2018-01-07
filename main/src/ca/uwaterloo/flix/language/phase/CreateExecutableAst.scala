@@ -190,9 +190,12 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
       case SimplifiedAst.Expression.ApplyCloTail(exp, args, tpe, loc) =>
         val argsArray = args.map(toExecutable)
         ExecutableAst.Expression.ApplyCloTail(toExecutable(exp), argsArray, tpe, loc)
-      case SimplifiedAst.Expression.ApplyDefTail(name, args, tpe, loc) =>
+      case SimplifiedAst.Expression.ApplyDefTail(sym, args, tpe, loc) =>
         val argsArray = args.map(toExecutable)
-        ExecutableAst.Expression.ApplyDefTail(name, argsArray, tpe, loc)
+        ExecutableAst.Expression.ApplyDefTail(sym, argsArray, tpe, loc)
+      case SimplifiedAst.Expression.ApplyEffTail(sym, args, tpe, loc) =>
+        val argsArray = args.map(toExecutable)
+        ExecutableAst.Expression.ApplyEffTail(sym, argsArray, tpe, loc)
       case SimplifiedAst.Expression.ApplySelfTail(name, formals, actuals, tpe, loc) =>
         ExecutableAst.Expression.ApplySelfTail(name, formals.map(CreateExecutableAst.toExecutable), actuals.map(toExecutable), tpe, loc)
       case SimplifiedAst.Expression.Unary(sop, op, exp, tpe, loc) =>

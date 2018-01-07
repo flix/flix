@@ -17,11 +17,11 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.{CompilationError, GenSym}
-import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expression
+import ca.uwaterloo.flix.language.ast.SimplifiedAst.{Expression, HandlerBinding}
 import ca.uwaterloo.flix.language.ast.{SimplifiedAst, Symbol}
-import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
+import ca.uwaterloo.flix.language.{CompilationError, GenSym}
 import ca.uwaterloo.flix.util.Validation._
+import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
 /**
   * The inlining phase performs careful inlining of select functions based on heuristics.
@@ -90,6 +90,9 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
             }
         }
 
+      case Expression.ApplyEff(sym, args, tpe, loc) =>
+        Expression.ApplyEff(sym, args, tpe, loc)
+
       case Expression.ApplyCloTail(exp1, args, tpe, loc) =>
         // Do not inline tail calls.
         Expression.ApplyCloTail(visit(exp1), args.map(visit), tpe, loc)
@@ -97,6 +100,10 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.ApplyDefTail(sym, args, tpe, loc) =>
         // Do not inline tail calls.
         Expression.ApplyDefTail(sym, args, tpe, loc)
+
+      case Expression.ApplyEffTail(sym, args, tpe, loc) =>
+        // Do not inline tail calls.
+        Expression.ApplyEffTail(sym, args, tpe, loc)
 
       /* Inline inside expression */
       case Expression.Closure(ref, freeVars, tpe, loc) =>
@@ -115,6 +122,7 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.Str(_) => exp0
       case Expression.Var(_, _, _) => exp0
       case Expression.Def(_, _, _) => exp0
+      case Expression.Eff(_, _, _) => exp0
       case Expression.Lambda(args, body, tpe, loc) =>
         Expression.Lambda(args, visit(body), tpe, loc)
       case Expression.ApplySelfTail(sym, formals, actuals, tpe, loc) =>
@@ -156,6 +164,12 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         Expression.Deref(visit(exp1), tpe, loc)
       case Expression.Assign(exp1, exp2, tpe, loc) =>
         Expression.Assign(visit(exp1), visit(exp2), tpe, loc)
+      case Expression.HandleWith(exp, bindings, tpe, loc) =>
+        val e = visit(exp)
+        val bs = bindings map {
+          case HandlerBinding(sym, handler) => HandlerBinding(sym, visit(handler))
+        }
+        Expression.HandleWith(e, bs, tpe, loc)
       case Expression.Existential(fparam, exp1, loc) =>
         Expression.Existential(fparam, visit(exp1), loc)
       case Expression.Universal(fparam, exp1, loc) =>
@@ -193,16 +207,21 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     case Expression.Str(_) => exp0
     case Expression.Var(sym, tpe, loc) => Expression.Var(env0(sym), tpe, loc)
     case Expression.Def(_, _, _) => exp0
+    case Expression.Eff(_, _, _) => exp0
     case Expression.Closure(ref, freeVars, tpe, loc) =>
       Expression.Closure(ref, freeVars.map(fv => fv.copy(sym = env0(fv.sym))), tpe, loc)
     case Expression.ApplyClo(exp1, args, tpe, loc) =>
       Expression.ApplyClo(renameAndSubstitute(exp1, env0), args.map(renameAndSubstitute(_, env0)), tpe, loc)
     case Expression.ApplyDef(sym, args, tpe, loc) =>
       Expression.ApplyDef(sym, args.map(renameAndSubstitute(_, env0)), tpe, loc)
+    case Expression.ApplyEff(sym, args, tpe, loc) =>
+      Expression.ApplyEff(sym, args.map(renameAndSubstitute(_, env0)), tpe, loc)
     case Expression.ApplyCloTail(exp1, args, tpe, loc) =>
       Expression.ApplyCloTail(renameAndSubstitute(exp1, env0), args.map(renameAndSubstitute(_, env0)), tpe, loc)
     case Expression.ApplyDefTail(sym, args, tpe, loc) =>
       Expression.ApplyDefTail(sym, args.map(renameAndSubstitute(_, env0)), tpe, loc)
+    case Expression.ApplyEffTail(sym, args, tpe, loc) =>
+      Expression.ApplyEffTail(sym, args.map(renameAndSubstitute(_, env0)), tpe, loc)
     case Expression.ApplySelfTail(sym, formals, actuals, tpe, loc) =>
       Expression.ApplySelfTail(sym, formals, actuals.map(renameAndSubstitute(_, env0)), tpe, loc)
     case Expression.Unary(sop, op, exp1, tpe, loc) =>
@@ -250,6 +269,12 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       Expression.Deref(renameAndSubstitute(exp1, env0), tpe, loc)
     case Expression.Assign(exp1, exp2, tpe, loc) =>
       Expression.Assign(renameAndSubstitute(exp1, env0), renameAndSubstitute(exp2, env0), tpe, loc)
+    case Expression.HandleWith(exp, bindings, tpe, loc) =>
+      val e = renameAndSubstitute(exp, env0)
+      val bs = bindings map {
+        case HandlerBinding(sym, handler) => HandlerBinding(sym, renameAndSubstitute(handler, env0))
+      }
+      Expression.HandleWith(e, bs, tpe, loc)
     case Expression.Existential(fparam, exp1, loc) =>
       val newFparam = fparam.copy(sym = Symbol.freshVarSym(fparam.sym))
       val sub1 = env0 + (fparam.sym -> newFparam.sym)
@@ -312,6 +337,7 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     //
     case Expression.Var(sym, tpe, loc) => true
     case Expression.Def(sym, tpe, loc) => true
+    case Expression.Eff(sym, tpe, loc) => true
 
     //
     // Closure are atomic.
@@ -323,8 +349,10 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     //
     case Expression.ApplyClo(exp, args, tpe, loc) => isAtomic(exp) && (args forall isAtomic)
     case Expression.ApplyDef(sym, args, tpe, loc) => args forall isAtomic
+    case Expression.ApplyEff(sym, args, tpe, loc) => args forall isAtomic
     case Expression.ApplyCloTail(exp, args, tpe, loc) => false
     case Expression.ApplyDefTail(sym, args, tpe, loc) => false
+    case Expression.ApplyEffTail(sym, args, tpe, loc) => false
     case Expression.ApplySelfTail(sym, formals, actuals, tpe, loc) => false
 
     //
@@ -423,6 +451,11 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     // Assign expressions are atomic.
     //
     case Expression.Assign(exp1, exp2, tpe, loc) => isAtomic(exp1) && isAtomic(exp2)
+
+    //
+    // HandleWith expressions are never atomic.
+    //
+    case Expression.HandleWith(exp, bindings, tpe, loc) => false
 
     //
     // Existential expressions are never atomic.

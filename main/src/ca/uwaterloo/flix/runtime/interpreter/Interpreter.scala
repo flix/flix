@@ -79,6 +79,8 @@ object Interpreter {
 
     case Expression.ApplyDefTail(sym, args, _, _) => invokeDef(sym, args, env0, henv0, lenv0, root)
 
+    case Expression.ApplyEffTail(sym, args, _, _) => invokeEff(sym, args, env0, henv0, lenv0, root)
+
     case Expression.ApplySelfTail(sym, _, args, _, _) => invokeDef(sym, args, env0, henv0, lenv0, root)
 
     //

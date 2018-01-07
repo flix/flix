@@ -191,6 +191,11 @@ object SymbolicEvaluator {
         invokeDef(pc0, sym, args, env0, lenv0, qua0)
 
       /**
+        * Apply Eff Tail.
+        */
+      case Expression.ApplyEffTail(sym, args, _, _) => ??? // TODO
+
+      /**
         * Apply Self Tail.
         */
       case Expression.ApplySelfTail(sym, _, args, _, _) =>

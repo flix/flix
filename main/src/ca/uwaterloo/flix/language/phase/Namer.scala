@@ -127,6 +127,11 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
         }
 
       /*
+       * Law.
+       */
+      case WeededAst.Declaration.Law(doc, ann, mod, ident, tparams0, fparams0, exp, tpe, eff0, loc) => ??? // TODO
+
+      /*
        * Eff.
        */
       case WeededAst.Declaration.Eff(doc, ann, mod, ident, tparams0, fparams0, tpe, eff0, loc) =>
@@ -174,6 +179,11 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
             // Case 2: Duplicate handler.
             DuplicateHandler(ident.name, handler.loc, ident.loc).toFailure
         }
+
+      /*
+       * Sig.
+       */
+      case WeededAst.Declaration.Sig(doc, ann, mod, ident, tparams0, fparams0, tpe, eff0, loc) => ??? // TODO
 
       /*
        * Enum.
@@ -778,6 +788,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
       case WeededAst.Expression.Ref(exp, loc) => freeVars(exp)
       case WeededAst.Expression.Deref(exp, loc) => freeVars(exp)
       case WeededAst.Expression.Assign(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
+      case WeededAst.Expression.HandleWith(exp, bindings, loc) => freeVars(exp) ++ bindings.flatMap(b => freeVars(b.exp))
       case WeededAst.Expression.Existential(fparam, exp, loc) => filterBoundVars(freeVars(exp), List(fparam.ident))
       case WeededAst.Expression.Universal(fparam, exp, loc) => filterBoundVars(freeVars(exp), List(fparam.ident))
       case WeededAst.Expression.Ascribe(exp, tpe, eff, loc) => freeVars(exp)
