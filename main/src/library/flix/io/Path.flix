@@ -41,7 +41,7 @@ namespace Path {
     ///
     /// Effectfully returns a list of files in the given directory `path`.
     ///
-    pub eff children(path: Path): Result[List[Path], IOError]
+    pub eff children[a](path: Path, k: Result[List[Path], IOError] -> a): a
 
     ///
     /// Default handler for `isParentOf`.
@@ -53,7 +53,7 @@ namespace Path {
     ///
     /// Effectfully returns `true` if the given path `parent` is the direct parent of the path `child`.
     ///
-    pub eff isParentOf(parent: Path, child: Path): Result[Bool, IOError]
+    pub eff isParentOf[a](parent: Path, child: Path, k: Result[Bool, IOError] -> a): a
 
     ///
     /// Default handler for `isParentOf`.
@@ -63,7 +63,7 @@ namespace Path {
     ///
     /// Effectfully returns `true` if the given path `child` is a direct child of the path `parent`.
     ///
-    pub eff isChildOf(child: Path, parent: Path): Result[Bool, IOError]
+    pub eff isChildOf[a](child: Path, parent: Path, k: Result[Bool, IOError] -> a): a
 
     ///
     /// Default handler for `isChildOf`.
@@ -73,7 +73,7 @@ namespace Path {
     ///
     /// Effectfully returns `true` if the given path `p1` is a sibling of the path `p2`.
     ///
-    pub eff isSiblingOf(p1: Path, p2: Path): Result[Bool, IOError]
+    pub eff isSiblingOf[a](p1: Path, p2: Path, k: Result[Bool, IOError] -> a): a
 
     ///
     /// Default handler for `isSiblingOf`.
@@ -83,7 +83,7 @@ namespace Path {
     ///
     /// Effectfully returns `true` if the given path `p` is a directory.
     ///
-    pub eff isDirectory(p: Path): Result[Bool, IOError]
+    pub eff isDirectory[a](p: Path, k: Result[Bool, IOError] -> a): a
 
     ///
     /// Default handler for `isDirectory`.
@@ -93,7 +93,7 @@ namespace Path {
     ///
     /// Effectfully returns `true` if the given path `p` does not exist or is an empty file or directory.
     ///
-    pub eff isEmpty(p: Path): Result[Bool, IOError]
+    pub eff isEmpty[a](p: Path, k: Result[Bool, IOError] -> a): a
 
     ///
     /// Default handler for `isEmpty`.
@@ -103,7 +103,7 @@ namespace Path {
     ///
     /// Effectfully returns `true` if the given path `p` is executable.
     ///
-    pub eff isExecutable(p: Path): Result[Bool, IOError]
+    pub eff isExecutable[a](p: Path, k: Result[Bool, IOError] -> a): a
 
     ///
     /// Default handler for `isExecutable`.
@@ -113,7 +113,7 @@ namespace Path {
     ///
     /// Effectfully returns `true` if the given path `p` is hidden.
     ///
-    pub eff isHidden(p: Path): Result[Bool, IOError]
+    pub eff isHidden[a](p: Path, k: Result[Bool, IOError] -> a): a
 
     ///
     /// Default handler for `isHidden`.
@@ -123,7 +123,7 @@ namespace Path {
     ///
     /// Effectfully returns `true` if the given path `p` is readable.
     ///
-    pub eff isReadable(p: Path): Result[Bool, IOError]
+    pub eff isReadable[a](p: Path, k: Result[Bool, IOError] -> a): a
 
     ///
     /// Default handler for `isReadable`.
@@ -133,7 +133,7 @@ namespace Path {
     ///
     /// Effectfully returns `true` if the given path `p` is a regular file.
     ///
-    pub eff isRegularFile(p: Path): Result[Bool, IOError]
+    pub eff isRegularFile[a](p: Path, k: Result[Bool, IOError] -> a): a
 
     ///
     /// Default handler for `isRegularFile`.
@@ -143,17 +143,17 @@ namespace Path {
     ///
     /// Effectfully returns `true` if the two given paths `p1` and `p2` refers to the same file.
     ///
-    pub eff isSameFile(p1: Path, p2: Path): Result[Bool, IOError]
+    pub eff isSameFile[a](p1: Path, p2: Path, k: Result[Bool, IOError] -> a): a
 
     ///
     /// Default handler for `isSameFile`.
     ///
-    handler isSameFile[a](p: Path, k: Result[Bool, IOError] -> a): a = ???
+    handler isSameFile[a](p1: Path, p2: Path, k: Result[Bool, IOError] -> a): a = ???
 
     ///
     /// Effectfully returns `true` if the given path `p` is a symbolic link.
     ///
-    pub eff isSymbolicLink(p: Path): Result[Bool, IOError]
+    pub eff isSymbolicLink[a](p: Path, k: Result[Bool, IOError] -> a): a
 
     ///
     /// Default handler for `isSymbolicLink`.
@@ -163,7 +163,7 @@ namespace Path {
     ///
     /// Effectfully returns `true` if the given path `p` is writable.
     ///
-    pub eff isWritable(p: Path): Result[Bool, IOError]
+    pub eff isWritable[a](p: Path, k: Result[Bool, IOError] -> a): a
 
     ///
     /// Default handler for `isWritable`.
@@ -173,7 +173,7 @@ namespace Path {
     ///
     /// Effectfully returns a list of all lines in the given text file denoted by path `p`.
     ///
-    pub eff readLines(p: Path): Result[List[Str], IOError]
+    pub eff readLines[a](p: Path, k: Result[List[Str], IOError] -> a): a
 
     ///
     /// Default handler for `readLines`.
@@ -183,7 +183,7 @@ namespace Path {
     ///
     /// Effectfully returns a list of all lines in the given text file denoted by path `p` parsed with the given charset `cs`.
     ///
-    pub eff readLinesWithCharset(p: Path, cs: Charset): Result[List[Str], IOError]
+    pub eff readLinesWithCharset[a](p: Path, cs: Charset, k: Result[List[Str], IOError] -> a): a
 
     ///
     /// Default handler for `readLinesWithCharset`.
@@ -193,7 +193,7 @@ namespace Path {
     ///
     /// Effectfully creates a new and empty file for the given path `p`.
     ///
-    pub eff createFile(p: Path): Result[Path, IOError]
+    pub eff createFile[a](p: Path, k: Result[Bool, IOError] -> a): a
 
     ///
     /// Default handler for `createFile`.
@@ -205,7 +205,7 @@ namespace Path {
     ///
     /// Requires that the path directory of the path `p` exists.
     ///
-    pub eff createDirectory(p: Path): Result[Path, IOError]
+    pub eff createDirectory[a](p: Path, k: Result[Bool, IOError] -> a): a
 
     ///
     /// Default handler for `createDirectory`.
@@ -217,7 +217,7 @@ namespace Path {
     ///
     /// Creates all parent directories as needed.
     ///
-    pub eff createDirectories(p: Path): Result[Path, IOError]
+    pub eff createDirectories[a](p: Path, k: Result[Bool, IOError] -> a): a
 
     ///
     /// Default handler for `createDirectories`.
@@ -227,47 +227,47 @@ namespace Path {
     ///
     /// Effectfully copies the source file path `src` to the destination path `dst`.
     ///
-    pub eff copyFileTo(src: Path, dst: Path): Result[(), IOError]
+    pub eff copyFileTo[a](src: Path, dst: Path, k: Result[Bool, IOError] -> a): a
 
     ///
     /// Default handler for `copyFileTo`.
     ///
-    handler copyFileTo[a](p: Path, dst: Path, k: Result[Bool, IOError] -> a): a = ???
+    handler copyFileTo[a](src: Path, dst: Path, k: Result[Bool, IOError] -> a): a = ???
 
     ///
     /// Effectfully copies the source directory path `src` to the destination directory `dst`.
     ///
-    pub eff copyDirectoryTo(src: Path, dst: Path): Result[(), IOError]
+    pub eff copyDirectoryTo[a](src: Path, dst: Path, k: Result[Bool, IOError] -> a): a
 
     ///
     /// Default handler for `copyDirectoryTo`.
     ///
-    handler copyDirectoryTo[a](p: Path, k: Result[Bool, IOError] -> a): a = ???
+    handler copyDirectoryTo[a](src: Path, dst: Path, k: Result[Bool, IOError] -> a): a = ???
 
     ///
     /// Effectfully moves the file from the `src` path to the `dst` path.
     ///
-    pub eff moveFile(src: Path, dst: Path): Result[(), IOError]
+    pub eff moveFile[a](src: Path, dst: Path, k: Result[Bool, IOError] -> a): a
 
     ///
     /// Default handler for `moveFile`.
     ///
-    handler moveFile[a](p: Path, k: Result[Bool, IOError] -> a): a = ???
+    handler moveFile[a](src: Path, dst: Path, k: Result[Bool, IOError] -> a): a = ???
 
     ///
     /// Effectfully moves the directory from the `src` path to the `dst` path.
     ///
-    pub eff moveDirectory(src: Path, dst: Path): Result[(), IOError]
+    pub eff moveDirectory[a](src: Path, dst: Path, k: Result[Bool, IOError] -> a): a
 
     ///
     /// Default handler for `moveFile`.
     ///
-    handler moveDirectory[a](p: Path, k: Result[Bool, IOError] -> a): a = ???
+    handler moveDirectory[a](src: Path, dst: Path, k: Result[Bool, IOError] -> a): a = ???
 
     ///
     /// Effectfully deletes the file for the given path `p`.
     ///
-    pub eff deleteFile(p: Path): Result[Path, IOError]
+    pub eff deleteFile[a](p: Path, k: Result[Bool, IOError] -> a): a
 
     ///
     /// Default handler for `deleteFile`.
@@ -277,7 +277,7 @@ namespace Path {
     ///
     /// Effectfully deletes the directory (and its sub-directories) for the given path `p`.
     ///
-    pub eff deleteDirectory(p: Path): Result[Path, IOError]
+    pub eff deleteDirectory[a](p: Path, k: Result[Bool, IOError] -> a): a
 
     ///
     /// Default handler for `deleteDirectory`.
@@ -287,7 +287,7 @@ namespace Path {
     ///
     /// Effectfully returns the size of the given path `p`.
     ///
-    pub eff size(p: Path): Result[Int64, IOError]
+    pub eff size[a](p: Path, k: Result[Int64, IOError] -> a): a
 
     ///
     /// Default handler for `size`.
@@ -297,7 +297,7 @@ namespace Path {
     ///
     /// Effectfully returns a path that references a new temporary directory.
     ///
-    pub eff newTemporaryDirectory(): Result[Path, IOError]
+    pub eff newTemporaryDirectory[a](k: Result[Path, IOError] -> a): a
 
     ///
     /// Default handler for `newTemporaryDirectory`.
@@ -307,7 +307,7 @@ namespace Path {
     ///
     /// Effectfully returns a path that references a new temporary file.
     ///
-    pub eff newTemporaryFile(): Result[Path, IOError]
+    pub eff newTemporaryFile[a](k: Result[Path, IOError] -> a): a
 
     ///
     /// Default handler for `newTemporaryFile`.

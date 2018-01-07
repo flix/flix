@@ -7,7 +7,7 @@ namespace InputStream {
     ///
     /// Effectfully returns an input stream from the given path `s`.
     ///
-    pub eff new(p: Path): Result[InputStream, IOError]
+    pub eff new[a](p: Path, k: Result[InputStream, IOError] -> a): a
 
     ///
     /// Default handler for `new`.
@@ -17,42 +17,42 @@ namespace InputStream {
     ///
     /// Effectfully returns an input stream from the given path `s` with the given open options `opts`.
     ///
-    pub eff newWithOpts(p: Path, opts: Set[OpenOption]): Result[InputStream, IOError]
+    pub eff newWithOpts[a](p: Path, k: Result[InputStream, IOError] -> a): a
 
     ///
     /// Default handler for `newWithOpts`.
     ///
-    handler newWithOpts[a](p: Path, k: Result[InputStream, IOError] -> a): a = ??? // TODO: Implement
+    handler newWithOpts[a](p: Path, k: Result[InputStream, IOError] -> a): a = ???
 
     ///
     /// Effectfully reads a single character from the given input stream `is`.
     ///
-    pub eff read(is: InputStream): Result[Char, IOError]
+    pub eff read[a](is: InputStream, k: Result[Char, IOError] -> a): a
 
     ///
     /// Default handler for `read`.
     ///
-    handler read[a](is: InputStream): a = ??? // TODO: Implement
+    handler read[a](is: InputStream, k: Result[Char, IOError] -> a): a = ???
 
     ///
     /// Effectfully reads a single line from the given input stream `is`.
     ///
-    pub eff readLine(is: InputStream): Result[Option[Str], IOError]
+    pub eff readLine[a](is: InputStream, k: Result[Option[Str], IOError] -> a): a
 
     ///
     /// Default handler for `readLine`.
     ///
-    handler readLine[a](is: InputStream): a = ??? // TODO: Implement
+    handler readLine[a](is: InputStream, k: Result[Option[Str], IOError] -> a): a = ???
 
     ///
     /// Effectfully reads all lines from the given input stream `is`.
     ///
-    pub eff readLines(is: InputStream): Result[List[Str], IOError]
+    pub eff readLines[a](is: InputStream, k: Result[List[Str], IOError] -> a): a
 
     ///
     /// Default handler for `readLines`.
     ///
-    handler readLines[a](is: InputStream): a = ??? // TODO: Implement
+    handler readLines[a](is: InputStream, k: Result[List[Str], IOError] -> a): a = ???
 
     ///
     /// Effectfully reads all lines from the given input stream `is` with the given charset `cs`.
@@ -67,31 +67,31 @@ namespace InputStream {
     ///
     /// Effectfully reads all bytes of the given input stream `is` into a new array.
     ///
-    pub eff readBytes(os: OutputStream): Result[(), IOError]
+    pub eff readBytes[a](is: InputStream, k: Result[(), IOError] -> a): a
 
     ///
     /// Default handler for `readBytes`.
     ///
-    handler readBytes[a](is: InputStream): a = ??? // TODO: Implement
+    handler readBytes[a](is: InputStream, k: Result[(), IOError] -> a): a = ???
 
     ///
     /// Effectfully pipes the given input stream `is` into the output stream `os`.
     ///
-    pub eff pipe(os: OutputStream): Result[(), IOError]
+    pub eff pipe[a](os: OutputStream, k: Result[(), IOError] -> a): a
 
     ///
     /// Default handler for `pipe`.
     ///
-    handler pipe[a](os: OutputStream): a = ??? // TODO: Implement
+    handler pipe[a](os: OutputStream, k: Result[(), IOError] -> a): a = ???
 
     ///
     /// Effectfully closes the given input stream `is`.
     ///
-    pub eff close(is: InputStream): Result[(), IOError]
+    pub eff close[a](is: InputStream, k: Result[(), IOError] -> a): a
 
     ///
     /// Default handler for `close`.
     ///
-    handler close[a](is: InputStream): a = ??? // TODO: Implement
+    handler close[a](is: InputStream, k: Result[(), IOError] -> a): a = ???
 
 }
