@@ -403,8 +403,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     def typecheckEff(eff0: ResolvedAst.Eff)(implicit flix: Flix): Result[TypedAst.Eff, TypeError] = eff0 match {
       case ResolvedAst.Eff(doc, ann, mod, sym, tparams0, fparams0, sc, eff, loc) =>
         val argumentTypes = fparams0.map(_.tpe)
-        val resultType = Scheme.instantiate(sc)(flix.genSym)
-        val tpe = Type.mkArrow(argumentTypes, resultType)
+        val tpe = Scheme.instantiate(sc)(flix.genSym)
 
         val subst = getSubstFromParams(fparams0)
         val tparams = getTypeParams(tparams0)

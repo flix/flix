@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.util.InternalCompilerException
 object Symbol {
 
   /**
-    * Returns a fresh definition symbol with the given text.
+    * Returns a fresh def symbol with the given text.
     */
   def freshDefnSym(text: String)(implicit genSym: GenSym): DefnSym = {
     val id = Some(genSym.freshId())
@@ -31,11 +31,19 @@ object Symbol {
   }
 
   /**
-    * Returns a fresh definition symbol based on the given symbol.
+    * Returns a fresh def symbol based on the given symbol.
     */
   def freshDefnSym(sym: DefnSym)(implicit genSym: GenSym): DefnSym = {
     val id = Some(genSym.freshId())
     new DefnSym(id, sym.namespace, sym.text, sym.loc)
+  }
+
+  /**
+    * Returns a fresh eff symbol based on the given symbol.
+    */
+  def freshEffSym(sym: EffSym)(implicit genSym: GenSym): EffSym = {
+    val id = Some(genSym.freshId())
+    new EffSym(id, sym.namespace, sym.text, sym.loc)
   }
 
   /**
@@ -99,7 +107,7 @@ object Symbol {
     * Returns the effect symbol for the given name `ident` in the given namespace `ns`.
     */
   def mkEffSym(ns: NName, ident: Ident): EffSym = {
-    new EffSym(ns.parts, ident.name, ident.loc)
+    new EffSym(None, ns.parts, ident.name, ident.loc)
   }
 
   /**
@@ -228,46 +236,6 @@ object Symbol {
     }
 
     /**
-      * Returns the prefix as a list of strings.
-      * For example, the prefix of the symbol "A.B.C/f" is List("A", "B", "C").
-      * A symbol "f" corresponds to "Root/f", so its prefix is List("Root").
-      */
-    // TODO: Possibly remove?
-    @deprecated("DO NOT USE", "0.2.0")
-    def prefix: List[String] = namespace match {
-      case Nil => List("Root")
-      case xs => xs
-    }
-
-    /**
-      * Returns the suffix as a string.
-      * For example, the suffix of the symbol "A.B.C/f" is "f".
-      */
-    // TODO: Possibly remove?
-    @deprecated("DO NOT USE", "0.2.0")
-    def suffix: String = name.
-      // Mangle the name w.r.t Java conventions.
-      replace("+", "$plus").
-      replace("-", "$minus").
-      replace("*", "$times").
-      replace("/", "$divide").
-      replace("%", "$modulo").
-      replace("**", "$exponentiate").
-      replace("<", "$lt").
-      replace("<=", "$le").
-      replace(">", "$gt").
-      replace(">=", "$ge").
-      replace("==", "$eq").
-      replace("!=", "$neq").
-      replace("&&", "$land").
-      replace("||", "$lor").
-      replace("&", "$band").
-      replace("|", "$bor").
-      replace("^", "$bxor").
-      replace("<<", "$lshift").
-      replace(">>", "$rshift")
-
-    /**
       * Returns `true` if this symbol is equal to `that` symbol.
       */
     override def equals(obj: scala.Any): Boolean = obj match {
@@ -289,19 +257,28 @@ object Symbol {
   /**
     * Effect Symbol.
     */
-  final class EffSym(val namespace: List[String], val name: String, val loc: SourceLocation) {
+  final class EffSym(val id: Option[Int], val namespace: List[String], val text: String, val loc: SourceLocation) {
+
+    /**
+      * Returns the name of `this` symbol.
+      */
+    def name: String = id match {
+      case None => text
+      case Some(i) => text + "$" + i
+    }
+
     /**
       * Returns `true` if this symbol is equal to `that` symbol.
       */
     override def equals(obj: scala.Any): Boolean = obj match {
-      case that: EffSym => this.namespace == that.namespace && this.name == that.name
+      case that: EffSym => this.id == that.id && this.namespace == that.namespace && this.name == that.name
       case _ => false
     }
 
     /**
       * Returns the hash code of this symbol.
       */
-    override val hashCode: Int = 7 * namespace.hashCode() + 11 * name.hashCode
+    override val hashCode: Int = 5 * this.id.hashCode() + 7 * namespace.hashCode() + 11 * name.hashCode
 
     /**
       * Human readable representation.
