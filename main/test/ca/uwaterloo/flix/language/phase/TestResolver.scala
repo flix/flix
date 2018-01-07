@@ -183,6 +183,36 @@ class TestResolver extends FunSuite with TestUtils {
     expectError[ResolutionError.InaccessibleDef](result)
   }
 
+  test("InaccessibleEff.01") {
+    val input =
+      s"""
+         |namespace A {
+         |  eff f(): Int = 42
+         |}
+         |
+         |namespace B {
+         |  def g(): Int = A.f()
+         |}
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[ResolutionError.InaccessibleEff](result)
+  }
+
+  test("InaccessibleEff.02") {
+    val input =
+      s"""
+         |namespace A {
+         |  eff f(): Int = A/B/C.g()
+         |
+         |  namespace B/C {
+         |    def g(): Int = A.f()
+         |  }
+         |}
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[ResolutionError.InaccessibleEff](result)
+  }
+
   test("InaccessibleEnum.01") {
     val input =
       s"""

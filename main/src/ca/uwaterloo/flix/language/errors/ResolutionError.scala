@@ -102,9 +102,9 @@ object ResolutionError {
   }
 
   /**
-    * Inaccessible Definition Error.
+    * Inaccessible Def Error.
     *
-    * @param sym the definition symbol.
+    * @param sym the def symbol.
     * @param ns  the namespace where the symbol is not accessible.
     * @param loc the location where the error occurred.
     */
@@ -118,6 +118,26 @@ object ResolutionError {
       vt << Code(loc, "inaccessible definition.") << NewLine
       vt << NewLine
       vt << Underline("Tip:") << " Mark the definition as public." << NewLine
+    }
+  }
+
+  /**
+    * Inaccessible Eff Error.
+    *
+    * @param sym the eff symbol.
+    * @param ns  the namespace where the symbol is not accessible.
+    * @param loc the location where the error occurred.
+    */
+  case class InaccessibleEff(sym: Symbol.EffSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
+    val source: Source = loc.source
+    val message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Effect '" << Red(sym.toString) << s"' is not accessible from the namespace '" << Cyan(ns.toString) << "'." << NewLine
+      vt << NewLine
+      vt << Code(loc, "inaccessible effect.") << NewLine
+      vt << NewLine
+      vt << Underline("Tip:") << " Mark the effect as public." << NewLine
     }
   }
 

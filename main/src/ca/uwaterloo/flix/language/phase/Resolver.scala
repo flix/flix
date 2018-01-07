@@ -20,8 +20,8 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.GenSym
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.ResolutionError
-import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 import ca.uwaterloo.flix.util.Validation._
+import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
 import scala.collection.mutable
 
@@ -1200,9 +1200,35 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
     ResolutionError.InaccessibleDef(defn0.sym, ns0, loc).toFailure
   }
 
-  // TODO: Implement: getEffIfAccessible
+  /**
+    * Successfully returns the given effect `eff0` if it is accessible from the given namespace `ns0`.
+    *
+    * Otherwise fails with a resolution error.
+    *
+    * An effect `eff0` is accessible from a namespace `ns0` if:
+    *
+    * (a) the effect is marked public, or
+    * (b) the effect is defined in the namespace `ns0` itself or in a parent of `ns0`.
+    */
   def getEffIfAccessible(eff0: NamedAst.Eff, ns0: Name.NName, loc: SourceLocation): Validation[LookupResult, ResolutionError] = {
-    LookupResult.Eff(eff0.sym).toSuccess
+    //
+    // Check if the effect is marked public.
+    //
+    if (eff0.mod.isPublic)
+      return LookupResult.Eff(eff0.sym).toSuccess
+
+    //
+    // Check if the effect is defined in `ns0` or in a parent of `ns0`.
+    //
+    val prefixNs = eff0.sym.namespace
+    val targetNs = ns0.idents.map(_.name)
+    if (targetNs.startsWith(prefixNs))
+      return LookupResult.Eff(eff0.sym).toSuccess
+
+    //
+    // The effect is not accessible.
+    //
+    ResolutionError.InaccessibleEff(eff0.sym, ns0, loc).toFailure
   }
 
   /**
