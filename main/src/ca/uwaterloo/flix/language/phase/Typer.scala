@@ -867,16 +867,20 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           } yield resultType
 
         /*
-         * Assignment expression.
+         * HandleWith expression.
          */
         case ResolvedAst.Expression.HandleWith(exp, bindings, tvar, loc) =>
-          // TODO: Check that Handlers match their declared signatures.
-
+          // Typecheck each handler binding.
           val bs = bindings map {
             case ResolvedAst.HandlerBinding(sym, handler) =>
-              visitExp(handler)
+              val eff = program.effs(sym)
+              val declaredType = Scheme.instantiate(eff.sc)
+              for {
+                actualType <- visitExp(handler)
+              } yield unify(declaredType, actualType)
           }
 
+          // Typecheck the expression.
           for {
             tpe <- visitExp(exp)
             handlers <- seqM(bs)
