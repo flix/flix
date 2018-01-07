@@ -57,12 +57,12 @@ namespace InputStream {
     ///
     /// Effectfully reads all lines from the given input stream `is` with the given charset `cs`.
     ///
-    pub eff readLinesWithCharset(is: InputStream, cs: Charset): Result[List[Str], IOError]
+    pub eff readLinesWithCharset[a](is: InputStream, cs: Charset, k: Result[List[Str], IOError] -> a): a
 
     ///
     /// Default handler for `readLinesWithCharset`.
     ///
-    handler readLinesWithCharset[a](is: InputStream, cs: Charset): a = ??? // TODO: Implement
+    handler readLinesWithCharset[a](is: InputStream, cs: Charset, k: Result[List[Str], IOError] -> a): a = ??? // TODO: Implement
 
     ///
     /// Effectfully reads all bytes of the given input stream `is` into a new array.

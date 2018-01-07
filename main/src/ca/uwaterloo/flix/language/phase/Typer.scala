@@ -430,23 +430,28 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       * Infers the the type of the given handler `handler0`.
       */
     def typecheckHandler(handler0: ResolvedAst.Handler, program0: ResolvedAst.Program)(implicit flix: Flix): Result[TypedAst.Handler, TypeError] = handler0 match {
-      case ResolvedAst.Handler(doc, ann, mod, sym, tparams0, fparams0, exp0, sc, eff, loc) =>
+      case ResolvedAst.Handler(doc, ann, mod, sym, tparams0, fparams0, exp0, sc, eff0, loc) =>
+
+        val eff = program0.effs(sym)
+        val effectType = Scheme.instantiate(eff.sc)(flix.genSym)
 
         val argumentTypes = fparams0.map(_.tpe)
         val resultType = Scheme.instantiate(sc)(flix.genSym)
-        val tpe = Type.mkArrow(argumentTypes, resultType)
+        val declaredType = Type.mkArrow(argumentTypes, resultType)
 
         val subst0 = getSubstFromParams(fparams0)
         val tparams = getTypeParams(tparams0)
         val fparams = getFormalParams(fparams0, subst0)
 
-        // TODO: Proper type checking...
-        val result = Expressions.infer(exp0, program0)(flix.genSym)
+        val result = for {
+          actualType <- Expressions.infer(exp0, program0)(flix.genSym)
+          unifiedType <- unifyM(declaredType, effectType, actualType, loc)
+        } yield unifiedType
 
         result.run(Substitution.empty) map {
           case (subst, unifiedType) =>
             val exp = Expressions.reassemble(exp0, program0, subst)
-            TypedAst.Handler(doc, ann, mod, sym, tparams, fparams, exp, subst(unifiedType), eff, loc)
+            TypedAst.Handler(doc, ann, mod, sym, tparams, fparams, exp, subst(unifiedType), eff0, loc)
         }
     }
 
