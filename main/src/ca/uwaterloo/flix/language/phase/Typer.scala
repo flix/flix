@@ -877,7 +877,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
               val declaredType = Scheme.instantiate(eff.sc)
               for {
                 actualType <- visitExp(handler)
-              } yield unify(declaredType, actualType)
+              } yield unifyM(declaredType, actualType, loc)
           }
 
           // Typecheck the expression.
