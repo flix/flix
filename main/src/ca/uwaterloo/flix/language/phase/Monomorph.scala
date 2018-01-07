@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, Pattern, Root}
+import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, HandlerBinding, Pattern, Root}
 import ca.uwaterloo.flix.language.ast.{BinaryOperator, Symbol, Type, TypedAst, UnaryOperator}
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
@@ -317,7 +317,10 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         case Expression.HandleWith(exp, bindings, tpe, eff, loc) =>
           val e = visitExp(exp, env0)
           val bs = bindings map {
-            case b => TypedAst.HandlerBinding(b.sym, visitExp(b.exp, env0))
+            case HandlerBinding(sym, handler) =>
+              val specializedSym = specializeEffSym(sym, handler.tpe)
+              val e = visitExp(handler, env0)
+              TypedAst.HandlerBinding(specializedSym, e)
           }
           Expression.HandleWith(e, bs, tpe, eff, loc)
 

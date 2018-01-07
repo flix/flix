@@ -38,3 +38,58 @@ eff i[a](x: Bool, y: Bool, k: (Int, Int) -> a): a
 ///
 handler i[a](x: Bool, y: Bool, k: (Int, Int) -> a): a = if (x && y) k((1, 2)) else k((2, 3))
 
+
+
+/////
+///// Effectfully returns `true` if the given path `p` is readable.
+/////
+//pub eff isReadable[a](p: Path, k: Result[Bool, IOError] -> a): a
+//
+/////
+///// Effectfully returns `true` if the given path `p` is writable.
+/////
+//pub eff isWritable[a](p: Path, k: Result[Bool, IOError] -> a): a
+//
+/////
+///// Default handler for `isReadable`.
+/////
+//handler isReadable[a](p: Path, k: Result[Bool, IOError] -> a): a = unsafe {
+//    let Path(nativePath) = p;
+//    let result = native method java.nio.file.Files.isReadable(nativePath);
+//        k(Ok(result))
+//}
+//
+/////
+///// Default handler for `isWritable`.
+/////
+//handler isWritable[a](p: Path, k: Result[Bool, IOError] -> a): a = unsafe {
+//   let Path(nativePath) = p;
+//   let result = native method java.nio.file.Files.isWritable(nativePath);
+//       k(Ok(result))
+//}
+//
+//def pureMain(): Str =
+//    let p = Path.new("foo.flix");
+//        isReadable(p, ra ->
+//            isWritable(p,
+//                rw -> match (ra, rw) with {
+//                    case (Ok(true), Ok(true)) => "Yes, the file is readable and writable."
+//                    case _                    => "No,  the file is not readable and writable."
+//                }
+//            ))
+//
+//def main1(): Str = pureMain()
+//
+//def main2(): Str = do
+//        pureMain()
+//    with {
+//        eff isReadable = (p: Path, k: Result[Bool, IOError] -> Str) -> k(Ok(true)) : Str,
+//        eff isWritable = (p: Path, k: Result[Bool, IOError] -> Str) -> k(Ok(false)) : Str
+//    }
+//
+//def main3(): List[Str] = do
+//        pureMain()
+//    with {
+//        eff isReadable = (p: Path, k: Result[Bool, IOError] -> List[Str]) -> (k(Ok(true)) :: k(Ok(false)) :: Nil) : List[Str],
+//        eff isWritable = (p: Path, k: Result[Bool, IOError] -> List[Str]) -> (k(Ok(true)) :: k(Ok(false)) :: Nil) : List[Str]
+//    }
