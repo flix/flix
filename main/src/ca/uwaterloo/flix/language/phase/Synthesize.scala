@@ -202,7 +202,7 @@ object Synthesize extends Phase[Root, Root] {
       case Expression.HandleWith(exp, bindings, tpe, eff, loc) =>
         val e = visitExp(exp)
         val bs = bindings map {
-          case HandlerBinding(sym, body) => HandlerBinding(sym, visitExp(body))
+          case HandlerBinding(sym, handler) => HandlerBinding(sym, visitExp(handler))
         }
         Expression.HandleWith(e, bs, tpe, eff, loc)
 

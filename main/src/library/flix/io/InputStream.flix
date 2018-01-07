@@ -77,12 +77,12 @@ namespace InputStream {
     ///
     /// Effectfully pipes the given input stream `is` into the output stream `os`.
     ///
-    pub eff pipe[a](os: OutputStream, k: Result[(), IOError] -> a): a
+    pub eff pipe[a](in: InputStream, os: OutputStream, k: Result[(), IOError] -> a): a
 
     ///
     /// Default handler for `pipe`.
     ///
-    handler pipe[a](os: OutputStream, k: Result[(), IOError] -> a): a = ???
+    handler pipe[a](in: InputStream, os: OutputStream, k: Result[(), IOError] -> a): a = ???
 
     ///
     /// Effectfully closes the given input stream `is`.

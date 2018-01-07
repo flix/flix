@@ -6,9 +6,6 @@
 // 4. How to deal with overloaded methods? Use ascription of type arguments.
 // 5. How to deal with different types of IOErrors, e.g. FileNotFound, FileIsDirectory etc.? Open question
 
-//    pub def copyToPath(i: unique InputStream, p: Path): Result[(), IOError] @ IO = ???
-//    pub def copyToStream(is: unique InputStream, os: borrow OutputStream): Result[(), IOError] @ IO = ???
-
 // TODO: Need some kind of walker... and how does that work with algebraic effects?
 //public static Path walkFileTree(Path start,
                 //Set<FileVisitOption> options,
@@ -47,8 +44,6 @@ namespace Path {
     /// Default handler for `isParentOf`.
     ///
     handler children[a](path: Path, k: Result[List[Path], IOError] -> a): a = ???
-
-// TODO file.siblings
 
     ///
     /// Effectfully returns `true` if the given path `parent` is the direct parent of the path `child`.
@@ -313,13 +308,5 @@ namespace Path {
     /// Default handler for `newTemporaryFile`.
     ///
     handler newTemporaryFile[a](k: Result[Path, IOError] -> a): a = ???
-
-// file.append(text)
-// file.appendText
-// file.appendLine(text)
-// file.appendByreArray
-// writeText
-// writeByteArray
-// writeBytes
 
 }

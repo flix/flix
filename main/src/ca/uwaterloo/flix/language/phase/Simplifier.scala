@@ -421,7 +421,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case TypedAst.Expression.HandleWith(exp, bindings, tpe, eff, loc) =>
         val e = visitExp(exp)
         val bs = bindings map {
-          case TypedAst.HandlerBinding(sym, body) => SimplifiedAst.HandlerBinding(sym, visitExp(body))
+          case TypedAst.HandlerBinding(sym, handler) => SimplifiedAst.HandlerBinding(sym, visitExp(handler))
         }
         SimplifiedAst.Expression.HandleWith(e, bs, tpe, loc)
 

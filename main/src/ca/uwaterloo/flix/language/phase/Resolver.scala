@@ -1200,7 +1200,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
     ResolutionError.InaccessibleDef(defn0.sym, ns0, loc).toFailure
   }
 
-  // TODO: DOC
+  // TODO: Implement: getEffIfAccessible
   def getEffIfAccessible(eff0: NamedAst.Eff, ns0: Name.NName, loc: SourceLocation): Validation[LookupResult, ResolutionError] = {
     LookupResult.Eff(eff0.sym).toSuccess
   }

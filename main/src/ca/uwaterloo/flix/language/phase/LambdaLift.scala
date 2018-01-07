@@ -201,7 +201,7 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.HandleWith(exp, bindings, tpe, loc) =>
         val e = visit(exp)
         val bs = bindings map {
-          case HandlerBinding(sym, body) => HandlerBinding(sym, visit(body))
+          case HandlerBinding(sym, handler) => HandlerBinding(sym, visit(handler))
         }
         Expression.HandleWith(e, bs, tpe, loc)
       case Expression.Existential(params, exp, loc) =>

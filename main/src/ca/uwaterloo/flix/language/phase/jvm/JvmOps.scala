@@ -999,7 +999,7 @@ object JvmOps {
       case Expression.Assign(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2) + tpe
 
       case Expression.HandleWith(exp, bindings, tpe, loc) => bindings.foldLeft(visitExp(exp)) {
-        case (sacc, HandlerBinding(sym, body)) => sacc ++ visitExp(body)
+        case (sacc, HandlerBinding(sym, handler)) => sacc ++ visitExp(handler)
       }
 
       case Expression.Existential(fparam, exp, loc) => visitExp(exp) + fparam.tpe

@@ -305,7 +305,7 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.HandleWith(exp, bindings, tpe, loc) =>
         val e = visitExp(exp, env0)
         val bs = bindings map {
-          case HandlerBinding(sym, body) => HandlerBinding(sym, visitExp(body, env0))
+          case HandlerBinding(sym, handler) => HandlerBinding(sym, visitExp(handler, env0))
         }
         Expression.HandleWith(e, bs, tpe, loc)
 

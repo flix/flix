@@ -872,6 +872,8 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
          * HandleWith expression.
          */
         case ResolvedAst.Expression.HandleWith(exp, bindings, tvar, loc) =>
+          // TODO: Need to check that the return types are consistent.
+
           // Typecheck each handler binding.
           val bs = bindings map {
             case ResolvedAst.HandlerBinding(sym, handler) =>
@@ -1177,7 +1179,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         case ResolvedAst.Expression.HandleWith(exp, bindings, tvar, loc) =>
           val e = visitExp(exp, subst0)
           val bs = bindings map {
-            case ResolvedAst.HandlerBinding(sym, e0) => TypedAst.HandlerBinding(sym, visitExp(e0, subst0))
+            case ResolvedAst.HandlerBinding(sym, handler) => TypedAst.HandlerBinding(sym, visitExp(handler, subst0))
           }
           TypedAst.Expression.HandleWith(e, bs, subst0(tvar), Eff.Top, loc)
 
