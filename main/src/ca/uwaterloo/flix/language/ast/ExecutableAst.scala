@@ -29,6 +29,8 @@ object ExecutableAst {
   // TODO: Get rid of most uses of array.
 
   case class Root(defs: Map[Symbol.DefnSym, ExecutableAst.Def],
+                  effs: Map[Symbol.EffSym, ExecutableAst.Eff],
+                  handlers: Map[Symbol.EffSym, ExecutableAst.Handler],
                   enums: Map[Symbol.EnumSym, ExecutableAst.Enum],
                   lattices: Map[Type, ExecutableAst.Lattice],
                   tables: Map[Symbol.TableSym, ExecutableAst.Table],
@@ -98,6 +100,10 @@ object ExecutableAst {
       */
     var method: Method = null
   }
+
+  case class Eff(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EffSym, fparams: List[ExecutableAst.FormalParam], tpe: Type, loc: SourceLocation) extends ExecutableAst
+
+  case class Handler(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EffSym, fparams: List[ExecutableAst.FormalParam], exp: ExecutableAst.Expression, tpe: Type, loc: SourceLocation) extends ExecutableAst
 
   case class Enum(mod: Ast.Modifiers, sym: Symbol.EnumSym, cases: Map[String, ExecutableAst.Case], tpe: Type, loc: SourceLocation) extends ExecutableAst
 
@@ -201,9 +207,13 @@ object ExecutableAst {
 
     case class ApplyDef(sym: Symbol.DefnSym, args: List[ExecutableAst.Expression], tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
+    case class ApplyEff(sym: Symbol.EffSym, args: List[ExecutableAst.Expression], tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
+
     case class ApplyCloTail(exp: ExecutableAst.Expression, args: List[ExecutableAst.Expression], tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
     case class ApplyDefTail(sym: Symbol.DefnSym, args: List[ExecutableAst.Expression], tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
+
+    case class ApplyEffTail(sym: Symbol.EffSym, args: List[ExecutableAst.Expression], tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
     case class ApplySelfTail(sym: Symbol.DefnSym, formals: List[ExecutableAst.FormalParam], actuals: List[ExecutableAst.Expression], tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
@@ -247,6 +257,8 @@ object ExecutableAst {
     case class Deref(exp: ExecutableAst.Expression, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
     case class Assign(exp1: ExecutableAst.Expression, exp2: ExecutableAst.Expression, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
+
+    case class HandleWith(exp: ExecutableAst.Expression, bindings: List[ExecutableAst.HandlerBinding], tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
     case class Existential(fparam: ExecutableAst.FormalParam, exp: ExecutableAst.Expression, loc: SourceLocation) extends ExecutableAst.Expression {
       def tpe: Type = Type.Bool
@@ -402,5 +414,7 @@ object ExecutableAst {
   case class FormalParam(sym: Symbol.VarSym, tpe: Type) extends ExecutableAst
 
   case class FreeVar(sym: Symbol.VarSym, tpe: Type) extends ExecutableAst
+
+  case class HandlerBinding(sym: Symbol.EffSym, exp: ExecutableAst.Expression) extends ExecutableAst
 
 }

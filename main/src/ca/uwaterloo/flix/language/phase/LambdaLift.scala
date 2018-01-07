@@ -17,11 +17,10 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.{CompilationError, GenSym}
-import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expression
+import ca.uwaterloo.flix.language.ast.SimplifiedAst.{Expression, HandlerBinding}
 import ca.uwaterloo.flix.language.ast.{Ast, SimplifiedAst, Symbol}
-import ca.uwaterloo.flix.util.InternalCompilerException
-import ca.uwaterloo.flix.util.Validation
+import ca.uwaterloo.flix.language.{CompilationError, GenSym}
+import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 import ca.uwaterloo.flix.util.Validation._
 
 import scala.collection.mutable
@@ -47,11 +46,14 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     val definitions = root.defs.map {
       case (name, decl) => name -> lift(decl, m)
     }
+    val handlers = root.handlers.map {
+      case (k, v) => k -> lift(v, m)
+    }
     val properties = root.properties.map(p => lift(p, m))
 
     // Return the updated AST root.
     val e = System.nanoTime() - t
-    root.copy(defs = definitions ++ m, properties = properties, time = root.time.copy(lambdaLift = e)).toSuccess
+    root.copy(defs = definitions ++ m, handlers = handlers, properties = properties, time = root.time.copy(lambdaLift = e)).toSuccess
   }
 
   /**
@@ -64,6 +66,18 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     val convExp = ClosureConv.convert(decl.exp)
     val liftExp = lift(convExp, m, Some(decl.sym))
     decl.copy(exp = liftExp)
+  }
+
+  /**
+    * Performs lambda lifting on the given handler `handler`.
+    *
+    * The handler's expression is closure converted, and then the lifted definitions are added to the mutable map `m`.
+    * The updated definition is then returned.
+    */
+  private def lift(handler: SimplifiedAst.Handler, m: TopLevel)(implicit genSym: GenSym): SimplifiedAst.Handler = {
+    val convExp = ClosureConv.convert(handler.exp)
+    val liftExp = lift(convExp, m, None)
+    handler.copy(exp = liftExp)
   }
 
   /**
@@ -99,6 +113,7 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.Str(lit) => e
       case Expression.Var(sym, tpe, loc) => e
       case Expression.Def(sym, tpe, loc) => e
+      case Expression.Eff(sym, tpe, loc) => e
 
       case Expression.Lambda(fparams, body, tpe, loc) =>
         // Lift the lambda to a top-level definition, and replacing the Lambda expression with a Ref.
@@ -138,8 +153,10 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
 
       case Expression.ApplyClo(exp, args, tpe, loc) =>
         Expression.ApplyClo(visit(exp), args.map(visit), tpe, loc)
-      case Expression.ApplyDef(name, args, tpe, loc) =>
-        Expression.ApplyDef(name, args.map(visit), tpe, loc)
+      case Expression.ApplyDef(sym, args, tpe, loc) =>
+        Expression.ApplyDef(sym, args.map(visit), tpe, loc)
+      case Expression.ApplyEff(sym, args, tpe, loc) =>
+        Expression.ApplyEff(sym, args.map(visit), tpe, loc)
       case Expression.Unary(sop, op, exp, tpe, loc) =>
         Expression.Unary(sop, op, visit(exp), tpe, loc)
       case Expression.Binary(sop, op, exp1, exp2, tpe, loc) =>
@@ -181,6 +198,12 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         Expression.Deref(visit(exp), tpe, loc)
       case Expression.Assign(exp1, exp2, tpe, loc) =>
         Expression.Assign(visit(exp1), visit(exp2), tpe, loc)
+      case Expression.HandleWith(exp, bindings, tpe, loc) =>
+        val e = visit(exp)
+        val bs = bindings map {
+          case HandlerBinding(sym, handler) => HandlerBinding(sym, visit(handler))
+        }
+        Expression.HandleWith(e, bs, tpe, loc)
       case Expression.Existential(params, exp, loc) =>
         Expression.Existential(params, visit(exp), loc)
       case Expression.Universal(params, exp, loc) =>
@@ -200,6 +223,7 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
 
       case Expression.ApplyCloTail(exp, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
       case Expression.ApplyDefTail(sym, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
+      case Expression.ApplyEffTail(sym, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
       case Expression.ApplySelfTail(sym, formals, actuals, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
     }
 

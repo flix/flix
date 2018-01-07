@@ -18,12 +18,12 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.{SimplifiedAst, Symbol}
 import ca.uwaterloo.flix.language.ast.SimplifiedAst._
+import ca.uwaterloo.flix.language.ast.{SimplifiedAst, Symbol}
 import ca.uwaterloo.flix.language.debug.PrettyPrinter
-import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.vt._
+import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
 /**
   * The Optimization phase performs intra-procedural optimizations.
@@ -76,6 +76,11 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.Def(sym, tpe, loc) => Expression.Def(sym, tpe, loc)
 
       //
+      // Eff Expressions.
+      //
+      case Expression.Eff(sym, tpe, loc) => Expression.Eff(sym, tpe, loc)
+
+      //
       // Closure Expressions.
       //
       case Expression.Closure(sym, freeVars, tpe, loc) =>
@@ -100,6 +105,13 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         Expression.ApplyDef(sym, as, tpe, loc)
 
       //
+      // ApplyEff Expressions.
+      //
+      case Expression.ApplyEff(sym, args, tpe, loc) =>
+        val as = args map (visitExp(_, env0))
+        Expression.ApplyEff(sym, as, tpe, loc)
+
+      //
       // ApplyCloTail Expressions.
       //
       case Expression.ApplyCloTail(exp, args, tpe, loc) =>
@@ -113,6 +125,13 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.ApplyDefTail(sym, args, tpe, loc) =>
         val as = args map (visitExp(_, env0))
         Expression.ApplyDefTail(sym, as, tpe, loc)
+
+      //
+      // ApplyEffTail Expressions.
+      //
+      case Expression.ApplyEffTail(sym, args, tpe, loc) =>
+        val as = args map (visitExp(_, env0))
+        Expression.ApplyEffTail(sym, as, tpe, loc)
 
       //
       // ApplySelfTail Expressions.
@@ -279,6 +298,16 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         val e1 = visitExp(exp1, env0)
         val e2 = visitExp(exp2, env0)
         Expression.Assign(e1, e2, tpe, loc)
+
+      //
+      // HandleWith Expressions.
+      //
+      case Expression.HandleWith(exp, bindings, tpe, loc) =>
+        val e = visitExp(exp, env0)
+        val bs = bindings map {
+          case HandlerBinding(sym, handler) => HandlerBinding(sym, visitExp(handler, env0))
+        }
+        Expression.HandleWith(e, bs, tpe, loc)
 
       //
       // Existential Expressions.

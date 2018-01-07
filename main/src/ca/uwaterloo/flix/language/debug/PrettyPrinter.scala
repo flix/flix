@@ -61,7 +61,10 @@ object PrettyPrinter {
         case Expression.Str(lit) => vt.text("\"").text(lit).text("\"")
 
         case Expression.Var(sym, tpe, loc) => fmtSym(sym, vt)
+
         case Expression.Def(sym, tpe, loc) => fmtSym(sym, vt)
+
+        case Expression.Eff(sym, tpe, loc) => fmtSym(sym, vt)
 
         case Expression.Lambda(fparams, body, tpe, loc) =>
           vt.text("(")
@@ -119,6 +122,16 @@ object PrettyPrinter {
             vt.text(", ")
           }
           vt.text(")")
+          vt.text(")")
+
+        case Expression.ApplyEff(sym, args, tpe, loc) =>
+          fmtSym(sym, vt)
+          vt.text("(")
+          for (arg <- args) {
+            visitExp(arg)
+            vt.text(", ")
+          }
+          vt.text(")")
 
         case Expression.ApplyCloTail(exp, args, tpe, loc) =>
           visitExp(exp)
@@ -130,6 +143,15 @@ object PrettyPrinter {
           vt.text(")")
 
         case Expression.ApplyDefTail(sym, args, tpe, loc) =>
+          fmtSym(sym, vt)
+          vt.text("*(")
+          for (arg <- args) {
+            visitExp(arg)
+            vt.text(", ")
+          }
+          vt.text(")")
+
+        case Expression.ApplyEffTail(sym, args, tpe, loc) =>
           fmtSym(sym, vt)
           vt.text("*(")
           for (arg <- args) {
@@ -280,6 +302,19 @@ object PrettyPrinter {
           vt.text(" := ")
           visitExp(exp2)
 
+        case Expression.HandleWith(exp, bindings, tpe, loc) =>
+          vt << "do" << Indent << NewLine
+          visitExp(exp)
+          vt.text("with {")
+          for (HandlerBinding(sym, handler) <- bindings) {
+            vt << "eff "
+            fmtSym(sym, vt)
+            vt << " = "
+            visitExp(handler)
+          }
+          vt.text("}")
+          vt << Dedent << NewLine
+
         case Expression.Existential(fparam, exp, loc) =>
           vt.text("∃(")
           fmtParam(fparam, vt)
@@ -333,6 +368,10 @@ object PrettyPrinter {
 
     def fmtSym(sym: Symbol.DefnSym, vt: VirtualTerminal): Unit = {
       vt << Blue(sym.toString)
+    }
+
+    def fmtSym(sym: Symbol.EffSym, vt: VirtualTerminal): Unit = {
+      vt << Red(sym.toString)
     }
 
     def fmtSym(sym: Symbol.LabelSym, vt: VirtualTerminal): Unit = {

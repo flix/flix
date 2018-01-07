@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.EffectError
@@ -68,7 +69,7 @@ object Effects extends Phase[Root, Root] {
     /*
      * Infer the effects of the formal parameters.
      */
-    val env0 = defn0.fparams.foldLeft(Map.empty[Symbol.VarSym, Eff]) {
+    val env0 = defn0.fparams.foldLeft(Map.empty[Symbol.VarSym, ast.Eff]) {
       case (macc, TypedAst.FormalParam(sym, _, tpe, _)) => macc // TODO
     }
 
@@ -99,12 +100,12 @@ object Effects extends Phase[Root, Root] {
     /**
       * Infers the effects of the given expression `exp0`.
       */
-    def infer(exp0: Expression, initialEnv: Map[Symbol.VarSym, Eff], root: Root): Validation[Expression, EffectError] = {
+    def infer(exp0: Expression, initialEnv: Map[Symbol.VarSym, ast.Eff], root: Root): Validation[Expression, EffectError] = {
 
       /**
         * Local visitor.
         */
-      def visitExp(e0: Expression, env0: Map[Symbol.VarSym, Eff]): Validation[Expression, EffectError] = e0 match {
+      def visitExp(e0: Expression, env0: Map[Symbol.VarSym, ast.Eff]): Validation[Expression, EffectError] = e0 match {
         /**
           * Literal Expression.
           */
@@ -126,14 +127,14 @@ object Effects extends Phase[Root, Root] {
           */
         case Expression.Wild(tpe, _, loc) =>
           // Wildcards are pure.
-          Expression.Wild(tpe, Eff.Pure, loc).toSuccess
+          Expression.Wild(tpe, ast.Eff.Pure, loc).toSuccess
 
         /**
           * Variable Expression.
           */
         case Expression.Var(sym, tpe, _, loc) =>
           // Lookup the effect in the effect environment.
-          val eff = env0.getOrElse(sym, Eff.Pure)
+          val eff = env0.getOrElse(sym, ast.Eff.Pure)
           Expression.Var(sym, tpe, eff, loc).toSuccess
 
         /**
@@ -142,14 +143,19 @@ object Effects extends Phase[Root, Root] {
         case Expression.Hole(sym, tpe, eff, loc) => ??? // TODO
 
         /**
-          * Ref Expression.
+          * Def Expression.
           */
         case Expression.Def(sym, tpe, _, loc) =>
           // The effect of a ref is its declared effect.
           val defn = root.defs(sym)
           val latent = defn.eff.eff
-          val eff = Eff.Arrow(Eff.Pure, latent, Eff.Pure, EffectSet.Bot)
+          val eff = ast.Eff.Arrow(ast.Eff.Pure, latent, ast.Eff.Pure, EffectSet.Bot)
           Expression.Def(sym, tpe, eff, loc).toSuccess
+
+        /**
+          * Def Expression.
+          */
+        case Expression.Eff(sym, tpe, _, loc) => ??? // TODO
 
         /**
           * Lambda Expression.
@@ -159,7 +165,7 @@ object Effects extends Phase[Root, Root] {
             e <- visitExp(body, env0)
           } yield {
             // TODO: [Effects]: Take the number of arguments into account.
-            val eff = Eff.Arrow(Eff.Pure, e.eff.eff, Eff.Pure, EffectSet.Bot)
+            val eff = ast.Eff.Arrow(ast.Eff.Pure, e.eff.eff, ast.Eff.Pure, EffectSet.Bot)
             Expression.Lambda(args, body, tpe, eff, loc)
           }
 
@@ -172,16 +178,16 @@ object Effects extends Phase[Root, Root] {
             es <- seqM(args.map(e => visitExp(e, env0)))
           } yield {
             // TODO: [Effects]: Take the number of arguments into account.
-            val Eff.Arrow(_, latent, e2, eff) = e.eff
+            val ast.Eff.Arrow(_, latent, e2, eff) = e.eff
 
             // Effects of arguments.
-            val argumentEffect = es.foldLeft(Eff.Pure) {
+            val argumentEffect = es.foldLeft(ast.Eff.Pure) {
               case (eacc, exp) => eacc seq exp.eff
             }
 
             // The effects of the lambda expression happen before the effects the arguments.
             // Then the effects of applying the lambda happens.
-            val resultEff = Eff.Box(latent) seq argumentEffect
+            val resultEff = ast.Eff.Box(latent) seq argumentEffect
             Expression.Apply(e, es, tpe, resultEff, loc)
           }
 
@@ -277,7 +283,7 @@ object Effects extends Phase[Root, Root] {
             val matchEffect = e.eff
 
             // Compute the total effects of all the rules.
-            val rulesEffect = rs.foldLeft(Eff.Bot) {
+            val rulesEffect = rs.foldLeft(ast.Eff.Bot) {
               case (eacc, MatchRule(pat, guard, body)) =>
                 // The effect of the guard happens before the effect of the body.
                 eacc lub (guard.eff seq body.eff)
@@ -307,7 +313,7 @@ object Effects extends Phase[Root, Root] {
           for {
             rs <- seqM(rulesVal)
           } yield {
-            val eff = rs.foldLeft(Eff.Bot) {
+            val eff = rs.foldLeft(ast.Eff.Bot) {
               case (eacc, (guard, body)) =>
                 eacc lub (guard.eff seq body.eff)
             }
@@ -333,7 +339,7 @@ object Effects extends Phase[Root, Root] {
             es <- seqM(elms.map(e => visitExp(e, env0)))
           } yield {
             // The effects of the each element expression happen in sequence.
-            val eff = es.foldLeft(Eff.Bot) {
+            val eff = es.foldLeft(ast.Eff.Bot) {
               case (eacc, e) => eacc seq e.eff
             }
             Expression.Tuple(elms, tpe, eff, loc)
@@ -394,6 +400,11 @@ object Effects extends Phase[Root, Root] {
           }
 
         /**
+          * HandleWith Expression.
+          */
+        case Expression.HandleWith(exp, bindings, tpe, eff, loc) => ??? // TODO
+
+        /**
           * Existential Expression.
           */
         case Expression.Existential(fparam, exp, _, loc) =>
@@ -445,7 +456,7 @@ object Effects extends Phase[Root, Root] {
           */
         case Expression.NativeConstructor(constructor, args, tpe, _, loc) =>
           // A native constructor can have any effect.
-          val eff = Eff.Top
+          val eff = ast.Eff.Top
           Expression.NativeConstructor(constructor, args, tpe, eff, loc).toSuccess
 
         /**
@@ -453,7 +464,7 @@ object Effects extends Phase[Root, Root] {
           */
         case Expression.NativeField(field, tpe, _, loc) =>
           // A native field can have any effect.
-          val eff = Eff.Top
+          val eff = ast.Eff.Top
           Expression.NativeField(field, tpe, eff, loc).toSuccess
 
         /**
@@ -461,7 +472,7 @@ object Effects extends Phase[Root, Root] {
           */
         case Expression.NativeMethod(method, args, tpe, _, loc) =>
           // A native method can have any effect.
-          val eff = Eff.Top
+          val eff = ast.Eff.Top
           Expression.NativeMethod(method, args, tpe, eff, loc).toSuccess
 
         /**
@@ -469,7 +480,7 @@ object Effects extends Phase[Root, Root] {
           */
         case Expression.UserError(tpe, _, loc) =>
           // Unsoundly assume that a user error exception has no effect.
-          Expression.UserError(tpe, Eff.Pure, loc).toSuccess
+          Expression.UserError(tpe, ast.Eff.Pure, loc).toSuccess
       }
 
       visitExp(exp0, initialEnv)
@@ -481,7 +492,7 @@ object Effects extends Phase[Root, Root] {
     *
     * Otherwise returns [[Failure]] with an [[EffectError]].
     */
-  private def assertPure(e0: Expression): Validation[Eff, EffectError] = assertLeq(e0, Eff.Pure)
+  private def assertPure(e0: Expression): Validation[ast.Eff, EffectError] = assertLeq(e0, ast.Eff.Pure)
 
   /**
     * Returns [[Success]] with the given effect `eff` if the effect of the
@@ -489,7 +500,7 @@ object Effects extends Phase[Root, Root] {
     *
     * Otherwise returns [[Failure]] with an [[EffectError]].
     */
-  private def assertLeq(e0: Expression, eff: Eff): Validation[Eff, EffectError] = {
+  private def assertLeq(e0: Expression, eff: ast.Eff): Validation[ast.Eff, EffectError] = {
     if (e0.eff leq eff)
       eff.toSuccess
     else

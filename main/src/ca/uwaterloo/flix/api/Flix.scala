@@ -86,12 +86,22 @@ class Flix {
     "TotalOrder.flix" -> LocalResource.get("/library/TotalOrder.flix"),
     "Tuple.flix" -> LocalResource.get("/library/Tuple.flix"),
 
+    "flix/core/Functor.flix" -> LocalResource.get("/library/flix/core/Functor.flix"),
+
     "flix/core/cmp/package.flix" -> LocalResource.get("/library/flix/core/cmp/package.flix"),
     "flix/core/cmp/Eq.flix" -> LocalResource.get("/library/flix/core/cmp/Eq.flix"),
     "flix/core/cmp/Ord.flix" -> LocalResource.get("/library/flix/core/cmp/Ord.flix"),
     "flix/core/cmp/PartialEq.flix" -> LocalResource.get("/library/flix/core/cmp/PartialEq.flix"),
     "flix/core/cmp/PartialOrd.flix" -> LocalResource.get("/library/flix/core/cmp/PartialOrd.flix"),
     "flix/core/lattice/JoinSemiLattice.flix" -> LocalResource.get("/library/flix/core/lattice/JoinSemiLattice.flix"),
+
+    "flix/io/BufferedReader.flix" -> LocalResource.get("/library/flix/io/BufferedReader.flix"),
+    "flix/io/BufferedWriter.flix" -> LocalResource.get("/library/flix/io/BufferedWriter.flix"),
+    "flix/io/InputStream.flix" -> LocalResource.get("/library/flix/io/InputStream.flix"),
+    "flix/io/OpenOption.flix" -> LocalResource.get("/library/flix/io/OpenOption.flix"),
+    "flix/io/OutputStream.flix" -> LocalResource.get("/library/flix/io/OutputStream.flix"),
+    "flix/io/Path.flix" -> LocalResource.get("/library/flix/io/Path.flix"),
+
   )
 
   /**
@@ -211,7 +221,6 @@ class Flix {
       Monomorph |>
       Synthesize |>
       Simplifier |>
-      Uncurrier |>
       LambdaLift |>
       Tailrec |>
       Inliner |>

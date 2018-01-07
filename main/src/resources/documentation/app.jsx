@@ -3,7 +3,7 @@
  *
  * Run the following command to install all the build dependencies:
  *
- *  $ npm install --save-dev react react-dom react-string-replace babel babel-preset-es2015 babel-preset-react babelify browserify uglify-js
+ *  $ npm install --save-dev react react-dom react-string-replace babel babel-core babel-loader babel-preset-es2015 babel-preset-react babelify browserify uglify-js create-react-class
  *
  * Then run:
  *
@@ -13,14 +13,15 @@
  */
 const React = require('react');
 const ReactDOM = require('react-dom');
-const reactStringReplace = require('react-string-replace')
+const reactStringReplace = require('react-string-replace');
+const createReactClass = require('create-react-class');
 
 /**
  * Main entry point.
  *
  * Renders the left navigation bar and the page content.
  */
-export let App = React.createClass({
+export let App = createReactClass({
     render: function () {
         return (
             <div className="app">
@@ -34,7 +35,7 @@ export let App = React.createClass({
 /**
  * Renders the navigation bar which shows the list of namespaces in the library.
  */
-export let LeftNavigationBar = React.createClass({
+export let LeftNavigationBar = createReactClass({
     render: function () {
         // Retrieve and sort the namespaces.
         const namespaces = this.props.namespaces.sort(lexicographic);
@@ -59,13 +60,14 @@ export let LeftNavigationBar = React.createClass({
 /**
  * Renders the types, definitions, relations, and lattices declared in the current namespace.
  */
-export let PageContent = React.createClass({
+export let PageContent = createReactClass({
     render: function () {
         return (
             <div className="pagecontent">
                 <h1>{this.props.namespace}</h1>
                 <TypeList decls={this.props.data.types}/>
                 <DefinitionList decls={this.props.data.definitions}/>
+                <EffectList decls={this.props.data.effs}/>
                 <LawList decls={this.props.data.laws}/>
                 <TestList decls={this.props.data.tests}/>
                 <RelationList decls={this.props.data.relations}/>
@@ -78,7 +80,7 @@ export let PageContent = React.createClass({
 /**
  * Renders a list of type declarations.
  */
-export let TypeList = React.createClass({
+export let TypeList = createReactClass({
     render: function () {
         const typeList = this.props.decls.map(d => <TypeBox key={d.name} decl={d}/>);
         if (typeList.length == 0)
@@ -95,7 +97,7 @@ export let TypeList = React.createClass({
 /**
  * Renders a single type declaration.
  */
-export let TypeBox = React.createClass({
+export let TypeBox = createReactClass({
     render: function () {
         const name = this.props.decl.name;
         const comment = format(this.props.decl.comment);
@@ -119,7 +121,7 @@ export let TypeBox = React.createClass({
 /**
  * Renders a list of definition declarations.
  */
-export let DefinitionList = React.createClass({
+export let DefinitionList = createReactClass({
     render: function () {
         const decls = this.props.decls.sort(lexicographic);
         const definitionList = decls.map(d => <DefinitionBox key={d.name} decl={d}/>);
@@ -137,7 +139,7 @@ export let DefinitionList = React.createClass({
 /**
  * Renders a single definition declaration.
  */
-export let DefinitionBox = React.createClass({
+export let DefinitionBox = createReactClass({
     render: function () {
         const name = this.props.decl.name;
         const tparams = surround(intersperse(this.props.decl.tparams.map(
@@ -169,10 +171,64 @@ export let DefinitionBox = React.createClass({
     }
 });
 
+
+/**
+ * Renders a list of effect declarations.
+ */
+export let EffectList = createReactClass({
+    render: function () {
+        const decls = this.props.decls.sort(lexicographic);
+        const effectList = decls.map(d => <EffectBox key={d.name} decl={d}/>);
+        if (effectList.length == 0)
+            return null;
+        return (
+            <div className="effect-list">
+                <h2>Effects</h2>
+                {effectList}
+            </div>
+        );
+    }
+});
+
+/**
+ * Renders a single effect declaration.
+ */
+export let EffectBox = createReactClass({
+    render: function () {
+        const name = this.props.decl.name;
+        const tparams = surround(intersperse(this.props.decl.tparams.map(
+            tparam => <span key={Math.random()}>{tparam.name}</span>
+        ), ", "), "[", "]");
+        const fparams = surround(intersperse(this.props.decl.fparams.map(
+            fparam => <span key={Math.random()}>{fparam.name}: <span key={Math.random()}
+                                                                     className="type">{fparam.tpe}</span></span>
+        ), ", "), "(", ")");
+        const result = this.props.decl.result;
+        const comment = format(this.props.decl.comment);
+        return (
+            <div id={name} className="definition-decl">
+                <div className="signature">
+                    <span className="keyword">eff</span>
+                    <span className="name">{name}</span>
+                    <span className="tparams">{tparams}</span>
+                    <span className="fparams">{fparams}</span>
+                    <span className="result">: <span className="type">{result}</span></span>
+                    <span className="anchor">
+                        <a href={'#' + name}><i className="material-icons md-18">link</i></a>
+                    </span>
+                </div>
+                <div className="comment">
+                    {comment}
+                </div>
+            </div>
+        );
+    }
+});
+
 /**
  * Renders a list of law definitions.
  */
-export let LawList = React.createClass({
+export let LawList = createReactClass({
     render: function () {
         const decls = this.props.decls.sort(lexicographic);
         const definitionList = decls.map(d => <DefinitionBox key={d.name} decl={d}/>);
@@ -190,7 +246,7 @@ export let LawList = React.createClass({
 /**
  * Renders a list of test definitions.
  */
-export let TestList = React.createClass({
+export let TestList = createReactClass({
     render: function () {
         const decls = this.props.decls.sort(lexicographic);
         const definitionList = decls.map(d => <DefinitionBox key={d.name} decl={d}/>);
@@ -208,7 +264,7 @@ export let TestList = React.createClass({
 /**
  * Renders a list of relation declarations.
  */
-export let RelationList = React.createClass({
+export let RelationList = createReactClass({
     render: function () {
         const decls = this.props.decls.sort(lexicographic);
         const relationList = decls.map(d => <RelationBox key={d.name} decl={d}/>);
@@ -226,7 +282,7 @@ export let RelationList = React.createClass({
 /**
  * Renders a single relation declaration.
  */
-export let RelationBox = React.createClass({
+export let RelationBox = createReactClass({
     render: function () {
         const name = this.props.decl.name;
         const attributes = surround(intersperse(this.props.decl.attributes.map(
@@ -252,7 +308,7 @@ export let RelationBox = React.createClass({
 /**
  * Renders a list of lattice declarations.
  */
-export let LatticeList = React.createClass({
+export let LatticeList = createReactClass({
     render: function () {
         const decls = this.props.decls.sort(lexicographic);
         const latticeList = decls.map(d => <LatticeBox key={d.name} decl={d}/>);
@@ -270,7 +326,7 @@ export let LatticeList = React.createClass({
 /**
  * Renders a single lattice declaration.
  */
-export let LatticeBox = React.createClass({
+export let LatticeBox = createReactClass({
     render: function () {
         const name = this.props.decl.name;
         const attributes = surround(intersperse(this.props.decl.attributes.map(

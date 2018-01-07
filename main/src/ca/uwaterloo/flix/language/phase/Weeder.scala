@@ -692,13 +692,11 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
             e2 <- visit(exp2, unsafe)
           } yield WeededAst.Expression.Assign(e1, e2, mkSL(sp1, sp2))
 
-        case ParsedAst.Expression.HandleWith(sp1, base, handlers, sp2) =>
-          // TODO
-          WeededAst.Expression.UserError(mkSL(sp1, sp2)).toSuccess
-
-        case ParsedAst.Expression.Handler(sp1, handlers, sp2) =>
-          // TODO
-          WeededAst.Expression.UserError(mkSL(sp1, sp2)).toSuccess
+        case ParsedAst.Expression.HandleWith(sp1, exp, handlers, sp2) =>
+          for {
+            e <- visit(exp, unsafe)
+            bs <- visitHandlers(handlers)
+          } yield WeededAst.Expression.HandleWith(e, bs, mkSL(sp1, sp2))
 
         case ParsedAst.Expression.Existential(sp1, fparams, exp, sp2) =>
           /*
@@ -1316,6 +1314,23 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   }
 
   /**
+    * Weeds the given effect handler bindings `bs0`.
+    */
+  def visitHandlers(bs0: Seq[ParsedAst.HandlerBinding])(implicit flix: Flix): Validation[List[WeededAst.HandlerBinding], WeederError] = {
+    seqM(bs0 map visitHandler)
+  }
+
+  /**
+    * Weeds the given effect handler binding `b0`.
+    */
+  def visitHandler(b0: ParsedAst.HandlerBinding)(implicit flix: Flix): Validation[WeededAst.HandlerBinding, WeederError] = b0 match {
+    case ParsedAst.HandlerBinding(qname, exp) =>
+      for {
+        e <- Expressions.weed(exp)
+      } yield WeededAst.HandlerBinding(qname, e)
+  }
+
+  /**
     * Returns an apply expression for the given fully-qualified name `fqn` and the given arguments `args`.
     */
   private def mkApply(fqn: String, args: List[WeededAst.Expression], sp1: SourcePosition, sp2: SourcePosition): WeededAst.Expression = {
@@ -1434,7 +1449,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.Deref(sp1, _, _) => sp1
     case ParsedAst.Expression.Assign(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.HandleWith(sp1, _, _, _) => sp1
-    case ParsedAst.Expression.Handler(sp1, _, _) => sp1
     case ParsedAst.Expression.Existential(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Universal(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Ascribe(e1, _, _, _) => leftMostSourcePosition(e1)

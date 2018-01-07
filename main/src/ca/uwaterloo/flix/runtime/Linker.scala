@@ -22,6 +22,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ExecutableAst._
 import ca.uwaterloo.flix.language.ast.{SpecialOperator, Symbol, Type}
 import ca.uwaterloo.flix.runtime.datastore.ProxyObject
+import ca.uwaterloo.flix.runtime.interpreter.Interpreter
 import ca.uwaterloo.flix.util.{Evaluation, InternalRuntimeException}
 
 object Linker {
@@ -59,7 +60,12 @@ object Linker {
       val lenv0 = Map.empty[Symbol.LabelSym, Expression]
 
       // Evaluate the function body.
-      val result = Interpreter.toJava(Interpreter.eval(defn.exp, env0, Map.empty, root))
+      val result = Interpreter.toJava(Interpreter.eval(defn.exp, env0, Map.empty, Map.empty, root))
+
+      // Immediately return the result if it is already a proxy object.
+      if (result.isInstanceOf[ProxyObject]) {
+        return result.asInstanceOf[ProxyObject]
+      }
 
       // Eq, Hash, and toString
       val resultType = defn.tpe.typeArguments.last
@@ -105,7 +111,7 @@ object Linker {
       link(sym, root).invoke(Array(x, y)).getValue match {
         case java.lang.Boolean.TRUE => true
         case java.lang.Boolean.FALSE => false
-        case v => throw InternalRuntimeException(s"Unexpected value: '$v'.")
+        case v => throw InternalRuntimeException(s"Unexpected value: '$v' of type '${v.getClass.getName}'.")
       }
     }
 
@@ -117,7 +123,7 @@ object Linker {
       val sym = root.specialOps(SpecialOperator.HashCode)(tpe)
       link(sym, root).invoke(Array(x)).getValue match {
         case i: java.lang.Integer => i.intValue()
-        case v => throw InternalRuntimeException(s"Unexpected value: '$v'.")
+        case v => throw InternalRuntimeException(s"Unexpected value: '$v' of type '${v.getClass.getName}'.")
       }
     }
 
@@ -129,7 +135,7 @@ object Linker {
       val sym = root.specialOps(SpecialOperator.ToString)(tpe)
       link(sym, root).invoke(Array(x)).getValue match {
         case s: java.lang.String => s
-        case v => throw InternalRuntimeException(s"Unexpected value: '$v'.")
+        case v => throw InternalRuntimeException(s"Unexpected value: '$v' of type '${v.getClass.getName}'.")
       }
     }
 

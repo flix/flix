@@ -27,6 +27,8 @@ trait ResolvedAst
 object ResolvedAst {
 
   case class Program(defs: Map[Symbol.DefnSym, ResolvedAst.Def],
+                     effs: Map[Symbol.EffSym, ResolvedAst.Eff],
+                     handlers: Map[Symbol.EffSym, ResolvedAst.Handler],
                      enums: Map[Symbol.EnumSym, ResolvedAst.Enum],
                      classes: Map[Symbol.ClassSym, ResolvedAst.Class],
                      impls: Map[Symbol.ClassSym, ResolvedAst.Impl],
@@ -44,7 +46,7 @@ object ResolvedAst {
 
   case class Eff(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EffSym, tparams: List[ResolvedAst.TypeParam], fparams: List[ResolvedAst.FormalParam], sc: Scheme, eff: ast.Eff, loc: SourceLocation) extends ResolvedAst
 
-  case class Handler(sym: Symbol.EffSym) extends ResolvedAst
+  case class Handler(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EffSym, tparams: List[ResolvedAst.TypeParam], fparams: List[ResolvedAst.FormalParam], exp: ResolvedAst.Expression, sc: Scheme, eff: ast.Eff, loc: SourceLocation) extends ResolvedAst
 
   // TODO
   case class Law() extends ResolvedAst
@@ -95,6 +97,8 @@ object ResolvedAst {
     case class Var(sym: Symbol.VarSym, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Def(sym: Symbol.DefnSym, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+
+    case class Eff(sym: Symbol.EffSym, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Hole(sym: Symbol.HoleSym, tpe: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
@@ -157,6 +161,8 @@ object ResolvedAst {
     case class Deref(exp: ResolvedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Assign(exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+
+    case class HandleWith(exp: ResolvedAst.Expression, bindings: List[ResolvedAst.HandlerBinding], tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Existential(fparam: ResolvedAst.FormalParam, exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
@@ -266,6 +272,8 @@ object ResolvedAst {
   case class ComplexClass(sym: Symbol.ClassSym, polarity: Ast.Polarity, args: List[Type], loc: SourceLocation) extends NamedAst
 
   case class FormalParam(sym: Symbol.VarSym, mod: Ast.Modifiers, tpe: Type, loc: SourceLocation) extends ResolvedAst
+
+  case class HandlerBinding(sym: Symbol.EffSym, exp: ResolvedAst.Expression) extends ResolvedAst
 
   case class MatchRule(pat: ResolvedAst.Pattern, guard: ResolvedAst.Expression, exp: ResolvedAst.Expression) extends ResolvedAst
 

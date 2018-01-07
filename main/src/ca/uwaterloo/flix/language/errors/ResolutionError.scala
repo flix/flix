@@ -31,21 +31,26 @@ sealed trait ResolutionError extends CompilationError {
 object ResolutionError {
 
   /**
-    * Ambiguous Reference Error.
+    * Ambiguous Name Error.
     *
-    * @param qn  the ambiguous name.
-    * @param ns  the current namespace.
-    * @param loc the location where the error occurred.
+    * @param qn   the ambiguous name.
+    * @param ns   the current namespace.
+    * @param loc1 the location where the 1st name is defined.
+    * @param loc2 the location where the 2nd name is defined.
+    * @param loc  the location where the error occurred.
     */
-  // TODO: Replace by DuplicateDefinition during naming!
-  case class AmbiguousRef(qn: Name.QName, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
+  case class AmbiguousName(qn: Name.QName, ns: Name.NName, loc1: SourceLocation, loc2: SourceLocation, loc: SourceLocation) extends ResolutionError {
     val source: Source = loc.source
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
-      vt << ">> Ambiguous reference '" << Red(qn.toString) << "'." << NewLine
+      vt << ">> Ambiguous name '" << Red(qn.toString) << "' Name refers to both a definition and an effect." << NewLine
       vt << NewLine
-      vt << Code(loc, "ambiguous reference.") << NewLine
+      vt << Code(loc, "ambiguous name.") << NewLine
+      vt << NewLine
+      vt << Code(loc1, "the definition of the 1st match was here.") << NewLine
+      vt << NewLine
+      vt << Code(loc2, "the definition of the 2nd match was here.") << NewLine
     }
   }
 
@@ -97,9 +102,9 @@ object ResolutionError {
   }
 
   /**
-    * Inaccessible Definition Error.
+    * Inaccessible Def Error.
     *
-    * @param sym the definition symbol.
+    * @param sym the def symbol.
     * @param ns  the namespace where the symbol is not accessible.
     * @param loc the location where the error occurred.
     */
@@ -113,6 +118,26 @@ object ResolutionError {
       vt << Code(loc, "inaccessible definition.") << NewLine
       vt << NewLine
       vt << Underline("Tip:") << " Mark the definition as public." << NewLine
+    }
+  }
+
+  /**
+    * Inaccessible Eff Error.
+    *
+    * @param sym the eff symbol.
+    * @param ns  the namespace where the symbol is not accessible.
+    * @param loc the location where the error occurred.
+    */
+  case class InaccessibleEff(sym: Symbol.EffSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
+    val source: Source = loc.source
+    val message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Effect '" << Red(sym.toString) << s"' is not accessible from the namespace '" << Cyan(ns.toString) << "'." << NewLine
+      vt << NewLine
+      vt << Code(loc, "inaccessible effect.") << NewLine
+      vt << NewLine
+      vt << Underline("Tip:") << " Mark the effect as public." << NewLine
     }
   }
 
@@ -157,18 +182,18 @@ object ResolutionError {
   }
 
   /**
-    * Undefined Definition Error.
+    * Undefined Name Error.
     *
     * @param qn  the unresolved name.
     * @param ns  the current namespace.
     * @param loc the location where the error occurred.
     */
-  case class UndefinedDef(qn: Name.QName, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
+  case class UndefinedName(qn: Name.QName, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
     val source: Source = loc.source
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
-      vt << ">> Undefined definition '" << Red(qn.toString) << "'." << NewLine
+      vt << ">> Undefined name '" << Red(qn.toString) << "'." << NewLine
       vt << NewLine
       vt << Code(loc, "name not found") << NewLine
       vt << NewLine

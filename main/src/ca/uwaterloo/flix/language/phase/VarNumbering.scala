@@ -20,8 +20,8 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.SimplifiedAst._
 import ca.uwaterloo.flix.language.ast.{SimplifiedAst, Type}
-import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 import ca.uwaterloo.flix.util.Validation._
+import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
 /**
   * Assigns stack offsets to each variable symbol in the program.
@@ -82,16 +82,19 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.Str(lit) => i0
       case Expression.Var(sym, tpe, loc) => i0
       case Expression.Def(sym, tpe, loc) => i0
+      case Expression.Eff(sym, tpe, loc) => i0
       case Expression.Closure(ref, freeVars, tpe, loc) => i0
       case Expression.ApplyClo(exp, args, tpe, loc) =>
         val i = visitExp(exp, i0)
         visitExps(args, i)
-      case Expression.ApplyDef(name, args, tpe, loc) => visitExps(args, i0)
+      case Expression.ApplyDef(sym, args, tpe, loc) => visitExps(args, i0)
+      case Expression.ApplyEff(sym, args, tpe, loc) => visitExps(args, i0)
       case Expression.ApplyCloTail(exp, args, tpe, loc) =>
         val i = visitExp(exp, i0)
         visitExps(args, i)
-      case Expression.ApplyDefTail(name, args, tpe, loc) => visitExps(args, i0)
-      case Expression.ApplySelfTail(name, formals, args, tpe, loc) => visitExps(args, i0)
+      case Expression.ApplyDefTail(sym, args, tpe, loc) => visitExps(args, i0)
+      case Expression.ApplyEffTail(sym, args, tpe, loc) => visitExps(args, i0)
+      case Expression.ApplySelfTail(sym, formals, args, tpe, loc) => visitExps(args, i0)
       case Expression.Unary(sop, op, exp, tpe, loc) => visitExp(exp, i0)
       case Expression.Binary(sop, op, exp1, exp2, tpe, loc) =>
         val i1 = visitExp(exp1, i0)
@@ -154,6 +157,9 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.Assign(exp1, exp2, tpe, loc) =>
         val i1 = visitExp(exp1, i0)
         visitExp(exp2, i1)
+      case Expression.HandleWith(exp, bindings, tpe, loc) =>
+        val i1 = visitExp(exp, i0)
+        visitExps(bindings.map(_.exp), i1)
       case Expression.Existential(params, exp, loc) => visitExp(exp, i0)
       case Expression.Universal(params, exp, loc) => visitExp(exp, i0)
       case Expression.NativeConstructor(constructor, args, tpe, loc) => visitExps(args, i0)

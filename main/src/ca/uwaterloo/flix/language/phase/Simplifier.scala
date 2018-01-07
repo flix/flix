@@ -19,8 +19,8 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.util.{InternalCompilerException, Optimization, Validation}
 import ca.uwaterloo.flix.util.Validation._
+import ca.uwaterloo.flix.util.{InternalCompilerException, Optimization, Validation}
 
 import scala.collection.mutable
 
@@ -71,11 +71,29 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
     }
 
     /**
+      * Translates the given effect `eff0` to the SimplifiedAst.
+      */
+    def visitEff(eff0: TypedAst.Eff): SimplifiedAst.Eff = {
+      val fs = eff0.fparams.map(visitFormalParam)
+      SimplifiedAst.Eff(eff0.ann, eff0.mod, eff0.sym, fs, eff0.tpe, eff0.loc)
+    }
+
+    /**
+      * Translates the given handler `handler0` to the SimplifiedAst.
+      */
+    def visitHandler(handler0: TypedAst.Handler): SimplifiedAst.Handler = {
+      val fs = handler0.fparams.map(visitFormalParam)
+      val exp = visitExp(handler0.exp)
+      SimplifiedAst.Handler(handler0.ann, handler0.mod, handler0.sym, fs, exp, handler0.tpe, handler0.loc)
+    }
+
+    /**
       * Translates the given expression `exp` to the SimplifiedAst.
       */
     def visitExp(expr: TypedAst.Expression): SimplifiedAst.Expression = expr match {
       case TypedAst.Expression.Var(sym, tpe, eff, loc) => SimplifiedAst.Expression.Var(sym, tpe, loc)
       case TypedAst.Expression.Def(sym, tpe, eff, loc) => SimplifiedAst.Expression.Def(sym, tpe, loc)
+      case TypedAst.Expression.Eff(sym, tpe, eff, loc) => SimplifiedAst.Expression.Eff(sym, tpe, loc)
       case TypedAst.Expression.Hole(sym, tpe, eff, loc) => SimplifiedAst.Expression.HoleError(sym, tpe, eff, loc)
       case TypedAst.Expression.Unit(loc) => SimplifiedAst.Expression.Unit
       case TypedAst.Expression.True(loc) => SimplifiedAst.Expression.True
@@ -399,6 +417,13 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
         SimplifiedAst.Expression.Assign(e1, e2, tpe, loc)
+
+      case TypedAst.Expression.HandleWith(exp, bindings, tpe, eff, loc) =>
+        val e = visitExp(exp)
+        val bs = bindings map {
+          case TypedAst.HandlerBinding(sym, handler) => SimplifiedAst.HandlerBinding(sym, visitExp(handler))
+        }
+        SimplifiedAst.Expression.HandleWith(e, bs, tpe, loc)
 
       case TypedAst.Expression.Existential(fparam, exp, eff, loc) =>
         val p = SimplifiedAst.FormalParam(fparam.sym, fparam.mod, fparam.tpe, fparam.loc)
@@ -983,6 +1008,8 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
     // Main computation.
     //
     val defns = root.defs.map { case (k, v) => k -> visitDef(v) }
+    val effs = root.effs.map { case (k, v) => k -> visitEff(v) }
+    val handlers = root.handlers.map { case (k, v) => k -> visitHandler(v) }
     val enums = root.enums.map {
       case (k, TypedAst.Enum(doc, mod, sym, cases0, enumType, loc)) =>
         val cases = cases0 map {
@@ -1000,7 +1027,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
     val time = root.time
 
     val elapsed = System.nanoTime() - start
-    SimplifiedAst.Root(defns ++ toplevel, enums, lattices, collections, indexes, strata, properties, specialOps, reachable, time.copy(simplifier = elapsed)).toSuccess
+    SimplifiedAst.Root(defns ++ toplevel, effs, handlers, enums, lattices, collections, indexes, strata, properties, specialOps, reachable, time.copy(simplifier = elapsed)).toSuccess
   }
 
   /**
@@ -1025,7 +1052,8 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         case None => SimplifiedAst.Expression.Var(sym, tpe, loc)
         case Some(replacement) => SimplifiedAst.Expression.Var(replacement, tpe, loc)
       }
-      case SimplifiedAst.Expression.Def(name, tpe, loc) => e
+      case SimplifiedAst.Expression.Def(sym, tpe, loc) => e
+      case SimplifiedAst.Expression.Eff(sym, tpe, loc) => e
       case SimplifiedAst.Expression.Lambda(fparams, body, tpe, loc) =>
         SimplifiedAst.Expression.Lambda(fparams, visit(body), tpe, loc)
       case SimplifiedAst.Expression.Apply(exp, args, tpe, loc) =>
@@ -1072,6 +1100,12 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         SimplifiedAst.Expression.Deref(visit(exp), tpe, loc)
       case SimplifiedAst.Expression.Assign(exp1, exp2, tpe, loc) =>
         SimplifiedAst.Expression.Assign(visit(exp1), visit(exp2), tpe, loc)
+      case SimplifiedAst.Expression.HandleWith(exp, bindings, tpe, loc) =>
+        val e = copy(exp, m)
+        val bs = bindings map {
+          case SimplifiedAst.HandlerBinding(sym, handler) => SimplifiedAst.HandlerBinding(sym, copy(handler, m))
+        }
+        SimplifiedAst.Expression.HandleWith(e, bs, tpe, loc)
       case SimplifiedAst.Expression.Existential(params, exp, loc) =>
         SimplifiedAst.Expression.Existential(params, visit(exp), loc)
       case SimplifiedAst.Expression.Universal(params, exp, loc) =>
@@ -1093,9 +1127,11 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case SimplifiedAst.Expression.Closure(ref, freeVars, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
       case SimplifiedAst.Expression.LambdaClosure(lambda, freeVars, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
       case SimplifiedAst.Expression.ApplyClo(exp, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
-      case SimplifiedAst.Expression.ApplyDef(name, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
+      case SimplifiedAst.Expression.ApplyDef(sym, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
+      case SimplifiedAst.Expression.ApplyEff(sym, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
       case SimplifiedAst.Expression.ApplyCloTail(exp, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
       case SimplifiedAst.Expression.ApplyDefTail(sym, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
+      case SimplifiedAst.Expression.ApplyEffTail(sym, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
       case SimplifiedAst.Expression.ApplySelfTail(name, formals, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
     }
 

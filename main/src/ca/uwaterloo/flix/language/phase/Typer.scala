@@ -38,7 +38,9 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     val startTime = System.nanoTime()
 
     val result = for {
-      definitions <- Declarations.Definitions.typecheck(program)
+      defs <- Declarations.Definitions.typecheck(program)
+      effs <- Declarations.typecheckEffects(program)
+      handlers <- Declarations.typecheckHandlers(program)
       enums <- Declarations.Enums.typecheck(program)
       lattices <- Declarations.Lattices.typecheck(program)
       tables <- Declarations.Tables.typecheck(program)
@@ -50,7 +52,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       val specialOps = Map.empty[SpecialOperator, Map[Type, Symbol.DefnSym]]
       val currentTime = System.nanoTime()
       val time = program.time.copy(typer = currentTime - startTime)
-      TypedAst.Root(definitions, enums, lattices, tables, indexes, strata, properties, specialOps, program.reachable, time)
+      TypedAst.Root(defs, effs, handlers, enums, lattices, tables, indexes, strata, properties, specialOps, program.reachable, time)
     }
 
     result match {
@@ -163,23 +165,13 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         // TODO: See if this can be rewritten nicer
         result match {
           case InferMonad(run) =>
-            val subst = getSubstFromParams(defn0.fparams, program)
-            run(subst) match {
-              case Ok((subst0, resultType)) =>
-                val exp = Expressions.reassemble(defn0.exp, program, subst0)
-
-                val tparams = defn0.tparams.map {
-                  case ResolvedAst.TypeParam(name, tpe, loc) =>
-                    TypedAst.TypeParam(name, tpe, loc)
-                }
-
-                // Translate the named formals into typed formals.
-                val formals = defn0.fparams.map {
-                  case ResolvedAst.FormalParam(sym, mod, tpe, loc) =>
-                    TypedAst.FormalParam(sym, mod, subst0(sym.tvar), sym.loc)
-                }
-
-                Ok(TypedAst.Def(defn0.doc, defn0.ann, defn0.mod, defn0.sym, tparams, formals, exp, resultType, defn0.eff, defn0.loc))
+            val subst0 = getSubstFromParams(defn0.fparams)
+            run(subst0) match {
+              case Ok((subst, resultType)) =>
+                val exp = Expressions.reassemble(defn0.exp, program, subst)
+                val tparams = getTypeParams(defn0.tparams)
+                val fparams = getFormalParams(defn0.fparams, subst)
+                Ok(TypedAst.Def(defn0.doc, defn0.ann, defn0.mod, defn0.sym, tparams, fparams, exp, resultType, defn0.eff, defn0.loc))
 
               case Err(e) => Err(e)
             }
@@ -392,6 +384,75 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
 
     }
 
+    /**
+      * Infers the types of the effects in the given program.
+      */
+    def typecheckEffects(program0: ResolvedAst.Program)(implicit flix: Flix): Result[Map[Symbol.EffSym, TypedAst.Eff], TypeError] = {
+      // Typecheck every effect in the program.
+      val effs = program0.effs.toList.map {
+        case (sym, eff0) => typecheckEff(eff0) map (e => sym -> e)
+      }
+
+      // Sequence the results and convert them back to a map.
+      Result.seqM(effs).map(_.toMap)
+    }
+
+    /**
+      * Infers the the type of the given effect `eff0`.
+      */
+    def typecheckEff(eff0: ResolvedAst.Eff)(implicit flix: Flix): Result[TypedAst.Eff, TypeError] = eff0 match {
+      case ResolvedAst.Eff(doc, ann, mod, sym, tparams0, fparams0, sc, eff, loc) =>
+        val argumentTypes = fparams0.map(_.tpe)
+        val tpe = Scheme.instantiate(sc)(flix.genSym)
+
+        val subst = getSubstFromParams(fparams0)
+        val tparams = getTypeParams(tparams0)
+        val fparams = getFormalParams(fparams0, subst)
+
+        Ok(TypedAst.Eff(doc, ann, mod, sym, tparams, fparams, tpe, eff, loc))
+    }
+
+    /**
+      * Infers the types of the handlers in the given program.
+      */
+    def typecheckHandlers(program0: ResolvedAst.Program)(implicit flix: Flix): Result[Map[Symbol.EffSym, TypedAst.Handler], TypeError] = {
+      // Typecheck every handler in the program.
+      val effs = program0.handlers.toList.map {
+        case (sym, handler0) => typecheckHandler(handler0, program0) map (e => sym -> e)
+      }
+
+      // Sequence the results and convert them back to a map.
+      Result.seqM(effs).map(_.toMap)
+    }
+
+    /**
+      * Infers the the type of the given handler `handler0`.
+      */
+    def typecheckHandler(handler0: ResolvedAst.Handler, program0: ResolvedAst.Program)(implicit flix: Flix): Result[TypedAst.Handler, TypeError] = handler0 match {
+      case ResolvedAst.Handler(doc, ann, mod, sym, tparams0, fparams0, exp0, sc, eff0, loc) =>
+
+        val eff = program0.effs(sym)
+        val effectType = Scheme.instantiate(eff.sc)(flix.genSym)
+
+        val declaredType = Scheme.instantiate(sc)(flix.genSym)
+
+        val subst0 = getSubstFromParams(fparams0)
+        val tparams = getTypeParams(tparams0)
+        val fparams = getFormalParams(fparams0, subst0)
+
+        val result = for {
+          actualType <- Expressions.infer(exp0, program0)(flix.genSym)
+          unifiedType <- unifyM(declaredType, effectType, actualType, loc)
+        } yield unifiedType
+
+        result.run(Substitution.empty) map {
+          case (subst, unifiedType) =>
+            val exp = Expressions.reassemble(exp0, program0, subst)
+            TypedAst.Handler(doc, ann, mod, sym, tparams, fparams, exp, subst(unifiedType), eff0, loc)
+        }
+    }
+
+
   }
 
   object Expressions {
@@ -417,11 +478,18 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         case ResolvedAst.Expression.Var(sym, loc) => liftM(sym.tvar)
 
         /*
-         * Reference expression.
+         * Def expression.
          */
         case ResolvedAst.Expression.Def(sym, tvar, loc) =>
           val defn = program.defs(sym)
           unifyM(tvar, Scheme.instantiate(defn.sc), loc)
+
+        /*
+         * Eff expression.
+         */
+        case ResolvedAst.Expression.Eff(sym, tvar, loc) =>
+          val eff = program.effs(sym)
+          unifyM(tvar, Scheme.instantiate(eff.sc), loc)
 
         /*
          * Hole expression.
@@ -801,6 +869,29 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           } yield resultType
 
         /*
+         * HandleWith expression.
+         */
+        case ResolvedAst.Expression.HandleWith(exp, bindings, tvar, loc) =>
+          // TODO: Need to check that the return types are consistent.
+
+          // Typecheck each handler binding.
+          val bs = bindings map {
+            case ResolvedAst.HandlerBinding(sym, handler) =>
+              val eff = program.effs(sym)
+              val declaredType = Scheme.instantiate(eff.sc)
+              for {
+                actualType <- visitExp(handler)
+              } yield unifyM(declaredType, actualType, loc)
+          }
+
+          // Typecheck the expression.
+          for {
+            tpe <- visitExp(exp)
+            handlers <- seqM(bs)
+            resultType <- unifyM(tvar, tpe, loc)
+          } yield resultType
+
+        /*
          * Existential expression.
          */
         case ResolvedAst.Expression.Existential(fparam, exp, loc) =>
@@ -896,10 +987,16 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         case ResolvedAst.Expression.Var(sym, loc) => TypedAst.Expression.Var(sym, subst0(sym.tvar), Eff.Bot, loc)
 
         /*
-         * Reference expression.
+         * Def expression.
          */
         case ResolvedAst.Expression.Def(sym, tvar, loc) =>
           TypedAst.Expression.Def(sym, subst0(tvar), Eff.Bot, loc)
+
+        /*
+         * Eff expression.
+         */
+        case ResolvedAst.Expression.Eff(sym, tvar, loc) =>
+          TypedAst.Expression.Eff(sym, subst0(tvar), Eff.Bot, loc)
 
         /*
          * Hole expression.
@@ -1075,6 +1172,16 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           val e1 = visitExp(exp1, subst0)
           val e2 = visitExp(exp2, subst0)
           TypedAst.Expression.Assign(e1, e2, subst0(tvar), Eff.Top, loc)
+
+        /*
+         * HandleWith expression.
+         */
+        case ResolvedAst.Expression.HandleWith(exp, bindings, tvar, loc) =>
+          val e = visitExp(exp, subst0)
+          val bs = bindings map {
+            case ResolvedAst.HandlerBinding(sym, handler) => TypedAst.HandlerBinding(sym, visitExp(handler, subst0))
+          }
+          TypedAst.Expression.HandleWith(e, bs, subst0(tvar), Eff.Top, loc)
 
         /*
          * Existential expression.
@@ -1354,11 +1461,8 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     * Returns a substitution from formal parameters to their declared types.
     *
     * Performs type resolution of the declared type of each formal parameters.
-    *
-    * @param params  the formal parameters.
-    * @param program the program.
     */
-  def getSubstFromParams(params: List[ResolvedAst.FormalParam], program: ResolvedAst.Program): Unification.Substitution = {
+  def getSubstFromParams(params: List[ResolvedAst.FormalParam]): Unification.Substitution = {
     // Compute the substitution by mapping the symbol of each parameter to its declared type.
     val declaredTypes = params.map(_.tpe)
     (params zip declaredTypes).foldLeft(Substitution.empty) {
@@ -1367,6 +1471,19 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     }
   }
 
+  /**
+    * Returns the typed version of the given type parameters `tparams0`.
+    */
+  def getTypeParams(tparams0: List[ResolvedAst.TypeParam]): List[TypedAst.TypeParam] = tparams0.map {
+    case ResolvedAst.TypeParam(name, tpe, loc) => TypedAst.TypeParam(name, tpe, loc)
+  }
+
+  /**
+    * Returns the typed version of the given formal parameters `fparams0`.
+    */
+  def getFormalParams(fparams0: List[ResolvedAst.FormalParam], subst0: Unification.Substitution) = fparams0.map {
+    case ResolvedAst.FormalParam(sym, mod, tpe, loc) => TypedAst.FormalParam(sym, mod, subst0(sym.tvar), sym.loc)
+  }
 
   def getTypeFromField(field: Field): Type = ??? // TODO
 
