@@ -136,11 +136,9 @@ object GenClosureClasses {
     applyMethod.visitVarInsn(ALOAD, 0)
     applyMethod.visitFieldInsn(GETFIELD, classType.name.toInternalName, "creationContext", JvmType.Object.toDescriptor)
     applyMethod.visitVarInsn(ALOAD, 1)
-    applyMethod.visitMethodInsn(INVOKEVIRTUAL, JvmName.Object.toInternalName, "equals",
-    AsmOps.getMethodDescriptor(List(JvmType.Object), JvmType.PrimBool), false)
 
     // If contexts are equal, precede to evaluate
-    applyMethod.visitJumpInsn(IFNE, skipLabel)
+    applyMethod.visitJumpInsn(IF_ACMPEQ, skipLabel)
 
     val message = "Closure is called with a different Context"
     // Create a new `Exception` object
