@@ -74,6 +74,9 @@ object GenClosureClasses {
     visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_FINAL, classType.name.toInternalName, null,
       JvmName.Object.toInternalName, superInterface)
 
+    // Context at creation
+    AsmOps.compileField(visitor, "creationContext", JvmType.Object, isStatic = false, isPrivate = true)
+
     // Generate a field for each closured captured variable.
     for ((freeVar, index) <- closure.freeVars.zipWithIndex) {
       // `JvmType` of `freeVar`
@@ -128,6 +131,33 @@ object GenClosureClasses {
     // Function parameters
     val params = defn.formals.takeRight(defn.formals.length - freeVars.length)
 
+    // Sanity check
+    val skipLabel = new Label
+    applyMethod.visitVarInsn(ALOAD, 0)
+    applyMethod.visitFieldInsn(GETFIELD, classType.name.toInternalName, "creationContext", JvmType.Object.toDescriptor)
+    applyMethod.visitVarInsn(ALOAD, 1)
+
+    // If contexts are equal, precede to evaluate
+    applyMethod.visitJumpInsn(IF_ACMPEQ, skipLabel)
+
+    val message = "Closure is called with a different Context"
+    // Create a new `Exception` object
+    applyMethod.visitTypeInsn(NEW, JvmName.Exception.toInternalName)
+    applyMethod.visitInsn(DUP)
+
+    // add the message to the stack
+    applyMethod.visitLdcInsn(message)
+
+    // invoke the constructor of the `Exception` object
+    applyMethod.visitMethodInsn(INVOKESPECIAL, JvmName.Exception.toInternalName, "<init>",
+    AsmOps.getMethodDescriptor(List(JvmType.String), JvmType.Void), false)
+
+    // throw the exception
+    applyMethod.visitInsn(ATHROW)
+
+    // Visit skip label
+    applyMethod.visitLabel(skipLabel)
+
     // Enter label
     val enterLabel = new Label()
     applyMethod.visitCode()
@@ -167,7 +197,6 @@ object GenClosureClasses {
     applyMethod.visitVarInsn(ALOAD, 0)
 
     // Swapping `this` and result of the expression
-    // TODO: Ramin could be extract this into a helper in AsmOps? It is used in several places, right?
     if (AsmOps.getStackSize(resultType) == 1) {
       applyMethod.visitInsn(SWAP)
     } else {
@@ -191,15 +220,20 @@ object GenClosureClasses {
     val varTypes = freeVars.map(_.tpe).map(JvmOps.getErasedJvmType)
 
     // Constructor header
-    val constructor = visitor.visitMethod(ACC_PUBLIC, "<init>", AsmOps.getMethodDescriptor(varTypes, JvmType.Void), null, null)
+    val constructor = visitor.visitMethod(ACC_PUBLIC, "<init>", AsmOps.getMethodDescriptor(JvmType.Object +: varTypes, JvmType.Void), null, null)
 
     // Calling constructor of super
     constructor.visitVarInsn(ALOAD, 0)
     constructor.visitMethodInsn(INVOKESPECIAL, JvmName.Object.toInternalName, "<init>",
       AsmOps.getMethodDescriptor(Nil, JvmType.Void), false)
 
+    // Saving the context
+    constructor.visitVarInsn(ALOAD, 0)
+    constructor.visitVarInsn(ALOAD, 1)
+    constructor.visitFieldInsn(PUTFIELD, classType.name.toInternalName, "creationContext", JvmType.Object.toDescriptor)
+
     // Setting up closure args
-    var offset: Int = 1
+    var offset: Int = 2
     for ((tpe, index) <- varTypes.zipWithIndex) {
       constructor.visitVarInsn(ALOAD, 0)
 
