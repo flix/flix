@@ -33,6 +33,7 @@ object AsmOps {
     * Returns the stack size of a variable of type `tpe` in jvm.
     */
   def getStackSize(tpe: JvmType): Int = tpe match {
+    case JvmType.Void => throw InternalCompilerException(s"Unexpected type: $tpe")
     case JvmType.PrimBool => 1
     case JvmType.PrimChar => 1
     case JvmType.PrimFloat => 1
@@ -42,43 +43,42 @@ object AsmOps {
     case JvmType.PrimInt => 1
     case JvmType.PrimLong => 2
     case JvmType.Reference(_) => 1
-    case JvmType.Void => throw InternalCompilerException(s"Unexpected type: $tpe")
   }
 
   /**
     * Returns the load instruction for the value of the type specified by `tpe`
     */
-  // TODO: Ramin: Pattern match should not use wildcard.
   def getLoadInstruction(tpe: JvmType): Int = tpe match {
+    case JvmType.Void => throw InternalCompilerException(s"Unexpected type $tpe")
     case JvmType.PrimBool | JvmType.PrimChar | JvmType.PrimByte | JvmType.PrimShort | JvmType.PrimInt => ILOAD
     case JvmType.PrimLong => LLOAD
     case JvmType.PrimFloat => FLOAD
     case JvmType.PrimDouble => DLOAD
-    case _ => ALOAD
+    case JvmType.Reference(_) => ALOAD
   }
 
   /**
     * Returns the store instruction for the value of the type specified by `tpe`
     */
-  // TODO: Ramin: Pattern match should not use wildcard.
   def getStoreInstruction(tpe: JvmType): Int = tpe match {
+    case JvmType.Void => throw InternalCompilerException(s"Unexpected type $tpe")
     case JvmType.PrimBool | JvmType.PrimChar | JvmType.PrimByte | JvmType.PrimShort | JvmType.PrimInt => ISTORE
     case JvmType.PrimLong => LSTORE
     case JvmType.PrimFloat => FSTORE
     case JvmType.PrimDouble => DSTORE
-    case _ => ASTORE
+    case JvmType.Reference(_) => ASTORE
   }
 
   /**
     * Returns the load instruction corresponding to the given type `tpe`
     */
-  // TODO: Ramin: Pattern match should not use wildcard.
   def getReturnInstruction(tpe: JvmType): Int = tpe match {
+    case JvmType.Void => throw InternalCompilerException(s"Unexpected type $tpe")
     case JvmType.PrimBool | JvmType.PrimChar | JvmType.PrimByte | JvmType.PrimShort | JvmType.PrimInt => IRETURN
     case JvmType.PrimLong => LRETURN
     case JvmType.PrimFloat => FRETURN
     case JvmType.PrimDouble => DRETURN
-    case _ => ARETURN
+    case JvmType.Reference(_) => ARETURN
   }
 
   /**
@@ -100,6 +100,7 @@ object AsmOps {
     * if the value is a primitive then since there is no boxing, then no casting is necessary.
     */
   def castIfNotPrim(visitor: MethodVisitor, tpe: JvmType): Unit = tpe match {
+    case JvmType.Void => throw InternalCompilerException(s"Unexpected type $tpe")
     case JvmType.PrimBool => ()
     case JvmType.PrimChar => ()
     case JvmType.PrimFloat => ()
@@ -108,7 +109,6 @@ object AsmOps {
     case JvmType.PrimShort => ()
     case JvmType.PrimInt => ()
     case JvmType.PrimLong => ()
-    case JvmType.Void => ()
     case JvmType.Reference(name) => visitor.visitTypeInsn(CHECKCAST, name.toInternalName)
   }
 
@@ -286,6 +286,7 @@ object AsmOps {
 
     // based on the type of the field, we pick the appropriate class that boxes the primitive
     fieldType match {
+      case JvmType.Void => throw InternalCompilerException(s"Unexpected type $fieldType")
       case JvmType.PrimBool => box(JvmName.Boolean.toInternalName, getMethodDescriptor(List(JvmType.PrimBool), JvmType.Void))
       case JvmType.PrimChar => box(JvmName.Character.toInternalName, getMethodDescriptor(List(JvmType.PrimChar), JvmType.Void))
       case JvmType.PrimByte => box(JvmName.Byte.toInternalName, getMethodDescriptor(List(JvmType.PrimByte), JvmType.Void))
@@ -294,8 +295,7 @@ object AsmOps {
       case JvmType.PrimLong => box(JvmName.Long.toInternalName, getMethodDescriptor(List(JvmType.PrimLong), JvmType.Void))
       case JvmType.PrimFloat => box(JvmName.Float.toInternalName, getMethodDescriptor(List(JvmType.PrimFloat), JvmType.Void))
       case JvmType.PrimDouble => box(JvmName.Double.toInternalName, getMethodDescriptor(List(JvmType.PrimDouble), JvmType.Void))
-      case _ =>
-        // TODO: Ramin: Pattern match should not use wildcard.
+      case JvmType.Reference(_) =>
         method.visitVarInsn(ALOAD, 0)
         method.visitMethodInsn(INVOKESPECIAL, classType.name.toInternalName, getterName, getMethodDescriptor(Nil, fieldType), false)
     }

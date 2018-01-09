@@ -31,7 +31,7 @@ class TestResolver extends FunSuite with TestUtils {
          |R(x).
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    expectError[ResolutionError.UndefinedDef](result)
+    expectError[ResolutionError.UndefinedName](result)
   }
 
   test("UnsafeFact.02") {
@@ -42,7 +42,7 @@ class TestResolver extends FunSuite with TestUtils {
          |R(42, x).
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    expectError[ResolutionError.UndefinedDef](result)
+    expectError[ResolutionError.UndefinedName](result)
   }
 
   test("UnsafeFact.03") {
@@ -53,7 +53,7 @@ class TestResolver extends FunSuite with TestUtils {
          |R(42, x, 21).
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    expectError[ResolutionError.UndefinedDef](result)
+    expectError[ResolutionError.UndefinedName](result)
   }
 
   test("UnsafeRule.01") {
@@ -64,7 +64,7 @@ class TestResolver extends FunSuite with TestUtils {
          |R(x) :- R(y).
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    expectError[ResolutionError.UndefinedDef](result)
+    expectError[ResolutionError.UndefinedName](result)
   }
 
   test("UnsafeRule.02") {
@@ -75,7 +75,7 @@ class TestResolver extends FunSuite with TestUtils {
          |R(x, y) :- R(x, z).
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    expectError[ResolutionError.UndefinedDef](result)
+    expectError[ResolutionError.UndefinedName](result)
   }
 
   test("UnsafeRule.03") {
@@ -86,7 +86,7 @@ class TestResolver extends FunSuite with TestUtils {
          |R(x, y, z) :- R(x, w, z).
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    expectError[ResolutionError.UndefinedDef](result)
+    expectError[ResolutionError.UndefinedName](result)
   }
 
   test("AmbiguousTag.01") {
@@ -183,6 +183,36 @@ class TestResolver extends FunSuite with TestUtils {
     expectError[ResolutionError.InaccessibleDef](result)
   }
 
+  test("InaccessibleEff.01") {
+    val input =
+      s"""
+         |namespace A {
+         |  eff f(): Int
+         |}
+         |
+         |namespace B {
+         |  def g(): Int = A.f()
+         |}
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[ResolutionError.InaccessibleEff](result)
+  }
+
+  test("InaccessibleEff.02") {
+    val input =
+      s"""
+         |namespace A {
+         |  def f(): Int = A/B/C.g()
+         |
+         |  namespace B/C {
+         |    eff g(): Int
+         |  }
+         |}
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[ResolutionError.InaccessibleEff](result)
+  }
+
   test("InaccessibleEnum.01") {
     val input =
       s"""
@@ -255,13 +285,13 @@ class TestResolver extends FunSuite with TestUtils {
     expectError[ResolutionError.InaccessibleEnum](result)
   }
 
-  test("UndefinedDef.01") {
+  test("UndefinedName.01") {
     val input = "def f(): Int = x"
     val result = new Flix().addStr(input).compile()
-    expectError[ResolutionError.UndefinedDef](result)
+    expectError[ResolutionError.UndefinedName](result)
   }
 
-  test("UndefinedDef.02") {
+  test("UndefinedName.02") {
     val input =
       s"""
          |namespace A {
@@ -269,7 +299,7 @@ class TestResolver extends FunSuite with TestUtils {
          |}
        """.stripMargin
     val result = new Flix().addStr(input).compile()
-    expectError[ResolutionError.UndefinedDef](result)
+    expectError[ResolutionError.UndefinedName](result)
   }
 
   test("UndefinedClass.01") {

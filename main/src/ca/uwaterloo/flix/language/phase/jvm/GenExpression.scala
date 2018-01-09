@@ -80,6 +80,8 @@ object GenExpression {
       visitor.visitTypeInsn(NEW, jvmType.name.toInternalName)
       // Duplicate
       visitor.visitInsn(DUP)
+      // Load the context object
+      visitor.visitVarInsn(ALOAD, 1)
       // Capturing free args
       for (f <- freeVars) {
         val v = Expression.Var(f.sym, f.tpe, loc)
@@ -87,7 +89,7 @@ object GenExpression {
       }
       // Calling the constructor
       val varTypes = freeVars.map(_.tpe).map(JvmOps.getErasedJvmType)
-      visitor.visitMethodInsn(INVOKESPECIAL, jvmType.name.toInternalName, "<init>", AsmOps.getMethodDescriptor(varTypes, JvmType.Void), false)
+      visitor.visitMethodInsn(INVOKESPECIAL, jvmType.name.toInternalName, "<init>", AsmOps.getMethodDescriptor(JvmType.Object +: varTypes, JvmType.Void), false)
 
     case Expression.ApplyClo(exp, args, tpe, loc) =>
       // Label for the loop
@@ -237,6 +239,9 @@ object GenExpression {
       visitor.visitVarInsn(ALOAD, 2)
       visitor.visitMethodInsn(INVOKEINTERFACE, cont.name.toInternalName, "getResult", AsmOps.getMethodDescriptor(Nil, resultType), true)
       AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
+
+    case Expression.ApplyEff(sym, args, tpe, loc) =>
+      throw InternalCompilerException(s"ApplyEff not implemented in JVM backend!")
 
     case Expression.ApplyCloTail(exp, args, tpe, loc) =>
       // Type of the function interface

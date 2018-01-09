@@ -602,7 +602,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     def Primary: Rule1[ParsedAst.Expression] = rule {
       LetRec | LetMatch | IfThenElse | Match | LambdaMatch | Switch | Unsafe | Native | Lambda | Tuple |
         ArrayLit | ArrayNew | FNil | FSet | FMap | Literal |
-        Handler | HandleWith | Existential | Universal | UnaryLambda | QName | Wild | Tag | SName | Hole | UserError
+        HandleWith | Existential | Universal | UnaryLambda | QName | Wild | Tag | SName | Hole | UserError
     }
 
     def Literal: Rule1[ParsedAst.Expression.Lit] = rule {
@@ -750,21 +750,18 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       SP ~ atomic("???") ~ SP ~> ParsedAst.Expression.UserError
     }
 
-    def HandleWith: Rule1[ParsedAst.Expression.HandleWith] = rule {
-      SP ~ atomic("handle") ~ WS ~ Expression ~ WS ~ atomic("with") ~ WS ~ Handler ~ SP ~> ParsedAst.Expression.HandleWith
-    }
-
-    def Handler: Rule1[ParsedAst.Expression.Handler] = {
-      def EffectHandler: Rule1[ParsedAst.EffectHandler] = rule {
-        atomic("eff") ~ WS ~ Names.QualifiedEffect ~ optWS ~ "=" ~ optWS ~ Expression ~> ParsedAst.EffectHandler
+    def HandleWith: Rule1[ParsedAst.Expression.HandleWith] = {
+      def EffectHandler: Rule1[ParsedAst.HandlerBinding] = rule {
+        atomic("eff") ~ WS ~ Names.QualifiedEffect ~ optWS ~ "=" ~ optWS ~ Expression ~> ParsedAst.HandlerBinding
       }
 
-      def HandlerBody: Rule1[Seq[ParsedAst.EffectHandler]] = rule {
-        zeroOrMore(EffectHandler).separatedBy(optWS ~ "," ~ optWS)
+      def HandlerBody: Rule1[Seq[ParsedAst.HandlerBinding]] = rule {
+        atomic("{") ~ optWS ~ oneOrMore(EffectHandler).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ atomic("}")
       }
 
       rule {
-        SP ~ atomic("handler") ~ optWS ~ "{" ~ optWS ~ HandlerBody ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.Handler
+        // Decide on the name...
+        SP ~ atomic("do") ~ WS ~ Expression ~ WS ~ atomic("with") ~ WS ~ HandlerBody ~ SP ~> ParsedAst.Expression.HandleWith
       }
     }
 

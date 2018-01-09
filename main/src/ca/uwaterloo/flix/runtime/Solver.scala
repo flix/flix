@@ -26,6 +26,7 @@ import ca.uwaterloo.flix.language.ast.ExecutableAst._
 import ca.uwaterloo.flix.language.ast.{ExecutableAst, Symbol}
 import ca.uwaterloo.flix.runtime.datastore.{DataStore, KeyCache, ProxyObject}
 import ca.uwaterloo.flix.runtime.debugger.RestServer
+import ca.uwaterloo.flix.runtime.interpreter.Value
 import ca.uwaterloo.flix.util._
 
 import scala.collection.mutable

@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.ast
 
 import java.lang.reflect.{Constructor, Field, Method}
 
+import ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.language.ast.Ast.{EliminatedBy, IntroducedBy}
 import ca.uwaterloo.flix.language.phase.{ClosureConv, LambdaLift, Tailrec}
 
@@ -26,6 +27,8 @@ sealed trait SimplifiedAst
 object SimplifiedAst {
 
   case class Root(defs: Map[Symbol.DefnSym, SimplifiedAst.Def],
+                  effs: Map[Symbol.EffSym, SimplifiedAst.Eff],
+                  handlers: Map[Symbol.EffSym, SimplifiedAst.Handler],
                   enums: Map[Symbol.EnumSym, SimplifiedAst.Enum],
                   lattices: Map[Type, SimplifiedAst.Lattice],
                   tables: Map[Symbol.TableSym, SimplifiedAst.Table],
@@ -39,6 +42,10 @@ object SimplifiedAst {
   case class Constraint(cparams: List[SimplifiedAst.ConstraintParam], head: SimplifiedAst.Predicate.Head, body: List[SimplifiedAst.Predicate.Body]) extends SimplifiedAst
 
   case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, fparams: List[SimplifiedAst.FormalParam], exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst
+
+  case class Eff(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EffSym, fparams: List[SimplifiedAst.FormalParam], tpe: Type, loc: SourceLocation) extends SimplifiedAst
+
+  case class Handler(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EffSym, fparams: List[SimplifiedAst.FormalParam], exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst
 
   case class Enum(mod: Ast.Modifiers, sym: Symbol.EnumSym, cases: Map[String, SimplifiedAst.Case], tpe: Type, loc: SourceLocation) extends SimplifiedAst
 
@@ -132,6 +139,8 @@ object SimplifiedAst {
 
     case class Def(sym: Symbol.DefnSym, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
+    case class Eff(sym: Symbol.EffSym, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
+
     @EliminatedBy(LambdaLift.getClass)
     case class Lambda(fparams: List[SimplifiedAst.FormalParam], exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
@@ -151,11 +160,17 @@ object SimplifiedAst {
     @IntroducedBy(ClosureConv.getClass)
     case class ApplyDef(sym: Symbol.DefnSym, args: List[SimplifiedAst.Expression], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
+    @IntroducedBy(ClosureConv.getClass)
+    case class ApplyEff(sym: Symbol.EffSym, args: List[SimplifiedAst.Expression], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
+
     @IntroducedBy(Tailrec.getClass)
     case class ApplyCloTail(exp: SimplifiedAst.Expression, args: List[SimplifiedAst.Expression], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
     @IntroducedBy(Tailrec.getClass)
     case class ApplyDefTail(sym: Symbol.DefnSym, args: List[SimplifiedAst.Expression], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
+
+    @IntroducedBy(Tailrec.getClass)
+    case class ApplyEffTail(sym: Symbol.EffSym, args: List[SimplifiedAst.Expression], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
     @IntroducedBy(Tailrec.getClass)
     case class ApplySelfTail(sym: Symbol.DefnSym, formals: List[SimplifiedAst.FormalParam], actuals: List[SimplifiedAst.Expression], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
@@ -201,6 +216,8 @@ object SimplifiedAst {
 
     case class Assign(exp1: SimplifiedAst.Expression, exp2: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
+    case class HandleWith(exp: SimplifiedAst.Expression, bindings: List[SimplifiedAst.HandlerBinding], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
+
     case class Existential(fparam: SimplifiedAst.FormalParam, exp: SimplifiedAst.Expression, loc: SourceLocation) extends SimplifiedAst.Expression {
       def tpe: Type = Type.Bool
     }
@@ -217,7 +234,7 @@ object SimplifiedAst {
 
     case class UserError(tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
-    case class HoleError(sym: Symbol.HoleSym, tpe: Type, eff: Eff, loc: SourceLocation) extends SimplifiedAst.Expression
+    case class HoleError(sym: Symbol.HoleSym, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends SimplifiedAst.Expression
 
     case class MatchError(tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
@@ -342,5 +359,7 @@ object SimplifiedAst {
   case class FormalParam(sym: Symbol.VarSym, mod: Ast.Modifiers, tpe: Type, loc: SourceLocation) extends SimplifiedAst
 
   case class FreeVar(sym: Symbol.VarSym, tpe: Type) extends SimplifiedAst
+
+  case class HandlerBinding(sym: Symbol.EffSym, exp: SimplifiedAst.Expression) extends SimplifiedAst
 
 }

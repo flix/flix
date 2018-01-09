@@ -17,8 +17,7 @@
 package ca.uwaterloo.flix.language.ast.ops
 
 import ca.uwaterloo.flix.language.ast.SimplifiedAst._
-import ca.uwaterloo.flix.language.ast.Symbol
-import ca.uwaterloo.flix.language.ast.Type
+import ca.uwaterloo.flix.language.ast.{Symbol, Type}
 
 object SimplifiedAstOps {
 
@@ -71,7 +70,14 @@ object SimplifiedAstOps {
       // Def Expressions.
       //
       case Expression.Def(sym, tpe, loc) =>
-        assert(root.defs contains sym, s"Undefined definition symbol: '$sym'.")
+        assert(root.defs contains sym, s"Undefined def symbol: '$sym'.")
+        checkType(tpe)
+
+      //
+      // Eff Expressions.
+      //
+      case Expression.Eff(sym, tpe, loc) =>
+        assert(root.effs contains sym, s"Undefined effect symbol: '$sym'.")
         checkType(tpe)
 
       //
@@ -117,7 +123,17 @@ object SimplifiedAstOps {
       // ApplyDef Expressions.
       //
       case Expression.ApplyDef(sym, args, tpe, loc) =>
-        assert(root.defs contains sym, s"Undefined definition symbol: '$sym'.")
+        assert(root.defs contains sym, s"Undefined def symbol: '$sym'.")
+        for (arg <- args) {
+          checkExp(arg, env0, ienv0)
+        }
+        checkType(tpe)
+
+      //
+      // ApplyEff Expressions.
+      //
+      case Expression.ApplyEff(sym, args, tpe, loc) =>
+        assert(root.effs contains sym, s"Undefined eff symbol: '$sym'.")
         for (arg <- args) {
           checkExp(arg, env0, ienv0)
         }
@@ -137,7 +153,17 @@ object SimplifiedAstOps {
       // ApplyDefTail Expressions.
       //
       case Expression.ApplyDefTail(sym, args, tpe, loc) =>
-        assert(root.defs contains sym, s"Undefined definition symbol: '$sym'.")
+        assert(root.defs contains sym, s"Undefined def symbol: '$sym'.")
+        for (arg <- args) {
+          checkExp(arg, env0, ienv0)
+        }
+        checkType(tpe)
+
+      //
+      // ApplyEffTail Expressions.
+      //
+      case Expression.ApplyEffTail(sym, args, tpe, loc) =>
+        assert(root.effs contains sym, s"Undefined eff symbol: '$sym'.")
         for (arg <- args) {
           checkExp(arg, env0, ienv0)
         }
@@ -305,6 +331,16 @@ object SimplifiedAstOps {
       case Expression.Assign(exp1, exp2, tpe, loc) =>
         checkExp(exp1, env0, ienv0)
         checkExp(exp2, env0, ienv0)
+        checkType(tpe)
+
+      //
+      // HandleWith Expressions.
+      //
+      case Expression.HandleWith(exp, bindings, tpe, loc) =>
+        checkExp(exp, env0, ienv0)
+        for (HandlerBinding(sym, handler) <- bindings) {
+          checkExp(handler, env0, ienv0)
+        }
         checkType(tpe)
 
       //

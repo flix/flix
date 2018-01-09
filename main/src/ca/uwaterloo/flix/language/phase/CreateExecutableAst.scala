@@ -20,8 +20,8 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.{CompilationError, GenSym}
 import ca.uwaterloo.flix.runtime.datastore.ProxyObject
-import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 import ca.uwaterloo.flix.util.Validation._
+import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
 import scala.collection.mutable
 
@@ -42,6 +42,9 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
 
     val constants = root.defs.map { case (k, v) => k -> toExecutable(v) }
 
+    val effs = root.effs.map { case (k, v) => k -> visitEff(v) }
+    val handlers = root.handlers.map { case (k, v) => k -> visitHandler(v) }
+
     val enums = root.enums.map {
       case (sym, SimplifiedAst.Enum(mod, _, cases0, tpe, loc)) =>
         val cases = cases0.map {
@@ -60,7 +63,7 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
     val reachable = root.reachable
     val time = root.time
 
-    ExecutableAst.Root(constants ++ m, enums, lattices, tables, indexes, strata, properties, specialOps, reachable, time).toSuccess
+    ExecutableAst.Root(constants ++ m, effs, handlers, enums, lattices, tables, indexes, strata, properties, specialOps, reachable, time).toSuccess
   }
 
   def toExecutable(sast: SimplifiedAst.Def): ExecutableAst.Def = {
@@ -69,6 +72,17 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
     }.toArray
 
     ExecutableAst.Def(sast.ann, sast.mod, sast.sym, formals, Expression.toExecutable(sast.exp), sast.tpe, sast.loc)
+  }
+
+  def visitEff(eff0: SimplifiedAst.Eff): ExecutableAst.Eff = {
+    val fparams = eff0.fparams.map(toExecutable)
+    ExecutableAst.Eff(eff0.ann, eff0.mod, eff0.sym, fparams, eff0.tpe, eff0.loc)
+  }
+
+  def visitHandler(handler0: SimplifiedAst.Handler): ExecutableAst.Handler = {
+    val fparams = handler0.fparams.map(toExecutable)
+    val exp = Expression.toExecutable(handler0.exp)
+    ExecutableAst.Handler(handler0.ann, handler0.mod, handler0.sym, fparams, exp, handler0.tpe, handler0.loc)
   }
 
   def toExecutable(sast: SimplifiedAst.Lattice, m: TopLevel)(implicit genSym: GenSym): ExecutableAst.Lattice = sast match {
@@ -168,14 +182,20 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
         val argsArray = args.map(toExecutable)
         ExecutableAst.Expression.ApplyClo(toExecutable(exp), argsArray, tpe, loc)
       case SimplifiedAst.Expression.ApplyDef(name, args, tpe, loc) =>
-        val argsArray = args.map(toExecutable)
-        ExecutableAst.Expression.ApplyDef(name, argsArray, tpe, loc)
+        val as = args.map(toExecutable)
+        ExecutableAst.Expression.ApplyDef(name, as, tpe, loc)
+      case SimplifiedAst.Expression.ApplyEff(sym, args, tpe, loc) =>
+        val as = args.map(toExecutable)
+        ExecutableAst.Expression.ApplyEff(sym, as, tpe, loc)
       case SimplifiedAst.Expression.ApplyCloTail(exp, args, tpe, loc) =>
         val argsArray = args.map(toExecutable)
         ExecutableAst.Expression.ApplyCloTail(toExecutable(exp), argsArray, tpe, loc)
-      case SimplifiedAst.Expression.ApplyDefTail(name, args, tpe, loc) =>
+      case SimplifiedAst.Expression.ApplyDefTail(sym, args, tpe, loc) =>
         val argsArray = args.map(toExecutable)
-        ExecutableAst.Expression.ApplyDefTail(name, argsArray, tpe, loc)
+        ExecutableAst.Expression.ApplyDefTail(sym, argsArray, tpe, loc)
+      case SimplifiedAst.Expression.ApplyEffTail(sym, args, tpe, loc) =>
+        val argsArray = args.map(toExecutable)
+        ExecutableAst.Expression.ApplyEffTail(sym, argsArray, tpe, loc)
       case SimplifiedAst.Expression.ApplySelfTail(name, formals, actuals, tpe, loc) =>
         ExecutableAst.Expression.ApplySelfTail(name, formals.map(CreateExecutableAst.toExecutable), actuals.map(toExecutable), tpe, loc)
       case SimplifiedAst.Expression.Unary(sop, op, exp, tpe, loc) =>
@@ -232,6 +252,12 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
         val e1 = toExecutable(exp1)
         val e2 = toExecutable(exp2)
         ExecutableAst.Expression.Assign(e1, e2, tpe, loc)
+      case SimplifiedAst.Expression.HandleWith(exp, bindings, tpe, loc) =>
+        val e = toExecutable(exp)
+        val bs = bindings map {
+          case SimplifiedAst.HandlerBinding(sym, body) => ExecutableAst.HandlerBinding(sym, toExecutable(body))
+        }
+        ExecutableAst.Expression.HandleWith(e, bs, tpe, loc)
       case SimplifiedAst.Expression.Existential(fparam, exp, loc) =>
         val p = ExecutableAst.FormalParam(fparam.sym, fparam.tpe)
         ExecutableAst.Expression.Existential(p, toExecutable(exp), loc)
@@ -249,8 +275,8 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
       case SimplifiedAst.Expression.HoleError(sym, tpe, eff, loc) => ExecutableAst.Expression.HoleError(sym, tpe, loc)
       case SimplifiedAst.Expression.MatchError(tpe, loc) => ExecutableAst.Expression.MatchError(tpe, loc)
       case SimplifiedAst.Expression.SwitchError(tpe, loc) => ExecutableAst.Expression.SwitchError(tpe, loc)
-      case SimplifiedAst.Expression.Def(name, tpe, loc) =>
-        throw InternalCompilerException(s"Unexpected expression: '$sast'.")
+      case SimplifiedAst.Expression.Def(sym, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '$sast'.")
+      case SimplifiedAst.Expression.Eff(sym, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '$sast'.")
     }
   }
 

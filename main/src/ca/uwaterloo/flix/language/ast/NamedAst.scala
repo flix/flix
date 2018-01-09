@@ -156,6 +156,8 @@ object NamedAst {
 
     case class Assign(exp1: NamedAst.Expression, exp2: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
+    case class HandleWith(exp: NamedAst.Expression, bindings: List[NamedAst.HandlerBinding], tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
+
     case class Existential(fparam: NamedAst.FormalParam, exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
 
     case class Universal(fparam: NamedAst.FormalParam, exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
@@ -287,6 +289,8 @@ object NamedAst {
   case class ComplexClass(qname: Name.QName, polarity: Ast.Polarity, args: List[NamedAst.Type], loc: SourceLocation) extends NamedAst
 
   case class FormalParam(sym: Symbol.VarSym, mod: Ast.Modifiers, tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst
+
+  case class HandlerBinding(qname: Name.QName, exp: NamedAst.Expression) extends WeededAst
 
   case class MatchRule(pat: NamedAst.Pattern, guard: NamedAst.Expression, exp: NamedAst.Expression) extends NamedAst
 

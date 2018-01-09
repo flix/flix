@@ -1,8 +1,8 @@
 package ca.uwaterloo.flix.language.ast.ops
 
 import ca.uwaterloo.flix.language.ast.Ast.HoleContext
-import ca.uwaterloo.flix.language.ast.{Symbol, Type}
 import ca.uwaterloo.flix.language.ast.TypedAst._
+import ca.uwaterloo.flix.language.ast.{Symbol, Type}
 
 object TypedAstOps {
 
@@ -39,6 +39,7 @@ object TypedAstOps {
       case Expression.Wild(tpe, eff, loc) => Map.empty
       case Expression.Var(sym, tpe, eff, loc) => Map.empty
       case Expression.Def(sym, tpe, eff, loc) => Map.empty
+      case Expression.Eff(sym, tpe, eff, loc) => Map.empty
 
       case Expression.Hole(sym, tpe, eff, loc) =>
         Map(sym -> HoleContext(sym, tpe, env0))
@@ -122,6 +123,11 @@ object TypedAstOps {
 
       case Expression.Assign(exp1, exp2, tpe, eff, loc) =>
         visitExp(exp1, env0) ++ visitExp(exp2, env0)
+
+      case Expression.HandleWith(exp, bindings, tpe, eff, loc) =>
+        bindings.foldLeft(visitExp(exp, env0)) {
+          case (macc, HandlerBinding(sym, handler)) => macc ++ visitExp(handler, env0)
+        }
 
       case Expression.Existential(fparam, exp, eff, loc) =>
         visitExp(exp, env0 + (fparam.sym -> fparam.tpe))

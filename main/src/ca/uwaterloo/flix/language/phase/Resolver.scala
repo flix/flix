@@ -20,8 +20,8 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.GenSym
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.ResolutionError
-import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
+import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
 import scala.collection.mutable
 
@@ -153,8 +153,9 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
       constraints <- seqM(constraintsVal)
       properties <- seqM(propertiesVal)
     } yield ResolvedAst.Program(
-      definitions.toMap ++ named.toMap, enums.toMap, classes.toMap, impls.toMap, lattices.toMap, indexes.toMap,
-      tables.toMap, constraints.flatten, properties.flatten, prog0.reachable, prog0.time.copy(resolver = e))
+      definitions.toMap ++ named.toMap, effs.toMap, handlers.toMap, enums.toMap, classes.toMap, impls.toMap,
+      lattices.toMap, indexes.toMap, tables.toMap, constraints.flatten, properties.flatten, prog0.reachable,
+      prog0.time.copy(resolver = e))
   }
 
   object Constraints {
@@ -208,19 +209,17 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
     * Performs name resolution on the given handler `handler0` in the given namespace `ns0`.
     */
   def resolveHandler(handler0: NamedAst.Handler, ns0: Name.NName, prog0: NamedAst.Program)(implicit genSym: GenSym): Validation[ResolvedAst.Handler, ResolutionError] = handler0 match {
-    case NamedAst.Handler(doc, ann, mod, ident, tparams0, fparams0, exp0, sc0, eff, loc) =>
-
+    case NamedAst.Handler(doc, ann, mod, ident, tparams0, fparams0, exp0, sc0, eff0, loc) =>
+      // Compute the qualified name of the ident, since we need it to call lookupEff.
       val qname = Name.mkQName(ident)
 
-      // TODO: Rest
-
       for {
-        sym <- lookupEff(qname, ns0, prog0)
+        eff <- lookupEff(qname, ns0, prog0)
         fparams <- resolveFormalParams(fparams0, ns0, prog0)
         tparams <- resolveTypeParams(tparams0, ns0, prog0)
         exp <- Expressions.resolve(exp0, ns0, prog0)
         scheme <- resolveScheme(sc0, ns0, prog0)
-      } yield ResolvedAst.Handler(sym) // TODO
+      } yield ResolvedAst.Handler(doc, ann, mod, eff.sym, tparams, fparams, exp, scheme, eff0, loc)
   }
 
   /**
@@ -367,9 +366,10 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
 
         case NamedAst.Expression.Var(sym, loc) => ResolvedAst.Expression.Var(sym, loc).toSuccess
 
-        case NamedAst.Expression.Def(ref, tvar, loc) =>
-          lookupDef(ref, ns0, prog0) map {
-            case DefTarget.Defn(defn) => ResolvedAst.Expression.Def(defn.sym, tvar, loc)
+        case NamedAst.Expression.Def(qname, tvar, loc) =>
+          lookupQName(qname, ns0, prog0) map {
+            case LookupResult.Def(sym) => ResolvedAst.Expression.Def(sym, tvar, loc)
+            case LookupResult.Eff(sym) => ResolvedAst.Expression.Eff(sym, tvar, loc)
           }
 
         case NamedAst.Expression.Hole(name, tpe, loc) =>
@@ -553,6 +553,12 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
             e2 <- visit(exp2)
           } yield ResolvedAst.Expression.Assign(e1, e2, tvar, loc)
 
+        case NamedAst.Expression.HandleWith(exp, bindings, tvar, loc) =>
+          for {
+            e <- visit(exp)
+            bs <- resolveHandlerBindings(bindings, ns0, prog0)
+          } yield ResolvedAst.Expression.HandleWith(e, bs, tvar, loc)
+
         case NamedAst.Expression.Existential(fparam, exp, loc) =>
           for {
             fp <- Params.resolve(fparam, ns0, prog0)
@@ -681,11 +687,14 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
           } yield ResolvedAst.Predicate.Body.Atom(d.sym, polarity, ts, loc)
 
         case NamedAst.Predicate.Body.Filter(qname, terms, loc) =>
-          lookupDef(qname, ns0, prog0) flatMap {
-            case DefTarget.Defn(defn) =>
-              for {
-                ts <- seqM(terms.map(t => Expressions.resolve(t, ns0, prog0)))
-              } yield ResolvedAst.Predicate.Body.Filter(defn.sym, ts, loc)
+          for {
+            lookupResult <- lookupQName(qname, ns0, prog0)
+            ts <- seqM(terms.map(t => Expressions.resolve(t, ns0, prog0)))
+          } yield {
+            lookupResult match {
+              case LookupResult.Def(sym) => ResolvedAst.Predicate.Body.Filter(sym, ts, loc)
+              case LookupResult.Eff(sym) => throw InternalCompilerException(s"Unexpected effect here: ${sym.toString}")
+            }
           }
 
         case NamedAst.Predicate.Body.Loop(pat, term, loc) =>
@@ -760,6 +769,25 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
     seqM(tparams0.map(tparam => Params.resolve(tparam, ns0, prog0)))
 
   /**
+    * Performs name resolution on the given handler bindings `bs0`.
+    */
+  def resolveHandlerBindings(bs0: List[NamedAst.HandlerBinding], ns0: Name.NName, prog0: NamedAst.Program)(implicit genSym: GenSym): Validation[List[ResolvedAst.HandlerBinding], ResolutionError] = {
+    // TODO: Check that there is no overlap?
+    seqM(bs0.map(b => resolveHandlerBindings(b, ns0, prog0)))
+  }
+
+  /**
+    * Performs name resolution on the given handler binding `b0`.
+    */
+  def resolveHandlerBindings(b0: NamedAst.HandlerBinding, ns0: Name.NName, prog0: NamedAst.Program)(implicit genSym: GenSym): Validation[ResolvedAst.HandlerBinding, ResolutionError] = b0 match {
+    case NamedAst.HandlerBinding(qname, exp0) =>
+      for {
+        eff <- lookupEff(qname, ns0, prog0)
+        exp <- Expressions.resolve(exp0, ns0, prog0)
+      } yield ResolvedAst.HandlerBinding(eff.sym, exp)
+  }
+
+  /**
     * Performs name resolution on the given scheme `sc0`.
     */
   def resolveScheme(sc0: NamedAst.Scheme, ns0: Name.NName, prog0: NamedAst.Program): Validation[Scheme, ResolutionError] = {
@@ -769,44 +797,160 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
   }
 
   /**
-    * The result of a definition lookup.
+    * The result of a qualified name lookup.
     */
-  sealed trait DefTarget
+  sealed trait LookupResult
 
-  object DefTarget {
+  object LookupResult {
 
-    case class Defn(defn: NamedAst.Def) extends DefTarget
+    case class Def(sym: Symbol.DefnSym) extends LookupResult
+
+    case class Eff(sym: Symbol.EffSym) extends LookupResult
 
   }
 
   /**
     * Finds the definition with the qualified name `qname` in the namespace `ns0`.
     */
-  def lookupDef(qname: Name.QName, ns0: Name.NName, prog0: NamedAst.Program): Validation[DefTarget, ResolutionError] = {
-    // check whether the name is fully-qualified.
+  def lookupQName(qname: Name.QName, ns0: Name.NName, prog0: NamedAst.Program): Validation[LookupResult, ResolutionError] = {
+    val defOpt = tryLookupDef(qname, ns0, prog0)
+    val effOpt = tryLookupEff(qname, ns0, prog0)
+
+    (defOpt, effOpt) match {
+      case (None, None) => ResolutionError.UndefinedName(qname, ns0, qname.loc).toFailure
+      case (Some(d), None) => getDefIfAccessible(d, ns0, qname.loc)
+      case (None, Some(e)) => getEffIfAccessible(e, ns0, qname.loc)
+      case (Some(d), Some(e)) => ResolutionError.AmbiguousName(qname, ns0, d.loc, e.loc, qname.loc).toFailure
+    }
+  }
+
+  /**
+    * Tries to a def with the qualified name `qname` in the namespace `ns0`.
+    */
+  def tryLookupDef(qname: Name.QName, ns0: Name.NName, prog0: NamedAst.Program): Option[NamedAst.Def] = {
+    // Check whether the name is fully-qualified.
     if (qname.isUnqualified) {
-      // Case 1: Unqualified name. Lookup the definition.
+      // Case 1: Unqualified name. Lookup in the current namespace.
       val defnOpt = prog0.defs.getOrElse(ns0, Map.empty).get(qname.ident.name)
 
       defnOpt match {
+        case Some(defn) =>
+          // Case 1.2: Found in the current namespace.
+          Some(defn)
         case None =>
-          // Try the global namespace.
-          prog0.defs.getOrElse(Name.RootNS, Map.empty).get(qname.ident.name) match {
-            case None => ResolutionError.UndefinedDef(qname, ns0, qname.loc).toFailure
-            case Some(defn) => DefTarget.Defn(defn).toSuccess
-          }
-        case Some(defn) => DefTarget.Defn(defn).toSuccess
+          // Case 1.1: Try the global namespace.
+          prog0.defs.getOrElse(Name.RootNS, Map.empty).get(qname.ident.name)
       }
     } else {
-      // Case 2: Qualified. Lookup both the definition.
-      val defnOpt = prog0.defs.getOrElse(qname.namespace, Map.empty).get(qname.ident.name)
+      // Case 2: Qualified. Lookup in the given namespace.
+      prog0.defs.getOrElse(qname.namespace, Map.empty).get(qname.ident.name)
+    }
+  }
+
+  /**
+    * Tries to find an eff with the qualified name `qname` in the namespace `ns0`.
+    */
+  def lookupEff(qname: Name.QName, ns0: Name.NName, prog0: NamedAst.Program): Validation[NamedAst.Eff, ResolutionError] = {
+    tryLookupEff(qname, ns0, prog0) match {
+      case None => ResolutionError.UndefinedEff(qname, ns0, qname.loc).toFailure
+      case Some(eff) => eff.toSuccess
+    }
+  }
+
+  /**
+    * Finds the given effect with the qualified name `qname` in the namespace `ns0`.
+    */
+  def tryLookupEff(qname: Name.QName, ns0: Name.NName, prog0: NamedAst.Program): Option[NamedAst.Eff] = {
+    // Check whether the name is fully-qualified.
+    if (qname.isUnqualified) {
+      // Case 1: Unqualified name. Lookup in the current namespace.
+      val defnOpt = prog0.effs.getOrElse(ns0, Map.empty).get(qname.ident.name)
 
       defnOpt match {
-        case None => ResolutionError.UndefinedDef(qname, ns0, qname.loc).toFailure
-        case Some(defn) => getDefIfAccessible(defn, ns0, qname.loc)
+        case Some(eff) =>
+          // Case 1.2: Found in the current namespace.
+          Some(eff)
+        case None =>
+          // Case 1.1: Try the global namespace.
+          prog0.effs.getOrElse(Name.RootNS, Map.empty).get(qname.ident.name)
+      }
+    } else {
+      // Case 2: Qualified. Lookup in the given namespace.
+      prog0.effs.getOrElse(qname.namespace, Map.empty).get(qname.ident.name)
+    }
+  }
+
+  /**
+    * Finds the class with the qualified name `qname` in the namespace `ns0`.
+    */
+  def lookupClass(qname: Name.QName, ns0: Name.NName, prog0: NamedAst.Program): Validation[Symbol.ClassSym, ResolutionError] = {
+    // Check whether the name is fully-qualified.
+    if (qname.isUnqualified) {
+      // Lookup in the current namespace.
+      prog0.classes.getOrElse(ns0, Map.empty).get(qname.ident.name) match {
+        case Some(clazz) =>
+          // Case 1.1 : The class is defined in the current namespace.
+          getClassIfAccessible(clazz, ns0, qname.loc).map(_.sym)
+        case None =>
+          // Case 1.2: The class was not found in the current namespace.
+          // Try the root namespace.
+          prog0.classes.getOrElse(Name.RootNS, Map.empty).get(qname.ident.name) match {
+            case Some(clazz) =>
+              // Case 1.2.1: The class is defined in the root namespace.
+              getClassIfAccessible(clazz, ns0, qname.loc).map(_.sym)
+            case None =>
+              // Case 1.2.2: The class was not found. Neither in the current namespace nor in the root namespace.
+              ResolutionError.UndefinedClass(qname, qname.namespace, qname.loc).toFailure
+          }
+      }
+    } else {
+      // Lookup in the qualified namespace.
+      prog0.classes.getOrElse(qname.namespace, Map.empty).get(qname.ident.name) match {
+        case Some(clazz) =>
+          // Case 2.1: The class was found in the qualified namespace.
+          getClassIfAccessible(clazz, ns0, qname.loc).map(_.sym)
+        case None =>
+          // Case 2.2: The class was not found in the qualified namespace.
+          ResolutionError.UndefinedClass(qname, qname.namespace, qname.loc).toFailure
       }
     }
   }
+
+  /**
+    * TODO: DOC
+    */
+  // TODO: Can you access a signature by qualified name???
+  def lookupSig(ident: Name.Ident, ns0: Name.NName, prog0: NamedAst.Program): Validation[Option[Symbol.SigSym], ResolutionError] = {
+    // Compute all classes visible in the current namespace.
+    val classes = getClassesInScope()
+
+    // A mutable collection of candidate signatures.
+    val candidates = mutable.Set.empty[Symbol.SigSym]
+
+    // Look through each class to see if it contains a usable signature.
+    for (NamedAst.Class(doc, mod, sym, quantifiers, head, body, sigs, laws, loc) <- classes) {
+      for (NamedAst.Sig(doc, ann, mod, sym, tparams, fparams, sc, eff, loc) <- sigs) {
+        // TODO: If ....
+      }
+    }
+
+    // Check how many candidate signatures were found.
+    if (candidates.isEmpty) {
+      // Case 1: No candidate signatures.
+      None.toSuccess
+    } else if (candidates.size == 1) {
+      // Case 2: Exactly one candidate signature.
+      Some(candidates.head).toSuccess
+    } else {
+      // Case 3: Multiple candidate signatures.
+      // TODO: Ambiguius
+      ???
+    }
+  }
+
+  // TODO: DOC
+  def getClassesInScope(): List[NamedAst.Class] = Nil
+
 
   /**
     * Finds the enum definition matching the given qualified name and tag.
@@ -893,6 +1037,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
     }
   }
 
+
   // TODO: Move
   /**
     * Ensures that every declared effect in `effs` has one handler in `handlers`.
@@ -913,94 +1058,6 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
     else
       ResolutionError.UnhandledEffect(unhandledEffects.head).toFailure
   }
-
-  /**
-    * Finds the given effect with the qualified name `qname` in the namespace `ns0`.
-    */
-  // TODO: Move
-  def lookupEff(qname: Name.QName, ns0: Name.NName, prog0: NamedAst.Program): Validation[Symbol.EffSym, ResolutionError] = {
-
-    // TODO: Replace by real implementation.
-
-    prog0.effs.getOrElse(ns0, Map.empty).get(qname.ident.name) match {
-      case Some(eff) =>
-        eff.sym.toSuccess
-      case None =>
-        ResolutionError.UndefinedEff(qname, ns0, qname.loc).toFailure
-    }
-  }
-
-  /**
-    * Finds the class with the qualified name `qname` in the namespace `ns0`.
-    */
-  // TODO: Move
-  def lookupClass(qname: Name.QName, ns0: Name.NName, prog0: NamedAst.Program): Validation[Symbol.ClassSym, ResolutionError] = {
-    // Check whether the name is fully-qualified.
-    if (qname.isUnqualified) {
-      // Lookup in the current namespace.
-      prog0.classes.getOrElse(ns0, Map.empty).get(qname.ident.name) match {
-        case Some(clazz) =>
-          // Case 1.1 : The class is defined in the current namespace.
-          getClassIfAccessible(clazz, ns0, qname.loc).map(_.sym)
-        case None =>
-          // Case 1.2: The class was not found in the current namespace.
-          // Try the root namespace.
-          prog0.classes.getOrElse(Name.RootNS, Map.empty).get(qname.ident.name) match {
-            case Some(clazz) =>
-              // Case 1.2.1: The class is defined in the root namespace.
-              getClassIfAccessible(clazz, ns0, qname.loc).map(_.sym)
-            case None =>
-              // Case 1.2.2: The class was not found. Neither in the current namespace nor in the root namespace.
-              ResolutionError.UndefinedClass(qname, qname.namespace, qname.loc).toFailure
-          }
-      }
-    } else {
-      // Lookup in the qualified namespace.
-      prog0.classes.getOrElse(qname.namespace, Map.empty).get(qname.ident.name) match {
-        case Some(clazz) =>
-          // Case 2.1: The class was found in the qualified namespace.
-          getClassIfAccessible(clazz, ns0, qname.loc).map(_.sym)
-        case None =>
-          // Case 2.2: The class was not found in the qualified namespace.
-          ResolutionError.UndefinedClass(qname, qname.namespace, qname.loc).toFailure
-      }
-    }
-  }
-
-  /**
-    * TODO: DOC
-    */
-  // TODO: Can you access a signature by qualified name???
-  def lookupSig(ident: Name.Ident, ns0: Name.NName, prog0: NamedAst.Program): Validation[Option[Symbol.SigSym], ResolutionError] = {
-    // Compute all classes visible in the current namespace.
-    val classes = getClassesInScope()
-
-    // A mutable collection of candidate signatures.
-    val candidates = mutable.Set.empty[Symbol.SigSym]
-
-    // Look through each class to see if it contains a usable signature.
-    for (NamedAst.Class(doc, mod, sym, quantifiers, head, body, sigs, laws, loc) <- classes) {
-      for (NamedAst.Sig(doc, ann, mod, sym, tparams, fparams, sc, eff, loc) <- sigs) {
-        // TODO: If ....
-      }
-    }
-
-    // Check how many candidate signatures were found.
-    if (candidates.isEmpty) {
-      // Case 1: No candidate signatures.
-      None.toSuccess
-    } else if (candidates.size == 1) {
-      // Case 2: Exactly one candidate signature.
-      Some(candidates.head).toSuccess
-    } else {
-      // Case 3: Multiple candidate signatures.
-      // TODO: Ambiguius
-      ???
-    }
-  }
-
-  // TODO: DOC
-  def getClassesInScope(): List[NamedAst.Class] = Nil
 
   /**
     * Returns `true` iff the given type `tpe0` is the Unit type.
@@ -1122,12 +1179,12 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
     * (a) the definition is marked public, or
     * (b) the definition is defined in the namespace `ns0` itself or in a parent of `ns0`.
     */
-  def getDefIfAccessible(defn0: NamedAst.Def, ns0: Name.NName, loc: SourceLocation): Validation[DefTarget, ResolutionError] = {
+  def getDefIfAccessible(defn0: NamedAst.Def, ns0: Name.NName, loc: SourceLocation): Validation[LookupResult, ResolutionError] = {
     //
     // Check if the definition is marked public.
     //
     if (defn0.mod.isPublic)
-      return DefTarget.Defn(defn0).toSuccess
+      return LookupResult.Def(defn0.sym).toSuccess
 
     //
     // Check if the definition is defined in `ns0` or in a parent of `ns0`.
@@ -1135,12 +1192,43 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
     val prefixNs = defn0.sym.namespace
     val targetNs = ns0.idents.map(_.name)
     if (targetNs.startsWith(prefixNs))
-      return DefTarget.Defn(defn0).toSuccess
+      return LookupResult.Def(defn0.sym).toSuccess
 
     //
     // The definition is not accessible.
     //
     ResolutionError.InaccessibleDef(defn0.sym, ns0, loc).toFailure
+  }
+
+  /**
+    * Successfully returns the given effect `eff0` if it is accessible from the given namespace `ns0`.
+    *
+    * Otherwise fails with a resolution error.
+    *
+    * An effect `eff0` is accessible from a namespace `ns0` if:
+    *
+    * (a) the effect is marked public, or
+    * (b) the effect is defined in the namespace `ns0` itself or in a parent of `ns0`.
+    */
+  def getEffIfAccessible(eff0: NamedAst.Eff, ns0: Name.NName, loc: SourceLocation): Validation[LookupResult, ResolutionError] = {
+    //
+    // Check if the effect is marked public.
+    //
+    if (eff0.mod.isPublic)
+      return LookupResult.Eff(eff0.sym).toSuccess
+
+    //
+    // Check if the effect is defined in `ns0` or in a parent of `ns0`.
+    //
+    val prefixNs = eff0.sym.namespace
+    val targetNs = ns0.idents.map(_.name)
+    if (targetNs.startsWith(prefixNs))
+      return LookupResult.Eff(eff0.sym).toSuccess
+
+    //
+    // The effect is not accessible.
+    //
+    ResolutionError.InaccessibleEff(eff0.sym, ns0, loc).toFailure
   }
 
   /**

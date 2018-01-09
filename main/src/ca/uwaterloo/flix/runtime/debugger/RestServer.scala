@@ -21,7 +21,7 @@ import java.net.{BindException, InetSocketAddress}
 import java.nio.file.{Paths, Files}
 import java.util.concurrent.Executors
 
-import ca.uwaterloo.flix.runtime.{Value, Monitor, Solver}
+import ca.uwaterloo.flix.runtime.{Monitor, Solver}
 import ca.uwaterloo.flix.runtime.datastore.{IndexedLattice, IndexedRelation}
 
 import com.sun.net.httpserver.{HttpServer, HttpExchange, HttpHandler}

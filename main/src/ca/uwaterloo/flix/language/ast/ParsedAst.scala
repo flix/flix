@@ -717,21 +717,11 @@ object ParsedAst {
       * HandleWith expression.
       *
       * @param sp1      the position of the first character in the expression.
-      * @param base     the base expression to evaluate.
-      * @param handlers the effect handlers.
+      * @param exp      the base expression.
+      * @param bindings the effect handler bindings.
       * @param sp2      the position of the last character in the expression.
       */
-    // TODO: Should handlers be first class or not? Their expressions are already first class.
-    case class HandleWith(sp1: SourcePosition, base: ParsedAst.Expression, handlers: ParsedAst.Expression.Handler, sp2: SourcePosition) extends ParsedAst.Expression
-
-    /**
-      * Handler expression.
-      *
-      * @param sp1 the position of the first character in the expression.
-      * @param hs  the sequences of effect handlers.
-      * @param sp2 the position of the last character in the expression.
-      */
-    case class Handler(sp1: SourcePosition, hs: Seq[ParsedAst.EffectHandler], sp2: SourcePosition) extends ParsedAst.Expression
+    case class HandleWith(sp1: SourcePosition, exp: ParsedAst.Expression, bindings: Seq[ParsedAst.HandlerBinding], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Existentially Quantified Expression.
@@ -1243,6 +1233,14 @@ object ParsedAst {
   case class FormalParam(sp1: SourcePosition, mod: Seq[ParsedAst.Modifier], ident: Name.Ident, tpe: Option[ParsedAst.Type], sp2: SourcePosition) extends ParsedAst
 
   /**
+    * A binding of an effect to an effect handler expression.
+    *
+    * @param qname the fully-qualified name of the effect.
+    * @param exp   the expression with which to handle the effect.
+    */
+  case class HandlerBinding(qname: Name.QName, exp: ParsedAst.Expression) extends ParsedAst
+
+  /**
     * A pattern match rule consists of a pattern, an optional pattern guard, and a body expression.
     *
     * @param pat   the pattern of the rule.
@@ -1250,14 +1248,6 @@ object ParsedAst {
     * @param exp   the body expression of the rule.
     */
   case class MatchRule(pat: ParsedAst.Pattern, guard: Option[ParsedAst.Expression], exp: ParsedAst.Expression) extends ParsedAst
-
-  /**
-    * An effect handler.
-    *
-    * @param qname the fully-qualified name of the effect.
-    * @param exp   the effect handler expression.
-    */
-  case class EffectHandler(qname: Name.QName, exp: ParsedAst.Expression) extends ParsedAst
 
   /**
     * Modifier.

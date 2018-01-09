@@ -148,6 +148,8 @@ object WeededAst {
 
     case class Assign(exp1: WeededAst.Expression, exp2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
+    case class HandleWith(exp: WeededAst.Expression, bindings: List[WeededAst.HandlerBinding], loc: SourceLocation) extends WeededAst.Expression
+
     case class Existential(fparam: WeededAst.FormalParam, exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     case class Universal(fparam: WeededAst.FormalParam, exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
@@ -265,6 +267,8 @@ object WeededAst {
   case class ComplexClass(qname: Name.QName, polarity: Ast.Polarity, args: List[WeededAst.Type], loc: SourceLocation) extends WeededAst
 
   case class FormalParam(ident: Name.Ident, mod: Ast.Modifiers, tpe: Option[WeededAst.Type], loc: SourceLocation) extends WeededAst
+
+  case class HandlerBinding(qname: Name.QName, exp: WeededAst.Expression) extends WeededAst
 
   case class MatchRule(pat: WeededAst.Pattern, guard: WeededAst.Expression, exp: WeededAst.Expression) extends WeededAst
 
