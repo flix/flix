@@ -115,12 +115,8 @@ object Synthesize extends Phase[Root, Root] {
         Expression.Unary(op, e, tpe, eff, loc)
 
       case Expression.Binary(op, exp1, exp2, tpe, eff, loc) =>
-        // TODO: Do not create a new equality def if the types are primitive.
-        if (exp1.tpe == Type.Int32 && exp2.tpe == Type.Int32) {
-          return exp0
-        }
-
-        if (exp1.tpe == Type.Int64 && exp2.tpe == Type.Int64) {
+        // Return the expression unchanged if it only compares primitive values.
+        if (isPrimitive(exp1.tpe) && isPrimitive(exp2.tpe)) {
           return exp0
         }
 
@@ -973,6 +969,21 @@ object Synthesize extends Phase[Root, Root] {
       * Returns the element types of the given tuple type `tpe`.
       */
     def getElementTypes(tpe: Type): List[Type] = tpe.typeArguments
+
+    /**
+      * Returns `true` if the given type `tpe` is a primitive type.
+      */
+    def isPrimitive(tpe: Type): Boolean = tpe match {
+      case Type.Bool => true
+      case Type.Char => true
+      case Type.Float32 => true
+      case Type.Float64 => true
+      case Type.Int8 => true
+      case Type.Int16 => true
+      case Type.Int32 => true
+      case Type.Int64 => true
+      case _ => false
+    }
 
     /**
       * Returns an association list of the (tag, type)s of the given `enum` specialized to the given type `tpe`.
