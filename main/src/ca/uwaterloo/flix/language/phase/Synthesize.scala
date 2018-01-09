@@ -114,6 +114,15 @@ object Synthesize extends Phase[Root, Root] {
         Expression.Unary(op, e, tpe, eff, loc)
 
       case Expression.Binary(op, exp1, exp2, tpe, eff, loc) =>
+        // TODO: Do not create a new equality def if the types are primitive.
+        if (exp1.tpe == Type.Int32 && exp2.tpe == Type.Int32) {
+          return exp0
+        }
+
+        if (exp1.tpe == Type.Int64 && exp2.tpe == Type.Int64) {
+          return exp0
+        }
+
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
 
