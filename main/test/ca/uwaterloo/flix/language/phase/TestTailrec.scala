@@ -20,6 +20,8 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.FunSuite
 
+// TODO: Move out into Flix test cases.
+
 class TestTailrec extends FunSuite {
 
   val opts = Options.DefaultTest

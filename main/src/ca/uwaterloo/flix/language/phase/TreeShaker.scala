@@ -18,10 +18,10 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.{SimplifiedAst, Symbol}
 import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expression
-import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
+import ca.uwaterloo.flix.language.ast.{SimplifiedAst, Symbol, Type}
 import ca.uwaterloo.flix.util.Validation._
+import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
 import scala.collection.mutable
 
@@ -30,7 +30,7 @@ import scala.collection.mutable
   *
   * A function is considered reachable if it:
   *
-  * (a) Appears in the global namespaces, takes zero arguments, and is not marked as synthetic.
+  * (a) Appears in the global namespaces, takes a unit argument, and is not marked as synthetic.
   * (b) Appears in a fact or a rule as a filter/transfer function.
   * (c) Appears in a lattice declaration.
   * (d) Appears in a property declaration.
@@ -64,10 +64,15 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       *
       * That is, returns true iff `defn` satisfies:
       *
-      * (a) Appears in the global namespaces, takes zero arguments, and is not marked as synthetic.
+      * (a) Appears in the global namespaces, takes a unit argument, and is not marked as synthetic.
       */
     def isReachableRoot(defn: SimplifiedAst.Def): Boolean = {
-      (defn.sym.namespace.isEmpty && defn.fparams.isEmpty && !defn.mod.isSynthetic) || defn.ann.isBenchmark
+      val isRootNs = defn.sym.namespace.isEmpty
+      val isSingleUnitArg = defn.fparams.nonEmpty && defn.fparams.head.tpe == Type.Unit
+      val isNonSynthetic = !defn.mod.isSynthetic
+      val isBenchmark = defn.ann.isBenchmark
+
+      (isRootNs && isSingleUnitArg && isNonSynthetic) || isBenchmark
     }
 
     /**

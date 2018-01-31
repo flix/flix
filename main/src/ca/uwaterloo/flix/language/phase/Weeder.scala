@@ -404,8 +404,11 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
         case ParsedAst.Expression.Apply(lambda, args, sp2) =>
           val sp1 = leftMostSourcePosition(lambda)
+          val loc = mkSL(sp1, sp2)
           @@(visit(lambda, unsafe), @@(args.map(e => visit(e, unsafe)))) flatMap {
-            case (e, as) => WeededAst.Expression.Apply(e, as, mkSL(sp1, sp2)).toSuccess
+            case (e, as) =>
+              val es = getApplyArgsCheckIfEmpty(as, sp1, sp2)
+              WeededAst.Expression.Apply(e, es, loc).toSuccess
           }
 
         case ParsedAst.Expression.Infix(exp1, name, exp2, sp2) =>
@@ -653,7 +656,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
            */
           @@(elms.map(e => visit(e, unsafe))) map {
             case es =>
-              val empty = mkApply("Set.empty", Nil, sp1, sp2)
+              val empty = mkApply("Set.empty", List(WeededAst.Expression.Unit(mkSL(sp1, sp2))), sp1, sp2)
               es.foldLeft(empty) {
                 case (acc, elm) => mkApply("Set.insert", List(elm, acc), sp1, sp2)
               }
@@ -669,7 +672,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
           @@(elmsVal) map {
             case es =>
-              val empty = mkApply("Map.empty", Nil, sp1, sp2)
+              val empty = mkApply("Map.empty", List(WeededAst.Expression.Unit(mkSL(sp1, sp2))), sp1, sp2)
               es.foldLeft(empty) {
                 case (acc, (k, v)) => mkApply("Map.insert", List(k, v, acc), sp1, sp2)
               }
@@ -1212,6 +1215,18 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       * Checks for [[IllegalFormalParameter]] and [[DuplicateFormalParam]].
       */
     def weed(fparams: Seq[ParsedAst.FormalParam], typeRequired: Boolean): Validation[List[WeededAst.FormalParam], WeederError] = {
+      //
+      // Special Case: Check if no formal parameters are present. If so, introduce a unit parameter.
+      //
+      if (fparams.isEmpty) {
+        val sp1 = SourcePosition.Unknown
+        val sp2 = SourcePosition.Unknown
+        val loc = mkSL(sp1, sp2)
+        val ident = Name.Ident(sp1, "_unit", sp2)
+        val tpe = Some(WeededAst.Type.Unit(loc))
+        return List(WeededAst.FormalParam(ident, Ast.Modifiers.Empty, tpe, loc)).toSuccess
+      }
+
       val seen = mutable.Map.empty[String, ParsedAst.FormalParam]
       val results = fparams map {
         case param@ParsedAst.FormalParam(sp1, mods, ident, typeOpt, sp2) => seen.get(ident.name) match {
@@ -1336,6 +1351,16 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   private def mkApply(fqn: String, args: List[WeededAst.Expression], sp1: SourcePosition, sp2: SourcePosition): WeededAst.Expression = {
     val lambda = WeededAst.Expression.VarOrDef(Name.mkQName(fqn, sp1, sp2), mkSL(sp1, sp2))
     WeededAst.Expression.Apply(lambda, args, mkSL(sp1, sp2))
+  }
+
+  /**
+    * Returns the list of expressions `args0` unless the list is empty.
+    *
+    * If so, returns a list with a single unit expression.
+    */
+  private def getApplyArgsCheckIfEmpty(args0: List[WeededAst.Expression], sp1: SourcePosition, sp2: SourcePosition): List[WeededAst.Expression] = args0 match {
+    case Nil => List(WeededAst.Expression.Unit(mkSL(sp1, sp2)))
+    case as => as
   }
 
   /**
