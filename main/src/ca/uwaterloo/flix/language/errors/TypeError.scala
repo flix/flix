@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.errors
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.{Source, SourceLocation, Type}
 import ca.uwaterloo.flix.util.InternalCompilerException
+import ca.uwaterloo.flix.util.tc.Show.ShowableSyntax
 import ca.uwaterloo.flix.util.vt._
 import ca.uwaterloo.flix.util.vt.VirtualString._
 
@@ -65,7 +66,7 @@ object TypeError {
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
-      vt << ">> Unable to unify '" << Red(baseType1.toString) << "' and '" << Red(baseType2.toString) << "'." << NewLine
+      vt << ">> Unable to unify '" << Red(baseType1.show) << "' and '" << Red(baseType2.show) << "'." << NewLine
       vt << NewLine
       vt << Code(loc, "mismatched types.") << NewLine
       vt << NewLine
@@ -88,7 +89,7 @@ object TypeError {
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal()
       vt << Line(kind, source.format) << NewLine
-      vt << ">> Unable to unify the type variable '" << Red(baseVar.toString) << "' with the type '" << Red(baseType.toString) << "'." << NewLine
+      vt << ">> Unable to unify the type variable '" << Red(baseVar.toString) << "' with the type '" << Red(baseType.show) << "'." << NewLine
       vt << ">> The type variable occurs recursively within the type." << NewLine
       vt << NewLine
       vt << Code(loc, "mismatched types.") << NewLine
@@ -223,7 +224,7 @@ object TypeError {
             vt << "*"
             intercalate(args, visit, vt, before = "[", separator = ", ", after = "]")
         }
-        case TypeDiff.Mismatch(tpe1, tpe2) => vt << color(tpe1.toString)
+        case TypeDiff.Mismatch(tpe1, tpe2) => vt << color(tpe1.show)
         case _ => throw InternalCompilerException(s"Unexpected base type: '$base'.")
       }
     }
