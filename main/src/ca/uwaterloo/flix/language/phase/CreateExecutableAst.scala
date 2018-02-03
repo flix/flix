@@ -104,8 +104,18 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
 
       val ann = Ast.Annotations.Empty
       val mod = Ast.Modifiers(List(Ast.Modifier.Synthetic))
-      val botConst = ExecutableAst.Def(ann, mod, botSym, formals = Array(), t(bot), Type.mkArrow(Nil, bot.tpe), bot.loc)
-      val topConst = ExecutableAst.Def(ann, mod, topSym, formals = Array(), t(top), Type.mkArrow(Nil, bot.tpe), top.loc)
+
+      val varX = Symbol.freshVarSym()
+      val varY = Symbol.freshVarSym()
+
+      val fparams0 = Array(ExecutableAst.FormalParam(varX, Type.Unit))
+      val fparams1 = Array(ExecutableAst.FormalParam(varY, Type.Unit))
+
+      varX.setStackOffset(0)
+      varY.setStackOffset(0)
+
+      val botConst = ExecutableAst.Def(ann, mod, botSym, fparams0, t(bot), Type.mkArrow(Type.Unit, bot.tpe), bot.loc)
+      val topConst = ExecutableAst.Def(ann, mod, topSym, fparams1, t(top), Type.mkArrow(Type.Unit, bot.tpe), top.loc)
 
       // Update the map of definitions
       m ++= Map(botSym -> botConst, topSym -> topConst)
@@ -417,8 +427,12 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
     val lit = Expression.toExecutable(exp0)
     val ann = Ast.Annotations.Empty
     val mod = Ast.Modifiers(List(Ast.Modifier.Synthetic))
-    val tpe = Type.Apply(Type.Arrow(1), exp0.tpe)
-    val defn = ExecutableAst.Def(ann, mod, sym, formals = Array(), lit, tpe, exp0.loc)
+    val varX = Symbol.freshVarSym("_unit")
+    varX.setStackOffset(0)
+    val fparam = ExecutableAst.FormalParam(varX, Type.Unit)
+    val fs = Array(fparam)
+    val tpe = Type.mkArrow(Type.Unit, exp0.tpe)
+    val defn = ExecutableAst.Def(ann, mod, sym, fs, lit, tpe, exp0.loc)
     m += (sym -> defn)
     sym
   }

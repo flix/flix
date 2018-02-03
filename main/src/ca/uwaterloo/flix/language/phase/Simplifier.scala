@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
+import ca.uwaterloo.flix.language.ast.Ast.{Annotations, Modifiers}
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Optimization, Validation}
@@ -516,6 +517,29 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
           // Generate a fresh symbol for the new definition.
           val freshSym = Symbol.freshDefnSym("head")
 
+          //
+          // Special Case: No constraint parameters.
+          //
+          if (cparams.isEmpty) {
+            // Construct the definition type.
+            val arrowType = Type.mkArrow(Type.Unit, e0.tpe)
+
+            // Assemble the fresh definition.
+            val ann = Ast.Annotations.Empty
+            val mod = Ast.Modifiers(List(Ast.Modifier.Synthetic))
+
+            val varX = Symbol.freshVarSym("_unit")
+            val param = SimplifiedAst.FormalParam(varX, mod, Type.Unit, SourceLocation.Unknown)
+
+            val defn = SimplifiedAst.Def(ann, mod, freshSym, List(param), visitExp(e0), arrowType, e0.loc)
+
+            // Add the fresh definition to the top-level.
+            toplevel += freshSym -> defn
+
+            // Return a head term that calls the freshly generated top-level definition.
+            return SimplifiedAst.Term.Head.App(freshSym, Nil, e0.tpe, e0.loc)
+          }
+
           // Generate fresh symbols for the formal parameters of the definition.
           val freshSymbols = cparams.map {
             case TypedAst.ConstraintParam.HeadParam(sym, tpe, _) => sym -> (Symbol.freshVarSym(sym), tpe)
@@ -531,7 +555,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
           val exp = copy(visitExp(e0), freshSymbols.map(x => (x._1, x._2._1)).toMap)
 
           // Construct the definition type.
-          val arrowType = Type.mkArrow(freshSymbols.map(_._2._2), e0.tpe)
+          val arrowType = Type.mkArrowNoCurry(freshSymbols.map(_._2._2), e0.tpe)
 
           // Assemble the fresh definition.
           val ann = Ast.Annotations.Empty
@@ -563,15 +587,45 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
     /**
       * Translates the given `lattice0` to the SimplifiedAst.
       */
-    def visitLattice(lattice0: TypedAst.Lattice): SimplifiedAst.Lattice = lattice0 match {
-      case TypedAst.Lattice(tpe, bot0, top0, equ0, leq0, lub0, glb0, loc) =>
-        val bot = visitExp(bot0)
-        val top = visitExp(top0)
-        val equ = visitExp(equ0)
-        val leq = visitExp(leq0)
-        val lub = visitExp(lub0)
-        val glb = visitExp(glb0)
-        SimplifiedAst.Lattice(tpe, bot, top, equ, leq, lub, glb, loc)
+    def visitLattice(lattice0: TypedAst.Lattice): SimplifiedAst.Lattice = {
+      /**
+        * XXX: A very hacky way to introduce an uncurried version of the lattice operations...
+        */
+      def mkUncurried2(n: String, e: TypedAst.Expression, elmType: Type, returnType: Type): SimplifiedAst.Expression = {
+        val loc = SourceLocation.Unknown
+        val ann = Annotations.Empty
+        val mod = Modifiers.Empty
+        val sym = Symbol.freshDefnSym(n)
+
+        val varX = Symbol.freshVarSym("x")
+        val varY = Symbol.freshVarSym("y")
+        val paramX = SimplifiedAst.FormalParam(varX, mod, elmType, loc)
+        val paramY = SimplifiedAst.FormalParam(varY, mod, elmType, loc)
+        val fs = List(paramX, paramY)
+
+        val innerExp = visitExp(e)
+        val innerApply = SimplifiedAst.Expression.Apply(
+          innerExp, List(SimplifiedAst.Expression.Var(varX, elmType, loc)), Type.mkArrow(elmType, returnType), loc)
+        val outerApply = SimplifiedAst.Expression.Apply(
+          innerApply, List(SimplifiedAst.Expression.Var(varY, elmType, loc)), returnType, loc)
+
+        val defnType = Type.mkArrowNoCurry(List(elmType, elmType), returnType)
+
+        val defn = SimplifiedAst.Def(ann, mod, sym, fs, outerApply, defnType, loc)
+        toplevel += (sym -> defn)
+        SimplifiedAst.Expression.Def(sym, Type.mkArrowNoCurry(List(elmType, elmType), returnType), loc)
+      }
+
+      lattice0 match {
+        case TypedAst.Lattice(tpe, bot0, top0, equ0, leq0, lub0, glb0, loc) =>
+          val bot = visitExp(bot0)
+          val top = visitExp(top0)
+          val equ = mkUncurried2("equ_uncurried", equ0, elmType = tpe, returnType = Type.Bool)
+          val leq = mkUncurried2("leq_uncurried", leq0, elmType = tpe, returnType = Type.Bool)
+          val lub = mkUncurried2("lub_uncurried", lub0, elmType = tpe, returnType = tpe)
+          val glb = mkUncurried2("glb_uncurried", glb0, elmType = tpe, returnType = tpe)
+          SimplifiedAst.Lattice(tpe, bot, top, equ, leq, lub, glb, loc)
+      }
     }
 
     /**

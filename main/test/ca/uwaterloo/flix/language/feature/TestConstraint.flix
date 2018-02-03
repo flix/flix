@@ -2,8 +2,9 @@ namespace TestConstraint {
 
     namespace Test01 {
 
-        rel A(x: Unit)
-        A(()).
+        // TODO
+        //rel A(x: Unit)
+        //A(()).
 
         rel B(x: Bool)
         B(true).

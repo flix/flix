@@ -310,7 +310,7 @@ object Synthesize extends Phase[Root, Root] {
       val exp = mkEqExp(tpe, freshX, freshY)
 
       // The definition type.
-      val lambdaType = Type.mkArrow(List(tpe, tpe), Type.Bool)
+      val lambdaType = Type.mkArrowNoCurry(List(tpe, tpe), Type.Bool)
 
       // Assemble the definition.
       val defn = Def(Ast.Doc(Nil, sl), ann, mod, sym, tparams, fparams, exp, lambdaType, ast.Eff.Pure, sl)

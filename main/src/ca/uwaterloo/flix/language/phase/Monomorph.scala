@@ -220,14 +220,17 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
             case Some(eqSym) =>
               // Equality function found. Specialize and generate a call to it.
               val newSym = specializeDefSym(eqSym, eqType)
-              val ref = Expression.Def(newSym, eqType, eff, loc)
+              val base = Expression.Def(newSym, eqType, eff, loc)
+
+              // Call the equality function.
+              val applyInner = Expression.Apply(base, List(e1), Type.mkArrow(valueType, Type.Bool), eff, loc)
+              val applyOuter = Expression.Apply(applyInner, List(e2), Type.Bool, eff, loc)
+
               // Check whether the whether the operator is equality or inequality.
               if (op == BinaryOperator.Equal) {
-                // Call the equality function.
-                Expression.Apply(ref, List(e1, e2), tpe, eff, loc)
+                applyOuter
               } else {
-                // Call the equality function and negate the result.
-                Expression.Unary(UnaryOperator.LogicalNot, Expression.Apply(ref, List(e1, e2), tpe, eff, loc), Type.Bool, eff, loc)
+                Expression.Unary(UnaryOperator.LogicalNot, applyOuter, Type.Bool, eff, loc)
               }
           }
 

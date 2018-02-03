@@ -91,6 +91,10 @@ object GenNamespaces {
     // Jvm type of method args
     val args = defn.tpe.typeArguments.map(JvmOps.getErasedJvmType)
 
+    if (args.isEmpty) {
+      println(defn)
+    }
+
     // Length of args in local
     val stackSize = args.init.map(AsmOps.getStackSize).sum
 

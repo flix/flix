@@ -356,6 +356,13 @@ object Type {
     * Constructs the function type [A] -> B where `A` is the given sequence of types `as` and `B` is the given type `b`.
     */
   def mkArrow(as: List[Type], b: Type): Type = {
+    as.foldRight(b)(mkArrow)
+  }
+
+  /**
+    * Constructs the function type [A] -> B where `A` is the given sequence of types `as` and `B` is the given type `b`.
+    */
+  def mkArrowNoCurry(as: List[Type], b: Type): Type = {
     val arrow = Arrow(as.length + 1)
     val inner = as.foldLeft(arrow: Type) {
       case (acc, x) => Apply(acc, x)
