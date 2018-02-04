@@ -47,8 +47,22 @@ def curry15(): Bool = j(1, 2, 3) `assertEq!` j(1)(2, 3)
 def curry16(): Bool = k(x -> x, 42) `assertEq!` k(x -> x)(42)
 
 @test
-def curry17(): Bool = List.map(x -> x+ 1)(1 :: 2 :: 3 :: Nil) `assertEq!` (2 :: 3 :: 4 :: Nil)
+def curry17(): Bool = Option.map(x -> x + 1)(Some(42)) `assertEq!` Some(43)
 
+@test
+def curry18(): Bool = Result.map(x -> x + 1)(Ok(42)) `assertEq!` Ok(43)
+
+@test
+def curry19(): Bool = List.map(x -> x + 1)(1 :: 2 :: 3 :: Nil) `assertEq!` (2 :: 3 :: 4 :: Nil)
+
+@test
+def curry20(): Bool = List.exists(x -> x == 1)(1 :: 2 :: 3 :: Nil) `assertEq!` true
+
+@test
+def curry21(): Bool = flip(Option.map)(Some(42), x -> x + 1) `assertEq!` Some(43)
+
+@test
+def curry22(): Bool = flip(Option.map)(Some(42))(x -> x + 1) `assertEq!` Some(43)
 
 ///
 /// A function of arity 2.
@@ -79,3 +93,8 @@ def j(x: Int): Int -> Int -> Int = y -> z -> x + y + z
 /// A curried higher-order function.
 ///
 def k(f: Int -> Int): Int -> Int = x -> f(x)
+
+///
+/// A curried higher-order function.
+///
+def l(f: (Int, Int) -> Int): (Int, Int) -> Int = (x, y) -> f(x)(y) + f(x, y)
