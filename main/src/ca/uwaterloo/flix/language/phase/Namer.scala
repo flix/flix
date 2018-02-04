@@ -764,8 +764,8 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
       case WeededAst.Expression.Int64(lit, loc) => Nil
       case WeededAst.Expression.BigInt(lit, loc) => Nil
       case WeededAst.Expression.Str(lit, loc) => Nil
-      case WeededAst.Expression.Apply(e1, e2, loc) => freeVars(e1) ++ freeVars(e2)
-      case WeededAst.Expression.Lambda(fparams, exp, loc) => filterBoundVars(freeVars(exp), fparams.map(_.ident))
+      case WeededAst.Expression.Apply(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
+      case WeededAst.Expression.Lambda(fparam, exp, loc) => filterBoundVars(freeVars(exp), List(fparam.ident))
       case WeededAst.Expression.Unary(op, exp, loc) => freeVars(exp)
       case WeededAst.Expression.Binary(op, exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
       case WeededAst.Expression.IfThenElse(exp1, exp2, exp3, loc) => freeVars(exp1) ++ freeVars(exp2) ++ freeVars(exp3)

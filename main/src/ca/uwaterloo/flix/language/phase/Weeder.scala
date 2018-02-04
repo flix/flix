@@ -86,7 +86,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         val formalsVal = Formals.weed(fparams0, typeRequired = true)
         @@(annVal, modVal, formalsVal, expVal, effVal) map {
           case (as, mod, fs, exp, eff) =>
-            val e = mkCurried(exp, fs.tail, loc)
+            val e = mkCurried(fs.tail, exp, loc)
             val t = mkArrowType(fs, Types.weed(tpe), loc)
             List(WeededAst.Declaration.Def(doc, as, mod, ident, tparams, fs.head :: Nil, e, t, eff, loc))
         }
@@ -444,7 +444,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           for {
             fs <- Formals.weed(fparams0, typeRequired = false)
             e <- visit(exp, unsafe)
-          } yield WeededAst.Expression.Lambda(fs.head :: Nil, mkCurried(e, fs.tail, loc), loc)
+          } yield mkCurried(fs, e, loc)
 
         case ParsedAst.Expression.LambdaMatch(sp1, pat, exp, sp2) =>
           /*
@@ -462,7 +462,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
               val fparam = WeededAst.FormalParam(ident, Ast.Modifiers.Empty, None, ident.loc)
               val body = WeededAst.Expression.Match(varOrRef, List(rule), loc)
-              WeededAst.Expression.Lambda(List(fparam), body, loc)
+              WeededAst.Expression.Lambda(fparam, body, loc)
           }
 
         case ParsedAst.Expression.Unary(sp1, op, exp, sp2) =>
@@ -1380,9 +1380,9 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   }
 
   /**
-    * Returns a curried version of the given expression `fqn` for each formal parameter in `fparams0`.
+    * Returns a curried version of the given expression `e` for each formal parameter in `fparams0`.
     */
-  private def mkCurried(e: WeededAst.Expression, fparams0: List[WeededAst.FormalParam], loc: SourceLocation): WeededAst.Expression = {
+  private def mkCurried(fparams0: List[WeededAst.FormalParam], e: WeededAst.Expression, loc: SourceLocation): WeededAst.Expression = {
     fparams0.foldRight(e) {
       case (fparam, eacc) => WeededAst.Expression.Lambda(fparam, eacc, loc)
     }
