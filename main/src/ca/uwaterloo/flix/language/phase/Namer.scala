@@ -572,18 +572,16 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
       case WeededAst.Expression.BigInt(lit, loc) => NamedAst.Expression.BigInt(lit, loc).toSuccess
       case WeededAst.Expression.Str(lit, loc) => NamedAst.Expression.Str(lit, loc).toSuccess
 
-      case WeededAst.Expression.Apply(lambda, args, loc) =>
-        val lambdaVal = namer(lambda, env0, tenv0)
-        val argsVal = @@(args map (a => namer(a, env0, tenv0)))
-        @@(lambdaVal, argsVal) map {
-          case (e, es) => NamedAst.Expression.Apply(e, es, Type.freshTypeVar(), loc)
+      case WeededAst.Expression.Apply(exp1, exp2, loc) =>
+        @@(namer(exp1, env0, tenv0), namer(exp2, env0, tenv0)) map {
+          case (e1, e2) => NamedAst.Expression.Apply(e1, List(e2), Type.freshTypeVar(), loc)
         }
 
-      case WeededAst.Expression.Lambda(fparams0, exp, loc) =>
-        val fparams = fparams0.map(p => Params.namer(p, tenv0))
-        val env1 = fparams.map(p => p.sym.text -> p.sym)
+      case WeededAst.Expression.Lambda(fparam0, exp, loc) =>
+        val fparam = Params.namer(fparam0, tenv0)
+        val env1 = Map(fparam.sym.text -> fparam.sym)
         namer(exp, env0 ++ env1, tenv0) map {
-          case e => NamedAst.Expression.Lambda(fparams, e, Type.freshTypeVar(), loc)
+          case e => NamedAst.Expression.Lambda(List(fparam), e, Type.freshTypeVar(), loc)
         }
 
       case WeededAst.Expression.Unary(op, exp, loc) => namer(exp, env0, tenv0) map {
@@ -766,7 +764,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
       case WeededAst.Expression.Int64(lit, loc) => Nil
       case WeededAst.Expression.BigInt(lit, loc) => Nil
       case WeededAst.Expression.Str(lit, loc) => Nil
-      case WeededAst.Expression.Apply(lambda, args, loc) => freeVars(lambda) ++ args.flatMap(freeVars)
+      case WeededAst.Expression.Apply(e1, e2, loc) => freeVars(e1) ++ freeVars(e2)
       case WeededAst.Expression.Lambda(fparams, exp, loc) => filterBoundVars(freeVars(exp), fparams.map(_.ident))
       case WeededAst.Expression.Unary(op, exp, loc) => freeVars(exp)
       case WeededAst.Expression.Binary(op, exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)

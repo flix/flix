@@ -1367,8 +1367,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     */
   private def mkApplyCurried(base: WeededAst.Expression, args: List[WeededAst.Expression], loc: SourceLocation): WeededAst.Expression = {
     args.foldLeft(base) {
-      // TODO: Apply does not have to take a list.
-      case (eacc, arg) => WeededAst.Expression.Apply(eacc, List(arg), loc)
+      case (eacc, arg) => WeededAst.Expression.Apply(eacc, arg, loc)
     }
   }
 
@@ -1385,8 +1384,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     */
   private def mkCurried(e: WeededAst.Expression, fparams0: List[WeededAst.FormalParam], loc: SourceLocation): WeededAst.Expression = {
     fparams0.foldRight(e) {
-      // TODO: Lambda does not have to take a list.
-      case (fparam, eacc) => WeededAst.Expression.Lambda(List(fparam), eacc, loc)
+      case (fparam, eacc) => WeededAst.Expression.Lambda(fparam, eacc, loc)
     }
   }
 
