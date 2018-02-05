@@ -574,14 +574,14 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
 
       case WeededAst.Expression.Apply(exp1, exp2, loc) =>
         @@(namer(exp1, env0, tenv0), namer(exp2, env0, tenv0)) map {
-          case (e1, e2) => NamedAst.Expression.Apply(e1, List(e2), Type.freshTypeVar(), loc)
+          case (e1, e2) => NamedAst.Expression.Apply(e1, e2, Type.freshTypeVar(), loc)
         }
 
       case WeededAst.Expression.Lambda(fparam0, exp, loc) =>
         val fparam = Params.namer(fparam0, tenv0)
         val env1 = Map(fparam.sym.text -> fparam.sym)
         namer(exp, env0 ++ env1, tenv0) map {
-          case e => NamedAst.Expression.Lambda(List(fparam), e, Type.freshTypeVar(), loc)
+          case e => NamedAst.Expression.Lambda(fparam, e, Type.freshTypeVar(), loc)
         }
 
       case WeededAst.Expression.Unary(op, exp, loc) => namer(exp, env0, tenv0) map {

@@ -410,19 +410,18 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
 
         case NamedAst.Expression.Str(lit, loc) => ResolvedAst.Expression.Str(lit, loc).toSuccess
 
-        case NamedAst.Expression.Apply(lambda, args, tvar, loc) =>
+        case NamedAst.Expression.Apply(exp1, exp2, tvar, loc) =>
           for {
-            e <- visit(lambda, tenv0)
-            es <- seqM(args.map(e => visit(e, tenv0)))
-          } yield ResolvedAst.Expression.Apply(e, es, tvar, loc)
+            e1 <- visit(exp1, tenv0)
+            e2 <- visit(exp2, tenv0)
+          } yield ResolvedAst.Expression.Apply(e1, e2, tvar, loc)
 
-        case NamedAst.Expression.Lambda(fparams, exp, tvar, loc) =>
-          val fparam = fparams.head
+        case NamedAst.Expression.Lambda(fparam, exp, tvar, loc) =>
           for {
-            fparamType <- lookupType(fparam.tpe, ns0, prog0)
-            e <- visit(exp, tenv0 + (fparam.sym -> fparamType))
-            fs <- seqM(fparams.map(fparam => Params.resolve(fparam, ns0, prog0)))
-          } yield ResolvedAst.Expression.Lambda(fs, e, tvar, loc)
+            paramType <- lookupType(fparam.tpe, ns0, prog0)
+            e <- visit(exp, tenv0 + (fparam.sym -> paramType))
+            p <- Params.resolve(fparam, ns0, prog0)
+          } yield ResolvedAst.Expression.Lambda(p, e, tvar, loc)
 
         case NamedAst.Expression.Unary(op, exp, tvar, loc) =>
           for {
@@ -510,7 +509,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
                   val tagExp = ResolvedAst.Expression.Tag(decl.sym, caze.tag.name, varExp, Type.freshTypeVar(), loc)
 
                   // Assemble the lambda expressions.
-                  ResolvedAst.Expression.Lambda(List(freshParam), tagExp, Type.freshTypeVar(), loc)
+                  ResolvedAst.Expression.Lambda(freshParam, tagExp, Type.freshTypeVar(), loc)
                 }
             }
           case Some(exp) =>
