@@ -52,6 +52,8 @@ object Uncurrier extends Phase[Root, Root] {
     * Returns the same symbol if the definition is not marked for uncurrying.
     */
   def uncurryDef(sym: Symbol.DefnSym, root: Root)(implicit flix: Flix): Symbol.DefnSym = {
+    implicit val _ = flix.genSym
+
     // Lookup the original definition.
     val defn = root.defs(sym)
 
