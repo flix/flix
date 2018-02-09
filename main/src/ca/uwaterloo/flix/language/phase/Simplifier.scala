@@ -386,25 +386,6 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case TypedAst.Expression.Tuple(elms, tpe, eff, loc) =>
         SimplifiedAst.Expression.Tuple(elms map visitExp, tpe, loc)
 
-      case TypedAst.Expression.ArrayNew(elm, len, tpe, eff, loc) =>
-        val e = visitExp(elm)
-        SimplifiedAst.Expression.ArrayNew(e, len, tpe, loc)
-
-      case TypedAst.Expression.ArrayLit(elms, tpe, eff, loc) =>
-        val es = elms map visitExp
-        SimplifiedAst.Expression.ArrayLit(es, tpe, loc)
-
-      case TypedAst.Expression.ArrayLoad(base, index, tpe, eff, loc) =>
-        val b = visitExp(base)
-        val i = visitExp(index)
-        SimplifiedAst.Expression.ArrayLoad(b, i, tpe, loc)
-
-      case TypedAst.Expression.ArrayStore(base, index, value, tpe, eff, loc) =>
-        val b = visitExp(base)
-        val i = visitExp(index)
-        val v = visitExp(value)
-        SimplifiedAst.Expression.ArrayStore(b, i, v, tpe, loc)
-
       case TypedAst.Expression.Ref(exp, tpe, eff, loc) =>
         val e = visitExp(exp)
         SimplifiedAst.Expression.Ref(e, tpe, loc)
@@ -1086,14 +1067,6 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         SimplifiedAst.Expression.Index(visit(exp), offset, tpe, loc)
       case SimplifiedAst.Expression.Tuple(elms, tpe, loc) =>
         SimplifiedAst.Expression.Tuple(elms.map(visit), tpe, loc)
-      case SimplifiedAst.Expression.ArrayNew(elm, len, tpe, loc) =>
-        SimplifiedAst.Expression.ArrayNew(visit(elm), len, tpe, loc)
-      case SimplifiedAst.Expression.ArrayLit(elms, tpe, loc) =>
-        SimplifiedAst.Expression.ArrayLit(elms map visit, tpe, loc)
-      case SimplifiedAst.Expression.ArrayLoad(base, index, tpe, loc) =>
-        SimplifiedAst.Expression.ArrayLoad(visit(base), visit(index), tpe, loc)
-      case SimplifiedAst.Expression.ArrayStore(base, index, value, tpe, loc) =>
-        SimplifiedAst.Expression.ArrayStore(visit(base), visit(index), visit(value), tpe, loc)
       case SimplifiedAst.Expression.Ref(exp, tpe, loc) =>
         SimplifiedAst.Expression.Ref(visit(exp), tpe, loc)
       case SimplifiedAst.Expression.Deref(exp, tpe, loc) =>

@@ -585,38 +585,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
             case xs => WeededAst.Expression.Tuple(xs, mkSL(sp1, sp2))
           }
 
-        case ParsedAst.Expression.ArrayNew(sp1, elm, length, sp2) =>
-          @@(visit(elm, unsafe), Patterns.weed(length)) flatMap {
-            case (e, len) => len match {
-              //
-              // Check for [[IllegalArrayLength]].
-              //
-              case WeededAst.Pattern.Int32(l, loc) =>
-                if (l >= 0)
-                  WeededAst.Expression.ArrayNew(e, l, mkSL(sp1, sp2)).toSuccess
-                else
-                  IllegalArrayLength(mkSL(sp1, sp2)).toFailure
-              case _ => IllegalArrayLength(mkSL(sp1, sp2)).toFailure
-            }
-          }
-
-        case ParsedAst.Expression.ArrayLit(sp1, elms, sp2) =>
-          @@(elms.map(e => visit(e, unsafe))) map {
-            case es => WeededAst.Expression.ArrayLit(es, mkSL(sp1, sp2))
-          }
-
-        case ParsedAst.Expression.ArrayLoad(base, index, sp2) =>
-          val sp1 = leftMostSourcePosition(base)
-          @@(visit(base, unsafe), visit(index, unsafe)) map {
-            case (b, i) => WeededAst.Expression.ArrayLoad(b, i, mkSL(sp1, sp2))
-          }
-
-        case ParsedAst.Expression.ArrayStore(base, index, value, sp2) =>
-          val sp1 = leftMostSourcePosition(base)
-          @@(visit(base, unsafe), visit(index, unsafe), visit(value, unsafe)) map {
-            case (b, i, v) => WeededAst.Expression.ArrayStore(b, i, v, mkSL(sp1, sp2))
-          }
-
         case ParsedAst.Expression.FNil(sp1, sp2) =>
           /*
            * Rewrites a `FNil` expression into a tag expression.
@@ -1159,8 +1127,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         args.foldLeft(weed(t1)) {
           case (acc, t2) => WeededAst.Type.Apply(acc, weed(t2), mkSL(sp1, sp2))
         }
-      case ParsedAst.Type.Borrow(sp1, borrowedType, sp2) => weed(borrowedType)
-      case ParsedAst.Type.Unique(sp1, uniqueType, sp2) => weed(uniqueType)
     }
 
   }
@@ -1436,10 +1402,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.Switch(sp1, _, _) => sp1
     case ParsedAst.Expression.Tag(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Tuple(sp1, _, _) => sp1
-    case ParsedAst.Expression.ArrayNew(sp1, _, _, _) => sp1
-    case ParsedAst.Expression.ArrayLit(sp1, _, _) => sp1
-    case ParsedAst.Expression.ArrayLoad(base, _, _) => leftMostSourcePosition(base)
-    case ParsedAst.Expression.ArrayStore(base, _, _, _) => leftMostSourcePosition(base)
     case ParsedAst.Expression.FNil(sp1, _) => sp1
     case ParsedAst.Expression.FCons(hd, _, _, _) => leftMostSourcePosition(hd)
     case ParsedAst.Expression.FAppend(fst, _, _, _) => leftMostSourcePosition(fst)
@@ -1472,8 +1434,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Type.Arrow(sp1, _, _, _) => sp1
     case ParsedAst.Type.Infix(tpe1, _, _, _) => leftMostSourcePosition(tpe1)
     case ParsedAst.Type.Apply(tpe1, _, _) => leftMostSourcePosition(tpe1)
-    case ParsedAst.Type.Borrow(sp1, _, _) => sp1
-    case ParsedAst.Type.Unique(sp1, _, _) => sp1
   }
 
   /**

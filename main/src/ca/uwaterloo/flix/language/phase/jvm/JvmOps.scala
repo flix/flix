@@ -768,19 +768,6 @@ object JvmOps {
         case (sacc, e) => sacc ++ visitExp(e)
       }
 
-      case Expression.ArrayNew(elm, len, tpe, loc) =>
-        visitExp(elm)
-
-      case Expression.ArrayLit(elms, tpe, loc) => elms.foldLeft(Set.empty[ClosureInfo]) {
-        case (sacc, e) => sacc ++ visitExp(e)
-      }
-
-      case Expression.ArrayLoad(base, index, tpe, loc) =>
-        visitExp(base) ++ visitExp(index)
-
-      case Expression.ArrayStore(base, index, value, tpe, loc) =>
-        visitExp(base) ++ visitExp(index) ++ visitExp(value)
-
       case Expression.Ref(exp, tpe, loc) => visitExp(exp)
       case Expression.Deref(exp, tpe, loc) => visitExp(exp)
       case Expression.Assign(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2)
@@ -986,13 +973,6 @@ object JvmOps {
       case Expression.Tuple(elms, tpe, loc) => elms.foldLeft(Set(tpe)) {
         case (sacc, e) => sacc ++ visitExp(e)
       }
-
-      case Expression.ArrayNew(elm, len, tpe, loc) => visitExp(elm) + tpe
-      case Expression.ArrayLit(elms, tpe, loc) => elms.foldLeft(Set(tpe)) {
-        case (sacc, e) => sacc ++ visitExp(e)
-      }
-      case Expression.ArrayLoad(base, index, tpe, loc) => visitExp(base) ++ visitExp(index) + tpe
-      case Expression.ArrayStore(base, index, value, tpe, loc) => visitExp(base) ++ visitExp(index) ++ visitExp(value) + tpe
 
       case Expression.Ref(exp, tpe, loc) => visitExp(exp) + tpe
       case Expression.Deref(exp, tpe, loc) => visitExp(exp) + tpe

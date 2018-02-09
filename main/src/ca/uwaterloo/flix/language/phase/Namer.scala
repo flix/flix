@@ -653,26 +653,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
           case es => NamedAst.Expression.Tuple(es, Type.freshTypeVar(), loc)
         }
 
-      case WeededAst.Expression.ArrayNew(elm, len, loc) =>
-        namer(elm, env0, tenv0) map {
-          case e => NamedAst.Expression.ArrayNew(e, len, Type.freshTypeVar(), loc)
-        }
-
-      case WeededAst.Expression.ArrayLit(elms, loc) =>
-        @@(elms map (e => namer(e, env0, tenv0))) map {
-          case es => NamedAst.Expression.ArrayLit(es, Type.freshTypeVar(), loc)
-        }
-
-      case WeededAst.Expression.ArrayLoad(base, index, loc) =>
-        @@(namer(base, env0, tenv0), namer(index, env0, tenv0)) map {
-          case (b, i) => NamedAst.Expression.ArrayLoad(b, i, Type.freshTypeVar(), loc)
-        }
-
-      case WeededAst.Expression.ArrayStore(base, index, value, loc) =>
-        @@(namer(base, env0, tenv0), namer(index, env0, tenv0), namer(value, env0, tenv0)) map {
-          case (b, i, v) => NamedAst.Expression.ArrayStore(b, i, v, Type.freshTypeVar(), loc)
-        }
-
       case WeededAst.Expression.Ref(exp, loc) =>
         namer(exp, env0, tenv0) map {
           case e => NamedAst.Expression.Ref(e, Type.freshTypeVar(), loc)
@@ -781,10 +761,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
       }
       case WeededAst.Expression.Tag(enum, tag, expOpt, loc) => expOpt.map(freeVars).getOrElse(Nil)
       case WeededAst.Expression.Tuple(elms, loc) => elms.flatMap(freeVars)
-      case WeededAst.Expression.ArrayNew(elm, len, loc) => freeVars(elm)
-      case WeededAst.Expression.ArrayLit(elms, loc) => elms.flatMap(freeVars)
-      case WeededAst.Expression.ArrayLoad(base, index, loc) => freeVars(base) ++ freeVars(index)
-      case WeededAst.Expression.ArrayStore(base, index, value, loc) => freeVars(base) ++ freeVars(index) ++ freeVars(value)
       case WeededAst.Expression.Ref(exp, loc) => freeVars(exp)
       case WeededAst.Expression.Deref(exp, loc) => freeVars(exp)
       case WeededAst.Expression.Assign(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)

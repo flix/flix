@@ -346,26 +346,6 @@ object Effects extends Phase[Root, Root] {
           }
 
         /**
-          * ArrayNew Expression.
-          */
-        case Expression.ArrayNew(elm, len, tpe, eff, loc) => ??? // TODO
-
-        /**
-          * ArrayLit Expression.
-          */
-        case Expression.ArrayLit(elms, tpe, eff, loc) => ??? // TODO
-
-        /**
-          * ArrayLoad Expression.
-          */
-        case Expression.ArrayLoad(base, index, tpe, eff, loc) => ??? // TODO
-
-        /**
-          * ArrayStore Expression.
-          */
-        case Expression.ArrayStore(base, index, value, tpe, eff, loc) => ??? // TODO
-
-        /**
           * Reference Expression.
           */
         case Expression.Ref(exp, tpe, eff, loc) =>

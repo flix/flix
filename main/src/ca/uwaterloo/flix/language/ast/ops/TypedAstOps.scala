@@ -101,20 +101,6 @@ object TypedAstOps {
           case (macc, elm) => macc ++ visitExp(elm, env0)
         }
 
-      case Expression.ArrayNew(elm, len, tpe, eff, loc) =>
-        visitExp(elm, env0)
-
-      case Expression.ArrayLit(elms, tpe, eff, loc) =>
-        elms.foldLeft(Map.empty[Symbol.HoleSym, HoleContext]) {
-          case (macc, elm) => macc ++ visitExp(elm, env0)
-        }
-
-      case Expression.ArrayLoad(base, index, tpe, eff, loc) =>
-        visitExp(base, env0) ++ visitExp(index, env0)
-
-      case Expression.ArrayStore(base, index, value, tpe, eff, loc) =>
-        visitExp(base, env0) ++ visitExp(index, env0) ++ visitExp(value, env0)
-
       case Expression.Ref(exp, tpe, eff, loc) =>
         visitExp(exp, env0)
 
