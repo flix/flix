@@ -5,6 +5,7 @@ HEAD:
     - Added pub keyword.
     - Added expression holes.
     - Vastly improved repl. (--interactive).
+    - Work on parallelism.
     
 
 Version 0.2:
