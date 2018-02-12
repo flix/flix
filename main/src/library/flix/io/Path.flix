@@ -33,7 +33,18 @@ namespace Path {
     ///
     /// Returns the extension of the given path `p`.
     ///
-    pub def extension(p: Path): Option[Str] = ???
+    //TODO: Testing pull requests. Also return type should be Option[Str] without "No extension"
+    pub def extension(p: Path): Str = unsafe {
+        let Path(javaPath) = p;
+        let shortPath = native method java.nio.file.Path.getFileName(javaPath);
+        let myString = native method java.nio.file.Path.toString(shortPath);
+        let dotIndex = native method java.lang.String.lastIndexOf(myString, "." : Str);
+        match dotIndex with {
+            case -1 => "No extension"
+            case num => let actualIndex = dotIndex + 1;
+                        native method java.lang.String.substring(myString, actualIndex)
+        }
+    }
 
     ///
     /// Effectfully returns a list of files in the given directory `path`.
@@ -41,7 +52,7 @@ namespace Path {
     pub eff children[a](path: Path, k: Result[List[Path], IOError] -> a): a
 
     ///
-    /// Default handler for `isParentOf`.
+    /// Default handler for `children`.
     ///
     handler children[a](path: Path, k: Result[List[Path], IOError] -> a): a = ???
 
