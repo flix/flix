@@ -110,8 +110,8 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case TypedAst.Expression.Str(lit, loc) => SimplifiedAst.Expression.Str(lit)
       case TypedAst.Expression.Lambda(args, body, tpe, eff, loc) =>
         SimplifiedAst.Expression.Lambda(args map visitFormalParam, visitExp(body), tpe, loc)
-      case TypedAst.Expression.Apply(e, args, tpe, eff, loc) =>
-        SimplifiedAst.Expression.Apply(visitExp(e), args map visitExp, tpe, loc)
+      case TypedAst.Expression.Apply(e1, e2, tpe, eff, loc) =>
+        SimplifiedAst.Expression.Apply(visitExp(e1), List(visitExp(e2)), tpe, loc)
 
       case TypedAst.Expression.Unary(op, e, tpe, eff, loc) =>
         /*
@@ -497,12 +497,9 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case TypedAst.Expression.Var(sym, tpe, eff, loc) =>
         SimplifiedAst.Term.Head.Var(sym, tpe, loc)
 
-      case TypedAst.Expression.Apply(TypedAst.Expression.Def(sym, _, _, _), args, tpe, eff, loc) if isVarExps(args) =>
-        val as = args map {
-          case TypedAst.Expression.Var(x, _, _, _) => x
-          case e => throw InternalCompilerException(s"Unexpected non-variable expression: $e.")
-        }
-        SimplifiedAst.Term.Head.App(sym, as, tpe, loc)
+      case TypedAst.Expression.Apply(TypedAst.Expression.Def(sym, _, _, _), exp, tpe, eff, loc) if exp.isInstanceOf[TypedAst.Expression.Var] =>
+        val v = exp.asInstanceOf[TypedAst.Expression.Var]
+        SimplifiedAst.Term.Head.App(sym, List(v.sym), tpe, loc)
 
       case _ =>
         // Determine if the expression is a literal.

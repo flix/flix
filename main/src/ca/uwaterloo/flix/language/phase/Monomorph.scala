@@ -184,10 +184,10 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           val (fs, env1) = specializeFormalParams(fparams, subst0)
           Expression.Lambda(fs, visitExp(body, env0 ++ env1), subst0(tpe), eff, loc)
 
-        case Expression.Apply(exp, args, tpe, eff, loc) =>
-          val e = visitExp(exp, env0)
-          val as = args.map(a => visitExp(a, env0))
-          Expression.Apply(e, as, subst0(tpe), eff, loc)
+        case Expression.Apply(exp1, exp2, tpe, eff, loc) =>
+          val e1 = visitExp(exp1, env0)
+          val e2 = visitExp(exp2, env0)
+          Expression.Apply(e1, e2, subst0(tpe), eff, loc)
 
         case Expression.Unary(op, exp, tpe, eff, loc) =>
           val e1 = visitExp(exp, env0)
@@ -223,14 +223,14 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
               val base = Expression.Def(newSym, eqType, eff, loc)
 
               // Call the equality function.
-              val applyInner = Expression.Apply(base, List(e1), Type.mkArrow(valueType, Type.Bool), eff, loc)
-              val applyOuter = Expression.Apply(applyInner, List(e2), Type.Bool, eff, loc)
+              val inner = Expression.Apply(base, e1, Type.mkArrow(valueType, Type.Bool), eff, loc)
+              val outer = Expression.Apply(inner, e2, Type.Bool, eff, loc)
 
               // Check whether the whether the operator is equality or inequality.
               if (op == BinaryOperator.Equal) {
-                applyOuter
+                outer
               } else {
-                Expression.Unary(UnaryOperator.LogicalNot, applyOuter, Type.Bool, eff, loc)
+                Expression.Unary(UnaryOperator.LogicalNot, outer, Type.Bool, eff, loc)
               }
           }
 
