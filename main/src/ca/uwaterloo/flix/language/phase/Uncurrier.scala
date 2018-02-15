@@ -18,10 +18,13 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.SimplifiedAst.{Def, Root}
-import ca.uwaterloo.flix.language.ast.Symbol
-import ca.uwaterloo.flix.language.ast.{SpecialOperator, Type}
+import ca.uwaterloo.flix.language.ast.Ast.{Annotations, Modifiers}
+import ca.uwaterloo.flix.language.ast.SimplifiedAst._
+import ca.uwaterloo.flix.language.ast.{SourceLocation, SpecialOperator, Symbol, Type}
 import ca.uwaterloo.flix.util.Validation
+import ca.uwaterloo.flix.util.Validation._
+
+import scala.collection.mutable
 
 /**
   * Introduces uncurried versions of certain definitions where needed for interop.
@@ -29,50 +32,117 @@ import ca.uwaterloo.flix.util.Validation
 object Uncurrier extends Phase[Root, Root] {
 
   /**
+    * Mutable map of top level definitions.
+    */
+  private type TopLevel = mutable.Map[Symbol.DefnSym, Def]
+
+  /**
     * Introduces uncurried definitions where needed.
     */
   def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationError] = {
-    visitSpecialOps(root.specialOps, root)
-    ???
-  }
+    // A mutable map to hold new top-level definitions.
+    val newDefs: TopLevel = mutable.Map.empty
 
-  def visitSpecialOps(specialOps: Map[SpecialOperator, Map[Type, Symbol.DefnSym]], root: Root)(implicit flix: Flix): Map[SpecialOperator, Map[Type, Symbol.DefnSym]] = {
+    // Uncurry symbols in constraints.
+    val newStrata = root.strata.map(visitStratum(_, newDefs, root))
 
+    // Uncurry special operations.
+    val newSpecialOps = visitSpecialOps(root.specialOps, newDefs, root)
 
-    ???
-  }
-
-  def visitSpecialOp(specialOp: SpecialOperator, tpe: Type, sym: Symbol.DefnSym, root: Root)(implicit flix: Flix): Symbol.DefnSym = {
-    ???
+    // Reassemble the ast.
+    root.copy(defs = root.defs ++ newDefs, strata = newStrata, specialOps = newSpecialOps).toSuccess
   }
 
   /**
-    * Introduces an uncurried version if the definition associated with the given symbol `sym`.
-    *
-    * Returns the same symbol if the definition is not marked for uncurrying.
+    * Uncurries special operators where needed.
     */
-  def uncurryDef(sym: Symbol.DefnSym, root: Root)(implicit flix: Flix): Symbol.DefnSym = {
+  def visitSpecialOps(specialOps: Map[SpecialOperator, Map[Type, Symbol.DefnSym]], newDefs: TopLevel, root: Root)(implicit flix: Flix): Map[SpecialOperator, Map[Type, Symbol.DefnSym]] = {
+    val newEqOps = specialOps(SpecialOperator.Equality).foldLeft(Map.empty[Type, Symbol.DefnSym]) {
+      case (macc, (tpe, sym)) =>
+        val newSym = mkUncurried2(sym, newDefs, root)
+        macc + (tpe -> newSym)
+    }
+
+    specialOps + (SpecialOperator.Equality -> newEqOps)
+  }
+
+  /**
+    * Uncurries symbols in the given stratum.
+    */
+  def visitStratum(s: Stratum, newDefs: TopLevel, root: Root)(implicit flix: Flix): Stratum = s match {
+    case Stratum(constraints) => Stratum(constraints.map(visitConstraint(_, newDefs, root)))
+  }
+
+  // TODO
+  def visitConstraint(c: Constraint, newDefs: TopLevel, root: Root)(implicit flix: Flix): Constraint = c match {
+    case Constraint(cparams, head, body) =>
+      Constraint(cparams, visitHeadPredicate(head, newDefs, root), body.map(visitBodyPredicate(_, newDefs, root)))
+  }
+
+  // TODO
+  def visitHeadPredicate(h: Predicate.Head, newDefs: TopLevel, root: Root)(implicit flix: Flix): Predicate.Head = h
+
+  // TODO
+  def visitBodyPredicate(b: Predicate.Body, newDefs: TopLevel, root: Root)(implicit flix: Flix): Predicate.Body = b match {
+    case Predicate.Body.Atom(_, _, _, _) => b
+    case Predicate.Body.Filter(sym, terms, loc) =>
+      // TODO: Refactor and document.
+      if (terms.length == 2) {
+        val freshSym = mkUncurried2(sym, newDefs, root)
+        Predicate.Body.Filter(freshSym, terms, loc)
+      }
+      else
+        b
+    case Predicate.Body.Loop(_, _, _) => b
+  }
+
+  /**
+    * Constructs an uncurried version of the given binary definition.
+    */
+  def mkUncurried2(sym: Symbol.DefnSym, newDefs: TopLevel, root: Root)(implicit flix: Flix): Symbol.DefnSym = {
     implicit val _ = flix.genSym
 
     // Lookup the original definition.
     val defn = root.defs(sym)
 
-    // Check if it is marked for uncurrying. If not, return the original symbol.
+    // The type of the 1st argument.
+    val typeX = defn.tpe.typeArguments.head
 
+    // The type of the 2nd argument.
+    val typeY = defn.tpe.typeArguments.tail.head.typeArguments.head
 
+    // The return type.
+    val returnType = defn.tpe.typeArguments.tail.head.typeArguments.tail.head
 
-    val uncurriedSym = Symbol.freshDefnSym(sym)
+    // Construct a fresh definition that takes two arguments.
+    val loc = SourceLocation.Unknown
+    val ann = Annotations.Empty
+    val mod = Modifiers.Empty
 
-    val ann = ???
-    val mod = ???
-    val fparams = ???
-    val exp = ???
-    val tpe = ???
-    val loc = ???
+    // Construct a fresh symbol for the new definition.
+    val freshSym = Symbol.freshDefnSym(sym)
 
-    val uncurriedDef = Def(ann, mod, sym, fparams, exp, tpe, loc)
+    // Construct fresh symbols for the two formal parameters.
+    val varX = Symbol.freshVarSym("x")
+    val varY = Symbol.freshVarSym("y")
+    val paramX = FormalParam(varX, mod, typeX, loc)
+    val paramY = FormalParam(varY, mod, typeY, loc)
+    val fs = List(paramX, paramY)
 
-    ???
+    // Construct an expression that calls the original symbol passing one argument at a time.
+    val innerExp = Expression.Def(sym, Type.mkArrow(List(typeX, typeY), returnType), loc)
+    val innerApply = Expression.Apply(innerExp, List(Expression.Var(varX, typeX, loc)), Type.mkArrow(typeY, returnType), loc)
+    val outerApply = Expression.Apply(innerApply, List(Expression.Var(varY, typeY, loc)), returnType, loc)
+
+    // Construct the uncurried definition.
+    val uncurriedType = Type.mkArrowNoCurry(List(typeX, typeY), returnType)
+    val uncurriedDefn = Def(ann, mod, freshSym, fs, outerApply, uncurriedType, loc)
+
+    // Add it to the global map of new definitions.
+    newDefs += (freshSym -> uncurriedDefn)
+
+    // Return the fresh symbol.
+    freshSym
   }
 
 }

@@ -273,12 +273,15 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       visitExp(queue.dequeue().exp).foreach(newReachableDefinitionSymbol)
     }
 
+    // Compute the live defs.
+    val liveDefs = root.defs.filterKeys(reachableFunctions.contains)
+
     // Calculate the elapsed time.
     val e = System.nanoTime() - t
 
     // Reassemble the AST.
     root.copy(
-      defs = root.defs.filterKeys(reachableFunctions.contains),
+      defs = liveDefs,
       time = root.time.copy(treeshaker = e)
     ).toSuccess
   }

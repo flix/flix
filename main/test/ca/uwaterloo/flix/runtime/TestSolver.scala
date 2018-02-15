@@ -361,8 +361,7 @@ class TestSolver extends FunSuite {
     val model = new Flix().setOptions(opts).addStr(Parity.Definition).addStr(s).solve().get
   }
 
-  // TODO: Currently broken
-  ignore("NotEqual01") {
+  test("NotEqual01") {
     val s =
       """rel A(x: Int)
         |rel B(x: Int, y: Int)
@@ -377,8 +376,7 @@ class TestSolver extends FunSuite {
     val model = new Flix().setOptions(opts).addStr(s).solve().get
   }
 
-  // TODO: Currently broken
-  ignore("NotEqual02") {
+  test("NotEqual02") {
     val s =
       """rel A(x: Int, y: Int)
         |rel B(x: Int, y: Int)
@@ -394,8 +392,7 @@ class TestSolver extends FunSuite {
     val model = new Flix().setOptions(opts).addStr(s).solve().get
   }
 
-  // TODO: Currently broken
-  ignore("NotEqual03") {
+  test("NotEqual03") {
     val s =
       """rel A(x: Int, y: Int)
         |rel B(x: Int, y: Int)

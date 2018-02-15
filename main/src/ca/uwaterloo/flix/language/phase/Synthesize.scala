@@ -256,9 +256,10 @@ object Synthesize extends Phase[Root, Root] {
       val sym = getOrMkEq(tpe)
 
       // Construct an expression to call the symbol with the arguments `e1` and `e2`.
-      val e = Expression.Def(sym, Type.mkArrow(List(tpe, tpe), Type.Bool), ast.Eff.Pure, sl)
-      val args = exp1 :: exp2 :: Nil
-      Expression.Apply(e, args, Type.Bool, ast.Eff.Pure, sl)
+      val base = Expression.Def(sym, Type.mkArrow(List(tpe, tpe), Type.Bool), ast.Eff.Pure, sl)
+      val inner = Expression.Apply(base, List(exp1), Type.mkArrow(List(tpe), Type.Bool), ast.Eff.Pure, sl)
+      val outer = Expression.Apply(inner, List(exp2), Type.Bool, ast.Eff.Pure, sl)
+      outer
     }
 
     /**
@@ -304,16 +305,19 @@ object Synthesize extends Phase[Root, Root] {
 
       // Type and formal parameters.
       val tparams = Nil
-      val fparams = paramX :: paramY :: Nil
+      val fparams = paramX :: Nil
 
       // The body expression.
       val exp = mkEqExp(tpe, freshX, freshY)
 
+      // The lambda for the second argument.
+      val lambdaExp = Expression.Lambda(List(paramY), exp, Type.mkArrow(tpe, Type.Bool), ast.Eff.Pure, sl)
+
       // The definition type.
-      val lambdaType = Type.mkArrowNoCurry(List(tpe, tpe), Type.Bool)
+      val lambdaType = Type.mkArrow(List(tpe, tpe), Type.Bool)
 
       // Assemble the definition.
-      val defn = Def(Ast.Doc(Nil, sl), ann, mod, sym, tparams, fparams, exp, lambdaType, ast.Eff.Pure, sl)
+      val defn = Def(Ast.Doc(Nil, sl), ann, mod, sym, tparams, fparams, lambdaExp, lambdaType, ast.Eff.Pure, sl)
 
       // Add it to the map of new definitions.
       newDefs += (defn.sym -> defn)
