@@ -217,7 +217,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
       // Compute the qualified name of the ident, since we need it to call lookupEff.
       val qname = Name.mkQName(ident)
 
-      // TODO...
+      // TODO: Introduce appropriate type environment for handlers.
       val tenv0 = Map.empty[Symbol.VarSym, Type]
 
       for {

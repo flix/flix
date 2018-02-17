@@ -114,8 +114,10 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         val e = visitExp(exp)
         SimplifiedAst.Expression.Lambda(List(p), e, tpe, loc)
 
-      case TypedAst.Expression.Apply(e1, e2, tpe, eff, loc) =>
-        SimplifiedAst.Expression.Apply(visitExp(e1), List(visitExp(e2)), tpe, loc)
+      case TypedAst.Expression.Apply(exp1, exp2, tpe, eff, loc) =>
+        val e1 = visitExp(exp1)
+        val e2 = visitExp(exp2)
+        SimplifiedAst.Expression.Apply(e1, List(e2), tpe, loc)
 
       case TypedAst.Expression.Unary(op, e, tpe, eff, loc) =>
         /*
@@ -556,7 +558,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
           val exp = copy(visitExp(e0), freshSymbols.map(x => (x._1, x._2._1)).toMap)
 
           // Construct the definition type.
-          val arrowType = Type.mkArrowNoCurry(freshSymbols.map(_._2._2), e0.tpe)
+          val arrowType = Type.mkUncurriedArrow(freshSymbols.map(_._2._2), e0.tpe)
 
           // Assemble the fresh definition.
           val ann = Ast.Annotations.Empty
@@ -610,11 +612,11 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         val outerApply = SimplifiedAst.Expression.Apply(
           innerApply, List(SimplifiedAst.Expression.Var(varY, elmType, loc)), returnType, loc)
 
-        val defnType = Type.mkArrowNoCurry(List(elmType, elmType), returnType)
+        val defnType = Type.mkUncurriedArrow(List(elmType, elmType), returnType)
 
         val defn = SimplifiedAst.Def(ann, mod, sym, fs, outerApply, defnType, loc)
         toplevel += (sym -> defn)
-        SimplifiedAst.Expression.Def(sym, Type.mkArrowNoCurry(List(elmType, elmType), returnType), loc)
+        SimplifiedAst.Expression.Def(sym, Type.mkUncurriedArrow(List(elmType, elmType), returnType), loc)
       }
 
       lattice0 match {

@@ -135,7 +135,7 @@ object Uncurrier extends Phase[Root, Root] {
     val outerApply = Expression.Apply(innerApply, List(Expression.Var(varY, typeY, loc)), returnType, loc)
 
     // Construct the uncurried definition.
-    val uncurriedType = Type.mkArrowNoCurry(List(typeX, typeY), returnType)
+    val uncurriedType = Type.mkUncurriedArrow(List(typeX, typeY), returnType)
     val uncurriedDefn = Def(ann, mod, freshSym, fs, outerApply, uncurriedType, loc)
 
     // Add it to the global map of new definitions.

@@ -348,21 +348,21 @@ object Type {
   def mkArray(a: Type): Type = Apply(Array, a)
 
   /**
-    * Constructs the function type A -> B where `A` is the given type `a` and `B` is the given type `b`.
+    * Constructs the arrow type A -> B.
     */
   def mkArrow(a: Type, b: Type): Type = Apply(Apply(Arrow(2), a), b)
 
   /**
-    * Constructs the function type [A] -> B where `A` is the given sequence of types `as` and `B` is the given type `b`.
+    * Constructs the arrow type A_1 -> .. -> A_n -> B.
     */
   def mkArrow(as: List[Type], b: Type): Type = {
     as.foldRight(b)(mkArrow)
   }
 
   /**
-    * Constructs the function type [A] -> B where `A` is the given sequence of types `as` and `B` is the given type `b`.
+    * Constructs the arrow type [A] -> B.
     */
-  def mkArrowNoCurry(as: List[Type], b: Type): Type = {
+  def mkUncurriedArrow(as: List[Type], b: Type): Type = {
     val arrow = Arrow(as.length + 1)
     val inner = as.foldLeft(arrow: Type) {
       case (acc, x) => Apply(acc, x)
