@@ -90,9 +90,6 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
       import Expression.{toExecutable => t}
 
       /**
-        * In `SimplifiedAst.Definition.Lattice`, bot/top/eq/leq/lub/glb are `SimplifiedAst.Expression`s.
-        * For `ExecutableAst.Definition.Lattice`, they are `Symbol.Resolved`s.
-        *
         * bot/top are arbitrary expressions, so we lift them to top-level definitions.
         * We assume that eq/leq/lub/glb are `Expression.Ref`s, so we do a cast and extract the symbols.
         *
@@ -120,13 +117,7 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
       // Update the map of definitions
       m ++= Map(botSym -> botConst, topSym -> topConst)
 
-      // Extract the symbols for eq/leq/lub/glb
-      val equSym = equ.asInstanceOf[SimplifiedAst.Expression.Def].sym
-      val leqSym = leq.asInstanceOf[SimplifiedAst.Expression.Def].sym
-      val lubSym = lub.asInstanceOf[SimplifiedAst.Expression.Def].sym
-      val glbSym = glb.asInstanceOf[SimplifiedAst.Expression.Def].sym
-
-      ExecutableAst.Lattice(tpe, botSym, topSym, equSym, leqSym, lubSym, glbSym, loc)
+      ExecutableAst.Lattice(tpe, botSym, topSym, sast.equ, sast.leq, sast.lub, sast.glb, loc)
   }
 
   def toExecutable(sast: SimplifiedAst.Index): ExecutableAst.Index =

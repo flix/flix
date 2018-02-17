@@ -18,7 +18,6 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.Ast.{Annotations, Modifiers}
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Optimization, Validation}
@@ -590,45 +589,16 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
     /**
       * Translates the given `lattice0` to the SimplifiedAst.
       */
-    def visitLattice(lattice0: TypedAst.Lattice): SimplifiedAst.Lattice = {
-      /**
-        * XXX: A very hacky way to introduce an uncurried version of the lattice operations...
-        */
-      def mkUncurried2(n: String, e: TypedAst.Expression, elmType: Type, returnType: Type): SimplifiedAst.Expression = {
-        val loc = SourceLocation.Unknown
-        val ann = Annotations.Empty
-        val mod = Modifiers.Empty
-        val sym = Symbol.freshDefnSym(n)
-
-        val varX = Symbol.freshVarSym("x")
-        val varY = Symbol.freshVarSym("y")
-        val paramX = SimplifiedAst.FormalParam(varX, mod, elmType, loc)
-        val paramY = SimplifiedAst.FormalParam(varY, mod, elmType, loc)
-        val fs = List(paramX, paramY)
-
-        val innerExp = visitExp(e)
-        val innerApply = SimplifiedAst.Expression.Apply(
-          innerExp, List(SimplifiedAst.Expression.Var(varX, elmType, loc)), Type.mkArrow(elmType, returnType), loc)
-        val outerApply = SimplifiedAst.Expression.Apply(
-          innerApply, List(SimplifiedAst.Expression.Var(varY, elmType, loc)), returnType, loc)
-
-        val defnType = Type.mkUncurriedArrow(List(elmType, elmType), returnType)
-
-        val defn = SimplifiedAst.Def(ann, mod, sym, fs, outerApply, defnType, loc)
-        toplevel += (sym -> defn)
-        SimplifiedAst.Expression.Def(sym, Type.mkUncurriedArrow(List(elmType, elmType), returnType), loc)
-      }
-
-      lattice0 match {
-        case TypedAst.Lattice(tpe, bot0, top0, equ0, leq0, lub0, glb0, loc) =>
-          val bot = visitExp(bot0)
-          val top = visitExp(top0)
-          val equ = mkUncurried2("equ_uncurried", equ0, elmType = tpe, returnType = Type.Bool)
-          val leq = mkUncurried2("leq_uncurried", leq0, elmType = tpe, returnType = Type.Bool)
-          val lub = mkUncurried2("lub_uncurried", lub0, elmType = tpe, returnType = tpe)
-          val glb = mkUncurried2("glb_uncurried", glb0, elmType = tpe, returnType = tpe)
-          SimplifiedAst.Lattice(tpe, bot, top, equ, leq, lub, glb, loc)
-      }
+    def visitLattice(lattice0: TypedAst.Lattice): SimplifiedAst.Lattice = lattice0 match {
+      case TypedAst.Lattice(tpe, bot0, top0, equ0, leq0, lub0, glb0, loc) =>
+        // TODO: Unsafe assumption that these are symbols.
+        val bot = visitExp(bot0)
+        val top = visitExp(top0)
+        val equ = visitExp(equ0).asInstanceOf[SimplifiedAst.Expression.Def].sym
+        val leq = visitExp(leq0).asInstanceOf[SimplifiedAst.Expression.Def].sym
+        val lub = visitExp(lub0).asInstanceOf[SimplifiedAst.Expression.Def].sym
+        val glb = visitExp(glb0).asInstanceOf[SimplifiedAst.Expression.Def].sym
+        SimplifiedAst.Lattice(tpe, bot, top, equ, leq, lub, glb, loc)
     }
 
     /**

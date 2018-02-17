@@ -549,10 +549,6 @@ object SimplifiedAstOps {
       checkType(tpe2)
       checkExp(exp0 = bot, env0 = Set.empty, ienv0 = Set.empty)
       checkExp(exp0 = top, env0 = Set.empty, ienv0 = Set.empty)
-      checkExp(exp0 = equ, env0 = Set.empty, ienv0 = Set.empty)
-      checkExp(exp0 = leq, env0 = Set.empty, ienv0 = Set.empty)
-      checkExp(exp0 = lub, env0 = Set.empty, ienv0 = Set.empty)
-      checkExp(exp0 = glb, env0 = Set.empty, ienv0 = Set.empty)
     }
 
     //

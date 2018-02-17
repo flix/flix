@@ -46,11 +46,31 @@ object Uncurrier extends Phase[Root, Root] {
     // Uncurry symbols in constraints.
     val newStrata = root.strata.map(visitStratum(_, newDefs, root))
 
+    // Uncurry lattice operations.
+    val newLatticeOps = visitLatticeOps(root.lattices, newDefs, root)
+
     // Uncurry special operations.
     val newSpecialOps = visitSpecialOps(root.specialOps, newDefs, root)
 
     // Reassemble the ast.
-    root.copy(defs = root.defs ++ newDefs, strata = newStrata, specialOps = newSpecialOps).toSuccess
+    root.copy(defs = root.defs ++ newDefs, strata = newStrata, lattices = newLatticeOps, specialOps = newSpecialOps).toSuccess
+  }
+
+  /**
+    *
+    */
+  // TODO: DOC
+  def visitLatticeOps(lattices: Map[Type, Lattice], newDefs: TopLevel, root: Root)(implicit flix: Flix): Map[Type, Lattice] = {
+    lattices.foldLeft(Map.empty[Type, Lattice]) {
+      case (macc, (_, Lattice(tpe, bot, top, equ, leq, lub, glb, loc))) =>
+
+        val uncurriedEqu = mkUncurried2(equ, newDefs, root)
+        val uncurriedLeq = mkUncurried2(leq, newDefs, root)
+        val uncurriedLub = mkUncurried2(lub, newDefs, root)
+        val uncurriedGlb = mkUncurried2(glb, newDefs, root)
+
+        macc + (tpe -> Lattice(tpe, bot, top, uncurriedEqu, uncurriedLeq, uncurriedLub, uncurriedGlb, loc))
+    }
   }
 
   /**

@@ -237,7 +237,7 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
      */
     reachableFunctions ++= root.lattices.values.map {
       case SimplifiedAst.Lattice(tpe, bot, top, equ, leq, lub, glb, loc) =>
-        visitExp(bot) ++ visitExp(top) ++ visitExp(equ) ++ visitExp(leq) ++ visitExp(lub) ++ visitExp(glb)
+        visitExp(bot) ++ visitExp(top) + equ + leq + lub + glb
     }.fold(Set())(_ ++ _)
 
     /*
