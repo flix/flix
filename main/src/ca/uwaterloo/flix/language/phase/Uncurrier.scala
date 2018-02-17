@@ -21,13 +21,17 @@ import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.Ast.{Annotations, Modifiers}
 import ca.uwaterloo.flix.language.ast.SimplifiedAst._
 import ca.uwaterloo.flix.language.ast.{SourceLocation, SpecialOperator, Symbol, Type}
-import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
+import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
 import scala.collection.mutable
 
 /**
-  * Introduces uncurried versions of certain definitions where needed for interop.
+  * The Uncurrier introduces uncurried versions of a subset of definitions needed for interop.
+  *
+  * Specifically, certain definitions are called by the Flix runtime environment and solver.
+  *
+  * The runtime solver cannot call curried functions, so we introduce uncurried versions.
   */
 object Uncurrier extends Phase[Root, Root] {
 
@@ -57,24 +61,22 @@ object Uncurrier extends Phase[Root, Root] {
   }
 
   /**
-    *
+    * Uncurries lattice operations.
     */
-  // TODO: DOC
   def visitLatticeOps(lattices: Map[Type, Lattice], newDefs: TopLevel, root: Root)(implicit flix: Flix): Map[Type, Lattice] = {
     lattices.foldLeft(Map.empty[Type, Lattice]) {
       case (macc, (_, Lattice(tpe, bot, top, equ, leq, lub, glb, loc))) =>
-
+        // Uncurry the four lattice operations.
         val uncurriedEqu = mkUncurried2(equ, newDefs, root)
         val uncurriedLeq = mkUncurried2(leq, newDefs, root)
         val uncurriedLub = mkUncurried2(lub, newDefs, root)
         val uncurriedGlb = mkUncurried2(glb, newDefs, root)
-
         macc + (tpe -> Lattice(tpe, bot, top, uncurriedEqu, uncurriedLeq, uncurriedLub, uncurriedGlb, loc))
     }
   }
 
   /**
-    * Uncurries special operators where needed.
+    * Uncurries the equality operation.
     */
   def visitSpecialOps(specialOps: Map[SpecialOperator, Map[Type, Symbol.DefnSym]], newDefs: TopLevel, root: Root)(implicit flix: Flix): Map[SpecialOperator, Map[Type, Symbol.DefnSym]] = {
     val newEqOps = specialOps(SpecialOperator.Equality).foldLeft(Map.empty[Type, Symbol.DefnSym]) {
@@ -87,52 +89,88 @@ object Uncurrier extends Phase[Root, Root] {
   }
 
   /**
-    * Uncurries symbols in the given stratum.
+    * Uncurries all definitions inside the given stratum `s`.
     */
   def visitStratum(s: Stratum, newDefs: TopLevel, root: Root)(implicit flix: Flix): Stratum = s match {
     case Stratum(constraints) => Stratum(constraints.map(visitConstraint(_, newDefs, root)))
   }
 
-  // TODO
+  /**
+    * Uncurries all definitions inside the given constraint `c`.
+    */
   def visitConstraint(c: Constraint, newDefs: TopLevel, root: Root)(implicit flix: Flix): Constraint = c match {
-    case Constraint(cparams, head, body) =>
-      Constraint(cparams, visitHeadPredicate(head, newDefs, root), body.map(visitBodyPredicate(_, newDefs, root)))
-  }
-
-  // TODO
-  def visitHeadPredicate(h: Predicate.Head, newDefs: TopLevel, root: Root)(implicit flix: Flix): Predicate.Head = h
-
-  // TODO
-  def visitBodyPredicate(b: Predicate.Body, newDefs: TopLevel, root: Root)(implicit flix: Flix): Predicate.Body = b match {
-    case Predicate.Body.Atom(_, _, _, _) => b
-    case Predicate.Body.Filter(sym, terms, loc) =>
-      // TODO: Refactor and document.
-      if (terms.length == 2) {
-        val freshSym = mkUncurried2(sym, newDefs, root)
-        Predicate.Body.Filter(freshSym, terms, loc)
-      }
-      else
-        b
-    case Predicate.Body.Loop(_, _, _) => b
+    case Constraint(cparams, head0, body0) =>
+      // TODO: Currently we do not need to uncurry in the head because of an earlier transformation.
+      val head = head0
+      val body = body0.map(visitBodyPredicate(_, newDefs, root))
+      Constraint(cparams, head, body)
   }
 
   /**
-    * Constructs an uncurried version of the given binary definition.
+    * Uncurries all definitions inside the given head predicate `h`.
+    */
+  def visitHeadPredicate(h: Predicate.Head, newDefs: TopLevel, root: Root)(implicit flix: Flix): Predicate.Head = h match {
+    case Predicate.Head.True(loc) => h
+    case Predicate.Head.False(loc) => h
+    case Predicate.Head.Atom(sym, terms, loc) =>
+      val ts = terms.map(visitHeadTerm(_, newDefs, root))
+      Predicate.Head.Atom(sym, ts, loc)
+  }
+
+  /**
+    * Uncurries all definitions inside the given body predicate `h`.
+    */
+  def visitBodyPredicate(b: Predicate.Body, newDefs: TopLevel, root: Root)(implicit flix: Flix): Predicate.Body = b match {
+    case Predicate.Body.Atom(sym, polarity, terms, loc) => b
+    case Predicate.Body.Loop(sym, term, loc) =>
+      val t = visitHeadTerm(term, newDefs, root)
+      Predicate.Body.Loop(sym, t, loc)
+    case Predicate.Body.Filter(sym, terms, loc) => terms match {
+      case Nil => b
+      case x :: Nil => b
+      case x :: y :: Nil =>
+        val freshSym = mkUncurried2(sym, newDefs, root)
+        Predicate.Body.Filter(freshSym, x :: y :: Nil, loc)
+      case _ =>
+        throw InternalCompilerException(s"Unable to uncurry definition of arity n > 2.")
+    }
+  }
+
+  /**
+    * Uncurries all definitions inside the given head term `t`.
+    */
+  def visitHeadTerm(t: Term.Head, newDefs: TopLevel, root: Root)(implicit flix: Flix): Term.Head = t match {
+    case Term.Head.Var(sym, tpe, loc) => t
+    case Term.Head.Lit(lit, tpe, loc) => t
+    case Term.Head.App(sym, terms, tpe, loc) => terms match {
+      case Nil => t
+      case x :: Nil => t
+      case x :: y :: Nil =>
+        val freshSym = mkUncurried2(sym, newDefs, root)
+        Term.Head.App(freshSym, x :: y :: Nil, tpe, loc)
+      case _ =>
+        throw InternalCompilerException(s"Unable to uncurry definition of arity n > 2.")
+    }
+  }
+
+  /**
+    * Introduces an uncurried version of the given binary function definition.
     */
   def mkUncurried2(sym: Symbol.DefnSym, newDefs: TopLevel, root: Root)(implicit flix: Flix): Symbol.DefnSym = {
+    // Put gensym into implicit scope.
     implicit val _ = flix.genSym
 
     // Lookup the original definition.
     val defn = root.defs(sym)
 
     // The type of the 1st argument.
-    val typeX = defn.tpe.typeArguments.head
+    val typeX = getFstArg(defn.tpe)
 
     // The type of the 2nd argument.
-    val typeY = defn.tpe.typeArguments.tail.head.typeArguments.head
+    val typeY = getSndArg(defn.tpe)
 
     // The return type.
-    val returnType = defn.tpe.typeArguments.tail.head.typeArguments.tail.head
+    val returnType = getReturnType(defn.tpe)
 
     // Construct a fresh definition that takes two arguments.
     val loc = SourceLocation.Unknown
@@ -164,5 +202,20 @@ object Uncurrier extends Phase[Root, Root] {
     // Return the fresh symbol.
     freshSym
   }
+
+  /**
+    * Returns the 1st argument of the given binary arrow type `tpe`.
+    */
+  def getFstArg(tpe: Type): Type = tpe.typeArguments.head
+
+  /**
+    * Returns the 2nd argument of the given binary arrow type `tpe`.
+    */
+  def getSndArg(tpe: Type): Type = tpe.typeArguments.tail.head.typeArguments.head
+
+  /**
+    * Returns the return type of the given binary arrow type `tpe`.
+    */
+  def getReturnType(tpe: Type): Type = tpe.typeArguments.tail.head.typeArguments.tail.head
 
 }
