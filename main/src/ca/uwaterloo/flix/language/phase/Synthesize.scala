@@ -311,7 +311,7 @@ object Synthesize extends Phase[Root, Root] {
       val exp = mkEqExp(tpe, freshX, freshY)
 
       // The lambda for the second argument.
-      val lambdaExp = Expression.Lambda(List(paramY), exp, Type.mkArrow(tpe, Type.Bool), ast.Eff.Pure, sl)
+      val lambdaExp = Expression.Lambda(paramY, exp, Type.mkArrow(tpe, Type.Bool), ast.Eff.Pure, sl)
 
       // The definition type.
       val lambdaType = Type.mkArrow(List(tpe, tpe), Type.Bool)

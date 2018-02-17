@@ -180,9 +180,10 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         case Expression.BigInt(lit, loc) => Expression.BigInt(lit, loc)
         case Expression.Str(lit, loc) => Expression.Str(lit, loc)
 
-        case Expression.Lambda(fparams, body, tpe, eff, loc) =>
-          val (fs, env1) = specializeFormalParams(fparams, subst0)
-          Expression.Lambda(fs, visitExp(body, env0 ++ env1), subst0(tpe), eff, loc)
+        case Expression.Lambda(fparam, exp, tpe, eff, loc) =>
+          val (p, env1) = specializeFormalParam(fparam, subst0)
+          val e = visitExp(exp, env0 ++ env1)
+          Expression.Lambda(p, e, subst0(tpe), eff, loc)
 
         case Expression.Apply(exp1, exp2, tpe, eff, loc) =>
           val e1 = visitExp(exp1, env0)

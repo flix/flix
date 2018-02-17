@@ -108,8 +108,12 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case TypedAst.Expression.Int64(lit, loc) => SimplifiedAst.Expression.Int64(lit)
       case TypedAst.Expression.BigInt(lit, loc) => SimplifiedAst.Expression.BigInt(lit)
       case TypedAst.Expression.Str(lit, loc) => SimplifiedAst.Expression.Str(lit)
-      case TypedAst.Expression.Lambda(args, body, tpe, eff, loc) =>
-        SimplifiedAst.Expression.Lambda(args map visitFormalParam, visitExp(body), tpe, loc)
+
+      case TypedAst.Expression.Lambda(fparam, exp, tpe, eff, loc) =>
+        val p = visitFormalParam(fparam)
+        val e = visitExp(exp)
+        SimplifiedAst.Expression.Lambda(List(p), e, tpe, loc)
+
       case TypedAst.Expression.Apply(e1, e2, tpe, eff, loc) =>
         SimplifiedAst.Expression.Apply(visitExp(e1), List(visitExp(e2)), tpe, loc)
 

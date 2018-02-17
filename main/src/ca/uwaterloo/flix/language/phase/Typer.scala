@@ -1035,7 +1035,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           val p = visitParam(fparam)
           val e = visitExp(exp, subst0)
           val t = subst0(tvar)
-          TypedAst.Expression.Lambda(List(p), e, t, Eff.Bot, loc)
+          TypedAst.Expression.Lambda(p, e, t, Eff.Bot, loc)
 
         /*
          * Unary expression.
