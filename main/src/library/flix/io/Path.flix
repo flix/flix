@@ -124,7 +124,12 @@ namespace Path {
     ///
     /// Default handler for `isHidden`.
     ///
-    handler isHidden[a](p: Path, k: Result[Bool, IOError] -> a): a = ???
+    handler isHidden[a](p: Path, k: Result[Bool, IOError] -> a): a = unsafe {
+        let Path(javaPath) = p;
+        let answer = native method java.nio.file.Files.isHidden(javaPath);
+        k(Ok(answer))
+        //TODO: This throws java.nio.file.NoSuchFileException when used on non-existing file
+    }
 
     ///
     /// Effectfully returns `true` if the given path `p` is readable.
@@ -134,7 +139,12 @@ namespace Path {
     ///
     /// Default handler for `isReadable`.
     ///
-    handler isReadable[a](p: Path, k: Result[Bool, IOError] -> a): a = ???
+    handler isReadable[a](p: Path, k: Result[Bool, IOError] -> a): a = unsafe {
+        let Path(javaPath) = p;
+        let answer = native method java.nio.file.Files.isReadable(javaPath);
+        k(Ok(answer))
+        //TODO: Returns false if Path p does not exist. Is this sufficient?
+    }
 
     ///
     /// Effectfully returns `true` if the given path `p` is a regular file.
@@ -164,7 +174,12 @@ namespace Path {
     ///
     /// Default handler for `isSymbolicLink`.
     ///
-    handler isSymbolicLink[a](p: Path, k: Result[Bool, IOError] -> a): a = ???
+    handler isSymbolicLink[a](p: Path, k: Result[Bool, IOError] -> a): a = unsafe {
+        let Path(javaPath) = p;
+        let answer = native method java.nio.file.Files.isSymbolicLink(javaPath);
+        k(Ok(answer))
+        //TODO: Returns false if Path p does not exist. Is this sufficient?
+    }
 
     ///
     /// Effectfully returns `true` if the given path `p` is writable.
@@ -174,7 +189,12 @@ namespace Path {
     ///
     /// Default handler for `isWritable`.
     ///
-    handler isWritable[a](p: Path, k: Result[Bool, IOError] -> a): a = ???
+    handler isWritable[a](p: Path, k: Result[Bool, IOError] -> a): a = unsafe {
+        let Path(javaPath) = p;
+        let answer = native method java.nio.file.Files.isWritable(javaPath);
+        k(Ok(answer))
+        //TODO: Returns false if Path p does not exist. Is this sufficient?
+    }
 
     ///
     /// Effectfully returns a list of all lines in the given text file denoted by path `p`.
