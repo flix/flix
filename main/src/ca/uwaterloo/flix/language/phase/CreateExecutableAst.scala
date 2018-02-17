@@ -87,37 +87,7 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
 
   def toExecutable(sast: SimplifiedAst.Lattice, m: TopLevel)(implicit genSym: GenSym): ExecutableAst.Lattice = sast match {
     case SimplifiedAst.Lattice(tpe, bot, top, equ, leq, lub, glb, loc) =>
-      import Expression.{toExecutable => t}
-
-      /**
-        * bot/top are arbitrary expressions, so we lift them to top-level definitions.
-        * We assume that eq/leq/lub/glb are `Expression.Ref`s, so we do a cast and extract the symbols.
-        *
-        * Note that all of this code will eventually be replaced by typeclasses.
-        */
-
-      val botSym = Symbol.freshDefnSym("bot")
-      val topSym = Symbol.freshDefnSym("top")
-
-      val ann = Ast.Annotations.Empty
-      val mod = Ast.Modifiers(List(Ast.Modifier.Synthetic))
-
-      val varX = Symbol.freshVarSym()
-      val varY = Symbol.freshVarSym()
-
-      val fparams0 = Array(ExecutableAst.FormalParam(varX, Type.Unit))
-      val fparams1 = Array(ExecutableAst.FormalParam(varY, Type.Unit))
-
-      varX.setStackOffset(0)
-      varY.setStackOffset(0)
-
-      val botConst = ExecutableAst.Def(ann, mod, botSym, fparams0, t(bot), Type.mkArrow(Type.Unit, bot.tpe), bot.loc)
-      val topConst = ExecutableAst.Def(ann, mod, topSym, fparams1, t(top), Type.mkArrow(Type.Unit, bot.tpe), top.loc)
-
-      // Update the map of definitions
-      m ++= Map(botSym -> botConst, topSym -> topConst)
-
-      ExecutableAst.Lattice(tpe, botSym, topSym, sast.equ, sast.leq, sast.lub, sast.glb, loc)
+      ExecutableAst.Lattice(tpe, bot, top, equ, leq, lub, glb, loc)
   }
 
   def toExecutable(sast: SimplifiedAst.Index): ExecutableAst.Index =

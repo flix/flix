@@ -547,8 +547,6 @@ object SimplifiedAstOps {
       assert(tpe1 == tpe2)
       checkType(tpe1)
       checkType(tpe2)
-      checkExp(exp0 = bot, env0 = Set.empty, ienv0 = Set.empty)
-      checkExp(exp0 = top, env0 = Set.empty, ienv0 = Set.empty)
     }
 
     //

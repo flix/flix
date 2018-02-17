@@ -591,9 +591,27 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       */
     def visitLattice(lattice0: TypedAst.Lattice): SimplifiedAst.Lattice = lattice0 match {
       case TypedAst.Lattice(tpe, bot0, top0, equ0, leq0, lub0, glb0, loc) =>
+
+        /**
+          * Introduces a unit function for the given expression `exp0`.
+          */
+        def mkUnitDef(name: String, exp0: TypedAst.Expression): Symbol.DefnSym = {
+          val freshSym = Symbol.freshDefnSym(name)
+          val ann = Ast.Annotations.Empty
+          val mod = Ast.Modifiers(List(Ast.Modifier.Synthetic))
+          val varX = Symbol.freshVarSym()
+          val fparam = SimplifiedAst.FormalParam(varX, Ast.Modifiers.Empty, Type.Unit, SourceLocation.Unknown)
+          val exp = visitExp(exp0)
+          val freshDef = SimplifiedAst.Def(ann, mod, freshSym, List(fparam), exp, Type.mkArrow(Type.Unit, exp.tpe), loc)
+
+          toplevel += (freshSym -> freshDef)
+          freshSym
+        }
+
+        val bot = mkUnitDef("bot", bot0)
+        val top = mkUnitDef("top", top0)
+
         // TODO: Unsafe assumption that these are symbols.
-        val bot = visitExp(bot0)
-        val top = visitExp(top0)
         val equ = visitExp(equ0).asInstanceOf[SimplifiedAst.Expression.Def].sym
         val leq = visitExp(leq0).asInstanceOf[SimplifiedAst.Expression.Def].sym
         val lub = visitExp(lub0).asInstanceOf[SimplifiedAst.Expression.Def].sym

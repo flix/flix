@@ -49,7 +49,7 @@ object SimplifiedAst {
 
   case class Enum(mod: Ast.Modifiers, sym: Symbol.EnumSym, cases: Map[String, SimplifiedAst.Case], tpe: Type, loc: SourceLocation) extends SimplifiedAst
 
-  case class Lattice(tpe: Type, bot: SimplifiedAst.Expression, top: SimplifiedAst.Expression, equ: Symbol.DefnSym, leq: Symbol.DefnSym, lub: Symbol.DefnSym, glb: Symbol.DefnSym, loc: SourceLocation) extends SimplifiedAst
+  case class Lattice(tpe: Type, bot: Symbol.DefnSym, top: Symbol.DefnSym, equ: Symbol.DefnSym, leq: Symbol.DefnSym, lub: Symbol.DefnSym, glb: Symbol.DefnSym, loc: SourceLocation) extends SimplifiedAst
 
   case class Index(sym: Symbol.TableSym, indexes: Seq[Seq[Name.Ident]], loc: SourceLocation) extends SimplifiedAst
 
