@@ -166,6 +166,8 @@ object NamedAst {
 
     case class Cast(exp: NamedAst.Expression, tpe: NamedAst.Type, eff: ast.Eff, loc: SourceLocation) extends NamedAst.Expression
 
+    case class TryCatch(exp: NamedAst.Expression, rules: List[NamedAst.CatchRule], loc: SourceLocation) extends NamedAst.Expression
+
     case class NativeConstructor(constructor: Constructor[_], args: List[NamedAst.Expression], tpe: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
     case class NativeField(field: Field, tpe: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
@@ -291,6 +293,8 @@ object NamedAst {
   case class FormalParam(sym: Symbol.VarSym, mod: Ast.Modifiers, tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst
 
   case class HandlerBinding(qname: Name.QName, exp: NamedAst.Expression) extends WeededAst
+
+  case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: NamedAst.Expression) extends NamedAst
 
   case class MatchRule(pat: NamedAst.Pattern, guard: NamedAst.Expression, exp: NamedAst.Expression) extends NamedAst
 

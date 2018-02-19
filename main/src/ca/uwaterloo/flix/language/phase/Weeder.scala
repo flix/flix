@@ -766,6 +766,27 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           }
           visit(exp, unsafe = true)
 
+        case ParsedAst.Expression.TryCatch(sp1, exp, rules, sp2) =>
+          /*
+           * Check for `IllegalUnsafeExpression`.
+           */
+          if (!unsafe) {
+            return WeederError.IllegalUnsafeExpression(mkSL(sp1, sp2)).toFailure
+          }
+
+          val expVal = visit(exp, unsafe)
+          val rulesVal = rules map {
+            case ParsedAst.CatchRule(ident, fqn, body) =>
+              visit(exp, unsafe) map {
+                case b => WeededAst.CatchRule(ident, fqn.mkString("."), b)
+              }
+          }
+
+          @@(expVal, seqM(rulesVal)) map {
+            case (e, rs) => WeededAst.Expression.TryCatch(e, rs, mkSL(sp1, sp2))
+          }
+
+
         case ParsedAst.Expression.NativeConstructor(sp1, fqn, args, sp2) =>
           /*
            * Check for `IllegalUnsafeExpression`.
@@ -1514,6 +1535,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.Ascribe(e1, _, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.Cast(e1, _, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.Unsafe(sp1, _, _) => sp1
+    case ParsedAst.Expression.TryCatch(sp1, _, _, _) => sp1
     case ParsedAst.Expression.NativeField(sp1, _, _) => sp1
     case ParsedAst.Expression.NativeMethod(sp1, _, _, _) => sp1
     case ParsedAst.Expression.NativeConstructor(sp1, _, _, _) => sp1
