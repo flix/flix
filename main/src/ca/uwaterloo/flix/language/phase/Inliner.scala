@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.SimplifiedAst.{Expression, HandlerBinding}
+import ca.uwaterloo.flix.language.ast.SimplifiedAst.{CatchRule, Expression, HandlerBinding}
 import ca.uwaterloo.flix.language.ast.{SimplifiedAst, Symbol}
 import ca.uwaterloo.flix.language.{CompilationError, GenSym}
 import ca.uwaterloo.flix.util.Validation._
@@ -174,6 +174,7 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         Expression.Existential(fparam, visit(exp1), loc)
       case Expression.Universal(fparam, exp1, loc) =>
         Expression.Universal(fparam, visit(exp1), loc)
+      case Expression.TryCatch(exp, rules, tpe, eff, loc) => ??? // TODO
       case Expression.NativeConstructor(constructor, args, tpe, loc) =>
         Expression.NativeConstructor(constructor, args.map(visit), tpe, loc)
       case Expression.NativeField(_, _, _) => exp0
@@ -283,6 +284,15 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       val newFparam = fparam.copy(sym = Symbol.freshVarSym(fparam.sym))
       val sub1 = env0 + (fparam.sym -> newFparam.sym)
       Expression.Universal(newFparam, renameAndSubstitute(exp1, sub1), loc)
+    case Expression.TryCatch(exp, rules, tpe, eff, loc) =>
+      val e = renameAndSubstitute(exp, env0)
+      val rs = rules map {
+        case CatchRule(sym, clazz, body) =>
+          val freshSym = Symbol.freshVarSym(sym)
+          val b = renameAndSubstitute(body, env0 + (sym -> freshSym))
+          CatchRule(freshSym, clazz, b)
+      }
+      Expression.TryCatch(e, rs, tpe, eff, loc)
     case Expression.NativeConstructor(constructor, args, tpe, loc) =>
       Expression.NativeConstructor(constructor, args.map(renameAndSubstitute(_, env0)), tpe, loc)
     case Expression.NativeField(_, _, _) => exp0
@@ -466,6 +476,11 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     // Universal expressions are never atomic.
     //
     case Expression.Universal(fparam, exp, loc) => false
+
+    //
+    // Try Catch expressions are never atomic.
+    //
+    case Expression.TryCatch(exp, rules, tpe, eff, loc) => false
 
     //
     // Native Constructors expressions are atomic if their arguments are.
