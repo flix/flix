@@ -777,7 +777,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           val expVal = visit(exp, unsafe)
           val rulesVal = rules map {
             case ParsedAst.CatchRule(ident, fqn, body) =>
-              visit(exp, unsafe) map {
+              visit(body, unsafe) map {
                 case b => WeededAst.CatchRule(ident, fqn.mkString("."), b)
               }
           }

@@ -595,6 +595,20 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
             t <- lookupType(tpe, ns0, prog0)
           } yield ResolvedAst.Expression.Cast(e, t, eff, loc)
 
+        case NamedAst.Expression.TryCatch(exp, rules, loc) =>
+          val rulesVal = rules map {
+            case NamedAst.CatchRule(sym, clazz, body) =>
+              // TODO: Give more precise type.
+              visit(body, tenv0 + (sym -> Type.Native)) map {
+                case b => ResolvedAst.CatchRule(sym, clazz, b)
+              }
+          }
+
+          for {
+            e <- visit(exp, tenv0)
+            rs <- seqM(rulesVal)
+          } yield ResolvedAst.Expression.TryCatch(e, rs, loc)
+
         case NamedAst.Expression.NativeConstructor(constructor, args, tpe, loc) =>
           for {
             es <- seqM(args.map(e => visit(e, tenv0)))

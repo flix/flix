@@ -933,6 +933,22 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           } yield declaredType
 
         /*
+         * Try Catch
+         */
+        case ResolvedAst.Expression.TryCatch(exp, rules, loc) =>
+          val rulesType = rules map {
+            case ResolvedAst.CatchRule(sym, clazz, body) =>
+              visitExp(body)
+          }
+
+          for {
+            expType <- visitExp(exp)
+            ruleTypes <- seqM(rulesType)
+            ruleType <- unifyM(ruleTypes, loc)
+            resultType <- unifyM(expType, ruleType, loc)
+          } yield resultType
+
+        /*
          * Native Constructor expression.
          */
         case ResolvedAst.Expression.NativeConstructor(constructor, actuals, tvar, loc) =>
