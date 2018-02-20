@@ -237,6 +237,24 @@ object Interpreter {
       // Evaluate the expression in the new handler environment.
       eval(exp, env0, henv, lenv0, root)
 
+
+    //
+    // TryCatch expressions.
+    //
+    case Expression.TryCatch(exp, rules, tpe, loc) =>
+      try {
+        eval(exp, env0, henv0, lenv0, root)
+      } catch {
+        case ex: Throwable =>
+          for (CatchRule(sym, clazz, body) <- rules) {
+            if (clazz == ex.getClass) {
+              val env1 = env0 + (sym.toString -> ex)
+              eval(body, env1, henv0, lenv0, root)
+            }
+          }
+          throw ex
+      }
+
     //
     // NativeConstructor expressions.
     //

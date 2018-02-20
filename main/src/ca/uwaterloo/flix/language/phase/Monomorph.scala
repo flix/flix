@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, HandlerBinding, Pattern, Root}
+import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.{BinaryOperator, Symbol, Type, TypedAst, UnaryOperator}
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
@@ -343,6 +343,18 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         case Expression.Cast(exp, tpe, eff, loc) =>
           val e = visitExp(exp, env0)
           Expression.Cast(e, subst0(tpe), eff, loc)
+
+        case Expression.TryCatch(exp, rules, tpe, eff, loc) =>
+          val e = visitExp(exp, env0)
+          val rs = rules map {
+            case CatchRule(sym, clazz, body) =>
+              // Generate a fresh symbol.
+              val freshSym = Symbol.freshVarSym(sym)
+              val env1 = env0 + (sym -> freshSym)
+              val b = visitExp(body, env1)
+              CatchRule(sym, clazz, b)
+          }
+          Expression.TryCatch(e, rs, tpe, eff, loc)
 
         case Expression.NativeConstructor(constructor, args, tpe, eff, loc) =>
           val es = args.map(e => visitExp(e, env0))

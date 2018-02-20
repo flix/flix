@@ -163,6 +163,8 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.HandleWith(exp, bindings, tpe, loc) => visitExp(exp) ++ visitExps(bindings.map(_.exp))
       case Expression.Existential(fparam, exp, loc) => visitExp(exp)
       case Expression.Universal(fparam, exp, loc) => visitExp(exp)
+      case Expression.TryCatch(exp, rules, tpe, eff, loc) =>
+        visitExp(exp) ++ visitExps(rules.map(_.exp))
       case Expression.NativeConstructor(constructor, args, tpe, loc) => visitExps(args)
       case Expression.NativeField(field, tpe, loc) => Set.empty
       case Expression.NativeMethod(method, args, tpe, loc) => visitExps(args)
@@ -171,8 +173,8 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.MatchError(tpe, loc) => Set.empty
       case Expression.SwitchError(tpe, loc) => Set.empty
 
-      case Expression.LambdaClosure(lambda, freeVars, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${e0.getClass.getSimpleName}'.")
-      case Expression.Apply(exp, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${e0.getClass.getSimpleName}'.")
+      case Expression.LambdaClosure(lambda, freeVars, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${e0.getClass}'.")
+      case Expression.Apply(exp, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${e0.getClass}'.")
     }
 
     /**

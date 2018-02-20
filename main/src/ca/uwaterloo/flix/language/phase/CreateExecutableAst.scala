@@ -235,13 +235,26 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
       case SimplifiedAst.Expression.Universal(fparam, exp, loc) =>
         val p = ExecutableAst.FormalParam(fparam.sym, fparam.tpe)
         ExecutableAst.Expression.Universal(p, toExecutable(exp), loc)
+
+      case SimplifiedAst.Expression.TryCatch(exp, rules, tpe, eff, loc) =>
+        val e = toExecutable(exp)
+        val rs = rules map {
+          case SimplifiedAst.CatchRule(sym, clazz, body) =>
+            val b = toExecutable(exp)
+            ExecutableAst.CatchRule(sym, clazz, b)
+        }
+        ExecutableAst.Expression.TryCatch(e, rs, tpe, loc)
+
       case SimplifiedAst.Expression.NativeConstructor(constructor, args, tpe, loc) =>
         val es = args.map(e => toExecutable(e))
         ExecutableAst.Expression.NativeConstructor(constructor, es, tpe, loc)
+
       case SimplifiedAst.Expression.NativeField(field, tpe, loc) => ExecutableAst.Expression.NativeField(field, tpe, loc)
+
       case SimplifiedAst.Expression.NativeMethod(method, args, tpe, loc) =>
         val es = args.map(e => toExecutable(e))
         ExecutableAst.Expression.NativeMethod(method, es, tpe, loc)
+
       case SimplifiedAst.Expression.UserError(tpe, loc) => ExecutableAst.Expression.UserError(tpe, loc)
       case SimplifiedAst.Expression.HoleError(sym, tpe, eff, loc) => ExecutableAst.Expression.HoleError(sym, tpe, loc)
       case SimplifiedAst.Expression.MatchError(tpe, loc) => ExecutableAst.Expression.MatchError(tpe, loc)
