@@ -439,10 +439,11 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         val subst0 = getSubstFromParams(fparams0)
         val tparams = getTypeParams(tparams0)
         val fparams = getFormalParams(fparams0, subst0)
+        val argumentTypes = fparams.map(_.tpe)
 
         val result = for {
           actualType <- Expressions.infer(exp0, program0)(flix.genSym)
-          unifiedType <- unifyM(declaredType, effectType, actualType, loc)
+          unifiedType <- unifyM(declaredType, effectType, Type.mkArrow(argumentTypes, actualType), loc)
         } yield unifiedType
 
         result.run(Substitution.empty) map {

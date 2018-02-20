@@ -283,6 +283,8 @@ object ClosureConv {
       freeVariables(exp).filterNot { v => v._1 == fparam.sym }
     case Expression.Universal(fparam, exp, loc) =>
       freeVariables(exp).filterNot { v => v._1 == fparam.sym }
+
+    case Expression.TryCatch(exp, rules, tpe, eff, loc) => mutable.LinkedHashSet.empty ++ freeVariables(exp) ++ rules.flatMap(r => freeVariables(r.exp).filterNot(_ == r.sym))
     case Expression.NativeConstructor(constructor, args, tpe, loc) => mutable.LinkedHashSet.empty ++ args.flatMap(freeVariables)
     case Expression.NativeField(field, tpe, loc) => mutable.LinkedHashSet.empty
     case Expression.NativeMethod(method, args, tpe, loc) => mutable.LinkedHashSet.empty ++ args.flatMap(freeVariables)
@@ -436,10 +438,22 @@ object ClosureConv {
         val fs = replace(fparam, subst)
         val e = visit(exp)
         Expression.Universal(fs, e, loc)
+
+      case Expression.TryCatch(exp, rules, tpe, eff, loc) =>
+        val e = visit(exp)
+        val rs = rules map {
+          case CatchRule(sym, clazz, body) =>
+            val b = visit(body)
+            CatchRule(sym, clazz, b)
+        }
+        Expression.TryCatch(e, rs, tpe, eff, loc)
+
       case Expression.NativeConstructor(constructor, args, tpe, loc) =>
         val es = args map visit
         Expression.NativeConstructor(constructor, es, tpe, loc)
+
       case Expression.NativeField(field, tpe, loc) => e
+
       case Expression.NativeMethod(method, args, tpe, loc) =>
         val es = args map visit
         Expression.NativeMethod(method, es, tpe, loc)
