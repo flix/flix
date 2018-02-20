@@ -213,7 +213,7 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         val e = visitExp(exp)
         val rs = rules map {
           case CatchRule(sym, clazz, body) =>
-            val b = visitExp(exp)
+            val b = visitExp(body)
             CatchRule(sym, clazz, b)
         }
         Expression.TryCatch(e, rs, tpe, eff, loc)

@@ -240,7 +240,7 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
         val e = toExecutable(exp)
         val rs = rules map {
           case SimplifiedAst.CatchRule(sym, clazz, body) =>
-            val b = toExecutable(exp)
+            val b = toExecutable(body)
             ExecutableAst.CatchRule(sym, clazz, b)
         }
         ExecutableAst.Expression.TryCatch(e, rs, tpe, loc)

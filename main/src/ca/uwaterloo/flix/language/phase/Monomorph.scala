@@ -592,45 +592,52 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
     }
 
     /*
-     * Performs function specialization until the queue is empty.
+     * Performs function specialization until both queues are empty.
      */
-    while (defQueue.nonEmpty) {
-      // Extract a function from the queue and specializes it w.r.t. its substitution.
-      val (freshSym, defn, subst) = defQueue.dequeue()
+    while (defQueue.nonEmpty || effQueue.nonEmpty) {
 
-      // Specialize the formal parameters and introduce fresh local variable symbols.
-      val (fparams, env0) = specializeFormalParams(defn.fparams, subst)
+      /*
+       * Performs function specialization until the queue is empty.
+       */
+      while (defQueue.nonEmpty) {
+        // Extract a function from the queue and specializes it w.r.t. its substitution.
+        val (freshSym, defn, subst) = defQueue.dequeue()
 
-      // Specialize the body expression.
-      val specializedExp = specialize(defn.exp, env0, subst)
+        // Specialize the formal parameters and introduce fresh local variable symbols.
+        val (fparams, env0) = specializeFormalParams(defn.fparams, subst)
 
-      // Reassemble the definition.
-      // NB: Removes the type parameters as the function is now monomorphic.
-      val specializedDefn = defn.copy(sym = freshSym, fparams = fparams, exp = specializedExp, tpe = subst(defn.tpe), tparams = Nil)
+        // Specialize the body expression.
+        val specializedExp = specialize(defn.exp, env0, subst)
 
-      // Save the specialized function.
-      specializedDefns.put(freshSym, specializedDefn)
-    }
+        // Reassemble the definition.
+        // NB: Removes the type parameters as the function is now monomorphic.
+        val specializedDefn = defn.copy(sym = freshSym, fparams = fparams, exp = specializedExp, tpe = subst(defn.tpe), tparams = Nil)
 
-    /*
-     * Performs effect handler specialization until the queue is empty.
-     */
-    while (effQueue.nonEmpty) {
-      // Extract an effect from the queue and specializes it w.r.t. its substitution.
-      val (freshSym, handler, subst) = effQueue.dequeue()
+        // Save the specialized function.
+        specializedDefns.put(freshSym, specializedDefn)
+      }
 
-      // Specialize the formal parameters and introduce fresh local variable symbols.
-      val (fparams, env0) = specializeFormalParams(handler.fparams, subst)
+      /*
+       * Performs effect handler specialization until the queue is empty.
+       */
+      while (effQueue.nonEmpty) {
+        // Extract an effect from the queue and specializes it w.r.t. its substitution.
+        val (freshSym, handler, subst) = effQueue.dequeue()
 
-      // Specialize the body expression.
-      val specializedExp = specialize(handler.exp, env0, subst)
+        // Specialize the formal parameters and introduce fresh local variable symbols.
+        val (fparams, env0) = specializeFormalParams(handler.fparams, subst)
 
-      // Reassemble the definition.
-      // NB: Removes the type parameters as the function is now monomorphic.
-      val specializedHandler = handler.copy(sym = freshSym, fparams = fparams, exp = specializedExp, tpe = subst(handler.tpe), tparams = Nil)
+        // Specialize the body expression.
+        val specializedExp = specialize(handler.exp, env0, subst)
 
-      // Save the specialized handler.
-      specializedHandlers.put(freshSym, specializedHandler)
+        // Reassemble the definition.
+        // NB: Removes the type parameters as the function is now monomorphic.
+        val specializedHandler = handler.copy(sym = freshSym, fparams = fparams, exp = specializedExp, tpe = subst(handler.tpe), tparams = Nil)
+
+        // Save the specialized handler.
+        specializedHandlers.put(freshSym, specializedHandler)
+      }
+
     }
 
     // Calculate the elapsed time.
