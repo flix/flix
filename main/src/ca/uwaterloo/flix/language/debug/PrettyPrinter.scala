@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.debug
 
 import ca.uwaterloo.flix.language.ast.SimplifiedAst._
 import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.util.tc.Show.ShowableSyntax
 import ca.uwaterloo.flix.util.vt.VirtualString._
 import ca.uwaterloo.flix.util.vt.VirtualTerminal
 
@@ -327,6 +328,19 @@ object PrettyPrinter {
           vt.text("). ")
           visitExp(exp)
 
+        case Expression.TryCatch(exp, rules, tpe, eff, loc) =>
+          vt << "try {" << Indent << NewLine
+          visitExp(exp)
+          vt << Dedent << NewLine
+          vt << "} catch {" << Indent << NewLine
+          for (CatchRule(sym, clazz, body) <- rules) {
+            vt << "case "
+            fmtSym(sym, vt)
+            vt << ": " << clazz.toString << " => "
+            visitExp(body)
+          }
+          vt << Dedent << NewLine << "}" << NewLine
+
         case Expression.NativeConstructor(constructor, args, tpe, loc) =>
           vt.text(constructor.toString)
           vt.text("(")
@@ -359,7 +373,7 @@ object PrettyPrinter {
     def fmtParam(p: FormalParam, vt: VirtualTerminal): Unit = {
       fmtSym(p.sym, vt)
       vt.text(": ")
-      vt.text(p.tpe.toString)
+      vt.text(p.tpe.show)
     }
 
     def fmtSym(sym: Symbol.VarSym, vt: VirtualTerminal): Unit = {
@@ -371,7 +385,7 @@ object PrettyPrinter {
     }
 
     def fmtSym(sym: Symbol.EffSym, vt: VirtualTerminal): Unit = {
-      vt << Red(sym.toString)
+      vt << Yellow(sym.toString)
     }
 
     def fmtSym(sym: Symbol.LabelSym, vt: VirtualTerminal): Unit = {
