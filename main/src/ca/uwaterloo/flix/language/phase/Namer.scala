@@ -733,7 +733,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
         }
 
         @@(expVal, @@(rulesVal)) map {
-          case (e, rs) => NamedAst.Expression.TryCatch(e, rs, loc)
+          case (e, rs) => NamedAst.Expression.TryCatch(e, rs, Type.freshTypeVar(), loc)
         }
 
       case WeededAst.Expression.NativeConstructor(className, args, loc) =>
