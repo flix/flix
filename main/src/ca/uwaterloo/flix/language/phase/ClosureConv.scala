@@ -284,7 +284,7 @@ object ClosureConv {
     case Expression.Universal(fparam, exp, loc) =>
       freeVariables(exp).filterNot { v => v._1 == fparam.sym }
 
-    case Expression.TryCatch(exp, rules, tpe, eff, loc) => mutable.LinkedHashSet.empty ++ freeVariables(exp) ++ rules.flatMap(r => freeVariables(r.exp).filterNot(_ == r.sym))
+    case Expression.TryCatch(exp, rules, tpe, eff, loc) => mutable.LinkedHashSet.empty ++ freeVariables(exp) ++ rules.flatMap(r => freeVariables(r.exp).filterNot(_._1 == r.sym))
     case Expression.NativeConstructor(constructor, args, tpe, loc) => mutable.LinkedHashSet.empty ++ args.flatMap(freeVariables)
     case Expression.NativeField(field, tpe, loc) => mutable.LinkedHashSet.empty
     case Expression.NativeMethod(method, args, tpe, loc) => mutable.LinkedHashSet.empty ++ args.flatMap(freeVariables)

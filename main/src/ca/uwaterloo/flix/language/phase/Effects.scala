@@ -436,6 +436,11 @@ object Effects extends Phase[Root, Root] {
           }
 
         /**
+          * Try Catch Expression.
+          */
+        case Expression.TryCatch(exp, rules, tpe, eff, loc) => ??? // TODO: TryCatch
+
+        /**
           * Native Constructor Expression.
           */
         case Expression.NativeConstructor(constructor, args, tpe, _, loc) =>

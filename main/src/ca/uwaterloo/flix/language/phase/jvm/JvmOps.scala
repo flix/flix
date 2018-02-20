@@ -785,10 +785,12 @@ object JvmOps {
       case Expression.Deref(exp, tpe, loc) => visitExp(exp)
       case Expression.Assign(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2)
 
-      case Expression.HandleWith(exp, bindings, tpe, loc) => ??? // TODO
+      case Expression.HandleWith(exp, bindings, tpe, loc) => ??? // TODO: HandleWith
 
       case Expression.Existential(fparam, exp, loc) => visitExp(exp)
       case Expression.Universal(fparam, exp, loc) => visitExp(exp)
+
+      case Expression.TryCatch(exp, rules, tpe, loc) => ??? // TODO: TryCatch
 
       case Expression.NativeConstructor(constructor, args, tpe, loc) => args.foldLeft(Set.empty[ClosureInfo]) {
         case (sacc, e) => sacc ++ visitExp(e)
@@ -1004,6 +1006,8 @@ object JvmOps {
 
       case Expression.Existential(fparam, exp, loc) => visitExp(exp) + fparam.tpe
       case Expression.Universal(fparam, exp, loc) => visitExp(exp) + fparam.tpe
+
+      case Expression.TryCatch(exp, rules, tpe, loc) => ??? // TODO: TryCatch
 
       case Expression.NativeConstructor(constructor, args, tpe, loc) => args.foldLeft(Set(tpe)) {
         case (sacc, e) => sacc ++ visitExp(e)

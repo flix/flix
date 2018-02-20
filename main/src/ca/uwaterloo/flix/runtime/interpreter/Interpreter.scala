@@ -248,7 +248,7 @@ object Interpreter {
         case ex: Throwable =>
           val exceptionClass = ex.getClass
           for (CatchRule(sym, clazz, body) <- rules) {
-            if (true) { // TODO: Check exception type.
+            if (clazz.isAssignableFrom(exceptionClass)) {
               val env1 = env0 + (sym.toString -> ex)
               return eval(body, env1, henv0, lenv0, root)
             }
