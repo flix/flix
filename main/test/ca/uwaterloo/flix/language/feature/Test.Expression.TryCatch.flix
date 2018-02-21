@@ -85,7 +85,35 @@ def trycatch12(): Bool = unsafe
         case ex: ##java.lang.StringIndexOutOfBoundsException => true
     }
 
+@test
+def trycatch13(): Bool = unsafe
+    try (0 / 0) == 0 catch {
+        case ex: ##java.lang.ArithmeticException =>
+            let x = true;
+                x
+    }
+
+@test
+def trycatch14(): Bool = unsafe
+    try (0 / 0) == 0 catch {
+        case ex: ##java.lang.ArithmeticException =>
+            let x = true;
+            let y = false;
+            let z = true;
+                x && z
+    }
+
+@test
+def trycatch15(): Bool = unsafe
+    try (0 / 0) == 0 catch {
+        case ex: ##java.lang.ArithmeticException =>
+            let x = 0.0;
+            let y = 123;
+            let z = 0.5;
+                true
+    }
+
+
 // TODO: Add tests where
 // (1) we use the exception value returned.
-// (2) We have nested lets inside the case.
 // (3) We have nested try/catch.

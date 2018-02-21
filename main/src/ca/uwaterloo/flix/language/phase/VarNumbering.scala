@@ -167,12 +167,10 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         val i1 = visitExp(exp, i0)
         val i2 = i1 + 1
         for (CatchRule(sym, clazz, body) <- rules) {
-          // NB: Reuses the same stack offset for each catch symbol.
+          // NB: We reuse the same stack offset for each exception.
           sym.setStackOffset(i1)
-          // TODO: Need to deal with i3
-          val i3 = visitExp(body, i2)
         }
-        i2
+        visitExps(rules.map(_.exp), i2)
 
       case Expression.NativeConstructor(constructor, args, tpe, loc) => visitExps(args, i0)
 
