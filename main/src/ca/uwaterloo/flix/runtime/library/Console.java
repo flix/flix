@@ -16,7 +16,6 @@
 
 package ca.uwaterloo.flix.runtime.library;
 
-import java.io.IOException;
 import java.util.Scanner;
 
 public class Console {
@@ -25,15 +24,9 @@ public class Console {
     // Standard Input Stream.
     //
 
-    public static int readLine() {
-//        Scanner scanner = new Scanner(System.in);
-  //      return scanner.nextLine();
-        int xyz = 42;
-        try {
-            return 1;
-        } catch (NullPointerException e) {
-            return e.hashCode();
-        }
+    public static String readLine() {
+        Scanner scanner = new Scanner(System.in);
+        return scanner.nextLine();
     }
 
     //
