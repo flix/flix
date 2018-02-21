@@ -475,7 +475,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         /*
          * Variable expression.
          */
-        case ResolvedAst.Expression.Var(sym, tpe, loc) => unifyM(sym.tvar, tpe, loc)
+        case ResolvedAst.Expression.Var(sym, loc) => liftM(sym.tvar)
 
         /*
          * Def expression.
@@ -516,22 +516,22 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         /*
          * Lambda expression.
          */
-        case ResolvedAst.Expression.Lambda(fparam, exp, tvar, loc) =>
-          val argumentType = fparam.tpe
+        case ResolvedAst.Expression.Lambda(fparams, body, tvar, loc) =>
+          val argumentTypes = fparams.map(_.tpe)
           for (
-            inferredExpType <- visitExp(exp);
-            resultType <- unifyM(tvar, Type.mkArrow(argumentType, inferredExpType), loc)
+            inferredBodyType <- visitExp(body);
+            resultType <- unifyM(tvar, Type.mkArrow(argumentTypes, inferredBodyType), loc)
           ) yield resultType
 
         /*
          * Apply expression.
          */
-        case ResolvedAst.Expression.Apply(exp1, exp2, tvar, loc) =>
+        case ResolvedAst.Expression.Apply(lambda, actuals, tvar, loc) =>
           val freshResultType = Type.freshTypeVar()
           for (
-            inferredLambdaType <- visitExp(exp1);
-            inferredArgumentType <- visitExp(exp2);
-            expectedLambdaType <- unifyM(inferredLambdaType, Type.mkArrow(inferredArgumentType, freshResultType), loc);
+            inferredLambdaType <- visitExp(lambda);
+            inferredArgumentTypes <- seqM(actuals.map(visitExp));
+            expectedLambdaType <- unifyM(inferredLambdaType, Type.mkArrow(inferredArgumentTypes, freshResultType), loc);
             resultType <- unifyM(freshResultType, tvar, loc)
           ) yield resultType
 
@@ -984,7 +984,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         /*
          * Variable expression.
          */
-        case ResolvedAst.Expression.Var(sym, _, loc) => TypedAst.Expression.Var(sym, subst0(sym.tvar), Eff.Bot, loc)
+        case ResolvedAst.Expression.Var(sym, loc) => TypedAst.Expression.Var(sym, subst0(sym.tvar), Eff.Bot, loc)
 
         /*
          * Def expression.
@@ -1023,19 +1023,21 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         /*
          * Apply expression.
          */
-        case ResolvedAst.Expression.Apply(exp1, exp2, tvar, loc) =>
-          val e1 = visitExp(exp1, subst0)
-          val e2 = visitExp(exp2, subst0)
-          TypedAst.Expression.Apply(e1, e2, subst0(tvar), Eff.Bot, loc)
+        case ResolvedAst.Expression.Apply(lambda, actuals, tvar, loc) =>
+          val l = visitExp(lambda, subst0)
+          val as = actuals.map(e => visitExp(e, subst0))
+          TypedAst.Expression.Apply(l, as, subst0(tvar), Eff.Bot, loc)
 
         /*
          * Lambda expression.
          */
-        case ResolvedAst.Expression.Lambda(fparam, exp, tvar, loc) =>
-          val p = visitParam(fparam)
-          val e = visitExp(exp, subst0)
-          val t = subst0(tvar)
-          TypedAst.Expression.Lambda(p, e, t, Eff.Bot, loc)
+        case ResolvedAst.Expression.Lambda(fparams, exp, tvar, loc) =>
+          val lambdaParams = fparams map {
+            case ResolvedAst.FormalParam(sym, mod, tpe, loc2) => TypedAst.FormalParam(sym, mod, subst0(tpe), loc2)
+          }
+          val lambdaBody = visitExp(exp, subst0)
+          val lambdaType = subst0(tvar)
+          TypedAst.Expression.Lambda(lambdaParams, lambdaBody, lambdaType, Eff.Bot, loc)
 
         /*
          * Unary expression.

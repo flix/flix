@@ -180,15 +180,14 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         case Expression.BigInt(lit, loc) => Expression.BigInt(lit, loc)
         case Expression.Str(lit, loc) => Expression.Str(lit, loc)
 
-        case Expression.Lambda(fparam, exp, tpe, eff, loc) =>
-          val (p, env1) = specializeFormalParam(fparam, subst0)
-          val e = visitExp(exp, env0 ++ env1)
-          Expression.Lambda(p, e, subst0(tpe), eff, loc)
+        case Expression.Lambda(fparams, body, tpe, eff, loc) =>
+          val (fs, env1) = specializeFormalParams(fparams, subst0)
+          Expression.Lambda(fs, visitExp(body, env0 ++ env1), subst0(tpe), eff, loc)
 
-        case Expression.Apply(exp1, exp2, tpe, eff, loc) =>
-          val e1 = visitExp(exp1, env0)
-          val e2 = visitExp(exp2, env0)
-          Expression.Apply(e1, e2, subst0(tpe), eff, loc)
+        case Expression.Apply(exp, args, tpe, eff, loc) =>
+          val e = visitExp(exp, env0)
+          val as = args.map(a => visitExp(a, env0))
+          Expression.Apply(e, as, subst0(tpe), eff, loc)
 
         case Expression.Unary(op, exp, tpe, eff, loc) =>
           val e1 = visitExp(exp, env0)
@@ -221,17 +220,14 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
             case Some(eqSym) =>
               // Equality function found. Specialize and generate a call to it.
               val newSym = specializeDefSym(eqSym, eqType)
-              val base = Expression.Def(newSym, eqType, eff, loc)
-
-              // Call the equality function.
-              val inner = Expression.Apply(base, e1, Type.mkArrow(valueType, Type.Bool), eff, loc)
-              val outer = Expression.Apply(inner, e2, Type.Bool, eff, loc)
-
+              val ref = Expression.Def(newSym, eqType, eff, loc)
               // Check whether the whether the operator is equality or inequality.
               if (op == BinaryOperator.Equal) {
-                outer
+                // Call the equality function.
+                Expression.Apply(ref, List(e1, e2), tpe, eff, loc)
               } else {
-                Expression.Unary(UnaryOperator.LogicalNot, outer, Type.Bool, eff, loc)
+                // Call the equality function and negate the result.
+                Expression.Unary(UnaryOperator.LogicalNot, Expression.Apply(ref, List(e1, e2), tpe, eff, loc), Type.Bool, eff, loc)
               }
           }
 

@@ -85,14 +85,7 @@ object Linker {
     override def invoke(args: Array[AnyRef]): ProxyObject =
       try {
         // Java Reflective Call.
-        val as = if (args.isEmpty) Array(null) else args
-
-        // Check the number of arguments.
-        if (defn.method.getParameterCount != as.length) {
-          throw InternalRuntimeException(s"Expected ${defn.method.getParameterCount} arguments, but got: ${as.length} for method ${defn.method.getName}.")
-        }
-
-        val result = defn.method.invoke(null, as: _*)
+        val result = defn.method.invoke(null, args: _*)
 
         // Eq, Hash, and toString
         val resultType = defn.tpe.typeArguments.last

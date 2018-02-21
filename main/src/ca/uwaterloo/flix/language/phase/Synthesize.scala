@@ -105,10 +105,10 @@ object Synthesize extends Phase[Root, Root] {
         val e = visitExp(exp)
         Expression.Lambda(fparams, e, tpe, eff, loc)
 
-      case Expression.Apply(exp1, exp2, tpe, eff, loc) =>
-        val e1 = visitExp(exp1)
-        val e2 = visitExp(exp2)
-        Expression.Apply(e1, e2, tpe, eff, loc)
+      case Expression.Apply(exp, args, tpe, eff, loc) =>
+        val e = visitExp(exp)
+        val es = args map visitExp
+        Expression.Apply(e, es, tpe, eff, loc)
 
       case Expression.Unary(op, exp, tpe, eff, loc) =>
         val e = visitExp(exp)
@@ -256,10 +256,9 @@ object Synthesize extends Phase[Root, Root] {
       val sym = getOrMkEq(tpe)
 
       // Construct an expression to call the symbol with the arguments `e1` and `e2`.
-      val base = Expression.Def(sym, Type.mkArrow(List(tpe, tpe), Type.Bool), ast.Eff.Pure, sl)
-      val inner = Expression.Apply(base, exp1, Type.mkArrow(List(tpe), Type.Bool), ast.Eff.Pure, sl)
-      val outer = Expression.Apply(inner, exp2, Type.Bool, ast.Eff.Pure, sl)
-      outer
+      val e = Expression.Def(sym, Type.mkArrow(List(tpe, tpe), Type.Bool), ast.Eff.Pure, sl)
+      val args = exp1 :: exp2 :: Nil
+      Expression.Apply(e, args, Type.Bool, ast.Eff.Pure, sl)
     }
 
     /**
@@ -305,19 +304,16 @@ object Synthesize extends Phase[Root, Root] {
 
       // Type and formal parameters.
       val tparams = Nil
-      val fparams = paramX :: Nil
+      val fparams = paramX :: paramY :: Nil
 
       // The body expression.
       val exp = mkEqExp(tpe, freshX, freshY)
-
-      // The lambda for the second argument.
-      val lambdaExp = Expression.Lambda(paramY, exp, Type.mkArrow(tpe, Type.Bool), ast.Eff.Pure, sl)
 
       // The definition type.
       val lambdaType = Type.mkArrow(List(tpe, tpe), Type.Bool)
 
       // Assemble the definition.
-      val defn = Def(Ast.Doc(Nil, sl), ann, mod, sym, tparams, fparams, lambdaExp, lambdaType, ast.Eff.Pure, sl)
+      val defn = Def(Ast.Doc(Nil, sl), ann, mod, sym, tparams, fparams, exp, lambdaType, ast.Eff.Pure, sl)
 
       // Add it to the map of new definitions.
       newDefs += (defn.sym -> defn)
@@ -491,16 +487,17 @@ object Synthesize extends Phase[Root, Root] {
     /**
       * Returns an expression that computes the hashCode of the value of the given expression `exp0`.
       */
-    def mkApplyHash(exp2: Expression): Expression = {
+    def mkApplyHash(exp0: Expression): Expression = {
       // The type of the expression.
-      val tpe = exp2.tpe
+      val tpe = exp0.tpe
 
       // Construct the symbol of the toString operator.
       val sym = getOrMkHash(tpe)
 
       // Construct an expression to call the symbol with the argument `exp0`.
-      val exp1 = Expression.Def(sym, Type.mkArrow(List(tpe), Type.Int32), ast.Eff.Pure, sl)
-      Expression.Apply(exp1, exp2, Type.Int32, ast.Eff.Pure, sl)
+      val e = Expression.Def(sym, Type.mkArrow(List(tpe), Type.Int32), ast.Eff.Pure, sl)
+      val args = exp0 :: Nil
+      Expression.Apply(e, args, Type.Int32, ast.Eff.Pure, sl)
     }
 
     /**
@@ -714,18 +711,19 @@ object Synthesize extends Phase[Root, Root] {
     }
 
     /**
-      * Returns an expression that computes the string representation of the value of the given expression `exp2`.
+      * Returns an expression that computes the string representation of the value of the given expression `exp0`.
       */
-    def mkApplyToString(exp2: Expression): Expression = {
+    def mkApplyToString(exp0: Expression): Expression = {
       // The type of the expression.
-      val tpe = exp2.tpe
+      val tpe = exp0.tpe
 
       // Construct the symbol of the toString operator.
       val sym = getOrMkToString(tpe)
 
       // Construct an expression to call the symbol with the argument `exp0`.
-      val exp1 = Expression.Def(sym, Type.mkArrow(List(tpe), Type.Str), ast.Eff.Pure, sl)
-      Expression.Apply(exp1, exp2, Type.Str, ast.Eff.Pure, sl)
+      val e = Expression.Def(sym, Type.mkArrow(List(tpe), Type.Str), ast.Eff.Pure, sl)
+      val args = exp0 :: Nil
+      Expression.Apply(e, args, Type.Str, ast.Eff.Pure, sl)
     }
 
     /**

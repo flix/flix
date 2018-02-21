@@ -18,10 +18,10 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
+import ca.uwaterloo.flix.language.ast.{SimplifiedAst, Symbol}
 import ca.uwaterloo.flix.language.ast.SimplifiedAst.Expression
-import ca.uwaterloo.flix.language.ast.{SimplifiedAst, Symbol, Type}
-import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
+import ca.uwaterloo.flix.util.Validation._
 
 import scala.collection.mutable
 
@@ -30,7 +30,7 @@ import scala.collection.mutable
   *
   * A function is considered reachable if it:
   *
-  * (a) Appears in the global namespaces, takes a unit argument, and is not marked as synthetic.
+  * (a) Appears in the global namespaces, takes zero arguments, and is not marked as synthetic.
   * (b) Appears in a fact or a rule as a filter/transfer function.
   * (c) Appears in a lattice declaration.
   * (d) Appears in a property declaration.
@@ -64,15 +64,10 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       *
       * That is, returns true iff `defn` satisfies:
       *
-      * (a) Appears in the global namespaces, takes a unit argument, and is not marked as synthetic.
+      * (a) Appears in the global namespaces, takes zero arguments, and is not marked as synthetic.
       */
     def isReachableRoot(defn: SimplifiedAst.Def): Boolean = {
-      val isRootNs = defn.sym.namespace.isEmpty
-      val isSingleUnitArg = defn.fparams.nonEmpty && defn.fparams.head.tpe == Type.Unit
-      val isNonSynthetic = !defn.mod.isSynthetic
-      val isBenchmark = defn.ann.isBenchmark
-
-      (isRootNs && isSingleUnitArg && isNonSynthetic) || isBenchmark
+      (defn.sym.namespace.isEmpty && defn.fparams.isEmpty && !defn.mod.isSynthetic) || defn.ann.isBenchmark
     }
 
     /**
@@ -237,7 +232,7 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
      */
     reachableFunctions ++= root.lattices.values.map {
       case SimplifiedAst.Lattice(tpe, bot, top, equ, leq, lub, glb, loc) =>
-        Set(bot, top, equ, leq, lub, glb)
+        visitExp(bot) ++ visitExp(top) ++ visitExp(equ) ++ visitExp(leq) ++ visitExp(lub) ++ visitExp(glb)
     }.fold(Set())(_ ++ _)
 
     /*
@@ -273,15 +268,12 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       visitExp(queue.dequeue().exp).foreach(newReachableDefinitionSymbol)
     }
 
-    // Compute the live defs.
-    val liveDefs = root.defs.filterKeys(reachableFunctions.contains)
-
     // Calculate the elapsed time.
     val e = System.nanoTime() - t
 
     // Reassemble the AST.
     root.copy(
-      defs = liveDefs,
+      defs = root.defs.filterKeys(reachableFunctions.contains),
       time = root.time.copy(treeshaker = e)
     ).toSuccess
   }

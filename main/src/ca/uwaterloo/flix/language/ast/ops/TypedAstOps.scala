@@ -57,12 +57,14 @@ object TypedAstOps {
       case Expression.BigInt(lit, loc) => Map.empty
       case Expression.Str(lit, loc) => Map.empty
 
-      case Expression.Lambda(fparam, exp, tpe, eff, loc) =>
-        val env1 = Map(fparam.sym -> fparam.tpe)
+      case Expression.Lambda(fparams, exp, tpe, eff, loc) =>
+        val env1 = fparams.map(p => p.sym -> p.tpe).toSet
         visitExp(exp, env0 ++ env1)
 
-      case Expression.Apply(exp1, exp2, tpe, eff, loc) =>
-        visitExp(exp1, env0) ++ visitExp(exp2, env0)
+      case Expression.Apply(exp, args, tpe, eff, loc) =>
+        args.foldLeft(visitExp(exp, env0)) {
+          case (macc, arg) => macc ++ visitExp(arg, env0)
+        }
 
       case Expression.Unary(op, exp, tpe, eff, loc) =>
         visitExp(exp, env0)

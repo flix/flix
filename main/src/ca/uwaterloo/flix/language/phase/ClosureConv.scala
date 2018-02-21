@@ -76,7 +76,7 @@ object ClosureConv {
 
       // Update the lambda type.
       val argTpes = freeVars.map(_._2) ++ targs
-      val newTpe = Type.mkUncurriedArrow(argTpes, tresult)
+      val newTpe = Type.mkArrow(argTpes, tresult)
 
       // We rewrite the lambda with its new arguments list and new body, with any nested lambdas also converted.
       val lambda = Expression.Lambda(newArgs, convert(replace(body, subst.toMap)), newTpe, loc)

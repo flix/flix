@@ -87,7 +87,36 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
 
   def toExecutable(sast: SimplifiedAst.Lattice, m: TopLevel)(implicit genSym: GenSym): ExecutableAst.Lattice = sast match {
     case SimplifiedAst.Lattice(tpe, bot, top, equ, leq, lub, glb, loc) =>
-      ExecutableAst.Lattice(tpe, bot, top, equ, leq, lub, glb, loc)
+      import Expression.{toExecutable => t}
+
+      /**
+        * In `SimplifiedAst.Definition.Lattice`, bot/top/eq/leq/lub/glb are `SimplifiedAst.Expression`s.
+        * For `ExecutableAst.Definition.Lattice`, they are `Symbol.Resolved`s.
+        *
+        * bot/top are arbitrary expressions, so we lift them to top-level definitions.
+        * We assume that eq/leq/lub/glb are `Expression.Ref`s, so we do a cast and extract the symbols.
+        *
+        * Note that all of this code will eventually be replaced by typeclasses.
+        */
+
+      val botSym = Symbol.freshDefnSym("bot")
+      val topSym = Symbol.freshDefnSym("top")
+
+      val ann = Ast.Annotations.Empty
+      val mod = Ast.Modifiers(List(Ast.Modifier.Synthetic))
+      val botConst = ExecutableAst.Def(ann, mod, botSym, formals = Array(), t(bot), Type.mkArrow(Nil, bot.tpe), bot.loc)
+      val topConst = ExecutableAst.Def(ann, mod, topSym, formals = Array(), t(top), Type.mkArrow(Nil, bot.tpe), top.loc)
+
+      // Update the map of definitions
+      m ++= Map(botSym -> botConst, topSym -> topConst)
+
+      // Extract the symbols for eq/leq/lub/glb
+      val equSym = equ.asInstanceOf[SimplifiedAst.Expression.Def].sym
+      val leqSym = leq.asInstanceOf[SimplifiedAst.Expression.Def].sym
+      val lubSym = lub.asInstanceOf[SimplifiedAst.Expression.Def].sym
+      val glbSym = glb.asInstanceOf[SimplifiedAst.Expression.Def].sym
+
+      ExecutableAst.Lattice(tpe, botSym, topSym, equSym, leqSym, lubSym, glbSym, loc)
   }
 
   def toExecutable(sast: SimplifiedAst.Index): ExecutableAst.Index =
@@ -388,12 +417,8 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
     val lit = Expression.toExecutable(exp0)
     val ann = Ast.Annotations.Empty
     val mod = Ast.Modifiers(List(Ast.Modifier.Synthetic))
-    val varX = Symbol.freshVarSym("_unit")
-    varX.setStackOffset(0)
-    val fparam = ExecutableAst.FormalParam(varX, Type.Unit)
-    val fs = Array(fparam)
-    val tpe = Type.mkArrow(Type.Unit, exp0.tpe)
-    val defn = ExecutableAst.Def(ann, mod, sym, fs, lit, tpe, exp0.loc)
+    val tpe = Type.Apply(Type.Arrow(1), exp0.tpe)
+    val defn = ExecutableAst.Def(ann, mod, sym, formals = Array(), lit, tpe, exp0.loc)
     m += (sym -> defn)
     sym
   }
