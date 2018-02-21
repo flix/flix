@@ -113,6 +113,15 @@ def trycatch15(): Bool = unsafe
                 true
     }
 
+//@test
+//def trycatch16(): Bool = unsafe
+//    try (0 / 0) == 0 catch {
+//        case ex: ##java.lang.ArithmeticException =>
+//            let msg = native method java.lang.Throwable.getMessage(ex);
+//                true
+//    }
+
+
 
 // TODO: Add tests where
 // (1) we use the exception value returned.

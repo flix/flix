@@ -352,7 +352,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
               val freshSym = Symbol.freshVarSym(sym)
               val env1 = env0 + (sym -> freshSym)
               val b = visitExp(body, env1)
-              CatchRule(sym, clazz, b)
+              CatchRule(freshSym, clazz, b)
           }
           Expression.TryCatch(e, rs, tpe, eff, loc)
 
