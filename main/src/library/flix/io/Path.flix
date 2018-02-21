@@ -114,7 +114,12 @@ namespace Path {
     ///
     /// Default handler for `isExecutable`.
     ///
-    handler isExecutable[a](p: Path, k: Result[Bool, IOError] -> a): a = ???
+    handler isExecutable[a](p: Path, k: Result[Bool, IOError] -> a): a = unsafe {
+        let Path(javaPath) = p;
+        let answer = native method java.nio.file.Files.isExecutable(javaPath);
+        k(Ok(answer))
+        //TODO: Returns false if Path p does not exist. Is this sufficient?
+    }
 
     ///
     /// Effectfully returns `true` if the given path `p` is hidden.
@@ -164,7 +169,14 @@ namespace Path {
     ///
     /// Default handler for `isSameFile`.
     ///
-    handler isSameFile[a](p1: Path, p2: Path, k: Result[Bool, IOError] -> a): a = ???
+    handler isSameFile[a](p1: Path, p2: Path, k: Result[Bool, IOError] -> a): a = unsafe {
+        let Path(javaPath1) = p1;
+        let Path(javaPath2) = p2;
+        let answer = native method java.nio.file.Files.isSameFile(javaPath1, javaPath2);
+        k(Ok(answer))
+        //TODO: This throws java.nio.file.NoSuchFileException when used on non-existing file
+        // When used on a symbolic link, only returns true when used on original link and not a copy.
+    }
 
     ///
     /// Effectfully returns `true` if the given path `p` is a symbolic link.
