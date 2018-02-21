@@ -94,7 +94,7 @@ object ResolvedAst {
 
     case class Wild(tpe: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Var(sym: Symbol.VarSym, loc: SourceLocation) extends ResolvedAst.Expression
+    case class Var(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Def(sym: Symbol.DefnSym, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
@@ -126,9 +126,9 @@ object ResolvedAst {
 
     case class Str(lit: java.lang.String, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Apply(lambda: ResolvedAst.Expression, args: List[ResolvedAst.Expression], tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class Apply(exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Lambda(params: List[ResolvedAst.FormalParam], exp: ResolvedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class Lambda(fparam: ResolvedAst.FormalParam, exp: ResolvedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Unary(op: UnaryOperator, exp: ResolvedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
