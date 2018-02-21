@@ -790,7 +790,10 @@ object JvmOps {
       case Expression.Existential(fparam, exp, loc) => visitExp(exp)
       case Expression.Universal(fparam, exp, loc) => visitExp(exp)
 
-      case Expression.TryCatch(exp, rules, tpe, loc) => ??? // TODO: TryCatch
+      case Expression.TryCatch(exp, rules, tpe, loc) =>
+        rules.foldLeft(visitExp(exp)) {
+          case (sacc, CatchRule(sym, clazz, body)) => sacc ++ visitExp(body)
+        }
 
       case Expression.NativeConstructor(constructor, args, tpe, loc) => args.foldLeft(Set.empty[ClosureInfo]) {
         case (sacc, e) => sacc ++ visitExp(e)
@@ -1007,7 +1010,10 @@ object JvmOps {
       case Expression.Existential(fparam, exp, loc) => visitExp(exp) + fparam.tpe
       case Expression.Universal(fparam, exp, loc) => visitExp(exp) + fparam.tpe
 
-      case Expression.TryCatch(exp, rules, tpe, loc) => ??? // TODO: TryCatch
+      case Expression.TryCatch(exp, rules, tpe, loc) =>
+        rules.foldLeft(visitExp(exp)) {
+          case (sacc, CatchRule(sym, clazz, body)) => sacc ++ visitExp(body)
+        }
 
       case Expression.NativeConstructor(constructor, args, tpe, loc) => args.foldLeft(Set(tpe)) {
         case (sacc, e) => sacc ++ visitExp(e)

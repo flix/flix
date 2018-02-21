@@ -85,3 +85,7 @@ def trycatch12(): Bool = unsafe
         case ex: ##java.lang.StringIndexOutOfBoundsException => true
     }
 
+// TODO: Add tests where
+// (1) we use the exception value returned.
+// (2) We have nested lets inside the case.
+// (3) We have nested try/catch.

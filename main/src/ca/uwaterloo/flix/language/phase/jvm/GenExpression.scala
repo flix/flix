@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 import java.lang.reflect.Modifier
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.ExecutableAst.{Expression, Root}
+import ca.uwaterloo.flix.language.ast.ExecutableAst.{CatchRule, Expression, Root}
 import ca.uwaterloo.flix.language.ast.SemanticOperator._
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Optimization}
@@ -732,6 +732,53 @@ object GenExpression {
 
     case Expression.Universal(params, exp, loc) =>
       throw InternalCompilerException(s"Unexpected expression: '$exp0' at ${loc.source.format}.")
+
+    case Expression.TryCatch(exp, rules, tpe, loc) =>
+      // Add source line number for debugging.
+      addSourceLine(visitor, loc)
+
+      // Introduce a label for before the try block.
+      val beforeTryBlock = new Label()
+
+      // Introduce a label for after the try block.
+      val afterTryBlock = new Label()
+
+      // Introduce a label after the try block and after all catch rules.
+      val afterTryAndCatch = new Label()
+
+      // Introduce a label for each catch rule.
+      val rulesAndLabels = rules map {
+        case rule => rule -> new Label()
+      }
+
+      // Emit a try catch block for each catch rule.
+      for ((CatchRule(sym, clazz, body), handlerLabel) <- rulesAndLabels) {
+        visitor.visitTryCatchBlock(beforeTryBlock, afterTryBlock, handlerLabel, asm.Type.getInternalName(clazz))
+      }
+
+      // Emit code for the try block.
+      visitor.visitLabel(beforeTryBlock)
+      compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+      visitor.visitLabel(afterTryBlock)
+      visitor.visitJumpInsn(GOTO, afterTryAndCatch)
+
+      // Emit code for each catch rule.
+      for ((CatchRule(sym, clazz, body), handlerLabel) <- rulesAndLabels) {
+        // Emit the label.
+        visitor.visitLabel(handlerLabel)
+
+        // Store the exception in a local variable.
+        val istore = AsmOps.getStoreInstruction(JvmType.Object)
+        // TODO: We must store the exception in a local variable, but currently that does not work.
+        //visitor.visitVarInsn(istore, sym.getStackOffset + 3)
+        visitor.visitInsn(POP)
+
+        // Emit code for the handler body expression.
+        compileExpression(body, visitor, currentClass, lenv0, entryPoint)
+      }
+
+      // Add the label after both the try and catch rules.
+      visitor.visitLabel(afterTryAndCatch)
 
     case Expression.NativeConstructor(constructor, args, tpe, loc) =>
       // Adding source line number for debugging

@@ -165,7 +165,14 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
 
       case Expression.TryCatch(exp, rules, tpe, eff, loc) =>
         val i1 = visitExp(exp, i0)
-        visitExps(rules.map(_.exp), i1)
+        val i2 = i1 + 1
+        for (CatchRule(sym, clazz, body) <- rules) {
+          // NB: Reuses the same stack offset for each catch symbol.
+          sym.setStackOffset(i1)
+          // TODO: Need to deal with i3
+          val i3 = visitExp(body, i2)
+        }
+        i2
 
       case Expression.NativeConstructor(constructor, args, tpe, loc) => visitExps(args, i0)
 
