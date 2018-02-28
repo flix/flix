@@ -33,7 +33,18 @@ namespace Path {
     ///
     /// Returns the extension of the given path `p`.
     ///
-    pub def extension(p: Path): Option[Str] = ???
+    //TODO: Testing pull requests. Also return type should be Option[Str] without "No extension"
+    pub def extension(p: Path): Str = unsafe {
+        let Path(javaPath) = p;
+        let shortPath = native method java.nio.file.Path.getFileName(javaPath);
+        let myString = native method java.nio.file.Path.toString(shortPath);
+        let dotIndex = native method java.lang.String.lastIndexOf(myString, "." : Str);
+        match dotIndex with {
+            case -1 => "No extension"
+            case num => let actualIndex = dotIndex + 1;
+                        native method java.lang.String.substring(myString, actualIndex)
+        }
+    }
 
     ///
     /// Effectfully returns a list of files in the given directory `path`.
@@ -41,7 +52,7 @@ namespace Path {
     pub eff children[a](path: Path, k: Result[List[Path], IOError] -> a): a
 
     ///
-    /// Default handler for `isParentOf`.
+    /// Default handler for `children`.
     ///
     handler children[a](path: Path, k: Result[List[Path], IOError] -> a): a = ???
 
@@ -103,7 +114,12 @@ namespace Path {
     ///
     /// Default handler for `isExecutable`.
     ///
-    handler isExecutable[a](p: Path, k: Result[Bool, IOError] -> a): a = ???
+    handler isExecutable[a](p: Path, k: Result[Bool, IOError] -> a): a = unsafe {
+        let Path(javaPath) = p;
+        let answer = native method java.nio.file.Files.isExecutable(javaPath);
+        k(Ok(answer))
+        //TODO: Returns false if Path p does not exist. Is this sufficient?
+    }
 
     ///
     /// Effectfully returns `true` if the given path `p` is hidden.
@@ -113,7 +129,12 @@ namespace Path {
     ///
     /// Default handler for `isHidden`.
     ///
-    handler isHidden[a](p: Path, k: Result[Bool, IOError] -> a): a = ???
+    handler isHidden[a](p: Path, k: Result[Bool, IOError] -> a): a = unsafe {
+        let Path(javaPath) = p;
+        let answer = native method java.nio.file.Files.isHidden(javaPath);
+        k(Ok(answer))
+        //TODO: This throws java.nio.file.NoSuchFileException when used on non-existing file
+    }
 
     ///
     /// Effectfully returns `true` if the given path `p` is readable.
@@ -123,7 +144,12 @@ namespace Path {
     ///
     /// Default handler for `isReadable`.
     ///
-    handler isReadable[a](p: Path, k: Result[Bool, IOError] -> a): a = ???
+    handler isReadable[a](p: Path, k: Result[Bool, IOError] -> a): a = unsafe {
+        let Path(javaPath) = p;
+        let answer = native method java.nio.file.Files.isReadable(javaPath);
+        k(Ok(answer))
+        //TODO: Returns false if Path p does not exist. Is this sufficient?
+    }
 
     ///
     /// Effectfully returns `true` if the given path `p` is a regular file.
@@ -143,7 +169,14 @@ namespace Path {
     ///
     /// Default handler for `isSameFile`.
     ///
-    handler isSameFile[a](p1: Path, p2: Path, k: Result[Bool, IOError] -> a): a = ???
+    handler isSameFile[a](p1: Path, p2: Path, k: Result[Bool, IOError] -> a): a = unsafe {
+        let Path(javaPath1) = p1;
+        let Path(javaPath2) = p2;
+        let answer = native method java.nio.file.Files.isSameFile(javaPath1, javaPath2);
+        k(Ok(answer))
+        //TODO: This throws java.nio.file.NoSuchFileException when used on non-existing file
+        // When used on a symbolic link, only returns true when used on original link and not a copy.
+    }
 
     ///
     /// Effectfully returns `true` if the given path `p` is a symbolic link.
@@ -153,7 +186,12 @@ namespace Path {
     ///
     /// Default handler for `isSymbolicLink`.
     ///
-    handler isSymbolicLink[a](p: Path, k: Result[Bool, IOError] -> a): a = ???
+    handler isSymbolicLink[a](p: Path, k: Result[Bool, IOError] -> a): a = unsafe {
+        let Path(javaPath) = p;
+        let answer = native method java.nio.file.Files.isSymbolicLink(javaPath);
+        k(Ok(answer))
+        //TODO: Returns false if Path p does not exist. Is this sufficient?
+    }
 
     ///
     /// Effectfully returns `true` if the given path `p` is writable.
@@ -163,7 +201,12 @@ namespace Path {
     ///
     /// Default handler for `isWritable`.
     ///
-    handler isWritable[a](p: Path, k: Result[Bool, IOError] -> a): a = ???
+    handler isWritable[a](p: Path, k: Result[Bool, IOError] -> a): a = unsafe {
+        let Path(javaPath) = p;
+        let answer = native method java.nio.file.Files.isWritable(javaPath);
+        k(Ok(answer))
+        //TODO: Returns false if Path p does not exist. Is this sufficient?
+    }
 
     ///
     /// Effectfully returns a list of all lines in the given text file denoted by path `p`.
