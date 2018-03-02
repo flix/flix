@@ -310,7 +310,16 @@ namespace Path {
     ///
     /// Default handler for `deleteFile`.
     ///
-    handler deleteFile[a](p: Path, k: Result[Bool, IOError] -> a): a = ???
+    handler deleteFile[a](p: Path, k: Result[Bool, IOError] -> a): a = unsafe {
+        let Path(javaPath) = p;
+        //TODO: Use isDirectory to check when implemented to return IOError for wrong use of function
+        //Consider using own exists method?
+        let answer = native method java.nio.file.Files.deleteIfExists(javaPath);
+        match answer with {
+            case true => k(Ok(true))
+            case false => k(Ok(false))
+        }
+    }
 
     ///
     /// Effectfully deletes the directory (and its sub-directories) for the given path `p`.
@@ -320,7 +329,18 @@ namespace Path {
     ///
     /// Default handler for `deleteDirectory`.
     ///
-    handler deleteDirectory[a](p: Path, k: Result[Bool, IOError] -> a): a = ???
+    handler deleteDirectory[a](p: Path, k: Result[Bool, IOError] -> a): a = unsafe {
+        let Path(javaPath) = p;
+        //TODO: Use isDirectory to check when implemented to return IOError for wrong use of function
+        //Consider using own exists method? Requires Varargs for LinkOption
+        let answer = native method java.nio.file.Files.deleteIfExists(javaPath);
+        match answer with {
+            case true => k(Ok(true))
+            case false => k(Ok(false))
+        }
+        //Notice that this requires sub directories to be empty as is. (DirectoryNotEmptyException)
+        //Will require calls to deleteFile when walking fileTree to implement subdirectory deletion fully.
+    }
 
     ///
     /// Effectfully returns the size of the given path `p`.
