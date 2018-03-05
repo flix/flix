@@ -123,7 +123,7 @@ def trycatch15(): Bool = unsafe
 
 
 //@test // TODO: Currently broken.
-def trycatchtrycatch01(): Bool = unsafe
+def trytrycatchcatch01(): Bool = unsafe
     try {
         try (0 / 0) == 0 catch {
             case ex: ##java.lang.ArithmeticException => true
@@ -133,7 +133,7 @@ def trycatchtrycatch01(): Bool = unsafe
      }
 
 @test
-def trycatchtrycatch02(): Bool = unsafe
+def trycatchtrycatch01(): Bool = unsafe
     try (0 / 0) == 0 catch {
         case ex: ##java.lang.ArithmeticException =>
             try (0 / 0) == 0 catch {
@@ -141,6 +141,14 @@ def trycatchtrycatch02(): Bool = unsafe
             }
     }
 
-// TODO: Add tests where
-// (1) we use the exception value returned.
-// (3) We have nested try/catch.
+@test
+def trycatchtrycatch02(): Bool = unsafe
+    try (0 / 0) == 0 catch {
+        case ex: ##java.lang.ArithmeticException =>
+            try (0 / 0) == 0 catch {
+                case ex: ##java.lang.ArithmeticException =>
+                    try (0 / 0) == 0 catch {
+                        case ex: ##java.lang.ArithmeticException => true
+                    }
+            }
+    }

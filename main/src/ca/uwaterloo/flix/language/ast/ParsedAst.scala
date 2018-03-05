@@ -1251,7 +1251,7 @@ object ParsedAst {
   case class HandlerBinding(qname: Name.QName, exp: ParsedAst.Expression) extends ParsedAst
 
   /**
-    * A catch rule consists of an identifier, a Java name, and a body expressions.
+    * A catch rule consists of an identifier, a Java name, and a body expression.
     *
     * @param ident the identifier.
     * @param fqn   the fully-qualified Java name.
