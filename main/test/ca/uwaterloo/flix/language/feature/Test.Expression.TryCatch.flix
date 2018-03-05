@@ -113,7 +113,7 @@ def trycatch15(): Bool = unsafe
                 true
     }
 
-//@test
+//@test // TODO: Currently broken.
 //def trycatch16(): Bool = unsafe
 //    try (0 / 0) == 0 catch {
 //        case ex: ##java.lang.ArithmeticException =>
@@ -122,6 +122,24 @@ def trycatch15(): Bool = unsafe
 //    }
 
 
+//@test // TODO: Currently broken.
+def trycatchtrycatch01(): Bool = unsafe
+    try {
+        try (0 / 0) == 0 catch {
+            case ex: ##java.lang.ArithmeticException => true
+        }
+    } catch {
+         case ex: ##java.lang.ArithmeticException => false
+     }
+
+@test
+def trycatchtrycatch02(): Bool = unsafe
+    try (0 / 0) == 0 catch {
+        case ex: ##java.lang.ArithmeticException =>
+            try (0 / 0) == 0 catch {
+                case ex: ##java.lang.ArithmeticException => true
+            }
+    }
 
 // TODO: Add tests where
 // (1) we use the exception value returned.
