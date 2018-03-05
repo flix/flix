@@ -109,13 +109,13 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
             List(WeededAst.Declaration.Eff(doc, as, mod, ident, tparams, fs, t, eff, loc))
         }
 
-      case ParsedAst.Declaration.Handler(doc0, ann, mods, sp1, ident, tparams0, fparams0, tpe, effOpt, exp, sp2) =>
+      case ParsedAst.Declaration.Handler(doc0, ann, mods, sp1, ident, tparams0, fparams0, tpe, effOpt, exp0, sp2) =>
         val loc = mkSL(ident.sp1, ident.sp2)
         val doc = visitDoc(doc0)
         val annVal = Annotations.weed(ann)
         val modVal = visitModifiers(mods, legalModifiers = Set(Ast.Modifier.Public))
         val tparams = tparams0.toList.map(_.ident)
-        val expVal = Expressions.weed(exp)
+        val expVal = Expressions.weed(exp0)
         val effVal = Effects.weed(effOpt)
 
         /*
@@ -123,9 +123,10 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           */
         val formalsVal = Formals.weed(fparams0, typeRequired = true)
         @@(annVal, modVal, formalsVal, expVal, effVal) map {
-          case (as, mod, fs, e, eff) =>
+          case (as, mod, fs, exp, eff) =>
+            val e = mkCurried(fs.tail, exp, loc)
             val t = mkArrowType(fs, Types.weed(tpe), loc)
-            List(WeededAst.Declaration.Handler(doc, as, mod, ident, tparams, fs, e, t, eff, loc))
+            List(WeededAst.Declaration.Handler(doc, as, mod, ident, tparams, fs.head :: Nil, e, t, eff, loc))
         }
 
       case ParsedAst.Declaration.Law(doc0, sp1, ident, tparams0, fparams0, tpe, exp, sp2) =>
@@ -765,6 +766,27 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
             return WeederError.IllegalUnsafeExpressionInSafeMode(mkSL(sp1, sp2)).toFailure
           }
           visit(exp, unsafe = true)
+
+        case ParsedAst.Expression.TryCatch(sp1, exp, rules, sp2) =>
+          /*
+           * Check for `IllegalUnsafeExpression`.
+           */
+          if (!unsafe) {
+            return WeederError.IllegalUnsafeExpression(mkSL(sp1, sp2)).toFailure
+          }
+
+          val expVal = visit(exp, unsafe)
+          val rulesVal = rules map {
+            case ParsedAst.CatchRule(ident, fqn, body) =>
+              visit(body, unsafe) map {
+                case b => WeededAst.CatchRule(ident, fqn.mkString("."), b)
+              }
+          }
+
+          @@(expVal, seqM(rulesVal)) map {
+            case (e, rs) => WeededAst.Expression.TryCatch(e, rs, mkSL(sp1, sp2))
+          }
+
 
         case ParsedAst.Expression.NativeConstructor(sp1, fqn, args, sp2) =>
           /*
@@ -1514,6 +1536,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.Ascribe(e1, _, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.Cast(e1, _, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.Unsafe(sp1, _, _) => sp1
+    case ParsedAst.Expression.TryCatch(sp1, _, _, _) => sp1
     case ParsedAst.Expression.NativeField(sp1, _, _) => sp1
     case ParsedAst.Expression.NativeMethod(sp1, _, _, _) => sp1
     case ParsedAst.Expression.NativeConstructor(sp1, _, _, _) => sp1

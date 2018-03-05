@@ -116,7 +116,7 @@ object TypeError {
     case (Type.Int64, Type.Int64) => TypeDiff.Star(TypeConstructor.Other)
     case (Type.BigInt, Type.BigInt) => TypeDiff.Star(TypeConstructor.Other)
     case (Type.Str, Type.Str) => TypeDiff.Star(TypeConstructor.Other)
-    case (Type.Native, Type.Native) => TypeDiff.Star(TypeConstructor.Other)
+    case (Type.Native(clazz1), Type.Native(clazz2)) => TypeDiff.Star(TypeConstructor.Other)
     case (Type.Arrow(l1), Type.Arrow(l2)) if l1 == l2 => TypeDiff.Star(TypeConstructor.Arrow)
     case (Type.Enum(name1, kind1), Type.Enum(name2, kind2)) if name1 == name2 => TypeDiff.Star(TypeConstructor.Enum(name1.name))
     case (Type.Tuple(l1), Type.Tuple(l2)) if l1 == l2 => TypeDiff.Star(TypeConstructor.Tuple)

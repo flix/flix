@@ -162,8 +162,20 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         visitExps(bindings.map(_.exp), i1)
       case Expression.Existential(params, exp, loc) => visitExp(exp, i0)
       case Expression.Universal(params, exp, loc) => visitExp(exp, i0)
+
+      case Expression.TryCatch(exp, rules, tpe, eff, loc) =>
+        val i1 = visitExp(exp, i0)
+        val i2 = i1 + 1
+        for (CatchRule(sym, clazz, body) <- rules) {
+          // NB: We reuse the same stack offset for each exception.
+          sym.setStackOffset(i1)
+        }
+        visitExps(rules.map(_.exp), i2)
+
       case Expression.NativeConstructor(constructor, args, tpe, loc) => visitExps(args, i0)
+
       case Expression.NativeField(field, tpe, loc) => i0
+
       case Expression.NativeMethod(method, args, tpe, loc) => visitExps(args, i0)
 
       case Expression.UserError(tpe, loc) => i0

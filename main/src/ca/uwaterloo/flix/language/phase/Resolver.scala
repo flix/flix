@@ -595,6 +595,20 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
             t <- lookupType(tpe, ns0, prog0)
           } yield ResolvedAst.Expression.Cast(e, t, eff, loc)
 
+        case NamedAst.Expression.TryCatch(exp, rules, tpe, loc) =>
+          val rulesVal = rules map {
+            case NamedAst.CatchRule(sym, clazz, body) =>
+              val exceptionType = Type.Native(clazz)
+              visit(body, tenv0 + (sym -> exceptionType)) map {
+                case b => ResolvedAst.CatchRule(sym, clazz, b)
+              }
+          }
+
+          for {
+            e <- visit(exp, tenv0)
+            rs <- seqM(rulesVal)
+          } yield ResolvedAst.Expression.TryCatch(e, rs, tpe, loc)
+
         case NamedAst.Expression.NativeConstructor(constructor, args, tpe, loc) =>
           for {
             es <- seqM(args.map(e => visit(e, tenv0)))
@@ -1102,7 +1116,6 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
       case "BigInt" => Type.BigInt.toSuccess
       case "Str" => Type.Str.toSuccess
       case "Array" => Type.Array.toSuccess
-      case "Native" => Type.Native.toSuccess
       case "Ref" => Type.Ref.toSuccess
 
       // Enum Types.
@@ -1135,8 +1148,9 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
         elms <- seqM(elms0.map(tpe => lookupType(tpe, ns0, prog0)))
       ) yield Type.mkTuple(elms)
     case NamedAst.Type.Native(fqn, loc) =>
-      // TODO: needs more precise type.
-      Type.Native.toSuccess
+      lookupJvmClass(fqn.mkString("."), loc) map {
+        case clazz => Type.Native(clazz)
+      }
     case NamedAst.Type.Arrow(tparams0, tresult0, loc) =>
       for (
         tparams <- seqM(tparams0.map(tpe => lookupType(tpe, ns0, prog0)));
@@ -1285,5 +1299,15 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
     getEnumIfAccessible(enum0, ns0, loc) map {
       case enum => Type.Enum(enum.sym, Kind.Star)
     }
+
+  /**
+    * Returns the class reflection object for the given `className`.
+    */
+  def lookupJvmClass(className: String, loc: SourceLocation): Validation[Class[_], ResolutionError] = try {
+    Class.forName(className).toSuccess
+  } catch {
+    case ex: ClassNotFoundException => ResolutionError.UndefinedNativeClass(className, loc).toFailure
+  }
+
 }
 

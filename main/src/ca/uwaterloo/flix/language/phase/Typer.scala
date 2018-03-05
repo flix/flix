@@ -439,10 +439,11 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         val subst0 = getSubstFromParams(fparams0)
         val tparams = getTypeParams(tparams0)
         val fparams = getFormalParams(fparams0, subst0)
+        val argumentTypes = fparams.map(_.tpe)
 
         val result = for {
           actualType <- Expressions.infer(exp0, program0)(flix.genSym)
-          unifiedType <- unifyM(declaredType, effectType, actualType, loc)
+          unifiedType <- unifyM(declaredType, effectType, Type.mkArrow(argumentTypes, actualType), loc)
         } yield unifiedType
 
         result.run(Substitution.empty) map {
@@ -933,13 +934,30 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           } yield declaredType
 
         /*
+         * Try Catch
+         */
+        case ResolvedAst.Expression.TryCatch(exp, rules, tvar, loc) =>
+          val rulesType = rules map {
+            case ResolvedAst.CatchRule(sym, clazz, body) =>
+              visitExp(body)
+          }
+
+          for {
+            expType <- visitExp(exp)
+            ruleTypes <- seqM(rulesType)
+            ruleType <- unifyM(ruleTypes, loc)
+            resultType <- unifyM(tvar, expType, ruleType, loc)
+          } yield resultType
+
+        /*
          * Native Constructor expression.
          */
         case ResolvedAst.Expression.NativeConstructor(constructor, actuals, tvar, loc) =>
           // TODO: Check types.
+          val clazz = constructor.getDeclaringClass
           for {
             inferredArgumentTypes <- seqM(actuals.map(visitExp))
-            resultType <- unifyM(tvar, Type.Native, loc)
+            resultType <- unifyM(tvar, Type.Native(clazz), loc)
           } yield resultType
 
         /*
@@ -1209,6 +1227,17 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           val e = visitExp(exp, subst0)
           TypedAst.Expression.Cast(e, tpe, eff, loc)
 
+        /*
+         * Try Catch expression.
+         */
+        case ResolvedAst.Expression.TryCatch(exp, rules, tvar, loc) =>
+          val e = visitExp(exp, subst0)
+          val rs = rules map {
+            case ResolvedAst.CatchRule(sym, clazz, body) =>
+              val b = visitExp(body, subst0)
+              TypedAst.CatchRule(sym, clazz, b)
+          }
+          TypedAst.Expression.TryCatch(e, rs, subst0(tvar), Eff.Bot, loc)
 
         /*
          * Native Constructor expression.

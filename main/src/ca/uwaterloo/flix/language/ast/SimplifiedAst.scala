@@ -226,6 +226,8 @@ object SimplifiedAst {
       def tpe: Type = Type.Bool
     }
 
+    case class TryCatch(exp: SimplifiedAst.Expression, rules: List[SimplifiedAst.CatchRule], tpe: Type, eff: ast.Eff, loc: SourceLocation) extends SimplifiedAst.Expression
+
     case class NativeConstructor(constructor: Constructor[_], args: List[SimplifiedAst.Expression], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
     case class NativeField(field: Field, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
@@ -355,6 +357,8 @@ object SimplifiedAst {
     case class RuleParam(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends SimplifiedAst.ConstraintParam
 
   }
+
+  case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: SimplifiedAst.Expression) extends SimplifiedAst
 
   case class FormalParam(sym: Symbol.VarSym, mod: Ast.Modifiers, tpe: Type, loc: SourceLocation) extends SimplifiedAst
 

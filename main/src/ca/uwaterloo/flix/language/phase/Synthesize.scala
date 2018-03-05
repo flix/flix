@@ -227,6 +227,15 @@ object Synthesize extends Phase[Root, Root] {
         val e = visitExp(exp)
         Expression.Cast(e, tpe, eff, loc)
 
+      case Expression.TryCatch(exp, rules, tpe, eff, loc) =>
+        val e = visitExp(exp)
+        val rs = rules map {
+          case CatchRule(sym, clazz, body) =>
+            val b = visitExp(body)
+            CatchRule(sym, clazz, b)
+        }
+        Expression.TryCatch(e, rs, tpe, eff, loc)
+
       case Expression.NativeConstructor(constructor, args, tpe, eff, loc) =>
         val as = args map visitExp
         Expression.NativeConstructor(constructor, as, tpe, eff, loc)
@@ -575,7 +584,7 @@ object Synthesize extends Phase[Root, Root] {
           val method = classOf[java.math.BigInteger].getMethod("hashCode")
           Expression.NativeMethod(method, List(exp0), Type.Str, ast.Eff.Pure, sl)
 
-        case Type.Native =>
+        case Type.Native(clazz) =>
           val method = classOf[java.lang.Object].getMethod("hashCode")
           Expression.NativeMethod(method, List(exp0), Type.Str, ast.Eff.Pure, sl)
 
@@ -823,7 +832,7 @@ object Synthesize extends Phase[Root, Root] {
           val method = classOf[java.lang.Object].getMethod("toString")
           Expression.NativeMethod(method, List(exp0), Type.Str, ast.Eff.Pure, sl)
 
-        case Type.Native =>
+        case Type.Native(clazz) =>
           val method = classOf[java.lang.Object].getMethod("toString")
           Expression.NativeMethod(method, List(exp0), Type.Str, ast.Eff.Pure, sl)
 

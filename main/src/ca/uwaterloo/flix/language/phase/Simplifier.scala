@@ -445,6 +445,15 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
 
       case TypedAst.Expression.Cast(exp, tpe, eff, loc) => visitExp(exp)
 
+      case TypedAst.Expression.TryCatch(exp, rules, tpe, eff, loc) =>
+        val e = visitExp(exp)
+        val rs = rules map {
+          case TypedAst.CatchRule(sym, clazz, body) =>
+            val b = visitExp(body)
+            SimplifiedAst.CatchRule(sym, clazz, b)
+        }
+        SimplifiedAst.Expression.TryCatch(e, rs, tpe, eff, loc)
+
       case TypedAst.Expression.NativeConstructor(constructor, args, tpe, eff, loc) =>
         val es = args.map(e => visitExp(e))
         SimplifiedAst.Expression.NativeConstructor(constructor, es, tpe, loc)
@@ -1155,11 +1164,23 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         SimplifiedAst.Expression.Existential(params, visit(exp), loc)
       case SimplifiedAst.Expression.Universal(params, exp, loc) =>
         SimplifiedAst.Expression.Universal(params, visit(exp), loc)
+
+      case SimplifiedAst.Expression.TryCatch(exp, rules, tpe, eff, loc) =>
+        val e = visit(exp)
+        val rs = rules map {
+          case SimplifiedAst.CatchRule(sym, clazz, body) =>
+            val b = visit(body)
+            SimplifiedAst.CatchRule(sym, clazz, b)
+        }
+        SimplifiedAst.Expression.TryCatch(e, rs, tpe, eff, loc)
+
       case SimplifiedAst.Expression.NativeConstructor(constructor, args, tpe, loc) =>
         val es = args map visit
         SimplifiedAst.Expression.NativeConstructor(constructor, es, tpe, loc)
+
       case SimplifiedAst.Expression.NativeField(field, tpe, loc) =>
         SimplifiedAst.Expression.NativeField(field, tpe, loc)
+
       case SimplifiedAst.Expression.NativeMethod(method, args, tpe, loc) =>
         val es = args map visit
         SimplifiedAst.Expression.NativeMethod(method, es, tpe, loc)

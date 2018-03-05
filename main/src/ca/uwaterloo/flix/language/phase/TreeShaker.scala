@@ -31,11 +31,12 @@ import scala.collection.mutable
   * A function is considered reachable if it:
   *
   * (a) Appears in the global namespaces, takes a unit argument, and is not marked as synthetic.
-  * (b) Appears in a fact or a rule as a filter/transfer function.
-  * (c) Appears in a lattice declaration.
-  * (d) Appears in a property declaration.
-  * (e) Appears as a special op.
-  * (f) Appears in a function which itself is reachable.
+  * (b) Appears in the global handlers.
+  * (c) Appears in a fact or a rule as a filter/transfer function.
+  * (d) Appears in a lattice declaration.
+  * (e) Appears in a property declaration.
+  * (f) Appears as a special op.
+  * (g) Appears in a function which itself is reachable.
   */
 
 object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
@@ -163,6 +164,8 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.HandleWith(exp, bindings, tpe, loc) => visitExp(exp) ++ visitExps(bindings.map(_.exp))
       case Expression.Existential(fparam, exp, loc) => visitExp(exp)
       case Expression.Universal(fparam, exp, loc) => visitExp(exp)
+      case Expression.TryCatch(exp, rules, tpe, eff, loc) =>
+        visitExp(exp) ++ visitExps(rules.map(_.exp))
       case Expression.NativeConstructor(constructor, args, tpe, loc) => visitExps(args)
       case Expression.NativeField(field, tpe, loc) => Set.empty
       case Expression.NativeMethod(method, args, tpe, loc) => visitExps(args)
@@ -171,8 +174,8 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.MatchError(tpe, loc) => Set.empty
       case Expression.SwitchError(tpe, loc) => Set.empty
 
-      case Expression.LambdaClosure(lambda, freeVars, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${e0.getClass.getSimpleName}'.")
-      case Expression.Apply(exp, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${e0.getClass.getSimpleName}'.")
+      case Expression.LambdaClosure(lambda, freeVars, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${e0.getClass}'.")
+      case Expression.Apply(exp, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${e0.getClass}'.")
     }
 
     /**
@@ -212,7 +215,16 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     /*
      * Find reachable functions that:
      *
-     * (b) Appear in a fact or a rule as a filter/transfer function.
+     * (b) Appear in global handlers.
+     */
+    for ((sym, handler) <- root.handlers) {
+      reachableFunctions ++= visitExp(handler.exp)
+    }
+
+    /*
+     * Find reachable functions that:
+     *
+     * (c) Appear in a fact or a rule as a filter/transfer function.
      */
     for (stratum <- root.strata) {
       for (constraint <- stratum.constraints) {
@@ -233,7 +245,7 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     /*
      * Find reachable functions that:
      *
-     * (c) Appear in a lattice declaration.
+     * (d) Appear in a lattice declaration.
      */
     reachableFunctions ++= root.lattices.values.map {
       case SimplifiedAst.Lattice(tpe, bot, top, equ, leq, lub, glb, loc) =>
@@ -243,7 +255,7 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     /*
      * Find reachable functions that:
      *
-     * (d) Appear in a property declaration.
+     * (e) Appear in a property declaration.
      */
     reachableFunctions ++= root.properties.map {
       case SimplifiedAst.Property(law, defn, exp) => visitExp(exp) + law + defn
@@ -252,14 +264,14 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     /*
      * Find reachable functions that:
      *
-     * (e) Appear as a special op.
+     * (f) Appear as a special op.
      */
     reachableFunctions ++= root.specialOps.values.flatMap(_.values)
 
     /*
      * Find reachable functions that:
      *
-     * (f) Appear in a function which itself is reachable.
+     * (g) Appear in a function which itself is reachable.
      */
     reachableFunctions.foreach {
       root.defs.get(_) match {
@@ -275,6 +287,9 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
 
     // Compute the live defs.
     val liveDefs = root.defs.filterKeys(reachableFunctions.contains)
+
+    // All reachable function should be live.
+    // assert(reachableFunctions.size == liveDefs.size)
 
     // Calculate the elapsed time.
     val e = System.nanoTime() - t

@@ -324,6 +324,18 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         Expression.Universal(fparam, e, loc)
 
       //
+      // Try Catch Constructor.
+      //
+      case Expression.TryCatch(exp, rules, tpe, eff, loc) =>
+        val e = visitExp(exp, env0)
+        val rs = rules map {
+          case CatchRule(sym, clazz, body) =>
+            val b = visitExp(body, env0)
+            CatchRule(sym, clazz, b)
+        }
+        Expression.TryCatch(e, rs, tpe, eff, loc)
+
+      //
       // Native Constructor.
       //
       case Expression.NativeConstructor(constructor, args, tpe, loc) =>

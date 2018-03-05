@@ -268,6 +268,8 @@ object ExecutableAst {
       def tpe: Type = Type.Bool
     }
 
+    case class TryCatch(exp: ExecutableAst.Expression, rules: List[ExecutableAst.CatchRule], tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
+
     case class NativeConstructor(constructor: Constructor[_], args: List[ExecutableAst.Expression], tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
     case class NativeField(field: Field, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
@@ -410,6 +412,8 @@ object ExecutableAst {
     case class RuleParam(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends ExecutableAst.ConstraintParam
 
   }
+
+  case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: ExecutableAst.Expression) extends ExecutableAst
 
   case class FormalParam(sym: Symbol.VarSym, tpe: Type) extends ExecutableAst
 

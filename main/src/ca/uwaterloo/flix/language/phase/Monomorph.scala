@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.TypedAst.{Expression, HandlerBinding, Pattern, Root}
+import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.{BinaryOperator, Symbol, Type, TypedAst, UnaryOperator}
 import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
@@ -88,7 +88,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         case Type.BigInt => Type.BigInt
         case Type.Str => Type.Str
         case Type.Array => Type.Array
-        case Type.Native => Type.Native
+        case Type.Native(clazz) => Type.Native(clazz)
         case Type.Ref => Type.Ref
         case Type.Arrow(l) => Type.Arrow(l)
         case Type.Tuple(l) => Type.Tuple(l)
@@ -344,6 +344,18 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           val e = visitExp(exp, env0)
           Expression.Cast(e, subst0(tpe), eff, loc)
 
+        case Expression.TryCatch(exp, rules, tpe, eff, loc) =>
+          val e = visitExp(exp, env0)
+          val rs = rules map {
+            case CatchRule(sym, clazz, body) =>
+              // Generate a fresh symbol.
+              val freshSym = Symbol.freshVarSym(sym)
+              val env1 = env0 + (sym -> freshSym)
+              val b = visitExp(body, env1)
+              CatchRule(freshSym, clazz, b)
+          }
+          Expression.TryCatch(e, rs, tpe, eff, loc)
+
         case Expression.NativeConstructor(constructor, args, tpe, eff, loc) =>
           val es = args.map(e => visitExp(e, env0))
           Expression.NativeConstructor(constructor, es, subst0(tpe), eff, loc)
@@ -580,45 +592,52 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
     }
 
     /*
-     * Performs function specialization until the queue is empty.
+     * Performs function specialization until both queues are empty.
      */
-    while (defQueue.nonEmpty) {
-      // Extract a function from the queue and specializes it w.r.t. its substitution.
-      val (freshSym, defn, subst) = defQueue.dequeue()
+    while (defQueue.nonEmpty || effQueue.nonEmpty) {
 
-      // Specialize the formal parameters and introduce fresh local variable symbols.
-      val (fparams, env0) = specializeFormalParams(defn.fparams, subst)
+      /*
+       * Performs function specialization until the queue is empty.
+       */
+      while (defQueue.nonEmpty) {
+        // Extract a function from the queue and specializes it w.r.t. its substitution.
+        val (freshSym, defn, subst) = defQueue.dequeue()
 
-      // Specialize the body expression.
-      val specializedExp = specialize(defn.exp, env0, subst)
+        // Specialize the formal parameters and introduce fresh local variable symbols.
+        val (fparams, env0) = specializeFormalParams(defn.fparams, subst)
 
-      // Reassemble the definition.
-      // NB: Removes the type parameters as the function is now monomorphic.
-      val specializedDefn = defn.copy(sym = freshSym, fparams = fparams, exp = specializedExp, tpe = subst(defn.tpe), tparams = Nil)
+        // Specialize the body expression.
+        val specializedExp = specialize(defn.exp, env0, subst)
 
-      // Save the specialized function.
-      specializedDefns.put(freshSym, specializedDefn)
-    }
+        // Reassemble the definition.
+        // NB: Removes the type parameters as the function is now monomorphic.
+        val specializedDefn = defn.copy(sym = freshSym, fparams = fparams, exp = specializedExp, tpe = subst(defn.tpe), tparams = Nil)
 
-    /*
-     * Performs effect handler specialization until the queue is empty.
-     */
-    while (effQueue.nonEmpty) {
-      // Extract an effect from the queue and specializes it w.r.t. its substitution.
-      val (freshSym, handler, subst) = effQueue.dequeue()
+        // Save the specialized function.
+        specializedDefns.put(freshSym, specializedDefn)
+      }
 
-      // Specialize the formal parameters and introduce fresh local variable symbols.
-      val (fparams, env0) = specializeFormalParams(handler.fparams, subst)
+      /*
+       * Performs effect handler specialization until the queue is empty.
+       */
+      while (effQueue.nonEmpty) {
+        // Extract an effect from the queue and specializes it w.r.t. its substitution.
+        val (freshSym, handler, subst) = effQueue.dequeue()
 
-      // Specialize the body expression.
-      val specializedExp = specialize(handler.exp, env0, subst)
+        // Specialize the formal parameters and introduce fresh local variable symbols.
+        val (fparams, env0) = specializeFormalParams(handler.fparams, subst)
 
-      // Reassemble the definition.
-      // NB: Removes the type parameters as the function is now monomorphic.
-      val specializedHandler = handler.copy(sym = freshSym, fparams = fparams, exp = specializedExp, tpe = subst(handler.tpe), tparams = Nil)
+        // Specialize the body expression.
+        val specializedExp = specialize(handler.exp, env0, subst)
 
-      // Save the specialized handler.
-      specializedHandlers.put(freshSym, specializedHandler)
+        // Reassemble the definition.
+        // NB: Removes the type parameters as the function is now monomorphic.
+        val specializedHandler = handler.copy(sym = freshSym, fparams = fparams, exp = specializedExp, tpe = subst(handler.tpe), tparams = Nil)
+
+        // Save the specialized handler.
+        specializedHandlers.put(freshSym, specializedHandler)
+      }
+
     }
 
     // Calculate the elapsed time.

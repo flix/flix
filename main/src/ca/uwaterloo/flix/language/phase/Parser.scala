@@ -19,9 +19,8 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.{ParsedAst, _}
-import ca.uwaterloo.flix.util.{ParOps, Timer, Validation}
 import ca.uwaterloo.flix.util.Validation._
-import org.parboiled2
+import ca.uwaterloo.flix.util.{ParOps, Timer, Validation}
 import org.parboiled2._
 
 import scala.collection.immutable.Seq
@@ -600,7 +599,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Primary: Rule1[ParsedAst.Expression] = rule {
-      LetRec | LetMatch | IfThenElse | Match | LambdaMatch | Switch | Unsafe | Native | Lambda | Tuple |
+      LetRec | LetMatch | IfThenElse | Match | LambdaMatch | Switch | Unsafe | TryCatch | Native | Lambda | Tuple |
         ArrayLit | ArrayNew | FNil | FSet | FMap | Literal |
         HandleWith | Existential | Universal | UnaryLambda | QName | Wild | Tag | SName | Hole | UserError
     }
@@ -643,6 +642,20 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Unsafe: Rule1[ParsedAst.Expression] = rule {
       SP ~ atomic("unsafe") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.Unsafe
+    }
+
+    def TryCatch: Rule1[ParsedAst.Expression] = {
+      def CatchRule: Rule1[ParsedAst.CatchRule] = rule {
+        atomic("case") ~ WS ~ Names.Variable ~ optWS ~ ":" ~ optWS ~ atomic("##") ~ Names.JavaName ~ WS ~ atomic("=>") ~ optWS ~ Expression ~> ParsedAst.CatchRule
+      }
+
+      def CatchBody: Rule1[Seq[ParsedAst.CatchRule]] = rule {
+        "{" ~ optWS ~ oneOrMore(CatchRule).separatedBy(WS) ~ optWS ~ "}"
+      }
+
+      rule {
+        SP ~ atomic("try") ~ WS ~ Expression ~ optWS ~ atomic("catch") ~ optWS ~ CatchBody ~ SP ~> ParsedAst.Expression.TryCatch
+      }
     }
 
     def Native: Rule1[ParsedAst.Expression] = {
