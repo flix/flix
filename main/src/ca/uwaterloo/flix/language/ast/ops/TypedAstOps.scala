@@ -141,7 +141,7 @@ object TypedAstOps {
 
       case Expression.TryCatch(exp, rules, tpe, eff, loc) =>
         rules.foldLeft(visitExp(exp, env0)) {
-          case (macc, CatchRule(sym, clazz, body)) => macc ++ visitExp(body, env0 + (sym -> Type.Native))
+          case (macc, CatchRule(sym, clazz, body)) => macc ++ visitExp(body, env0 + (sym -> Type.Native(null)))
         }
 
       case Expression.NativeConstructor(constructor, args, tpe, eff, loc) =>

@@ -63,7 +63,7 @@ object JvmOps {
       case Type.Int64 => JvmType.PrimLong
       case Type.BigInt => JvmType.BigInteger
       case Type.Str => JvmType.String
-      case Type.Native => JvmType.Object
+      case Type.Native(clazz) => JvmType.Object
       case Type.Ref => getCellClassType(tpe)
       case Type.Arrow(l) => getFunctionInterfaceType(tpe)
       case Type.Tuple(l) => getTupleInterfaceType(tpe)
@@ -534,7 +534,7 @@ object JvmOps {
       // Nullable types.
       case Type.BigInt => Nullability.Reference(tpe)
       case Type.Str => Nullability.Reference(tpe)
-      case Type.Native => Nullability.Reference(tpe)
+      case Type.Native(clazz) => Nullability.Reference(tpe)
       case Type.Ref => Nullability.Reference(tpe)
       case Type.Arrow(l) => Nullability.Reference(tpe)
       case Type.Tuple(l) => Nullability.Reference(tpe)
@@ -622,7 +622,7 @@ object JvmOps {
       case Type.Int64 => Type.Int64
       case Type.BigInt => Type.BigInt
       case Type.Str => Type.Str
-      case Type.Native => Type.Native
+      case Type.Native(clazz) => Type.Native
       case Type.Ref => Type.Ref
       case Type.Arrow(l) => Type.Arrow(l)
       case Type.Tuple(l) => Type.Tuple(l)

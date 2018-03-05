@@ -584,7 +584,7 @@ object Synthesize extends Phase[Root, Root] {
           val method = classOf[java.math.BigInteger].getMethod("hashCode")
           Expression.NativeMethod(method, List(exp0), Type.Str, ast.Eff.Pure, sl)
 
-        case Type.Native =>
+        case Type.Native(clazz) =>
           val method = classOf[java.lang.Object].getMethod("hashCode")
           Expression.NativeMethod(method, List(exp0), Type.Str, ast.Eff.Pure, sl)
 
@@ -832,7 +832,7 @@ object Synthesize extends Phase[Root, Root] {
           val method = classOf[java.lang.Object].getMethod("toString")
           Expression.NativeMethod(method, List(exp0), Type.Str, ast.Eff.Pure, sl)
 
-        case Type.Native =>
+        case Type.Native(clazz) =>
           val method = classOf[java.lang.Object].getMethod("toString")
           Expression.NativeMethod(method, List(exp0), Type.Str, ast.Eff.Pure, sl)
 

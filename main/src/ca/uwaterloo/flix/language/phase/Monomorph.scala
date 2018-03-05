@@ -88,7 +88,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         case Type.BigInt => Type.BigInt
         case Type.Str => Type.Str
         case Type.Array => Type.Array
-        case Type.Native => Type.Native
+        case Type.Native(clazz) => Type.Native(clazz)
         case Type.Ref => Type.Ref
         case Type.Arrow(l) => Type.Arrow(l)
         case Type.Tuple(l) => Type.Tuple(l)
