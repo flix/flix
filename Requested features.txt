@@ -1,0 +1,5 @@
+Feature: Varargs for java interop
+Description: At the current time Flix has problems making an empty array of Java types which java interoperability requires, when the native method uses Varargs. This is especially noticeable in calls to java.nio.file.Files.exists, .isDirectory, and createFile
+
+Feature: Exception handling
+Description: As a first step being able to catch exception and match them based on their type is sufficient. This is a huge help for making a better Path effect library.
