@@ -130,10 +130,14 @@ namespace Path {
     /// Default handler for `isHidden`.
     ///
     handler isHidden[a](p: Path, k: Result[Bool, IOError] -> a): a = unsafe {
-        let Path(javaPath) = p;
-        let answer = native method java.nio.file.Files.isHidden(javaPath);
-        k(Ok(answer))
-        //TODO: This throws java.nio.file.NoSuchFileException when used on non-existing file
+        try {
+            let Path(javaPath) = p;
+            let answer = native method java.nio.file.Files.isHidden(javaPath);
+            k(Ok(answer))
+        }
+        catch {
+            case ex: ##java.nio.file.NoSuchFileException => k(Err(IOError("Argument 'p' does not point to any file")))
+        }
     }
 
     ///
