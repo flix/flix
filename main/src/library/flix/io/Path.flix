@@ -119,7 +119,17 @@ namespace Path {
     ///
     /// Default handler for `isEmpty`.
     ///
-    handler isEmpty[a](p: Path, k: Result[Bool, IOError] -> a): a = ???
+    handler isEmpty[a](p: Path, k: Result[Bool, IOError] -> a): a = unsafe {
+        let Path(javaPath) = p;
+        if (exists(p))
+            let dirStream = native method java.nio.file.Files.newDirectoryStream(javaPath);
+            let dirIterator = native method java.nio.file.DirectoryStream.iterator(dirStream);
+            k(Ok(native method java.util.Iterator.hasNext(dirIterator)))
+            //This only handles the case for directories and should involve an isDirectory check.
+            //WIP at this time and showcases a way of doing it
+        else
+            k(Err(IOError("Argument 'p' does not point to any existing file or directory")))
+    }
 
     ///
     /// Effectfully returns `true` if the given path `p` is executable.
