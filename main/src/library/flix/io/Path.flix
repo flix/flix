@@ -47,6 +47,14 @@ namespace Path {
     }
 
     ///
+    /// Checks whether the given path `p` exists
+    ///
+    def exists(p: Path): Bool = unsafe {
+        let Path(javaPath) = p;
+        native method java.nio.file.Files.exists(javaPath, [| |] : Array[##java.nio.file.LinkOption])
+    }
+
+    ///
     /// Effectfully returns a list of files in the given directory `path`.
     ///
     pub eff children[a](path: Path, k: Result[List[Path], IOError] -> a): a
