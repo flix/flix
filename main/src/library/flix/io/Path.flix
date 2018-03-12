@@ -102,7 +102,14 @@ namespace Path {
     ///
     /// Default handler for `isDirectory`.
     ///
-    handler isDirectory[a](p: Path, k: Result[Bool, IOError] -> a): a = ???
+    handler isDirectory[a](p: Path, k: Result[Bool, IOError] -> a): a = unsafe {
+        let Path(javaPath) = p;
+        if (exists(p))
+            let answer = native method java.nio.file.Files.isDirectory(javaPath, [| |] : Array[##java.nio.file.LinkOption]);
+            k(Ok(answer))
+        else
+            k(Err(IOError("Argument 'p' does not point to any existing file or directory")))
+    }
 
     ///
     /// Effectfully returns `true` if the given path `p` does not exist or is an empty file or directory.
@@ -124,9 +131,12 @@ namespace Path {
     ///
     handler isExecutable[a](p: Path, k: Result[Bool, IOError] -> a): a = unsafe {
         let Path(javaPath) = p;
-        let answer = native method java.nio.file.Files.isExecutable(javaPath);
-        k(Ok(answer))
-        //TODO: Returns false if Path p does not exist. Is this sufficient?
+        if (exists(p))
+            let answer = native method java.nio.file.Files.isExecutable(javaPath);
+            k(Ok(answer))
+        else
+            k(Err(IOError("Argument 'p' does not point to any file")))
+            //TODO: Experiment with unExecutable files and determine if we can use .exists on them
     }
 
     ///
