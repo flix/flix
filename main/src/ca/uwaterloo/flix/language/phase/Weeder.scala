@@ -590,6 +590,11 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
             case es => WeededAst.Expression.ArrayLit(es, mkSL(sp1, sp2))
           }
 
+        case ParsedAst.Expression.ArrayStore(sp1, exp1, exp2, exp3, sp2) =>
+          @@(visit(exp1, unsafe), visit(exp2, unsafe), visit(exp3, unsafe)) map {
+            case (e1, e2, e3) => WeededAst.Expression.ArrayStore(e1, e2, e3, mkSL(sp1, sp2))
+          }
+
         case ParsedAst.Expression.FNil(sp1, sp2) =>
           /*
            * Rewrites a `FNil` expression into a tag expression.
