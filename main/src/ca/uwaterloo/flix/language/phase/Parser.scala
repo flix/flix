@@ -600,7 +600,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Primary: Rule1[ParsedAst.Expression] = rule {
-      LetRec | LetMatch | IfThenElse | Match | LambdaMatch | Switch | Unsafe | Native | Lambda | Tuple | ArrayLit | ArrayStore |
+      LetRec | LetMatch | IfThenElse | Match | LambdaMatch | Switch | Unsafe | Native | Lambda | Tuple | ArrayLit |
+        ArrayNew | ArrayLength | ArrayLoad | ArrayStore |
         FNil | FSet | FMap | Literal |
         HandleWith | Existential | Universal | UnaryLambda | QName | Wild | Tag | SName | Hole | UserError
     }
@@ -683,8 +684,20 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       SP ~ atomic("[|") ~ optWS ~ zeroOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ atomic("|]") ~ SP ~> ParsedAst.Expression.ArrayLit
     }
 
+    def ArrayNew: Rule1[ParsedAst.Expression] = rule {
+      SP ~ atomic("[|") ~ optWS ~ Literals.Int ~ optWS ~ ";" ~ optWS ~ Expression ~ optWS ~ atomic("|]") ~ SP ~> ParsedAst.Expression.ArrayNew
+    }
+
+    def ArrayLoad: Rule1[ParsedAst.Expression] = rule {
+      SP ~ "A" ~ WS ~ Expression ~ optWS ~ "[" ~ optWS ~ Expression ~ optWS ~ "]" ~ SP ~> ParsedAst.Expression.ArrayLoad
+    }
+
     def ArrayStore: Rule1[ParsedAst.Expression] = rule {
-      SP ~ atomic("[||") ~ WS ~ Expression ~ "[" ~ optWS ~ Expression ~ optWS ~ "]" ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.ArrayStore
+      SP ~ "A" ~ WS ~ Expression ~ optWS ~ "[" ~ optWS ~ Expression ~ optWS ~ "]" ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.ArrayStore
+    }
+
+    def ArrayLength: Rule1[ParsedAst.Expression] = rule {
+      SP ~ "[" ~ optWS ~ Expression ~ optWS ~ "]" ~ atomic("length") ~ SP ~> ParsedAst.Expression.ArrayLength
     }
 
     def FNil: Rule1[ParsedAst.Expression.FNil] = rule {
@@ -934,7 +947,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Primary: Rule1[ParsedAst.Type] = rule {
-      Arrow | Tuple | Native | Var | Ambiguous
+      Arrow | Tuple | Native | Var | Ambiguous | Array
     }
 
     def Arrow: Rule1[ParsedAst.Type] = rule {
@@ -957,6 +970,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       rule {
         Unit | Singleton | Tuple
       }
+    }
+
+    def Array: Rule1[ParsedAst.Type] = rule {
+      SP ~ atomic("Array") ~ optWS ~ "[" ~ optWS ~ Type ~ optWS ~ "]" ~ SP ~ optWS ~> ParsedAst.Type.Array
     }
 
     def Native: Rule1[ParsedAst.Type] = rule {
