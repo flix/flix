@@ -588,7 +588,11 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Deref: Rule1[ParsedAst.Expression] = rule {
-      (SP ~ atomic("deref") ~ WS ~ Cast ~ SP ~> ParsedAst.Expression.Deref) | Cast
+      (SP ~ atomic("deref") ~ WS ~ ArrayLoad ~ SP ~> ParsedAst.Expression.Deref) | ArrayLoad
+    }
+
+    def ArrayLoad: Rule1[ParsedAst.Expression] = rule{
+      Cast ~ zeroOrMore(optWS ~ "[" ~ optWS ~  Expression ~ optWS ~ "]" ~ SP ~> ParsedAst.Expression.ArrayLoad)
     }
 
     def Cast: Rule1[ParsedAst.Expression] = rule {
@@ -601,8 +605,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Primary: Rule1[ParsedAst.Expression] = rule {
       LetRec | LetMatch | IfThenElse | Match | LambdaMatch | Switch | Unsafe | Native | Lambda | Tuple | ArrayLit |
-        ArrayNew | ArrayLength | ArrayLoad | ArrayStore |
-        FNil | FSet | FMap | Literal |
+        ArrayNew | ArrayLength | FNil | FSet | FMap | Literal |
         HandleWith | Existential | Universal | UnaryLambda | QName | Wild | Tag | SName | Hole | UserError
     }
 
@@ -685,16 +688,13 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def ArrayNew: Rule1[ParsedAst.Expression] = rule {
-      SP ~ atomic("[|") ~ optWS ~ Literals.Int ~ optWS ~ ";" ~ optWS ~ Expression ~ optWS ~ atomic("|]") ~ SP ~> ParsedAst.Expression.ArrayNew
+      SP ~ atomic("[|") ~ optWS ~ Expression ~ optWS ~ ";" ~ optWS ~ Literals.Int ~ optWS ~ atomic("|]") ~ SP ~> ParsedAst.Expression.ArrayNew
     }
 
-    def ArrayLoad: Rule1[ParsedAst.Expression] = rule {
-      SP ~ "A" ~ WS ~ Expression ~ optWS ~ "[" ~ optWS ~ Expression ~ optWS ~ "]" ~ SP ~> ParsedAst.Expression.ArrayLoad
-    }
-
-    def ArrayStore: Rule1[ParsedAst.Expression] = rule {
+    // Skal flyttes mht. præcedence
+    /*def ArrayStore: Rule1[ParsedAst.Expression] = rule {
       SP ~ "A" ~ WS ~ Expression ~ optWS ~ "[" ~ optWS ~ Expression ~ optWS ~ "]" ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.ArrayStore
-    }
+    }*/
 
     def ArrayLength: Rule1[ParsedAst.Expression] = rule {
       SP ~ "[" ~ optWS ~ Expression ~ optWS ~ "]" ~ atomic("length") ~ SP ~> ParsedAst.Expression.ArrayLength
@@ -947,7 +947,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Primary: Rule1[ParsedAst.Type] = rule {
-      Arrow | Tuple | Native | Var | Ambiguous | Array
+      Arrow | Tuple | Native | Var | Ambiguous
     }
 
     def Arrow: Rule1[ParsedAst.Type] = rule {
@@ -970,10 +970,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       rule {
         Unit | Singleton | Tuple
       }
-    }
-
-    def Array: Rule1[ParsedAst.Type] = rule {
-      SP ~ atomic("Array") ~ optWS ~ "[" ~ optWS ~ Type ~ optWS ~ "]" ~ SP ~ optWS ~> ParsedAst.Type.Array
     }
 
     def Native: Rule1[ParsedAst.Type] = rule {
