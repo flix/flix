@@ -122,11 +122,16 @@ namespace Path {
     handler isEmpty[a](p: Path, k: Result[Bool, IOError] -> a): a = unsafe {
         let Path(javaPath) = p;
         if (exists(p))
-            let dirStream = native method java.nio.file.Files.newDirectoryStream(javaPath);
-            let dirIterator = native method java.nio.file.DirectoryStream.iterator(dirStream);
-            k(Ok(native method java.util.Iterator.hasNext(dirIterator)))
-            //This only handles the case for directories and should involve an isDirectory check.
-            //WIP at this time and showcases a way of doing it
+            let directoryHandler = isDirectory(p, result -> result);
+            match directoryHandler with {
+                case Ok(true) => let dirStream = native method java.nio.file.Files.newDirectoryStream(javaPath);
+                                 let dirIterator = native method java.nio.file.DirectoryStream.iterator(dirStream);
+                                 k(Ok(!native method java.util.Iterator.hasNext(dirIterator)))
+                case Ok(false) => k(Err(IOError("is a file and the File checking has not been written yet")))
+                    //TODO: Write isEmpty check for files
+                case Err(IOError(errorString)) => k(Err(IOError(errorString)))
+                    //Using own exists and calling isDirectory results in two separate exists checks - bad?
+            }
         else
             k(Err(IOError("Argument 'p' does not point to any existing file or directory")))
     }
