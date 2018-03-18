@@ -178,9 +178,11 @@ namespace Path {
     ///
     handler isReadable[a](p: Path, k: Result[Bool, IOError] -> a): a = unsafe {
         let Path(javaPath) = p;
-        let answer = native method java.nio.file.Files.isReadable(javaPath);
-        k(Ok(answer))
-        //TODO: Returns false if Path p does not exist. Is this sufficient?
+        if (exists(p))
+            let answer = native method java.nio.file.Files.isReadable(javaPath);
+            k(Ok(answer))
+        else
+            k(Err(IOError("Argument 'p' does not point to any existing file or directory")))
     }
 
     ///
@@ -220,9 +222,11 @@ namespace Path {
     ///
     handler isSymbolicLink[a](p: Path, k: Result[Bool, IOError] -> a): a = unsafe {
         let Path(javaPath) = p;
-        let answer = native method java.nio.file.Files.isSymbolicLink(javaPath);
-        k(Ok(answer))
-        //TODO: Returns false if Path p does not exist. Is this sufficient?
+        if (exists(p))
+            let answer = native method java.nio.file.Files.isSymbolicLink(javaPath);
+            k(Ok(answer))
+        else
+            k(Err(IOError("Argument 'p' does not point to any existing file or directory")))
     }
 
     ///
@@ -235,9 +239,11 @@ namespace Path {
     ///
     handler isWritable[a](p: Path, k: Result[Bool, IOError] -> a): a = unsafe {
         let Path(javaPath) = p;
-        let answer = native method java.nio.file.Files.isWritable(javaPath);
-        k(Ok(answer))
-        //TODO: Returns false if Path p does not exist. Is this sufficient?
+        if (exists(p))
+            let answer = native method java.nio.file.Files.isWritable(javaPath);
+            k(Ok(answer))
+        else
+            k(Err(IOError("Argument 'p' does not point to any existing file or directory")))
     }
 
     ///
