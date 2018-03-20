@@ -56,6 +56,17 @@ namespace Domain/Parity {
     }
 
     ///
+    /// The lattice height function.
+    ///
+    #nonNegative #decreasing(equ, leq)
+    pub def height(e: Parity): BigInt = match e with {
+        case Top    => 0ii
+        case Odd    => 1ii
+        case Even   => 1ii
+        case Bot    => 2ii
+    }
+
+    ///
     /// Abstracts a concrete integer into the Parity domain.
     ///
     def alpha(i: Int): Parity = if (i % 2 != 0) Odd else Even

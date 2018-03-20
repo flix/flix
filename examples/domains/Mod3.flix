@@ -61,6 +61,18 @@ namespace Domain/Mod3 {
     }
 
     ///
+    /// The lattice height function.
+    ///
+    #nonNegative #decreasing(equ, leq)
+    pub def height(e: Mod3): BigInt = match e with {
+        case Top    => 0ii
+        case Zer    => 1ii
+        case One    => 1ii
+        case Two    => 1ii
+        case Bot    => 2ii
+    }
+
+    ///
     /// Abstracts a concrete integer into the Parity domain.
     ///
     def alpha(i: BigInt): Mod3 =

@@ -655,9 +655,9 @@ object SymbolicEvaluator {
         }
 
       /**
-        * Block.
+        * Branches.
         */
-      case Expression.Branch(exp, branches, tpe, loc) => eval(pc0, exp, env0, lenv0, qua0)
+      case Expression.Branch(exp, branches, tpe, loc) => eval(pc0, exp, env0, branches, qua0)
 
       /**
         * Jump.

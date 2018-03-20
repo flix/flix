@@ -53,6 +53,16 @@ namespace Domain/Constant {
     }
 
     ///
+    /// The lattice height function.
+    ///
+    #nonNegative #decreasing(equ, leq)
+    pub def height(e: Constant): BigInt = match e with {
+        case Top    => 0ii
+        case Cst(n) => 1ii
+        case Bot    => 2ii
+    }
+
+    ///
     /// Abstracts a concrete integer into the Sign domain.
     ///
     def alpha(i: Int): Constant = Cst(i)

@@ -21,7 +21,7 @@ namespace Domain/IntervalAlt {
     ///
     /// Returns the maximum width of an interval before we go to top.
     ///
-    def maxWidth: BigInt = 10ii
+    def maxWidth(): BigInt = 10ii
 
     ///
     /// Returns the canonical representation of the given IntervalAlt `e`.
@@ -31,6 +31,11 @@ namespace Domain/IntervalAlt {
         case Range(b, e)    => if (b <= e) (if (e - b <= maxWidth()) Range(b, e) else Top) else Bot
         case Top            => Top
     }
+
+    ///
+    /// Returns `true` iff `e1` is equal to `e2`.
+    ///
+    pub def equ(e1: IntervalAlt, e2: IntervalAlt): Bool = e1 == e2
 
     ///
     /// Returns `true` iff `e1` is less than or equal to `e2`.
@@ -63,6 +68,16 @@ namespace Domain/IntervalAlt {
         case (x, Top)                       => x
         case (Range(b1, e1), Range(b2, e2)) => norm(Range(BigInt.max(b1, b2), BigInt.min(e1, e2)))
         case _                              => Bot
+    }
+
+    ///
+    /// The lattice height function.
+    ///
+    #nonNegative #decreasing(equ, leq)
+    pub def height(e: IntervalAlt): BigInt = match e with {
+        case Top            => 0ii
+        case Range(b, e)    => 99ii - (e - b)
+        case Bot            => 100ii
     }
 
     ///
@@ -181,7 +196,7 @@ namespace Domain/IntervalAlt {
     // NB: Strictness and monotonicity follows from the properties of `or` and `less`.
     def lessEqual(e1: IntervalAlt, e2: IntervalAlt): Belnap.Belnap = Belnap.or(e1 `less` e2, e1 `eq` e2)
 
-    let IntervalAlt<> = (Bot, Top, leq, lub, glb)
+    let IntervalAlt<> = (Bot, Top, equ, leq, lub, glb)
 
     // ------------------------------------------------------------------------
     // Specialized Laws
@@ -221,6 +236,15 @@ namespace Domain/IntervalAlt {
 
     law greatestElement(⊑: (IntervalAlt, IntervalAlt) -> Bool, ⊤: IntervalAlt): Bool =
         ∀(x: IntervalAlt). norm(x) ⊑ ⊤
+
+    law nonNegative(h: IntervalAlt -> BigInt): Bool =
+        ∀(x: IntervalAlt). h(norm(x)) >= 0ii
+
+    law decreasing(h: IntervalAlt -> BigInt, equ: (IntervalAlt, IntervalAlt) -> Bool, ⊑: (IntervalAlt, IntervalAlt) -> Bool): Bool =
+        ∀(x1: IntervalAlt, y1: IntervalAlt).
+            let x = norm(x1);
+            let y = norm(y1);
+                (x ⊑ y && !equ(x, y)) → (h(x) > h(y))
 
     law associative(f: (IntervalAlt, IntervalAlt) -> IntervalAlt): Bool =
         ∀(x: IntervalAlt, y: IntervalAlt, z: IntervalAlt).

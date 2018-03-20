@@ -166,3 +166,14 @@ law antiSymmetric[e](⊑: (e, e) -> Bool): Bool = ∀(x: e, y: e). ((x ⊑ y) �
 /// to `z` then `x` must be less than or equal to `z`.
 ///
 law transitive[e](⊑: (e, e) -> Bool): Bool = ∀(x: e, y: e, z: e). ((x ⊑ y) ∧ (y ⊑ z)) → (x ⊑ z)
+
+///
+/// The non-negative law asserts that the co-domain of `h` is non-negative.
+///
+law nonNegative[e](h: e -> BigInt): Bool = ∀(x: e). h(x) >= 0ii
+
+///
+/// The decreasing law asserts that if an element `x` is strictly less than an element `y` then
+/// the height assigned to `x` is stricty greater than the height assigned to `y`.
+///
+law decreasing[e](h: e -> BigInt, equ: (e, e) -> Bool, ⊑: (e, e) -> Bool): Bool = ∀(x: e, y: e). (x ⊑ y && !equ(x, y)) → (h(x) > h(y))

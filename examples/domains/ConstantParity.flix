@@ -76,6 +76,18 @@ namespace Domain/ConstantParity {
     }
 
     ///
+    /// The lattice height function.
+    ///
+    #nonNegative #decreasing(equ, leq)
+    pub def height(e: ConstantParity): BigInt = match e with {
+        case Top    => 0ii
+        case Odd    => 1ii
+        case Even   => 1ii
+        case Cst(n) => 2ii
+        case Bot    => 3ii
+    }
+
+    ///
     /// Abstracts a concrete number into the constant parity domain.
     ///
     def alpha(i: BigInt): ConstantParity = Cst(i)
