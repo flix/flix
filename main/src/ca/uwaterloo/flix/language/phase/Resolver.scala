@@ -550,6 +550,11 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
             e3 <- visit(exp3)
           } yield ResolvedAst.Expression.ArraySlice(e1, e2, e3, tvar, loc)
 
+        case NamedAst.Expression.VecLit(elms, tvar, loc) =>
+          for {
+            es <- seqM(elms map visit)
+          } yield ResolvedAst.Expression.VecLit(es, tvar, loc)
+        
         case NamedAst.Expression.Ref(exp, tvar, loc) =>
           for {
             e <- visit(exp)

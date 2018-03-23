@@ -683,6 +683,11 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
         @@(namer(exp1, env0, tenv0), namer(exp2, env0, tenv0), namer(exp3, env0, tenv0)) map {
           case(ex1, ex2, ex3) => NamedAst.Expression.ArraySlice(ex1, ex2, ex3, Type.freshTypeVar(), loc)
         }
+        
+      case WeededAst.Expression.VecLit(elms, loc) =>
+      @@(elms map (e => namer(e, env0, tenv0))) map{
+        case es => NamedAst.Expression.VecLit(es, Type.freshTypeVar(), loc)
+      }
 
       case WeededAst.Expression.Ref(exp, loc) =>
         namer(exp, env0, tenv0) map {
@@ -798,6 +803,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
       case WeededAst.Expression.ArrayStore(exp1, exp2, exp3, loc) => freeVars(exp1) ++ freeVars(exp2) ++ freeVars(exp3)
       case WeededAst.Expression.ArrayLength(exp, loc) => freeVars(exp)
       case WeededAst.Expression.ArraySlice(exp1, exp2, exp3, loc) => freeVars(exp1) ++ freeVars(exp2) ++ freeVars(exp3)
+      case WeededAst.Expression.VecLit(elms, loc) => elms.flatMap(freeVars)
       case WeededAst.Expression.Ref(exp, loc) => freeVars(exp)
       case WeededAst.Expression.Deref(exp, loc) => freeVars(exp)
       case WeededAst.Expression.Assign(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)

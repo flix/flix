@@ -624,6 +624,30 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
             case(ex1, ex2, ex3) => WeededAst.Expression.ArraySlice(ex1, ex2, ex3, loc)
           }
 
+        case ParsedAst.Expression.VecLit(sp1, elms, sp2) =>
+          /*
+           * Rewrites empty vectors to Unit.
+           */
+          @@(elms.map(e => visit(e, unsafe))) map{
+            case Nil =>
+              val loc = mkSL(sp1, sp2)
+              WeededAst.Expression.Unit(loc)
+            case es => WeededAst.Expression.VecLit(es, mkSL(sp1, sp2))
+          }
+
+//        case ParsedAst.Expression.VecNew(sp1, elm, len, sp2) =>
+  //        @@(visit(elm, unsafe), visit(len, unsafe)) map {
+  //        case Nil =>
+  //          val loc = mkSL(sp1, sp2)
+  //          WeededAst.Expression.Unit(loc)
+        // case (es, ln) => WeededAst.Expression.VecNew(es, ln, mkSl(sp1, sp2))
+      //    }
+
+        case ParsedAst.Expression.VecLength(sp1, exp, sp2) =>
+          visit(exp, unsafe) map {
+            case es => WeededAst.Expression.VecLength(es, mkSL(sp1, sp2))
+          }
+
         case ParsedAst.Expression.FNil(sp1, sp2) =>
           /*
            * Rewrites a `FNil` expression into a tag expression.
@@ -1447,6 +1471,12 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.ArrayStore(exp1, _, _, _) => leftMostSourcePosition(exp1)
     case ParsedAst.Expression.ArrayLength(sp1, _, _) => sp1
     case ParsedAst.Expression.ArraySlice(exp1, _, _, _) => leftMostSourcePosition(exp1)
+    case ParsedAst.Expression.VecLit(sp1, _,_) => sp1
+    case ParsedAst.Expression.VecNew(sp1,_,_,_) => sp1
+    case ParsedAst.Expression.VecLoad(exp1,_,_) => leftMostSourcePosition(exp1)
+    case ParsedAst.Expression.VecStore(exp1,_,_,_) => leftMostSourcePosition(exp1)
+    case ParsedAst.Expression.VecLength(sp1,_,_) => sp1
+    case ParsedAst.Expression.VecSlice(exp1,_,_,_) => leftMostSourcePosition(exp1)
     case ParsedAst.Expression.FNil(sp1, _) => sp1
     case ParsedAst.Expression.FCons(hd, _, _, _) => leftMostSourcePosition(hd)
     case ParsedAst.Expression.FAppend(fst, _, _, _) => leftMostSourcePosition(fst)

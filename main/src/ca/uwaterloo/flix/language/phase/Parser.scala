@@ -588,7 +588,19 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Deref: Rule1[ParsedAst.Expression] = rule {
-      (SP ~ atomic("deref") ~ WS ~ Cast ~ SP ~> ParsedAst.Expression.Deref) | Cast
+      (SP ~ atomic("deref") ~ WS ~ VecSlice ~ SP ~> ParsedAst.Expression.Deref) | VecSlice
+    }
+
+    def VecSlice: Rule1[ParsedAst.Expression] = rule {
+      VecLoad ~ optional(optWS ~ atomic("V[")~ optWS ~ Literals.Int ~ optWS ~ atomic("..") ~ optWS ~ Literals.Int ~ optWS ~ "]" ~ SP ~> ParsedAst.Expression.VecSlice)
+    }
+
+    def VecLoad: Rule1[ParsedAst.Expression] = rule{
+      VecStore ~ zeroOrMore(optWS ~ atomic("V[") ~ optWS ~ Literals.Int ~ optWS ~ "]" ~ SP ~> ParsedAst.Expression.VecLoad)
+    }
+
+    def VecStore: Rule1[ParsedAst.Expression] = rule{
+      Cast ~ optional(optWS ~ atomic("V[") ~ optWS ~ Literals.Int ~ optWS ~ "]" ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.VecStore)
     }
 
     def Cast: Rule1[ParsedAst.Expression] = rule {
@@ -601,7 +613,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Primary: Rule1[ParsedAst.Expression] = rule {
       LetRec | LetMatch | IfThenElse | Match | LambdaMatch | Switch | Unsafe | Native | Lambda | Tuple | ArrayLit |
-        ArrayNew | ArrayLength | FNil | FSet | FMap | Literal |
+        ArrayNew | ArrayLength |VecLength | VecLit | VecNew | FNil | FSet | FMap | Literal |
         HandleWith | Existential | Universal | UnaryLambda | QName | Wild | Tag | SName | Hole | UserError
     }
 
@@ -701,6 +713,18 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def ArrayLength: Rule1[ParsedAst.Expression] = rule {
       SP ~ "[" ~ optWS ~ Expression ~ optWS ~ "]" ~ atomic("length") ~ SP ~> ParsedAst.Expression.ArrayLength
+    }
+
+    def VecLit: Rule1[ParsedAst.Expression] = rule {
+      SP ~ atomic("V[") ~ optWS ~ zeroOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]" ~ SP ~> ParsedAst.Expression.VecLit
+    }
+
+    def VecNew: Rule1[ParsedAst.Expression] = rule {
+      SP ~ atomic("V[") ~ optWS ~ Expression ~ optWS ~ ";" ~ optWS ~ Literals.Int ~ optWS ~ "]" ~ SP ~> ParsedAst.Expression.VecNew
+    }
+
+    def VecLength: Rule1[ParsedAst.Expression] = rule {
+      SP ~ atomic("V[") ~ optWS ~ Expression ~ optWS ~ "]" ~ atomic("length") ~ SP ~> ParsedAst.Expression.VecLength
     }
 
     def FNil: Rule1[ParsedAst.Expression.FNil] = rule {
