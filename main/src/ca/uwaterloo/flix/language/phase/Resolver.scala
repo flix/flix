@@ -514,6 +514,42 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
             es <- seqM(elms map visit)
           } yield ResolvedAst.Expression.Tuple(es, tvar, loc)
 
+        case NamedAst.Expression.ArrayLit(elms, tvar, loc) =>
+          for {
+            es <- seqM(elms map visit)
+          } yield ResolvedAst.Expression.ArrayLit(es, tvar, loc)
+
+        case NamedAst.Expression.ArrayNew(elm, len, tvar, loc) =>
+          for {
+            e <- visit(elm)
+            ln <- visit(len)
+          } yield ResolvedAst.Expression.ArrayNew(e, ln, tvar, loc)
+
+        case NamedAst.Expression.ArrayLoad(exp1, exp2, tvar, loc) =>
+          for {
+            e1 <- visit(exp1)
+            e2 <- visit(exp2)
+          } yield ResolvedAst.Expression.ArrayLoad(e1, e2, tvar, loc)
+
+        case NamedAst.Expression.ArrayStore(exp1, exp2, exp3, tvar, loc) =>
+          for {
+            e1 <- visit(exp1)
+            e2 <- visit(exp2)
+            e3 <- visit(exp3)
+          } yield ResolvedAst.Expression.ArrayStore(e1, e2, e3, tvar, loc)
+
+        case NamedAst.Expression.ArrayLength(exp, tvar, loc) =>
+          for {
+            e <- visit(exp)
+          } yield ResolvedAst.Expression.ArrayLength(e, tvar, loc)
+
+        case NamedAst.Expression.ArraySlice(exp1, exp2, exp3, tvar, loc) =>
+          for {
+            e1 <- visit(exp1)
+            e2 <- visit(exp2)
+            e3 <- visit(exp3)
+          } yield ResolvedAst.Expression.ArraySlice(e1, e2, e3, tvar, loc)
+
         case NamedAst.Expression.Ref(exp, tvar, loc) =>
           for {
             e <- visit(exp)
