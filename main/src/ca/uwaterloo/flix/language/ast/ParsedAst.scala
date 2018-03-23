@@ -575,6 +575,15 @@ object ParsedAst {
     case class Match(sp1: SourcePosition, exp: ParsedAst.Expression, rules: Seq[ParsedAst.MatchRule], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
+      * Select Expression (select first channel expression).
+      *
+      * @param sp1   the position of the first character in the expression.
+      * @param rules the rules of the select channel.
+      * @param sp2   the position of the last character in the expression.
+      */
+    case class Select(sp1: SourcePosition, rules: Seq[ParsedAst.SelectRule], sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
       * Switch Expression.
       *
       * @param sp1   the position of the first character in the expression.
@@ -1248,6 +1257,15 @@ object ParsedAst {
     * @param exp   the body expression of the rule.
     */
   case class MatchRule(pat: ParsedAst.Pattern, guard: Option[ParsedAst.Expression], exp: ParsedAst.Expression) extends ParsedAst
+
+  /**
+    * A select channel rule consists of an identifier, a channel expression and an body expression.
+    *
+    * @param ident the identifier name.
+    * @param exp1  the channel expression of the rule.
+    * @param exp2  the body expression of the rule.
+    */
+  case class SelectRule(ident: Name.Ident, exp1: ParsedAst.Expression, exp2: ParsedAst.Expression) extends ParsedAst
 
   /**
     * Modifier.
