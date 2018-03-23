@@ -588,11 +588,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Deref: Rule1[ParsedAst.Expression] = rule {
-      (SP ~ atomic("deref") ~ WS ~ ArrayLoad ~ SP ~> ParsedAst.Expression.Deref) | ArrayLoad
-    }
-
-    def ArrayLoad: Rule1[ParsedAst.Expression] = rule{
-      Cast ~ zeroOrMore(optWS ~ "[" ~ optWS ~  Expression ~ optWS ~ "]" ~ SP ~> ParsedAst.Expression.ArrayLoad)
+      (SP ~ atomic("deref") ~ WS ~ Cast ~ SP ~> ParsedAst.Expression.Deref) | Cast
     }
 
     def Cast: Rule1[ParsedAst.Expression] = rule {
@@ -668,7 +664,19 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Postfix: Rule1[ParsedAst.Expression] = rule {
-      Apply ~ zeroOrMore(optWS ~ "." ~ Names.Definition ~ ArgumentList ~ SP ~> ParsedAst.Expression.Postfix)
+      ArraySlice ~ zeroOrMore(optWS ~ "." ~ Names.Definition ~ ArgumentList ~ SP ~> ParsedAst.Expression.Postfix)
+    }
+
+    def ArraySlice: Rule1[ParsedAst.Expression] = rule{
+      ArrayLoad ~ optional(optWS ~ "[" ~ optWS ~ Expression ~ optWS ~ atomic("..") ~ optWS ~ Expression ~ optWS ~ "]" ~ SP ~> ParsedAst.Expression.ArraySlice)
+    }
+
+    def ArrayLoad: Rule1[ParsedAst.Expression] = rule{
+      ArrayStore ~ zeroOrMore(optWS ~ "[" ~ optWS ~  Expression ~ optWS ~ "]" ~ SP ~> ParsedAst.Expression.ArrayLoad)
+    }
+
+    def ArrayStore: Rule1[ParsedAst.Expression] = rule {
+      Apply ~ optional(optWS ~ "[" ~ optWS ~ Expression ~ optWS ~ "]" ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.ArrayStore)
     }
 
     def Apply: Rule1[ParsedAst.Expression] = rule {
@@ -688,13 +696,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def ArrayNew: Rule1[ParsedAst.Expression] = rule {
-      SP ~ atomic("[|") ~ optWS ~ Expression ~ optWS ~ ";" ~ optWS ~ Literals.Int ~ optWS ~ atomic("|]") ~ SP ~> ParsedAst.Expression.ArrayNew
+      SP ~ atomic("[|") ~ optWS ~ Expression ~ optWS ~ ";" ~ optWS ~ Expression ~ optWS ~ atomic("|]") ~ SP ~> ParsedAst.Expression.ArrayNew
     }
-
-    // Skal flyttes mht. præcedence
-    /*def ArrayStore: Rule1[ParsedAst.Expression] = rule {
-      SP ~ "A" ~ WS ~ Expression ~ optWS ~ "[" ~ optWS ~ Expression ~ optWS ~ "]" ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.ArrayStore
-    }*/
 
     def ArrayLength: Rule1[ParsedAst.Expression] = rule {
       SP ~ "[" ~ optWS ~ Expression ~ optWS ~ "]" ~ atomic("length") ~ SP ~> ParsedAst.Expression.ArrayLength
