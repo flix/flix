@@ -758,6 +758,21 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
             resultType <- unifyM(tvar, Type.mkTuple(elementTypes), loc)
           ) yield resultType
 
+          /*
+           * VecLit expression.
+           */
+        /*case ResolvedAst.Expression.VecLit(elms, tvar, loc) =>
+          /*
+           * exp_1 : t ... exp_n : t
+           * --------------------------
+           * V[exp_1...exp_n] : Vec[t]
+           */
+          for(
+             elementTypes <- seqM(elms.map(visitExp));
+             resultType <- unifyM(tvar, Type.mkVec(elementTypes), loc)
+          ) yield resultType
+          */
+
         /*
          * Reference expression.
          */

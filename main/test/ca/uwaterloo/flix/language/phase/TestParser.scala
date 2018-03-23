@@ -731,6 +731,87 @@ class TestParser extends FunSuite with TestUtils {
     run(input)
   }
 
+  test("Expression.Array.01") {
+    val input = "def f(): Unit = [||]"
+    run(input, core = false)
+
+  }
+
+  test("Expression.ArrayLit.02") {
+    val input = "def f(): Int = [|42|] "
+    run(input, core = false)
+  }
+
+  test("Expression.ArrayLit.03") {
+    val input = "def f(): Int = [|42, 21|]"
+    run(input, core = false)
+  }
+
+  test("Expression.ArrayLit.03") {
+    val input = "def f(): Int = [|42, x, 21|]"
+    run(input, core = false)
+  }
+
+  test("Expression.ArrayLit.04") {
+    val input = "def f(): Int = [|42, x, 21|]"
+    run(input, core = false)
+  }
+
+  test("Expression.ArrayLit.05") {
+    val input = "def f(): Int = [|42, x, x, 21|]"
+    run(input, core = false)
+  }
+
+  test("Expression.ArrayNew.01") {
+    val input = "def f(): Unit = [||]"
+    run(input, core = false )
+  }
+
+  test("Expression.ArrayNew.02") {
+    val input = "def f(): Unit = [|0;0|]"
+    run(input, core = false )
+  }
+
+  test("Expression.ArrayNew.03") {
+    val input = "def f(): Int = [|0;1|]"
+    run(input, core = false )
+  }
+
+  test("Expression.ArrayNew.04") {
+    val input = "def f(): Int [|0;2|]"
+    run(input, core = false )
+  }
+
+  test("Expression.ArrayNew.05") {
+    val input = "def f(): Int [|0;3|]"
+    run(input, core = false )
+  }
+
+  test("Expression.VecLit.01") {
+    val input = "def f(): Unit = V[]"
+    run(input)
+  }
+
+  test("Expression.VecLit.02") {
+    val input = "def f(): Int = V[42]"
+    run(input)
+  }
+
+  test("Expression.VecLit.03") {
+    val input = "def f(): (Int, Int) = V[42, 42]"
+    run(input)
+  }
+
+  test("Expression.VecLit.04") {
+    val input = "def f(x: Int): (Int, Int, Int) = V[42, 42, x]"
+    run(input)
+  }
+
+  test("Expression.VecLit.05") {
+    val input = "def f(x: Int): (Int, Int, (Int, Int)) = V[42, 42, V[x, x]]"
+    run(input, core = false)
+  }
+
   test("Expression.List.01") {
     val input = "def f(): List[Int] = Nil"
     run(input, core = false)

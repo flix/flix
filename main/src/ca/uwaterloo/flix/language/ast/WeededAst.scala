@@ -138,6 +138,18 @@ object WeededAst {
 
     case class ArrayStore(exp1: WeededAst.Expression, exp2: WeededAst.Expression, exp3: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
+    case class VecLit(elms: List[WeededAst.Expression], loc: SourceLocation) extends  WeededAst.Expression
+
+    case class VecNew(elm: WeededAst.Expression, len: WeededAst.Type, loc: SourceLocation) extends WeededAst.Expression
+
+    case class VecLoad(exp1: WeededAst.Expression, exp2: WeededAst.Type, loc: SourceLocation) extends WeededAst.Expression
+
+    case class VecStore(exp1: WeededAst.Expression, exp2: WeededAst.Type, exp3: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+
+    case class VecLength(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+//exp1: Expression, exp2: Literal, exp3: Literal, sp2: SourcePosition
+    case class VecSlice(exp1: WeededAst.Expression, exp2: WeededAst.Type, exp3: WeededAst.Type, loc: SourceLocation) extends WeededAst.Expression
+
     case class Ref(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     case class Deref(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
