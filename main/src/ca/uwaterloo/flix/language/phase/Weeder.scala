@@ -590,9 +590,38 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
             case es => WeededAst.Expression.ArrayLit(es, mkSL(sp1, sp2))
           }
 
-        case ParsedAst.Expression.ArrayStore(sp1, exp1, exp2, exp3, sp2) =>
+        case ParsedAst.Expression.ArrayNew(sp1, elm, len, sp2) =>
+          @@(visit(elm, unsafe), visit(len, unsafe)) map {
+            case(es, ln) => WeededAst.Expression.ArrayNew(es, ln, mkSL(sp1, sp2))
+          }
+
+        case ParsedAst.Expression.ArrayLoad(exp1, exp2, sp2) =>
+          val sp1 = leftMostSourcePosition(exp1)
+          val loc = mkSL(sp1, sp2)
+
+          @@(visit(exp1, unsafe), visit(exp2, unsafe)) map {
+            case (ex1, ex2) => WeededAst.Expression.ArrayLoad(ex1, ex2, loc)
+          }
+
+        case ParsedAst.Expression.ArrayStore(exp1, exp2, exp3, sp2) =>
+          val sp1 = leftMostSourcePosition(exp1)
+          val loc = mkSL(sp1, sp2)
+
           @@(visit(exp1, unsafe), visit(exp2, unsafe), visit(exp3, unsafe)) map {
-            case (e1, e2, e3) => WeededAst.Expression.ArrayStore(e1, e2, e3, mkSL(sp1, sp2))
+            case(ex1, ex2, ex3) => WeededAst.Expression.ArrayStore(ex1, ex2, ex3, loc)
+          }
+
+        case ParsedAst.Expression.ArrayLength(sp1, exp, sp2) =>
+          visit(exp, unsafe) map {
+            case es => WeededAst.Expression.ArrayLength(es, mkSL(sp1, sp2))
+          }
+
+        case ParsedAst.Expression.ArraySlice(exp1, exp2, exp3, sp2) =>
+          val sp1 = leftMostSourcePosition(exp1)
+          val loc = mkSL(sp1, sp2)
+
+          @@(visit(exp1, unsafe), visit(exp2, unsafe), visit(exp3, unsafe)) map {
+            case(ex1, ex2, ex3) => WeededAst.Expression.ArraySlice(ex1, ex2, ex3, loc)
           }
 
         case ParsedAst.Expression.VecLit(sp1, elms, sp2) =>
@@ -1436,6 +1465,12 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.Switch(sp1, _, _) => sp1
     case ParsedAst.Expression.Tag(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Tuple(sp1, _, _) => sp1
+    case ParsedAst.Expression.ArrayLit(sp1, _, _) => sp1
+    case ParsedAst.Expression.ArrayNew(sp1, _, _, _) => sp1
+    case ParsedAst.Expression.ArrayLoad(exp1, _, _) => leftMostSourcePosition(exp1)
+    case ParsedAst.Expression.ArrayStore(exp1, _, _, _) => leftMostSourcePosition(exp1)
+    case ParsedAst.Expression.ArrayLength(sp1, _, _) => sp1
+    case ParsedAst.Expression.ArraySlice(exp1, _, _, _) => leftMostSourcePosition(exp1)
     case ParsedAst.Expression.VecLit(sp1, _,_) => sp1
     case ParsedAst.Expression.VecNew(sp1,_,_,_) => sp1
     case ParsedAst.Expression.VecLoad(exp1,_,_) => leftMostSourcePosition(exp1)

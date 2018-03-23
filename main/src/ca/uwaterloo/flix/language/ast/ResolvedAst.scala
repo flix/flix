@@ -148,6 +148,18 @@ object ResolvedAst {
 
     case class Tuple(elms: List[ResolvedAst.Expression], tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
+    case class ArrayLit(elms: List[ResolvedAst.Expression], tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+
+    case class ArrayNew(elm: ResolvedAst.Expression, len: ResolvedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+
+    case class ArrayLoad(exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends  ResolvedAst.Expression
+
+    case class ArrayStore(exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, exp3: ResolvedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends  ResolvedAst.Expression
+
+    case class ArrayLength(exp: ResolvedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+
+    case class ArraySlice(exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, exp3: ResolvedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends  ResolvedAst.Expression
+
     case class VecLit(elms: List[ResolvedAst.Expression], tvar: Type.Var, loc: SourceLocation) extends  ResolvedAst.Expression
 
     case class Ref(exp: ResolvedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression

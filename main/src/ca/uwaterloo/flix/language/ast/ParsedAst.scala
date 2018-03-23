@@ -615,18 +615,48 @@ object ParsedAst {
       * ArrayNew Expression
       *
       * @param sp1 the position of the first character in the expression.
-      * @param elm the default value of the array elements
-      * @param len the length of the array
+      * @param elm the default value of the array elements.
+      * @param len the length of the array.
       * @param sp2 the position of the last character in the expression.
       */
-    case class ArrayNew(sp1: SourcePosition, elm: ParsedAst.Expression, len: ParsedAst.Literal, sp2: SourcePosition) extends  ParsedAst.Expression
+    case class ArrayNew(sp1: SourcePosition, elm: ParsedAst.Expression, len: ParsedAst.Expression, sp2: SourcePosition) extends  ParsedAst.Expression
 
+    /**
+      * ArrayLoad Expression
+      *
+      * @param exp1 the array.
+      * @param exp2 the index of the array.
+      * @param sp2 the position of the last character in the expression.
+      */
     case class ArrayLoad(exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends  ParsedAst.Expression
 
-    case class ArrayStore(sp1: SourcePosition, exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, exp3: ParsedAst.Expression, sp2: SourcePosition
-                         ) extends  ParsedAst.Expression
+    /**
+      * ArrayStore Expression
+      * @param exp1 the array.
+      * @param exp2 the index of the array.
+      * @param exp3 the element to be inserted at the given index.
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class ArrayStore(exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, exp3: ParsedAst.Expression, sp2: SourcePosition) extends  ParsedAst.Expression
 
-    case class ArrayLength(sp1: SourcePosition, exp: Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    /**
+      * ArrayLenght Expression
+      *
+      * @param sp1 the position of the first character in the expression.
+      * @param exp the array
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class ArrayLength(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
+      * ArraySlice Expression
+      *
+      * @param exp1 the array
+      * @param exp2 the first index
+      * @param exp3 the second index
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class ArraySlice(exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, exp3: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * VecLit Expression.
