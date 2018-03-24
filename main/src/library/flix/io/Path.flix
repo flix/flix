@@ -279,7 +279,11 @@ namespace Path {
     ///
     /// Default handler for `createFile`.
     ///
-    handler createFile[a](p: Path, k: Result[Bool, IOError] -> a): a = ???
+    handler createFile[a](p: Path, k: Result[Bool, IOError] -> a): a = ???//unsafe {
+        //let Path(javaPath) = p;
+        //let _ = native method java.nio.file.Files.createFile(p, [| |] : Array[##java.nio.file.attribute.FileAttribute<##java.lang.String>]);
+        //k(Ok(true))
+    //}
 
     ///
     /// Effectfully creates a new directory for the given path `p`.
