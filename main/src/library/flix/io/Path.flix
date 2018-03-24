@@ -318,14 +318,21 @@ namespace Path {
     /// Default handler for `copyFileTo`.
     ///
     handler copyFileTo[a](src: Path, dst: Path, k: Result[Bool, IOError] -> a): a = unsafe {
-        let Path(javaPath1) = src;
-        let Path(javaPath2) = dst;
-        let _ = native method java.nio.file.Files.copy(javaPath1 : ##java.nio.file.Path,
-                                                       javaPath2 : ##java.nio.file.Path,
-                                                       [| |]     : Array[##java.nio.file.StandardCopyOption]);
-        k(Ok(true))
-        //TODO: Lookup exceptions for this method and do better than returning Ok(true)
-        //WIP - doesn't check if it's a file for instance
+        let directoryResponse = isDirectory(src, result -> result);
+        match directoryResponse with {
+            case Ok(true)  => k(Err(IOError("Path 'src' is a directory and not a file")))
+            case Ok(false) => if (exists(dst))
+                                  k(Err(IOError("Path 'dst' already exists. Overwriting is not currently possible")))
+                              else
+                                  let Path(javaPath1) = src;
+                                  let Path(javaPath2) = dst;
+                                  let _ = native method java.nio.file.Files.copy(javaPath1 : ##java.nio.file.Path,
+                                                                                 javaPath2 : ##java.nio.file.Path,
+                                                                                 [| |]     : Array[##java.nio.file.StandardCopyOption]);
+                                  k(Ok(true))
+                                  //TODO: Lookup exceptions for this method and do better than returning Ok(true)
+            case Err(IOError(errorString)) => k(Err(IOError(errorString)))
+        }
     }
 
     ///
@@ -336,7 +343,23 @@ namespace Path {
     ///
     /// Default handler for `copyDirectoryTo`.
     ///
-    handler copyDirectoryTo[a](src: Path, dst: Path, k: Result[Bool, IOError] -> a): a = ???
+    handler copyDirectoryTo[a](src: Path, dst: Path, k: Result[Bool, IOError] -> a): a = unsafe {
+        let directoryResponse = isDirectory(src, result -> result);
+        match directoryResponse with {
+            case Ok(true)  => if (exists(dst))
+                                  k(Err(IOError("Path 'dst' already exists. Overwriting is not currently possible")))
+                              else
+                                  let Path(javaPath1) = src;
+                                  let Path(javaPath2) = dst;
+                                  let _ = native method java.nio.file.Files.copy(javaPath1 : ##java.nio.file.Path,
+                                                                                 javaPath2 : ##java.nio.file.Path,
+                                                                                 [| |]     : Array[##java.nio.file.StandardCopyOption]);
+                                  k(Ok(true))
+                                  //TODO: Lookup exceptions for this method and do better than returning Ok(true)
+            case Ok(false) => k(Err(IOError("Path 'src' is a file and not a directory")))
+            case Err(IOError(errorString)) => k(Err(IOError(errorString)))
+        }
+    }
 
     ///
     /// Effectfully moves the file from the `src` path to the `dst` path.
