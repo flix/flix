@@ -364,13 +364,16 @@ namespace Path {
     ///
     handler deleteFile[a](p: Path, k: Result[Bool, IOError] -> a): a = unsafe {
         let Path(javaPath) = p;
-        //TODO: Use isDirectory to check when implemented to return IOError for wrong use of function
-        //Consider using own exists method?
-        let answer = native method java.nio.file.Files.deleteIfExists(javaPath);
-        match answer with {
-            case true => k(Ok(true))
-            case false => k(Ok(false))
-        }
+        if (exists(p))
+            let directoryResponse = isDirectory(p, result -> result);
+            match directoryResponse with {
+                case Ok(true) => k(Err(IOError("The provided Path 'p' points to a directory and not a file")))
+                case Ok(false) => let _ = native method java.nio.file.Files.delete(javaPath);
+                                  k(Ok(true))
+                case Err(IOError(errorString)) => k(Err(IOError(errorString)))
+            }
+        else
+            k(Err(IOError("Argument 'p' does not point to any existing file or directory")))
     }
 
     ///
@@ -382,16 +385,25 @@ namespace Path {
     /// Default handler for `deleteDirectory`.
     ///
     handler deleteDirectory[a](p: Path, k: Result[Bool, IOError] -> a): a = unsafe {
-        let Path(javaPath) = p;
-        //TODO: Use isDirectory to check when implemented to return IOError for wrong use of function
-        //Consider using own exists method? Requires Varargs for LinkOption
-        let answer = native method java.nio.file.Files.deleteIfExists(javaPath);
-        match answer with {
-            case true => k(Ok(true))
-            case false => k(Ok(false))
+        try {
+            let Path(javaPath) = p;
+            if (exists(p))
+                let directoryResponse = isDirectory(p, result -> result);
+                match directoryResponse with {
+                    case Ok(true) => let _ = native method java.nio.file.Files.delete(javaPath);
+                                     k(Ok(true))
+                    case Ok(false) => k(Err(IOError("The provided Path 'p' points to a file and not a directory")))
+                    case Err(IOError(errorString)) => k(Err(IOError(errorString)))
+                }
+            else
+                k(Err(IOError("Argument 'p' does not point to any existing file or directory")))
+        }
+        catch {
+            case ex: ##java.nio.file.DirectoryNotEmptyException => k(Err(IOError("Directory pointed to by 'p' is not empty. This is required")))
         }
         //Notice that this requires sub directories to be empty as is. (DirectoryNotEmptyException)
         //Will require calls to deleteFile when walking fileTree to implement subdirectory deletion fully.
+        //TODO: Consider whether to add a deleteDirectory(true) version for auto-deleting subdirectories?
     }
 
     ///
