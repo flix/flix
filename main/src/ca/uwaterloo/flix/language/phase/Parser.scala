@@ -494,7 +494,11 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Assign: Rule1[ParsedAst.Expression] = rule {
-      LogicalOr ~ optional(optWS ~ atomic(":=") ~ optWS ~ LogicalOr ~ SP ~> ParsedAst.Expression.Assign)
+      PutChannel ~ optional(optWS ~ atomic(":=") ~ optWS ~ PutChannel ~ SP ~> ParsedAst.Expression.Assign)
+    }
+
+    def PutChannel: Rule1[ParsedAst.Expression] = rule {
+      LogicalOr ~ zeroOrMore(optWS ~ atomic("<:") ~ optWS ~ LogicalOr ~ SP ~> ParsedAst.Expression.PutChannel)
     }
 
     def LogicalOr: Rule1[ParsedAst.Expression] = rule {

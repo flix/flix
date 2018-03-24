@@ -773,6 +773,15 @@ object ParsedAst {
     case class Cast(exp: ParsedAst.Expression, tpe: ParsedAst.Type, eff: Option[ParsedAst.Effect], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
+      * PutChannel Expression.
+      *
+      * @param exp1 the channel expression.
+      * @param exp2 the value expression.
+      * @param sp2 the position of the last character in the expression.
+     */
+    case class PutChannel(exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
       * Unsafe Expression.
       *
       * @param sp1 the position of the first character in the expression.
