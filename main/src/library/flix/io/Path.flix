@@ -82,7 +82,26 @@ namespace Path {
     ///
     /// Default handler for `isChildOf`.
     ///
-    handler isChildOf[a](child: Path, parent: Path, k: Result[Bool, IOError] -> a): a = ???
+    handler isChildOf[a](child: Path, parent: Path, k: Result[Bool, IOError] -> a): a = unsafe {
+        if (exists(child) && exists(parent))
+            k(Ok(isChildOfHelper(child, parent)))
+        else
+            k(Err(IOError("One or both arguments 'p1' and 'p2' do not point to an existing file or directory")))
+    }
+
+    def isChildOfHelper(child: Path, parent: Path) : Bool = unsafe {
+        let Path(childPath) = child;
+        let Path(parentPath) = parent;
+        let parentOfChild = native method java.nio.file.Path.getParent(childPath);
+        if (native method java.nio.file.Path.equals(parentOfChild, parentPath))
+            true
+        else
+            //TODO: This isNull check currently breaks the interpreter when run
+            if (native method java.util.Objects.isNull(parentOfChild))
+                false
+            else
+                isChildOfHelper(parentOfChild, parent)
+    }
 
     ///
     /// Effectfully returns `true` if the given path `p1` is a sibling of the path `p2`.
