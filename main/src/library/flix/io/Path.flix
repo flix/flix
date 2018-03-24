@@ -111,7 +111,17 @@ namespace Path {
     ///
     /// Default handler for `isSiblingOf`.
     ///
-    handler isSiblingOf[a](p1: Path, p2: Path, k: Result[Bool, IOError] -> a): a = ???
+    handler isSiblingOf[a](p1: Path, p2: Path, k: Result[Bool, IOError] -> a): a = unsafe {
+        if (exists(p1) && exists(p2))
+            let Path(javaPath1) = p1;
+            let Path(javaPath2) = p2;
+            let parent1 = native method java.nio.file.Path.getParent(javaPath1);
+            let parent2 = native method java.nio.file.Path.getParent(javaPath2);
+            let answer = native method java.nio.file.Path.equals(parent1, parent2);
+            k(Ok(answer))
+        else
+            k(Err(IOError("One or both arguments 'p1' and 'p2' do not point to an existing file or directory")))
+    }
 
     ///
     /// Effectfully returns `true` if the given path `p` is a directory.
@@ -217,7 +227,14 @@ namespace Path {
     ///
     /// Default handler for `isRegularFile`.
     ///
-    handler isRegularFile[a](p: Path, k: Result[Bool, IOError] -> a): a = ???
+    handler isRegularFile[a](p: Path, k: Result[Bool, IOError] -> a): a = unsafe {
+        let Path(javaPath) = p;
+        if (exists(p))
+            let answer = native method java.nio.file.Files.isRegularFile(javaPath, [| |] : Array[##java.nio.file.LinkOption]);
+            k(Ok(answer))
+        else
+            k(Err(IOError("Argument 'p' does not point to any existing file or directory")))
+    }
 
     ///
     /// Effectfully returns `true` if the two given paths `p1` and `p2` refers to the same file.
