@@ -37,6 +37,3 @@ def select_string_channel_first(): Bool =
     };
     ch2 <- "str";
     r `assertEq!` "str2"
-
-
-ch1 <- a -> (ch1 <- a)

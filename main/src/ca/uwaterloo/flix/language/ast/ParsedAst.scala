@@ -581,7 +581,7 @@ object ParsedAst {
       * @param rules the rules of the select channel.
       * @param sp2   the position of the last character in the expression.
       */
-    case class Select(sp1: SourcePosition, rules: Seq[ParsedAst.SelectRule], sp2: SourcePosition) extends ParsedAst.Expression
+    case class SelectChannel(sp1: SourcePosition, rules: Seq[ParsedAst.SelectRule], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Switch Expression.

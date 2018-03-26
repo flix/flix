@@ -128,6 +128,8 @@ object WeededAst {
 
     case class Match(exp: WeededAst.Expression, rules: List[WeededAst.MatchRule], loc: SourceLocation) extends WeededAst.Expression
 
+    case class SelectChannel(rules: List[WeededAst.SelectRule], loc: SourceLocation) extends WeededAst.Expression
+
     case class Switch(rules: List[(WeededAst.Expression, WeededAst.Expression)], loc: SourceLocation) extends WeededAst.Expression
 
     case class Tag(enum: Option[Name.QName], tag: Name.Ident, expOpt: Option[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
@@ -274,4 +276,5 @@ object WeededAst {
 
   case class MatchRule(pat: WeededAst.Pattern, guard: WeededAst.Expression, exp: WeededAst.Expression) extends WeededAst
 
+  case class SelectRule(ident: Name.Ident, exp1: WeededAst.Expression, exp2: WeededAst.Expression) extends WeededAst
 }

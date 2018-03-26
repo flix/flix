@@ -551,6 +551,16 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
             case (e, rs) => WeededAst.Expression.Match(e, rs, mkSL(sp1, sp2))
           }
 
+        case ParsedAst.Expression.SelectChannel(sp1, rules, sp2) =>
+          val rulesVal = rules map {
+            case ParsedAst.SelectRule(ident, channel, body) => @@(visit(channel, unsafe), visit(body, unsafe)) map {
+              case (c, b) => WeededAst.SelectRule(ident, c, b)
+            }
+          }
+          @@(rulesVal) map {
+            case rs => WeededAst.Expression.SelectChannel(rs, mkSL(sp1, sp2))
+          }
+
         case ParsedAst.Expression.Switch(sp1, rules, sp2) =>
           val rulesVal = rules map {
             case (cond, body) => @@(visit(cond, unsafe), visit(body, unsafe))
@@ -1438,6 +1448,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.LetMatch(sp1, _, _, _, _, _) => sp1
     case ParsedAst.Expression.LetRec(sp1, _, _, _, _) => sp1
     case ParsedAst.Expression.Match(sp1, _, _, _) => sp1
+    case ParsedAst.Expression.SelectChannel(sp1, _, _) => sp1
     case ParsedAst.Expression.Switch(sp1, _, _) => sp1
     case ParsedAst.Expression.Tag(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Tuple(sp1, _, _) => sp1
