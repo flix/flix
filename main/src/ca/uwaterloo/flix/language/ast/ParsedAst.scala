@@ -827,6 +827,15 @@ object ParsedAst {
       */
     case class UserError(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Expression
 
+    /**
+      * Spawn Expression (runs expression on new process)
+      *
+      * @param sp1 the position of the first character in the expression.
+      * @param exp the expression to be run concurrently
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class Spawn(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+
   }
 
   /**

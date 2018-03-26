@@ -745,6 +745,11 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
         }
 
       case WeededAst.Expression.UserError(loc) => NamedAst.Expression.UserError(Type.freshTypeVar(), loc).toSuccess
+
+      case WeededAst.Expression.Spawn(exp, loc) =>
+        namer(exp, env0, tenv0) map {
+          case (e) => NamedAst.Expression.Spawn(e, Type.freshTypeVar(), loc)
+        }
     }
 
     /**

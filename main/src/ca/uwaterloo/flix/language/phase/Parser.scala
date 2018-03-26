@@ -606,7 +606,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     def Primary: Rule1[ParsedAst.Expression] = rule {
       LetRec | LetMatch | IfThenElse | Match | LambdaMatch | Select | Switch | Unsafe | Native | Lambda | Tuple |
         ArrayLit | ArrayNew | FNil | FSet | FMap | Literal |
-        HandleWith | Existential | Universal | UnaryLambda | QName | Wild | Tag | SName | Hole | UserError
+        HandleWith | Existential | Universal | UnaryLambda | QName | Wild | Tag | SName | Hole | UserError | Spawn
     }
 
     def Literal: Rule1[ParsedAst.Expression.Lit] = rule {
@@ -787,6 +787,9 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       SP ~ atomic("∀" | "\\forall") ~ optWS ~ FormalParamList ~ optWS ~ "." ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.Universal
     }
 
+    def Spawn: Rule1[ParsedAst.Expression.Spawn] = rule {
+      SP ~ atomic("spawn") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.Spawn
+    }
   }
 
 

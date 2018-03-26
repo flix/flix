@@ -174,6 +174,8 @@ object NamedAst {
 
     case class UserError(tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
+    case class Spawn(exp: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
+
   }
 
   sealed trait Pattern extends NamedAst {

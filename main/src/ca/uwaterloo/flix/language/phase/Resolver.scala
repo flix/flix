@@ -596,6 +596,11 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
           } yield ResolvedAst.Expression.NativeMethod(method, es, tpe, loc)
 
         case NamedAst.Expression.UserError(tvar, loc) => ResolvedAst.Expression.UserError(tvar, loc).toSuccess
+
+        case NamedAst.Expression.Spawn(exp, tvar, loc) =>
+          for {
+            e <- visit(exp, tenv0)
+          } yield ResolvedAst.Expression.Spawn(e, tvar, loc)
       }
 
       visit(exp0)
