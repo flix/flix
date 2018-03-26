@@ -599,7 +599,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
 
         case NamedAst.Expression.Spawn(exp, tvar, loc) =>
           for {
-            e <- visit(exp, tenv0)
+            e <- visit(exp)
           } yield ResolvedAst.Expression.Spawn(e, tvar, loc)
       }
 
