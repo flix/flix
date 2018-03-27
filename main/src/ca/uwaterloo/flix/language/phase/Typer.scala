@@ -963,15 +963,6 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
          */
         case ResolvedAst.Expression.UserError(tvar, loc) => liftM(tvar)
 
-        /*
-         * Spawn expression.
-         */
-        /*case ResolvedAst.Expression.Spawn(exp, tvar, loc) =>
-          for (
-            tpe <- visitExp(exp);
-            rtpe <- unifyM(tvar, tpe2, tpe3, loc)
-          ) yield rtpe*/
-
       }
 
       visitExp(exp0)

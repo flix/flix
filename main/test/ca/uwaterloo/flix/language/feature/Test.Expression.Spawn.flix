@@ -1,41 +1,52 @@
-// Spawn without parameters
-def f(): Unit = ()
-spawn f()
+def f01(): Unit = ()
 
-// Spawn unit function with parameters
-def f(x: Int): Unit = ()
-spawn f(42)
+@test
+spawn f01()
 
-// Spawn non-unit function
-def f(): Int = 42
-spawn f()
+def f02(x: Int): Unit = ()
 
-// Spawn non-unit function with parameters
-def f(x: Int): Int = x
-spawn f(42)
+@test
+spawn f02(42)
 
-// Assignment
-def f(): Int = 42
-let x = spawn f()
+def f03(): Int = 42
 
-// Addition
-def f(): Int = 42
-spawn f() + spawn f()
+@test
+spawn f03()
 
-// Subtraction
-def f(): Int = 42
-spawn f() - spawn f()
 
-// Multiplication
-def f(): Int = 42
-spawn f() * spawn f()
+def f04(x: Int): Int = x
 
-// Division
-def f(): Int = 42
-spawn f() spawn f()
+@test
+spawn f04(42)
 
-// If
-def f(): Bool = True
-if (spawn f())
+def f05(): Int = 42
+
+@test
+let x = spawn f05()
+
+def f06(): Int = 42
+
+@test
+spawn f06() + spawn f()
+
+def f07(): Int = 42
+
+@test
+spawn f07() - spawn f()
+
+def f08(): Int = 42
+
+@test
+spawn f08() * spawn f08()
+
+def f09(): Int = 42
+
+@test
+spawn f09() spawn f09()
+
+def f10(): Bool = True
+
+@test
+if (spawn f10())
     42
 
