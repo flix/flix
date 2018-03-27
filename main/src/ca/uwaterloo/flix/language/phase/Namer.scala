@@ -631,6 +631,17 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
           case (e, rs) => NamedAst.Expression.Match(e, rs, Type.freshTypeVar(), loc)
         }
 
+      case WeededAst.Expression.SelectChannel(rules, loc) => 
+        val rulesVal = rules map {
+          case WeededAst.SelectRule(ident, channel, body) =>
+            @@(namer(channel,env0, tenv0), namer(body,env0, tenv0)) map {
+              case (c, b) => NamedAst.SelectRule(ident, c, b)
+            }
+        }
+        @@(rulesVal) map {
+          case rs => NamedAst.Expression.SelectChannel(rs, Type.freshTypeVar(), loc)
+        }
+
       case WeededAst.Expression.Switch(rules, loc) => @@(rules map {
         case (cond, body) => @@(namer(cond, env0, tenv0), namer(body, env0, tenv0))
       }) map {
