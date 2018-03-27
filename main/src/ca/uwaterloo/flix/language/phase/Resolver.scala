@@ -457,6 +457,19 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
             rs <- seqM(rulesVal)
           } yield ResolvedAst.Expression.Match(e, rs, tvar, loc)
 
+        case NamedAst.Expression.SelectChannel(rules, tvar, loc) =>
+          val rulesVal = rules map {
+            case NamedAst.SelectRule(ident, channel, body) =>
+              for {
+                c <- visit(channel)
+                b <- visit(body)
+              } yield ResolvedAst.SelectRule(ident, c, b)
+          }
+
+          for {
+            rs <- seqM(rulesVal)
+          } yield ResolvedAst.Expression.SelectChannel(rs, tvar, loc)
+
         case NamedAst.Expression.Switch(rules, tvar, loc) =>
           val rulesVal = rules map {
             case (cond, body) => @@(visit(cond), visit(body))
