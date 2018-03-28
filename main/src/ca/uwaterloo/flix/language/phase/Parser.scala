@@ -498,7 +498,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def PutChannel: Rule1[ParsedAst.Expression] = rule {
-      LogicalOr ~ zeroOrMore(optWS ~ atomic("<:") ~ optWS ~ LogicalOr ~ SP ~> ParsedAst.Expression.PutChannel)
+      LogicalOr ~ zeroOrMore(optWS ~ atomic("<-") ~ optWS ~ LogicalOr ~ SP ~> ParsedAst.Expression.PutChannel)
     }
 
     def LogicalOr: Rule1[ParsedAst.Expression] = rule {
@@ -549,7 +549,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
       // NB: We allow any operator, other than a reserved operator, to be matched by this rule.
       def Reserved2: Rule1[String] = rule {
-        capture("**" | "<=" | ">=" | "==" | "!=" | "&&" | "||" | "=>" | "->")
+        capture("**" | "<=" | ">=" | "==" | "!=" | "&&" | "||" | "=>" | "->" | "<-")
       }
 
       // NB: We allow any operator, other than a reserved operator, to be matched by this rule.
