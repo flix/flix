@@ -491,4 +491,15 @@ object WeederError {
     }
   }
 
+  case class IllegalVectorLength(loc: SourceLocation) extends WeederError {
+    val source: Source = loc.source
+    val message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Illegal vector length. " << NewLine
+      vt << NewLine
+      vt << Code(loc, "Illegal vector length.") << NewLine
+    }
+  }
+
 }
