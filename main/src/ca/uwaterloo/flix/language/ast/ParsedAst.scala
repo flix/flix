@@ -632,6 +632,7 @@ object ParsedAst {
 
     /**
       * ArrayStore Expression
+      *
       * @param exp1 the array.
       * @param exp2 the index of the array.
       * @param exp3 the element to be inserted at the given index.
@@ -659,42 +660,42 @@ object ParsedAst {
     case class ArraySlice(exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, exp3: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
-      * VecLit Expression.
+      * VectorLit Expression.
       *
       * @param sp1 the position of the first character in the expression.
       * @param elms the elements of the vector.
       * @param sp2 the position of the last character in the expression.
       */
-    case class VecLit(sp1: SourcePosition, elms: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
+    case class VectorLit(sp1: SourcePosition, elms: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
-      * VecNew Expression.
+      * VectorNew Expression.
       *
       * @param sp1 the position of the first character in the expression.
       * @param elm the default value the elements.
       * @param len the length of the vector.
       * @param sp2 the position of the last character in the expression.
       */
-    case class VecNew(sp1: SourcePosition, elm: ParsedAst.Expression, len: ParsedAst.Literal, sp2: SourcePosition) extends  ParsedAst.Expression
+    case class VectorNew(sp1: SourcePosition, elm: ParsedAst.Expression, len: ParsedAst.Literal, sp2: SourcePosition) extends  ParsedAst.Expression
 
     /**
-      * VecLoad Expression.
+      * VectorLoad Expression.
       *
       * @param exp1 the vector variable which is loaded from.
       * @param exp2 the index to load.
       * @param sp2 the position of the last character in the expression.
       */
-    case class VecLoad(exp1: ParsedAst.Expression, exp2: ParsedAst.Literal, sp2: SourcePosition) extends ParsedAst.Expression
+    case class VectorLoad(exp1: ParsedAst.Expression, exp2: ParsedAst.Literal, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
-      * VecStore Expression.
+      * VectorStore Expression.
       *
       * @param exp1 the vector variable which is stored in.
       * @param exp2 the index to store element in.
       * @param exp3 the expression to be stored.
       * @param sp2 the position of the last character in the expression.
       */
-    case class VecStore(exp1: ParsedAst.Expression, exp2: ParsedAst.Literal, exp3: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class VectorStore(exp1: ParsedAst.Expression, exp2: ParsedAst.Literal, exp3: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       *
@@ -702,16 +703,35 @@ object ParsedAst {
       * @param exp the vector to find the length of.
       * @param sp2 the position of the last character in the expression.
       */
-    case class VecLength(sp1: SourcePosition, exp: Expression, sp2: SourcePosition) extends  ParsedAst.Expression
+    case class VectorLength(sp1: SourcePosition, exp: Expression, sp2: SourcePosition) extends  ParsedAst.Expression
 
     /**
+      * VectorSlice Expression.
       *
       * @param exp1 the vector for slice.
       * @param exp2 the start index.
       * @param exp3 the end index.
       * @param sp2 the position of the last character in the expression.
       */
-    case class VecSlice(exp1: Expression, exp2: Literal, exp3: Literal, sp2: SourcePosition) extends  ParsedAst.Expression
+    case class VectorSlice(exp1: Expression, exp2: Literal, exp3: Literal, sp2: SourcePosition) extends  ParsedAst.Expression
+
+    /**
+      * VectorSliceNoEndIndex Expression.
+      *
+      * @param exp1 the vector for slice.
+      * @param exp2 the start index.
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class VectorSliceNoEndIndex(exp1: Expression, exp2: Literal, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
+      * VectorSliceNoStartIndex Expression.
+      *
+      * @param exp1 the vector for slice.
+      * @param exp2 the end index.
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class VectorSliceNoStartIndex(exp1: Expression, exp2: Literal, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Nil Expression (of list).

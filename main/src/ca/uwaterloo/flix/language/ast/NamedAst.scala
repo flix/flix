@@ -154,7 +154,21 @@ object NamedAst {
 
     case class ArraySlice(exp1: NamedAst.Expression, exp2: NamedAst.Expression, exp3: NamedAst.Expression, tvar: ast.Type.Var, loc:SourceLocation) extends  NamedAst.Expression
 
-    case class VecLit(elms: List[NamedAst.Expression], tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
+    case class VectorLit(elms: List[NamedAst.Expression], tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
+
+    case class VectorNew(elm: NamedAst.Expression, len: Int, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
+
+    case class VectorLoad(exp1: NamedAst.Expression, exp2: Int, tvar: ast.Type.Var, loc: SourceLocation) extends  NamedAst.Expression
+
+    case class VectorStore(exp1: NamedAst.Expression, exp2: Int, exp3: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends  NamedAst.Expression
+
+    case class VectorLength(exp: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
+
+    case class VectorSlice(exp1: NamedAst.Expression, exp2: Int, exp3: Int, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
+
+    case class VectorSliceNoEndIndex(exp1: NamedAst.Expression, exp2: Int, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
+
+    case class VectorSliceNoStartIndex(exp1: NamedAst.Expression, exp2: Int, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
     case class Ref(exp: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 

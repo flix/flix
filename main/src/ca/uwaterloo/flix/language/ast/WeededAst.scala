@@ -140,23 +140,27 @@ object WeededAst {
 
     case class ArrayLoad(exp1: WeededAst.Expression, exp2: WeededAst.Expression, loc:SourceLocation) extends  WeededAst.Expression
 
-    case class ArrayStore(exp1: WeededAst.Expression, exp2: WeededAst.Expression, exp3: WeededAst.Expression, loc: SourceLocation) extends  WeededAst.Expression
-
     case class ArrayLength(exp: WeededAst.Expression, loc: SourceLocation) extends  WeededAst.Expression
+
+    case class ArrayStore(exp1: WeededAst.Expression, exp2: WeededAst.Expression, exp3: WeededAst.Expression, loc: SourceLocation) extends  WeededAst.Expression
 
     case class ArraySlice(exp1: WeededAst.Expression, exp2: WeededAst.Expression, exp3: WeededAst.Expression, loc: SourceLocation) extends  WeededAst.Expression
 
-    case class VecLit(elms: List[WeededAst.Expression], loc: SourceLocation) extends  WeededAst.Expression
+    case class VectorLit(elms: List[WeededAst.Expression], loc: SourceLocation) extends  WeededAst.Expression
 
-    case class VecNew(elm: WeededAst.Expression, len: WeededAst.Type, loc: SourceLocation) extends WeededAst.Expression
+    case class VectorNew(elm: WeededAst.Expression, len: Int, loc: SourceLocation) extends WeededAst.Expression
 
-    case class VecLoad(exp1: WeededAst.Expression, exp2: WeededAst.Type, loc: SourceLocation) extends WeededAst.Expression
+    case class VectorLoad(exp1: WeededAst.Expression, exp2: Int, loc: SourceLocation) extends WeededAst.Expression
 
-    case class VecStore(exp1: WeededAst.Expression, exp2: WeededAst.Type, exp3: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+    case class VectorStore(exp1: WeededAst.Expression, exp2: Int, exp3: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
-    case class VecLength(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
-//exp1: Expression, exp2: Literal, exp3: Literal, sp2: SourcePosition
-    case class VecSlice(exp1: WeededAst.Expression, exp2: WeededAst.Type, exp3: WeededAst.Type, loc: SourceLocation) extends WeededAst.Expression
+    case class VectorLength(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+
+    case class VectorSlice(exp1: WeededAst.Expression, exp2: Int, exp3: Int, loc: SourceLocation) extends WeededAst.Expression
+
+    case class VectorSliceNoEndIndex(exp1: WeededAst.Expression, exp2: Int, loc: SourceLocation) extends WeededAst.Expression
+
+    case class VectorSliceNoStartIndex(exp1: WeededAst.Expression, exp2: Int, loc: SourceLocation) extends WeededAst.Expression
 
     case class Ref(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
