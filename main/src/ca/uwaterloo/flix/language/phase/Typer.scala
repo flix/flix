@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import java.lang.reflect.Field
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.EffectSet.Bot
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.Unification._
@@ -759,6 +760,25 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           ) yield resultType
 
           /*
+           * ArrayLit expression
+           */
+        /*case ResolvedAst.Expression.ArrayLit(elms, tvar, loc) =>
+          for (
+            elementsTypes <- seqM(elms.map(visitExp));
+            resultType <- unifyM(tvar, Type.mkArray(elementsTypes), loc)
+          ) yield resultType*/
+
+          /*
+           * ArrayNew expression
+           */
+        /*case ResolvedAst.Expression.ArrayNew(elm, len, tvar, loc) =>
+          for (
+            tpe <- visitExp(elm);
+            resultType <- unifyM(tvar, Type.mkArray(tpe), loc)
+          ) yield resultType*/
+
+
+          /*
            * VectorLit expression.
            */
         /*case ResolvedAst.Expression.VectorLit(elms, tvar, loc) =>
@@ -767,7 +787,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
            * --------------------------
            * V[exp_1...exp_n] : Vec[t]
            */
-          for(
+         /* for(
              elementTypes <- seqM(elms.map(visitExp));
              resultType <- unifyM(tvar, Type.mkVec(elementTypes), loc)
           ) yield resultType
@@ -1064,6 +1084,21 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         case ResolvedAst.Expression.Tuple(elms, tvar, loc) =>
           val es = elms.map(e => visitExp(e, subst0))
           TypedAst.Expression.Tuple(es, subst0(tvar), Eff.Bot, loc)
+
+        /*
+         * ArrayLit expression.
+         */
+        /*case ResolvedAst.Expression.ArrayLit(elms, tvar, loc) =>
+          val es = elms.map(e => visitExp(e, subst0))
+          TypedAst.Expression.ArrayLit(es, subst0(tvar), Eff.Bot, loc)*/
+
+        /*
+         * ArrayNew expression
+         */
+        case ResolvedAst.Expression.ArrayNew(elm, len, tvar, loc) =>
+          val e = visitExp(elm, subst0)
+          val ln = visitExp(len, subst0)
+          TypedAst.Expression.ArrayNew(e, ln, subst0(tvar), Eff.Bot, loc)
 
         /*
          * Reference expression.

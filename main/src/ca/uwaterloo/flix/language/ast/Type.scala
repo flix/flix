@@ -351,11 +351,6 @@ object Type {
     */
   def freshTypeVar(k: Kind = Kind.Star)(implicit genSym: GenSym): Type.Var = Type.Var(genSym.freshId(), k)
 
-  /**
-    * Constructs the array type [| a |] where `a` is the given type.
-    */
-  def mkArray(a: Type): Type = Apply(Array, a)
-
   /*
    * Constructs the vec type V[a] where 'a' is the given type.
    *
@@ -396,6 +391,11 @@ object Type {
       case (acc, x) => Apply(acc, x)
     }
   }
+
+  /**
+    * Constructs the array type [a] where 'a' is the given type.
+    */
+  def mkArray(a: Type): Type = Apply(Array, a)
 
   /**
     * Constructs the set type of A.

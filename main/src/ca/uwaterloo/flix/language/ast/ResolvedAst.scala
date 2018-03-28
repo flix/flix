@@ -160,6 +160,10 @@ object ResolvedAst {
 
     case class ArraySlice(exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, exp3: ResolvedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends  ResolvedAst.Expression
 
+    case class ArraySliceNoEndIndex(exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends  ResolvedAst.Expression
+
+    case class ArraySliceNoStartIndex(exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends  ResolvedAst.Expression
+
     case class VectorLit(elms: List[ResolvedAst.Expression], tvar: Type.Var, loc: SourceLocation) extends  ResolvedAst.Expression
 
     case class Ref(exp: ResolvedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
