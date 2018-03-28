@@ -408,6 +408,13 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
             case (e, as) => WeededAst.Expression.Apply(e, as, mkSL(sp1, sp2)).toSuccess
           }
 
+        case ParsedAst.Expression.PutChannel(exp1, exp2, sp2) =>
+          val sp1 = leftMostSourcePosition(exp1)
+          val loc = mkSL(sp1, sp2)
+          @@(visit(exp1, unsafe), visit(exp2, unsafe)) map {
+            case (e1, e2) => WeededAst.Expression.PutChannel(e1, e2, loc)
+          }
+
         case ParsedAst.Expression.Infix(exp1, name, exp2, sp2) =>
           /*
            * Rewrites infix expressions to apply expressions.
@@ -1438,6 +1445,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.Hole(sp1, _, _) => sp1
     case ParsedAst.Expression.Lit(sp1, _, _) => sp1
     case ParsedAst.Expression.Apply(e1, _, _) => leftMostSourcePosition(e1)
+    case ParsedAst.Expression.PutChannel(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.Infix(e1, _, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.Postfix(e1, _, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.Lambda(sp1, _, _, _) => sp1
