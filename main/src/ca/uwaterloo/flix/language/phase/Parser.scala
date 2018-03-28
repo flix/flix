@@ -613,7 +613,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Primary: Rule1[ParsedAst.Expression] = rule {
       LetRec | LetMatch | IfThenElse | Match | LambdaMatch | Switch | Unsafe | Native | Lambda | Tuple | ArrayLit |
-        ArrayNew | ArrayLength | VecLength | VecLit | VecNew | FNil | FSet | FMap | Literal |
+        ArrayNew | ArrayLength | VecLit | VecNew | VecLength | FNil | FSet | FMap | Literal |
         HandleWith | Existential | Universal | UnaryLambda | QName | Wild | Tag | SName | Hole | UserError
     }
 
