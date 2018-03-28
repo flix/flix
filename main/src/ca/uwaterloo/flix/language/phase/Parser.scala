@@ -613,7 +613,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Primary: Rule1[ParsedAst.Expression] = rule {
       LetRec | LetMatch | IfThenElse | Match | LambdaMatch | Switch | Unsafe | Native | Lambda | Tuple | ArrayLit |
-        ArrayNew | ArrayLength |VecLength | VecLit | VecNew | FNil | FSet | FMap | Literal |
+        ArrayNew | ArrayLength | VecLength | VecLit | VecNew | FNil | FSet | FMap | Literal |
         HandleWith | Existential | Universal | UnaryLambda | QName | Wild | Tag | SName | Hole | UserError
     }
 
@@ -680,7 +680,15 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def ArraySlice: Rule1[ParsedAst.Expression] = rule{
-      ArrayLoad ~ optional(optWS ~ "[" ~ optWS ~ Expression ~ optWS ~ atomic("..") ~ optWS ~ Expression ~ optWS ~ "]" ~ SP ~> ParsedAst.Expression.ArraySlice)
+      ArraySliceNoEndIndex ~ optional(optWS ~ "[" ~ optWS ~ Expression ~ optWS ~ atomic("..") ~ optWS ~ Expression ~ optWS ~ "]" ~ SP ~> ParsedAst.Expression.ArraySlice)
+    }
+
+    def ArraySliceNoEndIndex: Rule1[ParsedAst.Expression] = rule{
+      ArraySliceNoStartIndex ~ optional(optWS ~ "[" ~ optWS ~ Expression ~ optWS ~ atomic("..") ~ optWS ~ "]" ~ SP ~> ParsedAst.Expression.ArraySliceNoEndIndex)
+    }
+
+    def ArraySliceNoStartIndex: Rule1[ParsedAst.Expression] = rule{
+      ArrayLoad ~ optional(optWS ~ "[" ~ optWS ~ atomic("..") ~ optWS ~ Expression ~ optWS ~ "]" ~ SP ~> ParsedAst.Expression.ArraySliceNoStartIndex)
     }
 
     def ArrayLoad: Rule1[ParsedAst.Expression] = rule{
@@ -704,15 +712,15 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def ArrayLit: Rule1[ParsedAst.Expression] = rule {
-      SP ~ atomic("[|") ~ optWS ~ zeroOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ atomic("|]") ~ SP ~> ParsedAst.Expression.ArrayLit
+      SP ~ atomic("[") ~ optWS ~ zeroOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ atomic("]") ~ SP ~> ParsedAst.Expression.ArrayLit
     }
 
     def ArrayNew: Rule1[ParsedAst.Expression] = rule {
-      SP ~ atomic("[|") ~ optWS ~ Expression ~ optWS ~ ";" ~ optWS ~ Expression ~ optWS ~ atomic("|]") ~ SP ~> ParsedAst.Expression.ArrayNew
+      SP ~ atomic("[") ~ optWS ~ Expression ~ optWS ~ ";" ~ optWS ~ Expression ~ optWS ~ atomic("]") ~ SP ~> ParsedAst.Expression.ArrayNew
     }
 
     def ArrayLength: Rule1[ParsedAst.Expression] = rule {
-      SP ~ "[" ~ optWS ~ Expression ~ optWS ~ "]" ~ atomic("length") ~ SP ~> ParsedAst.Expression.ArrayLength
+      SP ~ atomic("length") ~ optWS ~ "[" ~ optWS ~ Expression ~ optWS ~ "]" ~ SP ~> ParsedAst.Expression.ArrayLength
     }
 
     def VecLit: Rule1[ParsedAst.Expression] = rule {

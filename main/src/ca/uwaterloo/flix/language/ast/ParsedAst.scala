@@ -625,16 +625,17 @@ object ParsedAst {
       * ArrayLoad Expression
       *
       * @param exp1 the array.
-      * @param exp2 the index of the array.
+      * @param exp2 the index to load from.
       * @param sp2 the position of the last character in the expression.
       */
     case class ArrayLoad(exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends  ParsedAst.Expression
 
     /**
       * ArrayStore Expression
+      *
       * @param exp1 the array.
-      * @param exp2 the index of the array.
-      * @param exp3 the element to be inserted at the given index.
+      * @param exp2 the index to store into.
+      * @param exp3 the element to store into the given index.
       * @param sp2 the position of the last character in the expression.
       */
     case class ArrayStore(exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, exp3: ParsedAst.Expression, sp2: SourcePosition) extends  ParsedAst.Expression
@@ -652,11 +653,30 @@ object ParsedAst {
       * ArraySlice Expression
       *
       * @param exp1 the array
-      * @param exp2 the first index
-      * @param exp3 the second index
+      * @param exp2 the start index
+      * @param exp3 the end index
       * @param sp2 the position of the last character in the expression.
       */
     case class ArraySlice(exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, exp3: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
+      *
+      * ArraySliceNoEndIndex
+      *
+      * @param exp1 the array.
+      * @param exp2 the start index.
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class ArraySliceNoEndIndex(exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
+      * ArraySliceNoStartIndex
+      *
+      * @param exp1 the array.
+      * @param exp2 the end index
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class ArraySliceNoStartIndex(exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * VecLit Expression.
@@ -697,6 +717,7 @@ object ParsedAst {
     case class VecStore(exp1: ParsedAst.Expression, exp2: ParsedAst.Literal, exp3: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
+      * VectorLength Expression
       *
       * @param sp1 the position of the first character in the expression.
       * @param exp the vector to find the length of.
