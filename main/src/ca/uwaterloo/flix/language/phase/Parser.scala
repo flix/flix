@@ -526,7 +526,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Relational: Rule1[ParsedAst.Expression] = rule {
-      Shift ~ optional(optWS ~ capture(atomic("<=") | atomic(">=") | atomic("<") | atomic(">")) ~ optWS ~ Shift ~ SP ~> ParsedAst.Expression.Binary)
+      Shift ~ optional(WS ~ capture(atomic("<=") | atomic(">=") | atomic("<") | atomic(">")) ~ WS ~ Shift ~ SP ~> ParsedAst.Expression.Binary)
     }
 
     def Shift: Rule1[ParsedAst.Expression] = rule {
