@@ -132,8 +132,8 @@ namespace Path {
     /// Default handler for `isDirectory`.
     ///
     handler isDirectory[a](p: Path, k: Result[Bool, IOError] -> a): a = unsafe {
-        let Path(javaPath) = p;
         if (exists(p))
+            let Path(javaPath) = p;
             let answer = native method java.nio.file.Files.isDirectory(javaPath, [| |] : Array[##java.nio.file.LinkOption]);
             k(Ok(answer))
         else
@@ -149,8 +149,8 @@ namespace Path {
     /// Default handler for `isEmpty`.
     ///
     handler isEmpty[a](p: Path, k: Result[Bool, IOError] -> a): a = unsafe {
-        let Path(javaPath) = p;
         if (exists(p))
+            let Path(javaPath) = p;
             let directoryHandler = isDirectory(p, result -> result);
             match directoryHandler with {
                 case Ok(true) => let dirStream = native method java.nio.file.Files.newDirectoryStream(javaPath);
@@ -192,14 +192,12 @@ namespace Path {
     /// Default handler for `isHidden`.
     ///
     handler isHidden[a](p: Path, k: Result[Bool, IOError] -> a): a = unsafe {
-        try {
+        if (exists(p))
             let Path(javaPath) = p;
             let answer = native method java.nio.file.Files.isHidden(javaPath);
             k(Ok(answer))
-        }
-        catch {
-            case ex: ##java.nio.file.NoSuchFileException => k(Err(IOError("Argument 'p' does not point to any file")))
-        }
+        else
+            k(Err(IOError("Argument 'p' does not point to any existing file or directory")))
     }
 
     ///
@@ -211,8 +209,8 @@ namespace Path {
     /// Default handler for `isReadable`.
     ///
     handler isReadable[a](p: Path, k: Result[Bool, IOError] -> a): a = unsafe {
-        let Path(javaPath) = p;
         if (exists(p))
+            let Path(javaPath) = p;
             let answer = native method java.nio.file.Files.isReadable(javaPath);
             k(Ok(answer))
         else
@@ -228,8 +226,8 @@ namespace Path {
     /// Default handler for `isRegularFile`.
     ///
     handler isRegularFile[a](p: Path, k: Result[Bool, IOError] -> a): a = unsafe {
-        let Path(javaPath) = p;
         if (exists(p))
+            let Path(javaPath) = p;
             let answer = native method java.nio.file.Files.isRegularFile(javaPath, [| |] : Array[##java.nio.file.LinkOption]);
             k(Ok(answer))
         else
@@ -262,8 +260,8 @@ namespace Path {
     /// Default handler for `isSymbolicLink`.
     ///
     handler isSymbolicLink[a](p: Path, k: Result[Bool, IOError] -> a): a = unsafe {
-        let Path(javaPath) = p;
         if (exists(p))
+            let Path(javaPath) = p;
             let answer = native method java.nio.file.Files.isSymbolicLink(javaPath);
             k(Ok(answer))
         else
@@ -279,8 +277,8 @@ namespace Path {
     /// Default handler for `isWritable`.
     ///
     handler isWritable[a](p: Path, k: Result[Bool, IOError] -> a): a = unsafe {
-        let Path(javaPath) = p;
         if (exists(p))
+            let Path(javaPath) = p;
             let answer = native method java.nio.file.Files.isWritable(javaPath);
             k(Ok(answer))
         else
@@ -426,8 +424,8 @@ namespace Path {
     /// Default handler for `deleteFile`.
     ///
     handler deleteFile[a](p: Path, k: Result[Bool, IOError] -> a): a = unsafe {
-        let Path(javaPath) = p;
         if (exists(p))
+            let Path(javaPath) = p;
             let directoryResponse = isDirectory(p, result -> result);
             match directoryResponse with {
                 case Ok(true) => k(Err(IOError("The provided Path 'p' points to a directory and not a file")))
@@ -449,8 +447,8 @@ namespace Path {
     ///
     handler deleteDirectory[a](p: Path, k: Result[Bool, IOError] -> a): a = unsafe {
         try {
-            let Path(javaPath) = p;
             if (exists(p))
+                let Path(javaPath) = p;
                 let directoryResponse = isDirectory(p, result -> result);
                 match directoryResponse with {
                     case Ok(true) => let _ = native method java.nio.file.Files.delete(javaPath);
