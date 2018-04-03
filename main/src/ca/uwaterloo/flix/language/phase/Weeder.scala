@@ -23,6 +23,7 @@ import ca.uwaterloo.flix.language.ast.Ast.Polarity
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.WeederError
 import ca.uwaterloo.flix.language.errors.WeederError._
+import ca.uwaterloo.flix.language.phase.PatternExhaustiveness.TypeConstructor.Int32
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{CompilationMode, InternalCompilerException, Validation}
 
@@ -698,10 +699,10 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
         case ParsedAst.Expression.VectorLength(sp1, exp, sp2) =>
           visit(exp, unsafe) map {
-            case es => WeededAst.Expression.VectorLength(es, mkSL(sp1, sp2))
+            case e => WeededAst.Expression.VectorLength(e, mkSL(sp1, sp2))
           }
 
-        case ParsedAst.Expression.VectorSlice(exp1, exp2, exp3, sp2) =>
+        case ParsedAst.Expression.VectorSlice(exp1, exp2, expopt3, sp2) =>
           val sp1 = leftMostSourcePosition(exp1)
           val loc = mkSL(sp1, sp2)
 
@@ -709,9 +710,9 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
             case e => exp2 match {
               case ParsedAst.Literal.Int32(sp1, sign, digits, sp2) => toInt32(sign, digits, loc) flatMap {
                 case l1 if l1 >= 0 => visit(exp1, unsafe) flatMap {
-                  case e2 => exp3 match {
+                  case e2 => expopt3 match {
                     case ParsedAst.Literal.Int32(sp1, sign, digits, sp2) => toInt32(sign, digits, loc) flatMap {
-                      case l2 if l2 >= 0 => WeededAst.Expression.VectorSlice(e, l1, l2, loc).toSuccess
+                      case l2 if l2 > l1 => WeededAst.Expression.VectorSlice(e, l1, Some(l2), loc).toSuccess
                       case _ => WeederError.IllegalVectorLength(loc).toFailure
                     }
                   }
@@ -722,7 +723,31 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
             }
           }
 
-      case ParsedAst.Expression.FNil(sp1, sp2) =>
+        case ParsedAst.Expression.VectorSliceNoEndIndex(exp1, exp2, sp2) =>
+          val sp1 = leftMostSourcePosition(exp1)
+          val loc = mkSL(sp1, sp2)
+          visit(exp1, unsafe) flatMap {
+            case e => exp2 match {
+              case ParsedAst.Literal.Int32(sp1, sign, digits, sp2) => toInt32(sign, digits, loc) flatMap {
+                case l if l >= 0 => WeededAst.Expression.VectorSlice(e, l, None, loc).toSuccess
+              }
+            }
+          }
+
+        case ParsedAst.Expression.VectorSliceNoStartIndex(exp1, exp2, sp2) =>
+          val sp1 = leftMostSourcePosition(exp1)
+          val loc = mkSL(sp1, sp2)
+          visit(exp1, unsafe) flatMap {
+            case e => exp2 match {
+              case ParsedAst.Literal.Int32(sp1, sign, digits, sp2) => toInt32(sign, digits, loc) flatMap {
+                case l if l >= 0 => WeededAst.Expression.VectorSlice(e, 0, Some(l), loc).toSuccess
+                case _ => WeederError.IllegalVectorLength(loc).toFailure
+              }
+              case _ => WeederError.IllegalVectorLength(loc).toFailure
+            }
+          }
+
+        case ParsedAst.Expression.FNil(sp1, sp2) =>
           /*
            * Rewrites a `FNil` expression into a tag expression.
            */
@@ -1250,6 +1275,8 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       case ParsedAst.Type.Tuple(sp1, elms, sp2) => WeededAst.Type.Tuple(elms.toList.map(weed), mkSL(sp1, sp2))
       case ParsedAst.Type.Native(sp1, fqn, sp2) => WeededAst.Type.Native(fqn.toList, mkSL(sp1, sp2))
       case ParsedAst.Type.Arrow(sp1, tparams, tresult, sp2) => WeededAst.Type.Arrow(tparams.toList.map(weed), weed(tresult), mkSL(sp1, sp2))
+        // Nuværende problem: Der kan skrives negative værdier som vector type. Jeg prøvede at bruge toInt32 metoden, men types object tager kun WeededAst.Type return, og ikke weedererror.
+      case ParsedAst.Type.Vector(sp1, elm, len, sp2) => WeededAst.Type.Vector(weed(elm), len.asInstanceOf[Int], mkSL(sp1, sp2))
       case ParsedAst.Type.Infix(tpe1, base0, tpe2, sp2) =>
         /*
          * Rewrites infix type applications to regular type applications.
@@ -1265,7 +1292,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           case (acc, t2) => WeededAst.Type.Apply(acc, weed(t2), mkSL(sp1, sp2))
         }
     }
-
   }
 
   object Effects {
@@ -1553,6 +1579,8 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.VectorStore(exp1,_,_,_) => leftMostSourcePosition(exp1)
     case ParsedAst.Expression.VectorLength(sp1,_,_) => sp1
     case ParsedAst.Expression.VectorSlice(exp1,_,_,_) => leftMostSourcePosition(exp1)
+    case ParsedAst.Expression.VectorSliceNoEndIndex(exp1, _, _) => leftMostSourcePosition(exp1)
+    case ParsedAst.Expression.VectorSliceNoStartIndex(exp1,_,_) => leftMostSourcePosition(exp1)
     case ParsedAst.Expression.FNil(sp1, _) => sp1
     case ParsedAst.Expression.FCons(hd, _, _, _) => leftMostSourcePosition(hd)
     case ParsedAst.Expression.FAppend(fst, _, _, _) => leftMostSourcePosition(fst)

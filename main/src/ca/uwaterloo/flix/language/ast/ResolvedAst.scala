@@ -162,6 +162,16 @@ object ResolvedAst {
 
     case class VectorLit(elms: List[ResolvedAst.Expression], tvar: Type.Var, loc: SourceLocation) extends  ResolvedAst.Expression
 
+    case class VectorNew(elm: ResolvedAst.Expression, len: Int, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+
+    case class VectorLoad(exp1: ResolvedAst.Expression, exp2: Int, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+
+    case class VectorStore(exp1: ResolvedAst.Expression, exp2: Int, exp3: ResolvedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+
+    case class VectorLength(exp: ResolvedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+
+    case class VectorSlice(exp1: ResolvedAst.Expression, exp2: Int, exp3: Int, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+
     case class Ref(exp: ResolvedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Deref(exp: ResolvedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression

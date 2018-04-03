@@ -166,11 +166,7 @@ object NamedAst {
 
     case class VectorLength(exp: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
-    case class VectorSlice(exp1: NamedAst.Expression, exp2: Int, exp3: Int, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
-
-    case class VectorSliceNoEndIndex(exp1: NamedAst.Expression, exp2: Int, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
-
-    case class VectorSliceNoStartIndex(exp1: NamedAst.Expression, exp2: Int, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
+    case class VectorSlice(exp1: NamedAst.Expression, exp2: Int, exp3: Option[Int], tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
     case class Ref(exp: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 

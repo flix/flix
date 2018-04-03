@@ -1,7 +1,8 @@
 def f() : Int = {
 
+
   /* Array */
-   [1,2,3,4,5] // (ArrayLit)
+  // [1,2,3,4,5] // (ArrayLit)
   // [10;g()] // (ArrayNew)
   // 2[10] // ((ArrayLoad)
   // 2[2] = 2 // (ArrayStore)
@@ -11,10 +12,11 @@ def f() : Int = {
   // 2[..2] // (ArraySliceNoStartIndex)
 
   /* Vector */
-  // V[1,1]
-  //V[1;10]
+
+  // [|1|]
+  //[|1;10|]
   //V[1]length
-  // 2[|2 .. 2|]
+  //   2[|2 .. 3|]
   //[|1,123|]
   //[| 1 ; 10|]
   //2V[21] = 2
