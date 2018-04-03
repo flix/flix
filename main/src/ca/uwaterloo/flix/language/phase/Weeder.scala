@@ -624,12 +624,20 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
             case(ex1, ex2, ex3) => WeededAst.Expression.ArraySlice(ex1, ex2, ex3, loc)
           }
 
+        /*case ParsedAst.Expression.ArraySlice(exp1, exp2, exp3, sp2) =>
+          val sp1 = leftMostSourcePosition(exp1)
+          val loc = mkSL(sp1, sp2)
+
+          @@(visit(exp1, unsafe), visit(exp2, unsafe), visit(exp3, unsafe)) map {
+            case(ex1, ex2, ex3) => WeededAst.Expression.ArraySlice(ex1, Some(ex2), Some(ex3), loc)
+          }
+
         case ParsedAst.Expression.ArraySliceNoEndIndex(exp1, exp2, sp2) =>
           val sp1 = leftMostSourcePosition(exp1)
           val loc = mkSL(sp1, sp2)
 
           @@(visit(exp1, unsafe), visit(exp2, unsafe)) map {
-            case(ex1, ex2) => WeededAst.Expression.ArraySliceNoEndIndex(ex1, ex2, loc)
+            case(ex1, ex2) => WeededAst.Expression.ArraySlice(ex1, Some(ex2), None, loc)
           }
 
         case ParsedAst.Expression.ArraySliceNoStartIndex(exp1, exp2, sp2) =>
@@ -637,8 +645,8 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           val loc = mkSL(sp1, sp2)
 
           @@(visit(exp1, unsafe), visit(exp2, unsafe)) map {
-            case(ex1, ex2) => WeededAst.Expression.ArraySliceNoStartIndex(ex1, ex2, loc)
-          }
+            case(ex1, ex2) => WeededAst.Expression.ArraySlice(ex1, None, Some(ex2), loc)
+          }*/
 
         case ParsedAst.Expression.VectorLit(sp1, elms, sp2) =>
           /*
