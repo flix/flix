@@ -1,4 +1,4 @@
-def f() : Array[Int] = {
+def f() : Vector[|Int, 6|] = {
 
   /* Array */
   // [1,2,3,4,5] // (ArrayLit)
@@ -11,10 +11,11 @@ def f() : Array[Int] = {
   // 2[..2] // (ArraySliceNoStartIndex)
 
   /* Vector */
-  // V[1,1]
-  //V[1;10]
+
+   [|1|]
+  //[|1;10|]
   //V[1]length
-  // 2[|2 .. 2|]
+//   2[|2 .. 3|]
   //[|1,123|]
   //[| 1 ; 10|]
   //2V[21] = 2
