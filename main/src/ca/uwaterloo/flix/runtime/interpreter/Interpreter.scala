@@ -159,49 +159,6 @@ object Interpreter {
       Value.Tuple(es)
 
     //
-    // ArrayNew expressions.
-    //
-    case Expression.ArrayNew(elm, len, tpe, loc) =>
-      val e = eval(elm, env0, henv0, lenv0, root)
-      val a = new Array[AnyRef](len)
-      for (i <- 0 until len) {
-        a(i) = e
-      }
-      Value.Arr(a, tpe.typeArguments.head)
-
-    //
-    // ArrayLit expressions.
-    //
-    case Expression.ArrayLit(elms, tpe, loc) =>
-      val es = elms.map(e => eval(e, env0, henv0, lenv0, root)).toArray
-      Value.Arr(es, tpe.typeArguments.head)
-
-    //
-    // ArrayLoad expressions.
-    //
-    case Expression.ArrayLoad(base, index, tpe, loc) =>
-      val b = cast2array(eval(base, env0, henv0, lenv0, root))
-      val i = cast2int32(eval(index, env0, henv0, lenv0, root))
-      if (i < b.elms.length)
-        b.elms(i)
-      else
-        throw InternalRuntimeException(s"Array index out of bounds: $i. Array length: ${b.elms.length}.")
-
-    //
-    // ArrayStore expressions.
-    //
-    case Expression.ArrayStore(base, index, value, tpe, loc) =>
-      val b = cast2array(eval(base, env0, henv0, lenv0, root))
-      val i = cast2int32(eval(index, env0, henv0, lenv0, root))
-      val v = eval(value, env0, henv0, lenv0, root)
-      if (i < b.elms.length) {
-        b.elms(i) = v
-        b
-      } else {
-        throw InternalRuntimeException(s"Array index out of bounds: $i. Array length: ${b.elms.length}.")
-      }
-
-    //
     // Reference expressions.
     //
     case Expression.Ref(exp, tpe, loc) =>

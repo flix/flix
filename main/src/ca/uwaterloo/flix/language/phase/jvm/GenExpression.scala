@@ -670,14 +670,6 @@ object GenExpression {
       // Invoking the constructor
       visitor.visitMethodInsn(INVOKESPECIAL, classType.name.toInternalName, "<init>", constructorDescriptor, false)
 
-    case Expression.ArrayNew(elm, len, tpe, loc) => ??? // TODO: Ramin: Array
-
-    case Expression.ArrayLit(elms, tpe, loc) => ??? // TODO: Ramin: Array
-
-    case Expression.ArrayLoad(base, index, tpe, loc) => ??? // TODO: Ramin: Array
-
-    case Expression.ArrayStore(base, index, value, tpe, loc) => ??? // TODO: Ramin: Array
-
     case Expression.Ref(exp, tpe, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)

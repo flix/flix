@@ -603,42 +603,155 @@ object ParsedAst {
     case class Tuple(sp1: SourcePosition, elms: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
-      * ArrayNew Expression.
-      *
-      * @param sp1 the position of the first character in the expression.
-      * @param elm the element of the array.
-      * @param len the length of the array.
-      * @param sp2 the position of the last character in the expression.
-      */
-    case class ArrayNew(sp1: SourcePosition, elm: ParsedAst.Expression, len: ParsedAst.Literal, sp2: SourcePosition) extends ParsedAst.Expression
-
-    /**
       * ArrayLit Expression.
       *
-      * @param sp1  the position of the first character in the expression.
+      * @param sp1 the position of the first character in the expression.
       * @param elms the elements of the array.
-      * @param sp2  the position of the last character in the expression.
+      * @param sp2 the position of the last character in the expression.
       */
     case class ArrayLit(sp1: SourcePosition, elms: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
-      * Array Load Expression.
+      * ArrayNew Expression
       *
-      * @param base  the array expression.
-      * @param index the index expression.
-      * @param sp2   the position of the last character in the expression.
+      * @param sp1 the position of the first character in the expression.
+      * @param elm the default value of the array elements.
+      * @param len the length of the array.
+      * @param sp2 the position of the last character in the expression.
       */
-    case class ArrayLoad(base: ParsedAst.Expression, index: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class ArrayNew(sp1: SourcePosition, elm: ParsedAst.Expression, len: ParsedAst.Expression, sp2: SourcePosition) extends  ParsedAst.Expression
 
     /**
-      * Array Store Expression.
+      * ArrayLoad Expression
       *
-      * @param base  the array expression.
-      * @param index the index expression.
-      * @param value the value expression.
-      * @param sp2   the position of the last character in the expression.
+      * @param exp1 the array.
+      * @param exp2 the index to load from.
+      * @param sp2 the position of the last character in the expression.
       */
-    case class ArrayStore(base: ParsedAst.Expression, index: ParsedAst.Expression, value: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class ArrayLoad(exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends  ParsedAst.Expression
+
+    /**
+      * ArrayStore Expression
+      *
+      * @param exp1 the array.
+      * @param exp2 the index to store into.
+      * @param exp3 the element to store into the given index.
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class ArrayStore(exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, exp3: ParsedAst.Expression, sp2: SourcePosition) extends  ParsedAst.Expression
+
+    /**
+      * ArrayLenght Expression
+      *
+      * @param sp1 the position of the first character in the expression.
+      * @param exp the array
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class ArrayLength(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
+      * ArraySlice Expression
+      *
+      * @param exp1 the array
+      * @param exp2 the start index
+      * @param exp3 the end index
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class ArraySlice(exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, exp3: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
+      *
+      * ArraySliceNoEndIndex
+      *
+      * @param exp1 the array.
+      * @param exp2 the start index.
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class ArraySliceNoEndIndex(exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
+      * ArraySliceNoStartIndex
+      *
+      * @param exp1 the array.
+      * @param exp2 the end index
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class ArraySliceNoStartIndex(exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
+      * VecLit Expression.
+      *
+      * @param sp1 the position of the first character in the expression.
+      * @param elms the elements of the vector.
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class VectorLit(sp1: SourcePosition, elms: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
+      * VectorNew Expression.
+      *
+      * @param sp1 the position of the first character in the expression.
+      * @param elm the default value the elements.
+      * @param len the length of the vector.
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class VectorNew(sp1: SourcePosition, elm: ParsedAst.Expression, len: ParsedAst.Literal, sp2: SourcePosition) extends  ParsedAst.Expression
+
+    /**
+      * VectorLoad Expression.
+      *
+      * @param exp1 the vector variable which is loaded from.
+      * @param exp2 the index to load.
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class VectorLoad(exp1: ParsedAst.Expression, exp2: ParsedAst.Literal, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
+      * VectorStore Expression.
+      *
+      * @param exp1 the vector variable which is stored in.
+      * @param exp2 the index to store element in.
+      * @param exp3 the expression to be stored.
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class VectorStore(exp1: ParsedAst.Expression, exp2: ParsedAst.Literal, exp3: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
+      * VectorLength Expression
+      *
+      * @param sp1 the position of the first character in the expression.
+      * @param exp the vector to find the length of.
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class VectorLength(sp1: SourcePosition, exp: Expression, sp2: SourcePosition) extends  ParsedAst.Expression
+
+    /**
+      * VectorSlice Expression.
+      *
+      * @param exp1 the vector for slice.
+      * @param exp2 the start index.
+      * @param exp3 the end index.
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class VectorSlice(exp1: Expression, exp2: Literal, exp3: Literal, sp2: SourcePosition) extends  ParsedAst.Expression
+
+    /**
+      * VectorSliceNoEndIndex Expression.
+      *
+      * @param exp1 the vector for slice.
+      * @param exp2 the start index.
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class VectorSliceNoEndIndex(exp1: Expression, exp2: Literal, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
+      * VectorSliceNoStartIndex Expression.
+      *
+      * @param exp1 the vector for slice.
+      * @param exp2 the end index.
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class VectorSliceNoStartIndex(exp1: Expression, exp2: Literal, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Nil Expression (of list).
@@ -1098,24 +1211,6 @@ object ParsedAst {
       * @param sp2     the position of the last character in the type.
       */
     case class Apply(base: ParsedAst.Type, tparams: Seq[ParsedAst.Type], sp2: SourcePosition) extends ParsedAst.Type
-
-    /**
-      * Borrowed Type.
-      *
-      * @param sp1 the position of the first character in the type.
-      * @param tpe the borrowed type.
-      * @param sp2 the position of the last character in the type.
-      */
-    case class Borrow(sp1: SourcePosition, tpe: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Type
-
-    /**
-      * Unique Type.
-      *
-      * @param sp1 the position of the first character in the type.
-      * @param tpe the unique type.
-      * @param sp2 the position of the last character in the type.
-      */
-    case class Unique(sp1: SourcePosition, tpe: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Type
 
   }
 

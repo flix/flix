@@ -46,6 +46,7 @@ sealed trait Type {
     case Type.BigInt => Set.empty
     case Type.Str => Set.empty
     case Type.Array => Set.empty
+    //case Type.Vec(l) => Set.empty
     case Type.Native => Set.empty
     case Type.Ref => Set.empty
     case Type.Arrow(l) => Set.empty
@@ -148,6 +149,7 @@ sealed trait Type {
     case Type.BigInt => "BigInt"
     case Type.Str => "Str"
     case Type.Array => "Array"
+    //case Type.Vec(l) => s"Vec($l)"
     case Type.Native => "Native"
     case Type.Ref => "Ref"
     case Type.Arrow(l) => s"Arrow($l)"
@@ -283,6 +285,13 @@ object Type {
   }
 
   /**
+    * A type constructor that represents vec of the given `length`.
+
+  case class Vec(length: Int) extends Type {
+    def kind: Kind = Kind.Arrow((0 until length).map(_ => Kind.Star).toList, Kind.Star)
+  }*/
+
+  /**
     * A type constructor that represent native objects.
     */
   case object Native extends Type {
@@ -318,6 +327,10 @@ object Type {
     def kind: Kind = Kind.Arrow((0 until length).map(_ => Kind.Star).toList, Kind.Star)
   }
 
+  case class Array(length: Int) extends Type {
+    def kind: Kind = Kind.Arrow((0 until length).map(_ => Kind.Star).toList, Kind.Star)
+  }
+
   /**
     * A type expression that a type application tpe1[tpe2].
     */
@@ -342,10 +355,15 @@ object Type {
     */
   def freshTypeVar(k: Kind = Kind.Star)(implicit genSym: GenSym): Type.Var = Type.Var(genSym.freshId(), k)
 
-  /**
-    * Constructs the array type [| a |] where `a` is the given type.
-    */
-  def mkArray(a: Type): Type = Apply(Array, a)
+  /*
+   * Constructs the vec type V[a] where 'a' is the given type.
+   *
+  def mkVec(vs: List[Type]): Type = {
+    val vec = Vec(vs.length)
+    vs.foldLeft(vec: Type) {
+      case (acc, t) => Apply(acc, t)
+    }
+  }*/
 
   /**
     * Constructs the function type A -> B where `A` is the given type `a` and `B` is the given type `b`.
@@ -375,6 +393,18 @@ object Type {
     val tuple = Tuple(ts.length)
     ts.foldLeft(tuple: Type) {
       case (acc, x) => Apply(acc, x)
+    }
+  }
+
+  /**
+    * Constructs the array type [a] where 'a' is the given type.
+    */
+  def mkArray(a: Type): Type = Apply(Array, a)
+
+  def mkArray(ts: List[Type]): Type = {
+    val array = Array(ts.length)
+    ts.foldLeft(array: Type) {
+      case(acc, x) => Apply(acc, x)
     }
   }
 
@@ -411,6 +441,7 @@ object Type {
       case Type.BigInt => Type.BigInt
       case Type.Str => Type.Str
       case Type.Array => Type.Array
+      //case Type.Vec(l) => Type.Vec(l)
       case Type.Native => Type.Native
       case Type.Ref => Type.Ref
       case Type.Arrow(l) => Type.Arrow(l)
@@ -459,6 +490,9 @@ object Type {
           case Type.BigInt => "BigInt"
           case Type.Str => "String"
           case Type.Array => "Array"
+          /*case Type.Vec(l) =>
+            "V" + "[" + args.map(visit(_, m).mkString(", ") + "]")
+            */
           case Type.Native => "Native"
           case Type.Ref => "Ref"
 
