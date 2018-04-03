@@ -313,11 +313,17 @@ namespace Path {
     ///
     /// Default handler for `createFile`.
     ///
-    handler createFile[a](p: Path, k: Result[Bool, IOError] -> a): a = ???//unsafe {
-        //let Path(javaPath) = p;
-        //let _ = native method java.nio.file.Files.createFile(p, [| |] : Array[##java.nio.file.attribute.FileAttribute<##java.lang.String>]);
-        //k(Ok(true))
-    //}
+    handler createFile[a](p: Path, k: Result[Bool, IOError] -> a): a = unsafe {
+        try {
+            let Path(javaPath) = p;
+            let _ = native method java.nio.file.Files.createFile(javaPath, [| |] : Array[##java.nio.file.attribute.FileAttribute]);
+            k(Ok(true))
+        }
+        catch {
+            case ex: ##java.nio.file.FileAlreadyExistsException => k(Err(IOError("Could not create file at path 'p' as it already exists")))
+            case ex: ##java.nio.file.NoSuchFileException        => k(Err(IOError("One of the folders in path 'p' does not exist")))
+        }
+    }
 
     ///
     /// Effectfully creates a new directory for the given path `p`.
@@ -329,7 +335,17 @@ namespace Path {
     ///
     /// Default handler for `createDirectory`.
     ///
-    handler createDirectory[a](p: Path, k: Result[Bool, IOError] -> a): a = ???
+    handler createDirectory[a](p: Path, k: Result[Bool, IOError] -> a): a = unsafe {
+        try {
+            let Path(javaPath) = p;
+            let _ = native method java.nio.file.Files.createDirectory(javaPath, [| |] : Array[##java.nio.file.attribute.FileAttribute]);
+            k(Ok(true))
+        }
+        catch {
+            case ex: ##java.nio.file.FileAlreadyExistsException => k(Err(IOError("Could not create directory at path 'p' as it already exists")))
+            case ex: ##java.nio.file.NoSuchFileException        => k(Err(IOError("One of the folders in path 'p' does not exist. Use Path.createDirectories to create them automatically")))
+        }
+    }
 
     ///
     /// Effectfully creates a new directory for the given path `p`.
@@ -341,7 +357,16 @@ namespace Path {
     ///
     /// Default handler for `createDirectories`.
     ///
-    handler createDirectories[a](p: Path, k: Result[Bool, IOError] -> a): a = ???
+    handler createDirectories[a](p: Path, k: Result[Bool, IOError] -> a): a = unsafe {
+        try {
+            let Path(javaPath) = p;
+            let _ = native method java.nio.file.Files.createDirectories(javaPath, [| |] : Array[##java.nio.file.attribute.FileAttribute]);
+            k(Ok(true))
+        }
+        catch {
+            case ex: ##java.nio.file.FileAlreadyExistsException => k(Err(IOError("Could not create directory at path 'p' as it already exists")))
+        }
+    }
 
     ///
     /// Effectfully copies the source file path `src` to the destination path `dst`.
