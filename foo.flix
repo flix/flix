@@ -1,4 +1,5 @@
-def f() : Vector[|Int, 6|] = {
+def f() : Int = {
+
 
   /* Array */
   // [1,2,3,4,5] // (ArrayLit)
@@ -7,15 +8,15 @@ def f() : Vector[|Int, 6|] = {
   // 2[2] = 2 // (ArrayStore)
   // length[2] // (ArrayLength)
   // 2[2..2] // (ArraySlice)
-  // 2[2..] // (ArraySliceNoEndIndex);
+  // 2[2..] // (ArraySliceNoEndIndex)
   // 2[..2] // (ArraySliceNoStartIndex)
 
   /* Vector */
 
-   [|1|]
+  // [|1|]
   //[|1;10|]
   //V[1]length
-//   2[|2 .. 3|]
+  //   2[|2 .. 3|]
   //[|1,123|]
   //[| 1 ; 10|]
   //2V[21] = 2
