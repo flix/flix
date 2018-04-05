@@ -510,7 +510,16 @@ namespace Path {
     ///
     /// Default handler for `newTemporaryDirectory`.
     ///
-    handler newTemporaryDirectory[a](k: Result[Path, IOError] -> a): a = ???
+    handler newTemporaryDirectory[a](k: Result[Path, IOError] -> a): a = unsafe {
+        try {
+            let prefixString = "FlixTemp";
+            let returnedPath = native method java.nio.file.Files.createTempDirectory(prefixString, [| |] : Array[##java.nio.file.attribute.FileAttribute]);
+            k(Ok(Path(returnedPath)))
+        }
+        catch {
+            case ex: ##java.io.IOException => k(Err(IOError("Either an I/O error occured, or the temporary-file directory does not exist")))
+        }
+    }
 
     ///
     /// Effectfully returns a path that references a new temporary file.
@@ -520,6 +529,16 @@ namespace Path {
     ///
     /// Default handler for `newTemporaryFile`.
     ///
-    handler newTemporaryFile[a](k: Result[Path, IOError] -> a): a = ???
+    handler newTemporaryFile[a](k: Result[Path, IOError] -> a): a = unsafe {
+        try {
+            let prefixString = "TempFlixFile";
+            let suffixString = ".tmp";
+            let returnedPath = native method java.nio.file.Files.createTempFile(prefixString, suffixString, [| |] : Array[##java.nio.file.attribute.FileAttribute]);
+            k(Ok(Path(returnedPath)))
+        }
+        catch {
+            case ex: ##java.io.IOException => k(Err(IOError("Either an I/O error occured, or the temporary-file directory does not exist")))
+        }
+    }
 
 }
