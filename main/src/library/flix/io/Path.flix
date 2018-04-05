@@ -428,7 +428,22 @@ namespace Path {
     ///
     /// Default handler for `moveFile`.
     ///
-    handler moveFile[a](src: Path, dst: Path, k: Result[Bool, IOError] -> a): a = ???
+    handler moveFile[a](src: Path, dst: Path, k: Result[Bool, IOError] -> a): a = unsafe {
+        try {
+            let handlerResponse = isRegularFile(src, result -> result);
+            match handlerResponse with {
+                case Ok(true)  => let Path(javaPath1) = src;
+                                  let Path(javaPath2) = dst;
+                                  let _ = native method java.nio.file.Files.move(javaPath1, javaPath2, [| |] : Array[##java.nio.file.StandardCopyOption]);
+                                  k(Ok(true))
+                case Ok(false) => k(Err(IOError("Parameter 'src' of moveFile is not a regular file")))
+                case Err(IOError(errorString)) => k(Err(IOError(errorString)))
+            }
+        }
+        catch {
+            case ex: ##java.nio.file.FileAlreadyExistsException => k(Err(IOError("Destination 'dst' already exists. Overwriting is not currently possible")))
+        }
+    }
 
     ///
     /// Effectfully moves the directory from the `src` path to the `dst` path.
@@ -436,9 +451,25 @@ namespace Path {
     pub eff moveDirectory[a](src: Path, dst: Path, k: Result[Bool, IOError] -> a): a
 
     ///
-    /// Default handler for `moveFile`.
+    /// Default handler for `moveDirectory`.
     ///
-    handler moveDirectory[a](src: Path, dst: Path, k: Result[Bool, IOError] -> a): a = ???
+    handler moveDirectory[a](src: Path, dst: Path, k: Result[Bool, IOError] -> a): a = unsafe {
+        try {
+            let handlerResponse = isDirectory(src, result -> result);
+            match handlerResponse with {
+                case Ok(true)  => let Path(javaPath1) = src;
+                                  let Path(javaPath2) = dst;
+                                  let _ = native method java.nio.file.Files.move(javaPath1, javaPath2, [| |] : Array[##java.nio.file.StandardCopyOption]);
+                                  k(Ok(true))
+                case Ok(false) => k(Err(IOError("Parameter 'src' of moveFile is not a directory")))
+                case Err(IOError(errorString)) => k(Err(IOError(errorString)))
+            }
+        }
+        catch {
+            case ex: ##java.nio.file.FileAlreadyExistsException => k(Err(IOError("Destination 'dst' already exists. Overwriting is not currently possible")))
+            case ex: ##java.io.IOException                      => k(Err(IOError("Unable to copy non-empty folder to other filestore")))
+        }
+    }
 
     ///
     /// Effectfully deletes the file for the given path `p`.
