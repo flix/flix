@@ -761,6 +761,18 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
         namer(exp, env0, tenv0) map {
           case (e) => NamedAst.Expression.Spawn(e, Type.freshTypeVar(), loc)
         }
+
+      case WeededAst.Expression.NewChannel(expOpt, tpe, loc) =>
+        expOpt match {
+          case None =>
+            // Case 1: NewChannel takes no expression that states the buffer size
+            NamedAst.Expression.NewChannel(None, Type.freshTypeVar(), loc).toSuccess
+          case Some(exp) =>
+            // Case 1: NewChannel takes an expression that states the buffer size
+            namer(exp, env0, tenv0) map {
+              case e => NamedAst.Expression.NewChannel(Some(e), Type.freshTypeVar(), loc)
+            }
+        }
     }
 
     /**

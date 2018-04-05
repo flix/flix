@@ -614,7 +614,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def NewChannel: Rule1[ParsedAst.Expression.NewChannel] = rule {
-      SP ~ atomic("channel") ~ WS ~ Type ~ optional(optWS ~ ":" ~ optWS ~ Expression) ~ SP ~> ParsedAst.Expression.NewChannel
+      SP ~ atomic("channel") ~ WS ~ Type ~ optional(":" ~ Expression) ~ SP ~> ParsedAst.Expression.NewChannel
     }
 
     def Literal: Rule1[ParsedAst.Expression.Lit] = rule {
