@@ -840,6 +840,18 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           visit(exp, unsafe) map {
             case (e) => WeededAst.Expression.Spawn(e, mkSL(sp1, sp2))
           }
+
+        case ParsedAst.Expression.NewChannel(sp1, tpe, expOpt, sp2) =>
+          expOpt match {
+            case None =>
+              // Case 1: NewChannel takes no expression that states the buffer size
+              WeededAst.Expression.NewChannel(None, Types.weed(tpe), mkSL(sp1, sp2)).toSuccess
+            case Some(exp) =>
+              // Case 1: NewChannel takes an expression that states the buffer size
+              visit(exp, unsafe) map {
+                case e => WeededAst.Expression.NewChannel(Some(e), Types.weed(tpe), mkSL(sp1, sp2))
+              }
+          }
       }
 
       visit(exp0, unsafe = false)
@@ -1483,6 +1495,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.NativeConstructor(sp1, _, _, _) => sp1
     case ParsedAst.Expression.UserError(sp1, _) => sp1
     case ParsedAst.Expression.Spawn(sp1, _, _) => sp1
+    case ParsedAst.Expression.NewChannel(sp1, _, _, _) => sp1
   }
 
   /**
