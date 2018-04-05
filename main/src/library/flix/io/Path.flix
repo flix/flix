@@ -500,7 +500,17 @@ namespace Path {
     ///
     /// Default handler for `size`.
     ///
-    handler size[a](p: Path, k: Result[Int64, IOError] -> a): a = ???
+    handler size[a](p: Path, k: Result[Int64, IOError] -> a): a = unsafe {
+        let handlerResponse = isRegularFile(p, result -> result);
+        match handlerResponse with {
+            case Ok(true)  => let Path(javaPath) = p;
+                              let sizeAnswer = native method java.nio.file.Files.size(javaPath);
+                              k(Ok(sizeAnswer))
+            case Ok(false) => k(Err(IOError("Path.Size currently only supports regular files")))
+            //TODO: java.nio.files does not have system-independent .size() for directories. Write own here.
+            case Err(IOError(errorString)) => k(Err(IOError(errorString)))
+        }
+    }
 
     ///
     /// Effectfully returns a path that references a new temporary directory.
