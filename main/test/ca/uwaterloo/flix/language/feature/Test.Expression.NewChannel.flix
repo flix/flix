@@ -35,12 +35,6 @@ def f15(): Channel[Channel[Int]] = channel Channel[Int]
 
 def f16(): Channel[Int] = channel Int:10
 
-def f17(): Channel[Int] = channel Int :10
-
-def f18(): Channel[Int] = channel Int: 10
-
-def f19(): Channel[Int] = channel Int : 10
-
 def f20(): Unit = let x = channel Int; ()
 
 
