@@ -614,6 +614,11 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
           for {
             e <- visit(exp)
           } yield ResolvedAst.Expression.Spawn(e, tvar, loc)
+
+        case NamedAst.Expression.GetChannel(exp, tvar, loc) =>
+          for {
+            e <- visit(exp)
+          } yield ResolvedAst.Expression.GetChannel(e, tvar, loc)
       }
 
       visit(exp0)

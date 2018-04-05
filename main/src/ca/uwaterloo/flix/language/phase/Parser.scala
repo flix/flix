@@ -21,7 +21,6 @@ import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.{ParsedAst, _}
 import ca.uwaterloo.flix.util.{ParOps, Timer, Validation}
 import ca.uwaterloo.flix.util.Validation._
-import org.parboiled2
 import org.parboiled2._
 
 import scala.collection.immutable.Seq
@@ -604,7 +603,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Primary: Rule1[ParsedAst.Expression] = rule {
-        LetRec | LetMatch | IfThenElse | Match | LambdaMatch | SelectChannel | Switch | Unsafe | Native | Lambda | Tuple |
+        GetChannel | LetRec | LetMatch | IfThenElse | Match | LambdaMatch | SelectChannel | Switch | Unsafe | Native | Lambda | Tuple |
         ArrayLit | ArrayNew | FNil | FSet | FMap | Literal | Spawn | NewChannel |
         HandleWith | Existential | Universal | UnaryLambda | QName | Wild | Tag | SName | Hole | UserError
     }
@@ -793,6 +792,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Universal: Rule1[ParsedAst.Expression.Universal] = rule {
       SP ~ atomic("∀" | "\\forall") ~ optWS ~ FormalParamList ~ optWS ~ "." ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.Universal
+    }
+
+    def GetChannel: Rule1[ParsedAst.Expression.GetChannel] = rule {
+      SP ~ atomic("<-") ~ optWS ~ Expression ~ optWS ~ SP ~> ParsedAst.Expression.GetChannel
     }
   }
 
