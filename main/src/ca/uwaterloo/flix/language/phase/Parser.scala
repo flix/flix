@@ -644,7 +644,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def SelectChannel: Rule1[ParsedAst.Expression.SelectChannel] = {
       def SelectRule: Rule1[ParsedAst.SelectRule] = rule {
-        atomic("case") ~ WS ~ Names.Variable ~ optWS ~ "<-" ~ optWS ~ Expression ~ optWS ~ atomic("=>") ~ optWS ~ Expression ~> ParsedAst.SelectRule
+        atomic("case") ~ WS ~ Names.Variable ~ optWS ~ GetChannel ~ atomic("=>") ~ optWS ~ Expression ~> ParsedAst.SelectRule
       }
 
       rule {
