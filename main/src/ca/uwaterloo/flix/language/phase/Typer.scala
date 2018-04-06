@@ -812,20 +812,9 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
             resultType <- unifyM(tvar, Type.mkArray(tpe), loc)
           ) yield resultType
 
-          /*
-           * VectorLit expression.
-           */
-        /*case ResolvedAst.Expression.VectorLit(elms, tvar, loc) => */
-          /*
-           * exp_1 : t ... exp_n : t
-           * --------------------------
-           * V[exp_1...exp_n] : Vec[t]
-           */
-         /* for(
-             elementTypes <- seqM(elms.map(visitExp));
-             resultType <- unifyM(tvar, Type.mkVec(elementTypes), loc)
-          ) yield resultType
-          */
+        case ResolvedAst.Expression.VectorLength(exp, tvar, loc) =>
+          for(
+            resultType <- unifyM(tvar, Type.Int32, loc)
 
         /*
          * Reference expression.
@@ -1133,6 +1122,18 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           val e = visitExp(elm, subst0)
           val ln = visitExp(len, subst0)
           TypedAst.Expression.ArrayNew(e, ln, subst0(tvar), Eff.Bot, loc)
+
+        case ResolvedAst.Expression.VectorLit(elms, tvar, loc) =>
+          val es = elms.map(e => visitExp(e, subst0))
+          TypedAst.Expression.VectorLit(es, tvar, Eff.Bot, loc)
+
+/*        case ResolvedAst.Expression.VectorLoad(exp1, exp2, tvar, loc) =>
+          val e = visitExp(exp1, subst0)
+          TypedAst.Expression.VectorLoad(e, exp2, tvar, Eff.Bot, loc)
+*/
+        case ResolvedAst.Expression.VectorLength(elm, tvar, loc) =>
+          var e = visitExp(elm, subst0)
+          TypedAst.Expression.VectorLength(e, tvar, Eff.Bot, loc)
 
         /*
          * ArrayLoad expression.

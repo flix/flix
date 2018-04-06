@@ -158,11 +158,7 @@ object WeededAst {
 
     case class VectorLength(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
-    case class VectorSlice(exp1: WeededAst.Expression, exp2: Int, exp3: Int, loc: SourceLocation) extends WeededAst.Expression
-
-    case class VectorSliceNoEndIndex(exp1: WeededAst.Expression, exp2: Int, loc: SourceLocation) extends WeededAst.Expression
-
-    case class VectorSliceNoStartIndex(exp1: WeededAst.Expression, exp2: Int, loc: SourceLocation) extends WeededAst.Expression
+    case class VectorSlice(exp1: WeededAst.Expression, exp2: Int, expopt3: Option[Int], loc: SourceLocation) extends WeededAst.Expression
 
     case class Ref(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
@@ -271,6 +267,8 @@ object WeededAst {
     case class Unit(loc: SourceLocation) extends WeededAst.Type
 
     case class Tuple(elms: List[WeededAst.Type], loc: SourceLocation) extends WeededAst.Type
+
+    //case class Nat(elm: Int, loc: SourceLocation) extends WeededAst.Type
 
     case class Native(fqn: List[String], loc: SourceLocation) extends WeededAst.Type
 
