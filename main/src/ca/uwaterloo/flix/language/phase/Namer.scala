@@ -1021,6 +1021,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
           else
             NamedAst.Type.Ambiguous(qname, loc)
         case WeededAst.Type.Tuple(elms, loc) => NamedAst.Type.Tuple(elms.map(e => visit(e, env)), loc)
+        case WeededAst.Type.Nat(elm, loc) => NamedAst.Type.Nat(elm, loc)
         case WeededAst.Type.Native(fqn, loc) => NamedAst.Type.Native(fqn, loc)
         case WeededAst.Type.Arrow(tparams, tresult, loc) => NamedAst.Type.Arrow(tparams.map(t => visit(t, env)), visit(tresult, env), loc)
         case WeededAst.Type.Apply(tpe1, tpe2, loc) => NamedAst.Type.Apply(visit(tpe1, env), visit(tpe2, env), loc)

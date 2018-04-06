@@ -813,11 +813,11 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
             resultType <- unifyM(tvar, tpe, loc)
           ) yield resultType
 
-          /*
-           * VectorLit expression.
-           * Mangler: Beregn type, og se at alle elementer er af samme type.
-           * Brug UnifyM med type
-           */
+        case ResolvedAst.Expression.VectorLit(elms, tvar, loc) =>
+          for (
+            elementTypes <- seqM(elms.map(visitExp));
+            resultType <- unifyM(tvar, Type.mkVector(elementTypes, elms.length), loc)
+          ) yield resultType
 
         case ResolvedAst.Expression.VectorLength(exp, tvar, loc) =>
           for(

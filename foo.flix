@@ -1,9 +1,7 @@
 def f() : Int = {
 
-
   let x = [1,2,3];
   length[x]
-
   /* Array */
   // [1,2,3,4,5] // (ArrayLit)
   // [10;g()] // (ArrayNew)
@@ -17,9 +15,9 @@ def f() : Int = {
   /* Vector */
   // [|1|]
   //[|1;10|]
-  //V[1]length
+  //Vlength[|1|]
 
 }
-// def g() : 47i32 = if(47 == 47) 47 else 2
+ //def g() : 47i32 = 47
 
 

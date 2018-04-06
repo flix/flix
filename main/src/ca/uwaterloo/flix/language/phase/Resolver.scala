@@ -1154,6 +1154,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
       case "BigInt" => Type.BigInt.toSuccess
       case "Str" => Type.Str.toSuccess
       case "Array" => Type.Array.toSuccess
+      case "Vector" => Type.Vector.toSuccess
       case "Native" => Type.Native.toSuccess
       case "Ref" => Type.Ref.toSuccess
 
@@ -1186,8 +1187,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
       for (
         elms <- seqM(elms0.map(tpe => lookupType(tpe, ns0, prog0)))
       ) yield Type.mkTuple(elms)
-
-//    case NamedAst.Type.
+    case NamedAst.Type.Nat(elm, loc) => Type.Nat(elm).toSuccess
 
     case NamedAst.Type.Native(fqn, loc) =>
       // TODO: needs more precise type.

@@ -46,8 +46,10 @@ sealed trait Type {
     case Type.BigInt => Set.empty
     case Type.Str => Set.empty
     case Type.Array => Set.empty
+    case Type.Vector => Set.empty
     case Type.Native => Set.empty
     case Type.Ref => Set.empty
+    case Type.Nat(i) => Set.empty
     case Type.Arrow(l) => Set.empty
     case Type.Tuple(l) => Set.empty
     case Type.Enum(enumName, kind) => Set.empty
@@ -148,6 +150,8 @@ sealed trait Type {
     case Type.BigInt => "BigInt"
     case Type.Str => "Str"
     case Type.Array => "Array"
+    case Type.Vector => "Vector"
+    case Type.Nat(i) => s"Natural Number($i)"
     case Type.Native => "Native"
     case Type.Ref => "Ref"
     case Type.Arrow(l) => s"Arrow($l)"
@@ -282,6 +286,10 @@ object Type {
     def kind: Kind = Kind.Star
   }
 
+  case object Vector extends Type {
+    def kind: Kind = Kind.Star
+  }
+
   /**
     * A type constructor that represent native objects.
     */
@@ -320,6 +328,14 @@ object Type {
 
   case class Array(length: Int) extends Type {
     def kind: Kind = Kind.Arrow((0 until length).map(_ => Kind.Star).toList, Kind.Star)
+  }
+
+  case class Vector(length: Int) extends Type {
+    def kind: Kind = Kind.Arrow((0 until length).map(_ => Kind.Star).toList, Kind.Star)
+  }
+
+  case class Nat(i: Int) extends Type {
+    def kind: Kind = Kind.Star
   }
 
   /**
@@ -382,6 +398,20 @@ object Type {
     */
   def mkArray(a: Type): Type = Apply(Array, a)
 
+  def mkArray(ts: List[Type]): Type = {
+    val array = Array(ts.length)
+    ts.foldLeft(array: Type) {
+      case(acc, x) => Apply(acc, x)
+    }
+  }
+
+  def mkVector(ts: List[Type], i: Int) : Type = {
+    val vector = Vector(ts.length)
+    ts.foldLeft(vector: Type) {
+      case(acc, x) => Apply(Apply(acc, x), Nat(i))
+    }
+  }
+
   /**
     * Constructs the set type of A.
     */
@@ -415,10 +445,12 @@ object Type {
       case Type.BigInt => Type.BigInt
       case Type.Str => Type.Str
       case Type.Array => Type.Array
+      case Type.Vector => Type.Vector
       case Type.Native => Type.Native
       case Type.Ref => Type.Ref
       case Type.Arrow(l) => Type.Arrow(l)
       case Type.Tuple(l) => Type.Tuple(l)
+      case Type.Nat(i) => Type.Nat(i)
       case Type.Apply(tpe1, tpe2) => Type.Apply(visit(tpe1), visit(tpe2))
       case Type.Enum(enum, kind) => Type.Enum(enum, kind)
     }
@@ -463,6 +495,8 @@ object Type {
           case Type.BigInt => "BigInt"
           case Type.Str => "String"
           case Type.Array => "Array"
+          case Type.Vector => "Vector"
+          case Type.Nat(i) => "Natural Number"
           case Type.Native => "Native"
           case Type.Ref => "Ref"
 
