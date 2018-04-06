@@ -21,7 +21,6 @@ import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.{ParsedAst, _}
 import ca.uwaterloo.flix.util.{ParOps, Timer, Validation}
 import ca.uwaterloo.flix.util.Validation._
-import org.parboiled2
 import org.parboiled2._
 
 import scala.collection.immutable.Seq
@@ -498,7 +497,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def PutChannel: Rule1[ParsedAst.Expression] = rule {
-      LogicalOr ~ zeroOrMore(optWS ~ atomic("<:") ~ optWS ~ LogicalOr ~ SP ~> ParsedAst.Expression.PutChannel)
+      LogicalOr ~ zeroOrMore(optWS ~ atomic("<-") ~ optWS ~ LogicalOr ~ SP ~> ParsedAst.Expression.PutChannel)
     }
 
     def LogicalOr: Rule1[ParsedAst.Expression] = rule {
@@ -526,7 +525,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Relational: Rule1[ParsedAst.Expression] = rule {
-      Shift ~ optional(optWS ~ capture(atomic("<=") | atomic(">=") | atomic("<") | atomic(">")) ~ optWS ~ Shift ~ SP ~> ParsedAst.Expression.Binary)
+      Shift ~ optional(WS ~ capture(atomic("<=") | atomic(">=") | atomic("<") | atomic(">")) ~ WS ~ Shift ~ SP ~> ParsedAst.Expression.Binary)
     }
 
     def Shift: Rule1[ParsedAst.Expression] = rule {
@@ -549,7 +548,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
       // NB: We allow any operator, other than a reserved operator, to be matched by this rule.
       def Reserved2: Rule1[String] = rule {
-        capture("**" | "<=" | ">=" | "==" | "!=" | "&&" | "||" | "=>" | "->")
+        capture("**" | "<=" | ">=" | "==" | "!=" | "&&" | "||" | "=>" | "->" | "<-")
       }
 
       // NB: We allow any operator, other than a reserved operator, to be matched by this rule.
@@ -604,9 +603,17 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Primary: Rule1[ParsedAst.Expression] = rule {
-      LetRec | LetMatch | IfThenElse | Match | LambdaMatch | Select | Switch | Unsafe | Native | Lambda | Tuple |
-        ArrayLit | ArrayNew | FNil | FSet | FMap | Literal |
-        HandleWith | Existential | Universal | UnaryLambda | QName | Wild | Tag | SName | Hole | UserError | Spawn
+        GetChannel | LetRec | LetMatch | IfThenElse | Match | LambdaMatch | SelectChannel | Switch | Unsafe | Native | Lambda | Tuple |
+        ArrayLit | ArrayNew | FNil | FSet | FMap | Literal | Spawn | NewChannel |
+        HandleWith | Existential | Universal | UnaryLambda | QName | Wild | Tag | SName | Hole | UserError
+    }
+
+    def Spawn: Rule1[ParsedAst.Expression.Spawn] = rule {
+      SP ~ atomic("spawn") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.Spawn
+    }
+
+    def NewChannel: Rule1[ParsedAst.Expression.NewChannel] = rule {
+      SP ~ atomic("channel") ~ WS ~ Type ~ optional(":" ~ Expression) ~ SP ~> ParsedAst.Expression.NewChannel
     }
 
     def Literal: Rule1[ParsedAst.Expression.Lit] = rule {
@@ -635,13 +642,13 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
     }
 
-    def Select: Rule1[ParsedAst.Expression.Select] = {
-      def Rule: Rule1[ParsedAst.SelectRule] = rule {
-        atomic("case") ~ WS ~ Names.Variable ~ optWS ~ "=" ~ optWS ~ "<-" ~ optWS ~ Expression ~ optWS ~ atomic("=>") ~ optWS ~ Expression ~> ParsedAst.SelectRule
+    def SelectChannel: Rule1[ParsedAst.Expression.SelectChannel] = {
+      def SelectRule: Rule1[ParsedAst.SelectRule] = rule {
+        atomic("case") ~ WS ~ Names.Variable ~ optWS ~ GetChannel ~ atomic("=>") ~ optWS ~ Expression ~> ParsedAst.SelectRule
       }
 
       rule {
-        SP ~ atomic("select") ~ WS ~ "{" ~ optWS ~ oneOrMore(Rule).separatedBy(optWS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.Select
+        SP ~ atomic("select") ~ optWS ~ "{" ~ optWS ~ oneOrMore(SelectRule).separatedBy(WS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.SelectChannel
       }
     }
 
@@ -787,8 +794,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       SP ~ atomic("∀" | "\\forall") ~ optWS ~ FormalParamList ~ optWS ~ "." ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.Universal
     }
 
-    def Spawn: Rule1[ParsedAst.Expression.Spawn] = rule {
-      SP ~ atomic("spawn") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.Spawn
+    def GetChannel: Rule1[ParsedAst.Expression.GetChannel] = rule {
+      SP ~ atomic("<-") ~ optWS ~ Expression ~ optWS ~ SP ~> ParsedAst.Expression.GetChannel
     }
   }
 

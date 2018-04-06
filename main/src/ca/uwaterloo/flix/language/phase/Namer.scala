@@ -631,6 +631,19 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
           case (e, rs) => NamedAst.Expression.Match(e, rs, Type.freshTypeVar(), loc)
         }
 
+      case WeededAst.Expression.SelectChannel(rules, loc) => 
+        val rulesVal = rules map {
+          case WeededAst.SelectRule(ident, channel, body) =>
+            val sym = Symbol.freshVarSym(ident)
+            val env1 = env0 + (ident.name -> sym)
+            @@(namer(channel, env1, tenv0), namer(body, env1, tenv0)) map {
+              case (c, b) => NamedAst.SelectRule(sym, c, b)
+            }
+        }
+        @@(rulesVal) map {
+          case rs => NamedAst.Expression.SelectChannel(rs, Type.freshTypeVar(), loc)
+        }
+
       case WeededAst.Expression.Switch(rules, loc) => @@(rules map {
         case (cond, body) => @@(namer(cond, env0, tenv0), namer(body, env0, tenv0))
       }) map {
@@ -750,6 +763,28 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
         namer(exp, env0, tenv0) map {
           case (e) => NamedAst.Expression.Spawn(e, Type.freshTypeVar(), loc)
         }
+
+      case WeededAst.Expression.GetChannel(exp,loc) =>
+        namer(exp,env0,tenv0) map {
+          case (e) => NamedAst.Expression.GetChannel(e, Type.freshTypeVar(), loc)
+        }
+
+      case WeededAst.Expression.NewChannel(expOpt, tpe, loc) =>
+        expOpt match {
+          case None =>
+            // Case 1: NewChannel takes no expression that states the buffer size
+            NamedAst.Expression.NewChannel(None, Type.freshTypeVar(), loc).toSuccess
+          case Some(exp) =>
+            // Case 1: NewChannel takes an expression that states the buffer size
+            namer(exp, env0, tenv0) map {
+              case e => NamedAst.Expression.NewChannel(Some(e), Type.freshTypeVar(), loc)
+            }
+        }
+
+      case WeededAst.Expression.PutChannel(exp1, exp2, loc) =>
+        @@(namer(exp1, env0, tenv0), namer(exp2, env0, tenv0)) map {
+          case (e1, e2) => NamedAst.Expression.PutChannel(e1, e2, Type.freshTypeVar(), loc)
+        }
     }
 
     /**
@@ -802,6 +837,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
       case WeededAst.Expression.NativeMethod(className, methodName, args, loc) => args.flatMap(freeVars)
       case WeededAst.Expression.NativeConstructor(className, args, loc) => args.flatMap(freeVars)
       case WeededAst.Expression.UserError(loc) => Nil
+      case WeededAst.Expression.PutChannel(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
     }
 
   }

@@ -581,7 +581,7 @@ object ParsedAst {
       * @param rules the rules of the select channel.
       * @param sp2   the position of the last character in the expression.
       */
-    case class Select(sp1: SourcePosition, rules: Seq[ParsedAst.SelectRule], sp2: SourcePosition) extends ParsedAst.Expression
+    case class SelectChannel(sp1: SourcePosition, rules: Seq[ParsedAst.SelectRule], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Switch Expression.
@@ -836,6 +836,23 @@ object ParsedAst {
       */
     case class Spawn(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
+    /**
+      * GetChannel
+      *
+      * @param exp1 the expression to get from.
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class GetChannel(sp1: SourcePosition, exp1: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    
+    /**
+      * New Channel Expression
+      *
+      * @param sp1 the position of the first character in the expression.
+      * @param tpe the type of the channel
+      * @param exp the optional buffer expression of the channel (Default is 0)
+      * @param sp2 the position of the last character in the expressions
+      */
+    case class NewChannel(sp1: SourcePosition, tpe: ParsedAst.Type, exp: Option[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
   }
 
   /**
@@ -1283,7 +1300,7 @@ object ParsedAst {
     * @param exp1  the channel expression of the rule.
     * @param exp2  the body expression of the rule.
     */
-  case class SelectRule(ident: Name.Ident, exp1: ParsedAst.Expression, exp2: ParsedAst.Expression) extends ParsedAst
+  case class SelectRule(ident: Name.Ident, exp1: ParsedAst.Expression.GetChannel, exp2: ParsedAst.Expression) extends ParsedAst
 
   /**
     * Modifier.

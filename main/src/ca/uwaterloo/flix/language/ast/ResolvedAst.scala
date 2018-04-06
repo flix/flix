@@ -142,6 +142,8 @@ object ResolvedAst {
 
     case class Match(exp: ResolvedAst.Expression, rules: List[ResolvedAst.MatchRule], tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
+    case class SelectChannel(rules: List[ResolvedAst.SelectRule], tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+
     case class Switch(rules: List[(ResolvedAst.Expression, ResolvedAst.Expression)], tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Tag(sym: Symbol.EnumSym, tag: String, exp: ResolvedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
@@ -182,6 +184,9 @@ object ResolvedAst {
 
     case class Spawn(exp: ResolvedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
+    case class GetChannel(exp: ResolvedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+
+    case class PutChannel(exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
   }
 
   sealed trait Pattern extends ResolvedAst {
@@ -278,6 +283,8 @@ object ResolvedAst {
   case class HandlerBinding(sym: Symbol.EffSym, exp: ResolvedAst.Expression) extends ResolvedAst
 
   case class MatchRule(pat: ResolvedAst.Pattern, guard: ResolvedAst.Expression, exp: ResolvedAst.Expression) extends ResolvedAst
+
+  case class SelectRule(sym: Symbol.VarSym, exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression) extends ResolvedAst
 
   case class TypeParam(name: Name.Ident, tpe: Type.Var, loc: SourceLocation) extends ResolvedAst
 
