@@ -48,7 +48,6 @@ sealed trait Type {
     case Type.Array => Set.empty
     case Type.Native => Set.empty
     case Type.Ref => Set.empty
-    case Type.Vector(l) => Set.empty
     case Type.Arrow(l) => Set.empty
     case Type.Tuple(l) => Set.empty
     case Type.Enum(enumName, kind) => Set.empty
@@ -151,7 +150,6 @@ sealed trait Type {
     case Type.Array => "Array"
     case Type.Native => "Native"
     case Type.Ref => "Ref"
-    case Type.Vector(l) => s"Vector($l)"
     case Type.Arrow(l) => s"Arrow($l)"
     case Type.Enum(enum, kind) => enum.toString
     case Type.Tuple(l) => s"Tuple($l)"
@@ -284,17 +282,6 @@ object Type {
     def kind: Kind = Kind.Star
   }
 
-  /*case object Vector extends Type {
-    def kind: Kind = Kind.Star
-  }*/
-
-  /**
-    * A type constructor that represents vec of the given `length`.
-*/
-  case class Vector(length: Int) extends Type {
-    def kind: Kind = Kind.Arrow((0 until length).map(_ => Kind.Star).toList, Kind.Star)
-  }
-
   /**
     * A type constructor that represent native objects.
     */
@@ -358,19 +345,6 @@ object Type {
     * Returns a fresh type variable.
     */
   def freshTypeVar(k: Kind = Kind.Star)(implicit genSym: GenSym): Type.Var = Type.Var(genSym.freshId(), k)
-
-
-  def mkVector(a: Type*): Type = mkVector(a.toList)
-
-  /*
-    Constructs the vector type [|a|] where 'a' is the given type.
-   */
-  def mkVector(vs: List[Type]): Type = {
-    val vector = Vector(vs.length)
-    vs.foldLeft(vector: Type) {
-      case (acc, t) => Apply(acc, t)
-    }
-  }
 
   /**
     * Constructs the function type A -> B where `A` is the given type `a` and `B` is the given type `b`.
@@ -450,7 +424,6 @@ object Type {
       case Type.Array => Type.Array
       case Type.Native => Type.Native
       case Type.Ref => Type.Ref
-      case Type.Vector(l) => Type.Vector(l)
       case Type.Arrow(l) => Type.Arrow(l)
       case Type.Tuple(l) => Type.Tuple(l)
       case Type.Apply(tpe1, tpe2) => Type.Apply(visit(tpe1), visit(tpe2))
@@ -497,15 +470,8 @@ object Type {
           case Type.BigInt => "BigInt"
           case Type.Str => "String"
           case Type.Array => "Array"
-          //case Type.Vector => "Vector"
           case Type.Native => "Native"
           case Type.Ref => "Ref"
-
-          //
-          // Vector
-          //
-          case Type.Vector(l) =>
-            "[|" + args.map(visit(_, m).mkString(", ") + "|]")
 
           //
           // Arrow.

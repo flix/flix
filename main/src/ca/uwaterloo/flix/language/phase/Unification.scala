@@ -72,7 +72,6 @@ object Unification {
       case Type.Array => Type.Array
       case Type.Native => Type.Native
       case Type.Ref => Type.Ref
-      case Type.Vector(l) => Type.Vector(l)
       case Type.Arrow(l) => Type.Arrow(l)
       case Type.Tuple(l) => Type.Tuple(l)
       case Type.Enum(name, kind) => Type.Enum(name, kind)
@@ -183,7 +182,6 @@ object Unification {
       case (Type.Array, Type.Array) => Result.Ok(Substitution.empty)
       case (Type.Native, Type.Native) => Result.Ok(Substitution.empty)
       case (Type.Ref, Type.Ref) => Result.Ok(Substitution.empty)
-      case (Type.Vector(l1), Type.Vector(l2)) if l1 == l2 => Result.Ok(Substitution.empty)
       case (Type.Arrow(l1), Type.Arrow(l2)) if l1 == l2 => Result.Ok(Substitution.empty)
       case (Type.Tuple(l1), Type.Tuple(l2)) if l1 == l2 => Result.Ok(Substitution.empty)
       case (Type.Enum(name1, kind1), Type.Enum(name2, kind2)) if name1 == name2 => Result.Ok(Substitution.empty)

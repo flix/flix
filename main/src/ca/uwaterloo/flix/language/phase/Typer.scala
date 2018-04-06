@@ -817,15 +817,10 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
            * Mangler: Beregn type, og se at alle elementer er af samme type.
            * Brug UnifyM med type
            */
-        case ResolvedAst.Expression.VectorLit(elms, tvar, loc) =>
-          /*
-            exp_1 : t ... exp_n : t
-            --------------------------
-            V[exp_1...exp_n] : Vec[t]
-           */
+
+        case ResolvedAst.Expression.VectorLength(exp, tvar, loc) =>
           for(
-             elementTypes <- seqM(elms.map(visitExp));
-             resultType <- unifyM(tvar, Type.mkVector(elementTypes), loc)
+            resultType <- unifyM(tvar, Type.Int32, loc)
           ) yield resultType
 
         /*
@@ -1138,6 +1133,14 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         case ResolvedAst.Expression.VectorLit(elms, tvar, loc) =>
           val es = elms.map(e => visitExp(e, subst0))
           TypedAst.Expression.VectorLit(es, tvar, Eff.Bot, loc)
+
+/*        case ResolvedAst.Expression.VectorLoad(exp1, exp2, tvar, loc) =>
+          val e = visitExp(exp1, subst0)
+          TypedAst.Expression.VectorLoad(e, exp2, tvar, Eff.Bot, loc)
+*/
+        case ResolvedAst.Expression.VectorLength(elm, tvar, loc) =>
+          var e = visitExp(elm, subst0)
+          TypedAst.Expression.VectorLength(e, tvar, Eff.Bot, loc)
 
         /*
          * ArrayLoad expression.

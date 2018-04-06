@@ -268,7 +268,7 @@ object WeededAst {
 
     case class Tuple(elms: List[WeededAst.Type], loc: SourceLocation) extends WeededAst.Type
 
-    case class Vector(elm: WeededAst.Type, len: Int, loc: SourceLocation) extends WeededAst.Type
+    //case class Nat(elm: Int, loc: SourceLocation) extends WeededAst.Type
 
     case class Native(fqn: List[String], loc: SourceLocation) extends WeededAst.Type
 
