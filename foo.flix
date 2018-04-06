@@ -1,5 +1,7 @@
 def f() : Int = {
 
+  let x = [1,2,3];
+  length[x]
   /* Array */
   // [1,2,3,4,5] // (ArrayLit)
   // [10;g()] // (ArrayNew)
@@ -11,7 +13,7 @@ def f() : Int = {
   // 2[..2] // (ArraySliceNoStartIndex)
 
   /* Vector */
-   [|1|]
+  // [|1|]
   //[|1;10|]
   //Vlength[|1|]
 

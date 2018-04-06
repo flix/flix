@@ -544,11 +544,22 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
           } yield ResolvedAst.Expression.ArrayLength(e, tvar, loc)
 
         case NamedAst.Expression.ArraySlice(exp1, exp2, exp3, tvar, loc) =>
-          for {
-            e1 <- visit(exp1)
-            e2 <- visit(exp2)
-            e3 <- visit(exp3)
-          } yield ResolvedAst.Expression.ArraySlice(e1, e2, e3, tvar, loc)
+          exp2 match {
+            /*case None => exp3 match {
+              case Some(e3) =>
+                // Need to be handled (No end index)
+            }*/
+            case Some(e2) => exp3 match {
+              /*case None =>
+                // Need to be handled (No start index)*/
+              case Some(e3) =>
+                for {
+                  ex1 <- visit(exp1)
+                  ex2 <- visit(e2)
+                  ex3 <- visit(e3)
+                } yield ResolvedAst.Expression.ArraySlice(ex1, ex2, ex3, tvar, loc)
+            }
+          }
 
         case NamedAst.Expression.VectorLit(elms, tvar, loc) =>
           for {
