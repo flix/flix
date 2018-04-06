@@ -318,6 +318,10 @@ object Type {
     def kind: Kind = Kind.Arrow((0 until length).map(_ => Kind.Star).toList, Kind.Star)
   }
 
+  case class Array(length: Int) extends Type {
+    def kind: Kind = Kind.Arrow((0 until length).map(_ => Kind.Star).toList, Kind.Star)
+  }
+
   /**
     * A type expression that a type application tpe1[tpe2].
     */
@@ -377,6 +381,13 @@ object Type {
     * Constructs the array type [a] where 'a' is the given type.
     */
   def mkArray(a: Type): Type = Apply(Array, a)
+
+  def mkArray(ts: List[Type]): Type = {
+    val array = Array(ts.length)
+    ts.foldLeft(array: Type) {
+      case(acc, x) => Apply(acc, x)
+    }
+  }
 
   /**
     * Constructs the set type of A.

@@ -684,16 +684,23 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
           case(ex1, ex2, ex3) => NamedAst.Expression.ArraySlice(ex1, ex2, ex3, Type.freshTypeVar(), loc)
         }
 
-      case WeededAst.Expression.ArraySliceNoEndIndex(exp1, exp2, loc) =>
-        @@(namer(exp1, env0, tenv0), namer(exp2, env0, tenv0)) map {
-          case(ex1, ex2) => NamedAst.Expression.ArraySliceNoEndIndex(ex1, ex2, Type.freshTypeVar(), loc)
+      /*case WeededAst.Expression.ArraySlice(exp1, exp2, exp3, loc) => exp2 match {
+        case None =>
+          @@(namer(exp1, env0, tenv0), namer(exp3.asInstanceOf[WeededAst.Expression], env0, tenv0)) map {
+            case(ex1, ex3) => NamedAst.Expression.ArraySlice(ex1, None, Some(ex3), Type.freshTypeVar(), loc)
+          }
+        case Some(exp2) => exp3 match {
+          case None =>
+            @@(namer(exp1, env0, tenv0), namer(exp2.asInstanceOf[WeededAst.Expression], env0, tenv0)) map {
+              case(ex1, ex2) => NamedAst.Expression.ArraySlice(ex1, Some(ex2), None, Type.freshTypeVar(), loc)
+            }
+          case Some(exp3) =>
+            @@(namer(exp1, env0, tenv0), namer(exp2.asInstanceOf[WeededAst.Expression], env0, tenv0), namer(exp3.asInstanceOf[WeededAst.Expression], env0, tenv0)) map {
+              case(ex1, ex2, ex3) => NamedAst.Expression.ArraySlice(ex1, Some(ex2), Some(ex3), Type.freshTypeVar(), loc)
+            }
         }
+      }*/
 
-      case WeededAst.Expression.ArraySliceNoStartIndex(exp1, exp2, loc) =>
-        @@(namer(exp1, env0, tenv0), namer(exp2, env0, tenv0)) map {
-          case(ex1, ex2) => NamedAst.Expression.ArraySliceNoStartIndex(ex1, ex2, Type.freshTypeVar(), loc)
-        }
-        
       case WeededAst.Expression.VectorLit(elms, loc) =>
       @@(elms map (e => namer(e, env0, tenv0))) map{
         case es => NamedAst.Expression.VectorLit(es, Type.freshTypeVar(), loc)
@@ -837,9 +844,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
       case WeededAst.Expression.ArrayLoad(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
       case WeededAst.Expression.ArrayStore(exp1, exp2, exp3, loc) => freeVars(exp1) ++ freeVars(exp2) ++ freeVars(exp3)
       case WeededAst.Expression.ArrayLength(exp, loc) => freeVars(exp)
-      case WeededAst.Expression.ArraySlice(exp1, exp2, exp3, loc) => freeVars(exp1) ++ freeVars(exp2) ++ freeVars(exp3)
-      case WeededAst.Expression.ArraySliceNoEndIndex(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
-      case WeededAst.Expression.ArraySliceNoStartIndex(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
+      case WeededAst.Expression.ArraySlice(exp1, exp2, exp3, loc) => freeVars(exp1) ++ freeVars(exp2.asInstanceOf[WeededAst.Expression]) ++ freeVars(exp3.asInstanceOf[WeededAst.Expression])
       case WeededAst.Expression.VectorLit(elms, loc) => elms.flatMap(freeVars)
       case WeededAst.Expression.VectorNew(elm, len, loc) => freeVars(elm)
       case WeededAst.Expression.VectorStore(exp1, exp2, exp3, loc) => freeVars(exp1) ++ freeVars(exp3)

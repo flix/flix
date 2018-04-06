@@ -759,34 +759,62 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
             resultType <- unifyM(tvar, Type.mkTuple(elementTypes), loc)
           ) yield resultType
 
-          /*
-           * ArrayLit expression
-           */
-        /*case ResolvedAst.Expression.ArrayLit(elms, tvar, loc) =>
+        /*
+         * ArrayLit expression.
+         */
+        case ResolvedAst.Expression.ArrayLit(elms, tvar, loc) =>
           for (
             elementsTypes <- seqM(elms.map(visitExp));
             resultType <- unifyM(tvar, Type.mkArray(elementsTypes), loc)
-          ) yield resultType*/
+          ) yield resultType
 
           /*
-           * ArrayNew expression
+           * ArrayNew expression.
            */
-        /*case ResolvedAst.Expression.ArrayNew(elm, len, tvar, loc) =>
+        case ResolvedAst.Expression.ArrayNew(elm, len, tvar, loc) =>
           for (
             tpe <- visitExp(elm);
             resultType <- unifyM(tvar, Type.mkArray(tpe), loc)
-          ) yield resultType*/
+          ) yield resultType
 
-          /*
-           * VectorLit expression.
-           * Mangler: Beregn type, og se at alle elementer er af samme type.
-           * Brug UnifyM med type
-           */
+        /*
+         * ArrayLoad expression.
+         */
+        case ResolvedAst.Expression.ArrayLoad(exp1, exp2, tvar, loc) =>
+          for (
+            tpe <- visitExp(exp1);
+            resultType <- unifyM(tvar, tpe, loc)
+          ) yield resultType
+
+        /*
+         * ArrayLength expression.
+         */
+        case ResolvedAst.Expression.ArrayLength(exp, tvar, loc) =>
+          for (
+            resultType <- unifyM(tvar, Type.Int32, loc)
+          ) yield resultType
+
+        /*
+         * ArrayStore expression.
+         */
+        case ResolvedAst.Expression.ArrayStore(exp1, exp2, exp3, tvar, loc) =>
+          for (
+            tpe <- visitExp(exp1);
+            resultType <- unifyM(tvar, Type.mkArray(tpe), loc)
+          ) yield resultType
+
+        /*
+         * ArraySlice expression.
+         */
+        case ResolvedAst.Expression.ArraySlice(exp1, exp2, exp3, tvar, loc) =>
+          for (
+            tpe <- visitExp(exp1);
+            resultType <- unifyM(tvar, Type.mkArray(tpe), loc)
+          ) yield resultType
 
         case ResolvedAst.Expression.VectorLength(exp, tvar, loc) =>
           for(
             resultType <- unifyM(tvar, Type.Int32, loc)
-          ) yield resultType
 
         /*
          * Reference expression.
@@ -1083,12 +1111,12 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         /*
          * ArrayLit expression.
          */
-        /*case ResolvedAst.Expression.ArrayLit(elms, tvar, loc) =>
+        case ResolvedAst.Expression.ArrayLit(elms, tvar, loc) =>
           val es = elms.map(e => visitExp(e, subst0))
-          TypedAst.Expression.ArrayLit(es, subst0(tvar), Eff.Bot, loc)*/
+          TypedAst.Expression.ArrayLit(es, subst0(tvar), Eff.Bot, loc)
 
         /*
-         * ArrayNew expression
+         * ArrayNew expression.
          */
         case ResolvedAst.Expression.ArrayNew(elm, len, tvar, loc) =>
           val e = visitExp(elm, subst0)
@@ -1106,6 +1134,39 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         case ResolvedAst.Expression.VectorLength(elm, tvar, loc) =>
           var e = visitExp(elm, subst0)
           TypedAst.Expression.VectorLength(e, tvar, Eff.Bot, loc)
+
+        /*
+         * ArrayLoad expression.
+         */
+        case ResolvedAst.Expression.ArrayLoad(exp1, exp2, tvar, loc) =>
+          val e1 = visitExp(exp1, subst0)
+          val e2 = visitExp(exp2, subst0)
+          TypedAst.Expression.ArrayLoad(e1, e2, subst0(tvar), Eff.Bot, loc)
+
+        /*
+         * ArrayStore expression.
+         */
+        case ResolvedAst.Expression.ArrayStore(exp1, exp2, exp3, tvar, loc) =>
+          val e1 = visitExp(exp1, subst0)
+          val e2 = visitExp(exp2, subst0)
+          val e3 = visitExp(exp3, subst0)
+          TypedAst.Expression.ArrayStore(e1, e2, e3, subst0(tvar), Eff.Bot, loc)
+
+        /*
+         * ArrayLength expression.
+         */
+        case ResolvedAst.Expression.ArrayLength(exp, tvar, loc) =>
+          val e = visitExp(exp, subst0)
+          TypedAst.Expression.ArrayLength(e, subst0(tvar), Eff.Bot, loc)
+
+        /*
+         * ArraySlice expression.
+         */
+        case ResolvedAst.Expression.ArraySlice(exp1, exp2, exp3, tvar, loc) =>
+          val e1 = visitExp(exp1, subst0)
+          val e2 = visitExp(exp2, subst0)
+          val e3 = visitExp(exp3, subst0)
+          TypedAst.Expression.ArraySlice(e1, e2, e3, subst0(tvar), Eff.Bot, loc)
 
         /*
          * Reference expression.
