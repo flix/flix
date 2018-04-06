@@ -158,6 +158,8 @@ object NamedAst {
 
     case class Assign(exp1: NamedAst.Expression, exp2: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
+    case class PutChannel(exp1: NamedAst.Expression, exp2: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
+
     case class HandleWith(exp: NamedAst.Expression, bindings: List[NamedAst.HandlerBinding], tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
     case class Existential(fparam: NamedAst.FormalParam, exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression

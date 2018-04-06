@@ -780,6 +780,11 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
               case e => NamedAst.Expression.NewChannel(Some(e), Type.freshTypeVar(), loc)
             }
         }
+
+      case WeededAst.Expression.PutChannel(exp1, exp2, loc) =>
+        @@(namer(exp1, env0, tenv0), namer(exp2, env0, tenv0)) map {
+          case (e1, e2) => NamedAst.Expression.PutChannel(e1, e2, Type.freshTypeVar(), loc)
+        }
     }
 
     /**
@@ -832,6 +837,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
       case WeededAst.Expression.NativeMethod(className, methodName, args, loc) => args.flatMap(freeVars)
       case WeededAst.Expression.NativeConstructor(className, args, loc) => args.flatMap(freeVars)
       case WeededAst.Expression.UserError(loc) => Nil
+      case WeededAst.Expression.PutChannel(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
     }
 
   }
