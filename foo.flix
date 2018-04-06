@@ -1,4 +1,4 @@
-def f() : Vector[|Int, 6|] = {
+def f() : Vector[Int] = {
 
   /* Array */
   // [1,2,3,4,5] // (ArrayLit)
@@ -12,9 +12,9 @@ def f() : Vector[|Int, 6|] = {
 
   /* Vector */
 
-   [|1|]
+//   [|1|]
   //[|1;10|]
-  //V[1]length
+  Vlength[|1|]
 //   2[|2 .. 3|]
   //[|1,123|]
   //[| 1 ; 10|]
@@ -25,6 +25,6 @@ def f() : Vector[|Int, 6|] = {
 
 
 }
+// def g() : 47i32 = if(47 == 47) 47 else 2
 
-def g() : Int = 42
 

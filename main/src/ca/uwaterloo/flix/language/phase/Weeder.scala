@@ -1252,7 +1252,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
       @@(root.decls.map(visit)).map(_.flatten)
     }
-
   }
 
   object Types {
@@ -1265,10 +1264,9 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       case ParsedAst.Type.Var(sp1, ident, sp2) => WeededAst.Type.Var(ident, mkSL(sp1, sp2))
       case ParsedAst.Type.Ambiguous(sp1, qname, sp2) => WeededAst.Type.Ambiguous(qname, mkSL(sp1, sp2))
       case ParsedAst.Type.Tuple(sp1, elms, sp2) => WeededAst.Type.Tuple(elms.toList.map(weed), mkSL(sp1, sp2))
+      //case ParsedAst.Type.Nat(sp1, elm, sp2) => WeededAst.Type.Nat(CheckNaturalNumber(elm, sp1, sp2), mkSL(sp1, sp2))
       case ParsedAst.Type.Native(sp1, fqn, sp2) => WeededAst.Type.Native(fqn.toList, mkSL(sp1, sp2))
       case ParsedAst.Type.Arrow(sp1, tparams, tresult, sp2) => WeededAst.Type.Arrow(tparams.toList.map(weed), weed(tresult), mkSL(sp1, sp2))
-        // Nuværende problem: Der kan skrives negative værdier som vector type. Jeg prøvede at bruge toInt32 metoden, men types object tager kun WeededAst.Type return, og ikke weedererror.
-      case ParsedAst.Type.Vector(sp1, elm, len, sp2) => WeededAst.Type.Vector(weed(elm), len.asInstanceOf[Int], mkSL(sp1, sp2))
       case ParsedAst.Type.Infix(tpe1, base0, tpe2, sp2) =>
         /*
          * Rewrites infix type applications to regular type applications.
@@ -1601,6 +1599,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Type.Var(sp1, _, _) => sp1
     case ParsedAst.Type.Ambiguous(sp1, _, _) => sp1
     case ParsedAst.Type.Tuple(sp1, _, _) => sp1
+    //case ParsedAst.Type.Nat(sp1, _, _) => sp1
     case ParsedAst.Type.Native(sp1, _, _) => sp1
     case ParsedAst.Type.Arrow(sp1, _, _, _) => sp1
     case ParsedAst.Type.Infix(tpe1, _, _, _) => leftMostSourcePosition(tpe1)
@@ -1624,6 +1623,19 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       }
     })
   }
+  private def CheckNaturalNumber(elm: ParsedAst.Literal.Int32, sp1: SourcePosition, sp2: SourcePosition) : Int = {
+     val l = toInt32(elm.sign, elm.lit, mkSL(sp1, sp2)) flatMap {
+       case l if l >= 0 => l.toSuccess
+       case _ => WeederError.IllegalVectorLength(mkSL(sp1, sp2)).toFailure
+     }
+    l.get
+  }
+
+
+  //case ParsedAst.Literal.Int32(sp1, sign, digits, sp2) => toInt32(sign, digits, mkSL(sp1, sp2)) flatMap {
+  //case l if l >= 0 => WeededAst.Expression.VectorNew(e, l, mkSL(sp1, sp2)).toSuccess
+  //case _ => WeederError.IllegalVectorLength(mkSL(sp1, sp2)).toFailure
+//}
 
   /**
     * Re-interprets the given fully-qualified name `qname0` as an optionally fully-qualified type name followed by a tag name.
