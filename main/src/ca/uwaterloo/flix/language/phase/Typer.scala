@@ -812,6 +812,12 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
             resultType <- unifyM(tvar, Type.mkArray(tpe), loc)
           ) yield resultType
 
+        case ResolvedAst.Expression.VectorLit(elms, tvar, loc) =>
+          for (
+            elementTypes <- seqM(elms.map(visitExp));
+            resultType <- unifyM(tvar, Type.mkVector(elementTypes, elms.length), loc)
+          ) yield resultType
+
         case ResolvedAst.Expression.VectorLength(exp, tvar, loc) =>
           for(
             resultType <- unifyM(tvar, Type.Int32, loc)

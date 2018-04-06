@@ -1184,14 +1184,14 @@ object ParsedAst {
       */
 //    case class Vector(sp1: SourcePosition, elm: ParsedAst.Type, len: ParsedAst.Literal, sp2: SourcePosition) extends ParsedAst.Type
 
-    /*/**
+    /**
       * Nat Type.
       *
       * @param sp1 the position of the first character in the type.
       * @param elm the type of the element.
       * @param sp2 the position of the last character in the type.
       */
-    case class Nat(sp1: SourcePosition, elm: ParsedAst.Literal.Int32, sp2: SourcePosition) extends ParsedAst.Type*/
+    case class Nat(sp1: SourcePosition, elm: ParsedAst.Literal.Int32, sp2: SourcePosition) extends ParsedAst.Type
 
     /**
       * Arrow Type.

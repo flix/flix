@@ -11,12 +11,11 @@ def f() : Int = {
   // 2[..2] // (ArraySliceNoStartIndex)
 
   /* Vector */
-
-  // [|1|]
+   [|1|]
   //[|1;10|]
-  //V[1]length
+  //Vlength[|1|]
 
 }
-// def g() : 47i32 = if(47 == 47) 47 else 2
+ //def g() : 47i32 = 47
 
 
