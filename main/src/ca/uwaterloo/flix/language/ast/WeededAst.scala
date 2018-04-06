@@ -144,9 +144,7 @@ object WeededAst {
 
     case class ArrayStore(exp1: WeededAst.Expression, exp2: WeededAst.Expression, exp3: WeededAst.Expression, loc: SourceLocation) extends  WeededAst.Expression
 
-    case class ArraySlice(exp1: WeededAst.Expression, exp2: WeededAst.Expression, exp3: WeededAst.Expression, loc: SourceLocation) extends  WeededAst.Expression
-
-    /* case class ArraySlice(exp1: WeededAst.Expression, exp2: Option[WeededAst.Expression], exp3: Option[WeededAst.Expression], loc: SourceLocation) extends  WeededAst.Expression*/
+    case class ArraySlice(exp1: WeededAst.Expression, exp2: Option[WeededAst.Expression], exp3: Option[WeededAst.Expression], loc: SourceLocation) extends  WeededAst.Expression
 
     case class VectorLit(elms: List[WeededAst.Expression], loc: SourceLocation) extends  WeededAst.Expression
 

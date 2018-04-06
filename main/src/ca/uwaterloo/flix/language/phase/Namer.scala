@@ -679,27 +679,24 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
           case(ex) => NamedAst.Expression.ArrayLength(ex, Type.freshTypeVar(), loc)
         }
 
-      case WeededAst.Expression.ArraySlice(exp1, exp2, exp3, loc) =>
-        @@(namer(exp1, env0, tenv0), namer(exp2, env0, tenv0), namer(exp3, env0, tenv0)) map {
-          case(ex1, ex2, ex3) => NamedAst.Expression.ArraySlice(ex1, ex2, ex3, Type.freshTypeVar(), loc)
-        }
-
-      /*case WeededAst.Expression.ArraySlice(exp1, exp2, exp3, loc) => exp2 match {
-        case None =>
-          @@(namer(exp1, env0, tenv0), namer(exp3.asInstanceOf[WeededAst.Expression], env0, tenv0)) map {
-            case(ex1, ex3) => NamedAst.Expression.ArraySlice(ex1, None, Some(ex3), Type.freshTypeVar(), loc)
+      case WeededAst.Expression.ArraySlice(exp1, exp2, exp3, loc) => exp2 match {
+          case None => exp3 match {
+            case Some(e3) =>
+              @@(namer(exp1, env0, tenv0), namer(e3, env0, tenv0)) map {
+                case(ex1, ex3) => NamedAst.Expression.ArraySlice(ex1, None, Some(ex3), Type.freshTypeVar(), loc)
+              }
           }
-        case Some(exp2) => exp3 match {
-          case None =>
-            @@(namer(exp1, env0, tenv0), namer(exp2.asInstanceOf[WeededAst.Expression], env0, tenv0)) map {
-              case(ex1, ex2) => NamedAst.Expression.ArraySlice(ex1, Some(ex2), None, Type.freshTypeVar(), loc)
-            }
-          case Some(exp3) =>
-            @@(namer(exp1, env0, tenv0), namer(exp2.asInstanceOf[WeededAst.Expression], env0, tenv0), namer(exp3.asInstanceOf[WeededAst.Expression], env0, tenv0)) map {
-              case(ex1, ex2, ex3) => NamedAst.Expression.ArraySlice(ex1, Some(ex2), Some(ex3), Type.freshTypeVar(), loc)
-            }
-        }
-      }*/
+          case Some(e2) => exp3 match {
+            case None =>
+              @@(namer(exp1, env0, tenv0), namer(e2, env0, tenv0)) map {
+                case(ex1, ex2) => NamedAst.Expression.ArraySlice(ex1, Some(ex2), None, Type.freshTypeVar(), loc)
+              }
+            case Some(e3) =>
+              @@(namer(exp1, env0, tenv0), namer(e2, env0, tenv0), namer(e3, env0, tenv0)) map {
+                case(ex1, ex2, ex3) => NamedAst.Expression.ArraySlice(ex1, Some(ex2), Some(ex3), Type.freshTypeVar(), loc)
+              }
+          }
+      }
 
       case WeededAst.Expression.VectorLit(elms, loc) =>
       @@(elms map (e => namer(e, env0, tenv0))) map{

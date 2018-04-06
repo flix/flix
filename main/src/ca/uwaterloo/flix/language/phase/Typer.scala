@@ -765,7 +765,8 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         case ResolvedAst.Expression.ArrayLit(elms, tvar, loc) =>
           for (
             elementsTypes <- seqM(elms.map(visitExp));
-            resultType <- unifyM(tvar, Type.mkArray(elementsTypes), loc)
+            elementType <- unifyM(elementsTypes, loc);
+            resultType <- unifyM(tvar, Type.mkArray(elementType), loc)
           ) yield resultType
 
           /*
@@ -800,7 +801,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         case ResolvedAst.Expression.ArrayStore(exp1, exp2, exp3, tvar, loc) =>
           for (
             tpe <- visitExp(exp1);
-            resultType <- unifyM(tvar, Type.mkArray(tpe), loc)
+            resultType <- unifyM(tvar, Type.Unit, loc)
           ) yield resultType
 
         /*
@@ -809,7 +810,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         case ResolvedAst.Expression.ArraySlice(exp1, exp2, exp3, tvar, loc) =>
           for (
             tpe <- visitExp(exp1);
-            resultType <- unifyM(tvar, Type.mkArray(tpe), loc)
+            resultType <- unifyM(tvar, tpe, loc)
           ) yield resultType
 
           /*
@@ -1134,14 +1135,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           val es = elms.map(e => visitExp(e, subst0))
           TypedAst.Expression.VectorLit(es, tvar, Eff.Bot, loc)
 
-/*        case ResolvedAst.Expression.VectorLoad(exp1, exp2, tvar, loc) =>
-          val e = visitExp(exp1, subst0)
-          TypedAst.Expression.VectorLoad(e, exp2, tvar, Eff.Bot, loc)
-*/
-        case ResolvedAst.Expression.VectorLength(elm, tvar, loc) =>
-          var e = visitExp(elm, subst0)
-          TypedAst.Expression.VectorLength(e, tvar, Eff.Bot, loc)
-
+          // Todo: Arrayload should just return the type of the array
         /*
          * ArrayLoad expression.
          */
@@ -1174,6 +1168,14 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           val e2 = visitExp(exp2, subst0)
           val e3 = visitExp(exp3, subst0)
           TypedAst.Expression.ArraySlice(e1, e2, e3, subst0(tvar), Eff.Bot, loc)
+        
+        /* case ResolvedAst.Expression.VectorLoad(exp1, exp2, tvar, loc) =>
+          val e = visitExp(exp1, subst0)
+          TypedAst.Expression.VectorLoad(e, exp2, tvar, Eff.Bot, loc)
+        */
+        case ResolvedAst.Expression.VectorLength(elm, tvar, loc) =>
+          var e = visitExp(elm, subst0)
+          TypedAst.Expression.VectorLength(e, tvar, Eff.Bot, loc)
 
         /*
          * Reference expression.

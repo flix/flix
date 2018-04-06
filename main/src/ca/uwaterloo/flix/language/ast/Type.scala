@@ -382,13 +382,6 @@ object Type {
     */
   def mkArray(a: Type): Type = Apply(Array, a)
 
-  def mkArray(ts: List[Type]): Type = {
-    val array = Array(ts.length)
-    ts.foldLeft(array: Type) {
-      case(acc, x) => Apply(acc, x)
-    }
-  }
-
   /**
     * Constructs the set type of A.
     */
