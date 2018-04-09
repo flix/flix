@@ -2,96 +2,187 @@
 // Select expressions (channel select)                                     //
 /////////////////////////////////////////////////////////////////////////////
 
-def testSelectChannel[a](var: a): a =
-    let ch = 2; //: Channel[a] = channel a:1;
-    //ch <- var;
-    select {
-        case x <- ch => x
-    }
-
 /******************************* Test units *******************************/
+def testSelectChannelUnit(): Unit =
+  let ch: Channel[Unit] = channel Unit:1;
+  //ch <- var;
+  select {
+      case x <- ch => ()
+  }
+
 @test
-def testSelectChannel01(): Bool = assertEq!(testSelectChannel(()), ())
+def testSelectChannel01(): Bool = assertEq!(testSelectChannelUnit(), ())
 
 /******************************* Test bools *******************************/
-@test
-def testSelectChannel02(): Bool = assertEq!(testSelectChannel(true), true)
+def testSelectChannelBool(var: Bool): Bool =
+  let ch: Channel[Bool] = channel Bool:1;
+  //ch <- var;
+  select {
+      case x <- ch => x
+  }
 
 @test
-def testSelectChannel03(): Bool = assertEq!(testSelectChannel(false), false)
+def testSelectChannel02(): Bool = assertEq!(testSelectChannelBool(true), true)
+
+@test
+def testSelectChannel03(): Bool = assertEq!(testSelectChannelBool(false), false)
 
 /******************************* Test integers *******************************/
-@test
-def testSelectChannel04(): Bool = assertEq!(testSelectChannel(0), 0)
+def testSelectChannelInt(var: Int): Int =
+  let ch: Channel[Int] = channel Int:1;
+  //ch <- var;
+  select {
+      case x <- ch => x
+  }
 
 @test
-def testSelectChannel05(): Bool = assertEq!(testSelectChannel(-1), -1)
+def testSelectChannel04(): Bool = assertEq!(testSelectChannelInt(0), 0)
 
 @test
-def testSelectChannel06(): Bool = assertEq!(testSelectChannel(1), 1)
+def testSelectChannel05(): Bool = assertEq!(testSelectChannelInt(-1), -1)
 
 @test
-def testSelectChannel07(): Bool = assertEq!(testSelectChannel(-100), -100)
+def testSelectChannel06(): Bool = assertEq!(testSelectChannelInt(1), 1)
 
 @test
-def testSelectChannel08(): Bool = assertEq!(testSelectChannel(100), 100)
+def testSelectChannel07(): Bool = assertEq!(testSelectChannelInt(-100), -100)
+
+@test
+def testSelectChannel08(): Bool = assertEq!(testSelectChannelInt(100), 100)
 
 /******************************* Test floats *******************************/
+//def testSelectChannelFloat32(var: Float32): Float32 =
+//  let ch: Channel[Float32] = channel Float32:1;
+//  //ch <- var;
+//  select {
+//      case x <- ch => x
+//  }
+
 // @test
-// def testSelectChannel09(): Bool = assertEq!(testSelectChannel[Float32](0f32), 0f32)
+// def testSelectChannel09(): Bool = assertEq!(testSelectChannelFloat32(0f32), 0f32)
 // 
 // @test
-// def testSelectChannel10(): Bool = assertEq!(testSelectChannel[Float32](-1.1f32), -1.1f32)
+// def testSelectChannel10(): Bool = assertEq!(testSelectChannelFloat32(-1.1f32), -1.1f32)
 // 
 // @test
-// def testSelectChannel11(): Bool = assertEq!(testSelectChannel[Float32](1.1f32), 1.1f32)
+// def testSelectChannel11(): Bool = assertEq!(testSelectChannelFloat32(1.1f32), 1.1f32)
 
 /******************************* Test strings *******************************/
-@test
-def testSelectChannel12(): Bool = assertEq!(testSelectChannel(""), "")
+def testSelectChannelStr(var: Str): Str =
+  let ch: Channel[Str] = channel Str:1;
+  //ch <- var;
+  select {
+      case x <- ch => x
+  }
 
 @test
-def testSelectChannel13(): Bool = assertEq!(testSelectChannel("str"), "str")
+def testSelectChannel12(): Bool = assertEq!(testSelectChannelStr(""), "")
+
+@test
+def testSelectChannel13(): Bool = assertEq!(testSelectChannelStr("str"), "str")
 
 /******************************* Test chars *******************************/
-@test
-def testSelectChannel14(): Bool = assertEq!(testSelectChannel('a'), 'a')
+def testSelectChannelChar(var: Char): Char =
+  let ch: Channel[Char] = channel Char:1;
+  //ch <- var;
+  select {
+      case x <- ch => x
+  }
 
 @test
-def testSelectChannel15(): Bool = assertEq!(testSelectChannel('b'), 'b')
+def testSelectChannel14(): Bool = assertEq!(testSelectChannelChar('a'), 'a')
+
+@test
+def testSelectChannel15(): Bool = assertEq!(testSelectChannelChar('b'), 'b')
 
 /******************************* Test tuples *******************************/
-@test
-def testSelectChannel16(): Bool = assertEq!(testSelectChannel((2, "Str")), (2, "Str"))
+def testSelectChannelIntStrTuple(var: (Int, Str)): (Int, Str) =
+  let ch: Channel[(Int, Str)] = channel (Int, Str):1;
+  //ch <- var;
+  select {
+      case x <- ch => x
+  }
+
+def testSelectChannelIntIntTuple(var: (Int, Int)): (Int, Int) =
+  let ch: Channel[(Int, Int)] = channel (Int, Int):1;
+  //ch <- var;
+  select {
+      case x <- ch => x
+  }
+
+def testSelectChannelIntIntIntIntTuple(var: (Int, Int, Int, Int)): (Int, Int, Int, Int) =
+  let ch: Channel[(Int, Int, Int, Int)] = channel (Int, Int, Int, Int):1;
+  //ch <- var;
+  select {
+      case x <- ch => x
+  }
 
 @test
-def testSelectChannel17(): Bool = assertEq!(testSelectChannel((2, 10)), (2, 10))
+def testSelectChannel16(): Bool = assertEq!(testSelectChannelIntStrTuple((2, "Str")), (2, "Str"))
 
 @test
-def testSelectChannel18(): Bool = assertEq!(testSelectChannel((2, 10, 12, 0)), (2, 10, 12, 0))
+def testSelectChannel17(): Bool = assertEq!(testSelectChannelIntIntTuple((2, 10)), (2, 10))
+
+@test
+def testSelectChannel18(): Bool = assertEq!(testSelectChannelIntIntIntIntTuple((2, 10, 12, 0)), (2, 10, 12, 0))
 
 /******************************* Test lists *******************************/
-@test
-def testSelectChannel19(): Bool = assertEq!(testSelectChannel(Nil), Nil)
+def testSelectChannelIntList(var: List[Int]): List[Int] =
+  let ch: Channel[List[Int]] = channel List[Int]:1;
+  //ch <- var;
+  select {
+      case x <- ch => x
+  }
+
+def testSelectChannelStrList(var: List[Str]): List[Str] =
+  let ch: Channel[List[Str]] = channel List[Str]:1;
+  //ch <- var;
+  select {
+      case x <- ch => x
+  }
 
 @test
-def testSelectChannel20(): Bool = assertEq!(testSelectChannel(1 :: Nil), 1 :: Nil)
+def testSelectChannel19(): Bool = assertEq!(testSelectChannelIntList(Nil), Nil)
 
 @test
-def testSelectChannel21(): Bool = assertEq!(testSelectChannel("str" :: Nil), "str" :: Nil)
+def testSelectChannel20(): Bool = assertEq!(testSelectChannelIntList(1 :: Nil), 1 :: Nil)
 
 @test
-def testSelectChannel22(): Bool = assertEq!(testSelectChannel("str" :: "trs" :: Nil), "str" :: "trs" :: Nil)
+def testSelectChannel21(): Bool = assertEq!(testSelectChannelStrList("str" :: Nil), "str" :: Nil)
+
+@test
+def testSelectChannel22(): Bool = assertEq!(testSelectChannelStrList("str" :: "trs" :: Nil), "str" :: "trs" :: Nil)
 
 /******************************* Test functions *******************************/
-@test
-def testSelectChannel23(): Bool = assertEq!(testSelectChannel(x -> x)(2), 2)
+def testSelectChannelIntIntFunction(var: Int -> Int): Int -> Int =
+  let ch: Channel[Int -> Int] = channel Int -> Int:1;
+  //ch <- var;
+  select {
+      case x <- ch => x
+  }
+
+def testSelectChannelIntStrFunction(var: Int -> Str): Int -> Str =
+  let ch: Channel[Int -> Str] = channel Int -> Str:1;
+  //ch <- var;
+  select {
+      case x <- ch => x
+  }
+
+def testSelectChannelIntIntIntFunction(var: Int -> Int -> Int): Int -> Int -> Int =
+  let ch: Channel[Int -> Int -> Int] = channel Int -> Int -> Int:1;
+  //ch <- var;
+  select {
+      case x <- ch => x
+  }
 
 @test
-def testSelectChannel24(): Bool = assertEq!(testSelectChannel(x -> "2")(2), "2")
+def testSelectChannel23(): Bool = assertEq!(testSelectChannelIntIntFunction(x -> x)(2), 2)
 
 @test
-def testSelectChannel25(): Bool = assertEq!(testSelectChannel((x, y) -> x + y)(2, 3), 5)
+def testSelectChannel24(): Bool = assertEq!(testSelectChannelIntStrFunction(x -> "2")(2), "2")
 
 @test
-def testSelectChannel26(): Bool = assertEq!(testSelectChannel(x -> y -> x + y)(2, 3), 5)
+def testSelectChannel25(): Bool = assertEq!(testSelectChannelIntIntIntFunction((x, y) -> x + y)(2, 3), 5)
+
+@test
+def testSelectChannel26(): Bool = assertEq!(testSelectChannelIntIntIntFunction(x -> y -> x + y)(2, 3), 5)

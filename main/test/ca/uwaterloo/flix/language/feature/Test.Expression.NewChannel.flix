@@ -3,39 +3,56 @@
 //                                                                         //
 /////////////////////////////////////////////////////////////////////////////
 
-def f01(): Channel[Int] = channel Int
+@test
+def newChannel01(): Channel[Int] = channel Int
 
-def f02(): Channel[Bool] = channel Bool
+@test
+def newChannel02(): Channel[Bool] = channel Bool
 
-def f03(): Channel[Char] = channel Char
+@test
+def newChannel03(): Channel[Char] = channel Char
 
-def f04(): Channel[Int8] = channel Int8
+@test
+def newChannel04(): Channel[Int8] = channel Int8
 
-def f05(): Channel[Int16] = channel Int16
+@test
+def newChannel05(): Channel[Int16] = channel Int16
 
-def f06(): Channel[Int32] = channel Int32
+@test
+def newChannel06(): Channel[Int32] = channel Int32
 
-def f07(): Channel[Int62] = channel Int64
+@test
+def newChannel07(): Channel[Int62] = channel Int64
 
-def f08(): Channel[BigInt] = channel BigInt
+@test
+def newChannel08(): Channel[BigInt] = channel BigInt
 
-def f09(): Channel[Float32] = channel Float32
+@test
+def newChannel09(): Channel[Float32] = channel Float32
 
-def f010(): Channel[Float64] = channel Float64
+@test
+def newChannel010(): Channel[Float64] = channel Float64
 
-def f011(): Channel[Str] = channel Str
+@test
+def newChannel011(): Channel[Str] = channel Str
 
-def f012(): Channel[Int -> Int] = channel Int -> Int
+@test
+def newChannel012(): Channel[Int -> Int] = channel Int -> Int
 
-def f013(): Channel[(Int, Str) -> Int] = channel (Int, Str) -> Int
+@test
+def newChannel013(): Channel[(Int, Str) -> Int] = channel (Int, Str) -> Int
 
-def f014(): Channel[(Int, Str) -> Int] = channel Int -> Str -> Int
+@test
+def newChannel014(): Channel[(Int, Str) -> Int] = channel Int -> Str -> Int
 
-def f15(): Channel[Channel[Int]] = channel Channel[Int]
+@test
+def newChannel15(): Channel[Channel[Int]] = channel Channel[Int]
 
-def f16(): Channel[Int] = channel Int:10
+@test
+def newChannel16(): Channel[Int] = channel Int:10
 
-def f20(): Unit = let x = channel Int; ()
+@test
+def newChannel20(): Unit = let x = channel Int; ()
 
 
 
