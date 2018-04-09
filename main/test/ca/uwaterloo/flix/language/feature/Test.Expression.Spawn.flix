@@ -1,52 +1,63 @@
+/////////////////////////////////////////////////////////////////////////////
+// Spawn expressions                                                       //
+/////////////////////////////////////////////////////////////////////////////
+
 def f01(): Unit = ()
 
-@test
-spawn f01()
+def testSpawn01(): Unit = spawn f01()
 
 def f02(x: Int): Unit = ()
 
-@test
-spawn f02(42)
+def testSpawn02(): Unit = spawn f02(42)
 
-def f03(): Int = 42
+def f03(x: Int, y: Int): Unit = ()
 
-@test
-spawn f03()
+def testSpawn03(): Unit = spawn f03(42, 10)
 
+def f04(x: Str): Unit = ()
 
-def f04(x: Int): Int = x
+def testSpawn04(): Unit = spawn f04("str")
 
-@test
-spawn f04(42)
+def f05(x: Str, y: Str): Unit = ()
 
-def f05(): Int = 42
+def testSpawn05(): Unit = spawn f05("str", "strstr")
 
-@test
-let x = spawn f05()
+//def f06(x: Float32): Unit = ()
+//
+//def testSpawn06(): Unit = spawn f06(1.2f)
+//
+//def f07(x: Float32, y: Float32): Unit = ()
+//
+//def testSpawn07(): Unit = spawn f07()
 
-def f06(): Int = 42
+def f08(x: Bool): Unit = ()
 
-@test
-spawn f06() + spawn f()
+def testSpawn08(): Unit = spawn f08(true)
 
-def f07(): Int = 42
+def f09(x: Bool, y: Bool): Unit = ()
 
-@test
-spawn f07() - spawn f()
+def testSpawn09(): Unit = spawn f09(true, false)
 
-def f08(): Int = 42
+def f10(x: Int -> Int): Unit = ()
 
-@test
-spawn f08() * spawn f08()
+def testSpawn10(): Unit = spawn f10(x -> x)
 
-def f09(): Int = 42
+def f11(x: Int -> Int, y: Int -> Int): Unit = ()
 
-@test
-spawn f09() spawn f09()
+def testSpawn11(): Unit = spawn f11(x -> x, x -> x + 2)
 
-def f10(): Bool = True
+def f12(x: (Int, Int)): Unit = ()
 
-@test
-if (spawn f10())
-    42
+def testSpawn12(): Unit = spawn f12((2, 3))
 
+def f13(x: (Int, Int), y: (Int, Int)): Unit = ()
+
+def testSpawn13(): Unit = spawn f13((2, 3), (3, 4))
+
+def f14(x: Channel[Int]): Unit = ()
+
+def testSpawn14(): Unit = spawn f14(channel Int)
+
+def f15(x: Channel[Int], y: Channel[Str]): Unit = ()
+
+def testSpawn15(): Unit = spawn f15(channel Int, channel Str)
