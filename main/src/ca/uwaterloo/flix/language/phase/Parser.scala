@@ -603,8 +603,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Primary: Rule1[ParsedAst.Expression] = rule {
-        GetChannel | LetRec | LetMatch | IfThenElse | Match | LambdaMatch | SelectChannel | Switch | Unsafe | Native | Lambda | Tuple |
-        ArrayLit | ArrayNew | FNil | FSet | FMap | Literal | Spawn | NewChannel |
+        GetChannel | LetRec | LetMatch | IfThenElse | Match | LambdaMatch  | Switch | Unsafe | Native | Lambda | Tuple |
+        ArrayLit | ArrayNew | FNil | FSet | FMap | Literal | NewChannel | Spawn | SelectChannel |
         HandleWith | Existential | Universal | UnaryLambda | QName | Wild | Tag | SName | Hole | UserError
     }
 
