@@ -136,8 +136,6 @@ object NamedAst {
 
     case class Match(exp: NamedAst.Expression, rules: List[NamedAst.MatchRule], tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
-    case class SelectChannel(rules: List[NamedAst.SelectRule], tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
-
     case class Switch(rules: List[(NamedAst.Expression, NamedAst.Expression)], tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
     case class Tag(enum: Option[Name.QName], tag: Name.Ident, expOpt: Option[NamedAst.Expression], tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
@@ -158,8 +156,6 @@ object NamedAst {
 
     case class Assign(exp1: NamedAst.Expression, exp2: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
-    case class PutChannel(exp1: NamedAst.Expression, exp2: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
-
     case class HandleWith(exp: NamedAst.Expression, bindings: List[NamedAst.HandlerBinding], tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
     case class Existential(fparam: NamedAst.FormalParam, exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
@@ -178,11 +174,16 @@ object NamedAst {
 
     case class UserError(tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
-    case class Spawn(exp: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
-    
-    case class GetChannel(exp: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
-    
     case class NewChannel(exp: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
+
+    case class GetChannel(exp: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
+
+    case class PutChannel(exp1: NamedAst.Expression, exp2: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
+
+    case class Spawn(exp: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
+
+    case class SelectChannel(rules: List[NamedAst.SelectRule], tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
+
   }
 
   sealed trait Pattern extends NamedAst {

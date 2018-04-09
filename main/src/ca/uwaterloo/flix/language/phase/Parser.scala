@@ -609,7 +609,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Spawn: Rule1[ParsedAst.Expression.Spawn] = rule {
-      SP ~ atomic("spawn") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.Spawn
+      SP ~ atomic("spawn") ~ WS ~ Names.Definition ~ optWS ~ ArgumentList ~ SP ~> ParsedAst.Expression.Spawn
     }
 
     def NewChannel: Rule1[ParsedAst.Expression.NewChannel] = rule {

@@ -114,8 +114,6 @@ object WeededAst {
 
     case class Apply(lambda: WeededAst.Expression, args: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
 
-    case class PutChannel(exp1: WeededAst.Expression, exp2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
-
     case class Lambda(fparams: List[WeededAst.FormalParam], exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     case class Unary(op: UnaryOperator, exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
@@ -129,8 +127,6 @@ object WeededAst {
     case class LetRec(ident: Name.Ident, exp1: WeededAst.Expression, exp2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     case class Match(exp: WeededAst.Expression, rules: List[WeededAst.MatchRule], loc: SourceLocation) extends WeededAst.Expression
-
-    case class SelectChannel(rules: List[WeededAst.SelectRule], loc: SourceLocation) extends WeededAst.Expression
 
     case class Switch(rules: List[(WeededAst.Expression, WeededAst.Expression)], loc: SourceLocation) extends WeededAst.Expression
 
@@ -170,11 +166,15 @@ object WeededAst {
 
     case class UserError(loc: SourceLocation) extends WeededAst.Expression
 
-    case class Spawn(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+    case class NewChannel(exp: WeededAst.Expression, tpe: WeededAst.Type, loc: SourceLocation) extends WeededAst.Expression
     
     case class GetChannel(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
-    case class NewChannel(exp: WeededAst.Expression, tpe: WeededAst.Type, loc: SourceLocation) extends WeededAst.Expression
+    case class PutChannel(exp1: WeededAst.Expression, exp2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+
+    case class Spawn(lambda: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+
+    case class SelectChannel(rules: List[WeededAst.SelectRule], loc: SourceLocation) extends WeededAst.Expression
 
   }
 

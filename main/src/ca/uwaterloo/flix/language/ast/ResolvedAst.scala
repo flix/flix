@@ -142,8 +142,6 @@ object ResolvedAst {
 
     case class Match(exp: ResolvedAst.Expression, rules: List[ResolvedAst.MatchRule], tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class SelectChannel(rules: List[ResolvedAst.SelectRule], tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
-
     case class Switch(rules: List[(ResolvedAst.Expression, ResolvedAst.Expression)], tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Tag(sym: Symbol.EnumSym, tag: String, exp: ResolvedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
@@ -182,13 +180,15 @@ object ResolvedAst {
 
     case class UserError(tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Spawn(exp: ResolvedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class NewChannel(exp: ResolvedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class GetChannel(exp: ResolvedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class NewChannel(exp: ResolvedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
-
     case class PutChannel(exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+
+    case class Spawn(exp: ResolvedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+
+    case class SelectChannel(rules: List[ResolvedAst.SelectRule], tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
   }
 

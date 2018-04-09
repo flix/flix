@@ -457,19 +457,6 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
             rs <- seqM(rulesVal)
           } yield ResolvedAst.Expression.Match(e, rs, tvar, loc)
 
-        case NamedAst.Expression.SelectChannel(rules, tvar, loc) =>
-          val rulesVal = rules map {
-            case NamedAst.SelectRule(sym, channel, body) =>
-              for {
-                c <- visit(channel)
-                b <- visit(body)
-              } yield ResolvedAst.SelectRule(sym, c, b)
-          }
-
-          for {
-            rs <- seqM(rulesVal)
-          } yield ResolvedAst.Expression.SelectChannel(rs, tvar, loc)
-
         case NamedAst.Expression.Switch(rules, tvar, loc) =>
           val rulesVal = rules map {
             case (cond, body) => @@(visit(cond), visit(body))
@@ -610,26 +597,40 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
 
         case NamedAst.Expression.UserError(tvar, loc) => ResolvedAst.Expression.UserError(tvar, loc).toSuccess
 
-        case NamedAst.Expression.Spawn(exp, tvar, loc) =>
+        case NamedAst.Expression.NewChannel(exp, tvar, loc) =>
           for {
             e <- visit(exp)
-          } yield ResolvedAst.Expression.Spawn(e, tvar, loc)
+          } yield ResolvedAst.Expression.NewChannel(e, tvar, loc)
 
         case NamedAst.Expression.GetChannel(exp, tvar, loc) =>
           for {
             e <- visit(exp)
           } yield ResolvedAst.Expression.GetChannel(e, tvar, loc)
 
-        case NamedAst.Expression.NewChannel(exp, tvar, loc) =>
-              for {
-                e <- visit(exp)
-              } yield ResolvedAst.Expression.NewChannel(e, tvar, loc)
-
         case NamedAst.Expression.PutChannel(exp1, exp2, tvar, loc) =>
           for {
             e1 <- visit(exp1)
             e2 <- visit(exp2)
           } yield ResolvedAst.Expression.PutChannel(e1, e2, tvar, loc)
+
+        case NamedAst.Expression.Spawn(exp, tvar, loc) =>
+          for {
+            e <- visit(exp)
+          } yield ResolvedAst.Expression.Spawn(e, tvar, loc)
+
+        case NamedAst.Expression.SelectChannel(rules, tvar, loc) =>
+          val rulesVal = rules map {
+            case NamedAst.SelectRule(sym, channel, body) =>
+              for {
+                c <- visit(channel)
+                b <- visit(body)
+              } yield ResolvedAst.SelectRule(sym, c, b)
+          }
+
+          for {
+            rs <- seqM(rulesVal)
+          } yield ResolvedAst.Expression.SelectChannel(rs, tvar, loc)
+
       }
 
       visit(exp0)

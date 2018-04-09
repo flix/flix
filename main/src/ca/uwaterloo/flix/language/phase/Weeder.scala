@@ -408,13 +408,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
             case (e, as) => WeededAst.Expression.Apply(e, as, mkSL(sp1, sp2)).toSuccess
           }
 
-        case ParsedAst.Expression.PutChannel(exp1, exp2, sp2) =>
-          val sp1 = leftMostSourcePosition(exp1)
-          val loc = mkSL(sp1, sp2)
-          @@(visit(exp1, unsafe), visit(exp2, unsafe)) map {
-            case (e1, e2) => WeededAst.Expression.PutChannel(e1, e2, loc)
-          }
-
         case ParsedAst.Expression.Infix(exp1, name, exp2, sp2) =>
           /*
            * Rewrites infix expressions to apply expressions.
@@ -556,16 +549,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           }
           @@(visit(exp, unsafe), @@(rulesVal)) map {
             case (e, rs) => WeededAst.Expression.Match(e, rs, mkSL(sp1, sp2))
-          }
-
-        case ParsedAst.Expression.SelectChannel(sp1, rules, sp2) =>
-          val rulesVal = rules map {
-            case ParsedAst.SelectRule(ident, channel, body) => @@(visit(channel, unsafe), visit(body, unsafe)) map {
-              case (c, b) => WeededAst.SelectRule(ident, c, b)
-            }
-          }
-          @@(rulesVal) map {
-            case rs => WeededAst.Expression.SelectChannel(rs, mkSL(sp1, sp2))
           }
 
         case ParsedAst.Expression.Switch(sp1, rules, sp2) =>
@@ -836,16 +819,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         case ParsedAst.Expression.UserError(sp1, sp2) =>
           WeededAst.Expression.UserError(mkSL(sp1, sp2)).toSuccess
 
-        case ParsedAst.Expression.Spawn(sp1, exp, sp2) =>
-          visit(exp, unsafe) map {
-            case (e) => WeededAst.Expression.Spawn(e, mkSL(sp1, sp2))
-          }
-
-        case ParsedAst.Expression.GetChannel(sp1, exp, sp2) =>
-          visit(exp,unsafe) map {
-            case (e) => WeededAst.Expression.GetChannel(e, mkSL(sp1, sp2))
-          }
-        
         case ParsedAst.Expression.NewChannel(sp1, tpe, expOpt, sp2) =>
           expOpt match {
             case None =>
@@ -853,10 +826,61 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
               val bufferSize = WeededAst.Expression.Int32(lit = 0, mkSL(sp2, sp2))
               WeededAst.Expression.NewChannel(bufferSize, Types.weed(tpe), mkSL(sp1, sp2)).toSuccess
             case Some(exp) =>
-              // Case 1: NewChannel takes an expression that states the buffer size
+              // Case 2: NewChannel takes an expression that states the buffer size
               visit(exp, unsafe) map {
                 case e => WeededAst.Expression.NewChannel(e, Types.weed(tpe), mkSL(sp1, sp2))
               }
+          }
+
+        case ParsedAst.Expression.GetChannel(sp1, exp, sp2) =>
+          visit(exp,unsafe) map {
+            case e => WeededAst.Expression.GetChannel(e, mkSL(sp1, sp2))
+          }
+        
+        case ParsedAst.Expression.PutChannel(exp1, exp2, sp2) =>
+          val sp1 = leftMostSourcePosition(exp1)
+          val loc = mkSL(sp1, sp2)
+          @@(visit(exp1, unsafe), visit(exp2, unsafe)) map {
+            case (e1, e2) => WeededAst.Expression.PutChannel(e1, e2, loc)
+          }
+
+        case ParsedAst.Expression.Spawn(sp1, fn, params, sp2) =>
+          val loc = mkSL(sp1, sp2)
+          val func = WeededAst.Expression.VarOrDef(Name.QName(sp1, Name.RootNS, fn, sp2), loc)
+
+          def createExpression(params: List[ParsedAst.Expression], arguments: List[Name.Ident], paramNumber: Int): Validation[WeededAst.Expression, WeederError] =
+            params match {
+              case h :: t =>
+                val param = Name.Ident(sp1, s"x$${paramNumber}", sp2)
+
+                @@(visit(h, unsafe), createExpression(t, param :: arguments, paramNumber + 1)) map {
+                  case (e1, e2) => WeededAst.Expression.Let(param, e1, e2, loc) // let x$n = en
+                }
+
+              case Nil    =>
+                val args = arguments.reverse map {
+                  case v => WeededAst.Expression.VarOrDef(Name.QName(sp1, Name.RootNS, v, sp2), loc)
+                }
+                val exp = WeededAst.Expression.Apply(func, args, loc) // f(args)
+
+                // Wrapping function in a lambda function
+                val formalParam = WeededAst.FormalParam(Name.Ident(sp1, "_$", sp2), Ast.Modifiers.Empty, None, loc)
+                val lam = WeededAst.Expression.Lambda(List(formalParam), exp, loc) // _$ -> f(args)
+
+                // Spawn the lambda function
+                WeededAst.Expression.Spawn(lam, loc).toSuccess // spawn(_$ -> f(args))
+            }
+
+          createExpression(params.toList, List.empty, 1)
+
+        case ParsedAst.Expression.SelectChannel(sp1, rules, sp2) =>
+          val rulesVal = rules map {
+            case ParsedAst.SelectRule(ident, channel, body) => @@(visit(channel, unsafe), visit(body, unsafe)) map {
+              case (c, b) => WeededAst.SelectRule(ident, c, b)
+            }
+          }
+          @@(rulesVal) map {
+            case rs => WeededAst.Expression.SelectChannel(rs, mkSL(sp1, sp2))
           }
       }
 
@@ -1463,7 +1487,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.Hole(sp1, _, _) => sp1
     case ParsedAst.Expression.Lit(sp1, _, _) => sp1
     case ParsedAst.Expression.Apply(e1, _, _) => leftMostSourcePosition(e1)
-    case ParsedAst.Expression.PutChannel(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.Infix(e1, _, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.Postfix(e1, _, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.Lambda(sp1, _, _, _) => sp1
@@ -1471,11 +1494,9 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.Unary(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Binary(e1, _, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.IfThenElse(sp1, _, _, _, _) => sp1
-    case ParsedAst.Expression.GetChannel(sp1,_,_) => sp1
     case ParsedAst.Expression.LetMatch(sp1, _, _, _, _, _) => sp1
     case ParsedAst.Expression.LetRec(sp1, _, _, _, _) => sp1
     case ParsedAst.Expression.Match(sp1, _, _, _) => sp1
-    case ParsedAst.Expression.SelectChannel(sp1, _, _) => sp1
     case ParsedAst.Expression.Switch(sp1, _, _) => sp1
     case ParsedAst.Expression.Tag(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Tuple(sp1, _, _) => sp1
@@ -1501,8 +1522,11 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.NativeMethod(sp1, _, _, _) => sp1
     case ParsedAst.Expression.NativeConstructor(sp1, _, _, _) => sp1
     case ParsedAst.Expression.UserError(sp1, _) => sp1
-    case ParsedAst.Expression.Spawn(sp1, _, _) => sp1
     case ParsedAst.Expression.NewChannel(sp1, _, _, _) => sp1
+    case ParsedAst.Expression.GetChannel(sp1,_,_) => sp1
+    case ParsedAst.Expression.PutChannel(e1, _, _) => leftMostSourcePosition(e1)
+    case ParsedAst.Expression.Spawn(sp1, _, _, _) => sp1
+    case ParsedAst.Expression.SelectChannel(sp1, _, _) => sp1
   }
 
   /**
