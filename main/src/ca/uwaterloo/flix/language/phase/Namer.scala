@@ -769,16 +769,10 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
           case (e) => NamedAst.Expression.GetChannel(e, Type.freshTypeVar(), loc)
         }
 
-      case WeededAst.Expression.NewChannel(expOpt, tpe, loc) =>
-        expOpt match {
-          case None =>
-            // Case 1: NewChannel takes no expression that states the buffer size
-            NamedAst.Expression.NewChannel(None, Type.freshTypeVar(), loc).toSuccess
-          case Some(exp) =>
-            // Case 1: NewChannel takes an expression that states the buffer size
-            namer(exp, env0, tenv0) map {
-              case e => NamedAst.Expression.NewChannel(Some(e), Type.freshTypeVar(), loc)
-            }
+      case WeededAst.Expression.NewChannel(exp, tpe, loc) =>
+        namer(exp, env0, tenv0) map {
+          case e => NamedAst.Expression.NewChannel(e, Type.freshTypeVar(), loc)
+
         }
 
       case WeededAst.Expression.PutChannel(exp1, exp2, loc) =>
@@ -838,6 +832,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
       case WeededAst.Expression.NativeConstructor(className, args, loc) => args.flatMap(freeVars)
       case WeededAst.Expression.UserError(loc) => Nil
       case WeededAst.Expression.PutChannel(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
+      case WeededAst.Expression.NewChannel(exp, tpe, loc) => freeVars(exp)
     }
 
   }
