@@ -774,8 +774,10 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
            */
         case ResolvedAst.Expression.ArrayNew(elm, len, tvar, loc) =>
           for (
-            tpe <- visitExp(elm);
-            resultType <- unifyM(tvar, Type.mkArray(tpe), loc)
+            recievedElementType <- visitExp(elm);
+            recievedLenghtType <- visitExp(len);
+            lenghtType <- unifyM(recievedLenghtType, Type.Int32, loc);
+            resultType <- unifyM(tvar, Type.mkArray(recievedElementType), loc)
           ) yield resultType
 
         /*
@@ -783,15 +785,19 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
          */
         case ResolvedAst.Expression.ArrayLoad(exp1, exp2, tvar, loc) =>
           for (
-            tpe <- visitExp(exp1);
-            resultType <- unifyM(tvar, tpe, loc)
-          ) yield resultType
+            recievedBaseType <- visitExp(exp1);
+            recievedIndexType <- visitExp(exp2);
+            arrayType <- unifyM(recievedBaseType, Type.mkArray(tvar), loc);
+            indexType <- unifyM(recievedIndexType, Type.Int32, loc)
+          ) yield tvar
 
         /*
          * ArrayLength expression.
          */
         case ResolvedAst.Expression.ArrayLength(exp, tvar, loc) =>
           for (
+            tpe <- visitExp(exp);
+            arrayType <- unifyM(tpe, Type.mkArray(tvar), loc);
             resultType <- unifyM(tvar, Type.Int32, loc)
           ) yield resultType
 
@@ -799,8 +805,14 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
          * ArrayStore expression.
          */
         case ResolvedAst.Expression.ArrayStore(exp1, exp2, exp3, tvar, loc) =>
+          val elementType = Type.freshTypeVar();
           for (
-            tpe <- visitExp(exp1);
+            recievedBaseType <- visitExp(exp1);
+            recievedIndexType <- visitExp(exp2);
+            recievedObjectType <- visitExp(exp3);
+            arrayType <- unifyM(recievedBaseType, Type.mkArray(elementType), loc);
+            objectType <- unifyM(recievedObjectType, elementType, loc);
+            indexType <- unifyM(recievedIndexType, Type.Int32, loc);
             resultType <- unifyM(tvar, Type.Unit, loc)
           ) yield resultType
 
@@ -809,8 +821,12 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
          */
         case ResolvedAst.Expression.ArraySlice(exp1, exp2, exp3, tvar, loc) =>
           for (
-            tpe <- visitExp(exp1);
-            resultType <- unifyM(tvar, tpe, loc)
+            recievedBaseType <- visitExp(exp1);
+            recievedStartIndexType <- visitExp(exp2);
+            recievedEndIndexType <- visitExp(exp3);
+            startIndexType <- unifyM(recievedStartIndexType, Type.Int32, loc);
+            endIndexType <- unifyM(recievedEndIndexType, Type.Int32, loc);
+            resultType <- unifyM(tvar, recievedBaseType, loc)
           ) yield resultType
 
         case ResolvedAst.Expression.VectorLit(elms, tvar, loc) =>
@@ -1135,7 +1151,6 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           val es = elms.map(e => visitExp(e, subst0))
           TypedAst.Expression.VectorLit(es, tvar, Eff.Bot, loc)
 
-          // Todo: Arrayload should just return the type of the array
         /*
          * ArrayLoad expression.
          */
