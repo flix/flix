@@ -52,6 +52,7 @@ sealed trait Type {
     case Type.Tuple(l) => Set.empty
     case Type.Enum(enumName, kind) => Set.empty
     case Type.Apply(tpe1, tpe2) => tpe1.typeVars ++ tpe2.typeVars
+    case Type.Channel => Set.empty
   }
 
   /**
@@ -154,6 +155,7 @@ sealed trait Type {
     case Type.Enum(enum, kind) => enum.toString
     case Type.Tuple(l) => s"Tuple($l)"
     case Type.Apply(tpe1, tpe2) => s"$tpe1[$tpe2]"
+    case Type.Channel => "Channel"
   }
 }
 
@@ -334,6 +336,13 @@ object Type {
     }
   }
 
+  /**
+    * A type constructor that represent Channels.
+    */
+  case object Channel extends Type {
+    def kind: Kind = Kind.Star
+  }
+
   /////////////////////////////////////////////////////////////////////////////
   // Helper Functions                                                        //
   /////////////////////////////////////////////////////////////////////////////
@@ -386,6 +395,12 @@ object Type {
   }
 
   /**
+    * Constructs the Channel type [| a |] where `a` is the given type.
+    */
+  def mkChannel(a: Type): Type = Apply(Channel, a)
+
+
+  /**
     * Replaces every free occurrence of a type variable in `typeVars`
     * with a fresh type variable in the given type `tpe`.
     */
@@ -417,6 +432,7 @@ object Type {
       case Type.Tuple(l) => Type.Tuple(l)
       case Type.Apply(tpe1, tpe2) => Type.Apply(visit(tpe1), visit(tpe2))
       case Type.Enum(enum, kind) => Type.Enum(enum, kind)
+      case Type.Channel => Type.Channel
     }
 
     visit(tpe)
@@ -461,6 +477,7 @@ object Type {
           case Type.Array => "Array"
           case Type.Native => "Native"
           case Type.Ref => "Ref"
+          case Type.Channel => "Channel"
 
           //
           // Arrow.

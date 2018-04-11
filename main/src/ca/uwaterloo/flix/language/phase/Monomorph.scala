@@ -94,6 +94,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         case Type.Tuple(l) => Type.Tuple(l)
         case Type.Enum(name, kind) => Type.Enum(name, kind)
         case Type.Apply(tpe1, tpe2) => Type.Apply(apply(tpe1), apply(tpe2))
+        case Type.Channel => Type.Channel
       }
 
       visit(s(tpe))
