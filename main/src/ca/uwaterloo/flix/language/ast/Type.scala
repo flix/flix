@@ -286,6 +286,9 @@ object Type {
     def kind: Kind = Kind.Star
   }
 
+  /**
+    * A type constructor that represent vectors.
+    */
   case object Vector extends Type {
     def kind: Kind = Kind.Star
   }
@@ -327,10 +330,6 @@ object Type {
   }
 
   case class Array(length: Int) extends Type {
-    def kind: Kind = Kind.Arrow((0 until length).map(_ => Kind.Star).toList, Kind.Star)
-  }
-
-  case class Vector(length: Int) extends Type {
     def kind: Kind = Kind.Arrow((0 until length).map(_ => Kind.Star).toList, Kind.Star)
   }
 
@@ -398,13 +397,8 @@ object Type {
     */
   def mkArray(a: Type): Type = Apply(Array, a)
 
-  def mkVector(ts: List[Type], i: Int) : Type = {
-    val vector = Vector(ts.length)
-    ts.foldLeft(vector: Type) {
-      case(acc, x) => Apply(Apply(acc, x), Nat(i))
-    }
-  }
-
+  def mkVector(a: Type, i: Int) : Type = Apply(Apply(Vector, a), Nat(i))
+  
   /**
     * Constructs the set type of A.
     */
@@ -489,7 +483,7 @@ object Type {
           case Type.Str => "String"
           case Type.Array => "Array"
           case Type.Vector => "Vector"
-          case Type.Nat(i) => "Natural Number"
+          case Type.Nat(i) => i.toString
           case Type.Native => "Native"
           case Type.Ref => "Ref"
 

@@ -1176,6 +1176,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
       for (
         elms <- seqM(elms0.map(tpe => lookupType(tpe, ns0, prog0)))
       ) yield Type.mkTuple(elms)
+
     case NamedAst.Type.Nat(elm, loc) => Type.Nat(elm).toSuccess
 
     case NamedAst.Type.Native(fqn, loc) =>
