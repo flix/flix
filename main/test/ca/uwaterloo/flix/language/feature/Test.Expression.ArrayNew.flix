@@ -1,4 +1,3 @@
-/*
 @test
 def testArrayNew01(): Array[Int] = [10;0]
 
@@ -52,5 +51,4 @@ def testArrayNew17(): Array[Str] = ["foo";5]
 
 @test
 def testArrayNew18(): Array[Array[Str]] = [["Hello"; 10]; 5]
-*/
 

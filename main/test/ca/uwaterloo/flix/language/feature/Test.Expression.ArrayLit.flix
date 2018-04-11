@@ -1,4 +1,3 @@
-/*
 @test
 def testArrayLit01(): Array[Unit] = []
 
@@ -112,5 +111,4 @@ def testArrayLit37(): Array[Array[Int]] = [[1,2,3,4,5], [2]]
 
 @test
 def testArrayLit38(): Array[Array[Int]] = [[1,2,3], [1,2,3], [1,2,3]]
-*/
 

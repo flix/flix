@@ -660,7 +660,6 @@ object ParsedAst {
     case class ArraySlice(exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, exp3: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
-      *
       * ArraySliceNoEndIndex
       *
       * @param exp1 the array.

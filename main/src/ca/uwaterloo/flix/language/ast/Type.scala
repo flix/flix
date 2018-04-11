@@ -397,22 +397,8 @@ object Type {
     */
   def mkArray(a: Type): Type = Apply(Array, a)
 
-  def mkArray(ts: List[Type]): Type = {
-    val array = Array(ts.length)
-    ts.foldLeft(array: Type) {
-      case(acc, x) => Apply(acc, x)
-    }
-  }
-
   def mkVector(a: Type, i: Int) : Type = Apply(Apply(Vector, a), Nat(i))
-/*
-  def mkVector(ts: List[Type], i: Int) : Type = {
-    val vector = Vector(ts.length)
-    ts.foldLeft(vector: Type) {
-      case(acc, x) => Apply(Apply(acc, x), Nat(i))
-    }
-  }
-*/
+  
   /**
     * Constructs the set type of A.
     */

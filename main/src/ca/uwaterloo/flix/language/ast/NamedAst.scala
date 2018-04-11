@@ -152,7 +152,7 @@ object NamedAst {
 
     case class ArrayLength(exp: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
-    case class ArraySlice(exp1: NamedAst.Expression, exp2: Option[NamedAst.Expression], exp3: Option[NamedAst.Expression], tvar: ast.Type.Var, loc: SourceLocation) extends  NamedAst.Expression
+    case class ArraySlice(exp1: NamedAst.Expression, exp2: NamedAst.Expression, exp3: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends  NamedAst.Expression
 
     case class VectorLit(elms: List[NamedAst.Expression], tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
