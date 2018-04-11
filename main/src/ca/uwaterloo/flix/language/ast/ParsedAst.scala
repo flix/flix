@@ -1173,17 +1173,7 @@ object ParsedAst {
       * @param sp2  the position of the last character in the type.
       */
     case class Tuple(sp1: SourcePosition, elms: Seq[ParsedAst.Type], sp2: SourcePosition) extends ParsedAst.Type
-
-    /**
-      * Vector Type.
-      *
-      * @param sp1  the position of the first character in the type.
-      * @param elm the type of the elements.
-      * @param len the length of the vector.
-      * @param sp2  the position of the last character in the type.
-      */
-//    case class Vector(sp1: SourcePosition, elm: ParsedAst.Type, len: ParsedAst.Literal, sp2: SourcePosition) extends ParsedAst.Type
-
+    
     /**
       * Nat Type.
       *

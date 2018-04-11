@@ -196,9 +196,15 @@ object TypedAst {
 
     case class VectorLit(elms: List[TypedAst.Expression], tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
 
+    case class VectorNew(elm: TypedAst.Expression, len: Int, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+
     case class VectorLoad(exp1: TypedAst.Expression, exp2: Int, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
 
+    case class VectorStore(exp1: TypedAst.Expression, exp2: Int, exp3: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+
     case class VectorLength(exp: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+
+    case class VectorSlice(exp: TypedAst.Expression, exp2: Int, exp3: Int, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
 
     case class Ref(exp: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
 

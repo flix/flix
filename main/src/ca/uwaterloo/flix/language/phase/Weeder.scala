@@ -23,7 +23,6 @@ import ca.uwaterloo.flix.language.ast.Ast.Polarity
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.WeederError
 import ca.uwaterloo.flix.language.errors.WeederError._
-import ca.uwaterloo.flix.language.phase.PatternExhaustiveness.TypeConstructor.Int32
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{CompilationMode, InternalCompilerException, Validation}
 
@@ -673,6 +672,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
                 case l if l >= 0 => WeededAst.Expression.VectorLoad(e, l, loc).toSuccess
                 case _ => WeederError.IllegalVectorLength(loc).toFailure
               }
+              case _ => WeederError.IllegalVectorLength(loc).toFailure
             }
           }
 
@@ -1285,7 +1285,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   }
 
   object Effects {
-
+7
     /**
       * Weeds the given parsed optional effect `effOpt`.
       */
