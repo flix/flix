@@ -72,7 +72,26 @@ namespace Path {
     ///
     /// Default handler for `isParentOf`.
     ///
-    handler isParentOf[a](parent: Path, child: Path, k: Result[Bool, IOError] -> a): a = ???
+    handler isParentOf[a](parent: Path, child: Path, k: Result[Bool, IOError] -> a): a = unsafe {
+        if (exists(child) && exists(parent))
+            //Could this simply reuse isChildOf with flipped call-order? What if user implements own handler for isChild?
+            k(Ok(isParentOfHelper(parent, child)))
+        else
+            k(Err(IOError("One or both arguments 'p1' and 'p2' do not point to an existing file or directory")))
+    }
+
+    def isParentOfHelper(parent: Path, child: Path) : Bool = unsafe {
+        let Path(parentPath) = parent;
+        let Path(childPath) = child;
+        let parentOfChild = native method java.nio.file.Path.getParent(childPath);
+        if (native method java.util.Objects.isNull(parentOfChild))
+            false
+        else
+            if (native method java.nio.file.Path.equals(parentOfChild, parentPath))
+                true
+            else
+                isParentOfHelper(parent, Path(parentOfChild))
+    }
 
     ///
     /// Effectfully returns `true` if the given path `child` is a direct child of the path `parent`.
@@ -93,14 +112,13 @@ namespace Path {
         let Path(childPath) = child;
         let Path(parentPath) = parent;
         let parentOfChild = native method java.nio.file.Path.getParent(childPath);
-        if (native method java.nio.file.Path.equals(parentOfChild, parentPath))
-            true
+        if (native method java.util.Objects.isNull(parentOfChild))
+            false
         else
-            //TODO: This isNull check currently breaks the interpreter when run
-            if (native method java.util.Objects.isNull(parentOfChild))
-                false
+            if (native method java.nio.file.Path.equals(parentOfChild, parentPath))
+                true
             else
-                isChildOfHelper(parentOfChild, parent)
+                isChildOfHelper(Path(parentOfChild), parent)
     }
 
     ///
