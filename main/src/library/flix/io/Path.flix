@@ -62,7 +62,31 @@ namespace Path {
     ///
     /// Default handler for `children`.
     ///
-    handler children[a](path: Path, k: Result[List[Path], IOError] -> a): a = ???
+    handler children[a](path: Path, k: Result[List[Path], IOError] -> a): a = unsafe {
+        let directoryResponse = isDirectory(path, result -> result);
+        match directoryResponse with {
+            case Ok(true) => let Path(javaPath) = path;
+                             let dirStream = native method java.nio.file.Files.newDirectoryStream(javaPath);
+                             let dirIterator = native method java.nio.file.DirectoryStream.iterator(dirStream);
+                             let childList : List[Path] = Nil;
+                             let childList = childrenHelper(dirIterator, childList);
+                             //let _ = native method java.nio.file.DirectoryStream.close(dirStream); TODO: Have this line compile
+                             k(Ok(childList))
+            case Ok(false) => k(Err(IOError("The provided path is not a directory. Children is only available for directories")))
+            case Err(IOError(errorString)) => k(Err(IOError(errorString)))
+        }
+    }
+
+    def childrenHelper(dirIterator : ##java.util.Iterator, childList : List[Path]) : List[Path] = unsafe {
+        if (native method java.util.Iterator.hasNext(dirIterator))
+            let fetchedPath = native method java.util.Iterator.next(dirIterator);
+            let childList = Path(fetchedPath) :: childList;
+            childrenHelper(dirIterator, childList)
+        else
+            let childList = List.reverse(childList);
+            childList
+
+    }
 
     ///
     /// Effectfully returns `true` if the given path `parent` is the direct parent of the path `child`.
