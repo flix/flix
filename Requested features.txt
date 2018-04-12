@@ -1,3 +1,0 @@
-Feature: Varargs for java interop
-Description: At the current time Flix has problems making an empty array of Java types which java interoperability requires, when the native method uses Varargs. This is especially noticeable in calls to java.nio.file.Files.exists, .isDirectory, and createFile.
-Currently this is hackable by editing the interpreter (not elegant solution).
