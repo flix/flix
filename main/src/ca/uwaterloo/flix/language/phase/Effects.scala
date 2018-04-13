@@ -344,7 +344,7 @@ object Effects extends Phase[Root, Root] {
             }
             Expression.Tuple(elms, tpe, eff, loc)
           }
-
+        
         /**
           * ArrayLit Expression.
           */
@@ -418,6 +418,19 @@ object Effects extends Phase[Root, Root] {
           } yield {
             val eff = exp1.eff seq exp2.eff seq  exp3.eff
             Expression.ArraySlice(e1, e2, e3, tpe, eff, loc)
+          }
+
+        /**
+          * VectorLit Expression.
+          */
+        case Expression.VectorLit(elms, tpe, _, loc) =>
+          for (
+            es <- seqM(elms.map(e => visitExp(e, env0)))
+          ) yield {
+            val eff = es.foldLeft(ast.Eff.Bot) {
+              case (eacc, e) => eacc seq e.eff
+            }
+            Expression.VectorLit(elms, tpe, eff, loc)
           }
 
         /**
