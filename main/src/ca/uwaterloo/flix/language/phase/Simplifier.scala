@@ -386,6 +386,35 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case TypedAst.Expression.Tuple(elms, tpe, eff, loc) =>
         SimplifiedAst.Expression.Tuple(elms map visitExp, tpe, loc)
 
+      case TypedAst.Expression.ArrayLit(elms, tpe, eff, loc) =>
+        SimplifiedAst.Expression.ArrayLit(elms map visitExp, tpe, loc)
+
+      case TypedAst.Expression.ArrayNew(elm, len, tpe, eff, loc) =>
+        val e = visitExp(elm)
+        val ln = visitExp(len)
+        SimplifiedAst.Expression.ArrayNew(e, ln, tpe, loc)
+
+      case TypedAst.Expression.ArrayLoad(exp1, exp2, tpe, eff, loc) =>
+        val e1 = visitExp(exp1)
+        val e2 = visitExp(exp2)
+        SimplifiedAst.Expression.ArrayLoad(e1, e2, tpe, loc)
+
+      case TypedAst.Expression.ArrayStore(exp1, exp2, exp3, tpe, eff, loc) =>
+        val e1 = visitExp(exp1)
+        val e2 = visitExp(exp2)
+        val e3 = visitExp(exp3)
+        SimplifiedAst.Expression.ArrayStore(e1, e2, e3, tpe, loc)
+
+      case TypedAst.Expression.ArrayLength(exp, tpe, eff, loc) =>
+        val e = visitExp(exp)
+        SimplifiedAst.Expression.ArrayLength(e, tpe, loc)
+
+      case TypedAst.Expression.ArraySlice(exp1, exp2, exp3, tpe, eff, loc) =>
+        val e1 = visitExp(exp1)
+        val e2 = visitExp(exp2)
+        val e3 = visitExp(exp3)
+        SimplifiedAst.Expression.ArraySlice(e1, e2, e3, tpe, loc)
+
       case TypedAst.Expression.Ref(exp, tpe, eff, loc) =>
         val e = visitExp(exp)
         SimplifiedAst.Expression.Ref(e, tpe, loc)
@@ -694,6 +723,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case TypedAst.Expression.Str(lit, loc) => true
       case TypedAst.Expression.Tag(sym, tag, exp, tpe, eff, loc) => isExpLiteral(exp)
       case TypedAst.Expression.Tuple(elms, tpe, eff, loc) => elms forall isExpLiteral
+      case TypedAst.Expression.ArrayLit(elms, tpe, eff, loc) => elms forall isExpLiteral
       case _ => false
     }
 

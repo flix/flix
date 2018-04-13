@@ -184,6 +184,12 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         Expression.Index(visit(exp), offset, tpe, loc)
       case Expression.Tuple(elms, tpe, loc) =>
         Expression.Tuple(elms.map(visit), tpe, loc)
+      case Expression.ArrayLit(elms, tpe, loc) =>
+        Expression.ArrayLit(elms.map(visit), tpe, loc)
+      case Expression.ArrayNew(elm, len, tpe, loc) =>
+        val e = visit(elm)
+        val ln = visit(len)
+        Expression.ArrayNew(e, ln, tpe, loc)
       case Expression.Ref(exp, tpe, loc) =>
         Expression.Ref(visit(exp), tpe, loc)
       case Expression.Deref(exp, tpe, loc) =>
