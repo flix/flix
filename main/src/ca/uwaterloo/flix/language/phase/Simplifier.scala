@@ -415,6 +415,9 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         val e3 = visitExp(exp3)
         SimplifiedAst.Expression.ArraySlice(e1, e2, e3, tpe, loc)
 
+      case TypedAst.Expression.VectorLit(elms, tpe, eff, loc) =>
+        SimplifiedAst.Expression.ArrayLit(elms map visitExp, tpe, loc)
+
       case TypedAst.Expression.Ref(exp, tpe, eff, loc) =>
         val e = visitExp(exp)
         SimplifiedAst.Expression.Ref(e, tpe, loc)
