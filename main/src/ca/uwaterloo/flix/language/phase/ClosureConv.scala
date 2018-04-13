@@ -144,6 +144,14 @@ object ClosureConv {
     case Expression.Tuple(elms, tpe, loc) =>
       Expression.Tuple(elms.map(convert), tpe, loc)
 
+    case Expression.ArrayLit(elms, tpe, loc) =>
+      Expression.ArrayLit(elms.map(convert), tpe, loc)
+
+    case Expression.ArrayNew(elm, len, tpe, loc) =>
+      val e1 = convert(elm)
+      val e2 = convert(len)
+      Expression.ArrayNew(e1, e2, tpe, loc)
+
     case Expression.Ref(exp, tpe, loc) =>
       val e = convert(exp)
       Expression.Ref(e, tpe, loc)
@@ -358,6 +366,13 @@ object ClosureConv {
       case Expression.Tuple(elms, tpe, loc) =>
         val es = elms map visit
         Expression.Tuple(es, tpe, loc)
+      case Expression.ArrayLit(elms, tpe, loc) =>
+        val es = elms map visit
+        Expression.ArrayLit(es, tpe, loc)
+      case Expression.ArrayNew(elm, len, tpe,loc) =>
+        val e1 = visit(elm)
+        val e2 = visit(len)
+        Expression.ArrayNew(e1, e2, tpe, loc)
       case Expression.Ref(exp, tpe, loc) =>
         val e = visit(exp)
         Expression.Ref(e, tpe, loc)
