@@ -88,6 +88,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         case Type.BigInt => Type.BigInt
         case Type.Str => Type.Str
         case Type.Array => Type.Array
+        case Type.Vector => Type.Vector
         case Type.Native => Type.Native
         case Type.Ref => Type.Ref
         case Type.Arrow(l) => Type.Arrow(l)
@@ -311,6 +312,10 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           val e2 = visitExp(exp2, env0)
           val e3 = visitExp(exp3, env0)
           Expression.ArraySlice(e1, e2, e3, tpe, eff, loc)
+
+        case Expression.VectorLit(elms, tpe, eff, loc) =>
+          val es = elms.map(e => visitExp(e, env0))
+          Expression.VectorLit(es,tpe, eff, loc)
 
         case Expression.Ref(exp, tpe, eff, loc) =>
           val e = visitExp(exp, env0)
