@@ -645,9 +645,9 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
            * Rewrites empty vectors to Unit.
            */
           @@(elms.map(e => visit(e, unsafe))) map{
-            case Nil =>
-              val loc = mkSL(sp1, sp2)
-              WeededAst.Expression.Unit(loc)
+            //case Nil =>
+              //val loc = mkSL(sp1, sp2)
+              //WeededAst.Expression.Unit(loc)
             case es => WeededAst.Expression.VectorLit(es, mkSL(sp1, sp2))
           }
 

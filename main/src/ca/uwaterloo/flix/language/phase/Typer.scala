@@ -20,6 +20,7 @@ import java.lang.reflect.Field
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.EffectSet.Bot
+import ca.uwaterloo.flix.language.ast.ResolvedAst.Expression.VectorLength
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.Unification._
@@ -831,31 +832,49 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
 
         case ResolvedAst.Expression.VectorLit(elms, tvar, loc) =>
           //
-          // e1: t  en: t  n: Nat
+          // e1: t ...  en: t  n: Nat
           // ---------------------------
           // [|e1,...,en|] : Vector[t, n]
           //
           for (
-            tpe <- visitExp(elms.head);
-            resultType <- unifyM(tvar, Type.mkVector(tpe, elms.length), loc)
+            elementTypes <- seqM(elms.map(visitExp));
+            elementType <- unifyM(elementTypes, loc);
+            resultType <- unifyM(tvar, Type.mkVector(elementType, elms.length), loc)
           ) yield resultType
 
         case ResolvedAst.Expression.VectorNew(elm, len, tvar, loc) =>
+          //
+          // e: t    n: Nat
+          // --------------------------
+          // [|e ; n |] : Vector[t, n]
+          //
           for (
             tpe <- visitExp(elm);
             resultType <- unifyM(tvar, Type.mkVector(tpe, len), loc)
           ) yield resultType
 
-        /*case ResolvedAst.Expression.VectorLoad(exp1, exp2, tvar, loc) =>
+ /*       case ResolvedAst.Expression.VectorLoad(exp1, exp2, tvar, loc) =>
           for (
             tpe <- visitExp(exp1);
+            j <- visitExp(ResolvedAst.Expression.VectorLength(exp1, tvar, loc));
+            vtpe <- unifyM(tpe, Type.mkVector(tvar, unifyM(Type.Int32, j, loc)), loc)
 
             //resultType <- unifyM(Type.Apply(tpe, tvar), Type.Apply(Type.Vector, tvar), loc)
             //resultType <- Type.Apply(tpe, tvar) // unifyM(tpe, Type.Vector, loc)
           ) yield tvar
 */
+          //nuværende problem: Jeg har vector som en expression exp1.
+          //For at kunne lave en Vector Type, skal jeg kende dens længde.
+          //Hvordan kan jeg finde længden af en allerede eksisterende expression?
+
         case ResolvedAst.Expression.VectorLength(exp, tvar, loc) =>
+          //
+          // e: t  n: Nat
+          // -------------
+          // e[|n|] : Int
+          //
           for(
+            _ <- visitExp(exp);
             resultType <- unifyM(tvar, Type.Int32, loc)
           ) yield resultType
 

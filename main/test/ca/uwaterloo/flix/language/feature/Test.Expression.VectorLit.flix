@@ -1,5 +1,5 @@
-//@test
-//def testVectorLit01(): Vector[Unit] = [||]
+@test
+def testVectorLit01(): Vector[Unit, 0] = [||]
 
 @test
 def testVectorLit02(): Vector[Int, 1] = [|1|]

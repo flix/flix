@@ -50,6 +50,7 @@ sealed trait Type {
     case Type.Native => Set.empty
     case Type.Ref => Set.empty
     case Type.Nat(i) => Set.empty
+    case Type.Num(i1, i2) => Set.empty
     case Type.Arrow(l) => Set.empty
     case Type.Tuple(l) => Set.empty
     case Type.Enum(enumName, kind) => Set.empty
@@ -151,6 +152,7 @@ sealed trait Type {
     case Type.Str => "Str"
     case Type.Array => "Array"
     case Type.Vector => "Vector"
+    case Type.Num(i1, i2) => s"Num($i1, $i2)"
     case Type.Nat(i) => s"Natural Number($i)"
     case Type.Native => "Native"
     case Type.Ref => "Ref"
@@ -337,6 +339,10 @@ object Type {
     def kind: Kind = Kind.Star
   }
 
+  case class Num(i1: Int, i2: Var) extends Type {
+    def kind: Kind = Kind.Star
+  }
+
   /**
     * A type expression that a type application tpe1[tpe2].
     */
@@ -398,7 +404,7 @@ object Type {
   def mkArray(a: Type): Type = Apply(Array, a)
 
   def mkVector(a: Type, i: Int) : Type = Apply(Apply(Vector, a), Nat(i))
-  
+
   /**
     * Constructs the set type of A.
     */
@@ -438,6 +444,7 @@ object Type {
       case Type.Arrow(l) => Type.Arrow(l)
       case Type.Tuple(l) => Type.Tuple(l)
       case Type.Nat(i) => Type.Nat(i)
+      case Type.Num(i1, i2) => Type.Num(i1, i2)
       case Type.Apply(tpe1, tpe2) => Type.Apply(visit(tpe1), visit(tpe2))
       case Type.Enum(enum, kind) => Type.Enum(enum, kind)
     }
@@ -484,6 +491,7 @@ object Type {
           case Type.Array => "Array"
           case Type.Vector => "Vector"
           case Type.Nat(i) => i.toString
+          case Type.Num(i1, i2) => i1.toString + " " + i2.toString
           case Type.Native => "Native"
           case Type.Ref => "Ref"
 

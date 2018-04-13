@@ -346,6 +346,20 @@ object Effects extends Phase[Root, Root] {
           }
 
         /**
+          * VectorLit Expression.
+          */
+        case Expression.VectorLit(elms, tpe, _, loc) =>
+          for (
+            es <- seqM(elms.map(e => visitExp(e, env0)))
+          ) yield {
+            val eff = es.foldLeft(ast.Eff.Bot) {
+              case (eacc, e) => eacc seq e.eff
+            }
+            Expression.VectorLit(elms, tpe, eff, loc)
+          }
+
+
+        /**
           * Reference Expression.
           */
         case Expression.Ref(exp, tpe, eff, loc) =>
