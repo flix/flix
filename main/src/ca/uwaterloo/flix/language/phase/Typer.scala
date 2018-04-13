@@ -763,6 +763,11 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
          * ArrayLit expression.
          */
         case ResolvedAst.Expression.ArrayLit(elms, tvar, loc) =>
+          //
+          //  e1 : t ... en: t
+          //  ------------------------
+          //  [e1,...,en] : Array[t]
+          //
           for (
             elementsTypes <- seqM(elms.map(visitExp));
             elementType <- unifyM(elementsTypes, loc);
@@ -773,6 +778,11 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
            * ArrayNew expression.
            */
         case ResolvedAst.Expression.ArrayNew(elm, len, tvar, loc) =>
+          //
+          //  elm : t      len: Int
+          //  ------------------------
+          //  [elm ; len] : Array[t]
+          //
           for (
             recievedElementType <- visitExp(elm);
             recievedLenghtType <- visitExp(len);
@@ -784,6 +794,11 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
          * ArrayLoad expression.
          */
         case ResolvedAst.Expression.ArrayLoad(exp1, exp2, tvar, loc) =>
+          //
+          //  exp1 : Array[t]   exp2: Int
+          //  ------------------------
+          //  exp1[exp2] : t
+          //
           for (
             recievedBaseType <- visitExp(exp1);
             recievedIndexType <- visitExp(exp2);
@@ -795,6 +810,11 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
          * ArrayLength expression.
          */
         case ResolvedAst.Expression.ArrayLength(exp, tvar, loc) =>
+          //
+          //  exp : Array[t]
+          //  ------------------------
+          //  length[exp] : Int
+          //
           for (
             tpe <- visitExp(exp);
             arrayType <- unifyM(tpe, Type.mkArray(tvar), loc);
@@ -805,6 +825,11 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
          * ArrayStore expression.
          */
         case ResolvedAst.Expression.ArrayStore(exp1, exp2, exp3, tvar, loc) =>
+          //
+          //  exp1 : Array[t]   exp2 : Int   exp3 : t
+          //  -----------------------------------------
+          //  exp1[exp2] = exp3 : Unit
+          //
           val elementType = Type.freshTypeVar();
           for (
             recievedBaseType <- visitExp(exp1);
@@ -820,6 +845,11 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
          * ArraySlice expression.
          */
         case ResolvedAst.Expression.ArraySlice(exp1, exp2, exp3, tvar, loc) =>
+          //
+          //  exp1 : Array[t]   exp2 : Int   exp3 : Int
+          //  -----------------------------------------
+          //  exp1[exp2..exp3] : Array[t]
+          //
           for (
             recievedBaseType <- visitExp(exp1);
             recievedStartIndexType <- visitExp(exp2);

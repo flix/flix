@@ -346,6 +346,81 @@ object Effects extends Phase[Root, Root] {
           }
 
         /**
+          * ArrayLit Expression.
+          */
+        case Expression.ArrayLit(elms, tpe, _, loc) =>
+          for {
+            es <- seqM(elms.map(e => visitExp(e, env0)))
+          } yield {
+            val eff = es.foldLeft(ast.Eff.Bot) {
+              case(eacc, e) => eacc seq e.eff
+            }
+            Expression.ArrayLit(elms, tpe, eff, loc)
+          }
+
+        /**
+          * ArrayNew Expression.
+          */
+        case Expression.ArrayNew(elm, len, tpe, _, loc) =>
+          for {
+            e <- visitExp(elm, env0)
+            ln <- visitExp(len, env0)
+          } yield {
+            val eff = elm.eff seq len.eff
+            Expression.ArrayNew(e, ln, tpe, eff, loc)
+          }
+
+
+        /**
+          * ArrayLoad Expression.
+          */
+        case Expression.ArrayLoad(exp1, exp2, tpe, _, loc) =>
+          for {
+            e1 <- visitExp(exp1, env0)
+            e2 <- visitExp(exp2, env0)
+          } yield {
+            val eff = exp1.eff seq exp2.eff
+            Expression.ArrayLoad(e1, e2, tpe, eff, loc)
+          }
+
+        /**
+          * ArrayStore Expression.
+          */
+        case Expression.ArrayStore(exp1, exp2, exp3, tpe, _, loc) =>
+          for {
+            e1 <- visitExp(exp1, env0)
+            e2 <- visitExp(exp2, env0)
+            e3 <- visitExp(exp3, env0)
+          } yield {
+            val eff = exp1.eff seq exp2.eff seq  exp3.eff
+            Expression.ArrayStore(e1, e2, e3, tpe, eff, loc)
+          }
+
+        /**
+          * ArrayLength Expression.
+          */
+        case Expression.ArrayLength(exp, tpe, _, loc) =>
+          for {
+            e <- visitExp(exp, env0)
+          } yield {
+            val eff = exp.eff
+            Expression.ArrayLength(e, tpe, eff, loc)
+          }
+
+        /**
+          * ArraySlice Expression.
+          */
+        case Expression.ArraySlice(exp1, exp2, exp3, tpe, _, loc) =>
+          for {
+            e1 <- visitExp(exp1, env0)
+            e2 <- visitExp(exp2, env0)
+            e3 <- visitExp(exp3, env0)
+          } yield {
+            val eff = exp1.eff seq exp2.eff seq  exp3.eff
+            Expression.ArraySlice(e1, e2, e3, tpe, eff, loc)
+          }
+
+        /**
           * Reference Expression.
           */
         case Expression.Ref(exp, tpe, eff, loc) =>
