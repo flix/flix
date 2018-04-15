@@ -83,9 +83,7 @@ namespace Path {
             let childList = Path(fetchedPath) :: childList;
             childrenHelper(dirIterator, childList)
         else
-            let childList = List.reverse(childList);
-            childList
-
+            List.reverse(childList)
     }
 
     ///
@@ -98,7 +96,7 @@ namespace Path {
     ///
     handler isParentOf[a](parent: Path, child: Path, k: Result[Bool, IOError] -> a): a = unsafe {
         if (exists(child) && exists(parent))
-            //Could this simply reuse isChildOf with flipped call-order? What if user implements own handler for isChild?
+            //TODO: Could this simply reuse isChildOf with flipped call-order? What if user implements own handler for isChild?
             k(Ok(isParentOfHelper(parent, child)))
         else
             k(Err(IOError("One or both arguments 'p1' and 'p2' do not point to an existing file or directory")))
@@ -285,11 +283,13 @@ namespace Path {
     /// Default handler for `isSameFile`.
     ///
     handler isSameFile[a](p1: Path, p2: Path, k: Result[Bool, IOError] -> a): a = unsafe {
-        let Path(javaPath1) = p1;
-        let Path(javaPath2) = p2;
-        let answer = native method java.nio.file.Files.isSameFile(javaPath1, javaPath2);
-        k(Ok(answer))
-        //TODO: This throws java.nio.file.NoSuchFileException when used on non-existing file
+        if (exists(p1) && exists(p2))
+            let Path(javaPath1) = p1;
+            let Path(javaPath2) = p2;
+            let answer = native method java.nio.file.Files.isSameFile(javaPath1, javaPath2);
+            k(Ok(answer))
+        else
+            k(Err(IOError("Not both arguments 'p1' and 'p2' refer to an existing Path")))
         // When used on a symbolic link, only returns true when used on original link and not a copy.
     }
 
@@ -602,6 +602,7 @@ namespace Path {
                               k(Ok(sizeAnswer))
             case Ok(false) => k(Err(IOError("Path.Size currently only supports regular files")))
             //TODO: java.nio.files does not have system-independent .size() for directories. Write own here.
+            //Possible to use own children method for this purpose
             case Err(IOError(errorString)) => k(Err(IOError(errorString)))
         }
     }
