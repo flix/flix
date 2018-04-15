@@ -335,7 +335,28 @@ namespace Path {
     ///
     /// Default handler for `readLines`.
     ///
-    handler readLines[a](p: Path, k: Result[List[Str], IOError] -> a): a = ???
+    handler readLines[a](p: Path, k: Result[List[Str], IOError] -> a): a = unsafe {
+        let isRegularFileResponse = isRegularFile(p, result -> result);
+        match isRegularFileResponse with {
+            case Ok(true)  => let Path(javaPath) = p;
+                              let reader = native method java.nio.file.Files.newBufferedReader(javaPath);
+                              let flixList: List[Str] = Nil;
+                              let flixList = readLinesHelper(flixList, reader);
+                              let _ = native method java.io.BufferedReader.close(reader);
+                              k(Ok(flixList))
+            case Ok(false) => k(Err(IOError("Argument 'p' is not a regular file")))
+            case Err(IOError(errorString)) => k(Err(IOError(errorString)))
+        }
+    }
+
+    def readLinesHelper(fList: List[Str], reader : ##java.io.BufferedReader) : List[Str] = unsafe {
+        let readLine = native method java.io.BufferedReader.readLine(reader);
+        if (native method java.util.Objects.isNull(readLine))
+            List.reverse(fList)
+        else
+            let fList = readLine :: fList;
+            readLinesHelper(fList, reader)
+    }
 
     ///
     /// Effectfully returns a list of all lines in the given text file denoted by path `p` parsed with the given charset `cs`.
