@@ -19,8 +19,6 @@ package ca.uwaterloo.flix.language.phase
 import java.lang.reflect.Field
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.EffectSet.Bot
-import ca.uwaterloo.flix.language.ast.ResolvedAst.Expression.VectorLength
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.Unification._
@@ -883,16 +881,15 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
             resultType <- unifyM(tvar, Type.mkVector(tpe, len), loc)
           ) yield resultType
 
- /*       case ResolvedAst.Expression.VectorLoad(exp1, exp2, tvar, loc) =>
+        /*case ResolvedAst.Expression.VectorLoad(exp1, exp2, tvar, loc) =>
           for (
             tpe <- visitExp(exp1);
-            j <- visitExp(ResolvedAst.Expression.VectorLength(exp1, tvar, loc));
-            vtpe <- unifyM(tpe, Type.mkVector(tvar, unifyM(Type.Int32, j, loc)), loc)
-
+            len <- TypedAst.Expression.VectorLength(exp1, tvar, Eff.Bot, loc);
+            vectorType <- unifyM(tpe, Type.mkVector(tvar, len), loc)
             //resultType <- unifyM(Type.Apply(tpe, tvar), Type.Apply(Type.Vector, tvar), loc)
             //resultType <- Type.Apply(tpe, tvar) // unifyM(tpe, Type.Vector, loc)
-          ) yield tvar
-*/
+          ) yield tvar*/
+
           //nuværende problem: Jeg har vector som en expression exp1.
           //For at kunne lave en Vector Type, skal jeg kende dens længde.
           //Hvordan kan jeg finde længden af en allerede eksisterende expression?

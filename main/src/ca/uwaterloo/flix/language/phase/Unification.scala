@@ -189,7 +189,7 @@ object Unification {
       case (Type.Arrow(l1), Type.Arrow(l2)) if l1 == l2 => Result.Ok(Substitution.empty)
       case (Type.Tuple(l1), Type.Tuple(l2)) if l1 == l2 => Result.Ok(Substitution.empty)
       case (Type.Nat(i1), Type.Nat(i2)) if i1 == i2 => Result.Ok(Substitution.empty)
-      case (Type.Num(l11, l21), Type.Num(l12, l22)) if (l11 == l12) && (l21 == l22) => Result.Ok(Substitution.empty)
+      case (Type.Min(l11, l21), Type.Min(l12, l22)) if (l11 == l12) && (l21 == l22) => Result.Ok(Substitution.empty)
       case (Type.Enum(name1, kind1), Type.Enum(name2, kind2)) if name1 == name2 => Result.Ok(Substitution.empty)
       case (Type.Apply(t11, t12), Type.Apply(t21, t22)) =>
         unifyTypes(t11, t21) match {
