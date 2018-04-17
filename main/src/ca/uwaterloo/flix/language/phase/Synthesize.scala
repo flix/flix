@@ -202,6 +202,10 @@ object Synthesize extends Phase[Root, Root] {
         val e3 = visitExp(exp3)
         Expression.ArraySlice(e1, e2, e3, tpe, eff, loc)
 
+      case Expression.VectorLit(elms, tpe, eff, loc) =>
+        val es = elms map visitExp
+        Expression.VectorLit(es, tpe, eff, loc)
+
       case Expression.Ref(exp, tpe, eff, loc) =>
         val e = visitExp(exp)
         Expression.Ref(e, tpe, eff, loc)
@@ -841,6 +845,8 @@ object Synthesize extends Phase[Root, Root] {
         case Type.Apply(Type.Ref, _) => Expression.Str("<<ref>>", sl)
 
         case Type.Apply(Type.Array, _) => Expression.Str("<<array>>", sl)
+
+        case Type.Apply(Type.Vector, _) => Expression.Str("<<vector>>", sl)
 
         case Type.Apply(Type.Arrow(l), _) => Expression.Str("<<clo>>", sl)
 
