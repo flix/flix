@@ -88,10 +88,13 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         case Type.BigInt => Type.BigInt
         case Type.Str => Type.Str
         case Type.Array => Type.Array
+        case Type.Vector => Type.Vector
         case Type.Native => Type.Native
         case Type.Ref => Type.Ref
         case Type.Arrow(l) => Type.Arrow(l)
         case Type.Tuple(l) => Type.Tuple(l)
+        case Type.Nat(i) => Type.Nat(i)
+        case Type.Min(i1, i2) => Type.Min(i1, i2)
         case Type.Enum(name, kind) => Type.Enum(name, kind)
         case Type.Apply(tpe1, tpe2) => Type.Apply(apply(tpe1), apply(tpe2))
       }
@@ -311,6 +314,31 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           val e2 = visitExp(exp2, env0)
           val e3 = visitExp(exp3, env0)
           Expression.ArraySlice(e1, e2, e3, tpe, eff, loc)
+
+        case Expression.VectorLit(elms, tpe, eff, loc) =>
+          val es = elms.map(e => visitExp(e, env0))
+          Expression.VectorLit(es, subst0(tpe), eff, loc)
+
+        case Expression.VectorNew(elm, len, tpe, eff, loc) =>
+          val e = visitExp(elm, env0)
+          Expression.VectorNew(e, len, tpe, eff, loc)
+
+        case Expression.VectorLoad(exp1, exp2, tpe, eff, loc) =>
+          val e = visitExp(exp1, env0)
+          Expression.VectorLoad(e, exp2, tpe, eff, loc)
+
+        case Expression.VectorStore(exp1, exp2, exp3, tpe, eff, loc) =>
+          val e1 = visitExp(exp1, env0)
+          val e3 = visitExp(exp3, env0)
+          Expression.VectorStore(e1, exp2, e3, tpe, eff, loc)
+
+        case Expression.VectorLength(exp, tpe, eff, loc) =>
+          val e = visitExp(exp, env0)
+          Expression.VectorLength(e, tpe, eff, loc)
+
+        case Expression.VectorSlice(exp1, exp2, exp3, tpe, eff, loc) =>
+          val e = visitExp(exp1, env0)
+          Expression.VectorSlice(e, exp2, exp3, tpe, eff, loc)
 
         case Expression.Ref(exp, tpe, eff, loc) =>
           val e = visitExp(exp, env0)

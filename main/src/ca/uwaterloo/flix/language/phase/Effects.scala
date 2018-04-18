@@ -433,7 +433,47 @@ object Effects extends Phase[Root, Root] {
             Expression.VectorLit(elms, tpe, eff, loc)
           }
 
-        /**
+        case Expression.VectorNew(elm, len, tpe, _, loc) =>
+          for {
+            e <- visitExp(elm, env0)
+          } yield {
+            val eff = elm.eff
+            Expression.VectorNew(e, len, tpe, eff, loc)
+          }
+
+        case Expression.VectorLoad(exp1, exp2, tpe, _, loc) =>
+          for {
+            e <- visitExp(exp1, env0)
+          } yield {
+            val eff = exp1.eff
+            Expression.VectorLoad(e, exp2, tpe, eff, loc)
+          }
+
+        case Expression.VectorStore(exp1, exp2, exp3, tpe, _, loc) =>
+          for {
+            e <- visitExp(exp1, env0)
+          } yield {
+            val eff = exp1.eff
+            Expression.VectorStore(e, exp2, exp3, tpe, eff, loc)
+          }
+
+        case Expression.VectorLength(exp, tpe, _, loc) =>
+          for {
+            e <- visitExp(exp, env0)
+          } yield {
+            val eff = exp.eff
+            Expression.VectorLength(e, tpe, eff, loc)
+          }
+
+        case Expression.VectorSlice(exp1, exp2, exp3, tpe, _, loc) =>
+          for {
+            e <- visitExp(exp1, env0)
+          } yield {
+            val eff = exp1.eff
+            Expression.VectorSlice(e, exp2, exp3, tpe, eff, loc)
+          }
+
+            /**
           * Reference Expression.
           */
         case Expression.Ref(exp, tpe, eff, loc) =>

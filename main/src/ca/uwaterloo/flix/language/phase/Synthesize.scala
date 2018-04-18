@@ -202,6 +202,31 @@ object Synthesize extends Phase[Root, Root] {
         val e3 = visitExp(exp3)
         Expression.ArraySlice(e1, e2, e3, tpe, eff, loc)
 
+      case Expression.VectorLit(elms, tpe, eff, loc) =>
+        val es = elms map visitExp
+        Expression.VectorLit(es, tpe, eff, loc)
+
+      case Expression.VectorNew(elm, len, tpe, eff, loc) =>
+        val e = visitExp(elm)
+        Expression.VectorNew(e, len, tpe, eff, loc)
+
+      case Expression.VectorLoad(exp1, exp2, tpe, eff, loc) =>
+        val e = visitExp(exp1)
+        Expression.VectorLoad(e, exp2, tpe, eff, loc)
+
+      case Expression.VectorStore(exp1, exp2, exp3, tpe, eff, loc) =>
+        val e1 = visitExp(exp1)
+        val e3 = visitExp(exp3)
+        Expression.VectorStore(e1, exp2, e3, tpe, eff, loc)
+
+      case Expression.VectorLength(exp, tpe, eff, loc) =>
+        val e = visitExp(exp)
+        Expression.VectorLength(e, tpe, eff, loc)
+
+      case Expression.VectorSlice(exp1, exp2, exp3, tpe, eff, loc) =>
+        val e = visitExp(exp1)
+        Expression.VectorSlice(e, exp2, exp3, tpe, eff, loc)
+
       case Expression.Ref(exp, tpe, eff, loc) =>
         val e = visitExp(exp)
         Expression.Ref(e, tpe, eff, loc)
@@ -593,6 +618,7 @@ object Synthesize extends Phase[Root, Root] {
 
         case Type.Apply(Type.Ref, _) => Expression.Int32(123, sl)
         case Type.Apply(Type.Array, _) => Expression.Int32(123, sl)
+        case Type.Apply(Type.Vector, _) => Expression.Int32(123, sl)
         case Type.Apply(Type.Arrow(l), _) => Expression.Int32(123, sl)
 
         case _ =>
@@ -832,6 +858,10 @@ object Synthesize extends Phase[Root, Root] {
           val method = classOf[java.lang.Object].getMethod("toString")
           Expression.NativeMethod(method, List(exp0), Type.Str, ast.Eff.Pure, sl)
 
+        case Type.Vector =>
+          val method = classOf[java.lang.Object].getMethod("toString")
+          Expression.NativeMethod(method, List(exp0), Type.Str, ast.Eff.Pure, sl)
+
         case Type.Native =>
           val method = classOf[java.lang.Object].getMethod("toString")
           Expression.NativeMethod(method, List(exp0), Type.Str, ast.Eff.Pure, sl)
@@ -841,6 +871,8 @@ object Synthesize extends Phase[Root, Root] {
         case Type.Apply(Type.Ref, _) => Expression.Str("<<ref>>", sl)
 
         case Type.Apply(Type.Array, _) => Expression.Str("<<array>>", sl)
+
+        case Type.Apply(Type.Vector, _) => Expression.Str("<<vector>>", sl)
 
         case Type.Apply(Type.Arrow(l), _) => Expression.Str("<<clo>>", sl)
 
