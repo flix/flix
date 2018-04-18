@@ -422,10 +422,10 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         val e = visitExp(elm)
         SimplifiedAst.Expression.ArrayNew(e, len.asInstanceOf[SimplifiedAst.Expression], tpe, loc)
 */
-      case TypedAst.Expression.VectorLoad(exp1, exp2, tpe, eff, loc) =>
+/*    case TypedAst.Expression.VectorLoad(exp1, exp2, tpe, eff, loc) =>
         val e = visitExp(exp1)
         SimplifiedAst.Expression.ArrayLoad(e, exp2.asInstanceOf[SimplifiedAst.Expression], tpe, loc)
-
+*/
       case TypedAst.Expression.Ref(exp, tpe, eff, loc) =>
         val e = visitExp(exp)
         SimplifiedAst.Expression.Ref(e, tpe, loc)
