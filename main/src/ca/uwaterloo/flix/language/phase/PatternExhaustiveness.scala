@@ -247,6 +247,16 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
         case Expression.VectorLit(elms, _, _, _) => seqM(elms map {
           checkPats(_, root)
         }).map(const(tast))
+        case Expression.VectorNew(elm, _, _, _, _) =>
+          checkPats(elm, root)
+        case Expression.VectorLoad(exp1, _, _, _, _) =>
+          checkPats(exp1, root)
+        case Expression.VectorStore(exp1, _, _, _, _, _) =>
+          checkPats(exp1, root)
+        case Expression.VectorLength(exp1, _, _, _) =>
+          checkPats(exp1, root)
+        case Expression.VectorSlice(exp1, _, _, _, _, _) =>
+          checkPats(exp1, root)
         case Expression.Ref(exp, _, _, _) =>
           checkPats(exp, root).map(const(tast))
         case Expression.Deref(exp, _, _, _) =>

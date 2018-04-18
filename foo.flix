@@ -1,3 +1,4 @@
+def f() : Vector[Int, 6] = {
 // ArrayLit
 def f() : Array[Int] = {
   let x = [1,2,3,4,5];
@@ -45,5 +46,4 @@ def f() : Array[Int] = {
   x[1..5]
 }
 */
-
 }

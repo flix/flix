@@ -403,16 +403,15 @@ object Type {
     */
   def mkArray(a: Type): Type = Apply(Array, a)
 
-  def mkVector(a: Type, i: Int) : Type = Apply(Apply(Vector, a), Nat(i))
 
-  ///**
-  //  * Constructs the Min type where 'i1' is the required minimum
-  //  * and v2 is the length of the vector.
-  //  * Returns a natural number Nat(x) if v2 >= i1.
-  //  */
-  //def getMin(i1: Int, v2: Var) : Nat = {
-  //
-  //}
+  def mkVector(a: Type, i: Int) : Type = Apply(Apply(Vector, a), Nat(i))
+  /**
+    * Constructs the vector type [|a, x|] where
+    * 'a' is the given type
+    * 'x' is the given length
+    * 'y' is a fresh variable for the remaining length.
+    */
+  def mkVector(a: Type, x: Int, y: Var) : Type = Apply(Apply(Vector, a), Min(x, y))
 
   /**
     * Constructs the set type of A.
