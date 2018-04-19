@@ -829,8 +829,8 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
          */
         case ResolvedAst.Expression.NewChannel(exp, tpe, loc) =>
           //
-          //  e: Int32
-          //  ------------------------
+          //  e: Int8 | Int16 | Int32 | Int64 | BigInt
+          //  ----------------------------------------
           //  channel t e : Channel[t]
           //
           for {
@@ -884,6 +884,35 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
             e <- unifyM(tpe, Type.mkArrow(Type.Unit, Type.Unit), loc);
             resultType <- unifyM(tvar, Type.Unit, loc)
           ) yield resultType
+
+        /**
+          * SelectChannel expression.
+          */
+        case ResolvedAst.Expression.SelectChannel(rules, tvar, loc) =>
+          // exp1 : t1   exp2 : Channel[t1]   exp3 : t2
+          // ------------------------------------------ [t-SelectRule]
+          // case exp1 <- exp2 => epx3 : t2
+          //
+          //  sr : t
+          //  ------------------ [t-SelectChannel]
+          //  select { sr+ } : t
+          assert(rules.nonEmpty)
+          // Extract the symbols, channels, and body expressions of each rule-
+          val bodies = rules.map(_.exp)
+
+          val _ = rules map {
+            case r =>
+              for {
+                ctpe <- visitExp(r.chan)
+                t1 <- Patterns.infer(r.pat, program)
+                _ <- unifyM(ctpe, Type.mkChannel(t1), loc)
+              } yield t1
+          }
+
+          for {
+            actualBodyTypes <- seqM(bodies map visitExp)
+            resultType <- unifyM(tvar :: actualBodyTypes, loc)
+          } yield resultType
 
         /*
          * Reference expression.
@@ -1236,6 +1265,19 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         case ResolvedAst.Expression.Spawn(exp, tvar, loc) =>
           val e = visitExp(exp, subst0)
           TypedAst.Expression.Spawn(e, subst0(tvar), Eff.Bot, loc)
+          
+        /**
+          * SelectChannel expression.
+          */
+        case ResolvedAst.Expression.SelectChannel(rules, tvar, loc) =>
+          val rs = rules map {
+            case ResolvedAst.SelectRule(pat, chan, body) =>
+              val p = Patterns.reassemble(pat, program, subst0)
+              val c = visitExp(chan, subst0)
+              val b = visitExp(body, subst0)
+              TypedAst.SelectRule(p, c, b)
+          }
+          TypedAst.Expression.SelectChannel(rs, subst0(tvar), Eff.Bot, loc)
 
         /*
          * Reference expression.

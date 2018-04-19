@@ -3,7 +3,7 @@
 /////////////////////////////////////////////////////////////////////////////
 
 def putChannelInt(ch1: Channel[Int], x: Int): Channel[Int] =
-    ch1 <- x;
+    let _ = ch1 <- x;
     ch1
 
 def testPutChannelInt(): Bool =
