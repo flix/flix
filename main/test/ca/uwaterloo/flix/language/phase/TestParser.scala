@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.api.{Flix, RuleException}
-import ca.uwaterloo.flix.language.errors.{NonExhaustiveMatchError, ResolutionError}
+import ca.uwaterloo.flix.language.errors.{NonExhaustiveMatchError, ResolutionError, ParseError}
 import ca.uwaterloo.flix.runtime.Model
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.FunSuite
@@ -1050,6 +1050,24 @@ class TestParser extends FunSuite with TestUtils {
   test("Expression.MatchLambda.09") {
     val input = "def f(): List[Int] -> Int = match x :: y :: Nil -> x + y"
     expectError[NonExhaustiveMatchError](new Flix().addStr(input).compile())
+  }
+
+  test("Expression.Spawn.01") {
+    val input = "def f(): Unit = spawn 42"
+    val result = new Flix().addStr(input).compile()
+    expectError[ParseError](result)
+  }
+
+  test("Expression.Spawn.02") {
+    val input = "def f(): Unit = spawn \"str\""
+    val result = new Flix().addStr(input).compile()
+    expectError[ParseError](result)
+  }
+
+  test("Expression.Spawn.03") {
+    val input = "def f(): Unit = spawn 'a'"
+    val result = new Flix().addStr(input).compile()
+    expectError[ParseError](result)
   }
 
   /////////////////////////////////////////////////////////////////////////////

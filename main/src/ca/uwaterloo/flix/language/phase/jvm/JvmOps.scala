@@ -781,6 +781,9 @@ object JvmOps {
       case Expression.ArrayStore(base, index, value, tpe, loc) =>
         visitExp(base) ++ visitExp(index) ++ visitExp(value)
 
+      case Expression.GetChannel(exp, tpe, loc) =>
+        visitExp(exp)
+
       case Expression.Ref(exp, tpe, loc) => visitExp(exp)
       case Expression.Deref(exp, tpe, loc) => visitExp(exp)
       case Expression.Assign(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2)
@@ -969,6 +972,9 @@ object JvmOps {
 
       case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
         visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
+
+      case Expression.GetChannel(exp, tpe, loc) =>
+        visitExp(exp)
 
       case Expression.Branch(exp, branches, tpe, loc) => branches.foldLeft(visitExp(exp)) {
         case (sacc, (_, e)) => sacc ++ visitExp(e)

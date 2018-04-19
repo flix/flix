@@ -825,6 +825,67 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           } yield resultType
 
         /*
+         * NewChannel expression.
+         */
+        case ResolvedAst.Expression.NewChannel(exp, tpe, loc) =>
+          //
+          //  e: Int32
+          //  ------------------------
+          //  channel t e : Channel[t]
+          //
+          for {
+            texp <- visitExp(exp)
+            _ <- texp match {
+              case Type.Int8 => unifyM(texp, Type.Int8, loc)
+              case Type.Int16 => unifyM(texp, Type.Int16, loc)
+              case Type.Int32 => unifyM(texp, Type.Int32, loc)
+              case Type.Int64 => unifyM(texp, Type.Int64, loc)
+              case Type.BigInt => unifyM(texp, Type.BigInt, loc)
+              case _ => unifyM(texp, Type.Int32, loc)
+            }
+              
+            resultType <- liftM(Type.mkChannel(tpe))
+          } yield resultType
+
+        /*
+         * GetChannel expression.
+         */
+        case ResolvedAst.Expression.GetChannel(exp, tvar, loc) =>
+          // exp : Channel[t]
+          // ----------------
+          // <- exp : t
+          for (
+            tpe  <- visitExp(exp);
+            rtpe <- unifyM(tvar, tpe, loc)
+          ) yield rtpe
+
+        /*
+         * PutChannel expression.
+         */
+        case ResolvedAst.Expression.PutChannel(exp1, exp2, tvar, loc) =>
+          // exp1 : Channel[t]    exp2: t
+          // ----------------------------
+          // exp1 <- exp2 : Channel[t]
+          for (
+            tpe1 <- visitExp(exp1);
+            tpe2 <- visitExp(exp2);
+            rtpe <- unifyM(tvar, tpe1, tpe2, loc)
+          ) yield rtpe
+
+        /**
+          * Spawn expression.
+          */
+        case ResolvedAst.Expression.Spawn(exp, tvar, loc) =>
+          // exp : () -> Unit
+          // ----------------
+          // spawn exp : Unit
+          for (
+            tpe <- visitExp(exp);
+            e <- unifyM(tpe, Type.mkArrow(Type.Unit, Type.Unit), loc);
+            resultType <- unifyM(tvar, Type.Unit, loc)
+          ) yield resultType
+
+        /*
          * Reference expression.
          */
         case ResolvedAst.Expression.Ref(exp, tvar, loc) =>
@@ -1146,6 +1207,35 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           val i = visitExp(index, subst0)
           val v = visitExp(value, subst0)
           TypedAst.Expression.ArrayStore(b, i, v, subst0(tvar), Eff.Bot, loc)
+
+        /*
+         * NewChannel expression.
+         */
+        case ResolvedAst.Expression.NewChannel(exp, tpe, loc) =>
+          val e = visitExp(exp, subst0)
+          TypedAst.Expression.NewChannel(e, subst0(tpe), Eff.Bot, loc)
+
+        /*
+         * GetChannel expression
+         */
+        case ResolvedAst.Expression.GetChannel(exp, tvar, loc) =>
+          val e = visitExp(exp, subst0)
+          TypedAst.Expression.GetChannel(e, subst0(tvar), Eff.Bot, loc)
+
+        /*
+         * PutChannel expression.
+         */
+        case ResolvedAst.Expression.PutChannel(exp1, exp2, tvar, loc) =>
+          val e1 = visitExp(exp1, subst0)
+          val e2 = visitExp(exp2, subst0)
+          TypedAst.Expression.PutChannel(e1, e2, subst0(tvar), Eff.Bot, loc)
+
+        /*
+         * Spawn expression.
+         */
+        case ResolvedAst.Expression.Spawn(exp, tvar, loc) =>
+          val e = visitExp(exp, subst0)
+          TypedAst.Expression.Spawn(e, subst0(tvar), Eff.Bot, loc)
 
         /*
          * Reference expression.

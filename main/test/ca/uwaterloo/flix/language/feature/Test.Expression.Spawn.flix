@@ -2,6 +2,12 @@
 // Spawn expressions                                                       //
 /////////////////////////////////////////////////////////////////////////////
 
+enum Color {
+    case Red,
+    case Blue,
+    case New(Str)
+}
+
 def f01(): Unit = ()
 
 def testSpawn01(): Unit = spawn f01()
@@ -58,6 +64,22 @@ def f14(x: Channel[Int]): Unit = ()
 
 def testSpawn14(): Unit = spawn f14(channel Int)
 
-def f15(x: Channel[Int], y: Channel[Str]): Unit = ()
+def f16(): Int = 42
 
-def testSpawn15(): Unit = spawn f15(channel Int, channel Str)
+def testSpawn16(): Unit = spawn f16()
+
+def f17(): Str = "str"
+
+def testSpawn17(): Unit = spawn f17()
+
+def f18(): (Int, Int) = (10, 42)
+
+def testSpawn18(): Unit = spawn f18()
+
+def f19(): Color = Red
+
+def testSpawn19(): Unit = spawn f19()
+
+def f20(): Color = Color.New("Green")
+
+def testSpawn20(): Unit = spawn f20()

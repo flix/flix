@@ -67,4 +67,65 @@ class TestTyper extends FunSuite with TestUtils {
     expectError[UnificationError](result)
   }
 
+  /////////////////////////////////////////////////////////////////////////////
+  // Channels                                                                //
+  /////////////////////////////////////////////////////////////////////////////
+  test("Expression.NewChannel.TypeError.Unit.IllegalBuffersizeType") {
+    val input = "def f(): Channel[Int] = channel Int ()"
+    val result = new Flix().addStr(input).compile()
+    expectError[UnificationError](result)
+  }
+
+  test("Expression.NewChannel.TypeError.String.IllegalBuffersizeType") {
+    val input = "def f(): Channel[Int] = channel Int \"Str\""
+    val result = new Flix().addStr(input).compile()
+    expectError[UnificationError](result)
+  }
+
+  test("Expression.NewChannel.TypeError.Char.IllegalBuffersizeType") {
+    val input = "def f(): Channel[Int] = channel Int 'a'"
+    val result = new Flix().addStr(input).compile()
+    expectError[UnificationError](result)
+  }
+
+  test("Expression.NewChannel.TypeError.Bool.IllegalBuffersizeType") {
+    val input = "def f(): Channel[Int] = channel Int true"
+    val result = new Flix().addStr(input).compile()
+    expectError[UnificationError](result)
+  }
+
+  test("Expression.NewChannel.TypeError.Channel[Int].IllegalBuffersizeType") {
+    val input = """def t(): Channel[Int] = channel Int
+                  |def f(): Channel[Int] = channel Int t()""".stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[UnificationError](result)
+  }
+
+  test("Expression.NewChannel.TypeError.Channel[Str].IllegalBuffersizeType") {
+    val input = """def t(): Channel[Str] = channel Str
+                  |def f(): Channel[Int] = channel Int t()""".stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[UnificationError](result)
+  }
+
+  test("Expression.NewChannel.TypeError.Channel[Char].IllegalBuffersizeType") {
+    val input = """def t(): Channel[Char] = channel Char
+                  |def f(): Channel[Int] = channel Int t()""".stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[UnificationError](result)
+  }
+
+  test("Expression.NewChannel.TypeError.Channel[Bool].IllegalBuffersizeType") {
+    val input = """def t(): Channel[Bool] = channel Bool
+                  |def f(): Channel[Int] = channel Int t()""".stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[UnificationError](result)
+  }
+
+  test("Expression.NewChannel.TypeError.Channel[Unit].IllegalBuffersizeType") {
+    val input = """def t(): Channel[Unit] = channel Unit
+                  |def f(): Channel[Int] = channel Int t()""".stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[UnificationError](result)
+  }
 }

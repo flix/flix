@@ -491,4 +491,20 @@ object WeederError {
     }
   }
 
+  /**
+    * An error raised to indicate an illegal buffer size of a channel,
+    *
+    * @param loc the location where the illegal array length occurs.
+    */
+  case class IllegalBufferSize(loc: SourceLocation) extends WeederError {
+    val source: Source = loc.source
+    val message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Illegal buffer size of channel." << NewLine
+      vt << NewLine
+      vt << Code(loc, "illegal buffer size.") << NewLine
+    }
+  }
+
 }

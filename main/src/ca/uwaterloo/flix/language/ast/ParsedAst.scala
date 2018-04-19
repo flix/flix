@@ -641,6 +641,52 @@ object ParsedAst {
     case class ArrayStore(base: ParsedAst.Expression, index: ParsedAst.Expression, value: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
+      * NewChannel Expression.
+      *
+      * @param sp1 the position of the first character in the expression.
+      * @param tpe the type of the channel
+      * @param exp the optional buffer expression of the channel (Default is 0)
+      * @param sp2 the position of the last character in the expressions
+      */
+    case class NewChannel(sp1: SourcePosition, tpe: ParsedAst.Type, exp: Option[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
+      * GetChannel Expression.
+      *
+      * @param exp1 the expression to get from.
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class GetChannel(sp1: SourcePosition, exp1: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
+      * PutChannel Expression.
+      *
+      * @param exp1 the channel expression.
+      * @param exp2 the value expression.
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class PutChannel(exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
+      * Spawn Expression (runs expression on new process).
+      *
+      * @param sp1  the position of the first character in the expression.
+      * @param fn   the function to be run concurrently
+      * @param args the arguments to pass to the function
+      * @param sp2  the position of the last character in the expression.
+      */
+    case class Spawn(sp1: SourcePosition, fn: Name.Ident, args: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
+      * SelectChannel Expression (select first channel expression).
+      *
+      * @param sp1   the position of the first character in the expression.
+      * @param rules the rules of the select channel.
+      * @param sp2   the position of the last character in the expression.
+      */
+    case class SelectChannel(sp1: SourcePosition, rules: Seq[ParsedAst.SelectRule], sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
       * Nil Expression (of list).
       *
       * @param sp1 the position of the first character in the expression.
@@ -808,52 +854,6 @@ object ParsedAst {
       * @param sp2 the position of the last character in the expression.
       */
     case class UserError(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Expression
-
-    /**
-      * New Channel Expression
-      *
-      * @param sp1 the position of the first character in the expression.
-      * @param tpe the type of the channel
-      * @param exp the optional buffer expression of the channel (Default is 0)
-      * @param sp2 the position of the last character in the expressions
-      */
-    case class NewChannel(sp1: SourcePosition, tpe: ParsedAst.Type, exp: Option[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
-
-    /**
-      * GetChannel
-      *
-      * @param exp1 the expression to get from.
-      * @param sp2 the position of the last character in the expression.
-      */
-    case class GetChannel(sp1: SourcePosition, exp1: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
-
-    /**
-      * PutChannel Expression.
-      *
-      * @param exp1 the channel expression.
-      * @param exp2 the value expression.
-      * @param sp2 the position of the last character in the expression.
-      */
-    case class PutChannel(exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
-
-    /**
-      * Spawn Expression (runs expression on new process)
-      *
-      * @param sp1  the position of the first character in the expression.
-      * @param fn   the function to be run concurrently
-      * @param args the arguments to pass to the function
-      * @param sp2  the position of the last character in the expression.
-      */
-    case class Spawn(sp1: SourcePosition, fn: Name.Ident, args: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
-
-    /**
-      * SelectChannel Expression (select first channel expression).
-      *
-      * @param sp1   the position of the first character in the expression.
-      * @param rules the rules of the select channel.
-      * @param sp2   the position of the last character in the expression.
-      */
-    case class SelectChannel(sp1: SourcePosition, rules: Seq[ParsedAst.SelectRule], sp2: SourcePosition) extends ParsedAst.Expression
 
   }
 

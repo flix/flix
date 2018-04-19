@@ -366,6 +366,11 @@ object Effects extends Phase[Root, Root] {
         case Expression.ArrayStore(base, index, value, tpe, eff, loc) => ??? // TODO
 
         /**
+          * Spawn Expression
+          */
+        case Expression.Spawn(exp, tpe, eff, loc) => Expression.Spawn(exp, tpe, eff, loc).toSuccess
+
+        /**
           * Reference Expression.
           */
         case Expression.Ref(exp, tpe, eff, loc) =>

@@ -614,7 +614,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def NewChannel: Rule1[ParsedAst.Expression.NewChannel] = rule {
-      SP ~ atomic("channel") ~ WS ~ Type ~ optional(":" ~ Expression) ~ SP ~> ParsedAst.Expression.NewChannel
+      SP ~ atomic("channel") ~ WS ~ Type ~ optional(WSWON ~ Expression) ~ SP ~> ParsedAst.Expression.NewChannel
     }
 
     def Literal: Rule1[ParsedAst.Expression.Lit] = rule {
@@ -645,7 +645,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def SelectChannel: Rule1[ParsedAst.Expression.SelectChannel] = {
       def SelectRule: Rule1[ParsedAst.SelectRule] = rule {
-        atomic("case") ~ WS ~ Names.Variable ~ optWS ~ GetChannel ~ atomic("=>") ~ optWS ~ Expression ~> ParsedAst.SelectRule
+        atomic("case") ~ WS ~ Names.Variable ~ optWS ~ atomic("<-") ~ optWS ~ Expression ~ optWS ~ atomic("=>") ~ optWS ~ Expression ~> ParsedAst.SelectRule
       }
 
       rule {
@@ -1241,6 +1241,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
   def optWS: Rule0 = rule {
     optional(WS)
+  }
+
+  def WSWON: Rule0 = rule {
+    oneOrMore(" " | "\t" | Comment)
   }
 
   def NewLine: Rule0 = rule {

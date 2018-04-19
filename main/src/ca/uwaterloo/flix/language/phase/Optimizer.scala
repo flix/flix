@@ -278,6 +278,35 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         Expression.ArrayStore(b, i, v, tpe, loc)
 
       //
+      // New-Channel Expressions.
+      //
+      case Expression.NewChannel(exp, tpe, loc) =>
+        val e = visitExp(exp, env0)
+        Expression.NewChannel(e, tpe, loc)
+
+      //
+      // Get-Channel Expressions.
+      //
+      case Expression.GetChannel(exp, tpe, loc) =>
+        val e = visitExp(exp, env0)
+        Expression.GetChannel(e, tpe, loc)
+      
+      //
+      // Put-Channel Expressions.
+      //
+      case Expression.PutChannel(exp1, exp2, tpe, loc) =>
+        val e1 = visitExp(exp1, env0)
+        val e2 = visitExp(exp2, env0)
+        Expression.PutChannel(e1, e2, tpe, loc)
+
+      //
+      // Spawn Expressions.
+      //
+      case Expression.Spawn(exp, tpe, loc) =>
+        val e = visitExp(exp, env0)
+        Expression.Spawn(e, tpe, loc)
+
+      //
       // Reference Expressions.
       //
       case Expression.Ref(exp, tpe, loc) =>

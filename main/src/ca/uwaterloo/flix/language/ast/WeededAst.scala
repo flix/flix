@@ -142,6 +142,16 @@ object WeededAst {
 
     case class ArrayStore(base: WeededAst.Expression, index: WeededAst.Expression, value: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
+    case class NewChannel(exp: WeededAst.Expression, tpe: WeededAst.Type, loc: SourceLocation) extends WeededAst.Expression
+    
+    case class GetChannel(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+
+    case class PutChannel(exp1: WeededAst.Expression, exp2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+
+    case class Spawn(lambda: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+
+    case class SelectChannel(rules: List[WeededAst.SelectRule], loc: SourceLocation) extends WeededAst.Expression
+
     case class Ref(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     case class Deref(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
@@ -165,16 +175,6 @@ object WeededAst {
     case class NativeMethod(className: String, methodName: String, args: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
 
     case class UserError(loc: SourceLocation) extends WeededAst.Expression
-
-    case class NewChannel(exp: WeededAst.Expression, tpe: WeededAst.Type, loc: SourceLocation) extends WeededAst.Expression
-    
-    case class GetChannel(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
-
-    case class PutChannel(exp1: WeededAst.Expression, exp2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
-
-    case class Spawn(lambda: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
-
-    case class SelectChannel(rules: List[WeededAst.SelectRule], loc: SourceLocation) extends WeededAst.Expression
 
   }
 
