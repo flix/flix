@@ -1,5 +1,5 @@
 @test
-def testVectorSlice01(): Vector[Int, 3] = let x [|1,2,3|]; x[|..2|]
+def testVectorSliceNoStart01(): Vector[Int, 3] = let x [|1,2,3|]; x[|..2|]
 
 @test
 def testVectorSlice02(): Vector[Int, 5] = let x [|1,2,3,4,5|]; x[|..3|]

@@ -1,11 +1,11 @@
 @test
-def testVectorSlice01(): Vector[Int, 3] = let x [|1,2,3|]; x[|0..2|]
+def testVectorSlice01(): Vector[Int, 3] = let x = [|1,2,3|]; x[|0..2|]
 
 @test
-def testVectorSlice02(): Vector[Int, 5] = let x [|1,2,3,4,5|]; x[|2..3|]
+def testVectorSlice02(): Vector[Int, 5] = let x = [|1,2,3,4,5|]; x[|2..3|]
 
 @test
-def testVectorSlice03(): Vector[Int, 20] = let x [|1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20|]; x[|15..18|]
+def testVectorSlice03(): Vector[Int, 20] = let x = [|1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20|]; x[|15..18|]
 
 @test
 def testArraySlice04(): Vector[Int, 2] = let x = [|1,2|]; x[|1..2|]
@@ -17,7 +17,7 @@ def testArraySlice05(): Vector[Bool, 2] = let x = [true, false]; x[|0..1|]
 def testArraySlice06(): Vector[Bool, 3] = let x = [false, true, false]; x[|2..4|]
 
 @test
-def testArraySlice07(): Vector[Bool, 5] = let x = [|false, false, false, false, true|]; x[|1..3|]
+def testArraySlice07(): Vector[Bool, 3] = let x = [|false, false, false, false, true|]; x[|1..3|]
 
 @test
 def testArraySlice08(): Vector[Char, 2] = let x = [|'a', 'b'|]; x[|0..1|]

@@ -193,7 +193,6 @@ object Unification {
       case (Type.Sum(l11, l21), Type.Sum(l12, l22)) if l11 == l12 => unifyTypes(l21, l22) // (42, x) == (42, y)
       case (Type.Sum(l11, l21), Type.Sum(l12, l22)) if l11 > l12 => unifyVar(l22, Type.Sum(l11-l12, l21)) // (42, x) == (21, y)
       case (Type.Sum(l11, l21), Type.Sum(l12, l22)) if l11 < l12 => unifyVar(l21, Type.Sum(l12-l11, l21)) // (21, x) == (42, y)
-
       case (Type.Nat(i1), Type.Sum(l1, l2)) if i1-1 >= l1 => Result.Ok(Substitution.empty)
       case (Type.Sum(l1, l2), Type.Nat(i1)) if l1 <= i1-1 => Result.Ok(Substitution.empty)
       case (Type.Enum(name1, kind1), Type.Enum(name2, kind2)) if name1 == name2 => Result.Ok(Substitution.empty)
