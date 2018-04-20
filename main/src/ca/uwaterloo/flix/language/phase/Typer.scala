@@ -860,9 +860,9 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
 
         case ResolvedAst.Expression.VectorLit(elms, tvar, loc) =>
           //
-          // e1: t ...  en: t  n: Nat
+          // elm1: t ...  elmn: t  n: Nat
           // ---------------------------
-          // [|e1,...,en|] : Vector[t, n]
+          // [|elm1,...,elmn|] : Vector[t, n]
           //
           for (
             elementTypes <- seqM(elms.map(visitExp));
@@ -872,27 +872,42 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
 
         case ResolvedAst.Expression.VectorNew(elm, len, tvar, loc) =>
           //
-          // e: t    n: Nat
+          // elm: t    n: Nat
           // --------------------------
-          // [|e ; n |] : Vector[t, n]
+          // [|elm ; n |] : Vector[t, n]
           //
           for (
             tpe <- visitExp(elm);
             resultType <- unifyM(tvar, Type.mkVector(tpe, len), loc)
           ) yield resultType
 
-        /*case ResolvedAst.Expression.VectorLoad(exp1, exp2, tvar, loc) =>
+        case ResolvedAst.Expression.VectorLoad(exp1, exp2, tvar, loc) =>
+          //
+          //  exp1 : Vector[t, n]   exp2: Min(x, y)   x: Int y: Var
+          //  -------------------------------------------------------
+          //  exp1[|exp2|] : t
+          //
+          val freshVar = Type.freshTypeVar()
           for (
             tpe <- visitExp(exp1);
-            len <- TypedAst.Expression.VectorLength(exp1, tvar, Eff.Bot, loc);
-            vectorType <- unifyM(tpe, Type.mkVector(tvar, len), loc)
-            //resultType <- unifyM(Type.Apply(tpe, tvar), Type.Apply(Type.Vector, tvar), loc)
-            //resultType <- Type.Apply(tpe, tvar) // unifyM(tpe, Type.Vector, loc)
-          ) yield tvar*/
+            resultType <- unifyM(tpe, Type.mkVector(tvar, exp2, freshVar), loc)
+          ) yield tvar
 
-          //nuværende problem: Jeg har vector som en expression exp1.
-          //For at kunne lave en Vector Type, skal jeg kende dens længde.
-          //Hvordan kan jeg finde længden af en allerede eksisterende expression?
+        case ResolvedAst.Expression.VectorStore(exp1, exp2, exp3, tvar, loc) =>
+          //
+          //  exp1 : Vector[t, n]   exp2: Min(x, y)   exp3: t   x: Int y: Var
+          //  ---------------------------------------------------------------
+          //  exp1[|exp2|] = exp3 : Unit
+          //
+          val freshVar = Type.freshTypeVar()
+          val elmVar = Type.freshTypeVar()
+          for (
+            recievedBaseType <- visitExp(exp1);
+            recievedObjectType <- visitExp(exp3);
+            vectorType <- unifyM(recievedBaseType, Type.mkVector(elmVar, exp2, freshVar), loc);
+            objectType <- unifyM(recievedObjectType, elmVar, loc);
+            resultType <- unifyM(tvar, Type.Unit, loc)
+          ) yield resultType
 
         case ResolvedAst.Expression.VectorLength(exp, tvar, loc) =>
           //
@@ -904,6 +919,32 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
             _ <- visitExp(exp);
             resultType <- unifyM(tvar, Type.Int32, loc)
           ) yield resultType
+
+        case ResolvedAst.Expression.VectorSlice(exp1, exp2, exp3, tvar, loc) =>
+          //
+          //  exp1 : Vector[t, n]   exp2 : Int   exp3 : Int   n: Nat
+          //  -------------------------------------------------------
+          //  exp1[exp2..exp3] : Vector[t, n]
+          //
+          val freshVar = Type.freshTypeVar()
+          val elmVar = Type.freshTypeVar()
+          for(
+            tpe <- visitExp(exp1);
+            firstIndex <- unifyM(tpe, Type.mkVector(elmVar, exp2, freshVar), loc);
+            secondIndex <- unifyM(tpe, Type.mkVector(elmVar, exp3, freshVar), loc);
+            resultType <- unifyM(tvar, Type.mkVector(Type.Int32, exp3-exp2), loc)
+          ) yield resultType
+
+//          recievedBaseType <- visitExp(exp1);
+  //    recievedStartIndexType <- visitExp(exp2);
+    //  recievedEndIndexType <- visitExp(exp3);
+//      startIndexType <- unifyM(recievedStartIndexType, Type.Int32, loc);
+  //    endIndexType <- unifyM(recievedEndIndexType, Type.Int32, loc);
+    //  resultType <- unifyM(tvar, recievedBaseType, loc)
+      //) yield resultType
+
+
+
 
         /*
          * Reference expression.
@@ -1253,15 +1294,22 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           val e = visitExp(elm, subst0)
           TypedAst.Expression.VectorNew(e, len, subst0(tvar), Eff.Bot, loc)
 
-
          case ResolvedAst.Expression.VectorLoad(exp1, exp2, tvar, loc) =>
           val e = visitExp(exp1, subst0)
           TypedAst.Expression.VectorLoad(e, exp2, tvar, Eff.Bot, loc)
 
+        case ResolvedAst.Expression.VectorStore(exp1, exp2, exp3, tvar, loc) =>
+          val e1 = visitExp(exp1, subst0)
+          val e3 = visitExp(exp3, subst0)
+          TypedAst.Expression.VectorStore(e1, exp2, e3, tvar, Eff.Bot, loc)
 
         case ResolvedAst.Expression.VectorLength(elm, tvar, loc) =>
           var e = visitExp(elm, subst0)
           TypedAst.Expression.VectorLength(e, tvar, Eff.Bot, loc)
+
+        case ResolvedAst.Expression.VectorSlice(exp1, exp2, exp3, tvar, loc) =>
+          var e = visitExp(exp1, subst0)
+          TypedAst.Expression.VectorSlice(e, exp2, exp3, tvar, Eff.Bot, loc)
 
         /*
          * Reference expression.
