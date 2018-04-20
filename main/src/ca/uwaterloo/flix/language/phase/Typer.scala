@@ -932,19 +932,8 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
             tpe <- visitExp(exp1);
             firstIndex <- unifyM(tpe, Type.mkVector(elmVar, exp2, freshVar), loc);
             secondIndex <- unifyM(tpe, Type.mkVector(elmVar, exp3, freshVar), loc);
-            resultType <- unifyM(tvar, Type.mkVector(Type.Int32, exp3-exp2), loc)
+            resultType <- unifyM(tvar, Type.mkVector(Type.Int32,  exp3-exp2), loc)
           ) yield resultType
-
-//          recievedBaseType <- visitExp(exp1);
-  //    recievedStartIndexType <- visitExp(exp2);
-    //  recievedEndIndexType <- visitExp(exp3);
-//      startIndexType <- unifyM(recievedStartIndexType, Type.Int32, loc);
-  //    endIndexType <- unifyM(recievedEndIndexType, Type.Int32, loc);
-    //  resultType <- unifyM(tvar, recievedBaseType, loc)
-      //) yield resultType
-
-
-
 
         /*
          * Reference expression.
@@ -1310,6 +1299,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         case ResolvedAst.Expression.VectorSlice(exp1, exp2, exp3, tvar, loc) =>
           var e = visitExp(exp1, subst0)
           TypedAst.Expression.VectorSlice(e, exp2, exp3, tvar, Eff.Bot, loc)
+
 
         /*
          * Reference expression.

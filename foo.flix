@@ -29,19 +29,28 @@ def f() : Int = {
 }
 */
 
+// VectorLit
+/*
+def f() : Vector[Int, 5] = {
+  let x = [|1, 2, 3, 4, 5|];
+  x
+}*/
+
+//VectorNew
+/*
 def f() : Vector[Int, 5] = {
   let x = [|5;5|];
   x
-}
+}*/
 
 //ArraySlice
-/*
-def f() : Array[Int] = {
 
-  let x = [0,1,2,3,4,5];
-  x[2..4]
+def f() : Vector[Int, 1] = {
+
+  let x = [|[|1|]|];
+  x[|0..1|]
 }
-*/
+
 //VectorLoad
 /*
 def f() : Int = {
