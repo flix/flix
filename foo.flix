@@ -1,8 +1,10 @@
 // ArrayLit
+/*
 def f() : Array[Int] = {
   let x = [1,2,3,4,5];
   x
 }
+*/
 
 // ArrayNew
 /*
@@ -13,17 +15,15 @@ def f() : Array[Int] = {
 */
 
 // ArrayLoad
-/*
 def f() : Int = {
-  let x = [10;10];
-  x[1]
+  let x = [1,2,3,4,5];
+  x[2]
 }
-*/
 
 // ArrayStore
 /*
 def f() : Unit = {
-  let x = [10;10];
+  let x = [1,2,3,4,5];
   x[1] = 2
 }
 */
@@ -32,7 +32,7 @@ def f() : Unit = {
 /*
 def f() : Int = {
 
-  let x = [10;10];
+  let x = [1,2,3,4,5,6,7,8,9,10];
   length[x]
 }
 */
@@ -41,9 +41,7 @@ def f() : Int = {
 /*
 def f() : Array[Int] = {
 
-  let x = [10;10];
-  x[1..5]
+  let x = [0,1,2,3,4,5];
+  x[2..4]
 }
 */
-
-}

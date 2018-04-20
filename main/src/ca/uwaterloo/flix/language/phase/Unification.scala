@@ -76,7 +76,7 @@ object Unification {
       case Type.Arrow(l) => Type.Arrow(l)
       case Type.Tuple(l) => Type.Tuple(l)
       case Type.Nat(i) => Type.Nat(i)
-      case Type.Num(l1, l2) => Type.Num(l1, l2)
+      case Type.Min(l1, l2) => Type.Min(l1, l2)
       case Type.Enum(name, kind) => Type.Enum(name, kind)
       case Type.Apply(t1, t2) => Type.Apply(apply(t1), apply(t2))
     }
