@@ -17,13 +17,13 @@ def testVectorNew05(): Vector[Int, 4] = [|1 ; 4|]
 def testVectorNew06(): Vector[Int,20] = [|1 ; 20|]
 
 @test
-def testVectorNew07(): Vector[Bool,1] = [|true, 1|]
+def testVectorNew07(): Vector[Bool,1] = [|true; 1|]
 
 @test
-def testVectorNew08(): Vector[Bool, 1] = [|false, 1|]
+def testVectorNew08(): Vector[Bool, 1] = [|false; 1|]
 
 @test
-def testVectorNew09(): Vector[Bool, 2] = [|true, 2|]
+def testVectorNew09(): Vector[Bool, 2] = [|true; 2|]
 
 @test
 def testVectorNew10(): Vector[Bool, 3] = [|false ; 3|]
@@ -47,7 +47,7 @@ def testVectorNew15(): Vector[Char, 20] = [|'a' ; 20|]
 def testVectorNew16(): Vector[Int8, 1] = [|1i8 ; 1|]
 
 @test
-def testVectorNew17(): Vector[Int8, 3] = [|1i8, ; 3|]
+def testVectorNew17(): Vector[Int8, 3] = [|1i8 ; 3|]
 
 @test
 def testVectorNew18(): Vector[Int8, 4] = [|4i8 ; 4|]

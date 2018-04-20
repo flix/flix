@@ -1,9 +1,15 @@
-def f() : Vector[Int, 6] = {
+def f() : Vector[Int, 3] = {
+ let x =  [|5;5|];
+  x[|0..3|]
+}
+// Test for alle 4 cases i slice, load og store.
+
+
 // ArrayLit
-def f() : Array[Int] = {
+/*def f() : Array[Int] = {
   let x = [1,2,3,4,5];
   x
-}
+}*/
 
 // ArrayNew
 /*
@@ -46,4 +52,3 @@ def f() : Array[Int] = {
   x[1..5]
 }
 */
-}

@@ -872,7 +872,7 @@ object Synthesize extends Phase[Root, Root] {
 
         case Type.Apply(Type.Array, _) => Expression.Str("<<array>>", sl)
 
-        case Type.Apply(Type.Vector, _) => Expression.Str("<<vector>>", sl)
+        case Type.Apply(Type.Apply(Type.Vector, _),  Type.Nat(i)) => Expression.Str("<<vector>>", sl)
 
         case Type.Apply(Type.Arrow(l), _) => Expression.Str("<<clo>>", sl)
 
