@@ -214,8 +214,8 @@ namespace Path {
     /// Default handler for `isExecutable`.
     ///
     handler isExecutable[a](p: Path, k: Result[Bool, IOError] -> a): a = unsafe {
-        let Path(javaPath) = p;
         if (exists(p))
+            let Path(javaPath) = p;
             let answer = native method java.nio.file.Files.isExecutable(javaPath);
             k(Ok(answer))
         else
@@ -452,7 +452,6 @@ namespace Path {
                                                                                  javaPath2 : ##java.nio.file.Path,
                                                                                  [| |]     : Array[##java.nio.file.StandardCopyOption]);
                                   k(Ok(true))
-                                  //TODO: Lookup exceptions for this method and do better than returning Ok(true)
             case Err(IOError(errorString)) => k(Err(IOError(errorString)))
         }
     }
@@ -477,7 +476,6 @@ namespace Path {
                                                                                  javaPath2 : ##java.nio.file.Path,
                                                                                  [| |]     : Array[##java.nio.file.StandardCopyOption]);
                                   k(Ok(true))
-                                  //TODO: Lookup exceptions for this method and do better than returning Ok(true)
             case Ok(false) => k(Err(IOError("Path 'src' is a file and not a directory")))
             case Err(IOError(errorString)) => k(Err(IOError(errorString)))
         }
@@ -566,17 +564,14 @@ namespace Path {
     ///
     handler deleteDirectory[a](p: Path, k: Result[Bool, IOError] -> a): a = unsafe {
         try {
-            if (exists(p))
-                let Path(javaPath) = p;
-                let directoryResponse = isDirectory(p, result -> result);
-                match directoryResponse with {
-                    case Ok(true) => let _ = native method java.nio.file.Files.delete(javaPath);
-                                     k(Ok(true))
-                    case Ok(false) => k(Err(IOError("The provided Path 'p' points to a file and not a directory")))
-                    case Err(IOError(errorString)) => k(Err(IOError(errorString)))
-                }
-            else
-                k(Err(IOError("Argument 'p' does not point to any existing file or directory")))
+            let directoryResponse = isDirectory(p, result -> result);
+            match directoryResponse with {
+                case Ok(true) => let Path(javaPath) = p;
+                                 let _ = native method java.nio.file.Files.delete(javaPath);
+                                 k(Ok(true))
+                case Ok(false) => k(Err(IOError("The provided Path 'p' points to a file and not a directory")))
+                case Err(IOError(errorString)) => k(Err(IOError(errorString)))
+            }
         }
         catch {
             case ex: ##java.nio.file.DirectoryNotEmptyException => k(Err(IOError("Directory pointed to by 'p' is not empty. This is required")))
