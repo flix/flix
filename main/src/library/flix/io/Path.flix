@@ -189,20 +189,20 @@ namespace Path {
     /// Default handler for `isEmpty`.
     ///
     handler isEmpty[a](p: Path, k: Result[Bool, IOError] -> a): a = unsafe {
-        if (exists(p))
-            let Path(javaPath) = p;
-            let directoryHandler = isDirectory(p, result -> result);
-            match directoryHandler with {
-                case Ok(true) => let dirStream = native method java.nio.file.Files.newDirectoryStream(javaPath);
-                                 let dirIterator = native method java.nio.file.DirectoryStream.iterator(dirStream);
-                                 k(Ok(!native method java.util.Iterator.hasNext(dirIterator)))
-                case Ok(false) => k(Err(IOError("is a file and the File checking has not been written yet")))
-                    //TODO: Write isEmpty check for files
-                case Err(IOError(errorString)) => k(Err(IOError(errorString)))
-                    //Using own exists and calling isDirectory results in two separate exists checks - bad?
-            }
-        else
-            k(Err(IOError("Argument 'p' does not point to any existing file or directory")))
+        let Path(javaPath) = p;
+        let directoryHandler = isDirectory(p, result -> result);
+        match directoryHandler with {
+            case Ok(true) =>  let dirStream = native method java.nio.file.Files.newDirectoryStream(javaPath);
+                              let dirIterator = native method java.nio.file.DirectoryStream.iterator(dirStream);
+                              k(Ok(!native method java.util.Iterator.hasNext(dirIterator)))
+            case Ok(false) => let readLinesResponse = readLines(p, result -> result);
+                              match readLinesResponse with {
+                                  case Ok(Nil) => k(Ok(true))
+                                  case Err(IOError(errorString)) => k(Err(IOError(errorString)))
+                                  case _       => k(Ok(false))
+                              }
+            case Err(IOError(errorString)) => k(Err(IOError(errorString)))
+        }
     }
 
     ///
