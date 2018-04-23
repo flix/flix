@@ -856,8 +856,8 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           // <- exp : t
           for (
             tpe  <- visitExp(exp);
-            rtpe <- unifyM(tvar, tpe, loc)
-          ) yield rtpe
+            ctpe <- unifyM(tpe, Type.mkChannel(tvar), loc)
+          ) yield tvar
 
         /*
          * PutChannel expression.
@@ -869,7 +869,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           for (
             tpe1 <- visitExp(exp1);
             tpe2 <- visitExp(exp2);
-            rtpe <- unifyM(tvar, tpe1, tpe2, loc)
+            rtpe <- unifyM(tvar, tpe1, Type.mkChannel(tpe2), loc)
           ) yield rtpe
 
         /**
