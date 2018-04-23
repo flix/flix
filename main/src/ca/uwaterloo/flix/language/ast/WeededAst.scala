@@ -282,5 +282,5 @@ object WeededAst {
 
   case class MatchRule(pat: WeededAst.Pattern, guard: WeededAst.Expression, exp: WeededAst.Expression) extends WeededAst
 
-  case class SelectRule(pat: WeededAst.Pattern, chan: WeededAst.Expression, exp: WeededAst.Expression) extends WeededAst
+  case class SelectRule(ident: Name.Ident, chan: WeededAst.Expression, exp: WeededAst.Expression) extends WeededAst
 }

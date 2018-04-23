@@ -131,8 +131,8 @@ class TestTyper extends FunSuite with TestUtils {
 
   test("Expression.SelectChannel.TypeError.String.IllegalReturnType") {
     val input =
-      """def f(ch: Channel[Int] ): Int = select {
-        |  case _ <- ch => "str"
+      """def f(ch: Channel[Int]): Int = select {
+        |  case x <- ch => "str"
         |}
       """.stripMargin
     val result = new Flix().addStr(input).compile()
@@ -141,8 +141,8 @@ class TestTyper extends FunSuite with TestUtils {
 
   test("Expression.SelectChannel.TypeError.Char.IllegalReturnType") {
     val input =
-      """def f(ch: Channel[Int] ): Int = select {
-        |  case _ <- ch => 'c'
+      """def f(ch: Channel[Int]): Int = select {
+        |  case x <- ch => 'c'
         |}
       """.stripMargin
     val result = new Flix().addStr(input).compile()

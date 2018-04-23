@@ -680,8 +680,8 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
         case ParsedAst.Expression.SelectChannel(sp1, rules, sp2) =>
           val rulesVal = rules map {
-            case ParsedAst.SelectRule(pat, chan, body) => @@(Patterns.weed(pat), visit(chan, unsafe), visit(body, unsafe)) map {
-              case (p, c, b) => WeededAst.SelectRule(p, c, b)
+            case ParsedAst.SelectRule(ident, chan, body) => @@(visit(chan, unsafe), visit(body, unsafe)) map {
+              case (c, b) => WeededAst.SelectRule(ident, c, b)
             }
           }
           @@(rulesVal) map {

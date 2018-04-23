@@ -303,7 +303,7 @@ object NamedAst {
 
   case class MatchRule(pat: NamedAst.Pattern, guard: NamedAst.Expression, exp: NamedAst.Expression) extends NamedAst
 
-  case class SelectRule(pat: NamedAst.Pattern, chan: NamedAst.Expression, exp: NamedAst.Expression) extends NamedAst
+  case class SelectRule(sym: Symbol.VarSym, chan: NamedAst.Expression, exp: NamedAst.Expression) extends NamedAst
 
   case class TypeParam(name: Name.Ident, tpe: ast.Type.Var, loc: SourceLocation) extends NamedAst
 
