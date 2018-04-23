@@ -161,6 +161,9 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         visitExp(exp2, i1)
       case Expression.Spawn(exp, tpe, loc) =>
         visitExp(exp, i0)
+      case Expression.SelectChannel(rules, tpe, loc) =>
+        visitExps(rules.map(_.chan), i0)
+        visitExps(rules.map(_.body), i0)
       case Expression.Ref(exp, tpe, loc) => visitExp(exp, i0)
       case Expression.Deref(exp, tpe, loc) => visitExp(exp, i0)
       case Expression.Assign(exp1, exp2, tpe, loc) =>

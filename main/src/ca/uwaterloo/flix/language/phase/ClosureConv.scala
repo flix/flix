@@ -175,6 +175,13 @@ object ClosureConv {
     case Expression.Spawn(e, tpe, loc) =>
       Expression.Spawn(convert(e), tpe, loc)
 
+    case Expression.SelectChannel(rules, tpe, loc) =>
+      val rs = rules map {
+        case SimplifiedAst.SelectRule(sym, chan, body) =>
+          SimplifiedAst.SelectRule(sym, convert(chan), convert(body))
+      }
+      Expression.SelectChannel(rs, tpe, loc)
+
     case Expression.Ref(exp, tpe, loc) =>
       val e = convert(exp)
       Expression.Ref(e, tpe, loc)

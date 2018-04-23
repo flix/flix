@@ -366,9 +366,14 @@ object Effects extends Phase[Root, Root] {
         case Expression.ArrayStore(base, index, value, tpe, eff, loc) => ??? // TODO
 
         /**
-          * Spawn Expression
+          * Spawn Expression.
           */
         case Expression.Spawn(exp, tpe, eff, loc) => Expression.Spawn(exp, tpe, eff, loc).toSuccess
+
+        /**
+          * Select Channel Expression.
+          */
+        case Expression.SelectChannel(rules, tpe, eff, loc) => Expression.SelectChannel(rules, tpe, eff, loc).toSuccess
 
         /**
           * Reference Expression.

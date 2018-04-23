@@ -320,6 +320,18 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           val e1 = visitExp(exp, env0)
           Expression.Spawn(e1, subst0(tpe), eff, loc)
 
+        case Expression.SelectChannel(rules, tpe, eff, loc) =>
+          val rs = rules map {
+            case TypedAst.SelectRule(sym, chan, body) =>
+              val freshSym = Symbol.freshVarSym(sym)
+              val env1 = env0 + (sym -> freshSym)
+              val extendedEnv = env0 ++ env1
+              val c = visitExp(chan, extendedEnv)
+              val b = visitExp(body, extendedEnv)
+              TypedAst.SelectRule(freshSym, c, b)
+          }
+          Expression.SelectChannel(rs, subst0(tpe), eff, loc)
+
         case Expression.Ref(exp, tpe, eff, loc) =>
           val e = visitExp(exp, env0)
           Expression.Ref(e, tpe, eff, loc)

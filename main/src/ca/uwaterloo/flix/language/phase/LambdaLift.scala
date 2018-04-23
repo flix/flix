@@ -200,6 +200,12 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         Expression.PutChannel(visit(exp1), visit(exp2), tpe, loc)
       case Expression.Spawn(exp, tpe, loc) =>
         Expression.Spawn(visit(exp), tpe, loc)
+      case Expression.SelectChannel(rules, tpe, loc) =>
+        val rs = rules map {
+          case SimplifiedAst.SelectRule(sym, chan, body) =>
+            SimplifiedAst.SelectRule(sym, visit(chan), visit(body))
+        }
+        Expression.SelectChannel(rs, tpe, loc)
       case Expression.Ref(exp, tpe, loc) =>
         Expression.Ref(visit(exp), tpe, loc)
       case Expression.Deref(exp, tpe, loc) =>
