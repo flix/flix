@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.runtime.interpreter
 import ca.uwaterloo.flix.api
 import ca.uwaterloo.flix.language.ast.{Symbol, Type}
 import ca.uwaterloo.flix.util.InternalRuntimeException
+import java.util.concurrent.ConcurrentLinkedQueue
 
 sealed trait Value
 
@@ -162,4 +163,21 @@ object Value {
     final override def toString: String = throw InternalRuntimeException(s"Value.Tuple does not support `toString`.")
   }
 
+  case class Channel(len: Int, tpe: Type) extends  Value {
+    def getType: Type = tpe
+
+    def getCapacity: Int = len
+
+    def getQueue: ConcurrentLinkedQueue[tpe.type] = new ConcurrentLinkedQueue[tpe.type]()
+
+    def getWaitingPutters = new ConcurrentLinkedQueue[Unit => Unit]()
+
+    def getWaitingGetters = new ConcurrentLinkedQueue[Unit => tpe.type]()
+
+    final override def equals(obj: scala.Any): Boolean = throw InternalRuntimeException(s"Value.Channel does not support `equals`.")
+
+    final override def hashCode(): Int = throw InternalRuntimeException(s"Value.Channel does not support `hashCode`.")
+
+    final override def toString: String = s"Channel[$tpe] $getCapacity"
+  }
 }
