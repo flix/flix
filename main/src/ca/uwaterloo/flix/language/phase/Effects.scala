@@ -366,14 +366,53 @@ object Effects extends Phase[Root, Root] {
         case Expression.ArrayStore(base, index, value, tpe, eff, loc) => ??? // TODO
 
         /**
+          * NewChannel Expression.
+          */
+        case Expression.NewChannel(exp, tpe, eff, loc) =>
+          for {
+            e <- visitExp(exp, env0)
+          } yield Expression.NewChannel(e, tpe, eff, loc)
+
+        /**
+          * GetChannel Expression.
+          */
+        case Expression.GetChannel(exp, tpe, eff, loc) =>
+          for {
+            e <- visitExp(exp, env0)
+          } yield Expression.GetChannel(e, tpe, eff, loc)
+
+        /**
+          * PutChannel Expression.
+          */
+        case Expression.PutChannel(exp1, exp2, tpe, eff, loc) =>
+          for {
+            e1 <- visitExp(exp1, env0)
+            e2 <- visitExp(exp2, env0)
+          } yield Expression.PutChannel(e1, e2, tpe, eff, loc)
+
+        /**
           * Spawn Expression.
           */
-        case Expression.Spawn(exp, tpe, eff, loc) => Expression.Spawn(exp, tpe, eff, loc).toSuccess
+        case Expression.Spawn(exp, tpe, eff, loc) =>
+          for {
+            e <- visitExp(exp, env0)
+          } yield Expression.Spawn(e, tpe, eff, loc)
 
         /**
           * Select Channel Expression.
           */
-        case Expression.SelectChannel(rules, tpe, eff, loc) => Expression.SelectChannel(rules, tpe, eff, loc).toSuccess
+        case Expression.SelectChannel(rules, tpe, eff, loc) =>
+          val rulesVal = rules.map {
+            case TypedAst.SelectRule(sym, chan, body) =>
+              for {
+                c <- visitExp(chan, env0)
+                b <- visitExp(body, env0)
+              } yield TypedAst.SelectRule(sym, c, b)
+          }
+
+          for {
+            rs <- seqM(rulesVal)
+          } yield Expression.SelectChannel(rs, tpe, eff, loc)
 
         /**
           * Reference Expression.

@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.SimplifiedAst.{Expression, HandlerBinding}
 import ca.uwaterloo.flix.language.ast.{SimplifiedAst, Symbol}
+import ca.uwaterloo.flix.language.phase.Inliner.renameAndSubstitute
 import ca.uwaterloo.flix.language.{CompilationError, GenSym}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
@@ -158,6 +159,16 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.ArrayLit(elms, tpe, loc) => Expression.ArrayLit(elms map visit, tpe, loc)
       case Expression.ArrayLoad(base, index, tpe, loc) => Expression.ArrayLoad(visit(base), visit(index), tpe, loc)
       case Expression.ArrayStore(base, index, value, tpe, loc) => Expression.ArrayStore(visit(base), visit(index), visit(value), tpe, loc)
+      case Expression.NewChannel(exp, tpe, loc) => Expression.NewChannel(visit(exp), tpe, loc)
+      case Expression.GetChannel(exp, tpe, loc) => Expression.GetChannel(visit(exp), tpe, loc)
+      case Expression.PutChannel(exp1, exp2, tpe, loc) => Expression.PutChannel(visit(exp1), visit(exp2), tpe, loc)
+      case Expression.Spawn(exp, tpe, loc) => Expression.Spawn(visit(exp), tpe, loc)
+      case Expression.SelectChannel(rules, tpe, loc) =>
+        val rs = rules map {
+          case SimplifiedAst.SelectRule(sym, chan, body) =>
+            SimplifiedAst.SelectRule(sym, visit(chan), visit(body))
+        }
+        Expression.SelectChannel(rs, tpe, loc)
       case Expression.Ref(exp1, tpe, loc) =>
         Expression.Ref(visit(exp1), tpe, loc)
       case Expression.Deref(exp1, tpe, loc) =>
@@ -263,6 +274,20 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       Expression.ArrayLoad(renameAndSubstitute(base, env0), renameAndSubstitute(index, env0), tpe, loc)
     case Expression.ArrayStore(base, index, value, tpe, loc) =>
       Expression.ArrayStore(renameAndSubstitute(base, env0), renameAndSubstitute(index, env0), renameAndSubstitute(value, env0), tpe, loc)
+    case Expression.NewChannel(exp, tpe, loc) =>
+      Expression.NewChannel(renameAndSubstitute(exp, env0), tpe, loc)
+    case Expression.GetChannel(exp, tpe, loc) =>
+      Expression.GetChannel(renameAndSubstitute(exp, env0), tpe, loc)
+    case Expression.PutChannel(exp1, exp2, tpe, loc) =>
+      Expression.PutChannel(renameAndSubstitute(exp1, env0), renameAndSubstitute(exp2, env0), tpe, loc)
+    case Expression.Spawn(exp, tpe, loc) =>
+      Expression.Spawn(renameAndSubstitute(exp, env0), tpe, loc)
+    case Expression.SelectChannel(rules, tpe, loc) =>
+      val rs = rules map {
+        case SimplifiedAst.SelectRule(sym, chan, body) =>
+          SimplifiedAst.SelectRule(sym, renameAndSubstitute(chan, env0), renameAndSubstitute(body, env0))
+      }
+      Expression.SelectChannel(rs, tpe, loc)
     case Expression.Ref(exp1, tpe, loc) =>
       Expression.Ref(renameAndSubstitute(exp1, env0), tpe, loc)
     case Expression.Deref(exp1, tpe, loc) =>
@@ -436,6 +461,31 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     // ArrayStore expressions are atomic if the elements are.
     //
     case Expression.ArrayStore(base, index, value, tpe, loc) => isAtomic(base) && isAtomic(index) && isAtomic(value)
+
+    //
+    // NewChannel expressions are atomic.
+    //
+    case Expression.NewChannel(exp, tpe, loc) => isAtomic(exp)
+
+    //
+    // GetChannel expressions are atomic.
+    //
+    case Expression.GetChannel(exp, tpe, loc) => isAtomic(exp)
+
+    //
+    // PutChannel expressions are atomic.
+    //
+    case Expression.PutChannel(exp1, exp2, tpe, loc) => isAtomic(exp1) && isAtomic(exp2)
+
+    //
+    // Spawn expressions are atomic.
+    //
+    case Expression.Spawn(exp, tpe, loc) => isAtomic(exp)
+
+    //
+    // SelectChannel expressions are atomic.
+    //
+    case Expression.SelectChannel(rules, tpe, loc) => (rules.map(_.chan) forall isAtomic) && (rules.map(_.body) forall isAtomic)
 
     //
     // Reference expressions are atomic.

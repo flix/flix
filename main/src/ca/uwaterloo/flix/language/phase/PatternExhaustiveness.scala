@@ -592,6 +592,7 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
       case Type.Ref => 0
       case Type.Arrow(length) => length
       case Type.Array => 1
+      case Type.Channel => 1
       case Type.Tuple(length) => length
       case Type.Enum(sym, kind) => 0
       case Type.Apply(tpe1, tpe2) => countTypeArgs(tpe1)
