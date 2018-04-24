@@ -561,12 +561,11 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
 
         case NamedAst.Expression.SelectChannel(rules, tvar, loc) =>
           val rulesVal = rules map {
-            case NamedAst.SelectRule(pat, chan, body) =>
+            case NamedAst.SelectRule(sym, chan, body) =>
               for {
-                p <- Patterns.resolve(pat, ns0, prog0)
                 c <- visit(chan)
                 b <- visit(body)
-              } yield ResolvedAst.SelectRule(p, c, b)
+              } yield ResolvedAst.SelectRule(sym, c, b)
           }
 
           for {
@@ -1130,7 +1129,6 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
       case "Channel" => Type.Channel.toSuccess
       case "Native" => Type.Native.toSuccess
       case "Ref" => Type.Ref.toSuccess
-      case "Channel" => Type.Channel.toSuccess
 
       // Enum Types.
       case typeName =>

@@ -175,6 +175,13 @@ object ClosureConv {
     case Expression.Spawn(e, tpe, loc) =>
       Expression.Spawn(convert(e), tpe, loc)
 
+    case Expression.SelectChannel(rules, tpe, loc) =>
+      val rs = rules map {
+        case SimplifiedAst.SelectRule(sym, chan, body) =>
+          SimplifiedAst.SelectRule(sym, convert(chan), convert(body))
+      }
+      Expression.SelectChannel(rs, tpe, loc)
+
     case Expression.Ref(exp, tpe, loc) =>
       val e = convert(exp)
       Expression.Ref(e, tpe, loc)
@@ -275,6 +282,7 @@ object ClosureConv {
     case Expression.GetChannel(exp, tpe, loc) => freeVariables(exp)
     case Expression.PutChannel(exp1, exp2, tpe, loc) => freeVariables(exp1) ++ freeVariables(exp2)
     case Expression.Spawn(exp, tpe, loc) => freeVariables(exp)
+    case Expression.SelectChannel(rules, tpe, loc) => mutable.LinkedHashSet.empty ++ rules.map(_.chan).flatMap(freeVariables) ++ rules.map(_.body).flatMap(freeVariables)
     case Expression.Ref(exp, tpe, loc) => freeVariables(exp)
     case Expression.Deref(exp, tpe, loc) => freeVariables(exp)
     case Expression.Assign(exp1, exp2, tpe, loc) => freeVariables(exp1) ++ freeVariables(exp2)
@@ -428,6 +436,14 @@ object ClosureConv {
       case Expression.Spawn(exp, tpe, loc) =>
         val e = visit(exp)
         Expression.Spawn(e, tpe, loc)
+      case Expression.SelectChannel(rules, tpe, loc) =>
+        val rs = rules map {
+          case SimplifiedAst.SelectRule(sym, chan, body) =>
+            val c = visit(chan)
+            val b = visit(body)
+            SimplifiedAst.SelectRule(sym, c, b)
+        }
+        Expression.SelectChannel(rs, tpe, loc)
       case Expression.Deref(exp, tpe, loc) =>
         val e = visit(exp)
         Expression.Deref(e, tpe, loc)

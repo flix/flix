@@ -347,7 +347,7 @@ object TypedAst {
 
   case class MatchRule(pat: TypedAst.Pattern, guard: TypedAst.Expression, exp: TypedAst.Expression) extends TypedAst
 
-  case class SelectRule(pat: TypedAst.Pattern, chan: TypedAst.Expression, exp: TypedAst.Expression) extends TypedAst
+  case class SelectRule(sym: Symbol.VarSym, chan: TypedAst.Expression, exp: TypedAst.Expression) extends TypedAst
 
   case class TypeParam(name: Name.Ident, tpe: Type, loc: SourceLocation) extends TypedAst
 

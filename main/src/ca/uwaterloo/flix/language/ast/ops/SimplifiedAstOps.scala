@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.ast.ops
 
 import ca.uwaterloo.flix.language.ast.SimplifiedAst._
-import ca.uwaterloo.flix.language.ast.{Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{SimplifiedAst, Symbol, Type}
 
 object SimplifiedAstOps {
 
@@ -309,6 +309,46 @@ object SimplifiedAstOps {
         checkExp(base, env0, ienv0)
         checkExp(index, env0, ienv0)
         checkExp(value, env0, ienv0)
+        checkType(tpe)
+
+      //
+      // NewChannel Expressions.
+      //
+      case Expression.NewChannel(exp, tpe, loc) =>
+        checkExp(exp, env0, ienv0)
+        checkType(tpe)
+
+      //
+      // GetChannel Expressions.
+      //
+      case Expression.GetChannel(exp, tpe, loc) =>
+        checkExp(exp, env0, ienv0)
+        checkType(tpe)
+
+      //
+      // PutChannel Expressions.
+      //
+      case Expression.PutChannel(exp1, exp2, tpe, loc) =>
+        checkExp(exp1, env0, ienv0)
+        checkExp(exp2, env0, ienv0)
+        checkType(tpe)
+
+      //
+      // Spawn Expressions.
+      //
+      case Expression.Spawn(exp, tpe, loc) =>
+        checkExp(exp, env0, ienv0)
+        checkType(tpe)
+
+      //
+      // SelectChannel Expressions.
+      //
+      case Expression.SelectChannel(rules, tpe, loc) =>
+        val _ = rules map {
+          case SimplifiedAst.SelectRule(sym, chan, body) =>
+            checkExp(chan, env0, ienv0)
+            checkExp(body, env0, ienv0)
+        }
         checkType(tpe)
 
       //

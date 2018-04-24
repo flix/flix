@@ -287,7 +287,7 @@ object ResolvedAst {
 
   case class MatchRule(pat: ResolvedAst.Pattern, guard: ResolvedAst.Expression, exp: ResolvedAst.Expression) extends ResolvedAst
 
-  case class SelectRule(pat: ResolvedAst.Pattern, chan: ResolvedAst.Expression, exp: ResolvedAst.Expression) extends ResolvedAst
+  case class SelectRule(sym: Symbol.VarSym, chan: ResolvedAst.Expression, exp: ResolvedAst.Expression) extends ResolvedAst
 
   case class TypeParam(name: Name.Ident, tpe: Type.Var, loc: SourceLocation) extends ResolvedAst
 

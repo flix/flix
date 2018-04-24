@@ -260,6 +260,8 @@ object ExecutableAst {
 
     case class Spawn(exp: ExecutableAst.Expression, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
+    case class SelectChannel(rules: List[ExecutableAst.SelectRule], tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
+
     case class Ref(exp: ExecutableAst.Expression, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
     case class Deref(exp: ExecutableAst.Expression, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
@@ -424,5 +426,7 @@ object ExecutableAst {
   case class FreeVar(sym: Symbol.VarSym, tpe: Type) extends ExecutableAst
 
   case class HandlerBinding(sym: Symbol.EffSym, exp: ExecutableAst.Expression) extends ExecutableAst
+
+  case class SelectRule(sym: Symbol.VarSym, chan: ExecutableAst.Expression, body: ExecutableAst.Expression) extends ExecutableAst
 
 }

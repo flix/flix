@@ -856,8 +856,8 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           // <- exp : t
           for (
             tpe  <- visitExp(exp);
-            rtpe <- unifyM(tvar, tpe, loc)
-          ) yield rtpe
+            ctpe <- unifyM(tpe, Type.mkChannel(tvar), loc)
+          ) yield tvar
 
         /*
          * PutChannel expression.
@@ -869,7 +869,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           for (
             tpe1 <- visitExp(exp1);
             tpe2 <- visitExp(exp2);
-            rtpe <- unifyM(tvar, tpe1, tpe2, loc)
+            rtpe <- unifyM(tvar, tpe1, Type.mkChannel(tpe2), loc)
           ) yield rtpe
 
         /**
@@ -904,9 +904,8 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
             case r =>
               for {
                 ctpe <- visitExp(r.chan)
-                t1 <- Patterns.infer(r.pat, program)
-                _ <- unifyM(ctpe, Type.mkChannel(t1), loc)
-              } yield t1
+                _ <- unifyM(ctpe, Type.mkChannel(r.sym.tvar), loc)
+              } yield r.sym.tvar
           }
 
           for {
@@ -1271,11 +1270,10 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           */
         case ResolvedAst.Expression.SelectChannel(rules, tvar, loc) =>
           val rs = rules map {
-            case ResolvedAst.SelectRule(pat, chan, body) =>
-              val p = Patterns.reassemble(pat, program, subst0)
+            case ResolvedAst.SelectRule(sym, chan, body) =>
               val c = visitExp(chan, subst0)
               val b = visitExp(body, subst0)
-              TypedAst.SelectRule(p, c, b)
+              TypedAst.SelectRule(sym, c, b)
           }
           TypedAst.Expression.SelectChannel(rs, subst0(tvar), Eff.Bot, loc)
 

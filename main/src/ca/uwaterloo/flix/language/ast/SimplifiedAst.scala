@@ -218,6 +218,8 @@ object SimplifiedAst {
 
     case class Spawn(exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
+    case class SelectChannel(rules: List[SimplifiedAst.SelectRule], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
+
     case class Ref(exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
     case class Deref(exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
@@ -369,5 +371,7 @@ object SimplifiedAst {
   case class FreeVar(sym: Symbol.VarSym, tpe: Type) extends SimplifiedAst
 
   case class HandlerBinding(sym: Symbol.EffSym, exp: SimplifiedAst.Expression) extends SimplifiedAst
+
+  case class SelectRule(sym: Symbol.VarSym, chan: SimplifiedAst.Expression, body: SimplifiedAst.Expression) extends SimplifiedAst
 
 }

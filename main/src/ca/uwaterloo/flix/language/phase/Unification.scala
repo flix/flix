@@ -77,7 +77,6 @@ object Unification {
       case Type.Tuple(l) => Type.Tuple(l)
       case Type.Enum(name, kind) => Type.Enum(name, kind)
       case Type.Apply(t1, t2) => Type.Apply(apply(t1), apply(t2))
-      case Type.Channel => Type.Channel
     }
 
     /**
