@@ -35,7 +35,7 @@ def testArraySlice11(): Vector[Int8, 1] = let x = [|1i8, 2i8, 3i8|]; x[|1..2|]
 def testArraySlice12(): Vector[Int8, 2] = let x = [|1i8,2i8,3i8,4i8|]; x[|2..4|]
 
 @test
-def testArraySlice13(): [Int16, 1] = let x = [|1i16, 2i16, 3i16|]; x[|1..2|]
+def testArraySlice13(): Vector[Int16, 1] = let x = [|1i16, 2i16, 3i16|]; x[|1..2|]
 
 @test
 def testArraySlice14(): Vector[Int16, 2] = let x = [|1i16,2i16,3i16,4i16|]; x[|2..4|]
@@ -77,4 +77,4 @@ def testArraySlice25(): Vector[Vector[Int, 2], 1] = let x = [|[1], [2]|]; x[0..1
 def testArraySlice26(): Vector[Vector[Int, 3], 2] = let x = [|[1,2,3], [1,2,3], [1,2,3]|]; x[0..2]
 
 @test
-def testArraySlice27(): Vector[Int, 9] = let x = [|1,2,3,4,5,6,7,8,9,10|]; x[0..Vlength[x]]
+def testArraySlice27(): Vector[Int, 9] = let x = [|1,2,3,4,5,6,7,8,9,10|]; x[0..Vlength[|x|]]

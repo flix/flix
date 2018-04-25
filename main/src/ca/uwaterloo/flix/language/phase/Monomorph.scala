@@ -93,8 +93,8 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         case Type.Ref => Type.Ref
         case Type.Arrow(l) => Type.Arrow(l)
         case Type.Tuple(l) => Type.Tuple(l)
-        case Type.Nat(i) => Type.Nat(i)
-        case Type.Sum(i1, i2) => Type.Sum(i1, i2)
+        case Type.Zero => Type.Zero
+        case Type.Succ(n, t) => Type.Succ(n, t)
         case Type.Enum(name, kind) => Type.Enum(name, kind)
         case Type.Apply(tpe1, tpe2) => Type.Apply(apply(tpe1), apply(tpe2))
       }

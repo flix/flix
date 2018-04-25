@@ -49,8 +49,8 @@ sealed trait Type {
     case Type.Vector => Set.empty
     case Type.Native => Set.empty
     case Type.Ref => Set.empty
-    case Type.Nat(i) => Set.empty
-    case Type.Sum(i1, i2) => Set.empty
+    case Type.Zero => Set.empty
+    case Type.Succ(n, t) => Set.empty
     case Type.Arrow(l) => Set.empty
     case Type.Tuple(l) => Set.empty
     case Type.Enum(enumName, kind) => Set.empty
@@ -152,8 +152,8 @@ sealed trait Type {
     case Type.Str => "Str"
     case Type.Array => "Array"
     case Type.Vector => "Vector"
-    case Type.Sum(i1, i2) => s"Sum($i1, $i2)"
-    case Type.Nat(i) => s"Natural Number($i)"
+    case Type.Zero => "Zero"
+    case Type.Succ(n, t) => s"Successor($n, $t)"
     case Type.Native => "Native"
     case Type.Ref => "Ref"
     case Type.Arrow(l) => s"Arrow($l)"
@@ -335,19 +335,11 @@ object Type {
     def kind: Kind = Kind.Arrow((0 until length).map(_ => Kind.Star).toList, Kind.Star)
   }
 
-  /**
-    * A type constructor that represents natural numbers of the integer 'i'.
-    */
-  case class Nat(i: Int) extends Type {
+  case object Zero extends Type {
     def kind: Kind = Kind.Star
   }
 
-  /**
-    * A type constructor that represents the sum of a vectors length.
-    * @param i1 the input length.
-    * @param i2 a fresh variable for the remainding length.
-    */
-  case class Sum(i1: Int, i2: Var) extends Type {
+  case class Succ(n: Int, t: Type) extends Type {
     def kind: Kind = Kind.Star
   }
 
@@ -411,15 +403,20 @@ object Type {
     */
   def mkArray(a: Type): Type = Apply(Array, a)
 
-
-  def mkVector(a: Type, i: Int) : Type = Apply(Apply(Vector, a), Nat(i))
   /**
-    * Constructs the vector type [|a, x|] where
+    * Constructs the vector type [|a, (n, t)|] where
     * 'a' is the given type
-    * 'x' is the given length
-    * 'y' is a fresh variable for the remaining length.
+    * 'n' is the given length
+    * 't' is the Zero type for the length.
     */
-  def mkVector(a: Type, x: Int, y: Var) : Type = Apply(Apply(Vector, a), Sum(x, y))
+  def mkVector(a: Type, n: Int) : Type = Apply(Apply(Vector, a), Succ(n, Type.Zero))
+  /**
+    * Constructs the vector type [|a, (n, t)|] where
+    * 'a' is the given type
+    * 'n' is the given length
+    * 't' is a fresh type for the remaining length.
+    */
+  def mkVector(a: Type, n: Int, t: Type) : Type = Apply(Apply(Vector, a), Succ(n, t))
 
   /**
     * Constructs the set type of A.
@@ -459,8 +456,8 @@ object Type {
       case Type.Ref => Type.Ref
       case Type.Arrow(l) => Type.Arrow(l)
       case Type.Tuple(l) => Type.Tuple(l)
-      case Type.Nat(i) => Type.Nat(i)
-      case Type.Sum(i1, i2) => Type.Sum(i1, i2)
+      case Type.Zero => Type.Zero
+      case Type.Succ(n, t) => Type.Succ(n, t)
       case Type.Apply(tpe1, tpe2) => Type.Apply(visit(tpe1), visit(tpe2))
       case Type.Enum(enum, kind) => Type.Enum(enum, kind)
     }
@@ -506,8 +503,8 @@ object Type {
           case Type.Str => "String"
           case Type.Array => "Array"
           case Type.Vector => "Vector"
-          case Type.Nat(i) => i.toString
-          case Type.Sum(i1, i2) => i1.toString + " " + i2.toString
+          case Type.Zero => "Zero"
+          case Type.Succ(n, t) => n.toString + " " + t.toString
           case Type.Native => "Native"
           case Type.Ref => "Ref"
 

@@ -276,7 +276,7 @@ object NamedAst {
 
     case class Tuple(elms: List[NamedAst.Type], loc: SourceLocation) extends NamedAst.Type
 
-    case class Nat(elm: Int, loc: SourceLocation) extends NamedAst.Type
+    case class Succ(elm: Int, loc: SourceLocation) extends NamedAst.Type
 
     case class Native(fqn: List[String], loc: SourceLocation) extends NamedAst.Type
 
