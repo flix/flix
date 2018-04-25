@@ -931,7 +931,8 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           // e[|n|] : Int
           //
           for(
-            _ <- visitExp(exp);
+            tpe <- visitExp(exp);
+            //_ <- unifyM(tpe, Type.mkVector(tvar, ))
             resultType <- unifyM(tvar, Type.Int32, loc)
           ) yield resultType
 

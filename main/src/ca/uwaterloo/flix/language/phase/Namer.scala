@@ -507,6 +507,8 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
       case WeededAst.Type.Ambiguous(qname, loc) => Nil
       case WeededAst.Type.Unit(loc) => Nil
       case WeededAst.Type.Tuple(elms, loc) => elms.flatMap(freeVars)
+      case WeededAst.Type.Succ(elm, loc) => Nil
+      // case WeededAst.Type.Array(elms, loc) => elms.flatmap(freeVars)
       case WeededAst.Type.Native(fqm, loc) => Nil
       case WeededAst.Type.Arrow(tparams, retType, loc) => tparams.flatMap(freeVars) ::: freeVars(retType)
       case WeededAst.Type.Apply(tpe1, tpe2, loc) => freeVars(tpe1) ++ freeVars(tpe2)
@@ -1006,7 +1008,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
           else
             NamedAst.Type.Ambiguous(qname, loc)
         case WeededAst.Type.Tuple(elms, loc) => NamedAst.Type.Tuple(elms.map(e => visit(e, env)), loc)
-        case WeededAst.Type.Nat(elm, loc) => NamedAst.Type.Nat(elm, loc)
+        case WeededAst.Type.Succ(elm, loc) => NamedAst.Type.Succ(elm, loc)
         case WeededAst.Type.Native(fqn, loc) => NamedAst.Type.Native(fqn, loc)
         case WeededAst.Type.Arrow(tparams, tresult, loc) => NamedAst.Type.Arrow(tparams.map(t => visit(t, env)), visit(tresult, env), loc)
         case WeededAst.Type.Apply(tpe1, tpe2, loc) => NamedAst.Type.Apply(visit(tpe1, env), visit(tpe2, env), loc)

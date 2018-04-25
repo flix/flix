@@ -75,8 +75,8 @@ object Unification {
       case Type.Ref => Type.Ref
       case Type.Arrow(l) => Type.Arrow(l)
       case Type.Tuple(l) => Type.Tuple(l)
-      case Type.Nat(i) => Type.Nat(i)
-      case Type.Sum(l1, l2) => Type.Sum(l1, l2)
+      case Type.Zero => Type.Zero
+      case Type.Succ(n, t) => Type.Succ(n, t)
       case Type.Enum(name, kind) => Type.Enum(name, kind)
       case Type.Apply(t1, t2) => Type.Apply(apply(t1), apply(t2))
     }
@@ -188,13 +188,12 @@ object Unification {
       case (Type.Ref, Type.Ref) => Result.Ok(Substitution.empty)
       case (Type.Arrow(l1), Type.Arrow(l2)) if l1 == l2 => Result.Ok(Substitution.empty)
       case (Type.Tuple(l1), Type.Tuple(l2)) if l1 == l2 => Result.Ok(Substitution.empty)
-      case (Type.Nat(i1), Type.Nat(i2)) if i1 == i2 => Result.Ok(Substitution.empty)
-      case (Type.Sum(l11, l21), Type.Sum(l12, l22)) if l11 == l12 && l21 == l22 => Result.Ok(Substitution.empty) // (42, x) == (42, x)
-      case (Type.Sum(l11, l21), Type.Sum(l12, l22)) if l11 == l12 => unifyTypes(l21, l22) // (42, x) == (42, y)
-      case (Type.Sum(l11, l21), Type.Sum(l12, l22)) if l11 > l12 => unifyVar(l22, Type.Sum(l11-l12, l21)) // (42, x) == (21, y)
-      case (Type.Sum(l11, l21), Type.Sum(l12, l22)) if l11 < l12 => unifyVar(l21, Type.Sum(l12-l11, l21)) // (21, x) == (42, y)
-      case (Type.Nat(i1), Type.Sum(l1, l2)) if i1-1 >= l1 => Result.Ok(Substitution.empty)
-      case (Type.Sum(l1, l2), Type.Nat(i1)) if l1 <= i1-1 => Result.Ok(Substitution.empty)
+      case (Type.Zero, Type.Zero) => Result.Ok(Substitution.empty) // 0 == 0
+      case (Type.Succ(n1, t1), Type.Succ(n2, t2)) if t1 == Type.Zero && n1-1 >= n2 => Result.Ok(Substitution.empty)
+      case (Type.Succ(n1, t1), Type.Succ(n2, t2)) if t2 == Type.Zero && n1 <= n2-1 => Result.Ok(Substitution.empty)
+      case (Type.Succ(n1, t1), Type.Succ(n2, t2)) if n1 == n2 && t1 != Type.Zero && t2 != Type.Zero => unifyTypes(t1, t2) // (42, x) == (42, y)
+      case (Type.Succ(n1, t1), Type.Succ(n2, t2)) if n1 > n2 => unifyTypes(Type.Succ(n1-n2, t1), t2) // (42, x) == (21, y)
+      case (Type.Succ(n1, t1), Type.Succ(n2, t2)) if n1 < n2 => unifyTypes(Type.Succ(n2-n1, t2), t1) // (21, x) == (42, y)
       case (Type.Enum(name1, kind1), Type.Enum(name2, kind2)) if name1 == name2 => Result.Ok(Substitution.empty)
       case (Type.Apply(t11, t12), Type.Apply(t21, t22)) =>
         unifyTypes(t11, t21) match {
@@ -341,5 +340,4 @@ object Unification {
       }
     }
   }
-
 }

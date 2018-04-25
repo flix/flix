@@ -35,8 +35,8 @@ def f() : Int = {
 def f() : Int = {
   let x = [[1,2,3], [1,2,3], [1,2,3], [1,2,3], [1,2,3], [1,2,3], [1,2,3], [1,2,3]];
   length[x]
-}
-*/
+}*/
+
 
 //ArraySlice
 /*
@@ -60,6 +60,13 @@ def f() : Vector[Int, 5] = {
   x
 }*/
 
+//ArraySlice
+
+/*def f() : Vector[Int, 1] = {
+
+  let x = [|[|1|]|];
+  x[|0..1|]
+}*/
 
 //VectorLoad
 /*
@@ -95,7 +102,7 @@ def f() : Vector[Int, 10] = {
 /*
 def f() : Int = {
   let x = [|10;10|];
-  x[|2|]
+  x[|9|]
 }
 */
 
@@ -111,7 +118,7 @@ def f() : Unit = {
 /*
 def f() : Int = {
 
-  let x = [|10;10|];
+  let x = [|[|1,2,3|], [|1,2,3|], [|1,2,3|]|];
   length[|x|]
 }
 */
@@ -125,3 +132,8 @@ def f() : Vector[Int, 4] = {
 }
 */
 
+/*
+def f() : Array[Array[Int]] = {
+  let x = [[1,2,3],[1,2,3],[1,2,3],[1,2,3]];
+  x
+}*/
