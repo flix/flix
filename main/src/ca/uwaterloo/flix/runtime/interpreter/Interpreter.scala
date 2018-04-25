@@ -17,11 +17,12 @@
 package ca.uwaterloo.flix.runtime.interpreter
 
 import java.lang.reflect.Modifier
+import java.util.concurrent.ConcurrentLinkedQueue
 
 import ca.uwaterloo.flix.api._
 import ca.uwaterloo.flix.language.ast.ExecutableAst._
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.runtime.interpreter.Value.{Channel, Int32}
+import ca.uwaterloo.flix.runtime.interpreter.Value.Channel
 import ca.uwaterloo.flix.util.InternalRuntimeException
 import ca.uwaterloo.flix.util.tc.Show._
 
@@ -176,6 +177,7 @@ object Interpreter {
     case Expression.NewChannel(len, tpe, loc) =>
       val l: Int = cast2int32(eval(len, env0, henv0, lenv0, root))
       Value.Channel(l, tpe)
+
     //
     // ArrayLit expressions.
     //
@@ -207,6 +209,20 @@ object Interpreter {
       } else {
         throw InternalRuntimeException(s"Array index out of bounds: $i. Array length: ${b.elms.length}.")
       }
+
+    //
+    // GetChannel expressions.
+    //
+    case Expression.GetChannel(exp, tpe, loc) =>
+      val c = cast2channel(eval(exp, env0, henv0, lenv0, root))
+      val ct = c.content.asInstanceOf[ConcurrentLinkedQueue[c.contentType.type]]
+      if (ct.peek() != null) {
+        ct.poll()
+      } else {
+        // TODO
+        throw InternalRuntimeException(s"Not implemented. Channel size: ${ct.size()}.")
+      }
+
 
     //
     // Reference expressions.
@@ -784,6 +800,14 @@ object Interpreter {
   private def cast2array(ref: AnyRef): Value.Arr = ref match {
     case v: Value.Arr => v
     case _ => throw InternalRuntimeException(s"Unexpected non-array value: ${ref.getClass.getName}.")
+  }
+
+  /**
+    * Cast the given reference `ref` to a channel value.
+    */
+  private def cast2channel(ref: AnyRef): Value.Channel = ref match {
+    case v: Value.Channel => v
+    case _ => throw InternalRuntimeException(s"Unexpected non-channel value: ${ref.getClass.getName}.")
   }
 
   /**
