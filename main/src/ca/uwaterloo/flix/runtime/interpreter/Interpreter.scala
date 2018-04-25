@@ -207,8 +207,7 @@ object Interpreter {
     //
     case Expression.ArrayLength(exp, _, _) =>
       val array = cast2array(eval(exp, env0, henv0, lenv0, root))
-      val length: AnyRef = Int.box(array.elms.length)
-      length
+      Value.Int32(array.elms.length)
 
     //
     // ArraySlice expressions.

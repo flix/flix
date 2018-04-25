@@ -7,10 +7,12 @@ def f() : Array[Int] = {
 */
 
 // ArrayNew
-/*def f() : Array[Int] = {
+/*
+def f() : Array[Int] = {
   let x = [10;10];
   x
-}*/
+}
+*/
 
 
 // ArrayLoad
@@ -22,21 +24,27 @@ def f() : Int = {
 */
 
 // ArrayStore
-/*
-def f() : Unit = {
-  let x = [1,2,3,4,5];
-  x[1] = 2
+def f() : Int = {
+  let x = [[1,2,3],[1,2,3],[1,2,3]];
+  let _ =  x[1][1] = 100;
+  x[1][1]
 }
-*/
 
 //ArrayLength
 /*
 def f() : Int = {
-
-  let x = [[1,2,3], [1,2,3], [1,2,3]];
+  let x = [[1,2,3], [1,2,3], [1,2,3], [1,2,3], [1,2,3], [1,2,3], [1,2,3], [1,2,3]];
   length[x]
 }*/
 
+
+//ArraySlice
+/*
+def f() : Array[Array[Int]] = {
+  let x = [[1,2,3], [1,2,3], [1,2,3]];
+  x[0..]
+}
+*/
 
 // VectorLit
 /*
@@ -123,6 +131,7 @@ def f() : Vector[Int, 4] = {
   x[|6..10|]
 }
 */
+
 /*
 def f() : Array[Array[Int]] = {
   let x = [[1,2,3],[1,2,3],[1,2,3],[1,2,3]];

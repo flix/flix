@@ -465,7 +465,8 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       /**
         * Infers the type of the given expression `exp0` inside the inference monad.
         */
-      def visitExp(e0: ResolvedAst.Expression): InferMonad[Type] = e0 match {
+      def visitExp(e0: ResolvedAst.Expression): InferMonad[Type] = e0 match
+      {
 
         /*
          * Wildcard expression.
@@ -538,7 +539,8 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         /*
          * Unary expression.
          */
-        case ResolvedAst.Expression.Unary(op, exp1, tvar, loc) => op match {
+        case ResolvedAst.Expression.Unary(op, exp1, tvar, loc) => op match
+        {
           case UnaryOperator.LogicalNot =>
             for (
               tpe <- visitExp(exp1);
@@ -567,7 +569,8 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         /*
          * Binary expression.
          */
-        case ResolvedAst.Expression.Binary(op, exp1, exp2, tvar, loc) => op match {
+        case ResolvedAst.Expression.Binary(op, exp1, exp2, tvar, loc) => op match
+        {
           case BinaryOperator.Plus =>
             for (
               tpe1 <- visitExp(exp1);
@@ -694,7 +697,8 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           val guards = rules.map(_.guard)
           val bodies = rules.map(_.exp)
 
-          for {
+          for
+            {
             matchType <- visitExp(exp1)
             patternTypes <- Patterns.inferAll(patterns, program)
             patternType <- unifyM(patternTypes, loc)
@@ -728,7 +732,8 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           val decl = program.enums(sym)
 
           // Generate a fresh type variable for each type parameters.
-          val subst = Substitution(decl.tparams.map {
+          val subst = Substitution(decl.tparams.map
+          {
             case param => param.tpe -> Type.freshTypeVar()
           }.toMap)
 
@@ -767,11 +772,20 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           //  ------------------------
           //  [e1,...,en] : Array[t]
           //
-          for (
-            elementsTypes <- seqM(elms.map(visitExp));
-            elementType <- unifyM(elementsTypes, loc);
-            resultType <- unifyM(tvar, Type.mkArray(elementType), loc)
-          ) yield resultType
+          val length = elms.length
+          length match {
+            case 0 =>
+              val x = List.empty
+              for (
+                resultType <- unifyM(tvar, Type.freshTypeVar(), loc)
+              ) yield resultType
+            case _ =>
+              for (
+                elementsTypes <- seqM(elms.map(visitExp));
+                elementType <- unifyM(elementsTypes, loc);
+                resultType <- unifyM(tvar, Type.mkArray(elementType), loc)
+              ) yield resultType
+          }
 
           /*
            * ArrayNew expression.
@@ -814,10 +828,11 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           //  ------------------------
           //  length[exp] : Int
           //
+          val freshResultType = Type.freshTypeVar();
           for (
             tpe <- visitExp(exp);
             arrayType <- unifyM(tpe, Type.mkArray(tvar), loc);
-            resultType <- unifyM(tvar, Type.Int32, loc)
+            resultType <- unifyM(freshResultType, Type.Int32, loc)
           ) yield resultType
 
         /*
