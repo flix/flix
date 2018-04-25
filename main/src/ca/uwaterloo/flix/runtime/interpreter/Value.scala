@@ -168,7 +168,7 @@ object Value {
 
     val capacity: Int = len
 
-    val content: AnyRef = new ConcurrentLinkedQueue[tpe.type]()
+    val content: AnyRef = new ConcurrentLinkedQueue[AnyRef]()
 
     val waitingPutters: AnyRef = new ConcurrentLinkedQueue[Thread]()
 
