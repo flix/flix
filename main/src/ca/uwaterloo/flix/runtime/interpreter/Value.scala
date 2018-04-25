@@ -164,15 +164,15 @@ object Value {
   }
 
   case class Channel(len: Int, tpe: Type) extends  Value {
-    def getType: Type = tpe
+    val getType: Type = tpe
 
-    def getCapacity: Int = len
+    val getCapacity: Int = len
 
-    def getQueue: ConcurrentLinkedQueue[tpe.type] = new ConcurrentLinkedQueue[tpe.type]()
+    val getQueue: AnyRef = new ConcurrentLinkedQueue[tpe.type]()
 
-    def getWaitingPutters = new ConcurrentLinkedQueue[Unit => Unit]()
+    val WaitingPutters = new ConcurrentLinkedQueue[Thread]()
 
-    def getWaitingGetters = new ConcurrentLinkedQueue[Unit => tpe.type]()
+    val WaitingGetters = new ConcurrentLinkedQueue[Thread]()
 
     final override def equals(obj: scala.Any): Boolean = throw InternalRuntimeException(s"Value.Channel does not support `equals`.")
 
