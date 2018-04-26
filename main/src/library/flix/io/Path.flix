@@ -33,16 +33,15 @@ namespace Path {
     ///
     /// Returns the extension of the given path `p`.
     ///
-    //TODO: Testing pull requests. Also return type should be Option[Str] without "No extension"
-    pub def extension(p: Path): Str = unsafe {
+    pub def extension(p: Path): Option[Str] = unsafe {
         let Path(javaPath) = p;
         let shortPath = native method java.nio.file.Path.getFileName(javaPath);
         let myString = native method java.nio.file.Path.toString(shortPath);
         let dotIndex = native method java.lang.String.lastIndexOf(myString, "." : Str);
         match dotIndex with {
-            case -1 => "No extension"
+            case -1 => None
             case num => let actualIndex = dotIndex + 1;
-                        native method java.lang.String.substring(myString, actualIndex)
+                        Some(native method java.lang.String.substring(myString, actualIndex))
         }
     }
 
@@ -77,7 +76,7 @@ namespace Path {
         }
     }
 
-    def childrenHelper(dirIterator : ##java.util.Iterator, childList : List[Path]) : List[Path] = unsafe {
+    def childrenHelper(dirIterator: ##java.util.Iterator, childList: List[Path]): List[Path] = unsafe {
         if (native method java.util.Iterator.hasNext(dirIterator))
             let fetchedPath = native method java.util.Iterator.next(dirIterator);
             let childList = Path(fetchedPath) :: childList;
@@ -102,7 +101,7 @@ namespace Path {
             k(Err(IOError("One or both arguments 'p1' and 'p2' do not point to an existing file or directory")))
     }
 
-    def isParentOfHelper(parent: Path, child: Path) : Bool = unsafe {
+    def isParentOfHelper(parent: Path, child: Path): Bool = unsafe {
         let Path(parentPath) = parent;
         let Path(childPath) = child;
         let parentOfChild = native method java.nio.file.Path.getParent(childPath);
