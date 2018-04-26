@@ -151,7 +151,7 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.ArrayLit(elms, tpe, loc) => visitExps(elms)
       case Expression.ArrayNew(elm, len, tpe, loc) => visitExp(elm) ++ visitExp(len)
       case Expression.ArrayLoad(exp1, exp2, tpe, lco) => visitExp(exp1) ++ visitExp(exp2)
-      case Expression.ArrayStore(exp1, exp2, exp3, tpe, loc) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
+      case Expression.ArrayStore(exp1, exps2, exp3, tpe, loc) => visitExp(exp1) ++ visitExps(exps2) ++ visitExp(exp3)
       case Expression.ArrayLength(exp, tpe, loc) => visitExp(exp)
       case Expression.ArraySlice(exp1, exp2, exp3, tpe, loc) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
       case Expression.Ref(exp, tpe, loc) => visitExp(exp)

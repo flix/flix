@@ -399,11 +399,11 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         val e2 = visitExp(exp2)
         SimplifiedAst.Expression.ArrayLoad(e1, e2, tpe, loc)
 
-      case TypedAst.Expression.ArrayStore(exp1, exp2, exp3, tpe, eff, loc) =>
+      case TypedAst.Expression.ArrayStore(exp1, exps2, exp3, tpe, eff, loc) =>
         val e1 = visitExp(exp1)
-        val e2 = visitExp(exp2)
+        val es2 = exps2.map(visitExp)
         val e3 = visitExp(exp3)
-        SimplifiedAst.Expression.ArrayStore(e1, e2, e3, tpe, loc)
+        SimplifiedAst.Expression.ArrayStore(e1, es2, e3, tpe, loc)
 
       case TypedAst.Expression.ArrayLength(exp, tpe, eff, loc) =>
         val e = visitExp(exp)
@@ -426,10 +426,10 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         val e = visitExp(exp1)
         SimplifiedAst.Expression.ArrayLoad(e, SimplifiedAst.Expression.Int32(exp2), tpe, loc)
 
-      case TypedAst.Expression.VectorStore(exp1, exp2, exp3, tpe, eff, loc) =>
+      /*case TypedAst.Expression.VectorStore(exp1, exp2, exp3, tpe, eff, loc) =>
         val e1 = visitExp(exp1)
         val e3 = visitExp(exp3)
-        SimplifiedAst.Expression.ArrayStore(e1, SimplifiedAst.Expression.Int32(exp2), e3, tpe, loc)
+        SimplifiedAst.Expression.ArrayStore(e1, SimplifiedAst.Expression.Int32(exp2), e3, tpe, loc)*/
 
       case TypedAst.Expression.VectorLength(exp, tpe, eff, loc) =>
         val e = visitExp(exp)
