@@ -204,7 +204,7 @@ object TypedAst {
 
     case class VectorLength(exp: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
 
-    case class VectorSlice(exp1: TypedAst.Expression, exp2: Int, exp3: Int, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    case class VectorSlice(exp1: TypedAst.Expression, exp2: Int, exp3: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
 
     case class Ref(exp: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
 

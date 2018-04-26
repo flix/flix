@@ -225,7 +225,8 @@ object Synthesize extends Phase[Root, Root] {
 
       case Expression.VectorSlice(exp1, exp2, exp3, tpe, eff, loc) =>
         val e = visitExp(exp1)
-        Expression.VectorSlice(e, exp2, exp3, tpe, eff, loc)
+        val e3 = visitExp(exp3)
+        Expression.VectorSlice(e, exp2, e3, tpe, eff, loc)
 
       case Expression.Ref(exp, tpe, eff, loc) =>
         val e = visitExp(exp)
@@ -862,6 +863,8 @@ object Synthesize extends Phase[Root, Root] {
           val method = classOf[java.lang.Object].getMethod("toString")
           Expression.NativeMethod(method, List(exp0), Type.Str, ast.Eff.Pure, sl)
 
+        case Type.Succ(n, t) => Expression.Str("<<Succession>>", sl)
+
         case Type.Native =>
           val method = classOf[java.lang.Object].getMethod("toString")
           Expression.NativeMethod(method, List(exp0), Type.Str, ast.Eff.Pure, sl)
@@ -873,6 +876,8 @@ object Synthesize extends Phase[Root, Root] {
         case Type.Apply(Type.Array, _) => Expression.Str("<<array>>", sl)
 
         case Type.Apply(Type.Apply(Type.Vector, _),  Type.Succ(i, Type.Zero)) => Expression.Str("<<vector>>", sl)
+
+        case Type.Apply(Type.Apply(Type.Vector, _),  Type.Succ(i, _)) => Expression.Str("<<vector>>", sl)
 
         case Type.Apply(Type.Arrow(l), _) => Expression.Str("<<clo>>", sl)
 

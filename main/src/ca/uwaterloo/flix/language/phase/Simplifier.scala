@@ -437,7 +437,8 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
 
       case TypedAst.Expression.VectorSlice(exp1, exp2, exp3, tpe, eff, loc) =>
         val e = visitExp(exp1)
-        SimplifiedAst.Expression.ArraySlice(e, SimplifiedAst.Expression.Int32(exp2), SimplifiedAst.Expression.Int32(exp3), tpe, loc)
+        val e3 = visitExp(exp3)
+        SimplifiedAst.Expression.ArraySlice(e, SimplifiedAst.Expression.Int32(exp2), e3, tpe, loc)
 
       case TypedAst.Expression.Ref(exp, tpe, eff, loc) =>
         val e = visitExp(exp)

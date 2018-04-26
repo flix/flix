@@ -416,7 +416,7 @@ object Type {
     * 'n' is the given length
     * 't' is a fresh type for the remaining length.
     */
-  def mkVector(a: Type, n: Int, t: Type) : Type = Apply(Apply(Vector, a), Succ(n, t))
+  def mkVector(a: Type, n: Int, t: Type) : Type =  Apply(Apply(Vector, a), Succ(n, t))
 
   /**
     * Constructs the set type of A.

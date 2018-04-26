@@ -879,11 +879,19 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           // ---------------------------
           // [|elm1,...,elmn|] : Vector[t, n]
           //
-          for (
-            elementTypes <- seqM(elms.map(visitExp));
-            elementType <- unifyM(elementTypes, loc);
-            resultType <- unifyM(tvar, Type.mkVector(elementType, elms.length), loc)
-          ) yield resultType
+          val length = elms.length
+          length match {
+            case 0 =>
+              for (
+                resultType <- unifyM(tvar, Type.mkVector(Type.freshTypeVar(), 0), loc)
+              ) yield resultType
+            case _ =>
+              for (
+                elementTypes <- seqM(elms.map(visitExp));
+                elementType <- unifyM(elementTypes, loc);
+                resultType <- unifyM(tvar, Type.mkVector(elementType, elms.length), loc)
+              ) yield resultType
+          }
 
         case ResolvedAst.Expression.VectorNew(elm, len, tvar, loc) =>
           //
@@ -930,26 +938,56 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           // -------------
           // e[|n|] : Int
           //
+          val freshResultType = Type.freshTypeVar();
+          val freshVar = Type.freshTypeVar()
           for(
             tpe <- visitExp(exp);
-            //_ <- unifyM(tpe, Type.mkVector(tvar, ))
-            resultType <- unifyM(tvar, Type.Int32, loc)
+            // Unify to check if tpe of a Vector is equal to the tvar vector.
+            _ <- unifyM(tpe, Type.mkVector(tvar, 0, freshVar), loc);
+            resultType <- unifyM(freshResultType, Type.Int32, loc)
           ) yield resultType
 
-        case ResolvedAst.Expression.VectorSlice(exp1, exp2, exp3, tvar, loc) =>
+        case ResolvedAst.Expression.VectorSlice(exp1, exp2, optexp3, tvar, loc) =>
           //
           //  exp1 : Vector[t, n]   exp2 : Int   exp3 : Int   n: Nat
           //  -------------------------------------------------------
           //  exp1[exp2..exp3] : Vector[t, n]
           //
           val freshVar = Type.freshTypeVar()
-          val elmVar = Type.freshTypeVar()
-          for(
-            tpe <- visitExp(exp1);
-            firstIndex <- unifyM(tpe, Type.mkVector(elmVar, exp2, freshVar), loc);
-            secondIndex <- unifyM(tpe, Type.mkVector(elmVar, exp3, freshVar), loc);
-            resultType <- unifyM(tvar, Type.mkVector(Type.Int32,  exp3-exp2), loc)
+          val freshTestVar = Type.freshTypeVar()
+          val freshResultType = Type.freshTypeVar()
+          optexp3 match {
+            case None =>
+              for(
+                tpe <- visitExp(exp1);
+                firstIndex <- unifyM(tpe, Type.mkVector(freshTestVar, exp2, freshVar), loc);
+                resultType <- unifyM(tpe, tvar, loc)
+              ) yield resultType
+
+            case Some(exp3) =>
+              for(
+                tpe <- visitExp(exp1);
+                firstIndex <- unifyM(tpe, Type.mkVector(freshTestVar, exp2, freshVar), loc);
+                secondIndex <- unifyM(tpe, Type.mkVector(freshTestVar, exp3, freshVar), loc);
+                resultType <- unifyM(tpe, Type.mkVector(freshTestVar, exp3-exp2), loc)
+              ) yield resultType
+          } // Tpe: Succ[2, Z]  mkVector: Succ[2, t]
+
+
+/*
+          for (
+            recievedBaseType <- visitExp(exp1);
+            recievedStartIndexType <- visitExp(exp2);
+            recievedEndIndexType <- visitExp(exp3);
+            startIndexType <- unifyM(recievedStartIndexType, Type.Int32, loc);
+            endIndexType <- unifyM(recievedEndIndexType, Type.Int32, loc);
+            resultType <- unifyM(tvar, recievedBaseType, loc)
           ) yield resultType
+*/
+
+
+
+
 
         /*
          * Reference expression.
@@ -1291,31 +1329,54 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           val e3 = visitExp(exp3, subst0)
           TypedAst.Expression.ArraySlice(e1, e2, e3, subst0(tvar), Eff.Bot, loc)
 
+        /*
+         * VectorLit expression.
+         */
         case ResolvedAst.Expression.VectorLit(elms, tvar, loc) =>
           val es = elms.map(e => visitExp(e, subst0))
           TypedAst.Expression.VectorLit(es, subst0(tvar), Eff.Bot, loc)
 
+        /*
+         * VectorLoad expression.
+         */
         case ResolvedAst.Expression.VectorNew(elm, len, tvar, loc) =>
           val e = visitExp(elm, subst0)
           TypedAst.Expression.VectorNew(e, len, subst0(tvar), Eff.Bot, loc)
 
+          /*
+           * VectorLoad expression.
+           */
          case ResolvedAst.Expression.VectorLoad(exp1, exp2, tvar, loc) =>
           val e = visitExp(exp1, subst0)
           TypedAst.Expression.VectorLoad(e, exp2, subst0(tvar), Eff.Bot, loc)
 
+          /*
+           * VectorStore expression.
+           */
         case ResolvedAst.Expression.VectorStore(exp1, exp2, exp3, tvar, loc) =>
           val e1 = visitExp(exp1, subst0)
           val e3 = visitExp(exp3, subst0)
           TypedAst.Expression.VectorStore(e1, exp2, e3, subst0(tvar), Eff.Bot, loc)
 
+          /*
+           * VectorLength expression.
+           */
         case ResolvedAst.Expression.VectorLength(elm, tvar, loc) =>
           var e = visitExp(elm, subst0)
           TypedAst.Expression.VectorLength(e, subst0(tvar), Eff.Bot, loc)
 
-        case ResolvedAst.Expression.VectorSlice(exp1, exp2, exp3, tvar, loc) =>
-          var e = visitExp(exp1, subst0)
-          TypedAst.Expression.VectorSlice(e, exp2, exp3, subst0(tvar), Eff.Bot, loc)
-
+          /*
+           * VectorSlice expression.
+           */
+        case ResolvedAst.Expression.VectorSlice(exp1, exp2, optexp3, tvar, loc) =>
+          optexp3 match {
+            case None =>
+              var e = visitExp(exp1, subst0)
+              TypedAst.Expression.VectorSlice(e, exp2, TypedAst.Expression.VectorLength(e, subst0(tvar), Eff.Bot, loc), subst0(tvar), Eff.Bot, loc)
+            case Some(exp3) =>
+              var e = visitExp(exp1, subst0)
+              TypedAst.Expression.VectorSlice(e, exp2, TypedAst.Expression.Int32(exp3, loc), subst0(tvar), Eff.Bot, loc)
+          }
 
         /*
          * Reference expression.
