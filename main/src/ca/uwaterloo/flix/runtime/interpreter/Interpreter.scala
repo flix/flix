@@ -191,16 +191,17 @@ object Interpreter {
     //
     // ArrayStore expressions.
     //
-    case Expression.ArrayStore(exp1, exp2, exp3, _, _) =>
+    case Expression.ArrayStore(exp1, exps2, exp3, _, _) =>
       val array = cast2array(eval(exp1, env0, henv0, lenv0, root))
-      val index = cast2int32(eval(exp2, env0, henv0, lenv0, root))
+      val indexes = exps2.map(e => eval(e, env0, henv0, lenv0, root))
       val obj = eval(exp3, env0, henv0, lenv0, root)
-      if(array.elms.length > index && index >= 0){
-        array.elms(index) = obj
-        array
+
+      if(indexes.length > 1){
+        arrayLoadsAndStore(array, indexes, obj)
       }
-      else
-        throw InternalRuntimeException(s"Array index out of bounds: $index  Array length: ${array.elms.length}.")
+      else{
+        arrayStore(array,indexes,obj)
+      }
 
     //
     // ArrayLength expressions.
@@ -870,6 +871,45 @@ object Interpreter {
     case o: java.math.BigInteger => Value.BigInt(o)
     case o: java.lang.String => Value.Str(o)
     case _ => ref
+  }
+
+  /**
+    * ArrayStore helper method
+    */
+  private def arrayStore(array: Value.Arr, indexes: Array[AnyRef], obj: AnyRef): Value.Arr = {
+    val index = cast2int32(indexes(0))
+    checkOutOfBounds(array, index)
+    array.elms(index) = obj
+    array
+  }
+
+  /**
+    * ArrayStore helper method
+    */
+  private def arrayLoadsAndStore(array: Value.Arr, indexes: Array[AnyRef], obj: AnyRef): Value.Arr =
+  {
+    var index = cast2int32(indexes(0)) // Handles the first load
+    checkOutOfBounds(array, index)
+    var x = cast2array(array.elms(index))
+
+    for (i <- 1 until (indexes.length - 1)) { // Handles the loads between the first load and the store
+      index = cast2int32(indexes(i))
+      checkOutOfBounds(array,index)
+      x = cast2array(x.elms(index))
+    }
+
+    index = cast2int32(indexes.last) // Handles the store
+    checkOutOfBounds(array,index)
+    x.elms(index) = obj
+    x
+  }
+
+  /**
+    * ArrayStore helper method
+    */
+  private def checkOutOfBounds(array: Value.Arr, index: Int) {
+    if(index >= array.elms.length || index < 0)
+      throw InternalRuntimeException(s"Array index out of bounds: $index  Array length: ${array.elms.length}.")
   }
 
 }

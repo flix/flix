@@ -238,11 +238,11 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
         val e1 = toExecutable(exp1)
         val e2 = toExecutable(exp2)
         ExecutableAst.Expression.ArrayLoad(e1, e2, tpe, loc)
-      case SimplifiedAst.Expression.ArrayStore(exp1, exp2, exp3, tpe, loc) =>
+      case SimplifiedAst.Expression.ArrayStore(exp1, exps2, exp3, tpe, loc) =>
         val e1 = toExecutable(exp1)
-        val e2 = toExecutable(exp2)
+        val es2 = exps2.map(toExecutable).toArray
         val e3 = toExecutable(exp3)
-        ExecutableAst.Expression.ArrayStore(e1, e2, e3, tpe, loc)
+        ExecutableAst.Expression.ArrayStore(e1, es2, e3, tpe, loc)
       case SimplifiedAst.Expression.ArrayLength(exp, tpe, loc) =>
         val e = toExecutable(exp)
         ExecutableAst.Expression.ArrayLength(e, tpe, loc)
