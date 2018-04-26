@@ -208,7 +208,7 @@ object SimplifiedAst {
 
     case class ArrayLoad(exp1: SimplifiedAst.Expression, exp2: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends  SimplifiedAst.Expression
 
-    case class ArrayStore(exp1: SimplifiedAst.Expression, exp2: SimplifiedAst.Expression, exp3: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends  SimplifiedAst.Expression
+    case class ArrayStore(exp1: SimplifiedAst.Expression, exps2: List[SimplifiedAst.Expression], exp3: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends  SimplifiedAst.Expression
 
     case class ArrayLength(exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 

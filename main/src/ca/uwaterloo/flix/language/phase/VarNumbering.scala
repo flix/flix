@@ -154,9 +154,9 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         val i1 = visitExp(exp1, i0)
         visitExp(exp2, i1)
 
-      case Expression.ArrayStore(exp1, exp2, exp3, tpe, loc) =>
+      case Expression.ArrayStore(exp1, exps2, exp3, tpe, loc) =>
         val i1 = visitExp(exp1, i0)
-        val i2 = visitExp(exp2, i1)
+        val i2 = visitExps(exps2, i1)
         visitExp(exp3, i2)
 
       case Expression.ArrayLength(exp, tpe, loc) => visitExp(exp, i0)

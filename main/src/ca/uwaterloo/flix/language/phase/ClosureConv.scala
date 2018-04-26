@@ -157,11 +157,11 @@ object ClosureConv {
       val e2 = convert(exp2)
       Expression.ArrayLoad(e1, e2, tpe, loc)
 
-    case Expression.ArrayStore(exp1, exp2, exp3, tpe, loc) =>
+    case Expression.ArrayStore(exp1, exps2, exp3, tpe, loc) =>
       val e1 = convert(exp1)
-      val e2 = convert(exp2)
+      val es2 = exps2.map(convert)
       val e3 = convert(exp3)
-      Expression.ArrayStore(e1, e2, e3, tpe, loc)
+      Expression.ArrayStore(e1, es2, e3, tpe, loc)
 
     case Expression.ArrayLength(exp, tpe, loc) =>
       val e = convert(exp)

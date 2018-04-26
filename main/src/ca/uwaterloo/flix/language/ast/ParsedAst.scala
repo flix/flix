@@ -638,7 +638,7 @@ object ParsedAst {
       * @param exp3 the element to store into the given index.
       * @param sp2 the position of the last character in the expression.
       */
-    case class ArrayStore(exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, exp3: ParsedAst.Expression, sp2: SourcePosition) extends  ParsedAst.Expression
+    case class ArrayStore(exp1: ParsedAst.Expression, exps2: Seq[ParsedAst.Expression], exp3: ParsedAst.Expression, sp2: SourcePosition) extends  ParsedAst.Expression
 
     /**
       * ArrayLenght Expression

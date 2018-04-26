@@ -775,9 +775,8 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           val length = elms.length
           length match {
             case 0 =>
-              val x = List.empty
               for (
-                resultType <- unifyM(tvar, Type.freshTypeVar(), loc)
+                resultType <- unifyM(tvar, Type.mkArray(Type.freshTypeVar()), loc)
               ) yield resultType
             case _ =>
               for (
@@ -838,7 +837,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         /*
          * ArrayStore expression.
          */
-        case ResolvedAst.Expression.ArrayStore(exp1, exp2, exp3, tvar, loc) =>
+        case ResolvedAst.Expression.ArrayStore(exp1, exps2, exp3, tvar, loc) =>
           //
           //  exp1 : Array[t]   exp2 : Int   exp3 : t
           //  -----------------------------------------
@@ -846,12 +845,14 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           //
           val elementType = Type.freshTypeVar();
           for (
-            recievedBaseType <- visitExp(exp1);
-            recievedIndexType <- visitExp(exp2);
-            recievedObjectType <- visitExp(exp3);
-            arrayType <- unifyM(recievedBaseType, Type.mkArray(elementType), loc);
-            objectType <- unifyM(recievedObjectType, elementType, loc);
+            // TODO how can we typecheck store for arrays of more than one dimension?
+            recievedBaseType <- visitExp(exp1); // Array[Array[Int]]
+            recievedIndexTypes <- seqM(exps2.map(visitExp)); // seq [Int]
+            recievedIndexType <- unifyM(recievedIndexTypes, loc); // Int
+            recievedObjectType <- visitExp(exp3); // Int
+            arrayType <- unifyM(recievedBaseType, Type.mkArray(elementType), loc); // Array[Int]
             indexType <- unifyM(recievedIndexType, Type.Int32, loc);
+            //objectType <- unifyM(recievedObjectType, elementType, loc); // Int != Array[Int]
             resultType <- unifyM(tvar, Type.Unit, loc)
           ) yield resultType
 
@@ -1268,11 +1269,11 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         /*
          * ArrayStore expression.
          */
-        case ResolvedAst.Expression.ArrayStore(exp1, exp2, exp3, tvar, loc) =>
+        case ResolvedAst.Expression.ArrayStore(exp1, exps2, exp3, tvar, loc) =>
           val e1 = visitExp(exp1, subst0)
-          val e2 = visitExp(exp2, subst0)
+          val es2 = exps2.map(e => visitExp(e, subst0))
           val e3 = visitExp(exp3, subst0)
-          TypedAst.Expression.ArrayStore(e1, e2, e3, subst0(tvar), Eff.Bot, loc)
+          TypedAst.Expression.ArrayStore(e1, es2, e3, subst0(tvar), Eff.Bot, loc)
 
         /*
          * ArrayLength expression.

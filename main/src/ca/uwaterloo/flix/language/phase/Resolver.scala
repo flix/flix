@@ -531,12 +531,12 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
             e2 <- visit(exp2)
           } yield ResolvedAst.Expression.ArrayLoad(e1, e2, tvar, loc)
 
-        case NamedAst.Expression.ArrayStore(exp1, exp2, exp3, tvar, loc) =>
+        case NamedAst.Expression.ArrayStore(exp1, exps2, exp3, tvar, loc) =>
           for {
             e1 <- visit(exp1)
-            e2 <- visit(exp2)
+            es2 <- seqM(exps2 map visit)
             e3 <- visit(exp3)
-          } yield ResolvedAst.Expression.ArrayStore(e1, e2, e3, tvar, loc)
+          } yield ResolvedAst.Expression.ArrayStore(e1, es2, e3, tvar, loc)
 
         case NamedAst.Expression.ArrayLength(exp, tvar, loc) =>
           for {

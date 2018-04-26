@@ -142,7 +142,7 @@ object WeededAst {
 
     case class ArrayLength(exp: WeededAst.Expression, loc: SourceLocation) extends  WeededAst.Expression
 
-    case class ArrayStore(exp1: WeededAst.Expression, exp2: WeededAst.Expression, exp3: WeededAst.Expression, loc: SourceLocation) extends  WeededAst.Expression
+    case class ArrayStore(exp1: WeededAst.Expression, exps2: List[WeededAst.Expression], exp3: WeededAst.Expression, loc: SourceLocation) extends  WeededAst.Expression
 
     case class ArraySlice(exp1: WeededAst.Expression, exp2: WeededAst.Expression, exp3: WeededAst.Expression, loc: SourceLocation) extends  WeededAst.Expression
 
