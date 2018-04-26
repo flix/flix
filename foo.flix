@@ -46,12 +46,12 @@ def f() : Int = {
 
 
 //ArraySlice
-/*
-def f() : Array[Array[Int]] = {
-  let x = [[1,2,3], [1,2,3], [1,2,3]];
+
+/*def f() : Array[Int] = {
+  let x = [1,2,3];
   x[0..]
-}
-*/
+}*/
+
 
 // VectorLit
 /*
@@ -65,14 +65,6 @@ def f() : Vector[Int, 5] = {
 def f() : Vector[Int, 5] = {
   let x = [|5;5|];
   x
-}*/
-
-//ArraySlice
-
-/*def f() : Vector[Int, 1] = {
-
-  let x = [|[|1|]|];
-  x[|0..1|]
 }*/
 
 //VectorLoad
@@ -94,13 +86,13 @@ def f() : Int = {
 def f() : Vector[Int, 5] = {
   let x = [|1,2,3,4,5|];
   x
-}
-*/
+}*/
+
 
 // VectorNew
 /*
-def f() : Vector[Int, 10] = {
-  let x = [|10;10|];
+def f() : Vector[Int, 15] = {
+  let x = [|10;15|];
   x
 }
 */
@@ -110,16 +102,16 @@ def f() : Vector[Int, 10] = {
 def f() : Int = {
   let x = [|10;10|];
   x[|9|]
-}
-*/
+}*/
+
 
 // VectorStore
 /*
 def f() : Unit = {
   let x = [|10;10|];
-  x[|1|] = 2
-}
-*/
+  x[|9|] = 2
+}*/
+
 
 // VectorLength
 /*
@@ -127,17 +119,21 @@ def f() : Int = {
 
   let x = [|[|1,2,3|], [|1,2,3|], [|1,2,3|]|];
   length[|x|]
+}*/
+/*
+def f() : Int = {
+
+
+  let x = [|1, 2, 3|];
+  length[|x|]
 }
 */
-
 // VectorSlice
 /*
-def f() : Vector[Int, 4] = {
-
+def f() : Vector[Int, 55] = {
   let x = [|10;10|];
-  x[|6..10|]
-}
-*/
+  x[|3..5|]
+}*/
 
 /*
 def f() : Array[Array[Int]] = {

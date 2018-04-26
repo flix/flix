@@ -578,16 +578,14 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
 
         case NamedAst.Expression.VectorSlice(exp1, exp2, expopt3, tvar, loc) =>
           expopt3 match {
-            /*
             case None =>
               for {
                 e1 <- visit(exp1)
-              } yield ResolvedAst.Expression.VectorSlice(e1, exp2, LENGTH, tvar, loc)
-            */
+              } yield ResolvedAst.Expression.VectorSlice(e1, exp2, None, tvar, loc)
             case Some(e3) =>
               for {
                 e1 <- visit(exp1)
-              } yield ResolvedAst.Expression.VectorSlice(e1, exp2, e3, tvar, loc)
+              } yield ResolvedAst.Expression.VectorSlice(e1, exp2, Some(e3), tvar, loc)
           }
 
         case NamedAst.Expression.Ref(exp, tvar, loc) =>

@@ -471,11 +471,12 @@ object Effects extends Phase[Root, Root] {
         case Expression.VectorSlice(exp1, exp2, exp3, tpe, _, loc) =>
           for {
             e <- visitExp(exp1, env0)
+            e3 <- visitExp(exp3, env0)
           } yield {
-            val eff = exp1.eff
-            Expression.VectorSlice(e, exp2, exp3, tpe, eff, loc)
+            val eff = exp1.eff seq exp3.eff
+            Expression.VectorSlice(e, exp2, e3, tpe, eff, loc)
           }
-
+          
             /**
           * Reference Expression.
           */
