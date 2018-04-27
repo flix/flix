@@ -955,6 +955,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           //  exp1[exp2..exp3] : Vector[t, n]
           //
           val freshVar = Type.freshTypeVar()
+          val freshVar2 = Type.freshTypeVar()
           val freshTestVar = Type.freshTypeVar()
           val freshResultType = Type.freshTypeVar()
           optexp3 match {
@@ -962,18 +963,18 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
               for(
                 tpe <- visitExp(exp1);
                 firstIndex <- unifyM(tpe, Type.mkVector(freshTestVar, exp2, freshVar), loc);
-                resultType <- unifyM(tpe, tvar, loc)
+                resultType <- unifyM(tvar, Type.mkVector(freshTestVar, exp2, freshVar2), loc)
               ) yield resultType
 
             case Some(exp3) =>
               for(
-                tpe <- visitExp(exp1);
-                firstIndex <- unifyM(tpe, Type.mkVector(freshTestVar, exp2, freshVar), loc);
-                secondIndex <- unifyM(tpe, Type.mkVector(freshTestVar, exp3, freshVar), loc);
-                resultType <- unifyM(tpe, Type.mkVector(freshTestVar, exp3-exp2), loc)
+                tpe1 <- visitExp(exp1);
+                tpe2 <- visitExp(exp1);
+                secondIndex <- unifyM(tpe2, Type.mkVector(freshTestVar, exp3-1, freshVar2), loc);
+                firstIndex <- unifyM(tpe1, Type.mkVector(freshTestVar, exp2, freshVar), loc);
+                resultType <- unifyM(tvar, Type.mkVector(freshTestVar, exp3-exp2), loc)
               ) yield resultType
-          } // Tpe: Succ[2, Z]  mkVector: Succ[2, t]
-
+          }
 
 /*
           for (
