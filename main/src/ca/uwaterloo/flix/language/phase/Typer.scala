@@ -976,21 +976,6 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
               ) yield resultType
           }
 
-/*
-          for (
-            recievedBaseType <- visitExp(exp1);
-            recievedStartIndexType <- visitExp(exp2);
-            recievedEndIndexType <- visitExp(exp3);
-            startIndexType <- unifyM(recievedStartIndexType, Type.Int32, loc);
-            endIndexType <- unifyM(recievedEndIndexType, Type.Int32, loc);
-            resultType <- unifyM(tvar, recievedBaseType, loc)
-          ) yield resultType
-*/
-
-
-
-
-
         /*
          * Reference expression.
          */
