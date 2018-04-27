@@ -24,11 +24,11 @@ def f() : Int = {
 */
 
 // ArrayStore
-def f() : Int = {
+/*def f() : Int = {
   let x = [[[1,2,3],[1,2,3]], [[1,2,3],[1,2,3]], [[1,2,3],[1,2,3]]];
   let _ =  x[1][1][1] = 100;
   x[1][1][1]
-}
+}*/
 /*
 def f(): Int = {
   let x = [1,2,3,4,5];
@@ -122,18 +122,16 @@ def f() : Int = {
 }*/
 /*
 def f() : Int = {
-
-
   let x = [|1, 2, 3|];
   length[|x|]
 }
 */
 // VectorSlice
-/*
-def f() : Vector[Int, 55] = {
+
+def f() : Vector[Int, 10] = {
   let x = [|10;10|];
-  x[|3..5|]
-}*/
+  x[|0..|]
+}
 
 /*
 def f() : Array[Array[Int]] = {
