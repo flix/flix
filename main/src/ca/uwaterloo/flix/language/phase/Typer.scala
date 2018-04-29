@@ -957,7 +957,6 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           val freshVar = Type.freshTypeVar()
           val freshVar2 = Type.freshTypeVar()
           val freshTestVar = Type.freshTypeVar()
-          val freshResultType = Type.freshTypeVar()
           optexp3 match {
             case None =>
               for(

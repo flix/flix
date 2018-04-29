@@ -620,6 +620,7 @@ object Synthesize extends Phase[Root, Root] {
         case Type.Apply(Type.Ref, _) => Expression.Int32(123, sl)
         case Type.Apply(Type.Array, _) => Expression.Int32(123, sl)
         case Type.Apply(Type.Vector, _) => Expression.Int32(123, sl)
+        case Type.Apply(Type.Apply(Type.Vector, _), Type.Succ(i, Type.Zero)) => Expression.Int32(123, sl)
         case Type.Apply(Type.Arrow(l), _) => Expression.Int32(123, sl)
 
         case _ =>
@@ -863,6 +864,8 @@ object Synthesize extends Phase[Root, Root] {
           val method = classOf[java.lang.Object].getMethod("toString")
           Expression.NativeMethod(method, List(exp0), Type.Str, ast.Eff.Pure, sl)
 
+        case Type.Zero => Expression.Str("<<Zero>>", sl)
+
         case Type.Succ(n, t) => Expression.Str("<<Succession>>", sl)
 
         case Type.Native =>
@@ -875,7 +878,7 @@ object Synthesize extends Phase[Root, Root] {
 
         case Type.Apply(Type.Array, _) => Expression.Str("<<array>>", sl)
 
-        case Type.Apply(Type.Apply(Type.Vector, _),  Type.Succ(i, Type.Zero)) => Expression.Str("<<vector>>", sl)
+        case Type.Apply(Type.Vector, _) => Expression.Str("<<vector>>", sl)
 
         case Type.Apply(Type.Apply(Type.Vector, _),  Type.Succ(i, _)) => Expression.Str("<<vector>>", sl)
 

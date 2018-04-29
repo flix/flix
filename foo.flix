@@ -128,10 +128,15 @@ def f() : Int = {
 */
 // VectorSlice
 
-def f() : Vector[Int, 10] = {
-  let x = [|10;10|];
-  x[|0..|]
+def f() : Vector[Int, 2] = {
+  let x = [|20;20|];
+  x[|15..|]
 }
+/*
+def f() : Vector[Int, 6] = {
+  let x = [|1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20|];
+  x[|15..|]
+}*/
 
 /*
 def f() : Array[Array[Int]] = {
