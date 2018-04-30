@@ -489,7 +489,11 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   object Expressions {
 
     def Block: Rule1[ParsedAst.Expression] = rule {
-      "{" ~ optWS ~ Expression ~ optWS ~ "}" ~ optWS | Assign
+      "{" ~ optWS ~ Expression ~ optWS ~ "}" ~ optWS | Statement
+    }
+
+    def Statement: Rule1[ParsedAst.Expression] = rule {
+      Assign ~ zeroOrMore(optWS ~ atomic(";;") ~ optWS ~ Assign ~ SP ~> ParsedAst.Expression.Statement)
     }
 
     def Assign: Rule1[ParsedAst.Expression] = rule {

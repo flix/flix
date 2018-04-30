@@ -115,6 +115,9 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.Def(sym, tpe, loc) => e
       case Expression.Eff(sym, tpe, loc) => e
 
+      case Expression.Statement(exp1, exp2, tpe, loc) =>
+        Expression.Statement(visit(exp1), visit(exp2), tpe, loc)
+
       case Expression.Lambda(fparams, body, tpe, loc) =>
         // Lift the lambda to a top-level definition, and replacing the Lambda expression with a Ref.
 

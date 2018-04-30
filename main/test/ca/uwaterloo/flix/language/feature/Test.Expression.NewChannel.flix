@@ -154,22 +154,7 @@ def testNewChannel45(): Channel[Int -> Str -> Int] = channel Int -> Str -> Int 2
 @test
 def testNewChannel46(): Channel[Channel[Int]] = channel Channel[Int] 2
 
-@test
-def testNewChannel47(): Channel[Int] = channel Int 2i8
-
-@test
-def testNewChannel48(): Channel[Int] = channel Int 2i16
-
-@test
-def testNewChannel49(): Channel[Int] = channel Int 2i32
-
-@test
-def testNewChannel50(): Channel[Int] = channel Int 2i64
-
-@test
-def testNewChannel51(): Channel[Int] = channel Int 2ii
-
-def bufferSize():Int = 2
+def bufferSize(): Int = 2
 
 @test
 def testNewChannel52(): Channel[Int] = channel Int bufferSize()

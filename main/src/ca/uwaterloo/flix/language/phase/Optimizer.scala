@@ -81,6 +81,14 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.Eff(sym, tpe, loc) => Expression.Eff(sym, tpe, loc)
 
       //
+      // Statement Expressions.
+      //
+      case Expression.Statement(exp1, exp2, tpe, loc) =>
+        val e1 = visitExp(exp1, env0)
+        val e2 = visitExp(exp2, env0)
+        Expression.Statement(e1, e2, tpe, loc)
+
+      //
       // Closure Expressions.
       //
       case Expression.Closure(sym, freeVars, tpe, loc) =>

@@ -101,6 +101,11 @@ object Synthesize extends Phase[Root, Root] {
       case Expression.BigInt(lit, loc) => exp0
       case Expression.Str(lit, loc) => exp0
 
+      case Expression.Statement(exp1, exp2, tpe, eff, loc) =>
+        val e1 = visitExp(exp1)
+        val e2 = visitExp(exp2)
+        Expression.Statement(e1, e2, tpe, eff, loc)
+
       case Expression.Lambda(fparams, exp, tpe, eff, loc) =>
         val e = visitExp(exp)
         Expression.Lambda(fparams, e, tpe, eff, loc)

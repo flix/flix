@@ -107,6 +107,10 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case TypedAst.Expression.Int64(lit, loc) => SimplifiedAst.Expression.Int64(lit)
       case TypedAst.Expression.BigInt(lit, loc) => SimplifiedAst.Expression.BigInt(lit)
       case TypedAst.Expression.Str(lit, loc) => SimplifiedAst.Expression.Str(lit)
+
+      case TypedAst.Expression.Statement(exp1, exp2, tpe, eff, loc) =>
+        SimplifiedAst.Expression.Statement(visitExp(exp1), visitExp(exp2), tpe, loc)
+
       case TypedAst.Expression.Lambda(args, body, tpe, eff, loc) =>
         SimplifiedAst.Expression.Lambda(args map visitFormalParam, visitExp(body), tpe, loc)
       case TypedAst.Expression.Apply(e, args, tpe, eff, loc) =>

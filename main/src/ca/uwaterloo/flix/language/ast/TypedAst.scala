@@ -150,6 +150,8 @@ object TypedAst {
       final def eff: ast.Eff = ast.Eff.Pure
     }
 
+    case class Statement(exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+
     case class Wild(tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
 
     case class Var(sym: Symbol.VarSym, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression

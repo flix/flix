@@ -80,6 +80,10 @@ object SimplifiedAstOps {
         assert(root.effs contains sym, s"Undefined effect symbol: '$sym'.")
         checkType(tpe)
 
+      case Expression.Statement(exp1, exp2, tpe, loc) =>
+        checkExp(exp1, env0, ienv0)
+        checkExp(exp2, env0, ienv0)
+
       //
       // Lambda Expressions.
       //

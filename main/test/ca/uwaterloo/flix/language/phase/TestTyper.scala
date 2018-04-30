@@ -76,6 +76,30 @@ class TestTyper extends FunSuite with TestUtils {
     expectError[UnificationError](result)
   }
 
+  test("Expression.NewChannel.TypeError.Int8.IllegalBuffersizeType") {
+    val input = "def f(): Channel[Int] = channel Int 1i8"
+    val result = new Flix().addStr(input).compile()
+    expectError[UnificationError](result)
+  }
+
+  test("Expression.NewChannel.TypeError.Int16.IllegalBuffersizeType") {
+    val input = "def f(): Channel[Int] = channel Int 1i16"
+    val result = new Flix().addStr(input).compile()
+    expectError[UnificationError](result)
+  }
+
+  test("Expression.NewChannel.TypeError.Int64.IllegalBuffersizeType") {
+    val input = "def f(): Channel[Int] = channel Int 1i64"
+    val result = new Flix().addStr(input).compile()
+    expectError[UnificationError](result)
+  }
+
+  test("Expression.NewChannel.TypeError.BigInt.IllegalBuffersizeType") {
+    val input = "def f(): Channel[Int] = channel Int 1ii"
+    val result = new Flix().addStr(input).compile()
+    expectError[UnificationError](result)
+  }
+
   test("Expression.NewChannel.TypeError.String.IllegalBuffersizeType") {
     val input = "def f(): Channel[Int] = channel Int \"Str\""
     val result = new Flix().addStr(input).compile()
@@ -125,6 +149,36 @@ class TestTyper extends FunSuite with TestUtils {
   test("Expression.NewChannel.TypeError.Channel[Unit].IllegalBuffersizeType") {
     val input = """def t(): Channel[Unit] = channel Unit
                   |def f(): Channel[Int] = channel Int t()""".stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[UnificationError](result)
+  }
+
+  test("Expression.Spawn.TypeError.MismatchArrowType.01") {
+    val input =
+      """
+        |def t(): Int = 42
+        |def f(): Unit = spawn t(2)
+      """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[UnificationError](result)
+  }
+
+  test("Expression.Spawn.TypeError.MismatchArrowType.02") {
+    val input =
+      """
+        |def t(x: Int): Int = x
+        |def f(): Unit = spawn t()
+      """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[UnificationError](result)
+  }
+
+  test("Expression.Spawn.TypeError.MismatchArrowType.03") {
+    val input =
+      """
+        |def t(x: Int, y: Int): Int = x + y
+        |def f(): Unit = spawn t(2)
+      """.stripMargin
     val result = new Flix().addStr(input).compile()
     expectError[UnificationError](result)
   }

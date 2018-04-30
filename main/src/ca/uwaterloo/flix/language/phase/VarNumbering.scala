@@ -83,6 +83,10 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.Var(sym, tpe, loc) => i0
       case Expression.Def(sym, tpe, loc) => i0
       case Expression.Eff(sym, tpe, loc) => i0
+      case Expression.Statement(exp1, exp2, tpe, loc) =>
+        val i = visitExp(exp1, i0)
+        visitExp(exp2, i)
+
       case Expression.Closure(ref, freeVars, tpe, loc) => i0
       case Expression.ApplyClo(exp, args, tpe, loc) =>
         val i = visitExp(exp, i0)

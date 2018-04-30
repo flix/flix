@@ -88,6 +88,8 @@ object NamedAst {
 
   object Expression {
 
+    case class Statement(exp1: NamedAst.Expression, exp2: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
+
     case class Wild(tpe: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
     case class Var(sym: Symbol.VarSym, loc: SourceLocation) extends NamedAst.Expression

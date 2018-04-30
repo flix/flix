@@ -362,6 +362,12 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
         * Local visitor.
         */
       def visit(e0: NamedAst.Expression): Validation[ResolvedAst.Expression, ResolutionError] = e0 match {
+        case NamedAst.Expression.Statement(exp1, exp2, tvar, loc) =>
+          for {
+            e1 <- visit(exp1)
+            e2 <- visit(exp2)
+          } yield ResolvedAst.Expression.Statement(e1, e2, tvar, loc)
+
         case NamedAst.Expression.Wild(tpe, loc) => ResolvedAst.Expression.Wild(tpe, loc).toSuccess
 
         case NamedAst.Expression.Var(sym, loc) => ResolvedAst.Expression.Var(sym, loc).toSuccess

@@ -533,6 +533,11 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
       /*
        * Variables.
        */
+      case WeededAst.Expression.Statement(exp1, exp2, loc) =>
+        @@(namer(exp1, env0, tenv0), namer(exp2, env0, tenv0)) map {
+          case (e1, e2) => NamedAst.Expression.Statement(e1, e2, Type.freshTypeVar(), loc)
+        }
+      
       case WeededAst.Expression.Wild(loc) => NamedAst.Expression.Wild(Type.freshTypeVar(), loc).toSuccess
 
       case WeededAst.Expression.VarOrDef(name, loc) if name.isUnqualified =>

@@ -51,6 +51,9 @@ object ClosureConv {
 
     case Expression.Eff(sym, tpe, loc) => ??? // TODO
 
+    case Expression.Statement(exp1, exp2, tpe, loc) =>
+      Expression.Statement(convert(exp1), convert(exp2), tpe, loc)
+
     case Expression.Lambda(args, body, tpe, loc) =>
       // Retrieve the type of the function.
       val ts = tpe.typeArguments

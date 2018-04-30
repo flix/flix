@@ -157,6 +157,11 @@ object Effects extends Phase[Root, Root] {
           */
         case Expression.Eff(sym, tpe, _, loc) => ??? // TODO
 
+        case Expression.Statement(exp1, exp2, tpe, eff, loc) =>
+          for {
+            e1 <- visitExp(exp1, env0)
+            e2 <- visitExp(exp2, env0)
+          } yield Expression.Statement(e1, e2, tpe, eff, loc)
         /**
           * Lambda Expression.
           */

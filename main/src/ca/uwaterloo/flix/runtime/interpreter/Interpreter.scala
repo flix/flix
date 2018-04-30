@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.runtime.interpreter
 
 import java.lang.reflect.Modifier
+import java.util.concurrent.ConcurrentLinkedQueue
 
 import ca.uwaterloo.flix.api._
 import ca.uwaterloo.flix.language.ast.ExecutableAst._
@@ -54,6 +55,10 @@ object Interpreter {
       case None => throw InternalRuntimeException(s"Key '${sym.toString}' not found in environment: '${env0.mkString(",")}'.")
       case Some(v) => v
     }
+
+    case Expression.Statement(exp1, exp2, tpe, loc) =>
+      eval(exp1, env0, henv0, lenv0, root)
+      eval(exp2, env0, henv0, lenv0, root)
 
     //
     // Closure expressions.
@@ -171,12 +176,6 @@ object Interpreter {
       Value.Arr(a, tpe.typeArguments.head)
 
     //
-    // NewChannel Expressions.
-    //
-    case Expression.NewChannel(len, tpe, loc) =>
-      val l: Int = cast2int32(eval(len, env0, henv0, lenv0, root))
-      Value.Channel(l, tpe)
-    //
     // ArrayLit expressions.
     //
     case Expression.ArrayLit(elms, tpe, loc) =>
@@ -207,6 +206,40 @@ object Interpreter {
       } else {
         throw InternalRuntimeException(s"Array index out of bounds: $i. Array length: ${b.elms.length}.")
       }
+
+    //
+    // NewChannel expressions.
+    //
+    case Expression.NewChannel(len, tpe, loc) =>
+      val l: Int = cast2int32(eval(len, env0, henv0, lenv0, root))
+      Value.Channel(l, tpe)
+
+    //
+    // GetChannel expressions.
+    //
+    case Expression.GetChannel(exp, tpe, loc) =>
+      val c = cast2channel(eval(exp, env0, henv0, lenv0, root))
+      c.get()
+
+    //
+    // PutChannel expressions.
+    //
+    case Expression.PutChannel(exp1, exp2, tpe, loc) =>
+      val v = eval(exp2, env0, henv0, lenv0, root)
+      val c = cast2channel(eval(exp1, env0, henv0, lenv0, root))
+      c.put(v)
+
+    //
+    // Spawn expressions.
+    //
+    case Expression.Spawn(exp, tpe, loc) =>
+      val clo = eval(exp, env0, henv0, lenv0, root)
+
+      val t = new Thread() {
+        override def run() = invokeClo(clo, List(ExecutableAst.Expression.Unit), env0, henv0, lenv0, root)
+      }
+      t.start()
+      Value.Unit
 
     //
     // Reference expressions.
@@ -784,6 +817,14 @@ object Interpreter {
   private def cast2array(ref: AnyRef): Value.Arr = ref match {
     case v: Value.Arr => v
     case _ => throw InternalRuntimeException(s"Unexpected non-array value: ${ref.getClass.getName}.")
+  }
+
+  /**
+    * Cast the given reference `ref` to a channel value.
+    */
+  private def cast2channel(ref: AnyRef): Value.Channel = ref match {
+    case v: Value.Channel => v
+    case _ => throw InternalRuntimeException(s"Unexpected non-channel value: ${ref.getClass.getName}.")
   }
 
   /**

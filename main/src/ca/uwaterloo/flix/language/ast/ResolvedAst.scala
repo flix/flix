@@ -92,6 +92,8 @@ object ResolvedAst {
 
   object Expression {
 
+    case class Statement(exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+
     case class Wild(tpe: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Var(sym: Symbol.VarSym, loc: SourceLocation) extends ResolvedAst.Expression

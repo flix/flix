@@ -161,6 +161,8 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
       case SimplifiedAst.Expression.Str(lit) => ExecutableAst.Expression.Str(lit)
       case SimplifiedAst.Expression.Var(sym, tpe, loc) =>
         ExecutableAst.Expression.Var(sym, tpe, loc)
+      case SimplifiedAst.Expression.Statement(exp1, exp2, tpe, loc) =>
+        ExecutableAst.Expression.Statement(toExecutable(exp1), toExecutable(exp2), tpe, loc)
       case SimplifiedAst.Expression.Lambda(args, body, tpe, loc) =>
         throw InternalCompilerException("Lambdas should have been converted to closures and lifted.")
       case SimplifiedAst.Expression.LambdaClosure(lambda, freeVars, tpe, loc) =>

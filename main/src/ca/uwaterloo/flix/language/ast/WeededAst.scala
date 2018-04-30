@@ -82,6 +82,8 @@ object WeededAst {
 
   object Expression {
 
+    case class Statement(exp1: WeededAst.Expression, exp2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+
     case class Wild(loc: SourceLocation) extends WeededAst.Expression
 
     case class VarOrDef(name: Name.QName, loc: SourceLocation) extends WeededAst.Expression
