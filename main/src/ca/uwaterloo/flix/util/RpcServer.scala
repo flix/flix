@@ -113,7 +113,7 @@ class RpcServer(port: Int) {
       t.getResponseHeaders.add("Access-Control-Allow-Origin", "*")
 
       val data = JsonMethods.pretty(JsonMethods.render(result))
-      t.sendResponseHeaders(200, data.length())
+      t.sendResponseHeaders(200, 0)
 
       val outputStream = t.getResponseBody
       outputStream.write(data.getBytes)

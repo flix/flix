@@ -759,12 +759,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           }
 
         case ParsedAst.Expression.Unsafe(sp1, exp, sp2) =>
-          /*
-           * Check if unsafe operations have been disabled.
-           */
-          if (flix.options.safe) {
-            return WeederError.IllegalUnsafeExpressionInSafeMode(mkSL(sp1, sp2)).toFailure
-          }
           visit(exp, unsafe = true)
 
         case ParsedAst.Expression.TryCatch(sp1, exp, rules, sp2) =>
