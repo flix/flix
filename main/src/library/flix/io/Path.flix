@@ -188,10 +188,10 @@ namespace Path {
     /// Default handler for `isEmpty`.
     ///
     handler isEmpty[a](p: Path, k: Result[Bool, IOError] -> a): a = unsafe {
-        let Path(javaPath) = p;
         let directoryHandler = isDirectory(p, result -> result);
         match directoryHandler with {
-            case Ok(true) =>  let dirStream = native method java.nio.file.Files.newDirectoryStream(javaPath);
+            case Ok(true) =>  let Path(javaPath) = p;
+                              let dirStream = native method java.nio.file.Files.newDirectoryStream(javaPath);
                               let dirIterator = native method java.nio.file.DirectoryStream.iterator(dirStream);
                               k(Ok(!native method java.util.Iterator.hasNext(dirIterator)))
             case Ok(false) => let readLinesResponse = readLines(p, result -> result);
