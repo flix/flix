@@ -613,7 +613,11 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           val loc = mkSL(sp1, sp2)
 
           @@(visit(exp1, unsafe), @@(exps2.map(e => visit(e, unsafe))), visit(exp3, unsafe)) map {
-            case (e1, e2, e3) => WeededAst.Expression.ArrayStore(e1, e2, e3, loc)
+            case (e1, es, e3) =>
+              val inner = es.init.foldLeft(e1){
+                case(accc, e) => WeededAst.Expression.ArrayLoad(accc, e, loc)
+              }
+              WeededAst.Expression.ArrayStore(inner, es.last, e3, loc)
           }
 
         case ParsedAst.Expression.ArrayLength(sp1, exp, sp2) =>
@@ -1290,7 +1294,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   }
 
   object Effects {
-7
+
     /**
       * Weeds the given parsed optional effect `effOpt`.
       */
