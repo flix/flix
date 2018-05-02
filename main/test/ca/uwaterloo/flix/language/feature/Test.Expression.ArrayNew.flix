@@ -34,8 +34,8 @@ def testArrayNew11(): Array[Int16] = [10i16;5]
 @test
 def testArrayNew12(): Array[Int32] = [10;5]
 
-@test
-def testArrayNew13(): Array[Int64] = [10i64;5]
+//@test
+//def testArrayNew13(): Array[Int64] = [10i64;5]
 
 @test
 def testArrayNew14(): Array[BigInt] = [10ii;5]
@@ -43,12 +43,13 @@ def testArrayNew14(): Array[BigInt] = [10ii;5]
 @test
 def testArrayNew15(): Array[Float32] = [3.0f32;5]
 
-@test
-def testArrayNew16(): Array[Float64] = [3.0f64;5]
+//@test
+//def testArrayNew16(): Array[Float64] = [3.0f64;5]
 
 @test
 def testArrayNew17(): Array[Str] = ["foo";5]
 
+
 @test
-def testArrayNew18(): Array[Array[Str]] = [["Hello"; 10]; 5]
+def testArrayNew18(): Array[Array[Int]] = [[10; 10]; 5]
 

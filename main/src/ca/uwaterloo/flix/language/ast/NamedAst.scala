@@ -148,7 +148,7 @@ object NamedAst {
 
     case class ArrayLoad(exp1: NamedAst.Expression, exp2: NamedAst.Expression, tvar: ast.Type.Var, loc:SourceLocation) extends  NamedAst.Expression
 
-    case class ArrayStore(exp1: NamedAst.Expression, exps2: List[NamedAst.Expression], exp3: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends  NamedAst.Expression
+    case class ArrayStore(exp1: NamedAst.Expression, exp2: NamedAst.Expression, exp3: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends  NamedAst.Expression
 
     case class ArrayLength(exp: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 

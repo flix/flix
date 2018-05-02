@@ -386,16 +386,13 @@ object Effects extends Phase[Root, Root] {
         /**
           * ArrayStore Expression.
           */
-        case Expression.ArrayStore(exp1, exps2, exp3, tpe, _, loc) =>
+        case Expression.ArrayStore(exp1, exp2, exp3, tpe, _, loc) =>
           for {
           e1 <- visitExp(exp1, env0)
-          es2 <- seqM(exps2.map(e => visitExp(e, env0)))
+          es2 <- visitExp(exp2, env0)
           e3 <- visitExp(exp3, env0)
         } yield {
-          val eff = exp1.eff seq
-                    exps2.foldLeft(ast.Eff.Bot) {
-                      case (eacc, e) => eacc seq e.eff } seq
-                    exp3.eff
+          val eff = exp1.eff seq exp2.eff seq  exp3.eff
           Expression.ArrayStore(e1, es2, e3, tpe, eff, loc)
         }
 

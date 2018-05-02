@@ -70,6 +70,47 @@ object AsmOps {
   }
 
   /**
+    * Returns the array store instruction for the value of the type specified by `tpe`
+    */
+  def getArrayStoreInstruction(tpe: JvmType): Int = tpe match {
+    case JvmType.Void => throw InternalCompilerException(s"Unexpected type $tpe")
+    case JvmType.PrimBool => BASTORE
+    case JvmType.PrimChar =>  CASTORE
+    case JvmType.PrimByte => BASTORE
+    case JvmType.PrimShort =>  SASTORE
+    case JvmType.PrimInt => IASTORE
+    case JvmType.PrimLong => LASTORE
+    case JvmType.PrimFloat => FASTORE
+    case JvmType.PrimDouble => DASTORE
+    case JvmType.Reference(_) => AASTORE
+  }
+
+  def getArrayLoadInstruction(tpe: JvmType): Int = tpe match {
+    case JvmType.Void => throw InternalCompilerException(s"Unexpected type $tpe")
+    case JvmType.PrimBool | JvmType.PrimChar | JvmType.PrimByte | JvmType.PrimShort | JvmType.PrimInt => IALOAD
+    case JvmType.PrimBool => BALOAD
+    case JvmType.PrimChar =>  CALOAD
+    case JvmType.PrimByte => BALOAD
+    case JvmType.PrimShort =>  SALOAD
+    case JvmType.PrimInt => IALOAD
+    case JvmType.PrimLong => LALOAD
+    case JvmType.PrimFloat => FALOAD
+    case JvmType.PrimDouble => DALOAD
+    case JvmType.Reference(_) => AALOAD
+  }
+
+  def getArrayTypeCode(tpe: JvmType): Int = tpe match {
+    case JvmType.PrimBool => T_BOOLEAN
+    case JvmType.PrimChar => T_CHAR
+    case JvmType.PrimFloat => T_FLOAT
+    case JvmType.PrimDouble => T_DOUBLE
+    case JvmType.PrimByte => T_BYTE
+    case JvmType.PrimShort => T_SHORT
+    case JvmType.PrimInt => T_INT
+    case JvmType.PrimLong => T_LONG
+  }
+
+  /**
     * Returns the load instruction corresponding to the given type `tpe`
     */
   def getReturnInstruction(tpe: JvmType): Int = tpe match {

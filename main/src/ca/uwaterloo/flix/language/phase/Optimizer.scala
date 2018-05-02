@@ -272,11 +272,11 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       //
       // ArrayStore Expressions.
       //
-      case Expression.ArrayStore(exp1, exps2, exp3, tpe, loc) =>
+      case Expression.ArrayStore(exp1, exp2, exp3, tpe, loc) =>
         val e1 = visitExp(exp1, env0)
-        val es2 = exps2 map (visitExp(_, env0))
+        val e2 = visitExp(exp2, env0)
         val e3 = visitExp(exp3, env0)
-        Expression.ArrayStore(e1, es2, e3, tpe, loc)
+        Expression.ArrayStore(e1, e2, e3, tpe, loc)
 
       //
       // ArraySlice Expressions.
