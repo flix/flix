@@ -670,6 +670,121 @@ object GenExpression {
       // Invoking the constructor
       visitor.visitMethodInsn(INVOKESPECIAL, classType.name.toInternalName, "<init>", constructorDescriptor, false)
 
+    case Expression.ArrayLit(elms, tpe, loc) =>
+      // Adding source line number for debugging
+      addSourceLine(visitor, loc)
+      visitor.visitLdcInsn(elms.length)
+      val jvmType = JvmOps.getErasedJvmType(JvmOps.getArrayInnerType(tpe))
+      if(jvmType == JvmType.Object){
+        visitor.visitTypeInsn(ANEWARRAY, "java/lang/Object")
+      }
+      else{
+        visitor.visitIntInsn(NEWARRAY, AsmOps.getArrayTypeCode(jvmType))
+      }
+      for(i <- 0 until elms.length){
+        visitor.visitInsn(DUP)
+        visitor.visitLdcInsn(i)
+        compileExpression(elms(i), visitor, currentClass, lenv0, entryPoint)
+        visitor.visitInsn(AsmOps.getArrayStoreInstruction(jvmType))
+      }
+
+    case Expression.ArrayNew(elm, len, tpe, loc) => // TODO Does not work for Int64 and FlOAT64
+      val continue = new Label()
+      val preEnd = new Label()
+      val end = new Label()
+      // Adding source line number for debugging
+      addSourceLine(visitor, loc)
+      val jvmType = JvmOps.getErasedJvmType(JvmOps.getArrayInnerType(tpe))
+      compileExpression(len, visitor, currentClass, lenv0, entryPoint) // Length
+      visitor.visitInsn(DUP) // Length - Length
+      if(jvmType == JvmType.Object){
+        visitor.visitTypeInsn(ANEWARRAY, "java/lang/Object")
+      }
+      else{
+        visitor.visitIntInsn(NEWARRAY, AsmOps.getArrayTypeCode(jvmType))
+      } // Length - ArrayRef
+      visitor.visitInsn(SWAP) // ArrayRef - length
+      visitor.visitInsn(DUP_X1) // Length - ArrayRef - Length
+      visitor.visitInsn(ICONST_0) // Length - ArrayRef - length - index
+      visitor.visitInsn(DUP_X1) // Length - ArrayRef - index - length - index
+      visitor.visitJumpInsn(IF_ICMPEQ, end) // Length - ArrayRef - Index
+      compileExpression(elm, visitor, currentClass, lenv0, entryPoint)  // Length - ArrayRef - Index - Value
+      val storeInstruction = AsmOps.getArrayStoreInstruction(jvmType)
+      visitor.visitLabel(continue)
+      visitor.visitInsn(DUP2_X1) // Length - Index - Value - ArrayRef - Index - Value
+      visitor.visitInsn(POP2)  // Length - Index - Value - ArrayRef (PoP2)
+      visitor.visitInsn(DUP_X2)// Length - ArrayRef - Index - Value - ArrayRef (DUP_x2)
+      visitor.visitInsn(DUP_X2)// Length - ArrayRef - ArrayRef - Index - Value - ArrayRef (DUP_x2)
+      visitor.visitInsn(POP)// Length - ArrayRef - ArrayRef - Index - Value (Pop)
+      visitor.visitInsn(DUP2_X1)// Length - ArrayRef - Index - Value - ArrayRef - Index - Value (DUP2_x1)
+      visitor.visitInsn(storeInstruction)// Length - ArrayRef - Index - Value (store)
+      visitor.visitInsn(SWAP) // Length - ArrayRef - Value - Index (Swap)
+      visitor.visitInsn(ICONST_1) // Length - ArrayRef - Value - Index - 1
+      visitor.visitInsn(IADD) // Length - ArrayRef - Value - Index
+      visitor.visitInsn(DUP2_X2)// Value - Index - Length - ArrayRef - Value - Index (DUP2_x2)
+      visitor.visitInsn(POP2)// Value - Index - Length - ArrayRef  (Pop2)
+      visitor.visitInsn(DUP2_X2)// Length - ArrayRef - Value - Index - Length - ArrayRef (Dub2_x2)
+      visitor.visitInsn(POP)// Length - ArrayRef - Value - Index - Length (pop)
+      visitor.visitInsn(DUP2)// Length - ArrayRef - Value - Index - Length - Index - Length (Dup2)
+      visitor.visitJumpInsn(IF_ICMPGE, preEnd)// Length - ArrayRef - Value - Index - Length (if_icmpge, preEnd)
+      visitor.visitInsn(POP)// Length - ArrayRef - Value - Index (Pop)
+      visitor.visitInsn(SWAP)// Length - ArrayRef - Index - Value (Swap)
+      visitor.visitJumpInsn(GOTO, continue)// Uncondiotnal jump Continue
+      visitor.visitLabel(preEnd) // Length - ArrayRef - Value - Index - Length
+      visitor.visitInsn(POP) // Label preEnd // Length - ArrayRef - Value - Index (pop)
+      visitor.visitInsn(SWAP)// Label preEnd // Length - ArrayRef - index - value (swap)
+      visitor.visitInsn(POP) // Label preEnd // Length - ArrayRef - index (pop)
+      visitor.visitLabel(end)
+      visitor.visitInsn(POP) // Length - ArrayRef (pop)
+      visitor.visitInsn(SWAP)// ArrayRef - Length (Swap)
+      visitor.visitInsn(POP) // ArrayRef (pop)
+
+    case Expression.ArrayLoad(exp1, exp2, tpe, loc) =>
+      // Adding source line number for debugging
+      addSourceLine(visitor, loc)
+      compileExpression(exp1, visitor, currentClass, lenv0, entryPoint) // ArrayRef
+      compileExpression(exp2, visitor, currentClass, lenv0, entryPoint) // ArrayRef - Index
+      val jvmType = JvmOps.getErasedJvmType(tpe) // ArrayRef - Index
+      visitor.visitInsn(AsmOps.getLoadInstruction(jvmType)) // Value
+
+    case Expression.ArrayStore(exp1, exp2, exp3, tpe, loc) =>
+      // Adding source line number for debugging
+      addSourceLine(visitor, loc)
+      compileExpression(exp1, visitor, currentClass, lenv0, entryPoint) // ArrayRef
+      compileExpression(exp2, visitor, currentClass, lenv0, entryPoint) // ArrayRef - Index
+      compileExpression(exp3, visitor, currentClass, lenv0, entryPoint) // ArrayRef - Index - Value
+      val jvmType = JvmOps.getErasedJvmType(exp3.tpe)
+      visitor.visitInsn(AsmOps.getArrayStoreInstruction(jvmType)) // Empty
+      // Since the return type is unit, we put an instance of unit on top of the stack
+      visitor.visitMethodInsn(INVOKESTATIC, JvmName.Unit.toInternalName, "getInstance",
+        AsmOps.getMethodDescriptor(Nil, JvmType.Unit), false)
+
+
+    case Expression.ArrayLength(exp, tpe, loc) => // TODO does not work!!!
+      // Adding source line number for debugging
+      addSourceLine(visitor, loc)
+      compileExpression(exp, visitor, currentClass, lenv0, entryPoint) // ArrayRef
+      visitor.visitInsn(ARRAYLENGTH) // Length
+
+    case Expression.ArraySlice(exp1, exp2, exp3, tpe, loc) =>
+      // Adding source line number for debugging
+      var indexNewArray = -1
+      addSourceLine(visitor, loc)
+      compileExpression(exp3, visitor, currentClass, lenv0, entryPoint) // EndIndex
+      compileExpression(exp2, visitor, currentClass, lenv0, entryPoint) // StartIndex
+      visitor.visitInsn(ISUB) // Count
+      val jvmType = JvmOps.getJvmType(exp1.tpe) // TODO Find the right type (Prøv at lave en hjælpeFunktion)
+      visitor.visitIntInsn(NEWARRAY, AsmOps.getArrayTypeCode(jvmType)) // NewRef  // TODO Right way to create new array
+      for(i <- 0 until 2) { // TODO Insert value(exp2) & value(exp3) instead of 0 and 10
+        indexNewArray = indexNewArray + 1
+        visitor.visitInsn(DUP) // NewRef - NewRef
+        visitor.visitLdcInsn(indexNewArray) // NewRef - NewRef - NewIndex
+        compileExpression(exp1, visitor, currentClass, lenv0, entryPoint) // NewRef - NewRef - NewIndex - OldRef  // TODO How do we get ArrayRef TOP?
+        visitor.visitLdcInsn(i) // NewRef - NewRef - NewIndex - OldRef - OldIndex
+        visitor.visitInsn(AsmOps.getLoadInstruction(jvmType)) // NewRef - NewRef - NewIndex - Value
+        visitor.visitInsn(AsmOps.getStoreInstruction(jvmType)) // NewRef
+      }
+
     case Expression.Ref(exp, tpe, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
