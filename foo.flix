@@ -92,8 +92,8 @@ def f() : Vector[Int, 5] = {
 def f() : Vector[Int, 15] = {
   let x = [|10;15|];
   x
-}
-*/
+}*/
+
 
 // VectorLoad
 /*
@@ -129,8 +129,8 @@ def f() : Int = {
 // VectorSlice
 /*
 def f() : Vector[Int, 2] = {
-  let x = [|20;20|];
-  x[|15..|]
+  let x = [|5;5|];
+  x[|3..|]
 }
 */
 

@@ -150,13 +150,13 @@ object WeededAst {
 
     case class VectorNew(elm: WeededAst.Expression, len: Int, loc: SourceLocation) extends WeededAst.Expression
 
-    case class VectorLoad(exp1: WeededAst.Expression, exp2: Int, loc: SourceLocation) extends WeededAst.Expression
+    case class VectorLoad(exp1: WeededAst.Expression, index: Int, loc: SourceLocation) extends WeededAst.Expression
 
-    case class VectorStore(exp1: WeededAst.Expression, exp2: Int, exp3: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+    case class VectorStore(exp1: WeededAst.Expression, index: Int, exp2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     case class VectorLength(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
-    case class VectorSlice(exp1: WeededAst.Expression, exp2: Int, expopt3: Option[Int], loc: SourceLocation) extends WeededAst.Expression
+    case class VectorSlice(exp1: WeededAst.Expression, index: Int, optindex: Option[Int], loc: SourceLocation) extends WeededAst.Expression
 
     case class Ref(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 

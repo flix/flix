@@ -5,7 +5,7 @@ def testVectorSliceNoEnd01(): Vector[Int, 3] = let x = [|1,2,3|]; x[|0..|]
 def testVectorSliceNoEnd02(): Vector[Int, 3] = let x = [|1,2,3,4,5|]; x[|2..|]
 
 @test
-def testVectorSliceNoEnd03(): Vector[Int, 6] = let x = [|1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20|]; x[|15..|]
+def testVectorSliceNoEnd03(): Vector[Int, 5] = let x = [|1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20|]; x[|15..|]
 
 @test
 def testVectorSliceNoEnd04(): Vector[Int, 1] = let x = [|1,2|]; x[|1..|]
@@ -23,7 +23,7 @@ def testVectorSliceNoEnd07(): Vector[Bool, 4] = let x = [|false, false, false, f
 def testVectorSliceNoEnd08(): Vector[Char, 2] = let x = [|'a', 'b'|]; x[|0..|]
 
 @test
-def testVectorSliceNoEnd09(): Vector[Char, 2] = let x = [|'a', 'b', 'c'|]; x[|0..|]
+def testVectorSliceNoEnd09(): Vector[Char, 3] = let x = [|'a', 'b', 'c'|]; x[|0..|]
 
 @test
 def testVectorSliceNoEnd10(): Vector[Char, 12] = let x = [|'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n'|]; x[|2..|]
@@ -32,7 +32,7 @@ def testVectorSliceNoEnd10(): Vector[Char, 12] = let x = [|'a', 'b', 'c', 'd', '
 def testVectorSliceNoEnd11(): Vector[Int8, 2] = let x = [|1i8, 2i8, 3i8|]; x[|1..|]
 
 @test
-def testVectorSliceNoEnd12(): Vector[Int8, 2] = let x = [|1i8,2i8,3i8,4i8|]; x[|1..|]
+def testVectorSliceNoEnd12(): Vector[Int8, 3] = let x = [|1i8,2i8,3i8,4i8|]; x[|1..|]
 
 @test
 def testVectorSliceNoEnd13(): Vector[Int16, 2] = let x = [|1i16, 2i16, 3i16|]; x[|1..|]
@@ -62,7 +62,7 @@ def testVectorSliceNoEnd20(): Vector[Float64, 1] = let x = [|1.0f64,2.0f64,3.0f6
 def testVectorSliceNoEnd21(): Vector[Str, 1] = let x = [|"Hello", "World"|]; x[|1..|]
 
 @test
-def testVectorSliceNoEnd22(): Vector[Str, 1] = let x = [|"World", "Hello", "World"|]; x[|2..3|]
+def testVectorSliceNoEnd22(): Vector[Str, 1] = let x = [|"World", "Hello", "World"|]; x[|2..|]
 
 @test
 def testVectorSliceNoEnd23(): Vector[Vector[Int, 2], 1] = let x = [|[|1,2|], [|1,2|]|]; x[|1..|]
@@ -71,11 +71,11 @@ def testVectorSliceNoEnd23(): Vector[Vector[Int, 2], 1] = let x = [|[|1,2|], [|1
 def testVectorSliceNoEnd24(): Vector[Vector[Int, 3], 2] = let x = [|[|1,2,3|], [|1,2,3|]|]; x[|0..|]
 
 @test
-def testVectorSliceNoEnd25(): Vector[Vector[Int, 2], 1] = let x = [|[|1|], [|2|]|]; x[|0..|]
+def testVectorSliceNoEnd25(): Vector[Vector[Int, 1], 2] = let x = [|[|1|], [|2|]|]; x[|0..|]
 
 @test
 def testVectorSliceNoEnd26(): Vector[Vector[Int, 3], 3] = let x = [|[|1,2,3|], [|1,2,3|], [|1,2,3|]|]; x[|0..|]
 
 @test
-def testVectorSliceNoEnd27(): Vector[Int, 9] = let x = [|1,2,3,4,5,6,7,8,9,10|]; x[|0..|]
+def testVectorSliceNoEnd27(): Vector[Int, 10] = let x = [|1,2,3,4,5,6,7,8,9,10|]; x[|0..|]
 

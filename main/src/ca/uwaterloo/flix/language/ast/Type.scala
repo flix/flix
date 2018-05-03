@@ -331,10 +331,6 @@ object Type {
     def kind: Kind = Kind.Arrow((0 until length).map(_ => Kind.Star).toList, Kind.Star)
   }
 
-  case class Array(length: Int) extends Type {
-    def kind: Kind = Kind.Arrow((0 until length).map(_ => Kind.Star).toList, Kind.Star)
-  }
-
   case object Zero extends Type {
     def kind: Kind = Kind.Star
   }
@@ -404,19 +400,13 @@ object Type {
   def mkArray(a: Type): Type = Apply(Array, a)
 
   /**
-    * Constructs the vector type [|a, (n, t)|] where
-    * 'a' is the given type
-    * 'n' is the given length
-    * 't' is the Zero type for the length.
+    * Constructs the vector type [|elmType, Len|] where
+    * 'elmType' is the given element type
+    * 'len' is the given length of the vector.
+    * len expected input is an instance of Succ(Int, Type), where Int is the length, and Type is either Type.Zero or a fresh variable.
     */
-  def mkVector(a: Type, n: Int) : Type = Apply(Apply(Vector, a), Succ(n, Type.Zero))
-  /**
-    * Constructs the vector type [|a, (n, t)|] where
-    * 'a' is the given type
-    * 'n' is the given length
-    * 't' is a fresh type for the remaining length.
-    */
-  def mkVector(a: Type, n: Int, t: Type) : Type =  Apply(Apply(Vector, a), Succ(n, t))
+  def mkVector(elmType: Type, len: Type) : Type = Apply(Apply(Vector, elmType), len)
+
 
   /**
     * Constructs the set type of A.

@@ -438,6 +438,10 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case TypedAst.Expression.VectorSlice(exp1, exp2, exp3, tpe, eff, loc) =>
         val e = visitExp(exp1)
         val e3 = visitExp(exp3)
+        val len = exp1.tpe match {
+          case Type.Apply(Type.Apply(Type.Vector, _), Type.Succ(n, _)) => n
+          case _ => throw InternalCompilerException("Unexpected type: " + exp1.tpe)
+        }
         SimplifiedAst.Expression.ArraySlice(e, SimplifiedAst.Expression.Int32(exp2), e3, tpe, loc)
 
       case TypedAst.Expression.Ref(exp, tpe, eff, loc) =>
