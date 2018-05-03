@@ -729,7 +729,7 @@ object GenExpression {
       visitor.visitJumpInsn(IF_ICMPGE, preEnd)// Length - ArrayRef - Value - Index - Length (if_icmpge, preEnd)
       visitor.visitInsn(POP)// Length - ArrayRef - Value - Index (Pop)
       visitor.visitInsn(SWAP)// Length - ArrayRef - Index - Value (Swap)
-      visitor.visitJumpInsn(GOTO, continue)// Uncondiotnal jump Continue
+      visitor.visitJumpInsn(GOTO, continue)
       visitor.visitLabel(preEnd) // Length - ArrayRef - Value - Index - Length
       visitor.visitInsn(POP) // Label preEnd // Length - ArrayRef - Value - Index (pop)
       visitor.visitInsn(SWAP)// Label preEnd // Length - ArrayRef - index - value (swap)
@@ -745,7 +745,7 @@ object GenExpression {
       compileExpression(exp1, visitor, currentClass, lenv0, entryPoint) // ArrayRef
       compileExpression(exp2, visitor, currentClass, lenv0, entryPoint) // ArrayRef - Index
       val jvmType = JvmOps.getErasedJvmType(tpe) // ArrayRef - Index
-      visitor.visitInsn(AsmOps.getLoadInstruction(jvmType)) // Value
+      visitor.visitInsn(AsmOps.getArrayLoadInstruction(jvmType)) // Value
 
     case Expression.ArrayStore(exp1, exp2, exp3, tpe, loc) =>
       // Adding source line number for debugging
@@ -760,30 +760,37 @@ object GenExpression {
         AsmOps.getMethodDescriptor(Nil, JvmType.Unit), false)
 
 
-    case Expression.ArrayLength(exp, tpe, loc) => // TODO does not work!!!
+    case Expression.ArrayLength(exp, tpe, loc) =>
       // Adding source line number for debugging
-      addSourceLine(visitor, loc)
+      addSourceLine(visitor, loc) // TODO We propably get an objectRef instead of an ArrayRef
       compileExpression(exp, visitor, currentClass, lenv0, entryPoint) // ArrayRef
+
       visitor.visitInsn(ARRAYLENGTH) // Length
 
     case Expression.ArraySlice(exp1, exp2, exp3, tpe, loc) =>
       // Adding source line number for debugging
-      var indexNewArray = -1
       addSourceLine(visitor, loc)
-      compileExpression(exp3, visitor, currentClass, lenv0, entryPoint) // EndIndex
-      compileExpression(exp2, visitor, currentClass, lenv0, entryPoint) // StartIndex
-      visitor.visitInsn(ISUB) // Count
-      val jvmType = JvmOps.getJvmType(exp1.tpe) // TODO Find the right type (Prøv at lave en hjælpeFunktion)
-      visitor.visitIntInsn(NEWARRAY, AsmOps.getArrayTypeCode(jvmType)) // NewRef  // TODO Right way to create new array
-      for(i <- 0 until 2) { // TODO Insert value(exp2) & value(exp3) instead of 0 and 10
-        indexNewArray = indexNewArray + 1
-        visitor.visitInsn(DUP) // NewRef - NewRef
-        visitor.visitLdcInsn(indexNewArray) // NewRef - NewRef - NewIndex
-        compileExpression(exp1, visitor, currentClass, lenv0, entryPoint) // NewRef - NewRef - NewIndex - OldRef  // TODO How do we get ArrayRef TOP?
-        visitor.visitLdcInsn(i) // NewRef - NewRef - NewIndex - OldRef - OldIndex
-        visitor.visitInsn(AsmOps.getLoadInstruction(jvmType)) // NewRef - NewRef - NewIndex - Value
-        visitor.visitInsn(AsmOps.getStoreInstruction(jvmType)) // NewRef
+      val jvmType = JvmOps.getErasedJvmType(JvmOps.getArrayInnerType(exp1.tpe))
+      compileExpression(exp1, visitor, currentClass, lenv0, entryPoint) // OldRef
+      compileExpression(exp2, visitor, currentClass, lenv0, entryPoint) // OldRef - StartIndex
+      compileExpression(exp3, visitor, currentClass, lenv0, entryPoint) // OldRef - StartIndex - Endindex
+      visitor.visitInsn(SWAP) // OldRef - Endindex - StartIndex
+      visitor.visitInsn(DUP_X1) // OldRef - StartIndex - Endindex - StartIndex
+      visitor.visitInsn(ISUB) // OldRef - StartIndex - Count
+      visitor.visitInsn(DUP) // OldRef - StartIndex - Count - Count
+      if(jvmType == JvmType.Object){
+        visitor.visitTypeInsn(ANEWARRAY, "java/lang/Object")
       }
+      else{
+        visitor.visitIntInsn(NEWARRAY, AsmOps.getArrayTypeCode(jvmType))
+      } // OldRef - StartIndex  - count - NewRef
+      visitor.visitInsn(DUP2_X2) // count - NewRef - OldRef - StartIndex  - count - NewRef
+      visitor.visitInsn(SWAP) // count - NewRef - OldRef - StartIndex - NewRef - count
+      visitor.visitInsn(ICONST_0) // count - NewRef - OldRef - StartIndex - NewRef - count - 0
+      visitor.visitInsn(SWAP) // count - NewRef - OldRef - StartIndex - NewRef - 0 - count
+      visitor.visitMethodInsn(INVOKESTATIC, "java/lang/System", "arraycopy", "(Ljava/lang/Object;ILjava/lang/Object;II)V", false); // count - NewRef
+      visitor.visitInsn(SWAP)
+      visitor.visitInsn(POP)
 
     case Expression.Ref(exp, tpe, loc) =>
       // Adding source line number for debugging

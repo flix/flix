@@ -17,19 +17,17 @@ def f() : Array[Bool] = {
 
 
 // ArrayLoad
-/*
 def f() : Int = {
   let x = [1,2,3,4,5,6];
   x[2]
 }
-*/
 
 
 // ArrayStore
 /*
 def f() : Array[Int] = {
   let x = [1,2,3,4,5];
-  //let _ = x[1] = 100;
+  let _ = x[1] = 100;
   x
 }
 */
@@ -44,11 +42,12 @@ def f() : Int = {
 
 
 //ArraySlice
-
-/*def f() : Array[Int] = {
-  let x = [1,2,3];
+/*
+def f() : Array[Int] = {
+  let x = [1,2,3,4,5];
   x[0..2]
-}*/
+}
+*/
 
 
 // VectorLit
