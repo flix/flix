@@ -164,13 +164,13 @@ object ResolvedAst {
 
     case class VectorNew(elm: ResolvedAst.Expression, len: Int, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class VectorLoad(exp1: ResolvedAst.Expression, exp2: Int, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class VectorLoad(exp1: ResolvedAst.Expression, index: Int, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class VectorStore(exp1: ResolvedAst.Expression, exp2: Int, exp3: ResolvedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class VectorStore(exp1: ResolvedAst.Expression, index: Int, exp2: ResolvedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class VectorLength(exp: ResolvedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class VectorSlice(exp1: ResolvedAst.Expression, exp2: Int, optexp3: Option[Int], tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class VectorSlice(exp1: ResolvedAst.Expression, index: Int, optindex: Option[Int], tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Ref(exp: ResolvedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
