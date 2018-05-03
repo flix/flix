@@ -14,7 +14,7 @@ def testArraySlice04(): Array[Int] = let x = [1,2]; x[1..2]
 def testArraySlice05(): Array[Bool] = let x = [true, false]; x[0..1]
 
 @test
-def testArraySlice06(): Array[Bool] = let x = [false, true, false]; x[2..4]
+def testArraySlice06(): Array[Bool] = let x = [false, true, false]; x[2..3]
 
 @test
 def testArraySlice07(): Array[Bool] = let x = [false, false, false, false, true]; x[1..3]
@@ -62,7 +62,7 @@ def testArraySlice20(): Array[Float64] = let x = [1.0f64,2.0f64,3.0f64,4.0f64]; 
 def testArraySlice21(): Array[Str] = let x = ["Hello", "World"]; x[1..2]
 
 @test
-def testArraySlice22(): Array[Str] = let x = ["World", "Hello", "World"]; x[2..4]
+def testArraySlice22(): Array[Str] = let x = ["World", "Hello", "World"]; x[2..3]
 
 @test
 def testArraySlice23(): Array[Array[Int]] = let x = [[1,2], [1,2]]; x[1..2]
@@ -75,6 +75,3 @@ def testArraySlice25(): Array[Array[Int]] = let x = [[1,2,3,4,5], [2]]; x[0..1]
 
 @test
 def testArraySlice26(): Array[Array[Int]] = let x = [[1,2,3], [1,2,3], [1,2,3]]; x[0..3]
-
-@test
-def testArraySlice27(): Array[Int] = let x = [1,2,3,4,5,6,7,8,9,10]; x[0..length[x]]
