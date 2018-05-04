@@ -1,7 +1,8 @@
-def f() : Int = {
+def f() : Int64 = {
  let x = [10i64;10];
- let _ = x[1] = 10i64;
- 2
+ let _ = x[1] = 5i64;
+ //x[2]
+ x[1]
 }
 
 // ArrayNew
@@ -79,12 +80,12 @@ def f() : Int = {
 */
 
 // VectorLit
-
+/*
 def f() : Array[Unit] = {
   let x = [];
   x
 }
-
+*/
 
 // VectorNew
 /*
@@ -152,7 +153,7 @@ def f() : Array[Array[Int]] = {
 }*/
 
 
-
+/*
 // def testArrayTuple1(): Array[(Int, Str), (Int, Bool)] = [(12, "Hello")] // Error array can only contain one type
 
 def testArrayTuple2(): Array[(Int, Int)] = [(12, 42)] // Works
@@ -162,7 +163,7 @@ def testArrayTuple3(): Array[(Int, Int, Int)] = [(12, 42, 34)] // Works
 def testArrayTuple4(): Array[(Int, Int)] = [(12, 42), (12, 23)] //Error
 
 
-
+*/
 
 
 

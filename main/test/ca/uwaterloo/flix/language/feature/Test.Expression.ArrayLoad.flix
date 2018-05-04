@@ -58,14 +58,14 @@ def testArrayLoad19(): Int16 = let x = [1i16, 2i16, 3i16]; x[1]
 @test
 def testArrayLoad20(): Int16 = let x = [1i16,2i16,3i16,4i16]; x[2]
 
-/*@test
+@test
 def testArrayLoad21(): Int64 = let x = [1i64]; x[0]
 
 @test
 def testArrayLoad22(): Int64 = let x = [1i64, 2i64, 3i64]; x[1]
 
 @test
-def testArrayLoad23(): Int64 = let x = [1i64,2i64,3i64,4i64]; x[2]*/
+def testArrayLoad23(): Int64 = let x = [1i64,2i64,3i64,4i64]; x[2]
 
 @test
 def testArrayLoad24(): Float32 = let x = [1.0f32]; x[0]
@@ -119,9 +119,6 @@ def testArrayLoad39(): Bool = let x = [[true,true], [true,false]]; x[1] [1]
 def testArrayLoad40(): Bool = let x = [[true], [true,false,true,false]]; x[1] [2]
 
 @test
-def testArrayLoad40(): Bool = let x = [[true,false,true,false], [true]]; x[0] [2]
-
-@test
 def testArrayLoad41(): Bool = let x = [[true,false,true], [true,false,true], [true,false,true]]; x[2] [2]
 
 @test
@@ -143,7 +140,7 @@ def testArrayLoad46(): Char = let x = [['a','b','c'], ['a','b','c'], ['a','b','c
 def testArrayLoad47(): Int8 = let x = [[1i8,2i8,3i8]]; x[0][1]
 
 @test
-def testArrayLoad48(): Int8 = let x = [[1i8,2i8], [1i8,2i8]; x[1][0]
+def testArrayLoad48(): Int8 = let x = [[1i8,2i8], [1i8,2i8]]; x[1][0]
 
 @test
 def testArrayLoad49(): Int8 = let x = [[1i8,2i8,3i8,4i8],[1i8]]; x[0][3]
@@ -207,9 +204,6 @@ def testArrayLoad68(): Float64 = let x = [[1.0f64,2.0f64], [1.0f64,2.0f64]]; x[1
 
 @test
 def testArrayLoad69(): Float64 = let x = [[1.0f64,2.0f64,3.0f64,4.0f64], [1.0f64]]; x[0][1]
-
-@test
-def testArrayLoad69(): Float64 = let x = [[1.0f64], [1.0f64,2.0f64,3.0f64,4.0f64]]; x[1][2]
 
 @test
 def testArrayLoad70(): Float64 = let x = [[1.0f64,2.0f64,3.0f64], [1.0f64,2.0f64,3.0f64], [1.0f64,2.0f64,3.0f64]]; x[2][2]

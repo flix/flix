@@ -143,7 +143,7 @@ def testArrayLit47(): Array[Array[Char]] = [['a','b','c','d','e'], ['a']]
 def testArrayLit48(): Array[Array[Char]] = [['a','b','c'], ['a','b','c'], ['a','b','c']]
 
 @test
-def testArrayLit49(): Array[Array[Int8]] = [[1i8, 2i8, 3i8,]]
+def testArrayLit49(): Array[Array[Int8]] = [[1i8, 2i8, 3i8]]
 
 @test
 def testArrayLit50(): Array[Array[Int8]] = [[1i8, 2i8], [1i8, 2i8]]
@@ -194,13 +194,10 @@ def testArrayLit64(): Array[Array[Float32]] = [[1.0f32,2.0f32,3.0f32]]
 def testArrayLit65(): Array[Array[Float32]] = [[1.0f32,2.0f32], [1.0f32,2.0f32]]
 
 @test
-def testArrayLit66(): Array[Array[Float32]] = [[1.0f32], [,1.0f32,2.0f32,3.0f32,4.0f32,5.0f32,6.0f32]]
+def testArrayLit66(): Array[Array[Float32]] = [[1.0f32], [1.0f32,2.0f32,3.0f32,4.0f32,5.0f32,6.0f32]]
 
 @test
-def testArrayLit67(): Array[Array[Float32]] = [[1.0f32,2.0f32,3.0f32,4.0f32,5.0f32,6.0f32], [1.0f32],]
-
-@test
-def testArrayLit67(): Array[Array[Float32]] = [[1.0f32,2.0f32,3.0f32], [1.0f32, 2.0f32,3.0f32], [1.0f32,2.0f32,3.0f32]]
+def testArrayLit67(): Array[Array[Float32]] = [[1.0f32,2.0f32,3.0f32,4.0f32,5.0f32,6.0f32], [1.0f32]]
 
 @test
 def testArrayLit68(): Array[Array[Float64]] = [[1.0f64,2.0f64,3.0f64]]
