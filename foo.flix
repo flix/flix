@@ -17,10 +17,10 @@ def f() : Array[Bool] = {
 
 
 // ArrayLoad
-def f() : Int = {
+/*def f() : Int = {
   let x = [1,2,3,4,5,6];
   x[2]
-}
+}*/
 
 
 // ArrayStore
@@ -79,11 +79,11 @@ def f() : Int = {
 */
 
 // VectorLit
-
+/*
 def f() : Vector[Int, 5] = {
   let x = [|1,2,3,4,5|];
   x
-}
+}*/
 
 
 // VectorNew
@@ -127,13 +127,17 @@ def f() : Int = {
 */
 
 // VectorSlice
-/*
-def f() : Vector[Int,10] = {
-  let x = [|10;10|];
-  let y = x[|3..10|];
+
+def f() : Vector[Str,10] = {
+  let x = [|"Hello";10|];
+  let y = x[|3..|] : Vector[Str, 5];
   y[|1..11|]
 }
-*/
+
+  //let y = x[|3..|];
+  //y[|1..11|]
+//}
+
 
 /*
 def f() : Vector[Int, 6] = {
