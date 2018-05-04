@@ -317,7 +317,13 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
 
         case Expression.VectorLit(elms, tpe, eff, loc) =>
           val es = elms.map(e => visitExp(e, env0))
-          Expression.VectorLit(es, subst0(tpe), eff, loc)
+          val t = if(elms.isEmpty) {
+            Type.freshTypeVar()
+          }
+          else{
+            tpe
+          }
+          Expression.VectorLit(es, subst0(t), eff, loc)
 
         case Expression.VectorNew(elm, len, tpe, eff, loc) =>
           val e = visitExp(elm, env0)

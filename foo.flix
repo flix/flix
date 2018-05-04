@@ -79,11 +79,11 @@ def f() : Int = {
 */
 
 // VectorLit
-/*
-def f() : Vector[Int, 5] = {
-  let x = [|1,2,3,4,5|];
+
+def f() : Array[Unit] = {
+  let x = [];
   x
-}*/
+}
 
 
 // VectorNew
@@ -119,20 +119,20 @@ def f() : Int = {
   length[|x|]
 }*/
 
-/*
-def f() : Int = {
+
+/*def f() : Int = {
   let x = [|1, 2, 3|];
   length[|x|]
 }
 */
 
 // VectorSlice
-
+/*
 def f() : Vector[Str,10] = {
   let x = [|"Hello";10|];
   let y = x[|3..|] : Vector[Str, 5];
   y[|1..11|]
-}
+}*/
 
   //let y = x[|3..|];
   //y[|1..11|]
