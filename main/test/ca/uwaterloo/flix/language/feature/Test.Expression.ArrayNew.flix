@@ -16,6 +16,7 @@ def testArrayNew05(): Array[Int] = [0; 500]
 @test
 def testArrayNew06(): Array[Unit] = [();5]
 
+
 @test
 def testArrayNew07(): Array[Bool] = [true;5]
 

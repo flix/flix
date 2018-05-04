@@ -150,3 +150,19 @@ def f() : Array[Array[Int]] = {
   let x = [[1,2,3],[1,2,3],[1,2,3],[1,2,3]];
   x
 }*/
+
+
+
+// def testArrayTuple1(): Array[(Int, Str), (Int, Bool)] = [(12, "Hello")] // Error array can only contain one type
+
+def testArrayTuple2(): Array[(Int, Int)] = [(12, 42)] // Works
+
+def testArrayTuple3(): Array[(Int, Int, Int)] = [(12, 42, 34)] // Works
+
+def testArrayTuple4(): Array[(Int, Int)] = [(12, 42), (12, 23)] //Error
+
+
+
+
+
+
