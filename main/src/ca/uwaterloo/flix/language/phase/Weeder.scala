@@ -585,6 +585,166 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
             case xs => WeededAst.Expression.Tuple(xs, mkSL(sp1, sp2))
           }
 
+        case ParsedAst.Expression.ArrayLit(sp1, elms, sp2) =>
+          @@(elms.map(e => visit(e, unsafe))) map {
+            case es => WeededAst.Expression.ArrayLit(es, mkSL(sp1, sp2))
+          }
+
+        case ParsedAst.Expression.ArrayNew(sp1, elm, len, sp2) =>
+          @@(visit(elm, unsafe), visit(len, unsafe)) map {
+            case(es, ln) => WeededAst.Expression.ArrayNew(es, ln, mkSL(sp1, sp2))
+          }
+
+        case ParsedAst.Expression.ArrayLoad(exp1, exp2, sp2) =>
+          val sp1 = leftMostSourcePosition(exp1)
+          val loc = mkSL(sp1, sp2)
+
+          @@(visit(exp1, unsafe), visit(exp2, unsafe)) map {
+            case (ex1, ex2) => WeededAst.Expression.ArrayLoad(ex1, ex2, loc)
+          }
+
+        case ParsedAst.Expression.ArrayStore(exp1, exps2, exp3, sp2) =>
+          val sp1 = leftMostSourcePosition(exp1)
+          val loc = mkSL(sp1, sp2)
+
+          @@(visit(exp1, unsafe), @@(exps2.map(e => visit(e, unsafe))), visit(exp3, unsafe)) map {
+            case (e1, es, e3) =>
+              val inner = es.init.foldLeft(e1){
+                case(accc, e) => WeededAst.Expression.ArrayLoad(accc, e, loc)
+              }
+              WeededAst.Expression.ArrayStore(inner, es.last, e3, loc)
+          }
+
+        case ParsedAst.Expression.ArrayLength(sp1, exp, sp2) =>
+          visit(exp, unsafe) map {
+            case es => WeededAst.Expression.ArrayLength(es, mkSL(sp1, sp2))
+          }
+
+        case ParsedAst.Expression.ArraySlice(exp1, exp2, exp3, sp2) =>
+          val sp1 = leftMostSourcePosition(exp1)
+          val loc = mkSL(sp1, sp2)
+
+          @@(visit(exp1, unsafe), visit(exp2, unsafe), visit(exp3, unsafe)) map {
+            case(ex1, ex2, ex3) => WeededAst.Expression.ArraySlice(ex1, ex2, ex3, loc)
+          }
+
+        case ParsedAst.Expression.ArraySliceNoEndIndex(exp1, exp2, sp2) =>
+          val sp1 = leftMostSourcePosition(exp1)
+          val loc = mkSL(sp1, sp2)
+
+          @@(visit(exp1, unsafe), visit(exp2, unsafe)) map {
+            case(ex1, ex2) => WeededAst.Expression.ArraySlice(ex1, ex2, WeededAst.Expression.ArrayLength(ex1, loc), loc)
+          }
+
+        case ParsedAst.Expression.ArraySliceNoStartIndex(exp1, exp2, sp2) =>
+          val sp1 = leftMostSourcePosition(exp1)
+          val loc = mkSL(sp1, sp2)
+
+          @@(visit(exp1, unsafe), visit(exp2, unsafe)) map {
+            case(ex1, ex2) => WeededAst.Expression.ArraySlice(ex1, WeededAst.Expression.Int32(0, loc), ex2, loc)
+          }
+
+        case ParsedAst.Expression.VectorLit(sp1, elms, sp2) =>
+          @@(elms.map(e => visit(e, unsafe))) map{
+            case es => WeededAst.Expression.VectorLit(es, mkSL(sp1, sp2))
+          }
+
+        case ParsedAst.Expression.VectorNew(sp1, elm, len, sp2) =>
+          visit(elm, unsafe) flatMap {
+            case e => len match {
+              case ParsedAst.Literal.Int32(sp1, sign, digits, sp2) => toInt32(sign, digits, mkSL(sp1, sp2)) flatMap {
+                case l if l >= 0 => WeededAst.Expression.VectorNew(e, l, mkSL(sp1, sp2)).toSuccess
+                case _ => WeederError.IllegalVectorLength(mkSL(sp1, sp2)).toFailure
+              }
+              case _ => WeederError.IllegalVectorLength(mkSL(sp1, sp2)).toFailure
+            }
+          }
+
+        case ParsedAst.Expression.VectorLoad(exp1, index, sp2) =>
+          val sp1 = leftMostSourcePosition(exp1)
+          val loc = mkSL(sp1, sp2)
+
+          visit(exp1, unsafe) flatMap {
+            case e => index match {
+              case ParsedAst.Literal.Int32(sp1, sign, digits, sp2) => toInt32(sign, digits, loc) flatMap {
+                case l if l >= 0 => WeededAst.Expression.VectorLoad(e, l, loc).toSuccess
+                case _ => WeederError.IllegalVectorLength(loc).toFailure
+              }
+              case _ => WeederError.IllegalVectorLength(loc).toFailure
+            }
+          }
+
+        case ParsedAst.Expression.VectorStore(exp1, indexes, exp2, sp2) =>
+          val sp1 = leftMostSourcePosition(exp1)
+          val loc = mkSL(sp1, sp2)
+
+          @@(visit(exp1, unsafe), visit(exp2, unsafe)) flatMap {
+            case (e1, e2) => val inner = indexes.init.foldLeft(e1) {
+              case (accc, e) => e match {
+                case ParsedAst.Literal.Int32(sp1, sign, digits, sp2) =>
+                  WeededAst.Expression.VectorLoad(accc, toInt32(sign, digits, loc).get, loc)
+              }
+            }
+            indexes.last match {
+              case ParsedAst.Literal.Int32(sp1, sign, digits, sp2) => toInt32(sign, digits, loc) flatMap {
+                case l if l >= 0 => WeededAst.Expression.VectorStore(inner, l, e2, loc).toSuccess
+                case _ => WeederError.IllegalVectorLength(loc).toFailure
+              }
+            }
+          }
+
+        case ParsedAst.Expression.VectorLength(sp1, exp, sp2) =>
+          visit(exp, unsafe) map {
+            case e => WeededAst.Expression.VectorLength(e, mkSL(sp1, sp2))
+          }
+
+        case ParsedAst.Expression.VectorSlice(exp1, index, optindex, sp2) =>
+          val sp1 = leftMostSourcePosition(exp1)
+          val loc = mkSL(sp1, sp2)
+
+          visit(exp1, unsafe) flatMap {
+            case e => index match {
+              case ParsedAst.Literal.Int32(sp1, sign, digits, sp2) => toInt32(sign, digits, loc) flatMap {
+                case l1 if l1 >= 0 => visit(exp1, unsafe) flatMap {
+                  case e2 => optindex match {
+                    case ParsedAst.Literal.Int32(sp1, sign, digits, sp2) => toInt32(sign, digits, loc) flatMap {
+                      case l2 if l2 > l1 => WeededAst.Expression.VectorSlice(e, l1, Some(l2), loc).toSuccess
+                      case _ => WeederError.IllegalVectorLength(loc).toFailure
+                    }
+                  }
+                  case _ => WeederError.IllegalVectorLength(loc).toFailure
+                }
+                case _ => WeederError.IllegalVectorLength(loc).toFailure
+              }
+            }
+          }
+
+        case ParsedAst.Expression.VectorSliceNoEndIndex(exp1, index, sp2) =>
+          val sp1 = leftMostSourcePosition(exp1)
+          val loc = mkSL(sp1, sp2)
+          visit(exp1, unsafe) flatMap {
+            case e => index match {
+              case ParsedAst.Literal.Int32(sp1, sign, digits, sp2) => toInt32(sign, digits, loc) flatMap {
+                case l if l >= 0 => WeededAst.Expression.VectorSlice(e, l, None, loc).toSuccess
+                case _ => WeederError.IllegalVectorLength(loc).toFailure
+              }
+              case _ => WeederError.IllegalVectorLength(loc).toFailure
+            }
+          }
+
+        case ParsedAst.Expression.VectorSliceNoStartIndex(exp1, index, sp2) =>
+          val sp1 = leftMostSourcePosition(exp1)
+          val loc = mkSL(sp1, sp2)
+          visit(exp1, unsafe) flatMap {
+            case e => index match {
+              case ParsedAst.Literal.Int32(sp1, sign, digits, sp2) => toInt32(sign, digits, loc) flatMap {
+                case l if l >= 0 => WeededAst.Expression.VectorSlice(e, 0, Some(l), loc).toSuccess
+                case _ => WeederError.IllegalVectorLength(loc).toFailure
+              }
+              case _ => WeederError.IllegalVectorLength(loc).toFailure
+            }
+          }
+
         case ParsedAst.Expression.FNil(sp1, sp2) =>
           /*
            * Rewrites a `FNil` expression into a tag expression.
@@ -1098,7 +1258,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
       @@(root.decls.map(visit)).map(_.flatten)
     }
-
   }
 
   object Types {
@@ -1111,6 +1270,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       case ParsedAst.Type.Var(sp1, ident, sp2) => WeededAst.Type.Var(ident, mkSL(sp1, sp2))
       case ParsedAst.Type.Ambiguous(sp1, qname, sp2) => WeededAst.Type.Ambiguous(qname, mkSL(sp1, sp2))
       case ParsedAst.Type.Tuple(sp1, elms, sp2) => WeededAst.Type.Tuple(elms.toList.map(weed), mkSL(sp1, sp2))
+      case ParsedAst.Type.Succ(sp1, elm, sp2) => WeededAst.Type.Succ(CheckNaturalNumber(elm, sp1, sp2), mkSL(sp1, sp2))
       case ParsedAst.Type.Native(sp1, fqn, sp2) => WeededAst.Type.Native(fqn.toList, mkSL(sp1, sp2))
       case ParsedAst.Type.Arrow(sp1, tparams, tresult, sp2) => WeededAst.Type.Arrow(tparams.toList.map(weed), weed(tresult), mkSL(sp1, sp2))
       case ParsedAst.Type.Infix(tpe1, base0, tpe2, sp2) =>
@@ -1128,7 +1288,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           case (acc, t2) => WeededAst.Type.Apply(acc, weed(t2), mkSL(sp1, sp2))
         }
     }
-
   }
 
   object Effects {
@@ -1402,6 +1561,22 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.Switch(sp1, _, _) => sp1
     case ParsedAst.Expression.Tag(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Tuple(sp1, _, _) => sp1
+    case ParsedAst.Expression.ArrayLit(sp1, _, _) => sp1
+    case ParsedAst.Expression.ArrayNew(sp1, _, _, _) => sp1
+    case ParsedAst.Expression.ArrayLoad(exp1, _, _) => leftMostSourcePosition(exp1)
+    case ParsedAst.Expression.ArrayStore(exp1, _, _, _) => leftMostSourcePosition(exp1)
+    case ParsedAst.Expression.ArrayLength(sp1, _, _) => sp1
+    case ParsedAst.Expression.ArraySlice(exp1, _, _, _) => leftMostSourcePosition(exp1)
+    case ParsedAst.Expression.ArraySliceNoEndIndex(exp1, _, _) => leftMostSourcePosition(exp1)
+    case ParsedAst.Expression.ArraySliceNoStartIndex(exp1, _, _) => leftMostSourcePosition(exp1)
+    case ParsedAst.Expression.VectorLit(sp1, _,_) => sp1
+    case ParsedAst.Expression.VectorNew(sp1,_,_,_) => sp1
+    case ParsedAst.Expression.VectorLoad(exp1,_,_) => leftMostSourcePosition(exp1)
+    case ParsedAst.Expression.VectorStore(exp1,_,_,_) => leftMostSourcePosition(exp1)
+    case ParsedAst.Expression.VectorLength(sp1,_,_) => sp1
+    case ParsedAst.Expression.VectorSlice(exp1,_,_,_) => leftMostSourcePosition(exp1)
+    case ParsedAst.Expression.VectorSliceNoEndIndex(exp1, _, _) => leftMostSourcePosition(exp1)
+    case ParsedAst.Expression.VectorSliceNoStartIndex(exp1,_,_) => leftMostSourcePosition(exp1)
     case ParsedAst.Expression.FNil(sp1, _) => sp1
     case ParsedAst.Expression.FCons(hd, _, _, _) => leftMostSourcePosition(hd)
     case ParsedAst.Expression.FAppend(fst, _, _, _) => leftMostSourcePosition(fst)
@@ -1430,6 +1605,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Type.Var(sp1, _, _) => sp1
     case ParsedAst.Type.Ambiguous(sp1, _, _) => sp1
     case ParsedAst.Type.Tuple(sp1, _, _) => sp1
+    case ParsedAst.Type.Succ(sp1, _, _) => sp1
     case ParsedAst.Type.Native(sp1, _, _) => sp1
     case ParsedAst.Type.Arrow(sp1, _, _, _) => sp1
     case ParsedAst.Type.Infix(tpe1, _, _, _) => leftMostSourcePosition(tpe1)
@@ -1452,6 +1628,13 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           DuplicateAttribute(ident.name, loc1, loc2).toFailure
       }
     })
+  }
+  private def CheckNaturalNumber(elm: ParsedAst.Literal.Int32, sp1: SourcePosition, sp2: SourcePosition) : Int = {
+     val l = toInt32(elm.sign, elm.lit, mkSL(sp1, sp2)) flatMap {
+       case l if l >= 0 => l.toSuccess
+       case _ => WeederError.IllegalVectorLength(mkSL(sp1, sp2)).toFailure
+     }
+    l.get
   }
 
   /**

@@ -159,6 +159,84 @@ object Interpreter {
       Value.Tuple(es)
 
     //
+    // ArrayLit expressions.
+    //
+    case Expression.ArrayLit(elms, tpe, _) =>
+      val es = elms.map(e => eval(e, env0, henv0, lenv0, root))
+      Value.Arr(es, tpe.typeArguments.head)
+
+    //
+    // ArrayNew expressions.
+    //
+    case Expression.ArrayNew(elm, len, tpe, _) =>
+      val e = eval(elm, env0, henv0, lenv0, root)
+      val ln = cast2int32(eval(len, env0, henv0, lenv0, root))
+      val array = new Array[AnyRef](ln)
+      for(i <- 0 until ln) {
+        array(i) = e
+      }
+      Value.Arr(array, tpe.typeArguments.head)
+
+    //
+    // ArrayLoad expressions.
+    //
+    case Expression.ArrayLoad(exp1, exp2, _, _) =>
+      val array = cast2array(eval(exp1, env0, henv0, lenv0, root))
+      val index = cast2int32(eval(exp2, env0, henv0, lenv0, root))
+      if(array.elms.length > index && index >= 0)
+        array.elms(index)
+      else
+        throw InternalRuntimeException(s"Array index out of bounds: $index  Array length: ${array.elms.length}.")
+
+    //
+    // ArrayStore expressions.
+    //
+    case Expression.ArrayStore(exp1, exp2, exp3, _, _) =>
+      val array = cast2array(eval(exp1, env0, henv0, lenv0, root))
+      val index = cast2int32(eval(exp2, env0, henv0, lenv0, root))
+      val obj = eval(exp3, env0, henv0, lenv0, root)
+      if(array.elms.length > index && index >= 0){
+        array.elms(index) = obj
+        array
+      }
+      else
+        throw InternalRuntimeException(s"Array index out of bounds: $index  Array length: ${array.elms.length}.")
+
+    //
+    // ArrayLength expressions.
+    //
+    case Expression.ArrayLength(exp, _, _) =>
+      val array = cast2array(eval(exp, env0, henv0, lenv0, root))
+      Value.Int32(array.elms.length)
+
+    //
+    // ArraySlice expressions.
+    //
+    case Expression.ArraySlice(exp1, exp2, exp3, tpe, loc) =>
+      val array = cast2array(eval(exp1, env0, henv0, lenv0, root))
+      val startIndex = cast2int32(eval(exp2, env0, henv0, lenv0, root))
+      val endIndex = cast2int32(eval(exp3, env0, henv0, lenv0, root))
+
+      if((startIndex < endIndex)){
+        val resultArray = new Array[AnyRef](endIndex - startIndex)
+
+        if(startIndex < 0)
+          throw InternalRuntimeException(s"Invalid startIndex: ${startIndex}.")
+        else if(endIndex > array.elms.length)
+          throw InternalRuntimeException(s"endIndex out of bounds: ${endIndex}    Array length: ${array.elms.length}.")
+        else {
+          for(i <- startIndex until endIndex){
+            resultArray(i - startIndex) = array.elms(i)
+          }
+          Value.Arr(resultArray,tpe.typeArguments.head)
+        }
+      }
+      else
+        throw InternalRuntimeException(s"startIndex >= endIndex, startIndex: ${startIndex}  endIndex: ${endIndex}.")
+
+
+
+    //
     // Reference expressions.
     //
     case Expression.Ref(exp, tpe, loc) =>
@@ -757,12 +835,20 @@ object Interpreter {
     case Value.BigInt(lit) => lit
     case Value.Str(lit) => lit
     case Value.Arr(elms, tpe) =>
+      // TODO: Should cases for all primitive types be added?
       tpe match {
         case Type.Str =>
           // Convert an object array to a string array.
           val result = new Array[String](elms.length)
           for (i <- elms.indices) {
-            result(i) = elms(i).asInstanceOf[String]
+            result(i) = toJava(elms(i)).asInstanceOf[String]
+          }
+          result
+        case Type.Int32 =>
+          // Convert an object array to an int array.
+          val result = new Array[Int](elms.length)
+          for (i <- elms.indices) {
+            result(i) = toJava(elms(i)).asInstanceOf[Int]
           }
           result
         case _ => throw InternalRuntimeException(s"Unable to construct array of type: '${tpe.show}'.")

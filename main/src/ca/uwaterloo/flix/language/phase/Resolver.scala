@@ -514,6 +514,80 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
             es <- seqM(elms map visit)
           } yield ResolvedAst.Expression.Tuple(es, tvar, loc)
 
+        case NamedAst.Expression.ArrayLit(elms, tvar, loc) =>
+          for {
+            es <- seqM(elms map visit)
+          } yield ResolvedAst.Expression.ArrayLit(es, tvar, loc)
+
+        case NamedAst.Expression.ArrayNew(elm, len, tvar, loc) =>
+          for {
+            e <- visit(elm)
+            ln <- visit(len)
+          } yield ResolvedAst.Expression.ArrayNew(e, ln, tvar, loc)
+
+        case NamedAst.Expression.ArrayLoad(exp1, exp2, tvar, loc) =>
+          for {
+            e1 <- visit(exp1)
+            e2 <- visit(exp2)
+          } yield ResolvedAst.Expression.ArrayLoad(e1, e2, tvar, loc)
+
+        case NamedAst.Expression.ArrayStore(exp1, exp2, exp3, tvar, loc) =>
+          for {
+            e1 <- visit(exp1)
+            e2 <- visit(exp2)
+            e3 <- visit(exp3)
+          } yield ResolvedAst.Expression.ArrayStore(e1, e2, e3, tvar, loc)
+
+        case NamedAst.Expression.ArrayLength(exp, tvar, loc) =>
+          for {
+            e <- visit(exp)
+          } yield ResolvedAst.Expression.ArrayLength(e, tvar, loc)
+
+        case NamedAst.Expression.ArraySlice(exp1, exp2, exp3, tvar, loc) =>
+          for{
+            e1 <- visit(exp1)
+            e2 <- visit(exp2)
+            e3 <- visit(exp3)
+          } yield ResolvedAst.Expression.ArraySlice(e1, e2, e3, tvar, loc)
+
+        case NamedAst.Expression.VectorLit(elms, tvar, loc) =>
+          for {
+            es <- seqM(elms map visit)
+          } yield ResolvedAst.Expression.VectorLit(es, tvar, loc)
+
+        case NamedAst.Expression.VectorNew(elm, len, tvar, loc) =>
+          for {
+            e <- visit(elm)
+          } yield ResolvedAst.Expression.VectorNew(e, len, tvar, loc)
+
+        case NamedAst.Expression.VectorLoad(exp1, index, tvar, loc) =>
+          for {
+            e <- visit(exp1)
+          } yield ResolvedAst.Expression.VectorLoad(e, index, tvar, loc)
+
+        case NamedAst.Expression.VectorStore(exp1, index, exp2, tvar, loc) =>
+          for {
+            e1 <- visit(exp1)
+            e2 <- visit(exp2)
+          } yield ResolvedAst.Expression.VectorStore(e1, index, e2, tvar, loc)
+
+        case NamedAst.Expression.VectorLength(exp, tvar, loc) =>
+          for {
+            e <- visit(exp)
+          } yield ResolvedAst.Expression.VectorLength(e, tvar, loc)
+
+        case NamedAst.Expression.VectorSlice(exp, index, optindex, tvar, loc) =>
+          optindex match {
+            case None =>
+              for {
+                e <- visit(exp)
+              } yield ResolvedAst.Expression.VectorSlice(e, index, None, tvar, loc)
+            case Some(e2) =>
+              for {
+                e1 <- visit(exp)
+              } yield ResolvedAst.Expression.VectorSlice(e1, index, Some(e2), tvar, loc)
+          }
+
         case NamedAst.Expression.Ref(exp, tvar, loc) =>
           for {
             e <- visit(exp)
@@ -1067,6 +1141,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
       case "BigInt" => Type.BigInt.toSuccess
       case "Str" => Type.Str.toSuccess
       case "Array" => Type.Array.toSuccess
+      case "Vector" => Type.Vector.toSuccess
       case "Native" => Type.Native.toSuccess
       case "Ref" => Type.Ref.toSuccess
 
@@ -1099,6 +1174,9 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
       for (
         elms <- seqM(elms0.map(tpe => lookupType(tpe, ns0, prog0)))
       ) yield Type.mkTuple(elms)
+
+    case NamedAst.Type.Succ(len, loc) => Type.Succ(len, Type.Zero).toSuccess
+
     case NamedAst.Type.Native(fqn, loc) =>
       // TODO: needs more precise type.
       Type.Native.toSuccess

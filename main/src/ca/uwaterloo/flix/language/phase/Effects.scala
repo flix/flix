@@ -344,8 +344,138 @@ object Effects extends Phase[Root, Root] {
             }
             Expression.Tuple(elms, tpe, eff, loc)
           }
+        
+        /**
+          * ArrayLit Expression.
+          */
+        case Expression.ArrayLit(elms, tpe, _, loc) =>
+          for {
+            es <- seqM(elms.map(e => visitExp(e, env0)))
+          } yield {
+            val eff = es.foldLeft(ast.Eff.Bot) {
+              case(eacc, e) => eacc seq e.eff
+            }
+            Expression.ArrayLit(elms, tpe, eff, loc)
+          }
 
         /**
+          * ArrayNew Expression.
+          */
+        case Expression.ArrayNew(elm, len, tpe, _, loc) =>
+          for {
+            e <- visitExp(elm, env0)
+            ln <- visitExp(len, env0)
+          } yield {
+            val eff = elm.eff seq len.eff
+            Expression.ArrayNew(e, ln, tpe, eff, loc)
+          }
+
+
+        /**
+          * ArrayLoad Expression.
+          */
+        case Expression.ArrayLoad(exp1, exp2, tpe, _, loc) =>
+          for {
+            e1 <- visitExp(exp1, env0)
+            e2 <- visitExp(exp2, env0)
+          } yield {
+            val eff = exp1.eff seq exp2.eff
+            Expression.ArrayLoad(e1, e2, tpe, eff, loc)
+          }
+
+        /**
+          * ArrayStore Expression.
+          */
+        case Expression.ArrayStore(exp1, exp2, exp3, tpe, _, loc) =>
+          for {
+          e1 <- visitExp(exp1, env0)
+          es2 <- visitExp(exp2, env0)
+          e3 <- visitExp(exp3, env0)
+        } yield {
+          val eff = exp1.eff seq exp2.eff seq  exp3.eff
+          Expression.ArrayStore(e1, es2, e3, tpe, eff, loc)
+        }
+
+        /**
+          * ArrayLength Expression.
+          */
+        case Expression.ArrayLength(exp, tpe, _, loc) =>
+          for {
+            e <- visitExp(exp, env0)
+          } yield {
+            val eff = exp.eff
+            Expression.ArrayLength(e, tpe, eff, loc)
+          }
+
+        /**
+          * ArraySlice Expression.
+          */
+        case Expression.ArraySlice(exp1, exp2, exp3, tpe, _, loc) =>
+          for {
+            e1 <- visitExp(exp1, env0)
+            e2 <- visitExp(exp2, env0)
+            e3 <- visitExp(exp3, env0)
+          } yield {
+            val eff = exp1.eff seq exp2.eff seq  exp3.eff
+            Expression.ArraySlice(e1, e2, e3, tpe, eff, loc)
+          }
+
+        /**
+          * VectorLit Expression.
+          */
+        case Expression.VectorLit(elms, tpe, _, loc) =>
+          for (
+            es <- seqM(elms.map(e => visitExp(e, env0)))
+          ) yield {
+            val eff = es.foldLeft(ast.Eff.Bot) {
+              case (eacc, e) => eacc seq e.eff
+            }
+            Expression.VectorLit(elms, tpe, eff, loc)
+          }
+
+        case Expression.VectorNew(elm, len, tpe, _, loc) =>
+          for {
+            e <- visitExp(elm, env0)
+          } yield {
+            val eff = elm.eff
+            Expression.VectorNew(e, len, tpe, eff, loc)
+          }
+
+        case Expression.VectorLoad(exp1, index, tpe, _, loc) =>
+          for {
+            e <- visitExp(exp1, env0)
+          } yield {
+            val eff = exp1.eff
+            Expression.VectorLoad(e, index, tpe, eff, loc)
+          }
+
+        case Expression.VectorStore(exp1, index, exp2, tpe, _, loc) =>
+          for {
+            e <- visitExp(exp1, env0)
+            e2 <- visitExp(exp2, env0)
+          } yield {
+            val eff = exp1.eff seq exp2.eff
+            Expression.VectorStore(e, index, e2, tpe, eff, loc)
+          }
+
+        case Expression.VectorLength(exp, tpe, _, loc) =>
+          for {
+            e <- visitExp(exp, env0)
+          } yield {
+            val eff = exp.eff
+            Expression.VectorLength(e, tpe, eff, loc)
+          }
+
+        case Expression.VectorSlice(exp1, index1, expIndex2, tpe, _, loc) =>
+          for {
+            e <- visitExp(exp1, env0)
+            e3 <- visitExp(expIndex2, env0)
+          } yield {
+            val eff = exp1.eff seq expIndex2.eff
+            Expression.VectorSlice(e, index1, e3, tpe, eff, loc)
+          }
+          
+            /**
           * Reference Expression.
           */
         case Expression.Ref(exp, tpe, eff, loc) =>
