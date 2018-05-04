@@ -931,22 +931,14 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
             objectType <- unifyM(recievedObjectType, elmVar, loc);
             resultType <- unifyM(tvar, Type.Unit, loc)
           ) yield resultType
-          /*
-              recievedBaseType <- visitExp(exp1);
-            recievedIndexType <- visitExp(exp2);
-            recievedObjectType <- visitExp(exp3);
-            arrayType <- unifyM(recievedBaseType, Type.mkArray(elementType), loc);
-            indexType <- unifyM(recievedIndexType, Type.Int32, loc);
-            objectType <- unifyM(recievedObjectType, elementType, loc);
-            resultType <- unifyM(tvar, Type.Unit, loc)
-*/
+
         case ResolvedAst.Expression.VectorLength(exp, tvar, loc) =>
           //
           // exp: t  n: Int
           // -------------
           // exp[|n|] : Int
           //
-          val freshResultType = Type.freshTypeVar();
+          val freshResultType = Type.freshTypeVar()
           val freshVar = Type.freshTypeVar()
           for(
             tpe <- visitExp(exp);
