@@ -23,7 +23,7 @@ def testArrayStore07(): Unit = let x = [false]; x[0] = true
 def testArrayStore08(): Unit = let x = [true, false]; x[1] = true
 
 @test
-def testArrayStore9(): Unit = let x = [false, true, false]; x[2] = false
+def testArrayStore09(): Unit = let x = [false, true, false]; x[2] = false
 
 @test
 def testArrayStore10(): Unit = let x = [false, false, false, false, true]; x[3] = true
@@ -58,14 +58,14 @@ def testArrayStore19(): Unit = let x = [1i16, 2i16, 3i16]; x[1] = 42i16
 @test
 def testArrayStore20(): Unit = let x = [1i16,2i16,3i16,4i16]; x[2] = 42i16
 
-@test
+/*@test
 def testArrayStore21(): Unit = let x = [1i64]; x[0] = 42i64
 
 @test
 def testArrayStore22(): Unit = let x = [1i64, 2i64, 3i64]; x[1] = 42i64
 
 @test
-def testArrayStore23(): Unit = let x = [1i64,2i64,3i64,4i64]; x[2] = 42i64
+def testArrayStore23(): Unit = let x = [1i64,2i64,3i64,4i64]; x[2] = 42i64*/
 
 @test
 def testArrayStore24(): Unit = let x = [1.0f32]; x[0] = 42.0f32

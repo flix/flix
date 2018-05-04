@@ -1,8 +1,5 @@
-/* Fejler
 @test
 def testArrayLength01(): Int = let x = []; length[x]
-*/
-
 
 @test
 def testArrayLength02(): Int = let x = [1]; length[x]
@@ -64,6 +61,7 @@ def testArrayLength20(): Int = let x = [1i16, 2i16, 3i16]; length[x]
 @test
 def testArrayLength21(): Int = let x = [1i16,2i16,3i16,4i16]; length[x]
 
+
 @test
 def testArrayLength22(): Int = let x = [1i64]; length[x]
 
@@ -72,6 +70,7 @@ def testArrayLength23(): Int = let x = [1i64, 2i64, 3i64]; length[x]
 
 @test
 def testArrayLength24(): Int = let x = [1i64,2i64,3i64,4i64]; length[x]
+
 
 @test
 def testArrayLength25(): Int = let x = [1.0f32]; length[x]

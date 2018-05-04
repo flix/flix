@@ -23,7 +23,7 @@ def testArrayLoad07(): Bool = let x = [false]; x[0]
 def testArrayLoad08(): Bool = let x = [true, false]; x[1]
 
 @test
-def testArrayLoad9(): Bool = let x = [false, true, false]; x[2]
+def testArrayLoad09(): Bool = let x = [false, true, false]; x[2]
 
 @test
 def testArrayLoad10(): Bool = let x = [false, false, false, false, true]; x[3]
@@ -108,3 +108,118 @@ def testArrayLoad36(): Int = let x = [[1,2,3,4,5], [2]]; x[0][3]
 
 @test
 def testArrayLoad37(): Int = let x = [[1,2,3], [1,2,3], [1,2,3]]; x[2][2]
+
+@test
+def testArrayLoad38(): Bool = let x = [[true,false,true]]; x[0] [2]
+
+@test
+def testArrayLoad39(): Bool = let x = [[true,true], [true,false]]; x[1] [1]
+
+@test
+def testArrayLoad40(): Bool = let x = [[true], [true,false,true,false]]; x[1] [2]
+
+@test
+def testArrayLoad41(): Bool = let x = [[true,false,true], [true,false,true], [true,false,true]]; x[2] [2]
+
+@test
+def testArrayLoad42(): Char = let x = [['a','b','c']]; x[0][1]
+
+@test
+def testArrayLoad43(): Char = let x = [['a','b'], ['a','b']]; x[1][1]
+
+@test
+def testArrayLoad44(): Char = let x = [['a'], ['a','b','c','d','e']]; x[1][1]
+
+@test
+def testArrayLoad45(): Char = let x = [['a','b','c','d','e'], ['a']]; x[0][3]
+
+@test
+def testArrayLoad46(): Char = let x = [['a','b','c'], ['a','b','c'], ['a','b','c']]; x[2][1]
+
+@test
+def testArrayLoad47(): Int8 = let x = [[1i8,2i8,3i8]]; x[0][1]
+
+@test
+def testArrayLoad48(): Int8 = let x = [[1i8,2i8], [1i8,2i8]]; x[1][0]
+
+@test
+def testArrayLoad49(): Int8 = let x = [[1i8,2i8,3i8,4i8],[1i8]]; x[0][3]
+
+@test
+def testArrayLoad50(): Int8 = let x = [[1i8], [1i8,2i8,3i8,4i8]]; x[1][3]
+
+@test
+def testArrayLoad51(): Int8 = let x = [[1i8,2i8,3i8], [1i8,2i8,3i8], [1i8,2i8,3i8]]; x[2][2]
+
+@test
+def testArrayLoad52(): Int16 = let x = [[1i16,2i16,3i16]]; x[0][1]
+
+@test
+def testArrayLoad53(): Int16 = let x = [[1i16,2i16], [1i16,2i16]]; x[1][1]
+
+@test
+def testArrayLoad54(): Int16 = let x = [[1i16,2i16,3i16,4i16], [1i16]]; x[0][1]
+
+@test
+def testArrayLoad55(): Int16 = let x = [[1i16], [1i16,2i16,3i16,4i16]]; x[1][1]
+
+@test
+def testArrayLoad56(): Int16 = let x = [[1i16,2i16,3i16], [1i16,2i16,3i16], [1i16,2i16,3i16]]; x[1][2]
+
+@test
+def testArrayLoad57(): Int64 = let x = [[1i64,2i64,3i64]]; x[0][2]
+
+@test
+def testArrayLoad58(): Int64 = let x = [[1i64,2i64], [1i64,2i64]]; x[1][1]
+
+@test
+def testArrayLoad59(): Int64 = let x = [[1i64], [1i64,2i64,3i64,4i64]]; x[1][2]
+
+@test
+def testArrayLoad60(): Int64 = let x = [[1i64,2i64,3i64,4i64], [1i64]]; x[1][0]
+
+@test
+def testArrayLoad61(): Int64 = let x = [[1i64,2i64,3i64], [1i64,2i64,3i64], [1i64,2i64,3i64]]; x[2][0]
+
+@test
+def testArrayLoad62(): Float32 = let x = [[1.0f32,2.0f32,3.0f32]]; x[0][0]
+
+@test
+def testArrayLoad63(): Float32 = let x = [[1.0f32,2.0f32], [1.0f32,2.0f32]]; x[1][1]
+
+@test
+def testArrayLoad64(): Float32 = let x = [[1.0f32], [1.0f32,2.0f32,3.0f32,4.0f32]]; x[1][2]
+
+@test
+def testArrayLoad65(): Float32 = let x = [[1.0f32,2.0f32,3.0f32,4.0f32], [1.0f32]]; x[0][2]
+
+@test
+def testArrayLoad66(): Float32 = let x = [[1.0f32,2.0f32,3.0f32], [1.0f32,2.0f32,3.0f32], [1.0f32,2.0f32,3.0f32]]; x[2][2]
+
+@test
+def testArrayLoad67(): Float64 = let x = [[1.0f64,2.0f64,3.0f64]]; x[0][0]
+
+@test
+def testArrayLoad68(): Float64 = let x = [[1.0f64,2.0f64], [1.0f64,2.0f64]]; x[1][1]
+
+@test
+def testArrayLoad69(): Float64 = let x = [[1.0f64,2.0f64,3.0f64,4.0f64], [1.0f64]]; x[0][1]
+
+@test
+def testArrayLoad70(): Float64 = let x = [[1.0f64,2.0f64,3.0f64], [1.0f64,2.0f64,3.0f64], [1.0f64,2.0f64,3.0f64]]; x[2][2]
+
+@test
+def testArrayLoad71(): Str = let x = [["Hello","Hello","Hello"]]; x[0][0]
+
+@test
+def testArrayLoad72(): Str = let x = [["Hello", "Hello"], ["World", "World"]]; x[1][1]
+
+@test
+def testArrayLoad73(): Str = let x = [["Hello"], ["World", "World", "World", "World"]]; x[1][3]
+
+@test
+def testArrayLoad74(): Str = let x = [["World", "World", "World", "World"], ["Hello"]]; x[0][3]
+
+@test
+def testArrayLoad75(): Str = let x = [["World", "World", "World"], ["World", "World", "World"], ["World", "World", "World"]]; x[1][2]
+
