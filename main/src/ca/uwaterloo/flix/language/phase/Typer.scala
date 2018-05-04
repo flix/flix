@@ -946,7 +946,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
             resultType <- unifyM(freshResultType, Type.Int32, loc)
           ) yield resultType
 
-        case ResolvedAst.Expression.VectorSlice(exp, index, optindex, tvar, loc) =>
+        case ResolvedAst.Expression.VectorSlice(exp, index1, optindex2, tvar, loc) =>
           //
           //  exp1 : Vector[t, n]   exp2 : Int   exp3 : Int   n: Int
           //  -------------------------------------------------------
@@ -955,20 +955,19 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           val freshIndexVar = Type.freshTypeVar()
           val freshIndexVar2 = Type.freshTypeVar()
           val freshTypeVar = Type.freshTypeVar()
-          optindex match {
+          optindex2 match {
             case None =>
               for(
                 tpe <- visitExp(exp);
-                firstIndex <- unifyM(tpe, Type.mkVector(freshTypeVar, Type.Succ(index, freshIndexVar)), loc);
+                firstIndex <- unifyM(tpe, Type.mkVector(freshTypeVar, Type.Succ(index1, freshIndexVar)), loc);
                 resultType <- unifyM(tvar, Type.mkVector(freshTypeVar, freshIndexVar), loc)
               ) yield resultType
-
             case Some(index2) =>
               for(
                 tpe <- visitExp(exp);
-                firstIndex <- unifyM(tpe, Type.mkVector(freshTypeVar, Type.Succ(index, freshIndexVar)), loc);
+                firstIndex <- unifyM(tpe, Type.mkVector(freshTypeVar, Type.Succ(index1, freshIndexVar)), loc);
                 secondIndex <- unifyM(tpe, Type.mkVector(freshTypeVar, Type.Succ(index2-1, freshIndexVar2)), loc);
-                resultType <- unifyM(tvar, Type.mkVector(freshTypeVar, Type.Succ(index2-index, Type.Zero)), loc)
+                resultType <- unifyM(tvar, Type.mkVector(freshTypeVar, Type.Succ(index2-index1, Type.Zero)), loc)
               ) yield resultType
           }
 
