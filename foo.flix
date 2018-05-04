@@ -1,11 +1,8 @@
-// ArrayLit
-/*
-def f() : Array[Int] = {
- //let x = [(1,2,3), (1,2,3), (1,2,3)];
- let x = [1,2,3,4,5];
- x
+def f() : Int = {
+ let x = [10i64;10];
+ let _ = x[1] = 10i64;
+ 2
 }
-*/
 
 // ArrayNew
 /*
@@ -18,8 +15,8 @@ def f() : Array[Bool] = {
 
 // ArrayLoad
 /*
-def f() : Int = {
-  let x = [1,2,3,4,5,6];
+def f() : Array[Int] = {
+  let x = [[1,2,3], [1,2,3], [1,2,3]];
   x[2]
 }
 */
@@ -27,28 +24,30 @@ def f() : Int = {
 
 // ArrayStore
 /*
-def f() : Array[Int] = {
+def f() : Int = {
   let x = [1,2,3,4,5];
-  //let _ = x[1] = 100;
-  x
+  let _ = x[1] = 100;
+  x[1]
 }
 */
 
 //ArrayLength
 /*
 def f() : Int = {
-  let x = [1,2,3,4];
+  let x = [1,2,3,4,5];
   length[x]
 }
 */
 
 
 //ArraySlice
-
-/*def f() : Array[Int] = {
-  let x = [1,2,3];
-  x[0..2]
-}*/
+/*
+def f() : Int = {
+  let x = [1,2,3,4,5];
+  let y = x[0..2];
+  y[1]
+}
+*/
 
 
 // VectorLit
@@ -80,11 +79,11 @@ def f() : Int = {
 */
 
 // VectorLit
-/*
-def f() : Vector[Int, 5] = {
-  let x = [|1,2,3,4,5|];
+
+def f() : Array[Unit] = {
+  let x = [];
   x
-}*/
+}
 
 
 // VectorNew
@@ -105,9 +104,10 @@ def f() : Int = {
 
 // VectorStore
 /*
-def f() : Unit = {
+def f() : Int = {
   let x = [|10;10|];
-  x[|9|] = 2
+  let _ = x[|9|] = 2;
+  x[|9|]
 }*/
 
 
@@ -119,8 +119,8 @@ def f() : Int = {
   length[|x|]
 }*/
 
-/*
-def f() : Int = {
+
+/*def f() : Int = {
   let x = [|1, 2, 3|];
   length[|x|]
 }
@@ -128,11 +128,16 @@ def f() : Int = {
 
 // VectorSlice
 /*
-def f() : Vector[Int, 2] = {
-  let x = [|5;5|];
-  x[|3..|]
-}
-*/
+def f() : Vector[Str,10] = {
+  let x = [|"Hello";10|];
+  let y = x[|3..|] : Vector[Str, 5];
+  y[|1..11|]
+}*/
+
+  //let y = x[|3..|];
+  //y[|1..11|]
+//}
+
 
 /*
 def f() : Vector[Int, 6] = {

@@ -1,5 +1,5 @@
 @test
-def testArraySliceNoStartIndexNoStartIndex01(): Array[Int] = let x = [1, 2, 3]; x[..2]
+def testArraySliceNoStartIndex01(): Array[Int] = let x = [1, 2, 3]; x[..2]
 
 @test
 def testArraySliceNoStartIndex02(): Array[Int] = let x = [1,2,3,4]; x[..3]
@@ -14,7 +14,7 @@ def testArraySliceNoStartIndex04(): Array[Int] = let x = [1,2]; x[..2]
 def testArraySliceNoStartIndex05(): Array[Bool] = let x = [true, false]; x[..1]
 
 @test
-def testArraySliceNoStartIndex06(): Array[Bool] = let x = [false, true, false]; x[..4]
+def testArraySliceNoStartIndex06(): Array[Bool] = let x = [false, true, false]; x[..3]
 
 @test
 def testArraySliceNoStartIndex07(): Array[Bool] = let x = [false, false, false, false, true]; x[..3]
@@ -62,7 +62,7 @@ def testArraySliceNoStartIndex20(): Array[Float64] = let x = [1.0f64,2.0f64,3.0f
 def testArraySliceNoStartIndex21(): Array[Str] = let x = ["Hello", "World"]; x[..2]
 
 @test
-def testArraySliceNoStartIndex22(): Array[Str] = let x = ["World", "Hello", "World"]; x[..4]
+def testArraySliceNoStartIndex22(): Array[Str] = let x = ["World", "Hello", "World"]; x[..3]
 
 @test
 def testArraySliceNoStartIndex23(): Array[Array[Int]] = let x = [[1,2], [1,2]]; x[..2]
@@ -75,6 +75,3 @@ def testArraySliceNoStartIndex25(): Array[Array[Int]] = let x = [[1,2,3,4,5], [2
 
 @test
 def testArraySliceNoStartIndex26(): Array[Array[Int]] = let x = [[1,2,3], [1,2,3], [1,2,3]]; x[..3]
-
-@test
-def testArraySliceNoStartIndex27(): Array[Int] = let x = [1,2,3,4,5,6,7,8,9,10]; x[..length[x]]

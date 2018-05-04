@@ -416,33 +416,45 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         SimplifiedAst.Expression.ArraySlice(e1, e2, e3, tpe, loc)
 
       case TypedAst.Expression.VectorLit(elms, tpe, eff, loc) =>
+        val e = elms map visitExp
+        /*val t = if(elms.isEmpty) {
+          Type.mkArray(Type.freshTypeVar())
+        }
+        else{
+         Type.mkArray(elms.head.tpe)
+        }*/
         SimplifiedAst.Expression.ArrayLit(elms map visitExp, tpe, loc)
+
 
       case TypedAst.Expression.VectorNew(elm, len, tpe, eff, loc) =>
         val e = visitExp(elm)
-        SimplifiedAst.Expression.ArrayNew(e, SimplifiedAst.Expression.Int32(len), tpe, loc)
+        val t = Type.mkArray(elm.tpe)
+        SimplifiedAst.Expression.ArrayNew(e, SimplifiedAst.Expression.Int32(len), t, loc)
 
       case TypedAst.Expression.VectorLoad(exp1, exp2, tpe, eff, loc) =>
-        val e = visitExp(exp1)
-        SimplifiedAst.Expression.ArrayLoad(e, SimplifiedAst.Expression.Int32(exp2), tpe, loc)
+        val e = exp1.tpe match {
+          case Type.Apply(Type.Apply(Type.Vector, t), _) => Type.mkArray(t)
+        }
+        val e1 = visitExp(exp1)
+        SimplifiedAst.Expression.ArrayLoad(e1, SimplifiedAst.Expression.Int32(exp2), tpe, loc)
 
-      /*case TypedAst.Expression.VectorStore(exp1, exp2, exp3, tpe, eff, loc) =>
+      case TypedAst.Expression.VectorStore(exp1, exp2, exp3, tpe, eff, loc) =>
         val e1 = visitExp(exp1)
         val e3 = visitExp(exp3)
-        SimplifiedAst.Expression.ArrayStore(e1, SimplifiedAst.Expression.Int32(exp2), e3, tpe, loc)*/
+        SimplifiedAst.Expression.ArrayStore(e1, SimplifiedAst.Expression.Int32(exp2), e3, tpe, loc)
 
       case TypedAst.Expression.VectorLength(exp, tpe, eff, loc) =>
         val e = visitExp(exp)
         SimplifiedAst.Expression.ArrayLength(e, tpe, loc)
 
-      case TypedAst.Expression.VectorSlice(exp1, exp2, exp3, tpe, eff, loc) =>
-        val e = visitExp(exp1)
-        val e3 = visitExp(exp3)
-        val len = exp1.tpe match {
+      case TypedAst.Expression.VectorSlice(exp, index1, expIndex2, tpe, eff, loc) =>
+        val e = visitExp(exp)
+        val e3 = visitExp(expIndex2)
+        /*val len = exp1.tpe match {
           case Type.Apply(Type.Apply(Type.Vector, _), Type.Succ(n, _)) => n
           case _ => throw InternalCompilerException("Unexpected type: " + exp1.tpe)
-        }
-        SimplifiedAst.Expression.ArraySlice(e, SimplifiedAst.Expression.Int32(exp2), e3, tpe, loc)
+        }*/
+        SimplifiedAst.Expression.ArraySlice(e, SimplifiedAst.Expression.Int32(index1), e3, tpe, loc)
 
       case TypedAst.Expression.Ref(exp, tpe, eff, loc) =>
         val e = visitExp(exp)
