@@ -61,14 +61,14 @@ def testVectorLoad20(): Int16 = let x = [|3i16 ; 3|]; x [|1|]
 @test
 def testVectorLoad21(): Int16 = let x = [|4i16 ; 4|]; x[|2|]
 
-@test
+/*@test
 def testVectorLoad22(): Int64 = let x = [|1i64 ; 1|]; x[|0|]
 
 @test
 def testVectorLoad23(): Int64 = let x = [|3i64 ; 3|]; x[|1|]
 
 @test
-def testVectorLoad24(): Int64 = let x = [|4i64 ; 4|]; x[|3|]
+def testVectorLoad24(): Int64 = let x = [|4i64 ; 4|]; x[|3|]*/
 
 @test
 def testVectorLoad25(): Float32 = let x = [|1.0f32 ; 1|]; x[|0|]

@@ -131,7 +131,7 @@ object AsmOps {
     case JvmType.Reference(_) => "[Ljava/lang/Object;"
   }
 
-  def getArratFillType(tpe: JvmType): String = tpe match {
+  def getArrayFillType(tpe: JvmType): String = tpe match {
     case JvmType.Void => throw InternalCompilerException(s"Unexpected type $tpe")
     case JvmType.PrimBool => "([ZZ)V"
     case JvmType.PrimChar =>  "([CC)V"

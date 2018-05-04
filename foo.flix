@@ -1,8 +1,7 @@
-def f() : Int64 = {
- let x = [10i64;10];
- let _ = x[1] = 5i64;
- //x[2]
- x[1]
+
+def f() : Int = {
+ let x = [[10ii;0];10];
+ length[x]
 }
 
 // ArrayNew
@@ -80,9 +79,8 @@ def f() : Unit = {
 }*/
 
 // VectorLit
-/*
-def f() : Vector[Vector[Int, 5], 5] = {
-  let x = [|[|5;5|];5|];
+/*def f() : Vector[Int, 2] = {
+  let x = [|1,2|];
   x
 }*/
 
@@ -98,8 +96,9 @@ def f() : Vector[Unit, 0] = {
 /*
 def f() : Int = {
   let x = [|10;10|];
-  x[|9|]
-}*/
+  length[|x|]
+}
+*/
 
 
 // VectorStore
