@@ -125,7 +125,7 @@ object AsmOps {
     case JvmType.PrimByte => "[B"
     case JvmType.PrimShort =>  "[S"
     case JvmType.PrimInt => "[I"
-    case JvmType.PrimLong => "[L"
+    case JvmType.PrimLong => "[J"
     case JvmType.PrimFloat => "[F"
     case JvmType.PrimDouble => "[D"
     case JvmType.Reference(_) => "[Ljava/lang/Object;"
