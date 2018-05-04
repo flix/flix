@@ -898,7 +898,6 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           // --------------------------
           // [|elm ; n |] : Vector[t, n]
           //
-          val freshVar = Type.freshTypeVar()
           for (
             tpe <- visitExp(elm);
             resultType <- unifyM(tvar, Type.mkVector(tpe, Type.Succ(len, Type.Zero)), loc)
@@ -1353,12 +1352,11 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
            * VectorSlice expression.
            */
         case ResolvedAst.Expression.VectorSlice(exp1, index, optindex, tvar, loc) =>
+          val e = visitExp(exp1, subst0)
           optindex match {
             case None =>
-              val e = visitExp(exp1, subst0)
               TypedAst.Expression.VectorSlice(e, index, TypedAst.Expression.VectorLength(e, subst0(tvar), Eff.Bot, loc), subst0(tvar), Eff.Bot, loc)
             case Some(index2) =>
-              val e = visitExp(exp1, subst0)
               TypedAst.Expression.VectorSlice(e, index, TypedAst.Expression.Int32(index2, loc), subst0(tvar), Eff.Bot, loc)
           }
 

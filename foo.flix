@@ -80,11 +80,11 @@ def f() : Int = {
 */
 
 // VectorLit
-/*
+
 def f() : Vector[Int, 5] = {
   let x = [|1,2,3,4,5|];
   x
-}*/
+}
 
 
 // VectorNew
@@ -105,9 +105,10 @@ def f() : Int = {
 
 // VectorStore
 /*
-def f() : Unit = {
+def f() : Int = {
   let x = [|10;10|];
-  x[|9|] = 2
+  let _ = x[|9|] = 2;
+  x[|9|]
 }*/
 
 
@@ -128,9 +129,10 @@ def f() : Int = {
 
 // VectorSlice
 /*
-def f() : Vector[Int, 2] = {
-  let x = [|5;5|];
-  x[|3..|]
+def f() : Vector[Int,10] = {
+  let x = [|10;10|];
+  let y = x[|3..10|];
+  y[|1..11|]
 }
 */
 
