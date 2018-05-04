@@ -61,14 +61,14 @@ def testVectorNew20(): Vector[Int16, 3] = [|3i16 ; 3|]
 @test
 def testVectorNew21(): Vector[Int16, 4] = [|4i16 ; 4|]
 
-//@test
-//def testVectorNew22(): Vector[Int64, 1] = [|1i64 ; 1|]
-//
-//@test
-//def testVectorNew23(): Vector[Int64, 3] = [|3i64 ; 3|]
-//
-//@test
-//def testVectorNew24(): Vector[Int64, 4] = [|4i64 ; 4|]
+@test
+def testVectorNew22(): Vector[Int64, 1] = [|1i64 ; 1|]
+
+@test
+def testVectorNew23(): Vector[Int64, 3] = [|3i64 ; 3|]
+
+@test
+def testVectorNew24(): Vector[Int64, 4] = [|4i64 ; 4|]
 
 @test
 def testVectorNew25(): Vector[Float32, 1] = [|1.0f32 ; 1|]
@@ -79,14 +79,14 @@ def testVectorNew26(): Vector[Float32, 3] = [|3.0f32 ; 3|]
 @test
 def testVectorNew27(): Vector[Float32, 4] = [|3.0f32 ; 4|]
 
-//@test
-//def testVectorNew28(): Vector[Float64, 1] = [|1.0f64 ; 1|]
-//
-//@test
-//def testVectorNew29(): Vector[Float64, 3] = [|3.0f64 ; 3|]
-//
-//@test
-//def testVectorNew30(): Vector[Float64, 4] = [|4.0f64 ; 4|]
+@test
+def testVectorNew28(): Vector[Float64, 1] = [|1.0f64 ; 1|]
+
+@test
+def testVectorNew29(): Vector[Float64, 3] = [|3.0f64 ; 3|]
+
+@test
+def testVectorNew30(): Vector[Float64, 4] = [|4.0f64 ; 4|]
 
 @test
 def testVectorNew31(): Vector[Str, 1] = [|"Hello" ; 1|]
@@ -97,6 +97,7 @@ def testVectorNew32(): Vector[Str, 2] = [|"World" ; 2|]
 @test
 def testVectorNew33(): Vector[Str, 3] = [|"World" ; 3|]
 
+/*
 @test
 def testVectorNew34(): Vector[Vector[Int, 3], 1] = [| [|1,2,3|] ; 1 |]
 
@@ -107,4 +108,4 @@ def testVectorNew35(): Vector[Vector[Int, 2], 2] = [| [|1,2|] ; 2|]
 def testVectorNew36(): Vector[Vector[Int, 3], 3] = [| [|1,2,3|] ; 3|]
 
 @test
-def testVectorNew37(): Vector[Vector[Int, 2], 2] = [| [| 2 ; 2|] ; 2 |]
+def testVectorNew37(): Vector[Vector[Int, 2], 2] = [| [| 2 ; 2|] ; 2 |]*/

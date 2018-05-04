@@ -61,7 +61,6 @@ def testArrayLength20(): Int = let x = [1i16, 2i16, 3i16]; length[x]
 @test
 def testArrayLength21(): Int = let x = [1i16,2i16,3i16,4i16]; length[x]
 
-
 @test
 def testArrayLength22(): Int = let x = [1i64]; length[x]
 
@@ -70,7 +69,6 @@ def testArrayLength23(): Int = let x = [1i64, 2i64, 3i64]; length[x]
 
 @test
 def testArrayLength24(): Int = let x = [1i64,2i64,3i64,4i64]; length[x]
-
 
 @test
 def testArrayLength25(): Int = let x = [1.0f32]; length[x]
@@ -113,3 +111,6 @@ def testArrayLength37(): Int = let x = [[1,2,3,4,5], [2]]; length[x]
 
 @test
 def testArrayLength38(): Int = let x = [[1,2,3], [1,2,3], [1,2,3]]; length[x]
+
+
+
