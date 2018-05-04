@@ -700,7 +700,7 @@ object GenExpression {
       } // ArrayRef
       visitor.visitInsn(DUP)// Arrayref - ArrayRef (DUP)
       compileExpression(elm, visitor, currentClass, lenv0, entryPoint) // Arrayref - ArrayRef - value
-      val arrayFillType = AsmOps.getArratFillType(jvmType)
+      val arrayFillType = AsmOps.getArrayFillType(jvmType)
       visitor.visitMethodInsn(Opcodes.INVOKESTATIC, "java/util/Arrays", "fill", arrayFillType, false);
 
     case Expression.ArrayLoad(exp1, exp2, tpe, loc) =>
@@ -734,7 +734,7 @@ object GenExpression {
       val jvmType = JvmOps.getErasedJvmType(JvmOps.getArrayInnerType(exp.tpe))
       compileExpression(exp, visitor, currentClass, lenv0, entryPoint) // ArrayRef
       // Cast the object to Array
-      visitor.visitTypeInsn(CHECKCAST, AsmOps.getCheckCastType(jvmType))
+      visitor.visitTypeInsn(CHECKCAST, AsmOps.getCheckCastType(jvmType)) // ArrayRef
       visitor.visitInsn(ARRAYLENGTH) // Length
 
     case Expression.ArraySlice(exp1, exp2, exp3, tpe, loc) =>

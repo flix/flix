@@ -1,4 +1,7 @@
 @test
+def testVectorLength01(): Int = let x = [||]; length[|x|]
+
+@test
 def testVectorLength02(): Int = let x = [|1|]; length[|x|]
 
 @test

@@ -58,14 +58,14 @@ def testArrayLoad19(): Int16 = let x = [1i16, 2i16, 3i16]; x[1]
 @test
 def testArrayLoad20(): Int16 = let x = [1i16,2i16,3i16,4i16]; x[2]
 
-/*@test
+@test
 def testArrayLoad21(): Int64 = let x = [1i64]; x[0]
 
 @test
 def testArrayLoad22(): Int64 = let x = [1i64, 2i64, 3i64]; x[1]
 
 @test
-def testArrayLoad23(): Int64 = let x = [1i64,2i64,3i64,4i64]; x[2]*/
+def testArrayLoad23(): Int64 = let x = [1i64,2i64,3i64,4i64]; x[2]
 
 @test
 def testArrayLoad24(): Float32 = let x = [1.0f32]; x[0]

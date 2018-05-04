@@ -421,9 +421,9 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
           Type.mkArray(Type.freshTypeVar())
         }
         else{
-         Type.mkArray(elms.head.tpe)
         }*/
-        SimplifiedAst.Expression.ArrayLit(elms map visitExp, tpe, loc)
+        val t = Type.mkArray(elms.head.tpe)
+        SimplifiedAst.Expression.ArrayLit(elms map visitExp, t, loc)
 
 
       case TypedAst.Expression.VectorNew(elm, len, tpe, eff, loc) =>
