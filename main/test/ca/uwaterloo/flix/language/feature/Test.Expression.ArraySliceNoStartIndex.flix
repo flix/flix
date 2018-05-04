@@ -1,5 +1,5 @@
 @test
-def testArraySliceNoStartIndexNoStartIndex01(): Array[Int] = let x = [1, 2, 3]; x[..2]
+def testArraySliceNoStartIndex01(): Array[Int] = let x = [1, 2, 3]; x[..2]
 
 @test
 def testArraySliceNoStartIndex02(): Array[Int] = let x = [1,2,3,4]; x[..3]

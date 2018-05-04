@@ -416,11 +416,14 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         SimplifiedAst.Expression.ArraySlice(e1, e2, e3, tpe, loc)
 
       case TypedAst.Expression.VectorLit(elms, tpe, eff, loc) =>
-        SimplifiedAst.Expression.ArrayLit(elms map visitExp, tpe, loc)
+        val e = elms map visitExp
+        val t = Type.mkArray(elms.head.tpe)
+        SimplifiedAst.Expression.ArrayLit(elms map visitExp, t, loc)
 
       case TypedAst.Expression.VectorNew(elm, len, tpe, eff, loc) =>
         val e = visitExp(elm)
-        SimplifiedAst.Expression.ArrayNew(e, SimplifiedAst.Expression.Int32(len), tpe, loc)
+        val t = Type.mkArray(elm.tpe)
+        SimplifiedAst.Expression.ArrayNew(e, SimplifiedAst.Expression.Int32(len), t, loc)
 
       case TypedAst.Expression.VectorLoad(exp1, exp2, tpe, eff, loc) =>
         val e = visitExp(exp1)
