@@ -395,9 +395,9 @@ object Type {
   }
 
   /**
-    * Constructs the array type [a] where 'a' is the given type.
+    * Constructs the array type [elmType] where 'elmType' is the given type.
     */
-  def mkArray(a: Type): Type = Apply(Array, a)
+  def mkArray(elmType: Type): Type = Apply(Array, elmType)
 
   /**
     * Constructs the vector type [|elmType, Len|] where

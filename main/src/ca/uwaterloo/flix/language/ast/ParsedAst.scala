@@ -634,7 +634,7 @@ object ParsedAst {
       * ArrayStore Expression
       *
       * @param exp1 the array.
-      * @param exp2 the index to store into.
+      * @param exps2 the indexes to load from and the last to store into.
       * @param exp3 the element to store into the given index.
       * @param sp2 the position of the last character in the expression.
       */
@@ -709,11 +709,11 @@ object ParsedAst {
       * VectorStore Expression.
       *
       * @param exp1 the vector variable which is stored in.
-      * @param index the index to store element in.
+      * @param indexes the indexes to load from and the last to store the element in.
       * @param exp2 the expression to be stored.
       * @param sp2 the position of the last character in the expression.
       */
-    case class VectorStore(exp1: ParsedAst.Expression, index: ParsedAst.Literal, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class VectorStore(exp1: ParsedAst.Expression, indexes: Seq[ParsedAst.Literal], exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * VectorLength Expression
