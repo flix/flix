@@ -1,3 +1,4 @@
+
 def f() : Int = {
  let x = [[10ii;0];10];
  length[x]
@@ -71,11 +72,11 @@ def f() : Int = {
 }*/
 
 //VectorStore
-/*def f() : Unit = {
-  let x = [|5;5|];
-  x[|4|] = 6
-}
-*/
+/*
+def f() : Unit = {
+  let x = [|1,2,3,4,5|];
+  x[|1|] = 100
+}*/
 
 // VectorLit
 /*def f() : Vector[Int, 2] = {
@@ -83,11 +84,10 @@ def f() : Int = {
   x
 }*/
 
-
 // VectorNew
 /*
-def f() : Vector[Int, 15] = {
-  let x = [|10;15|];
+def f() : Vector[Unit, 0] = {
+  let x = [|;|];
   x
 }*/
 
@@ -113,17 +113,17 @@ def f() : Int = {
 // VectorLength
 /*
 def f() : Int = {
-
-  let x = [|[|1,2,3|], [|1,2,3|], [|1,2,3|]|];
-  length[|x|]
+  let x = [1,2,3,4,5];
+  length[x]
 }*/
 
-
-/*def f() : Int = {
+/*
+def f() : Int = {
   let x = [|1, 2, 3|];
-  length[|x|]
-}
-*/
+  length[|x|];
+  head
+}*/
+
 
 // VectorSlice
 /*
@@ -149,3 +149,19 @@ def f() : Array[Array[Int]] = {
   let x = [[1,2,3],[1,2,3],[1,2,3],[1,2,3]];
   x
 }*/
+
+
+/*
+// def testArrayTuple1(): Array[(Int, Str), (Int, Bool)] = [(12, "Hello")] // Error array can only contain one type
+
+def testArrayTuple2(): Array[(Int, Int)] = [(12, 42)] // Works
+
+def testArrayTuple3(): Array[(Int, Int, Int)] = [(12, 42, 34)] // Works
+
+def testArrayTuple4(): Array[(Int, Int)] = [(12, 42), (12, 23)] //Error
+
+
+*/
+
+
+
