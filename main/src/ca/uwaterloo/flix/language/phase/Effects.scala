@@ -441,20 +441,21 @@ object Effects extends Phase[Root, Root] {
             Expression.VectorNew(e, len, tpe, eff, loc)
           }
 
-        case Expression.VectorLoad(exp1, exp2, tpe, _, loc) =>
+        case Expression.VectorLoad(exp1, index, tpe, _, loc) =>
           for {
             e <- visitExp(exp1, env0)
           } yield {
             val eff = exp1.eff
-            Expression.VectorLoad(e, exp2, tpe, eff, loc)
+            Expression.VectorLoad(e, index, tpe, eff, loc)
           }
 
-        case Expression.VectorStore(exp1, exp2, exp3, tpe, _, loc) =>
+        case Expression.VectorStore(exp1, index, exp2, tpe, _, loc) =>
           for {
             e <- visitExp(exp1, env0)
+            e2 <- visitExp(exp2, env0)
           } yield {
-            val eff = exp1.eff
-            Expression.VectorStore(e, exp2, exp3, tpe, eff, loc)
+            val eff = exp1.eff seq exp2.eff
+            Expression.VectorStore(e, index, e2, tpe, eff, loc)
           }
 
         case Expression.VectorLength(exp, tpe, _, loc) =>
@@ -465,13 +466,13 @@ object Effects extends Phase[Root, Root] {
             Expression.VectorLength(e, tpe, eff, loc)
           }
 
-        case Expression.VectorSlice(exp1, exp2, exp3, tpe, _, loc) =>
+        case Expression.VectorSlice(exp1, index1, expIndex2, tpe, _, loc) =>
           for {
             e <- visitExp(exp1, env0)
-            e3 <- visitExp(exp3, env0)
+            e3 <- visitExp(expIndex2, env0)
           } yield {
-            val eff = exp1.eff seq exp3.eff
-            Expression.VectorSlice(e, exp2, e3, tpe, eff, loc)
+            val eff = exp1.eff seq expIndex2.eff
+            Expression.VectorSlice(e, index1, e3, tpe, eff, loc)
           }
           
             /**

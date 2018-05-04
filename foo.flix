@@ -73,24 +73,23 @@ def f() : Int = {
 }*/
 
 //VectorStore
-/*def f() : Unit = {
-  let x = [|5;5|];
-  x[|4|] = 6
-}
-*/
+/*
+def f() : Unit = {
+  let x = [|1,2,3,4,5|];
+  x[|1|] = 100
+}*/
 
 // VectorLit
 /*
-def f() : Array[Unit] = {
-  let x = [];
+def f() : Vector[Vector[Int, 5], 5] = {
+  let x = [|[|5;5|];5|];
   x
-}
-*/
+}*/
 
 // VectorNew
 /*
-def f() : Vector[Int, 15] = {
-  let x = [|10;15|];
+def f() : Vector[Unit, 0] = {
+  let x = [|;|];
   x
 }*/
 
@@ -115,17 +114,17 @@ def f() : Int = {
 // VectorLength
 /*
 def f() : Int = {
-
-  let x = [|[|1,2,3|], [|1,2,3|], [|1,2,3|]|];
-  length[|x|]
+  let x = [1,2,3,4,5];
+  length[x]
 }*/
 
-
-/*def f() : Int = {
+/*
+def f() : Int = {
   let x = [|1, 2, 3|];
-  length[|x|]
-}
-*/
+  length[|x|];
+  head
+}*/
+
 
 // VectorSlice
 /*

@@ -210,23 +210,23 @@ object Synthesize extends Phase[Root, Root] {
         val e = visitExp(elm)
         Expression.VectorNew(e, len, tpe, eff, loc)
 
-      case Expression.VectorLoad(exp1, exp2, tpe, eff, loc) =>
+      case Expression.VectorLoad(exp1, index, tpe, eff, loc) =>
         val e = visitExp(exp1)
-        Expression.VectorLoad(e, exp2, tpe, eff, loc)
+        Expression.VectorLoad(e, index, tpe, eff, loc)
 
-      case Expression.VectorStore(exp1, exp2, exp3, tpe, eff, loc) =>
+      case Expression.VectorStore(exp1, index, exp2, tpe, eff, loc) =>
         val e1 = visitExp(exp1)
-        val e3 = visitExp(exp3)
-        Expression.VectorStore(e1, exp2, e3, tpe, eff, loc)
+        val e3 = visitExp(exp2)
+        Expression.VectorStore(e1, index, e3, tpe, eff, loc)
 
       case Expression.VectorLength(exp, tpe, eff, loc) =>
         val e = visitExp(exp)
         Expression.VectorLength(e, tpe, eff, loc)
 
-      case Expression.VectorSlice(exp1, exp2, exp3, tpe, eff, loc) =>
+      case Expression.VectorSlice(exp1, index1, expIndex2, tpe, eff, loc) =>
         val e = visitExp(exp1)
-        val e3 = visitExp(exp3)
-        Expression.VectorSlice(e, exp2, e3, tpe, eff, loc)
+        val e3 = visitExp(expIndex2)
+        Expression.VectorSlice(e, index1, e3, tpe, eff, loc)
 
       case Expression.Ref(exp, tpe, eff, loc) =>
         val e = visitExp(exp)
