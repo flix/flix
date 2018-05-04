@@ -679,14 +679,20 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
             }
           }
 
-        case ParsedAst.Expression.VectorStore(exp1, index, exp2, sp2) =>
+        case ParsedAst.Expression.VectorStore(exp1, indexes, exp2, sp2) =>
           val sp1 = leftMostSourcePosition(exp1)
           val loc = mkSL(sp1, sp2)
 
           @@(visit(exp1, unsafe), visit(exp2, unsafe)) flatMap {
-            case (e, e2) => index match {
+            case (e1, e2) => val inner = indexes.init.foldLeft(e1) {
+              case (accc, e) => e match {
+                case ParsedAst.Literal.Int32(sp1, sign, digits, sp2) =>
+                  WeededAst.Expression.VectorLoad(accc, toInt32(sign, digits, loc).get, loc)
+              }
+            }
+            indexes.last match {
               case ParsedAst.Literal.Int32(sp1, sign, digits, sp2) => toInt32(sign, digits, loc) flatMap {
-                case l if l >= 0 => WeededAst.Expression.VectorStore(e, l, e2, loc).toSuccess
+                case l if l >= 0 => WeededAst.Expression.VectorStore(inner, l, e2, loc).toSuccess
                 case _ => WeederError.IllegalVectorLength(loc).toFailure
               }
             }
