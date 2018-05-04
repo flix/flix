@@ -778,7 +778,7 @@ object JvmOps {
 
       case Expression.ArrayLoad(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2)
 
-      //case Expression.ArrayStore(exp1, exp2, exp3, tpe, loc) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
+      case Expression.ArrayStore(exp1, exp2, exp3, tpe, loc) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
       case Expression.ArrayLength(exp, tpe, loc) => visitExp(exp)
 
@@ -998,7 +998,7 @@ object JvmOps {
 
       case Expression.ArrayLoad(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2)
 
-      //case Expression.ArrayStore(exp1, exp2, exp3, tpe, loc) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
+      case Expression.ArrayStore(exp1, exp2, exp3, tpe, loc) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
       case Expression.ArrayLength(exp, tpe, loc) => visitExp(exp)
 
@@ -1133,6 +1133,11 @@ object JvmOps {
     */
   def nonLaw(defn: Def): Boolean = !defn.ann.isLaw
 
+  /**
+    *
+    * @param tpe
+    * @return
+    */
   def getArrayInnerType(tpe: Type): Type = {
     val x = tpe match {
       case Type.Apply(Type.Array, t) => t

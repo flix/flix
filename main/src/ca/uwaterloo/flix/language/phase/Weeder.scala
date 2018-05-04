@@ -603,11 +603,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
             case (ex1, ex2) => WeededAst.Expression.ArrayLoad(ex1, ex2, loc)
           }
 
-        case ParsedAst.Expression.ArrayLit(sp1, elms, sp2) =>
-          @@(elms.map(e => visit(e, unsafe))) map {
-            case es => WeededAst.Expression.ArrayLit(es, mkSL(sp1, sp2))
-          }
-
         case ParsedAst.Expression.ArrayStore(exp1, exps2, exp3, sp2) =>
           val sp1 = leftMostSourcePosition(exp1)
           val loc = mkSL(sp1, sp2)

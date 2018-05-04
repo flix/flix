@@ -1,11 +1,8 @@
-// ArrayLit
-/*
-def f() : Array[Int] = {
- //let x = [(1,2,3), (1,2,3), (1,2,3)];
- let x = [1,2,3,4,5];
- x
+def f() : Int = {
+ let x = [10i64;10];
+ let _ = x[1] = 10i64;
+ 2
 }
-*/
 
 // ArrayNew
 /*
@@ -17,25 +14,27 @@ def f() : Array[Bool] = {
 
 
 // ArrayLoad
-/*def f() : Int = {
-  let x = [1,2,3,4,5,6];
+/*
+def f() : Array[Int] = {
+  let x = [[1,2,3], [1,2,3], [1,2,3]];
   x[2]
-}*/
+}
+*/
 
 
 // ArrayStore
 /*
-def f() : Array[Int] = {
+def f() : Int = {
   let x = [1,2,3,4,5];
   let _ = x[1] = 100;
-  x
+  x[1]
 }
 */
 
 //ArrayLength
 /*
 def f() : Int = {
-  let x = [1,2,3,4];
+  let x = [1,2,3,4,5];
   length[x]
 }
 */
@@ -43,9 +42,10 @@ def f() : Int = {
 
 //ArraySlice
 /*
-def f() : Array[Int] = {
+def f() : Int = {
   let x = [1,2,3,4,5];
-  x[0..2]
+  let y = x[0..2];
+  y[1]
 }
 */
 
