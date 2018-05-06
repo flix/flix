@@ -5,7 +5,11 @@ namespace BufferedReader {
     ///
     /// Returns a new BufferedReader from the given Path `p`
     /// TODO: Consider choosing charsets and opening modes
-    pub def new(p: Path): BufferedReader = ???
+    pub def new(p: Path): BufferedReader = unsafe {
+        let Path(javaPath) = p;
+        BufferedReader(native method java.nio.file.Files.newBufferedReader(javaPath))
+        // TODO: This throws IOException when file does not exist. Do we create it?
+    }
 
     ///
     /// Effectfully closes the given BufferedReader, freeing any resources used by it
@@ -58,7 +62,11 @@ namespace BufferedReader {
     ///
     /// Default handler for `readLine`
     ///
-    handler readLine[a](reader: BufferedReader, k: Result[Option[Str], IOError] -> a): a = ???
+    handler readLine[a](reader: BufferedReader, k: Result[Option[Str], IOError] -> a): a = unsafe {
+        let BufferedReader(javaReader) = reader;
+        let readString = native method java.io.BufferedReader.readLine(javaReader);
+        Ok(Some(readString))
+    }
 
     ///
     /// Effectfully tells whether the BufferedReader is ready to be read from
