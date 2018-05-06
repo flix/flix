@@ -8,47 +8,85 @@ namespace BufferedReader {
     pub def new(p: Path): BufferedReader = ???
 
     ///
-    /// Closes the given BufferedReader, freeing any resources used by it
+    /// Effectfully closes the given BufferedReader, freeing any resources used by it
     ///
-    pub def close(reader: BufferedReader): Unit = ???
-
-
-    ///
-    /// Marks the present position in the stream, for future calls to reset()
-    ///
-    pub def mark(reader: BufferedReader, readAheadLimit: Int): Unit = ???
+    pub eff close[a](reader: BufferedReader, k: Result[Unit, IOError] -> a): a
 
     ///
-    /// Reads a single character from the stream and returns it as an integer
+    /// Default handler for `close`
+    ///
+    handler close[a](reader: BufferedReader, k: Result[Unit, IOError] -> a): a = ???
+
+    ///
+    /// Effectfully marks the present position in the stream, for future calls to reset()
+    ///
+    pub eff mark[a](reader: BufferedReader, readAheadLimit: Int, k: Result[Unit, IOError] -> a): a
+
+    ///
+    /// Default handler for `mark`
+    ///
+    handler mark[a](reader: BufferedReader, readAheadLimit: Int, k: Result[Unit, IOError] -> a): a = ???
+
+    ///
+    /// Effectfully reads a single character from the stream and returns it as an integer
     /// Returns -1 if end-of-file is the read character
     /// TODO: Consider returning read character as a char instead
-    pub def read(reader: BufferedReader): Int32 = ???
+    pub eff read[a](reader: BufferedReader, k: Result[Int32, IOError] -> a): a
 
     ///
-    /// Reads a specified number of characters into the provided array from a given offset
+    /// Default handler for `read`
+    ///
+    handler read[a](reader: BufferedReader, k: Result[Int32, IOError] -> a): a = ???
+
+    ///
+    /// Effectfully reads a specified number of characters into the provided array from a given offset
     /// Returns -1 if the first character encountered is end-of-file.
     /// Otherwise reads until end-of-file encountered
     ///
-    pub def readIntoBuffer(reader: BufferedReader, array: Array[Char], offset: Int32, number: Int32): Int32 = ???
+    pub eff readIntoBuffer[a](reader: BufferedReader, array: Array[Char], offset: Int32, number: Int32, k: Result[Int32, IOError] -> a): a
 
     ///
-    /// Reads an entire line from the BufferedReader. Returns None if end-of-file is reached
+    /// Default handler for `readIntoBuffer`
     ///
-    pub def readLine(reader: BufferedReader): Option[Str] = ???
+    handler readIntoBuffer[a](reader: BufferedReader, array: Array[Char], offset: Int32, number: Int32, k: Result[Int32, IOError] -> a): a = ???
 
     ///
-    /// Tells whether the BufferedReader is ready to be read from
+    /// Effectfully reads an entire line from the BufferedReader. Returns None if end-of-file is reached
     ///
-    pub def ready(reader: BufferedReader): Bool = ???
+    pub eff readLine[a](reader: BufferedReader, k: Result[Option[Str], IOError] -> a): a
 
     ///
-    /// Resets the BufferedReader to the most recent mark, if any where set and not invalidated
+    /// Default handler for `readLine`
     ///
-    pub def reset(reader: BufferedReader): Unit = ???
+    handler readLine[a](reader: BufferedReader, k: Result[Option[Str], IOError] -> a): a = ???
 
     ///
-    /// Skips n characters ahead in the provided BufferedReader. Returns the amount of characters actually skipped
+    /// Effectfully tells whether the BufferedReader is ready to be read from
     ///
-    pub def skip(reader: BufferedReader, n: Int64): Int64 = ???
+    pub eff ready[a](reader: BufferedReader, k: Result[Bool, IOError] -> a): a
 
+    ///
+    /// Default handler for `ready`
+    ///
+    handler ready[a](reader: BufferedReader, k: Result[Bool, IOError] -> a): a = ???
+
+    ///
+    /// Effectfully resets the BufferedReader to the most recent mark, if any where set and not invalidated
+    ///
+    pub eff reset[a](reader: BufferedReader, k: Result[Unit, IOError] -> a): a
+
+    ///
+    /// Default handler for `reset`
+    ///
+    handler reset[a](reader: BufferedReader, k: Result[Unit, IOError] -> a): a = ???
+
+    ///
+    /// Effectfully skips n characters ahead in the provided BufferedReader. Returns the amount of characters actually skipped
+    ///
+    pub eff skip[a](reader: BufferedReader, n: Int64, k: Result[Int64, IOError] -> a): a
+
+    ///
+    /// Default handler for `skip`
+    ///
+    handler skip[a](reader: BufferedReader, n: Int64, k: Result[Int64, IOError] -> a): a = ???
 }
