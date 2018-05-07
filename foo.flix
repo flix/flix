@@ -1,8 +1,10 @@
+
+/*
 def f() : Int = {
  let x = [10i64;10];
  let _ = x[1] = 10i64;
  2
-}
+} */
 
 // ArrayNew
 /*
@@ -31,7 +33,7 @@ def f() : Int = {
 }
 */
 
-//ArrayLength
+// ArrayLength
 /*
 def f() : Int = {
   let x = [1,2,3,4,5];
@@ -40,7 +42,7 @@ def f() : Int = {
 */
 
 
-//ArraySlice
+// ArraySlice
 /*
 def f() : Int = {
   let x = [1,2,3,4,5];
@@ -57,21 +59,21 @@ def f() : Vector[Int, 5] = {
   x
 }*/
 
-//VectorNew
+// VectorNew
 /*
 def f() : Vector[Int, 5] = {
   let x = [|5;5|];
   x
 }*/
 
-//VectorLoad
+// VectorLoad
 /*
 def f() : Int = {
   let x = [|5;5|];
   x[|3|]
 }*/
 
-//VectorStore
+// VectorStore
 /*def f() : Unit = {
   let x = [|5;5|];
   x[|4|] = 6
@@ -79,11 +81,11 @@ def f() : Int = {
 */
 
 // VectorLit
-
+/*
 def f() : Array[Unit] = {
   let x = [];
   x
-}
+}*/
 
 
 // VectorNew
@@ -134,9 +136,10 @@ def f() : Vector[Str,10] = {
   y[|1..11|]
 }*/
 
-  //let y = x[|3..|];
-  //y[|1..11|]
-//}
+
+  // let y = x[|3..|];
+  // y[|1..11|]
+// }
 
 
 /*
@@ -151,15 +154,41 @@ def f() : Array[Array[Int]] = {
   x
 }*/
 
+@test
+def testArrayLit73(): Array[Array[Str]] = [["Hello"]]
+
+@test
+def testArrayLit00(): List[Int] = Nil
+
+@test
+def testArrayLit01(): List[Int] = 1 :: Nil
+
+@test
+def testArrayLit02(): List[Int] = 1 :: 2 :: Nil
+
+enum Color {
+   case Red,
+   case Blue,
+   case Green
+ }
 
 
-// def testArrayTuple1(): Array[(Int, Str), (Int, Bool)] = [(12, "Hello")] // Error array can only contain one type
 
-def testArrayTuple2(): Array[(Int, Int)] = [(12, 42)] // Works
 
-def testArrayTuple3(): Array[(Int, Int, Int)] = [(12, 42, 34)] // Works
 
-def testArrayTuple4(): Array[(Int, Int)] = [(12, 42), (12, 23)] //Error
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
