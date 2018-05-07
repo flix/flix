@@ -699,58 +699,58 @@ object ParsedAst {
     /**
       * VectorLoad Expression.
       *
-      * @param exp the vector variable which is loaded from.
+      * @param base the vector variable which is loaded from.
       * @param index the index to load.
       * @param sp2 the position of the last character in the expression.
       */
-    case class VectorLoad(exp: ParsedAst.Expression, index: ParsedAst.Literal, sp2: SourcePosition) extends ParsedAst.Expression
+    case class VectorLoad(base: ParsedAst.Expression, index: ParsedAst.Literal, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * VectorStore Expression.
       *
-      * @param exp1 the vector variable which is stored in.
+      * @param base the vector variable which is stored in.
       * @param indexes the indexes to load from and the last to store the element in.
-      * @param exp2 the expression to be stored.
+      * @param elm the expression to be stored.
       * @param sp2 the position of the last character in the expression.
       */
-    case class VectorStore(exp1: ParsedAst.Expression, indexes: Seq[ParsedAst.Literal], exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class VectorStore(base: ParsedAst.Expression, indexes: Seq[ParsedAst.Literal], elm: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * VectorLength Expression
       *
       * @param sp1 the position of the first character in the expression.
-      * @param exp the vector to find the length of.
+      * @param base the vector to find the length of.
       * @param sp2 the position of the last character in the expression.
       */
-    case class VectorLength(sp1: SourcePosition, exp: Expression, sp2: SourcePosition) extends  ParsedAst.Expression
+    case class VectorLength(sp1: SourcePosition, base: Expression, sp2: SourcePosition) extends  ParsedAst.Expression
 
     /**
       * VectorSlice Expression.
       *
-      * @param exp1 the vector for slice.
-      * @param index1 the start index.
-      * @param index2 the end index.
+      * @param base the vector for slice.
+      * @param startIndex the start index.
+      * @param endIndex the end index.
       * @param sp2 the position of the last character in the expression.
       */
-    case class VectorSlice(exp1: Expression, index1: Literal, index2: Literal, sp2: SourcePosition) extends  ParsedAst.Expression
+    case class VectorSlice(base: Expression, startIndex: Literal, endIndex: Literal, sp2: SourcePosition) extends  ParsedAst.Expression
 
     /**
       * VectorSliceNoEndIndex Expression.
       *
-      * @param exp1 the vector for slice.
-      * @param index the start index.
+      * @param base the vector for slice.
+      * @param startIndex the start index.
       * @param sp2 the position of the last character in the expression.
       */
-    case class VectorSliceNoEndIndex(exp1: Expression, index: Literal, sp2: SourcePosition) extends ParsedAst.Expression
+    case class VectorSliceNoEndIndex(base: Expression, startIndex: Literal, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * VectorSliceNoStartIndex Expression.
       *
-      * @param exp1 the vector for slice.
-      * @param index the end index.
+      * @param base the vector for slice.
+      * @param endIndex the end index.
       * @param sp2 the position of the last character in the expression.
       */
-    case class VectorSliceNoStartIndex(exp1: Expression, index: Literal, sp2: SourcePosition) extends ParsedAst.Expression
+    case class VectorSliceNoStartIndex(base: Expression, endIndex: Literal, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Nil Expression (of list).
@@ -1177,10 +1177,10 @@ object ParsedAst {
       * Succ Type.
       *
       * @param sp1 the position of the first character in the type.
-      * @param elm the type of the element.
+      * @param len the type of the element.
       * @param sp2 the position of the last character in the type.
       */
-    case class Succ(sp1: SourcePosition, elm: ParsedAst.Literal.Int32, sp2: SourcePosition) extends ParsedAst.Type
+    case class Succ(sp1: SourcePosition, len: ParsedAst.Literal.Int32, sp2: SourcePosition) extends ParsedAst.Type
 
 
     /**
