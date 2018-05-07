@@ -8,4 +8,3 @@ target
 .ensime*
 main/*.iml
 foo.flix
-

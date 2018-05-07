@@ -260,6 +260,49 @@ object PrettyPrinter {
           }
           vt.text(")")
 
+        case Expression.ArrayLit(elms, tpe, loc) =>
+          vt.text("[")
+          for (elm <- elms){
+            visitExp(elm)
+            vt.text(",")
+          }
+          vt.text("]")
+
+        case Expression.ArrayNew(elm, len, tpe, loc) =>
+          vt.text("[")
+          visitExp(elm)
+          vt.text(";")
+          vt.text(len.toString)
+          vt.text("]")
+
+        case Expression.ArrayLoad(base, index, tpe, loc) =>
+          visitExp(base)
+          vt.text("[")
+          visitExp(index)
+          vt.text("]")
+
+        case Expression.ArrayStore(base, index, elm, tpe, loc) =>
+          visitExp(base)
+          vt.text("[")
+          visitExp(index)
+          vt.text("]")
+          vt.text(" = ")
+          visitExp(elm)
+
+        case Expression.ArrayLength(base, tpe, loc) =>
+          vt.text("length")
+          vt.text("[")
+          visitExp(base)
+          vt.text("]")
+
+        case Expression.ArraySlice(base, beginIndex, endIndex, tpe, loc) =>
+          visitExp(base)
+          vt.text("[")
+          visitExp(beginIndex)
+          vt.text("..")
+          visitExp(endIndex)
+          vt.text("]")
+
         case Expression.Ref(exp, tpe, loc) =>
           vt.text("ref ")
           visitExp(exp)
