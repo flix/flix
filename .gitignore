@@ -6,3 +6,5 @@
 /flix.jar
 target
 .ensime*
+main/*.iml
+foo.flix
