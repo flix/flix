@@ -703,47 +703,46 @@ object GenExpression {
       val arrayFillType = AsmOps.getArrayFillType(jvmType)
       visitor.visitMethodInsn(Opcodes.INVOKESTATIC, "java/util/Arrays", "fill", arrayFillType, false);
 
-    case Expression.ArrayLoad(exp1, exp2, tpe, loc) =>
+    case Expression.ArrayLoad(base, index, tpe, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
       val jvmType = JvmOps.getErasedJvmType(tpe)
-      compileExpression(exp1, visitor, currentClass, lenv0, entryPoint) // ArrayRef
+      compileExpression(base, visitor, currentClass, lenv0, entryPoint) // ArrayRef
       // Cast the object to Array
       visitor.visitTypeInsn(CHECKCAST, AsmOps.getCheckCastType(jvmType))
-      compileExpression(exp2, visitor, currentClass, lenv0, entryPoint) // ArrayRef - Index
+      compileExpression(index, visitor, currentClass, lenv0, entryPoint) // ArrayRef - Index
       visitor.visitInsn(AsmOps.getArrayLoadInstruction(jvmType)) // Value
-      // TODO Why does this not work? Theory: two values are on the stack and only one is returned?
 
-    case Expression.ArrayStore(exp1, exp2, exp3, tpe, loc) =>
+    case Expression.ArrayStore(base, index, elm, tpe, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
-      val jvmType = JvmOps.getErasedJvmType(exp3.tpe)
-      compileExpression(exp1, visitor, currentClass, lenv0, entryPoint) // ArrayRef
+      val jvmType = JvmOps.getErasedJvmType(elm.tpe)
+      compileExpression(base, visitor, currentClass, lenv0, entryPoint) // ArrayRef
       // Cast the object to Array
       visitor.visitTypeInsn(CHECKCAST, AsmOps.getCheckCastType(jvmType))
-      compileExpression(exp2, visitor, currentClass, lenv0, entryPoint) // ArrayRef - Index
-      compileExpression(exp3, visitor, currentClass, lenv0, entryPoint) // ArrayRef - Index - Value
+      compileExpression(index, visitor, currentClass, lenv0, entryPoint) // ArrayRef - Index
+      compileExpression(elm, visitor, currentClass, lenv0, entryPoint) // ArrayRef - Index - Value
       visitor.visitInsn(AsmOps.getArrayStoreInstruction(jvmType)) // Empty
       // Since the return type is unit, we put an instance of unit on top of the stack
       visitor.visitMethodInsn(INVOKESTATIC, JvmName.Unit.toInternalName, "getInstance",
         AsmOps.getMethodDescriptor(Nil, JvmType.Unit), false)
 
-    case Expression.ArrayLength(exp, tpe, loc) =>
+    case Expression.ArrayLength(base, tpe, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
-      val jvmType = JvmOps.getErasedJvmType(JvmOps.getArrayInnerType(exp.tpe))
-      compileExpression(exp, visitor, currentClass, lenv0, entryPoint) // ArrayRef
+      val jvmType = JvmOps.getErasedJvmType(JvmOps.getArrayInnerType(base.tpe))
+      compileExpression(base, visitor, currentClass, lenv0, entryPoint) // ArrayRef
       // Cast the object to Array
       visitor.visitTypeInsn(CHECKCAST, AsmOps.getCheckCastType(jvmType)) // ArrayRef
       visitor.visitInsn(ARRAYLENGTH) // Length
 
-    case Expression.ArraySlice(exp1, exp2, exp3, tpe, loc) =>
+    case Expression.ArraySlice(base, beginIndex, endIndex, tpe, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
-      val jvmType = JvmOps.getErasedJvmType(JvmOps.getArrayInnerType(exp1.tpe))
-      compileExpression(exp1, visitor, currentClass, lenv0, entryPoint) // OldRef
-      compileExpression(exp2, visitor, currentClass, lenv0, entryPoint) // OldRef - StartIndex
-      compileExpression(exp3, visitor, currentClass, lenv0, entryPoint) // OldRef - StartIndex - Endindex
+      val jvmType = JvmOps.getErasedJvmType(JvmOps.getArrayInnerType(base.tpe))
+      compileExpression(base, visitor, currentClass, lenv0, entryPoint) // OldRef
+      compileExpression(beginIndex, visitor, currentClass, lenv0, entryPoint) // OldRef - StartIndex
+      compileExpression(endIndex, visitor, currentClass, lenv0, entryPoint) // OldRef - StartIndex - Endindex
       visitor.visitInsn(SWAP) // OldRef - Endindex - StartIndex
       visitor.visitInsn(DUP_X1) // OldRef - StartIndex - Endindex - StartIndex
       visitor.visitInsn(ISUB) // OldRef - StartIndex - Count

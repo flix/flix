@@ -61,14 +61,14 @@ def testVectorstore20(): Unit = let x = [|3i16 ; 3|]; x [|1|] = 201i16
 @test
 def testVectorstore21(): Unit = let x = [|4i16 ; 4|]; x[|2|] = 0i16
 
-/*@test
+@test
 def testVectorstore22(): Unit = let x = [|1i64 ; 1|]; x[|0|] = 5i64
 
 @test
 def testVectorstore23(): Unit = let x = [|3i64 ; 3|]; x[|1|] = 100i64
 
 @test
-def testVectorstore24(): Unit = let x = [|4i64 ; 4|]; x[|3|] = 5i64*/
+def testVectorstore24(): Unit = let x = [|4i64 ; 4|]; x[|3|] = 5i64
 
 @test
 def testVectorstore25(): Unit = let x = [|1.0f32 ; 1|]; x[|0|] = 1.1f32

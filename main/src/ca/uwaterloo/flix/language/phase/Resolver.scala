@@ -525,30 +525,30 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
             ln <- visit(len)
           } yield ResolvedAst.Expression.ArrayNew(e, ln, tvar, loc)
 
-        case NamedAst.Expression.ArrayLoad(exp1, exp2, tvar, loc) =>
+        case NamedAst.Expression.ArrayLoad(base, index, tvar, loc) =>
           for {
-            e1 <- visit(exp1)
-            e2 <- visit(exp2)
-          } yield ResolvedAst.Expression.ArrayLoad(e1, e2, tvar, loc)
+            b <- visit(base)
+            i <- visit(index)
+          } yield ResolvedAst.Expression.ArrayLoad(b, i, tvar, loc)
 
-        case NamedAst.Expression.ArrayStore(exp1, exp2, exp3, tvar, loc) =>
+        case NamedAst.Expression.ArrayStore(base, index, elm, tvar, loc) =>
           for {
-            e1 <- visit(exp1)
-            e2 <- visit(exp2)
-            e3 <- visit(exp3)
-          } yield ResolvedAst.Expression.ArrayStore(e1, e2, e3, tvar, loc)
+            b <- visit(base)
+            i <- visit(index)
+            e <- visit(elm)
+          } yield ResolvedAst.Expression.ArrayStore(b, i, e, tvar, loc)
 
-        case NamedAst.Expression.ArrayLength(exp, tvar, loc) =>
+        case NamedAst.Expression.ArrayLength(base, tvar, loc) =>
           for {
-            e <- visit(exp)
-          } yield ResolvedAst.Expression.ArrayLength(e, tvar, loc)
+            b <- visit(base)
+          } yield ResolvedAst.Expression.ArrayLength(b, tvar, loc)
 
-        case NamedAst.Expression.ArraySlice(exp1, exp2, exp3, tvar, loc) =>
+        case NamedAst.Expression.ArraySlice(base, beginIndex, endIndex, tvar, loc) =>
           for{
-            e1 <- visit(exp1)
-            e2 <- visit(exp2)
-            e3 <- visit(exp3)
-          } yield ResolvedAst.Expression.ArraySlice(e1, e2, e3, tvar, loc)
+            b <- visit(base)
+            i1 <- visit(beginIndex)
+            i2 <- visit(endIndex)
+          } yield ResolvedAst.Expression.ArraySlice(b, i1, i2, tvar, loc)
 
         case NamedAst.Expression.VectorLit(elms, tvar, loc) =>
           for {

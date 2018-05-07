@@ -264,35 +264,35 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       //
       // ArrayLoad Expressions.
       //
-      case Expression.ArrayLoad(exp1, exp2, tpe, loc) =>
-        val e1 = visitExp(exp1, env0)
-        val e2 = visitExp(exp2, env0)
-        Expression.ArrayLoad(e1, e2, tpe, loc)
+      case Expression.ArrayLoad(base, index, tpe, loc) =>
+        val b = visitExp(base, env0)
+        val i = visitExp(index, env0)
+        Expression.ArrayLoad(b, i, tpe, loc)
 
       //
       // ArrayStore Expressions.
       //
-      case Expression.ArrayStore(exp1, exp2, exp3, tpe, loc) =>
-        val e1 = visitExp(exp1, env0)
-        val e2 = visitExp(exp2, env0)
-        val e3 = visitExp(exp3, env0)
-        Expression.ArrayStore(e1, e2, e3, tpe, loc)
+      case Expression.ArrayStore(base, index, elm, tpe, loc) =>
+        val b = visitExp(base, env0)
+        val i = visitExp(index, env0)
+        val e = visitExp(elm, env0)
+        Expression.ArrayStore(b, i, e, tpe, loc)
 
       //
       // ArraySlice Expressions.
       //
-      case Expression.ArrayLength(exp, tpe, loc) =>
-        val e = visitExp(exp, env0)
-        Expression.ArrayLength(e, tpe, loc)
+      case Expression.ArrayLength(base, tpe, loc) =>
+        val b = visitExp(base, env0)
+        Expression.ArrayLength(b, tpe, loc)
 
       //
       // ArraySlice Expressions.
       //
-      case Expression.ArraySlice(exp1, exp2, exp3, tpe, loc) =>
-        val e1 = visitExp(exp1, env0)
-        val e2 = visitExp(exp2, env0)
-        val e3 = visitExp(exp3, env0)
-        Expression.ArraySlice(e1, e2, e3, tpe, loc)
+      case Expression.ArraySlice(base, beginIndex, endIndex, tpe, loc) =>
+        val b = visitExp(base, env0)
+        val i1 = visitExp(beginIndex, env0)
+        val i2 = visitExp(endIndex, env0)
+        Expression.ArraySlice(b, i1, i2, tpe, loc)
 
       //
       // Reference Expressions.
