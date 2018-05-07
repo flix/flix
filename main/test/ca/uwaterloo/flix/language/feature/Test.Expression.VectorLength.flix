@@ -8,13 +8,13 @@ def testVectorLength02(): Int = let x = [|1|]; length[|x|]
 def testVectorLength03(): Int = let x = [|1, 2, 3|]; length[|x|]
 
 @test
-def testVectorLength04(): Int = let x = [|1,2,3,4|]; length[|x|]
+def testVectorLength04(): Int = let x = [|1, 2, 3, 4|]; length[|x|]
 
 @test
-def testVectorLength05(): Int = let x = [|1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20|]; length[|x|]
+def testVectorLength05(): Int = let x = [|1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20|]; length[|x|]
 
 @test
-def testVectorLength06(): Int = let x = [|1,2|]; length[|x|]
+def testVectorLength06(): Int = let x = [|1, 2|]; length[|x|]
 
 @test
 def testVectorLength07(): Int = let x = [|true|]; length[|x|]
@@ -50,7 +50,7 @@ def testVectorLength16(): Int = let x = [|1i8|]; length[|x|]
 def testVectorLength17(): Int = let x = [|1i8, 2i8, 3i8|]; length[|x|]
 
 @test
-def testVectorLength18(): Int = let x = [|1i8,2i8,3i8,4i8|]; length[|x|]
+def testVectorLength18(): Int = let x = [|1i8, 2i8, 3i8, 4i8|]; length[|x|]
 
 @test
 def testVectorLength19(): Int = let x = [|1i16|]; length[|x|]
@@ -59,7 +59,7 @@ def testVectorLength19(): Int = let x = [|1i16|]; length[|x|]
 def testVectorLength20(): Int = let x = [|1i16, 2i16, 3i16|]; length[|x|]
 
 @test
-def testVectorLength21(): Int = let x = [|1i16,2i16,3i16,4i16|]; length[|x|]
+def testVectorLength21(): Int = let x = [|1i16, 2i16, 3i16, 4i16|]; length[|x|]
 
 @test
 def testVectorLength22(): Int = let x = [|1i64|]; length[|x|]
@@ -68,7 +68,7 @@ def testVectorLength22(): Int = let x = [|1i64|]; length[|x|]
 def testVectorLength23(): Int = let x = [|1i64, 2i64, 3i64|]; length[|x|]
 
 @test
-def testVectorLength24(): Int = let x = [|1i64,2i64,3i64,4i64|]; length[|x|]
+def testVectorLength24(): Int = let x = [|1i64, 2i64, 3i64, 4i64|]; length[|x|]
 
 @test
 def testVectorLength25(): Int = let x = [|1.0f32|]; length[|x|]
@@ -77,7 +77,7 @@ def testVectorLength25(): Int = let x = [|1.0f32|]; length[|x|]
 def testVectorLength26(): Int = let x = [|1.0f32, 2.0f32, 3.0f32|]; length[|x|]
 
 @test
-def testVectorLength27(): Int = let x = [|1.0f32,2.0f32,3.0f32,4.0f32|]; length[|x|]
+def testVectorLength27(): Int = let x = [|1.0f32, 2.0f32, 3.0f32, 4.0f32|]; length[|x|]
 
 @test
 def testVectorLength28(): Int = let x = [|1.0f64|]; length[|x|]
@@ -86,7 +86,7 @@ def testVectorLength28(): Int = let x = [|1.0f64|]; length[|x|]
 def testVectorLength29(): Int = let x = [|1.0f64, 2.0f64, 3.0f64|]; length[|x|]
 
 @test
-def testVectorLength30(): Int = let x = [|1.0f64,2.0f64,3.0f64,4.0f64|]; length[|x|]
+def testVectorLength30(): Int = let x = [|1.0f64, 2.0f64, 3.0f64, 4.0f64|]; length[|x|]
 
 @test
 def testVectorLength31(): Int = let x = [|"Hello"|]; length[|x|]
@@ -98,16 +98,16 @@ def testVectorLength32(): Int = let x = [|"Hello", "World"|]; length[|x|]
 def testVectorLength33(): Int = let x = [|"World", "Hello", "World"|]; length[|x|]
 
 @test
-def testVectorLength34(): Int = let x = [|[|1,2,3|]|]; length[|x|]
+def testVectorLength34(): Int = let x = [|[|1, 2, 3|]|]; length[|x|]
 
 @test
-def testVectorLength35(): Int = let x = [|[|1,2|], [|1,2|]|]; length[|x|]
+def testVectorLength35(): Int = let x = [|[|1, 2|], [|1, 2|]|]; length[|x|]
 
 @test
-def testVectorLength36(): Int = let x = [|[|1,2,3,4,5,6,7,8|], [|1,2,3,4,5,6,7,8|]|]; length[|x|]
+def testVectorLength36(): Int = let x = [|[|1, 2, 3, 4, 5, 6, 7, 8|], [|1, 2, 3, 4, 5, 6, 7, 8|]|]; length[|x|]
 
 @test
-def testVectorLength37(): Int = let x = [|[|1,2,3,4,5|], [|2,2,2,2,2|]|]; length[|x|]
+def testVectorLength37(): Int = let x = [|[|1, 2, 3, 4, 5|], [|2, 2, 2, 2, 2|]|]; length[|x|]
 
 @test
-def testVectorLength38(): Int = let x = [|[|1,2,3|], [|1,2,3|], [|1,2,3|]|]; length[|x|]
+def testVectorLength38(): Int = let x = [|[|1, 2, 3|], [|1, 2, 3|], [|1, 2, 3|]|]; length[|x|]
