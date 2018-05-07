@@ -1141,6 +1141,7 @@ object JvmOps {
   def getArrayInnerType(tpe: Type): Type = {
     val x = tpe match {
       case Type.Apply(Type.Array, t) => t
+      case Type.Apply(Type.Apply(Type.Vector, t), _) => t
     }
     x
   }
