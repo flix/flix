@@ -335,7 +335,7 @@ object Type {
     def kind: Kind = Kind.Star
   }
 
-  case class Succ(n: Int, t: Type) extends Type {
+  case class Succ(len: Int, t: Type) extends Type {
     def kind: Kind = Kind.Star
   }
 

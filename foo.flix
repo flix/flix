@@ -79,8 +79,8 @@ def f() : Unit = {
 }*/
 
 // VectorLit
-/*def f() : Vector[Int, 2] = {
-  let x = [|1,2|];
+/*def f() : Vector[Unit, 0] = {
+  let x = [||];
   x
 }*/
 
@@ -90,7 +90,6 @@ def f() : Vector[Unit, 0] = {
   let x = [|;|];
   x
 }*/
-
 
 // VectorLoad
 /*
@@ -126,11 +125,9 @@ def f() : Int = {
 
 // VectorSlice
 
-def f() : Vector[Str,10] = {
-  let x = [|"Hello";10|];
+def f() : Vector[Int,10] = {
+  let x = [|7;10|];
   x[|0..10|]
-  /*let y = x[|3..|] : Vector[Str, 5];
-  y[|1..11|]*/
 }
 
   //let y = x[|3..|];

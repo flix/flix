@@ -866,7 +866,7 @@ object Synthesize extends Phase[Root, Root] {
 
         case Type.Zero => Expression.Str("<<Zero>>", sl)
 
-        case Type.Succ(n, t) => Expression.Str("<<Succession>>", sl)
+        case Type.Succ(len, t) => Expression.Str("<<Succession>>", sl)
 
         case Type.Native =>
           val method = classOf[java.lang.Object].getMethod("toString")

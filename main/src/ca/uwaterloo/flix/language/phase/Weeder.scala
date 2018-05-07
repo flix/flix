@@ -702,10 +702,9 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         case ParsedAst.Expression.VectorSlice(base, startIndex, endIndex, sp2) =>
           val sp1 = leftMostSourcePosition(base)
           val loc = mkSL(sp1, sp2)
-          val i1 = convertToInt(startIndex, sp1, sp2)
-          val i2 = convertToInt(endIndex, sp1, sp2)
-          visit(base, unsafe) flatMap {
-            case b => WeededAst.Expression.VectorSlice(b, i1, Some(i2), loc).toSuccess
+          // TODO Return validation. og lav det så ligesom @@(visit(base, unsafe), visit(endIndex, unsafe)) map {
+          @@(visit(base, unsafe), convertToInt(startIndex, sp1, sp2), convertToInt(endIndex, sp1, sp2)) flatMap {
+            case (b, in1, in2) => WeededAst.Expression.VectorSlice(b, in1, Some(in2), loc).toSuccess
             case _ => WeederError.IllegalVectorLength(loc).toFailure
           }
 
@@ -940,14 +939,13 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
       visit(exp0, unsafe = false)
     }
-    private def convertToInt(elm: ParsedAst.Literal, sp1: SourcePosition, sp2: SourcePosition) : Int = {
-      val i = elm match {
+    private def convertToInt(elm: ParsedAst.Literal, sp1: SourcePosition, sp2: SourcePosition) : Validation[Int, WeederError] = {
+      elm match {
         case ParsedAst.Literal.Int32(sp1, sign, digits, sp2) => toInt32(sign, digits, mkSL(sp1, sp2)) flatMap {
           case l if l >= 0 => l.toSuccess
           case _ => WeederError.IllegalVectorLength(mkSL(sp1, sp2)).toFailure
         }
       }
-      i.get
     }
   }
 
@@ -1269,7 +1267,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       case ParsedAst.Type.Var(sp1, ident, sp2) => WeededAst.Type.Var(ident, mkSL(sp1, sp2))
       case ParsedAst.Type.Ambiguous(sp1, qname, sp2) => WeededAst.Type.Ambiguous(qname, mkSL(sp1, sp2))
       case ParsedAst.Type.Tuple(sp1, elms, sp2) => WeededAst.Type.Tuple(elms.toList.map(weed), mkSL(sp1, sp2))
-      case ParsedAst.Type.Succ(sp1, elm, sp2) => WeededAst.Type.Succ(CheckNaturalNumber(elm, sp1, sp2), mkSL(sp1, sp2))
+      case ParsedAst.Type.Succ(sp1, len, sp2) => WeededAst.Type.Succ(CheckNaturalNumber(len, sp1, sp2), mkSL(sp1, sp2))
       case ParsedAst.Type.Native(sp1, fqn, sp2) => WeededAst.Type.Native(fqn.toList, mkSL(sp1, sp2))
       case ParsedAst.Type.Arrow(sp1, tparams, tresult, sp2) => WeededAst.Type.Arrow(tparams.toList.map(weed), weed(tresult), mkSL(sp1, sp2))
       case ParsedAst.Type.Infix(tpe1, base0, tpe2, sp2) =>
@@ -1628,13 +1626,13 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       }
     })
   }
-  //TODO comment
+  //TODO comment - Fjern det fra resolver.
   private def CheckNaturalNumber(elm: ParsedAst.Literal.Int32, sp1: SourcePosition, sp2: SourcePosition) : Int = {
-     val l = toInt32(elm.sign, elm.lit, mkSL(sp1, sp2)) flatMap {
-       case l if l >= 0 => l.toSuccess
+  toInt32(elm.sign, elm.lit, mkSL(sp1, sp2)) match {
+       case Validation.Success(l, _) if l >= 0 => l
+       // TODO forklar hvorfor internalcompiler
        case _ => throw InternalCompilerException("")
      }
-    l.get
   }
 
   /**
