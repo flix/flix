@@ -624,40 +624,40 @@ object ParsedAst {
     /**
       * ArrayLoad Expression
       *
-      * @param exp1 the array.
-      * @param exp2 the index to load from.
+      * @param base the array.
+      * @param index the index to load from.
       * @param sp2 the position of the last character in the expression.
       */
-    case class ArrayLoad(exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends  ParsedAst.Expression
+    case class ArrayLoad(base: ParsedAst.Expression, index: ParsedAst.Expression, sp2: SourcePosition) extends  ParsedAst.Expression
 
     /**
       * ArrayStore Expression
       *
-      * @param exp1 the array.
-      * @param exps2 the indexes to load from and the last to store into.
-      * @param exp3 the element to store into the given index.
+      * @param base the array.
+      * @param indexes the indexes to load from and the last to store into.
+      * @param elm the element to store into the given index.
       * @param sp2 the position of the last character in the expression.
       */
-    case class ArrayStore(exp1: ParsedAst.Expression, exps2: Seq[ParsedAst.Expression], exp3: ParsedAst.Expression, sp2: SourcePosition) extends  ParsedAst.Expression
+    case class ArrayStore(base: ParsedAst.Expression, indexes: Seq[ParsedAst.Expression], elm: ParsedAst.Expression, sp2: SourcePosition) extends  ParsedAst.Expression
 
     /**
       * ArrayLenght Expression
       *
       * @param sp1 the position of the first character in the expression.
-      * @param exp the array
+      * @param base the array
       * @param sp2 the position of the last character in the expression.
       */
-    case class ArrayLength(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class ArrayLength(sp1: SourcePosition, base: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * ArraySlice Expression
       *
-      * @param exp1 the array
-      * @param exp2 the start index
-      * @param exp3 the end index
+      * @param base the array
+      * @param beginIndex the start index
+      * @param endIndex the end index
       * @param sp2 the position of the last character in the expression.
       */
-    case class ArraySlice(exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, exp3: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class ArraySlice(base: ParsedAst.Expression, beginIndex: ParsedAst.Expression, endIndex: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * ArraySliceNoEndIndex

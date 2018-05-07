@@ -374,50 +374,50 @@ object Effects extends Phase[Root, Root] {
         /**
           * ArrayLoad Expression.
           */
-        case Expression.ArrayLoad(exp1, exp2, tpe, _, loc) =>
+        case Expression.ArrayLoad(base, index, tpe, _, loc) =>
           for {
-            e1 <- visitExp(exp1, env0)
-            e2 <- visitExp(exp2, env0)
+            b <- visitExp(base, env0)
+            i <- visitExp(index, env0)
           } yield {
-            val eff = exp1.eff seq exp2.eff
-            Expression.ArrayLoad(e1, e2, tpe, eff, loc)
+            val eff = base.eff seq index.eff
+            Expression.ArrayLoad(b, i, tpe, eff, loc)
           }
 
         /**
           * ArrayStore Expression.
           */
-        case Expression.ArrayStore(exp1, exp2, exp3, tpe, _, loc) =>
+        case Expression.ArrayStore(base, index, elm, tpe, _, loc) =>
           for {
-          e1 <- visitExp(exp1, env0)
-          es2 <- visitExp(exp2, env0)
-          e3 <- visitExp(exp3, env0)
+          b <- visitExp(base, env0)
+          i <- visitExp(index, env0)
+          e <- visitExp(elm, env0)
         } yield {
-          val eff = exp1.eff seq exp2.eff seq  exp3.eff
-          Expression.ArrayStore(e1, es2, e3, tpe, eff, loc)
+          val eff = base.eff seq index.eff seq  elm.eff
+          Expression.ArrayStore(b, i, e, tpe, eff, loc)
         }
 
         /**
           * ArrayLength Expression.
           */
-        case Expression.ArrayLength(exp, tpe, _, loc) =>
+        case Expression.ArrayLength(base, tpe, _, loc) =>
           for {
-            e <- visitExp(exp, env0)
+            b <- visitExp(base, env0)
           } yield {
-            val eff = exp.eff
-            Expression.ArrayLength(e, tpe, eff, loc)
+            val eff = base.eff
+            Expression.ArrayLength(b, tpe, eff, loc)
           }
 
         /**
           * ArraySlice Expression.
           */
-        case Expression.ArraySlice(exp1, exp2, exp3, tpe, _, loc) =>
+        case Expression.ArraySlice(base, beginIndex, endIndex, tpe, _, loc) =>
           for {
-            e1 <- visitExp(exp1, env0)
-            e2 <- visitExp(exp2, env0)
-            e3 <- visitExp(exp3, env0)
+            b <- visitExp(base, env0)
+            i1 <- visitExp(beginIndex, env0)
+            i2 <- visitExp(endIndex, env0)
           } yield {
-            val eff = exp1.eff seq exp2.eff seq  exp3.eff
-            Expression.ArraySlice(e1, e2, e3, tpe, eff, loc)
+            val eff = base.eff seq beginIndex.eff seq  endIndex.eff
+            Expression.ArraySlice(b, i1, i2, tpe, eff, loc)
           }
 
         /**

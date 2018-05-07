@@ -508,7 +508,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
       case WeededAst.Type.Unit(loc) => Nil
       case WeededAst.Type.Tuple(elms, loc) => elms.flatMap(freeVars)
       case WeededAst.Type.Succ(elm, loc) => Nil
-      // case WeededAst.Type.Array(elms, loc) => elms.flatmap(freeVars)
       case WeededAst.Type.Native(fqm, loc) => Nil
       case WeededAst.Type.Arrow(tparams, retType, loc) => tparams.flatMap(freeVars) ::: freeVars(retType)
       case WeededAst.Type.Apply(tpe1, tpe2, loc) => freeVars(tpe1) ++ freeVars(tpe2)
@@ -665,24 +664,24 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
           case (es, ln) => NamedAst.Expression.ArrayNew(es, ln, Type.freshTypeVar(), loc)
         }
 
-      case WeededAst.Expression.ArrayLoad(exp1, exp2, loc) =>
-        @@(namer(exp1, env0, tenv0), namer(exp2, env0, tenv0)) map {
-          case(ex1, ex2) => NamedAst.Expression.ArrayLoad(ex1, ex2, Type.freshTypeVar(), loc)
+      case WeededAst.Expression.ArrayLoad(base, index, loc) =>
+        @@(namer(base, env0, tenv0), namer(index, env0, tenv0)) map {
+          case(b, i) => NamedAst.Expression.ArrayLoad(b, i, Type.freshTypeVar(), loc)
         }
 
-      case WeededAst.Expression.ArrayStore(exp1, exps2, exp3, loc) =>
-        @@(namer(exp1, env0, tenv0), namer(exps2,env0,tenv0), namer(exp3, env0, tenv0)) map {
-          case(ex1, exs2, ex3) => NamedAst.Expression.ArrayStore(ex1, exs2, ex3, Type.freshTypeVar(), loc)
+      case WeededAst.Expression.ArrayStore(base, index, elm, loc) =>
+        @@(namer(base, env0, tenv0), namer(index,env0,tenv0), namer(elm, env0, tenv0)) map {
+          case(b, i, e) => NamedAst.Expression.ArrayStore(b, i, e, Type.freshTypeVar(), loc)
         }
 
-      case WeededAst.Expression.ArrayLength(exp, loc) =>
-        namer(exp, env0, tenv0) map {
-          case(ex) => NamedAst.Expression.ArrayLength(ex, Type.freshTypeVar(), loc)
+      case WeededAst.Expression.ArrayLength(base, loc) =>
+        namer(base, env0, tenv0) map {
+          case(b) => NamedAst.Expression.ArrayLength(b, Type.freshTypeVar(), loc)
         }
 
-      case WeededAst.Expression.ArraySlice(exp1, exp2, exp3, loc) =>
-        @@(namer(exp1, env0, tenv0), namer(exp2, env0, tenv0), namer(exp3, env0, tenv0)) map {
-          case(ex1, ex2, ex3) => NamedAst.Expression.ArraySlice(ex1, ex2, ex3, Type.freshTypeVar(), loc)
+      case WeededAst.Expression.ArraySlice(base, beginIndex, endIndex, loc) =>
+        @@(namer(base, env0, tenv0), namer(beginIndex, env0, tenv0), namer(endIndex, env0, tenv0)) map {
+          case(b, i1, i2) => NamedAst.Expression.ArraySlice(b, i1, i2, Type.freshTypeVar(), loc)
         }
 
       case WeededAst.Expression.VectorLit(elms, loc) =>
@@ -825,10 +824,10 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
       case WeededAst.Expression.Tuple(elms, loc) => elms.flatMap(freeVars)
       case WeededAst.Expression.ArrayLit(elms, loc) => elms.flatMap(freeVars)
       case WeededAst.Expression.ArrayNew(elm, len, loc) =>  freeVars(elm) ++ freeVars(len)
-      case WeededAst.Expression.ArrayLoad(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
-      case WeededAst.Expression.ArrayStore(exp1, exp2, exp3, loc) => freeVars(exp1) ++ freeVars(exp2) ++ freeVars(exp3)
-      case WeededAst.Expression.ArrayLength(exp, loc) => freeVars(exp)
-      case WeededAst.Expression.ArraySlice(exp1, exp2, exp3, loc) => freeVars(exp1) ++ freeVars(exp2) ++ freeVars(exp3)
+      case WeededAst.Expression.ArrayLoad(base, index, loc) => freeVars(base) ++ freeVars(index)
+      case WeededAst.Expression.ArrayStore(base, index, elm, loc) => freeVars(base) ++ freeVars(index) ++ freeVars(elm)
+      case WeededAst.Expression.ArrayLength(base, loc) => freeVars(base)
+      case WeededAst.Expression.ArraySlice(base, beginIndex, endIndex, loc) => freeVars(base) ++ freeVars(beginIndex) ++ freeVars(endIndex)
       case WeededAst.Expression.VectorLit(elms, loc) => elms.flatMap(freeVars)
       case WeededAst.Expression.VectorNew(elm, len, loc) => freeVars(elm)
       case WeededAst.Expression.VectorStore(exp1, index, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)

@@ -97,7 +97,6 @@ def testVectorNew32(): Vector[Str, 2] = [|"World" ; 2|]
 @test
 def testVectorNew33(): Vector[Str, 3] = [|"World" ; 3|]
 
-/*
 @test
 def testVectorNew34(): Vector[Vector[Int, 3], 1] = [| [|1,2,3|] ; 1 |]
 
@@ -108,4 +107,4 @@ def testVectorNew35(): Vector[Vector[Int, 2], 2] = [| [|1,2|] ; 2|]
 def testVectorNew36(): Vector[Vector[Int, 3], 3] = [| [|1,2,3|] ; 3|]
 
 @test
-def testVectorNew37(): Vector[Vector[Int, 2], 2] = [| [| 2 ; 2|] ; 2 |]*/
+def testVectorNew37(): Vector[Vector[Int, 2], 2] = [| [| 2 ; 2|] ; 2 |]

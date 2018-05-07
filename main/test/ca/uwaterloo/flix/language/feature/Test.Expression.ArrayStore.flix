@@ -109,4 +109,4 @@ def testArrayStore36(): Unit = let x = [[1,2,3,4,5], [2]]; x[0][3] = 42
 @test
 def testArrayStore37(): Unit = let x = [[1,2,3], [1,2,3], [1,2,3]]; x[2][2] = 42
 
-/* Store for arrays af flere dimensioner virker ikke */
+

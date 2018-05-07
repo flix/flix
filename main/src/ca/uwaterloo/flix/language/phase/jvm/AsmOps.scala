@@ -131,6 +131,9 @@ object AsmOps {
     case JvmType.Reference(_) => "[Ljava/lang/Object;"
   }
 
+  /**
+    * Returns the Array fill type for the value of the type specified by `tpe`
+    */
   def getArrayFillType(tpe: JvmType): String = tpe match {
     case JvmType.Void => throw InternalCompilerException(s"Unexpected type $tpe")
     case JvmType.PrimBool => "([ZZ)V"

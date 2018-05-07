@@ -138,13 +138,13 @@ object WeededAst {
 
     case class ArrayNew(elm: WeededAst.Expression, len: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
-    case class ArrayLoad(exp1: WeededAst.Expression, exp2: WeededAst.Expression, loc:SourceLocation) extends  WeededAst.Expression
+    case class ArrayLoad(base: WeededAst.Expression, index: WeededAst.Expression, loc:SourceLocation) extends  WeededAst.Expression
 
-    case class ArrayLength(exp: WeededAst.Expression, loc: SourceLocation) extends  WeededAst.Expression
+    case class ArrayLength(base: WeededAst.Expression, loc: SourceLocation) extends  WeededAst.Expression
 
-    case class ArrayStore(exp1: WeededAst.Expression, exp2: WeededAst.Expression, exp3: WeededAst.Expression, loc: SourceLocation) extends  WeededAst.Expression
+    case class ArrayStore(base: WeededAst.Expression, index: WeededAst.Expression, elm: WeededAst.Expression, loc: SourceLocation) extends  WeededAst.Expression
 
-    case class ArraySlice(exp1: WeededAst.Expression, exp2: WeededAst.Expression, exp3: WeededAst.Expression, loc: SourceLocation) extends  WeededAst.Expression
+    case class ArraySlice(base: WeededAst.Expression, beginIndex: WeededAst.Expression, endIndex: WeededAst.Expression, loc: SourceLocation) extends  WeededAst.Expression
 
     case class VectorLit(elms: List[WeededAst.Expression], loc: SourceLocation) extends  WeededAst.Expression
 
