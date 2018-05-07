@@ -560,32 +560,32 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
             e <- visit(elm)
           } yield ResolvedAst.Expression.VectorNew(e, len, tvar, loc)
 
-        case NamedAst.Expression.VectorLoad(exp1, index, tvar, loc) =>
+        case NamedAst.Expression.VectorLoad(base, index, tvar, loc) =>
           for {
-            e <- visit(exp1)
-          } yield ResolvedAst.Expression.VectorLoad(e, index, tvar, loc)
+            b <- visit(base)
+          } yield ResolvedAst.Expression.VectorLoad(b, index, tvar, loc)
 
-        case NamedAst.Expression.VectorStore(exp1, index, exp2, tvar, loc) =>
+        case NamedAst.Expression.VectorStore(base, index, elm, tvar, loc) =>
           for {
-            e1 <- visit(exp1)
-            e2 <- visit(exp2)
-          } yield ResolvedAst.Expression.VectorStore(e1, index, e2, tvar, loc)
+            b <- visit(base)
+            e <- visit(elm)
+          } yield ResolvedAst.Expression.VectorStore(b, index, e, tvar, loc)
 
-        case NamedAst.Expression.VectorLength(exp, tvar, loc) =>
+        case NamedAst.Expression.VectorLength(base, tvar, loc) =>
           for {
-            e <- visit(exp)
-          } yield ResolvedAst.Expression.VectorLength(e, tvar, loc)
+            b <- visit(base)
+          } yield ResolvedAst.Expression.VectorLength(b, tvar, loc)
 
-        case NamedAst.Expression.VectorSlice(exp, index, optindex, tvar, loc) =>
-          optindex match {
+        case NamedAst.Expression.VectorSlice(base, startIndex, endIndexOpt, tvar, loc) =>
+          endIndexOpt match {
             case None =>
               for {
-                e <- visit(exp)
-              } yield ResolvedAst.Expression.VectorSlice(e, index, None, tvar, loc)
-            case Some(e2) =>
+                b <- visit(base)
+              } yield ResolvedAst.Expression.VectorSlice(b, startIndex, None, tvar, loc)
+            case Some(ei) =>
               for {
-                e1 <- visit(exp)
-              } yield ResolvedAst.Expression.VectorSlice(e1, index, Some(e2), tvar, loc)
+                b <- visit(base)
+              } yield ResolvedAst.Expression.VectorSlice(b, startIndex, Some(ei), tvar, loc)
           }
 
         case NamedAst.Expression.Ref(exp, tvar, loc) =>
@@ -1175,7 +1175,8 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
         elms <- seqM(elms0.map(tpe => lookupType(tpe, ns0, prog0)))
       ) yield Type.mkTuple(elms)
 
-    case NamedAst.Type.Succ(len, loc) => Type.Succ(len, Type.Zero).toSuccess
+    case NamedAst.Type.Succ(len, loc) if len >= 0 => Type.Succ(len, Type.Zero).toSuccess
+    case NamedAst.Type.Succ(len, loc) if len < 0 => throw InternalCompilerException("Length must be 0 or higher.")
 
     case NamedAst.Type.Native(fqn, loc) =>
       // TODO: needs more precise type.

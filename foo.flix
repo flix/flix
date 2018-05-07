@@ -1,9 +1,9 @@
-
+/*
 def f() : Int = {
  let x = [1,2,3,4,5,6];
  length[x]
 }
-
+*/
 // ArrayNew
 /*
 def f() : Array[Bool] = {
@@ -96,9 +96,8 @@ def f() : Vector[Unit, 0] = {
 /*
 def f() : Int = {
   let x = [|10;10|];
-  length[|x|]
-}
-*/
+  x[|5|]
+}*/
 
 
 // VectorStore
@@ -113,8 +112,8 @@ def f() : Int = {
 // VectorLength
 /*
 def f() : Int = {
-  let x = [1,2,3,4,5];
-  length[x]
+  let x = [|1,2,3,4,5|];
+  length[|x|]
 }*/
 
 /*
@@ -126,12 +125,13 @@ def f() : Int = {
 
 
 // VectorSlice
-/*
+
 def f() : Vector[Str,10] = {
   let x = [|"Hello";10|];
-  let y = x[|3..|] : Vector[Str, 5];
-  y[|1..11|]
-}*/
+  x[|0..10|]
+  /*let y = x[|3..|] : Vector[Str, 5];
+  y[|1..11|]*/
+}
 
   //let y = x[|3..|];
   //y[|1..11|]

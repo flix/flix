@@ -1144,6 +1144,7 @@ object JvmOps {
       case Type.Apply(Type.Array, t) => t
       case Type.Apply(Type.Apply(Type.Vector, t), _) => t
       case _ => throw InternalCompilerException(s"Excepted array or vector type. Actual type: '$tpe' ")
+
     }
     x
   }

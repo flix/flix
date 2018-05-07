@@ -150,13 +150,13 @@ object WeededAst {
 
     case class VectorNew(elm: WeededAst.Expression, len: Int, loc: SourceLocation) extends WeededAst.Expression
 
-    case class VectorLoad(exp1: WeededAst.Expression, index: Int, loc: SourceLocation) extends WeededAst.Expression
+    case class VectorLoad(base: WeededAst.Expression, index: Int, loc: SourceLocation) extends WeededAst.Expression
 
-    case class VectorStore(exp1: WeededAst.Expression, index: Int, exp2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+    case class VectorStore(base: WeededAst.Expression, index: Int, elm: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
-    case class VectorLength(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+    case class VectorLength(base: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
-    case class VectorSlice(exp1: WeededAst.Expression, index: Int, optindex: Option[Int], loc: SourceLocation) extends WeededAst.Expression
+    case class VectorSlice(base: WeededAst.Expression, startIndex: Int, endIndexOpt: Option[Int], loc: SourceLocation) extends WeededAst.Expression
 
     case class Ref(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
@@ -266,7 +266,7 @@ object WeededAst {
 
     case class Tuple(elms: List[WeededAst.Type], loc: SourceLocation) extends WeededAst.Type
 
-    case class Succ(elm: Int, loc: SourceLocation) extends WeededAst.Type
+    case class Succ(len: Int, loc: SourceLocation) extends WeededAst.Type
 
     case class Native(fqn: List[String], loc: SourceLocation) extends WeededAst.Type
 

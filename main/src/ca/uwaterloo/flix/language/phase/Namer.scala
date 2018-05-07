@@ -694,24 +694,24 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
           case e => NamedAst.Expression.VectorNew(e, len, Type.freshTypeVar(), loc)
         }
 
-      case WeededAst.Expression.VectorLoad(exp1, index, loc) =>
-        namer(exp1, env0, tenv0) map {
-          case e => NamedAst.Expression.VectorLoad(e, index, Type.freshTypeVar(), loc)
+      case WeededAst.Expression.VectorLoad(base, index, loc) =>
+        namer(base, env0, tenv0) map {
+          case b => NamedAst.Expression.VectorLoad(b, index, Type.freshTypeVar(), loc)
         }
 
-      case WeededAst.Expression.VectorStore(exp1, index, exp2, loc) =>
-        @@(namer(exp1, env0, tenv0), namer(exp2, env0, tenv0)) map {
-          case(e1, e2) => NamedAst.Expression.VectorStore(e1, index, e2, Type.freshTypeVar(), loc)
+      case WeededAst.Expression.VectorStore(base, index, elm, loc) =>
+        @@(namer(base, env0, tenv0), namer(elm, env0, tenv0)) map {
+          case(b, e) => NamedAst.Expression.VectorStore(b, index, e, Type.freshTypeVar(), loc)
         }
 
-      case WeededAst.Expression.VectorLength(exp, loc) =>
-        namer(exp, env0, tenv0) map {
-          case e => NamedAst.Expression.VectorLength(e, Type.freshTypeVar(), loc)
+      case WeededAst.Expression.VectorLength(base, loc) =>
+        namer(base, env0, tenv0) map {
+          case b => NamedAst.Expression.VectorLength(b, Type.freshTypeVar(), loc)
         }
 
-      case WeededAst.Expression.VectorSlice(exp1, index, optindex, loc) =>
-        namer(exp1, env0, tenv0) map {
-          case e => NamedAst.Expression.VectorSlice(e, index, optindex, Type.freshTypeVar(), loc)
+      case WeededAst.Expression.VectorSlice(base, startIndex, endIndexOpt, loc) =>
+        namer(base, env0, tenv0) map {
+          case b => NamedAst.Expression.VectorSlice(b, startIndex, endIndexOpt, Type.freshTypeVar(), loc)
         }
 
       case WeededAst.Expression.Ref(exp, loc) =>
@@ -830,10 +830,10 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
       case WeededAst.Expression.ArraySlice(base, beginIndex, endIndex, loc) => freeVars(base) ++ freeVars(beginIndex) ++ freeVars(endIndex)
       case WeededAst.Expression.VectorLit(elms, loc) => elms.flatMap(freeVars)
       case WeededAst.Expression.VectorNew(elm, len, loc) => freeVars(elm)
-      case WeededAst.Expression.VectorStore(exp1, index, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
-      case WeededAst.Expression.VectorLoad(exp1, index, loc) => freeVars(exp1)
-      case WeededAst.Expression.VectorLength(exp, loc) => freeVars(exp)
-      case WeededAst.Expression.VectorSlice(exp1, index, optindex, loc) => freeVars(exp1)
+      case WeededAst.Expression.VectorLoad(base, index, loc) => freeVars(base)
+      case WeededAst.Expression.VectorStore(base, index, elm, loc) => freeVars(base) ++ freeVars(elm)
+      case WeededAst.Expression.VectorLength(base, loc) => freeVars(base)
+      case WeededAst.Expression.VectorSlice(base, startIndex, endIndexOpt, loc) => freeVars(base)
       case WeededAst.Expression.Ref(exp, loc) => freeVars(exp)
       case WeededAst.Expression.Deref(exp, loc) => freeVars(exp)
       case WeededAst.Expression.Assign(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
