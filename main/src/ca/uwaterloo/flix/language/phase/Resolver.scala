@@ -588,6 +588,11 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
               } yield ResolvedAst.Expression.VectorSlice(b, startIndex, Some(ei), tvar, loc)
           }
 
+        case NamedAst.Expression.Unique(exp, tvar, loc) =>
+          for {
+            e <- visit(exp)
+          } yield ResolvedAst.Expression.Unique(e, tvar, loc)
+
         case NamedAst.Expression.Ref(exp, tvar, loc) =>
           for {
             e <- visit(exp)

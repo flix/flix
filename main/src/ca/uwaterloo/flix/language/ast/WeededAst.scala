@@ -158,6 +158,8 @@ object WeededAst {
 
     case class VectorSlice(base: WeededAst.Expression, startIndex: Int, endIndexOpt: Option[Int], loc: SourceLocation) extends WeededAst.Expression
 
+    case class Unique(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+
     case class Ref(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     case class Deref(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression

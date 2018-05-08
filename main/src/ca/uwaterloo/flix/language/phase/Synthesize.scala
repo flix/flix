@@ -228,6 +228,10 @@ object Synthesize extends Phase[Root, Root] {
         val e3 = visitExp(expIndex2)
         Expression.VectorSlice(e, index1, e3, tpe, eff, loc)
 
+      case Expression.Unique(exp, tpe, eff, loc) =>
+        val e = visitExp(exp)
+        Expression.Unique(e, tpe, eff, loc)
+
       case Expression.Ref(exp, tpe, eff, loc) =>
         val e = visitExp(exp)
         Expression.Ref(e, tpe, eff, loc)

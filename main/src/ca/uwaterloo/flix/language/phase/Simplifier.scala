@@ -445,6 +445,9 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         val endindx = visitExp(endIndex)
         SimplifiedAst.Expression.ArraySlice(e, SimplifiedAst.Expression.Int32(startIndex), endindx, tpe, loc)
 
+      case TypedAst.Expression.Unique(exp, tpe, eff, loc) =>
+        visitExp(exp)
+
       case TypedAst.Expression.Ref(exp, tpe, eff, loc) =>
         val e = visitExp(exp)
         SimplifiedAst.Expression.Ref(e, tpe, loc)
