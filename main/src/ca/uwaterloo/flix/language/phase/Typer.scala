@@ -903,7 +903,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           //
           //  base : Vector[t, n1]   index: n2   n1: Int n2: Int
           //  -------------------------------------------------------
-          //  exp1[|index|] : t
+          //  base[|index|] : t
           //
           val freshVar = Type.freshTypeVar()
           for (

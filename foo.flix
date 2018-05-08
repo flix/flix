@@ -101,12 +101,15 @@ def f() : Int = {
 
 // VectorStore
 /*
-def f() : Int = {
-  let x = [|10;10|];
-  let _ = x[|9|] = 2;
-  x[|9|]
+def f() : Vector[Int, 12] = {
+  let x = [|[|11;12|], [|13;12|]|];
+  x[|1|][|2|] = 7
 }*/
 
+def f(): Vector[(Int, Int), 1]=
+  let x = [|(1, 2), (3, 4)|];
+  let _ = x[|0|] = (2, 3);
+  x
 
 // VectorLength
 /*
@@ -124,11 +127,17 @@ def f() : Int = {
 
 
 // VectorSlice
-
+/*
 def f() : Vector[Int,10] = {
   let x = [|7;10|];
-  x[|0..10|]
+  x[|..10|]
+}*//*
+def f() : Int = {
+  let x = [[|1, 2, 3|], [|5, 4, 8|]];
+  x[1][|0|]
 }
+*/
+
 
   //let y = x[|3..|];
   //y[|1..11|]
