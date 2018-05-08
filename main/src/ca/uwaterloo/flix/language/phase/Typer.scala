@@ -941,6 +941,17 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
             resultType <- unifyM(tvar, Type.Int32, loc)
           ) yield resultType
 
+        case ResolvedAst.Expression.Unique(exp, tvar, loc) =>
+          //
+          // exp : t
+          // -----------
+          // exp : t
+          //
+          for (
+            tpe <- visitExp(exp);
+            resultType <- unifyM(tvar, Type.freshTypeVar(), loc)
+          ) yield resultType
+
         case ResolvedAst.Expression.VectorSlice(base, startIndex, endIndexOpt, tvar, loc) =>
           //
           //  base : Vector[t, n]   startIndex : Int   endIndexOpt : Int   n: Int
@@ -1353,6 +1364,12 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
             case Some(endIndex) =>
               TypedAst.Expression.VectorSlice(e, startIndex, TypedAst.Expression.Int32(endIndex, loc), subst0(tvar), Eff.Bot, loc)
           }
+          /*
+          * Unique expression
+          */
+        case ResolvedAst.Expression.Unique(exp, tvar, loc) =>
+          val e = visitExp(exp, subst0)
+          TypedAst.Expression.Unique(e, subst0(tvar), Eff.Bot, loc)
 
         /*
          * Reference expression.
