@@ -53,5 +53,19 @@ def testArrayNew17(): Array[Str] = ["foo"; 5]
 def testArrayNew18(): Array[Array[Int]] = [[10; 10]; 5]
 
 @test
-def testArrayNew19(): Array[(Int, Int)] = [(1, 2), (1, 2), (1, 2)]
+def testArrayNew19(): Array[(Int, Int)] = [(1, 2); 5]
 
+@test
+def testArrayNew20(): Array[(List[Int])] = [(1 :: Nil); 5]
+
+enum Color {
+    case Red,
+    case Green,
+    case Blue
+}
+
+@test
+def testArrayNew21(): Array[Color] = [Color.Red; 1]
+
+@test
+def testArrayNew22(): Array[Vector[Int, 2]] = [[|3 ; 2|]]

@@ -110,4 +110,25 @@ def testVectorstore36(): Unit = let x = [|[|1, 2, 3|]; 3|]; x[|2|] = [|3; 3|]
 def testVectorstore37(): Unit = let x = [|[|2; 2|]; 2|]; x[|1|] = [|1, 1|]
 
 @test
-def testArrayStore38(): Unit = let x = [|[|1, 2, 3|], [|1, 2, 3|], [|1, 2, 3|]|]; x[|2|][|2|] = 42
+def testVectorstore38(): Unit = let x = [| [ 1, 2, 3 ], [ 1, 2, 3] |]; x[|1|][1] = 42
+
+@test
+def testVectorstore39(): Unit = let x = [|[7 :: 10 :: Nil], [7 :: Nil]|]; x[|1|] = [19 :: Nil]
+
+@test
+def testVectorstore40(): Unit = let x = [| [(1, 2)], [(3, 4)] |]; x[|1|] = [(19, 10)]
+
+enum Color {
+   case Red,
+   case Blue,
+   case Green
+}
+
+@test
+def testArrayStore41(): Unit = let x = [|[Color.Red, Color.Green], [Color.Blue, Color.Red]|]; x[|1|] = [Color.Green, Color.Green]
+
+@test
+def testArrayStore42(): Unit = let x = [|[|1, 2, 3|], [|1, 2, 3|], [|1, 2, 3|]|]; x[|2|][|2|] = 42
+
+// @test
+// def testArrayStore43(): Vector[(Int, Int), 1] = let x = [|(1, 2), (3, 4)|]; let _ = x[|0|] = (2, 3); x

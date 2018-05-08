@@ -109,4 +109,20 @@ def testArrayStore36(): Unit = let x = [[1, 2, 3, 4, 5], [2]]; x[0][3] = 42
 @test
 def testArrayStore37(): Unit = let x = [[1, 2, 3], [1, 2, 3], [1, 2, 3]]; x[2][2] = 42
 
+@test
+def testArrayStore38(): Unit = let x = [[|7 ; 10|], [|7 ; 10|]]; x[1] = [|19 ; 10|]
 
+@test
+def testArrayStore39(): Unit = let x = [[(7 , 10)], [(7 , 10)]]; x[1] = [(19 , 10)]
+
+@test
+def testArrayStore40(): Unit = let x = [[7 :: 10 :: Nil], [7 :: Nil]]; x[1] = [19 :: Nil]
+
+enum Color {
+   case Red,
+   case Blue,
+   case Green
+}
+
+@test
+def testArrayStore41(): Unit = let x = [[Color.Red, Color.Green], [Color.Blue, Color.Red]]; x[1] = [Color.Green, Color.Green]

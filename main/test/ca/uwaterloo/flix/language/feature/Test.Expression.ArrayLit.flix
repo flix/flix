@@ -4,8 +4,6 @@ def testArrayLit01(): Array[Unit] = []
 @test
 def testArrayLit02(): Array[Int] = [1]
 
-@test
-def testArrayLit03(): Array[Int] = [1, 2, 3]
 
 @test
 def testArrayLit04(): Array[Int] = [1, 2, 3, 4]
@@ -227,7 +225,54 @@ def testArrayLit75(): Array[Array[Str]] = [["Hello"], ["Hello", "World", "World"
 def testArrayLit76(): Array[Array[Str]] = [["Hello", "World", "World", "Hello"] ,["Hello"]]
 
 @test
-def testArrayTuple2(): Array[(Int, Int)] = [(12, 42)]
+def testArrayLit77(): Array[(Int, Int)] = [(12, 42)]
+
+@test
+def testArrayLit78(): Array[(Int, Int, Int)] = [(12, 42, 34), (12, 42, 34)]
+
+@test
+def testArrayLit79(): Array[(Int, Int, Int)] = [(12, 42, 12), (12, 23, 12), (12,12,12)]
+
+@test
+def testArrayLit80(): Array[(Int, Int, Int, Int)] = [(12, 42, 12, 12), (12, 23, 12, 12), (12,12,12, 31)]
+
+@test
+def testArrayLit81(): Array[(Int, Int)] =[(1,1), (1,1), (2,2), (3,3), (1,1), (2,1), (5,5)]
+
+@test
+def testArrayLit82(): Array[(Bool, Bool)] =[(true, true)]
+
+@test
+def testArrayLit83(): Array[(Bool, Bool, Bool)] =[(true, true, true), (true, true, true)]
+
+@test
+def testArrayLit84(): Array[(Bool, Bool, Bool)] =[(true, true, true), (true, false, false), (true, true, false)]
+
+@test
+def testArrayLit85(): Array[(List[Int])] = [(Nil)]
+
+@test
+def testArrayLit86(): Array[(List[Int])] = [(1 :: Nil)]
+
+enum Color {
+    case Red,
+    case Green,
+    case Blue
+}
+
+@test
+def testArrayLit88(): Array[Color] = [Color.Red]
+
+@test
+def testArrayLit89(): Array[Color] = [Color.Red, Color.Green, Color.Blue]
+
+@test
+def testArrayLit90(): Array[Vector[Int, 2]] = [[|12, 42|]]
+
+
+
+
+
 
 
 

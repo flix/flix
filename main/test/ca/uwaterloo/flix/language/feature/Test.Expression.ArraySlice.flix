@@ -75,4 +75,3 @@ def testArraySlice25(): Array[Array[Int]] = let x = [[1, 2, 3, 4, 5], [2]]; x[0.
 
 @test
 def testArraySlice26(): Array[Array[Int]] = let x = [[1, 2, 3], [1, 2, 3], [1, 2, 3]]; x[0..3]
-

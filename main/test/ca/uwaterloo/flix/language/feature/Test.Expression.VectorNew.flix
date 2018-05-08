@@ -98,13 +98,31 @@ def testVectorNew32(): Vector[Str, 2] = [|"World"; 2|]
 def testVectorNew33(): Vector[Str, 3] = [|"World"; 3|]
 
 @test
-def testVectorNew34(): Vector[Vector[Int, 3], 1] = [|[|1, 2, 3|]; 1|]
+def testVectorNew34(): Vector[(Str), 3] = [|("Hello") ; 3|]
 
 @test
-def testVectorNew35(): Vector[Vector[Int, 2], 2] = [|[|1, 2|]; 2|]
+def testVectorNew35(): Vector[(List[Int]), 2] = [|(1 :: Nil) ; 2|]
+
+enum Color {
+   case Red,
+   case Blue,
+   case Green
+}
 
 @test
-def testVectorNew36(): Vector[Vector[Int, 3], 3] = [|[|1, 2, 3|]; 3|]
+def testVectorNew36(): Vector[Color, 3] = [|Color.Red ; 3|]
 
 @test
-def testVectorNew37(): Vector[Vector[Int, 2], 2] = [|[|2; 2|]; 2|]
+def testVectorNew37(): Vector[Array[Int], 1] = [|[3 ; 1]|]
+
+@test
+def testVectorNew38(): Vector[Vector[Int, 2], 2] = [|[|1, 2|]; 2|]
+
+@test
+def testVectorNew39(): Vector[Vector[Int, 3], 3] = [|[|1, 2, 3|]; 3|]
+
+@test
+def testVectorNew40(): Vector[Vector[Int, 2], 2] = [|[|2; 2|]; 2|]
+
+@test
+def testVectorNew41(): Vector[Vector[Int, 3], 1] = [|[|1, 2, 3|]; 1|]
