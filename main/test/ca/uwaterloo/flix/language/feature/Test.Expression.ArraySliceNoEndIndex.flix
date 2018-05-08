@@ -40,11 +40,11 @@ def testArraySliceNoEndIndex13(): Array[Int16] = let x = [1i16, 2i16, 3i16]; x[1
 @test
 def testArraySliceNoEndIndex14(): Array[Int16] = let x = [1i16,2i16,3i16,4i16]; x[2..]
 
-/*@test
+@test
 def testArraySliceNoEndIndex15(): Array[Int64] = let x = [1i64, 2i64, 3i64]; x[1..]
 
 @test
-def testArraySliceNoEndIndex16(): Array[Int64] = let x = [1i64,2i64,3i64,4i64]; x[2..]*/
+def testArraySliceNoEndIndex16(): Array[Int64] = let x = [1i64,2i64,3i64,4i64]; x[2..]
 
 @test
 def testArraySliceNoEndIndex17(): Array[Float32] = let x = [1.0f32, 2.0f32, 3.0f32]; x[1..]

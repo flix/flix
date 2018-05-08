@@ -68,10 +68,11 @@ def testArraySlice22(): Array[Str] = let x = ["World", "Hello", "World"]; x[2..3
 def testArraySlice23(): Array[Array[Int]] = let x = [[1,2], [1,2]]; x[1..2]
 
 @test
-def testArraySlice24(): Array[Array[Int]] = let x = [[1], [1,2,3,4,5,6,7,8]]; x[0..2]
+def testArraySlice24(): Array[Array[Int]] = let x = [[1], [1,2,3,4,5,6,7,8]]; x[1..2]
 
 @test
 def testArraySlice25(): Array[Array[Int]] = let x = [[1,2,3,4,5], [2]]; x[0..1]
 
 @test
 def testArraySlice26(): Array[Array[Int]] = let x = [[1,2,3], [1,2,3], [1,2,3]]; x[0..3]
+

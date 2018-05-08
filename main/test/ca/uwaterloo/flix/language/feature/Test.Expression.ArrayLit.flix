@@ -4,8 +4,6 @@ def testArrayLit01(): Array[Unit] = []
 @test
 def testArrayLit02(): Array[Int] = [1]
 
-@test
-def testArrayLit03(): Array[Int] = [1, 2, 3]
 
 @test
 def testArrayLit04(): Array[Int] = [1,2,3,4]
@@ -143,7 +141,7 @@ def testArrayLit47(): Array[Array[Char]] = [['a','b','c','d','e'], ['a']]
 def testArrayLit48(): Array[Array[Char]] = [['a','b','c'], ['a','b','c'], ['a','b','c']]
 
 @test
-def testArrayLit49(): Array[Array[Int8]] = [[1i8, 2i8, 3i8,]]
+def testArrayLit49(): Array[Array[Int8]] = [[1i8, 2i8, 3i8]]
 
 @test
 def testArrayLit50(): Array[Array[Int8]] = [[1i8, 2i8], [1i8, 2i8]]
@@ -194,13 +192,10 @@ def testArrayLit64(): Array[Array[Float32]] = [[1.0f32,2.0f32,3.0f32]]
 def testArrayLit65(): Array[Array[Float32]] = [[1.0f32,2.0f32], [1.0f32,2.0f32]]
 
 @test
-def testArrayLit66(): Array[Array[Float32]] = [[1.0f32], [,1.0f32,2.0f32,3.0f32,4.0f32,5.0f32,6.0f32]]
+def testArrayLit66(): Array[Array[Float32]] = [[1.0f32], [1.0f32,2.0f32,3.0f32,4.0f32,5.0f32,6.0f32]]
 
 @test
-def testArrayLit67(): Array[Array[Float32]] = [[1.0f32,2.0f32,3.0f32,4.0f32,5.0f32,6.0f32], [1.0f32],]
-
-@test
-def testArrayLit67(): Array[Array[Float32]] = [[1.0f32,2.0f32,3.0f32], [1.0f32, 2.0f32,3.0f32], [1.0f32,2.0f32,3.0f32]]
+def testArrayLit67(): Array[Array[Float32]] = [[1.0f32,2.0f32,3.0f32,4.0f32,5.0f32,6.0f32], [1.0f32]]
 
 @test
 def testArrayLit68(): Array[Array[Float64]] = [[1.0f64,2.0f64,3.0f64]]
@@ -230,31 +225,53 @@ def testArrayLit75(): Array[Array[Str]] = [["Hello"], ["Hello", "World", "World"
 def testArrayLit76(): Array[Array[Str]] = [["Hello", "World", "World", "Hello"] ,["Hello"]]
 
 @test
-def testArrayLit76(): Array[(Int, Int)] = [(12, 42)]
+def testArrayLit77(): Array[(Int, Int)] = [(12, 42)]
 
 @test
-def testArrayLit77(): Array[(Int, Int, Int)] = [(12, 42, 34), (12, 42, 34)]
+def testArrayLit78(): Array[(Int, Int, Int)] = [(12, 42, 34), (12, 42, 34)]
 
 @test
-def testArrayLit78(): Array[(Int, Int, Int)] = [(12, 42, 12), (12, 23, 12), (12,12,12)]
+def testArrayLit79(): Array[(Int, Int, Int)] = [(12, 42, 12), (12, 23, 12), (12,12,12)]
 
 @test
-def testArrayLit79(): Array[(Int, Int, Int, Int)] = [(12, 42, 12, 12), (12, 23, 12, 12), (12,12,12, 31)]
+def testArrayLit80(): Array[(Int, Int, Int, Int)] = [(12, 42, 12, 12), (12, 23, 12, 12), (12,12,12, 31)]
 
 @test
-def testArrayLit80(): Array[(Int, Int)] =[(1,1), (1,1), (2,2), (3,3), (1,1), (2,1), (5,5)]
+def testArrayLit81(): Array[(Int, Int)] =[(1,1), (1,1), (2,2), (3,3), (1,1), (2,1), (5,5)]
 
 @test
-def testArrayLit81(): Array[(Bool, Bool)] =[(true, true)]
+def testArrayLit82(): Array[(Bool, Bool)] =[(true, true)]
 
 @test
-def testArrayLit82(): Array[(Bool, Bool, Bool)] =[(true, true, true), (true, true, true)]
+def testArrayLit83(): Array[(Bool, Bool, Bool)] =[(true, true, true), (true, true, true)]
 
 @test
-def testArrayLit83(): Array[(Bool, Bool, Bool)] =[(true, true, true), (true, false, false), (true, true, false)]
+def testArrayLit84(): Array[(Bool, Bool, Bool)] =[(true, true, true), (true, false, false), (true, true, false)]
 
 @test
-def testArrayLit83(): Array[List[Int]] = Nil
+def testArrayLit85(): Array[(List[Int])] = [(Nil)]
+
+@test
+def testArrayLit86(): Array[(List[Int])] = [(1 :: Nil)]
+
+enum Color {
+    case Red,
+    case Green,
+    case Blue
+}
+
+@test
+def testArrayLit88(): Array[Color] = [Color.Red]
+
+@test
+def testArrayLit89(): Array[Color] = [Color.Red, Color.Green, Color.Blue]
+
+@test
+def testArrayLit90(): Array[Vector[Int, 2]] = [[|12, 42|]]
+
+
+
+
 
 
 

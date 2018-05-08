@@ -1,18 +1,13 @@
 
-/*
-def f() : Int = {
- let x = [10i64;10];
- let _ = x[1] = 10i64;
- 2
-} */
+
 
 // ArrayNew
 /*
 def f() : Array[Bool] = {
   let x = [true;1000];
   x
-}
-*/
+} */
+
 
 
 // ArrayLoad
@@ -73,6 +68,7 @@ def f() : Int = {
   x[|3|]
 }*/
 
+
 // VectorStore
 /*def f() : Unit = {
   let x = [|5;5|];
@@ -88,10 +84,24 @@ def f() : Array[Unit] = {
 }*/
 
 
+//VectorStore
+/*
+def f() : Unit = {
+  let x = [|1,2,3,4,5|];
+  x[|1|] = 100
+}*/
+
+// VectorLit
+/*def f() : Vector[Int, 2] = {
+  let x = [|1,2|];
+  x
+}*/
+
+
 // VectorNew
 /*
-def f() : Vector[Int, 15] = {
-  let x = [|10;15|];
+def f() : Vector[Unit, 0] = {
+  let x = [|;|];
   x
 }*/
 
@@ -100,8 +110,9 @@ def f() : Vector[Int, 15] = {
 /*
 def f() : Int = {
   let x = [|10;10|];
-  x[|9|]
-}*/
+  length[|x|]
+}
+*/
 
 
 // VectorStore
@@ -116,17 +127,17 @@ def f() : Int = {
 // VectorLength
 /*
 def f() : Int = {
-
-  let x = [|[|1,2,3|], [|1,2,3|], [|1,2,3|]|];
-  length[|x|]
+  let x = [1,2,3,4,5];
+  length[x]
 }*/
 
-
-/*def f() : Int = {
+/*
+def f() : Int = {
   let x = [|1, 2, 3|];
-  length[|x|]
-}
-*/
+  length[|x|];
+  head
+}*/
+
 
 // VectorSlice
 /*
@@ -154,9 +165,11 @@ def f() : Array[Array[Int]] = {
   x
 }*/
 
-@test
-def testArrayLit73(): Array[Array[Str]] = [["Hello"]]
+//-------------------------------Tests--------------------------------------------//
 
+
+
+/*
 @test
 def testArrayLit00(): List[Int] = Nil
 
@@ -165,15 +178,47 @@ def testArrayLit01(): List[Int] = 1 :: Nil
 
 @test
 def testArrayLit02(): List[Int] = 1 :: 2 :: Nil
+*/
 
 enum Color {
    case Red,
    case Blue,
    case Green
- }
+}
 
 
 
+// def f(): Unit = let x = [|[Color.Red, Color.Green], [Color.Blue, Color.Red]|]; x[|1|] = [Color.Green, Color.Green]
+
+// def f(): Unit = let x = [[(7 , 10)], [(7 , 10)]]; x[1] = [(19 , 10)]
+
+// def f(): Unit = let x = [[(7 ; 10)], [(7 ; 10)]]; x[1] = [(19 ; 10)]
+
+// def f(): Unit = let x = [[7 :: 10 :: Nil], [7 :: Nil]]; x[1] = [19 :: Nil]
+
+// def f(): Unit = let x = [[Color.Red, Color.Green], [Color.Blue, Color.Red]]; x[1] = [Color.Green, Color.Green]
+
+// def f(): Array[Vector[Int, 2]] = [[|12, 42|]]
+
+// def f(): Array[Vector[Int, 2]] = [[|3 ; 2|]]
+
+// def f(): Int = let x = [[|1, 2|], [|3, 4|]]; x[0][|0|]
+
+// def f(): Int = let x = [[(1 :: Nil)], [(2 :: Nil)]]; x[1][0] ArrayLoad
+
+// def f(): Vector[Array[Int], 2] = [|[2, 1], [2, 1]|]
+
+// def f(): Vector[Array[Int], 1] = [|[3 ; 1]|]
+
+// def f(): Array[List[Int]] = let x = [[1 :: Nil], [3 :: Nil]]; x[0]
+
+// def f(): Int = let x = [|[1, 2], [3, 4]|]; x[|1|][0]
+
+// def f(): Unit = let x = [|[7 :: 10 :: Nil], [7 :: Nil]|]; x[|1|] = [19 :: Nil]
+
+// def f(): Unit = let x = [| [(1, 2)], [(3, 4)] |]; x[|1|] = [(19, 10)]
+
+// def f(): Array[(Int, Int)] = let x = [(1, 2), (3, 4)]; let _ = x[0] = (2, 3); x Array
 
 
 

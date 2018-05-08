@@ -1,5 +1,5 @@
-@test
-def testVectorLit01(): Vector[Unit, 0] = [||]
+/*@test
+def testVectorLit01(): Vector[Unit, 0] = [||]*/
 
 @test
 def testVectorLit02(): Vector[Int, 1] = [|1|]
@@ -104,4 +104,38 @@ def testVectorLit34(): Vector[Vector[Int, 3], 1] = [| [|1,2,3|] |]
 def testVectorLit35(): Vector[Vector[Int, 2], 2] = [| [|1,2|], [|1,2|] |]
 
 @test
-def testArrayLit36(): Vector[Vector[Int, 3], 3] = [| [|1,2,3|], [|1,2,3|], [|1,2,3|] |]
+def testVectorLit36(): Vector[Vector[Int, 3], 3] = [| [|1,2,3|], [|1,2,3|], [|1,2,3|] |]
+
+@test
+def testVectorLit37(): Vector[(Int, Int), 1] = [|(2, 1)|]
+
+@test
+def testVectorLit38(): Vector[(Int, Int), 2] = [|(2, 1), (2, 1)|]
+
+@test
+def testVectorLit39(): Vector[(List[Int]), 1] = [|(Nil)|]
+
+@test
+def testVectorLit40(): Vector[(List[Int]), 1] = [|(1 :: 2 :: 3 :: 4 :: Nil)|]
+
+enum Color {
+   case Red,
+   case Blue,
+   case Green
+}
+
+@test
+def testVectorLit41(): Vector[Color, 1] = [|Color.Red|]
+
+@test
+def testVectorLit42(): Vector[Color, 3] = [|Color.Red, Color.Blue, Color.Green|]
+
+@test
+def testVectorLit43(): Vector[Array[Int], 2] = [|[2, 1], [2, 1]|]
+
+
+
+
+
+
+

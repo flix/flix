@@ -33,26 +33,47 @@ def testArrayNew10(): Array[Int8] = [10i8;5]
 def testArrayNew11(): Array[Int16] = [10i16;5]
 
 @test
-def testArrayNew12(): Array[Int32] = [10;5]
+def testArrayNew12(): Array[Int32] = [10; 5]
 
 @test
-def testArrayNew13(): Array[Int64] = [10i64;5]
+def testArrayNew13(): Array[Int64] = [10i64; 5]
 
 @test
-def testArrayNew14(): Array[BigInt] = [10ii;5]
+def testArrayNew14(): Array[BigInt] = [10ii; 5]
 
 @test
-def testArrayNew15(): Array[Float32] = [3.0f32;5]
+def testArrayNew15(): Array[Float32] = [3.0f32; 5]
 
 @test
-def testArrayNew16(): Array[Float64] = [3.0f64;5]
+def testArrayNew16(): Array[Float64] = [3.0f64; 5]
 
 @test
-def testArrayNew17(): Array[Str] = ["foo";5]
+def testArrayNew17(): Array[Str] = ["foo"; 5]
 
 @test
 def testArrayNew18(): Array[Array[Int]] = [[10; 10]; 5]
 
 @test
-def testArrayNew19(): Array[(Int, Int)] = [(1,2), (1,2), (1,2)]
+def testArrayNew19(): Array[(Int, Int)] = [(1, 2); 5]
+
+@test
+def testArrayNew20(): Array[(List[Int])] = [(1 :: Nil); 5]
+
+enum Color {
+    case Red,
+    case Green,
+    case Blue
+}
+
+@test
+def testArrayNew21(): Array[Color] = [Color.Red; 1]
+
+def testArrayNew22(): Array[Vector[Int, 2]] = [[|3 ; 2|]]
+
+
+
+
+
+
+
 
