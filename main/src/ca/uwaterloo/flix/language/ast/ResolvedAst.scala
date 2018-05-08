@@ -172,6 +172,8 @@ object ResolvedAst {
 
     case class VectorSlice(base: ResolvedAst.Expression, startIndex: Int, optindex: Option[Int], tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
+    case class Unique(exp: ResolvedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+
     case class Ref(exp: ResolvedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Deref(exp: ResolvedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression

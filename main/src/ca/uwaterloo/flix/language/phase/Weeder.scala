@@ -723,6 +723,13 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
             }
           }
 
+        case ParsedAst.Expression.Unique(sp1, exp, sp2) =>
+          val loc = mkSL(sp1, sp2)
+          visit(exp, unsafe) map {
+            case e => WeededAst.Expression.Unique(e, loc)
+          }
+
+
         case ParsedAst.Expression.FNil(sp1, sp2) =>
           /*
            * Rewrites a `FNil` expression into a tag expression.
@@ -1563,6 +1570,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.VectorSlice(base,_,_,_) => leftMostSourcePosition(base)
     case ParsedAst.Expression.VectorSliceNoEndIndex(base, _, _) => leftMostSourcePosition(base)
     case ParsedAst.Expression.VectorSliceNoStartIndex(base,_,_) => leftMostSourcePosition(base)
+    case ParsedAst.Expression.Unique(sp1, _, _) => sp1
     case ParsedAst.Expression.FNil(sp1, _) => sp1
     case ParsedAst.Expression.FCons(hd, _, _, _) => leftMostSourcePosition(hd)
     case ParsedAst.Expression.FAppend(fst, _, _, _) => leftMostSourcePosition(fst)

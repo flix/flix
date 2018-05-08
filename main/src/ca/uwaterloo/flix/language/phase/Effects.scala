@@ -433,6 +433,9 @@ object Effects extends Phase[Root, Root] {
             Expression.VectorLit(elms, tpe, eff, loc)
           }
 
+        /**
+          * VectorNew Expression
+          * */
         case Expression.VectorNew(elm, len, tpe, _, loc) =>
           for {
             e <- visitExp(elm, env0)
@@ -441,6 +444,9 @@ object Effects extends Phase[Root, Root] {
             Expression.VectorNew(e, len, tpe, eff, loc)
           }
 
+        /**
+          * VectorLoad Expression
+          * */
         case Expression.VectorLoad(base, index, tpe, _, loc) =>
           for {
             b <- visitExp(base, env0)
@@ -449,6 +455,9 @@ object Effects extends Phase[Root, Root] {
             Expression.VectorLoad(b, index, tpe, eff, loc)
           }
 
+          /**
+            * VectorStore Expression
+            * */
         case Expression.VectorStore(base, index, elm, tpe, _, loc) =>
           for {
             b <- visitExp(base, env0)
@@ -458,6 +467,9 @@ object Effects extends Phase[Root, Root] {
             Expression.VectorStore(b, index, e, tpe, eff, loc)
           }
 
+          /**
+            * VectorLength Expression
+            * */
         case Expression.VectorLength(base, tpe, _, loc) =>
           for {
             b <- visitExp(base, env0)
@@ -466,6 +478,9 @@ object Effects extends Phase[Root, Root] {
             Expression.VectorLength(b, tpe, eff, loc)
           }
 
+          /**
+            * VectorSlice Expression
+            * */
         case Expression.VectorSlice(base, startIndex, endIndex, tpe, _, loc) =>
           for {
             b <- visitExp(base, env0)
@@ -474,7 +489,18 @@ object Effects extends Phase[Root, Root] {
             val eff = base.eff seq endIndex.eff
             Expression.VectorSlice(b, startIndex, i2, tpe, eff, loc)
           }
-          
+
+          /**
+            *  Unique Expression
+            * */
+        case Expression.Unique(exp, tpe, _, loc) =>
+          for {
+            e <- visitExp(exp, env0)
+          } yield {
+            val eff = exp.eff
+            Expression.Unique(e, tpe, eff, loc)
+          }
+
             /**
           * Reference Expression.
           */

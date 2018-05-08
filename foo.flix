@@ -129,7 +129,6 @@ def f() : Vector[Int,10] = {
   let x = [|7;10|];
   x[|0..10|]
 }*/
-
   //let y = x[|3..|];
   //y[|1..11|]
 //}
@@ -155,9 +154,12 @@ def testArrayTuple2(): Array[(Int, Int)] = [(12, 42)] // Works
 def testArrayTuple3(): Array[(Int, Int, Int)] = [(12, 42, 34)] // Works
 
 def testArrayTuple4(): Array[(Int, Int)] = [(12, 42), (12, 23)] //Error
-
-
 */
 
-
-
+def f(): Int = {
+  let x = unique [1, 2, 3];
+  let y = unique x;
+  //let x = [1,2];
+  //x[0]
+  x[0]
+}

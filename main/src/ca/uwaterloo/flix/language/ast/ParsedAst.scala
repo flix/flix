@@ -753,6 +753,15 @@ object ParsedAst {
     case class VectorSliceNoStartIndex(base: Expression, endIndex: Literal, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
+      * Unique Expression.
+      *
+      * @param sp1 the position of the first character in the unique keyword.
+      * @param exp the exp to be unique.
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class Unique(sp1: SourcePosition, exp: Expression, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
       * Nil Expression (of list).
       *
       * @param sp1 the position of the first character in the expression.

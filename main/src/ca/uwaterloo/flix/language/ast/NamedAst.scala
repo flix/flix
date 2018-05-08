@@ -166,6 +166,8 @@ object NamedAst {
 
     case class VectorSlice(base: NamedAst.Expression, startIndex: Int, endIndexOpt: Option[Int], tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
+    case class Unique(exp: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
+
     case class Ref(exp: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
     case class Deref(exp: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression

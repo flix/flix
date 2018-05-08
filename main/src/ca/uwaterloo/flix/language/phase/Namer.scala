@@ -714,6 +714,11 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
           case b => NamedAst.Expression.VectorSlice(b, startIndex, endIndexOpt, Type.freshTypeVar(), loc)
         }
 
+      case WeededAst.Expression.Unique(exp, loc) =>
+        namer(exp, env0, tenv0) map {
+          case e => NamedAst.Expression.Unique(e, Type.freshTypeVar(), loc)
+        }
+
       case WeededAst.Expression.Ref(exp, loc) =>
         namer(exp, env0, tenv0) map {
           case e => NamedAst.Expression.Ref(e, Type.freshTypeVar(), loc)
@@ -834,6 +839,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
       case WeededAst.Expression.VectorStore(base, index, elm, loc) => freeVars(base) ++ freeVars(elm)
       case WeededAst.Expression.VectorLength(base, loc) => freeVars(base)
       case WeededAst.Expression.VectorSlice(base, startIndex, endIndexOpt, loc) => freeVars(base)
+      case WeededAst.Expression.Unique(exp, loc) => freeVars(exp)
       case WeededAst.Expression.Ref(exp, loc) => freeVars(exp)
       case WeededAst.Expression.Deref(exp, loc) => freeVars(exp)
       case WeededAst.Expression.Assign(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
