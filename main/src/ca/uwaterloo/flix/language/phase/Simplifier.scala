@@ -427,23 +427,23 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         val t = Type.mkArray(elm.tpe)
         SimplifiedAst.Expression.ArrayNew(e, SimplifiedAst.Expression.Int32(len), t, loc)
 
-      case TypedAst.Expression.VectorLoad(exp1, index, tpe, eff, loc) =>
-        val e1 = visitExp(exp1)
-        SimplifiedAst.Expression.ArrayLoad(e1, SimplifiedAst.Expression.Int32(index), tpe, loc)
+      case TypedAst.Expression.VectorLoad(base, index, tpe, eff, loc) =>
+        val b = visitExp(base)
+        SimplifiedAst.Expression.ArrayLoad(b, SimplifiedAst.Expression.Int32(index), tpe, loc)
 
-      case TypedAst.Expression.VectorStore(exp1, index, exp2, tpe, eff, loc) =>
-        val e1 = visitExp(exp1)
-        val e3 = visitExp(exp2)
-        SimplifiedAst.Expression.ArrayStore(e1, SimplifiedAst.Expression.Int32(index), e3, tpe, loc)
+      case TypedAst.Expression.VectorStore(base, index, elm, tpe, eff, loc) =>
+        val b = visitExp(base)
+        val e = visitExp(elm)
+        SimplifiedAst.Expression.ArrayStore(b, SimplifiedAst.Expression.Int32(index), e, tpe, loc)
 
-      case TypedAst.Expression.VectorLength(exp, tpe, eff, loc) =>
-        val e = visitExp(exp)
-        SimplifiedAst.Expression.ArrayLength(e, tpe, loc)
+      case TypedAst.Expression.VectorLength(base, tpe, eff, loc) =>
+        val b = visitExp(base)
+        SimplifiedAst.Expression.ArrayLength(b, tpe, loc)
 
-      case TypedAst.Expression.VectorSlice(exp, startIndex, endIndex, tpe, eff, loc) =>
-        val e = visitExp(exp)
-        val endindx = visitExp(endIndex)
-        SimplifiedAst.Expression.ArraySlice(e, SimplifiedAst.Expression.Int32(startIndex), endindx, tpe, loc)
+      case TypedAst.Expression.VectorSlice(base, startIndex, endIndex, tpe, eff, loc) =>
+        val b = visitExp(base)
+        val i2 = visitExp(endIndex)
+        SimplifiedAst.Expression.ArraySlice(b, SimplifiedAst.Expression.Int32(startIndex), i2, tpe, loc)
 
       case TypedAst.Expression.Ref(exp, tpe, eff, loc) =>
         val e = visitExp(exp)
