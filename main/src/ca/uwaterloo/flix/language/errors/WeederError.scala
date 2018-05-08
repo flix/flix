@@ -509,7 +509,7 @@ object WeederError {
       vt << Line(kind, source.format) << NewLine
       vt << ">> Illegal vector index. " << NewLine
       vt << NewLine
-      vt << Code(loc, "Illegal vector length.") << NewLine
+      vt << Code(loc, "Illegal vector index.") << NewLine
     }
   }
 
