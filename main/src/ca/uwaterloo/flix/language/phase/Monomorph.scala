@@ -323,23 +323,23 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           val e = visitExp(elm, env0)
           Expression.VectorNew(e, len, tpe, eff, loc)
 
-        case Expression.VectorLoad(exp1, index, tpe, eff, loc) =>
-          val e = visitExp(exp1, env0)
-          Expression.VectorLoad(e, index, tpe, eff, loc)
+        case Expression.VectorLoad(base, index, tpe, eff, loc) =>
+          val b = visitExp(base, env0)
+          Expression.VectorLoad(b, index, tpe, eff, loc)
 
-        case Expression.VectorStore(exp1, index, exp2, tpe, eff, loc) =>
-          val e1 = visitExp(exp1, env0)
-          val e3 = visitExp(exp2, env0)
-          Expression.VectorStore(e1, index, e3, tpe, eff, loc)
+        case Expression.VectorStore(base, index, elm, tpe, eff, loc) =>
+          val b = visitExp(base, env0)
+          val e = visitExp(elm, env0)
+          Expression.VectorStore(b, index, e, tpe, eff, loc)
 
-        case Expression.VectorLength(exp, tpe, eff, loc) =>
-          val e = visitExp(exp, env0)
-          Expression.VectorLength(e, tpe, eff, loc)
+        case Expression.VectorLength(base, tpe, eff, loc) =>
+          val b = visitExp(base, env0)
+          Expression.VectorLength(b, tpe, eff, loc)
 
-        case Expression.VectorSlice(exp1, index1, expIndex2, tpe, eff, loc) =>
-          val e = visitExp(exp1, env0)
-          val e3 = visitExp(expIndex2, env0)
-          Expression.VectorSlice(e, index1, expIndex2, tpe, eff, loc)
+        case Expression.VectorSlice(base, startIndex, endIndex, tpe, eff, loc) =>
+          val b = visitExp(base, env0)
+          val i2 = visitExp(endIndex, env0)
+          Expression.VectorSlice(b, startIndex, endIndex, tpe, eff, loc)
 
         case Expression.Ref(exp, tpe, eff, loc) =>
           val e = visitExp(exp, env0)
