@@ -189,8 +189,8 @@ object Unification {
       case (Type.Arrow(l1), Type.Arrow(l2)) if l1 == l2 => Result.Ok(Substitution.empty)
       case (Type.Tuple(l1), Type.Tuple(l2)) if l1 == l2 => Result.Ok(Substitution.empty)
       case (Type.Zero, Type.Zero) => Result.Ok(Substitution.empty) // 0 == 0
-      case (Type.Succ(n1, t1), Type.Zero) if n1 == 0 && t1 == Type.Zero => Result.Ok(Substitution.empty)
-      case (Type.Zero, Type.Succ(n2, t2)) if n2 == 0 && t2 == Type.Zero => Result.Ok(Substitution.empty)
+      case (Type.Succ(0, Type.Zero), Type.Zero) => Result.Ok(Substitution.empty)
+      case (Type.Zero, Type.Succ(0, Type.Zero)) => Result.Ok(Substitution.empty)
       case (Type.Succ(n1, t1), Type.Succ(n2, t2)) if n1 == n2 => unifyTypes(t1, t2) //(42, t1) == (42, t2)
       case (Type.Succ(n1, t1), Type.Succ(n2, t2)) if n1 > n2 => unifyTypes(Type.Succ(n1-n2, t1), t2) // (42, x) == (21 y) --> (42-21, x) = y
       case (Type.Succ(n1, t1), Type.Succ(n2, t2)) if n1 < n2 => unifyTypes(Type.Succ(n2-n1, t2), t1) // (21, x) == (42, y) --> (42-21, y) = x

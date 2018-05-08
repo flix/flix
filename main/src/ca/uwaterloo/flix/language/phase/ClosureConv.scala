@@ -20,6 +20,7 @@ import ca.uwaterloo.flix.language.GenSym
 import ca.uwaterloo.flix.language.ast.SimplifiedAst.{Expression, HandlerBinding}
 import ca.uwaterloo.flix.language.ast.{Ast, SimplifiedAst, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.util.InternalCompilerException
+import shapeless.ops.coproduct.ExtendRight
 
 import scala.collection.mutable
 
@@ -265,6 +266,12 @@ object ClosureConv {
     case Expression.Tag(enum, tag, exp, tpe, loc) => freeVariables(exp)
     case Expression.Index(base, offset, tpe, loc) => freeVariables(base)
     case Expression.Tuple(elms, tpe, loc) => mutable.LinkedHashSet.empty ++ elms.flatMap(freeVariables)
+    case Expression.ArrayLit(elms, tpe, loc) => mutable.LinkedHashSet.empty ++ elms.flatMap(freeVariables)
+    case Expression.ArrayNew(elm, len, tpe, loc) => freeVariables(elm) ++ freeVariables(len)
+    case Expression.ArrayLoad(base, index, tpe, loc) => freeVariables(base) ++ freeVariables(index)
+    case Expression.ArrayStore(base, index, elm, tpe, loc) => freeVariables(base) ++ freeVariables(index) ++ freeVariables(elm)
+    case Expression.ArrayLength(base, tpe, loc) => freeVariables(base)
+    case Expression.ArraySlice(base ,beginIndex, endIndex, tpe, loc) => freeVariables(base) ++ freeVariables(beginIndex) ++ freeVariables(endIndex)
     case Expression.Ref(exp, tpe, loc) => freeVariables(exp)
     case Expression.Deref(exp, tpe, loc) => freeVariables(exp)
     case Expression.Assign(exp1, exp2, tpe, loc) => freeVariables(exp1) ++ freeVariables(exp2)
@@ -391,9 +398,26 @@ object ClosureConv {
         val es = elms map visit
         Expression.ArrayLit(es, tpe, loc)
       case Expression.ArrayNew(elm, len, tpe,loc) =>
-        val e1 = visit(elm)
-        val e2 = visit(len)
-        Expression.ArrayNew(e1, e2, tpe, loc)
+        val e = visit(elm)
+        val ln = visit(len)
+        Expression.ArrayNew(e, ln, tpe, loc)
+      case Expression.ArrayLoad(base, index, tpe, loc) =>
+        val b = visit(base)
+        val i = visit(index)
+        Expression.ArrayLoad(b, i, tpe, loc)
+      case Expression.ArrayStore(base, index, elm, tpe, loc) =>
+        val b = visit(base)
+        val i = visit(index)
+        val e = visit(elm)
+        Expression.ArrayStore(b, i, e, tpe, loc )
+      case Expression.ArrayLength(base, tpe, loc) =>
+        val b = visit(base)
+        Expression.ArrayLength(b, tpe, loc)
+      case Expression.ArraySlice(base, beginIndex, endIndex, tpe, loc) =>
+        val b = visit(base)
+        val i1 = visit(beginIndex)
+        val i2 = visit(endIndex)
+        Expression.ArraySlice(b, i1, i2, tpe, loc)
       case Expression.Ref(exp, tpe, loc) =>
         val e = visit(exp)
         Expression.Ref(e, tpe, loc)

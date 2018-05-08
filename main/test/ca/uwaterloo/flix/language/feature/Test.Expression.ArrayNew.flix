@@ -1,5 +1,5 @@
 @test
-def testArrayNew01(): Array[Int] = [10;0]
+def testArrayNew01(): Array[Int] = [10; 0]
 
 @test
 def testArrayNew02(): Array[Int] = [1; 1]
@@ -14,23 +14,22 @@ def testArrayNew04(): Array[Int] = [0; 113]
 def testArrayNew05(): Array[Int] = [0; 500]
 
 @test
-def testArrayNew06(): Array[Unit] = [();5]
-
-
-@test
-def testArrayNew07(): Array[Bool] = [true;5]
+def testArrayNew06(): Array[Unit] = [(); 5]
 
 @test
-def testArrayNew08(): Array[Bool] = [false;5]
+def testArrayNew07(): Array[Bool] = [true; 5]
 
 @test
-def testArrayNew09(): Array[Char] = ['a';5]
+def testArrayNew08(): Array[Bool] = [false; 5]
 
 @test
-def testArrayNew10(): Array[Int8] = [10i8;5]
+def testArrayNew09(): Array[Char] = ['a'; 5]
 
 @test
-def testArrayNew11(): Array[Int16] = [10i16;5]
+def testArrayNew10(): Array[Int8] = [10i8; 5]
+
+@test
+def testArrayNew11(): Array[Int16] = [10i16; 5]
 
 @test
 def testArrayNew12(): Array[Int32] = [10; 5]
@@ -68,12 +67,5 @@ enum Color {
 @test
 def testArrayNew21(): Array[Color] = [Color.Red; 1]
 
+@test
 def testArrayNew22(): Array[Vector[Int, 2]] = [[|3 ; 2|]]
-
-
-
-
-
-
-
-

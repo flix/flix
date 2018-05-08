@@ -227,22 +227,22 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
           _ <- checkPats(elm, root)
           _ <- checkPats(len, root)
         } yield tast
-        case Expression.ArrayLoad(exp1, exp2, _, _, _) => for {
-          _ <- checkPats(exp1, root)
-          _ <- checkPats(exp2, root)
+        case Expression.ArrayLoad(base, index, _, _, _) => for {
+          _ <- checkPats(base, root)
+          _ <- checkPats(index, root)
         } yield tast
-        case Expression.ArrayStore(exp1, exp2, exp3, _, _, _) => for {
-          _ <- checkPats(exp1, root)
-          _ <- checkPats(exp2, root)
-          _ <- checkPats(exp3, root)
+        case Expression.ArrayStore(base, index, elm, _, _, _) => for {
+          _ <- checkPats(base, root)
+          _ <- checkPats(index, root)
+          _ <- checkPats(elm, root)
         } yield tast
-        case Expression.ArrayLength(exp, _, _, _) => for {
-          _ <- checkPats(exp, root)
+        case Expression.ArrayLength(base, _, _, _) => for {
+          _ <- checkPats(base, root)
         } yield tast
-        case Expression.ArraySlice(exp1, exp2, exp3, _, _, _) => for {
-          _ <- checkPats(exp1, root)
-          _ <- checkPats(exp2, root)
-          _ <- checkPats(exp3, root)
+        case Expression.ArraySlice(base, beginIndex, endIndex, _, _, _) => for {
+          _ <- checkPats(base, root)
+          _ <- checkPats(beginIndex, root)
+          _ <- checkPats(endIndex, root)
         } yield tast
         case Expression.VectorLit(elms, _, _, _) => seqM(elms map {
           checkPats(_, root)
@@ -251,23 +251,27 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
           for {
             _ <- checkPats(elm, root)
           } yield tast
-        case Expression.VectorLoad(exp1, _, _, _, _) =>
+        case Expression.VectorLoad(base, _, _, _, _) =>
           for {
-            _ <- checkPats(exp1, root)
+            _ <- checkPats(base, root)
           } yield tast
-        case Expression.VectorStore(exp1, _, exp2, _, _, _) =>
+        case Expression.VectorStore(base, _, elm, _, _, _) =>
           for {
-            _ <- checkPats(exp1, root)
-            _ <- checkPats(exp2, root)
+            _ <- checkPats(base, root)
+            _ <- checkPats(elm, root)
           } yield tast
-        case Expression.VectorLength(exp1, _, _, _) =>
+        case Expression.VectorLength(base, _, _, _) =>
           for {
-           _ <- checkPats(exp1, root)
+           _ <- checkPats(base, root)
           } yield tast
-        case Expression.VectorSlice(exp1, _, exp2, _, _, _) =>
+        case Expression.VectorSlice(base, _, endIndex, _, _, _) =>
           for {
-            _ <- checkPats(exp1, root)
-            _ <- checkPats(exp2, root)
+            _ <- checkPats(base, root)
+            _ <- checkPats(endIndex, root)
+          } yield tast
+        case Expression.Unique(exp, _, _, _) =>
+          for {
+            _ <- checkPats(exp, root)
           } yield tast
         case Expression.Ref(exp, _, _, _) =>
           checkPats(exp, root).map(const(tast))

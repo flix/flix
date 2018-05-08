@@ -601,7 +601,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Primary: Rule1[ParsedAst.Expression] = rule {
       LetRec | LetMatch | IfThenElse | Match | LambdaMatch | Switch | Unsafe | Native | Lambda | Tuple | ArrayLit |
-        ArrayNew | ArrayLength | VectorLit | VectorNew | VectorLength | FNil | FSet | FMap | Literal |
+        ArrayNew | ArrayLength | VectorLit | VectorNew | VectorLength | Unique | FNil | FSet | FMap | Literal |
         HandleWith | Existential | Universal | UnaryLambda | QName | Wild | Tag | SName | Hole | UserError
     }
 
@@ -741,6 +741,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def VectorLength: Rule1[ParsedAst.Expression] = rule {
       SP ~ atomic("length[|") ~ optWS ~ Expression ~ optWS ~ "|]" ~ SP ~> ParsedAst.Expression.VectorLength
+    }
+
+    def Unique: Rule1[ParsedAst.Expression] = rule {
+      SP ~ atomic("unique") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.Unique
     }
 
     def FNil: Rule1[ParsedAst.Expression.FNil] = rule {

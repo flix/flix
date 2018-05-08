@@ -525,30 +525,30 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
             ln <- visit(len)
           } yield ResolvedAst.Expression.ArrayNew(e, ln, tvar, loc)
 
-        case NamedAst.Expression.ArrayLoad(exp1, exp2, tvar, loc) =>
+        case NamedAst.Expression.ArrayLoad(base, index, tvar, loc) =>
           for {
-            e1 <- visit(exp1)
-            e2 <- visit(exp2)
-          } yield ResolvedAst.Expression.ArrayLoad(e1, e2, tvar, loc)
+            b <- visit(base)
+            i <- visit(index)
+          } yield ResolvedAst.Expression.ArrayLoad(b, i, tvar, loc)
 
-        case NamedAst.Expression.ArrayStore(exp1, exp2, exp3, tvar, loc) =>
+        case NamedAst.Expression.ArrayStore(base, index, elm, tvar, loc) =>
           for {
-            e1 <- visit(exp1)
-            e2 <- visit(exp2)
-            e3 <- visit(exp3)
-          } yield ResolvedAst.Expression.ArrayStore(e1, e2, e3, tvar, loc)
+            b <- visit(base)
+            i <- visit(index)
+            e <- visit(elm)
+          } yield ResolvedAst.Expression.ArrayStore(b, i, e, tvar, loc)
 
-        case NamedAst.Expression.ArrayLength(exp, tvar, loc) =>
+        case NamedAst.Expression.ArrayLength(base, tvar, loc) =>
           for {
-            e <- visit(exp)
-          } yield ResolvedAst.Expression.ArrayLength(e, tvar, loc)
+            b <- visit(base)
+          } yield ResolvedAst.Expression.ArrayLength(b, tvar, loc)
 
-        case NamedAst.Expression.ArraySlice(exp1, exp2, exp3, tvar, loc) =>
+        case NamedAst.Expression.ArraySlice(base, beginIndex, endIndex, tvar, loc) =>
           for{
-            e1 <- visit(exp1)
-            e2 <- visit(exp2)
-            e3 <- visit(exp3)
-          } yield ResolvedAst.Expression.ArraySlice(e1, e2, e3, tvar, loc)
+            b <- visit(base)
+            i1 <- visit(beginIndex)
+            i2 <- visit(endIndex)
+          } yield ResolvedAst.Expression.ArraySlice(b, i1, i2, tvar, loc)
 
         case NamedAst.Expression.VectorLit(elms, tvar, loc) =>
           for {
@@ -560,33 +560,38 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
             e <- visit(elm)
           } yield ResolvedAst.Expression.VectorNew(e, len, tvar, loc)
 
-        case NamedAst.Expression.VectorLoad(exp1, index, tvar, loc) =>
+        case NamedAst.Expression.VectorLoad(base, index, tvar, loc) =>
           for {
-            e <- visit(exp1)
-          } yield ResolvedAst.Expression.VectorLoad(e, index, tvar, loc)
+            b <- visit(base)
+          } yield ResolvedAst.Expression.VectorLoad(b, index, tvar, loc)
 
-        case NamedAst.Expression.VectorStore(exp1, index, exp2, tvar, loc) =>
+        case NamedAst.Expression.VectorStore(base, index, elm, tvar, loc) =>
           for {
-            e1 <- visit(exp1)
-            e2 <- visit(exp2)
-          } yield ResolvedAst.Expression.VectorStore(e1, index, e2, tvar, loc)
+            b <- visit(base)
+            e <- visit(elm)
+          } yield ResolvedAst.Expression.VectorStore(b, index, e, tvar, loc)
 
-        case NamedAst.Expression.VectorLength(exp, tvar, loc) =>
+        case NamedAst.Expression.VectorLength(base, tvar, loc) =>
           for {
-            e <- visit(exp)
-          } yield ResolvedAst.Expression.VectorLength(e, tvar, loc)
+            b <- visit(base)
+          } yield ResolvedAst.Expression.VectorLength(b, tvar, loc)
 
-        case NamedAst.Expression.VectorSlice(exp, index, optindex, tvar, loc) =>
-          optindex match {
+        case NamedAst.Expression.VectorSlice(base, startIndex, endIndexOpt, tvar, loc) =>
+          endIndexOpt match {
             case None =>
               for {
-                e <- visit(exp)
-              } yield ResolvedAst.Expression.VectorSlice(e, index, None, tvar, loc)
-            case Some(e2) =>
+                b <- visit(base)
+              } yield ResolvedAst.Expression.VectorSlice(b, startIndex, None, tvar, loc)
+            case Some(ei) =>
               for {
-                e1 <- visit(exp)
-              } yield ResolvedAst.Expression.VectorSlice(e1, index, Some(e2), tvar, loc)
+                b <- visit(base)
+              } yield ResolvedAst.Expression.VectorSlice(b, startIndex, Some(ei), tvar, loc)
           }
+
+        case NamedAst.Expression.Unique(exp, tvar, loc) =>
+          for {
+            e <- visit(exp)
+          } yield ResolvedAst.Expression.Unique(e, tvar, loc)
 
         case NamedAst.Expression.Ref(exp, tvar, loc) =>
           for {

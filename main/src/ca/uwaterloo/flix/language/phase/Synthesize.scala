@@ -181,26 +181,26 @@ object Synthesize extends Phase[Root, Root] {
         val ln = visitExp(len)
         Expression.ArrayNew(e, ln, tpe, eff, loc)
 
-      case Expression.ArrayLoad(exp1, exp2, tpe, eff, loc) =>
-        val e1 = visitExp(exp1)
-        val e2 = visitExp(exp2)
-        Expression.ArrayLoad(e1, e2, tpe, eff, loc)
+      case Expression.ArrayLoad(base, index, tpe, eff, loc) =>
+        val b = visitExp(base)
+        val i = visitExp(index)
+        Expression.ArrayLoad(b, i, tpe, eff, loc)
 
-      case Expression.ArrayStore(exp1, exp2, exp3, tpe, eff, loc) =>
-        val e1 = visitExp(exp1)
-        val e2 = visitExp(exp2)
-        val e3 = visitExp(exp3)
-        Expression.ArrayStore(e1, e2, e3, tpe, eff, loc)
+      case Expression.ArrayStore(base, index, elm, tpe, eff, loc) =>
+        val b = visitExp(base)
+        val i = visitExp(index)
+        val e = visitExp(elm)
+        Expression.ArrayStore(b, i, e, tpe, eff, loc)
 
-      case Expression.ArrayLength(exp, tpe, eff, loc) =>
-        val e = visitExp(exp)
-        Expression.ArrayLength(e, tpe, eff, loc)
+      case Expression.ArrayLength(base, tpe, eff, loc) =>
+        val b = visitExp(base)
+        Expression.ArrayLength(b, tpe, eff, loc)
 
-      case Expression.ArraySlice(exp1, exp2, exp3, tpe, eff, loc) =>
-        val e1 = visitExp(exp1)
-        val e2 = visitExp(exp2)
-        val e3 = visitExp(exp3)
-        Expression.ArraySlice(e1, e2, e3, tpe, eff, loc)
+      case Expression.ArraySlice(base, beginIndex, endIndex, tpe, eff, loc) =>
+        val b = visitExp(base)
+        val i1 = visitExp(beginIndex)
+        val i2 = visitExp(endIndex)
+        Expression.ArraySlice(b, i1, i2, tpe, eff, loc)
 
       case Expression.VectorLit(elms, tpe, eff, loc) =>
         val es = elms map visitExp
@@ -210,23 +210,27 @@ object Synthesize extends Phase[Root, Root] {
         val e = visitExp(elm)
         Expression.VectorNew(e, len, tpe, eff, loc)
 
-      case Expression.VectorLoad(exp1, index, tpe, eff, loc) =>
-        val e = visitExp(exp1)
-        Expression.VectorLoad(e, index, tpe, eff, loc)
+      case Expression.VectorLoad(base, index, tpe, eff, loc) =>
+        val b = visitExp(base)
+        Expression.VectorLoad(b, index, tpe, eff, loc)
 
-      case Expression.VectorStore(exp1, index, exp2, tpe, eff, loc) =>
-        val e1 = visitExp(exp1)
-        val e3 = visitExp(exp2)
-        Expression.VectorStore(e1, index, e3, tpe, eff, loc)
+      case Expression.VectorStore(base, index, elm, tpe, eff, loc) =>
+        val b = visitExp(base)
+        val e = visitExp(elm)
+        Expression.VectorStore(b, index, e, tpe, eff, loc)
 
-      case Expression.VectorLength(exp, tpe, eff, loc) =>
+      case Expression.VectorLength(base, tpe, eff, loc) =>
+        val b = visitExp(base)
+        Expression.VectorLength(b, tpe, eff, loc)
+
+      case Expression.VectorSlice(base, startIndex, endIndex, tpe, eff, loc) =>
+        val b = visitExp(base)
+        val e = visitExp(endIndex)
+        Expression.VectorSlice(b, startIndex, e, tpe, eff, loc)
+
+      case Expression.Unique(exp, tpe, eff, loc) =>
         val e = visitExp(exp)
-        Expression.VectorLength(e, tpe, eff, loc)
-
-      case Expression.VectorSlice(exp1, index1, expIndex2, tpe, eff, loc) =>
-        val e = visitExp(exp1)
-        val e3 = visitExp(expIndex2)
-        Expression.VectorSlice(e, index1, e3, tpe, eff, loc)
+        Expression.Unique(e, tpe, eff, loc)
 
       case Expression.Ref(exp, tpe, eff, loc) =>
         val e = visitExp(exp)
@@ -866,7 +870,7 @@ object Synthesize extends Phase[Root, Root] {
 
         case Type.Zero => Expression.Str("<<Zero>>", sl)
 
-        case Type.Succ(n, t) => Expression.Str("<<Succession>>", sl)
+        case Type.Succ(len, t) => Expression.Str("<<Succession>>", sl)
 
         case Type.Native =>
           val method = classOf[java.lang.Object].getMethod("toString")
