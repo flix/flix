@@ -692,6 +692,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           val sp1 = leftMostSourcePosition(base)
           val loc = mkSL(sp1, sp2)
           @@(visit(base, unsafe), convertToInt(startIndex, sp1, sp2), convertToInt(endIndex, sp1, sp2)) flatMap {
+            case (b, l1, l2) if l1 > l2 => WeederError.IllegalVectorIndex(loc).toFailure
             case (b, l1, l2) => WeededAst.Expression.VectorSlice(b, l1, Some(l2), loc).toSuccess
             case _ => WeederError.IllegalVectorLength(loc).toFailure
           }
