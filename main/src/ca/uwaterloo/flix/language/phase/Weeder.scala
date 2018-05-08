@@ -666,22 +666,24 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         case ParsedAst.Expression.VectorStore(base, indexes, elm, sp2) =>
           val sp1 = leftMostSourcePosition(base)
           val loc = mkSL(sp1, sp2)
-
-          @@(visit(base, unsafe), visit(elm, unsafe)) flatMap {
-            case (b, el) => val inner = indexes.init.foldLeft(b) {
-              case (accc, e) => e match {
-                case ParsedAst.Literal.Int32(sp1, sign, digits, sp2) =>
-                  WeededAst.Expression.VectorLoad(accc, toInt32(sign, digits, loc).get, loc)
+          val validIndexes = checkIndexSequence(indexes, sp1, sp2)
+          if(validIndexes.isSuccess) {
+            @@(visit(base, unsafe), visit(elm, unsafe)) flatMap {
+              case (b, el) => val inner = indexes.init.foldLeft(b) {
+                case (accc, e) => e match {
+                  case ParsedAst.Literal.Int32(sp1, sign, digits, sp2) =>
+                    WeededAst.Expression.VectorLoad(accc, toInt32(sign, digits, loc).get, loc)
+                  case _ => throw InternalCompilerException("Index must be 0 or greater.")
+                }
               }
+                convertToInt(indexes.last, sp1, sp2) flatMap {
+                  case l => WeededAst.Expression.VectorStore(inner, l, el, loc).toSuccess
+                }
+              case _ => WeederError.IllegalVectorLength(loc).toFailure
             }
-            indexes.last match {
-              case ParsedAst.Literal.Int32(sp1, sign, digits, sp2) => toInt32(sign, digits, loc) flatMap {
-                case l if l >= 0 => WeededAst.Expression.VectorStore(inner, l, el, loc).toSuccess
-                case _ => WeederError.IllegalVectorLength(loc).toFailure
-              }
-            }
-            case _ => WeederError.IllegalVectorLength(loc).toFailure
           }
+          else
+            WeederError.IllegalVectorLength(loc).toFailure
 
         case ParsedAst.Expression.VectorLength(sp1, base, sp2) =>
           visit(base, unsafe) map {
@@ -700,27 +702,17 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         case ParsedAst.Expression.VectorSliceNoEndIndex(base, startIndex, sp2) =>
           val sp1 = leftMostSourcePosition(base)
           val loc = mkSL(sp1, sp2)
-          visit(base, unsafe) flatMap {
-            case b => startIndex match {
-              case ParsedAst.Literal.Int32(sp1, sign, digits, sp2) => toInt32(sign, digits, loc) flatMap {
-                case l if l >= 0 => WeededAst.Expression.VectorSlice(b, l, None, loc).toSuccess
-                case _ => WeederError.IllegalVectorLength(loc).toFailure
-              }
-              case _ => WeederError.IllegalVectorLength(loc).toFailure
-            }
+          @@(visit(base, unsafe), convertToInt(startIndex, sp1, sp2)) flatMap {
+            case (b, l) => WeededAst.Expression.VectorSlice(b, l, None, loc).toSuccess
+            case _ => WeederError.IllegalVectorLength(loc).toFailure
           }
 
         case ParsedAst.Expression.VectorSliceNoStartIndex(base, endIndex, sp2) =>
           val sp1 = leftMostSourcePosition(base)
           val loc = mkSL(sp1, sp2)
-          visit(base, unsafe) flatMap {
-            case b => endIndex match {
-              case ParsedAst.Literal.Int32(sp1, sign, digits, sp2) => toInt32(sign, digits, loc) flatMap {
-                case l if l >= 0 => WeededAst.Expression.VectorSlice(b, 0, Some(l), loc).toSuccess
-                case _ => WeederError.IllegalVectorLength(loc).toFailure
-              }
-              case _ => WeederError.IllegalVectorLength(loc).toFailure
-            }
+          @@(visit(base, unsafe), convertToInt(endIndex, sp1, sp2)) flatMap {
+            case (b, l) => WeededAst.Expression.VectorSlice(b, 0, Some(l), loc).toSuccess
+            case _ => WeederError.IllegalVectorLength(loc).toFailure
           }
 
         case ParsedAst.Expression.Unique(sp1, exp, sp2) =>
@@ -941,7 +933,16 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           case l if l >= 0 => l.toSuccess
           case _ => WeederError.IllegalVectorLength(mkSL(sp1, sp2)).toFailure
         }
+        case _=> throw InternalCompilerException("Index must be an integer.")
       }
+    }
+
+    private def checkIndexSequence(elms: Seq[ParsedAst.Literal], sp1: SourcePosition, sp2: SourcePosition) : Validation[Boolean, WeederError] = {
+      val t = elms map(e => convertToInt(e, sp1, sp2).isSuccess)
+      if(t.contains(false))
+        WeederError.IllegalVectorLength(mkSL(sp1, sp2)).toFailure
+      else
+        true.toSuccess
     }
   }
 

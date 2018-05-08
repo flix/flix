@@ -339,7 +339,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         case Expression.VectorSlice(base, startIndex, endIndex, tpe, eff, loc) =>
           val b = visitExp(base, env0)
           val i2 = visitExp(endIndex, env0)
-          Expression.VectorSlice(b, startIndex, endIndex, tpe, eff, loc)
+          Expression.VectorSlice(b, startIndex, i2, tpe, eff, loc)
 
         case Expression.Unique(exp, tpe, eff, loc) =>
           val e = visitExp(exp, env0)
