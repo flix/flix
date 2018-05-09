@@ -154,6 +154,18 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         Expression.Index(visit(base), offset, tpe, loc)
       case Expression.Tuple(elms, tpe, loc) =>
         Expression.Tuple(elms.map(visit), tpe, loc)
+      case Expression.ArrayLit(elms, tpe, loc) =>
+        Expression.ArrayLit(elms.map(visit), tpe, loc)
+      case Expression.ArrayNew(elm, len, tpe, loc) =>
+        Expression.ArrayNew(visit(elm), visit(len), tpe, loc)
+      case Expression.ArrayLoad(base, index, tpe, loc) =>
+        Expression.ArrayLoad(visit(base), visit(index), tpe, loc)
+      case Expression.ArrayStore(base, index, elm, tpe, loc) =>
+        Expression.ArrayStore(visit(base), visit(elm), visit(index), tpe, loc)
+      case Expression.ArrayLength(base, tpe, loc) =>
+        Expression.ArrayLength(visit(base), tpe, loc)
+      case Expression.ArraySlice(base, beginIndex, endIndex, tpe, loc) =>
+        Expression.ArraySlice(visit(base), visit(beginIndex), visit(endIndex), tpe, loc)
       case Expression.Ref(exp1, tpe, loc) =>
         Expression.Ref(visit(exp1), tpe, loc)
       case Expression.Deref(exp1, tpe, loc) =>
@@ -251,6 +263,18 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       Expression.Index(renameAndSubstitute(base, env0), offset, tpe, loc)
     case Expression.Tuple(elms, tpe, loc) =>
       Expression.Tuple(elms.map(renameAndSubstitute(_, env0)), tpe, loc)
+    case Expression.ArrayLit(elms, tpe, loc) =>
+      Expression.ArrayLit(elms.map(renameAndSubstitute(_, env0)), tpe, loc)
+    case Expression.ArrayNew(elm, len, tpe, loc) =>
+      Expression.ArrayNew(renameAndSubstitute(elm, env0), renameAndSubstitute(len, env0), tpe, loc)
+    case Expression.ArrayLoad(base, index, tpe, loc) =>
+      Expression.ArrayLoad(renameAndSubstitute(base, env0), renameAndSubstitute(index, env0), tpe, loc)
+    case Expression.ArrayStore(base, index, elm, tpe, loc) =>
+      Expression.ArrayStore(renameAndSubstitute(base, env0), renameAndSubstitute(index, env0), renameAndSubstitute(elm, env0), tpe, loc)
+    case Expression.ArrayLength(base, tpe, loc) =>
+      Expression.ArrayLength(renameAndSubstitute(base, env0), tpe, loc)
+    case Expression.ArraySlice(base, beginIndex, endIndex, tpe, loc) =>
+      Expression.ArraySlice(renameAndSubstitute(base, env0), renameAndSubstitute(beginIndex, env0), renameAndSubstitute(endIndex, env0), tpe, loc)
     case Expression.Ref(exp1, tpe, loc) =>
       Expression.Ref(renameAndSubstitute(exp1, env0), tpe, loc)
     case Expression.Deref(exp1, tpe, loc) =>
@@ -404,6 +428,36 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     // Tuple expressions are atomic if the elements are.
     //
     case Expression.Tuple(elms, tpe, loc) => elms forall isAtomic
+
+    //
+    // ArrayLit expressions are atomic if the elements are.
+    //
+    case Expression.ArrayLit(elms, tpe, loc) => elms forall isAtomic
+
+    //
+    // ArrayNew expressions are atomic if the element is.
+    //
+    case Expression.ArrayNew(elm, len, tpe, loc) => isAtomic(elm) && isAtomic(len)
+
+    //
+    // ArrayLoad expressions are atomic if the base and index are.
+    //
+    case Expression.ArrayLoad(base, index, tpe, loc) => isAtomic(base) && isAtomic(index)
+
+    //
+    // ArrayStore expressions are atomic if the base, index and element are.
+    //
+    case Expression.ArrayStore(base, index, elm, tpe, loc) => isAtomic(base) && isAtomic(index) && isAtomic(elm)
+
+    //
+    // ArrayLength expressions are atomic if the base is.
+    //
+    case Expression.ArrayLength(base, tpe, loc) => isAtomic(base)
+
+    //
+    // ArrayLength expressions are atomic if the base, beginIndex and endIndex are.
+    //
+    case Expression.ArraySlice(base, beginIndex, endIndex, tpe, loc) => isAtomic(base) && isAtomic(beginIndex) && isAtomic(endIndex)
 
     //
     // Reference expressions are atomic.

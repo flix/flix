@@ -67,6 +67,8 @@ object JvmOps {
       case Type.Ref => getCellClassType(tpe)
       case Type.Arrow(l) => getFunctionInterfaceType(tpe)
       case Type.Tuple(l) => getTupleInterfaceType(tpe)
+      case Type.Array => JvmType.Object
+      case Type.Vector => JvmType.Object
       case Type.Enum(sym, kind) =>
         getNullability(tpe) match {
           case Nullability.Nullable(t) =>
@@ -768,6 +770,20 @@ object JvmOps {
         case (sacc, e) => sacc ++ visitExp(e)
       }
 
+      case Expression.ArrayLit(elms, tpe, loc) => elms.foldLeft(Set.empty[ClosureInfo]) {
+        case (sacc, e) => sacc ++ visitExp(e)
+      }
+
+      case Expression.ArrayNew(elm, len, tpe, loc) => visitExp(elm) ++ visitExp(len)
+
+      case Expression.ArrayLoad(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2)
+
+      case Expression.ArrayStore(exp1, exp2, exp3, tpe, loc) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
+
+      case Expression.ArrayLength(exp, tpe, loc) => visitExp(exp)
+
+      case Expression.ArraySlice(exp1, exp2, exp3, tpe, loc) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
+
       case Expression.Ref(exp, tpe, loc) => visitExp(exp)
       case Expression.Deref(exp, tpe, loc) => visitExp(exp)
       case Expression.Assign(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2)
@@ -974,6 +990,20 @@ object JvmOps {
         case (sacc, e) => sacc ++ visitExp(e)
       }
 
+      case Expression.ArrayLit(elms, tpe, loc) => elms.foldLeft(Set(tpe)) {
+        case (sacc, e) => sacc ++ visitExp(e)
+      }
+
+      case Expression.ArrayNew(elm, len, tpe, loc) => visitExp(elm) ++ visitExp(len)
+
+      case Expression.ArrayLoad(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2)
+
+      case Expression.ArrayStore(exp1, exp2, exp3, tpe, loc) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
+
+      case Expression.ArrayLength(exp, tpe, loc) => visitExp(exp)
+
+      case Expression.ArraySlice(exp1, exp2, exp3, tpe, loc) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
+
       case Expression.Ref(exp, tpe, loc) => visitExp(exp) + tpe
       case Expression.Deref(exp, tpe, loc) => visitExp(exp) + tpe
       case Expression.Assign(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2) + tpe
@@ -1102,5 +1132,21 @@ object JvmOps {
     * Returns `true` if the given definition `defn` is a law.
     */
   def nonLaw(defn: Def): Boolean = !defn.ann.isLaw
+
+  /**
+    * Return the inner type of the array or vector
+    *
+    * For example given Array[Int] return Int,
+    * and given Vector[Int, 5] return Int.
+  */
+  def getArrayInnerType(tpe: Type): Type = {
+    val x = tpe match {
+      case Type.Apply(Type.Array, t) => t
+      case Type.Apply(Type.Apply(Type.Vector, t), _) => t
+      case _ => throw InternalCompilerException(s"Excepted array or vector type. Actual type: '$tpe' ")
+
+    }
+    x
+  }
 
 }
