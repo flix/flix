@@ -46,8 +46,11 @@ sealed trait Type {
     case Type.BigInt => Set.empty
     case Type.Str => Set.empty
     case Type.Array => Set.empty
+    case Type.Vector => Set.empty
     case Type.Native => Set.empty
     case Type.Ref => Set.empty
+    case Type.Zero => Set.empty
+    case Type.Succ(n, t) => Set.empty
     case Type.Arrow(l) => Set.empty
     case Type.Tuple(l) => Set.empty
     case Type.Enum(enumName, kind) => Set.empty
@@ -148,6 +151,9 @@ sealed trait Type {
     case Type.BigInt => "BigInt"
     case Type.Str => "Str"
     case Type.Array => "Array"
+    case Type.Vector => "Vector"
+    case Type.Zero => "Zero"
+    case Type.Succ(n, t) => s"Successor($n, $t)"
     case Type.Native => "Native"
     case Type.Ref => "Ref"
     case Type.Arrow(l) => s"Arrow($l)"
@@ -283,6 +289,13 @@ object Type {
   }
 
   /**
+    * A type constructor that represent vectors.
+    */
+  case object Vector extends Type {
+    def kind: Kind = Kind.Star
+  }
+
+  /**
     * A type constructor that represent native objects.
     */
   case object Native extends Type {
@@ -318,8 +331,12 @@ object Type {
     def kind: Kind = Kind.Arrow((0 until length).map(_ => Kind.Star).toList, Kind.Star)
   }
 
-  case class Array(length: Int) extends Type {
-    def kind: Kind = Kind.Arrow((0 until length).map(_ => Kind.Star).toList, Kind.Star)
+  case object Zero extends Type {
+    def kind: Kind = Kind.Star
+  }
+
+  case class Succ(len: Int, t: Type) extends Type {
+    def kind: Kind = Kind.Star
   }
 
   /**
@@ -378,16 +395,18 @@ object Type {
   }
 
   /**
-    * Constructs the array type [a] where 'a' is the given type.
+    * Constructs the array type [elmType] where 'elmType' is the given type.
     */
-  def mkArray(a: Type): Type = Apply(Array, a)
+  def mkArray(elmType: Type): Type = Apply(Array, elmType)
 
-  def mkArray(ts: List[Type]): Type = {
-    val array = Array(ts.length)
-    ts.foldLeft(array: Type) {
-      case(acc, x) => Apply(acc, x)
-    }
-  }
+  /**
+    * Constructs the vector type [|elmType, Len|] where
+    * 'elmType' is the given element type
+    * 'len' is the given length of the vector.
+    * len expected input is an instance of Succ(Int, Type), where Int is the length, and Type is either Type.Zero or a fresh variable.
+    */
+  def mkVector(elmType: Type, len: Type) : Type = Apply(Apply(Vector, elmType), len)
+
 
   /**
     * Constructs the set type of A.
@@ -422,10 +441,13 @@ object Type {
       case Type.BigInt => Type.BigInt
       case Type.Str => Type.Str
       case Type.Array => Type.Array
+      case Type.Vector => Type.Vector
       case Type.Native => Type.Native
       case Type.Ref => Type.Ref
       case Type.Arrow(l) => Type.Arrow(l)
       case Type.Tuple(l) => Type.Tuple(l)
+      case Type.Zero => Type.Zero
+      case Type.Succ(n, t) => Type.Succ(n, t)
       case Type.Apply(tpe1, tpe2) => Type.Apply(visit(tpe1), visit(tpe2))
       case Type.Enum(enum, kind) => Type.Enum(enum, kind)
     }
@@ -470,6 +492,9 @@ object Type {
           case Type.BigInt => "BigInt"
           case Type.Str => "String"
           case Type.Array => "Array"
+          case Type.Vector => "Vector"
+          case Type.Zero => "Zero"
+          case Type.Succ(n, t) => n.toString + " " + t.toString
           case Type.Native => "Native"
           case Type.Ref => "Ref"
 

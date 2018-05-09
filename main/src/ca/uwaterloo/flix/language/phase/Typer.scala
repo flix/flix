@@ -19,7 +19,6 @@ package ca.uwaterloo.flix.language.phase
 import java.lang.reflect.Field
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.EffectSet.Bot
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.Unification._
@@ -762,59 +761,221 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         /*
          * ArrayLit expression.
          */
-        case ResolvedAst.Expression.ArrayLit(elms, tvar, loc) =>
-          for (
-            elementsTypes <- seqM(elms.map(visitExp));
-            resultType <- unifyM(tvar, Type.mkArray(elementsTypes), loc)
-          ) yield resultType
+          case ResolvedAst.Expression.ArrayLit(elms, tvar, loc) =>
+          //
+          //  e1 : t ... en: t
+          //  ------------------------
+          //  [e1,...,en] : Array[t]
+          //
+          val length = elms.length
+          length match {
+            case 0 =>
+              for (
+                resultType <- unifyM(tvar, Type.mkArray(Type.freshTypeVar()), loc)
+              ) yield resultType
+            case _ =>
+              for (
+                elementsTypes <- seqM(elms.map(visitExp));
+                elementType <- unifyM(elementsTypes, loc);
+                resultType <- unifyM(tvar, Type.mkArray(elementType), loc)
+              ) yield resultType
+          }
 
           /*
            * ArrayNew expression.
            */
         case ResolvedAst.Expression.ArrayNew(elm, len, tvar, loc) =>
+          //
+          //  elm : t      len: Int
+          //  ------------------------
+          //  [elm ; len] : Array[t]
+          //
           for (
-            tpe <- visitExp(elm);
-            resultType <- unifyM(tvar, Type.mkArray(tpe), loc)
+            receivedElementType <- visitExp(elm);
+            receivedLengthType <- visitExp(len);
+            lenghtType <- unifyM(receivedLengthType, Type.Int32, loc);
+            resultType <- unifyM(tvar, Type.mkArray(receivedElementType), loc)
           ) yield resultType
 
         /*
          * ArrayLoad expression.
          */
-        case ResolvedAst.Expression.ArrayLoad(exp1, exp2, tvar, loc) =>
+        case ResolvedAst.Expression.ArrayLoad(base, index, tvar, loc) =>
+          //
+          //  base : Array[t]   index: Int
+          //  ------------------------
+          //  base[index] : t
+          //
           for (
-            tpe <- visitExp(exp1);
-            resultType <- unifyM(tvar, tpe, loc)
-          ) yield resultType
+            receivedBaseType <- visitExp(base);
+            receivedIndexType <- visitExp(index);
+            arrayType <- unifyM(receivedBaseType, Type.mkArray(tvar), loc);
+            indexType <- unifyM(receivedIndexType, Type.Int32, loc)
+          ) yield tvar
 
         /*
          * ArrayLength expression.
          */
-        case ResolvedAst.Expression.ArrayLength(exp, tvar, loc) =>
+        case ResolvedAst.Expression.ArrayLength(base, tvar, loc) =>
+          //
+          //  base : Array[t]
+          //  ------------------------
+          //  length[base] : Int
+          //
+          val freshResultType = Type.freshTypeVar();
           for (
-            resultType <- unifyM(tvar, Type.Int32, loc)
+            tpe <- visitExp(base);
+            arrayType <- unifyM(tpe, Type.mkArray(tvar), loc);
+            resultType <- unifyM(freshResultType, Type.Int32, loc)
           ) yield resultType
 
         /*
          * ArrayStore expression.
          */
-        case ResolvedAst.Expression.ArrayStore(exp1, exp2, exp3, tvar, loc) =>
+        case ResolvedAst.Expression.ArrayStore(base, index, elm, tvar, loc) =>
+          //
+          //  base : Array[t]   index : Int   elm : t
+          //  -----------------------------------------
+          //  base[index] = elm : Unit
+          //
+          val elementType = Type.freshTypeVar();
           for (
-            tpe <- visitExp(exp1);
-            resultType <- unifyM(tvar, Type.mkArray(tpe), loc)
+            receivedBaseType <- visitExp(base);
+            receivedIndexType <- visitExp(index);
+            receivedObjectType <- visitExp(elm);
+            arrayType <- unifyM(receivedBaseType, Type.mkArray(elementType), loc);
+            indexType <- unifyM(receivedIndexType, Type.Int32, loc);
+            objectType <- unifyM(receivedObjectType, elementType, loc);
+            resultType <- unifyM(tvar, Type.Unit, loc)
           ) yield resultType
 
         /*
          * ArraySlice expression.
          */
-        case ResolvedAst.Expression.ArraySlice(exp1, exp2, exp3, tvar, loc) =>
+        case ResolvedAst.Expression.ArraySlice(base, beginIndex, endIndex, tvar, loc) =>
+          //
+          //  base : Array[t]   beginIndex : Int   endIndex : Int
+          //  -----------------------------------------
+          //  base[beginIndex..EndIndex] : Array[t]
+          //
           for (
-            tpe <- visitExp(exp1);
-            resultType <- unifyM(tvar, Type.mkArray(tpe), loc)
+            receivedBaseType <- visitExp(base);
+            receivedStartIndexType <- visitExp(beginIndex);
+            receivedEndIndexType <- visitExp(endIndex);
+            startIndexType <- unifyM(receivedStartIndexType, Type.Int32, loc);
+            endIndexType <- unifyM(receivedEndIndexType, Type.Int32, loc);
+            resultType <- unifyM(tvar, receivedBaseType, loc)
           ) yield resultType
 
-        case ResolvedAst.Expression.VectorLength(exp, tvar, loc) =>
+        case ResolvedAst.Expression.VectorLit(elms, tvar, loc) =>
+          //
+          // elm1: t ...  elmn: t  n: Int
+          // ---------------------------
+          // [|elm1,...,elmn|] : Vector[t, n]
+          //
+          val length = elms.length
+          length match {
+            case 0 =>
+              for (
+                resultType <- unifyM(tvar, Type.mkVector(Type.freshTypeVar(), Type.Succ(0, Type.Zero)), loc)
+              ) yield resultType
+            case _ =>
+              for (
+                elementTypes <- seqM(elms.map(visitExp));
+                elementType <- unifyM(elementTypes, loc);
+                resultType <- unifyM(tvar, Type.mkVector(elementType, Type.Succ(elms.length, Type.Zero)), loc)
+              ) yield resultType
+          }
+
+        case ResolvedAst.Expression.VectorNew(elm, len, tvar, loc) =>
+          //
+          // elm: t    n: Nat
+          // --------------------------
+          // [|elm ; n |] : Vector[t, n]
+          //
+
+          for (
+            tpe <- visitExp(elm);
+            resultType <- unifyM(tvar, Type.mkVector(tpe, Type.Succ(len, Type.Zero)), loc)
+          ) yield resultType
+
+        case ResolvedAst.Expression.VectorLoad(base, index, tvar, loc) =>
+          //
+          //  base : Vector[t, n1]   index: n2   n1: Int n2: Int
+          //  -------------------------------------------------------
+          //  base[|index|] : t
+          //
+          val freshVar = Type.freshTypeVar()
+          for (
+            tpe <- visitExp(base);
+            resultType <- unifyM(tpe, Type.mkVector(tvar, Type.Succ(index, freshVar)), loc)
+          ) yield tvar
+
+        case ResolvedAst.Expression.VectorStore(base, index, elm, tvar, loc) =>
+          //
+          //  base : Vector[t, n1]   index: n2   elm: t    n1: Int  n2: Int
+          //  ---------------------------------------------------------------
+          //  base[|index|] = elm : Unit
+          //
+          val freshVar = Type.freshTypeVar()
+          val elmVar = Type.freshTypeVar()
+          for (
+            recievedBaseType <- visitExp(base);
+            recievedObjectType <- visitExp(elm);
+            vectorType <- unifyM(recievedBaseType, Type.mkVector(elmVar, Type.Succ(index, freshVar)), loc);
+            objectType <- unifyM(recievedObjectType, elmVar, loc);
+            resultType <- unifyM(tvar, Type.Unit, loc)
+          ) yield resultType
+
+        case ResolvedAst.Expression.VectorLength(base, tvar, loc) =>
+          //
+          // base: t  n: Int
+          // -------------
+          // base[|n|] : Int
+          //
+          val freshResultType = Type.freshTypeVar()
+          val freshVar = Type.freshTypeVar()
           for(
+            tpe <- visitExp(base);
+            _ <- unifyM(tpe, Type.mkVector(freshResultType, Type.Succ(0, freshVar)), loc);
             resultType <- unifyM(tvar, Type.Int32, loc)
+          ) yield resultType
+
+        case ResolvedAst.Expression.Unique(exp, tvar, loc) =>
+          //
+          // exp : t
+          // -----------
+          // exp : t
+          //
+          for (
+            tpe <- visitExp(exp);
+            resultType <- unifyM(tvar, Type.freshTypeVar(), loc)
+          ) yield resultType
+
+        case ResolvedAst.Expression.VectorSlice(base, startIndex, endIndexOpt, tvar, loc) =>
+          //
+          //  base : Vector[t, n]   startIndex : Int   endIndexOpt : Int   n: Int
+          //  -------------------------------------------------------
+          //  base[startIndex..endIndexOpt] : Vector[t, n]
+          //
+          val freshIndexVar = Type.freshTypeVar()
+          val freshIndexVar2 = Type.freshTypeVar()
+          val freshTypeVar = Type.freshTypeVar()
+          endIndexOpt match {
+            case None =>
+              for(
+                tpe <- visitExp(base);
+                firstIndex <- unifyM(tpe, Type.mkVector(freshTypeVar, Type.Succ(startIndex, freshIndexVar)), loc);
+                resultType <- unifyM(tvar, Type.mkVector(freshTypeVar, freshIndexVar), loc)
+              ) yield resultType
+            case Some(endIndex) =>
+              for(
+                tpe <- visitExp(base);
+                firstIndex <- unifyM(tpe, Type.mkVector(freshTypeVar, Type.Succ(startIndex, freshIndexVar)), loc);
+                secondIndex <- unifyM(tpe, Type.mkVector(freshTypeVar, Type.Succ(endIndex-1, freshIndexVar2)), loc);
+                resultType <- unifyM(tvar, Type.mkVector(freshTypeVar, Type.Succ(endIndex-startIndex, Type.Zero)), loc)
+              ) yield resultType
+          }
 
         /*
          * Reference expression.
@@ -1123,18 +1284,6 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           val ln = visitExp(len, subst0)
           TypedAst.Expression.ArrayNew(e, ln, subst0(tvar), Eff.Bot, loc)
 
-        case ResolvedAst.Expression.VectorLit(elms, tvar, loc) =>
-          val es = elms.map(e => visitExp(e, subst0))
-          TypedAst.Expression.VectorLit(es, tvar, Eff.Bot, loc)
-
-/*        case ResolvedAst.Expression.VectorLoad(exp1, exp2, tvar, loc) =>
-          val e = visitExp(exp1, subst0)
-          TypedAst.Expression.VectorLoad(e, exp2, tvar, Eff.Bot, loc)
-*/
-        case ResolvedAst.Expression.VectorLength(elm, tvar, loc) =>
-          var e = visitExp(elm, subst0)
-          TypedAst.Expression.VectorLength(e, tvar, Eff.Bot, loc)
-
         /*
          * ArrayLoad expression.
          */
@@ -1167,6 +1316,60 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           val e2 = visitExp(exp2, subst0)
           val e3 = visitExp(exp3, subst0)
           TypedAst.Expression.ArraySlice(e1, e2, e3, subst0(tvar), Eff.Bot, loc)
+
+        /*
+         * VectorLit expression.
+         */
+        case ResolvedAst.Expression.VectorLit(elms, tvar, loc) =>
+          val es = elms.map(e => visitExp(e, subst0))
+          TypedAst.Expression.VectorLit(es, subst0(tvar), Eff.Bot, loc)
+
+        /*
+         * VectorLoad expression.
+         */
+        case ResolvedAst.Expression.VectorNew(elm, len, tvar, loc) =>
+          val e = visitExp(elm, subst0)
+          TypedAst.Expression.VectorNew(e, len, subst0(tvar), Eff.Bot, loc)
+
+          /*
+           * VectorLoad expression.
+           */
+         case ResolvedAst.Expression.VectorLoad(base, index, tvar, loc) =>
+          val b = visitExp(base, subst0)
+          TypedAst.Expression.VectorLoad(b, index, subst0(tvar), Eff.Bot, loc)
+
+          /*
+           * VectorStore expression.
+           */
+        case ResolvedAst.Expression.VectorStore(base, index, elm, tvar, loc) =>
+          val b = visitExp(base, subst0)
+          val e = visitExp(elm, subst0)
+          TypedAst.Expression.VectorStore(b, index, e, subst0(tvar), Eff.Bot, loc)
+
+          /*
+           * VectorLength expression.
+           */
+        case ResolvedAst.Expression.VectorLength(base, tvar, loc) =>
+          val b = visitExp(base, subst0)
+          TypedAst.Expression.VectorLength(b, subst0(tvar), Eff.Bot, loc)
+
+          /*
+           * VectorSlice expression.
+           */
+        case ResolvedAst.Expression.VectorSlice(base, startIndex, endIndexOpt, tvar, loc) =>
+          val e = visitExp(base, subst0)
+          endIndexOpt match {
+            case None =>
+              TypedAst.Expression.VectorSlice(e, startIndex, TypedAst.Expression.VectorLength(e, subst0(tvar), Eff.Bot, loc), subst0(tvar), Eff.Bot, loc)
+            case Some(endIndex) =>
+              TypedAst.Expression.VectorSlice(e, startIndex, TypedAst.Expression.Int32(endIndex, loc), subst0(tvar), Eff.Bot, loc)
+          }
+          /*
+          * Unique expression
+          */
+        case ResolvedAst.Expression.Unique(exp, tvar, loc) =>
+          val e = visitExp(exp, subst0)
+          TypedAst.Expression.Unique(e, subst0(tvar), Eff.Bot, loc)
 
         /*
          * Reference expression.

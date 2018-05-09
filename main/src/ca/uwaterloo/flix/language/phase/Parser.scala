@@ -490,7 +490,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   object Expressions {
 
     def Block: Rule1[ParsedAst.Expression] = rule {
-      "{" ~ optWS ~ Expression ~ optWS ~ "}" ~ optWS | Assign
+      "{" ~ optWS ~ Expression ~ optWS ~ "}" | Assign
     }
 
     def Assign: Rule1[ParsedAst.Expression] = rule {
@@ -601,7 +601,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Primary: Rule1[ParsedAst.Expression] = rule {
       LetRec | LetMatch | IfThenElse | Match | LambdaMatch | Switch | Unsafe | Native | Lambda | Tuple | ArrayLit |
-        ArrayNew | ArrayLength | VectorLit | VectorNew | VectorLength | FNil | FSet | FMap | Literal |
+        ArrayNew | ArrayLength | VectorLit | VectorNew | VectorLength | Unique | FNil | FSet | FMap | Literal |
         HandleWith | Existential | Universal | UnaryLambda | QName | Wild | Tag | SName | Hole | UserError
     }
 
@@ -684,27 +684,27 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def ArrayStore: Rule1[ParsedAst.Expression] = rule {
-      VectorSlice ~ optional(optWS ~ "[" ~ optWS ~ Expression ~ optWS ~ "]" ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.ArrayStore)
+      VectorSlice ~ optional(oneOrMore(optWS ~ "[" ~ optWS ~  Expression ~ optWS ~ "]") ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.ArrayStore)
     }
 
     def VectorSlice: Rule1[ParsedAst.Expression] = rule {
-      VectorSliceNoStartIndex ~ optional(optWS ~ atomic("[|")~ optWS ~ Literals.Int ~ optWS ~ atomic("..") ~ optWS ~ Literals.Int32 ~ optWS ~ atomic("|]") ~ SP ~> ParsedAst.Expression.VectorSlice)
+      VectorSliceNoEndIndex ~ optional(optWS ~ atomic("[|")~ optWS ~ Literals.IntDefault ~ optWS ~ atomic("..") ~ optWS ~ Literals.IntDefault ~ optWS ~ atomic("|]") ~ SP ~> ParsedAst.Expression.VectorSlice)
     }
 
     def VectorSliceNoEndIndex: Rule1[ParsedAst.Expression] = rule {
-      VectorSliceNoStartIndex ~ optional(optWS ~ atomic("[|")~ optWS ~ Literals.Int ~ optWS ~ atomic("..") ~ optWS ~ atomic("|]") ~ SP ~> ParsedAst.Expression.VectorSliceNoEndIndex)
+      VectorSliceNoStartIndex ~ optional(optWS ~ atomic("[|")~ optWS ~ Literals.IntDefault ~ optWS ~ atomic("..") ~ optWS ~ atomic("|]") ~ SP ~> ParsedAst.Expression.VectorSliceNoEndIndex)
     }
 
     def VectorSliceNoStartIndex: Rule1[ParsedAst.Expression] = rule {
-      VectorLoad ~ optional(optWS ~ atomic("[|")~ optWS ~ atomic("..") ~ optWS ~ Literals.Int ~ optWS ~ atomic("|]") ~ SP ~> ParsedAst.Expression.VectorSliceNoStartIndex)
+      VectorLoad ~ optional(optWS ~ atomic("[|")~ optWS ~ atomic("..") ~ optWS ~ Literals.IntDefault ~ optWS ~ atomic("|]") ~ SP ~> ParsedAst.Expression.VectorSliceNoStartIndex)
     }
 
     def VectorLoad: Rule1[ParsedAst.Expression] = rule{
-      VectorStore ~ zeroOrMore(optWS ~ atomic("[|") ~ optWS ~ Literals.Int ~ optWS ~ atomic("|]") ~ SP ~> ParsedAst.Expression.VectorLoad)
+      VectorStore ~ zeroOrMore(optWS ~ atomic("[|") ~ optWS ~ Literals.IntDefault ~ optWS ~ atomic("|]") ~ SP ~> ParsedAst.Expression.VectorLoad)
     }
 
     def VectorStore: Rule1[ParsedAst.Expression] = rule{
-      Apply ~ optional(optWS ~ atomic("[|") ~ optWS ~ Literals.Int ~ optWS ~ atomic("|]") ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.VectorStore)
+      Apply ~ optional(oneOrMore(optWS ~ atomic("[|") ~ optWS ~ Literals.IntDefault ~ optWS ~ atomic("|]")) ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.VectorStore)
     }
 
     def Apply: Rule1[ParsedAst.Expression] = rule {
@@ -736,11 +736,15 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def VectorNew: Rule1[ParsedAst.Expression] = rule {
-      SP ~ atomic("[|") ~ optWS ~ Expression ~ optWS ~ ";" ~ optWS ~ Literals.Int ~ optWS ~ "|]" ~ SP ~> ParsedAst.Expression.VectorNew
+      SP ~ atomic("[|") ~ optWS ~ Expression ~ optWS ~ ";" ~ optWS ~ Literals.IntDefault ~ optWS ~ "|]" ~ SP ~> ParsedAst.Expression.VectorNew
     }
 
     def VectorLength: Rule1[ParsedAst.Expression] = rule {
-      SP ~ atomic("Vlength[|") ~ optWS ~ Expression ~ optWS ~ "|]" ~ SP ~> ParsedAst.Expression.VectorLength
+      SP ~ atomic("length[|") ~ optWS ~ Expression ~ optWS ~ "|]" ~ SP ~> ParsedAst.Expression.VectorLength
+    }
+
+    def Unique: Rule1[ParsedAst.Expression] = rule {
+      SP ~ atomic("unique") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.Unique
     }
 
     def FNil: Rule1[ParsedAst.Expression.FNil] = rule {
@@ -990,16 +994,16 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Primary: Rule1[ParsedAst.Type] = rule {
-      Arrow | /*Nat |*/ Tuple | Native | Var | Ambiguous
+      Arrow | Succ | Tuple | Native | Var | Ambiguous
     }
 
     def Arrow: Rule1[ParsedAst.Type] = rule {
       SP ~ "(" ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ optWS ~ atomic("->") ~ optWS ~ Type ~ SP ~> ParsedAst.Type.Arrow
     }
 
-/*    def Nat: Rule1[ParsedAst.Type] = rule {
-      SP ~ Literals.Int32 ~ SP ~> ParsedAst.Type.Nat
-    }*/
+    def Succ: Rule1[ParsedAst.Type] = rule {
+      SP ~ Literals.IntDefault ~ SP ~> ParsedAst.Type.Succ
+    }
 
     def Tuple: Rule1[ParsedAst.Type] = {
       def Unit: Rule1[ParsedAst.Type] = rule {

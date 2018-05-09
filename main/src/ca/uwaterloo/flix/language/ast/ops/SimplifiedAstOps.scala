@@ -279,6 +279,41 @@ object SimplifiedAstOps {
         checkType(tpe)
 
       //
+      // Array Expressions.
+      //
+      case Expression.ArrayLit(elms, tpe, loc) =>
+        for (elm <- elms) {
+          checkExp(elm, env0, ienv0)
+        }
+        checkType(tpe)
+
+      case Expression.ArrayNew(elm, len, tpe, loc) =>
+        checkExp(elm, env0, ienv0)
+        checkExp(len, env0, ienv0)
+        checkType(tpe)
+
+      case Expression.ArrayLoad(base, index, tpe, loc) =>
+        checkExp(base, env0, ienv0)
+        checkExp(index, env0, ienv0)
+        checkType(tpe)
+
+      case Expression.ArrayStore(base, index, elm, tpe, loc) =>
+        checkExp(base, env0, ienv0)
+        checkExp(index, env0, ienv0)
+        checkExp(elm, env0, ienv0)
+        checkType(tpe)
+
+      case Expression.ArrayLength(base, tpe, loc) =>
+        checkExp(base, env0, ienv0)
+        checkType(tpe)
+
+      case Expression.ArraySlice(base, beginIndex, endIndex, tpe, loc) =>
+        checkExp(base, env0, ienv0)
+        checkExp(beginIndex, env0, ienv0)
+        checkExp(endIndex, env0, ienv0)
+        checkType(tpe)
+
+      //
       // Reference Expressions.
       //
       case Expression.Ref(exp, tpe, loc) =>
