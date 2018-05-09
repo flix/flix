@@ -79,4 +79,20 @@ def testVectorSliceNoEnd26(): Vector[Vector[Int, 3], 3] = let x = [|[|1, 2, 3|],
 @test
 def testVectorSliceNoEnd27(): Vector[Int, 10] = let x = [|1, 2, 3, 4, 5, 6, 7, 8, 9, 10|]; x[|0..|]
 
+@test
+def testVectorSliceNoEnd28(): Vector[Array[Int], 3] = let x = [|[2, 1], [2, 1], [2, 1]|]; x[|0..|]
 
+@test
+def testVectorSliceNoEnd29(): Vector[List[(Int)], 3] = let x = [|(1 :: Nil), (2 :: Nil), (3 :: Nil)|]; x[|0..|]
+
+@test
+def testVectorSliceNoEnd30(): Vector[(Int, Int), 3] = let x = [|(1, 2), (3, 4), (5, 6)|]; x[|0..|]
+
+@test
+def testVectorSliceNoEnd31(): Vector[Color, 3] = let x = [|Color.Red, Color.Blue, Color.Green|]; x[|0..|]
+
+enum Color {
+    case Red,
+    case Green,
+    case Blue
+}

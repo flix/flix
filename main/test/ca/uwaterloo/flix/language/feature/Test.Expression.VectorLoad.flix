@@ -110,5 +110,24 @@ def testVectorLoad36(): Vector[Int, 3] = let x = [|[|1, 2, 3|]; 3|]; x[|2|]
 def testVectorLoad37(): Vector[Int, 2] = let x = [|[|2 ; 2|]; 2|]; x[|1|]
 
 @test
-def testVectorLoad38(): Int = let x = [|[1, 2], [3, 4]|]; x[|0|][0]
+def testVectorLoad38(): List[Int] = let x = [|(1 :: Nil), (2 :: Nil)|]; x[|0|]
+
+@test
+def testVectorLoad39(): Int = let x = [|[1, 2], [3, 4]|]; x[|0|][0]
+
+@test
+def testVectorLoad40(): (Int, Int) = let x = [|(1, 2), (3, 4)|]; x[|0|]
+
+@test
+def testVectorLoad41(): Color = let x = [|[Color.Red, Color.Blue, Color.Green], [Color.Red, Color.Blue, Color.Red, Color.Green]|]; x[|1|][2]
+
+enum Color {
+   case Red,
+   case Blue,
+   case Green
+}
+
+
+
+
 
