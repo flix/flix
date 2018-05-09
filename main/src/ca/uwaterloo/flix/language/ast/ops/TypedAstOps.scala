@@ -141,6 +141,9 @@ object TypedAstOps {
       case Expression.VectorSlice(base, beginIndex, endIndex, tpe, eff, loc) =>
         visitExp(base, env0) ++ visitExp(endIndex, env0)
 
+      case Expression.Unique(exp, tpe, eff, loc) =>
+        visitExp(exp, env0)
+
       case Expression.Ref(exp, tpe, eff, loc) =>
         visitExp(exp, env0)
 
