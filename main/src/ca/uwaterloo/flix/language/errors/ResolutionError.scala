@@ -299,4 +299,21 @@ object ResolutionError {
     }
   }
 
+  /**
+    * An error raised to indicate that the class name was not found.
+    *
+    * @param name the class name.
+    * @param loc  the location of the class name.
+    */
+  case class UndefinedNativeClass(name: String, loc: SourceLocation) extends ResolutionError {
+    val source: Source = loc.source
+    val message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Undefined class '" << Red(name) << "'." << NewLine
+      vt << NewLine
+      vt << Code(loc, "undefined class.") << NewLine
+    }
+  }
+
 }
