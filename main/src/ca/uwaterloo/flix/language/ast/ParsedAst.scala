@@ -1183,13 +1183,13 @@ object ParsedAst {
     case class Tuple(sp1: SourcePosition, elms: Seq[ParsedAst.Type], sp2: SourcePosition) extends ParsedAst.Type
     
     /**
-      * Succ Type.
+      * Nat Type.
       *
       * @param sp1 the position of the first character in the type.
       * @param len the type of the element.
       * @param sp2 the position of the last character in the type.
       */
-    case class Succ(sp1: SourcePosition, len: ParsedAst.Literal.Int32, sp2: SourcePosition) extends ParsedAst.Type
+    case class Nat(sp1: SourcePosition, len: ParsedAst.Literal.Int32, sp2: SourcePosition) extends ParsedAst.Type
 
 
     /**
