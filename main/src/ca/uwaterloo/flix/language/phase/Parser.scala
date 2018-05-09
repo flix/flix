@@ -994,15 +994,15 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Primary: Rule1[ParsedAst.Type] = rule {
-      Arrow | Succ | Tuple | Native | Var | Ambiguous
+      Arrow | Nat | Tuple | Native | Var | Ambiguous
     }
 
     def Arrow: Rule1[ParsedAst.Type] = rule {
       SP ~ "(" ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ optWS ~ atomic("->") ~ optWS ~ Type ~ SP ~> ParsedAst.Type.Arrow
     }
 
-    def Succ: Rule1[ParsedAst.Type] = rule {
-      SP ~ Literals.IntDefault ~ SP ~> ParsedAst.Type.Succ
+    def Nat: Rule1[ParsedAst.Type] = rule {
+      SP ~ Literals.IntDefault ~ SP ~> ParsedAst.Type.Nat
     }
 
     def Tuple: Rule1[ParsedAst.Type] = {
