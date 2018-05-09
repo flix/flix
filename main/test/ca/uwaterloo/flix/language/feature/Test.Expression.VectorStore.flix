@@ -130,5 +130,5 @@ def testArrayStore41(): Unit = let x = [|[Color.Red, Color.Green], [Color.Blue, 
 @test
 def testArrayStore42(): Unit = let x = [|[|1, 2, 3|], [|1, 2, 3|], [|1, 2, 3|]|]; x[|2|][|2|] = 42
 
-// @test
-// def testArrayStore43(): Vector[(Int, Int), 1] = let x = [|(1, 2), (3, 4)|]; let _ = x[|0|] = (2, 3); x
+@test
+def testArrayStore43(): Vector[(Int, Int), 2] = let x = [|(1, 2), (3, 4)|]; let _ = x[|0|] = (2, 3); x
