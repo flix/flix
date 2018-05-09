@@ -85,17 +85,6 @@ object Value {
   case class Str(lit: java.lang.String) extends Value
 
   /**
-    * An Array value.
-    */
-  case class Arr(elms: Array[AnyRef], tpe: Type) {
-    final override def equals(obj: scala.Any): Boolean = throw InternalRuntimeException(s"Value.Arr does not support `equals`.")
-
-    final override def hashCode(): Int = throw InternalRuntimeException(s"Value.Arr does not support `hashCode`.")
-
-    final override def toString: String = throw InternalRuntimeException(s"Value.Arr does not support `toString`.")
-  }
-
-  /**
     * A Boxed value.
     */
   class Box extends Value {
@@ -160,6 +149,14 @@ object Value {
     final override def hashCode(): Int = throw InternalRuntimeException(s"Value.Tuple does not support `hashCode`.")
 
     final override def toString: String = throw InternalRuntimeException(s"Value.Tuple does not support `toString`.")
+  }
+
+  case class Arr(elms: Array[AnyRef], tpe: Type){
+    final override def equals(obj: scala.Any): Boolean = throw InternalRuntimeException(s"Value.Arr does not support `equals`.")
+
+    final override def hashCode(): Int = throw InternalRuntimeException(s"Value.Arr does not support `hashCode`.")
+
+    final override def toString: String = throw InternalRuntimeException(s"Value.Arr does not support `toString`.")
   }
 
 }
