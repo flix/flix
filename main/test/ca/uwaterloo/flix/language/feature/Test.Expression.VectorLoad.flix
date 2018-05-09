@@ -111,3 +111,4 @@ def testVectorLoad37(): Vector[Int, 2] = let x = [|[|2 ; 2|]; 2|]; x[|1|]
 
 @test
 def testVectorLoad38(): Int = let x = [|[1, 2], [3, 4]|]; x[|0|][0]
+
