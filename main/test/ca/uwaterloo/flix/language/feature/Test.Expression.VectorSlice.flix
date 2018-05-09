@@ -88,4 +88,14 @@ def testVectorSlice29(): Vector[List[(Int)], 2] = let x = [|(1 :: Nil), (2 :: Ni
 @test
 def testVectorSlice30(): Vector[(Int, Int), 2] = let x = [|(1, 2), (3, 4), (5, 6)|]; x[|1..3|]
 
+@test
+def testVectorSlice31(): Vector[Color, 2] = let x = [|Color.Red, Color.Blue, Color.Green|]; x[|1..3|]
+
+enum Color {
+    case Red,
+    case Green,
+    case Blue
+}
+
+
 
