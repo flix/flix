@@ -667,6 +667,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           val sp1 = leftMostSourcePosition(base)
           val loc = mkSL(sp1, sp2)
           val validIndexes = checkIndexSequence(indexes, sp1, sp2)
+        
           if(validIndexes.isSuccess) {
             @@(visit(base, unsafe), visit(elm, unsafe)) flatMap {
               case (b, el) => val inner = indexes.init.foldLeft(b) {
@@ -933,7 +934,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           case l if l >= 0 => l.toSuccess
           case _ => WeederError.IllegalVectorLength(mkSL(sp1, sp2)).toFailure
         }
-        case _=> throw InternalCompilerException("Index must be an integer.")
+        case _ => throw InternalCompilerException(s"Expected literal.int32. Actual: ${elm}.")
       }
     }
 

@@ -105,6 +105,7 @@ object AsmOps {
     * Returns the array type code for the value of the type specified by `tpe`
     */
   def getArrayTypeCode(tpe: JvmType): Int = tpe match {
+    case JvmType.Void => throw InternalCompilerException(s"Unexpected type $tpe")
     case JvmType.PrimBool => T_BOOLEAN
     case JvmType.PrimChar => T_CHAR
     case JvmType.PrimFloat => T_FLOAT
@@ -113,6 +114,7 @@ object AsmOps {
     case JvmType.PrimShort => T_SHORT
     case JvmType.PrimInt => T_INT
     case JvmType.PrimLong => T_LONG
+    case _ =>  throw InternalCompilerException(s"Expected primitive type. Actual type: $tpe")
   }
 
   /**
