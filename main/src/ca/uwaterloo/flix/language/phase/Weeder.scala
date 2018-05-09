@@ -683,6 +683,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
               case (accc, e) => e match {
                 case ParsedAst.Literal.Int32(sp1, sign, digits, sp2) =>
                   WeededAst.Expression.VectorLoad(accc, toInt32(sign, digits, loc).get, loc)
+                case _ => throw InternalCompilerException(s"Expected literal.int32. Actual: ${e}.")
               }
             }
             indexes.last match {
@@ -690,6 +691,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
                 case l if l >= 0 => WeededAst.Expression.VectorStore(inner, l, el, loc).toSuccess
                 case _ => WeederError.IllegalVectorLength(loc).toFailure
               }
+              case _ => throw InternalCompilerException(s"Expected literal.int32. Actual: ${indexes.last}.")
             }
             case _ => WeederError.IllegalVectorLength(loc).toFailure
           }
@@ -946,6 +948,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           case l if l >= 0 => l.toSuccess
           case _ => WeederError.IllegalVectorLength(mkSL(sp1, sp2)).toFailure
         }
+        case _ => throw InternalCompilerException(s"Expected literal.int32. Actual: ${elm}.")
       }
       i.get
     }
