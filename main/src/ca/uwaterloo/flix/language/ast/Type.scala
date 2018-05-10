@@ -47,7 +47,7 @@ sealed trait Type {
     case Type.Str => Set.empty
     case Type.Array => Set.empty
     case Type.Vector => Set.empty
-    case Type.Native => Set.empty
+    case Type.Native(clazz) => Set.empty
     case Type.Ref => Set.empty
     case Type.Zero => Set.empty
     case Type.Succ(n, t) => Set.empty
@@ -154,7 +154,7 @@ sealed trait Type {
     case Type.Vector => "Vector"
     case Type.Zero => "Zero"
     case Type.Succ(n, t) => s"Successor($n, $t)"
-    case Type.Native => "Native"
+    case Type.Native(clazz) => "Native"
     case Type.Ref => "Ref"
     case Type.Arrow(l) => s"Arrow($l)"
     case Type.Enum(enum, kind) => enum.toString
@@ -298,7 +298,7 @@ object Type {
   /**
     * A type constructor that represent native objects.
     */
-  case object Native extends Type {
+  case class Native(clazz: Class[_]) extends Type {
     def kind: Kind = Kind.Star
   }
 
@@ -364,14 +364,21 @@ object Type {
   def freshTypeVar(k: Kind = Kind.Star)(implicit genSym: GenSym): Type.Var = Type.Var(genSym.freshId(), k)
 
   /**
-    * Constructs the function type A -> B where `A` is the given type `a` and `B` is the given type `b`.
+    * Constructs the arrow type A -> B.
     */
   def mkArrow(a: Type, b: Type): Type = Apply(Apply(Arrow(2), a), b)
 
   /**
-    * Constructs the function type [A] -> B where `A` is the given sequence of types `as` and `B` is the given type `b`.
+    * Constructs the arrow type A_1 -> .. -> A_n -> B.
     */
   def mkArrow(as: List[Type], b: Type): Type = {
+    as.foldRight(b)(mkArrow)
+  }
+
+  /**
+    * Constructs the arrow type [A] -> B.
+    */
+  def mkUncurriedArrow(as: List[Type], b: Type): Type = {
     val arrow = Arrow(as.length + 1)
     val inner = as.foldLeft(arrow: Type) {
       case (acc, x) => Apply(acc, x)
@@ -442,7 +449,7 @@ object Type {
       case Type.Str => Type.Str
       case Type.Array => Type.Array
       case Type.Vector => Type.Vector
-      case Type.Native => Type.Native
+      case Type.Native(clazz) => Type.Native(clazz)
       case Type.Ref => Type.Ref
       case Type.Arrow(l) => Type.Arrow(l)
       case Type.Tuple(l) => Type.Tuple(l)
@@ -495,7 +502,7 @@ object Type {
           case Type.Vector => "Vector"
           case Type.Zero => "Zero"
           case Type.Succ(n, t) => n.toString + " " + t.toString
-          case Type.Native => "Native"
+          case Type.Native(clazz) => "#" + clazz.getName
           case Type.Ref => "Ref"
 
           //

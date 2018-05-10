@@ -5,7 +5,7 @@ HEAD:
     - Added pub keyword.
     - Added expression holes.
     - Vastly improved repl. (--interactive).
-    
+    - Added full support for curried definitions.
 
 Version 0.2:
     - Added stratified negation (thanks Jason Mittertreiner).

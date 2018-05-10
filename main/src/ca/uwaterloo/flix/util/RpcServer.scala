@@ -46,18 +46,13 @@ class RpcServer(port: Int) {
     val SolverTimeout = Duration(10, TimeUnit.SECONDS)
 
     /**
-      * The default number of threads to use by the solver.
-      */
-    val SolverThreads = 1
-
-    /**
       * Evaluates the given `input` program and returns a JSON object with the result.
       */
     def solve(input: String): JValue = {
       try {
         // Instantiate fresh Flix instance.
         val flix = new Flix()
-        val opts = Options.Default.copy(safe = true, threads = SolverThreads, timeout = SolverTimeout)
+        val opts = Options.Default.copy(timeout = SolverTimeout)
         flix.setOptions(opts)
         flix.addStr(input)
 
@@ -87,7 +82,7 @@ class RpcServer(port: Int) {
           case Failure(errors) =>
             JObject(
               JField("status", JString("failure")),
-              JField("message", JString(errors.head.message.fmt(TerminalContext.HtmlTerminal)))
+              JField("message", JString(errors.head.message.fmt(TerminalContext.NoTerminal)))
             )
         }
       } catch {
@@ -118,7 +113,7 @@ class RpcServer(port: Int) {
       t.getResponseHeaders.add("Access-Control-Allow-Origin", "*")
 
       val data = JsonMethods.pretty(JsonMethods.render(result))
-      t.sendResponseHeaders(200, data.length())
+      t.sendResponseHeaders(200, 0)
 
       val outputStream = t.getResponseBody
       outputStream.write(data.getBytes)

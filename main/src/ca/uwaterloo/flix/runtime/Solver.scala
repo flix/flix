@@ -791,10 +791,9 @@ class Solver(val root: ExecutableAst.Root, options: Options)(implicit flix: Flix
     // construct the model.
     val definitions = root.defs.foldLeft(Map.empty[Symbol.DefnSym, () => ProxyObject]) {
       case (macc, (sym, defn)) =>
-        if (defn.formals.isEmpty)
-          macc + (sym -> (() => Linker.link(sym, root).invoke(Array.empty)))
-        else
-          macc + (sym -> (() => throw InternalRuntimeException("Unable to evalaute non-constant top-level definition.")))
+        // Invokes the function with a single argument (which is supposed to be the Unit value, but we pass null instead).
+        val args: Array[AnyRef] = Array(null)
+        macc + (sym -> (() => Linker.link(sym, root).invoke(args)))
     }
 
     val relations = dataStore.relations.foldLeft(Map.empty[Symbol.TableSym, Iterable[List[ProxyObject]]]) {
