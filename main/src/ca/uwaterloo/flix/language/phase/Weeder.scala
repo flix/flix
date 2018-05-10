@@ -1627,7 +1627,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   }
 
   /**
-    * Helper method for Succ type.
+    * Helper method for Nat type.
     * Checks to make sure Literal.Int32 is >= 0, and converts it to int.
     * Throws InternalCompilerException if check fails.
     * TODO make type handling for vertification.

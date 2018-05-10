@@ -203,7 +203,7 @@ class Flix {
         Namer |>
         Resolver |>
         Typer |>
-        //Uniqueness |>
+        Uniqueness |>
         Effects |>
         PatternExhaustiveness |>
         Safety
