@@ -17,14 +17,14 @@ def f() : Int = {
   1
 }*/
 
-/*
+
 def f() : Int = {
   let x = (1 :: 2 :: 3 :: Nil);
   let y = x;
-  //let z = x;
+  let z = x;
   1
 }
-*/
+
 
 /*
 def f(): List[Int] = {
@@ -33,4 +33,10 @@ def f(): List[Int] = {
 }
 */
 
-def f() : Set[Int] = #{1}
+/*
+def f() : Set[Int] = {
+  let a = unique (#{1});
+  let b = a;
+  a
+}
+*/

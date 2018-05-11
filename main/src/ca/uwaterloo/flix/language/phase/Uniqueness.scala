@@ -3,10 +3,11 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
-import ca.uwaterloo.flix.language.errors.UniquenessError
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.language.ast.Symbol
+import ca.uwaterloo.flix.language.errors.UniquenessError
+import ca.uwaterloo.flix.language.errors.UniquenessError._
 import ca.uwaterloo.flix.runtime.shell.Command.TypeOf
 
 
@@ -19,13 +20,14 @@ object Uniqueness extends Phase[Root, Root]{
     root.toSuccess
   }
 
-  def visitExp(exp0 : TypedAst.Expression, dead: Set[Symbol.VarSym]) : Unit =
+  def visitExp(exp0: TypedAst.Expression, dead: Set[Symbol.VarSym]) : Unit =
     exp0 match {
       case TypedAst.Expression.Let(sym, exp1, exp2, tpe, eff, loc) => {
         exp1 match {
-          case TypedAst.Expression.Var(sym2, _, _, _) =>{
-            if (dead.contains(sym2))
+          case TypedAst.Expression.Var(sym2, tpe, eff, loc) =>{
+            if (dead.contains(sym2)) //TODO Make UniquenessError work
               throw InternalCompilerException("The symbol is dead.")
+              //UniquenessError.DeadSymbol(loc).toFailure
 
             visitExp(exp2, dead + sym2)
           }
@@ -167,8 +169,9 @@ object Uniqueness extends Phase[Root, Root]{
       }
 
       case TypedAst.Expression.Var(sym, tpe, eff, loc) => {
-        if (dead.contains(sym))
+        if (dead.contains(sym))//TODO Make UniquenessError work
           throw InternalCompilerException("The symbol is dead.")
+          //UniquenessError.DeadSymbol(loc).toFailure
       }
 
       case _ => ()
@@ -177,6 +180,7 @@ object Uniqueness extends Phase[Root, Root]{
   def expressionToSymbol(exp: TypedAst.Expression) : Symbol.VarSym = {
     exp match {
       case TypedAst.Expression.Var(sym, tpe, eff, loc) => sym
+      case _ => throw InternalCompilerException("Unexpected type.")
     }
   }
 }
