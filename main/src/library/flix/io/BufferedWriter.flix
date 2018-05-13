@@ -19,7 +19,16 @@ namespace BufferedWriter {
     ///
     /// Default handler for `close`
     ///
-    handler close[a](writer: BufferedWriter, k: Result[Unit, IOError] -> a): a = ???
+    handler close[a](writer: BufferedWriter, k: Result[Unit, IOError] -> a): a = unsafe {
+        try {
+            let BufferedWriter(javaWriter) = writer;
+            let _ = native method java.io.BufferedWriter.close(javaWriter);
+            k(Ok(()))
+        }
+        catch {
+            case ex: ##java.io.IOException => k(Err(IOError("An unexpected IOException was thrown by BufferedWriter.close")))
+        }
+    }
 
     ///
     /// Effectfully flushes the given BufferedWriter
@@ -48,7 +57,16 @@ namespace BufferedWriter {
     ///
     /// Default handler for `newLine`
     ///
-    handler newLine[a](writer: BufferedWriter, k: Result[Unit, IOError] -> a): a = ???
+    handler newLine[a](writer: BufferedWriter, k: Result[Unit, IOError] -> a): a = unsafe {
+        try {
+            let BufferedWriter(javaWriter) = writer;
+            let _ = native method java.io.BufferedWriter.newLine(javaWriter);
+            k(Ok(()))
+        }
+        catch {
+            case ex: ##java.io.IOException => k(Err(IOError("An unexpected IOException was thrown by BufferedWriter.newLine")))
+        }
+    }
 
     ///
     /// Effectfully writes a single character to the BufferedWriter
