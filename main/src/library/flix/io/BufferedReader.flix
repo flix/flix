@@ -1,5 +1,8 @@
 type BufferedReader = BufferedReader(##java.io.BufferedReader)
 
+//TODO: Thoroughly test interactions between mark and reset. They do not act as intended
+//TODO: Are exceptions skipped when handlers are used with let _ = *handler*;
+
 namespace BufferedReader {
 
     ///
@@ -19,7 +22,16 @@ namespace BufferedReader {
     ///
     /// Default handler for `close`
     ///
-    handler close[a](reader: BufferedReader, k: Result[Unit, IOError] -> a): a = ???
+    handler close[a](reader: BufferedReader, k: Result[Unit, IOError] -> a): a = unsafe {
+        try {
+            let BufferedReader(javaReader) = reader;
+            let _ = native method java.io.BufferedReader.close(javaReader);
+            k(Ok(()))
+        }
+        catch {
+            case ex: ##java.io.IOException => k(Err(IOError("An unexpected IOException was thrown by BufferedReader.close")))
+        }
+    }
 
     ///
     /// Effectfully marks the present position in the stream, for future calls to reset()
@@ -29,7 +41,17 @@ namespace BufferedReader {
     ///
     /// Default handler for `mark`
     ///
-    handler mark[a](reader: BufferedReader, readAheadLimit: Int, k: Result[Unit, IOError] -> a): a = ???
+    handler mark[a](reader: BufferedReader, readAheadLimit: Int, k: Result[Unit, IOError] -> a): a = unsafe {
+        try {
+            let BufferedReader(javaReader) = reader;
+            let _ = native method java.io.BufferedReader.mark(javaReader, readAheadLimit);
+            k(Ok(()))
+        }
+        catch {
+            case ex: ##java.lang.IllegalArgumentException => k(Err(IOError("ReadAheadLimit must be >= 0")))
+            case ex: ##java.io.IOException => k(Err(IOError("An unexpected IOException was thrown by BufferedReader.mark")))
+        }
+    }
 
     ///
     /// Effectfully reads a single character from the stream and returns it as an integer
@@ -72,7 +94,7 @@ namespace BufferedReader {
                 k(Ok(Some(readString)))
         }
         catch {
-            case ex: ##java.io.IOException => k(Err(IOError("An unexpected IOEXception was thrown by BufferedReader.readLine")))
+            case ex: ##java.io.IOException => k(Err(IOError("An unexpected IOException was thrown by BufferedReader.readLine")))
         }
     }
 
@@ -90,7 +112,7 @@ namespace BufferedReader {
             k(Ok(native method java.io.BufferedReader.ready(javaReader)))
         }
         catch {
-            case ex: ##java.io.IOException => k(Err(IOError("An unexpected IOEXception was thrown by BufferedReader.ready")))
+            case ex: ##java.io.IOException => k(Err(IOError("An unexpected IOException was thrown by BufferedReader.ready")))
         }
     }
 
@@ -102,7 +124,16 @@ namespace BufferedReader {
     ///
     /// Default handler for `reset`
     ///
-    handler reset[a](reader: BufferedReader, k: Result[Unit, IOError] -> a): a = ???
+    handler reset[a](reader: BufferedReader, k: Result[Unit, IOError] -> a): a = unsafe {
+        try {
+            let BufferedReader(javaReader) = reader;
+            let _ = native method java.io.BufferedReader.reset(javaReader);
+            k(Ok(()))
+        }
+        catch {
+            case ex: ##java.io.IOException => k(Err(IOError("An unexpected IOException was thrown by BufferedReader.reset. Make sure the reader is marked and mark is not invalidated")))
+        }
+    }
 
     ///
     /// Effectfully skips n characters ahead in the provided BufferedReader. Returns the amount of characters actually skipped
@@ -118,7 +149,8 @@ namespace BufferedReader {
             k(Ok(native method java.io.BufferedReader.skip(javaReader, n)))
         }
         catch {
-            case ex: ##java.io.IOException => k(Err(IOError("An unexpected IOEXception was thrown by BufferedReader.skip")))
+            case ex: ##java.lang.IllegalArgumentException => k(Err(IOError("Amount of chars to skip must be >= 0")))
+            case ex: ##java.io.IOException => k(Err(IOError("An unexpected IOException was thrown by BufferedReader.skip")))
         }
     }
 }
