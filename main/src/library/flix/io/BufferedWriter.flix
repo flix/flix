@@ -107,6 +107,16 @@ namespace BufferedWriter {
     ///
     /// Default handler for `writeString`
     ///
-    handler writeString[a](writer: BufferedWriter, s: Str, k: Result[Unit, IOError] -> a): a = ???
+    handler writeString[a](writer: BufferedWriter, s: Str, k: Result[Unit, IOError] -> a): a = unsafe {
+        try {
+            let BufferedWriter(javaWriter) = writer;
+            // TODO: Consider whether to let user determine offset below - requires signature change
+            let _ = native method java.io.BufferedWriter.write(javaWriter, s : Str, 0, String.length(s));
+            k(Ok(()))
+        }
+        catch {
+            case ex: ##java.io.IOException => k(Err(IOError("An unexpected IOException was thrown by BufferedWriter.writeString")))
+        }
+    }
 
 }
