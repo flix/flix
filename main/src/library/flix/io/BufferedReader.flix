@@ -107,10 +107,18 @@ namespace BufferedReader {
     ///
     /// Effectfully skips n characters ahead in the provided BufferedReader. Returns the amount of characters actually skipped
     ///
-    pub eff skip[a](reader: BufferedReader, n: Int64, k: Result[Int64, IOError] -> a): a
+    pub eff skip[a](reader: BufferedReader, n: Int32, k: Result[Int64, IOError] -> a): a
 
     ///
     /// Default handler for `skip`
     ///
-    handler skip[a](reader: BufferedReader, n: Int64, k: Result[Int64, IOError] -> a): a = ???
+    handler skip[a](reader: BufferedReader, n: Int32, k: Result[Int64, IOError] -> a): a = unsafe {
+        try {
+            let BufferedReader(javaReader) = reader;
+            k(Ok(native method java.io.BufferedReader.skip(javaReader, n)))
+        }
+        catch {
+            case ex: ##java.io.IOException => k(Err(IOError("An unexpected IOEXception was thrown by BufferedReader.skip")))
+        }
+    }
 }
