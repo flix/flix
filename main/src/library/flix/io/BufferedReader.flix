@@ -62,7 +62,19 @@ namespace BufferedReader {
     ///
     /// Default handler for `read`
     ///
-    handler read[a](reader: BufferedReader, k: Result[Int32, IOError] -> a): a = ???
+    handler read[a](reader: BufferedReader, k: Result[Int32, IOError] -> a): a = unsafe {
+        try {
+            let BufferedReader(javaReader) = reader;
+            let readCharInt = native method java.io.BufferedReader.read(javaReader);
+            if (readCharInt == -1)
+                k(Err(IOError("End of file has been reached")))
+            else
+                k(Ok(readCharInt))
+        }
+        catch {
+            case ex: ##java.io.IOException => k(Err(IOError("An unexpected IOException was thrown by BufferedReader.read")))
+        }
+    }
 
     ///
     /// Effectfully reads a specified number of characters into the provided array from a given offset
