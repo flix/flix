@@ -12,6 +12,7 @@ namespace BufferedReader {
         let Path(javaPath) = p;
         BufferedReader(native method java.nio.file.Files.newBufferedReader(javaPath))
         // TODO: This throws IOException when file does not exist. Do we create it?
+        // TODO: Also sometimes throws NoSuchFileException
     }
 
     ///
