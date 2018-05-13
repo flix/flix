@@ -63,9 +63,17 @@ namespace BufferedReader {
     /// Default handler for `readLine`
     ///
     handler readLine[a](reader: BufferedReader, k: Result[Option[Str], IOError] -> a): a = unsafe {
-        let BufferedReader(javaReader) = reader;
-        let readString = native method java.io.BufferedReader.readLine(javaReader);
-        Ok(Some(readString))
+        try {
+            let BufferedReader(javaReader) = reader;
+            let readString = native method java.io.BufferedReader.readLine(javaReader);
+            if (native method java.util.Objects.isNull(readString))
+                k(Ok(None))
+            else
+                k(Ok(Some(readString)))
+        }
+        catch {
+            case ex: ##java.io.IOException => k(Err(IOError("An unexpected IOEXception was thrown by BufferedReader.readLine")))
+        }
     }
 
     ///
@@ -76,7 +84,15 @@ namespace BufferedReader {
     ///
     /// Default handler for `ready`
     ///
-    handler ready[a](reader: BufferedReader, k: Result[Bool, IOError] -> a): a = ???
+    handler ready[a](reader: BufferedReader, k: Result[Bool, IOError] -> a): a = unsafe {
+        try {
+            let BufferedReader(javaReader) = reader;
+            k(Ok(native method java.io.BufferedReader.ready(javaReader)))
+        }
+        catch {
+            case ex: ##java.io.IOException => k(Err(IOError("An unexpected IOEXception was thrown by BufferedReader.ready")))
+        }
+    }
 
     ///
     /// Effectfully resets the BufferedReader to the most recent mark, if any where set and not invalidated
