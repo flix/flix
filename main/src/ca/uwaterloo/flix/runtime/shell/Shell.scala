@@ -482,7 +482,7 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
 
     // Type check and print the error messages (if any).
     this.flix.check() match {
-      case Validation.Success(ast, _) =>
+      case Validation.Success(ast) =>
         this.root = ast
         // Pretty print the holes (if any).
         prettyPrintHoles()
@@ -785,7 +785,7 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
       // compute the least model.
       val timer = new Timer(flix.solve())
       timer.getResult match {
-        case Validation.Success(m, errors) =>
+        case Validation.Success(m) =>
           model = m
           if (main.nonEmpty) {
             val name = main.get

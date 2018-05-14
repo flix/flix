@@ -42,7 +42,7 @@ class FlixTest(name: String, path: String) extends FunSuite {
 
     // Compile and Evaluate the program to obtain the model.
     flix.solve() match {
-      case Success(model, _) => runTests(model)
+      case Success(model) => runTests(model)
       case Failure(errors) =>
         // Create a single test that always fails.
         test("Aborted.") {
