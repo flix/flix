@@ -58,7 +58,7 @@ class RpcServer(port: Int) {
 
         // Evaluate the Flix program.
         flix.solve() match {
-          case Success(model, _) =>
+          case Success(model) =>
 
             // Evaluate the main function.
             val result = model.evalToString("f")

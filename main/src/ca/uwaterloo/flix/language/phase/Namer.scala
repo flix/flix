@@ -295,7 +295,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
         val lubVal = Expressions.namer(lub0, Map.empty, Map.empty)
         val glbVal = Expressions.namer(glb0, Map.empty, Map.empty)
 
-        @@(botVal, topVal, equVal, leqVal, lubVal, glbVal) map {
+        mapN(botVal, topVal, equVal, leqVal, lubVal, glbVal) {
           case (bot, top, equ, leq, lub, glb) =>
             val lattice = NamedAst.Lattice(Types.namer(tpe, Map.empty), bot, top, equ, leq, lub, glb, ns0, loc)
             prog0.copy(lattices = prog0.lattices + (Types.namer(tpe, Map.empty) -> lattice)) // NB: This just overrides any existing binding.
@@ -594,8 +594,11 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
         }
 
       case WeededAst.Expression.IfThenElse(exp1, exp2, exp3, loc) =>
-        @@(namer(exp1, env0, tenv0), namer(exp2, env0, tenv0), namer(exp3, env0, tenv0)) map {
-          case (e1, e2, e3) => NamedAst.Expression.IfThenElse(e1, e2, e3, Type.freshTypeVar(), loc)
+        val e1 = namer(exp1, env0, tenv0)
+        val e2 = namer(exp2, env0, tenv0)
+        val e3 = namer(exp3, env0, tenv0)
+        mapN(e1, e2, e3) {
+          NamedAst.Expression.IfThenElse(_, _, _, Type.freshTypeVar(), loc)
         }
 
       case WeededAst.Expression.Let(ident, exp1, exp2, loc) =>

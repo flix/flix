@@ -122,8 +122,7 @@ object Main {
     // check if we are running in delta debugging mode.
     if (cmdOpts.delta.nonEmpty) {
       flix.deltaSolve(cmdOpts.delta.get.toPath) match {
-        case Validation.Success(_, errors) =>
-          errors.foreach(e => println(e.message.fmt))
+        case Validation.Success(_) =>
           System.exit(0)
         case Validation.Failure(errors) =>
           errors.foreach(e => println(e.message.fmt))
@@ -135,8 +134,7 @@ object Main {
     try {
       val timer = new Timer(flix.solve())
       timer.getResult match {
-        case Validation.Success(model, errors) =>
-          errors.foreach(e => println(e.message.fmt))
+        case Validation.Success(model) =>
 
           val main = cmdOpts.main
           if (main.nonEmpty) {
