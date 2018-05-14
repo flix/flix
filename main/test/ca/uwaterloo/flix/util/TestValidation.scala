@@ -162,5 +162,28 @@ class TestValidation extends FunSuite {
     assertResult(Success(List("a", "b", "c", "d", "e")))(result)
   }
 
+  test("traverse01") {
+    val result = traverse(List(1, 2, 3)) {
+      case x => Success(x + 1)
+    }
+
+    assertResult(Success(List(2, 3, 4)))(result)
+  }
+
+  test("traverse02") {
+    val result = traverse(List(1, 2, 3)) {
+      case x => Failure(Stream(42))
+    }
+
+    assertResult(Failure(Stream(42)))(result)
+  }
+
+  test("traverse03") {
+    val result = traverse(List(1, 2, 3)) {
+      case x =>  if (x % 2 == 1) Success(x) else Failure(Stream(x))
+    }
+
+    assertResult(Failure(Stream(2)))(result)
+  }
 
 }

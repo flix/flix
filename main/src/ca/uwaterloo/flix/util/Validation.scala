@@ -90,6 +90,7 @@ object Validation {
   /**
     * Sequences the given list of validations `xs`.
     */
+  // TODO: Rename to sequence.
   def seqM[T, E](xs: Traversable[Validation[T, E]]): Validation[List[T], E] = {
     val zero = Success(List.empty[T]): Validation[List[T], E]
     xs.foldRight(zero) {
@@ -103,6 +104,30 @@ object Validation {
         Failure(curErrors #::: accErrors)
     }
   }
+
+  /**
+    * Traverses `xs` while applying the function `f`.
+    */
+  // TODO: Use traverse moe often.
+  // TODO: Performance.
+  def traverse[T, S, E](xs: Traversable[T])(f: T => Validation[S, E]): Validation[List[S], E] = xs.toList match {
+    case Nil => Success(Nil)
+    case y :: ys =>
+      val s = f(y)
+      traverse(ys)(f) flatMap {
+        case rs => s map (r => r :: rs)
+      }
+  }
+
+  /**
+    * Maps over t1, t2, and t3.
+    */
+  def mapN[T1, T2, T3, U, E](t1: Validation[T1, E], t2: Validation[T2, E], t3: Validation[T3, E])
+                            (f: (T1, T2, T3) => U): Validation[U, E] =
+    (t1, t2, t3) match {
+      case (Success(v1), Success(v2), Success(v3)) => Success(f(v1, v2, v3))
+      case _ => Failure(t1.errors #::: t2.errors #::: t3.errors)
+    }
 
   /**
     * Maps over t1, t2, t3, and t4.

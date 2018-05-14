@@ -1214,7 +1214,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         /*
          * Process each effect.
          */
-        val effectsVal = xs.map {
+        val effectsVal = traverse(xs) {
           case ident => ident.name match {
             case "IO" => Effect.IO.toSuccess
             case "File" => Effect.File.toSuccess
@@ -1224,7 +1224,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         }
 
         for {
-          eff <- seqM(effectsVal)
+          eff <- effectsVal
         } yield Eff.Box(EffectSet.MayMust(eff.toSet, eff.toSet))
     }
 

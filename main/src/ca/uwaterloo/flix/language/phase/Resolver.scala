@@ -673,7 +673,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
 
         case NamedAst.Pattern.Tuple(elms, tvar, loc) =>
           for {
-            es <- seqM(elms map visit)
+            es <- traverse(elms)(visit)
           } yield ResolvedAst.Pattern.Tuple(es, tvar, loc)
       }
 
