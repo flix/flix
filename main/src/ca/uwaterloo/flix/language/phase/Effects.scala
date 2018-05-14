@@ -173,23 +173,7 @@ object Effects extends Phase[Root, Root] {
           * Apply Expression.
           */
         case Expression.Apply(lambda, args, tpe, _, loc) =>
-          for {
-            e <- visitExp(lambda, env0)
-            es <- seqM(args.map(e => visitExp(e, env0)))
-          } yield {
-            // TODO: [Effects]: Take the number of arguments into account.
-            val ast.Eff.Arrow(_, latent, e2, eff) = e.eff
-
-            // Effects of arguments.
-            val argumentEffect = es.foldLeft(ast.Eff.Pure) {
-              case (eacc, exp) => eacc seq exp.eff
-            }
-
-            // The effects of the lambda expression happen before the effects the arguments.
-            // Then the effects of applying the lambda happens.
-            val resultEff = ast.Eff.Box(latent) seq argumentEffect
-            Expression.Apply(e, es, tpe, resultEff, loc)
-          }
+          ??? // TODO
 
         /**
           * Unary Expression.
@@ -450,6 +434,11 @@ object Effects extends Phase[Root, Root] {
           } yield {
             Expression.Cast(e, tpe, eff, loc)
           }
+
+        /**
+          * Try Catch Expression.
+          */
+        case Expression.TryCatch(exp, rules, tpe, eff, loc) => ??? // TODO: TryCatch
 
         /**
           * Native Constructor Expression.

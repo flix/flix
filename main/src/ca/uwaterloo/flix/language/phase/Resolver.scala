@@ -80,14 +80,15 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
     }
 
     val namedVal = prog0.named.map {
-      case (sym, exp0) => Expressions.resolve(exp0, Name.RootNS, prog0).map {
+      case (sym, exp0) => Expressions.resolve(exp0, Map.empty, Name.RootNS, prog0).map {
         case exp =>
           // Introduce a synthetic definition for the expression.
           val doc = Ast.Doc(Nil, SourceLocation.Unknown)
           val ann = Ast.Annotations.Empty
           val mod = Ast.Modifiers.Empty
           val tparams = Nil
-          val fparams = Nil
+          val fparam = ResolvedAst.FormalParam(Symbol.freshVarSym(), Ast.Modifiers.Empty, Type.Unit, SourceLocation.Unknown)
+          val fparams = List(fparam)
           val sc = Scheme(Nil, Type.freshTypeVar())
           val eff = Eff.Pure
           val loc = SourceLocation.Unknown
@@ -185,10 +186,13 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
     */
   def resolve(d0: NamedAst.Def, ns0: Name.NName, prog0: NamedAst.Program)(implicit genSym: GenSym): Validation[ResolvedAst.Def, ResolutionError] = d0 match {
     case NamedAst.Def(doc, ann, mod, sym, tparams0, fparams0, exp0, sc0, eff0, loc) =>
+      val fparam = fparams0.head
+
       for {
+        fparamType <- lookupType(fparam.tpe, ns0, prog0)
         fparams <- resolveFormalParams(fparams0, ns0, prog0)
         tparams <- resolveTypeParams(tparams0, ns0, prog0)
-        exp <- Expressions.resolve(exp0, ns0, prog0)
+        exp <- Expressions.resolve(exp0, Map(fparam.sym -> fparamType), ns0, prog0)
         scheme <- resolveScheme(sc0, ns0, prog0)
       } yield ResolvedAst.Def(doc, ann, mod, sym, tparams, fparams, exp, scheme, eff0, loc)
   }
@@ -213,11 +217,14 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
       // Compute the qualified name of the ident, since we need it to call lookupEff.
       val qname = Name.mkQName(ident)
 
+      // TODO: Introduce appropriate type environment for handlers.
+      val tenv0 = Map.empty[Symbol.VarSym, Type]
+
       for {
         eff <- lookupEff(qname, ns0, prog0)
         fparams <- resolveFormalParams(fparams0, ns0, prog0)
         tparams <- resolveTypeParams(tparams0, ns0, prog0)
-        exp <- Expressions.resolve(exp0, ns0, prog0)
+        exp <- Expressions.resolve(exp0, tenv0, ns0, prog0)
         scheme <- resolveScheme(sc0, ns0, prog0)
       } yield ResolvedAst.Handler(doc, ann, mod, eff.sym, tparams, fparams, exp, scheme, eff0, loc)
   }
@@ -312,14 +319,15 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
     * Performs name resolution on the given lattice `l0` in the given namespace `ns0`.
     */
   def resolve(l0: NamedAst.Lattice, ns0: Name.NName, prog0: NamedAst.Program)(implicit genSym: GenSym): Validation[ResolvedAst.Lattice, ResolutionError] = {
+    val tenv0 = Map.empty[Symbol.VarSym, Type]
     for {
       tpe <- lookupType(l0.tpe, ns0, prog0)
-      bot <- Expressions.resolve(l0.bot, ns0, prog0)
-      top <- Expressions.resolve(l0.top, ns0, prog0)
-      equ <- Expressions.resolve(l0.equ, ns0, prog0)
-      leq <- Expressions.resolve(l0.leq, ns0, prog0)
-      lub <- Expressions.resolve(l0.lub, ns0, prog0)
-      glb <- Expressions.resolve(l0.glb, ns0, prog0)
+      bot <- Expressions.resolve(l0.bot, tenv0, ns0, prog0)
+      top <- Expressions.resolve(l0.top, tenv0, ns0, prog0)
+      equ <- Expressions.resolve(l0.equ, tenv0, ns0, prog0)
+      leq <- Expressions.resolve(l0.leq, tenv0, ns0, prog0)
+      lub <- Expressions.resolve(l0.lub, tenv0, ns0, prog0)
+      glb <- Expressions.resolve(l0.glb, tenv0, ns0, prog0)
     } yield ResolvedAst.Lattice(tpe, bot, top, equ, leq, lub, glb, ns0, l0.loc)
   }
 
@@ -357,14 +365,17 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
     /**
       * Performs name resolution on the given expression `exp0` in the namespace `ns0`.
       */
-    def resolve(exp0: NamedAst.Expression, ns0: Name.NName, prog0: NamedAst.Program)(implicit genSym: GenSym): Validation[ResolvedAst.Expression, ResolutionError] = {
+    def resolve(exp0: NamedAst.Expression, tenv0: Map[Symbol.VarSym, Type], ns0: Name.NName, prog0: NamedAst.Program)(implicit genSym: GenSym): Validation[ResolvedAst.Expression, ResolutionError] = {
       /**
         * Local visitor.
         */
-      def visit(e0: NamedAst.Expression): Validation[ResolvedAst.Expression, ResolutionError] = e0 match {
+      def visit(e0: NamedAst.Expression, tenv0: Map[Symbol.VarSym, Type]): Validation[ResolvedAst.Expression, ResolutionError] = e0 match {
         case NamedAst.Expression.Wild(tpe, loc) => ResolvedAst.Expression.Wild(tpe, loc).toSuccess
 
-        case NamedAst.Expression.Var(sym, loc) => ResolvedAst.Expression.Var(sym, loc).toSuccess
+        case NamedAst.Expression.Var(sym, loc) => tenv0.get(sym) match {
+          case None => ResolvedAst.Expression.Var(sym, sym.tvar, loc).toSuccess
+          case Some(tpe) => ResolvedAst.Expression.Var(sym, tpe, loc).toSuccess
+        }
 
         case NamedAst.Expression.Def(qname, tvar, loc) =>
           lookupQName(qname, ns0, prog0) map {
@@ -400,46 +411,47 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
 
         case NamedAst.Expression.Str(lit, loc) => ResolvedAst.Expression.Str(lit, loc).toSuccess
 
-        case NamedAst.Expression.Apply(lambda, args, tvar, loc) =>
+        case NamedAst.Expression.Apply(exp1, exp2, tvar, loc) =>
           for {
-            e <- visit(lambda)
-            es <- seqM(args map visit)
-          } yield ResolvedAst.Expression.Apply(e, es, tvar, loc)
+            e1 <- visit(exp1, tenv0)
+            e2 <- visit(exp2, tenv0)
+          } yield ResolvedAst.Expression.Apply(e1, e2, tvar, loc)
 
-        case NamedAst.Expression.Lambda(fparams, exp, tvar, loc) =>
+        case NamedAst.Expression.Lambda(fparam, exp, tvar, loc) =>
           for {
-            e <- visit(exp)
-            fs <- seqM(fparams.map(fparam => Params.resolve(fparam, ns0, prog0)))
-          } yield ResolvedAst.Expression.Lambda(fs, e, tvar, loc)
+            paramType <- lookupType(fparam.tpe, ns0, prog0)
+            e <- visit(exp, tenv0 + (fparam.sym -> paramType))
+            p <- Params.resolve(fparam, ns0, prog0)
+          } yield ResolvedAst.Expression.Lambda(p, e, tvar, loc)
 
         case NamedAst.Expression.Unary(op, exp, tvar, loc) =>
           for {
-            e <- visit(exp)
+            e <- visit(exp, tenv0)
           } yield ResolvedAst.Expression.Unary(op, e, tvar, loc)
 
         case NamedAst.Expression.Binary(op, exp1, exp2, tvar, loc) =>
           for {
-            e1 <- visit(exp1)
-            e2 <- visit(exp2)
+            e1 <- visit(exp1, tenv0)
+            e2 <- visit(exp2, tenv0)
           } yield ResolvedAst.Expression.Binary(op, e1, e2, tvar, loc)
 
         case NamedAst.Expression.IfThenElse(exp1, exp2, exp3, tvar, loc) =>
           for {
-            e1 <- visit(exp1)
-            e2 <- visit(exp2)
-            e3 <- visit(exp3)
+            e1 <- visit(exp1, tenv0)
+            e2 <- visit(exp2, tenv0)
+            e3 <- visit(exp3, tenv0)
           } yield ResolvedAst.Expression.IfThenElse(e1, e2, e3, tvar, loc)
 
         case NamedAst.Expression.Let(sym, exp1, exp2, tvar, loc) =>
           for {
-            e1 <- visit(exp1)
-            e2 <- visit(exp2)
+            e1 <- visit(exp1, tenv0)
+            e2 <- visit(exp2, tenv0)
           } yield ResolvedAst.Expression.Let(sym, e1, e2, tvar, loc)
 
         case NamedAst.Expression.LetRec(sym, exp1, exp2, tvar, loc) =>
           for {
-            e1 <- visit(exp1)
-            e2 <- visit(exp2)
+            e1 <- visit(exp1, tenv0)
+            e2 <- visit(exp2, tenv0)
           } yield ResolvedAst.Expression.LetRec(sym, e1, e2, tvar, loc)
 
         case NamedAst.Expression.Match(exp, rules, tvar, loc) =>
@@ -447,19 +459,19 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
             case NamedAst.MatchRule(pat, guard, body) =>
               for {
                 p <- Patterns.resolve(pat, ns0, prog0)
-                g <- visit(guard)
-                b <- visit(body)
+                g <- visit(guard, tenv0)
+                b <- visit(body, tenv0)
               } yield ResolvedAst.MatchRule(p, g, b)
           }
 
           for {
-            e <- visit(exp)
+            e <- visit(exp, tenv0)
             rs <- seqM(rulesVal)
           } yield ResolvedAst.Expression.Match(e, rs, tvar, loc)
 
         case NamedAst.Expression.Switch(rules, tvar, loc) =>
           val rulesVal = rules map {
-            case (cond, body) => @@(visit(cond), visit(body))
+            case (cond, body) => @@(visit(cond, tenv0), visit(body, tenv0))
           }
           seqM(rulesVal) map {
             case rs => ResolvedAst.Expression.Switch(rs, tvar, loc)
@@ -492,113 +504,127 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
                   val freshParam = ResolvedAst.FormalParam(freshVar, Ast.Modifiers.Empty, Type.freshTypeVar(), loc)
 
                   // Construct a variable expression for the fresh symbol.
-                  val varExp = ResolvedAst.Expression.Var(freshVar, loc)
+                  val varExp = ResolvedAst.Expression.Var(freshVar, freshVar.tvar, loc)
 
                   // Construct the tag expression on the fresh symbol expression.
                   val tagExp = ResolvedAst.Expression.Tag(decl.sym, caze.tag.name, varExp, Type.freshTypeVar(), loc)
 
                   // Assemble the lambda expressions.
-                  ResolvedAst.Expression.Lambda(List(freshParam), tagExp, Type.freshTypeVar(), loc)
+                  ResolvedAst.Expression.Lambda(freshParam, tagExp, Type.freshTypeVar(), loc)
                 }
             }
           case Some(exp) =>
             // Case 2: The tag has an expression. Perform resolution on it.
             for {
               d <- lookupEnumByTag(enum, tag, ns0, prog0)
-              e <- visit(exp)
+              e <- visit(exp, tenv0)
             } yield ResolvedAst.Expression.Tag(d.sym, tag.name, e, tvar, loc)
         }
 
         case NamedAst.Expression.Tuple(elms, tvar, loc) =>
           for {
-            es <- seqM(elms map visit)
+            es <- seqM(elms.map(e => visit(e, tenv0)))
           } yield ResolvedAst.Expression.Tuple(es, tvar, loc)
 
         case NamedAst.Expression.ArrayNew(elm, len, tvar, loc) =>
           for {
-            e <- visit(elm)
+            e <- visit(elm, tenv0)
           } yield ResolvedAst.Expression.ArrayNew(e, len, tvar, loc)
 
         case NamedAst.Expression.ArrayLit(elms, tvar, loc) =>
           for {
-            es <- seqM(elms map visit)
+            es <- seqM(elms.map(e => visit(e, tenv0)))
           } yield ResolvedAst.Expression.ArrayLit(es, tvar, loc)
 
         case NamedAst.Expression.ArrayLoad(base, index, tvar, loc) =>
           for {
-            b <- visit(base)
-            i <- visit(index)
+            b <- visit(base, tenv0)
+            i <- visit(index, tenv0)
           } yield ResolvedAst.Expression.ArrayLoad(b, i, tvar, loc)
 
         case NamedAst.Expression.ArrayStore(base, index, value, tvar, loc) =>
           for {
-            b <- visit(base)
-            i <- visit(index)
-            v <- visit(value)
+            b <- visit(base, tenv0)
+            i <- visit(index, tenv0)
+            v <- visit(value, tenv0)
           } yield ResolvedAst.Expression.ArrayStore(b, i, v, tvar, loc)
 
         case NamedAst.Expression.Ref(exp, tvar, loc) =>
           for {
-            e <- visit(exp)
+            e <- visit(exp, tenv0)
           } yield ResolvedAst.Expression.Ref(e, tvar, loc)
 
         case NamedAst.Expression.Deref(exp, tvar, loc) =>
           for {
-            e <- visit(exp)
+            e <- visit(exp, tenv0)
           } yield ResolvedAst.Expression.Deref(e, tvar, loc)
 
         case NamedAst.Expression.Assign(exp1, exp2, tvar, loc) =>
           for {
-            e1 <- visit(exp1)
-            e2 <- visit(exp2)
+            e1 <- visit(exp1, tenv0)
+            e2 <- visit(exp2, tenv0)
           } yield ResolvedAst.Expression.Assign(e1, e2, tvar, loc)
 
         case NamedAst.Expression.HandleWith(exp, bindings, tvar, loc) =>
           for {
-            e <- visit(exp)
-            bs <- resolveHandlerBindings(bindings, ns0, prog0)
+            e <- visit(exp, tenv0)
+            bs <- resolveHandlerBindings(bindings, tenv0, ns0, prog0)
           } yield ResolvedAst.Expression.HandleWith(e, bs, tvar, loc)
 
         case NamedAst.Expression.Existential(fparam, exp, loc) =>
           for {
             fp <- Params.resolve(fparam, ns0, prog0)
-            e <- visit(exp)
+            e <- visit(exp, tenv0)
           } yield ResolvedAst.Expression.Existential(fp, e, loc)
 
         case NamedAst.Expression.Universal(fparam, exp, loc) =>
           for {
             fp <- Params.resolve(fparam, ns0, prog0)
-            e <- visit(exp)
+            e <- visit(exp, tenv0)
           } yield ResolvedAst.Expression.Universal(fp, e, loc)
 
         case NamedAst.Expression.Ascribe(exp, tpe, eff, loc) =>
           for {
-            e <- visit(exp)
+            e <- visit(exp, tenv0)
             t <- lookupType(tpe, ns0, prog0)
           } yield ResolvedAst.Expression.Ascribe(e, t, eff, loc)
 
         case NamedAst.Expression.Cast(exp, tpe, eff, loc) =>
           for {
-            e <- visit(exp)
+            e <- visit(exp, tenv0)
             t <- lookupType(tpe, ns0, prog0)
           } yield ResolvedAst.Expression.Cast(e, t, eff, loc)
 
+        case NamedAst.Expression.TryCatch(exp, rules, tpe, loc) =>
+          val rulesVal = rules map {
+            case NamedAst.CatchRule(sym, clazz, body) =>
+              val exceptionType = Type.Native(clazz)
+              visit(body, tenv0 + (sym -> exceptionType)) map {
+                case b => ResolvedAst.CatchRule(sym, clazz, b)
+              }
+          }
+
+          for {
+            e <- visit(exp, tenv0)
+            rs <- seqM(rulesVal)
+          } yield ResolvedAst.Expression.TryCatch(e, rs, tpe, loc)
+
         case NamedAst.Expression.NativeConstructor(constructor, args, tpe, loc) =>
           for {
-            es <- seqM(args map visit)
+            es <- seqM(args.map(e => visit(e, tenv0)))
           } yield ResolvedAst.Expression.NativeConstructor(constructor, es, tpe, loc)
 
         case NamedAst.Expression.NativeField(field, tpe, loc) => ResolvedAst.Expression.NativeField(field, tpe, loc).toSuccess
 
         case NamedAst.Expression.NativeMethod(method, args, tpe, loc) =>
           for {
-            es <- seqM(args map visit)
+            es <- seqM(args.map(e => visit(e, tenv0)))
           } yield ResolvedAst.Expression.NativeMethod(method, es, tpe, loc)
 
         case NamedAst.Expression.UserError(tvar, loc) => ResolvedAst.Expression.UserError(tvar, loc).toSuccess
       }
 
-      visit(exp0)
+      visit(exp0, Map.empty)
     }
 
   }
@@ -670,7 +696,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
         case NamedAst.Predicate.Head.Atom(qname, terms, loc) =>
           for {
             t <- lookupTable(qname, ns0, prog0)
-            ts <- seqM(terms.map(t => Expressions.resolve(t, ns0, prog0)))
+            ts <- seqM(terms.map(t => Expressions.resolve(t, Map.empty, ns0, prog0)))
           } yield ResolvedAst.Predicate.Head.Atom(t.sym, ts, loc)
       }
     }
@@ -689,7 +715,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
         case NamedAst.Predicate.Body.Filter(qname, terms, loc) =>
           for {
             lookupResult <- lookupQName(qname, ns0, prog0)
-            ts <- seqM(terms.map(t => Expressions.resolve(t, ns0, prog0)))
+            ts <- seqM(terms.map(t => Expressions.resolve(t, Map.empty, ns0, prog0)))
           } yield {
             lookupResult match {
               case LookupResult.Def(sym) => ResolvedAst.Predicate.Body.Filter(sym, ts, loc)
@@ -700,7 +726,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
         case NamedAst.Predicate.Body.Loop(pat, term, loc) =>
           for {
             p <- Patterns.resolve(pat, ns0, prog0)
-            t <- Expressions.resolve(term, ns0, prog0)
+            t <- Expressions.resolve(term, Map.empty, ns0, prog0)
           } yield ResolvedAst.Predicate.Body.Loop(p, t, loc)
       }
     }
@@ -721,7 +747,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
       */
     def resolve(p0: NamedAst.Property, ns0: Name.NName, prog0: NamedAst.Program)(implicit genSym: GenSym): Validation[ResolvedAst.Property, ResolutionError] = {
       for {
-        e <- Expressions.resolve(p0.exp, ns0, prog0)
+        e <- Expressions.resolve(p0.exp, Map.empty, ns0, prog0)
       } yield ResolvedAst.Property(p0.law, p0.defn, e, p0.loc)
     }
 
@@ -771,19 +797,19 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
   /**
     * Performs name resolution on the given handler bindings `bs0`.
     */
-  def resolveHandlerBindings(bs0: List[NamedAst.HandlerBinding], ns0: Name.NName, prog0: NamedAst.Program)(implicit genSym: GenSym): Validation[List[ResolvedAst.HandlerBinding], ResolutionError] = {
+  def resolveHandlerBindings(bs0: List[NamedAst.HandlerBinding], tenv0: Map[Symbol.VarSym, Type], ns0: Name.NName, prog0: NamedAst.Program)(implicit genSym: GenSym): Validation[List[ResolvedAst.HandlerBinding], ResolutionError] = {
     // TODO: Check that there is no overlap?
-    seqM(bs0.map(b => resolveHandlerBindings(b, ns0, prog0)))
+    seqM(bs0.map(b => resolveHandlerBindings(b, tenv0, ns0, prog0)))
   }
 
   /**
     * Performs name resolution on the given handler binding `b0`.
     */
-  def resolveHandlerBindings(b0: NamedAst.HandlerBinding, ns0: Name.NName, prog0: NamedAst.Program)(implicit genSym: GenSym): Validation[ResolvedAst.HandlerBinding, ResolutionError] = b0 match {
+  def resolveHandlerBindings(b0: NamedAst.HandlerBinding, tenv0: Map[Symbol.VarSym, Type], ns0: Name.NName, prog0: NamedAst.Program)(implicit genSym: GenSym): Validation[ResolvedAst.HandlerBinding, ResolutionError] = b0 match {
     case NamedAst.HandlerBinding(qname, exp0) =>
       for {
         eff <- lookupEff(qname, ns0, prog0)
-        exp <- Expressions.resolve(exp0, ns0, prog0)
+        exp <- Expressions.resolve(exp0, tenv0, ns0, prog0)
       } yield ResolvedAst.HandlerBinding(eff.sym, exp)
   }
 
@@ -1090,7 +1116,6 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
       case "BigInt" => Type.BigInt.toSuccess
       case "Str" => Type.Str.toSuccess
       case "Array" => Type.Array.toSuccess
-      case "Native" => Type.Native.toSuccess
       case "Ref" => Type.Ref.toSuccess
 
       // Enum Types.
@@ -1123,8 +1148,9 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
         elms <- seqM(elms0.map(tpe => lookupType(tpe, ns0, prog0)))
       ) yield Type.mkTuple(elms)
     case NamedAst.Type.Native(fqn, loc) =>
-      // TODO: needs more precise type.
-      Type.Native.toSuccess
+      lookupJvmClass(fqn.mkString("."), loc) map {
+        case clazz => Type.Native(clazz)
+      }
     case NamedAst.Type.Arrow(tparams0, tresult0, loc) =>
       for (
         tparams <- seqM(tparams0.map(tpe => lookupType(tpe, ns0, prog0)));
@@ -1273,5 +1299,15 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
     getEnumIfAccessible(enum0, ns0, loc) map {
       case enum => Type.Enum(enum.sym, Kind.Star)
     }
+
+  /**
+    * Returns the class reflection object for the given `className`.
+    */
+  def lookupJvmClass(className: String, loc: SourceLocation): Validation[Class[_], ResolutionError] = try {
+    Class.forName(className).toSuccess
+  } catch {
+    case ex: ClassNotFoundException => ResolutionError.UndefinedNativeClass(className, loc).toFailure
+  }
+
 }
 

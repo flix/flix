@@ -358,6 +358,16 @@ object SimplifiedAstOps {
         checkExp(exp, env0 + fparam.sym, ienv0)
 
       //
+      // Try Catch
+      //
+      case Expression.TryCatch(exp, rules, tpe, eff, loc) =>
+        checkExp(exp, env0, ienv0)
+        for (CatchRule(sym, clazz, body) <- rules) {
+          checkExp(body, env0 + sym, ienv0)
+        }
+        checkType(tpe)
+
+      //
       // Native Constructor.
       //
       case Expression.NativeConstructor(constructor, args, tpe, loc) =>
@@ -547,12 +557,6 @@ object SimplifiedAstOps {
       assert(tpe1 == tpe2)
       checkType(tpe1)
       checkType(tpe2)
-      checkExp(exp0 = bot, env0 = Set.empty, ienv0 = Set.empty)
-      checkExp(exp0 = top, env0 = Set.empty, ienv0 = Set.empty)
-      checkExp(exp0 = equ, env0 = Set.empty, ienv0 = Set.empty)
-      checkExp(exp0 = leq, env0 = Set.empty, ienv0 = Set.empty)
-      checkExp(exp0 = lub, env0 = Set.empty, ienv0 = Set.empty)
-      checkExp(exp0 = glb, env0 = Set.empty, ienv0 = Set.empty)
     }
 
     //

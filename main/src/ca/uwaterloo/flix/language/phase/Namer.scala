@@ -572,18 +572,16 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
       case WeededAst.Expression.BigInt(lit, loc) => NamedAst.Expression.BigInt(lit, loc).toSuccess
       case WeededAst.Expression.Str(lit, loc) => NamedAst.Expression.Str(lit, loc).toSuccess
 
-      case WeededAst.Expression.Apply(lambda, args, loc) =>
-        val lambdaVal = namer(lambda, env0, tenv0)
-        val argsVal = @@(args map (a => namer(a, env0, tenv0)))
-        @@(lambdaVal, argsVal) map {
-          case (e, es) => NamedAst.Expression.Apply(e, es, Type.freshTypeVar(), loc)
+      case WeededAst.Expression.Apply(exp1, exp2, loc) =>
+        @@(namer(exp1, env0, tenv0), namer(exp2, env0, tenv0)) map {
+          case (e1, e2) => NamedAst.Expression.Apply(e1, e2, Type.freshTypeVar(), loc)
         }
 
-      case WeededAst.Expression.Lambda(fparams0, exp, loc) =>
-        val fparams = fparams0.map(p => Params.namer(p, tenv0))
-        val env1 = fparams.map(p => p.sym.text -> p.sym)
+      case WeededAst.Expression.Lambda(fparam0, exp, loc) =>
+        val fparam = Params.namer(fparam0, tenv0)
+        val env1 = Map(fparam.sym.text -> fparam.sym)
         namer(exp, env0 ++ env1, tenv0) map {
-          case e => NamedAst.Expression.Lambda(fparams, e, Type.freshTypeVar(), loc)
+          case e => NamedAst.Expression.Lambda(fparam, e, Type.freshTypeVar(), loc)
         }
 
       case WeededAst.Expression.Unary(op, exp, loc) => namer(exp, env0, tenv0) map {
@@ -722,6 +720,24 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
         case e => NamedAst.Expression.Cast(e, Types.namer(tpe, tenv0), eff, loc)
       }
 
+      case WeededAst.Expression.TryCatch(exp, rules, loc) =>
+        val expVal = namer(exp, env0, tenv0)
+        val rulesVal = rules map {
+          case WeededAst.CatchRule(ident, className, body) =>
+            val sym = Symbol.freshVarSym(ident)
+            val classVal = lookupClass(className, loc)
+            // TODO: Currently the bound name is not available due to bug in code gen.
+            // val bodyVal = namer(body, env0 + (ident.name -> sym), tenv0)
+            val bodyVal = namer(body, env0, tenv0)
+            @@(classVal, bodyVal) map {
+              case (c, b) => NamedAst.CatchRule(sym, c, b)
+            }
+        }
+
+        @@(expVal, @@(rulesVal)) map {
+          case (e, rs) => NamedAst.Expression.TryCatch(e, rs, Type.freshTypeVar(), loc)
+        }
+
       case WeededAst.Expression.NativeConstructor(className, args, loc) =>
         lookupNativeConstructor(className, args, loc) match {
           case Ok(constructor) => @@(args.map(e => namer(e, env0, tenv0))) map {
@@ -766,8 +782,8 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
       case WeededAst.Expression.Int64(lit, loc) => Nil
       case WeededAst.Expression.BigInt(lit, loc) => Nil
       case WeededAst.Expression.Str(lit, loc) => Nil
-      case WeededAst.Expression.Apply(lambda, args, loc) => freeVars(lambda) ++ args.flatMap(freeVars)
-      case WeededAst.Expression.Lambda(fparams, exp, loc) => filterBoundVars(freeVars(exp), fparams.map(_.ident))
+      case WeededAst.Expression.Apply(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
+      case WeededAst.Expression.Lambda(fparam, exp, loc) => filterBoundVars(freeVars(exp), List(fparam.ident))
       case WeededAst.Expression.Unary(op, exp, loc) => freeVars(exp)
       case WeededAst.Expression.Binary(op, exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
       case WeededAst.Expression.IfThenElse(exp1, exp2, exp3, loc) => freeVars(exp1) ++ freeVars(exp2) ++ freeVars(exp3)
@@ -793,6 +809,10 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
       case WeededAst.Expression.Universal(fparam, exp, loc) => filterBoundVars(freeVars(exp), List(fparam.ident))
       case WeededAst.Expression.Ascribe(exp, tpe, eff, loc) => freeVars(exp)
       case WeededAst.Expression.Cast(exp, tpe, eff, loc) => freeVars(exp)
+      case WeededAst.Expression.TryCatch(exp, rules, loc) =>
+        rules.foldLeft(freeVars(exp)) {
+          case (fvs, WeededAst.CatchRule(ident, className, body)) => filterBoundVars(freeVars(body), List(ident))
+        }
       case WeededAst.Expression.NativeField(className, fieldName, loc) => Nil
       case WeededAst.Expression.NativeMethod(className, methodName, args, loc) => args.flatMap(freeVars)
       case WeededAst.Expression.NativeConstructor(className, args, loc) => args.flatMap(freeVars)
@@ -1009,6 +1029,15 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
   }
 
   /**
+    * Returns the class reflection object for the given `className`.
+    */
+  def lookupClass(className: String, loc: SourceLocation): Validation[Class[_], NameError] = try {
+    Class.forName(className).toSuccess
+  } catch {
+    case ex: ClassNotFoundException => UndefinedNativeClass(className, loc).toFailure
+  }
+
+  /**
     * Returns the result of looking up the given `fieldName` on the given `className`.
     */
   def lookupNativeField(className: String, fieldName: String, loc: SourceLocation): Result[Field, NameError] = try {
@@ -1123,23 +1152,26 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
     *
     * May return `None` if not information about `tpe` is known.
     */
-  def lookupNativeType(tpe: WeededAst.Type): Option[Class[_]] = tpe match {
-    case WeededAst.Type.Native(fqn, loc) => lookupClass(fqn.mkString("."))
-    case WeededAst.Type.Ambiguous(qname, loc) =>
-      // TODO: Ugly incorrect hack. Must take place in the resolver.
-      if (qname.ident.name == "Str") Some(classOf[String]) else None
-    // TODO: Would be useful to handle primitive types too.
-    case _ => None
+  def lookupNativeType(tpe: WeededAst.Type): Option[Class[_]] = {
+    /**
+      * Optionally returns the class reflection object for the given `className`.
+      */
+    def lookupClass(className: String): Option[Class[_]] = try {
+      Some(Class.forName(className))
+    } catch {
+      case ex: ClassNotFoundException => None // TODO: Need to return a proper validation instead?
+    }
+
+    tpe match {
+      case WeededAst.Type.Native(fqn, loc) => lookupClass(fqn.mkString("."))
+      case WeededAst.Type.Ambiguous(qname, loc) =>
+        // TODO: Ugly incorrect hack. Must take place in the resolver.
+        if (qname.ident.name == "Str") Some(classOf[String]) else None
+      // TODO: Would be useful to handle primitive types too.
+      case _ => None
+    }
   }
 
-  /**
-    * Optionally returns the class reflection object for the given `className`.
-    */
-  def lookupClass(className: String): Option[Class[_]] = try {
-    Some(Class.forName(className))
-  } catch {
-    case ex: ClassNotFoundException => None // TODO: Need to return a proper validation instead?
-  }
 
   /**
     * Returns `true` if the class types present in `expected` equals those in `actual`.

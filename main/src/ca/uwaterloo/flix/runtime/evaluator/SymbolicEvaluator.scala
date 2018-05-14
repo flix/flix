@@ -804,6 +804,11 @@ object SymbolicEvaluator {
         }
 
       /**
+        * Try Catch.
+        */
+      case Expression.TryCatch(exp, rules, tpe, loc) => throw InternalCompilerException("Not yet supported.")
+
+      /**
         * Native Constructor.
         */
       case Expression.NativeConstructor(constructor, args, tpe, loc) => throw InternalCompilerException("Not yet supported.")

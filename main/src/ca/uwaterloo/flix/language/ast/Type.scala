@@ -46,7 +46,7 @@ sealed trait Type {
     case Type.BigInt => Set.empty
     case Type.Str => Set.empty
     case Type.Array => Set.empty
-    case Type.Native => Set.empty
+    case Type.Native(clazz) => Set.empty
     case Type.Ref => Set.empty
     case Type.Arrow(l) => Set.empty
     case Type.Tuple(l) => Set.empty
@@ -148,7 +148,7 @@ sealed trait Type {
     case Type.BigInt => "BigInt"
     case Type.Str => "Str"
     case Type.Array => "Array"
-    case Type.Native => "Native"
+    case Type.Native(clazz) => "Native"
     case Type.Ref => "Ref"
     case Type.Arrow(l) => s"Arrow($l)"
     case Type.Enum(enum, kind) => enum.toString
@@ -283,9 +283,9 @@ object Type {
   }
 
   /**
-    * A type constructor that represent native objects.
+    * A type constructor that represent JVM types.
     */
-  case object Native extends Type {
+  case class Native(clazz: Class[_]) extends Type {
     def kind: Kind = Kind.Star
   }
 
@@ -348,14 +348,21 @@ object Type {
   def mkArray(a: Type): Type = Apply(Array, a)
 
   /**
-    * Constructs the function type A -> B where `A` is the given type `a` and `B` is the given type `b`.
+    * Constructs the arrow type A -> B.
     */
   def mkArrow(a: Type, b: Type): Type = Apply(Apply(Arrow(2), a), b)
 
   /**
-    * Constructs the function type [A] -> B where `A` is the given sequence of types `as` and `B` is the given type `b`.
+    * Constructs the arrow type A_1 -> .. -> A_n -> B.
     */
   def mkArrow(as: List[Type], b: Type): Type = {
+    as.foldRight(b)(mkArrow)
+  }
+
+  /**
+    * Constructs the arrow type [A] -> B.
+    */
+  def mkUncurriedArrow(as: List[Type], b: Type): Type = {
     val arrow = Arrow(as.length + 1)
     val inner = as.foldLeft(arrow: Type) {
       case (acc, x) => Apply(acc, x)
@@ -411,7 +418,7 @@ object Type {
       case Type.BigInt => Type.BigInt
       case Type.Str => Type.Str
       case Type.Array => Type.Array
-      case Type.Native => Type.Native
+      case Type.Native(clazz) => Type.Native(clazz)
       case Type.Ref => Type.Ref
       case Type.Arrow(l) => Type.Arrow(l)
       case Type.Tuple(l) => Type.Tuple(l)
@@ -459,7 +466,7 @@ object Type {
           case Type.BigInt => "BigInt"
           case Type.Str => "String"
           case Type.Array => "Array"
-          case Type.Native => "Native"
+          case Type.Native(clazz) => "#" + clazz.getName
           case Type.Ref => "Ref"
 
           //

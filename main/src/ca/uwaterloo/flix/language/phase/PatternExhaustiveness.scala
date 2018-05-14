@@ -182,11 +182,9 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
         case Expression.BigInt(_, _) => tast.toSuccess
         case Expression.Str(_, _) => tast.toSuccess
         case Expression.Lambda(_, body, _, _, _) => checkPats(body, root).map(const(tast))
-        case Expression.Apply(exp, args, tpe, _, loc) => for {
-          _ <- checkPats(exp, root)
-          _ <- seqM(args map {
-            checkPats(_, root)
-          })
+        case Expression.Apply(exp1, exp2, tpe, _, loc) => for {
+          _ <- checkPats(exp1, root)
+          _ <- checkPats(exp2, root)
         } yield tast
         case Expression.Unary(_, exp, _, _, _) => checkPats(exp, root).map(const(tast))
         case Expression.Binary(_, exp1, exp2, _, _, _) => for {
@@ -254,6 +252,11 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
         case Expression.Universal(_, exp, _, _) => checkPats(exp, root).map(const(tast))
         case Expression.Ascribe(exp, _, _, _) => checkPats(exp, root).map(const(tast))
         case Expression.Cast(exp, _, _, _) => checkPats(exp, root).map(const(tast))
+        case Expression.TryCatch(exp, rules, tpe, eff, loc) =>
+          for {
+            _ <- checkPats(exp, root)
+            _ <- seqM(rules.map(r => checkPats(r.exp, root)))
+          } yield tast
         case Expression.NativeConstructor(_, args, _, _, _) => seqM(args map {
           checkPats(_, root)
         }).map(const(tast))
@@ -571,7 +574,7 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
       case Type.Int64 => 0
       case Type.BigInt => 0
       case Type.Str => 0
-      case Type.Native => 0
+      case Type.Native(clazz) => 0
       case Type.Ref => 0
       case Type.Arrow(length) => length
       case Type.Array => 1

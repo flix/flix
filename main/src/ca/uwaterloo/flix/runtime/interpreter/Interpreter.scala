@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.runtime.interpreter
 
-import java.lang.reflect.Modifier
+import java.lang.reflect.{InvocationTargetException, Modifier}
 
 import ca.uwaterloo.flix.api._
 import ca.uwaterloo.flix.language.ast.ExecutableAst._
@@ -50,7 +50,7 @@ object Interpreter {
     // Variable expressions.
     //
     case Expression.Var(sym, _, loc) => env0.get(sym.toString) match {
-      case None => throw InternalRuntimeException(s"Key '${sym.toString}' not found in environment: '${env0.mkString(",")}'.")
+      case None => throw InternalRuntimeException(s"Key '${sym.toString}' not found in environment.")
       case Some(v) => v
     }
 
@@ -237,6 +237,26 @@ object Interpreter {
       // Evaluate the expression in the new handler environment.
       eval(exp, env0, henv, lenv0, root)
 
+
+    //
+    // TryCatch expressions.
+    //
+    case Expression.TryCatch(exp, rules, tpe, loc) =>
+      try {
+        eval(exp, env0, henv0, lenv0, root)
+      } catch {
+        case ex: Throwable =>
+          val exceptionClass = ex.getClass
+          for (CatchRule(sym, clazz, body) <- rules) {
+            if (clazz.isAssignableFrom(exceptionClass)) {
+              val env1 = env0 + (sym.toString -> ex)
+              return eval(body, env1, henv0, lenv0, root)
+            }
+          }
+          // Fallthrough, rethrow the exception.
+          throw ex
+      }
+
     //
     // NativeConstructor expressions.
     //
@@ -255,7 +275,7 @@ object Interpreter {
     //
     // NativeMethod expressions.
     //
-    case Expression.NativeMethod(method, args, tpe, loc) =>
+    case Expression.NativeMethod(method, args, tpe, loc) => try {
       val values = evalArgs(args, env0, henv0, lenv0, root).map(toJava)
       if (Modifier.isStatic(method.getModifiers)) {
         val arguments = values.toArray
@@ -265,6 +285,9 @@ object Interpreter {
         val arguments = values.tail.toArray
         fromJava(method.invoke(thisObj, arguments: _*))
       }
+    } catch {
+      case ex: InvocationTargetException => throw ex.getTargetException
+    }
 
     //
     // Error expressions.

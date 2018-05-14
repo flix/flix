@@ -773,6 +773,16 @@ object ParsedAst {
     case class Unsafe(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
+      * Try Catch Expression.
+      *
+      * @param sp1   the position of the first character in the expression.
+      * @param exp   the guarded expression.
+      * @param rules the catch rules.
+      * @param sp2   the position of the last character in the expression.
+      */
+    case class TryCatch(sp1: SourcePosition, exp: ParsedAst.Expression, rules: Seq[ParsedAst.CatchRule], sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
       * Native Constructor Expression.
       *
       * @param sp1  the position of the first character in the expression.
@@ -1239,6 +1249,15 @@ object ParsedAst {
     * @param exp   the expression with which to handle the effect.
     */
   case class HandlerBinding(qname: Name.QName, exp: ParsedAst.Expression) extends ParsedAst
+
+  /**
+    * A catch rule consists of an identifier, a Java name, and a body expression.
+    *
+    * @param ident the identifier.
+    * @param fqn   the fully-qualified Java name.
+    * @param exp   the body expression.
+    */
+  case class CatchRule(ident: Name.Ident, fqn: Seq[String], exp: ParsedAst.Expression) extends ParsedAst
 
   /**
     * A pattern match rule consists of a pattern, an optional pattern guard, and a body expression.

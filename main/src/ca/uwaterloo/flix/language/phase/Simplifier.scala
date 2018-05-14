@@ -107,10 +107,16 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case TypedAst.Expression.Int64(lit, loc) => SimplifiedAst.Expression.Int64(lit)
       case TypedAst.Expression.BigInt(lit, loc) => SimplifiedAst.Expression.BigInt(lit)
       case TypedAst.Expression.Str(lit, loc) => SimplifiedAst.Expression.Str(lit)
-      case TypedAst.Expression.Lambda(args, body, tpe, eff, loc) =>
-        SimplifiedAst.Expression.Lambda(args map visitFormalParam, visitExp(body), tpe, loc)
-      case TypedAst.Expression.Apply(e, args, tpe, eff, loc) =>
-        SimplifiedAst.Expression.Apply(visitExp(e), args map visitExp, tpe, loc)
+
+      case TypedAst.Expression.Lambda(fparam, exp, tpe, eff, loc) =>
+        val p = visitFormalParam(fparam)
+        val e = visitExp(exp)
+        SimplifiedAst.Expression.Lambda(List(p), e, tpe, loc)
+
+      case TypedAst.Expression.Apply(exp1, exp2, tpe, eff, loc) =>
+        val e1 = visitExp(exp1)
+        val e2 = visitExp(exp2)
+        SimplifiedAst.Expression.Apply(e1, List(e2), tpe, loc)
 
       case TypedAst.Expression.Unary(op, e, tpe, eff, loc) =>
         /*
@@ -439,6 +445,15 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
 
       case TypedAst.Expression.Cast(exp, tpe, eff, loc) => visitExp(exp)
 
+      case TypedAst.Expression.TryCatch(exp, rules, tpe, eff, loc) =>
+        val e = visitExp(exp)
+        val rs = rules map {
+          case TypedAst.CatchRule(sym, clazz, body) =>
+            val b = visitExp(body)
+            SimplifiedAst.CatchRule(sym, clazz, b)
+        }
+        SimplifiedAst.Expression.TryCatch(e, rs, tpe, eff, loc)
+
       case TypedAst.Expression.NativeConstructor(constructor, args, tpe, eff, loc) =>
         val es = args.map(e => visitExp(e))
         SimplifiedAst.Expression.NativeConstructor(constructor, es, tpe, loc)
@@ -496,12 +511,9 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case TypedAst.Expression.Var(sym, tpe, eff, loc) =>
         SimplifiedAst.Term.Head.Var(sym, tpe, loc)
 
-      case TypedAst.Expression.Apply(TypedAst.Expression.Def(sym, _, _, _), args, tpe, eff, loc) if isVarExps(args) =>
-        val as = args map {
-          case TypedAst.Expression.Var(x, _, _, _) => x
-          case e => throw InternalCompilerException(s"Unexpected non-variable expression: $e.")
-        }
-        SimplifiedAst.Term.Head.App(sym, as, tpe, loc)
+      case TypedAst.Expression.Apply(TypedAst.Expression.Def(sym, _, _, _), exp, tpe, eff, loc) if exp.isInstanceOf[TypedAst.Expression.Var] =>
+        val v = exp.asInstanceOf[TypedAst.Expression.Var]
+        SimplifiedAst.Term.Head.App(sym, List(v.sym), tpe, loc)
 
       case _ =>
         // Determine if the expression is a literal.
@@ -515,6 +527,29 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
 
           // Generate a fresh symbol for the new definition.
           val freshSym = Symbol.freshDefnSym("head")
+
+          //
+          // Special Case: No constraint parameters.
+          //
+          if (cparams.isEmpty) {
+            // Construct the definition type.
+            val arrowType = Type.mkArrow(Type.Unit, e0.tpe)
+
+            // Assemble the fresh definition.
+            val ann = Ast.Annotations.Empty
+            val mod = Ast.Modifiers(List(Ast.Modifier.Synthetic))
+
+            val varX = Symbol.freshVarSym("_unit")
+            val param = SimplifiedAst.FormalParam(varX, mod, Type.Unit, SourceLocation.Unknown)
+
+            val defn = SimplifiedAst.Def(ann, mod, freshSym, List(param), visitExp(e0), arrowType, e0.loc)
+
+            // Add the fresh definition to the top-level.
+            toplevel += freshSym -> defn
+
+            // Return a head term that calls the freshly generated top-level definition.
+            return SimplifiedAst.Term.Head.App(freshSym, Nil, e0.tpe, e0.loc)
+          }
 
           // Generate fresh symbols for the formal parameters of the definition.
           val freshSymbols = cparams.map {
@@ -531,7 +566,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
           val exp = copy(visitExp(e0), freshSymbols.map(x => (x._1, x._2._1)).toMap)
 
           // Construct the definition type.
-          val arrowType = Type.mkArrow(freshSymbols.map(_._2._2), e0.tpe)
+          val arrowType = Type.mkUncurriedArrow(freshSymbols.map(_._2._2), e0.tpe)
 
           // Assemble the fresh definition.
           val ann = Ast.Annotations.Empty
@@ -565,12 +600,31 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       */
     def visitLattice(lattice0: TypedAst.Lattice): SimplifiedAst.Lattice = lattice0 match {
       case TypedAst.Lattice(tpe, bot0, top0, equ0, leq0, lub0, glb0, loc) =>
-        val bot = visitExp(bot0)
-        val top = visitExp(top0)
-        val equ = visitExp(equ0)
-        val leq = visitExp(leq0)
-        val lub = visitExp(lub0)
-        val glb = visitExp(glb0)
+
+        /**
+          * Introduces a unit function for the given expression `exp0`.
+          */
+        def mkUnitDef(name: String, exp0: TypedAst.Expression): Symbol.DefnSym = {
+          val freshSym = Symbol.freshDefnSym(name)
+          val ann = Ast.Annotations.Empty
+          val mod = Ast.Modifiers(List(Ast.Modifier.Synthetic))
+          val varX = Symbol.freshVarSym()
+          val fparam = SimplifiedAst.FormalParam(varX, Ast.Modifiers.Empty, Type.Unit, SourceLocation.Unknown)
+          val exp = visitExp(exp0)
+          val freshDef = SimplifiedAst.Def(ann, mod, freshSym, List(fparam), exp, Type.mkArrow(Type.Unit, exp.tpe), loc)
+
+          toplevel += (freshSym -> freshDef)
+          freshSym
+        }
+
+        val bot = mkUnitDef("bot", bot0)
+        val top = mkUnitDef("top", top0)
+
+        // TODO: Unsafe assumption that these are symbols.
+        val equ = visitExp(equ0).asInstanceOf[SimplifiedAst.Expression.Def].sym
+        val leq = visitExp(leq0).asInstanceOf[SimplifiedAst.Expression.Def].sym
+        val lub = visitExp(lub0).asInstanceOf[SimplifiedAst.Expression.Def].sym
+        val glb = visitExp(glb0).asInstanceOf[SimplifiedAst.Expression.Def].sym
         SimplifiedAst.Lattice(tpe, bot, top, equ, leq, lub, glb, loc)
     }
 
@@ -1110,11 +1164,23 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         SimplifiedAst.Expression.Existential(params, visit(exp), loc)
       case SimplifiedAst.Expression.Universal(params, exp, loc) =>
         SimplifiedAst.Expression.Universal(params, visit(exp), loc)
+
+      case SimplifiedAst.Expression.TryCatch(exp, rules, tpe, eff, loc) =>
+        val e = visit(exp)
+        val rs = rules map {
+          case SimplifiedAst.CatchRule(sym, clazz, body) =>
+            val b = visit(body)
+            SimplifiedAst.CatchRule(sym, clazz, b)
+        }
+        SimplifiedAst.Expression.TryCatch(e, rs, tpe, eff, loc)
+
       case SimplifiedAst.Expression.NativeConstructor(constructor, args, tpe, loc) =>
         val es = args map visit
         SimplifiedAst.Expression.NativeConstructor(constructor, es, tpe, loc)
+
       case SimplifiedAst.Expression.NativeField(field, tpe, loc) =>
         SimplifiedAst.Expression.NativeField(field, tpe, loc)
+
       case SimplifiedAst.Expression.NativeMethod(method, args, tpe, loc) =>
         val es = args map visit
         SimplifiedAst.Expression.NativeMethod(method, es, tpe, loc)

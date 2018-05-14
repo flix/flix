@@ -49,7 +49,7 @@ object SimplifiedAst {
 
   case class Enum(mod: Ast.Modifiers, sym: Symbol.EnumSym, cases: Map[String, SimplifiedAst.Case], tpe: Type, loc: SourceLocation) extends SimplifiedAst
 
-  case class Lattice(tpe: Type, bot: SimplifiedAst.Expression, top: SimplifiedAst.Expression, equ: SimplifiedAst.Expression, leq: SimplifiedAst.Expression, lub: SimplifiedAst.Expression, glb: SimplifiedAst.Expression, loc: SourceLocation) extends SimplifiedAst
+  case class Lattice(tpe: Type, bot: Symbol.DefnSym, top: Symbol.DefnSym, equ: Symbol.DefnSym, leq: Symbol.DefnSym, lub: Symbol.DefnSym, glb: Symbol.DefnSym, loc: SourceLocation) extends SimplifiedAst
 
   case class Index(sym: Symbol.TableSym, indexes: Seq[Seq[Name.Ident]], loc: SourceLocation) extends SimplifiedAst
 
@@ -226,6 +226,8 @@ object SimplifiedAst {
       def tpe: Type = Type.Bool
     }
 
+    case class TryCatch(exp: SimplifiedAst.Expression, rules: List[SimplifiedAst.CatchRule], tpe: Type, eff: ast.Eff, loc: SourceLocation) extends SimplifiedAst.Expression
+
     case class NativeConstructor(constructor: Constructor[_], args: List[SimplifiedAst.Expression], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
     case class NativeField(field: Field, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
@@ -355,6 +357,8 @@ object SimplifiedAst {
     case class RuleParam(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends SimplifiedAst.ConstraintParam
 
   }
+
+  case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: SimplifiedAst.Expression) extends SimplifiedAst
 
   case class FormalParam(sym: Symbol.VarSym, mod: Ast.Modifiers, tpe: Type, loc: SourceLocation) extends SimplifiedAst
 

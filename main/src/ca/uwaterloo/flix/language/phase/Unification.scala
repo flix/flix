@@ -70,7 +70,7 @@ object Unification {
       case Type.BigInt => Type.BigInt
       case Type.Str => Type.Str
       case Type.Array => Type.Array
-      case Type.Native => Type.Native
+      case Type.Native(clazz) => Type.Native(clazz)
       case Type.Ref => Type.Ref
       case Type.Arrow(l) => Type.Arrow(l)
       case Type.Tuple(l) => Type.Tuple(l)
@@ -180,7 +180,11 @@ object Unification {
       case (Type.BigInt, Type.BigInt) => Result.Ok(Substitution.empty)
       case (Type.Str, Type.Str) => Result.Ok(Substitution.empty)
       case (Type.Array, Type.Array) => Result.Ok(Substitution.empty)
-      case (Type.Native, Type.Native) => Result.Ok(Substitution.empty)
+      case (Type.Native(clazz1), Type.Native(clazz2)) =>
+        if (clazz1 == clazz2)
+          Result.Ok(Substitution.empty)
+        else
+          Result.Err(UnificationError.Mismatch(tpe1, tpe2))
       case (Type.Ref, Type.Ref) => Result.Ok(Substitution.empty)
       case (Type.Arrow(l1), Type.Arrow(l2)) if l1 == l2 => Result.Ok(Substitution.empty)
       case (Type.Tuple(l1), Type.Tuple(l2)) if l1 == l2 => Result.Ok(Substitution.empty)

@@ -439,10 +439,11 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         val subst0 = getSubstFromParams(fparams0)
         val tparams = getTypeParams(tparams0)
         val fparams = getFormalParams(fparams0, subst0)
+        val argumentTypes = fparams.map(_.tpe)
 
         val result = for {
           actualType <- Expressions.infer(exp0, program0)(flix.genSym)
-          unifiedType <- unifyM(declaredType, effectType, actualType, loc)
+          unifiedType <- unifyM(declaredType, effectType, Type.mkArrow(argumentTypes, actualType), loc)
         } yield unifiedType
 
         result.run(Substitution.empty) map {
@@ -475,7 +476,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         /*
          * Variable expression.
          */
-        case ResolvedAst.Expression.Var(sym, loc) => liftM(sym.tvar)
+        case ResolvedAst.Expression.Var(sym, tpe, loc) => unifyM(sym.tvar, tpe, loc)
 
         /*
          * Def expression.
@@ -516,22 +517,22 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         /*
          * Lambda expression.
          */
-        case ResolvedAst.Expression.Lambda(fparams, body, tvar, loc) =>
-          val argumentTypes = fparams.map(_.tpe)
+        case ResolvedAst.Expression.Lambda(fparam, exp, tvar, loc) =>
+          val argumentType = fparam.tpe
           for (
-            inferredBodyType <- visitExp(body);
-            resultType <- unifyM(tvar, Type.mkArrow(argumentTypes, inferredBodyType), loc)
+            inferredExpType <- visitExp(exp);
+            resultType <- unifyM(tvar, Type.mkArrow(argumentType, inferredExpType), loc)
           ) yield resultType
 
         /*
          * Apply expression.
          */
-        case ResolvedAst.Expression.Apply(lambda, actuals, tvar, loc) =>
+        case ResolvedAst.Expression.Apply(exp1, exp2, tvar, loc) =>
           val freshResultType = Type.freshTypeVar()
           for (
-            inferredLambdaType <- visitExp(lambda);
-            inferredArgumentTypes <- seqM(actuals.map(visitExp));
-            expectedLambdaType <- unifyM(inferredLambdaType, Type.mkArrow(inferredArgumentTypes, freshResultType), loc);
+            inferredLambdaType <- visitExp(exp1);
+            inferredArgumentType <- visitExp(exp2);
+            expectedLambdaType <- unifyM(inferredLambdaType, Type.mkArrow(inferredArgumentType, freshResultType), loc);
             resultType <- unifyM(freshResultType, tvar, loc)
           ) yield resultType
 
@@ -933,13 +934,30 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           } yield declaredType
 
         /*
+         * Try Catch
+         */
+        case ResolvedAst.Expression.TryCatch(exp, rules, tvar, loc) =>
+          val rulesType = rules map {
+            case ResolvedAst.CatchRule(sym, clazz, body) =>
+              visitExp(body)
+          }
+
+          for {
+            expType <- visitExp(exp)
+            ruleTypes <- seqM(rulesType)
+            ruleType <- unifyM(ruleTypes, loc)
+            resultType <- unifyM(tvar, expType, ruleType, loc)
+          } yield resultType
+
+        /*
          * Native Constructor expression.
          */
         case ResolvedAst.Expression.NativeConstructor(constructor, actuals, tvar, loc) =>
           // TODO: Check types.
+          val clazz = constructor.getDeclaringClass
           for {
             inferredArgumentTypes <- seqM(actuals.map(visitExp))
-            resultType <- unifyM(tvar, Type.Native, loc)
+            resultType <- unifyM(tvar, Type.Native(clazz), loc)
           } yield resultType
 
         /*
@@ -984,7 +1002,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         /*
          * Variable expression.
          */
-        case ResolvedAst.Expression.Var(sym, loc) => TypedAst.Expression.Var(sym, subst0(sym.tvar), Eff.Bot, loc)
+        case ResolvedAst.Expression.Var(sym, _, loc) => TypedAst.Expression.Var(sym, subst0(sym.tvar), Eff.Bot, loc)
 
         /*
          * Def expression.
@@ -1023,21 +1041,19 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         /*
          * Apply expression.
          */
-        case ResolvedAst.Expression.Apply(lambda, actuals, tvar, loc) =>
-          val l = visitExp(lambda, subst0)
-          val as = actuals.map(e => visitExp(e, subst0))
-          TypedAst.Expression.Apply(l, as, subst0(tvar), Eff.Bot, loc)
+        case ResolvedAst.Expression.Apply(exp1, exp2, tvar, loc) =>
+          val e1 = visitExp(exp1, subst0)
+          val e2 = visitExp(exp2, subst0)
+          TypedAst.Expression.Apply(e1, e2, subst0(tvar), Eff.Bot, loc)
 
         /*
          * Lambda expression.
          */
-        case ResolvedAst.Expression.Lambda(fparams, exp, tvar, loc) =>
-          val lambdaParams = fparams map {
-            case ResolvedAst.FormalParam(sym, mod, tpe, loc2) => TypedAst.FormalParam(sym, mod, subst0(tpe), loc2)
-          }
-          val lambdaBody = visitExp(exp, subst0)
-          val lambdaType = subst0(tvar)
-          TypedAst.Expression.Lambda(lambdaParams, lambdaBody, lambdaType, Eff.Bot, loc)
+        case ResolvedAst.Expression.Lambda(fparam, exp, tvar, loc) =>
+          val p = visitParam(fparam)
+          val e = visitExp(exp, subst0)
+          val t = subst0(tvar)
+          TypedAst.Expression.Lambda(p, e, t, Eff.Bot, loc)
 
         /*
          * Unary expression.
@@ -1211,6 +1227,17 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           val e = visitExp(exp, subst0)
           TypedAst.Expression.Cast(e, tpe, eff, loc)
 
+        /*
+         * Try Catch expression.
+         */
+        case ResolvedAst.Expression.TryCatch(exp, rules, tvar, loc) =>
+          val e = visitExp(exp, subst0)
+          val rs = rules map {
+            case ResolvedAst.CatchRule(sym, clazz, body) =>
+              val b = visitExp(body, subst0)
+              TypedAst.CatchRule(sym, clazz, b)
+          }
+          TypedAst.Expression.TryCatch(e, rs, subst0(tvar), Eff.Bot, loc)
 
         /*
          * Native Constructor expression.
