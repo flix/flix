@@ -23,7 +23,7 @@ sealed trait Validation[+Value, +Error] {
   /**
     * Returns `true` iff this is a [[Success]] object.
     */
-  def isSuccess: Boolean = this match {
+  final def isSuccess: Boolean = this match {
     case v: Success[Value, Error] => true
     case _ => false
   }
@@ -31,14 +31,14 @@ sealed trait Validation[+Value, +Error] {
   /**
     * Returns `true` iff this is a [[Failure]] object.
     */
-  def isFailure: Boolean = !isSuccess
+  final def isFailure: Boolean = !isSuccess
 
   /**
     * Returns the value inside `this` [[Success]] object.
     *
     * Throws an exception if `this` is a [[Failure]] object.
     */
-  def get: Value = this match {
+  final def get: Value = this match {
     case Success(value) => value
     case Failure(errors) => throw new RuntimeException(s"Attempt to retrieve value from Failure. The errors are: ${errors.mkString(", ")}")
   }
@@ -78,23 +78,81 @@ object Validation {
   /**
     * Represents a success `value`.
     */
-  case class Success[Value, Error](value: Value) extends Validation[Value, Error] {
-    def errors: Stream[Error] = Stream.empty
+  case class Success[T, E](t: T) extends Validation[T, E] {
+    def errors: Stream[E] = Stream.empty
   }
 
   /**
     * Represents a failure with no value and `errors`.
     */
-  case class Failure[Value, Error](errors: Stream[Error]) extends Validation[Value, Error]
+  case class Failure[T, E](errors: Stream[E]) extends Validation[T, E]
 
+  /**
+    * Sequences the given list of validations `xs`.
+    */
+  def seqM[T, E](xs: Traversable[Validation[T, E]]): Validation[List[T], E] = {
+    val zero = Success(List.empty[T]): Validation[List[T], E]
+    xs.foldRight(zero) {
+      case (Success(curValue), Success(accValue)) =>
+        Success(curValue :: accValue)
+      case (Success(_), Failure(accErrors)) =>
+        Failure(accErrors)
+      case (Failure(curErrors), Success(_)) =>
+        Failure(curErrors)
+      case (Failure(curErrors), Failure(accErrors)) =>
+        Failure(curErrors #::: accErrors)
+    }
+  }
 
+  /**
+    * Maps over t1, t2, t3, and t4.
+    */
+  def mapN[T1, T2, T3, T4, U, E](t1: Validation[T1, E], t2: Validation[T2, E], t3: Validation[T3, E],
+                                 t4: Validation[T4, E])
+                                (f: (T1, T2, T3, T4) => U): Validation[U, E] =
+    (t1, t2, t3, t4) match {
+      case (Success(v1), Success(v2), Success(v3), Success(v4)) => Success(f(v1, v2, v3, v4))
+      case _ => Failure(t1.errors #::: t2.errors #::: t3.errors #::: t4.errors)
+    }
 
+  /**
+    * Maps over t1, t2, t3, t4, and t5.
+    */
+  def mapN[T1, T2, T3, T4, T5, U, E](t1: Validation[T1, E], t2: Validation[T2, E], t3: Validation[T3, E],
+                                     t4: Validation[T4, E], t5: Validation[T5, E])
+                                    (f: (T1, T2, T3, T4, T5) => U): Validation[U, E] =
+    (t1, t2, t3, t4, t5) match {
+      case (Success(v1), Success(v2), Success(v3), Success(v4), Success(v5)) => Success(f(v1, v2, v3, v4, v5))
+      case _ => Failure(t1.errors #::: t2.errors #::: t3.errors #::: t4.errors #::: t5.errors)
+    }
 
-  // TODO: DOC
-  def seqM[Value, Error](xs: Traversable[Validation[Value, Error]]): Validation[List[Value], Error] = @@(xs)
+  /**
+    * Maps over t1, t2, t3, t4, t5, and t6.
+    */
+  def mapN[T1, T2, T3, T4, T5, T6, U, E](t1: Validation[T1, E], t2: Validation[T2, E], t3: Validation[T3, E],
+                                         t4: Validation[T4, E], t5: Validation[T5, E], t6: Validation[T6, E])
+                                        (f: (T1, T2, T3, T4, T5, T6) => U): Validation[U, E] =
+    (t1, t2, t3, t4, t5, t6) match {
+      case (Success(v1), Success(v2), Success(v3), Success(v4), Success(v5), Success(v6)) => Success(f(v1, v2, v3, v4, v5, v6))
+      case _ => Failure(t1.errors #::: t2.errors #::: t3.errors #::: t4.errors #::: t5.errors #::: t6.errors)
 
+    }
 
+  /**
+    * Adds an implicit `toSuccess` method.
+    */
+  implicit class ToSuccess[+T](val t: T) {
+    def toSuccess[U >: T, E]: Validation[U, E] = Success(t)
+  }
 
+  /**
+    * Adds an implicit `toFailure` method.
+    */
+  implicit class ToFailure[+E](val e: E) {
+    def toFailure[V, F >: E]: Validation[V, F] = Failure(e #:: Stream.empty)
+  }
+
+  // TODO: Everything below this line is deprecated.
 
 
   /**
@@ -111,38 +169,17 @@ object Validation {
   }
 
   /**
-    * TODO: DOC
-    */
-  def @@[Value, Error](o: Option[Validation[Value, Error]]): Validation[Option[Value], Error] = o match {
-    case None => Success(None)
-    case Some(Success(v)) => Success(Some(v))
-    case Some(Failure(errors)) => Failure(errors)
-  }
-
-  /**
     * Flattens a sequence of validations into one validation. Errors are concatenated.
     *
     * Returns [[Success]] if every element in `xs` is a [[Success]].
     */
-  def @@[Value, Error](xs: Traversable[Validation[Value, Error]]): Validation[List[Value], Error] = {
-    val zero = Success(List.empty[Value]): Validation[List[Value], Error]
-    xs.foldRight(zero) {
-      case (Success(curValue), Success(accValue)) =>
-        Success(curValue :: accValue)
-      case (Success(_), Failure(accErrors)) =>
-        Failure(accErrors)
-      case (Failure(curErrors), Success(_)) =>
-        Failure(curErrors)
-      case (Failure(curErrors), Failure(accErrors)) =>
-        Failure(curErrors #::: accErrors)
-    }
-  }
-
-
+  // TODO: Deprecated, replace by mapN
+  def @@[Value, Error](xs: Traversable[Validation[Value, Error]]): Validation[List[Value], Error] = seqM(xs)
 
   /**
     * Merges 2 validations.
     */
+  // TODO: Deprecated, replace by mapN
   def @@[A, B, X](a: Validation[A, X], b: Validation[B, X]): Validation[(A, B), X] =
     (a, b) match {
       case (Success(valueA), Success(valueB)) =>
@@ -153,59 +190,13 @@ object Validation {
   /**
     * Merges 3 validations.
     */
+  // TODO: Deprecated, replace by mapN
   def @@[A, B, C, X](a: Validation[A, X], b: Validation[B, X], c: Validation[C, X]): Validation[(A, B, C), X] =
     (@@(a, b), c) match {
       case (Success((valueA, valueB)), Success(valueC)) =>
         Success((valueA, valueB, valueC))
       case (that, _) => Failure(c.errors #::: that.errors)
     }
-
-  /**
-    * Merges 4 validations.
-    */
-  def @@[A, B, C, D, X](a: Validation[A, X], b: Validation[B, X], c: Validation[C, X],
-                        d: Validation[D, X]): Validation[(A, B, C, D), X] =
-    (@@(a, b, c), d) match {
-      case (Success((valueA, valueB, valueC)), Success(valueD)) =>
-        Success((valueA, valueB, valueC, valueD))
-      case (that, _) => Failure(d.errors #::: that.errors)
-    }
-
-  /**
-    * Merges 5 validations.
-    */
-  def @@[A, B, C, D, E, X](a: Validation[A, X], b: Validation[B, X], c: Validation[C, X],
-                           d: Validation[D, X], e: Validation[E, X]): Validation[(A, B, C, D, E), X] =
-    (@@(a, b, c, d), e) match {
-      case (Success((valueA, valueB, valueC, valueD)), Success(valueE)) =>
-        Success((valueA, valueB, valueC, valueD, valueE))
-      case (that, _) => Failure(e.errors #::: that.errors)
-    }
-
-  /**
-    * Merges 6 validations.
-    */
-  def @@[A, B, C, D, E, F, X](a: Validation[A, X], b: Validation[B, X], c: Validation[C, X],
-                              d: Validation[D, X], e: Validation[E, X], f: Validation[F, X]): Validation[(A, B, C, D, E, F), X] =
-    (@@(a, b, c, d, e), f) match {
-      case (Success((valueA, valueB, valueC, valueD, valueE)), Success(valueF)) =>
-        Success((valueA, valueB, valueC, valueD, valueE, valueF))
-      case (that, _) => Failure(e.errors #::: that.errors)
-    }
-
-  /**
-    * Adds an implicit `toSuccess` method.
-    */
-  implicit class ToSuccess[+Value](val value: Value) {
-    def toSuccess[V >: Value, Error]: Validation[V, Error] = Success(value)
-  }
-
-  /**
-    * Adds an implicit `toFailure` method.
-    */
-  implicit class ToFailure[+Error](val failure: Error) {
-    def toFailure[Value, E >: Error]: Validation[Value, E] = Failure(failure #:: Stream.empty)
-  }
 
 }
 

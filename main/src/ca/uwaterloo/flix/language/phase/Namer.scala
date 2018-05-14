@@ -295,7 +295,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
         val lubVal = Expressions.namer(lub0, Map.empty, Map.empty)
         val glbVal = Expressions.namer(glb0, Map.empty, Map.empty)
 
-        @@(botVal, topVal, equVal, leqVal, lubVal, glbVal) map {
+        mapN(botVal, topVal, equVal, leqVal, lubVal, glbVal) {
           case (bot, top, equ, leq, lub, glb) =>
             val lattice = NamedAst.Lattice(Types.namer(tpe, Map.empty), bot, top, equ, leq, lub, glb, ns0, loc)
             prog0.copy(lattices = prog0.lattices + (Types.namer(tpe, Map.empty) -> lattice)) // NB: This just overrides any existing binding.

@@ -84,7 +84,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           * Check for `DuplicateFormal`.
           */
         val formalsVal = Formals.weed(fparams0, typeRequired = true)
-        @@(annVal, modVal, formalsVal, expVal, effVal) map {
+        mapN(annVal, modVal, formalsVal, expVal, effVal) {
           case (as, mod, fs, exp, eff) =>
             val e = mkCurried(fs.tail, exp, loc)
             val t = mkArrowType(fs, Types.weed(tpe), loc)
@@ -103,7 +103,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           * Check for `DuplicateFormal`.
           */
         val formalsVal = Formals.weed(fparams0, typeRequired = true)
-        @@(annVal, modVal, formalsVal, effVal) map {
+        mapN(annVal, modVal, formalsVal, effVal) {
           case (as, mod, fs, eff) =>
             val t = mkArrowType(fs, Types.weed(tpe), loc)
             List(WeededAst.Declaration.Eff(doc, as, mod, ident, tparams, fs, t, eff, loc))
@@ -122,7 +122,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           * Check for `DuplicateFormal`.
           */
         val formalsVal = Formals.weed(fparams0, typeRequired = true)
-        @@(annVal, modVal, formalsVal, expVal, effVal) map {
+        mapN(annVal, modVal, formalsVal, expVal, effVal) {
           case (as, mod, fs, exp, eff) =>
             val e = mkCurried(fs.tail, exp, loc)
             val t = mkArrowType(fs, Types.weed(tpe), loc)
@@ -1344,7 +1344,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         * Check for `DuplicateFormal`.
         */
       val formalsVal = Formals.weed(fparams0, typeRequired = true)
-      @@(annVal, modVal, formalsVal, effVal) map {
+      mapN(annVal, modVal, formalsVal, effVal) {
         case (ann, mod, fs, eff) =>
           val t = WeededAst.Type.Arrow(fs map (_.tpe.get), Types.weed(tpe), loc)
           WeededAst.Declaration.Sig(doc, ann, mod, ident, tparams, fs, t, eff, loc)
