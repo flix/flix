@@ -27,7 +27,7 @@ namespace Path {
     /// Returns a Path from the given string `s`.
     ///
     pub def new(s: Str): Path = unsafe {
-        Path(native method java.nio.file.Paths.get(s, [| |] : Array[Str]))
+        ???
     }
 
     ///

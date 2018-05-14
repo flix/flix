@@ -142,13 +142,31 @@ object NamedAst {
 
     case class Tuple(elms: List[NamedAst.Expression], tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
-    case class ArrayNew(elm: NamedAst.Expression, len: Int, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
-
     case class ArrayLit(elms: List[NamedAst.Expression], tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
-    case class ArrayLoad(base: NamedAst.Expression, index: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
+    case class ArrayNew(elm: NamedAst.Expression, len: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends  NamedAst.Expression
 
-    case class ArrayStore(base: NamedAst.Expression, index: NamedAst.Expression, value: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
+    case class ArrayLoad(base: NamedAst.Expression, index: NamedAst.Expression, tvar: ast.Type.Var, loc:SourceLocation) extends  NamedAst.Expression
+
+    case class ArrayStore(base: NamedAst.Expression, index: NamedAst.Expression, elm: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends  NamedAst.Expression
+
+    case class ArrayLength(base: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
+
+    case class ArraySlice(base: NamedAst.Expression, beginIndex: NamedAst.Expression, endIndex: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends  NamedAst.Expression
+
+    case class VectorLit(elms: List[NamedAst.Expression], tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
+
+    case class VectorNew(elm: NamedAst.Expression, len: Int, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
+
+    case class VectorLoad(base: NamedAst.Expression, index: Int, tvar: ast.Type.Var, loc: SourceLocation) extends  NamedAst.Expression
+
+    case class VectorStore(base: NamedAst.Expression, index: Int, elm: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends  NamedAst.Expression
+
+    case class VectorLength(base: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
+
+    case class VectorSlice(base: NamedAst.Expression, startIndex: Int, endIndexOpt: Option[Int], tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
+
+    case class Unique(exp: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
     case class Ref(exp: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
@@ -261,6 +279,8 @@ object NamedAst {
     case class Enum(name: Symbol.EnumSym) extends NamedAst.Type
 
     case class Tuple(elms: List[NamedAst.Type], loc: SourceLocation) extends NamedAst.Type
+
+    case class Nat(len: Int, loc: SourceLocation) extends NamedAst.Type
 
     case class Native(fqn: List[String], loc: SourceLocation) extends NamedAst.Type
 
