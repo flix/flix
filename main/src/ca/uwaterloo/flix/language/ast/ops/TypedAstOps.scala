@@ -115,7 +115,7 @@ object TypedAstOps {
       case Expression.ArrayStore(base, index, value, tpe, eff, loc) =>
         visitExp(base, env0) ++ visitExp(index, env0) ++ visitExp(value, env0)
 
-      case Expression.NewChannel(exp, tpe, eff, loc) =>
+      case Expression.NewChannel(exp, ctpe, tpe, eff, loc) =>
         visitExp(exp, env0)
 
       case Expression.GetChannel(exp, tpe, eff, loc) =>

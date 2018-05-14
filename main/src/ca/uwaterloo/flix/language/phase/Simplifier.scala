@@ -108,9 +108,6 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case TypedAst.Expression.BigInt(lit, loc) => SimplifiedAst.Expression.BigInt(lit)
       case TypedAst.Expression.Str(lit, loc) => SimplifiedAst.Expression.Str(lit)
 
-      case TypedAst.Expression.Statement(exp1, exp2, tpe, eff, loc) =>
-        SimplifiedAst.Expression.Statement(visitExp(exp1), visitExp(exp2), tpe, loc)
-
       case TypedAst.Expression.Lambda(args, body, tpe, eff, loc) =>
         SimplifiedAst.Expression.Lambda(args map visitFormalParam, visitExp(body), tpe, loc)
       case TypedAst.Expression.Apply(e, args, tpe, eff, loc) =>
@@ -409,8 +406,8 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         val v = visitExp(value)
         SimplifiedAst.Expression.ArrayStore(b, i, v, tpe, loc)
 
-      case TypedAst.Expression.NewChannel(e, tpe, eff, loc) =>
-        SimplifiedAst.Expression.NewChannel(visitExp(e), tpe, loc)
+      case TypedAst.Expression.NewChannel(e, ctpe, tpe, eff, loc) =>
+        SimplifiedAst.Expression.NewChannel(visitExp(e), ctpe, tpe, loc)
 
       case TypedAst.Expression.GetChannel(e, tpe, eff, loc) =>
         SimplifiedAst.Expression.GetChannel(visitExp(e), tpe, loc)
@@ -1117,8 +1114,8 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         SimplifiedAst.Expression.ArrayLoad(visit(base), visit(index), tpe, loc)
       case SimplifiedAst.Expression.ArrayStore(base, index, value, tpe, loc) =>
         SimplifiedAst.Expression.ArrayStore(visit(base), visit(index), visit(value), tpe, loc)
-      case SimplifiedAst.Expression.NewChannel(exp, tpe, loc) =>
-        SimplifiedAst.Expression.NewChannel(visit(exp), tpe, loc)
+      case SimplifiedAst.Expression.NewChannel(exp, ctpe, tpe, loc) =>
+        SimplifiedAst.Expression.NewChannel(visit(exp), ctpe, tpe, loc)
       case SimplifiedAst.Expression.GetChannel(exp, tpe, loc) =>
         SimplifiedAst.Expression.GetChannel(visit(exp), tpe, loc)
       case SimplifiedAst.Expression.PutChannel(exp1, exp2, tpe, loc) =>

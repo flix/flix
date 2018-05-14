@@ -28,6 +28,8 @@ object JvmName {
     */
   val Context: JvmName = JvmName(Nil, "Context")
 
+  val BlockingQueue: JvmName = JvmName(List("java", "util", "concurrent"), "BlockingQueue")
+
   /**
     * The `ca.uwaterloo.flix.api.Unit` name
     */
@@ -145,6 +147,16 @@ object JvmName {
     */
   def getCellClassType(subType: JvmType): JvmType.Reference = {
     val name = "Cell" + "$" + JvmOps.stringify(subType)
+
+    // The type resides in the ca.uwaterloo.flix package.
+    JvmType.Reference(JvmName(List("ca", "uwaterloo", "flix"), name))
+  }
+
+  /**
+    * Get the class type for the channel with subtype `subType`
+    */
+  def getChannelClassType(subType: JvmType): JvmType.Reference = {
+    val name = "Channel" + "$" + JvmOps.stringify(subType)
 
     // The type resides in the ca.uwaterloo.flix package.
     JvmType.Reference(JvmName(List("ca", "uwaterloo", "flix"), name))

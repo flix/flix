@@ -678,6 +678,33 @@ object GenExpression {
 
     case Expression.ArrayStore(base, index, value, tpe, loc) => ??? // TODO: Ramin: Array
 
+    case Expression.NewChannel(exp, ctpe, tpe, loc) =>
+      val classType = JvmOps.getChannelClassType(tpe)
+      // Adding source line number for debugging
+      addSourceLine(visitor, loc)
+      // Instantiating a new object of channel
+      visitor.visitTypeInsn(NEW, classType.name.toInternalName)
+      // Duplicating the class
+      visitor.visitInsn(DUP)
+      // Evaluate the underlying expression
+      compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+      // Constructor descriptor
+      val constructorDescriptor = AsmOps.getMethodDescriptor(List(JvmType.PrimInt), JvmType.Void)
+      // Call the constructor
+      visitor.visitMethodInsn(INVOKESPECIAL, classType.name.toInternalName, "<init>", constructorDescriptor, false)
+
+    case Expression.GetChannel(exp, tpe, loc) =>
+      val classType = JvmOps.getChannelClassType(tpe)
+      // Adding source line number for debugging
+      addSourceLine(visitor, loc)
+      // Evaluate the underlying expression
+      compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+      // Constructor descriptor
+      val constructorDescriptor = AsmOps.getMethodDescriptor(Nil, JvmType.Void)
+      // Call the constructor
+      visitor.visitMethodInsn(INVOKESPECIAL, classType.name.toInternalName, "getValue", constructorDescriptor, false)
+
+
     case Expression.Ref(exp, tpe, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)

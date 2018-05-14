@@ -181,11 +181,6 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         case Expression.BigInt(lit, loc) => Expression.BigInt(lit, loc)
         case Expression.Str(lit, loc) => Expression.Str(lit, loc)
 
-        case Expression.Statement(exp1, exp2, tpe, eff, loc) =>
-          val e1 = visitExp(exp1, env0)
-          val e2 = visitExp(exp2, env0)
-          Expression.Statement(e1, e2, tpe, eff, loc)
-
         case Expression.Lambda(fparams, body, tpe, eff, loc) =>
           val (fs, env1) = specializeFormalParams(fparams, subst0)
           Expression.Lambda(fs, visitExp(body, env0 ++ env1), subst0(tpe), eff, loc)
@@ -307,9 +302,9 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           val v = visitExp(value, env0)
           Expression.ArrayStore(b, i, v, tpe, eff, loc)
 
-        case Expression.NewChannel(exp, tpe, eff, loc) =>
+        case Expression.NewChannel(exp, ctpe, tpe, eff, loc) =>
           val e = visitExp(exp, env0)
-          Expression.NewChannel(e, subst0(tpe), eff, loc)
+          Expression.NewChannel(e, subst0(ctpe), subst0(tpe), eff, loc)
 
         case Expression.GetChannel(exp, tpe, eff, loc) =>
           val e = visitExp(exp, env0)
@@ -321,8 +316,8 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           Expression.PutChannel(e1, e2, subst0(tpe), eff, loc)
 
         case Expression.Spawn(exp, tpe, eff, loc) =>
-          val e1 = visitExp(exp, env0)
-          Expression.Spawn(e1, subst0(tpe), eff, loc)
+          val e = visitExp(exp, env0)
+          Expression.Spawn(e, subst0(tpe), eff, loc)
 
         case Expression.SelectChannel(rules, tpe, eff, loc) =>
           val rs = rules map {

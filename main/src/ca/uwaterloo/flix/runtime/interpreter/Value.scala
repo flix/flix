@@ -16,11 +16,14 @@
 
 package ca.uwaterloo.flix.runtime.interpreter
 
+import java.util
+import java.util.concurrent.locks.{Condition, Lock}
+
 import ca.uwaterloo.flix.api
 import ca.uwaterloo.flix.language.ast.{Symbol, Type}
 import ca.uwaterloo.flix.util.InternalRuntimeException
-import java.util.concurrent.ConcurrentLinkedQueue
-import java.util.concurrent.locks
+
+import scala.collection.mutable.ListBuffer
 
 sealed trait Value
 
@@ -164,123 +167,11 @@ object Value {
     final override def toString: String = throw InternalRuntimeException(s"Value.Tuple does not support `toString`.")
   }
 
-  case class Channel(len: Int, tpe: Type) extends  Value {
-    private val contentType: Type = tpe
-
-    private val capacity: Int = len
-
-    private val content: AnyRef = new ConcurrentLinkedQueue[AnyRef]()
-
-    private val waitingPutters: AnyRef = new ConcurrentLinkedQueue[Thread]()
-
-    private val waitingGetters: AnyRef = new ConcurrentLinkedQueue[Thread]()
-
-    def put(value: AnyRef): Channel = {
-      this.synchronized {
-        val c = content.asInstanceOf[ConcurrentLinkedQueue[AnyRef]]
-        val wg = waitingGetters.asInstanceOf[ConcurrentLinkedQueue[AnyRef]]
-        val wp = waitingPutters.asInstanceOf[ConcurrentLinkedQueue[AnyRef]]
-
-        println(s"Thread: ${Thread.currentThread().getId()}  -  Put")
-
-        if(c.offer(value)) {
-          println(s"Thread: ${Thread.currentThread().getId()}  -  Add to content")
-          printState;
-          wg.peek() match {           //Lookup if any waiting getters exists
-            case null =>              //If no waiting getters exists DO NOTHING
-            case _ =>                 //If some waiting getters exist NOTIFY IT
-              val wgToNotify = wg.peek().asInstanceOf[Thread]
-              println(s"Thread: ${Thread.currentThread().getId()}  -  Notifies Thread ${wgToNotify.getId()}")
-              notifyAll()
-          }
-        }
-        else {                      //If channel is full
-          if (wg.poll() != null) { //If there are any excess waiting getters
-            println(s"Thread: ${Thread.currentThread().getId()}  -  Add to content and notify wg")
-            c.add(value)
-            printState;
-            notifyAll()
-          }
-          else {
-            println(s"Thread: ${Thread.currentThread().getId()}  -  Add to wp")
-            wp.add(Thread.currentThread())
-            println(s"Thread: ${Thread.currentThread().getId()}  -  goes to sleep!")
-            printState;
-            wait()
-            println(s"PUTTER ${Thread.currentThread().getId()} WOKEN")
-            wp.remove(Thread.currentThread())
-            put(value)
-          }
-        }
-        this
-      }
-    }
-
-    def get(): AnyRef = {
-      this.synchronized {
-        val c = content.asInstanceOf[ConcurrentLinkedQueue[AnyRef]]
-        val wg = waitingGetters.asInstanceOf[ConcurrentLinkedQueue[AnyRef]]
-        val wp = waitingPutters.asInstanceOf[ConcurrentLinkedQueue[AnyRef]]
-
-        println(s"Thread: ${Thread.currentThread().getId()}  -  Get")
-
-        c.peek() match { //Lookup elements in content
-          case null => //If no element exists ADD TO WAITING GETTERS AND PUT TO SLEEP
-            println(s"Thread: ${Thread.currentThread().getId()}  -  Add to Waiting Getters and wait")
-            wg.add(Thread.currentThread())
-            printState;
-
-            wp.peek() match { //Lookup waiting putters
-              case null => //If no waiting putters exists NO NOTHING
-              case _ => //If some waiting putters exists NOTIFY IT
-                val wpToNotify = wp.peek().asInstanceOf[Thread]
-                println(s"Thread: ${Thread.currentThread().getId()}  -  Notifies Thread ${wpToNotify.getId()}")
-                notifyAll()
-            }
-
-            println(s"Thread: ${Thread.currentThread().getId()} goes to sleep!")
-            wait()
-            println(s"GETTER ${Thread.currentThread().getId()} WOKEN")
-            //wg.remove(Thread.currentThread())
-            get()
-          case _ => //If some element exists
-            println(s"Thread: ${Thread.currentThread().getId}  -  Take and return content")
-            val tmp = c.poll()
-            notifyAll()
-            printState;
-            println(s"element got i channel ${content.asInstanceOf[ConcurrentLinkedQueue[AnyRef]].hashCode() % 100}: ${tmp}")
-            return tmp
-        }
-      }
-    }
-
-    def printState =
-      println(s"      STATE OF CHANNEL ${content.asInstanceOf[ConcurrentLinkedQueue[AnyRef]].hashCode() % 100}: " +
-        s"Thread: ${Thread.currentThread().getId} " +
-        s"c.size = ${content.asInstanceOf[ConcurrentLinkedQueue[AnyRef]].size()}; " +
-        s"wp.size = ${waitingPutters.asInstanceOf[ConcurrentLinkedQueue[AnyRef]].size()}; " +
-        s"wg.size = ${waitingGetters.asInstanceOf[ConcurrentLinkedQueue[AnyRef]].size()}")
-
-    def notifyGet(): Unit = {
-      this.synchronized{
-        val g = waitingGetters.asInstanceOf[ConcurrentLinkedQueue[Thread]].peek()
-        println(s"Notifies waiting getter ${g}")
-        g.notifyAll()
-      }
-    }
-
-    def notifyPut(): Unit = {
-      this.synchronized {
-        val p = waitingPutters.asInstanceOf[ConcurrentLinkedQueue[Thread]].peek()
-        println(s"Notifies waiting putter ${p}")
-        p.notifyAll()
-      }
-    }
-
+  case class Channel(queue: util.Queue[AnyRef], capacity: Int, cLock: Lock, bufferNotFull: Condition, bufferNotEmpty: Condition, conditions: ListBuffer[(Lock, Condition)]) extends Value {
     final override def equals(obj: scala.Any): Boolean = throw InternalRuntimeException(s"Value.Channel does not support `equals`.")
 
     final override def hashCode(): Int = throw InternalRuntimeException(s"Value.Channel does not support `hashCode`.")
 
-    final override def toString: String = s"Channel[$tpe] $capacity"
+    final override def toString: String = s"Channel[] "
   }
 }

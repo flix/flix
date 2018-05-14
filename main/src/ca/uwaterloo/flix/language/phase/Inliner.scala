@@ -159,7 +159,7 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.ArrayLit(elms, tpe, loc) => Expression.ArrayLit(elms map visit, tpe, loc)
       case Expression.ArrayLoad(base, index, tpe, loc) => Expression.ArrayLoad(visit(base), visit(index), tpe, loc)
       case Expression.ArrayStore(base, index, value, tpe, loc) => Expression.ArrayStore(visit(base), visit(index), visit(value), tpe, loc)
-      case Expression.NewChannel(exp, tpe, loc) => Expression.NewChannel(visit(exp), tpe, loc)
+      case Expression.NewChannel(exp, ctpe, tpe, loc) => Expression.NewChannel(visit(exp), ctpe, tpe, loc)
       case Expression.GetChannel(exp, tpe, loc) => Expression.GetChannel(visit(exp), tpe, loc)
       case Expression.PutChannel(exp1, exp2, tpe, loc) => Expression.PutChannel(visit(exp1), visit(exp2), tpe, loc)
       case Expression.Spawn(exp, tpe, loc) => Expression.Spawn(visit(exp), tpe, loc)
@@ -274,8 +274,8 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       Expression.ArrayLoad(renameAndSubstitute(base, env0), renameAndSubstitute(index, env0), tpe, loc)
     case Expression.ArrayStore(base, index, value, tpe, loc) =>
       Expression.ArrayStore(renameAndSubstitute(base, env0), renameAndSubstitute(index, env0), renameAndSubstitute(value, env0), tpe, loc)
-    case Expression.NewChannel(exp, tpe, loc) =>
-      Expression.NewChannel(renameAndSubstitute(exp, env0), tpe, loc)
+    case Expression.NewChannel(exp, ctpe, tpe, loc) =>
+      Expression.NewChannel(renameAndSubstitute(exp, env0), ctpe, tpe, loc)
     case Expression.GetChannel(exp, tpe, loc) =>
       Expression.GetChannel(renameAndSubstitute(exp, env0), tpe, loc)
     case Expression.PutChannel(exp1, exp2, tpe, loc) =>
@@ -465,27 +465,27 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     //
     // NewChannel expressions are atomic.
     //
-    case Expression.NewChannel(exp, tpe, loc) => isAtomic(exp)
+    case Expression.NewChannel(exp, ctpe, tpe, loc) => false
 
     //
     // GetChannel expressions are atomic.
     //
-    case Expression.GetChannel(exp, tpe, loc) => isAtomic(exp)
+    case Expression.GetChannel(exp, tpe, loc) => false
 
     //
     // PutChannel expressions are atomic.
     //
-    case Expression.PutChannel(exp1, exp2, tpe, loc) => isAtomic(exp1) && isAtomic(exp2)
+    case Expression.PutChannel(exp1, exp2, tpe, loc) => false
 
     //
     // Spawn expressions are atomic.
     //
-    case Expression.Spawn(exp, tpe, loc) => isAtomic(exp)
+    case Expression.Spawn(exp, tpe, loc) => false
 
     //
     // SelectChannel expressions are atomic.
     //
-    case Expression.SelectChannel(rules, tpe, loc) => (rules.map(_.chan) forall isAtomic) && (rules.map(_.body) forall isAtomic)
+    case Expression.SelectChannel(rules, tpe, loc) => false
 
     //
     // Reference expressions are atomic.

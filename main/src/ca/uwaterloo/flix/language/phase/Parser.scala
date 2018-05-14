@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.{ParsedAst, _}
 import ca.uwaterloo.flix.util.{ParOps, Timer, Validation}
 import ca.uwaterloo.flix.util.Validation._
+import org.parboiled2
 import org.parboiled2._
 
 import scala.collection.immutable.Seq
@@ -144,6 +145,26 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   }
 
   /////////////////////////////////////////////////////////////////////////////
+  // Sequential statement                                                    //
+  /////////////////////////////////////////////////////////////////////////////
+
+  def Statement: Rule1[ParsedAst.Statement] = rule {
+    Statements.BasicStatement |
+    Statements.SingleStatement
+  }
+
+  object Statements {
+
+    def BasicStatement: Rule1[ParsedAst.Statement] = rule {
+      SP ~ Expression ~ optWS ~ atomic(";") ~ optWS ~ Statement ~ SP ~> ParsedAst.Statement.BasicStatement
+    }
+
+    def SingleStatement: Rule1[ParsedAst.Statement] = rule {
+      SP ~ Expression ~ SP ~> ParsedAst.Statement.SingleStatement
+    }
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
   // Declarations                                                            //
   /////////////////////////////////////////////////////////////////////////////
   // NB: RuleDeclaration must be parsed before FactDeclaration.
@@ -172,7 +193,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Def: Rule1[ParsedAst.Declaration.Def] = rule {
-      Documentation ~ Annotations ~ Modifiers ~ SP ~ atomic("def") ~ WS ~ Names.Definition ~ optWS ~ TypeParams ~ FormalParamList ~ optWS ~ ":" ~ optWS ~ TypeAndEffect ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~> ParsedAst.Declaration.Def
+      Documentation ~ Annotations ~ Modifiers ~ SP ~ atomic("def") ~ WS ~ Names.Definition ~ optWS ~ TypeParams ~ FormalParamList ~ optWS ~ ":" ~ optWS ~ TypeAndEffect ~ optWS ~ "=" ~ optWS ~ Statement ~ SP ~> ParsedAst.Declaration.Def
     }
 
     def Eff: Rule1[ParsedAst.Declaration.Eff] = rule {
@@ -489,11 +510,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   object Expressions {
 
     def Block: Rule1[ParsedAst.Expression] = rule {
-      "{" ~ optWS ~ Expression ~ optWS ~ "}" ~ optWS | Statement
-    }
-
-    def Statement: Rule1[ParsedAst.Expression] = rule {
-      Assign ~ zeroOrMore(optWS ~ atomic(";;") ~ optWS ~ Assign ~ SP ~> ParsedAst.Expression.Statement)
+      "{" ~ optWS ~ Expression ~ optWS ~ "}" ~ optWS | Assign
     }
 
     def Assign: Rule1[ParsedAst.Expression] = rule {

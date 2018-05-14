@@ -289,7 +289,7 @@ object PrettyPrinter {
           vt.text(" = ")
           visitExp(value)
 
-        case Expression.NewChannel(exp, tpe, loc) =>
+        case Expression.NewChannel(exp, ctpe, tpe, loc) =>
           vt.text("channel ")
           vt << tpe.toString() << " "
           visitExp(exp)

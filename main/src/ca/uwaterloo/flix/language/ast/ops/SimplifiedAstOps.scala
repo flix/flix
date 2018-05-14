@@ -80,10 +80,6 @@ object SimplifiedAstOps {
         assert(root.effs contains sym, s"Undefined effect symbol: '$sym'.")
         checkType(tpe)
 
-      case Expression.Statement(exp1, exp2, tpe, loc) =>
-        checkExp(exp1, env0, ienv0)
-        checkExp(exp2, env0, ienv0)
-
       //
       // Lambda Expressions.
       //
@@ -318,7 +314,7 @@ object SimplifiedAstOps {
       //
       // NewChannel Expressions.
       //
-      case Expression.NewChannel(exp, tpe, loc) =>
+      case Expression.NewChannel(exp, ctpe, tpe, loc) =>
         checkExp(exp, env0, ienv0)
         checkType(tpe)
 
@@ -348,7 +344,7 @@ object SimplifiedAstOps {
       // SelectChannel Expressions.
       //
       case Expression.SelectChannel(rules, tpe, loc) =>
-        val _ = rules map {
+        rules map {
           case SimplifiedAst.SelectRule(sym, chan, body) =>
             checkExp(chan, env0, ienv0)
             checkExp(body, env0, ienv0)

@@ -533,11 +533,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
       /*
        * Variables.
        */
-      case WeededAst.Expression.Statement(exp1, exp2, loc) =>
-        @@(namer(exp1, env0, tenv0), namer(exp2, env0, tenv0)) map {
-          case (e1, e2) => NamedAst.Expression.Statement(e1, e2, Type.freshTypeVar(), loc)
-        }
-      
       case WeededAst.Expression.Wild(loc) => NamedAst.Expression.Wild(Type.freshTypeVar(), loc).toSuccess
 
       case WeededAst.Expression.VarOrDef(name, loc) if name.isUnqualified =>
@@ -678,14 +673,14 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
           case (b, i, v) => NamedAst.Expression.ArrayStore(b, i, v, Type.freshTypeVar(), loc)
         }
 
-      case WeededAst.Expression.NewChannel(exp, tpe, loc) =>
+      case WeededAst.Expression.NewChannel(exp, ctpe, loc) =>
         namer(exp, env0, tenv0) map {
-          case e => NamedAst.Expression.NewChannel(e, Types.namer(tpe, tenv0), loc)
+          case e => NamedAst.Expression.NewChannel(e, Types.namer(ctpe, tenv0), Type.freshTypeVar(), loc)
         }
 
       case WeededAst.Expression.GetChannel(exp,loc) =>
         namer(exp,env0,tenv0) map {
-          case (e) => NamedAst.Expression.GetChannel(e, Type.freshTypeVar(), loc)
+          case e => NamedAst.Expression.GetChannel(e, Type.freshTypeVar(), loc)
         }
 
       case WeededAst.Expression.PutChannel(exp1, exp2, loc) =>
@@ -695,7 +690,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
 
       case WeededAst.Expression.Spawn(exp, loc) =>
         namer(exp, env0, tenv0) map {
-          case (e) => NamedAst.Expression.Spawn(e, Type.freshTypeVar(), loc)
+          case e => NamedAst.Expression.Spawn(e, Type.freshTypeVar(), loc)
         }
 
       case WeededAst.Expression.SelectChannel(rules, loc) =>
@@ -783,7 +778,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
         }
 
       case WeededAst.Expression.UserError(loc) => NamedAst.Expression.UserError(Type.freshTypeVar(), loc).toSuccess
-
     }
 
     /**
@@ -1085,8 +1079,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
       case WeededAst.Expression.Ascribe(_, tpe, _, _) =>
         // The argument is ascribed. Try to determine its type.
         lookupNativeType(tpe)
-      case WeededAst.Expression.NewChannel(_, tpe, _) =>
-        lookupNativeType(tpe)
       case _ =>
         // The argument is not ascribed. We do not know its type.
         None
@@ -1137,8 +1129,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
     val argumentTypes = args map {
       case WeededAst.Expression.Ascribe(_, tpe, _, _) =>
         // The argument is ascribed. Try to determine its type.
-        lookupNativeType(tpe)
-      case WeededAst.Expression.NewChannel(_, tpe,_) =>
         lookupNativeType(tpe)
       case _ =>
         // The argument is not ascribed. We do not know its type.

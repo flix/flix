@@ -116,6 +116,14 @@ sealed trait Type {
   }
 
   /**
+    * Return `true` if `this` type is a channel type.
+    */
+  def isChannel: Boolean = typeConstructor match {
+    case Type.Channel => true
+    case _ => false
+  }
+
+  /**
     * Returns `true` if `this` type is a reference type.
     */
   def isRef: Boolean = typeConstructor match {
@@ -395,7 +403,7 @@ object Type {
   }
 
   /**
-    * Constructs the Channel type [a] where `a` is the given type - Channel[a].
+    * Returns the type `Channel[a]` where `a` is the given type.
     */
   def mkChannel(a: Type): Type = Apply(Channel, a)
 

@@ -157,11 +157,6 @@ object Effects extends Phase[Root, Root] {
           */
         case Expression.Eff(sym, tpe, _, loc) => ??? // TODO
 
-        case Expression.Statement(exp1, exp2, tpe, eff, loc) =>
-          for {
-            e1 <- visitExp(exp1, env0)
-            e2 <- visitExp(exp2, env0)
-          } yield Expression.Statement(e1, e2, tpe, eff, loc)
         /**
           * Lambda Expression.
           */
@@ -373,10 +368,10 @@ object Effects extends Phase[Root, Root] {
         /**
           * NewChannel Expression.
           */
-        case Expression.NewChannel(exp, tpe, eff, loc) =>
+        case Expression.NewChannel(exp, ctpe, tpe, eff, loc) =>
           for {
             e <- visitExp(exp, env0)
-          } yield Expression.NewChannel(e, tpe, eff, loc)
+          } yield Expression.NewChannel(e, ctpe, tpe, eff, loc)
 
         /**
           * GetChannel Expression.

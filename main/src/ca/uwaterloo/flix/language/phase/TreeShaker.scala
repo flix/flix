@@ -127,7 +127,6 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.Var(sym, tpe, loc) => Set.empty
       case Expression.Def(sym, tpe, loc) => Set(sym)
       case Expression.Eff(sym, tpe, loc) => Set.empty
-      case Expression.Statement(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2)
       case Expression.Lambda(args, body, tpe, loc) => visitExp(body)
       case Expression.Closure(sym, freeVars, tpe, loc) => Set(sym)
       case Expression.ApplyClo(exp, args, tpe, loc) => visitExps(args) ++ visitExp(exp)
@@ -153,7 +152,7 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.ArrayLit(elms, tpe, loc) => visitExps(elms)
       case Expression.ArrayLoad(base, index, tpe, loc) => visitExp(base) ++ visitExp(index)
       case Expression.ArrayStore(base, index, value, tpe, loc) => visitExp(base) ++ visitExp(index) ++ visitExp(value)
-      case Expression.NewChannel(exp, tpe, loc) => visitExp(exp)
+      case Expression.NewChannel(exp, ctpe, tpe, loc) => visitExp(exp)
       case Expression.GetChannel(exp, tpe, loc) => visitExp(exp)
       case Expression.PutChannel(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2)
       case Expression.Spawn(exp, tpe, loc) => visitExp(exp)

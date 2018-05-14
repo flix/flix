@@ -141,8 +141,6 @@ object SimplifiedAst {
 
     case class Eff(sym: Symbol.EffSym, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
-    case class Statement(exp1: SimplifiedAst.Expression, exp2: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
-
     @EliminatedBy(LambdaLift.getClass)
     case class Lambda(fparams: List[SimplifiedAst.FormalParam], exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
@@ -212,7 +210,7 @@ object SimplifiedAst {
 
     case class ArrayStore(base: SimplifiedAst.Expression, index: SimplifiedAst.Expression, value: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
-    case class NewChannel(exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
+    case class NewChannel(exp: SimplifiedAst.Expression, ctpe: Type, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
     case class GetChannel(exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 

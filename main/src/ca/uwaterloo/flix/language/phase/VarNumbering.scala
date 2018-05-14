@@ -83,9 +83,6 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.Var(sym, tpe, loc) => i0
       case Expression.Def(sym, tpe, loc) => i0
       case Expression.Eff(sym, tpe, loc) => i0
-      case Expression.Statement(exp1, exp2, tpe, loc) =>
-        val i = visitExp(exp1, i0)
-        visitExp(exp2, i)
 
       case Expression.Closure(ref, freeVars, tpe, loc) => i0
       case Expression.ApplyClo(exp, args, tpe, loc) =>
@@ -156,7 +153,7 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         val i1 = visitExp(base, i0)
         val i2 = visitExp(index, i1)
         visitExp(value, i2)
-      case Expression.NewChannel(exp, tpe, loc) =>
+      case Expression.NewChannel(exp, ctpe, tpe, loc) =>
         visitExp(exp, i0)
       case Expression.GetChannel(exp, tpe, loc) =>
         visitExp(exp, i0)

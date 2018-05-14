@@ -17,14 +17,16 @@
 package ca.uwaterloo.flix.runtime.interpreter
 
 import java.lang.reflect.Modifier
-import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.locks.{Condition, Lock, ReentrantLock}
+import java.util
 
 import ca.uwaterloo.flix.api._
 import ca.uwaterloo.flix.language.ast.ExecutableAst._
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.runtime.interpreter.Value.{Channel, Int32}
 import ca.uwaterloo.flix.util.InternalRuntimeException
 import ca.uwaterloo.flix.util.tc.Show._
+
+import scala.collection.mutable.ListBuffer
 
 object Interpreter {
 
@@ -55,10 +57,6 @@ object Interpreter {
       case None => throw InternalRuntimeException(s"Key '${sym.toString}' not found in environment: '${env0.mkString(",")}'.")
       case Some(v) => v
     }
-
-    case Expression.Statement(exp1, exp2, tpe, loc) =>
-      eval(exp1, env0, henv0, lenv0, root)
-      eval(exp2, env0, henv0, lenv0, root)
 
     //
     // Closure expressions.
@@ -210,24 +208,26 @@ object Interpreter {
     //
     // NewChannel expressions.
     //
-    case Expression.NewChannel(len, tpe, loc) =>
-      val l: Int = cast2int32(eval(len, env0, henv0, lenv0, root))
-      Value.Channel(l, tpe)
+    case Expression.NewChannel(len, ctpe, tpe, loc) =>
+      val capacity = cast2int32(eval(len, env0, henv0, lenv0, root))
+      val cLock = new ReentrantLock
+      Value.Channel(new util.LinkedList[AnyRef](), capacity, cLock, cLock.newCondition(), cLock.newCondition(), ListBuffer.empty)
 
     //
     // GetChannel expressions.
     //
     case Expression.GetChannel(exp, tpe, loc) =>
-      val c = cast2channel(eval(exp, env0, henv0, lenv0, root))
-      c.get()
+      val chan = cast2channel(eval(exp, env0, henv0, lenv0, root))
+      getChannel(chan)
 
     //
     // PutChannel expressions.
     //
     case Expression.PutChannel(exp1, exp2, tpe, loc) =>
-      val v = eval(exp2, env0, henv0, lenv0, root)
-      val c = cast2channel(eval(exp1, env0, henv0, lenv0, root))
-      c.put(v)
+      val value = eval(exp2, env0, henv0, lenv0, root)
+      val chan = cast2channel(eval(exp1, env0, henv0, lenv0, root))
+
+      putChannel(chan, value)
 
     //
     // Spawn expressions.
@@ -235,11 +235,27 @@ object Interpreter {
     case Expression.Spawn(exp, tpe, loc) =>
       val clo = eval(exp, env0, henv0, lenv0, root)
 
-      val t = new Thread() {
+      val t = new Thread("Spawn Process") {
         override def run() = invokeClo(clo, List(ExecutableAst.Expression.Unit), env0, henv0, lenv0, root)
       }
       t.start()
       Value.Unit
+
+    //
+    // SelectChannel expressions.
+    //
+    case Expression.SelectChannel(rules, tpe, loc) =>
+      val rs = rules map {
+        case SelectRule(sym, cexp, bexp) =>
+          val chan = cast2channel(eval(cexp, env0, henv0, lenv0, root))
+          ((sym, chan, bexp))
+      }
+
+      getSelect(rs) match {
+        case (sym, res, body) =>
+          val newEnv = env0 + (sym.toString -> res)
+          eval(body, newEnv, henv0, lenv0, root)
+      }
 
     //
     // Reference expressions.
@@ -319,6 +335,115 @@ object Interpreter {
     //
     case Expression.Existential(params, exp, loc) => throw InternalRuntimeException(s"Unexpected expression: '$exp' at ${loc.source.format}.")
     case Expression.Universal(params, exp, loc) => throw InternalRuntimeException(s"Unexpected expression: '$exp' at ${loc.source.format}.")
+  }
+
+  //
+  // Get value from channel.
+  //
+  private def getChannel(chan: Value.Channel): AnyRef = {
+    var value: AnyRef = null
+
+    chan.cLock.lock()
+    try {
+      while (chan.queue.isEmpty)
+        chan.bufferNotFull.await()
+
+      assert(!chan.queue.isEmpty)
+
+      value = chan.queue.poll()
+      if (value != null)
+        chan.bufferNotEmpty.signalAll()
+    }
+    finally
+      chan.cLock.unlock()
+
+    value
+  }
+
+  //
+  // Put value to channel.
+  //
+  private def putChannel(chan: Value.Channel, value: AnyRef): AnyRef = {
+    chan.cLock.lock()
+    try {
+      while (chan.queue.size() == chan.capacity)
+        chan.bufferNotEmpty.await()
+
+      assert(chan.queue.size() != chan.capacity)
+
+      chan.queue.add(value)
+      chan.bufferNotFull.signalAll()
+
+      signalConditions(chan.conditions)
+      chan.conditions.clear()
+    }
+    finally
+      chan.cLock.unlock()
+
+    chan
+  }
+
+  private def getSelect(rules: List[(Symbol.VarSym, Value.Channel, Expression)]): (Symbol.VarSym, AnyRef, Expression) = {
+    val sLock = new ReentrantLock
+    val sCondition = sLock.newCondition
+    val channels = rules.map(_._2)
+
+    var result: (Symbol.VarSym, AnyRef, Expression) = null
+
+    sLock.lock()
+    lockChannels(channels)
+    try {
+      while (result == null) {
+        result = pollChannels(rules)
+
+        if (result == null) {
+          addConditions(channels, sLock, sCondition)
+          unlockChannels(channels)
+          sCondition.await()
+          lockChannels(channels)
+        }
+      }
+    }
+    finally {
+      sLock.unlock()
+      unlockChannels(channels)
+    }
+
+    result
+  }
+
+  private def lockChannels(channels: List[Value.Channel]) =
+    channels.foreach(_.cLock.lock())
+
+  private def unlockChannels(channels: List[Value.Channel]) =
+    channels.foreach(_.cLock.unlock())
+
+  private def addConditions(channels: List[Value.Channel], lock: Lock, condition: Condition) =
+    channels.foreach(_.conditions += ((lock, condition)))
+
+  private def pollChannels(rules: List[(Symbol.VarSym, Value.Channel, Expression)]): (Symbol.VarSym, AnyRef, Expression) = {
+    var result: (Symbol.VarSym, AnyRef, Expression) = null
+
+    for ((sym, chan, body) <- rules)
+      if (!chan.queue.isEmpty && result == null) {
+        val value = chan.queue.poll()
+        result = (sym, value, body)
+
+        chan.bufferNotFull.signalAll()
+      }
+
+    result
+  }
+
+  private def signalConditions(conditions: ListBuffer[(Lock, Condition)]) = {
+    for ((sLock, sCond) <- conditions) {
+      sLock.lock()
+      try {
+        sCond.signalAll()
+      }
+      finally
+        sLock.unlock()
+    }
   }
 
   /**
@@ -831,7 +956,6 @@ object Interpreter {
     * Constructs a bool from the given boolean `b`.
     */
   private def mkBool(b: Boolean): AnyRef = if (b) Value.True else Value.False
-
 
   /**
     * Returns the given reference `ref` as a Java object.

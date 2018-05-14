@@ -200,8 +200,6 @@ object ExecutableAst {
 
     case class Var(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
-    case class Statement(exp1: ExecutableAst.Expression, exp2: ExecutableAst.Expression, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
-
     // TODO: Get rid of the fnType here.
     case class Closure(sym: Symbol.DefnSym, freeVars: List[FreeVar], fnType: Type, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
@@ -254,7 +252,7 @@ object ExecutableAst {
 
     case class ArrayStore(base: ExecutableAst.Expression, index: ExecutableAst.Expression, value: ExecutableAst.Expression, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
-    case class NewChannel(exp: ExecutableAst.Expression, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
+    case class NewChannel(exp: ExecutableAst.Expression, ctpe: Type, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
     case class GetChannel(exp: ExecutableAst.Expression, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 

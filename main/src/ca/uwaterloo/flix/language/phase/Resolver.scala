@@ -362,12 +362,6 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
         * Local visitor.
         */
       def visit(e0: NamedAst.Expression): Validation[ResolvedAst.Expression, ResolutionError] = e0 match {
-        case NamedAst.Expression.Statement(exp1, exp2, tvar, loc) =>
-          for {
-            e1 <- visit(exp1)
-            e2 <- visit(exp2)
-          } yield ResolvedAst.Expression.Statement(e1, e2, tvar, loc)
-
         case NamedAst.Expression.Wild(tpe, loc) => ResolvedAst.Expression.Wild(tpe, loc).toSuccess
 
         case NamedAst.Expression.Var(sym, loc) => ResolvedAst.Expression.Var(sym, loc).toSuccess
@@ -543,11 +537,11 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
             v <- visit(value)
           } yield ResolvedAst.Expression.ArrayStore(b, i, v, tvar, loc)
 
-        case NamedAst.Expression.NewChannel(exp, tpe, loc) =>
+        case NamedAst.Expression.NewChannel(exp, ctpe, tvar, loc) =>
           for {
             e <- visit(exp)
-            t <- lookupType(tpe, ns0, prog0)
-          } yield ResolvedAst.Expression.NewChannel(e, t, loc)
+            ct <- lookupType(ctpe, ns0, prog0)
+          } yield ResolvedAst.Expression.NewChannel(e, ct, tvar, loc)
 
         case NamedAst.Expression.GetChannel(exp, tvar, loc) =>
           for {
@@ -637,7 +631,6 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
           } yield ResolvedAst.Expression.NativeMethod(method, es, tpe, loc)
 
         case NamedAst.Expression.UserError(tvar, loc) => ResolvedAst.Expression.UserError(tvar, loc).toSuccess
-
       }
 
       visit(exp0)

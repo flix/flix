@@ -161,8 +161,6 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
       case SimplifiedAst.Expression.Str(lit) => ExecutableAst.Expression.Str(lit)
       case SimplifiedAst.Expression.Var(sym, tpe, loc) =>
         ExecutableAst.Expression.Var(sym, tpe, loc)
-      case SimplifiedAst.Expression.Statement(exp1, exp2, tpe, loc) =>
-        ExecutableAst.Expression.Statement(toExecutable(exp1), toExecutable(exp2), tpe, loc)
       case SimplifiedAst.Expression.Lambda(args, body, tpe, loc) =>
         throw InternalCompilerException("Lambdas should have been converted to closures and lifted.")
       case SimplifiedAst.Expression.LambdaClosure(lambda, freeVars, tpe, loc) =>
@@ -244,8 +242,8 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
         val i = toExecutable(index)
         val v = toExecutable(value)
         ExecutableAst.Expression.ArrayStore(b, i, v, tpe, loc)
-      case SimplifiedAst.Expression.NewChannel(exp, tpe, loc) =>
-        ExecutableAst.Expression.NewChannel(toExecutable(exp), tpe, loc)
+      case SimplifiedAst.Expression.NewChannel(exp, ctpe, tpe, loc) =>
+        ExecutableAst.Expression.NewChannel(toExecutable(exp), ctpe, tpe, loc)
       case SimplifiedAst.Expression.GetChannel(exp, tpe, loc) =>
         ExecutableAst.Expression.GetChannel(toExecutable(exp), tpe, loc)
       case SimplifiedAst.Expression.PutChannel(exp1, exp2, tpe, loc) =>
