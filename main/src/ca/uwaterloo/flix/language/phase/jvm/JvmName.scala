@@ -28,7 +28,25 @@ object JvmName {
     */
   val Context: JvmName = JvmName(Nil, "Context")
 
-  val BlockingQueue: JvmName = JvmName(List("java", "util", "concurrent"), "BlockingQueue")
+  /**
+    *  The `java.util.LinkedList` name.
+    */
+  val LinkedList: JvmName = JvmName(List("java", "util"), "LinkedList")
+
+  /**
+    *  The `java.util.List` name.
+    */
+  val JavaList: JvmName = JvmName(List("java", "util"), "List")
+
+  /**
+    *  The `java.util.concurrent.locks.Lock` name.
+    */
+  val Lock: JvmName = JvmName(List("java", "util", "concurrent", "locks"), "Lock")
+
+  /**
+    *  The `java.util.concurrent.locks.Lock` name.
+    */
+  val Condition: JvmName = JvmName(List("java", "util", "concurrent", "locks"), "Condition")
 
   /**
     * The `ca.uwaterloo.flix.api.Unit` name

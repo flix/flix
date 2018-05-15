@@ -47,7 +47,25 @@ object JvmType {
     */
   val Context: JvmType.Reference = Reference(JvmName.Context)
 
-  val BlockingQueue: JvmType.Reference = Reference(JvmName.BlockingQueue)
+  /**
+    *  The `java.util.LinkedList` type.
+    */
+  val LinkedList: JvmType.Reference = Reference(JvmName.LinkedList)
+
+  /**
+    *  The `java.util.List` type.
+    */
+  val JavaList: JvmType.Reference = Reference(JvmName.JavaList)
+
+  /**
+    *  The `java.util.concurrent.locks.Lock` type.
+    */
+  val Lock: JvmType.Reference = Reference(JvmName.Lock)
+
+  /**
+    *  The `java.util.concurrent.locks.Condition` type.
+    */
+  val Condition: JvmType.Reference = Reference(JvmName.Condition)
 
   /**
     * The `ca.uwaterloo.flix.api.Unit` type

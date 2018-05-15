@@ -15,7 +15,7 @@ object GenChannelClasses {
     // Type that we need a cell class for
     val types = List(JvmType.PrimBool, JvmType.PrimChar, JvmType.PrimFloat, JvmType.PrimDouble,
       JvmType.PrimByte, JvmType.PrimShort, JvmType.PrimInt, JvmType.Tuple, JvmType.Unit,
-      JvmType.PrimLong, JvmType.Channel, JvmType.Object)
+      JvmType.PrimLong, JvmType.Object)
 
     // Generating each channel class
     types.map{ tpe =>
@@ -33,13 +33,28 @@ object GenChannelClasses {
       JvmName.Object.toInternalName, null)
 
     // Generate the instance field
-    AsmOps.compileField(visitor, "queue", JvmType.BlockingQueue, isStatic = false, isPrivate = true)
+    AsmOps.compileField(visitor, "queue", JvmType.LinkedList, isStatic = false, isPrivate = true)
+
+    // Generate the capacity field
+    AsmOps.compileField(visitor, "capacity", JvmType.PrimInt, isStatic = false, isPrivate = true)
+
+    // Generate the channelLock field
+    AsmOps.compileField(visitor, "channelLock", JvmType.Lock, isStatic = false, isPrivate = true)
+
+    // Generate the bufferNotFull field
+    AsmOps.compileField(visitor, "bufferNotFull", JvmType.Condition, isStatic = false, isPrivate = true)
+
+    // Generate the bufferNotEmpty field
+    AsmOps.compileField(visitor, "bufferNotEmpty", JvmType.Condition, isStatic = false, isPrivate = true)
+
+    // Generate the conditions field
+    AsmOps.compileField(visitor, "conditions", JvmType.JavaList, isStatic = false, isPrivate = true)
 
     // Generate the constructor
     genConstructor(classType, channelType, visitor)
 
     // Generate `getValue` method
-    genGetValue(classType, channelType, visitor)
+    //genGetValue(classType, channelType, visitor)
 
     // Generate `putValue` method
     //genPutValue(classType, channelType, visitor)
@@ -63,30 +78,52 @@ object GenChannelClasses {
 
   def genConstructor(classType: JvmType.Reference, channelType: JvmType, visitor: ClassWriter)(implicit root: Root, flix: Flix): Unit = {
     val initMethod = visitor.visitMethod(ACC_PUBLIC, "<init>", AsmOps.getMethodDescriptor(List(JvmType.PrimInt), JvmType.Void), null, null)
-    val condElse = new Label()
-    val condEnd = new Label()
     initMethod.visitCode()
     initMethod.visitVarInsn(ALOAD, 0)
     initMethod.visitInsn(DUP)
     initMethod.visitMethodInsn(INVOKESPECIAL, JvmName.Object.toInternalName, "<init>", AsmOps.getMethodDescriptor(Nil, JvmType.Void), false)
-    initMethod.visitVarInsn(ILOAD, 1)
-    initMethod.visitJumpInsn(IFNE, condElse)
     initMethod.visitVarInsn(ALOAD, 0)
-    initMethod.visitTypeInsn(NEW, "java/util/concurrent/SynchronousQueue")
+    initMethod.visitTypeInsn(NEW, "java/util/LinkedList")
     initMethod.visitInsn(DUP)
-    initMethod.visitMethodInsn(INVOKESPECIAL, "java/util/concurrent/SynchronousQueue", "<init>", "()V", false)
-    initMethod.visitFieldInsn(PUTFIELD, classType.name.toInternalName, "queue", JvmType.BlockingQueue.toDescriptor)
-    initMethod.visitJumpInsn(GOTO, condEnd)
-    initMethod.visitLabel(condElse)
+    initMethod.visitMethodInsn(INVOKESPECIAL, "java/util/LinkedList", "<init>", AsmOps.getMethodDescriptor(Nil, JvmType.Void), false)
+    initMethod.visitFieldInsn(PUTFIELD, classType.name.toInternalName, "queue", JvmType.LinkedList.toDescriptor)
+
+    // Init `channelLock` field
     initMethod.visitVarInsn(ALOAD, 0)
-    initMethod.visitTypeInsn(NEW, "java/util/concurrent/LinkedBlockingQueue")
+    initMethod.visitTypeInsn(NEW, "java/util/concurrent/locks/ReentrantLock")
     initMethod.visitInsn(DUP)
+    initMethod.visitMethodInsn(INVOKESPECIAL, "java/util/concurrent/locks/ReentrantLock", "<init>", AsmOps.getMethodDescriptor(Nil, JvmType.Void), false)
+    initMethod.visitFieldInsn(PUTFIELD, classType.name.toInternalName, "channelLock", JvmType.Lock.toDescriptor)
+
+    // Init `capacity` field
+    initMethod.visitVarInsn(ALOAD, 0)
     initMethod.visitVarInsn(ILOAD, 1)
-    initMethod.visitMethodInsn(INVOKESPECIAL, "java/util/concurrent/LinkedBlockingQueue", "<init>", "(I)V", false)
-    initMethod.visitFieldInsn(PUTFIELD, classType.name.toInternalName, "queue", JvmType.BlockingQueue.toDescriptor)
-    initMethod.visitLabel(condEnd)
+    initMethod.visitFieldInsn(PUTFIELD, classType.name.toInternalName, "capacity", JvmType.PrimInt.toDescriptor)
+
+    // Init `bufferNotFull` field
+    initMethod.visitVarInsn(ALOAD, 0)
+    initMethod.visitFieldInsn(GETFIELD, classType.name.toInternalName, "channelLock", JvmType.Lock.toDescriptor)
+    initMethod.visitMethodInsn(INVOKEINTERFACE, "java/util/concurrent/locks/Lock", "newCondition", AsmOps.getMethodDescriptor(Nil, JvmType.Condition), true)
+    initMethod.visitFieldInsn(PUTFIELD, classType.name.toInternalName, "bufferNotFull", JvmType.Condition.toDescriptor)
+
+    // Init `bufferNotEmpty` field
+    initMethod.visitVarInsn(ALOAD, 0)
+    initMethod.visitFieldInsn(GETFIELD, classType.name.toInternalName, "channelLock", JvmType.Lock.toDescriptor)
+    initMethod.visitMethodInsn(INVOKEINTERFACE, "java/util/concurrent/locks/Lock", "newCondition", AsmOps.getMethodDescriptor(Nil, JvmType.Condition), true)
+    // ??? To Magnus: Why is the next two lines needed?
+    initMethod.visitVarInsn(ALOAD, 0)
+    initMethod.visitInsn(SWAP)
+    initMethod.visitFieldInsn(PUTFIELD, classType.name.toInternalName, "bufferNotEmpty", JvmType.Condition.toDescriptor)
+
+    // Init `channelLock` field
+    initMethod.visitVarInsn(ALOAD, 0)
+    initMethod.visitTypeInsn(NEW, "java/util/ArrayList")
+    initMethod.visitInsn(DUP)
+    initMethod.visitMethodInsn(INVOKESPECIAL, "java/util/ArrayList", "<init>", AsmOps.getMethodDescriptor(Nil, JvmType.Void), false)
+    initMethod.visitFieldInsn(PUTFIELD, classType.name.toInternalName, "conditions", JvmType.JavaList.toDescriptor)
+
     initMethod.visitInsn(RETURN)
-    initMethod.visitMaxs(2, 2)
+    initMethod.visitMaxs(4, 4)
     initMethod.visitEnd()
   }
 
@@ -97,7 +134,7 @@ object GenChannelClasses {
     getValue.visitCode()
 
     getValue.visitVarInsn(ALOAD, 0)
-    getValue.visitFieldInsn(GETFIELD, classType.name.toInternalName, "queue", JvmType.BlockingQueue.toDescriptor)
+    getValue.visitFieldInsn(GETFIELD, classType.name.toInternalName, "queue", JvmType.LinkedList.toDescriptor)
     getValue.visitMethodInsn(INVOKEINTERFACE, "java/util/concurrent/BlockingQueue", "take", AsmOps.getMethodDescriptor(Nil, channelType), true)
     getValue.visitInsn(iRet)
     getValue.visitMaxs(1, 1)

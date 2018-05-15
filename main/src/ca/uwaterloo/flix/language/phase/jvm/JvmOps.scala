@@ -63,7 +63,7 @@ object JvmOps {
       case Type.Int64 => JvmType.PrimLong
       case Type.BigInt => JvmType.BigInteger
       case Type.Str => JvmType.String
-      case Type.Channel => JvmType.Channel
+      case Type.Channel => JvmOps.getChannelClassType(tpe)
       case Type.Native => JvmType.Object
       case Type.Ref => getCellClassType(tpe)
       case Type.Arrow(l) => getFunctionInterfaceType(tpe)
