@@ -16,6 +16,8 @@
 
 package ca.uwaterloo.flix.runtime.interpreter
 
+import scala.collection.JavaConverters._
+
 import java.lang.reflect.Modifier
 import java.util.concurrent.locks.{Condition, Lock, ReentrantLock}
 import java.util
@@ -210,8 +212,7 @@ object Interpreter {
     //
     case Expression.NewChannel(len, ctpe, tpe, loc) =>
       val capacity = cast2int32(eval(len, env0, henv0, lenv0, root))
-      val cLock = new ReentrantLock
-      Value.Channel(new util.LinkedList[AnyRef](), capacity, cLock, cLock.newCondition(), cLock.newCondition(), ListBuffer.empty)
+      newChannel(capacity)
 
     //
     // GetChannel expressions.
@@ -251,7 +252,7 @@ object Interpreter {
           ((sym, chan, bexp))
       }
 
-      getSelect(rs) match {
+      selectChannel(rs) match {
         case (sym, res, body) =>
           val newEnv = env0 + (sym.toString -> res)
           eval(body, newEnv, henv0, lenv0, root)
@@ -337,25 +338,37 @@ object Interpreter {
     case Expression.Universal(params, exp, loc) => throw InternalRuntimeException(s"Unexpected expression: '$exp' at ${loc.source.format}.")
   }
 
+  private def newChannel(capacity: Int): Value.Channel = {
+    val channelLock = new ReentrantLock
+    val bufferNotFull = channelLock.newCondition()
+    val bufferNotEmpty = channelLock.newCondition()
+    val queue = new util.LinkedList[AnyRef]()
+    Value.Channel(queue, capacity, channelLock, bufferNotFull, bufferNotEmpty, new util.ArrayList())
+  }
+
+
   //
   // Get value from channel.
   //
   private def getChannel(chan: Value.Channel): AnyRef = {
     var value: AnyRef = null
 
-    chan.cLock.lock()
+    chan.lock.lock()
     try {
-      while (chan.queue.isEmpty)
+      while (chan.queue.isEmpty) {
         chan.bufferNotFull.await()
+      }
 
       assert(!chan.queue.isEmpty)
 
       value = chan.queue.poll()
-      if (value != null)
+      if (value != null) {
         chan.bufferNotEmpty.signalAll()
+      }
     }
-    finally
-      chan.cLock.unlock()
+    finally {
+      chan.lock.unlock()
+    }
 
     value
   }
@@ -364,7 +377,7 @@ object Interpreter {
   // Put value to channel.
   //
   private def putChannel(chan: Value.Channel, value: AnyRef): AnyRef = {
-    chan.cLock.lock()
+    chan.lock.lock()
     try {
       while (chan.queue.size() == chan.capacity)
         chan.bufferNotEmpty.await()
@@ -374,16 +387,16 @@ object Interpreter {
       chan.queue.add(value)
       chan.bufferNotFull.signalAll()
 
-      signalConditions(chan.conditions)
+      signalAllConditions(chan.conditions)
       chan.conditions.clear()
     }
     finally
-      chan.cLock.unlock()
+      chan.lock.unlock()
 
     chan
   }
 
-  private def getSelect(rules: List[(Symbol.VarSym, Value.Channel, Expression)]): (Symbol.VarSym, AnyRef, Expression) = {
+  private def selectChannel(rules: List[(Symbol.VarSym, Value.Channel, Expression)]): (Symbol.VarSym, AnyRef, Expression) = {
     val sLock = new ReentrantLock
     val sCondition = sLock.newCondition
     val channels = rules.map(_._2)
@@ -391,35 +404,41 @@ object Interpreter {
     var result: (Symbol.VarSym, AnyRef, Expression) = null
 
     sLock.lock()
-    lockChannels(channels)
+    lockAllChannels(channels)
     try {
       while (result == null) {
         result = pollChannels(rules)
 
         if (result == null) {
           addConditions(channels, sLock, sCondition)
-          unlockChannels(channels)
+          unlockAllChannels(channels)
           sCondition.await()
-          lockChannels(channels)
+          lockAllChannels(channels)
         }
       }
     }
     finally {
+      unlockAllChannels(channels)
       sLock.unlock()
-      unlockChannels(channels)
     }
 
     result
   }
 
-  private def lockChannels(channels: List[Value.Channel]) =
-    channels.foreach(_.cLock.lock())
+  private def lockAllChannels(channels: List[Value.Channel]): scala.Unit =
+    for (chan <- channels) {
+      chan.lock.lock()
+    }
 
-  private def unlockChannels(channels: List[Value.Channel]) =
-    channels.foreach(_.cLock.unlock())
+  private def unlockAllChannels(channels: List[Value.Channel]): scala.Unit =
+    for (chan <- channels) {
+      chan.lock.unlock()
+    }
 
-  private def addConditions(channels: List[Value.Channel], lock: Lock, condition: Condition) =
-    channels.foreach(_.conditions += ((lock, condition)))
+  private def addConditions(channels: List[Value.Channel], lock: Lock, condition: Condition): scala.Unit =
+    for (chan <- channels) {
+      chan.conditions.add((lock, condition))
+    }
 
   private def pollChannels(rules: List[(Symbol.VarSym, Value.Channel, Expression)]): (Symbol.VarSym, AnyRef, Expression) = {
     var result: (Symbol.VarSym, AnyRef, Expression) = null
@@ -435,8 +454,8 @@ object Interpreter {
     result
   }
 
-  private def signalConditions(conditions: ListBuffer[(Lock, Condition)]) = {
-    for ((sLock, sCond) <- conditions) {
+  private def signalAllConditions(conditions: util.List[(Lock, Condition)]): scala.Unit = {
+    for ((sLock, sCond) <- conditions.iterator().asScala) {
       sLock.lock()
       try {
         sCond.signalAll()
