@@ -158,25 +158,6 @@ object GenChannelClasses {
     isEmpty.visitEnd()
   }
 
-  def genGetChannel(classType: JvmType.Reference, channelType: JvmType, visitor: ClassWriter)(implicit root: Root, flix: Flix): Unit = {
-    val getChannel = visitor.visitMethod(ACC_PRIVATE, "getChannel", AsmOps.getMethodDescriptor(Nil, JvmType.Void), null, null)
-    val iRet = AsmOps.getReturnInstruction(channelType)
-
-    getChannel.visitCode()
-    getChannel.visitInsn(ACONST_NULL)
-    getChannel.visitVarInsn(ASTORE, 2)
-    //getChannel.visitVarInsn(ALOAD, 1)
-
-    getChannel.visitVarInsn(ALOAD, 0)
-    getChannel.visitFieldInsn(GETFIELD, classType.name.toInternalName, "channelLock", JvmType.Lock.toDescriptor)
-    getChannel.visitMethodInsn(INVOKEINTERFACE, "java/util/concurrent/locks/Lock", "lock", AsmOps.getMethodDescriptor(Nil, JvmType.Void), true)
-
-    //getChannel.visitVarInsn(ALOAD, 0)
-    getChannel.visitInsn(RETURN)
-    getChannel.visitMaxs(2, 2)
-    getChannel.visitEnd()
-  }
-
   def genPutValue(classType: JvmType.Reference, channelType: JvmType, visitor: ClassWriter)(implicit root: Root, flix: Flix): Unit = {
     val putValue = visitor.visitMethod(ACC_PUBLIC, "putValue", AsmOps.getMethodDescriptor(List(channelType), classType), null, null)
     putValue.visitCode()
