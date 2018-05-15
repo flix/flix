@@ -35,11 +35,11 @@ object GenChannelClasses {
     // Generate the instance field
     AsmOps.compileField(visitor, "queue", JvmType.LinkedList, isStatic = false, isPrivate = true)
 
-    // Generate the capacity field
-    AsmOps.compileField(visitor, "capacity", JvmType.PrimInt, isStatic = false, isPrivate = true)
-
     // Generate the channelLock field
     AsmOps.compileField(visitor, "channelLock", JvmType.Lock, isStatic = false, isPrivate = true)
+
+    // Generate the capacity field
+    AsmOps.compileField(visitor, "capacity", JvmType.PrimInt, isStatic = false, isPrivate = true)
 
     // Generate the bufferNotFull field
     AsmOps.compileField(visitor, "bufferNotFull", JvmType.Condition, isStatic = false, isPrivate = true)
@@ -55,6 +55,12 @@ object GenChannelClasses {
 
     // Generate `getValue` method
     //genGetValue(classType, channelType, visitor)
+
+    // Generate `getValue` method
+    genGetChannel(classType, channelType, visitor)
+
+    // Generate `isEmpty`method
+    genIsEmpty(classType, channelType, visitor)
 
     // Generate `putValue` method
     //genPutValue(classType, channelType, visitor)
@@ -95,6 +101,13 @@ object GenChannelClasses {
     initMethod.visitMethodInsn(INVOKESPECIAL, "java/util/concurrent/locks/ReentrantLock", "<init>", AsmOps.getMethodDescriptor(Nil, JvmType.Void), false)
     initMethod.visitFieldInsn(PUTFIELD, classType.name.toInternalName, "channelLock", JvmType.Lock.toDescriptor)
 
+    // Init `channelLock` field
+    initMethod.visitVarInsn(ALOAD, 0)
+    initMethod.visitTypeInsn(NEW, "java/util/ArrayList")
+    initMethod.visitInsn(DUP)
+    initMethod.visitMethodInsn(INVOKESPECIAL, "java/util/ArrayList", "<init>", AsmOps.getMethodDescriptor(Nil, JvmType.Void), false)
+    initMethod.visitFieldInsn(PUTFIELD, classType.name.toInternalName, "conditions", JvmType.JavaList.toDescriptor)
+
     // Init `capacity` field
     initMethod.visitVarInsn(ALOAD, 0)
     initMethod.visitVarInsn(ILOAD, 1)
@@ -110,20 +123,13 @@ object GenChannelClasses {
     initMethod.visitVarInsn(ALOAD, 0)
     initMethod.visitFieldInsn(GETFIELD, classType.name.toInternalName, "channelLock", JvmType.Lock.toDescriptor)
     initMethod.visitMethodInsn(INVOKEINTERFACE, "java/util/concurrent/locks/Lock", "newCondition", AsmOps.getMethodDescriptor(Nil, JvmType.Condition), true)
-    // ??? To Magnus: Why is the next two lines needed?
+    // ??? To Magnus: Why are the next two lines needed?
     initMethod.visitVarInsn(ALOAD, 0)
     initMethod.visitInsn(SWAP)
     initMethod.visitFieldInsn(PUTFIELD, classType.name.toInternalName, "bufferNotEmpty", JvmType.Condition.toDescriptor)
 
-    // Init `channelLock` field
-    initMethod.visitVarInsn(ALOAD, 0)
-    initMethod.visitTypeInsn(NEW, "java/util/ArrayList")
-    initMethod.visitInsn(DUP)
-    initMethod.visitMethodInsn(INVOKESPECIAL, "java/util/ArrayList", "<init>", AsmOps.getMethodDescriptor(Nil, JvmType.Void), false)
-    initMethod.visitFieldInsn(PUTFIELD, classType.name.toInternalName, "conditions", JvmType.JavaList.toDescriptor)
-
     initMethod.visitInsn(RETURN)
-    initMethod.visitMaxs(4, 4)
+    initMethod.visitMaxs(0, 2)
     initMethod.visitEnd()
   }
 
@@ -139,6 +145,36 @@ object GenChannelClasses {
     getValue.visitInsn(iRet)
     getValue.visitMaxs(1, 1)
     getValue.visitEnd()
+  }
+
+  def genIsEmpty(classType: JvmType.Reference, channelType: JvmType, visitor: ClassWriter)(implicit root: Root, flix: Flix): Unit = {
+    val isEmpty = visitor.visitMethod(ACC_PUBLIC, "isEmpty", AsmOps.getMethodDescriptor(Nil, JvmType.PrimBool), null, null)
+    isEmpty.visitCode()
+    isEmpty.visitVarInsn(ALOAD, 0)
+    isEmpty.visitFieldInsn(GETFIELD, classType.name.toInternalName, "queue", JvmType.LinkedList.toDescriptor)
+    isEmpty.visitMethodInsn(INVOKEINTERFACE, "java/util/LinkedList", "isEmpty", AsmOps.getMethodDescriptor(Nil, JvmType.PrimBool), true)
+    isEmpty.visitInsn(IRETURN)
+    isEmpty.visitMaxs(1, 1)
+    isEmpty.visitEnd()
+  }
+
+  def genGetChannel(classType: JvmType.Reference, channelType: JvmType, visitor: ClassWriter)(implicit root: Root, flix: Flix): Unit = {
+    val getChannel = visitor.visitMethod(ACC_PRIVATE, "getChannel", AsmOps.getMethodDescriptor(Nil, JvmType.Void), null, null)
+    val iRet = AsmOps.getReturnInstruction(channelType)
+
+    getChannel.visitCode()
+    getChannel.visitInsn(ACONST_NULL)
+    getChannel.visitVarInsn(ASTORE, 2)
+    //getChannel.visitVarInsn(ALOAD, 1)
+
+    getChannel.visitVarInsn(ALOAD, 0)
+    getChannel.visitFieldInsn(GETFIELD, classType.name.toInternalName, "channelLock", JvmType.Lock.toDescriptor)
+    getChannel.visitMethodInsn(INVOKEINTERFACE, "java/util/concurrent/locks/Lock", "lock", AsmOps.getMethodDescriptor(Nil, JvmType.Void), true)
+
+    //getChannel.visitVarInsn(ALOAD, 0)
+    getChannel.visitInsn(RETURN)
+    getChannel.visitMaxs(2, 2)
+    getChannel.visitEnd()
   }
 
   def genPutValue(classType: JvmType.Reference, channelType: JvmType, visitor: ClassWriter)(implicit root: Root, flix: Flix): Unit = {
