@@ -1,12 +1,12 @@
-/*
-def f() : Int = {
-  let x = unique [1, 2];
-  let _ = x[0] = 2;
-  //let a = x;
-  //x[0]
+
+def f(): Int = {
+  let x = unique [1, 2, 3];
+  //let _ = x[0] = 2;
+  let a = [x, x, x];
   1
+  //x[0]
 }
-*/
+
 
 /*
 def f() : Int = {
@@ -17,14 +17,14 @@ def f() : Int = {
   1
 }*/
 
-
+/*
 def f() : Int = {
   let x = (1 :: 2 :: 3 :: Nil);
   let y = x;
   let z = x;
   1
 }
-
+*/
 
 /*
 def f(): List[Int] = {

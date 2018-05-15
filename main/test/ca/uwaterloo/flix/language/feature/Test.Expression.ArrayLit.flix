@@ -268,28 +268,3 @@ enum Color {
     case Green,
     case Blue
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
