@@ -401,8 +401,9 @@ object Type {
 
   /**
     * Constructs the vector type [|elmType, Len|] where
-    * 'elmType' is the given element type
-    * 'len' is the given length of the vector.
+    * @param elmType is the given element type
+    * @param len is the given length of the vector.
+    *
     * len expected input is an instance of Succ(Int, Type), where Int is the length, and Type is either Type.Zero or a fresh variable.
     */
   def mkVector(elmType: Type, len: Type) : Type = Apply(Apply(Vector, elmType), len)

@@ -89,11 +89,4 @@ def testArraySliceNoEndIndex29(): Array[(List[Int])] = let x = [(1 :: Nil), (2 :
 def testArraySliceNoEndIndex30(): Array[(Bool, Bool)] = let x = [(true, true), (true, false), (true, true)]; x[0..]
 
 @test
-def testArraySliceNoEndIndex31(): Array[Color] = let x = [Color.Red, Color.Blue, Color.Red, Color.Blue, Color.Red, Color.Blue]; x[0..]
-
-enum Color {
-    case Red,
-    case Green,
-    case Blue
-}
-
+def testArraySliceNoEndIndex31(): Array[Option[Int]] = let x = [None, None, None, None, Some(1)]; x[0..]

@@ -507,7 +507,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
       case WeededAst.Type.Ambiguous(qname, loc) => Nil
       case WeededAst.Type.Unit(loc) => Nil
       case WeededAst.Type.Tuple(elms, loc) => elms.flatMap(freeVars)
-      case WeededAst.Type.Nat(elm, loc) => Nil
+      case WeededAst.Type.Nat(n, loc) => Nil
       case WeededAst.Type.Native(fqm, loc) => Nil
       case WeededAst.Type.Arrow(tparams, retType, loc) => tparams.flatMap(freeVars) ::: freeVars(retType)
       case WeededAst.Type.Apply(tpe1, tpe2, loc) => freeVars(tpe1) ++ freeVars(tpe2)
@@ -709,9 +709,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
           case b => NamedAst.Expression.VectorLength(b, Type.freshTypeVar(), loc)
         }
 
-      case WeededAst.Expression.VectorSlice(base, startIndex, endIndexOpt, loc) =>
+      case WeededAst.Expression.VectorSlice(base, startIndex, optEndIndex, loc) =>
         namer(base, env0, tenv0) map {
-          case b => NamedAst.Expression.VectorSlice(b, startIndex, endIndexOpt, Type.freshTypeVar(), loc)
+          case b => NamedAst.Expression.VectorSlice(b, startIndex, optEndIndex, Type.freshTypeVar(), loc)
         }
 
       case WeededAst.Expression.Unique(exp, loc) =>

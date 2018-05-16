@@ -1,6 +1,4 @@
-def f() : Int = {
-  let x = unique [1, 2];
-  // let _ = x[0] = 3;
-  let y = x;
-  length[x]
+def f() : Unit = {
+  let x = [|5;11|];
+  x[|-5|] = 5
 }

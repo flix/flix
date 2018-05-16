@@ -740,7 +740,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def VectorLength: Rule1[ParsedAst.Expression] = rule {
-      SP ~ atomic("length[|") ~ optWS ~ Expression ~ optWS ~ "|]" ~ SP ~> ParsedAst.Expression.VectorLength
+      SP ~ atomic("length") ~ optWS ~ atomic("[|") ~ optWS ~ Expression ~ optWS ~ "|]" ~ SP ~> ParsedAst.Expression.VectorLength
     }
 
     def Unique: Rule1[ParsedAst.Expression] = rule {
