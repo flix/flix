@@ -288,9 +288,9 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       //
       // ArraySlice Expressions.
       //
-      case Expression.ArraySlice(base, beginIndex, endIndex, tpe, loc) =>
+      case Expression.ArraySlice(base, startIndex, endIndex, tpe, loc) =>
         val b = visitExp(base, env0)
-        val i1 = visitExp(beginIndex, env0)
+        val i1 = visitExp(startIndex, env0)
         val i2 = visitExp(endIndex, env0)
         Expression.ArraySlice(b, i1, i2, tpe, loc)
 

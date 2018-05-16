@@ -1139,8 +1139,8 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         SimplifiedAst.Expression.ArrayStore(visit(base), visit(index), visit(elm), tpe, loc)
       case SimplifiedAst.Expression.ArrayLength(base, tpe, loc) =>
         SimplifiedAst.Expression.ArrayLength(visit(base), tpe, loc)
-      case SimplifiedAst.Expression.ArraySlice(base, beginIndex, endIndex, tpe, loc) =>
-        SimplifiedAst.Expression.ArraySlice(visit(base), visit(beginIndex), visit(endIndex), tpe, loc)
+      case SimplifiedAst.Expression.ArraySlice(base, startIndex, endIndex, tpe, loc) =>
+        SimplifiedAst.Expression.ArraySlice(visit(base), visit(startIndex), visit(endIndex), tpe, loc)
       case SimplifiedAst.Expression.Ref(exp, tpe, loc) =>
         SimplifiedAst.Expression.Ref(visit(exp), tpe, loc)
       case SimplifiedAst.Expression.Deref(exp, tpe, loc) =>

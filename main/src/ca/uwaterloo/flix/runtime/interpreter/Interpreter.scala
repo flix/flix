@@ -183,7 +183,7 @@ object Interpreter {
     case Expression.ArrayLoad(base, index, _, _) =>
       val array = cast2array(eval(base, env0, henv0, lenv0, root))
       val indexCasted = cast2int32(eval(index, env0, henv0, lenv0, root))
-      if(array.elms.length > indexCasted && indexCasted >= 0)
+      if(0 <= indexCasted && indexCasted < array.elms.length)
         array.elms(indexCasted)
       else
         throw InternalRuntimeException(s"Array index out of bounds: $index  Array length: ${array.elms.length}.")
@@ -195,9 +195,9 @@ object Interpreter {
       val array = cast2array(eval(base, env0, henv0, lenv0, root))
       val indexCasted = cast2int32(eval(index, env0, henv0, lenv0, root))
       val obj = eval(elm, env0, henv0, lenv0, root)
-      if(array.elms.length > indexCasted && indexCasted >= 0){
+      if(0 <= indexCasted && indexCasted < array.elms.length){
         array.elms(indexCasted) = obj
-        array
+        Value.Unit
       }
       else
         throw InternalRuntimeException(s"Array index out of bounds: $index  Array length: ${array.elms.length}.")
@@ -212,27 +212,25 @@ object Interpreter {
     //
     // ArraySlice expressions.
     //
-    case Expression.ArraySlice(base, beginIndex, endIndex, tpe, loc) =>
+    case Expression.ArraySlice(base, startIndex, endIndex, tpe, loc) =>
       val array = cast2array(eval(base, env0, henv0, lenv0, root))
-      val beginIndexCasted= cast2int32(eval(beginIndex, env0, henv0, lenv0, root))
-      val endIndexCasted = cast2int32(eval(endIndex, env0, henv0, lenv0, root))
+      val i1Casted = cast2int32(eval(startIndex, env0, henv0, lenv0, root))
+      val i2Casted = cast2int32(eval(endIndex, env0, henv0, lenv0, root))
 
-      if((beginIndexCasted < endIndexCasted)){
-        val resultArray = new Array[AnyRef](endIndexCasted - beginIndexCasted)
+      if(i1Casted >= i2Casted)
+        throw InternalRuntimeException(s"startIndex >= endIndex, startIndex: ${i1Casted}  endIndex: ${i2Casted}.")
+      else if(i1Casted < 0)
+        throw InternalRuntimeException(s"Invalid startIndex: ${i1Casted}.")
+      else if(i2Casted > array.elms.length)
+        throw InternalRuntimeException(s"endIndex out of bounds: ${i2Casted}    Array length: ${array.elms.length}.")
+      else{
+        val resultArray = new Array[AnyRef](i2Casted - i1Casted)
 
-        if(beginIndexCasted < 0)
-          throw InternalRuntimeException(s"Invalid beginIndex: ${beginIndexCasted}.")
-        else if(endIndexCasted > array.elms.length)
-          throw InternalRuntimeException(s"endIndex out of bounds: ${endIndexCasted}    Array length: ${array.elms.length}.")
-        else {
-          for(i <- beginIndexCasted until endIndexCasted){
-            resultArray(i - beginIndexCasted) = array.elms(i)
-          }
-          Value.Arr(resultArray,tpe.typeArguments.head)
+        for(i <- i1Casted until i2Casted){
+          resultArray(i - i1Casted) = array.elms(i)
         }
+        Value.Arr(resultArray,tpe.typeArguments.head)
       }
-      else
-        throw InternalRuntimeException(s"beginIndex >= endIndex, beginIndex: ${beginIndexCasted}  endIndex: ${endIndexCasted}.")
 
 
 

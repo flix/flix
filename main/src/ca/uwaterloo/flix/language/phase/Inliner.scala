@@ -164,8 +164,8 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         Expression.ArrayStore(visit(base), visit(elm), visit(index), tpe, loc)
       case Expression.ArrayLength(base, tpe, loc) =>
         Expression.ArrayLength(visit(base), tpe, loc)
-      case Expression.ArraySlice(base, beginIndex, endIndex, tpe, loc) =>
-        Expression.ArraySlice(visit(base), visit(beginIndex), visit(endIndex), tpe, loc)
+      case Expression.ArraySlice(base, startIndex, endIndex, tpe, loc) =>
+        Expression.ArraySlice(visit(base), visit(startIndex), visit(endIndex), tpe, loc)
       case Expression.Ref(exp1, tpe, loc) =>
         Expression.Ref(visit(exp1), tpe, loc)
       case Expression.Deref(exp1, tpe, loc) =>
@@ -273,8 +273,8 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       Expression.ArrayStore(renameAndSubstitute(base, env0), renameAndSubstitute(index, env0), renameAndSubstitute(elm, env0), tpe, loc)
     case Expression.ArrayLength(base, tpe, loc) =>
       Expression.ArrayLength(renameAndSubstitute(base, env0), tpe, loc)
-    case Expression.ArraySlice(base, beginIndex, endIndex, tpe, loc) =>
-      Expression.ArraySlice(renameAndSubstitute(base, env0), renameAndSubstitute(beginIndex, env0), renameAndSubstitute(endIndex, env0), tpe, loc)
+    case Expression.ArraySlice(base, startIndex, endIndex, tpe, loc) =>
+      Expression.ArraySlice(renameAndSubstitute(base, env0), renameAndSubstitute(startIndex, env0), renameAndSubstitute(endIndex, env0), tpe, loc)
     case Expression.Ref(exp1, tpe, loc) =>
       Expression.Ref(renameAndSubstitute(exp1, env0), tpe, loc)
     case Expression.Deref(exp1, tpe, loc) =>
@@ -455,9 +455,9 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     case Expression.ArrayLength(base, tpe, loc) => isAtomic(base)
 
     //
-    // ArrayLength expressions are atomic if the base, beginIndex and endIndex are.
+    // ArrayLength expressions are atomic if the base, startIndex and endIndex are.
     //
-    case Expression.ArraySlice(base, beginIndex, endIndex, tpe, loc) => isAtomic(base) && isAtomic(beginIndex) && isAtomic(endIndex)
+    case Expression.ArraySlice(base, startIndex, endIndex, tpe, loc) => isAtomic(base) && isAtomic(startIndex) && isAtomic(endIndex)
 
     //
     // Reference expressions are atomic.

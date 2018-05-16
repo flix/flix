@@ -196,9 +196,9 @@ object Synthesize extends Phase[Root, Root] {
         val b = visitExp(base)
         Expression.ArrayLength(b, tpe, eff, loc)
 
-      case Expression.ArraySlice(base, beginIndex, endIndex, tpe, eff, loc) =>
+      case Expression.ArraySlice(base, startIndex, endIndex, tpe, eff, loc) =>
         val b = visitExp(base)
-        val i1 = visitExp(beginIndex)
+        val i1 = visitExp(startIndex)
         val i2 = visitExp(endIndex)
         Expression.ArraySlice(b, i1, i2, tpe, eff, loc)
 
