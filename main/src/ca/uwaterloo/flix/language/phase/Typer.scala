@@ -767,18 +767,18 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           //  ------------------------
           //  [e1,...,en] : Array[t]
           //
-              if(elms.isEmpty){
-                for (
-                  resultType <- unifyM(tvar, Type.mkArray(Type.freshTypeVar()), loc)
-                ) yield resultType
-              }
-              else{
-                for (
-                  elementsTypes <- seqM(elms.map(visitExp));
-                  elementType <- unifyM(elementsTypes, loc);
-                  resultType <- unifyM(tvar, Type.mkArray(elementType), loc)
-                ) yield resultType
-              }
+          if(elms.isEmpty){
+            for (
+              resultType <- unifyM(tvar, Type.mkArray(Type.freshTypeVar()), loc)
+              ) yield resultType
+          }
+          else {
+            for (
+              elementsTypes <- seqM(elms.map(visitExp));
+              elementType <- unifyM(elementsTypes, loc);
+              resultType <- unifyM(tvar, Type.mkArray(elementType), loc)
+            ) yield resultType
+          }
 
           /*
            * ArrayNew expression.
