@@ -978,7 +978,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
               for(
                 baseType <- visitExp(base);
                 firstIndex <- unifyM(baseType, Type.mkVector(freshElmType, Type.Succ(startIndex, freshBeginIndex)), loc);
-                secondIndex <- unifyM(baseType, Type.mkVector(freshElmType, Type.Succ(endIndex-1, freshEndIndex)), loc);
+                secondIndex <- unifyM(baseType, Type.mkVector(freshElmType, Type.Succ(endIndex, freshEndIndex)), loc);
                 resultType <- unifyM(tvar, Type.mkVector(freshElmType, Type.Succ(endIndex-startIndex, Type.Zero)), loc)
               ) yield resultType
           }
