@@ -20,7 +20,6 @@ import ca.uwaterloo.flix.language.GenSym
 import ca.uwaterloo.flix.language.ast.SimplifiedAst.{Expression, HandlerBinding}
 import ca.uwaterloo.flix.language.ast.{Ast, SimplifiedAst, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.util.InternalCompilerException
-import shapeless.ops.coproduct.ExtendRight
 
 import scala.collection.mutable
 

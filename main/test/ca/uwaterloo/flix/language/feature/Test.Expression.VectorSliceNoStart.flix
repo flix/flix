@@ -89,10 +89,4 @@ def testVectorSliceNoStart29(): Vector[List[(Int)], 3] = let x = [|(1 :: Nil), (
 def testVectorSliceNoStart30(): Vector[(Int, Int), 3] = let x = [|(1, 2), (3, 4), (5, 6)|]; x[|..3|]
 
 @test
-def testVectorSliceNoStart31(): Vector[Color, 3] = let x = [|Color.Red, Color.Blue, Color.Green|]; x[|..3|]
-
-enum Color {
-    case Red,
-    case Green,
-    case Blue
-}
+def testVectorSliceNoStart31(): Vector[Option[Int], 3] = let x = [|Some(999), None, None|]; x[|..3|]

@@ -77,19 +77,13 @@ def testArraySliceNoStartIndex25(): Array[Array[Int]] = let x = [[1, 2, 3, 4, 5]
 def testArraySliceNoStartIndex26(): Array[Array[Int]] = let x = [[1, 2, 3], [1, 2, 3], [1, 2, 3]]; x[..3]
 
 @test
-def testArraySliceNoEndIndex27(): Array[Vector[Int, 3]] = let x = [[|1, 2, 3|], [|1, 2, 3|] ]; x[0..]
+def testArraySliceNoStartIndex27(): Array[Vector[Int, 3]] = let x = [[|1, 2, 3|], [|1, 2, 3|] ]; x[0..]
 
 @test
-def testArraySliceNoEndIndex28(): Array[(List[Int])] = let x = [(1 :: Nil), (2 :: Nil)]; x[0..]
+def testArraySliceNoStartIndex28(): Array[(List[Int])] = let x = [(1 :: Nil), (2 :: Nil)]; x[0..]
 
 @test
-def testArraySliceNoEndIndex29(): Array[(Bool, Bool)] = let x = [(true, true), (true, false), (true, true)]; x[0..]
+def testArraySliceNoStartIndex29(): Array[(Bool, Bool)] = let x = [(true, true), (true, false), (true, true)]; x[0..]
 
 @test
-def testArraySliceNoEndIndex30(): Array[Color] = let x = [Color.Red, Color.Blue, Color.Red, Color.Blue, Color.Red, Color.Blue]; x[0..]
-
-enum Color {
-    case Red,
-    case Green,
-    case Blue
-}
+def testArraySliceNoStartIndex30(): Array[Option[Int]] = let x = [None, None, Some(1)]; x[0..]

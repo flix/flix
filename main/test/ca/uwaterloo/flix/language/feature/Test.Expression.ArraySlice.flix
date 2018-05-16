@@ -86,10 +86,4 @@ def testArraySlice28(): Array[(List[Int])] = let x = [(1 :: Nil), (2 :: Nil)]; x
 def testArraySlice29(): Array[(Bool, Bool)] = let x = [(true, true), (true, false), (true, true)]; x[1..2]
 
 @test
-def testArraySlice30(): Array[Color] = let x = [Color.Red, Color.Blue, Color.Red, Color.Blue, Color.Red, Color.Blue]; x[1..2]
-
-enum Color {
-    case Red,
-    case Green,
-    case Blue
-}
+def testArraySlice30(): Array[Option[Int]] = let x = [Some(1), Some(2), Some(3), Some(4), None]; x[1..2]

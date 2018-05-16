@@ -156,7 +156,7 @@ object WeededAst {
 
     case class VectorLength(base: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
-    case class VectorSlice(base: WeededAst.Expression, startIndex: Int, endIndexOpt: Option[Int], loc: SourceLocation) extends WeededAst.Expression
+    case class VectorSlice(base: WeededAst.Expression, startIndex: Int, optEndIndex: Option[Int], loc: SourceLocation) extends WeededAst.Expression
 
     case class Unique(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 

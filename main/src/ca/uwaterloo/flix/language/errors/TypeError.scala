@@ -119,7 +119,7 @@ object TypeError {
     case (Type.Array, Type.Array) => TypeDiff.Star(TypeConstructor.Other)
     case (Type.Vector, Type.Vector)  => TypeDiff.Star(TypeConstructor.Other)
     case (Type.Zero, Type.Zero) => TypeDiff.Star(TypeConstructor.Other)
-    case (Type.Succ(n1, t1), Type.Succ(n2, t2)) if n1 == n2 && t1 == t2 => TypeDiff.Star(TypeConstructor.Other)
+    case (Type.Succ(n1, t1), Type.Succ(n2, t2)) => TypeDiff.Star(TypeConstructor.Other)
     case (Type.Arrow(l1), Type.Arrow(l2)) if l1 == l2 => TypeDiff.Star(TypeConstructor.Arrow)
     case (Type.Enum(name1, kind1), Type.Enum(name2, kind2)) if name1 == name2 => TypeDiff.Star(TypeConstructor.Enum(name1.name))
     case (Type.Tuple(l1), Type.Tuple(l2)) if l1 == l2 => TypeDiff.Star(TypeConstructor.Tuple)

@@ -116,17 +116,10 @@ def testArrayLength38(): Int = let x = [[1, 2, 3], [1, 2, 3], [1, 2, 3]]; length
 def testArrayLength39(): Int = let x = [[|1, 2|], [|3, 4|]]; length[x]
 
 @test
-def testArrayLength40(): Int = let x = [[Color.Red, Color.Blue, Color.Green], [Color.Red, Color.Blue, Color.Red, Color.Green]]; length[x]
+def testArrayLength40(): Int = let x = [[None, Some(1), None], [Some(2), Some(45), Some(9), None]]; length[x]
 
 @test
 def testArrayLength41(): Int = let x = [(1, 2), (3, 4)]; length[x]
 
 def testArrayLength42(): Int = let x = [[1 :: Nil], [3 :: 4 :: 5 :: Nil]]; length[x]
-
-enum Color {
-   case Red,
-   case Blue,
-   case Green
-}
-
 

@@ -122,10 +122,4 @@ def testVectorLength40(): Int = let x = [|[1, 2], [3, 4]|]; length[|x|]
 def testVectorLength41(): Int = let x = [|[1 :: Nil], [3 :: 4 :: 5 :: Nil]|]; length[|x|]
 
 @test
-def testVectorLength42(): Int = let x = [|[Color.Red, Color.Blue, Color.Green], [Color.Red, Color.Blue, Color.Red, Color.Green]|]; length[|x|]
-
-enum Color {
-   case Red,
-   case Blue,
-   case Green
-}
+def testVectorLength42(): Int = let x = [|Some(1), Some(2), Some(3)|]; length[|x|]
