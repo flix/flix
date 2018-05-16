@@ -161,6 +161,7 @@ sealed trait Type {
     case Type.Tuple(l) => s"Tuple($l)"
     case Type.Apply(tpe1, tpe2) => s"$tpe1[$tpe2]"
   }
+
 }
 
 object Type {
@@ -398,6 +399,20 @@ object Type {
     * Constructs the array type [elmType] where 'elmType' is the given type.
     */
   def mkArray(elmType: Type): Type = Apply(Array, elmType)
+
+  /**
+    * Return the inner type of the array or vector
+    *
+    * For example given Array[Int] return Int,
+    * and given Vector[Int, 5] return Int.
+    */
+  def getArrayInnerType(tpe: Type): Type = {
+    tpe match {
+      case Type.Apply(Type.Array, t) => t
+      case Type.Apply(Type.Apply(Type.Vector, t), _) => t
+      case _ => throw InternalCompilerException(s"Excepted array or vector type. Actual type: '$tpe' ")
+    }
+  }
 
   /**
     * Constructs the vector type [|elmType, Len|] where

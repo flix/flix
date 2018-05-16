@@ -1133,20 +1133,4 @@ object JvmOps {
     */
   def nonLaw(defn: Def): Boolean = !defn.ann.isLaw
 
-  /**
-    * Return the inner type of the array or vector
-    *
-    * For example given Array[Int] return Int,
-    * and given Vector[Int, 5] return Int.
-  */
-  def getArrayInnerType(tpe: Type): Type = {
-    val x = tpe match {
-      case Type.Apply(Type.Array, t) => t
-      case Type.Apply(Type.Apply(Type.Vector, t), _) => t
-      case _ => throw InternalCompilerException(s"Excepted array or vector type. Actual type: '$tpe' ")
-
-    }
-    x
-  }
-
 }

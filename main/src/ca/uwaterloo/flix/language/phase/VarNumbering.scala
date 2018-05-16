@@ -161,9 +161,9 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
 
       case Expression.ArrayLength(base, tpe, loc) => visitExp(base, i0)
 
-      case Expression.ArraySlice(base, beginIndex, endIndex, tpe, loc) =>
+      case Expression.ArraySlice(base, startIndex, endIndex, tpe, loc) =>
         val i1 = visitExp(base, i0)
-        val i2 = visitExp(beginIndex, i1)
+        val i2 = visitExp(startIndex, i1)
         visitExp(endIndex, i2)
 
       case Expression.Ref(exp, tpe, loc) => visitExp(exp, i0)

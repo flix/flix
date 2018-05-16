@@ -70,23 +70,7 @@ object AsmOps {
   }
 
   /**
-    * Returns the array store instruction for the value of the type specified by `tpe`
-    */
-  def getArrayStoreInstruction(tpe: JvmType): Int = tpe match {
-    case JvmType.Void => throw InternalCompilerException(s"Unexpected type $tpe")
-    case JvmType.PrimBool => BASTORE
-    case JvmType.PrimChar =>  CASTORE
-    case JvmType.PrimByte => BASTORE
-    case JvmType.PrimShort =>  SASTORE
-    case JvmType.PrimInt => IASTORE
-    case JvmType.PrimLong => LASTORE
-    case JvmType.PrimFloat => FASTORE
-    case JvmType.PrimDouble => DASTORE
-    case JvmType.Reference(_) => AASTORE
-  }
-
-  /**
-    * Returns the array load instruction for the value of the type specified by `tpe`
+    * Returns the array load instruction for arrays of the given JvmType tpe
     */
   def getArrayLoadInstruction(tpe: JvmType): Int = tpe match {
     case JvmType.Void => throw InternalCompilerException(s"Unexpected type $tpe")
@@ -102,6 +86,22 @@ object AsmOps {
   }
 
   /**
+    * Returns the array store instruction for arrays of the given JvmType tpe
+    */
+  def getArrayStoreInstruction(tpe: JvmType): Int = tpe match {
+    case JvmType.Void => throw InternalCompilerException(s"Unexpected type $tpe")
+    case JvmType.PrimBool => BASTORE
+    case JvmType.PrimChar =>  CASTORE
+    case JvmType.PrimByte => BASTORE
+    case JvmType.PrimShort =>  SASTORE
+    case JvmType.PrimInt => IASTORE
+    case JvmType.PrimLong => LASTORE
+    case JvmType.PrimFloat => FASTORE
+    case JvmType.PrimDouble => DASTORE
+    case JvmType.Reference(_) => AASTORE
+  }
+
+  /**
     * Returns the array type code for the value of the type specified by `tpe`
     */
   def getArrayTypeCode(tpe: JvmType): Int = tpe match {
@@ -114,13 +114,13 @@ object AsmOps {
     case JvmType.PrimShort => T_SHORT
     case JvmType.PrimInt => T_INT
     case JvmType.PrimLong => T_LONG
-    case _ =>  throw InternalCompilerException(s"Expected primitive type. Actual type: $tpe")
+    case JvmType.Reference(_) =>  throw InternalCompilerException(s"Expected primitive type. Actual type: $tpe")
   }
 
   /**
     * Returns the CheckCast type for the value of the type specified by `tpe`
     */
-  def getCheckCastType(tpe: JvmType): String = tpe match{
+  def arrayGetCheckCastType(tpe: JvmType): String = tpe match{
     case JvmType.Void => throw InternalCompilerException(s"Unexpected type $tpe")
     case JvmType.PrimBool => "[Z"
     case JvmType.PrimChar =>  "[C"

@@ -410,13 +410,13 @@ object Effects extends Phase[Root, Root] {
         /**
           * ArraySlice Expression.
           */
-        case Expression.ArraySlice(base, beginIndex, endIndex, tpe, _, loc) =>
+        case Expression.ArraySlice(base, startIndex, endIndex, tpe, _, loc) =>
           for {
             b <- visitExp(base, env0)
-            i1 <- visitExp(beginIndex, env0)
+            i1 <- visitExp(startIndex, env0)
             i2 <- visitExp(endIndex, env0)
           } yield {
-            val eff = base.eff seq beginIndex.eff seq  endIndex.eff
+            val eff = base.eff seq startIndex.eff seq  endIndex.eff
             Expression.ArraySlice(b, i1, i2, tpe, eff, loc)
           }
 

@@ -543,10 +543,10 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
             b <- visit(base)
           } yield ResolvedAst.Expression.ArrayLength(b, tvar, loc)
 
-        case NamedAst.Expression.ArraySlice(base, beginIndex, endIndex, tvar, loc) =>
+        case NamedAst.Expression.ArraySlice(base, startIndex, endIndex, tvar, loc) =>
           for{
             b <- visit(base)
-            i1 <- visit(beginIndex)
+            i1 <- visit(startIndex)
             i2 <- visit(endIndex)
           } yield ResolvedAst.Expression.ArraySlice(b, i1, i2, tvar, loc)
 

@@ -610,7 +610,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           @@(visit(base, unsafe), @@(indexes.map(e => visit(e, unsafe))), visit(elm, unsafe)) map {
             case (b, es, e) =>
               val inner = es.init.foldLeft(b){
-                case(accc, e) => WeededAst.Expression.ArrayLoad(accc, e, loc)
+                case(acc, e) => WeededAst.Expression.ArrayLoad(acc, e, loc)
               }
               WeededAst.Expression.ArrayStore(inner, es.last, e, loc)
           }
@@ -620,19 +620,19 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
             case b => WeededAst.Expression.ArrayLength(b, mkSL(sp1, sp2))
           }
 
-        case ParsedAst.Expression.ArraySlice(base, beginIndex, endIndex, sp2) =>
+        case ParsedAst.Expression.ArraySlice(base, startIndex, endIndex, sp2) =>
           val sp1 = leftMostSourcePosition(base)
           val loc = mkSL(sp1, sp2)
 
-          @@(visit(base, unsafe), visit(beginIndex, unsafe), visit(endIndex, unsafe)) map {
+          @@(visit(base, unsafe), visit(startIndex, unsafe), visit(endIndex, unsafe)) map {
             case(b, i1, i2) => WeededAst.Expression.ArraySlice(b, i1, i2, loc)
           }
 
-        case ParsedAst.Expression.ArraySliceNoEndIndex(base, beginIndex, sp2) =>
+        case ParsedAst.Expression.ArraySliceNoEndIndex(base, startIndex, sp2) =>
           val sp1 = leftMostSourcePosition(base)
           val loc = mkSL(sp1, sp2)
 
-          @@(visit(base, unsafe), visit(beginIndex, unsafe)) map {
+          @@(visit(base, unsafe), visit(startIndex, unsafe)) map {
             case(b, i) => WeededAst.Expression.ArraySlice(b, i, WeededAst.Expression.ArrayLength(b, loc), loc)
           }
 
