@@ -678,29 +678,30 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
             case b => WeededAst.Expression.VectorLength(b, mkSL(sp1, sp2))
           }
 
-        case ParsedAst.Expression.VectorSlice(base, startIndex, endIndex, sp2) =>
+        case ParsedAst.Expression.VectorSlice(base, optStartIndex, optEndIndex, sp2) =>
           val sp1 = leftMostSourcePosition(base)
           val loc = mkSL(sp1, sp2)
-          @@(visit(base, unsafe), getVectorLength(startIndex, sp1, sp2), getVectorLength(endIndex, sp1, sp2)) flatMap {
-            case (b, l1, l2) if l1 > l2 => WeederError.IllegalVectorIndex(loc).toFailure
-            case (b, l1, l2) => WeededAst.Expression.VectorSlice(b, l1, Some(l2), loc).toSuccess
-            case _ => WeederError.IllegalVectorLength(loc).toFailure
-          }
-
-        case ParsedAst.Expression.VectorSliceNoEndIndex(base, startIndex, sp2) =>
-          val sp1 = leftMostSourcePosition(base)
-          val loc = mkSL(sp1, sp2)
-          @@(visit(base, unsafe), getVectorLength(startIndex, sp1, sp2)) flatMap {
-            case (b, l) => WeededAst.Expression.VectorSlice(b, l, None, loc).toSuccess
-            case _ => WeederError.IllegalVectorLength(loc).toFailure
-          }
-
-        case ParsedAst.Expression.VectorSliceNoStartIndex(base, endIndex, sp2) =>
-          val sp1 = leftMostSourcePosition(base)
-          val loc = mkSL(sp1, sp2)
-          @@(visit(base, unsafe), getVectorLength(endIndex, sp1, sp2)) flatMap {
-            case (b, l) => WeededAst.Expression.VectorSlice(b, 0, Some(l), loc).toSuccess
-            case _ => WeederError.IllegalVectorLength(loc).toFailure
+          (optStartIndex, optEndIndex) match {
+            case (None, None) =>
+              visit(base, unsafe) flatMap {
+                case (b) => WeededAst.Expression.VectorSlice(b, 0, None, loc).toSuccess
+              }
+            case (None, Some(i)) =>
+              @@(visit(base, unsafe), getVectorLength(i, sp1, sp2)) flatMap {
+                case (b, l) => WeededAst.Expression.VectorSlice(b, 0, Some(l), loc).toSuccess
+                case _ => WeederError.IllegalVectorLength(loc).toFailure
+              }
+            case (Some(i), None) =>
+              @@(visit(base, unsafe), getVectorLength(i, sp1, sp2)) flatMap {
+                case (b, l) => WeededAst.Expression.VectorSlice(b, l, None, loc).toSuccess
+                case _ => WeederError.IllegalVectorLength(loc).toFailure
+              }
+            case (Some(i1), Some(i2)) =>
+              @@(visit(base, unsafe), getVectorLength(i1, sp1, sp2), getVectorLength(i2, sp1, sp2)) flatMap {
+                case (b, l1, l2) if l1 > l2 => WeederError.IllegalVectorIndex(loc).toFailure
+                case (b, l1, l2) => WeededAst.Expression.VectorSlice(b, l1, Some(l2), loc).toSuccess
+                case _ => WeederError.IllegalVectorLength(loc).toFailure
+              }
           }
 
         case ParsedAst.Expression.Unique(sp1, exp, sp2) =>
@@ -1553,8 +1554,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.VectorStore(base,_,_,_) => leftMostSourcePosition(base)
     case ParsedAst.Expression.VectorLength(sp1,_,_) => sp1
     case ParsedAst.Expression.VectorSlice(base,_,_,_) => leftMostSourcePosition(base)
-    case ParsedAst.Expression.VectorSliceNoEndIndex(base, _, _) => leftMostSourcePosition(base)
-    case ParsedAst.Expression.VectorSliceNoStartIndex(base,_,_) => leftMostSourcePosition(base)
     case ParsedAst.Expression.Unique(sp1, _, _) => sp1
     case ParsedAst.Expression.FNil(sp1, _) => sp1
     case ParsedAst.Expression.FCons(hd, _, _, _) => leftMostSourcePosition(hd)
