@@ -294,7 +294,7 @@ class Flix {
       val d = new DurationFormatter(e)
       val emojiPart = terminalCtx.emitBlue(" ✓ ")
       val phasePart = terminalCtx.emitBlue(f"$phase%-16s")
-      val timePart = f"${d.fmt}%8s"
+      val timePart = f"${d.fmtMiliSeconds}%8s"
       Console.println(emojiPart + phasePart + timePart)
     }
   }

@@ -36,6 +36,7 @@ object Reader extends Phase[(List[Input], Map[Symbol.DefnSym, String]), (List[So
   def run(arg: (List[Input], Map[Symbol.DefnSym, String]))(implicit flix: Flix): Validation[(List[Source], Long, Map[Symbol.DefnSym, String]), CompilationError] = {
     // Measure time
     val t = System.nanoTime()
+    flix.notifyEnterPhase("Reader")
 
     // Pattern match the argument into the inputs and the named expressions.
     val (input, named) = arg
@@ -72,6 +73,7 @@ object Reader extends Phase[(List[Input], Map[Symbol.DefnSym, String]), (List[So
     }
 
     val e = System.nanoTime() - t
+    flix.notifyLeavePhase("Reader")
 
     // Return a triple of inputs, elapsed time, and named expressions.
     (sources, e, named).toSuccess
