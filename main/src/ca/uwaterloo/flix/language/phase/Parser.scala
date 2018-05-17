@@ -688,6 +688,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def VectorSlice: Rule1[ParsedAst.Expression] = rule {
+      VectorLoad ~ optional(optWS ~ atomic("[|")~ optWS ~ optional(Literals.IntDefault) ~ optWS ~ atomic("..") ~ optWS ~ optional(Literals.IntDefault) ~ optWS ~ atomic("|]") ~ SP ~> ParsedAst.Expression.VectorSlice)
+    }
+    /*
+    def VectorSlice: Rule1[ParsedAst.Expression] = rule {
       VectorSliceNoEndIndex ~ optional(optWS ~ atomic("[|")~ optWS ~ Literals.IntDefault ~ optWS ~ atomic("..") ~ optWS ~ Literals.IntDefault ~ optWS ~ atomic("|]") ~ SP ~> ParsedAst.Expression.VectorSlice)
     }
 
@@ -697,7 +701,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def VectorSliceNoStartIndex: Rule1[ParsedAst.Expression] = rule {
       VectorLoad ~ optional(optWS ~ atomic("[|")~ optWS ~ atomic("..") ~ optWS ~ Literals.IntDefault ~ optWS ~ atomic("|]") ~ SP ~> ParsedAst.Expression.VectorSliceNoStartIndex)
-    }
+    }*/
 
     def VectorLoad: Rule1[ParsedAst.Expression] = rule{
       VectorStore ~ zeroOrMore(optWS ~ atomic("[|") ~ optWS ~ Literals.IntDefault ~ optWS ~ atomic("|]") ~ SP ~> ParsedAst.Expression.VectorLoad)
