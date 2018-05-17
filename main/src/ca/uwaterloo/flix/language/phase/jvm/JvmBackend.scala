@@ -180,8 +180,8 @@ object JvmBackend extends Phase[Root, Root] {
     //
     // Write each class (and interface) to disk.
     //
-    // NB: In test mode we skip writing the files to disk.
-    if (!flix.options.test) {
+    // NB: In interactive and test mode we skip writing the files to disk.
+    if (flix.options.writeClassFiles && !flix.options.test) {
       flix.subphase("WriteClasses") {
         for ((jvmName, jvmClass) <- allClasses) {
           JvmOps.writeClass(TargetDirectory, jvmClass)

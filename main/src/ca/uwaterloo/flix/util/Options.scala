@@ -39,7 +39,8 @@ object Options {
     timeout = Duration.Inf,
     threads = Runtime.getRuntime.availableProcessors(),
     verbosity = Verbosity.Normal,
-    verifier = false
+    verifier = false,
+    writeClassFiles = true
   )
 
   /**
@@ -51,22 +52,23 @@ object Options {
 /**
   * General Flix options.
   *
-  * @param core         disables loading of all non-essential namespaces.
-  * @param debug        enables the emission of debugging information.
-  * @param documentor   enables generation of flixdoc.
-  * @param evaluation   selects the evaluation strategy.
-  * @param impure       enables impure functions.
-  * @param invariants   enables checking of compiler invariants.
-  * @param mode         the compilation mode.
-  * @param monitor      enables the debugger and profiler.
-  * @param quickchecker enables the quickchecker.
-  * @param test         enables test mode.
-  * @param safe         disables unsafe operations.
-  * @param target       the target JVM.
-  * @param timeout      selects the solver timeout.
-  * @param threads      selects the number of threads to use.
-  * @param verbosity    selects the level of verbosity.
-  * @param verifier     enables the verifier.
+  * @param core            disables loading of all non-essential namespaces.
+  * @param debug           enables the emission of debugging information.
+  * @param documentor      enables generation of flixdoc.
+  * @param evaluation      selects the evaluation strategy.
+  * @param impure          enables impure functions.
+  * @param invariants      enables checking of compiler invariants.
+  * @param mode            the compilation mode.
+  * @param monitor         enables the debugger and profiler.
+  * @param quickchecker    enables the quickchecker.
+  * @param test            enables test mode.
+  * @param safe            disables unsafe operations.
+  * @param target          the target JVM.
+  * @param timeout         selects the solver timeout.
+  * @param threads         selects the number of threads to use.
+  * @param verbosity       selects the level of verbosity.
+  * @param verifier        enables the verifier.
+  * @param writeClassFiles enables output of class files.
   */
 case class Options(core: Boolean,
                    debug: Boolean,
@@ -84,7 +86,8 @@ case class Options(core: Boolean,
                    timeout: Duration,
                    threads: Int,
                    verbosity: Verbosity,
-                   verifier: Boolean)
+                   verifier: Boolean,
+                   writeClassFiles: Boolean)
 
 /**
   * An option to control the evaluation strategy.

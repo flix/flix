@@ -86,7 +86,8 @@ object Main {
       timeout = cmdOpts.timeout,
       threads = if (cmdOpts.threads == -1) Options.Default.threads else cmdOpts.threads,
       verbosity = if (cmdOpts.verbose) Verbosity.Verbose else Verbosity.Normal,
-      verifier = cmdOpts.verifier
+      verifier = cmdOpts.verifier,
+      writeClassFiles = !cmdOpts.interactive
     )
 
     // check if running in interactive mode.
