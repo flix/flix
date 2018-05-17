@@ -902,10 +902,10 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           //  -------------------------------------------------------------------------------
           //  base[|index|] : t
           //
-          val freshVar = Type.freshTypeVar()
+          val freshElementVar = Type.freshTypeVar()
           for (
             baseType <- visitExp(base);
-            resultType <- unifyM(baseType, Type.mkVector(tvar, Type.Succ(index, freshVar)), loc)
+            resultType <- unifyM(baseType, Type.mkVector(tvar, Type.Succ(index, freshElementVar)), loc)
           ) yield tvar
 
         case ResolvedAst.Expression.VectorStore(base, index, elm, tvar, loc) =>
