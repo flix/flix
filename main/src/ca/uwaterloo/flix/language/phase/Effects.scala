@@ -32,7 +32,7 @@ object Effects extends Phase[Root, Root] {
   /**
     * Performs effect inference on the given AST `root`.
     */
-  def run(root: Root)(implicit flix: Flix): Validation[Root, EffectError] = {
+  def run(root: Root)(implicit flix: Flix): Validation[Root, EffectError] = flix.phase("Effects") {
 
     // TODO: Effects currently disabled:
     return root.toSuccess

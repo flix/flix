@@ -36,7 +36,7 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
   /**
     * Assigns a stack offset to each variable symbol in the program.
     */
-  def run(root: SimplifiedAst.Root)(implicit flix: Flix): Validation[SimplifiedAst.Root, CompilationError] = {
+  def run(root: SimplifiedAst.Root)(implicit flix: Flix): Validation[SimplifiedAst.Root, CompilationError] = flix.phase("VariableNumbering") {
     val t = System.nanoTime()
 
     // Compute stack offset for each definition.

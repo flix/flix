@@ -305,7 +305,7 @@ class Flix {
         val d = new DurationFormatter(e)
         val terminalCtx = TerminalContext.AnsiTerminal
         val emojiPart = terminalCtx.emitMagenta("    ")
-        val phasePart = terminalCtx.emitMagenta(f"$subphase%-16s")
+        val phasePart = terminalCtx.emitMagenta(f"$subphase%-18s")
         val timePart = f"${d.fmtMiliSeconds}%8s"
         Console.println(emojiPart + phasePart + timePart)
       }

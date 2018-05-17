@@ -33,7 +33,7 @@ object Parser extends Phase[(List[Source], Long, Map[Symbol.DefnSym, String]), P
   /**
     * Parses the given source inputs into an abstract syntax tree.
     */
-  def run(arg: (List[Source], Long, Map[Symbol.DefnSym, String]))(implicit flix: Flix): Validation[ParsedAst.Program, CompilationError] = {
+  def run(arg: (List[Source], Long, Map[Symbol.DefnSym, String]))(implicit flix: Flix): Validation[ParsedAst.Program, CompilationError] = flix.phase("Parser") {
     // The argument consists of a list of sources and the time spent by the reader.
     val (sources, reader, namedExp) = arg
 
