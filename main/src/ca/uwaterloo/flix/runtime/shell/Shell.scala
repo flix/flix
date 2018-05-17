@@ -783,7 +783,8 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
   class SolverThread()(implicit terminal: Terminal) extends Runnable {
     override def run(): Unit = {
       // compute the least model.
-      val timer = new Timer(flix.solve())
+      val executableRoot = flix.codeGen(root).get
+      val timer = new Timer(flix.solve(executableRoot))
       timer.getResult match {
         case Validation.Success(m) =>
           model = m
