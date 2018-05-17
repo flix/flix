@@ -3,8 +3,8 @@
   x[|-5|] = 5
 }*/
 
-def f(): Vector[Str, 4] = {
-let x = [|"Str";10|];
-let y = x[|0..7|];
-y[|3..7|]
+def f(): Str = {
+let x = [|"HELLO WORLD!!! ";10|];
+let y = x[|3..|];
+y[|3|]
 }

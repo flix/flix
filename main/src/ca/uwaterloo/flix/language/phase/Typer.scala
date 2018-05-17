@@ -1369,7 +1369,8 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
               val len = TypedAst.Expression.VectorLength(e, Type.Int32, Eff.Bot, loc)
               TypedAst.Expression.VectorSlice(e, startIndex, len , subst0(tvar), Eff.Bot, loc)
             case Some(endIndex) =>
-              TypedAst.Expression.VectorSlice(e, startIndex, TypedAst.Expression.Int32(endIndex, loc), subst0(tvar), Eff.Bot, loc)
+              val len = TypedAst.Expression.Int32(endIndex, loc)
+              TypedAst.Expression.VectorSlice(e, startIndex, len, subst0(tvar), Eff.Bot, loc)
           }
           /*
           * Unique expression
