@@ -50,6 +50,7 @@ object JvmBackend extends Phase[Root, Root] {
     // Measure compilation time.
     //
     val t = System.nanoTime()
+    flix.notifyEnterPhase("JvmBackend")
 
     //
     // Put the AST root into implicit scope.
@@ -180,12 +181,14 @@ object JvmBackend extends Phase[Root, Root] {
     //
     // Write each class (and interface) to disk.
     //
+    flix.notifyEnterPhase("  .EmitClasses")
     // NB: In test mode we skip writing the files to disk.
     if (!flix.options.test) {
       for ((jvmName, jvmClass) <- allClasses) {
         JvmOps.writeClass(TargetDirectory, jvmClass)
       }
     }
+    flix.notifyLeavePhase("  .EmitClasses")
 
     //
     // Loads all the generated classes into the JVM and decorates the AST.
@@ -196,6 +199,7 @@ object JvmBackend extends Phase[Root, Root] {
     // Measure elapsed time.
     //
     val e = System.nanoTime() - t
+    flix.notifyLeavePhase("JvmBackend")
 
     root.copy(time = root.time.copy(backend = e)).toSuccess
   }

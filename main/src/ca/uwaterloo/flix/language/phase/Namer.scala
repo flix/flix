@@ -43,6 +43,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
     implicit val _ = flix.genSym
 
     val b = System.nanoTime()
+    flix.notifyEnterPhase("Namer")
 
     // make an empty program to fold over.
     val prog0 = NamedAst.Program(
@@ -80,7 +81,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
 
     @@(result, named) map {
       // update elapsed time.
-      case (p, ne) => p.copy(named = ne.toMap, time = p.time.copy(namer = e))
+      case (p, ne) =>
+        flix.notifyLeavePhase("Namer")
+        p.copy(named = ne.toMap, time = p.time.copy(namer = e))
     }
   }
 

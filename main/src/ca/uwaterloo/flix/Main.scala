@@ -140,7 +140,7 @@ object Main {
           if (main.nonEmpty) {
             val name = main.get
             val evalTimer = new Timer(model.evalToString(name))
-            Console.println(s"$name returned `${evalTimer.getResult}' (compile: ${timer.fmt}, execute: ${evalTimer.fmt})")
+            Console.println(s"$name returned `${evalTimer.getResult}' (compile: ${timer.getFormatter.fmt}, execute: ${evalTimer.getFormatter.fmt})")
           }
 
           if (cmdOpts.benchmark) {

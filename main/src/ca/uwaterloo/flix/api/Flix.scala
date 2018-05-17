@@ -27,8 +27,9 @@ import ca.uwaterloo.flix.language.{CompilationError, GenSym}
 import ca.uwaterloo.flix.runtime.quickchecker.QuickChecker
 import ca.uwaterloo.flix.runtime.verifier.Verifier
 import ca.uwaterloo.flix.runtime.{DeltaSolver, Model, Solver}
-import ca.uwaterloo.flix.util.{LocalResource, Options, Validation}
+import ca.uwaterloo.flix.util._
 import ca.uwaterloo.flix.util.Validation._
+import ca.uwaterloo.flix.util.vt.TerminalContext
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
@@ -103,6 +104,11 @@ class Flix {
     "flix/io/Path.flix" -> LocalResource.get("/library/flix/io/Path.flix"),
 
   )
+
+  /**
+    * A map of time spent in each compiler phase.
+    */
+  private val timers = mutable.Map.empty[String, Long]
 
   /**
     * The default assumed charset.
@@ -266,6 +272,31 @@ class Flix {
     */
   def deltaSolve(path: Path): Validation[scala.Unit, CompilationError] = compile().map {
     case root => DeltaSolver.solve(root, options, path)(this)
+  }
+
+  /**
+    * Notifies Flix that the compiler has entered the phase with the given name.
+    */
+  def notifyEnterPhase(phase: String): scala.Unit = {
+    val t = System.nanoTime()
+    timers += (phase -> t)
+  }
+
+  /**
+    * Notifies Flix that the compiler has left the phase with the given name.
+    */
+  def notifyLeavePhase(phase: String): scala.Unit = {
+    val terminalCtx = TerminalContext.AnsiTerminal
+    val t = System.nanoTime()
+    val e = t - timers.getOrElse(phase, 0L)
+    timers += (phase -> e)
+    if (options.verbosity == Verbosity.Verbose) {
+      val d = new DurationFormatter(e)
+      val emojiPart = terminalCtx.emitBlue(" ✓ ")
+      val phasePart = terminalCtx.emitBlue(f"$phase%-16s")
+      val timePart = f"${d.fmt}%8s"
+      Console.println(emojiPart + phasePart + timePart)
+    }
   }
 
   /**
