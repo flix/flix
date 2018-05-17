@@ -39,11 +39,10 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
   /**
     * Introduces unique names for each syntactic entity in the given `program`.
     **/
-  def run(program: WeededAst.Program)(implicit flix: Flix): Validation[NamedAst.Program, NameError] = {
+  def run(program: WeededAst.Program)(implicit flix: Flix): Validation[NamedAst.Program, NameError] = flix.phase("Namer") {
     implicit val _ = flix.genSym
 
     val b = System.nanoTime()
-    flix.notifyEnterPhase("Namer")
 
     // make an empty program to fold over.
     val prog0 = NamedAst.Program(
@@ -82,7 +81,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
     @@(result, named) map {
       // update elapsed time.
       case (p, ne) =>
-        flix.notifyLeavePhase("Namer")
         p.copy(named = ne.toMap, time = p.time.copy(namer = e))
     }
   }

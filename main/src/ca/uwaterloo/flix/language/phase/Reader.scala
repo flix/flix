@@ -34,49 +34,50 @@ object Reader extends Phase[(List[Input], Map[Symbol.DefnSym, String]), (List[So
     * Reads the given source inputs into memory.
     */
   def run(arg: (List[Input], Map[Symbol.DefnSym, String]))(implicit flix: Flix): Validation[(List[Source], Long, Map[Symbol.DefnSym, String]), CompilationError] = {
-    // Measure time
-    val t = System.nanoTime()
-    flix.notifyEnterPhase("Reader")
+    flix.phase("Reader") {
 
-    // Pattern match the argument into the inputs and the named expressions.
-    val (input, named) = arg
+      // Measure time
+      val t = System.nanoTime()
 
-    // Compute the sources.
-    val sources = input map {
+      // Pattern match the argument into the inputs and the named expressions.
+      val (input, named) = arg
 
-      /**
-        * Internal.
-        */
-      case Input.Internal(name, text) => Source(name, text.toCharArray)
+      // Compute the sources.
+      val sources = input map {
 
-      /**
-        * String.
-        */
-      case Input.Str(text) => Source("???", text.toCharArray)
+        /**
+          * Internal.
+          */
+        case Input.Internal(name, text) => Source(name, text.toCharArray)
 
-      /**
-        * Text file.
-        */
-      case Input.TxtFile(path) =>
-        val bytes = Files.readAllBytes(path)
-        Source(path.toString, new String(bytes, flix.defaultCharset).toCharArray)
+        /**
+          * String.
+          */
+        case Input.Str(text) => Source("???", text.toCharArray)
 
-      /**
-        * Zip file.
-        */
-      case Input.ZipFile(path) =>
-        val file = new ZipFile(path.toFile)
-        val entry = file.entries().nextElement()
-        val inputStream = file.getInputStream(entry)
-        val bytes = StreamOps.readAllBytes(inputStream)
-        Source(path.toString, new String(bytes, flix.defaultCharset).toCharArray)
+        /**
+          * Text file.
+          */
+        case Input.TxtFile(path) =>
+          val bytes = Files.readAllBytes(path)
+          Source(path.toString, new String(bytes, flix.defaultCharset).toCharArray)
+
+        /**
+          * Zip file.
+          */
+        case Input.ZipFile(path) =>
+          val file = new ZipFile(path.toFile)
+          val entry = file.entries().nextElement()
+          val inputStream = file.getInputStream(entry)
+          val bytes = StreamOps.readAllBytes(inputStream)
+          Source(path.toString, new String(bytes, flix.defaultCharset).toCharArray)
+      }
+
+      val e = System.nanoTime() - t
+
+      // Return a triple of inputs, elapsed time, and named expressions.
+      (sources, e, named).toSuccess
     }
-
-    val e = System.nanoTime() - t
-    flix.notifyLeavePhase("Reader")
-
-    // Return a triple of inputs, elapsed time, and named expressions.
-    (sources, e, named).toSuccess
   }
 
 }

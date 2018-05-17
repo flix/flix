@@ -32,11 +32,10 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
   /**
     * Type checks the given program.
     */
-  def run(program: ResolvedAst.Program)(implicit flix: Flix): Validation[TypedAst.Root, CompilationError] = {
+  def run(program: ResolvedAst.Program)(implicit flix: Flix): Validation[TypedAst.Root, CompilationError] = flix.phase("Typer") {
     implicit val _ = flix.genSym
 
     val startTime = System.nanoTime()
-    flix.notifyEnterPhase("Typer")
 
     val result = for {
       defs <- Declarations.Definitions.typecheck(program)
@@ -55,8 +54,6 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       val time = program.time.copy(typer = currentTime - startTime)
       TypedAst.Root(defs, effs, handlers, enums, lattices, tables, indexes, strata, properties, specialOps, program.reachable, time)
     }
-
-    flix.notifyLeavePhase("Typer")
 
     result match {
       case Ok(p) => p.toSuccess

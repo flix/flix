@@ -27,8 +27,8 @@ import ca.uwaterloo.flix.language.{CompilationError, GenSym}
 import ca.uwaterloo.flix.runtime.quickchecker.QuickChecker
 import ca.uwaterloo.flix.runtime.verifier.Verifier
 import ca.uwaterloo.flix.runtime.{DeltaSolver, Model, Solver}
-import ca.uwaterloo.flix.util._
 import ca.uwaterloo.flix.util.Validation._
+import ca.uwaterloo.flix.util._
 import ca.uwaterloo.flix.util.vt.TerminalContext
 
 import scala.collection.mutable
@@ -106,9 +106,14 @@ class Flix {
   )
 
   /**
-    * A map of time spent in each compiler phase.
+    * A case class to track the compile time spent in a phase and its sub-phases.
     */
-  private val timers = mutable.Map.empty[String, Long]
+  case class Phase(phase: String, time: Long, subphases: List[(String, Long)])
+
+  /**
+    * A map to track the time spent in each phase and sub-phase.
+    */
+  private val timers = mutable.Map.empty[String, Phase]
 
   /**
     * The default assumed charset.
@@ -274,29 +279,54 @@ class Flix {
     case root => DeltaSolver.solve(root, options, path)(this)
   }
 
-  /**
-    * Notifies Flix that the compiler has entered the phase with the given name.
-    */
-  def notifyEnterPhase(phase: String): scala.Unit = {
-    val t = System.nanoTime()
-    timers += (phase -> t)
-  }
+  var currentPhase: String = _
 
-  /**
-    * Notifies Flix that the compiler has left the phase with the given name.
-    */
-  def notifyLeavePhase(phase: String): scala.Unit = {
-    val terminalCtx = TerminalContext.AnsiTerminal
+  @inline
+  def phase[A](phase: String)(f: => A): A = {
+
+    currentPhase = phase
+    timers += (phase -> Phase(phase, 0, Nil))
+
     val t = System.nanoTime()
-    val e = t - timers.getOrElse(phase, 0L)
-    timers += (phase -> e)
+    val r = f
+    val e = System.nanoTime() - t
+
+    timers += (phase -> timers(phase).copy(time = e))
+
     if (options.verbosity == Verbosity.Verbose) {
       val d = new DurationFormatter(e)
-      val emojiPart = terminalCtx.emitBlue(" ✓ ")
-      val phasePart = terminalCtx.emitBlue(f"$phase%-16s")
+      val terminalCtx = TerminalContext.AnsiTerminal
+      val emojiPart = terminalCtx.emitBlue("✓ ")
+      val phasePart = terminalCtx.emitBlue(f"$phase%-20s")
       val timePart = f"${d.fmtMiliSeconds}%8s"
       Console.println(emojiPart + phasePart + timePart)
+
+      for ((subphase, e) <- timers(phase).subphases) {
+        val d = new DurationFormatter(e)
+        val terminalCtx = TerminalContext.AnsiTerminal
+        val emojiPart = terminalCtx.emitMagenta("    ")
+        val phasePart = terminalCtx.emitMagenta(f"$subphase%-16s")
+        val timePart = f"${d.fmtMiliSeconds}%8s"
+        Console.println(emojiPart + phasePart + timePart)
+      }
+
     }
+
+    r
+  }
+
+  @inline
+  def subphase[A](subphase: String)(f: => A): A = {
+
+    val t = System.nanoTime()
+    val r = f
+    val e = System.nanoTime() - t
+
+    val phase = timers(currentPhase)
+    val subphases = (subphase, e) :: phase.subphases
+    timers += (currentPhase -> phase.copy(subphases = subphases))
+
+    r
   }
 
   /**
