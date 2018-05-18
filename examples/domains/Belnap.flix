@@ -57,6 +57,17 @@ namespace Belnap {
     }
 
     ///
+    /// The lattice height function.
+    ///
+    #nonNegative #decreasing(equ, leq)
+    pub def height(e: Belnap): BigInt = match e with {
+        case Top    => 0ii
+        case True   => 1ii
+        case False  => 1ii
+        case Bot    => 2ii
+    }
+
+    ///
     /// Abstracts a concrete boolean into the Belnap domain.
     ///
     pub def alpha(b: Bool): Belnap = if (b) True else False

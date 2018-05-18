@@ -34,9 +34,9 @@ handler h[a](x: Int, y: Int, k: Bool -> a): a = if (x == y) k(true) else k(false
 eff i[a](x: Bool, y: Bool, k: (Int, Int) -> a): a
 
 ///
-/// Declares a default handler for the effect `h`.
+/// Declares a default handler for the effect `i`.
 ///
-handler i[a](x: Bool, y: Bool, k: (Int, Int) -> a): a = if (x && y) k((1, 2)) else k((2, 3))
+handler i[a](x: Bool, y: Bool, k: (Int, Int) -> a): a = if (x && y) k(1, 2) else k(2, 3)
 
 //
 /////

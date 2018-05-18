@@ -655,9 +655,9 @@ object SymbolicEvaluator {
         }
 
       /**
-        * Block.
+        * Branches.
         */
-      case Expression.Branch(exp, branches, tpe, loc) => eval(pc0, exp, env0, lenv0, qua0)
+      case Expression.Branch(exp, branches, tpe, loc) => eval(pc0, exp, env0, branches, qua0)
 
       /**
         * Jump.
@@ -813,6 +813,11 @@ object SymbolicEvaluator {
         enumerator(fparam.sym, fparam.tpe) flatMap {
           case value => eval(pc0, exp, env0 + (fparam.sym -> value), lenv0, qua0 + (fparam.sym -> value))
         }
+
+      /**
+        * Try Catch.
+        */
+      case Expression.TryCatch(exp, rules, tpe, loc) => throw InternalCompilerException("Not yet supported.")
 
       /**
         * Native Constructor.

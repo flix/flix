@@ -59,6 +59,18 @@ namespace Domain/StrictSign {
     }
 
     ///
+    /// The lattice height function.
+    ///
+    #nonNegative #decreasing(equ, leq)
+    pub def height(e: Sign): BigInt = match e with {
+        case Top    => 0ii
+        case Neg    => 1ii
+        case Zer    => 1ii
+        case Pos    => 1ii
+        case Bot    => 2ii
+    }
+
+    ///
     /// Abstracts a concrete integer into the Sign domain.
     ///
     def alpha(i: BigInt): Sign = switch {

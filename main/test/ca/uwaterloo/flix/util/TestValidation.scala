@@ -27,7 +27,7 @@ class TestValidation extends FunSuite {
     val result = "foo".toSuccess[String, Exception].map {
       case x => x.toUpperCase
     }
-    assertResult(Success("FOO", Stream.empty))(result)
+    assertResult(Success("FOO"))(result)
   }
 
   test("map02") {
@@ -36,7 +36,7 @@ class TestValidation extends FunSuite {
     }.map {
       case y => y.reverse
     }
-    assertResult(Success("OOF", Stream.empty))(result)
+    assertResult(Success("OOF"))(result)
   }
 
   test("map03") {
@@ -47,7 +47,7 @@ class TestValidation extends FunSuite {
     }.map {
       case z => z + z
     }
-    assertResult(Success("OOFOOF", Stream.empty))(result)
+    assertResult(Success("OOFOOF"))(result)
   }
 
   test("map04") {
@@ -56,7 +56,7 @@ class TestValidation extends FunSuite {
     }.map {
       case y => y < 5
     }
-    assertResult(Success(true, Stream.empty))(result)
+    assertResult(Success(true))(result)
   }
 
   test("map05") {
@@ -67,7 +67,7 @@ class TestValidation extends FunSuite {
     }.map {
       case z => z.toChar.toString
     }
-    assertResult(Success("e", Stream.empty))(result)
+    assertResult(Success("e"))(result)
   }
 
   test("map06") {
@@ -82,7 +82,7 @@ class TestValidation extends FunSuite {
     val result = "foo".toSuccess[String, Exception].flatMap {
       case x => x.toUpperCase.toSuccess
     }
-    assertResult(Success("FOO", Stream.empty))(result)
+    assertResult(Success("FOO"))(result)
   }
 
   test("flatMap02") {
@@ -93,7 +93,7 @@ class TestValidation extends FunSuite {
     }.flatMap {
       case z => (z + z).toSuccess
     }
-    assertResult(Success("OOFOOF", Stream.empty))(result)
+    assertResult(Success("OOFOOF"))(result)
   }
 
   test("flatMap03") {
@@ -106,24 +106,24 @@ class TestValidation extends FunSuite {
 
   test("flatMap04") {
     val result = "foo".toSuccess[String, Int].flatMap {
-      case x => Success(x.toUpperCase, Stream(1, 2, 3))
+      case x => Success(x.toUpperCase)
     }.flatMap {
-      case y => Success(y.reverse, Stream(4, 5, 6))
+      case y => Success(y.reverse)
     }.flatMap {
-      case z => Success(z + z, Stream(7, 8, 9))
+      case z => Success(z + z)
     }
-    assertResult(Success("OOFOOF", Stream(1, 2, 3, 4, 5, 6, 7, 8, 9)))(result)
+    assertResult(Success("OOFOOF"))(result)
   }
 
   test("flatMap05") {
     val result = "foo".toSuccess[String, Int].flatMap {
-      case x => Success(x.toUpperCase, Stream(1, 2, 3))
+      case x => Success(x.toUpperCase)
     }.flatMap {
       case y => Failure(Stream(4, 5, 6))
     }.flatMap {
       case z => Failure(Stream(7, 8, 9))
     }
-    assertResult(Failure(Stream(1, 2, 3, 4, 5, 6)))(result)
+    assertResult(Failure(Stream(4, 5, 6)))(result)
   }
 
   test("@@(List)01") {
@@ -135,7 +135,7 @@ class TestValidation extends FunSuite {
       "e".toSuccess
     ))
 
-    assertResult(Success(List("a", "b", "c", "d", "e"), Stream.empty))(result)
+    assertResult(Success(List("a", "b", "c", "d", "e")))(result)
   }
 
   test("@@(List)02") {
@@ -154,26 +154,36 @@ class TestValidation extends FunSuite {
     val result = @@(List(
       "a".toSuccess,
       "b".toSuccess,
-      Success("c", Stream("x", "y")),
+      Success("c"),
       "d".toSuccess,
-      Success("e", Stream("z"))
+      Success("e")
     ))
 
-    assertResult(Success(List("a", "b", "c", "d", "e"), Stream("x", "y", "z")))(result)
+    assertResult(Success(List("a", "b", "c", "d", "e")))(result)
   }
 
-  test("Collect01") {
-    val result = collect(List(
-      "a".toSuccess,
-      "b".toSuccess,
-      "c".toFailure,
-      "d".toSuccess,
-      "e".toFailure
-    ))
+  test("traverse01") {
+    val result = traverse(List(1, 2, 3)) {
+      case x => Success(x + 1)
+    }
 
-    assertResult(Success(List("a", "b", "d"), Stream("c", "e")))(result)
+    assertResult(Success(List(2, 3, 4)))(result)
   }
 
-  // TODO: Rest
+  test("traverse02") {
+    val result = traverse(List(1, 2, 3)) {
+      case x => Failure(Stream(42))
+    }
+
+    assertResult(Failure(Stream(42)))(result)
+  }
+
+  test("traverse03") {
+    val result = traverse(List(1, 2, 3)) {
+      case x =>  if (x % 2 == 1) Success(x) else Failure(Stream(x))
+    }
+
+    assertResult(Failure(Stream(2)))(result)
+  }
 
 }

@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.GenSym
+import ca.uwaterloo.flix.util.tc.Show.ShowableSyntax
 
 object Scheme {
 
@@ -35,6 +36,6 @@ case class Scheme(quantifiers: List[Type.Var], base: Type) {
   /**
     * Returns a human readable representation of the polytype.
     */
-  override def toString: String = s"∀(${quantifiers.mkString(", ")}). $base"
+  override def toString: String = s"∀(${quantifiers.mkString(", ")}). ${base.show}"
 
 }

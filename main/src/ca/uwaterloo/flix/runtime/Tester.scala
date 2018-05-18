@@ -17,8 +17,9 @@
 package ca.uwaterloo.flix.runtime
 
 import ca.uwaterloo.flix.api.FlixException
-import ca.uwaterloo.flix.language.ast.{Source, Symbol}
-import ca.uwaterloo.flix.util.vt.VirtualString.{Blue, Dedent, Green, Indent, Line, NewLine, Red}
+import ca.uwaterloo.flix.language.ast.Symbol
+import ca.uwaterloo.flix.runtime.datastore.ProxyObject
+import ca.uwaterloo.flix.util.vt.VirtualString._
 import ca.uwaterloo.flix.util.vt.VirtualTerminal
 
 /**
@@ -83,7 +84,8 @@ object Tester {
     val results = model.getTests.toList.map {
       case (sym, defn) =>
         try {
-          defn() match {
+          val result = defn().asInstanceOf[ProxyObject]
+          result.getValue match {
             case java.lang.Boolean.TRUE => TestResult.Success(sym, "Returned true.")
             case java.lang.Boolean.FALSE => TestResult.Failure(sym, "Returned false.")
             case _ => TestResult.Success(sym, "Returned non-boolean value.")

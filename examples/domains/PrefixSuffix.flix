@@ -78,6 +78,18 @@ namespace Domain/PrefixSuffix {
     }
 
     ///
+    /// The lattice height function.
+    ///
+    #nonNegative #decreasing(equ, leq)
+    pub def height(e: PrefixSuffix): BigInt = match e with {
+        case Top            => 0ii
+        case Pre(p)         => 1ii
+        case Suf(s)         => 1ii
+        case PreSuf(p, s)   => 2ii
+        case Bot            => 3ii
+    }
+
+    ///
     /// Over-approximates `concatenate`.
     ///
     #strict2 #monotone2 #associative
