@@ -564,7 +564,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
 
         case NamedAst.Expression.VectorLit(elms, tvar, loc) =>
           for {
-            es <- seqM(elms map visit, tenv0)
+            es <- seqM(elms.map(e => visit(e, tenv0)))
           } yield ResolvedAst.Expression.VectorLit(es, tvar, loc)
 
         case NamedAst.Expression.VectorNew(elm, len, tvar, loc) =>
