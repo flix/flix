@@ -88,10 +88,13 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         case Type.BigInt => Type.BigInt
         case Type.Str => Type.Str
         case Type.Array => Type.Array
+        case Type.Vector => Type.Vector
         case Type.Native => Type.Native
         case Type.Ref => Type.Ref
         case Type.Arrow(l) => Type.Arrow(l)
         case Type.Tuple(l) => Type.Tuple(l)
+        case Type.Zero => Type.Zero
+        case Type.Succ(n, t) => Type.Succ(n, t)
         case Type.Enum(name, kind) => Type.Enum(name, kind)
         case Type.Apply(tpe1, tpe2) => Type.Apply(apply(tpe1), apply(tpe2))
       }
@@ -281,6 +284,62 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         case Expression.Tuple(elms, tpe, eff, loc) =>
           val es = elms.map(e => visitExp(e, env0))
           Expression.Tuple(es, subst0(tpe), eff, loc)
+
+        case Expression.ArrayLit(elms, tpe, eff, loc) =>
+          val es = elms.map(e => visitExp(e, env0))
+          Expression.ArrayLit(es, subst0(tpe), eff, loc)
+
+        case Expression.ArrayNew(elm, len, tpe, eff, loc) =>
+          val e = visitExp(elm, env0)
+          val ln = visitExp(len, env0)
+          Expression.ArrayNew(e, ln, tpe, eff, loc)
+
+        case Expression.ArrayLoad(base, index, tpe, eff, loc) =>
+          val b = visitExp(base, env0)
+          val i = visitExp(index, env0)
+          Expression.ArrayLoad(b, i, tpe, eff, loc)
+
+        case Expression.ArrayStore(base, index, elm, tpe, eff, loc) =>
+          val b = visitExp(base, env0)
+          val i = visitExp(index, env0)
+          val e = visitExp(elm, env0)
+          Expression.ArrayStore(b, i, e, tpe, eff, loc)
+
+        case Expression.ArrayLength(base, tpe, eff, loc) =>
+          val b = visitExp(base, env0)
+          Expression.ArrayLength(b, tpe, eff, loc)
+
+        case Expression.ArraySlice(base, startIndex, endIndex, tpe, eff, loc) =>
+          val b = visitExp(base, env0)
+          val i1 = visitExp(startIndex, env0)
+          val i2 = visitExp(endIndex, env0)
+          Expression.ArraySlice(b, i1, i2, tpe, eff, loc)
+
+        case Expression.VectorLit(elms, tpe, eff, loc) =>
+          val es = elms.map(e => visitExp(e, env0))
+          Expression.VectorLit(es, subst0(tpe), eff, loc)
+
+        case Expression.VectorNew(elm, len, tpe, eff, loc) =>
+          val e = visitExp(elm, env0)
+          Expression.VectorNew(e, len, tpe, eff, loc)
+
+        case Expression.VectorLoad(base, index, tpe, eff, loc) =>
+          val b = visitExp(base, env0)
+          Expression.VectorLoad(b, index, tpe, eff, loc)
+
+        case Expression.VectorStore(base, index, elm, tpe, eff, loc) =>
+          val b = visitExp(base, env0)
+          val e = visitExp(elm, env0)
+          Expression.VectorStore(b, index, e, tpe, eff, loc)
+
+        case Expression.VectorLength(base, tpe, eff, loc) =>
+          val b = visitExp(base, env0)
+          Expression.VectorLength(b, tpe, eff, loc)
+
+        case Expression.VectorSlice(base, startIndex, endIndex, tpe, eff, loc) =>
+          val b = visitExp(base, env0)
+          val i2 = visitExp(endIndex, env0)
+          Expression.VectorSlice(b, startIndex, i2, tpe, eff, loc)
 
         case Expression.Ref(exp, tpe, eff, loc) =>
           val e = visitExp(exp, env0)

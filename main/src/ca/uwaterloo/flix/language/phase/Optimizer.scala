@@ -247,6 +247,54 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         Expression.Tuple(es, tpe, loc)
 
       //
+      // ArrayLit Expressions.
+      //
+      case Expression.ArrayLit(elms, tpe, loc) =>
+        val es = elms map (visitExp(_, env0))
+        Expression.ArrayLit(es, tpe, loc)
+
+      //
+      // ArrayNew Expressions.
+      //
+      case Expression.ArrayNew(elm, len, tpe, loc) =>
+        val e = visitExp(elm, env0)
+        val ln = visitExp(len, env0)
+        Expression.ArrayNew(e, ln, tpe, loc)
+
+      //
+      // ArrayLoad Expressions.
+      //
+      case Expression.ArrayLoad(base, index, tpe, loc) =>
+        val b = visitExp(base, env0)
+        val i = visitExp(index, env0)
+        Expression.ArrayLoad(b, i, tpe, loc)
+
+      //
+      // ArrayStore Expressions.
+      //
+      case Expression.ArrayStore(base, index, elm, tpe, loc) =>
+        val b = visitExp(base, env0)
+        val i = visitExp(index, env0)
+        val e = visitExp(elm, env0)
+        Expression.ArrayStore(b, i, e, tpe, loc)
+
+      //
+      // ArraySlice Expressions.
+      //
+      case Expression.ArrayLength(base, tpe, loc) =>
+        val b = visitExp(base, env0)
+        Expression.ArrayLength(b, tpe, loc)
+
+      //
+      // ArraySlice Expressions.
+      //
+      case Expression.ArraySlice(base, startIndex, endIndex, tpe, loc) =>
+        val b = visitExp(base, env0)
+        val i1 = visitExp(startIndex, env0)
+        val i2 = visitExp(endIndex, env0)
+        Expression.ArraySlice(b, i1, i2, tpe, loc)
+
+      //
       // Reference Expressions.
       //
       case Expression.Ref(exp, tpe, loc) =>

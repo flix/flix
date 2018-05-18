@@ -23,11 +23,6 @@ import org.scalatest.{ParallelTestExecution, Suites}
 class FeatureSuite extends Suites(
   new FlixTest("TestConstraint", "main/test/ca/uwaterloo/flix/language/feature/TestConstraint.flix"),
   new FlixTest("TestEquality", "main/test/ca/uwaterloo/flix/language/feature/TestEquality.flix"),
-  // TODO: Arrays
-  //new FlixTest("Test.Expression.ArrayNew", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.ArrayNew.flix"),
-  //new FlixTest("Test.Expression.ArrayLit", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.ArrayLit.flix"),
-  //new FlixTest("Test.Expression.ArrayLoad", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.ArrayLoad.flix"),
-  //new FlixTest("Test.Expression.ArrayStore", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.ArrayStore.flix"),
   new FlixTest("Test.Expression.Ascribe", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Ascribe.flix"),
   new FlixTest("Test.Expression.Binary.Arithmetic", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Binary.Arithmetic.flix"),
   new FlixTest("Test.Expression.Binary.Comparison", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Binary.Comparison.flix"),
@@ -73,6 +68,24 @@ class FeatureSuite extends Suites(
   new FlixTest("Test.Decl.Class", "main/test/ca/uwaterloo/flix/language/feature/Test.Decl.Class.flix"),
   new FlixTest("Test.Decl.Disallow", "main/test/ca/uwaterloo/flix/language/feature/Test.Decl.Disallow.flix"),
   new FlixTest("Test.Decl.Impl", "main/test/ca/uwaterloo/flix/language/feature/Test.Decl.Impl.flix"),
+  new FlixTest("Test.Expression.ArrayLit", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.ArrayLit.flix"),
+  new FlixTest("Test.Expression.ArrayNew", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.ArrayNew.flix"),
+  new FlixTest("Test.Expression.ArrayLoad", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.ArrayLoad.flix"),
+  new FlixTest("Test.Expression.ArrayStore", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.ArrayStore.flix"),
+  new FlixTest("Test.Expression.ArrayLength", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.ArrayLength.flix"),
+  new FlixTest("Test.Expression.ArraySlice", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.ArraySlice.flix"),
+  new FlixTest("Test.Expression.ArraySliceNoEndIndex", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.ArraySliceNoEndIndex.flix"),
+  new FlixTest("Test.Expression.ArraySliceNoStartIndex", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.ArraySliceNoStartIndex.flix"),
+  new FlixTest("Test.Expression.ArraySliceNoIndexes", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.ArraySliceNoIndexes.flix"),
+  new FlixTest("Test.Expression.VectorLit", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.VectorLit.flix"),
+  new FlixTest("Test.Expression.VectorNew", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.VectorNew.flix"),
+  new FlixTest("Test.Expression.VectorLoad", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.VectorLoad.flix"),
+  new FlixTest("Test.Expression.VectorStore", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.VectorStore.flix"),
+  new FlixTest("Test.Expression.VectorLength", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.VectorLength.flix"),
+  new FlixTest("Test.Expression.VectorSlice", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.VectorSlice.flix"),
+  new FlixTest("Test.Expression.VectorSliceNoIndexes", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.VectorSliceNoIndexes.flix"),
+  new FlixTest("Test.Expression.VectorSliceNoEnd", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.VectorSliceNoEnd.flix"),
+  new FlixTest("Test.Expression.VectorSliceNoStart", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.VectorSliceNoStart.flix"),
 ) with ParallelTestExecution {
   /* left empty */
 }

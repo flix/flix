@@ -70,10 +70,13 @@ object Unification {
       case Type.BigInt => Type.BigInt
       case Type.Str => Type.Str
       case Type.Array => Type.Array
+      case Type.Vector => Type.Vector
       case Type.Native => Type.Native
       case Type.Ref => Type.Ref
       case Type.Arrow(l) => Type.Arrow(l)
       case Type.Tuple(l) => Type.Tuple(l)
+      case Type.Zero => Type.Zero
+      case Type.Succ(n, t) => Type.Succ(n, apply(t))
       case Type.Enum(name, kind) => Type.Enum(name, kind)
       case Type.Apply(t1, t2) => Type.Apply(apply(t1), apply(t2))
     }
@@ -180,10 +183,17 @@ object Unification {
       case (Type.BigInt, Type.BigInt) => Result.Ok(Substitution.empty)
       case (Type.Str, Type.Str) => Result.Ok(Substitution.empty)
       case (Type.Array, Type.Array) => Result.Ok(Substitution.empty)
+      case (Type.Vector, Type.Vector) => Result.Ok(Substitution.empty)
       case (Type.Native, Type.Native) => Result.Ok(Substitution.empty)
       case (Type.Ref, Type.Ref) => Result.Ok(Substitution.empty)
       case (Type.Arrow(l1), Type.Arrow(l2)) if l1 == l2 => Result.Ok(Substitution.empty)
       case (Type.Tuple(l1), Type.Tuple(l2)) if l1 == l2 => Result.Ok(Substitution.empty)
+      case (Type.Zero, Type.Zero) => Result.Ok(Substitution.empty) // 0 == 0
+      case (Type.Succ(0, Type.Zero), Type.Zero) => Result.Ok(Substitution.empty)
+      case (Type.Zero, Type.Succ(0, Type.Zero)) => Result.Ok(Substitution.empty)
+      case (Type.Succ(n1, t1), Type.Succ(n2, t2)) if n1 == n2 => unifyTypes(t1, t2) //(42, t1) == (42, t2)
+      case (Type.Succ(n1, t1), Type.Succ(n2, t2)) if n1 > n2 => unifyTypes(Type.Succ(n1-n2, t1), t2) // (42, x) == (21 y) --> (42-21, x) = y
+      case (Type.Succ(n1, t1), Type.Succ(n2, t2)) if n1 < n2 => unifyTypes(Type.Succ(n2-n1, t2), t1) // (21, x) == (42, y) --> (42-21, y) = x
       case (Type.Enum(name1, kind1), Type.Enum(name2, kind2)) if name1 == name2 => Result.Ok(Substitution.empty)
       case (Type.Apply(t11, t12), Type.Apply(t21, t22)) =>
         unifyTypes(t11, t21) match {
@@ -330,5 +340,4 @@ object Unification {
       }
     }
   }
-
 }

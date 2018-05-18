@@ -148,6 +148,30 @@ object ResolvedAst {
 
     case class Tuple(elms: List[ResolvedAst.Expression], tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
+    case class ArrayLit(elms: List[ResolvedAst.Expression], tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+
+    case class ArrayNew(elm: ResolvedAst.Expression, len: ResolvedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+
+    case class ArrayLoad(base: ResolvedAst.Expression, index: ResolvedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends  ResolvedAst.Expression
+
+    case class ArrayStore(base: ResolvedAst.Expression, index: ResolvedAst.Expression, elm: ResolvedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends  ResolvedAst.Expression
+
+    case class ArrayLength(base: ResolvedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+
+    case class ArraySlice(base: ResolvedAst.Expression, beginIndex: ResolvedAst.Expression, endIndex: ResolvedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends  ResolvedAst.Expression
+
+    case class VectorLit(elms: List[ResolvedAst.Expression], tvar: Type.Var, loc: SourceLocation) extends  ResolvedAst.Expression
+
+    case class VectorNew(elm: ResolvedAst.Expression, len: Int, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+
+    case class VectorLoad(base: ResolvedAst.Expression, index: Int, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+
+    case class VectorStore(base: ResolvedAst.Expression, index: Int, elm: ResolvedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+
+    case class VectorLength(base: ResolvedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+
+    case class VectorSlice(base: ResolvedAst.Expression, startIndex: Int, optEndIndex: Option[Int], tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+
     case class Ref(exp: ResolvedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Deref(exp: ResolvedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression

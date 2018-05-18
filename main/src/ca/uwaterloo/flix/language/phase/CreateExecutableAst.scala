@@ -227,6 +227,30 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
       case SimplifiedAst.Expression.Tuple(elms, tpe, loc) =>
         val elmsArray = elms.map(toExecutable).toArray
         ExecutableAst.Expression.Tuple(elmsArray, tpe, loc)
+      case SimplifiedAst.Expression.ArrayLit(elms, tpe, loc) =>
+        val elmsArray = elms.map(toExecutable).toArray
+        ExecutableAst.Expression.ArrayLit(elmsArray, tpe, loc)
+      case SimplifiedAst.Expression.ArrayNew(elm, len, tpe, loc) =>
+        val e = toExecutable(elm)
+        val ln = toExecutable(len)
+        ExecutableAst.Expression.ArrayNew(e, ln, tpe, loc)
+      case SimplifiedAst.Expression.ArrayLoad(base, index, tpe, loc) =>
+        val b = toExecutable(base)
+        val i = toExecutable(index)
+        ExecutableAst.Expression.ArrayLoad(b, i, tpe, loc)
+      case SimplifiedAst.Expression.ArrayStore(base, index, elm, tpe, loc) =>
+        val b = toExecutable(base)
+        val i = toExecutable(index)
+        val e = toExecutable(elm)
+        ExecutableAst.Expression.ArrayStore(b, i, e, tpe, loc)
+      case SimplifiedAst.Expression.ArrayLength(base, tpe, loc) =>
+        val b = toExecutable(base)
+        ExecutableAst.Expression.ArrayLength(b, tpe, loc)
+      case SimplifiedAst.Expression.ArraySlice(base, startIndex, endIndex, tpe, loc) =>
+        val b = toExecutable(base)
+        val i1 = toExecutable(startIndex)
+        val i2 = toExecutable(endIndex)
+        ExecutableAst.Expression.ArraySlice(b, i1, i2, tpe, loc)
       case SimplifiedAst.Expression.Ref(exp, tpe, loc) =>
         val e = toExecutable(exp)
         ExecutableAst.Expression.Ref(e, tpe, loc)

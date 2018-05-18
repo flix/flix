@@ -386,6 +386,69 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case TypedAst.Expression.Tuple(elms, tpe, eff, loc) =>
         SimplifiedAst.Expression.Tuple(elms map visitExp, tpe, loc)
 
+      case TypedAst.Expression.ArrayLit(elms, tpe, eff, loc) =>
+        SimplifiedAst.Expression.ArrayLit(elms map visitExp, tpe, loc)
+
+      case TypedAst.Expression.ArrayNew(elm, len, tpe, eff, loc) =>
+        val e = visitExp(elm)
+        val ln = visitExp(len)
+        SimplifiedAst.Expression.ArrayNew(e, ln, tpe, loc)
+
+      case TypedAst.Expression.ArrayLoad(base, index, tpe, eff, loc) =>
+        val b = visitExp(base)
+        val i = visitExp(index)
+        SimplifiedAst.Expression.ArrayLoad(b, i, tpe, loc)
+
+      case TypedAst.Expression.ArrayStore(base, index, elm, tpe, eff, loc) =>
+        val b = visitExp(base)
+        val i = visitExp(index)
+        val e = visitExp(elm)
+        SimplifiedAst.Expression.ArrayStore(b, i, e, tpe, loc)
+
+      case TypedAst.Expression.ArrayLength(base, tpe, eff, loc) =>
+        val b = visitExp(base)
+        SimplifiedAst.Expression.ArrayLength(b, tpe, loc)
+
+      case TypedAst.Expression.ArraySlice(base, beginIndex, endIndex, tpe, eff, loc) =>
+        val b = visitExp(base)
+        val i1 = visitExp(beginIndex)
+        val i2 = visitExp(endIndex)
+        SimplifiedAst.Expression.ArraySlice(b, i1, i2, tpe, loc)
+
+      case TypedAst.Expression.VectorLit(elms, tpe, eff, loc) =>
+        val arrayType = tpe match {
+          case Type.Apply(Type.Apply(Type.Vector, t), _) => Type.mkArray(t)
+          case _ => throw InternalCompilerException("Type must be of vector type.")
+        }
+        SimplifiedAst.Expression.ArrayLit(elms map visitExp, arrayType, loc)
+
+      case TypedAst.Expression.VectorNew(elm, len, tpe, eff, loc) =>
+        val e = visitExp(elm)
+        val t = Type.mkArray(elm.tpe)
+        val i = SimplifiedAst.Expression.Int32(len)
+        SimplifiedAst.Expression.ArrayNew(e, i, t, loc)
+
+      case TypedAst.Expression.VectorLoad(base, index, tpe, eff, loc) =>
+        val b = visitExp(base)
+        val i = SimplifiedAst.Expression.Int32(index)
+        SimplifiedAst.Expression.ArrayLoad(b, i, tpe, loc)
+
+      case TypedAst.Expression.VectorStore(base, index, elm, tpe, eff, loc) =>
+        val b = visitExp(base)
+        val e = visitExp(elm)
+        val i = SimplifiedAst.Expression.Int32(index)
+        SimplifiedAst.Expression.ArrayStore(b, i, e, tpe, loc)
+
+      case TypedAst.Expression.VectorLength(base, tpe, eff, loc) =>
+        val b = visitExp(base)
+        SimplifiedAst.Expression.ArrayLength(b, tpe, loc)
+
+      case TypedAst.Expression.VectorSlice(base, startIndex, endIndex, tpe, eff, loc) =>
+        val b = visitExp(base)
+        val i1 = SimplifiedAst.Expression.Int32(startIndex)
+        val i2 = visitExp(endIndex)
+        SimplifiedAst.Expression.ArraySlice(b, i1, i2, tpe, loc)
+
       case TypedAst.Expression.Ref(exp, tpe, eff, loc) =>
         val e = visitExp(exp)
         SimplifiedAst.Expression.Ref(e, tpe, loc)
@@ -1067,6 +1130,18 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         SimplifiedAst.Expression.Index(visit(exp), offset, tpe, loc)
       case SimplifiedAst.Expression.Tuple(elms, tpe, loc) =>
         SimplifiedAst.Expression.Tuple(elms.map(visit), tpe, loc)
+      case SimplifiedAst.Expression.ArrayLit(elms, tpe, loc) =>
+        SimplifiedAst.Expression.ArrayLit(elms.map(visit), tpe, loc)
+      case SimplifiedAst.Expression.ArrayNew(elm, len, tpe, loc) =>
+        SimplifiedAst.Expression.ArrayNew(visit(elm), visit(len), tpe, loc)
+      case SimplifiedAst.Expression.ArrayLoad(base, index, tpe, loc) =>
+        SimplifiedAst.Expression.ArrayLoad(visit(base), visit(index), tpe, loc)
+      case SimplifiedAst.Expression.ArrayStore(base, index, elm, tpe, loc) =>
+        SimplifiedAst.Expression.ArrayStore(visit(base), visit(index), visit(elm), tpe, loc)
+      case SimplifiedAst.Expression.ArrayLength(base, tpe, loc) =>
+        SimplifiedAst.Expression.ArrayLength(visit(base), tpe, loc)
+      case SimplifiedAst.Expression.ArraySlice(base, startIndex, endIndex, tpe, loc) =>
+        SimplifiedAst.Expression.ArraySlice(visit(base), visit(startIndex), visit(endIndex), tpe, loc)
       case SimplifiedAst.Expression.Ref(exp, tpe, loc) =>
         SimplifiedAst.Expression.Ref(visit(exp), tpe, loc)
       case SimplifiedAst.Expression.Deref(exp, tpe, loc) =>

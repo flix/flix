@@ -220,6 +220,55 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
         case Expression.Tuple(elms, _, _, _) => seqM(elms map {
           checkPats(_, root)
         }).map(const(tast))
+        case Expression.ArrayLit(elms, _, _, _) => seqM(elms map {
+          checkPats(_, root)
+        }).map(const(tast))
+        case Expression.ArrayNew(elm, len, _, _, _) => for {
+          _ <- checkPats(elm, root)
+          _ <- checkPats(len, root)
+        } yield tast
+        case Expression.ArrayLoad(base, index, _, _, _) => for {
+          _ <- checkPats(base, root)
+          _ <- checkPats(index, root)
+        } yield tast
+        case Expression.ArrayStore(base, index, elm, _, _, _) => for {
+          _ <- checkPats(base, root)
+          _ <- checkPats(index, root)
+          _ <- checkPats(elm, root)
+        } yield tast
+        case Expression.ArrayLength(base, _, _, _) => for {
+          _ <- checkPats(base, root)
+        } yield tast
+        case Expression.ArraySlice(base, beginIndex, endIndex, _, _, _) => for {
+          _ <- checkPats(base, root)
+          _ <- checkPats(beginIndex, root)
+          _ <- checkPats(endIndex, root)
+        } yield tast
+        case Expression.VectorLit(elms, _, _, _) => seqM(elms map {
+          checkPats(_, root)
+        }).map(const(tast))
+        case Expression.VectorNew(elm, _, _, _, _) =>
+          for {
+            _ <- checkPats(elm, root)
+          } yield tast
+        case Expression.VectorLoad(base, _, _, _, _) =>
+          for {
+            _ <- checkPats(base, root)
+          } yield tast
+        case Expression.VectorStore(base, _, elm, _, _, _) =>
+          for {
+            _ <- checkPats(base, root)
+            _ <- checkPats(elm, root)
+          } yield tast
+        case Expression.VectorLength(base, _, _, _) =>
+          for {
+           _ <- checkPats(base, root)
+          } yield tast
+        case Expression.VectorSlice(base, _, endIndex, _, _, _) =>
+          for {
+            _ <- checkPats(base, root)
+            _ <- checkPats(endIndex, root)
+          } yield tast
         case Expression.Ref(exp, _, _, _) =>
           checkPats(exp, root).map(const(tast))
         case Expression.Deref(exp, _, _, _) =>
@@ -559,6 +608,9 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
       case Type.Ref => 0
       case Type.Arrow(length) => length
       case Type.Array => 1
+      case Type.Vector => 2
+      case Type.Zero => 0
+      case Type.Succ(n, t) => 2
       case Type.Tuple(length) => length
       case Type.Enum(sym, kind) => 0
       case Type.Apply(tpe1, tpe2) => countTypeArgs(tpe1)
