@@ -1,11 +1,10 @@
 
-def f(): Int = {
-  let x = unique [1, 2, 3];
-  //let _ = x[0] = 2;
-  let a = [x, x, x];
-  1
-  //x[0]
-}
+def f(): Array[Int] = {
+   let x = unique [1, 2];
+   let b = [x, x];
+   x
+   //let a = [x, x];
+ }
 
 
 /*

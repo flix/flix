@@ -968,13 +968,13 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
 
         case ResolvedAst.Expression.Unique(exp, tvar, loc) =>
           //
-          // exp : t
+          // unique exp : t
           // -----------
-          // exp : t
+          // unique exp : t
           //
           for (
-            tpe <- visitExp(exp);
-            resultType <- unifyM(tvar, tpe, loc)
+            baseType <- visitExp(exp);
+            resultType <- unifyM(tvar, baseType, loc)
           ) yield resultType
 
         /*
