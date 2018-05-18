@@ -39,7 +39,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
   /**
     * Generates documentation for the given program `p`.
     */
-  def run(root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, CompilationError] = {
+  def run(root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, CompilationError] = flix.phase("Documentor") {
     // Check whether to generate documentation.
     if (flix.options.documentor) {
       // Collect the definitions.

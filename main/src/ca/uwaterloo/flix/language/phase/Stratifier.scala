@@ -48,7 +48,7 @@ object Stratifier extends Phase[TypedAst.Root, TypedAst.Root] {
   /**
     * Returns a stratified version of the given AST `root`.
     */
-  def run(root: Root)(implicit flix: Flix): Validation[TypedAst.Root, CompilationError] = {
+  def run(root: Root)(implicit flix: Flix): Validation[TypedAst.Root, CompilationError] = flix.phase("Stratifier") {
     val constraints = root.strata.head.constraints
     val stratified = stratify(constraints, root.tables.keys.toList)
 

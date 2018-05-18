@@ -329,7 +329,7 @@ class RestServer(solver: Solver)(implicit flix: Flix) {
     */
   class GetCompilerPhasePerformance extends JsonHandler {
     def json: JValue = JArray(
-      flix.timers.toList.map {
+      flix.phaseTimers.toList.map {
         case phase =>
           val name = phase.phase
           val time = phase.time

@@ -104,7 +104,7 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
   /**
     * Returns an error message if a pattern match is not exhaustive
     */
-  def run(root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, CompilationError] = flix.phase("PatMatch") {
+  def run(root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, CompilationError] = flix.phase("PatternExhaustiveness") {
     implicit val _ = flix.genSym
 
     for {
