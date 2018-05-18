@@ -145,7 +145,7 @@ object ClosureConv {
       Expression.Tuple(elms.map(visitExp), tpe, loc)
 
     case Expression.ArrayLit(elms, tpe, loc) =>
-      Expression.ArrayLit(elms.map(convert), tpe, loc)
+      Expression.ArrayLit(elms.map(visitExp), tpe, loc)
 
     case Expression.ArrayNew(elm, len, tpe, loc) =>
       val e1 = visitExp(elm)
