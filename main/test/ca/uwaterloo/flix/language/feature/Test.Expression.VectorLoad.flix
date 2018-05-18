@@ -119,15 +119,7 @@ def testVectorLoad39(): Int = let x = [|[1, 2], [3, 4]|]; x[|0|][0]
 def testVectorLoad40(): (Int, Int) = let x = [|(1, 2), (3, 4)|]; x[|0|]
 
 @test
-def testVectorLoad41(): Color = let x = [|[Color.Red, Color.Blue, Color.Green], [Color.Red, Color.Blue, Color.Red, Color.Green]|]; x[|1|][2]
-
-enum Color {
-   case Red,
-   case Blue,
-   case Green
-}
-
-
+def testVectorLoad41(): Option[Int] = let x = [|[Some(1), Some(2), Some(3)], [Some(4), Some(5), None, None]|]; x[|1|][2]
 
 
 

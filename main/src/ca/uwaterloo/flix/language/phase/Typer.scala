@@ -767,18 +767,18 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           //  ------------------------
           //  [e1,...,en] : Array[t]
           //
-              if(elms.isEmpty){
-                for (
-                  resultType <- unifyM(tvar, Type.mkArray(Type.freshTypeVar()), loc)
-                ) yield resultType
-              }
-              else{
-                for (
-                  elementsTypes <- seqM(elms.map(visitExp));
-                  elementType <- unifyM(elementsTypes, loc);
-                  resultType <- unifyM(tvar, Type.mkArray(elementType), loc)
-                ) yield resultType
-              }
+          if(elms.isEmpty){
+            for (
+              resultType <- unifyM(tvar, Type.mkArray(Type.freshTypeVar()), loc)
+              ) yield resultType
+          }
+          else {
+            for (
+              elementsTypes <- seqM(elms.map(visitExp));
+              elementType <- unifyM(elementsTypes, loc);
+              resultType <- unifyM(tvar, Type.mkArray(elementType), loc)
+            ) yield resultType
+          }
 
           /*
            * ArrayNew expression.
@@ -867,9 +867,9 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
 
         case ResolvedAst.Expression.VectorLit(elms, tvar, loc) =>
           //
-          // elm1: t ...  elmn: t  n: Int
+          // elm1: t ...  elm_len: t  len: Succ(n, Zero)
           // ---------------------------
-          // [|elm1,...,elmn|] : Vector[t, n]
+          // [|elm1,...,elm_len|] : Vector[t, len]
           //
           if(elms.isEmpty){
             for (
@@ -886,9 +886,9 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
 
         case ResolvedAst.Expression.VectorNew(elm, len, tvar, loc) =>
           //
-          // elm: t    n: Nat
+          // elm: t    len: Succ(n, Zero)
           // --------------------------
-          // [|elm ; n |] : Vector[t, n]
+          // [|elm ; len |] : Vector[t, len]
           //
 
           for (
@@ -898,43 +898,43 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
 
         case ResolvedAst.Expression.VectorLoad(base, index, tvar, loc) =>
           //
-          //  base : Vector[t, n1]   index: n2   n1: Int n2: Int
-          //  -------------------------------------------------------
+          //  base : Vector[t, len1]   index: len2   len1: Succ(n1, Zero) len2: Succ(n2, Var)
+          //  -------------------------------------------------------------------------------
           //  base[|index|] : t
           //
-          val freshVar = Type.freshTypeVar()
+          val freshElementVar = Type.freshTypeVar()
           for (
             baseType <- visitExp(base);
-            resultType <- unifyM(baseType, Type.mkVector(tvar, Type.Succ(index, freshVar)), loc)
+            resultType <- unifyM(baseType, Type.mkVector(tvar, Type.Succ(index, freshElementVar)), loc)
           ) yield tvar
 
         case ResolvedAst.Expression.VectorStore(base, index, elm, tvar, loc) =>
           //
-          //  base : Vector[t, n1]   index: n2   elm: t    n1: Int  n2: Int
-          //  ---------------------------------------------------------------
+          //  base : Vector[t, len1]   index: len2   elm: t    len1: Succ(n1, Zero)  len2: Succ(n2, Var)
+          //  ------------------------------------------------------------------------------------------
           //  base[|index|] = elm : Unit
           //
-          val freshVar = Type.freshTypeVar()
+          val freshElementVar = Type.freshTypeVar()
           val elmVar = Type.freshTypeVar()
           for (
-            recievedBaseType <- visitExp(base);
+            baseType <- visitExp(base);
             recievedObjectType <- visitExp(elm);
-            vectorType <- unifyM(recievedBaseType, Type.mkVector(elmVar, Type.Succ(index, freshVar)), loc);
+            vectorType <- unifyM(baseType, Type.mkVector(elmVar, Type.Succ(index, freshElementVar)), loc);
             objectType <- unifyM(recievedObjectType, elmVar, loc);
             resultType <- unifyM(tvar, Type.Unit, loc)
           ) yield resultType
 
         case ResolvedAst.Expression.VectorLength(base, tvar, loc) =>
           //
-          // base: t  n: Int
-          // -------------
-          // base[|n|] : Int
+          // base: Vector[t, len1]   index: len2   len1: Succ(n1, Zero)  len2: Succ(n2, Var)
+          // ----------------------------------------------------------------------------------
+          // base[|index|] : Int
           //
           val freshResultType = Type.freshTypeVar()
-          val freshVar = Type.freshTypeVar()
+          val freshLengthVar = Type.freshTypeVar()
           for(
             baseType <- visitExp(base);
-            _ <- unifyM(baseType, Type.mkVector(freshResultType, Type.Succ(0, freshVar)), loc);
+            _ <- unifyM(baseType, Type.mkVector(freshResultType, Type.Succ(0, freshLengthVar)), loc);
             resultType <- unifyM(tvar, Type.Int32, loc)
           ) yield resultType
 
@@ -949,28 +949,37 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
             resultType <- unifyM(tvar, baseType, loc)
           ) yield resultType
 
-        case ResolvedAst.Expression.VectorSlice(base, startIndex, endIndexOpt, tvar, loc) =>
+        case ResolvedAst.Expression.VectorSlice(base, startIndex, optEndIndex, tvar, loc) =>
           //
-          //  base : Vector[t, n]   startIndex : Int   endIndexOpt : Int   n: Int
-          //  -------------------------------------------------------
-          //  base[startIndex..endIndexOpt] : Vector[t, n]
+          //  Case None =
+          //  base : Vector[t, len2]   startIndex : len3
+          //  len1 : Succ(n1, Zero) len2 : Succ(n2, Zero) len3 : Succ(n3, Var)
+          //  --------------------------------------------------------------------------------------
+          //  base[|startIndex.. |] : Vector[t, len1]
           //
-          val freshIndexVar = Type.freshTypeVar()
-          val freshIndexVar2 = Type.freshTypeVar()
-          val freshTypeVar = Type.freshTypeVar()
-          endIndexOpt match {
+          //
+          //  Case Some =
+          //  base : Vector[t, len2]   startIndex : len3   endIndexOpt : len4
+          //  len1 : Succ(n1, Zero) len2 : Succ(n2, Zero) len3 : Succ(n3, Var) len 4 : Succ(n4, Var)
+          //  --------------------------------------------------------------------------------------
+          //  base[startIndex..endIndexOpt] : Vector[t, len1]
+          //
+          val freshEndIndex = Type.freshTypeVar()
+          val freshBeginIndex = Type.freshTypeVar()
+          val freshElmType = Type.freshTypeVar()
+          optEndIndex match {
             case None =>
               for(
                 baseType <- visitExp(base);
-                firstIndex <- unifyM(baseType, Type.mkVector(freshTypeVar, Type.Succ(startIndex, freshIndexVar)), loc);
-                resultType <- unifyM(tvar, Type.mkVector(freshTypeVar, freshIndexVar), loc)
+                firstIndex <- unifyM(baseType, Type.mkVector(freshElmType, Type.Succ(startIndex, freshEndIndex)), loc);
+                resultType <- unifyM(tvar, Type.mkVector(freshElmType, freshEndIndex), loc)
               ) yield resultType
             case Some(endIndex) =>
               for(
                 baseType <- visitExp(base);
-                firstIndex <- unifyM(baseType, Type.mkVector(freshTypeVar, Type.Succ(startIndex, freshIndexVar)), loc);
-                secondIndex <- unifyM(baseType, Type.mkVector(freshTypeVar, Type.Succ(endIndex-1, freshIndexVar2)), loc);
-                resultType <- unifyM(tvar, Type.mkVector(freshTypeVar, Type.Succ(endIndex-startIndex, Type.Zero)), loc)
+                firstIndex <- unifyM(baseType, Type.mkVector(freshElmType, Type.Succ(startIndex, freshBeginIndex)), loc);
+                secondIndex <- unifyM(baseType, Type.mkVector(freshElmType, Type.Succ(endIndex, freshEndIndex)), loc);
+                resultType <- unifyM(tvar, Type.mkVector(freshElmType, Type.Succ(endIndex-startIndex, Type.Zero)), loc)
               ) yield resultType
           }
 
@@ -1353,13 +1362,15 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           /*
            * VectorSlice expression.
            */
-        case ResolvedAst.Expression.VectorSlice(base, startIndex, endIndexOpt, tvar, loc) =>
+        case ResolvedAst.Expression.VectorSlice(base, startIndex, optEndIndex, tvar, loc) =>
           val e = visitExp(base, subst0)
-          endIndexOpt match {
+          optEndIndex match {
             case None =>
-              TypedAst.Expression.VectorSlice(e, startIndex, TypedAst.Expression.VectorLength(e, subst0(tvar), Eff.Bot, loc), subst0(tvar), Eff.Bot, loc)
+              val len = TypedAst.Expression.VectorLength(e, Type.Int32, Eff.Bot, loc)
+              TypedAst.Expression.VectorSlice(e, startIndex, len , subst0(tvar), Eff.Bot, loc)
             case Some(endIndex) =>
-              TypedAst.Expression.VectorSlice(e, startIndex, TypedAst.Expression.Int32(endIndex, loc), subst0(tvar), Eff.Bot, loc)
+              val len = TypedAst.Expression.Int32(endIndex, loc)
+              TypedAst.Expression.VectorSlice(e, startIndex, len, subst0(tvar), Eff.Bot, loc)
           }
           /*
           * Unique expression
