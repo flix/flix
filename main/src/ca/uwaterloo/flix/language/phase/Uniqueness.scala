@@ -6,13 +6,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.language.errors.UniquenessError
-import ca.uwaterloo.flix.language.errors.UniquenessError._
-import ca.uwaterloo.flix.runtime.shell.Command.TypeOf
-import ca.uwaterloo.flix.language.GenSym
-import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.ast.Symbol
-import ca.uwaterloo.flix.language.phase.jvm.JvmOps
-import ca.uwaterloo.flix.runtime.evaluator.SymVal
 
 
 object Uniqueness extends Phase[Root, Root]{
