@@ -657,25 +657,7 @@ object ParsedAst {
       * @param endIndex the end index
       * @param sp2 the position of the last character in the expression.
       */
-    case class ArraySlice(base: ParsedAst.Expression, beginIndex: ParsedAst.Expression, endIndex: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
-
-    /**
-      * ArraySliceNoEndIndex
-      *
-      * @param base the array.
-      * @param startIndex the start index.
-      * @param sp2 the position of the last character in the expression.
-      */
-    case class ArraySliceNoEndIndex(base: ParsedAst.Expression, startIndex: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
-
-    /**
-      * ArraySliceNoStartIndex
-      *
-      * @param base the array.
-      * @param endIndex the end index
-      * @param sp2 the position of the last character in the expression.
-      */
-    case class ArraySliceNoStartIndex(base: ParsedAst.Expression, endIndex: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class ArraySlice(base: ParsedAst.Expression, beginIndex: Option[ParsedAst.Expression], endIndex: Option[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * VecLit Expression.
