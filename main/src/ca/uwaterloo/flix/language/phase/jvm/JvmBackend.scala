@@ -187,9 +187,7 @@ object JvmBackend extends Phase[Root, Root] {
     //
     // Loads all the generated classes into the JVM and decorates the AST.
     //
-    flix.subphase("BootstrapClasses") {
-      Bootstrap.bootstrap(allClasses)
-    }
+    Bootstrap.bootstrap(allClasses)
 
     root.toSuccess
   }
