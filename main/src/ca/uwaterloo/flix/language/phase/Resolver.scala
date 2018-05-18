@@ -37,8 +37,6 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
 
     implicit val _ = flix.genSym
 
-    val b = System.nanoTime()
-
     val definitionsVal = prog0.defs.flatMap {
       case (ns0, defs) => defs.map {
         case (_, defn) => resolve(defn, ns0, prog0) map {
@@ -137,8 +135,6 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
       case (ns0, properties) => Properties.resolve(properties, ns0, prog0)
     }
 
-    val e = System.nanoTime() - b
-
     for {
       definitions <- seqM(definitionsVal)
       effs <- seqM(effsVal)
@@ -155,8 +151,8 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
       properties <- seqM(propertiesVal)
     } yield ResolvedAst.Program(
       definitions.toMap ++ named.toMap, effs.toMap, handlers.toMap, enums.toMap, classes.toMap, impls.toMap,
-      lattices.toMap, indexes.toMap, tables.toMap, constraints.flatten, properties.flatten, prog0.reachable,
-      prog0.time.copy(resolver = e))
+      lattices.toMap, indexes.toMap, tables.toMap, constraints.flatten, properties.flatten, prog0.reachable
+    )
   }
 
   object Constraints {

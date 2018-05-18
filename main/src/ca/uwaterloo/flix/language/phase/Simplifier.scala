@@ -38,11 +38,6 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
     implicit val _ = flix.genSym
 
     //
-    // Measure elapsed time.
-    //
-    val start = System.nanoTime()
-
-    //
     // A mutable map to contain fresh top-level definitions.
     //
     val toplevel: TopLevel = mutable.Map.empty
@@ -1078,10 +1073,8 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
     val properties = root.properties.map { p => visitProperty(p) }
     val specialOps = root.specialOps
     val reachable = root.reachable
-    val time = root.time
 
-    val elapsed = System.nanoTime() - start
-    SimplifiedAst.Root(defns ++ toplevel, effs, handlers, enums, lattices, collections, indexes, strata, properties, specialOps, reachable, time.copy(simplifier = elapsed)).toSuccess
+    SimplifiedAst.Root(defns ++ toplevel, effs, handlers, enums, lattices, collections, indexes, strata, properties, specialOps, reachable).toSuccess
   }
 
   /**

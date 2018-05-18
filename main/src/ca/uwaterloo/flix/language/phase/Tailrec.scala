@@ -43,12 +43,10 @@ object Tailrec extends Phase[Root, Root] {
     //
     // Rewrite tail calls.
     //
-    val b = System.nanoTime()
     val defns = root.defs.map {
       case (sym, defn) => sym -> tailrec(defn)
     }
-    val e = System.nanoTime() - b
-    root.copy(defs = defns, time = root.time.copy(tailrec = e)).toSuccess
+    root.copy(defs = defns).toSuccess
   }
 
   /**

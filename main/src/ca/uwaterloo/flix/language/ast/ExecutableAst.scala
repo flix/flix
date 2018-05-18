@@ -38,8 +38,7 @@ object ExecutableAst {
                   strata: List[ExecutableAst.Stratum],
                   properties: List[ExecutableAst.Property],
                   specialOps: Map[SpecialOperator, Map[Type, Symbol.DefnSym]],
-                  reachable: Set[Symbol.DefnSym],
-                  time: Time) extends ExecutableAst
+                  reachable: Set[Symbol.DefnSym]) extends ExecutableAst
 
   case class Constraint(cparams: List[ConstraintParam], head: Predicate.Head, body: List[Predicate.Body]) extends ExecutableAst {
 

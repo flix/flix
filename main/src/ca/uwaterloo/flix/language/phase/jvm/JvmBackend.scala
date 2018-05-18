@@ -47,11 +47,6 @@ object JvmBackend extends Phase[Root, Root] {
     }
 
     //
-    // Measure compilation time.
-    //
-    val t = System.nanoTime()
-
-    //
     // Put the AST root into implicit scope.
     //
     implicit val _ = root
@@ -196,12 +191,7 @@ object JvmBackend extends Phase[Root, Root] {
       Bootstrap.bootstrap(allClasses)
     }
 
-    //
-    // Measure elapsed time.
-    //
-    val e = System.nanoTime() - t
-
-    root.copy(time = root.time.copy(backend = e)).toSuccess
+    root.toSuccess
   }
 
 }

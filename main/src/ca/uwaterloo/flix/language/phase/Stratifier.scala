@@ -49,16 +49,12 @@ object Stratifier extends Phase[TypedAst.Root, TypedAst.Root] {
     * Returns a stratified version of the given AST `root`.
     */
   def run(root: Root)(implicit flix: Flix): Validation[TypedAst.Root, CompilationError] = {
-
-    val startTime = System.nanoTime()
-
     val constraints = root.strata.head.constraints
     val stratified = stratify(constraints, root.tables.keys.toList)
-    val duration = System.nanoTime() - startTime
 
     for {
       stratified <- stratified
-    } yield root.copy(strata = stratified).copy(time = root.time.copy(stratifier = duration))
+    } yield root.copy(strata = stratified)
   }
 
   /**

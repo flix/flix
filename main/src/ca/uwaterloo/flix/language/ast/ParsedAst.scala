@@ -31,7 +31,7 @@ object ParsedAst {
     * @param roots the roots of the abstract syntax trees in the program.
     * @param time  the time spent in each compiler phase.
     */
-  case class Program(roots: List[ParsedAst.Root], named: Map[Symbol.DefnSym, ParsedAst.Expression], time: Time) extends ParsedAst
+  case class Program(roots: List[ParsedAst.Root], named: Map[Symbol.DefnSym, ParsedAst.Expression]) extends ParsedAst
 
   /**
     * Root. A collection of imports and declarations.

@@ -38,8 +38,6 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
 
     implicit val genSym: GenSym = flix.genSym
 
-    val t = System.nanoTime()
-
     /**
       * Computes the function definitions eligible for inlining.
       */
@@ -57,8 +55,7 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         macc + (sym -> defn.copy(exp = newExp))
     }
 
-    val e = System.nanoTime() - t
-    root.copy(defs = inlinedDefinitions, time = root.time.copy(inliner = e)).toSuccess
+    root.copy(defs = inlinedDefinitions).toSuccess
   }
 
   /**

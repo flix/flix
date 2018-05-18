@@ -1033,7 +1033,6 @@ object Synthesize extends Phase[Root, Root] {
     //
     // Generate Special Operators.
     //
-    val t = System.nanoTime()
 
     /*
      * (a) Every type that appears as return type of some definition.
@@ -1110,11 +1109,8 @@ object Synthesize extends Phase[Root, Root] {
       SpecialOperator.ToString -> toStringOps
     )
 
-    // Elapsed time.
-    val e = System.nanoTime() - t
-
     // Reassemble the ast with the new definitions.
-    root.copy(defs = defs ++ newDefs, strata = strata, specialOps = specialOps, time = root.time.copy(synthesize = e)).toSuccess
+    root.copy(defs = defs ++ newDefs, strata = strata, specialOps = specialOps).toSuccess
   }
 
 }

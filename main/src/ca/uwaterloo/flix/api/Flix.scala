@@ -113,7 +113,7 @@ class Flix {
   /**
     * A map to track the time spent in each phase and sub-phase.
     */
-  private val timers = mutable.Map.empty[String, Phase]
+  val timers: ListBuffer[Phase] = ListBuffer.empty
 
   /**
     * The default assumed charset.
@@ -279,19 +279,19 @@ class Flix {
     case root => DeltaSolver.solve(root, options, path)(this)
   }
 
-  var currentPhase: String = _
+  var currentPhase: Phase = _
 
   @inline
   def phase[A](phase: String)(f: => A): A = {
 
-    currentPhase = phase
-    timers += (phase -> Phase(phase, 0, Nil))
+    currentPhase =  Phase(phase, 0, Nil)
 
     val t = System.nanoTime()
     val r = f
     val e = System.nanoTime() - t
 
-    timers += (phase -> timers(phase).copy(time = e))
+    currentPhase = currentPhase.copy(time = e)
+    timers += currentPhase
 
     if (options.verbosity == Verbosity.Verbose) {
       val d = new DurationFormatter(e)
@@ -301,7 +301,7 @@ class Flix {
       val timePart = f"${d.fmtMiliSeconds}%8s"
       Console.println(emojiPart + phasePart + timePart)
 
-      for ((subphase, e) <- timers(phase).subphases) {
+      for ((subphase, e) <- currentPhase.subphases) {
         val d = new DurationFormatter(e)
         val terminalCtx = TerminalContext.AnsiTerminal
         val emojiPart = terminalCtx.emitMagenta("    ")
@@ -322,9 +322,8 @@ class Flix {
     val r = f
     val e = System.nanoTime() - t
 
-    val phase = timers(currentPhase)
-    val subphases = (subphase, e) :: phase.subphases
-    timers += (currentPhase -> phase.copy(subphases = subphases))
+    val subphases = (subphase, e) :: currentPhase.subphases
+    currentPhase = currentPhase.copy(subphases = subphases)
 
     r
   }

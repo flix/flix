@@ -37,26 +37,6 @@ object Effects extends Phase[Root, Root] {
     // TODO: Effects currently disabled:
     return root.toSuccess
 
-    val timer = new Timer({
-      /**
-        * Infer effects for definitions.
-        */
-      val definitionsVal = root.defs.map {
-        case (sym, defn0) => infer(defn0, root) map {
-          case defn => sym -> defn
-        }
-      }
-
-      // TODO: [Effects]: Infer effects for constraints.
-
-      for {
-        definitions <- seqM(definitionsVal)
-      } yield {
-        root.copy(defs = definitions.toMap)
-      }
-    })
-
-    timer.getResult.map(root => root.copy(time = root.time.copy(effects = timer.getDuration)))
   }
 
   /**

@@ -30,7 +30,6 @@ import ca.uwaterloo.flix.runtime.datastore.ProxyObject
   * @param lattices    the lattice facts in the model.
   */
 class Model(root: Root,
-            time: Time,
             definitions: Map[Symbol.DefnSym, () => ProxyObject],
             relations: Map[Symbol.TableSym, Iterable[List[ProxyObject]]],
             lattices: Map[Symbol.TableSym, Iterable[(List[ProxyObject], ProxyObject)]])
@@ -58,11 +57,6 @@ class Model(root: Root,
       case (sym, _) => root.defs(sym).ann.isTest
     }
   }
-
-  /**
-    * Returns the time taken by each compiler phase.
-    */
-  def getTime: Time = time
 
   /**
     * Immediately evaluates the given fully-qualified name `fqn`.
