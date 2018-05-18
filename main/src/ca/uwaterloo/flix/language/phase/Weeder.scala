@@ -1683,7 +1683,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     */
   private def CheckNaturalNumber(elm: ParsedAst.Literal.Int32, sp1: SourcePosition, sp2: SourcePosition) : Int = {
   toInt32(elm.sign, elm.lit, mkSL(sp1, sp2)) match {
-       case Validation.Success(l, _) if l >= 0 => l
+       case Validation.Success(l) if l >= 0 => l
        // TODO Make Types.weed handle validation.
        case _ => throw InternalCompilerException("Vector length must be an integer of minimum 0.")
      }
