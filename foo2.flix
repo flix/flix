@@ -1,6 +1,4 @@
-def f() : Int = {
-  let x = unique [1, 2];
-  // let _ = x[0] = 3;
-  let y = x;
-  length[x]
+def f() : Array[Int] = {
+  let x = [1,2,3,4,5];
+  x[..]
 }

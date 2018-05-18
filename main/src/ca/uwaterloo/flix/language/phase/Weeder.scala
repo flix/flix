@@ -620,28 +620,27 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
             case b => WeededAst.Expression.ArrayLength(b, mkSL(sp1, sp2))
           }
 
-        case ParsedAst.Expression.ArraySlice(base, startIndex, endIndex, sp2) =>
+        case ParsedAst.Expression.ArraySlice(base, optStartIndex, optEndIndex, sp2) =>
           val sp1 = leftMostSourcePosition(base)
           val loc = mkSL(sp1, sp2)
 
-          @@(visit(base, unsafe), visit(startIndex, unsafe), visit(endIndex, unsafe)) map {
-            case(b, i1, i2) => WeededAst.Expression.ArraySlice(b, i1, i2, loc)
-          }
-
-        case ParsedAst.Expression.ArraySliceNoEndIndex(base, startIndex, sp2) =>
-          val sp1 = leftMostSourcePosition(base)
-          val loc = mkSL(sp1, sp2)
-
-          @@(visit(base, unsafe), visit(startIndex, unsafe)) map {
-            case(b, i) => WeededAst.Expression.ArraySlice(b, i, WeededAst.Expression.ArrayLength(b, loc), loc)
-          }
-
-        case ParsedAst.Expression.ArraySliceNoStartIndex(base, endIndex, sp2) =>
-          val sp1 = leftMostSourcePosition(base)
-          val loc = mkSL(sp1, sp2)
-
-          @@(visit(base, unsafe), visit(endIndex, unsafe)) map {
-            case(b, i) => WeededAst.Expression.ArraySlice(b, WeededAst.Expression.Int32(0, loc), i, loc)
+          (optStartIndex, optEndIndex) match {
+            case(None, None) =>
+              visit(base, unsafe) map {
+                case b => WeededAst.Expression.ArraySlice(b, WeededAst.Expression.Int32(0, loc), WeededAst.Expression.ArrayLength(b, loc), loc)
+              }
+            case(Some(startIndex), None) =>
+              @@(visit(base, unsafe), visit(startIndex, unsafe)) map {
+                case(b, i1) => WeededAst.Expression.ArraySlice(b, i1, WeededAst.Expression.ArrayLength(b, loc), loc)
+              }
+            case(None, Some(endIndex)) =>
+              @@(visit(base, unsafe), visit(endIndex, unsafe)) map {
+                case(b, i2) => WeededAst.Expression.ArraySlice(b, WeededAst.Expression.Int32(0, loc), i2, loc)
+              }
+            case(Some(startIndex), Some(endIndex)) =>
+              @@(visit(base, unsafe), visit(startIndex, unsafe), visit(endIndex, unsafe)) map {
+                case(b, i1, i2) => WeededAst.Expression.ArraySlice(b, i1, i2, loc)
+              }
           }
 
         case ParsedAst.Expression.VectorLit(sp1, elms, sp2) =>
@@ -1562,8 +1561,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.ArrayStore(base, _, _, _) => leftMostSourcePosition(base)
     case ParsedAst.Expression.ArrayLength(sp1, _, _) => sp1
     case ParsedAst.Expression.ArraySlice(base, _, _, _) => leftMostSourcePosition(base)
-    case ParsedAst.Expression.ArraySliceNoEndIndex(base, _, _) => leftMostSourcePosition(base)
-    case ParsedAst.Expression.ArraySliceNoStartIndex(base, _, _) => leftMostSourcePosition(base)
     case ParsedAst.Expression.VectorLit(sp1, _,_) => sp1
     case ParsedAst.Expression.VectorNew(sp1,_,_,_) => sp1
     case ParsedAst.Expression.VectorLoad(base,_,_) => leftMostSourcePosition(base)
