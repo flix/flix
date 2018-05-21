@@ -2,10 +2,11 @@
 
 HEAD:
     - Added completely new backend with full tail call support (thanks Ramin Zarifi)
+    - Added support for arrays and vectors.
     - Added pub keyword.
     - Added expression holes.
-    - Vastly improved repl. (--interactive).
     - Added full support for curried definitions.
+    - Vastly improved repl. (--interactive).
 
 Version 0.2:
     - Added stratified negation (thanks Jason Mittertreiner).
