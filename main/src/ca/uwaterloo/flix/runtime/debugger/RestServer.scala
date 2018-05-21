@@ -16,16 +16,16 @@
 
 package ca.uwaterloo.flix.runtime.debugger
 
-import java.io.{IOException, ByteArrayOutputStream}
+import java.io.{ByteArrayOutputStream, IOException}
 import java.net.{BindException, InetSocketAddress}
-import java.nio.file.{Paths, Files}
+import java.nio.file.{Files, Paths}
 import java.util.concurrent.Executors
 
-import ca.uwaterloo.flix.runtime.{Monitor, Solver}
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.runtime.datastore.{IndexedLattice, IndexedRelation}
-
-import com.sun.net.httpserver.{HttpServer, HttpExchange, HttpHandler}
-
+import ca.uwaterloo.flix.runtime.{Monitor, Solver}
+import ca.uwaterloo.flix.util.DurationFormatter
+import com.sun.net.httpserver.{HttpExchange, HttpHandler, HttpServer}
 import org.json4s.JsonAST._
 import org.json4s.native.JsonMethods
 
@@ -34,7 +34,7 @@ import org.json4s.native.JsonMethods
   *
   * Usage of this class may incur additional solver overhead.
   */
-class RestServer(solver: Solver) {
+class RestServer(solver: Solver)(implicit flix: Flix) {
 
   /**
     * The minimum port number to bind to.
@@ -328,30 +328,15 @@ class RestServer(solver: Solver) {
     * Returns compiler performance statistics.
     */
   class GetCompilerPhasePerformance extends JsonHandler {
-    def json: JValue = JArray(List(
-      JObject(List(JField("name", JString("Reader")), JField("time", JInt(solver.root.time.reader / 1000000)))),
-      JObject(List(JField("name", JString("Parser")), JField("time", JInt(solver.root.time.parser / 1000000)))),
-      JObject(List(JField("name", JString("Weeder")), JField("time", JInt(solver.root.time.weeder / 1000000)))),
-      JObject(List(JField("name", JString("Namer")), JField("time", JInt(solver.root.time.namer / 1000000)))),
-      JObject(List(JField("name", JString("Resolver")), JField("time", JInt(solver.root.time.resolver / 1000000)))),
-      JObject(List(JField("name", JString("Typer")), JField("time", JInt(solver.root.time.typer / 1000000)))),
-      JObject(List(JField("name", JString("Effects")), JField("time", JInt(solver.root.time.effects / 1000000)))),
-      JObject(List(JField("name", JString("PatMatch")), JField("time", JInt(solver.root.time.patmatch / 1000000)))),
-      JObject(List(JField("name", JString("Documentor")), JField("time", JInt(solver.root.time.documentor / 1000000)))),
-      JObject(List(JField("name", JString("Stratifier")), JField("time", JInt(solver.root.time.stratifier / 1000000)))),
-      JObject(List(JField("name", JString("Monomorph")), JField("time", JInt(solver.root.time.monomorph / 1000000)))),
-      JObject(List(JField("name", JString("Synthesize")), JField("time", JInt(solver.root.time.synthesize / 1000000)))),
-      JObject(List(JField("name", JString("PropertyGen")), JField("time", JInt(solver.root.time.propertyGen / 1000000)))),
-      JObject(List(JField("name", JString("Verifier")), JField("time", JInt(solver.root.time.verifier / 1000000)))),
-      JObject(List(JField("name", JString("LambdaLift")), JField("time", JInt(solver.root.time.lambdaLift / 1000000)))),
-      JObject(List(JField("name", JString("TailRec")), JField("time", JInt(solver.root.time.tailrec / 1000000)))),
-      JObject(List(JField("name", JString("Inliner")), JField("time", JInt(solver.root.time.inliner / 1000000)))),
-      JObject(List(JField("name", JString("Simplifier")), JField("time", JInt(solver.root.time.simplifier / 1000000)))),
-      JObject(List(JField("name", JString("Uncurrier")), JField("time", JInt(solver.root.time.uncurrier / 1000000)))),
-      JObject(List(JField("name", JString("TreeShaker")), JField("time", JInt(solver.root.time.treeshaker / 1000000)))),
-      JObject(List(JField("name", JString("VarNumbering")), JField("time", JInt(solver.root.time.varNumbering / 1000000)))),
-      JObject(List(JField("name", JString("Backend")), JField("time", JInt(solver.root.time.backend / 1000000))))
-    ))
+    def json: JValue = JArray(
+      flix.phaseTimers.toList.map {
+        case phase =>
+          val name = phase.phase
+          val time = phase.time
+          val timeInMilis = new DurationFormatter(time).miliseconds
+          JObject(List(JField("name", JString(name)), JField("time", JInt(timeInMilis.toInt))))
+      }
+    )
   }
 
   /**

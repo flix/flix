@@ -37,8 +37,7 @@ object ResolvedAst {
                      tables: Map[Symbol.TableSym, ResolvedAst.Table],
                      constraints: List[ResolvedAst.Constraint],
                      properties: List[ResolvedAst.Property],
-                     reachable: Set[Symbol.DefnSym],
-                     time: Time) extends ResolvedAst
+                     reachable: Set[Symbol.DefnSym]) extends ResolvedAst
 
   case class Constraint(cparams: List[ResolvedAst.ConstraintParam], head: ResolvedAst.Predicate.Head, body: List[ResolvedAst.Predicate.Body], loc: SourceLocation) extends ResolvedAst
 

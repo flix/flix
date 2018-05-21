@@ -810,7 +810,7 @@ class Solver(val root: ExecutableAst.Root, options: Options)(implicit flix: Flix
         macc + ((sym, table))
     }
 
-    model = new Model(root, root.time.copy(solver = elapsed), definitions, relations, lattices)
+    model = new Model(root, definitions, relations, lattices)
     model
   }
 

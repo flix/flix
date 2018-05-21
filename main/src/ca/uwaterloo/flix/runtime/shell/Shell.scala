@@ -783,14 +783,15 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
   class SolverThread()(implicit terminal: Terminal) extends Runnable {
     override def run(): Unit = {
       // compute the least model.
-      val timer = new Timer(flix.solve())
+      val executableRoot = flix.codeGen(root).get
+      val timer = new Timer(flix.solve(executableRoot))
       timer.getResult match {
         case Validation.Success(m) =>
           model = m
           if (main.nonEmpty) {
             val name = main.get
             val evalTimer = new Timer(m.evalToString(name))
-            terminal.writer().println(s"$name returned `${evalTimer.getResult}' (compile: ${timer.fmt}, execute: ${evalTimer.fmt})")
+            terminal.writer().println(s"$name returned `${evalTimer.getResult}' (compile: ${timer.getFormatter.fmt}, execute: ${evalTimer.getFormatter.fmt})")
           }
         case Validation.Failure(errors) =>
           for (error <- errors) {

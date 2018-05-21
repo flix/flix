@@ -132,8 +132,7 @@ object Verifier extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
      * Returns the original AST root if all properties verified successfully.
      */
     if (isSuccess(results)) {
-      val time = root.time.copy(verifier = totalElapsed(results))
-      root.copy(time = time).toSuccess
+      root.toSuccess
     } else {
       val errors = results.collect {
         case PropertyResult.Failure(_, _, _, _, error) => error

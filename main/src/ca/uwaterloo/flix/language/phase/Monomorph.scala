@@ -106,7 +106,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
   /**
     * Performs monomorphization of the given AST `root`.
     */
-  def run(root: Root)(implicit flix: Flix): Validation[TypedAst.Root, CompilationError] = {
+  def run(root: Root)(implicit flix: Flix): Validation[TypedAst.Root, CompilationError] = flix.phase("Monomorph") {
     implicit val _ = flix.genSym
 
     /**
@@ -579,9 +579,6 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
      * We can now use these helper functions to perform specialization of the whole program.
      */
 
-    // Start the timer.
-    val t = System.nanoTime()
-
     /*
      * A map used to collect specialized definitions, etc.
      */
@@ -680,15 +677,11 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
 
     }
 
-    // Calculate the elapsed time.
-    val e = System.nanoTime() - t
-
     // Reassemble the AST.
     root.copy(
       defs = specializedDefns.toMap,
       handlers = specializedHandlers.toMap,
-      properties = specializedProperties.toList,
-      time = root.time.copy(monomorph = e)
+      properties = specializedProperties.toList
     ).toSuccess
   }
 

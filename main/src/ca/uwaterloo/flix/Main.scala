@@ -86,7 +86,8 @@ object Main {
       timeout = cmdOpts.timeout,
       threads = if (cmdOpts.threads == -1) Options.Default.threads else cmdOpts.threads,
       verbosity = if (cmdOpts.verbose) Verbosity.Verbose else Verbosity.Normal,
-      verifier = cmdOpts.verifier
+      verifier = cmdOpts.verifier,
+      writeClassFiles = !cmdOpts.interactive
     )
 
     // check if running in interactive mode.
@@ -140,7 +141,7 @@ object Main {
           if (main.nonEmpty) {
             val name = main.get
             val evalTimer = new Timer(model.evalToString(name))
-            Console.println(s"$name returned `${evalTimer.getResult}' (compile: ${timer.fmt}, execute: ${evalTimer.fmt})")
+            Console.println(s"$name returned `${evalTimer.getResult}' (compile: ${timer.getFormatter.fmt}, execute: ${evalTimer.getFormatter.fmt})")
           }
 
           if (cmdOpts.benchmark) {

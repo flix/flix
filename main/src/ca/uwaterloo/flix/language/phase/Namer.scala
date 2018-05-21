@@ -39,10 +39,8 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
   /**
     * Introduces unique names for each syntactic entity in the given `program`.
     **/
-  def run(program: WeededAst.Program)(implicit flix: Flix): Validation[NamedAst.Program, NameError] = {
+  def run(program: WeededAst.Program)(implicit flix: Flix): Validation[NamedAst.Program, NameError] = flix.phase("Namer") {
     implicit val _ = flix.genSym
-
-    val b = System.nanoTime()
 
     // make an empty program to fold over.
     val prog0 = NamedAst.Program(
@@ -58,8 +56,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
       constraints = Map.empty,
       named = Map.empty,
       properties = Map.empty,
-      reachable = program.reachable,
-      time = program.time
+      reachable = program.reachable
     )
 
     // collect all the declarations.
@@ -75,12 +72,10 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
       case (sym, exp) => Expressions.namer(exp, Map.empty, Map.empty).map(e => sym -> e)
     })
 
-    // compute elapsed time.
-    val e = System.nanoTime() - b
-
     @@(result, named) map {
       // update elapsed time.
-      case (p, ne) => p.copy(named = ne.toMap, time = p.time.copy(namer = e))
+      case (p, ne) =>
+        p.copy(named = ne.toMap)
     }
   }
 

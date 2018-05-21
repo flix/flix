@@ -27,8 +27,9 @@ import ca.uwaterloo.flix.language.{CompilationError, GenSym}
 import ca.uwaterloo.flix.runtime.quickchecker.QuickChecker
 import ca.uwaterloo.flix.runtime.verifier.Verifier
 import ca.uwaterloo.flix.runtime.{DeltaSolver, Model, Solver}
-import ca.uwaterloo.flix.util.{LocalResource, Options, Validation}
 import ca.uwaterloo.flix.util.Validation._
+import ca.uwaterloo.flix.util._
+import ca.uwaterloo.flix.util.vt.TerminalContext
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
@@ -103,6 +104,21 @@ class Flix {
     "flix/io/Path.flix" -> LocalResource.get("/library/flix/io/Path.flix"),
 
   )
+
+  /**
+    * A case class to track the compile time spent in a phase and its sub-phases.
+    */
+  case class PhaseTime(phase: String, time: Long, subphases: List[(String, Long)])
+
+  /**
+    * A map to track the time spent in each phase and sub-phase.
+    */
+  val phaseTimers: ListBuffer[PhaseTime] = ListBuffer.empty
+
+  /**
+    * The current phase we are in. Initially null.
+    */
+  var currentPhase: PhaseTime = _
 
   /**
     * The default assumed charset.
@@ -266,6 +282,65 @@ class Flix {
     */
   def deltaSolve(path: Path): Validation[scala.Unit, CompilationError] = compile().map {
     case root => DeltaSolver.solve(root, options, path)(this)
+  }
+
+  /**
+    * Enters the phase with the given name.
+    */
+  def phase[A](phase: String)(f: => A): A = {
+    // Initialize the phase time object.
+    currentPhase = PhaseTime(phase, 0, Nil)
+
+    // Measure the execution time.
+    val t = System.nanoTime()
+    val r = f
+    val e = System.nanoTime() - t
+
+    // Update the phase time.
+    currentPhase = currentPhase.copy(time = e)
+
+    // And add it to the list of executed phases.
+    phaseTimers += currentPhase
+
+    // Print performance information if in verbose mode.
+    if (options.verbosity == Verbosity.Verbose) {
+      // Print information about the phase.
+      val d = new DurationFormatter(e)
+      val terminalCtx = TerminalContext.AnsiTerminal
+      val emojiPart = terminalCtx.emitBlue("✓ ")
+      val phasePart = terminalCtx.emitBlue(f"$phase%-40s")
+      val timePart = f"${d.fmtMiliSeconds}%8s"
+      Console.println(emojiPart + phasePart + timePart)
+
+      // Print information about each subphase.
+      for ((subphase, e) <- currentPhase.subphases) {
+        val d = new DurationFormatter(e)
+        val emojiPart = "    "
+        val phasePart = terminalCtx.emitMagenta(f"$subphase%-37s")
+        val timePart = f"(${d.fmtMiliSeconds}%8s)"
+        Console.println(emojiPart + phasePart + timePart)
+      }
+    }
+
+    // Return the result computed by the phase.
+    r
+  }
+
+  /**
+    * Enters the sub-phase with the given name.
+    */
+  def subphase[A](subphase: String)(f: => A): A = {
+    // Measure the execution time.
+    val t = System.nanoTime()
+    val r = f
+    val e = System.nanoTime() - t
+
+    // Update the phase with information about the subphase.
+    val subphases = (subphase, e) :: currentPhase.subphases
+    currentPhase = currentPhase.copy(subphases = subphases)
+
+    // Return the result computed by the subphase.
+    r
   }
 
   /**

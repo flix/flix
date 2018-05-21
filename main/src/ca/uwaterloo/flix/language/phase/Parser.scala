@@ -28,37 +28,31 @@ import scala.collection.immutable.Seq
 /**
   * A phase to transform source files into abstract syntax trees.
   */
-object Parser extends Phase[(List[Source], Long, Map[Symbol.DefnSym, String]), ParsedAst.Program] {
+object Parser extends Phase[(List[Source], Map[Symbol.DefnSym, String]), ParsedAst.Program] {
 
   /**
     * Parses the given source inputs into an abstract syntax tree.
     */
-  def run(arg: (List[Source], Long, Map[Symbol.DefnSym, String]))(implicit flix: Flix): Validation[ParsedAst.Program, CompilationError] = {
+  def run(arg: (List[Source], Map[Symbol.DefnSym, String]))(implicit flix: Flix): Validation[ParsedAst.Program, CompilationError] = flix.phase("Parser") {
     // The argument consists of a list of sources and the time spent by the reader.
-    val (sources, reader, namedExp) = arg
+    val (sources, namedExp) = arg
 
     // Retrieve the execution context.
     implicit val _ = flix.ec
 
-    val timer = new Timer({
-      // Parse each source in parallel.
-      val roots = @@(ParOps.parMap(parseRoot, sources))
+    // Parse each source in parallel.
+    val roots = @@(ParOps.parMap(parseRoot, sources))
 
-      // Parse each named expression.
-      val named = @@(namedExp.map {
-        case (sym, s) => parseExp(Source("<unknown>", s.toCharArray)).map(exp => (sym -> exp))
-      })
-
-      // Sequence and combine the ASTs into one abstract syntax tree.
-      @@(roots, named) map {
-        case (as, ne) => ParsedAst.Program(as, ne.toMap, Time.Default)
-      }
+    // Parse each named expression.
+    val named = @@(namedExp.map {
+      case (sym, s) => parseExp(Source("<unknown>", s.toCharArray)).map(exp => sym -> exp)
     })
 
-    // Measure the time spent in parsing.
-    timer.getResult.map {
-      case ast => ast.copy(time = ast.time.copy(reader = reader, parser = timer.getDuration))
+    // Sequence and combine the ASTs into one abstract syntax tree.
+    @@(roots, named) map {
+      case (as, ne) => ParsedAst.Program(as, ne.toMap)
     }
+
   }
 
   /**

@@ -35,10 +35,8 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
   /**
     * Performs lambda lifting on all definitions in the AST.
     */
-  def run(root: SimplifiedAst.Root)(implicit flix: Flix): Validation[SimplifiedAst.Root, CompilationError] = {
+  def run(root: SimplifiedAst.Root)(implicit flix: Flix): Validation[SimplifiedAst.Root, CompilationError] = flix.phase("LambdaLift") {
     implicit val _ = flix.genSym
-
-    val t = System.nanoTime()
 
     // A mutable map to hold lambdas that are lifted to the top level.
     val m: TopLevel = mutable.Map.empty
@@ -52,8 +50,7 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     val properties = root.properties.map(p => lift(p, m))
 
     // Return the updated AST root.
-    val e = System.nanoTime() - t
-    root.copy(defs = definitions ++ m, handlers = handlers, properties = properties, time = root.time.copy(lambdaLift = e)).toSuccess
+    root.copy(defs = definitions ++ m, handlers = handlers, properties = properties).toSuccess
   }
 
   /**

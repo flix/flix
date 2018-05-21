@@ -22,8 +22,8 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.ExecutableAst._
 import ca.uwaterloo.flix.language.phase.Phase
-import ca.uwaterloo.flix.util.{Evaluation, Validation}
 import ca.uwaterloo.flix.util.Validation._
+import ca.uwaterloo.flix.util.{Evaluation, Validation}
 
 object JvmBackend extends Phase[Root, Root] {
 
@@ -38,18 +38,13 @@ object JvmBackend extends Phase[Root, Root] {
   /**
     * Emits JVM bytecode for the given AST `root`.
     */
-  def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationError] = {
+  def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationError] = flix.phase("JvmBackend") {
     //
     // Immediately return if in interpreted mode.
     //
     if (flix.options.evaluation == Evaluation.Interpreted) {
       return root.toSuccess
     }
-
-    //
-    // Measure compilation time.
-    //
-    val t = System.nanoTime()
 
     //
     // Put the AST root into implicit scope.
@@ -180,10 +175,12 @@ object JvmBackend extends Phase[Root, Root] {
     //
     // Write each class (and interface) to disk.
     //
-    // NB: In test mode we skip writing the files to disk.
-    if (!flix.options.test) {
-      for ((jvmName, jvmClass) <- allClasses) {
-        JvmOps.writeClass(TargetDirectory, jvmClass)
+    // NB: In interactive and test mode we skip writing the files to disk.
+    if (flix.options.writeClassFiles && !flix.options.test) {
+      flix.subphase("WriteClasses") {
+        for ((jvmName, jvmClass) <- allClasses) {
+          JvmOps.writeClass(TargetDirectory, jvmClass)
+        }
       }
     }
 
@@ -192,12 +189,7 @@ object JvmBackend extends Phase[Root, Root] {
     //
     Bootstrap.bootstrap(allClasses)
 
-    //
-    // Measure elapsed time.
-    //
-    val e = System.nanoTime() - t
-
-    root.copy(time = root.time.copy(backend = e)).toSuccess
+    root.toSuccess
   }
 
 }

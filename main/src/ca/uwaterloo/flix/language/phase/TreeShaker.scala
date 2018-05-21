@@ -43,7 +43,7 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
   /**
     * Performs tree shaking on the given AST `root`.
     */
-  def run(root: SimplifiedAst.Root)(implicit flix: Flix): Validation[SimplifiedAst.Root, CompilationError] = {
+  def run(root: SimplifiedAst.Root)(implicit flix: Flix): Validation[SimplifiedAst.Root, CompilationError] = flix.phase("TreeShaker") {
     /**
       * A set used to collect the definition symbols of reachable functions.
       */
@@ -200,9 +200,6 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
      * We can now use these helper functions to perform tree shaking.
      */
 
-    // Start the timer.
-    val t = System.nanoTime()
-
     /*
      * Find reachable functions that:
      *
@@ -293,13 +290,7 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     // All reachable function should be live.
     // assert(reachableFunctions.size == liveDefs.size)
 
-    // Calculate the elapsed time.
-    val e = System.nanoTime() - t
-
     // Reassemble the AST.
-    root.copy(
-      defs = liveDefs,
-      time = root.time.copy(treeshaker = e)
-    ).toSuccess
+    root.copy(defs = liveDefs).toSuccess
   }
 }

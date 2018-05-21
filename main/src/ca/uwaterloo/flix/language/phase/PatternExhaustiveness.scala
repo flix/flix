@@ -104,16 +104,13 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
   /**
     * Returns an error message if a pattern match is not exhaustive
     */
-  def run(root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, CompilationError] = {
+  def run(root: TypedAst.Root)(implicit flix: Flix): Validation[TypedAst.Root, CompilationError] = flix.phase("PatternExhaustiveness") {
     implicit val _ = flix.genSym
-    val startTime = System.nanoTime()
 
     for {
       _ <- seqM(root.defs.map { case (_, v) => checkPats(v, root) })
     } yield {
-      val currentTime = System.nanoTime()
-      val time = root.time.copy(patmatch = currentTime - startTime)
-      root.copy(time = time)
+      root
     }
   }
 

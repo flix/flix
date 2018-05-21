@@ -43,7 +43,7 @@ object Uncurrier extends Phase[Root, Root] {
   /**
     * Introduces uncurried definitions where needed.
     */
-  def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationError] = {
+  def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationError] = flix.phase("Uncurrier") {
     // A mutable map to hold new top-level definitions.
     val newDefs: TopLevel = mutable.Map.empty
 

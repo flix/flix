@@ -31,16 +31,11 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
 
   type TopLevel = mutable.Map[Symbol.DefnSym, SimplifiedAst.Def]
 
-  def run(root: TypedAst.Root)(implicit flix: Flix): Validation[SimplifiedAst.Root, CompilationError] = {
+  def run(root: TypedAst.Root)(implicit flix: Flix): Validation[SimplifiedAst.Root, CompilationError] = flix.phase("Simplifier") {
     //
     // Put GenSym into the implicit scope.
     //
     implicit val _ = flix.genSym
-
-    //
-    // Measure elapsed time.
-    //
-    val start = System.nanoTime()
 
     //
     // A mutable map to contain fresh top-level definitions.
@@ -1122,10 +1117,8 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
     val properties = root.properties.map { p => visitProperty(p) }
     val specialOps = root.specialOps
     val reachable = root.reachable
-    val time = root.time
 
-    val elapsed = System.nanoTime() - start
-    SimplifiedAst.Root(defns ++ toplevel, effs, handlers, enums, lattices, collections, indexes, strata, properties, specialOps, reachable, time.copy(simplifier = elapsed)).toSuccess
+    SimplifiedAst.Root(defns ++ toplevel, effs, handlers, enums, lattices, collections, indexes, strata, properties, specialOps, reachable).toSuccess
   }
 
   /**

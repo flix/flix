@@ -22,7 +22,7 @@ trait WeededAst
 
 object WeededAst {
 
-  case class Program(roots: List[WeededAst.Root], named: Map[Symbol.DefnSym, WeededAst.Expression], reachable: Set[Symbol.DefnSym], time: Time) extends WeededAst
+  case class Program(roots: List[WeededAst.Root], named: Map[Symbol.DefnSym, WeededAst.Expression], reachable: Set[Symbol.DefnSym]) extends WeededAst
 
   case class Root(decls: List[WeededAst.Declaration]) extends WeededAst
 

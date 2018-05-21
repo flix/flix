@@ -14,7 +14,7 @@ object Bootstrap {
   /**
     * Loads all the generated classes into the JVM and decorates the AST.
     */
-  def bootstrap(classes: Map[JvmName, JvmClass])(implicit flix: Flix, root: Root): Unit = {
+  def bootstrap(classes: Map[JvmName, JvmClass])(implicit flix: Flix, root: Root): Unit = flix.subphase("BootstrapClasses") {
     //
     // Load each class into the JVM in a fresh class loader.
     //

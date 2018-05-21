@@ -34,8 +34,7 @@ object TypedAst {
                   strata: List[TypedAst.Stratum],
                   properties: List[TypedAst.Property],
                   specialOps: Map[SpecialOperator, Map[Type, Symbol.DefnSym]],
-                  reachable: Set[Symbol.DefnSym],
-                  time: Time) extends TypedAst
+                  reachable: Set[Symbol.DefnSym]) extends TypedAst
 
   case class Constraint(cparams: List[TypedAst.ConstraintParam], head: TypedAst.Predicate.Head, body: List[TypedAst.Predicate.Body], loc: SourceLocation) extends TypedAst
 

@@ -38,7 +38,7 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
   /**
     * Returns an optimized version of the given AST `root`.
     */
-  def run(root: SimplifiedAst.Root)(implicit flix: Flix): Validation[SimplifiedAst.Root, CompilationError] = {
+  def run(root: SimplifiedAst.Root)(implicit flix: Flix): Validation[SimplifiedAst.Root, CompilationError] = flix.phase("Optimizer") {
 
     /**
       * Performs intra-procedural optimization on the given expression `exp0` and substitution map `env0`.

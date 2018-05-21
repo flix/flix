@@ -32,10 +32,8 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
   /**
     * Type checks the given program.
     */
-  def run(program: ResolvedAst.Program)(implicit flix: Flix): Validation[TypedAst.Root, CompilationError] = {
+  def run(program: ResolvedAst.Program)(implicit flix: Flix): Validation[TypedAst.Root, CompilationError] = flix.phase("Typer") {
     implicit val _ = flix.genSym
-
-    val startTime = System.nanoTime()
 
     val result = for {
       defs <- Declarations.Definitions.typecheck(program)
@@ -50,9 +48,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     } yield {
       val strata = List(TypedAst.Stratum(constraints))
       val specialOps = Map.empty[SpecialOperator, Map[Type, Symbol.DefnSym]]
-      val currentTime = System.nanoTime()
-      val time = program.time.copy(typer = currentTime - startTime)
-      TypedAst.Root(defs, effs, handlers, enums, lattices, tables, indexes, strata, properties, specialOps, program.reachable, time)
+      TypedAst.Root(defs, effs, handlers, enums, lattices, tables, indexes, strata, properties, specialOps, program.reachable)
     }
 
     result match {

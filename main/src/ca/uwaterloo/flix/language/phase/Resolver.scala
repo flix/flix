@@ -33,11 +33,9 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
   /**
     * Performs name resolution on the given program `prog0`.
     */
-  def run(prog0: NamedAst.Program)(implicit flix: Flix): Validation[ResolvedAst.Program, ResolutionError] = {
+  def run(prog0: NamedAst.Program)(implicit flix: Flix): Validation[ResolvedAst.Program, ResolutionError] = flix.phase("Resolver") {
 
     implicit val _ = flix.genSym
-
-    val b = System.nanoTime()
 
     val definitionsVal = prog0.defs.flatMap {
       case (ns0, defs) => defs.map {
@@ -137,8 +135,6 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
       case (ns0, properties) => Properties.resolve(properties, ns0, prog0)
     }
 
-    val e = System.nanoTime() - b
-
     for {
       definitions <- seqM(definitionsVal)
       effs <- seqM(effsVal)
@@ -155,8 +151,8 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
       properties <- seqM(propertiesVal)
     } yield ResolvedAst.Program(
       definitions.toMap ++ named.toMap, effs.toMap, handlers.toMap, enums.toMap, classes.toMap, impls.toMap,
-      lattices.toMap, indexes.toMap, tables.toMap, constraints.flatten, properties.flatten, prog0.reachable,
-      prog0.time.copy(resolver = e))
+      lattices.toMap, indexes.toMap, tables.toMap, constraints.flatten, properties.flatten, prog0.reachable
+    )
   }
 
   object Constraints {

@@ -34,7 +34,7 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
     */
   private type TopLevel = mutable.Map[Symbol.DefnSym, ExecutableAst.Def]
 
-  def run(root: SimplifiedAst.Root)(implicit flix: Flix): Validation[ExecutableAst.Root, CompilationError] = {
+  def run(root: SimplifiedAst.Root)(implicit flix: Flix): Validation[ExecutableAst.Root, CompilationError] = flix.phase("CreateExecutableAst") {
     implicit val _ = flix.genSym
 
     // A mutable map to hold top-level definitions created by lifting lattice expressions.
@@ -61,9 +61,8 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
     val properties = root.properties.map(p => toExecutable(p))
     val specialOps = root.specialOps
     val reachable = root.reachable
-    val time = root.time
 
-    ExecutableAst.Root(constants ++ m, effs, handlers, enums, lattices, tables, indexes, strata, properties, specialOps, reachable, time).toSuccess
+    ExecutableAst.Root(constants ++ m, effs, handlers, enums, lattices, tables, indexes, strata, properties, specialOps, reachable).toSuccess
   }
 
   def toExecutable(sast: SimplifiedAst.Def): ExecutableAst.Def = {

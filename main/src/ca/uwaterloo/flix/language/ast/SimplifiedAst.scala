@@ -36,8 +36,7 @@ object SimplifiedAst {
                   strata: List[SimplifiedAst.Stratum],
                   properties: List[SimplifiedAst.Property],
                   specialOps: Map[SpecialOperator, Map[Type, Symbol.DefnSym]],
-                  reachable: Set[Symbol.DefnSym],
-                  time: Time) extends SimplifiedAst
+                  reachable: Set[Symbol.DefnSym]) extends SimplifiedAst
 
   case class Constraint(cparams: List[SimplifiedAst.ConstraintParam], head: SimplifiedAst.Predicate.Head, body: List[SimplifiedAst.Predicate.Body]) extends SimplifiedAst
 
