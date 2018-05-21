@@ -1,9 +1,8 @@
 
-def f(): Array[Int] = {
-   let x = unique [1, 2];
-   let b = [x, x];
-   x
-   //let a = [x, x];
+def f(): Int = {
+   let x = unique [1; 2];
+   let y = x;
+   x[0]
  }
 
 

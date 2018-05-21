@@ -33,6 +33,7 @@ object Uniqueness extends Phase[Root, Root]{
         exp1 match {
           case TypedAst.Expression.Var(sym2, tpe, eff, loc) => {
             if (dead.contains(sym2)){
+              //throw InternalCompilerException("The symbol is dead.")
               UniquenessError.DeadSymbol(loc, sym.loc).toFailure
             }
             visitExp(exp2, dead + sym2, uniqueSet)
@@ -84,6 +85,7 @@ object Uniqueness extends Phase[Root, Root]{
                 visitExp(exp2, dead, uniqueSet + sym)
               }
               case _ => UniquenessError.UniquePrimitiveType(loc).toFailure
+              //case _ => throw InternalCompilerException("The symbol is dead.")
             }
           }
 
@@ -179,6 +181,7 @@ object Uniqueness extends Phase[Root, Root]{
 
       case TypedAst.Expression.Var(sym, tpe, eff, loc) => {
         if (dead.contains(sym))
+          //throw InternalCompilerException("The symbol is dead.")
           return UniquenessError.DeadSymbol(loc, sym.loc).toFailure
 
         else if (uniqueSet.contains(sym))
@@ -200,7 +203,6 @@ object Uniqueness extends Phase[Root, Root]{
         case deadSet => visitExps(xs, deadSet, uniqueSet)
       }
     }
-
   }
 
   def expressionToSymbol(exp: TypedAst.Expression): Symbol.VarSym = {
