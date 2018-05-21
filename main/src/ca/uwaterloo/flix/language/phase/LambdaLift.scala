@@ -184,14 +184,29 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         Expression.Index(visitExp(exp), offset, tpe, loc)
       case Expression.Tuple(elms, tpe, loc) =>
         Expression.Tuple(elms.map(visitExp), tpe, loc)
-      case Expression.ArrayNew(elm, len, tpe, loc) =>
-        Expression.ArrayNew(visitExp(elm), len, tpe, loc)
       case Expression.ArrayLit(elms, tpe, loc) =>
         Expression.ArrayLit(elms.map(visitExp), tpe, loc)
+      case Expression.ArrayNew(elm, len, tpe, loc) =>
+        val e = visitExp(elm)
+        val ln = visitExp(len)
+        Expression.ArrayNew(e, ln, tpe, loc)
       case Expression.ArrayLoad(base, index, tpe, loc) =>
-        Expression.ArrayLoad(visitExp(base), visitExp(index), tpe, loc)
-      case Expression.ArrayStore(base, index, value, tpe, loc) =>
-        Expression.ArrayStore(visitExp(base), visitExp(index), visitExp(value), tpe, loc)
+        val b = visitExp(base)
+        val i = visitExp(index)
+        Expression.ArrayLoad(b, i, tpe, loc)
+      case Expression.ArrayStore(base, index, elm, tpe, loc) =>
+        val b = visitExp(base)
+        val i = visitExp(index)
+        val e = visitExp(elm)
+        Expression.ArrayStore(b, i, e, tpe, loc)
+      case Expression.ArrayLength(base, tpe, loc) =>
+        val b = visitExp(base)
+        Expression.ArrayLength(b, tpe, loc)
+      case Expression.ArraySlice(base, startIndex, endIndex, tpe, loc) =>
+        val b = visitExp(base)
+        val i1 = visitExp(startIndex)
+        val i2 = visitExp(endIndex)
+        Expression.ArraySlice(b, i1, i2, tpe, loc)
       case Expression.Ref(exp, tpe, loc) =>
         Expression.Ref(visitExp(exp), tpe, loc)
       case Expression.Deref(exp, tpe, loc) =>

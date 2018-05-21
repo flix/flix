@@ -750,24 +750,35 @@ object SymbolicEvaluator {
         }
 
       /**
-        * ArrayNew.
-        */
-      case Expression.ArrayNew(elm, _, _, _) => ??? // TODO
-
-      /**
         * ArrayLit.
         */
-      case Expression.ArrayLit(elms, _, _) => ??? // TODO
+      case Expression.ArrayLit(elms, tpe, loc) => ???
+
+      /**
+        * ArrayNew.
+        */
+      case Expression.ArrayNew(elm, len, tpe, loc) => ???
 
       /**
         * ArrayLoad.
         */
-      case Expression.ArrayLoad(base, index, _, _) => ??? // TODO
+      case Expression.ArrayLoad(base, index, tpe, loc) => ???
 
       /**
         * ArrayStore.
         */
-      case Expression.ArrayStore(base, index, value, _, _) => ??? // TODO
+      case Expression.ArrayStore(base, index, elm, tpe, loc) => ???
+
+      /**
+        * ArrayLength.
+        */
+      case Expression.ArrayLength(base, tpe, loc) => ???
+
+      /**
+        * ArraySlice.
+        */
+      case Expression.ArraySlice(base, beginIndex, endIndex, tpe, loc) => ???
+
 
       /**
         * Reference.
