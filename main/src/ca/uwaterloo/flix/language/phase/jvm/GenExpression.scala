@@ -701,19 +701,29 @@ object GenExpression {
       addSourceLine(visitor, loc)
       // We get the inner type of the array
       val jvmType = JvmOps.getErasedJvmType(ca.uwaterloo.flix.language.ast.Type.getArrayInnerType(tpe))
+      // Evaluating the value of the 'default element'
+      compileExpression(elm, visitor, currentClass, lenv0, entryPoint)
       // Evaluating the 'length' of the array
       compileExpression(len, visitor, currentClass, lenv0, entryPoint)
       // Instantiating a new array of type jvmType
       if(jvmType == JvmType.Object){ // Happens if the inner type is an object type
         visitor.visitTypeInsn(ANEWARRAY, "java/lang/Object")
-      }
-      else{ // Happens if the inner type is a primitive type
+      } else{ // Happens if the inner type is a primitive type
         visitor.visitIntInsn(NEWARRAY, AsmOps.getArrayTypeCode(jvmType))
       }
-      // Duplicates the 'array reference'
-      visitor.visitInsn(DUP)
-      // Evaluating the value of the 'default element'
-      compileExpression(elm, visitor, currentClass, lenv0, entryPoint)
+      if(jvmType == JvmType.PrimLong || jvmType == JvmType.PrimDouble){ // Happens if the inner type is Int64 or Float64
+        // Duplicates the 'array reference' three places down the stack
+        visitor.visitInsn(DUP_X2)
+        // Duplicates the 'array reference' three places down the stack
+        visitor.visitInsn(DUP_X2)
+        // Pops the 'ArrayRef' at the top of the stack
+        visitor.visitInsn(POP)
+      } else {
+        // Duplicates the 'array reference' two places down the stack
+        visitor.visitInsn(DUP_X1)
+        // Swaps the 'array reference' and 'default element'
+        visitor.visitInsn(SWAP)
+      }
       // We get the array fill type
       val arrayFillType = AsmOps.getArrayFillType(jvmType)
       // Invoking the method to fill the array with the default element
