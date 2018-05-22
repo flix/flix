@@ -11,8 +11,8 @@ trait UniquenessError extends CompilationError {
 }
 
 object UniquenessError {
-
-  case class DeadSymbol(loc1: SourceLocation, loc2: SourceLocation) extends UniquenessError {
+/*
+  case class DeadSymbol(loc1: SourceLocation, oc2: SourceLocation) extends UniquenessError {
     val source: Source = loc1.source
     val source2: Source = loc2.source
     val message: VirtualTerminal = {
@@ -20,9 +20,21 @@ object UniquenessError {
       vt << Line(kind, source.format) << NewLine
       vt << ">> Dead symbol. " << NewLine
       vt << NewLine
-      vt << Code(loc1, "The symbol is already dead.") << NewLine
+      vt << Code(loc1, "The symbol is invalid.") << NewLine
       vt << NewLine
       vt << Code(loc2, "The symbol was killed here.") << NewLine
+    }
+  }*/
+
+  case class DeadSymbol(loc1: SourceLocation) extends UniquenessError {
+    val source: Source = loc1.source
+    val message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Dead symbol. " << NewLine
+      vt << NewLine
+      vt << Code(loc1, "The symbol is dead.") << NewLine
+      vt << NewLine
     }
   }
 

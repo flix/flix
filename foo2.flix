@@ -1,10 +1,15 @@
 
 def f(): Int = {
    let x = unique [1; 2];
-   let y = x;
+   let y = [x, x];
    x[0]
  }
 
+/*
+def f(): Int = {
+  let x = unique 1;
+  2
+}*/
 
 /*
 def f() : Int = {

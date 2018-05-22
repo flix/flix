@@ -33,10 +33,10 @@ object Uniqueness extends Phase[Root, Root]{
         exp1 match {
           case TypedAst.Expression.Var(sym2, tpe, eff, loc) => {
             if (dead.contains(sym2)){
-              //throw InternalCompilerException("The symbol is dead.")
-              UniquenessError.DeadSymbol(loc, sym.loc).toFailure
+              UniquenessError.DeadSymbol(loc).toFailure
             }
-            visitExp(exp2, dead + sym2, uniqueSet)
+            else
+              visitExp(exp2, dead + sym2, uniqueSet)
           }
 
           case TypedAst.Expression.Unique(exp, tpe, eff, loc) => {
@@ -46,77 +46,79 @@ object Uniqueness extends Phase[Root, Root]{
               }
               case TypedAst.Expression.ArrayLit(elms, tpe, eff, loc) => {
                 if (!isPrimitive(tpe, false)){
-                  visitExps(elms, dead, uniqueSet + sym)
+                  val expList = elms :+ exp2
+                  visitExps(expList, dead, uniqueSet + sym)
                 }
                 else{
-                  dead.toSuccess
+                  visitExp(exp2, dead, uniqueSet)
                 }
-                visitExp(exp2, dead, uniqueSet)
-              }
+              } 
               case TypedAst.Expression.ArrayNew(elm, len, tpe, eff, loc) => {
-                visitExp(elm, dead, uniqueSet + sym)
-                visitExp(len, dead, uniqueSet + sym)
-                visitExp(exp2, dead, uniqueSet + sym)
+                val expList = List(elm, len, exp2)
+                visitExps(expList, dead, uniqueSet + sym)
               }
               case TypedAst.Expression.ArrayLoad(base, index, tpe, eff, loc) => {
-                visitExp(base, dead, uniqueSet + sym)
-                visitExp(index, dead, uniqueSet + sym)
-                visitExp(exp2, dead, uniqueSet + sym)
+                val expList = List(base, index, exp2)
+                visitExps(expList, dead, uniqueSet + sym)
               }
               case TypedAst.Expression.ArraySlice(base, beginIndex, endIndex, tpe, eff, loc) => {
-                visitExp(base, dead, uniqueSet + sym)
-                visitExp(beginIndex, dead, uniqueSet + sym)
-                visitExp(endIndex, dead, uniqueSet + sym)
-                visitExp(exp2, dead, uniqueSet + sym)
+                val expList = List(base, beginIndex, endIndex, exp2)
+                visitExps(expList, dead, uniqueSet + sym)
               }
               case TypedAst.Expression.VectorLit(elms, tpe, eff, loc) => {
-                visitExps(elms, dead, uniqueSet + sym)
+                val expList = elms :+ exp2
+                visitExps(expList, dead, uniqueSet + sym + sym)
+
               }
               case TypedAst.Expression.VectorNew(elm, len, tpe, eff, loc) => {
-                visitExp(elm, dead, uniqueSet + sym)
-                visitExp(exp2, dead, uniqueSet + sym)
+                val expList = List(elm, exp2)
+                visitExps(expList, dead, uniqueSet + sym)
               }
               case TypedAst.Expression.VectorLoad(base, index, tpe, eff, loc) => {
-                visitExp(base, dead, uniqueSet + sym)
-                visitExp(exp2, dead, uniqueSet + sym)
+                val expList = List(base, exp2)
+                visitExps(expList, dead, uniqueSet + sym)
               }
               case TypedAst.Expression.VectorSlice(base, beginIndex, endIndex, tpe, eff, loc) => {
-                visitExp(base, dead, uniqueSet + sym)
-                visitExp(exp2, dead, uniqueSet + sym)
+                val expList = List(base, exp2)
+                visitExps(expList, dead, uniqueSet + sym)
               }
               case _ => UniquenessError.UniquePrimitiveType(loc).toFailure
-              //case _ => throw InternalCompilerException("The symbol is dead.")
             }
           }
 
           case TypedAst.Expression.ArrayLit(elms, tpe, eff, loc) => {
             if (!isPrimitive(tpe, false)){
-              visitExps(elms, dead, uniqueSet)
+              val expList = elms :+ exp2
+              visitExps(expList, dead, uniqueSet + sym)
             }
             else{
-              dead.toSuccess
+              visitExp(exp2, dead, uniqueSet)
             }
-            visitExp(exp2, dead, uniqueSet)
           }
 
           case TypedAst.Expression.ArrayNew(elm, len, tpe, eff, loc) => {
-            visitExp(elm, dead, uniqueSet)
-            visitExp(len, dead, uniqueSet)
+            val expList = List(elm, len)
+            visitExps(expList, dead, uniqueSet)
           }
 
           case TypedAst.Expression.ArrayLoad(base, index, tpe, eff, loc) => {
-            visitExp(base, dead + expressionToSymbol(base), uniqueSet)
+            val expList = List(base, index)
+            visitExps(expList, dead, uniqueSet)
           }
 
           case TypedAst.Expression.ArraySlice(base, beginIndex, endIndex, tpe, eff, loc) => {
-            visitExp(base, dead, uniqueSet)
-            visitExp(beginIndex, dead, uniqueSet)
-            visitExp(endIndex, dead, uniqueSet)
-            visitExp(exp2, dead + expressionToSymbol(base), uniqueSet)
+            val expList = List(base, beginIndex, endIndex, exp2)
+            visitExps(expList, dead, uniqueSet)
           }
 
           case TypedAst.Expression.VectorLit(elms, tpe, eff, loc) => {
-            visitExps(elms, dead, uniqueSet)
+            if (!isPrimitive(tpe, false)){
+              val expList = elms :+ exp2
+              visitExps(expList, dead, uniqueSet + sym)
+            }
+            else{
+              visitExp(exp2, dead, uniqueSet)
+            }
           }
 
           case TypedAst.Expression.VectorNew(elm, len, tpe, eff, loc) => {
@@ -129,7 +131,6 @@ object Uniqueness extends Phase[Root, Root]{
 
           case TypedAst.Expression.VectorSlice(base, beginIndex, endIndex, tpe, eff, loc) => {
             visitExp(base, dead, uniqueSet)
-            visitExp(exp2, dead + expressionToSymbol(base), uniqueSet)
           }
 
           case _ => visitExp(exp2, dead, uniqueSet)
@@ -139,15 +140,6 @@ object Uniqueness extends Phase[Root, Root]{
       case TypedAst.Expression.Unique(exp, tpe, eff, loc) => {
         visitExp(exp, dead, uniqueSet + expressionToSymbol(exp))
       }
-/*
-      case TypedAst.Expression.ArrayLit(elms, tpe, eff, loc) => {
-        visitExps(elms, dead, uniqueSet, exp2)
-      }*/
-/*
-      case TypedAst.Expression.ArrayNew(elm, len, tpe, eff, loc) => {
-        visitExp(elm, dead, uniqueSet)
-        visitExp(len, dead, uniqueSet)
-      }*/
 
       case TypedAst.Expression.ArrayLoad(base, index, tpe, eff, loc) => {
         visitExp(base, dead, uniqueSet)
@@ -162,14 +154,6 @@ object Uniqueness extends Phase[Root, Root]{
         visitExp(beginIndex, dead, uniqueSet)
         visitExp(endIndex, dead, uniqueSet)
       }
-/*
-      case TypedAst.Expression.VectorLit(elms, tpe, eff, loc) => {
-        visitExps(elms, dead, uniqueSet)
-      }*/
-/*
-      case TypedAst.Expression.VectorNew(elm, len, tpe, eff, loc) => {
-        visitExp(elm, dead, uniqueSet)
-      }*/
 
       case TypedAst.Expression.VectorLoad(base, index, tpe, eff, loc) => {
         visitExp(base, dead, uniqueSet)
@@ -181,15 +165,11 @@ object Uniqueness extends Phase[Root, Root]{
 
       case TypedAst.Expression.Var(sym, tpe, eff, loc) => {
         if (dead.contains(sym))
-          //throw InternalCompilerException("The symbol is dead.")
-          return UniquenessError.DeadSymbol(loc, sym.loc).toFailure
-
+          UniquenessError.DeadSymbol(loc).toFailure
         else if (uniqueSet.contains(sym))
-          return (dead + sym).toSuccess
-
+          (dead + sym).toSuccess
         else
           dead.toSuccess
-
       }
 
       case _ => dead.toSuccess
