@@ -118,17 +118,11 @@ def testVectorstore39(): Unit = let x = [|[7 :: 10 :: Nil], [7 :: Nil]|]; x[|1|]
 @test
 def testVectorstore40(): Unit = let x = [| [(1, 2)], [(3, 4)] |]; x[|1|] = [(19, 10)]
 
-enum Color {
-   case Red,
-   case Blue,
-   case Green
-}
+@test
+def testVectorstore41(): Unit = let x = [|[None, Some(5)], [Some(55), Some(42)]|]; x[|1|] = [None, None]
 
 @test
-def testArrayStore41(): Unit = let x = [|[Color.Red, Color.Green], [Color.Blue, Color.Red]|]; x[|1|] = [Color.Green, Color.Green]
+def testVectorstore42(): Unit = let x = [|[|1, 2, 3|], [|1, 2, 3|], [|1, 2, 3|]|]; x[|2|][|2|] = 42
 
 @test
-def testArrayStore42(): Unit = let x = [|[|1, 2, 3|], [|1, 2, 3|], [|1, 2, 3|]|]; x[|2|][|2|] = 42
-
-@test
-def testArrayStore43(): Vector[(Int, Int), 2] = let x = [|(1, 2), (3, 4)|]; let _ = x[|0|] = (2, 3); x
+def testVectorstore43(): Vector[(Int, Int), 2] = let x = [|(1, 2), (3, 4)|]; let _ = x[|0|] = (2, 3); x

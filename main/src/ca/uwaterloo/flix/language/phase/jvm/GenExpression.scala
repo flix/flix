@@ -676,12 +676,11 @@ object GenExpression {
       // We push the 'length' of the array on top of stack
       compileInt(visitor, elms.length, isLong = false)
       // We get the inner type of the array
-      val jvmType = JvmOps.getErasedJvmType(JvmOps.getArrayInnerType(tpe))
+      val jvmType = JvmOps.getErasedJvmType(ca.uwaterloo.flix.language.ast.Type.getArrayInnerType(tpe))
       // Instantiating a new array of type jvmType
       if(jvmType == JvmType.Object){ // Happens if the inner type is an object type
         visitor.visitTypeInsn(ANEWARRAY, "java/lang/Object")
-      }
-      else{ // Happens if the inner type is a primitive type
+      } else{ // Happens if the inner type is a primitive type
         visitor.visitIntInsn(NEWARRAY, AsmOps.getArrayTypeCode(jvmType))
       }
       // For each element we generate code to store it into the array
@@ -701,7 +700,7 @@ object GenExpression {
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
       // We get the inner type of the array
-      val jvmType = JvmOps.getErasedJvmType(JvmOps.getArrayInnerType(tpe))
+      val jvmType = JvmOps.getErasedJvmType(ca.uwaterloo.flix.language.ast.Type.getArrayInnerType(tpe))
       // Evaluating the 'length' of the array
       compileExpression(len, visitor, currentClass, lenv0, entryPoint)
       // Instantiating a new array of type jvmType
@@ -728,7 +727,7 @@ object GenExpression {
       // Evaluating the 'base'
       compileExpression(base, visitor, currentClass, lenv0, entryPoint)
       // Cast the object to Array
-      visitor.visitTypeInsn(CHECKCAST, AsmOps.getCheckCastType(jvmType))
+      visitor.visitTypeInsn(CHECKCAST, AsmOps.arrayGetCheckCastType(jvmType))
       // Evaluating the 'index' to load from
       compileExpression(index, visitor, currentClass, lenv0, entryPoint)
       // Loads the 'element' at the given 'index' from the 'array'
@@ -743,7 +742,7 @@ object GenExpression {
       // Evaluating the 'base'
       compileExpression(base, visitor, currentClass, lenv0, entryPoint)
       // Cast the object to Array
-      visitor.visitTypeInsn(CHECKCAST, AsmOps.getCheckCastType(jvmType))
+      visitor.visitTypeInsn(CHECKCAST, AsmOps.arrayGetCheckCastType(jvmType))
       // Evaluating the 'index' to be stored in
       compileExpression(index, visitor, currentClass, lenv0, entryPoint)
       // Evaluating the 'element' to be stored
@@ -759,38 +758,37 @@ object GenExpression {
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
       // We get the inner type of the array
-      val jvmType = JvmOps.getErasedJvmType(JvmOps.getArrayInnerType(base.tpe))
+      val jvmType = JvmOps.getErasedJvmType(ca.uwaterloo.flix.language.ast.Type.getArrayInnerType(base.tpe))
       // Evaluating the 'base'
       compileExpression(base, visitor, currentClass, lenv0, entryPoint)
       // Cast the object to array
-      visitor.visitTypeInsn(CHECKCAST, AsmOps.getCheckCastType(jvmType))
+      visitor.visitTypeInsn(CHECKCAST, AsmOps.arrayGetCheckCastType(jvmType))
       // Pushes the 'length' of the array on top of stack
       visitor.visitInsn(ARRAYLENGTH)
 
-    case Expression.ArraySlice(base, beginIndex, endIndex, tpe, loc) =>
+    case Expression.ArraySlice(base, startIndex, endIndex, tpe, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
       // We get the inner type of the array
-      val jvmType = JvmOps.getErasedJvmType(JvmOps.getArrayInnerType(base.tpe))
+      val jvmType = JvmOps.getErasedJvmType(ca.uwaterloo.flix.language.ast.Type.getArrayInnerType(base.tpe))
       // Evaluating the 'base'
       compileExpression(base, visitor, currentClass, lenv0, entryPoint)
-      // Evaluating the 'beginIndex'
-      compileExpression(beginIndex, visitor, currentClass, lenv0, entryPoint)
+      // Evaluating the 'startIndex'
+      compileExpression(startIndex, visitor, currentClass, lenv0, entryPoint)
       // Evaluating the 'endIndex'
       compileExpression(endIndex, visitor, currentClass, lenv0, entryPoint)
-      // Swaps the beginIndex and 'endIndex'
+      // Swaps the startIndex and 'endIndex'
       visitor.visitInsn(SWAP)
-      // Duplicates the 'beginIndex' two places down the stack
+      // Duplicates the 'startIndex' two places down the stack
       visitor.visitInsn(DUP_X1)
-      // Subtracts the 'beginIndex' from the 'endIndex' (leaving the 'length' of the array)
+      // Subtracts the 'startIndex' from the 'endIndex' (leaving the 'length' of the array)
       visitor.visitInsn(ISUB)
       // Duplicates the 'length'
       visitor.visitInsn(DUP)
       // Instantiating a new array of type jvmType
       if(jvmType == JvmType.Object){ // Happens if the inner type is an object type
         visitor.visitTypeInsn(ANEWARRAY, "java/lang/Object")
-      }
-      else{ // Happens if the inner type is a primitive type
+      } else{ // Happens if the inner type is a primitive type
         visitor.visitIntInsn(NEWARRAY, AsmOps.getArrayTypeCode(jvmType))
       }
       // Duplicates the 'array reference' and 'length' 4 places down the stack

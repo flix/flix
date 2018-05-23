@@ -246,9 +246,9 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
       case SimplifiedAst.Expression.ArrayLength(base, tpe, loc) =>
         val b = toExecutable(base)
         ExecutableAst.Expression.ArrayLength(b, tpe, loc)
-      case SimplifiedAst.Expression.ArraySlice(base, beginIndex, endIndex, tpe, loc) =>
+      case SimplifiedAst.Expression.ArraySlice(base, startIndex, endIndex, tpe, loc) =>
         val b = toExecutable(base)
-        val i1 = toExecutable(beginIndex)
+        val i1 = toExecutable(startIndex)
         val i2 = toExecutable(endIndex)
         ExecutableAst.Expression.ArraySlice(b, i1, i2, tpe, loc)
       case SimplifiedAst.Expression.Ref(exp, tpe, loc) =>

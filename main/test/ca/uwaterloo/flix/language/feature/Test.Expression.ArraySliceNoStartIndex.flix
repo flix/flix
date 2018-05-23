@@ -75,3 +75,15 @@ def testArraySliceNoStartIndex25(): Array[Array[Int]] = let x = [[1, 2, 3, 4, 5]
 
 @test
 def testArraySliceNoStartIndex26(): Array[Array[Int]] = let x = [[1, 2, 3], [1, 2, 3], [1, 2, 3]]; x[..3]
+
+@test
+def testArraySliceNoStartIndex27(): Array[Vector[Int, 3]] = let x = [[|1, 2, 3|], [|1, 2, 3|] ]; x[0..]
+
+@test
+def testArraySliceNoStartIndex28(): Array[(List[Int])] = let x = [(1 :: Nil), (2 :: Nil)]; x[0..]
+
+@test
+def testArraySliceNoStartIndex29(): Array[(Bool, Bool)] = let x = [(true, true), (true, false), (true, true)]; x[0..]
+
+@test
+def testArraySliceNoStartIndex30(): Array[Option[Int]] = let x = [None, None, Some(1)]; x[0..]

@@ -76,7 +76,7 @@ object Unification {
       case Type.Arrow(l) => Type.Arrow(l)
       case Type.Tuple(l) => Type.Tuple(l)
       case Type.Zero => Type.Zero
-      case Type.Succ(n, t) => Type.Succ(n, t)
+      case Type.Succ(n, t) => Type.Succ(n, apply(t))
       case Type.Enum(name, kind) => Type.Enum(name, kind)
       case Type.Apply(t1, t2) => Type.Apply(apply(t1), apply(t2))
     }

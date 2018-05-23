@@ -79,3 +79,14 @@ def testVectorSliceNoStart26(): Vector[Vector[Int, 3], 3] = let x = [|[|1, 2, 3|
 @test
 def testVectorSliceNoStart27(): Vector[Int, 10] = let x = [|1, 2, 3, 4, 5, 6, 7, 8, 9, 10|]; x[|..10|]
 
+@test
+def testVectorSliceNoStart28(): Vector[Array[Int], 3] = let x = [|[2, 1], [2, 1], [2, 1]|]; x[|..3|]
+
+@test
+def testVectorSliceNoStart29(): Vector[List[(Int)], 3] = let x = [|(1 :: Nil), (2 :: Nil), (3 :: Nil)|]; x[|..3|]
+
+@test
+def testVectorSliceNoStart30(): Vector[(Int, Int), 3] = let x = [|(1, 2), (3, 4), (5, 6)|]; x[|..3|]
+
+@test
+def testVectorSliceNoStart31(): Vector[Option[Int], 3] = let x = [|Some(999), None, None|]; x[|..3|]

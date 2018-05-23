@@ -170,7 +170,7 @@ object ResolvedAst {
 
     case class VectorLength(base: ResolvedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class VectorSlice(base: ResolvedAst.Expression, startIndex: Int, optindex: Option[Int], tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class VectorSlice(base: ResolvedAst.Expression, startIndex: Int, optEndIndex: Option[Int], tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Unique(exp: ResolvedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 

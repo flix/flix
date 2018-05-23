@@ -103,14 +103,8 @@ def testVectorNew34(): Vector[(Str), 3] = [|("Hello") ; 3|]
 @test
 def testVectorNew35(): Vector[(List[Int]), 2] = [|(1 :: Nil) ; 2|]
 
-enum Color {
-   case Red,
-   case Blue,
-   case Green
-}
-
 @test
-def testVectorNew36(): Vector[Color, 3] = [|Color.Red ; 3|]
+def testVectorNew36(): Vector[Option[Int], 3] = [|Some(5); 3|]
 
 @test
 def testVectorNew37(): Vector[Array[Int], 1] = [|[3 ; 1]|]

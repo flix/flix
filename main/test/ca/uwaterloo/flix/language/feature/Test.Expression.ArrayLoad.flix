@@ -223,18 +223,11 @@ def testArrayLoad74(): Str = let x = [["World", "World", "World", "World"], ["He
 @test
 def testArrayLoad75(): Str = let x = [["World", "World", "World"], ["World", "World", "World"], ["World", "World", "World"]]; x[1][2]
 
-
-enum Color {
-   case Red,
-   case Blue,
-   case Green
-}
+@test
+def testArrayLoad77(): Option[Int] = let x = [Some(5), Some(6), Some(7)]; x[1]
 
 @test
-def testArrayLoad77(): Color = let x = [Color.Red, Color.Blue, Color.Green]; x[1]
-
-@test
-def testArrayLoad78(): Color = let x = [[Color.Red, Color.Blue, Color.Green], [Color.Red, Color.Blue, Color.Red, Color.Green]]; x[1][2]
+def testArrayLoad78(): Option[Int] = let x = [[None, Some(4), Some(999)], [Some(9), Some(5), None, None]]; x[1][2]
 
 @test
 def testArrayLoad79(): Int = let x = [[|1, 2|], [|3, 4|]]; x[0][|0|]
@@ -242,8 +235,5 @@ def testArrayLoad79(): Int = let x = [[|1, 2|], [|3, 4|]]; x[0][|0|]
 @test
 def testArrayLoad80(): Array[List[Int]] = let x = [[1 :: Nil], [3 :: Nil]]; x[0]
 
-
-
-
-
-
+@test
+def testArrayLoad81(): (Int, Int) = let x = [(1, 2), (3, 4)]; x[0]

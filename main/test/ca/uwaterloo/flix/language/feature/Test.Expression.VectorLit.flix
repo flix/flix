@@ -118,17 +118,11 @@ def testVectorLit39(): Vector[(List[Int]), 1] = [|(Nil)|]
 @test
 def testVectorLit40(): Vector[(List[Int]), 1] = [|(1 :: 2 :: 3 :: 4 :: Nil)|]
 
-enum Color {
-   case Red,
-   case Blue,
-   case Green
-}
+@test
+def testVectorLit41(): Vector[Option[Int], 1] = [|None|]
 
 @test
-def testVectorLit41(): Vector[Color, 1] = [|Color.Red|]
-
-@test
-def testVectorLit42(): Vector[Color, 3] = [|Color.Red, Color.Blue, Color.Green|]
+def testVectorLit42(): Vector[Option[Int], 3] = [|None, Some(1), Some(2)|]
 
 @test
 def testVectorLit43(): Vector[Array[Int], 2] = [|[2, 1], [2, 1]|]
