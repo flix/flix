@@ -261,3 +261,10 @@ def testArrayLit89(): Array[Option[Int]] = [Some(1), Some(2), None]
 
 @test
 def testArrayLit90(): Array[Vector[Int, 4]] = [[|1, 2, 3, 4|]]
+
+enum Color {
+    case Red,
+    case Green,
+    case Blue
+}
+
