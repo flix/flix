@@ -82,7 +82,7 @@ object Uniqueness extends Phase[Root, Root]{
                 val expList = List(base, exp2)
                 visitExps(expList, dead, uniqueSet + sym)
               }
-              case _ => UniquenessError.UniquePrimitiveType(loc).toFailure
+              case _ => visitExp(exp2, dead, uniqueSet)
             }
           }
 
@@ -142,7 +142,8 @@ object Uniqueness extends Phase[Root, Root]{
       }
 
       case TypedAst.Expression.ArrayLoad(base, index, tpe, eff, loc) => {
-        visitExp(base, dead, uniqueSet)
+        val expList = List(base, index)
+        visitExps(expList, dead, uniqueSet)
       }
 
       case TypedAst.Expression.ArrayLength(base, tpe, eff, loc) => {

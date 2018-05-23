@@ -1,15 +1,17 @@
-
-def f(): Int = {
+/*
+def f(): Array[Int] = {
    let x = unique [1; 2];
    let y = [x, x];
-   x[0]
- }
+   y[0]
+ }*/
 
-/*
+
 def f(): Int = {
-  let x = unique 1;
-  2
-}*/
+  let x = unique [1; 2];
+  let y = x;
+  x[0]
+}
+
 
 /*
 def f() : Int = {

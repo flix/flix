@@ -31,9 +31,9 @@ object UniquenessError {
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
-      vt << ">> Dead symbol. " << NewLine
+      vt << ">> Dead variable. " << NewLine
       vt << NewLine
-      vt << Code(loc1, "The symbol is dead.") << NewLine
+      vt << Code(loc1, "The variable is dead.") << NewLine
       vt << NewLine
     }
   }
