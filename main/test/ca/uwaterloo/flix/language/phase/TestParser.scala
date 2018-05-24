@@ -36,57 +36,6 @@ class TestParser extends FunSuite with TestUtils {
   // Declarations                                                            //
   /////////////////////////////////////////////////////////////////////////////
 
-
-  test("Declaration.Enum.01") {
-    val input =
-      """enum A {
-        |  case B
-        |}
-      """.stripMargin
-    run(input)
-  }
-
-  test("Declaration.Enum.02") {
-    val input =
-      """enum A {
-        |  case B(Int)
-        |}
-      """.stripMargin
-    run(input)
-  }
-
-  test("Declaration.Enum.03") {
-    val input =
-      """enum A {
-        |  case B,
-        |  case C(Int),
-        |  case D(Bool, Int, Str)
-        |}
-      """.stripMargin
-    run(input)
-  }
-
-  test("Declaration.Enum.04") {
-    val input =
-      """enum A[a] {
-        |  case B
-        |}
-      """.stripMargin
-    run(input)
-  }
-
-  test("Declaration.Enum.05") {
-    val input =
-      """enum A[a, b, c] {
-        |  case A(a),
-        |  case B(b),
-        |  case C(c),
-        |  case D(a, b, c)
-        |}
-      """.stripMargin
-    run(input)
-  }
-
   test("Declaration.Relation.01") {
     val input = "rel R(a: Int)"
     run(input)
