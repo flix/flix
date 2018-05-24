@@ -312,17 +312,21 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
         prog0.classes.get(ns0) match {
           case None =>
             // Case 1: The namespace does not yet exist. So the class does not yet exist.
-            val clazz = visitClassDecl(decl, ns0)
-            val classes = Map(ident.name -> clazz)
-            prog0.copy(classes = prog0.classes + (ns0 -> classes)).toSuccess
+            visitClassDecl(decl, ns0) map {
+              case clazz =>
+                val classes = Map(ident.name -> clazz)
+                prog0.copy(classes = prog0.classes + (ns0 -> classes))
+            }
           case Some(classes0) =>
             // Case 2: The namespace exists. Lookup the class.
             classes0.get(ident.name) match {
               case None =>
                 // Case 2.1: The class does not exist in the namespace. Update it.
-                val clazz = visitClassDecl(decl, ns0)
-                val classes = classes0 + (ident.name -> clazz)
-                prog0.copy(classes = prog0.classes + (ns0 -> classes)).toSuccess
+                visitClassDecl(decl, ns0) map {
+                  case clazz =>
+                    val classes = classes0 + (ident.name -> clazz)
+                    prog0.copy(classes = prog0.classes + (ns0 -> classes))
+                }
               case Some(clazz) =>
                 // Case 2.2: Duplicate class.
                 val loc1 = clazz.head.qname.ident.loc
@@ -434,7 +438,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
     /**
       * Performs naming on the given class declaration `decl0` in the given namespace `ns0`.
       */
-    def visitClassDecl(decl0: Declaration.Class, ns0: Name.NName)(implicit genSym: GenSym): NamedAst.Class = decl0 match {
+    def visitClassDecl(decl0: Declaration.Class, ns0: Name.NName)(implicit genSym: GenSym): Validation[NamedAst.Class, NameError] = decl0 match {
       case Declaration.Class(doc, mod, head0, body0, sigs0, laws0, loc) =>
         // Compute the free type variables in the head and body atoms.
         val freeTypeVars = freeVars(head0) ::: (body0 flatMap freeVars)
@@ -448,11 +452,19 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
         val quantifiers = tenv0.values.toList
         val head = visitSimpleClass(head0, ns0, tenv0)
         val body = body0.map(visitSimpleClass(_, ns0, tenv0))
-        val sigs = sigs0.foldLeft(Map.empty[String, NamedAst.Sig]) {
-          case (macc, sig) => macc + (sig.ident.name -> visitSig(sig, sym, tenv0, ns0))
+        val sigsVal = Validation.fold(sigs0, Map.empty[String, NamedAst.Sig]) {
+          case (macc, sig) =>
+            val name = sig.ident.name
+            macc.get(name) match {
+              case None => (macc + (sig.ident.name -> visitSig(sig, sym, tenv0, ns0))).toSuccess
+              case Some(otherSig) => DuplicateSig(name, otherSig.sym.loc, sig.ident.loc).toFailure
+            }
         }
         val laws = Nil
-        NamedAst.Class(doc, mod, sym, quantifiers, head, body, sigs, laws, loc)
+
+        sigsVal map {
+          case sigs => NamedAst.Class(doc, mod, sym, quantifiers, head, body, sigs, laws, loc)
+        }
     }
 
     /**

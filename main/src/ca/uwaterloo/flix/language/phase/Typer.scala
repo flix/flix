@@ -489,6 +489,13 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           unifyM(tvar, Scheme.instantiate(eff.sc), loc)
 
         /*
+         * Sig expression.
+         */
+        case ResolvedAst.Expression.Sig(sym, tvar, loc) =>
+          val sig = program.classes(sym.clazz)
+          ??? // TODO
+
+        /*
          * Hole expression.
          */
         case ResolvedAst.Expression.Hole(sym, tpe, loc) =>
@@ -1159,6 +1166,12 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
          */
         case ResolvedAst.Expression.Eff(sym, tvar, loc) =>
           TypedAst.Expression.Eff(sym, subst0(tvar), Eff.Bot, loc)
+
+        /*
+         * Eff expression.
+         */
+        case ResolvedAst.Expression.Sig(sym, tvar, loc) =>
+          ??? // TODO
 
         /*
          * Hole expression.
