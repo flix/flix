@@ -19,7 +19,7 @@ pub class JoinSemiLattice[a] {
     ///
     /// Returns the least upper bound of `x` and `y`.
     ///
-    def lub(x: a, y: a): a
+    def lubTODO(x: a, y: a): a
 
     // TODO: laws
 

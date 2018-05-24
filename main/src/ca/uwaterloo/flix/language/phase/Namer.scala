@@ -103,7 +103,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
         defns.get(ident.name) match {
           case None =>
             // Case 1: The definition does not already exist. Update it.
-            visitDef(decl, ns0) map {
+            visitDef(decl, Map.empty, ns0) map {
               case defn => prog0.copy(defs = prog0.defs + (ns0 -> (defns + (ident.name -> defn))))
             }
           case Some(defn) =>
@@ -343,7 +343,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
         val defsVal = Validation.fold(defs0, Map.empty[String, NamedAst.Def]) {
           case (macc, decl) =>
             val name = decl.ident.name
-            visitDef(decl, ns0) flatMap {
+            visitDef(decl, tenv0, ns0) flatMap {
               case defn => macc.get(name) match {
                 case None => (macc + (name -> defn)).toSuccess
                 case Some(otherDef) => NameError.DuplicateDef(name, otherDef.sym.loc, decl.ident.loc).toFailure
@@ -438,19 +438,19 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
     }
 
     /**
-      * Performs naming on the given definition declaration `decl0` in the given namespace `ns0`.
+      * Performs naming on the given definition declaration `decl0` with the given type environment `tenv0` in the given namespace `ns0`.
       */
-    def visitDef(decl0: WeededAst.Declaration.Def, ns0: Name.NName)(implicit genSym: GenSym): Validation[NamedAst.Def, NameError] = decl0 match {
+    def visitDef(decl0: WeededAst.Declaration.Def, tenv0: Map[String, Type.Var], ns0: Name.NName)(implicit genSym: GenSym): Validation[NamedAst.Def, NameError] = decl0 match {
       case WeededAst.Declaration.Def(doc, ann, mod, ident, tparams0, fparams0, exp, tpe, eff0, loc) =>
         val tparams = getTypeParams(tparams0)
-        val tenv0 = getTypeEnv(tparams)
-        val fparams = getFormalParams(fparams0, tenv0)
+        val tenv = tenv0 ++ getTypeEnv(tparams)
+        val fparams = getFormalParams(fparams0, tenv)
         val env0 = getVarEnv(fparams)
 
-        Expressions.namer(exp, env0, tenv0) map {
+        Expressions.namer(exp, env0, tenv) map {
           case e =>
             val sym = Symbol.mkDefnSym(ns0, ident)
-            val sc = getScheme(tparams, tpe, tenv0)
+            val sc = getScheme(tparams, tpe, tenv)
             NamedAst.Def(doc, ann, mod, sym, tparams, fparams, e, sc, eff0, loc)
         }
     }
@@ -1049,7 +1049,11 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
         */
       def visit(tpe: WeededAst.Type, env: Map[String, Type.Var]): NamedAst.Type = tpe match {
         case WeededAst.Type.Unit(loc) => NamedAst.Type.Unit(loc)
-        case WeededAst.Type.Var(ident, loc) => NamedAst.Type.Var(env(ident.name), loc)
+        case WeededAst.Type.Var(ident, loc) => env.get(ident.name) match {
+          case None =>
+            throw InternalCompilerException(s"Unknown type variable '${ident.name}' near: ${loc.format}")
+          case Some(tvar) => NamedAst.Type.Var(tvar, loc)
+        }
         case WeededAst.Type.Ambiguous(qname, loc) =>
           if (qname.isUnqualified)
             env.get(qname.ident.name) match {

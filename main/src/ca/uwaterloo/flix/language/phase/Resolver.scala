@@ -761,6 +761,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
             lookupResult match {
               case LookupResult.Def(sym) => ResolvedAst.Predicate.Body.Filter(sym, ts, loc)
               case LookupResult.Eff(sym) => throw InternalCompilerException(s"Unexpected effect here: ${sym.toString}")
+              case LookupResult.Sig(sym) => throw InternalCompilerException(s"Unexpected signature here: ${sym.toString}")
             }
           }
 

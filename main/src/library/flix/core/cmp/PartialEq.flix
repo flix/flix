@@ -68,7 +68,7 @@ impl PartialEq[Option[a]] <= PartialEq[a] {
 }
 
 impl PartialEq[List[a]] <= PartialEq[a] {
-    def eq(x: List[a], y: List[b]): Bool = match (x, y) with {
+    def eq(x: List[a], y: List[a]): Bool = match (x, y) with {
         case (Nil, Nil)             => true
         case (v1 :: xs, v2 :: ys)   => eq(v1, v2) && eq(xs, ys)
         case _                      => false
