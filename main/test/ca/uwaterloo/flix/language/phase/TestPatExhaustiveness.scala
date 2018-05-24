@@ -32,46 +32,6 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
     new Flix().setOptions(Options.DefaultTest.copy(core = core)).addStr(s).solve().get
   }
 
-  /////////////////////////////////////////////////////////////////////////////
-  // Patterns                                                                //
-  /////////////////////////////////////////////////////////////////////////////
-  test("Pattern.Wildcard.01") {
-    val input =
-      """def f(x: Int): Int = match x with {
-        |  case _ => 42
-        |}
-      """.stripMargin
-    run(input)
-  }
-
-  test("Pattern.Var.01") {
-    val input =
-      """def f(x: Int): Int = match x with {
-        |  case x => x
-        |}
-      """.stripMargin
-    run(input)
-  }
-
-  test("Pattern.Literal.Unit.01") {
-    val input =
-      """def f(x: Unit): Int = match x with {
-        |  case () => 42
-        |}
-      """.stripMargin
-    run(input)
-  }
-
-  test("Pattern.Literal.Bool.01") {
-    val input =
-      """def f(x: Bool): Int = match x with {
-        |  case true => 42
-        |  case false => 21
-        |}
-      """.stripMargin
-    run(input)
-  }
-
   test("Pattern.Literal.Char.01") {
     val input =
       """def f(x: Char): Int = match x with {
@@ -81,17 +41,6 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
         |}
       """.stripMargin
     expectError[NonExhaustiveMatchError](new Flix().addStr(input).compile())
-  }
-  test("Pattern.Literal.Char.02") {
-    val input =
-      """def f(x: Char): Int = match x with {
-        |  case 'a' => 1
-        |  case 'b' => 2
-        |  case 'c' => 3
-        |  case _ => 4
-        |}
-      """.stripMargin
-    run(input)
   }
 
   test("Pattern.Literal.Int32.01") {
@@ -127,110 +76,7 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
     expectError[NonExhaustiveMatchError](new Flix().addStr(input).compile())
   }
 
-  test("Pattern.Enum.01") {
-    val input =
-      """enum Color {
-        |  case Red,
-        |  case Blu
-        |}
-        |
-        |def f(x: Color): Int = match x with {
-        |  case Red => 1
-        |  case Blu => 2
-        |}
-      """.stripMargin
-    run(input)
-  }
-
-  test("Pattern.Enum.02") {
-    val input =
-      """enum Color {
-        |  case Red,
-        |  case Blu
-        |}
-        |
-        |def f(x: Color): Int = match x with {
-        |  case Color.Red => 1
-        |  case Color.Blu => 2
-        |}
-      """.stripMargin
-    run(input)
-  }
-
-  test("Pattern.Enum.03") {
-    val input =
-      """enum Shape {
-        |  case Circle(Int),
-        |  case Rectangle(Int, Int)
-        |}
-        |
-        |def f(x: Shape): Int = match x with {
-        |  case Circle(r) => r
-        |  case Rectangle(h, w) => h * w
-        |}
-      """.stripMargin
-    run(input)
-  }
-
-  test("Pattern.Enum.04") {
-    val input =
-      """enum Shape {
-        |  case Circle(Int),
-        |  case Rectangle(Int, Int)
-        |}
-        |
-        |def f(x: Shape): Int = match x with {
-        |  case Shape.Circle(r) => r
-        |  case Shape.Rectangle(h, w) => h * w
-        |}
-      """.stripMargin
-    run(input)
-  }
-
-  test("Pattern.Tuples.01") {
-    val input =
-      """enum Color {
-        |  case Red,
-        |  case Blu
-        |}
-        |
-        |def f(x: (Color, Color)): Int = match x with {
-        |  case (Color.Red, _) => 1
-        |  case (Color.Blu, _) => 2
-        |}
-      """.stripMargin
-    run(input)
-  }
-  test("Pattern.Tuples.02") {
-    val input =
-      """enum Color {
-        |  case Red,
-        |  case Blu
-        |}
-        |
-        |def f(x: (Color, Color)): Int = match x with {
-        |  case (_,Color.Red ) => 1
-        |  case (_, Color.Blu ) => 2
-        |}
-      """.stripMargin
-    run(input)
-  }
-  test("Pattern.Tuples.03") {
-    val input =
-      """enum Color {
-        |  case Red,
-        |  case Blu
-        |}
-        |
-        |def f(x: (Color, Color)): Int = match x with {
-        |  case (Color.Red ,Color.Red ) => 1
-        |  case (_, _) => 2
-        |}
-      """.stripMargin
-    run(input)
-  }
-
-  test("Pattern.Literal.Tuples.04") {
+  test("Pattern.Literal.Tuples.01") {
     val input =
       """enum Color {
         |  case Red,
@@ -245,7 +91,7 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
     expectError[NonExhaustiveMatchError](new Flix().addStr(input).compile())
   }
 
-  test("Pattern.Literal.Tuples.05") {
+  test("Pattern.Literal.Tuples.02") {
     val input =
       """def f(x: (Int8, (Str, Str))): Int = match x with {
         |  case (5i8, ("five", _)) => 5
@@ -256,7 +102,7 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
     expectError[NonExhaustiveMatchError](new Flix().addStr(input).compile())
   }
 
-  test("Pattern.Literal.Tuples.06") {
+  test("Pattern.Literal.Tuples.03") {
     val input =
       """def f(x: (Int, Int, Int, Int, Int)): Int = match x with {
         |  case (1,2,3,4,5) => 1
@@ -268,22 +114,6 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
         |}
       """.stripMargin
     expectError[NonExhaustiveMatchError](new Flix().addStr(input).compile())
-  }
-  test("Pattern.Literal.Tuples.07") {
-    val input =
-      """def f(x: (Int, Int, Int, Int, Int)): Int = match x with {
-        |  case (1,2,3,4,5) => 1
-        |  case (_,2,3,4,5) => 1
-        |  case (1,_,3,4,5) => 1
-        |  case (1,2,_,4,5) => 1
-        |  case (1,2,3,_,5) => 1
-        |  case (1,2,3,4,_) => 1
-        |  case (1,2,3,4,_) => 1
-        |  case (_,_,_,_,_) => 1
-        |}
-      """.stripMargin
-    val result = new Flix().addStr(input).compile()
-    result.get
   }
 
   test("Pattern.Literal.Lists.01") {
@@ -330,17 +160,6 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
   test("Expression.LetMatch01") {
     val input =
       """enum E {
-        |  case A(Bool)
-        |}
-        |
-        |def f(e: E): Bool = let E.A(b) = e; b
-      """.stripMargin
-    run(input)
-  }
-
-  test("Expression.LetMatch02") {
-    val input =
-      """enum E {
         |  case A(Bool, Char, Int8)
         |}
         |
@@ -349,14 +168,7 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
     expectError[NonExhaustiveMatchError](new Flix().addStr(input).compile())
   }
 
-  test("Expression.LetMatch03") {
-    val input =
-      """def f(e: (Int8, Int8)): Int8 = let (a,b) = e; a
-      """.stripMargin
-    run(input)
-  }
-
-  test("Expression.LetMatch04") {
+  test("Expression.LetMatch02") {
     val input =
       """def f(e: (Int8, Int8)): Int8 = let (a,1i8) = e; a
       """.stripMargin
@@ -406,26 +218,7 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
     expectError[NonExhaustiveMatchError](new Flix().addStr(input).compile())
   }
 
-  test("Pattern.Nested.02") {
-    val input =
-      """ enum IntList {
-        |   case Lst(Int32, IntList),
-        |   case Empty
-        |}
-        |def f(xs: IntList): Int32 = match xs with {
-        |  case Empty => 0
-        |  case Lst(y,ys) => match ys with {
-        |      case Empty => 0
-        |      case Lst(z,zs) => match zs with {
-        |           case Empty => 0
-        |           case _ => 1
-        |      }
-        |  }
-        |}
-      """.stripMargin
-    run(input)
-  }
-  test ("Pattern.Nested.03") {
+  test ("Pattern.Nested.02") {
     val input =
       """ def f(l: List[Int]): Int = let foo = 42 ;
         |     match l with {
@@ -435,18 +228,4 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
     expectError[NonExhaustiveMatchError](new Flix().addStr(input).compile())
   }
 
-  test ("Pattern.Nested.04") {
-    val input =
-      """ enum IntList {
-        |   case Lst(Int32, IntList),
-        |   case Empty
-        |}
-        | def f(l: IntList): Int = let foo = 42 ;
-        |     match l with {
-        |         case Empty => 42
-        |         case _   => 42
-        |     }
-      """.stripMargin
-    run(input)
-  }
 }

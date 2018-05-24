@@ -18,11 +18,11 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.api.{Flix, RuleException}
-import ca.uwaterloo.flix.language.errors.{NonExhaustiveMatchError, ResolutionError}
 import ca.uwaterloo.flix.runtime.Model
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.FunSuite
 
+// TODO: Remove TestParser.
 class TestParser extends FunSuite with TestUtils {
 
   /**
@@ -31,10 +31,6 @@ class TestParser extends FunSuite with TestUtils {
   def run(s: String, core: Boolean = true): Model = {
     new Flix().setOptions(Options.DefaultTest.copy(core = core)).addStr(s).solve().get
   }
-
-  /////////////////////////////////////////////////////////////////////////////
-  // Declarations                                                            //
-  /////////////////////////////////////////////////////////////////////////////
 
   test("Declaration.Rule.01") {
     val input =
@@ -107,107 +103,6 @@ class TestParser extends FunSuite with TestUtils {
     run(input)
   }
 
-  test("Expression.LetMatch.01") {
-    val input =
-      """
-        |def f(): Int =
-        |  let x = 42;
-        |    x
-        | """.stripMargin
-    run(input)
-  }
-
-  test("Expression.LetMatch.02") {
-    val input =
-      """
-        |def f(): Int =
-        |  let (x, y) = (42, 21);
-        |    x + y
-        | """.stripMargin
-    run(input)
-  }
-
-  test("Expression.LetMatch.03") {
-    val input =
-      """
-        |def f(): Int =
-        |  let x = 1;
-        |  let y = 2;
-        |  let z = 3;
-        |    x + y + z
-      """.stripMargin
-    run(input)
-  }
-
-  test("Expression.LetMatch.04") {
-    // Note: This is to test the performance of deeply nested lets.
-    val input =
-      """
-        |def f(): Int =
-        |    let x1 = 1;
-        |    let x2 = 1;
-        |    let x3 = 1;
-        |    let x4 = 1;
-        |    let x5 = 1;
-        |    let x6 = 1;
-        |    let x7 = 1;
-        |    let x8 = 1;
-        |    let x9 = 1;
-        |    let y1 = 1;
-        |    let y2 = 1;
-        |    let y3 = 1;
-        |    let y4 = 1;
-        |    let y5 = 1;
-        |    let y6 = 1;
-        |    let y7 = 1;
-        |    let y8 = 1;
-        |    let y9 = 1;
-        |    let z1 = 1;
-        |    let z2 = 1;
-        |    let z3 = 1;
-        |    let z4 = 1;
-        |    let z5 = 1;
-        |    let z6 = 1;
-        |    let z7 = 1;
-        |    let z8 = 1;
-        |    let z9 = 1;
-        |        1
-      """.stripMargin
-    run(input)
-  }
-
-  test("Expression.LetMatch.05") {
-    val input =
-      """
-        |def f(): Int =
-        |  let x = 42;
-        |    x
-        | """.stripMargin
-    run(input)
-  }
-
-  test("Expression.LetMatch.06") {
-    val input =
-      """
-        |def f(): Int =
-        |  let x = 42;
-        |  let y = 21;
-        |    x + y
-        | """.stripMargin
-    run(input)
-  }
-
-  test("Expression.LetMatch.07") {
-    val input =
-      """
-        |def f(): Int =
-        |  let x = 1;
-        |  let y = 2;
-        |  let z = 3;
-        |    x + y + z
-      """.stripMargin
-    run(input)
-  }
 
   test("Pattern.Enum.01") {
     val input =
