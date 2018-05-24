@@ -97,24 +97,14 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
       /*
        * Definition.
        */
-      case WeededAst.Declaration.Def(doc, ann, mod, ident, tparams0, fparams0, exp, tpe, eff0, loc) =>
+      case decl@WeededAst.Declaration.Def(doc, ann, mod, ident, tparams0, fparams0, exp, tpe, eff0, loc) =>
         // Check if the definition already exists.
         val defns = prog0.defs.getOrElse(ns0, Map.empty)
         defns.get(ident.name) match {
           case None =>
             // Case 1: The definition does not already exist. Update it.
-
-            val tparams = getTypeParams(tparams0)
-            val tenv0 = getTypeEnv(tparams)
-            val fparams = getFormalParams(fparams0, tenv0)
-            val env0 = getVarEnv(fparams)
-
-            Expressions.namer(exp, env0, tenv0) map {
-              case e =>
-                val sym = Symbol.mkDefnSym(ns0, ident)
-                val sc = getScheme(tparams, tpe, tenv0)
-                val defn = NamedAst.Def(doc, ann, mod, sym, tparams, fparams, e, sc, eff0, loc)
-                prog0.copy(defs = prog0.defs + (ns0 -> (defns + (ident.name -> defn))))
+            visitDef(decl, ns0) map {
+              case defn => prog0.copy(defs = prog0.defs + (ns0 -> (defns + (ident.name -> defn))))
             }
           case Some(defn) =>
             // Case 2: Duplicate definition.
@@ -433,6 +423,24 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
     def casesOf(cases: Map[String, WeededAst.Case], tenv0: Map[String, Type.Var])(implicit genSym: GenSym): Map[String, NamedAst.Case] = cases.foldLeft(Map.empty[String, NamedAst.Case]) {
       case (macc, (name, WeededAst.Case(enum, tag, tpe))) =>
         macc + (name -> NamedAst.Case(enum, tag, Types.namer(tpe, tenv0)))
+    }
+
+    /**
+      * Performs naming on the given definition declaration `decl0` in the given namespace `ns0`.
+      */
+    def visitDef(decl0: WeededAst.Declaration.Def, ns0: Name.NName)(implicit genSym: GenSym): Validation[NamedAst.Def, NameError] = decl0 match {
+      case WeededAst.Declaration.Def(doc, ann, mod, ident, tparams0, fparams0, exp, tpe, eff0, loc) =>
+        val tparams = getTypeParams(tparams0)
+        val tenv0 = getTypeEnv(tparams)
+        val fparams = getFormalParams(fparams0, tenv0)
+        val env0 = getVarEnv(fparams)
+
+        Expressions.namer(exp, env0, tenv0) map {
+          case e =>
+            val sym = Symbol.mkDefnSym(ns0, ident)
+            val sc = getScheme(tparams, tpe, tenv0)
+            NamedAst.Def(doc, ann, mod, sym, tparams, fparams, e, sc, eff0, loc)
+        }
     }
 
     /**
