@@ -848,7 +848,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Tag: Rule1[ParsedAst.Pattern.Tag] = rule {
-      SP ~ Names.QualifiedTag ~ optional(optWS ~ Pattern) ~ SP ~> ParsedAst.Pattern.Tag
+      SP ~ Names.QualifiedTag ~ optional(optWS ~ Tuple) ~ SP ~> ParsedAst.Pattern.Tag
     }
 
     def Tuple: Rule1[ParsedAst.Pattern.Tuple] = rule {
