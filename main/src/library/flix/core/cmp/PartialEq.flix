@@ -22,7 +22,7 @@ pub class PartialEq[a] {
     ///
     /// Returns `true` if `x` is equal to `y`.
     ///
-    def eq(x: a, y: a): Bool
+    def eqTODO(x: a, y: a): Bool
 
     ///
     /// Returns `true` if `x` is not equal to `y`.
