@@ -340,14 +340,26 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
         val body = body0.map(b => visitComplexClass(b, ns0, tenv0))
 
         // Perform naming on the definitions in the implementation.
-        val defs = Nil // TODO: must compute the defs.
+        val defsVal = Validation.fold(defs0, Map.empty[String, NamedAst.Def]) {
+          case (macc, decl) =>
+            val name = decl.ident.name
+            visitDef(decl, ns0) flatMap {
+              case defn => macc.get(name) match {
+                case None => (macc + (name -> defn)).toSuccess
+                case Some(otherDef) => NameError.DuplicateDef(name, otherDef.sym.loc, decl.ident.loc).toFailure
+              }
+            }
+        }
 
-        // Reassemble the implementation.
-        val impl = NamedAst.Impl(doc, mod, head, body, defs, loc)
+        defsVal map {
+          case defs =>
+            // Reassemble the implementation.
+            val impl = NamedAst.Impl(doc, mod, head, body, defs, loc)
 
-        // Reassemble the implementations in the namespace.
-        val implsInNs = impl :: prog0.impls.getOrElse(ns0, Nil)
-        prog0.copy(impls = prog0.impls + (ns0 -> implsInNs)).toSuccess
+            // Reassemble the implementations in the namespace.
+            val implsInNs = impl :: prog0.impls.getOrElse(ns0, Nil)
+            prog0.copy(impls = prog0.impls + (ns0 -> implsInNs))
+        }
 
       //
       // Disallow.
