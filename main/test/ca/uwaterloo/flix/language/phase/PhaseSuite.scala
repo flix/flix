@@ -22,7 +22,6 @@ class PhaseSuite extends Suites(
   new TestParser,
   new TestNamer,
   new TestResolver,
-  new TestTailrec,
   new TestUnification,
   new TestWeeder,
   new TestPatExhaustiveness,
