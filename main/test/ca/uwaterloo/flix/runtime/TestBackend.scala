@@ -22,7 +22,7 @@ import org.scalatest.FunSuite
 
 import scala.language.implicitConversions
 
-// TODO: Class is deprecated.
+// TODO: Remove TestBackend
 class TestBackend extends FunSuite {
 
   private class Tester(input: String, solve: Boolean = true, dumpBytecode: Boolean = false) {
@@ -145,15 +145,15 @@ class TestBackend extends FunSuite {
   }
 
   // TODO
-  ignore("Term.Head.Exp.09") {
-    val input =
-      """enum Foo { case Foo(Int,Str) }
-        |rel A(x: Foo)
-        |
-        |A(Foo.Foo(1, "one")).
-      """.stripMargin
-    val t = new Tester(input)
-  }
+//  ignore("Term.Head.Exp.09") {
+//    val input =
+//      """enum Foo { case Foo(Int,Str) }
+//        |rel A(x: Foo)
+//        |
+//        |A(Foo.Foo(1, "one")).
+//      """.stripMargin
+//    val t = new Tester(input)
+//  }
 
   test("Term.Head.Exp.10") {
     val input =
@@ -305,16 +305,16 @@ class TestBackend extends FunSuite {
   }
 
   // TODO
-  ignore("Term.Head.Apply.09") {
-    val input =
-      """enum Foo { case Foo(Int,Str) }
-        |rel A(x: Foo)
-        |def f(x: Str): Foo = Foo.Foo(1, x)
-        |
-        |A(f("one")).
-      """.stripMargin
-    val t = new Tester(input)
-  }
+//  ignore("Term.Head.Apply.09") {
+//    val input =
+//      """enum Foo { case Foo(Int,Str) }
+//        |rel A(x: Foo)
+//        |def f(x: Str): Foo = Foo.Foo(1, x)
+//        |
+//        |A(f("one")).
+//      """.stripMargin
+//    val t = new Tester(input)
+//  }
 
   test("Term.Head.Apply.10") {
     val input =

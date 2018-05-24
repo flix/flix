@@ -24,26 +24,6 @@ import scala.concurrent.duration.Duration
 
 class TestMain extends FunSuite {
 
-  test("p.flix") {
-    val args = Array("p.flix")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.files.exists(_.getName == "p.flix"))
-  }
-
-  test("p.flix.zip") {
-    val args = Array("p.flix.zip")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.files.exists(_.getName == "p.flix.zip"))
-  }
-
-  test("a.flix b.flix c.flix") {
-    val args = Array("a.flix", "b.flix", "c.flix")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.files.exists(_.getName == "a.flix"))
-    assert(opts.files.exists(_.getName == "b.flix"))
-    assert(opts.files.exists(_.getName == "c.flix"))
-  }
-
   test("--benchmark") {
     val args = Array("--benchmark", "p.flix")
     val opts = Main.parseCmdOpts(args).get
