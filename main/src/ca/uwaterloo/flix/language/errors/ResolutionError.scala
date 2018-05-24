@@ -35,22 +35,23 @@ object ResolutionError {
     *
     * @param qn   the ambiguous name.
     * @param ns   the current namespace.
-    * @param loc1 the location where the 1st name is defined.
-    * @param loc2 the location where the 2nd name is defined.
+    * @param locs the locations where the names are defined.
     * @param loc  the location where the error occurred.
     */
-  case class AmbiguousName(qn: Name.QName, ns: Name.NName, loc1: SourceLocation, loc2: SourceLocation, loc: SourceLocation) extends ResolutionError {
+  case class AmbiguousName(qn: Name.QName, ns: Name.NName, locs: List[SourceLocation], loc: SourceLocation) extends ResolutionError {
     val source: Source = loc.source
     val message: VirtualTerminal = {
       val vt = new VirtualTerminal
       vt << Line(kind, source.format) << NewLine
-      vt << ">> Ambiguous name '" << Red(qn.toString) << "' Name refers to both a definition and an effect." << NewLine
+      vt << ">> Ambiguous name '" << Red(qn.toString) << "' Name refers to multiple definitions/effects/signatures." << NewLine
       vt << NewLine
       vt << Code(loc, "ambiguous name.") << NewLine
       vt << NewLine
-      vt << Code(loc1, "the definition of the 1st match was here.") << NewLine
-      vt << NewLine
-      vt << Code(loc2, "the definition of the 2nd match was here.") << NewLine
+      for (loc1 <- locs) {
+        vt << Code(loc1, "definition/effect/signature matches.") << NewLine
+        vt << NewLine
+      }
+      vt
     }
   }
 

@@ -310,7 +310,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       def ImplBody: Rule1[Seq[ParsedAst.Declaration.Def]] = rule {
-        optional("{" ~ optWS ~ zeroOrMore(Declarations.Def).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}") ~> (
+        optional("{" ~ optWS ~ zeroOrMore(Declarations.Def).separatedBy(WS) ~ optWS ~ "}") ~> (
           (o: Option[Seq[ParsedAst.Declaration.Def]]) => o.getOrElse(Seq.empty))
       }
 

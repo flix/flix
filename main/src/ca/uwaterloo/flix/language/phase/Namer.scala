@@ -97,24 +97,14 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
       /*
        * Definition.
        */
-      case WeededAst.Declaration.Def(doc, ann, mod, ident, tparams0, fparams0, exp, tpe, eff0, loc) =>
+      case decl@WeededAst.Declaration.Def(doc, ann, mod, ident, tparams0, fparams0, exp, tpe, eff0, loc) =>
         // Check if the definition already exists.
         val defns = prog0.defs.getOrElse(ns0, Map.empty)
         defns.get(ident.name) match {
           case None =>
             // Case 1: The definition does not already exist. Update it.
-
-            val tparams = getTypeParams(tparams0)
-            val tenv0 = getTypeEnv(tparams)
-            val fparams = getFormalParams(fparams0, tenv0)
-            val env0 = getVarEnv(fparams)
-
-            Expressions.namer(exp, env0, tenv0) map {
-              case e =>
-                val sym = Symbol.mkDefnSym(ns0, ident)
-                val sc = getScheme(tparams, tpe, tenv0)
-                val defn = NamedAst.Def(doc, ann, mod, sym, tparams, fparams, e, sc, eff0, loc)
-                prog0.copy(defs = prog0.defs + (ns0 -> (defns + (ident.name -> defn))))
+            visitDef(decl, Map.empty, ns0) map {
+              case defn => prog0.copy(defs = prog0.defs + (ns0 -> (defns + (ident.name -> defn))))
             }
           case Some(defn) =>
             // Case 2: Duplicate definition.
@@ -312,17 +302,21 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
         prog0.classes.get(ns0) match {
           case None =>
             // Case 1: The namespace does not yet exist. So the class does not yet exist.
-            val clazz = visitClassDecl(decl, ns0)
-            val classes = Map(ident.name -> clazz)
-            prog0.copy(classes = prog0.classes + (ns0 -> classes)).toSuccess
+            visitClassDecl(decl, ns0) map {
+              case clazz =>
+                val classes = Map(ident.name -> clazz)
+                prog0.copy(classes = prog0.classes + (ns0 -> classes))
+            }
           case Some(classes0) =>
             // Case 2: The namespace exists. Lookup the class.
             classes0.get(ident.name) match {
               case None =>
                 // Case 2.1: The class does not exist in the namespace. Update it.
-                val clazz = visitClassDecl(decl, ns0)
-                val classes = classes0 + (ident.name -> clazz)
-                prog0.copy(classes = prog0.classes + (ns0 -> classes)).toSuccess
+                visitClassDecl(decl, ns0) map {
+                  case clazz =>
+                    val classes = classes0 + (ident.name -> clazz)
+                    prog0.copy(classes = prog0.classes + (ns0 -> classes))
+                }
               case Some(clazz) =>
                 // Case 2.2: Duplicate class.
                 val loc1 = clazz.head.qname.ident.loc
@@ -346,14 +340,26 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
         val body = body0.map(b => visitComplexClass(b, ns0, tenv0))
 
         // Perform naming on the definitions in the implementation.
-        val defs = Nil // TODO: must compute the defs.
+        val defsVal = Validation.fold(defs0, Map.empty[String, NamedAst.Def]) {
+          case (macc, decl) =>
+            val name = decl.ident.name
+            visitDef(decl, tenv0, ns0) flatMap {
+              case defn => macc.get(name) match {
+                case None => (macc + (name -> defn)).toSuccess
+                case Some(otherDef) => NameError.DuplicateDef(name, otherDef.sym.loc, decl.ident.loc).toFailure
+              }
+            }
+        }
 
-        // Reassemble the implementation.
-        val impl = NamedAst.Impl(doc, mod, head, body, defs, loc)
+        defsVal map {
+          case defs =>
+            // Reassemble the implementation.
+            val impl = NamedAst.Impl(doc, mod, head, body, defs, loc)
 
-        // Reassemble the implementations in the namespace.
-        val implsInNs = impl :: prog0.impls.getOrElse(ns0, Nil)
-        prog0.copy(impls = prog0.impls + (ns0 -> implsInNs)).toSuccess
+            // Reassemble the implementations in the namespace.
+            val implsInNs = impl :: prog0.impls.getOrElse(ns0, Nil)
+            prog0.copy(impls = prog0.impls + (ns0 -> implsInNs))
+        }
 
       //
       // Disallow.
@@ -432,9 +438,27 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
     }
 
     /**
+      * Performs naming on the given definition declaration `decl0` with the given type environment `tenv0` in the given namespace `ns0`.
+      */
+    def visitDef(decl0: WeededAst.Declaration.Def, tenv0: Map[String, Type.Var], ns0: Name.NName)(implicit genSym: GenSym): Validation[NamedAst.Def, NameError] = decl0 match {
+      case WeededAst.Declaration.Def(doc, ann, mod, ident, tparams0, fparams0, exp, tpe, eff0, loc) =>
+        val tparams = getTypeParams(tparams0)
+        val tenv = tenv0 ++ getTypeEnv(tparams)
+        val fparams = getFormalParams(fparams0, tenv)
+        val env0 = getVarEnv(fparams)
+
+        Expressions.namer(exp, env0, tenv) map {
+          case e =>
+            val sym = Symbol.mkDefnSym(ns0, ident)
+            val sc = getScheme(tparams, tpe, tenv)
+            NamedAst.Def(doc, ann, mod, sym, tparams, fparams, e, sc, eff0, loc)
+        }
+    }
+
+    /**
       * Performs naming on the given class declaration `decl0` in the given namespace `ns0`.
       */
-    def visitClassDecl(decl0: Declaration.Class, ns0: Name.NName)(implicit genSym: GenSym): NamedAst.Class = decl0 match {
+    def visitClassDecl(decl0: Declaration.Class, ns0: Name.NName)(implicit genSym: GenSym): Validation[NamedAst.Class, NameError] = decl0 match {
       case Declaration.Class(doc, mod, head0, body0, sigs0, laws0, loc) =>
         // Compute the free type variables in the head and body atoms.
         val freeTypeVars = freeVars(head0) ::: (body0 flatMap freeVars)
@@ -448,9 +472,19 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
         val quantifiers = tenv0.values.toList
         val head = visitSimpleClass(head0, ns0, tenv0)
         val body = body0.map(visitSimpleClass(_, ns0, tenv0))
-        val sigs = sigs0.map(visitSig(_, sym, tenv0, ns0))
+        val sigsVal = Validation.fold(sigs0, Map.empty[String, NamedAst.Sig]) {
+          case (macc, sig) =>
+            val name = sig.ident.name
+            macc.get(name) match {
+              case None => (macc + (sig.ident.name -> visitSig(sig, sym, tenv0, ns0))).toSuccess
+              case Some(otherSig) => DuplicateSig(name, otherSig.sym.loc, sig.ident.loc).toFailure
+            }
+        }
         val laws = Nil
-        NamedAst.Class(doc, mod, sym, quantifiers, head, body, sigs, laws, loc)
+
+        sigsVal map {
+          case sigs => NamedAst.Class(doc, mod, sym, quantifiers, head, body, sigs, laws, loc)
+        }
     }
 
     /**
@@ -662,28 +696,28 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
 
       case WeededAst.Expression.ArrayLoad(base, index, loc) =>
         @@(namer(base, env0, tenv0), namer(index, env0, tenv0)) map {
-          case(b, i) => NamedAst.Expression.ArrayLoad(b, i, Type.freshTypeVar(), loc)
+          case (b, i) => NamedAst.Expression.ArrayLoad(b, i, Type.freshTypeVar(), loc)
         }
 
       case WeededAst.Expression.ArrayStore(base, index, elm, loc) =>
-        @@(namer(base, env0, tenv0), namer(index,env0,tenv0), namer(elm, env0, tenv0)) map {
-          case(b, i, e) => NamedAst.Expression.ArrayStore(b, i, e, Type.freshTypeVar(), loc)
+        @@(namer(base, env0, tenv0), namer(index, env0, tenv0), namer(elm, env0, tenv0)) map {
+          case (b, i, e) => NamedAst.Expression.ArrayStore(b, i, e, Type.freshTypeVar(), loc)
         }
 
       case WeededAst.Expression.ArrayLength(base, loc) =>
         namer(base, env0, tenv0) map {
-          case(b) => NamedAst.Expression.ArrayLength(b, Type.freshTypeVar(), loc)
+          case (b) => NamedAst.Expression.ArrayLength(b, Type.freshTypeVar(), loc)
         }
 
       case WeededAst.Expression.ArraySlice(base, startIndex, endIndex, loc) =>
         @@(namer(base, env0, tenv0), namer(startIndex, env0, tenv0), namer(endIndex, env0, tenv0)) map {
-          case(b, i1, i2) => NamedAst.Expression.ArraySlice(b, i1, i2, Type.freshTypeVar(), loc)
+          case (b, i1, i2) => NamedAst.Expression.ArraySlice(b, i1, i2, Type.freshTypeVar(), loc)
         }
 
       case WeededAst.Expression.VectorLit(elms, loc) =>
-      @@(elms map (e => namer(e, env0, tenv0))) map{
-        case es => NamedAst.Expression.VectorLit(es, Type.freshTypeVar(), loc)
-      }
+        @@(elms map (e => namer(e, env0, tenv0))) map {
+          case es => NamedAst.Expression.VectorLit(es, Type.freshTypeVar(), loc)
+        }
 
       case WeededAst.Expression.VectorNew(elm, len, loc) =>
         namer(elm, env0, tenv0) map {
@@ -697,7 +731,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
 
       case WeededAst.Expression.VectorStore(base, index, elm, loc) =>
         @@(namer(base, env0, tenv0), namer(elm, env0, tenv0)) map {
-          case(b, e) => NamedAst.Expression.VectorStore(b, index, e, Type.freshTypeVar(), loc)
+          case (b, e) => NamedAst.Expression.VectorStore(b, index, e, Type.freshTypeVar(), loc)
         }
 
       case WeededAst.Expression.VectorLength(base, loc) =>
@@ -837,7 +871,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
       case WeededAst.Expression.Tag(enum, tag, expOpt, loc) => expOpt.map(freeVars).getOrElse(Nil)
       case WeededAst.Expression.Tuple(elms, loc) => elms.flatMap(freeVars)
       case WeededAst.Expression.ArrayLit(elms, loc) => elms.flatMap(freeVars)
-      case WeededAst.Expression.ArrayNew(elm, len, loc) =>  freeVars(elm) ++ freeVars(len)
+      case WeededAst.Expression.ArrayNew(elm, len, loc) => freeVars(elm) ++ freeVars(len)
       case WeededAst.Expression.ArrayLoad(base, index, loc) => freeVars(base) ++ freeVars(index)
       case WeededAst.Expression.ArrayStore(base, index, elm, loc) => freeVars(base) ++ freeVars(index) ++ freeVars(elm)
       case WeededAst.Expression.ArrayLength(base, loc) => freeVars(base)
@@ -1015,7 +1049,11 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
         */
       def visit(tpe: WeededAst.Type, env: Map[String, Type.Var]): NamedAst.Type = tpe match {
         case WeededAst.Type.Unit(loc) => NamedAst.Type.Unit(loc)
-        case WeededAst.Type.Var(ident, loc) => NamedAst.Type.Var(env(ident.name), loc)
+        case WeededAst.Type.Var(ident, loc) => env.get(ident.name) match {
+          case None =>
+            throw InternalCompilerException(s"Unknown type variable '${ident.name}' near: ${loc.format}")
+          case Some(tvar) => NamedAst.Type.Var(tvar, loc)
+        }
         case WeededAst.Type.Ambiguous(qname, loc) =>
           if (qname.isUnqualified)
             env.get(qname.ident.name) match {

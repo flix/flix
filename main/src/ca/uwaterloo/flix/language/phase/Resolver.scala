@@ -251,7 +251,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
       for {
         head <- resolveSimpleClass(head0, ns0, prog0)
         body <- seqM(body0.map(resolveSimpleClass(_, ns0, prog0)))
-        sigs <- seqM(sigs0.map(resolveSig(_, ns0, prog0)))
+        sigs <- seqM(sigs0.map(s => resolveSig(s._2, ns0, prog0)))
       } yield {
         ResolvedAst.Class(doc, mod, sym, quantifiers, head, body, /* TODO */ Map.empty, /* TODO */ Nil, loc)
       }
@@ -377,6 +377,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
           lookupQName(qname, ns0, prog0) map {
             case LookupResult.Def(sym) => ResolvedAst.Expression.Def(sym, tvar, loc)
             case LookupResult.Eff(sym) => ResolvedAst.Expression.Eff(sym, tvar, loc)
+            case LookupResult.Sig(sym) => ResolvedAst.Expression.Sig(sym, tvar, loc)
           }
 
         case NamedAst.Expression.Hole(name, tpe, loc) =>
@@ -552,7 +553,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
           } yield ResolvedAst.Expression.ArrayLength(b, tvar, loc)
 
         case NamedAst.Expression.ArraySlice(base, startIndex, endIndex, tvar, loc) =>
-          for{
+          for {
             b <- visit(base, tenv0)
             i1 <- visit(startIndex, tenv0)
             i2 <- visit(endIndex, tenv0)
@@ -760,6 +761,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
             lookupResult match {
               case LookupResult.Def(sym) => ResolvedAst.Predicate.Body.Filter(sym, ts, loc)
               case LookupResult.Eff(sym) => throw InternalCompilerException(s"Unexpected effect here: ${sym.toString}")
+              case LookupResult.Sig(sym) => throw InternalCompilerException(s"Unexpected signature here: ${sym.toString}")
             }
           }
 
@@ -873,6 +875,8 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
 
     case class Eff(sym: Symbol.EffSym) extends LookupResult
 
+    case class Sig(sym: Symbol.SigSym) extends LookupResult
+
   }
 
   /**
@@ -881,12 +885,17 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
   def lookupQName(qname: Name.QName, ns0: Name.NName, prog0: NamedAst.Program): Validation[LookupResult, ResolutionError] = {
     val defOpt = tryLookupDef(qname, ns0, prog0)
     val effOpt = tryLookupEff(qname, ns0, prog0)
+    val sigOpt = tryLookupSig(qname, ns0, prog0)
 
-    (defOpt, effOpt) match {
-      case (None, None) => ResolutionError.UndefinedName(qname, ns0, qname.loc).toFailure
-      case (Some(d), None) => getDefIfAccessible(d, ns0, qname.loc)
-      case (None, Some(e)) => getEffIfAccessible(e, ns0, qname.loc)
-      case (Some(d), Some(e)) => ResolutionError.AmbiguousName(qname, ns0, d.loc, e.loc, qname.loc).toFailure
+    (defOpt, effOpt, sigOpt) match {
+      case (None, None, None) => ResolutionError.UndefinedName(qname, ns0, qname.loc).toFailure
+      case (Some(d), None, None) => getDefIfAccessible(d, ns0, qname.loc)
+      case (None, Some(e), None) => getEffIfAccessible(e, ns0, qname.loc)
+      case (None, None, Some(s)) => getSigIfAccessible(s, ns0, qname.loc)
+      case (Some(d), Some(e), None) => ResolutionError.AmbiguousName(qname, ns0, List(d.loc, e.loc), qname.loc).toFailure
+      case (Some(d), None, Some(s)) => ResolutionError.AmbiguousName(qname, ns0, List(d.loc, s.loc), qname.loc).toFailure
+      case (None, Some(e), Some(s)) => ResolutionError.AmbiguousName(qname, ns0, List(e.loc, s.loc), qname.loc).toFailure
+      case (Some(d), Some(e), Some(s)) => ResolutionError.AmbiguousName(qname, ns0, List(d.loc, e.loc, s.loc), qname.loc).toFailure
     }
   }
 
@@ -947,6 +956,49 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
   }
 
   /**
+    * Finds the given signature with the qualified name `qname` in the namespace `ns0`.
+    */
+  def tryLookupSig(qname: Name.QName, ns0: Name.NName, prog0: NamedAst.Program): Option[NamedAst.Sig] = {
+    // Check whether the name is fully-qualified.
+    if (qname.isUnqualified) {
+      // TODO: We currently only lookup in the global namespace.
+
+      // Case 1: Unqualified name. Lookup the classes in the global namespace.
+      val classes = prog0.classes.getOrElse(Name.RootNS, Map.empty).values
+
+      // A mutable collection of candidate signatures.
+      val candidates = mutable.Set.empty[NamedAst.Sig]
+
+      // Look through each class to see if it contains a usable signature.
+      // TODO: This is very inefficient. It would be better to have a map of signatures in each ns.
+      for (NamedAst.Class(doc, mod, sym, quantifiers, head, body, sigs, laws, loc) <- classes) {
+        sigs.get(qname.ident.name) match {
+          case None => // no such signature in the current class.
+          case Some(sig) =>
+            candidates += sig
+        }
+      }
+
+      // Check how many candidate signatures were found.
+      if (candidates.isEmpty) {
+        // Case 1: No candidate signatures.
+        None
+      } else if (candidates.size == 1) {
+        // Case 2: Exactly one candidate signature.
+        Some(candidates.head)
+      } else {
+        // Case 3: Multiple candidate signatures.
+        // TODO: Need to return validation?
+        throw InternalCompilerException(s"Ambigious signature.")
+      }
+    } else {
+      // Case 2: Qualified.
+      // TODO: We currently only look for unqualified names.
+      None
+    }
+  }
+
+  /**
     * Finds the class with the qualified name `qname` in the namespace `ns0`.
     */
   def lookupClass(qname: Name.QName, ns0: Name.NName, prog0: NamedAst.Program): Validation[Symbol.ClassSym, ResolutionError] = {
@@ -981,42 +1033,6 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
       }
     }
   }
-
-  /**
-    * TODO: DOC
-    */
-  // TODO: Can you access a signature by qualified name???
-  def lookupSig(ident: Name.Ident, ns0: Name.NName, prog0: NamedAst.Program): Validation[Option[Symbol.SigSym], ResolutionError] = {
-    // Compute all classes visible in the current namespace.
-    val classes = getClassesInScope()
-
-    // A mutable collection of candidate signatures.
-    val candidates = mutable.Set.empty[Symbol.SigSym]
-
-    // Look through each class to see if it contains a usable signature.
-    for (NamedAst.Class(doc, mod, sym, quantifiers, head, body, sigs, laws, loc) <- classes) {
-      for (NamedAst.Sig(doc, ann, mod, sym, tparams, fparams, sc, eff, loc) <- sigs) {
-        // TODO: If ....
-      }
-    }
-
-    // Check how many candidate signatures were found.
-    if (candidates.isEmpty) {
-      // Case 1: No candidate signatures.
-      None.toSuccess
-    } else if (candidates.size == 1) {
-      // Case 2: Exactly one candidate signature.
-      Some(candidates.head).toSuccess
-    } else {
-      // Case 3: Multiple candidate signatures.
-      // TODO: Ambiguius
-      ???
-    }
-  }
-
-  // TODO: DOC
-  def getClassesInScope(): List[NamedAst.Class] = Nil
-
 
   /**
     * Finds the enum definition matching the given qualified name and tag.
@@ -1299,6 +1315,15 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
     // The effect is not accessible.
     //
     ResolutionError.InaccessibleEff(eff0.sym, ns0, loc).toFailure
+  }
+
+  /**
+    * Successfully returns the given signature `sig0` if it is accessible from the given namespace `ns0`.
+    *
+    * Otherwise fails with a resolution error.
+    */
+  def getSigIfAccessible(sig0: NamedAst.Sig, ns0: Name.NName, loc: SourceLocation): Validation[LookupResult, ResolutionError] = {
+    LookupResult.Sig(sig0.sym).toSuccess
   }
 
   /**
