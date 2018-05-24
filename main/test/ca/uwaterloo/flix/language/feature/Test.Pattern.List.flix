@@ -73,3 +73,23 @@ def testPatternOption03(): Bool = match Some(123) :: Nil with {
     case _                => false
 }
 
+
+@test
+def testListList01(): Bool = match Nil : List[List[Int]] with {
+    case Nil              => true
+    case _                => false
+}
+
+@test
+def testListList02(): Bool = match (1 :: Nil) :: Nil with {
+    case Nil                => false
+    case (1 :: Nil) :: Nil  => true
+    case _                  => false
+}
+
+@test
+def testListList03(): Bool = match (1 :: Nil) :: (2 :: Nil) :: Nil with {
+    case Nil                             => false
+    case (x :: Nil) :: (y :: Nil) :: Nil => x + 1 == y
+    case _                               => false
+}
