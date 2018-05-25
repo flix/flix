@@ -145,6 +145,14 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   }
 
   /////////////////////////////////////////////////////////////////////////////
+  // Sequential statement                                                    //
+  /////////////////////////////////////////////////////////////////////////////
+
+  def Statement: Rule1[ParsedAst.Statement] = rule {
+    oneOrMore(Expression).separatedBy(optWS ~ ";" ~ optWS) ~> ParsedAst.Statement.Statement
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
   // Declarations                                                            //
   /////////////////////////////////////////////////////////////////////////////
   // NB: RuleDeclaration must be parsed before FactDeclaration.
@@ -173,7 +181,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Def: Rule1[ParsedAst.Declaration.Def] = rule {
-      Documentation ~ Annotations ~ Modifiers ~ SP ~ atomic("def") ~ WS ~ Names.Definition ~ optWS ~ TypeParams ~ FormalParamList ~ optWS ~ ":" ~ optWS ~ TypeAndEffect ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~> ParsedAst.Declaration.Def
+      Documentation ~ Annotations ~ Modifiers ~ SP ~ atomic("def") ~ WS ~ Names.Definition ~ optWS ~ TypeParams ~ FormalParamList ~ optWS ~ ":" ~ optWS ~ TypeAndEffect ~ optWS ~ "=" ~ optWS ~ Statement ~ SP ~> ParsedAst.Declaration.Def
     }
 
     def Eff: Rule1[ParsedAst.Declaration.Eff] = rule {
@@ -494,7 +502,11 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Assign: Rule1[ParsedAst.Expression] = rule {
-      LogicalOr ~ optional(optWS ~ atomic(":=") ~ optWS ~ LogicalOr ~ SP ~> ParsedAst.Expression.Assign)
+      PutChannel ~ optional(optWS ~ atomic(":=") ~ optWS ~ PutChannel ~ SP ~> ParsedAst.Expression.Assign)
+    }
+
+    def PutChannel: Rule1[ParsedAst.Expression] = rule {
+      LogicalOr ~ zeroOrMore(optWS ~ atomic("<-") ~ optWS ~ LogicalOr ~ SP ~> ParsedAst.Expression.PutChannel)
     }
 
     def LogicalOr: Rule1[ParsedAst.Expression] = rule {
@@ -522,7 +534,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Relational: Rule1[ParsedAst.Expression] = rule {
-      Shift ~ optional(optWS ~ capture(atomic("<=") | atomic(">=") | atomic("<") | atomic(">")) ~ optWS ~ Shift ~ SP ~> ParsedAst.Expression.Binary)
+      // Hard whitespace is required in order to use the <- for channels
+      Shift ~ optional(WS ~ capture(atomic("<=") | atomic(">=") | atomic("<") | atomic(">")) ~ WS ~ Shift ~ SP ~> ParsedAst.Expression.Binary)
     }
 
     def Shift: Rule1[ParsedAst.Expression] = rule {
@@ -545,7 +558,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
       // NB: We allow any operator, other than a reserved operator, to be matched by this rule.
       def Reserved2: Rule1[String] = rule {
-        capture("**" | "<=" | ">=" | "==" | "!=" | "&&" | "||" | "=>" | "->")
+        capture("**" | "<=" | ">=" | "==" | "!=" | "&&" | "||" | "=>" | "->" | "<-")
       }
 
       // NB: We allow any operator, other than a reserved operator, to be matched by this rule.
@@ -600,8 +613,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Primary: Rule1[ParsedAst.Expression] = rule {
-      LetRec | LetMatch | IfThenElse | Match | LambdaMatch | Switch | Unsafe | Native | Lambda | Tuple |
-        ArrayLit | ArrayNew | FNil | FSet | FMap | Literal |
+        GetChannel | LetRec | LetMatch | IfThenElse | Match | LambdaMatch  | Switch | Unsafe | Native | Lambda | Tuple |
+        ArrayLit | ArrayNew | FNil | FSet | FMap | Literal | NewChannel | Spawn | SelectChannel |
         HandleWith | Existential | Universal | UnaryLambda | QName | Wild | Tag | SName | Hole | UserError
     }
 
@@ -618,7 +631,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def LetMatch: Rule1[ParsedAst.Expression.LetMatch] = rule {
-      SP ~ atomic("let") ~ WS ~ Pattern ~ optWS ~ optional(":" ~ optWS ~ Type ~ optWS) ~ "=" ~ optWS ~ Expression ~ optWS ~ ";" ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.LetMatch
+      SP ~ atomic("let") ~ WS ~ Pattern ~ optWS ~ optional(":" ~ optWS ~ Type ~ optWS) ~ "=" ~ optWS ~ Expression ~ optWS ~ ";" ~ optWS ~ Statement ~ SP ~> ParsedAst.Expression.LetMatch
     }
 
     def Match: Rule1[ParsedAst.Expression.Match] = {
@@ -628,6 +641,28 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
       rule {
         SP ~ atomic("match") ~ WS ~ Expression ~ WS ~ atomic("with") ~ WS ~ "{" ~ optWS ~ oneOrMore(Rule).separatedBy(optWS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.Match
+      }
+    }
+
+    def NewChannel: Rule1[ParsedAst.Expression.NewChannel] = rule {
+      SP ~ atomic("channel") ~ WS ~ Type ~ optional(WSWON ~ Expression) ~ SP ~> ParsedAst.Expression.NewChannel
+    }
+
+    def GetChannel: Rule1[ParsedAst.Expression.GetChannel] = rule {
+      SP ~ atomic("<-") ~ optWS ~ Expression ~ optWS ~ SP ~> ParsedAst.Expression.GetChannel
+    }
+
+    def Spawn: Rule1[ParsedAst.Expression.Spawn] = rule {
+      SP ~ atomic("spawn") ~ WS ~ Names.Definition ~ optWS ~ ArgumentList ~ SP ~> ParsedAst.Expression.Spawn
+    }
+
+    def SelectChannel: Rule1[ParsedAst.Expression.SelectChannel] = {
+      def SelectRule: Rule1[ParsedAst.SelectRule] = rule {
+        atomic("case") ~ WS ~ Names.Variable ~ optWS ~ atomic("<-") ~ optWS ~ Expression ~ optWS ~ atomic("=>") ~ optWS ~ Expression ~> ParsedAst.SelectRule
+      }
+
+      rule {
+        SP ~ atomic("select") ~ optWS ~ "{" ~ optWS ~ oneOrMore(SelectRule).separatedBy(WS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.SelectChannel
       }
     }
 
@@ -1216,6 +1251,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
   def optWS: Rule0 = rule {
     optional(WS)
+  }
+
+  def WSWON: Rule0 = rule {
+    oneOrMore(" " | "\t" | Comment)
   }
 
   def NewLine: Rule0 = rule {

@@ -46,6 +46,7 @@ sealed trait Type {
     case Type.BigInt => Set.empty
     case Type.Str => Set.empty
     case Type.Array => Set.empty
+    case Type.Channel => Set.empty
     case Type.Native => Set.empty
     case Type.Ref => Set.empty
     case Type.Arrow(l) => Set.empty
@@ -115,6 +116,14 @@ sealed trait Type {
   }
 
   /**
+    * Return `true` if `this` type is a channel type.
+    */
+  def isChannel: Boolean = typeConstructor match {
+    case Type.Channel => true
+    case _ => false
+  }
+
+  /**
     * Returns `true` if `this` type is a reference type.
     */
   def isRef: Boolean = typeConstructor match {
@@ -148,6 +157,7 @@ sealed trait Type {
     case Type.BigInt => "BigInt"
     case Type.Str => "Str"
     case Type.Array => "Array"
+    case Type.Channel => "Channel"
     case Type.Native => "Native"
     case Type.Ref => "Ref"
     case Type.Arrow(l) => s"Arrow($l)"
@@ -334,6 +344,13 @@ object Type {
     }
   }
 
+  /**
+    * A type constructor that represent Channels.
+    */
+  case object Channel extends Type {
+    def kind: Kind = Kind.Star
+  }
+
   /////////////////////////////////////////////////////////////////////////////
   // Helper Functions                                                        //
   /////////////////////////////////////////////////////////////////////////////
@@ -386,6 +403,11 @@ object Type {
   }
 
   /**
+    * Returns the type `Channel[a]` where `a` is the given type.
+    */
+  def mkChannel(a: Type): Type = Apply(Channel, a)
+
+  /**
     * Replaces every free occurrence of a type variable in `typeVars`
     * with a fresh type variable in the given type `tpe`.
     */
@@ -411,6 +433,7 @@ object Type {
       case Type.BigInt => Type.BigInt
       case Type.Str => Type.Str
       case Type.Array => Type.Array
+      case Type.Channel => Type.Channel
       case Type.Native => Type.Native
       case Type.Ref => Type.Ref
       case Type.Arrow(l) => Type.Arrow(l)
@@ -459,6 +482,7 @@ object Type {
           case Type.BigInt => "BigInt"
           case Type.Str => "String"
           case Type.Array => "Array"
+          case Type.Channel => "Channel"
           case Type.Native => "Native"
           case Type.Ref => "Ref"
 

@@ -673,6 +673,39 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
           case (b, i, v) => NamedAst.Expression.ArrayStore(b, i, v, Type.freshTypeVar(), loc)
         }
 
+      case WeededAst.Expression.NewChannel(tpe, exp, loc) =>
+        namer(exp, env0, tenv0) map {
+          case e => NamedAst.Expression.NewChannel(Types.namer(tpe, tenv0), e, loc)
+        }
+
+      case WeededAst.Expression.GetChannel(exp,loc) =>
+        namer(exp, env0, tenv0) map {
+          case e => NamedAst.Expression.GetChannel(e, Type.freshTypeVar(), loc)
+        }
+
+      case WeededAst.Expression.PutChannel(exp1, exp2, loc) =>
+        @@(namer(exp1, env0, tenv0), namer(exp2, env0, tenv0)) map {
+          case (e1, e2) => NamedAst.Expression.PutChannel(e1, e2, Type.freshTypeVar(), loc)
+        }
+
+      case WeededAst.Expression.Spawn(exp, loc) =>
+        namer(exp, env0, tenv0) map {
+          case e => NamedAst.Expression.Spawn(e, Type.freshTypeVar(), loc)
+        }
+
+      case WeededAst.Expression.SelectChannel(rules, loc) =>
+        val rulesVal = rules map {
+          case WeededAst.SelectRule(ident, chan, body) =>
+            val sym = Symbol.freshVarSym(ident)
+            val env1 = env0 + (ident.name -> sym)
+            @@(namer(chan, env0, tenv0), namer(body, env1, tenv0)) map {
+              case (c, b) => NamedAst.SelectRule(sym, c, b)
+            }
+        }
+        @@(rulesVal) map {
+          case rs => NamedAst.Expression.SelectChannel(rs, Type.freshTypeVar(), loc)
+        }
+
       case WeededAst.Expression.Ref(exp, loc) =>
         namer(exp, env0, tenv0) map {
           case e => NamedAst.Expression.Ref(e, Type.freshTypeVar(), loc)
@@ -785,6 +818,11 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
       case WeededAst.Expression.ArrayLit(elms, loc) => elms.flatMap(freeVars)
       case WeededAst.Expression.ArrayLoad(base, index, loc) => freeVars(base) ++ freeVars(index)
       case WeededAst.Expression.ArrayStore(base, index, value, loc) => freeVars(base) ++ freeVars(index) ++ freeVars(value)
+      case WeededAst.Expression.NewChannel(tpe, exp, loc) => freeVars(exp)
+      case WeededAst.Expression.GetChannel(exp, loc) => freeVars(exp)
+      case WeededAst.Expression.PutChannel(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
+      case WeededAst.Expression.Spawn(exp, loc) => freeVars(exp)
+      case WeededAst.Expression.SelectChannel(rules, loc) => rules.map(_.chan).flatMap(freeVars) ++ rules.map(_.exp).flatMap(freeVars)
       case WeededAst.Expression.Ref(exp, loc) => freeVars(exp)
       case WeededAst.Expression.Deref(exp, loc) => freeVars(exp)
       case WeededAst.Expression.Assign(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)

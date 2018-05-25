@@ -491,4 +491,20 @@ object WeederError {
     }
   }
 
+  /**
+    * An error raised to indicate an illegal channel size.
+    *
+    * @param loc the location where the illegal size occurs.
+    */
+  case class IllegalChannelSize(loc: SourceLocation) extends WeederError {
+    val source: Source = loc.source
+    val message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Illegal channel size." << NewLine
+      vt << NewLine
+      vt << Code(loc, "Illegal channel size.") << NewLine
+    }
+  }
+
 }

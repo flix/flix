@@ -312,6 +312,45 @@ object SimplifiedAstOps {
         checkType(tpe)
 
       //
+      // NewChannel Expressions.
+      //
+      case Expression.NewChannel(exp, tpe, loc) =>
+        checkExp(exp, env0, ienv0)
+        checkType(tpe)
+
+      //
+      // GetChannel Expressions.
+      //
+      case Expression.GetChannel(exp, tpe, loc) =>
+        checkExp(exp, env0, ienv0)
+        checkType(tpe)
+
+      //
+      // PutChannel Expressions.
+      //
+      case Expression.PutChannel(exp1, exp2, tpe, loc) =>
+        checkExp(exp1, env0, ienv0)
+        checkExp(exp2, env0, ienv0)
+        checkType(tpe)
+
+      //
+      // Spawn Expressions.
+      //
+      case Expression.Spawn(exp, tpe, loc) =>
+        checkExp(exp, env0, ienv0)
+        checkType(tpe)
+
+      //
+      // SelectChannel Expressions.
+      //
+      case Expression.SelectChannel(rules, tpe, loc) =>
+        for (SelectRule(sym, chan, body) <- rules) {
+            checkExp(chan, env0, ienv0)
+            checkExp(body, env0, ienv0)
+        }
+        checkType(tpe)
+
+      //
       // Reference Expressions.
       //
       case Expression.Ref(exp, tpe, loc) =>

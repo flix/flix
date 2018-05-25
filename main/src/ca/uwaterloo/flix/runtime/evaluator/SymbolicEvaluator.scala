@@ -770,6 +770,31 @@ object SymbolicEvaluator {
       case Expression.ArrayStore(base, index, value, _, _) => ??? // TODO
 
       /**
+        * NewChannel.
+        */
+      case Expression.NewChannel(tpe, exp, loc) => ??? // TODO
+
+      /**
+        * GetChannel.
+        */
+      case Expression.GetChannel(exp, tpe, loc) => ??? // TODO
+
+      /**
+        * PutChannel.
+        */
+      case Expression.PutChannel(exp1, exp2, tpe, loc) => ??? // TODO
+
+      /**
+        * Spawn.
+        */
+      case Expression.Spawn(exp, tpe, loc) => ??? // TODO
+
+      /**
+        * SelectChannel
+        */
+      case Expression.SelectChannel(rules, tpe, loc) => ??? // TODO
+
+      /**
         * Reference.
         */
       case Expression.Ref(exp, tpe, loc) => ??? // TODO

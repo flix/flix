@@ -289,6 +289,39 @@ object PrettyPrinter {
           vt.text(" = ")
           visitExp(value)
 
+        case Expression.NewChannel(exp, tpe, loc) =>
+          vt.text("channel ")
+          vt << tpe.toString() << " "
+          visitExp(exp)
+
+        case Expression.GetChannel(exp, tpe, loc) =>
+          vt.text("<- ")
+          visitExp(exp)
+
+        case Expression.PutChannel(exp1, exp2, tpe, loc) =>
+          visitExp(exp1)
+          vt.text(" <- ")
+          visitExp(exp2)
+
+        case Expression.Spawn(exp, tpe, loc) =>
+          vt.text("spawn ")
+          visitExp(exp)
+
+        case Expression.SelectChannel(rules, tpe, loc) =>
+          vt.text("select {")
+          vt << Indent << NewLine
+          for (SimplifiedAst.SelectRule(sym, chan, body) <- rules) {
+            vt.text("case ")
+            fmtSym(sym, vt)
+            vt.text(" <- ")
+            visitExp(chan)
+            vt.text(" => ")
+            visitExp(body)
+            vt << NewLine
+          }
+          vt << Dedent << NewLine
+          vt.text("}")
+
         case Expression.Ref(exp, tpe, loc) =>
           vt.text("ref ")
           visitExp(exp)

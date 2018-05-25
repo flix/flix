@@ -16,13 +16,19 @@
 
 package ca.uwaterloo.flix.runtime.interpreter
 
+import scala.collection.JavaConverters._
 import java.lang.reflect.Modifier
+import java.util.concurrent.locks.{Condition, Lock, ReentrantLock}
+import java.util
 
 import ca.uwaterloo.flix.api._
 import ca.uwaterloo.flix.language.ast.ExecutableAst._
 import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.runtime.interpreter.Value.Channel
 import ca.uwaterloo.flix.util.InternalRuntimeException
 import ca.uwaterloo.flix.util.tc.Show._
+
+import scala.collection.mutable.ListBuffer
 
 object Interpreter {
 
@@ -202,6 +208,56 @@ object Interpreter {
       }
 
     //
+    // NewChannel expressions.
+    //
+    case Expression.NewChannel(exp, tpe, loc) =>
+      val capacity = cast2int32(eval(exp, env0, henv0, lenv0, root))
+      newChannel(capacity)
+
+    //
+    // GetChannel expressions.
+    //
+    case Expression.GetChannel(exp, tpe, loc) =>
+      val chan = cast2channel(eval(exp, env0, henv0, lenv0, root))
+      getChannel(chan)
+
+    //
+    // PutChannel expressions.
+    //
+    case Expression.PutChannel(exp1, exp2, tpe, loc) =>
+      val value = eval(exp2, env0, henv0, lenv0, root)
+      val chan = cast2channel(eval(exp1, env0, henv0, lenv0, root))
+      putChannel(chan, value)
+
+    //
+    // Spawn expressions.
+    //
+    case Expression.Spawn(exp, tpe, loc) =>
+      val clo = eval(exp, env0, henv0, lenv0, root)
+
+      val t = new Thread("Spawn Process") {
+        override def run() = invokeClo(clo, List(ExecutableAst.Expression.Unit), env0, henv0, lenv0, root)
+      }
+      t.start()
+      Value.Unit
+
+    //
+    // SelectChannel expressions.
+    //
+    case Expression.SelectChannel(rules, tpe, loc) =>
+      val rs = rules map {
+        case SelectRule(sym, cexp, body) =>
+          val chan = cast2channel(eval(cexp, env0, henv0, lenv0, root))
+          ((sym, chan, body))
+      }
+
+      selectChannel(rs) match {
+        case (sym, res, body) =>
+          val newEnv = env0 + (sym.toString -> res)
+          eval(body, newEnv, henv0, lenv0, root)
+      }
+
+    //
     // Reference expressions.
     //
     case Expression.Ref(exp, tpe, loc) =>
@@ -279,6 +335,180 @@ object Interpreter {
     //
     case Expression.Existential(params, exp, loc) => throw InternalRuntimeException(s"Unexpected expression: '$exp' at ${loc.source.format}.")
     case Expression.Universal(params, exp, loc) => throw InternalRuntimeException(s"Unexpected expression: '$exp' at ${loc.source.format}.")
+  }
+
+  //
+  // Create a new channel.
+  //
+  private def newChannel(capacity: Int): Value.Channel = {
+    val id = Channel.counter.incrementAndGet()
+    val channelLock = new ReentrantLock
+    val channelGetters = channelLock.newCondition()
+    val channelPutters = channelLock.newCondition()
+    val queue = new util.LinkedList[AnyRef]()
+    val conditions = new util.ArrayList[(Lock, Condition)]()
+    Value.Channel(id, queue, capacity, channelLock, channelGetters, channelPutters, conditions)
+  }
+
+
+  //
+  // Get value from channel.
+  //
+  private def getChannel(chan: Value.Channel): AnyRef = {
+    var value: AnyRef = null
+
+    // Lock the channel.
+    chan.lock.lock()
+    try {
+      // Wait for an element to be available in the channel.
+      while (chan.queue.isEmpty) {
+        chan.channelPutters.await()
+      }
+
+      // Get value of channel.
+      value = chan.queue.poll()
+      if (value != null) {
+        // Signal all putters on the channel.
+        chan.channelGetters.signalAll()
+      }
+    }
+    finally {
+      // Unclock the channel.
+      chan.lock.unlock()
+    }
+
+    // Return the found value.
+    value
+  }
+
+  //
+  // Put value to channel.
+  //
+  private def putChannel(chan: Value.Channel, value: AnyRef): AnyRef = {
+    // Lock the channel.
+    chan.lock.lock()
+    try {
+      // Wait for available space in the channel.
+      while (chan.queue.size() == chan.capacity) {
+        chan.channelGetters.await()
+      }
+
+      // Put value to channel.
+      chan.queue.add(value)
+
+      // Signal all getters & select conditions on the channel.
+      chan.channelPutters.signalAll()
+      signalAllConditions(chan.conditions)
+      // Clear select conditions
+      chan.conditions.clear()
+    }
+    finally {
+      // Unlock the channel.
+      chan.lock.unlock()
+    }
+
+    // Return the channel.
+    chan
+  }
+
+  /**
+   * Select channel
+   */
+  private def selectChannel(rules: List[(Symbol.VarSym, Value.Channel, Expression)]): (Symbol.VarSym, AnyRef, Expression) = {
+    val sLock = new ReentrantLock
+    val sCondition = sLock.newCondition
+    val channels = rules.map(_._2).sorted
+
+    var result: (Symbol.VarSym, AnyRef, Expression) = null
+
+    // Lock select & all channels.
+    lockAllChannels(channels)
+    sLock.lock()
+    try {
+      while (result == null) {
+        // Get the first available value from all channel
+        result = pollChannels(rules)
+
+        if (result == null) {
+          // Add condition to all channels and wait for items to be available.
+          addConditions(channels, sLock, sCondition)
+          unlockAllChannels(channels)
+          sCondition.await()
+          lockAllChannels(channels)
+        }
+      }
+    }
+    finally {
+      // Unlock select & all channels.
+      unlockAllChannels(channels)
+      sLock.unlock()
+    }
+
+    // Returns the result.
+    result
+  }
+
+  /**
+   * Locks all channels.
+   */
+  private def lockAllChannels(channels: List[Value.Channel]): scala.Unit = {
+    for (chan <- channels) {
+      chan.lock.lock()
+    }
+  }
+
+  /**
+   * Unlocks all channels.
+   */
+  private def unlockAllChannels(channels: List[Value.Channel]): scala.Unit = {
+    for (chan <- channels) {
+      chan.lock.unlock()
+    }
+  }
+
+  /**
+   * Add condition to all channels.
+   */
+  private def addConditions(channels: List[Value.Channel], lock: Lock, condition: Condition): scala.Unit = {
+    for (chan <- channels) {
+      chan.conditions.add((lock, condition))
+    }
+  }
+
+  /**
+   * Returns the first value of all channels parsed to the function if value is available else null.
+   */
+  private def pollChannels(rules: List[(Symbol.VarSym, Value.Channel, Expression)]): (Symbol.VarSym, AnyRef, Expression) = {
+    var result: (Symbol.VarSym, AnyRef, Expression) = null
+
+    for ((sym, chan, body) <- rules) {
+      // Get value if available and result isn't specified.
+      if (!chan.queue.isEmpty && result == null) {
+        // Get value from queue.
+        val value = chan.queue.poll()
+        result = (sym, value, body)
+
+        // Signal all putter of the channel.
+        chan.channelGetters.signalAll()
+      }
+    }
+
+    // Return the result.
+    result
+  }
+
+  /**
+   * Signal all conditions.
+   */
+  private def signalAllConditions(conditions: util.List[(Lock, Condition)]): scala.Unit = {
+    for ((sLock, sCond) <- conditions.iterator().asScala) {
+      sLock.lock()
+      try {
+        sCond.signalAll()
+      }
+      finally
+        sLock.unlock()
+    }
   }
 
   /**
@@ -780,10 +1010,17 @@ object Interpreter {
   }
 
   /**
+    * Cast the given reference `ref` to a channel value.
+    */
+  private def cast2channel(ref: AnyRef): Value.Channel = ref match {
+    case v: Value.Channel => v
+    case _ => throw InternalRuntimeException(s"Unexpected non-channel value: ${ref.getClass.getName}.")
+  }
+
+  /**
     * Constructs a bool from the given boolean `b`.
     */
   private def mkBool(b: Boolean): AnyRef = if (b) Value.True else Value.False
-
 
   /**
     * Returns the given reference `ref` as a Java object.

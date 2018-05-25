@@ -23,11 +23,18 @@ import org.scalatest.{ParallelTestExecution, Suites}
 class FeatureSuite extends Suites(
   new FlixTest("TestConstraint", "main/test/ca/uwaterloo/flix/language/feature/TestConstraint.flix"),
   new FlixTest("TestEquality", "main/test/ca/uwaterloo/flix/language/feature/TestEquality.flix"),
+  new FlixTest("TestStatement", "main/test/ca/uwaterloo/flix/language/feature/TestStatement.flix"),
   // TODO: Arrays
   //new FlixTest("Test.Expression.ArrayNew", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.ArrayNew.flix"),
   //new FlixTest("Test.Expression.ArrayLit", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.ArrayLit.flix"),
   //new FlixTest("Test.Expression.ArrayLoad", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.ArrayLoad.flix"),
   //new FlixTest("Test.Expression.ArrayStore", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.ArrayStore.flix"),
+  // TODO: Channels
+  new FlixTest("Test.Expression.NewChannel", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.NewChannel.flix"),
+  new FlixTest("Test.Expression.GetChannel", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.GetChannel.flix"),
+  new FlixTest("Test.Expression.PutChannel", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.PutChannel.flix"),
+  new FlixTest("Test.Expression.Spawn", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Spawn.flix"),
+  //new FlixTest("Test.Expression.SelectChannel", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.SelectChannel.flix"),
   new FlixTest("Test.Expression.Ascribe", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Ascribe.flix"),
   new FlixTest("Test.Expression.Binary.Arithmetic", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Binary.Arithmetic.flix"),
   new FlixTest("Test.Expression.Binary.Comparison", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Binary.Comparison.flix"),
