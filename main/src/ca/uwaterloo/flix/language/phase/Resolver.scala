@@ -590,6 +590,41 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
             b <- visit(base, tenv0)
           } yield ResolvedAst.Expression.VectorSlice(b, startIndex, optEndIndex, tvar, loc)
 
+        case NamedAst.Expression.NewChannel(tpe, exp, loc) =>
+          for {
+            e <- visit(exp)
+            t <- lookupType(tpe, ns0, prog0)
+          } yield ResolvedAst.Expression.NewChannel(t, e, loc)
+
+        case NamedAst.Expression.GetChannel(exp, tvar, loc) =>
+          for {
+            e <- visit(exp)
+          } yield ResolvedAst.Expression.GetChannel(e, tvar, loc)
+
+        case NamedAst.Expression.PutChannel(exp1, exp2, tvar, loc) =>
+          for {
+            e1 <- visit(exp1)
+            e2 <- visit(exp2)
+          } yield ResolvedAst.Expression.PutChannel(e1, e2, tvar, loc)
+
+        case NamedAst.Expression.Spawn(exp, tvar, loc) =>
+          for {
+            e <- visit(exp)
+          } yield ResolvedAst.Expression.Spawn(e, tvar, loc)
+
+        case NamedAst.Expression.SelectChannel(rules, tvar, loc) =>
+          val rulesVal = rules map {
+            case NamedAst.SelectRule(sym, chan, body) =>
+              for {
+                c <- visit(chan)
+                b <- visit(body)
+              } yield ResolvedAst.SelectRule(sym, c, b)
+          }
+
+          for {
+            rs <- seqM(rulesVal)
+          } yield ResolvedAst.Expression.SelectChannel(rs, tvar, loc)
+
         case NamedAst.Expression.Ref(exp, tvar, loc) =>
           for {
             e <- visit(exp, tenv0)
@@ -1173,6 +1208,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
       case "Str" => Type.Str.toSuccess
       case "Array" => Type.Array.toSuccess
       case "Vector" => Type.Vector.toSuccess
+      case "Channel" => Type.Channel.toSuccess
       case "Ref" => Type.Ref.toSuccess
 
       // Enum Types.

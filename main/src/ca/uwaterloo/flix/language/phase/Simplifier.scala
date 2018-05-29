@@ -450,6 +450,25 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         val i2 = visitExp(endIndex)
         SimplifiedAst.Expression.ArraySlice(b, i1, i2, tpe, loc)
 
+      case TypedAst.Expression.NewChannel(exp, tpe, eff, loc) =>
+        SimplifiedAst.Expression.NewChannel(visitExp(exp), tpe, loc)
+
+      case TypedAst.Expression.GetChannel(exp, tpe, eff, loc) =>
+        SimplifiedAst.Expression.GetChannel(visitExp(exp), tpe, loc)
+
+      case TypedAst.Expression.PutChannel(exp1, exp2, tpe, eff, loc) =>
+        SimplifiedAst.Expression.PutChannel(visitExp(exp1), visitExp(exp2), tpe, loc)
+
+      case TypedAst.Expression.Spawn(exp, tpe, eff, loc) =>
+        SimplifiedAst.Expression.Spawn(visitExp(exp), tpe, loc)
+
+      case TypedAst.Expression.SelectChannel(rules, tpe, eff, loc) =>
+        val rs = rules map {
+          case TypedAst.SelectRule(sym, chan, body) =>
+            SimplifiedAst.SelectRule(sym, visitExp(chan), visitExp(body))
+        }
+        SimplifiedAst.Expression.SelectChannel(rs, tpe, loc)
+
       case TypedAst.Expression.Ref(exp, tpe, eff, loc) =>
         val e = visitExp(exp)
         SimplifiedAst.Expression.Ref(e, tpe, loc)
@@ -1189,6 +1208,20 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         SimplifiedAst.Expression.ArrayLength(visit(base), tpe, loc)
       case SimplifiedAst.Expression.ArraySlice(base, startIndex, endIndex, tpe, loc) =>
         SimplifiedAst.Expression.ArraySlice(visit(base), visit(startIndex), visit(endIndex), tpe, loc)
+      case SimplifiedAst.Expression.NewChannel(exp, tpe, loc) =>
+        SimplifiedAst.Expression.NewChannel(visit(exp), tpe, loc)
+      case SimplifiedAst.Expression.GetChannel(exp, tpe, loc) =>
+        SimplifiedAst.Expression.GetChannel(visit(exp), tpe, loc)
+      case SimplifiedAst.Expression.PutChannel(exp1, exp2, tpe, loc) =>
+        SimplifiedAst.Expression.PutChannel(visit(exp1), visit(exp2), tpe, loc)
+      case SimplifiedAst.Expression.Spawn(exp, tpe, loc) =>
+        SimplifiedAst.Expression.Spawn(visit(exp), tpe, loc)
+      case SimplifiedAst.Expression.SelectChannel(rules, tpe, loc) =>
+        val rs = rules map {
+          case SimplifiedAst.SelectRule(sym, chan, body) =>
+            SimplifiedAst.SelectRule(sym, visit(chan), visit(body))
+        }
+        SimplifiedAst.Expression.SelectChannel(rs, tpe, loc)
       case SimplifiedAst.Expression.Ref(exp, tpe, loc) =>
         SimplifiedAst.Expression.Ref(visit(exp), tpe, loc)
       case SimplifiedAst.Expression.Deref(exp, tpe, loc) =>

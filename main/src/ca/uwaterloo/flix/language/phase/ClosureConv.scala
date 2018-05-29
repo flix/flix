@@ -173,6 +173,25 @@ object ClosureConv {
       val e3 = visitExp(exp3)
       Expression.ArraySlice(e1, e2, e3, tpe, loc)
 
+    case Expression.NewChannel(e, tpe, loc) =>
+      Expression.NewChannel(convert(e), tpe, loc)
+
+    case Expression.GetChannel(e, tpe, loc) =>
+      Expression.GetChannel(convert(e), tpe, loc)
+
+    case Expression.PutChannel(e1, e2, tpe, loc) =>
+      Expression.PutChannel(convert(e1), convert(e2), tpe, loc)
+
+    case Expression.Spawn(e, tpe, loc) =>
+      Expression.Spawn(convert(e), tpe, loc)
+
+    case Expression.SelectChannel(rules, tpe, loc) =>
+      val rs = rules map {
+        case SimplifiedAst.SelectRule(sym, chan, body) =>
+          SimplifiedAst.SelectRule(sym, convert(chan), convert(body))
+      }
+      Expression.SelectChannel(rs, tpe, loc)
+
     case Expression.Ref(exp, tpe, loc) =>
       val e = visitExp(exp)
       Expression.Ref(e, tpe, loc)
@@ -287,6 +306,11 @@ object ClosureConv {
     case Expression.ArrayStore(base, index, elm, tpe, loc) => freeVariables(base) ++ freeVariables(index) ++ freeVariables(elm)
     case Expression.ArrayLength(base, tpe, loc) => freeVariables(base)
     case Expression.ArraySlice(base ,beginIndex, endIndex, tpe, loc) => freeVariables(base) ++ freeVariables(beginIndex) ++ freeVariables(endIndex)
+    case Expression.NewChannel(exp, tpe, loc) => freeVariables(exp)
+    case Expression.GetChannel(exp, tpe, loc) => freeVariables(exp)
+    case Expression.PutChannel(exp1, exp2, tpe, loc) => freeVariables(exp1) ++ freeVariables(exp2)
+    case Expression.Spawn(exp, tpe, loc) => freeVariables(exp)
+    case Expression.SelectChannel(rules, tpe, loc) => mutable.LinkedHashSet.empty ++ rules.map(_.chan).flatMap(freeVariables) ++ rules.map(_.body).flatMap(freeVariables)
     case Expression.Ref(exp, tpe, loc) => freeVariables(exp)
     case Expression.Deref(exp, tpe, loc) => freeVariables(exp)
     case Expression.Assign(exp1, exp2, tpe, loc) => freeVariables(exp1) ++ freeVariables(exp2)
@@ -435,6 +459,27 @@ object ClosureConv {
         val i1 = visit(beginIndex)
         val i2 = visit(endIndex)
         Expression.ArraySlice(b, i1, i2, tpe, loc)
+      case Expression.NewChannel(exp, tpe, loc) =>
+        val e = visit(exp)
+        Expression.NewChannel(e, tpe, loc)
+      case Expression.GetChannel(exp, tpe, loc) =>
+        val e = visit(exp)
+        Expression.GetChannel(e, tpe, loc)
+      case Expression.PutChannel(exp1, exp2, tpe, loc) =>
+        val e1 = visit(exp1)
+        val e2 = visit(exp2)
+        Expression.PutChannel(e1, e2, tpe, loc)
+      case Expression.Spawn(exp, tpe, loc) =>
+        val e = visit(exp)
+        Expression.Spawn(e, tpe, loc)
+      case Expression.SelectChannel(rules, tpe, loc) =>
+        val rs = rules map {
+          case SimplifiedAst.SelectRule(sym, chan, body) =>
+            val c = visit(chan)
+            val b = visit(body)
+            SimplifiedAst.SelectRule(sym, c, b)
+        }
+        Expression.SelectChannel(rs, tpe, loc)
       case Expression.Ref(exp, tpe, loc) =>
         val e = visit(exp)
         Expression.Ref(e, tpe, loc)
