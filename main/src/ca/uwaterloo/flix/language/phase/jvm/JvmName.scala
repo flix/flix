@@ -29,6 +29,36 @@ object JvmName {
   val Context: JvmName = JvmName(Nil, "Context")
 
   /**
+    *  The `java.util.List` name.
+    */
+  val JavaList: JvmName = JvmName(List("java", "util"), "List")
+
+  /**
+    *  The `java.util.ArrayList` name.
+    */
+  val ArrayList: JvmName = JvmName(List("java", "util"), "ArrayList")
+
+  /**
+    *  The `java.util.LinkedList` name.
+    */
+  val LinkedList: JvmName = JvmName(List("java", "util"), "LinkedList")
+
+  /**
+    *  The `java.util.concurrent.locks.Lock` name.
+    */
+  val Lock: JvmName = JvmName(List("java", "util", "concurrent", "locks"), "Lock")
+
+  /**
+    *  The `java.util.concurrent.locks.ReentrantLock` name.
+    */
+  val ReentrantLock: JvmName = JvmName(List("java", "util", "concurrent", "locks"), "ReentrantLock")
+
+  /**
+    *  The `java.util.concurrent.locks.Lock` name.
+    */
+  val Condition: JvmName = JvmName(List("java", "util", "concurrent", "locks"), "Condition")
+
+  /**
     * The `ca.uwaterloo.flix.api.Unit` name
     */
   val Unit: JvmName = JvmName(List("ca", "uwaterloo", "flix"), "Unit")
@@ -89,6 +119,21 @@ object JvmName {
   val String: JvmName = JvmName(List("java", "lang"), "String")
 
   /**
+    * The `java.lang.Runnable` name.
+    */
+  val Runnable: JvmName = JvmName(List("java", "lang"), "Runnable")
+
+  /**
+    * The `java.lang.Thread` name.
+    */
+  val Thread: JvmName = JvmName(List("java", "lang"), "Thread")
+
+  /**
+    * The `ca.uwaterloo.flix.Spawn` name.
+    */
+  val Spawn: JvmName = JvmName(List("ca", "uwaterloo", "flix"), "Spawn")
+
+  /**
     * The `ca.uwaterloo.flix.api.Tuple` name
     */
   // TODO: Magnus: Get rid of tuple interface.
@@ -109,6 +154,11 @@ object JvmName {
     * The `java.lang.Exception` name
     */
   val Exception: JvmName = JvmName(List("java", "lang"), "Exception")
+
+  /**
+    * The `java.lang.Exception` name
+    */
+  val InterruptedException: JvmName = JvmName(List("java", "lang"), "InterruptedException")
 
   /**
     * The `ca.uwaterloo.flix.api.UserException$` name
@@ -145,6 +195,16 @@ object JvmName {
     */
   def getCellClassType(subType: JvmType): JvmType.Reference = {
     val name = "Cell" + "$" + JvmOps.stringify(subType)
+
+    // The type resides in the ca.uwaterloo.flix package.
+    JvmType.Reference(JvmName(List("ca", "uwaterloo", "flix"), name))
+  }
+
+  /**
+    * Get the class type for the channel with subtype `subType`
+    */
+  def getChannelClassType(subType: JvmType): JvmType.Reference = {
+    val name = "Channel" + "$" + JvmOps.stringify(subType)
 
     // The type resides in the ca.uwaterloo.flix package.
     JvmType.Reference(JvmName(List("ca", "uwaterloo", "flix"), name))

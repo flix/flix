@@ -110,10 +110,71 @@ object GenClosureClasses {
     // Apply method of the class
     compileApplyMethod(visitor, classType, root.defs(closure.sym), closure.freeVars, resultType)
 
+    // Copy method of the class
+    compileCopyMethod(visitor, classType, functionInterface, root.defs(closure.sym), closure.freeVars, resultType)
+
     // Constructor of the class
     compileConstructor(visitor, classType, closure.freeVars)
 
     visitor.toByteArray
+  }
+
+  /**
+    * copy method for the given `defn` and `classType`.
+    *
+    * public final `classType` copy(Context context) {
+    *     `classType` closure = new `classType`(context, this.clo0, this.clo1, .., this.clon);
+    *
+    *     closure.setArg0(this.arg0);
+    *     closure.setArg1(this.arg1);
+    *     ...
+    *     closure.setArgn(this.argn);
+    *
+    *     return closure;
+    * }
+    */
+  private def compileCopyMethod(visitor: ClassWriter, classType: JvmType.Reference, functionInterface: JvmType.Reference, defn: Def,
+                                 freeVars: List[FreeVar], resultType: JvmType)(implicit root: Root, flix: Flix): Unit = {
+    // Variable types
+    val varTypes = freeVars.map(_.tpe).map(JvmOps.getErasedJvmType)
+    // Function parameters
+    val params = defn.formals.takeRight(defn.formals.length - freeVars.length)
+
+    // Method header
+    val copyMethod = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, "copy",
+      AsmOps.getMethodDescriptor(List(JvmType.Context), functionInterface), null, null)
+
+    copyMethod.visitCode()
+
+    copyMethod.visitTypeInsn(NEW, classType.name.toInternalName)
+    copyMethod.visitInsn(DUP)
+    copyMethod.visitVarInsn(ALOAD, 1)
+
+    for ((tpe, index) <- varTypes.zipWithIndex) {
+      copyMethod.visitVarInsn(ALOAD, 0)
+
+      copyMethod.visitFieldInsn(GETFIELD, classType.name.toInternalName, s"clo$index", tpe.toDescriptor)
+    }
+
+    copyMethod.visitMethodInsn(INVOKESPECIAL, classType.name.toInternalName, "<init>",
+      AsmOps.getMethodDescriptor(JvmType.Object +: varTypes, JvmType.Void), false)
+
+    // Saving parameters on variable stack
+    for ((FormalParam(sym, tpe), ind) <- params.zipWithIndex) {
+      // Erased type of the parameter
+      val erasedType = JvmOps.getErasedJvmType(tpe)
+      copyMethod.visitInsn(DUP)
+
+      copyMethod.visitVarInsn(ALOAD, 0)
+      copyMethod.visitFieldInsn(GETFIELD, classType.name.toInternalName, s"arg$ind", erasedType.toDescriptor)
+
+      copyMethod.visitMethodInsn(INVOKEVIRTUAL, classType.name.toInternalName, s"setArg$ind",
+        AsmOps.getMethodDescriptor(List(erasedType), JvmType.Void), false)
+    }
+
+    copyMethod.visitInsn(ARETURN)
+    copyMethod.visitMaxs(1, 1)
+    copyMethod.visitEnd()
   }
 
   /**

@@ -112,10 +112,10 @@ object ParsedAst {
       * @param tparams    the type parameters.
       * @param fparamsOpt the formal parameters.
       * @param tpe        the declared type.
-      * @param exp        the expression.
+      * @param stmt       the statement.
       * @param sp2        the position of the last character in the declaration.
       */
-    case class Def(doc: ParsedAst.Doc, ann: Seq[ParsedAst.AnnotationOrProperty], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: Seq[ParsedAst.ContextBound], fparamsOpt: Seq[ParsedAst.FormalParam], tpe: ParsedAst.Type, eff: Option[ParsedAst.Effect], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Declaration
+    case class Def(doc: ParsedAst.Doc, ann: Seq[ParsedAst.AnnotationOrProperty], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: Seq[ParsedAst.ContextBound], fparamsOpt: Seq[ParsedAst.FormalParam], tpe: ParsedAst.Type, eff: Option[ParsedAst.Effect], stmt: ParsedAst.Statement, sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
       * Effect Declaration.
@@ -278,6 +278,21 @@ object ParsedAst {
       */
     case class Disallow(doc: ParsedAst.Doc, sp1: SourcePosition, ic: ParsedAst.DisallowConstraint, sp2: SourcePosition) extends ParsedAst.Declaration
 
+  }
+
+  /**
+    * Statements.
+    */
+  sealed trait Statement
+
+  /**
+    * A statement is a non-empty sequence of expressions.
+    * It evaluates to its last expression
+    *
+    * @param exps the expressions sequence.
+    */
+  object Statement {
+    case class Statement(exps: Seq[Expression]) extends ParsedAst.Statement
   }
 
   /**
@@ -547,11 +562,11 @@ object ParsedAst {
       * @param sp1  the position of the first character in the expression.
       * @param pat  the match pattern.
       * @param tpe  the optional type annotation.
-      * @param exp1 the value expression.
-      * @param exp2 the body expression.
+      * @param exp  the value expression.
+      * @param stmt the body statement.
       * @param sp2  the position of the last character in the expression.
       */
-    case class LetMatch(sp1: SourcePosition, pat: ParsedAst.Pattern, tpe: Option[ParsedAst.Type], exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class LetMatch(sp1: SourcePosition, pat: ParsedAst.Pattern, tpe: Option[ParsedAst.Type], exp: ParsedAst.Expression, stmt: ParsedAst.Statement, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * LetRec Expression (recursive let-binding).
@@ -715,6 +730,53 @@ object ParsedAst {
       * @param sp2 the position of the last character in the expression.
       */
     case class VectorSlice(base: Expression, optStartIndex: Option[Literal], optEndIndex: Option[Literal], sp2: SourcePosition) extends  ParsedAst.Expression
+
+    /**
+      * NewChannel Expression.
+      *
+      * @param sp1 the position of the first character in the expression.
+      * @param tpe the type of the elements of the channel.
+      * @param exp the optional buffer size of the channel.
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class NewChannel(sp1: SourcePosition, tpe: ParsedAst.Type, exp: Option[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
+      * GetChannel Expression.
+      *
+      * @param sp1 the position of the first character in the expression.
+      * @param exp the channel expression.
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class GetChannel(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
+      * PutChannel Expression.
+      *
+      * @param exp1 the channel expression.
+      * @param exp2 the value expression.
+      * @param sp2  the position of the last character in the expression.
+      */
+    case class PutChannel(exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
+      * Spawn Expression (runs expression on new process).
+      *
+      * @param sp1    the position of the first character in the expression.
+      * @param ident  the name of the function definition to run concurrently.
+      * @param args   the arguments to pass to the function
+      * @param sp2    the position of the last character in the expression.
+      */
+    case class Spawn(sp1: SourcePosition, ident: Name.Ident, args: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
+      * SelectChannel Expression.
+      *
+      * @param sp1   the position of the first character in the expression.
+      * @param rules the rules of the select channel.
+      * @param sp2   the position of the last character in the expression.
+      */
+    case class SelectChannel(sp1: SourcePosition, rules: Seq[ParsedAst.SelectRule], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Nil Expression (of list).
@@ -1146,7 +1208,7 @@ object ParsedAst {
       * @param sp2  the position of the last character in the type.
       */
     case class Tuple(sp1: SourcePosition, elms: Seq[ParsedAst.Type], sp2: SourcePosition) extends ParsedAst.Type
-    
+
     /**
       * Nat Type.
       *
@@ -1335,6 +1397,15 @@ object ParsedAst {
     * @param exp   the body expression of the rule.
     */
   case class MatchRule(pat: ParsedAst.Pattern, guard: Option[ParsedAst.Expression], exp: ParsedAst.Expression) extends ParsedAst
+
+  /**
+    * A select channel rule consists of an identifier, a channel expression and an body expression.
+    *
+    * @param ident the identifier of the rule.
+    * @param chan  the channel expression of the rule.
+    * @param body  the body expression of the rule.
+    */
+  case class SelectRule(ident: Name.Ident, chan: ParsedAst.Expression, body: ParsedAst.Expression) extends ParsedAst
 
   /**
     * Modifier.

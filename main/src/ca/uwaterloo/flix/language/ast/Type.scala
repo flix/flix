@@ -48,6 +48,7 @@ sealed trait Type {
     case Type.Array => Set.empty
     case Type.Vector => Set.empty
     case Type.Native(clazz) => Set.empty
+    case Type.Channel => Set.empty
     case Type.Ref => Set.empty
     case Type.Zero => Set.empty
     case Type.Succ(n, t) => Set.empty
@@ -118,6 +119,14 @@ sealed trait Type {
   }
 
   /**
+    * Return `true` if `this` type is a channel type.
+    */
+  def isChannel: Boolean = typeConstructor match {
+    case Type.Channel => true
+    case _ => false
+  }
+
+  /**
     * Returns `true` if `this` type is a reference type.
     */
   def isRef: Boolean = typeConstructor match {
@@ -155,6 +164,7 @@ sealed trait Type {
     case Type.Zero => "Zero"
     case Type.Succ(n, t) => s"Successor($n, $t)"
     case Type.Native(clazz) => "Native"
+    case Type.Channel => "Channel"
     case Type.Ref => "Ref"
     case Type.Arrow(l) => s"Arrow($l)"
     case Type.Enum(enum, kind) => enum.toString
@@ -356,6 +366,13 @@ object Type {
     }
   }
 
+  /**
+    * A type constructor that represent Channels.
+    */
+  case object Channel extends Type {
+    def kind: Kind = Kind.Star
+  }
+
   /////////////////////////////////////////////////////////////////////////////
   // Helper Functions                                                        //
   /////////////////////////////////////////////////////////////////////////////
@@ -439,6 +456,11 @@ object Type {
   }
 
   /**
+    * Returns the type `Channel[a]` where `a` is the given type.
+    */
+  def mkChannel(a: Type): Type = Apply(Channel, a)
+
+  /**
     * Replaces every free occurrence of a type variable in `typeVars`
     * with a fresh type variable in the given type `tpe`.
     */
@@ -466,6 +488,7 @@ object Type {
       case Type.Array => Type.Array
       case Type.Vector => Type.Vector
       case Type.Native(clazz) => Type.Native(clazz)
+      case Type.Channel => Type.Channel
       case Type.Ref => Type.Ref
       case Type.Arrow(l) => Type.Arrow(l)
       case Type.Tuple(l) => Type.Tuple(l)
@@ -519,6 +542,7 @@ object Type {
           case Type.Zero => "Zero"
           case Type.Succ(n, t) => n.toString + " " + t.toString
           case Type.Native(clazz) => "#" + clazz.getName
+          case Type.Channel => "Channel"
           case Type.Ref => "Ref"
 
           //

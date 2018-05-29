@@ -90,6 +90,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         case Type.Array => Type.Array
         case Type.Vector => Type.Vector
         case Type.Native(clazz) => Type.Native(clazz)
+        case Type.Channel => Type.Channel
         case Type.Ref => Type.Ref
         case Type.Arrow(l) => Type.Arrow(l)
         case Type.Tuple(l) => Type.Tuple(l)
@@ -344,6 +345,34 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           val b = visitExp(base, env0)
           val i2 = visitExp(endIndex, env0)
           Expression.VectorSlice(b, startIndex, i2, tpe, eff, loc)
+
+        case Expression.NewChannel(exp, tpe, eff, loc) =>
+          val e = visitExp(exp, env0)
+          Expression.NewChannel(e, subst0(tpe), eff, loc)
+
+        case Expression.GetChannel(exp, tpe, eff, loc) =>
+          val e = visitExp(exp, env0)
+          Expression.GetChannel(e, subst0(tpe), eff, loc)
+
+        case Expression.PutChannel(exp1, exp2, tpe, eff, loc) =>
+          val e1 = visitExp(exp1, env0)
+          val e2 = visitExp(exp2, env0)
+          Expression.PutChannel(e1, e2, subst0(tpe), eff, loc)
+
+        case Expression.Spawn(exp, tpe, eff, loc) =>
+          val e = visitExp(exp, env0)
+          Expression.Spawn(e, subst0(tpe), eff, loc)
+
+        case Expression.SelectChannel(rules, tpe, eff, loc) =>
+          val rs = rules map {
+            case TypedAst.SelectRule(sym, chan, body) =>
+              val freshSym = Symbol.freshVarSym(sym)
+              val env1 = env0 + (sym -> freshSym)
+              val c = visitExp(chan, env1)
+              val b = visitExp(body, env1)
+              TypedAst.SelectRule(freshSym, c, b)
+          }
+          Expression.SelectChannel(rs, subst0(tpe), eff, loc)
 
         case Expression.Ref(exp, tpe, eff, loc) =>
           val e = visitExp(exp, env0)
