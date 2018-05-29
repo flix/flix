@@ -89,6 +89,10 @@ object GenFunctionInterfaces {
       setArgMethod.visitEnd()
     }
 
+    val copyMethod = visitor.visitMethod(ACC_PUBLIC + ACC_ABSTRACT, "copy",
+      AsmOps.getMethodDescriptor(List(JvmType.Context), functionType), null, null)
+    copyMethod.visitEnd()
+
     visitor.visitEnd()
 
     // `JvmClass` of the interface

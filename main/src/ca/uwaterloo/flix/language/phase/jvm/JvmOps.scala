@@ -64,6 +64,7 @@ object JvmOps {
       case Type.BigInt => JvmType.BigInteger
       case Type.Str => JvmType.String
       case Type.Native(clazz) => JvmType.Object
+      case Type.Channel => JvmOps.getChannelClassType(tpe)
       case Type.Ref => getCellClassType(tpe)
       case Type.Arrow(l) => getFunctionInterfaceType(tpe)
       case Type.Tuple(l) => getTupleInterfaceType(tpe)
@@ -343,6 +344,35 @@ object JvmOps {
 
     // The type resides in the root package.
     JvmType.Reference(JvmName(RootPackage, name))
+  }
+
+  /**
+    * Returns the channel class type `Channel$tpe` for the given type `tpe`.
+    *
+    * For example,
+    *
+    * Channel[Bool]           =>    Channel$Bool
+    * Channel[List[Int]]      =>    Channel$Obj
+    *
+    * NB: The given type `tpe` must be a tuple type.
+    */
+  def getChannelClassType(tpe: Type)(implicit root: Root, flix: Flix): JvmType.Reference = {
+    // Check that the given type is an Channel type.
+    if (!tpe.typeConstructor.isChannel)
+      throw InternalCompilerException(s"Unexpected type: '$tpe'")
+
+    // Check that the given type has one type argument.
+    if (tpe.typeArguments.length != 1)
+      throw InternalCompilerException(s"Unexpected type: '$tpe'")
+
+    // Compute the stringified erased type the type argument.
+    val arg = stringify(getErasedJvmType(tpe.typeArguments.head))
+
+    // The JVM name is of the form Channel$Arg0
+    val name = "Channel" + "$" + arg
+
+    // The type resides in the root package.
+    JvmType.Reference(JvmName(List("ca", "uwaterloo", "flix"), name))
   }
 
   /**
@@ -784,6 +814,19 @@ object JvmOps {
 
       case Expression.ArraySlice(exp1, exp2, exp3, tpe, loc) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
+      case Expression.NewChannel(exp, tpe, loc) =>
+        visitExp(exp)
+      case Expression.GetChannel(exp, tpe, loc) =>
+        visitExp(exp)
+      case Expression.PutChannel(exp1, exp2, tpe, loc) =>
+        visitExp(exp1) ++ visitExp(exp2)
+      case Expression.Spawn(exp, tpe, loc) =>
+        visitExp(exp)
+      case Expression.SelectChannel(rules, tpe, loc) =>
+        rules.foldLeft(Set.empty[ClosureInfo]) {
+          case (sacc, r) => sacc ++ visitExp(r.chan) ++ visitExp(r.body)
+        }
+
       case Expression.Ref(exp, tpe, loc) => visitExp(exp)
       case Expression.Deref(exp, tpe, loc) => visitExp(exp)
       case Expression.Assign(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2)
@@ -1008,6 +1051,14 @@ object JvmOps {
       case Expression.ArrayLength(exp, tpe, loc) => visitExp(exp)
 
       case Expression.ArraySlice(exp1, exp2, exp3, tpe, loc) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
+
+      case Expression.NewChannel(exp, tpe, loc) => visitExp(exp) + tpe
+      case Expression.GetChannel(exp, tpe, loc) => visitExp(exp) + tpe
+      case Expression.PutChannel(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2) + tpe
+      case Expression.Spawn(exp, tpe, loc) => visitExp(exp) + tpe
+      case Expression.SelectChannel(rules, tpe, loc) => rules.foldLeft(Set(tpe)) {
+        case (sacc, r) => sacc ++ visitExp(r.chan) ++ visitExp(r.body)
+      }
 
       case Expression.Ref(exp, tpe, loc) => visitExp(exp) + tpe
       case Expression.Deref(exp, tpe, loc) => visitExp(exp) + tpe

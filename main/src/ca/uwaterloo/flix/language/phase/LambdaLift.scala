@@ -204,6 +204,27 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         val i1 = visitExp(startIndex)
         val i2 = visitExp(endIndex)
         Expression.ArraySlice(b, i1, i2, tpe, loc)
+      case Expression.NewChannel(exp, tpe, loc) =>
+        val e = visitExp(exp)
+        Expression.NewChannel(e, tpe, loc)
+      case Expression.GetChannel(exp, tpe, loc) =>
+        val e = visitExp(exp)
+        Expression.GetChannel(e, tpe, loc)
+      case Expression.PutChannel(exp1, exp2, tpe, loc) =>
+        val e1 = visitExp(exp1)
+        val e2 = visitExp(exp2)
+        Expression.PutChannel(e1, e2, tpe, loc)
+      case Expression.Spawn(exp, tpe, loc) =>
+        val e = visitExp(exp)
+        Expression.Spawn(e, tpe, loc)
+      case Expression.SelectChannel(rules, tpe, loc) =>
+        val rs = rules map {
+          case SimplifiedAst.SelectRule(sym, chan, body) =>
+            val c = visitExp(chan)
+            val b = visitExp(body)
+            SimplifiedAst.SelectRule(sym, c, b)
+        }
+        Expression.SelectChannel(rs, tpe, loc)
       case Expression.Ref(exp, tpe, loc) =>
         Expression.Ref(visitExp(exp), tpe, loc)
       case Expression.Deref(exp, tpe, loc) =>

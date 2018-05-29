@@ -264,6 +264,23 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
             _ <- checkPats(base, root)
             _ <- checkPats(endIndex, root)
           } yield tast
+        case Expression.NewChannel(exp, _, _, _) =>
+          for {
+            _ <- checkPats(exp, root)
+          } yield tast
+        case Expression.GetChannel(exp, _, _, _) =>
+          for {
+            _ <- checkPats(exp, root)
+          } yield tast
+        case Expression.PutChannel(exp1, exp2, _, _, _) =>
+          for {
+            _ <- checkPats(exp1, root)
+            _ <- checkPats(exp2, root)
+          } yield tast
+        case Expression.Spawn(exp, _, _, _) => checkPats(exp, root).map(const(tast))
+        case Expression.SelectChannel(rules, _, _, _) => for {
+          _ <- seqM(rules map { x => checkPats(x.chan, root); checkPats(x.exp, root) })
+        } yield tast
         case Expression.Ref(exp, _, _, _) =>
           checkPats(exp, root).map(const(tast))
         case Expression.Deref(exp, _, _, _) =>
@@ -611,6 +628,7 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
       case Type.Vector => 2
       case Type.Zero => 0
       case Type.Succ(n, t) => 2
+      case Type.Channel => 1
       case Type.Tuple(length) => length
       case Type.Enum(sym, kind) => 0
       case Type.Apply(tpe1, tpe2) => countTypeArgs(tpe1)

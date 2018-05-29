@@ -163,6 +163,16 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         Expression.ArrayLength(visit(base), tpe, loc)
       case Expression.ArraySlice(base, startIndex, endIndex, tpe, loc) =>
         Expression.ArraySlice(visit(base), visit(startIndex), visit(endIndex), tpe, loc)
+      case Expression.NewChannel(exp, tpe, loc) => Expression.NewChannel(visit(exp), tpe, loc)
+      case Expression.GetChannel(exp, tpe, loc) => Expression.GetChannel(visit(exp), tpe, loc)
+      case Expression.PutChannel(exp1, exp2, tpe, loc) => Expression.PutChannel(visit(exp1), visit(exp2), tpe, loc)
+      case Expression.Spawn(exp, tpe, loc) => Expression.Spawn(visit(exp), tpe, loc)
+      case Expression.SelectChannel(rules, tpe, loc) =>
+        val rs = rules map {
+          case SimplifiedAst.SelectRule(sym, chan, body) =>
+            SimplifiedAst.SelectRule(sym, visit(chan), visit(body))
+        }
+        Expression.SelectChannel(rs, tpe, loc)
       case Expression.Ref(exp1, tpe, loc) =>
         Expression.Ref(visit(exp1), tpe, loc)
       case Expression.Deref(exp1, tpe, loc) =>
@@ -273,6 +283,22 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       Expression.ArrayLength(renameAndSubstitute(base, env0), tpe, loc)
     case Expression.ArraySlice(base, startIndex, endIndex, tpe, loc) =>
       Expression.ArraySlice(renameAndSubstitute(base, env0), renameAndSubstitute(startIndex, env0), renameAndSubstitute(endIndex, env0), tpe, loc)
+    case Expression.NewChannel(exp, tpe, loc) =>
+      Expression.NewChannel(renameAndSubstitute(exp, env0), tpe, loc)
+    case Expression.GetChannel(exp, tpe, loc) =>
+      Expression.GetChannel(renameAndSubstitute(exp, env0), tpe, loc)
+    case Expression.PutChannel(exp1, exp2, tpe, loc) =>
+      Expression.PutChannel(renameAndSubstitute(exp1, env0), renameAndSubstitute(exp2, env0), tpe, loc)
+    case Expression.Spawn(exp, tpe, loc) =>
+      Expression.Spawn(renameAndSubstitute(exp, env0), tpe, loc)
+    case Expression.SelectChannel(rules, tpe, loc) =>
+      val rs = rules map {
+        case SimplifiedAst.SelectRule(sym, chan, body) =>
+          val newSym = Symbol.freshVarSym(sym)
+          val sub1 = env0 + (sym -> newSym)
+          SimplifiedAst.SelectRule(newSym, renameAndSubstitute(chan, sub1), renameAndSubstitute(body, sub1))
+      }
+      Expression.SelectChannel(rs, tpe, loc)
     case Expression.Ref(exp1, tpe, loc) =>
       Expression.Ref(renameAndSubstitute(exp1, env0), tpe, loc)
     case Expression.Deref(exp1, tpe, loc) =>
@@ -465,6 +491,31 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     // ArrayLength expressions are atomic if the base, startIndex and endIndex are.
     //
     case Expression.ArraySlice(base, startIndex, endIndex, tpe, loc) => isAtomic(base) && isAtomic(startIndex) && isAtomic(endIndex)
+
+    //
+    // NewChannel expressions are atomic.
+    //
+    case Expression.NewChannel(exp, tpe, loc) => false
+
+    //
+    // GetChannel expressions are atomic.
+    //
+    case Expression.GetChannel(exp, tpe, loc) => false
+
+    //
+    // PutChannel expressions are atomic.
+    //
+    case Expression.PutChannel(exp1, exp2, tpe, loc) => false
+
+    //
+    // Spawn expressions are atomic.
+    //
+    case Expression.Spawn(exp, tpe, loc) => false
+
+    //
+    // SelectChannel expressions are atomic.
+    //
+    case Expression.SelectChannel(rules, tpe, loc) => false
 
     //
     // Reference expressions are atomic.

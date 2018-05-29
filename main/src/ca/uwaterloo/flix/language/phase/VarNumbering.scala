@@ -162,6 +162,18 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         val i1 = visitExp(base, i0)
         val i2 = visitExp(startIndex, i1)
         visitExp(endIndex, i2)
+      case Expression.NewChannel(exp, tpe, loc) =>
+        visitExp(exp, i0)
+      case Expression.GetChannel(exp, tpe, loc) =>
+        visitExp(exp, i0)
+      case Expression.PutChannel(exp1, exp2,tpe, loc) =>
+        val i1 = visitExp(exp1, i0)
+        visitExp(exp2, i1)
+      case Expression.Spawn(exp, tpe, loc) =>
+        visitExp(exp, i0)
+      case Expression.SelectChannel(rules, tpe, loc) =>
+        visitExps(rules.map(_.chan), i0)
+        visitExps(rules.map(_.body), i0)
 
       case Expression.Ref(exp, tpe, loc) => visitExp(exp, i0)
       case Expression.Deref(exp, tpe, loc) => visitExp(exp, i0)

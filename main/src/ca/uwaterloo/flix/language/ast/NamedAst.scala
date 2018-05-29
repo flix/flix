@@ -165,6 +165,16 @@ object NamedAst {
 
     case class VectorSlice(base: NamedAst.Expression, startIndex: Int, optEndIndex: Option[Int], tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
+    case class NewChannel(tpe: NamedAst.Type, exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
+
+    case class GetChannel(exp: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
+
+    case class PutChannel(exp1: NamedAst.Expression, exp2: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
+
+    case class Spawn(exp: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
+
+    case class SelectChannel(rules: List[NamedAst.SelectRule], tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
+
     case class Ref(exp: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
     case class Deref(exp: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
@@ -314,6 +324,8 @@ object NamedAst {
   case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: NamedAst.Expression) extends NamedAst
 
   case class MatchRule(pat: NamedAst.Pattern, guard: NamedAst.Expression, exp: NamedAst.Expression) extends NamedAst
+
+  case class SelectRule(sym: Symbol.VarSym, chan: NamedAst.Expression, exp: NamedAst.Expression) extends NamedAst
 
   case class TypeParam(name: Name.Ident, tpe: ast.Type.Var, loc: SourceLocation) extends NamedAst
 

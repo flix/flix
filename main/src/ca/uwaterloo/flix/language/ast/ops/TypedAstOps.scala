@@ -139,6 +139,24 @@ object TypedAstOps {
       case Expression.VectorSlice(base, beginIndex, endIndex, tpe, eff, loc) =>
         visitExp(base, env0) ++ visitExp(endIndex, env0)
 
+      case Expression.NewChannel(exp, tpe, eff, loc) =>
+        visitExp(exp, env0)
+
+      case Expression.GetChannel(exp, tpe, eff, loc) =>
+        visitExp(exp, env0)
+
+      case Expression.PutChannel(exp1, exp2, tpe, eff, loc) =>
+        visitExp(exp1, env0) ++ visitExp(exp2, env0)
+
+      case Expression.Spawn(exp, tpe, eff, loc) =>
+        visitExp(exp, env0)
+
+      case Expression.SelectChannel(rules, tpe, eff, loc) =>
+        rules.foldLeft(Map.empty[Symbol.HoleSym, HoleContext]) {
+          case (macc, SelectRule(sym, chan, body)) =>
+            macc ++ visitExp(chan, env0) ++ visitExp(body, env0)
+        }
+
       case Expression.Ref(exp, tpe, eff, loc) =>
         visitExp(exp, env0)
 

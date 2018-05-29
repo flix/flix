@@ -136,6 +136,24 @@ class TestWeeder extends FunSuite with TestUtils {
     expectError[WeederError.EmptyLattice](result)
   }
 
+  test("IllegalChannelSize.01") {
+    val input = "def f(): Channel[Int] = channel Int -1"
+    val result = new Flix().addStr(input).compile()
+    expectError[WeederError.IllegalChannelSize](result)
+  }
+
+  test("IllegalChannelSize.02") {
+    val input = "def f(): Channel[Int] = channel Int -10"
+    val result = new Flix().addStr(input).compile()
+    expectError[WeederError.IllegalChannelSize](result)
+  }
+
+  test("IllegalChannelSize.03") {
+    val input = "def f(): Channel[Int] = channel Int -1000"
+    val result = new Flix().addStr(input).compile()
+    expectError[WeederError.IllegalChannelSize](result)
+  }
+
   test("IllegalEffect.01") {
     val input = "def f(): Bool @ Foo = true"
     val result = new Flix().addStr(input).compile()
