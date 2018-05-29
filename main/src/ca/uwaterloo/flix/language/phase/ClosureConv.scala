@@ -173,41 +173,29 @@ object ClosureConv {
       val e3 = visitExp(exp3)
       Expression.ArraySlice(e1, e2, e3, tpe, loc)
 
-    case Expression.NewChannel(e, tpe, loc) =>
-      Expression.NewChannel(convert(e), tpe, loc)
+    case Expression.NewChannel(exp, tpe, loc) =>
+      val e = visitExp(exp)
+      Expression.NewChannel(e, tpe, loc)
 
-    case Expression.GetChannel(e, tpe, loc) =>
-      Expression.GetChannel(convert(e), tpe, loc)
+    case Expression.GetChannel(exp, tpe, loc) =>
+      val e = visitExp(exp)
+      Expression.GetChannel(e, tpe, loc)
 
-    case Expression.PutChannel(e1, e2, tpe, loc) =>
-      Expression.PutChannel(convert(e1), convert(e2), tpe, loc)
+    case Expression.PutChannel(exp1, exp2, tpe, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      Expression.PutChannel(e1, e2, tpe, loc)
 
-    case Expression.Spawn(e, tpe, loc) =>
-      Expression.Spawn(convert(e), tpe, loc)
-
-    case Expression.SelectChannel(rules, tpe, loc) =>
-      val rs = rules map {
-        case SimplifiedAst.SelectRule(sym, chan, body) =>
-          SimplifiedAst.SelectRule(sym, convert(chan), convert(body))
-      }
-      Expression.SelectChannel(rs, tpe, loc)
-
-    case Expression.NewChannel(e, tpe, loc) =>
-      Expression.NewChannel(convert(e), tpe, loc)
-
-    case Expression.GetChannel(e, tpe, loc) =>
-      Expression.GetChannel(convert(e), tpe, loc)
-
-    case Expression.PutChannel(e1, e2, tpe, loc) =>
-      Expression.PutChannel(convert(e1), convert(e2), tpe, loc)
-
-    case Expression.Spawn(e, tpe, loc) =>
-      Expression.Spawn(convert(e), tpe, loc)
+    case Expression.Spawn(exp, tpe, loc) =>
+      val e = visitExp(exp)
+      Expression.Spawn(e, tpe, loc)
 
     case Expression.SelectChannel(rules, tpe, loc) =>
       val rs = rules map {
         case SimplifiedAst.SelectRule(sym, chan, body) =>
-          SimplifiedAst.SelectRule(sym, convert(chan), convert(body))
+          val c = visitExp(chan)
+          val b = visitExp(body)
+          SimplifiedAst.SelectRule(sym, c, b)
       }
       Expression.SelectChannel(rs, tpe, loc)
 

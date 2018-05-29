@@ -265,16 +265,6 @@ object ExecutableAst {
 
     case class SelectChannel(rules: List[ExecutableAst.SelectRule], tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
-    case class NewChannel(exp: ExecutableAst.Expression, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
-
-    case class GetChannel(exp: ExecutableAst.Expression, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
-
-    case class PutChannel(exp1: ExecutableAst.Expression, exp2: ExecutableAst.Expression, tpe: Type, loc: SourceLocation) extends  ExecutableAst.Expression
-
-    case class Spawn(exp: ExecutableAst.Expression, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
-
-    case class SelectChannel(rules: List[ExecutableAst.SelectRule], tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
-
     case class Ref(exp: ExecutableAst.Expression, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
     case class Deref(exp: ExecutableAst.Expression, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression

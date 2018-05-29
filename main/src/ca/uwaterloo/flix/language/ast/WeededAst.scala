@@ -168,16 +168,6 @@ object WeededAst {
 
     case class SelectChannel(rules: List[WeededAst.SelectRule], loc: SourceLocation) extends WeededAst.Expression
 
-    case class NewChannel(tpe: WeededAst.Type, exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
-
-    case class GetChannel(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
-
-    case class PutChannel(exp1: WeededAst.Expression, exp2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
-
-    case class Spawn(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
-
-    case class SelectChannel(rules: List[WeededAst.SelectRule], loc: SourceLocation) extends WeededAst.Expression
-
     case class Ref(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     case class Deref(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
