@@ -175,6 +175,16 @@ object NamedAst {
 
     case class SelectChannel(rules: List[NamedAst.SelectRule], tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
+    case class NewChannel(tpe: NamedAst.Type, exp: NamedAst.Expression, loc: SourceLocation) extends NamedAst.Expression
+
+    case class GetChannel(exp: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
+
+    case class PutChannel(exp1: NamedAst.Expression, exp2: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
+
+    case class Spawn(exp: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
+
+    case class SelectChannel(rules: List[NamedAst.SelectRule], tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
+
     case class Ref(exp: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
     case class Deref(exp: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression

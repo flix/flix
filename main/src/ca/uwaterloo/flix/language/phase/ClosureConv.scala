@@ -192,6 +192,25 @@ object ClosureConv {
       }
       Expression.SelectChannel(rs, tpe, loc)
 
+    case Expression.NewChannel(e, tpe, loc) =>
+      Expression.NewChannel(convert(e), tpe, loc)
+
+    case Expression.GetChannel(e, tpe, loc) =>
+      Expression.GetChannel(convert(e), tpe, loc)
+
+    case Expression.PutChannel(e1, e2, tpe, loc) =>
+      Expression.PutChannel(convert(e1), convert(e2), tpe, loc)
+
+    case Expression.Spawn(e, tpe, loc) =>
+      Expression.Spawn(convert(e), tpe, loc)
+
+    case Expression.SelectChannel(rules, tpe, loc) =>
+      val rs = rules map {
+        case SimplifiedAst.SelectRule(sym, chan, body) =>
+          SimplifiedAst.SelectRule(sym, convert(chan), convert(body))
+      }
+      Expression.SelectChannel(rs, tpe, loc)
+
     case Expression.Ref(exp, tpe, loc) =>
       val e = visitExp(exp)
       Expression.Ref(e, tpe, loc)

@@ -592,32 +592,32 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
 
         case NamedAst.Expression.NewChannel(tpe, exp, loc) =>
           for {
-            e <- visit(exp)
+            e <- visit(exp, tenv0)
             t <- lookupType(tpe, ns0, prog0)
           } yield ResolvedAst.Expression.NewChannel(t, e, loc)
 
         case NamedAst.Expression.GetChannel(exp, tvar, loc) =>
           for {
-            e <- visit(exp)
+            e <- visit(exp, tenv0)
           } yield ResolvedAst.Expression.GetChannel(e, tvar, loc)
 
         case NamedAst.Expression.PutChannel(exp1, exp2, tvar, loc) =>
           for {
-            e1 <- visit(exp1)
-            e2 <- visit(exp2)
+            e1 <- visit(exp1, tenv0)
+            e2 <- visit(exp2, tenv0)
           } yield ResolvedAst.Expression.PutChannel(e1, e2, tvar, loc)
 
         case NamedAst.Expression.Spawn(exp, tvar, loc) =>
           for {
-            e <- visit(exp)
+            e <- visit(exp, tenv0)
           } yield ResolvedAst.Expression.Spawn(e, tvar, loc)
 
         case NamedAst.Expression.SelectChannel(rules, tvar, loc) =>
           val rulesVal = rules map {
             case NamedAst.SelectRule(sym, chan, body) =>
               for {
-                c <- visit(chan)
-                b <- visit(body)
+                c <- visit(chan, tenv0)
+                b <- visit(body, tenv0)
               } yield ResolvedAst.SelectRule(sym, c, b)
           }
 

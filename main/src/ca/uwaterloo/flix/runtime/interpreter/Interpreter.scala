@@ -19,7 +19,6 @@ package ca.uwaterloo.flix.runtime.interpreter
 import scala.collection.JavaConverters._
 
 import java.lang.reflect.{InvocationTargetException, Modifier}
-import java.lang.reflect.Modifier
 import java.util.concurrent.locks.{Condition, Lock, ReentrantLock}
 import java.util
 
@@ -239,6 +238,56 @@ object Interpreter {
       }
 
 
+
+    //
+    // NewChannel expressions.
+    //
+    case Expression.NewChannel(exp, tpe, loc) =>
+      val capacity = cast2int32(eval(exp, env0, henv0, lenv0, root))
+      newChannel(capacity)
+
+    //
+    // GetChannel expressions.
+    //
+    case Expression.GetChannel(exp, tpe, loc) =>
+      val chan = cast2channel(eval(exp, env0, henv0, lenv0, root))
+      getChannel(chan)
+
+    //
+    // PutChannel expressions.
+    //
+    case Expression.PutChannel(exp1, exp2, tpe, loc) =>
+      val value = eval(exp2, env0, henv0, lenv0, root)
+      val chan = cast2channel(eval(exp1, env0, henv0, lenv0, root))
+      putChannel(chan, value)
+
+    //
+    // Spawn expressions.
+    //
+    case Expression.Spawn(exp, tpe, loc) =>
+      val clo = eval(exp, env0, henv0, lenv0, root)
+
+      val t = new Thread("Spawn Process") {
+        override def run() = invokeClo(clo, List(ExecutableAst.Expression.Unit), env0, henv0, lenv0, root)
+      }
+      t.start()
+      Value.Unit
+
+    //
+    // SelectChannel expressions.
+    //
+    case Expression.SelectChannel(rules, tpe, loc) =>
+      val rs = rules map {
+        case SelectRule(sym, cexp, body) =>
+          val chan = cast2channel(eval(cexp, env0, henv0, lenv0, root))
+          ((sym, chan, body))
+      }
+
+      selectChannel(rs) match {
+        case (sym, res, body) =>
+          val newEnv = env0 + (sym.toString -> res)
+          eval(body, newEnv, henv0, lenv0, root)
+      }
 
     //
     // NewChannel expressions.

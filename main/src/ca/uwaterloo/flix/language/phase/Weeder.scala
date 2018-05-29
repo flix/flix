@@ -806,6 +806,78 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
             case rs => WeededAst.Expression.SelectChannel(rs, mkSL(sp1, sp2))
           }
 
+        case ParsedAst.Expression.NewChannel(sp1, tpe, expOpt, sp2) =>
+          expOpt match {
+            case None =>
+              // Case 1: NewChannel takes no expression that states the channel size
+              val channelSize = WeededAst.Expression.Int32(lit = 0, mkSL(sp2, sp2))
+              WeededAst.Expression.NewChannel(Types.weed(tpe), channelSize, mkSL(sp1, sp2)).toSuccess
+            case Some(exp) =>
+              // Case 2: NewChannel takes an expression that states the channel size
+              exp match {
+                case ParsedAst.Expression.Lit(_, ParsedAst.Literal.Int32(_, sign, _, _), _) if sign =>
+                    IllegalChannelSize(mkSL(sp1, sp2)).toFailure
+                case _ =>
+                  visit(exp, unsafe) map {
+                    case e => WeededAst.Expression.NewChannel(Types.weed(tpe), e, mkSL(sp1, sp2))
+                  }
+              }
+          }
+
+        case ParsedAst.Expression.GetChannel(sp1, exp, sp2) =>
+          visit(exp,unsafe) map {
+            case e => WeededAst.Expression.GetChannel(e, mkSL(sp1, sp2))
+          }
+
+        case ParsedAst.Expression.PutChannel(exp1, exp2, sp2) =>
+          val sp1 = leftMostSourcePosition(exp1)
+          val loc = mkSL(sp1, sp2)
+          @@(visit(exp1, unsafe), visit(exp2, unsafe)) map {
+            case (e1, e2) => WeededAst.Expression.PutChannel(e1, e2, loc)
+          }
+
+        case ParsedAst.Expression.Spawn(sp1, fn, params, sp2) =>
+          val loc = mkSL(sp1, sp2)
+          val func = WeededAst.Expression.VarOrDef(Name.QName(sp1, Name.RootNS, fn, sp2), loc)
+
+          // TODO simplify this
+          def createExpression(params: List[ParsedAst.Expression], arguments: List[Name.Ident], paramNumber: Int): Validation[WeededAst.Expression, WeederError] =
+            params match {
+              case h :: t =>
+                val param = Name.Ident(sp1, s"x$$${paramNumber}", sp2)
+
+                @@(visit(h, unsafe), createExpression(t, param :: arguments, paramNumber + 1)) map {
+                  case (e1, e2) => WeededAst.Expression.Let(param, e1, e2, loc) // let x$n = en
+                }
+
+              case Nil    =>
+                val args = arguments.reverse map {
+                  case v => WeededAst.Expression.VarOrDef(Name.QName(sp1, Name.RootNS, v, sp2), loc)
+                }
+                val exp = WeededAst.Expression.Apply(func, args, loc) // f(args)
+
+                val innerBody = WeededAst.Expression.Let(Name.Ident(sp1, "_$1", sp2), exp, WeededAst.Expression.Unit(loc), loc)
+
+                // Wrapping function in a lambda function
+                val formalParam = WeededAst.FormalParam(Name.Ident(sp1, "_$2", sp2), Ast.Modifiers.Empty, None, loc)
+                val lam = WeededAst.Expression.Lambda(List(formalParam), innerBody, loc) // _$ -> f(args)
+
+                // Spawn the lambda function
+                WeededAst.Expression.Spawn(lam, loc).toSuccess // spawn(_$ -> f(args))
+            }
+
+          createExpression(params.toList, List.empty, 1)
+
+        case ParsedAst.Expression.SelectChannel(sp1, rules, sp2) =>
+          val rulesVal = rules map {
+            case ParsedAst.SelectRule(ident, chan, body) => @@(visit(chan, unsafe), visit(body, unsafe)) map {
+              case (c, b) => WeededAst.SelectRule(ident, c, b)
+            }
+          }
+          @@(rulesVal) map {
+            case rs => WeededAst.Expression.SelectChannel(rs, mkSL(sp1, sp2))
+          }
+
         case ParsedAst.Expression.FNil(sp1, sp2) =>
           /*
            * Rewrites a `FNil` expression into a tag expression.
