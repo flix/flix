@@ -782,7 +782,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
                 val args = arguments.reverse map {
                   case v => WeededAst.Expression.VarOrDef(Name.QName(sp1, Name.RootNS, v, sp2), loc)
                 }
-                val exp = WeededAst.Expression.Apply(func, args, loc) // f(args)
+                val exp = mkApplyCurried(func, args, loc) // f(args)
 
                 val innerBody = WeededAst.Expression.Let(Name.Ident(sp1, "_$1", sp2), exp, WeededAst.Expression.Unit(loc), loc)
 

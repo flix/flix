@@ -827,19 +827,6 @@ object JvmOps {
           case (sacc, r) => sacc ++ visitExp(r.chan) ++ visitExp(r.body)
         }
 
-      case Expression.NewChannel(exp, tpe, loc) =>
-        visitExp(exp)
-      case Expression.GetChannel(exp, tpe, loc) =>
-        visitExp(exp)
-      case Expression.PutChannel(exp1, exp2, tpe, loc) =>
-        visitExp(exp1) ++ visitExp(exp2)
-      case Expression.Spawn(exp, tpe, loc) =>
-        visitExp(exp)
-      case Expression.SelectChannel(rules, tpe, loc) =>
-        rules.foldLeft(Set.empty[ClosureInfo]) {
-          case (sacc, r) => sacc ++ visitExp(r.chan) ++ visitExp(r.body)
-        }
-
       case Expression.Ref(exp, tpe, loc) => visitExp(exp)
       case Expression.Deref(exp, tpe, loc) => visitExp(exp)
       case Expression.Assign(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2)
@@ -1064,14 +1051,6 @@ object JvmOps {
       case Expression.ArrayLength(exp, tpe, loc) => visitExp(exp)
 
       case Expression.ArraySlice(exp1, exp2, exp3, tpe, loc) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
-
-      case Expression.NewChannel(exp, tpe, loc) => visitExp(exp) + tpe
-      case Expression.GetChannel(exp, tpe, loc) => visitExp(exp) + tpe
-      case Expression.PutChannel(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2) + tpe
-      case Expression.Spawn(exp, tpe, loc) => visitExp(exp) + tpe
-      case Expression.SelectChannel(rules, tpe, loc) => rules.foldLeft(Set(tpe)) {
-        case (sacc, r) => sacc ++ visitExp(r.chan) ++ visitExp(r.body)
-      }
 
       case Expression.NewChannel(exp, tpe, loc) => visitExp(exp) + tpe
       case Expression.GetChannel(exp, tpe, loc) => visitExp(exp) + tpe

@@ -518,31 +518,6 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     case Expression.SelectChannel(rules, tpe, loc) => false
 
     //
-    // NewChannel expressions are atomic.
-    //
-    case Expression.NewChannel(exp, tpe, loc) => false
-
-    //
-    // GetChannel expressions are atomic.
-    //
-    case Expression.GetChannel(exp, tpe, loc) => false
-
-    //
-    // PutChannel expressions are atomic.
-    //
-    case Expression.PutChannel(exp1, exp2, tpe, loc) => false
-
-    //
-    // Spawn expressions are atomic.
-    //
-    case Expression.Spawn(exp, tpe, loc) => false
-
-    //
-    // SelectChannel expressions are atomic.
-    //
-    case Expression.SelectChannel(rules, tpe, loc) => false
-
-    //
     // Reference expressions are atomic.
     //
     case Expression.Ref(exp, tpe, loc) => isAtomic(exp)

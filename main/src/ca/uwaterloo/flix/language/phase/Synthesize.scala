@@ -251,29 +251,6 @@ object Synthesize extends Phase[Root, Root] {
         }
         Expression.SelectChannel(rs, tpe, eff, loc)
 
-      case Expression.NewChannel(exp, tpe, eff, loc) =>
-        val e = visitExp(exp)
-        Expression.NewChannel(e, tpe, eff, loc)
-
-      case Expression.GetChannel(exp, tpe, eff, loc) =>
-        val e = visitExp(exp)
-        Expression.GetChannel(e, tpe, eff, loc)
-
-      case Expression.PutChannel(exp1, exp2, tpe, eff, loc) =>
-        val e1 = visitExp(exp1)
-        val e2 = visitExp(exp2)
-        Expression.PutChannel(e1, e2, tpe, eff, loc)
-
-      case Expression.Spawn(exp, tpe, eff, loc) =>
-        val e = visitExp(exp)
-        Expression.Spawn(e, tpe, eff, loc)
-
-      case Expression.SelectChannel(rules, tpe, eff, loc) =>
-        val rs = rules map {
-          case SelectRule(sym, chan, body) => SelectRule(sym, chan, visitExp(body))
-        }
-        Expression.SelectChannel(rs, tpe, eff, loc)
-
       case Expression.Ref(exp, tpe, eff, loc) =>
         val e = visitExp(exp)
         Expression.Ref(e, tpe, eff, loc)
