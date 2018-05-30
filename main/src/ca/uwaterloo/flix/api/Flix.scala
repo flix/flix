@@ -245,9 +245,9 @@ class Flix {
       TreeShaker |>
       VarNumbering |>
       CreateExecutableAst |>
-      JvmBackend |>
       QuickChecker |>
-      Verifier
+      Verifier |>
+      JvmBackend
 
     // Apply the pipeline to the parsed AST.
     pipeline.run(typedAst)(this)

@@ -174,8 +174,8 @@ object Uncurrier extends Phase[Root, Root] {
 
     // Construct a fresh definition that takes two arguments.
     val loc = SourceLocation.Unknown
-    val ann = Annotations.Empty
-    val mod = Modifiers.Empty
+    val ann = defn.ann
+    val mod = defn.mod
 
     // Construct a fresh symbol for the new definition.
     val freshSym = Symbol.freshDefnSym(sym)

@@ -127,22 +127,23 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
             List(WeededAst.Declaration.Handler(doc, as, mod, ident, tparams, fs.head :: Nil, e, t, eff, loc))
         }
 
-      case ParsedAst.Declaration.Law(doc0, sp1, ident, tparams0, fparams0, tpe, exp, sp2) =>
-        val loc = mkSL(sp1, sp2)
+      case ParsedAst.Declaration.Law(doc0, sp1, ident, tparams0, fparams0, tpe, exp0, sp2) =>
+        val loc = mkSL(ident.sp1, ident.sp2)
         val doc = visitDoc(doc0)
-        val mod = Ast.Modifiers(Ast.Modifier.Public :: Nil)
+        val expVal = Expressions.weed(exp0)
+        val tparams = tparams0.toList.map(_.ident)
 
         /*
-         * Check for `DuplicateFormal`.
-         */
-        for {
-          fs <- Formals.weed(fparams0, typeRequired = true)
-          e <- Expressions.weed(exp)
-        } yield {
-          // Rewrite to Definition.
-          val ann = Ast.Annotations(List(Ast.Annotation.Law(loc)))
-          val t = mkArrowType(fs, Types.weed(tpe), loc)
-          List(WeededAst.Declaration.Def(doc, ann, mod, ident, tparams0.map(_.ident).toList, fs, e, t, Eff.Pure, loc))
+          * Check for `DuplicateFormal`.
+          */
+        val formalsVal = Formals.weed(fparams0, typeRequired = true)
+        @@(formalsVal, expVal) map {
+          case (fs, exp) =>
+            val e = mkCurried(fs.tail, exp, loc)
+            val t = mkArrowType(fs, Types.weed(tpe), loc)
+            val ann = Ast.Annotations(List(Ast.Annotation.Law(loc)))
+            val mod = Ast.Modifiers(Ast.Modifier.Public :: Nil)
+            List(WeededAst.Declaration.Def(doc, ann, mod, ident, tparams, fs.head :: Nil, e, t, Eff.Pure, loc))
         }
 
       case ParsedAst.Declaration.Enum(doc0, mods, sp1, ident, tparams0, cases, sp2) =>

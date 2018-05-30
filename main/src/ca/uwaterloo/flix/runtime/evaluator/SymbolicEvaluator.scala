@@ -148,7 +148,10 @@ object SymbolicEvaluator {
       /**
         * Local Variable.
         */
-      case Expression.Var(sym, tpe, loc) => lift(pc0, qua0, env0(sym))
+      case Expression.Var(sym, tpe, loc) => env0.get(sym) match {
+        case None => throw InternalRuntimeException(s"Undefined symbol: '$sym' near ${loc.format}.")
+        case Some(symVal) => lift(pc0, qua0, symVal)
+      }
 
       /**
         * Closure.

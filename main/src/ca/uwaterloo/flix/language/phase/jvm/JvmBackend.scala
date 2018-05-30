@@ -47,6 +47,13 @@ object JvmBackend extends Phase[Root, Root] {
     }
 
     //
+    // Immediately return if in verification mode.
+    //
+    if (flix.options.verifier) {
+      return root.toSuccess
+    }
+
+    //
     // Put the AST root into implicit scope.
     //
     implicit val _ = root
