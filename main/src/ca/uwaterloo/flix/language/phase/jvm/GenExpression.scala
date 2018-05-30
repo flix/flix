@@ -866,10 +866,16 @@ object GenExpression {
         AsmOps.getMethodDescriptor(Nil, JvmType.Unit), false)
 
     case Expression.Existential(params, exp, loc) =>
-      throw InternalCompilerException(s"Unexpected expression: '$exp0' at ${loc.source.format}.")
+      // Adding source line number for debugging
+      addSourceLine(visitor, loc)
+      val msg = s"Existential expression near ${loc.format}."
+      AsmOps.compileThrowException(visitor, JvmName.UserException, msg)
 
     case Expression.Universal(params, exp, loc) =>
-      throw InternalCompilerException(s"Unexpected expression: '$exp0' at ${loc.source.format}.")
+      // Adding source line number for debugging
+      addSourceLine(visitor, loc)
+      val msg = s"Universal expression near ${loc.format}."
+      AsmOps.compileThrowException(visitor, JvmName.UserException, msg)
 
     case Expression.TryCatch(exp, rules, tpe, loc) =>
       // Add source line number for debugging.
