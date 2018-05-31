@@ -135,7 +135,7 @@ namespace Domain/IntervalAlt {
     /// Over-approximates integer `multiplication`.
     ///
     #safe2((x, y) -> x * y)
-    #strict2 /* slow? #monotone2 */
+    #strict2 /* #monotone2 loops/timeout */
     def times(e1: IntervalAlt, e2: IntervalAlt): IntervalAlt = match (e1, e2) with {
         case (Bot, _)                       => Bot
         case (_, Bot)                       => Bot

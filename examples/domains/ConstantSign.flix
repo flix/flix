@@ -179,41 +179,6 @@ namespace Domain/ConstantSign {
     }
 
     ///
-    /// Over-approximates integer `division`.
-    ///
-    /// NB: We cannot prove safety directly because modulus is not a total function.
-    #strict2 #monotone2
-    def divide(e1: ConstantSign, e2: ConstantSign): ConstantSign = match (e1, e2) with {
-        case (Bot, _)           => Bot
-        case (_, Bot)           => Bot
-        case (_, Cst(0ii))      => Bot
-        case (Cst(0ii), _)      => Cst(0ii)
-        case (Cst(n1), Cst(n2)) => Cst(n1 / n2)
-        case (Cst(n1), Neg)     => if (n1 > 0ii) Neg else Pos
-        case (Neg, Cst(n1))     => if (n1 > 0ii) Neg else Pos
-        case (Cst(n1), Pos)     => if (n1 < 0ii) Neg else Pos
-        case (Pos, Cst(n1))     => if (n1 < 0ii) Neg else Pos
-        case (Neg, Neg)         => Pos
-        case (Pos, Neg)         => Neg
-        case (Neg, Pos)         => Neg
-        case (Pos, Pos)         => Pos
-        case _                  => Top
-    }
-
-    ///
-    /// Over-approximates integer `modulus`.
-    ///
-    /// NB: We cannot prove safety directly because modulus is not a total function.
-    #strict2 #monotone2
-    def modulo(e1: ConstantSign, e2: ConstantSign): ConstantSign = match (e1, e2) with {
-        case (Bot, _)           => Bot
-        case (_, Bot)           => Bot
-        case (_, Cst(0ii))      => Bot
-        case (Cst(n1), Cst(n2)) => Cst(n1 % n2)
-        case _                  => Top
-    }
-
-    ///
     /// Over-approximates `equal`.
     ///
     #PartialOrder.safe2((x, y) -> x == y, alpha, Belnap.alpha, Belnap.leq)

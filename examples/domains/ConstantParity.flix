@@ -179,37 +179,6 @@ namespace Domain/ConstantParity {
     }
 
     ///
-    /// Over-approximates integer `division`.
-    ///
-    /// NB: We cannot prove safety directly because modulus is not a total function.
-    #strict2 #monotone2
-    def divide(e1: ConstantParity, e2: ConstantParity): ConstantParity = match (e1, e2) with {
-        case (Bot, _)           => Bot
-        case (_, Bot)           => Bot
-        case (_, Cst(0ii))      => Bot
-        case (Cst(n1), Cst(n2)) => Cst(n1 / n2)
-        case _                  => Top
-    }
-
-    ///
-    /// Over-approximates integer `modulus`.
-    ///
-    /// NB: We cannot prove safety directly because modulus is not a total function.
-    #strict2 // NB: @monotone annotation removed since Z3 reports unknown.
-    def modulo(e1: ConstantParity, e2: ConstantParity): ConstantParity = match (e1, e2) with {
-        case (Bot, _)           => Bot
-        case (_, Bot)           => Bot
-        case (_, Cst(0ii))      => Bot
-        case (Cst(n1), Cst(n2)) => Cst(n1 % n2)
-        case (Cst(n), Even)     => if (isOdd(n)) Odd else Even
-        case (Odd, Cst(n))      => if (isEven(n)) Odd else Top
-        case (Even, Cst(n))     => if (isEven(n)) Even else Top
-        case (Odd, Even)        => Odd
-        case (Even, Even)       => Even
-        case _                  => Top
-    }
-
-    ///
     /// Over-approximates `equal`.
     ///
     #PartialOrder.safe2((x, y) -> x == y, alpha, Belnap.alpha, Belnap.leq)

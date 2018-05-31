@@ -17,7 +17,12 @@ namespace Domain/Interval {
 
                   case Bot
     }
-    
+
+    ///
+    /// Returns `true` iff `e1` is equal to `e2`.
+    ///
+    def equ(e1: Interval, e2: Interval): Bool = norm(e1) == norm(e2)
+
     ///
     /// Returns the canonical representation of the given interval `e`.
     ///
@@ -176,7 +181,7 @@ namespace Domain/Interval {
     // NB: Strictness and monotonicity follows from the properties of `or` and `less`.
     def lessEqual(e1: Interval, e2: Interval): Belnap.Belnap = Belnap.or(e1 `less` e2, e1 `eq` e2)
 
-    let Interval<> = (Bot, Top, leq, lub, glb)
+    let Interval<> = (Bot, Top, leq, equ, lub, glb)
 
     // ------------------------------------------------------------------------
     // Specialized Laws

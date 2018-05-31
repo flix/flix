@@ -39,7 +39,7 @@ namespace Domain/PrefixSuffix {
     ///
     /// Returns the least upper bound of `e1` and `e2`.
     ///
-    #upperBound #leastUpperBound #commutative /* #associative slow */
+    #upperBound #leastUpperBound #commutative #associative
     def lub(e1: PrefixSuffix, e2: PrefixSuffix): PrefixSuffix = match (e1, e2) with {
         case (Bot, x)                           => x
         case (x, Bot)                           => x
