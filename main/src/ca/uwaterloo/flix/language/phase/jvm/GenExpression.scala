@@ -866,16 +866,16 @@ object GenExpression {
         AsmOps.getMethodDescriptor(Nil, JvmType.Unit), false)
 
     case Expression.Existential(params, exp, loc) =>
-      // Adding source line number for debugging
+      // TODO: Better exception.
       addSourceLine(visitor, loc)
-      val msg = s"Existential expression near ${loc.format}."
-      AsmOps.compileThrowException(visitor, JvmName.UserException, msg)
+      val msg = s"Existential expression hear ${loc.format}"
+      AsmOps.compileThrowRuntimeException(visitor, JvmName.Runtime.NotImplementedException, msg)
 
     case Expression.Universal(params, exp, loc) =>
-      // Adding source line number for debugging
+      // TODO: Better exception.
       addSourceLine(visitor, loc)
-      val msg = s"Universal expression near ${loc.format}."
-      AsmOps.compileThrowException(visitor, JvmName.UserException, msg)
+      val msg = s"Universal expression near ${loc.format}"
+      AsmOps.compileThrowRuntimeException(visitor, JvmName.Runtime.NotImplementedException, msg)
 
     case Expression.TryCatch(exp, rules, tpe, loc) =>
       // Add source line number for debugging.
@@ -966,10 +966,9 @@ object GenExpression {
       }
 
     case Expression.UserError(_, loc) =>
-      // Adding source line number for debugging
       addSourceLine(visitor, loc)
-      val msg = s"User exception: ${loc.format}."
-      AsmOps.compileThrowException(visitor, JvmName.UserException, msg)
+      val msg = s"Not implemented near ${loc.format}"
+      AsmOps.compileThrowRuntimeException(visitor, JvmName.Runtime.NotImplementedException, msg)
 
     case Expression.HoleError(sym, _, loc) =>
       // Adding source line number for debugging

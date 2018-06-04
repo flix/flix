@@ -24,6 +24,7 @@ import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.InternalRuntimeException
 import ca.uwaterloo.flix.util.tc.Show._
 import flix.runtime.HoleException
+import flix.runtime.NotImplementedException
 
 object Interpreter {
 
@@ -326,7 +327,7 @@ object Interpreter {
     //
     // Error expressions.
     //
-    case Expression.UserError(_, loc) => throw UserException("User exception.", loc)
+    case Expression.UserError(_, loc) => throw new NotImplementedException(s"Not implemented near ${loc.format}")
     case Expression.HoleError(sym, _, loc) => throw new HoleException(s"Hole '$sym' near ${loc.format}")
     case Expression.MatchError(_, loc) => throw MatchException("Non-exhaustive match expression.", loc)
     case Expression.SwitchError(_, loc) => throw SwitchException("Non-exhaustive switch expression.", loc)

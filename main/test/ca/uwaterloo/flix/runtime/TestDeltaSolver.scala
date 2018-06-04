@@ -54,13 +54,6 @@ class TestDeltaSolver extends FunSuite {
     assert(DeltaSolver.sameException(ex1, ex2))
   }
 
-  test("SameException.UserException.01") {
-    val loc = SourceLocation.Unknown
-    val ex1 = new UserException("test", loc)
-    val ex2 = new UserException("test", loc)
-    assert(DeltaSolver.sameException(ex1, ex2))
-  }
-
   //
   // Java Exceptions.
   //
@@ -144,7 +137,6 @@ class TestDeltaSolver extends FunSuite {
     val ex01 = new RuleException("test", SourceLocation.Unknown)
     val ex02 = new SwitchException("test", SourceLocation.Unknown)
     val ex03 = new TimeoutException(Duration(1, SECONDS), Duration(2, SECONDS))
-    val ex04 = new UserException("test", SourceLocation.Unknown)
     val ex05 = new ArithmeticException()
     val ex06 = new IllegalArgumentException()
     val ex07 = new IndexOutOfBoundsException()
@@ -155,8 +147,6 @@ class TestDeltaSolver extends FunSuite {
     assert(!DeltaSolver.sameException(ex00, ex01))
     assert(!DeltaSolver.sameException(ex01, ex02))
     assert(!DeltaSolver.sameException(ex02, ex03))
-    assert(!DeltaSolver.sameException(ex03, ex04))
-    assert(!DeltaSolver.sameException(ex04, ex05))
     assert(!DeltaSolver.sameException(ex05, ex06))
     assert(!DeltaSolver.sameException(ex06, ex07))
     assert(!DeltaSolver.sameException(ex07, ex08))
@@ -186,12 +176,6 @@ class TestDeltaSolver extends FunSuite {
     val sl2 = SourceLocation(Source("test", Array.emptyCharArray), 1, 0, 1, 42, i => "")
     val ex1 = SwitchException("test", sl1)
     val ex2 = SwitchException("test", sl2)
-    assert(!DeltaSolver.sameException(ex1, ex2))
-  }
-
-  test("SameException.NotEqual.UserException") {
-    val ex1 = UserException("ONE", SourceLocation.Unknown)
-    val ex2 = UserException("TWO", SourceLocation.Unknown)
     assert(!DeltaSolver.sameException(ex1, ex2))
   }
 

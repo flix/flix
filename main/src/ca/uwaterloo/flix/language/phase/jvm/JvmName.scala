@@ -99,11 +99,6 @@ object JvmName {
   val Exception: JvmName = JvmName(List("java", "lang"), "Exception")
 
   /**
-    * The `ca.uwaterloo.flix.api.UserException$` name
-    */
-  val UserException: JvmName = JvmName(List("ca", "uwaterloo", "flix", "api"), "UserException")
-
-  /**
     * The `ca.uwaterloo.flix.api.MatchException$` name
     */
   val MatchException: JvmName = JvmName(List("ca", "uwaterloo", "flix", "api"), "MatchException")
@@ -141,6 +136,8 @@ object JvmName {
   object Runtime {
 
     val HoleException: JvmName = JvmName(List("flix", "runtime"), "HoleException")
+
+    val NotImplementedException: JvmName = JvmName(List("flix", "runtime"), "NotImplementedException")
 
   }
 

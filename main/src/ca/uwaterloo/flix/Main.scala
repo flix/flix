@@ -18,12 +18,14 @@ package ca.uwaterloo.flix
 
 import java.io.{File, PrintWriter}
 
-import ca.uwaterloo.flix.api.{Flix, MatchException, RuleException, SwitchException, UserException}
+import ca.uwaterloo.flix.api.{Flix, MatchException, RuleException, SwitchException}
+import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.runtime.shell.Shell
 import ca.uwaterloo.flix.runtime.{Benchmarker, Tester}
 import ca.uwaterloo.flix.util._
 import ca.uwaterloo.flix.util.vt.VirtualString.{Code, Line, NewLine}
 import ca.uwaterloo.flix.util.vt._
+import flix.runtime.NotImplementedException
 
 import scala.concurrent.duration.Duration
 
@@ -161,11 +163,8 @@ object Main {
           errors.foreach(e => println(e.message.fmt))
       }
     } catch {
-      case UserException(msg, loc) =>
-        val vt = new VirtualTerminal()
-        vt << Line("User Error", loc.source.format) << NewLine
-        vt << Code(loc, msg) << NewLine
-        Console.println(vt.fmt)
+      case ex: NotImplementedException =>
+        Console.println(ex.getMessage)
         System.exit(1)
       case MatchException(msg, loc) =>
         val vt = new VirtualTerminal()
