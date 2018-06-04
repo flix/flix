@@ -150,6 +150,12 @@ object JvmName {
     JvmType.Reference(JvmName(List("ca", "uwaterloo", "flix"), name))
   }
 
+  object Runtime {
+
+    val HoleException: JvmName = JvmName(List("flix", "runtime"), "HoleException")
+
+  }
+
 }
 
 /**

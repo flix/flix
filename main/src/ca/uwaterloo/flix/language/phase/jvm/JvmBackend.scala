@@ -154,11 +154,6 @@ object JvmBackend extends Phase[Root, Root] {
     val cellClasses = GenCellClasses.gen()
 
     //
-    // Generate exception classes.
-    //
-    val exceptionClasses = GenExceptionClasses.gen()
-
-    //
     // Collect all the classes and interfaces together.
     //
     val allClasses = List(
@@ -175,8 +170,7 @@ object JvmBackend extends Phase[Root, Root] {
       tupleInterfaces,
       tupleClasses,
       fusionClasses,
-      cellClasses,
-      exceptionClasses
+      cellClasses
     ).reduce(_ ++ _)
 
     //

@@ -304,6 +304,7 @@ object AsmOps {
   /**
     * Generates code which instantiate an exception object and then throws it.
     */
+  // TODO: Deprecated.
   def compileThrowException(visitor: MethodVisitor, className: JvmName, msg: String): Unit = {
     visitor.visitTypeInsn(NEW, className.toInternalName)
     visitor.visitInsn(DUP)
@@ -314,6 +315,17 @@ object AsmOps {
     visitor.visitMethodInsn(INVOKESPECIAL, className.toInternalName, "<init>", "(Ljava/lang/String;Lca/uwaterloo/flix/language/ast/package$SourceLocation;)V", false)
     visitor.visitInsn(ATHROW)
   }
+
+  /**
+    * Generates code which instantiate an exception object and then throws it.
+    */
+  def compileThrowRuntimeException(mv: MethodVisitor, className: JvmName, msg: String): Unit = {
+    mv.visitTypeInsn(NEW, className.toInternalName)
+    mv.visitInsn(DUP)
+    mv.visitLdcInsn(msg)
+    mv.visitMethodInsn(INVOKESPECIAL, className.toInternalName, "<init>", "(Ljava/lang/String;)V", false)
+    mv.visitInsn(ATHROW)
+}
 
   /**
     * This will generate a method which will throw an exception in case of getting called.

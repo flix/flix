@@ -18,11 +18,12 @@ package ca.uwaterloo.flix.runtime.evaluator
 
 import java.math.BigInteger
 
-import ca.uwaterloo.flix.api.{HoleException, MatchException, SwitchException, UserException}
+import ca.uwaterloo.flix.api.{MatchException, SwitchException, UserException}
 import ca.uwaterloo.flix.language.GenSym
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Expression
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.{InternalCompilerException, InternalRuntimeException}
+import flix.runtime.HoleException
 
 /**
   * Symbolic evaluator that supports symbolic values and collects path constraints.
@@ -845,7 +846,7 @@ object SymbolicEvaluator {
       /**
         * Hole Error.
         */
-      case Expression.HoleError(sym, tpe, loc) => throw HoleException(sym.toString, loc)
+      case Expression.HoleError(sym, tpe, loc) => throw new HoleException(s"Hole '$sym' near ${loc.format}")
 
       /**
         * Match Error.

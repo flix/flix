@@ -971,8 +971,13 @@ object GenExpression {
       val msg = s"User exception: ${loc.format}."
       AsmOps.compileThrowException(visitor, JvmName.UserException, msg)
 
-    case Expression.HoleError(sym, _, loc) => ???
-    // TODO: Ramin: HoleError.
+    case Expression.HoleError(sym, _, loc) =>
+      // Adding source line number for debugging
+      addSourceLine(visitor, loc)
+      // Construct the error message.
+      val msg = s"Hole '$sym' near ${loc.format}"
+      AsmOps.compileThrowRuntimeException(visitor, JvmName.Runtime.HoleException, msg)
+
     // TODO: Be sure to Uncomment the tests in Test.Expression.Hole.
 
     case Expression.MatchError(_, loc) =>
