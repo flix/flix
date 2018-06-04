@@ -126,7 +126,7 @@ object Value {
   /**
     * Flix internal representation of tags.
     */
-  case class Tag(enum: Symbol.EnumSym, tag: String, value: AnyRef) extends Value with api.Tag {
+  case class Tag(enum: Symbol.EnumSym, tag: String, value: AnyRef) extends Value {
     def getTag: String = tag
 
     def getBoxedTagValue: AnyRef = value
@@ -141,7 +141,7 @@ object Value {
   /**
     * A Tuple value.
     */
-  case class Tuple(elms: List[AnyRef]) extends Value with api.Tuple {
+  case class Tuple(elms: List[AnyRef]) extends Value {
     def getBoxedValue: Array[AnyRef] = elms.toArray
 
     final override def equals(obj: scala.Any): Boolean = throw InternalRuntimeException(s"Value.Tuple does not support `equals`.")

@@ -89,18 +89,6 @@ object JvmName {
   val String: JvmName = JvmName(List("java", "lang"), "String")
 
   /**
-    * The `ca.uwaterloo.flix.api.Tuple` name
-    */
-  // TODO: Magnus: Get rid of tuple interface.
-  val Tuple: JvmName = JvmName(List("ca", "uwaterloo", "flix", "api"), "Tuple")
-
-  /**
-    * The `ca.uwaterloo.flix.api.Tag` name
-    */
-  // TODO: Magnus: Get rid of tag interface.
-  val Tag: JvmName = JvmName(List("ca", "uwaterloo", "flix", "api"), "Tag")
-
-  /**
     * The `scala.math.package$` name
     */
   val ScalaMathPkg: JvmName = JvmName(List("scala", "math"), "package$")

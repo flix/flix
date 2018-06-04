@@ -55,11 +55,8 @@ object GenEnumInterfaces {
     // The super class of the generated interface.
     val superClass = JvmName.Object.toInternalName
 
-    // The interfaces implemented by the generated interface.
-    val implementedInterfaces = Array(JvmName.Tag.toInternalName)
-
     // The interface header.
-    visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_ABSTRACT + ACC_INTERFACE, interfaceType.name.toInternalName, null, superClass, implementedInterfaces)
+    visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_ABSTRACT + ACC_INTERFACE, interfaceType.name.toInternalName, null, superClass, Array())
 
     // The source of the generated interface.
     visitor.visitSource(interfaceType.name.toInternalName, null)

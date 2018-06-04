@@ -60,11 +60,8 @@ object GenTupleInterfaces {
     // Super descriptor
     val superClass = JvmName.Object.toInternalName
 
-    // Descriptors of implemented interfaces
-    val implementedInterfaces = Array(JvmName.Tuple.toInternalName)
-
     // Initialize the visitor to create a class.
-    visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_ABSTRACT + ACC_INTERFACE, interfaceType.name.toInternalName, null, superClass, implementedInterfaces)
+    visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_ABSTRACT + ACC_INTERFACE, interfaceType.name.toInternalName, null, superClass, Array())
 
     // Source of the class
     visitor.visitSource(interfaceType.name.toInternalName, null)

@@ -67,11 +67,6 @@ object JvmType {
   val String: JvmType.Reference = Reference(JvmName.String)
 
   /**
-    * The `ca.uwaterloo.flix.api.Tuple` type
-    */
-  val Tuple: JvmType.Reference = Reference(JvmName.Tuple)
-
-  /**
     * The `scala.math.package$` type
     */
   val ScalaMathPkg: JvmType.Reference = Reference(JvmName.ScalaMathPkg)
