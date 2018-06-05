@@ -16,10 +16,11 @@
 
 package ca.uwaterloo.flix.runtime
 
+import java.time.Duration
 import java.util.concurrent._
 import java.util.concurrent.atomic.AtomicInteger
 
-import ca.uwaterloo.flix.api.{Flix, RuleException, Tag, TimeoutException}
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Polarity
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Term.Body.Pat
 import ca.uwaterloo.flix.language.ast.ExecutableAst._
@@ -28,10 +29,10 @@ import ca.uwaterloo.flix.runtime.datastore.{DataStore, KeyCache, ProxyObject}
 import ca.uwaterloo.flix.runtime.debugger.RestServer
 import ca.uwaterloo.flix.runtime.interpreter.Value
 import ca.uwaterloo.flix.util._
+import flix.runtime.{RuleError, TimeoutError}
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
-import scala.concurrent.duration.{Duration, _}
 
 /**
   * Flix Fixed Point Solver.
@@ -602,7 +603,7 @@ class Solver(val root: ExecutableAst.Root, options: Options)(implicit flix: Flix
 
       interp += ((p.sym, fact))
     case Predicate.Head.True(loc) => // nop
-    case Predicate.Head.False(loc) => throw RuleException(s"The integrity rule defined at ${loc.format} is violated.", loc)
+    case Predicate.Head.False(loc) => throw new RuleError(loc.reified)
   }
 
   /**
@@ -873,14 +874,14 @@ class Solver(val root: ExecutableAst.Root, options: Options)(implicit flix: Flix
   /**
     * Checks whether the solver has exceed the timeout. If so, throws a timeout exception.
     */
-  private def checkTimeout(): Unit = {
-    if (options.timeout.isFinite()) {
+  private def checkTimeout(): Unit = options.timeout match {
+    case None => // nop
+    case Some(timeout) =>
       val elapsed = System.nanoTime() - totalTime
-      if (elapsed > options.timeout.toNanos) {
+      if (elapsed > timeout.toNanos) {
         stopSolver()
-        throw TimeoutException(options.timeout, Duration(elapsed, NANOSECONDS))
+        throw new TimeoutError(timeout, Duration.ofNanos(elapsed))
       }
-    }
   }
 
   /**
@@ -963,7 +964,6 @@ class Solver(val root: ExecutableAst.Root, options: Options)(implicit flix: Flix
     case (Pattern.BigInt(lit, _), o: java.math.BigInteger) => lit.equals(o)
     case (Pattern.Str(lit, _), o: java.lang.String) => lit.equals(o)
     case (Pattern.Tag(enum, tag, p, _, _), o: Value.Tag) => if (tag.equals(o.tag)) unify(p, o.value, env0) else false
-    case (Pattern.Tag(enum, tag, p, _, _), o: Tag) => if (tag == o.getTag) unify(p, o.getBoxedTagValue, env0) else false
     case (Pattern.Tuple(elms, _, _), o: Array[AnyRef]) =>
       if (elms.length != o.length)
         return false

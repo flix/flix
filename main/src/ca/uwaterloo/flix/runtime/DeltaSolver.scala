@@ -19,10 +19,11 @@ package ca.uwaterloo.flix.runtime
 import java.nio.file.StandardOpenOption._
 import java.nio.file.{Files, Path}
 
-import ca.uwaterloo.flix.api.{Flix, MatchException, RuleException, SwitchException, TimeoutException, UserException}
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Stratum
 import ca.uwaterloo.flix.language.ast.{ExecutableAst, PrettyPrinter}
 import ca.uwaterloo.flix.util.{Options, Verbosity}
+import flix.runtime._
 
 object DeltaSolver {
 
@@ -201,11 +202,11 @@ object DeltaSolver {
     * @return `true` iff `ex1` is equal to `ex2`.
     */
   def sameException(ex1: RuntimeException, ex2: RuntimeException): Boolean = (ex1, ex2) match {
-    case (MatchException(msg1, loc1), MatchException(msg2, loc2)) => msg1 == msg2 && loc1 == loc2
-    case (RuleException(msg1, loc1), RuleException(msg2, loc2)) => msg1 == msg2 && loc1 == loc2
-    case (SwitchException(msg1, loc1), SwitchException(msg2, loc2)) => msg1 == msg2 && loc1 == loc2
-    case (TimeoutException(_, _), TimeoutException(_, _)) => true
-    case (UserException(msg1, loc1), UserException(msg2, loc2)) => msg1 == msg2 && loc1 == loc2
+    case (ex1: MatchError, ex2: MatchError) => ex1.equals(ex2)
+    case (ex1: NotImplementedError, ex2: NotImplementedError) => ex1.equals(ex2)
+    case (ex1: RuleError, ex2: RuleError) => ex1.equals(ex2)
+    case (ex1: SwitchError, ex2: SwitchError) => ex1.equals(ex2)
+    case (ex1: TimeoutError, ex2: TimeoutError) => ex1.equals(ex2)
     case _ => ex1.getClass == ex2.getClass
   }
 

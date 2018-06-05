@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Magnus Madsen, Ming-Ho Yee
+ * Copyright 2015-2016 Magnus Madsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,16 @@
 
 package ca.uwaterloo.flix.api
 
-import ca.uwaterloo.flix.language.ast.SourceLocation
+object Version {
+  /**
+    * Represents the current version of Flix.
+    */
+  val CurrentVersion = Version(major = 0, minor = 3, revision = 0)
+}
 
 /**
-  * An exception thrown to indicate an incomplete match error.
-  *
-  * @param msg the error message.
-  * @param loc the source location of the incomplete match.
+  * A case class to represent versions.
   */
-case class MatchException(msg: String, loc: SourceLocation) extends FlixException(msg)
+case class Version(major: Int, minor: Int, revision: Int) {
+  override val toString: String = s"v$major.$minor.$revision"
+}

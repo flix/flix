@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.util
 
 import java.net.InetSocketAddress
+import java.time.Duration
 import java.util.concurrent.{Executors, TimeUnit}
 
 import ca.uwaterloo.flix.api.Flix
@@ -25,8 +26,6 @@ import ca.uwaterloo.flix.util.vt.TerminalContext
 import com.sun.net.httpserver.{HttpExchange, HttpHandler, HttpServer}
 import org.json4s.JsonAST._
 import org.json4s.native.JsonMethods
-
-import scala.concurrent.duration.Duration
 
 /**
   * A simple web server that listens on the given `port` and evaluates Flix programs in response to requests.
@@ -43,7 +42,7 @@ class RpcServer(port: Int) {
     /**
       * The default solver timeout.
       */
-    val SolverTimeout = Duration(10, TimeUnit.SECONDS)
+    val SolverTimeout: Duration = Duration.ofSeconds(10)
 
     /**
       * Evaluates the given `input` program and returns a JSON object with the result.
@@ -52,7 +51,7 @@ class RpcServer(port: Int) {
       try {
         // Instantiate fresh Flix instance.
         val flix = new Flix()
-        val opts = Options.Default.copy(timeout = SolverTimeout)
+        val opts = Options.Default.copy(timeout = Some(SolverTimeout))
         flix.setOptions(opts)
         flix.addStr(input)
 

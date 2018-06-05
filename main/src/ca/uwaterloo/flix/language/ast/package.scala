@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language
 
 import java.nio.file.Path
 
+import flix.runtime.ReifiedSourceLocation
 import org.parboiled2.ParserInput
 
 package object ast {
@@ -132,6 +133,11 @@ package object ast {
       * Returns a formatted string representation of `this` source location.
       */
     def format: String = s"${source.format}:$beginLine:$beginCol"
+
+    /**
+      * Returns a reified source location.
+      */
+    def reified: ReifiedSourceLocation = new ReifiedSourceLocation(source.format, beginLine, beginCol, endLine, endCol)
 
   }
 

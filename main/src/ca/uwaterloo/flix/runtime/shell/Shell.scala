@@ -20,7 +20,7 @@ import java.nio.file._
 import java.util.concurrent.Executors
 import java.util.logging.{Level, Logger}
 
-import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.api.{Flix, Version}
 import ca.uwaterloo.flix.language.ast.Ast.HoleContext
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps

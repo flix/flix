@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.util
 
-import scala.concurrent.duration.Duration
+import java.time.Duration
 
 object Options {
   /**
@@ -36,7 +36,7 @@ object Options {
     safe = false,
     test = false,
     target = JvmTarget.Version18,
-    timeout = Duration.Inf,
+    timeout = None,
     threads = Runtime.getRuntime.availableProcessors(),
     verbosity = Verbosity.Normal,
     verifier = false,
@@ -83,7 +83,7 @@ case class Options(core: Boolean,
                    safe: Boolean,
                    target: JvmTarget,
                    test: Boolean,
-                   timeout: Duration,
+                   timeout: Option[Duration],
                    threads: Int,
                    verbosity: Verbosity,
                    verifier: Boolean,

@@ -29,11 +29,6 @@ object JvmName {
   val Context: JvmName = JvmName(Nil, "Context")
 
   /**
-    * The `ca.uwaterloo.flix.api.Unit` name
-    */
-  val Unit: JvmName = JvmName(List("ca", "uwaterloo", "flix"), "Unit")
-
-  /**
     * The `java.math.BigInteger` name.
     */
   val BigInteger: JvmName = JvmName(List("java", "math"), "BigInteger")
@@ -89,18 +84,6 @@ object JvmName {
   val String: JvmName = JvmName(List("java", "lang"), "String")
 
   /**
-    * The `ca.uwaterloo.flix.api.Tuple` name
-    */
-  // TODO: Magnus: Get rid of tuple interface.
-  val Tuple: JvmName = JvmName(List("ca", "uwaterloo", "flix", "api"), "Tuple")
-
-  /**
-    * The `ca.uwaterloo.flix.api.Tag` name
-    */
-  // TODO: Magnus: Get rid of tag interface.
-  val Tag: JvmName = JvmName(List("ca", "uwaterloo", "flix", "api"), "Tag")
-
-  /**
     * The `scala.math.package$` name
     */
   val ScalaMathPkg: JvmName = JvmName(List("scala", "math"), "package$")
@@ -109,31 +92,6 @@ object JvmName {
     * The `java.lang.Exception` name
     */
   val Exception: JvmName = JvmName(List("java", "lang"), "Exception")
-
-  /**
-    * The `ca.uwaterloo.flix.api.UserException$` name
-    */
-  val UserException: JvmName = JvmName(List("ca", "uwaterloo", "flix", "api"), "UserException")
-
-  /**
-    * The `ca.uwaterloo.flix.api.MatchException$` name
-    */
-  val MatchException: JvmName = JvmName(List("ca", "uwaterloo", "flix", "api"), "MatchException")
-
-  /**
-    * The `ca.uwaterloo.flix.api.SwitchException$` name
-    */
-  val SwitchException: JvmName = JvmName(List("ca", "uwaterloo", "flix", "api"), "SwitchException")
-
-  /**
-    * The `ca.uwaterloo.flix.FlixException` name
-    */
-  val FlixException: JvmName = JvmName(List("ca", "uwaterloo", "flix"), "FlixException")
-
-  /**
-    * The `ca.uwaterloo.flix.RuntimeException` name
-    */
-  val RuntimeException: JvmName = JvmName(List("ca", "uwaterloo", "flix"), "RuntimeException")
 
   /**
     * The `java.lang.Exception` name
@@ -148,6 +106,24 @@ object JvmName {
 
     // The type resides in the ca.uwaterloo.flix package.
     JvmType.Reference(JvmName(List("ca", "uwaterloo", "flix"), name))
+  }
+
+  object Runtime {
+
+    object Value {
+      val Unit: JvmName = JvmName(List("flix", "runtime", "value"), "Unit")
+    }
+
+    val HoleError: JvmName = JvmName(List("flix", "runtime"), "HoleError")
+
+    val MatchError: JvmName = JvmName(List("flix", "runtime"), "MatchError")
+
+    val NotImplementedError: JvmName = JvmName(List("flix", "runtime"), "NotImplementedError")
+
+    val ReifiedSourceLocation: JvmName = JvmName(List("flix", "runtime"), "ReifiedSourceLocation")
+
+    val SwitchError: JvmName = JvmName(List("flix", "runtime"), "SwitchError")
+
   }
 
 }

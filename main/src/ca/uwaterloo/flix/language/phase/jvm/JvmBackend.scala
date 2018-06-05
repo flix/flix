@@ -89,11 +89,6 @@ object JvmBackend extends Phase[Root, Root] {
     val mainClass = GenMainClass.gen()
 
     //
-    // Generate the Unit class.
-    //
-    val unitClass = GenUnitClass.gen()
-
-    //
     // Generate the Context class.
     //
     val contextClass = GenContext.gen(namespaces)
@@ -154,16 +149,10 @@ object JvmBackend extends Phase[Root, Root] {
     val cellClasses = GenCellClasses.gen()
 
     //
-    // Generate exception classes.
-    //
-    val exceptionClasses = GenExceptionClasses.gen()
-
-    //
     // Collect all the classes and interfaces together.
     //
     val allClasses = List(
       mainClass,
-      unitClass,
       contextClass,
       namespaceClasses,
       continuationInterfaces,
@@ -175,8 +164,7 @@ object JvmBackend extends Phase[Root, Root] {
       tupleInterfaces,
       tupleClasses,
       fusionClasses,
-      cellClasses,
-      exceptionClasses
+      cellClasses
     ).reduce(_ ++ _)
 
     //

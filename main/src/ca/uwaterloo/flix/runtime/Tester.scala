@@ -16,11 +16,11 @@
 
 package ca.uwaterloo.flix.runtime
 
-import ca.uwaterloo.flix.api.FlixException
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.runtime.datastore.ProxyObject
 import ca.uwaterloo.flix.util.vt.VirtualString._
 import ca.uwaterloo.flix.util.vt.VirtualTerminal
+import flix.runtime.FlixError
 
 /**
   * Evaluates all tests in a model.
@@ -91,7 +91,7 @@ object Tester {
             case _ => TestResult.Success(sym, "Returned non-boolean value.")
           }
         } catch {
-          case ex: FlixException =>
+          case ex: FlixError =>
             TestResult.Failure(sym, ex.getMessage)
         }
     }

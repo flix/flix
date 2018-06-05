@@ -18,12 +18,12 @@ package ca.uwaterloo.flix
 
 import java.io.{File, PrintWriter}
 
-import ca.uwaterloo.flix.api.{Flix, MatchException, RuleException, SwitchException, UserException}
+import ca.uwaterloo.flix.api.{Flix, Version}
 import ca.uwaterloo.flix.runtime.shell.Shell
 import ca.uwaterloo.flix.runtime.{Benchmarker, Tester}
 import ca.uwaterloo.flix.util._
-import ca.uwaterloo.flix.util.vt.VirtualString.{Code, Line, NewLine}
 import ca.uwaterloo.flix.util.vt._
+import flix.runtime.FlixError
 
 import scala.concurrent.duration.Duration
 
@@ -83,7 +83,7 @@ object Main {
       monitor = cmdOpts.monitor,
       quickchecker = cmdOpts.quickchecker,
       safe = cmdOpts.xsafe,
-      timeout = cmdOpts.timeout,
+      timeout = if(!cmdOpts.timeout.isFinite()) None else Some(java.time.Duration.ofNanos(cmdOpts.timeout.toNanos)),
       threads = if (cmdOpts.threads == -1) Options.Default.threads else cmdOpts.threads,
       verbosity = if (cmdOpts.verbose) Verbosity.Verbose else Verbosity.Normal,
       verifier = cmdOpts.verifier,
@@ -161,29 +161,8 @@ object Main {
           errors.foreach(e => println(e.message.fmt))
       }
     } catch {
-      case UserException(msg, loc) =>
-        val vt = new VirtualTerminal()
-        vt << Line("User Error", loc.source.format) << NewLine
-        vt << Code(loc, msg) << NewLine
-        Console.println(vt.fmt)
-        System.exit(1)
-      case MatchException(msg, loc) =>
-        val vt = new VirtualTerminal()
-        vt << Line("Non-exhaustive match", loc.source.format) << NewLine
-        vt << Code(loc, msg) << NewLine
-        Console.println(vt.fmt)
-        System.exit(1)
-      case SwitchException(msg, loc) =>
-        val vt = new VirtualTerminal()
-        vt << Line("Non-exhaustive switch", loc.source.format) << NewLine
-        vt << Code(loc, msg) << NewLine
-        Console.println(vt.fmt)
-        System.exit(1)
-      case RuleException(msg, loc) =>
-        val vt = new VirtualTerminal()
-        vt << Line("Integrity rule violated", loc.source.format) << NewLine
-        vt << Code(loc, msg) << NewLine
-        Console.println(vt.fmt)
+      case ex: FlixError =>
+        Console.println(ex.getMessage)
         System.exit(1)
     }
 

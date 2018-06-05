@@ -37,7 +37,7 @@ object GenExpression {
     */
   def compileExpression(exp0: Expression, visitor: MethodVisitor, currentClass: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label)(implicit root: Root, flix: Flix): Unit = exp0 match {
     case Expression.Unit =>
-      visitor.visitMethodInsn(INVOKESTATIC, JvmName.Unit.toInternalName, "getInstance",
+      visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Value.Unit.toInternalName, "getInstance",
         AsmOps.getMethodDescriptor(Nil, JvmType.Unit), false)
     case Expression.True => visitor.visitInsn(ICONST_1)
     case Expression.False => visitor.visitInsn(ICONST_0)
@@ -610,7 +610,7 @@ object GenExpression {
                * If sub expression is a var, then that expression has already been evaluated. Since the result is just NULL,
                * we will not evaluate the sub expression and we will directly put a Unit on top of the stack.
                */
-              visitor.visitMethodInsn(INVOKESTATIC, JvmName.Unit.toInternalName, "getInstance",
+              visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Value.Unit.toInternalName, "getInstance",
                 AsmOps.getMethodDescriptor(Nil, JvmType.Unit), false)
             case _ =>
               /*
@@ -761,7 +761,7 @@ object GenExpression {
       // with the store instruction corresponding to the stored element
       visitor.visitInsn(AsmOps.getArrayStoreInstruction(jvmType))
       // Since the return type is 'unit', we put an instance of 'unit' on top of the stack
-      visitor.visitMethodInsn(INVOKESTATIC, JvmName.Unit.toInternalName, "getInstance",
+      visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Value.Unit.toInternalName, "getInstance",
                               AsmOps.getMethodDescriptor(Nil, JvmType.Unit), false)
 
     case Expression.ArrayLength(base, tpe, loc) =>
@@ -862,20 +862,18 @@ object GenExpression {
       // Invoke `setValue` method to set the value to the given number
       visitor.visitMethodInsn(INVOKEVIRTUAL, classType.name.toInternalName, "setValue", methodDescriptor, false)
       // Since the return type is unit, we put an instance of unit on top of the stack
-      visitor.visitMethodInsn(INVOKESTATIC, JvmName.Unit.toInternalName, "getInstance",
+      visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Value.Unit.toInternalName, "getInstance",
         AsmOps.getMethodDescriptor(Nil, JvmType.Unit), false)
 
     case Expression.Existential(params, exp, loc) =>
-      // Adding source line number for debugging
+      // TODO: Better exception.
       addSourceLine(visitor, loc)
-      val msg = s"Existential expression near ${loc.format}."
-      AsmOps.compileThrowException(visitor, JvmName.UserException, msg)
+      AsmOps.compileThrowFlixError(visitor, JvmName.Runtime.NotImplementedError, loc)
 
     case Expression.Universal(params, exp, loc) =>
-      // Adding source line number for debugging
+      // TODO: Better exception.
       addSourceLine(visitor, loc)
-      val msg = s"Universal expression near ${loc.format}."
-      AsmOps.compileThrowException(visitor, JvmName.UserException, msg)
+      AsmOps.compileThrowFlixError(visitor, JvmName.Runtime.NotImplementedError, loc)
 
     case Expression.TryCatch(exp, rules, tpe, loc) =>
       // Add source line number for debugging.
@@ -961,31 +959,25 @@ object GenExpression {
       visitor.visitMethodInsn(invokeInsn, declaration, name, descriptor, false)
       // If the method is void, put a unit on top of the stack
       if (asm.Type.getType(method.getReturnType) == asm.Type.VOID_TYPE) {
-        visitor.visitMethodInsn(INVOKESTATIC, JvmName.Unit.toInternalName, "getInstance",
+        visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Value.Unit.toInternalName, "getInstance",
           AsmOps.getMethodDescriptor(List(), JvmType.Unit), false)
       }
 
     case Expression.UserError(_, loc) =>
-      // Adding source line number for debugging
       addSourceLine(visitor, loc)
-      val msg = s"User exception: ${loc.format}."
-      AsmOps.compileThrowException(visitor, JvmName.UserException, msg)
+      AsmOps.compileThrowFlixError(visitor, JvmName.Runtime.NotImplementedError, loc)
 
-    case Expression.HoleError(sym, _, loc) => ???
-    // TODO: Ramin: HoleError.
-    // TODO: Be sure to Uncomment the tests in Test.Expression.Hole.
+    case Expression.HoleError(sym, _, loc) =>
+      addSourceLine(visitor, loc)
+      AsmOps.compileThrowHoleError(visitor, sym.toString, loc)
 
     case Expression.MatchError(_, loc) =>
-      // Adding source line number for debugging
       addSourceLine(visitor, loc)
-      val msg = s"Non-exhaustive match expression: ${loc.format}."
-      AsmOps.compileThrowException(visitor, JvmName.MatchException, msg)
+      AsmOps.compileThrowFlixError(visitor, JvmName.Runtime.MatchError, loc)
 
     case Expression.SwitchError(_, loc) =>
-      // Adding source line number for debugging
       addSourceLine(visitor, loc)
-      val msg = s"Non-exhaustive switch expression: ${loc.format}."
-      AsmOps.compileThrowException(visitor, JvmName.SwitchException, msg)
+      AsmOps.compileThrowFlixError(visitor, JvmName.Runtime.SwitchError, loc)
   }
 
   /*
