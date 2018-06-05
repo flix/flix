@@ -99,16 +99,6 @@ object JvmName {
   val Exception: JvmName = JvmName(List("java", "lang"), "Exception")
 
   /**
-    * The `ca.uwaterloo.flix.FlixException` name
-    */
-  val FlixException: JvmName = JvmName(List("ca", "uwaterloo", "flix"), "FlixException")
-
-  /**
-    * The `ca.uwaterloo.flix.RuntimeException` name
-    */
-  val RuntimeException: JvmName = JvmName(List("ca", "uwaterloo", "flix"), "RuntimeException")
-
-  /**
     * The `java.lang.Exception` name
     */
   val UnsupportedOperationException: JvmName = JvmName(List("java", "lang"), "UnsupportedOperationException")

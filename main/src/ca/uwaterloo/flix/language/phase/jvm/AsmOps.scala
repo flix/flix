@@ -333,7 +333,7 @@ object AsmOps {
   def compileExceptionThrowerMethod(visitor: ClassWriter, modifiers: Int, methodName: String, descriptor: String, message: String): Unit = {
     // TODO: Ramin: The descriptor argument should be a JvmType, not a string.
     // Method visitor.
-    val method = visitor.visitMethod(modifiers, methodName, descriptor, null, Array(JvmName.Exception.toInternalName))
+    val method = visitor.visitMethod(modifiers, methodName, descriptor, null, Array())
     method.visitCode()
 
     // Create a new `Exception` object
