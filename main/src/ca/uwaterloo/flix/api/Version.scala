@@ -14,12 +14,18 @@
  * limitations under the License.
  */
 
-package ca.uwaterloo.flix.util
+package ca.uwaterloo.flix.api
 
 object Version {
+  /**
+    * Represents the current version of Flix.
+    */
   val CurrentVersion = Version(major = 0, minor = 3, revision = 0)
 }
 
+/**
+  * A case class to represent versions.
+  */
 case class Version(major: Int, minor: Int, revision: Int) {
   override val toString: String = s"v$major.$minor.$revision"
 }

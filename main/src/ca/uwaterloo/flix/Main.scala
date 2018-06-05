@@ -18,12 +18,11 @@ package ca.uwaterloo.flix
 
 import java.io.{File, PrintWriter}
 
-import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.api.{Flix, Version}
 import ca.uwaterloo.flix.runtime.shell.Shell
 import ca.uwaterloo.flix.runtime.{Benchmarker, Tester}
 import ca.uwaterloo.flix.util._
 import ca.uwaterloo.flix.util.vt._
-
 import flix.runtime.FlixError
 
 import scala.concurrent.duration.Duration
