@@ -868,14 +868,12 @@ object GenExpression {
     case Expression.Existential(params, exp, loc) =>
       // TODO: Better exception.
       addSourceLine(visitor, loc)
-      val msg = s"Existential expression hear ${loc.format}"
-      AsmOps.compileThrowFlixException(visitor, JvmName.Runtime.NotImplementedException, msg)
+      AsmOps.compileThrowFlixError(visitor, JvmName.Runtime.NotImplementedError, loc)
 
     case Expression.Universal(params, exp, loc) =>
       // TODO: Better exception.
       addSourceLine(visitor, loc)
-      val msg = s"Universal expression near ${loc.format}"
-      AsmOps.compileThrowFlixException(visitor, JvmName.Runtime.NotImplementedException, msg)
+      AsmOps.compileThrowFlixError(visitor, JvmName.Runtime.NotImplementedError, loc)
 
     case Expression.TryCatch(exp, rules, tpe, loc) =>
       // Add source line number for debugging.
@@ -967,29 +965,19 @@ object GenExpression {
 
     case Expression.UserError(_, loc) =>
       addSourceLine(visitor, loc)
-      val msg = s"Not implemented near ${loc.format}"
-      AsmOps.compileThrowFlixException(visitor, JvmName.Runtime.NotImplementedException, msg)
+      AsmOps.compileThrowFlixError(visitor, JvmName.Runtime.NotImplementedError, loc)
 
     case Expression.HoleError(sym, _, loc) =>
-      // Adding source line number for debugging
       addSourceLine(visitor, loc)
-      // Construct the error message.
-      val msg = s"Hole '$sym' near ${loc.format}"
-      AsmOps.compileThrowFlixException(visitor, JvmName.Runtime.HoleException, msg)
-
-    // TODO: Be sure to Uncomment the tests in Test.Expression.Hole.
+      AsmOps.compileThrowHoleError(visitor, sym.toString, loc)
 
     case Expression.MatchError(_, loc) =>
-      // Adding source line number for debugging
       addSourceLine(visitor, loc)
-      val msg = s"Non-exhaustive match expression near ${loc.format}."
-      AsmOps.compileThrowFlixException(visitor, JvmName.Runtime.MatchException, msg)
+      AsmOps.compileThrowFlixError(visitor, JvmName.Runtime.MatchError, loc)
 
     case Expression.SwitchError(_, loc) =>
-      // Adding source line number for debugging
       addSourceLine(visitor, loc)
-      val msg = s"Non-exhaustive switch expression near ${loc.format}."
-      AsmOps.compileThrowFlixException(visitor, JvmName.Runtime.SwitchException, msg)
+      AsmOps.compileThrowFlixError(visitor, JvmName.Runtime.SwitchError, loc)
   }
 
   /*

@@ -2,6 +2,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Root
+import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.util.{InternalCompilerException, JvmTarget}
 import org.objectweb.asm.Opcodes._
 import org.objectweb.asm.{ClassWriter, MethodVisitor}
@@ -302,30 +303,45 @@ object AsmOps {
   }
 
   /**
-    * Generates code which instantiate an exception object and then throws it.
+    * Generates code to throw a MatchError.
     */
-  // TODO: Deprecated.
-  def compileThrowException(visitor: MethodVisitor, className: JvmName, msg: String): Unit = {
-    visitor.visitTypeInsn(NEW, className.toInternalName)
-    visitor.visitInsn(DUP)
-    visitor.visitLdcInsn(msg)
-    // TODO: Ramin: We need to preserve the line number here, somehow. (I am not sure how to do it, we can talk about it).
-    visitor.visitFieldInsn(GETSTATIC, "ca/uwaterloo/flix/language/ast/package$SourceLocation$", "MODULE$", "Lca/uwaterloo/flix/language/ast/package$SourceLocation$;")
-    visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/language/ast/package$SourceLocation$", "Unknown", "()Lca/uwaterloo/flix/language/ast/package$SourceLocation;", false)
-    visitor.visitMethodInsn(INVOKESPECIAL, className.toInternalName, "<init>", "(Ljava/lang/String;Lca/uwaterloo/flix/language/ast/package$SourceLocation;)V", false)
-    visitor.visitInsn(ATHROW)
+  def compileThrowFlixError(mv: MethodVisitor, className: JvmName, loc: SourceLocation): Unit = {
+    compileReifiedSourceLocation(mv, loc)
+    mv.visitTypeInsn(NEW, className.toInternalName)
+    mv.visitInsn(DUP2)
+    mv.visitInsn(SWAP)
+    mv.visitMethodInsn(INVOKESPECIAL, className.toInternalName, "<init>", "(Lflix/runtime/ReifiedSourceLocation;)V", false)
+    mv.visitInsn(ATHROW)
   }
 
   /**
-    * Generates code which instantiate an exception object and then throws it.
+    * Generates code to throw a MatchError.
     */
-  def compileThrowFlixException(mv: MethodVisitor, className: JvmName, msg: String): Unit = {
+  def compileThrowHoleError(mv: MethodVisitor, hole: String, loc: SourceLocation): Unit = {
+    compileReifiedSourceLocation(mv, loc)
+    val className = JvmName.Runtime.HoleError
     mv.visitTypeInsn(NEW, className.toInternalName)
-    mv.visitInsn(DUP)
-    mv.visitLdcInsn(msg)
-    mv.visitMethodInsn(INVOKESPECIAL, className.toInternalName, "<init>", "(Ljava/lang/String;)V", false)
+    mv.visitInsn(DUP2)
+    mv.visitInsn(SWAP)
+    mv.visitLdcInsn(hole)
+    mv.visitInsn(SWAP)
+    mv.visitMethodInsn(INVOKESPECIAL, className.toInternalName, "<init>", "(Ljava/lang/String;Lflix/runtime/ReifiedSourceLocation;)V", false)
     mv.visitInsn(ATHROW)
-}
+  }
+
+  /**
+    * Generates code which instantiate a reified source location.
+    */
+  private def compileReifiedSourceLocation(mv: MethodVisitor, loc: SourceLocation): Unit = {
+    mv.visitTypeInsn(NEW, JvmName.Runtime.ReifiedSourceLocation.toInternalName)
+    mv.visitInsn(DUP)
+    mv.visitLdcInsn(loc.source.format)
+    mv.visitLdcInsn(loc.beginLine)
+    mv.visitLdcInsn(loc.beginCol)
+    mv.visitLdcInsn(loc.endLine)
+    mv.visitLdcInsn(loc.endCol)
+    mv.visitMethodInsn(INVOKESPECIAL, JvmName.Runtime.ReifiedSourceLocation.toInternalName, "<init>", "(Ljava/lang/String;IIII)V", false)
+  }
 
   /**
     * This will generate a method which will throw an exception in case of getting called.

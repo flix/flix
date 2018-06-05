@@ -202,11 +202,11 @@ object DeltaSolver {
     * @return `true` iff `ex1` is equal to `ex2`.
     */
   def sameException(ex1: RuntimeException, ex2: RuntimeException): Boolean = (ex1, ex2) match {
-    case (ex1: MatchException, ex2: MatchException) => ex1.equals(ex2)
-    case (ex1: RuleException, ex2: RuleException) => ex1.equals(ex2)
-    case (ex1: SwitchException, ex2: SwitchException) => ex1.equals(ex2)
-    case (ex1: TimeoutException, ex2: TimeoutException) => ex1.equals(ex2)
-    case (ex1: NotImplementedException, ex2: NotImplementedException) => ex1.equals(ex2)
+    case (ex1: MatchError, ex2: MatchError) => ex1.equals(ex2)
+    case (ex1: NotImplementedError, ex2: NotImplementedError) => ex1.equals(ex2)
+    case (ex1: RuleError, ex2: RuleError) => ex1.equals(ex2)
+    case (ex1: SwitchError, ex2: SwitchError) => ex1.equals(ex2)
+    case (ex1: TimeoutError, ex2: TimeoutError) => ex1.equals(ex2)
     case _ => ex1.getClass == ex2.getClass
   }
 

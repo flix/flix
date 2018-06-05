@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.GenSym
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Expression
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.{InternalCompilerException, InternalRuntimeException}
-import flix.runtime.{HoleException, MatchException, NotImplementedException, SwitchException}
+import flix.runtime._
 
 /**
   * Symbolic evaluator that supports symbolic values and collects path constraints.
@@ -840,22 +840,22 @@ object SymbolicEvaluator {
       /**
         * User Error.
         */
-      case Expression.UserError(tpe, loc) => throw new NotImplementedException(s"Not implemented near ${loc.format}")
+      case Expression.UserError(tpe, loc) => throw new NotImplementedError(loc.reified)
 
       /**
         * Hole Error.
         */
-      case Expression.HoleError(sym, tpe, loc) => throw new HoleException(s"Hole '$sym' near ${loc.format}")
+      case Expression.HoleError(sym, tpe, loc) => throw new HoleError(sym.toString, loc.reified)
 
       /**
         * Match Error.
         */
-      case Expression.MatchError(tpe, loc) => throw new MatchException("Match Error.")
+      case Expression.MatchError(tpe, loc) => throw new MatchError(loc.reified)
 
       /**
         * Switch Error
         */
-      case Expression.SwitchError(tpe, loc) => throw new SwitchException("Switch Error")
+      case Expression.SwitchError(tpe, loc) => throw new SwitchError(loc.reified)
 
     }
 

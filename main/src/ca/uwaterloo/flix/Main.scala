@@ -24,7 +24,7 @@ import ca.uwaterloo.flix.runtime.{Benchmarker, Tester}
 import ca.uwaterloo.flix.util._
 import ca.uwaterloo.flix.util.vt._
 
-import flix.runtime.FlixException
+import flix.runtime.FlixError
 
 import scala.concurrent.duration.Duration
 
@@ -162,7 +162,7 @@ object Main {
           errors.foreach(e => println(e.message.fmt))
       }
     } catch {
-      case ex: FlixException =>
+      case ex: FlixError =>
         Console.println(ex.getMessage)
         System.exit(1)
     }

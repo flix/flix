@@ -115,13 +115,15 @@ object JvmName {
 
   object Runtime {
 
-    val HoleException: JvmName = JvmName(List("flix", "runtime"), "HoleException")
+    val HoleError: JvmName = JvmName(List("flix", "runtime"), "HoleError")
 
-    val MatchException: JvmName = JvmName(List("flix", "runtime"), "MatchException")
+    val MatchError: JvmName = JvmName(List("flix", "runtime"), "MatchError")
 
-    val NotImplementedException: JvmName = JvmName(List("flix", "runtime"), "NotImplementedException")
+    val NotImplementedError: JvmName = JvmName(List("flix", "runtime"), "NotImplementedError")
 
-    val SwitchException: JvmName = JvmName(List("flix", "runtime"), "SwitchException")
+    val ReifiedSourceLocation: JvmName = JvmName(List("flix", "runtime"), "ReifiedSourceLocation")
+
+    val SwitchError: JvmName = JvmName(List("flix", "runtime"), "SwitchError")
 
   }
 

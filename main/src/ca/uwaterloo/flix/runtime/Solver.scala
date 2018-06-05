@@ -29,7 +29,7 @@ import ca.uwaterloo.flix.runtime.datastore.{DataStore, KeyCache, ProxyObject}
 import ca.uwaterloo.flix.runtime.debugger.RestServer
 import ca.uwaterloo.flix.runtime.interpreter.Value
 import ca.uwaterloo.flix.util._
-import flix.runtime.{RuleException, TimeoutException}
+import flix.runtime.{RuleError, TimeoutError}
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -603,7 +603,7 @@ class Solver(val root: ExecutableAst.Root, options: Options)(implicit flix: Flix
 
       interp += ((p.sym, fact))
     case Predicate.Head.True(loc) => // nop
-    case Predicate.Head.False(loc) => throw new RuleException(s"The integrity rule defined at ${loc.format} is violated.")
+    case Predicate.Head.False(loc) => throw new RuleError(loc.reified)
   }
 
   /**
@@ -880,7 +880,7 @@ class Solver(val root: ExecutableAst.Root, options: Options)(implicit flix: Flix
       val elapsed = System.nanoTime() - totalTime
       if (elapsed > timeout.toNanos) {
         stopSolver()
-        throw new TimeoutException(timeout, Duration.ofNanos(elapsed))
+        throw new TimeoutError(timeout, Duration.ofNanos(elapsed))
       }
   }
 

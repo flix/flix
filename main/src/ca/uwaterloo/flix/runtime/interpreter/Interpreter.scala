@@ -23,7 +23,8 @@ import ca.uwaterloo.flix.language.ast.ExecutableAst._
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.InternalRuntimeException
 import ca.uwaterloo.flix.util.tc.Show._
-import flix.runtime.{HoleException, MatchException, NotImplementedException, SwitchException}
+
+import flix.runtime._
 
 object Interpreter {
 
@@ -326,10 +327,10 @@ object Interpreter {
     //
     // Error expressions.
     //
-    case Expression.UserError(_, loc) => throw new NotImplementedException(s"Not implemented near ${loc.format}")
-    case Expression.HoleError(sym, _, loc) => throw new HoleException(s"Hole '$sym' near ${loc.format}")
-    case Expression.MatchError(_, loc) => throw new MatchException(s"Non-exhaustive match near ${loc.format}")
-    case Expression.SwitchError(_, loc) => throw new SwitchException(s"Non-exhaustive switch near ${loc.format}")
+    case Expression.UserError(_, loc) => throw new NotImplementedError(loc.reified)
+    case Expression.HoleError(sym, _, loc) => throw new HoleError(sym.toString, loc.reified)
+    case Expression.MatchError(_, loc) => throw new MatchError(loc.reified)
+    case Expression.SwitchError(_, loc) => throw new SwitchError(loc.reified)
 
     //
     // Unexpected expressions.
