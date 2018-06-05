@@ -20,7 +20,7 @@ import java.time.Duration
 import java.util.concurrent._
 import java.util.concurrent.atomic.AtomicInteger
 
-import ca.uwaterloo.flix.api.{Flix, TimeoutException}
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Polarity
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Term.Body.Pat
 import ca.uwaterloo.flix.language.ast.ExecutableAst._
@@ -29,7 +29,7 @@ import ca.uwaterloo.flix.runtime.datastore.{DataStore, KeyCache, ProxyObject}
 import ca.uwaterloo.flix.runtime.debugger.RestServer
 import ca.uwaterloo.flix.runtime.interpreter.Value
 import ca.uwaterloo.flix.util._
-import flix.runtime.RuleException
+import flix.runtime.{RuleException, TimeoutException}
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer

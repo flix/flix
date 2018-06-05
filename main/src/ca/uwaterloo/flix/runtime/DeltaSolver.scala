@@ -19,11 +19,11 @@ package ca.uwaterloo.flix.runtime
 import java.nio.file.StandardOpenOption._
 import java.nio.file.{Files, Path}
 
-import ca.uwaterloo.flix.api.{Flix, TimeoutException}
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Stratum
 import ca.uwaterloo.flix.language.ast.{ExecutableAst, PrettyPrinter}
 import ca.uwaterloo.flix.util.{Options, Verbosity}
-import flix.runtime.{MatchException, NotImplementedException, RuleException, SwitchException}
+import flix.runtime._
 
 object DeltaSolver {
 
@@ -203,9 +203,9 @@ object DeltaSolver {
     */
   def sameException(ex1: RuntimeException, ex2: RuntimeException): Boolean = (ex1, ex2) match {
     case (ex1: MatchException, ex2: MatchException) => ex1.equals(ex2)
-    case (ex1: RuleException, ex2: RuleException) =>  ex1.equals(ex2)
+    case (ex1: RuleException, ex2: RuleException) => ex1.equals(ex2)
     case (ex1: SwitchException, ex2: SwitchException) => ex1.equals(ex2)
-    case (TimeoutException(_, _), TimeoutException(_, _)) => true
+    case (ex1: TimeoutException, ex2: TimeoutException) => ex1.equals(ex2)
     case (ex1: NotImplementedException, ex2: NotImplementedException) => ex1.equals(ex2)
     case _ => ex1.getClass == ex2.getClass
   }

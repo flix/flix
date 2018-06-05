@@ -16,11 +16,9 @@
 
 package ca.uwaterloo.flix.runtime
 
-import ca.uwaterloo.flix.api.{Flix, TimeoutException}
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.FunSuite
-
-import scala.concurrent.duration.{Duration, _}
 
 class TestSolver extends FunSuite {
 
