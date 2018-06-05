@@ -29,11 +29,6 @@ object JvmName {
   val Context: JvmName = JvmName(Nil, "Context")
 
   /**
-    * The `ca.uwaterloo.flix.api.Unit` name
-    */
-  val Unit: JvmName = JvmName(List("ca", "uwaterloo", "flix"), "Unit")
-
-  /**
     * The `java.math.BigInteger` name.
     */
   val BigInteger: JvmName = JvmName(List("java", "math"), "BigInteger")
@@ -114,6 +109,10 @@ object JvmName {
   }
 
   object Runtime {
+
+    object Value {
+      val Unit: JvmName = JvmName(List("flix", "runtime", "value"), "Unit")
+    }
 
     val HoleError: JvmName = JvmName(List("flix", "runtime"), "HoleError")
 

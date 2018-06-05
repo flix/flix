@@ -49,7 +49,7 @@ object JvmType {
   /**
     * The `ca.uwaterloo.flix.api.Unit` type
     */
-  val Unit: JvmType.Reference = Reference(JvmName.Unit)
+  val Unit: JvmType.Reference = Reference(JvmName.Runtime.Value.Unit)
 
   /**
     * The `java.lang.BigInteger` type.
