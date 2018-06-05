@@ -319,7 +319,7 @@ object AsmOps {
   /**
     * Generates code which instantiate an exception object and then throws it.
     */
-  def compileThrowRuntimeException(mv: MethodVisitor, className: JvmName, msg: String): Unit = {
+  def compileThrowFlixException(mv: MethodVisitor, className: JvmName, msg: String): Unit = {
     mv.visitTypeInsn(NEW, className.toInternalName)
     mv.visitInsn(DUP)
     mv.visitLdcInsn(msg)

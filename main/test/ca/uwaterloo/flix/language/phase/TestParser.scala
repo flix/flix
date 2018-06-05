@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
-import ca.uwaterloo.flix.api.{Flix, RuleException}
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.runtime.Model
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.FunSuite
@@ -76,13 +76,6 @@ class TestParser extends FunSuite with TestUtils {
   test("Declaration.Fact.Head.True") {
     val input = "true."
     run(input)
-  }
-
-  test("Declaration.Fact.Head.False") {
-    intercept[RuleException] {
-      val input = "false."
-      run(input)
-    }
   }
 
   test("Declaration.Rule.Head.True") {

@@ -23,8 +23,7 @@ import ca.uwaterloo.flix.language.ast.ExecutableAst._
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.InternalRuntimeException
 import ca.uwaterloo.flix.util.tc.Show._
-import flix.runtime.HoleException
-import flix.runtime.NotImplementedException
+import flix.runtime.{HoleException, MatchException, NotImplementedException, SwitchException}
 
 object Interpreter {
 
@@ -174,7 +173,7 @@ object Interpreter {
       val e = eval(elm, env0, henv0, lenv0, root)
       val ln = cast2int32(eval(len, env0, henv0, lenv0, root))
       val array = new Array[AnyRef](ln)
-      for(i <- 0 until ln) {
+      for (i <- 0 until ln) {
         array(i) = e
       }
       Value.Arr(array, tpe.typeArguments.head)
@@ -185,7 +184,7 @@ object Interpreter {
     case Expression.ArrayLoad(base, index, _, _) =>
       val array = cast2array(eval(base, env0, henv0, lenv0, root))
       val indexCasted = cast2int32(eval(index, env0, henv0, lenv0, root))
-      if(0 <= indexCasted && indexCasted < array.elms.length)
+      if (0 <= indexCasted && indexCasted < array.elms.length)
         array.elms(indexCasted)
       else
         throw InternalRuntimeException(s"Array index out of bounds: $index  Array length: ${array.elms.length}.")
@@ -197,7 +196,7 @@ object Interpreter {
       val array = cast2array(eval(base, env0, henv0, lenv0, root))
       val indexCasted = cast2int32(eval(index, env0, henv0, lenv0, root))
       val obj = eval(elm, env0, henv0, lenv0, root)
-      if(0 <= indexCasted && indexCasted < array.elms.length){
+      if (0 <= indexCasted && indexCasted < array.elms.length) {
         array.elms(indexCasted) = obj
         Value.Unit
       }
@@ -219,19 +218,19 @@ object Interpreter {
       val i1Casted = cast2int32(eval(startIndex, env0, henv0, lenv0, root))
       val i2Casted = cast2int32(eval(endIndex, env0, henv0, lenv0, root))
 
-      if(i1Casted >= i2Casted)
+      if (i1Casted >= i2Casted)
         throw InternalRuntimeException(s"startIndex >= endIndex, startIndex: ${i1Casted}  endIndex: ${i2Casted}.")
-      else if(i1Casted < 0)
+      else if (i1Casted < 0)
         throw InternalRuntimeException(s"Invalid startIndex: ${i1Casted}.")
-      else if(i2Casted > array.elms.length)
+      else if (i2Casted > array.elms.length)
         throw InternalRuntimeException(s"endIndex out of bounds: ${i2Casted}    Array length: ${array.elms.length}.")
-      else{
+      else {
         val resultArray = new Array[AnyRef](i2Casted - i1Casted)
 
-        for(i <- i1Casted until i2Casted){
+        for (i <- i1Casted until i2Casted) {
           resultArray(i - i1Casted) = array.elms(i)
         }
-        Value.Arr(resultArray,tpe.typeArguments.head)
+        Value.Arr(resultArray, tpe.typeArguments.head)
       }
 
 
@@ -329,8 +328,8 @@ object Interpreter {
     //
     case Expression.UserError(_, loc) => throw new NotImplementedException(s"Not implemented near ${loc.format}")
     case Expression.HoleError(sym, _, loc) => throw new HoleException(s"Hole '$sym' near ${loc.format}")
-    case Expression.MatchError(_, loc) => throw MatchException("Non-exhaustive match expression.", loc)
-    case Expression.SwitchError(_, loc) => throw SwitchException("Non-exhaustive switch expression.", loc)
+    case Expression.MatchError(_, loc) => throw new MatchException(s"Non-exhaustive match near ${loc.format}")
+    case Expression.SwitchError(_, loc) => throw new SwitchException(s"Non-exhaustive switch near ${loc.format}")
 
     //
     // Unexpected expressions.

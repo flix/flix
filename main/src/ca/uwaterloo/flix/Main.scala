@@ -18,14 +18,13 @@ package ca.uwaterloo.flix
 
 import java.io.{File, PrintWriter}
 
-import ca.uwaterloo.flix.api.{Flix, MatchException, RuleException, SwitchException}
-import ca.uwaterloo.flix.language.ast.SourceLocation
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.runtime.shell.Shell
 import ca.uwaterloo.flix.runtime.{Benchmarker, Tester}
 import ca.uwaterloo.flix.util._
-import ca.uwaterloo.flix.util.vt.VirtualString.{Code, Line, NewLine}
 import ca.uwaterloo.flix.util.vt._
-import flix.runtime.NotImplementedException
+
+import flix.runtime.FlixException
 
 import scala.concurrent.duration.Duration
 
@@ -163,26 +162,8 @@ object Main {
           errors.foreach(e => println(e.message.fmt))
       }
     } catch {
-      case ex: NotImplementedException =>
+      case ex: FlixException =>
         Console.println(ex.getMessage)
-        System.exit(1)
-      case MatchException(msg, loc) =>
-        val vt = new VirtualTerminal()
-        vt << Line("Non-exhaustive match", loc.source.format) << NewLine
-        vt << Code(loc, msg) << NewLine
-        Console.println(vt.fmt)
-        System.exit(1)
-      case SwitchException(msg, loc) =>
-        val vt = new VirtualTerminal()
-        vt << Line("Non-exhaustive switch", loc.source.format) << NewLine
-        vt << Code(loc, msg) << NewLine
-        Console.println(vt.fmt)
-        System.exit(1)
-      case RuleException(msg, loc) =>
-        val vt = new VirtualTerminal()
-        vt << Line("Integrity rule violated", loc.source.format) << NewLine
-        vt << Code(loc, msg) << NewLine
-        Console.println(vt.fmt)
         System.exit(1)
     }
 

@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.runtime
 import java.util.concurrent._
 import java.util.concurrent.atomic.AtomicInteger
 
-import ca.uwaterloo.flix.api.{Flix, RuleException, TimeoutException}
+import ca.uwaterloo.flix.api.{Flix, TimeoutException}
 import ca.uwaterloo.flix.language.ast.Ast.Polarity
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Term.Body.Pat
 import ca.uwaterloo.flix.language.ast.ExecutableAst._
@@ -28,6 +28,7 @@ import ca.uwaterloo.flix.runtime.datastore.{DataStore, KeyCache, ProxyObject}
 import ca.uwaterloo.flix.runtime.debugger.RestServer
 import ca.uwaterloo.flix.runtime.interpreter.Value
 import ca.uwaterloo.flix.util._
+import flix.runtime.RuleException
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -602,7 +603,7 @@ class Solver(val root: ExecutableAst.Root, options: Options)(implicit flix: Flix
 
       interp += ((p.sym, fact))
     case Predicate.Head.True(loc) => // nop
-    case Predicate.Head.False(loc) => throw RuleException(s"The integrity rule defined at ${loc.format} is violated.", loc)
+    case Predicate.Head.False(loc) => throw new RuleException(s"The integrity rule defined at ${loc.format} is violated.")
   }
 
   /**

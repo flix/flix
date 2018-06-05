@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix
 
-import ca.uwaterloo.flix.api.{Flix, RuleException}
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.FunSuite
 
