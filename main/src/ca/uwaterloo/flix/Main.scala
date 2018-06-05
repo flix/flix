@@ -84,7 +84,7 @@ object Main {
       monitor = cmdOpts.monitor,
       quickchecker = cmdOpts.quickchecker,
       safe = cmdOpts.xsafe,
-      timeout = cmdOpts.timeout,
+      timeout = if(!cmdOpts.timeout.isFinite()) None else Some(java.time.Duration.ofNanos(cmdOpts.timeout.toNanos)),
       threads = if (cmdOpts.threads == -1) Options.Default.threads else cmdOpts.threads,
       verbosity = if (cmdOpts.verbose) Verbosity.Verbose else Verbosity.Normal,
       verifier = cmdOpts.verifier,

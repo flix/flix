@@ -16,6 +16,7 @@
 
 package ca.uwaterloo.flix.runtime
 
+import java.time.Duration
 import java.util.concurrent._
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -32,7 +33,6 @@ import flix.runtime.RuleException
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
-import scala.concurrent.duration.{Duration, _}
 
 /**
   * Flix Fixed Point Solver.
@@ -874,14 +874,14 @@ class Solver(val root: ExecutableAst.Root, options: Options)(implicit flix: Flix
   /**
     * Checks whether the solver has exceed the timeout. If so, throws a timeout exception.
     */
-  private def checkTimeout(): Unit = {
-    if (options.timeout.isFinite()) {
+  private def checkTimeout(): Unit = options.timeout match {
+    case None => // nop
+    case Some(timeout) =>
       val elapsed = System.nanoTime() - totalTime
-      if (elapsed > options.timeout.toNanos) {
+      if (elapsed > timeout.toNanos) {
         stopSolver()
-        throw TimeoutException(options.timeout, Duration(elapsed, NANOSECONDS))
+        throw new TimeoutException(timeout, Duration.ofNanos(elapsed))
       }
-    }
   }
 
   /**

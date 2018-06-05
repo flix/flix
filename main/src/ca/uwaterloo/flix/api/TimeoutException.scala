@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.api
 
-import scala.concurrent.duration.Duration
+import java.time.Duration
 
 /**
   * An exception thrown to indicate a timeout.

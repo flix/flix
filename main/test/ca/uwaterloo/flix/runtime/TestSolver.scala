@@ -409,19 +409,6 @@ class TestSolver extends FunSuite {
     val model = new Flix().setOptions(opts).addStr(s).solve().get
   }
 
-  test("Timeout") {
-    intercept[TimeoutException] {
-      val s =
-        """rel A(x: Str)
-          |rel B(x: Str)
-          |
-          |A("foo").
-          |B(x) :- A(x).
-        """.stripMargin
-      new Flix().setOptions(opts.copy(timeout = Duration(0, MILLISECONDS))).addStr(s).solve()
-    }
-  }
-
   test("Transfer01") {
     val s =
       """rel A(x: Int)
