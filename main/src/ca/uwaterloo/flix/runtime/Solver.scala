@@ -25,7 +25,7 @@ import ca.uwaterloo.flix.language.ast.Ast.Polarity
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Term.Body.Pat
 import ca.uwaterloo.flix.language.ast.ExecutableAst._
 import ca.uwaterloo.flix.language.ast.{ExecutableAst, Symbol}
-import ca.uwaterloo.flix.runtime.datastore.{DataStore, KeyCache, ProxyObject}
+import ca.uwaterloo.flix.runtime.datastore.{DataStore, ProxyObject}
 import ca.uwaterloo.flix.runtime.debugger.RestServer
 import ca.uwaterloo.flix.runtime.interpreter.Value
 import ca.uwaterloo.flix.util._
@@ -97,13 +97,6 @@ class Solver(val root: ExecutableAst.Root, options: Options)(implicit flix: Flix
     * no concurrent writes may occur for the *same* relation/lattice.
     */
   val dataStore = new DataStore[AnyRef](root)
-
-  /**
-    * The key cache holds a bi-map from key values to integers.
-    *
-    * Reading and writing to the cache is guaranteed to be thread-safe.
-    */
-  val keyCache = new KeyCache()
 
   /**
     * The dependencies of the program. Populated by [[initDependencies]].
