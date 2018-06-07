@@ -832,7 +832,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   object Patterns {
 
     def Simple: Rule1[ParsedAst.Pattern] = rule {
-      FNil | Tag | Literal | Tuple | FSet | FMap | Wildcard | Variable
+      FNil | Tag | Literal | Tuple | Wildcard | Variable
     }
 
     def Wildcard: Rule1[ParsedAst.Pattern.Wild] = rule {
@@ -861,38 +861,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def FList: Rule1[ParsedAst.Pattern] = rule {
       Simple ~ optional(optWS ~ SP ~ atomic("::") ~ SP ~ optWS ~ Pattern ~> ParsedAst.Pattern.FCons)
-    }
-
-    def FSet: Rule1[ParsedAst.Pattern.FSet] = {
-      def DotDotDot: Rule1[Option[ParsedAst.Pattern]] = rule {
-        optional(optWS ~ "," ~ optWS ~ Pattern ~ atomic("..."))
-      }
-
-      def Elements: Rule1[Seq[ParsedAst.Pattern]] = rule {
-        zeroOrMore(!(Pattern ~ atomic("...")) ~ Pattern).separatedBy(optWS ~ "," ~ optWS)
-      }
-
-      rule {
-        SP ~ "#{" ~ optWS ~ Elements ~ DotDotDot ~ optWS ~ "}" ~ SP ~> ParsedAst.Pattern.FSet
-      }
-    }
-
-    def FMap: Rule1[ParsedAst.Pattern.FMap] = {
-      def KeyValue: Rule1[(ParsedAst.Pattern, ParsedAst.Pattern)] = rule {
-        Pattern ~ optWS ~ atomic("->") ~ optWS ~ Pattern ~> ((p1: ParsedAst.Pattern, p2: ParsedAst.Pattern) => (p1, p2))
-      }
-
-      def Elements: Rule1[Seq[(ParsedAst.Pattern, ParsedAst.Pattern)]] = rule {
-        zeroOrMore(KeyValue).separatedBy(optWS ~ "," ~ optWS)
-      }
-
-      def DotDotDot: Rule1[Option[ParsedAst.Pattern]] = rule {
-        optional(optWS ~ "," ~ optWS ~ Pattern ~ atomic("..."))
-      }
-
-      rule {
-        SP ~ "@{" ~ optWS ~ Elements ~ DotDotDot ~ optWS ~ "}" ~ SP ~> ParsedAst.Pattern.FMap
-      }
     }
 
   }
