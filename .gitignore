@@ -6,3 +6,4 @@
 /flix.jar
 target
 .ensime*
+*.flix
