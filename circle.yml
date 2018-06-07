@@ -9,7 +9,7 @@ machine:
     ANT_OPTS: -Xss8m -Xmx1536m
   java:
     version:
-      oraclejdk8
+      oraclejdk9
 
 compile:
   override:

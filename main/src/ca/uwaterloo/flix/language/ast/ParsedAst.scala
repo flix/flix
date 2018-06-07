@@ -913,8 +913,6 @@ object ParsedAst {
       case Pattern.Tuple(sp1, _, _) => sp1
       case Pattern.FNil(sp1, _) => sp1
       case Pattern.FCons(hd, _, _, _) => hd.leftMostSourcePosition
-      case Pattern.FSet(sp1, _, _, _) => sp1
-      case Pattern.FMap(sp1, _, _, _) => sp1
     }
 
   }
@@ -985,26 +983,6 @@ object ParsedAst {
       * @param tl  the tail pattern.
       */
     case class FCons(hd: ParsedAst.Pattern, sp1: SourcePosition, sp2: SourcePosition, tl: ParsedAst.Pattern) extends ParsedAst.Pattern
-
-    /**
-      * Set Pattern.
-      *
-      * @param sp1  the position of the first character in the pattern.
-      * @param elms the elements of the set.
-      * @param rest the optional rest pattern.
-      * @param sp2  the position of the last character in the pattern.
-      */
-    case class FSet(sp1: SourcePosition, elms: Seq[ParsedAst.Pattern], rest: Option[ParsedAst.Pattern], sp2: SourcePosition) extends ParsedAst.Pattern
-
-    /**
-      * Map Pattern.
-      *
-      * @param sp1  the position of the first character in the pattern.
-      * @param elms the elements of the map.
-      * @param rest the optional rest pattern.
-      * @param sp2  the position of the last character in the pattern.
-      */
-    case class FMap(sp1: SourcePosition, elms: Seq[(ParsedAst.Pattern, ParsedAst.Pattern)], rest: Option[ParsedAst.Pattern], sp2: SourcePosition) extends ParsedAst.Pattern
 
   }
 

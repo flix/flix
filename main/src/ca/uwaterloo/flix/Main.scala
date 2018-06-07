@@ -65,7 +65,6 @@ object Main {
     // compute the enabled optimizations.
     val optimizations = Optimization.All.filter {
       case Optimization.NullableEnums => !cmdOpts.xnonullable
-      case Optimization.PatMatchLabels => !cmdOpts.xpatmatchlambda
       case Optimization.SingleCaseEnums => !cmdOpts.xnosinglecase
       case Optimization.TagTupleFusion => !cmdOpts.xnofusion
       case Optimization.TailCalls => !cmdOpts.xnotailcalls
@@ -77,12 +76,10 @@ object Main {
       debug = cmdOpts.xdebug,
       documentor = cmdOpts.documentor,
       evaluation = if (cmdOpts.xinterpreter) Evaluation.Interpreted else Evaluation.Compiled,
-      impure = cmdOpts.ximpure,
       optimizations = optimizations,
       mode = if (cmdOpts.release) CompilationMode.Release else CompilationMode.Development,
       monitor = cmdOpts.monitor,
       quickchecker = cmdOpts.quickchecker,
-      safe = cmdOpts.xsafe,
       timeout = if(!cmdOpts.timeout.isFinite()) None else Some(java.time.Duration.ofNanos(cmdOpts.timeout.toNanos)),
       threads = if (cmdOpts.threads == -1) Options.Default.threads else cmdOpts.threads,
       verbosity = if (cmdOpts.verbose) Verbosity.Verbose else Verbosity.Normal,
@@ -190,16 +187,13 @@ object Main {
                      verifier: Boolean = false,
                      xcore: Boolean = false,
                      xdebug: Boolean = false,
-                     ximpure: Boolean = false,
                      xinterpreter: Boolean = false,
                      xinvariants: Boolean = false,
-                     xpatmatchlambda: Boolean = false,
                      xnofusion: Boolean = false,
                      xnoinline: Boolean = false,
                      xnonullable: Boolean = false,
                      xnosinglecase: Boolean = false,
                      xnotailcalls: Boolean = false,
-                     xsafe: Boolean = false,
                      files: Seq[File] = Seq())
 
   /**
@@ -307,10 +301,6 @@ object Main {
       opt[Unit]("Xdebug").action((_, c) => c.copy(xdebug = true)).
         text("[experimental] enables output of debugging information.")
 
-      // Ximpure.
-      opt[Unit]("Ximpure").action((_, c) => c.copy(ximpure = true)).
-        text("[experimental] enables impure functions.")
-
       // Xinterpreter.
       opt[Unit]("Xinterpreter").action((_, c) => c.copy(xinterpreter = true)).
         text("[experimental] enables interpreted evaluation.")
@@ -318,10 +308,6 @@ object Main {
       // Xinvariants.
       opt[Unit]("Xinvariants").action((_, c) => c.copy(xinvariants = true)).
         text("[experimental] enables compiler invariants.")
-
-      // Xpatmatch-lambda
-      opt[Unit]("Xpatmatch-lambda").action((_, c) => c.copy(xpatmatchlambda = true)).
-        text("[experimental] compile pattern matching to lambdas.")
 
       // Xno-fusion
       opt[Unit]("Xno-fusion").action((_, c) => c.copy(xnofusion = true)).
@@ -342,10 +328,6 @@ object Main {
       // Xno-tailcalls
       opt[Unit]("Xno-tailcalls").action((_, c) => c.copy(xnotailcalls = true)).
         text("[experimental] disables tail call elimination.")
-
-      // Xsafe.
-      opt[Unit]("Xsafe").action((_, c) => c.copy(xsafe = true)).
-        text("[experimental] disables unsafe operations.")
 
       note("")
 

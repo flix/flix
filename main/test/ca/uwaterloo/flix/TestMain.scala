@@ -163,12 +163,6 @@ class TestMain extends FunSuite {
     assert(opts.xdebug)
   }
 
-  test("--Ximpure") {
-    val args = Array("--Ximpure", "p.flix")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.ximpure)
-  }
-
   test("--Xinterpreter") {
     val args = Array("--Xinterpreter", "p.flix")
     val opts = Main.parseCmdOpts(args).get
@@ -179,12 +173,6 @@ class TestMain extends FunSuite {
     val args = Array("--Xinvariants", "p.flix")
     val opts = Main.parseCmdOpts(args).get
     assert(opts.xinvariants)
-  }
-
-  test("--Xpatmatch-lambda") {
-    val args = Array("--Xpatmatch-lambda", "p.flix")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.xpatmatchlambda)
   }
 
   test("--Xno-fusion") {
@@ -215,12 +203,6 @@ class TestMain extends FunSuite {
     val args = Array("--Xno-tailcalls", "p.flix")
     val opts = Main.parseCmdOpts(args).get
     assert(opts.xnotailcalls)
-  }
-
-  test("--Xsafe") {
-    val args = Array("--Xsafe", "p.flix")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.xsafe)
   }
 
 }

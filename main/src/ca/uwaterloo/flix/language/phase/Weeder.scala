@@ -1055,9 +1055,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
               WeededAst.Pattern.Tag(None, tag, pat, mkSL(sp1, sp2))
           }
 
-        case ParsedAst.Pattern.FSet(sp1, elms, rest, sp2) => ??? // TODO
-
-        case ParsedAst.Pattern.FMap(sp1, elms, rest, sp2) => ??? // TODO
       }
 
       visit(pattern)

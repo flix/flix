@@ -27,13 +27,11 @@ object Options {
     debug = false,
     documentor = false,
     evaluation = Evaluation.Compiled,
-    impure = false,
     invariants = false,
     mode = CompilationMode.Development,
     monitor = false,
     optimizations = Optimization.All,
     quickchecker = false,
-    safe = false,
     test = false,
     target = JvmTarget.Version18,
     timeout = None,
@@ -56,13 +54,11 @@ object Options {
   * @param debug           enables the emission of debugging information.
   * @param documentor      enables generation of flixdoc.
   * @param evaluation      selects the evaluation strategy.
-  * @param impure          enables impure functions.
   * @param invariants      enables checking of compiler invariants.
   * @param mode            the compilation mode.
   * @param monitor         enables the debugger and profiler.
   * @param quickchecker    enables the quickchecker.
   * @param test            enables test mode.
-  * @param safe            disables unsafe operations.
   * @param target          the target JVM.
   * @param timeout         selects the solver timeout.
   * @param threads         selects the number of threads to use.
@@ -74,13 +70,11 @@ case class Options(core: Boolean,
                    debug: Boolean,
                    documentor: Boolean,
                    evaluation: Evaluation,
-                   impure: Boolean,
                    invariants: Boolean,
                    optimizations: Set[Optimization],
                    mode: CompilationMode,
                    monitor: Boolean,
                    quickchecker: Boolean,
-                   safe: Boolean,
                    target: JvmTarget,
                    test: Boolean,
                    timeout: Option[Duration],
@@ -120,7 +114,6 @@ object Optimization {
     */
   val All: Set[Optimization] = Set(
     NullableEnums,
-    PatMatchLabels,
     SingleCaseEnums,
     TagTupleFusion,
     TailCalls
@@ -132,11 +125,6 @@ object Optimization {
     * A nullable enum is an enum with exactly two cases where one case is the unit constructor.
     */
   case object NullableEnums extends Optimization
-
-  /**
-    * Enables compilation of pattern matches to labels and jumps.
-    */
-  case object PatMatchLabels extends Optimization
 
   /**
     * Enables compilation with elimination of single case enums.
