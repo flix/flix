@@ -14,7 +14,7 @@
  *  limitations under the License.
  */
 
-package ca.uwaterloo.flix.runtime.datastore
+package ca.uwaterloo.flix.runtime.solver.datastore
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ExecutableAst

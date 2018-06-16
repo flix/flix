@@ -21,7 +21,7 @@ import java.lang.reflect.InvocationTargetException
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ExecutableAst._
 import ca.uwaterloo.flix.language.ast.{SpecialOperator, Symbol, Type}
-import ca.uwaterloo.flix.runtime.datastore.ProxyObject
+import ca.uwaterloo.flix.runtime.solver.datastore.ProxyObject
 import ca.uwaterloo.flix.runtime.interpreter.Interpreter
 import ca.uwaterloo.flix.util.{Evaluation, InternalRuntimeException}
 

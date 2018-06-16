@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package ca.uwaterloo.flix.runtime
+package ca.uwaterloo.flix.runtime.solver
 
 import java.time.Duration
 import java.util.concurrent._
@@ -25,9 +25,10 @@ import ca.uwaterloo.flix.language.ast.Ast.Polarity
 import ca.uwaterloo.flix.language.ast.ExecutableAst.Term.Body.Pat
 import ca.uwaterloo.flix.language.ast.ExecutableAst._
 import ca.uwaterloo.flix.language.ast.{ExecutableAst, Symbol}
-import ca.uwaterloo.flix.runtime.datastore.{DataStore, ProxyObject}
+import ca.uwaterloo.flix.runtime.solver.datastore.{DataStore, ProxyObject}
 import ca.uwaterloo.flix.runtime.debugger.RestServer
 import ca.uwaterloo.flix.runtime.interpreter.Value
+import ca.uwaterloo.flix.runtime.{Linker, Model, Monitor}
 import ca.uwaterloo.flix.util._
 import flix.runtime.{RuleError, TimeoutError}
 

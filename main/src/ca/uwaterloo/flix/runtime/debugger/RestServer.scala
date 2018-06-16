@@ -22,8 +22,9 @@ import java.nio.file.{Files, Paths}
 import java.util.concurrent.Executors
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.runtime.datastore.{IndexedLattice, IndexedRelation}
-import ca.uwaterloo.flix.runtime.{Monitor, Solver}
+import ca.uwaterloo.flix.runtime.solver.datastore.{IndexedLattice, IndexedRelation}
+import ca.uwaterloo.flix.runtime.Monitor
+import ca.uwaterloo.flix.runtime.solver.Solver
 import ca.uwaterloo.flix.util.DurationFormatter
 import com.sun.net.httpserver.{HttpExchange, HttpHandler, HttpServer}
 import org.json4s.JsonAST._

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package ca.uwaterloo.flix.runtime.datastore
+package ca.uwaterloo.flix.runtime.solver.datastore
 
 // TODO: Consider index expression:
 // http://www.postgresql.org/docs/9.1/static/indexes-expressional.html

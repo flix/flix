@@ -16,7 +16,9 @@
 
 package ca.uwaterloo.flix.runtime
 
-import java.util.concurrent.{TimeUnit, Executors}
+import java.util.concurrent.{Executors, TimeUnit}
+
+import ca.uwaterloo.flix.runtime.solver.Solver
 
 /**
   * Companion object for the [[Monitor]] class.

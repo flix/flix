@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package ca.uwaterloo.flix.runtime
+package ca.uwaterloo.flix.runtime.solver
 
 import java.nio.file.StandardOpenOption._
 import java.nio.file.{Files, Path}

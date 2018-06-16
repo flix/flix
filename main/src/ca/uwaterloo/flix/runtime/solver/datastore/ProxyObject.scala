@@ -1,4 +1,4 @@
-package ca.uwaterloo.flix.runtime.datastore
+package ca.uwaterloo.flix.runtime.solver.datastore
 
 import ca.uwaterloo.flix.util.InternalRuntimeException
 

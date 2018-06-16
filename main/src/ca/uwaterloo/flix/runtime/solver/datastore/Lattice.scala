@@ -14,7 +14,7 @@
  *  limitations under the License.
  */
 
-package ca.uwaterloo.flix.runtime.datastore
+package ca.uwaterloo.flix.runtime.solver.datastore
 
 /**
   * Type class for types equipped with lattice operations.
