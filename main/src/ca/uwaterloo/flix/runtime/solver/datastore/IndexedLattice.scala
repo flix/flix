@@ -18,13 +18,13 @@ package ca.uwaterloo.flix.runtime.solver.datastore
 
 import java.util
 
-import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ExecutableAst
+import ca.uwaterloo.flix.runtime.solver.LatticeOps
 
 import scala.annotation.switch
 import scala.collection.mutable
 
-class IndexedLattice(val lattice: ExecutableAst.Table.Lattice, indexes: Set[Int], root: ExecutableAst.Root)(implicit flix: Flix) extends IndexedCollection {
+class IndexedLattice(val lattice: ExecutableAst.Table.Lattice, indexes: Set[Int], ops: LatticeOps) extends IndexedCollection {
   /**
     * A map from indexes to a map from keys to rows (represented as map from keys to an element):
     *
@@ -40,7 +40,7 @@ class IndexedLattice(val lattice: ExecutableAst.Table.Lattice, indexes: Set[Int]
   /**
     * The lattice operations.
     */
-  val latticeOps = new LatticeImpl(lattice, root)
+  val latticeOps = new LatticeImpl(ops)
 
   /**
     * Initialize the store for all indexes.

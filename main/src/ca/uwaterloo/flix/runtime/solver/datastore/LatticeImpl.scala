@@ -16,46 +16,14 @@
 
 package ca.uwaterloo.flix.runtime.solver.datastore
 
-import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.ExecutableAst
-import ca.uwaterloo.flix.runtime.{InvocationTarget, Linker}
+import ca.uwaterloo.flix.runtime.solver.LatticeOps
 
-class LatticeImpl(lattice: ExecutableAst.Table.Lattice, root: ExecutableAst.Root)(implicit flix: Flix) extends Lattice[ProxyObject] {
-
-  /**
-    * The lattice operations associated with each lattice.
-    */
-  private val latticeOps: ExecutableAst.Lattice = root.lattices(lattice.value.tpe)
-
-  /**
-    * The bottom element.
-    */
-  private val Bot: ProxyObject = Linker.link(latticeOps.bot, root).invoke(Array.empty)
-
-  /**
-    * The equality operator.
-    */
-  private val Equ: InvocationTarget = Linker.link(latticeOps.equ, root)
-
-  /**
-    * The partial order operator.
-    */
-  private val Leq: InvocationTarget = Linker.link(latticeOps.leq, root)
-
-  /**
-    * The least upper bound operator.
-    */
-  private val Lub: InvocationTarget = Linker.link(latticeOps.lub, root)
-
-  /**
-    * The greatest lower bound operator.
-    */
-  private val Glb: InvocationTarget = Linker.link(latticeOps.glb, root)
+class LatticeImpl(ops: LatticeOps) extends Lattice[ProxyObject] {
 
   /**
     * Returns the bottom element of the lattice.
     */
-  def bot: ProxyObject = Bot
+  def bot: ProxyObject = ops.bot
 
   /**
     * Returns `true` if `x` is equal to `y` according to the partial order of the lattice.
@@ -70,7 +38,7 @@ class LatticeImpl(lattice: ExecutableAst.Table.Lattice, root: ExecutableAst.Root
 
     // evaluate the equality function passing the arguments `x` and `y`.
     val args = Array(x, y)
-    val result = Equ.invoke(args).getValue
+    val result = ops.equ.invoke(args).getValue
     return result.asInstanceOf[java.lang.Boolean].booleanValue()
   }
 
@@ -87,7 +55,7 @@ class LatticeImpl(lattice: ExecutableAst.Table.Lattice, root: ExecutableAst.Root
 
     // evaluate the partial order function passing the arguments `x` and `y`.
     val args = Array(x, y)
-    val result = Leq.invoke(args).getValue
+    val result = ops.leq.invoke(args).getValue
     return result.asInstanceOf[java.lang.Boolean].booleanValue()
   }
 
@@ -104,7 +72,7 @@ class LatticeImpl(lattice: ExecutableAst.Table.Lattice, root: ExecutableAst.Root
 
     // evaluate the least upper bound function passing the arguments `x` and `y`.
     val args = Array(x, y)
-    Lub.invoke(args)
+    ops.lub.invoke(args)
   }
 
   /**
@@ -120,7 +88,7 @@ class LatticeImpl(lattice: ExecutableAst.Table.Lattice, root: ExecutableAst.Root
 
     // evaluate the greatest lower bound function passing the arguments `x` and `y`.
     val args = Array(x, y)
-    Glb.invoke(args)
+    ops.glb.invoke(args)
   }
 
 }
