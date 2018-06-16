@@ -42,7 +42,7 @@ import scala.collection.mutable.ArrayBuffer
   *
   * The solver computes the least fixed point of the rules in the given program.
   */
-class Solver(val root: ExecutableAst.Root, options: Options)(implicit flix: Flix) {
+class Solver(val root: ExecutableAst.Root, options: SolverOptions)(implicit flix: Flix) {
 
   /**
     * Controls the number of batches per thread. A value of one means one batch per thread.
@@ -347,7 +347,7 @@ class Solver(val root: ExecutableAst.Root, options: Options)(implicit flix: Flix
     * Prints debugging information.
     */
   private def printDebug(): Unit = {
-    if (options.verbosity == Verbosity.Verbose) {
+    if (options.verbose) {
       val solverTime = totalTime / 1000000
       val initMiliSeconds = initTime / 1000000
       val readersMiliSeconds = readersTime / 1000000

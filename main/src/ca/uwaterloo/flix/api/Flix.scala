@@ -25,7 +25,7 @@ import ca.uwaterloo.flix.language.phase._
 import ca.uwaterloo.flix.language.phase.jvm.JvmBackend
 import ca.uwaterloo.flix.language.{CompilationError, GenSym}
 import ca.uwaterloo.flix.runtime.quickchecker.QuickChecker
-import ca.uwaterloo.flix.runtime.solver.{DeltaSolver, Solver}
+import ca.uwaterloo.flix.runtime.solver.{DeltaSolver, Solver, SolverOptions}
 import ca.uwaterloo.flix.runtime.verifier.Verifier
 import ca.uwaterloo.flix.runtime.Model
 import ca.uwaterloo.flix.util.Validation._
@@ -272,8 +272,14 @@ class Flix {
   /**
     * Runs the Flix fixed point solver on the program and returns the minimal model.
     */
-  def solve(root: ExecutableAst.Root): Validation[Model, CompilationError] =
-    new Solver(root, options)(this).solve().toSuccess
+  def solve(root: ExecutableAst.Root): Validation[Model, CompilationError] = {
+    val solverOptions = SolverOptions(
+      monitor = options.monitor,
+      threads = options.threads,
+      timeout = options.timeout,
+      verbose = options.verbosity == Verbosity.Verbose)
+    new Solver(root, solverOptions)(this).solve().toSuccess
+  }
 
   /**
     * Runs the Flix fixed point solver on the program trying to minimize the
@@ -282,7 +288,13 @@ class Flix {
     * @param path the path to write the minimized facts to.
     */
   def deltaSolve(path: Path): Validation[scala.Unit, CompilationError] = compile().map {
-    case root => DeltaSolver.solve(root, options, path)(this)
+    case root =>
+      val solverOptions = SolverOptions(
+        monitor = options.monitor,
+        threads = options.threads,
+        timeout = options.timeout,
+        verbose = options.verbosity == Verbosity.Verbose)
+      DeltaSolver.solve(root, solverOptions, path)(this)
   }
 
   /**

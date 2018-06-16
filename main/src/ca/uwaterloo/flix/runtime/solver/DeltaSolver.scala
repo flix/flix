@@ -58,7 +58,7 @@ object DeltaSolver {
     * @param options the Flix options.
     * @param path    the path to write the minimized facts to.
     */
-  def solve(root: ExecutableAst.Root, options: Options, path: Path)(implicit flix: Flix): Unit = {
+  def solve(root: ExecutableAst.Root, options: SolverOptions, path: Path)(implicit flix: Flix): Unit = {
     /*
      * Retrieve the lowest stratum.
      */
@@ -163,7 +163,7 @@ object DeltaSolver {
   /**
     * Optionally returns the exception thrown by the original program.
     */
-  def tryInit(root: ExecutableAst.Root, options: Options)(implicit flix: Flix): Option[RuntimeException] = {
+  def tryInit(root: ExecutableAst.Root, options: SolverOptions)(implicit flix: Flix): Option[RuntimeException] = {
     try {
       runSolver(root, options)
       None
@@ -175,7 +175,7 @@ object DeltaSolver {
   /**
     * Attempts to solve the given program expects `expectedException` to be thrown.
     */
-  def trySolve(root: ExecutableAst.Root, options: Options, expectedException: RuntimeException)(implicit flix: Flix): SolverResult = {
+  def trySolve(root: ExecutableAst.Root, options: SolverOptions, expectedException: RuntimeException)(implicit flix: Flix): SolverResult = {
     try {
       // run the solver.
       runSolver(root, options)
@@ -213,10 +213,9 @@ object DeltaSolver {
   /**
     * Runs the solver.
     */
-  private def runSolver(root: ExecutableAst.Root, options: Options)(implicit flix: Flix): Unit = {
+  private def runSolver(root: ExecutableAst.Root, options: SolverOptions)(implicit flix: Flix): Unit = {
     // silence output from the solver.
-    val opts = options.copy(verbosity = Verbosity.Silent)
-    new Solver(root, opts).solve()
+    new Solver(root, options).solve()
   }
 
   /**
