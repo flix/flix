@@ -63,14 +63,10 @@ class RpcServer(port: Int) {
             val result = model.evalToString("f")
 
             // Translate the computed relations to JSON data.
-            val relations = model.getRelations.map {
-              case (fqn, (attributes, rows)) => relation2json(fqn, rows)
-            }
+            val relations = Nil // TODO: RpcServer needs access to tables.
 
             // Translate the computed lattices to JSON data.
-            val lattices = model.getLattices.map {
-              case (fqn, (attributes, rows)) => lattice2json(fqn, rows)
-            }
+            val lattices = Nil // TODO: RpcServer needs access to tables.
 
             JObject(
               JField("status", JString("success")),

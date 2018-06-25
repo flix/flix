@@ -27,7 +27,7 @@ import ca.uwaterloo.flix.language.{CompilationError, GenSym}
 import ca.uwaterloo.flix.runtime.quickchecker.QuickChecker
 import ca.uwaterloo.flix.runtime.solver.{DeltaSolver, Solver, SolverOptions}
 import ca.uwaterloo.flix.runtime.verifier.Verifier
-import ca.uwaterloo.flix.runtime.Model
+import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util._
 import ca.uwaterloo.flix.util.vt.TerminalContext
@@ -267,12 +267,12 @@ class Flix {
   /**
     * Runs the Flix fixed point solver on the program and returns the minimal model.
     */
-  def solve(): Validation[Model, CompilationError] = compile() flatMap solve
+  def solve(): Validation[CompilationResult, CompilationError] = compile() flatMap solve
 
   /**
     * Runs the Flix fixed point solver on the program and returns the minimal model.
     */
-  def solve(root: ExecutableAst.Root): Validation[Model, CompilationError] = {
+  def solve(root: ExecutableAst.Root): Validation[CompilationResult, CompilationError] = {
     val solverOptions = SolverOptions(
       monitor = options.monitor,
       threads = options.threads,

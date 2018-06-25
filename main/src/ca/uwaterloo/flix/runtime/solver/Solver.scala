@@ -28,7 +28,7 @@ import ca.uwaterloo.flix.language.ast.{ExecutableAst, Symbol}
 import ca.uwaterloo.flix.runtime.solver.datastore.{DataStore, ProxyObject}
 import ca.uwaterloo.flix.runtime.debugger.RestServer
 import ca.uwaterloo.flix.runtime.interpreter.Value
-import ca.uwaterloo.flix.runtime.{Linker, Model, Monitor}
+import ca.uwaterloo.flix.runtime.{Fixedpoint, Linker, CompilationResult, Monitor}
 import ca.uwaterloo.flix.util._
 import flix.runtime.{RuleError, TimeoutError}
 
@@ -137,10 +137,10 @@ class Solver(val root: ExecutableAst.Root, options: SolverOptions)(implicit flix
   var paused: Boolean = false
 
   /**
-    * The model (if it exists).
+    * The compilation result (if it exists).
     */
   @volatile
-  var model: Model = _
+  var compilationResult: CompilationResult = _
 
   //
   // Statistics:
@@ -210,7 +210,7 @@ class Solver(val root: ExecutableAst.Root, options: SolverOptions)(implicit flix
   /**
     * Solves the Flix program.
     */
-  def solve(): Model = try {
+  def solve(): CompilationResult = try {
     // initialize the solver.
     initSolver()
 
@@ -259,7 +259,7 @@ class Solver(val root: ExecutableAst.Root, options: SolverOptions)(implicit flix
   /**
     * Returns the model (if available).
     */
-  def getModel: Model = model
+  def getModel: CompilationResult = compilationResult
 
   def getRuleStats: List[(Constraint, Int, Long)] = {
     val constraints = root.strata.flatMap(_.constraints)
@@ -782,9 +782,9 @@ class Solver(val root: ExecutableAst.Root, options: SolverOptions)(implicit flix
   /**
     * Constructs the minimal model from the datastore.
     */
-  private def mkModel(elapsed: Long): Model = {
+  private def mkModel(elapsed: Long): CompilationResult = {
     // construct the model.
-    val definitions = root.defs.foldLeft(Map.empty[Symbol.DefnSym, () => ProxyObject]) {
+    val defs = root.defs.foldLeft(Map.empty[Symbol.DefnSym, () => ProxyObject]) {
       case (macc, (sym, defn)) =>
         // Invokes the function with a single argument (which is supposed to be the Unit value, but we pass null instead).
         val args: Array[AnyRef] = Array(null)
@@ -805,8 +805,10 @@ class Solver(val root: ExecutableAst.Root, options: SolverOptions)(implicit flix
         macc + ((sym, table))
     }
 
-    model = new Model(root, definitions, relations, lattices)
-    model
+    val fixedpoint = Fixedpoint(root.tables, relations, lattices)
+
+    compilationResult = new CompilationResult(root, defs, fixedpoint)
+    compilationResult
   }
 
   /**

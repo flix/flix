@@ -149,11 +149,6 @@ object Main {
             val results = Tester.test(model)
             Console.println(results.output.fmt)
           }
-
-          val print = cmdOpts.print
-          for (name <- print) {
-            PrettyPrint.print(name, model)
-          }
         case Validation.Failure(errors) =>
           errors.foreach(e => println(e.message.fmt))
       }
@@ -176,7 +171,6 @@ object Main {
                      main: Option[String] = None,
                      monitor: Boolean = false,
                      pipe: Boolean = false,
-                     print: Seq[String] = Seq(),
                      quickchecker: Boolean = false,
                      release: Boolean = false,
                      threads: Int = -1,
@@ -244,11 +238,6 @@ object Main {
       // Pipe.
       opt[Unit]("pipe").action((_, c) => c.copy(pipe = true)).
         text("reads from standard input.")
-
-      // Print.
-      opt[Seq[String]]("print").action((xs, c) => c.copy(print = xs)).
-        valueName("<name>...").
-        text("prints the named relations/lattices.")
 
       // Quickchecker.
       opt[Unit]("quickchecker").action((_, c) => c.copy(quickchecker = true)).

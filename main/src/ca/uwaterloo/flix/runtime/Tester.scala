@@ -76,12 +76,12 @@ object Tester {
   }
 
   /**
-    * Evaluates all tests in the given model.
+    * Evaluates all tests.
     *
     * Returns a pair of (successful, failed)-tests.
     */
-  def test(model: Model): TestResults = {
-    val results = model.getTests.toList.map {
+  def test(compilationResult: CompilationResult): TestResults = {
+    val results = compilationResult.getTests.toList.map {
       case (sym, defn) =>
         try {
           val result = defn().asInstanceOf[ProxyObject]
