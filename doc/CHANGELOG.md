@@ -1,6 +1,8 @@
 # Changelog
 
 HEAD:
+
+Version 0.3:
     - Added completely new backend with full tail call support (thanks Ramin Zarifi)
     - Added support for arrays and vectors.
     - Added pub keyword.
