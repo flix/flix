@@ -42,7 +42,7 @@ import scala.collection.mutable.ArrayBuffer
   *
   * The solver computes the least fixed point of the rules in the given program.
   */
-class Solver(val root: ExecutableAst.Root, options: SolverOptions)(implicit flix: Flix) {
+class Solver(val root: ExecutableAst.Root, options: FixpointOptions)(implicit flix: Flix) {
 
   /**
     * Controls the number of batches per thread. A value of one means one batch per thread.
@@ -261,7 +261,7 @@ class Solver(val root: ExecutableAst.Root, options: SolverOptions)(implicit flix
     * Initialize the solver by starting the monitor, debugger, etc.
     */
   private def initSolver(): Unit = {
-    if (options.monitor) {
+    if (options.isMonitored) {
       monitor.start()
 
       val restServer = new RestServer(this)
@@ -325,7 +325,7 @@ class Solver(val root: ExecutableAst.Root, options: SolverOptions)(implicit flix
     writersPool.shutdownNow()
 
     // stop the debugger (if enabled).
-    if (options.monitor) {
+    if (options.isMonitored) {
       monitor.stop()
     }
 
@@ -336,7 +336,7 @@ class Solver(val root: ExecutableAst.Root, options: SolverOptions)(implicit flix
     * Prints debugging information.
     */
   private def printDebug(): Unit = {
-    if (options.verbose) {
+    if (options.isVerbose) {
       val solverTime = totalTime / 1000000
       val initMiliSeconds = initTime / 1000000
       val readersMiliSeconds = readersTime / 1000000
@@ -706,7 +706,7 @@ class Solver(val root: ExecutableAst.Root, options: SolverOptions)(implicit flix
     val readerTasks = new java.util.ArrayList[Batch]()
 
     val worklistAsArray = worklist.toArray
-    val chunkSize = (worklist.length / (BatchesPerThread * options.threads)) + 1
+    val chunkSize = (worklist.length / (BatchesPerThread * options.getThreads)) + 1
     var b = 0
     while (b < worklistAsArray.length) {
       val e = Math.min(b + chunkSize, worklistAsArray.length)
@@ -792,7 +792,7 @@ class Solver(val root: ExecutableAst.Root, options: SolverOptions)(implicit flix
   /**
     * Returns a new thread pool configured to use the appropriate number of threads.
     */
-  private def mkThreadPool(name: String): ExecutorService = options.threads match {
+  private def mkThreadPool(name: String): ExecutorService = options.getThreads match {
     // Case 1: Parallel execution disabled. Use a single thread.
     case 1 => Executors.newSingleThreadExecutor(mkThreadFactory(name))
     // Case 2: Parallel execution enabled. Use the specified number of processors.
@@ -848,7 +848,7 @@ class Solver(val root: ExecutableAst.Root, options: SolverOptions)(implicit flix
   /**
     * Checks whether the solver has exceed the timeout. If so, throws a timeout exception.
     */
-  private def checkTimeout(): Unit = options.timeout match {
+  private def checkTimeout(): Unit = options.getTimeout match {
     case None => // nop
     case Some(timeout) =>
       val elapsed = System.nanoTime() - totalTime

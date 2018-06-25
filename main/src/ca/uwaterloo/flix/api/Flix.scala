@@ -25,7 +25,7 @@ import ca.uwaterloo.flix.language.phase._
 import ca.uwaterloo.flix.language.phase.jvm.JvmBackend
 import ca.uwaterloo.flix.language.{CompilationError, GenSym}
 import ca.uwaterloo.flix.runtime.quickchecker.QuickChecker
-import ca.uwaterloo.flix.runtime.solver.{DeltaSolver, Solver, SolverOptions}
+import ca.uwaterloo.flix.runtime.solver.{DeltaSolver, Solver, FixpointOptions}
 import ca.uwaterloo.flix.runtime.verifier.Verifier
 import ca.uwaterloo.flix.runtime.{CompilationResult, Linker}
 import ca.uwaterloo.flix.runtime.solver.datastore.ProxyObject
@@ -272,12 +272,13 @@ class Flix {
     * Runs the Flix fixed point solver on the program and returns the minimal model.
     */
   def solve(compilationResult: CompilationResult): Validation[CompilationResult, CompilationError] = {
-    val solverOptions = SolverOptions(
-      monitor = options.monitor,
-      threads = options.threads,
-      timeout = options.timeout,
-      verbose = options.verbosity == Verbosity.Verbose)
-    val fixedpoint = new Solver(compilationResult.getRoot, solverOptions)(this).solve()
+    val opts = new FixpointOptions()
+    opts.setMonitored(options.monitor)
+    opts.setThreads(options.threads)
+    opts.setTimeout(options.timeout)
+    opts.setVerbose(options.verbosity == Verbosity.Verbose)
+
+    val fixedpoint = new Solver(compilationResult.getRoot, opts)(this).solve()
     compilationResult.toSuccess
   }
 
@@ -289,12 +290,13 @@ class Flix {
     */
   def deltaSolve(path: Path): Validation[scala.Unit, CompilationError] = compile().map {
     case compilationResult =>
-      val solverOptions = SolverOptions(
-        monitor = options.monitor,
-        threads = options.threads,
-        timeout = options.timeout,
-        verbose = options.verbosity == Verbosity.Verbose)
-      DeltaSolver.solve(compilationResult.getRoot, solverOptions, path)(this)
+      val opts = new FixpointOptions()
+      opts.setMonitored(options.monitor)
+      opts.setThreads(options.threads)
+      opts.setTimeout(options.timeout)
+      opts.setVerbose(options.verbosity == Verbosity.Verbose)
+
+      DeltaSolver.solve(compilationResult.getRoot, opts, path)(this)
   }
 
   /**
