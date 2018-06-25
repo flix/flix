@@ -26,9 +26,8 @@ import ca.uwaterloo.flix.runtime.solver.datastore.ProxyObject
   *
   * @param root       the abstract syntax tree of the program.
   * @param defs       the definitions in the program.
-  * @param fixedpoint the fixedpoint (if any).
   */
-class CompilationResult(root: Root, defs: Map[Symbol.DefnSym, () => ProxyObject], fixedpoint: Fixedpoint)(implicit flix: Flix) {
+class CompilationResult(root: Root, defs: Map[Symbol.DefnSym, () => ProxyObject])(implicit flix: Flix) {
 
   /**
     * Returns the root AST.

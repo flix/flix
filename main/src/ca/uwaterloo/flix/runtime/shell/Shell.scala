@@ -179,7 +179,6 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
     case Command.Load(s) => execLoad(s)
     case Command.Unload(s) => execUnload(s)
     case Command.Reload => execReload()
-    case Command.Solve => execSolve()
     case Command.Benchmark => execBenchmark()
     case Command.Test => execTest()
     case Command.Watch => execWatch()

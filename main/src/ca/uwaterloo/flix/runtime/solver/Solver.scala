@@ -210,7 +210,7 @@ class Solver(val root: ExecutableAst.Root, options: SolverOptions)(implicit flix
   /**
     * Solves the Flix program.
     */
-  def solve(): CompilationResult = try {
+  def solve(): Fixedpoint = try {
     // initialize the solver.
     initSolver()
 
@@ -248,7 +248,7 @@ class Solver(val root: ExecutableAst.Root, options: SolverOptions)(implicit flix
     printDebug()
 
     // build and return the model.
-    mkModel(totalTime)
+    mkFixedpoint(totalTime)
   } catch {
     // Re-throw exceptions caught inside the individual reader/writer tasks.
     case ex: ExecutionException =>
@@ -782,15 +782,7 @@ class Solver(val root: ExecutableAst.Root, options: SolverOptions)(implicit flix
   /**
     * Constructs the minimal model from the datastore.
     */
-  private def mkModel(elapsed: Long): CompilationResult = {
-    // construct the model.
-    val defs = root.defs.foldLeft(Map.empty[Symbol.DefnSym, () => ProxyObject]) {
-      case (macc, (sym, defn)) =>
-        // Invokes the function with a single argument (which is supposed to be the Unit value, but we pass null instead).
-        val args: Array[AnyRef] = Array(null)
-        macc + (sym -> (() => Linker.link(sym, root).invoke(args)))
-    }
-
+  private def mkFixedpoint(elapsed: Long): Fixedpoint = {
     val relations = dataStore.relations.foldLeft(Map.empty[Symbol.TableSym, Iterable[List[ProxyObject]]]) {
       case (macc, (sym, relation)) =>
         val table = relation.scan.toIterable.map(_.toList)
@@ -805,10 +797,7 @@ class Solver(val root: ExecutableAst.Root, options: SolverOptions)(implicit flix
         macc + ((sym, table))
     }
 
-    val fixedpoint = Fixedpoint(root.tables, relations, lattices)
-
-    compilationResult = new CompilationResult(root, defs, fixedpoint)
-    compilationResult
+    Fixedpoint(root.tables, relations, lattices)
   }
 
   /**

@@ -86,11 +86,6 @@ object Command {
   case object Reload extends Command
 
   /**
-    * Computes the least fixed point of the program.
-    */
-  case object Solve extends Command
-
-  /**
     * Runs all benchmarks in the program.
     */
   case object Benchmark extends Command
@@ -249,12 +244,6 @@ object Command {
     //
     if (input == ":r" || input == ":reload")
       return Command.Reload
-
-    //
-    // Solve
-    //
-    if (input == ":solve")
-      return Command.Solve
 
     //
     // Benchmark

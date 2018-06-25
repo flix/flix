@@ -27,7 +27,8 @@ import ca.uwaterloo.flix.language.{CompilationError, GenSym}
 import ca.uwaterloo.flix.runtime.quickchecker.QuickChecker
 import ca.uwaterloo.flix.runtime.solver.{DeltaSolver, Solver, SolverOptions}
 import ca.uwaterloo.flix.runtime.verifier.Verifier
-import ca.uwaterloo.flix.runtime.CompilationResult
+import ca.uwaterloo.flix.runtime.{CompilationResult, Linker}
+import ca.uwaterloo.flix.runtime.solver.datastore.ProxyObject
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util._
 import ca.uwaterloo.flix.util.vt.TerminalContext
@@ -231,7 +232,7 @@ class Flix {
   /**
     * Compiles the given typed ast to an executable ast.
     */
-  def codeGen(typedAst: TypedAst.Root): Validation[ExecutableAst.Root, CompilationError] = {
+  def codeGen(typedAst: TypedAst.Root): Validation[CompilationResult, CompilationError] = {
     // Construct the compiler pipeline.
     val pipeline = Documentor |>
       Stratifier |>
@@ -251,18 +252,26 @@ class Flix {
       JvmBackend
 
     // Apply the pipeline to the parsed AST.
-    pipeline.run(typedAst)(this)
+    pipeline.run(typedAst)(this) map {
+      case root =>
+        val defs = root.defs.foldLeft(Map.empty[Symbol.DefnSym, () => ProxyObject]) {
+          case (macc, (sym, defn)) =>
+            // Invokes the function with a single argument (which is supposed to be the Unit value, but we pass null instead).
+            val args: Array[AnyRef] = Array(null)
+            macc + (sym -> (() => Linker.link(sym, root)(this).invoke(args)))
+        }
+        new CompilationResult(root, defs)(this)
+    }
 
   }
 
   /**
     * Compiles the given typed ast to an executable ast.
     */
-  def compile(): Validation[ExecutableAst.Root, CompilationError] = {
+  def compile(): Validation[CompilationResult, CompilationError] =
     check() flatMap {
       case typedAst => codeGen(typedAst)
     }
-  }
 
   /**
     * Runs the Flix fixed point solver on the program and returns the minimal model.
@@ -272,13 +281,14 @@ class Flix {
   /**
     * Runs the Flix fixed point solver on the program and returns the minimal model.
     */
-  def solve(root: ExecutableAst.Root): Validation[CompilationResult, CompilationError] = {
+  def solve(compilationResult: CompilationResult): Validation[CompilationResult, CompilationError] = {
     val solverOptions = SolverOptions(
       monitor = options.monitor,
       threads = options.threads,
       timeout = options.timeout,
       verbose = options.verbosity == Verbosity.Verbose)
-    new Solver(root, solverOptions)(this).solve().toSuccess
+    val fixedpoint = new Solver(compilationResult.getRoot, solverOptions)(this).solve()
+    compilationResult.toSuccess
   }
 
   /**
@@ -288,13 +298,13 @@ class Flix {
     * @param path the path to write the minimized facts to.
     */
   def deltaSolve(path: Path): Validation[scala.Unit, CompilationError] = compile().map {
-    case root =>
+    case compilationResult =>
       val solverOptions = SolverOptions(
         monitor = options.monitor,
         threads = options.threads,
         timeout = options.timeout,
         verbose = options.verbosity == Verbosity.Verbose)
-      DeltaSolver.solve(root, solverOptions, path)(this)
+      DeltaSolver.solve(compilationResult.getRoot, solverOptions, path)(this)
   }
 
   /**

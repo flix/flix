@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix
 
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.ExecutableAst
+import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util.Validation
 import org.scalatest.FunSuite
 
@@ -30,7 +30,7 @@ trait TestUtils {
   /**
     * Asserts that the validation is a failure with a value of the parametric type `T`.
     */
-  def expectError[T](result: Validation[ExecutableAst, CompilationError])(implicit classTag: ClassTag[T]): Unit = result match {
+  def expectError[T](result: Validation[CompilationResult, CompilationError])(implicit classTag: ClassTag[T]): Unit = result match {
     case Validation.Success(_) => fail(s"Expected Failure, but got Success.")
     case Validation.Failure(errors) =>
       val expected = classTag.runtimeClass
