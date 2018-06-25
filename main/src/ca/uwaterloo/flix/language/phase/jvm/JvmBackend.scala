@@ -21,11 +21,14 @@ import java.nio.file.{Path, Paths}
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.ExecutableAst._
+import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.phase.Phase
+import ca.uwaterloo.flix.runtime.{CompilationResult, Linker}
+import ca.uwaterloo.flix.runtime.solver.datastore.ProxyObject
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{Evaluation, Validation}
 
-object JvmBackend extends Phase[Root, Root] {
+object JvmBackend extends Phase[Root, CompilationResult] {
 
   // TODO: Ramin/Magnus: Can and should we make he backend completely independent from flix.api?
   // Then we would need to generate CellX, Unit, and a collection of exceptions.
@@ -38,19 +41,19 @@ object JvmBackend extends Phase[Root, Root] {
   /**
     * Emits JVM bytecode for the given AST `root`.
     */
-  def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationError] = flix.phase("JvmBackend") {
+  def run(root: Root)(implicit flix: Flix): Validation[CompilationResult, CompilationError] = flix.phase("JvmBackend") {
     //
     // Immediately return if in interpreted mode.
     //
     if (flix.options.evaluation == Evaluation.Interpreted) {
-      return root.toSuccess
+      return new CompilationResult(root, Map.empty).toSuccess
     }
 
     //
     // Immediately return if in verification mode.
     //
     if (flix.options.verifier) {
-      return root.toSuccess
+      return new CompilationResult(root, Map.empty).toSuccess
     }
 
     //
@@ -184,7 +187,20 @@ object JvmBackend extends Phase[Root, Root] {
     //
     Bootstrap.bootstrap(allClasses)
 
-    root.toSuccess
+    //
+    // Construct a map from symbols to actual JVM code.
+    //
+    val defs = root.defs.foldLeft(Map.empty[Symbol.DefnSym, () => ProxyObject]) {
+      case (macc, (sym, defn)) =>
+        // Invokes the function with a single argument (which is supposed to be the Unit value, but we pass null instead).
+        val args: Array[AnyRef] = Array(null)
+        macc + (sym -> (() => Linker.link(sym, root).invoke(args)))
+    }
+
+    //
+    // Return the compilation result.
+    //
+    new CompilationResult(root, defs).toSuccess
   }
 
 }
