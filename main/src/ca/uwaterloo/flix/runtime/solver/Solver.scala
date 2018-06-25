@@ -28,7 +28,7 @@ import ca.uwaterloo.flix.language.ast.{ExecutableAst, Symbol}
 import ca.uwaterloo.flix.runtime.solver.datastore.{DataStore, ProxyObject}
 import ca.uwaterloo.flix.runtime.debugger.RestServer
 import ca.uwaterloo.flix.runtime.interpreter.Value
-import ca.uwaterloo.flix.runtime.{Fixedpoint, Linker, CompilationResult, Monitor}
+import ca.uwaterloo.flix.runtime.{Linker, Monitor}
 import ca.uwaterloo.flix.util._
 import flix.runtime.{RuleError, TimeoutError}
 
@@ -135,12 +135,6 @@ class Solver(val root: ExecutableAst.Root, options: SolverOptions)(implicit flix
     */
   @volatile
   var paused: Boolean = false
-
-  /**
-    * The compilation result (if it exists).
-    */
-  @volatile
-  var compilationResult: CompilationResult = _
 
   //
   // Statistics:
@@ -255,11 +249,6 @@ class Solver(val root: ExecutableAst.Root, options: SolverOptions)(implicit flix
       stopSolver()
       throw ex.getCause
   }
-
-  /**
-    * Returns the model (if available).
-    */
-  def getModel: CompilationResult = compilationResult
 
   def getRuleStats: List[(Constraint, Int, Long)] = {
     val constraints = root.strata.flatMap(_.constraints)

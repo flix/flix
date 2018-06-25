@@ -1,4 +1,4 @@
-package ca.uwaterloo.flix.runtime
+package ca.uwaterloo.flix.runtime.solver
 
 import ca.uwaterloo.flix.language.ast.ExecutableAst.{Attribute, Table}
 import ca.uwaterloo.flix.language.ast.{ExecutableAst, Symbol}
