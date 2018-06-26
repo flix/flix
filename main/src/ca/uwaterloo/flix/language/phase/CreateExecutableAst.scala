@@ -315,7 +315,7 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
 
       def toExecutable(sast: SimplifiedAst.Predicate.Body, m: TopLevel)(implicit genSym: GenSym): ExecutableAst.Predicate.Body = sast match {
         case SimplifiedAst.Predicate.Body.Atom(sym, polarity, terms, loc) =>
-          val termsArray = terms.map(t => Terms.Body.translate(t, m)).toArray
+          val termsArray = terms.map(t => Terms.Body.translate(t, m))
           val index2var: Array[Symbol.VarSym] = {
             val r = new Array[Symbol.VarSym](termsArray.length)
             var i = 0
@@ -329,10 +329,10 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
             }
             r
           }
-          ExecutableAst.Predicate.Body.Atom(sym, polarity, termsArray, index2var, loc)
+          ExecutableAst.Predicate.Body.Atom(sym, polarity, termsArray, index2var.toList, loc)
 
         case SimplifiedAst.Predicate.Body.Filter(name, terms, loc) =>
-          val termsArray = terms.map(t => Terms.Body.translate(t, m)).toArray
+          val termsArray = terms.map(t => Terms.Body.translate(t, m))
           ExecutableAst.Predicate.Body.Filter(name, termsArray, loc)
         case SimplifiedAst.Predicate.Body.Loop(sym, term, loc) =>
           ExecutableAst.Predicate.Body.Loop(sym, Terms.translate(term, m), loc)
@@ -353,7 +353,7 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
         case None => ExecutableAst.Term.Head.Cst(lit2sym(lit, m), tpe, loc)
       }
       case SimplifiedAst.Term.Head.App(name, args, tpe, loc) =>
-        ExecutableAst.Term.Head.App(name, args.toArray, tpe, loc)
+        ExecutableAst.Term.Head.App(name, args, tpe, loc)
     }
 
     object Body {

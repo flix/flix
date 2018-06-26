@@ -377,13 +377,13 @@ class Solver(val root: ConstraintSystem, options: FixpointOptions)(implicit flix
 
       // Case split on whether the atom is positive or negative.
       p.polarity match {
-        case Polarity.Positive =>
+        case _: PositivePolarity =>
           // Case 1: The atom is positive. Recurse on all matched rows.
           for (newRow <- rows) {
             evalCross(rule, xs, newRow, interp)
           }
 
-        case Polarity.Negative =>
+        case _: NegativePolarity =>
           // Assertion: Check that every variable has been assigned a value.
           for (t <- p.terms) {
             t match {
