@@ -63,7 +63,10 @@ object ApiBridge {
         case Ast.Polarity.Negative => Polarity.Negative
       }
       val ts = terms.map(visitBodyTerm)
-      val i2s = index2sym.map(visitVarSym)
+      val i2s = index2sym map {
+        case x if x != null => visitVarSym(x)
+        case _ => null
+      }
       Predicate.Body.Atom(s, p, ts, i2s)
 
     case ExecutableAst.Predicate.Body.Filter(sym, terms, _) =>
