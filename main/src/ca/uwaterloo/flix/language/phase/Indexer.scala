@@ -38,7 +38,8 @@ object Indexer {
           indexes(name) = Set(Seq(0))
         case l: Table.Lattice =>
           val idxs = indexes.getOrElse(name, Set.empty)
-          indexes(name) = Set(Seq(0))
+          val everyKey = l.keys.indices
+          indexes(name) = Set(Seq(0), everyKey)
       }
     }
 
