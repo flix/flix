@@ -86,21 +86,6 @@ object Command {
   case object Reload extends Command
 
   /**
-    * Computes the least fixed point of the program.
-    */
-  case object Solve extends Command
-
-  /**
-    * Shows the rows in the relation `fqn` that matches the optional `needle`.
-    */
-  case class Rel(fqn: String, needle: Option[String]) extends Command
-
-  /**
-    * Shows the rows in the lattice `fqn` that matches the optional `needle`.
-    */
-  case class Lat(fqn: String, needle: Option[String]) extends Command
-
-  /**
     * Runs all benchmarks in the program.
     */
   case object Benchmark extends Command
@@ -259,50 +244,6 @@ object Command {
     //
     if (input == ":r" || input == ":reload")
       return Command.Reload
-
-    //
-    // Solve
-    //
-    if (input == ":solve")
-      return Command.Solve
-
-    //
-    // Rel
-    //
-    if (input.startsWith(":rel ")) {
-      // Check if any arguments were passed.
-      val args = input.substring(":rel ".length).trim
-      if (args.isEmpty) {
-        terminal.writer().println("Missing argument for command :rel.")
-        return Command.Nop
-      }
-
-      // Split the arguments into fqn and needle.
-      val split = args.split(" ")
-      if (split.length == 1)
-        return Command.Rel(split(0), None)
-      else
-        return Command.Rel(split(0), Some(split(1)))
-    }
-
-    //
-    // Lat
-    //
-    if (input.startsWith(":lat ")) {
-      // Check if any arguments were passed.
-      val args = input.substring(":lat ".length).trim
-      if (args.isEmpty) {
-        terminal.writer().println("Missing argument for command :lat.")
-        return Command.Nop
-      }
-
-      // Split the arguments into fqn and needle.
-      val split = args.split(" ")
-      if (split.length == 1)
-        return Command.Lat(split(0), None)
-      else
-        return Command.Lat(split(0), Some(split(1)))
-    }
 
     //
     // Benchmark

@@ -78,19 +78,6 @@ class TestMain extends FunSuite {
     assert(opts.pipe)
   }
 
-  test("--print foo") {
-    val args = Array("--print", "foo", "p.flix")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.print.contains("foo"))
-  }
-
-  test("--print foo,bar") {
-    val args = Array("--print", "foo,bar", "p.flix")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.print.contains("foo"))
-    assert(opts.print.contains("bar"))
-  }
-
   test("--release") {
     val args = Array("--release", "p.flix")
     val opts = Main.parseCmdOpts(args).get

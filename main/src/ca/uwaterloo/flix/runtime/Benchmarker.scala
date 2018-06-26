@@ -34,13 +34,13 @@ object Benchmarker {
   val ActualRounds = 50
 
   /**
-    * Evaluates all benchmarks in the given `model`.
+    * Evaluates all benchmarks.
     */
-  def benchmark(model: Model, writer: PrintWriter): Unit = {
+  def benchmark(compilationResult: CompilationResult, writer: PrintWriter): Unit = {
     /*
       * Group benchmarks by namespace.
       */
-    val benchmarksByNamespace = model.getBenchmarks.groupBy(_._1.namespace)
+    val benchmarksByNamespace = compilationResult.getBenchmarks.groupBy(_._1.namespace)
 
     /*
      * Iterate through each namespace and evaluate each benchmark.

@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.util
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.runtime.Model
+import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util.Validation.{Failure, Success}
 import ca.uwaterloo.flix.util.vt.TerminalContext
 import org.scalatest.FunSuite
@@ -40,7 +40,7 @@ class FlixTest(name: String, path: String) extends FunSuite {
     // Add the given path.
     flix.addPath(path)
 
-    // Compile and Evaluate the program to obtain the model.
+    // Compile and Evaluate the program to obtain the compilationResult.
     flix.solve() match {
       case Success(model) => runTests(model)
       case Failure(errors) =>
@@ -55,11 +55,11 @@ class FlixTest(name: String, path: String) extends FunSuite {
   }
 
   /**
-    * Runs all tests in the given `model`.
+    * Runs all tests.
     */
-  private def runTests(model: Model): Unit = {
+  private def runTests(compilationResult: CompilationResult): Unit = {
     // Group the tests by namespace.
-    val testsByNamespace = model.getTests.groupBy(_._1.namespace)
+    val testsByNamespace = compilationResult.getTests.groupBy(_._1.namespace)
 
     // Iterate through each namespace.
     for ((_, tests) <- testsByNamespace) {

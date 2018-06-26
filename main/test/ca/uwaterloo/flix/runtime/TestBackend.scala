@@ -29,8 +29,8 @@ class TestBackend extends FunSuite {
 
     private val interpretedFlix = createFlix(codegen = false).addStr(input)
     private val compiledFlix = createFlix(codegen = true).addStr(input)
-    private var interpreted: Model = null
-    private var compiled: Model = null
+    private var interpreted: CompilationResult = null
+    private var compiled: CompilationResult = null
 
     // A public Flix instance to expose the interop functions.
     val flix = createFlix()

@@ -25,9 +25,10 @@ import ca.uwaterloo.flix.language.phase._
 import ca.uwaterloo.flix.language.phase.jvm.JvmBackend
 import ca.uwaterloo.flix.language.{CompilationError, GenSym}
 import ca.uwaterloo.flix.runtime.quickchecker.QuickChecker
-import ca.uwaterloo.flix.runtime.solver.{DeltaSolver, Solver, SolverOptions}
+import ca.uwaterloo.flix.runtime.solver.{DeltaSolver, Solver, FixpointOptions}
 import ca.uwaterloo.flix.runtime.verifier.Verifier
-import ca.uwaterloo.flix.runtime.Model
+import ca.uwaterloo.flix.runtime.{CompilationResult, Linker}
+import ca.uwaterloo.flix.runtime.solver.datastore.ProxyObject
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util._
 import ca.uwaterloo.flix.util.vt.TerminalContext
@@ -231,7 +232,7 @@ class Flix {
   /**
     * Compiles the given typed ast to an executable ast.
     */
-  def codeGen(typedAst: TypedAst.Root): Validation[ExecutableAst.Root, CompilationError] = {
+  def codeGen(typedAst: TypedAst.Root): Validation[CompilationResult, CompilationError] = {
     // Construct the compiler pipeline.
     val pipeline = Documentor |>
       Stratifier |>
@@ -252,33 +253,33 @@ class Flix {
 
     // Apply the pipeline to the parsed AST.
     pipeline.run(typedAst)(this)
-
   }
 
   /**
     * Compiles the given typed ast to an executable ast.
     */
-  def compile(): Validation[ExecutableAst.Root, CompilationError] = {
+  def compile(): Validation[CompilationResult, CompilationError] =
     check() flatMap {
       case typedAst => codeGen(typedAst)
     }
-  }
 
   /**
     * Runs the Flix fixed point solver on the program and returns the minimal model.
     */
-  def solve(): Validation[Model, CompilationError] = compile() flatMap solve
+  def solve(): Validation[CompilationResult, CompilationError] = compile() flatMap solve
 
   /**
     * Runs the Flix fixed point solver on the program and returns the minimal model.
     */
-  def solve(root: ExecutableAst.Root): Validation[Model, CompilationError] = {
-    val solverOptions = SolverOptions(
-      monitor = options.monitor,
-      threads = options.threads,
-      timeout = options.timeout,
-      verbose = options.verbosity == Verbosity.Verbose)
-    new Solver(root, solverOptions)(this).solve().toSuccess
+  def solve(compilationResult: CompilationResult): Validation[CompilationResult, CompilationError] = {
+    val opts = new FixpointOptions()
+    opts.setMonitored(options.monitor)
+    opts.setThreads(options.threads)
+    opts.setTimeout(options.timeout)
+    opts.setVerbose(options.verbosity == Verbosity.Verbose)
+
+    val fixedpoint = new Solver(compilationResult.getRoot, opts)(this).solve()
+    compilationResult.toSuccess
   }
 
   /**
@@ -288,13 +289,14 @@ class Flix {
     * @param path the path to write the minimized facts to.
     */
   def deltaSolve(path: Path): Validation[scala.Unit, CompilationError] = compile().map {
-    case root =>
-      val solverOptions = SolverOptions(
-        monitor = options.monitor,
-        threads = options.threads,
-        timeout = options.timeout,
-        verbose = options.verbosity == Verbosity.Verbose)
-      DeltaSolver.solve(root, solverOptions, path)(this)
+    case compilationResult =>
+      val opts = new FixpointOptions()
+      opts.setMonitored(options.monitor)
+      opts.setThreads(options.threads)
+      opts.setTimeout(options.timeout)
+      opts.setVerbose(options.verbosity == Verbosity.Verbose)
+
+      DeltaSolver.solve(compilationResult.getRoot, opts, path)(this)
   }
 
   /**

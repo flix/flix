@@ -25,7 +25,7 @@ import ca.uwaterloo.flix.language.ast.Ast.HoleContext
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.{Symbol, Type}
-import ca.uwaterloo.flix.runtime.{Benchmarker, Model, Tester}
+import ca.uwaterloo.flix.runtime.{Benchmarker, CompilationResult, Tester}
 import ca.uwaterloo.flix.util._
 import ca.uwaterloo.flix.util.tc.Show
 import ca.uwaterloo.flix.util.tc.Show._
@@ -70,9 +70,9 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
   private var root: Root = _
 
   /**
-    * The current model (if any).
+    * The current compilation result.
     */
-  private var model: Model = _
+  private var compilationResult: CompilationResult = _
 
   /**
     * The definition symbol to use for the expression.
@@ -179,9 +179,6 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
     case Command.Load(s) => execLoad(s)
     case Command.Unload(s) => execUnload(s)
     case Command.Reload => execReload()
-    case Command.Solve => execSolve()
-    case Command.Rel(fqn, needle) => execRel(fqn, needle)
-    case Command.Lat(fqn, needle) => execLat(fqn, needle)
     case Command.Benchmark => execBenchmark()
     case Command.Test => execTest()
     case Command.Watch => execWatch()
@@ -201,11 +198,11 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
     // Recompile the program.
     execReload()
 
-    // Solve the program (to retrieve the model).
+    // Solve the program (to retrieve the compilationResult).
     execSolve()
 
     // Evaluate the function and get the result.
-    val result = this.model.evalToString(this.sym.toString)
+    val result = this.compilationResult.evalToString(this.sym.toString)
 
     // Write the result to the terminal.
     terminal.writer().println(result)
@@ -502,81 +499,31 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
   }
 
   /**
-    * Shows the rows in the given relation `fqn` that match the optional `needle`.
-    */
-  private def execRel(fqn: String, needle: Option[String])(implicit terminal: Terminal): Unit = {
-    // Check that the model has been computed.
-    if (this.model == null) {
-      terminal.writer().println(s"The model has not been computed. Run :solve.")
-      return
-    }
-
-    // Lookup the relation.
-    this.model.getRelations.get(fqn) match {
-      case None =>
-        // Case 1: The relation was not found.
-        terminal.writer().println(s"Undefined relation: '$fqn'.")
-      case Some((attributes, rows)) =>
-        // Case 2: The relation was found.
-        val ascii = new AsciiTable().withCols(attributes: _*).withFilter(needle)
-        for (row <- rows) {
-          ascii.mkRow(row)
-        }
-        ascii.write(terminal.writer())
-    }
-  }
-
-  /**
-    * Shows the rows in the given lattice `fqn` that match the optional `needle`.
-    */
-  private def execLat(fqn: String, needle: Option[String])(implicit terminal: Terminal): Unit = {
-    // Check that the model has been computed.
-    if (this.model == null) {
-      terminal.writer().println(s"The model has not been computed. Run :solve.")
-      return
-    }
-
-    // Lookup the lattice.
-    this.model.getLattices.get(fqn) match {
-      case None =>
-        // Case 1: The lattice was not found.
-        terminal.writer().println(s"Undefined lattice: '$fqn'.")
-      case Some((attributes, rows)) =>
-        // Case 1: The lattice was found.
-        val ascii = new AsciiTable().withCols(attributes: _*).withFilter(needle)
-        for (row <- rows) {
-          ascii.mkRow(row)
-        }
-        ascii.write(terminal.writer())
-    }
-  }
-
-  /**
     * Run all benchmarks in the program.
     */
   private def execBenchmark()(implicit terminal: Terminal): Unit = {
-    // Check that the model has been computed.
-    if (this.model == null) {
-      terminal.writer().println(s"The model has not been computed. Run :solve.")
+    // Check that the compilationResult has been computed.
+    if (this.compilationResult == null) {
+      terminal.writer().println(s"The compilationResult has not been computed. Run :solve.")
       return
     }
 
     // Run all benchmarks.
-    Benchmarker.benchmark(this.model, terminal.writer())
+    Benchmarker.benchmark(this.compilationResult, terminal.writer())
   }
 
   /**
     * Run all unit tests in the program.
     */
   private def execTest()(implicit terminal: Terminal): Unit = {
-    // Check that the model has been computed.
-    if (this.model == null) {
-      terminal.writer().println(s"The model has not been computed. Run :solve.")
+    // Check that the compilationResult has been computed.
+    if (this.compilationResult == null) {
+      terminal.writer().println(s"The compilationResult has not been computed. Run :solve.")
       return
     }
 
     // Run all unit tests.
-    val vt = Tester.test(this.model)
+    val vt = Tester.test(this.compilationResult)
 
     // Print the result to the terminal.
     terminal.writer().print(vt.output.fmt)
@@ -641,8 +588,6 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
     w.println("  :unload       <path>            Removes <path> as a source file.")
     w.println("  :reload :r                      Recompiles every source file.")
     w.println("  :solve                          Computes the least fixed point.")
-    w.println("  :rel          <fqn> [needle]    Shows all rows in the relation <fqn> that match <needle>.")
-    w.println("  :lat          <fqn> [needle]    Shows all rows in the lattice <fqn> that match <needle>.")
     w.println("  :benchmark                      Run all benchmarks in the program and show the results.")
     w.println("  :test                           Run all unit tests in the program and show the results.")
     w.println("  :watch :w                       Watches all source files for changes.")
@@ -782,12 +727,12 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
     */
   class SolverThread()(implicit terminal: Terminal) extends Runnable {
     override def run(): Unit = {
-      // compute the least model.
+      // compute the least compilationResult.
       val executableRoot = flix.codeGen(root).get
       val timer = new Timer(flix.solve(executableRoot))
       timer.getResult match {
         case Validation.Success(m) =>
-          model = m
+          compilationResult = m
           if (main.nonEmpty) {
             val name = main.get
             val evalTimer = new Timer(m.evalToString(name))
