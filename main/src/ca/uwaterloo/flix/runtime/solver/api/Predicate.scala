@@ -1,4 +1,4 @@
-package ca.uwaterloo.flix.runtime.solver.data
+package ca.uwaterloo.flix.runtime.solver.api
 
 object Predicate {
 
@@ -25,7 +25,7 @@ object Predicate {
       val arity: Int = terms.length
     }
 
-    case class Filter(f: AnyRef => Boolean, terms: Array[Term.Body]) extends Predicate.Body
+    case class Filter(f: Array[AnyRef] => Boolean, terms: Array[Term.Body]) extends Predicate.Body
 
   }
 

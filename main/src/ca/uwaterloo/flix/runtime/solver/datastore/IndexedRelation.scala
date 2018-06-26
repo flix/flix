@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.runtime.solver.datastore
 
-import ca.uwaterloo.flix.language.ast.ExecutableAst
+import ca.uwaterloo.flix.runtime.solver.api.Table
 import ca.uwaterloo.flix.util.BitOps
 
 import scala.collection.mutable
@@ -32,7 +32,7 @@ import scala.collection.mutable.ArrayBuffer
   * @param indexes  the indexes.
   * @param default  the default index.
   */
-final class IndexedRelation(val relation: ExecutableAst.Table.Relation, indexes: Set[Int], default: Int) extends IndexedCollection {
+final class IndexedRelation(val relation: Table.Relation, indexes: Set[Int], default: Int) extends IndexedCollection {
 
   /**
     * A map from indexes to keys to rows of values.

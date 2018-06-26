@@ -1,4 +1,4 @@
-package ca.uwaterloo.flix.runtime.solver.data
+package ca.uwaterloo.flix.runtime.solver.api
 
 import ca.uwaterloo.flix.runtime.solver.datastore.ProxyObject
 
@@ -12,9 +12,9 @@ object Term {
 
     case class Lit(f: () => ProxyObject) extends Term.Head
 
-    case class Cst(f: () => AnyRef) extends Term.Head
+    case class Cst(f: () => ProxyObject) extends Term.Head
 
-    case class App(f: AnyRef => AnyRef, args: Array[VarSym]) extends Term.Head
+    case class App(f: Array[AnyRef] => ProxyObject, args: Array[VarSym]) extends Term.Head
 
   }
 
@@ -28,7 +28,7 @@ object Term {
 
     case class Lit(lit: () => ProxyObject) extends Term.Body
 
-    case class Cst(f: () => AnyRef) extends Term.Body
+    case class Cst(f: () => ProxyObject) extends Term.Body
 
   }
 

@@ -26,7 +26,7 @@ sealed trait ExecutableAst
 
 object ExecutableAst {
 
-  // TODO: Get rid of most uses of array.
+  // TODO: Simplify everything after the introduction of solver.api.
 
   case class Root(defs: Map[Symbol.DefnSym, ExecutableAst.Def],
                   effs: Map[Symbol.EffSym, ExecutableAst.Eff],

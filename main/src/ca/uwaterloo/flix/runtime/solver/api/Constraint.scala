@@ -1,4 +1,4 @@
-package ca.uwaterloo.flix.runtime.solver.data
+package ca.uwaterloo.flix.runtime.solver.api
 
 import java.util.concurrent.atomic.{AtomicInteger, AtomicLong}
 
