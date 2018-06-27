@@ -12,8 +12,6 @@ object Term {
 
     case class Lit(f: () => ProxyObject) extends Term.Head
 
-    case class Cst(f: () => ProxyObject) extends Term.Head
-
     case class App(f: Array[AnyRef] => ProxyObject, args: Array[VarSym]) extends Term.Head
 
   }
@@ -27,8 +25,6 @@ object Term {
     case class Var(sym: VarSym) extends Term.Body
 
     case class Lit(lit: () => ProxyObject) extends Term.Body
-
-    case class Cst(f: () => ProxyObject) extends Term.Body
 
   }
 

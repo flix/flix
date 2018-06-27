@@ -422,8 +422,6 @@ class Solver(val root: ConstraintSystem, options: FixpointOptions)(implicit flix
           env(sym.getStackOffset)
         case Term.Body.Lit(f) =>
           f()
-        case Term.Body.Cst(f) =>
-          f()
         case Term.Body.Wild() =>
           // A wildcard places no restrictions on the value.
           null
@@ -504,8 +502,6 @@ class Solver(val root: ConstraintSystem, options: FixpointOptions)(implicit flix
             env(x.getStackOffset)
           case Term.Body.Lit(f) =>
             f()
-          case Term.Body.Cst(f) =>
-            f()
           case Term.Body.Wild() =>
             // A wildcard should not appear as an argument to a filter function.
             throw InternalRuntimeException("Wildcard not allowed here!")
@@ -552,7 +548,6 @@ class Solver(val root: ConstraintSystem, options: FixpointOptions)(implicit flix
   def evalHeadTerm(t: Term.Head, root: ConstraintSystem, env: Env): ProxyObject = t match {
     case Term.Head.Var(sym) => env(sym.getStackOffset)
     case Term.Head.Lit(f) => f()
-    case Term.Head.Cst(f) => f()
     case Term.Head.App(f, syms) =>
       val args = new Array[AnyRef](syms.length)
       var i = 0

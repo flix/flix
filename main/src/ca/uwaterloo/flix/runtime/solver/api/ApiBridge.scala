@@ -82,7 +82,7 @@ object ApiBridge {
   def visitHeadTerm(t: ExecutableAst.Term.Head)(implicit root: ExecutableAst.Root, flix: Flix): Term.Head = t match {
     case ExecutableAst.Term.Head.Var(sym, _, _) => Term.Head.Var(visitVarSym(sym))
     case ExecutableAst.Term.Head.Lit(lit, _, _) => Term.Head.Lit(() => lit)
-    case ExecutableAst.Term.Head.Cst(sym, _, _) => Term.Head.Cst(() => Linker.link(sym, root).invoke(Array.emptyObjectArray))
+    case ExecutableAst.Term.Head.Cst(sym, _, _) => Term.Head.Lit(() => Linker.link(sym, root).invoke(Array.emptyObjectArray))
     case ExecutableAst.Term.Head.App(sym, args, _, _) =>
       val f = (args: Array[AnyRef]) => Linker.link(sym, root).invoke(args)
       val as = args.map(visitVarSym)
@@ -93,7 +93,7 @@ object ApiBridge {
     case ExecutableAst.Term.Body.Wild(_, _) => Term.Body.Wild()
     case ExecutableAst.Term.Body.Var(sym, _, _) => Term.Body.Var(visitVarSym(sym))
     case ExecutableAst.Term.Body.Lit(lit, _, _) => Term.Body.Lit(() => lit)
-    case ExecutableAst.Term.Body.Cst(sym, _, _) => Term.Body.Cst(() => Linker.link(sym, root).invoke(Array.emptyObjectArray))
+    case ExecutableAst.Term.Body.Cst(sym, _, _) => Term.Body.Lit(() => Linker.link(sym, root).invoke(Array.emptyObjectArray))
     case ExecutableAst.Term.Body.Pat(_, _, _) => throw new UnsupportedOperationException("Loop currently not supported")
   }
 
