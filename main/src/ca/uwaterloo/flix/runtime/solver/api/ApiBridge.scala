@@ -72,7 +72,7 @@ object ApiBridge {
     case ExecutableAst.Predicate.Body.Filter(sym, terms, _) =>
       val f = (as: Array[AnyRef]) => Linker.link(sym, root).invoke(as).getValue.asInstanceOf[Boolean].booleanValue()
       val ts = terms.map(visitBodyTerm)
-      FilterBodyPredicate(f, ts.toArray)
+      new FilterBodyPredicate(f, ts.toArray)
 
     case ExecutableAst.Predicate.Body.Loop(_, _, _) => throw new UnsupportedOperationException("Loop currently not supported")
   }

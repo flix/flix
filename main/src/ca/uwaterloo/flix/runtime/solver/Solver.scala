@@ -491,12 +491,12 @@ class Solver(val root: ConstraintSystem, options: FixpointOptions)(implicit flix
   private def evalFilter(filter: FilterBodyPredicate, env: Env): Boolean = filter match {
     case p: FilterBodyPredicate =>
       // Evaluate the arguments of the filter function predicate.
-      val args = new Array[AnyRef](p.terms.length)
+      val args = new Array[AnyRef](p.getArguments().length)
       var j = 0
       // Iterate through each term of the filter function predicate.
       while (j < args.length) {
         // Compute the value of the term.
-        val value: ProxyObject = p.terms(j) match {
+        val value: ProxyObject = p.getArguments()(j) match {
           case p: VarBodyTerm =>
             // A variable is replaced by its value from the environment.
             env(p.sym.getStackOffset)
@@ -513,7 +513,7 @@ class Solver(val root: ConstraintSystem, options: FixpointOptions)(implicit flix
       }
 
       // Evaluate the filter function passing the arguments.
-      val result = p.f(args)
+      val result = p.getFunction()(args)
 
       // Return the result.
       result.asInstanceOf[java.lang.Boolean].booleanValue()
@@ -549,13 +549,13 @@ class Solver(val root: ConstraintSystem, options: FixpointOptions)(implicit flix
     case t: VarHeadTerm => env(t.sym.getStackOffset)
     case t: LitHeadTerm => t.f()
     case t: AppHeadTerm =>
-      val args = new Array[AnyRef](t.args.length)
+      val args = new Array[AnyRef](t.getArguments().length)
       var i = 0
       while (i < args.length) {
-        args(i) = env(t.args(i).getStackOffset).getValue
+        args(i) = env(t.getArguments()(i).getStackOffset).getValue
         i = i + 1
       }
-      t.f(args)
+      t.getFunction()(args)
   }
 
   /**
