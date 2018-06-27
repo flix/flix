@@ -89,11 +89,11 @@ object ApiBridge {
       new AppHeadTerm(f, as.toArray)
   }
 
-  def visitBodyTerm(t: ExecutableAst.Term.Body)(implicit root: ExecutableAst.Root, flix: Flix): Term.Body = t match {
-    case ExecutableAst.Term.Body.Wild(_, _) => Term.Body.Wild()
-    case ExecutableAst.Term.Body.Var(sym, _, _) => Term.Body.Var(visitVarSym(sym))
-    case ExecutableAst.Term.Body.Lit(lit, _, _) => Term.Body.Lit(() => lit)
-    case ExecutableAst.Term.Body.Cst(sym, _, _) => Term.Body.Lit(() => Linker.link(sym, root).invoke(Array.emptyObjectArray))
+  def visitBodyTerm(t: ExecutableAst.Term.Body)(implicit root: ExecutableAst.Root, flix: Flix): BodyTerm = t match {
+    case ExecutableAst.Term.Body.Wild(_, _) => new WildBodyTerm()
+    case ExecutableAst.Term.Body.Var(sym, _, _) => new VarBodyTerm(visitVarSym(sym))
+    case ExecutableAst.Term.Body.Lit(lit, _, _) => new LitBodyTerm(() => lit)
+    case ExecutableAst.Term.Body.Cst(sym, _, _) => new LitBodyTerm(() => Linker.link(sym, root).invoke(Array.emptyObjectArray))
     case ExecutableAst.Term.Body.Pat(_, _, _) => throw new UnsupportedOperationException("Loop currently not supported")
   }
 

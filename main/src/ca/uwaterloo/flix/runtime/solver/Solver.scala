@@ -387,8 +387,8 @@ class Solver(val root: ConstraintSystem, options: FixpointOptions)(implicit flix
           // Assertion: Check that every variable has been assigned a value.
           for (t <- p.terms) {
             t match {
-              case Term.Body.Var(sym) =>
-                assert(env(sym.getStackOffset) != null, s"Unbound variable in negated atom.")
+              case p: VarBodyTerm =>
+                assert(env(p.sym.getStackOffset) != null, s"Unbound variable in negated atom.")
               case _ => // Nop
             }
           }
@@ -417,12 +417,12 @@ class Solver(val root: ConstraintSystem, options: FixpointOptions)(implicit flix
     var i = 0
     while (i < pat.length) {
       val value: ProxyObject = p.terms(i) match {
-        case Term.Body.Var(sym) =>
+        case p: VarBodyTerm =>
           // A variable is replaced by its value from the environment (or null if unbound).
-          env(sym.getStackOffset)
-        case Term.Body.Lit(f) =>
-          f()
-        case Term.Body.Wild() =>
+          env(p.sym.getStackOffset)
+        case p: LitBodyTerm  =>
+          p.f()
+        case p: WildBodyTerm =>
           // A wildcard places no restrictions on the value.
           null
       }
@@ -497,12 +497,12 @@ class Solver(val root: ConstraintSystem, options: FixpointOptions)(implicit flix
       while (j < args.length) {
         // Compute the value of the term.
         val value: ProxyObject = p.terms(j) match {
-          case Term.Body.Var(x) =>
+          case p: VarBodyTerm =>
             // A variable is replaced by its value from the environment.
-            env(x.getStackOffset)
-          case Term.Body.Lit(f) =>
-            f()
-          case Term.Body.Wild() =>
+            env(p.sym.getStackOffset)
+          case p: LitBodyTerm =>
+            p.f()
+          case p: WildBodyTerm =>
             // A wildcard should not appear as an argument to a filter function.
             throw InternalRuntimeException("Wildcard not allowed here!")
         }
