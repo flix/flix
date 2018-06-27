@@ -2,7 +2,7 @@ package ca.uwaterloo.flix.runtime.solver.api
 
 import java.util.concurrent.atomic.{AtomicInteger, AtomicLong}
 
-case class Constraint(cparams: List[ConstraintParam], head: HeadPredicate, body: List[Predicate.Body]) {
+case class Constraint(cparams: List[ConstraintParam], head: HeadPredicate, body: List[BodyPredicate]) {
 
   /**
     * Returns the arity of the constraint.
@@ -25,15 +25,15 @@ case class Constraint(cparams: List[ConstraintParam], head: HeadPredicate, body:
   /**
     * Returns the atoms predicates in the body of the constraint.
     */
-  val atoms: List[Predicate.Body.Atom] = body.collect {
-    case p: Predicate.Body.Atom => p
+  val atoms: List[AtomBodyPredicate] = body.collect {
+    case p: AtomBodyPredicate => p
   }
 
   /**
     * Returns the filter predicates in the body of the constraint.
     */
-  val filters: Array[Predicate.Body.Filter] = body.collect {
-    case p: Predicate.Body.Filter => p
+  val filters: Array[FilterBodyPredicate] = body.collect {
+    case p: FilterBodyPredicate => p
   }.toArray
 
   /**

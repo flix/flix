@@ -55,7 +55,7 @@ object ApiBridge {
     case ExecutableAst.Predicate.Head.Atom(sym, terms, _) => new AtomHeadPredicate(visitTableSym(sym), terms.map(visitHeadTerm))
   }
 
-  def visitBodyPredicate(b: ExecutableAst.Predicate.Body)(implicit root: ExecutableAst.Root, flix: Flix): Predicate.Body = b match {
+  def visitBodyPredicate(b: ExecutableAst.Predicate.Body)(implicit root: ExecutableAst.Root, flix: Flix): BodyPredicate = b match {
     case ExecutableAst.Predicate.Body.Atom(sym, polarity, terms, index2sym, loc) =>
       val s = visitTableSym(sym)
       val p = polarity match {
@@ -67,12 +67,12 @@ object ApiBridge {
         case x if x != null => visitVarSym(x)
         case _ => null
       }
-      Predicate.Body.Atom(s, p, ts.toArray, i2s.toArray)
+      AtomBodyPredicate(s, p, ts.toArray, i2s.toArray)
 
     case ExecutableAst.Predicate.Body.Filter(sym, terms, _) =>
       val f = (as: Array[AnyRef]) => Linker.link(sym, root).invoke(as).getValue.asInstanceOf[Boolean].booleanValue()
       val ts = terms.map(visitBodyTerm)
-      Predicate.Body.Filter(f, ts.toArray)
+      FilterBodyPredicate(f, ts.toArray)
 
     case ExecutableAst.Predicate.Body.Loop(_, _, _) => throw new UnsupportedOperationException("Loop currently not supported")
   }

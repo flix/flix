@@ -80,7 +80,7 @@ class Solver(val root: ConstraintSystem, options: FixpointOptions)(implicit flix
   /**
     * The type of the dependency graph, a map from symbols to (constraint, atom) pairs.
     */
-  type DependencyGraph = mutable.Map[TableSym, Set[(Constraint, Predicate.Body.Atom)]]
+  type DependencyGraph = mutable.Map[TableSym, Set[(Constraint, AtomBodyPredicate)]]
 
   //
   // State of the solver:
@@ -367,7 +367,7 @@ class Solver(val root: ConstraintSystem, options: FixpointOptions)(implicit flix
   /**
     * Computes the cross product of all collections in the body.
     */
-  private def evalCross(rule: Constraint, ps: List[Predicate.Body.Atom], env: Env, interp: Interpretation): Unit = ps match {
+  private def evalCross(rule: Constraint, ps: List[AtomBodyPredicate], env: Env, interp: Interpretation): Unit = ps match {
     case Nil =>
       // cross product complete, now filter
       evalAllFilters(rule, env, interp)
@@ -405,7 +405,7 @@ class Solver(val root: ConstraintSystem, options: FixpointOptions)(implicit flix
   /**
     * Returns a sequence of rows matched by the given atom `p`.
     */
-  private def evalAtom(p: Predicate.Body.Atom, env: Env): Traversable[Env] = {
+  private def evalAtom(p: AtomBodyPredicate, env: Env): Traversable[Env] = {
     // lookup the relation or lattice.
     val table = root.tables(p.sym) match {
       case r: Table.Relation => dataStore.relations(p.sym)
@@ -490,15 +490,15 @@ class Solver(val root: ConstraintSystem, options: FixpointOptions)(implicit flix
   /**
     * Evaluates the given `filter` and returns its result.
     */
-  private def evalFilter(filter: Predicate.Body.Filter, env: Env): Boolean = filter match {
-    case Predicate.Body.Filter(filterFun, terms) =>
+  private def evalFilter(filter: FilterBodyPredicate, env: Env): Boolean = filter match {
+    case p: FilterBodyPredicate =>
       // Evaluate the arguments of the filter function predicate.
-      val args = new Array[AnyRef](terms.length)
+      val args = new Array[AnyRef](p.terms.length)
       var j = 0
       // Iterate through each term of the filter function predicate.
       while (j < args.length) {
         // Compute the value of the term.
-        val value: ProxyObject = terms(j) match {
+        val value: ProxyObject = p.terms(j) match {
           case Term.Body.Var(x) =>
             // A variable is replaced by its value from the environment.
             env(x.getStackOffset)
@@ -517,7 +517,7 @@ class Solver(val root: ConstraintSystem, options: FixpointOptions)(implicit flix
       }
 
       // Evaluate the filter function passing the arguments.
-      val result = filterFun(args)
+      val result = p.f(args)
 
       // Return the result.
       result.asInstanceOf[java.lang.Boolean].booleanValue()
@@ -851,7 +851,7 @@ class Solver(val root: ConstraintSystem, options: FixpointOptions)(implicit flix
           for (body <- innerRule.body) {
             // Loop through the atoms of the inner rule.
             (outerRule.head, body) match {
-              case (outer: AtomHeadPredicate, inner: Predicate.Body.Atom) =>
+              case (outer: AtomHeadPredicate, inner: AtomBodyPredicate) =>
                 // We have found a head and body atom. Check if they share the same symbol.
                 if (outer.sym == inner.sym) {
                   // The symbol is the same. Update the dependencies.
