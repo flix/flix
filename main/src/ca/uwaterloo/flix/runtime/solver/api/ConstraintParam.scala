@@ -1,11 +1,10 @@
 package ca.uwaterloo.flix.runtime.solver.api
 
-sealed trait ConstraintParam
+class ConstraintParam(sym: VarSym) {
 
-object ConstraintParam {
-
-  case class HeadParam(sym: VarSym) extends ConstraintParam
-
-  case class RuleParam(sym: VarSym) extends ConstraintParam
+  /**
+    * Returns the quantified variable symbol.
+    */
+  def getSymbol(): VarSym = sym
 
 }

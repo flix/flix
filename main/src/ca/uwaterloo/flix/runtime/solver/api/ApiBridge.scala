@@ -45,8 +45,8 @@ object ApiBridge {
   }
 
   def visitConstraintParam(c: ExecutableAst.ConstraintParam)(implicit root: ExecutableAst.Root, flix: Flix): ConstraintParam = c match {
-    case ExecutableAst.ConstraintParam.HeadParam(sym, _, _) => ConstraintParam.HeadParam(visitVarSym(sym))
-    case ExecutableAst.ConstraintParam.RuleParam(sym, _, _) => ConstraintParam.RuleParam(visitVarSym(sym))
+    case ExecutableAst.ConstraintParam.HeadParam(sym, _, _) => new ConstraintParam(visitVarSym(sym))
+    case ExecutableAst.ConstraintParam.RuleParam(sym, _, _) => new ConstraintParam(visitVarSym(sym))
   }
 
   def visitHeadPredicate(h: ExecutableAst.Predicate.Head)(implicit root: ExecutableAst.Root, flix: Flix): HeadPredicate = h match {
