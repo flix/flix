@@ -2,21 +2,6 @@ package ca.uwaterloo.flix.runtime.solver.api
 
 object Predicate {
 
-  sealed trait Head
-
-  object Head {
-
-    case class True() extends Head
-
-    case class False() extends Head
-
-    case class Atom(sym: TableSym, terms: List[Term.Head]) extends Head {
-      val arity: Int = terms.length
-      val termsAsArray: Array[Term.Head] = terms.toArray
-    }
-
-  }
-
   sealed trait Body
 
   object Body {

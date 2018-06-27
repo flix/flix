@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.runtime.solver.datastore
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.phase.Indexer
+import ca.uwaterloo.flix.runtime.solver.Indexer
 import ca.uwaterloo.flix.runtime.solver.api.{ConstraintSystem, Table, TableSym}
 import ca.uwaterloo.flix.util.BitOps
 

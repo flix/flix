@@ -526,8 +526,8 @@ class Solver(val root: ConstraintSystem, options: FixpointOptions)(implicit flix
   /**
     * Evaluates the given head predicate `p` under the given environment `env0`.
     */
-  private def evalHead(p: Predicate.Head, env: Env, interp: Interpretation): Unit = p match {
-    case p: Predicate.Head.Atom =>
+  private def evalHead(p: HeadPredicate, env: Env, interp: Interpretation): Unit = p match {
+    case p: AtomHeadPredicate =>
       val terms = p.termsAsArray
       val fact = new Array[ProxyObject](p.arity)
       var i = 0
@@ -542,8 +542,8 @@ class Solver(val root: ConstraintSystem, options: FixpointOptions)(implicit flix
       }
 
       interp += ((p.sym, fact))
-    case Predicate.Head.True() => // nop
-    case Predicate.Head.False() => throw new RuleError(null)
+    case _: TrueHeadPredicate => // nop
+    case _: FalseHeadPredicate => throw new RuleError(null)
   }
 
   /**
@@ -840,7 +840,7 @@ class Solver(val root: ConstraintSystem, options: FixpointOptions)(implicit flix
       // Initialize the dependencies of every symbol to the empty set.
       for (rule <- constraints) {
         rule.head match {
-          case Predicate.Head.Atom(sym, _) => dependenciesOf.update(sym, Set.empty)
+          case p: AtomHeadPredicate => dependenciesOf.update(p.sym, Set.empty)
           case _ => // nop
         }
       }
@@ -851,7 +851,7 @@ class Solver(val root: ConstraintSystem, options: FixpointOptions)(implicit flix
           for (body <- innerRule.body) {
             // Loop through the atoms of the inner rule.
             (outerRule.head, body) match {
-              case (outer: Predicate.Head.Atom, inner: Predicate.Body.Atom) =>
+              case (outer: AtomHeadPredicate, inner: Predicate.Body.Atom) =>
                 // We have found a head and body atom. Check if they share the same symbol.
                 if (outer.sym == inner.sym) {
                   // The symbol is the same. Update the dependencies.

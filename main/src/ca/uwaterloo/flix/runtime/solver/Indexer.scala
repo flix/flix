@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package ca.uwaterloo.flix.language.phase
+package ca.uwaterloo.flix.runtime.solver
 
 import ca.uwaterloo.flix.runtime.solver.api._
 

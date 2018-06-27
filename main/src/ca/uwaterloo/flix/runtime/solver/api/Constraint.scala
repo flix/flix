@@ -2,7 +2,7 @@ package ca.uwaterloo.flix.runtime.solver.api
 
 import java.util.concurrent.atomic.{AtomicInteger, AtomicLong}
 
-case class Constraint(cparams: List[ConstraintParam], head: Predicate.Head, body: List[Predicate.Body]) {
+case class Constraint(cparams: List[ConstraintParam], head: HeadPredicate, body: List[Predicate.Body]) {
 
   /**
     * Returns the arity of the constraint.

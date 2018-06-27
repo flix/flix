@@ -49,10 +49,10 @@ object ApiBridge {
     case ExecutableAst.ConstraintParam.RuleParam(sym, _, _) => ConstraintParam.RuleParam(visitVarSym(sym))
   }
 
-  def visitHeadPredicate(h: ExecutableAst.Predicate.Head)(implicit root: ExecutableAst.Root, flix: Flix): Predicate.Head = h match {
-    case ExecutableAst.Predicate.Head.True(_) => Predicate.Head.True()
-    case ExecutableAst.Predicate.Head.False(_) => Predicate.Head.False()
-    case ExecutableAst.Predicate.Head.Atom(sym, terms, _) => Predicate.Head.Atom(visitTableSym(sym), terms.map(visitHeadTerm))
+  def visitHeadPredicate(h: ExecutableAst.Predicate.Head)(implicit root: ExecutableAst.Root, flix: Flix): HeadPredicate = h match {
+    case ExecutableAst.Predicate.Head.True(_) => new TrueHeadPredicate()
+    case ExecutableAst.Predicate.Head.False(_) => new FalseHeadPredicate()
+    case ExecutableAst.Predicate.Head.Atom(sym, terms, _) => new AtomHeadPredicate(visitTableSym(sym), terms.map(visitHeadTerm))
   }
 
   def visitBodyPredicate(b: ExecutableAst.Predicate.Body)(implicit root: ExecutableAst.Root, flix: Flix): Predicate.Body = b match {
