@@ -79,14 +79,14 @@ object ApiBridge {
 
   def visitTableSym(sym: Symbol.TableSym)(implicit root: ExecutableAst.Root, flix: Flix): TableSym = TableSym(sym.toString)
 
-  def visitHeadTerm(t: ExecutableAst.Term.Head)(implicit root: ExecutableAst.Root, flix: Flix): Term.Head = t match {
-    case ExecutableAst.Term.Head.Var(sym, _, _) => Term.Head.Var(visitVarSym(sym))
-    case ExecutableAst.Term.Head.Lit(lit, _, _) => Term.Head.Lit(() => lit)
-    case ExecutableAst.Term.Head.Cst(sym, _, _) => Term.Head.Lit(() => Linker.link(sym, root).invoke(Array.emptyObjectArray))
+  def visitHeadTerm(t: ExecutableAst.Term.Head)(implicit root: ExecutableAst.Root, flix: Flix): HeadTerm = t match {
+    case ExecutableAst.Term.Head.Var(sym, _, _) => new VarHeadTerm(visitVarSym(sym))
+    case ExecutableAst.Term.Head.Lit(lit, _, _) => new LitHeadTerm(() => lit)
+    case ExecutableAst.Term.Head.Cst(sym, _, _) => new LitHeadTerm(() => Linker.link(sym, root).invoke(Array.emptyObjectArray))
     case ExecutableAst.Term.Head.App(sym, args, _, _) =>
       val f = (args: Array[AnyRef]) => Linker.link(sym, root).invoke(args)
       val as = args.map(visitVarSym)
-      Term.Head.App(f, as.toArray)
+      new AppHeadTerm(f, as.toArray)
   }
 
   def visitBodyTerm(t: ExecutableAst.Term.Body)(implicit root: ExecutableAst.Root, flix: Flix): Term.Body = t match {

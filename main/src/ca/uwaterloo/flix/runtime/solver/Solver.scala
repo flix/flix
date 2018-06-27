@@ -545,17 +545,17 @@ class Solver(val root: ConstraintSystem, options: FixpointOptions)(implicit flix
   /**
     * Evaluates the given head term `t` under the given environment `env0`
     */
-  def evalHeadTerm(t: Term.Head, root: ConstraintSystem, env: Env): ProxyObject = t match {
-    case Term.Head.Var(sym) => env(sym.getStackOffset)
-    case Term.Head.Lit(f) => f()
-    case Term.Head.App(f, syms) =>
-      val args = new Array[AnyRef](syms.length)
+  def evalHeadTerm(t: HeadTerm, root: ConstraintSystem, env: Env): ProxyObject = t match {
+    case t: VarHeadTerm => env(t.sym.getStackOffset)
+    case t: LitHeadTerm => t.f()
+    case t: AppHeadTerm =>
+      val args = new Array[AnyRef](t.args.length)
       var i = 0
       while (i < args.length) {
-        args(i) = env(syms(i).getStackOffset).getValue
+        args(i) = env(t.args(i).getStackOffset).getValue
         i = i + 1
       }
-      f(args)
+      t.f(args)
   }
 
   /**
