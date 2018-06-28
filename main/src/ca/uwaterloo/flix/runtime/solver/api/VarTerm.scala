@@ -1,3 +1,3 @@
 package ca.uwaterloo.flix.runtime.solver.api
 
-trait BodyTerm
+case class VarTerm(sym: VarSym) extends Term

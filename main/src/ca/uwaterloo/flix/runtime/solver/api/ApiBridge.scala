@@ -79,21 +79,21 @@ object ApiBridge {
 
   def visitTableSym(sym: Symbol.TableSym)(implicit root: ExecutableAst.Root, flix: Flix): TableSym = TableSym(sym.toString)
 
-  def visitHeadTerm(t: ExecutableAst.Term.Head)(implicit root: ExecutableAst.Root, flix: Flix): HeadTerm = t match {
-    case ExecutableAst.Term.Head.Var(sym, _, _) => new VarHeadTerm(visitVarSym(sym))
-    case ExecutableAst.Term.Head.Lit(lit, _, _) => new LitHeadTerm(() => lit)
-    case ExecutableAst.Term.Head.Cst(sym, _, _) => new LitHeadTerm(() => Linker.link(sym, root).invoke(Array.emptyObjectArray))
+  def visitHeadTerm(t: ExecutableAst.Term.Head)(implicit root: ExecutableAst.Root, flix: Flix): Term = t match {
+    case ExecutableAst.Term.Head.Var(sym, _, _) => new VarTerm(visitVarSym(sym))
+    case ExecutableAst.Term.Head.Lit(lit, _, _) => new LitTerm(() => lit)
+    case ExecutableAst.Term.Head.Cst(sym, _, _) => new LitTerm(() => Linker.link(sym, root).invoke(Array.emptyObjectArray))
     case ExecutableAst.Term.Head.App(sym, args, _, _) =>
       val f = (args: Array[AnyRef]) => Linker.link(sym, root).invoke(args)
       val as = args.map(visitVarSym)
       new AppHeadTerm(f, as.toArray)
   }
 
-  def visitBodyTerm(t: ExecutableAst.Term.Body)(implicit root: ExecutableAst.Root, flix: Flix): BodyTerm = t match {
-    case ExecutableAst.Term.Body.Wild(_, _) => new WildBodyTerm()
-    case ExecutableAst.Term.Body.Var(sym, _, _) => new VarBodyTerm(visitVarSym(sym))
-    case ExecutableAst.Term.Body.Lit(lit, _, _) => new LitBodyTerm(() => lit)
-    case ExecutableAst.Term.Body.Cst(sym, _, _) => new LitBodyTerm(() => Linker.link(sym, root).invoke(Array.emptyObjectArray))
+  def visitBodyTerm(t: ExecutableAst.Term.Body)(implicit root: ExecutableAst.Root, flix: Flix): Term = t match {
+    case ExecutableAst.Term.Body.Wild(_, _) => new WildTerm()
+    case ExecutableAst.Term.Body.Var(sym, _, _) => new VarTerm(visitVarSym(sym))
+    case ExecutableAst.Term.Body.Lit(lit, _, _) => new LitTerm(() => lit)
+    case ExecutableAst.Term.Body.Cst(sym, _, _) => new LitTerm(() => Linker.link(sym, root).invoke(Array.emptyObjectArray))
     case ExecutableAst.Term.Body.Pat(_, _, _) => throw new UnsupportedOperationException("Loop currently not supported")
   }
 

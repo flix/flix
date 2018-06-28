@@ -1,7 +1,9 @@
 package ca.uwaterloo.flix.runtime.solver.api
 
 // TODO: Should not be case class.
-case class AtomHeadPredicate(sym: TableSym, terms: List[HeadTerm]) extends HeadPredicate {
+case class AtomHeadPredicate(sym: TableSym, terms: List[Term]) extends HeadPredicate {
   val arity: Int = terms.length
-  val termsAsArray: Array[HeadTerm] = terms.toArray
+  val termsAsArray: Array[Term] = terms.toArray
+
+  assert(!terms.exists(_.isInstanceOf[WildTerm]))
 }

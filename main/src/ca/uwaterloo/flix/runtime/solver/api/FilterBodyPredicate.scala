@@ -1,6 +1,8 @@
 package ca.uwaterloo.flix.runtime.solver.api
 
-class FilterBodyPredicate(f: Array[AnyRef] => Boolean, terms: Array[BodyTerm]) extends BodyPredicate {
+class FilterBodyPredicate(f: Array[AnyRef] => Boolean, terms: Array[Term]) extends BodyPredicate {
+
+  // TODO: The terms cannot be wildcard terms.
 
   /**
     * Returns the filter function.
@@ -10,6 +12,6 @@ class FilterBodyPredicate(f: Array[AnyRef] => Boolean, terms: Array[BodyTerm]) e
   /**
     * Returns the arguments of the filter function.
     */
-  def getArguments(): Array[BodyTerm] = terms
+  def getArguments(): Array[Term] = terms
 
 }

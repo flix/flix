@@ -387,7 +387,7 @@ class Solver(val root: ConstraintSystem, options: FixpointOptions)(implicit flix
           // Assertion: Check that every variable has been assigned a value.
           for (t <- p.terms) {
             t match {
-              case p: VarBodyTerm =>
+              case p: VarTerm =>
                 assert(env(p.sym.getStackOffset) != null, s"Unbound variable in negated atom.")
               case _ => // Nop
             }
@@ -417,12 +417,12 @@ class Solver(val root: ConstraintSystem, options: FixpointOptions)(implicit flix
     var i = 0
     while (i < pat.length) {
       val value: ProxyObject = p.terms(i) match {
-        case p: VarBodyTerm =>
+        case p: VarTerm =>
           // A variable is replaced by its value from the environment (or null if unbound).
           env(p.sym.getStackOffset)
-        case p: LitBodyTerm  =>
+        case p: LitTerm  =>
           p.f()
-        case p: WildBodyTerm =>
+        case p: WildTerm =>
           // A wildcard places no restrictions on the value.
           null
       }
@@ -497,12 +497,12 @@ class Solver(val root: ConstraintSystem, options: FixpointOptions)(implicit flix
       while (j < args.length) {
         // Compute the value of the term.
         val value: ProxyObject = p.getArguments()(j) match {
-          case p: VarBodyTerm =>
+          case p: VarTerm =>
             // A variable is replaced by its value from the environment.
             env(p.sym.getStackOffset)
-          case p: LitBodyTerm =>
+          case p: LitTerm =>
             p.f()
-          case p: WildBodyTerm =>
+          case p: WildTerm =>
             // A wildcard should not appear as an argument to a filter function.
             throw InternalRuntimeException("Wildcard not allowed here!")
         }
@@ -545,9 +545,9 @@ class Solver(val root: ConstraintSystem, options: FixpointOptions)(implicit flix
   /**
     * Evaluates the given head term `t` under the given environment `env0`
     */
-  def evalHeadTerm(t: HeadTerm, root: ConstraintSystem, env: Env): ProxyObject = t match {
-    case t: VarHeadTerm => env(t.sym.getStackOffset)
-    case t: LitHeadTerm => t.f()
+  def evalHeadTerm(t: Term, root: ConstraintSystem, env: Env): ProxyObject = t match {
+    case t: VarTerm => env(t.sym.getStackOffset)
+    case t: LitTerm => t.f()
     case t: AppHeadTerm =>
       val args = new Array[AnyRef](t.getArguments().length)
       var i = 0

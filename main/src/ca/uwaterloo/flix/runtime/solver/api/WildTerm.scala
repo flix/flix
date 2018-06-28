@@ -1,3 +1,3 @@
 package ca.uwaterloo.flix.runtime.solver.api
 
-trait HeadTerm
+class WildTerm extends Term
