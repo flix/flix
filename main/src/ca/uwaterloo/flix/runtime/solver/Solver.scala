@@ -26,6 +26,8 @@ import ca.uwaterloo.flix.runtime.debugger.RestServer
 import ca.uwaterloo.flix.runtime.interpreter.Value
 import ca.uwaterloo.flix.runtime.solver.api._
 import ca.uwaterloo.flix.runtime.Monitor
+import ca.uwaterloo.flix.runtime.solver.api.polarity._
+import ca.uwaterloo.flix.runtime.solver.api.predicate._
 import ca.uwaterloo.flix.runtime.solver.api.term._
 import ca.uwaterloo.flix.util._
 import flix.runtime.{RuleError, TimeoutError}
@@ -81,7 +83,7 @@ class Solver(val root: ConstraintSystem, options: FixpointOptions)(implicit flix
   /**
     * The type of the dependency graph, a map from symbols to (constraint, atom) pairs.
     */
-  type DependencyGraph = mutable.Map[TableSym, Set[(Constraint, AtomBodyPredicate)]]
+  type DependencyGraph = mutable.Map[TableSym, Set[(Constraint, AtomPredicate)]]
 
   //
   // State of the solver:
@@ -368,7 +370,7 @@ class Solver(val root: ConstraintSystem, options: FixpointOptions)(implicit flix
   /**
     * Computes the cross product of all collections in the body.
     */
-  private def evalCross(rule: Constraint, ps: List[AtomBodyPredicate], env: Env, interp: Interpretation): Unit = ps match {
+  private def evalCross(rule: Constraint, ps: List[AtomPredicate], env: Env, interp: Interpretation): Unit = ps match {
     case Nil =>
       // cross product complete, now filter
       evalAllFilters(rule, env, interp)
@@ -406,7 +408,7 @@ class Solver(val root: ConstraintSystem, options: FixpointOptions)(implicit flix
   /**
     * Returns a sequence of rows matched by the given atom `p`.
     */
-  private def evalAtom(p: AtomBodyPredicate, env: Env): Traversable[Env] = {
+  private def evalAtom(p: AtomPredicate, env: Env): Traversable[Env] = {
     // lookup the relation or lattice.
     val table = root.tables(p.sym) match {
       case r: Table.Relation => dataStore.relations(p.sym)
@@ -489,8 +491,8 @@ class Solver(val root: ConstraintSystem, options: FixpointOptions)(implicit flix
   /**
     * Evaluates the given `filter` and returns its result.
     */
-  private def evalFilter(filter: FilterBodyPredicate, env: Env): Boolean = filter match {
-    case p: FilterBodyPredicate =>
+  private def evalFilter(filter: FilterPredicate, env: Env): Boolean = filter match {
+    case p: FilterPredicate =>
       // Evaluate the arguments of the filter function predicate.
       val args = new Array[AnyRef](p.getArguments().length)
       var j = 0
@@ -523,9 +525,9 @@ class Solver(val root: ConstraintSystem, options: FixpointOptions)(implicit flix
   /**
     * Evaluates the given head predicate `p` under the given environment `env0`.
     */
-  private def evalHead(p: HeadPredicate, env: Env, interp: Interpretation): Unit = p match {
-    case p: AtomHeadPredicate =>
-      val terms = p.termsAsArray
+  private def evalHead(p: Predicate, env: Env, interp: Interpretation): Unit = p match {
+    case p: AtomPredicate =>
+      val terms = p.terms
       val fact = new Array[ProxyObject](p.arity)
       var i = 0
       while (i < fact.length) {
@@ -539,8 +541,8 @@ class Solver(val root: ConstraintSystem, options: FixpointOptions)(implicit flix
       }
 
       interp += ((p.sym, fact))
-    case _: TrueHeadPredicate => // nop
-    case _: FalseHeadPredicate => throw new RuleError(null)
+    case _: TruePredicate => // nop
+    case _: FalsePredicate => throw new RuleError(null)
   }
 
   /**
@@ -836,7 +838,7 @@ class Solver(val root: ConstraintSystem, options: FixpointOptions)(implicit flix
       // Initialize the dependencies of every symbol to the empty set.
       for (rule <- constraints) {
         rule.head match {
-          case p: AtomHeadPredicate => dependenciesOf.update(p.sym, Set.empty)
+          case p: AtomPredicate => dependenciesOf.update(p.sym, Set.empty)
           case _ => // nop
         }
       }
@@ -847,7 +849,7 @@ class Solver(val root: ConstraintSystem, options: FixpointOptions)(implicit flix
           for (body <- innerRule.body) {
             // Loop through the atoms of the inner rule.
             (outerRule.head, body) match {
-              case (outer: AtomHeadPredicate, inner: AtomBodyPredicate) =>
+              case (outer: AtomPredicate, inner: AtomPredicate) =>
                 // We have found a head and body atom. Check if they share the same symbol.
                 if (outer.sym == inner.sym) {
                   // The symbol is the same. Update the dependencies.

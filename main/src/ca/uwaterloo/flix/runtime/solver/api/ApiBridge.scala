@@ -4,6 +4,8 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{Ast, ExecutableAst, Symbol}
 import ca.uwaterloo.flix.runtime.{InvocationTarget, Linker}
 import ca.uwaterloo.flix.runtime.solver.LatticeOps
+import ca.uwaterloo.flix.runtime.solver.api.polarity.{NegativePolarity, PositivePolarity}
+import ca.uwaterloo.flix.runtime.solver.api.predicate._
 import ca.uwaterloo.flix.runtime.solver.api.term._
 import ca.uwaterloo.flix.runtime.solver.datastore.ProxyObject
 
@@ -50,13 +52,13 @@ object ApiBridge {
     case ExecutableAst.ConstraintParam.RuleParam(sym, _, _) => new ConstraintParam(visitVarSym(sym))
   }
 
-  def visitHeadPredicate(h: ExecutableAst.Predicate.Head)(implicit root: ExecutableAst.Root, flix: Flix): HeadPredicate = h match {
-    case ExecutableAst.Predicate.Head.True(_) => new TrueHeadPredicate()
-    case ExecutableAst.Predicate.Head.False(_) => new FalseHeadPredicate()
-    case ExecutableAst.Predicate.Head.Atom(sym, terms, _) => new AtomHeadPredicate(visitTableSym(sym), terms.map(visitHeadTerm))
+  def visitHeadPredicate(h: ExecutableAst.Predicate.Head)(implicit root: ExecutableAst.Root, flix: Flix): Predicate = h match {
+    case ExecutableAst.Predicate.Head.True(_) => new TruePredicate()
+    case ExecutableAst.Predicate.Head.False(_) => new FalsePredicate()
+    case ExecutableAst.Predicate.Head.Atom(sym, terms, _) => new AtomPredicate(visitTableSym(sym), new PositivePolarity, terms.map(visitHeadTerm).toArray, null)
   }
 
-  def visitBodyPredicate(b: ExecutableAst.Predicate.Body)(implicit root: ExecutableAst.Root, flix: Flix): BodyPredicate = b match {
+  def visitBodyPredicate(b: ExecutableAst.Predicate.Body)(implicit root: ExecutableAst.Root, flix: Flix): Predicate = b match {
     case ExecutableAst.Predicate.Body.Atom(sym, polarity, terms, index2sym, loc) =>
       val s = visitTableSym(sym)
       val p = polarity match {
@@ -68,12 +70,12 @@ object ApiBridge {
         case x if x != null => visitVarSym(x)
         case _ => null
       }
-      AtomBodyPredicate(s, p, ts.toArray, i2s.toArray)
+      AtomPredicate(s, p, ts.toArray, i2s.toArray)
 
     case ExecutableAst.Predicate.Body.Filter(sym, terms, _) =>
       val f = (as: Array[AnyRef]) => Linker.link(sym, root).invoke(as).getValue.asInstanceOf[Boolean].booleanValue()
       val ts = terms.map(visitBodyTerm)
-      new FilterBodyPredicate(f, ts.toArray)
+      new FilterPredicate(f, ts.toArray)
 
     case ExecutableAst.Predicate.Body.Loop(_, _, _) => throw new UnsupportedOperationException("Loop currently not supported")
   }

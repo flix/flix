@@ -1,8 +1,8 @@
-package ca.uwaterloo.flix.runtime.solver.api
+package ca.uwaterloo.flix.runtime.solver.api.predicate
 
 import ca.uwaterloo.flix.runtime.solver.api.term.Term
 
-class FilterBodyPredicate(f: Array[AnyRef] => Boolean, terms: Array[Term]) extends BodyPredicate {
+class FilterPredicate(f: Array[AnyRef] => Boolean, terms: Array[Term]) extends Predicate {
 
   // TODO: The terms cannot be wildcard terms.
 
