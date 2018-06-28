@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.runtime.solver
 
 import ca.uwaterloo.flix.runtime.solver.api._
+import ca.uwaterloo.flix.runtime.solver.api.symbol.TableSym
 
 import scala.collection.mutable
 

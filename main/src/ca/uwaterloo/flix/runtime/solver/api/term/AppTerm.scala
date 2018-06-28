@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.runtime.solver.api.term
 
-import ca.uwaterloo.flix.runtime.solver.api.VarSym
+import ca.uwaterloo.flix.runtime.solver.api.symbol.VarSym
 import ca.uwaterloo.flix.runtime.solver.datastore.ProxyObject
 
 class AppTerm(f: Array[AnyRef] => ProxyObject, args: Array[VarSym]) extends Term {

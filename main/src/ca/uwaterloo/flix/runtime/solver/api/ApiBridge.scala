@@ -6,6 +6,7 @@ import ca.uwaterloo.flix.runtime.{InvocationTarget, Linker}
 import ca.uwaterloo.flix.runtime.solver.LatticeOps
 import ca.uwaterloo.flix.runtime.solver.api.polarity.{NegativePolarity, PositivePolarity}
 import ca.uwaterloo.flix.runtime.solver.api.predicate._
+import ca.uwaterloo.flix.runtime.solver.api.symbol.{TableSym, VarSym}
 import ca.uwaterloo.flix.runtime.solver.api.term._
 import ca.uwaterloo.flix.runtime.solver.datastore.ProxyObject
 

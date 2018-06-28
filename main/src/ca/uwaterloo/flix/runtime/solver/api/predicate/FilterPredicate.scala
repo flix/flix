@@ -1,10 +1,17 @@
 package ca.uwaterloo.flix.runtime.solver.api.predicate
 
-import ca.uwaterloo.flix.runtime.solver.api.term.Term
+import ca.uwaterloo.flix.runtime.solver.api.term.{Term, WildTerm}
 
 class FilterPredicate(f: Array[AnyRef] => Boolean, terms: Array[Term]) extends Predicate {
 
-  // TODO: The terms cannot be wildcard terms.
+  /**
+    * Constructor.
+    */
+  for (t <- terms) {
+    if (t.isInstanceOf[WildTerm]) {
+      throw new IllegalArgumentException("Unexpected wildcard term.")
+    }
+  }
 
   /**
     * Returns the filter function.

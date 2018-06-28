@@ -18,7 +18,8 @@ package ca.uwaterloo.flix.runtime.solver.datastore
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.runtime.solver.Indexer
-import ca.uwaterloo.flix.runtime.solver.api.{ConstraintSystem, Table, TableSym}
+import ca.uwaterloo.flix.runtime.solver.api.symbol.TableSym
+import ca.uwaterloo.flix.runtime.solver.api.{ConstraintSystem, Table}
 import ca.uwaterloo.flix.util.BitOps
 
 import scala.collection.mutable
