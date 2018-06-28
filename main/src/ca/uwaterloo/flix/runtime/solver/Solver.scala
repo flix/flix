@@ -380,27 +380,26 @@ class Solver(val root: ConstraintSystem, options: FixpointOptions)(implicit flix
       val rows = evalAtom(p, env)
 
       // Case split on whether the atom is positive or negative.
-      p.polarity match {
-        case _: PositivePolarity =>
-          // Case 1: The atom is positive. Recurse on all matched rows.
-          for (newRow <- rows) {
-            evalCross(rule, xs, newRow, interp)
+      if (p.polarity.isPositive) {
+        // Case 1: The atom is positive. Recurse on all matched rows.
+        for (newRow <- rows) {
+          evalCross(rule, xs, newRow, interp)
+        }
+      } else {
+        // Case 2: The atom is negative.
+        // Assertion: Check that every variable has been assigned a value.
+        for (t <- p.terms) {
+          t match {
+            case p: VarTerm =>
+              assert(env(p.sym.getStackOffset) != null, s"Unbound variable in negated atom.")
+            case _ => // Nop
           }
+        }
 
-        case _: NegativePolarity =>
-          // Assertion: Check that every variable has been assigned a value.
-          for (t <- p.terms) {
-            t match {
-              case p: VarTerm =>
-                assert(env(p.sym.getStackOffset) != null, s"Unbound variable in negated atom.")
-              case _ => // Nop
-            }
-          }
-
-          // Case 2: The atom is negative. Recurse on the original environment if *no* rows were matched.
-          if (rows.isEmpty) {
-            evalCross(rule, xs, env, interp)
-          }
+        // Case 2: The atom is negative. Recurse on the original environment if *no* rows were matched.
+        if (rows.isEmpty) {
+          evalCross(rule, xs, env, interp)
+        }
       }
 
     case p => throw InternalRuntimeException(s"Unmatched predicate: '$p'.")
@@ -424,7 +423,7 @@ class Solver(val root: ConstraintSystem, options: FixpointOptions)(implicit flix
         case p: VarTerm =>
           // A variable is replaced by its value from the environment (or null if unbound).
           env(p.sym.getStackOffset)
-        case p: LitTerm  =>
+        case p: LitTerm =>
           p.f()
         case p: WildTerm =>
           // A wildcard places no restrictions on the value.
