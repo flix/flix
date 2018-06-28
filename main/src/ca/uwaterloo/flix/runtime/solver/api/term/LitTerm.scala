@@ -1,4 +1,4 @@
-package ca.uwaterloo.flix.runtime.solver.api
+package ca.uwaterloo.flix.runtime.solver.api.term
 
 import ca.uwaterloo.flix.runtime.solver.datastore.ProxyObject
 

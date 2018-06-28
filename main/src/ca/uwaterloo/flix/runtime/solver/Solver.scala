@@ -26,6 +26,7 @@ import ca.uwaterloo.flix.runtime.debugger.RestServer
 import ca.uwaterloo.flix.runtime.interpreter.Value
 import ca.uwaterloo.flix.runtime.solver.api._
 import ca.uwaterloo.flix.runtime.Monitor
+import ca.uwaterloo.flix.runtime.solver.api.term._
 import ca.uwaterloo.flix.util._
 import flix.runtime.{RuleError, TimeoutError}
 
@@ -548,7 +549,7 @@ class Solver(val root: ConstraintSystem, options: FixpointOptions)(implicit flix
   def evalHeadTerm(t: Term, root: ConstraintSystem, env: Env): ProxyObject = t match {
     case t: VarTerm => env(t.sym.getStackOffset)
     case t: LitTerm => t.f()
-    case t: AppHeadTerm =>
+    case t: AppTerm =>
       val args = new Array[AnyRef](t.getArguments().length)
       var i = 0
       while (i < args.length) {

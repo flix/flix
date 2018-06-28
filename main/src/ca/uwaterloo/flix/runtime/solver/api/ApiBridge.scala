@@ -4,6 +4,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{Ast, ExecutableAst, Symbol}
 import ca.uwaterloo.flix.runtime.{InvocationTarget, Linker}
 import ca.uwaterloo.flix.runtime.solver.LatticeOps
+import ca.uwaterloo.flix.runtime.solver.api.term._
 import ca.uwaterloo.flix.runtime.solver.datastore.ProxyObject
 
 object ApiBridge {
@@ -86,7 +87,7 @@ object ApiBridge {
     case ExecutableAst.Term.Head.App(sym, args, _, _) =>
       val f = (args: Array[AnyRef]) => Linker.link(sym, root).invoke(args)
       val as = args.map(visitVarSym)
-      new AppHeadTerm(f, as.toArray)
+      new AppTerm(f, as.toArray)
   }
 
   def visitBodyTerm(t: ExecutableAst.Term.Body)(implicit root: ExecutableAst.Root, flix: Flix): Term = t match {
