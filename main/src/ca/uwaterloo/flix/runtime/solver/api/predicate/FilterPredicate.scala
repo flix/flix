@@ -5,7 +5,7 @@ import ca.uwaterloo.flix.runtime.solver.api.term.{Term, WildTerm}
 class FilterPredicate(f: Array[AnyRef] => Boolean, terms: Array[Term]) extends Predicate {
 
   /**
-    * Constructor.
+    * Invariants.
     */
   for (t <- terms) {
     if (t.isInstanceOf[WildTerm]) {

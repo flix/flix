@@ -26,7 +26,6 @@ import ca.uwaterloo.flix.runtime.debugger.RestServer
 import ca.uwaterloo.flix.runtime.interpreter.Value
 import ca.uwaterloo.flix.runtime.solver.api._
 import ca.uwaterloo.flix.runtime.Monitor
-import ca.uwaterloo.flix.runtime.solver.api.polarity._
 import ca.uwaterloo.flix.runtime.solver.api.predicate._
 import ca.uwaterloo.flix.runtime.solver.api.symbol.{TableSym, VarSym}
 import ca.uwaterloo.flix.runtime.solver.api.term._
@@ -380,7 +379,7 @@ class Solver(val root: ConstraintSystem, options: FixpointOptions)(implicit flix
       val rows = evalAtom(p, env)
 
       // Case split on whether the atom is positive or negative.
-      if (p.getPolarity.isPositive) {
+      if (p.isPositive) {
         // Case 1: The atom is positive. Recurse on all matched rows.
         for (newRow <- rows) {
           evalCross(rule, xs, newRow, interp)
@@ -416,7 +415,7 @@ class Solver(val root: ConstraintSystem, options: FixpointOptions)(implicit flix
     }
 
     // evaluate all terms in the predicate.
-    val pat = new Array[ProxyObject](p.getNumberOfTerms)
+    val pat = new Array[ProxyObject](p.getTerms.length)
     var i = 0
     while (i < pat.length) {
       val value: ProxyObject = p.getTerms(i) match {
@@ -528,16 +527,12 @@ class Solver(val root: ConstraintSystem, options: FixpointOptions)(implicit flix
   private def evalHead(p: Predicate, env: Env, interp: Interpretation): Unit = p match {
     case p: AtomPredicate =>
       val terms = p.getTerms
-      val fact = new Array[ProxyObject](p.getNumberOfTerms)
+      val fact = new Array[ProxyObject](p.getTerms.length)
       var i = 0
       while (i < fact.length) {
         val term: ProxyObject = evalHeadTerm(terms(i), root, env)
         fact(i) = term
         i = i + 1
-
-        // TODO: Experiment with keyCache.
-        //if(i != fact.length)
-        //  keyCache.put(term)
       }
 
       interp += ((p.getSym, fact))
