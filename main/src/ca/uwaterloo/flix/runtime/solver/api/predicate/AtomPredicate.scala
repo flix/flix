@@ -3,6 +3,9 @@ package ca.uwaterloo.flix.runtime.solver.api.predicate
 import ca.uwaterloo.flix.runtime.solver.api.term.Term
 import ca.uwaterloo.flix.runtime.solver.api.symbol.{TableSym, VarSym}
 
+/**
+  * Represents an atom predicate for the symbol `sym` with arguments `terms`.
+  */
 class AtomPredicate(sym: TableSym, positive: Boolean, terms: Array[Term], index2sym: Array[VarSym]) extends Predicate {
 
   /**

@@ -3,8 +3,9 @@ package ca.uwaterloo.flix.runtime.solver.api
 import java.util.concurrent.atomic.{AtomicInteger, AtomicLong}
 
 import ca.uwaterloo.flix.runtime.solver.api.predicate.{AtomPredicate, FilterPredicate, Predicate}
+import ca.uwaterloo.flix.runtime.solver.api.symbol.VarSym
 
-case class Constraint(cparams: List[ConstraintParam], head: Predicate, body: List[Predicate]) {
+case class Constraint(cparams: List[VarSym], head: Predicate, body: List[Predicate]) {
 
   // TODO: Head predicate cannot be filter,
   // TODO: Head predicate cannot be negated atom.

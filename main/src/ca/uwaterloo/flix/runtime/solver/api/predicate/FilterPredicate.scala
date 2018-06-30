@@ -2,6 +2,9 @@ package ca.uwaterloo.flix.runtime.solver.api.predicate
 
 import ca.uwaterloo.flix.runtime.solver.api.term.{Term, WildTerm}
 
+/**
+  * Represents a filter predicate with function `f` and arguments `terms`.
+  */
 class FilterPredicate(f: Array[AnyRef] => Boolean, terms: Array[Term]) extends Predicate {
 
   /**

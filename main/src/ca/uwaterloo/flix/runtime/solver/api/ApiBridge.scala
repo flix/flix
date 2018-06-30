@@ -47,9 +47,9 @@ object ApiBridge {
     Constraint(cparams, head, body)
   }
 
-  def visitConstraintParam(c: ExecutableAst.ConstraintParam)(implicit root: ExecutableAst.Root, flix: Flix): ConstraintParam = c match {
-    case ExecutableAst.ConstraintParam.HeadParam(sym, _, _) => new ConstraintParam(visitVarSym(sym))
-    case ExecutableAst.ConstraintParam.RuleParam(sym, _, _) => new ConstraintParam(visitVarSym(sym))
+  def visitConstraintParam(c: ExecutableAst.ConstraintParam)(implicit root: ExecutableAst.Root, flix: Flix): VarSym = c match {
+    case ExecutableAst.ConstraintParam.HeadParam(sym, _, _) => visitVarSym(sym)
+    case ExecutableAst.ConstraintParam.RuleParam(sym, _, _) => visitVarSym(sym)
   }
 
   def visitHeadPredicate(h: ExecutableAst.Predicate.Head)(implicit root: ExecutableAst.Root, flix: Flix): Predicate = h match {
@@ -80,7 +80,7 @@ object ApiBridge {
     case ExecutableAst.Predicate.Body.Loop(_, _, _) => throw new UnsupportedOperationException("Loop currently not supported")
   }
 
-  def visitTableSym(sym: Symbol.TableSym)(implicit root: ExecutableAst.Root, flix: Flix): TableSym = TableSym(sym.toString)
+  def visitTableSym(sym: Symbol.TableSym)(implicit root: ExecutableAst.Root, flix: Flix): TableSym = new TableSym(sym.toString)
 
   def visitHeadTerm(t: ExecutableAst.Term.Head)(implicit root: ExecutableAst.Root, flix: Flix): Term = t match {
     case ExecutableAst.Term.Head.Var(sym, _, _) => new VarTerm(visitVarSym(sym))
@@ -100,7 +100,7 @@ object ApiBridge {
     case ExecutableAst.Term.Body.Pat(_, _, _) => throw new UnsupportedOperationException("Loop currently not supported")
   }
 
-  def visitVarSym(s: Symbol.VarSym)(implicit root: ExecutableAst.Root, flix: Flix): VarSym = VarSym(s.id, s.getStackOffset)
+  def visitVarSym(s: Symbol.VarSym)(implicit root: ExecutableAst.Root, flix: Flix): VarSym = new VarSym(s.id, s.getStackOffset)
 
   def visitAttribute(a: ExecutableAst.Attribute)(implicit root: ExecutableAst.Root, flix: Flix): Attribute =
     Attribute(a.name)
