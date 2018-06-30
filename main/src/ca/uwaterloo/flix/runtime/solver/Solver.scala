@@ -390,7 +390,7 @@ class Solver(val root: ConstraintSystem, options: FixpointOptions)(implicit flix
         for (t <- p.getTerms) {
           t match {
             case p: VarTerm =>
-              assert(env(p.sym.getStackOffset) != null, s"Unbound variable in negated atom.")
+              assert(env(p.getSym.getStackOffset) != null, s"Unbound variable in negated atom.")
             case _ => // Nop
           }
         }
@@ -418,12 +418,12 @@ class Solver(val root: ConstraintSystem, options: FixpointOptions)(implicit flix
     val pat = new Array[ProxyObject](p.getTerms.length)
     var i = 0
     while (i < pat.length) {
-      val value: ProxyObject = p.getTerms(i) match {
+      val value: ProxyObject = p.getTerms()(i) match {
         case p: VarTerm =>
           // A variable is replaced by its value from the environment (or null if unbound).
-          env(p.sym.getStackOffset)
+          env(p.getSym().getStackOffset)
         case p: LitTerm =>
-          p.f()
+          p.getFunction()()
         case p: WildTerm =>
           // A wildcard places no restrictions on the value.
           null
@@ -501,9 +501,9 @@ class Solver(val root: ConstraintSystem, options: FixpointOptions)(implicit flix
         val value: ProxyObject = p.getArguments()(j) match {
           case p: VarTerm =>
             // A variable is replaced by its value from the environment.
-            env(p.sym.getStackOffset)
+            env(p.getSym.getStackOffset)
           case p: LitTerm =>
-            p.f()
+            p.getFunction()()
           case p: WildTerm =>
             // A wildcard should not appear as an argument to a filter function.
             throw InternalRuntimeException("Wildcard not allowed here!")
@@ -544,8 +544,8 @@ class Solver(val root: ConstraintSystem, options: FixpointOptions)(implicit flix
     * Evaluates the given head term `t` under the given environment `env0`
     */
   def evalHeadTerm(t: Term, root: ConstraintSystem, env: Env): ProxyObject = t match {
-    case t: VarTerm => env(t.sym.getStackOffset)
-    case t: LitTerm => t.f()
+    case t: VarTerm => env(t.getSym.getStackOffset)
+    case t: LitTerm => t.getFunction()()
     case t: AppTerm =>
       val args = new Array[AnyRef](t.getArguments().length)
       var i = 0
