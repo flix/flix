@@ -380,7 +380,7 @@ class Solver(val root: ConstraintSystem, options: FixpointOptions)(implicit flix
       val rows = evalAtom(p, env)
 
       // Case split on whether the atom is positive or negative.
-      if (p.polarity.isPositive) {
+      if (p.getPolarity.isPositive) {
         // Case 1: The atom is positive. Recurse on all matched rows.
         for (newRow <- rows) {
           evalCross(rule, xs, newRow, interp)
@@ -388,7 +388,7 @@ class Solver(val root: ConstraintSystem, options: FixpointOptions)(implicit flix
       } else {
         // Case 2: The atom is negative.
         // Assertion: Check that every variable has been assigned a value.
-        for (t <- p.terms) {
+        for (t <- p.getTerms) {
           t match {
             case p: VarTerm =>
               assert(env(p.sym.getStackOffset) != null, s"Unbound variable in negated atom.")
@@ -410,16 +410,16 @@ class Solver(val root: ConstraintSystem, options: FixpointOptions)(implicit flix
     */
   private def evalAtom(p: AtomPredicate, env: Env): Traversable[Env] = {
     // lookup the relation or lattice.
-    val table = root.tables(p.sym) match {
-      case r: Table.Relation => dataStore.relations(p.sym)
-      case l: Table.Lattice => dataStore.lattices(p.sym)
+    val table = root.tables(p.getSym) match {
+      case r: Table.Relation => dataStore.relations(p.getSym)
+      case l: Table.Lattice => dataStore.lattices(p.getSym)
     }
 
     // evaluate all terms in the predicate.
-    val pat = new Array[ProxyObject](p.arity)
+    val pat = new Array[ProxyObject](p.getNumberOfTerms)
     var i = 0
     while (i < pat.length) {
-      val value: ProxyObject = p.terms(i) match {
+      val value: ProxyObject = p.getTerms(i) match {
         case p: VarTerm =>
           // A variable is replaced by its value from the environment (or null if unbound).
           env(p.sym.getStackOffset)
@@ -447,7 +447,7 @@ class Solver(val root: ConstraintSystem, options: FixpointOptions)(implicit flix
 
       var i = 0
       while (i < matchedRow.length) {
-        val sym = p.index2sym(i)
+        val sym = p.getIndex2SymTEMPORARY(i)
         if (sym != null)
           newRow.update(sym.getStackOffset, matchedRow(i))
         i = i + 1
@@ -527,8 +527,8 @@ class Solver(val root: ConstraintSystem, options: FixpointOptions)(implicit flix
     */
   private def evalHead(p: Predicate, env: Env, interp: Interpretation): Unit = p match {
     case p: AtomPredicate =>
-      val terms = p.terms
-      val fact = new Array[ProxyObject](p.arity)
+      val terms = p.getTerms
+      val fact = new Array[ProxyObject](p.getNumberOfTerms)
       var i = 0
       while (i < fact.length) {
         val term: ProxyObject = evalHeadTerm(terms(i), root, env)
@@ -540,7 +540,7 @@ class Solver(val root: ConstraintSystem, options: FixpointOptions)(implicit flix
         //  keyCache.put(term)
       }
 
-      interp += ((p.sym, fact))
+      interp += ((p.getSym, fact))
     case _: TruePredicate => // nop
     case _: FalsePredicate => throw new RuleError(null)
   }
@@ -611,7 +611,7 @@ class Solver(val root: ConstraintSystem, options: FixpointOptions)(implicit flix
       case r: Table.Relation =>
         for ((rule, p) <- dependenciesOf(sym)) {
           // unify all terms with their values.
-          val env = unify(p.index2sym, fact, fact.length, rule.arity)
+          val env = unify(p.getIndex2SymTEMPORARY, fact, fact.length, rule.arity)
           if (env != null) {
             localWorkList.push((rule, env))
           }
@@ -621,7 +621,7 @@ class Solver(val root: ConstraintSystem, options: FixpointOptions)(implicit flix
         for ((rule, p) <- dependenciesOf(sym)) {
           // unify only key terms with their values.
           val numberOfKeys = l.keys.length
-          val env = unify(p.index2sym, fact, numberOfKeys, rule.arity)
+          val env = unify(p.getIndex2SymTEMPORARY, fact, numberOfKeys, rule.arity)
           if (env != null) {
             localWorkList.push((rule, env))
           }
@@ -838,7 +838,7 @@ class Solver(val root: ConstraintSystem, options: FixpointOptions)(implicit flix
       // Initialize the dependencies of every symbol to the empty set.
       for (rule <- constraints) {
         rule.head match {
-          case p: AtomPredicate => dependenciesOf.update(p.sym, Set.empty)
+          case p: AtomPredicate => dependenciesOf.update(p.getSym, Set.empty)
           case _ => // nop
         }
       }
@@ -851,10 +851,10 @@ class Solver(val root: ConstraintSystem, options: FixpointOptions)(implicit flix
             (outerRule.head, body) match {
               case (outer: AtomPredicate, inner: AtomPredicate) =>
                 // We have found a head and body atom. Check if they share the same symbol.
-                if (outer.sym == inner.sym) {
+                if (outer.getSym == inner.getSym) {
                   // The symbol is the same. Update the dependencies.
-                  val deps = dependenciesOf(outer.sym)
-                  dependenciesOf(outer.sym) = deps + ((innerRule, inner))
+                  val deps = dependenciesOf(outer.getSym)
+                  dependenciesOf(outer.getSym) = deps + ((innerRule, inner))
                 }
               case _ => // nop
             }

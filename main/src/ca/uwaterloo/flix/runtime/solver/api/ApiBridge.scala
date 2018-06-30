@@ -71,7 +71,7 @@ object ApiBridge {
         case x if x != null => visitVarSym(x)
         case _ => null
       }
-      AtomPredicate(s, p, ts.toArray, i2s.toArray)
+      new AtomPredicate(s, p, ts.toArray, i2s.toArray)
 
     case ExecutableAst.Predicate.Body.Filter(sym, terms, _) =>
       val f = (as: Array[AnyRef]) => Linker.link(sym, root).invoke(as).getValue.asInstanceOf[Boolean].booleanValue()
