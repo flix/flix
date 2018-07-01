@@ -20,7 +20,7 @@ import java.lang.reflect.{Constructor, Field, Method}
 import java.util.concurrent.atomic.{AtomicInteger, AtomicLong}
 
 import ca.uwaterloo.flix.runtime.InvocationTarget
-import ca.uwaterloo.flix.runtime.solver.datastore.ProxyObject
+import ca.uwaterloo.flix.runtime.solver.api.ProxyObject
 
 sealed trait ExecutableAst
 

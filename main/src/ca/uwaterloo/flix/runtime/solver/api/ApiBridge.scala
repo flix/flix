@@ -7,7 +7,6 @@ import ca.uwaterloo.flix.runtime.solver.LatticeOps
 import ca.uwaterloo.flix.runtime.solver.api.predicate._
 import ca.uwaterloo.flix.runtime.solver.api.symbol.{TableSym, VarSym}
 import ca.uwaterloo.flix.runtime.solver.api.term._
-import ca.uwaterloo.flix.runtime.solver.datastore.ProxyObject
 
 object ApiBridge {
 

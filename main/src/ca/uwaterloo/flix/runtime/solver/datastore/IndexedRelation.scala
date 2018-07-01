@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.runtime.solver.datastore
 
-import ca.uwaterloo.flix.runtime.solver.api.Table
+import ca.uwaterloo.flix.runtime.solver.api.{ProxyObject, Table}
 import ca.uwaterloo.flix.util.BitOps
 
 import scala.collection.mutable

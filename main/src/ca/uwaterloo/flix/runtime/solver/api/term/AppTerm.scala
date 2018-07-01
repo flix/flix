@@ -1,8 +1,11 @@
 package ca.uwaterloo.flix.runtime.solver.api.term
 
+import ca.uwaterloo.flix.runtime.solver.api.ProxyObject
 import ca.uwaterloo.flix.runtime.solver.api.symbol.VarSym
-import ca.uwaterloo.flix.runtime.solver.datastore.ProxyObject
 
+/**
+  * Represents a function application term with function `f` and arguments `args`.
+  */
 class AppTerm(f: Array[AnyRef] => ProxyObject, args: Array[VarSym]) extends Term {
 
   /**

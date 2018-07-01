@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.runtime.solver.api.term
 
-import ca.uwaterloo.flix.runtime.solver.datastore.ProxyObject
+import ca.uwaterloo.flix.runtime.solver.api.ProxyObject
 
 class LitTerm(f: () => ProxyObject) extends Term {
 

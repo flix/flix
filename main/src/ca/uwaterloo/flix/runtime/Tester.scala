@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.runtime
 
 import ca.uwaterloo.flix.language.ast.Symbol
-import ca.uwaterloo.flix.runtime.solver.datastore.ProxyObject
+import ca.uwaterloo.flix.runtime.solver.api.ProxyObject
 import ca.uwaterloo.flix.util.vt.VirtualString._
 import ca.uwaterloo.flix.util.vt.VirtualTerminal
 import flix.runtime.FlixError

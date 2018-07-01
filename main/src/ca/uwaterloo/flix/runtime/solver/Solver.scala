@@ -21,7 +21,7 @@ import java.util.concurrent._
 import java.util.concurrent.atomic.AtomicInteger
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.runtime.solver.datastore.{DataStore, ProxyObject}
+import ca.uwaterloo.flix.runtime.solver.datastore.DataStore
 import ca.uwaterloo.flix.runtime.debugger.RestServer
 import ca.uwaterloo.flix.runtime.interpreter.Value
 import ca.uwaterloo.flix.runtime.solver.api._
