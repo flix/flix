@@ -252,8 +252,8 @@ class Solver(val root: ConstraintSystem, options: FixpointOptions)(implicit flix
 
   def getRuleStats: List[(Constraint, Int, Long)] = {
     val constraints = root.strata.flatMap(_.constraints)
-    constraints.filter(_.isRule).sortBy(_.time.get()).reverse.map {
-      case r => (r, r.hits.get(), r.time.get())
+    constraints.filter(_.isRule).sortBy(_.getElapsedTime()).reverse.map {
+      case r => (r, r.getNumberOfHits(), r.getElapsedTime())
     }
   }
 
@@ -360,9 +360,10 @@ class Solver(val root: ConstraintSystem, options: FixpointOptions)(implicit flix
 
     val interp = mkInterpretation()
     evalCross(rule, rule.atoms, env, interp)
+    val e = System.nanoTime() - t
 
-    rule.hits.incrementAndGet()
-    rule.time.addAndGet(System.nanoTime() - t)
+    rule.incrementNumberOfUnits()
+    rule.incrementElapsedTime(e)
 
     interp
   }

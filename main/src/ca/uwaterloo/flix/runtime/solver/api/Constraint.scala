@@ -8,6 +8,16 @@ import ca.uwaterloo.flix.runtime.solver.api.symbol.VarSym
 class Constraint(cparams: List[VarSym], head: Predicate, body: List[Predicate]) {
 
   /**
+    * Numbers of times the constraint has been evaluated.
+    */
+  private val hits = new AtomicInteger()
+
+  /**
+    * Number of nanoseconds spent during evaluation of the constraint.
+    */
+  private val time = new AtomicLong()
+
+  /**
     * A head predicate cannot be a filter predicate.
     */
   if (head.isInstanceOf[FilterPredicate]) {
@@ -48,6 +58,29 @@ class Constraint(cparams: List[VarSym], head: Predicate, body: List[Predicate]) 
     */
   def getNumberOfParameters(): Int = cparams.length
 
+  /**
+    * Returns the number of times the constraint has been evaluated.
+    */
+  def getNumberOfHits(): Int = hits.get()
+
+  /**
+    * Increments the number of times the constraint has been evaluated.
+    */
+  def incrementNumberOfUnits(): Unit = {
+    hits.getAndIncrement()
+  }
+
+  /**
+    * Returns the number of nanoseconds spent during evaluation of the constraint.
+    */
+  def getElapsedTime(): Long = time.get()
+
+  /**
+    * Increments the number of times the constraint has been evaluated.
+    */
+  def incrementElapsedTime(ns: Long): Unit = {
+    time.addAndGet(ns)
+  }
 
   /**
     * Returns the atoms predicates in the body of the constraint.
@@ -62,9 +95,5 @@ class Constraint(cparams: List[VarSym], head: Predicate, body: List[Predicate]) 
   val filters: Array[FilterPredicate] = body.collect {
     case p: FilterPredicate => p
   }.toArray
-
-  val hits = new AtomicInteger()
-
-  val time = new AtomicLong()
 
 }
