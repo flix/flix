@@ -5,7 +5,7 @@ package ca.uwaterloo.flix.runtime.solver.api.symbol
   */
 class TableSym(val name: String) {
 
-  // TODO: Update equality.
+  // TODO: We want TableSym to be ultimately replaced by a reference to a table.
 
   def canEqual(other: Any): Boolean = other.isInstanceOf[TableSym]
 

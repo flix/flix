@@ -8,16 +8,6 @@ import ca.uwaterloo.flix.runtime.solver.api.symbol.VarSym
 class Constraint(cparams: List[VarSym], head: Predicate, body: List[Predicate]) {
 
   /**
-    * Numbers of times the constraint has been evaluated.
-    */
-  private val hits = new AtomicInteger()
-
-  /**
-    * Number of nanoseconds spent during evaluation of the constraint.
-    */
-  private val time = new AtomicLong()
-
-  /**
     * A head predicate cannot be a filter predicate.
     */
   if (head.isInstanceOf[FilterPredicate]) {
@@ -32,6 +22,16 @@ class Constraint(cparams: List[VarSym], head: Predicate, body: List[Predicate]) 
       throw new IllegalArgumentException("A head predicate cannot be negated.")
     }
   }
+
+  /**
+    * Numbers of times the constraint has been evaluated.
+    */
+  private val hits = new AtomicInteger()
+
+  /**
+    * Number of nanoseconds spent during evaluation of the constraint.
+    */
+  private val time = new AtomicLong()
 
   /**
     * Returns `true` if the constraint is a fact.
@@ -85,14 +85,14 @@ class Constraint(cparams: List[VarSym], head: Predicate, body: List[Predicate]) 
   /**
     * Returns the atoms predicates in the body of the constraint.
     */
-  val atoms: List[AtomPredicate] = body.collect {
+  def getAtoms(): List[AtomPredicate] = body.collect {
     case p: AtomPredicate => p
   }
 
   /**
     * Returns the filter predicates in the body of the constraint.
     */
-  val filters: Array[FilterPredicate] = body.collect {
+  def getFilters(): Array[FilterPredicate] = body.collect {
     case p: FilterPredicate => p
   }.toArray
 

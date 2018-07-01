@@ -359,7 +359,7 @@ class Solver(val root: ConstraintSystem, options: FixpointOptions)(implicit flix
     val t = System.nanoTime()
 
     val interp = mkInterpretation()
-    evalCross(rule, rule.atoms, env, interp)
+    evalCross(rule, rule.getAtoms(), env, interp)
     val e = System.nanoTime() - t
 
     rule.incrementNumberOfUnits()
@@ -467,7 +467,7 @@ class Solver(val root: ConstraintSystem, options: FixpointOptions)(implicit flix
     */
   private def evalAllFilters(rule: Constraint, env: Env, interp: Interpretation): Unit = {
     // Extract the filters function predicates from the rule.
-    val filters = rule.filters
+    val filters = rule.getFilters()
 
     // Evaluate each filter function predicate one-by-one.
     var i = 0
