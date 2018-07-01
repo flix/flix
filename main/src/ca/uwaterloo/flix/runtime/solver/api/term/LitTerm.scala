@@ -2,6 +2,9 @@ package ca.uwaterloo.flix.runtime.solver.api.term
 
 import ca.uwaterloo.flix.runtime.solver.api.ProxyObject
 
+/**
+  * Represents a literal returned by the function `f`.
+  */
 class LitTerm(f: () => ProxyObject) extends Term {
 
   /**
