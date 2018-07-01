@@ -5,28 +5,49 @@ import java.util.concurrent.atomic.{AtomicInteger, AtomicLong}
 import ca.uwaterloo.flix.runtime.solver.api.predicate.{AtomPredicate, FilterPredicate, Predicate}
 import ca.uwaterloo.flix.runtime.solver.api.symbol.VarSym
 
-case class Constraint(cparams: List[VarSym], head: Predicate, body: List[Predicate]) {
-
-  // TODO: Head predicate cannot be filter,
-  // TODO: Head predicate cannot be negated atom.
+class Constraint(cparams: List[VarSym], head: Predicate, body: List[Predicate]) {
 
   /**
-    * Returns the arity of the constraint.
-    *
-    * The arity of a constraint is the number of constraint parameters (i.e. variables in the constraint).
-    * Not to be confused with the number of predicates or terms.
+    * A head predicate cannot be a filter predicate.
     */
-  val arity: Int = cparams.length
+  if (head.isInstanceOf[FilterPredicate]) {
+    throw new IllegalArgumentException("A head predicate cannot be a filter predicate.")
+  }
+
+  /**
+    * A head predicate cannot be a negated atom predicate.
+    */
+  if (head.isInstanceOf[AtomPredicate]) {
+    if (head.asInstanceOf[AtomPredicate].isNegative()) {
+      throw new IllegalArgumentException("A head predicate cannot be negated.")
+    }
+  }
 
   /**
     * Returns `true` if the constraint is a fact.
     */
-  val isFact: Boolean = body.isEmpty
+  def isFact(): Boolean = body.isEmpty
 
   /**
     * Returns `true` if the constraint is a rule.
     */
-  val isRule: Boolean = body.nonEmpty
+  def isRule(): Boolean = body.nonEmpty
+
+  /**
+    * Returns the head predicate.
+    */
+  def getHeadPredicate(): Predicate = head
+
+  /**
+    * Returns the body predicates.
+    */
+  def getBodyPredicates(): Array[Predicate] = body.toArray
+
+  /**
+    * Returns the number of variables in the constraint.
+    */
+  def getNumberOfParameters(): Int = cparams.length
+
 
   /**
     * Returns the atoms predicates in the body of the constraint.
@@ -42,14 +63,8 @@ case class Constraint(cparams: List[VarSym], head: Predicate, body: List[Predica
     case p: FilterPredicate => p
   }.toArray
 
-  /**
-    * Records the number of times this rule has been evaluated.
-    */
   val hits = new AtomicInteger()
 
-  /**
-    * Records the amount of time spent evaluating this rule.
-    */
   val time = new AtomicLong()
 
 }

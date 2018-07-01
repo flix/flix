@@ -8,11 +8,11 @@ import ca.uwaterloo.flix.runtime.solver.api.term.{Term, WildTerm}
 class FilterPredicate(f: Array[AnyRef] => Boolean, terms: Array[Term]) extends Predicate {
 
   /**
-    * Invariants.
+    * Invariant: A filter predicate cannot have wild card terms as arguments.
     */
   for (t <- terms) {
     if (t.isInstanceOf[WildTerm]) {
-      throw new IllegalArgumentException("Unexpected wildcard term.")
+      throw new IllegalArgumentException("A filter predicate cannot take a wild card term as an argument.")
     }
   }
 

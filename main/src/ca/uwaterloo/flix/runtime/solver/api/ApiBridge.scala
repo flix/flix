@@ -58,7 +58,7 @@ object ApiBridge {
     val cparams = c0.cparams.map(visitConstraintParam)
     val head = visitHeadPredicate(c0.head)
     val body = c0.body.map(visitBodyPredicate)
-    Constraint(cparams, head, body)
+    new Constraint(cparams, head, body)
   }
 
   private def visitConstraintParam(c0: ExecutableAst.ConstraintParam)(implicit root: ExecutableAst.Root, cache: SymbolCache, flix: Flix): VarSym = c0 match {

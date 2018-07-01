@@ -286,7 +286,7 @@ class Solver(val root: ConstraintSystem, options: FixpointOptions)(implicit flix
       if (constraint.isFact) {
         // evaluate the head of each fact.
         val interp = mkInterpretation()
-        evalHead(constraint.head, Array.empty, interp)
+        evalHead(constraint.getHeadPredicate(), Array.empty, interp)
 
         // iterate through the interpretation.
         for ((sym, fact) <- interp) {
@@ -309,7 +309,7 @@ class Solver(val root: ConstraintSystem, options: FixpointOptions)(implicit flix
   private def initWorkList(stratum: Stratum): Unit = {
     // add all rules to the worklist (under empty environments).
     for (rule <- stratum.constraints) {
-      worklist.push((rule, new Array[ProxyObject](rule.arity)))
+      worklist.push((rule, new Array[ProxyObject](rule.getNumberOfParameters)))
     }
   }
 
@@ -484,7 +484,7 @@ class Solver(val root: ConstraintSystem, options: FixpointOptions)(implicit flix
 
     // All filter functions returned `true`.
     // Continue evaluation of the head of the rule.
-    evalHead(rule.head, env, interp)
+    evalHead(rule.getHeadPredicate(), env, interp)
   }
 
   /**
@@ -606,7 +606,7 @@ class Solver(val root: ConstraintSystem, options: FixpointOptions)(implicit flix
       case r: Table.Relation =>
         for ((rule, p) <- dependenciesOf(sym)) {
           // unify all terms with their values.
-          val env = unify(p.getIndex2SymTEMPORARY, fact, fact.length, rule.arity)
+          val env = unify(p.getIndex2SymTEMPORARY, fact, fact.length, rule.getNumberOfParameters)
           if (env != null) {
             localWorkList.push((rule, env))
           }
@@ -616,7 +616,7 @@ class Solver(val root: ConstraintSystem, options: FixpointOptions)(implicit flix
         for ((rule, p) <- dependenciesOf(sym)) {
           // unify only key terms with their values.
           val numberOfKeys = l.keys.length
-          val env = unify(p.getIndex2SymTEMPORARY, fact, numberOfKeys, rule.arity)
+          val env = unify(p.getIndex2SymTEMPORARY, fact, numberOfKeys, rule.getNumberOfParameters)
           if (env != null) {
             localWorkList.push((rule, env))
           }
@@ -832,7 +832,7 @@ class Solver(val root: ConstraintSystem, options: FixpointOptions)(implicit flix
 
       // Initialize the dependencies of every symbol to the empty set.
       for (rule <- constraints) {
-        rule.head match {
+        rule.getHeadPredicate() match {
           case p: AtomPredicate => dependenciesOf.update(p.getSym, Set.empty)
           case _ => // nop
         }
@@ -841,9 +841,9 @@ class Solver(val root: ConstraintSystem, options: FixpointOptions)(implicit flix
       // Compute the dependencies via cross product.
       for (outerRule <- constraints if outerRule.isRule) {
         for (innerRule <- constraints if innerRule.isRule) {
-          for (body <- innerRule.body) {
+          for (body <- innerRule.getBodyPredicates()) {
             // Loop through the atoms of the inner rule.
-            (outerRule.head, body) match {
+            (outerRule.getHeadPredicate(), body) match {
               case (outer: AtomPredicate, inner: AtomPredicate) =>
                 // We have found a head and body atom. Check if they share the same symbol.
                 if (outer.getSym == inner.getSym) {
