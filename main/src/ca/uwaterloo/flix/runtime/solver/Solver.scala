@@ -215,7 +215,7 @@ class Solver(val root: ConstraintSystem, options: FixpointOptions)(implicit flix
     initDataStore()
 
     // compute the fixedpoint for each stratum, in sequence.
-    for (stratum <- root.strata) {
+    for (stratum <- root.getStrata()) {
       // initialize the worklist.
       initWorkList(stratum)
 
@@ -251,7 +251,7 @@ class Solver(val root: ConstraintSystem, options: FixpointOptions)(implicit flix
   }
 
   def getRuleStats: List[(Constraint, Int, Long)] = {
-    val constraints = root.strata.flatMap(_.constraints)
+    val constraints = root.getStrata().flatMap(_.constraints)
     constraints.filter(_.isRule).sortBy(_.getElapsedTime()).reverse.map {
       case r => (r, r.getNumberOfHits(), r.getElapsedTime())
     }
@@ -279,7 +279,7 @@ class Solver(val root: ConstraintSystem, options: FixpointOptions)(implicit flix
   private def initDataStore(): Unit = {
     val t = System.nanoTime()
     // retrieve the lowest stratum.
-    val stratum0 = root.strata.head
+    val stratum0 = root.getStrata().head
 
     // iterate through all facts.
     for (constraint <- stratum0.constraints) {
@@ -341,7 +341,7 @@ class Solver(val root: ConstraintSystem, options: FixpointOptions)(implicit flix
       val initMiliSeconds = initTime / 1000000
       val readersMiliSeconds = readersTime / 1000000
       val writersMiliSeconds = writersTime / 1000000
-      val initialFacts = root.strata.head.constraints.count(_.isFact)
+      val initialFacts = root.getStrata().head.constraints.count(_.isFact)
       val totalFacts = dataStore.numberOfFacts
       val throughput = ((1000.0 * totalFacts.toDouble) / (solverTime.toDouble + 1.0)).toInt
       Console.println(f"Solved in $solverTime%,d msec. (init: $initMiliSeconds%,d msec, readers: $readersMiliSeconds%,d msec, writers: $writersMiliSeconds%,d msec)")
@@ -827,7 +827,7 @@ class Solver(val root: ConstraintSystem, options: FixpointOptions)(implicit flix
     */
   private def initDependencies(): Unit = {
     // Iterate through each stratum.
-    for (stratum <- root.strata) {
+    for (stratum <- root.getStrata()) {
       // Retrieve the constraints in the current stratum.
       val constraints = stratum.constraints
 

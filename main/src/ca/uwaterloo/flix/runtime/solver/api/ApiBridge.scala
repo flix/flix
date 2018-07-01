@@ -37,7 +37,7 @@ object ApiBridge {
     val strata = root.strata.map(visitStratum)
     val tables = visitTables(root.tables)
     val latOps = visitLatOps(root.tables)
-    ConstraintSystem(strata, tables, latOps)
+    new ConstraintSystem(strata, tables, latOps)
   }
 
   private def visitStratum(stratum: ExecutableAst.Stratum)(implicit root: ExecutableAst.Root, cache: SymbolCache, flix: Flix): Stratum = {
