@@ -251,7 +251,7 @@ class Solver(val root: ConstraintSet, options: FixpointOptions)(implicit flix: F
   }
 
   def getRuleStats: List[(Constraint, Int, Long)] = {
-    val constraints = root.getStrata().flatMap(_.constraints)
+    val constraints = root.getStrata().flatMap(_.getConstraints())
     constraints.filter(_.isRule).sortBy(_.getElapsedTime()).reverse.map {
       case r => (r, r.getNumberOfHits(), r.getElapsedTime())
     }
@@ -282,7 +282,7 @@ class Solver(val root: ConstraintSet, options: FixpointOptions)(implicit flix: F
     val stratum0 = root.getStrata().head
 
     // iterate through all facts.
-    for (constraint <- stratum0.constraints) {
+    for (constraint <- stratum0.getConstraints()) {
       if (constraint.isFact) {
         // evaluate the head of each fact.
         val interp = mkInterpretation()
@@ -308,7 +308,7 @@ class Solver(val root: ConstraintSet, options: FixpointOptions)(implicit flix: F
     */
   private def initWorkList(stratum: Stratum): Unit = {
     // add all rules to the worklist (under empty environments).
-    for (rule <- stratum.constraints) {
+    for (rule <- stratum.getConstraints()) {
       worklist.push((rule, new Array[ProxyObject](rule.getNumberOfParameters)))
     }
   }
@@ -341,7 +341,7 @@ class Solver(val root: ConstraintSet, options: FixpointOptions)(implicit flix: F
       val initMiliSeconds = initTime / 1000000
       val readersMiliSeconds = readersTime / 1000000
       val writersMiliSeconds = writersTime / 1000000
-      val initialFacts = root.getStrata().head.constraints.count(_.isFact)
+      val initialFacts = root.getStrata().head.getConstraints().count(_.isFact)
       val totalFacts = dataStore.numberOfFacts
       val throughput = ((1000.0 * totalFacts.toDouble) / (solverTime.toDouble + 1.0)).toInt
       Console.println(f"Solved in $solverTime%,d msec. (init: $initMiliSeconds%,d msec, readers: $readersMiliSeconds%,d msec, writers: $writersMiliSeconds%,d msec)")
@@ -829,7 +829,7 @@ class Solver(val root: ConstraintSet, options: FixpointOptions)(implicit flix: F
     // Iterate through each stratum.
     for (stratum <- root.getStrata()) {
       // Retrieve the constraints in the current stratum.
-      val constraints = stratum.constraints
+      val constraints = stratum.getConstraints()
 
       // Initialize the dependencies of every symbol to the empty set.
       for (rule <- constraints) {

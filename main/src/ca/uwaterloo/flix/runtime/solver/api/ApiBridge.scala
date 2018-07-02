@@ -41,7 +41,7 @@ object ApiBridge {
   }
 
   private def visitStratum(stratum: ExecutableAst.Stratum)(implicit root: ExecutableAst.Root, cache: SymbolCache, flix: Flix): Stratum = {
-    Stratum(stratum.constraints.map(visitConstraint))
+    new Stratum(stratum.constraints.map(visitConstraint))
   }
 
   private def visitTables(tables: Map[Symbol.TableSym, ExecutableAst.Table])(implicit root: ExecutableAst.Root, cache: SymbolCache, flix: Flix): Map[TableSym, Table] = {
