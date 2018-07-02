@@ -28,11 +28,11 @@ object Indexer {
   /**
     * Returns an index selection strategy based on left-to-right evaluation of constraint rules.
     */
-  def index(root: ConstraintSystem): Map[TableSym, Set[Seq[Int]]] = {
+  def index(root: ConstraintSet): Map[TableSym, Set[Seq[Int]]] = {
     val indexes = mutable.Map.empty[TableSym, Set[Seq[Int]]]
 
     // ensure every table has at least one index.
-    for ((name, table) <- root.tables) {
+    for ((name, table) <- root.getTables()) {
       table match {
         case r: Table.Relation =>
           val idxs = indexes.getOrElse(name, Set.empty)

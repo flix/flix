@@ -22,7 +22,7 @@ object ApiBridge {
 
     def getVarSym(sym: Symbol.VarSym): VarSym = varSyms.get(sym) match {
       case None =>
-        val newSym = new VarSym(sym.getStackOffset)
+        val newSym = new VarSym()
         varSyms += (sym -> newSym)
         newSym
       case Some(res) => res
@@ -30,14 +30,14 @@ object ApiBridge {
 
   }
 
-  def translate(root: ExecutableAst.Root)(implicit flix: Flix): ConstraintSystem = {
+  def translate(root: ExecutableAst.Root)(implicit flix: Flix): ConstraintSet = {
     implicit val _ = root
     implicit val cache = new SymbolCache
 
     val strata = root.strata.map(visitStratum)
     val tables = visitTables(root.tables)
     val latOps = visitLatOps(root.tables)
-    new ConstraintSystem(strata, tables, latOps)
+    new ConstraintSet(strata, tables, latOps)
   }
 
   private def visitStratum(stratum: ExecutableAst.Stratum)(implicit root: ExecutableAst.Root, cache: SymbolCache, flix: Flix): Stratum = {

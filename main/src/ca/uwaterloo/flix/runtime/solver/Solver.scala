@@ -42,7 +42,7 @@ import scala.collection.mutable.ArrayBuffer
   *
   * The solver computes the least fixed point of the rules in the given program.
   */
-class Solver(val root: ConstraintSystem, options: FixpointOptions)(implicit flix: Flix) {
+class Solver(val root: ConstraintSet, options: FixpointOptions)(implicit flix: Flix) {
 
   /**
     * Controls the number of batches per thread. A value of one means one batch per thread.
@@ -291,7 +291,7 @@ class Solver(val root: ConstraintSystem, options: FixpointOptions)(implicit flix
         // iterate through the interpretation.
         for ((sym, fact) <- interp) {
           // update the datastore, but don't compute any dependencies.
-          root.tables(sym) match {
+          root.getTables()(sym) match {
             case r: Table.Relation =>
               dataStore.relations(sym).inferredFact(fact)
             case l: Table.Lattice =>
@@ -410,7 +410,7 @@ class Solver(val root: ConstraintSystem, options: FixpointOptions)(implicit flix
     */
   private def evalAtom(p: AtomPredicate, env: Env): Traversable[Env] = {
     // lookup the relation or lattice.
-    val table = root.tables(p.getSym) match {
+    val table = root.getTables()(p.getSym) match {
       case r: Table.Relation => dataStore.relations(p.getSym)
       case l: Table.Lattice => dataStore.lattices(p.getSym)
     }
@@ -544,7 +544,7 @@ class Solver(val root: ConstraintSystem, options: FixpointOptions)(implicit flix
   /**
     * Evaluates the given head term `t` under the given environment `env0`
     */
-  def evalHeadTerm(t: Term, root: ConstraintSystem, env: Env): ProxyObject = t match {
+  def evalHeadTerm(t: Term, root: ConstraintSet, env: Env): ProxyObject = t match {
     case t: VarTerm => env(t.getSym.getStackOffset)
     case t: LitTerm => t.getFunction()()
     case t: AppTerm =>
@@ -571,7 +571,7 @@ class Solver(val root: ConstraintSystem, options: FixpointOptions)(implicit flix
   /**
     * Processes an inferred `fact` for the relation or lattice with the symbol `sym`.
     */
-  private def inferredFact(sym: TableSym, fact: Array[ProxyObject], localWorkList: WorkList): Unit = root.tables(sym) match {
+  private def inferredFact(sym: TableSym, fact: Array[ProxyObject], localWorkList: WorkList): Unit = root.getTables()(sym) match {
     case r: Table.Relation =>
       val changed = dataStore.relations(sym).inferredFact(fact)
       if (changed) {
@@ -603,7 +603,7 @@ class Solver(val root: ConstraintSystem, options: FixpointOptions)(implicit flix
     }
 
 
-    root.tables(sym) match {
+    root.getTables()(sym) match {
       case r: Table.Relation =>
         for ((rule, p) <- dependenciesOf(sym)) {
           // unify all terms with their values.
@@ -735,7 +735,7 @@ class Solver(val root: ConstraintSystem, options: FixpointOptions)(implicit flix
         macc + ((sym, table))
     }
 
-    Fixedpoint(root.tables, relations, lattices)
+    Fixedpoint(root.getTables(), relations, lattices)
   }
 
   /**

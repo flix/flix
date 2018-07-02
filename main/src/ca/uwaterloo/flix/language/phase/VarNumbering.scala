@@ -42,13 +42,6 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       number(defn)
     }
 
-    // Compute offset for each constraint.
-    for (strata <- root.strata) {
-      for (constraint <- strata.constraints) {
-        number(constraint)
-      }
-    }
-
     root.toSuccess
   }
 
@@ -221,23 +214,6 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
 
     // Compute stack offset for the body.
     visitExp(defn.exp, offset)
-  }
-
-  /**
-    * Assign an offset to each constraint parameter in the given constraint `c`.
-    */
-  def number(c: Constraint): Unit = {
-    var offset = 0
-    for (cparam <- c.cparams) {
-      cparam match {
-        case ConstraintParam.HeadParam(sym, tpe, loc) =>
-          sym.setStackOffset(offset)
-          offset = offset + 1
-        case ConstraintParam.RuleParam(sym, tpe, loc) =>
-          sym.setStackOffset(offset)
-          offset = offset + 1
-      }
-    }
   }
 
   /**

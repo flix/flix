@@ -24,6 +24,15 @@ class Constraint(cparams: List[VarSym], head: Predicate, body: List[Predicate]) 
   }
 
   /**
+    * Assign a number to each constraint parameter in the current constraint.
+    */
+  private var offset = 0
+  for (cparam <- cparams) {
+    cparam.setStackOffset(offset)
+    offset = offset + 1
+  }
+
+  /**
     * Numbers of times the constraint has been evaluated.
     */
   private val hits = new AtomicInteger()
