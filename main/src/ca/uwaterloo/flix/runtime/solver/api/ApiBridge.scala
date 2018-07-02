@@ -118,7 +118,7 @@ object ApiBridge {
     cache.getVarSym(sym)
 
   private def visitAttribute(a: ExecutableAst.Attribute)(implicit root: ExecutableAst.Root, cache: SymbolCache, flix: Flix): Attribute =
-    Attribute(a.name)
+    new Attribute(a.name)
 
   private def visitLatOps(tables: Map[Symbol.TableSym, ExecutableAst.Table])(implicit root: ExecutableAst.Root, cache: SymbolCache, flix: Flix): Map[TableSym, LatticeOps] = {
     tables.foldLeft(Map.empty[TableSym, LatticeOps]) {

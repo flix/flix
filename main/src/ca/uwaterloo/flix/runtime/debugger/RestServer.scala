@@ -237,7 +237,7 @@ class RestServer(solver: Solver)(implicit flix: Flix) {
     */
   class ListRelation(relation: IndexedRelation) extends JsonHandler {
     def json: JValue = JObject(
-      JField("cols", JArray(relation.relation.attributes.toList.map(a => JString(a.name)))),
+      JField("cols", JArray(relation.relation.attributes.toList.map(a => JString(a.getName())))),
       JField("rows", JArray(Nil)) // TODO: Currently broken.
     )
   }
@@ -249,7 +249,7 @@ class RestServer(solver: Solver)(implicit flix: Flix) {
     */
   class ListLattice(lattice: IndexedLattice) extends JsonHandler {
     def json: JValue = JObject(
-      JField("cols", JArray(lattice.lattice.keys.toList.map(a => JString(a.name)) ::: JString(lattice.lattice.value.name) :: Nil)),
+      JField("cols", JArray(lattice.lattice.keys.toList.map(a => JString(a.getName())) ::: JString(lattice.lattice.value.getName()) :: Nil)),
       JField("rows", JArray(Nil)) // TODO: Currently broken.
     )
   }
