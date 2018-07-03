@@ -237,7 +237,7 @@ class RestServer(solver: Solver)(implicit flix: Flix) {
     */
   class ListRelation(relation: IndexedRelation) extends JsonHandler {
     def json: JValue = JObject(
-      JField("cols", JArray(relation.relation.getAttributes().toList.map(a => JString(a.getName())))),
+      JField("cols", JArray(relation.attributes.toList.map(a => JString(a.getName())))),
       JField("rows", JArray(Nil)) // TODO: Currently broken.
     )
   }

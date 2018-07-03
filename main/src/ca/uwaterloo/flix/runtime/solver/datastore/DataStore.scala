@@ -56,7 +56,7 @@ class DataStore[ValueType <: AnyRef](root: ConstraintSet)(implicit m: ClassTag[V
 
     table match {
       case r: api.Relation =>
-        relations(sym) = new IndexedRelation(r, idx, idx.head)
+        relations(sym) = new IndexedRelation(r.getAttributes(), idx, idx.head)
       case l: api.Lattice =>
         val ops = root.getLatticeOps()(l.getSym())
         lattices(sym) = new IndexedLattice(l, idx, ops)
