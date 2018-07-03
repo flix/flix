@@ -82,7 +82,7 @@ class Constraint(cparams: Array[VarSym], head: Predicate, body: Array[Predicate]
   /**
     * Increments the number of times the constraint has been evaluated.
     */
-  def incrementNumberOfUnits(): Unit = {
+  def incrementNumberOfHits(): Unit = {
     hits.getAndIncrement()
   }
 

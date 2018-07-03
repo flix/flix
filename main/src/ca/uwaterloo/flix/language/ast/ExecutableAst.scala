@@ -26,8 +26,6 @@ sealed trait ExecutableAst
 
 object ExecutableAst {
 
-  // TODO: Simplify everything after the introduction of solver.api.
-
   case class Root(defs: Map[Symbol.DefnSym, ExecutableAst.Def],
                   effs: Map[Symbol.EffSym, ExecutableAst.Eff],
                   handlers: Map[Symbol.EffSym, ExecutableAst.Handler],
@@ -45,7 +43,7 @@ object ExecutableAst {
     val isRule: Boolean = !isFact
   }
 
-  case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, formals: Array[ExecutableAst.FormalParam], exp: ExecutableAst.Expression, tpe: Type, loc: SourceLocation) extends ExecutableAst {
+  case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, formals: List[ExecutableAst.FormalParam], exp: ExecutableAst.Expression, tpe: Type, loc: SourceLocation) extends ExecutableAst {
     /**
       * Pointer to generated code.
       */
@@ -72,9 +70,9 @@ object ExecutableAst {
 
   object Table {
 
-    case class Relation(sym: Symbol.TableSym, attributes: Array[ExecutableAst.Attribute], loc: SourceLocation) extends ExecutableAst.Table
+    case class Relation(sym: Symbol.TableSym, attributes: List[ExecutableAst.Attribute], loc: SourceLocation) extends ExecutableAst.Table
 
-    case class Lattice(sym: Symbol.TableSym, keys: Array[ExecutableAst.Attribute], value: ExecutableAst.Attribute, loc: SourceLocation) extends ExecutableAst.Table
+    case class Lattice(sym: Symbol.TableSym, keys: List[ExecutableAst.Attribute], value: ExecutableAst.Attribute, loc: SourceLocation) extends ExecutableAst.Table
 
   }
 
@@ -190,9 +188,9 @@ object ExecutableAst {
 
     case class Index(base: ExecutableAst.Expression, offset: scala.Int, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
-    case class Tuple(elms: Array[ExecutableAst.Expression], tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
+    case class Tuple(elms: List[ExecutableAst.Expression], tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
-    case class ArrayLit(elms: Array[ExecutableAst.Expression], tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
+    case class ArrayLit(elms: List[ExecutableAst.Expression], tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
     case class ArrayNew(elm: ExecutableAst.Expression, len: ExecutableAst.Expression, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 

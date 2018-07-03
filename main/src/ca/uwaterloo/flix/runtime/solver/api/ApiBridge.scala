@@ -12,8 +12,7 @@ import scala.collection.mutable
 
 object ApiBridge {
 
-  // TODO: Transitory class.
-  // TODO: Accept arguments only as proxy objects?
+  // TODO: Temporary class.
 
   // Class used to ensure that the symbols share the same object by identity.
   class SymbolCache {
@@ -111,13 +110,13 @@ object ApiBridge {
     root.tables(sym) match {
       case r: ExecutableAst.Table.Relation =>
         val attributes = r.attributes.map(visitAttribute)
-        cache.getRelSym(sym, sym.toString, attributes)
+        cache.getRelSym(sym, sym.toString, attributes.toArray)
 
       case l: ExecutableAst.Table.Lattice =>
         val keys = l.keys.map(visitAttribute)
         val value = visitAttribute(l.value)
         val ops = getLatticeOps(l.value)
-        cache.getLatSym(sym, sym.toString, keys, value, ops)
+        cache.getLatSym(sym, sym.toString, keys.toArray, value, ops)
     }
 
   private def visitHeadTerm(t0: ExecutableAst.Term.Head)(implicit root: ExecutableAst.Root, cache: SymbolCache, flix: Flix): Term = t0 match {

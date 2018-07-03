@@ -157,7 +157,7 @@ object Interpreter {
     // Tuple expressions.
     //
     case Expression.Tuple(elms, _, _) =>
-      val es = elms.map(e => eval(e, env0, henv0, lenv0, root)).toList
+      val es = elms.map(e => eval(e, env0, henv0, lenv0, root))
       Value.Tuple(es)
 
     //
@@ -165,7 +165,7 @@ object Interpreter {
     //
     case Expression.ArrayLit(elms, tpe, _) =>
       val es = elms.map(e => eval(e, env0, henv0, lenv0, root))
-      Value.Arr(es, tpe.typeArguments.head)
+      Value.Arr(es.toArray, tpe.typeArguments.head)
 
     //
     // ArrayNew expressions.

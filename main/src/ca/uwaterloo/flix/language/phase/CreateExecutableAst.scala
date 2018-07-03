@@ -68,7 +68,7 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
   def toExecutable(sast: SimplifiedAst.Def): ExecutableAst.Def = {
     val formals = sast.fparams.map {
       case SimplifiedAst.FormalParam(sym, mod, tpe, loc) => ExecutableAst.FormalParam(sym, tpe)
-    }.toArray
+    }
 
     ExecutableAst.Def(sast.ann, sast.mod, sast.sym, formals, Expression.toExecutable(sast.exp), sast.tpe, sast.loc)
   }
@@ -95,10 +95,10 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
   object Table {
     def toExecutable(sast: SimplifiedAst.Table): ExecutableAst.Table = sast match {
       case SimplifiedAst.Table.Relation(symbol, attributes, loc) =>
-        val attributesArray = attributes.map(CreateExecutableAst.toExecutable).toArray
+        val attributesArray = attributes.map(CreateExecutableAst.toExecutable)
         ExecutableAst.Table.Relation(symbol, attributesArray, loc)
       case SimplifiedAst.Table.Lattice(symbol, keys, value, loc) =>
-        val keysArray = keys.map(CreateExecutableAst.toExecutable).toArray
+        val keysArray = keys.map(CreateExecutableAst.toExecutable)
         ExecutableAst.Table.Lattice(symbol, keysArray, CreateExecutableAst.toExecutable(value), loc)
     }
   }
@@ -195,10 +195,10 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
       case SimplifiedAst.Expression.Index(base, offset, tpe, loc) =>
         ExecutableAst.Expression.Index(toExecutable(base), offset, tpe, loc)
       case SimplifiedAst.Expression.Tuple(elms, tpe, loc) =>
-        val elmsArray = elms.map(toExecutable).toArray
+        val elmsArray = elms.map(toExecutable)
         ExecutableAst.Expression.Tuple(elmsArray, tpe, loc)
       case SimplifiedAst.Expression.ArrayLit(elms, tpe, loc) =>
-        val elmsArray = elms.map(toExecutable).toArray
+        val elmsArray = elms.map(toExecutable)
         ExecutableAst.Expression.ArrayLit(elmsArray, tpe, loc)
       case SimplifiedAst.Expression.ArrayNew(elm, len, tpe, loc) =>
         val e = toExecutable(elm)
@@ -412,7 +412,7 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
     val varX = Symbol.freshVarSym("_unit")
     varX.setStackOffset(0)
     val fparam = ExecutableAst.FormalParam(varX, Type.Unit)
-    val fs = Array(fparam)
+    val fs = List(fparam)
     val tpe = Type.mkArrow(Type.Unit, exp0.tpe)
     val defn = ExecutableAst.Def(ann, mod, sym, fs, lit, tpe, exp0.loc)
     m += (sym -> defn)

@@ -20,10 +20,8 @@ import java.time.Duration
 import java.util.concurrent._
 import java.util.concurrent.atomic.AtomicInteger
 
-import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.runtime.solver.datastore.DataStore
 import ca.uwaterloo.flix.runtime.debugger.RestServer
-import ca.uwaterloo.flix.runtime.interpreter.Value
 import ca.uwaterloo.flix.runtime.solver.api._
 import ca.uwaterloo.flix.runtime.Monitor
 import ca.uwaterloo.flix.runtime.solver.api.predicate._
@@ -42,7 +40,7 @@ import scala.collection.mutable.ArrayBuffer
   *
   * The solver computes the least fixed point of the rules in the given program.
   */
-class Solver(val root: ConstraintSet, options: FixpointOptions) {
+class Solver(val constraintSet: ConstraintSet, options: FixpointOptions) {
 
   /**
     * Controls the number of batches per thread. A value of one means one batch per thread.
@@ -97,7 +95,7 @@ class Solver(val root: ConstraintSet, options: FixpointOptions) {
     * Writing to the datastore is, in general, not thread-safe: Each relation/lattice may be concurrently updated, but
     * no concurrent writes may occur for the *same* relation/lattice.
     */
-  val dataStore = new DataStore[AnyRef](root)
+  val dataStore = new DataStore[AnyRef](constraintSet)
 
   /**
     * The dependencies of the program. Populated by [[initDependencies]].
@@ -215,7 +213,7 @@ class Solver(val root: ConstraintSet, options: FixpointOptions) {
     initDataStore()
 
     // compute the fixedpoint for each stratum, in sequence.
-    for (stratum <- root.getStrata()) {
+    for (stratum <- constraintSet.getStrata()) {
       // initialize the worklist.
       initWorkList(stratum)
 
@@ -251,7 +249,7 @@ class Solver(val root: ConstraintSet, options: FixpointOptions) {
   }
 
   def getRuleStats: List[(Constraint, Int, Long)] = {
-    val constraints = root.getStrata().flatMap(_.getConstraints())
+    val constraints = constraintSet.getStrata().flatMap(_.getConstraints())
     constraints.toList.filter(_.isRule).sortBy(_.getElapsedTime()).reverse.map {
       case r => (r, r.getNumberOfHits(), r.getElapsedTime())
     }
@@ -279,7 +277,7 @@ class Solver(val root: ConstraintSet, options: FixpointOptions) {
   private def initDataStore(): Unit = {
     val t = System.nanoTime()
     // retrieve the lowest stratum.
-    val stratum0 = root.getStrata().head
+    val stratum0 = constraintSet.getStrata().head
 
     // iterate through all facts.
     for (constraint <- stratum0.getConstraints()) {
@@ -341,7 +339,7 @@ class Solver(val root: ConstraintSet, options: FixpointOptions) {
       val initMiliSeconds = initTime / 1000000
       val readersMiliSeconds = readersTime / 1000000
       val writersMiliSeconds = writersTime / 1000000
-      val initialFacts = root.getStrata().head.getConstraints().count(_.isFact)
+      val initialFacts = constraintSet.getStrata().head.getConstraints().count(_.isFact)
       val totalFacts = dataStore.numberOfFacts
       val throughput = ((1000.0 * totalFacts.toDouble) / (solverTime.toDouble + 1.0)).toInt
       Console.println(f"Solved in $solverTime%,d msec. (init: $initMiliSeconds%,d msec, readers: $readersMiliSeconds%,d msec, writers: $writersMiliSeconds%,d msec)")
@@ -362,7 +360,7 @@ class Solver(val root: ConstraintSet, options: FixpointOptions) {
     evalCross(rule, rule.getAtoms().toList, env, interp)
     val e = System.nanoTime() - t
 
-    rule.incrementNumberOfUnits()
+    rule.incrementNumberOfHits()
     rule.incrementElapsedTime(e)
 
     interp
@@ -531,7 +529,7 @@ class Solver(val root: ConstraintSet, options: FixpointOptions) {
       val fact = new Array[ProxyObject](p.getTerms.length)
       var i = 0
       while (i < fact.length) {
-        val term: ProxyObject = evalHeadTerm(terms(i), root, env)
+        val term: ProxyObject = evalHeadTerm(terms(i), constraintSet, env)
         fact(i) = term
         i = i + 1
       }
@@ -721,13 +719,13 @@ class Solver(val root: ConstraintSet, options: FixpointOptions) {
     * Constructs the minimal model from the datastore.
     */
   private def mkFixedpoint(elapsed: Long): Fixedpoint = {
-    val relations = root.getRelations().foldLeft(Map.empty[Table, Iterable[List[ProxyObject]]]) {
+    val relations = constraintSet.getRelations().foldLeft(Map.empty[Table, Iterable[List[ProxyObject]]]) {
       case (macc, sym) =>
         val table = sym.getIndexedRelation().scan.toIterable.map(_.toList)
         macc + ((sym, table))
     }
 
-    val lattices = root.getLattices().foldLeft(Map.empty[Table, Iterable[(List[ProxyObject], ProxyObject)]]) {
+    val lattices = constraintSet.getLattices().foldLeft(Map.empty[Table, Iterable[(List[ProxyObject], ProxyObject)]]) {
       case (macc, sym) =>
         val table = sym.getIndexedLattice().scan.toIterable.map {
           case (keys, values) => (keys.toArray.toList, values)
@@ -827,7 +825,7 @@ class Solver(val root: ConstraintSet, options: FixpointOptions) {
     */
   private def initDependencies(): Unit = {
     // Iterate through each stratum.
-    for (stratum <- root.getStrata()) {
+    for (stratum <- constraintSet.getStrata()) {
       // Retrieve the constraints in the current stratum.
       val constraints = stratum.getConstraints()
 
@@ -858,30 +856,6 @@ class Solver(val root: ConstraintSet, options: FixpointOptions) {
         }
       }
     }
-  }
-
-  /////////////////////////////////////////////////////////////////////////////
-  // Iterators                                                               //
-  /////////////////////////////////////////////////////////////////////////////
-  /**
-    * Return an iterator over the given Set.
-    */
-  private def iteratorOf(value: AnyRef): Iterator[ProxyObject] = {
-    def visit(o: AnyRef): List[AnyRef] = {
-      val taggedValue = o.asInstanceOf[Value.Tag]
-      if (taggedValue.tag == "Nil") {
-        Nil
-      } else {
-        val hd = taggedValue.value.asInstanceOf[Array[AnyRef]](0)
-        val tl = taggedValue.value.asInstanceOf[Array[AnyRef]](1)
-        hd :: visit(tl)
-      }
-    }
-
-    // val list = value.asInstanceOf[Value.Tag].value
-    // visit(list).iterator
-    // TODO: Loop predicate.
-    throw InternalRuntimeException(s"Currently broken.")
   }
 
 }

@@ -16,7 +16,6 @@
 
 package ca.uwaterloo.flix.runtime.solver.datastore
 
-import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.runtime.solver.api.{ConstraintSet, Table}
 
 import scala.collection.mutable
@@ -25,7 +24,7 @@ import scala.reflect.ClassTag
 /**
   * A class implementing a data store for indexed relations and lattices.
   */
-class DataStore[ValueType <: AnyRef](root: ConstraintSet)(implicit m: ClassTag[ValueType]) {
+class DataStore[ValueType <: AnyRef](constraintSet: ConstraintSet)(implicit m: ClassTag[ValueType]) {
 
   /**
     * A map from names to indexed relations.
@@ -37,11 +36,11 @@ class DataStore[ValueType <: AnyRef](root: ConstraintSet)(implicit m: ClassTag[V
     */
   private val lattices = mutable.Map.empty[Table, IndexedLattice]
 
-  for (sym <- root.getRelations()) {
+  for (sym <- constraintSet.getRelations()) {
     relations += (sym -> sym.getIndexedRelation())
   }
 
-  for (sym <- root.getLattices()) {
+  for (sym <- constraintSet.getLattices()) {
     lattices += (sym -> sym.getIndexedLattice())
   }
 

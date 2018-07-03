@@ -210,7 +210,7 @@ class RestServer(solver: Solver) {
     * Returns the name and size of all relations.
     */
   class GetRelations extends JsonHandler {
-    def json: JValue = JArray(solver.root.getRelations().toList.map {
+    def json: JValue = JArray(solver.constraintSet.getRelations().toList.map {
       case sym => JObject(List(
         JField("name", JString(sym.getName().toString)),
         JField("size", JInt(sym.getIndexedRelation().getSize))
@@ -222,7 +222,7 @@ class RestServer(solver: Solver) {
     * Returns the name and size of all lattices.
     */
   class GetLattices extends JsonHandler {
-    def json: JValue = JArray(solver.root.getLattices().toList.map {
+    def json: JValue = JArray(solver.constraintSet.getLattices().toList.map {
       case sym => JObject(List(
         JField("name", JString(sym.getName().toString)),
         JField("size", JInt(sym.getIndexedLattice().getSize))
@@ -337,11 +337,11 @@ class RestServer(solver: Solver) {
     // mount ajax handlers.
     server.createContext("/status", new GetStatus())
     server.createContext("/relations", new GetRelations())
-    for (sym <- solver.root.getRelations()) {
+    for (sym <- solver.constraintSet.getRelations()) {
       server.createContext("/relation/" + sym.getName(), new ListRelation(sym.getIndexedRelation()))
     }
     server.createContext("/lattices", new GetLattices())
-    for (sym <- solver.root.getLattices()) {
+    for (sym <- solver.constraintSet.getLattices()) {
       server.createContext("/lattice/" + sym.getName(), new ListLattice(sym.getIndexedLattice()))
     }
     server.createContext("/telemetry", new GetTelemetry())
