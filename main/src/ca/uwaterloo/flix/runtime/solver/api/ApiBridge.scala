@@ -19,14 +19,26 @@ object ApiBridge {
   class SymbolCache {
 
     private val varSyms = mutable.Map.empty[Symbol.VarSym, VarSym]
+    private val relSyms = mutable.Map.empty[Symbol.TableSym, RelSym]
+    private val latSyms = mutable.Map.empty[Symbol.TableSym, LatSym]
 
-    def getVarSym(sym: Symbol.VarSym): VarSym = varSyms.get(sym) match {
-      case None =>
-        val newSym = new VarSym()
-        varSyms += (sym -> newSym)
-        newSym
-      case Some(res) => res
-    }
+    def getVarSym(sym: Symbol.VarSym): VarSym =
+      varSyms.get(sym) match {
+        case None =>
+          val newSym = new VarSym()
+          varSyms += (sym -> newSym)
+          newSym
+        case Some(res) => res
+      }
+
+    def getRelSym(sym: Symbol.TableSym, name: String, attributes: Array[Attribute]): RelSym =
+      relSyms.get(sym) match {
+        case None =>
+          val newSym = new RelSym(name, attributes)
+          relSyms += (sym -> newSym)
+          newSym
+        case Some(res) => res
+      }
 
   }
 
@@ -96,7 +108,10 @@ object ApiBridge {
 
   private def visitTableSym(sym: Symbol.TableSym)(implicit root: ExecutableAst.Root, cache: SymbolCache, flix: Flix): TableSym =
     root.tables(sym) match {
-      case _: ExecutableAst.Table.Relation => new RelSym(sym.toString)
+      case r: ExecutableAst.Table.Relation =>
+        val attributes = r.attributes.map(visitAttribute)
+        cache.getRelSym(sym, sym.toString, attributes)
+
       case _: ExecutableAst.Table.Lattice => new LatSym(sym.toString)
     }
 
