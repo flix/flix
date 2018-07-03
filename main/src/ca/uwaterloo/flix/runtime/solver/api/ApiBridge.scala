@@ -5,7 +5,7 @@ import ca.uwaterloo.flix.language.ast.{Ast, ExecutableAst, Symbol}
 import ca.uwaterloo.flix.runtime.{InvocationTarget, Linker}
 import ca.uwaterloo.flix.runtime.solver.LatticeOps
 import ca.uwaterloo.flix.runtime.solver.api.predicate._
-import ca.uwaterloo.flix.runtime.solver.api.symbol.{TableSym, VarSym}
+import ca.uwaterloo.flix.runtime.solver.api.symbol.{LatSym, RelSym, TableSym, VarSym}
 import ca.uwaterloo.flix.runtime.solver.api.term._
 
 import scala.collection.mutable
@@ -95,7 +95,10 @@ object ApiBridge {
   }
 
   private def visitTableSym(sym: Symbol.TableSym)(implicit root: ExecutableAst.Root, cache: SymbolCache, flix: Flix): TableSym =
-    new TableSym(sym.toString)
+    root.tables(sym) match {
+      case _: ExecutableAst.Table.Relation => new RelSym(sym.toString)
+      case _: ExecutableAst.Table.Lattice => new LatSym(sym.toString)
+    }
 
   private def visitHeadTerm(t0: ExecutableAst.Term.Head)(implicit root: ExecutableAst.Root, cache: SymbolCache, flix: Flix): Term = t0 match {
     case ExecutableAst.Term.Head.Var(sym, _, _) => new VarTerm(visitVarSym(sym))
