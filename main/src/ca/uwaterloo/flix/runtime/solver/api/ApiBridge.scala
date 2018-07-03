@@ -47,10 +47,10 @@ object ApiBridge {
   private def visitTables(tables: Map[Symbol.TableSym, ExecutableAst.Table])(implicit root: ExecutableAst.Root, cache: SymbolCache, flix: Flix): Map[TableSym, Table] = {
     tables.foldLeft(Map.empty[TableSym, Table]) {
       case (macc, (sym, ExecutableAst.Table.Relation(_, attributes, _))) =>
-        macc + (visitTableSym(sym) -> Table.Relation(visitTableSym(sym), attributes.map(visitAttribute)))
+        macc + (visitTableSym(sym) -> new Relation(visitTableSym(sym), attributes.map(visitAttribute)))
 
       case (macc, (sym, ExecutableAst.Table.Lattice(_, keys, value, _))) =>
-        macc + (visitTableSym(sym) -> Table.Lattice(visitTableSym(sym), keys.map(visitAttribute), visitAttribute(value)))
+        macc + (visitTableSym(sym) -> new Lattice(visitTableSym(sym), keys.map(visitAttribute), visitAttribute(value)))
     }
   }
 
@@ -94,7 +94,8 @@ object ApiBridge {
     case ExecutableAst.Predicate.Body.Loop(_, _, _) => throw new UnsupportedOperationException("Loop currently not supported")
   }
 
-  private def visitTableSym(sym: Symbol.TableSym)(implicit root: ExecutableAst.Root, cache: SymbolCache, flix: Flix): TableSym = new TableSym(sym.toString)
+  private def visitTableSym(sym: Symbol.TableSym)(implicit root: ExecutableAst.Root, cache: SymbolCache, flix: Flix): TableSym =
+    new TableSym(sym.toString)
 
   private def visitHeadTerm(t0: ExecutableAst.Term.Head)(implicit root: ExecutableAst.Root, cache: SymbolCache, flix: Flix): Term = t0 match {
     case ExecutableAst.Term.Head.Var(sym, _, _) => new VarTerm(visitVarSym(sym))

@@ -292,9 +292,9 @@ class Solver(val root: ConstraintSet, options: FixpointOptions)(implicit flix: F
         for ((sym, fact) <- interp) {
           // update the datastore, but don't compute any dependencies.
           root.getTables()(sym) match {
-            case r: Table.Relation =>
+            case r: Relation =>
               dataStore.relations(sym).inferredFact(fact)
-            case l: Table.Lattice =>
+            case l: Lattice =>
               dataStore.lattices(sym).inferredFact(fact)
           }
         }
@@ -411,8 +411,8 @@ class Solver(val root: ConstraintSet, options: FixpointOptions)(implicit flix: F
   private def evalAtom(p: AtomPredicate, env: Env): Traversable[Env] = {
     // lookup the relation or lattice.
     val table = root.getTables()(p.getSym) match {
-      case r: Table.Relation => dataStore.relations(p.getSym)
-      case l: Table.Lattice => dataStore.lattices(p.getSym)
+      case r: Relation => dataStore.relations(p.getSym)
+      case l: Lattice => dataStore.lattices(p.getSym)
     }
 
     // evaluate all terms in the predicate.
@@ -572,16 +572,16 @@ class Solver(val root: ConstraintSet, options: FixpointOptions)(implicit flix: F
     * Processes an inferred `fact` for the relation or lattice with the symbol `sym`.
     */
   private def inferredFact(sym: TableSym, fact: Array[ProxyObject], localWorkList: WorkList): Unit = root.getTables()(sym) match {
-    case r: Table.Relation =>
+    case r: Relation =>
       val changed = dataStore.relations(sym).inferredFact(fact)
       if (changed) {
-        dependencies(r.sym, fact, localWorkList)
+        dependencies(r.getSym(), fact, localWorkList)
       }
 
-    case l: Table.Lattice =>
+    case l: Lattice =>
       val changed = dataStore.lattices(sym).inferredFact(fact)
       if (changed) {
-        dependencies(l.sym, fact, localWorkList)
+        dependencies(l.getSym(), fact, localWorkList)
       }
   }
 
@@ -604,7 +604,7 @@ class Solver(val root: ConstraintSet, options: FixpointOptions)(implicit flix: F
 
 
     root.getTables()(sym) match {
-      case r: Table.Relation =>
+      case r: Relation =>
         for ((rule, p) <- dependenciesOf(sym)) {
           // unify all terms with their values.
           val env = unify(p.getIndex2SymTEMPORARY, fact, fact.length, rule.getNumberOfParameters)
@@ -613,10 +613,10 @@ class Solver(val root: ConstraintSet, options: FixpointOptions)(implicit flix: F
           }
         }
 
-      case l: Table.Lattice =>
+      case l: Lattice =>
         for ((rule, p) <- dependenciesOf(sym)) {
           // unify only key terms with their values.
-          val numberOfKeys = l.keys.length
+          val numberOfKeys = l.getKeys().length
           val env = unify(p.getIndex2SymTEMPORARY, fact, numberOfKeys, rule.getNumberOfParameters)
           if (env != null) {
             localWorkList.push((rule, env))

@@ -34,12 +34,12 @@ object Indexer {
     // ensure every table has at least one index.
     for ((name, table) <- root.getTables()) {
       table match {
-        case r: Table.Relation =>
+        case r: Relation =>
           val idxs = indexes.getOrElse(name, Set.empty)
           indexes(name) = Set(Seq(0))
-        case l: Table.Lattice =>
+        case l: Lattice =>
           val idxs = indexes.getOrElse(name, Set.empty)
-          val everyKey = l.keys.indices
+          val everyKey = l.getKeys().indices
           indexes(name) = Set(Seq(0), everyKey)
       }
     }

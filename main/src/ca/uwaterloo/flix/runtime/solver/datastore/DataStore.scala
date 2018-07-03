@@ -18,8 +18,9 @@ package ca.uwaterloo.flix.runtime.solver.datastore
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.runtime.solver.Indexer
+import ca.uwaterloo.flix.runtime.solver.api
 import ca.uwaterloo.flix.runtime.solver.api.symbol.TableSym
-import ca.uwaterloo.flix.runtime.solver.api.{ConstraintSet, Table}
+import ca.uwaterloo.flix.runtime.solver.api.{ConstraintSet, Relation}
 import ca.uwaterloo.flix.util.BitOps
 
 import scala.collection.mutable
@@ -54,9 +55,9 @@ class DataStore[ValueType <: AnyRef](root: ConstraintSet)(implicit m: ClassTag[V
     }
 
     table match {
-      case r: Table.Relation => relations(sym) = new IndexedRelation(r, idx, idx.head)
-      case l: Table.Lattice =>
-        val ops = root.getLatticeOps()(l.sym)
+      case r: api.Relation => relations(sym) = new IndexedRelation(r, idx, idx.head)
+      case l: api.Lattice =>
+        val ops = root.getLatticeOps()(l.getSym())
         lattices(sym) = new IndexedLattice(l, idx, ops)
     }
   }
