@@ -37,11 +37,11 @@ class DataStore[ValueType <: AnyRef](root: ConstraintSet)(implicit m: ClassTag[V
     */
   private val lattices = mutable.Map.empty[Table, IndexedLattice]
 
-  for (sym <- root.getRelSyms()) {
+  for (sym <- root.getRelations()) {
     relations += (sym -> sym.getIndexedRelation())
   }
 
-  for (sym <- root.getLatSyms()) {
+  for (sym <- root.getLattices()) {
     lattices += (sym -> sym.getIndexedLattice())
   }
 

@@ -57,8 +57,8 @@ object ApiBridge {
 
     val strata = root.strata.map(visitStratum)
 
-    val relSyms = cache.relSyms.values.toSet
-    val latSyms = cache.latSyms.values.toSet
+    val relSyms = cache.relSyms.values.toArray
+    val latSyms = cache.latSyms.values.toArray
 
     new ConstraintSet(relSyms, latSyms, strata)
   }

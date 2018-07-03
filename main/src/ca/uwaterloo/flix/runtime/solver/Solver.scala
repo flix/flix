@@ -721,13 +721,13 @@ class Solver(val root: ConstraintSet, options: FixpointOptions)(implicit flix: F
     * Constructs the minimal model from the datastore.
     */
   private def mkFixedpoint(elapsed: Long): Fixedpoint = {
-    val relations = root.getRelSyms().foldLeft(Map.empty[Table, Iterable[List[ProxyObject]]]) {
+    val relations = root.getRelations().foldLeft(Map.empty[Table, Iterable[List[ProxyObject]]]) {
       case (macc, sym) =>
         val table = sym.getIndexedRelation().scan.toIterable.map(_.toList)
         macc + ((sym, table))
     }
 
-    val lattices = root.getLatSyms().foldLeft(Map.empty[Table, Iterable[(List[ProxyObject], ProxyObject)]]) {
+    val lattices = root.getLattices().foldLeft(Map.empty[Table, Iterable[(List[ProxyObject], ProxyObject)]]) {
       case (macc, sym) =>
         val table = sym.getIndexedLattice().scan.toIterable.map {
           case (keys, values) => (keys.toArray.toList, values)
