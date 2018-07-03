@@ -25,7 +25,7 @@ import scala.reflect.ClassTag
 /**
   * A class implementing a data store for indexed relations and lattices.
   */
-class DataStore[ValueType <: AnyRef](root: ConstraintSet)(implicit m: ClassTag[ValueType], flix: Flix) {
+class DataStore[ValueType <: AnyRef](root: ConstraintSet)(implicit m: ClassTag[ValueType]) {
 
   /**
     * A map from names to indexed relations.

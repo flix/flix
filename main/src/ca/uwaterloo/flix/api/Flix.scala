@@ -279,7 +279,7 @@ class Flix {
     opts.setVerbose(options.verbosity == Verbosity.Verbose)
 
     val cs = ApiBridge.translate(compilationResult.getRoot)(this)
-    val fixedpoint = new Solver(cs, opts)(this).solve()
+    val fixedpoint = new Solver(cs, opts).solve()
     compilationResult.toSuccess
   }
 

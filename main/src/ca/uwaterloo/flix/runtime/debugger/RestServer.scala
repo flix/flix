@@ -35,7 +35,7 @@ import org.json4s.native.JsonMethods
   *
   * Usage of this class may incur additional solver overhead.
   */
-class RestServer(solver: Solver)(implicit flix: Flix) {
+class RestServer(solver: Solver) {
 
   /**
     * The minimum port number to bind to.
@@ -322,15 +322,7 @@ class RestServer(solver: Solver)(implicit flix: Flix) {
     * Returns compiler performance statistics.
     */
   class GetCompilerPhasePerformance extends JsonHandler {
-    def json: JValue = JArray(
-      flix.phaseTimers.toList.map {
-        case phase =>
-          val name = phase.phase
-          val time = phase.time
-          val timeInMilis = new DurationFormatter(time).miliseconds
-          JObject(List(JField("name", JString(name)), JField("time", JInt(timeInMilis.toInt))))
-      }
-    )
+    def json: JValue = JArray(Nil)
   }
 
   /**

@@ -19,4 +19,6 @@ class Relation(val name: String, val attributes: Array[Attribute]) extends Table
 
   def getIndexedRelation(): IndexedRelation = indexedRelation
 
+  override def toString: String = s"$name(${indexedRelation.getSize})"
+
 }

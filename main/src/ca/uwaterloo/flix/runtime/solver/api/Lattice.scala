@@ -20,4 +20,6 @@ class Lattice(val name: String, val keys: Array[Attribute], val value: Attribute
 
   def getIndexedLattice(): IndexedLattice = indexedLattice
 
+  override def toString: String = s"$name(${indexedLattice.getSize})"
+
 }
