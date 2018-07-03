@@ -6,7 +6,17 @@ import ca.uwaterloo.flix.util.BitOps
 /**
   * Represents a relation value.
   */
-class Relation(val name: String, val attributes: Array[Attribute]) extends Table {
+class Relation(name: String, attributes: Array[Attribute]) extends Table {
+
+  /**
+    * Returns the name of the relation.
+    */
+  def getName(): String = name
+
+  /**
+    * Returns the attributes of the relation.
+    */
+  def getAttributes(): Array[Attribute] = attributes
 
   private val indexedRelation = {
     // NB: Just an index on the first attribute.
@@ -19,6 +29,9 @@ class Relation(val name: String, val attributes: Array[Attribute]) extends Table
 
   def getIndexedRelation(): IndexedRelation = indexedRelation
 
+  /**
+    * Returns a string representation of the relation.
+    */
   override def toString: String = s"$name(${indexedRelation.getSize})"
 
 }

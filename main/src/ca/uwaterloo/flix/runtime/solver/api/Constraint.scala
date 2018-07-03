@@ -5,7 +5,14 @@ import java.util.concurrent.atomic.{AtomicInteger, AtomicLong}
 import ca.uwaterloo.flix.runtime.solver.api.predicate.{AtomPredicate, FilterPredicate, Predicate}
 import ca.uwaterloo.flix.runtime.solver.api.symbol.VarSym
 
-class Constraint(cparams: List[VarSym], head: Predicate, body: List[Predicate]) {
+/**
+  * Represents a constraint.
+  *
+  * A constraint is a horn clause that consists of
+  * a sequence of universally quantified variables,
+  * a head predicate, and a sequence of body predicates.
+  */
+class Constraint(cparams: Array[VarSym], head: Predicate, body: Array[Predicate]) {
 
   /**
     * A head predicate cannot be a filter predicate.
@@ -60,7 +67,7 @@ class Constraint(cparams: List[VarSym], head: Predicate, body: List[Predicate]) 
   /**
     * Returns the body predicates.
     */
-  def getBodyPredicates(): Array[Predicate] = body.toArray
+  def getBodyPredicates(): Array[Predicate] = body
 
   /**
     * Returns the number of variables in the constraint.
@@ -94,7 +101,7 @@ class Constraint(cparams: List[VarSym], head: Predicate, body: List[Predicate]) 
   /**
     * Returns the atoms predicates in the body of the constraint.
     */
-  def getAtoms(): List[AtomPredicate] = body.collect {
+  def getAtoms(): Array[AtomPredicate] = body.collect {
     case p: AtomPredicate => p
   }
 
@@ -103,6 +110,6 @@ class Constraint(cparams: List[VarSym], head: Predicate, body: List[Predicate]) 
     */
   def getFilters(): Array[FilterPredicate] = body.collect {
     case p: FilterPredicate => p
-  }.toArray
+  }
 
 }

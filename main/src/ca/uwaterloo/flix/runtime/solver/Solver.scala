@@ -252,7 +252,7 @@ class Solver(val root: ConstraintSet, options: FixpointOptions) {
 
   def getRuleStats: List[(Constraint, Int, Long)] = {
     val constraints = root.getStrata().flatMap(_.getConstraints())
-    constraints.filter(_.isRule).sortBy(_.getElapsedTime()).reverse.map {
+    constraints.toList.filter(_.isRule).sortBy(_.getElapsedTime()).reverse.map {
       case r => (r, r.getNumberOfHits(), r.getElapsedTime())
     }
   }
@@ -359,7 +359,7 @@ class Solver(val root: ConstraintSet, options: FixpointOptions) {
     val t = System.nanoTime()
 
     val interp = mkInterpretation()
-    evalCross(rule, rule.getAtoms(), env, interp)
+    evalCross(rule, rule.getAtoms().toList, env, interp)
     val e = System.nanoTime() - t
 
     rule.incrementNumberOfUnits()
@@ -616,7 +616,7 @@ class Solver(val root: ConstraintSet, options: FixpointOptions) {
       case l: Lattice =>
         for ((rule, p) <- dependenciesOf(sym)) {
           // unify only key terms with their values.
-          val numberOfKeys = l.keys.length
+          val numberOfKeys = l.getKeys().length
           val env = unify(p.getIndex2SymTEMPORARY, fact, numberOfKeys, rule.getNumberOfParameters)
           if (env != null) {
             localWorkList.push((rule, env))

@@ -3,11 +3,11 @@ package ca.uwaterloo.flix.runtime.solver.api
 /**
   * Represents a stratum.
   */
-class Stratum(constraints: List[Constraint]) {
+class Stratum(constraints: Array[Constraint]) {
 
   /**
     * Returns the constraints in the stratum.
     */
-  def getConstraints(): List[Constraint] = constraints
+  def getConstraints(): Array[Constraint] = constraints
 
 }

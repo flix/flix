@@ -3,7 +3,7 @@ package ca.uwaterloo.flix.runtime.solver.api
 /**
   * Represents a collection of constraints.
   */
-class ConstraintSet(relations: Array[Relation], lattices: Array[Lattice], strata: List[Stratum]) {
+class ConstraintSet(relations: Array[Relation], lattices: Array[Lattice], strata: Array[Stratum]) {
 
   /**
     * Returns all the relation values in the constraint set.
@@ -18,7 +18,7 @@ class ConstraintSet(relations: Array[Relation], lattices: Array[Lattice], strata
   /**
     * Returns the strata in the constraint set.
     */
-  def getStrata(): List[Stratum] = strata
+  def getStrata(): Array[Stratum] = strata
 
   /**
     * Returns the union of `this` constraint set with `that` constraint set.

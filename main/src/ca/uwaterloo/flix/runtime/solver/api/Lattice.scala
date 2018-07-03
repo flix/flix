@@ -7,7 +7,22 @@ import ca.uwaterloo.flix.util.BitOps
 /**
   * Represents a lattice value.
   */
-class Lattice(val name: String, val keys: Array[Attribute], val value: Attribute, ops: LatticeOps) extends Table {
+class Lattice(name: String, keys: Array[Attribute], value: Attribute, ops: LatticeOps) extends Table {
+
+  /**
+    * Returns the name of the lattice.
+    */
+  def getName(): String = name
+
+  /**
+    * Returns the key attributes of the lattice.
+    */
+  def getKeys(): Array[Attribute] = keys
+
+  /**
+    * Returns the value attribute of the lattice.
+    */
+  def getValue(): Attribute = value
 
   private val indexedLattice = {
     // NB: Just an index on the first attribute and on all the keys.
@@ -20,6 +35,9 @@ class Lattice(val name: String, val keys: Array[Attribute], val value: Attribute
 
   def getIndexedLattice(): IndexedLattice = indexedLattice
 
+  /**
+    * Returns a string representation of the lattice.
+    */
   override def toString: String = s"$name(${indexedLattice.getSize})"
 
 }

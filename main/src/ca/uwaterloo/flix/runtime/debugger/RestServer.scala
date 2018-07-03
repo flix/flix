@@ -212,7 +212,7 @@ class RestServer(solver: Solver) {
   class GetRelations extends JsonHandler {
     def json: JValue = JArray(solver.root.getRelations().toList.map {
       case sym => JObject(List(
-        JField("name", JString(sym.name.toString)),
+        JField("name", JString(sym.getName().toString)),
         JField("size", JInt(sym.getIndexedRelation().getSize))
       ))
     })
@@ -224,7 +224,7 @@ class RestServer(solver: Solver) {
   class GetLattices extends JsonHandler {
     def json: JValue = JArray(solver.root.getLattices().toList.map {
       case sym => JObject(List(
-        JField("name", JString(sym.name.toString)),
+        JField("name", JString(sym.getName().toString)),
         JField("size", JInt(sym.getIndexedLattice().getSize))
       ))
     })
@@ -338,11 +338,11 @@ class RestServer(solver: Solver) {
     server.createContext("/status", new GetStatus())
     server.createContext("/relations", new GetRelations())
     for (sym <- solver.root.getRelations()) {
-      server.createContext("/relation/" + sym.name, new ListRelation(sym.getIndexedRelation()))
+      server.createContext("/relation/" + sym.getName(), new ListRelation(sym.getIndexedRelation()))
     }
     server.createContext("/lattices", new GetLattices())
     for (sym <- solver.root.getLattices()) {
-      server.createContext("/lattice/" + sym.name, new ListLattice(sym.getIndexedLattice()))
+      server.createContext("/lattice/" + sym.getName(), new ListLattice(sym.getIndexedLattice()))
     }
     server.createContext("/telemetry", new GetTelemetry())
     server.createContext("/performance/rules", new GetRulePerformance())
