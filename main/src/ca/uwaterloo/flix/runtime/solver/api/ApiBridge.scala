@@ -56,27 +56,15 @@ object ApiBridge {
     implicit val cache = new SymbolCache
 
     val strata = root.strata.map(visitStratum)
-    val tables = visitTables(root.tables)
-    val latOps = visitLatOps(root.tables)
 
     val relSyms = cache.relSyms.values.toSet
     val latSyms = cache.latSyms.values.toSet
 
-    new ConstraintSet(relSyms, latSyms, strata, tables, latOps)
+    new ConstraintSet(relSyms, latSyms, strata)
   }
 
   private def visitStratum(stratum: ExecutableAst.Stratum)(implicit root: ExecutableAst.Root, cache: SymbolCache, flix: Flix): Stratum = {
     new Stratum(stratum.constraints.map(visitConstraint))
-  }
-
-  private def visitTables(tables: Map[Symbol.TableSym, ExecutableAst.Table])(implicit root: ExecutableAst.Root, cache: SymbolCache, flix: Flix): Map[TableSym, Table] = {
-    tables.foldLeft(Map.empty[TableSym, Table]) {
-      case (macc, (sym, ExecutableAst.Table.Relation(_, attributes, _))) =>
-        macc + (visitTableSym(sym) -> new Relation(visitTableSym(sym), attributes.map(visitAttribute)))
-
-      case (macc, (sym, ExecutableAst.Table.Lattice(_, keys, value, _))) =>
-        macc + (visitTableSym(sym) -> new Lattice(visitTableSym(sym), keys.map(visitAttribute), visitAttribute(value)))
-    }
   }
 
   private def visitConstraint(c0: ExecutableAst.Constraint)(implicit root: ExecutableAst.Root, cache: SymbolCache, flix: Flix): Constraint = {

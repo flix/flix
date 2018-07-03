@@ -603,8 +603,8 @@ class Solver(val root: ConstraintSet, options: FixpointOptions)(implicit flix: F
     }
 
 
-    root.getTables()(sym) match {
-      case r: Relation =>
+    sym match {
+      case r: RelSym =>
         for ((rule, p) <- dependenciesOf(sym)) {
           // unify all terms with their values.
           val env = unify(p.getIndex2SymTEMPORARY, fact, fact.length, rule.getNumberOfParameters)
@@ -613,10 +613,10 @@ class Solver(val root: ConstraintSet, options: FixpointOptions)(implicit flix: F
           }
         }
 
-      case l: Lattice =>
+      case l: LatSym =>
         for ((rule, p) <- dependenciesOf(sym)) {
           // unify only key terms with their values.
-          val numberOfKeys = l.getKeys().length
+          val numberOfKeys = l.keys.length
           val env = unify(p.getIndex2SymTEMPORARY, fact, numberOfKeys, rule.getNumberOfParameters)
           if (env != null) {
             localWorkList.push((rule, env))
@@ -735,7 +735,7 @@ class Solver(val root: ConstraintSet, options: FixpointOptions)(implicit flix: F
         macc + ((sym, table))
     }
 
-    Fixedpoint(root.getTables(), relations, lattices)
+    Fixedpoint(relations, lattices)
   }
 
   /**

@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.runtime.solver.datastore
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.runtime.solver.api.symbol.TableSym
-import ca.uwaterloo.flix.runtime.solver.api.{ConstraintSet, Relation}
+import ca.uwaterloo.flix.runtime.solver.api.ConstraintSet
 
 import scala.collection.mutable
 import scala.reflect.ClassTag
