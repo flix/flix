@@ -27,7 +27,7 @@ import ca.uwaterloo.flix.runtime.interpreter.Value
 import ca.uwaterloo.flix.runtime.solver.api._
 import ca.uwaterloo.flix.runtime.Monitor
 import ca.uwaterloo.flix.runtime.solver.api.predicate._
-import ca.uwaterloo.flix.runtime.solver.api.symbol.{TableSym, VarSym}
+import ca.uwaterloo.flix.runtime.solver.api.symbol.{RelSym, TableSym, VarSym}
 import ca.uwaterloo.flix.runtime.solver.api.term._
 import ca.uwaterloo.flix.util._
 import flix.runtime.{RuleError, TimeoutError}
@@ -293,6 +293,7 @@ class Solver(val root: ConstraintSet, options: FixpointOptions)(implicit flix: F
           // update the datastore, but don't compute any dependencies.
           root.getTables()(sym) match {
             case r: Relation =>
+              sym.asInstanceOf[RelSym].getIndexedRelation().inferredFact(fact)
               dataStore.relations(sym).inferredFact(fact)
             case l: Lattice =>
               dataStore.lattices(sym).inferredFact(fact)

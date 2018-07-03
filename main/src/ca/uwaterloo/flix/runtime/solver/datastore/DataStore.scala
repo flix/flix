@@ -59,7 +59,7 @@ class DataStore[ValueType <: AnyRef](root: ConstraintSet)(implicit m: ClassTag[V
         relations(sym) = new IndexedRelation(r.getAttributes(), idx, idx.head)
       case l: api.Lattice =>
         val ops = root.getLatticeOps()(l.getSym())
-        lattices(sym) = new IndexedLattice(l, idx, ops)
+        lattices(sym) = new IndexedLattice(l.getKeys(), l.getValue(), idx, ops)
     }
   }
 

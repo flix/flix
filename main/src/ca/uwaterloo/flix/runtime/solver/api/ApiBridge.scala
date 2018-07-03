@@ -112,7 +112,12 @@ object ApiBridge {
         val attributes = r.attributes.map(visitAttribute)
         cache.getRelSym(sym, sym.toString, attributes)
 
-      case _: ExecutableAst.Table.Lattice => new LatSym(sym.toString)
+      case l: ExecutableAst.Table.Lattice =>
+        val keys = l.keys.map(visitAttribute)
+        val value = visitAttribute(l.value)
+        val ops = getLatticeOps(l.value)
+
+        new LatSym(sym.toString, keys, value, ops)
     }
 
   private def visitHeadTerm(t0: ExecutableAst.Term.Head)(implicit root: ExecutableAst.Root, cache: SymbolCache, flix: Flix): Term = t0 match {
@@ -147,21 +152,24 @@ object ApiBridge {
 
       case (macc, (sym, ExecutableAst.Table.Lattice(_, keys, value, _))) =>
         // lattice
-
-        val lattice = root.lattices(value.tpe)
-
-        val latticeOps = new LatticeOps {
-          override def bot: ProxyObject = Linker.link(lattice.bot, root).invoke(Array.empty)
-
-          override def equ: InvocationTarget = Linker.link(lattice.equ, root)
-
-          override def leq: InvocationTarget = Linker.link(lattice.leq, root)
-
-          override def lub: InvocationTarget = Linker.link(lattice.lub, root)
-
-          override def glb: InvocationTarget = Linker.link(lattice.glb, root)
-        }
+        val latticeOps = getLatticeOps(value)
         macc + (visitTableSym(sym) -> latticeOps)
+    }
+  }
+
+  private def getLatticeOps(value: ExecutableAst.Attribute)(implicit root: ExecutableAst.Root, cache: SymbolCache, flix: Flix): LatticeOps = {
+    val lattice = root.lattices(value.tpe)
+
+    new LatticeOps {
+      override def bot: ProxyObject = Linker.link(lattice.bot, root).invoke(Array.empty)
+
+      override def equ: InvocationTarget = Linker.link(lattice.equ, root)
+
+      override def leq: InvocationTarget = Linker.link(lattice.leq, root)
+
+      override def lub: InvocationTarget = Linker.link(lattice.lub, root)
+
+      override def glb: InvocationTarget = Linker.link(lattice.glb, root)
     }
   }
 
