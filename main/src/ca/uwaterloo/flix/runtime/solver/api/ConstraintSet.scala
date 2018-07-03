@@ -1,21 +1,19 @@
 package ca.uwaterloo.flix.runtime.solver.api
 
-import ca.uwaterloo.flix.runtime.solver.api.symbol.{LatSym, RelSym}
-
 /**
   * Represents a collection of constraints.
   */
-class ConstraintSet(relSyms: Set[RelSym], latSyms: Set[LatSym], strata: List[Stratum]) {
+class ConstraintSet(relSyms: Set[Relation], latSyms: Set[Lattice], strata: List[Stratum]) {
 
   /**
     * Returns the relation symbols in the constraint set.
     */
-  def getRelSyms(): Set[RelSym] = relSyms
+  def getRelSyms(): Set[Relation] = relSyms
 
   /**
     * Returns the lattice symbols in the constraint set.
     */
-  def getLatSyms(): Set[LatSym] = latSyms
+  def getLatSyms(): Set[Lattice] = latSyms
 
   /**
     * Returns the strata in the constraint set.

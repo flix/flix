@@ -17,8 +17,7 @@
 package ca.uwaterloo.flix.runtime.solver.datastore
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.runtime.solver.api.symbol.TableSym
-import ca.uwaterloo.flix.runtime.solver.api.ConstraintSet
+import ca.uwaterloo.flix.runtime.solver.api.{ConstraintSet, Table}
 
 import scala.collection.mutable
 import scala.reflect.ClassTag
@@ -31,12 +30,12 @@ class DataStore[ValueType <: AnyRef](root: ConstraintSet)(implicit m: ClassTag[V
   /**
     * A map from names to indexed relations.
     */
-  private val relations = mutable.Map.empty[TableSym, IndexedRelation]
+  private val relations = mutable.Map.empty[Table, IndexedRelation]
 
   /**
     * A map from names to indexed lattices.
     */
-  private val lattices = mutable.Map.empty[TableSym, IndexedLattice]
+  private val lattices = mutable.Map.empty[Table, IndexedLattice]
 
   for (sym <- root.getRelSyms()) {
     relations += (sym -> sym.getIndexedRelation())

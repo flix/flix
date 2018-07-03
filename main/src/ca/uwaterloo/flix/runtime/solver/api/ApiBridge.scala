@@ -5,7 +5,7 @@ import ca.uwaterloo.flix.language.ast.{Ast, ExecutableAst, Symbol}
 import ca.uwaterloo.flix.runtime.{InvocationTarget, Linker}
 import ca.uwaterloo.flix.runtime.solver.LatticeOps
 import ca.uwaterloo.flix.runtime.solver.api.predicate._
-import ca.uwaterloo.flix.runtime.solver.api.symbol.{LatSym, RelSym, TableSym, VarSym}
+import ca.uwaterloo.flix.runtime.solver.api.symbol.VarSym
 import ca.uwaterloo.flix.runtime.solver.api.term._
 
 import scala.collection.mutable
@@ -19,8 +19,8 @@ object ApiBridge {
   class SymbolCache {
 
     val varSyms = mutable.Map.empty[Symbol.VarSym, VarSym]
-    val relSyms = mutable.Map.empty[Symbol.TableSym, RelSym]
-    val latSyms = mutable.Map.empty[Symbol.TableSym, LatSym]
+    val relSyms = mutable.Map.empty[Symbol.TableSym, Relation]
+    val latSyms = mutable.Map.empty[Symbol.TableSym, Lattice]
 
     def getVarSym(sym: Symbol.VarSym): VarSym =
       varSyms.get(sym) match {
@@ -31,19 +31,19 @@ object ApiBridge {
         case Some(res) => res
       }
 
-    def getRelSym(sym: Symbol.TableSym, name: String, attributes: Array[Attribute]): RelSym =
+    def getRelSym(sym: Symbol.TableSym, name: String, attributes: Array[Attribute]): Relation =
       relSyms.get(sym) match {
         case None =>
-          val newSym = new RelSym(name, attributes)
+          val newSym = new Relation(name, attributes)
           relSyms += (sym -> newSym)
           newSym
         case Some(res) => res
       }
 
-    def getLatSym(sym: Symbol.TableSym, name: String, keys: Array[Attribute], value: Attribute, ops: LatticeOps): LatSym =
+    def getLatSym(sym: Symbol.TableSym, name: String, keys: Array[Attribute], value: Attribute, ops: LatticeOps): Lattice =
       latSyms.get(sym) match {
         case None =>
-          val newSym = new LatSym(name, keys, value, ops)
+          val newSym = new Lattice(name, keys, value, ops)
           latSyms += (sym -> newSym)
           newSym
         case Some(res) => res
@@ -107,7 +107,7 @@ object ApiBridge {
     case ExecutableAst.Predicate.Body.Loop(_, _, _) => throw new UnsupportedOperationException("Loop currently not supported")
   }
 
-  private def visitTableSym(sym: Symbol.TableSym)(implicit root: ExecutableAst.Root, cache: SymbolCache, flix: Flix): TableSym =
+  private def visitTableSym(sym: Symbol.TableSym)(implicit root: ExecutableAst.Root, cache: SymbolCache, flix: Flix): Table =
     root.tables(sym) match {
       case r: ExecutableAst.Table.Relation =>
         val attributes = r.attributes.map(visitAttribute)
@@ -144,8 +144,8 @@ object ApiBridge {
   private def visitAttribute(a: ExecutableAst.Attribute)(implicit root: ExecutableAst.Root, cache: SymbolCache, flix: Flix): Attribute =
     new Attribute(a.name)
 
-  private def visitLatOps(tables: Map[Symbol.TableSym, ExecutableAst.Table])(implicit root: ExecutableAst.Root, cache: SymbolCache, flix: Flix): Map[TableSym, LatticeOps] = {
-    tables.foldLeft(Map.empty[TableSym, LatticeOps]) {
+  private def visitLatOps(tables: Map[Symbol.TableSym, ExecutableAst.Table])(implicit root: ExecutableAst.Root, cache: SymbolCache, flix: Flix): Map[Table, LatticeOps] = {
+    tables.foldLeft(Map.empty[Table, LatticeOps]) {
       case (macc, (sym, ExecutableAst.Table.Relation(_, attributes, _))) =>
         // relation
         macc

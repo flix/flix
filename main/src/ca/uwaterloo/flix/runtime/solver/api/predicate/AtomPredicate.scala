@@ -1,17 +1,18 @@
 package ca.uwaterloo.flix.runtime.solver.api.predicate
 
+import ca.uwaterloo.flix.runtime.solver.api.Table
 import ca.uwaterloo.flix.runtime.solver.api.term.Term
-import ca.uwaterloo.flix.runtime.solver.api.symbol.{TableSym, VarSym}
+import ca.uwaterloo.flix.runtime.solver.api.symbol.VarSym
 
 /**
   * Represents an atom predicate for the symbol `sym` with arguments `terms`.
   */
-class AtomPredicate(sym: TableSym, positive: Boolean, terms: Array[Term], index2sym: Array[VarSym]) extends Predicate {
+class AtomPredicate(sym: Table, positive: Boolean, terms: Array[Term], index2sym: Array[VarSym]) extends Predicate {
 
   /**
     * Returns the table symbol of the atom.
     */
-  def getSym(): TableSym = sym
+  def getSym(): Table = sym
 
   /**
     * Returns `true` if this atom is un-negated.

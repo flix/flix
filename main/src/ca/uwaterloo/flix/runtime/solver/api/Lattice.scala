@@ -1,11 +1,10 @@
-package ca.uwaterloo.flix.runtime.solver.api.symbol
+package ca.uwaterloo.flix.runtime.solver.api
 
 import ca.uwaterloo.flix.runtime.solver.LatticeOps
-import ca.uwaterloo.flix.runtime.solver.api.Attribute
 import ca.uwaterloo.flix.runtime.solver.datastore.IndexedLattice
 import ca.uwaterloo.flix.util.BitOps
 
-class LatSym(val name: String, val keys: Array[Attribute], val value: Attribute, ops: LatticeOps) extends TableSym {
+class Lattice(val name: String, val keys: Array[Attribute], val value: Attribute, ops: LatticeOps) extends Table {
 
   private val indexedLattice = {
     val idx = Set(Seq(0), keys.indices)
@@ -17,10 +16,10 @@ class LatSym(val name: String, val keys: Array[Attribute], val value: Attribute,
 
   def getIndexedLattice(): IndexedLattice = indexedLattice
 
-  def canEqual(other: Any): Boolean = other.isInstanceOf[LatSym]
+  def canEqual(other: Any): Boolean = other.isInstanceOf[Lattice]
 
   override def equals(other: Any): Boolean = other match {
-    case that: LatSym =>
+    case that: Lattice =>
       (that canEqual this) &&
         name == that.name
     case _ => false

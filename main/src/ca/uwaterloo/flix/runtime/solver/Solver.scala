@@ -27,7 +27,7 @@ import ca.uwaterloo.flix.runtime.interpreter.Value
 import ca.uwaterloo.flix.runtime.solver.api._
 import ca.uwaterloo.flix.runtime.Monitor
 import ca.uwaterloo.flix.runtime.solver.api.predicate._
-import ca.uwaterloo.flix.runtime.solver.api.symbol.{LatSym, RelSym, TableSym, VarSym}
+import ca.uwaterloo.flix.runtime.solver.api.symbol.VarSym
 import ca.uwaterloo.flix.runtime.solver.api.term._
 import ca.uwaterloo.flix.util._
 import flix.runtime.{RuleError, TimeoutError}
@@ -78,12 +78,12 @@ class Solver(val root: ConstraintSet, options: FixpointOptions)(implicit flix: F
     *
     * An interpretation is collection of facts (a table symbol associated with an array of facts).
     */
-  type Interpretation = mutable.ArrayBuffer[(TableSym, Array[ProxyObject])]
+  type Interpretation = mutable.ArrayBuffer[(Table, Array[ProxyObject])]
 
   /**
     * The type of the dependency graph, a map from symbols to (constraint, atom) pairs.
     */
-  type DependencyGraph = mutable.Map[TableSym, Set[(Constraint, AtomPredicate)]]
+  type DependencyGraph = mutable.Map[Table, Set[(Constraint, AtomPredicate)]]
 
   //
   // State of the solver:
@@ -292,9 +292,9 @@ class Solver(val root: ConstraintSet, options: FixpointOptions)(implicit flix: F
         for ((sym, fact) <- interp) {
           // update the datastore, but don't compute any dependencies.
           sym match {
-            case r: RelSym =>
+            case r: Relation =>
               r.getIndexedRelation().inferredFact(fact)
-            case l: LatSym =>
+            case l: Lattice =>
               l.getIndexedLattice().inferredFact(fact)
           }
         }
@@ -411,8 +411,8 @@ class Solver(val root: ConstraintSet, options: FixpointOptions)(implicit flix: F
   private def evalAtom(p: AtomPredicate, env: Env): Traversable[Env] = {
     // lookup the relation or lattice.
     val table = p.getSym() match {
-      case r: RelSym => r.getIndexedRelation()
-      case l: LatSym => l.getIndexedLattice()
+      case r: Relation => r.getIndexedRelation()
+      case l: Lattice => l.getIndexedLattice()
     }
 
     // evaluate all terms in the predicate.
@@ -560,7 +560,7 @@ class Solver(val root: ConstraintSet, options: FixpointOptions)(implicit flix: F
   /**
     * Returns a callable to process a collection of inferred `facts` for the relation or lattice with the symbol `sym`.
     */
-  private def inferredFacts(sym: TableSym, facts: ArrayBuffer[Array[ProxyObject]]): Callable[WorkList] = () => {
+  private def inferredFacts(sym: Table, facts: ArrayBuffer[Array[ProxyObject]]): Callable[WorkList] = () => {
     val localWorkList = mkWorkList()
     for (fact <- facts) {
       inferredFact(sym, fact, localWorkList)
@@ -571,14 +571,14 @@ class Solver(val root: ConstraintSet, options: FixpointOptions)(implicit flix: F
   /**
     * Processes an inferred `fact` for the relation or lattice with the symbol `sym`.
     */
-  private def inferredFact(sym: TableSym, fact: Array[ProxyObject], localWorkList: WorkList): Unit = sym match {
-    case r: RelSym =>
+  private def inferredFact(sym: Table, fact: Array[ProxyObject], localWorkList: WorkList): Unit = sym match {
+    case r: Relation =>
       val changed = r.getIndexedRelation().inferredFact(fact)
       if (changed) {
         dependencies(sym, fact, localWorkList)
       }
 
-    case l: LatSym =>
+    case l: Lattice =>
       val changed = l.getIndexedLattice().inferredFact(fact)
       if (changed) {
         dependencies(sym, fact, localWorkList)
@@ -588,7 +588,7 @@ class Solver(val root: ConstraintSet, options: FixpointOptions)(implicit flix: F
   /**
     * Returns all dependencies of the given symbol `sym` along with an environment.
     */
-  private def dependencies(sym: TableSym, fact: Array[ProxyObject], localWorkList: WorkList): Unit = {
+  private def dependencies(sym: Table, fact: Array[ProxyObject], localWorkList: WorkList): Unit = {
 
     def unify(pat: Array[VarSym], fact: Array[ProxyObject], limit: Int, len: Int): Env = {
       val env: Env = new Array[ProxyObject](len)
@@ -604,7 +604,7 @@ class Solver(val root: ConstraintSet, options: FixpointOptions)(implicit flix: F
 
 
     sym match {
-      case r: RelSym =>
+      case r: Relation =>
         for ((rule, p) <- dependenciesOf(sym)) {
           // unify all terms with their values.
           val env = unify(p.getIndex2SymTEMPORARY, fact, fact.length, rule.getNumberOfParameters)
@@ -613,7 +613,7 @@ class Solver(val root: ConstraintSet, options: FixpointOptions)(implicit flix: F
           }
         }
 
-      case l: LatSym =>
+      case l: Lattice =>
         for ((rule, p) <- dependenciesOf(sym)) {
           // unify only key terms with their values.
           val numberOfKeys = l.keys.length
@@ -705,8 +705,8 @@ class Solver(val root: ConstraintSet, options: FixpointOptions)(implicit flix: F
   /**
     * Sorts the given facts by their table symbol.
     */
-  private def groupFactsBySymbol(iter: Iterator[Interpretation]): mutable.Map[TableSym, ArrayBuffer[Array[ProxyObject]]] = {
-    val result = mutable.Map.empty[TableSym, ArrayBuffer[Array[ProxyObject]]]
+  private def groupFactsBySymbol(iter: Iterator[Interpretation]): mutable.Map[Table, ArrayBuffer[Array[ProxyObject]]] = {
+    val result = mutable.Map.empty[Table, ArrayBuffer[Array[ProxyObject]]]
     while (iter.hasNext) {
       val interp = iter.next()
       for ((symbol, fact) <- interp) {
@@ -721,13 +721,13 @@ class Solver(val root: ConstraintSet, options: FixpointOptions)(implicit flix: F
     * Constructs the minimal model from the datastore.
     */
   private def mkFixedpoint(elapsed: Long): Fixedpoint = {
-    val relations = root.getRelSyms().foldLeft(Map.empty[TableSym, Iterable[List[ProxyObject]]]) {
+    val relations = root.getRelSyms().foldLeft(Map.empty[Table, Iterable[List[ProxyObject]]]) {
       case (macc, sym) =>
         val table = sym.getIndexedRelation().scan.toIterable.map(_.toList)
         macc + ((sym, table))
     }
 
-    val lattices = root.getLatSyms().foldLeft(Map.empty[TableSym, Iterable[(List[ProxyObject], ProxyObject)]]) {
+    val lattices = root.getLatSyms().foldLeft(Map.empty[Table, Iterable[(List[ProxyObject], ProxyObject)]]) {
       case (macc, sym) =>
         val table = sym.getIndexedLattice().scan.toIterable.map {
           case (keys, values) => (keys.toArray.toList, values)
@@ -782,7 +782,7 @@ class Solver(val root: ConstraintSet, options: FixpointOptions)(implicit flix: F
   /**
     * Returns a fresh (empty) interpretation.
     */
-  private def mkInterpretation(): Interpretation = new mutable.ArrayBuffer[(TableSym, Array[ProxyObject])]()
+  private def mkInterpretation(): Interpretation = new mutable.ArrayBuffer[(Table, Array[ProxyObject])]()
 
   /**
     * Checks if the solver is paused, and if so, waits for an interrupt.
