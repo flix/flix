@@ -210,10 +210,10 @@ class RestServer(solver: Solver)(implicit flix: Flix) {
     * Returns the name and size of all relations.
     */
   class GetRelations extends JsonHandler {
-    def json: JValue = JArray(solver.dataStore.relations.toList.map {
-      case (name, relation) => JObject(List(
-        JField("name", JString(name.toString)),
-        JField("size", JInt(relation.getSize))
+    def json: JValue = JArray(solver.root.getRelSyms().toList.map {
+      case sym => JObject(List(
+        JField("name", JString(sym.name.toString)),
+        JField("size", JInt(sym.getIndexedRelation().getSize))
       ))
     })
   }
@@ -222,10 +222,10 @@ class RestServer(solver: Solver)(implicit flix: Flix) {
     * Returns the name and size of all lattices.
     */
   class GetLattices extends JsonHandler {
-    def json: JValue = JArray(solver.dataStore.lattices.toList.map {
-      case (name, lattice) => JObject(List(
-        JField("name", JString(name.toString)),
-        JField("size", JInt(lattice.getSize))
+    def json: JValue = JArray(solver.root.getLatSyms().toList.map {
+      case sym => JObject(List(
+        JField("name", JString(sym.name.toString)),
+        JField("size", JInt(sym.getIndexedLattice().getSize))
       ))
     })
   }
@@ -345,12 +345,12 @@ class RestServer(solver: Solver)(implicit flix: Flix) {
     // mount ajax handlers.
     server.createContext("/status", new GetStatus())
     server.createContext("/relations", new GetRelations())
-    for ((name, relation) <- solver.dataStore.relations) {
-      server.createContext("/relation/" + name, new ListRelation(relation))
+    for (sym <- solver.root.getRelSyms()) {
+      server.createContext("/relation/" + sym.name, new ListRelation(sym.getIndexedRelation()))
     }
     server.createContext("/lattices", new GetLattices())
-    for ((name, lattice) <- solver.dataStore.lattices) {
-      server.createContext("/lattice/" + name, new ListLattice(lattice))
+    for (sym <- solver.root.getLatSyms()) {
+      server.createContext("/lattice/" + sym.name, new ListLattice(sym.getIndexedLattice()))
     }
     server.createContext("/telemetry", new GetTelemetry())
     server.createContext("/performance/rules", new GetRulePerformance())

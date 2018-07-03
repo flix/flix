@@ -6,11 +6,13 @@ import ca.uwaterloo.flix.util.BitOps
 
 class RelSym(val name: String, val attributes: Array[Attribute]) extends TableSym {
 
-  private val idx = Set(Seq(0), attributes.indices)
-  private val indexes = idx map {
-    case columns => BitOps.setBits(vec = 0, bits = columns)
+  private val indexedRelation = {
+    val idx = Set(Seq(0))
+    val indexes = idx map {
+      case columns => BitOps.setBits(vec = 0, bits = columns)
+    }
+    new IndexedRelation(attributes, indexes, indexes.head)
   }
-  private val indexedRelation = new IndexedRelation(attributes, indexes, indexes.head)
 
   def getIndexedRelation(): IndexedRelation = indexedRelation
 

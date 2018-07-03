@@ -17,11 +17,8 @@
 package ca.uwaterloo.flix.runtime.solver.datastore
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.runtime.solver.Indexer
-import ca.uwaterloo.flix.runtime.solver.api
 import ca.uwaterloo.flix.runtime.solver.api.symbol.TableSym
 import ca.uwaterloo.flix.runtime.solver.api.{ConstraintSet, Relation}
-import ca.uwaterloo.flix.util.BitOps
 
 import scala.collection.mutable
 import scala.reflect.ClassTag
@@ -34,33 +31,19 @@ class DataStore[ValueType <: AnyRef](root: ConstraintSet)(implicit m: ClassTag[V
   /**
     * A map from names to indexed relations.
     */
-  val relations = mutable.Map.empty[TableSym, IndexedRelation]
+  private val relations = mutable.Map.empty[TableSym, IndexedRelation]
 
   /**
     * A map from names to indexed lattices.
     */
-  val lattices = mutable.Map.empty[TableSym, IndexedLattice]
+  private val lattices = mutable.Map.empty[TableSym, IndexedLattice]
 
-  /**
-    * Initializes the relations and lattices.
-    */
-  // compute indexes based on the program constraint rules.
-  val indexes = Indexer.index(root)
+  for (sym <- root.getRelSyms()) {
+    relations += (sym -> sym.getIndexedRelation())
+  }
 
-  // initialize all indexed relations and lattices.
-  for ((sym, table) <- root.getTables()) {
-    // translate indexes into their binary representation.
-    val idx = indexes(sym) map {
-      case columns => BitOps.setBits(vec = 0, bits = columns)
-    }
-
-    table match {
-      case r: api.Relation =>
-        relations(sym) = new IndexedRelation(r.getAttributes(), idx, idx.head)
-      case l: api.Lattice =>
-        val ops = root.getLatticeOps()(l.getSym())
-        lattices(sym) = new IndexedLattice(l.getKeys(), l.getValue(), idx, ops)
-    }
+  for (sym <- root.getLatSyms()) {
+    lattices += (sym -> sym.getIndexedLattice())
   }
 
   /**

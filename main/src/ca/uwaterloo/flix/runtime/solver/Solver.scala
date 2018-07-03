@@ -27,7 +27,7 @@ import ca.uwaterloo.flix.runtime.interpreter.Value
 import ca.uwaterloo.flix.runtime.solver.api._
 import ca.uwaterloo.flix.runtime.Monitor
 import ca.uwaterloo.flix.runtime.solver.api.predicate._
-import ca.uwaterloo.flix.runtime.solver.api.symbol.{RelSym, TableSym, VarSym}
+import ca.uwaterloo.flix.runtime.solver.api.symbol.{LatSym, RelSym, TableSym, VarSym}
 import ca.uwaterloo.flix.runtime.solver.api.term._
 import ca.uwaterloo.flix.util._
 import flix.runtime.{RuleError, TimeoutError}
@@ -291,12 +291,11 @@ class Solver(val root: ConstraintSet, options: FixpointOptions)(implicit flix: F
         // iterate through the interpretation.
         for ((sym, fact) <- interp) {
           // update the datastore, but don't compute any dependencies.
-          root.getTables()(sym) match {
-            case r: Relation =>
-              sym.asInstanceOf[RelSym].getIndexedRelation().inferredFact(fact)
-              dataStore.relations(sym).inferredFact(fact)
-            case l: Lattice =>
-              dataStore.lattices(sym).inferredFact(fact)
+          sym match {
+            case r: RelSym =>
+              r.getIndexedRelation().inferredFact(fact)
+            case l: LatSym =>
+              l.getIndexedLattice().inferredFact(fact)
           }
         }
       }
@@ -411,9 +410,9 @@ class Solver(val root: ConstraintSet, options: FixpointOptions)(implicit flix: F
     */
   private def evalAtom(p: AtomPredicate, env: Env): Traversable[Env] = {
     // lookup the relation or lattice.
-    val table = root.getTables()(p.getSym) match {
-      case r: Relation => dataStore.relations(p.getSym)
-      case l: Lattice => dataStore.lattices(p.getSym)
+    val table = p.getSym() match {
+      case r: RelSym => r.getIndexedRelation()
+      case l: LatSym => l.getIndexedLattice()
     }
 
     // evaluate all terms in the predicate.
@@ -572,17 +571,17 @@ class Solver(val root: ConstraintSet, options: FixpointOptions)(implicit flix: F
   /**
     * Processes an inferred `fact` for the relation or lattice with the symbol `sym`.
     */
-  private def inferredFact(sym: TableSym, fact: Array[ProxyObject], localWorkList: WorkList): Unit = root.getTables()(sym) match {
-    case r: Relation =>
-      val changed = dataStore.relations(sym).inferredFact(fact)
+  private def inferredFact(sym: TableSym, fact: Array[ProxyObject], localWorkList: WorkList): Unit = sym match {
+    case r: RelSym =>
+      val changed = r.getIndexedRelation().inferredFact(fact)
       if (changed) {
-        dependencies(r.getSym(), fact, localWorkList)
+        dependencies(sym, fact, localWorkList)
       }
 
-    case l: Lattice =>
-      val changed = dataStore.lattices(sym).inferredFact(fact)
+    case l: LatSym =>
+      val changed = l.getIndexedLattice().inferredFact(fact)
       if (changed) {
-        dependencies(l.getSym(), fact, localWorkList)
+        dependencies(sym, fact, localWorkList)
       }
   }
 
@@ -722,15 +721,15 @@ class Solver(val root: ConstraintSet, options: FixpointOptions)(implicit flix: F
     * Constructs the minimal model from the datastore.
     */
   private def mkFixedpoint(elapsed: Long): Fixedpoint = {
-    val relations = dataStore.relations.foldLeft(Map.empty[TableSym, Iterable[List[ProxyObject]]]) {
-      case (macc, (sym, relation)) =>
-        val table = relation.scan.toIterable.map(_.toList)
+    val relations = root.getRelSyms().foldLeft(Map.empty[TableSym, Iterable[List[ProxyObject]]]) {
+      case (macc, sym) =>
+        val table = sym.getIndexedRelation().scan.toIterable.map(_.toList)
         macc + ((sym, table))
     }
 
-    val lattices = dataStore.lattices.foldLeft(Map.empty[TableSym, Iterable[(List[ProxyObject], ProxyObject)]]) {
-      case (macc, (sym, lattice)) =>
-        val table = lattice.scan.toIterable.map {
+    val lattices = root.getLatSyms().foldLeft(Map.empty[TableSym, Iterable[(List[ProxyObject], ProxyObject)]]) {
+      case (macc, sym) =>
+        val table = sym.getIndexedLattice().scan.toIterable.map {
           case (keys, values) => (keys.toArray.toList, values)
         }
         macc + ((sym, table))

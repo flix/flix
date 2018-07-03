@@ -18,9 +18,9 @@ object ApiBridge {
   // Class used to ensure that the symbols share the same object by identity.
   class SymbolCache {
 
-    private val varSyms = mutable.Map.empty[Symbol.VarSym, VarSym]
-    private val relSyms = mutable.Map.empty[Symbol.TableSym, RelSym]
-    private val latSyms = mutable.Map.empty[Symbol.TableSym, LatSym]
+    val varSyms = mutable.Map.empty[Symbol.VarSym, VarSym]
+    val relSyms = mutable.Map.empty[Symbol.TableSym, RelSym]
+    val latSyms = mutable.Map.empty[Symbol.TableSym, LatSym]
 
     def getVarSym(sym: Symbol.VarSym): VarSym =
       varSyms.get(sym) match {
@@ -40,6 +40,15 @@ object ApiBridge {
         case Some(res) => res
       }
 
+    def getLatSym(sym: Symbol.TableSym, name: String, keys: Array[Attribute], value: Attribute, ops: LatticeOps): LatSym =
+      latSyms.get(sym) match {
+        case None =>
+          val newSym = new LatSym(name, keys, value, ops)
+          latSyms += (sym -> newSym)
+          newSym
+        case Some(res) => res
+      }
+
   }
 
   def translate(root: ExecutableAst.Root)(implicit flix: Flix): ConstraintSet = {
@@ -49,7 +58,11 @@ object ApiBridge {
     val strata = root.strata.map(visitStratum)
     val tables = visitTables(root.tables)
     val latOps = visitLatOps(root.tables)
-    new ConstraintSet(strata, tables, latOps)
+
+    val relSyms = cache.relSyms.values.toSet
+    val latSyms = cache.latSyms.values.toSet
+
+    new ConstraintSet(relSyms, latSyms, strata, tables, latOps)
   }
 
   private def visitStratum(stratum: ExecutableAst.Stratum)(implicit root: ExecutableAst.Root, cache: SymbolCache, flix: Flix): Stratum = {
@@ -116,8 +129,7 @@ object ApiBridge {
         val keys = l.keys.map(visitAttribute)
         val value = visitAttribute(l.value)
         val ops = getLatticeOps(l.value)
-
-        new LatSym(sym.toString, keys, value, ops)
+        cache.getLatSym(sym, sym.toString, keys, value, ops)
     }
 
   private def visitHeadTerm(t0: ExecutableAst.Term.Head)(implicit root: ExecutableAst.Root, cache: SymbolCache, flix: Flix): Term = t0 match {

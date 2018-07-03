@@ -54,6 +54,8 @@ class IndexedLattice(val keys: Array[Attribute], val value: Attribute, indexes: 
     */
   def getSize: Int = scan.size
 
+  override def toString: String = "IndexedLattice(" + getSize + ")"
+
   /**
     * Processes a new inferred `fact`.
     *

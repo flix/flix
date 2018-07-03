@@ -77,6 +77,8 @@ final class IndexedRelation(val attributes: Array[Attribute], indexes: Set[Int],
   // TODO: Optimize
   def getSize: Int = scan.size
 
+  override def toString: String = "IndexedRelation(" + getSize + ")"
+
   /**
     * Returns the number of indexed lookups.
     */
