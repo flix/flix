@@ -16,13 +16,7 @@
 
 package ca.uwaterloo.flix.runtime.solver.datastore
 
-import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.ExecutableAst.Table
-import ca.uwaterloo.flix.language.ast.{ExecutableAst, Symbol}
-import ca.uwaterloo.flix.language.phase.Indexer
-import ca.uwaterloo.flix.runtime.{InvocationTarget, Linker}
-import ca.uwaterloo.flix.runtime.solver.LatticeOps
-import ca.uwaterloo.flix.util.BitOps
+import ca.uwaterloo.flix.runtime.solver.api.{ConstraintSet, Table}
 
 import scala.collection.mutable
 import scala.reflect.ClassTag
@@ -30,53 +24,24 @@ import scala.reflect.ClassTag
 /**
   * A class implementing a data store for indexed relations and lattices.
   */
-class DataStore[ValueType <: AnyRef](root: ExecutableAst.Root)(implicit m: ClassTag[ValueType], flix: Flix) {
+class DataStore[ValueType <: AnyRef](constraintSet: ConstraintSet)(implicit m: ClassTag[ValueType]) {
 
   /**
     * A map from names to indexed relations.
     */
-  val relations = mutable.Map.empty[Symbol.TableSym, IndexedRelation]
+  private val relations = mutable.Map.empty[Table, IndexedRelation]
 
   /**
     * A map from names to indexed lattices.
     */
-  val lattices = mutable.Map.empty[Symbol.TableSym, IndexedLattice]
+  private val lattices = mutable.Map.empty[Table, IndexedLattice]
 
-  /**
-    * Initializes the relations and lattices.
-    */
-  // compute indexes based on the program constraint rules.
-  val indexes = Indexer.index(root)
-
-  // initialize all indexed relations and lattices.
-  for ((sym, table) <- root.tables) {
-    // translate indexes into their binary representation.
-    val idx = indexes(sym) map {
-      case columns => BitOps.setBits(vec = 0, bits = columns)
-    }
-
-    table match {
-      case r: Table.Relation => relations(sym) = new IndexedRelation(r, idx, idx.head)
-      case l: Table.Lattice =>
-        val ops = getOps(l)
-        lattices(sym) = new IndexedLattice(l, idx, ops)
-    }
+  for (sym <- constraintSet.getRelations()) {
+    relations += (sym -> sym.getIndexedRelation())
   }
 
-  def getOps(l: Table.Lattice): LatticeOps = {
-    val latticeOps = root.lattices(l.value.tpe)
-
-    new LatticeOps {
-      override def bot: ProxyObject = Linker.link(latticeOps.bot, root).invoke(Array.empty)
-
-      override def equ: InvocationTarget = Linker.link(latticeOps.equ, root)
-
-      override def leq: InvocationTarget = Linker.link(latticeOps.leq, root)
-
-      override def lub: InvocationTarget = Linker.link(latticeOps.lub, root)
-
-      override def glb: InvocationTarget = Linker.link(latticeOps.glb, root)
-    }
+  for (sym <- constraintSet.getLattices()) {
+    lattices += (sym -> sym.getIndexedLattice())
   }
 
   /**

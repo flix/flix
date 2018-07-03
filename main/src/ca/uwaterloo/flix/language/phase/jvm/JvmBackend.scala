@@ -23,8 +23,8 @@ import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.ExecutableAst._
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.phase.Phase
+import ca.uwaterloo.flix.runtime.solver.api.ProxyObject
 import ca.uwaterloo.flix.runtime.{CompilationResult, Linker}
-import ca.uwaterloo.flix.runtime.solver.datastore.ProxyObject
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{Evaluation, Validation}
 

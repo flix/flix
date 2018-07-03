@@ -20,15 +20,13 @@ import java.time.Duration
 import java.util.concurrent._
 import java.util.concurrent.atomic.AtomicInteger
 
-import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Ast.Polarity
-import ca.uwaterloo.flix.language.ast.ExecutableAst.Term.Body.Pat
-import ca.uwaterloo.flix.language.ast.ExecutableAst._
-import ca.uwaterloo.flix.language.ast.{ExecutableAst, Symbol}
-import ca.uwaterloo.flix.runtime.solver.datastore.{DataStore, ProxyObject}
+import ca.uwaterloo.flix.runtime.solver.datastore.DataStore
 import ca.uwaterloo.flix.runtime.debugger.RestServer
-import ca.uwaterloo.flix.runtime.interpreter.Value
-import ca.uwaterloo.flix.runtime.{Linker, Monitor}
+import ca.uwaterloo.flix.runtime.solver.api._
+import ca.uwaterloo.flix.runtime.Monitor
+import ca.uwaterloo.flix.runtime.solver.api.predicate._
+import ca.uwaterloo.flix.runtime.solver.api.symbol.VarSym
+import ca.uwaterloo.flix.runtime.solver.api.term._
 import ca.uwaterloo.flix.util._
 import flix.runtime.{RuleError, TimeoutError}
 
@@ -42,7 +40,7 @@ import scala.collection.mutable.ArrayBuffer
   *
   * The solver computes the least fixed point of the rules in the given program.
   */
-class Solver(val root: ExecutableAst.Root, options: FixpointOptions)(implicit flix: Flix) {
+class Solver(val constraintSet: ConstraintSet, options: FixpointOptions) {
 
   /**
     * Controls the number of batches per thread. A value of one means one batch per thread.
@@ -78,12 +76,12 @@ class Solver(val root: ExecutableAst.Root, options: FixpointOptions)(implicit fl
     *
     * An interpretation is collection of facts (a table symbol associated with an array of facts).
     */
-  type Interpretation = mutable.ArrayBuffer[(Symbol.TableSym, Array[ProxyObject])]
+  type Interpretation = mutable.ArrayBuffer[(Table, Array[ProxyObject])]
 
   /**
     * The type of the dependency graph, a map from symbols to (constraint, atom) pairs.
     */
-  type DependencyGraph = mutable.Map[Symbol.TableSym, Set[(Constraint, Predicate.Body.Atom)]]
+  type DependencyGraph = mutable.Map[Table, Set[(Constraint, AtomPredicate)]]
 
   //
   // State of the solver:
@@ -97,7 +95,7 @@ class Solver(val root: ExecutableAst.Root, options: FixpointOptions)(implicit fl
     * Writing to the datastore is, in general, not thread-safe: Each relation/lattice may be concurrently updated, but
     * no concurrent writes may occur for the *same* relation/lattice.
     */
-  val dataStore = new DataStore[AnyRef](root)
+  val dataStore = new DataStore[AnyRef](constraintSet)
 
   /**
     * The dependencies of the program. Populated by [[initDependencies]].
@@ -215,7 +213,7 @@ class Solver(val root: ExecutableAst.Root, options: FixpointOptions)(implicit fl
     initDataStore()
 
     // compute the fixedpoint for each stratum, in sequence.
-    for (stratum <- root.strata) {
+    for (stratum <- constraintSet.getStrata()) {
       // initialize the worklist.
       initWorkList(stratum)
 
@@ -251,9 +249,9 @@ class Solver(val root: ExecutableAst.Root, options: FixpointOptions)(implicit fl
   }
 
   def getRuleStats: List[(Constraint, Int, Long)] = {
-    val constraints = root.strata.flatMap(_.constraints)
-    constraints.filter(_.isRule).sortBy(_.time.get()).reverse.map {
-      case r => (r, r.hits.get(), r.time.get())
+    val constraints = constraintSet.getStrata().flatMap(_.getConstraints())
+    constraints.toList.filter(_.isRule).sortBy(_.getElapsedTime()).reverse.map {
+      case r => (r, r.getNumberOfHits(), r.getElapsedTime())
     }
   }
 
@@ -279,23 +277,23 @@ class Solver(val root: ExecutableAst.Root, options: FixpointOptions)(implicit fl
   private def initDataStore(): Unit = {
     val t = System.nanoTime()
     // retrieve the lowest stratum.
-    val stratum0 = root.strata.head
+    val stratum0 = constraintSet.getStrata().head
 
     // iterate through all facts.
-    for (constraint <- stratum0.constraints) {
+    for (constraint <- stratum0.getConstraints()) {
       if (constraint.isFact) {
         // evaluate the head of each fact.
         val interp = mkInterpretation()
-        evalHead(constraint.head, Array.empty, interp)
+        evalHead(constraint.getHeadPredicate(), Array.empty, interp)
 
         // iterate through the interpretation.
         for ((sym, fact) <- interp) {
           // update the datastore, but don't compute any dependencies.
-          root.tables(sym) match {
-            case r: ExecutableAst.Table.Relation =>
-              dataStore.relations(sym).inferredFact(fact)
-            case l: ExecutableAst.Table.Lattice =>
-              dataStore.lattices(sym).inferredFact(fact)
+          sym match {
+            case r: Relation =>
+              r.getIndexedRelation().inferredFact(fact)
+            case l: Lattice =>
+              l.getIndexedLattice().inferredFact(fact)
           }
         }
       }
@@ -308,8 +306,8 @@ class Solver(val root: ExecutableAst.Root, options: FixpointOptions)(implicit fl
     */
   private def initWorkList(stratum: Stratum): Unit = {
     // add all rules to the worklist (under empty environments).
-    for (rule <- stratum.constraints) {
-      worklist.push((rule, new Array[ProxyObject](rule.arity)))
+    for (rule <- stratum.getConstraints()) {
+      worklist.push((rule, new Array[ProxyObject](rule.getNumberOfParameters)))
     }
   }
 
@@ -341,7 +339,7 @@ class Solver(val root: ExecutableAst.Root, options: FixpointOptions)(implicit fl
       val initMiliSeconds = initTime / 1000000
       val readersMiliSeconds = readersTime / 1000000
       val writersMiliSeconds = writersTime / 1000000
-      val initialFacts = root.strata.head.constraints.count(_.isFact)
+      val initialFacts = constraintSet.getStrata().head.getConstraints().count(_.isFact)
       val totalFacts = dataStore.numberOfFacts
       val throughput = ((1000.0 * totalFacts.toDouble) / (solverTime.toDouble + 1.0)).toInt
       Console.println(f"Solved in $solverTime%,d msec. (init: $initMiliSeconds%,d msec, readers: $readersMiliSeconds%,d msec, writers: $writersMiliSeconds%,d msec)")
@@ -359,10 +357,11 @@ class Solver(val root: ExecutableAst.Root, options: FixpointOptions)(implicit fl
     val t = System.nanoTime()
 
     val interp = mkInterpretation()
-    evalCross(rule, rule.atoms, env, interp)
+    evalCross(rule, rule.getAtoms().toList, env, interp)
+    val e = System.nanoTime() - t
 
-    rule.hits.incrementAndGet()
-    rule.time.addAndGet(System.nanoTime() - t)
+    rule.incrementNumberOfHits()
+    rule.incrementElapsedTime(e)
 
     interp
   }
@@ -370,36 +369,35 @@ class Solver(val root: ExecutableAst.Root, options: FixpointOptions)(implicit fl
   /**
     * Computes the cross product of all collections in the body.
     */
-  private def evalCross(rule: Constraint, ps: List[Predicate.Body.Atom], env: Env, interp: Interpretation): Unit = ps match {
+  private def evalCross(rule: Constraint, ps: List[AtomPredicate], env: Env, interp: Interpretation): Unit = ps match {
     case Nil =>
       // cross product complete, now filter
-      evalLoop(rule, rule.loops, env, interp)
+      evalAllFilters(rule, env, interp)
     case p :: xs =>
       // Compute the rows that match the atom.
       val rows = evalAtom(p, env)
 
       // Case split on whether the atom is positive or negative.
-      p.polarity match {
-        case Polarity.Positive =>
-          // Case 1: The atom is positive. Recurse on all matched rows.
-          for (newRow <- rows) {
-            evalCross(rule, xs, newRow, interp)
+      if (p.isPositive) {
+        // Case 1: The atom is positive. Recurse on all matched rows.
+        for (newRow <- rows) {
+          evalCross(rule, xs, newRow, interp)
+        }
+      } else {
+        // Case 2: The atom is negative.
+        // Assertion: Check that every variable has been assigned a value.
+        for (t <- p.getTerms) {
+          t match {
+            case p: VarTerm =>
+              assert(env(p.getSym.getStackOffset) != null, s"Unbound variable in negated atom.")
+            case _ => // Nop
           }
+        }
 
-        case Polarity.Negative =>
-          // Assertion: Check that every variable has been assigned a value.
-          for (t <- p.terms) {
-            t match {
-              case Term.Body.Var(sym, tpe, loc) =>
-                assert(env(sym.getStackOffset) != null, s"Unbound variable in negated atom near: ${p.loc.format}")
-              case _ => // Nop
-            }
-          }
-
-          // Case 2: The atom is negative. Recurse on the original environment if *no* rows were matched.
-          if (rows.isEmpty) {
-            evalCross(rule, xs, env, interp)
-          }
+        // Case 2: The atom is negative. Recurse on the original environment if *no* rows were matched.
+        if (rows.isEmpty) {
+          evalCross(rule, xs, env, interp)
+        }
       }
 
     case p => throw InternalRuntimeException(s"Unmatched predicate: '$p'.")
@@ -408,31 +406,25 @@ class Solver(val root: ExecutableAst.Root, options: FixpointOptions)(implicit fl
   /**
     * Returns a sequence of rows matched by the given atom `p`.
     */
-  private def evalAtom(p: ExecutableAst.Predicate.Body.Atom, env: Env): Traversable[Env] = {
+  private def evalAtom(p: AtomPredicate, env: Env): Traversable[Env] = {
     // lookup the relation or lattice.
-    val table = root.tables(p.sym) match {
-      case r: Table.Relation => dataStore.relations(p.sym)
-      case l: Table.Lattice => dataStore.lattices(p.sym)
+    val table = p.getSym() match {
+      case r: Relation => r.getIndexedRelation()
+      case l: Lattice => l.getIndexedLattice()
     }
 
     // evaluate all terms in the predicate.
-    val pat = new Array[ProxyObject](p.arity)
+    val pat = new Array[ProxyObject](p.getTerms.length)
     var i = 0
     while (i < pat.length) {
-      val value: ProxyObject = p.terms(i) match {
-        case ExecutableAst.Term.Body.Var(sym, _, _) =>
+      val value: ProxyObject = p.getTerms()(i) match {
+        case p: VarTerm =>
           // A variable is replaced by its value from the environment (or null if unbound).
-          env(sym.getStackOffset)
-        case ExecutableAst.Term.Body.Lit(lit, _, _) =>
-          lit
-        case ExecutableAst.Term.Body.Cst(litSym, _, _) =>
-          // Every literal is lifted to a function definition and its value is obtained by invoking it.
-          Linker.link(litSym, root).invoke(Array.emptyObjectArray)
-        case ExecutableAst.Term.Body.Wild(_, _) =>
+          env(p.getSym().getStackOffset)
+        case p: LitTerm =>
+          p.getFunction()()
+        case p: WildTerm =>
           // A wildcard places no restrictions on the value.
-          null
-        case ExecutableAst.Term.Body.Pat(_, _, _) =>
-          // A pattern places no restrictions on the value, but is filtered later.
           null
       }
       pat(i) = value
@@ -453,20 +445,7 @@ class Solver(val root: ExecutableAst.Root, options: FixpointOptions)(implicit fl
 
       var i = 0
       while (i < matchedRow.length) {
-
-        // Check if the term is pattern term.
-        // If so, we must checked whether the pattern can be unified with the value.
-        p.terms(i) match {
-          case term: Pat =>
-            val value = matchedRow(i)
-            if (!unify(term.pat, value, env)) {
-              // Value does not unify with the pattern term. We should skip this row.
-              skip = true
-            }
-          case _ => // nop
-        }
-
-        val sym = p.index2sym(i)
+        val sym = p.getIndex2SymTEMPORARY(i)
         if (sym != null)
           newRow.update(sym.getStackOffset, matchedRow(i))
         i = i + 1
@@ -482,25 +461,11 @@ class Solver(val root: ExecutableAst.Root, options: FixpointOptions)(implicit fl
   }
 
   /**
-    * Unfolds the given loop predicates `ps` over the initial `env`.
-    */
-  private def evalLoop(rule: Constraint, ps: List[Predicate.Body.Loop], env: Env, interp: Interpretation): Unit = ps match {
-    case Nil => evalAllFilters(rule, env, interp)
-    case Predicate.Body.Loop(sym, term, _) :: rest =>
-      val value = evalHeadTerm(term, root, env)
-      for (x <- iteratorOf(value)) {
-        val newRow = copy(env)
-        newRow(sym.getStackOffset) = x
-        evalLoop(rule, rest, newRow, interp)
-      }
-  }
-
-  /**
     * Evaluates all filters in the given `rule`.
     */
   private def evalAllFilters(rule: Constraint, env: Env, interp: Interpretation): Unit = {
     // Extract the filters function predicates from the rule.
-    val filters = rule.filters
+    val filters = rule.getFilters()
 
     // Evaluate each filter function predicate one-by-one.
     var i = 0
@@ -518,35 +483,29 @@ class Solver(val root: ExecutableAst.Root, options: FixpointOptions)(implicit fl
 
     // All filter functions returned `true`.
     // Continue evaluation of the head of the rule.
-    evalHead(rule.head, env, interp)
+    evalHead(rule.getHeadPredicate(), env, interp)
   }
 
   /**
     * Evaluates the given `filter` and returns its result.
     */
-  private def evalFilter(filter: Predicate.Body.Filter, env: Env): Boolean = filter match {
-    case Predicate.Body.Filter(sym, terms, _) =>
+  private def evalFilter(filter: FilterPredicate, env: Env): Boolean = filter match {
+    case p: FilterPredicate =>
       // Evaluate the arguments of the filter function predicate.
-      val args = new Array[AnyRef](terms.length)
+      val args = new Array[AnyRef](p.getArguments().length)
       var j = 0
       // Iterate through each term of the filter function predicate.
       while (j < args.length) {
         // Compute the value of the term.
-        val value = terms(j) match {
-          case Term.Body.Var(x, _, _) =>
+        val value: ProxyObject = p.getArguments()(j) match {
+          case p: VarTerm =>
             // A variable is replaced by its value from the environment.
-            env(x.getStackOffset)
-          case Term.Body.Lit(lit, _, _) =>
-            lit
-          case Term.Body.Cst(litSym, _, _) =>
-            // Every literal is lifted to a function definition and its value is obtained by invoking it.
-            Linker.link(litSym, root).invoke(Array.emptyObjectArray)
-          case Term.Body.Wild(_, _) =>
+            env(p.getSym.getStackOffset)
+          case p: LitTerm =>
+            p.getFunction()()
+          case p: WildTerm =>
             // A wildcard should not appear as an argument to a filter function.
             throw InternalRuntimeException("Wildcard not allowed here!")
-          case Term.Body.Pat(_, _, _) =>
-            // A pattern should not appear as an argument to a filter function.
-            throw InternalRuntimeException("Pattern not allowed here!")
         }
 
         // Store the value of the term into the argument array.
@@ -554,13 +513,8 @@ class Solver(val root: ExecutableAst.Root, options: FixpointOptions)(implicit fl
         j = j + 1
       }
 
-      // Link the filter function invocation target (if not already done).
-      if (filter.target == null) {
-        filter.target = Linker.link(sym, root)
-      }
-
       // Evaluate the filter function passing the arguments.
-      val result = filter.target.invoke(args).getValue
+      val result = p.getFunction()(args)
 
       // Return the result.
       result.asInstanceOf[java.lang.Boolean].booleanValue()
@@ -569,49 +523,42 @@ class Solver(val root: ExecutableAst.Root, options: FixpointOptions)(implicit fl
   /**
     * Evaluates the given head predicate `p` under the given environment `env0`.
     */
-  private def evalHead(p: Predicate.Head, env: Env, interp: Interpretation): Unit = p match {
-    case p: Predicate.Head.Atom =>
-      val terms = p.termsAsArray
-      val fact = new Array[ProxyObject](p.arity)
+  private def evalHead(p: Predicate, env: Env, interp: Interpretation): Unit = p match {
+    case p: AtomPredicate =>
+      val terms = p.getTerms
+      val fact = new Array[ProxyObject](p.getTerms.length)
       var i = 0
       while (i < fact.length) {
-        val term: ProxyObject = evalHeadTerm(terms(i), root, env)
+        val term: ProxyObject = evalHeadTerm(terms(i), constraintSet, env)
         fact(i) = term
         i = i + 1
-
-        // TODO: Experiment with keyCache.
-        //if(i != fact.length)
-        //  keyCache.put(term)
       }
 
-      interp += ((p.sym, fact))
-    case Predicate.Head.True(loc) => // nop
-    case Predicate.Head.False(loc) => throw new RuleError(loc.reified)
+      interp += ((p.getSym, fact))
+    case _: TruePredicate => // nop
+    case _: FalsePredicate => throw new RuleError(null)
   }
 
   /**
     * Evaluates the given head term `t` under the given environment `env0`
     */
-  def evalHeadTerm(t: Term.Head, root: Root, env: Env): ProxyObject = t match {
-    case Term.Head.Var(sym, _, _) => env(sym.getStackOffset)
-    case Term.Head.Lit(lit, _, _) => lit
-    case Term.Head.Cst(litSym, _, _) =>
-      // Every literal is lifted to a function definition and its value is obtained by invoking it.
-      Linker.link(litSym, root).invoke(Array.emptyObjectArray)
-    case Term.Head.App(sym, syms, _, _) =>
-      val args = new Array[AnyRef](syms.length)
+  def evalHeadTerm(t: Term, root: ConstraintSet, env: Env): ProxyObject = t match {
+    case t: VarTerm => env(t.getSym.getStackOffset)
+    case t: LitTerm => t.getFunction()()
+    case t: AppTerm =>
+      val args = new Array[AnyRef](t.getArguments().length)
       var i = 0
       while (i < args.length) {
-        args(i) = env(syms(i).getStackOffset).getValue
+        args(i) = env(t.getArguments()(i).getStackOffset).getValue
         i = i + 1
       }
-      Linker.link(sym, root).invoke(args)
+      t.getFunction()(args)
   }
 
   /**
     * Returns a callable to process a collection of inferred `facts` for the relation or lattice with the symbol `sym`.
     */
-  private def inferredFacts(sym: Symbol.TableSym, facts: ArrayBuffer[Array[ProxyObject]]): Callable[WorkList] = () => {
+  private def inferredFacts(sym: Table, facts: ArrayBuffer[Array[ProxyObject]]): Callable[WorkList] = () => {
     val localWorkList = mkWorkList()
     for (fact <- facts) {
       inferredFact(sym, fact, localWorkList)
@@ -622,26 +569,26 @@ class Solver(val root: ExecutableAst.Root, options: FixpointOptions)(implicit fl
   /**
     * Processes an inferred `fact` for the relation or lattice with the symbol `sym`.
     */
-  private def inferredFact(sym: Symbol.TableSym, fact: Array[ProxyObject], localWorkList: WorkList): Unit = root.tables(sym) match {
-    case r: ExecutableAst.Table.Relation =>
-      val changed = dataStore.relations(sym).inferredFact(fact)
+  private def inferredFact(sym: Table, fact: Array[ProxyObject], localWorkList: WorkList): Unit = sym match {
+    case r: Relation =>
+      val changed = r.getIndexedRelation().inferredFact(fact)
       if (changed) {
-        dependencies(r.sym, fact, localWorkList)
+        dependencies(sym, fact, localWorkList)
       }
 
-    case l: ExecutableAst.Table.Lattice =>
-      val changed = dataStore.lattices(sym).inferredFact(fact)
+    case l: Lattice =>
+      val changed = l.getIndexedLattice().inferredFact(fact)
       if (changed) {
-        dependencies(l.sym, fact, localWorkList)
+        dependencies(sym, fact, localWorkList)
       }
   }
 
   /**
     * Returns all dependencies of the given symbol `sym` along with an environment.
     */
-  private def dependencies(sym: Symbol.TableSym, fact: Array[ProxyObject], localWorkList: WorkList): Unit = {
+  private def dependencies(sym: Table, fact: Array[ProxyObject], localWorkList: WorkList): Unit = {
 
-    def unify(pat: Array[Symbol.VarSym], fact: Array[ProxyObject], limit: Int, len: Int): Env = {
+    def unify(pat: Array[VarSym], fact: Array[ProxyObject], limit: Int, len: Int): Env = {
       val env: Env = new Array[ProxyObject](len)
       var i = 0
       while (i < limit) {
@@ -654,21 +601,21 @@ class Solver(val root: ExecutableAst.Root, options: FixpointOptions)(implicit fl
     }
 
 
-    root.tables(sym) match {
-      case r: ExecutableAst.Table.Relation =>
+    sym match {
+      case r: Relation =>
         for ((rule, p) <- dependenciesOf(sym)) {
           // unify all terms with their values.
-          val env = unify(p.index2sym, fact, fact.length, rule.arity)
+          val env = unify(p.getIndex2SymTEMPORARY, fact, fact.length, rule.getNumberOfParameters)
           if (env != null) {
             localWorkList.push((rule, env))
           }
         }
 
-      case l: ExecutableAst.Table.Lattice =>
+      case l: Lattice =>
         for ((rule, p) <- dependenciesOf(sym)) {
           // unify only key terms with their values.
-          val numberOfKeys = l.keys.length
-          val env = unify(p.index2sym, fact, numberOfKeys, rule.arity)
+          val numberOfKeys = l.getKeys().length
+          val env = unify(p.getIndex2SymTEMPORARY, fact, numberOfKeys, rule.getNumberOfParameters)
           if (env != null) {
             localWorkList.push((rule, env))
           }
@@ -756,8 +703,8 @@ class Solver(val root: ExecutableAst.Root, options: FixpointOptions)(implicit fl
   /**
     * Sorts the given facts by their table symbol.
     */
-  private def groupFactsBySymbol(iter: Iterator[Interpretation]): mutable.Map[Symbol.TableSym, ArrayBuffer[Array[ProxyObject]]] = {
-    val result = mutable.Map.empty[Symbol.TableSym, ArrayBuffer[Array[ProxyObject]]]
+  private def groupFactsBySymbol(iter: Iterator[Interpretation]): mutable.Map[Table, ArrayBuffer[Array[ProxyObject]]] = {
+    val result = mutable.Map.empty[Table, ArrayBuffer[Array[ProxyObject]]]
     while (iter.hasNext) {
       val interp = iter.next()
       for ((symbol, fact) <- interp) {
@@ -772,21 +719,21 @@ class Solver(val root: ExecutableAst.Root, options: FixpointOptions)(implicit fl
     * Constructs the minimal model from the datastore.
     */
   private def mkFixedpoint(elapsed: Long): Fixedpoint = {
-    val relations = dataStore.relations.foldLeft(Map.empty[Symbol.TableSym, Iterable[List[ProxyObject]]]) {
-      case (macc, (sym, relation)) =>
-        val table = relation.scan.toIterable.map(_.toList)
+    val relations = constraintSet.getRelations().foldLeft(Map.empty[Table, Iterable[List[ProxyObject]]]) {
+      case (macc, sym) =>
+        val table = sym.getIndexedRelation().scan.toIterable.map(_.toList)
         macc + ((sym, table))
     }
 
-    val lattices = dataStore.lattices.foldLeft(Map.empty[Symbol.TableSym, Iterable[(List[ProxyObject], ProxyObject)]]) {
-      case (macc, (sym, lattice)) =>
-        val table = lattice.scan.toIterable.map {
+    val lattices = constraintSet.getLattices().foldLeft(Map.empty[Table, Iterable[(List[ProxyObject], ProxyObject)]]) {
+      case (macc, sym) =>
+        val table = sym.getIndexedLattice().scan.toIterable.map {
           case (keys, values) => (keys.toArray.toList, values)
         }
         macc + ((sym, table))
     }
 
-    Fixedpoint(root.tables, relations, lattices)
+    Fixedpoint(relations, lattices)
   }
 
   /**
@@ -833,7 +780,7 @@ class Solver(val root: ExecutableAst.Root, options: FixpointOptions)(implicit fl
   /**
     * Returns a fresh (empty) interpretation.
     */
-  private def mkInterpretation(): Interpretation = new mutable.ArrayBuffer[(Symbol.TableSym, Array[ProxyObject])]()
+  private def mkInterpretation(): Interpretation = new mutable.ArrayBuffer[(Table, Array[ProxyObject])]()
 
   /**
     * Checks if the solver is paused, and if so, waits for an interrupt.
@@ -878,14 +825,14 @@ class Solver(val root: ExecutableAst.Root, options: FixpointOptions)(implicit fl
     */
   private def initDependencies(): Unit = {
     // Iterate through each stratum.
-    for (stratum <- root.strata) {
+    for (stratum <- constraintSet.getStrata()) {
       // Retrieve the constraints in the current stratum.
-      val constraints = stratum.constraints
+      val constraints = stratum.getConstraints()
 
       // Initialize the dependencies of every symbol to the empty set.
       for (rule <- constraints) {
-        rule.head match {
-          case Predicate.Head.Atom(sym, _, _) => dependenciesOf.update(sym, Set.empty)
+        rule.getHeadPredicate() match {
+          case p: AtomPredicate => dependenciesOf.update(p.getSym, Set.empty)
           case _ => // nop
         }
       }
@@ -893,15 +840,15 @@ class Solver(val root: ExecutableAst.Root, options: FixpointOptions)(implicit fl
       // Compute the dependencies via cross product.
       for (outerRule <- constraints if outerRule.isRule) {
         for (innerRule <- constraints if innerRule.isRule) {
-          for (body <- innerRule.body) {
+          for (body <- innerRule.getBodyPredicates()) {
             // Loop through the atoms of the inner rule.
-            (outerRule.head, body) match {
-              case (outer: Predicate.Head.Atom, inner: Predicate.Body.Atom) =>
+            (outerRule.getHeadPredicate(), body) match {
+              case (outer: AtomPredicate, inner: AtomPredicate) =>
                 // We have found a head and body atom. Check if they share the same symbol.
-                if (outer.sym == inner.sym) {
+                if (outer.getSym == inner.getSym) {
                   // The symbol is the same. Update the dependencies.
-                  val deps = dependenciesOf(outer.sym)
-                  dependenciesOf(outer.sym) = deps + ((innerRule, inner))
+                  val deps = dependenciesOf(outer.getSym)
+                  dependenciesOf(outer.getSym) = deps + ((innerRule, inner))
                 }
               case _ => // nop
             }
@@ -909,75 +856,6 @@ class Solver(val root: ExecutableAst.Root, options: FixpointOptions)(implicit fl
         }
       }
     }
-  }
-
-  /////////////////////////////////////////////////////////////////////////////
-  // Unification                                                             //
-  /////////////////////////////////////////////////////////////////////////////
-  /**
-    * Tries to unify the given pattern `p0` with the given value `v0` under the environment `env0`.
-    *
-    * Mutates the given map. Returns `true` if unification was successful.
-    */
-  private def unify(p0: Pattern, v0: AnyRef, env0: Array[ProxyObject]): Boolean = (p0, v0) match {
-    case (Pattern.Wild(_, _), _) => true
-    case (Pattern.Var(sym, _, _), _) =>
-      val v2 = env0(sym.getStackOffset)
-      // TODO: Value unification.
-      throw InternalRuntimeException(s"Currently broken.")
-    case (Pattern.Unit(_), Value.Unit) => true
-    case (Pattern.True(_), java.lang.Boolean.TRUE) => true
-    case (Pattern.False(_), java.lang.Boolean.FALSE) => true
-    case (Pattern.Char(lit, _), o: java.lang.Character) => lit == o.charValue()
-    case (Pattern.Float32(lit, _), o: java.lang.Float) => lit == o.floatValue()
-    case (Pattern.Float64(lit, _), o: java.lang.Double) => lit == o.doubleValue()
-    case (Pattern.Int8(lit, _), o: java.lang.Byte) => lit == o.byteValue()
-    case (Pattern.Int16(lit, _), o: java.lang.Short) => lit == o.shortValue()
-    case (Pattern.Int32(lit, _), o: java.lang.Integer) => lit == o.intValue()
-    case (Pattern.Int64(lit, _), o: java.lang.Long) => lit == o.longValue()
-    case (Pattern.BigInt(lit, _), o: java.math.BigInteger) => lit.equals(o)
-    case (Pattern.Str(lit, _), o: java.lang.String) => lit.equals(o)
-    case (Pattern.Tag(enum, tag, p, _, _), o: Value.Tag) => if (tag.equals(o.tag)) unify(p, o.value, env0) else false
-    case (Pattern.Tuple(elms, _, _), o: Array[AnyRef]) =>
-      if (elms.length != o.length)
-        return false
-      var i: Int = 0
-      while (i < o.length) {
-        val pi = elms(i)
-        val vi = o(i)
-        val success = unify(pi, vi, env0)
-        if (!success)
-          return false
-        i = i + 1
-      }
-      true
-    case _ =>
-      // Unification failed. Return `null`.
-      false
-  }
-
-  /////////////////////////////////////////////////////////////////////////////
-  // Iterators                                                               //
-  /////////////////////////////////////////////////////////////////////////////
-  /**
-    * Return an iterator over the given Set.
-    */
-  private def iteratorOf(value: AnyRef): Iterator[ProxyObject] = {
-    def visit(o: AnyRef): List[AnyRef] = {
-      val taggedValue = o.asInstanceOf[Value.Tag]
-      if (taggedValue.tag == "Nil") {
-        Nil
-      } else {
-        val hd = taggedValue.value.asInstanceOf[Array[AnyRef]](0)
-        val tl = taggedValue.value.asInstanceOf[Array[AnyRef]](1)
-        hd :: visit(tl)
-      }
-    }
-
-    // val list = value.asInstanceOf[Value.Tag].value
-    // visit(list).iterator
-    // TODO: Loop predicate.
-    throw InternalRuntimeException(s"Currently broken.")
   }
 
 }

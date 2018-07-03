@@ -25,10 +25,10 @@ import ca.uwaterloo.flix.language.phase._
 import ca.uwaterloo.flix.language.phase.jvm.JvmBackend
 import ca.uwaterloo.flix.language.{CompilationError, GenSym}
 import ca.uwaterloo.flix.runtime.quickchecker.QuickChecker
-import ca.uwaterloo.flix.runtime.solver.{DeltaSolver, Solver, FixpointOptions}
+import ca.uwaterloo.flix.runtime.solver.api.{ApiBridge, ProxyObject}
+import ca.uwaterloo.flix.runtime.solver.{DeltaSolver, FixpointOptions, Solver}
 import ca.uwaterloo.flix.runtime.verifier.Verifier
 import ca.uwaterloo.flix.runtime.{CompilationResult, Linker}
-import ca.uwaterloo.flix.runtime.solver.datastore.ProxyObject
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util._
 import ca.uwaterloo.flix.util.vt.TerminalContext
@@ -278,7 +278,8 @@ class Flix {
     opts.setTimeout(options.timeout)
     opts.setVerbose(options.verbosity == Verbosity.Verbose)
 
-    val fixedpoint = new Solver(compilationResult.getRoot, opts)(this).solve()
+    val cs = ApiBridge.translate(compilationResult.getRoot)(this)
+    val fixedpoint = new Solver(cs, opts).solve()
     compilationResult.toSuccess
   }
 

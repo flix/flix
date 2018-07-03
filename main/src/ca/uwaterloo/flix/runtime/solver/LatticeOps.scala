@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.runtime.solver
 
 import ca.uwaterloo.flix.runtime.InvocationTarget
-import ca.uwaterloo.flix.runtime.solver.datastore.ProxyObject
+import ca.uwaterloo.flix.runtime.solver.api.ProxyObject
 
 trait LatticeOps {
 

@@ -20,13 +20,11 @@ import java.lang.reflect.{Constructor, Field, Method}
 import java.util.concurrent.atomic.{AtomicInteger, AtomicLong}
 
 import ca.uwaterloo.flix.runtime.InvocationTarget
-import ca.uwaterloo.flix.runtime.solver.datastore.ProxyObject
+import ca.uwaterloo.flix.runtime.solver.api.ProxyObject
 
 sealed trait ExecutableAst
 
 object ExecutableAst {
-
-  // TODO: Get rid of most uses of array.
 
   case class Root(defs: Map[Symbol.DefnSym, ExecutableAst.Def],
                   effs: Map[Symbol.EffSym, ExecutableAst.Eff],
@@ -41,59 +39,11 @@ object ExecutableAst {
                   reachable: Set[Symbol.DefnSym]) extends ExecutableAst
 
   case class Constraint(cparams: List[ConstraintParam], head: Predicate.Head, body: List[Predicate.Body]) extends ExecutableAst {
-
-    /**
-      * Returns the arity of the constraint.
-      *
-      * The arity of a constraint is the number of constraint parameters (i.e. variables in the constraint).
-      * Not to be confused with the number of predicates or terms.
-      */
-    val arity: Int = cparams.length
-
-    /**
-      * Returns `true` if the constraint is a fact.
-      */
     val isFact: Boolean = body.isEmpty
-
-    /**
-      * Returns `true` if the constraint is a rule.
-      */
-    val isRule: Boolean = body.nonEmpty
-
-    /**
-      * Returns the atoms predicates in the body of the constraint.
-      */
-    val atoms: List[ExecutableAst.Predicate.Body.Atom] = body.collect {
-      case p: ExecutableAst.Predicate.Body.Atom => p
-    }
-
-    /**
-      * Returns the filter predicates in the body of the constraint.
-      */
-    val filters: Array[ExecutableAst.Predicate.Body.Filter] = body.collect {
-      case p: ExecutableAst.Predicate.Body.Filter => p
-    }.toArray
-
-    /**
-      * Returns the loop predicates in the body of the constraint.
-      */
-    val loops: List[ExecutableAst.Predicate.Body.Loop] = body.collect {
-      case p: ExecutableAst.Predicate.Body.Loop => p
-    }
-
-    /**
-      * Records the number of times this rule has been evaluated.
-      */
-    val hits = new AtomicInteger()
-
-    /**
-      * Records the amount of time spent evaluating this rule.
-      */
-    val time = new AtomicLong()
-
+    val isRule: Boolean = !isFact
   }
 
-  case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, formals: Array[ExecutableAst.FormalParam], exp: ExecutableAst.Expression, tpe: Type, loc: SourceLocation) extends ExecutableAst {
+  case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, formals: List[ExecutableAst.FormalParam], exp: ExecutableAst.Expression, tpe: Type, loc: SourceLocation) extends ExecutableAst {
     /**
       * Pointer to generated code.
       */
@@ -120,12 +70,9 @@ object ExecutableAst {
 
   object Table {
 
-    case class Relation(sym: Symbol.TableSym, attributes: Array[ExecutableAst.Attribute], loc: SourceLocation) extends ExecutableAst.Table
+    case class Relation(sym: Symbol.TableSym, attributes: List[ExecutableAst.Attribute], loc: SourceLocation) extends ExecutableAst.Table
 
-    case class Lattice(sym: Symbol.TableSym, keys: Array[ExecutableAst.Attribute], value: ExecutableAst.Attribute, loc: SourceLocation) extends ExecutableAst.Table {
-      // TODO: Refactor
-      def attributes: List[ExecutableAst.Attribute] = keys.toList ::: value :: Nil
-    }
+    case class Lattice(sym: Symbol.TableSym, keys: List[ExecutableAst.Attribute], value: ExecutableAst.Attribute, loc: SourceLocation) extends ExecutableAst.Table
 
   }
 
@@ -241,9 +188,9 @@ object ExecutableAst {
 
     case class Index(base: ExecutableAst.Expression, offset: scala.Int, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
-    case class Tuple(elms: Array[ExecutableAst.Expression], tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
+    case class Tuple(elms: List[ExecutableAst.Expression], tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
-    case class ArrayLit(elms: Array[ExecutableAst.Expression], tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
+    case class ArrayLit(elms: List[ExecutableAst.Expression], tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
     case class ArrayNew(elm: ExecutableAst.Expression, len: ExecutableAst.Expression, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
@@ -341,10 +288,7 @@ object ExecutableAst {
 
       case class False(loc: SourceLocation) extends ExecutableAst.Predicate.Head
 
-      case class Atom(sym: Symbol.TableSym, terms: List[ExecutableAst.Term.Head], loc: SourceLocation) extends ExecutableAst.Predicate.Head {
-        val arity: Int = terms.length
-        val termsAsArray: Array[ExecutableAst.Term.Head] = terms.toArray
-      }
+      case class Atom(sym: Symbol.TableSym, terms: List[ExecutableAst.Term.Head], loc: SourceLocation) extends ExecutableAst.Predicate.Head
 
     }
 
@@ -352,15 +296,9 @@ object ExecutableAst {
 
     object Body {
 
-      // TODO: Avoid arrays
+      case class Atom(sym: Symbol.TableSym, polarity: Ast.Polarity, terms: List[ExecutableAst.Term.Body], index2sym: List[Symbol.VarSym], loc: SourceLocation) extends ExecutableAst.Predicate.Body
 
-      case class Atom(sym: Symbol.TableSym, polarity: Ast.Polarity, terms: Array[ExecutableAst.Term.Body], index2sym: Array[Symbol.VarSym], loc: SourceLocation) extends ExecutableAst.Predicate.Body {
-        val arity: Int = terms.length
-      }
-
-      case class Filter(sym: Symbol.DefnSym, terms: Array[ExecutableAst.Term.Body], loc: SourceLocation) extends ExecutableAst.Predicate.Body {
-        var target: InvocationTarget = _
-      }
+      case class Filter(sym: Symbol.DefnSym, terms: List[ExecutableAst.Term.Body], loc: SourceLocation) extends ExecutableAst.Predicate.Body
 
       case class Loop(sym: Symbol.VarSym, term: ExecutableAst.Term.Head, loc: SourceLocation) extends ExecutableAst.Predicate.Body
 
@@ -380,7 +318,7 @@ object ExecutableAst {
 
       case class Cst(sym: Symbol.DefnSym, tpe: Type, loc: SourceLocation) extends ExecutableAst.Term.Head
 
-      case class App(sym: Symbol.DefnSym, args: Array[Symbol.VarSym], tpe: Type, loc: SourceLocation) extends ExecutableAst.Term.Head
+      case class App(sym: Symbol.DefnSym, args: List[Symbol.VarSym], tpe: Type, loc: SourceLocation) extends ExecutableAst.Term.Head
 
     }
 

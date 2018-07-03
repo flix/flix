@@ -35,7 +35,7 @@ import org.json4s.native.JsonMethods
   *
   * Usage of this class may incur additional solver overhead.
   */
-class RestServer(solver: Solver)(implicit flix: Flix) {
+class RestServer(solver: Solver) {
 
   /**
     * The minimum port number to bind to.
@@ -210,10 +210,10 @@ class RestServer(solver: Solver)(implicit flix: Flix) {
     * Returns the name and size of all relations.
     */
   class GetRelations extends JsonHandler {
-    def json: JValue = JArray(solver.dataStore.relations.toList.map {
-      case (name, relation) => JObject(List(
-        JField("name", JString(name.toString)),
-        JField("size", JInt(relation.getSize))
+    def json: JValue = JArray(solver.constraintSet.getRelations().toList.map {
+      case sym => JObject(List(
+        JField("name", JString(sym.getName().toString)),
+        JField("size", JInt(sym.getIndexedRelation().getSize))
       ))
     })
   }
@@ -222,10 +222,10 @@ class RestServer(solver: Solver)(implicit flix: Flix) {
     * Returns the name and size of all lattices.
     */
   class GetLattices extends JsonHandler {
-    def json: JValue = JArray(solver.dataStore.lattices.toList.map {
-      case (name, lattice) => JObject(List(
-        JField("name", JString(name.toString)),
-        JField("size", JInt(lattice.getSize))
+    def json: JValue = JArray(solver.constraintSet.getLattices().toList.map {
+      case sym => JObject(List(
+        JField("name", JString(sym.getName().toString)),
+        JField("size", JInt(sym.getIndexedLattice().getSize))
       ))
     })
   }
@@ -237,7 +237,7 @@ class RestServer(solver: Solver)(implicit flix: Flix) {
     */
   class ListRelation(relation: IndexedRelation) extends JsonHandler {
     def json: JValue = JObject(
-      JField("cols", JArray(relation.relation.attributes.toList.map(a => JString(a.name)))),
+      JField("cols", JArray(relation.attributes.toList.map(a => JString(a.getName())))),
       JField("rows", JArray(Nil)) // TODO: Currently broken.
     )
   }
@@ -249,7 +249,7 @@ class RestServer(solver: Solver)(implicit flix: Flix) {
     */
   class ListLattice(lattice: IndexedLattice) extends JsonHandler {
     def json: JValue = JObject(
-      JField("cols", JArray(lattice.lattice.keys.toList.map(a => JString(a.name)) ::: JString(lattice.lattice.value.name) :: Nil)),
+      JField("cols", JArray(lattice.keys.toList.map(a => JString(a.getName())) ::: JString(lattice.value.getName()) :: Nil)),
       JField("rows", JArray(Nil)) // TODO: Currently broken.
     )
   }
@@ -274,14 +274,7 @@ class RestServer(solver: Solver)(implicit flix: Flix) {
     * Returns rule performance statistics.
     */
   class GetRulePerformance extends JsonHandler {
-    def json: JValue = JArray(solver.getRuleStats.map {
-      case (rule, hits, time) => JObject(List(
-        JField("rule", JString(rule.head.loc.lineAt(rule.head.loc.beginLine))),
-        JField("loc", JString(rule.head.loc.format)),
-        JField("hits", JInt(hits)),
-        JField("time", JInt(time / 1000000))
-      ))
-    })
+    def json: JValue = JArray(Nil) // TODO
   }
 
   /**
@@ -329,15 +322,7 @@ class RestServer(solver: Solver)(implicit flix: Flix) {
     * Returns compiler performance statistics.
     */
   class GetCompilerPhasePerformance extends JsonHandler {
-    def json: JValue = JArray(
-      flix.phaseTimers.toList.map {
-        case phase =>
-          val name = phase.phase
-          val time = phase.time
-          val timeInMilis = new DurationFormatter(time).miliseconds
-          JObject(List(JField("name", JString(name)), JField("time", JInt(timeInMilis.toInt))))
-      }
-    )
+    def json: JValue = JArray(Nil)
   }
 
   /**
@@ -352,12 +337,12 @@ class RestServer(solver: Solver)(implicit flix: Flix) {
     // mount ajax handlers.
     server.createContext("/status", new GetStatus())
     server.createContext("/relations", new GetRelations())
-    for ((name, relation) <- solver.dataStore.relations) {
-      server.createContext("/relation/" + name, new ListRelation(relation))
+    for (sym <- solver.constraintSet.getRelations()) {
+      server.createContext("/relation/" + sym.getName(), new ListRelation(sym.getIndexedRelation()))
     }
     server.createContext("/lattices", new GetLattices())
-    for ((name, lattice) <- solver.dataStore.lattices) {
-      server.createContext("/lattice/" + name, new ListLattice(lattice))
+    for (sym <- solver.constraintSet.getLattices()) {
+      server.createContext("/lattice/" + sym.getName(), new ListLattice(sym.getIndexedLattice()))
     }
     server.createContext("/telemetry", new GetTelemetry())
     server.createContext("/performance/rules", new GetRulePerformance())

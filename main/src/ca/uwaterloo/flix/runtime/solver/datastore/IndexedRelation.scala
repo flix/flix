@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.runtime.solver.datastore
 
-import ca.uwaterloo.flix.language.ast.ExecutableAst
+import ca.uwaterloo.flix.runtime.solver.api.{Attribute, ProxyObject}
 import ca.uwaterloo.flix.util.BitOps
 
 import scala.collection.mutable
@@ -28,11 +28,10 @@ import scala.collection.mutable.ArrayBuffer
   * An index on the first column corresponds to 0b0000...0001.
   * An index on the first and third columns corresponds to 0b0000...0101.
   *
-  * @param relation the relation.
   * @param indexes  the indexes.
   * @param default  the default index.
   */
-final class IndexedRelation(val relation: ExecutableAst.Table.Relation, indexes: Set[Int], default: Int) extends IndexedCollection {
+final class IndexedRelation(val attributes: Array[Attribute], indexes: Set[Int], default: Int) extends IndexedCollection {
 
   /**
     * A map from indexes to keys to rows of values.
@@ -78,13 +77,15 @@ final class IndexedRelation(val relation: ExecutableAst.Table.Relation, indexes:
   // TODO: Optimize
   def getSize: Int = scan.size
 
+  override def toString: String = "IndexedRelation(" + getSize + ")"
+
   /**
     * Returns the number of indexed lookups.
     */
   def getIndexHits: Map[Seq[String], Int] = indexHits.toMap.map {
     case (idx, count) =>
       val columns = (0 until 31).filter(n => BitOps.getBit(vec = idx, bit = n))
-      val names = columns map (column => relation.attributes(column).name)
+      val names = columns map (column => attributes(column).getName())
       names -> count
   }
 
@@ -94,7 +95,7 @@ final class IndexedRelation(val relation: ExecutableAst.Table.Relation, indexes:
   def getIndexMisses: Map[Seq[String], Int] = indexMisses.toMap.map {
     case (idx, count) =>
       val columns = (0 until 31).filter(n => BitOps.getBit(vec = idx, bit = n))
-      val names = columns map (column => relation.attributes(column).name)
+      val names = columns map (column => attributes(column).getName())
       names -> count
   }
 
