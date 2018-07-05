@@ -168,7 +168,7 @@ class Shell(initialPaths: List[Path], options: Options) {
     case Command.TypeOf(e) => execTypeOf(e)
     case Command.KindOf(e) => execKindOf(e)
     case Command.EffectOf(e) => execEffectOf(e)
-    case Command.Hole(fqn) => execHole(fqn)
+    case Command.Hole(fqnOpt) => execHole(fqnOpt)
     case Command.Browse(ns) => execBrowse(ns)
     case Command.Doc(fqn) => execDoc(fqn)
     case Command.Search(s) => execSearch(s)
@@ -271,39 +271,45 @@ class Shell(initialPaths: List[Path], options: Options) {
   /**
     * Shows the hole context of the given `fqn`.
     */
-  private def execHole(fqn: String)(implicit terminal: Terminal, s: Show[Type]): Unit = {
-    // Compute the hole symbol.
-    val sym = Symbol.mkHoleSym(fqn)
+  private def execHole(fqnOpt: Option[String])(implicit terminal: Terminal, s: Show[Type]): Unit = fqnOpt match {
+    case None =>
+      // Case 1: Print all available holes.
+      prettyPrintHoles()
+    case Some(fqn) =>
+      // Case 2: Print the given hole.
 
-    // Retrieve all the holes in the program.
-    val holes = TypedAstOps.holesOf(root)
+      // Compute the hole symbol.
+      val sym = Symbol.mkHoleSym(fqn)
 
-    // Lookup the hole symbol.
-    holes.get(sym) match {
-      case None =>
-        // Case 1: Hole not found.
-        terminal.writer().println(s"Undefined hole: '$fqn'.")
-      case Some(HoleContext(_, holeType, env)) =>
-        // Case 2: Hole found.
-        val vt = new VirtualTerminal
+      // Retrieve all the holes in the program.
+      val holes = TypedAstOps.holesOf(root)
 
-        // Indent
-        vt << "  "
+      // Lookup the hole symbol.
+      holes.get(sym) match {
+        case None =>
+          // Case 1: Hole not found.
+          terminal.writer().println(s"Undefined hole: '$fqn'.")
+        case Some(HoleContext(_, holeType, env)) =>
+          // Case 2: Hole found.
+          val vt = new VirtualTerminal
 
-        // Iterate through the premises, i.e. the variable symbols in scope.
-        for ((varSym, varType) <- env) {
-          vt << Blue(varSym.text) << ": " << Cyan(varType.show) << " " * 6
-        }
+          // Indent
+          vt << "  "
 
-        // Print the divider.
-        vt << NewLine << "-" * 80 << NewLine
+          // Iterate through the premises, i.e. the variable symbols in scope.
+          for ((varSym, varType) <- env) {
+            vt << Blue(varSym.text) << ": " << Cyan(varType.show) << " " * 6
+          }
 
-        // Print the goal.
-        vt << Blue(sym.toString) << ": " << Cyan(holeType.show) << NewLine
+          // Print the divider.
+          vt << NewLine << "-" * 80 << NewLine
 
-        // Print the result to the terminal.
-        terminal.writer().print(vt.fmt)
-    }
+          // Print the goal.
+          vt << Blue(sym.toString) << ": " << Cyan(holeType.show) << NewLine
+
+          // Print the result to the terminal.
+          terminal.writer().print(vt.fmt)
+      }
   }
 
   /**

@@ -53,7 +53,7 @@ object Command {
   /**
     * Shows the context for the given hole `fqn`.
     */
-  case class Hole(fqn: String) extends Command
+  case class Hole(fqnOpt: Option[String]) extends Command
 
   /**
     * Shows the definitions, relations, and lattices in the given namespace.
@@ -180,9 +180,12 @@ object Command {
     //
     // Hole
     //
-    if (input.startsWith(":hole ")) {
-      val fqn = input.substring(":hole ".length).trim
-      return Command.Hole(fqn)
+    if (input.startsWith(":hole")) {
+      val fqn = input.substring(":hole".length).trim
+      if (fqn.isEmpty)
+        return Command.Hole(None)
+      else
+        return Command.Hole(Some(fqn))
     }
 
     //
