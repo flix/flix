@@ -444,6 +444,7 @@ class Shell(initialPaths: List[Path], options: Options) {
     * Executes the unload command.
     */
   private def execUnload(s: String)(implicit terminal: Terminal): Unit = {
+    this.exp = null
     val path = Paths.get(s)
     if (!(this.sourcePaths contains path)) {
       terminal.writer().println(s"Path '$path' was not loaded.")
