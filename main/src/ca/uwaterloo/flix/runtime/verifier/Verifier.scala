@@ -16,6 +16,8 @@
 
 package ca.uwaterloo.flix.runtime.verifier
 
+import java.io.PrintWriter
+
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.GenSym
 import ca.uwaterloo.flix.language.ast.ExecutableAst.{Property, Root}
@@ -106,6 +108,36 @@ object Verifier extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
   /**
     * Attempts to verify all properties in the given AST.
     */
+  def runAndPrint(root: ExecutableAst.Root, writer: PrintWriter)(implicit flix: Flix): Unit = {
+    implicit val _ = flix.genSym
+
+    /*
+     * Verify each property.
+     */
+    val results = root.properties.map(p => verifyProperty(p, root))
+
+    /*
+     * Print errors (if any).
+     */
+    for (result <- results) {
+      result match {
+        case PropertyResult.Success(_, _, _, _) => // nop
+        case PropertyResult.Failure(_, _, _, _, error) =>
+          writer.print(error.message.fmt(TerminalContext.AnsiTerminal))
+        case PropertyResult.Unknown(_, _, _, _, error) =>
+          writer.print(error.message.fmt(TerminalContext.AnsiTerminal))
+      }
+    }
+
+    /*
+     * Print verbose information.
+     */
+    printVerbose(results, writer)
+  }
+
+  /**
+    * Attempts to verify all properties in the given AST.
+    */
   def run(root: ExecutableAst.Root)(implicit flix: Flix): Validation[ExecutableAst.Root, PropertyError] = {
     implicit val _ = flix.genSym
 
@@ -125,7 +157,7 @@ object Verifier extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
      * Print verbose information (if enabled).
      */
     if (flix.options.verbosity == Verbosity.Verbose) {
-      printVerbose(results)
+      printVerbose(results, new PrintWriter(Console.out))
     }
 
     /*
@@ -425,7 +457,7 @@ object Verifier extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
   /**
     * Prints verbose results.
     */
-  private def printVerbose(results: List[PropertyResult]): Unit = {
+  private def printVerbose(results: List[PropertyResult], writer: PrintWriter): Unit = {
     val vt = new VirtualTerminal()
 
     for ((source, properties) <- results.groupBy(_.property.loc.source).toList.sortBy(_._1.format)) {
@@ -462,7 +494,7 @@ object Verifier extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
 
     }
 
-    println(vt.fmt(TerminalContext.AnsiTerminal))
+    writer.print(vt.fmt(TerminalContext.AnsiTerminal))
   }
 
   /**

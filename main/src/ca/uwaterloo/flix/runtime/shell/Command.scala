@@ -53,7 +53,7 @@ object Command {
   /**
     * Shows the context for the given hole `fqn`.
     */
-  case class Hole(fqn: String) extends Command
+  case class Hole(fqnOpt: Option[String]) extends Command
 
   /**
     * Shows the definitions, relations, and lattices in the given namespace.
@@ -94,6 +94,11 @@ object Command {
     * Runs all unit tests in the program.
     */
   case object Test extends Command
+
+  /**
+    * Verifies all properties in the program.
+    */
+  case object Verify extends Command
 
   /**
     * Watches source paths for changes.
@@ -175,9 +180,12 @@ object Command {
     //
     // Hole
     //
-    if (input.startsWith(":hole ")) {
-      val fqn = input.substring(":hole ".length).trim
-      return Command.Hole(fqn)
+    if (input.startsWith(":hole")) {
+      val fqn = input.substring(":hole".length).trim
+      if (fqn.isEmpty)
+        return Command.Hole(None)
+      else
+        return Command.Hole(Some(fqn))
     }
 
     //
@@ -250,6 +258,12 @@ object Command {
     //
     if (input == ":benchmark")
       return Command.Benchmark
+
+    //
+    // Verify
+    //
+    if (input == ":verify")
+      return Command.Verify
 
     //
     // Test

@@ -25,6 +25,7 @@ import ca.uwaterloo.flix.language.ast.Ast.HoleContext
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.{Symbol, Type}
+import ca.uwaterloo.flix.runtime.verifier.Verifier
 import ca.uwaterloo.flix.runtime.{Benchmarker, CompilationResult, Tester}
 import ca.uwaterloo.flix.util._
 import ca.uwaterloo.flix.util.tc.Show
@@ -37,12 +38,7 @@ import org.jline.terminal.{Terminal, TerminalBuilder}
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 
-class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
-
-  /**
-    * The minimum amount of time between runs of the compiler.
-    */
-  private val Delay: Long = 1000 * 1000 * 1000
+class Shell(initialPaths: List[Path], options: Options) {
 
   /**
     * The default color context.
@@ -70,7 +66,7 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
   private var root: Root = _
 
   /**
-    * The current compilation result.
+    * The current compilation result (initialized on startup).
     */
   private var compilationResult: CompilationResult = _
 
@@ -133,8 +129,8 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
         }
       }
     } catch {
-      case ex: UserInterruptException => // nop, exit gracefully.
-      case ex: EndOfFileException => // nop, exit gracefully.
+      case _: UserInterruptException => // nop, exit gracefully.
+      case _: EndOfFileException => // nop, exit gracefully.
     }
 
     // Print goodbye message.
@@ -172,7 +168,7 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
     case Command.TypeOf(e) => execTypeOf(e)
     case Command.KindOf(e) => execKindOf(e)
     case Command.EffectOf(e) => execEffectOf(e)
-    case Command.Hole(fqn) => execHole(fqn)
+    case Command.Hole(fqnOpt) => execHole(fqnOpt)
     case Command.Browse(ns) => execBrowse(ns)
     case Command.Doc(fqn) => execDoc(fqn)
     case Command.Search(s) => execSearch(s)
@@ -181,6 +177,7 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
     case Command.Reload => execReload()
     case Command.Benchmark => execBenchmark()
     case Command.Test => execTest()
+    case Command.Verify => execVerify()
     case Command.Watch => execWatch()
     case Command.Unwatch => execUnwatch()
     case Command.Quit => execQuit()
@@ -197,9 +194,6 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
 
     // Recompile the program.
     execReload()
-
-    // Solve the program (to retrieve the compilationResult).
-    execSolve()
 
     // Evaluate the function and get the result.
     val result = this.compilationResult.evalToString(this.sym.toString)
@@ -277,39 +271,45 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
   /**
     * Shows the hole context of the given `fqn`.
     */
-  private def execHole(fqn: String)(implicit terminal: Terminal, s: Show[Type]): Unit = {
-    // Compute the hole symbol.
-    val sym = Symbol.mkHoleSym(fqn)
+  private def execHole(fqnOpt: Option[String])(implicit terminal: Terminal, s: Show[Type]): Unit = fqnOpt match {
+    case None =>
+      // Case 1: Print all available holes.
+      prettyPrintHoles()
+    case Some(fqn) =>
+      // Case 2: Print the given hole.
 
-    // Retrieve all the holes in the program.
-    val holes = TypedAstOps.holesOf(root)
+      // Compute the hole symbol.
+      val sym = Symbol.mkHoleSym(fqn)
 
-    // Lookup the hole symbol.
-    holes.get(sym) match {
-      case None =>
-        // Case 1: Hole not found.
-        terminal.writer().println(s"Undefined hole: '$fqn'.")
-      case Some(HoleContext(_, holeType, env)) =>
-        // Case 2: Hole found.
-        val vt = new VirtualTerminal
+      // Retrieve all the holes in the program.
+      val holes = TypedAstOps.holesOf(root)
 
-        // Indent
-        vt << "  "
+      // Lookup the hole symbol.
+      holes.get(sym) match {
+        case None =>
+          // Case 1: Hole not found.
+          terminal.writer().println(s"Undefined hole: '$fqn'.")
+        case Some(HoleContext(_, holeType, env)) =>
+          // Case 2: Hole found.
+          val vt = new VirtualTerminal
 
-        // Iterate through the premises, i.e. the variable symbols in scope.
-        for ((varSym, varType) <- env) {
-          vt << Blue(varSym.text) << ": " << Cyan(varType.show) << " " * 6
-        }
+          // Indent
+          vt << "  "
 
-        // Print the divider.
-        vt << NewLine << "-" * 80 << NewLine
+          // Iterate through the premises, i.e. the variable symbols in scope.
+          for ((varSym, varType) <- env) {
+            vt << Blue(varSym.text) << ": " << Cyan(varType.show) << " " * 6
+          }
 
-        // Print the goal.
-        vt << Blue(sym.toString) << ": " << Cyan(holeType.show) << NewLine
+          // Print the divider.
+          vt << NewLine << "-" * 80 << NewLine
 
-        // Print the result to the terminal.
-        terminal.writer().print(vt.fmt)
-    }
+          // Print the goal.
+          vt << Blue(sym.toString) << ": " << Cyan(holeType.show) << NewLine
+
+          // Print the result to the terminal.
+          terminal.writer().print(vt.fmt)
+      }
   }
 
   /**
@@ -443,20 +443,21 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
       return
     }
     this.sourcePaths += path
-    terminal.writer().println(s"Path '$path' was loaded.")
+    terminal.writer().println(s"Path '$path' was loaded. Run :reload.")
   }
 
   /**
     * Executes the unload command.
     */
   private def execUnload(s: String)(implicit terminal: Terminal): Unit = {
+    this.exp = null
     val path = Paths.get(s)
     if (!(this.sourcePaths contains path)) {
       terminal.writer().println(s"Path '$path' was not loaded.")
       return
     }
     this.sourcePaths -= path
-    terminal.writer().println(s"Path '$path' was unloaded.")
+    terminal.writer().println(s"Path '$path' was unloaded. Run :reload.")
   }
 
   /**
@@ -477,7 +478,7 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
       this.flix.addNamedExp(this.sym, this.exp)
     }
 
-    // Type check and print the error messages (if any).
+    // Compute the TypedAst and store it.
     this.flix.check() match {
       case Validation.Success(ast) =>
         this.root = ast
@@ -488,26 +489,23 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
           terminal.writer().print(error.message.fmt)
         }
     }
-  }
 
-  /**
-    * Computes the least fixed point.
-    */
-  private def execSolve()(implicit terminal: Terminal): Unit = {
-    val future = this.executorService.submit(new SolverThread())
-    future.get()
+    // Compute the ExecutableAst (with the compilationResult) and store it.
+    val executableRoot = flix.codeGen(root).get
+    flix.solve(executableRoot) match {
+      case Validation.Success(m) =>
+        compilationResult = m
+      case Validation.Failure(errors) =>
+        for (error <- errors) {
+          terminal.writer().print(error.message.fmt)
+        }
+    }
   }
 
   /**
     * Run all benchmarks in the program.
     */
   private def execBenchmark()(implicit terminal: Terminal): Unit = {
-    // Check that the compilationResult has been computed.
-    if (this.compilationResult == null) {
-      terminal.writer().println(s"The compilationResult has not been computed. Run :solve.")
-      return
-    }
-
     // Run all benchmarks.
     Benchmarker.benchmark(this.compilationResult, terminal.writer())
   }
@@ -516,17 +514,19 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
     * Run all unit tests in the program.
     */
   private def execTest()(implicit terminal: Terminal): Unit = {
-    // Check that the compilationResult has been computed.
-    if (this.compilationResult == null) {
-      terminal.writer().println(s"The compilationResult has not been computed. Run :solve.")
-      return
-    }
-
     // Run all unit tests.
     val vt = Tester.test(this.compilationResult)
 
     // Print the result to the terminal.
     terminal.writer().print(vt.output.fmt)
+  }
+
+  /**
+    * Verify all properties in the program.
+    */
+  private def execVerify()(implicit terminal: Terminal): Unit = {
+    // Verify all properties in the program.
+    Verifier.runAndPrint(this.compilationResult.getRoot, terminal.writer())(flix)
   }
 
   /**
@@ -587,9 +587,9 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
     w.println("  :load         <path>            Adds <path> as a source file.")
     w.println("  :unload       <path>            Removes <path> as a source file.")
     w.println("  :reload :r                      Recompiles every source file.")
-    w.println("  :solve                          Computes the least fixed point.")
     w.println("  :benchmark                      Run all benchmarks in the program and show the results.")
     w.println("  :test                           Run all unit tests in the program and show the results.")
+    w.println("  :verify                         Verify all properties in the program and show the results.")
     w.println("  :watch :w                       Watches all source files for changes.")
     w.println("  :unwatch                        Unwatches all source files for changes.")
     w.println("  :quit :q                        Terminates the Flix shell.")
@@ -723,33 +723,15 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
   }
 
   /**
-    * A thread to run the fixed point solver in.
-    */
-  class SolverThread()(implicit terminal: Terminal) extends Runnable {
-    override def run(): Unit = {
-      // compute the least compilationResult.
-      val executableRoot = flix.codeGen(root).get
-      val timer = new Timer(flix.solve(executableRoot))
-      timer.getResult match {
-        case Validation.Success(m) =>
-          compilationResult = m
-          if (main.nonEmpty) {
-            val name = main.get
-            val evalTimer = new Timer(m.evalToString(name))
-            terminal.writer().println(s"$name returned `${evalTimer.getResult}' (compile: ${timer.getFormatter.fmt}, execute: ${evalTimer.getFormatter.fmt})")
-          }
-        case Validation.Failure(errors) =>
-          for (error <- errors) {
-            terminal.writer().print(error.message.fmt)
-          }
-      }
-    }
-  }
-
-  /**
     * A thread to watch over changes in a collection of directories.
     */
   class WatcherThread(paths: List[Path])(implicit terminal: Terminal) extends Thread {
+
+    /**
+      * The minimum amount of time between runs of the compiler.
+      */
+    private val Delay: Long = 1000 * 1000 * 1000
+
     // Initialize a new watcher service.
     val watchService: WatchService = FileSystems.getDefault.newWatchService
 
@@ -794,7 +776,7 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
         watchKey.reset()
       }
     } catch {
-      case ex: InterruptedException => // nop, shutdown.
+      case _: InterruptedException => // nop, shutdown.
     }
 
   }
