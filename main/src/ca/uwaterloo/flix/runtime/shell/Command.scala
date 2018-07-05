@@ -96,6 +96,11 @@ object Command {
   case object Test extends Command
 
   /**
+    * Verifies all properties in the program.
+    */
+  case object Verify extends Command
+
+  /**
     * Watches source paths for changes.
     */
   case object Watch extends Command
@@ -250,6 +255,12 @@ object Command {
     //
     if (input == ":benchmark")
       return Command.Benchmark
+
+    //
+    // Verify
+    //
+    if (input == ":verify")
+      return Command.Verify
 
     //
     // Test

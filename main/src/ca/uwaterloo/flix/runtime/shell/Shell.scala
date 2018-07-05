@@ -25,6 +25,7 @@ import ca.uwaterloo.flix.language.ast.Ast.HoleContext
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.{Symbol, Type}
+import ca.uwaterloo.flix.runtime.verifier.Verifier
 import ca.uwaterloo.flix.runtime.{Benchmarker, CompilationResult, Tester}
 import ca.uwaterloo.flix.util._
 import ca.uwaterloo.flix.util.tc.Show
@@ -70,7 +71,7 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
   private var root: Root = _
 
   /**
-    * The current compilation result.
+    * The current compilation result (initialized on startup).
     */
   private var compilationResult: CompilationResult = _
 
@@ -181,6 +182,7 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
     case Command.Reload => execReload()
     case Command.Benchmark => execBenchmark()
     case Command.Test => execTest()
+    case Command.Verify => execVerify()
     case Command.Watch => execWatch()
     case Command.Unwatch => execUnwatch()
     case Command.Quit => execQuit()
@@ -197,9 +199,6 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
 
     // Recompile the program.
     execReload()
-
-    // Solve the program (to retrieve the compilationResult).
-    execSolve()
 
     // Evaluate the function and get the result.
     val result = this.compilationResult.evalToString(this.sym.toString)
@@ -443,7 +442,7 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
       return
     }
     this.sourcePaths += path
-    terminal.writer().println(s"Path '$path' was loaded.")
+    terminal.writer().println(s"Path '$path' was loaded. Run :reload.")
   }
 
   /**
@@ -456,7 +455,7 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
       return
     }
     this.sourcePaths -= path
-    terminal.writer().println(s"Path '$path' was unloaded.")
+    terminal.writer().println(s"Path '$path' was unloaded. Run :reload.")
   }
 
   /**
@@ -477,7 +476,7 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
       this.flix.addNamedExp(this.sym, this.exp)
     }
 
-    // Type check and print the error messages (if any).
+    // Compute the TypedAst and store it.
     this.flix.check() match {
       case Validation.Success(ast) =>
         this.root = ast
@@ -488,26 +487,23 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
           terminal.writer().print(error.message.fmt)
         }
     }
-  }
 
-  /**
-    * Computes the least fixed point.
-    */
-  private def execSolve()(implicit terminal: Terminal): Unit = {
-    val future = this.executorService.submit(new SolverThread())
-    future.get()
+    // Compute the ExecutableAst (with the compilationResult) and store it.
+    val executableRoot = flix.codeGen(root).get
+    flix.solve(executableRoot) match {
+      case Validation.Success(m) =>
+        compilationResult = m
+      case Validation.Failure(errors) =>
+        for (error <- errors) {
+          terminal.writer().print(error.message.fmt)
+        }
+    }
   }
 
   /**
     * Run all benchmarks in the program.
     */
   private def execBenchmark()(implicit terminal: Terminal): Unit = {
-    // Check that the compilationResult has been computed.
-    if (this.compilationResult == null) {
-      terminal.writer().println(s"The compilationResult has not been computed. Run :solve.")
-      return
-    }
-
     // Run all benchmarks.
     Benchmarker.benchmark(this.compilationResult, terminal.writer())
   }
@@ -516,17 +512,19 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
     * Run all unit tests in the program.
     */
   private def execTest()(implicit terminal: Terminal): Unit = {
-    // Check that the compilationResult has been computed.
-    if (this.compilationResult == null) {
-      terminal.writer().println(s"The compilationResult has not been computed. Run :solve.")
-      return
-    }
-
     // Run all unit tests.
     val vt = Tester.test(this.compilationResult)
 
     // Print the result to the terminal.
     terminal.writer().print(vt.output.fmt)
+  }
+
+  /**
+    * Verify all properties in the program.
+    */
+  private def execVerify()(implicit terminal: Terminal): Unit = {
+    // Verify all properties in the program.
+    Verifier.runAndPrint(this.compilationResult.getRoot)(flix)
   }
 
   /**
@@ -587,9 +585,9 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
     w.println("  :load         <path>            Adds <path> as a source file.")
     w.println("  :unload       <path>            Removes <path> as a source file.")
     w.println("  :reload :r                      Recompiles every source file.")
-    w.println("  :solve                          Computes the least fixed point.")
     w.println("  :benchmark                      Run all benchmarks in the program and show the results.")
     w.println("  :test                           Run all unit tests in the program and show the results.")
+    w.println("  :verify                         Verify all properties in the program and show the results.")
     w.println("  :watch :w                       Watches all source files for changes.")
     w.println("  :unwatch                        Unwatches all source files for changes.")
     w.println("  :quit :q                        Terminates the Flix shell.")
@@ -720,30 +718,6 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
 
     // Print the result to the terminal.
     terminal.writer().print(vt.fmt)
-  }
-
-  /**
-    * A thread to run the fixed point solver in.
-    */
-  class SolverThread()(implicit terminal: Terminal) extends Runnable {
-    override def run(): Unit = {
-      // compute the least compilationResult.
-      val executableRoot = flix.codeGen(root).get
-      val timer = new Timer(flix.solve(executableRoot))
-      timer.getResult match {
-        case Validation.Success(m) =>
-          compilationResult = m
-          if (main.nonEmpty) {
-            val name = main.get
-            val evalTimer = new Timer(m.evalToString(name))
-            terminal.writer().println(s"$name returned `${evalTimer.getResult}' (compile: ${timer.getFormatter.fmt}, execute: ${evalTimer.getFormatter.fmt})")
-          }
-        case Validation.Failure(errors) =>
-          for (error <- errors) {
-            terminal.writer().print(error.message.fmt)
-          }
-      }
-    }
   }
 
   /**

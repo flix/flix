@@ -106,6 +106,23 @@ object Verifier extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
   /**
     * Attempts to verify all properties in the given AST.
     */
+  def runAndPrint(root: ExecutableAst.Root)(implicit flix: Flix): Unit = {
+    implicit val _ = flix.genSym
+
+    /*
+     * Verify each property.
+     */
+    val results = root.properties.map(p => verifyProperty(p, root))
+
+    /*
+     * Print verbose information (if enabled).
+     */
+    printVerbose(results)
+  }
+
+  /**
+    * Attempts to verify all properties in the given AST.
+    */
   def run(root: ExecutableAst.Root)(implicit flix: Flix): Validation[ExecutableAst.Root, PropertyError] = {
     implicit val _ = flix.genSym
 
