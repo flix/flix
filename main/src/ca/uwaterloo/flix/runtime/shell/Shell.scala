@@ -38,12 +38,7 @@ import org.jline.terminal.{Terminal, TerminalBuilder}
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 
-class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
-
-  /**
-    * The minimum amount of time between runs of the compiler.
-    */
-  private val Delay: Long = 1000 * 1000 * 1000
+class Shell(initialPaths: List[Path], options: Options) {
 
   /**
     * The default color context.
@@ -134,8 +129,8 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
         }
       }
     } catch {
-      case ex: UserInterruptException => // nop, exit gracefully.
-      case ex: EndOfFileException => // nop, exit gracefully.
+      case _: UserInterruptException => // nop, exit gracefully.
+      case _: EndOfFileException => // nop, exit gracefully.
     }
 
     // Print goodbye message.
@@ -724,6 +719,12 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
     * A thread to watch over changes in a collection of directories.
     */
   class WatcherThread(paths: List[Path])(implicit terminal: Terminal) extends Thread {
+
+    /**
+      * The minimum amount of time between runs of the compiler.
+      */
+    private val Delay: Long = 1000 * 1000 * 1000
+
     // Initialize a new watcher service.
     val watchService: WatchService = FileSystems.getDefault.newWatchService
 
@@ -768,7 +769,7 @@ class Shell(initialPaths: List[Path], main: Option[String], options: Options) {
         watchKey.reset()
       }
     } catch {
-      case ex: InterruptedException => // nop, shutdown.
+      case _: InterruptedException => // nop, shutdown.
     }
 
   }
