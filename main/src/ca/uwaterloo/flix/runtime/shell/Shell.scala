@@ -520,7 +520,7 @@ class Shell(initialPaths: List[Path], options: Options) {
     */
   private def execVerify()(implicit terminal: Terminal): Unit = {
     // Verify all properties in the program.
-    Verifier.runAndPrint(this.compilationResult.getRoot)(flix)
+    Verifier.runAndPrint(this.compilationResult.getRoot, terminal.writer())(flix)
   }
 
   /**
