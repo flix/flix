@@ -51,7 +51,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
       classes = Map.empty,
       impls = Map.empty,
       lattices = Map.empty,
-      indexes = Map.empty,
       tables = Map.empty,
       constraints = Map.empty,
       named = Map.empty,
@@ -255,18 +254,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
             val constraint = NamedAst.Constraint(cparams, head, body, loc)
             val constraints = constraint :: prog0.constraints.getOrElse(ns0, Nil)
             prog0.copy(constraints = prog0.constraints + (ns0 -> constraints))
-        }
-
-      /*
-       * Index.
-       */
-      case WeededAst.Declaration.Index(qname, indexes, loc) =>
-        val name = qname.ident.name
-        val index = NamedAst.Index(qname, indexes.map(_.toList), loc)
-        val decls = prog0.indexes.getOrElse(ns0, Map.empty)
-        decls.get(name) match {
-          case None => prog0.copy(indexes = prog0.indexes + (ns0 -> (decls + (name -> index)))).toSuccess
-          case Some(idx) => NameError.DuplicateIndex(name, idx.loc, loc).toFailure
         }
 
       /*

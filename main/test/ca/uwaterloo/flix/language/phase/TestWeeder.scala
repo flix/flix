@@ -115,15 +115,6 @@ class TestWeeder extends FunSuite with TestUtils {
     expectError[WeederError.DuplicateTag](result)
   }
 
-  test("EmptyIndex.01") {
-    val input =
-      """rel A(x: Int, y: Int, z: Int)
-        |index A()
-      """.stripMargin
-    val result = new Flix().addStr(input).compile()
-    expectError[WeederError.EmptyIndex](result)
-  }
-
   test("EmptyRelation.01") {
     val input = "rel R()"
     val result = new Flix().addStr(input).compile()
@@ -146,24 +137,6 @@ class TestWeeder extends FunSuite with TestUtils {
     val input = "def f(): Bool = ∃(). true"
     val result = new Flix().addStr(input).compile()
     expectError[WeederError.IllegalExistential](result)
-  }
-
-  test("IllegalIndex.01") {
-    val input =
-      """rel A(x: Int, y: Int, z: Int)
-        |index A({})
-      """.stripMargin
-    val result = new Flix().addStr(input).compile()
-    expectError[WeederError.IllegalIndex](result)
-  }
-
-  test("IllegalIndex.02") {
-    val input =
-      """rel A(x: Int, y: Int, z: Int)
-        |index A({x}, {}, {z})
-      """.stripMargin
-    val result = new Flix().addStr(input).compile()
-    expectError[WeederError.IllegalIndex](result)
   }
 
   test("IllegalInt8.01") {

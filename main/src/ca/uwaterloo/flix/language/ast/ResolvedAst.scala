@@ -33,7 +33,6 @@ object ResolvedAst {
                      classes: Map[Symbol.ClassSym, ResolvedAst.Class],
                      impls: Map[Symbol.ClassSym, ResolvedAst.Impl],
                      lattices: Map[Type, ResolvedAst.Lattice],
-                     indexes: Map[Symbol.TableSym, ResolvedAst.Index],
                      tables: Map[Symbol.TableSym, ResolvedAst.Table],
                      constraints: List[ResolvedAst.Constraint],
                      properties: List[ResolvedAst.Property],
@@ -54,8 +53,6 @@ object ResolvedAst {
   case class Sig() extends ResolvedAst
 
   case class Enum(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: List[ResolvedAst.TypeParam], cases: Map[String, ResolvedAst.Case], tpe: Type, loc: SourceLocation) extends ResolvedAst
-
-  case class Index(sym: Symbol.TableSym, indexes: List[List[Name.Ident]], loc: SourceLocation) extends ResolvedAst
 
   case class Lattice(tpe: Type, bot: ResolvedAst.Expression, top: ResolvedAst.Expression, equ: ResolvedAst.Expression, leq: ResolvedAst.Expression, lub: ResolvedAst.Expression, glb: ResolvedAst.Expression, ns: Name.NName, loc: SourceLocation) extends ResolvedAst
 

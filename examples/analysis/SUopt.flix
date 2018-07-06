@@ -16,19 +16,6 @@
 // =========
   rel Pt(variable: Str, target: Str)
 
-// Indexes
-// =========
-  index AddrOf({variable, object})
-  index Copy({to, from}, {from})
-  index Store({label, to, from}, {to}, {from})
-  index Load({label, to, from}, {label}, {from})
-  index CFG({label, to}, {label}, {to})
-  index FIStore({to}, {from})
-  index FILoad({from})
-
-  index Pt({variable, target}, {variable})
-  index PtH({object, target}, {object})
-
 // Other types
 // =========
   enum SULattice {
@@ -60,8 +47,6 @@
   let SULattice<> = (SULattice.Bottom, SULattice.Top, equ, leq, lub, glb)
 
   lat SU(location: Str, object: Str, target: SULattice)
-
-  index SU({location}, {location, object})
 
   rel PtH(object: Str, target: Str)
   lat Kill(location: Str, kill: SULattice)

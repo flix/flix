@@ -237,18 +237,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
             }
         }
 
-      case ParsedAst.Declaration.Index(sp1, qname, indexes, sp2) =>
-        /*
-         * Check for `EmptyIndex` and `IllegalIndex`.
-         */
-        val sl = mkSL(sp1, sp2)
-        if (indexes.isEmpty)
-          EmptyIndex(qname.ident.name, sl).toFailure
-        else if (indexes.exists(_.isEmpty))
-          IllegalIndex(sl).toFailure
-        else
-          List(WeededAst.Declaration.Index(qname, indexes.toList.map(_.toList), sl)).toSuccess
-
       case ParsedAst.Declaration.BoundedLattice(sp1, tpe, elms, sp2) =>
         val elmsVal = @@(elms.toList.map(e => Expressions.weed(e)))
         elmsVal flatMap {

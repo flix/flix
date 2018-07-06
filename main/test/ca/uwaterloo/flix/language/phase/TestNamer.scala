@@ -187,32 +187,6 @@ class TestNamer extends FunSuite with TestUtils {
     expectError[NameError.DuplicateClass](result)
   }
 
-  test("DuplicateIndex.01") {
-    val input =
-      s"""
-         |rel R(x: Int)
-         |
-         |index R({x})
-         |index R({x})
-       """.stripMargin
-    val result = new Flix().addStr(input).compile()
-    expectError[NameError.DuplicateIndex](result)
-  }
-
-  test("DuplicateIndex.02") {
-    val input =
-      s"""
-         |namespace A {
-         |  rel R(x: Int)
-         |
-         |  index R({x})
-         |  index R({x})
-         |}
-       """.stripMargin
-    val result = new Flix().addStr(input).compile()
-    expectError[NameError.DuplicateIndex](result)
-  }
-
   test("UndefinedNativeClass.01") {
     val input = "def f(): Int = unsafe native field java.lang.Foo"
     val result = new Flix().addStr(input).compile()

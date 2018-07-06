@@ -56,13 +56,12 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
     // Converting lattices to ExecutableAst will create new top-level definitions in the map `m`.
     val lattices = root.lattices.map { case (k, v) => k -> toExecutable(v, m) }
     val tables = root.tables.map { case (k, v) => k -> Table.toExecutable(v) }
-    val indexes = root.indexes.map { case (k, v) => k -> toExecutable(v) }
     val strata = root.strata.map(s => ExecutableAst.Stratum(s.constraints.map(c => Constraint.toConstraint(c, m))))
     val properties = root.properties.map(p => toExecutable(p))
     val specialOps = root.specialOps
     val reachable = root.reachable
 
-    ExecutableAst.Root(constants ++ m, effs, handlers, enums, lattices, tables, indexes, strata, properties, specialOps, reachable).toSuccess
+    ExecutableAst.Root(constants ++ m, effs, handlers, enums, lattices, tables, strata, properties, specialOps, reachable).toSuccess
   }
 
   def toExecutable(sast: SimplifiedAst.Def): ExecutableAst.Def = {
@@ -88,9 +87,6 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
     case SimplifiedAst.Lattice(tpe, bot, top, equ, leq, lub, glb, loc) =>
       ExecutableAst.Lattice(tpe, bot, top, equ, leq, lub, glb, loc)
   }
-
-  def toExecutable(sast: SimplifiedAst.Index): ExecutableAst.Index =
-    ExecutableAst.Index(sast.sym, sast.indexes, sast.loc)
 
   object Table {
     def toExecutable(sast: SimplifiedAst.Table): ExecutableAst.Table = sast match {

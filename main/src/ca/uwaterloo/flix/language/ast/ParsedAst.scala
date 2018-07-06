@@ -29,7 +29,6 @@ object ParsedAst {
     * Program. A collection of abstract syntax trees.
     *
     * @param roots the roots of the abstract syntax trees in the program.
-    * @param time  the time spent in each compiler phase.
     */
   case class Program(roots: List[ParsedAst.Root], named: Map[Symbol.DefnSym, ParsedAst.Expression]) extends ParsedAst
 
@@ -221,16 +220,6 @@ object ParsedAst {
       * @param sp2   the position of the last character in the declaration.
       */
     case class Lattice(doc: ParsedAst.Doc, sp1: SourcePosition, ident: Name.Ident, attr: Seq[ParsedAst.Attribute], sp2: SourcePosition) extends ParsedAst.Declaration
-
-    /**
-      * Index Declaration.
-      *
-      * @param sp1     the position of the first character in the declaration.
-      * @param qname   the name of the relation or lattice.
-      * @param indexes the sequence of indexes.
-      * @param sp2     the position of the last character in the declaration.
-      */
-    case class Index(sp1: SourcePosition, qname: Name.QName, indexes: Seq[Seq[Name.Ident]], sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
       * Constraint Declaration.

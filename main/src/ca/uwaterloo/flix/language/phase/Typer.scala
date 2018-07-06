@@ -42,13 +42,12 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       enums <- Declarations.Enums.typecheck(program)
       lattices <- Declarations.Lattices.typecheck(program)
       tables <- Declarations.Tables.typecheck(program)
-      indexes <- Declarations.Indexes.typecheck(program)
       constraints <- Constraints.typecheck(program)
       properties <- Declarations.Properties.typecheck(program)
     } yield {
       val strata = List(TypedAst.Stratum(constraints))
       val specialOps = Map.empty[SpecialOperator, Map[Type, Symbol.DefnSym]]
-      TypedAst.Root(defs, effs, handlers, enums, lattices, tables, indexes, strata, properties, specialOps, program.reachable)
+      TypedAst.Root(defs, effs, handlers, enums, lattices, tables, strata, properties, specialOps, program.reachable)
     }
 
     result match {
@@ -202,47 +201,6 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         // Sequence the results and convert them back to a map.
         Result.seqM(result).map(_.toMap)
       }
-    }
-
-    object Indexes {
-
-      /**
-        * Performs type inference and reassembly on all indexes in the given program.
-        *
-        * Returns [[Err]] if an index refers to a non-existent table or a non-existent attribute in a table.
-        */
-      def typecheck(program: ResolvedAst.Program): Result[Map[Symbol.TableSym, TypedAst.Index], TypeError] = {
-
-        /**
-          * Checks that the referenced table exists and that every attribute used by the index exists.
-          */
-        def visitIndex(index: ResolvedAst.Index): Result[(Symbol.TableSym, TypedAst.Index), TypeError] = index match {
-          case ResolvedAst.Index(sym, indexes, loc) =>
-            // Lookup the table using the table symbol.
-            val table = program.tables(index.sym)
-
-            val declaredAttributes = table.attr.map(_.ident.name)
-            // Iterate through every index in the declaration.
-            for (index <- indexes) {
-              // Iterate through every attribute name in the current index.
-              for (referencedAttribute <- index) {
-                if (!(declaredAttributes contains referencedAttribute.name)) {
-                  return Err(TypeError.UndefinedAttribute(table.sym.name, referencedAttribute.name, referencedAttribute.loc))
-                }
-              }
-            }
-            Ok(table.sym -> TypedAst.Index(table.sym, indexes, loc))
-        }
-
-        // Visit every index in the program.
-        val result = program.indexes.toList.map {
-          case (_, index) => visitIndex(index)
-        }
-
-        // Sequence the results and convert them back to a map.
-        Result.seqM(result).map(_.toMap)
-      }
-
     }
 
     object Lattices {

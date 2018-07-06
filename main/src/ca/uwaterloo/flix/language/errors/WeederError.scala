@@ -140,25 +140,6 @@ object WeederError {
   }
 
   /**
-    * An error raised to indicate that an index declaration declares no indexes.
-    *
-    * @param name the name of the table.
-    * @param loc  the location where the declaration occurs.
-    */
-  case class EmptyIndex(name: String, loc: SourceLocation) extends WeederError {
-    val source: Source = loc.source
-    val message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> The index for table '" << Red(name) << "' does not declare any attribute groups." << NewLine
-      vt << NewLine
-      vt << Code(loc, "an index must declare at least one group of attributes.") << NewLine
-      vt << NewLine
-      vt << Underline("Tip:") << " Add an index on at least one attribute." << NewLine
-    }
-  }
-
-  /**
     * An error raised to indicate that a relation declares no attributes.
     *
     * @param name the name of the relation.
@@ -330,22 +311,6 @@ object WeederError {
       vt << Code(loc, "illegal hole.") << NewLine
       vt << NewLine
       vt << Underline("Tip:") << " Implement the hole or disable release mode." << NewLine
-    }
-  }
-
-  /**
-    * An error raised to indicate that an index declaration defines an index on zero attributes.
-    *
-    * @param loc the location where the illegal index occurs.
-    */
-  case class IllegalIndex(loc: SourceLocation) extends WeederError {
-    val source: Source = loc.source
-    val message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> The attribute group does not declare any attributes." << NewLine
-      vt << NewLine
-      vt << Code(loc, "an attribute group must contain at least one attribute.") << NewLine
     }
   }
 

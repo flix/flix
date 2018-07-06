@@ -111,14 +111,6 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
         } yield (tpe, lattice)
     }
 
-    val indexesVal = prog0.indexes.flatMap {
-      case (ns0, indexes) => indexes.map {
-        case (_, index) => resolve(index, ns0, prog0) map {
-          case i => i.sym -> i
-        }
-      }
-    }
-
     val tablesVal = prog0.tables.flatMap {
       case (ns0, tables) => tables.map {
         case (_, table) => Tables.resolve(table, ns0, prog0) map {
@@ -145,13 +137,12 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
       classes <- seqM(classesVal)
       impls <- seqM(implsVal)
       lattices <- seqM(latticesVal)
-      indexes <- seqM(indexesVal)
       tables <- seqM(tablesVal)
       constraints <- seqM(constraintsVal)
       properties <- seqM(propertiesVal)
     } yield ResolvedAst.Program(
       definitions.toMap ++ named.toMap, effs.toMap, handlers.toMap, enums.toMap, classes.toMap, impls.toMap,
-      lattices.toMap, indexes.toMap, tables.toMap, constraints.flatten, properties.flatten, prog0.reachable
+      lattices.toMap, tables.toMap, constraints.flatten, properties.flatten, prog0.reachable
     )
   }
 
@@ -300,15 +291,6 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
     */
   def resolveSig(sig0: NamedAst.Sig, ns0: Name.NName, prog0: NamedAst.Program): Validation[ResolvedAst.Sig, ResolutionError] = {
     ResolvedAst.Sig().toSuccess
-  }
-
-  /**
-    * Performs name resolution on the given index `i0` in the given namespace `ns0`.
-    */
-  def resolve(i0: NamedAst.Index, ns0: Name.NName, prog0: NamedAst.Program)(implicit genSym: GenSym): Validation[ResolvedAst.Index, ResolutionError] = {
-    for {
-      d <- lookupTable(i0.qname, ns0, prog0)
-    } yield ResolvedAst.Index(d.sym, i0.indexes, i0.loc)
   }
 
   /**

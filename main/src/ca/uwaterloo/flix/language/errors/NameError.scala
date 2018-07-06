@@ -141,27 +141,6 @@ object NameError {
   }
 
   /**
-    * An error raised to indicate that an index is defined multiple times for the same relation/lattice.
-    *
-    * @param name the name.
-    * @param loc1 the location of the first definition.
-    * @param loc2 the location of the second definition.
-    */
-  case class DuplicateIndex(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
-    val source: Source = loc1.source
-    val message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Duplicate index declaration for table '" << Red(name) << "'." << NewLine
-      vt << Code(loc1, "the first declaration was here.") << NewLine
-      vt << NewLine
-      vt << Code(loc2, "the second declaration was here.") << NewLine
-      vt << NewLine
-      vt << Underline("Tip:") << " Remove one of the two index declarations." << NewLine
-    }
-  }
-
-  /**
     * An error raised to indicate that an ambiguous constructor was not found.
     *
     * @param className the class name.

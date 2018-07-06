@@ -493,12 +493,6 @@ class TestResolver extends FunSuite with TestUtils {
     expectError[ResolutionError.UndefinedTable](result)
   }
 
-  test("UndefinedTable.03") {
-    val input = "index AddrOf({foo, bar})"
-    val result = new Flix().addStr(input).compile()
-    expectError[ResolutionError.UndefinedTable](result)
-  }
-
   test("UndefinedType.01") {
     val input = "def x(): Foo = 42"
     val result = new Flix().addStr(input).compile()

@@ -622,12 +622,6 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
     def isVarExps(args: List[TypedAst.Expression]): Boolean = args.forall(_.isInstanceOf[TypedAst.Expression.Var])
 
     /**
-      * Translates the given `index0` to the SimplifiedAst.
-      */
-    def visitIndex(index0: TypedAst.Index): SimplifiedAst.Index =
-      SimplifiedAst.Index(index0.sym, index0.indexes, index0.loc)
-
-    /**
       * Translates the given `lattice0` to the SimplifiedAst.
       */
     def visitLattice(lattice0: TypedAst.Lattice): SimplifiedAst.Lattice = lattice0 match {
@@ -1018,13 +1012,12 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
     }
     val lattices = root.lattices.map { case (k, v) => k -> visitLattice(v) }
     val collections = root.tables.map { case (k, v) => k -> visitTable(v) }
-    val indexes = root.indexes.map { case (k, v) => k -> visitIndex(v) }
     val strata = root.strata.map(visitStratum)
     val properties = root.properties.map { p => visitProperty(p) }
     val specialOps = root.specialOps
     val reachable = root.reachable
 
-    SimplifiedAst.Root(defns ++ toplevel, effs, handlers, enums, lattices, collections, indexes, strata, properties, specialOps, reachable).toSuccess
+    SimplifiedAst.Root(defns ++ toplevel, effs, handlers, enums, lattices, collections, strata, properties, specialOps, reachable).toSuccess
   }
 
   /**

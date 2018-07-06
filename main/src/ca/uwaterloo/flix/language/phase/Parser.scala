@@ -153,7 +153,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       Declarations.LetLattice |
       Declarations.Relation |
       Declarations.Lattice |
-      Declarations.Index |
       Declarations.Class |
       Declarations.Impl |
       Declarations.Disallow
@@ -227,16 +226,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Lattice: Rule1[ParsedAst.Declaration.Lattice] = rule {
       Documentation ~ SP ~ atomic("lat") ~ WS ~ Names.Table ~ optWS ~ "(" ~ optWS ~ Attributes ~ optWS ~ ")" ~ SP ~> ParsedAst.Declaration.Lattice
-    }
-
-    def Index: Rule1[ParsedAst.Declaration.Index] = {
-      def Indexes: Rule1[Seq[Name.Ident]] = rule {
-        "{" ~ optWS ~ zeroOrMore(Names.Attribute).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}"
-      }
-
-      rule {
-        optWS ~ SP ~ atomic("index") ~ WS ~ Names.QualifiedTable ~ optWS ~ "(" ~ optWS ~ zeroOrMore(Indexes).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ SP ~> ParsedAst.Declaration.Index
-      }
     }
 
     def Constraint: Rule1[ParsedAst.Declaration.Constraint] = {

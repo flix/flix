@@ -142,16 +142,6 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
     _ <- Expressions.checkPats(tast.exp, root)
   } yield tast
 
-  /**
-    * Check that all patterns in a Declaration are exhaustive
-    *
-    * @param tast The expression to check
-    * @param root The AST root
-    * @return
-    */
-  def checkPats(tast: TypedAst.Index, root: TypedAst.Root)(implicit genSym: GenSym): TypedAst.Index = tast
-
-
   object Expressions {
     /**
       * Check that all patterns in an expression are exhaustive
