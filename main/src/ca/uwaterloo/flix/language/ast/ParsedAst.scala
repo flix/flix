@@ -231,8 +231,6 @@ object ParsedAst {
       */
     case class Constraint(sp1: SourcePosition, head: Seq[ParsedAst.Predicate.Head], body: Seq[Seq[ParsedAst.Predicate.Body]], sp2: SourcePosition) extends ParsedAst.Declaration
 
-    case class BoundedLattice(sp1: SourcePosition, tpe: ParsedAst.Type, elms: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Declaration
-
     /**
       * Class Declaration.
       *
@@ -266,6 +264,9 @@ object ParsedAst {
       * @param sp2 the position of the last character in the declaration.
       */
     case class Disallow(doc: ParsedAst.Doc, sp1: SourcePosition, ic: ParsedAst.DisallowConstraint, sp2: SourcePosition) extends ParsedAst.Declaration
+
+
+    case class LatticeComponents(sp1: SourcePosition, tpe: ParsedAst.Type, elms: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Declaration
 
   }
 

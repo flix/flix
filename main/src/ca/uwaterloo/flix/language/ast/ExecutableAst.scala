@@ -17,9 +17,7 @@
 package ca.uwaterloo.flix.language.ast
 
 import java.lang.reflect.{Constructor, Field, Method}
-import java.util.concurrent.atomic.{AtomicInteger, AtomicLong}
 
-import ca.uwaterloo.flix.runtime.InvocationTarget
 import ca.uwaterloo.flix.runtime.solver.api.ProxyObject
 
 sealed trait ExecutableAst
@@ -30,7 +28,7 @@ object ExecutableAst {
                   effs: Map[Symbol.EffSym, ExecutableAst.Eff],
                   handlers: Map[Symbol.EffSym, ExecutableAst.Handler],
                   enums: Map[Symbol.EnumSym, ExecutableAst.Enum],
-                  lattices: Map[Type, ExecutableAst.Lattice],
+                  latticeComponents: Map[Type, ExecutableAst.LatticeComponents],
                   tables: Map[Symbol.TableSym, ExecutableAst.Table],
                   strata: List[ExecutableAst.Stratum],
                   properties: List[ExecutableAst.Property],
@@ -55,8 +53,6 @@ object ExecutableAst {
 
   case class Enum(mod: Ast.Modifiers, sym: Symbol.EnumSym, cases: Map[String, ExecutableAst.Case], tpe: Type, loc: SourceLocation) extends ExecutableAst
 
-  case class Lattice(tpe: Type, bot: Symbol.DefnSym, top: Symbol.DefnSym, equ: Symbol.DefnSym, leq: Symbol.DefnSym, lub: Symbol.DefnSym, glb: Symbol.DefnSym, loc: SourceLocation) extends ExecutableAst
-
   case class Property(law: Symbol.DefnSym, defn: Symbol.DefnSym, exp: ExecutableAst.Expression) extends ExecutableAst {
     def loc: SourceLocation = defn.loc
   }
@@ -72,6 +68,8 @@ object ExecutableAst {
     case class Lattice(sym: Symbol.TableSym, keys: List[ExecutableAst.Attribute], value: ExecutableAst.Attribute, loc: SourceLocation) extends ExecutableAst.Table
 
   }
+
+  case class LatticeComponents(tpe: Type, bot: Symbol.DefnSym, top: Symbol.DefnSym, equ: Symbol.DefnSym, leq: Symbol.DefnSym, lub: Symbol.DefnSym, glb: Symbol.DefnSym, loc: SourceLocation) extends ExecutableAst
 
   sealed trait Expression extends ExecutableAst {
     def tpe: Type

@@ -246,8 +246,8 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
      *
      * (d) Appear in a lattice declaration.
      */
-    reachableFunctions ++= root.lattices.values.map {
-      case SimplifiedAst.Lattice(tpe, bot, top, equ, leq, lub, glb, loc) =>
+    reachableFunctions ++= root.latticeComponents.values.map {
+      case SimplifiedAst.LatticeComponents(tpe, bot, top, equ, leq, lub, glb, loc) =>
         Set(bot, top, equ, leq, lub, glb)
     }.fold(Set())(_ ++ _)
 

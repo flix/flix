@@ -210,13 +210,13 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         *
         * Returns [[Err]] if a type error occurs.
         */
-      def typecheck(program: ResolvedAst.Program)(implicit genSym: GenSym): Result[Map[Type, TypedAst.Lattice], TypeError] = {
+      def typecheck(program: ResolvedAst.Program)(implicit genSym: GenSym): Result[Map[Type, TypedAst.LatticeComponents], TypeError] = {
 
         /**
           * Performs type inference and reassembly on the given `lattice`.
           */
-        def visitLattice(lattice: ResolvedAst.Lattice): Result[(Type, TypedAst.Lattice), TypeError] = lattice match {
-          case ResolvedAst.Lattice(tpe, e1, e2, e3, e4, e5, e6, ns, loc) =>
+        def visitLattice(lattice: ResolvedAst.LatticeComponents): Result[(Type, TypedAst.LatticeComponents), TypeError] = lattice match {
+          case ResolvedAst.LatticeComponents(tpe, e1, e2, e3, e4, e5, e6, ns, loc) =>
             // Perform type resolution on the declared type.
             val declaredType = lattice.tpe
 
@@ -247,14 +247,14 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
                 val lub = Expressions.reassemble(e5, program, subst)
                 val glb = Expressions.reassemble(e6, program, subst)
 
-                declaredType -> TypedAst.Lattice(declaredType, bot, top, equ, leq, lub, glb, loc)
+                declaredType -> TypedAst.LatticeComponents(declaredType, bot, top, equ, leq, lub, glb, loc)
             }
 
         }
 
 
         // Visit every lattice in the program.
-        val result = program.lattices.toList.map {
+        val result = program.latticeComponents.toList.map {
           case (_, lattice) => visitLattice(lattice)
         }
 

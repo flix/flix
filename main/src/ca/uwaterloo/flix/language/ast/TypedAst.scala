@@ -28,7 +28,7 @@ object TypedAst {
                   effs: Map[Symbol.EffSym, TypedAst.Eff],
                   handlers: Map[Symbol.EffSym, TypedAst.Handler],
                   enums: Map[Symbol.EnumSym, TypedAst.Enum],
-                  lattices: Map[Type, TypedAst.Lattice],
+                  latticeComponents: Map[Type, TypedAst.LatticeComponents],
                   tables: Map[Symbol.TableSym, TypedAst.Table],
                   strata: List[TypedAst.Stratum],
                   properties: List[TypedAst.Property],
@@ -44,8 +44,6 @@ object TypedAst {
   case class Handler(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EffSym, tparams: List[TypedAst.TypeParam], fparams: List[TypedAst.FormalParam], exp: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst
 
   case class Enum(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.EnumSym, cases: Map[String, TypedAst.Case], tpe: Type, loc: SourceLocation) extends TypedAst
-
-  case class Lattice(tpe: Type, bot: TypedAst.Expression, top: TypedAst.Expression, equ: TypedAst.Expression, leq: TypedAst.Expression, lub: TypedAst.Expression, glb: TypedAst.Expression, loc: SourceLocation) extends TypedAst
 
   case class Property(law: Symbol.DefnSym, defn: Symbol.DefnSym, exp: TypedAst.Expression, loc: SourceLocation) extends TypedAst
 
@@ -63,6 +61,8 @@ object TypedAst {
     }
 
   }
+
+  case class LatticeComponents(tpe: Type, bot: TypedAst.Expression, top: TypedAst.Expression, equ: TypedAst.Expression, leq: TypedAst.Expression, lub: TypedAst.Expression, glb: TypedAst.Expression, loc: SourceLocation) extends TypedAst
 
   sealed trait Expression extends TypedAst {
     def tpe: Type

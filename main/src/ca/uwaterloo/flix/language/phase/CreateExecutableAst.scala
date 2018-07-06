@@ -54,7 +54,7 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
     }
 
     // Converting lattices to ExecutableAst will create new top-level definitions in the map `m`.
-    val lattices = root.lattices.map { case (k, v) => k -> toExecutable(v, m) }
+    val lattices = root.latticeComponents.map { case (k, v) => k -> toExecutable(v, m) }
     val tables = root.tables.map { case (k, v) => k -> Table.toExecutable(v) }
     val strata = root.strata.map(s => ExecutableAst.Stratum(s.constraints.map(c => Constraint.toConstraint(c, m))))
     val properties = root.properties.map(p => toExecutable(p))
@@ -83,9 +83,9 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
     ExecutableAst.Handler(handler0.ann, handler0.mod, handler0.sym, fparams, exp, handler0.tpe, handler0.loc)
   }
 
-  def toExecutable(sast: SimplifiedAst.Lattice, m: TopLevel)(implicit genSym: GenSym): ExecutableAst.Lattice = sast match {
-    case SimplifiedAst.Lattice(tpe, bot, top, equ, leq, lub, glb, loc) =>
-      ExecutableAst.Lattice(tpe, bot, top, equ, leq, lub, glb, loc)
+  def toExecutable(sast: SimplifiedAst.LatticeComponents, m: TopLevel)(implicit genSym: GenSym): ExecutableAst.LatticeComponents = sast match {
+    case SimplifiedAst.LatticeComponents(tpe, bot, top, equ, leq, lub, glb, loc) =>
+      ExecutableAst.LatticeComponents(tpe, bot, top, equ, leq, lub, glb, loc)
   }
 
   object Table {

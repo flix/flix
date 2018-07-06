@@ -237,10 +237,10 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
             }
         }
 
-      case ParsedAst.Declaration.BoundedLattice(sp1, tpe, elms, sp2) =>
+      case ParsedAst.Declaration.LatticeComponents(sp1, tpe, elms, sp2) =>
         val elmsVal = @@(elms.toList.map(e => Expressions.weed(e)))
         elmsVal flatMap {
-          case List(bot, top, equ, leq, lub, glb) => List(WeededAst.Declaration.Lattice(Types.weed(tpe), bot, top, equ, leq, lub, glb, mkSL(sp1, sp2))).toSuccess
+          case List(bot, top, equ, leq, lub, glb) => List(WeededAst.Declaration.LatticeComponents(Types.weed(tpe), bot, top, equ, leq, lub, glb, mkSL(sp1, sp2))).toSuccess
           case _ => IllegalLattice(mkSL(sp1, sp2)).toFailure
         }
 

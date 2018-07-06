@@ -30,7 +30,7 @@ object SimplifiedAst {
                   effs: Map[Symbol.EffSym, SimplifiedAst.Eff],
                   handlers: Map[Symbol.EffSym, SimplifiedAst.Handler],
                   enums: Map[Symbol.EnumSym, SimplifiedAst.Enum],
-                  lattices: Map[Type, SimplifiedAst.Lattice],
+                  latticeComponents: Map[Type, SimplifiedAst.LatticeComponents],
                   tables: Map[Symbol.TableSym, SimplifiedAst.Table],
                   strata: List[SimplifiedAst.Stratum],
                   properties: List[SimplifiedAst.Property],
@@ -47,8 +47,6 @@ object SimplifiedAst {
 
   case class Enum(mod: Ast.Modifiers, sym: Symbol.EnumSym, cases: Map[String, SimplifiedAst.Case], tpe: Type, loc: SourceLocation) extends SimplifiedAst
 
-  case class Lattice(tpe: Type, bot: Symbol.DefnSym, top: Symbol.DefnSym, equ: Symbol.DefnSym, leq: Symbol.DefnSym, lub: Symbol.DefnSym, glb: Symbol.DefnSym, loc: SourceLocation) extends SimplifiedAst
-
   case class Property(law: Symbol.DefnSym, defn: Symbol.DefnSym, exp: SimplifiedAst.Expression) extends SimplifiedAst
 
   case class Stratum(constraints: List[SimplifiedAst.Constraint]) extends SimplifiedAst
@@ -62,6 +60,8 @@ object SimplifiedAst {
     case class Lattice(sym: Symbol.TableSym, keys: List[SimplifiedAst.Attribute], value: SimplifiedAst.Attribute, loc: SourceLocation) extends SimplifiedAst.Table
 
   }
+
+  case class LatticeComponents(tpe: Type, bot: Symbol.DefnSym, top: Symbol.DefnSym, equ: Symbol.DefnSym, leq: Symbol.DefnSym, lub: Symbol.DefnSym, glb: Symbol.DefnSym, loc: SourceLocation) extends SimplifiedAst
 
   sealed trait Expression extends SimplifiedAst {
     def tpe: Type

@@ -32,7 +32,7 @@ object NamedAst {
                      enums: Map[Name.NName, Map[String, NamedAst.Enum]],
                      classes: Map[Name.NName, Map[String, NamedAst.Class]],
                      impls: Map[Name.NName, List[NamedAst.Impl]],
-                     lattices: Map[NamedAst.Type, NamedAst.Lattice],
+                     latticeComponents: Map[NamedAst.Type, NamedAst.LatticeComponents],
                      tables: Map[Name.NName, Map[String, NamedAst.Table]],
                      constraints: Map[Name.NName, List[NamedAst.Constraint]],
                      named: Map[Symbol.DefnSym, NamedAst.Expression],
@@ -53,8 +53,6 @@ object NamedAst {
   case class Sig(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.SigSym, tparams: List[NamedAst.TypeParam], fparams: List[NamedAst.FormalParam], sc: NamedAst.Scheme, eff: ast.Eff, loc: SourceLocation) extends NamedAst
 
   case class Enum(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: List[NamedAst.TypeParam], cases: Map[String, NamedAst.Case], tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst
-
-  case class Lattice(tpe: NamedAst.Type, bot: NamedAst.Expression, top: NamedAst.Expression, equ: NamedAst.Expression, leq: NamedAst.Expression, lub: NamedAst.Expression, glb: NamedAst.Expression, ns: Name.NName, loc: SourceLocation) extends NamedAst
 
   case class Property(law: Symbol.DefnSym, defn: Symbol.DefnSym, exp: NamedAst.Expression, loc: SourceLocation) extends Ast.Annotation
 
@@ -77,6 +75,8 @@ object NamedAst {
     case class Lattice(doc: Ast.Doc, sym: Symbol.TableSym, keys: List[NamedAst.Attribute], value: NamedAst.Attribute, loc: SourceLocation) extends NamedAst.Table
 
   }
+
+  case class LatticeComponents(tpe: NamedAst.Type, bot: NamedAst.Expression, top: NamedAst.Expression, equ: NamedAst.Expression, leq: NamedAst.Expression, lub: NamedAst.Expression, glb: NamedAst.Expression, ns: Name.NName, loc: SourceLocation) extends NamedAst
 
   sealed trait Expression extends NamedAst {
     def loc: SourceLocation

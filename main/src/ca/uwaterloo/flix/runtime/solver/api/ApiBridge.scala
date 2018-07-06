@@ -157,7 +157,7 @@ object ApiBridge {
   }
 
   private def getLatticeOps(value: ExecutableAst.Attribute)(implicit root: ExecutableAst.Root, cache: SymbolCache, flix: Flix): LatticeOps = {
-    val lattice = root.lattices(value.tpe)
+    val lattice = root.latticeComponents(value.tpe)
 
     new LatticeOps {
       override def bot: ProxyObject = Linker.link(lattice.bot, root).invoke(Array.empty)

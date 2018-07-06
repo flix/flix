@@ -150,7 +150,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       Declarations.Law |
       Declarations.Enum |
       Declarations.TypeDecl |
-      Declarations.LetLattice |
+      Declarations.LatticeComponents |
       Declarations.Relation |
       Declarations.Lattice |
       Declarations.Class |
@@ -251,13 +251,13 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
     }
 
-    def LetLattice: Rule1[ParsedAst.Declaration] = {
+    def LatticeComponents: Rule1[ParsedAst.Declaration] = {
       def Elms: Rule1[Seq[ParsedAst.Expression]] = rule {
         oneOrMore(Expression).separatedBy(optWS ~ "," ~ optWS)
       }
 
       rule {
-        optWS ~ SP ~ atomic("let") ~ optWS ~ Type ~ atomic("<>") ~ optWS ~ "=" ~ optWS ~ "(" ~ optWS ~ Elms ~ optWS ~ ")" ~ SP ~> ParsedAst.Declaration.BoundedLattice
+        optWS ~ SP ~ atomic("let") ~ optWS ~ Type ~ atomic("<>") ~ optWS ~ "=" ~ optWS ~ "(" ~ optWS ~ Elms ~ optWS ~ ")" ~ SP ~> ParsedAst.Declaration.LatticeComponents
       }
     }
 

@@ -103,7 +103,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
       }
     }
 
-    val latticesVal = prog0.lattices.map {
+    val latticesVal = prog0.latticeComponents.map {
       case (tpe0, lattice0) =>
         for {
           tpe <- lookupType(tpe0, lattice0.ns, prog0)
@@ -296,7 +296,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
   /**
     * Performs name resolution on the given lattice `l0` in the given namespace `ns0`.
     */
-  def resolve(l0: NamedAst.Lattice, ns0: Name.NName, prog0: NamedAst.Program)(implicit genSym: GenSym): Validation[ResolvedAst.Lattice, ResolutionError] = {
+  def resolve(l0: NamedAst.LatticeComponents, ns0: Name.NName, prog0: NamedAst.Program)(implicit genSym: GenSym): Validation[ResolvedAst.LatticeComponents, ResolutionError] = {
     val tenv0 = Map.empty[Symbol.VarSym, Type]
     for {
       tpe <- lookupType(l0.tpe, ns0, prog0)
@@ -306,7 +306,7 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
       leq <- Expressions.resolve(l0.leq, tenv0, ns0, prog0)
       lub <- Expressions.resolve(l0.lub, tenv0, ns0, prog0)
       glb <- Expressions.resolve(l0.glb, tenv0, ns0, prog0)
-    } yield ResolvedAst.Lattice(tpe, bot, top, equ, leq, lub, glb, ns0, l0.loc)
+    } yield ResolvedAst.LatticeComponents(tpe, bot, top, equ, leq, lub, glb, ns0, l0.loc)
   }
 
   object Tables {
