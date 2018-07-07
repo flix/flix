@@ -358,7 +358,54 @@ object Symbol {
   /**
     * Table Symbol.
     */
+  // TODO: Deprecated, replaced by RelSym and LatSym.
   final class TableSym(val namespace: List[String], val name: String, val loc: SourceLocation) {
+    /**
+      * Returns `true` if this symbol is equal to `that` symbol.
+      */
+    override def equals(obj: scala.Any): Boolean = obj match {
+      case that: TableSym => this.namespace == that.namespace && this.name == that.name
+      case _ => false
+    }
+
+    /**
+      * Returns the hash code of this symbol.
+      */
+    override val hashCode: Int = 7 * namespace.hashCode() + 11 * name.hashCode
+
+    /**
+      * Human readable representation.
+      */
+    override def toString: String = if (namespace.isEmpty) name else namespace.mkString("/") + "." + name
+  }
+
+  /**
+    * Relation Symbol.
+    */
+  final class RelSym(val namespace: List[String], val name: String, val loc: SourceLocation) {
+    /**
+      * Returns `true` if this symbol is equal to `that` symbol.
+      */
+    override def equals(obj: scala.Any): Boolean = obj match {
+      case that: TableSym => this.namespace == that.namespace && this.name == that.name
+      case _ => false
+    }
+
+    /**
+      * Returns the hash code of this symbol.
+      */
+    override val hashCode: Int = 7 * namespace.hashCode() + 11 * name.hashCode
+
+    /**
+      * Human readable representation.
+      */
+    override def toString: String = if (namespace.isEmpty) name else namespace.mkString("/") + "." + name
+  }
+
+  /**
+    * Lattice Symbol.
+    */
+  final class LatSym(val namespace: List[String], val name: String, val loc: SourceLocation) {
     /**
       * Returns `true` if this symbol is equal to `that` symbol.
       */

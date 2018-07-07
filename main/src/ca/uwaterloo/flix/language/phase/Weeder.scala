@@ -197,7 +197,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
          * Check for `DuplicateAttribute`.
          */
         checkDuplicateAttribute(attrs) map {
-          case as => List(WeededAst.Table.Relation(doc, ident, as, mkSL(sp1, sp2)))
+          case as => List(WeededAst.Declaration.Relation(doc, ident, as, mkSL(sp1, sp2)))
         }
 
       case ParsedAst.Declaration.Lattice(doc0, sp1, ident, attr, sp2) =>
@@ -215,7 +215,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         checkDuplicateAttribute(attr) map {
           case as =>
             // Split the attributes into keys and element.
-            List(WeededAst.Table.Lattice(doc, ident, as, mkSL(sp1, sp2)))
+            List(WeededAst.Declaration.Lattice(doc, ident, as, mkSL(sp1, sp2)))
         }
 
       case ParsedAst.Declaration.Constraint(sp1, head, body, sp2) =>

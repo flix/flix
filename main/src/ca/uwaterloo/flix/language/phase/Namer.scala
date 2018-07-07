@@ -367,7 +367,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
       /*
        * Relation.
        */
-      case WeededAst.Table.Relation(doc, ident, attr, loc) =>
+      case WeededAst.Declaration.Relation(doc, ident, attr, loc) =>
         // check if the table already exists.
         prog0.tables.get(ns0) match {
           case None =>
@@ -392,7 +392,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
       /*
        * Lattice.
        */
-      case WeededAst.Table.Lattice(doc, ident, attr, loc) =>
+      case WeededAst.Declaration.Lattice(doc, ident, attr, loc) =>
         // check if the table already exists.
         prog0.tables.get(ns0) match {
           case None =>
