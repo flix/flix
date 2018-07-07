@@ -681,8 +681,8 @@ class Shell(initialPaths: List[Path], options: Options) {
     */
   private def prettyPrintRel(rel: Table.Relation, vt: VirtualTerminal): Unit = {
     vt << Bold("rel ") << Blue(rel.sym.toString) << "("
-    vt << rel.attributes.head.name << ": " << Cyan(rel.attributes.head.tpe.show)
-    for (attr <- rel.attributes.tail) {
+    vt << rel.attr.head.name << ": " << Cyan(rel.attr.head.tpe.show)
+    for (attr <- rel.attr.tail) {
       vt << ", " << attr.name << ": " << Cyan(attr.tpe.show)
     }
     vt << ")" << NewLine
@@ -693,8 +693,8 @@ class Shell(initialPaths: List[Path], options: Options) {
     */
   private def prettyPrintLat(lat: Table.Lattice, vt: VirtualTerminal): Unit = {
     vt << Bold("lat ") << Blue(lat.sym.toString) << "("
-    vt << lat.attributes.head.name << ": " << Cyan(lat.attributes.head.tpe.show)
-    for (attr <- lat.attributes.tail) {
+    vt << lat.attr.head.name << ": " << Cyan(lat.attr.head.tpe.show)
+    for (attr <- lat.attr.tail) {
       vt << ", " << attr.name << ": " << Cyan(attr.tpe.show)
     }
     vt << ")" << NewLine

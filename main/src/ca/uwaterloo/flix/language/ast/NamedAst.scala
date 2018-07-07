@@ -72,7 +72,7 @@ object NamedAst {
 
     case class Relation(doc: Ast.Doc, sym: Symbol.TableSym, attr: List[NamedAst.Attribute], loc: SourceLocation) extends NamedAst.Table
 
-    case class Lattice(doc: Ast.Doc, sym: Symbol.TableSym, keys: List[NamedAst.Attribute], value: NamedAst.Attribute, loc: SourceLocation) extends NamedAst.Table
+    case class Lattice(doc: Ast.Doc, sym: Symbol.TableSym, attr: List[NamedAst.Attribute], loc: SourceLocation) extends NamedAst.Table
 
   }
 

@@ -282,11 +282,10 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           case ResolvedAst.Table.Relation(doc, sym, attr, loc) =>
             for (typedAttributes <- Result.seqM(attr.map(a => visitAttribute(a))))
               yield sym -> TypedAst.Table.Relation(doc, sym, typedAttributes, loc)
-          case ResolvedAst.Table.Lattice(doc, sym, keys, value, loc) =>
+          case ResolvedAst.Table.Lattice(doc, sym, attributes, loc) =>
             for {
-              typedKeys <- Result.seqM(keys.map(a => visitAttribute(a)))
-              typedVal <- visitAttribute(value)
-            } yield sym -> TypedAst.Table.Lattice(doc, sym, typedKeys, typedVal, loc)
+              typedAttributes <- Result.seqM(attributes.map(a => visitAttribute(a)))
+            } yield sym -> TypedAst.Table.Lattice(doc, sym, typedAttributes, loc)
         }
 
         /**
@@ -1662,7 +1661,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
   def getTableSignature(sym: Symbol.TableSym, program: ResolvedAst.Program): Result[List[Type], TypeError] = {
     program.tables(sym) match {
       case ResolvedAst.Table.Relation(_, _, attr, _) => Ok(attr.map(_.tpe))
-      case ResolvedAst.Table.Lattice(_, _, keys, value, _) => Ok(keys.map(_.tpe) ::: value.tpe :: Nil)
+      case ResolvedAst.Table.Lattice(_, _, attr, _) => Ok(attr.map(_.tpe))
     }
   }
 

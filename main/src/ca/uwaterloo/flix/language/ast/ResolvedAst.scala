@@ -74,9 +74,7 @@ object ResolvedAst {
 
     case class Relation(doc: Ast.Doc, sym: Symbol.TableSym, attr: List[ResolvedAst.Attribute], loc: SourceLocation) extends ResolvedAst.Table
 
-    case class Lattice(doc: Ast.Doc, sym: Symbol.TableSym, keys: List[ResolvedAst.Attribute], value: ResolvedAst.Attribute, loc: SourceLocation) extends ResolvedAst.Table {
-      def attr: List[ResolvedAst.Attribute] = keys ::: value :: Nil
-    }
+    case class Lattice(doc: Ast.Doc, sym: Symbol.TableSym, attr: List[ResolvedAst.Attribute], loc: SourceLocation) extends ResolvedAst.Table
 
   }
 

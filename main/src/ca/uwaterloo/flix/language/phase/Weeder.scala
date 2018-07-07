@@ -200,22 +200,22 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           case as => List(WeededAst.Table.Relation(doc, ident, as, mkSL(sp1, sp2)))
         }
 
-      case ParsedAst.Declaration.Lattice(doc0, sp1, ident, attrs, sp2) =>
+      case ParsedAst.Declaration.Lattice(doc0, sp1, ident, attr, sp2) =>
         val doc = visitDoc(doc0)
 
         /*
          * Check for `EmptyLattice`.
          */
-        if (attrs.isEmpty)
+        if (attr.isEmpty)
           return EmptyLattice(ident.name, mkSL(sp1, sp2)).toFailure
 
         /*
          * Check for `DuplicateAttribute`.
          */
-        checkDuplicateAttribute(attrs) map {
+        checkDuplicateAttribute(attr) map {
           case as =>
             // Split the attributes into keys and element.
-            List(WeededAst.Table.Lattice(doc, ident, as.init, as.last, mkSL(sp1, sp2)))
+            List(WeededAst.Table.Lattice(doc, ident, as, mkSL(sp1, sp2)))
         }
 
       case ParsedAst.Declaration.Constraint(sp1, head, body, sp2) =>

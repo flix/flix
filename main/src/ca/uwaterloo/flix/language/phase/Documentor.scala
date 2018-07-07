@@ -227,7 +227,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     * Returns the given relation `r` as a JSON object.
     */
   private def mkRelation(r: Table.Relation): JObject = {
-    val attributes = r.attributes.map {
+    val attributes = r.attr.map {
       case Attribute(name, tpe, loc) => JObject(List(
         JField("name", JString(name)),
         JField("tpe", JString(prettify(tpe)))
@@ -245,7 +245,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
     * Returns the given lattice `l` as a JSON object.
     */
   private def mkLattice(l: Table.Lattice): JObject = {
-    val attributes = (l.keys ::: l.value :: Nil).map {
+    val attributes = l.attr.map {
       case Attribute(name, tpe, loc) => JObject(List(
         JField("name", JString(name)),
         JField("tpe", JString(prettify(tpe)))

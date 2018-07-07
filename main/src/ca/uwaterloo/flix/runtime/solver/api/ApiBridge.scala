@@ -109,13 +109,14 @@ object ApiBridge {
   private def visitTableSym(sym: Symbol.TableSym)(implicit root: ExecutableAst.Root, cache: SymbolCache, flix: Flix): Table =
     root.tables(sym) match {
       case r: ExecutableAst.Table.Relation =>
-        val attributes = r.attributes.map(visitAttribute)
+        val attributes = r.attr.map(visitAttribute)
         cache.getRelSym(sym, sym.toString, attributes.toArray)
 
       case l: ExecutableAst.Table.Lattice =>
-        val keys = l.keys.map(visitAttribute)
-        val value = visitAttribute(l.value)
-        val ops = getLatticeOps(l.value)
+        val attributes = l.attr.map(visitAttribute)
+        val keys = attributes.init
+        val value = attributes.last
+        val ops = getLatticeOps(l.attr.last)
         cache.getLatSym(sym, sym.toString, keys.toArray, value, ops)
     }
 
@@ -145,13 +146,13 @@ object ApiBridge {
 
   private def visitLatOps(tables: Map[Symbol.TableSym, ExecutableAst.Table])(implicit root: ExecutableAst.Root, cache: SymbolCache, flix: Flix): Map[Table, LatticeOps] = {
     tables.foldLeft(Map.empty[Table, LatticeOps]) {
-      case (macc, (sym, ExecutableAst.Table.Relation(_, attributes, _))) =>
+      case (macc, (sym, ExecutableAst.Table.Relation(_, attr, _))) =>
         // relation
         macc
 
-      case (macc, (sym, ExecutableAst.Table.Lattice(_, keys, value, _))) =>
+      case (macc, (sym, ExecutableAst.Table.Lattice(_, attr, _))) =>
         // lattice
-        val latticeOps = getLatticeOps(value)
+        val latticeOps = getLatticeOps(attr.last)
         macc + (visitTableSym(sym) -> latticeOps)
     }
   }

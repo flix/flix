@@ -573,17 +573,16 @@ object SimplifiedAstOps {
     //
     for ((sym1, table) <- root.tables) {
       table match {
-        case Table.Relation(sym2, attributes, loc) =>
+        case Table.Relation(sym2, attr, loc) =>
           assert(sym1 == sym2)
-          for (attribute <- attributes) {
+          for (attribute <- attr) {
             checkAttribute(attribute)
           }
-        case Table.Lattice(sym2, keys, value, loc) =>
+        case Table.Lattice(sym2, attr, loc) =>
           assert(sym1 == sym2)
-          for (attribute <- keys) {
+          for (attribute <- attr) {
             checkAttribute(attribute)
           }
-          checkAttribute(value)
       }
     }
 

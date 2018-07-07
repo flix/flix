@@ -320,11 +320,10 @@ object Resolver extends Phase[NamedAst.Program, ResolvedAst.Program] {
           as <- seqM(attr.map(a => resolve(a, ns0, prog0)))
         } yield ResolvedAst.Table.Relation(doc, sym, as, loc)
 
-      case NamedAst.Table.Lattice(doc, sym, keys, value, loc) =>
+      case NamedAst.Table.Lattice(doc, sym, attr, loc) =>
         for {
-          ks <- seqM(keys.map(k => resolve(k, ns0, prog0)))
-          v <- resolve(value, ns0, prog0)
-        } yield ResolvedAst.Table.Lattice(doc, sym, ks, v, loc)
+          as <- seqM(attr.map(a => resolve(a, ns0, prog0)))
+        } yield ResolvedAst.Table.Lattice(doc, sym, as, loc)
     }
 
     /**

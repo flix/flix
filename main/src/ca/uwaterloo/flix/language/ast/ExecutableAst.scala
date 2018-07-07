@@ -63,9 +63,9 @@ object ExecutableAst {
 
   object Table {
 
-    case class Relation(sym: Symbol.TableSym, attributes: List[ExecutableAst.Attribute], loc: SourceLocation) extends ExecutableAst.Table
+    case class Relation(sym: Symbol.TableSym, attr: List[ExecutableAst.Attribute], loc: SourceLocation) extends ExecutableAst.Table
 
-    case class Lattice(sym: Symbol.TableSym, keys: List[ExecutableAst.Attribute], value: ExecutableAst.Attribute, loc: SourceLocation) extends ExecutableAst.Table
+    case class Lattice(sym: Symbol.TableSym, attr: List[ExecutableAst.Attribute], loc: SourceLocation) extends ExecutableAst.Table
 
   }
 

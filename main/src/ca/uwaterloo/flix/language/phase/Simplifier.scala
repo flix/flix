@@ -666,8 +666,8 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
     def visitTable(table0: TypedAst.Table): SimplifiedAst.Table = table0 match {
       case TypedAst.Table.Relation(doc, symbol, attributes, loc) =>
         SimplifiedAst.Table.Relation(symbol, attributes.map(visitAttribute), loc)
-      case TypedAst.Table.Lattice(doc, name, keys, value, loc) =>
-        SimplifiedAst.Table.Lattice(name, keys.map(visitAttribute), visitAttribute(value), loc)
+      case TypedAst.Table.Lattice(doc, name, attributes, loc) =>
+        SimplifiedAst.Table.Lattice(name, attributes.map(visitAttribute),loc)
     }
 
     /**

@@ -1099,8 +1099,7 @@ object Synthesize extends Phase[Root, Root] {
       case (sym, Table.Relation(_, _, attributes, _)) => attributes.map {
         case Attribute(_, tpe, _) => tpe
       }
-      case (sym, Table.Lattice(_, _, keys, value, _)) =>
-        val attributes = keys ::: value :: Nil
+      case (sym, Table.Lattice(_, _, attributes, _)) =>
         attributes.map {
           case Attribute(_, tpe, _) => tpe
         }

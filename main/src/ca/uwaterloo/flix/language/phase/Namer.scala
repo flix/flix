@@ -392,12 +392,12 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
       /*
        * Lattice.
        */
-      case WeededAst.Table.Lattice(doc, ident, keys, value, loc) =>
+      case WeededAst.Table.Lattice(doc, ident, attr, loc) =>
         // check if the table already exists.
         prog0.tables.get(ns0) match {
           case None =>
             // Case 1: The namespace does not yet exist. So the table does not yet exist.
-            val table = NamedAst.Table.Lattice(doc, Symbol.mkTableSym(ns0, ident), keys.map(k => Attributes.namer(k, Map.empty)), Attributes.namer(value, Map.empty), loc)
+            val table = NamedAst.Table.Lattice(doc, Symbol.mkTableSym(ns0, ident), attr.map(k => Attributes.namer(k, Map.empty)), loc)
             val tables = Map(ident.name -> table)
             prog0.copy(tables = prog0.tables + (ns0 -> tables)).toSuccess
           case Some(tables0) =>
@@ -405,7 +405,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
             tables0.get(ident.name) match {
               case None =>
                 // Case 2.1: The table does not exist in the namespace. Update it.
-                val table = NamedAst.Table.Lattice(doc, Symbol.mkTableSym(ns0, ident), keys.map(k => Attributes.namer(k, Map.empty)), Attributes.namer(value, Map.empty), loc)
+                val table = NamedAst.Table.Lattice(doc, Symbol.mkTableSym(ns0, ident), attr.map(k => Attributes.namer(k, Map.empty)), loc)
                 val tables = tables0 + (ident.name -> table)
                 prog0.copy(tables = prog0.tables + (ns0 -> tables)).toSuccess
               case Some(table) =>

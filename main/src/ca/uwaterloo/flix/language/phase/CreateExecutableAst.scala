@@ -93,9 +93,9 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
       case SimplifiedAst.Table.Relation(symbol, attributes, loc) =>
         val attributesArray = attributes.map(CreateExecutableAst.toExecutable)
         ExecutableAst.Table.Relation(symbol, attributesArray, loc)
-      case SimplifiedAst.Table.Lattice(symbol, keys, value, loc) =>
-        val keysArray = keys.map(CreateExecutableAst.toExecutable)
-        ExecutableAst.Table.Lattice(symbol, keysArray, CreateExecutableAst.toExecutable(value), loc)
+      case SimplifiedAst.Table.Lattice(symbol, attributes, loc) =>
+        val attributesArray = attributes.map(CreateExecutableAst.toExecutable)
+        ExecutableAst.Table.Lattice(symbol, attributesArray, loc)
     }
   }
 

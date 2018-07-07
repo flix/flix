@@ -70,7 +70,7 @@ object WeededAst {
 
     case class Relation(doc: Ast.Doc, ident: Name.Ident, attr: List[WeededAst.Attribute], loc: SourceLocation) extends WeededAst.Table
 
-    case class Lattice(doc: Ast.Doc, ident: Name.Ident, keys: List[WeededAst.Attribute], value: WeededAst.Attribute, loc: SourceLocation) extends WeededAst.Table
+    case class Lattice(doc: Ast.Doc, ident: Name.Ident, attr: List[WeededAst.Attribute], loc: SourceLocation) extends WeededAst.Table
 
   }
 
