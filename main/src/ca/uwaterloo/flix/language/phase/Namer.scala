@@ -32,18 +32,18 @@ import scala.collection.mutable
 /**
   * The Namer phase introduces unique symbols for each syntactic entity in the program.
   */
-object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
+object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
 
   import NameError._
 
   /**
     * Introduces unique names for each syntactic entity in the given `program`.
     **/
-  def run(program: WeededAst.Program)(implicit flix: Flix): Validation[NamedAst.Program, NameError] = flix.phase("Namer") {
+  def run(program: WeededAst.Program)(implicit flix: Flix): Validation[NamedAst.Root, NameError] = flix.phase("Namer") {
     implicit val _ = flix.genSym
 
     // make an empty program to fold over.
-    val prog0 = NamedAst.Program(
+    val prog0 = NamedAst.Root(
       defs = Map.empty,
       effs = Map.empty,
       handlers = Map.empty,
@@ -83,7 +83,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
     /**
       * Performs naming on the given declaration `decl0` in the given namespace `ns0` under the given (partial) program `prog0`.
       */
-    def namer(decl0: WeededAst.Declaration, ns0: Name.NName, prog0: NamedAst.Program)(implicit genSym: GenSym): Validation[NamedAst.Program, NameError] = decl0 match {
+    def namer(decl0: WeededAst.Declaration, ns0: Name.NName, prog0: NamedAst.Root)(implicit genSym: GenSym): Validation[NamedAst.Root, NameError] = decl0 match {
       /*
        * Namespace.
        */
