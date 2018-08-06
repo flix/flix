@@ -40,14 +40,15 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       effs <- Declarations.typecheckEffects(program)
       handlers <- Declarations.typecheckHandlers(program)
       enums <- Declarations.Enums.typecheck(program)
-      lattices <- Declarations.Lattices.typecheck(program)
-      tables <- Declarations.Tables.typecheck(program)
+      relations <- Declarations.visitRelations(program)
+      lattices <- Declarations.visitLattices(program)
+      latticeComponents <- Declarations.Lattices.typecheck(program)
       constraints <- Constraints.typecheck(program)
       properties <- Declarations.Properties.typecheck(program)
     } yield {
       val strata = List(TypedAst.Stratum(constraints))
       val specialOps = Map.empty[SpecialOperator, Map[Type, Symbol.DefnSym]]
-      TypedAst.Root(defs, effs, handlers, enums, lattices, tables, strata, properties, specialOps, program.reachable)
+      TypedAst.Root(defs, effs, handlers, enums, relations, lattices, latticeComponents, strata, properties, specialOps, program.reachable)
     }
 
     result match {
@@ -264,47 +265,65 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
 
     }
 
-    object Tables {
-
-      /**
-        * Performs type inference and reassembly on all tables in the given program.
-        *
-        * Returns [[Err]] if type resolution fails.
-        */
-      def typecheck(program: ResolvedAst.Program): Result[Map[Symbol.TableSym, TypedAst.Table], TypeError] = {
-
-        /**
-          * Performs type resolution on the given `table`.
-          *
-          * Returns [[Err]] if a type is unresolved.
-          */
-        def visitTable(table: ResolvedAst.Table): Result[(Symbol.TableSym, TypedAst.Table), TypeError] = table match {
-          case ResolvedAst.Table.Relation(doc, sym, attr, loc) =>
-            for (typedAttributes <- Result.seqM(attr.map(a => visitAttribute(a))))
-              yield sym -> TypedAst.Table.Relation(doc, sym, typedAttributes, loc)
-          case ResolvedAst.Table.Lattice(doc, sym, attributes, loc) =>
-            for {
-              typedAttributes <- Result.seqM(attributes.map(a => visitAttribute(a)))
-            } yield sym -> TypedAst.Table.Lattice(doc, sym, typedAttributes, loc)
-        }
-
-        /**
-          * Performs type resolution on the given attribute `attr`.
-          */
-        def visitAttribute(attr: ResolvedAst.Attribute): Result[TypedAst.Attribute, TypeError] = attr match {
-          case ResolvedAst.Attribute(ident, tpe, loc) => Ok(TypedAst.Attribute(ident.name, tpe, loc))
-        }
-
-        // Visit every table in the program.
-        val result = program.tables.toList.map {
-          case (_, table) => visitTable(table)
-        }
-
-        // Sequence the results and convert them back to a map.
-        Result.seqM(result).map(_.toMap)
+    /**
+      * Performs type inference and reassembly on all relations in the given program.
+      *
+      * Returns [[Err]] if type resolution fails.
+      */
+    def visitRelations(program: ResolvedAst.Program): Result[Map[Symbol.RelSym, TypedAst.Relation], TypeError] = {
+      // Visit every relation in the program.
+      val result = program.relations.toList.map {
+        case (_, rel) => visitRelation(rel)
       }
 
+      // Sequence the results and convert them back to a map.
+      Result.seqM(result).map(_.toMap)
     }
+
+    /**
+      * Performs type inference and reassembly on all lattices in the given program.
+      *
+      * Returns [[Err]] if type resolution fails.
+      */
+    def visitLattices(program: ResolvedAst.Program): Result[Map[Symbol.LatSym, TypedAst.Lattice], TypeError] = {
+      // Visit every relation in the program.
+      val result = program.lattices.toList.map {
+        case (_, lat) => visitLattice(lat)
+      }
+
+      // Sequence the results and convert them back to a map.
+      Result.seqM(result).map(_.toMap)
+    }
+
+    /**
+      * Performs type resolution on the given relation `r`.
+      *
+      * Returns [[Err]] if a type is unresolved.
+      */
+    def visitRelation(r: ResolvedAst.Relation): Result[(Symbol.RelSym, TypedAst.Relation), TypeError] = r match {
+      case ResolvedAst.Relation(doc, sym, attr, loc) =>
+        for (typedAttributes <- Result.seqM(attr.map(a => visitAttribute(a))))
+          yield sym -> TypedAst.Relation(doc, sym, typedAttributes, loc)
+    }
+
+    /**
+      * Performs type resolution on the given lattice `l`.
+      *
+      * Returns [[Err]] if a type is unresolved.
+      */
+    def visitLattice(r: ResolvedAst.Lattice): Result[(Symbol.LatSym, TypedAst.Lattice), TypeError] = r match {
+      case ResolvedAst.Lattice(doc, sym, attr, loc) =>
+        for (typedAttributes <- Result.seqM(attr.map(a => visitAttribute(a))))
+          yield sym -> TypedAst.Lattice(doc, sym, typedAttributes, loc)
+    }
+
+    /**
+      * Performs type resolution on the given attribute `attr`.
+      */
+    def visitAttribute(attr: ResolvedAst.Attribute): Result[TypedAst.Attribute, TypeError] = attr match {
+      case ResolvedAst.Attribute(ident, tpe, loc) => Ok(TypedAst.Attribute(ident.name, tpe, loc))
+    }
+
 
     object Properties {
 
@@ -722,16 +741,16 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         /*
          * ArrayLit expression.
          */
-          case ResolvedAst.Expression.ArrayLit(elms, tvar, loc) =>
+        case ResolvedAst.Expression.ArrayLit(elms, tvar, loc) =>
           //
           //  e1 : t ... en: t
           //  ------------------------
           //  [e1,...,en] : Array[t]
           //
-          if(elms.isEmpty){
+          if (elms.isEmpty) {
             for (
               resultType <- unifyM(tvar, Type.mkArray(Type.freshTypeVar()), loc)
-              ) yield resultType
+            ) yield resultType
           }
           else {
             for (
@@ -741,9 +760,9 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
             ) yield resultType
           }
 
-          /*
-           * ArrayNew expression.
-           */
+        /*
+         * ArrayNew expression.
+         */
         case ResolvedAst.Expression.ArrayNew(elm, len, tvar, loc) =>
           //
           //  elm : t      len: Int
@@ -832,12 +851,12 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           // ---------------------------
           // [|elm1,...,elm_len|] : Vector[t, len]
           //
-          if(elms.isEmpty){
+          if (elms.isEmpty) {
             for (
               resultType <- unifyM(tvar, Type.mkVector(Type.freshTypeVar(), Type.Succ(0, Type.Zero)), loc)
             ) yield resultType
           }
-          else{
+          else {
             for (
               elementTypes <- seqM(elms.map(visitExp));
               elementType <- unifyM(elementTypes, loc);
@@ -893,7 +912,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           //
           val freshResultType = Type.freshTypeVar()
           val freshLengthVar = Type.freshTypeVar()
-          for(
+          for (
             baseType <- visitExp(base);
             _ <- unifyM(baseType, Type.mkVector(freshResultType, Type.Succ(0, freshLengthVar)), loc);
             resultType <- unifyM(tvar, Type.Int32, loc)
@@ -919,17 +938,17 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           val freshElmType = Type.freshTypeVar()
           optEndIndex match {
             case None =>
-              for(
+              for (
                 baseType <- visitExp(base);
                 firstIndex <- unifyM(baseType, Type.mkVector(freshElmType, Type.Succ(startIndex, freshEndIndex)), loc);
                 resultType <- unifyM(tvar, Type.mkVector(freshElmType, freshEndIndex), loc)
               ) yield resultType
             case Some(endIndex) =>
-              for(
+              for (
                 baseType <- visitExp(base);
                 firstIndex <- unifyM(baseType, Type.mkVector(freshElmType, Type.Succ(startIndex, freshBeginIndex)), loc);
                 secondIndex <- unifyM(baseType, Type.mkVector(freshElmType, Type.Succ(endIndex, freshEndIndex)), loc);
-                resultType <- unifyM(tvar, Type.mkVector(freshElmType, Type.Succ(endIndex-startIndex, Type.Zero)), loc)
+                resultType <- unifyM(tvar, Type.mkVector(freshElmType, Type.Succ(endIndex - startIndex, Type.Zero)), loc)
               ) yield resultType
           }
 
@@ -1308,37 +1327,37 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           val e = visitExp(elm, subst0)
           TypedAst.Expression.VectorNew(e, len, subst0(tvar), Eff.Bot, loc)
 
-          /*
-           * VectorLoad expression.
-           */
-         case ResolvedAst.Expression.VectorLoad(base, index, tvar, loc) =>
+        /*
+         * VectorLoad expression.
+         */
+        case ResolvedAst.Expression.VectorLoad(base, index, tvar, loc) =>
           val b = visitExp(base, subst0)
           TypedAst.Expression.VectorLoad(b, index, subst0(tvar), Eff.Bot, loc)
 
-          /*
-           * VectorStore expression.
-           */
+        /*
+         * VectorStore expression.
+         */
         case ResolvedAst.Expression.VectorStore(base, index, elm, tvar, loc) =>
           val b = visitExp(base, subst0)
           val e = visitExp(elm, subst0)
           TypedAst.Expression.VectorStore(b, index, e, subst0(tvar), Eff.Bot, loc)
 
-          /*
-           * VectorLength expression.
-           */
+        /*
+         * VectorLength expression.
+         */
         case ResolvedAst.Expression.VectorLength(base, tvar, loc) =>
           val b = visitExp(base, subst0)
           TypedAst.Expression.VectorLength(b, subst0(tvar), Eff.Bot, loc)
 
-          /*
-           * VectorSlice expression.
-           */
+        /*
+         * VectorSlice expression.
+         */
         case ResolvedAst.Expression.VectorSlice(base, startIndex, optEndIndex, tvar, loc) =>
           val e = visitExp(base, subst0)
           optEndIndex match {
             case None =>
               val len = TypedAst.Expression.VectorLength(e, Type.Int32, Eff.Bot, loc)
-              TypedAst.Expression.VectorSlice(e, startIndex, len , subst0(tvar), Eff.Bot, loc)
+              TypedAst.Expression.VectorSlice(e, startIndex, len, subst0(tvar), Eff.Bot, loc)
             case Some(endIndex) =>
               val len = TypedAst.Expression.Int32(endIndex, loc)
               TypedAst.Expression.VectorSlice(e, startIndex, len, subst0(tvar), Eff.Bot, loc)
@@ -1563,8 +1582,13 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     def infer(head: ResolvedAst.Predicate.Head, program: ResolvedAst.Program)(implicit genSym: GenSym): InferMonad[List[Type]] = head match {
       case ResolvedAst.Predicate.Head.True(loc) => Unification.liftM(Nil)
       case ResolvedAst.Predicate.Head.False(loc) => Unification.liftM(Nil)
-      case ResolvedAst.Predicate.Head.Atom(sym, terms, loc) =>
-        getTableSignature(sym, program) match {
+      case ResolvedAst.Predicate.Head.RelAtom(sym, terms, loc) =>
+        getRelationSignature(sym, program) match {
+          case Ok(declaredTypes) => Terms.Head.typecheck(terms, declaredTypes, loc, program)
+          case Err(e) => failM(e)
+        }
+      case ResolvedAst.Predicate.Head.LatAtom(sym, terms, loc) =>
+        getLatticeSignature(sym, program) match {
           case Ok(declaredTypes) => Terms.Head.typecheck(terms, declaredTypes, loc, program)
           case Err(e) => failM(e)
         }
@@ -1574,8 +1598,13 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       * Infers the type of the given body predicate.
       */
     def infer(body0: ResolvedAst.Predicate.Body, program: ResolvedAst.Program)(implicit genSym: GenSym): InferMonad[List[Type]] = body0 match {
-      case ResolvedAst.Predicate.Body.Atom(sym, polarity, terms, loc) =>
-        getTableSignature(sym, program) match {
+      case ResolvedAst.Predicate.Body.RelAtom(sym, polarity, terms, loc) =>
+        getRelationSignature(sym, program) match {
+          case Ok(declaredTypes) => Terms.Body.typecheck(terms, declaredTypes, loc, program)
+          case Err(e) => failM(e)
+        }
+      case ResolvedAst.Predicate.Body.LatAtom(sym, polarity, terms, loc) =>
+        getLatticeSignature(sym, program) match {
           case Ok(declaredTypes) => Terms.Body.typecheck(terms, declaredTypes, loc, program)
           case Err(e) => failM(e)
         }
@@ -1602,18 +1631,24 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     def reassemble(head0: ResolvedAst.Predicate.Head, program: ResolvedAst.Program, subst0: Substitution): TypedAst.Predicate.Head = head0 match {
       case ResolvedAst.Predicate.Head.True(loc) => TypedAst.Predicate.Head.True(loc)
       case ResolvedAst.Predicate.Head.False(loc) => TypedAst.Predicate.Head.False(loc)
-      case ResolvedAst.Predicate.Head.Atom(sym, terms, loc) =>
+      case ResolvedAst.Predicate.Head.RelAtom(sym, terms, loc) =>
         val ts = terms.map(t => Expressions.reassemble(t, program, subst0))
-        TypedAst.Predicate.Head.Atom(sym, ts, loc)
+        TypedAst.Predicate.Head.RelAtom(sym, ts, loc)
+      case ResolvedAst.Predicate.Head.LatAtom(sym, terms, loc) =>
+        val ts = terms.map(t => Expressions.reassemble(t, program, subst0))
+        TypedAst.Predicate.Head.LatAtom(sym, ts, loc)
     }
 
     /**
       * Applies the given substitution `subst0` to the given body predicate `body0`.
       */
     def reassemble(body0: ResolvedAst.Predicate.Body, program: ResolvedAst.Program, subst0: Substitution): TypedAst.Predicate.Body = body0 match {
-      case ResolvedAst.Predicate.Body.Atom(sym, polarity, terms, loc) =>
+      case ResolvedAst.Predicate.Body.RelAtom(sym, polarity, terms, loc) =>
         val ts = terms.map(t => Patterns.reassemble(t, program, subst0))
-        TypedAst.Predicate.Body.Atom(sym, polarity, ts, loc)
+        TypedAst.Predicate.Body.RelAtom(sym, polarity, ts, loc)
+      case ResolvedAst.Predicate.Body.LatAtom(sym, polarity, terms, loc) =>
+        val ts = terms.map(t => Patterns.reassemble(t, program, subst0))
+        TypedAst.Predicate.Body.LatAtom(sym, polarity, ts, loc)
       case ResolvedAst.Predicate.Body.Filter(sym, terms, loc) =>
         val defn = program.defs(sym)
         val ts = terms.map(t => Expressions.reassemble(t, program, subst0))
@@ -1656,12 +1691,20 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
   }
 
   /**
-    * Returns the declared types of the terms of the given fully-qualified table name `qname`.
+    * Returns the declared types of the terms of the given relation symbol `sym`.
     */
-  def getTableSignature(sym: Symbol.TableSym, program: ResolvedAst.Program): Result[List[Type], TypeError] = {
-    program.tables(sym) match {
-      case ResolvedAst.Table.Relation(_, _, attr, _) => Ok(attr.map(_.tpe))
-      case ResolvedAst.Table.Lattice(_, _, attr, _) => Ok(attr.map(_.tpe))
+  def getRelationSignature(sym: Symbol.RelSym, program: ResolvedAst.Program): Result[List[Type], TypeError] = {
+    program.relations(sym) match {
+      case ResolvedAst.Relation(_, _, attr, _) => Ok(attr.map(_.tpe))
+    }
+  }
+
+  /**
+    * Returns the declared types of the terms of the given lattice symbol `sym`.
+    */
+  def getLatticeSignature(sym: Symbol.LatSym, program: ResolvedAst.Program): Result[List[Type], TypeError] = {
+    program.lattices(sym) match {
+      case ResolvedAst.Lattice(_, _, attr, _) => Ok(attr.map(_.tpe))
     }
   }
 

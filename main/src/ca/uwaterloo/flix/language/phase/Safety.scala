@@ -3,7 +3,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.Ast.Polarity
-import ca.uwaterloo.flix.language.ast.Symbol
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, TypedAst}
 import ca.uwaterloo.flix.language.ast.TypedAst.{Constraint, Predicate, Root, Stratum}
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps._
 import ca.uwaterloo.flix.language.errors.SafetyError
@@ -65,7 +65,17 @@ object Safety extends Phase[Root, Root] {
     * with the given positively defined variable symbols `posVars`.
     */
   private def checkBodyPredicate(p0: Predicate.Body, posVars: Set[Symbol.VarSym]): List[CompilationError] = p0 match {
-    case Predicate.Body.Atom(sym, polarity, terms, loc) => polarity match {
+    case Predicate.Body.RelAtom(sym, polarity, terms, loc) => checkBodyAtomPredicate(polarity, terms, posVars, loc)
+    case Predicate.Body.LatAtom(sym, polarity, terms, loc) => checkBodyAtomPredicate(polarity, terms, posVars, loc)
+    case Predicate.Body.Filter(sym, terms, loc) => Nil
+    case Predicate.Body.Loop(sym, term, loc) => Nil
+  }
+
+  /**
+    * Performs safety and well-formedness checks on an atom with the given polarity, terms, and positive variables.
+    */
+  private def checkBodyAtomPredicate(polarity: Polarity, terms: List[TypedAst.Pattern], posVars: Set[Symbol.VarSym], loc: SourceLocation): List[CompilationError] = {
+    polarity match {
       case Polarity.Positive => Nil
       case Polarity.Negative =>
         // Compute the free variables in the terms.
@@ -73,11 +83,9 @@ object Safety extends Phase[Root, Root] {
 
         // Check if any free variables are not positively bound.
         ((freeVars -- posVars) map {
-          case unboundVar => SafetyError.IllegalNonPositivelyBoundVariable(unboundVar, p0.loc)
+          case unboundVar => SafetyError.IllegalNonPositivelyBoundVariable(unboundVar, loc)
         }).toList
     }
-    case Predicate.Body.Filter(sym, terms, loc) => Nil
-    case Predicate.Body.Loop(sym, term, loc) => Nil
   }
 
   /**
@@ -89,7 +97,15 @@ object Safety extends Phase[Root, Root] {
     * Returns all positively defiend variable symbols in the given body predicate `p0`.
     */
   private def positivelyDefinedVariables(p0: Predicate.Body): Set[Symbol.VarSym] = p0 match {
-    case Predicate.Body.Atom(sym, polarity, terms, loc) => polarity match {
+    case Predicate.Body.RelAtom(sym, polarity, terms, loc) => polarity match {
+      case Polarity.Positive =>
+        // Case 1: A positive atom positively defines all its free variables.
+        terms.flatMap(freeVarsOf).toSet
+      case Polarity.Negative =>
+        // Case 2: A negative atom does not positively define any variables.
+        Set.empty
+    }
+    case Predicate.Body.LatAtom(sym, polarity, terms, loc) => polarity match {
       case Polarity.Positive =>
         // Case 1: A positive atom positively defines all its free variables.
         terms.flatMap(freeVarsOf).toSet

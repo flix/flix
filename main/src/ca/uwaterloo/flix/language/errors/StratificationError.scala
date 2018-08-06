@@ -40,7 +40,8 @@ case class StratificationError(constraints: List[TypedAst.Constraint]) extends C
       vt << "\t" << (rule.head match {
         case True(loc) => loc.format
         case False(loc) => loc.format
-        case Head.Atom(sym, terms, loc) => loc.format
+        case Head.RelAtom(sym, terms, loc) => loc.format
+        case Head.LatAtom(sym, terms, loc) => loc.format
       })
       vt << NewLine
     })

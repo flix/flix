@@ -609,8 +609,9 @@ class Shell(initialPaths: List[Path], options: Options) {
     */
   private def namespacesOf(root: Root): Set[String] = {
     val ns1 = root.defs.keySet.map(_.namespace.mkString("/"))
-    val ns2 = root.tables.keySet.map(_.namespace.mkString("/"))
-    (ns1 ++ ns2) - ""
+    val ns2 = root.relations.keySet.map(_.namespace.mkString("/"))
+    val ns3 = root.lattices.keySet.map(_.namespace.mkString("/"))
+    (ns1 ++ ns2 ++ ns3) - ""
   }
 
   /**
@@ -628,10 +629,10 @@ class Shell(initialPaths: List[Path], options: Options) {
   /**
     * Returns the relations in the given namespace.
     */
-  private def getRelationsByNamespace(ns: String, root: Root): List[Table.Relation] = {
+  private def getRelationsByNamespace(ns: String, root: Root): List[Relation] = {
     val namespace: List[String] = getNameSpace(ns)
-    root.tables.foldLeft(Nil: List[Table.Relation]) {
-      case (xs, (s, t: Table.Relation)) if s.namespace == namespace =>
+    root.relations.foldLeft(Nil: List[Relation]) {
+      case (xs, (s, t: Relation)) if s.namespace == namespace =>
         t :: xs
       case (xs, _) => xs
     }
@@ -640,10 +641,10 @@ class Shell(initialPaths: List[Path], options: Options) {
   /**
     * Returns the lattices in the given namespace.
     */
-  private def getLatticesByNamespace(ns: String, root: Root): List[Table.Lattice] = {
+  private def getLatticesByNamespace(ns: String, root: Root): List[Lattice] = {
     val namespace: List[String] = getNameSpace(ns)
-    root.tables.foldLeft(Nil: List[Table.Lattice]) {
-      case (xs, (s, t: Table.Lattice)) if s.namespace == namespace =>
+    root.lattices.foldLeft(Nil: List[Lattice]) {
+      case (xs, (s, t: Lattice)) if s.namespace == namespace =>
         t :: xs
       case (xs, _) => xs
     }
@@ -679,7 +680,7 @@ class Shell(initialPaths: List[Path], options: Options) {
   /**
     * Pretty prints the given relation `rel` to the given virtual terminal `vt`.
     */
-  private def prettyPrintRel(rel: Table.Relation, vt: VirtualTerminal): Unit = {
+  private def prettyPrintRel(rel: Relation, vt: VirtualTerminal): Unit = {
     vt << Bold("rel ") << Blue(rel.sym.toString) << "("
     vt << rel.attr.head.name << ": " << Cyan(rel.attr.head.tpe.show)
     for (attr <- rel.attr.tail) {
@@ -691,7 +692,7 @@ class Shell(initialPaths: List[Path], options: Options) {
   /**
     * Pretty prints the given lattice `lat` to the given virtual terminal `vt`.
     */
-  private def prettyPrintLat(lat: Table.Lattice, vt: VirtualTerminal): Unit = {
+  private def prettyPrintLat(lat: Lattice, vt: VirtualTerminal): Unit = {
     vt << Bold("lat ") << Blue(lat.sym.toString) << "("
     vt << lat.attr.head.name << ": " << Cyan(lat.attr.head.tpe.show)
     for (attr <- lat.attr.tail) {

@@ -32,26 +32,27 @@ import scala.collection.mutable
 /**
   * The Namer phase introduces unique symbols for each syntactic entity in the program.
   */
-object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
+object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
 
   import NameError._
 
   /**
     * Introduces unique names for each syntactic entity in the given `program`.
     **/
-  def run(program: WeededAst.Program)(implicit flix: Flix): Validation[NamedAst.Program, NameError] = flix.phase("Namer") {
+  def run(program: WeededAst.Program)(implicit flix: Flix): Validation[NamedAst.Root, NameError] = flix.phase("Namer") {
     implicit val _ = flix.genSym
 
     // make an empty program to fold over.
-    val prog0 = NamedAst.Program(
+    val prog0 = NamedAst.Root(
       defs = Map.empty,
       effs = Map.empty,
       handlers = Map.empty,
       enums = Map.empty,
       classes = Map.empty,
       impls = Map.empty,
+      relations = Map.empty,
+      lattices = Map.empty,
       latticeComponents = Map.empty,
-      tables = Map.empty,
       constraints = Map.empty,
       named = Map.empty,
       properties = Map.empty,
@@ -83,7 +84,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
     /**
       * Performs naming on the given declaration `decl0` in the given namespace `ns0` under the given (partial) program `prog0`.
       */
-    def namer(decl0: WeededAst.Declaration, ns0: Name.NName, prog0: NamedAst.Program)(implicit genSym: GenSym): Validation[NamedAst.Program, NameError] = decl0 match {
+    def namer(decl0: WeededAst.Declaration, ns0: Name.NName, prog0: NamedAst.Root)(implicit genSym: GenSym): Validation[NamedAst.Root, NameError] = decl0 match {
       /*
        * Namespace.
        */
@@ -367,22 +368,22 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
       /*
        * Relation.
        */
-      case WeededAst.Table.Relation(doc, ident, attr, loc) =>
+      case WeededAst.Declaration.Relation(doc, ident, attr, loc) =>
         // check if the table already exists.
-        prog0.tables.get(ns0) match {
+        prog0.relations.get(ns0) match {
           case None =>
             // Case 1: The namespace does not yet exist. So the table does not yet exist.
-            val table = NamedAst.Table.Relation(doc, Symbol.mkTableSym(ns0, ident), attr.map(a => Attributes.namer(a, Map.empty)), loc)
-            val tables = Map(ident.name -> table)
-            prog0.copy(tables = prog0.tables + (ns0 -> tables)).toSuccess
-          case Some(tables0) =>
+            val relation = NamedAst.Relation(doc, Symbol.mkRelSym(ns0, ident), attr.map(a => Attributes.namer(a, Map.empty)), loc)
+            val relations = Map(ident.name -> relation)
+            prog0.copy(relations = prog0.relations + (ns0 -> relations)).toSuccess
+          case Some(relations0) =>
             // Case 2: The namespace exists. Lookup the table.
-            tables0.get(ident.name) match {
+            relations0.get(ident.name) match {
               case None =>
                 // Case 2.1: The table does not exist in the namespace. Update it.
-                val table = NamedAst.Table.Relation(doc, Symbol.mkTableSym(ns0, ident), attr.map(a => Attributes.namer(a, Map.empty)), loc)
-                val tables = tables0 + (ident.name -> table)
-                prog0.copy(tables = prog0.tables + (ns0 -> tables)).toSuccess
+                val relation = NamedAst.Relation(doc, Symbol.mkRelSym(ns0, ident), attr.map(a => Attributes.namer(a, Map.empty)), loc)
+                val relations = relations0 + (ident.name -> relation)
+                prog0.copy(relations = prog0.relations + (ns0 -> relations)).toSuccess
               case Some(table) =>
                 // Case 2.2: Duplicate definition.
                 DuplicateDef(ident.name, table.loc, ident.loc).toFailure
@@ -392,22 +393,22 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Program] {
       /*
        * Lattice.
        */
-      case WeededAst.Table.Lattice(doc, ident, attr, loc) =>
+      case WeededAst.Declaration.Lattice(doc, ident, attr, loc) =>
         // check if the table already exists.
-        prog0.tables.get(ns0) match {
+        prog0.lattices.get(ns0) match {
           case None =>
             // Case 1: The namespace does not yet exist. So the table does not yet exist.
-            val table = NamedAst.Table.Lattice(doc, Symbol.mkTableSym(ns0, ident), attr.map(k => Attributes.namer(k, Map.empty)), loc)
-            val tables = Map(ident.name -> table)
-            prog0.copy(tables = prog0.tables + (ns0 -> tables)).toSuccess
-          case Some(tables0) =>
+            val lattice = NamedAst.Lattice(doc, Symbol.mkLatSym(ns0, ident), attr.map(k => Attributes.namer(k, Map.empty)), loc)
+            val lattices = Map(ident.name -> lattice)
+            prog0.copy(lattices = prog0.lattices + (ns0 -> lattices)).toSuccess
+          case Some(lattices0) =>
             // Case 2: The namespace exists. Lookup the table.
-            tables0.get(ident.name) match {
+            lattices0.get(ident.name) match {
               case None =>
                 // Case 2.1: The table does not exist in the namespace. Update it.
-                val table = NamedAst.Table.Lattice(doc, Symbol.mkTableSym(ns0, ident), attr.map(k => Attributes.namer(k, Map.empty)), loc)
-                val tables = tables0 + (ident.name -> table)
-                prog0.copy(tables = prog0.tables + (ns0 -> tables)).toSuccess
+                val lattice = NamedAst.Lattice(doc, Symbol.mkLatSym(ns0, ident), attr.map(k => Attributes.namer(k, Map.empty)), loc)
+                val lattices = lattices0 + (ident.name -> lattice)
+                prog0.copy(lattices = prog0.lattices + (ns0 -> lattices)).toSuccess
               case Some(table) =>
                 // Case 2.2: Duplicate definition.
                 DuplicateDef(ident.name, table.loc, ident.loc).toFailure

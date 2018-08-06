@@ -28,8 +28,9 @@ object ExecutableAst {
                   effs: Map[Symbol.EffSym, ExecutableAst.Eff],
                   handlers: Map[Symbol.EffSym, ExecutableAst.Handler],
                   enums: Map[Symbol.EnumSym, ExecutableAst.Enum],
+                  relations: Map[Symbol.RelSym, ExecutableAst.Relation],
+                  lattices: Map[Symbol.LatSym, ExecutableAst.Lattice],
                   latticeComponents: Map[Type, ExecutableAst.LatticeComponents],
-                  tables: Map[Symbol.TableSym, ExecutableAst.Table],
                   strata: List[ExecutableAst.Stratum],
                   properties: List[ExecutableAst.Property],
                   specialOps: Map[SpecialOperator, Map[Type, Symbol.DefnSym]],
@@ -53,21 +54,15 @@ object ExecutableAst {
 
   case class Enum(mod: Ast.Modifiers, sym: Symbol.EnumSym, cases: Map[String, ExecutableAst.Case], tpe: Type, loc: SourceLocation) extends ExecutableAst
 
+  case class Relation(sym: Symbol.RelSym, attr: List[ExecutableAst.Attribute], loc: SourceLocation) extends ExecutableAst
+
+  case class Lattice(sym: Symbol.LatSym, attr: List[ExecutableAst.Attribute], loc: SourceLocation) extends ExecutableAst
+
   case class Property(law: Symbol.DefnSym, defn: Symbol.DefnSym, exp: ExecutableAst.Expression) extends ExecutableAst {
     def loc: SourceLocation = defn.loc
   }
 
   case class Stratum(constraints: List[ExecutableAst.Constraint]) extends ExecutableAst
-
-  sealed trait Table extends ExecutableAst
-
-  object Table {
-
-    case class Relation(sym: Symbol.TableSym, attr: List[ExecutableAst.Attribute], loc: SourceLocation) extends ExecutableAst.Table
-
-    case class Lattice(sym: Symbol.TableSym, attr: List[ExecutableAst.Attribute], loc: SourceLocation) extends ExecutableAst.Table
-
-  }
 
   case class LatticeComponents(tpe: Type, bot: Symbol.DefnSym, top: Symbol.DefnSym, equ: Symbol.DefnSym, leq: Symbol.DefnSym, lub: Symbol.DefnSym, glb: Symbol.DefnSym, loc: SourceLocation) extends ExecutableAst
 
@@ -283,7 +278,9 @@ object ExecutableAst {
 
       case class False(loc: SourceLocation) extends ExecutableAst.Predicate.Head
 
-      case class Atom(sym: Symbol.TableSym, terms: List[ExecutableAst.Term.Head], loc: SourceLocation) extends ExecutableAst.Predicate.Head
+      case class RelAtom(sym: Symbol.RelSym, terms: List[ExecutableAst.Term.Head], loc: SourceLocation) extends ExecutableAst.Predicate.Head
+
+      case class LatAtom(sym: Symbol.LatSym, terms: List[ExecutableAst.Term.Head], loc: SourceLocation) extends ExecutableAst.Predicate.Head
 
     }
 
@@ -291,7 +288,9 @@ object ExecutableAst {
 
     object Body {
 
-      case class Atom(sym: Symbol.TableSym, polarity: Ast.Polarity, terms: List[ExecutableAst.Term.Body], index2sym: List[Symbol.VarSym], loc: SourceLocation) extends ExecutableAst.Predicate.Body
+      case class RelAtom(sym: Symbol.RelSym, polarity: Ast.Polarity, terms: List[ExecutableAst.Term.Body], index2sym: List[Symbol.VarSym], loc: SourceLocation) extends ExecutableAst.Predicate.Body
+
+      case class LatAtom(sym: Symbol.LatSym, polarity: Ast.Polarity, terms: List[ExecutableAst.Term.Body], index2sym: List[Symbol.VarSym], loc: SourceLocation) extends ExecutableAst.Predicate.Body
 
       case class Filter(sym: Symbol.DefnSym, terms: List[ExecutableAst.Term.Body], loc: SourceLocation) extends ExecutableAst.Predicate.Body
 

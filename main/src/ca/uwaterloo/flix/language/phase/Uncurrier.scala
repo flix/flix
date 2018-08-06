@@ -112,16 +112,20 @@ object Uncurrier extends Phase[Root, Root] {
   def visitHeadPredicate(h: Predicate.Head, newDefs: TopLevel, root: Root)(implicit flix: Flix): Predicate.Head = h match {
     case Predicate.Head.True(loc) => h
     case Predicate.Head.False(loc) => h
-    case Predicate.Head.Atom(sym, terms, loc) =>
+    case Predicate.Head.RelAtom(sym, terms, loc) =>
       val ts = terms.map(visitHeadTerm(_, newDefs, root))
-      Predicate.Head.Atom(sym, ts, loc)
+      Predicate.Head.RelAtom(sym, ts, loc)
+    case Predicate.Head.LatAtom(sym, terms, loc) =>
+      val ts = terms.map(visitHeadTerm(_, newDefs, root))
+      Predicate.Head.LatAtom(sym, ts, loc)
   }
 
   /**
     * Uncurries all definitions inside the given body predicate `h`.
     */
   def visitBodyPredicate(b: Predicate.Body, newDefs: TopLevel, root: Root)(implicit flix: Flix): Predicate.Body = b match {
-    case Predicate.Body.Atom(sym, polarity, terms, loc) => b
+    case Predicate.Body.RelAtom(sym, polarity, terms, loc) => b
+    case Predicate.Body.LatAtom(sym, polarity, terms, loc) => b
     case Predicate.Body.Loop(sym, term, loc) =>
       val t = visitHeadTerm(term, newDefs, root)
       Predicate.Body.Loop(sym, t, loc)

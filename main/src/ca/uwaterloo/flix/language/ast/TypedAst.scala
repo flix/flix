@@ -28,8 +28,9 @@ object TypedAst {
                   effs: Map[Symbol.EffSym, TypedAst.Eff],
                   handlers: Map[Symbol.EffSym, TypedAst.Handler],
                   enums: Map[Symbol.EnumSym, TypedAst.Enum],
+                  relations: Map[Symbol.RelSym, TypedAst.Relation],
+                  lattices: Map[Symbol.LatSym, TypedAst.Lattice],
                   latticeComponents: Map[Type, TypedAst.LatticeComponents],
-                  tables: Map[Symbol.TableSym, TypedAst.Table],
                   strata: List[TypedAst.Stratum],
                   properties: List[TypedAst.Property],
                   specialOps: Map[SpecialOperator, Map[Type, Symbol.DefnSym]],
@@ -45,19 +46,13 @@ object TypedAst {
 
   case class Enum(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.EnumSym, cases: Map[String, TypedAst.Case], tpe: Type, loc: SourceLocation) extends TypedAst
 
+  case class Relation(doc: Ast.Doc, sym: Symbol.RelSym, attr: List[TypedAst.Attribute], loc: SourceLocation) extends TypedAst
+
+  case class Lattice(doc: Ast.Doc, sym: Symbol.LatSym, attr: List[TypedAst.Attribute], loc: SourceLocation) extends TypedAst
+
   case class Property(law: Symbol.DefnSym, defn: Symbol.DefnSym, exp: TypedAst.Expression, loc: SourceLocation) extends TypedAst
 
   case class Stratum(constraints: List[TypedAst.Constraint]) extends TypedAst
-
-  sealed trait Table
-
-  object Table {
-
-    case class Relation(doc: Ast.Doc, sym: Symbol.TableSym, attr: List[TypedAst.Attribute], loc: SourceLocation) extends TypedAst.Table
-
-    case class Lattice(doc: Ast.Doc, sym: Symbol.TableSym, attr: List[TypedAst.Attribute], loc: SourceLocation) extends TypedAst.Table
-
-  }
 
   case class LatticeComponents(tpe: Type, bot: TypedAst.Expression, top: TypedAst.Expression, equ: TypedAst.Expression, leq: TypedAst.Expression, lub: TypedAst.Expression, glb: TypedAst.Expression, loc: SourceLocation) extends TypedAst
 
@@ -310,7 +305,9 @@ object TypedAst {
 
       case class False(loc: SourceLocation) extends TypedAst.Predicate.Head
 
-      case class Atom(sym: Symbol.TableSym, terms: List[TypedAst.Expression], loc: SourceLocation) extends TypedAst.Predicate.Head
+      case class RelAtom(sym: Symbol.RelSym, terms: List[TypedAst.Expression], loc: SourceLocation) extends TypedAst.Predicate.Head
+
+      case class LatAtom(sym: Symbol.LatSym, terms: List[TypedAst.Expression], loc: SourceLocation) extends TypedAst.Predicate.Head
 
     }
 
@@ -318,7 +315,9 @@ object TypedAst {
 
     object Body {
 
-      case class Atom(sym: Symbol.TableSym, polarity: Ast.Polarity, terms: List[TypedAst.Pattern], loc: SourceLocation) extends TypedAst.Predicate.Body
+      case class RelAtom(sym: Symbol.RelSym, polarity: Ast.Polarity, terms: List[TypedAst.Pattern], loc: SourceLocation) extends TypedAst.Predicate.Body
+
+      case class LatAtom(sym: Symbol.LatSym, polarity: Ast.Polarity, terms: List[TypedAst.Pattern], loc: SourceLocation) extends TypedAst.Predicate.Body
 
       case class Filter(sym: Symbol.DefnSym, terms: List[TypedAst.Expression], loc: SourceLocation) extends TypedAst.Predicate.Body
 

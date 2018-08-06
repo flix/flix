@@ -438,7 +438,11 @@ object SimplifiedAstOps {
     def checkHeadPred(h0: Predicate.Head, env0: Set[Symbol.VarSym]): Unit = h0 match {
       case Predicate.Head.True(loc) => // nop
       case Predicate.Head.False(loc) => // nop
-      case Predicate.Head.Atom(sym, terms, loc) =>
+      case Predicate.Head.RelAtom(sym, terms, loc) =>
+        for (term <- terms) {
+          checkHeadTerm(term, env0)
+        }
+      case Predicate.Head.LatAtom(sym, terms, loc) =>
         for (term <- terms) {
           checkHeadTerm(term, env0)
         }
@@ -448,7 +452,11 @@ object SimplifiedAstOps {
       * Checks invariants of the given body predicate `b0`.
       */
     def checkBodyPred(b0: Predicate.Body, env0: Set[Symbol.VarSym]): Unit = b0 match {
-      case Predicate.Body.Atom(sym, polarity, terms, loc) =>
+      case Predicate.Body.RelAtom(sym, polarity, terms, loc) =>
+        for (term <- terms) {
+          checkBodyTerm(term, env0)
+        }
+      case Predicate.Body.LatAtom(sym, polarity, terms, loc) =>
         for (term <- terms) {
           checkBodyTerm(term, env0)
         }
@@ -569,20 +577,22 @@ object SimplifiedAstOps {
     }
 
     //
-    // Check all tables in the program.
+    // Check all relations in the program.
     //
-    for ((sym1, table) <- root.tables) {
-      table match {
-        case Table.Relation(sym2, attr, loc) =>
-          assert(sym1 == sym2)
-          for (attribute <- attr) {
-            checkAttribute(attribute)
-          }
-        case Table.Lattice(sym2, attr, loc) =>
-          assert(sym1 == sym2)
-          for (attribute <- attr) {
-            checkAttribute(attribute)
-          }
+    for ((sym1, Relation(sym2, attr, _)) <- root.relations) {
+      assert(sym1 == sym2)
+      for (attribute <- attr) {
+        checkAttribute(attribute)
+      }
+    }
+
+    //
+    // Check all lattices in the program.
+    //
+    for ((sym1, Lattice(sym2, attr, _)) <- root.lattices) {
+      assert(sym1 == sym2)
+      for (attribute <- attr) {
+        checkAttribute(attribute)
       }
     }
 

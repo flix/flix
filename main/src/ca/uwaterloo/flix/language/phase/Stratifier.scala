@@ -19,12 +19,13 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.Ast.Polarity
+import ca.uwaterloo.flix.language.ast.SimplifiedAst.Predicate.Head.RelAtom
+import ca.uwaterloo.flix.language.ast.SimplifiedAst.Predicate.Head.LatAtom
 import ca.uwaterloo.flix.language.ast.TypedAst
-import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body.{Filter, Loop}
-import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Head.{Atom, False, True}
-import ca.uwaterloo.flix.language.ast.TypedAst.{Root, Stratum}
+import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Head.{False, True}
+import ca.uwaterloo.flix.language.ast.TypedAst.{Predicate, Root, Stratum}
 import ca.uwaterloo.flix.language.errors.StratificationError
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 import ca.uwaterloo.flix.util.Validation._
@@ -50,7 +51,8 @@ object Stratifier extends Phase[TypedAst.Root, TypedAst.Root] {
     */
   def run(root: Root)(implicit flix: Flix): Validation[TypedAst.Root, CompilationError] = flix.phase("Stratifier") {
     val constraints = root.strata.head.constraints
-    val stratified = stratify(constraints, root.tables.keys.toList)
+    val symbols = root.relations.keys ++ root.lattices.keys
+    val stratified = stratify(constraints, symbols.toList)
 
     for {
       stratified <- stratified
@@ -62,10 +64,15 @@ object Stratifier extends Phase[TypedAst.Root, TypedAst.Root] {
     * constraint
     */
   sealed trait ConstrHead
+
   object ConstrHead {
+
     case object True extends ConstrHead
+
     case object False extends ConstrHead
-    case class Atom(sym: Symbol.TableSym) extends ConstrHead
+
+    case class Atom(sym: /* Symbol.TableSym */ AnyRef) extends ConstrHead
+
   }
 
   /**
@@ -74,14 +81,15 @@ object Stratifier extends Phase[TypedAst.Root, TypedAst.Root] {
   def makeConstrHead(constr: TypedAst.Constraint): ConstrHead = constr.head match {
     case True(_) => ConstrHead.True
     case False(_) => ConstrHead.False
-    case Atom(sym, _, _) => ConstrHead.Atom(sym)
+    case Predicate.Head.RelAtom(sym, _, _) => ConstrHead.Atom(sym)
+    case Predicate.Head.LatAtom(sym, _, _) => ConstrHead.Atom(sym)
   }
 
 
   /**
     * Stratify the graph
     */
-  def stratify(constraints: List[TypedAst.Constraint], syms: List[Symbol.TableSym]): Validation[List[Stratum], StratificationError] = {
+  def stratify(constraints: List[TypedAst.Constraint], syms: List[ /* Symbol.TableSym */ AnyRef]): Validation[List[Stratum], StratificationError] = {
     // Implementing as described in Database and Knowledge - Base Systems Volume 1
     // Ullman, Algorithm 3.5 p 133
 
@@ -106,7 +114,7 @@ object Stratifier extends Phase[TypedAst.Root, TypedAst.Root] {
 
         for (subGoal <- pred.body) {
           subGoal match {
-            case Body.Atom(subGoalSym, Polarity.Positive, _, _) =>
+            case Body.RelAtom(subGoalSym, Polarity.Positive, _, _) =>
               val newStratum = math.max(currStratum, stratumOf(ConstrHead.Atom(subGoalSym)))
               if (newStratum > numRules) {
                 // If we create more stratum than there are rules then
@@ -118,7 +126,22 @@ object Stratifier extends Phase[TypedAst.Root, TypedAst.Root] {
                 stratumOf += (headSym -> newStratum)
                 changes = true
               }
-            case Body.Atom(subGoalSym, Polarity.Negative, _, _) =>
+
+            /* copied */
+            case Body.LatAtom(subGoalSym, Polarity.Positive, _, _) =>
+              val newStratum = math.max(currStratum, stratumOf(ConstrHead.Atom(subGoalSym)))
+              if (newStratum > numRules) {
+                // If we create more stratum than there are rules then
+                // we know there must be a negative cycle.
+                return StratificationError(findNegCycle(constraints)).toFailure
+              }
+              if (currStratum != newStratum) {
+                // Update the strata of the predicate
+                stratumOf += (headSym -> newStratum)
+                changes = true
+              }
+
+            case Body.RelAtom(subGoalSym, Polarity.Negative, _, _) =>
               val newStratum = math.max(stratumOf(headSym), stratumOf(ConstrHead.Atom(subGoalSym)) + 1)
 
               if (newStratum > numRules) {
@@ -131,6 +154,22 @@ object Stratifier extends Phase[TypedAst.Root, TypedAst.Root] {
                 stratumOf += (headSym -> newStratum)
                 changes = true
               }
+
+            /* copied */
+            case Body.LatAtom(subGoalSym, Polarity.Negative, _, _) =>
+              val newStratum = math.max(stratumOf(headSym), stratumOf(ConstrHead.Atom(subGoalSym)) + 1)
+
+              if (newStratum > numRules) {
+                // If we create more stratum than there are rules then
+                // we know there must be a negative cycle
+                return StratificationError(findNegCycle(constraints)).toFailure
+              }
+              if (currStratum != newStratum) {
+                // Update the strata of the predicate
+                stratumOf += (headSym -> newStratum)
+                changes = true
+              }
+
             case _: Filter => // Do Nothing
             case _: Loop => // Do Nothing
           }
@@ -151,7 +190,8 @@ object Stratifier extends Phase[TypedAst.Root, TypedAst.Root] {
       */
     def reorder(rule: TypedAst.Constraint): TypedAst.Constraint = {
       def isNegative(p: Body): Boolean = p match {
-        case Body.Atom(_ , Polarity.Negative, _, _) => true
+        case Body.RelAtom(_, Polarity.Negative, _, _) => true
+        case Body.LatAtom(_, Polarity.Negative, _, _) => true
         case _ => false
       }
 
@@ -200,15 +240,15 @@ object Stratifier extends Phase[TypedAst.Root, TypedAst.Root] {
     */
   class Graph {
 
-    var vertices: Set[Symbol.TableSym] = Set.empty
+    var vertices: Set[ /* Symbol.TableSym */ AnyRef] = Set.empty
 
     // An adjacency list of from - to edges with weights
-    var edges: Map[Symbol.TableSym, Map[Symbol.TableSym, Edge]] = Map.empty
+    var edges: Map[ /* Symbol.TableSym */ AnyRef, Map[ /* Symbol.TableSym */ AnyRef, Edge]] = Map.empty
 
     /**
       * Insert an edge from-to with weight into the graph
       */
-    def insert(from: Symbol.TableSym, to: Symbol.TableSym, constr: TypedAst.Constraint, weight: Int): Stratifier.Graph = {
+    def insert(from: /* Symbol.TableSym */ AnyRef, to: /* Symbol.TableSym */ AnyRef, constr: TypedAst.Constraint, weight: Int): Stratifier.Graph = {
       edges = edges.get(from) match {
         case Some(m) => edges + (from -> (m + (to -> Edge(weight, constr))))
         case None => edges + (from -> Map(to -> Edge(weight, constr)))
@@ -228,18 +268,41 @@ object Stratifier extends Phase[TypedAst.Root, TypedAst.Root] {
     */
   def createGraph(constraints: List[TypedAst.Constraint]): Graph = {
     constraints.foldRight(new Graph)((constraint: TypedAst.Constraint, graph: Graph) => constraint.head match {
-      case TypedAst.Predicate.Head.Atom(headSym, _, _) =>
+      case TypedAst.Predicate.Head.RelAtom(headSym, _, _) =>
         // As well as creating the graph out of the given constraints, we also add a source node which
         // has a directed edge to all nodes
         graph.insert(null, headSym, constraint, 0)
         constraint.body.foldRight(graph)((pred: TypedAst.Predicate.Body, graph: Graph) => pred match {
-          case TypedAst.Predicate.Body.Atom(predSym, Polarity.Positive, _, _) =>
+          case TypedAst.Predicate.Body.RelAtom(predSym, Polarity.Positive, _, _) =>
             graph.insert(headSym, predSym, constraint, 0)
-          case TypedAst.Predicate.Body.Atom(predSym, Polarity.Negative, _, _) =>
+          case TypedAst.Predicate.Body.LatAtom(predSym, Polarity.Positive, _, _) =>
+            graph.insert(headSym, predSym, constraint, 0)
+          case TypedAst.Predicate.Body.RelAtom(predSym, Polarity.Negative, _, _) =>
+            graph.insert(headSym, predSym, constraint, -1)
+          case TypedAst.Predicate.Body.LatAtom(predSym, Polarity.Negative, _, _) =>
             graph.insert(headSym, predSym, constraint, -1)
           case _: TypedAst.Predicate.Body.Filter => graph
           case _: TypedAst.Predicate.Body.Loop => graph
         })
+
+      /* copied */
+      case TypedAst.Predicate.Head.LatAtom(headSym, _, _) =>
+        // As well as creating the graph out of the given constraints, we also add a source node which
+        // has a directed edge to all nodes
+        graph.insert(null, headSym, constraint, 0)
+        constraint.body.foldRight(graph)((pred: TypedAst.Predicate.Body, graph: Graph) => pred match {
+          case TypedAst.Predicate.Body.RelAtom(predSym, Polarity.Positive, _, _) =>
+            graph.insert(headSym, predSym, constraint, 0)
+          case TypedAst.Predicate.Body.LatAtom(predSym, Polarity.Positive, _, _) =>
+            graph.insert(headSym, predSym, constraint, 0)
+          case TypedAst.Predicate.Body.RelAtom(predSym, Polarity.Negative, _, _) =>
+            graph.insert(headSym, predSym, constraint, -1)
+          case TypedAst.Predicate.Body.LatAtom(predSym, Polarity.Negative, _, _) =>
+            graph.insert(headSym, predSym, constraint, -1)
+          case _: TypedAst.Predicate.Body.Filter => graph
+          case _: TypedAst.Predicate.Body.Loop => graph
+        })
+
       case TypedAst.Predicate.Head.True(_) => graph
       case TypedAst.Predicate.Head.False(_) => graph
     })
@@ -255,7 +318,7 @@ object Stratifier extends Phase[TypedAst.Root, TypedAst.Root] {
     // The Bellman Ford algorithm, we can use it to find negative cycles
 
     // Initialize the distance and predecessor arrays to default values
-    var distPred: Map[Symbol.TableSym, (Int, TypedAst.Constraint)] = g.vertices.toList.zip(List.fill(g.vertices.size)((1, null))).toMap
+    var distPred: Map[ /* Symbol.TableSym */ AnyRef, (Int, TypedAst.Constraint)] = g.vertices.toList.zip(List.fill(g.vertices.size)((1, null))).toMap
     // The source has 0 weight
     distPred = distPred.updated(null, (0, null))
 
@@ -290,7 +353,8 @@ object Stratifier extends Phase[TypedAst.Root, TypedAst.Root] {
           witness = firstEdge :: witness
 
           var fromConstraint = distPred(firstEdge.head match {
-            case Atom(sym, _, _) => sym
+            case Predicate.Head.RelAtom(sym, _, _) => sym
+            case Predicate.Head.LatAtom(sym, _, _) => sym
             case _: False => throw InternalCompilerException("Encountered the False atom while looking for negative cyles which should never happen")
             case _: True => throw InternalCompilerException("Encountered the True atom while looking for negative cyles which should never happen")
           })._2
@@ -298,7 +362,8 @@ object Stratifier extends Phase[TypedAst.Root, TypedAst.Root] {
           while (fromConstraint != null && fromConstraint != firstEdge) {
             witness = fromConstraint :: witness
             fromConstraint = distPred(fromConstraint.head match {
-              case Atom(sym, _, _) => sym
+              case Predicate.Head.RelAtom(sym, _, _) => sym
+              case Predicate.Head.LatAtom(sym, _, _) => sym
               case _: False => throw InternalCompilerException("Encountered the False atom while looking for negative cyles which should never happen")
               case _: True => throw InternalCompilerException("Encountered the True atom while looking for negative cyles which should never happen")
             })._2

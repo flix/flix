@@ -56,6 +56,31 @@ object ResolutionError {
   }
 
   /**
+    * Ambiguous Relation or Lattice Error.
+    *
+    * @param qn   the ambiguous name.
+    * @param ns   the current namespace.
+    * @param locs the locations where the names are defined.
+    * @param loc  the location where the error occurred.
+    */
+  case class AmbiguousRelationOrLattice(qn: Name.QName, ns: Name.NName, locs: List[SourceLocation], loc: SourceLocation) extends ResolutionError {
+    val source: Source = loc.source
+    val message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Ambiguous name '" << Red(qn.toString) << "' Name refers to multiple relations or lattices." << NewLine
+      vt << NewLine
+      vt << Code(loc, "ambiguous name.") << NewLine
+      vt << NewLine
+      for (loc1 <- locs) {
+        vt << Code(loc1, "relation/lattice matches.") << NewLine
+        vt << NewLine
+      }
+      vt
+    }
+  }
+
+  /**
     * Ambiguous Tag Error.
     *
     * @param tag  the tag.

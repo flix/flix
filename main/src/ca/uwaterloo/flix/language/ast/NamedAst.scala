@@ -26,20 +26,19 @@ trait NamedAst
 
 object NamedAst {
 
-  case class Program(defs: Map[Name.NName, Map[String, NamedAst.Def]],
-                     effs: Map[Name.NName, Map[String, NamedAst.Eff]],
-                     handlers: Map[Name.NName, Map[String, NamedAst.Handler]],
-                     enums: Map[Name.NName, Map[String, NamedAst.Enum]],
-                     classes: Map[Name.NName, Map[String, NamedAst.Class]],
-                     impls: Map[Name.NName, List[NamedAst.Impl]],
-                     latticeComponents: Map[NamedAst.Type, NamedAst.LatticeComponents],
-                     tables: Map[Name.NName, Map[String, NamedAst.Table]],
-                     constraints: Map[Name.NName, List[NamedAst.Constraint]],
-                     named: Map[Symbol.DefnSym, NamedAst.Expression],
-                     properties: Map[Name.NName, List[NamedAst.Property]],
-                     reachable: Set[Symbol.DefnSym]) extends NamedAst
-
-  case class Constraint(cparams: List[NamedAst.ConstraintParam], head: NamedAst.Predicate.Head, body: List[NamedAst.Predicate.Body], loc: SourceLocation) extends NamedAst
+  case class Root(defs: Map[Name.NName, Map[String, NamedAst.Def]],
+                  effs: Map[Name.NName, Map[String, NamedAst.Eff]],
+                  handlers: Map[Name.NName, Map[String, NamedAst.Handler]],
+                  enums: Map[Name.NName, Map[String, NamedAst.Enum]],
+                  classes: Map[Name.NName, Map[String, NamedAst.Class]],
+                  impls: Map[Name.NName, List[NamedAst.Impl]],
+                  relations: Map[Name.NName, Map[String, NamedAst.Relation]],
+                  lattices: Map[Name.NName, Map[String, NamedAst.Lattice]],
+                  constraints: Map[Name.NName, List[NamedAst.Constraint]],
+                  latticeComponents: Map[NamedAst.Type, NamedAst.LatticeComponents],
+                  named: Map[Symbol.DefnSym, NamedAst.Expression],
+                  properties: Map[Name.NName, List[NamedAst.Property]],
+                  reachable: Set[Symbol.DefnSym]) extends NamedAst
 
   case class Def(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, tparams: List[NamedAst.TypeParam], fparams: List[NamedAst.FormalParam], exp: NamedAst.Expression, sc: NamedAst.Scheme, eff: ast.Eff, loc: SourceLocation) extends NamedAst
 
@@ -56,25 +55,17 @@ object NamedAst {
 
   case class Property(law: Symbol.DefnSym, defn: Symbol.DefnSym, exp: NamedAst.Expression, loc: SourceLocation) extends Ast.Annotation
 
+  case class Constraint(cparams: List[NamedAst.ConstraintParam], head: NamedAst.Predicate.Head, body: List[NamedAst.Predicate.Body], loc: SourceLocation) extends NamedAst
+
   case class Class(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.ClassSym, quantifiers: List[ast.Type.Var], head: NamedAst.SimpleClass, body: List[NamedAst.SimpleClass], sigs: Map[String, NamedAst.Sig], laws: List[NamedAst.Law], loc: SourceLocation) extends NamedAst
 
   case class Impl(doc: Ast.Doc, mod: Ast.Modifiers, head: NamedAst.ComplexClass, body: List[NamedAst.ComplexClass], defs: Map[String, NamedAst.Def], loc: SourceLocation) extends NamedAst
 
   case class Disallow(doc: Ast.Doc, body: List[NamedAst.ComplexClass], loc: SourceLocation) extends NamedAst
 
-  sealed trait Table extends NamedAst {
-    def sym: Symbol.TableSym
+  case class Relation(doc: Ast.Doc, sym: Symbol.RelSym, attr: List[NamedAst.Attribute], loc: SourceLocation) extends NamedAst
 
-    def loc: SourceLocation
-  }
-
-  object Table {
-
-    case class Relation(doc: Ast.Doc, sym: Symbol.TableSym, attr: List[NamedAst.Attribute], loc: SourceLocation) extends NamedAst.Table
-
-    case class Lattice(doc: Ast.Doc, sym: Symbol.TableSym, attr: List[NamedAst.Attribute], loc: SourceLocation) extends NamedAst.Table
-
-  }
+  case class Lattice(doc: Ast.Doc, sym: Symbol.LatSym, attr: List[NamedAst.Attribute], loc: SourceLocation) extends NamedAst
 
   case class LatticeComponents(tpe: NamedAst.Type, bot: NamedAst.Expression, top: NamedAst.Expression, equ: NamedAst.Expression, leq: NamedAst.Expression, lub: NamedAst.Expression, glb: NamedAst.Expression, ns: Name.NName, loc: SourceLocation) extends NamedAst
 
@@ -140,23 +131,23 @@ object NamedAst {
 
     case class ArrayLit(elms: List[NamedAst.Expression], tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
-    case class ArrayNew(elm: NamedAst.Expression, len: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends  NamedAst.Expression
+    case class ArrayNew(elm: NamedAst.Expression, len: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
-    case class ArrayLoad(base: NamedAst.Expression, index: NamedAst.Expression, tvar: ast.Type.Var, loc:SourceLocation) extends  NamedAst.Expression
+    case class ArrayLoad(base: NamedAst.Expression, index: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
-    case class ArrayStore(base: NamedAst.Expression, index: NamedAst.Expression, elm: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends  NamedAst.Expression
+    case class ArrayStore(base: NamedAst.Expression, index: NamedAst.Expression, elm: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
     case class ArrayLength(base: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
-    case class ArraySlice(base: NamedAst.Expression, beginIndex: NamedAst.Expression, endIndex: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends  NamedAst.Expression
+    case class ArraySlice(base: NamedAst.Expression, beginIndex: NamedAst.Expression, endIndex: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
     case class VectorLit(elms: List[NamedAst.Expression], tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
     case class VectorNew(elm: NamedAst.Expression, len: Int, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
-    case class VectorLoad(base: NamedAst.Expression, index: Int, tvar: ast.Type.Var, loc: SourceLocation) extends  NamedAst.Expression
+    case class VectorLoad(base: NamedAst.Expression, index: Int, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
-    case class VectorStore(base: NamedAst.Expression, index: Int, elm: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends  NamedAst.Expression
+    case class VectorStore(base: NamedAst.Expression, index: Int, elm: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
     case class VectorLength(base: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
