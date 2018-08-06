@@ -512,18 +512,26 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
 
       case TypedAst.Predicate.Head.False(loc) => SimplifiedAst.Predicate.Head.False(loc)
 
-      case TypedAst.Predicate.Head.Atom(sym, terms, loc) =>
+      case TypedAst.Predicate.Head.RelAtom(sym, terms, loc) =>
         val ts = terms.map(t => exp2HeadTerm(t, cparams))
-        SimplifiedAst.Predicate.Head.Atom(sym, ts, loc)
+        SimplifiedAst.Predicate.Head.RelAtom(sym, ts, loc)
+
+      case TypedAst.Predicate.Head.LatAtom(sym, terms, loc) =>
+        val ts = terms.map(t => exp2HeadTerm(t, cparams))
+        SimplifiedAst.Predicate.Head.LatAtom(sym, ts, loc)
     }
 
     /**
       * Translates the given `body` predicate to the SimplifiedAst.
       */
     def visitBodyPred(body: TypedAst.Predicate.Body, cparams: List[TypedAst.ConstraintParam]): SimplifiedAst.Predicate.Body = body match {
-      case TypedAst.Predicate.Body.Atom(sym, polarity, terms, loc) =>
+      case TypedAst.Predicate.Body.RelAtom(sym, polarity, terms, loc) =>
         val ts = terms map pat2BodyTerm
-        SimplifiedAst.Predicate.Body.Atom(sym, polarity, ts, loc)
+        SimplifiedAst.Predicate.Body.RelAtom(sym, polarity, ts, loc)
+
+      case TypedAst.Predicate.Body.LatAtom(sym, polarity, terms, loc) =>
+        val ts = terms map pat2BodyTerm
+        SimplifiedAst.Predicate.Body.LatAtom(sym, polarity, ts, loc)
 
       case TypedAst.Predicate.Body.Filter(sym, terms, loc) =>
         SimplifiedAst.Predicate.Body.Filter(sym, terms map exp2BodyTerm, loc)
@@ -617,14 +625,9 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
     }
 
     /**
-      * Returns `true` if all the given expressions `exps` are variable expressions.
-      */
-    def isVarExps(args: List[TypedAst.Expression]): Boolean = args.forall(_.isInstanceOf[TypedAst.Expression.Var])
-
-    /**
       * Translates the given `lattice0` to the SimplifiedAst.
       */
-    def visitLattice(lattice0: TypedAst.LatticeComponents): SimplifiedAst.LatticeComponents = lattice0 match {
+    def visitLatticeComponents(lattice0: TypedAst.LatticeComponents): SimplifiedAst.LatticeComponents = lattice0 match {
       case TypedAst.LatticeComponents(tpe, bot0, top0, equ0, leq0, lub0, glb0, loc) =>
 
         /**
@@ -661,13 +664,19 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       SimplifiedAst.Stratum(stratum0.constraints.map(c => visitConstraint(c)))
 
     /**
-      * Translates the given `table0` to the SimplifiedAst.
+      * Translates the given `relation0` to the SimplifiedAst.
       */
-    def visitTable(table0: TypedAst.Table): SimplifiedAst.Table = table0 match {
-      case TypedAst.Table.Relation(doc, symbol, attributes, loc) =>
-        SimplifiedAst.Table.Relation(symbol, attributes.map(visitAttribute), loc)
-      case TypedAst.Table.Lattice(doc, name, attributes, loc) =>
-        SimplifiedAst.Table.Lattice(name, attributes.map(visitAttribute),loc)
+    def visitRelation(relation0: TypedAst.Relation): SimplifiedAst.Relation = relation0 match {
+      case TypedAst.Relation(doc, sym, attributes, loc) =>
+        SimplifiedAst.Relation(sym, attributes.map(visitAttribute), loc)
+    }
+
+    /**
+      * Translates the given `lattice0` to the SimplifiedAst.
+      */
+    def visitLattice(lattice0: TypedAst.Lattice): SimplifiedAst.Lattice = lattice0 match {
+      case TypedAst.Lattice(doc, sym, attributes, loc) =>
+        SimplifiedAst.Lattice(sym, attributes.map(visitAttribute), loc)
     }
 
     /**
@@ -1010,14 +1019,15 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         }
         k -> SimplifiedAst.Enum(mod, sym, cases, enumType, loc)
     }
-    val lattices = root.latticeComponents.map { case (k, v) => k -> visitLattice(v) }
-    val collections = root.tables.map { case (k, v) => k -> visitTable(v) }
+    val latticeComponents = root.latticeComponents.map { case (k, v) => k -> visitLatticeComponents(v) }
+    val relations = root.relations.map { case (k, v) => k -> visitRelation(v) }
+    val lattices = root.lattices.map { case (k, v) => k -> visitLattice(v) }
     val strata = root.strata.map(visitStratum)
     val properties = root.properties.map { p => visitProperty(p) }
     val specialOps = root.specialOps
     val reachable = root.reachable
 
-    SimplifiedAst.Root(defns ++ toplevel, effs, handlers, enums, lattices, collections, strata, properties, specialOps, reachable).toSuccess
+    SimplifiedAst.Root(defns ++ toplevel, effs, handlers, enums, latticeComponents, relations, lattices, strata, properties, specialOps, reachable).toSuccess
   }
 
   /**

@@ -66,20 +66,13 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
       val enumsByNS = root.enums.groupBy(_._1.namespace)
 
       // Collect the tables.
-      val tablesByNS = root.tables.groupBy(_._1.namespace)
+      val tablesByNS = root.relations.groupBy(_._1.namespace) ++ root.lattices.groupBy(_._1.namespace)
 
       // Collect the relations.
-      val relationsByNS = tablesByNS.map {
-        case (ns, m) => ns -> m.collect {
-          case (sym, t: Table.Relation) => t
-        }.toList
-      }
+      val relationsByNS = root.relations.values.groupBy(_.sym.namespace)
+
       // Collect the lattices.
-      val latticesByNS = tablesByNS.map {
-        case (ns, m) => ns -> m.collect {
-          case (sym, t: Table.Lattice) => t
-        }.toList
-      }
+      val latticesByNS = root.lattices.values.groupBy(_.sym.namespace)
 
       // Compute the set of all available namespaces.
       val namespaces = defsByNS.keySet ++ effsByNS.keySet ++ lawsByNS.keySet ++ testsByNS.keySet ++ enumsByNS.keySet ++ tablesByNS.keySet
@@ -102,8 +95,8 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
             JField("effs", JArray(effs)),
             JField("laws", JArray(laws)),
             JField("tests", JArray(tests)),
-            JField("relations", JArray(relations)),
-            JField("lattices", JArray(lattices))
+            JField("relations", JArray(relations.toList)),
+            JField("lattices", JArray(lattices.toList))
           )
       }
 
@@ -226,7 +219,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
   /**
     * Returns the given relation `r` as a JSON object.
     */
-  private def mkRelation(r: Table.Relation): JObject = {
+  private def mkRelation(r: Relation): JObject = {
     val attributes = r.attr.map {
       case Attribute(name, tpe, loc) => JObject(List(
         JField("name", JString(name)),
@@ -244,7 +237,7 @@ object Documentor extends Phase[TypedAst.Root, TypedAst.Root] {
   /**
     * Returns the given lattice `l` as a JSON object.
     */
-  private def mkLattice(l: Table.Lattice): JObject = {
+  private def mkLattice(l: Lattice): JObject = {
     val attributes = l.attr.map {
       case Attribute(name, tpe, loc) => JObject(List(
         JField("name", JString(name)),

@@ -31,7 +31,8 @@ object SimplifiedAst {
                   handlers: Map[Symbol.EffSym, SimplifiedAst.Handler],
                   enums: Map[Symbol.EnumSym, SimplifiedAst.Enum],
                   latticeComponents: Map[Type, SimplifiedAst.LatticeComponents],
-                  tables: Map[Symbol.TableSym, SimplifiedAst.Table],
+                  relations: Map[Symbol.RelSym, SimplifiedAst.Relation],
+                  lattices: Map[Symbol.LatSym, SimplifiedAst.Lattice],
                   strata: List[SimplifiedAst.Stratum],
                   properties: List[SimplifiedAst.Property],
                   specialOps: Map[SpecialOperator, Map[Type, Symbol.DefnSym]],
@@ -51,15 +52,9 @@ object SimplifiedAst {
 
   case class Stratum(constraints: List[SimplifiedAst.Constraint]) extends SimplifiedAst
 
-  sealed trait Table extends SimplifiedAst
+  case class Relation(sym: Symbol.RelSym, attr: List[SimplifiedAst.Attribute], loc: SourceLocation) extends SimplifiedAst
 
-  object Table {
-
-    case class Relation(sym: Symbol.TableSym, attr: List[SimplifiedAst.Attribute], loc: SourceLocation) extends SimplifiedAst.Table
-
-    case class Lattice(sym: Symbol.TableSym, attr: List[SimplifiedAst.Attribute], loc: SourceLocation) extends SimplifiedAst.Table
-
-  }
+  case class Lattice(sym: Symbol.LatSym, attr: List[SimplifiedAst.Attribute], loc: SourceLocation) extends SimplifiedAst
 
   case class LatticeComponents(tpe: Type, bot: Symbol.DefnSym, top: Symbol.DefnSym, equ: Symbol.DefnSym, leq: Symbol.DefnSym, lub: Symbol.DefnSym, glb: Symbol.DefnSym, loc: SourceLocation) extends SimplifiedAst
 
@@ -296,7 +291,9 @@ object SimplifiedAst {
 
       case class False(loc: SourceLocation) extends SimplifiedAst.Predicate.Head
 
-      case class Atom(sym: Symbol.TableSym, terms: List[SimplifiedAst.Term.Head], loc: SourceLocation) extends SimplifiedAst.Predicate.Head
+      case class RelAtom(sym: Symbol.RelSym, terms: List[SimplifiedAst.Term.Head], loc: SourceLocation) extends SimplifiedAst.Predicate.Head
+
+      case class LatAtom(sym: Symbol.LatSym, terms: List[SimplifiedAst.Term.Head], loc: SourceLocation) extends SimplifiedAst.Predicate.Head
 
     }
 
@@ -304,7 +301,9 @@ object SimplifiedAst {
 
     object Body {
 
-      case class Atom(sym: Symbol.TableSym, polarity: Ast.Polarity, terms: List[SimplifiedAst.Term.Body], loc: SourceLocation) extends SimplifiedAst.Predicate.Body
+      case class RelAtom(sym: Symbol.RelSym, polarity: Ast.Polarity, terms: List[SimplifiedAst.Term.Body], loc: SourceLocation) extends SimplifiedAst.Predicate.Body
+
+      case class LatAtom(sym: Symbol.LatSym, polarity: Ast.Polarity, terms: List[SimplifiedAst.Term.Body], loc: SourceLocation) extends SimplifiedAst.Predicate.Body
 
       case class Filter(sym: Symbol.DefnSym, terms: List[SimplifiedAst.Term.Body], loc: SourceLocation) extends SimplifiedAst.Predicate.Body
 

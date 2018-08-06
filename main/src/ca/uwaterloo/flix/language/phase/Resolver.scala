@@ -103,17 +103,17 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
       }
     }
 
-    val latticesVal = prog0.latticeComponents.map {
-      case (tpe0, lattice0) =>
-        for {
-          tpe <- lookupType(tpe0, lattice0.ns, prog0)
-          lattice <- resolve(lattice0, lattice0.ns, prog0)
-        } yield (tpe, lattice)
+    val relationsVal = prog0.relations.flatMap {
+      case (ns0, relations) => relations.map {
+        case (_, relation) => Tables.resolveRelation(relation, ns0, prog0) map {
+          case t => t.sym -> t
+        }
+      }
     }
 
-    val tablesVal = prog0.tables.flatMap {
-      case (ns0, tables) => tables.map {
-        case (_, table) => Tables.resolve(table, ns0, prog0) map {
+    val latticesVal = prog0.lattices.flatMap {
+      case (ns0, lattices) => lattices.map {
+        case (_, lattice) => Tables.resolveLattice(lattice, ns0, prog0) map {
           case t => t.sym -> t
         }
       }
@@ -121,6 +121,14 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
 
     val constraintsVal = prog0.constraints.map {
       case (ns0, constraints) => Constraints.resolve(constraints, ns0, prog0)
+    }
+
+    val latticeComponentsVal = prog0.latticeComponents.map {
+      case (tpe0, lattice0) =>
+        for {
+          tpe <- lookupType(tpe0, lattice0.ns, prog0)
+          lattice <- resolve(lattice0, lattice0.ns, prog0)
+        } yield (tpe, lattice)
     }
 
     val propertiesVal = prog0.properties.map {
@@ -136,13 +144,14 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
       enums <- seqM(enumsVal)
       classes <- seqM(classesVal)
       impls <- seqM(implsVal)
+      relations <- seqM(relationsVal)
       lattices <- seqM(latticesVal)
-      tables <- seqM(tablesVal)
       constraints <- seqM(constraintsVal)
+      latticeComponents <- seqM(latticeComponentsVal)
       properties <- seqM(propertiesVal)
     } yield ResolvedAst.Program(
       definitions.toMap ++ named.toMap, effs.toMap, handlers.toMap, enums.toMap, classes.toMap, impls.toMap,
-      lattices.toMap, tables.toMap, constraints.flatten, properties.flatten, prog0.reachable
+      relations.toMap, lattices.toMap, constraints.flatten, latticeComponents.toMap, properties.flatten, prog0.reachable
     )
   }
 
@@ -312,18 +321,23 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
   object Tables {
 
     /**
+      * Performs name resolution on the given relation `r0` in the given namespace `ns0`.
+      */
+    def resolveRelation(r0: NamedAst.Relation, ns0: Name.NName, prog0: NamedAst.Root)(implicit genSym: GenSym): Validation[ResolvedAst.Relation, ResolutionError] = r0 match {
+      case NamedAst.Relation(doc, sym, attr, loc) =>
+        for {
+          as <- seqM(attr.map(a => resolve(a, ns0, prog0)))
+        } yield ResolvedAst.Relation(doc, sym, as, loc)
+    }
+
+    /**
       * Performs name resolution on the given table `t0` in the given namespace `ns0`.
       */
-    def resolve(t0: NamedAst.Table, ns0: Name.NName, prog0: NamedAst.Root)(implicit genSym: GenSym): Validation[ResolvedAst.Table, ResolutionError] = t0 match {
-      case NamedAst.Table.Relation(doc, sym, attr, loc) =>
+    def resolveLattice(l0: NamedAst.Lattice, ns0: Name.NName, prog0: NamedAst.Root)(implicit genSym: GenSym): Validation[ResolvedAst.Lattice, ResolutionError] = l0 match {
+      case NamedAst.Lattice(doc, sym, attr, loc) =>
         for {
           as <- seqM(attr.map(a => resolve(a, ns0, prog0)))
-        } yield ResolvedAst.Table.Relation(doc, sym, as, loc)
-
-      case NamedAst.Table.Lattice(doc, sym, attr, loc) =>
-        for {
-          as <- seqM(attr.map(a => resolve(a, ns0, prog0)))
-        } yield ResolvedAst.Table.Lattice(doc, sym, as, loc)
+        } yield ResolvedAst.Lattice(doc, sym, as, loc)
     }
 
     /**
@@ -719,7 +733,10 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
           for {
             t <- lookupTable(qname, ns0, prog0)
             ts <- seqM(terms.map(t => Expressions.resolve(t, Map.empty, ns0, prog0)))
-          } yield ResolvedAst.Predicate.Head.Atom(t.sym, ts, loc)
+          } yield t match {
+            case PredicateResult.Rel(sym) => ResolvedAst.Predicate.Head.RelAtom(sym, ts, loc)
+            case PredicateResult.Lat(sym) => ResolvedAst.Predicate.Head.LatAtom(sym, ts, loc)
+          }
       }
     }
 
@@ -730,9 +747,12 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
       def resolve(b0: NamedAst.Predicate.Body, ns0: Name.NName, prog0: NamedAst.Root)(implicit genSym: GenSym): Validation[ResolvedAst.Predicate.Body, ResolutionError] = b0 match {
         case NamedAst.Predicate.Body.Atom(qname, polarity, terms, loc) =>
           for {
-            d <- lookupTable(qname, ns0, prog0)
+            t <- lookupTable(qname, ns0, prog0)
             ts <- seqM(terms.map(t => Patterns.resolve(t, ns0, prog0)))
-          } yield ResolvedAst.Predicate.Body.Atom(d.sym, polarity, ts, loc)
+          } yield t match {
+            case PredicateResult.Rel(sym) => ResolvedAst.Predicate.Body.RelAtom(sym, polarity, ts, loc)
+            case PredicateResult.Lat(sym) => ResolvedAst.Predicate.Body.LatAtom(sym, polarity, ts, loc)
+          }
 
         case NamedAst.Predicate.Body.Filter(qname, terms, loc) =>
           for {
@@ -1080,23 +1100,40 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
   }
 
   /**
+    * Represents the result of a predicate lookup.
+    */
+  sealed trait PredicateResult
+
+  object PredicateResult {
+
+    case class Rel(sym: Symbol.RelSym) extends PredicateResult
+
+    case class Lat(sym: Symbol.LatSym) extends PredicateResult
+
+  }
+
+  /**
     * Finds the table of the given `qname` in the namespace `ns`.
     */
-  def lookupTable(qname: Name.QName, ns: Name.NName, prog0: NamedAst.Root): Validation[NamedAst.Table, ResolutionError] = {
-    if (qname.isUnqualified) {
+  // TODO: Check that this resolution is correct.
+  def lookupTable(qname: Name.QName, ns: Name.NName, prog0: NamedAst.Root): Validation[PredicateResult, ResolutionError] = {
+    val (relations, lattices) = if (qname.isUnqualified) {
       // Lookup in the current namespace.
-      val tables = prog0.tables.getOrElse(ns, Map.empty)
-      tables.get(qname.ident.name) match {
-        case None => ResolutionError.UndefinedTable(qname, ns, qname.loc).toFailure
-        case Some(table) => table.toSuccess
-      }
+      (prog0.relations.getOrElse(ns, Map.empty), prog0.lattices.getOrElse(ns, Map.empty))
     } else {
       // Lookup in the qualified namespace.
-      val tables = prog0.tables.getOrElse(qname.namespace, Map.empty)
-      tables.get(qname.ident.name) match {
-        case None => ResolutionError.UndefinedTable(qname, qname.namespace, qname.loc).toFailure
-        case Some(table) => table.toSuccess
-      }
+      (prog0.relations.getOrElse(qname.namespace, Map.empty), prog0.lattices.getOrElse(qname.namespace, Map.empty))
+    }
+
+    // Lookup the relation/lattice in the maps.
+    val relationOpt = relations.get(qname.ident.name)
+    val latticeOpt = lattices.get(qname.ident.name)
+
+    (relationOpt, latticeOpt) match {
+      case (None, None) => ResolutionError.UndefinedTable(qname, ns, qname.loc).toFailure
+      case (Some(rel), None) => PredicateResult.Rel(rel.sym).toSuccess
+      case (None, Some(lat)) => PredicateResult.Lat(lat.sym).toSuccess
+      case _ => ??? // TODO: Add error message.
     }
   }
 

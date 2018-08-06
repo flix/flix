@@ -230,11 +230,13 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         reachableFunctions ++= (constraint.head match {
           case SimplifiedAst.Predicate.Head.True(loc) => Set.empty
           case SimplifiedAst.Predicate.Head.False(loc) => Set.empty
-          case SimplifiedAst.Predicate.Head.Atom(sym, terms, loc) => visitHeadTerms(terms)
+          case SimplifiedAst.Predicate.Head.RelAtom(sym, terms, loc) => visitHeadTerms(terms)
+          case SimplifiedAst.Predicate.Head.LatAtom(sym, terms, loc) => visitHeadTerms(terms)
         })
 
         reachableFunctions ++= constraint.body.map {
-          case SimplifiedAst.Predicate.Body.Atom(sym, polarity, terms, loc) => visitBodyTerms(terms)
+          case SimplifiedAst.Predicate.Body.RelAtom(sym, polarity, terms, loc) => visitBodyTerms(terms)
+          case SimplifiedAst.Predicate.Body.LatAtom(sym, polarity, terms, loc) => visitBodyTerms(terms)
           case SimplifiedAst.Predicate.Body.Filter(sym, terms, loc) => Set(sym)
           case SimplifiedAst.Predicate.Body.Loop(sym, term, loc) => visitHeadTerm(term)
         }.fold(Set())(_ ++ _)

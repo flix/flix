@@ -18,8 +18,8 @@ object ApiBridge {
   class SymbolCache {
 
     val varSyms = mutable.Map.empty[Symbol.VarSym, VarSym]
-    val relSyms = mutable.Map.empty[Symbol.TableSym, Relation]
-    val latSyms = mutable.Map.empty[Symbol.TableSym, Lattice]
+    val relSyms = mutable.Map.empty[Symbol.RelSym, Relation]
+    val latSyms = mutable.Map.empty[Symbol.LatSym, Lattice]
 
     def getVarSym(sym: Symbol.VarSym): VarSym =
       varSyms.get(sym) match {
@@ -30,7 +30,7 @@ object ApiBridge {
         case Some(res) => res
       }
 
-    def getRelSym(sym: Symbol.TableSym, name: String, attributes: Array[Attribute]): Relation =
+    def getRelSym(sym: Symbol.RelSym, name: String, attributes: Array[Attribute]): Relation =
       relSyms.get(sym) match {
         case None =>
           val newSym = new Relation(name, attributes)
@@ -39,7 +39,7 @@ object ApiBridge {
         case Some(res) => res
       }
 
-    def getLatSym(sym: Symbol.TableSym, name: String, keys: Array[Attribute], value: Attribute, ops: LatticeOps): Lattice =
+    def getLatSym(sym: Symbol.LatSym, name: String, keys: Array[Attribute], value: Attribute, ops: LatticeOps): Lattice =
       latSyms.get(sym) match {
         case None =>
           val newSym = new Lattice(name, keys, value, ops)
@@ -81,12 +81,26 @@ object ApiBridge {
   private def visitHeadPredicate(h0: ExecutableAst.Predicate.Head)(implicit root: ExecutableAst.Root, cache: SymbolCache, flix: Flix): Predicate = h0 match {
     case ExecutableAst.Predicate.Head.True(_) => new TruePredicate()
     case ExecutableAst.Predicate.Head.False(_) => new FalsePredicate()
-    case ExecutableAst.Predicate.Head.Atom(sym, terms, _) => new AtomPredicate(visitTableSym(sym), positive = true, terms.map(visitHeadTerm).toArray, null)
+    case ExecutableAst.Predicate.Head.RelAtom(sym, terms, _) => new AtomPredicate(visitRelSym(sym), positive = true, terms.map(visitHeadTerm).toArray, null)
+    case ExecutableAst.Predicate.Head.LatAtom(sym, terms, _) => new AtomPredicate(visitLatSym(sym), positive = true, terms.map(visitHeadTerm).toArray, null)
   }
 
   private def visitBodyPredicate(b0: ExecutableAst.Predicate.Body)(implicit root: ExecutableAst.Root, cache: SymbolCache, flix: Flix): Predicate = b0 match {
-    case ExecutableAst.Predicate.Body.Atom(sym, polarity, terms, index2sym, loc) =>
-      val s = visitTableSym(sym)
+    case ExecutableAst.Predicate.Body.RelAtom(sym, polarity, terms, index2sym, loc) =>
+      val s = visitRelSym(sym)
+      val p = polarity match {
+        case Ast.Polarity.Positive => true
+        case Ast.Polarity.Negative => false
+      }
+      val ts = terms.map(visitBodyTerm)
+      val i2s = index2sym map {
+        case x if x != null => visitVarSym(x)
+        case _ => null
+      }
+      new AtomPredicate(s, p, ts.toArray, i2s.toArray)
+
+    case ExecutableAst.Predicate.Body.LatAtom(sym, polarity, terms, index2sym, loc) =>
+      val s = visitLatSym(sym)
       val p = polarity match {
         case Ast.Polarity.Positive => true
         case Ast.Polarity.Negative => false
@@ -106,13 +120,16 @@ object ApiBridge {
     case ExecutableAst.Predicate.Body.Loop(_, _, _) => throw new UnsupportedOperationException("Loop currently not supported")
   }
 
-  private def visitTableSym(sym: Symbol.TableSym)(implicit root: ExecutableAst.Root, cache: SymbolCache, flix: Flix): Table =
-    root.tables(sym) match {
-      case r: ExecutableAst.Table.Relation =>
+  private def visitRelSym(sym: Symbol.RelSym)(implicit root: ExecutableAst.Root, cache: SymbolCache, flix: Flix): Table =
+    root.relations(sym) match {
+      case r: ExecutableAst.Relation =>
         val attributes = r.attr.map(visitAttribute)
         cache.getRelSym(sym, sym.toString, attributes.toArray)
+    }
 
-      case l: ExecutableAst.Table.Lattice =>
+  private def visitLatSym(sym: Symbol.LatSym)(implicit root: ExecutableAst.Root, cache: SymbolCache, flix: Flix): Table =
+    root.lattices(sym) match {
+      case l: ExecutableAst.Lattice =>
         val attributes = l.attr.map(visitAttribute)
         val keys = attributes.init
         val value = attributes.last
@@ -144,16 +161,12 @@ object ApiBridge {
   private def visitAttribute(a: ExecutableAst.Attribute)(implicit root: ExecutableAst.Root, cache: SymbolCache, flix: Flix): Attribute =
     new Attribute(a.name)
 
-  private def visitLatOps(tables: Map[Symbol.TableSym, ExecutableAst.Table])(implicit root: ExecutableAst.Root, cache: SymbolCache, flix: Flix): Map[Table, LatticeOps] = {
+  private def visitLatOps(tables: Map[Symbol.LatSym, ExecutableAst.Lattice])(implicit root: ExecutableAst.Root, cache: SymbolCache, flix: Flix): Map[Table, LatticeOps] = {
     tables.foldLeft(Map.empty[Table, LatticeOps]) {
-      case (macc, (sym, ExecutableAst.Table.Relation(_, attr, _))) =>
-        // relation
-        macc
-
-      case (macc, (sym, ExecutableAst.Table.Lattice(_, attr, _))) =>
+      case (macc, (sym, ExecutableAst.Lattice(_, attr, _))) =>
         // lattice
         val latticeOps = getLatticeOps(attr.last)
-        macc + (visitTableSym(sym) -> latticeOps)
+        macc + (visitLatSym(sym) -> latticeOps)
     }
   }
 

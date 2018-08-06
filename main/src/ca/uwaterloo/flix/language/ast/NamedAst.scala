@@ -30,10 +30,11 @@ object NamedAst {
                   effs: Map[Name.NName, Map[String, NamedAst.Eff]],
                   handlers: Map[Name.NName, Map[String, NamedAst.Handler]],
                   enums: Map[Name.NName, Map[String, NamedAst.Enum]],
-                  tables: Map[Name.NName, Map[String, NamedAst.Table]],
-                  constraints: Map[Name.NName, List[NamedAst.Constraint]],
                   classes: Map[Name.NName, Map[String, NamedAst.Class]],
                   impls: Map[Name.NName, List[NamedAst.Impl]],
+                  relations: Map[Name.NName, Map[String, NamedAst.Relation]],
+                  lattices: Map[Name.NName, Map[String, NamedAst.Lattice]],
+                  constraints: Map[Name.NName, List[NamedAst.Constraint]],
                   latticeComponents: Map[NamedAst.Type, NamedAst.LatticeComponents],
                   named: Map[Symbol.DefnSym, NamedAst.Expression],
                   properties: Map[Name.NName, List[NamedAst.Property]],
@@ -54,19 +55,9 @@ object NamedAst {
 
   case class Property(law: Symbol.DefnSym, defn: Symbol.DefnSym, exp: NamedAst.Expression, loc: SourceLocation) extends Ast.Annotation
 
-  sealed trait Table extends NamedAst {
-    def sym: Symbol.TableSym
+  case class Relation(doc: Ast.Doc, sym: Symbol.RelSym, attr: List[NamedAst.Attribute], loc: SourceLocation) extends NamedAst
 
-    def loc: SourceLocation
-  }
-
-  object Table {
-
-    case class Relation(doc: Ast.Doc, sym: Symbol.TableSym, attr: List[NamedAst.Attribute], loc: SourceLocation) extends NamedAst.Table
-
-    case class Lattice(doc: Ast.Doc, sym: Symbol.TableSym, attr: List[NamedAst.Attribute], loc: SourceLocation) extends NamedAst.Table
-
-  }
+  case class Lattice(doc: Ast.Doc, sym: Symbol.LatSym, attr: List[NamedAst.Attribute], loc: SourceLocation) extends NamedAst
 
   case class Constraint(cparams: List[NamedAst.ConstraintParam], head: NamedAst.Predicate.Head, body: List[NamedAst.Predicate.Body], loc: SourceLocation) extends NamedAst
 

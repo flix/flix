@@ -50,8 +50,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       enums = Map.empty,
       classes = Map.empty,
       impls = Map.empty,
+      relations = Map.empty,
+      lattices = Map.empty,
       latticeComponents = Map.empty,
-      tables = Map.empty,
       constraints = Map.empty,
       named = Map.empty,
       properties = Map.empty,
@@ -369,20 +370,20 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
        */
       case WeededAst.Declaration.Relation(doc, ident, attr, loc) =>
         // check if the table already exists.
-        prog0.tables.get(ns0) match {
+        prog0.relations.get(ns0) match {
           case None =>
             // Case 1: The namespace does not yet exist. So the table does not yet exist.
-            val table = NamedAst.Table.Relation(doc, Symbol.mkTableSym(ns0, ident), attr.map(a => Attributes.namer(a, Map.empty)), loc)
-            val tables = Map(ident.name -> table)
-            prog0.copy(tables = prog0.tables + (ns0 -> tables)).toSuccess
+            val relation = NamedAst.Relation(doc, Symbol.mkRelSym(ns0, ident), attr.map(a => Attributes.namer(a, Map.empty)), loc)
+            val relations = Map(ident.name -> relation)
+            prog0.copy(relations = prog0.relations + (ns0 -> relations)).toSuccess
           case Some(tables0) =>
             // Case 2: The namespace exists. Lookup the table.
             tables0.get(ident.name) match {
               case None =>
                 // Case 2.1: The table does not exist in the namespace. Update it.
-                val table = NamedAst.Table.Relation(doc, Symbol.mkTableSym(ns0, ident), attr.map(a => Attributes.namer(a, Map.empty)), loc)
+                val table = NamedAst.Relation(doc, Symbol.mkRelSym(ns0, ident), attr.map(a => Attributes.namer(a, Map.empty)), loc)
                 val tables = tables0 + (ident.name -> table)
-                prog0.copy(tables = prog0.tables + (ns0 -> tables)).toSuccess
+                prog0.copy(relations = prog0.relations + (ns0 -> tables)).toSuccess
               case Some(table) =>
                 // Case 2.2: Duplicate definition.
                 DuplicateDef(ident.name, table.loc, ident.loc).toFailure
@@ -394,20 +395,20 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
        */
       case WeededAst.Declaration.Lattice(doc, ident, attr, loc) =>
         // check if the table already exists.
-        prog0.tables.get(ns0) match {
+        prog0.lattices.get(ns0) match {
           case None =>
             // Case 1: The namespace does not yet exist. So the table does not yet exist.
-            val table = NamedAst.Table.Lattice(doc, Symbol.mkTableSym(ns0, ident), attr.map(k => Attributes.namer(k, Map.empty)), loc)
-            val tables = Map(ident.name -> table)
-            prog0.copy(tables = prog0.tables + (ns0 -> tables)).toSuccess
+            val lattice = NamedAst.Lattice(doc, Symbol.mkLatSym(ns0, ident), attr.map(k => Attributes.namer(k, Map.empty)), loc)
+            val lattices = Map(ident.name -> lattice)
+            prog0.copy(lattices = prog0.lattices + (ns0 -> lattices)).toSuccess
           case Some(tables0) =>
             // Case 2: The namespace exists. Lookup the table.
             tables0.get(ident.name) match {
               case None =>
                 // Case 2.1: The table does not exist in the namespace. Update it.
-                val table = NamedAst.Table.Lattice(doc, Symbol.mkTableSym(ns0, ident), attr.map(k => Attributes.namer(k, Map.empty)), loc)
-                val tables = tables0 + (ident.name -> table)
-                prog0.copy(tables = prog0.tables + (ns0 -> tables)).toSuccess
+                val lattice = NamedAst.Lattice(doc, Symbol.mkLatSym(ns0, ident), attr.map(k => Attributes.namer(k, Map.empty)), loc)
+                val lattices = tables0 + (ident.name -> lattice)
+                prog0.copy(lattices = prog0.lattices + (ns0 -> lattices)).toSuccess
               case Some(table) =>
                 // Case 2.2: Duplicate definition.
                 DuplicateDef(ident.name, table.loc, ident.loc).toFailure

@@ -25,7 +25,9 @@ object PrettyPrinter {
   def fmt(f: ExecutableAst.Constraint, sb: StringBuilder): StringBuilder = f.head match {
     case ExecutableAst.Predicate.Head.True(loc) => sb.append("true")
     case ExecutableAst.Predicate.Head.False(loc) => sb.append("false")
-    case ExecutableAst.Predicate.Head.Atom(sym, terms, loc) =>
+    case ExecutableAst.Predicate.Head.RelAtom(sym, terms, loc) =>
+      sb.append(sym).append("(").append(terms.map(t => fmt(t, new StringBuilder)).mkString(", ")).append(").")
+    case ExecutableAst.Predicate.Head.LatAtom(sym, terms, loc) =>
       sb.append(sym).append("(").append(terms.map(t => fmt(t, new StringBuilder)).mkString(", ")).append(").")
   }
 

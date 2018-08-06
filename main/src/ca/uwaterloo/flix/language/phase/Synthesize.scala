@@ -65,14 +65,16 @@ object Synthesize extends Phase[Root, Root] {
     def visitHead(h0: Predicate.Head): Predicate.Head = h0 match {
       case Predicate.Head.True(loc) => h0
       case Predicate.Head.False(loc) => h0
-      case Predicate.Head.Atom(sym, terms, loc) => Predicate.Head.Atom(sym, terms map visitExp, loc)
+      case Predicate.Head.RelAtom(sym, terms, loc) => Predicate.Head.RelAtom(sym, terms map visitExp, loc)
+      case Predicate.Head.LatAtom(sym, terms, loc) => Predicate.Head.LatAtom(sym, terms map visitExp, loc)
     }
 
     /**
       * Performs synthesis on the given body predicate `h0`.
       */
     def visitBody(b0: Predicate.Body): Predicate.Body = b0 match {
-      case Predicate.Body.Atom(sym, polarity, pats, loc) => b0
+      case Predicate.Body.RelAtom(sym, polarity, pats, loc) => b0
+      case Predicate.Body.LatAtom(sym, polarity, pats, loc) => b0
       case Predicate.Body.Filter(sym, terms, loc) => Predicate.Body.Filter(sym, terms map visitExp, loc)
       case Predicate.Body.Loop(sym, term, loc) => Predicate.Body.Loop(sym, visitExp(term), loc)
     }
@@ -891,7 +893,7 @@ object Synthesize extends Phase[Root, Root] {
 
         case Type.Apply(Type.Vector, _) => Expression.Str("<<vector>>", sl)
 
-        case Type.Apply(Type.Apply(Type.Vector, _),  Type.Succ(i, _)) => Expression.Str("<<vector>>", sl)
+        case Type.Apply(Type.Apply(Type.Vector, _), Type.Succ(i, _)) => Expression.Str("<<vector>>", sl)
 
         case Type.Apply(Type.Arrow(l), _) => Expression.Str("<<clo>>", sl)
 
@@ -1093,17 +1095,20 @@ object Synthesize extends Phase[Root, Root] {
     }.toSet
 
     /*
-     * (b) Every type that appears as an attribute in some table.
+     * (b) Every type that appears as an attribute in some relation or lattice.
      */
-    val typesInTables: Set[Type] = root.tables.flatMap {
-      case (sym, Table.Relation(_, _, attributes, _)) => attributes.map {
+    val typesInRels = root.relations.flatMap {
+      case (_, Relation(_, _, attributes, _)) => attributes.map {
         case Attribute(_, tpe, _) => tpe
       }
-      case (sym, Table.Lattice(_, _, attributes, _)) =>
+    }
+    val typesInLats = root.lattices.flatMap {
+      case (_, Lattice(_, _, attributes, _)) =>
         attributes.map {
           case Attribute(_, tpe, _) => tpe
         }
-    }.toSet
+    }
+    val typesInTables = typesInRels.toSet ++ typesInLats
 
     /*
      * (c) Every type that appears as some lattice type.

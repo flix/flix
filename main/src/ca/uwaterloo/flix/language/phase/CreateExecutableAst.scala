@@ -54,14 +54,15 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
     }
 
     // Converting lattices to ExecutableAst will create new top-level definitions in the map `m`.
-    val lattices = root.latticeComponents.map { case (k, v) => k -> toExecutable(v, m) }
-    val tables = root.tables.map { case (k, v) => k -> Table.toExecutable(v) }
+    val latticeComponents = root.latticeComponents.map { case (k, v) => k -> toExecutable(v, m) }
+    val relations = root.relations.map { case (k, v) => k -> visitRelation(v) }
+    val lattices = root.lattices.map { case (k, v) => k -> visitLattice(v) }
     val strata = root.strata.map(s => ExecutableAst.Stratum(s.constraints.map(c => Constraint.toConstraint(c, m))))
     val properties = root.properties.map(p => toExecutable(p))
     val specialOps = root.specialOps
     val reachable = root.reachable
 
-    ExecutableAst.Root(constants ++ m, effs, handlers, enums, lattices, tables, strata, properties, specialOps, reachable).toSuccess
+    ExecutableAst.Root(constants ++ m, effs, handlers, enums, relations, lattices, latticeComponents, strata, properties, specialOps, reachable).toSuccess
   }
 
   def toExecutable(sast: SimplifiedAst.Def): ExecutableAst.Def = {
@@ -88,15 +89,14 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
       ExecutableAst.LatticeComponents(tpe, bot, top, equ, leq, lub, glb, loc)
   }
 
-  object Table {
-    def toExecutable(sast: SimplifiedAst.Table): ExecutableAst.Table = sast match {
-      case SimplifiedAst.Table.Relation(symbol, attributes, loc) =>
-        val attributesArray = attributes.map(CreateExecutableAst.toExecutable)
-        ExecutableAst.Table.Relation(symbol, attributesArray, loc)
-      case SimplifiedAst.Table.Lattice(symbol, attributes, loc) =>
-        val attributesArray = attributes.map(CreateExecutableAst.toExecutable)
-        ExecutableAst.Table.Lattice(symbol, attributesArray, loc)
-    }
+  def visitRelation(r: SimplifiedAst.Relation): ExecutableAst.Relation = r match {
+    case SimplifiedAst.Relation(sym, attr, loc) =>
+      ExecutableAst.Relation(sym, attr.map(CreateExecutableAst.visitAttribute), loc)
+  }
+
+  def visitLattice(l: SimplifiedAst.Lattice): ExecutableAst.Lattice = l match {
+    case SimplifiedAst.Lattice(sym, attr, loc) =>
+      ExecutableAst.Lattice(sym, attr.map(CreateExecutableAst.visitAttribute), loc)
   }
 
   object Constraint {
@@ -299,10 +299,12 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
       def toExecutable(sast: SimplifiedAst.Predicate.Head, m: TopLevel)(implicit genSym: GenSym): ExecutableAst.Predicate.Head = sast match {
         case SimplifiedAst.Predicate.Head.True(loc) => ExecutableAst.Predicate.Head.True(loc)
         case SimplifiedAst.Predicate.Head.False(loc) => ExecutableAst.Predicate.Head.False(loc)
-
-        case SimplifiedAst.Predicate.Head.Atom(name, terms, loc) =>
+        case SimplifiedAst.Predicate.Head.RelAtom(sym, terms, loc) =>
           val ts = terms.map(t => Terms.translate(t, m))
-          ExecutableAst.Predicate.Head.Atom(name, ts, loc)
+          ExecutableAst.Predicate.Head.RelAtom(sym, ts, loc)
+        case SimplifiedAst.Predicate.Head.LatAtom(sym, terms, loc) =>
+          val ts = terms.map(t => Terms.translate(t, m))
+          ExecutableAst.Predicate.Head.LatAtom(sym, ts, loc)
       }
     }
 
@@ -310,7 +312,7 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
       // Also, figure out the actual implementation for Predicate.Body.Loop
 
       def toExecutable(sast: SimplifiedAst.Predicate.Body, m: TopLevel)(implicit genSym: GenSym): ExecutableAst.Predicate.Body = sast match {
-        case SimplifiedAst.Predicate.Body.Atom(sym, polarity, terms, loc) =>
+        case SimplifiedAst.Predicate.Body.RelAtom(sym, polarity, terms, loc) =>
           val termsArray = terms.map(t => Terms.Body.translate(t, m))
           val index2var: Array[Symbol.VarSym] = {
             val r = new Array[Symbol.VarSym](termsArray.length)
@@ -325,8 +327,24 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
             }
             r
           }
-          ExecutableAst.Predicate.Body.Atom(sym, polarity, termsArray, index2var.toList, loc)
+          ExecutableAst.Predicate.Body.RelAtom(sym, polarity, termsArray, index2var.toList, loc)
 
+        case SimplifiedAst.Predicate.Body.LatAtom(sym, polarity, terms, loc) =>
+          val termsArray = terms.map(t => Terms.Body.translate(t, m))
+          val index2var: Array[Symbol.VarSym] = {
+            val r = new Array[Symbol.VarSym](termsArray.length)
+            var i = 0
+            while (i < r.length) {
+              termsArray(i) match {
+                case ExecutableAst.Term.Body.Var(sym, _, _) =>
+                  r(i) = sym
+                case _ => // nop
+              }
+              i = i + 1
+            }
+            r
+          }
+          ExecutableAst.Predicate.Body.LatAtom(sym, polarity, termsArray, index2var.toList, loc)
         case SimplifiedAst.Predicate.Body.Filter(name, terms, loc) =>
           val termsArray = terms.map(t => Terms.Body.translate(t, m))
           ExecutableAst.Predicate.Body.Filter(name, termsArray, loc)
@@ -369,7 +387,7 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
 
   }
 
-  def toExecutable(sast: SimplifiedAst.Attribute): ExecutableAst.Attribute =
+  def visitAttribute(sast: SimplifiedAst.Attribute): ExecutableAst.Attribute =
     ExecutableAst.Attribute(sast.name, sast.tpe)
 
   def toExecutable(sast: SimplifiedAst.FormalParam): ExecutableAst.FormalParam =
