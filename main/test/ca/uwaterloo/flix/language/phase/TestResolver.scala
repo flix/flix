@@ -89,6 +89,18 @@ class TestResolver extends FunSuite with TestUtils {
     expectError[ResolutionError.UndefinedName](result)
   }
 
+  test("AmbiguousRelationOrLattice.01") {
+    val input =
+      s"""
+         |rel R(x: Int)
+         |lat R(x: Int)
+         |
+         |R(42).
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[ResolutionError.AmbiguousRelationOrLattice](result)
+  }
+
   test("AmbiguousTag.01") {
     val input =
       s"""
