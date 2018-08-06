@@ -53,10 +53,6 @@ object NamedAst {
 
   case class Enum(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: List[NamedAst.TypeParam], cases: Map[String, NamedAst.Case], tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst
 
-  case class Relation(doc: Ast.Doc, sym: Symbol.RelSym, attr: List[NamedAst.Attribute], loc: SourceLocation) extends NamedAst
-
-  case class Lattice(doc: Ast.Doc, sym: Symbol.LatSym, attr: List[NamedAst.Attribute], loc: SourceLocation) extends NamedAst
-
   case class Property(law: Symbol.DefnSym, defn: Symbol.DefnSym, exp: NamedAst.Expression, loc: SourceLocation) extends Ast.Annotation
 
   case class Constraint(cparams: List[NamedAst.ConstraintParam], head: NamedAst.Predicate.Head, body: List[NamedAst.Predicate.Body], loc: SourceLocation) extends NamedAst
@@ -66,6 +62,10 @@ object NamedAst {
   case class Impl(doc: Ast.Doc, mod: Ast.Modifiers, head: NamedAst.ComplexClass, body: List[NamedAst.ComplexClass], defs: Map[String, NamedAst.Def], loc: SourceLocation) extends NamedAst
 
   case class Disallow(doc: Ast.Doc, body: List[NamedAst.ComplexClass], loc: SourceLocation) extends NamedAst
+
+  case class Relation(doc: Ast.Doc, sym: Symbol.RelSym, attr: List[NamedAst.Attribute], loc: SourceLocation) extends NamedAst
+
+  case class Lattice(doc: Ast.Doc, sym: Symbol.LatSym, attr: List[NamedAst.Attribute], loc: SourceLocation) extends NamedAst
 
   case class LatticeComponents(tpe: NamedAst.Type, bot: NamedAst.Expression, top: NamedAst.Expression, equ: NamedAst.Expression, leq: NamedAst.Expression, lub: NamedAst.Expression, glb: NamedAst.Expression, ns: Name.NName, loc: SourceLocation) extends NamedAst
 

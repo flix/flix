@@ -727,11 +727,11 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
 
         case NamedAst.Predicate.Head.Atom(qname, terms, loc) =>
           for {
-            t <- lookupTable(qname, ns0, prog0)
+            t <- lookupRelationOrLattice(qname, ns0, prog0)
             ts <- seqM(terms.map(t => Expressions.resolve(t, Map.empty, ns0, prog0)))
           } yield t match {
-            case PredicateResult.Rel(sym) => ResolvedAst.Predicate.Head.RelAtom(sym, ts, loc)
-            case PredicateResult.Lat(sym) => ResolvedAst.Predicate.Head.LatAtom(sym, ts, loc)
+            case RelationOrLattice.Rel(sym) => ResolvedAst.Predicate.Head.RelAtom(sym, ts, loc)
+            case RelationOrLattice.Lat(sym) => ResolvedAst.Predicate.Head.LatAtom(sym, ts, loc)
           }
       }
     }
@@ -743,11 +743,11 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
       def resolve(b0: NamedAst.Predicate.Body, ns0: Name.NName, prog0: NamedAst.Root)(implicit genSym: GenSym): Validation[ResolvedAst.Predicate.Body, ResolutionError] = b0 match {
         case NamedAst.Predicate.Body.Atom(qname, polarity, terms, loc) =>
           for {
-            t <- lookupTable(qname, ns0, prog0)
+            t <- lookupRelationOrLattice(qname, ns0, prog0)
             ts <- seqM(terms.map(t => Patterns.resolve(t, ns0, prog0)))
           } yield t match {
-            case PredicateResult.Rel(sym) => ResolvedAst.Predicate.Body.RelAtom(sym, polarity, ts, loc)
-            case PredicateResult.Lat(sym) => ResolvedAst.Predicate.Body.LatAtom(sym, polarity, ts, loc)
+            case RelationOrLattice.Rel(sym) => ResolvedAst.Predicate.Body.RelAtom(sym, polarity, ts, loc)
+            case RelationOrLattice.Lat(sym) => ResolvedAst.Predicate.Body.LatAtom(sym, polarity, ts, loc)
           }
 
         case NamedAst.Predicate.Body.Filter(qname, terms, loc) =>
@@ -1098,21 +1098,20 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
   /**
     * Represents the result of a predicate lookup.
     */
-  sealed trait PredicateResult
+  sealed trait RelationOrLattice
 
-  object PredicateResult {
+  object RelationOrLattice {
 
-    case class Rel(sym: Symbol.RelSym) extends PredicateResult
+    case class Rel(sym: Symbol.RelSym) extends RelationOrLattice
 
-    case class Lat(sym: Symbol.LatSym) extends PredicateResult
+    case class Lat(sym: Symbol.LatSym) extends RelationOrLattice
 
   }
 
   /**
     * Finds the table of the given `qname` in the namespace `ns`.
     */
-  // TODO: Check that this resolution is correct.
-  def lookupTable(qname: Name.QName, ns: Name.NName, prog0: NamedAst.Root): Validation[PredicateResult, ResolutionError] = {
+  def lookupRelationOrLattice(qname: Name.QName, ns: Name.NName, prog0: NamedAst.Root): Validation[RelationOrLattice, ResolutionError] = {
     val (relations, lattices) = if (qname.isUnqualified) {
       // Lookup in the current namespace.
       (prog0.relations.getOrElse(ns, Map.empty), prog0.lattices.getOrElse(ns, Map.empty))
@@ -1127,9 +1126,9 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
 
     (relationOpt, latticeOpt) match {
       case (None, None) => ResolutionError.UndefinedTable(qname, ns, qname.loc).toFailure
-      case (Some(rel), None) => PredicateResult.Rel(rel.sym).toSuccess
-      case (None, Some(lat)) => PredicateResult.Lat(lat.sym).toSuccess
-      case _ => ??? // TODO: Add error message.
+      case (Some(rel), None) => RelationOrLattice.Rel(rel.sym).toSuccess
+      case (None, Some(lat)) => RelationOrLattice.Lat(lat.sym).toSuccess
+      case (Some(rel), Some(lat)) => ResolutionError.AmbiguousRelationOrLattice(qname, ns, List(rel.loc, lat.loc), qname.loc).toFailure
     }
   }
 
