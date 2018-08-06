@@ -376,14 +376,14 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
             val relation = NamedAst.Relation(doc, Symbol.mkRelSym(ns0, ident), attr.map(a => Attributes.namer(a, Map.empty)), loc)
             val relations = Map(ident.name -> relation)
             prog0.copy(relations = prog0.relations + (ns0 -> relations)).toSuccess
-          case Some(tables0) =>
+          case Some(relations0) =>
             // Case 2: The namespace exists. Lookup the table.
-            tables0.get(ident.name) match {
+            relations0.get(ident.name) match {
               case None =>
                 // Case 2.1: The table does not exist in the namespace. Update it.
-                val table = NamedAst.Relation(doc, Symbol.mkRelSym(ns0, ident), attr.map(a => Attributes.namer(a, Map.empty)), loc)
-                val tables = tables0 + (ident.name -> table)
-                prog0.copy(relations = prog0.relations + (ns0 -> tables)).toSuccess
+                val relation = NamedAst.Relation(doc, Symbol.mkRelSym(ns0, ident), attr.map(a => Attributes.namer(a, Map.empty)), loc)
+                val relations = relations0 + (ident.name -> relation)
+                prog0.copy(relations = prog0.relations + (ns0 -> relations)).toSuccess
               case Some(table) =>
                 // Case 2.2: Duplicate definition.
                 DuplicateDef(ident.name, table.loc, ident.loc).toFailure
@@ -401,13 +401,13 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
             val lattice = NamedAst.Lattice(doc, Symbol.mkLatSym(ns0, ident), attr.map(k => Attributes.namer(k, Map.empty)), loc)
             val lattices = Map(ident.name -> lattice)
             prog0.copy(lattices = prog0.lattices + (ns0 -> lattices)).toSuccess
-          case Some(tables0) =>
+          case Some(lattices0) =>
             // Case 2: The namespace exists. Lookup the table.
-            tables0.get(ident.name) match {
+            lattices0.get(ident.name) match {
               case None =>
                 // Case 2.1: The table does not exist in the namespace. Update it.
                 val lattice = NamedAst.Lattice(doc, Symbol.mkLatSym(ns0, ident), attr.map(k => Attributes.namer(k, Map.empty)), loc)
-                val lattices = tables0 + (ident.name -> lattice)
+                val lattices = lattices0 + (ident.name -> lattice)
                 prog0.copy(lattices = prog0.lattices + (ns0 -> lattices)).toSuccess
               case Some(table) =>
                 // Case 2.2: Duplicate definition.

@@ -105,7 +105,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
 
     val relationsVal = prog0.relations.flatMap {
       case (ns0, relations) => relations.map {
-        case (_, relation) => Tables.resolveRelation(relation, ns0, prog0) map {
+        case (_, relation) => resolveRelation(relation, ns0, prog0) map {
           case t => t.sym -> t
         }
       }
@@ -113,7 +113,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
 
     val latticesVal = prog0.lattices.flatMap {
       case (ns0, lattices) => lattices.map {
-        case (_, lattice) => Tables.resolveLattice(lattice, ns0, prog0) map {
+        case (_, lattice) => resolveLattice(lattice, ns0, prog0) map {
           case t => t.sym -> t
         }
       }
@@ -318,37 +318,33 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     } yield ResolvedAst.LatticeComponents(tpe, bot, top, equ, leq, lub, glb, ns0, l0.loc)
   }
 
-  object Tables {
-
-    /**
-      * Performs name resolution on the given relation `r0` in the given namespace `ns0`.
-      */
-    def resolveRelation(r0: NamedAst.Relation, ns0: Name.NName, prog0: NamedAst.Root)(implicit genSym: GenSym): Validation[ResolvedAst.Relation, ResolutionError] = r0 match {
-      case NamedAst.Relation(doc, sym, attr, loc) =>
-        for {
-          as <- seqM(attr.map(a => resolve(a, ns0, prog0)))
-        } yield ResolvedAst.Relation(doc, sym, as, loc)
-    }
-
-    /**
-      * Performs name resolution on the given table `t0` in the given namespace `ns0`.
-      */
-    def resolveLattice(l0: NamedAst.Lattice, ns0: Name.NName, prog0: NamedAst.Root)(implicit genSym: GenSym): Validation[ResolvedAst.Lattice, ResolutionError] = l0 match {
-      case NamedAst.Lattice(doc, sym, attr, loc) =>
-        for {
-          as <- seqM(attr.map(a => resolve(a, ns0, prog0)))
-        } yield ResolvedAst.Lattice(doc, sym, as, loc)
-    }
-
-    /**
-      * Performs name resolution on the given attribute `a0` in the given namespace `ns0`.
-      */
-    private def resolve(a0: NamedAst.Attribute, ns0: Name.NName, prog0: NamedAst.Root)(implicit genSym: GenSym): Validation[ResolvedAst.Attribute, ResolutionError] = {
+  /**
+    * Performs name resolution on the given relation `r0` in the given namespace `ns0`.
+    */
+  def resolveRelation(r0: NamedAst.Relation, ns0: Name.NName, prog0: NamedAst.Root)(implicit genSym: GenSym): Validation[ResolvedAst.Relation, ResolutionError] = r0 match {
+    case NamedAst.Relation(doc, sym, attr, loc) =>
       for {
-        tpe <- lookupType(a0.tpe, ns0, prog0)
-      } yield ResolvedAst.Attribute(a0.ident, tpe, a0.loc)
-    }
+        as <- seqM(attr.map(a => resolve(a, ns0, prog0)))
+      } yield ResolvedAst.Relation(doc, sym, as, loc)
+  }
 
+  /**
+    * Performs name resolution on the given table `t0` in the given namespace `ns0`.
+    */
+  def resolveLattice(l0: NamedAst.Lattice, ns0: Name.NName, prog0: NamedAst.Root)(implicit genSym: GenSym): Validation[ResolvedAst.Lattice, ResolutionError] = l0 match {
+    case NamedAst.Lattice(doc, sym, attr, loc) =>
+      for {
+        as <- seqM(attr.map(a => resolve(a, ns0, prog0)))
+      } yield ResolvedAst.Lattice(doc, sym, as, loc)
+  }
+
+  /**
+    * Performs name resolution on the given attribute `a0` in the given namespace `ns0`.
+    */
+  private def resolve(a0: NamedAst.Attribute, ns0: Name.NName, prog0: NamedAst.Root)(implicit genSym: GenSym): Validation[ResolvedAst.Attribute, ResolutionError] = {
+    for {
+      tpe <- lookupType(a0.tpe, ns0, prog0)
+    } yield ResolvedAst.Attribute(a0.ident, tpe, a0.loc)
   }
 
   object Expressions {

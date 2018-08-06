@@ -40,8 +40,8 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       effs <- Declarations.typecheckEffects(program)
       handlers <- Declarations.typecheckHandlers(program)
       enums <- Declarations.Enums.typecheck(program)
-      relations <- Declarations.Tables.visitRelations(program)
-      lattices <- Declarations.Tables.visitLattices(program)
+      relations <- Declarations.visitRelations(program)
+      lattices <- Declarations.visitLattices(program)
       latticeComponents <- Declarations.Lattices.typecheck(program)
       constraints <- Constraints.typecheck(program)
       properties <- Declarations.Properties.typecheck(program)
@@ -265,68 +265,65 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
 
     }
 
-    object Tables {
-
-      /**
-        * Performs type inference and reassembly on all relations in the given program.
-        *
-        * Returns [[Err]] if type resolution fails.
-        */
-      def visitRelations(program: ResolvedAst.Program): Result[Map[Symbol.RelSym, TypedAst.Relation], TypeError] = {
-        // Visit every relation in the program.
-        val result = program.relations.toList.map {
-          case (_, rel) => visitRelation(rel)
-        }
-
-        // Sequence the results and convert them back to a map.
-        Result.seqM(result).map(_.toMap)
+    /**
+      * Performs type inference and reassembly on all relations in the given program.
+      *
+      * Returns [[Err]] if type resolution fails.
+      */
+    def visitRelations(program: ResolvedAst.Program): Result[Map[Symbol.RelSym, TypedAst.Relation], TypeError] = {
+      // Visit every relation in the program.
+      val result = program.relations.toList.map {
+        case (_, rel) => visitRelation(rel)
       }
 
-      /**
-        * Performs type inference and reassembly on all lattices in the given program.
-        *
-        * Returns [[Err]] if type resolution fails.
-        */
-      def visitLattices(program: ResolvedAst.Program): Result[Map[Symbol.LatSym, TypedAst.Lattice], TypeError] = {
-        // Visit every relation in the program.
-        val result = program.lattices.toList.map {
-          case (_, lat) => visitLattice(lat)
-        }
-
-        // Sequence the results and convert them back to a map.
-        Result.seqM(result).map(_.toMap)
-      }
-
-      /**
-        * Performs type resolution on the given relation `r`.
-        *
-        * Returns [[Err]] if a type is unresolved.
-        */
-      def visitRelation(r: ResolvedAst.Relation): Result[(Symbol.RelSym, TypedAst.Relation), TypeError] = r match {
-        case ResolvedAst.Relation(doc, sym, attr, loc) =>
-          for (typedAttributes <- Result.seqM(attr.map(a => visitAttribute(a))))
-            yield sym -> TypedAst.Relation(doc, sym, typedAttributes, loc)
-      }
-
-      /**
-        * Performs type resolution on the given lattice `l`.
-        *
-        * Returns [[Err]] if a type is unresolved.
-        */
-      def visitLattice(r: ResolvedAst.Lattice): Result[(Symbol.LatSym, TypedAst.Lattice), TypeError] = r match {
-        case ResolvedAst.Lattice(doc, sym, attr, loc) =>
-          for (typedAttributes <- Result.seqM(attr.map(a => visitAttribute(a))))
-            yield sym -> TypedAst.Lattice(doc, sym, typedAttributes, loc)
-      }
-
-      /**
-        * Performs type resolution on the given attribute `attr`.
-        */
-      def visitAttribute(attr: ResolvedAst.Attribute): Result[TypedAst.Attribute, TypeError] = attr match {
-        case ResolvedAst.Attribute(ident, tpe, loc) => Ok(TypedAst.Attribute(ident.name, tpe, loc))
-      }
-
+      // Sequence the results and convert them back to a map.
+      Result.seqM(result).map(_.toMap)
     }
+
+    /**
+      * Performs type inference and reassembly on all lattices in the given program.
+      *
+      * Returns [[Err]] if type resolution fails.
+      */
+    def visitLattices(program: ResolvedAst.Program): Result[Map[Symbol.LatSym, TypedAst.Lattice], TypeError] = {
+      // Visit every relation in the program.
+      val result = program.lattices.toList.map {
+        case (_, lat) => visitLattice(lat)
+      }
+
+      // Sequence the results and convert them back to a map.
+      Result.seqM(result).map(_.toMap)
+    }
+
+    /**
+      * Performs type resolution on the given relation `r`.
+      *
+      * Returns [[Err]] if a type is unresolved.
+      */
+    def visitRelation(r: ResolvedAst.Relation): Result[(Symbol.RelSym, TypedAst.Relation), TypeError] = r match {
+      case ResolvedAst.Relation(doc, sym, attr, loc) =>
+        for (typedAttributes <- Result.seqM(attr.map(a => visitAttribute(a))))
+          yield sym -> TypedAst.Relation(doc, sym, typedAttributes, loc)
+    }
+
+    /**
+      * Performs type resolution on the given lattice `l`.
+      *
+      * Returns [[Err]] if a type is unresolved.
+      */
+    def visitLattice(r: ResolvedAst.Lattice): Result[(Symbol.LatSym, TypedAst.Lattice), TypeError] = r match {
+      case ResolvedAst.Lattice(doc, sym, attr, loc) =>
+        for (typedAttributes <- Result.seqM(attr.map(a => visitAttribute(a))))
+          yield sym -> TypedAst.Lattice(doc, sym, typedAttributes, loc)
+    }
+
+    /**
+      * Performs type resolution on the given attribute `attr`.
+      */
+    def visitAttribute(attr: ResolvedAst.Attribute): Result[TypedAst.Attribute, TypeError] = attr match {
+      case ResolvedAst.Attribute(ident, tpe, loc) => Ok(TypedAst.Attribute(ident.name, tpe, loc))
+    }
+
 
     object Properties {
 
