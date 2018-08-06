@@ -1027,7 +1027,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
     val specialOps = root.specialOps
     val reachable = root.reachable
 
-    SimplifiedAst.Root(defns ++ toplevel, effs, handlers, enums, latticeComponents, relations, lattices, strata, properties, specialOps, reachable).toSuccess
+    SimplifiedAst.Root(defns ++ toplevel, effs, handlers, enums, relations, lattices, latticeComponents, strata, properties, specialOps, reachable).toSuccess
   }
 
   /**

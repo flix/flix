@@ -30,9 +30,9 @@ object SimplifiedAst {
                   effs: Map[Symbol.EffSym, SimplifiedAst.Eff],
                   handlers: Map[Symbol.EffSym, SimplifiedAst.Handler],
                   enums: Map[Symbol.EnumSym, SimplifiedAst.Enum],
-                  latticeComponents: Map[Type, SimplifiedAst.LatticeComponents],
                   relations: Map[Symbol.RelSym, SimplifiedAst.Relation],
                   lattices: Map[Symbol.LatSym, SimplifiedAst.Lattice],
+                  latticeComponents: Map[Type, SimplifiedAst.LatticeComponents],
                   strata: List[SimplifiedAst.Stratum],
                   properties: List[SimplifiedAst.Property],
                   specialOps: Map[SpecialOperator, Map[Type, Symbol.DefnSym]],
@@ -48,13 +48,13 @@ object SimplifiedAst {
 
   case class Enum(mod: Ast.Modifiers, sym: Symbol.EnumSym, cases: Map[String, SimplifiedAst.Case], tpe: Type, loc: SourceLocation) extends SimplifiedAst
 
-  case class Property(law: Symbol.DefnSym, defn: Symbol.DefnSym, exp: SimplifiedAst.Expression) extends SimplifiedAst
-
-  case class Stratum(constraints: List[SimplifiedAst.Constraint]) extends SimplifiedAst
-
   case class Relation(sym: Symbol.RelSym, attr: List[SimplifiedAst.Attribute], loc: SourceLocation) extends SimplifiedAst
 
   case class Lattice(sym: Symbol.LatSym, attr: List[SimplifiedAst.Attribute], loc: SourceLocation) extends SimplifiedAst
+
+  case class Property(law: Symbol.DefnSym, defn: Symbol.DefnSym, exp: SimplifiedAst.Expression) extends SimplifiedAst
+
+  case class Stratum(constraints: List[SimplifiedAst.Constraint]) extends SimplifiedAst
 
   case class LatticeComponents(tpe: Type, bot: Symbol.DefnSym, top: Symbol.DefnSym, equ: Symbol.DefnSym, leq: Symbol.DefnSym, lub: Symbol.DefnSym, glb: Symbol.DefnSym, loc: SourceLocation) extends SimplifiedAst
 

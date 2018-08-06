@@ -46,11 +46,11 @@ object WeededAst {
 
     case class Enum(doc: Ast.Doc, mod: Ast.Modifiers, ident: Name.Ident, tparams: List[Name.Ident], cases: Map[String, WeededAst.Case], loc: SourceLocation) extends WeededAst.Declaration
 
-    case class Property(law: Name.QName, defn: Name.Ident, exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Declaration
-
     case class Relation(doc: Ast.Doc, ident: Name.Ident, attr: List[WeededAst.Attribute], loc: SourceLocation) extends WeededAst.Declaration
 
     case class Lattice(doc: Ast.Doc, ident: Name.Ident, attr: List[WeededAst.Attribute], loc: SourceLocation) extends WeededAst.Declaration
+
+    case class Property(law: Name.QName, defn: Name.Ident, exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Declaration
 
     case class Constraint(head: WeededAst.Predicate.Head, body: List[WeededAst.Predicate.Body], loc: SourceLocation) extends WeededAst.Declaration
 
@@ -126,15 +126,15 @@ object WeededAst {
 
     case class ArrayNew(elm: WeededAst.Expression, len: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
-    case class ArrayLoad(base: WeededAst.Expression, index: WeededAst.Expression, loc:SourceLocation) extends  WeededAst.Expression
+    case class ArrayLoad(base: WeededAst.Expression, index: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
-    case class ArrayLength(base: WeededAst.Expression, loc: SourceLocation) extends  WeededAst.Expression
+    case class ArrayLength(base: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
-    case class ArrayStore(base: WeededAst.Expression, index: WeededAst.Expression, elm: WeededAst.Expression, loc: SourceLocation) extends  WeededAst.Expression
+    case class ArrayStore(base: WeededAst.Expression, index: WeededAst.Expression, elm: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
-    case class ArraySlice(base: WeededAst.Expression, beginIndex: WeededAst.Expression, endIndex: WeededAst.Expression, loc: SourceLocation) extends  WeededAst.Expression
+    case class ArraySlice(base: WeededAst.Expression, beginIndex: WeededAst.Expression, endIndex: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
-    case class VectorLit(elms: List[WeededAst.Expression], loc: SourceLocation) extends  WeededAst.Expression
+    case class VectorLit(elms: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
 
     case class VectorNew(elm: WeededAst.Expression, len: Int, loc: SourceLocation) extends WeededAst.Expression
 

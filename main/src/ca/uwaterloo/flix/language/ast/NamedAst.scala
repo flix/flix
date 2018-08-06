@@ -53,11 +53,11 @@ object NamedAst {
 
   case class Enum(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: List[NamedAst.TypeParam], cases: Map[String, NamedAst.Case], tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst
 
-  case class Property(law: Symbol.DefnSym, defn: Symbol.DefnSym, exp: NamedAst.Expression, loc: SourceLocation) extends Ast.Annotation
-
   case class Relation(doc: Ast.Doc, sym: Symbol.RelSym, attr: List[NamedAst.Attribute], loc: SourceLocation) extends NamedAst
 
   case class Lattice(doc: Ast.Doc, sym: Symbol.LatSym, attr: List[NamedAst.Attribute], loc: SourceLocation) extends NamedAst
+
+  case class Property(law: Symbol.DefnSym, defn: Symbol.DefnSym, exp: NamedAst.Expression, loc: SourceLocation) extends Ast.Annotation
 
   case class Constraint(cparams: List[NamedAst.ConstraintParam], head: NamedAst.Predicate.Head, body: List[NamedAst.Predicate.Body], loc: SourceLocation) extends NamedAst
 

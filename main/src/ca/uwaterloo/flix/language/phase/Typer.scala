@@ -48,7 +48,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     } yield {
       val strata = List(TypedAst.Stratum(constraints))
       val specialOps = Map.empty[SpecialOperator, Map[Type, Symbol.DefnSym]]
-      TypedAst.Root(defs, effs, handlers, enums, latticeComponents, relations, lattices, strata, properties, specialOps, program.reachable)
+      TypedAst.Root(defs, effs, handlers, enums, relations, lattices, latticeComponents, strata, properties, specialOps, program.reachable)
     }
 
     result match {

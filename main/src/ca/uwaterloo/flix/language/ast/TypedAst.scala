@@ -28,9 +28,9 @@ object TypedAst {
                   effs: Map[Symbol.EffSym, TypedAst.Eff],
                   handlers: Map[Symbol.EffSym, TypedAst.Handler],
                   enums: Map[Symbol.EnumSym, TypedAst.Enum],
-                  latticeComponents: Map[Type, TypedAst.LatticeComponents],
                   relations: Map[Symbol.RelSym, TypedAst.Relation],
                   lattices: Map[Symbol.LatSym, TypedAst.Lattice],
+                  latticeComponents: Map[Type, TypedAst.LatticeComponents],
                   strata: List[TypedAst.Stratum],
                   properties: List[TypedAst.Property],
                   specialOps: Map[SpecialOperator, Map[Type, Symbol.DefnSym]],
@@ -46,13 +46,13 @@ object TypedAst {
 
   case class Enum(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.EnumSym, cases: Map[String, TypedAst.Case], tpe: Type, loc: SourceLocation) extends TypedAst
 
-  case class Property(law: Symbol.DefnSym, defn: Symbol.DefnSym, exp: TypedAst.Expression, loc: SourceLocation) extends TypedAst
-
-  case class Stratum(constraints: List[TypedAst.Constraint]) extends TypedAst
-
   case class Relation(doc: Ast.Doc, sym: Symbol.RelSym, attr: List[TypedAst.Attribute], loc: SourceLocation) extends TypedAst
 
   case class Lattice(doc: Ast.Doc, sym: Symbol.LatSym, attr: List[TypedAst.Attribute], loc: SourceLocation) extends TypedAst
+
+  case class Property(law: Symbol.DefnSym, defn: Symbol.DefnSym, exp: TypedAst.Expression, loc: SourceLocation) extends TypedAst
+
+  case class Stratum(constraints: List[TypedAst.Constraint]) extends TypedAst
 
   case class LatticeComponents(tpe: Type, bot: TypedAst.Expression, top: TypedAst.Expression, equ: TypedAst.Expression, leq: TypedAst.Expression, lub: TypedAst.Expression, glb: TypedAst.Expression, loc: SourceLocation) extends TypedAst
 
