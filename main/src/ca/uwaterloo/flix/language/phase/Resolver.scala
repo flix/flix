@@ -1126,8 +1126,8 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
 
     (relationOpt, latticeOpt) match {
       case (None, None) => ResolutionError.UndefinedTable(qname, ns, qname.loc).toFailure
-      case (Some(rel), None) => getRelationIfAccessible(rel, ns, qname.loc)
-      case (None, Some(lat)) => getLatticeIfAccessible(lat, ns, qname.loc)
+      case (Some(rel), None) => getRelationIfAccessible(rel, ns, qname.loc) map RelationOrLattice.Rel
+      case (None, Some(lat)) => getLatticeIfAccessible(lat, ns, qname.loc) map RelationOrLattice.Lat
       case (Some(rel), Some(lat)) => ResolutionError.AmbiguousRelationOrLattice(qname, ns, List(rel.loc, lat.loc), qname.loc).toFailure
     }
   }
@@ -1166,7 +1166,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     * Resolves the given type `tpe0` in the given namespace `ns0`.
     */
   // TODO: Add support for Higher-Kinded types.
-  def lookupType(tpe0: NamedAst.Type, ns0: Name.NName, prog0: NamedAst.Root): Validation[Type, ResolutionError] = tpe0 match {
+  def lookupType(tpe0: NamedAst.Type, ns0: Name.NName, root: NamedAst.Root): Validation[Type, ResolutionError] = tpe0 match {
     case NamedAst.Type.Var(tvar, loc) => tvar.toSuccess
     case NamedAst.Type.Unit(loc) => Type.Unit.toSuccess
     case NamedAst.Type.Ambiguous(qname, loc) if qname.isUnqualified => qname.ident.name match {
@@ -1188,34 +1188,40 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
       case "Vector" => Type.Vector.toSuccess
       case "Ref" => Type.Ref.toSuccess
 
-      // Enum Types.
+      // Disambiguate type.
       case typeName =>
-        // Lookup the enum in the current namespace.
-        // If the namespace doesn't even exist, just use an empty map.
-        val namespaceDecls = prog0.enums.getOrElse(ns0, Map.empty)
-        namespaceDecls.get(typeName) match {
-          case None =>
-            // The enum was not found in the current namespace. Try the root namespace.
-            val rootDecls = prog0.enums.getOrElse(Name.RootNS, Map.empty)
-            rootDecls.get(typeName) match {
-              case None => ResolutionError.UndefinedType(qname, ns0, loc).toFailure
-              case Some(enum) => getTypeIfAccessible(enum, ns0, ns0.loc)
-            }
-          case Some(enum) => getTypeIfAccessible(enum, ns0, ns0.loc)
+        (lookupEnum(typeName, ns0, root), lookupRelation(typeName, ns0, root), lookupLattice(typeName, ns0, root)) match {
+          // Case 1: Not Found.
+          case (None, None, None) => ResolutionError.UndefinedType(qname, ns0, loc).toFailure
+
+          // Case 2: Enum.
+          case (Some(enum), None, None) => getEnumTypeIfAccessible(enum, ns0, ns0.loc)
+
+          // Case 3: Relation.
+          case (None, Some(rel), None) => getRelationTypeIfAccessible(rel, ns0, ns0.loc)
+
+          // Case 4: Lattice.
+          case (None, None, Some(lat)) => getLatticeTypeIfAccessible(lat, ns0, ns0.loc)
+
+          // Case 5: Errors.
+          case (Some(enum), Some(rel), None) => ResolutionError.AmbiguousType(typeName, ns0, List(enum.loc, rel.loc), loc).toFailure
+          case (Some(enum), None, Some(lat)) => ResolutionError.AmbiguousType(typeName, ns0, List(enum.loc, lat.loc), loc).toFailure
+          case (None, Some(rel), Some(lat)) => ResolutionError.AmbiguousType(typeName, ns0, List(rel.loc, lat.loc), loc).toFailure
+          case (Some(enum), Some(rel), Some(lat)) => ResolutionError.AmbiguousType(typeName, ns0, List(enum.loc, rel.loc, lat.loc), loc).toFailure
         }
     }
     case NamedAst.Type.Ambiguous(qname, loc) if qname.isQualified =>
       // Lookup the enum using the namespace.
-      val decls = prog0.enums.getOrElse(qname.namespace, Map.empty)
+      val decls = root.enums.getOrElse(qname.namespace, Map.empty)
       decls.get(qname.ident.name) match {
         case None => ResolutionError.UndefinedType(qname, ns0, loc).toFailure
-        case Some(enum) => getTypeIfAccessible(enum, ns0, ns0.loc)
+        case Some(enum) => getEnumTypeIfAccessible(enum, ns0, ns0.loc)
       }
     case NamedAst.Type.Enum(sym) =>
       Type.Enum(sym, Kind.Star).toSuccess
     case NamedAst.Type.Tuple(elms0, loc) =>
       for (
-        elms <- seqM(elms0.map(tpe => lookupType(tpe, ns0, prog0)))
+        elms <- seqM(elms0.map(tpe => lookupType(tpe, ns0, root)))
       ) yield Type.mkTuple(elms)
 
     case NamedAst.Type.Nat(len, loc) => Type.Succ(len, Type.Zero).toSuccess
@@ -1226,15 +1232,48 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
       }
     case NamedAst.Type.Arrow(tparams0, tresult0, loc) =>
       for (
-        tparams <- seqM(tparams0.map(tpe => lookupType(tpe, ns0, prog0)));
-        tresult <- lookupType(tresult0, ns0, prog0)
+        tparams <- seqM(tparams0.map(tpe => lookupType(tpe, ns0, root)));
+        tresult <- lookupType(tresult0, ns0, root)
       ) yield Type.mkArrow(tparams, tresult)
     case NamedAst.Type.Apply(base0, targ0, loc) =>
       for (
-        tpe1 <- lookupType(base0, ns0, prog0);
-        tpe2 <- lookupType(targ0, ns0, prog0)
+        tpe1 <- lookupType(base0, ns0, root);
+        tpe2 <- lookupType(targ0, ns0, root)
       ) yield Type.Apply(tpe1, tpe2)
 
+  }
+
+  /**
+    * Optionally returns the enum with the given `name` in the given namespace `ns0`.
+    */
+  private def lookupEnum(typeName: String, ns0: Name.NName, root: NamedAst.Root): Option[NamedAst.Enum] = {
+    val enumsInNamespace = root.enums.getOrElse(ns0, Map.empty)
+    enumsInNamespace.get(typeName) orElse {
+      val enumsInRootNS = root.enums.getOrElse(Name.RootNS, Map.empty)
+      enumsInRootNS.get(typeName)
+    }
+  }
+
+  /**
+    * Optionally returns the relation with the given `name` in the given namespace `ns0`.
+    */
+  private def lookupRelation(typeName: String, ns0: Name.NName, root: NamedAst.Root): Option[NamedAst.Relation] = {
+    val relationsInNS = root.relations.getOrElse(ns0, Map.empty)
+    relationsInNS.get(typeName) orElse {
+      val relationsInRootNS = root.relations.getOrElse(Name.RootNS, Map.empty)
+      relationsInRootNS.get(typeName)
+    }
+  }
+
+  /**
+    * Optionally returns the lattice with the given `name` in the given namespace `ns0`.
+    */
+  private def lookupLattice(name: String, ns0: Name.NName, root: NamedAst.Root): Option[NamedAst.Lattice] = {
+    val latticesInNS = root.lattices.getOrElse(ns0, Map.empty)
+    latticesInNS.get(name) orElse {
+      val latticesInRootNS = root.lattices.getOrElse(Name.RootNS, Map.empty)
+      latticesInRootNS.get(name)
+    }
   }
 
   /**
@@ -1380,12 +1419,12 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     * (a) the relation is marked public, or
     * (b) the relation is defined in the namespace `ns0` itself or in a parent of `ns0`.
     */
-  def getRelationIfAccessible(rel0: NamedAst.Relation, ns0: Name.NName, loc: SourceLocation): Validation[RelationOrLattice, ResolutionError] = {
+  def getRelationIfAccessible(rel0: NamedAst.Relation, ns0: Name.NName, loc: SourceLocation): Validation[Symbol.RelSym, ResolutionError] = {
     //
     // Check if the relation is marked public.
     //
     if (rel0.mod.isPublic)
-      return RelationOrLattice.Rel(rel0.sym).toSuccess
+      return rel0.sym.toSuccess
 
     //
     // Check if the relation is defined in `ns0` or in a parent of `ns0`.
@@ -1393,7 +1432,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     val prefixNs = rel0.sym.namespace
     val targetNs = ns0.idents.map(_.name)
     if (targetNs.startsWith(prefixNs))
-      return RelationOrLattice.Rel(rel0.sym).toSuccess
+      return rel0.sym.toSuccess
 
     //
     // The relation is not accessible.
@@ -1411,12 +1450,12 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     * (a) the lattice is marked public, or
     * (b) the lattice is defined in the namespace `ns0` itself or in a parent of `ns0`.
     */
-  def getLatticeIfAccessible(lat0: NamedAst.Lattice, ns0: Name.NName, loc: SourceLocation): Validation[RelationOrLattice, ResolutionError] = {
+  def getLatticeIfAccessible(lat0: NamedAst.Lattice, ns0: Name.NName, loc: SourceLocation): Validation[Symbol.LatSym, ResolutionError] = {
     //
     // Check if the lattice is marked public.
     //
     if (lat0.mod.isPublic)
-      return RelationOrLattice.Lat(lat0.sym).toSuccess
+      return lat0.sym.toSuccess
 
     //
     // Check if the lattice is defined in `ns0` or in a parent of `ns0`.
@@ -1424,7 +1463,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     val prefixNs = lat0.sym.namespace
     val targetNs = ns0.idents.map(_.name)
     if (targetNs.startsWith(prefixNs))
-      return RelationOrLattice.Lat(lat0.sym).toSuccess
+      return lat0.sym.toSuccess
 
     //
     // The lattice is not accessible.
@@ -1436,12 +1475,30 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     * Successfully returns the type of the given `enum0` if it is accessible from the given namespace `ns0`.
     *
     * Otherwise fails with a resolution error.
-    *
-    * Internally uses [[getEnumIfAccessible]].
     */
-  def getTypeIfAccessible(enum0: NamedAst.Enum, ns0: Name.NName, loc: SourceLocation): Validation[Type, ResolutionError] =
+  def getEnumTypeIfAccessible(enum0: NamedAst.Enum, ns0: Name.NName, loc: SourceLocation): Validation[Type, ResolutionError] =
     getEnumIfAccessible(enum0, ns0, loc) map {
       case enum => Type.Enum(enum.sym, Kind.Star)
+    }
+
+  /**
+    * Successfully returns the type of the given `rel0` if it is accessible from the given namespace `ns0`.
+    *
+    * Otherwise fails with a resolution error.
+    */
+  def getRelationTypeIfAccessible(rel0: NamedAst.Relation, ns0: Name.NName, loc: SourceLocation): Validation[Type, ResolutionError] =
+    getRelationIfAccessible(rel0, ns0, loc) map {
+      case sym => Type.Relation(sym, Kind.Star)
+    }
+
+  /**
+    * Successfully returns the type of the given `lat0` if it is accessible from the given namespace `ns0`.
+    *
+    * Otherwise fails with a resolution error.
+    */
+  def getLatticeTypeIfAccessible(lat0: NamedAst.Lattice, ns0: Name.NName, loc: SourceLocation): Validation[Type, ResolutionError] =
+    getLatticeIfAccessible(lat0, ns0, loc) map {
+      case sym => Type.Lattice(sym, Kind.Star)
     }
 
   /**

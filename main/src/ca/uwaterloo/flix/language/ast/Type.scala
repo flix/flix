@@ -53,7 +53,9 @@ sealed trait Type {
     case Type.Succ(n, t) => Set.empty
     case Type.Arrow(l) => Set.empty
     case Type.Tuple(l) => Set.empty
-    case Type.Enum(enumName, kind) => Set.empty
+    case Type.Enum(_, _) => Set.empty
+    case Type.Relation(_, _) => Set.empty
+    case Type.Lattice(_, _) => Set.empty
     case Type.Apply(tpe1, tpe2) => tpe1.typeVars ++ tpe2.typeVars
   }
 
@@ -157,7 +159,9 @@ sealed trait Type {
     case Type.Native(clazz) => "Native"
     case Type.Ref => "Ref"
     case Type.Arrow(l) => s"Arrow($l)"
-    case Type.Enum(enum, kind) => enum.toString
+    case Type.Enum(sym, _) => sym.toString
+    case Type.Relation(sym, _) => sym.toString
+    case Type.Lattice(sym, _) => sym.toString
     case Type.Tuple(l) => s"Tuple($l)"
     case Type.Apply(tpe1, tpe2) => s"$tpe1[$tpe2]"
   }
@@ -326,16 +330,38 @@ object Type {
   case class Enum(sym: Symbol.EnumSym, kind: Kind) extends Type
 
   /**
+    * A type constructor that represents a relation.
+    *
+    * @param sym  the symbol of the relation.
+    * @param kind the kind of the relation.
+    */
+  case class Relation(sym: Symbol.RelSym, kind: Kind) extends Type
+
+  /**
+    * A type constructor that represents a lattice.
+    *
+    * @param sym  the symbol of the lattice.
+    * @param kind the kind of the lattice.
+    */
+  case class Lattice(sym: Symbol.LatSym, kind: Kind) extends Type
+
+  /**
     * A type constructor that represents tuples of the given `length`.
     */
   case class Tuple(length: Int) extends Type {
     def kind: Kind = Kind.Arrow((0 until length).map(_ => Kind.Star).toList, Kind.Star)
   }
 
+  /**
+    * A type constructor that represents zero.
+    */
   case object Zero extends Type {
     def kind: Kind = Kind.Star
   }
 
+  /**
+    * A type constructor that represents the successor of a type.
+    */
   case class Succ(len: Int, t: Type) extends Type {
     def kind: Kind = Kind.Star
   }
@@ -423,12 +449,13 @@ object Type {
 
   /**
     * Constructs the vector type [|elmType, Len|] where
-    * @param elmType is the given element type
-    * @param len is the given length of the vector.
     *
-    * len expected input is an instance of Succ(Int, Type), where Int is the length, and Type is either Type.Zero or a fresh variable.
+    * @param elmType is the given element type
+    * @param len     is the given length of the vector.
+    *
+    *                len expected input is an instance of Succ(Int, Type), where Int is the length, and Type is either Type.Zero or a fresh variable.
     */
-  def mkVector(elmType: Type, len: Type) : Type = Apply(Apply(Vector, elmType), len)
+  def mkVector(elmType: Type, len: Type): Type = Apply(Apply(Vector, elmType), len)
 
 
   /**
@@ -472,7 +499,9 @@ object Type {
       case Type.Zero => Type.Zero
       case Type.Succ(n, t) => Type.Succ(n, t)
       case Type.Apply(tpe1, tpe2) => Type.Apply(visit(tpe1), visit(tpe2))
-      case Type.Enum(enum, kind) => Type.Enum(enum, kind)
+      case Type.Enum(sym, kind) => Type.Enum(sym, kind)
+      case Type.Relation(sym, kind) => Type.Relation(sym, kind)
+      case Type.Lattice(sym, kind) => Type.Lattice(sym, kind)
     }
 
     visit(tpe)
@@ -542,15 +571,23 @@ object Type {
           //
           // Enum.
           //
-          case Type.Enum(sym, kind) =>
-            if (args.isEmpty) {
-              sym.toString
-            } else {
-              sym.toString + "[" + args.map(visit(_, m)).mkString(", ") + "]"
-            }
+          case Type.Enum(sym, _) =>
+            if (args.isEmpty) sym.toString else sym.toString + "[" + args.map(visit(_, m)).mkString(", ") + "]"
 
           //
-          // Type Application.
+          // Relation.
+          //
+          case Type.Relation(sym, _) =>
+            if (args.isEmpty) sym.toString else sym.toString + "[" + args.map(visit(_, m)).mkString(", ") + "]"
+
+          //
+          // Lattice.
+          //
+          case Type.Lattice(sym, _) =>
+            if (args.isEmpty) sym.toString else sym.toString + "[" + args.map(visit(_, m)).mkString(", ") + "]"
+
+          //
+          // Application.
           //
           case Type.Apply(tpe1, tpe2) => visit(tpe1, m) + "[" + visit(tpe2, m) + "]"
         }
