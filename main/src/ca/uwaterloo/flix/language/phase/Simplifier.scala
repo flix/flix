@@ -667,16 +667,16 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       * Translates the given `relation0` to the SimplifiedAst.
       */
     def visitRelation(relation0: TypedAst.Relation): SimplifiedAst.Relation = relation0 match {
-      case TypedAst.Relation(doc, sym, attributes, loc) =>
-        SimplifiedAst.Relation(sym, attributes.map(visitAttribute), loc)
+      case TypedAst.Relation(doc, mod, sym, attributes, loc) =>
+        SimplifiedAst.Relation(mod, sym, attributes.map(visitAttribute), loc)
     }
 
     /**
       * Translates the given `lattice0` to the SimplifiedAst.
       */
     def visitLattice(lattice0: TypedAst.Lattice): SimplifiedAst.Lattice = lattice0 match {
-      case TypedAst.Lattice(doc, sym, attributes, loc) =>
-        SimplifiedAst.Lattice(sym, attributes.map(visitAttribute), loc)
+      case TypedAst.Lattice(doc, mod, sym, attributes, loc) =>
+        SimplifiedAst.Lattice(mod, sym, attributes.map(visitAttribute), loc)
     }
 
     /**

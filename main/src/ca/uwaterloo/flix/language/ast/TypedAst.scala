@@ -46,9 +46,9 @@ object TypedAst {
 
   case class Enum(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.EnumSym, cases: Map[String, TypedAst.Case], tpe: Type, loc: SourceLocation) extends TypedAst
 
-  case class Relation(doc: Ast.Doc, sym: Symbol.RelSym, attr: List[TypedAst.Attribute], loc: SourceLocation) extends TypedAst
+  case class Relation(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.RelSym, attr: List[TypedAst.Attribute], loc: SourceLocation) extends TypedAst
 
-  case class Lattice(doc: Ast.Doc, sym: Symbol.LatSym, attr: List[TypedAst.Attribute], loc: SourceLocation) extends TypedAst
+  case class Lattice(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.LatSym, attr: List[TypedAst.Attribute], loc: SourceLocation) extends TypedAst
 
   case class Property(law: Symbol.DefnSym, defn: Symbol.DefnSym, exp: TypedAst.Expression, loc: SourceLocation) extends TypedAst
 
@@ -170,13 +170,13 @@ object TypedAst {
 
     case class Tuple(elms: List[TypedAst.Expression], tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
 
-    case class ArrayLit(elms: List[TypedAst.Expression], tpe: Type, eff: ast.Eff, loc: SourceLocation) extends  TypedAst.Expression
+    case class ArrayLit(elms: List[TypedAst.Expression], tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
 
     case class ArrayNew(elm: TypedAst.Expression, len: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
 
     case class ArrayLoad(base: TypedAst.Expression, index: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
 
-    case class ArrayLength(base: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends  TypedAst.Expression
+    case class ArrayLength(base: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
 
     case class ArrayStore(base: TypedAst.Expression, index: TypedAst.Expression, elm: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
 
@@ -289,6 +289,7 @@ object TypedAst {
     case class Tag(sym: Symbol.EnumSym, tag: String, pat: TypedAst.Pattern, tpe: Type, loc: SourceLocation) extends TypedAst.Pattern
 
     case class Tuple(elms: List[TypedAst.Pattern], tpe: Type, loc: SourceLocation) extends TypedAst.Pattern
+
   }
 
   sealed trait Predicate extends TypedAst {

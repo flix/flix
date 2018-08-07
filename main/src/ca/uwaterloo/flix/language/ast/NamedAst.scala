@@ -63,9 +63,9 @@ object NamedAst {
 
   case class Disallow(doc: Ast.Doc, body: List[NamedAst.ComplexClass], loc: SourceLocation) extends NamedAst
 
-  case class Relation(doc: Ast.Doc, sym: Symbol.RelSym, attr: List[NamedAst.Attribute], loc: SourceLocation) extends NamedAst
+  case class Relation(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.RelSym, attr: List[NamedAst.Attribute], loc: SourceLocation) extends NamedAst
 
-  case class Lattice(doc: Ast.Doc, sym: Symbol.LatSym, attr: List[NamedAst.Attribute], loc: SourceLocation) extends NamedAst
+  case class Lattice(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.LatSym, attr: List[NamedAst.Attribute], loc: SourceLocation) extends NamedAst
 
   case class LatticeComponents(tpe: NamedAst.Type, bot: NamedAst.Expression, top: NamedAst.Expression, equ: NamedAst.Expression, leq: NamedAst.Expression, lub: NamedAst.Expression, glb: NamedAst.Expression, ns: Name.NName, loc: SourceLocation) extends NamedAst
 

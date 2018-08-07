@@ -63,9 +63,9 @@ object ResolvedAst {
 
   // TODO: Disallow.
 
-  case class Relation(doc: Ast.Doc, sym: Symbol.RelSym, attr: List[ResolvedAst.Attribute], loc: SourceLocation) extends ResolvedAst
+  case class Relation(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.RelSym, attr: List[ResolvedAst.Attribute], loc: SourceLocation) extends ResolvedAst
 
-  case class Lattice(doc: Ast.Doc, sym: Symbol.LatSym, attr: List[ResolvedAst.Attribute], loc: SourceLocation) extends ResolvedAst
+  case class Lattice(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.LatSym, attr: List[ResolvedAst.Attribute], loc: SourceLocation) extends ResolvedAst
 
   case class LatticeComponents(tpe: Type, bot: ResolvedAst.Expression, top: ResolvedAst.Expression, equ: ResolvedAst.Expression, leq: ResolvedAst.Expression, lub: ResolvedAst.Expression, glb: ResolvedAst.Expression, ns: Name.NName, loc: SourceLocation) extends ResolvedAst
 
@@ -137,15 +137,15 @@ object ResolvedAst {
 
     case class ArrayNew(elm: ResolvedAst.Expression, len: ResolvedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class ArrayLoad(base: ResolvedAst.Expression, index: ResolvedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends  ResolvedAst.Expression
+    case class ArrayLoad(base: ResolvedAst.Expression, index: ResolvedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class ArrayStore(base: ResolvedAst.Expression, index: ResolvedAst.Expression, elm: ResolvedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends  ResolvedAst.Expression
+    case class ArrayStore(base: ResolvedAst.Expression, index: ResolvedAst.Expression, elm: ResolvedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class ArrayLength(base: ResolvedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class ArraySlice(base: ResolvedAst.Expression, beginIndex: ResolvedAst.Expression, endIndex: ResolvedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends  ResolvedAst.Expression
+    case class ArraySlice(base: ResolvedAst.Expression, beginIndex: ResolvedAst.Expression, endIndex: ResolvedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class VectorLit(elms: List[ResolvedAst.Expression], tvar: Type.Var, loc: SourceLocation) extends  ResolvedAst.Expression
+    case class VectorLit(elms: List[ResolvedAst.Expression], tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class VectorNew(elm: ResolvedAst.Expression, len: Int, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 

@@ -184,8 +184,9 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
             List(WeededAst.Declaration.Enum(doc, mod, ident, Nil, cases, mkSL(sp1, sp2)))
         }
 
-      case ParsedAst.Declaration.Relation(doc0, sp1, ident, attrs, sp2) =>
+      case ParsedAst.Declaration.Relation(doc0, mod0, sp1, ident, attrs, sp2) =>
         val doc = visitDoc(doc0)
+        val modVal = visitModifiers(mod0, legalModifiers = Set(Ast.Modifier.Public))
 
         /*
          * Check for `EmptyRelation`
@@ -196,12 +197,13 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         /*
          * Check for `DuplicateAttribute`.
          */
-        checkDuplicateAttribute(attrs) map {
-          case as => List(WeededAst.Declaration.Relation(doc, ident, as, mkSL(sp1, sp2)))
+        @@(modVal, checkDuplicateAttribute(attrs)) map {
+          case (mod, as) => List(WeededAst.Declaration.Relation(doc, mod, ident, as, mkSL(sp1, sp2)))
         }
 
-      case ParsedAst.Declaration.Lattice(doc0, sp1, ident, attr, sp2) =>
+      case ParsedAst.Declaration.Lattice(doc0, mod0, sp1, ident, attr, sp2) =>
         val doc = visitDoc(doc0)
+        val modVal = visitModifiers(mod0, legalModifiers = Set(Ast.Modifier.Public))
 
         /*
          * Check for `EmptyLattice`.
@@ -212,10 +214,10 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         /*
          * Check for `DuplicateAttribute`.
          */
-        checkDuplicateAttribute(attr) map {
-          case as =>
+        @@(modVal, checkDuplicateAttribute(attr)) map {
+          case (mod, as) =>
             // Split the attributes into keys and element.
-            List(WeededAst.Declaration.Lattice(doc, ident, as, mkSL(sp1, sp2)))
+            List(WeededAst.Declaration.Lattice(doc, mod, ident, as, mkSL(sp1, sp2)))
         }
 
       case ParsedAst.Declaration.Constraint(sp1, head, body, sp2) =>
@@ -585,7 +587,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
         case ParsedAst.Expression.ArrayNew(sp1, elm, len, sp2) =>
           @@(visit(elm, unsafe), visit(len, unsafe)) map {
-            case(e, ln) => WeededAst.Expression.ArrayNew(e, ln, mkSL(sp1, sp2))
+            case (e, ln) => WeededAst.Expression.ArrayNew(e, ln, mkSL(sp1, sp2))
           }
 
         case ParsedAst.Expression.ArrayLoad(base, index, sp2) =>
@@ -602,8 +604,8 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
           @@(visit(base, unsafe), @@(indexes.map(e => visit(e, unsafe))), visit(elm, unsafe)) map {
             case (b, es, e) =>
-              val inner = es.init.foldLeft(b){
-                case(acc, e) => WeededAst.Expression.ArrayLoad(acc, e, loc)
+              val inner = es.init.foldLeft(b) {
+                case (acc, e) => WeededAst.Expression.ArrayLoad(acc, e, loc)
               }
               WeededAst.Expression.ArrayStore(inner, es.last, e, loc)
           }
@@ -618,39 +620,39 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           val loc = mkSL(sp1, sp2)
 
           (optStartIndex, optEndIndex) match {
-            case(None, None) =>
+            case (None, None) =>
               visit(base, unsafe) map {
                 case b => WeededAst.Expression.ArraySlice(b, WeededAst.Expression.Int32(0, loc), WeededAst.Expression.ArrayLength(b, loc), loc)
               }
-            case(Some(startIndex), None) =>
+            case (Some(startIndex), None) =>
               @@(visit(base, unsafe), visit(startIndex, unsafe)) map {
-                case(b, i1) => WeededAst.Expression.ArraySlice(b, i1, WeededAst.Expression.ArrayLength(b, loc), loc)
+                case (b, i1) => WeededAst.Expression.ArraySlice(b, i1, WeededAst.Expression.ArrayLength(b, loc), loc)
               }
-            case(None, Some(endIndex)) =>
+            case (None, Some(endIndex)) =>
               @@(visit(base, unsafe), visit(endIndex, unsafe)) map {
-                case(b, i2) => WeededAst.Expression.ArraySlice(b, WeededAst.Expression.Int32(0, loc), i2, loc)
+                case (b, i2) => WeededAst.Expression.ArraySlice(b, WeededAst.Expression.Int32(0, loc), i2, loc)
               }
-            case(Some(startIndex), Some(endIndex)) =>
+            case (Some(startIndex), Some(endIndex)) =>
               @@(visit(base, unsafe), visit(startIndex, unsafe), visit(endIndex, unsafe)) map {
-                case(b, i1, i2) => WeededAst.Expression.ArraySlice(b, i1, i2, loc)
+                case (b, i1, i2) => WeededAst.Expression.ArraySlice(b, i1, i2, loc)
               }
           }
 
         case ParsedAst.Expression.VectorLit(sp1, elms, sp2) =>
-          @@(elms.map(e => visit(e, unsafe))) map{
+          @@(elms.map(e => visit(e, unsafe))) map {
             case es => WeededAst.Expression.VectorLit(es, mkSL(sp1, sp2))
           }
 
         case ParsedAst.Expression.VectorNew(sp1, elm, len, sp2) =>
           @@(visit(elm, unsafe), getVectorLength(len, sp1, sp2)) map {
             case (e, l) => WeededAst.Expression.VectorNew(e, l, mkSL(sp1, sp2))
-            }
+          }
 
         case ParsedAst.Expression.VectorLoad(base, index, sp2) =>
           val sp1 = leftMostSourcePosition(base)
           val loc = mkSL(sp1, sp2)
           @@(visit(base, unsafe), getVectorLength(index, sp1, sp2)) map {
-            case(b, l) => WeededAst.Expression.VectorLoad(b, l, loc)
+            case (b, l) => WeededAst.Expression.VectorLoad(b, l, loc)
           }
 
         case ParsedAst.Expression.VectorStore(base, indexes, elm, sp2) =>
@@ -916,7 +918,8 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
       visit(exp0, unsafe = false)
     }
-    private def getVectorLength(elm: ParsedAst.Literal, sp1: SourcePosition, sp2: SourcePosition) : Validation[Int, WeederError] = {
+
+    private def getVectorLength(elm: ParsedAst.Literal, sp1: SourcePosition, sp2: SourcePosition): Validation[Int, WeederError] = {
       elm match {
         case ParsedAst.Literal.Int32(sp1, sign, digits, sp2) => toInt32(sign, digits, mkSL(sp1, sp2)) flatMap {
           case l if l >= 0 => l.toSuccess
@@ -926,8 +929,8 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       }
     }
 
-    private def checkIndexSequence(elms: Seq[ParsedAst.Literal], sp1: SourcePosition, sp2: SourcePosition) : Seq[Validation[Int, WeederError]] = {
-      elms map(e => getVectorLength(e, sp1, sp2))
+    private def checkIndexSequence(elms: Seq[ParsedAst.Literal], sp1: SourcePosition, sp2: SourcePosition): Seq[Validation[Int, WeederError]] = {
+      elms map (e => getVectorLength(e, sp1, sp2))
       //(elms.map(e => visit(e, unsafe))) map{
     }
   }
@@ -1599,12 +1602,12 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.ArrayStore(base, _, _, _) => leftMostSourcePosition(base)
     case ParsedAst.Expression.ArrayLength(sp1, _, _) => sp1
     case ParsedAst.Expression.ArraySlice(base, _, _, _) => leftMostSourcePosition(base)
-    case ParsedAst.Expression.VectorLit(sp1, _,_) => sp1
-    case ParsedAst.Expression.VectorNew(sp1,_,_,_) => sp1
-    case ParsedAst.Expression.VectorLoad(base,_,_) => leftMostSourcePosition(base)
-    case ParsedAst.Expression.VectorStore(base,_,_,_) => leftMostSourcePosition(base)
-    case ParsedAst.Expression.VectorLength(sp1,_,_) => sp1
-    case ParsedAst.Expression.VectorSlice(base,_,_,_) => leftMostSourcePosition(base)
+    case ParsedAst.Expression.VectorLit(sp1, _, _) => sp1
+    case ParsedAst.Expression.VectorNew(sp1, _, _, _) => sp1
+    case ParsedAst.Expression.VectorLoad(base, _, _) => leftMostSourcePosition(base)
+    case ParsedAst.Expression.VectorStore(base, _, _, _) => leftMostSourcePosition(base)
+    case ParsedAst.Expression.VectorLength(sp1, _, _) => sp1
+    case ParsedAst.Expression.VectorSlice(base, _, _, _) => leftMostSourcePosition(base)
     case ParsedAst.Expression.FNil(sp1, _) => sp1
     case ParsedAst.Expression.FCons(hd, _, _, _) => leftMostSourcePosition(hd)
     case ParsedAst.Expression.FAppend(fst, _, _, _) => leftMostSourcePosition(fst)
@@ -1665,12 +1668,12 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     * Throws InternalCompilerException if check fails.
     * TODO make type handling for vertification.
     */
-  private def CheckNaturalNumber(elm: ParsedAst.Literal.Int32, sp1: SourcePosition, sp2: SourcePosition) : Int = {
-  toInt32(elm.sign, elm.lit, mkSL(sp1, sp2)) match {
-       case Validation.Success(l) if l >= 0 => l
-       // TODO Make Types.weed handle validation.
-       case _ => throw InternalCompilerException("Vector length must be an integer of minimum 0.")
-     }
+  private def CheckNaturalNumber(elm: ParsedAst.Literal.Int32, sp1: SourcePosition, sp2: SourcePosition): Int = {
+    toInt32(elm.sign, elm.lit, mkSL(sp1, sp2)) match {
+      case Validation.Success(l) if l >= 0 => l
+      // TODO Make Types.weed handle validation.
+      case _ => throw InternalCompilerException("Vector length must be an integer of minimum 0.")
+    }
   }
 
   /**

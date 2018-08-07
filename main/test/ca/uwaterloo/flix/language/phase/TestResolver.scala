@@ -297,6 +297,66 @@ class TestResolver extends FunSuite with TestUtils {
     expectError[ResolutionError.InaccessibleEnum](result)
   }
 
+  test("InaccessibleRelation.01") {
+    val input =
+      s"""
+         |namespace A {
+         |  rel R(x: Int)
+         |}
+         |
+         |namespace B {
+         |  A.R(42).
+         |}
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[ResolutionError.InaccessibleRelation](result)
+  }
+
+  test("InaccessibleRelation.02") {
+    val input =
+      s"""
+         |namespace A {
+         |  A/B/C.R(42).
+         |
+         |  namespace B/C {
+         |    rel R(x: Int)
+         |  }
+         |}
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[ResolutionError.InaccessibleRelation](result)
+  }
+
+  test("InaccessibleLattice.01") {
+    val input =
+      s"""
+         |namespace A {
+         |  lat R(x: Int)
+         |}
+         |
+         |namespace B {
+         |  A.R(42).
+         |}
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[ResolutionError.InaccessibleLattice](result)
+  }
+
+  test("InaccessibleLattice.02") {
+    val input =
+      s"""
+         |namespace A {
+         |  A/B/C.R(42).
+         |
+         |  namespace B/C {
+         |    lat R(x: Int)
+         |  }
+         |}
+       """.stripMargin
+    val result = new Flix().addStr(input).compile()
+    expectError[ResolutionError.InaccessibleLattice](result)
+  }
+
   test("UndefinedName.01") {
     val input = "def f(): Int = x"
     val result = new Flix().addStr(input).compile()

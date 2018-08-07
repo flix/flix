@@ -54,9 +54,9 @@ object ExecutableAst {
 
   case class Enum(mod: Ast.Modifiers, sym: Symbol.EnumSym, cases: Map[String, ExecutableAst.Case], tpe: Type, loc: SourceLocation) extends ExecutableAst
 
-  case class Relation(sym: Symbol.RelSym, attr: List[ExecutableAst.Attribute], loc: SourceLocation) extends ExecutableAst
+  case class Relation(mod: Ast.Modifiers, sym: Symbol.RelSym, attr: List[ExecutableAst.Attribute], loc: SourceLocation) extends ExecutableAst
 
-  case class Lattice(sym: Symbol.LatSym, attr: List[ExecutableAst.Attribute], loc: SourceLocation) extends ExecutableAst
+  case class Lattice(mod: Ast.Modifiers, sym: Symbol.LatSym, attr: List[ExecutableAst.Attribute], loc: SourceLocation) extends ExecutableAst
 
   case class Property(law: Symbol.DefnSym, defn: Symbol.DefnSym, exp: ExecutableAst.Expression) extends ExecutableAst {
     def loc: SourceLocation = defn.loc

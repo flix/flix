@@ -48,9 +48,9 @@ object SimplifiedAst {
 
   case class Enum(mod: Ast.Modifiers, sym: Symbol.EnumSym, cases: Map[String, SimplifiedAst.Case], tpe: Type, loc: SourceLocation) extends SimplifiedAst
 
-  case class Relation(sym: Symbol.RelSym, attr: List[SimplifiedAst.Attribute], loc: SourceLocation) extends SimplifiedAst
+  case class Relation(mod: Ast.Modifiers, sym: Symbol.RelSym, attr: List[SimplifiedAst.Attribute], loc: SourceLocation) extends SimplifiedAst
 
-  case class Lattice(sym: Symbol.LatSym, attr: List[SimplifiedAst.Attribute], loc: SourceLocation) extends SimplifiedAst
+  case class Lattice(mod: Ast.Modifiers, sym: Symbol.LatSym, attr: List[SimplifiedAst.Attribute], loc: SourceLocation) extends SimplifiedAst
 
   case class Property(law: Symbol.DefnSym, defn: Symbol.DefnSym, exp: SimplifiedAst.Expression) extends SimplifiedAst
 
