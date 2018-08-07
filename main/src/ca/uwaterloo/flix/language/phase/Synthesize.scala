@@ -1098,12 +1098,12 @@ object Synthesize extends Phase[Root, Root] {
      * (b) Every type that appears as an attribute in some relation or lattice.
      */
     val typesInRels = root.relations.flatMap {
-      case (_, Relation(_, _, attributes, _)) => attributes.map {
+      case (_, Relation(_, _, _, attributes, _)) => attributes.map {
         case Attribute(_, tpe, _) => tpe
       }
     }
     val typesInLats = root.lattices.flatMap {
-      case (_, Lattice(_, _, attributes, _)) =>
+      case (_, Lattice(_, _, _, attributes, _)) =>
         attributes.map {
           case Attribute(_, tpe, _) => tpe
         }

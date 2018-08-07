@@ -163,7 +163,7 @@ object ApiBridge {
 
   private def visitLatOps(tables: Map[Symbol.LatSym, ExecutableAst.Lattice])(implicit root: ExecutableAst.Root, cache: SymbolCache, flix: Flix): Map[Table, LatticeOps] = {
     tables.foldLeft(Map.empty[Table, LatticeOps]) {
-      case (macc, (sym, ExecutableAst.Lattice(_, attr, _))) =>
+      case (macc, (sym, ExecutableAst.Lattice(_, _, attr, _))) =>
         // lattice
         val latticeOps = getLatticeOps(attr.last)
         macc + (visitLatSym(sym) -> latticeOps)

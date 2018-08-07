@@ -90,13 +90,13 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
   }
 
   def visitRelation(r: SimplifiedAst.Relation): ExecutableAst.Relation = r match {
-    case SimplifiedAst.Relation(sym, attr, loc) =>
-      ExecutableAst.Relation(sym, attr.map(CreateExecutableAst.visitAttribute), loc)
+    case SimplifiedAst.Relation(mod, sym, attr, loc) =>
+      ExecutableAst.Relation(mod, sym, attr.map(CreateExecutableAst.visitAttribute), loc)
   }
 
   def visitLattice(l: SimplifiedAst.Lattice): ExecutableAst.Lattice = l match {
-    case SimplifiedAst.Lattice(sym, attr, loc) =>
-      ExecutableAst.Lattice(sym, attr.map(CreateExecutableAst.visitAttribute), loc)
+    case SimplifiedAst.Lattice(mod, sym, attr, loc) =>
+      ExecutableAst.Lattice(mod, sym, attr.map(CreateExecutableAst.visitAttribute), loc)
   }
 
   object Constraint {

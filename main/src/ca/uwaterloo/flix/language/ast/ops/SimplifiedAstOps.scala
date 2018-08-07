@@ -579,7 +579,7 @@ object SimplifiedAstOps {
     //
     // Check all relations in the program.
     //
-    for ((sym1, Relation(sym2, attr, _)) <- root.relations) {
+    for ((sym1, Relation(_, sym2, attr, _)) <- root.relations) {
       assert(sym1 == sym2)
       for (attribute <- attr) {
         checkAttribute(attribute)
@@ -589,7 +589,7 @@ object SimplifiedAstOps {
     //
     // Check all lattices in the program.
     //
-    for ((sym1, Lattice(sym2, attr, _)) <- root.lattices) {
+    for ((sym1, Lattice(_, sym2, attr, _)) <- root.lattices) {
       assert(sym1 == sym2)
       for (attribute <- attr) {
         checkAttribute(attribute)

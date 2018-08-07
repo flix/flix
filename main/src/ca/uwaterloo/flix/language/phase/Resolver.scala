@@ -322,20 +322,20 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     * Performs name resolution on the given relation `r0` in the given namespace `ns0`.
     */
   def resolveRelation(r0: NamedAst.Relation, ns0: Name.NName, prog0: NamedAst.Root)(implicit genSym: GenSym): Validation[ResolvedAst.Relation, ResolutionError] = r0 match {
-    case NamedAst.Relation(doc, sym, attr, loc) =>
+    case NamedAst.Relation(doc, mod, sym, attr, loc) =>
       for {
         as <- seqM(attr.map(a => resolve(a, ns0, prog0)))
-      } yield ResolvedAst.Relation(doc, sym, as, loc)
+      } yield ResolvedAst.Relation(doc, mod, sym, as, loc)
   }
 
   /**
     * Performs name resolution on the given table `t0` in the given namespace `ns0`.
     */
   def resolveLattice(l0: NamedAst.Lattice, ns0: Name.NName, prog0: NamedAst.Root)(implicit genSym: GenSym): Validation[ResolvedAst.Lattice, ResolutionError] = l0 match {
-    case NamedAst.Lattice(doc, sym, attr, loc) =>
+    case NamedAst.Lattice(doc, mod, sym, attr, loc) =>
       for {
         as <- seqM(attr.map(a => resolve(a, ns0, prog0)))
-      } yield ResolvedAst.Lattice(doc, sym, as, loc)
+      } yield ResolvedAst.Lattice(doc, mod, sym, as, loc)
   }
 
   /**
@@ -1126,8 +1126,8 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
 
     (relationOpt, latticeOpt) match {
       case (None, None) => ResolutionError.UndefinedTable(qname, ns, qname.loc).toFailure
-      case (Some(rel), None) => RelationOrLattice.Rel(rel.sym).toSuccess
-      case (None, Some(lat)) => RelationOrLattice.Lat(lat.sym).toSuccess
+      case (Some(rel), None) => getRelationIfAccessible(rel, ns, qname.loc)
+      case (None, Some(lat)) => getLatticeIfAccessible(lat, ns, qname.loc)
       case (Some(rel), Some(lat)) => ResolutionError.AmbiguousRelationOrLattice(qname, ns, List(rel.loc, lat.loc), qname.loc).toFailure
     }
   }
@@ -1368,6 +1368,68 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     // The enum is not accessible.
     //
     ResolutionError.InaccessibleEnum(enum0.sym, ns0, loc).toFailure
+  }
+
+  /**
+    * Successfully returns the given relation `rel0` if it is accessible from the given namespace `ns0`.
+    *
+    * Otherwise fails with a resolution error.
+    *
+    * A relation `rel0` is accessible from a namespace `ns0` if:
+    *
+    * (a) the relation is marked public, or
+    * (b) the relation is defined in the namespace `ns0` itself or in a parent of `ns0`.
+    */
+  def getRelationIfAccessible(rel0: NamedAst.Relation, ns0: Name.NName, loc: SourceLocation): Validation[RelationOrLattice, ResolutionError] = {
+    //
+    // Check if the relation is marked public.
+    //
+    if (rel0.mod.isPublic)
+      return RelationOrLattice.Rel(rel0.sym).toSuccess
+
+    //
+    // Check if the relation is defined in `ns0` or in a parent of `ns0`.
+    //
+    val prefixNs = rel0.sym.namespace
+    val targetNs = ns0.idents.map(_.name)
+    if (targetNs.startsWith(prefixNs))
+      return RelationOrLattice.Rel(rel0.sym).toSuccess
+
+    //
+    // The relation is not accessible.
+    //
+    ResolutionError.InaccessibleRelation(rel0.sym, ns0, loc).toFailure
+  }
+
+  /**
+    * Successfully returns the given lattice `lat0` if it is accessible from the given namespace `ns0`.
+    *
+    * Otherwise fails with a resolution error.
+    *
+    * A relation `lat0` is accessible from a namespace `ns0` if:
+    *
+    * (a) the lattice is marked public, or
+    * (b) the lattice is defined in the namespace `ns0` itself or in a parent of `ns0`.
+    */
+  def getLatticeIfAccessible(lat0: NamedAst.Lattice, ns0: Name.NName, loc: SourceLocation): Validation[RelationOrLattice, ResolutionError] = {
+    //
+    // Check if the lattice is marked public.
+    //
+    if (lat0.mod.isPublic)
+      return RelationOrLattice.Lat(lat0.sym).toSuccess
+
+    //
+    // Check if the lattice is defined in `ns0` or in a parent of `ns0`.
+    //
+    val prefixNs = lat0.sym.namespace
+    val targetNs = ns0.idents.map(_.name)
+    if (targetNs.startsWith(prefixNs))
+      return RelationOrLattice.Lat(lat0.sym).toSuccess
+
+    //
+    // The lattice is not accessible.
+    //
+    ResolutionError.InaccessibleLattice(lat0.sym, ns0, loc).toFailure
   }
 
   /**
