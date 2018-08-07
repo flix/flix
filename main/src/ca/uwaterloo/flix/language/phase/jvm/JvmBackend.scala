@@ -46,7 +46,13 @@ object JvmBackend extends Phase[Root, CompilationResult] {
     // Immediately return if in interpreted mode.
     //
     if (flix.options.evaluation == Evaluation.Interpreted) {
-      return new CompilationResult(root, Map.empty).toSuccess
+      val defs = root.defs.foldLeft(Map.empty[Symbol.DefnSym, () => ProxyObject]) {
+        case (macc, (sym, defn)) =>
+          // Invokes the function with a single argument (which is supposed to be the Unit value, but we pass null instead).
+          val args: Array[AnyRef] = Array(null)
+          macc + (sym -> (() => Linker.link(sym, root).invoke(args)))
+      }
+      return new CompilationResult(root, defs).toSuccess
     }
 
     //

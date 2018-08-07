@@ -961,6 +961,20 @@ object Synthesize extends Phase[Root, Root] {
           }
 
           //
+          // Relation case.
+          //
+          if (tpe.isRelation) {
+            return Expression.Str("<<relation>>", sl)
+          }
+
+          //
+          // Lattice case.
+          //
+          if (tpe.isLattice) {
+            return Expression.Str("<<lattice>>", sl)
+          }
+
+          //
           // Tuple case.
           //
           if (tpe.isTuple) {
