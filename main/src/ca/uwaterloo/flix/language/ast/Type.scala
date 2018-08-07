@@ -112,6 +112,22 @@ sealed trait Type {
   }
 
   /**
+    * Returns `true` if `this` type is a relation type.
+    */
+  def isRelation: Boolean = typeConstructor match {
+    case Type.Relation(sym, kind) => true
+    case _ => false
+  }
+
+  /**
+    * Returns `true` if `this` type is a lattice type.
+    */
+  def isLattice: Boolean = typeConstructor match {
+    case Type.Lattice(sym, kind) => true
+    case _ => false
+  }
+
+  /**
     * Returns `true` if `this` type is a tuple type.
     */
   def isTuple: Boolean = typeConstructor match {
