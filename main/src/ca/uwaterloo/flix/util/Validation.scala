@@ -16,6 +16,8 @@
 
 package ca.uwaterloo.flix.util
 
+import scala.collection.mutable
+
 sealed trait Validation[+Value, +Error] {
 
   import Validation._
@@ -76,6 +78,11 @@ sealed trait Validation[+Value, +Error] {
 object Validation {
 
   /**
+    * Represents a sucessful validation with the empty list.
+    */
+  final val SuccessNil = Success(Nil)
+
+  /**
     * Represents a success `value`.
     */
   case class Success[T, E](t: T) extends Validation[T, E] {
@@ -91,7 +98,7 @@ object Validation {
     * Sequences the given list of validations `xs`.
     */
   // TODO: Rename to sequence.
-  def seqM[T, E](xs: Traversable[Validation[T, E]]): Validation[List[T], E] = {
+  def sequence[T, E](xs: Traversable[Validation[T, E]]): Validation[List[T], E] = {
     val zero = Success(List.empty[T]): Validation[List[T], E]
     xs.foldRight(zero) {
       case (Success(curValue), Success(accValue)) =>
@@ -106,18 +113,75 @@ object Validation {
   }
 
   /**
+    * Sequences the validation T1 and T2 into a validation pair.
+    */
+  // TODO: Rename to sequence.
+  // TODO: Tests
+  def sequence[T1, T2, E](a: Validation[T1, E], b: Validation[T2, E]): Validation[(T1, T2), E] =
+    (a, b) match {
+      case (Success(valueA), Success(valueB)) =>
+        Success((valueA, valueB))
+      case _ => Failure(b.errors #::: a.errors)
+    }
+
+  /**
     * Traverses `xs` while applying the function `f`.
     */
-  // TODO: Use traverse moe often.
-  // TODO: Performance.
-  def traverse[T, S, E](xs: Traversable[T])(f: T => Validation[S, E]): Validation[List[S], E] = xs.toList match {
+  // TODO: In general it is better to use traverse than sequence.
+  def traverse[T, S, E](xs: Traversable[T])(f: T => Validation[S, E]): Validation[List[S], E] = fastTraverse(xs)(f)
+
+
+  /**
+    * A slow implementation of traverse.
+    */
+  private def slowTraverse[T, S, E](xs: Traversable[T])(f: T => Validation[S, E]): Validation[List[S], E] = xs.toList match {
     case Nil => Success(Nil)
     case y :: ys =>
+      // TODO: Correctness issue with multiple failures?
       val s = f(y)
       traverse(ys)(f) flatMap {
         case rs => s map (r => r :: rs)
       }
   }
+
+  /**
+    * A fast implementation of traverse.
+    */
+  private def fastTraverse[T, S, E](xs: Traversable[T])(f: T => Validation[S, E]): Validation[List[S], E] = {
+    // Check if the sequence is empty.
+    if (xs.isEmpty)
+      return Validation.SuccessNil
+
+    // Two mutable arrays to hold the intermediate results.
+    val successValues = mutable.ArrayBuffer.empty[S]
+    val failureStream = mutable.ArrayBuffer.empty[Stream[E]]
+
+    // Apply f to each element and collect the results.
+    for (x <- xs) {
+      f(x) match {
+        case Success(v) => successValues += v
+        case Failure(e) => failureStream += e
+      }
+    }
+
+    // Check whether we were successful or not.
+    if (failureStream.isEmpty) {
+      Success(successValues.toList)
+    } else {
+      Failure(failureStream.foldLeft(Stream.empty[E])(_ #::: _))
+    }
+
+  }
+
+  /**
+    * Maps over t1 and t2.
+    */
+  def mapN[T1, T2, U, E](t1: Validation[T1, E], t2: Validation[T2, E])
+                        (f: (T1, T2) => U): Validation[U, E] =
+    (t1, t2) match {
+      case (Success(v1), Success(v2)) => Success(f(v1, v2))
+      case _ => Failure(t1.errors #::: t2.errors)
+    }
 
   /**
     * Maps over t1, t2, and t3.
@@ -164,6 +228,26 @@ object Validation {
     }
 
   /**
+    * FlatMaps over t1 and t2.
+    */
+  def flatMapN[T1, T2, U, E](t1: Validation[T1, E], t2: Validation[T2, E])
+                            (f: (T1, T2) => Validation[U, E]): Validation[U, E] =
+    (t1, t2) match {
+      case (Success(v1), Success(v2)) => f(v1, v2)
+      case _ => Failure(t1.errors #::: t2.errors)
+    }
+
+  /**
+    * FlatMaps over t1, t2, and t3.
+    */
+  def flatMapN[T1, T2, T3, U, E](t1: Validation[T1, E], t2: Validation[T2, E], t3: Validation[T3, E])
+                                (f: (T1, T2, T3) => Validation[U, E]): Validation[U, E] =
+    (t1, t2, t3) match {
+      case (Success(v1), Success(v2), Success(v3)) => f(v1, v2, v3)
+      case _ => Failure(t1.errors #::: t2.errors #::: t3.errors)
+    }
+
+  /**
     * Adds an implicit `toSuccess` method.
     */
   implicit class ToSuccess[+T](val t: T) {
@@ -179,7 +263,6 @@ object Validation {
 
   // TODO: Everything below this line is deprecated.
 
-
   /**
     * Folds the given function `f` over all elements `xs`.
     *
@@ -192,36 +275,6 @@ object Validation {
       }
     }
   }
-
-  /**
-    * Flattens a sequence of validations into one validation. Errors are concatenated.
-    *
-    * Returns [[Success]] if every element in `xs` is a [[Success]].
-    */
-  // TODO: Deprecated, replace by mapN
-  def @@[Value, Error](xs: Traversable[Validation[Value, Error]]): Validation[List[Value], Error] = seqM(xs)
-
-  /**
-    * Merges 2 validations.
-    */
-  // TODO: Deprecated, replace by mapN
-  def @@[A, B, X](a: Validation[A, X], b: Validation[B, X]): Validation[(A, B), X] =
-    (a, b) match {
-      case (Success(valueA), Success(valueB)) =>
-        Success((valueA, valueB))
-      case _ => Failure(b.errors #::: a.errors)
-    }
-
-  /**
-    * Merges 3 validations.
-    */
-  // TODO: Deprecated, replace by mapN
-  def @@[A, B, C, X](a: Validation[A, X], b: Validation[B, X], c: Validation[C, X]): Validation[(A, B, C), X] =
-    (@@(a, b), c) match {
-      case (Success((valueA, valueB)), Success(valueC)) =>
-        Success((valueA, valueB, valueC))
-      case (that, _) => Failure(c.errors #::: that.errors)
-    }
 
 }
 

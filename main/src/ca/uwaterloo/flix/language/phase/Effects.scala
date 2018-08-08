@@ -241,7 +241,7 @@ object Effects extends Phase[Root, Root] {
           // Infer the effects of the entire match expression.
           for {
             e <- visitExp(exp, env0)
-            rs <- seqM(rulesVal)
+            rs <- sequence(rulesVal)
           } yield {
             // Compute the effects of the match value expression.
             val matchEffect = e.eff
@@ -275,7 +275,7 @@ object Effects extends Phase[Root, Root] {
 
           // Infer the effects.
           for {
-            rs <- seqM(rulesVal)
+            rs <- sequence(rulesVal)
           } yield {
             val eff = rs.foldLeft(ast.Eff.Bot) {
               case (eacc, (guard, body)) =>
@@ -300,7 +300,7 @@ object Effects extends Phase[Root, Root] {
           */
         case Expression.Tuple(elms, tpe, _, loc) =>
           for {
-            es <- seqM(elms.map(e => visitExp(e, env0)))
+            es <- sequence(elms.map(e => visitExp(e, env0)))
           } yield {
             // The effects of the each element expression happen in sequence.
             val eff = es.foldLeft(ast.Eff.Bot) {
@@ -314,7 +314,7 @@ object Effects extends Phase[Root, Root] {
           */
         case Expression.ArrayLit(elms, tpe, _, loc) =>
           for {
-            es <- seqM(elms.map(e => visitExp(e, env0)))
+            es <- sequence(elms.map(e => visitExp(e, env0)))
           } yield {
             val eff = es.foldLeft(ast.Eff.Bot) {
               case(eacc, e) => eacc seq e.eff
@@ -389,7 +389,7 @@ object Effects extends Phase[Root, Root] {
           */
         case Expression.VectorLit(elms, tpe, _, loc) =>
           for (
-            es <- seqM(elms.map(e => visitExp(e, env0)))
+            es <- sequence(elms.map(e => visitExp(e, env0)))
           ) yield {
             val eff = es.foldLeft(ast.Eff.Bot) {
               case (eacc, e) => eacc seq e.eff

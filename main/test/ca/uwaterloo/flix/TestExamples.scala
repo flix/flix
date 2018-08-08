@@ -17,9 +17,12 @@
 package ca.uwaterloo.flix
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.util.Options
 import org.scalatest.FunSuite
 
 class TestExamples extends FunSuite {
+
+  val DefaultOptions = Options.DefaultTest.copy(core = false)
 
   test("Belnap.flix") {
     val input =
@@ -45,6 +48,7 @@ class TestExamples extends FunSuite {
       """.stripMargin
 
     new Flix()
+      .setOptions(DefaultOptions)
       .addPath("./examples/domains/Belnap.flix")
       .addStr(input)
       .solve().get
@@ -71,6 +75,7 @@ class TestExamples extends FunSuite {
       """.stripMargin
 
     new Flix()
+      .setOptions(DefaultOptions)
       .addPath("./examples/domains/Belnap.flix")
       .addPath("./examples/domains/Constant.flix")
       .addStr(input)
@@ -103,6 +108,7 @@ class TestExamples extends FunSuite {
       """.stripMargin
 
     new Flix()
+      .setOptions(DefaultOptions)
       .addPath("./examples/domains/Belnap.flix")
       .addPath("./examples/domains/ConstantSign.flix")
       .addStr(input)
@@ -113,6 +119,7 @@ class TestExamples extends FunSuite {
     val input = ""
 
     new Flix()
+      .setOptions(DefaultOptions)
       .addPath("./examples/domains/Belnap.flix")
       .addPath("./examples/domains/ConstantParity.flix")
       .addStr(input)
@@ -125,6 +132,7 @@ class TestExamples extends FunSuite {
     val input = ""
 
     new Flix()
+      .setOptions(DefaultOptions)
       .addPath("./examples/domains/Belnap.flix")
       .addPath("./examples/domains/Mod3.flix")
       .addStr(input)
@@ -157,6 +165,7 @@ class TestExamples extends FunSuite {
       """.stripMargin
 
     new Flix()
+      .setOptions(DefaultOptions)
       .addPath("./examples/domains/Belnap.flix")
       .addPath("./examples/domains/Parity.flix")
       .addStr(input)
@@ -167,6 +176,7 @@ class TestExamples extends FunSuite {
     val input = ""
 
     new Flix()
+      .setOptions(DefaultOptions)
       .addPath("./examples/domains/Belnap.flix")
       .addPath("./examples/domains/ParitySign.flix")
       .addStr(input)
@@ -179,6 +189,7 @@ class TestExamples extends FunSuite {
     val input = ""
 
     new Flix()
+      .setOptions(DefaultOptions)
       .addPath("./examples/domains/Belnap.flix")
       .addPath("./examples/domains/PrefixSuffix.flix")
       .addStr(input)
@@ -190,7 +201,8 @@ class TestExamples extends FunSuite {
   test("Sign.flix") {
     val input = ""
 
-    val t = new Flix()
+    new Flix()
+      .setOptions(DefaultOptions)
       .addPath("./examples/domains/Belnap.flix")
       .addPath("./examples/domains/Sign.flix")
       .addStr(input)
@@ -222,7 +234,8 @@ class TestExamples extends FunSuite {
         |}
       """.stripMargin
 
-    val t = new Flix()
+    new Flix()
+      .setOptions(DefaultOptions)
       .addPath("./examples/domains/Belnap.flix")
       .addPath("./examples/domains/StrictSign.flix")
       .addStr(input)
@@ -230,25 +243,29 @@ class TestExamples extends FunSuite {
   }
 
   test("IFDS.flix") {
-    val t = new Flix()
+    new Flix()
+      .setOptions(DefaultOptions)
       .addPath("./examples/analysis/IFDS.flix")
       .solve().get
   }
 
   test("IDE.flix") {
-    val t = new Flix()
+    new Flix()
+      .setOptions(DefaultOptions)
       .addPath("./examples/analysis/IDE.flix")
       .solve().get
   }
 
   test("SUOpt.flix") {
-    val t = new Flix()
+    new Flix()
+      .setOptions(DefaultOptions)
       .addPath("./examples/analysis/SUopt.flix")
       .solve().get
   }
 
   test("FloydWarshall.flix") {
-    val t = new Flix()
+    new Flix()
+      .setOptions(DefaultOptions)
       .addPath("./examples/misc/FloydWarshall.flix")
       .solve().get
   }

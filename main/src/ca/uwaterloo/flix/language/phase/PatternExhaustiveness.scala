@@ -108,7 +108,7 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
     implicit val _ = flix.genSym
 
     for {
-      _ <- seqM(root.defs.map { case (_, v) => checkPats(v, root) })
+      _ <- sequence(root.defs.map { case (_, v) => checkPats(v, root) })
     } yield {
       root
     }
@@ -192,20 +192,20 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
           _ <- checkPats(exp3, root)
         } yield tast
         case Expression.Match(exp, rules, _, _, _) => for {
-          _ <- seqM(rules map { x => checkPats(x.exp, root) })
+          _ <- sequence(rules map { x => checkPats(x.exp, root) })
           _ <- checkRules(exp, rules, root)
         } yield tast
         case Expression.Switch(rules, _, _, _) => for {
-          _ <- seqM(rules map (x => for {
+          _ <- sequence(rules map (x => for {
             _ <- checkPats(x._1, root)
             _ <- checkPats(x._2, root)
           } yield x))
         } yield tast
         case Expression.Tag(_, _, exp, _, _, _) => checkPats(exp, root).map(const(tast))
-        case Expression.Tuple(elms, _, _, _) => seqM(elms map {
+        case Expression.Tuple(elms, _, _, _) => sequence(elms map {
           checkPats(_, root)
         }).map(const(tast))
-        case Expression.ArrayLit(elms, _, _, _) => seqM(elms map {
+        case Expression.ArrayLit(elms, _, _, _) => sequence(elms map {
           checkPats(_, root)
         }).map(const(tast))
         case Expression.ArrayNew(elm, len, _, _, _) => for {
@@ -229,7 +229,7 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
           _ <- checkPats(beginIndex, root)
           _ <- checkPats(endIndex, root)
         } yield tast
-        case Expression.VectorLit(elms, _, _, _) => seqM(elms map {
+        case Expression.VectorLit(elms, _, _, _) => sequence(elms map {
           checkPats(_, root)
         }).map(const(tast))
         case Expression.VectorNew(elm, _, _, _, _) =>
@@ -266,7 +266,7 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
         case Expression.HandleWith(exp, bs, _, _, _) =>
           for {
             _ <- checkPats(exp, root)
-            _ <- seqM(bs.map(b => checkPats(b.exp, root)))
+            _ <- sequence(bs.map(b => checkPats(b.exp, root)))
           } yield tast
         case Expression.Existential(_, exp, _, _) => checkPats(exp, root).map(const(tast))
         case Expression.Universal(_, exp, _, _) => checkPats(exp, root).map(const(tast))
@@ -275,13 +275,13 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
         case Expression.TryCatch(exp, rules, tpe, eff, loc) =>
           for {
             _ <- checkPats(exp, root)
-            _ <- seqM(rules.map(r => checkPats(r.exp, root)))
+            _ <- sequence(rules.map(r => checkPats(r.exp, root)))
           } yield tast
-        case Expression.NativeConstructor(_, args, _, _, _) => seqM(args map {
+        case Expression.NativeConstructor(_, args, _, _, _) => sequence(args map {
           checkPats(_, root)
         }).map(const(tast))
         case Expression.NativeField(_, _, _, _) => tast.toSuccess
-        case Expression.NativeMethod(_, args, _, _, _) => seqM(args map {
+        case Expression.NativeMethod(_, args, _, _, _) => sequence(args map {
           checkPats(_, root)
         }).map(const(tast))
         case Expression.UserError(_, _, _) => tast.toSuccess
