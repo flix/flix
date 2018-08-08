@@ -38,8 +38,8 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     * Weeds the whole program.
     */
   def run(program: ParsedAst.Program)(implicit flix: Flix): Validation[WeededAst.Program, WeederError] = flix.phase("Weeder") {
-    val roots = @@(program.roots map weed)
-    val named = @@(program.named.map {
+    val roots = sequence(program.roots map weed)
+    val named = sequence(program.named.map {
       case (sym, exp) => Expressions.weed(exp).map(e => sym -> e)
     })
 
@@ -53,7 +53,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     * Weeds the given abstract syntax tree.
     */
   def weed(root: ParsedAst.Root)(implicit flix: Flix): Validation[WeededAst.Root, WeederError] = {
-    mapN(@@(root.decls map Declarations.weed), Properties.weed(root)) {
+    mapN(sequence(root.decls map Declarations.weed), Properties.weed(root)) {
       case (decls1, decls2) => WeededAst.Root(decls1.flatten ++ decls2)
     }
   }
@@ -65,7 +65,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       */
     def weed(decl: ParsedAst.Declaration)(implicit flix: Flix): Validation[List[WeededAst.Declaration], WeederError] = decl match {
       case ParsedAst.Declaration.Namespace(sp1, name, decls, sp2) =>
-        @@(decls.map(weed)) map {
+        sequence(decls.map(weed)) map {
           case ds => List(WeededAst.Declaration.Namespace(name, ds.flatten, mkSL(sp1, sp2)))
         }
 
@@ -221,8 +221,8 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         }
 
       case ParsedAst.Declaration.Constraint(sp1, head, body, sp2) =>
-        val headVal = @@(head.map(Predicate.Head.weed))
-        val bodyVal = @@(body.map(disj => @@(disj.map(Predicate.Body.weed))))
+        val headVal = sequence(head.map(Predicate.Head.weed))
+        val bodyVal = sequence(body.map(disj => sequence(disj.map(Predicate.Body.weed))))
 
         mapN(headVal, bodyVal) {
           case (headConj, bs) =>
@@ -240,7 +240,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         }
 
       case ParsedAst.Declaration.LatticeComponents(sp1, tpe, elms, sp2) =>
-        val elmsVal = @@(elms.toList.map(e => Expressions.weed(e)))
+        val elmsVal = sequence(elms.toList.map(e => Expressions.weed(e)))
         elmsVal flatMap {
           case List(bot, top, equ, leq, lub, glb) => List(WeededAst.Declaration.LatticeComponents(Types.weed(tpe), bot, top, equ, leq, lub, glb, mkSL(sp1, sp2))).toSuccess
           case _ => IllegalLattice(mkSL(sp1, sp2)).toFailure
@@ -251,7 +251,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         val ccVal = visitClassConstraint(cc)
 
         // Collect all signatures.
-        val sigsVal = @@(decls.toList.collect {
+        val sigsVal = sequence(decls.toList.collect {
           case sig: ParsedAst.Declaration.Sig => visitSig(sig)
         })
 
@@ -273,7 +273,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         val ccVal = visitImplConstraint(ic)
 
         // Collect all signatures.
-        val defsVal = @@(defs0 map {
+        val defsVal = sequence(defs0 map {
           case defn => Declarations.weed(defn)
         })
 
@@ -396,7 +396,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         case ParsedAst.Expression.Apply(lambda, args, sp2) =>
           val sp1 = leftMostSourcePosition(lambda)
           val loc = mkSL(sp1, sp2)
-          mapN(visit(lambda, unsafe), @@(args.map(e => visit(e, unsafe)))) {
+          mapN(visit(lambda, unsafe), sequence(args.map(e => visit(e, unsafe)))) {
             case (e, as) =>
               val es = getApplyArgsCheckIfEmpty(as, sp1, sp2)
               mkApplyCurried(e, es, loc)
@@ -417,7 +417,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           /*
            * Rewrites postfix expressions to apply expressions.
            */
-          mapN(visit(exp, unsafe), @@(exps.map(e => visit(e, unsafe)))) {
+          mapN(visit(exp, unsafe), sequence(exps.map(e => visit(e, unsafe)))) {
             case (e, es) =>
               val sp1 = leftMostSourcePosition(exp)
               val loc = mkSL(sp1, sp2)
@@ -543,15 +543,15 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
               case (p, g, b) => WeededAst.MatchRule(p, g, b)
             }
           }
-          mapN(visit(exp, unsafe), @@(rulesVal)) {
+          mapN(visit(exp, unsafe), sequence(rulesVal)) {
             case (e, rs) => WeededAst.Expression.Match(e, rs, mkSL(sp1, sp2))
           }
 
         case ParsedAst.Expression.Switch(sp1, rules, sp2) =>
           val rulesVal = rules map {
-            case (cond, body) => seqM(visit(cond, unsafe), visit(body, unsafe))
+            case (cond, body) => sequence(visit(cond, unsafe), visit(body, unsafe))
           }
-          @@(rulesVal) map {
+          sequence(rulesVal) map {
             case rs => WeededAst.Expression.Switch(rs, mkSL(sp1, sp2))
           }
 
@@ -573,7 +573,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           /*
            * Rewrites empty tuples to Unit and eliminate single-element tuples.
            */
-          @@(elms.map(e => visit(e, unsafe))) map {
+          sequence(elms.map(e => visit(e, unsafe))) map {
             case Nil =>
               val loc = mkSL(sp1, sp2)
               WeededAst.Expression.Unit(loc)
@@ -582,7 +582,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           }
 
         case ParsedAst.Expression.ArrayLit(sp1, elms, sp2) =>
-          @@(elms.map(e => visit(e, unsafe))) map {
+          sequence(elms.map(e => visit(e, unsafe))) map {
             case es => WeededAst.Expression.ArrayLit(es, mkSL(sp1, sp2))
           }
 
@@ -603,7 +603,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           val sp1 = leftMostSourcePosition(base)
           val loc = mkSL(sp1, sp2)
 
-          mapN(visit(base, unsafe), @@(indexes.map(e => visit(e, unsafe))), visit(elm, unsafe)) {
+          mapN(visit(base, unsafe), sequence(indexes.map(e => visit(e, unsafe))), visit(elm, unsafe)) {
             case (b, es, e) =>
               val inner = es.init.foldLeft(b) {
                 case (acc, e) => WeededAst.Expression.ArrayLoad(acc, e, loc)
@@ -640,7 +640,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           }
 
         case ParsedAst.Expression.VectorLit(sp1, elms, sp2) =>
-          @@(elms.map(e => visit(e, unsafe))) map {
+          sequence(elms.map(e => visit(e, unsafe))) map {
             case es => WeededAst.Expression.VectorLit(es, mkSL(sp1, sp2))
           }
 
@@ -660,7 +660,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           val sp1 = leftMostSourcePosition(base)
           val loc = mkSL(sp1, sp2)
           val indexesVal = checkIndexSequence(indexes, sp1, sp2)
-          mapN(visit(base, unsafe), seqM(indexesVal), visit(elm, unsafe)) {
+          mapN(visit(base, unsafe), indexesVal, visit(elm, unsafe)) {
             case (b, is, e) =>
               val inner = is.init.foldLeft(b) {
                 case (acc, e) => WeededAst.Expression.VectorLoad(acc, e, loc)
@@ -731,7 +731,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           /*
            * Rewrites a `FSet` expression into `Set/empty` and a `Set/insert` calls.
            */
-          @@(elms.map(e => visit(e, unsafe))) map {
+          sequence(elms.map(e => visit(e, unsafe))) map {
             case es =>
               val empty = mkApplyFqn("Set.empty", List(WeededAst.Expression.Unit(mkSL(sp1, sp2))), sp1, sp2)
               es.foldLeft(empty) {
@@ -744,10 +744,10 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
            * Rewrites a `FMap` expression into `Map/empty` and a `Map/insert` calls.
            */
           val elmsVal = elms map {
-            case (key, value) => seqM(visit(key, unsafe), visit(value, unsafe))
+            case (key, value) => sequence(visit(key, unsafe), visit(value, unsafe))
           }
 
-          @@(elmsVal) map {
+          sequence(elmsVal) map {
             case es =>
               val empty = mkApplyFqn("Map.empty", List(WeededAst.Expression.Unit(mkSL(sp1, sp2))), sp1, sp2)
               es.foldLeft(empty) {
@@ -844,17 +844,16 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           }
 
           val expVal = visit(exp, unsafe)
-          val rulesVal = rules map {
+          val rulesVal = traverse(rules) {
             case ParsedAst.CatchRule(ident, fqn, body) =>
               visit(body, unsafe) map {
                 case b => WeededAst.CatchRule(ident, fqn.mkString("."), b)
               }
           }
 
-          mapN(expVal, seqM(rulesVal)) {
+          mapN(expVal, rulesVal) {
             case (e, rs) => WeededAst.Expression.TryCatch(e, rs, mkSL(sp1, sp2))
           }
-
 
         case ParsedAst.Expression.NativeConstructor(sp1, fqn, args, sp2) =>
           /*
@@ -865,7 +864,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           }
 
           val className = fqn.mkString(".")
-          @@(args.map(e => weed(e))) flatMap {
+          sequence(args.map(e => weed(e))) flatMap {
             case es => WeededAst.Expression.NativeConstructor(className, es, mkSL(sp1, sp2)).toSuccess
           }
 
@@ -907,7 +906,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           // Extract class and member name.
           val className = fqn.dropRight(1).mkString(".")
           val methodName = fqn.last
-          @@(args.map(e => weed(e))) flatMap {
+          sequence(args.map(e => weed(e))) flatMap {
             case es => WeededAst.Expression.NativeMethod(className, methodName, es, mkSL(sp1, sp2)).toSuccess
           }
 
@@ -928,9 +927,8 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       }
     }
 
-    private def checkIndexSequence(elms: Seq[ParsedAst.Literal], sp1: SourcePosition, sp2: SourcePosition): Seq[Validation[Int, WeederError]] = {
-      elms map (e => getVectorLength(e, sp1, sp2))
-      //(elms.map(e => visit(e, unsafe))) map{
+    private def checkIndexSequence(elms: Seq[ParsedAst.Literal], sp1: SourcePosition, sp2: SourcePosition): Validation[List[Int], WeederError] = {
+      traverse(elms)(e => getVectorLength(e, sp1, sp2))
     }
   }
 
@@ -1020,7 +1018,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           /*
            * Rewrites empty tuples to Unit and eliminate single-element tuples.
            */
-          @@(pats map visit) map {
+          sequence(pats map visit) map {
             case Nil => WeededAst.Pattern.Unit(mkSL(sp1, sp2))
             case x :: Nil => x
             case xs => WeededAst.Pattern.Tuple(xs, mkSL(sp1, sp2))
@@ -1064,7 +1062,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         case ParsedAst.Predicate.Head.False(sp1, sp2) => WeededAst.Predicate.Head.False(mkSL(sp1, sp2)).toSuccess
 
         case ParsedAst.Predicate.Head.Atom(sp1, qname, terms, sp2) =>
-          @@(terms.map(t => Expressions.weed(t))) map {
+          sequence(terms.map(t => Expressions.weed(t))) map {
             case ts => WeededAst.Predicate.Head.Atom(qname, ts, mkSL(sp1, sp2))
           }
 
@@ -1079,18 +1077,18 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         */
       def weed(past: ParsedAst.Predicate.Body)(implicit flix: Flix): Validation[WeededAst.Predicate.Body, WeederError] = past match {
         case ParsedAst.Predicate.Body.Positive(sp1, qname, terms, sp2) =>
-          @@(terms.map(t => Patterns.weed(t))) map {
+          sequence(terms.map(t => Patterns.weed(t))) map {
             case ts => WeededAst.Predicate.Body.Atom(qname, Polarity.Positive, ts, mkSL(sp1, sp2))
           }
 
         case ParsedAst.Predicate.Body.Negative(sp1, qname, terms, sp2) =>
           val loc = mkSL(sp1, sp2)
-          @@(terms.map(t => Patterns.weed(t))) map {
+          sequence(terms.map(t => Patterns.weed(t))) map {
             case ts => WeededAst.Predicate.Body.Atom(qname, Polarity.Negative, ts, loc)
           }
 
         case ParsedAst.Predicate.Body.Filter(sp1, qname, terms, sp2) =>
-          @@(terms.map(t => Expressions.weed(t))) map {
+          sequence(terms.map(t => Expressions.weed(t))) map {
             case ts => WeededAst.Predicate.Body.Filter(qname, ts, mkSL(sp1, sp2))
           }
 
@@ -1128,7 +1126,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
             DuplicateAnnotation(x.ident.name, mkSL(otherAnn.sp1, otherAnn.sp2), mkSL(x.sp1, x.sp2)).toFailure
         }
       }
-      @@(result).map(as => Ast.Annotations(as))
+      sequence(result).map(as => Ast.Annotations(as))
     }
 
     /**
@@ -1155,7 +1153,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     */
   def visitModifiers(xs: Seq[ParsedAst.Modifier], legalModifiers: Set[Ast.Modifier]): Validation[Ast.Modifiers, WeederError] = {
     val seen = mutable.Map.empty[String, ParsedAst.Modifier]
-    val modifiersVal = xs map {
+    val modifiersVal = traverse(xs) {
       modifier =>
         seen.get(modifier.name) match {
           case None =>
@@ -1168,12 +1166,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         }
     }
 
-    // Sequence the results.
-    for {
-      ms <- seqM(modifiersVal)
-    } yield {
-      Ast.Modifiers(ms)
-    }
+    modifiersVal.map(ms => Ast.Modifiers(ms))
   }
 
   /**
@@ -1208,20 +1201,20 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       def visit(decl: ParsedAst.Declaration): Validation[List[WeededAst.Declaration], WeederError] = decl match {
         // Recurse through the namespace.
         case ParsedAst.Declaration.Namespace(sp1, name, decls, sp2) =>
-          @@(decls.map(visit)) map {
+          sequence(decls.map(visit)) map {
             case ds => List(WeededAst.Declaration.Namespace(name, ds.flatten, mkSL(sp1, sp2)))
           }
 
         case ParsedAst.Declaration.Def(_, meta, _, _, defn, _, _, _, _, _, _) =>
           // Instantiate properties based on the laws referenced by the definition.
-          @@(meta.collect {
+          sequence(meta.collect {
             case ParsedAst.Property(sp1, law, args, sp2) =>
               val loc = mkSL(sp1, sp2)
 
               // Weeds the arguments of the property.
               val argsVal = args match {
                 case None => Nil.toSuccess
-                case Some(es) => @@(es.map(e => Expressions.weed(e)))
+                case Some(es) => sequence(es.map(e => Expressions.weed(e)))
               }
 
               argsVal map {
@@ -1235,7 +1228,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         case _ => Nil.toSuccess
       }
 
-      @@(root.decls.map(visit)).map(_.flatten)
+      sequence(root.decls.map(visit)).map(_.flatten)
     }
   }
 
@@ -1334,7 +1327,8 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       }
 
       val seen = mutable.Map.empty[String, ParsedAst.FormalParam]
-      val results = fparams map {
+
+      traverse(fparams) {
         case param@ParsedAst.FormalParam(sp1, mods, ident, typeOpt, sp2) => seen.get(ident.name) match {
           case None =>
             seen += (ident.name -> param)
@@ -1351,9 +1345,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
             DuplicateFormalParam(ident.name, loc1, loc2).toFailure
         }
       }
-
-      // Sequence the results.
-      seqM(results)
     }
 
   }
@@ -1369,8 +1360,8 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   private def visitClassConstraint(cc: ParsedAst.ClassConstraint): Validation[(WeededAst.SimpleClass, List[WeededAst.SimpleClass]), WeederError] = cc match {
     case ParsedAst.ClassConstraint(head0, body0) =>
       val headVal = visitSimpleClass(head0)
-      val bodyVal = @@(body0 map visitSimpleClass)
-      seqM(headVal, bodyVal)
+      val bodyVal = sequence(body0 map visitSimpleClass)
+      sequence(headVal, bodyVal)
   }
 
   /**
@@ -1379,15 +1370,15 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   private def visitImplConstraint(ic: ParsedAst.ImplConstraint): Validation[(WeededAst.ComplexClass, List[WeededAst.ComplexClass]), WeederError] = ic match {
     case ParsedAst.ImplConstraint(head0, body0) =>
       val headVal = visitComplexClass(head0)
-      val bodyVal = @@(body0 map visitComplexClass)
-      seqM(headVal, bodyVal)
+      val bodyVal = sequence(body0 map visitComplexClass)
+      sequence(headVal, bodyVal)
   }
 
   /**
     * Weeds the given integrity constraint `ic`.
     */
   private def visitDisallowConstraint(ic: ParsedAst.DisallowConstraint): Validation[List[WeededAst.ComplexClass], WeederError] = ic match {
-    case ParsedAst.DisallowConstraint(body0) => @@(body0 map visitComplexClass)
+    case ParsedAst.DisallowConstraint(body0) => sequence(body0 map visitComplexClass)
   }
 
   /**
@@ -1438,7 +1429,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     * Weeds the given effect handler bindings `bs0`.
     */
   def visitHandlers(bs0: Seq[ParsedAst.HandlerBinding])(implicit flix: Flix): Validation[List[WeededAst.HandlerBinding], WeederError] = {
-    seqM(bs0 map visitHandler)
+    traverse(bs0)(visitHandler)
   }
 
   /**
@@ -1648,7 +1639,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     */
   private def checkDuplicateAttribute(attrs: Seq[ParsedAst.Attribute]): Validation[List[WeededAst.Attribute], WeederError] = {
     val seen = mutable.Map.empty[String, ParsedAst.Attribute]
-    @@(attrs.map {
+    sequence(attrs.map {
       case attr@ParsedAst.Attribute(sp1, ident, tpe, sp2) => seen.get(ident.name) match {
         case None =>
           seen += (ident.name -> attr)

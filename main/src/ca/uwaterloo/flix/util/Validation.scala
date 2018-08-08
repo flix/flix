@@ -91,7 +91,7 @@ object Validation {
     * Sequences the given list of validations `xs`.
     */
   // TODO: Rename to sequence.
-  def seqM[T, E](xs: Traversable[Validation[T, E]]): Validation[List[T], E] = {
+  def sequence[T, E](xs: Traversable[Validation[T, E]]): Validation[List[T], E] = {
     val zero = Success(List.empty[T]): Validation[List[T], E]
     xs.foldRight(zero) {
       case (Success(curValue), Success(accValue)) =>
@@ -110,7 +110,7 @@ object Validation {
     */
   // TODO: Rename to sequence.
   // TODO: Tests
-  def seqM[T1, T2, E](a: Validation[T1, E], b: Validation[T2, E]): Validation[(T1, T2), E] =
+  def sequence[T1, T2, E](a: Validation[T1, E], b: Validation[T2, E]): Validation[(T1, T2), E] =
     (a, b) match {
       case (Success(valueA), Success(valueB)) =>
         Success((valueA, valueB))
@@ -120,7 +120,7 @@ object Validation {
   /**
     * Traverses `xs` while applying the function `f`.
     */
-  // TODO: Use traverse moe often.
+  // TODO: In general it is better to use traverse than sequence.
   // TODO: Performance.
   def traverse[T, S, E](xs: Traversable[T])(f: T => Validation[S, E]): Validation[List[S], E] = xs.toList match {
     case Nil => Success(Nil)
@@ -221,7 +221,6 @@ object Validation {
 
   // TODO: Everything below this line is deprecated.
 
-
   /**
     * Folds the given function `f` over all elements `xs`.
     *
@@ -234,14 +233,6 @@ object Validation {
       }
     }
   }
-
-  /**
-    * Flattens a sequence of validations into one validation. Errors are concatenated.
-    *
-    * Returns [[Success]] if every element in `xs` is a [[Success]].
-    */
-  // TODO: Deprecated, replace by mapN
-  def @@[Value, Error](xs: Traversable[Validation[Value, Error]]): Validation[List[Value], Error] = seqM(xs)
 
 }
 

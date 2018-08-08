@@ -68,7 +68,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     }
 
     // fold over the named expressions.
-    val named = @@(program.named.map {
+    val named = sequence(program.named.map {
       case (sym, exp) => Expressions.namer(exp, Map.empty, Map.empty).map(e => sym -> e)
     })
 
@@ -243,7 +243,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         val tenv0 = Map.empty[String, Type.Var]
 
         // Perform naming on the head and body predicates.
-        mapN(Predicates.namer(h, headEnv, ruleEnv, tenv0), @@(bs.map(b => Predicates.namer(b, headEnv, ruleEnv, tenv0)))) {
+        mapN(Predicates.namer(h, headEnv, ruleEnv, tenv0), sequence(bs.map(b => Predicates.namer(b, headEnv, ruleEnv, tenv0)))) {
           case (head, body) =>
             val headParams = headEnv.map {
               case (_, sym) => NamedAst.ConstraintParam.HeadParam(sym, sym.tvar, sym.loc)
@@ -636,7 +636,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
 
       case WeededAst.Expression.Match(exp, rules, loc) =>
         val expVal = namer(exp, env0, tenv0)
-        val rulesVal = rules map {
+        val rulesVal = traverse(rules) {
           case WeededAst.MatchRule(pat, guard, body) =>
             // extend the environment with every variable occurring in the pattern
             // and perform naming on the rule guard and body under the extended environment.
@@ -646,18 +646,18 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
               case (g, b) => NamedAst.MatchRule(p, g, b)
             }
         }
-        mapN(expVal, @@(rulesVal)) {
+        mapN(expVal, rulesVal) {
           case (e, rs) => NamedAst.Expression.Match(e, rs, Type.freshTypeVar(), loc)
         }
 
       case WeededAst.Expression.Switch(rules, loc) =>
-        val rulesVal = rules map {
-          case (cond, body) => seqM(namer(cond, env0, tenv0), namer(body, env0, tenv0))
+        val rulesVal = traverse(rules) {
+          case (cond, body) => sequence(namer(cond, env0, tenv0), namer(body, env0, tenv0))
         }
 
-        @@(rulesVal) map {
-        case rs => NamedAst.Expression.Switch(rs, Type.freshTypeVar(), loc)
-      }
+        rulesVal map {
+          case rs => NamedAst.Expression.Switch(rs, Type.freshTypeVar(), loc)
+        }
 
       case WeededAst.Expression.Tag(enum, tag, expOpt, loc) => expOpt match {
         case None =>
@@ -671,12 +671,12 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       }
 
       case WeededAst.Expression.Tuple(elms, loc) =>
-        @@(elms map (e => namer(e, env0, tenv0))) map {
+        traverse(elms)(e => namer(e, env0, tenv0)) map {
           case es => NamedAst.Expression.Tuple(es, Type.freshTypeVar(), loc)
         }
 
       case WeededAst.Expression.ArrayLit(elms, loc) =>
-        @@(elms map (e => namer(e, env0, tenv0))) map {
+        traverse(elms)(e => namer(e, env0, tenv0)) map {
           case es => NamedAst.Expression.ArrayLit(es, Type.freshTypeVar(), loc)
         }
 
@@ -706,7 +706,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         }
 
       case WeededAst.Expression.VectorLit(elms, loc) =>
-        @@(elms map (e => namer(e, env0, tenv0))) map {
+        traverse(elms)(e => namer(e, env0, tenv0)) map {
           case es => NamedAst.Expression.VectorLit(es, Type.freshTypeVar(), loc)
         }
 
@@ -752,12 +752,12 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
 
       case WeededAst.Expression.HandleWith(exp, bindings, loc) =>
         val baseVal = namer(exp, env0, tenv0)
-        val bindingsVal = @@(bindings map {
+        val bindingsVal = traverse(bindings) {
           case WeededAst.HandlerBinding(qname, exp) =>
             namer(exp, env0, tenv0) map {
               case e => NamedAst.HandlerBinding(qname, e)
             }
-        })
+        }
         mapN(baseVal, bindingsVal) {
           case (b, bs) => NamedAst.Expression.HandleWith(b, bs, Type.freshTypeVar(), loc)
         }
@@ -786,7 +786,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
 
       case WeededAst.Expression.TryCatch(exp, rules, loc) =>
         val expVal = namer(exp, env0, tenv0)
-        val rulesVal = rules map {
+        val rulesVal = traverse(rules) {
           case WeededAst.CatchRule(ident, className, body) =>
             val sym = Symbol.freshVarSym(ident)
             val classVal = lookupClass(className, loc)
@@ -798,13 +798,13 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
             }
         }
 
-        mapN(expVal, @@(rulesVal)) {
+        mapN(expVal, rulesVal) {
           case (e, rs) => NamedAst.Expression.TryCatch(e, rs, Type.freshTypeVar(), loc)
         }
 
       case WeededAst.Expression.NativeConstructor(className, args, loc) =>
         lookupNativeConstructor(className, args, loc) match {
-          case Ok(constructor) => @@(args.map(e => namer(e, env0, tenv0))) map {
+          case Ok(constructor) => traverse(args)(e => namer(e, env0, tenv0)) map {
             case es => NamedAst.Expression.NativeConstructor(constructor, es, Type.freshTypeVar(), loc)
           }
           case Err(e) => e.toFailure
@@ -818,7 +818,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
 
       case WeededAst.Expression.NativeMethod(className, methodName, args, loc) =>
         lookupNativeMethod(className, methodName, args, loc) match {
-          case Ok(method) => @@(args.map(e => namer(e, env0, tenv0))) map {
+          case Ok(method) => traverse(args)(e => namer(e, env0, tenv0)) map {
             case es => NamedAst.Expression.NativeMethod(method, es, Type.freshTypeVar(), loc)
           }
           case Err(e) => e.toFailure
@@ -988,9 +988,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       case WeededAst.Predicate.Head.True(loc) => NamedAst.Predicate.Head.True(loc).toSuccess
       case WeededAst.Predicate.Head.False(loc) => NamedAst.Predicate.Head.False(loc).toSuccess
       case WeededAst.Predicate.Head.Atom(qname, terms, loc) =>
-        @@(terms.map(t => Expressions.namer(t, headEnv0 ++ ruleEnv0, tenv0))) map {
-          case ts => NamedAst.Predicate.Head.Atom(qname, ts, loc)
-        }
+        for {
+          ts <- traverse(terms)(t => Expressions.namer(t, headEnv0 ++ ruleEnv0, tenv0))
+        } yield NamedAst.Predicate.Head.Atom(qname, ts, loc)
     }
 
     def namer(body: WeededAst.Predicate.Body, headEnv0: Map[String, Symbol.VarSym], ruleEnv0: Map[String, Symbol.VarSym], tenv0: Map[String, Type.Var])(implicit genSym: GenSym): Validation[NamedAst.Predicate.Body, NameError] = body match {
@@ -999,9 +999,10 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         NamedAst.Predicate.Body.Atom(qname, polarity, ts, loc).toSuccess
 
       case WeededAst.Predicate.Body.Filter(qname, terms, loc) =>
-        @@(terms.map(t => Expressions.namer(t, headEnv0 ++ ruleEnv0, tenv0))) map {
-          case ts => NamedAst.Predicate.Body.Filter(qname, ts, loc)
-        }
+        for {
+          ts <- traverse(terms)(t => Expressions.namer(t, headEnv0 ++ ruleEnv0, tenv0))
+        } yield NamedAst.Predicate.Body.Filter(qname, ts, loc)
+
       case WeededAst.Predicate.Body.Loop(pat, term, loc) =>
         val p = Patterns.namer(pat, headEnv0)
         Expressions.namer(term, ruleEnv0, tenv0) map {

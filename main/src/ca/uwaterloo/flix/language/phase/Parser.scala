@@ -41,12 +41,12 @@ object Parser extends Phase[(List[Source], Map[Symbol.DefnSym, String]), ParsedA
     implicit val _ = flix.ec
 
     // Parse each source in parallel.
-    val roots = @@(ParOps.parMap(parseRoot, sources))
+    val roots = sequence(ParOps.parMap(parseRoot, sources))
 
     // Parse each named expression.
-    val named = @@(namedExp.map {
+    val named = traverse(namedExp) {
       case (sym, s) => parseExp(Source("<unknown>", s.toCharArray)).map(exp => sym -> exp)
-    })
+    }
 
     // Sequence and combine the ASTs into one abstract syntax tree.
     mapN(roots, named) {
@@ -582,9 +582,9 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Primary: Rule1[ParsedAst.Expression] = rule {
-      LetRec | LetMatch | IfThenElse | Match | LambdaMatch | Switch | Unsafe | TryCatch | Native | Lambda | Tuple | 
-      ArrayLit | ArrayNew | ArrayLength | VectorLit | VectorNew | VectorLength | FNil | FSet | FMap | Literal |
-      HandleWith | Existential | Universal | UnaryLambda | QName | Wild | Tag | SName | Hole | UserError
+      LetRec | LetMatch | IfThenElse | Match | LambdaMatch | Switch | Unsafe | TryCatch | Native | Lambda | Tuple |
+        ArrayLit | ArrayNew | ArrayLength | VectorLit | VectorNew | VectorLength | FNil | FSet | FMap | Literal |
+        HandleWith | Existential | Universal | UnaryLambda | QName | Wild | Tag | SName | Hole | UserError
     }
 
     def Literal: Rule1[ParsedAst.Expression.Lit] = rule {
@@ -663,27 +663,27 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       ArraySlice ~ zeroOrMore(optWS ~ "." ~ Names.Definition ~ ArgumentList ~ SP ~> ParsedAst.Expression.Postfix)
     }
 
-    def ArraySlice: Rule1[ParsedAst.Expression] = rule{
+    def ArraySlice: Rule1[ParsedAst.Expression] = rule {
       ArrayLoad ~ optional(optWS ~ "[" ~ optWS ~ optional(Expression) ~ optWS ~ atomic("..") ~ optWS ~ optional(Expression) ~ optWS ~ "]" ~ SP ~> ParsedAst.Expression.ArraySlice)
     }
 
-    def ArrayLoad: Rule1[ParsedAst.Expression] = rule{
-      ArrayStore ~ zeroOrMore(optWS ~ "[" ~ optWS ~  Expression ~ optWS ~ "]" ~ SP ~> ParsedAst.Expression.ArrayLoad)
+    def ArrayLoad: Rule1[ParsedAst.Expression] = rule {
+      ArrayStore ~ zeroOrMore(optWS ~ "[" ~ optWS ~ Expression ~ optWS ~ "]" ~ SP ~> ParsedAst.Expression.ArrayLoad)
     }
 
     def ArrayStore: Rule1[ParsedAst.Expression] = rule {
-      VectorSlice ~ optional(oneOrMore(optWS ~ "[" ~ optWS ~  Expression ~ optWS ~ "]") ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.ArrayStore)
+      VectorSlice ~ optional(oneOrMore(optWS ~ "[" ~ optWS ~ Expression ~ optWS ~ "]") ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.ArrayStore)
     }
 
     def VectorSlice: Rule1[ParsedAst.Expression] = rule {
-      VectorLoad ~ optional(optWS ~ atomic("[|")~ optWS ~ optional(Literals.IntDefault) ~ optWS ~ atomic("..") ~ optWS ~ optional(Literals.IntDefault) ~ optWS ~ atomic("|]") ~ SP ~> ParsedAst.Expression.VectorSlice)
+      VectorLoad ~ optional(optWS ~ atomic("[|") ~ optWS ~ optional(Literals.IntDefault) ~ optWS ~ atomic("..") ~ optWS ~ optional(Literals.IntDefault) ~ optWS ~ atomic("|]") ~ SP ~> ParsedAst.Expression.VectorSlice)
     }
 
-    def VectorLoad: Rule1[ParsedAst.Expression] = rule{
+    def VectorLoad: Rule1[ParsedAst.Expression] = rule {
       VectorStore ~ zeroOrMore(optWS ~ atomic("[|") ~ optWS ~ Literals.IntDefault ~ optWS ~ atomic("|]") ~ SP ~> ParsedAst.Expression.VectorLoad)
     }
 
-    def VectorStore: Rule1[ParsedAst.Expression] = rule{
+    def VectorStore: Rule1[ParsedAst.Expression] = rule {
       Apply ~ optional(oneOrMore(optWS ~ atomic("[|") ~ optWS ~ Literals.IntDefault ~ optWS ~ atomic("|]")) ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.VectorStore)
     }
 

@@ -126,42 +126,6 @@ class TestValidation extends FunSuite {
     assertResult(Failure(Stream(4, 5, 6)))(result)
   }
 
-  test("@@(List)01") {
-    val result = @@(List(
-      "a".toSuccess,
-      "b".toSuccess,
-      "c".toSuccess,
-      "d".toSuccess,
-      "e".toSuccess
-    ))
-
-    assertResult(Success(List("a", "b", "c", "d", "e")))(result)
-  }
-
-  test("@@(List)02") {
-    val result = @@(List(
-      "a".toSuccess,
-      "b".toSuccess,
-      "c".toFailure,
-      "d".toSuccess,
-      "e".toFailure
-    ))
-
-    assertResult(Failure(Stream("c", "e")))(result)
-  }
-
-  test("@@(List)03") {
-    val result = @@(List(
-      "a".toSuccess,
-      "b".toSuccess,
-      Success("c"),
-      "d".toSuccess,
-      Success("e")
-    ))
-
-    assertResult(Success(List("a", "b", "c", "d", "e")))(result)
-  }
-
   test("traverse01") {
     val result = traverse(List(1, 2, 3)) {
       case x => Success(x + 1)
