@@ -68,9 +68,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     }
 
     // fold over the named expressions.
-    val named = sequence(program.named.map {
+    val named = traverse(program.named) {
       case (sym, exp) => Expressions.namer(exp, Map.empty, Map.empty).map(e => sym -> e)
-    })
+    }
 
     mapN(result, named) {
       // update elapsed time.
@@ -243,7 +243,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         val tenv0 = Map.empty[String, Type.Var]
 
         // Perform naming on the head and body predicates.
-        mapN(Predicates.namer(h, headEnv, ruleEnv, tenv0), sequence(bs.map(b => Predicates.namer(b, headEnv, ruleEnv, tenv0)))) {
+        mapN(Predicates.namer(h, headEnv, ruleEnv, tenv0), traverse(bs)(b => Predicates.namer(b, headEnv, ruleEnv, tenv0))) {
           case (head, body) =>
             val headParams = headEnv.map {
               case (_, sym) => NamedAst.ConstraintParam.HeadParam(sym, sym.tvar, sym.loc)

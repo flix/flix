@@ -131,7 +131,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
         } yield (tpe, lattice)
     }
 
-    val propertiesVal = prog0.properties.map {
+    val propertiesVal = traverse(prog0.properties) {
       case (ns0, properties) => Properties.resolve(properties, ns0, prog0)
     }
 
@@ -148,7 +148,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
       lattices <- sequence(latticesVal)
       constraints <- sequence(constraintsVal)
       latticeComponents <- sequence(latticeComponentsVal)
-      properties <- sequence(propertiesVal)
+      properties <- propertiesVal
     } yield ResolvedAst.Program(
       definitions.toMap ++ named.toMap, effs.toMap, handlers.toMap, enums.toMap, classes.toMap, impls.toMap,
       relations.toMap, lattices.toMap, constraints.flatten, latticeComponents.toMap, properties.flatten, prog0.reachable
@@ -161,7 +161,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
       * Performs name resolution on the given `constraints` in the given namespace `ns0`.
       */
     def resolve(constraints: List[NamedAst.Constraint], ns0: Name.NName, prog0: NamedAst.Root)(implicit genSym: GenSym): Validation[List[ResolvedAst.Constraint], ResolutionError] = {
-      sequence(constraints.map(c => resolve(c, ns0, prog0)))
+      traverse(constraints)(c => resolve(c, ns0, prog0))
     }
 
     /**
@@ -169,9 +169,9 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
       */
     def resolve(c0: NamedAst.Constraint, ns0: Name.NName, prog0: NamedAst.Root)(implicit genSym: GenSym): Validation[ResolvedAst.Constraint, ResolutionError] = {
       for {
-        ps <- sequence(c0.cparams.map(p => Params.resolve(p, ns0, prog0)))
+        ps <- traverse(c0.cparams)(p => Params.resolve(p, ns0, prog0))
         h <- Predicates.Head.resolve(c0.head, ns0, prog0)
-        bs <- sequence(c0.body.map(b => Predicates.Body.resolve(b, ns0, prog0)))
+        bs <- traverse(c0.body)(b => Predicates.Body.resolve(b, ns0, prog0))
       } yield ResolvedAst.Constraint(ps, h, bs, c0.loc)
     }
 
@@ -229,16 +229,16 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     * Performs name resolution on the given enum `e0` in the given namespace `ns0`.
     */
   def resolve(e0: NamedAst.Enum, ns0: Name.NName, prog0: NamedAst.Root)(implicit genSym: GenSym): Validation[ResolvedAst.Enum, ResolutionError] = {
-    val casesVal = e0.cases.map {
+    val tparamsVal = traverse(e0.tparams)(p => Params.resolve(p, ns0, prog0))
+    val casesVal = traverse(e0.cases) {
       case (name, NamedAst.Case(enum, tag, tpe)) =>
         for {
           t <- lookupType(tpe, ns0, prog0)
         } yield name -> ResolvedAst.Case(enum, tag, t)
     }
-
     for {
-      tparams <- sequence(e0.tparams.map(p => Params.resolve(p, ns0, prog0)))
-      cases <- sequence(casesVal)
+      tparams <- tparamsVal
+      cases <- casesVal
       tpe <- lookupType(e0.tpe, ns0, prog0)
     } yield ResolvedAst.Enum(e0.doc, e0.mod, e0.sym, tparams, cases.toMap, tpe, e0.loc)
   }
@@ -250,8 +250,8 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     case NamedAst.Class(doc, mod, sym, quantifiers, head0, body0, sigs0, laws, loc) =>
       for {
         head <- resolveSimpleClass(head0, ns0, prog0)
-        body <- sequence(body0.map(resolveSimpleClass(_, ns0, prog0)))
-        sigs <- sequence(sigs0.map(s => resolveSig(s._2, ns0, prog0)))
+        body <- traverse(body0)(resolveSimpleClass(_, ns0, prog0))
+        sigs <- traverse(sigs0)(s => resolveSig(s._2, ns0, prog0))
       } yield {
         ResolvedAst.Class(doc, mod, sym, quantifiers, head, body, /* TODO */ Map.empty, /* TODO */ Nil, loc)
       }
@@ -264,7 +264,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     case NamedAst.Impl(doc, mod, head0, body0, defs, loc) =>
       for {
         head <- resolveComplexClass(head0, ns0, prog0)
-        body <- sequence(body0.map(resolveComplexClass(_, ns0, prog0)))
+        body <- traverse(body0)(resolveComplexClass(_, ns0, prog0))
       } yield {
         ResolvedAst.Impl(doc, mod, head, body, /* TODO */ Nil, loc)
       }
@@ -289,7 +289,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     case NamedAst.ComplexClass(qname, polarity, args, loc) =>
       for {
         sym <- lookupClass(qname, ns0, prog0)
-        ts <- sequence(args.map(lookupType(_, ns0, prog0)))
+        ts <- traverse(args)(lookupType(_, ns0, prog0))
       } yield {
         ResolvedAst.ComplexClass(sym, polarity, ts, loc)
       }
@@ -324,7 +324,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
   def resolveRelation(r0: NamedAst.Relation, ns0: Name.NName, prog0: NamedAst.Root)(implicit genSym: GenSym): Validation[ResolvedAst.Relation, ResolutionError] = r0 match {
     case NamedAst.Relation(doc, mod, sym, attr, loc) =>
       for {
-        as <- sequence(attr.map(a => resolve(a, ns0, prog0)))
+        as <- traverse(attr)(a => resolve(a, ns0, prog0))
       } yield ResolvedAst.Relation(doc, mod, sym, as, loc)
   }
 
@@ -334,7 +334,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
   def resolveLattice(l0: NamedAst.Lattice, ns0: Name.NName, prog0: NamedAst.Root)(implicit genSym: GenSym): Validation[ResolvedAst.Lattice, ResolutionError] = l0 match {
     case NamedAst.Lattice(doc, mod, sym, attr, loc) =>
       for {
-        as <- sequence(attr.map(a => resolve(a, ns0, prog0)))
+        as <- traverse(attr)(a => resolve(a, ns0, prog0))
       } yield ResolvedAst.Lattice(doc, mod, sym, as, loc)
   }
 
@@ -443,7 +443,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
           } yield ResolvedAst.Expression.LetRec(sym, e1, e2, tvar, loc)
 
         case NamedAst.Expression.Match(exp, rules, tvar, loc) =>
-          val rulesVal = rules map {
+          val rulesVal = traverse(rules) {
             case NamedAst.MatchRule(pat, guard, body) =>
               for {
                 p <- Patterns.resolve(pat, ns0, prog0)
@@ -454,14 +454,14 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
 
           for {
             e <- visit(exp, tenv0)
-            rs <- sequence(rulesVal)
+            rs <- rulesVal
           } yield ResolvedAst.Expression.Match(e, rs, tvar, loc)
 
         case NamedAst.Expression.Switch(rules, tvar, loc) =>
-          val rulesVal = rules map {
+          val rulesVal = traverse(rules) {
             case (cond, body) => sequence(visit(cond, tenv0), visit(body, tenv0))
           }
-          sequence(rulesVal) map {
+          rulesVal map {
             case rs => ResolvedAst.Expression.Switch(rs, tvar, loc)
           }
 
@@ -511,12 +511,12 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
 
         case NamedAst.Expression.Tuple(elms, tvar, loc) =>
           for {
-            es <- sequence(elms.map(e => visit(e, tenv0)))
+            es <- traverse(elms)(e => visit(e, tenv0))
           } yield ResolvedAst.Expression.Tuple(es, tvar, loc)
 
         case NamedAst.Expression.ArrayLit(elms, tvar, loc) =>
           for {
-            es <- sequence(elms.map(e => visit(e, tenv0)))
+            es <- traverse(elms)(e => visit(e, tenv0))
           } yield ResolvedAst.Expression.ArrayLit(es, tvar, loc)
 
         case NamedAst.Expression.ArrayNew(elm, len, tvar, loc) =>
@@ -552,7 +552,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
 
         case NamedAst.Expression.VectorLit(elms, tvar, loc) =>
           for {
-            es <- sequence(elms.map(e => visit(e, tenv0)))
+            es <- traverse(elms)(e => visit(e, tenv0))
           } yield ResolvedAst.Expression.VectorLit(es, tvar, loc)
 
         case NamedAst.Expression.VectorNew(elm, len, tvar, loc) =>
@@ -628,7 +628,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
           } yield ResolvedAst.Expression.Cast(e, t, eff, loc)
 
         case NamedAst.Expression.TryCatch(exp, rules, tpe, loc) =>
-          val rulesVal = rules map {
+          val rulesVal = traverse(rules) {
             case NamedAst.CatchRule(sym, clazz, body) =>
               val exceptionType = Type.Native(clazz)
               visit(body, tenv0 + (sym -> exceptionType)) map {
@@ -638,7 +638,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
 
           for {
             e <- visit(exp, tenv0)
-            rs <- sequence(rulesVal)
+            rs <- rulesVal
           } yield ResolvedAst.Expression.TryCatch(e, rs, tpe, loc)
 
         case NamedAst.Expression.NativeConstructor(constructor, args, tpe, loc) =>

@@ -548,10 +548,10 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           }
 
         case ParsedAst.Expression.Switch(sp1, rules, sp2) =>
-          val rulesVal = rules map {
+          val rulesVal = traverse(rules) {
             case (cond, body) => sequence(visit(cond, unsafe), visit(body, unsafe))
           }
-          sequence(rulesVal) map {
+          rulesVal map {
             case rs => WeededAst.Expression.Switch(rs, mkSL(sp1, sp2))
           }
 
@@ -573,7 +573,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           /*
            * Rewrites empty tuples to Unit and eliminate single-element tuples.
            */
-          sequence(elms.map(e => visit(e, unsafe))) map {
+          traverse(elms)(e => visit(e, unsafe)) map {
             case Nil =>
               val loc = mkSL(sp1, sp2)
               WeededAst.Expression.Unit(loc)
@@ -864,7 +864,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           }
 
           val className = fqn.mkString(".")
-          sequence(args.map(e => weed(e))) flatMap {
+          traverse(args)(weed) flatMap {
             case es => WeededAst.Expression.NativeConstructor(className, es, mkSL(sp1, sp2)).toSuccess
           }
 
@@ -906,8 +906,8 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           // Extract class and member name.
           val className = fqn.dropRight(1).mkString(".")
           val methodName = fqn.last
-          sequence(args.map(e => weed(e))) flatMap {
-            case es => WeededAst.Expression.NativeMethod(className, methodName, es, mkSL(sp1, sp2)).toSuccess
+          traverse(args)(weed) map {
+            case es => WeededAst.Expression.NativeMethod(className, methodName, es, mkSL(sp1, sp2))
           }
 
         case ParsedAst.Expression.UserError(sp1, sp2) =>
@@ -1018,7 +1018,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           /*
            * Rewrites empty tuples to Unit and eliminate single-element tuples.
            */
-          sequence(pats map visit) map {
+          traverse(pats)(visit) map {
             case Nil => WeededAst.Pattern.Unit(mkSL(sp1, sp2))
             case x :: Nil => x
             case xs => WeededAst.Pattern.Tuple(xs, mkSL(sp1, sp2))
@@ -1062,7 +1062,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         case ParsedAst.Predicate.Head.False(sp1, sp2) => WeededAst.Predicate.Head.False(mkSL(sp1, sp2)).toSuccess
 
         case ParsedAst.Predicate.Head.Atom(sp1, qname, terms, sp2) =>
-          sequence(terms.map(t => Expressions.weed(t))) map {
+          traverse(terms)(Expressions.weed) map {
             case ts => WeededAst.Predicate.Head.Atom(qname, ts, mkSL(sp1, sp2))
           }
 
@@ -1077,18 +1077,18 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         */
       def weed(past: ParsedAst.Predicate.Body)(implicit flix: Flix): Validation[WeededAst.Predicate.Body, WeederError] = past match {
         case ParsedAst.Predicate.Body.Positive(sp1, qname, terms, sp2) =>
-          sequence(terms.map(t => Patterns.weed(t))) map {
+          traverse(terms)(Patterns.weed) map {
             case ts => WeededAst.Predicate.Body.Atom(qname, Polarity.Positive, ts, mkSL(sp1, sp2))
           }
 
         case ParsedAst.Predicate.Body.Negative(sp1, qname, terms, sp2) =>
           val loc = mkSL(sp1, sp2)
-          sequence(terms.map(t => Patterns.weed(t))) map {
+          traverse(terms)(Patterns.weed) map {
             case ts => WeededAst.Predicate.Body.Atom(qname, Polarity.Negative, ts, loc)
           }
 
         case ParsedAst.Predicate.Body.Filter(sp1, qname, terms, sp2) =>
-          sequence(terms.map(t => Expressions.weed(t))) map {
+          traverse(terms)(Expressions.weed) map {
             case ts => WeededAst.Predicate.Body.Filter(qname, ts, mkSL(sp1, sp2))
           }
 
@@ -1126,6 +1126,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
             DuplicateAnnotation(x.ident.name, mkSL(otherAnn.sp1, otherAnn.sp2), mkSL(x.sp1, x.sp2)).toFailure
         }
       }
+
       sequence(result).map(as => Ast.Annotations(as))
     }
 
@@ -1201,7 +1202,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       def visit(decl: ParsedAst.Declaration): Validation[List[WeededAst.Declaration], WeederError] = decl match {
         // Recurse through the namespace.
         case ParsedAst.Declaration.Namespace(sp1, name, decls, sp2) =>
-          sequence(decls.map(visit)) map {
+          traverse(decls)(visit) map {
             case ds => List(WeededAst.Declaration.Namespace(name, ds.flatten, mkSL(sp1, sp2)))
           }
 
@@ -1360,7 +1361,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   private def visitClassConstraint(cc: ParsedAst.ClassConstraint): Validation[(WeededAst.SimpleClass, List[WeededAst.SimpleClass]), WeederError] = cc match {
     case ParsedAst.ClassConstraint(head0, body0) =>
       val headVal = visitSimpleClass(head0)
-      val bodyVal = sequence(body0 map visitSimpleClass)
+      val bodyVal = traverse(body0)(visitSimpleClass)
       sequence(headVal, bodyVal)
   }
 
@@ -1370,7 +1371,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   private def visitImplConstraint(ic: ParsedAst.ImplConstraint): Validation[(WeededAst.ComplexClass, List[WeededAst.ComplexClass]), WeederError] = ic match {
     case ParsedAst.ImplConstraint(head0, body0) =>
       val headVal = visitComplexClass(head0)
-      val bodyVal = sequence(body0 map visitComplexClass)
+      val bodyVal = traverse(body0)(visitComplexClass)
       sequence(headVal, bodyVal)
   }
 
@@ -1378,7 +1379,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     * Weeds the given integrity constraint `ic`.
     */
   private def visitDisallowConstraint(ic: ParsedAst.DisallowConstraint): Validation[List[WeededAst.ComplexClass], WeederError] = ic match {
-    case ParsedAst.DisallowConstraint(body0) => sequence(body0 map visitComplexClass)
+    case ParsedAst.DisallowConstraint(body0) => traverse(body0)(visitComplexClass)
   }
 
   /**
@@ -1639,7 +1640,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     */
   private def checkDuplicateAttribute(attrs: Seq[ParsedAst.Attribute]): Validation[List[WeededAst.Attribute], WeederError] = {
     val seen = mutable.Map.empty[String, ParsedAst.Attribute]
-    sequence(attrs.map {
+    traverse(attrs) {
       case attr@ParsedAst.Attribute(sp1, ident, tpe, sp2) => seen.get(ident.name) match {
         case None =>
           seen += (ident.name -> attr)
@@ -1649,7 +1650,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           val loc2 = mkSL(attr.sp1, attr.sp2)
           DuplicateAttribute(ident.name, loc1, loc2).toFailure
       }
-    })
+    }
   }
 
   /**
