@@ -80,6 +80,7 @@ object Unification {
       case Type.Enum(sym, kind) => Type.Enum(sym, kind)
       case Type.Relation(sym, kind) => Type.Relation(sym, kind)
       case Type.Lattice(sym, kind) => Type.Lattice(sym, kind)
+      case Type.ConstraintSet => Type.ConstraintSet
       case Type.Apply(t1, t2) => Type.Apply(apply(t1), apply(t2))
     }
 
@@ -200,7 +201,10 @@ object Unification {
       case (Type.Succ(n1, t1), Type.Succ(n2, t2)) if n1 == n2 => unifyTypes(t1, t2) //(42, t1) == (42, t2)
       case (Type.Succ(n1, t1), Type.Succ(n2, t2)) if n1 > n2 => unifyTypes(Type.Succ(n1 - n2, t1), t2) // (42, x) == (21 y) --> (42-21, x) = y
       case (Type.Succ(n1, t1), Type.Succ(n2, t2)) if n1 < n2 => unifyTypes(Type.Succ(n2 - n1, t2), t1) // (21, x) == (42, y) --> (42-21, y) = x
-      case (Type.Enum(name1, kind1), Type.Enum(name2, kind2)) if name1 == name2 => Result.Ok(Substitution.empty)
+      case (Type.Enum(sym1, kind1), Type.Enum(sym2, kind2)) if sym1 == sym2 => Result.Ok(Substitution.empty)
+      case (Type.Relation(sym1, kind1), Type.Relation(sym2, kind2)) if sym1 == sym2 => Result.Ok(Substitution.empty)
+      case (Type.Lattice(sym1, kind1), Type.Lattice(sym2, kind2)) if sym1 == sym2 => Result.Ok(Substitution.empty)
+      case (Type.ConstraintSet, Type.ConstraintSet) => Result.Ok(Substitution.empty)
       case (Type.Apply(t11, t12), Type.Apply(t21, t22)) =>
         unifyTypes(t11, t21) match {
           case Result.Ok(subst1) => unify(subst1(t12), subst1(t22)) match {

@@ -975,6 +975,13 @@ object Synthesize extends Phase[Root, Root] {
           }
 
           //
+          // ConstraintSet case.
+          //
+          if (tpe == Type.ConstraintSet) {
+            return Expression.Str("<<constraintset>>", sl)
+          }
+
+          //
           // Tuple case.
           //
           if (tpe.isTuple) {

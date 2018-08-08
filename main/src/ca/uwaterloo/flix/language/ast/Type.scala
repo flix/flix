@@ -56,6 +56,7 @@ sealed trait Type {
     case Type.Enum(_, _) => Set.empty
     case Type.Relation(_, _) => Set.empty
     case Type.Lattice(_, _) => Set.empty
+    case Type.ConstraintSet => Set.empty
     case Type.Apply(tpe1, tpe2) => tpe1.typeVars ++ tpe2.typeVars
   }
 
@@ -178,6 +179,7 @@ sealed trait Type {
     case Type.Enum(sym, _) => sym.toString
     case Type.Relation(sym, _) => sym.toString
     case Type.Lattice(sym, _) => sym.toString
+    case Type.ConstraintSet => "ConstraintSet"
     case Type.Tuple(l) => s"Tuple($l)"
     case Type.Apply(tpe1, tpe2) => s"$tpe1[$tpe2]"
   }
@@ -362,6 +364,15 @@ object Type {
   case class Lattice(sym: Symbol.LatSym, kind: Kind) extends Type
 
   /**
+    * A type constructor that represents a constraint set.
+    */
+  // TODO: We might need different types depending on whether the constraints contain integrity constraints?
+  // TODO: Will the stratification graph be part of the type system?
+  case object ConstraintSet extends Type {
+    def kind: Kind = Kind.Star
+  }
+
+  /**
     * A type constructor that represents tuples of the given `length`.
     */
   case class Tuple(length: Int) extends Type {
@@ -518,6 +529,7 @@ object Type {
       case Type.Enum(sym, kind) => Type.Enum(sym, kind)
       case Type.Relation(sym, kind) => Type.Relation(sym, kind)
       case Type.Lattice(sym, kind) => Type.Lattice(sym, kind)
+      case Type.ConstraintSet => Type.ConstraintSet
     }
 
     visit(tpe)
@@ -565,6 +577,7 @@ object Type {
           case Type.Succ(n, t) => n.toString + " " + t.toString
           case Type.Native(clazz) => "#" + clazz.getName
           case Type.Ref => "Ref"
+          case Type.ConstraintSet => "ConstraintSet"
 
           //
           // Arrow.
