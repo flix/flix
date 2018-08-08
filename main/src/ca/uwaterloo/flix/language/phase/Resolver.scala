@@ -1186,6 +1186,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
       case "Str" => Type.Str.toSuccess
       case "Array" => Type.Array.toSuccess
       case "Vector" => Type.Vector.toSuccess
+      case "ConstraintSet" => Type.ConstraintSet.toSuccess
       case "Ref" => Type.Ref.toSuccess
 
       // Disambiguate type.

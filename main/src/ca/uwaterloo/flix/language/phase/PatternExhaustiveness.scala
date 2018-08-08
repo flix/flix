@@ -605,6 +605,7 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
       case Type.Enum(sym, kind) => 0
       case Type.Relation(sym, kind) => 0
       case Type.Lattice(sym, kind) => 0
+      case Type.ConstraintSet => 0
       case Type.Apply(tpe1, tpe2) => countTypeArgs(tpe1)
     }
 
