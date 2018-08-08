@@ -106,6 +106,18 @@ object Validation {
   }
 
   /**
+    * Sequences the validation T1 and T2 into a validation pair.
+    */
+  // TODO: Rename to sequence.
+  // TODO: Tests
+  def seqM[T1, T2, E](a: Validation[T1, E], b: Validation[T2, E]): Validation[(T1, T2), E] =
+    (a, b) match {
+      case (Success(valueA), Success(valueB)) =>
+        Success((valueA, valueB))
+      case _ => Failure(b.errors #::: a.errors)
+    }
+
+  /**
     * Traverses `xs` while applying the function `f`.
     */
   // TODO: Use traverse moe often.
@@ -118,6 +130,16 @@ object Validation {
         case rs => s map (r => r :: rs)
       }
   }
+
+  /**
+    * Maps over t1 and t2.
+    */
+  def mapN[T1, T2, U, E](t1: Validation[T1, E], t2: Validation[T2, E])
+                        (f: (T1, T2) => U): Validation[U, E] =
+    (t1, t2) match {
+      case (Success(v1), Success(v2)) => Success(f(v1, v2))
+      case _ => Failure(t1.errors #::: t2.errors)
+    }
 
   /**
     * Maps over t1, t2, and t3.
@@ -164,6 +186,26 @@ object Validation {
     }
 
   /**
+    * FlatMaps over t1 and t2.
+    */
+  def flatMapN[T1, T2, U, E](t1: Validation[T1, E], t2: Validation[T2, E])
+                            (f: (T1, T2) => Validation[U, E]): Validation[U, E] =
+    (t1, t2) match {
+      case (Success(v1), Success(v2)) => f(v1, v2)
+      case _ => Failure(t1.errors #::: t2.errors)
+    }
+
+  /**
+    * FlatMaps over t1, t2, and t3.
+    */
+  def flatMapN[T1, T2, T3, U, E](t1: Validation[T1, E], t2: Validation[T2, E], t3: Validation[T3, E])
+                                (f: (T1, T2, T3) => Validation[U, E]): Validation[U, E] =
+    (t1, t2, t3) match {
+      case (Success(v1), Success(v2), Success(v3)) => f(v1, v2, v3)
+      case _ => Failure(t1.errors #::: t2.errors #::: t3.errors)
+    }
+
+  /**
     * Adds an implicit `toSuccess` method.
     */
   implicit class ToSuccess[+T](val t: T) {
@@ -200,28 +242,6 @@ object Validation {
     */
   // TODO: Deprecated, replace by mapN
   def @@[Value, Error](xs: Traversable[Validation[Value, Error]]): Validation[List[Value], Error] = seqM(xs)
-
-  /**
-    * Merges 2 validations.
-    */
-  // TODO: Deprecated, replace by mapN
-  def @@[A, B, X](a: Validation[A, X], b: Validation[B, X]): Validation[(A, B), X] =
-    (a, b) match {
-      case (Success(valueA), Success(valueB)) =>
-        Success((valueA, valueB))
-      case _ => Failure(b.errors #::: a.errors)
-    }
-
-  /**
-    * Merges 3 validations.
-    */
-  // TODO: Deprecated, replace by mapN
-  def @@[A, B, C, X](a: Validation[A, X], b: Validation[B, X], c: Validation[C, X]): Validation[(A, B, C), X] =
-    (@@(a, b), c) match {
-      case (Success((valueA, valueB)), Success(valueC)) =>
-        Success((valueA, valueB, valueC))
-      case (that, _) => Failure(c.errors #::: that.errors)
-    }
 
 }
 

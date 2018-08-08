@@ -49,7 +49,7 @@ object Parser extends Phase[(List[Source], Map[Symbol.DefnSym, String]), ParsedA
     })
 
     // Sequence and combine the ASTs into one abstract syntax tree.
-    @@(roots, named) map {
+    mapN(roots, named) {
       case (as, ne) => ParsedAst.Program(as, ne.toMap)
     }
 

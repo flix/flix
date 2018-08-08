@@ -72,7 +72,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       case (sym, exp) => Expressions.namer(exp, Map.empty, Map.empty).map(e => sym -> e)
     })
 
-    @@(result, named) map {
+    mapN(result, named) {
       // update elapsed time.
       case (p, ne) =>
         p.copy(named = ne.toMap)
@@ -243,7 +243,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         val tenv0 = Map.empty[String, Type.Var]
 
         // Perform naming on the head and body predicates.
-        @@(Predicates.namer(h, headEnv, ruleEnv, tenv0), @@(bs.map(b => Predicates.namer(b, headEnv, ruleEnv, tenv0)))) map {
+        mapN(Predicates.namer(h, headEnv, ruleEnv, tenv0), @@(bs.map(b => Predicates.namer(b, headEnv, ruleEnv, tenv0)))) {
           case (head, body) =>
             val headParams = headEnv.map {
               case (_, sym) => NamedAst.ConstraintParam.HeadParam(sym, sym.tvar, sym.loc)
@@ -591,7 +591,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       case WeededAst.Expression.Str(lit, loc) => NamedAst.Expression.Str(lit, loc).toSuccess
 
       case WeededAst.Expression.Apply(exp1, exp2, loc) =>
-        @@(namer(exp1, env0, tenv0), namer(exp2, env0, tenv0)) map {
+        mapN(namer(exp1, env0, tenv0), namer(exp2, env0, tenv0)) {
           case (e1, e2) => NamedAst.Expression.Apply(e1, e2, Type.freshTypeVar(), loc)
         }
 
@@ -607,7 +607,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       }
 
       case WeededAst.Expression.Binary(op, exp1, exp2, loc) =>
-        @@(namer(exp1, env0, tenv0), namer(exp2, env0, tenv0)) map {
+        mapN(namer(exp1, env0, tenv0), namer(exp2, env0, tenv0)) {
           case (e1, e2) => NamedAst.Expression.Binary(op, e1, e2, Type.freshTypeVar(), loc)
         }
 
@@ -622,7 +622,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       case WeededAst.Expression.Let(ident, exp1, exp2, loc) =>
         // make a fresh variable symbol for the local variable.
         val sym = Symbol.freshVarSym(ident)
-        @@(namer(exp1, env0, tenv0), namer(exp2, env0 + (ident.name -> sym), tenv0)) map {
+        mapN(namer(exp1, env0, tenv0), namer(exp2, env0 + (ident.name -> sym), tenv0)) {
           case (e1, e2) => NamedAst.Expression.Let(sym, e1, e2, Type.freshTypeVar(), loc)
         }
 
@@ -630,7 +630,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         // make a fresh variable symbol for the local recursive variable.
         val sym = Symbol.freshVarSym(ident)
         val env1 = env0 + (ident.name -> sym)
-        @@(namer(exp1, env1, tenv0), namer(exp2, env1, tenv0)) map {
+        mapN(namer(exp1, env1, tenv0), namer(exp2, env1, tenv0)) {
           case (e1, e2) => NamedAst.Expression.LetRec(sym, e1, e2, Type.freshTypeVar(), loc)
         }
 
@@ -642,17 +642,20 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
             // and perform naming on the rule guard and body under the extended environment.
             val (p, env1) = Patterns.namer(pat)
             val extendedEnv = env0 ++ env1
-            @@(namer(guard, extendedEnv, tenv0), namer(body, extendedEnv, tenv0)) map {
+            mapN(namer(guard, extendedEnv, tenv0), namer(body, extendedEnv, tenv0)) {
               case (g, b) => NamedAst.MatchRule(p, g, b)
             }
         }
-        @@(expVal, @@(rulesVal)) map {
+        mapN(expVal, @@(rulesVal)) {
           case (e, rs) => NamedAst.Expression.Match(e, rs, Type.freshTypeVar(), loc)
         }
 
-      case WeededAst.Expression.Switch(rules, loc) => @@(rules map {
-        case (cond, body) => @@(namer(cond, env0, tenv0), namer(body, env0, tenv0))
-      }) map {
+      case WeededAst.Expression.Switch(rules, loc) =>
+        val rulesVal = rules map {
+          case (cond, body) => seqM(namer(cond, env0, tenv0), namer(body, env0, tenv0))
+        }
+
+        @@(rulesVal) map {
         case rs => NamedAst.Expression.Switch(rs, Type.freshTypeVar(), loc)
       }
 
@@ -678,17 +681,17 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         }
 
       case WeededAst.Expression.ArrayNew(elm, len, loc) =>
-        @@(namer(elm, env0, tenv0), namer(len, env0, tenv0)) map {
+        mapN(namer(elm, env0, tenv0), namer(len, env0, tenv0)) {
           case (es, ln) => NamedAst.Expression.ArrayNew(es, ln, Type.freshTypeVar(), loc)
         }
 
       case WeededAst.Expression.ArrayLoad(base, index, loc) =>
-        @@(namer(base, env0, tenv0), namer(index, env0, tenv0)) map {
+        mapN(namer(base, env0, tenv0), namer(index, env0, tenv0)) {
           case (b, i) => NamedAst.Expression.ArrayLoad(b, i, Type.freshTypeVar(), loc)
         }
 
       case WeededAst.Expression.ArrayStore(base, index, elm, loc) =>
-        @@(namer(base, env0, tenv0), namer(index, env0, tenv0), namer(elm, env0, tenv0)) map {
+        mapN(namer(base, env0, tenv0), namer(index, env0, tenv0), namer(elm, env0, tenv0)) {
           case (b, i, e) => NamedAst.Expression.ArrayStore(b, i, e, Type.freshTypeVar(), loc)
         }
 
@@ -698,7 +701,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         }
 
       case WeededAst.Expression.ArraySlice(base, startIndex, endIndex, loc) =>
-        @@(namer(base, env0, tenv0), namer(startIndex, env0, tenv0), namer(endIndex, env0, tenv0)) map {
+        mapN(namer(base, env0, tenv0), namer(startIndex, env0, tenv0), namer(endIndex, env0, tenv0)) {
           case (b, i1, i2) => NamedAst.Expression.ArraySlice(b, i1, i2, Type.freshTypeVar(), loc)
         }
 
@@ -718,7 +721,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         }
 
       case WeededAst.Expression.VectorStore(base, index, elm, loc) =>
-        @@(namer(base, env0, tenv0), namer(elm, env0, tenv0)) map {
+        mapN(namer(base, env0, tenv0), namer(elm, env0, tenv0)) {
           case (b, e) => NamedAst.Expression.VectorStore(b, index, e, Type.freshTypeVar(), loc)
         }
 
@@ -743,7 +746,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         }
 
       case WeededAst.Expression.Assign(exp1, exp2, loc) =>
-        @@(namer(exp1, env0, tenv0), namer(exp2, env0, tenv0)) map {
+        mapN(namer(exp1, env0, tenv0), namer(exp2, env0, tenv0)) {
           case (e1, e2) => NamedAst.Expression.Assign(e1, e2, Type.freshTypeVar(), loc)
         }
 
@@ -755,7 +758,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
               case e => NamedAst.HandlerBinding(qname, e)
             }
         })
-        @@(baseVal, bindingsVal) map {
+        mapN(baseVal, bindingsVal) {
           case (b, bs) => NamedAst.Expression.HandleWith(b, bs, Type.freshTypeVar(), loc)
         }
 
@@ -790,12 +793,12 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
             // TODO: Currently the bound name is not available due to bug in code gen.
             // val bodyVal = namer(body, env0 + (ident.name -> sym), tenv0)
             val bodyVal = namer(body, env0, tenv0)
-            @@(classVal, bodyVal) map {
+            mapN(classVal, bodyVal) {
               case (c, b) => NamedAst.CatchRule(sym, c, b)
             }
         }
 
-        @@(expVal, @@(rulesVal)) map {
+        mapN(expVal, @@(rulesVal)) {
           case (e, rs) => NamedAst.Expression.TryCatch(e, rs, Type.freshTypeVar(), loc)
         }
 
