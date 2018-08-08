@@ -284,6 +284,14 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
         case Expression.NativeMethod(_, args, _, _, _) => sequence(args map {
           checkPats(_, root)
         }).map(const(tast))
+        case Expression.Constraint(c, tpe, eff, loc) =>
+          // TODO: check recursively.
+          tast.toSuccess
+        case Expression.ConstraintUnion(exp1, exp2, tpe, eff, loc) =>
+          for {
+            _ <- checkPats(exp1, root)
+            _ <- checkPats(exp2, root)
+          } yield tast
         case Expression.UserError(_, _, _) => tast.toSuccess
       }
     }

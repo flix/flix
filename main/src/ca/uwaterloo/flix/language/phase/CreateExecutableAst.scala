@@ -40,10 +40,10 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
     // A mutable map to hold top-level definitions created by lifting lattice expressions.
     val m: TopLevel = mutable.Map.empty
 
-    val constants = root.defs.map { case (k, v) => k -> toExecutable(v) }
+    val constants = root.defs.map { case (k, v) => k -> toExecutable(v, m) }
 
     val effs = root.effs.map { case (k, v) => k -> visitEff(v) }
-    val handlers = root.handlers.map { case (k, v) => k -> visitHandler(v) }
+    val handlers = root.handlers.map { case (k, v) => k -> visitHandler(v, m) }
 
     val enums = root.enums.map {
       case (sym, SimplifiedAst.Enum(mod, _, cases0, tpe, loc)) =>
@@ -58,19 +58,19 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
     val relations = root.relations.map { case (k, v) => k -> visitRelation(v) }
     val lattices = root.lattices.map { case (k, v) => k -> visitLattice(v) }
     val strata = root.strata.map(s => ExecutableAst.Stratum(s.constraints.map(c => Constraint.toConstraint(c, m))))
-    val properties = root.properties.map(p => toExecutable(p))
+    val properties = root.properties.map(p => toExecutable(p, m))
     val specialOps = root.specialOps
     val reachable = root.reachable
 
     ExecutableAst.Root(constants ++ m, effs, handlers, enums, relations, lattices, latticeComponents, strata, properties, specialOps, reachable).toSuccess
   }
 
-  def toExecutable(sast: SimplifiedAst.Def): ExecutableAst.Def = {
+  def toExecutable(sast: SimplifiedAst.Def, m: TopLevel)(implicit genSym: GenSym): ExecutableAst.Def = {
     val formals = sast.fparams.map {
       case SimplifiedAst.FormalParam(sym, mod, tpe, loc) => ExecutableAst.FormalParam(sym, tpe)
     }
 
-    ExecutableAst.Def(sast.ann, sast.mod, sast.sym, formals, Expression.toExecutable(sast.exp), sast.tpe, sast.loc)
+    ExecutableAst.Def(sast.ann, sast.mod, sast.sym, formals, Expression.toExecutable2(sast.exp, m), sast.tpe, sast.loc)
   }
 
   def visitEff(eff0: SimplifiedAst.Eff): ExecutableAst.Eff = {
@@ -78,9 +78,9 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
     ExecutableAst.Eff(eff0.ann, eff0.mod, eff0.sym, fparams, eff0.tpe, eff0.loc)
   }
 
-  def visitHandler(handler0: SimplifiedAst.Handler): ExecutableAst.Handler = {
+  def visitHandler(handler0: SimplifiedAst.Handler, m: TopLevel)(implicit genSym: GenSym): ExecutableAst.Handler = {
     val fparams = handler0.fparams.map(toExecutable)
-    val exp = Expression.toExecutable(handler0.exp)
+    val exp = Expression.toExecutable2(handler0.exp, m)
     ExecutableAst.Handler(handler0.ann, handler0.mod, handler0.sym, fparams, exp, handler0.tpe, handler0.loc)
   }
 
@@ -112,159 +112,174 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
   }
 
   object Expression {
-    def toExecutable(sast: SimplifiedAst.Expression): ExecutableAst.Expression = sast match {
-      case SimplifiedAst.Expression.Unit => ExecutableAst.Expression.Unit
-      case SimplifiedAst.Expression.True => ExecutableAst.Expression.True
-      case SimplifiedAst.Expression.False => ExecutableAst.Expression.False
-      case SimplifiedAst.Expression.Char(lit) => ExecutableAst.Expression.Char(lit)
-      case SimplifiedAst.Expression.Float32(lit) => ExecutableAst.Expression.Float32(lit)
-      case SimplifiedAst.Expression.Float64(lit) => ExecutableAst.Expression.Float64(lit)
-      case SimplifiedAst.Expression.Int8(lit) => ExecutableAst.Expression.Int8(lit)
-      case SimplifiedAst.Expression.Int16(lit) => ExecutableAst.Expression.Int16(lit)
-      case SimplifiedAst.Expression.Int32(lit) => ExecutableAst.Expression.Int32(lit)
-      case SimplifiedAst.Expression.Int64(lit) => ExecutableAst.Expression.Int64(lit)
-      case SimplifiedAst.Expression.BigInt(lit) => ExecutableAst.Expression.BigInt(lit)
-      case SimplifiedAst.Expression.Str(lit) => ExecutableAst.Expression.Str(lit)
-      case SimplifiedAst.Expression.Var(sym, tpe, loc) =>
-        ExecutableAst.Expression.Var(sym, tpe, loc)
-      case SimplifiedAst.Expression.Lambda(args, body, tpe, loc) =>
-        throw InternalCompilerException("Lambdas should have been converted to closures and lifted.")
-      case SimplifiedAst.Expression.LambdaClosure(lambda, freeVars, tpe, loc) =>
-        throw InternalCompilerException("MkClosure should have been replaced by MkClosureRef after lambda lifting.")
-      case SimplifiedAst.Expression.Apply(exp, args, tpe, loc) =>
-        throw InternalCompilerException("Apply should have been replaced by ClosureConv.") // TODO: Doc
-      case SimplifiedAst.Expression.Closure(sym, freeVars, tpe, loc) =>
-        val fvs = freeVars.map(CreateExecutableAst.toExecutable)
 
-        // TODO: Temporary fix to compute the function interface type (as opposed to the closure interface type).
-        // In the future this "computation" should not be performed here.
-        val base = tpe.typeConstructor
-        val targs = tpe.typeArguments
-        val freeArgs = fvs.map(_.tpe)
-        val fnType = Type.mkArrow(freeArgs ::: targs.init, targs.last)
+    def toExecutable2(sast: SimplifiedAst.Expression, m: TopLevel)(implicit genSym: GenSym): ExecutableAst.Expression = {
+      def visit(sast: SimplifiedAst.Expression): ExecutableAst.Expression = sast match {
+        case SimplifiedAst.Expression.Unit => ExecutableAst.Expression.Unit
+        case SimplifiedAst.Expression.True => ExecutableAst.Expression.True
+        case SimplifiedAst.Expression.False => ExecutableAst.Expression.False
+        case SimplifiedAst.Expression.Char(lit) => ExecutableAst.Expression.Char(lit)
+        case SimplifiedAst.Expression.Float32(lit) => ExecutableAst.Expression.Float32(lit)
+        case SimplifiedAst.Expression.Float64(lit) => ExecutableAst.Expression.Float64(lit)
+        case SimplifiedAst.Expression.Int8(lit) => ExecutableAst.Expression.Int8(lit)
+        case SimplifiedAst.Expression.Int16(lit) => ExecutableAst.Expression.Int16(lit)
+        case SimplifiedAst.Expression.Int32(lit) => ExecutableAst.Expression.Int32(lit)
+        case SimplifiedAst.Expression.Int64(lit) => ExecutableAst.Expression.Int64(lit)
+        case SimplifiedAst.Expression.BigInt(lit) => ExecutableAst.Expression.BigInt(lit)
+        case SimplifiedAst.Expression.Str(lit) => ExecutableAst.Expression.Str(lit)
+        case SimplifiedAst.Expression.Var(sym, tpe, loc) =>
+          ExecutableAst.Expression.Var(sym, tpe, loc)
+        case SimplifiedAst.Expression.Lambda(args, body, tpe, loc) =>
+          throw InternalCompilerException("Lambdas should have been converted to closures and lifted.")
+        case SimplifiedAst.Expression.LambdaClosure(lambda, freeVars, tpe, loc) =>
+          throw InternalCompilerException("MkClosure should have been replaced by MkClosureRef after lambda lifting.")
+        case SimplifiedAst.Expression.Apply(exp, args, tpe, loc) =>
+          throw InternalCompilerException("Apply should have been replaced by ClosureConv.") // TODO: Doc
+        case SimplifiedAst.Expression.Closure(sym, freeVars, tpe, loc) =>
+          val fvs = freeVars.map(CreateExecutableAst.toExecutable)
 
-        ExecutableAst.Expression.Closure(sym, fvs, fnType, tpe, loc)
-      case SimplifiedAst.Expression.ApplyClo(exp, args, tpe, loc) =>
-        val argsArray = args.map(toExecutable)
-        ExecutableAst.Expression.ApplyClo(toExecutable(exp), argsArray, tpe, loc)
-      case SimplifiedAst.Expression.ApplyDef(name, args, tpe, loc) =>
-        val as = args.map(toExecutable)
-        ExecutableAst.Expression.ApplyDef(name, as, tpe, loc)
-      case SimplifiedAst.Expression.ApplyEff(sym, args, tpe, loc) =>
-        val as = args.map(toExecutable)
-        ExecutableAst.Expression.ApplyEff(sym, as, tpe, loc)
-      case SimplifiedAst.Expression.ApplyCloTail(exp, args, tpe, loc) =>
-        val argsArray = args.map(toExecutable)
-        ExecutableAst.Expression.ApplyCloTail(toExecutable(exp), argsArray, tpe, loc)
-      case SimplifiedAst.Expression.ApplyDefTail(sym, args, tpe, loc) =>
-        val argsArray = args.map(toExecutable)
-        ExecutableAst.Expression.ApplyDefTail(sym, argsArray, tpe, loc)
-      case SimplifiedAst.Expression.ApplyEffTail(sym, args, tpe, loc) =>
-        val argsArray = args.map(toExecutable)
-        ExecutableAst.Expression.ApplyEffTail(sym, argsArray, tpe, loc)
-      case SimplifiedAst.Expression.ApplySelfTail(name, formals, actuals, tpe, loc) =>
-        ExecutableAst.Expression.ApplySelfTail(name, formals.map(CreateExecutableAst.toExecutable), actuals.map(toExecutable), tpe, loc)
-      case SimplifiedAst.Expression.Unary(sop, op, exp, tpe, loc) =>
-        ExecutableAst.Expression.Unary(sop, op, toExecutable(exp), tpe, loc)
-      case SimplifiedAst.Expression.Binary(sop, op, exp1, exp2, tpe, loc) =>
-        ExecutableAst.Expression.Binary(sop, op, toExecutable(exp1), toExecutable(exp2), tpe, loc)
-      case SimplifiedAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
-        ExecutableAst.Expression.IfThenElse(toExecutable(exp1), toExecutable(exp2), toExecutable(exp3), tpe, loc)
-      case SimplifiedAst.Expression.Branch(exp, branches, tpe, loc) =>
-        val e = toExecutable(exp)
-        val bs = branches map {
-          case (sym, br) => sym -> toExecutable(br)
-        }
-        ExecutableAst.Expression.Branch(e, bs, tpe, loc)
-      case SimplifiedAst.Expression.JumpTo(sym, tpe, loc) =>
-        ExecutableAst.Expression.JumpTo(sym, tpe, loc)
-      case SimplifiedAst.Expression.Let(sym, exp1, exp2, tpe, loc) =>
-        ExecutableAst.Expression.Let(sym, toExecutable(exp1), toExecutable(exp2), tpe, loc)
-      case SimplifiedAst.Expression.LetRec(sym, exp1, exp2, tpe, loc) =>
-        ExecutableAst.Expression.LetRec(sym, toExecutable(exp1), toExecutable(exp2), tpe, loc)
-      case SimplifiedAst.Expression.Is(sym, tag, exp, loc) =>
-        ExecutableAst.Expression.Is(sym, tag, toExecutable(exp), loc)
-      case SimplifiedAst.Expression.Tag(enum, tag, exp, tpe, loc) =>
-        ExecutableAst.Expression.Tag(enum, tag, toExecutable(exp), tpe, loc)
-      case SimplifiedAst.Expression.Untag(sym, tag, exp, tpe, loc) =>
-        ExecutableAst.Expression.Untag(sym, tag, toExecutable(exp), tpe, loc)
-      case SimplifiedAst.Expression.Index(base, offset, tpe, loc) =>
-        ExecutableAst.Expression.Index(toExecutable(base), offset, tpe, loc)
-      case SimplifiedAst.Expression.Tuple(elms, tpe, loc) =>
-        val elmsArray = elms.map(toExecutable)
-        ExecutableAst.Expression.Tuple(elmsArray, tpe, loc)
-      case SimplifiedAst.Expression.ArrayLit(elms, tpe, loc) =>
-        val elmsArray = elms.map(toExecutable)
-        ExecutableAst.Expression.ArrayLit(elmsArray, tpe, loc)
-      case SimplifiedAst.Expression.ArrayNew(elm, len, tpe, loc) =>
-        val e = toExecutable(elm)
-        val ln = toExecutable(len)
-        ExecutableAst.Expression.ArrayNew(e, ln, tpe, loc)
-      case SimplifiedAst.Expression.ArrayLoad(base, index, tpe, loc) =>
-        val b = toExecutable(base)
-        val i = toExecutable(index)
-        ExecutableAst.Expression.ArrayLoad(b, i, tpe, loc)
-      case SimplifiedAst.Expression.ArrayStore(base, index, elm, tpe, loc) =>
-        val b = toExecutable(base)
-        val i = toExecutable(index)
-        val e = toExecutable(elm)
-        ExecutableAst.Expression.ArrayStore(b, i, e, tpe, loc)
-      case SimplifiedAst.Expression.ArrayLength(base, tpe, loc) =>
-        val b = toExecutable(base)
-        ExecutableAst.Expression.ArrayLength(b, tpe, loc)
-      case SimplifiedAst.Expression.ArraySlice(base, startIndex, endIndex, tpe, loc) =>
-        val b = toExecutable(base)
-        val i1 = toExecutable(startIndex)
-        val i2 = toExecutable(endIndex)
-        ExecutableAst.Expression.ArraySlice(b, i1, i2, tpe, loc)
-      case SimplifiedAst.Expression.Ref(exp, tpe, loc) =>
-        val e = toExecutable(exp)
-        ExecutableAst.Expression.Ref(e, tpe, loc)
-      case SimplifiedAst.Expression.Deref(exp, tpe, loc) =>
-        val e = toExecutable(exp)
-        ExecutableAst.Expression.Deref(e, tpe, loc)
-      case SimplifiedAst.Expression.Assign(exp1, exp2, tpe, loc) =>
-        val e1 = toExecutable(exp1)
-        val e2 = toExecutable(exp2)
-        ExecutableAst.Expression.Assign(e1, e2, tpe, loc)
-      case SimplifiedAst.Expression.HandleWith(exp, bindings, tpe, loc) =>
-        val e = toExecutable(exp)
-        val bs = bindings map {
-          case SimplifiedAst.HandlerBinding(sym, body) => ExecutableAst.HandlerBinding(sym, toExecutable(body))
-        }
-        ExecutableAst.Expression.HandleWith(e, bs, tpe, loc)
-      case SimplifiedAst.Expression.Existential(fparam, exp, loc) =>
-        val p = ExecutableAst.FormalParam(fparam.sym, fparam.tpe)
-        ExecutableAst.Expression.Existential(p, toExecutable(exp), loc)
-      case SimplifiedAst.Expression.Universal(fparam, exp, loc) =>
-        val p = ExecutableAst.FormalParam(fparam.sym, fparam.tpe)
-        ExecutableAst.Expression.Universal(p, toExecutable(exp), loc)
+          // TODO: Temporary fix to compute the function interface type (as opposed to the closure interface type).
+          // In the future this "computation" should not be performed here.
+          val base = tpe.typeConstructor
+          val targs = tpe.typeArguments
+          val freeArgs = fvs.map(_.tpe)
+          val fnType = Type.mkArrow(freeArgs ::: targs.init, targs.last)
 
-      case SimplifiedAst.Expression.TryCatch(exp, rules, tpe, eff, loc) =>
-        val e = toExecutable(exp)
-        val rs = rules map {
-          case SimplifiedAst.CatchRule(sym, clazz, body) =>
-            val b = toExecutable(body)
-            ExecutableAst.CatchRule(sym, clazz, b)
-        }
-        ExecutableAst.Expression.TryCatch(e, rs, tpe, loc)
+          ExecutableAst.Expression.Closure(sym, fvs, fnType, tpe, loc)
+        case SimplifiedAst.Expression.ApplyClo(exp, args, tpe, loc) =>
+          val argsArray = args.map(visit)
+          ExecutableAst.Expression.ApplyClo(visit(exp), argsArray, tpe, loc)
+        case SimplifiedAst.Expression.ApplyDef(name, args, tpe, loc) =>
+          val as = args.map(visit)
+          ExecutableAst.Expression.ApplyDef(name, as, tpe, loc)
+        case SimplifiedAst.Expression.ApplyEff(sym, args, tpe, loc) =>
+          val as = args.map(visit)
+          ExecutableAst.Expression.ApplyEff(sym, as, tpe, loc)
+        case SimplifiedAst.Expression.ApplyCloTail(exp, args, tpe, loc) =>
+          val argsArray = args.map(visit)
+          ExecutableAst.Expression.ApplyCloTail(visit(exp), argsArray, tpe, loc)
+        case SimplifiedAst.Expression.ApplyDefTail(sym, args, tpe, loc) =>
+          val argsArray = args.map(visit)
+          ExecutableAst.Expression.ApplyDefTail(sym, argsArray, tpe, loc)
+        case SimplifiedAst.Expression.ApplyEffTail(sym, args, tpe, loc) =>
+          val argsArray = args.map(visit)
+          ExecutableAst.Expression.ApplyEffTail(sym, argsArray, tpe, loc)
+        case SimplifiedAst.Expression.ApplySelfTail(name, formals, actuals, tpe, loc) =>
+          ExecutableAst.Expression.ApplySelfTail(name, formals.map(CreateExecutableAst.toExecutable), actuals.map(visit), tpe, loc)
+        case SimplifiedAst.Expression.Unary(sop, op, exp, tpe, loc) =>
+          ExecutableAst.Expression.Unary(sop, op, visit(exp), tpe, loc)
+        case SimplifiedAst.Expression.Binary(sop, op, exp1, exp2, tpe, loc) =>
+          ExecutableAst.Expression.Binary(sop, op, visit(exp1), visit(exp2), tpe, loc)
+        case SimplifiedAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
+          ExecutableAst.Expression.IfThenElse(visit(exp1), visit(exp2), visit(exp3), tpe, loc)
+        case SimplifiedAst.Expression.Branch(exp, branches, tpe, loc) =>
+          val e = visit(exp)
+          val bs = branches map {
+            case (sym, br) => sym -> visit(br)
+          }
+          ExecutableAst.Expression.Branch(e, bs, tpe, loc)
+        case SimplifiedAst.Expression.JumpTo(sym, tpe, loc) =>
+          ExecutableAst.Expression.JumpTo(sym, tpe, loc)
+        case SimplifiedAst.Expression.Let(sym, exp1, exp2, tpe, loc) =>
+          ExecutableAst.Expression.Let(sym, visit(exp1), visit(exp2), tpe, loc)
+        case SimplifiedAst.Expression.LetRec(sym, exp1, exp2, tpe, loc) =>
+          ExecutableAst.Expression.LetRec(sym, visit(exp1), visit(exp2), tpe, loc)
+        case SimplifiedAst.Expression.Is(sym, tag, exp, loc) =>
+          ExecutableAst.Expression.Is(sym, tag, visit(exp), loc)
+        case SimplifiedAst.Expression.Tag(enum, tag, exp, tpe, loc) =>
+          ExecutableAst.Expression.Tag(enum, tag, visit(exp), tpe, loc)
+        case SimplifiedAst.Expression.Untag(sym, tag, exp, tpe, loc) =>
+          ExecutableAst.Expression.Untag(sym, tag, visit(exp), tpe, loc)
+        case SimplifiedAst.Expression.Index(base, offset, tpe, loc) =>
+          ExecutableAst.Expression.Index(visit(base), offset, tpe, loc)
+        case SimplifiedAst.Expression.Tuple(elms, tpe, loc) =>
+          val elmsArray = elms.map(visit)
+          ExecutableAst.Expression.Tuple(elmsArray, tpe, loc)
+        case SimplifiedAst.Expression.ArrayLit(elms, tpe, loc) =>
+          val elmsArray = elms.map(visit)
+          ExecutableAst.Expression.ArrayLit(elmsArray, tpe, loc)
+        case SimplifiedAst.Expression.ArrayNew(elm, len, tpe, loc) =>
+          val e = visit(elm)
+          val ln = visit(len)
+          ExecutableAst.Expression.ArrayNew(e, ln, tpe, loc)
+        case SimplifiedAst.Expression.ArrayLoad(base, index, tpe, loc) =>
+          val b = visit(base)
+          val i = visit(index)
+          ExecutableAst.Expression.ArrayLoad(b, i, tpe, loc)
+        case SimplifiedAst.Expression.ArrayStore(base, index, elm, tpe, loc) =>
+          val b = visit(base)
+          val i = visit(index)
+          val e = visit(elm)
+          ExecutableAst.Expression.ArrayStore(b, i, e, tpe, loc)
+        case SimplifiedAst.Expression.ArrayLength(base, tpe, loc) =>
+          val b = visit(base)
+          ExecutableAst.Expression.ArrayLength(b, tpe, loc)
+        case SimplifiedAst.Expression.ArraySlice(base, startIndex, endIndex, tpe, loc) =>
+          val b = visit(base)
+          val i1 = visit(startIndex)
+          val i2 = visit(endIndex)
+          ExecutableAst.Expression.ArraySlice(b, i1, i2, tpe, loc)
+        case SimplifiedAst.Expression.Ref(exp, tpe, loc) =>
+          val e = visit(exp)
+          ExecutableAst.Expression.Ref(e, tpe, loc)
+        case SimplifiedAst.Expression.Deref(exp, tpe, loc) =>
+          val e = visit(exp)
+          ExecutableAst.Expression.Deref(e, tpe, loc)
+        case SimplifiedAst.Expression.Assign(exp1, exp2, tpe, loc) =>
+          val e1 = visit(exp1)
+          val e2 = visit(exp2)
+          ExecutableAst.Expression.Assign(e1, e2, tpe, loc)
+        case SimplifiedAst.Expression.HandleWith(exp, bindings, tpe, loc) =>
+          val e = visit(exp)
+          val bs = bindings map {
+            case SimplifiedAst.HandlerBinding(sym, body) => ExecutableAst.HandlerBinding(sym, visit(body))
+          }
+          ExecutableAst.Expression.HandleWith(e, bs, tpe, loc)
+        case SimplifiedAst.Expression.Existential(fparam, exp, loc) =>
+          val p = ExecutableAst.FormalParam(fparam.sym, fparam.tpe)
+          ExecutableAst.Expression.Existential(p, visit(exp), loc)
+        case SimplifiedAst.Expression.Universal(fparam, exp, loc) =>
+          val p = ExecutableAst.FormalParam(fparam.sym, fparam.tpe)
+          ExecutableAst.Expression.Universal(p, visit(exp), loc)
 
-      case SimplifiedAst.Expression.NativeConstructor(constructor, args, tpe, loc) =>
-        val es = args.map(e => toExecutable(e))
-        ExecutableAst.Expression.NativeConstructor(constructor, es, tpe, loc)
+        case SimplifiedAst.Expression.TryCatch(exp, rules, tpe, eff, loc) =>
+          val e = visit(exp)
+          val rs = rules map {
+            case SimplifiedAst.CatchRule(sym, clazz, body) =>
+              val b = visit(body)
+              ExecutableAst.CatchRule(sym, clazz, b)
+          }
+          ExecutableAst.Expression.TryCatch(e, rs, tpe, loc)
 
-      case SimplifiedAst.Expression.NativeField(field, tpe, loc) => ExecutableAst.Expression.NativeField(field, tpe, loc)
+        case SimplifiedAst.Expression.NativeConstructor(constructor, args, tpe, loc) =>
+          val es = args.map(e => visit(e))
+          ExecutableAst.Expression.NativeConstructor(constructor, es, tpe, loc)
 
-      case SimplifiedAst.Expression.NativeMethod(method, args, tpe, loc) =>
-        val es = args.map(e => toExecutable(e))
-        ExecutableAst.Expression.NativeMethod(method, es, tpe, loc)
+        case SimplifiedAst.Expression.NativeField(field, tpe, loc) => ExecutableAst.Expression.NativeField(field, tpe, loc)
 
-      case SimplifiedAst.Expression.UserError(tpe, loc) => ExecutableAst.Expression.UserError(tpe, loc)
-      case SimplifiedAst.Expression.HoleError(sym, tpe, eff, loc) => ExecutableAst.Expression.HoleError(sym, tpe, loc)
-      case SimplifiedAst.Expression.MatchError(tpe, loc) => ExecutableAst.Expression.MatchError(tpe, loc)
-      case SimplifiedAst.Expression.SwitchError(tpe, loc) => ExecutableAst.Expression.SwitchError(tpe, loc)
-      case SimplifiedAst.Expression.Def(sym, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '$sast'.")
-      case SimplifiedAst.Expression.Eff(sym, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '$sast'.")
+        case SimplifiedAst.Expression.NativeMethod(method, args, tpe, loc) =>
+          val es = args.map(e => visit(e))
+          ExecutableAst.Expression.NativeMethod(method, es, tpe, loc)
+
+        case SimplifiedAst.Expression.Constraint(c0, tpe, loc) =>
+          val c = Constraint.toConstraint(c0, m)
+          ExecutableAst.Expression.Constraint(c, tpe, loc)
+
+        case SimplifiedAst.Expression.ConstraintUnion(exp1, exp2, tpe, loc) =>
+          val e1 = visit(exp1)
+          val e2 = visit(exp2)
+          ExecutableAst.Expression.ConstraintUnion(e1, e2, tpe, loc)
+
+        case SimplifiedAst.Expression.UserError(tpe, loc) => ExecutableAst.Expression.UserError(tpe, loc)
+        case SimplifiedAst.Expression.HoleError(sym, tpe, eff, loc) => ExecutableAst.Expression.HoleError(sym, tpe, loc)
+        case SimplifiedAst.Expression.MatchError(tpe, loc) => ExecutableAst.Expression.MatchError(tpe, loc)
+        case SimplifiedAst.Expression.SwitchError(tpe, loc) => ExecutableAst.Expression.SwitchError(tpe, loc)
+
+        case SimplifiedAst.Expression.Def(sym, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '$sast'.")
+        case SimplifiedAst.Expression.Eff(sym, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '$sast'.")
+      }
+
+      visit(sast)
     }
   }
 
@@ -396,8 +411,8 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
   def toExecutable(sast: SimplifiedAst.FreeVar): ExecutableAst.FreeVar =
     ExecutableAst.FreeVar(sast.sym, sast.tpe)
 
-  def toExecutable(sast: SimplifiedAst.Property): ExecutableAst.Property =
-    ExecutableAst.Property(sast.law, sast.defn, Expression.toExecutable(sast.exp))
+  def toExecutable(sast: SimplifiedAst.Property, m: TopLevel)(implicit genSym: GenSym): ExecutableAst.Property =
+    ExecutableAst.Property(sast.law, sast.defn, Expression.toExecutable2(sast.exp, m))
 
   /**
     * Optionally returns the given expression `exp0` as a value reference.
@@ -420,7 +435,7 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
   private def lit2sym(exp0: SimplifiedAst.Expression, m: TopLevel)(implicit genSym: GenSym): Symbol.DefnSym = {
     // Generate a top-level function for the constant.
     val sym = Symbol.freshDefnSym("lit")
-    val lit = Expression.toExecutable(exp0)
+    val lit = Expression.toExecutable2(exp0, m)
     val ann = Ast.Annotations.Empty
     val mod = Ast.Modifiers(List(Ast.Modifier.Synthetic))
     val varX = Symbol.freshVarSym("_unit")

@@ -372,6 +372,21 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         Expression.NativeMethod(method, as, tpe, loc)
 
       //
+      // Constraint.
+      //
+      case Expression.Constraint(c0, tpe, loc) =>
+        // TODO: Recurse?
+        Expression.Constraint(c0, tpe, loc)
+
+      //
+      // Constraint Union.
+      //
+      case Expression.ConstraintUnion(exp1, exp2, tpe, loc) =>
+        val e1 = visitExp(exp1, env0)
+        val e2 = visitExp(exp2, env0)
+        Expression.ConstraintUnion(e1, e2, tpe, loc)
+
+      //
       // Error Expressions.
       //
       case Expression.UserError(tpe, loc) => Expression.UserError(tpe, loc)

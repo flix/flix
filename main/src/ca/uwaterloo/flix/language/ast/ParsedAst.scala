@@ -880,6 +880,33 @@ object ParsedAst {
     case class NativeMethod(sp1: SourcePosition, fqn: Seq[String], args: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
+      * Constraint sequence expression.
+      *
+      * @param sp1 the position of the first character in the expression.
+      * @param cs  the sequence of constraints.
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class ConstraintSeq(sp1: SourcePosition, cs: Seq[Declaration.Constraint], sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
+      * Fixpoint Solve expression.
+      *
+      * @param sp1 the position of the first character in the expression.
+      * @param exp the constraint expression.
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class FixpointSolve(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
+      * Fixpoint Check expression.
+      *
+      * @param sp1 the position of the first character in the expression.
+      * @param exp the constraint expression.
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class FixpointCheck(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
       * User Error Expression (an expression that immediately aborts execution).
       *
       * @param sp1 the position of the first character in the expression.

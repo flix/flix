@@ -218,6 +218,15 @@ object ClosureConv {
       val as = args map visitExp
       Expression.NativeMethod(method, as, tpe, loc)
 
+    case Expression.Constraint(c0, tpe, loc) =>
+      // TODO: Recurse?
+      Expression.Constraint(c0, tpe, loc)
+
+    case Expression.ConstraintUnion(exp1, exp2, tpe, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      Expression.ConstraintUnion(e1, e2, tpe, loc)
+
     case Expression.UserError(tpe, loc) => exp0
     case Expression.HoleError(sym, tpe, eff, loc) => exp0
     case Expression.MatchError(tpe, loc) => exp0
@@ -286,7 +295,7 @@ object ClosureConv {
     case Expression.ArrayLoad(base, index, tpe, loc) => freeVariables(base) ++ freeVariables(index)
     case Expression.ArrayStore(base, index, elm, tpe, loc) => freeVariables(base) ++ freeVariables(index) ++ freeVariables(elm)
     case Expression.ArrayLength(base, tpe, loc) => freeVariables(base)
-    case Expression.ArraySlice(base ,beginIndex, endIndex, tpe, loc) => freeVariables(base) ++ freeVariables(beginIndex) ++ freeVariables(endIndex)
+    case Expression.ArraySlice(base, beginIndex, endIndex, tpe, loc) => freeVariables(base) ++ freeVariables(beginIndex) ++ freeVariables(endIndex)
     case Expression.Ref(exp, tpe, loc) => freeVariables(exp)
     case Expression.Deref(exp, tpe, loc) => freeVariables(exp)
     case Expression.Assign(exp1, exp2, tpe, loc) => freeVariables(exp1) ++ freeVariables(exp2)
@@ -414,7 +423,7 @@ object ClosureConv {
       case Expression.ArrayLit(elms, tpe, loc) =>
         val es = elms map visit
         Expression.ArrayLit(es, tpe, loc)
-      case Expression.ArrayNew(elm, len, tpe,loc) =>
+      case Expression.ArrayNew(elm, len, tpe, loc) =>
         val e = visit(elm)
         val ln = visit(len)
         Expression.ArrayNew(e, ln, tpe, loc)
@@ -426,7 +435,7 @@ object ClosureConv {
         val b = visit(base)
         val i = visit(index)
         val e = visit(elm)
-        Expression.ArrayStore(b, i, e, tpe, loc )
+        Expression.ArrayStore(b, i, e, tpe, loc)
       case Expression.ArrayLength(base, tpe, loc) =>
         val b = visit(base)
         Expression.ArrayLength(b, tpe, loc)

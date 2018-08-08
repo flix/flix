@@ -107,6 +107,26 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       Result.seqM(result)
     }
 
+    // TODO: DOC
+    def reassemble(c0: ResolvedAst.Constraint, program: ResolvedAst.Program, subst0: Substitution): TypedAst.Constraint = c0 match {
+      case ResolvedAst.Constraint(cparams0, head0, body0, loc) =>
+        // Unification was successful. Reassemble the head and body predicates.
+        val head = Predicates.reassemble(head0, program, subst0)
+        val body = body0.map(b => Predicates.reassemble(b, program, subst0))
+
+        // Reassemble the constraint parameters.
+        val cparams = cparams0.map {
+          case ResolvedAst.ConstraintParam.HeadParam(sym, tpe, l) =>
+            TypedAst.ConstraintParam.HeadParam(sym, subst0(tpe), l)
+          case ResolvedAst.ConstraintParam.RuleParam(sym, tpe, l) =>
+            TypedAst.ConstraintParam.RuleParam(sym, subst0(tpe), l)
+        }
+
+        // Reassemble the constraint.
+        TypedAst.Constraint(cparams, head, body, loc)
+    }
+
+
   }
 
   object Declarations {
@@ -1104,6 +1124,23 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           ) yield tvar
 
         /*
+         * Constraint expression.
+         */
+        case ResolvedAst.Expression.Constraint(cons, tvar, loc) =>
+          // TODO: Actually check the type.
+          unifyM(tvar, Type.ConstraintSet, loc)
+
+        /*
+         * Constraint Union expression.
+         */
+        case ResolvedAst.Expression.ConstraintUnion(exp1, exp2, tvar, loc) =>
+          for {
+            tpe1 <- visitExp(exp1)
+            tpe2 <- visitExp(exp2)
+            resultType <- unifyM(tvar, Type.ConstraintSet, tpe1, tpe2, loc)
+          } yield resultType
+
+        /*
          * User Error expression.
          */
         case ResolvedAst.Expression.UserError(tvar, loc) => liftM(tvar)
@@ -1458,6 +1495,21 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         case ResolvedAst.Expression.NativeMethod(method, actuals, tpe, loc) =>
           val es = actuals.map(e => reassemble(e, program, subst0))
           TypedAst.Expression.NativeMethod(method, es, subst0(tpe), Eff.Bot, loc)
+
+        /*
+         * Constraint expression.
+         */
+        case ResolvedAst.Expression.Constraint(cons, tvar, loc) =>
+          val c = Constraints.reassemble(cons, program, subst0)
+          TypedAst.Expression.Constraint(c, subst0(tvar), Eff.Bot, loc)
+
+        /*
+         * ConstraintUnion expression.
+         */
+        case ResolvedAst.Expression.ConstraintUnion(exp1, exp2, tvar, loc) =>
+          val e1 = reassemble(exp1, program, subst0)
+          val e2 = reassemble(exp2, program, subst0)
+          TypedAst.Expression.ConstraintUnion(e1, e2, subst0(tvar), Eff.Bot, loc)
 
         /*
          * User Error expression.

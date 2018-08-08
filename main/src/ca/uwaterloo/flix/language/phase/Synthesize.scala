@@ -286,6 +286,15 @@ object Synthesize extends Phase[Root, Root] {
         val as = args map visitExp
         Expression.NativeMethod(method, as, tpe, eff, loc)
 
+      case Expression.Constraint(c, tpe, eff, loc) =>
+        // TODO: Recurse?
+        Expression.Constraint(c, tpe, eff, loc)
+
+      case Expression.ConstraintUnion(exp1, exp2, tpe, eff, loc) =>
+        val e1 = visitExp(exp1)
+        val e2 = visitExp(exp2)
+        Expression.ConstraintUnion(e1, e2, tpe, eff, loc)
+
       case Expression.UserError(tpe, eff, loc) =>
         Expression.UserError(tpe, eff, loc)
 
@@ -964,21 +973,24 @@ object Synthesize extends Phase[Root, Root] {
           // Relation case.
           //
           if (tpe.isRelation) {
-            return Expression.Str("<<relation>>", sl)
+            val method = classOf[java.lang.Object].getMethod("toString")
+            return Expression.NativeMethod(method, List(exp0), Type.Str, ast.Eff.Pure, sl)
           }
 
           //
           // Lattice case.
           //
           if (tpe.isLattice) {
-            return Expression.Str("<<lattice>>", sl)
+            val method = classOf[java.lang.Object].getMethod("toString")
+            return Expression.NativeMethod(method, List(exp0), Type.Str, ast.Eff.Pure, sl)
           }
 
           //
           // ConstraintSet case.
           //
           if (tpe == Type.ConstraintSet) {
-            return Expression.Str("<<constraintset>>", sl)
+            val method = classOf[java.lang.Object].getMethod("toString")
+            return Expression.NativeMethod(method, List(exp0), Type.Str, ast.Eff.Pure, sl)
           }
 
           //

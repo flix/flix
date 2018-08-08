@@ -177,10 +177,13 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         visitExps(rules.map(_.exp), i2)
 
       case Expression.NativeConstructor(constructor, args, tpe, loc) => visitExps(args, i0)
-
       case Expression.NativeField(field, tpe, loc) => i0
-
       case Expression.NativeMethod(method, args, tpe, loc) => visitExps(args, i0)
+
+      case Expression.Constraint(c, tpe, loc) => i0
+      case Expression.ConstraintUnion(exp1, exp2, tpe, loc) =>
+        val i1 = visitExp(exp1, i0)
+        visitExp(exp2, i1)
 
       case Expression.UserError(tpe, loc) => i0
       case Expression.HoleError(sym, tpe, eff, loc) => i0

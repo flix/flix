@@ -21,9 +21,12 @@ import java.lang.reflect.{InvocationTargetException, Modifier}
 import ca.uwaterloo.flix.api._
 import ca.uwaterloo.flix.language.ast.ExecutableAst._
 import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.runtime.solver.api
+import ca.uwaterloo.flix.runtime.solver.api.ApiBridge
+import ca.uwaterloo.flix.runtime.solver.api.ApiBridge.SymbolCache
+import ca.uwaterloo.flix.runtime.solver.api.ConstraintSet
 import ca.uwaterloo.flix.util.InternalRuntimeException
 import ca.uwaterloo.flix.util.tc.Show._
-
 import flix.runtime._
 
 object Interpreter {
@@ -323,6 +326,21 @@ object Interpreter {
     } catch {
       case ex: InvocationTargetException => throw ex.getTargetException
     }
+
+    //
+    // Constraint expressions.
+    //
+    case Expression.Constraint(c, tpe, loc) =>
+      evalConstraint(c, env0, henv0, lenv0, root)
+
+    //
+    // ConstraintUnion expressions.
+    //
+    case Expression.ConstraintUnion(exp1, exp2, tpe, loc) =>
+      // TODO: Use value?
+      val v1 = cast2constraintset(eval(exp1, env0, henv0, lenv0, root))
+      val v2 = cast2constraintset(eval(exp2, env0, henv0, lenv0, root))
+      v1.union(v2)
 
     //
     // Error expressions.
@@ -713,6 +731,23 @@ object Interpreter {
     Value.Closure(sym, bindings)
   }
 
+  /**
+    * Evaluates the given constraint to a constraint value.
+    */
+  private def evalConstraint(c0: Constraint, env0: Map[String, AnyRef], henv0: Map[Symbol.EffSym, AnyRef], lenv0: Map[Symbol.LabelSym, Expression], root: Root)(implicit flix: Flix): AnyRef = {
+    implicit val _ = root
+    implicit val cache = new SymbolCache
+
+    val constraint = ApiBridge.visitConstraint(c0)
+    val strata = new api.Stratum(List(constraint).toArray)
+
+    val relSyms = cache.relSyms.values.toArray
+    val latSyms = cache.latSyms.values.toArray
+
+    new ConstraintSet(relSyms, latSyms, Array(strata))
+  }
+
+
   /////////////////////////////////////////////////////////////////////////////
   // Casts                                                                   //
   /////////////////////////////////////////////////////////////////////////////
@@ -835,6 +870,14 @@ object Interpreter {
   private def cast2array(ref: AnyRef): Value.Arr = ref match {
     case v: Value.Arr => v
     case _ => throw InternalRuntimeException(s"Unexpected non-array value: ${ref.getClass.getName}.")
+  }
+
+  /**
+    * Casts the given reference `ref` to a constraint value.
+    */
+  private def cast2constraintset(ref: AnyRef): ConstraintSet = ref match {
+    case v: ConstraintSet => v
+    case _ => throw InternalRuntimeException(s"Unexpected non-constraint value: ${ref.getClass.getName}.")
   }
 
   /**

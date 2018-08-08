@@ -240,6 +240,15 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         val es = args map visitExp
         Expression.NativeMethod(method, es, tpe, loc)
 
+      case Expression.Constraint(c0, tpe, loc) =>
+        // TODO: Recurse?
+        Expression.Constraint(c0, tpe, loc)
+
+      case Expression.ConstraintUnion(exp1, exp2, tpe, loc) =>
+        val e1 = visitExp(exp1)
+        val e2 = visitExp(exp2)
+        Expression.ConstraintUnion(e1, e2, tpe, loc)
+
       case Expression.UserError(tpe, loc) => e
       case Expression.HoleError(sym, tpe, eff, loc) => e
       case Expression.MatchError(tpe, loc) => e
