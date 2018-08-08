@@ -16,6 +16,8 @@
 
 package ca.uwaterloo.flix.util
 
+import scala.collection.mutable
+
 sealed trait Validation[+Value, +Error] {
 
   import Validation._
@@ -76,6 +78,11 @@ sealed trait Validation[+Value, +Error] {
 object Validation {
 
   /**
+    * Represents a sucessful validation with the empty list.
+    */
+  final val SuccessNil = Success(Nil)
+
+  /**
     * Represents a success `value`.
     */
   case class Success[T, E](t: T) extends Validation[T, E] {
@@ -121,14 +128,49 @@ object Validation {
     * Traverses `xs` while applying the function `f`.
     */
   // TODO: In general it is better to use traverse than sequence.
-  // TODO: Performance.
-  def traverse[T, S, E](xs: Traversable[T])(f: T => Validation[S, E]): Validation[List[S], E] = xs.toList match {
+  def traverse[T, S, E](xs: Traversable[T])(f: T => Validation[S, E]): Validation[List[S], E] = fastTraverse(xs)(f)
+
+
+  /**
+    * A slow implementation of traverse.
+    */
+  private def slowTraverse[T, S, E](xs: Traversable[T])(f: T => Validation[S, E]): Validation[List[S], E] = xs.toList match {
     case Nil => Success(Nil)
     case y :: ys =>
+      // TODO: Correctness issue with multiple failures?
       val s = f(y)
       traverse(ys)(f) flatMap {
         case rs => s map (r => r :: rs)
       }
+  }
+
+  /**
+    * A fast implementation of traverse.
+    */
+  private def fastTraverse[T, S, E](xs: Traversable[T])(f: T => Validation[S, E]): Validation[List[S], E] = {
+    // Check if the sequence is empty.
+    if (xs.isEmpty)
+      return Validation.SuccessNil
+
+    // Two mutable arrays to hold the intermediate results.
+    val successValues = mutable.ArrayBuffer.empty[S]
+    val failureStream = mutable.ArrayBuffer.empty[Stream[E]]
+
+    // Apply f to each element and collect the results.
+    for (x <- xs) {
+      f(x) match {
+        case Success(v) => successValues += v
+        case Failure(e) => failureStream += e
+      }
+    }
+
+    // Check whether we were successful or not.
+    if (failureStream.isEmpty) {
+      Success(successValues.toList)
+    } else {
+      Failure(failureStream.foldLeft(Stream.empty[E])(_ #::: _))
+    }
+
   }
 
   /**

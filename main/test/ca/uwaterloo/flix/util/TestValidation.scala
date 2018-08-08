@@ -139,7 +139,7 @@ class TestValidation extends FunSuite {
       case x => Failure(Stream(42))
     }
 
-    assertResult(Failure(Stream(42)))(result)
+    assertResult(Failure(Stream(42, 42, 42)))(result)
   }
 
   test("traverse03") {
