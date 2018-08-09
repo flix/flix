@@ -910,7 +910,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       def Filter: Rule1[ParsedAst.Predicate.Body.Filter] = rule {
-        SP ~ Names.QualifiedDefinition ~ optWS ~ NonEmptyArgumentList ~ SP ~> ParsedAst.Predicate.Body.Filter
+        SP ~ Names.QualifiedDefinition ~ optWS ~ ArgumentList ~ SP ~> ParsedAst.Predicate.Body.Filter
       }
 
       def NotEqual: Rule1[ParsedAst.Predicate.Body.NotEqual] = rule {
