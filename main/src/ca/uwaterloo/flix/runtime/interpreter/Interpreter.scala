@@ -21,7 +21,7 @@ import java.lang.reflect.{InvocationTargetException, Modifier}
 import ca.uwaterloo.flix.api._
 import ca.uwaterloo.flix.language.ast.ExecutableAst._
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.runtime.solver.{Fixedpoint, FixpointOptions, Solver, api}
+import ca.uwaterloo.flix.runtime.solver.{Fixpoint, FixpointOptions, Solver, api}
 import ca.uwaterloo.flix.runtime.solver.api.ApiBridge
 import ca.uwaterloo.flix.runtime.solver.api.ApiBridge.SymbolCache
 import ca.uwaterloo.flix.runtime.solver.api.ConstraintSet
@@ -913,7 +913,7 @@ object Interpreter {
   /**
     * Computes the fixed point of the given constraint set `cs`.
     */
-  private def solve(cs: ConstraintSet)(implicit flix: Flix): Fixedpoint = {
+  private def solve(cs: ConstraintSet)(implicit flix: Flix): Fixpoint = {
     val solver = mkSolver(cs)
     solver.solve()
   }
