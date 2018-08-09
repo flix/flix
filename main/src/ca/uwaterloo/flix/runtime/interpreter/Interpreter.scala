@@ -357,7 +357,8 @@ object Interpreter {
       println(v)
       val solver = new Solver(v, new FixpointOptions())
       try {
-        solver.solve()
+        val fixedpoint = solver.solve()
+        println(fixedpoint)
         Value.True
       } catch {
         case ex: RuleError => Value.False
