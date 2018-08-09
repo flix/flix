@@ -346,22 +346,22 @@ object Interpreter {
     // FixpointSolve expressions.
     //
     case Expression.FixpointSolve(exp, tpe, loc) =>
-      val v = cast2constraintset(eval(exp, env0, henv0, lenv0, root))
-      println(v)
-      val solver = mkSolver(v)
-      solver.solve().toString
+      val cs = cast2constraintset(eval(exp, env0, henv0, lenv0, root))
+      val fixpoint = solve(cs)
+      println(fixpoint)
+      Value.Unit
 
     //
     // FixpointCheck expressions.
     //
     case Expression.FixpointCheck(exp, tpe, loc) =>
       // TODO
-      val v = cast2constraintset(eval(exp, env0, henv0, lenv0, root))
-      println(v)
-      val solver = mkSolver(v)
+      val cs = cast2constraintset(eval(exp, env0, henv0, lenv0, root))
+      println(cs)
+      val solver = mkSolver(cs)
       try {
-        val fixedpoint = solver.solve()
-        println(fixedpoint)
+        val fixpoint = solve(cs)
+        println(fixpoint)
         Value.True
       } catch {
         case ex: RuleError => Value.False
@@ -909,6 +909,14 @@ object Interpreter {
     * Constructs a bool from the given boolean `b`.
     */
   private def mkBool(b: Boolean): AnyRef = if (b) Value.True else Value.False
+
+  /**
+    * Computes the fixed point of the given constraint set `cs`.
+    */
+  private def solve(cs: ConstraintSet)(implicit flix: Flix): Fixedpoint = {
+    val solver = mkSolver(cs)
+    solver.solve()
+  }
 
   /**
     * Returns a fixpoint solver for the given constraint set `cs`.
