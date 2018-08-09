@@ -77,44 +77,6 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     }
 
     /**
-      * Returns the function symbols reachable from `hs`.
-      */
-    def visitHeadTerms(hs: List[SimplifiedAst.Term.Head]): Set[Symbol.DefnSym] = hs.map(visitHeadTerm).fold(Set())(_ ++ _)
-
-    /**
-      * Returns the function symbols reachable from the given SimplifiedAst.Term.Head `head`.
-      */
-    def visitHeadTerm(h0: SimplifiedAst.Term.Head): Set[Symbol.DefnSym] = {
-      h0 match {
-        case SimplifiedAst.Term.Head.Var(sym, tpe, loc) => Set.empty
-        case SimplifiedAst.Term.Head.Lit(lit, tpe, loc) => visitExp(lit)
-        case SimplifiedAst.Term.Head.App(sym, args, tpe, loc) => Set(sym)
-      }
-    }
-
-    /**
-      * Returns the function symbols reachable from `bs`.
-      */
-    def visitBodyTerms(bs: List[SimplifiedAst.Term.Body]): Set[Symbol.DefnSym] = bs.map(visitBodyTerm).fold(Set())(_ ++ _)
-
-    /**
-      * Returns the function symbols reachable from the given SimplifiedAst.Term.Body `body`.
-      */
-    def visitBodyTerm(b0: SimplifiedAst.Term.Body): Set[Symbol.DefnSym] = {
-      b0 match {
-        case SimplifiedAst.Term.Body.Wild(tpe, loc) => Set.empty
-        case SimplifiedAst.Term.Body.Var(sym, tpe, loc) => Set.empty
-        case SimplifiedAst.Term.Body.Lit(exp, tpe, loc) => visitExp(exp)
-        case SimplifiedAst.Term.Body.Pat(pat, tpe, loc) => Set.empty
-      }
-    }
-
-    /**
-      * Returns the function symbols reachable from `es`.
-      */
-    def visitExps(es: List[Expression]): Set[Symbol.DefnSym] = es.map(visitExp).fold(Set())(_ ++ _)
-
-    /**
       * Returns the function symbols reachable from the given Expression `e0`.
       */
     def visitExp(e0: Expression): Set[Symbol.DefnSym] = e0 match {
@@ -171,7 +133,7 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.NativeConstructor(constructor, args, tpe, loc) => visitExps(args)
       case Expression.NativeField(field, tpe, loc) => Set.empty
       case Expression.NativeMethod(method, args, tpe, loc) => visitExps(args)
-      case Expression.Constraint(c, tpe, loc) => Set.empty // TODO: Reachable function symbols.
+      case Expression.Constraint(c0, tpe, loc) => visitConstraint(c0)
       case Expression.ConstraintUnion(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2)
       case Expression.FixpointSolve(exp, tpe, loc) => visitExp(exp)
       case Expression.FixpointCheck(exp, tpe, loc) => visitExp(exp)
@@ -182,6 +144,55 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
 
       case Expression.LambdaClosure(lambda, freeVars, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${e0.getClass}'.")
       case Expression.Apply(exp, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${e0.getClass}'.")
+    }
+
+    /**
+      * Returns the function symbols reachable from `es`.
+      */
+    def visitExps(es: List[Expression]): Set[Symbol.DefnSym] = es.map(visitExp).fold(Set())(_ ++ _)
+
+    /**
+      * Returns the function symbols reachable from the given constraint `c0`.
+      */
+    def visitConstraint(c0: SimplifiedAst.Constraint): Set[Symbol.DefnSym] = {
+      val headSymbols = c0.head match {
+        case SimplifiedAst.Predicate.Head.True(loc) => Set.empty
+        case SimplifiedAst.Predicate.Head.False(loc) => Set.empty
+        case SimplifiedAst.Predicate.Head.RelAtom(sym, terms, loc) => terms.map(visitHeadTerm).fold(Set())(_ ++ _)
+        case SimplifiedAst.Predicate.Head.LatAtom(sym, terms, loc) => terms.map(visitHeadTerm).fold(Set())(_ ++ _)
+      }
+
+      val bodySymbols = c0.body.map {
+        case SimplifiedAst.Predicate.Body.RelAtom(sym, polarity, terms, loc) => terms.map(visitBodyTerm).fold(Set())(_ ++ _)
+        case SimplifiedAst.Predicate.Body.LatAtom(sym, polarity, terms, loc) => terms.map(visitBodyTerm).fold(Set())(_ ++ _)
+        case SimplifiedAst.Predicate.Body.Filter(sym, terms, loc) => Set(sym)
+        case SimplifiedAst.Predicate.Body.Loop(sym, term, loc) => visitHeadTerm(term)
+      }.fold(Set())(_ ++ _)
+
+      headSymbols ++ bodySymbols
+    }
+
+    /**
+      * Returns the function symbols reachable from the given SimplifiedAst.Term.Head `head`.
+      */
+    def visitHeadTerm(h0: SimplifiedAst.Term.Head): Set[Symbol.DefnSym] = {
+      h0 match {
+        case SimplifiedAst.Term.Head.Var(sym, tpe, loc) => Set.empty
+        case SimplifiedAst.Term.Head.Lit(lit, tpe, loc) => visitExp(lit)
+        case SimplifiedAst.Term.Head.App(sym, args, tpe, loc) => Set(sym)
+      }
+    }
+
+    /**
+      * Returns the function symbols reachable from the given SimplifiedAst.Term.Body `body`.
+      */
+    def visitBodyTerm(b0: SimplifiedAst.Term.Body): Set[Symbol.DefnSym] = {
+      b0 match {
+        case SimplifiedAst.Term.Body.Wild(tpe, loc) => Set.empty
+        case SimplifiedAst.Term.Body.Var(sym, tpe, loc) => Set.empty
+        case SimplifiedAst.Term.Body.Lit(exp, tpe, loc) => visitExp(exp)
+        case SimplifiedAst.Term.Body.Pat(pat, tpe, loc) => Set.empty
+      }
     }
 
     /**
@@ -231,19 +242,7 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
      */
     for (stratum <- root.strata) {
       for (constraint <- stratum.constraints) {
-        reachableFunctions ++= (constraint.head match {
-          case SimplifiedAst.Predicate.Head.True(loc) => Set.empty
-          case SimplifiedAst.Predicate.Head.False(loc) => Set.empty
-          case SimplifiedAst.Predicate.Head.RelAtom(sym, terms, loc) => visitHeadTerms(terms)
-          case SimplifiedAst.Predicate.Head.LatAtom(sym, terms, loc) => visitHeadTerms(terms)
-        })
-
-        reachableFunctions ++= constraint.body.map {
-          case SimplifiedAst.Predicate.Body.RelAtom(sym, polarity, terms, loc) => visitBodyTerms(terms)
-          case SimplifiedAst.Predicate.Body.LatAtom(sym, polarity, terms, loc) => visitBodyTerms(terms)
-          case SimplifiedAst.Predicate.Body.Filter(sym, terms, loc) => Set(sym)
-          case SimplifiedAst.Predicate.Body.Loop(sym, term, loc) => visitHeadTerm(term)
-        }.fold(Set())(_ ++ _)
+        visitConstraint(constraint)
       }
     }
 
