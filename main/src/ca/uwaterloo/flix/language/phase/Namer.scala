@@ -838,6 +838,16 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
           case c => NamedAst.Expression.Constraint(c, Type.freshTypeVar(), loc)
         }
 
+      case WeededAst.Expression.FixpointSolve(exp, loc) =>
+        namer(exp, env0, tenv0) map {
+          case e => NamedAst.Expression.FixpointSolve(e, Type.freshTypeVar(), loc)
+        }
+
+      case WeededAst.Expression.FixpointCheck(exp, loc) =>
+        namer(exp, env0, tenv0) map {
+          case e => NamedAst.Expression.FixpointCheck(e, Type.freshTypeVar(), loc)
+        }
+
       case WeededAst.Expression.ConstraintUnion(exp1, exp2, loc) =>
         mapN(namer(exp1, env0, tenv0), namer(exp2, env0, tenv0)) {
           case (e1, e2) => NamedAst.Expression.ConstraintUnion(e1, e2, Type.freshTypeVar(), loc)

@@ -185,6 +185,10 @@ object ResolvedAst {
 
     case class ConstraintUnion(e1: ResolvedAst.Expression, e2: ResolvedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
+    case class FixpointSolve(exp: ResolvedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+
+    case class FixpointCheck(exp: ResolvedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+
     case class UserError(tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
   }

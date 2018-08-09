@@ -664,6 +664,12 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
             e2 <- visit(exp2, tenv0)
           } yield ResolvedAst.Expression.ConstraintUnion(e1, e2, tvar, loc)
 
+        case NamedAst.Expression.FixpointSolve(exp, tvar, loc) =>
+          ???
+
+        case NamedAst.Expression.FixpointCheck(exp, tvar, loc) =>
+          ???
+
         case NamedAst.Expression.UserError(tvar, loc) => ResolvedAst.Expression.UserError(tvar, loc).toSuccess
       }
 

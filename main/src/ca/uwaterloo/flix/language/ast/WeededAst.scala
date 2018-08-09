@@ -174,6 +174,10 @@ object WeededAst {
 
     case class ConstraintUnion(e1: WeededAst.Expression, e2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
+    case class FixpointSolve(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+
+    case class FixpointCheck(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+
     case class UserError(loc: SourceLocation) extends WeededAst.Expression
 
   }

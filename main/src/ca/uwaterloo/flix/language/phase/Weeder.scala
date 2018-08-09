@@ -933,6 +933,16 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
               }
           }
 
+        case ParsedAst.Expression.FixpointSolve(sp1, exp, sp2) =>
+          visit(exp, unsafe) map {
+            case e => WeededAst.Expression.FixpointSolve(e, mkSL(sp1, sp2))
+          }
+
+        case ParsedAst.Expression.FixpointCheck(sp1, exp, sp2) =>
+          visit(exp, unsafe) map {
+            case e => WeededAst.Expression.FixpointCheck(e, mkSL(sp1, sp2))
+          }
+
         case ParsedAst.Expression.UserError(sp1, sp2) =>
           WeededAst.Expression.UserError(mkSL(sp1, sp2)).toSuccess
       }
