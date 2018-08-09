@@ -242,7 +242,7 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
      */
     for (stratum <- root.strata) {
       for (constraint <- stratum.constraints) {
-        visitConstraint(constraint)
+        reachableFunctions ++= visitConstraint(constraint)
       }
     }
 
