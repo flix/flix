@@ -25,7 +25,7 @@ import ca.uwaterloo.flix.runtime.solver.{Fixedpoint, FixpointOptions, Solver, ap
 import ca.uwaterloo.flix.runtime.solver.api.ApiBridge
 import ca.uwaterloo.flix.runtime.solver.api.ApiBridge.SymbolCache
 import ca.uwaterloo.flix.runtime.solver.api.ConstraintSet
-import ca.uwaterloo.flix.util.InternalRuntimeException
+import ca.uwaterloo.flix.util.{InternalRuntimeException, Verbosity}
 import ca.uwaterloo.flix.util.tc.Show._
 import flix.runtime._
 
@@ -346,7 +346,10 @@ object Interpreter {
     // FixpointSolve expressions.
     //
     case Expression.FixpointSolve(exp, tpe, loc) =>
-      ??? // TODO
+      val v = cast2constraintset(eval(exp, env0, henv0, lenv0, root))
+      println(v)
+      val solver = mkSolver(v)
+      solver.solve().toString
 
     //
     // FixpointCheck expressions.
@@ -355,7 +358,7 @@ object Interpreter {
       // TODO
       val v = cast2constraintset(eval(exp, env0, henv0, lenv0, root))
       println(v)
-      val solver = new Solver(v, new FixpointOptions())
+      val solver = mkSolver(v)
       try {
         val fixedpoint = solver.solve()
         println(fixedpoint)
@@ -907,6 +910,19 @@ object Interpreter {
     */
   private def mkBool(b: Boolean): AnyRef = if (b) Value.True else Value.False
 
+  /**
+    * Returns a fixpoint solver for the given constraint set `cs`.
+    */
+  private def mkSolver(cs: ConstraintSet)(implicit flix: Flix): Solver = {
+    // Configure the fixpoint solver based on the Flix options.
+    val options = new FixpointOptions
+    options.setMonitored(flix.options.monitor)
+    options.setThreads(flix.options.threads)
+    options.setVerbose(flix.options.verbosity == Verbosity.Verbose)
+
+    // Construct the solver.
+    new Solver(cs, options)
+  }
 
   /**
     * Returns the given reference `ref` as a Java object.
