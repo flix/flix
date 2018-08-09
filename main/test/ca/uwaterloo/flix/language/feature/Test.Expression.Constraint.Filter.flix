@@ -1,14 +1,3 @@
-rel A(x: Int)
-rel B(x: Int)
-rel R(x: Str)
-
-def success(): Bool = true
-def failure(): Bool = false
-def isZero(x: Int): Bool = x == 0
-def isSame(x: Int, y: Int): Bool = x == y
-def increment(x: Int): Int = x + 1
-def decrement(x: Int): Int = x - 1
-
 @test
 def testFilter01(): Bool = check {
     R("a") :- success().
@@ -95,3 +84,14 @@ def testFilter10(): Bool = check {
 //    A(0). A(1). A(2).
 //    R("a") :- isSame(increment(x), increment(y)), A(x), B(y).
 //}
+
+rel A(x: Int)
+rel B(x: Int)
+rel R(x: Str)
+
+def success(): Bool = true
+def failure(): Bool = false
+def isZero(x: Int): Bool = x == 0
+def isSame(x: Int, y: Int): Bool = x == y
+def increment(x: Int): Int = x + 1
+def decrement(x: Int): Int = x - 1
