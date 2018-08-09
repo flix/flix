@@ -28,7 +28,7 @@ import ca.uwaterloo.flix.runtime.solver.api.predicate._
 import ca.uwaterloo.flix.runtime.solver.api.symbol.VarSym
 import ca.uwaterloo.flix.runtime.solver.api.term._
 import ca.uwaterloo.flix.util._
-import flix.runtime.{RuleError, TimeoutError}
+import flix.runtime.{ReifiedSourceLocation, RuleError, TimeoutError}
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -536,7 +536,7 @@ class Solver(val constraintSet: ConstraintSet, options: FixpointOptions) {
 
       interp += ((p.getSym, fact))
     case _: TruePredicate => // nop
-    case _: FalsePredicate => throw new RuleError(null)
+    case _: FalsePredicate => throw new RuleError(new ReifiedSourceLocation("", 0, 0, 0, 0))
   }
 
   /**

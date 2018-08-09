@@ -21,7 +21,7 @@ import java.lang.reflect.{InvocationTargetException, Modifier}
 import ca.uwaterloo.flix.api._
 import ca.uwaterloo.flix.language.ast.ExecutableAst._
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.runtime.solver.api
+import ca.uwaterloo.flix.runtime.solver.{Fixedpoint, FixpointOptions, Solver, api}
 import ca.uwaterloo.flix.runtime.solver.api.ApiBridge
 import ca.uwaterloo.flix.runtime.solver.api.ApiBridge.SymbolCache
 import ca.uwaterloo.flix.runtime.solver.api.ConstraintSet
@@ -341,6 +341,25 @@ object Interpreter {
       val v1 = cast2constraintset(eval(exp1, env0, henv0, lenv0, root))
       val v2 = cast2constraintset(eval(exp2, env0, henv0, lenv0, root))
       v1.union(v2)
+
+    //
+    // FixpointSolve expressions.
+    //
+    case Expression.FixpointSolve(exp, tpe, loc) =>
+      ??? // TODO
+
+    //
+    // FixpointCheck expressions.
+    //
+    case Expression.FixpointCheck(exp, tpe, loc) =>
+      val v = cast2constraintset(eval(exp, env0, henv0, lenv0, root))
+      val solver = new Solver(v, new FixpointOptions())
+      try {
+        solver.solve()
+        Value.True
+      } catch {
+        case ex: RuleError => Value.False
+      }
 
     //
     // Error expressions.

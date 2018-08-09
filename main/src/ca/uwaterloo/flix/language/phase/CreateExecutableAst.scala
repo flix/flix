@@ -270,6 +270,14 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
           val e2 = visit(exp2)
           ExecutableAst.Expression.ConstraintUnion(e1, e2, tpe, loc)
 
+        case SimplifiedAst.Expression.FixpointSolve(exp, tpe, loc) =>
+          val e = visit(exp)
+          ExecutableAst.Expression.FixpointSolve(e, tpe, loc)
+
+        case SimplifiedAst.Expression.FixpointCheck(exp, tpe, loc) =>
+          val e = visit(exp)
+          ExecutableAst.Expression.FixpointCheck(e, tpe, loc)
+
         case SimplifiedAst.Expression.UserError(tpe, loc) => ExecutableAst.Expression.UserError(tpe, loc)
         case SimplifiedAst.Expression.HoleError(sym, tpe, eff, loc) => ExecutableAst.Expression.HoleError(sym, tpe, loc)
         case SimplifiedAst.Expression.MatchError(tpe, loc) => ExecutableAst.Expression.MatchError(tpe, loc)

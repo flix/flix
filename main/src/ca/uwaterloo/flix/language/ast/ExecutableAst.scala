@@ -220,6 +220,10 @@ object ExecutableAst {
 
     case class ConstraintUnion(e1: ExecutableAst.Expression, e2: ExecutableAst.Expression, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
+    case class FixpointSolve(exp: ExecutableAst.Expression, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
+
+    case class FixpointCheck(exp: ExecutableAst.Expression, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
+
     case class UserError(tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
     case class HoleError(sym: Symbol.HoleSym, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
