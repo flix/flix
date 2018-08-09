@@ -227,6 +227,14 @@ object ClosureConv {
       val e2 = visitExp(exp2)
       Expression.ConstraintUnion(e1, e2, tpe, loc)
 
+    case Expression.FixpointSolve(exp, tpe, loc) =>
+      val e = visitExp(exp)
+      Expression.FixpointSolve(e, tpe, loc)
+
+    case Expression.FixpointCheck(exp, tpe, loc) =>
+      val e = visitExp(exp)
+      Expression.FixpointCheck(e, tpe, loc)
+
     case Expression.UserError(tpe, loc) => exp0
     case Expression.HoleError(sym, tpe, eff, loc) => exp0
     case Expression.MatchError(tpe, loc) => exp0

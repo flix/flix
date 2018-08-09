@@ -233,9 +233,9 @@ object SimplifiedAst {
 
     case class ConstraintUnion(e1: SimplifiedAst.Expression, e2: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
-    case class FixpointSolve(exp: SimplifiedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends SimplifiedAst.Expression
+    case class FixpointSolve(exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
-    case class FixpointCheck(exp: SimplifiedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends SimplifiedAst.Expression
+    case class FixpointCheck(exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
     case class UserError(tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
