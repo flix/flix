@@ -6,6 +6,8 @@ def success(): Bool = true
 def failure(): Bool = false
 def isZero(x: Int): Bool = x == 0
 def isSame(x: Int, y: Int): Bool = x == y
+def increment(x: Int): Int = x + 1
+def decrement(x: Int): Int = x - 1
 
 @test
 def testFilter01(): Bool = check {
@@ -63,3 +65,21 @@ def testFilter10(): Bool = check {
     B(0). B(1). B(2).
     R("a") :- isZero(x), isZero(y), isSame(x, y), A(x), B(y).
 }
+
+//// TODO: Bugged
+//@test
+//def testFilter11(): Bool = check {
+//    R("a") :- isZero(increment(0)).
+//}
+//
+//// TODO: Bugged
+//@test
+//def testFilter12(): Bool = check {
+//    R("b") :- isZero(increment(decrement(0))).
+//}
+//
+//// TODO: Bugged
+//@test
+//def testFilter13(): Bool = check {
+//    R("c") :- isZero(increment(decrement(decrement(0)))).
+//}
