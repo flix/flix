@@ -295,6 +295,14 @@ object Synthesize extends Phase[Root, Root] {
         val e2 = visitExp(exp2)
         Expression.ConstraintUnion(e1, e2, tpe, eff, loc)
 
+      case Expression.FixpointSolve(exp, tpe, eff, loc) =>
+        val e = visitExp(exp)
+        Expression.FixpointSolve(e, tpe, eff, loc)
+
+      case Expression.FixpointCheck(exp, tpe, eff, loc) =>
+        val e = visitExp(exp)
+        Expression.FixpointCheck(e, tpe, eff, loc)
+
       case Expression.UserError(tpe, eff, loc) =>
         Expression.UserError(tpe, eff, loc)
 

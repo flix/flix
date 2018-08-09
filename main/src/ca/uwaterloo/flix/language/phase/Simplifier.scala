@@ -506,6 +506,8 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         val e2 = visitExp(exp2)
         SimplifiedAst.Expression.ConstraintUnion(e1, e2, tpe, loc)
 
+
+
       case TypedAst.Expression.UserError(tpe, eff, loc) =>
         SimplifiedAst.Expression.UserError(tpe, loc)
 

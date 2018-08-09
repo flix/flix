@@ -226,6 +226,10 @@ object TypedAst {
 
     case class ConstraintUnion(e1: TypedAst.Expression, e2: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
 
+    case class FixpointSolve(exp: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+
+    case class FixpointCheck(exp: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+
     case class UserError(tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
 
   }

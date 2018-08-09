@@ -1141,6 +1141,24 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           } yield resultType
 
         /*
+         * FixpointSolve expression.
+         */
+        case ResolvedAst.Expression.FixpointSolve(exp, tvar, loc) =>
+          for {
+            tpe <- visitExp(exp)
+            resultType <- unifyM(tvar, Type.Unit, loc) // TODO
+          } yield resultType
+
+        /*
+          * FixpointCheck expression.
+          */
+        case ResolvedAst.Expression.FixpointCheck(exp, tvar, loc) =>
+          for {
+            tpe <- visitExp(exp)
+            resultType <- unifyM(tvar, Type.Bool, loc)
+          } yield resultType
+
+        /*
          * User Error expression.
          */
         case ResolvedAst.Expression.UserError(tvar, loc) => liftM(tvar)
@@ -1510,6 +1528,20 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           val e1 = reassemble(exp1, program, subst0)
           val e2 = reassemble(exp2, program, subst0)
           TypedAst.Expression.ConstraintUnion(e1, e2, subst0(tvar), Eff.Bot, loc)
+
+        /*
+         * FixpointSolve expression.
+         */
+        case ResolvedAst.Expression.FixpointSolve(exp, tvar, loc) =>
+          val e = reassemble(exp, program, subst0)
+          TypedAst.Expression.FixpointSolve(e, subst0(tvar), Eff.Bot, loc)
+
+        /*
+         * FixpointCheck expression.
+         */
+        case ResolvedAst.Expression.FixpointCheck(exp, tvar, loc) =>
+          val e = reassemble(exp, program, subst0)
+          TypedAst.Expression.FixpointCheck(e, subst0(tvar), Eff.Bot, loc)
 
         /*
          * User Error expression.
