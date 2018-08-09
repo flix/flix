@@ -24,7 +24,7 @@ object ApiBridge {
     def getVarSym(sym: Symbol.VarSym): VarSym =
       varSyms.get(sym) match {
         case None =>
-          val newSym = new VarSym()
+          val newSym = new VarSym(sym.text)
           varSyms += (sym -> newSym)
           newSym
         case Some(res) => res

@@ -14,6 +14,9 @@ class LitTerm(f: () => ProxyObject) extends Term {
     */
   def getFunction(): () => ProxyObject = f
 
+  /**
+    * Returns a string representation of `this` term.
+    */
   override def toString: String = f().toString
 
 }

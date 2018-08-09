@@ -12,4 +12,9 @@ class VarTerm(sym: VarSym) extends Term {
     */
   def getSym(): VarSym = sym
 
+  /**
+    * Returns a string representation of `this` term.
+    */
+  override def toString: String = sym.toString
+
 }

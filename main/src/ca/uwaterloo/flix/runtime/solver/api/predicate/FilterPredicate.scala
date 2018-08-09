@@ -26,4 +26,9 @@ class FilterPredicate(f: Array[AnyRef] => Boolean, terms: Array[Term]) extends P
     */
   def getArguments(): Array[Term] = terms
 
+  /**
+    * Returns a string representation of `this` predicate.
+    */
+  override def toString: String = "<<filter>>" + "(" + terms.mkString(", ") + ")"
+
 }
