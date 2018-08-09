@@ -108,6 +108,15 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     }
 
     // TODO: DOC
+    def infer(c0: ResolvedAst.Constraint, program: ResolvedAst.Program)(implicit genSym: GenSym): InferMonad[Type] = c0 match {
+      case ResolvedAst.Constraint(cparams, head0, body0, loc) =>
+        for {
+          headType <- Predicates.infer(head0, program)
+          bodyTypes <- seqM(body0.map(b => Predicates.infer(b, program)))
+        } yield Type.ConstraintSet
+    }
+
+    // TODO: DOC
     def reassemble(c0: ResolvedAst.Constraint, program: ResolvedAst.Program, subst0: Substitution): TypedAst.Constraint = c0 match {
       case ResolvedAst.Constraint(cparams0, head0, body0, loc) =>
         // Unification was successful. Reassemble the head and body predicates.
@@ -1127,8 +1136,11 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
          * Constraint expression.
          */
         case ResolvedAst.Expression.Constraint(cons, tvar, loc) =>
-          // TODO: Actually check the type.
-          unifyM(tvar, Type.ConstraintSet, loc)
+          // TODO
+          for {
+            _ <- Constraints.infer(cons, program)
+            resultType <- unifyM(tvar, Type.ConstraintSet, loc)
+          } yield resultType
 
         /*
          * Constraint Union expression.

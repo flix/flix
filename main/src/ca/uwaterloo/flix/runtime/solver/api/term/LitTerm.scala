@@ -7,11 +7,13 @@ import ca.uwaterloo.flix.runtime.solver.api.ProxyObject
   */
 class LitTerm(f: () => ProxyObject) extends Term {
 
+  // TODO: should not take a function?
+
   /**
     * Returns a unit function that returns the literal value.
     */
   def getFunction(): () => ProxyObject = f
 
-  override def toString: String = "<<lit>>"
+  override def toString: String = f().toString
 
 }
