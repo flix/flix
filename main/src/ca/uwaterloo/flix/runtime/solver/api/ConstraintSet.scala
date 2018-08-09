@@ -38,4 +38,6 @@ class ConstraintSet(relations: Array[Relation], lattices: Array[Lattice], strata
     new ConstraintSet(newRelations, newLattices, newStrata)
   }
 
+  override def toString: String = strata.mkString(", ")
+
 }

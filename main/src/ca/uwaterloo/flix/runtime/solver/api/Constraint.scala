@@ -112,4 +112,11 @@ class Constraint(cparams: Array[VarSym], head: Predicate, body: Array[Predicate]
     case p: FilterPredicate => p
   }
 
+  override def toString: String = {
+    if (isFact())
+      head.toString + "."
+    else
+      head.toString + " :- " + body.mkString(", ") + "."
+  }
+
 }

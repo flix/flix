@@ -32,4 +32,6 @@ class AtomPredicate(sym: Table, positive: Boolean, terms: Array[Term], index2sym
   // TODO: Deprecated.
   def getIndex2SymTEMPORARY: Array[VarSym] = index2sym
 
+  override def toString: String = s"$sym(${terms.mkString(", ")})"
+
 }

@@ -352,7 +352,9 @@ object Interpreter {
     // FixpointCheck expressions.
     //
     case Expression.FixpointCheck(exp, tpe, loc) =>
+      // TODO
       val v = cast2constraintset(eval(exp, env0, henv0, lenv0, root))
+      println(v)
       val solver = new Solver(v, new FixpointOptions())
       try {
         solver.solve()

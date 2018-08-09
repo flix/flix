@@ -12,4 +12,6 @@ class LitTerm(f: () => ProxyObject) extends Term {
     */
   def getFunction(): () => ProxyObject = f
 
+  override def toString: String = "<<lit>>"
+
 }

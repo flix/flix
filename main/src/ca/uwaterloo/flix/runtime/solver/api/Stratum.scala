@@ -10,4 +10,6 @@ class Stratum(constraints: Array[Constraint]) {
     */
   def getConstraints(): Array[Constraint] = constraints
 
+  override def toString: String = constraints.mkString(", ")
+
 }
