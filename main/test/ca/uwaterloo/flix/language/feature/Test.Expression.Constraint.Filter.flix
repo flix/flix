@@ -75,11 +75,23 @@ def testFilter10(): Bool = check {
 //// TODO: Bugged
 //@test
 //def testFilter12(): Bool = check {
-//    R("b") :- isZero(increment(decrement(0))).
+//    R("a") :- isZero(increment(decrement(0))).
 //}
 //
 //// TODO: Bugged
 //@test
 //def testFilter13(): Bool = check {
-//    R("c") :- isZero(increment(decrement(decrement(0)))).
+//    R("a") :- isZero(increment(decrement(decrement(0)))).
+//}
+//// TODO: Bugged
+//@test
+//def testFilter14(): Bool = check {
+//    A(0). A(1). A(2).
+//    R("a") :- isZero(increment(decrement(x))), A(x).
+//}
+//// TODO: Bugged
+//@test
+//def testFilter15(): Bool = check {
+//    A(0). A(1). A(2).
+//    R("a") :- isSame(increment(x), increment(y)), A(x), B(y).
 //}
