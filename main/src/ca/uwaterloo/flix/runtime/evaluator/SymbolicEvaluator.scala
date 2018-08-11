@@ -838,6 +838,26 @@ object SymbolicEvaluator {
       case Expression.NativeMethod(method, args, tpe, loc) => throw InternalCompilerException("Not yet supported.")
 
       /**
+        * Constraint.
+        */
+      case Expression.Constraint(c, tpe, loc) => throw InternalCompilerException("Not yet supported.")
+
+      /**
+        * ConstraintUnion.
+        */
+      case Expression.ConstraintUnion(e1, e2, tpe, loc) => throw InternalCompilerException("Not yet supported.")
+
+      /**
+        * Fixpoint Solve.
+        */
+      case Expression.FixpointSolve(exp, tpe, loc) => throw InternalCompilerException("Not yet supported.")
+
+      /**
+        * Fixpoint Check.
+        */
+      case Expression.FixpointCheck(exp, tpe, loc) => throw InternalCompilerException("Not yet supported.")
+
+      /**
         * User Error.
         */
       case Expression.UserError(tpe, loc) => throw new NotImplementedError(loc.reified)

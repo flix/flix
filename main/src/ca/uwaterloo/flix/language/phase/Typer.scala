@@ -1133,6 +1133,18 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           ) yield tvar
 
         /*
+         * New Relation expression.
+         */
+        case ResolvedAst.Expression.NewRelation(sym, tvar, loc) =>
+          unifyM(tvar, Type.Relation(sym, Kind.Star), loc)
+
+        /*
+         * New Lattice Expression.
+         */
+        case ResolvedAst.Expression.NewLattice(sym, tvar, loc) =>
+          unifyM(tvar, Type.Lattice(sym, Kind.Star), loc)
+
+        /*
          * Constraint expression.
          */
         case ResolvedAst.Expression.Constraint(cons, tvar, loc) =>
@@ -1525,6 +1537,18 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         case ResolvedAst.Expression.NativeMethod(method, actuals, tpe, loc) =>
           val es = actuals.map(e => reassemble(e, program, subst0))
           TypedAst.Expression.NativeMethod(method, es, subst0(tpe), Eff.Bot, loc)
+
+        /*
+         * New Relation expression.
+         */
+        case ResolvedAst.Expression.NewRelation(sym, tvar, loc) =>
+          TypedAst.Expression.NewRelation(sym, subst0(tvar), Eff.Bot, loc)
+
+        /*
+         * New Lattice expression.
+         */
+        case ResolvedAst.Expression.NewLattice(sym, tvar, loc) =>
+          TypedAst.Expression.NewLattice(sym, subst0(tvar), Eff.Bot, loc)
 
         /*
          * Constraint expression.

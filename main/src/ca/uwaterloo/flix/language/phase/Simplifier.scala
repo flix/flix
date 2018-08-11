@@ -497,6 +497,12 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         val es = args.map(e => visitExp(e))
         SimplifiedAst.Expression.NativeMethod(method, es, tpe, loc)
 
+      case TypedAst.Expression.NewRelation(sym, tpe, eff, loc) =>
+        SimplifiedAst.Expression.NewRelation(sym, tpe, loc)
+
+      case TypedAst.Expression.NewLattice(sym, tpe, eff, loc) =>
+        SimplifiedAst.Expression.NewLattice(sym, tpe, loc)
+
       case TypedAst.Expression.Constraint(c0, tpe, eff, loc) =>
         val c = visitConstraint(c0)
         SimplifiedAst.Expression.Constraint(c, tpe, loc)
@@ -1151,6 +1157,12 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case SimplifiedAst.Expression.NativeMethod(method, args, tpe, loc) =>
         val es = args map visit
         SimplifiedAst.Expression.NativeMethod(method, es, tpe, loc)
+
+      case SimplifiedAst.Expression.NewRelation(sym, tpe, loc) =>
+        SimplifiedAst.Expression.NewRelation(sym, tpe, loc)
+
+      case SimplifiedAst.Expression.NewLattice(sym, tpe, loc) =>
+        SimplifiedAst.Expression.NewLattice(sym, tpe, loc)
 
       case SimplifiedAst.Expression.UserError(tpe, loc) => e
       case SimplifiedAst.Expression.HoleError(sym, tpe, eff, loc) => e
