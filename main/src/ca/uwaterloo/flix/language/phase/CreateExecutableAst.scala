@@ -25,8 +25,7 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
 import scala.collection.mutable
 
-// TODO: This class is pretty ugly and could use a rewrite.
-// TODO: Rename to Finalize.
+// TODO: Rename to FinalAst and to Finalize.
 
 object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root] {
 
@@ -34,30 +33,45 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
 
   def run(root: SimplifiedAst.Root)(implicit flix: Flix): Validation[ExecutableAst.Root, CompilationError] = flix.phase("CreateExecutableAst") {
 
-    // A mutable map to hold top-level definitions created by lifting lattice expressions.
     val m: TopLevel = mutable.Map.empty
 
-    val constants = root.defs.map { case (k, v) => k -> visitDef(v, m) }
-    val effs = root.effs.map { case (k, v) => k -> visitEff(v) }
-    val handlers = root.handlers.map { case (k, v) => k -> visitHandler(v, m) }
-
-    val enums = root.enums.map {
-      case (sym, SimplifiedAst.Enum(mod, _, cases0, tpe, loc)) =>
-        val cases = cases0.map {
-          case (tag, SimplifiedAst.Case(enumSym, tagName, tagType, tagLoc)) => tag -> ExecutableAst.Case(enumSym, tagName, tagType, tagLoc)
-        }
-        sym -> ExecutableAst.Enum(mod, sym, cases, tpe, loc)
+    val defs = root.defs.map {
+      case (k, v) => k -> visitDef(v, m)
     }
 
-    val latticeComponents = root.latticeComponents.map { case (k, v) => k -> visitLatticeComponents(v, m) }
-    val relations = root.relations.map { case (k, v) => k -> visitRelation(v) }
-    val lattices = root.lattices.map { case (k, v) => k -> visitLattice(v) }
-    val strata = root.strata.map(s => ExecutableAst.Stratum(s.constraints.map(c => visitConstraint(c, m))))
+    val effs = root.effs.map {
+      case (k, v) => k -> visitEff(v)
+    }
+
+    val handlers = root.handlers.map {
+      case (k, v) => k -> visitHandler(v, m)
+    }
+
+    val enums = root.enums.map {
+      case (sym, enum) => sym -> visitEnum(enum, m)
+    }
+
+    val relations = root.relations.map {
+      case (k, v) => k -> visitRelation(v)
+    }
+
+    val lattices = root.lattices.map {
+      case (k, v) => k -> visitLattice(v)
+    }
+
+    val latticeComponents = root.latticeComponents.map {
+      case (k, v) => k -> visitLatticeComponents(v, m)
+    }
+
+    val strata = root.strata.map(visitStratum(_, m))
+
     val properties = root.properties.map(p => visitProperty(p, m))
+
     val specialOps = root.specialOps
+
     val reachable = root.reachable
 
-    ExecutableAst.Root(constants ++ m, effs, handlers, enums, relations, lattices, latticeComponents, strata, properties, specialOps, reachable).toSuccess
+    ExecutableAst.Root(defs ++ m, effs, handlers, enums, relations, lattices, latticeComponents, strata, properties, specialOps, reachable).toSuccess
   }
 
   private def visitDef(def0: SimplifiedAst.Def, m: TopLevel)(implicit flix: Flix): ExecutableAst.Def = {
@@ -70,35 +84,46 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
     ExecutableAst.Eff(eff0.ann, eff0.mod, eff0.sym, fs, eff0.tpe, eff0.loc)
   }
 
+  private def visitEnum(enum0: SimplifiedAst.Enum, m: TopLevel)(implicit flix: Flix): ExecutableAst.Enum = enum0 match {
+    case SimplifiedAst.Enum(mod, sym, cases0, tpe, loc) =>
+      val cases = cases0.map {
+        case (tag, SimplifiedAst.Case(enumSym, tagName, tagType, tagLoc)) => tag -> ExecutableAst.Case(enumSym, tagName, tagType, tagLoc)
+      }
+      ExecutableAst.Enum(mod, sym, cases, tpe, loc)
+  }
+
   private def visitHandler(handler0: SimplifiedAst.Handler, m: TopLevel)(implicit flix: Flix): ExecutableAst.Handler = {
     val fs = handler0.fparams.map(visitFormalParam)
     val e = visitExp(handler0.exp, m)
     ExecutableAst.Handler(handler0.ann, handler0.mod, handler0.sym, fs, e, handler0.tpe, handler0.loc)
   }
 
-  private def visitLatticeComponents(sast: SimplifiedAst.LatticeComponents, m: TopLevel)(implicit flix: Flix): ExecutableAst.LatticeComponents = sast match {
-    case SimplifiedAst.LatticeComponents(tpe, bot, top, equ, leq, lub, glb, loc) =>
-      ExecutableAst.LatticeComponents(tpe, bot, top, equ, leq, lub, glb, loc)
-  }
-
-  private def visitRelation(r: SimplifiedAst.Relation): ExecutableAst.Relation = r match {
+  private def visitRelation(relation0: SimplifiedAst.Relation): ExecutableAst.Relation = relation0 match {
     case SimplifiedAst.Relation(mod, sym, attr, loc) =>
       ExecutableAst.Relation(mod, sym, attr.map(visitAttribute), loc)
   }
 
-  private def visitLattice(l: SimplifiedAst.Lattice): ExecutableAst.Lattice = l match {
+  private def visitLattice(lattice0: SimplifiedAst.Lattice): ExecutableAst.Lattice = lattice0 match {
     case SimplifiedAst.Lattice(mod, sym, attr, loc) =>
       ExecutableAst.Lattice(mod, sym, attr.map(visitAttribute), loc)
   }
 
-  private def visitConstraint(c0: SimplifiedAst.Constraint, m: TopLevel)(implicit flix: Flix): ExecutableAst.Constraint = {
-    val head = visitHeadPredicate(c0.head, m)
-    val body = c0.body.map(b => visitBodyPredicate(b, m))
-    val cparams = c0.cparams.map {
+  private def visitConstraint(constraint0: SimplifiedAst.Constraint, m: TopLevel)(implicit flix: Flix): ExecutableAst.Constraint = {
+    val head = visitHeadPredicate(constraint0.head, m)
+    val body = constraint0.body.map(b => visitBodyPredicate(b, m))
+    val cparams = constraint0.cparams.map {
       case SimplifiedAst.ConstraintParam.HeadParam(sym, tpe, loc) => ExecutableAst.ConstraintParam.HeadParam(sym, tpe, loc)
       case SimplifiedAst.ConstraintParam.RuleParam(sym, tpe, loc) => ExecutableAst.ConstraintParam.RuleParam(sym, tpe, loc)
     }
     ExecutableAst.Constraint(cparams, head, body)
+  }
+
+  private def visitStratum(stratum0: SimplifiedAst.Stratum, m: TopLevel)(implicit flix: Flix): ExecutableAst.Stratum =
+    ExecutableAst.Stratum(stratum0.constraints.map(visitConstraint(_, m)))
+
+  private def visitLatticeComponents(lc: SimplifiedAst.LatticeComponents, m: TopLevel)(implicit flix: Flix): ExecutableAst.LatticeComponents = lc match {
+    case SimplifiedAst.LatticeComponents(tpe, bot, top, equ, leq, lub, glb, loc) =>
+      ExecutableAst.LatticeComponents(tpe, bot, top, equ, leq, lub, glb, loc)
   }
 
   private def visitExp(exp0: SimplifiedAst.Expression, m: TopLevel)(implicit flix: Flix): ExecutableAst.Expression = {
@@ -243,47 +268,59 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
 
       case SimplifiedAst.Expression.ArrayNew(elm, len, tpe, loc) =>
         val e = visit(elm)
-        val ln = visit(len)
-        ExecutableAst.Expression.ArrayNew(e, ln, tpe, loc)
+        val l = visit(len)
+        ExecutableAst.Expression.ArrayNew(e, l, tpe, loc)
+
       case SimplifiedAst.Expression.ArrayLoad(base, index, tpe, loc) =>
         val b = visit(base)
         val i = visit(index)
         ExecutableAst.Expression.ArrayLoad(b, i, tpe, loc)
+
       case SimplifiedAst.Expression.ArrayStore(base, index, elm, tpe, loc) =>
         val b = visit(base)
         val i = visit(index)
         val e = visit(elm)
         ExecutableAst.Expression.ArrayStore(b, i, e, tpe, loc)
+
       case SimplifiedAst.Expression.ArrayLength(base, tpe, loc) =>
         val b = visit(base)
         ExecutableAst.Expression.ArrayLength(b, tpe, loc)
+
       case SimplifiedAst.Expression.ArraySlice(base, startIndex, endIndex, tpe, loc) =>
         val b = visit(base)
         val i1 = visit(startIndex)
         val i2 = visit(endIndex)
         ExecutableAst.Expression.ArraySlice(b, i1, i2, tpe, loc)
+
       case SimplifiedAst.Expression.Ref(exp, tpe, loc) =>
         val e = visit(exp)
         ExecutableAst.Expression.Ref(e, tpe, loc)
+
       case SimplifiedAst.Expression.Deref(exp, tpe, loc) =>
         val e = visit(exp)
         ExecutableAst.Expression.Deref(e, tpe, loc)
+
       case SimplifiedAst.Expression.Assign(exp1, exp2, tpe, loc) =>
         val e1 = visit(exp1)
         val e2 = visit(exp2)
         ExecutableAst.Expression.Assign(e1, e2, tpe, loc)
+
       case SimplifiedAst.Expression.HandleWith(exp, bindings, tpe, loc) =>
         val e = visit(exp)
         val bs = bindings map {
           case SimplifiedAst.HandlerBinding(sym, body) => ExecutableAst.HandlerBinding(sym, visit(body))
         }
         ExecutableAst.Expression.HandleWith(e, bs, tpe, loc)
+
       case SimplifiedAst.Expression.Existential(fparam, exp, loc) =>
-        val p = ExecutableAst.FormalParam(fparam.sym, fparam.tpe)
-        ExecutableAst.Expression.Existential(p, visit(exp), loc)
+        val p = visitFormalParam(fparam)
+        val e = visit(exp)
+        ExecutableAst.Expression.Existential(p, e, loc)
+
       case SimplifiedAst.Expression.Universal(fparam, exp, loc) =>
-        val p = ExecutableAst.FormalParam(fparam.sym, fparam.tpe)
-        ExecutableAst.Expression.Universal(p, visit(exp), loc)
+        val p = visitFormalParam(fparam)
+        val e = visit(exp)
+        ExecutableAst.Expression.Universal(p, e, loc)
 
       case SimplifiedAst.Expression.TryCatch(exp, rules, tpe, eff, loc) =>
         val e = visit(exp)
@@ -295,13 +332,14 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
         ExecutableAst.Expression.TryCatch(e, rs, tpe, loc)
 
       case SimplifiedAst.Expression.NativeConstructor(constructor, args, tpe, loc) =>
-        val es = args.map(e => visit(e))
+        val es = args map visit
         ExecutableAst.Expression.NativeConstructor(constructor, es, tpe, loc)
 
-      case SimplifiedAst.Expression.NativeField(field, tpe, loc) => ExecutableAst.Expression.NativeField(field, tpe, loc)
+      case SimplifiedAst.Expression.NativeField(field, tpe, loc) =>
+        ExecutableAst.Expression.NativeField(field, tpe, loc)
 
       case SimplifiedAst.Expression.NativeMethod(method, args, tpe, loc) =>
-        val es = args.map(e => visit(e))
+        val es = args map visit
         ExecutableAst.Expression.NativeMethod(method, es, tpe, loc)
 
       case SimplifiedAst.Expression.NewRelation(sym, tpe, loc) =>
@@ -327,13 +365,17 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
         val e = visit(exp)
         ExecutableAst.Expression.FixpointCheck(e, tpe, loc)
 
-      case SimplifiedAst.Expression.UserError(tpe, loc) => ExecutableAst.Expression.UserError(tpe, loc)
+      case SimplifiedAst.Expression.UserError(tpe, loc) =>
+        ExecutableAst.Expression.UserError(tpe, loc)
 
-      case SimplifiedAst.Expression.HoleError(sym, tpe, eff, loc) => ExecutableAst.Expression.HoleError(sym, tpe, loc)
+      case SimplifiedAst.Expression.HoleError(sym, tpe, eff, loc) =>
+        ExecutableAst.Expression.HoleError(sym, tpe, loc)
 
-      case SimplifiedAst.Expression.MatchError(tpe, loc) => ExecutableAst.Expression.MatchError(tpe, loc)
+      case SimplifiedAst.Expression.MatchError(tpe, loc) =>
+        ExecutableAst.Expression.MatchError(tpe, loc)
 
-      case SimplifiedAst.Expression.SwitchError(tpe, loc) => ExecutableAst.Expression.SwitchError(tpe, loc)
+      case SimplifiedAst.Expression.SwitchError(tpe, loc) =>
+        ExecutableAst.Expression.SwitchError(tpe, loc)
 
       case SimplifiedAst.Expression.Def(sym, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '$e0'.")
       case SimplifiedAst.Expression.Eff(sym, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '$e0'.")
@@ -379,6 +421,7 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
 
   private def visitBodyPredicate(p0: SimplifiedAst.Predicate.Body, m: TopLevel)(implicit flix: Flix): ExecutableAst.Predicate.Body = p0 match {
     case SimplifiedAst.Predicate.Body.RelAtom(sym, polarity, terms, loc) =>
+      // TODO: Remove index2var.
       val termsArray = terms.map(t => visitBodyTerm(t, m))
       val index2var: Array[Symbol.VarSym] = {
         val r = new Array[Symbol.VarSym](termsArray.length)
@@ -396,6 +439,7 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
       ExecutableAst.Predicate.Body.RelAtom(sym, polarity, termsArray, index2var.toList, loc)
 
     case SimplifiedAst.Predicate.Body.LatAtom(sym, polarity, terms, loc) =>
+      // TODO: Remove index2var.
       val termsArray = terms.map(t => visitBodyTerm(t, m))
       val index2var: Array[Symbol.VarSym] = {
         val r = new Array[Symbol.VarSym](termsArray.length)
@@ -420,9 +464,9 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
 
   private def visitHeadTerm(t0: SimplifiedAst.Term.Head, m: TopLevel)(implicit flix: Flix): ExecutableAst.Term.Head = t0 match {
     case SimplifiedAst.Term.Head.Var(sym, tpe, loc) => ExecutableAst.Term.Head.Var(sym, tpe, loc)
-    case SimplifiedAst.Term.Head.Lit(lit, tpe, loc) => toValueOpt(lit) match {
+    case SimplifiedAst.Term.Head.Lit(lit, tpe, loc) => toValueOptTemporaryToBeRemoved(lit) match {
       case Some(value) => ExecutableAst.Term.Head.Lit(value, tpe, loc)
-      case None => ExecutableAst.Term.Head.Cst(lit2sym(lit, m), tpe, loc)
+      case None => ExecutableAst.Term.Head.Cst(lit2symTemporaryToBeRemoved(lit, m), tpe, loc)
     }
     case SimplifiedAst.Term.Head.App(name, args, tpe, loc) =>
       ExecutableAst.Term.Head.App(name, args, tpe, loc)
@@ -431,9 +475,9 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
   private def visitBodyTerm(t0: SimplifiedAst.Term.Body, m: TopLevel)(implicit flix: Flix): ExecutableAst.Term.Body = t0 match {
     case SimplifiedAst.Term.Body.Wild(tpe, loc) => ExecutableAst.Term.Body.Wild(tpe, loc)
     case SimplifiedAst.Term.Body.Var(sym, tpe, loc) => ExecutableAst.Term.Body.Var(sym, tpe, loc)
-    case SimplifiedAst.Term.Body.Lit(lit, tpe, loc) => toValueOpt(lit) match {
+    case SimplifiedAst.Term.Body.Lit(lit, tpe, loc) => toValueOptTemporaryToBeRemoved(lit) match {
       case Some(value) => ExecutableAst.Term.Body.Lit(value, tpe, loc)
-      case None => ExecutableAst.Term.Body.Cst(lit2sym(lit, m), tpe, loc)
+      case None => ExecutableAst.Term.Body.Cst(lit2symTemporaryToBeRemoved(lit, m), tpe, loc)
     }
     case SimplifiedAst.Term.Body.Pat(pat, tpe, loc) => ExecutableAst.Term.Body.Pat(visitPattern(pat), tpe, loc)
   }
@@ -450,7 +494,8 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
   private def visitProperty(p0: SimplifiedAst.Property, m: TopLevel)(implicit flix: Flix): ExecutableAst.Property =
     ExecutableAst.Property(p0.law, p0.defn, visitExp(p0.exp, m))
 
-  private def toValueOpt(exp0: SimplifiedAst.Expression): Option[ProxyObject] = exp0 match {
+  // TODO: Deprecated
+  private def toValueOptTemporaryToBeRemoved(exp0: SimplifiedAst.Expression): Option[ProxyObject] = exp0 match {
     case SimplifiedAst.Expression.True => Some(new ProxyObject(java.lang.Boolean.TRUE, null, null, null))
     case SimplifiedAst.Expression.False => Some(new ProxyObject(java.lang.Boolean.FALSE, null, null, null))
     case SimplifiedAst.Expression.Char(lit) => Some(new ProxyObject(new java.lang.Character(lit), null, null, null))
@@ -465,7 +510,8 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
     case _ => None
   }
 
-  private def lit2sym(exp0: SimplifiedAst.Expression, m: TopLevel)(implicit flix: Flix): Symbol.DefnSym = {
+  // TODO: Deprecated
+  private def lit2symTemporaryToBeRemoved(exp0: SimplifiedAst.Expression, m: TopLevel)(implicit flix: Flix): Symbol.DefnSym = {
     implicit val _ = flix.genSym
     // Generate a top-level function for the constant.
     val sym = Symbol.freshDefnSym("lit")
