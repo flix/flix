@@ -117,16 +117,132 @@ def testInt16Rel04(): ConstraintSet = {
     Int16Rel(x) :- Int16Rel(x).
 }
 
-// TODO
-//    case Type.Int32 => Set.empty
-//    case Type.Int64 => Set.empty
-//    case Type.BigInt => Set.empty
-//    case Type.Str => Set.empty
-//    case Type.Tuple(l) => Set.empty
-//    case Type.Enum(_, _) => Set.empty
-//    case Type.Relation(_, _) => Set.empty
-//    case Type.Lattice(_, _) => Set.empty
-//    case Type.ConstraintSet => Set.empty
+rel Int32Rel(x: Int32)
+
+@test
+def testInt32Rel01(): ConstraintSet = Int32Rel(0i32).
+
+@test
+def testInt32Rel02(): ConstraintSet = Int32Rel(123i32).
+
+@test
+def testInt32Rel03(): ConstraintSet = Int32Rel(x) :- Int32Rel(x).
+
+@test
+def testInt32Rel04(): ConstraintSet = {
+    Int32Rel(0i32).
+    Int32Rel(123i32).
+    Int32Rel(x) :- Int32Rel(x).
+}
+
+rel Int64Rel(x: Int64)
+
+@test
+def testInt64Rel01(): ConstraintSet = Int64Rel(0i64).
+
+@test
+def testInt64Rel02(): ConstraintSet = Int64Rel(123i64).
+
+@test
+def testInt64Rel03(): ConstraintSet = Int64Rel(x) :- Int64Rel(x).
+
+@test
+def testInt64Rel04(): ConstraintSet = {
+    Int64Rel(0i64).
+    Int64Rel(123i64).
+    Int64Rel(x) :- Int64Rel(x).
+}
+
+rel BigIntRel(x: BigInt)
+
+@test
+def testBigIntRel01(): ConstraintSet = BigIntRel(0ii).
+
+@test
+def testBigIntRel02(): ConstraintSet = BigIntRel(123ii).
+
+@test
+def testBigIntRel03(): ConstraintSet = BigIntRel(x) :- BigIntRel(x).
+
+@test
+def testBigIntRel04(): ConstraintSet = {
+    BigIntRel(0ii).
+    BigIntRel(123ii).
+    BigIntRel(x) :- BigIntRel(x).
+}
+
+rel StrRel(x: Str)
+
+@test
+def testStrRel01(): ConstraintSet = StrRel("hello").
+
+@test
+def testStrRel02(): ConstraintSet = StrRel("world").
+
+@test
+def testStrRel03(): ConstraintSet = StrRel(x) :- StrRel(x).
+
+@test
+def testStrRel04(): ConstraintSet = {
+    StrRel("hello").
+    StrRel("world").
+    StrRel(x) :- StrRel(x).
+}
+
+rel TupleRel(x: (Bool, Int, Str))
+
+@test
+def testTupleRel01(): ConstraintSet = TupleRel((true, 21, "hello")).
+
+@test
+def testTupleRel02(): ConstraintSet = TupleRel((false, 42, "world")).
+
+@test
+def testTupleRel03(): ConstraintSet = TupleRel(x) :- TupleRel(x).
+
+@test
+def testTupleRel04(): ConstraintSet = {
+    TupleRel((true, 21, "hello")).
+    TupleRel((false, 42, "world")).
+    StrRel(x) :- StrRel(x).
+}
+
+rel OptionRel(x: Option[Int])
+
+@test
+def testOptionRel01(): ConstraintSet = OptionRel(None).
+
+@test
+def testOptionRel02(): ConstraintSet = OptionRel(Some(42)).
+
+@test
+def testOptionRel03(): ConstraintSet = OptionRel(x) :- OptionRel(x).
+
+@test
+def testOptionRel04(): ConstraintSet = {
+   OptionRel(None).
+   OptionRel(Some(42)).
+   OptionRel(x) :- OptionRel(x).
+}
+
+// TODO: Broken.
+//rel ListRel(x: List[Int])
+//
+//@test
+//def testListRel01(): ConstraintSet = ListRel(Nil).
+//
+//@test
+//def testListRel02(): ConstraintSet = ListRel(1 :: 2 :: 3 :: Nil).
+//
+//@test
+//def testListRel03(): ConstraintSet = ListRel(x) :- ListRel(x).
+//
+//@test
+//def testListRel04(): ConstraintSet = {
+//   ListRel(Nil).
+//   ListRel(1 :: 2 :: 3 :: Nil).
+//   ListRel(x) :- ListRel(x).
+//}
 
 namespace Example01 {
 
