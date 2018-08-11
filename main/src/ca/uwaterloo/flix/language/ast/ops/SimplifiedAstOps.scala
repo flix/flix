@@ -394,6 +394,46 @@ object SimplifiedAstOps {
         checkType(tpe)
 
       //
+      // New Relation.
+      //
+      case Expression.NewRelation(sym, tpe, loc) =>
+        checkType(tpe)
+
+      //
+      // New Lattice.
+      //
+      case Expression.NewLattice(sym, tpe, loc) =>
+        checkType(tpe)
+
+      //
+      // Constraint.
+      //
+      case Expression.Constraint(c, tpe, loc) =>
+        checkType(tpe)
+
+      //
+      // ConstraintUnion.
+      //
+      case Expression.ConstraintUnion(exp1, exp2, tpe, loc) =>
+        checkExp(exp1, env0, ienv0)
+        checkExp(exp2, env0, ienv0)
+        checkType(tpe)
+
+      //
+      // Fixpoint Solve.
+      //
+      case Expression.FixpointSolve(exp, tpe, loc) =>
+        checkExp(exp, env0, ienv0)
+        checkType(tpe)
+
+      //
+      // Fixpoint Check.
+      //
+      case Expression.FixpointCheck(exp, tpe, loc) =>
+        checkExp(exp, env0, ienv0)
+        checkType(tpe)
+
+      //
       // Error Expressions.
       //
       case Expression.UserError(tpe, loc) => checkType(tpe)

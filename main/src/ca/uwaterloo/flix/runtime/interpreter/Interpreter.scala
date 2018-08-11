@@ -68,19 +68,19 @@ object Interpreter {
     //
     // Apply* expressions.
     //
-    case Expression.ApplyClo(exp, args, _, _) => {
+    case Expression.ApplyClo(exp, args, _, _) =>
       val clo = eval(exp, env0, henv0, lenv0, root)
       invokeClo(clo, args, env0, henv0, lenv0, root)
-    }
+
 
     case Expression.ApplyDef(sym, args, _, _) => invokeDef(sym, args, env0, henv0, lenv0, root)
 
     case Expression.ApplyEff(sym, args, tpe, loc) => invokeEff(sym, args, env0, henv0, lenv0, root)
 
-    case Expression.ApplyCloTail(exp, args, _, _) => {
+    case Expression.ApplyCloTail(exp, args, _, _) =>
       val clo = eval(exp, env0, henv0, lenv0, root)
       invokeClo(clo, args, env0, henv0, lenv0, root)
-    }
+
 
     case Expression.ApplyDefTail(sym, args, _, _) => invokeDef(sym, args, env0, henv0, lenv0, root)
 
@@ -326,6 +326,18 @@ object Interpreter {
     } catch {
       case ex: InvocationTargetException => throw ex.getTargetException
     }
+
+    //
+    // New Relation expressions.
+    //
+    case Expression.NewRelation(sym, tpe, loc) =>
+      ??? // TODO
+
+    //
+    // New Lattice expressions.
+    //
+    case Expression.NewLattice(sym, tpe, loc) =>
+      ??? // TODO
 
     //
     // Constraint expressions.

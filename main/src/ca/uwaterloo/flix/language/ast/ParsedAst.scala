@@ -880,6 +880,15 @@ object ParsedAst {
     case class NativeMethod(sp1: SourcePosition, fqn: Seq[String], args: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
+      * New Relation or Lattice.
+      *
+      * @param sp1  the position of the first character in the expression.
+      * @param name the name of the relation or lattice.
+      * @param sp2  the position of the last character in the expression.
+      */
+    case class NewRelationOrLattice(sp1: SourcePosition, name: Name.QName, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
       * Constraint sequence expression.
       *
       * @param sp1 the position of the first character in the expression.

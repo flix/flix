@@ -838,6 +838,17 @@ object SymbolicEvaluator {
       case Expression.NativeMethod(method, args, tpe, loc) => throw InternalCompilerException("Not yet supported.")
 
       /**
+        * New Relation.
+        *
+        */
+      case Expression.NewRelation(sym, tpe, loc) => throw InternalCompilerException("Not yet supported.")
+
+      /**
+        * New Lattice.
+        */
+      case Expression.NewLattice(sym, tpe, loc) => throw InternalCompilerException("Not yet supported.")
+
+      /**
         * Constraint.
         */
       case Expression.Constraint(c, tpe, loc) => throw InternalCompilerException("Not yet supported.")
