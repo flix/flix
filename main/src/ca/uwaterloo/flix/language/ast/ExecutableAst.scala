@@ -216,6 +216,10 @@ object ExecutableAst {
 
     case class NativeMethod(method: Method, args: List[ExecutableAst.Expression], tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
+    case class NewRelation(sym: Symbol.RelSym, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
+
+    case class NewLattice(sym: Symbol.LatSym, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
+
     case class Constraint(c: ExecutableAst.Constraint, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
     case class ConstraintUnion(e1: ExecutableAst.Expression, e2: ExecutableAst.Expression, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
