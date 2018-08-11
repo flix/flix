@@ -1650,6 +1650,10 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.NativeField(sp1, _, _) => sp1
     case ParsedAst.Expression.NativeMethod(sp1, _, _, _) => sp1
     case ParsedAst.Expression.NativeConstructor(sp1, _, _, _) => sp1
+    case ParsedAst.Expression.NewRelationOrLattice(sp1, _, _) => sp1
+    case ParsedAst.Expression.ConstraintSeq(sp1, _, _) => sp1
+    case ParsedAst.Expression.FixpointSolve(sp1, _, _) => sp1
+    case ParsedAst.Expression.FixpointCheck(sp1, _, _) => sp1
     case ParsedAst.Expression.UserError(sp1, _) => sp1
   }
 
