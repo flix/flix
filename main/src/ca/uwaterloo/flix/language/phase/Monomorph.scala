@@ -410,6 +410,12 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           val es = args.map(e => visitExp(e, env0))
           Expression.NativeMethod(method, es, subst0(tpe), eff, loc)
 
+        case Expression.NewRelation(sym, tpe, eff, loc) =>
+          Expression.NewRelation(sym, subst0(tpe), eff, loc)
+
+        case Expression.NewLattice(sym, tpe, eff, loc) =>
+          Expression.NewLattice(sym, subst0(tpe), eff, loc)
+
         case Expression.Constraint(c, tpe, eff, loc) =>
           // TODO: Any monomorph?
           Expression.Constraint(c, tpe, eff, loc)
