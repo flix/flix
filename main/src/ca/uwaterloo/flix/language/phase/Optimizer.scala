@@ -362,7 +362,8 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       //
       // Native Field.
       //
-      case Expression.NativeField(field, tpe, loc) => Expression.NativeField(field, tpe, loc)
+      case Expression.NativeField(field, tpe, loc) =>
+        Expression.NativeField(field, tpe, loc)
 
       //
       // Native Method.
@@ -370,6 +371,18 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.NativeMethod(method, args, tpe, loc) =>
         val as = args map (visitExp(_, env0))
         Expression.NativeMethod(method, as, tpe, loc)
+
+      //
+      // NewRelation.
+      //
+      case Expression.NewRelation(sym, tpe, loc) =>
+        Expression.NewRelation(sym, tpe, loc)
+
+      //
+      // NewLattice.
+      //
+      case Expression.NewLattice(sym, tpe, loc) =>
+        Expression.NewLattice(sym, tpe, loc)
 
       //
       // Constraint.

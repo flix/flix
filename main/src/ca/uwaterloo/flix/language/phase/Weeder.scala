@@ -918,6 +918,9 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
             case es => WeededAst.Expression.NativeMethod(className, methodName, es, mkSL(sp1, sp2))
           }
 
+        case ParsedAst.Expression.NewRelationOrLattice(sp1, name, sp2) =>
+          ??? // TODO
+
         case ParsedAst.Expression.ConstraintSeq(sp1, cs, sp2) =>
           val loc = mkSL(sp1, sp2)
 
