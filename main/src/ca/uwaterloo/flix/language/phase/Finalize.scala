@@ -25,13 +25,11 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
 import scala.collection.mutable
 
-// TODO: Rename to FinalAst and to Finalize.
-
-object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root] {
+object Finalize extends Phase[SimplifiedAst.Root, ExecutableAst.Root] {
 
   private type TopLevel = mutable.Map[Symbol.DefnSym, ExecutableAst.Def]
 
-  def run(root: SimplifiedAst.Root)(implicit flix: Flix): Validation[ExecutableAst.Root, CompilationError] = flix.phase("CreateExecutableAst") {
+  def run(root: SimplifiedAst.Root)(implicit flix: Flix): Validation[ExecutableAst.Root, CompilationError] = flix.phase("Finalize") {
 
     val m: TopLevel = mutable.Map.empty
 
@@ -79,17 +77,17 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
     ExecutableAst.Def(def0.ann, def0.mod, def0.sym, fs, visitExp(def0.exp, m), def0.tpe, def0.loc)
   }
 
-  private def visitEff(eff0: SimplifiedAst.Eff): ExecutableAst.Eff = {
-    val fs = eff0.fparams.map(visitFormalParam)
-    ExecutableAst.Eff(eff0.ann, eff0.mod, eff0.sym, fs, eff0.tpe, eff0.loc)
-  }
-
   private def visitEnum(enum0: SimplifiedAst.Enum, m: TopLevel)(implicit flix: Flix): ExecutableAst.Enum = enum0 match {
     case SimplifiedAst.Enum(mod, sym, cases0, tpe, loc) =>
       val cases = cases0.map {
         case (tag, SimplifiedAst.Case(enumSym, tagName, tagType, tagLoc)) => tag -> ExecutableAst.Case(enumSym, tagName, tagType, tagLoc)
       }
       ExecutableAst.Enum(mod, sym, cases, tpe, loc)
+  }
+
+  private def visitEff(eff0: SimplifiedAst.Eff): ExecutableAst.Eff = {
+    val fs = eff0.fparams.map(visitFormalParam)
+    ExecutableAst.Eff(eff0.ann, eff0.mod, eff0.sym, fs, eff0.tpe, eff0.loc)
   }
 
   private def visitHandler(handler0: SimplifiedAst.Handler, m: TopLevel)(implicit flix: Flix): ExecutableAst.Handler = {
@@ -170,13 +168,7 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
 
       case SimplifiedAst.Expression.Closure(sym, freeVars, tpe, loc) =>
         val fvs = freeVars.map(visitFreeVar)
-        // TODO: Temporary fix to compute the function interface type (as opposed to the closure interface type).
-        // In the future this "computation" should not be performed here.
-        val base = tpe.typeConstructor
-        val targs = tpe.typeArguments
-        val freeArgs = fvs.map(_.tpe)
-        val fnType = Type.mkArrow(freeArgs ::: targs.init, targs.last)
-        ExecutableAst.Expression.Closure(sym, fvs, fnType, tpe, loc)
+        ExecutableAst.Expression.Closure(sym, fvs, getFunctionTypeTemporaryToBeRemoved(fvs, tpe), tpe, loc)
 
       case SimplifiedAst.Expression.ApplyClo(exp, args, tpe, loc) =>
         val as = args map visit
@@ -421,43 +413,19 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
 
   private def visitBodyPredicate(p0: SimplifiedAst.Predicate.Body, m: TopLevel)(implicit flix: Flix): ExecutableAst.Predicate.Body = p0 match {
     case SimplifiedAst.Predicate.Body.RelAtom(sym, polarity, terms, loc) =>
-      // TODO: Remove index2var.
-      val termsArray = terms.map(t => visitBodyTerm(t, m))
-      val index2var: Array[Symbol.VarSym] = {
-        val r = new Array[Symbol.VarSym](termsArray.length)
-        var i = 0
-        while (i < r.length) {
-          termsArray(i) match {
-            case ExecutableAst.Term.Body.Var(sym, _, _) =>
-              r(i) = sym
-            case _ => // nop
-          }
-          i = i + 1
-        }
-        r
-      }
-      ExecutableAst.Predicate.Body.RelAtom(sym, polarity, termsArray, index2var.toList, loc)
+      val ts = terms.map(t => visitBodyTerm(t, m))
+      val index2var = getIndex2VarTemporaryToBeRemoved(ts)
+      ExecutableAst.Predicate.Body.RelAtom(sym, polarity, ts, index2var, loc)
 
     case SimplifiedAst.Predicate.Body.LatAtom(sym, polarity, terms, loc) =>
-      // TODO: Remove index2var.
-      val termsArray = terms.map(t => visitBodyTerm(t, m))
-      val index2var: Array[Symbol.VarSym] = {
-        val r = new Array[Symbol.VarSym](termsArray.length)
-        var i = 0
-        while (i < r.length) {
-          termsArray(i) match {
-            case ExecutableAst.Term.Body.Var(sym, _, _) =>
-              r(i) = sym
-            case _ => // nop
-          }
-          i = i + 1
-        }
-        r
-      }
-      ExecutableAst.Predicate.Body.LatAtom(sym, polarity, termsArray, index2var.toList, loc)
+      val ts = terms.map(t => visitBodyTerm(t, m))
+      val index2var = getIndex2VarTemporaryToBeRemoved(ts)
+      ExecutableAst.Predicate.Body.LatAtom(sym, polarity, ts, index2var, loc)
+
     case SimplifiedAst.Predicate.Body.Filter(name, terms, loc) =>
-      val termsArray = terms.map(t => visitBodyTerm(t, m))
-      ExecutableAst.Predicate.Body.Filter(name, termsArray, loc)
+      val ts = terms.map(t => visitBodyTerm(t, m))
+      ExecutableAst.Predicate.Body.Filter(name, ts, loc)
+
     case SimplifiedAst.Predicate.Body.Loop(sym, term, loc) =>
       ExecutableAst.Predicate.Body.Loop(sym, visitHeadTerm(term, m), loc)
   }
@@ -493,6 +461,29 @@ object CreateExecutableAst extends Phase[SimplifiedAst.Root, ExecutableAst.Root]
 
   private def visitProperty(p0: SimplifiedAst.Property, m: TopLevel)(implicit flix: Flix): ExecutableAst.Property =
     ExecutableAst.Property(p0.law, p0.defn, visitExp(p0.exp, m))
+
+  // TODO: Deprecated
+  private def getFunctionTypeTemporaryToBeRemoved(fvs: List[ExecutableAst.FreeVar], tpe: Type): Type = {
+    val base = tpe.typeConstructor
+    val targs = tpe.typeArguments
+    val freeArgs = fvs.map(_.tpe)
+    Type.mkArrow(freeArgs ::: targs.init, targs.last)
+  }
+
+  // TODO: Deprecated
+  private def getIndex2VarTemporaryToBeRemoved(ts: List[ExecutableAst.Term.Body]): List[Symbol.VarSym] = {
+    val r = new Array[Symbol.VarSym](ts.length)
+    var i = 0
+    while (i < r.length) {
+      ts(i) match {
+        case ExecutableAst.Term.Body.Var(sym, _, _) =>
+          r(i) = sym
+        case _ => // nop
+      }
+      i = i + 1
+    }
+    r.toList
+  }
 
   // TODO: Deprecated
   private def toValueOptTemporaryToBeRemoved(exp0: SimplifiedAst.Expression): Option[ProxyObject] = exp0 match {

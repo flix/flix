@@ -246,7 +246,7 @@ class Flix {
       Optimizer |>
       TreeShaker |>
       VarNumbering |>
-      CreateExecutableAst |>
+      Finalize |>
       QuickChecker |>
       Verifier |>
       JvmBackend

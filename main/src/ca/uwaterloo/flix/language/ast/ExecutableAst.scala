@@ -42,9 +42,6 @@ object ExecutableAst {
   }
 
   case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, formals: List[ExecutableAst.FormalParam], exp: ExecutableAst.Expression, tpe: Type, loc: SourceLocation) extends ExecutableAst {
-    /**
-      * Pointer to generated code.
-      */
     var method: Method = null
   }
 
