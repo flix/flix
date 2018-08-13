@@ -216,46 +216,11 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       /*
        * Constraint.
        */
-      case WeededAst.Declaration.Constraint(h, bs, loc) =>
-        // Find the variables bound in the head and rule scope of the constraint.
-        val headVars = bs.flatMap(Predicates.boundInHeadScope)
-        val ruleVars = bs.flatMap(Predicates.boundInRuleScope)
-
-        // Introduce a symbol for each variable that is bound in the head scope of the constraint (excluding those bound by the rule scope).
-        val headEnv = headVars.foldLeft(Map.empty[String, Symbol.VarSym]) {
-          case (macc, ident) => macc.get(ident.name) match {
-            // Check if the identifier is bound by the rule scope.
-            case None if !ruleVars.exists(_.name == ident.name) =>
-              macc + (ident.name -> Symbol.freshVarSym(ident))
-            case _ => macc
-          }
-        }
-
-        // Introduce a symbol for each variable that is bound in the rule scope of the constraint.
-        val ruleEnv = ruleVars.foldLeft(Map.empty[String, Symbol.VarSym]) {
-          case (macc, ident) => macc.get(ident.name) match {
-            case None => macc + (ident.name -> Symbol.freshVarSym(ident))
-            case Some(sym) => macc
-          }
-        }
-
-        // Constraints are non-polymorphic so the type environment is always empty.
-        val tenv0 = Map.empty[String, Type.Var]
-
-        // Perform naming on the head and body predicates.
-        mapN(Predicates.namer(h, headEnv, ruleEnv, tenv0), traverse(bs)(b => Predicates.namer(b, headEnv, ruleEnv, tenv0))) {
-          case (head, body) =>
-            val headParams = headEnv.map {
-              case (_, sym) => NamedAst.ConstraintParam.HeadParam(sym, sym.tvar, sym.loc)
-            }
-            val ruleParam = ruleEnv.map {
-              case (_, sym) => NamedAst.ConstraintParam.RuleParam(sym, sym.tvar, sym.loc)
-            }
-            val cparams = (headParams ++ ruleParam).toList
-            val constraint = NamedAst.Constraint(cparams, head, body, loc)
-            val constraints = constraint :: prog0.constraints.getOrElse(ns0, Nil)
-            prog0.copy(constraints = prog0.constraints + (ns0 -> constraints))
-        }
+      case d@WeededAst.Declaration.Constraint(h, bs, loc) => visitConstraint(d) map {
+        case constraint =>
+          val constraints = constraint :: prog0.constraints.getOrElse(ns0, Nil)
+          prog0.copy(constraints = prog0.constraints + (ns0 -> constraints))
+      }
 
       /*
        * BoundedLattice (deprecated).
@@ -418,6 +383,50 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     }
 
     /**
+      * Performs naming on the given constraint `c0`.
+      */
+    def visitConstraint(c0: WeededAst.Declaration.Constraint)(implicit genSym: GenSym): Validation[NamedAst.Constraint, NameError] = c0 match {
+      case WeededAst.Declaration.Constraint(h, bs, loc) =>
+        // Find the variables bound in the head and rule scope of the constraint.
+        val headVars = bs.flatMap(Predicates.boundInHeadScope)
+        val ruleVars = bs.flatMap(Predicates.boundInRuleScope)
+
+        // Introduce a symbol for each variable that is bound in the head scope of the constraint (excluding those bound by the rule scope).
+        val headEnv = headVars.foldLeft(Map.empty[String, Symbol.VarSym]) {
+          case (macc, ident) => macc.get(ident.name) match {
+            // Check if the identifier is bound by the rule scope.
+            case None if !ruleVars.exists(_.name == ident.name) =>
+              macc + (ident.name -> Symbol.freshVarSym(ident))
+            case _ => macc
+          }
+        }
+
+        // Introduce a symbol for each variable that is bound in the rule scope of the constraint.
+        val ruleEnv = ruleVars.foldLeft(Map.empty[String, Symbol.VarSym]) {
+          case (macc, ident) => macc.get(ident.name) match {
+            case None => macc + (ident.name -> Symbol.freshVarSym(ident))
+            case Some(sym) => macc
+          }
+        }
+
+        // Constraints are non-polymorphic so the type environment is always empty.
+        val tenv0 = Map.empty[String, Type.Var]
+
+        // Perform naming on the head and body predicates.
+        mapN(Predicates.namer(h, headEnv, ruleEnv, tenv0), traverse(bs)(b => Predicates.namer(b, headEnv, ruleEnv, tenv0))) {
+          case (head, body) =>
+            val headParams = headEnv.map {
+              case (_, sym) => NamedAst.ConstraintParam.HeadParam(sym, sym.tvar, sym.loc)
+            }
+            val ruleParam = ruleEnv.map {
+              case (_, sym) => NamedAst.ConstraintParam.RuleParam(sym, sym.tvar, sym.loc)
+            }
+            val cparams = (headParams ++ ruleParam).toList
+            NamedAst.Constraint(cparams, head, body, loc)
+        }
+    }
+
+    /**
       * Performs naming on the given `cases` map.
       */
     def casesOf(cases: Map[String, WeededAst.Case], tenv0: Map[String, Type.Var])(implicit genSym: GenSym): Map[String, NamedAst.Case] = cases.foldLeft(Map.empty[String, NamedAst.Case]) {
@@ -548,9 +557,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       * Performs naming on the given expression `exp0` under the given environment `env0`.
       */
     def namer(exp0: WeededAst.Expression, env0: Map[String, Symbol.VarSym], tenv0: Map[String, Type.Var])(implicit genSym: GenSym): Validation[NamedAst.Expression, NameError] = exp0 match {
-      /*
-       * Variables.
-       */
       case WeededAst.Expression.Wild(loc) => NamedAst.Expression.Wild(Type.freshTypeVar(), loc).toSuccess
 
       case WeededAst.Expression.VarOrDef(name, loc) if name.isUnqualified =>
@@ -567,16 +573,10 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       case WeededAst.Expression.VarOrDef(name, loc) =>
         NamedAst.Expression.Def(name, Type.freshTypeVar(), loc).toSuccess
 
-      /*
-       * Holes.
-       */
       case WeededAst.Expression.Hole(name, loc) =>
         val tpe = Type.freshTypeVar()
         NamedAst.Expression.Hole(name, tpe, loc).toSuccess
 
-      /*
-       * Literals.
-       */
       case WeededAst.Expression.Unit(loc) => NamedAst.Expression.Unit(loc).toSuccess
       case WeededAst.Expression.True(loc) => NamedAst.Expression.True(loc).toSuccess
       case WeededAst.Expression.False(loc) => NamedAst.Expression.False(loc).toSuccess
@@ -824,6 +824,29 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
           case Err(e) => e.toFailure
         }
 
+      case WeededAst.Expression.NewRelationOrLattice(name, loc) =>
+        NamedAst.Expression.NewRelationOrLattice(name, Type.freshTypeVar(), loc).toSuccess
+
+      case WeededAst.Expression.Constraint(con, loc) =>
+        Declarations.visitConstraint(con) map {
+          case c => NamedAst.Expression.Constraint(c, Type.freshTypeVar(), loc)
+        }
+
+      case WeededAst.Expression.FixpointSolve(exp, loc) =>
+        namer(exp, env0, tenv0) map {
+          case e => NamedAst.Expression.FixpointSolve(e, Type.freshTypeVar(), loc)
+        }
+
+      case WeededAst.Expression.FixpointCheck(exp, loc) =>
+        namer(exp, env0, tenv0) map {
+          case e => NamedAst.Expression.FixpointCheck(e, Type.freshTypeVar(), loc)
+        }
+
+      case WeededAst.Expression.ConstraintUnion(exp1, exp2, loc) =>
+        mapN(namer(exp1, env0, tenv0), namer(exp2, env0, tenv0)) {
+          case (e1, e2) => NamedAst.Expression.ConstraintUnion(e1, e2, Type.freshTypeVar(), loc)
+        }
+
       case WeededAst.Expression.UserError(loc) => NamedAst.Expression.UserError(Type.freshTypeVar(), loc).toSuccess
     }
 
@@ -888,6 +911,11 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       case WeededAst.Expression.NativeField(className, fieldName, loc) => Nil
       case WeededAst.Expression.NativeMethod(className, methodName, args, loc) => args.flatMap(freeVars)
       case WeededAst.Expression.NativeConstructor(className, args, loc) => args.flatMap(freeVars)
+      case WeededAst.Expression.NewRelationOrLattice(name, loc) => Nil
+      case WeededAst.Expression.Constraint(c, loc) => ??? // TODO
+      case WeededAst.Expression.ConstraintUnion(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
+      case WeededAst.Expression.FixpointSolve(exp, loc) => freeVars(exp)
+      case WeededAst.Expression.FixpointCheck(exp, loc) => freeVars(exp)
       case WeededAst.Expression.UserError(loc) => Nil
     }
 

@@ -100,7 +100,7 @@ object TypedAstOps {
         }
 
       case Expression.ArrayLit(elms, tpe, eff, loc) =>
-        elms.foldLeft(Map.empty[Symbol.HoleSym, HoleContext]){
+        elms.foldLeft(Map.empty[Symbol.HoleSym, HoleContext]) {
           case (macc, elm) => macc ++ visitExp(elm, env0)
         }
 
@@ -120,7 +120,7 @@ object TypedAstOps {
         visitExp(base, env0) ++ visitExp(beginIndex, env0) ++ visitExp(endIndex, env0)
 
       case Expression.VectorLit(elms, tpe, eff, loc) =>
-        elms.foldLeft(Map.empty[Symbol.HoleSym, HoleContext]){
+        elms.foldLeft(Map.empty[Symbol.HoleSym, HoleContext]) {
           case (macc, elm) => macc ++ visitExp(elm, env0)
         }
 
@@ -181,6 +181,21 @@ object TypedAstOps {
         args.foldLeft(Map.empty[Symbol.HoleSym, HoleContext]) {
           case (macc, arg) => macc ++ visitExp(arg, env0)
         }
+
+      case Expression.NewRelation(sym, tpe, eff, loc) => Map.empty
+
+      case Expression.NewLattice(sym, tpe, eff, loc) => Map.empty
+
+      case Expression.Constraint(c, tpe, eff, loc) => ??? // TODO
+
+      case Expression.ConstraintUnion(exp1, exp2, tpe, eff, loc) =>
+        visitExp(exp1, env0) ++ visitExp(exp2, env0)
+
+      case Expression.FixpointSolve(exp, tpe, eff, loc) =>
+        visitExp(exp, env0)
+
+      case Expression.FixpointCheck(exp, tpe, eff, loc) =>
+        visitExp(exp, env0)
 
       case Expression.UserError(tpe, eff, loc) => Map.empty
     }

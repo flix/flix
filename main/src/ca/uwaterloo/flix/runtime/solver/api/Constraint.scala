@@ -112,4 +112,14 @@ class Constraint(cparams: Array[VarSym], head: Predicate, body: Array[Predicate]
     case p: FilterPredicate => p
   }
 
+  /**
+    * Returns a string representation of `this` constraint.
+    */
+  override def toString: String = {
+    if (isFact())
+      head.toString + "."
+    else
+      head.toString + " :- " + body.mkString(", ") + "."
+  }
+
 }

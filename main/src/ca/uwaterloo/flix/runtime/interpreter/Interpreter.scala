@@ -21,9 +21,12 @@ import java.lang.reflect.{InvocationTargetException, Modifier}
 import ca.uwaterloo.flix.api._
 import ca.uwaterloo.flix.language.ast.ExecutableAst._
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.util.InternalRuntimeException
+import ca.uwaterloo.flix.runtime.solver.{Fixpoint, FixpointOptions, Solver, api}
+import ca.uwaterloo.flix.runtime.solver.api.ApiBridge
+import ca.uwaterloo.flix.runtime.solver.api.ApiBridge.SymbolCache
+import ca.uwaterloo.flix.runtime.solver.api.ConstraintSet
+import ca.uwaterloo.flix.util.{InternalRuntimeException, Verbosity}
 import ca.uwaterloo.flix.util.tc.Show._
-
 import flix.runtime._
 
 object Interpreter {
@@ -65,19 +68,19 @@ object Interpreter {
     //
     // Apply* expressions.
     //
-    case Expression.ApplyClo(exp, args, _, _) => {
+    case Expression.ApplyClo(exp, args, _, _) =>
       val clo = eval(exp, env0, henv0, lenv0, root)
       invokeClo(clo, args, env0, henv0, lenv0, root)
-    }
+
 
     case Expression.ApplyDef(sym, args, _, _) => invokeDef(sym, args, env0, henv0, lenv0, root)
 
     case Expression.ApplyEff(sym, args, tpe, loc) => invokeEff(sym, args, env0, henv0, lenv0, root)
 
-    case Expression.ApplyCloTail(exp, args, _, _) => {
+    case Expression.ApplyCloTail(exp, args, _, _) =>
       val clo = eval(exp, env0, henv0, lenv0, root)
       invokeClo(clo, args, env0, henv0, lenv0, root)
-    }
+
 
     case Expression.ApplyDefTail(sym, args, _, _) => invokeDef(sym, args, env0, henv0, lenv0, root)
 
@@ -323,6 +326,64 @@ object Interpreter {
     } catch {
       case ex: InvocationTargetException => throw ex.getTargetException
     }
+
+    //
+    // New Relation expressions.
+    //
+    case Expression.NewRelation(sym, tpe, loc) =>
+      val attr = root.relations(sym).attr.map {
+        case Attribute(name, _) => new api.Attribute(name)
+      }
+      new api.Relation(sym.name, attr.toArray)
+
+    //
+    // New Lattice expressions.
+    //
+    case Expression.NewLattice(sym, tpe, loc) =>
+      val attr = root.lattices(sym).attr.map {
+        case Attribute(name, _) => new api.Attribute(name)
+      }
+      new api.Lattice(sym.name, attr.init.toArray, attr.last, /* TODO*/ null)
+
+    //
+    // Constraint expressions.
+    //
+    case Expression.Constraint(c, tpe, loc) =>
+      evalConstraint(c, env0, henv0, lenv0, root)
+
+    //
+    // ConstraintUnion expressions.
+    //
+    case Expression.ConstraintUnion(exp1, exp2, tpe, loc) =>
+      // TODO: Use value?
+      val v1 = cast2constraintset(eval(exp1, env0, henv0, lenv0, root))
+      val v2 = cast2constraintset(eval(exp2, env0, henv0, lenv0, root))
+      v1.union(v2)
+
+    //
+    // FixpointSolve expressions.
+    //
+    case Expression.FixpointSolve(exp, tpe, loc) =>
+      val cs = cast2constraintset(eval(exp, env0, henv0, lenv0, root))
+      val fixpoint = solve(cs)
+      println(fixpoint)
+      Value.Unit
+
+    //
+    // FixpointCheck expressions.
+    //
+    case Expression.FixpointCheck(exp, tpe, loc) =>
+      // TODO
+      val cs = cast2constraintset(eval(exp, env0, henv0, lenv0, root))
+      println(cs)
+      val solver = mkSolver(cs)
+      try {
+        val fixpoint = solve(cs)
+        println(fixpoint)
+        Value.True
+      } catch {
+        case ex: RuleError => Value.False
+      }
 
     //
     // Error expressions.
@@ -713,6 +774,23 @@ object Interpreter {
     Value.Closure(sym, bindings)
   }
 
+  /**
+    * Evaluates the given constraint to a constraint value.
+    */
+  private def evalConstraint(c0: Constraint, env0: Map[String, AnyRef], henv0: Map[Symbol.EffSym, AnyRef], lenv0: Map[Symbol.LabelSym, Expression], root: Root)(implicit flix: Flix): AnyRef = {
+    implicit val _ = root
+    implicit val cache = new SymbolCache
+
+    val constraint = ApiBridge.visitConstraint(c0)
+    val strata = new api.Stratum(List(constraint).toArray)
+
+    val relSyms = cache.relSyms.values.toArray
+    val latSyms = cache.latSyms.values.toArray
+
+    new ConstraintSet(relSyms, latSyms, Array(strata))
+  }
+
+
   /////////////////////////////////////////////////////////////////////////////
   // Casts                                                                   //
   /////////////////////////////////////////////////////////////////////////////
@@ -838,10 +916,39 @@ object Interpreter {
   }
 
   /**
+    * Casts the given reference `ref` to a constraint value.
+    */
+  private def cast2constraintset(ref: AnyRef): ConstraintSet = ref match {
+    case v: ConstraintSet => v
+    case _ => throw InternalRuntimeException(s"Unexpected non-constraint value: ${ref.getClass.getName}.")
+  }
+
+  /**
     * Constructs a bool from the given boolean `b`.
     */
   private def mkBool(b: Boolean): AnyRef = if (b) Value.True else Value.False
 
+  /**
+    * Computes the fixed point of the given constraint set `cs`.
+    */
+  private def solve(cs: ConstraintSet)(implicit flix: Flix): Fixpoint = {
+    val solver = mkSolver(cs)
+    solver.solve()
+  }
+
+  /**
+    * Returns a fixpoint solver for the given constraint set `cs`.
+    */
+  private def mkSolver(cs: ConstraintSet)(implicit flix: Flix): Solver = {
+    // Configure the fixpoint solver based on the Flix options.
+    val options = new FixpointOptions
+    options.setMonitored(flix.options.monitor)
+    options.setThreads(flix.options.threads)
+    options.setVerbose(flix.options.verbosity == Verbosity.Verbose)
+
+    // Construct the solver.
+    new Solver(cs, options)
+  }
 
   /**
     * Returns the given reference `ref` as a Java object.

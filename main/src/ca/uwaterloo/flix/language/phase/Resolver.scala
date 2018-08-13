@@ -653,6 +653,33 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
             es <- traverse(args)(e => visit(e, tenv0))
           } yield ResolvedAst.Expression.NativeMethod(method, es, tpe, loc)
 
+        case NamedAst.Expression.NewRelationOrLattice(name, tvar, loc) =>
+          lookupRelationOrLattice(name, ns0, prog0) map {
+            case RelationOrLattice.Rel(sym) => ResolvedAst.Expression.NewRelation(sym, tvar, loc)
+            case RelationOrLattice.Lat(sym) => ResolvedAst.Expression.NewLattice(sym, tvar, loc)
+          }
+
+        case NamedAst.Expression.Constraint(cons, tvar, loc) =>
+          Constraints.resolve(cons, ns0, prog0) map {
+            case c => ResolvedAst.Expression.Constraint(c, tvar, loc)
+          }
+
+        case NamedAst.Expression.ConstraintUnion(exp1, exp2, tvar, loc) =>
+          for {
+            e1 <- visit(exp1, tenv0)
+            e2 <- visit(exp2, tenv0)
+          } yield ResolvedAst.Expression.ConstraintUnion(e1, e2, tvar, loc)
+
+        case NamedAst.Expression.FixpointSolve(exp, tvar, loc) =>
+          for {
+            e <- visit(exp, tenv0)
+          } yield ResolvedAst.Expression.FixpointSolve(e, tvar, loc)
+
+        case NamedAst.Expression.FixpointCheck(exp, tvar, loc) =>
+          for {
+            e <- visit(exp, tenv0)
+          } yield ResolvedAst.Expression.FixpointCheck(e, tvar, loc)
+
         case NamedAst.Expression.UserError(tvar, loc) => ResolvedAst.Expression.UserError(tvar, loc).toSuccess
       }
 

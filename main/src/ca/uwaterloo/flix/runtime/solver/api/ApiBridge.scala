@@ -24,7 +24,7 @@ object ApiBridge {
     def getVarSym(sym: Symbol.VarSym): VarSym =
       varSyms.get(sym) match {
         case None =>
-          val newSym = new VarSym()
+          val newSym = new VarSym(sym.text)
           varSyms += (sym -> newSym)
           newSym
         case Some(res) => res
@@ -66,7 +66,7 @@ object ApiBridge {
     new Stratum(stratum.constraints.map(visitConstraint).toArray)
   }
 
-  private def visitConstraint(c0: ExecutableAst.Constraint)(implicit root: ExecutableAst.Root, cache: SymbolCache, flix: Flix): Constraint = {
+  def visitConstraint(c0: ExecutableAst.Constraint)(implicit root: ExecutableAst.Root, cache: SymbolCache, flix: Flix): Constraint = {
     val cparams = c0.cparams.map(visitConstraintParam)
     val head = visitHeadPredicate(c0.head)
     val body = c0.body.map(visitBodyPredicate)
@@ -147,7 +147,7 @@ object ApiBridge {
       new AppTerm(f, as.toArray)
   }
 
-  def visitBodyTerm(t0: ExecutableAst.Term.Body)(implicit root: ExecutableAst.Root, cache: SymbolCache, flix: Flix): Term = t0 match {
+  private def visitBodyTerm(t0: ExecutableAst.Term.Body)(implicit root: ExecutableAst.Root, cache: SymbolCache, flix: Flix): Term = t0 match {
     case ExecutableAst.Term.Body.Wild(_, _) => new WildTerm()
     case ExecutableAst.Term.Body.Var(sym, _, _) => new VarTerm(visitVarSym(sym))
     case ExecutableAst.Term.Body.Lit(lit, _, _) => new LitTerm(() => lit)

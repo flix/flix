@@ -42,9 +42,6 @@ object ExecutableAst {
   }
 
   case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, formals: List[ExecutableAst.FormalParam], exp: ExecutableAst.Expression, tpe: Type, loc: SourceLocation) extends ExecutableAst {
-    /**
-      * Pointer to generated code.
-      */
     var method: Method = null
   }
 
@@ -215,6 +212,18 @@ object ExecutableAst {
     case class NativeField(field: Field, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
     case class NativeMethod(method: Method, args: List[ExecutableAst.Expression], tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
+
+    case class NewRelation(sym: Symbol.RelSym, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
+
+    case class NewLattice(sym: Symbol.LatSym, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
+
+    case class Constraint(con: ExecutableAst.Constraint, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
+
+    case class ConstraintUnion(exp1: ExecutableAst.Expression, exp2: ExecutableAst.Expression, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
+
+    case class FixpointSolve(exp: ExecutableAst.Expression, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
+
+    case class FixpointCheck(exp: ExecutableAst.Expression, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
     case class UserError(tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 

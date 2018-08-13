@@ -28,7 +28,7 @@ import ca.uwaterloo.flix.runtime.solver.api.predicate._
 import ca.uwaterloo.flix.runtime.solver.api.symbol.VarSym
 import ca.uwaterloo.flix.runtime.solver.api.term._
 import ca.uwaterloo.flix.util._
-import flix.runtime.{RuleError, TimeoutError}
+import flix.runtime.{ReifiedSourceLocation, RuleError, TimeoutError}
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -202,7 +202,7 @@ class Solver(val constraintSet: ConstraintSet, options: FixpointOptions) {
   /**
     * Solves the Flix program.
     */
-  def solve(): Fixedpoint = try {
+  def solve(): Fixpoint = try {
     // initialize the solver.
     initSolver()
 
@@ -240,7 +240,7 @@ class Solver(val constraintSet: ConstraintSet, options: FixpointOptions) {
     printDebug()
 
     // build and return the model.
-    mkFixedpoint(totalTime)
+    mkFixpoint(totalTime)
   } catch {
     // Re-throw exceptions caught inside the individual reader/writer tasks.
     case ex: ExecutionException =>
@@ -536,7 +536,7 @@ class Solver(val constraintSet: ConstraintSet, options: FixpointOptions) {
 
       interp += ((p.getSym, fact))
     case _: TruePredicate => // nop
-    case _: FalsePredicate => throw new RuleError(null)
+    case _: FalsePredicate => throw new RuleError(new ReifiedSourceLocation("", 0, 0, 0, 0))
   }
 
   /**
@@ -718,23 +718,7 @@ class Solver(val constraintSet: ConstraintSet, options: FixpointOptions) {
   /**
     * Constructs the minimal model from the datastore.
     */
-  private def mkFixedpoint(elapsed: Long): Fixedpoint = {
-    val relations = constraintSet.getRelations().foldLeft(Map.empty[Table, Iterable[List[ProxyObject]]]) {
-      case (macc, sym) =>
-        val table = sym.getIndexedRelation().scan.toIterable.map(_.toList)
-        macc + ((sym, table))
-    }
-
-    val lattices = constraintSet.getLattices().foldLeft(Map.empty[Table, Iterable[(List[ProxyObject], ProxyObject)]]) {
-      case (macc, sym) =>
-        val table = sym.getIndexedLattice().scan.toIterable.map {
-          case (keys, values) => (keys.toArray.toList, values)
-        }
-        macc + ((sym, table))
-    }
-
-    Fixedpoint(relations, lattices)
-  }
+  private def mkFixpoint(elapsed: Long): Fixpoint = new Fixpoint(constraintSet.getRelations(), constraintSet.getLattices())
 
   /**
     * Returns a new thread pool configured to use the appropriate number of threads.

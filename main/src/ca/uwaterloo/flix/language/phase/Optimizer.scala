@@ -362,7 +362,8 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       //
       // Native Field.
       //
-      case Expression.NativeField(field, tpe, loc) => Expression.NativeField(field, tpe, loc)
+      case Expression.NativeField(field, tpe, loc) =>
+        Expression.NativeField(field, tpe, loc)
 
       //
       // Native Method.
@@ -370,6 +371,47 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.NativeMethod(method, args, tpe, loc) =>
         val as = args map (visitExp(_, env0))
         Expression.NativeMethod(method, as, tpe, loc)
+
+      //
+      // NewRelation.
+      //
+      case Expression.NewRelation(sym, tpe, loc) =>
+        Expression.NewRelation(sym, tpe, loc)
+
+      //
+      // NewLattice.
+      //
+      case Expression.NewLattice(sym, tpe, loc) =>
+        Expression.NewLattice(sym, tpe, loc)
+
+      //
+      // Constraint.
+      //
+      case Expression.Constraint(c0, tpe, loc) =>
+        // TODO: Recurse?
+        Expression.Constraint(c0, tpe, loc)
+
+      //
+      // Constraint Union.
+      //
+      case Expression.ConstraintUnion(exp1, exp2, tpe, loc) =>
+        val e1 = visitExp(exp1, env0)
+        val e2 = visitExp(exp2, env0)
+        Expression.ConstraintUnion(e1, e2, tpe, loc)
+
+      //
+      // Fixpoint Solve.
+      //
+      case Expression.FixpointSolve(exp, tpe, loc) =>
+        val e = visitExp(exp, env0)
+        Expression.FixpointSolve(e, tpe, loc)
+
+      //
+      // Fixpoint Check.
+      //
+      case Expression.FixpointCheck(exp, tpe, loc) =>
+        val e = visitExp(exp, env0)
+        Expression.FixpointCheck(e, tpe, loc)
 
       //
       // Error Expressions.

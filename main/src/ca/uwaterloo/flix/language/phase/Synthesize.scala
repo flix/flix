@@ -286,6 +286,29 @@ object Synthesize extends Phase[Root, Root] {
         val as = args map visitExp
         Expression.NativeMethod(method, as, tpe, eff, loc)
 
+      case Expression.NewRelation(sym, tpe, eff, loc) =>
+        Expression.NewRelation(sym, tpe, eff, loc)
+
+      case Expression.NewLattice(sym, tpe, eff, loc) =>
+        Expression.NewLattice(sym, tpe, eff, loc)
+
+      case Expression.Constraint(c, tpe, eff, loc) =>
+        // TODO: Recurse?
+        Expression.Constraint(c, tpe, eff, loc)
+
+      case Expression.ConstraintUnion(exp1, exp2, tpe, eff, loc) =>
+        val e1 = visitExp(exp1)
+        val e2 = visitExp(exp2)
+        Expression.ConstraintUnion(e1, e2, tpe, eff, loc)
+
+      case Expression.FixpointSolve(exp, tpe, eff, loc) =>
+        val e = visitExp(exp)
+        Expression.FixpointSolve(e, tpe, eff, loc)
+
+      case Expression.FixpointCheck(exp, tpe, eff, loc) =>
+        val e = visitExp(exp)
+        Expression.FixpointCheck(e, tpe, eff, loc)
+
       case Expression.UserError(tpe, eff, loc) =>
         Expression.UserError(tpe, eff, loc)
 
@@ -964,21 +987,24 @@ object Synthesize extends Phase[Root, Root] {
           // Relation case.
           //
           if (tpe.isRelation) {
-            return Expression.Str("<<relation>>", sl)
+            val method = classOf[java.lang.Object].getMethod("toString")
+            return Expression.NativeMethod(method, List(exp0), Type.Str, ast.Eff.Pure, sl)
           }
 
           //
           // Lattice case.
           //
           if (tpe.isLattice) {
-            return Expression.Str("<<lattice>>", sl)
+            val method = classOf[java.lang.Object].getMethod("toString")
+            return Expression.NativeMethod(method, List(exp0), Type.Str, ast.Eff.Pure, sl)
           }
 
           //
           // ConstraintSet case.
           //
           if (tpe == Type.ConstraintSet) {
-            return Expression.Str("<<constraintset>>", sl)
+            val method = classOf[java.lang.Object].getMethod("toString")
+            return Expression.NativeMethod(method, List(exp0), Type.Str, ast.Eff.Pure, sl)
           }
 
           //

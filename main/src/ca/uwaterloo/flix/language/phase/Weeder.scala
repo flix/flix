@@ -220,24 +220,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
             List(WeededAst.Declaration.Lattice(doc, mod, ident, as, mkSL(sp1, sp2)))
         }
 
-      case ParsedAst.Declaration.Constraint(sp1, head, body, sp2) =>
-        val headVal = traverse(head)(Predicate.Head.weed)
-        val bodyVal = traverse(body)(disj => sequence(disj.map(Predicate.Body.weed)))
-
-        mapN(headVal, bodyVal) {
-          case (headConj, bs) =>
-            // Duplicate the constraint for each predicate in the head conjunction.
-            headConj flatMap {
-              case h =>
-                // Duplicate the constraint for each predicate in a body disjunction.
-                val unfolded = bs.foldRight(List(Nil): List[List[WeededAst.Predicate.Body]]) {
-                  case (xs, acc) => xs.map(p => acc.flatMap(rs => p :: rs))
-                }
-                unfolded map {
-                  case b => WeededAst.Declaration.Constraint(h, b, mkSL(sp1, sp2))
-                }
-            }
-        }
+      case d@ParsedAst.Declaration.Constraint(sp1, head, body, sp2) => visitConstraint(d)
 
       case ParsedAst.Declaration.LatticeComponents(sp1, tpe, elms, sp2) =>
         val elmsVal = traverse(elms)(e => Expressions.weed(e))
@@ -300,6 +283,31 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
       case ParsedAst.Declaration.Sig(doc0, ann, mods, sp1, ident, tparams0, fparams0, tpe, effOpt, sp2) =>
         throw InternalCompilerException(s"Unexpected declaration")
+    }
+
+
+    /**
+      * Performs weeding on the given constraint `c0`.
+      */
+    def visitConstraint(c0: ParsedAst.Declaration.Constraint)(implicit flix: Flix): Validation[List[WeededAst.Declaration.Constraint], WeederError] = c0 match {
+      case ParsedAst.Declaration.Constraint(sp1, head, body, sp2) =>
+        val headVal = traverse(head)(Predicate.Head.weed)
+        val bodyVal = traverse(body)(disj => sequence(disj.map(Predicate.Body.weed)))
+
+        mapN(headVal, bodyVal) {
+          case (headConj, bs) =>
+            // Duplicate the constraint for each predicate in the head conjunction.
+            headConj flatMap {
+              case h =>
+                // Duplicate the constraint for each predicate in a body disjunction.
+                val unfolded = bs.foldRight(List(Nil): List[List[WeededAst.Predicate.Body]]) {
+                  case (xs, acc) => xs.map(p => acc.flatMap(rs => p :: rs))
+                }
+                unfolded map {
+                  case b => WeededAst.Declaration.Constraint(h, b, mkSL(sp1, sp2))
+                }
+            }
+        }
     }
 
   }
@@ -908,6 +916,35 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           val methodName = fqn.last
           traverse(args)(weed) map {
             case es => WeededAst.Expression.NativeMethod(className, methodName, es, mkSL(sp1, sp2))
+          }
+
+        case ParsedAst.Expression.NewRelationOrLattice(sp1, name, sp2) =>
+          val loc = mkSL(sp1, sp2)
+          WeededAst.Expression.NewRelationOrLattice(name, loc).toSuccess
+
+        case ParsedAst.Expression.ConstraintSeq(sp1, cs, sp2) =>
+          val loc = mkSL(sp1, sp2)
+
+          traverse(cs)(Declarations.visitConstraint) map {
+            case xs =>
+              // The base constraint is simple the true fact.
+              val base = WeededAst.Expression.Constraint(WeededAst.Declaration.Constraint(WeededAst.Predicate.Head.True(loc), Nil, loc), loc)
+              // Combine each of the constraints using union.
+              xs.flatten.foldLeft(base: WeededAst.Expression) {
+                case (eacc, c) =>
+                  val e2 = WeededAst.Expression.Constraint(c, loc)
+                  WeededAst.Expression.ConstraintUnion(eacc, e2, loc)
+              }
+          }
+
+        case ParsedAst.Expression.FixpointSolve(sp1, exp, sp2) =>
+          visit(exp, unsafe) map {
+            case e => WeededAst.Expression.FixpointSolve(e, mkSL(sp1, sp2))
+          }
+
+        case ParsedAst.Expression.FixpointCheck(sp1, exp, sp2) =>
+          visit(exp, unsafe) map {
+            case e => WeededAst.Expression.FixpointCheck(e, mkSL(sp1, sp2))
           }
 
         case ParsedAst.Expression.UserError(sp1, sp2) =>
@@ -1617,6 +1654,10 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.NativeField(sp1, _, _) => sp1
     case ParsedAst.Expression.NativeMethod(sp1, _, _, _) => sp1
     case ParsedAst.Expression.NativeConstructor(sp1, _, _, _) => sp1
+    case ParsedAst.Expression.NewRelationOrLattice(sp1, _, _) => sp1
+    case ParsedAst.Expression.ConstraintSeq(sp1, _, _) => sp1
+    case ParsedAst.Expression.FixpointSolve(sp1, _, _) => sp1
+    case ParsedAst.Expression.FixpointCheck(sp1, _, _) => sp1
     case ParsedAst.Expression.UserError(sp1, _) => sp1
   }
 

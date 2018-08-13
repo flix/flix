@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.Validation._
-import ca.uwaterloo.flix.util.{InternalCompilerException, Optimization, Validation}
+import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
 import scala.collection.mutable
 
@@ -496,6 +496,29 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case TypedAst.Expression.NativeMethod(method, args, tpe, eff, loc) =>
         val es = args.map(e => visitExp(e))
         SimplifiedAst.Expression.NativeMethod(method, es, tpe, loc)
+
+      case TypedAst.Expression.NewRelation(sym, tpe, eff, loc) =>
+        SimplifiedAst.Expression.NewRelation(sym, tpe, loc)
+
+      case TypedAst.Expression.NewLattice(sym, tpe, eff, loc) =>
+        SimplifiedAst.Expression.NewLattice(sym, tpe, loc)
+
+      case TypedAst.Expression.Constraint(c0, tpe, eff, loc) =>
+        val c = visitConstraint(c0)
+        SimplifiedAst.Expression.Constraint(c, tpe, loc)
+
+      case TypedAst.Expression.ConstraintUnion(exp1, exp2, tpe, eff, loc) =>
+        val e1 = visitExp(exp1)
+        val e2 = visitExp(exp2)
+        SimplifiedAst.Expression.ConstraintUnion(e1, e2, tpe, loc)
+
+      case TypedAst.Expression.FixpointSolve(exp, tpe, eff, loc) =>
+        val e = visitExp(exp)
+        SimplifiedAst.Expression.FixpointSolve(e, tpe, loc)
+
+      case TypedAst.Expression.FixpointCheck(exp, tpe, eff, loc) =>
+        val e = visitExp(exp)
+        SimplifiedAst.Expression.FixpointCheck(e, tpe, loc)
 
       case TypedAst.Expression.UserError(tpe, eff, loc) =>
         SimplifiedAst.Expression.UserError(tpe, loc)
@@ -1134,6 +1157,28 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case SimplifiedAst.Expression.NativeMethod(method, args, tpe, loc) =>
         val es = args map visit
         SimplifiedAst.Expression.NativeMethod(method, es, tpe, loc)
+
+      case SimplifiedAst.Expression.NewRelation(sym, tpe, loc) =>
+        SimplifiedAst.Expression.NewRelation(sym, tpe, loc)
+
+      case SimplifiedAst.Expression.NewLattice(sym, tpe, loc) =>
+        SimplifiedAst.Expression.NewLattice(sym, tpe, loc)
+
+      case SimplifiedAst.Expression.Constraint(con, tpe, loc) =>
+        ??? // TODO Expression.Constraint
+
+      case SimplifiedAst.Expression.ConstraintUnion(exp1, exp2, tpe, loc) =>
+        val e1 = visit(exp1)
+        val e2 = visit(exp2)
+        SimplifiedAst.Expression.ConstraintUnion(e1, e2, tpe, loc)
+
+      case SimplifiedAst.Expression.FixpointSolve(exp, tpe, loc) =>
+        val e = visit(exp)
+        SimplifiedAst.Expression.FixpointSolve(e, tpe, loc)
+
+      case SimplifiedAst.Expression.FixpointCheck(exp, tpe, loc) =>
+        val e = visit(exp)
+        SimplifiedAst.Expression.FixpointCheck(e, tpe, loc)
 
       case SimplifiedAst.Expression.UserError(tpe, loc) => e
       case SimplifiedAst.Expression.HoleError(sym, tpe, eff, loc) => e

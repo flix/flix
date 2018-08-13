@@ -801,10 +801,24 @@ object JvmOps {
       case Expression.NativeConstructor(constructor, args, tpe, loc) => args.foldLeft(Set.empty[ClosureInfo]) {
         case (sacc, e) => sacc ++ visitExp(e)
       }
+
       case Expression.NativeField(field, tpe, loc) => Set.empty
+
       case Expression.NativeMethod(method, args, tpe, loc) => args.foldLeft(Set.empty[ClosureInfo]) {
         case (sacc, e) => sacc ++ visitExp(e)
       }
+
+      case Expression.NewRelation(sym, tpe, loc) => Set.empty
+
+      case Expression.NewLattice(sym, tpe, loc) => Set.empty
+
+      case Expression.Constraint(con, tpe, loc) => ??? // TODO: Constraint
+
+      case Expression.ConstraintUnion(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2)
+
+      case Expression.FixpointSolve(exp, tpe, loc) => visitExp(exp)
+
+      case Expression.FixpointCheck(exp, tpe, loc) => visitExp(exp)
 
       case Expression.UserError(tpe, loc) => Set.empty
       case Expression.HoleError(sym, tpe, loc) => Set.empty
@@ -1032,6 +1046,18 @@ object JvmOps {
       case Expression.NativeMethod(method, args, tpe, loc) => args.foldLeft(Set(tpe)) {
         case (sacc, e) => sacc ++ visitExp(e)
       }
+
+      case Expression.NewRelation(sym, tpe, loc) => Set(tpe)
+
+      case Expression.NewLattice(sym, tpe, loc) => Set(tpe)
+
+      case Expression.Constraint(con, tpe, loc) => ??? // TODO: Constraint
+
+      case Expression.ConstraintUnion(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2) + tpe
+
+      case Expression.FixpointSolve(exp, tpe, loc) => visitExp(exp) + tpe
+
+      case Expression.FixpointCheck(exp, tpe, loc) => visitExp(exp) + tpe
 
       case Expression.UserError(tpe, loc) => Set(tpe)
       case Expression.HoleError(sym, tpe, loc) => Set(tpe)

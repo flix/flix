@@ -10,4 +10,9 @@ class Stratum(constraints: Array[Constraint]) {
     */
   def getConstraints(): Array[Constraint] = constraints
 
+  /**
+    * Returns a string representation of `this` stratum.
+    */
+  override def toString: String = "{\n\t" + constraints.mkString(", \n\t") + "\n}"
+
 }

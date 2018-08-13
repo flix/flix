@@ -8,11 +8,13 @@ class ConstraintSet(relations: Array[Relation], lattices: Array[Lattice], strata
   /**
     * Returns all the relation values in the constraint set.
     */
+  // TODO: Maybe it would be easier if these are computed based on the actual constraints in the set?
   def getRelations(): Array[Relation] = relations
 
   /**
     * Returns all the lattice values in the constraint set.
     */
+  // TODO: Maybe it would be easier if these are computed based on the actual constraints in the set?
   def getLattices(): Array[Lattice] = lattices
 
   /**
@@ -23,10 +25,19 @@ class ConstraintSet(relations: Array[Relation], lattices: Array[Lattice], strata
   /**
     * Returns the union of `this` constraint set with `that` constraint set.
     */
-  def union(that: ConstraintSet): Constraint = {
-    // TODO: How to deal with the strata?
+  def union(that: ConstraintSet): ConstraintSet = {
+    // TODO: Correctness. This is just a hack for now.
 
-    ???
+    // TODO: What about duplicates?
+    val newRelations = this.getRelations() ++ that.getRelations()
+    val newLattices = this.getLattices() ++ that.getLattices()
+    val newStrata = (this.getStrata() zip that.getStrata()) map {
+      case (stratum1, stratum2) => new Stratum(stratum1.getConstraints() ++ stratum2.getConstraints())
+    }
+
+    new ConstraintSet(newRelations, newLattices, newStrata)
   }
+
+  override def toString: String = strata.mkString(", ")
 
 }

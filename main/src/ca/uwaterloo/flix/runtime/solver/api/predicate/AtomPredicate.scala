@@ -32,4 +32,9 @@ class AtomPredicate(sym: Table, positive: Boolean, terms: Array[Term], index2sym
   // TODO: Deprecated.
   def getIndex2SymTEMPORARY: Array[VarSym] = index2sym
 
+  /**
+    * Returns a string representation of `this` predicate.
+    */
+  override def toString: String = sym.getName() + "(" + terms.mkString(", ") + ")"
+
 }
