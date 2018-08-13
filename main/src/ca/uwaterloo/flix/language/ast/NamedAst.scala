@@ -179,9 +179,9 @@ object NamedAst {
 
     case class NewRelationOrLattice(name: Name.QName, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
-    case class Constraint(c: NamedAst.Constraint, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
+    case class Constraint(con: NamedAst.Constraint, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
-    case class ConstraintUnion(e1: NamedAst.Expression, e2: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
+    case class ConstraintUnion(exp1: NamedAst.Expression, exp2: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
     case class FixpointSolve(exp: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 

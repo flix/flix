@@ -233,9 +233,9 @@ object SimplifiedAst {
 
     case class NewLattice(sym: Symbol.LatSym, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
-    case class Constraint(c: SimplifiedAst.Constraint, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
+    case class Constraint(con: SimplifiedAst.Constraint, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
-    case class ConstraintUnion(e1: SimplifiedAst.Expression, e2: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
+    case class ConstraintUnion(exp1: SimplifiedAst.Expression, exp2: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
     case class FixpointSolve(exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 

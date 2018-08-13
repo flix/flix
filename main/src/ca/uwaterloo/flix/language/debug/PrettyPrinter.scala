@@ -375,6 +375,26 @@ object PrettyPrinter {
           }
           vt.text(")")
 
+        case Expression.NewRelation(sym, tpe, loc) =>
+          ??? // TODO: Expression.NewRelation
+
+        case Expression.NewLattice(sym, tpe, loc) =>
+          ??? // TODO: Expression.NewLattice
+
+        case Expression.Constraint(c, tpe, loc) =>
+          ??? // TODO: Expression.Constraint
+
+        case Expression.ConstraintUnion(exp1, exp2, tpe, loc) =>
+          ??? // TODO: ConstraintUnion
+
+        case Expression.FixpointSolve(exp, tpe, loc) =>
+          vt.text("solve ")
+          visitExp(exp)
+
+        case Expression.FixpointCheck(exp, tpe, loc) =>
+          vt.text("check ")
+          visitExp(exp)
+
         case Expression.UserError(tpe, loc) => vt << Red("UserError")
         case Expression.HoleError(sym, tpe, eff, loc) => Red("HoleError")
         case Expression.MatchError(tpe, loc) => vt << Red("MatchError")

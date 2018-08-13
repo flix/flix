@@ -653,6 +653,9 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
             es <- traverse(args)(e => visit(e, tenv0))
           } yield ResolvedAst.Expression.NativeMethod(method, es, tpe, loc)
 
+        case NamedAst.Expression.NewRelationOrLattice(name, tvar, loc) =>
+          ??? // TODO: Resolve NewRelationOrLattice
+
         case NamedAst.Expression.Constraint(cons, tvar, loc) =>
           Constraints.resolve(cons, ns0, prog0) map {
             case c => ResolvedAst.Expression.Constraint(c, tvar, loc)

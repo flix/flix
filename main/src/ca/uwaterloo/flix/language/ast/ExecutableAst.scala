@@ -217,9 +217,9 @@ object ExecutableAst {
 
     case class NewLattice(sym: Symbol.LatSym, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
-    case class Constraint(c: ExecutableAst.Constraint, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
+    case class Constraint(con: ExecutableAst.Constraint, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
-    case class ConstraintUnion(e1: ExecutableAst.Expression, e2: ExecutableAst.Expression, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
+    case class ConstraintUnion(exp1: ExecutableAst.Expression, exp2: ExecutableAst.Expression, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 
     case class FixpointSolve(exp: ExecutableAst.Expression, tpe: Type, loc: SourceLocation) extends ExecutableAst.Expression
 

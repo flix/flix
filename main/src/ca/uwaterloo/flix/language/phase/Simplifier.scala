@@ -1164,6 +1164,22 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case SimplifiedAst.Expression.NewLattice(sym, tpe, loc) =>
         SimplifiedAst.Expression.NewLattice(sym, tpe, loc)
 
+      case SimplifiedAst.Expression.Constraint(con, tpe, loc) =>
+        ??? // TODO Expression.Constraint
+
+      case SimplifiedAst.Expression.ConstraintUnion(exp1, exp2, tpe, loc) =>
+        val e1 = visit(exp1)
+        val e2 = visit(exp2)
+        SimplifiedAst.Expression.ConstraintUnion(e1, e2, tpe, loc)
+
+      case SimplifiedAst.Expression.FixpointSolve(exp, tpe, loc) =>
+        val e = visit(exp)
+        SimplifiedAst.Expression.FixpointSolve(e, tpe, loc)
+
+      case SimplifiedAst.Expression.FixpointCheck(exp, tpe, loc) =>
+        val e = visit(exp)
+        SimplifiedAst.Expression.FixpointCheck(e, tpe, loc)
+
       case SimplifiedAst.Expression.UserError(tpe, loc) => e
       case SimplifiedAst.Expression.HoleError(sym, tpe, eff, loc) => e
       case SimplifiedAst.Expression.MatchError(tpe, loc) => e

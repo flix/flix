@@ -218,6 +218,12 @@ object ClosureConv {
       val as = args map visitExp
       Expression.NativeMethod(method, as, tpe, loc)
 
+    case Expression.NewRelation(sym, tpe, loc) =>
+      Expression.NewRelation(sym, tpe, loc)
+
+    case Expression.NewLattice(sym, tpe, loc) =>
+      Expression.NewLattice(sym, tpe, loc)
+
     case Expression.Constraint(c0, tpe, loc) =>
       // TODO: Recurse?
       Expression.Constraint(c0, tpe, loc)
@@ -318,6 +324,13 @@ object ClosureConv {
     case Expression.NativeField(field, tpe, loc) => mutable.LinkedHashSet.empty
     case Expression.NativeMethod(method, args, tpe, loc) => mutable.LinkedHashSet.empty ++ args.flatMap(freeVariables)
 
+    case Expression.NewRelation(sym, tpe, loc) => mutable.LinkedHashSet.empty
+    case Expression.NewLattice(sym, tpe, loc) => mutable.LinkedHashSet.empty
+    case Expression.Constraint(con, tpe, loc) => ??? // TODO: Expression.Constraint
+    case Expression.ConstraintUnion(exp1, exp2, tpe, loc) => freeVariables(exp1) ++ freeVariables(exp2)
+    case Expression.FixpointSolve(exp, tpe, loc) => freeVariables(exp)
+    case Expression.FixpointCheck(exp, tpe, loc) => freeVariables(exp)
+
     case Expression.UserError(tpe, loc) => mutable.LinkedHashSet.empty
     case Expression.HoleError(sym, tpe, eff, loc) => mutable.LinkedHashSet.empty
     case Expression.MatchError(tpe, loc) => mutable.LinkedHashSet.empty
@@ -351,54 +364,70 @@ object ClosureConv {
       case Expression.Int64(lit) => e
       case Expression.BigInt(lit) => e
       case Expression.Str(lit) => e
+
       case Expression.Var(sym, tpe, loc) => subst.get(sym) match {
         case None => Expression.Var(sym, tpe, loc)
         case Some(newSym) => Expression.Var(newSym, tpe, loc)
       }
+
       case Expression.Def(sym, tpe, loc) => e
+
       case Expression.Eff(sym, tpe, loc) => e
+
       case Expression.Lambda(fparams, exp, tpe, loc) =>
         val fs = fparams.map(fparam => replace(fparam, subst))
         val e = visit(exp)
         Expression.Lambda(fs, e, tpe, loc)
+
       case Expression.Closure(ref, freeVars, tpe, loc) => e
+
       case Expression.LambdaClosure(exp, freeVars, tpe, loc) =>
         val e = visit(exp).asInstanceOf[Expression.Lambda]
         Expression.LambdaClosure(e, freeVars, tpe, loc)
+
       case Expression.ApplyClo(exp, args, tpe, loc) =>
         val e = visit(exp)
         val as = args map visit
         Expression.ApplyClo(e, as, tpe, loc)
+
       case Expression.ApplyDef(sym, args, tpe, loc) =>
         val as = args map visit
         Expression.ApplyDef(sym, as, tpe, loc)
+
       case Expression.ApplyEff(sym, args, tpe, loc) =>
         val as = args map visit
         Expression.ApplyEff(sym, as, tpe, loc)
+
       case Expression.Apply(exp, args, tpe, loc) =>
         val e = visit(exp)
         val as = args map visit
         Expression.Apply(e, as, tpe, loc)
+
       case Expression.Unary(sop, op, exp, tpe, loc) =>
         val e = visit(exp)
         Expression.Unary(sop, op, e, tpe, loc)
+
       case Expression.Binary(sop, op, exp1, exp2, tpe, loc) =>
         val e1 = visit(exp1)
         val e2 = visit(exp2)
         Expression.Binary(sop, op, e1, e2, tpe, loc)
+
       case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
         val e1 = visit(exp1)
         val e2 = visit(exp2)
         val e3 = visit(exp3)
         Expression.IfThenElse(e1, e2, e3, tpe, loc)
+
       case Expression.Branch(exp, branches, tpe, loc) =>
         val e = visit(exp)
         val bs = branches map {
           case (sym, br) => sym -> visit(br)
         }
         Expression.Branch(e, bs, tpe, loc)
+
       case Expression.JumpTo(sym, tpe, loc) =>
         Expression.JumpTo(sym, tpe, loc)
+
       case Expression.Let(sym, exp1, exp2, tpe, loc) =>
         val e1 = visit(exp1)
         val e2 = visit(exp2)
@@ -406,6 +435,7 @@ object ClosureConv {
           case None => Expression.Let(sym, e1, e2, tpe, loc)
           case Some(newSym) => Expression.Let(newSym, e1, e2, tpe, loc)
         }
+
       case Expression.LetRec(sym, exp1, exp2, tpe, loc) =>
         val e1 = visit(exp1)
         val e2 = visit(exp2)
@@ -413,65 +443,82 @@ object ClosureConv {
           case None => Expression.LetRec(sym, e1, e2, tpe, loc)
           case Some(newSym) => Expression.LetRec(newSym, e1, e2, tpe, loc)
         }
+
       case Expression.Is(sym, tag, exp, loc) =>
         val e = visit(exp)
         Expression.Is(sym, tag, e, loc)
+
       case Expression.Untag(sym, tag, exp, tpe, loc) =>
         val e = visit(exp)
         Expression.Untag(sym, tag, e, tpe, loc)
+
       case Expression.Tag(enum, tag, exp, tpe, loc) =>
         val e = visit(exp)
         Expression.Tag(enum, tag, e, tpe, loc)
+
       case Expression.Index(exp, offset, tpe, loc) =>
         val e = visit(exp)
         Expression.Index(e, offset, tpe, loc)
+
       case Expression.Tuple(elms, tpe, loc) =>
         val es = elms map visit
         Expression.Tuple(es, tpe, loc)
+
       case Expression.ArrayLit(elms, tpe, loc) =>
         val es = elms map visit
         Expression.ArrayLit(es, tpe, loc)
+
       case Expression.ArrayNew(elm, len, tpe, loc) =>
         val e = visit(elm)
         val ln = visit(len)
         Expression.ArrayNew(e, ln, tpe, loc)
+
       case Expression.ArrayLoad(base, index, tpe, loc) =>
         val b = visit(base)
         val i = visit(index)
         Expression.ArrayLoad(b, i, tpe, loc)
+
       case Expression.ArrayStore(base, index, elm, tpe, loc) =>
         val b = visit(base)
         val i = visit(index)
         val e = visit(elm)
         Expression.ArrayStore(b, i, e, tpe, loc)
+
       case Expression.ArrayLength(base, tpe, loc) =>
         val b = visit(base)
         Expression.ArrayLength(b, tpe, loc)
+
       case Expression.ArraySlice(base, beginIndex, endIndex, tpe, loc) =>
         val b = visit(base)
         val i1 = visit(beginIndex)
         val i2 = visit(endIndex)
         Expression.ArraySlice(b, i1, i2, tpe, loc)
+
       case Expression.Ref(exp, tpe, loc) =>
         val e = visit(exp)
         Expression.Ref(e, tpe, loc)
+
       case Expression.Deref(exp, tpe, loc) =>
         val e = visit(exp)
         Expression.Deref(e, tpe, loc)
+
       case Expression.Assign(exp1, exp2, tpe, loc) =>
         val e1 = visit(exp1)
         val e2 = visit(exp2)
         Expression.Assign(e1, e2, tpe, loc)
+
       case Expression.HandleWith(exp, bindings, tpe, loc) =>
         val e = visit(exp)
         val bs = bindings map {
           case HandlerBinding(sym, handler) => HandlerBinding(sym, visit(handler))
         }
         Expression.HandleWith(e, bs, tpe, loc)
+
       case Expression.Existential(fparam, exp, loc) =>
         val fs = replace(fparam, subst)
         val e = visit(exp)
         Expression.Existential(fs, e, loc)
+
       case Expression.Universal(fparam, exp, loc) =>
         val fs = replace(fparam, subst)
         val e = visit(exp)
@@ -495,6 +542,25 @@ object ClosureConv {
       case Expression.NativeMethod(method, args, tpe, loc) =>
         val es = args map visit
         Expression.NativeMethod(method, es, tpe, loc)
+
+      case Expression.NewRelation(sym, tpe, loc) => e
+
+      case Expression.NewLattice(sym, tpe, loc) => e
+
+      case Expression.Constraint(con, tpe, loc) => ??? // TODO Expression.Constraint
+
+      case Expression.ConstraintUnion(exp1, exp2, tpe, loc) =>
+        val e1 = visit(exp1)
+        val e2 = visit(exp2)
+        Expression.ConstraintUnion(e1, e2, tpe, loc)
+
+      case Expression.FixpointSolve(exp, tpe, loc) =>
+        val e = visit(exp)
+        Expression.FixpointSolve(e, tpe, loc)
+
+      case Expression.FixpointCheck(exp, tpe, loc) =>
+        val e = visit(exp)
+        Expression.FixpointCheck(e, tpe, loc)
 
       case Expression.UserError(tpe, loc) => e
       case Expression.HoleError(sym, tpe, eff, loc) => e
