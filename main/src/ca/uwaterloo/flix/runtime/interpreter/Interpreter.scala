@@ -331,13 +331,19 @@ object Interpreter {
     // New Relation expressions.
     //
     case Expression.NewRelation(sym, tpe, loc) =>
-      ??? // TODO
+      val attr = root.relations(sym).attr.map {
+        case Attribute(name, _) => new api.Attribute(name)
+      }
+      new api.Relation(sym.name, attr.toArray)
 
     //
     // New Lattice expressions.
     //
     case Expression.NewLattice(sym, tpe, loc) =>
-      ??? // TODO
+      val attr = root.lattices(sym).attr.map {
+        case Attribute(name, _) => new api.Attribute(name)
+      }
+      new api.Lattice(sym.name, attr.init.toArray, attr.last, /* TODO*/ null)
 
     //
     // Constraint expressions.

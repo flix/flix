@@ -911,6 +911,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       case WeededAst.Expression.NativeField(className, fieldName, loc) => Nil
       case WeededAst.Expression.NativeMethod(className, methodName, args, loc) => args.flatMap(freeVars)
       case WeededAst.Expression.NativeConstructor(className, args, loc) => args.flatMap(freeVars)
+      case WeededAst.Expression.NewRelationOrLattice(name, loc) => Nil
       case WeededAst.Expression.Constraint(c, loc) => ??? // TODO
       case WeededAst.Expression.ConstraintUnion(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
       case WeededAst.Expression.FixpointSolve(exp, loc) => freeVars(exp)

@@ -654,7 +654,10 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
           } yield ResolvedAst.Expression.NativeMethod(method, es, tpe, loc)
 
         case NamedAst.Expression.NewRelationOrLattice(name, tvar, loc) =>
-          ??? // TODO: Resolve NewRelationOrLattice
+          lookupRelationOrLattice(name, ns0, prog0) map {
+            case RelationOrLattice.Rel(sym) => ResolvedAst.Expression.NewRelation(sym, tvar, loc)
+            case RelationOrLattice.Lat(sym) => ResolvedAst.Expression.NewLattice(sym, tvar, loc)
+          }
 
         case NamedAst.Expression.Constraint(cons, tvar, loc) =>
           Constraints.resolve(cons, ns0, prog0) map {
