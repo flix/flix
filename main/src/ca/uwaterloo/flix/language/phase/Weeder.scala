@@ -919,7 +919,8 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           }
 
         case ParsedAst.Expression.NewRelationOrLattice(sp1, name, sp2) =>
-          ??? // TODO
+          val loc = mkSL(sp1, sp2)
+          WeededAst.Expression.NewRelationOrLattice(name, loc).toSuccess
 
         case ParsedAst.Expression.ConstraintSeq(sp1, cs, sp2) =>
           val loc = mkSL(sp1, sp2)

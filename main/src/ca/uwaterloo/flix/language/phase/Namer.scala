@@ -557,9 +557,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       * Performs naming on the given expression `exp0` under the given environment `env0`.
       */
     def namer(exp0: WeededAst.Expression, env0: Map[String, Symbol.VarSym], tenv0: Map[String, Type.Var])(implicit genSym: GenSym): Validation[NamedAst.Expression, NameError] = exp0 match {
-      /*
-       * Variables.
-       */
       case WeededAst.Expression.Wild(loc) => NamedAst.Expression.Wild(Type.freshTypeVar(), loc).toSuccess
 
       case WeededAst.Expression.VarOrDef(name, loc) if name.isUnqualified =>
@@ -576,16 +573,10 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       case WeededAst.Expression.VarOrDef(name, loc) =>
         NamedAst.Expression.Def(name, Type.freshTypeVar(), loc).toSuccess
 
-      /*
-       * Holes.
-       */
       case WeededAst.Expression.Hole(name, loc) =>
         val tpe = Type.freshTypeVar()
         NamedAst.Expression.Hole(name, tpe, loc).toSuccess
 
-      /*
-       * Literals.
-       */
       case WeededAst.Expression.Unit(loc) => NamedAst.Expression.Unit(loc).toSuccess
       case WeededAst.Expression.True(loc) => NamedAst.Expression.True(loc).toSuccess
       case WeededAst.Expression.False(loc) => NamedAst.Expression.False(loc).toSuccess
@@ -832,6 +823,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
           }
           case Err(e) => e.toFailure
         }
+
+      case WeededAst.Expression.NewRelationOrLattice(name, loc) =>
+        NamedAst.Expression.NewRelationOrLattice(name, Type.freshTypeVar(), loc).toSuccess
 
       case WeededAst.Expression.Constraint(con, loc) =>
         Declarations.visitConstraint(con) map {

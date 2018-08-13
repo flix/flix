@@ -170,6 +170,8 @@ object WeededAst {
 
     case class NativeMethod(className: String, methodName: String, args: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
 
+    case class NewRelationOrLattice(name: Name.QName, loc: SourceLocation) extends WeededAst.Expression
+    
     case class Constraint(con: WeededAst.Declaration.Constraint, loc: SourceLocation) extends WeededAst.Expression
 
     case class ConstraintUnion(exp1: WeededAst.Expression, exp2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
