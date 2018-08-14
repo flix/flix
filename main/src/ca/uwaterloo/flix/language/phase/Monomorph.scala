@@ -416,9 +416,12 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         case Expression.NewLattice(sym, tpe, eff, loc) =>
           Expression.NewLattice(sym, subst0(tpe), eff, loc)
 
-        case Expression.Constraint(c, tpe, eff, loc) =>
-          // TODO: Any monomorph?
-          Expression.Constraint(c, tpe, eff, loc)
+        case Expression.Constraint(c0, tpe, eff, loc) =>
+          val Constraint(cparams, head0, body0, loc) = c0
+          val head = visitHeadPredicate(head0, env0)
+          val body = body0.map(b => visitBodyPredicate(b, env0))
+          val c = Constraint(cparams, head, body, loc)
+          Expression.Constraint(c, subst0(tpe), eff, loc)
 
         case Expression.ConstraintUnion(exp1, exp2, tpe, eff, loc) =>
           val e1 = visitExp(exp1, env0)
@@ -465,6 +468,48 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         case Pattern.Tuple(elms, tpe, loc) =>
           val (ps, envs) = elms.map(p => visitPat(p)).unzip
           (Pattern.Tuple(ps, subst0(tpe), loc), envs.reduce(_ ++ _))
+      }
+
+      /**
+        * Specializes the given list of patterns `ps0` w.r.t. the current substitution.
+        */
+      def visitPats(ps0: List[Pattern]): List[Pattern] = ps0 match {
+        case Nil => Nil
+        case p :: ps =>
+          val (np, _) = visitPat(p)
+          np :: visitPats(ps)
+      }
+
+      /**
+        * Specializes the given head predicate `h0` w.r.t. the given environment and current substitution.
+        */
+      def visitHeadPredicate(h0: Predicate.Head, env0: Map[Symbol.VarSym, Symbol.VarSym]): Predicate.Head = h0 match {
+        case Predicate.Head.True(loc) => Predicate.Head.True(loc)
+        case Predicate.Head.False(loc) => Predicate.Head.False(loc)
+        case Predicate.Head.RelAtom(sym, terms, loc) =>
+          val ts = terms.map(t => visitExp(t, env0))
+          Predicate.Head.RelAtom(sym, ts, loc)
+        case Predicate.Head.LatAtom(sym, terms, loc) =>
+          val ts = terms.map(t => visitExp(t, env0))
+          Predicate.Head.LatAtom(sym, ts, loc)
+      }
+
+      /**
+        * Specializes the given body predicate `b0` w.r.t. the given environment and current substitution.
+        */
+      def visitBodyPredicate(b0: TypedAst.Predicate.Body, symToSym: Map[Symbol.VarSym, Symbol.VarSym]): Predicate.Body = b0 match {
+        case Predicate.Body.RelAtom(sym, polarity, terms, loc) =>
+          val ts = visitPats(terms)
+          Predicate.Body.RelAtom(sym, polarity, ts, loc)
+        case Predicate.Body.LatAtom(sym, polarity, terms, loc) =>
+          val ts = visitPats(terms)
+          Predicate.Body.LatAtom(sym, polarity, ts, loc)
+        case Predicate.Body.Filter(sym, terms, loc) =>
+          val ts = terms.map(t => visitExp(t, env0))
+          Predicate.Body.Filter(sym, ts, loc)
+        case Predicate.Body.Functional(sym, term, loc) =>
+          val t = visitExp(term, env0)
+          Predicate.Body.Functional(sym, t, loc)
       }
 
       visitExp(exp0, env0)
