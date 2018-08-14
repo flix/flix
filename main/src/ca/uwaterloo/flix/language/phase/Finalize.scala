@@ -430,7 +430,6 @@ object Finalize extends Phase[SimplifiedAst.Root, ExecutableAst.Root] {
       case Some(value) => ExecutableAst.Term.Body.Lit(value, tpe, loc)
       case None => ExecutableAst.Term.Body.Cst(lit2symTemporaryToBeRemoved(lit, m), tpe, loc)
     }
-    case SimplifiedAst.Term.Body.Pat(pat, tpe, loc) => ???
   }
 
   private def visitAttribute(a0: SimplifiedAst.Attribute): ExecutableAst.Attribute =

@@ -524,46 +524,13 @@ object SimplifiedAstOps {
     /**
       * Checks invariants of the given body term `t0`.
       */
-    def checkBodyTerm(t0: Term.Body, env0: Set[Symbol.VarSym]) = t0 match {
+    def checkBodyTerm(t0: Term.Body, env0: Set[Symbol.VarSym]): Unit = t0 match {
       case Term.Body.Wild(tpe, loc) =>
       // TODO: What is the type allowed to be here?
       case Term.Body.Var(sym, tpe, loc) =>
         checkType(tpe)
       case Term.Body.Lit(exp, tpe, loc) =>
         checkExp(exp0 = exp, env0 = env0, ienv0 = Set.empty)
-        checkType(tpe)
-      case Term.Body.Pat(pat, tpe, loc) =>
-        checkPat(pat)
-        checkType(tpe)
-    }
-
-    /**
-      * Checks invariants of the given pattern `pat0`.
-      */
-    def checkPat(pat0: Pattern): Unit = pat0 match {
-      case Pattern.Wild(tpe, loc) =>
-        checkType(tpe)
-      case Pattern.Var(sym, tpe, loc) =>
-        checkType(tpe)
-      case Pattern.Unit(loc) => // nop
-      case Pattern.True(loc) => // nop
-      case Pattern.False(loc) => // nop
-      case Pattern.Char(lit, loc) => // nop
-      case Pattern.Float32(lit, loc) => // nop
-      case Pattern.Float64(lit, loc) => // nop
-      case Pattern.Int8(lit, loc) => // nop
-      case Pattern.Int16(lit, loc) => // nop
-      case Pattern.Int32(lit, loc) => // nop
-      case Pattern.Int64(lit, loc) => // nop
-      case Pattern.BigInt(lit, loc) => // nop
-      case Pattern.Str(lit, loc) => // nop
-      case Pattern.Tag(sym, tag, pat, tpe, loc) =>
-        checkPat(pat)
-        checkType(tpe)
-      case Pattern.Tuple(elms, tpe, loc) =>
-        for (elm <- elms) {
-          checkPat(elm)
-        }
         checkType(tpe)
     }
 

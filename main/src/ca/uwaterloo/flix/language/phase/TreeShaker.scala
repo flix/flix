@@ -193,7 +193,6 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         case SimplifiedAst.Term.Body.Wild(tpe, loc) => Set.empty
         case SimplifiedAst.Term.Body.Var(sym, tpe, loc) => Set.empty
         case SimplifiedAst.Term.Body.Lit(exp, tpe, loc) => visitExp(exp)
-        case SimplifiedAst.Term.Body.Pat(pat, tpe, loc) => Set.empty
       }
     }
 

@@ -729,7 +729,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case _ => if (isPatLiteral(p))
         SimplifiedAst.Term.Body.Lit(pat2exp(p), p.tpe, p.loc)
       else
-        SimplifiedAst.Term.Body.Pat(pat2pat(p), p.tpe, p.loc)
+        ???
     }
 
     /**
@@ -739,32 +739,6 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case TypedAst.Expression.Wild(tpe, eff, loc) => SimplifiedAst.Term.Body.Wild(tpe, loc)
       case TypedAst.Expression.Var(sym, tpe, eff, loc) => SimplifiedAst.Term.Body.Var(sym, tpe, loc)
       case _ => SimplifiedAst.Term.Body.Lit(visitExp(e), e.tpe, e.loc) // TODO: Only certain expressions should be allow here.
-    }
-
-    /**
-      * Translates the given typed pattern `pat0` into a simplified pattern.
-      *
-      * NB: This function is only used for constraints. Patterns are eliminated for expressions.
-      */
-    def pat2pat(pat0: TypedAst.Pattern): SimplifiedAst.Pattern = pat0 match {
-      case TypedAst.Pattern.Wild(tpe, loc) => SimplifiedAst.Pattern.Wild(tpe, loc)
-      case TypedAst.Pattern.Var(sym, tpe, loc) => SimplifiedAst.Pattern.Var(sym, tpe, loc)
-      case TypedAst.Pattern.Unit(loc) => SimplifiedAst.Pattern.Unit(loc)
-      case TypedAst.Pattern.True(loc) => SimplifiedAst.Pattern.True(loc)
-      case TypedAst.Pattern.False(loc) => SimplifiedAst.Pattern.False(loc)
-      case TypedAst.Pattern.Char(lit, loc) => SimplifiedAst.Pattern.Char(lit, loc)
-      case TypedAst.Pattern.Float32(lit, loc) => SimplifiedAst.Pattern.Float32(lit, loc)
-      case TypedAst.Pattern.Float64(lit, loc) => SimplifiedAst.Pattern.Float64(lit, loc)
-      case TypedAst.Pattern.Int8(lit, loc) => SimplifiedAst.Pattern.Int8(lit, loc)
-      case TypedAst.Pattern.Int16(lit, loc) => SimplifiedAst.Pattern.Int16(lit, loc)
-      case TypedAst.Pattern.Int32(lit, loc) => SimplifiedAst.Pattern.Int32(lit, loc)
-      case TypedAst.Pattern.Int64(lit, loc) => SimplifiedAst.Pattern.Int64(lit, loc)
-      case TypedAst.Pattern.BigInt(lit, loc) => SimplifiedAst.Pattern.BigInt(lit, loc)
-      case TypedAst.Pattern.Str(lit, loc) => SimplifiedAst.Pattern.Str(lit, loc)
-      case TypedAst.Pattern.Tag(sym, tag, pat, tpe, loc) => SimplifiedAst.Pattern.Tag(sym, tag, pat2pat(pat), tpe, loc)
-      case TypedAst.Pattern.Tuple(elms, tpe, loc) =>
-        val es = elms map pat2pat
-        SimplifiedAst.Pattern.Tuple(es, tpe, loc)
     }
 
     /**

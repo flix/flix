@@ -465,7 +465,6 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Term.Body.Wild(tpe, loc) => Term.Body.Wild(tpe, loc)
       case Term.Body.Var(sym, tpe, loc) => Term.Body.Var(sym, tpe, loc)
       case Term.Body.Lit(exp, tpe, loc) => Term.Body.Lit(visitExp(exp, Map.empty), tpe, loc)
-      case Term.Body.Pat(pat, tpe, loc) => Term.Body.Pat(pat, tpe, loc)
     }
 
     // Visit every definition in the program.
