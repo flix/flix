@@ -9,7 +9,10 @@ class VarSym(humanName: String) {
   // TODO: We want VarSym to eventually be replaced by just an index.
   private var offset: Int = -1
 
-  def getStackOffset: Int = offset
+  def getStackOffset: Int = {
+    if (offset == -1) throw new IllegalArgumentException("Undefined stack offset.")
+    offset
+  }
 
   def setStackOffset(v: Int): Unit = {
     this.offset = v

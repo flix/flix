@@ -26,6 +26,6 @@ class FunctionalPredicate(sym: VarSym, f: Array[AnyRef] => Array[ProxyObject], a
   /**
     * Returns a string representation of `this` predicate.
     */
-  override def toString: String = "<<functional>>" + "(" + args.mkString(", ") + ")"
+  override def toString: String = sym.toString + " <- <f>(" + args.mkString(", ") + ")"
 
 }

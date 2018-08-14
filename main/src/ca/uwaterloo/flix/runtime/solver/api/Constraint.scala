@@ -22,6 +22,13 @@ class Constraint(cparams: Array[VarSym], head: Predicate, body: Array[Predicate]
   }
 
   /**
+    * A head predicate cannot be a functional predicate.
+    */
+  if (head.isInstanceOf[FunctionalPredicate]) {
+    throw new IllegalArgumentException("A head predicate cannot be a functional predicate.")
+  }
+
+  /**
     * A head predicate cannot be a negated atom predicate.
     */
   if (head.isInstanceOf[AtomPredicate]) {

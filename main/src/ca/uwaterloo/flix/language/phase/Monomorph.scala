@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.{BinaryOperator, Symbol, Type, TypedAst, UnaryOperator}
-import ca.uwaterloo.flix.util.Validation
+import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 import ca.uwaterloo.flix.util.Validation._
 
 import scala.collection.mutable
@@ -472,16 +472,6 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
       }
 
       /**
-        * Specializes the given list of patterns `ps0` w.r.t. the current substitution.
-        */
-      def visitPats(ps0: List[Pattern]): List[Pattern] = ps0 match {
-        case Nil => Nil
-        case p :: ps =>
-          val (np, _) = visitPat(p)
-          np :: visitPats(ps)
-      }
-
-      /**
         * Specializes the given head predicate `h0` w.r.t. the given environment and current substitution.
         */
       def visitHeadPredicate(h0: Predicate.Head, env0: Map[Symbol.VarSym, Symbol.VarSym]): Predicate.Head = h0 match {
@@ -498,20 +488,41 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
       /**
         * Specializes the given body predicate `b0` w.r.t. the given environment and current substitution.
         */
-      def visitBodyPredicate(b0: Predicate.Body, env0: Map[Symbol.VarSym, Symbol.VarSym]): Predicate.Body = b0 match {
-        case Predicate.Body.RelAtom(sym, polarity, terms, loc) =>
-          val ts = visitPats(terms)
-          Predicate.Body.RelAtom(sym, polarity, ts, loc)
-        case Predicate.Body.LatAtom(sym, polarity, terms, loc) =>
-          val ts = visitPats(terms)
-          Predicate.Body.LatAtom(sym, polarity, ts, loc)
-        case Predicate.Body.Filter(sym, terms, loc) =>
-          val ts = terms.map(t => visitExp(t, env0))
-          Predicate.Body.Filter(sym, ts, loc)
-        case Predicate.Body.Functional(sym, term, loc) =>
-          val s = env0(sym)
-          val t = visitExp(term, env0)
-          Predicate.Body.Functional(s, t, loc)
+      def visitBodyPredicate(b0: Predicate.Body, env0: Map[Symbol.VarSym, Symbol.VarSym]): Predicate.Body = {
+        // TODO: We should change what is allowed here. Probably only variables and constants should be allowed?
+        def visitPatTemporaryToBeRemoved(pat: Pattern): Pattern = pat match {
+          case Pattern.Wild(tpe, loc) => Pattern.Wild(subst0(tpe), loc)
+          case Pattern.Var(sym, tpe, loc) => Pattern.Var(env0(sym), subst0(tpe), loc)
+          case Pattern.Unit(loc) => Pattern.Unit(loc)
+          case Pattern.True(loc) => Pattern.True(loc)
+          case Pattern.False(loc) => Pattern.False(loc)
+          case Pattern.Char(lit, loc) => Pattern.Char(lit, loc)
+          case Pattern.Float32(lit, loc) => Pattern.Float32(lit, loc)
+          case Pattern.Float64(lit, loc) => Pattern.Float64(lit, loc)
+          case Pattern.Int8(lit, loc) => Pattern.Int8(lit, loc)
+          case Pattern.Int16(lit, loc) => Pattern.Int16(lit, loc)
+          case Pattern.Int32(lit, loc) => Pattern.Int32(lit, loc)
+          case Pattern.Int64(lit, loc) => Pattern.Int64(lit, loc)
+          case Pattern.BigInt(lit, loc) => Pattern.BigInt(lit, loc)
+          case Pattern.Str(lit, loc) => Pattern.Str(lit, loc)
+          case _ => throw InternalCompilerException(s"Pattern not allowed here $pat.")
+        }
+
+        b0 match {
+          case Predicate.Body.RelAtom(sym, polarity, terms, loc) =>
+            val ts = terms map visitPatTemporaryToBeRemoved
+            Predicate.Body.RelAtom(sym, polarity, ts, loc)
+          case Predicate.Body.LatAtom(sym, polarity, terms, loc) =>
+            val ts = terms map visitPatTemporaryToBeRemoved
+            Predicate.Body.LatAtom(sym, polarity, ts, loc)
+          case Predicate.Body.Filter(sym, terms, loc) =>
+            val ts = terms.map(t => visitExp(t, env0))
+            Predicate.Body.Filter(sym, ts, loc)
+          case Predicate.Body.Functional(sym, term, loc) =>
+            val s = env0(sym)
+            val t = visitExp(term, env0)
+            Predicate.Body.Functional(s, t, loc)
+        }
       }
 
       visitExp(exp0, env0)
