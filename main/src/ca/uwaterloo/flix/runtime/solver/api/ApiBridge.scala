@@ -156,7 +156,6 @@ object ApiBridge {
     case ExecutableAst.Term.Body.Var(sym, _, _) => new VarTerm(visitVarSym(sym))
     case ExecutableAst.Term.Body.Lit(lit, _, _) => new LitTerm(() => lit)
     case ExecutableAst.Term.Body.Cst(sym, _, _) => new LitTerm(() => Linker.link(sym, root).invoke(Array.emptyObjectArray))
-    case ExecutableAst.Term.Body.Pat(_, _, _) => throw new UnsupportedOperationException("Loop currently not supported")
   }
 
   private def visitVarSym(sym: Symbol.VarSym)(implicit root: ExecutableAst.Root, cache: SymbolCache, flix: Flix): VarSym =

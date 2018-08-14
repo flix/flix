@@ -379,27 +379,6 @@ object Finalize extends Phase[SimplifiedAst.Root, ExecutableAst.Root] {
     visit(exp0)
   }
 
-  private def visitPattern(pat0: SimplifiedAst.Pattern): ExecutableAst.Pattern = pat0 match {
-    case SimplifiedAst.Pattern.Wild(tpe, loc) => ExecutableAst.Pattern.Wild(tpe, loc)
-    case SimplifiedAst.Pattern.Var(sym, tpe, loc) => ExecutableAst.Pattern.Var(sym, tpe, loc)
-    case SimplifiedAst.Pattern.Unit(loc) => ExecutableAst.Pattern.Unit(loc)
-    case SimplifiedAst.Pattern.True(loc) => ExecutableAst.Pattern.True(loc)
-    case SimplifiedAst.Pattern.False(loc) => ExecutableAst.Pattern.False(loc)
-    case SimplifiedAst.Pattern.Char(lit, loc) => ExecutableAst.Pattern.Char(lit, loc)
-    case SimplifiedAst.Pattern.Float32(lit, loc) => ExecutableAst.Pattern.Float32(lit, loc)
-    case SimplifiedAst.Pattern.Float64(lit, loc) => ExecutableAst.Pattern.Float64(lit, loc)
-    case SimplifiedAst.Pattern.Int8(lit, loc) => ExecutableAst.Pattern.Int8(lit, loc)
-    case SimplifiedAst.Pattern.Int16(lit, loc) => ExecutableAst.Pattern.Int16(lit, loc)
-    case SimplifiedAst.Pattern.Int32(lit, loc) => ExecutableAst.Pattern.Int32(lit, loc)
-    case SimplifiedAst.Pattern.Int64(lit, loc) => ExecutableAst.Pattern.Int64(lit, loc)
-    case SimplifiedAst.Pattern.BigInt(lit, loc) => ExecutableAst.Pattern.BigInt(lit, loc)
-    case SimplifiedAst.Pattern.Str(lit, loc) => ExecutableAst.Pattern.Str(lit, loc)
-    case SimplifiedAst.Pattern.Tag(sym, tag, pat, tpe, loc) => ExecutableAst.Pattern.Tag(sym, tag, visitPattern(pat), tpe, loc)
-    case SimplifiedAst.Pattern.Tuple(elms, tpe, loc) =>
-      val es = elms map visitPattern
-      ExecutableAst.Pattern.Tuple(es, tpe, loc)
-  }
-
   private def visitHeadPredicate(p0: SimplifiedAst.Predicate.Head, m: TopLevel)(implicit flix: Flix): ExecutableAst.Predicate.Head = p0 match {
     case SimplifiedAst.Predicate.Head.True(loc) => ExecutableAst.Predicate.Head.True(loc)
     case SimplifiedAst.Predicate.Head.False(loc) => ExecutableAst.Predicate.Head.False(loc)
@@ -451,7 +430,7 @@ object Finalize extends Phase[SimplifiedAst.Root, ExecutableAst.Root] {
       case Some(value) => ExecutableAst.Term.Body.Lit(value, tpe, loc)
       case None => ExecutableAst.Term.Body.Cst(lit2symTemporaryToBeRemoved(lit, m), tpe, loc)
     }
-    case SimplifiedAst.Term.Body.Pat(pat, tpe, loc) => ExecutableAst.Term.Body.Pat(visitPattern(pat), tpe, loc)
+    case SimplifiedAst.Term.Body.Pat(pat, tpe, loc) => ???
   }
 
   private def visitAttribute(a0: SimplifiedAst.Attribute): ExecutableAst.Attribute =
