@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.ExecutableAst.{Def, FormalParam, FreeVar, Root}
+import ca.uwaterloo.flix.language.ast.FinalAst.{Def, FormalParam, FreeVar, Root}
 import org.objectweb.asm.Opcodes._
 import org.objectweb.asm.{ClassWriter, Label}
 

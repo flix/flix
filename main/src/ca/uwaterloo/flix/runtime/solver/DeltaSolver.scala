@@ -20,8 +20,8 @@ import java.nio.file.StandardOpenOption._
 import java.nio.file.{Files, Path}
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.ExecutableAst.Stratum
-import ca.uwaterloo.flix.language.ast.{ExecutableAst, PrettyPrinter}
+import ca.uwaterloo.flix.language.ast.FinalAst.Stratum
+import ca.uwaterloo.flix.language.ast.{FinalAst, PrettyPrinter}
 import ca.uwaterloo.flix.runtime.solver.api.ApiBridge
 import ca.uwaterloo.flix.util.{Options, Verbosity}
 import flix.runtime._
@@ -59,7 +59,7 @@ object DeltaSolver {
     * @param options the Flix options.
     * @param path    the path to write the minimized facts to.
     */
-  def solve(root: ExecutableAst.Root, options: FixpointOptions, path: Path)(implicit flix: Flix): Unit = {
+  def solve(root: FinalAst.Root, options: FixpointOptions, path: Path)(implicit flix: Flix): Unit = {
     /*
      * Retrieve the lowest stratum.
      */
@@ -164,7 +164,7 @@ object DeltaSolver {
   /**
     * Optionally returns the exception thrown by the original program.
     */
-  def tryInit(root: ExecutableAst.Root, options: FixpointOptions)(implicit flix: Flix): Option[RuntimeException] = {
+  def tryInit(root: FinalAst.Root, options: FixpointOptions)(implicit flix: Flix): Option[RuntimeException] = {
     try {
       runSolver(root, options)
       None
@@ -176,7 +176,7 @@ object DeltaSolver {
   /**
     * Attempts to solve the given program expects `expectedException` to be thrown.
     */
-  def trySolve(root: ExecutableAst.Root, options: FixpointOptions, expectedException: RuntimeException)(implicit flix: Flix): SolverResult = {
+  def trySolve(root: FinalAst.Root, options: FixpointOptions, expectedException: RuntimeException)(implicit flix: Flix): SolverResult = {
     try {
       // run the solver.
       runSolver(root, options)
@@ -214,7 +214,7 @@ object DeltaSolver {
   /**
     * Runs the solver.
     */
-  private def runSolver(root: ExecutableAst.Root, options: FixpointOptions)(implicit flix: Flix): Unit = {
+  private def runSolver(root: FinalAst.Root, options: FixpointOptions)(implicit flix: Flix): Unit = {
     // silence output from the solver.
     val cs = ApiBridge.translate(root)
     new Solver(cs, options).solve()
@@ -223,7 +223,7 @@ object DeltaSolver {
   /**
     * Writes the given `facts` to the given `path`.
     */
-  private def writeFacts(constraints: Traversable[ExecutableAst.Constraint], path: Path): Unit = {
+  private def writeFacts(constraints: Traversable[FinalAst.Constraint], path: Path): Unit = {
     val writer = Files.newBufferedWriter(path, WRITE, CREATE, TRUNCATE_EXISTING)
     for (constraint <- constraints; if constraint.isFact) {
       val formattedFact = PrettyPrinter.fmt(constraint, new StringBuilder).toString

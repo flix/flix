@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.runtime
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.ExecutableAst._
+import ca.uwaterloo.flix.language.ast.FinalAst._
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.runtime.solver.api.ProxyObject
 

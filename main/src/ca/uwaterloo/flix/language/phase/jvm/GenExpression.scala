@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 import java.lang.reflect.Modifier
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.ExecutableAst.{CatchRule, Expression, Root}
+import ca.uwaterloo.flix.language.ast.FinalAst.{CatchRule, Expression, Root}
 import ca.uwaterloo.flix.language.ast.SemanticOperator._
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Optimization}

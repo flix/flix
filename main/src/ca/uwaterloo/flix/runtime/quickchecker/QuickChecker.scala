@@ -20,8 +20,8 @@ import java.math.BigInteger
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.GenSym
-import ca.uwaterloo.flix.language.ast.ExecutableAst.{Property, Root}
-import ca.uwaterloo.flix.language.ast.{ExecutableAst, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.FinalAst.{Property, Root}
+import ca.uwaterloo.flix.language.ast.{FinalAst, Symbol, Type}
 import ca.uwaterloo.flix.language.errors.PropertyError
 import ca.uwaterloo.flix.language.phase.Phase
 import ca.uwaterloo.flix.runtime.evaluator.SymVal.{Char, Unit}
@@ -35,7 +35,7 @@ import scala.collection.mutable
 import scala.language.implicitConversions
 import scala.util.Random
 
-object QuickChecker extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
+object QuickChecker extends Phase[FinalAst.Root, FinalAst.Root] {
 
   /**
     * The result of a single symbolic execution.
@@ -164,7 +164,7 @@ object QuickChecker extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
   /**
     * Attempts to quick check all properties in the given AST.
     */
-  def run(root: ExecutableAst.Root)(implicit flix: Flix): Validation[ExecutableAst.Root, PropertyError] = {
+  def run(root: FinalAst.Root)(implicit flix: Flix): Validation[FinalAst.Root, PropertyError] = {
     implicit val _ = flix.genSym
 
     /*

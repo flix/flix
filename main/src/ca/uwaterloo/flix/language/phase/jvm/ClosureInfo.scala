@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
-import ca.uwaterloo.flix.language.ast.ExecutableAst.FreeVar
+import ca.uwaterloo.flix.language.ast.FinalAst.FreeVar
 import ca.uwaterloo.flix.language.ast.{Symbol, Type}
 
 /**

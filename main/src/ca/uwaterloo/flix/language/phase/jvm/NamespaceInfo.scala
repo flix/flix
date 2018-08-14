@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language.phase.jvm
 
-import ca.uwaterloo.flix.language.ast.ExecutableAst.Def
+import ca.uwaterloo.flix.language.ast.FinalAst.Def
 import ca.uwaterloo.flix.language.ast.Symbol
 
 /**

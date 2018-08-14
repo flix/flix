@@ -3,7 +3,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 import java.lang.reflect.Method
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.ExecutableAst.Root
+import ca.uwaterloo.flix.language.ast.FinalAst.Root
 import ca.uwaterloo.flix.util.{InternalCompilerException, Verbosity}
 
 /**

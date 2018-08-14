@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.runtime.interpreter
 import java.lang.reflect.{InvocationTargetException, Modifier}
 
 import ca.uwaterloo.flix.api._
-import ca.uwaterloo.flix.language.ast.ExecutableAst._
+import ca.uwaterloo.flix.language.ast.FinalAst._
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.runtime.solver.{Fixpoint, FixpointOptions, Solver, api}
 import ca.uwaterloo.flix.runtime.solver.api.ApiBridge
@@ -757,7 +757,7 @@ object Interpreter {
   /**
     * Allocates a closure for the given definition `sym` with free variables `freeVars` under the given environment `env0`.
     */
-  private def allocateClosure(sym: Symbol.DefnSym, freeVars: Array[ExecutableAst.FreeVar], env0: Map[String, AnyRef]): Value.Closure = {
+  private def allocateClosure(sym: Symbol.DefnSym, freeVars: Array[FinalAst.FreeVar], env0: Map[String, AnyRef]): Value.Closure = {
     // Save the values of the free variables in the Value.Closure structure.
     // When the closure is called, these values will be provided at the beginning of the argument list.
     val bindings = new Array[AnyRef](freeVars.length)

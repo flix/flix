@@ -20,7 +20,7 @@ import java.io.PrintWriter
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.GenSym
-import ca.uwaterloo.flix.language.ast.ExecutableAst.{Property, Root}
+import ca.uwaterloo.flix.language.ast.FinalAst.{Property, Root}
 import ca.uwaterloo.flix.language.ast.{Symbol, _}
 import ca.uwaterloo.flix.language.errors.PropertyError
 import ca.uwaterloo.flix.language.phase.Phase
@@ -33,7 +33,7 @@ import com.microsoft.z3._
 
 import scala.collection.mutable.ListBuffer
 
-object Verifier extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
+object Verifier extends Phase[FinalAst.Root, FinalAst.Root] {
 
   /**
     * The result of a single symbolic execution.
@@ -67,7 +67,7 @@ object Verifier extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     /**
       * Returns the property associated with `this` property result.
       */
-    def property: ExecutableAst.Property
+    def property: FinalAst.Property
 
     /**
       * Returns the number of paths explored by symbolic execution for `this` property.
@@ -91,24 +91,24 @@ object Verifier extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
     /**
       * A property that was proven.
       */
-    case class Success(property: ExecutableAst.Property, paths: Int, queries: Int, elapsed: Long) extends PropertyResult
+    case class Success(property: FinalAst.Property, paths: Int, queries: Int, elapsed: Long) extends PropertyResult
 
     /**
       * A property that was disproved.
       */
-    case class Failure(property: ExecutableAst.Property, paths: Int, queries: Int, elapsed: Long, error: PropertyError) extends PropertyResult
+    case class Failure(property: FinalAst.Property, paths: Int, queries: Int, elapsed: Long, error: PropertyError) extends PropertyResult
 
     /**
       * A property whose validity is unknown.
       */
-    case class Unknown(property: ExecutableAst.Property, paths: Int, queries: Int, elapsed: Long, error: PropertyError) extends PropertyResult
+    case class Unknown(property: FinalAst.Property, paths: Int, queries: Int, elapsed: Long, error: PropertyError) extends PropertyResult
 
   }
 
   /**
     * Attempts to verify all properties in the given AST.
     */
-  def runAndPrint(root: ExecutableAst.Root, writer: PrintWriter)(implicit flix: Flix): Unit = {
+  def runAndPrint(root: FinalAst.Root, writer: PrintWriter)(implicit flix: Flix): Unit = {
     implicit val _ = flix.genSym
 
     /*
@@ -138,7 +138,7 @@ object Verifier extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
   /**
     * Attempts to verify all properties in the given AST.
     */
-  def run(root: ExecutableAst.Root)(implicit flix: Flix): Validation[ExecutableAst.Root, PropertyError] = {
+  def run(root: FinalAst.Root)(implicit flix: Flix): Validation[FinalAst.Root, PropertyError] = {
     implicit val _ = flix.genSym
 
     /*
@@ -179,7 +179,7 @@ object Verifier extends Phase[ExecutableAst.Root, ExecutableAst.Root] {
   /**
     * Attempts the verify that the given property `p` is valid.
     */
-  def verifyProperty(p: Property, root: ExecutableAst.Root)(implicit genSym: GenSym): PropertyResult = {
+  def verifyProperty(p: Property, root: FinalAst.Root)(implicit genSym: GenSym): PropertyResult = {
     // start the clock.
     val t = System.nanoTime()
 

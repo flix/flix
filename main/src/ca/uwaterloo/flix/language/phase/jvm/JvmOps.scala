@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 import java.nio.file.{Files, LinkOption, Path}
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.ExecutableAst._
+import ca.uwaterloo.flix.language.ast.FinalAst._
 import ca.uwaterloo.flix.language.ast.{Symbol, Type}
 import ca.uwaterloo.flix.language.phase.Unification
 import ca.uwaterloo.flix.util.{InternalCompilerException, Optimization}

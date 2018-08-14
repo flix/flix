@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.runtime.evaluator
 import java.math.BigInteger
 
 import ca.uwaterloo.flix.language.GenSym
-import ca.uwaterloo.flix.language.ast.ExecutableAst.Expression
+import ca.uwaterloo.flix.language.ast.FinalAst.Expression
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.{InternalCompilerException, InternalRuntimeException}
 import flix.runtime._
@@ -80,7 +80,7 @@ object SymbolicEvaluator {
   /**
     * Evaluates the given expression `exp0` under the given environment `env0`.
     */
-  def eval(exp0: Expression, env0: Environment, lenv0: LabelEnv, enumerator: Enumerator, root: ExecutableAst.Root)(implicit genSym: GenSym): Context = {
+  def eval(exp0: Expression, env0: Environment, lenv0: LabelEnv, enumerator: Enumerator, root: FinalAst.Root)(implicit genSym: GenSym): Context = {
     /*
       * Local visitor.
       */

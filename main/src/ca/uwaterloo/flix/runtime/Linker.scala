@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.runtime
 import java.lang.reflect.InvocationTargetException
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.ExecutableAst._
+import ca.uwaterloo.flix.language.ast.FinalAst._
 import ca.uwaterloo.flix.language.ast.{SpecialOperator, Symbol, Type}
 import ca.uwaterloo.flix.runtime.interpreter.Interpreter
 import ca.uwaterloo.flix.runtime.solver.api.ProxyObject

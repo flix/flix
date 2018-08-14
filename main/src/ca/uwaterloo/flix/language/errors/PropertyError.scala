@@ -17,14 +17,14 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.{ExecutableAst, Source, Symbol}
+import ca.uwaterloo.flix.language.ast.{FinalAst, Source, Symbol}
 import ca.uwaterloo.flix.util.vt.VirtualString._
 import ca.uwaterloo.flix.util.vt.VirtualTerminal
 
 /**
   * An error raised to indicate that a property is violated.
   */
-case class PropertyError(property: ExecutableAst.Property, m: Map[Symbol.VarSym, String]) extends CompilationError {
+case class PropertyError(property: FinalAst.Property, m: Map[Symbol.VarSym, String]) extends CompilationError {
   val kind: String = "Property Error"
   val source: Source = property.defn.loc.source
   val message: VirtualTerminal = {

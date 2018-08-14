@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.runtime.evaluator
 
-import ca.uwaterloo.flix.language.ast.ExecutableAst.Expression
+import ca.uwaterloo.flix.language.ast.FinalAst.Expression
 import ca.uwaterloo.flix.language.ast.{Symbol, Type}
 import com.microsoft.z3.Model
 

@@ -20,7 +20,7 @@ import java.nio.file.{Path, Paths}
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.ExecutableAst._
+import ca.uwaterloo.flix.language.ast.FinalAst._
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.phase.Phase
 import ca.uwaterloo.flix.runtime.solver.api.ProxyObject

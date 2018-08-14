@@ -22,23 +22,23 @@ object PrettyPrinter {
   /**
     * Returns a string representation of the given constraint.
     */
-  def fmt(f: ExecutableAst.Constraint, sb: StringBuilder): StringBuilder = f.head match {
-    case ExecutableAst.Predicate.Head.True(loc) => sb.append("true")
-    case ExecutableAst.Predicate.Head.False(loc) => sb.append("false")
-    case ExecutableAst.Predicate.Head.RelAtom(sym, terms, loc) =>
+  def fmt(f: FinalAst.Constraint, sb: StringBuilder): StringBuilder = f.head match {
+    case FinalAst.Predicate.Head.True(loc) => sb.append("true")
+    case FinalAst.Predicate.Head.False(loc) => sb.append("false")
+    case FinalAst.Predicate.Head.RelAtom(sym, terms, loc) =>
       sb.append(sym).append("(").append(terms.map(t => fmt(t, new StringBuilder)).mkString(", ")).append(").")
-    case ExecutableAst.Predicate.Head.LatAtom(sym, terms, loc) =>
+    case FinalAst.Predicate.Head.LatAtom(sym, terms, loc) =>
       sb.append(sym).append("(").append(terms.map(t => fmt(t, new StringBuilder)).mkString(", ")).append(").")
   }
 
   /**
     * Returns a string representation of the given term.
     */
-  def fmt(t: ExecutableAst.Term.Head, sb: StringBuilder): StringBuilder = t match {
-    case ExecutableAst.Term.Head.Var(sym, tpe, loc) => sb.append(sym.toString)
-    case ExecutableAst.Term.Head.Lit(lit, tpe, loc) => sb.append(lit.toString)
-    case ExecutableAst.Term.Head.Cst(sym, tpe, loc) => sb.append(sym.toString)
-    case ExecutableAst.Term.Head.App(name, args, tpe, loc) => ???
+  def fmt(t: FinalAst.Term.Head, sb: StringBuilder): StringBuilder = t match {
+    case FinalAst.Term.Head.Var(sym, tpe, loc) => sb.append(sym.toString)
+    case FinalAst.Term.Head.Lit(lit, tpe, loc) => sb.append(lit.toString)
+    case FinalAst.Term.Head.Cst(sym, tpe, loc) => sb.append(sym.toString)
+    case FinalAst.Term.Head.App(name, args, tpe, loc) => ???
   }
 
 }
