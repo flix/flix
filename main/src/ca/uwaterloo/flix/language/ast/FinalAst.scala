@@ -277,9 +277,7 @@ object FinalAst {
 
       case class Var(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends FinalAst.Term.Head
 
-      case class Lit(lit: ProxyObject, tpe: Type, loc: SourceLocation) extends FinalAst.Term.Head
-
-      case class Cst(sym: Symbol.DefnSym, tpe: Type, loc: SourceLocation) extends FinalAst.Term.Head
+      case class Lit(sym: Symbol.DefnSym, tpe: Type, loc: SourceLocation) extends FinalAst.Term.Head
 
       case class App(sym: Symbol.DefnSym, args: List[Symbol.VarSym], tpe: Type, loc: SourceLocation) extends FinalAst.Term.Head
 
@@ -293,9 +291,7 @@ object FinalAst {
 
       case class Var(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends FinalAst.Term.Body
 
-      case class Lit(lit: ProxyObject, tpe: Type, loc: SourceLocation) extends FinalAst.Term.Body
-
-      case class Cst(sym: Symbol.DefnSym, tpe: Type, loc: SourceLocation) extends FinalAst.Term.Body
+      case class Lit(sym: Symbol.DefnSym, tpe: Type, loc: SourceLocation) extends FinalAst.Term.Body
 
     }
 
@@ -304,6 +300,8 @@ object FinalAst {
   case class Attribute(name: String, tpe: Type)
 
   case class Case(sym: Symbol.EnumSym, tag: Name.Ident, tpe: Type, loc: SourceLocation)
+
+  case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: FinalAst.Expression)
 
   sealed trait ConstraintParam
 
@@ -314,8 +312,6 @@ object FinalAst {
     case class RuleParam(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends FinalAst.ConstraintParam
 
   }
-
-  case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: FinalAst.Expression)
 
   case class FormalParam(sym: Symbol.VarSym, tpe: Type)
 

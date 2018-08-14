@@ -415,21 +415,14 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
 
   private def visitHeadTerm(t0: SimplifiedAst.Term.Head, m: TopLevel)(implicit flix: Flix): FinalAst.Term.Head = t0 match {
     case SimplifiedAst.Term.Head.Var(sym, tpe, loc) => FinalAst.Term.Head.Var(sym, tpe, loc)
-    case SimplifiedAst.Term.Head.Lit(lit, tpe, loc) => toValueOptTemporaryToBeRemoved(lit) match {
-      case Some(value) => FinalAst.Term.Head.Lit(value, tpe, loc)
-      case None => FinalAst.Term.Head.Cst(lit2symTemporaryToBeRemoved(lit, m), tpe, loc)
-    }
-    case SimplifiedAst.Term.Head.App(name, args, tpe, loc) =>
-      FinalAst.Term.Head.App(name, args, tpe, loc)
+    case SimplifiedAst.Term.Head.Lit(lit, tpe, loc) => FinalAst.Term.Head.Lit(lit2symTemporaryToBeRemoved(lit, m), tpe, loc)
+    case SimplifiedAst.Term.Head.App(sym, args, tpe, loc) => FinalAst.Term.Head.App(sym, args, tpe, loc)
   }
 
   private def visitBodyTerm(t0: SimplifiedAst.Term.Body, m: TopLevel)(implicit flix: Flix): FinalAst.Term.Body = t0 match {
     case SimplifiedAst.Term.Body.Wild(tpe, loc) => FinalAst.Term.Body.Wild(tpe, loc)
     case SimplifiedAst.Term.Body.Var(sym, tpe, loc) => FinalAst.Term.Body.Var(sym, tpe, loc)
-    case SimplifiedAst.Term.Body.Lit(lit, tpe, loc) => toValueOptTemporaryToBeRemoved(lit) match {
-      case Some(value) => FinalAst.Term.Body.Lit(value, tpe, loc)
-      case None => FinalAst.Term.Body.Cst(lit2symTemporaryToBeRemoved(lit, m), tpe, loc)
-    }
+    case SimplifiedAst.Term.Body.Lit(lit, tpe, loc) => FinalAst.Term.Body.Lit(lit2symTemporaryToBeRemoved(lit, m), tpe, loc)
   }
 
   private def visitAttribute(a0: SimplifiedAst.Attribute): FinalAst.Attribute =
@@ -468,22 +461,7 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
   }
 
   // TODO: Deprecated
-  private def toValueOptTemporaryToBeRemoved(exp0: SimplifiedAst.Expression): Option[ProxyObject] = exp0 match {
-    case SimplifiedAst.Expression.True => Some(new ProxyObject(java.lang.Boolean.TRUE, null, null, null))
-    case SimplifiedAst.Expression.False => Some(new ProxyObject(java.lang.Boolean.FALSE, null, null, null))
-    case SimplifiedAst.Expression.Char(lit) => Some(new ProxyObject(new java.lang.Character(lit), null, null, null))
-    case SimplifiedAst.Expression.Float32(lit) => Some(new ProxyObject(new java.lang.Float(lit), null, null, null))
-    case SimplifiedAst.Expression.Float64(lit) => Some(new ProxyObject(new java.lang.Double(lit), null, null, null))
-    case SimplifiedAst.Expression.Int8(lit) => Some(new ProxyObject(new java.lang.Byte(lit), null, null, null))
-    case SimplifiedAst.Expression.Int16(lit) => Some(new ProxyObject(new java.lang.Short(lit), null, null, null))
-    case SimplifiedAst.Expression.Int32(lit) => Some(new ProxyObject(new java.lang.Integer(lit), null, null, null))
-    case SimplifiedAst.Expression.Int64(lit) => Some(new ProxyObject(new java.lang.Long(lit), null, null, null))
-    case SimplifiedAst.Expression.BigInt(lit) => Some(new ProxyObject(lit, null, null, null))
-    case SimplifiedAst.Expression.Str(lit) => Some(new ProxyObject(lit, null, null, null))
-    case _ => None
-  }
-
-  // TODO: Deprecated
+  // TODO: This should be done in a prior phase, perhaps during lambda lifting, or not done at all...
   private def lit2symTemporaryToBeRemoved(exp0: SimplifiedAst.Expression, m: TopLevel)(implicit flix: Flix): Symbol.DefnSym = {
     implicit val _ = flix.genSym
     // Generate a top-level function for the constant.

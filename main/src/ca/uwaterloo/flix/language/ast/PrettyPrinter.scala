@@ -36,8 +36,7 @@ object PrettyPrinter {
     */
   def fmt(t: FinalAst.Term.Head, sb: StringBuilder): StringBuilder = t match {
     case FinalAst.Term.Head.Var(sym, tpe, loc) => sb.append(sym.toString)
-    case FinalAst.Term.Head.Lit(lit, tpe, loc) => sb.append(lit.toString)
-    case FinalAst.Term.Head.Cst(sym, tpe, loc) => sb.append(sym.toString)
+    case FinalAst.Term.Head.Lit(sym, tpe, loc) => sb.append(sym.toString)
     case FinalAst.Term.Head.App(name, args, tpe, loc) => ???
   }
 
