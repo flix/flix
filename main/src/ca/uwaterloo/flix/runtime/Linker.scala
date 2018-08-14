@@ -67,14 +67,42 @@ object Linker {
         return result.asInstanceOf[ProxyObject]
       }
 
-      // Eq, Hash, and toString
+      // Retrieve the value type.
       val resultType = defn.tpe.typeArguments.last
-      val eq = getEqOp(resultType, root)
-      val hash = getHashOp(resultType, root)
-      val toString = getToStrOp(resultType, root)
 
-      // Create the proxy object.
-      new ProxyObject(result, eq, hash, toString)
+      // Check whether the value is an array.
+      // NB: This is a hack to get functional predicates to work.
+      if (resultType.typeConstructor != Type.Array) {
+        // Case 1: Non-array value.
+
+        // Retrieve operations.
+        val eq = getEqOp(resultType, root)
+        val hash = getHashOp(resultType, root)
+        val toString = getToStrOp(resultType, root)
+
+        // Create the proxy object.
+        new ProxyObject(result, eq, hash, toString)
+      } else {
+        // Case 2: Array value.
+        result match {
+          // TODO: This is a crazy mess!
+          case a: Array[Int] =>
+            val wrappedArray = a map {
+              case i =>
+                val eq = (x: AnyRef, y: AnyRef) => x == y
+                val hash = (x: AnyRef) => x.hashCode()
+                val toString = (x: AnyRef) => x.toString
+                new ProxyObject(Integer.valueOf(i), eq, hash, toString)
+            }
+
+            val eq = (x: AnyRef, y: AnyRef) => x == y
+            val hash = (x: AnyRef) => x.hashCode()
+            val toString = (x: AnyRef) => x.toString
+
+            new ProxyObject(wrappedArray, eq, hash, toString)
+        }
+      }
+
     }
   }
 

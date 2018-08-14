@@ -474,7 +474,6 @@ class Solver(val constraintSet: ConstraintSet, options: FixpointOptions) {
       // complete, now filter.
       evalAllFilters(rule, env, interp)
     case r :: rs =>
-
       // compute the values of the arguments
       val args = new Array[AnyRef](r.getArguments().length)
       for (a <- r.getArguments()) {
