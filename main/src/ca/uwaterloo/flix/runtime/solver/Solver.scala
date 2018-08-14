@@ -478,7 +478,7 @@ class Solver(val constraintSet: ConstraintSet, options: FixpointOptions) {
       // compute the values of the arguments
       val args = new Array[AnyRef](r.getArguments().length)
       for (a <- r.getArguments()) {
-
+        args(a.getStackOffset) = env(a.getStackOffset)
       }
 
       // apply the function to obtain the array of values.

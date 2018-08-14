@@ -119,6 +119,7 @@ object ApiBridge {
 
     case ExecutableAst.Predicate.Body.Functional(varSym, defSym, terms, loc) =>
       val s = cache.getVarSym(varSym)
+      // TODO: Problem here is that an array does not contain proxy objects.
       val f = (as: Array[AnyRef]) => Linker.link(defSym, root).invoke(as).getValue.asInstanceOf[Array[ProxyObject]]
       new FunctionalPredicate(s, f, terms.map(t => cache.getVarSym(t)).toArray)
   }
