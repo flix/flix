@@ -789,11 +789,10 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
             }
           }
 
-        case NamedAst.Predicate.Body.Loop(pat, term, loc) =>
+        case NamedAst.Predicate.Body.Functional(sym, term, loc) =>
           for {
-            p <- Patterns.resolve(pat, ns0, prog0)
             t <- Expressions.resolve(term, Map.empty, ns0, prog0)
-          } yield ResolvedAst.Predicate.Body.Loop(p, t, loc)
+          } yield ResolvedAst.Predicate.Body.Functional(sym, t, loc)
       }
     }
 

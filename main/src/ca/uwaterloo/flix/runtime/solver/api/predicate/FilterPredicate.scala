@@ -17,12 +17,12 @@ class FilterPredicate(f: Array[AnyRef] => Boolean, terms: Array[Term]) extends P
   }
 
   /**
-    * Returns the filter function.
+    * Returns the function.
     */
   def getFunction(): Array[AnyRef] => Boolean = f
 
   /**
-    * Returns the arguments of the filter function.
+    * Returns the arguments.
     */
   def getArguments(): Array[Term] = terms
 

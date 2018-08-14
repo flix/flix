@@ -504,7 +504,7 @@ object SimplifiedAstOps {
         for (term <- terms) {
           checkBodyTerm(term, env0)
         }
-      case Predicate.Body.Loop(sym, term, loc) =>
+      case Predicate.Body.Functional(sym, term, loc) =>
         checkHeadTerm(term, env0)
     }
 

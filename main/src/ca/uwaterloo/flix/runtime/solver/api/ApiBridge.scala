@@ -112,12 +112,16 @@ object ApiBridge {
       }
       new AtomPredicate(s, p, ts.toArray, i2s.toArray)
 
-    case ExecutableAst.Predicate.Body.Filter(sym, terms, _) =>
+    case ExecutableAst.Predicate.Body.Filter(sym, terms, loc) =>
       val f = (as: Array[AnyRef]) => Linker.link(sym, root).invoke(as).getValue.asInstanceOf[Boolean].booleanValue()
       val ts = terms.map(visitBodyTerm)
       new FilterPredicate(f, ts.toArray)
 
-    case ExecutableAst.Predicate.Body.Loop(_, _, _) => throw new UnsupportedOperationException("Loop currently not supported")
+    case ExecutableAst.Predicate.Body.Functional(varSym, defSym, terms, loc) =>
+      val s = cache.getVarSym(varSym)
+      val f = (as: Array[AnyRef]) => Linker.link(defSym, root).invoke(as).getValue.asInstanceOf[Array[AnyRef]]
+      val ts = terms map visitHeadTerm
+      new FunctionalPredicate(s, f, ts.toArray)
   }
 
   private def visitRelSym(sym: Symbol.RelSym)(implicit root: ExecutableAst.Root, cache: SymbolCache, flix: Flix): Table =

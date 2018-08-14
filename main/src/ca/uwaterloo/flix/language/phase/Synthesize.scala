@@ -76,7 +76,7 @@ object Synthesize extends Phase[Root, Root] {
       case Predicate.Body.RelAtom(sym, polarity, pats, loc) => b0
       case Predicate.Body.LatAtom(sym, polarity, pats, loc) => b0
       case Predicate.Body.Filter(sym, terms, loc) => Predicate.Body.Filter(sym, terms map visitExp, loc)
-      case Predicate.Body.Loop(sym, term, loc) => Predicate.Body.Loop(sym, visitExp(term), loc)
+      case Predicate.Body.Functional(sym, term, loc) => Predicate.Body.Functional(sym, visitExp(term), loc)
     }
 
     /**

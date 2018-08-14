@@ -2,7 +2,7 @@ package ca.uwaterloo.flix.runtime.solver.api
 
 import java.util.concurrent.atomic.{AtomicInteger, AtomicLong}
 
-import ca.uwaterloo.flix.runtime.solver.api.predicate.{AtomPredicate, FilterPredicate, Predicate}
+import ca.uwaterloo.flix.runtime.solver.api.predicate.{AtomPredicate, FilterPredicate, FunctionalPredicate, Predicate}
 import ca.uwaterloo.flix.runtime.solver.api.symbol.VarSym
 
 /**
@@ -110,6 +110,13 @@ class Constraint(cparams: Array[VarSym], head: Predicate, body: Array[Predicate]
     */
   def getFilters(): Array[FilterPredicate] = body.collect {
     case p: FilterPredicate => p
+  }
+
+  /**
+    * Returns the functional predicates in the body of the constraint.
+    */
+  def getFunctionals(): Array[FunctionalPredicate] = body.collect {
+    case p: FunctionalPredicate => p
   }
 
   /**

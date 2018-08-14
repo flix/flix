@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.ast.SimplifiedAst.Predicate.Head.RelAtom
 import ca.uwaterloo.flix.language.ast.SimplifiedAst.Predicate.Head.LatAtom
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
-import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body.{Filter, Loop}
+import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body.{Filter, Functional}
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Head.{False, True}
 import ca.uwaterloo.flix.language.ast.TypedAst.{Predicate, Root, Stratum}
 import ca.uwaterloo.flix.language.errors.StratificationError
@@ -171,7 +171,7 @@ object Stratifier extends Phase[TypedAst.Root, TypedAst.Root] {
               }
 
             case _: Filter => // Do Nothing
-            case _: Loop => // Do Nothing
+            case _: Functional => // Do Nothing
           }
         }
       }
@@ -282,7 +282,7 @@ object Stratifier extends Phase[TypedAst.Root, TypedAst.Root] {
           case TypedAst.Predicate.Body.LatAtom(predSym, Polarity.Negative, _, _) =>
             graph.insert(headSym, predSym, constraint, -1)
           case _: TypedAst.Predicate.Body.Filter => graph
-          case _: TypedAst.Predicate.Body.Loop => graph
+          case _: TypedAst.Predicate.Body.Functional => graph
         })
 
       /* copied */
@@ -300,7 +300,7 @@ object Stratifier extends Phase[TypedAst.Root, TypedAst.Root] {
           case TypedAst.Predicate.Body.LatAtom(predSym, Polarity.Negative, _, _) =>
             graph.insert(headSym, predSym, constraint, -1)
           case _: TypedAst.Predicate.Body.Filter => graph
-          case _: TypedAst.Predicate.Body.Loop => graph
+          case _: TypedAst.Predicate.Body.Functional => graph
         })
 
       case TypedAst.Predicate.Head.True(_) => graph

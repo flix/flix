@@ -371,8 +371,8 @@ class Solver(val constraintSet: ConstraintSet, options: FixpointOptions) {
     */
   private def evalCross(rule: Constraint, ps: List[AtomPredicate], env: Env, interp: Interpretation): Unit = ps match {
     case Nil =>
-      // cross product complete, now filter
-      evalAllFilters(rule, env, interp)
+      // complete, now functionals.
+      evalAllFunctionals(rule, env, interp)
     case p :: xs =>
       // Compute the rows that match the atom.
       val rows = evalAtom(p, env)
@@ -458,6 +458,32 @@ class Solver(val constraintSet: ConstraintSet, options: FixpointOptions) {
     }
 
     result
+  }
+
+  /**
+    * Computes the cross product of all functionals in the body.
+    */
+  private def evalAllFunctionals(rule: Constraint, env: Env, interp: Interpretation): Unit =
+    evalFunctionals(rule, rule.getFunctionals().toList, env, interp)
+
+  /**
+    * Evaluates a single functional.
+    */
+  private def evalFunctionals(rule: Constraint, ps: List[FunctionalPredicate], env: Env, interp: Interpretation): Unit = ps match {
+    case Nil =>
+      // complete, now filter.
+      evalAllFilters(rule, env, interp)
+    case r :: rs =>
+
+      r.getVarSym()
+      r.getFunction()
+      r.getArguments()
+
+      //for (newRow <- rows) {
+      //  evalFunctionals(rule, rs, newRow, interp)
+      //}
+
+      ???
   }
 
   /**

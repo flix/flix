@@ -126,9 +126,9 @@ object Uncurrier extends Phase[Root, Root] {
   def visitBodyPredicate(b: Predicate.Body, newDefs: TopLevel, root: Root)(implicit flix: Flix): Predicate.Body = b match {
     case Predicate.Body.RelAtom(sym, polarity, terms, loc) => b
     case Predicate.Body.LatAtom(sym, polarity, terms, loc) => b
-    case Predicate.Body.Loop(sym, term, loc) =>
+    case Predicate.Body.Functional(sym, term, loc) =>
       val t = visitHeadTerm(term, newDefs, root)
-      Predicate.Body.Loop(sym, t, loc)
+      Predicate.Body.Functional(sym, t, loc)
     case Predicate.Body.Filter(sym, terms, loc) => terms match {
       case Nil => b
       case x :: Nil => b

@@ -1031,10 +1031,11 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
           ts <- traverse(terms)(t => Expressions.namer(t, headEnv0 ++ ruleEnv0, tenv0))
         } yield NamedAst.Predicate.Body.Filter(qname, ts, loc)
 
-      case WeededAst.Predicate.Body.Loop(pat, term, loc) =>
-        val p = Patterns.namer(pat, headEnv0)
+      case WeededAst.Predicate.Body.Functional(ident, term, loc) =>
         Expressions.namer(term, ruleEnv0, tenv0) map {
-          case t => NamedAst.Predicate.Body.Loop(p, t, loc)
+          case t =>
+            val sym = headEnv0(ident.name)
+            NamedAst.Predicate.Body.Functional(sym, t, loc)
         }
     }
 
@@ -1044,7 +1045,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     def boundInHeadScope(p0: WeededAst.Predicate.Body): List[Name.Ident] = p0 match {
       case WeededAst.Predicate.Body.Atom(polarity, qname, terms, loc) => terms.flatMap(Patterns.freeVars)
       case WeededAst.Predicate.Body.Filter(qname, terms, loc) => Nil
-      case WeededAst.Predicate.Body.Loop(pat, term, loc) => Patterns.freeVars(pat)
+      case WeededAst.Predicate.Body.Functional(ident, term, loc) => ident :: Nil
     }
 
     /**
@@ -1053,7 +1054,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     def boundInRuleScope(p0: WeededAst.Predicate.Body): List[Name.Ident] = p0 match {
       case WeededAst.Predicate.Body.Atom(polarity, qname, terms, loc) => terms.flatMap(Patterns.freeVars)
       case WeededAst.Predicate.Body.Filter(qname, terms, loc) => Nil
-      case WeededAst.Predicate.Body.Loop(pat, term, loc) => Nil
+      case WeededAst.Predicate.Body.Functional(pat, term, loc) => Nil
     }
 
   }

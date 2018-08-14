@@ -422,12 +422,17 @@ object Finalize extends Phase[SimplifiedAst.Root, ExecutableAst.Root] {
       val index2var = getIndex2VarTemporaryToBeRemoved(ts)
       ExecutableAst.Predicate.Body.LatAtom(sym, polarity, ts, index2var, loc)
 
-    case SimplifiedAst.Predicate.Body.Filter(name, terms, loc) =>
+    case SimplifiedAst.Predicate.Body.Filter(sym, terms, loc) =>
       val ts = terms.map(t => visitBodyTerm(t, m))
-      ExecutableAst.Predicate.Body.Filter(name, ts, loc)
+      ExecutableAst.Predicate.Body.Filter(sym, ts, loc)
 
-    case SimplifiedAst.Predicate.Body.Loop(sym, term, loc) =>
-      ExecutableAst.Predicate.Body.Loop(sym, visitHeadTerm(term, m), loc)
+    case SimplifiedAst.Predicate.Body.Functional(varSym, term, loc) => term match {
+      case SimplifiedAst.Term.Head.App(defSym, args, tpe, _) =>
+        val as = args.map(a => ExecutableAst.Term.Head.Var(a, /* TODO: Incorrect type */ Type.Unit, loc))
+        ExecutableAst.Predicate.Body.Functional(varSym, defSym, as, loc)
+
+      case _ => throw InternalCompilerException(s"Unexpected term: $term.")
+    }
   }
 
   private def visitHeadTerm(t0: SimplifiedAst.Term.Head, m: TopLevel)(implicit flix: Flix): ExecutableAst.Term.Head = t0 match {
