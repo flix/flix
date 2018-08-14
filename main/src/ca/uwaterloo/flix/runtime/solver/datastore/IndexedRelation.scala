@@ -28,8 +28,8 @@ import scala.collection.mutable.ArrayBuffer
   * An index on the first column corresponds to 0b0000...0001.
   * An index on the first and third columns corresponds to 0b0000...0101.
   *
-  * @param indexes  the indexes.
-  * @param default  the default index.
+  * @param indexes the indexes.
+  * @param default the default index.
   */
 final class IndexedRelation(val attributes: Array[Attribute], indexes: Set[Int], default: Int) extends IndexedCollection {
 
@@ -77,7 +77,17 @@ final class IndexedRelation(val attributes: Array[Attribute], indexes: Set[Int],
   // TODO: Optimize
   def getSize: Int = scan.size
 
-  override def toString: String = "IndexedRelation(" + getSize + ")"
+  override def toString: String = {
+    val rows = scan.map {
+      case row =>
+        if (row.length == 1)
+          row.mkString(", ")
+        else
+          "(" + row.mkString(", ") + ")"
+    }
+
+    "{ " + rows.mkString(", ") + " }"
+  }
 
   /**
     * Returns the number of indexed lookups.

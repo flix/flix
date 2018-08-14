@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.{BinaryOperator, Symbol, Type, TypedAst, UnaryOperator}
-import ca.uwaterloo.flix.util.Validation
+import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 import ca.uwaterloo.flix.util.Validation._
 
 import scala.collection.mutable
@@ -109,7 +109,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
   /**
     * Performs monomorphization of the given AST `root`.
     */
-  def run(root: Root)(implicit flix: Flix): Validation[TypedAst.Root, CompilationError] = flix.phase("Monomorph") {
+  def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationError] = flix.phase("Monomorph") {
     implicit val _ = flix.genSym
 
     /**
@@ -121,8 +121,8 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
       *
       * it means that the function definition f should be specialized w.r.t. the map [a -> Int] under the fresh name f$1.
       */
-    val defQueue: mutable.Queue[(Symbol.DefnSym, TypedAst.Def, StrictSubstitution)] = mutable.Queue.empty
-    val effQueue: mutable.Queue[(Symbol.EffSym, TypedAst.Handler, StrictSubstitution)] = mutable.Queue.empty
+    val defQueue: mutable.Queue[(Symbol.DefnSym, Def, StrictSubstitution)] = mutable.Queue.empty
+    val effQueue: mutable.Queue[(Symbol.EffSym, Handler, StrictSubstitution)] = mutable.Queue.empty
 
     /**
       * A function-local map from a symbol and a concrete type to the fresh symbol for the specialized version of that function.
@@ -269,12 +269,12 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
 
         case Expression.Match(exp, rules, tpe, eff, loc) =>
           val rs = rules map {
-            case TypedAst.MatchRule(pat, guard, body) =>
+            case MatchRule(pat, guard, body) =>
               val (p, env1) = visitPat(pat)
               val extendedEnv = env0 ++ env1
               val g = visitExp(guard, extendedEnv)
               val b = visitExp(body, extendedEnv)
-              TypedAst.MatchRule(p, g, b)
+              MatchRule(p, g, b)
           }
           Expression.Match(visitExp(exp, env0), rs, subst0(tpe), eff, loc)
 
@@ -367,7 +367,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
             case HandlerBinding(sym, handler) =>
               val specializedSym = specializeEffSym(sym, handler.tpe)
               val e = visitExp(handler, env0)
-              TypedAst.HandlerBinding(specializedSym, e)
+              HandlerBinding(specializedSym, e)
           }
           Expression.HandleWith(e, bs, tpe, eff, loc)
 
@@ -416,9 +416,13 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         case Expression.NewLattice(sym, tpe, eff, loc) =>
           Expression.NewLattice(sym, subst0(tpe), eff, loc)
 
-        case Expression.Constraint(c, tpe, eff, loc) =>
-          // TODO: Any monomorph?
-          Expression.Constraint(c, tpe, eff, loc)
+        case Expression.Constraint(c0, tpe, eff, loc) =>
+          val Constraint(cparams0, head0, body0, loc) = c0
+          val (cparams, env1) = specializeConstraintParams(cparams0, subst0)
+          val head = visitHeadPredicate(head0, env0 ++ env1)
+          val body = body0.map(b => visitBodyPredicate(b, env0 ++ env1))
+          val c = Constraint(cparams, head, body, loc)
+          Expression.Constraint(c, subst0(tpe), eff, loc)
 
         case Expression.ConstraintUnion(exp1, exp2, tpe, eff, loc) =>
           val e1 = visitExp(exp1, env0)
@@ -465,6 +469,60 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         case Pattern.Tuple(elms, tpe, loc) =>
           val (ps, envs) = elms.map(p => visitPat(p)).unzip
           (Pattern.Tuple(ps, subst0(tpe), loc), envs.reduce(_ ++ _))
+      }
+
+      /**
+        * Specializes the given head predicate `h0` w.r.t. the given environment and current substitution.
+        */
+      def visitHeadPredicate(h0: Predicate.Head, env0: Map[Symbol.VarSym, Symbol.VarSym]): Predicate.Head = h0 match {
+        case Predicate.Head.True(loc) => Predicate.Head.True(loc)
+        case Predicate.Head.False(loc) => Predicate.Head.False(loc)
+        case Predicate.Head.RelAtom(sym, terms, loc) =>
+          val ts = terms.map(t => visitExp(t, env0))
+          Predicate.Head.RelAtom(sym, ts, loc)
+        case Predicate.Head.LatAtom(sym, terms, loc) =>
+          val ts = terms.map(t => visitExp(t, env0))
+          Predicate.Head.LatAtom(sym, ts, loc)
+      }
+
+      /**
+        * Specializes the given body predicate `b0` w.r.t. the given environment and current substitution.
+        */
+      def visitBodyPredicate(b0: Predicate.Body, env0: Map[Symbol.VarSym, Symbol.VarSym]): Predicate.Body = {
+        // TODO: We should change what is allowed here. Probably only variables and constants should be allowed?
+        def visitPatTemporaryToBeRemoved(pat: Pattern): Pattern = pat match {
+          case Pattern.Wild(tpe, loc) => Pattern.Wild(subst0(tpe), loc)
+          case Pattern.Var(sym, tpe, loc) => Pattern.Var(env0(sym), subst0(tpe), loc)
+          case Pattern.Unit(loc) => Pattern.Unit(loc)
+          case Pattern.True(loc) => Pattern.True(loc)
+          case Pattern.False(loc) => Pattern.False(loc)
+          case Pattern.Char(lit, loc) => Pattern.Char(lit, loc)
+          case Pattern.Float32(lit, loc) => Pattern.Float32(lit, loc)
+          case Pattern.Float64(lit, loc) => Pattern.Float64(lit, loc)
+          case Pattern.Int8(lit, loc) => Pattern.Int8(lit, loc)
+          case Pattern.Int16(lit, loc) => Pattern.Int16(lit, loc)
+          case Pattern.Int32(lit, loc) => Pattern.Int32(lit, loc)
+          case Pattern.Int64(lit, loc) => Pattern.Int64(lit, loc)
+          case Pattern.BigInt(lit, loc) => Pattern.BigInt(lit, loc)
+          case Pattern.Str(lit, loc) => Pattern.Str(lit, loc)
+          case _ => throw InternalCompilerException(s"Pattern not allowed here $pat.")
+        }
+
+        b0 match {
+          case Predicate.Body.RelAtom(sym, polarity, terms, loc) =>
+            val ts = terms map visitPatTemporaryToBeRemoved
+            Predicate.Body.RelAtom(sym, polarity, ts, loc)
+          case Predicate.Body.LatAtom(sym, polarity, terms, loc) =>
+            val ts = terms map visitPatTemporaryToBeRemoved
+            Predicate.Body.LatAtom(sym, polarity, ts, loc)
+          case Predicate.Body.Filter(sym, terms, loc) =>
+            val ts = terms.map(t => visitExp(t, env0))
+            Predicate.Body.Filter(sym, ts, loc)
+          case Predicate.Body.Functional(sym, term, loc) =>
+            val s = env0(sym)
+            val t = visitExp(term, env0)
+            Predicate.Body.Functional(s, t, loc)
+        }
       }
 
       visitExp(exp0, env0)
@@ -551,7 +609,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
       *
       * Returns the new formal parameters and an environment mapping the variable symbol for each parameter to a fresh symbol.
       */
-    def specializeFormalParams(fparams0: List[TypedAst.FormalParam], subst0: StrictSubstitution): (List[TypedAst.FormalParam], Map[Symbol.VarSym, Symbol.VarSym]) = {
+    def specializeFormalParams(fparams0: List[FormalParam], subst0: StrictSubstitution): (List[FormalParam], Map[Symbol.VarSym, Symbol.VarSym]) = {
       // Return early if there are no formal parameters.
       if (fparams0.isEmpty)
         return (Nil, Map.empty)
@@ -566,10 +624,39 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
       *
       * Returns the new formal parameter and an environment mapping the variable symbol to a fresh variable symbol.
       */
-    def specializeFormalParam(fparam0: TypedAst.FormalParam, subst0: StrictSubstitution): (TypedAst.FormalParam, Map[Symbol.VarSym, Symbol.VarSym]) = {
-      val TypedAst.FormalParam(sym, mod, tpe, loc) = fparam0
+    def specializeFormalParam(fparam0: FormalParam, subst0: StrictSubstitution): (FormalParam, Map[Symbol.VarSym, Symbol.VarSym]) = {
+      val FormalParam(sym, mod, tpe, loc) = fparam0
       val freshSym = Symbol.freshVarSym(sym)
-      (TypedAst.FormalParam(freshSym, mod, subst0(tpe), loc), Map(sym -> freshSym))
+      (FormalParam(freshSym, mod, subst0(tpe), loc), Map(sym -> freshSym))
+    }
+
+    /**
+      * Specializes the given constraint parameters `cparams0` w.r.t. the given substitution `subst0`.
+      *
+      * Returns the new formal parameters and an environment mapping the variable symbol for each parameter to a fresh symbol.
+      */
+    def specializeConstraintParams(cparams0: List[ConstraintParam], subst0: StrictSubstitution): (List[ConstraintParam], Map[Symbol.VarSym, Symbol.VarSym]) = {
+      // Return early if there are no formal parameters.
+      if (cparams0.isEmpty)
+        return (Nil, Map.empty)
+
+      // Specialize each constraint parameter and recombine the results.
+      val (params, envs) = cparams0.map(p => specializeConstraintParam(p, subst0)).unzip
+      (params, envs.reduce(_ ++ _))
+    }
+
+    /**
+      * Specializes the given constraint parameter `fparam0` w.r.t. the given substitution `subst0`.
+      *
+      * Returns the new constraint parameter and an environment mapping the variable symbol to a fresh variable symbol.
+      */
+    def specializeConstraintParam(cparam0: ConstraintParam, subst0: StrictSubstitution): (ConstraintParam, Map[Symbol.VarSym, Symbol.VarSym]) = cparam0 match {
+      case ConstraintParam.HeadParam(sym, tpe, loc) =>
+        val freshSym = Symbol.freshVarSym(sym)
+        (ConstraintParam.HeadParam(freshSym, subst0(tpe), loc), Map(sym -> freshSym))
+      case ConstraintParam.RuleParam(sym, tpe, loc) =>
+        val freshSym = Symbol.freshVarSym(sym)
+        (ConstraintParam.RuleParam(freshSym, subst0(tpe), loc), Map(sym -> freshSym))
     }
 
     /**

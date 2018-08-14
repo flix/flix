@@ -371,8 +371,8 @@ class Solver(val constraintSet: ConstraintSet, options: FixpointOptions) {
     */
   private def evalCross(rule: Constraint, ps: List[AtomPredicate], env: Env, interp: Interpretation): Unit = ps match {
     case Nil =>
-      // cross product complete, now filter
-      evalAllFilters(rule, env, interp)
+      // complete, now functionals.
+      evalAllFunctionals(rule, env, interp)
     case p :: xs =>
       // Compute the rows that match the atom.
       val rows = evalAtom(p, env)
@@ -458,6 +458,39 @@ class Solver(val constraintSet: ConstraintSet, options: FixpointOptions) {
     }
 
     result
+  }
+
+  /**
+    * Computes the cross product of all functionals in the body.
+    */
+  private def evalAllFunctionals(rule: Constraint, env: Env, interp: Interpretation): Unit =
+    evalFunctionals(rule, rule.getFunctionals().toList, env, interp)
+
+  /**
+    * Evaluates a single functional.
+    */
+  private def evalFunctionals(rule: Constraint, ps: List[FunctionalPredicate], env: Env, interp: Interpretation): Unit = ps match {
+    case Nil =>
+      // complete, now filter.
+      evalAllFilters(rule, env, interp)
+    case r :: rs =>
+      // compute the values of the arguments
+      val args = new Array[AnyRef](r.getArguments().length)
+      var i = 0
+      for (a <- r.getArguments()) {
+        args(i) = env(a.getStackOffset)
+        i = i + 1
+      }
+
+      // apply the function to obtain the array of values.
+      val values: Array[ProxyObject] = r.getFunction()(args)
+
+      // iterate through each value.
+      for (value <- values) {
+        val newEnv = copy(env)
+        newEnv(r.getVarSym().getStackOffset) = value
+        evalFunctionals(rule, rs, newEnv, interp)
+      }
   }
 
   /**

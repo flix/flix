@@ -265,7 +265,7 @@ object ResolvedAst {
 
       case class Filter(sym: Symbol.DefnSym, terms: List[ResolvedAst.Expression], loc: SourceLocation) extends ResolvedAst.Predicate.Body
 
-      case class Loop(pat: ResolvedAst.Pattern, term: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Predicate.Body
+      case class Functional(sym: Symbol.VarSym, term: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Predicate.Body
 
     }
 

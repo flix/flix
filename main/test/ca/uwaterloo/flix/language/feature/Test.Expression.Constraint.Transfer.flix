@@ -47,9 +47,32 @@ def testTransfer07(): Bool = check {
     A(0). A(1). A(3).
     B(1). B(2). B(3).
 
+    R(add(x)(y)) :- A(x), B(y).
+}
+
+@test
+def testTransfer08(): Bool = check {
+    A(0). A(1). A(3).
+    B(1). B(2). B(3).
+
     R(add(inc(x), dec(y))) :- A(x), B(y).
 }
 
+@test
+def testTransfer09(): Bool = check {
+    R(identity(42)).
+}
+
+@test
+def testTransfer10(): Bool = check {
+    R(fst((1, 2))).
+    R(snd((1, 2))).
+}
+
+@test
+def testTransfer11(): Bool = check {
+    R(constant(42)(42)).
+}
 
 def zer(): Int = 0
 def one(): Int = 1

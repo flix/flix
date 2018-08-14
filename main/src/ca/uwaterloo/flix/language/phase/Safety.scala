@@ -68,7 +68,7 @@ object Safety extends Phase[Root, Root] {
     case Predicate.Body.RelAtom(sym, polarity, terms, loc) => checkBodyAtomPredicate(polarity, terms, posVars, loc)
     case Predicate.Body.LatAtom(sym, polarity, terms, loc) => checkBodyAtomPredicate(polarity, terms, posVars, loc)
     case Predicate.Body.Filter(sym, terms, loc) => Nil
-    case Predicate.Body.Loop(sym, term, loc) => Nil
+    case Predicate.Body.Functional(sym, term, loc) => Nil
   }
 
   /**
@@ -114,7 +114,7 @@ object Safety extends Phase[Root, Root] {
         Set.empty
     }
     case Predicate.Body.Filter(sym, terms, loc) => Set.empty
-    case Predicate.Body.Loop(sym, term, loc) => Set.empty
+    case Predicate.Body.Functional(sym, term, loc) => Set.empty
   }
 
 }

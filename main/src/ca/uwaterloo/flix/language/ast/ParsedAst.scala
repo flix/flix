@@ -1088,6 +1088,16 @@ object ParsedAst {
       case class Filter(sp1: SourcePosition, name: Name.QName, terms: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Predicate.Body
 
       /**
+        * Functional Predicate.
+        *
+        * @param sp1   the position of the first character in the predicate.
+        * @param ident the name of the variable.
+        * @param term  the term of the predicate.
+        * @param sp2   the position of the last character in the predicate.
+        */
+      case class Functional(sp1: SourcePosition, ident: Name.Ident, term: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Predicate.Body
+
+      /**
         * NotEqual Predicate.
         *
         * @param sp1    the position of the first character in the predicate.
@@ -1096,16 +1106,6 @@ object ParsedAst {
         * @param sp2    the position of the last character in the predicate.
         */
       case class NotEqual(sp1: SourcePosition, ident1: Name.Ident, ident2: Name.Ident, sp2: SourcePosition) extends ParsedAst.Predicate.Body
-
-      /**
-        * Loop Predicate.
-        *
-        * @param sp1  the position of the first character in the predicate.
-        * @param pat  the loop pattern.
-        * @param term the set term.
-        * @param sp2  the position of the last character in the predicate.
-        */
-      case class Loop(sp1: SourcePosition, pat: ParsedAst.Pattern, term: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Predicate.Body
 
     }
 

@@ -112,12 +112,16 @@ object ApiBridge {
       }
       new AtomPredicate(s, p, ts.toArray, i2s.toArray)
 
-    case ExecutableAst.Predicate.Body.Filter(sym, terms, _) =>
+    case ExecutableAst.Predicate.Body.Filter(sym, terms, loc) =>
       val f = (as: Array[AnyRef]) => Linker.link(sym, root).invoke(as).getValue.asInstanceOf[Boolean].booleanValue()
       val ts = terms.map(visitBodyTerm)
       new FilterPredicate(f, ts.toArray)
 
-    case ExecutableAst.Predicate.Body.Loop(_, _, _) => throw new UnsupportedOperationException("Loop currently not supported")
+    case ExecutableAst.Predicate.Body.Functional(varSym, defSym, terms, loc) =>
+      val s = cache.getVarSym(varSym)
+      // TODO: Problem here is that an array does not contain proxy objects.
+      val f = (as: Array[AnyRef]) => Linker.link(defSym, root).invoke(as).getValue.asInstanceOf[Array[ProxyObject]]
+      new FunctionalPredicate(s, f, terms.map(t => cache.getVarSym(t)).toArray)
   }
 
   private def visitRelSym(sym: Symbol.RelSym)(implicit root: ExecutableAst.Root, cache: SymbolCache, flix: Flix): Table =
@@ -152,7 +156,6 @@ object ApiBridge {
     case ExecutableAst.Term.Body.Var(sym, _, _) => new VarTerm(visitVarSym(sym))
     case ExecutableAst.Term.Body.Lit(lit, _, _) => new LitTerm(() => lit)
     case ExecutableAst.Term.Body.Cst(sym, _, _) => new LitTerm(() => Linker.link(sym, root).invoke(Array.emptyObjectArray))
-    case ExecutableAst.Term.Body.Pat(_, _, _) => throw new UnsupportedOperationException("Loop currently not supported")
   }
 
   private def visitVarSym(sym: Symbol.VarSym)(implicit root: ExecutableAst.Root, cache: SymbolCache, flix: Flix): VarSym =

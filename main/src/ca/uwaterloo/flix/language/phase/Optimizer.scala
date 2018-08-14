@@ -446,7 +446,7 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Predicate.Body.RelAtom(sym, polarity, terms, loc) => Predicate.Body.RelAtom(sym, polarity, terms map visitBodyTerm, loc)
       case Predicate.Body.LatAtom(sym, polarity, terms, loc) => Predicate.Body.LatAtom(sym, polarity, terms map visitBodyTerm, loc)
       case Predicate.Body.Filter(sym, terms, loc) => Predicate.Body.Filter(sym, terms map visitBodyTerm, loc)
-      case Predicate.Body.Loop(sym, term, loc) => Predicate.Body.Loop(sym, visitHeadTerm(term), loc)
+      case Predicate.Body.Functional(sym, term, loc) => Predicate.Body.Functional(sym, visitHeadTerm(term), loc)
     }
 
     /**
@@ -465,7 +465,6 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Term.Body.Wild(tpe, loc) => Term.Body.Wild(tpe, loc)
       case Term.Body.Var(sym, tpe, loc) => Term.Body.Var(sym, tpe, loc)
       case Term.Body.Lit(exp, tpe, loc) => Term.Body.Lit(visitExp(exp, Map.empty), tpe, loc)
-      case Term.Body.Pat(pat, tpe, loc) => Term.Body.Pat(pat, tpe, loc)
     }
 
     // Visit every definition in the program.

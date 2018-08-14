@@ -1736,12 +1736,10 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           unifiedTypes <- Unification.unifyM(expectedTypes, actualTypes, loc)
         ) yield unifiedTypes
 
-      case ResolvedAst.Predicate.Body.Loop(pat, term, loc) =>
-        // TODO: Assumes that pat is a variable symbol.
-        val sym = pat.asInstanceOf[ResolvedAst.Pattern.Var].sym
+      case ResolvedAst.Predicate.Body.Functional(sym, term, loc) =>
         for {
           tpe <- Expressions.infer(term, program)
-          ___ <- unifyM(Type.mkFSet(sym.tvar), tpe, loc)
+          ___ <- unifyM(Type.mkArray(sym.tvar), tpe, loc)
         } yield List(tpe)
     }
 
@@ -1773,11 +1771,9 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         val defn = program.defs(sym)
         val ts = terms.map(t => Expressions.reassemble(t, program, subst0))
         TypedAst.Predicate.Body.Filter(defn.sym, ts, loc)
-      case ResolvedAst.Predicate.Body.Loop(pat, term, loc) =>
-        // TODO: Assumes that the pattern is a single variable.
-        val p = pat.asInstanceOf[ResolvedAst.Pattern.Var]
+      case ResolvedAst.Predicate.Body.Functional(sym, term, loc) =>
         val t = Expressions.reassemble(term, program, subst0)
-        TypedAst.Predicate.Body.Loop(p.sym, t, loc)
+        TypedAst.Predicate.Body.Functional(sym, t, loc)
     }
 
   }

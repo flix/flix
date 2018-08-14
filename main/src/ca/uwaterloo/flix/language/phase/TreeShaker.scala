@@ -168,7 +168,7 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         case SimplifiedAst.Predicate.Body.RelAtom(sym, polarity, terms, loc) => terms.map(visitBodyTerm).fold(Set())(_ ++ _)
         case SimplifiedAst.Predicate.Body.LatAtom(sym, polarity, terms, loc) => terms.map(visitBodyTerm).fold(Set())(_ ++ _)
         case SimplifiedAst.Predicate.Body.Filter(sym, terms, loc) => Set(sym)
-        case SimplifiedAst.Predicate.Body.Loop(sym, term, loc) => visitHeadTerm(term)
+        case SimplifiedAst.Predicate.Body.Functional(sym, term, loc) => visitHeadTerm(term)
       }.fold(Set())(_ ++ _)
 
       headSymbols ++ bodySymbols
@@ -193,7 +193,6 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         case SimplifiedAst.Term.Body.Wild(tpe, loc) => Set.empty
         case SimplifiedAst.Term.Body.Var(sym, tpe, loc) => Set.empty
         case SimplifiedAst.Term.Body.Lit(exp, tpe, loc) => visitExp(exp)
-        case SimplifiedAst.Term.Body.Pat(pat, tpe, loc) => Set.empty
       }
     }
 

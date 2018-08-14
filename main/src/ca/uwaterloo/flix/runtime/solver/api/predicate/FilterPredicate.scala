@@ -5,30 +5,32 @@ import ca.uwaterloo.flix.runtime.solver.api.term.{Term, WildTerm}
 /**
   * Represents a filter predicate with function `f` and arguments `terms`.
   */
-class FilterPredicate(f: Array[AnyRef] => Boolean, terms: Array[Term]) extends Predicate {
+class FilterPredicate(f: Array[AnyRef] => Boolean, args: Array[Term]) extends Predicate {
+
+  // TODO: Maybe the args should just be variables?
 
   /**
     * Invariant: A filter predicate cannot have wild card terms as arguments.
     */
-  for (t <- terms) {
+  for (t <- args) {
     if (t.isInstanceOf[WildTerm]) {
       throw new IllegalArgumentException("A filter predicate cannot take a wild card term as an argument.")
     }
   }
 
   /**
-    * Returns the filter function.
+    * Returns the function.
     */
   def getFunction(): Array[AnyRef] => Boolean = f
 
   /**
-    * Returns the arguments of the filter function.
+    * Returns the arguments.
     */
-  def getArguments(): Array[Term] = terms
+  def getArguments(): Array[Term] = args
 
   /**
     * Returns a string representation of `this` predicate.
     */
-  override def toString: String = "<<filter>>" + "(" + terms.mkString(", ") + ")"
+  override def toString: String = "<<filter>>" + "(" + args.mkString(", ") + ")"
 
 }
