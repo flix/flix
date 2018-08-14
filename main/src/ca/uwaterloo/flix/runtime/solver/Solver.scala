@@ -475,15 +475,21 @@ class Solver(val constraintSet: ConstraintSet, options: FixpointOptions) {
       evalAllFilters(rule, env, interp)
     case r :: rs =>
 
-      r.getVarSym()
-      r.getFunction()
-      r.getArguments()
+      // compute the values of the arguments
+      val args = new Array[AnyRef](r.getArguments().length)
+      for (a <- r.getArguments()) {
 
-      //for (newRow <- rows) {
-      //  evalFunctionals(rule, rs, newRow, interp)
-      //}
+      }
 
-      ???
+      // apply the function to obtain the array of values.
+      val values: Array[ProxyObject] = r.getFunction()(args)
+
+      // iterate through each value.
+      for (value <- values) {
+        val newEnv = copy(env)
+        newEnv(r.getVarSym().getStackOffset) = value
+        evalFunctionals(rule, rs, newEnv, interp)
+      }
   }
 
   /**

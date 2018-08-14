@@ -119,9 +119,8 @@ object ApiBridge {
 
     case ExecutableAst.Predicate.Body.Functional(varSym, defSym, terms, loc) =>
       val s = cache.getVarSym(varSym)
-      val f = (as: Array[AnyRef]) => Linker.link(defSym, root).invoke(as).getValue.asInstanceOf[Array[AnyRef]]
-      val ts = terms map visitHeadTerm
-      new FunctionalPredicate(s, f, ts.toArray)
+      val f = (as: Array[AnyRef]) => Linker.link(defSym, root).invoke(as).getValue.asInstanceOf[Array[ProxyObject]]
+      new FunctionalPredicate(s, f, terms.map(t => cache.getVarSym(t)).toArray)
   }
 
   private def visitRelSym(sym: Symbol.RelSym)(implicit root: ExecutableAst.Root, cache: SymbolCache, flix: Flix): Table =

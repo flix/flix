@@ -303,7 +303,7 @@ object ExecutableAst {
 
       case class Filter(sym: Symbol.DefnSym, terms: List[ExecutableAst.Term.Body], loc: SourceLocation) extends ExecutableAst.Predicate.Body
 
-      case class Functional(varSym: Symbol.VarSym, defSym: Symbol.DefnSym, terms: List[ExecutableAst.Term.Head], loc: SourceLocation) extends ExecutableAst.Predicate.Body
+      case class Functional(varSym: Symbol.VarSym, defSym: Symbol.DefnSym, terms: List[Symbol.VarSym], loc: SourceLocation) extends ExecutableAst.Predicate.Body
 
     }
 

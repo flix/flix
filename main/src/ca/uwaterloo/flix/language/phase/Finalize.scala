@@ -428,8 +428,7 @@ object Finalize extends Phase[SimplifiedAst.Root, ExecutableAst.Root] {
 
     case SimplifiedAst.Predicate.Body.Functional(varSym, term, loc) => term match {
       case SimplifiedAst.Term.Head.App(defSym, args, tpe, _) =>
-        val as = args.map(a => ExecutableAst.Term.Head.Var(a, /* TODO: Incorrect type */ Type.Unit, loc))
-        ExecutableAst.Predicate.Body.Functional(varSym, defSym, as, loc)
+        ExecutableAst.Predicate.Body.Functional(varSym, defSym, args, loc)
 
       case _ => throw InternalCompilerException(s"Unexpected term: $term.")
     }
