@@ -86,7 +86,7 @@ object Linker {
         // Case 2: Array value.
 
         // Retrieve the wrapped array.
-        val wrappedArray = getWrappedArray(result)
+        val wrappedArray = getWrappedArray(result, resultType, root)
 
         // The wrapped array operations.
         val wrappedEq = (x: AnyRef, y: AnyRef) => x == y
@@ -134,7 +134,7 @@ object Linker {
   /**
     * Returns the given array `result` with all its values wrapped in proxy object.
     */
-  private def getWrappedArray(result: AnyRef): Array[ProxyObject] = {
+  private def getWrappedArray(result: AnyRef, tpe: Type, root: Root)(implicit flix: Flix): Array[ProxyObject] = {
     // Primitive equality, hashCode, and toString method.
     val primitiveEq = (x: AnyRef, y: AnyRef) => x == y
     val primitiveHash = (x: AnyRef) => x.hashCode()
@@ -142,17 +142,24 @@ object Linker {
 
     // Wrap the array values in proxy objects.
     result match {
-      case a: Array[Char] => a map (i => new ProxyObject(Char.box(i), primitiveEq, primitiveHash, primitiveToString))
+      case a: Array[Char] => a map (v => new ProxyObject(Char.box(v), primitiveEq, primitiveHash, primitiveToString))
 
-      case a: Array[Byte] => a map (i => new ProxyObject(Byte.box(i), primitiveEq, primitiveHash, primitiveToString))
-      case a: Array[Short] => a map (i => new ProxyObject(Short.box(i), primitiveEq, primitiveHash, primitiveToString))
-      case a: Array[Int] => a map (i => new ProxyObject(Int.box(i), primitiveEq, primitiveHash, primitiveToString))
-      case a: Array[Long] => a map (i => new ProxyObject(Long.box(i), primitiveEq, primitiveHash, primitiveToString))
+      case a: Array[Byte] => a map (v => new ProxyObject(Byte.box(v), primitiveEq, primitiveHash, primitiveToString))
+      case a: Array[Short] => a map (v => new ProxyObject(Short.box(v), primitiveEq, primitiveHash, primitiveToString))
+      case a: Array[Int] => a map (v => new ProxyObject(Int.box(v), primitiveEq, primitiveHash, primitiveToString))
+      case a: Array[Long] => a map (v => new ProxyObject(Long.box(v), primitiveEq, primitiveHash, primitiveToString))
 
-      case a: Array[Float] => a map (i => new ProxyObject(Float.box(i), primitiveEq, primitiveHash, primitiveToString))
-      case a: Array[Double] => a map (i => new ProxyObject(Double.box(i), primitiveEq, primitiveHash, primitiveToString))
+      case a: Array[Float] => a map (v => new ProxyObject(Float.box(v), primitiveEq, primitiveHash, primitiveToString))
+      case a: Array[Double] => a map (v => new ProxyObject(Double.box(v), primitiveEq, primitiveHash, primitiveToString))
 
-      case a: Array[AnyRef] => ??? // TODO
+      case a: Array[AnyRef] => a map {
+        case v =>
+          // The type of the array elements.
+          val elmType = tpe.typeArguments.head
+
+          // Construct the wrapped element.
+          new ProxyObject(v, getEqOp(elmType, root), getHashOp(elmType, root), getToStrOp(elmType, root))
+      }
     }
   }
 

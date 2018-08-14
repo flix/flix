@@ -981,6 +981,8 @@ object Interpreter {
             result(i) = toJava(elms(i)).asInstanceOf[Int]
           }
           result
+        case _ if tpe.isTuple =>
+          elms
         case _ => throw InternalRuntimeException(s"Unable to construct array of type: '${tpe.show}'.")
       }
     case _ => ref
