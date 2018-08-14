@@ -498,7 +498,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
       /**
         * Specializes the given body predicate `b0` w.r.t. the given environment and current substitution.
         */
-      def visitBodyPredicate(b0: Predicate.Body, symToSym: Map[Symbol.VarSym, Symbol.VarSym]): Predicate.Body = b0 match {
+      def visitBodyPredicate(b0: Predicate.Body, env0: Map[Symbol.VarSym, Symbol.VarSym]): Predicate.Body = b0 match {
         case Predicate.Body.RelAtom(sym, polarity, terms, loc) =>
           val ts = visitPats(terms)
           Predicate.Body.RelAtom(sym, polarity, ts, loc)
@@ -509,8 +509,9 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           val ts = terms.map(t => visitExp(t, env0))
           Predicate.Body.Filter(sym, ts, loc)
         case Predicate.Body.Functional(sym, term, loc) =>
+          val s = env0(sym)
           val t = visitExp(term, env0)
-          Predicate.Body.Functional(sym, t, loc)
+          Predicate.Body.Functional(s, t, loc)
       }
 
       visitExp(exp0, env0)

@@ -32,6 +32,6 @@ class Relation(name: String, attributes: Array[Attribute]) extends Table {
   /**
     * Returns a string representation of the relation.
     */
-  override def toString: String = s"$name(${indexedRelation.getSize})"
+  override def toString: String = s"$name(${indexedRelation.toString})"
 
 }
