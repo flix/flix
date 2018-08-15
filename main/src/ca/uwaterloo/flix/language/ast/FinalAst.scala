@@ -275,7 +275,9 @@ object FinalAst {
 
     object Head {
 
-      case class Var(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends FinalAst.Term.Head
+      case class FreeVar(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends FinalAst.Term.Head
+
+      case class BoundVar(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends FinalAst.Term.Head
 
       case class Lit(sym: Symbol.DefnSym, tpe: Type, loc: SourceLocation) extends FinalAst.Term.Head
 
@@ -289,7 +291,9 @@ object FinalAst {
 
       case class Wild(tpe: Type, loc: SourceLocation) extends FinalAst.Term.Body
 
-      case class Var(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends FinalAst.Term.Body
+      case class FreeVar(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends FinalAst.Term.Body
+
+      case class BoundVar(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends FinalAst.Term.Body
 
       case class Lit(sym: Symbol.DefnSym, tpe: Type, loc: SourceLocation) extends FinalAst.Term.Body
 

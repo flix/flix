@@ -46,12 +46,12 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       * Translates the given `constraint0` to the SimplifiedAst.
       */
     def visitConstraint(constraint0: TypedAst.Constraint): SimplifiedAst.Constraint = {
-      val head = visitHeadPred(constraint0.head, constraint0.cparams)
-      val body = constraint0.body.map(p => visitBodyPred(p, constraint0.cparams))
       val cparams = constraint0.cparams.map {
         case TypedAst.ConstraintParam.HeadParam(sym, tpe, loc) => SimplifiedAst.ConstraintParam.HeadParam(sym, tpe, loc)
         case TypedAst.ConstraintParam.RuleParam(sym, tpe, loc) => SimplifiedAst.ConstraintParam.RuleParam(sym, tpe, loc)
       }
+      val head = visitHeadPred(constraint0.head, constraint0.cparams)
+      val body = constraint0.body.map(p => visitBodyPred(p, constraint0.cparams))
 
       SimplifiedAst.Constraint(cparams, head, body)
     }
@@ -557,7 +557,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         SimplifiedAst.Predicate.Body.LatAtom(sym, polarity, ts, loc)
 
       case TypedAst.Predicate.Body.Filter(sym, terms, loc) =>
-        SimplifiedAst.Predicate.Body.Filter(sym, terms map exp2BodyTerm, loc)
+        SimplifiedAst.Predicate.Body.Filter(sym, terms.map(t => exp2BodyTerm(t, cparams)), loc)
 
       case TypedAst.Predicate.Body.Functional(sym, term, loc) =>
         val cps = cparams.filter {
@@ -572,7 +572,11 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       */
     def exp2HeadTerm(e0: TypedAst.Expression, cparams: List[TypedAst.ConstraintParam]): SimplifiedAst.Term.Head = e0 match {
       case TypedAst.Expression.Var(sym, tpe, eff, loc) =>
-        SimplifiedAst.Term.Head.Var(sym, tpe, loc)
+        val isQuantified = cparams.exists(p => p.sym == sym)
+        if (isQuantified)
+          SimplifiedAst.Term.Head.FreeVar(sym, tpe, loc)
+        else
+          SimplifiedAst.Term.Head.BoundVar(sym, tpe, loc)
 
       case TypedAst.Expression.Apply(TypedAst.Expression.Def(sym, _, _, _), exp, tpe, eff, loc) if exp.isInstanceOf[TypedAst.Expression.Var] =>
         val v = exp.asInstanceOf[TypedAst.Expression.Var]
@@ -725,7 +729,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       */
     def pat2BodyTerm(p: TypedAst.Pattern): SimplifiedAst.Term.Body = p match {
       case TypedAst.Pattern.Wild(tpe, loc) => SimplifiedAst.Term.Body.Wild(tpe, loc)
-      case TypedAst.Pattern.Var(sym, tpe, loc) => SimplifiedAst.Term.Body.Var(sym, tpe, loc)
+      case TypedAst.Pattern.Var(sym, tpe, loc) => SimplifiedAst.Term.Body.FreeVar(sym, tpe, loc)
       case _ => if (isPatLiteral(p))
         SimplifiedAst.Term.Body.Lit(pat2exp(p), p.tpe, p.loc)
       else
@@ -735,9 +739,15 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
     /**
       * Translates the given expression `e` to a body term.
       */
-    def exp2BodyTerm(e: TypedAst.Expression): SimplifiedAst.Term.Body = e match {
+    def exp2BodyTerm(e: TypedAst.Expression, cparams: List[TypedAst.ConstraintParam]): SimplifiedAst.Term.Body = e match {
       case TypedAst.Expression.Wild(tpe, eff, loc) => SimplifiedAst.Term.Body.Wild(tpe, loc)
-      case TypedAst.Expression.Var(sym, tpe, eff, loc) => SimplifiedAst.Term.Body.Var(sym, tpe, loc)
+      case TypedAst.Expression.Var(sym, tpe, eff, loc) =>
+        val isQuantified = cparams.exists(p => p.sym == sym)
+        if (isQuantified)
+          SimplifiedAst.Term.Body.FreeVar(sym, tpe, loc)
+        else
+          SimplifiedAst.Term.Body.BoundVar(sym, tpe, loc)
+
       case _ => SimplifiedAst.Term.Body.Lit(visitExp(e), e.tpe, e.loc) // TODO: Only certain expressions should be allow here.
     }
 
