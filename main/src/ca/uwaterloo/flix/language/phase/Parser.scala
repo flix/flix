@@ -196,7 +196,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
       def Cases: Rule1[Seq[ParsedAst.Case]] = rule {
         // NB: NestedCase must be parsed before UnitCase.
-        oneOrMore(NestedCase | UnitCase).separatedBy(optWS ~ "," ~ optWS)
+        zeroOrMore(NestedCase | UnitCase).separatedBy(optWS ~ "," ~ optWS)
       }
 
       rule {

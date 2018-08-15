@@ -1,4 +1,9 @@
 ///
+/// The Void type.
+///
+enum Void { }
+
+///
 /// The identity function.
 ///
 def identity[a](x: a): a = x
