@@ -21,8 +21,8 @@ import java.lang.reflect.{InvocationTargetException, Modifier}
 import ca.uwaterloo.flix.api._
 import ca.uwaterloo.flix.language.ast.FinalAst._
 import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.runtime.Linker
 import ca.uwaterloo.flix.runtime.solver.{Fixpoint, FixpointOptions, Solver, api}
-import ca.uwaterloo.flix.runtime.solver.api.ApiBridge
 import ca.uwaterloo.flix.runtime.solver.api.ApiBridge.SymbolCache
 import ca.uwaterloo.flix.runtime.solver.api.ConstraintSet
 import ca.uwaterloo.flix.util.{InternalRuntimeException, Verbosity}
@@ -775,13 +775,17 @@ object Interpreter {
   }
 
   /**
-    * Evaluates the given constraint to a constraint value.
+    * Evaluates the given constraint `c0` to a constraint value under the given environment `env0`.
     */
   private def evalConstraint(c0: Constraint, env0: Map[String, AnyRef], henv0: Map[Symbol.EffSym, AnyRef], lenv0: Map[Symbol.LabelSym, Expression], root: Root)(implicit flix: Flix): AnyRef = {
     implicit val _ = root
     implicit val cache = new SymbolCache
 
-    val constraint = ApiBridge.visitConstraint(c0)
+    val cparams = c0.cparams.map(visitConstraintParam)
+    val head = visitHeadPredicate(c0.head, env0)
+    val body = c0.body.map(b => visitBodyPredicate(b, env0))
+
+    val constraint = new api.Constraint(cparams.toArray, head, body.toArray)
     val strata = new api.Stratum(List(constraint).toArray)
 
     val relSyms = cache.relSyms.values.toArray
@@ -790,6 +794,45 @@ object Interpreter {
     new ConstraintSet(relSyms, latSyms, Array(strata))
   }
 
+  private def visitConstraintParam(c0: FinalAst.ConstraintParam)(implicit root: FinalAst.Root, cache: SymbolCache, flix: Flix): api.symbol.VarSym = ???
+
+  private def visitHeadPredicate(h0: FinalAst.Predicate.Head, env0: Map[String, AnyRef])(implicit root: FinalAst.Root, cache: SymbolCache, flix: Flix): api.predicate.Predicate = h0 match {
+    case FinalAst.Predicate.Head.True(_) => new api.predicate.TruePredicate()
+    case FinalAst.Predicate.Head.False(_) => new api.predicate.FalsePredicate()
+    case FinalAst.Predicate.Head.RelAtom(sym, terms, _) => new api.predicate.AtomPredicate(visitRelSym(sym), positive = true, terms.map(t => visitHeadTerm(t, env0)).toArray, null)
+    case FinalAst.Predicate.Head.LatAtom(sym, terms, _) => new api.predicate.AtomPredicate(visitLatSym(sym), positive = true, terms.map(t => visitHeadTerm(t, env0)).toArray, null)
+  }
+
+  private def visitBodyPredicate(b0: FinalAst.Predicate.Body, env0: Map[String, AnyRef])(implicit root: FinalAst.Root, cache: SymbolCache, flix: Flix): api.predicate.Predicate = ???
+
+  private def visitHeadTerm(t0: FinalAst.Term.Head, env0: Map[String, AnyRef])(implicit root: FinalAst.Root, cache: SymbolCache, flix: Flix): api.term.Term = t0 match {
+    case FinalAst.Term.Head.FreeVar(sym, _, _) => new api.term.VarTerm(cache.getVarSym(sym))
+    case FinalAst.Term.Head.BoundVar(sym, _, _) =>
+      val value = env0.get(sym.toString)
+      ???
+    case FinalAst.Term.Head.Lit(sym, _, _) => new api.term.LitTerm(() => Linker.link(sym, root).invoke(Array.emptyObjectArray))
+    case FinalAst.Term.Head.App(sym, args, _, _) =>
+      val f = (args: Array[AnyRef]) => Linker.link(sym, root).invoke(args)
+      val as = args.map(cache.getVarSym)
+      new api.term.AppTerm(f, as.toArray)
+  }
+
+  private def visitRelSym(sym: Symbol.RelSym)(implicit root: FinalAst.Root, cache: SymbolCache, flix: Flix): api.Table =
+    root.relations(sym) match {
+      case r: FinalAst.Relation =>
+        val attributes = r.attr.map(a => new api.Attribute(a.name))
+        cache.getRelSym(sym, sym.toString, attributes.toArray)
+    }
+
+  private def visitLatSym(sym: Symbol.LatSym)(implicit root: FinalAst.Root, cache: SymbolCache, flix: Flix): api.Table =
+    root.lattices(sym) match {
+      case l: FinalAst.Lattice =>
+        val attributes = l.attr.map(a => new api.Attribute(a.name))
+        val keys = attributes.init
+        val value = attributes.last
+        val ops = ??? //getLatticeOps(l.attr.last)
+        cache.getLatSym(sym, sym.toString, keys.toArray, value, ops)
+    }
 
   /////////////////////////////////////////////////////////////////////////////
   // Casts                                                                   //
