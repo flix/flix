@@ -781,9 +781,9 @@ object Interpreter {
     implicit val _ = root
     implicit val cache = new SymbolCache
 
-    val cparams = c0.cparams.map(visitConstraintParam)
-    val head = visitHeadPredicate(c0.head, env0)
-    val body = c0.body.map(b => visitBodyPredicate(b, env0))
+    val cparams = c0.cparams.map(p => cache.getVarSym(p.sym))
+    val head = evalHeadPredicate(c0.head, env0)
+    val body = c0.body.map(b => evalBodyPredicate(b, env0))
 
     val constraint = new api.Constraint(cparams.toArray, head, body.toArray)
     val strata = new api.Stratum(List(constraint).toArray)
@@ -794,19 +794,24 @@ object Interpreter {
     new ConstraintSet(relSyms, latSyms, Array(strata))
   }
 
-  private def visitConstraintParam(c0: FinalAst.ConstraintParam)(implicit root: FinalAst.Root, cache: SymbolCache, flix: Flix): api.symbol.VarSym = c0 match {
-    case FinalAst.ConstraintParam.HeadParam(sym, _, _) => cache.getVarSym(sym)
-    case FinalAst.ConstraintParam.RuleParam(sym, _, _) => cache.getVarSym(sym)
-  }
-
-  private def visitHeadPredicate(h0: FinalAst.Predicate.Head, env0: Map[String, AnyRef])(implicit root: FinalAst.Root, cache: SymbolCache, flix: Flix): api.predicate.Predicate = h0 match {
+  /**
+    * Evaluates the given head predicate `h0` under the given environment `env0` to a head predicate value.
+    */
+  private def evalHeadPredicate(h0: FinalAst.Predicate.Head, env0: Map[String, AnyRef])(implicit root: FinalAst.Root, cache: SymbolCache, flix: Flix): api.predicate.Predicate = h0 match {
     case FinalAst.Predicate.Head.True(_) => new api.predicate.TruePredicate()
     case FinalAst.Predicate.Head.False(_) => new api.predicate.FalsePredicate()
-    case FinalAst.Predicate.Head.RelAtom(sym, terms, _) => new api.predicate.AtomPredicate(getRelation(sym), positive = true, terms.map(t => evalHeadTerm(t, env0)).toArray, null)
-    case FinalAst.Predicate.Head.LatAtom(sym, terms, _) => new api.predicate.AtomPredicate(getLattice(sym), positive = true, terms.map(t => evalHeadTerm(t, env0)).toArray, null)
+    case FinalAst.Predicate.Head.RelAtom(sym, terms, _) =>
+      val ts = terms.map(t => evalHeadTerm(t, env0))
+      new api.predicate.AtomPredicate(getRelation(sym), positive = true, ts.toArray, null)
+    case FinalAst.Predicate.Head.LatAtom(sym, terms, _) =>
+      val ts = terms.map(t => evalHeadTerm(t, env0))
+      new api.predicate.AtomPredicate(getLattice(sym), positive = true, ts.toArray, null)
   }
 
-  private def visitBodyPredicate(b0: FinalAst.Predicate.Body, env0: Map[String, AnyRef])(implicit root: FinalAst.Root, cache: SymbolCache, flix: Flix): api.predicate.Predicate = b0 match {
+  /**
+    * Evaluates the given body predicate `b0` under the given environment `env0` to a body predicate value.
+    */
+  private def evalBodyPredicate(b0: FinalAst.Predicate.Body, env0: Map[String, AnyRef])(implicit root: FinalAst.Root, cache: SymbolCache, flix: Flix): api.predicate.Predicate = b0 match {
     case FinalAst.Predicate.Body.RelAtom(sym, polarity, terms, index2sym, loc) =>
       val s = getRelation(sym)
       val p = polarity match {
@@ -814,6 +819,7 @@ object Interpreter {
         case Ast.Polarity.Negative => false
       }
       val ts = terms.map(t => evalBodyTerm(t, env0))
+      // TODO: Get rid of i2s
       val i2s = index2sym map {
         case x if x != null => cache.getVarSym(x)
         case _ => null
@@ -827,6 +833,7 @@ object Interpreter {
         case Ast.Polarity.Negative => false
       }
       val ts = terms.map(t => evalBodyTerm(t, env0))
+      // TODO: Get rid of i2s
       val i2s = index2sym map {
         case x if x != null => cache.getVarSym(x)
         case _ => null
