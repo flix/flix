@@ -24,7 +24,7 @@ import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.runtime.Linker
 import ca.uwaterloo.flix.runtime.solver.{Fixpoint, FixpointOptions, Solver, api}
 import ca.uwaterloo.flix.runtime.solver.api.ApiBridge.SymbolCache
-import ca.uwaterloo.flix.runtime.solver.api.ConstraintSet
+import ca.uwaterloo.flix.runtime.solver.api.{ConstraintSet, ProxyObject}
 import ca.uwaterloo.flix.util.{InternalRuntimeException, Verbosity}
 import ca.uwaterloo.flix.util.tc.Show._
 import flix.runtime._
@@ -794,45 +794,171 @@ object Interpreter {
     new ConstraintSet(relSyms, latSyms, Array(strata))
   }
 
-  private def visitConstraintParam(c0: FinalAst.ConstraintParam)(implicit root: FinalAst.Root, cache: SymbolCache, flix: Flix): api.symbol.VarSym = ???
+  private def visitConstraintParam(c0: FinalAst.ConstraintParam)(implicit root: FinalAst.Root, cache: SymbolCache, flix: Flix): api.symbol.VarSym = c0 match {
+    case FinalAst.ConstraintParam.HeadParam(sym, _, _) => cache.getVarSym(sym)
+    case FinalAst.ConstraintParam.RuleParam(sym, _, _) => cache.getVarSym(sym)
+  }
 
   private def visitHeadPredicate(h0: FinalAst.Predicate.Head, env0: Map[String, AnyRef])(implicit root: FinalAst.Root, cache: SymbolCache, flix: Flix): api.predicate.Predicate = h0 match {
     case FinalAst.Predicate.Head.True(_) => new api.predicate.TruePredicate()
     case FinalAst.Predicate.Head.False(_) => new api.predicate.FalsePredicate()
-    case FinalAst.Predicate.Head.RelAtom(sym, terms, _) => new api.predicate.AtomPredicate(visitRelSym(sym), positive = true, terms.map(t => visitHeadTerm(t, env0)).toArray, null)
-    case FinalAst.Predicate.Head.LatAtom(sym, terms, _) => new api.predicate.AtomPredicate(visitLatSym(sym), positive = true, terms.map(t => visitHeadTerm(t, env0)).toArray, null)
+    case FinalAst.Predicate.Head.RelAtom(sym, terms, _) => new api.predicate.AtomPredicate(getRelation(sym), positive = true, terms.map(t => evalHeadTerm(t, env0)).toArray, null)
+    case FinalAst.Predicate.Head.LatAtom(sym, terms, _) => new api.predicate.AtomPredicate(getLattice(sym), positive = true, terms.map(t => evalHeadTerm(t, env0)).toArray, null)
   }
 
-  private def visitBodyPredicate(b0: FinalAst.Predicate.Body, env0: Map[String, AnyRef])(implicit root: FinalAst.Root, cache: SymbolCache, flix: Flix): api.predicate.Predicate = ???
+  private def visitBodyPredicate(b0: FinalAst.Predicate.Body, env0: Map[String, AnyRef])(implicit root: FinalAst.Root, cache: SymbolCache, flix: Flix): api.predicate.Predicate = b0 match {
+    case FinalAst.Predicate.Body.RelAtom(sym, polarity, terms, index2sym, loc) =>
+      val s = getRelation(sym)
+      val p = polarity match {
+        case Ast.Polarity.Positive => true
+        case Ast.Polarity.Negative => false
+      }
+      val ts = terms.map(t => evalBodyTerm(t, env0))
+      val i2s = index2sym map {
+        case x if x != null => cache.getVarSym(x)
+        case _ => null
+      }
+      new api.predicate.AtomPredicate(s, p, ts.toArray, i2s.toArray)
 
-  private def visitHeadTerm(t0: FinalAst.Term.Head, env0: Map[String, AnyRef])(implicit root: FinalAst.Root, cache: SymbolCache, flix: Flix): api.term.Term = t0 match {
-    case FinalAst.Term.Head.FreeVar(sym, _, _) => new api.term.VarTerm(cache.getVarSym(sym))
-    case FinalAst.Term.Head.BoundVar(sym, _, _) =>
-      val value = env0.get(sym.toString)
-      ???
-    case FinalAst.Term.Head.Lit(sym, _, _) => new api.term.LitTerm(() => Linker.link(sym, root).invoke(Array.emptyObjectArray))
+    case FinalAst.Predicate.Body.LatAtom(sym, polarity, terms, index2sym, loc) =>
+      val s = getLattice(sym)
+      val p = polarity match {
+        case Ast.Polarity.Positive => true
+        case Ast.Polarity.Negative => false
+      }
+      val ts = terms.map(t => evalBodyTerm(t, env0))
+      val i2s = index2sym map {
+        case x if x != null => cache.getVarSym(x)
+        case _ => null
+      }
+      new api.predicate.AtomPredicate(s, p, ts.toArray, i2s.toArray)
+
+    case FinalAst.Predicate.Body.Filter(sym, terms, loc) =>
+      val f = (as: Array[AnyRef]) => Linker.link(sym, root).invoke(as).getValue.asInstanceOf[Boolean].booleanValue()
+      val ts = terms.map(t => evalBodyTerm(t, env0))
+      new api.predicate.FilterPredicate(f, ts.toArray)
+
+    case FinalAst.Predicate.Body.Functional(varSym, defSym, terms, loc) =>
+      val s = cache.getVarSym(varSym)
+      val f = (as: Array[AnyRef]) => Linker.link(defSym, root).invoke(as).getValue.asInstanceOf[Array[ProxyObject]]
+      new api.predicate.FunctionalPredicate(s, f, terms.map(t => cache.getVarSym(t)).toArray)
+  }
+
+  /**
+    * Evaluates the given head term `t0` under the given environment `env0` to a head term value.
+    */
+  private def evalHeadTerm(t0: FinalAst.Term.Head, env0: Map[String, AnyRef])(implicit root: FinalAst.Root, cache: SymbolCache, flix: Flix): api.term.Term = t0 match {
+    //
+    // Free Variables (i.e. variables that are quantified over in the constraint).
+    //
+    case FinalAst.Term.Head.FreeVar(sym, _, _) =>
+      // Lookup the corresponding symbol in the cache.
+
+      new api.term.VarTerm(cache.getVarSym(sym))
+
+    //
+    // Bound Variables (i.e. variables that have a value in the local environment).
+    //
+    case FinalAst.Term.Head.BoundVar(sym, tpe, _) =>
+      // Retrieve the value from the local environment and wrap it in a proxy object.
+      val v = wrapValueInProxyObject(env0(sym.toString), tpe)
+
+      // Construct a literal term with a function that evaluates to the proxy object.
+      new api.term.LitTerm(() => v)
+
+    //
+    // Literals.
+    //
+    case FinalAst.Term.Head.Lit(sym, _, _) =>
+      // Construct a literal term with a function that invokes another function which returns the literal.
+      new api.term.LitTerm(() => Linker.link(sym, root).invoke(Array.emptyObjectArray))
+
+    //
+    // Applications.
+    //
     case FinalAst.Term.Head.App(sym, args, _, _) =>
+      // Construct a function that when invoked applies the underlying function.
       val f = (args: Array[AnyRef]) => Linker.link(sym, root).invoke(args)
       val as = args.map(cache.getVarSym)
       new api.term.AppTerm(f, as.toArray)
   }
 
-  private def visitRelSym(sym: Symbol.RelSym)(implicit root: FinalAst.Root, cache: SymbolCache, flix: Flix): api.Table =
-    root.relations(sym) match {
-      case r: FinalAst.Relation =>
-        val attributes = r.attr.map(a => new api.Attribute(a.name))
-        cache.getRelSym(sym, sym.toString, attributes.toArray)
-    }
+  /**
+    * Evaluates the given body term `t0` under the given environment `env0` to a body term value.
+    */
+  private def evalBodyTerm(t0: FinalAst.Term.Body, env0: Map[String, AnyRef])(implicit root: FinalAst.Root, cache: SymbolCache, flix: Flix): api.term.Term = t0 match {
+    //
+    // Wildcards.
+    //
+    case FinalAst.Term.Body.Wild(_, _) => new api.term.WildTerm()
 
-  private def visitLatSym(sym: Symbol.LatSym)(implicit root: FinalAst.Root, cache: SymbolCache, flix: Flix): api.Table =
-    root.lattices(sym) match {
-      case l: FinalAst.Lattice =>
-        val attributes = l.attr.map(a => new api.Attribute(a.name))
-        val keys = attributes.init
-        val value = attributes.last
-        val ops = ??? //getLatticeOps(l.attr.last)
-        cache.getLatSym(sym, sym.toString, keys.toArray, value, ops)
-    }
+    //
+    // Free Variables (i.e. variables that are quantified over in the constraint).
+    //
+    case FinalAst.Term.Body.FreeVar(sym, _, _) =>
+      // Lookup the corresponding symbol in the cache.
+      new api.term.VarTerm(cache.getVarSym(sym))
+
+    //
+    // Bound Variables (i.e. variables that have a value in the local environment).
+    //
+    case FinalAst.Term.Body.BoundVar(sym, tpe, _) =>
+      // Retrieve the value from the local environment and wrap it in a proxy object.
+      val v = wrapValueInProxyObject(env0(sym.toString), tpe)
+
+      // Construct a literal term with a function that evaluates to the proxy object.
+      new api.term.LitTerm(() => v)
+
+    //
+    // Literals.
+    //
+    case FinalAst.Term.Body.Lit(sym, _, _) =>
+      // Construct a literal term with a function that invokes another function which returns the literal.
+      new api.term.LitTerm(() => Linker.link(sym, root).invoke(Array.emptyObjectArray))
+  }
+
+  /**
+    * Returns the relation value associated with the given relation symbol `sym`.
+    *
+    * NB: Allocates a new relation if no such relation exists in the cache.
+    */
+  private def getRelation(sym: Symbol.RelSym)(implicit root: FinalAst.Root, cache: SymbolCache, flix: Flix): api.Relation = root.relations(sym) match {
+    case FinalAst.Relation(_, _, attr, _) =>
+      val attributes = attr.map(a => new api.Attribute(a.name))
+      cache.getRelSym(sym, sym.toString, attributes.toArray)
+  }
+
+  /**
+    * Returns the lattice value associated with the given lattice symbol `sym`.
+    *
+    * NB: Allocates a new lattice if no such lattice exists in the cache.
+    */
+  private def getLattice(sym: Symbol.LatSym)(implicit root: FinalAst.Root, cache: SymbolCache, flix: Flix): api.Lattice = root.lattices(sym) match {
+    case FinalAst.Lattice(_, _, attr, _) =>
+      val attributes = attr.map(a => new api.Attribute(a.name))
+      val keys = attributes.init
+      val value = attributes.last
+      val ops = ??? //getLatticeOps(l.attr.last) // TODO
+      cache.getLatSym(sym, sym.toString, keys.toArray, value, ops)
+  }
+
+  /**
+    * Returns the given value `v` of the given type `tpe` wrapped in a proxy object.
+    */
+  private def wrapValueInProxyObject(v: AnyRef, tpe: Type)(implicit root: FinalAst.Root, flix: Flix): ProxyObject = {
+    // Retrieve the operator symbols.
+    val eqSym = root.specialOps(SpecialOperator.Equality)(tpe)
+    val hashSym = root.specialOps(SpecialOperator.HashCode)(tpe)
+    val toStrSym = root.specialOps(SpecialOperator.ToString)(tpe)
+
+    // Construct the operators.
+    val eqOp = (x: AnyRef, y: AnyRef) => Linker.link(eqSym, root).invoke(Array(x, y)).getValue.asInstanceOf[Boolean]
+    val hashOp = (x: AnyRef) => Linker.link(hashSym, root).invoke(Array(x)).getValue.asInstanceOf[Integer].intValue()
+    val toStrOp = (x: AnyRef) => Linker.link(toStrSym, root).invoke(Array(x)).getValue.asInstanceOf[String]
+
+    // Return the proxy object.
+    new ProxyObject(v, eqOp, hashOp, toStrOp)
+  }
 
   /////////////////////////////////////////////////////////////////////////////
   // Casts                                                                   //

@@ -549,11 +549,11 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       */
     def visitBodyPred(body: TypedAst.Predicate.Body, cparams: List[TypedAst.ConstraintParam]): SimplifiedAst.Predicate.Body = body match {
       case TypedAst.Predicate.Body.RelAtom(sym, polarity, terms, loc) =>
-        val ts = terms map pat2BodyTerm
+        val ts = terms.map(p => pat2BodyTerm(p, cparams))
         SimplifiedAst.Predicate.Body.RelAtom(sym, polarity, ts, loc)
 
       case TypedAst.Predicate.Body.LatAtom(sym, polarity, terms, loc) =>
-        val ts = terms map pat2BodyTerm
+        val ts = terms.map(p => pat2BodyTerm(p, cparams))
         SimplifiedAst.Predicate.Body.LatAtom(sym, polarity, ts, loc)
 
       case TypedAst.Predicate.Body.Filter(sym, terms, loc) =>
@@ -727,9 +727,15 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
     /**
       * Translates the given pattern `p` to a body term.
       */
-    def pat2BodyTerm(p: TypedAst.Pattern): SimplifiedAst.Term.Body = p match {
+    def pat2BodyTerm(p: TypedAst.Pattern, cparams: List[TypedAst.ConstraintParam]): SimplifiedAst.Term.Body = p match {
       case TypedAst.Pattern.Wild(tpe, loc) => SimplifiedAst.Term.Body.Wild(tpe, loc)
-      case TypedAst.Pattern.Var(sym, tpe, loc) => SimplifiedAst.Term.Body.FreeVar(sym, tpe, loc)
+      case TypedAst.Pattern.Var(sym, tpe, loc) =>
+        val isQuantified = cparams.exists(p => p.sym == sym)
+        if (isQuantified)
+          SimplifiedAst.Term.Body.FreeVar(sym, tpe, loc)
+        else
+          SimplifiedAst.Term.Body.BoundVar(sym, tpe, loc)
+
       case _ => if (isPatLiteral(p))
         SimplifiedAst.Term.Body.Lit(pat2exp(p), p.tpe, p.loc)
       else

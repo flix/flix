@@ -307,7 +307,9 @@ object FinalAst {
 
   case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: FinalAst.Expression)
 
-  sealed trait ConstraintParam
+  sealed trait ConstraintParam {
+    def sym: Symbol.VarSym
+  }
 
   object ConstraintParam {
 
