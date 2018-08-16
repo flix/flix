@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.language.GenSym
-import ca.uwaterloo.flix.language.ast.SimplifiedAst.{CatchRule, Expression, HandlerBinding}
+import ca.uwaterloo.flix.language.ast.SimplifiedAst._
 import ca.uwaterloo.flix.language.ast.{Ast, SimplifiedAst, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
@@ -326,7 +326,11 @@ object ClosureConv {
 
     case Expression.NewRelation(sym, tpe, loc) => mutable.LinkedHashSet.empty
     case Expression.NewLattice(sym, tpe, loc) => mutable.LinkedHashSet.empty
-    case Expression.Constraint(con, tpe, loc) => ??? // TODO: Expression.Constraint
+
+    case Expression.Constraint(con, tpe, loc) =>
+      val Constraint(cparams, head, body) = con
+      freeVariables(head) ++ body.flatMap(freeVariables)
+
     case Expression.ConstraintUnion(exp1, exp2, tpe, loc) => freeVariables(exp1) ++ freeVariables(exp2)
     case Expression.FixpointSolve(exp, tpe, loc) => freeVariables(exp)
     case Expression.FixpointCheck(exp, tpe, loc) => freeVariables(exp)
@@ -345,6 +349,24 @@ object ClosureConv {
     case Expression.ApplyDefTail(sym, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
     case Expression.ApplyEffTail(sym, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
     case Expression.ApplySelfTail(sym, formals, actuals, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
+  }
+
+  /**
+    * Returns the free variables in the given head predicate `head0`.
+    */
+  private def freeVariables(head0: Predicate.Head): mutable.LinkedHashSet[(Symbol.VarSym, Type)] = head0 match {
+    case Predicate.Head.True(loc) => mutable.LinkedHashSet.empty
+    case Predicate.Head.False(loc) => mutable.LinkedHashSet.empty
+    case Predicate.Head.RelAtom(baseOpt, sym, terms, loc) => ??? // TODO
+    case Predicate.Head.LatAtom(baseOpt, sym, terms, loc) => ???
+  }
+
+  /**
+    * Returns the free variables in the given body predicate `body0`.
+    */
+  private def freeVariables(body0: Predicate.Body): mutable.LinkedHashSet[(Symbol.VarSym, Type)] = body0 match {
+    case Predicate.Body.RelAtom(base, sym, polarity, terms, loc) => ???
+
   }
 
   /**

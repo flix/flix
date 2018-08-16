@@ -91,6 +91,14 @@ def testNewRelation10(): Bool =
     let _ = check { a.A(3). a.A(4). a.A(5). };
     check { a.A(1). }
 
+@test
+def testNewRelation11(): Bool =
+    let a = new A;
+    check f(a)
+
+
+
+def f(a: A): ConstraintSet = { a.A(1). a.A(2). a.A(3). }
 
 rel A(x: Int)
 rel B(x: Int)
