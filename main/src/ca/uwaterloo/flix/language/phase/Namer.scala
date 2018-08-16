@@ -885,19 +885,22 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   private def visitHeadPredicate(head: WeededAst.Predicate.Head, outerEnv: Map[String, Symbol.VarSym], headEnv0: Map[String, Symbol.VarSym], ruleEnv0: Map[String, Symbol.VarSym], tenv0: Map[String, Type.Var])(implicit genSym: GenSym): Validation[NamedAst.Predicate.Head, NameError] = head match {
     case WeededAst.Predicate.Head.True(loc) => NamedAst.Predicate.Head.True(loc).toSuccess
     case WeededAst.Predicate.Head.False(loc) => NamedAst.Predicate.Head.False(loc).toSuccess
-    case WeededAst.Predicate.Head.Atom(qname, terms, loc) =>
+    case WeededAst.Predicate.Head.Atom(baseOpt, qname, terms, loc) =>
       for {
+        b <- lookupVarOpt(baseOpt, outerEnv)
         ts <- traverse(terms)(t => visitExp(t, outerEnv ++ headEnv0 ++ ruleEnv0, tenv0))
-      } yield NamedAst.Predicate.Head.Atom(qname, ts, loc)
+      } yield NamedAst.Predicate.Head.Atom(b, qname, ts, loc)
   }
 
   /**
     * Names the given body predicate `body` under the given environments.
     */
   private def visitBodyPredicate(body: WeededAst.Predicate.Body, outerEnv: Map[String, Symbol.VarSym], headEnv0: Map[String, Symbol.VarSym], ruleEnv0: Map[String, Symbol.VarSym], tenv0: Map[String, Type.Var])(implicit genSym: GenSym): Validation[NamedAst.Predicate.Body, NameError] = body match {
-    case WeededAst.Predicate.Body.Atom(qname, polarity, terms, loc) =>
+    case WeededAst.Predicate.Body.Atom(baseOpt, qname, polarity, terms, loc) =>
       val ts = terms.map(t => visitPattern(t, outerEnv ++ ruleEnv0))
-      NamedAst.Predicate.Body.Atom(qname, polarity, ts, loc).toSuccess
+      for {
+        b <- lookupVarOpt(baseOpt, outerEnv)
+      } yield NamedAst.Predicate.Body.Atom(b, qname, polarity, ts, loc)
 
     case WeededAst.Predicate.Body.Filter(qname, terms, loc) =>
       for {
@@ -913,10 +916,21 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   }
 
   /**
+    * Optionally returns the variable symbol of the given optional identifier `ident`.
+    */
+  private def lookupVarOpt(o: Option[Name.Ident], env0: Map[String, Symbol.VarSym]): Validation[Option[Symbol.VarSym], NameError] = o match {
+    case None => None.toSuccess
+    case Some(ident) => env0.get(ident.name) match {
+      case None => NameError.UndefinedVar(ident.name, ident.loc).toFailure
+      case Some(sym) => Some(sym).toSuccess
+    }
+  }
+
+  /**
     * Returns the identifiers that are visible in the head scope by the given body predicate `p0`.
     */
   private def visibleInHeadScope(p0: WeededAst.Predicate.Body): List[Name.Ident] = p0 match {
-    case WeededAst.Predicate.Body.Atom(polarity, qname, terms, loc) => terms.flatMap(freeVars)
+    case WeededAst.Predicate.Body.Atom(baseOpt, polarity, qname, terms, loc) => terms.flatMap(freeVars)
     case WeededAst.Predicate.Body.Filter(qname, terms, loc) => Nil
     case WeededAst.Predicate.Body.Functional(ident, term, loc) => ident :: Nil
   }
@@ -925,7 +939,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     * Returns the identifiers that are visible in the rule scope by the given body predicate `p0`.
     */
   private def visibleInRuleScope(p0: WeededAst.Predicate.Body): List[Name.Ident] = p0 match {
-    case WeededAst.Predicate.Body.Atom(polarity, qname, terms, loc) => terms.flatMap(freeVars)
+    case WeededAst.Predicate.Body.Atom(baseOpt, polarity, qname, terms, loc) => terms.flatMap(freeVars)
     case WeededAst.Predicate.Body.Filter(qname, terms, loc) => Nil
     case WeededAst.Predicate.Body.Functional(ident, term, loc) => Nil
   }

@@ -894,14 +894,14 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       def Atom: Rule1[ParsedAst.Predicate.Head.Atom] = rule {
-        SP ~ Names.QualifiedTable ~ optWS ~ NonEmptyArgumentList ~ SP ~> ParsedAst.Predicate.Head.Atom
+        SP ~ optional(Names.Variable ~ optWS ~ "." ~ optWS) ~ Names.QualifiedTable ~ optWS ~ NonEmptyArgumentList ~ SP ~> ParsedAst.Predicate.Head.Atom
       }
 
     }
 
     object Body {
       def Positive: Rule1[ParsedAst.Predicate.Body.Positive] = rule {
-        SP ~ Names.QualifiedTable ~ optWS ~ NonEmptyPatternList ~ SP ~> ParsedAst.Predicate.Body.Positive
+        SP ~ optional(Names.Variable ~ optWS ~ "." ~ optWS) ~ Names.QualifiedTable ~ optWS ~ NonEmptyPatternList ~ SP ~> ParsedAst.Predicate.Body.Positive
       }
 
       def Negative: Rule1[ParsedAst.Predicate.Body.Negative] = {
@@ -910,7 +910,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         }
 
         rule {
-          SP ~ Not ~ optWS ~ Names.QualifiedTable ~ optWS ~ NonEmptyPatternList ~ SP ~> ParsedAst.Predicate.Body.Negative
+          SP ~ Not ~ optWS ~ optional(Names.Variable ~ optWS ~ "." ~ optWS) ~ Names.QualifiedTable ~ optWS ~ NonEmptyPatternList ~ SP ~> ParsedAst.Predicate.Body.Negative
         }
       }
 

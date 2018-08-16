@@ -249,4 +249,21 @@ object NameError {
     }
   }
 
+  /**
+    * An error raised to indicate that the local variable was not found.
+    *
+    * @param name the name of the variable.
+    * @param loc  the location of the method name.
+    */
+  case class UndefinedVar(name: String, loc: SourceLocation) extends NameError {
+    val source: Source = loc.source
+    val message: VirtualTerminal = {
+      val vt = new VirtualTerminal
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Undefined variable '" << Red(name) << "'." << NewLine
+      vt << NewLine
+      vt << Code(loc, "undefined variable.") << NewLine
+    }
+  }
+
 }

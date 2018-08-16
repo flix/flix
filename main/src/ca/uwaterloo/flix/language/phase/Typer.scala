@@ -1702,12 +1702,12 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     def infer(head: ResolvedAst.Predicate.Head, program: ResolvedAst.Program)(implicit genSym: GenSym): InferMonad[List[Type]] = head match {
       case ResolvedAst.Predicate.Head.True(loc) => Unification.liftM(Nil)
       case ResolvedAst.Predicate.Head.False(loc) => Unification.liftM(Nil)
-      case ResolvedAst.Predicate.Head.RelAtom(sym, terms, loc) =>
+      case ResolvedAst.Predicate.Head.RelAtom(baseOpt, sym, terms, loc) =>
         getRelationSignature(sym, program) match {
           case Ok(declaredTypes) => Terms.Head.typecheck(terms, declaredTypes, loc, program)
           case Err(e) => failM(e)
         }
-      case ResolvedAst.Predicate.Head.LatAtom(sym, terms, loc) =>
+      case ResolvedAst.Predicate.Head.LatAtom(baseOpt, sym, terms, loc) =>
         getLatticeSignature(sym, program) match {
           case Ok(declaredTypes) => Terms.Head.typecheck(terms, declaredTypes, loc, program)
           case Err(e) => failM(e)
@@ -1718,12 +1718,12 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       * Infers the type of the given body predicate.
       */
     def infer(body0: ResolvedAst.Predicate.Body, program: ResolvedAst.Program)(implicit genSym: GenSym): InferMonad[List[Type]] = body0 match {
-      case ResolvedAst.Predicate.Body.RelAtom(sym, polarity, terms, loc) =>
+      case ResolvedAst.Predicate.Body.RelAtom(baseOpt, sym, polarity, terms, loc) =>
         getRelationSignature(sym, program) match {
           case Ok(declaredTypes) => Terms.Body.typecheck(terms, declaredTypes, loc, program)
           case Err(e) => failM(e)
         }
-      case ResolvedAst.Predicate.Body.LatAtom(sym, polarity, terms, loc) =>
+      case ResolvedAst.Predicate.Body.LatAtom(baseOpt, sym, polarity, terms, loc) =>
         getLatticeSignature(sym, program) match {
           case Ok(declaredTypes) => Terms.Body.typecheck(terms, declaredTypes, loc, program)
           case Err(e) => failM(e)
@@ -1749,10 +1749,10 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     def reassemble(head0: ResolvedAst.Predicate.Head, program: ResolvedAst.Program, subst0: Substitution): TypedAst.Predicate.Head = head0 match {
       case ResolvedAst.Predicate.Head.True(loc) => TypedAst.Predicate.Head.True(loc)
       case ResolvedAst.Predicate.Head.False(loc) => TypedAst.Predicate.Head.False(loc)
-      case ResolvedAst.Predicate.Head.RelAtom(sym, terms, loc) =>
+      case ResolvedAst.Predicate.Head.RelAtom(baseOpt, sym, terms, loc) =>
         val ts = terms.map(t => Expressions.reassemble(t, program, subst0))
         TypedAst.Predicate.Head.RelAtom(sym, ts, loc)
-      case ResolvedAst.Predicate.Head.LatAtom(sym, terms, loc) =>
+      case ResolvedAst.Predicate.Head.LatAtom(baseOpt, sym, terms, loc) =>
         val ts = terms.map(t => Expressions.reassemble(t, program, subst0))
         TypedAst.Predicate.Head.LatAtom(sym, ts, loc)
     }
@@ -1761,10 +1761,10 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       * Applies the given substitution `subst0` to the given body predicate `body0`.
       */
     def reassemble(body0: ResolvedAst.Predicate.Body, program: ResolvedAst.Program, subst0: Substitution): TypedAst.Predicate.Body = body0 match {
-      case ResolvedAst.Predicate.Body.RelAtom(sym, polarity, terms, loc) =>
+      case ResolvedAst.Predicate.Body.RelAtom(baseOpt, sym, polarity, terms, loc) =>
         val ts = terms.map(t => Patterns.reassemble(t, program, subst0))
         TypedAst.Predicate.Body.RelAtom(sym, polarity, ts, loc)
-      case ResolvedAst.Predicate.Body.LatAtom(sym, polarity, terms, loc) =>
+      case ResolvedAst.Predicate.Body.LatAtom(baseOpt, sym, polarity, terms, loc) =>
         val ts = terms.map(t => Patterns.reassemble(t, program, subst0))
         TypedAst.Predicate.Body.LatAtom(sym, polarity, ts, loc)
       case ResolvedAst.Predicate.Body.Filter(sym, terms, loc) =>

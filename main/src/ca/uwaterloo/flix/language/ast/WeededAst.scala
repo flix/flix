@@ -236,7 +236,7 @@ object WeededAst {
 
       case class False(loc: SourceLocation) extends WeededAst.Predicate.Head
 
-      case class Atom(name: Name.QName, terms: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Predicate.Head
+      case class Atom(base: Option[Name.Ident], name: Name.QName, terms: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Predicate.Head
 
     }
 
@@ -244,7 +244,7 @@ object WeededAst {
 
     object Body {
 
-      case class Atom(name: Name.QName, polarity: Ast.Polarity, terms: List[WeededAst.Pattern], loc: SourceLocation) extends WeededAst.Predicate.Body
+      case class Atom(base: Option[Name.Ident], name: Name.QName, polarity: Ast.Polarity, terms: List[WeededAst.Pattern], loc: SourceLocation) extends WeededAst.Predicate.Body
 
       case class Filter(name: Name.QName, terms: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Predicate.Body
 

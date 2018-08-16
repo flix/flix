@@ -243,7 +243,7 @@ object NamedAst {
 
       case class False(loc: SourceLocation) extends NamedAst.Predicate.Head
 
-      case class Atom(name: Name.QName, terms: List[NamedAst.Expression], loc: SourceLocation) extends NamedAst.Predicate.Head
+      case class Atom(base: Option[Symbol.VarSym], name: Name.QName, terms: List[NamedAst.Expression], loc: SourceLocation) extends NamedAst.Predicate.Head
 
     }
 
@@ -251,7 +251,7 @@ object NamedAst {
 
     object Body {
 
-      case class Atom(name: Name.QName, polarity: Ast.Polarity, terms: List[NamedAst.Pattern], loc: SourceLocation) extends NamedAst.Predicate.Body
+      case class Atom(base: Option[Symbol.VarSym], name: Name.QName, polarity: Ast.Polarity, terms: List[NamedAst.Pattern], loc: SourceLocation) extends NamedAst.Predicate.Body
 
       case class Filter(name: Name.QName, terms: List[NamedAst.Expression], loc: SourceLocation) extends NamedAst.Predicate.Body
 
