@@ -1749,24 +1749,24 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     def reassemble(head0: ResolvedAst.Predicate.Head, program: ResolvedAst.Program, subst0: Substitution): TypedAst.Predicate.Head = head0 match {
       case ResolvedAst.Predicate.Head.True(loc) => TypedAst.Predicate.Head.True(loc)
       case ResolvedAst.Predicate.Head.False(loc) => TypedAst.Predicate.Head.False(loc)
-      case ResolvedAst.Predicate.Head.RelAtom(baseOpt, sym, terms, loc) =>
+      case ResolvedAst.Predicate.Head.RelAtom(base, sym, terms, loc) =>
         val ts = terms.map(t => Expressions.reassemble(t, program, subst0))
-        TypedAst.Predicate.Head.RelAtom(sym, ts, loc)
-      case ResolvedAst.Predicate.Head.LatAtom(baseOpt, sym, terms, loc) =>
+        TypedAst.Predicate.Head.RelAtom(base, sym, ts, loc)
+      case ResolvedAst.Predicate.Head.LatAtom(base, sym, terms, loc) =>
         val ts = terms.map(t => Expressions.reassemble(t, program, subst0))
-        TypedAst.Predicate.Head.LatAtom(sym, ts, loc)
+        TypedAst.Predicate.Head.LatAtom(base, sym, ts, loc)
     }
 
     /**
       * Applies the given substitution `subst0` to the given body predicate `body0`.
       */
     def reassemble(body0: ResolvedAst.Predicate.Body, program: ResolvedAst.Program, subst0: Substitution): TypedAst.Predicate.Body = body0 match {
-      case ResolvedAst.Predicate.Body.RelAtom(baseOpt, sym, polarity, terms, loc) =>
+      case ResolvedAst.Predicate.Body.RelAtom(base, sym, polarity, terms, loc) =>
         val ts = terms.map(t => Patterns.reassemble(t, program, subst0))
-        TypedAst.Predicate.Body.RelAtom(sym, polarity, ts, loc)
-      case ResolvedAst.Predicate.Body.LatAtom(baseOpt, sym, polarity, terms, loc) =>
+        TypedAst.Predicate.Body.RelAtom(base, sym, polarity, ts, loc)
+      case ResolvedAst.Predicate.Body.LatAtom(base, sym, polarity, terms, loc) =>
         val ts = terms.map(t => Patterns.reassemble(t, program, subst0))
-        TypedAst.Predicate.Body.LatAtom(sym, polarity, ts, loc)
+        TypedAst.Predicate.Body.LatAtom(base, sym, polarity, ts, loc)
       case ResolvedAst.Predicate.Body.Filter(sym, terms, loc) =>
         val defn = program.defs(sym)
         val ts = terms.map(t => Expressions.reassemble(t, program, subst0))

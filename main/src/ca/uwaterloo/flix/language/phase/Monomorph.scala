@@ -477,12 +477,12 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
       def visitHeadPredicate(h0: Predicate.Head, env0: Map[Symbol.VarSym, Symbol.VarSym]): Predicate.Head = h0 match {
         case Predicate.Head.True(loc) => Predicate.Head.True(loc)
         case Predicate.Head.False(loc) => Predicate.Head.False(loc)
-        case Predicate.Head.RelAtom(sym, terms, loc) =>
+        case Predicate.Head.RelAtom(base, sym, terms, loc) =>
           val ts = terms.map(t => visitExp(t, env0))
-          Predicate.Head.RelAtom(sym, ts, loc)
-        case Predicate.Head.LatAtom(sym, terms, loc) =>
+          Predicate.Head.RelAtom(base, sym, ts, loc)
+        case Predicate.Head.LatAtom(base, sym, terms, loc) =>
           val ts = terms.map(t => visitExp(t, env0))
-          Predicate.Head.LatAtom(sym, ts, loc)
+          Predicate.Head.LatAtom(base, sym, ts, loc)
       }
 
       /**
@@ -509,12 +509,12 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         }
 
         b0 match {
-          case Predicate.Body.RelAtom(sym, polarity, terms, loc) =>
+          case Predicate.Body.RelAtom(base, sym, polarity, terms, loc) =>
             val ts = terms map visitPatTemporaryToBeRemoved
-            Predicate.Body.RelAtom(sym, polarity, ts, loc)
-          case Predicate.Body.LatAtom(sym, polarity, terms, loc) =>
+            Predicate.Body.RelAtom(base, sym, polarity, ts, loc)
+          case Predicate.Body.LatAtom(base, sym, polarity, terms, loc) =>
             val ts = terms map visitPatTemporaryToBeRemoved
-            Predicate.Body.LatAtom(sym, polarity, ts, loc)
+            Predicate.Body.LatAtom(base, sym, polarity, ts, loc)
           case Predicate.Body.Filter(sym, terms, loc) =>
             val ts = terms.map(t => visitExp(t, env0))
             Predicate.Body.Filter(sym, ts, loc)
