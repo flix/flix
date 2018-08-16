@@ -435,16 +435,16 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     def visitHeadPred(p0: Predicate.Head): Predicate.Head = p0 match {
       case Predicate.Head.True(loc) => p0
       case Predicate.Head.False(loc) => p0
-      case Predicate.Head.RelAtom(sym, terms, loc) => Predicate.Head.RelAtom(sym, terms map visitHeadTerm, loc)
-      case Predicate.Head.LatAtom(sym, terms, loc) => Predicate.Head.LatAtom(sym, terms map visitHeadTerm, loc)
+      case Predicate.Head.RelAtom(baseOpt, sym, terms, loc) => Predicate.Head.RelAtom(baseOpt, sym, terms map visitHeadTerm, loc)
+      case Predicate.Head.LatAtom(baseOpt, sym, terms, loc) => Predicate.Head.LatAtom(baseOpt, sym, terms map visitHeadTerm, loc)
     }
 
     /**
       * Performs intra-procedural optimization on the terms of the given body predicate `p0`.
       */
     def visitBodyPred(p0: Predicate.Body): Predicate.Body = p0 match {
-      case Predicate.Body.RelAtom(sym, polarity, terms, loc) => Predicate.Body.RelAtom(sym, polarity, terms map visitBodyTerm, loc)
-      case Predicate.Body.LatAtom(sym, polarity, terms, loc) => Predicate.Body.LatAtom(sym, polarity, terms map visitBodyTerm, loc)
+      case Predicate.Body.RelAtom(baseOpt, sym, polarity, terms, loc) => Predicate.Body.RelAtom(baseOpt, sym, polarity, terms map visitBodyTerm, loc)
+      case Predicate.Body.LatAtom(baseOpt, sym, polarity, terms, loc) => Predicate.Body.LatAtom(baseOpt, sym, polarity, terms map visitBodyTerm, loc)
       case Predicate.Body.Filter(sym, terms, loc) => Predicate.Body.Filter(sym, terms map visitBodyTerm, loc)
       case Predicate.Body.Functional(sym, term, loc) => Predicate.Body.Functional(sym, visitHeadTerm(term), loc)
     }

@@ -478,11 +478,13 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         case Predicate.Head.True(loc) => Predicate.Head.True(loc)
         case Predicate.Head.False(loc) => Predicate.Head.False(loc)
         case Predicate.Head.RelAtom(base, sym, terms, loc) =>
+          val b = base.map(s => env0(s))
           val ts = terms.map(t => visitExp(t, env0))
-          Predicate.Head.RelAtom(base, sym, ts, loc)
+          Predicate.Head.RelAtom(b, sym, ts, loc)
         case Predicate.Head.LatAtom(base, sym, terms, loc) =>
+          val b = base.map(s => env0(s))
           val ts = terms.map(t => visitExp(t, env0))
-          Predicate.Head.LatAtom(base, sym, ts, loc)
+          Predicate.Head.LatAtom(b, sym, ts, loc)
       }
 
       /**

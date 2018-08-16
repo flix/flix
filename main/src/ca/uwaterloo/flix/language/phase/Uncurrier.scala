@@ -112,20 +112,20 @@ object Uncurrier extends Phase[Root, Root] {
   def visitHeadPredicate(h: Predicate.Head, newDefs: TopLevel, root: Root)(implicit flix: Flix): Predicate.Head = h match {
     case Predicate.Head.True(loc) => h
     case Predicate.Head.False(loc) => h
-    case Predicate.Head.RelAtom(sym, terms, loc) =>
+    case Predicate.Head.RelAtom(baseOpt, sym, terms, loc) =>
       val ts = terms.map(visitHeadTerm(_, newDefs, root))
-      Predicate.Head.RelAtom(sym, ts, loc)
-    case Predicate.Head.LatAtom(sym, terms, loc) =>
+      Predicate.Head.RelAtom(baseOpt, sym, ts, loc)
+    case Predicate.Head.LatAtom(baseOpt, sym, terms, loc) =>
       val ts = terms.map(visitHeadTerm(_, newDefs, root))
-      Predicate.Head.LatAtom(sym, ts, loc)
+      Predicate.Head.LatAtom(baseOpt, sym, ts, loc)
   }
 
   /**
     * Uncurries all definitions inside the given body predicate `h`.
     */
   def visitBodyPredicate(b: Predicate.Body, newDefs: TopLevel, root: Root)(implicit flix: Flix): Predicate.Body = b match {
-    case Predicate.Body.RelAtom(sym, polarity, terms, loc) => b
-    case Predicate.Body.LatAtom(sym, polarity, terms, loc) => b
+    case Predicate.Body.RelAtom(baseOpt, sym, polarity, terms, loc) => b
+    case Predicate.Body.LatAtom(baseOpt, sym, polarity, terms, loc) => b
     case Predicate.Body.Functional(sym, term, loc) =>
       val t = visitHeadTerm(term, newDefs, root)
       Predicate.Body.Functional(sym, t, loc)

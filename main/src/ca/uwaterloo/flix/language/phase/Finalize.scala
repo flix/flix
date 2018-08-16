@@ -382,24 +382,24 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
   private def visitHeadPredicate(p0: SimplifiedAst.Predicate.Head, m: TopLevel)(implicit flix: Flix): FinalAst.Predicate.Head = p0 match {
     case SimplifiedAst.Predicate.Head.True(loc) => FinalAst.Predicate.Head.True(loc)
     case SimplifiedAst.Predicate.Head.False(loc) => FinalAst.Predicate.Head.False(loc)
-    case SimplifiedAst.Predicate.Head.RelAtom(sym, terms, loc) =>
+    case SimplifiedAst.Predicate.Head.RelAtom(baseOpt, sym, terms, loc) =>
       val ts = terms.map(t => visitHeadTerm(t, m))
-      FinalAst.Predicate.Head.RelAtom(sym, ts, loc)
-    case SimplifiedAst.Predicate.Head.LatAtom(sym, terms, loc) =>
+      FinalAst.Predicate.Head.RelAtom(baseOpt, sym, ts, loc)
+    case SimplifiedAst.Predicate.Head.LatAtom(baseOpt, sym, terms, loc) =>
       val ts = terms.map(t => visitHeadTerm(t, m))
-      FinalAst.Predicate.Head.LatAtom(sym, ts, loc)
+      FinalAst.Predicate.Head.LatAtom(baseOpt, sym, ts, loc)
   }
 
   private def visitBodyPredicate(p0: SimplifiedAst.Predicate.Body, m: TopLevel)(implicit flix: Flix): FinalAst.Predicate.Body = p0 match {
-    case SimplifiedAst.Predicate.Body.RelAtom(sym, polarity, terms, loc) =>
+    case SimplifiedAst.Predicate.Body.RelAtom(baseOpt, sym, polarity, terms, loc) =>
       val ts = terms.map(t => visitBodyTerm(t, m))
       val index2var = getIndex2VarTemporaryToBeRemoved(ts)
-      FinalAst.Predicate.Body.RelAtom(sym, polarity, ts, index2var, loc)
+      FinalAst.Predicate.Body.RelAtom(baseOpt, sym, polarity, ts, index2var, loc)
 
-    case SimplifiedAst.Predicate.Body.LatAtom(sym, polarity, terms, loc) =>
+    case SimplifiedAst.Predicate.Body.LatAtom(baseOpt, sym, polarity, terms, loc) =>
       val ts = terms.map(t => visitBodyTerm(t, m))
       val index2var = getIndex2VarTemporaryToBeRemoved(ts)
-      FinalAst.Predicate.Body.LatAtom(sym, polarity, ts, index2var, loc)
+      FinalAst.Predicate.Body.LatAtom(baseOpt, sym, polarity, ts, index2var, loc)
 
     case SimplifiedAst.Predicate.Body.Filter(sym, terms, loc) =>
       val ts = terms.map(t => visitBodyTerm(t, m))
