@@ -825,7 +825,13 @@ object Interpreter {
     */
   private def evalBodyPredicate(b0: FinalAst.Predicate.Body, env0: Map[String, AnyRef])(implicit root: FinalAst.Root, cache: SymbolCache, flix: Flix): api.predicate.Predicate = b0 match {
     case FinalAst.Predicate.Body.RelAtom(baseOpt, sym, polarity, terms, index2sym, loc) =>
-      val s = getRelation(sym)
+      // Retrieve the relation.
+      val relation = baseOpt match {
+        case None => getRelation(sym)
+        case Some(baseSym) =>
+          cast2relation(env0(baseSym.toString))
+      }
+
       val p = polarity match {
         case Ast.Polarity.Positive => true
         case Ast.Polarity.Negative => false
@@ -836,10 +842,15 @@ object Interpreter {
         case x if x != null => cache.getVarSym(x)
         case _ => null
       }
-      new api.predicate.AtomPredicate(s, p, ts.toArray, i2s.toArray)
+      new api.predicate.AtomPredicate(relation, p, ts.toArray, i2s.toArray)
 
     case FinalAst.Predicate.Body.LatAtom(baseOpt, sym, polarity, terms, index2sym, loc) =>
-      val s = getLattice(sym)
+      // Retrieve the lattice.
+      val lattice = baseOpt match {
+        case None => getLattice(sym)
+        case Some(baseSym) =>
+          cast2lattice(env0(baseSym.toString))
+      }
       val p = polarity match {
         case Ast.Polarity.Positive => true
         case Ast.Polarity.Negative => false
@@ -850,7 +861,7 @@ object Interpreter {
         case x if x != null => cache.getVarSym(x)
         case _ => null
       }
-      new api.predicate.AtomPredicate(s, p, ts.toArray, i2s.toArray)
+      new api.predicate.AtomPredicate(lattice, p, ts.toArray, i2s.toArray)
 
     case FinalAst.Predicate.Body.Filter(sym, terms, loc) =>
       val f = (as: Array[AnyRef]) => Linker.link(sym, root).invoke(as).getValue.asInstanceOf[Boolean].booleanValue()
