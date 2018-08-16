@@ -1701,15 +1701,26 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       */
     def infer(head: ResolvedAst.Predicate.Head, program: ResolvedAst.Program)(implicit genSym: GenSym): InferMonad[List[Type]] = head match {
       case ResolvedAst.Predicate.Head.True(loc) => Unification.liftM(Nil)
+
       case ResolvedAst.Predicate.Head.False(loc) => Unification.liftM(Nil)
+
       case ResolvedAst.Predicate.Head.RelAtom(baseOpt, sym, terms, loc) =>
         getRelationSignature(sym, program) match {
-          case Ok(declaredTypes) => Terms.Head.typecheck(terms, declaredTypes, loc, program)
+          case Ok(declaredTypes) =>
+            for {
+              _ <- baseOpt.map(baseSym => unifyM(baseSym.tvar, Type.Relation(sym, Kind.Star), loc)).getOrElse(liftM[Unit](()))
+              ts <- Terms.Head.typecheck(terms, declaredTypes, loc, program)
+            } yield ts
           case Err(e) => failM(e)
         }
+
       case ResolvedAst.Predicate.Head.LatAtom(baseOpt, sym, terms, loc) =>
         getLatticeSignature(sym, program) match {
-          case Ok(declaredTypes) => Terms.Head.typecheck(terms, declaredTypes, loc, program)
+          case Ok(declaredTypes) =>
+            for {
+              _ <- baseOpt.map(baseSym => unifyM(baseSym.tvar, Type.Lattice(sym, Kind.Star), loc)).getOrElse(liftM[Unit](()))
+              ts <- Terms.Head.typecheck(terms, declaredTypes, loc, program)
+            } yield ts
           case Err(e) => failM(e)
         }
     }
@@ -1720,14 +1731,23 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     def infer(body0: ResolvedAst.Predicate.Body, program: ResolvedAst.Program)(implicit genSym: GenSym): InferMonad[List[Type]] = body0 match {
       case ResolvedAst.Predicate.Body.RelAtom(baseOpt, sym, polarity, terms, loc) =>
         getRelationSignature(sym, program) match {
-          case Ok(declaredTypes) => Terms.Body.typecheck(terms, declaredTypes, loc, program)
+          case Ok(declaredTypes) => for {
+            _ <- baseOpt.map(baseSym => unifyM(baseSym.tvar, Type.Relation(sym, Kind.Star), loc)).getOrElse(liftM[Unit](()))
+            ts <- Terms.Body.typecheck(terms, declaredTypes, loc, program)
+          } yield ts
           case Err(e) => failM(e)
         }
+
       case ResolvedAst.Predicate.Body.LatAtom(baseOpt, sym, polarity, terms, loc) =>
         getLatticeSignature(sym, program) match {
-          case Ok(declaredTypes) => Terms.Body.typecheck(terms, declaredTypes, loc, program)
+          case Ok(declaredTypes) =>
+            for {
+              _ <- baseOpt.map(baseSym => unifyM(baseSym.tvar, Type.Lattice(sym, Kind.Star), loc)).getOrElse(liftM[Unit](()))
+              ts <- Terms.Body.typecheck(terms, declaredTypes, loc, program)
+            } yield ts
           case Err(e) => failM(e)
         }
+
       case ResolvedAst.Predicate.Body.Filter(sym, terms, loc) =>
         val defn = program.defs(sym)
         val expectedTypes = defn.fparams.map(_.tpe)
