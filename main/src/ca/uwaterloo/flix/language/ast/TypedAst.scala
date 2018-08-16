@@ -344,7 +344,9 @@ object TypedAst {
 
   case class Case(sym: Symbol.EnumSym, tag: Name.Ident, tpe: Type, loc: SourceLocation) extends TypedAst
 
-  sealed trait ConstraintParam
+  sealed trait ConstraintParam {
+    def sym: Symbol.VarSym
+  }
 
   object ConstraintParam {
 

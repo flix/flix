@@ -512,7 +512,9 @@ object SimplifiedAstOps {
       * Checks invariants of the given head term `t0`.
       */
     def checkHeadTerm(t0: Term.Head, env0: Set[Symbol.VarSym]): Unit = t0 match {
-      case Term.Head.Var(sym, tpe, loc) =>
+      case Term.Head.FreeVar(sym, tpe, loc) =>
+        checkType(tpe)
+      case Term.Head.BoundVar(sym, tpe, loc) =>
         checkType(tpe)
       case Term.Head.Lit(exp, tpe, loc) =>
         checkExp(exp0 = exp, env0 = env0, ienv0 = Set.empty)
@@ -527,7 +529,9 @@ object SimplifiedAstOps {
     def checkBodyTerm(t0: Term.Body, env0: Set[Symbol.VarSym]): Unit = t0 match {
       case Term.Body.Wild(tpe, loc) =>
       // TODO: What is the type allowed to be here?
-      case Term.Body.Var(sym, tpe, loc) =>
+      case Term.Body.FreeVar(sym, tpe, loc) =>
+        checkType(tpe)
+      case Term.Body.BoundVar(sym, tpe, loc) =>
         checkType(tpe)
       case Term.Body.Lit(exp, tpe, loc) =>
         checkExp(exp0 = exp, env0 = env0, ienv0 = Set.empty)

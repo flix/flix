@@ -212,7 +212,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     /*
      * Constraint.
      */
-    case d@WeededAst.Declaration.Constraint(h, bs, loc) => visitConstraint(d) map {
+    case d@WeededAst.Declaration.Constraint(h, bs, loc) => visitConstraint(d, Map.empty, Map.empty) map {
       case constraint =>
         val constraints = constraint :: prog0.constraints.getOrElse(ns0, Nil)
         prog0.copy(constraints = prog0.constraints + (ns0 -> constraints))
@@ -381,13 +381,14 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   /**
     * Performs naming on the given constraint `c0`.
     */
-  private def visitConstraint(c0: WeededAst.Declaration.Constraint)(implicit genSym: GenSym): Validation[NamedAst.Constraint, NameError] = c0 match {
+  private def visitConstraint(c0: WeededAst.Declaration.Constraint, outerEnv: Map[String, Symbol.VarSym], tenv0: Map[String, Type.Var])(implicit genSym: GenSym): Validation[NamedAst.Constraint, NameError] = c0 match {
     case WeededAst.Declaration.Constraint(h, bs, loc) =>
-      // Find the variables bound in the head and rule scope of the constraint.
-      val headVars = bs.flatMap(boundInHeadScope)
-      val ruleVars = bs.flatMap(boundInRuleScope)
+      // Find the variables visible in the head and rule scope of the constraint.
+      // Remove any variables already in the outer environment.
+      val headVars = bs.flatMap(visibleInHeadScope).filterNot(ident => outerEnv.contains(ident.name))
+      val ruleVars = bs.flatMap(visibleInRuleScope).filterNot(ident => outerEnv.contains(ident.name))
 
-      // Introduce a symbol for each variable that is bound in the head scope of the constraint (excluding those bound by the rule scope).
+      // Introduce a symbol for each variable that is visible in the head scope of the constraint (excluding those visible by the rule scope).
       val headEnv = headVars.foldLeft(Map.empty[String, Symbol.VarSym]) {
         case (macc, ident) => macc.get(ident.name) match {
           // Check if the identifier is bound by the rule scope.
@@ -397,7 +398,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         }
       }
 
-      // Introduce a symbol for each variable that is bound in the rule scope of the constraint.
+      // Introduce a symbol for each variable that is visible in the rule scope of the constraint.
       val ruleEnv = ruleVars.foldLeft(Map.empty[String, Symbol.VarSym]) {
         case (macc, ident) => macc.get(ident.name) match {
           case None => macc + (ident.name -> Symbol.freshVarSym(ident))
@@ -405,11 +406,8 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         }
       }
 
-      // Constraints are non-polymorphic so the type environment is always empty.
-      val tenv0 = Map.empty[String, Type.Var]
-
       // Perform naming on the head and body predicates.
-      mapN(visitHeadPredicate(h, headEnv, ruleEnv, tenv0), traverse(bs)(b => visitBodyPredicate(b, headEnv, ruleEnv, tenv0))) {
+      mapN(visitHeadPredicate(h, outerEnv, headEnv, ruleEnv, tenv0), traverse(bs)(b => visitBodyPredicate(b, outerEnv, headEnv, ruleEnv, tenv0))) {
         case (head, body) =>
           val headParams = headEnv.map {
             case (_, sym) => NamedAst.ConstraintParam.HeadParam(sym, sym.tvar, sym.loc)
@@ -797,7 +795,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       NamedAst.Expression.NewRelationOrLattice(name, Type.freshTypeVar(), loc).toSuccess
 
     case WeededAst.Expression.Constraint(con, loc) =>
-      visitConstraint(con) map {
+      visitConstraint(con, env0, tenv0) map {
         case c => NamedAst.Expression.Constraint(c, Type.freshTypeVar(), loc)
       }
 
@@ -881,23 +879,29 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     visit(pat0)
   }
 
-  private def visitHeadPredicate(head: WeededAst.Predicate.Head, headEnv0: Map[String, Symbol.VarSym], ruleEnv0: Map[String, Symbol.VarSym], tenv0: Map[String, Type.Var])(implicit genSym: GenSym): Validation[NamedAst.Predicate.Head, NameError] = head match {
+  /**
+    * Names the given head predicate `head` under the given environments.
+    */
+  private def visitHeadPredicate(head: WeededAst.Predicate.Head, outerEnv: Map[String, Symbol.VarSym], headEnv0: Map[String, Symbol.VarSym], ruleEnv0: Map[String, Symbol.VarSym], tenv0: Map[String, Type.Var])(implicit genSym: GenSym): Validation[NamedAst.Predicate.Head, NameError] = head match {
     case WeededAst.Predicate.Head.True(loc) => NamedAst.Predicate.Head.True(loc).toSuccess
     case WeededAst.Predicate.Head.False(loc) => NamedAst.Predicate.Head.False(loc).toSuccess
     case WeededAst.Predicate.Head.Atom(qname, terms, loc) =>
       for {
-        ts <- traverse(terms)(t => visitExp(t, headEnv0 ++ ruleEnv0, tenv0))
+        ts <- traverse(terms)(t => visitExp(t, outerEnv ++ headEnv0 ++ ruleEnv0, tenv0))
       } yield NamedAst.Predicate.Head.Atom(qname, ts, loc)
   }
 
-  private def visitBodyPredicate(body: WeededAst.Predicate.Body, headEnv0: Map[String, Symbol.VarSym], ruleEnv0: Map[String, Symbol.VarSym], tenv0: Map[String, Type.Var])(implicit genSym: GenSym): Validation[NamedAst.Predicate.Body, NameError] = body match {
+  /**
+    * Names the given body predicate `body` under the given environments.
+    */
+  private def visitBodyPredicate(body: WeededAst.Predicate.Body, outerEnv: Map[String, Symbol.VarSym], headEnv0: Map[String, Symbol.VarSym], ruleEnv0: Map[String, Symbol.VarSym], tenv0: Map[String, Type.Var])(implicit genSym: GenSym): Validation[NamedAst.Predicate.Body, NameError] = body match {
     case WeededAst.Predicate.Body.Atom(qname, polarity, terms, loc) =>
-      val ts = terms.map(t => visitPattern(t, ruleEnv0))
+      val ts = terms.map(t => visitPattern(t, outerEnv ++ ruleEnv0))
       NamedAst.Predicate.Body.Atom(qname, polarity, ts, loc).toSuccess
 
     case WeededAst.Predicate.Body.Filter(qname, terms, loc) =>
       for {
-        ts <- traverse(terms)(t => visitExp(t, headEnv0 ++ ruleEnv0, tenv0))
+        ts <- traverse(terms)(t => visitExp(t, outerEnv ++ headEnv0 ++ ruleEnv0, tenv0))
       } yield NamedAst.Predicate.Body.Filter(qname, ts, loc)
 
     case WeededAst.Predicate.Body.Functional(ident, term, loc) =>
@@ -909,21 +913,21 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   }
 
   /**
-    * Returns the identifiers that are bound in the head scope by the given body predicate `p0`.
+    * Returns the identifiers that are visible in the head scope by the given body predicate `p0`.
     */
-  private def boundInHeadScope(p0: WeededAst.Predicate.Body): List[Name.Ident] = p0 match {
+  private def visibleInHeadScope(p0: WeededAst.Predicate.Body): List[Name.Ident] = p0 match {
     case WeededAst.Predicate.Body.Atom(polarity, qname, terms, loc) => terms.flatMap(freeVars)
     case WeededAst.Predicate.Body.Filter(qname, terms, loc) => Nil
     case WeededAst.Predicate.Body.Functional(ident, term, loc) => ident :: Nil
   }
 
   /**
-    * Returns the identifiers that are bound in the rule scope by the given body predicate `p0`.
+    * Returns the identifiers that are visible in the rule scope by the given body predicate `p0`.
     */
-  private def boundInRuleScope(p0: WeededAst.Predicate.Body): List[Name.Ident] = p0 match {
+  private def visibleInRuleScope(p0: WeededAst.Predicate.Body): List[Name.Ident] = p0 match {
     case WeededAst.Predicate.Body.Atom(polarity, qname, terms, loc) => terms.flatMap(freeVars)
     case WeededAst.Predicate.Body.Filter(qname, terms, loc) => Nil
-    case WeededAst.Predicate.Body.Functional(pat, term, loc) => Nil
+    case WeededAst.Predicate.Body.Functional(ident, term, loc) => Nil
   }
 
   /**
