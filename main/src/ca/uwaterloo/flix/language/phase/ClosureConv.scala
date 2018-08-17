@@ -379,18 +379,32 @@ object ClosureConv {
     * Returns the free variables in the given body predicate `body0`.
     */
   private def freeVariables(body0: Predicate.Body): mutable.LinkedHashSet[(Symbol.VarSym, Type)] = body0 match {
-    case Predicate.Body.RelAtom(base, sym, polarity, terms, loc) => ???
+    case Predicate.Body.RelAtom(baseOpt, sym, polarity, terms, loc) => baseOpt match {
+      case None => mutable.LinkedHashSet.empty ++ terms.flatMap(freeVariables)
+      case Some(baseSym) => mutable.LinkedHashSet((baseSym, Type.Relation(sym, Kind.Star))) ++ terms.flatMap(freeVariables)
+    }
+
+
   }
 
   /**
     * Returns the free variables in the given head term `term0`.
     */
   private def freeVariables(term0: Term.Head): mutable.LinkedHashSet[(Symbol.VarSym, Type)] = term0 match {
-    // TODO: Rename FreeVar to QuantVar?
     case Term.Head.FreeVar(sym, tpe, loc) => mutable.LinkedHashSet.empty
     case Term.Head.BoundVar(sym, tpe, loc) => mutable.LinkedHashSet((sym, tpe))
     case Term.Head.Lit(lit, tpe, loc) => mutable.LinkedHashSet.empty
     case Term.Head.App(sym, args, tpe, loc) => mutable.LinkedHashSet.empty
+  }
+
+  /**
+    * Returns the free variables in the given body term `term0`.
+    */
+  private def freeVariables(term0: Term.Body): mutable.LinkedHashSet[(Symbol.VarSym, Type)] = term0 match {
+    case Term.Body.Wild(tpe, loc) => mutable.LinkedHashSet.empty
+    case Term.Body.FreeVar(sym, tpe, loc) => mutable.LinkedHashSet.empty
+    case Term.Body.BoundVar(sym, tpe, loc) => mutable.LinkedHashSet((sym, tpe))
+    case Term.Body.Lit(exp, tpe, loc) => freeVariables(exp)
   }
 
   /**
@@ -596,10 +610,9 @@ object ClosureConv {
 
       case Expression.Constraint(con, tpe, loc) =>
         val Constraint(cparams0, head0, body0) = con
-        // TODO: Should subst happen here?
         val cs = cparams0 map {
-          case ConstraintParam.HeadParam(s, t, l) => ConstraintParam.HeadParam(subst(s), t, l)
-          case ConstraintParam.RuleParam(s, t, l) => ConstraintParam.RuleParam(subst(s), t, l)
+          case ConstraintParam.HeadParam(s, t, l) => ConstraintParam.HeadParam(subst.getOrElse(s, s), t, l)
+          case ConstraintParam.RuleParam(s, t, l) => ConstraintParam.RuleParam(subst.getOrElse(s, s), t, l)
         }
         val head = visitHeadPredicate(head0)
         val body = body0 map visitBodyPredicate
@@ -638,21 +651,62 @@ object ClosureConv {
         val ts = terms map visitHeadTerm
         Predicate.Head.RelAtom(b, sym, ts, loc)
 
-      case Predicate.Head.LatAtom(baseOpt, sym, terms, loc) => ???
+      case Predicate.Head.LatAtom(baseOpt, sym, terms, loc) =>
+        val b = baseOpt.map(s => subst.getOrElse(s, s))
+        val ts = terms map visitHeadTerm
+        Predicate.Head.LatAtom(b, sym, ts, loc)
     }
 
     def visitBodyPredicate(body0: Predicate.Body): Predicate.Body = body0 match {
-      case Predicate.Body.RelAtom(base, sym, polarity, terms, loc) => ???
-      case Predicate.Body.LatAtom(base, sym, polarity, terms, loc) => ???
-      case Predicate.Body.Filter(sym, terms, loc) => ???
-      case Predicate.Body.Functional(sym, term, loc) => ???
+      case Predicate.Body.RelAtom(baseOpt, sym, polarity, terms, loc) =>
+        val b = baseOpt.map(s => subst.getOrElse(s, s))
+        val ts = terms map visitBodyTerm
+        Predicate.Body.RelAtom(b, sym, polarity, ts, loc)
+
+      case Predicate.Body.LatAtom(baseOpt, sym, polarity, terms, loc) =>
+        val b = baseOpt.map(s => subst.getOrElse(s, s))
+        val ts = terms map visitBodyTerm
+        Predicate.Body.LatAtom(b, sym, polarity, ts, loc)
+
+      case Predicate.Body.Filter(sym, terms, loc) =>
+        val ts = terms map visitBodyTerm
+        Predicate.Body.Filter(sym, ts, loc)
+
+      case Predicate.Body.Functional(sym, term, loc) =>
+        val s = subst.getOrElse(sym, sym)
+        val t = visitHeadTerm(term)
+        Predicate.Body.Functional(s, t, loc)
     }
 
     def visitHeadTerm(term0: Term.Head): Term.Head = term0 match {
-      case Term.Head.FreeVar(sym, tpe, loc) => Term.Head.FreeVar(sym, tpe, loc) // TODO: Apply subst?
-      case Term.Head.BoundVar(sym, tpe, loc) => Term.Head.BoundVar(subst.getOrElse(sym, sym), tpe, loc)
+      case Term.Head.FreeVar(sym, tpe, loc) =>
+        val s = subst.getOrElse(sym, sym)
+        Term.Head.FreeVar(s, tpe, loc)
+
+      case Term.Head.BoundVar(sym, tpe, loc) =>
+        val s = subst.getOrElse(sym, sym)
+        Term.Head.BoundVar(s, tpe, loc)
+
       case Term.Head.Lit(lit, tpe, loc) => Term.Head.Lit(lit, tpe, loc)
-      case Term.Head.App(sym, args, tpe, loc) => Term.Head.App(sym, args, tpe, loc)
+
+      case Term.Head.App(sym, args, tpe, loc) =>
+        val as = args.map(s => subst.getOrElse(s, s))
+        Term.Head.App(sym, as, tpe, loc)
+    }
+
+    def visitBodyTerm(term0: Term.Body): Term.Body = term0 match {
+      case Term.Body.Wild(tpe, loc) => Term.Body.Wild(tpe, loc)
+      case Term.Body.FreeVar(sym, tpe, loc) =>
+        val s = subst.getOrElse(sym, sym)
+        Term.Body.FreeVar(sym, tpe, loc)
+
+      case Term.Body.BoundVar(sym, tpe, loc) =>
+        val s = subst.getOrElse(sym, sym)
+        Term.Body.BoundVar(s, tpe, loc)
+
+      case Term.Body.Lit(exp, tpe, loc) =>
+        val e = visitExp(exp)
+        Term.Body.Lit(e, tpe, loc)
     }
 
     visitExp(e0)

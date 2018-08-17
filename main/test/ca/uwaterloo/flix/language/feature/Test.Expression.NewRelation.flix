@@ -96,9 +96,35 @@ def testNewRelation11(): Bool =
     let a = new A;
     check f(a)
 
+@test
+def testNewRelation11(): Bool =
+    let a = new A;
+    check g(a, 1, 2, 3)
+
+@test
+def testNewRelation12(): Bool =
+    let a = new A;
+    check h(a, 1, 2, 3)
+
+@test
+def testNewRelation13(): Bool =
+    let a = new A;
+    let b = new B;
+    check j(a, b, 1, 2, 3)
 
 
 def f(a: A): ConstraintSet = { a.A(1). a.A(2). a.A(3). }
+def g(a: A, x: Int, y: Int, z: Int): ConstraintSet = { a.A(x). a.A(y). a.A(z). }
+def h(a: A, x: Int, y: Int, z: Int): ConstraintSet = {
+    a.A(y). a.A(z).
+    a.A(x) :- a.A(x), a.A(y).
+}
+def j(a: A, b: B, x: Int, y: Int, z: Int): ConstraintSet = {
+    a.A(x). a.A(y). a.A(z).
+    b.B(add(u, v)) :- a.A(u), a.A(v).
+}
+
+def add(x: Int, y: Int): Int = x + y
 
 rel A(x: Int)
 rel B(x: Int)
