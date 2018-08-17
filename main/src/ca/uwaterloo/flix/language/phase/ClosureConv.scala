@@ -384,7 +384,16 @@ object ClosureConv {
       case Some(baseSym) => mutable.LinkedHashSet((baseSym, Type.Relation(sym, Kind.Star))) ++ terms.flatMap(freeVariables)
     }
 
+    case Predicate.Body.LatAtom(baseOpt, sym, polarity, terms, loc) => baseOpt match {
+      case None => mutable.LinkedHashSet.empty ++ terms.flatMap(freeVariables)
+      case Some(baseSym) => mutable.LinkedHashSet((baseSym, Type.Lattice(sym, Kind.Star))) ++ terms.flatMap(freeVariables)
+    }
 
+    case Predicate.Body.Filter(sym, terms, loc) =>
+      mutable.LinkedHashSet.empty ++ terms.flatMap(freeVariables)
+
+    case Predicate.Body.Functional(sym, term, loc) =>
+      freeVariables(term)
   }
 
   /**
