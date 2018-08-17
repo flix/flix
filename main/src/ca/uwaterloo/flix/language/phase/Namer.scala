@@ -908,7 +908,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       } yield NamedAst.Predicate.Body.Filter(qname, ts, loc)
 
     case WeededAst.Predicate.Body.Functional(ident, term, loc) =>
-      visitExp(term, ruleEnv0, tenv0) map {
+      visitExp(term, outerEnv ++ ruleEnv0, tenv0) map {
         case t =>
           val sym = headEnv0(ident.name)
           NamedAst.Predicate.Body.Functional(sym, t, loc)
