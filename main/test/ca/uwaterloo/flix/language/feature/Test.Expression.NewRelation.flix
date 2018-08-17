@@ -97,17 +97,17 @@ def testNewRelation11(): Bool =
     check f(a)
 
 @test
-def testNewRelation11(): Bool =
+def testNewRelation12(): Bool =
     let a = new A;
     check g(a, 1, 2, 3)
 
 @test
-def testNewRelation12(): Bool =
+def testNewRelation13(): Bool =
     let a = new A;
     check h(a, 1, 2, 3)
 
 @test
-def testNewRelation13(): Bool =
+def testNewRelation14(): Bool =
     let a = new A;
     let b = new B;
     check j(a, b, 1, 2, 3)
