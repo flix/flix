@@ -752,13 +752,13 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
 
         case NamedAst.Predicate.Head.False(loc) => ResolvedAst.Predicate.Head.False(loc).toSuccess
 
-        case NamedAst.Predicate.Head.Atom(qname, terms, loc) =>
+        case NamedAst.Predicate.Head.Atom(baseOpt, qname, terms, loc) =>
           for {
             t <- lookupRelationOrLattice(qname, ns0, prog0)
             ts <- traverse(terms)(t => Expressions.resolve(t, Map.empty, ns0, prog0))
           } yield t match {
-            case RelationOrLattice.Rel(sym) => ResolvedAst.Predicate.Head.RelAtom(sym, ts, loc)
-            case RelationOrLattice.Lat(sym) => ResolvedAst.Predicate.Head.LatAtom(sym, ts, loc)
+            case RelationOrLattice.Rel(sym) => ResolvedAst.Predicate.Head.RelAtom(baseOpt, sym, ts, loc)
+            case RelationOrLattice.Lat(sym) => ResolvedAst.Predicate.Head.LatAtom(baseOpt, sym, ts, loc)
           }
       }
     }
@@ -768,13 +768,13 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
         * Performs name resolution on the given body predicate `b0` in the given namespace `ns0`.
         */
       def resolve(b0: NamedAst.Predicate.Body, ns0: Name.NName, prog0: NamedAst.Root)(implicit genSym: GenSym): Validation[ResolvedAst.Predicate.Body, ResolutionError] = b0 match {
-        case NamedAst.Predicate.Body.Atom(qname, polarity, terms, loc) =>
+        case NamedAst.Predicate.Body.Atom(baseOpt, qname, polarity, terms, loc) =>
           for {
             t <- lookupRelationOrLattice(qname, ns0, prog0)
             ts <- traverse(terms)(t => Patterns.resolve(t, ns0, prog0))
           } yield t match {
-            case RelationOrLattice.Rel(sym) => ResolvedAst.Predicate.Body.RelAtom(sym, polarity, ts, loc)
-            case RelationOrLattice.Lat(sym) => ResolvedAst.Predicate.Body.LatAtom(sym, polarity, ts, loc)
+            case RelationOrLattice.Rel(sym) => ResolvedAst.Predicate.Body.RelAtom(baseOpt, sym, polarity, ts, loc)
+            case RelationOrLattice.Lat(sym) => ResolvedAst.Predicate.Body.LatAtom(baseOpt, sym, polarity, ts, loc)
           }
 
         case NamedAst.Predicate.Body.Filter(qname, terms, loc) =>

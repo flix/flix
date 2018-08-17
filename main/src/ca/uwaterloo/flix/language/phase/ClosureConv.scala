@@ -17,8 +17,8 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.language.GenSym
-import ca.uwaterloo.flix.language.ast.SimplifiedAst.{CatchRule, Expression, HandlerBinding}
-import ca.uwaterloo.flix.language.ast.{Ast, SimplifiedAst, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.SimplifiedAst._
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, SimplifiedAst, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 import scala.collection.mutable
@@ -61,13 +61,13 @@ object ClosureConv {
 
       // First, we collect the free variables in the lambda expression.
       // NB: We pass the lambda expression (instead of its body) to account for bound arguments.
-      val freeVars = freeVariables(exp0).toList
+      val fvs = freeVars(exp0).toList
 
       // We prepend the free variables to the arguments list. Thus all variables within the lambda body will be treated
       // uniformly. The implementation will supply values for the free variables, without any effort from the caller.
       // We introduce new symbols for each introduced parameter and replace their occurrence in the body.
       val subst = mutable.Map.empty[Symbol.VarSym, Symbol.VarSym]
-      val newArgs = freeVars.map {
+      val newArgs = fvs.map {
         case (oldSym, ptype) =>
           val newSym = Symbol.freshVarSym(oldSym)
           subst += (oldSym -> newSym)
@@ -75,7 +75,7 @@ object ClosureConv {
       } ++ args
 
       // Update the lambda type.
-      val argTpes = freeVars.map(_._2) ++ targs
+      val argTpes = fvs.map(_._2) ++ targs
       val newTpe = Type.mkUncurriedArrow(argTpes, tresult)
 
       // We rewrite the lambda with its new arguments list and new body, with any nested lambdas also converted.
@@ -91,7 +91,7 @@ object ClosureConv {
       // bound values are passed as arguments.
       // Note that MkClosure keeps the old lambda type.
       // In a later phase, we will lift the lambda to a top-level definition.
-      Expression.LambdaClosure(lambda, freeVars.map(v => SimplifiedAst.FreeVar(v._1, v._2)), tpe, loc)
+      Expression.LambdaClosure(lambda, fvs.map(v => SimplifiedAst.FreeVar(v._1, v._2)), tpe, loc)
 
     case Expression.Apply(e, args, tpe, loc) =>
       // We're trying to call some expression `e`. If `e` is a Ref, then it's a top-level function, so we directly call
@@ -262,7 +262,7 @@ object ClosureConv {
     * Does a left-to-right traversal of the AST, collecting free variables in order, in a LinkedHashSet.
     */
   // TODO: Use immutable, but sorted data structure?
-  def freeVariables(exp0: SimplifiedAst.Expression): mutable.LinkedHashSet[(Symbol.VarSym, Type)] = exp0 match {
+  def freeVars(exp0: SimplifiedAst.Expression): mutable.LinkedHashSet[(Symbol.VarSym, Type)] = exp0 match {
     case Expression.Unit => mutable.LinkedHashSet.empty
     case Expression.True => mutable.LinkedHashSet.empty
     case Expression.False => mutable.LinkedHashSet.empty
@@ -280,56 +280,60 @@ object ClosureConv {
     case Expression.Eff(sym, tpe, loc) => mutable.LinkedHashSet.empty
     case Expression.Lambda(args, body, tpe, loc) =>
       val bound = args.map(_.sym)
-      freeVariables(body).filterNot { v => bound.contains(v._1) }
+      freeVars(body).filterNot { v => bound.contains(v._1) }
     case Expression.Apply(exp, args, tpe, loc) =>
-      freeVariables(exp) ++ args.flatMap(freeVariables)
-    case Expression.Unary(sop, op, exp, tpe, loc) => freeVariables(exp)
+      freeVars(exp) ++ args.flatMap(freeVars)
+    case Expression.Unary(sop, op, exp, tpe, loc) => freeVars(exp)
     case Expression.Binary(sop, op, exp1, exp2, tpe, loc) =>
-      freeVariables(exp1) ++ freeVariables(exp2)
+      freeVars(exp1) ++ freeVars(exp2)
     case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
-      freeVariables(exp1) ++ freeVariables(exp2) ++ freeVariables(exp3)
+      freeVars(exp1) ++ freeVars(exp2) ++ freeVars(exp3)
     case Expression.Branch(exp, branches, tpe, loc) =>
-      mutable.LinkedHashSet.empty ++ freeVariables(exp) ++ (branches flatMap {
-        case (sym, br) => freeVariables(br)
+      mutable.LinkedHashSet.empty ++ freeVars(exp) ++ (branches flatMap {
+        case (sym, br) => freeVars(br)
       })
     case Expression.JumpTo(sym, tpe, loc) => mutable.LinkedHashSet.empty
     case Expression.Let(sym, exp1, exp2, tpe, loc) =>
       val bound = sym
-      freeVariables(exp1) ++ freeVariables(exp2).filterNot { v => bound == v._1 }
+      freeVars(exp1) ++ freeVars(exp2).filterNot { v => bound == v._1 }
     case Expression.LetRec(sym, exp1, exp2, tpe, loc) =>
       val bound = sym
-      (freeVariables(exp1) ++ freeVariables(exp2)).filterNot { v => bound == v._1 }
-    case Expression.Is(sym, tag, exp, loc) => freeVariables(exp)
-    case Expression.Untag(sym, tag, exp, tpe, loc) => freeVariables(exp)
-    case Expression.Tag(enum, tag, exp, tpe, loc) => freeVariables(exp)
-    case Expression.Index(base, offset, tpe, loc) => freeVariables(base)
-    case Expression.Tuple(elms, tpe, loc) => mutable.LinkedHashSet.empty ++ elms.flatMap(freeVariables)
-    case Expression.ArrayLit(elms, tpe, loc) => mutable.LinkedHashSet.empty ++ elms.flatMap(freeVariables)
-    case Expression.ArrayNew(elm, len, tpe, loc) => freeVariables(elm) ++ freeVariables(len)
-    case Expression.ArrayLoad(base, index, tpe, loc) => freeVariables(base) ++ freeVariables(index)
-    case Expression.ArrayStore(base, index, elm, tpe, loc) => freeVariables(base) ++ freeVariables(index) ++ freeVariables(elm)
-    case Expression.ArrayLength(base, tpe, loc) => freeVariables(base)
-    case Expression.ArraySlice(base, beginIndex, endIndex, tpe, loc) => freeVariables(base) ++ freeVariables(beginIndex) ++ freeVariables(endIndex)
-    case Expression.Ref(exp, tpe, loc) => freeVariables(exp)
-    case Expression.Deref(exp, tpe, loc) => freeVariables(exp)
-    case Expression.Assign(exp1, exp2, tpe, loc) => freeVariables(exp1) ++ freeVariables(exp2)
-    case Expression.HandleWith(exp, bindings, tpe, loc) => freeVariables(exp) ++ bindings.flatMap(b => freeVariables(b.exp))
+      (freeVars(exp1) ++ freeVars(exp2)).filterNot { v => bound == v._1 }
+    case Expression.Is(sym, tag, exp, loc) => freeVars(exp)
+    case Expression.Untag(sym, tag, exp, tpe, loc) => freeVars(exp)
+    case Expression.Tag(enum, tag, exp, tpe, loc) => freeVars(exp)
+    case Expression.Index(base, offset, tpe, loc) => freeVars(base)
+    case Expression.Tuple(elms, tpe, loc) => mutable.LinkedHashSet.empty ++ elms.flatMap(freeVars)
+    case Expression.ArrayLit(elms, tpe, loc) => mutable.LinkedHashSet.empty ++ elms.flatMap(freeVars)
+    case Expression.ArrayNew(elm, len, tpe, loc) => freeVars(elm) ++ freeVars(len)
+    case Expression.ArrayLoad(base, index, tpe, loc) => freeVars(base) ++ freeVars(index)
+    case Expression.ArrayStore(base, index, elm, tpe, loc) => freeVars(base) ++ freeVars(index) ++ freeVars(elm)
+    case Expression.ArrayLength(base, tpe, loc) => freeVars(base)
+    case Expression.ArraySlice(base, beginIndex, endIndex, tpe, loc) => freeVars(base) ++ freeVars(beginIndex) ++ freeVars(endIndex)
+    case Expression.Ref(exp, tpe, loc) => freeVars(exp)
+    case Expression.Deref(exp, tpe, loc) => freeVars(exp)
+    case Expression.Assign(exp1, exp2, tpe, loc) => freeVars(exp1) ++ freeVars(exp2)
+    case Expression.HandleWith(exp, bindings, tpe, loc) => freeVars(exp) ++ bindings.flatMap(b => freeVars(b.exp))
     case Expression.Existential(fparam, exp, loc) =>
-      freeVariables(exp).filterNot { v => v._1 == fparam.sym }
+      freeVars(exp).filterNot { v => v._1 == fparam.sym }
     case Expression.Universal(fparam, exp, loc) =>
-      freeVariables(exp).filterNot { v => v._1 == fparam.sym }
+      freeVars(exp).filterNot { v => v._1 == fparam.sym }
 
-    case Expression.TryCatch(exp, rules, tpe, eff, loc) => mutable.LinkedHashSet.empty ++ freeVariables(exp) ++ rules.flatMap(r => freeVariables(r.exp).filterNot(_._1 == r.sym))
-    case Expression.NativeConstructor(constructor, args, tpe, loc) => mutable.LinkedHashSet.empty ++ args.flatMap(freeVariables)
+    case Expression.TryCatch(exp, rules, tpe, eff, loc) => mutable.LinkedHashSet.empty ++ freeVars(exp) ++ rules.flatMap(r => freeVars(r.exp).filterNot(_._1 == r.sym))
+    case Expression.NativeConstructor(constructor, args, tpe, loc) => mutable.LinkedHashSet.empty ++ args.flatMap(freeVars)
     case Expression.NativeField(field, tpe, loc) => mutable.LinkedHashSet.empty
-    case Expression.NativeMethod(method, args, tpe, loc) => mutable.LinkedHashSet.empty ++ args.flatMap(freeVariables)
+    case Expression.NativeMethod(method, args, tpe, loc) => mutable.LinkedHashSet.empty ++ args.flatMap(freeVars)
 
     case Expression.NewRelation(sym, tpe, loc) => mutable.LinkedHashSet.empty
     case Expression.NewLattice(sym, tpe, loc) => mutable.LinkedHashSet.empty
-    case Expression.Constraint(con, tpe, loc) => ??? // TODO: Expression.Constraint
-    case Expression.ConstraintUnion(exp1, exp2, tpe, loc) => freeVariables(exp1) ++ freeVariables(exp2)
-    case Expression.FixpointSolve(exp, tpe, loc) => freeVariables(exp)
-    case Expression.FixpointCheck(exp, tpe, loc) => freeVariables(exp)
+
+    case Expression.Constraint(con, tpe, loc) =>
+      val Constraint(cparams, head, body) = con
+      freeVars(head) ++ body.flatMap(freeVars)
+
+    case Expression.ConstraintUnion(exp1, exp2, tpe, loc) => freeVars(exp1) ++ freeVars(exp2)
+    case Expression.FixpointSolve(exp, tpe, loc) => freeVars(exp)
+    case Expression.FixpointCheck(exp, tpe, loc) => freeVars(exp)
 
     case Expression.UserError(tpe, loc) => mutable.LinkedHashSet.empty
     case Expression.HoleError(sym, tpe, eff, loc) => mutable.LinkedHashSet.empty
@@ -348,10 +352,75 @@ object ClosureConv {
   }
 
   /**
+    * Returns the free variables in the given head predicate `head0`.
+    */
+  private def freeVars(head0: Predicate.Head): mutable.LinkedHashSet[(Symbol.VarSym, Type)] = head0 match {
+    case Predicate.Head.True(loc) => mutable.LinkedHashSet.empty
+
+    case Predicate.Head.False(loc) => mutable.LinkedHashSet.empty
+
+    case Predicate.Head.RelAtom(baseOpt, sym, terms, loc) => baseOpt match {
+      case None =>
+        mutable.LinkedHashSet.empty ++ terms.flatMap(freeVars)
+      case Some(baseSym) =>
+        mutable.LinkedHashSet((baseSym, Type.Relation(sym, Kind.Star))) ++ terms.flatMap(freeVars)
+    }
+
+    case Predicate.Head.LatAtom(baseOpt, sym, terms, loc) => baseOpt match {
+      case None =>
+        mutable.LinkedHashSet.empty ++ terms.flatMap(freeVars)
+      case Some(baseSym) =>
+        mutable.LinkedHashSet((baseSym, Type.Lattice(sym, Kind.Star))) ++ terms.flatMap(freeVars)
+    }
+  }
+
+  /**
+    * Returns the free variables in the given body predicate `body0`.
+    */
+  private def freeVars(body0: Predicate.Body): mutable.LinkedHashSet[(Symbol.VarSym, Type)] = body0 match {
+    case Predicate.Body.RelAtom(baseOpt, sym, polarity, terms, loc) => baseOpt match {
+      case None => mutable.LinkedHashSet.empty ++ terms.flatMap(freeVars)
+      case Some(baseSym) => mutable.LinkedHashSet((baseSym, Type.Relation(sym, Kind.Star))) ++ terms.flatMap(freeVars)
+    }
+
+    case Predicate.Body.LatAtom(baseOpt, sym, polarity, terms, loc) => baseOpt match {
+      case None => mutable.LinkedHashSet.empty ++ terms.flatMap(freeVars)
+      case Some(baseSym) => mutable.LinkedHashSet((baseSym, Type.Lattice(sym, Kind.Star))) ++ terms.flatMap(freeVars)
+    }
+
+    case Predicate.Body.Filter(sym, terms, loc) =>
+      mutable.LinkedHashSet.empty ++ terms.flatMap(freeVars)
+
+    case Predicate.Body.Functional(sym, term, loc) =>
+      freeVars(term)
+  }
+
+  /**
+    * Returns the free variables in the given head term `term0`.
+    */
+  private def freeVars(term0: Term.Head): mutable.LinkedHashSet[(Symbol.VarSym, Type)] = term0 match {
+    case Term.Head.QuantVar(sym, tpe, loc) => mutable.LinkedHashSet.empty
+    case Term.Head.CapturedVar(sym, tpe, loc) => mutable.LinkedHashSet((sym, tpe))
+    case Term.Head.Lit(lit, tpe, loc) => mutable.LinkedHashSet.empty
+    case Term.Head.App(sym, args, tpe, loc) => mutable.LinkedHashSet.empty
+  }
+
+  /**
+    * Returns the free variables in the given body term `term0`.
+    */
+  private def freeVars(term0: Term.Body): mutable.LinkedHashSet[(Symbol.VarSym, Type)] = term0 match {
+    case Term.Body.Wild(tpe, loc) => mutable.LinkedHashSet.empty
+    case Term.Body.QuantVar(sym, tpe, loc) => mutable.LinkedHashSet.empty
+    case Term.Body.CapturedVar(sym, tpe, loc) => mutable.LinkedHashSet((sym, tpe))
+    case Term.Body.Lit(exp, tpe, loc) => freeVars(exp)
+  }
+
+  /**
     * Applies the given substitution map `subst` to the given expression `e`.
     */
   private def replace(e0: Expression, subst: Map[Symbol.VarSym, Symbol.VarSym]): Expression = {
-    def visit(e: Expression): Expression = e match {
+
+    def visitExp(e: Expression): Expression = e match {
       case Expression.Unit => e
       case Expression.True => e
       case Expression.False => e
@@ -376,52 +445,52 @@ object ClosureConv {
 
       case Expression.Lambda(fparams, exp, tpe, loc) =>
         val fs = fparams.map(fparam => replace(fparam, subst))
-        val e = visit(exp)
+        val e = visitExp(exp)
         Expression.Lambda(fs, e, tpe, loc)
 
       case Expression.Closure(ref, freeVars, tpe, loc) => e
 
       case Expression.LambdaClosure(exp, freeVars, tpe, loc) =>
-        val e = visit(exp).asInstanceOf[Expression.Lambda]
+        val e = visitExp(exp).asInstanceOf[Expression.Lambda]
         Expression.LambdaClosure(e, freeVars, tpe, loc)
 
       case Expression.ApplyClo(exp, args, tpe, loc) =>
-        val e = visit(exp)
-        val as = args map visit
+        val e = visitExp(exp)
+        val as = args map visitExp
         Expression.ApplyClo(e, as, tpe, loc)
 
       case Expression.ApplyDef(sym, args, tpe, loc) =>
-        val as = args map visit
+        val as = args map visitExp
         Expression.ApplyDef(sym, as, tpe, loc)
 
       case Expression.ApplyEff(sym, args, tpe, loc) =>
-        val as = args map visit
+        val as = args map visitExp
         Expression.ApplyEff(sym, as, tpe, loc)
 
       case Expression.Apply(exp, args, tpe, loc) =>
-        val e = visit(exp)
-        val as = args map visit
+        val e = visitExp(exp)
+        val as = args map visitExp
         Expression.Apply(e, as, tpe, loc)
 
       case Expression.Unary(sop, op, exp, tpe, loc) =>
-        val e = visit(exp)
+        val e = visitExp(exp)
         Expression.Unary(sop, op, e, tpe, loc)
 
       case Expression.Binary(sop, op, exp1, exp2, tpe, loc) =>
-        val e1 = visit(exp1)
-        val e2 = visit(exp2)
+        val e1 = visitExp(exp1)
+        val e2 = visitExp(exp2)
         Expression.Binary(sop, op, e1, e2, tpe, loc)
 
       case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
-        val e1 = visit(exp1)
-        val e2 = visit(exp2)
-        val e3 = visit(exp3)
+        val e1 = visitExp(exp1)
+        val e2 = visitExp(exp2)
+        val e3 = visitExp(exp3)
         Expression.IfThenElse(e1, e2, e3, tpe, loc)
 
       case Expression.Branch(exp, branches, tpe, loc) =>
-        val e = visit(exp)
+        val e = visitExp(exp)
         val bs = branches map {
-          case (sym, br) => sym -> visit(br)
+          case (sym, br) => sym -> visitExp(br)
         }
         Expression.Branch(e, bs, tpe, loc)
 
@@ -429,137 +498,146 @@ object ClosureConv {
         Expression.JumpTo(sym, tpe, loc)
 
       case Expression.Let(sym, exp1, exp2, tpe, loc) =>
-        val e1 = visit(exp1)
-        val e2 = visit(exp2)
+        val e1 = visitExp(exp1)
+        val e2 = visitExp(exp2)
         subst.get(sym) match {
           case None => Expression.Let(sym, e1, e2, tpe, loc)
           case Some(newSym) => Expression.Let(newSym, e1, e2, tpe, loc)
         }
 
       case Expression.LetRec(sym, exp1, exp2, tpe, loc) =>
-        val e1 = visit(exp1)
-        val e2 = visit(exp2)
+        val e1 = visitExp(exp1)
+        val e2 = visitExp(exp2)
         subst.get(sym) match {
           case None => Expression.LetRec(sym, e1, e2, tpe, loc)
           case Some(newSym) => Expression.LetRec(newSym, e1, e2, tpe, loc)
         }
 
       case Expression.Is(sym, tag, exp, loc) =>
-        val e = visit(exp)
+        val e = visitExp(exp)
         Expression.Is(sym, tag, e, loc)
 
       case Expression.Untag(sym, tag, exp, tpe, loc) =>
-        val e = visit(exp)
+        val e = visitExp(exp)
         Expression.Untag(sym, tag, e, tpe, loc)
 
       case Expression.Tag(enum, tag, exp, tpe, loc) =>
-        val e = visit(exp)
+        val e = visitExp(exp)
         Expression.Tag(enum, tag, e, tpe, loc)
 
       case Expression.Index(exp, offset, tpe, loc) =>
-        val e = visit(exp)
+        val e = visitExp(exp)
         Expression.Index(e, offset, tpe, loc)
 
       case Expression.Tuple(elms, tpe, loc) =>
-        val es = elms map visit
+        val es = elms map visitExp
         Expression.Tuple(es, tpe, loc)
 
       case Expression.ArrayLit(elms, tpe, loc) =>
-        val es = elms map visit
+        val es = elms map visitExp
         Expression.ArrayLit(es, tpe, loc)
 
       case Expression.ArrayNew(elm, len, tpe, loc) =>
-        val e = visit(elm)
-        val ln = visit(len)
+        val e = visitExp(elm)
+        val ln = visitExp(len)
         Expression.ArrayNew(e, ln, tpe, loc)
 
       case Expression.ArrayLoad(base, index, tpe, loc) =>
-        val b = visit(base)
-        val i = visit(index)
+        val b = visitExp(base)
+        val i = visitExp(index)
         Expression.ArrayLoad(b, i, tpe, loc)
 
       case Expression.ArrayStore(base, index, elm, tpe, loc) =>
-        val b = visit(base)
-        val i = visit(index)
-        val e = visit(elm)
+        val b = visitExp(base)
+        val i = visitExp(index)
+        val e = visitExp(elm)
         Expression.ArrayStore(b, i, e, tpe, loc)
 
       case Expression.ArrayLength(base, tpe, loc) =>
-        val b = visit(base)
+        val b = visitExp(base)
         Expression.ArrayLength(b, tpe, loc)
 
       case Expression.ArraySlice(base, beginIndex, endIndex, tpe, loc) =>
-        val b = visit(base)
-        val i1 = visit(beginIndex)
-        val i2 = visit(endIndex)
+        val b = visitExp(base)
+        val i1 = visitExp(beginIndex)
+        val i2 = visitExp(endIndex)
         Expression.ArraySlice(b, i1, i2, tpe, loc)
 
       case Expression.Ref(exp, tpe, loc) =>
-        val e = visit(exp)
+        val e = visitExp(exp)
         Expression.Ref(e, tpe, loc)
 
       case Expression.Deref(exp, tpe, loc) =>
-        val e = visit(exp)
+        val e = visitExp(exp)
         Expression.Deref(e, tpe, loc)
 
       case Expression.Assign(exp1, exp2, tpe, loc) =>
-        val e1 = visit(exp1)
-        val e2 = visit(exp2)
+        val e1 = visitExp(exp1)
+        val e2 = visitExp(exp2)
         Expression.Assign(e1, e2, tpe, loc)
 
       case Expression.HandleWith(exp, bindings, tpe, loc) =>
-        val e = visit(exp)
+        val e = visitExp(exp)
         val bs = bindings map {
-          case HandlerBinding(sym, handler) => HandlerBinding(sym, visit(handler))
+          case HandlerBinding(sym, handler) => HandlerBinding(sym, visitExp(handler))
         }
         Expression.HandleWith(e, bs, tpe, loc)
 
       case Expression.Existential(fparam, exp, loc) =>
         val fs = replace(fparam, subst)
-        val e = visit(exp)
+        val e = visitExp(exp)
         Expression.Existential(fs, e, loc)
 
       case Expression.Universal(fparam, exp, loc) =>
         val fs = replace(fparam, subst)
-        val e = visit(exp)
+        val e = visitExp(exp)
         Expression.Universal(fs, e, loc)
 
       case Expression.TryCatch(exp, rules, tpe, eff, loc) =>
-        val e = visit(exp)
+        val e = visitExp(exp)
         val rs = rules map {
           case CatchRule(sym, clazz, body) =>
-            val b = visit(body)
+            val b = visitExp(body)
             CatchRule(sym, clazz, b)
         }
         Expression.TryCatch(e, rs, tpe, eff, loc)
 
       case Expression.NativeConstructor(constructor, args, tpe, loc) =>
-        val es = args map visit
+        val es = args map visitExp
         Expression.NativeConstructor(constructor, es, tpe, loc)
 
       case Expression.NativeField(field, tpe, loc) => e
 
       case Expression.NativeMethod(method, args, tpe, loc) =>
-        val es = args map visit
+        val es = args map visitExp
         Expression.NativeMethod(method, es, tpe, loc)
 
       case Expression.NewRelation(sym, tpe, loc) => e
 
       case Expression.NewLattice(sym, tpe, loc) => e
 
-      case Expression.Constraint(con, tpe, loc) => ??? // TODO Expression.Constraint
+      case Expression.Constraint(con, tpe, loc) =>
+        val Constraint(cparams0, head0, body0) = con
+        val cs = cparams0 map {
+          case ConstraintParam.HeadParam(s, t, l) => ConstraintParam.HeadParam(subst.getOrElse(s, s), t, l)
+          case ConstraintParam.RuleParam(s, t, l) => ConstraintParam.RuleParam(subst.getOrElse(s, s), t, l)
+        }
+        val head = visitHeadPredicate(head0)
+        val body = body0 map visitBodyPredicate
+        val c = Constraint(cs, head, body)
+        Expression.Constraint(c, tpe, loc)
 
       case Expression.ConstraintUnion(exp1, exp2, tpe, loc) =>
-        val e1 = visit(exp1)
-        val e2 = visit(exp2)
+        val e1 = visitExp(exp1)
+        val e2 = visitExp(exp2)
         Expression.ConstraintUnion(e1, e2, tpe, loc)
 
       case Expression.FixpointSolve(exp, tpe, loc) =>
-        val e = visit(exp)
+        val e = visitExp(exp)
         Expression.FixpointSolve(e, tpe, loc)
 
       case Expression.FixpointCheck(exp, tpe, loc) =>
-        val e = visit(exp)
+        val e = visitExp(exp)
         Expression.FixpointCheck(e, tpe, loc)
 
       case Expression.UserError(tpe, loc) => e
@@ -573,7 +651,73 @@ object ClosureConv {
       case Expression.ApplySelfTail(sym, fparams, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${e.getClass.getSimpleName}'.")
     }
 
-    visit(e0)
+    def visitHeadPredicate(head0: Predicate.Head): Predicate.Head = head0 match {
+      case Predicate.Head.True(loc) => Predicate.Head.True(loc)
+      case Predicate.Head.False(loc) => Predicate.Head.False(loc)
+      case Predicate.Head.RelAtom(baseOpt, sym, terms, loc) =>
+        val b = baseOpt.map(s => subst.getOrElse(s, s))
+        val ts = terms map visitHeadTerm
+        Predicate.Head.RelAtom(b, sym, ts, loc)
+
+      case Predicate.Head.LatAtom(baseOpt, sym, terms, loc) =>
+        val b = baseOpt.map(s => subst.getOrElse(s, s))
+        val ts = terms map visitHeadTerm
+        Predicate.Head.LatAtom(b, sym, ts, loc)
+    }
+
+    def visitBodyPredicate(body0: Predicate.Body): Predicate.Body = body0 match {
+      case Predicate.Body.RelAtom(baseOpt, sym, polarity, terms, loc) =>
+        val b = baseOpt.map(s => subst.getOrElse(s, s))
+        val ts = terms map visitBodyTerm
+        Predicate.Body.RelAtom(b, sym, polarity, ts, loc)
+
+      case Predicate.Body.LatAtom(baseOpt, sym, polarity, terms, loc) =>
+        val b = baseOpt.map(s => subst.getOrElse(s, s))
+        val ts = terms map visitBodyTerm
+        Predicate.Body.LatAtom(b, sym, polarity, ts, loc)
+
+      case Predicate.Body.Filter(sym, terms, loc) =>
+        val ts = terms map visitBodyTerm
+        Predicate.Body.Filter(sym, ts, loc)
+
+      case Predicate.Body.Functional(sym, term, loc) =>
+        val s = subst.getOrElse(sym, sym)
+        val t = visitHeadTerm(term)
+        Predicate.Body.Functional(s, t, loc)
+    }
+
+    def visitHeadTerm(term0: Term.Head): Term.Head = term0 match {
+      case Term.Head.QuantVar(sym, tpe, loc) =>
+        val s = subst.getOrElse(sym, sym)
+        Term.Head.QuantVar(s, tpe, loc)
+
+      case Term.Head.CapturedVar(sym, tpe, loc) =>
+        val s = subst.getOrElse(sym, sym)
+        Term.Head.CapturedVar(s, tpe, loc)
+
+      case Term.Head.Lit(lit, tpe, loc) => Term.Head.Lit(lit, tpe, loc)
+
+      case Term.Head.App(sym, args, tpe, loc) =>
+        val as = args.map(s => subst.getOrElse(s, s))
+        Term.Head.App(sym, as, tpe, loc)
+    }
+
+    def visitBodyTerm(term0: Term.Body): Term.Body = term0 match {
+      case Term.Body.Wild(tpe, loc) => Term.Body.Wild(tpe, loc)
+      case Term.Body.QuantVar(sym, tpe, loc) =>
+        val s = subst.getOrElse(sym, sym)
+        Term.Body.QuantVar(sym, tpe, loc)
+
+      case Term.Body.CapturedVar(sym, tpe, loc) =>
+        val s = subst.getOrElse(sym, sym)
+        Term.Body.CapturedVar(s, tpe, loc)
+
+      case Term.Body.Lit(exp, tpe, loc) =>
+        val e = visitExp(exp)
+        Term.Body.Lit(e, tpe, loc)
+    }
+
+    visitExp(e0)
   }
 
   /**

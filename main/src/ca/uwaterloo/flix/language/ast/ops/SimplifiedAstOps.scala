@@ -21,6 +21,8 @@ import ca.uwaterloo.flix.language.ast.{Symbol, Type}
 
 object SimplifiedAstOps {
 
+  // TODO: Use this somewhere.
+
   /**
     * Checks the invariants of the given SimplifiedAst `root`.
     */
@@ -477,12 +479,21 @@ object SimplifiedAstOps {
       */
     def checkHeadPred(h0: Predicate.Head, env0: Set[Symbol.VarSym]): Unit = h0 match {
       case Predicate.Head.True(loc) => // nop
+
       case Predicate.Head.False(loc) => // nop
-      case Predicate.Head.RelAtom(sym, terms, loc) =>
+
+      case Predicate.Head.RelAtom(baseOpt, sym, terms, loc) =>
+        if (baseOpt.nonEmpty) {
+          assert(env0 contains baseOpt.get, s"Undefined base variable symbol: '$baseOpt.get'.")
+        }
         for (term <- terms) {
           checkHeadTerm(term, env0)
         }
-      case Predicate.Head.LatAtom(sym, terms, loc) =>
+
+      case Predicate.Head.LatAtom(baseOpt, sym, terms, loc) =>
+        if (baseOpt.nonEmpty) {
+          assert(env0 contains baseOpt.get, s"Undefined base variable symbol: '$baseOpt.get'.")
+        }
         for (term <- terms) {
           checkHeadTerm(term, env0)
         }
@@ -492,18 +503,27 @@ object SimplifiedAstOps {
       * Checks invariants of the given body predicate `b0`.
       */
     def checkBodyPred(b0: Predicate.Body, env0: Set[Symbol.VarSym]): Unit = b0 match {
-      case Predicate.Body.RelAtom(sym, polarity, terms, loc) =>
+      case Predicate.Body.RelAtom(baseOpt, sym, polarity, terms, loc) =>
+        if (baseOpt.nonEmpty) {
+          assert(env0 contains baseOpt.get, s"Undefined base variable symbol: '$baseOpt.get'.")
+        }
         for (term <- terms) {
           checkBodyTerm(term, env0)
         }
-      case Predicate.Body.LatAtom(sym, polarity, terms, loc) =>
+
+      case Predicate.Body.LatAtom(baseOpt, sym, polarity, terms, loc) =>
+        if (baseOpt.nonEmpty) {
+          assert(env0 contains baseOpt.get, s"Undefined base variable symbol: '$baseOpt.get'.")
+        }
         for (term <- terms) {
           checkBodyTerm(term, env0)
         }
+
       case Predicate.Body.Filter(sym, terms, loc) =>
         for (term <- terms) {
           checkBodyTerm(term, env0)
         }
+
       case Predicate.Body.Functional(sym, term, loc) =>
         checkHeadTerm(term, env0)
     }
@@ -512,9 +532,9 @@ object SimplifiedAstOps {
       * Checks invariants of the given head term `t0`.
       */
     def checkHeadTerm(t0: Term.Head, env0: Set[Symbol.VarSym]): Unit = t0 match {
-      case Term.Head.FreeVar(sym, tpe, loc) =>
+      case Term.Head.QuantVar(sym, tpe, loc) =>
         checkType(tpe)
-      case Term.Head.BoundVar(sym, tpe, loc) =>
+      case Term.Head.CapturedVar(sym, tpe, loc) =>
         checkType(tpe)
       case Term.Head.Lit(exp, tpe, loc) =>
         checkExp(exp0 = exp, env0 = env0, ienv0 = Set.empty)
@@ -529,9 +549,9 @@ object SimplifiedAstOps {
     def checkBodyTerm(t0: Term.Body, env0: Set[Symbol.VarSym]): Unit = t0 match {
       case Term.Body.Wild(tpe, loc) =>
       // TODO: What is the type allowed to be here?
-      case Term.Body.FreeVar(sym, tpe, loc) =>
+      case Term.Body.QuantVar(sym, tpe, loc) =>
         checkType(tpe)
-      case Term.Body.BoundVar(sym, tpe, loc) =>
+      case Term.Body.CapturedVar(sym, tpe, loc) =>
         checkType(tpe)
       case Term.Body.Lit(exp, tpe, loc) =>
         checkExp(exp0 = exp, env0 = env0, ienv0 = Set.empty)

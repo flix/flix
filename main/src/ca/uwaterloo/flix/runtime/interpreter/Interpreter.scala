@@ -800,34 +800,38 @@ object Interpreter {
   private def evalHeadPredicate(h0: FinalAst.Predicate.Head, env0: Map[String, AnyRef])(implicit root: FinalAst.Root, cache: SymbolCache, flix: Flix): api.predicate.Predicate = h0 match {
     case FinalAst.Predicate.Head.True(_) => new api.predicate.TruePredicate()
     case FinalAst.Predicate.Head.False(_) => new api.predicate.FalsePredicate()
-    case FinalAst.Predicate.Head.RelAtom(sym, terms, _) =>
+    case FinalAst.Predicate.Head.RelAtom(baseOpt, sym, terms, _) =>
+      // Retrieve the relation.
+      val relation = baseOpt match {
+        case None => getRelation(sym)
+        case Some(baseSym) =>
+          cast2relation(env0(baseSym.toString))
+      }
       val ts = terms.map(t => evalHeadTerm(t, env0))
-      new api.predicate.AtomPredicate(getRelation(sym), positive = true, ts.toArray, null)
-    case FinalAst.Predicate.Head.LatAtom(sym, terms, _) =>
+      new api.predicate.AtomPredicate(relation, positive = true, ts.toArray, null)
+    case FinalAst.Predicate.Head.LatAtom(baseOpt, sym, terms, _) =>
+      // Retrieve the lattice.
+      val lattice = baseOpt match {
+        case None => getLattice(sym)
+        case Some(baseSym) =>
+          cast2lattice(env0(baseSym.toString))
+      }
       val ts = terms.map(t => evalHeadTerm(t, env0))
-      new api.predicate.AtomPredicate(getLattice(sym), positive = true, ts.toArray, null)
+      new api.predicate.AtomPredicate(lattice, positive = true, ts.toArray, null)
   }
 
   /**
     * Evaluates the given body predicate `b0` under the given environment `env0` to a body predicate value.
     */
   private def evalBodyPredicate(b0: FinalAst.Predicate.Body, env0: Map[String, AnyRef])(implicit root: FinalAst.Root, cache: SymbolCache, flix: Flix): api.predicate.Predicate = b0 match {
-    case FinalAst.Predicate.Body.RelAtom(sym, polarity, terms, index2sym, loc) =>
-      val s = getRelation(sym)
-      val p = polarity match {
-        case Ast.Polarity.Positive => true
-        case Ast.Polarity.Negative => false
+    case FinalAst.Predicate.Body.RelAtom(baseOpt, sym, polarity, terms, index2sym, loc) =>
+      // Retrieve the relation.
+      val relation = baseOpt match {
+        case None => getRelation(sym)
+        case Some(baseSym) =>
+          cast2relation(env0(baseSym.toString))
       }
-      val ts = terms.map(t => evalBodyTerm(t, env0))
-      // TODO: Get rid of i2s
-      val i2s = index2sym map {
-        case x if x != null => cache.getVarSym(x)
-        case _ => null
-      }
-      new api.predicate.AtomPredicate(s, p, ts.toArray, i2s.toArray)
 
-    case FinalAst.Predicate.Body.LatAtom(sym, polarity, terms, index2sym, loc) =>
-      val s = getLattice(sym)
       val p = polarity match {
         case Ast.Polarity.Positive => true
         case Ast.Polarity.Negative => false
@@ -838,7 +842,26 @@ object Interpreter {
         case x if x != null => cache.getVarSym(x)
         case _ => null
       }
-      new api.predicate.AtomPredicate(s, p, ts.toArray, i2s.toArray)
+      new api.predicate.AtomPredicate(relation, p, ts.toArray, i2s.toArray)
+
+    case FinalAst.Predicate.Body.LatAtom(baseOpt, sym, polarity, terms, index2sym, loc) =>
+      // Retrieve the lattice.
+      val lattice = baseOpt match {
+        case None => getLattice(sym)
+        case Some(baseSym) =>
+          cast2lattice(env0(baseSym.toString))
+      }
+      val p = polarity match {
+        case Ast.Polarity.Positive => true
+        case Ast.Polarity.Negative => false
+      }
+      val ts = terms.map(t => evalBodyTerm(t, env0))
+      // TODO: Get rid of i2s
+      val i2s = index2sym map {
+        case x if x != null => cache.getVarSym(x)
+        case _ => null
+      }
+      new api.predicate.AtomPredicate(lattice, p, ts.toArray, i2s.toArray)
 
     case FinalAst.Predicate.Body.Filter(sym, terms, loc) =>
       val f = (as: Array[AnyRef]) => Linker.link(sym, root).invoke(as).getValue.asInstanceOf[Boolean].booleanValue()
@@ -858,7 +881,7 @@ object Interpreter {
     //
     // Free Variables (i.e. variables that are quantified over in the constraint).
     //
-    case FinalAst.Term.Head.FreeVar(sym, _, _) =>
+    case FinalAst.Term.Head.QuantVar(sym, _, _) =>
       // Lookup the corresponding symbol in the cache.
 
       new api.term.VarTerm(cache.getVarSym(sym))
@@ -866,7 +889,7 @@ object Interpreter {
     //
     // Bound Variables (i.e. variables that have a value in the local environment).
     //
-    case FinalAst.Term.Head.BoundVar(sym, tpe, _) =>
+    case FinalAst.Term.Head.CapturedVar(sym, tpe, _) =>
       // Retrieve the value from the local environment and wrap it in a proxy object.
       val v = wrapValueInProxyObject(env0(sym.toString), tpe)
 
@@ -902,14 +925,14 @@ object Interpreter {
     //
     // Free Variables (i.e. variables that are quantified over in the constraint).
     //
-    case FinalAst.Term.Body.FreeVar(sym, _, _) =>
+    case FinalAst.Term.Body.QuantVar(sym, _, _) =>
       // Lookup the corresponding symbol in the cache.
       new api.term.VarTerm(cache.getVarSym(sym))
 
     //
     // Bound Variables (i.e. variables that have a value in the local environment).
     //
-    case FinalAst.Term.Body.BoundVar(sym, tpe, _) =>
+    case FinalAst.Term.Body.CapturedVar(sym, tpe, _) =>
       // Retrieve the value from the local environment and wrap it in a proxy object.
       val v = wrapValueInProxyObject(env0(sym.toString), tpe)
 
@@ -1097,6 +1120,22 @@ object Interpreter {
   private def cast2constraintset(ref: AnyRef): ConstraintSet = ref match {
     case v: ConstraintSet => v
     case _ => throw InternalRuntimeException(s"Unexpected non-constraint value: ${ref.getClass.getName}.")
+  }
+
+  /**
+    * Casts the given reference `ref` to a relation.
+    */
+  private def cast2relation(ref: AnyRef): api.Relation = ref match {
+    case r: api.Relation => r
+    case _ => throw InternalRuntimeException(s"Unexpected non-relation value: ${ref.getClass.getName}.")
+  }
+
+  /**
+    * Casts the given reference `ref` to a lattice.
+    */
+  private def cast2lattice(ref: AnyRef): api.Lattice = ref match {
+    case r: api.Lattice => r
+    case _ => throw InternalRuntimeException(s"Unexpected non-lattice value: ${ref.getClass.getName}.")
   }
 
   /**

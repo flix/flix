@@ -1098,9 +1098,9 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
         case ParsedAst.Predicate.Head.False(sp1, sp2) => WeededAst.Predicate.Head.False(mkSL(sp1, sp2)).toSuccess
 
-        case ParsedAst.Predicate.Head.Atom(sp1, qname, terms, sp2) =>
+        case ParsedAst.Predicate.Head.Atom(sp1, baseOpt, qname, terms, sp2) =>
           traverse(terms)(Expressions.weed) map {
-            case ts => WeededAst.Predicate.Head.Atom(qname, ts, mkSL(sp1, sp2))
+            case ts => WeededAst.Predicate.Head.Atom(baseOpt, qname, ts, mkSL(sp1, sp2))
           }
 
       }
@@ -1113,15 +1113,15 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         * Weeds the given body predicate.
         */
       def weed(past: ParsedAst.Predicate.Body)(implicit flix: Flix): Validation[WeededAst.Predicate.Body, WeederError] = past match {
-        case ParsedAst.Predicate.Body.Positive(sp1, qname, terms, sp2) =>
+        case ParsedAst.Predicate.Body.Positive(sp1, baseOpt, qname, terms, sp2) =>
           traverse(terms)(Patterns.weed) map {
-            case ts => WeededAst.Predicate.Body.Atom(qname, Polarity.Positive, ts, mkSL(sp1, sp2))
+            case ts => WeededAst.Predicate.Body.Atom(baseOpt, qname, Polarity.Positive, ts, mkSL(sp1, sp2))
           }
 
-        case ParsedAst.Predicate.Body.Negative(sp1, qname, terms, sp2) =>
+        case ParsedAst.Predicate.Body.Negative(sp1, baseOpt, qname, terms, sp2) =>
           val loc = mkSL(sp1, sp2)
           traverse(terms)(Patterns.weed) map {
-            case ts => WeededAst.Predicate.Body.Atom(qname, Polarity.Negative, ts, loc)
+            case ts => WeededAst.Predicate.Body.Atom(baseOpt, qname, Polarity.Negative, ts, loc)
           }
 
         case ParsedAst.Predicate.Body.Filter(sp1, qname, terms, sp2) =>

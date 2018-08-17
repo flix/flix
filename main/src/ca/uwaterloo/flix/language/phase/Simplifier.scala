@@ -535,26 +535,26 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
 
       case TypedAst.Predicate.Head.False(loc) => SimplifiedAst.Predicate.Head.False(loc)
 
-      case TypedAst.Predicate.Head.RelAtom(sym, terms, loc) =>
+      case TypedAst.Predicate.Head.RelAtom(baseOpt, sym, terms, loc) =>
         val ts = terms.map(t => exp2HeadTerm(t, cparams))
-        SimplifiedAst.Predicate.Head.RelAtom(sym, ts, loc)
+        SimplifiedAst.Predicate.Head.RelAtom(baseOpt, sym, ts, loc)
 
-      case TypedAst.Predicate.Head.LatAtom(sym, terms, loc) =>
+      case TypedAst.Predicate.Head.LatAtom(baseOpt, sym, terms, loc) =>
         val ts = terms.map(t => exp2HeadTerm(t, cparams))
-        SimplifiedAst.Predicate.Head.LatAtom(sym, ts, loc)
+        SimplifiedAst.Predicate.Head.LatAtom(baseOpt, sym, ts, loc)
     }
 
     /**
       * Translates the given `body` predicate to the SimplifiedAst.
       */
     def visitBodyPred(body: TypedAst.Predicate.Body, cparams: List[TypedAst.ConstraintParam]): SimplifiedAst.Predicate.Body = body match {
-      case TypedAst.Predicate.Body.RelAtom(sym, polarity, terms, loc) =>
+      case TypedAst.Predicate.Body.RelAtom(baseOpt, sym, polarity, terms, loc) =>
         val ts = terms.map(p => pat2BodyTerm(p, cparams))
-        SimplifiedAst.Predicate.Body.RelAtom(sym, polarity, ts, loc)
+        SimplifiedAst.Predicate.Body.RelAtom(baseOpt, sym, polarity, ts, loc)
 
-      case TypedAst.Predicate.Body.LatAtom(sym, polarity, terms, loc) =>
+      case TypedAst.Predicate.Body.LatAtom(baseOpt, sym, polarity, terms, loc) =>
         val ts = terms.map(p => pat2BodyTerm(p, cparams))
-        SimplifiedAst.Predicate.Body.LatAtom(sym, polarity, ts, loc)
+        SimplifiedAst.Predicate.Body.LatAtom(baseOpt, sym, polarity, ts, loc)
 
       case TypedAst.Predicate.Body.Filter(sym, terms, loc) =>
         SimplifiedAst.Predicate.Body.Filter(sym, terms.map(t => exp2BodyTerm(t, cparams)), loc)
@@ -574,9 +574,9 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case TypedAst.Expression.Var(sym, tpe, eff, loc) =>
         val isQuantified = cparams.exists(p => p.sym == sym)
         if (isQuantified)
-          SimplifiedAst.Term.Head.FreeVar(sym, tpe, loc)
+          SimplifiedAst.Term.Head.QuantVar(sym, tpe, loc)
         else
-          SimplifiedAst.Term.Head.BoundVar(sym, tpe, loc)
+          SimplifiedAst.Term.Head.CapturedVar(sym, tpe, loc)
 
       case TypedAst.Expression.Apply(TypedAst.Expression.Def(sym, _, _, _), exp, tpe, eff, loc) if exp.isInstanceOf[TypedAst.Expression.Var] =>
         val v = exp.asInstanceOf[TypedAst.Expression.Var]
@@ -732,9 +732,9 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case TypedAst.Pattern.Var(sym, tpe, loc) =>
         val isQuantified = cparams.exists(p => p.sym == sym)
         if (isQuantified)
-          SimplifiedAst.Term.Body.FreeVar(sym, tpe, loc)
+          SimplifiedAst.Term.Body.QuantVar(sym, tpe, loc)
         else
-          SimplifiedAst.Term.Body.BoundVar(sym, tpe, loc)
+          SimplifiedAst.Term.Body.CapturedVar(sym, tpe, loc)
 
       case _ => if (isPatLiteral(p))
         SimplifiedAst.Term.Body.Lit(pat2exp(p), p.tpe, p.loc)
@@ -750,9 +750,9 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case TypedAst.Expression.Var(sym, tpe, eff, loc) =>
         val isQuantified = cparams.exists(p => p.sym == sym)
         if (isQuantified)
-          SimplifiedAst.Term.Body.FreeVar(sym, tpe, loc)
+          SimplifiedAst.Term.Body.QuantVar(sym, tpe, loc)
         else
-          SimplifiedAst.Term.Body.BoundVar(sym, tpe, loc)
+          SimplifiedAst.Term.Body.CapturedVar(sym, tpe, loc)
 
       case _ => SimplifiedAst.Term.Body.Lit(visitExp(e), e.tpe, e.loc) // TODO: Only certain expressions should be allow here.
     }

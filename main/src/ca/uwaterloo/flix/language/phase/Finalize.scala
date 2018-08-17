@@ -19,7 +19,6 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.runtime.solver.api.ProxyObject
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
@@ -382,24 +381,24 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
   private def visitHeadPredicate(p0: SimplifiedAst.Predicate.Head, m: TopLevel)(implicit flix: Flix): FinalAst.Predicate.Head = p0 match {
     case SimplifiedAst.Predicate.Head.True(loc) => FinalAst.Predicate.Head.True(loc)
     case SimplifiedAst.Predicate.Head.False(loc) => FinalAst.Predicate.Head.False(loc)
-    case SimplifiedAst.Predicate.Head.RelAtom(sym, terms, loc) =>
+    case SimplifiedAst.Predicate.Head.RelAtom(baseOpt, sym, terms, loc) =>
       val ts = terms.map(t => visitHeadTerm(t, m))
-      FinalAst.Predicate.Head.RelAtom(sym, ts, loc)
-    case SimplifiedAst.Predicate.Head.LatAtom(sym, terms, loc) =>
+      FinalAst.Predicate.Head.RelAtom(baseOpt, sym, ts, loc)
+    case SimplifiedAst.Predicate.Head.LatAtom(baseOpt, sym, terms, loc) =>
       val ts = terms.map(t => visitHeadTerm(t, m))
-      FinalAst.Predicate.Head.LatAtom(sym, ts, loc)
+      FinalAst.Predicate.Head.LatAtom(baseOpt, sym, ts, loc)
   }
 
   private def visitBodyPredicate(p0: SimplifiedAst.Predicate.Body, m: TopLevel)(implicit flix: Flix): FinalAst.Predicate.Body = p0 match {
-    case SimplifiedAst.Predicate.Body.RelAtom(sym, polarity, terms, loc) =>
+    case SimplifiedAst.Predicate.Body.RelAtom(baseOpt, sym, polarity, terms, loc) =>
       val ts = terms.map(t => visitBodyTerm(t, m))
       val index2var = getIndex2VarTemporaryToBeRemoved(ts)
-      FinalAst.Predicate.Body.RelAtom(sym, polarity, ts, index2var, loc)
+      FinalAst.Predicate.Body.RelAtom(baseOpt, sym, polarity, ts, index2var, loc)
 
-    case SimplifiedAst.Predicate.Body.LatAtom(sym, polarity, terms, loc) =>
+    case SimplifiedAst.Predicate.Body.LatAtom(baseOpt, sym, polarity, terms, loc) =>
       val ts = terms.map(t => visitBodyTerm(t, m))
       val index2var = getIndex2VarTemporaryToBeRemoved(ts)
-      FinalAst.Predicate.Body.LatAtom(sym, polarity, ts, index2var, loc)
+      FinalAst.Predicate.Body.LatAtom(baseOpt, sym, polarity, ts, index2var, loc)
 
     case SimplifiedAst.Predicate.Body.Filter(sym, terms, loc) =>
       val ts = terms.map(t => visitBodyTerm(t, m))
@@ -414,16 +413,16 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
   }
 
   private def visitHeadTerm(t0: SimplifiedAst.Term.Head, m: TopLevel)(implicit flix: Flix): FinalAst.Term.Head = t0 match {
-    case SimplifiedAst.Term.Head.FreeVar(sym, tpe, loc) => FinalAst.Term.Head.FreeVar(sym, tpe, loc)
-    case SimplifiedAst.Term.Head.BoundVar(sym, tpe, loc) => FinalAst.Term.Head.BoundVar(sym, tpe, loc)
+    case SimplifiedAst.Term.Head.QuantVar(sym, tpe, loc) => FinalAst.Term.Head.QuantVar(sym, tpe, loc)
+    case SimplifiedAst.Term.Head.CapturedVar(sym, tpe, loc) => FinalAst.Term.Head.CapturedVar(sym, tpe, loc)
     case SimplifiedAst.Term.Head.Lit(lit, tpe, loc) => FinalAst.Term.Head.Lit(lit2symTemporaryToBeRemoved(lit, m), tpe, loc)
     case SimplifiedAst.Term.Head.App(sym, args, tpe, loc) => FinalAst.Term.Head.App(sym, args, tpe, loc)
   }
 
   private def visitBodyTerm(t0: SimplifiedAst.Term.Body, m: TopLevel)(implicit flix: Flix): FinalAst.Term.Body = t0 match {
     case SimplifiedAst.Term.Body.Wild(tpe, loc) => FinalAst.Term.Body.Wild(tpe, loc)
-    case SimplifiedAst.Term.Body.FreeVar(sym, tpe, loc) => FinalAst.Term.Body.FreeVar(sym, tpe, loc)
-    case SimplifiedAst.Term.Body.BoundVar(sym, tpe, loc) => FinalAst.Term.Body.BoundVar(sym, tpe, loc)
+    case SimplifiedAst.Term.Body.QuantVar(sym, tpe, loc) => FinalAst.Term.Body.QuantVar(sym, tpe, loc)
+    case SimplifiedAst.Term.Body.CapturedVar(sym, tpe, loc) => FinalAst.Term.Body.CapturedVar(sym, tpe, loc)
     case SimplifiedAst.Term.Body.Lit(lit, tpe, loc) => FinalAst.Term.Body.Lit(lit2symTemporaryToBeRemoved(lit, m), tpe, loc)
   }
 
@@ -453,7 +452,7 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
     var i = 0
     while (i < r.length) {
       ts(i) match {
-        case FinalAst.Term.Body.FreeVar(sym, _, _) =>
+        case FinalAst.Term.Body.QuantVar(sym, _, _) =>
           r(i) = sym
         case _ => // nop
       }

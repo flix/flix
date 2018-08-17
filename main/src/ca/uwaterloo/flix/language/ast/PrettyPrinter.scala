@@ -25,9 +25,9 @@ object PrettyPrinter {
   def fmt(f: FinalAst.Constraint, sb: StringBuilder): StringBuilder = f.head match {
     case FinalAst.Predicate.Head.True(loc) => sb.append("true")
     case FinalAst.Predicate.Head.False(loc) => sb.append("false")
-    case FinalAst.Predicate.Head.RelAtom(sym, terms, loc) =>
+    case FinalAst.Predicate.Head.RelAtom(baseOpt, sym, terms, loc) =>
       sb.append(sym).append("(").append(terms.map(t => fmt(t, new StringBuilder)).mkString(", ")).append(").")
-    case FinalAst.Predicate.Head.LatAtom(sym, terms, loc) =>
+    case FinalAst.Predicate.Head.LatAtom(baseOpt, sym, terms, loc) =>
       sb.append(sym).append("(").append(terms.map(t => fmt(t, new StringBuilder)).mkString(", ")).append(").")
   }
 
@@ -35,8 +35,8 @@ object PrettyPrinter {
     * Returns a string representation of the given term.
     */
   def fmt(t: FinalAst.Term.Head, sb: StringBuilder): StringBuilder = t match {
-    case FinalAst.Term.Head.FreeVar(sym, tpe, loc) => sb.append(sym.toString)
-    case FinalAst.Term.Head.BoundVar(sym, tpe, loc) => sb.append(sym.toString)
+    case FinalAst.Term.Head.QuantVar(sym, tpe, loc) => sb.append(sym.toString)
+    case FinalAst.Term.Head.CapturedVar(sym, tpe, loc) => sb.append(sym.toString)
     case FinalAst.Term.Head.Lit(sym, tpe, loc) => sb.append(sym.toString)
     case FinalAst.Term.Head.App(name, args, tpe, loc) => ???
   }

@@ -435,16 +435,16 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     def visitHeadPred(p0: Predicate.Head): Predicate.Head = p0 match {
       case Predicate.Head.True(loc) => p0
       case Predicate.Head.False(loc) => p0
-      case Predicate.Head.RelAtom(sym, terms, loc) => Predicate.Head.RelAtom(sym, terms map visitHeadTerm, loc)
-      case Predicate.Head.LatAtom(sym, terms, loc) => Predicate.Head.LatAtom(sym, terms map visitHeadTerm, loc)
+      case Predicate.Head.RelAtom(baseOpt, sym, terms, loc) => Predicate.Head.RelAtom(baseOpt, sym, terms map visitHeadTerm, loc)
+      case Predicate.Head.LatAtom(baseOpt, sym, terms, loc) => Predicate.Head.LatAtom(baseOpt, sym, terms map visitHeadTerm, loc)
     }
 
     /**
       * Performs intra-procedural optimization on the terms of the given body predicate `p0`.
       */
     def visitBodyPred(p0: Predicate.Body): Predicate.Body = p0 match {
-      case Predicate.Body.RelAtom(sym, polarity, terms, loc) => Predicate.Body.RelAtom(sym, polarity, terms map visitBodyTerm, loc)
-      case Predicate.Body.LatAtom(sym, polarity, terms, loc) => Predicate.Body.LatAtom(sym, polarity, terms map visitBodyTerm, loc)
+      case Predicate.Body.RelAtom(baseOpt, sym, polarity, terms, loc) => Predicate.Body.RelAtom(baseOpt, sym, polarity, terms map visitBodyTerm, loc)
+      case Predicate.Body.LatAtom(baseOpt, sym, polarity, terms, loc) => Predicate.Body.LatAtom(baseOpt, sym, polarity, terms map visitBodyTerm, loc)
       case Predicate.Body.Filter(sym, terms, loc) => Predicate.Body.Filter(sym, terms map visitBodyTerm, loc)
       case Predicate.Body.Functional(sym, term, loc) => Predicate.Body.Functional(sym, visitHeadTerm(term), loc)
     }
@@ -453,8 +453,8 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       * Performs intra-procedural optimization on the given head term `t0`.
       */
     def visitHeadTerm(h0: Term.Head): Term.Head = h0 match {
-      case Term.Head.FreeVar(sym, tpe, loc) => Term.Head.FreeVar(sym, tpe, loc)
-      case Term.Head.BoundVar(sym, tpe, loc) => Term.Head.BoundVar(sym, tpe, loc)
+      case Term.Head.QuantVar(sym, tpe, loc) => Term.Head.QuantVar(sym, tpe, loc)
+      case Term.Head.CapturedVar(sym, tpe, loc) => Term.Head.CapturedVar(sym, tpe, loc)
       case Term.Head.Lit(lit, tpe, loc) => Term.Head.Lit(visitExp(lit, Map.empty), tpe, loc)
       case Term.Head.App(sym, args, tpe, loc) => Term.Head.App(sym, args, tpe, loc)
     }
@@ -464,8 +464,8 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       */
     def visitBodyTerm(b0: Term.Body): Term.Body = b0 match {
       case Term.Body.Wild(tpe, loc) => Term.Body.Wild(tpe, loc)
-      case Term.Body.FreeVar(sym, tpe, loc) => Term.Body.FreeVar(sym, tpe, loc)
-      case Term.Body.BoundVar(sym, tpe, loc) => Term.Body.BoundVar(sym, tpe, loc)
+      case Term.Body.QuantVar(sym, tpe, loc) => Term.Body.QuantVar(sym, tpe, loc)
+      case Term.Body.CapturedVar(sym, tpe, loc) => Term.Body.CapturedVar(sym, tpe, loc)
       case Term.Body.Lit(exp, tpe, loc) => Term.Body.Lit(visitExp(exp, Map.empty), tpe, loc)
     }
 

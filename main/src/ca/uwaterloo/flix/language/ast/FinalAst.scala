@@ -247,9 +247,9 @@ object FinalAst {
 
       case class False(loc: SourceLocation) extends FinalAst.Predicate.Head
 
-      case class RelAtom(sym: Symbol.RelSym, terms: List[FinalAst.Term.Head], loc: SourceLocation) extends FinalAst.Predicate.Head
+      case class RelAtom(base: Option[Symbol.VarSym], sym: Symbol.RelSym, terms: List[FinalAst.Term.Head], loc: SourceLocation) extends FinalAst.Predicate.Head
 
-      case class LatAtom(sym: Symbol.LatSym, terms: List[FinalAst.Term.Head], loc: SourceLocation) extends FinalAst.Predicate.Head
+      case class LatAtom(base: Option[Symbol.VarSym], sym: Symbol.LatSym, terms: List[FinalAst.Term.Head], loc: SourceLocation) extends FinalAst.Predicate.Head
 
     }
 
@@ -257,9 +257,9 @@ object FinalAst {
 
     object Body {
 
-      case class RelAtom(sym: Symbol.RelSym, polarity: Ast.Polarity, terms: List[FinalAst.Term.Body], index2sym: List[Symbol.VarSym], loc: SourceLocation) extends FinalAst.Predicate.Body
+      case class RelAtom(base: Option[Symbol.VarSym], sym: Symbol.RelSym, polarity: Ast.Polarity, terms: List[FinalAst.Term.Body], index2sym: List[Symbol.VarSym], loc: SourceLocation) extends FinalAst.Predicate.Body
 
-      case class LatAtom(sym: Symbol.LatSym, polarity: Ast.Polarity, terms: List[FinalAst.Term.Body], index2sym: List[Symbol.VarSym], loc: SourceLocation) extends FinalAst.Predicate.Body
+      case class LatAtom(base: Option[Symbol.VarSym], sym: Symbol.LatSym, polarity: Ast.Polarity, terms: List[FinalAst.Term.Body], index2sym: List[Symbol.VarSym], loc: SourceLocation) extends FinalAst.Predicate.Body
 
       case class Filter(sym: Symbol.DefnSym, terms: List[FinalAst.Term.Body], loc: SourceLocation) extends FinalAst.Predicate.Body
 
@@ -275,9 +275,9 @@ object FinalAst {
 
     object Head {
 
-      case class FreeVar(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends FinalAst.Term.Head
+      case class QuantVar(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends FinalAst.Term.Head
 
-      case class BoundVar(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends FinalAst.Term.Head
+      case class CapturedVar(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends FinalAst.Term.Head
 
       case class Lit(sym: Symbol.DefnSym, tpe: Type, loc: SourceLocation) extends FinalAst.Term.Head
 
@@ -291,9 +291,9 @@ object FinalAst {
 
       case class Wild(tpe: Type, loc: SourceLocation) extends FinalAst.Term.Body
 
-      case class FreeVar(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends FinalAst.Term.Body
+      case class QuantVar(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends FinalAst.Term.Body
 
-      case class BoundVar(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends FinalAst.Term.Body
+      case class CapturedVar(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends FinalAst.Term.Body
 
       case class Lit(sym: Symbol.DefnSym, tpe: Type, loc: SourceLocation) extends FinalAst.Term.Body
 

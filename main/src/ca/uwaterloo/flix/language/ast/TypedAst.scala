@@ -318,9 +318,9 @@ object TypedAst {
 
       case class False(loc: SourceLocation) extends TypedAst.Predicate.Head
 
-      case class RelAtom(sym: Symbol.RelSym, terms: List[TypedAst.Expression], loc: SourceLocation) extends TypedAst.Predicate.Head
+      case class RelAtom(base: Option[Symbol.VarSym], sym: Symbol.RelSym, terms: List[TypedAst.Expression], loc: SourceLocation) extends TypedAst.Predicate.Head
 
-      case class LatAtom(sym: Symbol.LatSym, terms: List[TypedAst.Expression], loc: SourceLocation) extends TypedAst.Predicate.Head
+      case class LatAtom(base: Option[Symbol.VarSym], sym: Symbol.LatSym, terms: List[TypedAst.Expression], loc: SourceLocation) extends TypedAst.Predicate.Head
 
     }
 
@@ -328,9 +328,9 @@ object TypedAst {
 
     object Body {
 
-      case class RelAtom(sym: Symbol.RelSym, polarity: Ast.Polarity, terms: List[TypedAst.Pattern], loc: SourceLocation) extends TypedAst.Predicate.Body
+      case class RelAtom(base: Option[Symbol.VarSym], sym: Symbol.RelSym, polarity: Ast.Polarity, terms: List[TypedAst.Pattern], loc: SourceLocation) extends TypedAst.Predicate.Body
 
-      case class LatAtom(sym: Symbol.LatSym, polarity: Ast.Polarity, terms: List[TypedAst.Pattern], loc: SourceLocation) extends TypedAst.Predicate.Body
+      case class LatAtom(base: Option[Symbol.VarSym], sym: Symbol.LatSym, polarity: Ast.Polarity, terms: List[TypedAst.Pattern], loc: SourceLocation) extends TypedAst.Predicate.Body
 
       case class Filter(sym: Symbol.DefnSym, terms: List[TypedAst.Expression], loc: SourceLocation) extends TypedAst.Predicate.Body
 
