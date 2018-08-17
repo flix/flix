@@ -144,8 +144,8 @@ object Uncurrier extends Phase[Root, Root] {
     * Uncurries all definitions inside the given head term `t`.
     */
   def visitHeadTerm(t: Term.Head, newDefs: TopLevel, root: Root)(implicit flix: Flix): Term.Head = t match {
-    case Term.Head.FreeVar(sym, tpe, loc) => t
-    case Term.Head.BoundVar(sym, tpe, loc) => t
+    case Term.Head.QuantVar(sym, tpe, loc) => t
+    case Term.Head.CapturedVar(sym, tpe, loc) => t
     case Term.Head.Lit(lit, tpe, loc) => t
     case Term.Head.App(sym, terms, tpe, loc) => terms match {
       case Nil => t

@@ -413,16 +413,16 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
   }
 
   private def visitHeadTerm(t0: SimplifiedAst.Term.Head, m: TopLevel)(implicit flix: Flix): FinalAst.Term.Head = t0 match {
-    case SimplifiedAst.Term.Head.FreeVar(sym, tpe, loc) => FinalAst.Term.Head.FreeVar(sym, tpe, loc)
-    case SimplifiedAst.Term.Head.BoundVar(sym, tpe, loc) => FinalAst.Term.Head.BoundVar(sym, tpe, loc)
+    case SimplifiedAst.Term.Head.QuantVar(sym, tpe, loc) => FinalAst.Term.Head.QuantVar(sym, tpe, loc)
+    case SimplifiedAst.Term.Head.CapturedVar(sym, tpe, loc) => FinalAst.Term.Head.CapturedVar(sym, tpe, loc)
     case SimplifiedAst.Term.Head.Lit(lit, tpe, loc) => FinalAst.Term.Head.Lit(lit2symTemporaryToBeRemoved(lit, m), tpe, loc)
     case SimplifiedAst.Term.Head.App(sym, args, tpe, loc) => FinalAst.Term.Head.App(sym, args, tpe, loc)
   }
 
   private def visitBodyTerm(t0: SimplifiedAst.Term.Body, m: TopLevel)(implicit flix: Flix): FinalAst.Term.Body = t0 match {
     case SimplifiedAst.Term.Body.Wild(tpe, loc) => FinalAst.Term.Body.Wild(tpe, loc)
-    case SimplifiedAst.Term.Body.FreeVar(sym, tpe, loc) => FinalAst.Term.Body.FreeVar(sym, tpe, loc)
-    case SimplifiedAst.Term.Body.BoundVar(sym, tpe, loc) => FinalAst.Term.Body.BoundVar(sym, tpe, loc)
+    case SimplifiedAst.Term.Body.QuantVar(sym, tpe, loc) => FinalAst.Term.Body.QuantVar(sym, tpe, loc)
+    case SimplifiedAst.Term.Body.CapturedVar(sym, tpe, loc) => FinalAst.Term.Body.CapturedVar(sym, tpe, loc)
     case SimplifiedAst.Term.Body.Lit(lit, tpe, loc) => FinalAst.Term.Body.Lit(lit2symTemporaryToBeRemoved(lit, m), tpe, loc)
   }
 
@@ -452,7 +452,7 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
     var i = 0
     while (i < r.length) {
       ts(i) match {
-        case FinalAst.Term.Body.FreeVar(sym, _, _) =>
+        case FinalAst.Term.Body.QuantVar(sym, _, _) =>
           r(i) = sym
         case _ => // nop
       }

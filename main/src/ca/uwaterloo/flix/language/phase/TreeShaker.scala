@@ -179,8 +179,8 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       */
     def visitHeadTerm(h0: SimplifiedAst.Term.Head): Set[Symbol.DefnSym] = {
       h0 match {
-        case SimplifiedAst.Term.Head.FreeVar(sym, tpe, loc) => Set.empty
-        case SimplifiedAst.Term.Head.BoundVar(sym, tpe, loc) => Set.empty
+        case SimplifiedAst.Term.Head.QuantVar(sym, tpe, loc) => Set.empty
+        case SimplifiedAst.Term.Head.CapturedVar(sym, tpe, loc) => Set.empty
         case SimplifiedAst.Term.Head.Lit(lit, tpe, loc) => visitExp(lit)
         case SimplifiedAst.Term.Head.App(sym, args, tpe, loc) => Set(sym)
       }
@@ -192,8 +192,8 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     def visitBodyTerm(b0: SimplifiedAst.Term.Body): Set[Symbol.DefnSym] = {
       b0 match {
         case SimplifiedAst.Term.Body.Wild(tpe, loc) => Set.empty
-        case SimplifiedAst.Term.Body.FreeVar(sym, tpe, loc) => Set.empty
-        case SimplifiedAst.Term.Body.BoundVar(sym, tpe, loc) => Set.empty
+        case SimplifiedAst.Term.Body.QuantVar(sym, tpe, loc) => Set.empty
+        case SimplifiedAst.Term.Body.CapturedVar(sym, tpe, loc) => Set.empty
         case SimplifiedAst.Term.Body.Lit(exp, tpe, loc) => visitExp(exp)
       }
     }

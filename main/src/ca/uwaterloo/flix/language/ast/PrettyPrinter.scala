@@ -35,8 +35,8 @@ object PrettyPrinter {
     * Returns a string representation of the given term.
     */
   def fmt(t: FinalAst.Term.Head, sb: StringBuilder): StringBuilder = t match {
-    case FinalAst.Term.Head.FreeVar(sym, tpe, loc) => sb.append(sym.toString)
-    case FinalAst.Term.Head.BoundVar(sym, tpe, loc) => sb.append(sym.toString)
+    case FinalAst.Term.Head.QuantVar(sym, tpe, loc) => sb.append(sym.toString)
+    case FinalAst.Term.Head.CapturedVar(sym, tpe, loc) => sb.append(sym.toString)
     case FinalAst.Term.Head.Lit(sym, tpe, loc) => sb.append(sym.toString)
     case FinalAst.Term.Head.App(name, args, tpe, loc) => ???
   }

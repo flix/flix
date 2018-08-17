@@ -574,9 +574,9 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case TypedAst.Expression.Var(sym, tpe, eff, loc) =>
         val isQuantified = cparams.exists(p => p.sym == sym)
         if (isQuantified)
-          SimplifiedAst.Term.Head.FreeVar(sym, tpe, loc)
+          SimplifiedAst.Term.Head.QuantVar(sym, tpe, loc)
         else
-          SimplifiedAst.Term.Head.BoundVar(sym, tpe, loc)
+          SimplifiedAst.Term.Head.CapturedVar(sym, tpe, loc)
 
       case TypedAst.Expression.Apply(TypedAst.Expression.Def(sym, _, _, _), exp, tpe, eff, loc) if exp.isInstanceOf[TypedAst.Expression.Var] =>
         val v = exp.asInstanceOf[TypedAst.Expression.Var]
@@ -732,9 +732,9 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case TypedAst.Pattern.Var(sym, tpe, loc) =>
         val isQuantified = cparams.exists(p => p.sym == sym)
         if (isQuantified)
-          SimplifiedAst.Term.Body.FreeVar(sym, tpe, loc)
+          SimplifiedAst.Term.Body.QuantVar(sym, tpe, loc)
         else
-          SimplifiedAst.Term.Body.BoundVar(sym, tpe, loc)
+          SimplifiedAst.Term.Body.CapturedVar(sym, tpe, loc)
 
       case _ => if (isPatLiteral(p))
         SimplifiedAst.Term.Body.Lit(pat2exp(p), p.tpe, p.loc)
@@ -750,9 +750,9 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case TypedAst.Expression.Var(sym, tpe, eff, loc) =>
         val isQuantified = cparams.exists(p => p.sym == sym)
         if (isQuantified)
-          SimplifiedAst.Term.Body.FreeVar(sym, tpe, loc)
+          SimplifiedAst.Term.Body.QuantVar(sym, tpe, loc)
         else
-          SimplifiedAst.Term.Body.BoundVar(sym, tpe, loc)
+          SimplifiedAst.Term.Body.CapturedVar(sym, tpe, loc)
 
       case _ => SimplifiedAst.Term.Body.Lit(visitExp(e), e.tpe, e.loc) // TODO: Only certain expressions should be allow here.
     }

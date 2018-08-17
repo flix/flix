@@ -881,7 +881,7 @@ object Interpreter {
     //
     // Free Variables (i.e. variables that are quantified over in the constraint).
     //
-    case FinalAst.Term.Head.FreeVar(sym, _, _) =>
+    case FinalAst.Term.Head.QuantVar(sym, _, _) =>
       // Lookup the corresponding symbol in the cache.
 
       new api.term.VarTerm(cache.getVarSym(sym))
@@ -889,7 +889,7 @@ object Interpreter {
     //
     // Bound Variables (i.e. variables that have a value in the local environment).
     //
-    case FinalAst.Term.Head.BoundVar(sym, tpe, _) =>
+    case FinalAst.Term.Head.CapturedVar(sym, tpe, _) =>
       // Retrieve the value from the local environment and wrap it in a proxy object.
       val v = wrapValueInProxyObject(env0(sym.toString), tpe)
 
@@ -925,14 +925,14 @@ object Interpreter {
     //
     // Free Variables (i.e. variables that are quantified over in the constraint).
     //
-    case FinalAst.Term.Body.FreeVar(sym, _, _) =>
+    case FinalAst.Term.Body.QuantVar(sym, _, _) =>
       // Lookup the corresponding symbol in the cache.
       new api.term.VarTerm(cache.getVarSym(sym))
 
     //
     // Bound Variables (i.e. variables that have a value in the local environment).
     //
-    case FinalAst.Term.Body.BoundVar(sym, tpe, _) =>
+    case FinalAst.Term.Body.CapturedVar(sym, tpe, _) =>
       // Retrieve the value from the local environment and wrap it in a proxy object.
       val v = wrapValueInProxyObject(env0(sym.toString), tpe)
 

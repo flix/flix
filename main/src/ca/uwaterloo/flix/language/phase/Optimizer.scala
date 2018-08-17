@@ -453,8 +453,8 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       * Performs intra-procedural optimization on the given head term `t0`.
       */
     def visitHeadTerm(h0: Term.Head): Term.Head = h0 match {
-      case Term.Head.FreeVar(sym, tpe, loc) => Term.Head.FreeVar(sym, tpe, loc)
-      case Term.Head.BoundVar(sym, tpe, loc) => Term.Head.BoundVar(sym, tpe, loc)
+      case Term.Head.QuantVar(sym, tpe, loc) => Term.Head.QuantVar(sym, tpe, loc)
+      case Term.Head.CapturedVar(sym, tpe, loc) => Term.Head.CapturedVar(sym, tpe, loc)
       case Term.Head.Lit(lit, tpe, loc) => Term.Head.Lit(visitExp(lit, Map.empty), tpe, loc)
       case Term.Head.App(sym, args, tpe, loc) => Term.Head.App(sym, args, tpe, loc)
     }
@@ -464,8 +464,8 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       */
     def visitBodyTerm(b0: Term.Body): Term.Body = b0 match {
       case Term.Body.Wild(tpe, loc) => Term.Body.Wild(tpe, loc)
-      case Term.Body.FreeVar(sym, tpe, loc) => Term.Body.FreeVar(sym, tpe, loc)
-      case Term.Body.BoundVar(sym, tpe, loc) => Term.Body.BoundVar(sym, tpe, loc)
+      case Term.Body.QuantVar(sym, tpe, loc) => Term.Body.QuantVar(sym, tpe, loc)
+      case Term.Body.CapturedVar(sym, tpe, loc) => Term.Body.CapturedVar(sym, tpe, loc)
       case Term.Body.Lit(exp, tpe, loc) => Term.Body.Lit(visitExp(exp, Map.empty), tpe, loc)
     }
 

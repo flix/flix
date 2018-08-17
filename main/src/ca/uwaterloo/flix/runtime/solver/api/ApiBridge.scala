@@ -142,8 +142,8 @@ object ApiBridge {
     }
 
   private def visitHeadTerm(t0: FinalAst.Term.Head)(implicit root: FinalAst.Root, cache: SymbolCache, flix: Flix): Term = t0 match {
-    case FinalAst.Term.Head.FreeVar(sym, _, _) => new VarTerm(visitVarSym(sym))
-    case FinalAst.Term.Head.BoundVar(sym, _, _) => ???
+    case FinalAst.Term.Head.QuantVar(sym, _, _) => new VarTerm(visitVarSym(sym))
+    case FinalAst.Term.Head.CapturedVar(sym, _, _) => ???
     case FinalAst.Term.Head.Lit(sym, _, _) => new LitTerm(() => Linker.link(sym, root).invoke(Array.emptyObjectArray))
     case FinalAst.Term.Head.App(sym, args, _, _) =>
       val f = (args: Array[AnyRef]) => Linker.link(sym, root).invoke(args)
@@ -153,8 +153,8 @@ object ApiBridge {
 
   private def visitBodyTerm(t0: FinalAst.Term.Body)(implicit root: FinalAst.Root, cache: SymbolCache, flix: Flix): Term = t0 match {
     case FinalAst.Term.Body.Wild(_, _) => new WildTerm()
-    case FinalAst.Term.Body.FreeVar(sym, _, _) => new VarTerm(visitVarSym(sym))
-    case FinalAst.Term.Body.BoundVar(sym, _, _) => ???
+    case FinalAst.Term.Body.QuantVar(sym, _, _) => new VarTerm(visitVarSym(sym))
+    case FinalAst.Term.Body.CapturedVar(sym, _, _) => ???
     case FinalAst.Term.Body.Lit(sym, _, _) => new LitTerm(() => Linker.link(sym, root).invoke(Array.emptyObjectArray))
   }
 
