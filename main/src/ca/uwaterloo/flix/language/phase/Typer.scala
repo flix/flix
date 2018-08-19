@@ -108,15 +108,6 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     }
 
     // TODO: DOC
-    def infer(c0: ResolvedAst.Constraint, program: ResolvedAst.Program)(implicit genSym: GenSym): InferMonad[Type] = c0 match {
-      case ResolvedAst.Constraint(cparams, head0, body0, loc) =>
-        for {
-          headType <- Predicates.infer(head0, program)
-          bodyTypes <- seqM(body0.map(b => Predicates.infer(b, program)))
-        } yield Type.ConstraintSet
-    }
-
-    // TODO: DOC
     def reassemble(c0: ResolvedAst.Constraint, program: ResolvedAst.Program, subst0: Substitution): TypedAst.Constraint = c0 match {
       case ResolvedAst.Constraint(cparams0, head0, body0, loc) =>
         // Unification was successful. Reassemble the head and body predicates.
@@ -1148,37 +1139,53 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
          * Constraint expression.
          */
         case ResolvedAst.Expression.Constraint(cons, tvar, loc) =>
-          // TODO
+          val ResolvedAst.Constraint(cparams, head0, body0, loc) = cons
+          //
+          //  A_0 : tpe_0    A_1 : tpe_1, ..., A_n : tpe_n
+          //  ---------------------------------------------------
+          //  A_0 :- A_1, ..., A_n : tpe_1 : ConstraintSet[tpe_0]
+          //
           for {
-            _ <- Constraints.infer(cons, program)
-            resultType <- unifyM(tvar, Type.ConstraintSet, loc)
+            headPredicateType <- Predicates.infer(head0, program)
+            bodyPredicateTypes <- seqM(body0.map(b => Predicates.infer(b, program)))
+            resultType <- unifyM(tvar, Type.mkConstraintSet(headPredicateType), loc)
           } yield resultType
 
-        /*
-         * Constraint Union expression.
-         */
+        //
+        //  exp1 : ConstraintSet[a]    exp2 : ConstraintSet[a]
+        //  --------------------------------------------------
+        //  exp1 || exp2 : ConstraintSet[a]
+        //
         case ResolvedAst.Expression.ConstraintUnion(exp1, exp2, tvar, loc) =>
           for {
             tpe1 <- visitExp(exp1)
             tpe2 <- visitExp(exp2)
-            resultType <- unifyM(tvar, Type.ConstraintSet, tpe1, tpe2, loc)
+            resultType <- unifyM(tvar, Type.mkConstraintSet(Type.freshTypeVar()), tpe1, tpe2, loc)
           } yield resultType
 
-        /*
-         * FixpointSolve expression.
-         */
+        //
+        //  exp : ConstraintSet[Solvable]
+        //  -----------------------------
+        //  check exp : Unit
+        //
         case ResolvedAst.Expression.FixpointSolve(exp, tvar, loc) =>
+          // TODO: Add support for records to deal with return type?
+          // TODO: Temporary use string as return type?
           for {
-            tpe <- visitExp(exp)
-            resultType <- unifyM(tvar, Type.Unit, loc) // TODO
+            inferredType <- visitExp(exp)
+            expectedType <- unifyM(inferredType, Type.mkConstraintSet(Type.Solvable), loc)
+            resultType <- unifyM(tvar, Type.Unit, loc)
           } yield resultType
 
-        /*
-          * FixpointCheck expression.
-          */
+        //
+        //  exp : ConstraintSet[Checkable]
+        //  ------------------------------
+        //  check exp : Bool
+        //
         case ResolvedAst.Expression.FixpointCheck(exp, tvar, loc) =>
           for {
-            tpe <- visitExp(exp)
+            inferredType <- visitExp(exp)
+            expectedType <- unifyM(inferredType, Type.mkConstraintSet(Type.Checkable), loc)
             resultType <- unifyM(tvar, Type.Bool, loc)
           } yield resultType
 
@@ -1699,28 +1706,45 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     /**
       * Infers the type of the given head predicate.
       */
-    def infer(head: ResolvedAst.Predicate.Head, program: ResolvedAst.Program)(implicit genSym: GenSym): InferMonad[List[Type]] = head match {
-      case ResolvedAst.Predicate.Head.True(loc) => Unification.liftM(Nil)
+    // TODO: We might want to introduce some notion of predicate type?
+    def infer(head: ResolvedAst.Predicate.Head, program: ResolvedAst.Program)(implicit genSym: GenSym): InferMonad[Type] = head match {
+      //
+      // --------
+      // true : a
+      //
+      case ResolvedAst.Predicate.Head.True(loc) => Unification.liftM(Type.freshTypeVar())
 
-      case ResolvedAst.Predicate.Head.False(loc) => Unification.liftM(Nil)
+      //
+      // -----------------
+      // false : Checkable
+      //
+      case ResolvedAst.Predicate.Head.False(loc) => Unification.liftM(Type.Checkable)
 
+      //
+      // -----------
+      // P(x...) : a
+      //
       case ResolvedAst.Predicate.Head.RelAtom(baseOpt, sym, terms, loc) =>
         getRelationSignature(sym, program) match {
           case Ok(declaredTypes) =>
             for {
               _ <- baseOpt.map(baseSym => unifyM(baseSym.tvar, Type.Relation(sym, Kind.Star), loc)).getOrElse(liftM[Unit](()))
               ts <- Terms.Head.typecheck(terms, declaredTypes, loc, program)
-            } yield ts
+            } yield Type.freshTypeVar()
           case Err(e) => failM(e)
         }
 
+      //
+      // -----------
+      // P(x...) : a
+      //
       case ResolvedAst.Predicate.Head.LatAtom(baseOpt, sym, terms, loc) =>
         getLatticeSignature(sym, program) match {
           case Ok(declaredTypes) =>
             for {
               _ <- baseOpt.map(baseSym => unifyM(baseSym.tvar, Type.Lattice(sym, Kind.Star), loc)).getOrElse(liftM[Unit](()))
               ts <- Terms.Head.typecheck(terms, declaredTypes, loc, program)
-            } yield ts
+            } yield Type.freshTypeVar()
           case Err(e) => failM(e)
         }
     }
