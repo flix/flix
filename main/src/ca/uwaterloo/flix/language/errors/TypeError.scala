@@ -117,13 +117,16 @@ object TypeError {
     case (Type.BigInt, Type.BigInt) => TypeDiff.Star(TypeConstructor.Other)
     case (Type.Str, Type.Str) => TypeDiff.Star(TypeConstructor.Other)
     case (Type.Array, Type.Array) => TypeDiff.Star(TypeConstructor.Other)
-    case (Type.Vector, Type.Vector)  => TypeDiff.Star(TypeConstructor.Other)
+    case (Type.Vector, Type.Vector) => TypeDiff.Star(TypeConstructor.Other)
     case (Type.Zero, Type.Zero) => TypeDiff.Star(TypeConstructor.Other)
     case (Type.Succ(n1, t1), Type.Succ(n2, t2)) => TypeDiff.Star(TypeConstructor.Other)
     case (Type.Native(clazz1), Type.Native(clazz2)) => TypeDiff.Star(TypeConstructor.Other)
     case (Type.Arrow(l1), Type.Arrow(l2)) if l1 == l2 => TypeDiff.Star(TypeConstructor.Arrow)
     case (Type.Enum(name1, kind1), Type.Enum(name2, kind2)) if name1 == name2 => TypeDiff.Star(TypeConstructor.Enum(name1.name))
     case (Type.Tuple(l1), Type.Tuple(l2)) if l1 == l2 => TypeDiff.Star(TypeConstructor.Tuple)
+    case (Type.ConstraintSet, Type.ConstraintSet) => TypeDiff.Star(TypeConstructor.Other)
+    case (Type.Solvable, Type.Solvable) => TypeDiff.Star(TypeConstructor.Other)
+    case (Type.Checkable, Type.Checkable) => TypeDiff.Star(TypeConstructor.Other)
     case (Type.Apply(t11, t12), Type.Apply(t21, t22)) =>
       (diff(t11, t21), diff(t12, t22)) match {
         case (TypeDiff.Star(_), TypeDiff.Star(_)) => TypeDiff.Star(TypeConstructor.Other)

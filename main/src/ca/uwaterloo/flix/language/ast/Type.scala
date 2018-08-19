@@ -57,6 +57,8 @@ sealed trait Type {
     case Type.Relation(_, _) => Set.empty
     case Type.Lattice(_, _) => Set.empty
     case Type.ConstraintSet => Set.empty
+    case Type.Solvable => Set.empty
+    case Type.Checkable => Set.empty
     case Type.Apply(tpe1, tpe2) => tpe1.typeVars ++ tpe2.typeVars
   }
 
@@ -129,6 +131,14 @@ sealed trait Type {
   }
 
   /**
+    * Returns `true` if `this` type is a constraint set type.
+    */
+  def isConstraintSet: Boolean = typeConstructor match {
+    case Type.ConstraintSet => true
+    case _ => false
+  }
+
+  /**
     * Returns `true` if `this` type is a tuple type.
     */
   def isTuple: Boolean = typeConstructor match {
@@ -180,6 +190,8 @@ sealed trait Type {
     case Type.Relation(sym, _) => sym.toString
     case Type.Lattice(sym, _) => sym.toString
     case Type.ConstraintSet => "ConstraintSet"
+    case Type.Solvable => "Solvable"
+    case Type.Checkable => "Checkable"
     case Type.Tuple(l) => s"Tuple($l)"
     case Type.Apply(tpe1, tpe2) => s"$tpe1[$tpe2]"
   }
@@ -366,9 +378,21 @@ object Type {
   /**
     * A type constructor that represents a constraint set.
     */
-  // TODO: We might need different types depending on whether the constraints contain integrity constraints?
-  // TODO: Will the stratification graph be part of the type system?
   case object ConstraintSet extends Type {
+    def kind: Kind = Kind.Star
+  }
+
+  /**
+    * A phantom type that represents solvable constraint sets (i.e. that contain integrity constraints.)
+    */
+  case object Solvable extends Type {
+    def kind: Kind = Kind.Star
+  }
+
+  /**
+    * A phantom type that represents checkable constraint sets (i.e. that *does not* contain integrity constraints.)
+    */
+  case object Checkable extends Type {
     def kind: Kind = Kind.Star
   }
 
@@ -484,13 +508,17 @@ object Type {
     */
   def mkVector(elmType: Type, len: Type): Type = Apply(Apply(Vector, elmType), len)
 
-
   /**
     * Constructs the set type of A.
     */
   def mkFSet(a: Type): Type = {
     Type.Apply(Type.Enum(Symbol.mkEnumSym("Set"), Kind.Arrow(List(Kind.Star), Kind.Star)), a)
   }
+
+  /**
+    * Returns the constraint set type parameters with the given type `tpe`.
+    */
+  def mkConstraintSet(tpe: Type): Type = Apply(ConstraintSet, tpe)
 
   /**
     * Replaces every free occurrence of a type variable in `typeVars`
@@ -530,6 +558,8 @@ object Type {
       case Type.Relation(sym, kind) => Type.Relation(sym, kind)
       case Type.Lattice(sym, kind) => Type.Lattice(sym, kind)
       case Type.ConstraintSet => Type.ConstraintSet
+      case Type.Solvable => Type.Solvable
+      case Type.Checkable => Type.Checkable
     }
 
     visit(tpe)
@@ -578,6 +608,8 @@ object Type {
           case Type.Native(clazz) => "#" + clazz.getName
           case Type.Ref => "Ref"
           case Type.ConstraintSet => "ConstraintSet"
+          case Type.Solvable => "Solvable"
+          case Type.Checkable => "Checkable"
 
           //
           // Arrow.

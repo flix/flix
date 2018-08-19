@@ -99,6 +99,8 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         case Type.Relation(sym, kind) => Type.Relation(sym, kind)
         case Type.Lattice(sym, kind) => Type.Lattice(sym, kind)
         case Type.ConstraintSet => Type.ConstraintSet
+        case Type.Solvable => Type.Solvable
+        case Type.Checkable => Type.Checkable
         case Type.Apply(tpe1, tpe2) => Type.Apply(apply(tpe1), apply(tpe2))
       }
 
