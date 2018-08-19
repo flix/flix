@@ -1166,7 +1166,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         //
         //  exp : ConstraintSet[Solvable]
         //  -----------------------------
-        //  check exp : Unit
+        //  solve exp : Unit
         //
         case ResolvedAst.Expression.FixpointSolve(exp, tvar, loc) =>
           // TODO: Add support for records to deal with return type?
@@ -1182,6 +1182,8 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         //  ------------------------------
         //  check exp : Bool
         //
+        // TODO: This does not actually enforce that the constraint set must contain an integrity rule.
+        // TODO: It only prevents the case where we try to use both check and solve with the same constraint.
         case ResolvedAst.Expression.FixpointCheck(exp, tvar, loc) =>
           for {
             inferredType <- visitExp(exp)
