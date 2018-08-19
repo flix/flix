@@ -390,7 +390,7 @@ object Type {
   }
 
   /**
-    * A phantom type that represents checkable constraiont sets (i.e. that contain integrity constraints.)
+    * A phantom type that represents checkable constraint sets (i.e. that *does not* contain integrity constraints.)
     */
   case object Checkable extends Type {
     def kind: Kind = Kind.Star
