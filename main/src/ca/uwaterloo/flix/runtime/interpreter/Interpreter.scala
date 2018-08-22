@@ -366,8 +366,7 @@ object Interpreter {
     case Expression.FixpointSolve(exp, tpe, loc) =>
       val cs = cast2constraintset(eval(exp, env0, henv0, lenv0, root))
       val fixpoint = solve(cs)
-      println(fixpoint)
-      Value.Unit
+      fixpoint.toString
 
     //
     // FixpointCheck expressions.

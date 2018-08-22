@@ -37,12 +37,9 @@ class Relation(name: String, attributes: Array[Attribute]) extends Table {
   override def toString: String = {
     val sb = new StringBuilder
 
-    sb.append(s"$name(${indexedRelation.getSize})")
-    sb.append("\n")
-
     // Construct an ASCII table with a column for each attribute.
     val columns = attributes.map(_.getName())
-    val table = new AsciiTable().withCols(columns: _*)
+    val table = new AsciiTable().withTitle(name).withCols(columns: _*)
 
     // Add each row to the ASCII table.
     for (row <- indexedRelation.scan) {

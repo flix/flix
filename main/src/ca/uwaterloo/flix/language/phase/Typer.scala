@@ -1166,7 +1166,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         //
         //  exp : ConstraintSet[Solvable]
         //  -----------------------------
-        //  solve exp : Unit
+        //  solve exp : Str
         //
         case ResolvedAst.Expression.FixpointSolve(exp, tvar, loc) =>
           // TODO: Add support for records to deal with return type?
@@ -1174,7 +1174,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           for {
             inferredType <- visitExp(exp)
             expectedType <- unifyM(inferredType, Type.mkConstraintSet(Type.Solvable), loc)
-            resultType <- unifyM(tvar, Type.Unit, loc)
+            resultType <- unifyM(tvar, Type.Str, loc)
           } yield resultType
 
         //

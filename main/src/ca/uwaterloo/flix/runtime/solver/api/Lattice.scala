@@ -43,13 +43,10 @@ class Lattice(name: String, keys: Array[Attribute], value: Attribute, ops: Latti
   override def toString: String = {
     val sb = new StringBuilder
 
-    sb.append(s"$name(${indexedLattice.getSize})")
-    sb.append("\n")
-
     // Construct an ASCII table with a column for each attribute.
     val attributes = keys.toList ::: value :: Nil
     val columns = attributes.map(_.getName())
-    val table = new AsciiTable().withCols(columns: _*)
+    val table = new AsciiTable().withTitle(name).withCols(columns: _*)
 
     // Add each row to the ASCII table.
     for ((key, value) <- indexedLattice.scan) {

@@ -16,33 +16,49 @@
 
 package ca.uwaterloo.flix.util
 
-import java.io.{PrintStream, PrintWriter}
+import java.io.PrintWriter
 
 /**
- * A class for printing ASCII tables.
- */
+  * A class for printing ASCII tables.
+  */
 class AsciiTable {
 
   /**
-   * The names of the columns in the table.
-   */
+    * The title of the table.
+    */
+  private var title = ""
+
+  /**
+    * The names of the columns in the table.
+    */
   private var columns = List.empty[String]
+
   /**
-   * The rows in the table.
-   */
+    * The rows in the table.
+    */
   private var rows = List.empty[List[String]]
+
   /**
-   * The alignments used for each column.
-   */
+    * The alignments used for each column.
+    */
   private var alignment = List.empty[Align]
+
   /**
-   * A filtering function used to determine what rows to include.
-   */
+    * A filtering function used to determine what rows to include.
+    */
   private var filter = (x: String) => true
 
   /**
-   * Sets the columns of the table.
-   */
+    * Sets the title of the table.
+    */
+  def withTitle(title: String): AsciiTable = {
+    this.title = title
+    this
+  }
+
+  /**
+    * Sets the columns of the table.
+    */
   def withCols(columns: String*): AsciiTable = {
     this.columns = columns.toList
     this.alignment = this.columns.map(x => Align.Left)
@@ -50,8 +66,8 @@ class AsciiTable {
   }
 
   /**
-   * Sets the filter of the table. None is interpreted as no filter.
-   */
+    * Sets the filter of the table. None is interpreted as no filter.
+    */
   def withFilter(pattern: Option[String]): AsciiTable = pattern match {
     case None =>
       this.filter = (x: String) => true
@@ -63,8 +79,8 @@ class AsciiTable {
   }
 
   /**
-   * Adds the given row.
-   */
+    * Adds the given row.
+    */
   def mkRow(row: List[Any]): AsciiTable = {
     rows = row.map(_.toString) :: rows
     alignment = row map {
@@ -78,8 +94,8 @@ class AsciiTable {
   }
 
   /**
-   * Writes the table to the given `stream`.
-   */
+    * Writes the table to the given `stream`.
+    */
   def write(stream: PrintWriter): Unit = {
     val xs = rows
     val ys = columns
@@ -90,6 +106,8 @@ class AsciiTable {
     var numberOfMatchedRows = 0
 
     val w = new PrintWriter(stream)
+    w.println(formatLine(ws))
+    w.println(formatTitle(title, ws.sum + 3 * (ws.length - 1)))
     w.println(formatLine(ws))
     w.println(formatRow(ys, ws, as))
     w.println(formatLine(ws))
@@ -106,15 +124,15 @@ class AsciiTable {
   }
 
   /**
-   * Returns the column widths of a sequence of rows.
-   */
+    * Returns the column widths of a sequence of rows.
+    */
   private def columnWidths(xs: List[List[String]]): List[Int] = (List.empty[Int] /: xs) {
     case (acc, ys) => mergeWidths(acc, columnWidth(ys))
   }
 
   /**
-   * Merge two column widths.
-   */
+    * Merge two column widths.
+    */
   private def mergeWidths(xs: List[Int], ys: List[Int]): List[Int] = (xs, ys) match {
     case (Nil, Nil) => Nil
     case (as, Nil) => as
@@ -123,21 +141,28 @@ class AsciiTable {
   }
 
   /**
-   * Returns the column width of a given row.
-   */
+    * Returns the column width of a given row.
+    */
   private def columnWidth(xs: List[String]): List[Int] = xs.map(x => x.length)
 
   /**
-   * Returns a string corresponding to the horizontal ruler in the table.
-   */
+    * Returns a string corresponding to the horizontal ruler in the table.
+    */
   private def formatLine(ws: List[Int]): String = {
     val cells = ws.map(w => "-" * w)
     "+-" + cells.mkString("-+-") + "-+"
   }
 
   /**
-   * Returns a string which is a formatting of the given row `xs` with widths `ws` and alignments `as`.
-   */
+    * Returns a string which contains the given string in the center.
+    */
+  private def formatTitle(title: String, width: Int): String = {
+    "| " + align(title, width, Align.Middle) + " |"
+  }
+
+  /**
+    * Returns a string which is a formatting of the given row `xs` with widths `ws` and alignments `as`.
+    */
   private def formatRow(xs: List[String], ws: List[Int], as: List[Align]): String = {
     val cells = xs.zip(ws).zip(as).map {
       case ((s, w), a) => align(s, w, a)
@@ -146,8 +171,8 @@ class AsciiTable {
   }
 
   /**
-   * Returns a string of length `w` where the given string `s` is aligned according to `a`.
-   */
+    * Returns a string of length `w` where the given string `s` is aligned according to `a`.
+    */
   private def align(s: String, w: Int, a: Align): String = a match {
     case Align.Left => alignLeft(s, w)
     case Align.Middle => alignCenter(s, w)
@@ -155,43 +180,43 @@ class AsciiTable {
   }
 
   /**
-   * Returns a string of length `w` where the given string `s` is left aligned.
-   */
+    * Returns a string of length `w` where the given string `s` is left aligned.
+    */
   private def alignLeft(s: String, w: Int): String = s + " " * (w - s.length)
 
   /**
-   * Returns a string of length `w` where the given string `s` is aligned in the center.
-   */
+    * Returns a string of length `w` where the given string `s` is aligned in the center.
+    */
   private def alignCenter(s: String, w: Int): String = {
     val v = w - s.length
     " " * (v / 2) + s + " " * (v - v / 2)
   }
 
   /**
-   * Returns a string of length `w` where the given string `s` is right aligned.
-   */
+    * Returns a string of length `w` where the given string `s` is right aligned.
+    */
   private def alignRight(s: String, w: Int): String = " " * (w - s.length) + s
 
   /**
-   * A common super-type for alignment of columns.
-   */
+    * A common super-type for alignment of columns.
+    */
   sealed trait Align
 
   object Align {
 
     /**
-     * Align to the left.
-     */
+      * Align to the left.
+      */
     case object Left extends Align
 
     /**
-     * Align in the middle.
-     */
+      * Align in the middle.
+      */
     case object Middle extends Align
 
     /**
-     * Align to the right.
-     */
+      * Align to the right.
+      */
     case object Right extends Align
 
   }
