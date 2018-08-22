@@ -33,68 +33,80 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
   private type TopLevel = mutable.Map[Symbol.DefnSym, SimplifiedAst.Def]
 
   /**
-    * Performs lambda lifting on all definitions in the AST.
+    * Performs lambda lifting on the given AST `root`.
     */
   def run(root: SimplifiedAst.Root)(implicit flix: Flix): Validation[SimplifiedAst.Root, CompilationError] = flix.phase("LambdaLift") {
-    implicit val _ = flix.genSym
-
     // A mutable map to hold lambdas that are lifted to the top level.
     val m: TopLevel = mutable.Map.empty
 
+    // Definitions.
     val definitions = root.defs.map {
-      case (name, decl) => name -> lift(decl, m)
+      case (sym, decl) => sym -> liftDef(decl, m)
     }
+
+    // Handlers.
     val handlers = root.handlers.map {
-      case (k, v) => k -> lift(v, m)
+      case (sym, handler) => sym -> liftHandler(handler, m)
     }
-    val properties = root.properties.map(p => lift(p, m))
+
+    // Properties.
+    val properties = root.properties.map {
+      property => liftProperty(property, m)
+    }
 
     // Return the updated AST root.
     root.copy(defs = definitions ++ m, handlers = handlers, properties = properties).toSuccess
   }
 
   /**
-    * Performs lambda lifting on the given declaration `decl`.
-    *
-    * The definition's expression is closure converted, and then lifted definitions are added to the mutable map `m`.
-    * The updated definition is then returned.
+    * Performs lambda lifting on the given definition `def0`.
     */
-  private def lift(decl: SimplifiedAst.Def, m: TopLevel)(implicit genSym: GenSym): SimplifiedAst.Def = {
-    val convExp = ClosureConv.visitExp(decl.exp)
-    val liftExp = lift(convExp, m, Some(decl.sym))
-    decl.copy(exp = liftExp)
+  private def liftDef(def0: SimplifiedAst.Def, m: TopLevel)(implicit flix: Flix): SimplifiedAst.Def = {
+    // Closure convert the expression.
+    val convertedExp = ClosureConv.visitExp(def0.exp)
+
+    // Lift the closure converted expression.
+    val liftedExp = liftExp(convertedExp, def0.sym.name, m)
+
+    // Reassemble the definition.
+    def0.copy(exp = liftedExp)
   }
 
   /**
-    * Performs lambda lifting on the given handler `handler`.
-    *
-    * The handler's expression is closure converted, and then the lifted definitions are added to the mutable map `m`.
-    * The updated definition is then returned.
+    * Performs lambda lifting on the given handler `handler0`.
     */
-  private def lift(handler: SimplifiedAst.Handler, m: TopLevel)(implicit genSym: GenSym): SimplifiedAst.Handler = {
-    val convExp = ClosureConv.visitExp(handler.exp)
-    val liftExp = lift(convExp, m, None)
-    handler.copy(exp = liftExp)
+  private def liftHandler(handler0: SimplifiedAst.Handler, m: TopLevel)(implicit flix: Flix): SimplifiedAst.Handler = {
+    // Closure convert the expression.
+    val convertedExp = ClosureConv.visitExp(handler0.exp)
+
+    // Lift the closure converted expression.
+    val liftedExp = liftExp(convertedExp, "handler", m)
+
+    // Reassemble the handler.
+    handler0.copy(exp = liftedExp)
   }
 
   /**
-    * Performs lambda lifting on the given property `prop`.
-    *
-    * The property's expression is closure converted, and then the lifted definitions are added to the mutable map `m`.
-    * The updated definition is then returned.
+    * Performs lambda lifting on the given property `property0`.
     */
-  private def lift(prop: SimplifiedAst.Property, m: TopLevel)(implicit genSym: GenSym): SimplifiedAst.Property = {
-    val convExp = ClosureConv.visitExp(prop.exp)
-    val liftExp = lift(convExp, m, None)
-    prop.copy(exp = liftExp)
+  private def liftProperty(property0: SimplifiedAst.Property, m: TopLevel)(implicit flix: Flix): SimplifiedAst.Property = {
+    // Closure convert the expression.
+    val convertedExp = ClosureConv.visitExp(property0.exp)
+
+    // Lift the closure converted expression.
+    val liftedExp = liftExp(convertedExp, "property", m)
+
+    // Reassemble the property.
+    property0.copy(exp = liftedExp)
   }
 
   /**
-    * Performs lambda lifting on the given expression `exp0`.
-    *
-    * Adds new top-level definitions to the mutable map `m`.
+    * Performs lambda lifting on the given expression `exp0` using the given `name` as part of the lifted name.
     */
-  private def lift(exp0: Expression, m: TopLevel, symOpt: Option[Symbol.DefnSym])(implicit genSym: GenSym): Expression = {
+  private def liftExp(exp0: Expression, name: String, m: TopLevel)(implicit flix: Flix): Expression = {
+    /**
+      * Local visitor.
+      */
     def visitExp(e: Expression): Expression = e match {
       case Expression.Unit => e
       case Expression.True => e
@@ -112,112 +124,164 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.Def(sym, tpe, loc) => e
       case Expression.Eff(sym, tpe, loc) => e
 
-      case Expression.Lambda(fparams, body, tpe, loc) =>
-        // Lift the lambda to a top-level definition, and replacing the Lambda expression with a Ref.
+      case Expression.Lambda(fparams, exp, tpe, loc) =>
+        // Lift the lambda expression to a top-level definition.
 
-        // First, recursively visit the lambda body, lifting any inner lambdas.
-        val liftedBody = visitExp(body)
+        // First, recursively lift the inner expression.
+        val liftedExp = visitExp(exp)
 
-        // Generate a fresh symbol for the definition.
-        val freshSymbol = symOpt match {
-          case None => Symbol.freshDefnSym("none") // TODO: This seems suspicious.
-          case Some(oldSym) => Symbol.freshDefnSym(oldSym)
-        }
+        // Generate a fresh symbol for the new lifted definition.
+        val freshSymbol = Symbol.freshDefnSym(name)(flix.genSym)
 
-        // Create a new top-level definition, using the fresh name and lifted body.
+        // Annotations and modifiers.
         val ann = Ast.Annotations.Empty
         val mod = Ast.Modifiers(Ast.Modifier.Synthetic :: Nil)
-        val defn = SimplifiedAst.Def(ann, mod, freshSymbol, fparams, liftedBody, tpe, loc)
 
-        // Update the map that holds newly-generated definitions
+        // Construct a new definition.
+        val defn = SimplifiedAst.Def(ann, mod, freshSymbol, fparams, liftedExp, tpe, loc)
+
+        // Add the new definition to the map of lifted definitions.
         m += (freshSymbol -> defn)
 
-        // Finally, replace this current Lambda node with a Ref to the newly-generated name.
+        // Return a def expression that refers to the new definition.
         SimplifiedAst.Expression.Def(freshSymbol, tpe, loc)
 
-      case Expression.Closure(ref, freeVars, tpe, loc) => e
+      case Expression.Closure(sym, freeVars, tpe, loc) => e
 
       case Expression.Apply(exp, args, tpe, loc) =>
-        Expression.Apply(visitExp(exp), args.map(visitExp), tpe, loc)
+        val e = visitExp(exp)
+        val as = args map visitExp
+        Expression.Apply(e, as, tpe, loc)
 
       case SimplifiedAst.Expression.LambdaClosure(lambda, freeVars, tpe, loc) =>
-        // Replace a Def expression with a Closure expression.
+        // Replace a def expression by a closure expression.
         visitExp(lambda) match {
-          case defn: SimplifiedAst.Expression.Def =>
-            SimplifiedAst.Expression.Closure(defn.sym, freeVars, tpe, loc)
+          case SimplifiedAst.Expression.Def(sym, _, _) =>
+            SimplifiedAst.Expression.Closure(sym, freeVars, tpe, loc)
           case _ => throw InternalCompilerException(s"Unexpected expression: '$lambda'.")
         }
 
       case Expression.ApplyClo(exp, args, tpe, loc) =>
-        Expression.ApplyClo(visitExp(exp), args.map(visitExp), tpe, loc)
+        val e = visitExp(exp)
+        val as = args map visitExp
+        Expression.ApplyClo(e, as, tpe, loc)
+
       case Expression.ApplyDef(sym, args, tpe, loc) =>
-        Expression.ApplyDef(sym, args.map(visitExp), tpe, loc)
+        val as = args map visitExp
+        Expression.ApplyDef(sym, as, tpe, loc)
+
       case Expression.ApplyEff(sym, args, tpe, loc) =>
-        Expression.ApplyEff(sym, args.map(visitExp), tpe, loc)
+        val as = args map visitExp
+        Expression.ApplyEff(sym, as, tpe, loc)
+
       case Expression.Unary(sop, op, exp, tpe, loc) =>
-        Expression.Unary(sop, op, visitExp(exp), tpe, loc)
+        val e = visitExp(exp)
+        Expression.Unary(sop, op, e, tpe, loc)
+
       case Expression.Binary(sop, op, exp1, exp2, tpe, loc) =>
-        Expression.Binary(sop, op, visitExp(exp1), visitExp(exp2), tpe, loc)
+        val e1 = visitExp(exp1)
+        val e2 = visitExp(exp2)
+        Expression.Binary(sop, op, e1, e2, tpe, loc)
+
       case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
-        Expression.IfThenElse(visitExp(exp1), visitExp(exp2), visitExp(exp3), tpe, loc)
+        val e1 = visitExp(exp1)
+        val e2 = visitExp(exp2)
+        val e3 = visitExp(exp3)
+        Expression.IfThenElse(e1, e2, e3, tpe, loc)
+
       case Expression.Branch(exp, branches, tpe, loc) =>
         val e = visitExp(exp)
         val bs = branches map {
           case (sym, br) => sym -> visitExp(br)
         }
         Expression.Branch(e, bs, tpe, loc)
-      case Expression.JumpTo(sym, tpe, loc) => Expression.JumpTo(sym, tpe, loc)
+
+      case Expression.JumpTo(sym, tpe, loc) =>
+        Expression.JumpTo(sym, tpe, loc)
+
       case Expression.Let(sym, exp1, exp2, tpe, loc) =>
-        Expression.Let(sym, visitExp(exp1), visitExp(exp2), tpe, loc)
+        val e1 = visitExp(exp1)
+        val e2 = visitExp(exp2)
+        Expression.Let(sym, e1, e2, tpe, loc)
+
       case Expression.LetRec(sym, exp1, exp2, tpe, loc) =>
-        Expression.LetRec(sym, visitExp(exp1), visitExp(exp2), tpe, loc)
+        val e1 = visitExp(exp1)
+        val e2 = visitExp(exp2)
+        Expression.LetRec(sym, e1, e2, tpe, loc)
+
       case Expression.Is(sym, tag, exp, loc) =>
-        Expression.Is(sym, tag, visitExp(exp), loc)
+        val e = visitExp(exp)
+        Expression.Is(sym, tag, e, loc)
+
       case Expression.Tag(enum, tag, exp, tpe, loc) =>
-        Expression.Tag(enum, tag, visitExp(exp), tpe, loc)
+        val e = visitExp(exp)
+        Expression.Tag(enum, tag, e, tpe, loc)
+
       case Expression.Untag(sym, tag, exp, tpe, loc) =>
-        Expression.Untag(sym, tag, visitExp(exp), tpe, loc)
+        val e = visitExp(exp)
+        Expression.Untag(sym, tag, e, tpe, loc)
+
       case Expression.Index(exp, offset, tpe, loc) =>
-        Expression.Index(visitExp(exp), offset, tpe, loc)
+        val e = visitExp(exp)
+        Expression.Index(e, offset, tpe, loc)
+
       case Expression.Tuple(elms, tpe, loc) =>
-        Expression.Tuple(elms.map(visitExp), tpe, loc)
+        val es = elms map visitExp
+        Expression.Tuple(es, tpe, loc)
+
       case Expression.ArrayLit(elms, tpe, loc) =>
-        Expression.ArrayLit(elms.map(visitExp), tpe, loc)
+        val es = elms map visitExp
+        Expression.ArrayLit(es, tpe, loc)
+
       case Expression.ArrayNew(elm, len, tpe, loc) =>
         val e = visitExp(elm)
-        val ln = visitExp(len)
-        Expression.ArrayNew(e, ln, tpe, loc)
+        val l = visitExp(len)
+        Expression.ArrayNew(e, l, tpe, loc)
+
       case Expression.ArrayLoad(base, index, tpe, loc) =>
         val b = visitExp(base)
         val i = visitExp(index)
         Expression.ArrayLoad(b, i, tpe, loc)
+
       case Expression.ArrayStore(base, index, elm, tpe, loc) =>
         val b = visitExp(base)
         val i = visitExp(index)
         val e = visitExp(elm)
         Expression.ArrayStore(b, i, e, tpe, loc)
+
       case Expression.ArrayLength(base, tpe, loc) =>
         val b = visitExp(base)
         Expression.ArrayLength(b, tpe, loc)
+
       case Expression.ArraySlice(base, startIndex, endIndex, tpe, loc) =>
         val b = visitExp(base)
         val i1 = visitExp(startIndex)
         val i2 = visitExp(endIndex)
         Expression.ArraySlice(b, i1, i2, tpe, loc)
+
       case Expression.Ref(exp, tpe, loc) =>
-        Expression.Ref(visitExp(exp), tpe, loc)
+        val e = visitExp(exp)
+        Expression.Ref(e, tpe, loc)
+
       case Expression.Deref(exp, tpe, loc) =>
-        Expression.Deref(visitExp(exp), tpe, loc)
+        val e = visitExp(exp)
+        Expression.Deref(e, tpe, loc)
+
       case Expression.Assign(exp1, exp2, tpe, loc) =>
-        Expression.Assign(visitExp(exp1), visitExp(exp2), tpe, loc)
+        val e1 = visitExp(exp1)
+        val e2 = visitExp(exp2)
+        Expression.Assign(e1, e2, tpe, loc)
+
       case Expression.HandleWith(exp, bindings, tpe, loc) =>
         val e = visitExp(exp)
         val bs = bindings map {
           case HandlerBinding(sym, handler) => HandlerBinding(sym, visitExp(handler))
         }
         Expression.HandleWith(e, bs, tpe, loc)
+
       case Expression.Existential(params, exp, loc) =>
         Expression.Existential(params, visitExp(exp), loc)
+
       case Expression.Universal(params, exp, loc) =>
         Expression.Universal(params, visitExp(exp), loc)
 

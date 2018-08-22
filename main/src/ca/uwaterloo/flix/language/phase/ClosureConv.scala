@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language.phase
 
-import ca.uwaterloo.flix.language.GenSym
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.SimplifiedAst._
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, SimplifiedAst, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.util.InternalCompilerException
@@ -28,7 +28,7 @@ object ClosureConv {
   /**
     * Performs closure conversion on the given expression `e`.
     */
-  def visitExp(exp0: SimplifiedAst.Expression)(implicit genSym: GenSym): SimplifiedAst.Expression = exp0 match {
+  def visitExp(exp0: SimplifiedAst.Expression)(implicit flix: Flix): SimplifiedAst.Expression = exp0 match {
     case Expression.Unit => exp0
     case Expression.True => exp0
     case Expression.False => exp0
@@ -69,7 +69,7 @@ object ClosureConv {
       val subst = mutable.Map.empty[Symbol.VarSym, Symbol.VarSym]
       val newArgs = fvs.map {
         case (oldSym, ptype) =>
-          val newSym = Symbol.freshVarSym(oldSym)
+          val newSym = Symbol.freshVarSym(oldSym)(flix.genSym)
           subst += (oldSym -> newSym)
           SimplifiedAst.FormalParam(newSym, Ast.Modifiers.Empty, ptype, SourceLocation.Unknown)
       } ++ args
