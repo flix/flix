@@ -1,8 +1,10 @@
 package ca.uwaterloo.flix.runtime.solver.api
 
+import java.io.{PrintWriter, StringWriter}
+
 import ca.uwaterloo.flix.runtime.solver.LatticeOps
 import ca.uwaterloo.flix.runtime.solver.datastore.IndexedLattice
-import ca.uwaterloo.flix.util.BitOps
+import ca.uwaterloo.flix.util.{AsciiTable, BitOps}
 
 /**
   * Represents a lattice value.
@@ -36,8 +38,31 @@ class Lattice(name: String, keys: Array[Attribute], value: Attribute, ops: Latti
   def getIndexedLattice(): IndexedLattice = indexedLattice
 
   /**
-    * Returns a string representation of the lattice.
+    * Returns a human readable string representation of the lattice.
     */
-  override def toString: String = s"$name(${indexedLattice.getSize})"
+  override def toString: String = {
+    val sb = new StringBuilder
+
+    sb.append(s"$name(${indexedLattice.getSize})")
+    sb.append("\n")
+
+    // Construct an ASCII table with a column for each attribute.
+    val attributes = keys.toList ::: value :: Nil
+    val columns = attributes.map(_.getName())
+    val table = new AsciiTable().withCols(columns: _*)
+
+    // Add each row to the ASCII table.
+    for ((key, value) <- indexedLattice.scan) {
+      val row = key.toArray.toList ::: value :: Nil
+      table.mkRow(row)
+    }
+
+    // Write the ASCII table to the string buffer.
+    val sw = new StringWriter()
+    table.write(new PrintWriter(sw))
+    sb.append(sw.toString)
+
+    sb.toString()
+  }
 
 }

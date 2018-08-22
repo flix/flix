@@ -1,7 +1,9 @@
 package ca.uwaterloo.flix.runtime.solver.api
 
+import java.io.{PrintWriter, StringWriter}
+
 import ca.uwaterloo.flix.runtime.solver.datastore.IndexedRelation
-import ca.uwaterloo.flix.util.BitOps
+import ca.uwaterloo.flix.util.{AsciiTable, BitOps}
 
 /**
   * Represents a relation value.
@@ -30,8 +32,29 @@ class Relation(name: String, attributes: Array[Attribute]) extends Table {
   def getIndexedRelation(): IndexedRelation = indexedRelation
 
   /**
-    * Returns a string representation of the relation.
+    * Returns a human readable string representation of the relation.
     */
-  override def toString: String = s"$name(${indexedRelation.toString})"
+  override def toString: String = {
+    val sb = new StringBuilder
+
+    sb.append(s"$name(${indexedRelation.getSize})")
+    sb.append("\n")
+
+    // Construct an ASCII table with a column for each attribute.
+    val columns = attributes.map(_.getName())
+    val table = new AsciiTable().withCols(columns: _*)
+
+    // Add each row to the ASCII table.
+    for (row <- indexedRelation.scan) {
+      table.mkRow(row.toList)
+    }
+
+    // Write the ASCII table to the string buffer.
+    val sw = new StringWriter()
+    table.write(new PrintWriter(sw))
+    sb.append(sw.toString)
+
+    sb.toString()
+  }
 
 }

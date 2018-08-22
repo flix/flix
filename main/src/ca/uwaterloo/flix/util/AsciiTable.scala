@@ -101,7 +101,6 @@ class AsciiTable {
       numberOfRows += 1
     }
     w.println(formatLine(ws))
-    w.println(s"Query matched $numberOfMatchedRows row(s) out of $numberOfRows total row(s).")
 
     w.flush()
   }
