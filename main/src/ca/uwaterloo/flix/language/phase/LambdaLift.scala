@@ -124,16 +124,14 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.Def(sym, tpe, loc) => e
       case Expression.Eff(sym, tpe, loc) => e
 
-      case Expression.Lambda(fparams, exp, tpe, loc) =>
-        // Lift the lambda expression to a top-level definition.
-
-        // First, recursively lift the inner expression.
+      case Expression.LambdaClosure(fparams, freeVars, exp, tpe, loc) =>
+        // Recursively lift the inner expression.
         val liftedExp = visitExp(exp)
 
         // Generate a fresh symbol for the new lifted definition.
         val freshSymbol = Symbol.freshDefnSym(name)(flix.genSym)
 
-        // Annotations and modifiers.
+        // Construct annotations and modifiers for the fresh definition.
         val ann = Ast.Annotations.Empty
         val mod = Ast.Modifiers(Ast.Modifier.Synthetic :: Nil)
 
@@ -143,8 +141,8 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         // Add the new definition to the map of lifted definitions.
         m += (freshSymbol -> defn)
 
-        // Return a def expression that refers to the new definition.
-        SimplifiedAst.Expression.Def(freshSymbol, tpe, loc)
+        // Construct the closure expression.
+        SimplifiedAst.Expression.Closure(freshSymbol, freeVars, tpe, loc)
 
       case Expression.Closure(sym, freeVars, tpe, loc) => e
 
@@ -152,14 +150,6 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         val e = visitExp(exp)
         val as = args map visitExp
         Expression.Apply(e, as, tpe, loc)
-
-      case SimplifiedAst.Expression.LambdaClosure(lambda, freeVars, tpe, loc) =>
-        // Replace a def expression by a closure expression.
-        visitExp(lambda) match {
-          case SimplifiedAst.Expression.Def(sym, _, _) =>
-            SimplifiedAst.Expression.Closure(sym, freeVars, tpe, loc)
-          case _ => throw InternalCompilerException(s"Unexpected expression: '$lambda'.")
-        }
 
       case Expression.ApplyClo(exp, args, tpe, loc) =>
         val e = visitExp(exp)
@@ -328,14 +318,18 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         Expression.FixpointCheck(e, tpe, loc)
 
       case Expression.UserError(tpe, loc) => e
+
       case Expression.HoleError(sym, tpe, eff, loc) => e
+
       case Expression.MatchError(tpe, loc) => e
+
       case Expression.SwitchError(tpe, loc) => e
 
-      case Expression.ApplyCloTail(exp, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
-      case Expression.ApplyDefTail(sym, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
-      case Expression.ApplyEffTail(sym, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
-      case Expression.ApplySelfTail(sym, formals, actuals, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
+      case Expression.Lambda(exp, args, tpe, loc) => throw InternalCompilerException(s"Unexpected lambda expression. Every lambda expression should have been converted to a LambdaClosure.")
+      case Expression.ApplyCloTail(exp, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass}'.")
+      case Expression.ApplyDefTail(sym, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass}'.")
+      case Expression.ApplyEffTail(sym, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass}'.")
+      case Expression.ApplySelfTail(sym, formals, actuals, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass}'.")
     }
 
     visitExp(exp0)

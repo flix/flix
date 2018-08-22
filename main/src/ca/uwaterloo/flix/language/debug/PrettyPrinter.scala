@@ -86,9 +86,9 @@ object PrettyPrinter {
           }
           vt.text(")")
 
-        case Expression.LambdaClosure(lambda, freeVars, tpe, loc) =>
+        case Expression.LambdaClosure(fparams, freeVars, exp, tpe, loc) =>
           vt.text("LambdaClosure(")
-          visitExp(lambda)
+          visitExp(exp)
           vt.text(", [")
           for (freeVar <- freeVars) {
             fmtSym(freeVar.sym, vt)
@@ -263,7 +263,7 @@ object PrettyPrinter {
 
         case Expression.ArrayLit(elms, tpe, loc) =>
           vt.text("[")
-          for (elm <- elms){
+          for (elm <- elms) {
             visitExp(elm)
             vt.text(",")
           }

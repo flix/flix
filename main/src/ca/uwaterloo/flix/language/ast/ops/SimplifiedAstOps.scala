@@ -107,7 +107,7 @@ object SimplifiedAstOps {
       //
       // LambdaClosure.
       //
-      case Expression.LambdaClosure(lambda, freeVars, tpe, loc) =>
+      case Expression.LambdaClosure(fparams, freeVars, exp, tpe, loc) =>
         checkExp(exp0, env0, ienv0)
         checkType(tpe)
 

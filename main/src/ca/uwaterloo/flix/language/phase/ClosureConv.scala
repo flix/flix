@@ -78,8 +78,9 @@ object ClosureConv {
       val argTpes = fvs.map(_._2) ++ targs
       val newTpe = Type.mkUncurriedArrow(argTpes, tresult)
 
+      val newBody = visitExp(replace(body, subst.toMap))
       // We rewrite the lambda with its new arguments list and new body, with any nested lambdas also converted.
-      val lambda = Expression.Lambda(newArgs, visitExp(replace(body, subst.toMap)), newTpe, loc)
+      val lambda = Expression.Lambda(newArgs, newBody, newTpe, loc)
 
       // At this point, `lambda` is the original lambda expression, but with all free variables converted to new
       // arguments, prepended to the original arguments list. Additionally, any lambdas within the body have also been
@@ -91,7 +92,8 @@ object ClosureConv {
       // bound values are passed as arguments.
       // Note that MkClosure keeps the old lambda type.
       // In a later phase, we will lift the lambda to a top-level definition.
-      Expression.LambdaClosure(lambda, fvs.map(v => SimplifiedAst.FreeVar(v._1, v._2)), tpe, loc)
+      //Expression.LambdaClosure(lambda, fvs.map(v => SimplifiedAst.FreeVar(v._1, v._2)), tpe, loc)
+      Expression.LambdaClosure(newArgs, fvs.map(v => SimplifiedAst.FreeVar(v._1, v._2)), newBody, tpe, loc)
 
     case Expression.Apply(e, args, tpe, loc) =>
       // We're trying to call some expression `e`. If `e` is a Ref, then it's a top-level function, so we directly call
@@ -247,7 +249,7 @@ object ClosureConv {
     case Expression.SwitchError(tpe, loc) => exp0
 
     case Expression.Closure(ref, freeVars, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
-    case Expression.LambdaClosure(lambda, freeVars, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
+    case Expression.LambdaClosure(fparams, freeVars, exp, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
     case Expression.ApplyClo(e, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
     case Expression.ApplyDef(name, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
     case Expression.ApplyEff(name, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
@@ -340,7 +342,7 @@ object ClosureConv {
     case Expression.MatchError(tpe, loc) => mutable.LinkedHashSet.empty
     case Expression.SwitchError(tpe, loc) => mutable.LinkedHashSet.empty
 
-    case Expression.LambdaClosure(lambda, freeVars, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
+    case Expression.LambdaClosure(fparams, freeVars, exp, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
     case Expression.Closure(ref, freeVars, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
     case Expression.ApplyClo(exp, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
     case Expression.ApplyDef(sym, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
@@ -450,9 +452,9 @@ object ClosureConv {
 
       case Expression.Closure(ref, freeVars, tpe, loc) => e
 
-      case Expression.LambdaClosure(exp, freeVars, tpe, loc) =>
+      case Expression.LambdaClosure(fparams, freeVars, exp, tpe, loc) =>
         val e = visitExp(exp).asInstanceOf[Expression.Lambda]
-        Expression.LambdaClosure(e, freeVars, tpe, loc)
+        Expression.LambdaClosure(fparams, freeVars, exp, tpe, loc)
 
       case Expression.ApplyClo(exp, args, tpe, loc) =>
         val e = visitExp(exp)
