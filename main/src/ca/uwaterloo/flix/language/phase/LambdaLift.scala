@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.SimplifiedAst.{CatchRule, Expression, HandlerBinding}
+import ca.uwaterloo.flix.language.ast.SimplifiedAst._
 import ca.uwaterloo.flix.language.ast.{Ast, SimplifiedAst, Symbol}
 import ca.uwaterloo.flix.language.{CompilationError, GenSym}
 import ca.uwaterloo.flix.util.Validation._
@@ -105,7 +105,7 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     */
   private def liftExp(exp0: Expression, name: String, m: TopLevel)(implicit flix: Flix): Expression = {
     /**
-      * Local visitor.
+      * Performs closure conversion and lambda lifting on the given expression `exp0`.
       */
     def visitExp(e: Expression): Expression = e match {
       case Expression.Unit => e
@@ -301,8 +301,12 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         Expression.NewLattice(sym, tpe, loc)
 
       case Expression.Constraint(c0, tpe, loc) =>
-        // TODO: Recurse?
-        Expression.Constraint(c0, tpe, loc)
+        val Constraint(cparams0, head0, body0) = c0
+        val head = visitHeadPredicate(head0)
+        val body = ???
+
+        val c = Constraint(cparams0, head, body)
+        Expression.Constraint(c, tpe, loc)
 
       case Expression.ConstraintUnion(exp1, exp2, tpe, loc) =>
         val e1 = visitExp(exp1)
@@ -330,6 +334,30 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.ApplyDefTail(sym, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass}'.")
       case Expression.ApplyEffTail(sym, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass}'.")
       case Expression.ApplySelfTail(sym, formals, actuals, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass}'.")
+    }
+
+    /**
+      * Performs closure conversion and lambda lifting on the given head predicate `head0`.
+      */
+    def visitHeadPredicate(head0: Predicate.Head): Predicate.Head = head0 match {
+      case Predicate.Head.True(loc) => Predicate.Head.True(loc)
+      case Predicate.Head.False(loc) => Predicate.Head.False(loc)
+      case Predicate.Head.RelAtom(base, sym, terms, loc) =>
+        val ts = terms map visitHeadTerm
+        Predicate.Head.RelAtom(base, sym, terms, loc)
+      case Predicate.Head.LatAtom(base, sym, terms, loc) =>
+        val ts = terms map visitHeadTerm
+        Predicate.Head.LatAtom(base, sym, terms, loc)
+    }
+
+    /**
+      * Performs closure conversion and lambda lifting on the given head term `term0`.
+      */
+    def visitHeadTerm(term0: Term.Head): Term.Head = term0 match {
+      case Term.Head.QuantVar(sym, tpe, loc) => ???
+      case Term.Head.CapturedVar(sym, tpe, loc) => ???
+      case Term.Head.Lit(lit, tpe, loc) => ???
+      case Term.Head.App(sym, args, tpe, loc) => ???
     }
 
     visitExp(exp0)
