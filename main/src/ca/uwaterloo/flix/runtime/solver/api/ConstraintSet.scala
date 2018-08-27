@@ -12,6 +12,36 @@ class ConstraintSet(strata: Array[Stratum]) {
   // TODO: Replace stratum by a number and then just do group by.
 
   /**
+    * Returns all the relation values in the constraint set.
+    */
+  def getRelations(): Array[Relation] = getAllRelations()
+
+  /**
+    * Returns all the lattice values in the constraint set.
+    */
+  def getLattices(): Array[Lattice] = getAllLattices()
+
+  /**
+    * Returns the strata in the constraint set.
+    */
+  def getStrata(): Array[Stratum] = strata
+
+  /**
+    * Returns the union of `this` constraint set with `that` constraint set.
+    */
+  def union(that: ConstraintSet): ConstraintSet = {
+    // TODO: Correctness. This is just a hack for now.
+
+    // TODO: What about duplicates?
+    val newStrata = (this.getStrata() zip that.getStrata()) map {
+      case (stratum1, stratum2) => new Stratum(stratum1.getConstraints() ++ stratum2.getConstraints())
+    }
+
+    new ConstraintSet(newStrata)
+  }
+
+
+  /**
     * Returns a new constraint set without any place holders.
     */
   // TODO: Move
@@ -61,34 +91,8 @@ class ConstraintSet(strata: Array[Stratum]) {
   }
 
   /**
-    * Returns all the relation values in the constraint set.
+    * Returns a human readable representation the constraint set.
     */
-  def getRelations(): Array[Relation] = getAllRelations()
-
-  /**
-    * Returns all the lattice values in the constraint set.
-    */
-  def getLattices(): Array[Lattice] = getAllLattices()
-
-  /**
-    * Returns the strata in the constraint set.
-    */
-  def getStrata(): Array[Stratum] = strata
-
-  /**
-    * Returns the union of `this` constraint set with `that` constraint set.
-    */
-  def union(that: ConstraintSet): ConstraintSet = {
-    // TODO: Correctness. This is just a hack for now.
-
-    // TODO: What about duplicates?
-    val newStrata = (this.getStrata() zip that.getStrata()) map {
-      case (stratum1, stratum2) => new Stratum(stratum1.getConstraints() ++ stratum2.getConstraints())
-    }
-
-    new ConstraintSet(newStrata)
-  }
-
   override def toString: String = strata.mkString(", ")
 
   /**
@@ -108,22 +112,22 @@ class ConstraintSet(strata: Array[Stratum]) {
   /**
     * Computes all placeholder relations in the constraint set.
     */
-  private def getRelationPlaceholders(): Array[RelationPlaceholder] =
-    getTables() collect {
-      case r: RelationPlaceholder => r
-    }
+  private def getRelationPlaceholders(): Array[RelationPlaceholder] = getTables() collect {
+    case r: RelationPlaceholder => r
+  }
 
   /**
     * Computes all lattice placeholders in the constraint set.
     */
-  private def getLatticePlaceholders(): Array[LatticePlaceholder] =
-    getTables() collect {
-      case l: LatticePlaceholder => l
-    }
+  private def getLatticePlaceholders(): Array[LatticePlaceholder] = getTables() collect {
+    case l: LatticePlaceholder => l
+  }
 
+  /**
+    * Returns all tables in the constraint set.
+    */
   private def getTables(): Array[Table] =
     getAtomPredicates().map(_.getSym()).distinct
-
 
   /**
     * Returns all predicates in the constraint set.
