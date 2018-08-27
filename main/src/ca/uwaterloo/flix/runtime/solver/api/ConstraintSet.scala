@@ -94,14 +94,14 @@ class ConstraintSet(strata: Array[Stratum]) {
   /**
     * Computes all relations in the constraint set.
     */
-  private def getAllRelations(): Array[Relation] = getAtomPredicates().map(_.getSym()) collect {
+  private def getAllRelations(): Array[Relation] = getTables() collect {
     case r: Relation => r
   }
 
   /**
     * Computes all lattices in the constraint set.
     */
-  private def getAllLattices(): Array[Lattice] = getAtomPredicates().map(_.getSym()) collect {
+  private def getAllLattices(): Array[Lattice] = getTables() collect {
     case l: Lattice => l
   }
 
@@ -109,7 +109,7 @@ class ConstraintSet(strata: Array[Stratum]) {
     * Computes all placeholder relations in the constraint set.
     */
   private def getRelationPlaceholders(): Array[RelationPlaceholder] =
-    getAtomPredicates().map(_.getSym()) collect {
+    getTables() collect {
       case r: RelationPlaceholder => r
     }
 
@@ -117,9 +117,13 @@ class ConstraintSet(strata: Array[Stratum]) {
     * Computes all lattice placeholders in the constraint set.
     */
   private def getLatticePlaceholders(): Array[LatticePlaceholder] =
-    getAtomPredicates().map(_.getSym()) collect {
+    getTables() collect {
       case l: LatticePlaceholder => l
     }
+
+  private def getTables(): Array[Table] =
+    getAtomPredicates().map(_.getSym()).distinct
+
 
   /**
     * Returns all predicates in the constraint set.
