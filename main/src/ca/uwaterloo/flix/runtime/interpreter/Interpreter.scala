@@ -24,7 +24,7 @@ import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.runtime.Linker
 import ca.uwaterloo.flix.runtime.solver.{Fixpoint, FixpointOptions, Solver, api}
 import ca.uwaterloo.flix.runtime.solver.api.ApiBridge.SymbolCache
-import ca.uwaterloo.flix.runtime.solver.api.{ConstraintSet, ProxyObject}
+import ca.uwaterloo.flix.runtime.solver.api.{ConstraintSet, ProxyObject, RelationPlaceholder}
 import ca.uwaterloo.flix.util.{InternalRuntimeException, Verbosity}
 import ca.uwaterloo.flix.util.tc.Show._
 import flix.runtime._
@@ -355,7 +355,6 @@ object Interpreter {
     // ConstraintUnion expressions.
     //
     case Expression.ConstraintUnion(exp1, exp2, tpe, loc) =>
-      // TODO: Use value?
       val v1 = cast2constraintset(eval(exp1, env0, henv0, lenv0, root))
       val v2 = cast2constraintset(eval(exp2, env0, henv0, lenv0, root))
       v1.union(v2)
@@ -787,10 +786,7 @@ object Interpreter {
     val constraint = new api.Constraint(cparams.toArray, head, body.toArray)
     val strata = new api.Stratum(List(constraint).toArray)
 
-    val relSyms = cache.relSyms.values.toArray
-    val latSyms = cache.latSyms.values.toArray
-
-    new ConstraintSet(relSyms, latSyms, Array(strata))
+    new ConstraintSet(Array(strata))
   }
 
   /**
@@ -951,10 +947,11 @@ object Interpreter {
     *
     * NB: Allocates a new relation if no such relation exists in the cache.
     */
-  private def getRelation(sym: Symbol.RelSym)(implicit root: FinalAst.Root, cache: SymbolCache, flix: Flix): api.Relation = root.relations(sym) match {
+  private def getRelation(sym: Symbol.RelSym)(implicit root: FinalAst.Root, flix: Flix): api.Table = root.relations(sym) match {
     case FinalAst.Relation(_, _, attr, _) =>
-      val attributes = attr.map(a => new api.Attribute(a.name))
-      cache.getRelSym(sym, sym.toString, attributes.toArray)
+      val name = sym.toString
+      val as = attr.map(a => new api.Attribute(a.name)).toArray
+      new RelationPlaceholder(name, as)
   }
 
   /**
@@ -962,13 +959,14 @@ object Interpreter {
     *
     * NB: Allocates a new lattice if no such lattice exists in the cache.
     */
-  private def getLattice(sym: Symbol.LatSym)(implicit root: FinalAst.Root, cache: SymbolCache, flix: Flix): api.Lattice = root.lattices(sym) match {
+  private def getLattice(sym: Symbol.LatSym)(implicit root: FinalAst.Root, flix: Flix): api.Lattice = root.lattices(sym) match {
     case FinalAst.Lattice(_, _, attr, _) =>
+      // TODO
       val attributes = attr.map(a => new api.Attribute(a.name))
       val keys = attributes.init
       val value = attributes.last
       val ops = ??? //getLatticeOps(l.attr.last) // TODO
-      cache.getLatSym(sym, sym.toString, keys.toArray, value, ops)
+      ???
   }
 
   /**
@@ -1146,7 +1144,7 @@ object Interpreter {
     * Computes the fixed point of the given constraint set `cs`.
     */
   private def solve(cs: ConstraintSet)(implicit flix: Flix): Fixpoint = {
-    val solver = mkSolver(cs)
+    val solver = mkSolver(cs.complete())
     solver.solve()
   }
 
@@ -1161,7 +1159,7 @@ object Interpreter {
     options.setVerbose(flix.options.verbosity == Verbosity.Verbose)
 
     // Construct the solver.
-    new Solver(cs, options)
+    new Solver(cs.complete(), options)
   }
 
   /**

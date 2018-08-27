@@ -67,6 +67,11 @@ class Constraint(cparams: Array[VarSym], head: Predicate, body: Array[Predicate]
   def isRule(): Boolean = body.nonEmpty
 
   /**
+    * Returns the constraint parameters.
+    */
+  def getParams(): Array[VarSym] = cparams
+
+  /**
     * Returns the head predicate.
     */
   def getHeadPredicate(): Predicate = head

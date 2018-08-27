@@ -1,13 +1,64 @@
 package ca.uwaterloo.flix.runtime.solver.api
 
-import ca.uwaterloo.flix.runtime.solver.api.predicate.AtomPredicate
+import ca.uwaterloo.flix.runtime.solver.api.predicate._
 
 import scala.collection.mutable
 
 /**
   * Represents a collection of constraints.
   */
-class ConstraintSet(relations: Array[Relation], lattices: Array[Lattice], strata: Array[Stratum]) {
+class ConstraintSet(strata: Array[Stratum]) {
+
+  // TODO: Replace stratum by a number and then just do group by.
+
+  /**
+    * Returns a new constraint set without any place holders.
+    */
+  // TODO: Move
+  def complete(): ConstraintSet = {
+    // TODO: Cleanup.
+    val relationPlaceholders = getRelationPlaceholders().groupBy(_.getName())
+    val latticePlaceholders = getLatticePlaceholders().groupBy(_.getName())
+
+    // Introduce a proper relation for each relation placeholder.
+    val newRelations = relationPlaceholders map {
+      case (name, placeholders) => {
+        val placeholder = placeholders(0) // guaranteed to be non-empty.
+        val attr = placeholder.attr
+        name -> new Relation(name, attr)
+      }
+    }
+
+    val newLattices = latticePlaceholders map {
+      case (name, placeholders) => {
+        val placeholder = placeholders(0)
+        name -> new Lattice(name, ???, ???, ???) // TODO
+      }
+    }
+
+    def replace(c: Constraint): Constraint = {
+      val head = replacePredicate(c.getHeadPredicate())
+      val body = c.getBodyPredicates().map(replacePredicate)
+      new Constraint(c.getParams(), head, body)
+    }
+
+    def replacePredicate(p0: Predicate): Predicate = p0 match {
+      case p: AtomPredicate =>
+        val sym = p.getSym() match {
+          case r: RelationPlaceholder => newRelations(r.getName())
+          case l: LatticePlaceholder => newLattices(l.getName())
+          case _ => p.getSym()
+        }
+        new AtomPredicate(sym, p.isPositive(), p.getTerms(), p.getIndex2SymTEMPORARY)
+      case _ => p0
+    }
+
+    val newStrata = strata map {
+      stratum => new Stratum(stratum.getConstraints().map(replace))
+    }
+
+    new ConstraintSet(newStrata)
+  }
 
   /**
     * Returns all the relation values in the constraint set.
@@ -31,13 +82,11 @@ class ConstraintSet(relations: Array[Relation], lattices: Array[Lattice], strata
     // TODO: Correctness. This is just a hack for now.
 
     // TODO: What about duplicates?
-    val newRelations = this.getRelations() ++ that.getRelations()
-    val newLattices = this.getLattices() ++ that.getLattices()
     val newStrata = (this.getStrata() zip that.getStrata()) map {
       case (stratum1, stratum2) => new Stratum(stratum1.getConstraints() ++ stratum2.getConstraints())
     }
 
-    new ConstraintSet(newRelations, newLattices, newStrata)
+    new ConstraintSet(newStrata)
   }
 
   override def toString: String = strata.mkString(", ")
@@ -88,6 +137,62 @@ class ConstraintSet(relations: Array[Relation], lattices: Array[Lattice], strata
           predicate match {
             case p: AtomPredicate => p.getSym() match {
               case l: Lattice => lattices += l
+              case _ =>
+            }
+            case _ => // nop
+          }
+        }
+      }
+    }
+    lattices.toArray
+  }
+
+  /**
+    * Computes all placeholder relations in the constraint set.
+    */
+  private def getRelationPlaceholders(): Array[RelationPlaceholder] = {
+    val relations = mutable.Set.empty[RelationPlaceholder]
+    for (stratum <- strata) {
+      for (constraint <- stratum.getConstraints()) {
+        constraint.getHeadPredicate() match {
+          case p: AtomPredicate => p.getSym() match {
+            case r: RelationPlaceholder => relations += r
+            case _ =>
+          }
+          case _ => // nop
+        }
+        for (predicate <- constraint.getAtoms()) {
+          predicate match {
+            case p: AtomPredicate => p.getSym() match {
+              case r: RelationPlaceholder => relations += r
+              case _ =>
+            }
+            case _ => // nop
+          }
+        }
+      }
+    }
+    relations.toArray
+  }
+
+  /**
+    * Computes all lattice placeholders in the constraint set.
+    */
+  private def getLatticePlaceholders(): Array[LatticePlaceholder] = {
+    val lattices = mutable.Set.empty[LatticePlaceholder]
+    for (stratum <- strata) {
+      for (constraint <- stratum.getConstraints()) {
+        constraint.getHeadPredicate() match {
+          case p: AtomPredicate => p.getSym() match {
+            case l: LatticePlaceholder => lattices += l
+            case _ =>
+          }
+          case _ => // nop
+        }
+        for (predicate <- constraint.getAtoms()) {
+          predicate match {
+            case p: AtomPredicate => p.getSym() match {
+              case l: LatticePlaceholder => lattices += l
               case _ =>
             }
             case _ => // nop
