@@ -240,6 +240,7 @@ class Flix {
       Synthesize |>
       Simplifier |>
       Uncurrier |>
+      ClosureConv |>
       LambdaLift |>
       Tailrec |>
       Inliner |>

@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.SimplifiedAst.{CatchRule, Expression, HandlerBinding}
+import ca.uwaterloo.flix.language.ast.SimplifiedAst._
 import ca.uwaterloo.flix.language.ast.{Ast, SimplifiedAst, Symbol}
 import ca.uwaterloo.flix.language.{CompilationError, GenSym}
 import ca.uwaterloo.flix.util.Validation._
@@ -62,11 +62,8 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     * Performs lambda lifting on the given definition `def0`.
     */
   private def liftDef(def0: SimplifiedAst.Def, m: TopLevel)(implicit flix: Flix): SimplifiedAst.Def = {
-    // Closure convert the expression.
-    val convertedExp = ClosureConv.visitExp(def0.exp)
-
     // Lift the closure converted expression.
-    val liftedExp = liftExp(convertedExp, def0.sym.name, m)
+    val liftedExp = liftExp(def0.exp, def0.sym.name, m)
 
     // Reassemble the definition.
     def0.copy(exp = liftedExp)
@@ -76,11 +73,8 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     * Performs lambda lifting on the given handler `handler0`.
     */
   private def liftHandler(handler0: SimplifiedAst.Handler, m: TopLevel)(implicit flix: Flix): SimplifiedAst.Handler = {
-    // Closure convert the expression.
-    val convertedExp = ClosureConv.visitExp(handler0.exp)
-
     // Lift the closure converted expression.
-    val liftedExp = liftExp(convertedExp, "handler", m)
+    val liftedExp = liftExp(handler0.exp, "handler", m)
 
     // Reassemble the handler.
     handler0.copy(exp = liftedExp)
@@ -90,11 +84,8 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     * Performs lambda lifting on the given property `property0`.
     */
   private def liftProperty(property0: SimplifiedAst.Property, m: TopLevel)(implicit flix: Flix): SimplifiedAst.Property = {
-    // Closure convert the expression.
-    val convertedExp = ClosureConv.visitExp(property0.exp)
-
     // Lift the closure converted expression.
-    val liftedExp = liftExp(convertedExp, "property", m)
+    val liftedExp = liftExp(property0.exp, "property", m)
 
     // Reassemble the property.
     property0.copy(exp = liftedExp)
@@ -105,7 +96,7 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     */
   private def liftExp(exp0: Expression, name: String, m: TopLevel)(implicit flix: Flix): Expression = {
     /**
-      * Local visitor.
+      * Performs closure conversion and lambda lifting on the given expression `exp0`.
       */
     def visitExp(e: Expression): Expression = e match {
       case Expression.Unit => e
@@ -124,16 +115,14 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.Def(sym, tpe, loc) => e
       case Expression.Eff(sym, tpe, loc) => e
 
-      case Expression.Lambda(fparams, exp, tpe, loc) =>
-        // Lift the lambda expression to a top-level definition.
-
-        // First, recursively lift the inner expression.
+      case Expression.LambdaClosure(fparams, freeVars, exp, tpe, loc) =>
+        // Recursively lift the inner expression.
         val liftedExp = visitExp(exp)
 
         // Generate a fresh symbol for the new lifted definition.
         val freshSymbol = Symbol.freshDefnSym(name)(flix.genSym)
 
-        // Annotations and modifiers.
+        // Construct annotations and modifiers for the fresh definition.
         val ann = Ast.Annotations.Empty
         val mod = Ast.Modifiers(Ast.Modifier.Synthetic :: Nil)
 
@@ -143,8 +132,8 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         // Add the new definition to the map of lifted definitions.
         m += (freshSymbol -> defn)
 
-        // Return a def expression that refers to the new definition.
-        SimplifiedAst.Expression.Def(freshSymbol, tpe, loc)
+        // Construct the closure expression.
+        SimplifiedAst.Expression.Closure(freshSymbol, freeVars, tpe, loc)
 
       case Expression.Closure(sym, freeVars, tpe, loc) => e
 
@@ -152,14 +141,6 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         val e = visitExp(exp)
         val as = args map visitExp
         Expression.Apply(e, as, tpe, loc)
-
-      case SimplifiedAst.Expression.LambdaClosure(lambda, freeVars, tpe, loc) =>
-        // Replace a def expression by a closure expression.
-        visitExp(lambda) match {
-          case SimplifiedAst.Expression.Def(sym, _, _) =>
-            SimplifiedAst.Expression.Closure(sym, freeVars, tpe, loc)
-          case _ => throw InternalCompilerException(s"Unexpected expression: '$lambda'.")
-        }
 
       case Expression.ApplyClo(exp, args, tpe, loc) =>
         val e = visitExp(exp)
@@ -311,7 +292,12 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         Expression.NewLattice(sym, tpe, loc)
 
       case Expression.Constraint(c0, tpe, loc) =>
-        // TODO: Recurse?
+        val Constraint(cparams0, head0, body0) = c0
+        // TODO
+//        val head = visitHeadPredicate(head0)
+        //        val body = ???
+
+        //      val c = Constraint(cparams0, head, body)
         Expression.Constraint(c0, tpe, loc)
 
       case Expression.ConstraintUnion(exp1, exp2, tpe, loc) =>
@@ -328,14 +314,42 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         Expression.FixpointCheck(e, tpe, loc)
 
       case Expression.UserError(tpe, loc) => e
+
       case Expression.HoleError(sym, tpe, eff, loc) => e
+
       case Expression.MatchError(tpe, loc) => e
+
       case Expression.SwitchError(tpe, loc) => e
 
-      case Expression.ApplyCloTail(exp, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
-      case Expression.ApplyDefTail(sym, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
-      case Expression.ApplyEffTail(sym, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
-      case Expression.ApplySelfTail(sym, formals, actuals, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass.getSimpleName}'.")
+      case Expression.Lambda(exp, args, tpe, loc) => throw InternalCompilerException(s"Unexpected lambda expression. Every lambda expression should have been converted to a LambdaClosure.")
+      case Expression.ApplyCloTail(exp, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass}'.")
+      case Expression.ApplyDefTail(sym, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass}'.")
+      case Expression.ApplyEffTail(sym, args, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass}'.")
+      case Expression.ApplySelfTail(sym, formals, actuals, tpe, loc) => throw InternalCompilerException(s"Unexpected expression: '${exp0.getClass}'.")
+    }
+
+    /**
+      * Performs closure conversion and lambda lifting on the given head predicate `head0`.
+      */
+    def visitHeadPredicate(head0: Predicate.Head): Predicate.Head = head0 match {
+      case Predicate.Head.True(loc) => Predicate.Head.True(loc)
+      case Predicate.Head.False(loc) => Predicate.Head.False(loc)
+      case Predicate.Head.RelAtom(base, sym, terms, loc) =>
+        val ts = terms map visitHeadTerm
+        Predicate.Head.RelAtom(base, sym, terms, loc)
+      case Predicate.Head.LatAtom(base, sym, terms, loc) =>
+        val ts = terms map visitHeadTerm
+        Predicate.Head.LatAtom(base, sym, terms, loc)
+    }
+
+    /**
+      * Performs closure conversion and lambda lifting on the given head term `term0`.
+      */
+    def visitHeadTerm(term0: Term.Head): Term.Head = term0 match {
+      case Term.Head.QuantVar(sym, tpe, loc) => ???
+      case Term.Head.CapturedVar(sym, tpe, loc) => ???
+      case Term.Head.Lit(lit, tpe, loc) => ???
+      case Term.Head.App(sym, args, tpe, loc) => ???
     }
 
     visitExp(exp0)
