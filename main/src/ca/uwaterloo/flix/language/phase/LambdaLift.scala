@@ -62,11 +62,8 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     * Performs lambda lifting on the given definition `def0`.
     */
   private def liftDef(def0: SimplifiedAst.Def, m: TopLevel)(implicit flix: Flix): SimplifiedAst.Def = {
-    // Closure convert the expression.
-    val convertedExp = ClosureConv.visitExp(def0.exp)
-
     // Lift the closure converted expression.
-    val liftedExp = liftExp(convertedExp, def0.sym.name, m)
+    val liftedExp = liftExp(def0.exp, def0.sym.name, m)
 
     // Reassemble the definition.
     def0.copy(exp = liftedExp)
@@ -76,11 +73,8 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     * Performs lambda lifting on the given handler `handler0`.
     */
   private def liftHandler(handler0: SimplifiedAst.Handler, m: TopLevel)(implicit flix: Flix): SimplifiedAst.Handler = {
-    // Closure convert the expression.
-    val convertedExp = ClosureConv.visitExp(handler0.exp)
-
     // Lift the closure converted expression.
-    val liftedExp = liftExp(convertedExp, "handler", m)
+    val liftedExp = liftExp(handler0.exp, "handler", m)
 
     // Reassemble the handler.
     handler0.copy(exp = liftedExp)
@@ -90,11 +84,8 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     * Performs lambda lifting on the given property `property0`.
     */
   private def liftProperty(property0: SimplifiedAst.Property, m: TopLevel)(implicit flix: Flix): SimplifiedAst.Property = {
-    // Closure convert the expression.
-    val convertedExp = ClosureConv.visitExp(property0.exp)
-
     // Lift the closure converted expression.
-    val liftedExp = liftExp(convertedExp, "property", m)
+    val liftedExp = liftExp(property0.exp, "property", m)
 
     // Reassemble the property.
     property0.copy(exp = liftedExp)
@@ -302,11 +293,12 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
 
       case Expression.Constraint(c0, tpe, loc) =>
         val Constraint(cparams0, head0, body0) = c0
-        val head = visitHeadPredicate(head0)
-        val body = ???
+        // TODO
+//        val head = visitHeadPredicate(head0)
+        //        val body = ???
 
-        val c = Constraint(cparams0, head, body)
-        Expression.Constraint(c, tpe, loc)
+        //      val c = Constraint(cparams0, head, body)
+        Expression.Constraint(c0, tpe, loc)
 
       case Expression.ConstraintUnion(exp1, exp2, tpe, loc) =>
         val e1 = visitExp(exp1)

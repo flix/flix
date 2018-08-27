@@ -17,18 +17,70 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.SimplifiedAst._
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, SimplifiedAst, SourceLocation, Symbol, Type}
-import ca.uwaterloo.flix.util.InternalCompilerException
+import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
+import ca.uwaterloo.flix.util.Validation._
 
 import scala.collection.mutable
 
-object ClosureConv {
+object ClosureConv extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
+
+  /**
+    * Performs closure conversion on the given AST `root`.
+    */
+  def run(root: SimplifiedAst.Root)(implicit flix: Flix): Validation[SimplifiedAst.Root, CompilationError] = flix.phase("ClosureConv") {
+
+    // Definitions.
+    val definitions = root.defs.map {
+      case (sym, decl) => sym -> visitDef(decl)
+    }
+
+    // Handlers.
+    val handlers = root.handlers.map {
+      case (sym, handler) => sym -> visitHandler(handler)
+    }
+
+    // Properties.
+    val properties = root.properties.map {
+      property => visitProperty(property)
+    }
+
+    // Return the updated AST root.
+    root.copy(defs = definitions, handlers = handlers, properties = properties).toSuccess
+  }
+
+  /**
+    * Performs closure conversion on the given definition `def0`.
+    */
+  private def visitDef(def0: SimplifiedAst.Def)(implicit flix: Flix): SimplifiedAst.Def = {
+    val convertedExp = visitExp(def0.exp)
+    def0.copy(exp = convertedExp)
+  }
+
+  /**
+    * Performs closure conversion on the given handler `handler0`.
+    */
+  private def visitHandler(handler0: SimplifiedAst.Handler)(implicit flix: Flix): SimplifiedAst.Handler = {
+    val convertedExp = visitExp(handler0.exp)
+    handler0.copy(exp = convertedExp)
+  }
+
+  /**
+    * Performs closure conversion on the given property `property0`.
+    */
+  private def visitProperty(property0: SimplifiedAst.Property)(implicit flix: Flix): SimplifiedAst.Property = {
+    val convertedExp = visitExp(property0.exp)
+
+    // Reassemble the property.
+    property0.copy(exp = convertedExp)
+  }
 
   /**
     * Performs closure conversion on the given expression `e`.
     */
-  def visitExp(exp0: SimplifiedAst.Expression)(implicit flix: Flix): SimplifiedAst.Expression = exp0 match {
+  private def visitExp(exp0: SimplifiedAst.Expression)(implicit flix: Flix): SimplifiedAst.Expression = exp0 match {
     case Expression.Unit => exp0
     case Expression.True => exp0
     case Expression.False => exp0
@@ -264,7 +316,7 @@ object ClosureConv {
     * Does a left-to-right traversal of the AST, collecting free variables in order, in a LinkedHashSet.
     */
   // TODO: Use immutable, but sorted data structure?
-  def freeVars(exp0: SimplifiedAst.Expression): mutable.LinkedHashSet[(Symbol.VarSym, Type)] = exp0 match {
+  private def freeVars(exp0: SimplifiedAst.Expression): mutable.LinkedHashSet[(Symbol.VarSym, Type)] = exp0 match {
     case Expression.Unit => mutable.LinkedHashSet.empty
     case Expression.True => mutable.LinkedHashSet.empty
     case Expression.False => mutable.LinkedHashSet.empty
