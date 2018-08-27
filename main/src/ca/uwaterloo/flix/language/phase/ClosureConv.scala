@@ -19,18 +19,18 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.SimplifiedAst._
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, SimplifiedAst, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 import ca.uwaterloo.flix.util.Validation._
 
 import scala.collection.mutable
 
-object ClosureConv extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
+object ClosureConv extends Phase[Root, Root] {
 
   /**
     * Performs closure conversion on the given AST `root`.
     */
-  def run(root: SimplifiedAst.Root)(implicit flix: Flix): Validation[SimplifiedAst.Root, CompilationError] = flix.phase("ClosureConv") {
+  def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationError] = flix.phase("ClosureConv") {
 
     // Definitions.
     val definitions = root.defs.map {
@@ -54,7 +54,7 @@ object ClosureConv extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
   /**
     * Performs closure conversion on the given definition `def0`.
     */
-  private def visitDef(def0: SimplifiedAst.Def)(implicit flix: Flix): SimplifiedAst.Def = {
+  private def visitDef(def0: Def)(implicit flix: Flix): Def = {
     val convertedExp = visitExp(def0.exp)
     def0.copy(exp = convertedExp)
   }
@@ -62,7 +62,7 @@ object ClosureConv extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
   /**
     * Performs closure conversion on the given handler `handler0`.
     */
-  private def visitHandler(handler0: SimplifiedAst.Handler)(implicit flix: Flix): SimplifiedAst.Handler = {
+  private def visitHandler(handler0: Handler)(implicit flix: Flix): Handler = {
     val convertedExp = visitExp(handler0.exp)
     handler0.copy(exp = convertedExp)
   }
@@ -70,7 +70,7 @@ object ClosureConv extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
   /**
     * Performs closure conversion on the given property `property0`.
     */
-  private def visitProperty(property0: SimplifiedAst.Property)(implicit flix: Flix): SimplifiedAst.Property = {
+  private def visitProperty(property0: Property)(implicit flix: Flix): Property = {
     val convertedExp = visitExp(property0.exp)
 
     // Reassemble the property.
@@ -78,9 +78,9 @@ object ClosureConv extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
   }
 
   /**
-    * Performs closure conversion on the given expression `e`.
+    * Performs closure conversion on the given expression `exp0`.
     */
-  private def visitExp(exp0: SimplifiedAst.Expression)(implicit flix: Flix): SimplifiedAst.Expression = exp0 match {
+  private def visitExp(exp0: Expression)(implicit flix: Flix): Expression = exp0 match {
     case Expression.Unit => exp0
     case Expression.True => exp0
     case Expression.False => exp0
@@ -101,7 +101,7 @@ object ClosureConv extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       // We must create a closure, without free variables, of the definition symbol.
       Expression.Closure(sym, List.empty, tpe, loc)
 
-    case Expression.Eff(sym, tpe, loc) => ??? // TODO
+    case Expression.Eff(sym, tpe, loc) => ??? // TODO: ClosureConv Effect.
 
     case Expression.Lambda(args, body, tpe, loc) =>
       // Retrieve the type of the function.
@@ -123,7 +123,7 @@ object ClosureConv extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         case (oldSym, ptype) =>
           val newSym = Symbol.freshVarSym(oldSym)(flix.genSym)
           subst += (oldSym -> newSym)
-          SimplifiedAst.FormalParam(newSym, Ast.Modifiers.Empty, ptype, SourceLocation.Unknown)
+          FormalParam(newSym, Ast.Modifiers.Empty, ptype, SourceLocation.Unknown)
       } ++ args
 
       // Update the lambda type.
@@ -144,8 +144,8 @@ object ClosureConv extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       // bound values are passed as arguments.
       // Note that MkClosure keeps the old lambda type.
       // In a later phase, we will lift the lambda to a top-level definition.
-      //Expression.LambdaClosure(lambda, fvs.map(v => SimplifiedAst.FreeVar(v._1, v._2)), tpe, loc)
-      Expression.LambdaClosure(newArgs, fvs.map(v => SimplifiedAst.FreeVar(v._1, v._2)), newBody, tpe, loc)
+      //Expression.LambdaClosure(lambda, fvs.map(v => FreeVar(v._1, v._2)), tpe, loc)
+      Expression.LambdaClosure(newArgs, fvs.map(v => FreeVar(v._1, v._2)), newBody, tpe, loc)
 
     case Expression.Apply(e, args, tpe, loc) =>
       // We're trying to call some expression `e`. If `e` is a Ref, then it's a top-level function, so we directly call
@@ -156,7 +156,6 @@ object ClosureConv extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         case Expression.Eff(sym, _, _) => Expression.ApplyEff(sym, args.map(visitExp), tpe, loc)
         case _ => Expression.ApplyClo(visitExp(e), args.map(visitExp), tpe, loc)
       }
-
 
     case Expression.Unary(sop, op, e, tpe, loc) =>
       Expression.Unary(sop, op, visitExp(e), tpe, loc)
@@ -279,8 +278,11 @@ object ClosureConv extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       Expression.NewLattice(sym, tpe, loc)
 
     case Expression.Constraint(c0, tpe, loc) =>
-      // TODO: Recurse?
-      Expression.Constraint(c0, tpe, loc)
+      val Constraint(cparams0, head0, body0) = c0
+      val head = visitHeadPredicate(head0)
+      val body = body0 map visitBodyPredicate
+      val c = Constraint(cparams0, head, body)
+      Expression.Constraint(c, tpe, loc)
 
     case Expression.ConstraintUnion(exp1, exp2, tpe, loc) =>
       val e1 = visitExp(exp1)
@@ -312,11 +314,70 @@ object ClosureConv extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
   }
 
   /**
+    * Performs closure conversion on the given head predicate `head0`.
+    */
+  private def visitHeadPredicate(head0: Predicate.Head): Predicate.Head = head0 match {
+    case Predicate.Head.True(loc) => Predicate.Head.True(loc)
+
+    case Predicate.Head.False(loc) => Predicate.Head.False(loc)
+
+    case Predicate.Head.RelAtom(base, sym, terms, loc) =>
+      val ts = terms map visitHeadTerm
+      Predicate.Head.RelAtom(base, sym, ts, loc)
+
+    case Predicate.Head.LatAtom(base, sym, terms, loc) =>
+      val ts = terms map visitHeadTerm
+      Predicate.Head.LatAtom(base, sym, ts, loc)
+  }
+
+  /**
+    * Performs closure conversion on the given body predicate `body0`.
+    */
+  private def visitBodyPredicate(body0: Predicate.Body)(implicit flix: Flix): Predicate.Body = body0 match {
+    case Predicate.Body.RelAtom(base, sym, polarity, terms, loc) =>
+      val ts = terms map visitBodyTerm
+      Predicate.Body.RelAtom(base, sym, polarity, ts, loc)
+
+    case Predicate.Body.LatAtom(base, sym, polarity, terms, loc) =>
+      val ts = terms map visitBodyTerm
+      Predicate.Body.LatAtom(base, sym, polarity, ts, loc)
+
+    case Predicate.Body.Filter(sym, terms, loc) =>
+      val fvs = terms flatMap freeVars
+
+      val ts = terms map visitBodyTerm
+      Predicate.Body.Filter(sym, ts, loc)
+
+    case Predicate.Body.Functional(sym, term, loc) =>
+      body0 // TODO
+  }
+
+  /**
+    * Performs closure conversion on the given head term `term0`.
+    */
+  private def visitHeadTerm(term0: Term.Head): Term.Head =
+    term0 // TODO: Actually perform some operations.
+
+
+  /**
+    * Performs closure conversion on the given body term `term0`.
+    */
+  private def visitBodyTerm(term0: Term.Body)(implicit flix: Flix): Term.Body = term0 match {
+    case Term.Body.Wild(tpe, loc) => Term.Body.Wild(tpe, loc)
+    case Term.Body.QuantVar(sym, tpe, loc) => Term.Body.QuantVar(sym, tpe, loc)
+    case Term.Body.CapturedVar(sym, tpe, loc) =>
+      term0 // TODO
+    case Term.Body.Lit(exp, tpe, loc) =>
+      val e = visitExp(exp)
+      Term.Body.Lit(e, tpe, loc)
+  }
+
+  /**
     * Returns the free variables in the given expression `exp`.
     * Does a left-to-right traversal of the AST, collecting free variables in order, in a LinkedHashSet.
     */
   // TODO: Use immutable, but sorted data structure?
-  private def freeVars(exp0: SimplifiedAst.Expression): mutable.LinkedHashSet[(Symbol.VarSym, Type)] = exp0 match {
+  private def freeVars(exp0: Expression): mutable.LinkedHashSet[(Symbol.VarSym, Type)] = exp0 match {
     case Expression.Unit => mutable.LinkedHashSet.empty
     case Expression.True => mutable.LinkedHashSet.empty
     case Expression.False => mutable.LinkedHashSet.empty
@@ -453,8 +514,12 @@ object ClosureConv extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     * Returns the free variables in the given head term `term0`.
     */
   private def freeVars(term0: Term.Head): mutable.LinkedHashSet[(Symbol.VarSym, Type)] = term0 match {
-    case Term.Head.QuantVar(sym, tpe, loc) => mutable.LinkedHashSet.empty
-    case Term.Head.CapturedVar(sym, tpe, loc) => mutable.LinkedHashSet((sym, tpe))
+    case Term.Head.QuantVar(sym, tpe, loc) =>
+      // Quantified variables are never free.
+      mutable.LinkedHashSet.empty
+    case Term.Head.CapturedVar(sym, tpe, loc) =>
+      // Captured variables are by definition free.
+      mutable.LinkedHashSet((sym, tpe))
     case Term.Head.Lit(lit, tpe, loc) => mutable.LinkedHashSet.empty
     case Term.Head.App(sym, args, tpe, loc) => mutable.LinkedHashSet.empty
   }
@@ -464,8 +529,12 @@ object ClosureConv extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     */
   private def freeVars(term0: Term.Body): mutable.LinkedHashSet[(Symbol.VarSym, Type)] = term0 match {
     case Term.Body.Wild(tpe, loc) => mutable.LinkedHashSet.empty
-    case Term.Body.QuantVar(sym, tpe, loc) => mutable.LinkedHashSet.empty
-    case Term.Body.CapturedVar(sym, tpe, loc) => mutable.LinkedHashSet((sym, tpe))
+    case Term.Body.QuantVar(sym, tpe, loc) =>
+      // Quantified variables are never free.
+      mutable.LinkedHashSet.empty
+    case Term.Body.CapturedVar(sym, tpe, loc) =>
+      // Captured variables are by definition free.
+      mutable.LinkedHashSet((sym, tpe))
     case Term.Body.Lit(exp, tpe, loc) => freeVars(exp)
   }
 
@@ -777,11 +846,11 @@ object ClosureConv extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
   /**
     * Applies the given substitution map `subst` to the given formal parameters `fs`.
     */
-  private def replace(fparam: SimplifiedAst.FormalParam, subst: Map[Symbol.VarSym, Symbol.VarSym]): SimplifiedAst.FormalParam = fparam match {
-    case SimplifiedAst.FormalParam(sym, mod, tpe, loc) =>
+  private def replace(fparam: FormalParam, subst: Map[Symbol.VarSym, Symbol.VarSym]): FormalParam = fparam match {
+    case FormalParam(sym, mod, tpe, loc) =>
       subst.get(sym) match {
-        case None => SimplifiedAst.FormalParam(sym, mod, tpe, loc)
-        case Some(newSym) => SimplifiedAst.FormalParam(newSym, mod, tpe, loc)
+        case None => FormalParam(sym, mod, tpe, loc)
+        case Some(newSym) => FormalParam(newSym, mod, tpe, loc)
       }
   }
 
