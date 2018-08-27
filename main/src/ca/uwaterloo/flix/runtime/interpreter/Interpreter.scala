@@ -1163,7 +1163,7 @@ object Interpreter {
     * Computes the fixed point of the given constraint set `cs`.
     */
   private def solve(cs: ConstraintSet)(implicit flix: Flix): Fixpoint = {
-    val solver = mkSolver(cs.complete())
+    val solver = mkSolver(cs)
     solver.solve()
   }
 

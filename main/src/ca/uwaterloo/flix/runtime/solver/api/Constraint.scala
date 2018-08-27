@@ -113,6 +113,7 @@ class Constraint(cparams: Array[VarSym], head: Predicate, body: Array[Predicate]
   /**
     * Returns the atoms predicates in the body of the constraint.
     */
+  // TODO: Unfortunate name..
   def getAtoms(): Array[AtomPredicate] = body.collect {
     case p: AtomPredicate => p
   }

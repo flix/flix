@@ -94,113 +94,45 @@ class ConstraintSet(strata: Array[Stratum]) {
   /**
     * Computes all relations in the constraint set.
     */
-  private def getAllRelations(): Array[Relation] = {
-    val relations = mutable.Set.empty[Relation]
-    for (stratum <- strata) {
-      for (constraint <- stratum.getConstraints()) {
-        constraint.getHeadPredicate() match {
-          case p: AtomPredicate => p.getSym() match {
-            case r: Relation => relations += r
-            case _ =>
-          }
-          case _ => // nop
-        }
-        for (predicate <- constraint.getAtoms()) {
-          predicate match {
-            case p: AtomPredicate => p.getSym() match {
-              case r: Relation => relations += r
-              case _ =>
-            }
-            case _ => // nop
-          }
-        }
-      }
-    }
-    relations.toArray
+  private def getAllRelations(): Array[Relation] = getAtomPredicates().map(_.getSym()) collect {
+    case r: Relation => r
   }
 
   /**
     * Computes all lattices in the constraint set.
     */
-  private def getAllLattices(): Array[Lattice] = {
-    val lattices = mutable.Set.empty[Lattice]
-    for (stratum <- strata) {
-      for (constraint <- stratum.getConstraints()) {
-        constraint.getHeadPredicate() match {
-          case p: AtomPredicate => p.getSym() match {
-            case l: Lattice => lattices += l
-            case _ =>
-          }
-          case _ => // nop
-        }
-        for (predicate <- constraint.getAtoms()) {
-          predicate match {
-            case p: AtomPredicate => p.getSym() match {
-              case l: Lattice => lattices += l
-              case _ =>
-            }
-            case _ => // nop
-          }
-        }
-      }
-    }
-    lattices.toArray
+  private def getAllLattices(): Array[Lattice] = getAtomPredicates().map(_.getSym()) collect {
+    case l: Lattice => l
   }
 
   /**
     * Computes all placeholder relations in the constraint set.
     */
-  private def getRelationPlaceholders(): Array[RelationPlaceholder] = {
-    val relations = mutable.Set.empty[RelationPlaceholder]
-    for (stratum <- strata) {
-      for (constraint <- stratum.getConstraints()) {
-        constraint.getHeadPredicate() match {
-          case p: AtomPredicate => p.getSym() match {
-            case r: RelationPlaceholder => relations += r
-            case _ =>
-          }
-          case _ => // nop
-        }
-        for (predicate <- constraint.getAtoms()) {
-          predicate match {
-            case p: AtomPredicate => p.getSym() match {
-              case r: RelationPlaceholder => relations += r
-              case _ =>
-            }
-            case _ => // nop
-          }
-        }
-      }
+  private def getRelationPlaceholders(): Array[RelationPlaceholder] =
+    getAtomPredicates().map(_.getSym()) collect {
+      case r: RelationPlaceholder => r
     }
-    relations.toArray
-  }
 
   /**
     * Computes all lattice placeholders in the constraint set.
     */
-  private def getLatticePlaceholders(): Array[LatticePlaceholder] = {
-    val lattices = mutable.Set.empty[LatticePlaceholder]
-    for (stratum <- strata) {
-      for (constraint <- stratum.getConstraints()) {
-        constraint.getHeadPredicate() match {
-          case p: AtomPredicate => p.getSym() match {
-            case l: LatticePlaceholder => lattices += l
-            case _ =>
-          }
-          case _ => // nop
-        }
-        for (predicate <- constraint.getAtoms()) {
-          predicate match {
-            case p: AtomPredicate => p.getSym() match {
-              case l: LatticePlaceholder => lattices += l
-              case _ =>
-            }
-            case _ => // nop
-          }
-        }
+  private def getLatticePlaceholders(): Array[LatticePlaceholder] =
+    getAtomPredicates().map(_.getSym()) collect {
+      case l: LatticePlaceholder => l
+    }
+
+  /**
+    * Returns all predicates in the constraint set.
+    */
+  private def getAtomPredicates(): Array[AtomPredicate] = {
+    val constraints = strata.flatMap(_.getConstraints())
+    // TODO: Introduce better helper.
+    constraints.flatMap {
+      case c => c.getHeadPredicate() match {
+        case h: AtomPredicate => h +: c.getAtoms()
+        case _ => c.getAtoms()
       }
     }
-    lattices.toArray
   }
 
 }
