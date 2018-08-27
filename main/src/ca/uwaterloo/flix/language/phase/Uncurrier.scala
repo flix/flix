@@ -47,8 +47,6 @@ object Uncurrier extends Phase[Root, Root] {
     // A mutable map to hold new top-level definitions.
     val newDefs: TopLevel = mutable.Map.empty
 
-    // TODO: Need to perform uncurrying inside expressions since they may contain constraints...
-
     // Uncurry symbols in constraints.
     val newStrata = root.strata.map(visitStratum(_, newDefs, root))
 

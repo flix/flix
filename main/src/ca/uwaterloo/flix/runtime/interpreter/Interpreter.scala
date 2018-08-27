@@ -21,10 +21,10 @@ import java.lang.reflect.{InvocationTargetException, Modifier}
 import ca.uwaterloo.flix.api._
 import ca.uwaterloo.flix.language.ast.FinalAst._
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.runtime.Linker
-import ca.uwaterloo.flix.runtime.solver.{Fixpoint, FixpointOptions, Solver, api}
+import ca.uwaterloo.flix.runtime.{InvocationTarget, Linker}
+import ca.uwaterloo.flix.runtime.solver._
 import ca.uwaterloo.flix.runtime.solver.api.ApiBridge.SymbolCache
-import ca.uwaterloo.flix.runtime.solver.api.{ConstraintSet, ProxyObject, RelationPlaceholder}
+import ca.uwaterloo.flix.runtime.solver.api.{ConstraintSet, LatticePlaceholder, ProxyObject, RelationPlaceholder}
 import ca.uwaterloo.flix.util.{InternalRuntimeException, Verbosity}
 import ca.uwaterloo.flix.util.tc.Show._
 import flix.runtime._
@@ -947,7 +947,7 @@ object Interpreter {
     *
     * NB: Allocates a new relation if no such relation exists in the cache.
     */
-  private def getRelation(sym: Symbol.RelSym)(implicit root: FinalAst.Root, flix: Flix): api.Table = root.relations(sym) match {
+  private def getRelation(sym: Symbol.RelSym)(implicit root: FinalAst.Root, flix: Flix): api.RelationPlaceholder = root.relations(sym) match {
     case FinalAst.Relation(_, _, attr, _) =>
       val name = sym.toString
       val as = attr.map(a => new api.Attribute(a.name)).toArray
@@ -959,14 +959,33 @@ object Interpreter {
     *
     * NB: Allocates a new lattice if no such lattice exists in the cache.
     */
-  private def getLattice(sym: Symbol.LatSym)(implicit root: FinalAst.Root, flix: Flix): api.Lattice = root.lattices(sym) match {
+  private def getLattice(sym: Symbol.LatSym)(implicit root: FinalAst.Root, flix: Flix): api.LatticePlaceholder = root.lattices(sym) match {
     case FinalAst.Lattice(_, _, attr, _) =>
-      // TODO
-      val attributes = attr.map(a => new api.Attribute(a.name))
-      val keys = attributes.init
-      val value = attributes.last
-      val ops = ??? //getLatticeOps(l.attr.last) // TODO
-      ???
+      val name = sym.toString
+      val as = attr.map(a => new api.Attribute(a.name))
+      val keys = as.init.toArray
+      val value = as.last
+      val ops = getLatticeOps(attr.last.tpe)
+      new LatticePlaceholder(name, keys, value, ops)
+  }
+
+  /**
+    * Returns the lattice operations associated with the given type `tpe`.
+    */
+  private def getLatticeOps(tpe: Type)(implicit root: FinalAst.Root, flix: Flix): LatticeOps = {
+    val lattice = root.latticeComponents(tpe)
+
+    new LatticeOps {
+      override def bot: ProxyObject = Linker.link(lattice.bot, root).invoke(Array.empty)
+
+      override def equ: InvocationTarget = Linker.link(lattice.equ, root)
+
+      override def leq: InvocationTarget = Linker.link(lattice.leq, root)
+
+      override def lub: InvocationTarget = Linker.link(lattice.lub, root)
+
+      override def glb: InvocationTarget = Linker.link(lattice.glb, root)
+    }
   }
 
   /**

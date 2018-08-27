@@ -32,7 +32,7 @@ class ConstraintSet(strata: Array[Stratum]) {
     val newLattices = latticePlaceholders map {
       case (name, placeholders) => {
         val placeholder = placeholders(0)
-        name -> new Lattice(name, ???, ???, ???) // TODO
+        name -> new Lattice(name, placeholder.keys, placeholder.value, placeholder.ops)
       }
     }
 
