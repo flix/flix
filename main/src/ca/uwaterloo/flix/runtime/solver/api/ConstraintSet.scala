@@ -54,7 +54,7 @@ class ConstraintSet(strata: Array[Stratum]) {
     val newRelations = relationPlaceholders map {
       case (name, placeholders) => {
         val placeholder = placeholders(0) // guaranteed to be non-empty.
-        val attr = placeholder.attr
+        val attr = placeholder.getAttributes()
         name -> new Relation(name, attr)
       }
     }
@@ -62,7 +62,7 @@ class ConstraintSet(strata: Array[Stratum]) {
     val newLattices = latticePlaceholders map {
       case (name, placeholders) => {
         val placeholder = placeholders(0)
-        name -> new Lattice(name, placeholder.keys, placeholder.value, placeholder.ops)
+        name -> new Lattice(name, placeholder.getKeys(), placeholder.getValue(), placeholder.getOps())
       }
     }
 
@@ -75,8 +75,8 @@ class ConstraintSet(strata: Array[Stratum]) {
     def replacePredicate(p0: Predicate): Predicate = p0 match {
       case p: AtomPredicate =>
         val sym = p.getSym() match {
-          case r: RelationPlaceholder => newRelations(r.getName())
-          case l: LatticePlaceholder => newLattices(l.getName())
+          case r: RelationVar => newRelations(r.getName())
+          case l: LatticeVar => newLattices(l.getName())
           case _ => p.getSym()
         }
         new AtomPredicate(sym, p.isPositive(), p.getTerms(), p.getIndex2SymTEMPORARY)
@@ -112,15 +112,15 @@ class ConstraintSet(strata: Array[Stratum]) {
   /**
     * Computes all placeholder relations in the constraint set.
     */
-  private def getRelationPlaceholders(): Array[RelationPlaceholder] = getTables() collect {
-    case r: RelationPlaceholder => r
+  private def getRelationPlaceholders(): Array[RelationVar] = getTables() collect {
+    case r: RelationVar => r
   }
 
   /**
     * Computes all lattice placeholders in the constraint set.
     */
-  private def getLatticePlaceholders(): Array[LatticePlaceholder] = getTables() collect {
-    case l: LatticePlaceholder => l
+  private def getLatticePlaceholders(): Array[LatticeVar] = getTables() collect {
+    case l: LatticeVar => l
   }
 
   /**
