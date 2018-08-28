@@ -6,7 +6,7 @@ namespace InputStream {
 
     ///
     /// Effectfully returns an input stream from the given path `s`.
-    ///
+    /// Use path newInputStream to implement this
     pub eff new[a](p: Path, k: Result[InputStream, IOError] -> a): a
 
     ///
