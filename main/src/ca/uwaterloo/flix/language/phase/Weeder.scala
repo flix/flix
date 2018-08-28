@@ -182,50 +182,13 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           List(WeededAst.Declaration.Enum(doc, mod, ident, Nil, cases, mkSL(sp1, sp2)))
       }
 
-    case ParsedAst.Declaration.Relation(doc0, mod0, sp1, ident, attrs, sp2) =>
-      val doc = visitDoc(doc0)
-      val modVal = visitModifiers(mod0, legalModifiers = Set(Ast.Modifier.Public))
+    case d: ParsedAst.Declaration.Relation => visitRelation(d)
 
-      /*
-       * Check for `EmptyRelation`
-       */
-      if (attrs.isEmpty)
-        return EmptyRelation(ident.name, mkSL(sp1, sp2)).toFailure
+    case d: ParsedAst.Declaration.Lattice => visitLattice(d)
 
-      /*
-       * Check for `DuplicateAttribute`.
-       */
-      mapN(modVal, checkDuplicateAttribute(attrs)) {
-        case (mod, as) => List(WeededAst.Declaration.Relation(doc, mod, ident, as, mkSL(sp1, sp2)))
-      }
+    case d: ParsedAst.Declaration.Constraint => visitConstraint(d)
 
-    case ParsedAst.Declaration.Lattice(doc0, mod0, sp1, ident, attr, sp2) =>
-      val doc = visitDoc(doc0)
-      val modVal = visitModifiers(mod0, legalModifiers = Set(Ast.Modifier.Public))
-
-      /*
-       * Check for `EmptyLattice`.
-       */
-      if (attr.isEmpty)
-        return EmptyLattice(ident.name, mkSL(sp1, sp2)).toFailure
-
-      /*
-       * Check for `DuplicateAttribute`.
-       */
-      mapN(modVal, checkDuplicateAttribute(attr)) {
-        case (mod, as) =>
-          // Split the attributes into keys and element.
-          List(WeededAst.Declaration.Lattice(doc, mod, ident, as, mkSL(sp1, sp2)))
-      }
-
-    case d@ParsedAst.Declaration.Constraint(sp1, head, body, sp2) => visitConstraint(d)
-
-    case ParsedAst.Declaration.LatticeComponents(sp1, tpe, elms, sp2) =>
-      val elmsVal = traverse(elms)(e => visitExp(e))
-      elmsVal flatMap {
-        case List(bot, top, equ, leq, lub, glb) => List(WeededAst.Declaration.LatticeComponents(visitType(tpe), bot, top, equ, leq, lub, glb, mkSL(sp1, sp2))).toSuccess
-        case _ => IllegalLattice(mkSL(sp1, sp2)).toFailure
-      }
+    case d: ParsedAst.Declaration.LatticeComponents => visitLatticeComponents(d)
 
     case ParsedAst.Declaration.Class(doc0, sp1, mod0, cc, decls, sp2) =>
       val modVal = visitModifiers(mod0, legalModifiers = Set(Ast.Modifier.Public))
@@ -284,6 +247,52 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   }
 
   /**
+    * Performs weeding on the given relation `r0`.
+    */
+  private def visitRelation(r0: ParsedAst.Declaration.Relation)(implicit flix: Flix): Validation[List[WeededAst.Declaration.Relation], WeederError] = r0 match {
+    case ParsedAst.Declaration.Relation(doc0, mod0, sp1, ident, attrs, sp2) =>
+      val doc = visitDoc(doc0)
+      val modVal = visitModifiers(mod0, legalModifiers = Set(Ast.Modifier.Public))
+
+      /*
+       * Check for `EmptyRelation`
+       */
+      if (attrs.isEmpty)
+        return EmptyRelation(ident.name, mkSL(sp1, sp2)).toFailure
+
+      /*
+       * Check for `DuplicateAttribute`.
+       */
+      mapN(modVal, checkDuplicateAttribute(attrs)) {
+        case (mod, as) => List(WeededAst.Declaration.Relation(doc, mod, ident, as, mkSL(sp1, sp2)))
+      }
+  }
+
+  /**
+    * Performs weeding on the given lattice `r0`.
+    */
+  private def visitLattice(l0: ParsedAst.Declaration.Lattice)(implicit flix: Flix): Validation[List[WeededAst.Declaration.Lattice], WeederError] = l0 match {
+    case ParsedAst.Declaration.Lattice(doc0, mod0, sp1, ident, attr, sp2) =>
+      val doc = visitDoc(doc0)
+      val modVal = visitModifiers(mod0, legalModifiers = Set(Ast.Modifier.Public))
+
+      /*
+       * Check for `EmptyLattice`.
+       */
+      if (attr.isEmpty)
+        return EmptyLattice(ident.name, mkSL(sp1, sp2)).toFailure
+
+      /*
+       * Check for `DuplicateAttribute`.
+       */
+      mapN(modVal, checkDuplicateAttribute(attr)) {
+        case (mod, as) =>
+          // Split the attributes into keys and element.
+          List(WeededAst.Declaration.Lattice(doc, mod, ident, as, mkSL(sp1, sp2)))
+      }
+  }
+
+  /**
     * Performs weeding on the given constraint `c0`.
     */
   private def visitConstraint(c0: ParsedAst.Declaration.Constraint)(implicit flix: Flix): Validation[List[WeededAst.Declaration.Constraint], WeederError] = c0 match {
@@ -304,6 +313,18 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
                 case b => WeededAst.Declaration.Constraint(h, b, mkSL(sp1, sp2))
               }
           }
+      }
+  }
+
+  /**
+    * Performs weeding on the given lattice components `lc0`.
+    */
+  private def visitLatticeComponents(lc0: ParsedAst.Declaration.LatticeComponents)(implicit flix: Flix): Validation[List[WeededAst.Declaration.LatticeComponents], WeederError] = lc0 match {
+    case ParsedAst.Declaration.LatticeComponents(sp1, tpe, elms, sp2) =>
+      val elmsVal = traverse(elms)(e => visitExp(e))
+      elmsVal flatMap {
+        case List(bot, top, equ, leq, lub, glb) => List(WeededAst.Declaration.LatticeComponents(visitType(tpe), bot, top, equ, leq, lub, glb, mkSL(sp1, sp2))).toSuccess
+        case _ => IllegalLattice(mkSL(sp1, sp2)).toFailure
       }
   }
 
