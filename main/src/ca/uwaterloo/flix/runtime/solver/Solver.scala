@@ -213,7 +213,7 @@ class Solver(val constraintSet: ConstraintSet, options: FixpointOptions) {
     initDataStore()
 
     // compute the fixedpoint for each stratum, in sequence.
-    for (stratum <- constraintSet.getStrata()) {
+    for (stratum <- constraintSet.getConstraintsByStrata) {
       // initialize the worklist.
       initWorkList(stratum)
 
@@ -248,13 +248,6 @@ class Solver(val constraintSet: ConstraintSet, options: FixpointOptions) {
       throw ex.getCause
   }
 
-  def getRuleStats: List[(Constraint, Int, Long)] = {
-    val constraints = constraintSet.getStrata().flatMap(_.getConstraints())
-    constraints.toList.filter(_.isRule).sortBy(_.getElapsedTime()).reverse.map {
-      case r => (r, r.getNumberOfHits(), r.getElapsedTime())
-    }
-  }
-
   /**
     * Initialize the solver by starting the monitor, debugger, etc.
     */
@@ -277,10 +270,11 @@ class Solver(val constraintSet: ConstraintSet, options: FixpointOptions) {
   private def initDataStore(): Unit = {
     val t = System.nanoTime()
     // retrieve the lowest stratum.
-    val stratum0 = constraintSet.getStrata().head
+    val strata = constraintSet.getConstraintsByStrata
+    val stratum0 = if (strata.isEmpty) Array.empty[Constraint] else strata(0)
 
     // iterate through all facts.
-    for (constraint <- stratum0.getConstraints()) {
+    for (constraint <- stratum0) {
       if (constraint.isFact) {
         // evaluate the head of each fact.
         val interp = mkInterpretation()
@@ -304,9 +298,9 @@ class Solver(val constraintSet: ConstraintSet, options: FixpointOptions) {
   /**
     * Initialize the worklist with every rule (under the empty environment) in the given `stratum`.
     */
-  private def initWorkList(stratum: Stratum): Unit = {
+  private def initWorkList(stratum: Array[Constraint]): Unit = {
     // add all rules to the worklist (under empty environments).
-    for (rule <- stratum.getConstraints()) {
+    for (rule <- stratum) {
       worklist.push((rule, new Array[ProxyObject](rule.getNumberOfParameters)))
     }
   }
@@ -339,7 +333,7 @@ class Solver(val constraintSet: ConstraintSet, options: FixpointOptions) {
       val initMiliSeconds = initTime / 1000000
       val readersMiliSeconds = readersTime / 1000000
       val writersMiliSeconds = writersTime / 1000000
-      val initialFacts = constraintSet.getStrata().head.getConstraints().count(_.isFact)
+      val initialFacts = constraintSet.getConstraintsByStrata.head.count(_.isFact)
       val totalFacts = dataStore.numberOfFacts
       val throughput = ((1000.0 * totalFacts.toDouble) / (solverTime.toDouble + 1.0)).toInt
       Console.println(f"Solved in $solverTime%,d msec. (init: $initMiliSeconds%,d msec, readers: $readersMiliSeconds%,d msec, writers: $writersMiliSeconds%,d msec)")
@@ -357,7 +351,7 @@ class Solver(val constraintSet: ConstraintSet, options: FixpointOptions) {
     val t = System.nanoTime()
 
     val interp = mkInterpretation()
-    evalCross(rule, rule.getAtoms().toList, env, interp)
+    evalCross(rule, rule.getBodyAtoms().toList, env, interp)
     val e = System.nanoTime() - t
 
     rule.incrementNumberOfHits()
@@ -842,12 +836,9 @@ class Solver(val constraintSet: ConstraintSet, options: FixpointOptions) {
     */
   private def initDependencies(): Unit = {
     // Iterate through each stratum.
-    for (stratum <- constraintSet.getStrata()) {
-      // Retrieve the constraints in the current stratum.
-      val constraints = stratum.getConstraints()
-
+    for (stratum <- constraintSet.getConstraintsByStrata) {
       // Initialize the dependencies of every symbol to the empty set.
-      for (rule <- constraints) {
+      for (rule <- stratum) {
         rule.getHeadPredicate() match {
           case p: AtomPredicate => dependenciesOf.update(p.getSym, Set.empty)
           case _ => // nop
@@ -855,8 +846,8 @@ class Solver(val constraintSet: ConstraintSet, options: FixpointOptions) {
       }
 
       // Compute the dependencies via cross product.
-      for (outerRule <- constraints if outerRule.isRule) {
-        for (innerRule <- constraints if innerRule.isRule) {
+      for (outerRule <- stratum if outerRule.isRule) {
+        for (innerRule <- stratum if innerRule.isRule) {
           for (body <- innerRule.getBodyPredicates()) {
             // Loop through the atoms of the inner rule.
             (outerRule.getHeadPredicate(), body) match {

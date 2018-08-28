@@ -7,48 +7,49 @@ import scala.collection.mutable
 /**
   * Represents a collection of constraints.
   */
-class ConstraintSet(strata: Array[Stratum]) {
-
-  // TODO: Replace stratum by a number and then just do group by.
+class ConstraintSet(constraints: Array[Constraint]) {
 
   /**
-    * Returns all the relation values in the constraint set.
+    * Returns all the constraints in the constraint set.
     */
-  def getRelations(): Array[Relation] = getAllRelations()
+  def getConstraints(): Array[Constraint] = constraints
 
   /**
-    * Returns all the lattice values in the constraint set.
+    * Returns all the constraints in the constraint set by stratum.
     */
-  def getLattices(): Array[Lattice] = getAllLattices()
+  def getConstraintsByStrata: Array[Array[Constraint]] = {
+    val groupedByStratum = constraints.groupBy(_.getStratum()).toList
+    groupedByStratum.sortBy(_._1).map(_._2).toArray
+  }
 
   /**
-    * Returns the strata in the constraint set.
+    * Returns all relations in the constraint set.
     */
-  def getStrata(): Array[Stratum] = strata
+  def getRelations(): Array[Relation] = getTables() collect {
+    case r: Relation => r
+  }
+
+  /**
+    * Returns all the lattices in the constraint set.
+    */
+  def getLattices(): Array[Lattice] = getTables() collect {
+    case l: Lattice => l
+  }
 
   /**
     * Returns the union of `this` constraint set with `that` constraint set.
     */
   def union(that: ConstraintSet): ConstraintSet = {
-    // TODO: Correctness. This is just a hack for now.
-
-    // TODO: What about duplicates?
-    val newStrata = (this.getStrata() zip that.getStrata()) map {
-      case (stratum1, stratum2) => new Stratum(stratum1.getConstraints() ++ stratum2.getConstraints())
-    }
-
-    new ConstraintSet(newStrata)
+    new ConstraintSet(this.getConstraints() ++ that.getConstraints())
   }
 
-
   /**
-    * Returns a new constraint set without any place holders.
+    * Returns a new constraint set with all relations/lattices instantiated.
     */
-  // TODO: Move
   def complete(): ConstraintSet = {
     // TODO: Cleanup.
-    val relationPlaceholders = getRelationPlaceholders().groupBy(_.getName())
-    val latticePlaceholders = getLatticePlaceholders().groupBy(_.getName())
+    val relationPlaceholders = getRelationVars().groupBy(_.getName())
+    val latticePlaceholders = getLatticeVars().groupBy(_.getName())
 
     // Introduce a proper relation for each relation placeholder.
     val newRelations = relationPlaceholders map {
@@ -83,43 +84,22 @@ class ConstraintSet(strata: Array[Stratum]) {
       case _ => p0
     }
 
-    val newStrata = strata map {
-      stratum => new Stratum(stratum.getConstraints().map(replace))
-    }
+    val newConstraints = constraints.map(replace)
 
-    new ConstraintSet(newStrata)
+    new ConstraintSet(newConstraints)
   }
 
   /**
-    * Returns a human readable representation the constraint set.
+    * Returns all relation variables in the constraint set.
     */
-  override def toString: String = strata.mkString(", ")
-
-  /**
-    * Computes all relations in the constraint set.
-    */
-  private def getAllRelations(): Array[Relation] = getTables() collect {
-    case r: Relation => r
-  }
-
-  /**
-    * Computes all lattices in the constraint set.
-    */
-  private def getAllLattices(): Array[Lattice] = getTables() collect {
-    case l: Lattice => l
-  }
-
-  /**
-    * Computes all placeholder relations in the constraint set.
-    */
-  private def getRelationPlaceholders(): Array[RelationVar] = getTables() collect {
+  private def getRelationVars(): Array[RelationVar] = getTables() collect {
     case r: RelationVar => r
   }
 
   /**
-    * Computes all lattice placeholders in the constraint set.
+    * Returns all lattice variables in the constraint set.
     */
-  private def getLatticePlaceholders(): Array[LatticeVar] = getTables() collect {
+  private def getLatticeVars(): Array[LatticeVar] = getTables() collect {
     case l: LatticeVar => l
   }
 
@@ -132,15 +112,11 @@ class ConstraintSet(strata: Array[Stratum]) {
   /**
     * Returns all predicates in the constraint set.
     */
-  private def getAtomPredicates(): Array[AtomPredicate] = {
-    val constraints = strata.flatMap(_.getConstraints())
-    // TODO: Introduce better helper.
-    constraints.flatMap {
-      case c => c.getHeadPredicate() match {
-        case h: AtomPredicate => h +: c.getAtoms()
-        case _ => c.getAtoms()
-      }
-    }
-  }
+  private def getAtomPredicates(): Array[AtomPredicate] = constraints.flatMap(_.getAllAtoms())
+
+  /**
+    * Returns a human readable representation the constraint set.
+    */
+  override def toString: String = constraints.mkString(", ")
 
 }

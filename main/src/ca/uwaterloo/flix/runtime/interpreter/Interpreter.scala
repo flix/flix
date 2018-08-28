@@ -784,9 +784,8 @@ object Interpreter {
     val body = c0.body.map(b => evalBodyPredicate(b, env0))
 
     val constraint = new api.Constraint(cparams.toArray, head, body.toArray)
-    val strata = new api.Stratum(List(constraint).toArray)
 
-    new ConstraintSet(Array(strata))
+    new ConstraintSet(Array(constraint))
   }
 
   /**
