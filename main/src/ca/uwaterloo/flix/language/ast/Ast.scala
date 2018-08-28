@@ -77,17 +77,6 @@ object Ast {
       override def toString: String = "@unchecked"
     }
 
-    /**
-      * An AST node that represents an `@unsafe` annotation.
-      *
-      * A function marked `@unsafe` is permitted to use unsafe operations.
-      *
-      * @param loc the source location of the annotation.
-      */
-    case class Unsafe(loc: SourceLocation) extends Annotation {
-      override def toString: String = "@unsafe"
-    }
-
   }
 
   /**
@@ -124,11 +113,6 @@ object Ast {
       * Returns `true` if `this` sequence contains the `@unchecked` annotation.
       */
     def isUnchecked: Boolean = annotations exists (_.isInstanceOf[Annotation.Unchecked])
-
-    /**
-      * Returns `true` if `this` sequence contains the `@unsafe` annotation.
-      */
-    def isUnsafe: Boolean = annotations exists (_.isInstanceOf[Annotation.Unsafe])
   }
 
   /**

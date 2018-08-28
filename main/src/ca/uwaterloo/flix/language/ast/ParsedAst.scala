@@ -832,15 +832,6 @@ object ParsedAst {
     case class Cast(exp: ParsedAst.Expression, tpe: ParsedAst.Type, eff: Option[ParsedAst.Effect], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
-      * Unsafe Expression.
-      *
-      * @param sp1 the position of the first character in the expression.
-      * @param exp the unsafe expression.
-      * @param sp2 the position of the last character in the expression.
-      */
-    case class Unsafe(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
-
-    /**
       * Try Catch Expression.
       *
       * @param sp1   the position of the first character in the expression.

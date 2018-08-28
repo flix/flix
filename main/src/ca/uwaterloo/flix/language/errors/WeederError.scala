@@ -370,38 +370,6 @@ object WeederError {
   }
 
   /**
-    * An error raised to indicate that an unsafe expression does not occur inside an unsafe scope.
-    *
-    * @param loc the location of the expression.
-    */
-  case class IllegalUnsafeExpression(loc: SourceLocation) extends WeederError {
-    val source: Source = loc.source
-    val message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Unsafe operation must occur in unsafe scope." << NewLine
-      vt << NewLine
-      vt << Code(loc, "unsafe expression.") << NewLine
-    }
-  }
-
-  /**
-    * An error raised to indicate that an unsafe operations have been disabled.
-    *
-    * @param loc the location of the expression.
-    */
-  case class IllegalUnsafeExpressionInSafeMode(loc: SourceLocation) extends WeederError {
-    val source: Source = loc.source
-    val message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> Unsafe operations are disabled in safe mode." << NewLine
-      vt << NewLine
-      vt << Code(loc, "unsafe expression.") << NewLine
-    }
-  }
-
-  /**
     * An error raised to indicate an illegal wildcard in an expression.
     *
     * @param loc the location where the illegal wildcard occurs.
