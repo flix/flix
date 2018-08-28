@@ -19,7 +19,16 @@ class ConstraintSet(constraints: Array[Constraint]) {
     */
   def getConstraintsByStrata: Array[Array[Constraint]] = {
     val groupedByStratum = constraints.groupBy(_.getStratum()).toList
-    groupedByStratum.sortBy(_._1).map(_._2).toArray
+    val strata = groupedByStratum.sortBy(_._1).map(_._2).toArray
+
+    // Ensure that there is always at least one empty stratum.
+    if (strata.nonEmpty) {
+      strata
+    } else {
+      val a = Array.ofDim[Constraint](1, 1)
+      a(0) = Array.empty[Constraint]
+      a
+    }
   }
 
   /**

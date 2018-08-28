@@ -270,8 +270,7 @@ class Solver(val constraintSet: ConstraintSet, options: FixpointOptions) {
   private def initDataStore(): Unit = {
     val t = System.nanoTime()
     // retrieve the lowest stratum.
-    val strata = constraintSet.getConstraintsByStrata
-    val stratum0 = if (strata.isEmpty) Array.empty[Constraint] else strata(0)
+    val stratum0 = constraintSet.getConstraintsByStrata(0)
 
     // iterate through all facts.
     for (constraint <- stratum0) {
