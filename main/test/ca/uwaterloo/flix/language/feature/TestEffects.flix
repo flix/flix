@@ -52,7 +52,7 @@ handler i[a](x: Bool, y: Bool, k: (Int, Int) -> a): a = if (x && y) k(1, 2) else
 /////
 ///// Default handler for `isReadable`.
 /////
-//handler isReadable[a](p: Path, k: Result[Bool, IOError] -> a): a = unsafe {
+//handler isReadable[a](p: Path, k: Result[Bool, IOError] -> a): a = {
 //    let Path(nativePath) = p;
 //    let result = native method java.nio.file.Files.isReadable(nativePath);
 //        k(Ok(result))
@@ -61,7 +61,7 @@ handler i[a](x: Bool, y: Bool, k: (Int, Int) -> a): a = if (x && y) k(1, 2) else
 /////
 ///// Default handler for `isWritable`.
 /////
-//handler isWritable[a](p: Path, k: Result[Bool, IOError] -> a): a = unsafe {
+//handler isWritable[a](p: Path, k: Result[Bool, IOError] -> a): a = {
 //   let Path(nativePath) = p;
 //   let result = native method java.nio.file.Files.isWritable(nativePath);
 //       k(Ok(result))

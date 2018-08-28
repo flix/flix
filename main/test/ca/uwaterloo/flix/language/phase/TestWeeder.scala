@@ -200,45 +200,27 @@ class TestWeeder extends FunSuite with TestUtils {
   }
 
   test("IllegalNativeFieldOrMethodName.01") {
-    val input = "def f(): Int = unsafe native field java"
+    val input = "def f(): Int = native field java"
     val result = new Flix().addStr(input).compile()
     expectError[WeederError.IllegalNativeFieldOrMethodName](result)
   }
 
   test("IllegalNativeFieldOrMethodName.02") {
-    val input = "def f(): Int = unsafe native field com"
+    val input = "def f(): Int = native field com"
     val result = new Flix().addStr(input).compile()
     expectError[WeederError.IllegalNativeFieldOrMethodName](result)
   }
 
   test("IllegalNativeFieldOrMethodName.03") {
-    val input = "def f(): Int = unsafe native method java()"
+    val input = "def f(): Int = native method java()"
     val result = new Flix().addStr(input).compile()
     expectError[WeederError.IllegalNativeFieldOrMethodName](result)
   }
 
   test("IllegalNativeFieldOrMethodName.04") {
-    val input = "def f(): Int = unsafe native method com()"
+    val input = "def f(): Int = native method com()"
     val result = new Flix().addStr(input).compile()
     expectError[WeederError.IllegalNativeFieldOrMethodName](result)
-  }
-
-  test("IllegalUnsafeExpression.01") {
-    val input = "def f(): Int = native new java.lang.x.y.z(1, 2, 3)"
-    val result = new Flix().addStr(input).compile()
-    expectError[WeederError.IllegalUnsafeExpression](result)
-  }
-
-  test("IllegalUnsafeExpression.02") {
-    val input = "def f(): Int = native field java.lang.x.y.z"
-    val result = new Flix().addStr(input).compile()
-    expectError[WeederError.IllegalUnsafeExpression](result)
-  }
-
-  test("IllegalUnsafeExpression.03") {
-    val input = "def f(): Int = native method java.lang.x.y.z(1, 2, 3)"
-    val result = new Flix().addStr(input).compile()
-    expectError[WeederError.IllegalUnsafeExpression](result)
   }
 
   test("IllegalUniversal.01") {
