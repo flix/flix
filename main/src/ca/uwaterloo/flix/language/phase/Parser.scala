@@ -582,7 +582,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Primary: Rule1[ParsedAst.Expression] = rule {
-      LetRec | LetMatch | IfThenElse | Match | LambdaMatch | Switch | Unsafe | TryCatch | Native | Lambda | Tuple |
+      LetRec | LetMatch | IfThenElse | Match | LambdaMatch | Switch | TryCatch | Native | Lambda | Tuple |
         ArrayLit | ArrayNew | ArrayLength | VectorLit | VectorNew | VectorLength | FNil | FSet | FMap |
         NewRelationOrLattice | FixpointSolve | FixpointCheck | ConstraintSeq | Literal |
         HandleWith | Existential | Universal | UnaryLambda | QName | Wild | Tag | SName | Hole | UserError
@@ -622,10 +622,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       rule {
         SP ~ atomic("switch") ~ WS ~ "{" ~ optWS ~ oneOrMore(Rule).separatedBy(optWS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.Switch
       }
-    }
-
-    def Unsafe: Rule1[ParsedAst.Expression] = rule {
-      SP ~ atomic("unsafe") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.Unsafe
     }
 
     def TryCatch: Rule1[ParsedAst.Expression] = {

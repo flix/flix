@@ -310,587 +310,547 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   /**
     * Weeds the given expression.
     */
-  private def visitExp(exp0: ParsedAst.Expression)(implicit flix: Flix): Validation[WeededAst.Expression, WeederError] = {
-    /**
-      * Inner visitor.
-      *
-      * @param e0     the expression.
-      * @param unsafe `true` if we are inside an unsafe scope.
-      */
-    def visit(e0: ParsedAst.Expression, unsafe: Boolean): Validation[WeededAst.Expression, WeederError] = e0 match {
-      case ParsedAst.Expression.Wild(sp1, sp2) => IllegalWildcard(mkSL(sp1, sp2)).toFailure
+  private def visitExp(exp0: ParsedAst.Expression)(implicit flix: Flix): Validation[WeededAst.Expression, WeederError] = exp0 match {
+    case ParsedAst.Expression.Wild(sp1, sp2) => IllegalWildcard(mkSL(sp1, sp2)).toFailure
 
-      case ParsedAst.Expression.SName(sp1, ident, sp2) =>
-        val qname = Name.mkQName(ident)
-        WeededAst.Expression.VarOrDef(qname, mkSL(sp1, sp2)).toSuccess
+    case ParsedAst.Expression.SName(sp1, ident, sp2) =>
+      val qname = Name.mkQName(ident)
+      WeededAst.Expression.VarOrDef(qname, mkSL(sp1, sp2)).toSuccess
 
-      case ParsedAst.Expression.QName(sp1, qname, sp2) =>
-        WeededAst.Expression.VarOrDef(qname, mkSL(sp1, sp2)).toSuccess
+    case ParsedAst.Expression.QName(sp1, qname, sp2) =>
+      WeededAst.Expression.VarOrDef(qname, mkSL(sp1, sp2)).toSuccess
 
-      case ParsedAst.Expression.Hole(sp1, name, sp2) =>
-        val loc = mkSL(sp1, sp2)
-        /*
-         * Checks for `IllegalHole`.
-         */
-        if (flix.options.mode == CompilationMode.Release) {
-          return IllegalHole(loc).toFailure
+    case ParsedAst.Expression.Hole(sp1, name, sp2) =>
+      val loc = mkSL(sp1, sp2)
+      /*
+       * Checks for `IllegalHole`.
+       */
+      if (flix.options.mode == CompilationMode.Release) {
+        return IllegalHole(loc).toFailure
+      }
+      WeededAst.Expression.Hole(name, loc).toSuccess
+
+    case ParsedAst.Expression.Lit(sp1, lit, sp2) => lit2exp(lit)
+
+    case ParsedAst.Expression.Apply(lambda, args, sp2) =>
+      val sp1 = leftMostSourcePosition(lambda)
+      val loc = mkSL(sp1, sp2)
+      mapN(visitExp(lambda), traverse(args)(e => visitExp(e))) {
+        case (e, as) =>
+          val es = getApplyArgsCheckIfEmpty(as, sp1, sp2)
+          mkApplyCurried(e, es, loc)
+      }
+
+    case ParsedAst.Expression.Infix(exp1, name, exp2, sp2) =>
+      /*
+       * Rewrites infix expressions to apply expressions.
+       */
+      mapN(visitExp(exp1), visitExp(exp2)) {
+        case (e1, e2) =>
+          val loc = mkSL(leftMostSourcePosition(exp1), sp2)
+          val lambda = WeededAst.Expression.VarOrDef(name, loc)
+          mkApplyCurried(lambda, List(e1, e2), loc)
+      }
+
+    case ParsedAst.Expression.Postfix(exp, ident, exps, sp2) =>
+      /*
+       * Rewrites postfix expressions to apply expressions.
+       */
+      mapN(visitExp(exp), traverse(exps)(e => visitExp(e))) {
+        case (e, es) =>
+          val sp1 = leftMostSourcePosition(exp)
+          val loc = mkSL(sp1, sp2)
+          val qname = Name.mkQName(ident)
+          val lambda = WeededAst.Expression.VarOrDef(qname, loc)
+          mkApplyCurried(lambda, e :: es, loc)
+      }
+
+    case ParsedAst.Expression.Lambda(sp1, fparams0, exp, sp2) =>
+      val loc = mkSL(sp1, sp2)
+      /*
+       * Check for `DuplicateFormal`.
+       */
+      for {
+        fs <- visitFormalParams(fparams0, typeRequired = false)
+        e <- visitExp(exp)
+      } yield mkCurried(fs, e, loc)
+
+    case ParsedAst.Expression.LambdaMatch(sp1, pat, exp, sp2) =>
+      /*
+       * Rewrites lambda pattern match expressions into a lambda expression with a nested pattern match.
+       */
+      mapN(visitPattern(pat), visitExp(exp)) {
+        case (p, e) =>
+          val loc = mkSL(sp1, sp2)
+          // The name of the lambda parameter.
+          val ident = Name.Ident(sp1, "pat$0", sp2)
+          val qname = Name.mkQName(ident)
+          // Construct the body of the lambda expression.
+          val varOrRef = WeededAst.Expression.VarOrDef(qname, loc)
+          val rule = WeededAst.MatchRule(p, WeededAst.Expression.True(loc), e)
+
+          val fparam = WeededAst.FormalParam(ident, Ast.Modifiers.Empty, None, ident.loc)
+          val body = WeededAst.Expression.Match(varOrRef, List(rule), loc)
+          WeededAst.Expression.Lambda(fparam, body, loc)
+      }
+
+    case ParsedAst.Expression.Unary(sp1, op, exp, sp2) =>
+      val loc = mkSL(sp1, sp2)
+      visitExp(exp) map {
+        case e => op match {
+          case "!" => WeededAst.Expression.Unary(UnaryOperator.LogicalNot, e, loc)
+          case "+" => WeededAst.Expression.Unary(UnaryOperator.Plus, e, loc)
+          case "-" => WeededAst.Expression.Unary(UnaryOperator.Minus, e, loc)
+          case "~~~" => WeededAst.Expression.Unary(UnaryOperator.BitwiseNegate, e, loc)
+          case _ => mkApplyFqn(op, List(e), sp1, sp2)
         }
-        WeededAst.Expression.Hole(name, loc).toSuccess
+      }
 
-      case ParsedAst.Expression.Lit(sp1, lit, sp2) => lit2exp(lit)
-
-      case ParsedAst.Expression.Apply(lambda, args, sp2) =>
-        val sp1 = leftMostSourcePosition(lambda)
-        val loc = mkSL(sp1, sp2)
-        mapN(visit(lambda, unsafe), traverse(args)(e => visit(e, unsafe))) {
-          case (e, as) =>
-            val es = getApplyArgsCheckIfEmpty(as, sp1, sp2)
-            mkApplyCurried(e, es, loc)
+    case ParsedAst.Expression.Binary(exp1, op, exp2, sp2) =>
+      val sp1 = leftMostSourcePosition(exp1)
+      val loc = mkSL(sp1, sp2)
+      mapN(visitExp(exp1), visitExp(exp2)) {
+        case (e1, e2) => op match {
+          case "+" => WeededAst.Expression.Binary(BinaryOperator.Plus, e1, e2, loc)
+          case "-" => WeededAst.Expression.Binary(BinaryOperator.Minus, e1, e2, loc)
+          case "*" => WeededAst.Expression.Binary(BinaryOperator.Times, e1, e2, loc)
+          case "/" => WeededAst.Expression.Binary(BinaryOperator.Divide, e1, e2, loc)
+          case "%" => WeededAst.Expression.Binary(BinaryOperator.Modulo, e1, e2, loc)
+          case "**" => WeededAst.Expression.Binary(BinaryOperator.Exponentiate, e1, e2, loc)
+          case "<" => WeededAst.Expression.Binary(BinaryOperator.Less, e1, e2, loc)
+          case "<=" => WeededAst.Expression.Binary(BinaryOperator.LessEqual, e1, e2, loc)
+          case ">" => WeededAst.Expression.Binary(BinaryOperator.Greater, e1, e2, loc)
+          case ">=" => WeededAst.Expression.Binary(BinaryOperator.GreaterEqual, e1, e2, loc)
+          case "==" => WeededAst.Expression.Binary(BinaryOperator.Equal, e1, e2, loc)
+          case "!=" => WeededAst.Expression.Binary(BinaryOperator.NotEqual, e1, e2, loc)
+          case "&&" => WeededAst.Expression.Binary(BinaryOperator.LogicalAnd, e1, e2, loc)
+          case "||" => WeededAst.Expression.Binary(BinaryOperator.LogicalOr, e1, e2, loc)
+          case "&&&" => WeededAst.Expression.Binary(BinaryOperator.BitwiseAnd, e1, e2, loc)
+          case "|||" => WeededAst.Expression.Binary(BinaryOperator.BitwiseOr, e1, e2, loc)
+          case "^^^" => WeededAst.Expression.Binary(BinaryOperator.BitwiseXor, e1, e2, loc)
+          case "<<<" => WeededAst.Expression.Binary(BinaryOperator.BitwiseLeftShift, e1, e2, loc)
+          case ">>>" => WeededAst.Expression.Binary(BinaryOperator.BitwiseRightShift, e1, e2, loc)
+          case _ => mkApplyFqn(op, List(e1, e2), sp1, sp2)
         }
+      }
 
-      case ParsedAst.Expression.Infix(exp1, name, exp2, sp2) =>
-        /*
-         * Rewrites infix expressions to apply expressions.
-         */
-        mapN(visit(exp1, unsafe), visit(exp2, unsafe)) {
-          case (e1, e2) =>
-            val loc = mkSL(leftMostSourcePosition(exp1), sp2)
-            val lambda = WeededAst.Expression.VarOrDef(name, loc)
-            mkApplyCurried(lambda, List(e1, e2), loc)
-        }
+    case ParsedAst.Expression.IfThenElse(sp1, exp1, exp2, exp3, sp2) =>
+      mapN(visitExp(exp1), visitExp(exp2), visitExp(exp3)) {
+        case (e1, e2, e3) => WeededAst.Expression.IfThenElse(e1, e2, e3, mkSL(sp1, sp2))
+      }
 
-      case ParsedAst.Expression.Postfix(exp, ident, exps, sp2) =>
-        /*
-         * Rewrites postfix expressions to apply expressions.
-         */
-        mapN(visit(exp, unsafe), traverse(exps)(e => visit(e, unsafe))) {
-          case (e, es) =>
-            val sp1 = leftMostSourcePosition(exp)
-            val loc = mkSL(sp1, sp2)
-            val qname = Name.mkQName(ident)
-            val lambda = WeededAst.Expression.VarOrDef(qname, loc)
-            mkApplyCurried(lambda, e :: es, loc)
-        }
-
-      case ParsedAst.Expression.Lambda(sp1, fparams0, exp, sp2) =>
-        val loc = mkSL(sp1, sp2)
-        /*
-         * Check for `DuplicateFormal`.
-         */
-        for {
-          fs <- visitFormalParams(fparams0, typeRequired = false)
-          e <- visit(exp, unsafe)
-        } yield mkCurried(fs, e, loc)
-
-      case ParsedAst.Expression.LambdaMatch(sp1, pat, exp, sp2) =>
-        /*
-         * Rewrites lambda pattern match expressions into a lambda expression with a nested pattern match.
-         */
-        mapN(visitPattern(pat), visitExp(exp)) {
-          case (p, e) =>
-            val loc = mkSL(sp1, sp2)
-            // The name of the lambda parameter.
-            val ident = Name.Ident(sp1, "pat$0", sp2)
-            val qname = Name.mkQName(ident)
-            // Construct the body of the lambda expression.
-            val varOrRef = WeededAst.Expression.VarOrDef(qname, loc)
-            val rule = WeededAst.MatchRule(p, WeededAst.Expression.True(loc), e)
-
-            val fparam = WeededAst.FormalParam(ident, Ast.Modifiers.Empty, None, ident.loc)
-            val body = WeededAst.Expression.Match(varOrRef, List(rule), loc)
-            WeededAst.Expression.Lambda(fparam, body, loc)
-        }
-
-      case ParsedAst.Expression.Unary(sp1, op, exp, sp2) =>
-        val loc = mkSL(sp1, sp2)
-        visit(exp, unsafe) map {
-          case e => op match {
-            case "!" => WeededAst.Expression.Unary(UnaryOperator.LogicalNot, e, loc)
-            case "+" => WeededAst.Expression.Unary(UnaryOperator.Plus, e, loc)
-            case "-" => WeededAst.Expression.Unary(UnaryOperator.Minus, e, loc)
-            case "~~~" => WeededAst.Expression.Unary(UnaryOperator.BitwiseNegate, e, loc)
-            case _ => mkApplyFqn(op, List(e), sp1, sp2)
+    case ParsedAst.Expression.LetMatch(sp1, pat, tpe, exp1, exp2, sp2) =>
+      /*
+       * Rewrites a let-match to a regular let-binding or a full-blown pattern match.
+       */
+      mapN(visitPattern(pat), visitExp(exp1), visitExp(exp2)) {
+        case (WeededAst.Pattern.Var(ident, loc), value, body) =>
+          // Let-binding.
+          // Check if there is a type annotation for the value expression.
+          tpe match {
+            case None => WeededAst.Expression.Let(ident, value, body, mkSL(sp1, sp2))
+            case Some(t) =>
+              val ascribed = WeededAst.Expression.Ascribe(value, visitType(t), Eff.Pure, value.loc)
+              WeededAst.Expression.Let(ident, ascribed, body, mkSL(sp1, sp2))
           }
-        }
-
-      case ParsedAst.Expression.Binary(exp1, op, exp2, sp2) =>
-        val sp1 = leftMostSourcePosition(exp1)
-        val loc = mkSL(sp1, sp2)
-        mapN(visit(exp1, unsafe), visit(exp2, unsafe)) {
-          case (e1, e2) => op match {
-            case "+" => WeededAst.Expression.Binary(BinaryOperator.Plus, e1, e2, loc)
-            case "-" => WeededAst.Expression.Binary(BinaryOperator.Minus, e1, e2, loc)
-            case "*" => WeededAst.Expression.Binary(BinaryOperator.Times, e1, e2, loc)
-            case "/" => WeededAst.Expression.Binary(BinaryOperator.Divide, e1, e2, loc)
-            case "%" => WeededAst.Expression.Binary(BinaryOperator.Modulo, e1, e2, loc)
-            case "**" => WeededAst.Expression.Binary(BinaryOperator.Exponentiate, e1, e2, loc)
-            case "<" => WeededAst.Expression.Binary(BinaryOperator.Less, e1, e2, loc)
-            case "<=" => WeededAst.Expression.Binary(BinaryOperator.LessEqual, e1, e2, loc)
-            case ">" => WeededAst.Expression.Binary(BinaryOperator.Greater, e1, e2, loc)
-            case ">=" => WeededAst.Expression.Binary(BinaryOperator.GreaterEqual, e1, e2, loc)
-            case "==" => WeededAst.Expression.Binary(BinaryOperator.Equal, e1, e2, loc)
-            case "!=" => WeededAst.Expression.Binary(BinaryOperator.NotEqual, e1, e2, loc)
-            case "&&" => WeededAst.Expression.Binary(BinaryOperator.LogicalAnd, e1, e2, loc)
-            case "||" => WeededAst.Expression.Binary(BinaryOperator.LogicalOr, e1, e2, loc)
-            case "&&&" => WeededAst.Expression.Binary(BinaryOperator.BitwiseAnd, e1, e2, loc)
-            case "|||" => WeededAst.Expression.Binary(BinaryOperator.BitwiseOr, e1, e2, loc)
-            case "^^^" => WeededAst.Expression.Binary(BinaryOperator.BitwiseXor, e1, e2, loc)
-            case "<<<" => WeededAst.Expression.Binary(BinaryOperator.BitwiseLeftShift, e1, e2, loc)
-            case ">>>" => WeededAst.Expression.Binary(BinaryOperator.BitwiseRightShift, e1, e2, loc)
-            case _ => mkApplyFqn(op, List(e1, e2), sp1, sp2)
+        case (pattern, value, body) =>
+          // Full-blown pattern match.
+          val rule = WeededAst.MatchRule(pattern, WeededAst.Expression.True(mkSL(sp1, sp2)), body)
+          // Check if there is a type annotation for the value expression.
+          tpe match {
+            case None => WeededAst.Expression.Match(value, List(rule), mkSL(sp1, sp2))
+            case Some(t) =>
+              val ascribed = WeededAst.Expression.Ascribe(value, visitType(t), Eff.Pure, value.loc)
+              WeededAst.Expression.Match(ascribed, List(rule), mkSL(sp1, sp2))
           }
-        }
+      }
 
-      case ParsedAst.Expression.IfThenElse(sp1, exp1, exp2, exp3, sp2) =>
-        mapN(visit(exp1, unsafe), visit(exp2, unsafe), visit(exp3, unsafe)) {
-          case (e1, e2, e3) => WeededAst.Expression.IfThenElse(e1, e2, e3, mkSL(sp1, sp2))
-        }
+    case ParsedAst.Expression.LetRec(sp1, ident, exp1, exp2, sp2) =>
+      mapN(visitExp(exp1), visitExp(exp2)) {
+        case (value, body) => WeededAst.Expression.LetRec(ident, value, body, mkSL(sp1, sp2))
+      }
 
-      case ParsedAst.Expression.LetMatch(sp1, pat, tpe, exp1, exp2, sp2) =>
-        /*
-         * Rewrites a let-match to a regular let-binding or a full-blown pattern match.
-         */
-        mapN(visitPattern(pat), visit(exp1, unsafe), visit(exp2, unsafe)) {
-          case (WeededAst.Pattern.Var(ident, loc), value, body) =>
-            // Let-binding.
-            // Check if there is a type annotation for the value expression.
-            tpe match {
-              case None => WeededAst.Expression.Let(ident, value, body, mkSL(sp1, sp2))
-              case Some(t) =>
-                val ascribed = WeededAst.Expression.Ascribe(value, visitType(t), Eff.Pure, value.loc)
-                WeededAst.Expression.Let(ident, ascribed, body, mkSL(sp1, sp2))
-            }
-          case (pattern, value, body) =>
-            // Full-blown pattern match.
-            val rule = WeededAst.MatchRule(pattern, WeededAst.Expression.True(mkSL(sp1, sp2)), body)
-            // Check if there is a type annotation for the value expression.
-            tpe match {
-              case None => WeededAst.Expression.Match(value, List(rule), mkSL(sp1, sp2))
-              case Some(t) =>
-                val ascribed = WeededAst.Expression.Ascribe(value, visitType(t), Eff.Pure, value.loc)
-                WeededAst.Expression.Match(ascribed, List(rule), mkSL(sp1, sp2))
-            }
-        }
-
-      case ParsedAst.Expression.LetRec(sp1, ident, exp1, exp2, sp2) =>
-        mapN(visit(exp1, unsafe), visit(exp2, unsafe)) {
-          case (value, body) => WeededAst.Expression.LetRec(ident, value, body, mkSL(sp1, sp2))
-        }
-
-      case ParsedAst.Expression.Match(sp1, exp, rules, sp2) =>
-        val rulesVal = traverse(rules) {
-          case ParsedAst.MatchRule(pat, None, body) =>
-            mapN(visitPattern(pat), visit(body, unsafe)) {
-              // Pattern match without guard.
-              case (p, e) => WeededAst.MatchRule(p, WeededAst.Expression.True(mkSL(sp1, sp2)), e)
-            }
-          case ParsedAst.MatchRule(pat, Some(guard), body) => mapN(visitPattern(pat), visit(guard, unsafe), visit(body, unsafe)) {
-            // Pattern match with guard.
-            case (p, g, b) => WeededAst.MatchRule(p, g, b)
+    case ParsedAst.Expression.Match(sp1, exp, rules, sp2) =>
+      val rulesVal = traverse(rules) {
+        case ParsedAst.MatchRule(pat, None, body) =>
+          mapN(visitPattern(pat), visitExp(body)) {
+            // Pattern match without guard.
+            case (p, e) => WeededAst.MatchRule(p, WeededAst.Expression.True(mkSL(sp1, sp2)), e)
           }
+        case ParsedAst.MatchRule(pat, Some(guard), body) => mapN(visitPattern(pat), visitExp(guard), visitExp(body)) {
+          // Pattern match with guard.
+          case (p, g, b) => WeededAst.MatchRule(p, g, b)
         }
-        mapN(visit(exp, unsafe), rulesVal) {
-          case (e, rs) => WeededAst.Expression.Match(e, rs, mkSL(sp1, sp2))
-        }
+      }
+      mapN(visitExp(exp), rulesVal) {
+        case (e, rs) => WeededAst.Expression.Match(e, rs, mkSL(sp1, sp2))
+      }
 
-      case ParsedAst.Expression.Switch(sp1, rules, sp2) =>
-        val rulesVal = traverse(rules) {
-          case (cond, body) => sequence(visit(cond, unsafe), visit(body, unsafe))
-        }
-        rulesVal map {
-          case rs => WeededAst.Expression.Switch(rs, mkSL(sp1, sp2))
-        }
+    case ParsedAst.Expression.Switch(sp1, rules, sp2) =>
+      val rulesVal = traverse(rules) {
+        case (cond, body) => sequence(visitExp(cond), visitExp(body))
+      }
+      rulesVal map {
+        case rs => WeededAst.Expression.Switch(rs, mkSL(sp1, sp2))
+      }
 
-      case ParsedAst.Expression.Tag(sp1, qname, expOpt, sp2) =>
-        val (enum, tag) = asTag(qname)
+    case ParsedAst.Expression.Tag(sp1, qname, expOpt, sp2) =>
+      val (enum, tag) = asTag(qname)
 
-        expOpt match {
-          case None =>
-            // Case 1: The tag does not have an expression. Nothing more to be done.
-            WeededAst.Expression.Tag(enum, tag, None, mkSL(sp1, sp2)).toSuccess
-          case Some(exp) =>
-            // Case 2: The tag has an expression. Perform weeding on it.
-            visit(exp, unsafe) map {
-              case e => WeededAst.Expression.Tag(enum, tag, Some(e), mkSL(sp1, sp2))
-            }
-        }
-
-      case ParsedAst.Expression.Tuple(sp1, elms, sp2) =>
-        /*
-         * Rewrites empty tuples to Unit and eliminate single-element tuples.
-         */
-        traverse(elms)(e => visit(e, unsafe)) map {
-          case Nil =>
-            val loc = mkSL(sp1, sp2)
-            WeededAst.Expression.Unit(loc)
-          case x :: Nil => x
-          case xs => WeededAst.Expression.Tuple(xs, mkSL(sp1, sp2))
-        }
-
-      case ParsedAst.Expression.ArrayLit(sp1, elms, sp2) =>
-        traverse(elms)(e => visit(e, unsafe)) map {
-          case es => WeededAst.Expression.ArrayLit(es, mkSL(sp1, sp2))
-        }
-
-      case ParsedAst.Expression.ArrayNew(sp1, elm, len, sp2) =>
-        mapN(visit(elm, unsafe), visit(len, unsafe)) {
-          case (e, ln) => WeededAst.Expression.ArrayNew(e, ln, mkSL(sp1, sp2))
-        }
-
-      case ParsedAst.Expression.ArrayLoad(base, index, sp2) =>
-        val sp1 = leftMostSourcePosition(base)
-        val loc = mkSL(sp1, sp2)
-
-        mapN(visit(base, unsafe), visit(index, unsafe)) {
-          case (b, i) => WeededAst.Expression.ArrayLoad(b, i, loc)
-        }
-
-      case ParsedAst.Expression.ArrayStore(base, indexes, elm, sp2) =>
-        val sp1 = leftMostSourcePosition(base)
-        val loc = mkSL(sp1, sp2)
-
-        mapN(visit(base, unsafe), traverse(indexes)(e => visit(e, unsafe)), visit(elm, unsafe)) {
-          case (b, es, e) =>
-            val inner = es.init.foldLeft(b) {
-              case (acc, e) => WeededAst.Expression.ArrayLoad(acc, e, loc)
-            }
-            WeededAst.Expression.ArrayStore(inner, es.last, e, loc)
-        }
-
-      case ParsedAst.Expression.ArrayLength(sp1, base, sp2) =>
-        visit(base, unsafe) map {
-          case b => WeededAst.Expression.ArrayLength(b, mkSL(sp1, sp2))
-        }
-
-      case ParsedAst.Expression.ArraySlice(base, optStartIndex, optEndIndex, sp2) =>
-        val sp1 = leftMostSourcePosition(base)
-        val loc = mkSL(sp1, sp2)
-
-        (optStartIndex, optEndIndex) match {
-          case (None, None) =>
-            visit(base, unsafe) map {
-              case b => WeededAst.Expression.ArraySlice(b, WeededAst.Expression.Int32(0, loc), WeededAst.Expression.ArrayLength(b, loc), loc)
-            }
-          case (Some(startIndex), None) =>
-            mapN(visit(base, unsafe), visit(startIndex, unsafe)) {
-              case (b, i1) => WeededAst.Expression.ArraySlice(b, i1, WeededAst.Expression.ArrayLength(b, loc), loc)
-            }
-          case (None, Some(endIndex)) =>
-            mapN(visit(base, unsafe), visit(endIndex, unsafe)) {
-              case (b, i2) => WeededAst.Expression.ArraySlice(b, WeededAst.Expression.Int32(0, loc), i2, loc)
-            }
-          case (Some(startIndex), Some(endIndex)) =>
-            mapN(visit(base, unsafe), visit(startIndex, unsafe), visit(endIndex, unsafe)) {
-              case (b, i1, i2) => WeededAst.Expression.ArraySlice(b, i1, i2, loc)
-            }
-        }
-
-      case ParsedAst.Expression.VectorLit(sp1, elms, sp2) =>
-        traverse(elms)(e => visit(e, unsafe)) map {
-          case es => WeededAst.Expression.VectorLit(es, mkSL(sp1, sp2))
-        }
-
-      case ParsedAst.Expression.VectorNew(sp1, elm, len, sp2) =>
-        mapN(visit(elm, unsafe), getVectorLength(len, sp1, sp2)) {
-          case (e, l) => WeededAst.Expression.VectorNew(e, l, mkSL(sp1, sp2))
-        }
-
-      case ParsedAst.Expression.VectorLoad(base, index, sp2) =>
-        val sp1 = leftMostSourcePosition(base)
-        val loc = mkSL(sp1, sp2)
-        mapN(visit(base, unsafe), getVectorLength(index, sp1, sp2)) {
-          case (b, l) => WeededAst.Expression.VectorLoad(b, l, loc)
-        }
-
-      case ParsedAst.Expression.VectorStore(base, indexes, elm, sp2) =>
-        val sp1 = leftMostSourcePosition(base)
-        val loc = mkSL(sp1, sp2)
-        val indexesVal = checkIndexSequence(indexes, sp1, sp2)
-        mapN(visit(base, unsafe), indexesVal, visit(elm, unsafe)) {
-          case (b, is, e) =>
-            val inner = is.init.foldLeft(b) {
-              case (acc, e) => WeededAst.Expression.VectorLoad(acc, e, loc)
-            }
-            WeededAst.Expression.VectorStore(inner, is.last, e, loc)
-        }
-
-      case ParsedAst.Expression.VectorLength(sp1, base, sp2) =>
-        visit(base, unsafe) map {
-          case b => WeededAst.Expression.VectorLength(b, mkSL(sp1, sp2))
-        }
-
-      case ParsedAst.Expression.VectorSlice(base, optStartIndex, optEndIndex, sp2) =>
-        val sp1 = leftMostSourcePosition(base)
-        val loc = mkSL(sp1, sp2)
-        (optStartIndex, optEndIndex) match {
-          case (None, None) =>
-            visit(base, unsafe) flatMap {
-              case b => WeededAst.Expression.VectorSlice(b, 0, None, loc).toSuccess
-            }
-          case (None, Some(i)) =>
-            mapN(visit(base, unsafe), getVectorLength(i, sp1, sp2)) {
-              case (b, l) => WeededAst.Expression.VectorSlice(b, 0, Some(l), loc)
-            }
-          case (Some(i), None) =>
-            mapN(visit(base, unsafe), getVectorLength(i, sp1, sp2)) {
-              case (b, l) => WeededAst.Expression.VectorSlice(b, l, None, loc)
-            }
-          case (Some(i1), Some(i2)) =>
-            flatMapN(visit(base, unsafe), getVectorLength(i1, sp1, sp2), getVectorLength(i2, sp1, sp2)) {
-              case (b, l1, l2) if l1 > l2 => WeederError.IllegalVectorIndex(loc).toFailure
-              case (b, l1, l2) => WeededAst.Expression.VectorSlice(b, l1, Some(l2), loc).toSuccess
-              case _ => WeederError.IllegalVectorLength(loc).toFailure
-            }
-        }
-
-      case ParsedAst.Expression.FNil(sp1, sp2) =>
-        /*
-         * Rewrites a `FNil` expression into a tag expression.
-         */
-        val tag = Name.Ident(sp1, "Nil", sp2)
-        val exp = WeededAst.Expression.Unit(mkSL(sp1, sp2))
-        WeededAst.Expression.Tag(None, tag, Some(exp), mkSL(sp1, sp2)).toSuccess
-
-      case ParsedAst.Expression.FCons(hd, sp1, sp2, tl) =>
-        /*
-         * Rewrites a `FCons` expression into a tag expression.
-         */
-        mapN(visit(hd, unsafe), visit(tl, unsafe)) {
-          case (e1, e2) =>
-            val tag = Name.Ident(sp1, "Cons", sp2)
-            val exp = WeededAst.Expression.Tuple(List(e1, e2), mkSL(sp1, sp2))
-            WeededAst.Expression.Tag(None, tag, Some(exp), mkSL(sp1, sp2))
-        }
-
-      case ParsedAst.Expression.FAppend(fst, sp1, sp2, snd) =>
-        /*
-         * Rewrites a `FAppend` expression into a call to `List/append`.
-         */
-        mapN(visit(fst, unsafe), visit(snd, unsafe)) {
-          case (e1, e2) =>
-            // NB: We painstakingly construct the qualified name
-            // to ensure that source locations are available.
-            mkApplyFqn("List.append", List(e1, e2), sp1, sp2)
-        }
-
-      case ParsedAst.Expression.FSet(sp1, elms, sp2) =>
-        /*
-         * Rewrites a `FSet` expression into `Set/empty` and a `Set/insert` calls.
-         */
-        traverse(elms)(e => visit(e, unsafe)) map {
-          case es =>
-            val empty = mkApplyFqn("Set.empty", List(WeededAst.Expression.Unit(mkSL(sp1, sp2))), sp1, sp2)
-            es.foldLeft(empty) {
-              case (acc, elm) => mkApplyFqn("Set.insert", List(elm, acc), sp1, sp2)
-            }
-        }
-
-      case ParsedAst.Expression.FMap(sp1, elms, sp2) =>
-        /*
-         * Rewrites a `FMap` expression into `Map/empty` and a `Map/insert` calls.
-         */
-        val elmsVal = traverse(elms) {
-          case (key, value) => sequence(visit(key, unsafe), visit(value, unsafe))
-        }
-
-        elmsVal map {
-          case es =>
-            val empty = mkApplyFqn("Map.empty", List(WeededAst.Expression.Unit(mkSL(sp1, sp2))), sp1, sp2)
-            es.foldLeft(empty) {
-              case (acc, (k, v)) => mkApplyFqn("Map.insert", List(k, v, acc), sp1, sp2)
-            }
-        }
-
-      case ParsedAst.Expression.Ref(sp1, exp, sp2) =>
-        for {
-          e <- visit(exp, unsafe)
-        } yield WeededAst.Expression.Ref(e, mkSL(sp1, sp2))
-
-      case ParsedAst.Expression.Deref(sp1, exp, sp2) =>
-        for {
-          e <- visit(exp, unsafe)
-        } yield WeededAst.Expression.Deref(e, mkSL(sp1, sp2))
-
-      case ParsedAst.Expression.Assign(exp1, exp2, sp2) =>
-        val sp1 = leftMostSourcePosition(exp1)
-        for {
-          e1 <- visit(exp1, unsafe)
-          e2 <- visit(exp2, unsafe)
-        } yield WeededAst.Expression.Assign(e1, e2, mkSL(sp1, sp2))
-
-      case ParsedAst.Expression.HandleWith(sp1, exp, handlers, sp2) =>
-        for {
-          e <- visit(exp, unsafe)
-          bs <- visitHandlers(handlers)
-        } yield WeededAst.Expression.HandleWith(e, bs, mkSL(sp1, sp2))
-
-      case ParsedAst.Expression.Existential(sp1, fparams, exp, sp2) =>
-        /*
-         * Checks for `IllegalExistential`.
-         */
-        if (fparams.isEmpty)
-          return IllegalExistential(mkSL(sp1, sp2)).toFailure
-
-        for {
-          e <- visit(exp, unsafe)
-          fs <- visitFormalParams(fparams, typeRequired = true)
-        } yield {
-          /*
-           * Rewrites the multi-parameter existential to nested single-parameter existentials.
-           */
-          fs.foldRight(e) {
-            case (param, eacc) => WeededAst.Expression.Existential(param, eacc, mkSL(sp1, sp2))
+      expOpt match {
+        case None =>
+          // Case 1: The tag does not have an expression. Nothing more to be done.
+          WeededAst.Expression.Tag(enum, tag, None, mkSL(sp1, sp2)).toSuccess
+        case Some(exp) =>
+          // Case 2: The tag has an expression. Perform weeding on it.
+          visitExp(exp) map {
+            case e => WeededAst.Expression.Tag(enum, tag, Some(e), mkSL(sp1, sp2))
           }
-        }
+      }
 
-      case ParsedAst.Expression.Universal(sp1, fparams, exp, sp2) =>
-        /*
-         * Checks for `IllegalUniversal`.
-         */
-        if (fparams.isEmpty)
-          return IllegalUniversal(mkSL(sp1, sp2)).toFailure
+    case ParsedAst.Expression.Tuple(sp1, elms, sp2) =>
+      /*
+       * Rewrites empty tuples to Unit and eliminate single-element tuples.
+       */
+      traverse(elms)(e => visitExp(e)) map {
+        case Nil =>
+          val loc = mkSL(sp1, sp2)
+          WeededAst.Expression.Unit(loc)
+        case x :: Nil => x
+        case xs => WeededAst.Expression.Tuple(xs, mkSL(sp1, sp2))
+      }
 
-        for {
-          e <- visit(exp, unsafe)
-          fs <- visitFormalParams(fparams, typeRequired = true)
-        } yield {
-          /*
-           * Rewrites the multi-parameter universal to nested single-parameter universals.
-           */
-          fs.foldRight(e) {
-            case (param, eacc) => WeededAst.Expression.Universal(param, eacc, mkSL(sp1, sp2))
+    case ParsedAst.Expression.ArrayLit(sp1, elms, sp2) =>
+      traverse(elms)(e => visitExp(e)) map {
+        case es => WeededAst.Expression.ArrayLit(es, mkSL(sp1, sp2))
+      }
+
+    case ParsedAst.Expression.ArrayNew(sp1, elm, len, sp2) =>
+      mapN(visitExp(elm), visitExp(len)) {
+        case (e, ln) => WeededAst.Expression.ArrayNew(e, ln, mkSL(sp1, sp2))
+      }
+
+    case ParsedAst.Expression.ArrayLoad(base, index, sp2) =>
+      val sp1 = leftMostSourcePosition(base)
+      val loc = mkSL(sp1, sp2)
+
+      mapN(visitExp(base), visitExp(index)) {
+        case (b, i) => WeededAst.Expression.ArrayLoad(b, i, loc)
+      }
+
+    case ParsedAst.Expression.ArrayStore(base, indexes, elm, sp2) =>
+      val sp1 = leftMostSourcePosition(base)
+      val loc = mkSL(sp1, sp2)
+
+      mapN(visitExp(base), traverse(indexes)(e => visitExp(e)), visitExp(elm)) {
+        case (b, es, e) =>
+          val inner = es.init.foldLeft(b) {
+            case (acc, e) => WeededAst.Expression.ArrayLoad(acc, e, loc)
           }
-        }
+          WeededAst.Expression.ArrayStore(inner, es.last, e, loc)
+      }
 
-      case ParsedAst.Expression.Ascribe(exp, tpe, effOpt, sp2) =>
-        for {
-          e <- visit(exp, unsafe)
-          eff <- visitEff(effOpt)
-        } yield {
-          WeededAst.Expression.Ascribe(e, visitType(tpe), eff, mkSL(leftMostSourcePosition(exp), sp2))
-        }
+    case ParsedAst.Expression.ArrayLength(sp1, base, sp2) =>
+      visitExp(base) map {
+        case b => WeededAst.Expression.ArrayLength(b, mkSL(sp1, sp2))
+      }
 
-      case ParsedAst.Expression.Cast(exp, tpe, effOpt, sp2) =>
-        for {
-          e <- visit(exp, unsafe)
-          eff <- visitEff(effOpt)
-        } yield {
-          WeededAst.Expression.Cast(e, visitType(tpe), eff, mkSL(leftMostSourcePosition(exp), sp2))
-        }
+    case ParsedAst.Expression.ArraySlice(base, optStartIndex, optEndIndex, sp2) =>
+      val sp1 = leftMostSourcePosition(base)
+      val loc = mkSL(sp1, sp2)
 
-      case ParsedAst.Expression.Unsafe(sp1, exp, sp2) =>
-        visit(exp, unsafe = true)
+      (optStartIndex, optEndIndex) match {
+        case (None, None) =>
+          visitExp(base) map {
+            case b => WeededAst.Expression.ArraySlice(b, WeededAst.Expression.Int32(0, loc), WeededAst.Expression.ArrayLength(b, loc), loc)
+          }
+        case (Some(startIndex), None) =>
+          mapN(visitExp(base), visitExp(startIndex)) {
+            case (b, i1) => WeededAst.Expression.ArraySlice(b, i1, WeededAst.Expression.ArrayLength(b, loc), loc)
+          }
+        case (None, Some(endIndex)) =>
+          mapN(visitExp(base), visitExp(endIndex)) {
+            case (b, i2) => WeededAst.Expression.ArraySlice(b, WeededAst.Expression.Int32(0, loc), i2, loc)
+          }
+        case (Some(startIndex), Some(endIndex)) =>
+          mapN(visitExp(base), visitExp(startIndex), visitExp(endIndex)) {
+            case (b, i1, i2) => WeededAst.Expression.ArraySlice(b, i1, i2, loc)
+          }
+      }
 
-      case ParsedAst.Expression.TryCatch(sp1, exp, rules, sp2) =>
+    case ParsedAst.Expression.VectorLit(sp1, elms, sp2) =>
+      traverse(elms)(e => visitExp(e)) map {
+        case es => WeededAst.Expression.VectorLit(es, mkSL(sp1, sp2))
+      }
+
+    case ParsedAst.Expression.VectorNew(sp1, elm, len, sp2) =>
+      mapN(visitExp(elm), getVectorLength(len, sp1, sp2)) {
+        case (e, l) => WeededAst.Expression.VectorNew(e, l, mkSL(sp1, sp2))
+      }
+
+    case ParsedAst.Expression.VectorLoad(base, index, sp2) =>
+      val sp1 = leftMostSourcePosition(base)
+      val loc = mkSL(sp1, sp2)
+      mapN(visitExp(base), getVectorLength(index, sp1, sp2)) {
+        case (b, l) => WeededAst.Expression.VectorLoad(b, l, loc)
+      }
+
+    case ParsedAst.Expression.VectorStore(base, indexes, elm, sp2) =>
+      val sp1 = leftMostSourcePosition(base)
+      val loc = mkSL(sp1, sp2)
+      val indexesVal = checkIndexSequence(indexes, sp1, sp2)
+      mapN(visitExp(base), indexesVal, visitExp(elm)) {
+        case (b, is, e) =>
+          val inner = is.init.foldLeft(b) {
+            case (acc, e) => WeededAst.Expression.VectorLoad(acc, e, loc)
+          }
+          WeededAst.Expression.VectorStore(inner, is.last, e, loc)
+      }
+
+    case ParsedAst.Expression.VectorLength(sp1, base, sp2) =>
+      visitExp(base) map {
+        case b => WeededAst.Expression.VectorLength(b, mkSL(sp1, sp2))
+      }
+
+    case ParsedAst.Expression.VectorSlice(base, optStartIndex, optEndIndex, sp2) =>
+      val sp1 = leftMostSourcePosition(base)
+      val loc = mkSL(sp1, sp2)
+      (optStartIndex, optEndIndex) match {
+        case (None, None) =>
+          visitExp(base) flatMap {
+            case b => WeededAst.Expression.VectorSlice(b, 0, None, loc).toSuccess
+          }
+        case (None, Some(i)) =>
+          mapN(visitExp(base), getVectorLength(i, sp1, sp2)) {
+            case (b, l) => WeededAst.Expression.VectorSlice(b, 0, Some(l), loc)
+          }
+        case (Some(i), None) =>
+          mapN(visitExp(base), getVectorLength(i, sp1, sp2)) {
+            case (b, l) => WeededAst.Expression.VectorSlice(b, l, None, loc)
+          }
+        case (Some(i1), Some(i2)) =>
+          flatMapN(visitExp(base), getVectorLength(i1, sp1, sp2), getVectorLength(i2, sp1, sp2)) {
+            case (b, l1, l2) if l1 > l2 => WeederError.IllegalVectorIndex(loc).toFailure
+            case (b, l1, l2) => WeededAst.Expression.VectorSlice(b, l1, Some(l2), loc).toSuccess
+            case _ => WeederError.IllegalVectorLength(loc).toFailure
+          }
+      }
+
+    case ParsedAst.Expression.FNil(sp1, sp2) =>
+      /*
+       * Rewrites a `FNil` expression into a tag expression.
+       */
+      val tag = Name.Ident(sp1, "Nil", sp2)
+      val exp = WeededAst.Expression.Unit(mkSL(sp1, sp2))
+      WeededAst.Expression.Tag(None, tag, Some(exp), mkSL(sp1, sp2)).toSuccess
+
+    case ParsedAst.Expression.FCons(hd, sp1, sp2, tl) =>
+      /*
+       * Rewrites a `FCons` expression into a tag expression.
+       */
+      mapN(visitExp(hd), visitExp(tl)) {
+        case (e1, e2) =>
+          val tag = Name.Ident(sp1, "Cons", sp2)
+          val exp = WeededAst.Expression.Tuple(List(e1, e2), mkSL(sp1, sp2))
+          WeededAst.Expression.Tag(None, tag, Some(exp), mkSL(sp1, sp2))
+      }
+
+    case ParsedAst.Expression.FAppend(fst, sp1, sp2, snd) =>
+      /*
+       * Rewrites a `FAppend` expression into a call to `List/append`.
+       */
+      mapN(visitExp(fst), visitExp(snd)) {
+        case (e1, e2) =>
+          // NB: We painstakingly construct the qualified name
+          // to ensure that source locations are available.
+          mkApplyFqn("List.append", List(e1, e2), sp1, sp2)
+      }
+
+    case ParsedAst.Expression.FSet(sp1, elms, sp2) =>
+      /*
+       * Rewrites a `FSet` expression into `Set/empty` and a `Set/insert` calls.
+       */
+      traverse(elms)(e => visitExp(e)) map {
+        case es =>
+          val empty = mkApplyFqn("Set.empty", List(WeededAst.Expression.Unit(mkSL(sp1, sp2))), sp1, sp2)
+          es.foldLeft(empty) {
+            case (acc, elm) => mkApplyFqn("Set.insert", List(elm, acc), sp1, sp2)
+          }
+      }
+
+    case ParsedAst.Expression.FMap(sp1, elms, sp2) =>
+      /*
+       * Rewrites a `FMap` expression into `Map/empty` and a `Map/insert` calls.
+       */
+      val elmsVal = traverse(elms) {
+        case (key, value) => sequence(visitExp(key), visitExp(value))
+      }
+
+      elmsVal map {
+        case es =>
+          val empty = mkApplyFqn("Map.empty", List(WeededAst.Expression.Unit(mkSL(sp1, sp2))), sp1, sp2)
+          es.foldLeft(empty) {
+            case (acc, (k, v)) => mkApplyFqn("Map.insert", List(k, v, acc), sp1, sp2)
+          }
+      }
+
+    case ParsedAst.Expression.Ref(sp1, exp, sp2) =>
+      for {
+        e <- visitExp(exp)
+      } yield WeededAst.Expression.Ref(e, mkSL(sp1, sp2))
+
+    case ParsedAst.Expression.Deref(sp1, exp, sp2) =>
+      for {
+        e <- visitExp(exp)
+      } yield WeededAst.Expression.Deref(e, mkSL(sp1, sp2))
+
+    case ParsedAst.Expression.Assign(exp1, exp2, sp2) =>
+      val sp1 = leftMostSourcePosition(exp1)
+      for {
+        e1 <- visitExp(exp1)
+        e2 <- visitExp(exp2)
+      } yield WeededAst.Expression.Assign(e1, e2, mkSL(sp1, sp2))
+
+    case ParsedAst.Expression.HandleWith(sp1, exp, handlers, sp2) =>
+      for {
+        e <- visitExp(exp)
+        bs <- visitHandlers(handlers)
+      } yield WeededAst.Expression.HandleWith(e, bs, mkSL(sp1, sp2))
+
+    case ParsedAst.Expression.Existential(sp1, fparams, exp, sp2) =>
+      /*
+       * Checks for `IllegalExistential`.
+       */
+      if (fparams.isEmpty)
+        return IllegalExistential(mkSL(sp1, sp2)).toFailure
+
+      for {
+        e <- visitExp(exp)
+        fs <- visitFormalParams(fparams, typeRequired = true)
+      } yield {
         /*
-         * Check for `IllegalUnsafeExpression`.
+         * Rewrites the multi-parameter existential to nested single-parameter existentials.
          */
-        if (!unsafe) {
-          return WeederError.IllegalUnsafeExpression(mkSL(sp1, sp2)).toFailure
+        fs.foldRight(e) {
+          case (param, eacc) => WeededAst.Expression.Existential(param, eacc, mkSL(sp1, sp2))
         }
+      }
 
-        val expVal = visit(exp, unsafe)
-        val rulesVal = traverse(rules) {
-          case ParsedAst.CatchRule(ident, fqn, body) =>
-            visit(body, unsafe) map {
-              case b => WeededAst.CatchRule(ident, fqn.mkString("."), b)
-            }
-        }
+    case ParsedAst.Expression.Universal(sp1, fparams, exp, sp2) =>
+      /*
+       * Checks for `IllegalUniversal`.
+       */
+      if (fparams.isEmpty)
+        return IllegalUniversal(mkSL(sp1, sp2)).toFailure
 
-        mapN(expVal, rulesVal) {
-          case (e, rs) => WeededAst.Expression.TryCatch(e, rs, mkSL(sp1, sp2))
-        }
-
-      case ParsedAst.Expression.NativeConstructor(sp1, fqn, args, sp2) =>
+      for {
+        e <- visitExp(exp)
+        fs <- visitFormalParams(fparams, typeRequired = true)
+      } yield {
         /*
-         * Check for `IllegalUnsafeExpression`.
+         * Rewrites the multi-parameter universal to nested single-parameter universals.
          */
-        if (!unsafe) {
-          return WeederError.IllegalUnsafeExpression(mkSL(sp1, sp2)).toFailure
+        fs.foldRight(e) {
+          case (param, eacc) => WeededAst.Expression.Universal(param, eacc, mkSL(sp1, sp2))
         }
+      }
 
-        val className = fqn.mkString(".")
-        traverse(args)(visitExp) flatMap {
-          case es => WeededAst.Expression.NativeConstructor(className, es, mkSL(sp1, sp2)).toSuccess
-        }
+    case ParsedAst.Expression.Ascribe(exp, tpe, effOpt, sp2) =>
+      for {
+        e <- visitExp(exp)
+        eff <- visitEff(effOpt)
+      } yield {
+        WeededAst.Expression.Ascribe(e, visitType(tpe), eff, mkSL(leftMostSourcePosition(exp), sp2))
+      }
 
-      case ParsedAst.Expression.NativeField(sp1, fqn, sp2) =>
-        /*
-         * Check for `IllegalUnsafeExpression`.
-         */
-        if (!unsafe) {
-          return WeederError.IllegalUnsafeExpression(mkSL(sp1, sp2)).toFailure
-        }
+    case ParsedAst.Expression.Cast(exp, tpe, effOpt, sp2) =>
+      for {
+        e <- visitExp(exp)
+        eff <- visitEff(effOpt)
+      } yield {
+        WeededAst.Expression.Cast(e, visitType(tpe), eff, mkSL(leftMostSourcePosition(exp), sp2))
+      }
 
-        /*
-         * Check for `IllegalNativeFieldOrMethod`.
-         */
-        if (fqn.size == 1) {
-          return WeederError.IllegalNativeFieldOrMethodName(mkSL(sp1, sp2)).toFailure
-        }
+    case ParsedAst.Expression.TryCatch(sp1, exp, rules, sp2) =>
+      val expVal = visitExp(exp)
+      val rulesVal = traverse(rules) {
+        case ParsedAst.CatchRule(ident, fqn, body) =>
+          visitExp(body) map {
+            case b => WeededAst.CatchRule(ident, fqn.mkString("."), b)
+          }
+      }
 
-        // Extract class and field name.
-        val className = fqn.dropRight(1).mkString(".")
-        val fieldName = fqn.last
-        WeededAst.Expression.NativeField(className, fieldName, mkSL(sp1, sp2)).toSuccess
+      mapN(expVal, rulesVal) {
+        case (e, rs) => WeededAst.Expression.TryCatch(e, rs, mkSL(sp1, sp2))
+      }
 
-      case ParsedAst.Expression.NativeMethod(sp1, fqn, args, sp2) =>
-        /*
-         * Check for `IllegalUnsafeExpression`.
-         */
-        if (!unsafe) {
-          return WeederError.IllegalUnsafeExpression(mkSL(sp1, sp2)).toFailure
-        }
+    case ParsedAst.Expression.NativeConstructor(sp1, fqn, args, sp2) =>
+      val className = fqn.mkString(".")
+      traverse(args)(visitExp) flatMap {
+        case es => WeededAst.Expression.NativeConstructor(className, es, mkSL(sp1, sp2)).toSuccess
+      }
 
-        /*
-         * Check for `IllegalNativeFieldOrMethod`.
-         */
-        if (fqn.size == 1) {
-          return WeederError.IllegalNativeFieldOrMethodName(mkSL(sp1, sp2)).toFailure
-        }
+    case ParsedAst.Expression.NativeField(sp1, fqn, sp2) =>
+      /*
+             * Check for `IllegalNativeFieldOrMethod`.
+             */
+      if (fqn.size == 1) {
+        return WeederError.IllegalNativeFieldOrMethodName(mkSL(sp1, sp2)).toFailure
+      }
 
-        // Extract class and member name.
-        val className = fqn.dropRight(1).mkString(".")
-        val methodName = fqn.last
-        traverse(args)(visitExp) map {
-          case es => WeededAst.Expression.NativeMethod(className, methodName, es, mkSL(sp1, sp2))
-        }
+      // Extract class and field name.
+      val className = fqn.dropRight(1).mkString(".")
+      val fieldName = fqn.last
+      WeededAst.Expression.NativeField(className, fieldName, mkSL(sp1, sp2)).toSuccess
 
-      case ParsedAst.Expression.NewRelationOrLattice(sp1, name, sp2) =>
-        val loc = mkSL(sp1, sp2)
-        WeededAst.Expression.NewRelationOrLattice(name, loc).toSuccess
+    case ParsedAst.Expression.NativeMethod(sp1, fqn, args, sp2) =>
+      /*
+            * Check for `IllegalNativeFieldOrMethod`.
+            */
+      if (fqn.size == 1) {
+        return WeederError.IllegalNativeFieldOrMethodName(mkSL(sp1, sp2)).toFailure
+      }
 
-      case ParsedAst.Expression.ConstraintSeq(sp1, cs, sp2) =>
-        val loc = mkSL(sp1, sp2)
+      // Extract class and member name.
+      val className = fqn.dropRight(1).mkString(".")
+      val methodName = fqn.last
+      traverse(args)(visitExp) map {
+        case es => WeededAst.Expression.NativeMethod(className, methodName, es, mkSL(sp1, sp2))
+      }
 
-        traverse(cs)(visitConstraint) map {
-          case xs =>
-            // The base constraint is simple the true fact.
-            val base = WeededAst.Expression.Constraint(WeededAst.Declaration.Constraint(WeededAst.Predicate.Head.True(loc), Nil, loc), loc)
-            // Combine each of the constraints using union.
-            xs.flatten.foldLeft(base: WeededAst.Expression) {
-              case (eacc, c) =>
-                val e2 = WeededAst.Expression.Constraint(c, loc)
-                WeededAst.Expression.ConstraintUnion(eacc, e2, loc)
-            }
-        }
+    case ParsedAst.Expression.NewRelationOrLattice(sp1, name, sp2) =>
+      val loc = mkSL(sp1, sp2)
+      WeededAst.Expression.NewRelationOrLattice(name, loc).toSuccess
 
-      case ParsedAst.Expression.FixpointSolve(sp1, exp, sp2) =>
-        visit(exp, unsafe) map {
-          case e => WeededAst.Expression.FixpointSolve(e, mkSL(sp1, sp2))
-        }
+    case ParsedAst.Expression.ConstraintSeq(sp1, cs, sp2) =>
+      val loc = mkSL(sp1, sp2)
 
-      case ParsedAst.Expression.FixpointCheck(sp1, exp, sp2) =>
-        visit(exp, unsafe) map {
-          case e => WeededAst.Expression.FixpointCheck(e, mkSL(sp1, sp2))
-        }
+      traverse(cs)(visitConstraint) map {
+        case xs =>
+          // The base constraint is simple the true fact.
+          val base = WeededAst.Expression.Constraint(WeededAst.Declaration.Constraint(WeededAst.Predicate.Head.True(loc), Nil, loc), loc)
+          // Combine each of the constraints using union.
+          xs.flatten.foldLeft(base: WeededAst.Expression) {
+            case (eacc, c) =>
+              val e2 = WeededAst.Expression.Constraint(c, loc)
+              WeededAst.Expression.ConstraintUnion(eacc, e2, loc)
+          }
+      }
 
-      case ParsedAst.Expression.UserError(sp1, sp2) =>
-        WeededAst.Expression.UserError(mkSL(sp1, sp2)).toSuccess
-    }
+    case ParsedAst.Expression.FixpointSolve(sp1, exp, sp2) =>
+      visitExp(exp) map {
+        case e => WeededAst.Expression.FixpointSolve(e, mkSL(sp1, sp2))
+      }
 
-    visit(exp0, unsafe = false)
+    case ParsedAst.Expression.FixpointCheck(sp1, exp, sp2) =>
+      visitExp(exp) map {
+        case e => WeededAst.Expression.FixpointCheck(e, mkSL(sp1, sp2))
+      }
+
+    case ParsedAst.Expression.UserError(sp1, sp2) =>
+      WeededAst.Expression.UserError(mkSL(sp1, sp2)).toSuccess
   }
+
 
   /**
     * Translates the given literal to an expression.
@@ -1156,7 +1116,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       case "law" => Ast.Annotation.Law(loc).toSuccess
       case "test" => Ast.Annotation.Test(loc).toSuccess
       case "unchecked" => Ast.Annotation.Unchecked(loc).toSuccess
-      case "unsafe" => Ast.Annotation.Unsafe(loc).toSuccess
       case name => WeederError.UndefinedAnnotation(name, loc).toFailure
     }
   }
@@ -1611,7 +1570,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.Universal(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Ascribe(e1, _, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.Cast(e1, _, _, _) => leftMostSourcePosition(e1)
-    case ParsedAst.Expression.Unsafe(sp1, _, _) => sp1
     case ParsedAst.Expression.TryCatch(sp1, _, _, _) => sp1
     case ParsedAst.Expression.NativeField(sp1, _, _) => sp1
     case ParsedAst.Expression.NativeMethod(sp1, _, _, _) => sp1

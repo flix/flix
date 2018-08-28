@@ -1,11 +1,11 @@
 @test
-def trycatch01(): Bool = unsafe
+def trycatch01(): Bool =
     try true catch {
         case ex: ##java.lang.Throwable => false
     }
 
 @test
-def trycatch02(): Bool = unsafe
+def trycatch02(): Bool =
     try true catch {
         case ex: ##java.lang.Throwable => false
         case ex: ##java.lang.Exception => false
@@ -13,7 +13,7 @@ def trycatch02(): Bool = unsafe
 
 
 @test
-def trycatch03(): Bool = unsafe
+def trycatch03(): Bool =
     try true catch {
         case ex: ##java.lang.Throwable        => false
         case ex: ##java.lang.Exception        => false
@@ -21,7 +21,7 @@ def trycatch03(): Bool = unsafe
     }
 
 @test
-def trycatch04(): Bool = unsafe
+def trycatch04(): Bool =
     try true catch {
         case ex: ##java.lang.Throwable           => false
         case ex: ##java.lang.Exception           => false
@@ -30,38 +30,38 @@ def trycatch04(): Bool = unsafe
     }
 
 @test
-def trycatch05(): Bool = unsafe
+def trycatch05(): Bool =
     try (0 / 0) == 0 catch {
         case ex: ##java.lang.ArithmeticException => true
     }
 
 @test
-def trycatch06(): Bool = unsafe
+def trycatch06(): Bool =
     try (0 / 0) == 0 catch {
         case ex: ##java.lang.RuntimeException => true
     }
 
 @test
-def trycatch07(): Bool = unsafe
+def trycatch07(): Bool =
     try (0 / 0) == 0 catch {
         case ex: ##java.lang.Exception => true
     }
 
 @test
-def trycatch08(): Bool = unsafe
+def trycatch08(): Bool =
     try (0 / 0) == 0 catch {
         case ex: ##java.lang.Throwable => true
     }
 
 @test
-def trycatch09(): Bool = unsafe
+def trycatch09(): Bool =
     try (0 / 0) == 0 catch {
         case ex: ##java.io.IOException           => false
         case ex: ##java.lang.ArithmeticException => true
     }
 
 @test
-def trycatch10(): Bool = unsafe
+def trycatch10(): Bool =
     try (0 / 0) == 0 catch {
         case ex: ##java.io.IOException            => false
         case ex: ##java.lang.NullPointerException => false
@@ -69,7 +69,7 @@ def trycatch10(): Bool = unsafe
     }
 
 @test
-def trycatch11(): Bool = unsafe
+def trycatch11(): Bool =
     try (0 / 0) == 0 catch {
         case ex: ##java.io.IOException            => false
         case ex: ##java.lang.NullPointerException => false
@@ -78,7 +78,7 @@ def trycatch11(): Bool = unsafe
     }
 
 @test
-def trycatch12(): Bool = unsafe
+def trycatch12(): Bool =
     try {
         native method java.lang.String.charAt("", 0)
     } catch {
@@ -86,7 +86,7 @@ def trycatch12(): Bool = unsafe
     }
 
 @test
-def trycatch13(): Bool = unsafe
+def trycatch13(): Bool =
     try (0 / 0) == 0 catch {
         case ex: ##java.lang.ArithmeticException =>
             let x = true;
@@ -94,7 +94,7 @@ def trycatch13(): Bool = unsafe
     }
 
 @test
-def trycatch14(): Bool = unsafe
+def trycatch14(): Bool =
     try (0 / 0) == 0 catch {
         case ex: ##java.lang.ArithmeticException =>
             let x = true;
@@ -104,7 +104,7 @@ def trycatch14(): Bool = unsafe
     }
 
 @test
-def trycatch15(): Bool = unsafe
+def trycatch15(): Bool =
     try (0 / 0) == 0 catch {
         case ex: ##java.lang.ArithmeticException =>
             let x = 0.0;
@@ -114,7 +114,7 @@ def trycatch15(): Bool = unsafe
     }
 
 //@test // TODO: Currently broken.
-//def trycatch16(): Bool = unsafe
+//def trycatch16(): Bool =
 //    try (0 / 0) == 0 catch {
 //        case ex: ##java.lang.ArithmeticException =>
 //            let msg = native method java.lang.Throwable.getMessage(ex);
@@ -123,7 +123,7 @@ def trycatch15(): Bool = unsafe
 
 
 //@test // TODO: Currently broken.
-def trytrycatchcatch01(): Bool = unsafe
+def trytrycatchcatch01(): Bool =
     try {
         try (0 / 0) == 0 catch {
             case ex: ##java.lang.ArithmeticException => true
@@ -133,7 +133,7 @@ def trytrycatchcatch01(): Bool = unsafe
      }
 
 @test
-def trycatchtrycatch01(): Bool = unsafe
+def trycatchtrycatch01(): Bool =
     try (0 / 0) == 0 catch {
         case ex: ##java.lang.ArithmeticException =>
             try (0 / 0) == 0 catch {
@@ -142,7 +142,7 @@ def trycatchtrycatch01(): Bool = unsafe
     }
 
 @test
-def trycatchtrycatch02(): Bool = unsafe
+def trycatchtrycatch02(): Bool =
     try (0 / 0) == 0 catch {
         case ex: ##java.lang.ArithmeticException =>
             try (0 / 0) == 0 catch {
