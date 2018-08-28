@@ -47,46 +47,54 @@ class ConstraintSet(constraints: Array[Constraint]) {
     * Returns a new constraint set with all relations/lattices instantiated.
     */
   def complete(): ConstraintSet = {
-    // TODO: Cleanup.
-    val relationPlaceholders = getRelationVars().groupBy(_.getName())
-    val latticePlaceholders = getLatticeVars().groupBy(_.getName())
+    // Find all relation/lattice variables.
+    val relationVarsByName = getRelationVars().groupBy(_.getName())
+    val latticeVarsByName = getLatticeVars().groupBy(_.getName())
 
-    // Introduce a proper relation for each relation placeholder.
-    val newRelations = relationPlaceholders map {
-      case (name, placeholders) => {
-        val placeholder = placeholders(0) // guaranteed to be non-empty.
-        val attr = placeholder.getAttributes()
+    // Introduce a fresh relation for each name.
+    val instantiatedRelations = relationVarsByName map {
+      case (name, relationVars) => {
+        val relationVar = relationVars(0) // guaranteed to be non-empty.
+        val attr = relationVar.getAttributes()
         name -> new Relation(name, attr)
       }
     }
 
-    val newLattices = latticePlaceholders map {
-      case (name, placeholders) => {
-        val placeholder = placeholders(0)
-        name -> new Lattice(name, placeholder.getKeys(), placeholder.getValue(), placeholder.getOps())
+    // Introduce a fresh lattice for each name.
+    val instantiatedLattices = latticeVarsByName map {
+      case (name, latticeVars) => {
+        val latticeVar = latticeVars(0)
+        name -> new Lattice(name, latticeVar.getKeys(), latticeVar.getValue(), latticeVar.getOps())
       }
     }
 
-    def replace(c: Constraint): Constraint = {
+    /**
+      * Replaces every occurrence of a relation/lattice variable with its instantiated value.
+      */
+    def replaceConstraint(c: Constraint): Constraint = {
       val head = replacePredicate(c.getHeadPredicate())
       val body = c.getBodyPredicates().map(replacePredicate)
       new Constraint(c.getParams(), head, body)
     }
 
+    /**
+      * Replaces every occurrence of a relation/lattice variable with its instantiated value.
+      */
     def replacePredicate(p0: Predicate): Predicate = p0 match {
       case p: AtomPredicate =>
         val sym = p.getSym() match {
-          case r: RelationVar => newRelations(r.getName())
-          case l: LatticeVar => newLattices(l.getName())
+          case r: RelationVar => instantiatedRelations(r.getName())
+          case l: LatticeVar => instantiatedLattices(l.getName())
           case _ => p.getSym()
         }
         new AtomPredicate(sym, p.isPositive(), p.getTerms(), p.getIndex2SymTEMPORARY)
       case _ => p0
     }
 
-    val newConstraints = constraints.map(replace)
+    // Replace every relation/lattice variable with its instantiated value.
+    val cs = constraints map replaceConstraint
 
-    new ConstraintSet(newConstraints)
+    new ConstraintSet(cs)
   }
 
   /**
