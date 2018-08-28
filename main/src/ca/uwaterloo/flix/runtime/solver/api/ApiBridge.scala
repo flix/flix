@@ -56,14 +56,11 @@ object ApiBridge {
 
     val strata = root.strata.map(visitStratum).toArray
 
-    val relSyms = cache.relSyms.values.toArray
-    val latSyms = cache.latSyms.values.toArray
-
-    new ConstraintSet(relSyms, latSyms, strata)
+    new ConstraintSet(strata.flatten)
   }
 
-  private def visitStratum(stratum: FinalAst.Stratum)(implicit root: FinalAst.Root, cache: SymbolCache, flix: Flix): Stratum = {
-    new Stratum(stratum.constraints.map(visitConstraint).toArray)
+  private def visitStratum(stratum: FinalAst.Stratum)(implicit root: FinalAst.Root, cache: SymbolCache, flix: Flix): Array[Constraint] = {
+    stratum.constraints.map(visitConstraint).toArray
   }
 
   def visitConstraint(c0: FinalAst.Constraint)(implicit root: FinalAst.Root, cache: SymbolCache, flix: Flix): Constraint = {

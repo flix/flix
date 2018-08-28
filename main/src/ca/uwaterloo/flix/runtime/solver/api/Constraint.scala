@@ -67,6 +67,16 @@ class Constraint(cparams: Array[VarSym], head: Predicate, body: Array[Predicate]
   def isRule(): Boolean = body.nonEmpty
 
   /**
+    * Returns the constraint parameters.
+    */
+  def getParams(): Array[VarSym] = cparams
+
+  /**
+    * Returns the stratum of the constraint.
+    */
+  def getStratum(): Int = 0
+
+  /**
     * Returns the head predicate.
     */
   def getHeadPredicate(): Predicate = head
@@ -106,9 +116,17 @@ class Constraint(cparams: Array[VarSym], head: Predicate, body: Array[Predicate]
   }
 
   /**
-    * Returns the atoms predicates in the body of the constraint.
+    * Returns all atom predicates in the constraint.
     */
-  def getAtoms(): Array[AtomPredicate] = body.collect {
+  def getAllAtoms(): Array[AtomPredicate] = getHeadPredicate() match {
+    case h: AtomPredicate => h +: getBodyAtoms()
+    case _ => getBodyAtoms()
+  }
+
+  /**
+    * Returns all atoms predicates in the body of the constraint.
+    */
+  def getBodyAtoms(): Array[AtomPredicate] = body.collect {
     case p: AtomPredicate => p
   }
 

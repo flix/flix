@@ -21,10 +21,10 @@ import java.lang.reflect.{InvocationTargetException, Modifier}
 import ca.uwaterloo.flix.api._
 import ca.uwaterloo.flix.language.ast.FinalAst._
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.runtime.Linker
-import ca.uwaterloo.flix.runtime.solver.{Fixpoint, FixpointOptions, Solver, api}
+import ca.uwaterloo.flix.runtime.{InvocationTarget, Linker}
+import ca.uwaterloo.flix.runtime.solver._
 import ca.uwaterloo.flix.runtime.solver.api.ApiBridge.SymbolCache
-import ca.uwaterloo.flix.runtime.solver.api.{ConstraintSet, ProxyObject}
+import ca.uwaterloo.flix.runtime.solver.api.{ConstraintSet, LatticeVar, ProxyObject, RelationVar}
 import ca.uwaterloo.flix.util.{InternalRuntimeException, Verbosity}
 import ca.uwaterloo.flix.util.tc.Show._
 import flix.runtime._
@@ -355,7 +355,6 @@ object Interpreter {
     // ConstraintUnion expressions.
     //
     case Expression.ConstraintUnion(exp1, exp2, tpe, loc) =>
-      // TODO: Use value?
       val v1 = cast2constraintset(eval(exp1, env0, henv0, lenv0, root))
       val v2 = cast2constraintset(eval(exp2, env0, henv0, lenv0, root))
       v1.union(v2)
@@ -785,12 +784,8 @@ object Interpreter {
     val body = c0.body.map(b => evalBodyPredicate(b, env0))
 
     val constraint = new api.Constraint(cparams.toArray, head, body.toArray)
-    val strata = new api.Stratum(List(constraint).toArray)
 
-    val relSyms = cache.relSyms.values.toArray
-    val latSyms = cache.latSyms.values.toArray
-
-    new ConstraintSet(relSyms, latSyms, Array(strata))
+    new ConstraintSet(Array(constraint))
   }
 
   /**
@@ -951,10 +946,11 @@ object Interpreter {
     *
     * NB: Allocates a new relation if no such relation exists in the cache.
     */
-  private def getRelation(sym: Symbol.RelSym)(implicit root: FinalAst.Root, cache: SymbolCache, flix: Flix): api.Relation = root.relations(sym) match {
+  private def getRelation(sym: Symbol.RelSym)(implicit root: FinalAst.Root, flix: Flix): api.RelationVar = root.relations(sym) match {
     case FinalAst.Relation(_, _, attr, _) =>
-      val attributes = attr.map(a => new api.Attribute(a.name))
-      cache.getRelSym(sym, sym.toString, attributes.toArray)
+      val name = sym.toString
+      val as = attr.map(a => new api.Attribute(a.name)).toArray
+      new RelationVar(name, as)
   }
 
   /**
@@ -962,13 +958,33 @@ object Interpreter {
     *
     * NB: Allocates a new lattice if no such lattice exists in the cache.
     */
-  private def getLattice(sym: Symbol.LatSym)(implicit root: FinalAst.Root, cache: SymbolCache, flix: Flix): api.Lattice = root.lattices(sym) match {
+  private def getLattice(sym: Symbol.LatSym)(implicit root: FinalAst.Root, flix: Flix): api.LatticeVar = root.lattices(sym) match {
     case FinalAst.Lattice(_, _, attr, _) =>
-      val attributes = attr.map(a => new api.Attribute(a.name))
-      val keys = attributes.init
-      val value = attributes.last
-      val ops = ??? //getLatticeOps(l.attr.last) // TODO
-      cache.getLatSym(sym, sym.toString, keys.toArray, value, ops)
+      val name = sym.toString
+      val as = attr.map(a => new api.Attribute(a.name))
+      val keys = as.init.toArray
+      val value = as.last
+      val ops = getLatticeOps(attr.last.tpe)
+      new LatticeVar(name, keys, value, ops)
+  }
+
+  /**
+    * Returns the lattice operations associated with the given type `tpe`.
+    */
+  private def getLatticeOps(tpe: Type)(implicit root: FinalAst.Root, flix: Flix): LatticeOps = {
+    val lattice = root.latticeComponents(tpe)
+
+    new LatticeOps {
+      override def bot: ProxyObject = Linker.link(lattice.bot, root).invoke(Array.empty)
+
+      override def equ: InvocationTarget = Linker.link(lattice.equ, root)
+
+      override def leq: InvocationTarget = Linker.link(lattice.leq, root)
+
+      override def lub: InvocationTarget = Linker.link(lattice.lub, root)
+
+      override def glb: InvocationTarget = Linker.link(lattice.glb, root)
+    }
   }
 
   /**
@@ -1161,7 +1177,7 @@ object Interpreter {
     options.setVerbose(flix.options.verbosity == Verbosity.Verbose)
 
     // Construct the solver.
-    new Solver(cs, options)
+    new Solver(cs.complete(), options)
   }
 
   /**
