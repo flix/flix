@@ -97,8 +97,8 @@ def alpha(i: Int): Constant = Cst(i)
 //
 // The first rule models literal statements r = c and lifts the constant
 // into the constant propagation lattice. Intuitively, if the body of
-// the rule (whatever is to the right of ':-') then the head (what is on
-// the left of ':-') is inferred.
+// the rule holds (whatever is to the right of ':-') then the head (what
+// is on the left of ':-') is inferred.
 //
 LocalVar(r, alpha(c)) :- LitStm(r, c).
 
