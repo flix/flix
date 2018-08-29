@@ -204,4 +204,44 @@ namespace Belnap {
 
     law safe2(fa: (Belnap, Belnap) -> Belnap, fc: (Bool, Bool) -> Bool): Bool = PartialOrder.safe2(fa, fc, alpha, alpha, leq)
 
+
+    ///
+    /// Tests
+    ///
+    lat L(k: Int, y: Belnap)
+    lat R(k: Int, y: Belnap)
+
+    // TODO: These tests are not found by Flix.
+
+    @test
+    pub def testBelnap01(): Bool = check {
+        L(1, Bot).
+        L(2, True).
+        L(3, False).
+        L(4, Top).
+    }
+
+    @test
+    pub def testBelnap02(): Bool = check {
+        L(1, True).
+        L(1, False).
+    }
+
+    @test
+    pub def testBelnap03(): Bool = check {
+        L(1, True).
+        L(1, False).
+        L(2, False).
+        L(2, True).
+    }
+
+    @test
+    pub def testBelnap04(): Bool = check {
+        L(1, True).
+        L(2, False).
+
+    }
+
+
+
 }

@@ -29,6 +29,7 @@ class TestAll extends Suites(
   new UtilSuite,
   new TestMain,
   new TestExamples,
+  new TestExamples2,
   new TestTutorials
 ) with ParallelTestExecution {
   /* left empty */
