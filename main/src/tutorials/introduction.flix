@@ -194,7 +194,7 @@ DivStm("v", "w", "z"). // v = w / z
 //
 // We can now run our program with Flix and inspect the output!
 //
-// Run: flix --print LocalVar,ArithmeticError tutorial.flix
+// Run: flix --print LocalVar,ArithmeticError introduction.flix
 //
 // This should produce output like:
 //
