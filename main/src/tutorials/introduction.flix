@@ -57,7 +57,7 @@ def leq(e1: Constant, e2: Constant): Bool = match (e1, e2) with {
 }
 
 //
-// Then its on to the least upper bound:
+// Then it's on to the least upper bound:
 //
 def lub(e1: Constant, e2: Constant): Constant = match (e1, e2) with {
     case (Bot, x)           => x
