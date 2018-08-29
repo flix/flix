@@ -42,9 +42,13 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     val named = traverse(program.named) {
       case (sym, exp) => visitExp(exp).map(e => sym -> e)
     }
+    val constraints = visitAllConstraints(program.roots)
 
-    mapN(roots, named) {
-      case (rs, ne) =>
+    mapN(roots, named, constraints) {
+      case (rs, ne, cs) =>
+
+        val foo = mkMain(cs)
+
         WeededAst.Program(rs, ne.toMap, flix.getReachableRoots)
     }
   }
@@ -53,8 +57,12 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     * Weeds the given abstract syntax tree.
     */
   private def visitRoot(root: ParsedAst.Root)(implicit flix: Flix): Validation[WeededAst.Root, WeederError] = {
-    mapN(traverse(root.decls)(visitDecl), visitProperty(root)) {
-      case (decls1, decls2) => WeededAst.Root(decls1.flatten ++ decls2)
+    val declarationsVal = traverse(root.decls)(visitDecl)
+    val propertiesVal = visitAllProperties(root)
+
+    mapN(declarationsVal, propertiesVal) {
+      case (decls1, decls2) =>
+        WeededAst.Root(decls1.flatten ++ decls2)
     }
   }
 
@@ -1231,12 +1239,36 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   }
 
   /**
-    * Weeds all properties in the given AST `root`.
+    * Collects all constraints in the given AST `roots`.
     */
-  private def visitProperty(root: ParsedAst.Root)(implicit flix: Flix): Validation[List[WeededAst.Declaration], WeederError] = {
+  private def visitAllConstraints(roots: List[ParsedAst.Root])(implicit flix: Flix): Validation[List[WeededAst.Declaration.Constraint], WeederError] = {
+
+    // TODO: What if a constraint occurs in another namespace????
 
     /**
-      * Processes a single declaration.
+      * Local root visitor.
+      */
+    def visitRoot(root: ParsedAst.Root): Validation[List[WeededAst.Declaration.Constraint], WeederError] = traverse(root.decls)(visitDecl).map(_.flatten)
+
+    /**
+      * Local declaration visitor.
+      */
+    def visitDecl(d0: ParsedAst.Declaration): Validation[List[WeededAst.Declaration.Constraint], WeederError] = d0 match {
+      case ParsedAst.Declaration.Namespace(sp1, name, decls, sp2) => traverse(decls)(visitDecl).map(_.flatten)
+      case d: ParsedAst.Declaration.Constraint => visitConstraint(d)
+      case _ => Nil.toSuccess
+    }
+
+    traverse(roots)(visitRoot).map(_.flatten)
+  }
+
+  /**
+    * Collects all the properties in the given AST `root`.
+    */
+  private def visitAllProperties(root: ParsedAst.Root)(implicit flix: Flix): Validation[List[WeededAst.Declaration], WeederError] = {
+
+    /**
+      * Local declaration visitor.
       */
     def visit(decl: ParsedAst.Declaration): Validation[List[WeededAst.Declaration], WeederError] = decl match {
       // Recurse through the namespace.
@@ -1720,6 +1752,40 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       val qname = Name.QName(qname0.sp1, nname, ident, qname0.sp2)
       (Some(qname), tagName)
     }
+  }
+
+  /**
+    * Introduces a main declaration that wraps the given constraints in a solve expression.
+    */
+  private def mkMain(cs: List[WeededAst.Declaration.Constraint]): WeededAst.Root = {
+
+    // Source positions and source locations for the generated main.
+    val sp1 = SourcePosition.Unknown
+    val sp2 = SourcePosition.Unknown
+    val loc = SourceLocation.Generated
+
+    // Documentation, annotations, and modifiers for the generated main.
+    val doc = Ast.Doc(Nil, loc)
+    val ann = Ast.Annotations.Empty
+    val mod = Ast.Modifiers.Empty
+    val ident = Name.Ident(sp1, "main", sp2)
+
+    // Type and formal parameters for the generated main.
+    val tparams = Nil
+    val fparams = WeededAst.FormalParam(Name.Ident(sp1, "_unit", sp2), Ast.Modifiers.Empty, None, loc) :: Nil
+
+    // The main expression.
+    val exp = ???
+
+    // The type and effect of the generated main.
+    val tpe = WeededAst.Type.Var(Name.Ident(sp1, "Str", sp2), loc)
+    val eff = Eff.Top
+
+    // Construct the declaration.
+    val decl = WeededAst.Declaration.Def(doc, ann, mod, ident, tparams, fparams, exp, tpe, eff, loc)
+
+    // Construct an AST root that contains the main declaration.
+    WeededAst.Root(List(decl))
   }
 
 }
