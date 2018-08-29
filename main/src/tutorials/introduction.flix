@@ -199,24 +199,25 @@ DivStm("v", "w", "z"). // v = w / z
 // This should produce output like:
 //
 
-// LocalVar:
-//
-//    +---+---------+
-//    | k | v       |
-//    +---+---------+
-//    | x | Cst(3)  |
-//    | y | Cst(7)  |
-//    | z | Cst(0)  |
-//    | w | Cst(10) |
-//    +---+---------+
+// LocalVar
+// +---------+---------+
+// | k       | v       |
+// +---------+---------+
+// | List(x) | Cst(3)  |
+// | List(v) | Bot(()) |
+// | List(y) | Cst(7)  |
+// | List(w) | Cst(10) |
+// | List(z) | Cst(0)  |
+// +---------+---------+
+// Query matched 5 row(s) out of 5 total row(s).
 
 // ArithmeticError
-//
-//    +---+
-//    | r |
-//    +---+
-//    | v |
-//    +---+
+// +---+
+// | r |
+// +---+
+// | v |
+// +---+
+// Query matched 1 row(s) out of 1 total row(s).
 
 //
 // Here are some exercises for learning Flix:
