@@ -17,12 +17,14 @@
 package ca.uwaterloo.flix
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.util.Options
+import ca.uwaterloo.flix.util.{Evaluation, Options}
 import org.scalatest.FunSuite
 
 class TestExamples extends FunSuite {
 
-  val DefaultOptions = Options.DefaultTest.copy(core = false)
+  // TODO: Remove class.
+
+  val DefaultOptions = Options.DefaultTest.copy(core = false, evaluation = Evaluation.Interpreted)
 
   test("Belnap.flix") {
     val input =

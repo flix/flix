@@ -17,12 +17,12 @@
 package ca.uwaterloo.flix.runtime
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.util.Options
+import ca.uwaterloo.flix.util.{Evaluation, Options}
 import org.scalatest.FunSuite
 
 class TestSolver extends FunSuite {
 
-  val opts = Options.DefaultTest
+  val opts = Options.DefaultTest.copy(evaluation = Evaluation.Interpreted) // TODO
 
   object Parity {
 

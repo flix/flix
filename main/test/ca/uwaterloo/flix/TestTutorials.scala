@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.util.Options
+import ca.uwaterloo.flix.util.{Evaluation, Options}
 import org.scalatest.FunSuite
 
 class TestTutorials extends FunSuite {
@@ -26,7 +26,7 @@ class TestTutorials extends FunSuite {
 
   test("introduction.flix") {
     val path = "main/src/tutorials/introduction.flix"
-    new Flix().setOptions(opts.copy(core = false, test = true)).addPath(path).solve().get
+    new Flix().setOptions(opts.copy(core = false, test = true, evaluation = Evaluation.Interpreted)).addPath(path).solve().get
   }
 
   test("interpreter.flix") {
