@@ -46,10 +46,11 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
     mapN(roots, named, constraints) {
       case (rs, ne, cs) =>
-
-        val foo = mkMain(cs)
-
-        WeededAst.Program(rs, ne.toMap, flix.getReachableRoots)
+        // Check if there are top-level constraints and we should introduce a main.
+        if (cs.isEmpty)
+          WeededAst.Program(rs, ne.toMap, flix.getReachableRoots)
+        else
+          WeededAst.Program(mkMain(cs) :: rs, ne.toMap, flix.getReachableRoots)
     }
   }
 
@@ -1758,7 +1759,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     * Introduces a main declaration that wraps the given constraints in a solve expression.
     */
   private def mkMain(cs: List[WeededAst.Declaration.Constraint]): WeededAst.Root = {
-
     // Source positions and source locations for the generated main.
     val sp1 = SourcePosition.Unknown
     val sp2 = SourcePosition.Unknown
@@ -1775,14 +1775,23 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     val fparams = WeededAst.FormalParam(Name.Ident(sp1, "_unit", sp2), Ast.Modifiers.Empty, None, loc) :: Nil
 
     // The main expression.
-    val exp = ???
+    val trueFact = WeededAst.Declaration.Constraint(WeededAst.Predicate.Head.True(loc), Nil, loc)
+    val zeroExp = WeededAst.Expression.Constraint(trueFact, loc)
+    val innerExp = cs.foldLeft(zeroExp: WeededAst.Expression) {
+      case (eacc, c) =>
+        val constraintExp = WeededAst.Expression.Constraint(c, loc)
+        WeededAst.Expression.ConstraintUnion(eacc, constraintExp, loc)
+    }
+    val outerExp = WeededAst.Expression.FixpointSolve(innerExp, loc)
 
     // The type and effect of the generated main.
-    val tpe = WeededAst.Type.Var(Name.Ident(sp1, "Str", sp2), loc)
+    val argumentType = WeededAst.Type.Ambiguous(Name.mkQName("Unit"), loc)
+    val resultType = WeededAst.Type.Ambiguous(Name.mkQName("Str"), loc)
+    val tpe = WeededAst.Type.Arrow(argumentType :: Nil, resultType, loc)
     val eff = Eff.Top
 
     // Construct the declaration.
-    val decl = WeededAst.Declaration.Def(doc, ann, mod, ident, tparams, fparams, exp, tpe, eff, loc)
+    val decl = WeededAst.Declaration.Def(doc, ann, mod, ident, tparams, fparams, outerExp, tpe, eff, loc)
 
     // Construct an AST root that contains the main declaration.
     WeededAst.Root(List(decl))
