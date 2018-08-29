@@ -72,8 +72,9 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       val isSingleUnitArg = defn.fparams.nonEmpty && defn.fparams.head.tpe == Type.Unit
       val isNonSynthetic = !defn.mod.isSynthetic
       val isBenchmark = defn.ann.isBenchmark
+      val isTest = defn.ann.isTest
 
-      (isRootNs && isSingleUnitArg && isNonSynthetic) || isBenchmark
+      (isRootNs && isSingleUnitArg && isNonSynthetic) || isBenchmark || isTest
     }
 
     /**
