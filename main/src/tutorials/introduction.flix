@@ -23,7 +23,7 @@ rel DivStm(r: Str, x: Str, y: Str) // r = x / y
 // variable to an element of the constant propagation lattice (which we
 // define below.)
 //
-// We can think of this lattice the result of the analysis.
+// We can think of this lattice as the result of the analysis.
 //
 lat LocalVar(k: Str, v: Constant)
 
