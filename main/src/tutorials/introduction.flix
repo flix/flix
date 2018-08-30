@@ -23,7 +23,7 @@ rel DivStm(r: Str, x: Str, y: Str) // r = x / y
 // variable to an element of the constant propagation lattice (which we
 // define below.)
 //
-// We can think of this lattice the result of the analysis.
+// We can think of this lattice as the result of the analysis.
 //
 lat LocalVar(k: Str, v: Constant)
 
@@ -57,7 +57,7 @@ def leq(e1: Constant, e2: Constant): Bool = match (e1, e2) with {
 }
 
 //
-// Then its on to the least upper bound:
+// Then it's on to the least upper bound:
 //
 def lub(e1: Constant, e2: Constant): Constant = match (e1, e2) with {
     case (Bot, x)           => x
@@ -97,8 +97,8 @@ def alpha(i: Int): Constant = Cst(i)
 //
 // The first rule models literal statements r = c and lifts the constant
 // into the constant propagation lattice. Intuitively, if the body of
-// the rule (whatever is to the right of ':-') then the head (what is on
-// the left of ':-') is inferred.
+// the rule holds (whatever is to the right of ':-') then the head (what
+// is on the left of ':-') is inferred.
 //
 LocalVar(r, alpha(c)) :- LitStm(r, c).
 
@@ -194,29 +194,30 @@ DivStm("v", "w", "z"). // v = w / z
 //
 // We can now run our program with Flix and inspect the output!
 //
-// Run: flix --print LocalVar,ArithmeticError tutorial.flix
+// Run: flix --print LocalVar,ArithmeticError introduction.flix
 //
 // This should produce output like:
 //
 
-// LocalVar:
-//
-//    +---+---------+
-//    | k | v       |
-//    +---+---------+
-//    | x | Cst(3)  |
-//    | y | Cst(7)  |
-//    | z | Cst(0)  |
-//    | w | Cst(10) |
-//    +---+---------+
+// LocalVar
+// +---------+---------+
+// | k       | v       |
+// +---------+---------+
+// | List(x) | Cst(3)  |
+// | List(v) | Bot(()) |
+// | List(y) | Cst(7)  |
+// | List(w) | Cst(10) |
+// | List(z) | Cst(0)  |
+// +---------+---------+
+// Query matched 5 row(s) out of 5 total row(s).
 
 // ArithmeticError
-//
-//    +---+
-//    | r |
-//    +---+
-//    | v |
-//    +---+
+// +---+
+// | r |
+// +---+
+// | v |
+// +---+
+// Query matched 1 row(s) out of 1 total row(s).
 
 //
 // Here are some exercises for learning Flix:
