@@ -28,7 +28,6 @@ class TestAll extends Suites(
   new LibrarySuite,
   new UtilSuite,
   new TestMain,
-  new TestExamplesOld,
   new TestExamples,
   new TestTutorials
 ) with ParallelTestExecution {
