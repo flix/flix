@@ -21,7 +21,6 @@ import java.nio.file.{Files, Path}
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{FinalAst, PrettyPrinter}
-import ca.uwaterloo.flix.runtime.solver.api.ApiBridge
 import flix.runtime._
 
 object DeltaSolver {
@@ -217,8 +216,9 @@ object DeltaSolver {
     */
   private def runSolver(root: FinalAst.Root, options: FixpointOptions)(implicit flix: Flix): Unit = {
     // silence output from the solver.
-    val cs = ApiBridge.translate(root)
-    new Solver(cs, options).solve()
+    //val cs = ApiBridge.translate(root)
+    //new Solver(cs, options).solve()
+    ???
   }
 
   /**

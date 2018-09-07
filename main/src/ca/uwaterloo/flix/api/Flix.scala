@@ -25,7 +25,7 @@ import ca.uwaterloo.flix.language.phase._
 import ca.uwaterloo.flix.language.phase.jvm.JvmBackend
 import ca.uwaterloo.flix.language.{CompilationError, GenSym}
 import ca.uwaterloo.flix.runtime.quickchecker.QuickChecker
-import ca.uwaterloo.flix.runtime.solver.api.{ApiBridge, ProxyObject}
+import ca.uwaterloo.flix.runtime.solver.api.ProxyObject
 import ca.uwaterloo.flix.runtime.solver.{DeltaSolver, FixpointOptions, Solver}
 import ca.uwaterloo.flix.runtime.verifier.Verifier
 import ca.uwaterloo.flix.runtime.{CompilationResult, Linker}
@@ -273,14 +273,6 @@ class Flix {
     * Runs the Flix fixed point solver on the program and returns the minimal model.
     */
   def solve(compilationResult: CompilationResult): Validation[CompilationResult, CompilationError] = {
-    val opts = new FixpointOptions()
-    opts.setMonitored(options.monitor)
-    opts.setThreads(options.threads)
-    opts.setTimeout(options.timeout)
-    opts.setVerbose(options.verbosity == Verbosity.Verbose)
-
-    val cs = ApiBridge.translate(compilationResult.getRoot)(this)
-    val fixedpoint = new Solver(cs, opts).solve()
     compilationResult.toSuccess
   }
 
