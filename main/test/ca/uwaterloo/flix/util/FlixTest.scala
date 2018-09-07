@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.util.Validation.{Failure, Success}
 import ca.uwaterloo.flix.util.vt.TerminalContext
 import org.scalatest.FunSuite
 
-class FlixTest(name: String, path: String, compiled: Boolean = true) extends FunSuite {
+class FlixTest(name: String, paths: String*)(implicit compiled: Boolean = true) extends FunSuite {
 
   /**
     * Returns the name of the test suite.
@@ -41,7 +41,8 @@ class FlixTest(name: String, path: String, compiled: Boolean = true) extends Fun
     val flix = new Flix().setOptions(opts)
 
     // Add the given path.
-    flix.addPath(path)
+    for (path <- paths)
+      flix.addPath(path)
 
     // Compile and Evaluate the program to obtain the compilationResult.
     flix.solve() match {

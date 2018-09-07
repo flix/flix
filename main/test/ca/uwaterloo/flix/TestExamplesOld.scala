@@ -26,33 +26,6 @@ class TestExamplesOld extends FunSuite {
 
   val DefaultOptions = Options.DefaultTest.copy(core = false, evaluation = Evaluation.Interpreted)
 
-  test("Constant.flix") {
-    val input =
-      """namespace Domain/Constant {
-        |    lat A(k: Int, v: Constant)
-        |
-        |    A(0, Cst(0)).
-        |    A(1, Cst(1)).
-        |    A(2, Cst(2)).
-        |
-        |    A(3, x) :- A(0, x).
-        |    A(3, x) :- A(1, x).
-        |    A(3, x) :- A(2, x).
-        |
-        |    A(4, x) :- A(0, x), A(1, x), A(2, x).
-        |
-        |    A(5, plus(x, y))  :- A(0, x), A(2, y).
-        |    A(6, times(x, y)) :- A(1, x), A(2, y).
-        |}
-      """.stripMargin
-
-    new Flix()
-      .setOptions(DefaultOptions)
-      .addPath("./examples/domains/Belnap.flix")
-      .addPath("./examples/domains/Constant.flix")
-      .addStr(input)
-      .solve().get
-  }
 
   test("ConstantSign.flix") {
     val input =
