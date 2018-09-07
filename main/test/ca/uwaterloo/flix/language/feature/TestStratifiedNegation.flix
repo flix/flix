@@ -1,155 +1,99 @@
-namespace StratifiedNegation {
+rel A(x: Int)
+rel B(x: Int)
+rel C(x: Int)
+rel D(x: Int)
+rel E(x: Int)
+rel R(x: Int)
 
-    namespace Test01 {
-        rel A(x: Int)
-        rel B(x: Int)
-        rel R(x: Int)
+@test
+def testStratification01(): Bool = check {
+    A(1). A(2). A(3).
 
-        A(1).
-        A(2).
-        A(3).
+    B(3).
 
-        B(3).
+    R(x) :- A(x), not B(x).
+}
 
-        R(x) :- A(x), not B(x).
-    }
+//@test // TODO
+def testStratification02(): Bool = check {
+    A(1). A(2). A(3).
 
-    namespace Test02 {
-        rel A(x: Int)
-        rel B(x: Int)
-        rel R(x: Int)
+    B(3).
 
-        A(1).
-        A(2).
-        A(3).
+    R(x) :- not A(x), B(x).
+}
 
-        B(3).
+@test
+def testStratification03(): Bool = check {
+    A(1). A(2). A(3).
 
-        R(x) :- not A(x), B(x).
-    }
+    B(3).
 
-    namespace Test03 {
-        rel A(x: Int)
-        rel B(x: Int)
-        rel C(x: Int)
-        rel R(x: Int)
+    C(3).
 
-        A(1).
-        A(2).
-        A(3).
+    R(x) :- A(x), not B(x), not C(x).
+}
 
-        B(3).
+//@test // TODO
+def testStratification04(): Bool = check {
+    A(1). A(2). A(3).
 
-        C(3).
+    B(3).
 
-        R(x) :- A(x), not B(x), not C(x).
-    }
+    C(3).
 
-    namespace Test04 {
-        rel A(x: Int)
-        rel B(x: Int)
-        rel C(x: Int)
-        rel R(x: Int)
+    R(x) :- not A(x), B(x), not C(x).
+}
 
-        A(1).
-        A(2).
-        A(3).
+@test
+def testStratification05(): Bool = check {
+    A(1). A(2).
+    B(3).
 
-        B(3).
+    C(x) :- A(x).
+    C(x) :- B(x).
+    R(x) :- C(x), not A(x).
+}
 
-        C(3).
+@test
+def testStratification06(): Bool = check {
+    A(1). A(2).
+    B(3).
 
-        R(x) :- not A(x), B(x), not C(x).
-    }
+    C(x) :- A(x).
+    C(x) :- B(x).
+    D(x) :- C(x), not A(x).
+    R(x) :- A(x), not D(x).
+}
 
-    namespace Test05 {
-        rel A(x: Int, y: Int)
-        rel B(x: Int, y: Int)
-        rel R(x: Int, y: Int)
+@test
+def testStratification07(): Bool = check {
+    A(1). A(2).
+    B(3).
 
-        A(1, 1).
-        A(2, 2).
-        A(3, 3).
+    C(x) :- A(x).
+    C(x) :- B(x).
+    D(x) :- C(x), not A(x).
+    E(x) :- B(x), not D(x).
+    R(x) :- E(x).
+}
 
-        B(3, 3).
+@test
+def testStratification08(): Bool = check {
+    A(1).
+    A(2).
+    A(3).
 
-        R(x, y) :- A(x, y), not B(x, y).
-    }
+    false :- not A(1).
+    false :- not A(2).
+    false :- not A(3).
+}
 
-    namespace Test06 {
-        rel A(x: Int)
-        rel B(x: Int)
-        rel C(x: Int)
-        rel R(x: Int)
+@test
+def testStratification09(): Bool = check {
+    A(1). A(2).
+    B(1).  B(2).
 
-        A(1).
-        A(2).
-        B(3).
-
-        C(x) :- A(x).
-        C(x) :- B(x).
-        R(x) :- C(x), not A(x).
-    }
-
-    namespace Test07 {
-        rel A(x: Int)
-        rel B(x: Int)
-        rel C(x: Int)
-        rel D(x: Int)
-        rel R(x: Int)
-
-        A(1).
-        A(2).
-        B(3).
-
-        C(x) :- A(x).
-        C(x) :- B(x).
-        D(x) :- C(x), not A(x).
-        R(x) :- A(x), not D(x).
-    }
-
-    namespace Test08 {
-        rel A(x: Int)
-        rel B(x: Int)
-        rel C(x: Int)
-        rel D(x: Int)
-        rel E(x: Int)
-        rel R(x: Int)
-
-        A(1).
-        A(2).
-        B(3).
-
-        C(x) :- A(x).
-        C(x) :- B(x).
-        D(x) :- C(x), not A(x).
-        E(x) :- B(x), not D(x).
-        R(x) :- E(x).
-    }
-
-    namespace Test09 {
-        rel A(x: Int)
-
-        A(1).
-        A(2).
-        A(3).
-
-        false :- not A(1).
-        false :- not A(2).
-        false :- not A(3).
-    }
-
-    namespace Test10 {
-        rel A(x: Int)
-        rel B(x: Int)
-
-        A(1).
-        A(2).
-        B(1).
-        B(2).
-
-        false :- not A(1), not B(1).
-        false :- not A(2), not B(2).
-    }
-
+    false :- not A(1), not B(1).
+    false :- not A(2), not B(2).
 }
