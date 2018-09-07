@@ -3,6 +3,7 @@
 By adding your name to this document, you agree to release all your contributions to Flix under the [Apache 2.0 License](LICENSE.md).
 
 - [Luqman Aden](https://github.com/luqmana)
+- [Nada Amin](https://github.com/namin)
 - [Ondřej Lhoták](https://github.com/olhotak) ([website](http://plg.uwaterloo.ca/~olhotak/))
 - [Magnus Madsen](https://github.com/magnus-madsen) ([website](http://plg.uwaterloo.ca/~mmadsen/))
 - [Ming-Ho Yee](https://github.com/mhyee) ([website](http://mhyee.com))
@@ -18,3 +19,4 @@ By adding your name to this document, you agree to release all your contribution
 - [Marcus Bach](https://github.com/Xinrah)
 - [Patrick Bering Tietze](https://github.com/Tietze95)
 - [Simon Dalgas Christensen](https://github.com/Dalgas104)
+- [Frederik Kirk Kristensen](https://github.com/FkirkK)
