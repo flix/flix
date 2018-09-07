@@ -32,11 +32,10 @@ import scala.collection.mutable
   *
   * (a) Appears in the global namespaces, takes a unit argument, and is not marked as synthetic.
   * (b) Appears in the global handlers.
-  * (c) Appears in a fact or a rule as a filter/transfer function.
-  * (d) Appears in a lattice declaration.
-  * (e) Appears in a property declaration.
-  * (f) Appears as a special op.
-  * (g) Appears in a function which itself is reachable.
+  * (c) Appears in a lattice declaration.
+  * (d) Appears in a property declaration.
+  * (e) Appears as a special op.
+  * (f) Appears in a function which itself is reachable.
   */
 
 object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
@@ -242,18 +241,7 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     /*
      * Find reachable functions that:
      *
-     * (c) Appear in a fact or a rule as a filter/transfer function.
-     */
-    for (stratum <- root.strata) {
-      for (constraint <- stratum.constraints) {
-        reachableFunctions ++= visitConstraint(constraint)
-      }
-    }
-
-    /*
-     * Find reachable functions that:
-     *
-     * (d) Appear in a lattice declaration.
+     * (c) Appear in a lattice declaration.
      */
     reachableFunctions ++= root.latticeComponents.values.map {
       case SimplifiedAst.LatticeComponents(tpe, bot, top, equ, leq, lub, glb, loc) =>
@@ -263,7 +251,7 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     /*
      * Find reachable functions that:
      *
-     * (e) Appear in a property declaration.
+     * (d) Appear in a property declaration.
      */
     reachableFunctions ++= root.properties.map {
       case SimplifiedAst.Property(law, defn, exp) => visitExp(exp) + law + defn
@@ -272,14 +260,14 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     /*
      * Find reachable functions that:
      *
-     * (f) Appear as a special op.
+     * (e) Appear as a special op.
      */
     reachableFunctions ++= root.specialOps.values.flatMap(_.values)
 
     /*
      * Find reachable functions that:
      *
-     * (g) Appear in a function which itself is reachable.
+     * (f) Appear in a function which itself is reachable.
      */
     reachableFunctions.foreach {
       root.defs.get(_) match {

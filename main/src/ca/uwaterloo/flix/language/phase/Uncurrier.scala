@@ -47,9 +47,6 @@ object Uncurrier extends Phase[Root, Root] {
     // A mutable map to hold new top-level definitions.
     val newDefs: TopLevel = mutable.Map.empty
 
-    // Uncurry symbols in constraints.
-    val newStrata = root.strata.map(visitStratum(_, newDefs, root))
-
     // Uncurry lattice operations.
     val newLatticeOps = visitLatticeOps(root.latticeComponents, newDefs, root)
 
@@ -57,7 +54,7 @@ object Uncurrier extends Phase[Root, Root] {
     val newSpecialOps = visitSpecialOps(root.specialOps, newDefs, root)
 
     // Reassemble the ast.
-    root.copy(defs = root.defs ++ newDefs, strata = newStrata, latticeComponents = newLatticeOps, specialOps = newSpecialOps).toSuccess
+    root.copy(defs = root.defs ++ newDefs, latticeComponents = newLatticeOps, specialOps = newSpecialOps).toSuccess
   }
 
   /**
@@ -86,13 +83,6 @@ object Uncurrier extends Phase[Root, Root] {
     }
 
     specialOps + (SpecialOperator.Equality -> newEqOps)
-  }
-
-  /**
-    * Uncurries all definitions inside the given stratum `s`.
-    */
-  def visitStratum(s: Stratum, newDefs: TopLevel, root: Root)(implicit flix: Flix): Stratum = s match {
-    case Stratum(constraints) => Stratum(constraints.map(visitConstraint(_, newDefs, root)))
   }
 
   /**

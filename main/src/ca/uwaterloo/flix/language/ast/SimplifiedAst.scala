@@ -33,7 +33,6 @@ object SimplifiedAst {
                   relations: Map[Symbol.RelSym, SimplifiedAst.Relation],
                   lattices: Map[Symbol.LatSym, SimplifiedAst.Lattice],
                   latticeComponents: Map[Type, SimplifiedAst.LatticeComponents],
-                  strata: List[SimplifiedAst.Stratum],
                   properties: List[SimplifiedAst.Property],
                   specialOps: Map[SpecialOperator, Map[Type, Symbol.DefnSym]],
                   reachable: Set[Symbol.DefnSym]) extends SimplifiedAst
@@ -53,8 +52,6 @@ object SimplifiedAst {
   case class Lattice(mod: Ast.Modifiers, sym: Symbol.LatSym, attr: List[SimplifiedAst.Attribute], loc: SourceLocation) extends SimplifiedAst
 
   case class Property(law: Symbol.DefnSym, defn: Symbol.DefnSym, exp: SimplifiedAst.Expression) extends SimplifiedAst
-
-  case class Stratum(constraints: List[SimplifiedAst.Constraint]) extends SimplifiedAst
 
   case class LatticeComponents(tpe: Type, bot: Symbol.DefnSym, top: Symbol.DefnSym, equ: Symbol.DefnSym, leq: Symbol.DefnSym, lub: Symbol.DefnSym, glb: Symbol.DefnSym, loc: SourceLocation) extends SimplifiedAst
 

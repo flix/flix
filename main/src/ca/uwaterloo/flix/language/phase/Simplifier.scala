@@ -685,12 +685,6 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
     }
 
     /**
-      * Translates the given `stratum0` to the SimplifiedAst.
-      */
-    def visitStratum(stratum0: TypedAst.Stratum): SimplifiedAst.Stratum =
-      SimplifiedAst.Stratum(stratum0.constraints.map(c => visitConstraint(c)))
-
-    /**
       * Translates the given `relation0` to the SimplifiedAst.
       */
     def visitRelation(relation0: TypedAst.Relation): SimplifiedAst.Relation = relation0 match {
@@ -1035,12 +1029,11 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
     val latticeComponents = root.latticeComponents.map { case (k, v) => k -> visitLatticeComponents(v) }
     val relations = root.relations.map { case (k, v) => k -> visitRelation(v) }
     val lattices = root.lattices.map { case (k, v) => k -> visitLattice(v) }
-    val strata = root.strata.map(visitStratum)
     val properties = root.properties.map { p => visitProperty(p) }
     val specialOps = root.specialOps
     val reachable = root.reachable
 
-    SimplifiedAst.Root(defns ++ toplevel, effs, handlers, enums, relations, lattices, latticeComponents, strata, properties, specialOps, reachable).toSuccess
+    SimplifiedAst.Root(defns ++ toplevel, effs, handlers, enums, relations, lattices, latticeComponents, properties, specialOps, reachable).toSuccess
   }
 
   /**
