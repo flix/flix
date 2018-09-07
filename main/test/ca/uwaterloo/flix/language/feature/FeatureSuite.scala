@@ -22,12 +22,11 @@ import org.scalatest.{ParallelTestExecution, Suites}
 // TODO: Sort
 class FeatureSuite extends Suites(
   new FlixTest("TestCurrying", "main/test/ca/uwaterloo/flix/language/feature/TestCurrying.flix"),
-  new FlixTest("TestConstraint", "main/test/ca/uwaterloo/flix/language/feature/TestConstraint.flix"),
   new FlixTest("TestEquality", "main/test/ca/uwaterloo/flix/language/feature/TestEquality.flix"),
   new FlixTest("Test.Decl.Namespace", "main/test/ca/uwaterloo/flix/language/feature/Test.Decl.Namespace.flix"),
   new FlixTest("Test.Decl.Def", "main/test/ca/uwaterloo/flix/language/feature/Test.Decl.Def.flix"),
+  new FlixTest("Test.Decl.Constraint", "main/test/ca/uwaterloo/flix/language/feature/Test.Decl.Constraint.flix")(compiled = false),
   new FlixTest("Test.Decl.Enum", "main/test/ca/uwaterloo/flix/language/feature/Test.Decl.Enum.flix"),
-  new FlixTest("Test.Decl.Rel", "main/test/ca/uwaterloo/flix/language/feature/Test.Decl.Rel.flix"),
   new FlixTest("Test.Expression.List", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.List.flix"),
   new FlixTest("Test.Expression.LetMatch", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.LetMatch.flix"),
   new FlixTest("Test.Pattern.List", "main/test/ca/uwaterloo/flix/language/feature/Test.Pattern.List.flix"),
@@ -43,11 +42,11 @@ class FeatureSuite extends Suites(
   new FlixTest("Test.Expression.Bool", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Bool.flix"),
   new FlixTest("Test.Expression.Char", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Char.flix"),
 
-  new FlixTest("Test.Expression.Constraint.Filter", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Constraint.Filter.flix", compiled = false), // TODO
-  new FlixTest("Test.Expression.Constraint", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Constraint.flix", compiled = false), // TODO
-  new FlixTest("Test.Expression.Constraint.Functional", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Constraint.Functional.flix", compiled = false), // TODO
-  new FlixTest("Test.Expression.Constraint.Transfer", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Constraint.Transfer.flix", compiled = false), // TODO
-  new FlixTest("Test.Expression.NewRelation", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.NewRelation.flix", compiled = false), // TODO
+  new FlixTest("Test.Expression.Constraint.Filter", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Constraint.Filter.flix")(compiled = false), // TODO
+  new FlixTest("Test.Expression.Constraint", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Constraint.flix")(compiled = false), // TODO
+  new FlixTest("Test.Expression.Constraint.Functional", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Constraint.Functional.flix")(compiled = false), // TODO
+  new FlixTest("Test.Expression.Constraint.Transfer", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Constraint.Transfer.flix")(compiled = false), // TODO
+  new FlixTest("Test.Expression.NewRelation", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.NewRelation.flix")(compiled = false), // TODO
 
   new FlixTest("Test.Expression.Float", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Float.flix"),
   new FlixTest("Test.Expression.Float32", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Float32.flix"),
@@ -80,7 +79,7 @@ class FeatureSuite extends Suites(
   new FlixTest("TestTailCallElimination", "main/test/ca/uwaterloo/flix/language/feature/TestTailCallElimination.flix"),
   new FlixTest("TestUncurry", "main/test/ca/uwaterloo/flix/language/feature/TestUncurry.flix"),
   new FlixTest("TestUniformFunctionCallSyntax", "main/test/ca/uwaterloo/flix/language/feature/TestUniformFunctionCallSyntax.flix"),
-  new FlixTest("TestStratifiedNegation", "main/test/ca/uwaterloo/flix/language/feature/TestStratifiedNegation.flix"),
+  new FlixTest("TestStratifiedNegation", "main/test/ca/uwaterloo/flix/language/feature/TestStratifiedNegation.flix")(compiled = false),
   new FlixTest("TestEffects", "main/test/ca/uwaterloo/flix/language/feature/TestEffects.flix"),
   new FlixTest("Test.Decl.Class", "main/test/ca/uwaterloo/flix/language/feature/Test.Decl.Class.flix"),
   new FlixTest("Test.Decl.Disallow", "main/test/ca/uwaterloo/flix/language/feature/Test.Decl.Disallow.flix"),
