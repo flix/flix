@@ -54,14 +54,9 @@ object ApiBridge {
     implicit val _ = root
     implicit val cache = new SymbolCache
 
-    val strata = root.strata.map(visitStratum).toArray
-
-    new ConstraintSet(strata.flatten)
+    ??? // TODO
   }
 
-  private def visitStratum(stratum: FinalAst.Stratum)(implicit root: FinalAst.Root, cache: SymbolCache, flix: Flix): Array[Constraint] = {
-    stratum.constraints.map(visitConstraint).toArray
-  }
 
   def visitConstraint(c0: FinalAst.Constraint)(implicit root: FinalAst.Root, cache: SymbolCache, flix: Flix): Constraint = {
     val cparams = c0.cparams.map(visitConstraintParam)

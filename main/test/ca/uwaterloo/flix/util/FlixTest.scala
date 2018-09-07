@@ -45,8 +45,8 @@ class FlixTest(name: String, paths: String*)(implicit compiled: Boolean = true) 
       flix.addPath(path)
 
     // Compile and Evaluate the program to obtain the compilationResult.
-    flix.solve() match {
-      case Success(model) => runTests(model)
+    flix.compile() match {
+      case Success(compilationResult) => runTests(compilationResult)
       case Failure(errors) =>
         // Create a single test that always fails.
         test("Aborted.") {

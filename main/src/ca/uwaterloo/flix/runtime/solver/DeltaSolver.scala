@@ -20,13 +20,13 @@ import java.nio.file.StandardOpenOption._
 import java.nio.file.{Files, Path}
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.FinalAst.Stratum
 import ca.uwaterloo.flix.language.ast.{FinalAst, PrettyPrinter}
 import ca.uwaterloo.flix.runtime.solver.api.ApiBridge
-import ca.uwaterloo.flix.util.{Options, Verbosity}
 import flix.runtime._
 
 object DeltaSolver {
+
+  // TODO: Rewrite the delta solver to be part of the runtime and to work on the API.
 
   /**
     * A common super-type to represent the result of running the solver.
@@ -60,15 +60,13 @@ object DeltaSolver {
     * @param path    the path to write the minimized facts to.
     */
   def solve(root: FinalAst.Root, options: FixpointOptions, path: Path)(implicit flix: Flix): Unit = {
-    /*
-     * Retrieve the lowest stratum.
-     */
-    val stratum0 = root.strata.head
+
+    val constraints: List[api.Constraint] = ???
 
     /*
      * Retrieve the facts of the program. These are always in the lowest stratum.
      */
-    val initialFacts = stratum0.constraints.filter(_.isFact)
+    val initialFacts = constraints.filter(_.isFact())
 
     /*
      * Refuse to overwrite existing file.
@@ -117,13 +115,15 @@ object DeltaSolver {
         facts = facts - block
 
         // reconstruct the constraints in the lowest stratum.
-        val s0 = facts.flatten.toList ::: stratum0.constraints.filter(_.isRule)
+        // val s0 = facts.flatten.toList ::: stratum0.constraints.filter(_.isRule)
+        val s0 = ???
 
         // reconstruct the strata.
-        val strata = Stratum(s0) :: root.strata.tail
+        // val strata = Stratum(s0) :: root.strata.tail
+        val strata = ???
 
         // try to solve the reconstructed program.
-        trySolve(root.copy(strata = strata), options, exception) match {
+        trySolve(root, options, exception) match {
           case SolverResult.Success =>
             // the program successfully completed. Must backtrack.
             Console.println(f"    [block $round%3d] ${block.size}%5d fact(s) retained (program ran successfully).") // TODO: Red
@@ -152,7 +152,8 @@ object DeltaSolver {
       Console.println(f"--- Progress: $numberOfFacts%4d out of $totalNumberOfFacts%4d facts ($percentage%2.1f%%) --- ")
       Console.println()
 
-      writeFacts(globalFacts, path)
+      //writeFacts(globalFacts, path)
+      ???
     }
 
     Console.println(s"    >>> Delta Debugging Complete! <<<") // TODO: Green
@@ -225,12 +226,17 @@ object DeltaSolver {
     */
   private def writeFacts(constraints: Traversable[FinalAst.Constraint], path: Path): Unit = {
     val writer = Files.newBufferedWriter(path, WRITE, CREATE, TRUNCATE_EXISTING)
-    for (constraint <- constraints; if constraint.isFact) {
+    for (constraint <- constraints; if isFact(constraint)) {
       val formattedFact = PrettyPrinter.fmt(constraint, new StringBuilder).toString
       writer.write(formattedFact)
       writer.newLine()
     }
     writer.close()
   }
+
+  /**
+    * Returns `true` if the given constraint is a fact.
+    */
+  private def isFact(c: FinalAst.Constraint): Boolean = c.body.isEmpty
 
 }
