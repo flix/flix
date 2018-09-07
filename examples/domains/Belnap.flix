@@ -211,28 +211,27 @@ namespace Belnap {
     lat L(k: Int, y: Belnap)
     lat R(k: Int, y: Belnap)
 
-    // TODO: These tests are not found by Flix.
-
     @test
     pub def testBelnap01(): Bool = check {
-        L(1, Bot).
-        L(2, True).
-        L(3, False).
-        L(4, Top).
+        R(1, Bot).
+        R(2, True).
+        R(3, False).
+        R(4, Top).
     }
 
     @test
     pub def testBelnap02(): Bool = check {
-        L(1, True).
-        L(1, False).
+        R(1, True).
+        R(1, False).
     }
 
     @test
     pub def testBelnap03(): Bool = check {
         L(1, True).
-        L(1, False).
         L(2, False).
-        L(2, True).
+
+        R(3, e) :- L(1, e).
+        R(3, e) :- L(2, e).
     }
 
     @test
@@ -240,8 +239,27 @@ namespace Belnap {
         L(1, True).
         L(2, False).
 
+        R(3, e) :- L(1, e), L(2, e).
     }
 
+    @test
+    pub def testBelnap05(): Bool = check {
+        R(1, not(False)).
+    }
 
+    @test
+    pub def testBelnap06(): Bool = check {
+        R(1, and(True, False)).
+    }
+
+    @test
+    pub def testBelnap07(): Bool = check {
+        R(1, or(True, False)).
+    }
+
+    @test
+    pub def testBelnap08(): Bool = check {
+        R(1, xor(True, False)).
+    }
 
 }
