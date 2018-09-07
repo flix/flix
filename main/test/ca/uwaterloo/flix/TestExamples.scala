@@ -26,7 +26,7 @@ class TestExamples extends Suites(
 
   new FlixTest("IFDS", "examples/analysis/IFDS.flix")(compiled = false),
   new FlixTest("IDE", "examples/analysis/IDE.flix")(compiled = false),
-  new FlixTest("SUOpt", "examples/analysis/SUOpt.flix")(compiled = false),
+  new FlixTest("SUOpt", "examples/analysis/SUopt.flix")(compiled = false),
   new FlixTest("FloydWarshall", "examples/misc/FloydWarshall.flix")(compiled = false)
 
 )
