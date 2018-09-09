@@ -4,7 +4,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.Ast.Polarity
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, TypedAst}
-import ca.uwaterloo.flix.language.ast.TypedAst.{Constraint, Predicate, Root, Stratum}
+import ca.uwaterloo.flix.language.ast.TypedAst.{Constraint, Predicate, Root}
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps._
 import ca.uwaterloo.flix.language.errors.SafetyError
 import ca.uwaterloo.flix.util.Validation
@@ -19,10 +19,13 @@ object Safety extends Phase[Root, Root] {
     * Performs safety and well-formedness checks on a typed ast.
     */
   def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationError] = flix.phase("Safety") {
+
+    // TODO: Safety must check in expressions.
+
     //
     // Check each stratum for safety errors.
     //
-    val strataErrors = root.strata flatMap checkStratum
+    val strataErrors = Nil
 
     //
     // Combine all errors.
@@ -36,13 +39,6 @@ object Safety extends Phase[Root, Root] {
       root.toSuccess
     else
       Validation.Failure(allErrors.toStream)
-  }
-
-  /**
-    * Performs safety and well-formedness checks on the given stratum `st0`.
-    */
-  private def checkStratum(st0: Stratum): List[CompilationError] = {
-    st0.constraints flatMap checkConstraint
   }
 
   /**

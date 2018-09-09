@@ -23,10 +23,12 @@ import org.scalatest.FunSuite
 
 class TestStratifier extends FunSuite with TestUtils {
 
+  // TODO
+
   /////////////////////////////////////////////////////////////////////////////
   // Patterns                                                                //
   /////////////////////////////////////////////////////////////////////////////
-  test("Stratification.01") {
+  ignore("Stratification.01") {
     val input =
       """
         |rel A(c: Int)
@@ -36,7 +38,7 @@ class TestStratifier extends FunSuite with TestUtils {
     expectError[StratificationError](new Flix().addStr(input).compile())
   }
 
-  test("Stratification.02") {
+  ignore("Stratification.02") {
     val input =
       """
         |rel A(c: Int)
@@ -48,7 +50,7 @@ class TestStratifier extends FunSuite with TestUtils {
     expectError[StratificationError](new Flix().addStr(input).compile())
   }
 
-  test("Stratification.03") {
+  ignore("Stratification.03") {
     val input =
       """
         |rel A(c: Int)
@@ -60,7 +62,7 @@ class TestStratifier extends FunSuite with TestUtils {
     expectError[StratificationError](new Flix().addStr(input).compile())
   }
 
-  test("Stratification.04") {
+  ignore("Stratification.04") {
     val input =
       """
         |rel A(c: Int)
@@ -90,7 +92,7 @@ class TestStratifier extends FunSuite with TestUtils {
     expectError[StratificationError](new Flix().addStr(input).compile())
   }
 
-  test("Stratification.05") {
+  ignore("Stratification.05") {
     val input =
       """
         |rel A(c: Int)
@@ -103,7 +105,7 @@ class TestStratifier extends FunSuite with TestUtils {
     expectError[StratificationError](new Flix().addStr(input).compile())
   }
 
-  test("Stratification.06") {
+  ignore("Stratification.06") {
     val input =
       """
         |rel A(c: Int)
@@ -115,7 +117,7 @@ class TestStratifier extends FunSuite with TestUtils {
     expectError[StratificationError](new Flix().addStr(input).compile())
   }
 
-  test("Stratification.07") {
+  ignore("Stratification.07") {
     val input =
       """
         |rel A(c: Int)

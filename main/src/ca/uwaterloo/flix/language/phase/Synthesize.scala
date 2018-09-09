@@ -1194,15 +1194,6 @@ object Synthesize extends Phase[Root, Root] {
     }
 
     /*
-     * Rewrite every equality expression in a constraint to explicitly call the equality operator.
-     */
-    val strata = root.strata.map {
-      case Stratum(constraints) => Stratum(constraints.map {
-        case Constraint(cparams, head, body, loc) => Constraint(cparams, visitHead(head), body map visitBody, loc)
-      })
-    }
-
-    /*
      * Construct the map of special operators.
      */
     val specialOps: Map[SpecialOperator, Map[Type, Symbol.DefnSym]] = Map(
@@ -1212,7 +1203,7 @@ object Synthesize extends Phase[Root, Root] {
     )
 
     // Reassemble the ast with the new definitions.
-    root.copy(defs = defs ++ newDefs, strata = strata, specialOps = specialOps).toSuccess
+    root.copy(defs = defs ++ newDefs, specialOps = specialOps).toSuccess
   }
 
 }
