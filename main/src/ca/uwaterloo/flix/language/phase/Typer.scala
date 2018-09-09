@@ -43,7 +43,6 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       relations <- Declarations.visitRelations(program)
       lattices <- Declarations.visitLattices(program)
       latticeComponents <- Declarations.Lattices.typecheck(program)
-      constraints <- Constraints.typecheck(program)
       properties <- Declarations.Properties.typecheck(program)
     } yield {
       val specialOps = Map.empty[SpecialOperator, Map[Type, Symbol.DefnSym]]
@@ -57,54 +56,6 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
   }
 
   object Constraints {
-
-    /**
-      * Performs type inference and reassembly on all constraints in the given program.
-      *
-      * Returns [[Err]] if a constraint fails to type check.
-      */
-    def typecheck(program: ResolvedAst.Program)(implicit genSym: GenSym): Result[List[TypedAst.Constraint], TypeError] = {
-
-      /**
-        * Performs type inference on the given constraint `c`.
-        */
-      def visitConstraint(c: ResolvedAst.Constraint): Result[TypedAst.Constraint, TypeError] = c match {
-        case ResolvedAst.Constraint(cparams0, head0, body0, loc) =>
-
-          // Infer the types of head and body predicates.
-          val result = for {
-            headType <- Predicates.infer(head0, program)
-            bodyTypes <- seqM(body0.map(b => Predicates.infer(b, program)))
-          } yield ()
-
-          // Evaluate the monad under the empty substitution.
-          result.run(Substitution.empty) map {
-            case (subst, _) =>
-              // Unification was successful. Reassemble the head and body predicates.
-              val head = Predicates.reassemble(head0, program, subst)
-              val body = body0.map(b => Predicates.reassemble(b, program, subst))
-
-              // Reassemble the constraint parameters.
-              val cparams = cparams0.map {
-                case ResolvedAst.ConstraintParam.HeadParam(sym, tpe, l) =>
-                  TypedAst.ConstraintParam.HeadParam(sym, subst(tpe), l)
-                case ResolvedAst.ConstraintParam.RuleParam(sym, tpe, l) =>
-                  TypedAst.ConstraintParam.RuleParam(sym, subst(tpe), l)
-              }
-
-              // Reassemble the constraint.
-              TypedAst.Constraint(cparams, head, body, loc)
-          }
-      }
-
-      // Perform type inference on every constraint in the program.
-      val result = program.constraints.map {
-        case constraint => visitConstraint(constraint)
-      }
-
-      // Sequence the results.
-      Result.seqM(result)
-    }
 
     // TODO: DOC
     def reassemble(c0: ResolvedAst.Constraint, program: ResolvedAst.Program, subst0: Substitution): TypedAst.Constraint = c0 match {
