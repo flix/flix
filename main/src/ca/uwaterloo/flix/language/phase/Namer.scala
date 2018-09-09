@@ -51,7 +51,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       relations = Map.empty,
       lattices = Map.empty,
       latticeComponents = Map.empty,
-      constraints = Map.empty,
       named = Map.empty,
       properties = Map.empty,
       reachable = program.reachable
@@ -208,15 +207,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
           val properties = prog0.properties.getOrElse(ns0, Nil)
           prog0.copy(properties = prog0.properties + (ns0 -> (property :: properties)))
       }
-
-    /*
-     * Constraint.
-     */
-    case d@WeededAst.Declaration.Constraint(h, bs, loc) => visitConstraint(d, Map.empty, Map.empty) map {
-      case constraint =>
-        val constraints = constraint :: prog0.constraints.getOrElse(ns0, Nil)
-        prog0.copy(constraints = prog0.constraints + (ns0 -> constraints))
-    }
 
     /*
      * BoundedLattice (deprecated).

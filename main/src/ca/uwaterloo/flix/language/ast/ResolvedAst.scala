@@ -55,7 +55,7 @@ object ResolvedAst {
 
   case class Class(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.ClassSym, quantifiers: List[Type.Var], head: ResolvedAst.SimpleClass, body: List[ResolvedAst.SimpleClass], sigs: Map[String, ResolvedAst.Sig], laws: List[ResolvedAst.Law], loc: SourceLocation)
 
-  case class Impl(doc: Ast.Doc, mod: Ast.Modifiers, head: ResolvedAst.ComplexClass, body: List[ResolvedAst.ComplexClass], defs: List[ResolvedAst.Def], loc: SourceLocation) extends NamedAst
+  case class Impl(doc: Ast.Doc, mod: Ast.Modifiers, head: ResolvedAst.ComplexClass, body: List[ResolvedAst.ComplexClass], defs: List[ResolvedAst.Def], loc: SourceLocation)
 
   // TODO: Disallow.
 
@@ -284,9 +284,9 @@ object ResolvedAst {
   }
 
 
-  case class SimpleClass(sym: Symbol.ClassSym, args: List[Type.Var], loc: SourceLocation) extends NamedAst
+  case class SimpleClass(sym: Symbol.ClassSym, args: List[Type.Var], loc: SourceLocation)
 
-  case class ComplexClass(sym: Symbol.ClassSym, polarity: Ast.Polarity, args: List[Type], loc: SourceLocation) extends NamedAst
+  case class ComplexClass(sym: Symbol.ClassSym, polarity: Ast.Polarity, args: List[Type], loc: SourceLocation)
 
   case class FormalParam(sym: Symbol.VarSym, mod: Ast.Modifiers, tpe: Type, loc: SourceLocation)
 

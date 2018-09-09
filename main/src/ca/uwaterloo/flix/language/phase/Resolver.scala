@@ -119,10 +119,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
       }
     }
 
-    val constraintsVal = prog0.constraints.map {
-      case (ns0, constraints) => Constraints.resolve(constraints, ns0, prog0)
-    }
-
     val latticeComponentsVal = prog0.latticeComponents.map {
       case (tpe0, lattice0) =>
         for {
@@ -146,7 +142,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
       impls <- sequence(implsVal)
       relations <- sequence(relationsVal)
       lattices <- sequence(latticesVal)
-      constraints <- sequence(constraintsVal)
       latticeComponents <- sequence(latticeComponentsVal)
       properties <- propertiesVal
     } yield ResolvedAst.Program(

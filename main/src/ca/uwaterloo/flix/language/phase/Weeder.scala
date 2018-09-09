@@ -92,7 +92,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
     case d: ParsedAst.Declaration.Lattice => visitLattice(d)
 
-    case d: ParsedAst.Declaration.Constraint => visitConstraint(d)
+    case d: ParsedAst.Declaration.Constraint => Nil.toSuccess
 
     case d: ParsedAst.Declaration.LatticeComponents => visitLatticeComponents(d)
 
