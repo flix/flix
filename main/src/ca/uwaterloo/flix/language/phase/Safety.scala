@@ -4,7 +4,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.Ast.Polarity
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, TypedAst}
-import ca.uwaterloo.flix.language.ast.TypedAst.{Constraint, Predicate, Root}
+import ca.uwaterloo.flix.language.ast.TypedAst.{Constraint, Expression, Predicate, Root}
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps._
 import ca.uwaterloo.flix.language.errors.SafetyError
 import ca.uwaterloo.flix.util.Validation
@@ -15,17 +15,18 @@ import ca.uwaterloo.flix.util.Validation._
   */
 object Safety extends Phase[Root, Root] {
 
+  // TODO: Carefully vet this class.
+
   /**
     * Performs safety and well-formedness checks on a typed ast.
     */
   def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationError] = flix.phase("Safety") {
-
-    // TODO: Safety must check in expressions.
-
     //
     // Check each stratum for safety errors.
     //
-    val strataErrors = Nil
+    val strataErrors = root.defs.flatMap {
+      case (sym, defn) => visitDef(defn)
+    }
 
     //
     // Combine all errors.
@@ -39,6 +40,126 @@ object Safety extends Phase[Root, Root] {
       root.toSuccess
     else
       Validation.Failure(allErrors.toStream)
+  }
+
+  // TODO: DOC
+  private def visitDef(d0: TypedAst.Def): List[CompilationError] = visitExp(d0.exp)
+
+  // TODO: DOC
+  private def visitExp(exp0: Expression): List[CompilationError] = exp0 match {
+    case Expression.Unit(loc) => Nil
+    case Expression.True(loc) => Nil
+    case Expression.False(loc) => Nil
+    case Expression.Char(lit, loc) => Nil
+    case Expression.Float32(lit, loc) => Nil
+    case Expression.Float64(lit, loc) => Nil
+    case Expression.Int8(lit, loc) => Nil
+    case Expression.Int16(lit, loc) => Nil
+    case Expression.Int32(lit, loc) => Nil
+    case Expression.Int64(lit, loc) => Nil
+    case Expression.BigInt(lit, loc) => Nil
+    case Expression.Str(lit, loc) => Nil
+
+    case Expression.Wild(tpe, eff, loc) => Nil
+
+    case Expression.Var(sym, tpe, eff, loc) => Nil
+
+    case Expression.Def(sym, tpe, eff, loc) => Nil
+
+    case Expression.Eff(sym, tpe, eff, loc) => Nil
+
+    case Expression.Hole(sym, tpe, eff, loc) => Nil
+
+    case Expression.Lambda(fparam, exp, tpe, eff, loc) => visitExp(exp)
+
+    case Expression.Apply(exp1, exp2, tpe, eff, loc) => visitExp(exp1) ::: visitExp(exp2)
+
+    case Expression.Unary(op, exp, tpe, eff, loc) => visitExp(exp)
+
+    case Expression.Binary(op, exp1, exp2, tpe, eff, loc) => visitExp(exp1) ::: visitExp(exp2)
+
+    case Expression.Let(sym, exp1, exp2, tpe, eff, loc) => visitExp(exp1) ::: visitExp(exp2)
+
+
+    //    case class LetRec(sym: Symbol.VarSym, exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    //
+    //    case class IfThenElse(exp1: TypedAst.Expression, exp2: TypedAst.Expression, exp3: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    //
+    //    case class Match(exp: TypedAst.Expression, rules: List[TypedAst.MatchRule], tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    //
+    //    case class Switch(rules: List[(TypedAst.Expression, TypedAst.Expression)], tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    //
+    //    case class Tag(sym: Symbol.EnumSym, tag: String, exp: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    //
+    //    case class Tuple(elms: List[TypedAst.Expression], tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    //
+    //    case class ArrayLit(elms: List[TypedAst.Expression], tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    //
+    //    case class ArrayNew(elm: TypedAst.Expression, len: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    //
+    //    case class ArrayLoad(base: TypedAst.Expression, index: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    //
+    //    case class ArrayLength(base: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    //
+    //    case class ArrayStore(base: TypedAst.Expression, index: TypedAst.Expression, elm: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    //
+    //    case class ArraySlice(base: TypedAst.Expression, beginIndex: TypedAst.Expression, endIndex: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    //
+    //    case class VectorLit(elms: List[TypedAst.Expression], tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    //
+    //    case class VectorNew(elm: TypedAst.Expression, len: Int, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    //
+    //    case class VectorLoad(base: TypedAst.Expression, index: Int, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    //
+    //    case class VectorStore(base: TypedAst.Expression, index: Int, elm: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    //
+    //    case class VectorLength(base: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    //
+    //    case class VectorSlice(base: TypedAst.Expression, startIndex: Int, endIndex: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    //
+    //    case class Ref(exp: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    //
+    //    case class Deref(exp: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    //
+    //    case class Assign(exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    //
+    //    case class HandleWith(exp: TypedAst.Expression, bindings: List[TypedAst.HandlerBinding], tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    //
+    //    case class Existential(fparam: TypedAst.FormalParam, exp: TypedAst.Expression, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression {
+    //  def tpe: Type = Type.Bool
+    //  }
+    //
+    //    case class Universal(fparam: TypedAst.FormalParam, exp: TypedAst.Expression, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression {
+    //  def tpe: Type = Type.Bool
+    //  }
+    //
+    //    case class Ascribe(exp: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    //
+    //    case class Cast(exp: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    //
+    //    case class NativeConstructor(constructor: Constructor[_], args: List[TypedAst.Expression], tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    //
+    //    case class TryCatch(exp: TypedAst.Expression, rules: List[TypedAst.CatchRule], tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    //
+    //    case class NativeField(field: Field, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    //
+    //    case class NativeMethod(method: Method, args: List[TypedAst.Expression], tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    //
+    //    case class NewRelation(sym: Symbol.RelSym, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    //
+    //    case class NewLattice(sym: Symbol.LatSym, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    //
+    //    case class Constraint(con: TypedAst.Constraint, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    //
+    //    case class ConstraintUnion(exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    //
+
+    case Expression.FixpointSolve(exp, tpe, eff, loc) => visitExp(exp)
+
+    case Expression.FixpointCheck(exp, tpe, eff, loc) => visitExp(exp)
+
+    case Expression.UserError(tpe, eff, loc) => Nil
+
   }
 
   /**
