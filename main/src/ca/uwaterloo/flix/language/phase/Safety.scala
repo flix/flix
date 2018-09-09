@@ -110,34 +110,37 @@ object Safety extends Phase[Root, Root] {
 
     case Expression.ArrayLoad(base, index, tpe, eff, loc) => visitExp(base) ::: visitExp(index)
 
-    //    case class ArrayLoad(base: TypedAst.Expression, index: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
-    //
-    //    case class ArrayLength(base: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
-    //
-    //    case class ArrayStore(base: TypedAst.Expression, index: TypedAst.Expression, elm: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
-    //
-    //    case class ArraySlice(base: TypedAst.Expression, beginIndex: TypedAst.Expression, endIndex: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
-    //
-    //    case class VectorLit(elms: List[TypedAst.Expression], tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
-    //
-    //    case class VectorNew(elm: TypedAst.Expression, len: Int, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
-    //
-    //    case class VectorLoad(base: TypedAst.Expression, index: Int, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
-    //
-    //    case class VectorStore(base: TypedAst.Expression, index: Int, elm: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
-    //
-    //    case class VectorLength(base: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
-    //
-    //    case class VectorSlice(base: TypedAst.Expression, startIndex: Int, endIndex: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
-    //
-    //    case class Ref(exp: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
-    //
-    //    case class Deref(exp: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
-    //
-    //    case class Assign(exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
-    //
-    //    case class HandleWith(exp: TypedAst.Expression, bindings: List[TypedAst.HandlerBinding], tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
-    //
+    case Expression.ArrayLength(base, tpe, eff, loc) => visitExp(base)
+
+    case Expression.ArrayStore(base, index, elm, tpe, eff, loc) => visitExp(base) ::: visitExp(index) ::: visitExp(elm)
+
+    case Expression.ArraySlice(base, beginIndex, endIndex, tpe, eff, loc) => visitExp(base) ::: visitExp(beginIndex) ::: visitExp(endIndex)
+
+    case Expression.VectorLit(elms, tpe, eff, loc) =>
+      elms.foldLeft(Nil: List[CompilationError]) {
+        case (acc, e) => acc ::: visitExp(e)
+      }
+
+    case Expression.VectorNew(elm, len, tpe, eff, loc) => visitExp(elm)
+
+    case Expression.VectorLoad(base, index, tpe, eff, loc) => visitExp(base)
+
+    case Expression.VectorStore(base, index, elm, tpe, eff, loc) => visitExp(base) ::: visitExp(elm)
+
+    case Expression.VectorLength(base, tpe, eff, loc) => visitExp(base)
+
+    case Expression.VectorSlice(base, startIndex, endIndex, tpe, eff, loc) => visitExp(base)
+
+    case Expression.Ref(exp, tpe, eff, loc) => visitExp(exp)
+
+    case Expression.Deref(exp, tpe, eff, loc) => visitExp(exp)
+
+    case Expression.Assign(exp1, exp2, tpe, eff, loc) => visitExp(exp1) ::: visitExp(exp2)
+
+    case Expression.HandleWith(exp, bindings, tpe, eff, loc) =>
+      bindings.foldLeft(visitExp(exp)) {
+        case (acc, HandlerBinding(_, e)) => acc ::: visitExp(e)
+      }
 
     case Expression.Existential(fparam, exp, eff, loc) => visitExp(exp)
 
@@ -152,23 +155,21 @@ object Safety extends Phase[Root, Root] {
         case (acc, e) => acc ::: visitExp(e)
       }
 
-    //
-    //    case class TryCatch(exp: TypedAst.Expression, rules: List[TypedAst.CatchRule], tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
-    //
-    //    case class NativeField(field: Field, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
-    //
+    case Expression.TryCatch(exp, rules, tpe, eff, loc) =>
+      rules.foldLeft(visitExp(exp)) {
+        case (acc, CatchRule(_, _, e)) => acc ::: visitExp(e)
+      }
+
+    case Expression.NativeField(field, tpe, eff, loc) => Nil
 
     case Expression.NativeMethod(method, args, tpe, eff, loc) =>
       args.foldLeft(Nil: List[CompilationError]) {
         case (acc, e) => acc ::: visitExp(e)
       }
-    //
-    //    case class NewRelation(sym: Symbol.RelSym, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
-    //
-    //    case class NewLattice(sym: Symbol.LatSym, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
-    //
-    //    case class Constraint(con: TypedAst.Constraint, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
-    //
+
+    case Expression.NewRelation(sym, tpe, eff, loc) => Nil
+
+    case Expression.NewLattice(sym, tpe, eff, loc) => Nil
 
     case Expression.Constraint(con, tpe, eff, loc) => checkConstraint(con)
 
