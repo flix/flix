@@ -28,7 +28,7 @@ class TestQuickChecker extends FunSuite {
     new Flix()
       .addPath("./examples/domains/Belnap.flix")
       .setOptions(opts)
-      .solve()
+      .compile()
       .get
   }
 
@@ -37,7 +37,7 @@ class TestQuickChecker extends FunSuite {
       .addPath("./examples/domains/Belnap.flix")
       .addPath("./examples/domains/Constant.flix")
       .setOptions(opts)
-      .solve()
+      .compile()
       .get
   }
 
@@ -46,7 +46,7 @@ class TestQuickChecker extends FunSuite {
       .addPath("./examples/domains/Belnap.flix")
       .addPath("./examples/domains/ConstantParity.flix")
       .setOptions(opts)
-      .solve()
+      .compile()
       .get
   }
 
@@ -55,7 +55,7 @@ class TestQuickChecker extends FunSuite {
       .addPath("./examples/domains/Belnap.flix")
       .addPath("./examples/domains/ConstantSign.flix")
       .setOptions(opts)
-      .solve()
+      .compile()
       .get
   }
 
@@ -64,7 +64,7 @@ class TestQuickChecker extends FunSuite {
       .addPath("./examples/domains/Belnap.flix")
       .addPath("./examples/domains/Parity.flix")
       .setOptions(opts)
-      .solve()
+      .compile()
       .get
   }
 
@@ -73,7 +73,7 @@ class TestQuickChecker extends FunSuite {
       .addPath("./examples/domains/Belnap.flix")
       .addPath("./examples/domains/Mod3.flix")
       .setOptions(opts)
-      .solve()
+      .compile()
       .get
   }
 
@@ -82,7 +82,7 @@ class TestQuickChecker extends FunSuite {
       .addPath("./examples/domains/Belnap.flix")
       .addPath("./examples/domains/PrefixSuffix.flix")
       .setOptions(opts)
-      .solve()
+      .compile()
       .get
   }
 
@@ -91,7 +91,7 @@ class TestQuickChecker extends FunSuite {
       .addPath("./examples/domains/Belnap.flix")
       .addPath("./examples/domains/Sign.flix")
       .setOptions(opts)
-      .solve()
+      .compile()
       .get
   }
 
@@ -100,7 +100,7 @@ class TestQuickChecker extends FunSuite {
       .addPath("./examples/domains/Belnap.flix")
       .addPath("./examples/domains/StrictSign.flix")
       .setOptions(opts)
-      .solve()
+      .compile()
       .get
   }
 
@@ -108,7 +108,7 @@ class TestQuickChecker extends FunSuite {
     new Flix()
       .addPath("./examples/domains/Type.flix")
       .setOptions(opts)
-      .solve()
+      .compile()
       .get
   }
 
@@ -116,7 +116,7 @@ class TestQuickChecker extends FunSuite {
     new Flix()
       .addPath("./examples/domains/ilo/Cube.flix")
       .setOptions(opts)
-      .solve()
+      .compile()
       .get
   }
 
@@ -124,7 +124,7 @@ class TestQuickChecker extends FunSuite {
     new Flix()
       .addPath("./examples/domains/ilo/InfNoAccDcc.flix")
       .setOptions(opts)
-      .solve()
+      .compile()
       .get
   }
 
@@ -132,7 +132,7 @@ class TestQuickChecker extends FunSuite {
     new Flix()
       .addPath("./examples/domains/ilo/M2.flix")
       .setOptions(opts)
-      .solve()
+      .compile()
       .get
   }
 
@@ -140,7 +140,7 @@ class TestQuickChecker extends FunSuite {
     new Flix()
       .addPath("./examples/domains/ilo/M3.flix")
       .setOptions(opts)
-      .solve()
+      .compile()
       .get
   }
 
@@ -148,7 +148,7 @@ class TestQuickChecker extends FunSuite {
     new Flix()
       .addPath("./examples/domains/ilo/M2M3.flix")
       .setOptions(opts)
-      .solve()
+      .compile()
       .get
   }
 
@@ -156,7 +156,7 @@ class TestQuickChecker extends FunSuite {
     new Flix()
       .addPath("./examples/domains/ilo/N5.flix")
       .setOptions(opts)
-      .solve()
+      .compile()
       .get
   }
 
@@ -164,7 +164,7 @@ class TestQuickChecker extends FunSuite {
     new Flix()
       .addPath("./examples/domains/ilo/SubD4.flix")
       .setOptions(opts)
-      .solve()
+      .compile()
       .get
   }
 
@@ -172,7 +172,7 @@ class TestQuickChecker extends FunSuite {
     new Flix()
       .addPath("./examples/domains/ilo/SubZ2Z4.flix")
       .setOptions(opts)
-      .solve()
+      .compile()
       .get
   }
 

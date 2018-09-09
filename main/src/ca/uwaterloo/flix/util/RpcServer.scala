@@ -56,11 +56,11 @@ class RpcServer(port: Int) {
         flix.addStr(input)
 
         // Evaluate the Flix program.
-        flix.solve() match {
-          case Success(model) =>
+        flix.compile() match {
+          case Success(compilationResult) =>
 
             // Evaluate the main function.
-            val result = model.evalToString("f")
+            val result = compilationResult.evalToString("f")
 
             // Translate the computed relations to JSON data.
             val relations = Nil // TODO: RpcServer needs access to tables.

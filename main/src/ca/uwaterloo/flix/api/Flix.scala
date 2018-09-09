@@ -264,35 +264,6 @@ class Flix {
     }
 
   /**
-    * Runs the Flix fixed point solver on the program and returns the minimal model.
-    */
-  def solve(): Validation[CompilationResult, CompilationError] = compile() flatMap solve
-
-  /**
-    * Runs the Flix fixed point solver on the program and returns the minimal model.
-    */
-  def solve(compilationResult: CompilationResult): Validation[CompilationResult, CompilationError] = {
-    compilationResult.toSuccess
-  }
-
-  /**
-    * Runs the Flix fixed point solver on the program trying to minimize the
-    * number of input facts which cause some unhandled exception.
-    *
-    * @param path the path to write the minimized facts to.
-    */
-  def deltaSolve(path: Path): Validation[scala.Unit, CompilationError] = compile().map {
-    case compilationResult =>
-      val opts = new FixpointOptions()
-      opts.setMonitored(options.monitor)
-      opts.setThreads(options.threads)
-      opts.setTimeout(options.timeout)
-      opts.setVerbose(options.verbosity == Verbosity.Verbose)
-
-      DeltaSolver.solve(compilationResult.getRoot, opts, path)(this)
-  }
-
-  /**
     * Enters the phase with the given name.
     */
   def phase[A](phase: String)(f: => A): A = {

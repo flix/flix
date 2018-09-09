@@ -490,9 +490,7 @@ class Shell(initialPaths: List[Path], options: Options) {
         }
     }
 
-    // Compute the ExecutableAst (with the compilationResult) and store it.
-    val executableRoot = flix.codeGen(root).get
-    flix.solve(executableRoot) match {
+    flix.codeGen(root) match {
       case Validation.Success(m) =>
         compilationResult = m
       case Validation.Failure(errors) =>

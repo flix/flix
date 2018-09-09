@@ -117,36 +117,25 @@ object Main {
     // the default color context.
     implicit val _ = TerminalContext.AnsiTerminal
 
-    // check if we are running in delta debugging mode.
-    if (cmdOpts.delta.nonEmpty) {
-      flix.deltaSolve(cmdOpts.delta.get.toPath) match {
-        case Validation.Success(_) =>
-          System.exit(0)
-        case Validation.Failure(errors) =>
-          errors.foreach(e => println(e.message.fmt))
-          System.exit(1)
-      }
-    }
-
     // compute the least model.
     try {
-      val timer = new Timer(flix.solve())
+      val timer = new Timer(flix.compile())
       timer.getResult match {
-        case Validation.Success(model) =>
+        case Validation.Success(compilationResult) =>
 
           val main = cmdOpts.main
           if (main.nonEmpty) {
             val name = main.get
-            val evalTimer = new Timer(model.evalToString(name))
+            val evalTimer = new Timer(compilationResult.evalToString(name))
             Console.println(s"$name returned `${evalTimer.getResult}' (compile: ${timer.getFormatter.fmt}, execute: ${evalTimer.getFormatter.fmt})")
           }
 
           if (cmdOpts.benchmark) {
-            Benchmarker.benchmark(model, new PrintWriter(System.out, true))
+            Benchmarker.benchmark(compilationResult, new PrintWriter(System.out, true))
           }
 
           if (cmdOpts.test) {
-            val results = Tester.test(model)
+            val results = Tester.test(compilationResult)
             Console.println(results.output.fmt)
           }
         case Validation.Failure(errors) =>
@@ -164,7 +153,6 @@ object Main {
     * A case class representing the parsed command line options.
     */
   case class CmdOpts(benchmark: Boolean = false,
-                     delta: Option[File] = None,
                      documentor: Boolean = false,
                      interactive: Boolean = false,
                      listen: Option[Int] = None,
@@ -208,11 +196,6 @@ object Main {
       // Doc.
       opt[Unit]("doc").action((_, c) => c.copy(documentor = true)).
         text("generates HTML documentation.")
-
-      // Delta.
-      opt[File]("delta").action((f, c) => c.copy(delta = Some(f))).
-        valueName("<file>").
-        text("enables the delta debugger. Output facts to <file>.")
 
       // Help.
       help("help").text("prints this usage information.")
