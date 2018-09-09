@@ -52,8 +52,6 @@ object WeededAst {
 
     case class Disallow(doc: Ast.Doc, body: List[WeededAst.ComplexClass], loc: SourceLocation) extends WeededAst.Declaration
 
-    case class Constraint(head: WeededAst.Predicate.Head, body: List[WeededAst.Predicate.Body], loc: SourceLocation) extends WeededAst.Declaration
-
     case class Relation(doc: Ast.Doc, mod: Ast.Modifiers, ident: Name.Ident, attr: List[WeededAst.Attribute], loc: SourceLocation) extends WeededAst.Declaration
 
     case class Lattice(doc: Ast.Doc, mod: Ast.Modifiers, ident: Name.Ident, attr: List[WeededAst.Attribute], loc: SourceLocation) extends WeededAst.Declaration
@@ -170,7 +168,7 @@ object WeededAst {
 
     case class NewRelationOrLattice(name: Name.QName, loc: SourceLocation) extends WeededAst.Expression
 
-    case class Constraint(con: WeededAst.Declaration.Constraint, loc: SourceLocation) extends WeededAst.Expression
+    case class Constraint(con: WeededAst.Constraint, loc: SourceLocation) extends WeededAst.Expression
 
     case class ConstraintUnion(exp1: WeededAst.Expression, exp2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
@@ -287,6 +285,8 @@ object WeededAst {
   case class HandlerBinding(qname: Name.QName, exp: WeededAst.Expression)
 
   case class CatchRule(ident: Name.Ident, className: String, exp: WeededAst.Expression)
+
+  case class Constraint(head: WeededAst.Predicate.Head, body: List[WeededAst.Predicate.Body], loc: SourceLocation)
 
   case class MatchRule(pat: WeededAst.Pattern, guard: WeededAst.Expression, exp: WeededAst.Expression)
 

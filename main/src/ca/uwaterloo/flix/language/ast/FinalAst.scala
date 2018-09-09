@@ -41,8 +41,6 @@ object FinalAst {
 
   case class Enum(mod: Ast.Modifiers, sym: Symbol.EnumSym, cases: Map[String, FinalAst.Case], tpe: Type, loc: SourceLocation)
 
-  case class Constraint(cparams: List[ConstraintParam], head: Predicate.Head, body: List[Predicate.Body])
-
   case class Relation(mod: Ast.Modifiers, sym: Symbol.RelSym, attr: List[FinalAst.Attribute], loc: SourceLocation)
 
   case class Lattice(mod: Ast.Modifiers, sym: Symbol.LatSym, attr: List[FinalAst.Attribute], loc: SourceLocation)
@@ -298,6 +296,8 @@ object FinalAst {
   case class Case(sym: Symbol.EnumSym, tag: Name.Ident, tpe: Type, loc: SourceLocation)
 
   case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: FinalAst.Expression)
+
+  case class Constraint(cparams: List[ConstraintParam], head: Predicate.Head, body: List[Predicate.Body])
 
   sealed trait ConstraintParam {
     def sym: Symbol.VarSym

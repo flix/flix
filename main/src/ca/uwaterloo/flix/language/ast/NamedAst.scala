@@ -58,8 +58,6 @@ object NamedAst {
 
   case class Disallow(doc: Ast.Doc, body: List[NamedAst.ComplexClass], loc: SourceLocation)
 
-  case class Constraint(cparams: List[NamedAst.ConstraintParam], head: NamedAst.Predicate.Head, body: List[NamedAst.Predicate.Body], loc: SourceLocation)
-
   case class Relation(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.RelSym, attr: List[NamedAst.Attribute], loc: SourceLocation)
 
   case class Lattice(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.LatSym, attr: List[NamedAst.Attribute], loc: SourceLocation)
@@ -287,6 +285,8 @@ object NamedAst {
   case class Attribute(ident: Name.Ident, tpe: NamedAst.Type, loc: SourceLocation)
 
   case class Case(enum: Name.Ident, tag: Name.Ident, tpe: NamedAst.Type)
+
+  case class Constraint(cparams: List[NamedAst.ConstraintParam], head: NamedAst.Predicate.Head, body: List[NamedAst.Predicate.Body], loc: SourceLocation)
 
   sealed trait ConstraintParam
 
