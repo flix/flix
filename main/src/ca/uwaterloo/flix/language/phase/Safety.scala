@@ -11,41 +11,38 @@ import ca.uwaterloo.flix.util.Validation
 import ca.uwaterloo.flix.util.Validation._
 
 /**
-  * Performs safety and well-formedness checks on a typed ast.
+  * Performs safety and well-formedness.
   */
 object Safety extends Phase[Root, Root] {
 
-  // TODO: Carefully vet this class.
-
   /**
-    * Performs safety and well-formedness checks on a typed ast.
+    * Performs safety and well-formedness checks on the given AST `root`.
     */
   def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationError] = flix.phase("Safety") {
     //
-    // Check each stratum for safety errors.
+    // Collect all errors.
     //
-    val strataErrors = root.defs.flatMap {
+    val errors = root.defs.flatMap {
       case (sym, defn) => visitDef(defn)
     }
 
     //
-    // Combine all errors.
-    //
-    val allErrors = strataErrors
-
-    //
     // Check if any errors were detected.
     //
-    if (allErrors.isEmpty)
+    if (errors.isEmpty)
       root.toSuccess
     else
-      Validation.Failure(allErrors.toStream)
+      Validation.Failure(errors.toStream)
   }
 
-  // TODO: DOC
-  private def visitDef(d0: TypedAst.Def): List[CompilationError] = visitExp(d0.exp)
+  /**
+    * Performs safety and well-formedness checks on the given definition `def0`.
+    */
+  private def visitDef(def0: TypedAst.Def): List[CompilationError] = visitExp(def0.exp)
 
-  // TODO: DOC
+  /**
+    * Performs safety and well-formedness checks on the given expression `exp0`.
+    */
   private def visitExp(exp0: Expression): List[CompilationError] = exp0 match {
     case Expression.Unit(loc) => Nil
     case Expression.True(loc) => Nil
@@ -193,18 +190,25 @@ object Safety extends Phase[Root, Root] {
     val posVars = positivelyDefinedVariables(c0)
 
     //
+    // Compute the quantified variables in the constraint.
+    //
+    // A lexically bound variable does not appear in this set and is never free.
+    //
+    val quantVars = c0.cparams.map(_.sym).toSet
+
+    //
     // Check that all negative atoms only use positively defined variable symbols.
     //
-    c0.body.flatMap(checkBodyPredicate(_, posVars))
+    c0.body.flatMap(checkBodyPredicate(_, posVars, quantVars))
   }
 
   /**
     * Performs safety and well-formedness checks on the given body predicate `p0`
     * with the given positively defined variable symbols `posVars`.
     */
-  private def checkBodyPredicate(p0: Predicate.Body, posVars: Set[Symbol.VarSym]): List[CompilationError] = p0 match {
-    case Predicate.Body.RelAtom(base, sym, polarity, terms, loc) => checkBodyAtomPredicate(polarity, terms, posVars, loc)
-    case Predicate.Body.LatAtom(base, sym, polarity, terms, loc) => checkBodyAtomPredicate(polarity, terms, posVars, loc)
+  private def checkBodyPredicate(p0: Predicate.Body, posVars: Set[Symbol.VarSym], quantVars: Set[Symbol.VarSym]): List[CompilationError] = p0 match {
+    case Predicate.Body.RelAtom(base, sym, polarity, terms, loc) => checkBodyAtomPredicate(polarity, terms, posVars, quantVars, loc)
+    case Predicate.Body.LatAtom(base, sym, polarity, terms, loc) => checkBodyAtomPredicate(polarity, terms, posVars, quantVars, loc)
     case Predicate.Body.Filter(sym, terms, loc) => Nil
     case Predicate.Body.Functional(sym, term, loc) => Nil
   }
@@ -212,12 +216,12 @@ object Safety extends Phase[Root, Root] {
   /**
     * Performs safety and well-formedness checks on an atom with the given polarity, terms, and positive variables.
     */
-  private def checkBodyAtomPredicate(polarity: Polarity, terms: List[TypedAst.Pattern], posVars: Set[Symbol.VarSym], loc: SourceLocation): List[CompilationError] = {
+  private def checkBodyAtomPredicate(polarity: Polarity, terms: List[TypedAst.Pattern], posVars: Set[Symbol.VarSym], quantVars: Set[Symbol.VarSym], loc: SourceLocation): List[CompilationError] = {
     polarity match {
       case Polarity.Positive => Nil
       case Polarity.Negative =>
-        // Compute the free variables in the terms.
-        val freeVars = terms.flatMap(freeVarsOf).toSet
+        // Compute the free variables in the terms which are *not* bound by the lexical scope.
+        val freeVars = terms.flatMap(freeVarsOf).toSet intersect quantVars
 
         // Check if any free variables are not positively bound.
         ((freeVars -- posVars) map {
@@ -232,7 +236,7 @@ object Safety extends Phase[Root, Root] {
   private def positivelyDefinedVariables(c0: Constraint): Set[Symbol.VarSym] = c0.body.flatMap(positivelyDefinedVariables).toSet
 
   /**
-    * Returns all positively defiend variable symbols in the given body predicate `p0`.
+    * Returns all positively defined variable symbols in the given body predicate `p0`.
     */
   private def positivelyDefinedVariables(p0: Predicate.Body): Set[Symbol.VarSym] = p0 match {
     case Predicate.Body.RelAtom(base, sym, polarity, terms, loc) => polarity match {
