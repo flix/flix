@@ -282,9 +282,7 @@ object Interpreter {
 
     case Expression.FixpointDelta(exp, tpe, loc) =>
       val cs = cast2constraintset(eval(exp, env0, henv0, lenv0, root))
-      println(cs)
-      val fixpoint = deltaSolve(cs)
-      ???
+      deltaSolve(cs)
 
     case Expression.UserError(_, loc) => throw new NotImplementedError(loc.reified)
 
@@ -1067,8 +1065,10 @@ object Interpreter {
     solver.solve()
   }
 
-  // TODO: DOC
-  private def deltaSolve(cs: ConstraintSet)(implicit flix: Flix): Fixpoint = {
+  /**
+    * Returns the minimal set of facts that fails to satisfy the given constraint set.
+    */
+  private def deltaSolve(cs: ConstraintSet)(implicit flix: Flix): String = {
     // Configure the fixpoint solver based on the Flix options.
     val options = new FixpointOptions
     options.setMonitored(flix.options.monitor)
@@ -1076,7 +1076,7 @@ object Interpreter {
     options.setVerbose(flix.options.verbosity == Verbosity.Verbose)
 
     // Construct the solver.
-    val deltaSolver = new DeltaSolver(cs.complete(), options)
+    val deltaSolver = new DeltaSolver(cs, options)
     deltaSolver.deltaSolve()
   }
 

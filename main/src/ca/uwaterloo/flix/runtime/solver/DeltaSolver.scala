@@ -51,7 +51,7 @@ class DeltaSolver(constraintSet: ConstraintSet, options: FixpointOptions) {
   /**
     * Runs the delta solver.
     */
-  def deltaSolve(): Fixpoint = {
+  def deltaSolve(): String = {
     /*
      * Retrieve all the constraints.
      */
@@ -61,6 +61,11 @@ class DeltaSolver(constraintSet: ConstraintSet, options: FixpointOptions) {
      * Retrieve the facts of the program. These are always in the lowest stratum.
      */
     val initialFacts = constraints.filter(_.isFact())
+
+    /*
+     * Retrieve all rules, i.e. non-facts.
+     */
+    val rules = constraints.filter(_.isRule())
 
     /*
      * Attempts to determine the exception the (original) program crashes with.
@@ -74,9 +79,9 @@ class DeltaSolver(constraintSet: ConstraintSet, options: FixpointOptions) {
     /*
      * Print information about the caught exception.
      */
-    Console.println(s"Caught `${exception.getClass.getName}' with message:") // TODO: Blue
-    Console.println(s"    `${exception.getMessage}'") // TODO: Blue
-    Console.println(s"Delta Debugging Started. Trying to minimize ${initialFacts.length} facts.") // TODO: Blue
+    Console.println(s"Caught `${exception.getClass.getName}' with message:")
+    Console.println(s"    `${exception.getMessage}'")
+    Console.println(s"Delta Debugging Started. Trying to minimize ${initialFacts.length} facts.")
     Console.println()
 
     /*
@@ -101,21 +106,21 @@ class DeltaSolver(constraintSet: ConstraintSet, options: FixpointOptions) {
         facts = facts - block
 
         // reconstruct the constraints.
-        val s0 = facts.flatten.toList ::: constraints.filter(_.isRule()).toList
+        val cs = new ConstraintSet(facts.flatten.toArray ++ rules)
 
         // try to solve the reconstructed program.
-        trySolve(exception) match {
+        trySolve(cs, exception) match {
           case SolverResult.Success =>
             // the program successfully completed. Must backtrack.
-            Console.println(f"    [block $round%3d] ${block.size}%5d fact(s) retained (program ran successfully).") // TODO: Red
+            Console.println(f"    [block $round%3d] ${block.size}%5d fact(s) retained (program ran successfully).")
             facts = facts + block // put the block back
           case SolverResult.FailDiffException =>
             // the program failed with a different exception. Must backtrack.
-            Console.println(f"    [block $round%3d] ${block.size}%5d fact(s) retained (different exception).") // TODO: Red
+            Console.println(f"    [block $round%3d] ${block.size}%5d fact(s) retained (different exception).")
             facts = facts + block // put the block back
           case SolverResult.FailSameException =>
             // the program failed with the same exception. Continue minimization.
-            Console.println(f"    [block $round%3d] ${block.size}%5d fact(s) discarded.") // TODO: Red
+            Console.println(f"    [block $round%3d] ${block.size}%5d fact(s) discarded.")
         }
 
         round += 1
@@ -132,18 +137,14 @@ class DeltaSolver(constraintSet: ConstraintSet, options: FixpointOptions) {
       val percentage = 100.0 * numberOfFacts.toDouble / totalNumberOfFacts.toDouble
       Console.println(f"--- Progress: $numberOfFacts%4d out of $totalNumberOfFacts%4d facts ($percentage%2.1f%%) --- ")
       Console.println()
-
     }
 
-
-    Console.println(s"    >>> Delta Debugging Complete! <<<") // TODO: Green
-
+    Console.println(s"    >>> Delta Debugging Complete! <<<")
+    Console.println()
+    Console.println(s"    The minimal set of facts is: " + globalFacts.mkString(", "))
     Console.println()
 
-    println(globalFacts)
-    Console.flush()
-
-    ???
+    globalFacts.mkString(", ")
   }
 
   /**
@@ -161,10 +162,10 @@ class DeltaSolver(constraintSet: ConstraintSet, options: FixpointOptions) {
   /**
     * Attempts to solve the given program expects `expectedException` to be thrown.
     */
-  def trySolve(expectedException: RuntimeException): SolverResult = {
+  def trySolve(cs: ConstraintSet, expectedException: RuntimeException): SolverResult = {
     try {
       // run the solver.
-      runSolver(constraintSet)
+      runSolver(cs)
       // the solver successfully completed, return `Success`.
       SolverResult.Success
     } catch {
@@ -200,7 +201,7 @@ class DeltaSolver(constraintSet: ConstraintSet, options: FixpointOptions) {
     * Runs the solver.
     */
   private def runSolver(cs: ConstraintSet): Fixpoint = {
-    val solver = new Solver(cs, options)
+    val solver = new Solver(cs.complete(), options)
     solver.solve()
   }
 
