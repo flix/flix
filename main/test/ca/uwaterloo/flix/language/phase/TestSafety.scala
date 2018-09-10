@@ -18,12 +18,12 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.errors.SafetyError
+import ca.uwaterloo.flix.language.errors.SafetyError.IllegalNonPositivelyBoundVariable
 import org.scalatest.FunSuite
 
 class TestSafety extends FunSuite with TestUtils {
 
-  test("Safety.01") {
+  test("NonPositivelyBoundVariable.01") {
     val input =
       """
         |rel A(x: Int)
@@ -35,10 +35,10 @@ class TestSafety extends FunSuite with TestUtils {
         |}
         |
       """.stripMargin
-    expectError[SafetyError](new Flix().addStr(input).compile())
+    expectError[IllegalNonPositivelyBoundVariable](new Flix().addStr(input).compile())
   }
 
-  test("Safety.02") {
+  test("NonPositivelyBoundVariable.02") {
     val input =
       """
         |rel A(x: Int)
@@ -50,10 +50,10 @@ class TestSafety extends FunSuite with TestUtils {
         |}
         |
       """.stripMargin
-    expectError[SafetyError](new Flix().addStr(input).compile())
+    expectError[IllegalNonPositivelyBoundVariable](new Flix().addStr(input).compile())
   }
 
-  test("Safety.03") {
+  test("NonPositivelyBoundVariable.03") {
     val input =
       """
         |rel A(x: Int)
@@ -65,10 +65,10 @@ class TestSafety extends FunSuite with TestUtils {
         |}
         |
       """.stripMargin
-    expectError[SafetyError](new Flix().addStr(input).compile())
+    expectError[IllegalNonPositivelyBoundVariable](new Flix().addStr(input).compile())
   }
 
-  test("Safety.04") {
+  test("NonPositivelyBoundVariable.04") {
     val input =
       """
         |rel A(x: Int)
@@ -80,7 +80,7 @@ class TestSafety extends FunSuite with TestUtils {
         |}
         |
       """.stripMargin
-    expectError[SafetyError](new Flix().addStr(input).compile())
+    expectError[IllegalNonPositivelyBoundVariable](new Flix().addStr(input).compile())
   }
 
 }
