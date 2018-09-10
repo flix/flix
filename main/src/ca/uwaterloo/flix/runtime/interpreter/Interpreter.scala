@@ -1077,7 +1077,7 @@ object Interpreter {
 
     // Construct the solver.
     val deltaSolver = new DeltaSolver(cs.complete(), options)
-    deltaSolver.solve()
+    deltaSolver.deltaSolve()
   }
 
   /**
