@@ -869,6 +869,11 @@ object SymbolicEvaluator {
       case Expression.FixpointCheck(exp, tpe, loc) => throw InternalCompilerException("Not yet supported.")
 
       /**
+        * Fixpoint Delta.
+        */
+      case Expression.FixpointDelta(exp, tpe, loc) => throw InternalCompilerException("Not yet supported.")
+
+      /**
         * User Error.
         */
       case Expression.UserError(tpe, loc) => throw new NotImplementedError(loc.reified)

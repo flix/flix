@@ -206,6 +206,10 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         val e = visit(exp)
         Expression.FixpointCheck(e, tpe, loc)
 
+      case Expression.FixpointDelta(exp, tpe, loc) =>
+        val e = visit(exp)
+        Expression.FixpointDelta(e, tpe, loc)
+
       case Expression.UserError(_, _) => exp0
       case Expression.HoleError(_, _, _, _) => exp0
       case Expression.MatchError(_, _) => exp0
@@ -347,6 +351,10 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     case Expression.FixpointCheck(exp, tpe, loc) =>
       val e = renameAndSubstitute(exp, env0)
       Expression.FixpointCheck(e, tpe, loc)
+
+    case Expression.FixpointDelta(exp, tpe, loc) =>
+      val e = renameAndSubstitute(exp, env0)
+      Expression.FixpointDelta(e, tpe, loc)
 
     case Expression.UserError(_, _) => exp0
     case Expression.HoleError(_, _, _, _) => exp0
@@ -586,6 +594,11 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     // Fixpoint Check expressions are atomic if its argument is.
     //
     case Expression.FixpointCheck(exp, tpe, loc) => isAtomic(exp)
+
+    //
+    // Fixpoint Delta expressions are atomic if its argument is.
+    //
+    case Expression.FixpointDelta(exp, tpe, loc) => isAtomic(exp)
 
     //
     // Errors are atomic.

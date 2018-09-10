@@ -197,6 +197,9 @@ object TypedAstOps {
       case Expression.FixpointCheck(exp, tpe, eff, loc) =>
         visitExp(exp, env0)
 
+      case Expression.FixpointDelta(exp, tpe, eff, loc) =>
+        visitExp(exp, env0)
+
       case Expression.UserError(tpe, eff, loc) => Map.empty
     }
 

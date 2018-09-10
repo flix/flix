@@ -1167,6 +1167,10 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         val e = visit(exp)
         SimplifiedAst.Expression.FixpointCheck(e, tpe, loc)
 
+      case SimplifiedAst.Expression.FixpointDelta(exp, tpe, loc) =>
+        val e = visit(exp)
+        SimplifiedAst.Expression.FixpointDelta(e, tpe, loc)
+
       case SimplifiedAst.Expression.UserError(tpe, loc) => e
       case SimplifiedAst.Expression.HoleError(sym, tpe, eff, loc) => e
       case SimplifiedAst.Expression.MatchError(tpe, loc) => e

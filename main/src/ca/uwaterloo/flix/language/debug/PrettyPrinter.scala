@@ -395,6 +395,10 @@ object PrettyPrinter {
           vt.text("check ")
           visitExp(exp)
 
+        case Expression.FixpointDelta(exp, tpe, loc) =>
+          vt.text("delta ")
+          visitExp(exp)
+
         case Expression.UserError(tpe, loc) => vt << Red("UserError")
         case Expression.HoleError(sym, tpe, eff, loc) => Red("HoleError")
         case Expression.MatchError(tpe, loc) => vt << Red("MatchError")
