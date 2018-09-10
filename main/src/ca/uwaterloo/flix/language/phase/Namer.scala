@@ -799,6 +799,11 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case e => NamedAst.Expression.FixpointCheck(e, Type.freshTypeVar(), loc)
       }
 
+    case WeededAst.Expression.FixpointDelta(exp, loc) =>
+      visitExp(exp, env0, tenv0) map {
+        case e => NamedAst.Expression.FixpointDelta(e, Type.freshTypeVar(), loc)
+      }
+
     case WeededAst.Expression.ConstraintUnion(exp1, exp2, loc) =>
       mapN(visitExp(exp1, env0, tenv0), visitExp(exp2, env0, tenv0)) {
         case (e1, e2) => NamedAst.Expression.ConstraintUnion(e1, e2, Type.freshTypeVar(), loc)
@@ -1038,10 +1043,11 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Expression.NativeMethod(className, methodName, args, loc) => args.flatMap(freeVars)
     case WeededAst.Expression.NativeConstructor(className, args, loc) => args.flatMap(freeVars)
     case WeededAst.Expression.NewRelationOrLattice(name, loc) => Nil
-    case WeededAst.Expression.Constraint(c, loc) => ??? // TODO
+    case WeededAst.Expression.Constraint(c, loc) => ??? // TODO: Constraint
     case WeededAst.Expression.ConstraintUnion(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
     case WeededAst.Expression.FixpointSolve(exp, loc) => freeVars(exp)
     case WeededAst.Expression.FixpointCheck(exp, loc) => freeVars(exp)
+    case WeededAst.Expression.FixpointDelta(exp, loc) => freeVars(exp)
     case WeededAst.Expression.UserError(loc) => Nil
   }
 

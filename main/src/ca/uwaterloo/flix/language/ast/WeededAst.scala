@@ -176,6 +176,8 @@ object WeededAst {
 
     case class FixpointCheck(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
+    case class FixpointDelta(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+
     case class UserError(loc: SourceLocation) extends WeededAst.Expression
 
   }

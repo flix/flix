@@ -182,6 +182,8 @@ object NamedAst {
 
     case class FixpointCheck(exp: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
+    case class FixpointDelta(exp: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
+
     case class UserError(tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
   }

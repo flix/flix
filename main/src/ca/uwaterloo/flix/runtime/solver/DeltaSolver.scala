@@ -21,9 +21,10 @@ import java.nio.file.{Files, Path}
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{FinalAst, PrettyPrinter}
+import ca.uwaterloo.flix.runtime.solver.api.ConstraintSet
 import flix.runtime._
 
-object DeltaSolver {
+class DeltaSolver(cs: ConstraintSet, options: FixpointOptions) {
 
   // TODO: Rewrite the delta solver to be part of the runtime and to work on the API.
 
@@ -51,6 +52,11 @@ object DeltaSolver {
 
   }
 
+  def solve(): Fixpoint = {
+    ???
+  }
+
+
   /**
     * Runs the delta debugger on the given program.
     *
@@ -58,7 +64,7 @@ object DeltaSolver {
     * @param options the Flix options.
     * @param path    the path to write the minimized facts to.
     */
-  def solve(root: FinalAst.Root, options: FixpointOptions, path: Path)(implicit flix: Flix): Unit = {
+  def solve(root: FinalAst.Root, options: FixpointOptions, path: Path)(implicit flix: Flix): Fixpoint = {
 
     val constraints: List[api.Constraint] = ???
 
@@ -159,6 +165,8 @@ object DeltaSolver {
     Console.println(s"    >>> Output written to `$path'. <<<") // TODO: Green
 
     Console.println()
+
+    ???
   }
 
   /**

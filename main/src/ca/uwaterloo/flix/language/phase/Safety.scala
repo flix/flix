@@ -176,6 +176,8 @@ object Safety extends Phase[Root, Root] {
 
     case Expression.FixpointCheck(exp, tpe, eff, loc) => visitExp(exp)
 
+    case Expression.FixpointDelta(exp, tpe, eff, loc) => visitExp(exp)
+
     case Expression.UserError(tpe, eff, loc) => Nil
 
   }

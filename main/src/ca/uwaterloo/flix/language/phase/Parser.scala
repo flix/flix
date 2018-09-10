@@ -584,7 +584,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     def Primary: Rule1[ParsedAst.Expression] = rule {
       LetRec | LetMatch | IfThenElse | Match | LambdaMatch | Switch | TryCatch | Native | Lambda | Tuple |
         ArrayLit | ArrayNew | ArrayLength | VectorLit | VectorNew | VectorLength | FNil | FSet | FMap |
-        NewRelationOrLattice | FixpointSolve | FixpointCheck | ConstraintSeq | Literal |
+        NewRelationOrLattice | FixpointSolve | FixpointCheck | FixpointDelta | ConstraintSeq | Literal |
         HandleWith | Existential | Universal | UnaryLambda | QName | Wild | Tag | SName | Hole | UserError
     }
 
@@ -789,6 +789,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def FixpointCheck: Rule1[ParsedAst.Expression] = rule {
       SP ~ atomic("check") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.FixpointCheck
+    }
+
+    def FixpointDelta: Rule1[ParsedAst.Expression] = rule {
+      SP ~ atomic("delta") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.FixpointDelta
     }
 
     def UserError: Rule1[ParsedAst.Expression] = rule {
