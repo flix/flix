@@ -20,11 +20,12 @@ import org.scalatest.{ParallelTestExecution, Suites}
 
 class PhaseSuite extends Suites(
   new TestNamer,
-  new TestResolver,
-  new TestUnification,
-  new TestWeeder,
   new TestPatExhaustiveness,
-  new TestStratifier
+  new TestResolver,
+  new TestSafety,
+  new TestStratifier,
+  new TestUnification,
+  new TestWeeder
 ) with ParallelTestExecution {
   /* left empty */
 }

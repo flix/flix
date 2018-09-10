@@ -23,11 +23,13 @@ import ca.uwaterloo.flix.language.ast.FinalAst._
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.runtime.{InvocationTarget, Linker}
 import ca.uwaterloo.flix.runtime.solver._
-import ca.uwaterloo.flix.runtime.solver.api.ApiBridge.SymbolCache
-import ca.uwaterloo.flix.runtime.solver.api.{ConstraintSet, LatticeVar, ProxyObject, RelationVar}
+import ca.uwaterloo.flix.runtime.solver.api.symbol.VarSym
+import ca.uwaterloo.flix.runtime.solver.api.{Attribute => _, Constraint => _, Lattice => _, Relation => _, _}
 import ca.uwaterloo.flix.util.{InternalRuntimeException, Verbosity}
 import ca.uwaterloo.flix.util.tc.Show._
 import flix.runtime._
+
+import scala.collection.mutable
 
 object Interpreter {
 
@@ -1232,6 +1234,23 @@ object Interpreter {
     case o: java.math.BigInteger => Value.BigInt(o)
     case o: java.lang.String => Value.Str(o)
     case _ => ref
+  }
+
+
+  // Class used to ensure that the symbols share the same object by identity.
+  private class SymbolCache {
+
+    val varSyms = mutable.Map.empty[Symbol.VarSym, VarSym]
+
+    def getVarSym(sym: Symbol.VarSym): VarSym =
+      varSyms.get(sym) match {
+        case None =>
+          val newSym = new VarSym(sym.text)
+          varSyms += (sym -> newSym)
+          newSym
+        case Some(res) => res
+      }
+
   }
 
 }

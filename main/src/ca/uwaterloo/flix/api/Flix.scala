@@ -25,10 +25,9 @@ import ca.uwaterloo.flix.language.phase._
 import ca.uwaterloo.flix.language.phase.jvm.JvmBackend
 import ca.uwaterloo.flix.language.{CompilationError, GenSym}
 import ca.uwaterloo.flix.runtime.quickchecker.QuickChecker
-import ca.uwaterloo.flix.runtime.solver.api.{ApiBridge, ProxyObject}
-import ca.uwaterloo.flix.runtime.solver.{DeltaSolver, FixpointOptions, Solver}
+import ca.uwaterloo.flix.runtime.solver.{DeltaSolver, FixpointOptions}
 import ca.uwaterloo.flix.runtime.verifier.Verifier
-import ca.uwaterloo.flix.runtime.{CompilationResult, Linker}
+import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util._
 import ca.uwaterloo.flix.util.vt.TerminalContext
@@ -263,43 +262,6 @@ class Flix {
     check() flatMap {
       case typedAst => codeGen(typedAst)
     }
-
-  /**
-    * Runs the Flix fixed point solver on the program and returns the minimal model.
-    */
-  def solve(): Validation[CompilationResult, CompilationError] = compile() flatMap solve
-
-  /**
-    * Runs the Flix fixed point solver on the program and returns the minimal model.
-    */
-  def solve(compilationResult: CompilationResult): Validation[CompilationResult, CompilationError] = {
-    val opts = new FixpointOptions()
-    opts.setMonitored(options.monitor)
-    opts.setThreads(options.threads)
-    opts.setTimeout(options.timeout)
-    opts.setVerbose(options.verbosity == Verbosity.Verbose)
-
-    val cs = ApiBridge.translate(compilationResult.getRoot)(this)
-    val fixedpoint = new Solver(cs, opts).solve()
-    compilationResult.toSuccess
-  }
-
-  /**
-    * Runs the Flix fixed point solver on the program trying to minimize the
-    * number of input facts which cause some unhandled exception.
-    *
-    * @param path the path to write the minimized facts to.
-    */
-  def deltaSolve(path: Path): Validation[scala.Unit, CompilationError] = compile().map {
-    case compilationResult =>
-      val opts = new FixpointOptions()
-      opts.setMonitored(options.monitor)
-      opts.setThreads(options.threads)
-      opts.setTimeout(options.timeout)
-      opts.setVerbose(options.verbosity == Verbosity.Verbose)
-
-      DeltaSolver.solve(compilationResult.getRoot, opts, path)(this)
-  }
 
   /**
     * Enters the phase with the given name.

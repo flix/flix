@@ -92,7 +92,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
     case d: ParsedAst.Declaration.Lattice => visitLattice(d)
 
-    case d: ParsedAst.Declaration.Constraint => visitConstraint(d)
+    case d: ParsedAst.Declaration.Constraint => Nil.toSuccess
 
     case d: ParsedAst.Declaration.LatticeComponents => visitLatticeComponents(d)
 
@@ -288,7 +288,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   /**
     * Performs weeding on the given constraint `c0`.
     */
-  private def visitConstraint(c0: ParsedAst.Declaration.Constraint)(implicit flix: Flix): Validation[List[WeededAst.Declaration.Constraint], WeederError] = c0 match {
+  private def visitConstraint(c0: ParsedAst.Declaration.Constraint)(implicit flix: Flix): Validation[List[WeededAst.Constraint], WeederError] = c0 match {
     case ParsedAst.Declaration.Constraint(sp1, head, body, sp2) =>
       val headVal = traverse(head)(visitHeadPredicate)
       val bodyVal = traverse(body)(disj => sequence(disj.map(visitPredicateBody)))
@@ -303,7 +303,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
                 case (xs, acc) => xs.map(p => acc.flatMap(rs => p :: rs))
               }
               unfolded map {
-                case b => WeededAst.Declaration.Constraint(h, b, mkSL(sp1, sp2))
+                case b => WeededAst.Constraint(h, b, mkSL(sp1, sp2))
               }
           }
       }
@@ -907,7 +907,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       traverse(cs)(visitConstraint) map {
         case xs =>
           // The base constraint is simple the true fact.
-          val base = WeededAst.Expression.Constraint(WeededAst.Declaration.Constraint(WeededAst.Predicate.Head.True(loc), Nil, loc), loc)
+          val base = WeededAst.Expression.Constraint(WeededAst.Constraint(WeededAst.Predicate.Head.True(loc), Nil, loc), loc)
           // Combine each of the constraints using union.
           xs.flatten.foldLeft(base: WeededAst.Expression) {
             case (eacc, c) =>
@@ -1242,19 +1242,19 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   /**
     * Collects all constraints in the given AST `roots`.
     */
-  private def visitAllConstraints(roots: List[ParsedAst.Root])(implicit flix: Flix): Validation[List[WeededAst.Declaration.Constraint], WeederError] = {
+  private def visitAllConstraints(roots: List[ParsedAst.Root])(implicit flix: Flix): Validation[List[WeededAst.Constraint], WeederError] = {
 
     // TODO: What if a constraint occurs in another namespace????
 
     /**
       * Local root visitor.
       */
-    def visitRoot(root: ParsedAst.Root): Validation[List[WeededAst.Declaration.Constraint], WeederError] = traverse(root.decls)(visitDecl).map(_.flatten)
+    def visitRoot(root: ParsedAst.Root): Validation[List[WeededAst.Constraint], WeederError] = traverse(root.decls)(visitDecl).map(_.flatten)
 
     /**
       * Local declaration visitor.
       */
-    def visitDecl(d0: ParsedAst.Declaration): Validation[List[WeededAst.Declaration.Constraint], WeederError] = d0 match {
+    def visitDecl(d0: ParsedAst.Declaration): Validation[List[WeededAst.Constraint], WeederError] = d0 match {
       case ParsedAst.Declaration.Namespace(sp1, name, decls, sp2) => traverse(decls)(visitDecl).map(_.flatten)
       case d: ParsedAst.Declaration.Constraint => visitConstraint(d)
       case _ => Nil.toSuccess
@@ -1758,7 +1758,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   /**
     * Introduces a main declaration that wraps the given constraints in a solve expression.
     */
-  private def mkMain(cs: List[WeededAst.Declaration.Constraint]): WeededAst.Root = {
+  private def mkMain(cs: List[WeededAst.Constraint]): WeededAst.Root = {
     // Source positions and source locations for the generated main.
     val sp1 = SourcePosition.Unknown
     val sp2 = SourcePosition.Unknown
@@ -1775,7 +1775,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     val fparams = WeededAst.FormalParam(Name.Ident(sp1, "_unit", sp2), Ast.Modifiers.Empty, None, loc) :: Nil
 
     // The main expression.
-    val trueFact = WeededAst.Declaration.Constraint(WeededAst.Predicate.Head.True(loc), Nil, loc)
+    val trueFact = WeededAst.Constraint(WeededAst.Predicate.Head.True(loc), Nil, loc)
     val zeroExp = WeededAst.Expression.Constraint(trueFact, loc)
     val innerExp = cs.foldLeft(zeroExp: WeededAst.Expression) {
       case (eacc, c) =>

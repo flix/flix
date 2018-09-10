@@ -627,15 +627,6 @@ object SimplifiedAstOps {
       }
     }
 
-    //
-    // Check all constraints in the program.
-    //
-    for (Stratum(constraints) <- root.strata) {
-      for (constraint <- constraints) {
-        checkConstraint(constraint)
-      }
-    }
-
     // Success :)
     root
   }

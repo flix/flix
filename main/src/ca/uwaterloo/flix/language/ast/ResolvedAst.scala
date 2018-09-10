@@ -22,8 +22,6 @@ import ca.uwaterloo.flix.language.ast
 
 import scala.collection.immutable.List
 
-trait ResolvedAst
-
 object ResolvedAst {
 
   case class Program(defs: Map[Symbol.DefnSym, ResolvedAst.Def],
@@ -34,42 +32,40 @@ object ResolvedAst {
                      impls: Map[Symbol.ClassSym, ResolvedAst.Impl],
                      relations: Map[Symbol.RelSym, ResolvedAst.Relation],
                      lattices: Map[Symbol.LatSym, ResolvedAst.Lattice],
-                     constraints: List[ResolvedAst.Constraint],
                      latticeComponents: Map[Type, ResolvedAst.LatticeComponents],
                      properties: List[ResolvedAst.Property],
-                     reachable: Set[Symbol.DefnSym]) extends ResolvedAst
+                     reachable: Set[Symbol.DefnSym])
 
-  case class Constraint(cparams: List[ResolvedAst.ConstraintParam], head: ResolvedAst.Predicate.Head, body: List[ResolvedAst.Predicate.Body], loc: SourceLocation) extends ResolvedAst
 
-  case class Def(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, tparams: List[ResolvedAst.TypeParam], fparams: List[ResolvedAst.FormalParam], exp: ResolvedAst.Expression, sc: Scheme, eff: ast.Eff, loc: SourceLocation) extends ResolvedAst
+  case class Def(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, tparams: List[ResolvedAst.TypeParam], fparams: List[ResolvedAst.FormalParam], exp: ResolvedAst.Expression, sc: Scheme, eff: ast.Eff, loc: SourceLocation)
 
-  case class Eff(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EffSym, tparams: List[ResolvedAst.TypeParam], fparams: List[ResolvedAst.FormalParam], sc: Scheme, eff: ast.Eff, loc: SourceLocation) extends ResolvedAst
+  case class Eff(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EffSym, tparams: List[ResolvedAst.TypeParam], fparams: List[ResolvedAst.FormalParam], sc: Scheme, eff: ast.Eff, loc: SourceLocation)
 
-  case class Handler(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EffSym, tparams: List[ResolvedAst.TypeParam], fparams: List[ResolvedAst.FormalParam], exp: ResolvedAst.Expression, sc: Scheme, eff: ast.Eff, loc: SourceLocation) extends ResolvedAst
-
-  // TODO
-  case class Law() extends ResolvedAst
+  case class Handler(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EffSym, tparams: List[ResolvedAst.TypeParam], fparams: List[ResolvedAst.FormalParam], exp: ResolvedAst.Expression, sc: Scheme, eff: ast.Eff, loc: SourceLocation)
 
   // TODO
-  case class Sig() extends ResolvedAst
+  case class Law()
 
-  case class Enum(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: List[ResolvedAst.TypeParam], cases: Map[String, ResolvedAst.Case], tpe: Type, loc: SourceLocation) extends ResolvedAst
+  // TODO
+  case class Sig()
+
+  case class Enum(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: List[ResolvedAst.TypeParam], cases: Map[String, ResolvedAst.Case], tpe: Type, loc: SourceLocation)
 
   case class Property(law: Symbol.DefnSym, defn: Symbol.DefnSym, exp: ResolvedAst.Expression, loc: SourceLocation)
 
-  case class Class(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.ClassSym, quantifiers: List[Type.Var], head: ResolvedAst.SimpleClass, body: List[ResolvedAst.SimpleClass], sigs: Map[String, ResolvedAst.Sig], laws: List[ResolvedAst.Law], loc: SourceLocation) extends ResolvedAst
+  case class Class(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.ClassSym, quantifiers: List[Type.Var], head: ResolvedAst.SimpleClass, body: List[ResolvedAst.SimpleClass], sigs: Map[String, ResolvedAst.Sig], laws: List[ResolvedAst.Law], loc: SourceLocation)
 
-  case class Impl(doc: Ast.Doc, mod: Ast.Modifiers, head: ResolvedAst.ComplexClass, body: List[ResolvedAst.ComplexClass], defs: List[ResolvedAst.Def], loc: SourceLocation) extends NamedAst
+  case class Impl(doc: Ast.Doc, mod: Ast.Modifiers, head: ResolvedAst.ComplexClass, body: List[ResolvedAst.ComplexClass], defs: List[ResolvedAst.Def], loc: SourceLocation)
 
   // TODO: Disallow.
 
-  case class Relation(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.RelSym, attr: List[ResolvedAst.Attribute], loc: SourceLocation) extends ResolvedAst
+  case class Relation(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.RelSym, attr: List[ResolvedAst.Attribute], loc: SourceLocation)
 
-  case class Lattice(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.LatSym, attr: List[ResolvedAst.Attribute], loc: SourceLocation) extends ResolvedAst
+  case class Lattice(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.LatSym, attr: List[ResolvedAst.Attribute], loc: SourceLocation)
 
-  case class LatticeComponents(tpe: Type, bot: ResolvedAst.Expression, top: ResolvedAst.Expression, equ: ResolvedAst.Expression, leq: ResolvedAst.Expression, lub: ResolvedAst.Expression, glb: ResolvedAst.Expression, ns: Name.NName, loc: SourceLocation) extends ResolvedAst
+  case class LatticeComponents(tpe: Type, bot: ResolvedAst.Expression, top: ResolvedAst.Expression, equ: ResolvedAst.Expression, leq: ResolvedAst.Expression, lub: ResolvedAst.Expression, glb: ResolvedAst.Expression, ns: Name.NName, loc: SourceLocation)
 
-  sealed trait Expression extends ResolvedAst {
+  sealed trait Expression {
     def loc: SourceLocation
   }
 
@@ -197,7 +193,7 @@ object ResolvedAst {
 
   }
 
-  sealed trait Pattern extends ResolvedAst {
+  sealed trait Pattern {
     def loc: SourceLocation
   }
 
@@ -237,7 +233,7 @@ object ResolvedAst {
 
   }
 
-  sealed trait Predicate extends ResolvedAst
+  sealed trait Predicate
 
   object Predicate {
 
@@ -271,9 +267,11 @@ object ResolvedAst {
 
   }
 
-  case class Attribute(ident: Name.Ident, tpe: Type, loc: SourceLocation) extends ResolvedAst
+  case class Attribute(ident: Name.Ident, tpe: Type, loc: SourceLocation)
 
-  case class Case(enum: Name.Ident, tag: Name.Ident, tpe: Type) extends ResolvedAst
+  case class Case(enum: Name.Ident, tag: Name.Ident, tpe: Type)
+
+  case class Constraint(cparams: List[ResolvedAst.ConstraintParam], head: ResolvedAst.Predicate.Head, body: List[ResolvedAst.Predicate.Body], loc: SourceLocation)
 
   sealed trait ConstraintParam
 
@@ -286,18 +284,18 @@ object ResolvedAst {
   }
 
 
-  case class SimpleClass(sym: Symbol.ClassSym, args: List[Type.Var], loc: SourceLocation) extends NamedAst
+  case class SimpleClass(sym: Symbol.ClassSym, args: List[Type.Var], loc: SourceLocation)
 
-  case class ComplexClass(sym: Symbol.ClassSym, polarity: Ast.Polarity, args: List[Type], loc: SourceLocation) extends NamedAst
+  case class ComplexClass(sym: Symbol.ClassSym, polarity: Ast.Polarity, args: List[Type], loc: SourceLocation)
 
-  case class FormalParam(sym: Symbol.VarSym, mod: Ast.Modifiers, tpe: Type, loc: SourceLocation) extends ResolvedAst
+  case class FormalParam(sym: Symbol.VarSym, mod: Ast.Modifiers, tpe: Type, loc: SourceLocation)
 
-  case class HandlerBinding(sym: Symbol.EffSym, exp: ResolvedAst.Expression) extends ResolvedAst
+  case class HandlerBinding(sym: Symbol.EffSym, exp: ResolvedAst.Expression)
 
-  case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: ResolvedAst.Expression) extends ResolvedAst
+  case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: ResolvedAst.Expression)
 
-  case class MatchRule(pat: ResolvedAst.Pattern, guard: ResolvedAst.Expression, exp: ResolvedAst.Expression) extends ResolvedAst
+  case class MatchRule(pat: ResolvedAst.Pattern, guard: ResolvedAst.Expression, exp: ResolvedAst.Expression)
 
-  case class TypeParam(name: Name.Ident, tpe: Type.Var, loc: SourceLocation) extends ResolvedAst
+  case class TypeParam(name: Name.Ident, tpe: Type.Var, loc: SourceLocation)
 
 }

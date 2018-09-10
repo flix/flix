@@ -29,7 +29,7 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
     * Runs Flix on the given input string `s`.
     */
   def run(s: String, core: Boolean = true): CompilationResult = {
-    new Flix().setOptions(Options.DefaultTest.copy(core = core)).addStr(s).solve().get
+    new Flix().setOptions(Options.DefaultTest.copy(core = core)).addStr(s).compile().get
   }
 
   test("Pattern.Literal.Char.01") {
@@ -218,7 +218,7 @@ class TestPatExhaustiveness extends FunSuite with TestUtils {
     expectError[NonExhaustiveMatchError](new Flix().addStr(input).compile())
   }
 
-  test ("Pattern.Nested.02") {
+  test("Pattern.Nested.02") {
     val input =
       """ def f(l: List[Int]): Int = let foo = 42 ;
         |     match l with {

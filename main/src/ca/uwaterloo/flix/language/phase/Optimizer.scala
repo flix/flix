@@ -474,16 +474,6 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case (sym, defn) => sym -> defn.copy(exp = visitExp(defn.exp, Map.empty))
     }
 
-    // Visit every stratum in the program.
-    val strata = root.strata.map {
-      case Stratum(constraints) =>
-        val cs = constraints map {
-          case Constraint(cparams, head, body) =>
-            Constraint(cparams, visitHeadPred(head), body map visitBodyPred)
-        }
-        Stratum(cs)
-    }
-
     // Visit every property in the program.
     val properties = root.properties.map {
       case property => property.copy(exp = visitExp(property.exp, Map.empty))
@@ -492,7 +482,6 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     // Reassemble the ast root.
     val result = root.copy(
       defs = defs,
-      strata = strata,
       properties = properties
     )
 

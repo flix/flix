@@ -18,13 +18,11 @@ package ca.uwaterloo.flix
 
 import ca.uwaterloo.flix.language.LanguageSuite
 import ca.uwaterloo.flix.library.LibrarySuite
-import ca.uwaterloo.flix.runtime.RuntimeSuite
 import ca.uwaterloo.flix.util.UtilSuite
 import org.scalatest.{ParallelTestExecution, Suites}
 
 class TestAll extends Suites(
   new LanguageSuite,
-  new RuntimeSuite,
   new LibrarySuite,
   new UtilSuite,
   new TestMain,

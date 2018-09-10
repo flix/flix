@@ -323,9 +323,9 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
       * @param rules The rules to check
       * @return
       */
-    def checkRules(exp: TypedAst.Expression, rules: List[TypedAst.MatchRule], root: TypedAst.Root): Validation[TypedAst, CompilationError] = {
+    def checkRules(exp: TypedAst.Expression, rules: List[TypedAst.MatchRule], root: TypedAst.Root): Validation[TypedAst.Root, CompilationError] = {
       findNonMatchingPat(rules.map(r => List(r.pat)), 1, root) match {
-        case Exhaustive => root.toSuccess[TypedAst, CompilationError]
+        case Exhaustive => root.toSuccess[TypedAst.Root, CompilationError]
         case NonExhaustive(ctors) => NonExhaustiveMatchError(rules, prettyPrintCtor(ctors.head), exp.loc).toFailure
       }
     }

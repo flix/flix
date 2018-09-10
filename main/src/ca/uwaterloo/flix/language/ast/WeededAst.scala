@@ -18,15 +18,13 @@ package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.ast
 
-trait WeededAst
-
 object WeededAst {
 
-  case class Program(roots: List[WeededAst.Root], named: Map[Symbol.DefnSym, WeededAst.Expression], reachable: Set[Symbol.DefnSym]) extends WeededAst
+  case class Program(roots: List[WeededAst.Root], named: Map[Symbol.DefnSym, WeededAst.Expression], reachable: Set[Symbol.DefnSym])
 
-  case class Root(decls: List[WeededAst.Declaration]) extends WeededAst
+  case class Root(decls: List[WeededAst.Declaration])
 
-  sealed trait Declaration extends WeededAst {
+  sealed trait Declaration {
     def loc: SourceLocation
   }
 
@@ -60,11 +58,9 @@ object WeededAst {
 
     case class LatticeComponents(tpe: WeededAst.Type, bot: WeededAst.Expression, top: WeededAst.Expression, equ: WeededAst.Expression, leq: WeededAst.Expression, lub: WeededAst.Expression, glb: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Declaration
 
-    case class Constraint(head: WeededAst.Predicate.Head, body: List[WeededAst.Predicate.Body], loc: SourceLocation) extends WeededAst.Declaration
-
   }
 
-  sealed trait Expression extends WeededAst {
+  sealed trait Expression {
     def loc: SourceLocation
   }
 
@@ -172,7 +168,7 @@ object WeededAst {
 
     case class NewRelationOrLattice(name: Name.QName, loc: SourceLocation) extends WeededAst.Expression
 
-    case class Constraint(con: WeededAst.Declaration.Constraint, loc: SourceLocation) extends WeededAst.Expression
+    case class Constraint(con: WeededAst.Constraint, loc: SourceLocation) extends WeededAst.Expression
 
     case class ConstraintUnion(exp1: WeededAst.Expression, exp2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
@@ -184,7 +180,7 @@ object WeededAst {
 
   }
 
-  sealed trait Pattern extends WeededAst {
+  sealed trait Pattern {
     def loc: SourceLocation
   }
 
@@ -224,7 +220,7 @@ object WeededAst {
 
   }
 
-  sealed trait Predicate extends WeededAst
+  sealed trait Predicate
 
   object Predicate {
 
@@ -254,7 +250,7 @@ object WeededAst {
 
   }
 
-  sealed trait Type extends WeededAst
+  sealed trait Type
 
   object Type {
 
@@ -276,20 +272,22 @@ object WeededAst {
 
   }
 
-  case class Attribute(ident: Name.Ident, tpe: WeededAst.Type, loc: SourceLocation) extends WeededAst
+  case class Attribute(ident: Name.Ident, tpe: WeededAst.Type, loc: SourceLocation)
 
-  case class Case(enum: Name.Ident, tag: Name.Ident, tpe: WeededAst.Type) extends WeededAst
+  case class Case(enum: Name.Ident, tag: Name.Ident, tpe: WeededAst.Type)
 
-  case class SimpleClass(qname: Name.QName, args: List[Name.Ident], loc: SourceLocation) extends WeededAst
+  case class SimpleClass(qname: Name.QName, args: List[Name.Ident], loc: SourceLocation)
 
-  case class ComplexClass(qname: Name.QName, polarity: Ast.Polarity, args: List[WeededAst.Type], loc: SourceLocation) extends WeededAst
+  case class ComplexClass(qname: Name.QName, polarity: Ast.Polarity, args: List[WeededAst.Type], loc: SourceLocation)
 
-  case class FormalParam(ident: Name.Ident, mod: Ast.Modifiers, tpe: Option[WeededAst.Type], loc: SourceLocation) extends WeededAst
+  case class FormalParam(ident: Name.Ident, mod: Ast.Modifiers, tpe: Option[WeededAst.Type], loc: SourceLocation)
 
-  case class HandlerBinding(qname: Name.QName, exp: WeededAst.Expression) extends WeededAst
+  case class HandlerBinding(qname: Name.QName, exp: WeededAst.Expression)
 
-  case class CatchRule(ident: Name.Ident, className: String, exp: WeededAst.Expression) extends WeededAst
+  case class CatchRule(ident: Name.Ident, className: String, exp: WeededAst.Expression)
 
-  case class MatchRule(pat: WeededAst.Pattern, guard: WeededAst.Expression, exp: WeededAst.Expression) extends WeededAst
+  case class Constraint(head: WeededAst.Predicate.Head, body: List[WeededAst.Predicate.Body], loc: SourceLocation)
+
+  case class MatchRule(pat: WeededAst.Pattern, guard: WeededAst.Expression, exp: WeededAst.Expression)
 
 }

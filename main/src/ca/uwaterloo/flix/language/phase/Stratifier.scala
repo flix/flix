@@ -25,7 +25,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body.{Filter, Functional}
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Head.{False, True}
-import ca.uwaterloo.flix.language.ast.TypedAst.{Predicate, Root, Stratum}
+import ca.uwaterloo.flix.language.ast.TypedAst.{Predicate, Root}
 import ca.uwaterloo.flix.language.errors.StratificationError
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 import ca.uwaterloo.flix.util.Validation._
@@ -46,17 +46,14 @@ import ca.uwaterloo.flix.util.Validation._
   */
 object Stratifier extends Phase[TypedAst.Root, TypedAst.Root] {
 
+  // TODO: Rewrite stratifier to work with constraint expressions.
+
   /**
     * Returns a stratified version of the given AST `root`.
     */
   def run(root: Root)(implicit flix: Flix): Validation[TypedAst.Root, CompilationError] = flix.phase("Stratifier") {
-    val constraints = root.strata.head.constraints
-    val symbols = root.relations.keys ++ root.lattices.keys
-    val stratified = stratify(constraints, symbols.toList)
 
-    for {
-      stratified <- stratified
-    } yield root.copy(strata = stratified)
+    return root.toSuccess
   }
 
   /**
@@ -89,7 +86,7 @@ object Stratifier extends Phase[TypedAst.Root, TypedAst.Root] {
   /**
     * Stratify the graph
     */
-  def stratify(constraints: List[TypedAst.Constraint], syms: List[ /* Symbol.TableSym */ AnyRef]): Validation[List[Stratum], StratificationError] = {
+  def stratify(constraints: List[TypedAst.Constraint], syms: List[ /* Symbol.TableSym */ AnyRef]): Validation[List[AnyRef], StratificationError] = {
     // Implementing as described in Database and Knowledge - Base Systems Volume 1
     // Ullman, Algorithm 3.5 p 133
 
@@ -220,11 +217,8 @@ object Stratifier extends Phase[TypedAst.Root, TypedAst.Root] {
     val reordered = separated map {
       _ map reorder
     }
-    val strata = reordered.map(Stratum) match {
-      case Nil => List(Stratum(Nil))
-      case lst => lst
-    }
-    strata.toSuccess
+
+    ???
   }
 
 

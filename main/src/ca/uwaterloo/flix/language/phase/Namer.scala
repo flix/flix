@@ -51,7 +51,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       relations = Map.empty,
       lattices = Map.empty,
       latticeComponents = Map.empty,
-      constraints = Map.empty,
       named = Map.empty,
       properties = Map.empty,
       reachable = program.reachable
@@ -208,15 +207,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
           val properties = prog0.properties.getOrElse(ns0, Nil)
           prog0.copy(properties = prog0.properties + (ns0 -> (property :: properties)))
       }
-
-    /*
-     * Constraint.
-     */
-    case d@WeededAst.Declaration.Constraint(h, bs, loc) => visitConstraint(d, Map.empty, Map.empty) map {
-      case constraint =>
-        val constraints = constraint :: prog0.constraints.getOrElse(ns0, Nil)
-        prog0.copy(constraints = prog0.constraints + (ns0 -> constraints))
-    }
 
     /*
      * BoundedLattice (deprecated).
@@ -381,8 +371,8 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   /**
     * Performs naming on the given constraint `c0`.
     */
-  private def visitConstraint(c0: WeededAst.Declaration.Constraint, outerEnv: Map[String, Symbol.VarSym], tenv0: Map[String, Type.Var])(implicit genSym: GenSym): Validation[NamedAst.Constraint, NameError] = c0 match {
-    case WeededAst.Declaration.Constraint(h, bs, loc) =>
+  private def visitConstraint(c0: WeededAst.Constraint, outerEnv: Map[String, Symbol.VarSym], tenv0: Map[String, Type.Var])(implicit genSym: GenSym): Validation[NamedAst.Constraint, NameError] = c0 match {
+    case WeededAst.Constraint(h, bs, loc) =>
       // Find the variables visible in the head and rule scope of the constraint.
       // Remove any variables already in the outer environment.
       val headVars = bs.flatMap(visibleInHeadScope).filterNot(ident => outerEnv.contains(ident.name))

@@ -60,15 +60,13 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
       case (k, v) => k -> visitLatticeComponents(v, m)
     }
 
-    val strata = root.strata.map(visitStratum(_, m))
-
     val properties = root.properties.map(p => visitProperty(p, m))
 
     val specialOps = root.specialOps
 
     val reachable = root.reachable
 
-    FinalAst.Root(defs ++ m, effs, handlers, enums, relations, lattices, latticeComponents, strata, properties, specialOps, reachable).toSuccess
+    FinalAst.Root(defs ++ m, effs, handlers, enums, relations, lattices, latticeComponents, properties, specialOps, reachable).toSuccess
   }
 
   private def visitDef(def0: SimplifiedAst.Def, m: TopLevel)(implicit flix: Flix): FinalAst.Def = {
@@ -114,9 +112,6 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
     }
     FinalAst.Constraint(cparams, head, body)
   }
-
-  private def visitStratum(stratum0: SimplifiedAst.Stratum, m: TopLevel)(implicit flix: Flix): FinalAst.Stratum =
-    FinalAst.Stratum(stratum0.constraints.map(visitConstraint(_, m)))
 
   private def visitLatticeComponents(lc: SimplifiedAst.LatticeComponents, m: TopLevel)(implicit flix: Flix): FinalAst.LatticeComponents = lc match {
     case SimplifiedAst.LatticeComponents(tpe, bot, top, equ, leq, lub, glb, loc) =>

@@ -22,8 +22,6 @@ import ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.language.ast.Ast.{EliminatedBy, IntroducedBy}
 import ca.uwaterloo.flix.language.phase.{ClosureConv, LambdaLift, Tailrec}
 
-sealed trait SimplifiedAst
-
 object SimplifiedAst {
 
   case class Root(defs: Map[Symbol.DefnSym, SimplifiedAst.Def],
@@ -33,32 +31,27 @@ object SimplifiedAst {
                   relations: Map[Symbol.RelSym, SimplifiedAst.Relation],
                   lattices: Map[Symbol.LatSym, SimplifiedAst.Lattice],
                   latticeComponents: Map[Type, SimplifiedAst.LatticeComponents],
-                  strata: List[SimplifiedAst.Stratum],
                   properties: List[SimplifiedAst.Property],
                   specialOps: Map[SpecialOperator, Map[Type, Symbol.DefnSym]],
-                  reachable: Set[Symbol.DefnSym]) extends SimplifiedAst
+                  reachable: Set[Symbol.DefnSym])
 
-  case class Constraint(cparams: List[SimplifiedAst.ConstraintParam], head: SimplifiedAst.Predicate.Head, body: List[SimplifiedAst.Predicate.Body]) extends SimplifiedAst
+  case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, fparams: List[SimplifiedAst.FormalParam], exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation)
 
-  case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, fparams: List[SimplifiedAst.FormalParam], exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst
+  case class Eff(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EffSym, fparams: List[SimplifiedAst.FormalParam], tpe: Type, loc: SourceLocation)
 
-  case class Eff(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EffSym, fparams: List[SimplifiedAst.FormalParam], tpe: Type, loc: SourceLocation) extends SimplifiedAst
+  case class Handler(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EffSym, fparams: List[SimplifiedAst.FormalParam], exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation)
 
-  case class Handler(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EffSym, fparams: List[SimplifiedAst.FormalParam], exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst
+  case class Enum(mod: Ast.Modifiers, sym: Symbol.EnumSym, cases: Map[String, SimplifiedAst.Case], tpe: Type, loc: SourceLocation)
 
-  case class Enum(mod: Ast.Modifiers, sym: Symbol.EnumSym, cases: Map[String, SimplifiedAst.Case], tpe: Type, loc: SourceLocation) extends SimplifiedAst
+  case class Relation(mod: Ast.Modifiers, sym: Symbol.RelSym, attr: List[SimplifiedAst.Attribute], loc: SourceLocation)
 
-  case class Relation(mod: Ast.Modifiers, sym: Symbol.RelSym, attr: List[SimplifiedAst.Attribute], loc: SourceLocation) extends SimplifiedAst
+  case class Lattice(mod: Ast.Modifiers, sym: Symbol.LatSym, attr: List[SimplifiedAst.Attribute], loc: SourceLocation)
 
-  case class Lattice(mod: Ast.Modifiers, sym: Symbol.LatSym, attr: List[SimplifiedAst.Attribute], loc: SourceLocation) extends SimplifiedAst
+  case class Property(law: Symbol.DefnSym, defn: Symbol.DefnSym, exp: SimplifiedAst.Expression)
 
-  case class Property(law: Symbol.DefnSym, defn: Symbol.DefnSym, exp: SimplifiedAst.Expression) extends SimplifiedAst
+  case class LatticeComponents(tpe: Type, bot: Symbol.DefnSym, top: Symbol.DefnSym, equ: Symbol.DefnSym, leq: Symbol.DefnSym, lub: Symbol.DefnSym, glb: Symbol.DefnSym, loc: SourceLocation)
 
-  case class Stratum(constraints: List[SimplifiedAst.Constraint]) extends SimplifiedAst
-
-  case class LatticeComponents(tpe: Type, bot: Symbol.DefnSym, top: Symbol.DefnSym, equ: Symbol.DefnSym, leq: Symbol.DefnSym, lub: Symbol.DefnSym, glb: Symbol.DefnSym, loc: SourceLocation) extends SimplifiedAst
-
-  sealed trait Expression extends SimplifiedAst {
+  sealed trait Expression {
     def tpe: Type
 
     def loc: SourceLocation
@@ -251,7 +244,7 @@ object SimplifiedAst {
 
   }
 
-  sealed trait Predicate extends SimplifiedAst {
+  sealed trait Predicate {
     def loc: SourceLocation
   }
 
@@ -289,7 +282,7 @@ object SimplifiedAst {
 
   object Term {
 
-    sealed trait Head extends SimplifiedAst
+    sealed trait Head
 
     object Head {
 
@@ -303,7 +296,7 @@ object SimplifiedAst {
 
     }
 
-    sealed trait Body extends SimplifiedAst
+    sealed trait Body
 
     object Body {
 
@@ -319,9 +312,11 @@ object SimplifiedAst {
 
   }
 
-  case class Attribute(name: String, tpe: Type) extends SimplifiedAst
+  case class Attribute(name: String, tpe: Type)
 
-  case class Case(sym: Symbol.EnumSym, tag: Name.Ident, tpe: Type, loc: SourceLocation) extends SimplifiedAst
+  case class Case(sym: Symbol.EnumSym, tag: Name.Ident, tpe: Type, loc: SourceLocation)
+
+  case class Constraint(cparams: List[SimplifiedAst.ConstraintParam], head: SimplifiedAst.Predicate.Head, body: List[SimplifiedAst.Predicate.Body])
 
   sealed trait ConstraintParam
 
@@ -333,12 +328,12 @@ object SimplifiedAst {
 
   }
 
-  case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: SimplifiedAst.Expression) extends SimplifiedAst
+  case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: SimplifiedAst.Expression)
 
-  case class FormalParam(sym: Symbol.VarSym, mod: Ast.Modifiers, tpe: Type, loc: SourceLocation) extends SimplifiedAst
+  case class FormalParam(sym: Symbol.VarSym, mod: Ast.Modifiers, tpe: Type, loc: SourceLocation)
 
-  case class FreeVar(sym: Symbol.VarSym, tpe: Type) extends SimplifiedAst
+  case class FreeVar(sym: Symbol.VarSym, tpe: Type)
 
-  case class HandlerBinding(sym: Symbol.EffSym, exp: SimplifiedAst.Expression) extends SimplifiedAst
+  case class HandlerBinding(sym: Symbol.EffSym, exp: SimplifiedAst.Expression)
 
 }

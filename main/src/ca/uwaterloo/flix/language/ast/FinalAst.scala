@@ -18,8 +18,6 @@ package ca.uwaterloo.flix.language.ast
 
 import java.lang.reflect.{Constructor, Field, Method}
 
-import ca.uwaterloo.flix.runtime.solver.api.ProxyObject
-
 object FinalAst {
 
   case class Root(defs: Map[Symbol.DefnSym, FinalAst.Def],
@@ -29,15 +27,9 @@ object FinalAst {
                   relations: Map[Symbol.RelSym, FinalAst.Relation],
                   lattices: Map[Symbol.LatSym, FinalAst.Lattice],
                   latticeComponents: Map[Type, FinalAst.LatticeComponents],
-                  strata: List[FinalAst.Stratum],
                   properties: List[FinalAst.Property],
                   specialOps: Map[SpecialOperator, Map[Type, Symbol.DefnSym]],
                   reachable: Set[Symbol.DefnSym])
-
-  case class Constraint(cparams: List[ConstraintParam], head: Predicate.Head, body: List[Predicate.Body]) {
-    val isFact: Boolean = body.isEmpty
-    val isRule: Boolean = !isFact
-  }
 
   case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, formals: List[FinalAst.FormalParam], exp: FinalAst.Expression, tpe: Type, loc: SourceLocation) {
     var method: Method = null
@@ -56,8 +48,6 @@ object FinalAst {
   case class Property(law: Symbol.DefnSym, defn: Symbol.DefnSym, exp: FinalAst.Expression) {
     def loc: SourceLocation = defn.loc
   }
-
-  case class Stratum(constraints: List[FinalAst.Constraint])
 
   case class LatticeComponents(tpe: Type, bot: Symbol.DefnSym, top: Symbol.DefnSym, equ: Symbol.DefnSym, leq: Symbol.DefnSym, lub: Symbol.DefnSym, glb: Symbol.DefnSym, loc: SourceLocation)
 
@@ -306,6 +296,8 @@ object FinalAst {
   case class Case(sym: Symbol.EnumSym, tag: Name.Ident, tpe: Type, loc: SourceLocation)
 
   case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: FinalAst.Expression)
+
+  case class Constraint(cparams: List[ConstraintParam], head: Predicate.Head, body: List[Predicate.Body])
 
   sealed trait ConstraintParam {
     def sym: Symbol.VarSym

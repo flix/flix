@@ -15,7 +15,7 @@ object SafetyError {
   /**
     * An error raised to indicate an illegal use of a non-positively bound variable in a negative atom.
     */
-  case class IllegalNonPositivelyBoundVariable(sym: Symbol.VarSym, loc: SourceLocation) extends CompilationError {
+  case class IllegalNonPositivelyBoundVariable(sym: Symbol.VarSym, loc: SourceLocation) extends SafetyError {
     val kind: String = "Safety Error"
     val source: Source = loc.source
     val message: VirtualTerminal = {

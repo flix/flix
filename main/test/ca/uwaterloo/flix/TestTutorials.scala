@@ -16,22 +16,10 @@
 
 package ca.uwaterloo.flix
 
-import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.util.{Evaluation, Options}
-import org.scalatest.FunSuite
+import ca.uwaterloo.flix.util.FlixTest
+import org.scalatest.Suites
 
-class TestTutorials extends FunSuite {
-
-  val opts = Options.DefaultTest
-
-  test("introduction.flix") {
-    val path = "main/src/tutorials/introduction.flix"
-    new Flix().setOptions(opts.copy(core = false, test = true, evaluation = Evaluation.Interpreted)).addPath(path).solve().get
-  }
-
-  test("interpreter.flix") {
-    val path = "main/src/tutorials/interpreter.flix"
-    new Flix().setOptions(opts.copy(core = false, test = true)).addPath(path).solve().get
-  }
-
-}
+class TestTutorials extends Suites(
+  new FlixTest("TestIntroduction", "main/src/tutorials/introduction.flix")(compiled = false),
+  new FlixTest("TestInterpreter", "main/src/tutorials/interpreter.flix")(compiled = false)
+)
