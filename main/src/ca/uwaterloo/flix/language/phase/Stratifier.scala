@@ -71,26 +71,23 @@ object Stratifier extends Phase[Root, Root] {
       */
     val Empty: DependencyGraph = DependencyGraph(Set.empty)
 
-    /**
-      * Returns the union of the two dependency graphs.
-      */
-    def union(dg1: DependencyGraph, dg2: DependencyGraph): DependencyGraph =
-      DependencyGraph(dg1.xs ++ dg2.xs)
-
-    /**
-      *
-      */
-    def stratify(): Unit = ??? // TODO
   }
 
   case class DependencyGraph(xs: Set[DependencyEdge])
 
   // TODO: Rewrite stratifier to work with constraint expressions.
 
+  // TODO: Also compute strongly connected components?
+
   /**
     * Returns a stratified version of the given AST `root`.
     */
   def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationError] = flix.phase("Stratifier") {
+
+
+    root.defs map {
+      case (sym, defn) => visitDef(defn)
+    }
 
     return root.toSuccess
   }
@@ -106,72 +103,74 @@ object Stratifier extends Phase[Root, Root] {
     * Stratifies any constraint set in the given expression `exp0`.
     */
   // TODO: This really has to be done in a fixed point...
-  private def visitExp(exp0: Expression): Expression = exp0 match {
-    case Expression.Unit(loc) => exp0
-    case Expression.True(loc) => exp0
-    case Expression.False(loc) => exp0
-    case Expression.Char(lit, loc) => exp0
-    case Expression.Float32(lit, loc) => exp0
-    case Expression.Float64(lit, loc) => exp0
-    case Expression.Int8(lit, loc) => exp0
-    case Expression.Int16(lit, loc) => exp0
-    case Expression.Int32(lit, loc) => exp0
-    case Expression.Int64(lit, loc) => exp0
-    case Expression.BigInt(lit, loc) => exp0
-    case Expression.Str(lit, loc) => exp0
+  private def visitExp(exp0: Expression): DependencyGraph = exp0 match {
+    case Expression.Unit(loc) => DependencyGraph.Empty
+    case Expression.True(loc) => DependencyGraph.Empty
+    case Expression.False(loc) => DependencyGraph.Empty
+    case Expression.Char(lit, loc) => DependencyGraph.Empty
+    case Expression.Float32(lit, loc) => DependencyGraph.Empty
+    case Expression.Float64(lit, loc) => DependencyGraph.Empty
+    case Expression.Int8(lit, loc) => DependencyGraph.Empty
+    case Expression.Int16(lit, loc) => DependencyGraph.Empty
+    case Expression.Int32(lit, loc) => DependencyGraph.Empty
+    case Expression.Int64(lit, loc) => DependencyGraph.Empty
+    case Expression.BigInt(lit, loc) => DependencyGraph.Empty
+    case Expression.Str(lit, loc) => DependencyGraph.Empty
 
-    case Expression.Wild(tpe, eff, loc) => exp0
+    case Expression.Wild(tpe, eff, loc) => DependencyGraph.Empty
 
-    case Expression.Var(sym, tpe, eff, loc) => exp0
+    case Expression.Var(sym, tpe, eff, loc) =>
+      // TODO: Here we need to do something.
+      DependencyGraph.Empty
 
-    case Expression.Def(sym, tpe, eff, loc) => exp0
+    case Expression.Def(sym, tpe, eff, loc) =>
+      // TODO: Here we need to recursively do something.
+      DependencyGraph.Empty
 
-    case Expression.Eff(sym, tpe, eff, loc) => exp0
+    case Expression.Eff(sym, tpe, eff, loc) => DependencyGraph.Empty
 
-    case Expression.Hole(sym, tpe, eff, loc) => exp0
+    case Expression.Hole(sym, tpe, eff, loc) => DependencyGraph.Empty
 
     case Expression.Lambda(fparam, exp, tpe, eff, loc) =>
-      val e = visitExp(exp)
-      Expression.Lambda(fparam, e, tpe, eff, loc)
+      // TODO...
+      visitExp(exp)
 
     case Expression.Apply(exp1, exp2, tpe, eff, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      ???
+      // TODO...
+      visitExp(exp1)
 
     case Expression.Unary(op, exp, tpe, eff, loc) =>
-      val e = visitExp(exp)
-      Expression.Unary(op, e, tpe, eff, loc)
+      ???
 
     case Expression.Binary(op, exp1, exp2, tpe, eff, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      Expression.Binary(op, e1, e2, tpe, eff, loc)
+      ???
 
     case Expression.Let(sym, exp1, exp2, tpe, eff, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      Expression.Let(sym, e1, e2, tpe, eff, loc)
+      ???
 
     case Expression.LetRec(sym, exp1, exp2, tpe, eff, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
       ???
 
     case Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      val e3 = visitExp(exp3)
-      Expression.IfThenElse(e1, e2, e3, tpe, eff, loc)
+      val dq2 = visitExp(exp2)
+      val dq3 = visitExp(exp3)
+      union(dq2, dq3)
 
     case Expression.Match(exp, rules, tpe, eff, loc) =>
-      val e = visitExp(exp)
-      val rs = ???
-      Expression.Match(e, rs, tpe, eff, loc)
+      // TODO: Deal with the match value.
 
-    case Expression.Switch(rules, tpe, eff, loc) => ???
+      rules.foldLeft(DependencyGraph.Empty) {
+        case (dg, MatchRule(p, g, b)) => union(dg, visitExp(b))
+      }
 
-    case Expression.Tag(sym, tag, exp, tpe, eff, loc) => visitExp(exp)
+    case Expression.Switch(rules, tpe, eff, loc) =>
+      rules.foldLeft(DependencyGraph.Empty) {
+        case (dg, (cond, body)) => union(dg, visitExp(body))
+      }
+
+    case Expression.Tag(sym, tag, exp, tpe, eff, loc) =>
+      // TODO: Incorrect.
+      visitExp(exp)
 
     case Expression.Tuple(elms, tpe, eff, loc) => ???
 
@@ -207,48 +206,66 @@ object Stratifier extends Phase[Root, Root] {
 
     case Expression.HandleWith(exp, bindings, tpe, eff, loc) => ???
 
-    case Expression.Existential(fparam, exp, eff, loc) => visitExp(exp)
+    case Expression.Existential(fparam, exp, eff, loc) => DependencyGraph.Empty
 
-    case Expression.Universal(fparam, exp, eff, loc) => visitExp(exp)
+    case Expression.Universal(fparam, exp, eff, loc) => DependencyGraph.Empty
 
     case Expression.Ascribe(exp, tpe, eff, loc) => visitExp(exp)
 
     case Expression.Cast(exp, tpe, eff, loc) => visitExp(exp)
 
-    case Expression.NativeConstructor(constructor, args, tpe, eff, loc) => ???
+    case Expression.NativeConstructor(constructor, args, tpe, eff, loc) => DependencyGraph.Empty
 
     case Expression.TryCatch(exp, rules, tpe, eff, loc) => ???
 
-    case Expression.NativeField(field, tpe, eff, loc) => ???
+    case Expression.NativeField(field, tpe, eff, loc) => DependencyGraph.Empty
 
-    case Expression.NativeMethod(method, args, tpe, eff, loc) => ???
+    case Expression.NativeMethod(method, args, tpe, eff, loc) => DependencyGraph.Empty
 
-    case Expression.NewRelation(sym, tpe, eff, loc) => exp0
+    case Expression.NewRelation(sym, tpe, eff, loc) => DependencyGraph.Empty
 
-    case Expression.NewLattice(sym, tpe, eff, loc) => exp0
+    case Expression.NewLattice(sym, tpe, eff, loc) => DependencyGraph.Empty
 
-    case Expression.Constraint(con, tpe, eff, loc) =>
-      getDependencyGraph(con)
-      ???
+    case Expression.Constraint(con, tpe, eff, loc) => getDependencyGraph(con)
 
     case Expression.ConstraintUnion(exp1, exp2, tpe, eff, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      Expression.ConstraintUnion(e1, e2, tpe, eff, loc)
+      val dg1 = visitExp(exp1)
+      val dg2 = visitExp(exp2)
+      union(dg1, dg2)
 
     case Expression.FixpointSolve(exp, tpe, eff, loc) =>
-      val e = visitExp(exp)
-      Expression.FixpointSolve(exp, tpe, eff, loc)
+      // TODO: Might need to split this into the program analysis and the checking part...
+      // Compute the dependency graph.
+      val dg = visitExp(exp)
+
+      // Compute its stratification.
+      stratify(dg)
+
+      // Solve does not return any constraint set.
+      DependencyGraph.Empty
 
     case Expression.FixpointCheck(exp, tpe, eff, loc) =>
-      val e = visitExp(exp)
-      Expression.FixpointCheck(e, tpe, eff, loc)
+      // TODO: Might need to split this into the program analysis and the checking part...
+      // Compute the dependency graph.
+      val dg = visitExp(exp)
 
+      // Compute its stratification.
+      stratify(dg)
+
+      // Solve does not return any constraint set.
+      DependencyGraph.Empty
     case Expression.FixpointDelta(exp, tpe, eff, loc) =>
-      val e = visitExp(exp)
-      Expression.FixpointDelta(e, tpe, eff, loc)
+      // TODO: Might need to split this into the program analysis and the checking part...
+      // Compute the dependency graph.
+      val dg = visitExp(exp)
 
-    case Expression.UserError(tpe, eff, loc) => exp0
+      // Compute its stratification.
+      stratify(dg)
+
+      // Solve does not return any constraint set.
+      DependencyGraph.Empty
+
+    case Expression.UserError(tpe, eff, loc) => DependencyGraph.Empty
 
   }
 
@@ -293,6 +310,20 @@ object Stratifier extends Phase[Root, Root] {
     case Predicate.Body.Filter(sym, terms, loc) => None
 
     case Predicate.Body.Functional(sym, term, loc) => None
+  }
+
+  /**
+    * Returns the union of the two dependency graphs.
+    */
+  private def union(dg1: DependencyGraph, dg2: DependencyGraph): DependencyGraph =
+    DependencyGraph(dg1.xs ++ dg2.xs)
+
+  /**
+    * Computes the stratification of the given dependency graph.
+    */
+  private def stratify(dg: DependencyGraph): Validation[DependencyGraph, StratificationError] = {
+    println(dg)
+    ??? // TODO
   }
 
   /////////////////////////////////////////////////////////////////////////////
