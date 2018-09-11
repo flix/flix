@@ -36,7 +36,7 @@ case class StratificationError(path: List[Stratifier.PredicateSym], loc: SourceL
     vt << "The following path contains a negative cycle:" << NewLine
     vt << Indent << NewLine
     for (sym <- path) {
-      vt << sym.toString
+      vt << sym.toString << ", "
     }
     vt << Dedent << NewLine
   }
