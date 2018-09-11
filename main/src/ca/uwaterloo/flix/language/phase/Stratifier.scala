@@ -55,6 +55,16 @@ object Stratifier extends Phase[Root, Root] {
 
   }
 
+  sealed trait DependencyEdge
+
+  object DependencyEdge {
+
+    case class Positive(head: PredicateSym, body: PredicateSym) extends DependencyEdge
+
+    case class Negative(head: PredicateSym, body: PredicateSym) extends DependencyEdge
+
+  }
+
   object DependencyGraph {
     /**
       * The empty dependency graph.
@@ -73,7 +83,7 @@ object Stratifier extends Phase[Root, Root] {
     def stratify(): Unit = ??? // TODO
   }
 
-  case class DependencyGraph(xs: Set[(PredicateSym, PredicateSym)])
+  case class DependencyGraph(xs: Set[DependencyEdge])
 
   // TODO: Rewrite stratifier to work with constraint expressions.
 
@@ -92,11 +102,10 @@ object Stratifier extends Phase[Root, Root] {
     visitExp(def0.exp)
   }
 
-  // TODO: This really has to be done in a fixed point...
-
   /**
     * Stratifies any constraint set in the given expression `exp0`.
     */
+  // TODO: This really has to be done in a fixed point...
   private def visitExp(exp0: Expression): Expression = exp0 match {
     case Expression.Unit(loc) => exp0
     case Expression.True(loc) => exp0
@@ -252,11 +261,7 @@ object Stratifier extends Phase[Root, Root] {
       getHeadPredicateSymbol(head) match {
         case None => DependencyGraph.Empty
         case Some(headSym) =>
-          // Compute the body symbols.
-          val bodySyms = body.flatMap(getBodyPredicateSymbol)
-
-          // Construct the pairs (headSym, bodySym).
-          val dependencies = bodySyms map (bodySym => headSym -> bodySym)
+          val dependencies = body flatMap (b => getDependencyEdge(headSym, b))
           DependencyGraph(dependencies.toSet)
       }
   }
@@ -274,10 +279,19 @@ object Stratifier extends Phase[Root, Root] {
   /**
     * Optionally returns the predicate symbol of the given body predicate `body0`.
     */
-  private def getBodyPredicateSymbol(body0: Predicate.Body): Option[PredicateSym] = body0 match {
-    case Predicate.Body.RelAtom(base, sym, polarity, terms, loc) => Some(PredicateSym.Rel(sym))
-    case Predicate.Body.LatAtom(base, sym, polarity, terms, loc) => Some(PredicateSym.Lat(sym))
+  private def getDependencyEdge(head: PredicateSym, body0: Predicate.Body): Option[DependencyEdge] = body0 match {
+    case Predicate.Body.RelAtom(base, sym, polarity, terms, loc) => polarity match {
+      case Polarity.Positive => Some(DependencyEdge.Positive(head, PredicateSym.Rel(sym)))
+      case Polarity.Negative => Some(DependencyEdge.Negative(head, PredicateSym.Rel(sym)))
+    }
+
+    case Predicate.Body.LatAtom(base, sym, polarity, terms, loc) => polarity match {
+      case Polarity.Positive => Some(DependencyEdge.Positive(head, PredicateSym.Lat(sym)))
+      case Polarity.Negative => Some(DependencyEdge.Negative(head, PredicateSym.Lat(sym)))
+    }
+
     case Predicate.Body.Filter(sym, terms, loc) => None
+
     case Predicate.Body.Functional(sym, term, loc) => None
   }
 
