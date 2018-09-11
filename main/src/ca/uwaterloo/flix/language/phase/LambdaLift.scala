@@ -294,7 +294,7 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.Constraint(c0, tpe, loc) =>
         val Constraint(cparams0, head0, body0) = c0
         // TODO
-//        val head = visitHeadPredicate(head0)
+        //        val head = visitHeadPredicate(head0)
         //        val body = ???
 
         //      val c = Constraint(cparams0, head, body)
@@ -312,6 +312,10 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.FixpointCheck(exp, tpe, loc) =>
         val e = visitExp(exp)
         Expression.FixpointCheck(e, tpe, loc)
+
+      case Expression.FixpointDelta(exp, tpe, loc) =>
+        val e = visitExp(exp)
+        Expression.FixpointDelta(e, tpe, loc)
 
       case Expression.UserError(tpe, loc) => e
 

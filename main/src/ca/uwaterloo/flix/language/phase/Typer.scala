@@ -1141,6 +1141,20 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
             resultType <- unifyM(tvar, Type.Bool, loc)
           } yield resultType
 
+        //
+        //  exp : ConstraintSet[Checkable]
+        //  ------------------------------
+        //  delta exp : Str
+        //
+        // TODO: This does not actually enforce that the constraint set must contain an integrity rule.
+        // TODO: It only prevents the case where we try to use both check and solve with the same constraint.
+        case ResolvedAst.Expression.FixpointDelta(exp, tvar, loc) =>
+          for {
+            inferredType <- visitExp(exp)
+            expectedType <- unifyM(inferredType, Type.mkConstraintSet(Type.Checkable), loc)
+            resultType <- unifyM(tvar, Type.Str, loc)
+          } yield resultType
+
         /*
          * User Error expression.
          */
@@ -1537,6 +1551,13 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         case ResolvedAst.Expression.FixpointCheck(exp, tvar, loc) =>
           val e = reassemble(exp, program, subst0)
           TypedAst.Expression.FixpointCheck(e, subst0(tvar), Eff.Bot, loc)
+
+        /*
+         * FixpointDelta expression.
+         */
+        case ResolvedAst.Expression.FixpointDelta(exp, tvar, loc) =>
+          val e = reassemble(exp, program, subst0)
+          TypedAst.Expression.FixpointDelta(e, subst0(tvar), Eff.Bot, loc)
 
         /*
          * User Error expression.

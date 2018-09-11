@@ -308,7 +308,7 @@ object Effects extends Phase[Root, Root] {
             }
             Expression.Tuple(elms, tpe, eff, loc)
           }
-        
+
         /**
           * ArrayLit Expression.
           */
@@ -317,7 +317,7 @@ object Effects extends Phase[Root, Root] {
             es <- sequence(elms.map(e => visitExp(e, env0)))
           } yield {
             val eff = es.foldLeft(ast.Eff.Bot) {
-              case(eacc, e) => eacc seq e.eff
+              case (eacc, e) => eacc seq e.eff
             }
             Expression.ArrayLit(elms, tpe, eff, loc)
           }
@@ -352,13 +352,13 @@ object Effects extends Phase[Root, Root] {
           */
         case Expression.ArrayStore(base, index, elm, tpe, _, loc) =>
           for {
-          b <- visitExp(base, env0)
-          i <- visitExp(index, env0)
-          e <- visitExp(elm, env0)
-        } yield {
-          val eff = base.eff seq index.eff seq  elm.eff
-          Expression.ArrayStore(b, i, e, tpe, eff, loc)
-        }
+            b <- visitExp(base, env0)
+            i <- visitExp(index, env0)
+            e <- visitExp(elm, env0)
+          } yield {
+            val eff = base.eff seq index.eff seq elm.eff
+            Expression.ArrayStore(b, i, e, tpe, eff, loc)
+          }
 
         /**
           * ArrayLength Expression.
@@ -380,7 +380,7 @@ object Effects extends Phase[Root, Root] {
             i1 <- visitExp(startIndex, env0)
             i2 <- visitExp(endIndex, env0)
           } yield {
-            val eff = base.eff seq startIndex.eff seq  endIndex.eff
+            val eff = base.eff seq startIndex.eff seq endIndex.eff
             Expression.ArraySlice(b, i1, i2, tpe, eff, loc)
           }
 
@@ -399,7 +399,7 @@ object Effects extends Phase[Root, Root] {
 
         /**
           * VectorNew Expression
-          * */
+          **/
         case Expression.VectorNew(elm, len, tpe, _, loc) =>
           for {
             e <- visitExp(elm, env0)
@@ -410,7 +410,7 @@ object Effects extends Phase[Root, Root] {
 
         /**
           * VectorLoad Expression
-          * */
+          **/
         case Expression.VectorLoad(base, index, tpe, _, loc) =>
           for {
             b <- visitExp(base, env0)
@@ -419,9 +419,9 @@ object Effects extends Phase[Root, Root] {
             Expression.VectorLoad(b, index, tpe, eff, loc)
           }
 
-          /**
-            * VectorStore Expression
-            * */
+        /**
+          * VectorStore Expression
+          **/
         case Expression.VectorStore(base, index, elm, tpe, _, loc) =>
           for {
             b <- visitExp(base, env0)
@@ -431,9 +431,9 @@ object Effects extends Phase[Root, Root] {
             Expression.VectorStore(b, index, e, tpe, eff, loc)
           }
 
-          /**
-            * VectorLength Expression
-            * */
+        /**
+          * VectorLength Expression
+          **/
         case Expression.VectorLength(base, tpe, _, loc) =>
           for {
             b <- visitExp(base, env0)
@@ -442,9 +442,9 @@ object Effects extends Phase[Root, Root] {
             Expression.VectorLength(b, tpe, eff, loc)
           }
 
-          /**
-            * VectorSlice Expression
-            * */
+        /**
+          * VectorSlice Expression
+          **/
         case Expression.VectorSlice(base, startIndex, endIndex, tpe, _, loc) =>
           for {
             b <- visitExp(base, env0)
@@ -454,7 +454,7 @@ object Effects extends Phase[Root, Root] {
             Expression.VectorSlice(b, startIndex, i2, tpe, eff, loc)
           }
 
-            /**
+        /**
           * Reference Expression.
           */
         case Expression.Ref(exp, tpe, eff, loc) =>
@@ -580,6 +580,8 @@ object Effects extends Phase[Root, Root] {
         case Expression.FixpointSolve(exp, tpe, eff, loc) => ??? // TODO: FixpointSolve
 
         case Expression.FixpointCheck(exp, tpe, eff, loc) => ??? // TODO: FixpointCheck
+
+        case Expression.FixpointDelta(exp, tpe, eff, loc) => ??? // TODO: FixpointDelta
 
         /**
           * User Error Expression.

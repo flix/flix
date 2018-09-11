@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Magnus Madsen
+ * Copyright 2018 Magnus Madsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,13 @@
 
 package ca.uwaterloo.flix.runtime.solver
 
-import java.nio.file.StandardOpenOption._
-import java.nio.file.{Files, Path}
+import ca.uwaterloo.flix.runtime.solver.api._
+import flix.runtime.{RuleError, NotImplementedError, SwitchError, TimeoutError}
 
-import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{FinalAst, PrettyPrinter}
-import flix.runtime._
-
-object DeltaSolver {
-
-  // TODO: Rewrite the delta solver to be part of the runtime and to work on the API.
+/**
+  * A delta debugging solver based on the Flix solver.
+  */
+class DeltaSolver(constraintSet: ConstraintSet, options: FixpointOptions) {
 
   /**
     * A common super-type to represent the result of running the solver.
@@ -52,15 +49,13 @@ object DeltaSolver {
   }
 
   /**
-    * Runs the delta debugger on the given program.
-    *
-    * @param root    the program.
-    * @param options the Flix options.
-    * @param path    the path to write the minimized facts to.
+    * Runs the delta solver.
     */
-  def solve(root: FinalAst.Root, options: FixpointOptions, path: Path)(implicit flix: Flix): Unit = {
-
-    val constraints: List[api.Constraint] = ???
+  def deltaSolve(): String = {
+    /*
+     * Retrieve all the constraints.
+     */
+    val constraints = constraintSet.getConstraints()
 
     /*
      * Retrieve the facts of the program. These are always in the lowest stratum.
@@ -68,17 +63,14 @@ object DeltaSolver {
     val initialFacts = constraints.filter(_.isFact())
 
     /*
-     * Refuse to overwrite existing file.
+     * Retrieve all rules, i.e. non-facts.
      */
-    if (Files.exists(path)) {
-      Console.err.println(s"Path `$path' already exists. Refusing to overwrite.")
-      System.exit(1)
-    }
+    val rules = constraints.filter(_.isRule())
 
     /*
      * Attempts to determine the exception the (original) program crashes with.
      */
-    val exception = tryInit(root, options).getOrElse {
+    val exception = tryInit(constraintSet).getOrElse {
       Console.err.println(s"The program ran successfully. No need for delta debugging?")
       System.exit(1)
       null
@@ -87,9 +79,9 @@ object DeltaSolver {
     /*
      * Print information about the caught exception.
      */
-    Console.println(s"Caught `${exception.getClass.getName}' with message:") // TODO: Blue
-    Console.println(s"    `${exception.getMessage}'") // TODO: Blue
-    Console.println(s"Delta Debugging Started. Trying to minimize ${initialFacts.length} facts.") // TODO: Blue
+    Console.println(s"Caught `${exception.getClass.getName}' with message:")
+    Console.println(s"    `${exception.getMessage}'")
+    Console.println(s"Delta Debugging Started. Trying to minimize ${initialFacts.length} facts.")
     Console.println()
 
     /*
@@ -113,27 +105,22 @@ object DeltaSolver {
         // every fact except for those in the current block.
         facts = facts - block
 
-        // reconstruct the constraints in the lowest stratum.
-        // val s0 = facts.flatten.toList ::: stratum0.constraints.filter(_.isRule)
-        val s0 = ???
-
-        // reconstruct the strata.
-        // val strata = Stratum(s0) :: root.strata.tail
-        val strata = ???
+        // reconstruct the constraints.
+        val cs = new ConstraintSet(facts.flatten.toArray ++ rules)
 
         // try to solve the reconstructed program.
-        trySolve(root, options, exception) match {
+        trySolve(cs, exception) match {
           case SolverResult.Success =>
             // the program successfully completed. Must backtrack.
-            Console.println(f"    [block $round%3d] ${block.size}%5d fact(s) retained (program ran successfully).") // TODO: Red
+            Console.println(f"    [block $round%3d] ${block.size}%5d fact(s) retained (program ran successfully).")
             facts = facts + block // put the block back
           case SolverResult.FailDiffException =>
             // the program failed with a different exception. Must backtrack.
-            Console.println(f"    [block $round%3d] ${block.size}%5d fact(s) retained (different exception).") // TODO: Red
+            Console.println(f"    [block $round%3d] ${block.size}%5d fact(s) retained (different exception).")
             facts = facts + block // put the block back
           case SolverResult.FailSameException =>
             // the program failed with the same exception. Continue minimization.
-            Console.println(f"    [block $round%3d] ${block.size}%5d fact(s) discarded.") // TODO: Red
+            Console.println(f"    [block $round%3d] ${block.size}%5d fact(s) discarded.")
         }
 
         round += 1
@@ -150,23 +137,22 @@ object DeltaSolver {
       val percentage = 100.0 * numberOfFacts.toDouble / totalNumberOfFacts.toDouble
       Console.println(f"--- Progress: $numberOfFacts%4d out of $totalNumberOfFacts%4d facts ($percentage%2.1f%%) --- ")
       Console.println()
-
-      //writeFacts(globalFacts, path)
-      ???
     }
 
-    Console.println(s"    >>> Delta Debugging Complete! <<<") // TODO: Green
-    Console.println(s"    >>> Output written to `$path'. <<<") // TODO: Green
-
+    Console.println(s"    >>> Delta Debugging Complete! <<<")
     Console.println()
+    Console.println(s"    The minimal set of facts is: " + globalFacts.mkString(", "))
+    Console.println()
+
+    globalFacts.mkString(", ")
   }
 
   /**
     * Optionally returns the exception thrown by the original program.
     */
-  def tryInit(root: FinalAst.Root, options: FixpointOptions)(implicit flix: Flix): Option[RuntimeException] = {
+  def tryInit(cs: ConstraintSet): Option[RuntimeException] = {
     try {
-      runSolver(root, options)
+      runSolver(cs)
       None
     } catch {
       case ex: RuntimeException => Some(ex)
@@ -176,10 +162,10 @@ object DeltaSolver {
   /**
     * Attempts to solve the given program expects `expectedException` to be thrown.
     */
-  def trySolve(root: FinalAst.Root, options: FixpointOptions, expectedException: RuntimeException)(implicit flix: Flix): SolverResult = {
+  def trySolve(cs: ConstraintSet, expectedException: RuntimeException): SolverResult = {
     try {
       // run the solver.
-      runSolver(root, options)
+      runSolver(cs)
       // the solver successfully completed, return `Success`.
       SolverResult.Success
     } catch {
@@ -214,29 +200,9 @@ object DeltaSolver {
   /**
     * Runs the solver.
     */
-  private def runSolver(root: FinalAst.Root, options: FixpointOptions)(implicit flix: Flix): Unit = {
-    // silence output from the solver.
-    //val cs = ApiBridge.translate(root)
-    //new Solver(cs, options).solve()
-    ???
+  private def runSolver(cs: ConstraintSet): Fixpoint = {
+    val solver = new Solver(cs.complete(), options)
+    solver.solve()
   }
-
-  /**
-    * Writes the given `facts` to the given `path`.
-    */
-  private def writeFacts(constraints: Traversable[FinalAst.Constraint], path: Path): Unit = {
-    val writer = Files.newBufferedWriter(path, WRITE, CREATE, TRUNCATE_EXISTING)
-    for (constraint <- constraints; if isFact(constraint)) {
-      val formattedFact = PrettyPrinter.fmt(constraint, new StringBuilder).toString
-      writer.write(formattedFact)
-      writer.newLine()
-    }
-    writer.close()
-  }
-
-  /**
-    * Returns `true` if the given constraint is a fact.
-    */
-  private def isFact(c: FinalAst.Constraint): Boolean = c.body.isEmpty
 
 }

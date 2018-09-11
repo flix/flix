@@ -213,6 +213,8 @@ object FinalAst {
 
     case class FixpointCheck(exp: FinalAst.Expression, tpe: Type, loc: SourceLocation) extends FinalAst.Expression
 
+    case class FixpointDelta(exp: FinalAst.Expression, tpe: Type, loc: SourceLocation) extends FinalAst.Expression
+
     case class UserError(tpe: Type, loc: SourceLocation) extends FinalAst.Expression
 
     case class HoleError(sym: Symbol.HoleSym, tpe: Type, loc: SourceLocation) extends FinalAst.Expression

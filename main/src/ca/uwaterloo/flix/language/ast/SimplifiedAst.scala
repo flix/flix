@@ -234,6 +234,8 @@ object SimplifiedAst {
 
     case class FixpointCheck(exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
+    case class FixpointDelta(exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
+
     case class UserError(tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
     case class HoleError(sym: Symbol.HoleSym, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends SimplifiedAst.Expression

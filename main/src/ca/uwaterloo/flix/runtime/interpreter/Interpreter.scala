@@ -37,9 +37,6 @@ object Interpreter {
     * Evaluates the given expression `exp0` under the given environment `env0`.
     */
   def eval(exp0: Expression, env0: Map[String, AnyRef], henv0: Map[Symbol.EffSym, AnyRef], lenv0: Map[Symbol.LabelSym, Expression], root: Root)(implicit flix: Flix): AnyRef = exp0 match {
-    //
-    // Literal expressions.
-    //
     case Expression.Unit => Value.Unit
     case Expression.True => Value.True
     case Expression.False => Value.False
@@ -53,27 +50,17 @@ object Interpreter {
     case Expression.BigInt(lit) => Value.BigInt(lit)
     case Expression.Str(lit) => Value.Str(lit)
 
-    //
-    // Variable expressions.
-    //
     case Expression.Var(sym, _, loc) => env0.get(sym.toString) match {
       case None => throw InternalRuntimeException(s"Key '${sym.toString}' not found in environment.")
       case Some(v) => v
     }
 
-    //
-    // Closure expressions.
-    //
     case Expression.Closure(sym, freeVars, _, _, _) =>
       allocateClosure(sym, freeVars.toArray, env0)
 
-    //
-    // Apply* expressions.
-    //
     case Expression.ApplyClo(exp, args, _, _) =>
       val clo = eval(exp, env0, henv0, lenv0, root)
       invokeClo(clo, args, env0, henv0, lenv0, root)
-
 
     case Expression.ApplyDef(sym, args, _, _) => invokeDef(sym, args, env0, henv0, lenv0, root)
 
@@ -83,55 +70,33 @@ object Interpreter {
       val clo = eval(exp, env0, henv0, lenv0, root)
       invokeClo(clo, args, env0, henv0, lenv0, root)
 
-
     case Expression.ApplyDefTail(sym, args, _, _) => invokeDef(sym, args, env0, henv0, lenv0, root)
 
     case Expression.ApplyEffTail(sym, args, _, _) => invokeEff(sym, args, env0, henv0, lenv0, root)
 
     case Expression.ApplySelfTail(sym, _, args, _, _) => invokeDef(sym, args, env0, henv0, lenv0, root)
 
-    //
-    // Unary expressions.
-    //
     case Expression.Unary(sop, op, exp, _, _) =>
       evalUnary(sop, exp, env0, henv0, lenv0, root)
 
-    //
-    // Binary expressions.
-    //
     case Expression.Binary(sop, op, exp1, exp2, _, _) => evalBinary(sop, exp1, exp2, env0, henv0, lenv0, root)
 
-    //
-    // If-then-else expressions.
-    //
     case Expression.IfThenElse(exp1, exp2, exp3, tpe, _) =>
       val cond = cast2bool(eval(exp1, env0, henv0, lenv0, root))
       if (cond) eval(exp2, env0, henv0, lenv0, root) else eval(exp3, env0, henv0, lenv0, root)
 
-    //
-    // Block expressions.
-    //
     case Expression.Branch(exp, branches, tpe, loc) => eval(exp, env0, henv0, branches, root)
 
-    //
-    // Jump expressions.
-    //
     case Expression.JumpTo(sym, tpe, loc) =>
       lenv0.get(sym) match {
         case None => throw InternalRuntimeException(s"Unknown label: '$sym' in label environment ${lenv0.mkString(" ,")}.")
         case Some(e) => eval(e, env0, henv0, lenv0, root)
       }
 
-    //
-    // Let expressions.
-    //
     case Expression.Let(sym, exp1, exp2, _, _) =>
       val newEnv = env0 + (sym.toString -> eval(exp1, env0, henv0, lenv0, root))
       eval(exp2, newEnv, henv0, lenv0, root)
 
-    //
-    // Let-rec expressions.
-    //
     case Expression.LetRec(sym, exp1, exp2, _, _) => exp1 match {
       case Expression.Closure(ref, freeVars, _, _, _) =>
         // Allocate a circular closure.
@@ -144,37 +109,24 @@ object Interpreter {
       case _ => throw InternalRuntimeException(s"Non-closure letrec value: ${exp1.getClass.getName}.")
     }
 
-    //
-    // Is, Tag, and Untag expressions.
-    //
     case Expression.Is(sym, tag, exp, _) => mkBool(cast2tag(eval(exp, env0, henv0, lenv0, root)).tag == tag)
+
     case Expression.Tag(sym, tag, exp, _, _) => Value.Tag(sym, tag, eval(exp, env0, henv0, lenv0, root))
+
     case Expression.Untag(sym, tag, exp, _, _) => cast2tag(eval(exp, env0, henv0, lenv0, root)).value
 
-    //
-    // Index expressions.
-    //
     case Expression.Index(base, offset, _, _) =>
       val tuple = cast2tuple(eval(base, env0, henv0, lenv0, root))
       tuple.elms(offset)
 
-    //
-    // Tuple expressions.
-    //
     case Expression.Tuple(elms, _, _) =>
       val es = elms.map(e => eval(e, env0, henv0, lenv0, root))
       Value.Tuple(es)
 
-    //
-    // ArrayLit expressions.
-    //
     case Expression.ArrayLit(elms, tpe, _) =>
       val es = elms.map(e => eval(e, env0, henv0, lenv0, root))
       Value.Arr(es.toArray, tpe.typeArguments.head)
 
-    //
-    // ArrayNew expressions.
-    //
     case Expression.ArrayNew(elm, len, tpe, _) =>
       val e = eval(elm, env0, henv0, lenv0, root)
       val ln = cast2int32(eval(len, env0, henv0, lenv0, root))
@@ -184,9 +136,6 @@ object Interpreter {
       }
       Value.Arr(array, tpe.typeArguments.head)
 
-    //
-    // ArrayLoad expressions.
-    //
     case Expression.ArrayLoad(base, index, _, _) =>
       val array = cast2array(eval(base, env0, henv0, lenv0, root))
       val indexCasted = cast2int32(eval(index, env0, henv0, lenv0, root))
@@ -195,9 +144,6 @@ object Interpreter {
       else
         throw InternalRuntimeException(s"Array index out of bounds: $index  Array length: ${array.elms.length}.")
 
-    //
-    // ArrayStore expressions.
-    //
     case Expression.ArrayStore(base, index, elm, _, _) =>
       val array = cast2array(eval(base, env0, henv0, lenv0, root))
       val indexCasted = cast2int32(eval(index, env0, henv0, lenv0, root))
@@ -209,16 +155,10 @@ object Interpreter {
       else
         throw InternalRuntimeException(s"Array index out of bounds: $index  Array length: ${array.elms.length}.")
 
-    //
-    // ArrayLength expressions.
-    //
     case Expression.ArrayLength(base, _, _) =>
       val array = cast2array(eval(base, env0, henv0, lenv0, root))
       Value.Int32(array.elms.length)
 
-    //
-    // ArraySlice expressions.
-    //
     case Expression.ArraySlice(base, startIndex, endIndex, tpe, loc) =>
       val array = cast2array(eval(base, env0, henv0, lenv0, root))
       val i1Casted = cast2int32(eval(startIndex, env0, henv0, lenv0, root))
@@ -239,36 +179,22 @@ object Interpreter {
         Value.Arr(resultArray, tpe.typeArguments.head)
       }
 
-
-
-    //
-    // Reference expressions.
-    //
     case Expression.Ref(exp, tpe, loc) =>
       val box = new Value.Box()
       val value = eval(exp, env0, henv0, lenv0, root)
       box.setValue(value)
       box
 
-    //
-    // Dereference expressions.
-    //
     case Expression.Deref(exp, tpe, loc) =>
       val box = cast2box(eval(exp, env0, henv0, lenv0, root))
       box.getValue
 
-    //
-    // Assign expressions.
-    //
     case Expression.Assign(exp1, exp2, tpe, loc) =>
       val box = cast2box(eval(exp1, env0, henv0, lenv0, root))
       val value = eval(exp2, env0, henv0, lenv0, root)
       box.setValue(value)
       Value.Unit
 
-    //
-    // HandleWith expressions.
-    //
     case Expression.HandleWith(exp, bindings, tpe, loc) =>
       // Evaluate each handler expression and construct the new handler environment.
       val henv = bindings.foldLeft(henv0) {
@@ -277,10 +203,6 @@ object Interpreter {
       // Evaluate the expression in the new handler environment.
       eval(exp, env0, henv, lenv0, root)
 
-
-    //
-    // TryCatch expressions.
-    //
     case Expression.TryCatch(exp, rules, tpe, loc) =>
       try {
         eval(exp, env0, henv0, lenv0, root)
@@ -297,24 +219,15 @@ object Interpreter {
           throw ex
       }
 
-    //
-    // NativeConstructor expressions.
-    //
     case Expression.NativeConstructor(constructor, args, tpe, loc) =>
       val values = evalArgs(args, env0, henv0, lenv0, root).map(toJava)
       val arguments = values.toArray
       fromJava(constructor.newInstance(arguments: _*).asInstanceOf[AnyRef])
 
-    //
-    // NativeField expressions.
-    //
     case Expression.NativeField(field, tpe, loc) =>
       val clazz = field.getDeclaringClass
       fromJava(field.get(clazz))
 
-    //
-    // NativeMethod expressions.
-    //
     case Expression.NativeMethod(method, args, tpe, loc) => try {
       val values = evalArgs(args, env0, henv0, lenv0, root).map(toJava)
       if (Modifier.isStatic(method.getModifiers)) {
@@ -329,49 +242,31 @@ object Interpreter {
       case ex: InvocationTargetException => throw ex.getTargetException
     }
 
-    //
-    // New Relation expressions.
-    //
     case Expression.NewRelation(sym, tpe, loc) =>
       val attr = root.relations(sym).attr.map {
         case Attribute(name, _) => new api.Attribute(name)
       }
       new api.Relation(sym.name, attr.toArray)
 
-    //
-    // New Lattice expressions.
-    //
     case Expression.NewLattice(sym, tpe, loc) =>
       val attr = root.lattices(sym).attr.map {
         case Attribute(name, _) => new api.Attribute(name)
       }
       new api.Lattice(sym.name, attr.init.toArray, attr.last, /* TODO*/ null)
 
-    //
-    // Constraint expressions.
-    //
     case Expression.Constraint(c, tpe, loc) =>
       evalConstraint(c, env0, henv0, lenv0, root)
 
-    //
-    // ConstraintUnion expressions.
-    //
     case Expression.ConstraintUnion(exp1, exp2, tpe, loc) =>
       val v1 = cast2constraintset(eval(exp1, env0, henv0, lenv0, root))
       val v2 = cast2constraintset(eval(exp2, env0, henv0, lenv0, root))
       v1.union(v2)
 
-    //
-    // FixpointSolve expressions.
-    //
     case Expression.FixpointSolve(exp, tpe, loc) =>
       val cs = cast2constraintset(eval(exp, env0, henv0, lenv0, root))
       val fixpoint = solve(cs)
       fixpoint.toString
 
-    //
-    // FixpointCheck expressions.
-    //
     case Expression.FixpointCheck(exp, tpe, loc) =>
       // TODO
       val cs = cast2constraintset(eval(exp, env0, henv0, lenv0, root))
@@ -385,18 +280,20 @@ object Interpreter {
         case ex: RuleError => Value.False
       }
 
-    //
-    // Error expressions.
-    //
+    case Expression.FixpointDelta(exp, tpe, loc) =>
+      val cs = cast2constraintset(eval(exp, env0, henv0, lenv0, root))
+      deltaSolve(cs)
+
     case Expression.UserError(_, loc) => throw new NotImplementedError(loc.reified)
+
     case Expression.HoleError(sym, _, loc) => throw new HoleError(sym.toString, loc.reified)
+
     case Expression.MatchError(_, loc) => throw new MatchError(loc.reified)
+
     case Expression.SwitchError(_, loc) => throw new SwitchError(loc.reified)
 
-    //
-    // Unexpected expressions.
-    //
     case Expression.Existential(params, exp, loc) => throw InternalRuntimeException(s"Unexpected expression: '$exp' at ${loc.source.format}.")
+
     case Expression.Universal(params, exp, loc) => throw InternalRuntimeException(s"Unexpected expression: '$exp' at ${loc.source.format}.")
   }
 
@@ -1166,6 +1063,21 @@ object Interpreter {
   private def solve(cs: ConstraintSet)(implicit flix: Flix): Fixpoint = {
     val solver = mkSolver(cs)
     solver.solve()
+  }
+
+  /**
+    * Returns the minimal set of facts that fails to satisfy the given constraint set.
+    */
+  private def deltaSolve(cs: ConstraintSet)(implicit flix: Flix): String = {
+    // Configure the fixpoint solver based on the Flix options.
+    val options = new FixpointOptions
+    options.setMonitored(flix.options.monitor)
+    options.setThreads(flix.options.threads)
+    options.setVerbose(flix.options.verbosity == Verbosity.Verbose)
+
+    // Construct the solver.
+    val deltaSolver = new DeltaSolver(cs, options)
+    deltaSolver.deltaSolve()
   }
 
   /**

@@ -820,6 +820,8 @@ object JvmOps {
 
       case Expression.FixpointCheck(exp, tpe, loc) => visitExp(exp)
 
+      case Expression.FixpointDelta(exp, tpe, loc) => visitExp(exp)
+
       case Expression.UserError(tpe, loc) => Set.empty
       case Expression.HoleError(sym, tpe, loc) => Set.empty
       case Expression.MatchError(tpe, loc) => Set.empty
@@ -1058,6 +1060,8 @@ object JvmOps {
       case Expression.FixpointSolve(exp, tpe, loc) => visitExp(exp) + tpe
 
       case Expression.FixpointCheck(exp, tpe, loc) => visitExp(exp) + tpe
+
+      case Expression.FixpointDelta(exp, tpe, loc) => visitExp(exp) + tpe
 
       case Expression.UserError(tpe, loc) => Set(tpe)
       case Expression.HoleError(sym, tpe, loc) => Set(tpe)
