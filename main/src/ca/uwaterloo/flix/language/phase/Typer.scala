@@ -271,9 +271,10 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       * Returns [[Err]] if a type is unresolved.
       */
     def visitRelation(r: ResolvedAst.Relation): Result[(Symbol.RelSym, TypedAst.Relation), TypeError] = r match {
-      case ResolvedAst.Relation(doc, mod, sym, attr, loc) =>
-        for (typedAttributes <- Result.seqM(attr.map(a => visitAttribute(a))))
-          yield sym -> TypedAst.Relation(doc, mod, sym, typedAttributes, loc)
+      case ResolvedAst.Relation(doc, mod, sym, tparams, attr, loc) =>
+        for {
+          typedAttributes <- Result.seqM(attr.map(a => visitAttribute(a)))
+        } yield sym -> TypedAst.Relation(doc, mod, sym, typedAttributes, loc)
     }
 
     /**
@@ -282,9 +283,10 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       * Returns [[Err]] if a type is unresolved.
       */
     def visitLattice(r: ResolvedAst.Lattice): Result[(Symbol.LatSym, TypedAst.Lattice), TypeError] = r match {
-      case ResolvedAst.Lattice(doc, mod, sym, attr, loc) =>
-        for (typedAttributes <- Result.seqM(attr.map(a => visitAttribute(a))))
-          yield sym -> TypedAst.Lattice(doc, mod, sym, typedAttributes, loc)
+      case ResolvedAst.Lattice(doc, mod, sym, tparams, attr, loc) =>
+        for {
+          typedAttributes <- Result.seqM(attr.map(a => visitAttribute(a)))
+        } yield sym -> TypedAst.Lattice(doc, mod, sym, typedAttributes, loc)
     }
 
     /**
@@ -1828,7 +1830,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     */
   def getRelationSignature(sym: Symbol.RelSym, program: ResolvedAst.Program): Result[List[Type], TypeError] = {
     program.relations(sym) match {
-      case ResolvedAst.Relation(_, _, _, attr, _) => Ok(attr.map(_.tpe))
+      case ResolvedAst.Relation(_, _, _, _, attr, _) => Ok(attr.map(_.tpe))
     }
   }
 
@@ -1837,7 +1839,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     */
   def getLatticeSignature(sym: Symbol.LatSym, program: ResolvedAst.Program): Result[List[Type], TypeError] = {
     program.lattices(sym) match {
-      case ResolvedAst.Lattice(_, _, _, attr, _) => Ok(attr.map(_.tpe))
+      case ResolvedAst.Lattice(_, _, _, _, attr, _) => Ok(attr.map(_.tpe))
     }
   }
 

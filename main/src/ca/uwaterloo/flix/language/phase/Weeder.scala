@@ -243,9 +243,10 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     * Performs weeding on the given relation `r0`.
     */
   private def visitRelation(r0: ParsedAst.Declaration.Relation)(implicit flix: Flix): Validation[List[WeededAst.Declaration.Relation], WeederError] = r0 match {
-    case ParsedAst.Declaration.Relation(doc0, mod0, sp1, ident, attrs, sp2) =>
+    case ParsedAst.Declaration.Relation(doc0, mod0, sp1, ident, tparams0, attrs, sp2) =>
       val doc = visitDoc(doc0)
       val modVal = visitModifiers(mod0, legalModifiers = Set(Ast.Modifier.Public))
+      val tparams = tparams0.toList.map(_.ident)
 
       /*
        * Check for `EmptyRelation`
@@ -257,7 +258,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
        * Check for `DuplicateAttribute`.
        */
       mapN(modVal, checkDuplicateAttribute(attrs)) {
-        case (mod, as) => List(WeededAst.Declaration.Relation(doc, mod, ident, as, mkSL(sp1, sp2)))
+        case (mod, as) => List(WeededAst.Declaration.Relation(doc, mod, ident, tparams, as, mkSL(sp1, sp2)))
       }
   }
 
@@ -265,9 +266,10 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     * Performs weeding on the given lattice `r0`.
     */
   private def visitLattice(l0: ParsedAst.Declaration.Lattice)(implicit flix: Flix): Validation[List[WeededAst.Declaration.Lattice], WeederError] = l0 match {
-    case ParsedAst.Declaration.Lattice(doc0, mod0, sp1, ident, attr, sp2) =>
+    case ParsedAst.Declaration.Lattice(doc0, mod0, sp1, ident, tparams0, attr, sp2) =>
       val doc = visitDoc(doc0)
       val modVal = visitModifiers(mod0, legalModifiers = Set(Ast.Modifier.Public))
+      val tparams = tparams0.toList.map(_.ident)
 
       /*
        * Check for `EmptyLattice`.
@@ -281,7 +283,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       mapN(modVal, checkDuplicateAttribute(attr)) {
         case (mod, as) =>
           // Split the attributes into keys and element.
-          List(WeededAst.Declaration.Lattice(doc, mod, ident, as, mkSL(sp1, sp2)))
+          List(WeededAst.Declaration.Lattice(doc, mod, ident, tparams, as, mkSL(sp1, sp2)))
       }
   }
 

@@ -52,9 +52,9 @@ object WeededAst {
 
     case class Disallow(doc: Ast.Doc, body: List[WeededAst.ComplexClass], loc: SourceLocation) extends WeededAst.Declaration
 
-    case class Relation(doc: Ast.Doc, mod: Ast.Modifiers, ident: Name.Ident, attr: List[WeededAst.Attribute], loc: SourceLocation) extends WeededAst.Declaration
+    case class Relation(doc: Ast.Doc, mod: Ast.Modifiers, ident: Name.Ident, tparams: List[Name.Ident], attr: List[WeededAst.Attribute], loc: SourceLocation) extends WeededAst.Declaration
 
-    case class Lattice(doc: Ast.Doc, mod: Ast.Modifiers, ident: Name.Ident, attr: List[WeededAst.Attribute], loc: SourceLocation) extends WeededAst.Declaration
+    case class Lattice(doc: Ast.Doc, mod: Ast.Modifiers, ident: Name.Ident, tparams: List[Name.Ident], attr: List[WeededAst.Attribute], loc: SourceLocation) extends WeededAst.Declaration
 
     case class LatticeComponents(tpe: WeededAst.Type, bot: WeededAst.Expression, top: WeededAst.Expression, equ: WeededAst.Expression, leq: WeededAst.Expression, lub: WeededAst.Expression, glb: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Declaration
 

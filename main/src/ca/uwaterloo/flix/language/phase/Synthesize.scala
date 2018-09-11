@@ -1148,6 +1148,7 @@ object Synthesize extends Phase[Root, Root] {
     /*
      * (b) Every type that appears as an attribute in some relation or lattice.
      */
+    // TODO: Need to deal with polymorphic attributes.
     val typesInRels = root.relations.flatMap {
       case (_, Relation(_, _, _, attributes, _)) => attributes.map {
         case Attribute(_, tpe, _) => tpe
@@ -1170,7 +1171,7 @@ object Synthesize extends Phase[Root, Root] {
      * Introduce Equality special operators.
      */
     val equalityOps = (typesInTables ++ typesInLattices).foldLeft(Map.empty[Type, Symbol.DefnSym]) {
-      case (macc, tpe) if !tpe.isArrow => macc + (tpe -> getOrMkEq(tpe))
+      case (macc, tpe) if !tpe.isArrow && !tpe.isVar => macc + (tpe -> getOrMkEq(tpe))
       case (macc, tpe) => macc
     }
 
@@ -1178,7 +1179,7 @@ object Synthesize extends Phase[Root, Root] {
      * Introduce Hash special operators.
      */
     val hashOps = (typesInTables ++ typesInLattices).foldLeft(Map.empty[Type, Symbol.DefnSym]) {
-      case (macc, tpe) if !tpe.isArrow => macc + (tpe -> getOrMkHash(tpe))
+      case (macc, tpe) if !tpe.isArrow && !tpe.isVar => macc + (tpe -> getOrMkHash(tpe))
       case (macc, tpe) => macc
     }
 
@@ -1186,7 +1187,7 @@ object Synthesize extends Phase[Root, Root] {
      * Introduce ToString special operators.
      */
     val toStringOps = (typesInDefs ++ typesInTables).foldLeft(Map.empty[Type, Symbol.DefnSym]) {
-      case (macc, tpe) if !tpe.isArrow => macc + (tpe -> getOrMkToString(tpe))
+      case (macc, tpe) if !tpe.isArrow && !tpe.isVar => macc + (tpe -> getOrMkToString(tpe))
       case (macc, tpe) => macc
     }
 

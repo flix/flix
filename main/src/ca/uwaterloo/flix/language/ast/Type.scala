@@ -99,6 +99,14 @@ sealed trait Type {
   }
 
   /**
+    * Returns `true` if `this` type is a type variable.
+    */
+  def isVar: Boolean = typeConstructor match {
+    case Type.Var(_, _) => true
+    case _ => false
+  }
+
+  /**
     * Returns `true` if `this` type is an arrow type.
     */
   def isArrow: Boolean = typeConstructor match {
