@@ -202,26 +202,28 @@ object ParsedAst {
     /**
       * Relation Declaration.
       *
-      * @param doc   the optional comment associated with the definition.
-      * @param mod   the associated modifiers.
-      * @param sp1   the position of the first character in the declaration.
-      * @param ident the name of the relation.
-      * @param attr  the attributes (columns) of the relation.
-      * @param sp2   the position of the last character in the declaration.
+      * @param doc     the optional comment associated with the definition.
+      * @param mod     the associated modifiers.
+      * @param sp1     the position of the first character in the declaration.
+      * @param ident   the name of the relation.
+      * @param tparams the type parameters.
+      * @param attr    the attributes (columns) of the relation.
+      * @param sp2     the position of the last character in the declaration.
       */
-    case class Relation(doc: ParsedAst.Doc, mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, attr: Seq[ParsedAst.Attribute], sp2: SourcePosition) extends ParsedAst.Declaration
+    case class Relation(doc: ParsedAst.Doc, mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: Seq[ParsedAst.ContextBound], attr: Seq[ParsedAst.Attribute], sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
       * Lattice Declaration.
       *
-      * @param doc   the optional comment associated with the definition.
-      * @param mod   the associated modifiers.
-      * @param sp1   the position of the first character in the declaration.
-      * @param ident the name of the lattice.
-      * @param attr  the attributes (columns) of the relation.
-      * @param sp2   the position of the last character in the declaration.
+      * @param doc     the optional comment associated with the definition.
+      * @param mod     the associated modifiers.
+      * @param sp1     the position of the first character in the declaration.
+      * @param ident   the name of the lattice.
+      * @param tparams the type parameters.
+      * @param attr    the attributes (columns) of the relation.
+      * @param sp2     the position of the last character in the declaration.
       */
-    case class Lattice(doc: ParsedAst.Doc, mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, attr: Seq[ParsedAst.Attribute], sp2: SourcePosition) extends ParsedAst.Declaration
+    case class Lattice(doc: ParsedAst.Doc, mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: Seq[ParsedAst.ContextBound], attr: Seq[ParsedAst.Attribute], sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
       * Constraint Declaration.
@@ -914,7 +916,7 @@ object ParsedAst {
       * @param sp2 the position of the last character in the expression.
       */
     case class FixpointDelta(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
-    
+
     /**
       * User Error Expression (an expression that immediately aborts execution).
       *
