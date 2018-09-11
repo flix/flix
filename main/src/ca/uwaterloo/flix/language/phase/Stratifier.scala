@@ -18,14 +18,13 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
+import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.ast.Ast.Polarity
-import ca.uwaterloo.flix.language.ast.SimplifiedAst.Predicate.Head.RelAtom
-import ca.uwaterloo.flix.language.ast.SimplifiedAst.Predicate.Head.LatAtom
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body.{Filter, Functional}
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Head.{False, True}
-import ca.uwaterloo.flix.language.ast.TypedAst.{Predicate, Root}
+import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.errors.StratificationError
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 import ca.uwaterloo.flix.util.Validation._
@@ -44,17 +43,247 @@ import ca.uwaterloo.flix.util.Validation._
   * program. If the first fails, then we continue to the second phase which
   * finds a cycle in the constraints and reports it.
   */
-object Stratifier extends Phase[TypedAst.Root, TypedAst.Root] {
+object Stratifier extends Phase[Root, Root] {
+
+  sealed trait PredicateSym
+
+  object PredicateSym {
+
+    case class Rel(sym: Symbol.RelSym) extends PredicateSym
+
+    case class Lat(sym: Symbol.LatSym) extends PredicateSym
+
+  }
+
+  object DependencyGraph {
+    /**
+      * The empty dependency graph.
+      */
+    val Empty: DependencyGraph = DependencyGraph(Set.empty)
+
+    /**
+      * Returns the union of the two dependency graphs.
+      */
+    def union(dg1: DependencyGraph, dg2: DependencyGraph): DependencyGraph =
+      DependencyGraph(dg1.xs ++ dg2.xs)
+
+    /**
+      *
+      */
+    def stratify(): Unit = ??? // TODO
+  }
+
+  case class DependencyGraph(xs: Set[(PredicateSym, PredicateSym)])
 
   // TODO: Rewrite stratifier to work with constraint expressions.
 
   /**
     * Returns a stratified version of the given AST `root`.
     */
-  def run(root: Root)(implicit flix: Flix): Validation[TypedAst.Root, CompilationError] = flix.phase("Stratifier") {
+  def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationError] = flix.phase("Stratifier") {
 
     return root.toSuccess
   }
+
+  /**
+    * Stratifies any constraint set in the given definition `def0`.
+    */
+  private def visitDef(def0: TypedAst.Def): Unit = {
+    visitExp(def0.exp)
+  }
+
+  // TODO: This really has to be done in a fixed point...
+
+  /**
+    * Stratifies any constraint set in the given expression `exp0`.
+    */
+  private def visitExp(exp0: Expression): Expression = exp0 match {
+    case Expression.Unit(loc) => exp0
+    case Expression.True(loc) => exp0
+    case Expression.False(loc) => exp0
+    case Expression.Char(lit, loc) => exp0
+    case Expression.Float32(lit, loc) => exp0
+    case Expression.Float64(lit, loc) => exp0
+    case Expression.Int8(lit, loc) => exp0
+    case Expression.Int16(lit, loc) => exp0
+    case Expression.Int32(lit, loc) => exp0
+    case Expression.Int64(lit, loc) => exp0
+    case Expression.BigInt(lit, loc) => exp0
+    case Expression.Str(lit, loc) => exp0
+
+    case Expression.Wild(tpe, eff, loc) => exp0
+
+    case Expression.Var(sym, tpe, eff, loc) => exp0
+
+    case Expression.Def(sym, tpe, eff, loc) => exp0
+
+    case Expression.Eff(sym, tpe, eff, loc) => exp0
+
+    case Expression.Hole(sym, tpe, eff, loc) => exp0
+
+    case Expression.Lambda(fparam, exp, tpe, eff, loc) =>
+      val e = visitExp(exp)
+      Expression.Lambda(fparam, e, tpe, eff, loc)
+
+    case Expression.Apply(exp1, exp2, tpe, eff, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      ???
+
+    case Expression.Unary(op, exp, tpe, eff, loc) =>
+      val e = visitExp(exp)
+      Expression.Unary(op, e, tpe, eff, loc)
+
+    case Expression.Binary(op, exp1, exp2, tpe, eff, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      Expression.Binary(op, e1, e2, tpe, eff, loc)
+
+    case Expression.Let(sym, exp1, exp2, tpe, eff, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      Expression.Let(sym, e1, e2, tpe, eff, loc)
+
+    case Expression.LetRec(sym, exp1, exp2, tpe, eff, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      ???
+
+    case Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      val e3 = visitExp(exp3)
+      Expression.IfThenElse(e1, e2, e3, tpe, eff, loc)
+
+    case Expression.Match(exp, rules, tpe, eff, loc) =>
+      val e = visitExp(exp)
+      val rs = ???
+      Expression.Match(e, rs, tpe, eff, loc)
+
+    case Expression.Switch(rules, tpe, eff, loc) => ???
+
+    case Expression.Tag(sym, tag, exp, tpe, eff, loc) => visitExp(exp)
+
+    case Expression.Tuple(elms, tpe, eff, loc) => ???
+
+    case Expression.ArrayLit(elms, tpe, eff, loc) => ???
+
+    case Expression.ArrayNew(elm, len, tpe, eff, loc) => ???
+
+    case Expression.ArrayLoad(base, index, tpe, eff, loc) => ???
+
+    case Expression.ArrayLength(base, tpe, eff, loc) => ???
+
+    case Expression.ArrayStore(base, index, elm, tpe, eff, loc) => ???
+
+    case Expression.ArraySlice(base, beginIndex, endIndex, tpe, eff, loc) => ???
+
+    case Expression.VectorLit(elms, tpe, eff, loc) => ???
+
+    case Expression.VectorNew(elm, len, tpe, eff, loc) => ???
+
+    case Expression.VectorLoad(base, index, tpe, eff, loc) => ???
+
+    case Expression.VectorStore(base, index, elm, tpe, eff, loc) => ???
+
+    case Expression.VectorLength(base, tpe, eff, loc) => ???
+
+    case Expression.VectorSlice(base, startIndex, endIndex, tpe, eff, loc) => ???
+
+    case Expression.Ref(exp, tpe, eff, loc) => ???
+
+    case Expression.Deref(exp, tpe, eff, loc) => ???
+
+    case Expression.Assign(exp1, exp2, tpe, eff, loc) => ???
+
+    case Expression.HandleWith(exp, bindings, tpe, eff, loc) => ???
+
+    case Expression.Existential(fparam, exp, eff, loc) => visitExp(exp)
+
+    case Expression.Universal(fparam, exp, eff, loc) => visitExp(exp)
+
+    case Expression.Ascribe(exp, tpe, eff, loc) => visitExp(exp)
+
+    case Expression.Cast(exp, tpe, eff, loc) => visitExp(exp)
+
+    case Expression.NativeConstructor(constructor, args, tpe, eff, loc) => ???
+
+    case Expression.TryCatch(exp, rules, tpe, eff, loc) => ???
+
+    case Expression.NativeField(field, tpe, eff, loc) => ???
+
+    case Expression.NativeMethod(method, args, tpe, eff, loc) => ???
+
+    case Expression.NewRelation(sym, tpe, eff, loc) => exp0
+
+    case Expression.NewLattice(sym, tpe, eff, loc) => exp0
+
+    case Expression.Constraint(con, tpe, eff, loc) =>
+      getDependencyGraph(con)
+      ???
+
+    case Expression.ConstraintUnion(exp1, exp2, tpe, eff, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      Expression.ConstraintUnion(e1, e2, tpe, eff, loc)
+
+    case Expression.FixpointSolve(exp, tpe, eff, loc) =>
+      val e = visitExp(exp)
+      Expression.FixpointSolve(exp, tpe, eff, loc)
+
+    case Expression.FixpointCheck(exp, tpe, eff, loc) =>
+      val e = visitExp(exp)
+      Expression.FixpointCheck(e, tpe, eff, loc)
+
+    case Expression.FixpointDelta(exp, tpe, eff, loc) =>
+      val e = visitExp(exp)
+      Expression.FixpointDelta(e, tpe, eff, loc)
+
+    case Expression.UserError(tpe, eff, loc) => exp0
+
+  }
+
+  /**
+    * Returns the dependency graph of the given constraint.
+    */
+  private def getDependencyGraph(c: Constraint): DependencyGraph = c match {
+    case Constraint(cparams, head, body, loc) =>
+      // Determine if the head predicate has a symbol.
+      getHeadPredicateSymbol(head) match {
+        case None => DependencyGraph.Empty
+        case Some(headSym) =>
+          // Compute the body symbols.
+          val bodySyms = body.flatMap(getBodyPredicateSymbol)
+
+          // Construct the pairs (headSym, bodySym).
+          val dependencies = bodySyms map (bodySym => headSym -> bodySym)
+          DependencyGraph(dependencies.toSet)
+      }
+  }
+
+  /**
+    * Optionally returns the predicate symbol of the given head predicate `head0`.
+    */
+  private def getHeadPredicateSymbol(head0: Predicate.Head): Option[PredicateSym] = head0 match {
+    case Predicate.Head.True(_) => None
+    case Predicate.Head.False(_) => None
+    case Predicate.Head.RelAtom(base, sym, terms, loc) => Some(PredicateSym.Rel(sym))
+    case Predicate.Head.LatAtom(base, sym, terms, loc) => Some(PredicateSym.Lat(sym))
+  }
+
+  /**
+    * Optionally returns the predicate symbol of the given body predicate `body0`.
+    */
+  private def getBodyPredicateSymbol(body0: Predicate.Body): Option[PredicateSym] = body0 match {
+    case Predicate.Body.RelAtom(base, sym, polarity, terms, loc) => Some(PredicateSym.Rel(sym))
+    case Predicate.Body.LatAtom(base, sym, polarity, terms, loc) => Some(PredicateSym.Lat(sym))
+    case Predicate.Body.Filter(sym, terms, loc) => None
+    case Predicate.Body.Functional(sym, term, loc) => None
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  ////////     LEGACY CODE                                       //////////////
+  /////////////////////////////////////////////////////////////////////////////
 
   /**
     * A small case class to allow us to abstract over the possible heads in a
