@@ -29,6 +29,8 @@ import ca.uwaterloo.flix.language.errors.StratificationError
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 import ca.uwaterloo.flix.util.Validation._
 
+import scala.collection.mutable
+
 /**
   * The stratification phase breaks constraints into strata.
   *
@@ -78,6 +80,8 @@ object Stratifier extends Phase[Root, Root] {
   // TODO: Rewrite stratifier to work with constraint expressions.
 
   // TODO: Also compute strongly connected components?
+
+  // TODO: Would be a good exampple for flix semantics.
 
   /**
     * Returns a stratified version of the given AST `root`.
@@ -320,11 +324,83 @@ object Stratifier extends Phase[Root, Root] {
 
   /**
     * Computes the stratification of the given dependency graph.
+    *
+    * See Database and Knowledge - Base Systems Volume 1 Ullman, Algorithm 3.5 p 133
     */
-  private def stratify(dg: DependencyGraph): Validation[DependencyGraph, StratificationError] = {
-    println(dg)
-    ??? // TODO
+  private def stratify(dg: DependencyGraph): Validation[Map[PredicateSym, Int], StratificationError] = {
+    //
+    // Maintain a mutable map from predicate symbols to their (maximum) stratum number.
+    //
+    // Any predicate symbol not explicitly in the map has a default value of zero.
+    //
+    val stratumOf = mutable.Map.empty[PredicateSym, Int]
+
+    //
+    // Compute the number of dependency edges.
+    //
+    // The number of strata is bounded by the number of predicate symbols which is bounded by the number of edges.
+    //
+    // Hence if we ever compute a stratum higher than this number then there is a negative cycle.
+    //
+    val maxStratum = dg.xs.size
+
+    //
+    // Repeatedly examine the dependency edges.
+    //
+    // We always consider two cases:
+    //   1. A positive body predicate requires its head predicate to be in its stratum or any higher stratum.
+    //   2. A negative body predicate requires its head predicate to be in a strictly higher stratum.
+    //
+    // If we ever create more strata than there are dependency edges then there is a negative cycle and we abort.
+    //
+    var changed = true
+    while (changed) {
+      changed = false
+
+      // Examine each dependency edge in turn.
+      for (edge <- dg.xs) {
+        edge match {
+          case DependencyEdge.Positive(headSym, bodySym) =>
+            // Case 1: The stratum of the head must be in the same or a higher stratum as the body.
+            val headStratum = stratumOf.getOrElseUpdate(headSym, 0)
+            val bodyStratum = stratumOf.getOrElseUpdate(bodySym, 0)
+
+            if (!(headStratum >= bodyStratum)) {
+              // Put the head in the same stratum as the body.
+              stratumOf.put(headSym, bodyStratum)
+              changed = true
+            }
+
+          case DependencyEdge.Negative(headSym, bodySym) =>
+            // Case 2: The stratum of the head must be in a strictly higher stratum than the body.
+            val headStratum = stratumOf.getOrElseUpdate(headSym, 0)
+            val bodyStratum = stratumOf.getOrElseUpdate(bodySym, 0)
+
+            if (!(headStratum > bodyStratum)) {
+              // Put the head in one stratum above the body stratum.
+              val newHeadStratum = bodyStratum + 1
+              stratumOf.put(headSym, newHeadStratum)
+              changed = true
+
+              // Check if we have found a negative cycle.
+              if (newHeadStratum > maxStratum) {
+                return StratificationError(findNegativeCycle(dg)).toFailure
+              }
+            }
+        }
+
+      }
+    }
+
+    // We are done. Successfully return the computed stratification.
+    stratumOf.toMap.toSuccess
   }
+
+  // TODO:
+  private def findNegativeCycle(dg: Stratifier.DependencyGraph): List[TypedAst.Constraint] =
+  // TODO
+    Nil
+
 
   /////////////////////////////////////////////////////////////////////////////
   ////////     LEGACY CODE                                       //////////////
