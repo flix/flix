@@ -17,37 +17,27 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Head
-import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Head.{False, True}
 import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.phase.Stratifier
 import ca.uwaterloo.flix.util.vt.VirtualString._
 import ca.uwaterloo.flix.util.vt.VirtualTerminal
 
 /**
   * An error raised to indicate that a constraint set is not stratified.
   */
-case class StratificationError(constraints: List[TypedAst.Constraint], loc: SourceLocation) extends CompilationError {
+case class StratificationError(path: List[Stratifier.PredicateSym], loc: SourceLocation) extends CompilationError {
   val kind: String = "Stratification Error"
   val source: Source = loc.source
   val message: VirtualTerminal = {
     val vt = new VirtualTerminal
     vt << Line(kind, source.format) << NewLine
-    vt << ">> Stratification Error in Constraints" << NewLine
-
-    vt << "The following constraint" << (if (constraints.size > 1) {
-      "s"
-    } else {
-      ""
-    }) << " form a negative cycle at locations" << NewLine
-    constraints.foreach(rule => {
-      vt << "\t" << (rule.head match {
-        case True(loc) => loc.format
-        case False(loc) => loc.format
-        case Head.RelAtom(base, sym, terms, loc) => loc.format
-        case Head.LatAtom(base, sym, terms, loc) => loc.format
-      })
-      vt << NewLine
-    })
-    vt
+    vt << ">> Stratification Error." << NewLine
+    vt << NewLine
+    vt << "The following path contains a negative cycle:" << NewLine
+    vt << Indent << NewLine
+    for (sym <- path) {
+      vt << sym.toString
+    }
+    vt << Dedent << NewLine
   }
 }

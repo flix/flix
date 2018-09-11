@@ -242,7 +242,7 @@ object Stratifier extends Phase[Root, Root] {
       val dg = visitExp(exp)
 
       // Compute its stratification.
-      stratify(dg, loc)
+      stratify(dg, loc).get
 
       // Solve does not return any constraint set.
       DependencyGraph.Empty
@@ -253,7 +253,7 @@ object Stratifier extends Phase[Root, Root] {
       val dg = visitExp(exp)
 
       // Compute its stratification.
-      stratify(dg, loc)
+      stratify(dg, loc).get
 
       // Solve does not return any constraint set.
       DependencyGraph.Empty
@@ -263,7 +263,7 @@ object Stratifier extends Phase[Root, Root] {
       val dg = visitExp(exp)
 
       // Compute its stratification.
-      stratify(dg, loc)
+      stratify(dg, loc).get
 
       // Solve does not return any constraint set.
       DependencyGraph.Empty
@@ -396,7 +396,7 @@ object Stratifier extends Phase[Root, Root] {
   }
 
   // TODO:
-  private def findNegativeCycle(dg: Stratifier.DependencyGraph): List[TypedAst.Constraint] =
+  private def findNegativeCycle(dg: Stratifier.DependencyGraph): List[PredicateSym] =
   // TODO
     Nil
 
@@ -465,7 +465,7 @@ object Stratifier extends Phase[Root, Root] {
               if (newStratum > numRules) {
                 // If we create more stratum than there are rules then
                 // we know there must be a negative cycle.
-                return StratificationError(findNegCycle(constraints), ???).toFailure
+                return StratificationError(???, ???).toFailure
               }
               if (currStratum != newStratum) {
                 // Update the strata of the predicate
@@ -479,7 +479,7 @@ object Stratifier extends Phase[Root, Root] {
               if (newStratum > numRules) {
                 // If we create more stratum than there are rules then
                 // we know there must be a negative cycle.
-                return StratificationError(findNegCycle(constraints), ???).toFailure
+                return StratificationError(???, ???).toFailure
               }
               if (currStratum != newStratum) {
                 // Update the strata of the predicate
@@ -493,7 +493,7 @@ object Stratifier extends Phase[Root, Root] {
               if (newStratum > numRules) {
                 // If we create more stratum than there are rules then
                 // we know there must be a negative cycle
-                return StratificationError(findNegCycle(constraints), ???).toFailure
+                return StratificationError(???, ???).toFailure
               }
               if (currStratum != newStratum) {
                 // Update the strata of the predicate
@@ -508,7 +508,7 @@ object Stratifier extends Phase[Root, Root] {
               if (newStratum > numRules) {
                 // If we create more stratum than there are rules then
                 // we know there must be a negative cycle
-                return StratificationError(findNegCycle(constraints), ???).toFailure
+                return StratificationError(???, ???).toFailure
               }
               if (currStratum != newStratum) {
                 // Update the strata of the predicate
