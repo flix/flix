@@ -18,9 +18,8 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.Symbol
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, TypedAst}
 import ca.uwaterloo.flix.language.ast.Ast.Polarity
-import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body.{Filter, Functional}
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Head.{False, True}
@@ -243,7 +242,7 @@ object Stratifier extends Phase[Root, Root] {
       val dg = visitExp(exp)
 
       // Compute its stratification.
-      stratify(dg)
+      stratify(dg, loc)
 
       // Solve does not return any constraint set.
       DependencyGraph.Empty
@@ -254,7 +253,7 @@ object Stratifier extends Phase[Root, Root] {
       val dg = visitExp(exp)
 
       // Compute its stratification.
-      stratify(dg)
+      stratify(dg, loc)
 
       // Solve does not return any constraint set.
       DependencyGraph.Empty
@@ -264,7 +263,7 @@ object Stratifier extends Phase[Root, Root] {
       val dg = visitExp(exp)
 
       // Compute its stratification.
-      stratify(dg)
+      stratify(dg, loc)
 
       // Solve does not return any constraint set.
       DependencyGraph.Empty
@@ -323,11 +322,11 @@ object Stratifier extends Phase[Root, Root] {
     DependencyGraph(dg1.xs ++ dg2.xs)
 
   /**
-    * Computes the stratification of the given dependency graph.
+    * Computes the stratification of the given dependency graph `dg` at the given source location `loc`.
     *
     * See Database and Knowledge - Base Systems Volume 1 Ullman, Algorithm 3.5 p 133
     */
-  private def stratify(dg: DependencyGraph): Validation[Map[PredicateSym, Int], StratificationError] = {
+  private def stratify(dg: DependencyGraph, loc: SourceLocation): Validation[Map[PredicateSym, Int], StratificationError] = {
     //
     // Maintain a mutable map from predicate symbols to their (maximum) stratum number.
     //
@@ -384,7 +383,7 @@ object Stratifier extends Phase[Root, Root] {
 
               // Check if we have found a negative cycle.
               if (newHeadStratum > maxStratum) {
-                return StratificationError(findNegativeCycle(dg)).toFailure
+                return StratificationError(findNegativeCycle(dg), loc).toFailure
               }
             }
         }
@@ -466,7 +465,7 @@ object Stratifier extends Phase[Root, Root] {
               if (newStratum > numRules) {
                 // If we create more stratum than there are rules then
                 // we know there must be a negative cycle.
-                return StratificationError(findNegCycle(constraints)).toFailure
+                return StratificationError(findNegCycle(constraints), ???).toFailure
               }
               if (currStratum != newStratum) {
                 // Update the strata of the predicate
@@ -480,7 +479,7 @@ object Stratifier extends Phase[Root, Root] {
               if (newStratum > numRules) {
                 // If we create more stratum than there are rules then
                 // we know there must be a negative cycle.
-                return StratificationError(findNegCycle(constraints)).toFailure
+                return StratificationError(findNegCycle(constraints), ???).toFailure
               }
               if (currStratum != newStratum) {
                 // Update the strata of the predicate
@@ -494,7 +493,7 @@ object Stratifier extends Phase[Root, Root] {
               if (newStratum > numRules) {
                 // If we create more stratum than there are rules then
                 // we know there must be a negative cycle
-                return StratificationError(findNegCycle(constraints)).toFailure
+                return StratificationError(findNegCycle(constraints), ???).toFailure
               }
               if (currStratum != newStratum) {
                 // Update the strata of the predicate
@@ -509,7 +508,7 @@ object Stratifier extends Phase[Root, Root] {
               if (newStratum > numRules) {
                 // If we create more stratum than there are rules then
                 // we know there must be a negative cycle
-                return StratificationError(findNegCycle(constraints)).toFailure
+                return StratificationError(findNegCycle(constraints), ???).toFailure
               }
               if (currStratum != newStratum) {
                 // Update the strata of the predicate

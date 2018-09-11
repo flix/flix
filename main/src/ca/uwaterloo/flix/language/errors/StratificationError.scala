@@ -24,18 +24,21 @@ import ca.uwaterloo.flix.util.vt.VirtualString._
 import ca.uwaterloo.flix.util.vt.VirtualTerminal
 
 /**
-  * An error raised to indicate there is a negative cycle in the attempted
-  * stratification of the program
+  * An error raised to indicate that a constraint set is not stratified.
   */
-case class StratificationError(constraints: List[TypedAst.Constraint]) extends CompilationError {
+case class StratificationError(constraints: List[TypedAst.Constraint], loc: SourceLocation) extends CompilationError {
   val kind: String = "Stratification Error"
-  val source: Source = constraints.head.loc.source
+  val source: Source = loc.source
   val message: VirtualTerminal = {
     val vt = new VirtualTerminal
     vt << Line(kind, source.format) << NewLine
     vt << ">> Stratification Error in Constraints" << NewLine
 
-    vt << "The following constraint" << (if (constraints.size > 1) {"s"} else {""}) << " form a negative cycle at locations" << NewLine
+    vt << "The following constraint" << (if (constraints.size > 1) {
+      "s"
+    } else {
+      ""
+    }) << " form a negative cycle at locations" << NewLine
     constraints.foreach(rule => {
       vt << "\t" << (rule.head match {
         case True(loc) => loc.format
