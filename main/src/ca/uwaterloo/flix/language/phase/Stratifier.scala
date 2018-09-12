@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, TypedAst}
 import ca.uwaterloo.flix.language.ast.Ast.Polarity
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body.{Filter, Functional}
@@ -46,7 +46,10 @@ import scala.collection.mutable
   */
 object Stratifier extends Phase[Root, Root] {
 
-  sealed trait PredicateSym
+  // TODO: Remove predicate symbol.
+  sealed trait PredicateSym {
+    def sym: Symbol.PredSym
+  }
 
   object PredicateSym {
 
@@ -234,11 +237,11 @@ object Stratifier extends Phase[Root, Root] {
 
     case Expression.ConstraintUnion(exp1, exp2, tpe, eff, loc) => ???
 
-    case Expression.FixpointSolve(exp, tpe, eff, loc) => ???
+    case Expression.FixpointSolve(exp, stf, tpe, eff, loc) => ???
 
-    case Expression.FixpointCheck(exp, tpe, eff, loc) => ???
+    case Expression.FixpointCheck(exp, stf, tpe, eff, loc) => ???
 
-    case Expression.FixpointDelta(exp, tpe, eff, loc) => ???
+    case Expression.FixpointDelta(exp, stf, tpe, eff, loc) => ???
 
     case Expression.UserError(tpe, eff, loc) => ???
 
@@ -246,6 +249,8 @@ object Stratifier extends Phase[Root, Root] {
 
   /**
     * Stratifies any constraint set in the given expression `exp0`.
+    *
+    * Returns [[Success]] if the expression is stratified. Otherwise returns [[Failure]] with a [[StratificationError]].
     */
   private def visitExp(exp0: Expression): Validation[Expression, StratificationError] = exp0 match {
     case Expression.Unit(loc) => Expression.Unit(loc).toSuccess
@@ -343,78 +348,146 @@ object Stratifier extends Phase[Root, Root] {
         case (e, l) => Expression.ArrayNew(e, l, tpe, eff, loc)
       }
 
-    case Expression.ArrayLoad(base, index, tpe, eff, loc) => ???
+    case Expression.ArrayLoad(base, index, tpe, eff, loc) =>
+      mapN(visitExp(base), visitExp(index)) {
+        case (b, i) => Expression.ArrayLoad(b, i, tpe, eff, loc)
+      }
 
-    case Expression.ArrayLength(base, tpe, eff, loc) => ???
+    case Expression.ArrayLength(base, tpe, eff, loc) =>
+      mapN(visitExp(base)) {
+        case b => Expression.ArrayLength(b, tpe, eff, loc)
+      }
 
-    case Expression.ArrayStore(base, index, elm, tpe, eff, loc) => ???
+    case Expression.ArrayStore(base, index, elm, tpe, eff, loc) =>
+      mapN(visitExp(base), visitExp(index), visitExp(elm)) {
+        case (b, i, e) => Expression.ArrayStore(b, i, e, tpe, eff, loc)
+      }
 
-    case Expression.ArraySlice(base, beginIndex, endIndex, tpe, eff, loc) => ???
+    case Expression.ArraySlice(base, beginIndex, endIndex, tpe, eff, loc) =>
+      mapN(visitExp(base), visitExp(beginIndex), visitExp(endIndex)) {
+        case (b, i1, i2) => Expression.ArraySlice(b, i1, i2, tpe, eff, loc)
+      }
 
-    case Expression.VectorLit(elms, tpe, eff, loc) => ???
+    case Expression.VectorLit(elms, tpe, eff, loc) =>
+      mapN(traverse(elms)(visitExp)) {
+        case es => Expression.VectorLit(es, tpe, eff, loc)
+      }
 
-    case Expression.VectorNew(elm, len, tpe, eff, loc) => ???
+    case Expression.VectorNew(elm, len, tpe, eff, loc) =>
+      mapN(visitExp(elm)) {
+        case e => Expression.VectorNew(e, len, tpe, eff, loc)
+      }
 
-    case Expression.VectorLoad(base, index, tpe, eff, loc) => ???
+    case Expression.VectorLoad(base, index, tpe, eff, loc) =>
+      mapN(visitExp(base)) {
+        case b => Expression.VectorLoad(b, index, tpe, eff, loc)
+      }
 
-    case Expression.VectorStore(base, index, elm, tpe, eff, loc) => ???
+    case Expression.VectorStore(base, index, elm, tpe, eff, loc) =>
+      mapN(visitExp(base), visitExp(elm)) {
+        case (b, e) => Expression.VectorStore(b, index, e, tpe, eff, loc)
+      }
 
-    case Expression.VectorLength(base, tpe, eff, loc) => ???
+    case Expression.VectorLength(base, tpe, eff, loc) =>
+      mapN(visitExp(base)) {
+        case b => Expression.VectorLength(b, tpe, eff, loc)
+      }
 
-    case Expression.VectorSlice(base, startIndex, endIndex, tpe, eff, loc) => ???
+    case Expression.VectorSlice(base, startIndex, endIndex, tpe, eff, loc) =>
+      mapN(visitExp(base)) {
+        case b => Expression.VectorSlice(b, startIndex, endIndex, tpe, eff, loc)
+      }
 
-    case Expression.Ref(exp, tpe, eff, loc) => ???
+    case Expression.Ref(exp, tpe, eff, loc) =>
+      mapN(visitExp(exp)) {
+        case e => Expression.Ref(e, tpe, eff, loc)
+      }
 
-    case Expression.Deref(exp, tpe, eff, loc) => ???
+    case Expression.Deref(exp, tpe, eff, loc) =>
+      mapN(visitExp(exp)) {
+        case e => Expression.Deref(e, tpe, eff, loc)
+      }
 
-    case Expression.Assign(exp1, exp2, tpe, eff, loc) => ???
+    case Expression.Assign(exp1, exp2, tpe, eff, loc) =>
+      mapN(visitExp(exp1), visitExp(exp2)) {
+        case (e1, e2) => Expression.Assign(e1, e2, tpe, eff, loc)
+      }
 
-    case Expression.HandleWith(exp, bindings, tpe, eff, loc) => ???
+    case Expression.HandleWith(exp, bindings, tpe, eff, loc) =>
+      val bindingsVal = traverse(bindings) {
+        case HandlerBinding(sym, b) => visitExp(exp).map(HandlerBinding(sym, _))
+      }
+      mapN(visitExp(exp), bindingsVal) {
+        case (e, bs) => Expression.HandleWith(e, bs, tpe, eff, loc)
+      }
 
-    case Expression.Existential(fparam, exp, eff, loc) => ???
+    case Expression.Existential(fparam, exp, eff, loc) =>
+      mapN(visitExp(exp)) {
+        case e => Expression.Existential(fparam, e, eff, loc)
+      }
 
-    case Expression.Universal(fparam, exp, eff, loc) => ???
+    case Expression.Universal(fparam, exp, eff, loc) =>
+      mapN(visitExp(exp)) {
+        case e => Expression.Universal(fparam, e, eff, loc)
+      }
 
-    case Expression.Ascribe(exp, tpe, eff, loc) => ???
+    case Expression.Ascribe(exp, tpe, eff, loc) =>
+      mapN(visitExp(exp)) {
+        case e => Expression.Ascribe(e, tpe, eff, loc)
+      }
 
-    case Expression.Cast(exp, tpe, eff, loc) => ???
+    case Expression.Cast(exp, tpe, eff, loc) =>
+      mapN(visitExp(exp)) {
+        case e => Expression.Cast(e, tpe, eff, loc)
+      }
 
-    case Expression.NativeConstructor(constructor, args, tpe, eff, loc) => ???
+    case Expression.NativeConstructor(constructor, args, tpe, eff, loc) =>
+      mapN(traverse(args)(visitExp)) {
+        case as => Expression.NativeConstructor(constructor, as, tpe, eff, loc)
+      }
 
-    case Expression.TryCatch(exp, rules, tpe, eff, loc) => ???
+    case Expression.TryCatch(exp, rules, tpe, eff, loc) =>
+      val rulesVal = traverse(rules) {
+        case CatchRule(sym, clazz, e) => visitExp(e).map(CatchRule(sym, clazz, _))
+      }
+      mapN(visitExp(exp), rulesVal) {
+        case (e, rs) => Expression.TryCatch(e, rs, tpe, eff, loc)
+      }
 
-    case Expression.NativeField(field, tpe, eff, loc) => ???
+    case Expression.NativeField(field, tpe, eff, loc) =>
+      Expression.NativeField(field, tpe, eff, loc).toSuccess
 
-    case Expression.NativeMethod(method, args, tpe, eff, loc) => ???
+    case Expression.NativeMethod(method, args, tpe, eff, loc) =>
+      mapN(traverse(args)(visitExp)) {
+        case as => Expression.NativeMethod(method, as, tpe, eff, loc)
+      }
 
-    case Expression.NewRelation(sym, tpe, eff, loc) => ???
+    case Expression.NewRelation(sym, tpe, eff, loc) =>
+      Expression.NewRelation(sym, tpe, eff, loc).toSuccess
 
-    case Expression.NewLattice(sym, tpe, eff, loc) => ???
+    case Expression.NewLattice(sym, tpe, eff, loc) =>
+      Expression.NewLattice(sym, tpe, eff, loc).toSuccess
 
     case Expression.Constraint(con, tpe, eff, loc) =>
-      // TODO: Remember to reorder.
-      ???
+      Expression.Constraint(con, tpe, eff, loc).toSuccess
 
     case Expression.ConstraintUnion(exp1, exp2, tpe, eff, loc) =>
-      ???
+      mapN(visitExp(exp1), visitExp(exp2)) {
+        case (e1, e2) => Expression.ConstraintUnion(e1, e2, tpe, eff, loc)
+      }
 
     // TODO: It is important to understand that the stratification is different depending on the constraint system.
     // Since the exact constraints are not known, we cannot actually separate the constraints until at runtime!
     // At compile time we know the stratification, just not the exact constraints.
 
-    case Expression.FixpointSolve(exp, tpe, eff, loc) =>
-      // TODO: Need to obtain the dep. graph. from some program analysis.
-      val g = constraintGen(exp)
+    case Expression.FixpointSolve(exp, _, tpe, eff, loc) =>
+      val g = constraintGen(exp) // TODO: Need to obtain the dep. graph. from some program analysis.
 
       mapN(visitExp(exp), stratify(g, loc)) {
-        case (e, s) =>
-          // TODO: Here we have the stratification available and we should pass it on to the typed ast.
-          // TODO: S has type Map[PredicateSym, Int]. How do we go from that to a stratum for a constraint?
-
-          Expression.FixpointSolve(e, tpe, eff, loc)
+        case (e, s) => Expression.FixpointSolve(e, s, tpe, eff, loc)
       }
 
-    case Expression.FixpointCheck(exp, tpe, eff, loc) =>
+    case Expression.FixpointCheck(exp, _, tpe, eff, loc) =>
       // TODO: Might need to split this into the program analysis and the checking part...
       // Compute the dependency graph.
       val dg = ??? // TODO: From where to get access to the dependency graph?
@@ -426,7 +499,7 @@ object Stratifier extends Phase[Root, Root] {
       DependencyGraph.Empty
       ???
 
-    case Expression.FixpointDelta(exp, tpe, eff, loc) =>
+    case Expression.FixpointDelta(exp, _, tpe, eff, loc) =>
       // TODO: Might need to split this into the program analysis and the checking part...
       // Compute the dependency graph.
       val dg = ??? // TODO: From where to get access to the dependency graph?
@@ -438,7 +511,8 @@ object Stratifier extends Phase[Root, Root] {
       DependencyGraph.Empty
       ???
 
-    case Expression.UserError(tpe, eff, loc) => Expression.UserError(tpe, eff, loc).toSuccess
+    case Expression.UserError(tpe, eff, loc) =>
+      Expression.UserError(tpe, eff, loc).toSuccess
 
   }
 
@@ -496,7 +570,7 @@ object Stratifier extends Phase[Root, Root] {
     *
     * See Database and Knowledge - Base Systems Volume 1 Ullman, Algorithm 3.5 p 133
     */
-  private def stratify(dg: DependencyGraph, loc: SourceLocation): Validation[Map[PredicateSym, Int], StratificationError] = {
+  private def stratify(dg: DependencyGraph, loc: SourceLocation): Validation[Ast.Stratification, StratificationError] = {
     //
     // Maintain a mutable map from predicate symbols to their (maximum) stratum number.
     //
@@ -562,7 +636,10 @@ object Stratifier extends Phase[Root, Root] {
     }
 
     // We are done. Successfully return the computed stratification.
-    stratumOf.toMap.toSuccess
+    val xs = stratumOf.foldLeft(Map.empty[Symbol.PredSym, Int]) {
+      case (macc, (sym, int)) => macc + ((sym.sym -> int))
+    }
+    Ast.Stratification(xs).toSuccess
   }
 
   // TODO:

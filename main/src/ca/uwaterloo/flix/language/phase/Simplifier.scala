@@ -512,15 +512,15 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         val e2 = visitExp(exp2)
         SimplifiedAst.Expression.ConstraintUnion(e1, e2, tpe, loc)
 
-      case TypedAst.Expression.FixpointSolve(exp, tpe, eff, loc) =>
+      case TypedAst.Expression.FixpointSolve(exp, stf, tpe, eff, loc) =>
         val e = visitExp(exp)
         SimplifiedAst.Expression.FixpointSolve(e, tpe, loc)
 
-      case TypedAst.Expression.FixpointCheck(exp, tpe, eff, loc) =>
+      case TypedAst.Expression.FixpointCheck(exp, stf, tpe, eff, loc) =>
         val e = visitExp(exp)
         SimplifiedAst.Expression.FixpointCheck(e, tpe, loc)
 
-      case TypedAst.Expression.FixpointDelta(exp, tpe, eff, loc) =>
+      case TypedAst.Expression.FixpointDelta(exp, stf, tpe, eff, loc) =>
         val e = visitExp(exp)
         SimplifiedAst.Expression.FixpointDelta(e, tpe, loc)
 

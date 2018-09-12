@@ -371,9 +371,14 @@ object Symbol {
   }
 
   /**
+    * A common super-type for predicate symbols.
+    */
+  trait PredSym
+
+  /**
     * Relation Symbol.
     */
-  final class RelSym(val namespace: List[String], val name: String, val loc: SourceLocation) {
+  final class RelSym(val namespace: List[String], val name: String, val loc: SourceLocation) extends PredSym {
     /**
       * Returns `true` if this symbol is equal to `that` symbol.
       */
@@ -396,7 +401,7 @@ object Symbol {
   /**
     * Lattice Symbol.
     */
-  final class LatSym(val namespace: List[String], val name: String, val loc: SourceLocation) {
+  final class LatSym(val namespace: List[String], val name: String, val loc: SourceLocation) extends PredSym {
     /**
       * Returns `true` if this symbol is equal to `that` symbol.
       */

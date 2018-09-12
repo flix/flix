@@ -198,6 +198,18 @@ object Ast {
 
   }
 
+  object Stratification {
+    /**
+      * Represents the empty stratification.
+      */
+    val Empty: Stratification = Stratification(Map.empty)
+  }
+
+  /**
+    * Represents a stratification that maps every predicate symbol to its stratum.
+    */
+  case class Stratification(m: Map[Symbol.PredSym, Int])
+
   /**
     * A hole context consists of a hole symbol and its type together with the local environment.
     */

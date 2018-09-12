@@ -301,17 +301,17 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
             _ <- checkPats(exp2, root)
           } yield tast
 
-        case Expression.FixpointSolve(exp, tpe, eff, loc) =>
+        case Expression.FixpointSolve(exp, stf, tpe, eff, loc) =>
           for {
             _ <- checkPats(exp, root)
           } yield tast
 
-        case Expression.FixpointCheck(exp, tpe, eff, loc) =>
+        case Expression.FixpointCheck(exp, stf, tpe, eff, loc) =>
           for {
             _ <- checkPats(exp, root)
           } yield tast
 
-        case Expression.FixpointDelta(exp, tpe, eff, loc) =>
+        case Expression.FixpointDelta(exp, stf, tpe, eff, loc) =>
           for {
             _ <- checkPats(exp, root)
           } yield tast
