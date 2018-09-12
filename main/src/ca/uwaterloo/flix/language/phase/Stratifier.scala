@@ -163,8 +163,7 @@ object Stratifier extends Phase[Root, Root] {
       ???
 
     case Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
-      val dq2 = visitExp(exp2)
-      val dq3 = visitExp(exp3)
+
       ???
 
     case Expression.Match(exp, rules, tpe, eff, loc) =>
@@ -303,19 +302,36 @@ object Stratifier extends Phase[Root, Root] {
       }
 
     case Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
-      ???
+      mapN(visitExp(exp1), visitExp(exp2), visitExp(exp3)) {
+        case (e1, e2, e3) => Expression.IfThenElse(e1, e2, e3, tpe, eff, loc)
+      }
 
     case Expression.Match(exp, rules, tpe, eff, loc) =>
-      // TODO: Deal with the match value.
+      val rulesVal = traverse(rules) {
+        case MatchRule(p, g, b) => visitExp(b).map(MatchRule(p, g, _))
+      }
 
-      ???
+      mapN(visitExp(exp), rulesVal) {
+        case (e, rs) => Expression.Match(e, rs, tpe, eff, loc)
+      }
 
     case Expression.Switch(rules, tpe, eff, loc) =>
-      ???
-    case Expression.Tag(sym, tag, exp, tpe, eff, loc) =>
-      ???
+      val rulesVal = traverse(rules) {
+        case (g, b) => mapN(visitExp(g), visitExp(b))((_, _))
+      }
+      mapN(rulesVal) {
+        case rs => Expression.Switch(rs, tpe, eff, loc)
+      }
 
-    case Expression.Tuple(elms, tpe, eff, loc) => ???
+    case Expression.Tag(sym, tag, exp, tpe, eff, loc) =>
+      mapN(visitExp(exp)) {
+        case e => Expression.Tag(sym, tag, e, tpe, eff, loc)
+      }
+
+    case Expression.Tuple(elms, tpe, eff, loc) =>
+      mapN(traverse(elms)(visitExp)) {
+        case es => Expression.Tuple(es, tpe, eff, loc)
+      }
 
     case Expression.ArrayLit(elms, tpe, eff, loc) => ???
 
@@ -353,9 +369,9 @@ object Stratifier extends Phase[Root, Root] {
 
     case Expression.Universal(fparam, exp, eff, loc) => ???
 
-    case Expression.Ascribe(exp, tpe, eff, loc) => visitExp(exp)
+    case Expression.Ascribe(exp, tpe, eff, loc) => ???
 
-    case Expression.Cast(exp, tpe, eff, loc) => visitExp(exp)
+    case Expression.Cast(exp, tpe, eff, loc) => ???
 
     case Expression.NativeConstructor(constructor, args, tpe, eff, loc) => ???
 
@@ -374,8 +390,6 @@ object Stratifier extends Phase[Root, Root] {
       ???
 
     case Expression.ConstraintUnion(exp1, exp2, tpe, eff, loc) =>
-      val dg1 = visitExp(exp1)
-      val dg2 = visitExp(exp2)
       ???
 
     // TODO: It is important to understand that the stratification is different depending on the constraint system.
