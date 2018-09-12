@@ -369,24 +369,30 @@ object Stratifier extends Phase[Root, Root] {
 
     case Expression.NewLattice(sym, tpe, eff, loc) => ???
 
-    case Expression.Constraint(con, tpe, eff, loc) => ???
+    case Expression.Constraint(con, tpe, eff, loc) =>
+      // TODO: Remember to reorder.
+      ???
 
     case Expression.ConstraintUnion(exp1, exp2, tpe, eff, loc) =>
       val dg1 = visitExp(exp1)
       val dg2 = visitExp(exp2)
       ???
 
+    // TODO: It is important to understand that the stratification is different depending on the constraint system.
+    // Since the exact constraints are not known, we cannot actually separate the constraints until at runtime!
+    // At compile time we know the stratification, just not the exact constraints.
+
     case Expression.FixpointSolve(exp, tpe, eff, loc) =>
-      // TODO: Might need to split this into the program analysis and the checking part...
-      // Compute the dependency graph.
-      val dg = ??? // TODO: From where to get access to the dependency graph?
+      // TODO: Need to obtain the dep. graph. from some program analysis.
+      val g = constraintGen(exp)
 
-      // Compute its stratification.
-      stratify(dg, loc).get
+      mapN(visitExp(exp), stratify(g, loc)) {
+        case (e, s) =>
+          // TODO: Here we have the stratification available and we should pass it on to the typed ast.
+          // TODO: S has type Map[PredicateSym, Int]. How do we go from that to a stratum for a constraint?
 
-      // Solve does not return any constraint set.
-      DependencyGraph.Empty
-      ???
+          Expression.FixpointSolve(e, tpe, eff, loc)
+      }
 
     case Expression.FixpointCheck(exp, tpe, eff, loc) =>
       // TODO: Might need to split this into the program analysis and the checking part...
@@ -545,6 +551,28 @@ object Stratifier extends Phase[Root, Root] {
     Nil
 
 
+  /**
+    * Reorders a constraint such that its negated atoms occur last.
+    */
+  def reorder(c0: TypedAst.Constraint): TypedAst.Constraint = {
+    /**
+      * Returns `true` if the body predicate is negated.
+      */
+    def isNegative(p: Predicate.Body): Boolean = p match {
+      case Body.RelAtom(_, _, Polarity.Negative, _, _) => true
+      case Body.LatAtom(_, _, Polarity.Negative, _, _) => true
+      case _ => false
+    }
+
+    // Collect all the negated and non-negated predicates.
+    val negated = c0.body filter isNegative
+    val nonNegated = c0.body filterNot isNegative
+
+    // Reassemble the constraint.
+    c0.copy(body = nonNegated ::: negated)
+  }
+
+
   /////////////////////////////////////////////////////////////////////////////
   ////////     LEGACY CODE                                       //////////////
   /////////////////////////////////////////////////////////////////////////////
@@ -675,20 +703,6 @@ object Stratifier extends Phase[Root, Root] {
     // variables in the negated literals will be bound when we evaluate
     // them
 
-    /**
-      * Reorder a rule so that negated literals occur last
-      */
-    def reorder(rule: TypedAst.Constraint): TypedAst.Constraint = {
-      def isNegative(p: Body): Boolean = p match {
-        case Body.RelAtom(_, _, Polarity.Negative, _, _) => true
-        case Body.LatAtom(_, _, Polarity.Negative, _, _) => true
-        case _ => false
-      }
-
-      val negated = rule.body filter isNegative
-      val nonNegated = rule.body filter (x => !isNegative(x))
-      rule.copy(body = nonNegated ::: negated)
-    }
 
     /**
       * Separate a list of strata into the levels found earlier
