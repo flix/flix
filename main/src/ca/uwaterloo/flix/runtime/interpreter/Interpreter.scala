@@ -271,7 +271,6 @@ object Interpreter {
       // TODO
       val cs = cast2constraintset(eval(exp, env0, henv0, lenv0, root))
       println(cs)
-      val solver = mkSolver(cs)
       try {
         val fixpoint = solve(cs)
         println(fixpoint)
