@@ -47,15 +47,27 @@ import scala.collection.mutable
 object Stratifier extends Phase[Root, Root] {
 
   // TODO: It is important to understand that the stratification is different depending on the constraint system.
-  // Since the exact constraints are not known, we cannot actually separate the constraints until at runtime!
-  // At compile time we know the stratification, just not the exact constraints.
+  // TODO: Since the exact constraints are not known, we cannot actually separate the constraints until at runtime!
+  // TODO: At compile time we know the stratification, just not the exact constraints.
 
+  // TODO: Also compute strongly connected components?
+  // TODO: Would be a good exampple for flix semantics.
+
+  /**
+    * Represents a dependency between two predicate symbols.
+    */
   sealed trait DependencyEdge
 
   object DependencyEdge {
 
+    /**
+      * Represents a positive labelled edge.
+      */
     case class Positive(head: Symbol.PredSym, body: Symbol.PredSym) extends DependencyEdge
 
+    /**
+      * Represents a negative labelled edge.
+      */
     case class Negative(head: Symbol.PredSym, body: Symbol.PredSym) extends DependencyEdge
 
   }
@@ -68,20 +80,10 @@ object Stratifier extends Phase[Root, Root] {
 
   }
 
+  /**
+    * Represents a dependency graph; a set of dependency edges.
+    */
   case class DependencyGraph(xs: Set[DependencyEdge])
-
-  // TODO: Rewrite stratifier to work with constraint expressions.
-
-  // TODO: Also compute strongly connected components?
-
-  // TODO: Would be a good exampple for flix semantics.
-
-
-  sealed trait DataflowConstraint
-
-  object DataflowConstraint {
-
-  }
 
   /**
     * Returns a stratified version of the given AST `root`.
@@ -107,8 +109,37 @@ object Stratifier extends Phase[Root, Root] {
     }
 
 
+  sealed trait AbstractValue
+
+  object AbstractValue {
+
+    case object AnyPrimitive extends AbstractValue
+
+    case class Array() extends AbstractValue
+
+    case class Tag() extends AbstractValue
+
+    case class Lambda() extends AbstractValue
+
+  }
+
+  def lub(e1: AbstractValue, e2: AbstractValue): AbstractValue = ???
+
+  private def fixpoint(root: Root): DependencyGraph = {
+
+    // TODO: Repeatedly reanalyze a function if it calls a function that changes.
+    // This essentially requires a call graph.
+    // What about closures?
+
+    ???
+  }
+
+  private def fixpointDef(def0: Def): DependencyGraph = {
+    ???
+  }
+
   // TODO: This really has to be done in a fixed point...
-  private def constraintGen(exp0: Expression): DependencyGraph = exp0 match {
+  private def fixpointExp(exp0: Expression): DependencyGraph = exp0 match {
     case Expression.Unit(loc) => DependencyGraph.Empty
     case Expression.True(loc) => DependencyGraph.Empty
     case Expression.False(loc) => DependencyGraph.Empty
@@ -224,9 +255,13 @@ object Stratifier extends Phase[Root, Root] {
 
     case Expression.NewLattice(sym, tpe, eff, loc) => ???
 
-    case Expression.Constraint(con, tpe, eff, loc) => getDependencyGraph(con)
+    case Expression.Constraint(con, tpe, eff, loc) =>
+      getDependencyGraph(con)
 
-    case Expression.ConstraintUnion(exp1, exp2, tpe, eff, loc) => ???
+    case Expression.ConstraintUnion(exp1, exp2, tpe, eff, loc) =>
+      val g1 = fixpointExp(exp1)
+      val g2 = fixpointExp(exp2)
+      union(g1, g2)
 
     case Expression.FixpointSolve(exp, stf, tpe, eff, loc) => ???
 
@@ -468,19 +503,19 @@ object Stratifier extends Phase[Root, Root] {
       }
 
     case Expression.FixpointSolve(exp, _, tpe, eff, loc) =>
-      val g = constraintGen(exp)
+      val g = fixpointExp(exp)
       mapN(visitExp(exp), stratify(g, loc)) {
         case (e, s) => Expression.FixpointSolve(e, s, tpe, eff, loc)
       }
 
     case Expression.FixpointCheck(exp, _, tpe, eff, loc) =>
-      val g = constraintGen(exp)
+      val g = fixpointExp(exp)
       mapN(visitExp(exp), stratify(g, loc)) {
         case (e, s) => Expression.FixpointCheck(e, s, tpe, eff, loc)
       }
 
     case Expression.FixpointDelta(exp, _, tpe, eff, loc) =>
-      val g = constraintGen(exp)
+      val g = fixpointExp(exp)
       mapN(visitExp(exp), stratify(g, loc)) {
         case (e, s) => Expression.FixpointDelta(e, s, tpe, eff, loc)
       }
@@ -540,11 +575,11 @@ object Stratifier extends Phase[Root, Root] {
     DependencyGraph(dg1.xs ++ dg2.xs)
 
   /**
-    * Computes the stratification of the given dependency graph `dg` at the given source location `loc`.
+    * Computes the stratification of the given dependency graph `g` at the given source location `loc`.
     *
     * See Database and Knowledge - Base Systems Volume 1 Ullman, Algorithm 3.5 p 133
     */
-  private def stratify(dg: DependencyGraph, loc: SourceLocation): Validation[Ast.Stratification, StratificationError] = {
+  private def stratify(g: DependencyGraph, loc: SourceLocation): Validation[Ast.Stratification, StratificationError] = {
     //
     // Maintain a mutable map from predicate symbols to their (maximum) stratum number.
     //
@@ -559,7 +594,7 @@ object Stratifier extends Phase[Root, Root] {
     //
     // Hence if we ever compute a stratum higher than this number then there is a negative cycle.
     //
-    val maxStratum = dg.xs.size
+    val maxStratum = g.xs.size
 
     //
     // Repeatedly examine the dependency edges.
@@ -575,7 +610,7 @@ object Stratifier extends Phase[Root, Root] {
       changed = false
 
       // Examine each dependency edge in turn.
-      for (edge <- dg.xs) {
+      for (edge <- g.xs) {
         edge match {
           case DependencyEdge.Positive(headSym, bodySym) =>
             // Case 1: The stratum of the head must be in the same or a higher stratum as the body.
@@ -601,7 +636,7 @@ object Stratifier extends Phase[Root, Root] {
 
               // Check if we have found a negative cycle.
               if (newHeadStratum > maxStratum) {
-                return StratificationError(findNegativeCycle(dg), loc).toFailure
+                return StratificationError(findNegativeCycle(bodySym, headSym, g), loc).toFailure
               }
             }
         }
@@ -612,11 +647,27 @@ object Stratifier extends Phase[Root, Root] {
     Ast.Stratification(stratumOf.toMap).toSuccess
   }
 
-  // TODO:
-  private def findNegativeCycle(dg: Stratifier.DependencyGraph): List[Symbol.PredSym] =
-  // TODO
-    Nil
+  /**
+    * Returns a path that forms a cycle with the edge from `src` to `dst` in the given dependency graph `g`.
+    */
+  private def findNegativeCycle(src: Symbol.PredSym, dst: Symbol.PredSym, g: Stratifier.DependencyGraph): List[Symbol.PredSym] = {
+    // Computes a map from symbols to their successors.
+    val m = mutable.Map.empty[Symbol.PredSym, Set[Symbol.PredSym]]
+    for (edge <- g.xs) {
+      edge match {
+        case DependencyEdge.Positive(head, body) =>
+          val s = m.getOrElse(body, Set.empty)
+          m.put(body, s + head)
+        case DependencyEdge.Negative(head, body) =>
+          val s = m.getOrElse(body, Set.empty)
+          m.put(body, s + head)
+      }
+    }
 
+    // TODO: Need some cycle finding algorithm.
+
+    src :: dst :: Nil
+  }
 
   /**
     * Reorders a constraint such that its negated atoms occur last.

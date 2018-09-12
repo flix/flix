@@ -262,12 +262,12 @@ object Interpreter {
       val v2 = cast2constraintset(eval(exp2, env0, henv0, lenv0, root))
       v1.union(v2)
 
-    case Expression.FixpointSolve(exp, tpe, loc) =>
+    case Expression.FixpointSolve(exp, stf, tpe, loc) =>
       val cs = cast2constraintset(eval(exp, env0, henv0, lenv0, root))
       val fixpoint = solve(cs)
       fixpoint.toString
 
-    case Expression.FixpointCheck(exp, tpe, loc) =>
+    case Expression.FixpointCheck(exp, stf, tpe, loc) =>
       // TODO
       val cs = cast2constraintset(eval(exp, env0, henv0, lenv0, root))
       println(cs)
@@ -280,7 +280,7 @@ object Interpreter {
         case ex: RuleError => Value.False
       }
 
-    case Expression.FixpointDelta(exp, tpe, loc) =>
+    case Expression.FixpointDelta(exp, stf, tpe, loc) =>
       val cs = cast2constraintset(eval(exp, env0, henv0, lenv0, root))
       deltaSolve(cs)
 

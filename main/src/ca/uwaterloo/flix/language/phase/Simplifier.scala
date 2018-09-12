@@ -514,15 +514,15 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
 
       case TypedAst.Expression.FixpointSolve(exp, stf, tpe, eff, loc) =>
         val e = visitExp(exp)
-        SimplifiedAst.Expression.FixpointSolve(e, tpe, loc)
+        SimplifiedAst.Expression.FixpointSolve(e, stf, tpe, loc)
 
       case TypedAst.Expression.FixpointCheck(exp, stf, tpe, eff, loc) =>
         val e = visitExp(exp)
-        SimplifiedAst.Expression.FixpointCheck(e, tpe, loc)
+        SimplifiedAst.Expression.FixpointCheck(e, stf, tpe, loc)
 
       case TypedAst.Expression.FixpointDelta(exp, stf, tpe, eff, loc) =>
         val e = visitExp(exp)
-        SimplifiedAst.Expression.FixpointDelta(e, tpe, loc)
+        SimplifiedAst.Expression.FixpointDelta(e, stf, tpe, loc)
 
       case TypedAst.Expression.UserError(tpe, eff, loc) =>
         SimplifiedAst.Expression.UserError(tpe, loc)
@@ -1159,17 +1159,17 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         val e2 = visit(exp2)
         SimplifiedAst.Expression.ConstraintUnion(e1, e2, tpe, loc)
 
-      case SimplifiedAst.Expression.FixpointSolve(exp, tpe, loc) =>
+      case SimplifiedAst.Expression.FixpointSolve(exp, stf, tpe, loc) =>
         val e = visit(exp)
-        SimplifiedAst.Expression.FixpointSolve(e, tpe, loc)
+        SimplifiedAst.Expression.FixpointSolve(e, stf, tpe, loc)
 
-      case SimplifiedAst.Expression.FixpointCheck(exp, tpe, loc) =>
+      case SimplifiedAst.Expression.FixpointCheck(exp, stf, tpe, loc) =>
         val e = visit(exp)
-        SimplifiedAst.Expression.FixpointCheck(e, tpe, loc)
+        SimplifiedAst.Expression.FixpointCheck(e, stf, tpe, loc)
 
-      case SimplifiedAst.Expression.FixpointDelta(exp, tpe, loc) =>
+      case SimplifiedAst.Expression.FixpointDelta(exp, stf, tpe, loc) =>
         val e = visit(exp)
-        SimplifiedAst.Expression.FixpointDelta(e, tpe, loc)
+        SimplifiedAst.Expression.FixpointDelta(e, stf, tpe, loc)
 
       case SimplifiedAst.Expression.UserError(tpe, loc) => e
       case SimplifiedAst.Expression.HoleError(sym, tpe, eff, loc) => e

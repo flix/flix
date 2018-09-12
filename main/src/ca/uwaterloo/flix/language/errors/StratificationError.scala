@@ -24,7 +24,7 @@ import ca.uwaterloo.flix.util.vt.VirtualTerminal
 /**
   * An error raised to indicate that a constraint set is not stratified.
   */
-case class StratificationError(path: List[Symbol.PredSym], loc: SourceLocation) extends CompilationError {
+case class StratificationError(cycle: List[Symbol.PredSym], loc: SourceLocation) extends CompilationError {
   val kind: String = "Stratification Error"
   val source: Source = loc.source
   val message: VirtualTerminal = {
@@ -32,11 +32,9 @@ case class StratificationError(path: List[Symbol.PredSym], loc: SourceLocation) 
     vt << Line(kind, source.format) << NewLine
     vt << ">> Stratification Error." << NewLine
     vt << NewLine
-    vt << "The following path contains a negative cycle:" << NewLine
+    vt << "The following predicate symbols form a negative cycle:" << NewLine
     vt << Indent << NewLine
-    for (sym <- path) {
-      vt << sym.toString << ", "
-    }
+    vt << cycle.mkString(", ")
     vt << Dedent << NewLine
   }
 }
