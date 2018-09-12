@@ -18,14 +18,13 @@ package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.language.phase.Stratifier
 import ca.uwaterloo.flix.util.vt.VirtualString._
 import ca.uwaterloo.flix.util.vt.VirtualTerminal
 
 /**
   * An error raised to indicate that a constraint set is not stratified.
   */
-case class StratificationError(path: List[Stratifier.PredicateSym], loc: SourceLocation) extends CompilationError {
+case class StratificationError(path: List[Symbol.PredSym], loc: SourceLocation) extends CompilationError {
   val kind: String = "Stratification Error"
   val source: Source = loc.source
   val message: VirtualTerminal = {

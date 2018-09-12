@@ -46,26 +46,17 @@ import scala.collection.mutable
   */
 object Stratifier extends Phase[Root, Root] {
 
-  // TODO: Remove predicate symbol.
-  sealed trait PredicateSym {
-    def sym: Symbol.PredSym
-  }
-
-  object PredicateSym {
-
-    case class Rel(sym: Symbol.RelSym) extends PredicateSym
-
-    case class Lat(sym: Symbol.LatSym) extends PredicateSym
-
-  }
+  // TODO: It is important to understand that the stratification is different depending on the constraint system.
+  // Since the exact constraints are not known, we cannot actually separate the constraints until at runtime!
+  // At compile time we know the stratification, just not the exact constraints.
 
   sealed trait DependencyEdge
 
   object DependencyEdge {
 
-    case class Positive(head: PredicateSym, body: PredicateSym) extends DependencyEdge
+    case class Positive(head: Symbol.PredSym, body: Symbol.PredSym) extends DependencyEdge
 
-    case class Negative(head: PredicateSym, body: PredicateSym) extends DependencyEdge
+    case class Negative(head: Symbol.PredSym, body: Symbol.PredSym) extends DependencyEdge
 
   }
 
@@ -96,26 +87,26 @@ object Stratifier extends Phase[Root, Root] {
     * Returns a stratified version of the given AST `root`.
     */
   def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationError] = flix.phase("Stratifier") {
-
-
-    root.defs map {
-      case (sym, defn) => visitDef(defn)
+    // Stratify every definition.
+    val defsVal = traverse(root.defs) {
+      case (sym, defn) => visitDef(defn).map(d => sym -> d)
     }
 
-    return root.toSuccess
+    mapN(defsVal) {
+      // Reassemble the AST.
+      case ds => root.copy(defs = ds.toMap)
+    }
   }
 
   /**
-    * Stratifies any constraint set in the given definition `def0`.
+    * Performs stratification of the given definition `def0`.
     */
-  private def visitDef(def0: TypedAst.Def): Unit = {
-    visitExp(def0.exp)
-  }
+  private def visitDef(def0: Def): Validation[Def, CompilationError] =
+    visitExp(def0.exp) map {
+      case e => def0.copy(exp = e)
+    }
 
 
-  /**
-    * Stratifies any constraint set in the given expression `exp0`.
-    */
   // TODO: This really has to be done in a fixed point...
   private def constraintGen(exp0: Expression): DependencyGraph = exp0 match {
     case Expression.Unit(loc) => DependencyGraph.Empty
@@ -248,7 +239,7 @@ object Stratifier extends Phase[Root, Root] {
   }
 
   /**
-    * Stratifies any constraint set in the given expression `exp0`.
+    * Performs stratification of the given expression `exp0`.
     *
     * Returns [[Success]] if the expression is stratified. Otherwise returns [[Failure]] with a [[StratificationError]].
     */
@@ -476,40 +467,23 @@ object Stratifier extends Phase[Root, Root] {
         case (e1, e2) => Expression.ConstraintUnion(e1, e2, tpe, eff, loc)
       }
 
-    // TODO: It is important to understand that the stratification is different depending on the constraint system.
-    // Since the exact constraints are not known, we cannot actually separate the constraints until at runtime!
-    // At compile time we know the stratification, just not the exact constraints.
-
     case Expression.FixpointSolve(exp, _, tpe, eff, loc) =>
-      val g = constraintGen(exp) // TODO: Need to obtain the dep. graph. from some program analysis.
-
+      val g = constraintGen(exp)
       mapN(visitExp(exp), stratify(g, loc)) {
         case (e, s) => Expression.FixpointSolve(e, s, tpe, eff, loc)
       }
 
     case Expression.FixpointCheck(exp, _, tpe, eff, loc) =>
-      // TODO: Might need to split this into the program analysis and the checking part...
-      // Compute the dependency graph.
-      val dg = ??? // TODO: From where to get access to the dependency graph?
-
-      // Compute its stratification.
-      stratify(dg, loc).get
-
-      // Solve does not return any constraint set.
-      DependencyGraph.Empty
-      ???
+      val g = constraintGen(exp)
+      mapN(visitExp(exp), stratify(g, loc)) {
+        case (e, s) => Expression.FixpointCheck(e, s, tpe, eff, loc)
+      }
 
     case Expression.FixpointDelta(exp, _, tpe, eff, loc) =>
-      // TODO: Might need to split this into the program analysis and the checking part...
-      // Compute the dependency graph.
-      val dg = ??? // TODO: From where to get access to the dependency graph?
-
-      // Compute its stratification.
-      stratify(dg, loc).get
-
-      // Solve does not return any constraint set.
-      DependencyGraph.Empty
-      ???
+      val g = constraintGen(exp)
+      mapN(visitExp(exp), stratify(g, loc)) {
+        case (e, s) => Expression.FixpointDelta(e, s, tpe, eff, loc)
+      }
 
     case Expression.UserError(tpe, eff, loc) =>
       Expression.UserError(tpe, eff, loc).toSuccess
@@ -533,25 +507,25 @@ object Stratifier extends Phase[Root, Root] {
   /**
     * Optionally returns the predicate symbol of the given head predicate `head0`.
     */
-  private def getHeadPredicateSymbol(head0: Predicate.Head): Option[PredicateSym] = head0 match {
+  private def getHeadPredicateSymbol(head0: Predicate.Head): Option[Symbol.PredSym] = head0 match {
     case Predicate.Head.True(_) => None
     case Predicate.Head.False(_) => None
-    case Predicate.Head.RelAtom(base, sym, terms, loc) => Some(PredicateSym.Rel(sym))
-    case Predicate.Head.LatAtom(base, sym, terms, loc) => Some(PredicateSym.Lat(sym))
+    case Predicate.Head.RelAtom(base, sym, terms, loc) => Some(sym)
+    case Predicate.Head.LatAtom(base, sym, terms, loc) => Some(sym)
   }
 
   /**
     * Optionally returns the predicate symbol of the given body predicate `body0`.
     */
-  private def getDependencyEdge(head: PredicateSym, body0: Predicate.Body): Option[DependencyEdge] = body0 match {
+  private def getDependencyEdge(head: Symbol.PredSym, body0: Predicate.Body): Option[DependencyEdge] = body0 match {
     case Predicate.Body.RelAtom(base, sym, polarity, terms, loc) => polarity match {
-      case Polarity.Positive => Some(DependencyEdge.Positive(head, PredicateSym.Rel(sym)))
-      case Polarity.Negative => Some(DependencyEdge.Negative(head, PredicateSym.Rel(sym)))
+      case Polarity.Positive => Some(DependencyEdge.Positive(head, sym))
+      case Polarity.Negative => Some(DependencyEdge.Negative(head, sym))
     }
 
     case Predicate.Body.LatAtom(base, sym, polarity, terms, loc) => polarity match {
-      case Polarity.Positive => Some(DependencyEdge.Positive(head, PredicateSym.Lat(sym)))
-      case Polarity.Negative => Some(DependencyEdge.Negative(head, PredicateSym.Lat(sym)))
+      case Polarity.Positive => Some(DependencyEdge.Positive(head, sym))
+      case Polarity.Negative => Some(DependencyEdge.Negative(head, sym))
     }
 
     case Predicate.Body.Filter(sym, terms, loc) => None
@@ -576,7 +550,7 @@ object Stratifier extends Phase[Root, Root] {
     //
     // Any predicate symbol not explicitly in the map has a default value of zero.
     //
-    val stratumOf = mutable.Map.empty[PredicateSym, Int]
+    val stratumOf = mutable.Map.empty[Symbol.PredSym, Int]
 
     //
     // Compute the number of dependency edges.
@@ -631,19 +605,15 @@ object Stratifier extends Phase[Root, Root] {
               }
             }
         }
-
       }
     }
 
     // We are done. Successfully return the computed stratification.
-    val xs = stratumOf.foldLeft(Map.empty[Symbol.PredSym, Int]) {
-      case (macc, (sym, int)) => macc + ((sym.sym -> int))
-    }
-    Ast.Stratification(xs).toSuccess
+    Ast.Stratification(stratumOf.toMap).toSuccess
   }
 
   // TODO:
-  private def findNegativeCycle(dg: Stratifier.DependencyGraph): List[PredicateSym] =
+  private def findNegativeCycle(dg: Stratifier.DependencyGraph): List[Symbol.PredSym] =
   // TODO
     Nil
 
@@ -651,7 +621,7 @@ object Stratifier extends Phase[Root, Root] {
   /**
     * Reorders a constraint such that its negated atoms occur last.
     */
-  def reorder(c0: TypedAst.Constraint): TypedAst.Constraint = {
+  def reorder(c0: Constraint): Constraint = {
     /**
       * Returns `true` if the body predicate is negated.
       */
