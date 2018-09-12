@@ -333,9 +333,15 @@ object Stratifier extends Phase[Root, Root] {
         case es => Expression.Tuple(es, tpe, eff, loc)
       }
 
-    case Expression.ArrayLit(elms, tpe, eff, loc) => ???
+    case Expression.ArrayLit(elms, tpe, eff, loc) =>
+      mapN(traverse(elms)(visitExp)) {
+        case es => Expression.ArrayLit(es, tpe, eff, loc)
+      }
 
-    case Expression.ArrayNew(elm, len, tpe, eff, loc) => ???
+    case Expression.ArrayNew(elm, len, tpe, eff, loc) =>
+      mapN(visitExp(elm), visitExp(len)) {
+        case (e, l) => Expression.ArrayNew(e, l, tpe, eff, loc)
+      }
 
     case Expression.ArrayLoad(base, index, tpe, eff, loc) => ???
 
