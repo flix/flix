@@ -133,13 +133,24 @@ object Stratifier extends Phase[Root, Root] {
 
     case class Tag(v: AbstractValue) extends AbstractValue
 
+    case class Array(vs: AbstractValue) extends AbstractValue
+
+    case class Vector(vs: AbstractValue) extends AbstractValue
+
+    case class Tuple(vs: AbstractValue) extends AbstractValue
+
     case object Bot extends AbstractValue
 
   }
 
-  def lub(e1: AbstractValue, e2: AbstractValue): AbstractValue = (e1, e2) match {
+  def join(e1: AbstractValue, e2: AbstractValue): AbstractValue = (e1, e2) match {
+    case (AbstractValue.Bot, _) => e2
+    case (_, AbstractValue.Bot) => e1
     case (AbstractValue.Graph(g1), AbstractValue.Graph(g2)) => AbstractValue.Graph(union(g1, g2))
+
   }
+
+  def joinAll(vs: List[AbstractValue]): AbstractValue = vs.foldLeft(AbstractValue.Bot: AbstractValue)(join)
 
   private def fixpoint(root: Root): DependencyGraph = {
 
@@ -155,6 +166,7 @@ object Stratifier extends Phase[Root, Root] {
   }
 
   // TODO: This really has to be done in a fixed point...
+  // TODO: It seems unlike that this can simplt return an abstract value. It probably will have to return an abstract state...
   private def fixpointExp(exp0: Expression, env0: AbstractEnvironment, l: AbstractLattice): AbstractValue = exp0 match {
     case Expression.Unit(loc) => AbstractValue.AnyVal
     case Expression.True(loc) => AbstractValue.AnyVal
@@ -208,7 +220,7 @@ object Stratifier extends Phase[Root, Root] {
     case Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
       val v1 = fixpointExp(exp2, env0, l)
       val v2 = fixpointExp(exp3, env0, l)
-      lub(v1, v2)
+      join(v1, v2)
 
     case Expression.Match(exp, rules, tpe, eff, loc) =>
       // TODO: Deal with the match value.
@@ -222,11 +234,19 @@ object Stratifier extends Phase[Root, Root] {
 
     case Expression.Tuple(elms, tpe, eff, loc) => ???
 
-    case Expression.ArrayLit(elms, tpe, eff, loc) => ???
+    case Expression.ArrayLit(elms, tpe, eff, loc) =>
+      val vs = elms.map(fixpointExp(_, env0, l))
+      AbstractValue.Array(joinAll(vs))
 
     case Expression.ArrayNew(elm, len, tpe, eff, loc) => ???
 
-    case Expression.ArrayLoad(base, index, tpe, eff, loc) => ???
+    case Expression.ArrayLoad(base, index, tpe, eff, loc) =>
+      // TODO: This does not even use index...
+      fixpointExp(base, env0, l) match {
+        case AbstractValue.Bot => AbstractValue.Bot
+        case AbstractValue.Array(v) => v
+        case v => throw InternalCompilerException(s"Unexpected abstract value: '$v'.")
+      }
 
     case Expression.ArrayLength(base, tpe, eff, loc) => ???
 
@@ -281,7 +301,7 @@ object Stratifier extends Phase[Root, Root] {
     case Expression.ConstraintUnion(exp1, exp2, tpe, eff, loc) =>
       val v1 = fixpointExp(exp1, env0, l)
       val v2 = fixpointExp(exp2, env0, l)
-      lub(v1, v2)
+      join(v1, v2)
 
     case Expression.FixpointSolve(exp, stf, tpe, eff, loc) => ???
 
