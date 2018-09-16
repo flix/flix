@@ -108,22 +108,38 @@ object Stratifier extends Phase[Root, Root] {
       case e => def0.copy(exp = e)
     }
 
+  case class AbstractLattice(m: Map[Symbol.DefnSym, AbstractValue]) {
+    def lookup(sym: Symbol.DefnSym): AbstractValue =
+      m.getOrElse(sym, AbstractValue.Bot)
+  }
+
+  case class AbstractEnvironment(m: Map[Symbol.VarSym, AbstractValue]) {
+    def lookup(sym: Symbol.VarSym): AbstractValue = m.get(sym) match {
+      case None =>
+        // TODO: XXX: Would be better to set formals etc. to bottom than just assume bottom...
+        AbstractValue.Bot
+      //throw InternalCompilerException(s"Unknown value of $sym.")
+      case Some(v) => v
+    }
+  }
 
   sealed trait AbstractValue
 
   object AbstractValue {
 
-    case object AnyPrimitive extends AbstractValue
+    case object AnyVal extends AbstractValue
 
-    case class Array() extends AbstractValue
+    case class Graph(d: DependencyGraph) extends AbstractValue
 
-    case class Tag() extends AbstractValue
+    case class Tag(v: AbstractValue) extends AbstractValue
 
-    case class Lambda() extends AbstractValue
+    case object Bot extends AbstractValue
 
   }
 
-  def lub(e1: AbstractValue, e2: AbstractValue): AbstractValue = ???
+  def lub(e1: AbstractValue, e2: AbstractValue): AbstractValue = (e1, e2) match {
+    case (AbstractValue.Graph(g1), AbstractValue.Graph(g2)) => AbstractValue.Graph(union(g1, g2))
+  }
 
   private def fixpoint(root: Root): DependencyGraph = {
 
@@ -139,44 +155,46 @@ object Stratifier extends Phase[Root, Root] {
   }
 
   // TODO: This really has to be done in a fixed point...
-  private def fixpointExp(exp0: Expression): DependencyGraph = exp0 match {
-    case Expression.Unit(loc) => DependencyGraph.Empty
-    case Expression.True(loc) => DependencyGraph.Empty
-    case Expression.False(loc) => DependencyGraph.Empty
-    case Expression.Char(lit, loc) => DependencyGraph.Empty
-    case Expression.Float32(lit, loc) => DependencyGraph.Empty
-    case Expression.Float64(lit, loc) => DependencyGraph.Empty
-    case Expression.Int8(lit, loc) => DependencyGraph.Empty
-    case Expression.Int16(lit, loc) => DependencyGraph.Empty
-    case Expression.Int32(lit, loc) => DependencyGraph.Empty
-    case Expression.Int64(lit, loc) => DependencyGraph.Empty
-    case Expression.BigInt(lit, loc) => DependencyGraph.Empty
-    case Expression.Str(lit, loc) => DependencyGraph.Empty
+  private def fixpointExp(exp0: Expression, env0: AbstractEnvironment, l: AbstractLattice): AbstractValue = exp0 match {
+    case Expression.Unit(loc) => AbstractValue.AnyVal
+    case Expression.True(loc) => AbstractValue.AnyVal
+    case Expression.False(loc) => AbstractValue.AnyVal
+    case Expression.Char(lit, loc) => AbstractValue.AnyVal
+    case Expression.Float32(lit, loc) => AbstractValue.AnyVal
+    case Expression.Float64(lit, loc) => AbstractValue.AnyVal
+    case Expression.Int8(lit, loc) => AbstractValue.AnyVal
+    case Expression.Int16(lit, loc) => AbstractValue.AnyVal
+    case Expression.Int32(lit, loc) => AbstractValue.AnyVal
+    case Expression.Int64(lit, loc) => AbstractValue.AnyVal
+    case Expression.BigInt(lit, loc) => AbstractValue.AnyVal
+    case Expression.Str(lit, loc) => AbstractValue.AnyVal
 
-    case Expression.Wild(tpe, eff, loc) => DependencyGraph.Empty
+    case Expression.Wild(tpe, eff, loc) => AbstractValue.Bot
 
     case Expression.Var(sym, tpe, eff, loc) =>
-      // TODO: Here we need to do something.
-      DependencyGraph.Empty
+      env0.lookup(sym)
 
     case Expression.Def(sym, tpe, eff, loc) =>
-      // TODO: Here we need to recursively do something.
-      DependencyGraph.Empty
+      l.lookup(sym)
 
-    case Expression.Eff(sym, tpe, eff, loc) => DependencyGraph.Empty
+    case Expression.Eff(sym, tpe, eff, loc) => ???
 
-    case Expression.Hole(sym, tpe, eff, loc) => DependencyGraph.Empty
+    case Expression.Hole(sym, tpe, eff, loc) => ???
 
     case Expression.Lambda(fparam, exp, tpe, eff, loc) =>
       // TODO...
       ???
 
     case Expression.Apply(exp1, exp2, tpe, eff, loc) =>
-      // TODO...
-      ???
+      val v1 = fixpointExp(exp1, env0, l)
+      val v2 = fixpointExp(exp2, env0, l)
+      v1 match {
+        case AbstractValue.Bot => AbstractValue.Bot
+        case _ => ???
+      }
 
     case Expression.Unary(op, exp, tpe, eff, loc) =>
-      ???
+      AbstractValue.AnyVal
 
     case Expression.Binary(op, exp1, exp2, tpe, eff, loc) =>
       ???
@@ -188,8 +206,9 @@ object Stratifier extends Phase[Root, Root] {
       ???
 
     case Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
-
-      ???
+      val v1 = fixpointExp(exp2, env0, l)
+      val v2 = fixpointExp(exp3, env0, l)
+      lub(v1, v2)
 
     case Expression.Match(exp, rules, tpe, eff, loc) =>
       // TODO: Deal with the match value.
@@ -256,12 +275,13 @@ object Stratifier extends Phase[Root, Root] {
     case Expression.NewLattice(sym, tpe, eff, loc) => ???
 
     case Expression.Constraint(con, tpe, eff, loc) =>
-      getDependencyGraph(con)
+      val g = getDependencyGraph(con)
+      AbstractValue.Graph(g)
 
     case Expression.ConstraintUnion(exp1, exp2, tpe, eff, loc) =>
-      val g1 = fixpointExp(exp1)
-      val g2 = fixpointExp(exp2)
-      union(g1, g2)
+      val v1 = fixpointExp(exp1, env0, l)
+      val v2 = fixpointExp(exp2, env0, l)
+      lub(v1, v2)
 
     case Expression.FixpointSolve(exp, stf, tpe, eff, loc) => ???
 
@@ -269,7 +289,7 @@ object Stratifier extends Phase[Root, Root] {
 
     case Expression.FixpointDelta(exp, stf, tpe, eff, loc) => ???
 
-    case Expression.UserError(tpe, eff, loc) => ???
+    case Expression.UserError(tpe, eff, loc) => AbstractValue.Bot
 
   }
 
@@ -503,19 +523,19 @@ object Stratifier extends Phase[Root, Root] {
       }
 
     case Expression.FixpointSolve(exp, _, tpe, eff, loc) =>
-      val g = fixpointExp(exp)
+      val g = getDependencyGraphFromAbstractValue(exp)
       mapN(visitExp(exp), stratify(g, loc)) {
         case (e, s) => Expression.FixpointSolve(e, s, tpe, eff, loc)
       }
 
     case Expression.FixpointCheck(exp, _, tpe, eff, loc) =>
-      val g = fixpointExp(exp)
+      val g = getDependencyGraphFromAbstractValue(exp)
       mapN(visitExp(exp), stratify(g, loc)) {
         case (e, s) => Expression.FixpointCheck(e, s, tpe, eff, loc)
       }
 
     case Expression.FixpointDelta(exp, _, tpe, eff, loc) =>
-      val g = fixpointExp(exp)
+      val g = getDependencyGraphFromAbstractValue(exp)
       mapN(visitExp(exp), stratify(g, loc)) {
         case (e, s) => Expression.FixpointDelta(e, s, tpe, eff, loc)
       }
@@ -523,6 +543,17 @@ object Stratifier extends Phase[Root, Root] {
     case Expression.UserError(tpe, eff, loc) =>
       Expression.UserError(tpe, eff, loc).toSuccess
 
+  }
+
+
+  // TODO: DOC
+  private def getDependencyGraphFromAbstractValue(exp: Expression): DependencyGraph = {
+    // TODO
+    val v = fixpointExp(exp, AbstractEnvironment(Map.empty), AbstractLattice(Map.empty))
+    v match {
+      case AbstractValue.Bot => DependencyGraph.Empty
+      case AbstractValue.Graph(g) => g
+    }
   }
 
   /**
@@ -571,8 +602,8 @@ object Stratifier extends Phase[Root, Root] {
   /**
     * Returns the union of the two dependency graphs.
     */
-  private def union(dg1: DependencyGraph, dg2: DependencyGraph): DependencyGraph =
-    DependencyGraph(dg1.xs ++ dg2.xs)
+  private def union(g1: DependencyGraph, g2: DependencyGraph): DependencyGraph =
+    DependencyGraph(g1.xs ++ g2.xs)
 
   /**
     * Computes the stratification of the given dependency graph `g` at the given source location `loc`.
