@@ -861,17 +861,17 @@ object SymbolicEvaluator {
       /**
         * Fixpoint Solve.
         */
-      case Expression.FixpointSolve(exp, tpe, loc) => throw InternalCompilerException("Not yet supported.")
+      case Expression.FixpointSolve(exp, stf, tpe, loc) => throw InternalCompilerException("Not yet supported.")
 
       /**
         * Fixpoint Check.
         */
-      case Expression.FixpointCheck(exp, tpe, loc) => throw InternalCompilerException("Not yet supported.")
+      case Expression.FixpointCheck(exp, stf, tpe, loc) => throw InternalCompilerException("Not yet supported.")
 
       /**
         * Fixpoint Delta.
         */
-      case Expression.FixpointDelta(exp, tpe, loc) => throw InternalCompilerException("Not yet supported.")
+      case Expression.FixpointDelta(exp, stf, tpe, loc) => throw InternalCompilerException("Not yet supported.")
 
       /**
         * User Error.

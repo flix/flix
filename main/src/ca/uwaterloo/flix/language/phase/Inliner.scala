@@ -198,17 +198,17 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         val e2 = visit(exp2)
         Expression.ConstraintUnion(e1, e2, tpe, loc)
 
-      case Expression.FixpointSolve(exp, tpe, loc) =>
+      case Expression.FixpointSolve(exp, stf, tpe, loc) =>
         val e = visit(exp)
-        Expression.FixpointSolve(e, tpe, loc)
+        Expression.FixpointSolve(e, stf, tpe, loc)
 
-      case Expression.FixpointCheck(exp, tpe, loc) =>
+      case Expression.FixpointCheck(exp, stf, tpe, loc) =>
         val e = visit(exp)
-        Expression.FixpointCheck(e, tpe, loc)
+        Expression.FixpointCheck(e, stf, tpe, loc)
 
-      case Expression.FixpointDelta(exp, tpe, loc) =>
+      case Expression.FixpointDelta(exp, stf, tpe, loc) =>
         val e = visit(exp)
-        Expression.FixpointDelta(e, tpe, loc)
+        Expression.FixpointDelta(e, stf, tpe, loc)
 
       case Expression.UserError(_, _) => exp0
       case Expression.HoleError(_, _, _, _) => exp0
@@ -344,17 +344,17 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       val e2 = renameAndSubstitute(exp2, env0)
       Expression.ConstraintUnion(exp1, exp2, tpe, loc)
 
-    case Expression.FixpointSolve(exp, tpe, loc) =>
+    case Expression.FixpointSolve(exp, stf, tpe, loc) =>
       val e = renameAndSubstitute(exp, env0)
-      Expression.FixpointSolve(e, tpe, loc)
+      Expression.FixpointSolve(e, stf, tpe, loc)
 
-    case Expression.FixpointCheck(exp, tpe, loc) =>
+    case Expression.FixpointCheck(exp, stf, tpe, loc) =>
       val e = renameAndSubstitute(exp, env0)
-      Expression.FixpointCheck(e, tpe, loc)
+      Expression.FixpointCheck(e, stf, tpe, loc)
 
-    case Expression.FixpointDelta(exp, tpe, loc) =>
+    case Expression.FixpointDelta(exp, stf, tpe, loc) =>
       val e = renameAndSubstitute(exp, env0)
-      Expression.FixpointDelta(e, tpe, loc)
+      Expression.FixpointDelta(e, stf, tpe, loc)
 
     case Expression.UserError(_, _) => exp0
     case Expression.HoleError(_, _, _, _) => exp0
@@ -588,17 +588,17 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     //
     // Fixpoint Solve expressions are atomic if its argument is.
     //
-    case Expression.FixpointSolve(exp, tpe, loc) => isAtomic(exp)
+    case Expression.FixpointSolve(exp, stf, tpe, loc) => isAtomic(exp)
 
     //
     // Fixpoint Check expressions are atomic if its argument is.
     //
-    case Expression.FixpointCheck(exp, tpe, loc) => isAtomic(exp)
+    case Expression.FixpointCheck(exp, stf, tpe, loc) => isAtomic(exp)
 
     //
     // Fixpoint Delta expressions are atomic if its argument is.
     //
-    case Expression.FixpointDelta(exp, tpe, loc) => isAtomic(exp)
+    case Expression.FixpointDelta(exp, stf, tpe, loc) => isAtomic(exp)
 
     //
     // Errors are atomic.

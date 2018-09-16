@@ -262,27 +262,26 @@ object Interpreter {
       val v2 = cast2constraintset(eval(exp2, env0, henv0, lenv0, root))
       v1.union(v2)
 
-    case Expression.FixpointSolve(exp, tpe, loc) =>
+    case Expression.FixpointSolve(exp, stf, tpe, loc) =>
       val cs = cast2constraintset(eval(exp, env0, henv0, lenv0, root))
-      val fixpoint = solve(cs)
+      val fixpoint = solve(cs, stf)
       fixpoint.toString
 
-    case Expression.FixpointCheck(exp, tpe, loc) =>
+    case Expression.FixpointCheck(exp, stf, tpe, loc) =>
       // TODO
       val cs = cast2constraintset(eval(exp, env0, henv0, lenv0, root))
       println(cs)
-      val solver = mkSolver(cs)
       try {
-        val fixpoint = solve(cs)
+        val fixpoint = solve(cs, stf)
         println(fixpoint)
         Value.True
       } catch {
         case ex: RuleError => Value.False
       }
 
-    case Expression.FixpointDelta(exp, tpe, loc) =>
+    case Expression.FixpointDelta(exp, stf, tpe, loc) =>
       val cs = cast2constraintset(eval(exp, env0, henv0, lenv0, root))
-      deltaSolve(cs)
+      deltaSolve(cs, stf)
 
     case Expression.UserError(_, loc) => throw new NotImplementedError(loc.reified)
 
@@ -1060,15 +1059,22 @@ object Interpreter {
   /**
     * Computes the fixed point of the given constraint set `cs`.
     */
-  private def solve(cs: ConstraintSet)(implicit flix: Flix): Fixpoint = {
-    val solver = mkSolver(cs)
+  private def solve(cs: ConstraintSet, stf: Ast.Stratification)(implicit flix: Flix): Fixpoint = {
+    // Configure the fixpoint solver based on the Flix options.
+    val options = new FixpointOptions
+    options.setMonitored(flix.options.monitor)
+    options.setThreads(flix.options.threads)
+    options.setVerbose(flix.options.verbosity == Verbosity.Verbose)
+
+    // Construct the solver.
+    val solver = new Solver(cs.complete(), options)
     solver.solve()
   }
 
   /**
     * Returns the minimal set of facts that fails to satisfy the given constraint set.
     */
-  private def deltaSolve(cs: ConstraintSet)(implicit flix: Flix): String = {
+  private def deltaSolve(cs: ConstraintSet, stf: Ast.Stratification)(implicit flix: Flix): String = {
     // Configure the fixpoint solver based on the Flix options.
     val options = new FixpointOptions
     options.setMonitored(flix.options.monitor)
@@ -1078,20 +1084,6 @@ object Interpreter {
     // Construct the solver.
     val deltaSolver = new DeltaSolver(cs, options)
     deltaSolver.deltaSolve()
-  }
-
-  /**
-    * Returns a fixpoint solver for the given constraint set `cs`.
-    */
-  private def mkSolver(cs: ConstraintSet)(implicit flix: Flix): Solver = {
-    // Configure the fixpoint solver based on the Flix options.
-    val options = new FixpointOptions
-    options.setMonitored(flix.options.monitor)
-    options.setThreads(flix.options.threads)
-    options.setVerbose(flix.options.verbosity == Verbosity.Verbose)
-
-    // Construct the solver.
-    new Solver(cs.complete(), options)
   }
 
   /**

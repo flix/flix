@@ -387,15 +387,15 @@ object PrettyPrinter {
         case Expression.ConstraintUnion(exp1, exp2, tpe, loc) =>
           ??? // TODO: ConstraintUnion
 
-        case Expression.FixpointSolve(exp, tpe, loc) =>
+        case Expression.FixpointSolve(exp, stf, tpe, loc) =>
           vt.text("solve ")
           visitExp(exp)
 
-        case Expression.FixpointCheck(exp, tpe, loc) =>
+        case Expression.FixpointCheck(exp, stf, tpe, loc) =>
           vt.text("check ")
           visitExp(exp)
 
-        case Expression.FixpointDelta(exp, tpe, loc) =>
+        case Expression.FixpointDelta(exp, stf, tpe, loc) =>
           vt.text("delta ")
           visitExp(exp)
 

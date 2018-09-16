@@ -402,23 +402,23 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       //
       // Fixpoint Solve.
       //
-      case Expression.FixpointSolve(exp, tpe, loc) =>
+      case Expression.FixpointSolve(exp, stf, tpe, loc) =>
         val e = visitExp(exp, env0)
-        Expression.FixpointSolve(e, tpe, loc)
+        Expression.FixpointSolve(e, stf, tpe, loc)
 
       //
       // Fixpoint Check.
       //
-      case Expression.FixpointCheck(exp, tpe, loc) =>
+      case Expression.FixpointCheck(exp, stf, tpe, loc) =>
         val e = visitExp(exp, env0)
-        Expression.FixpointCheck(e, tpe, loc)
+        Expression.FixpointCheck(e, stf, tpe, loc)
 
       //
       // Fixpoint Delta.
       //
-      case Expression.FixpointDelta(exp, tpe, loc) =>
+      case Expression.FixpointDelta(exp, stf, tpe, loc) =>
         val e = visitExp(exp, env0)
-        Expression.FixpointDelta(e, tpe, loc)
+        Expression.FixpointDelta(e, stf, tpe, loc)
 
       //
       // Error Expressions.

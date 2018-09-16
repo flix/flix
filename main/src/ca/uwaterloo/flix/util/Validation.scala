@@ -174,6 +174,16 @@ object Validation {
   }
 
   /**
+    * Maps over t1.
+    */
+  def mapN[T1, U, E](t1: Validation[T1, E])
+                    (f: T1 => U): Validation[U, E] =
+    t1 match {
+      case Success(v1) => Success(f(v1))
+      case _ => Failure(t1.errors)
+    }
+
+  /**
     * Maps over t1 and t2.
     */
   def mapN[T1, T2, U, E](t1: Validation[T1, E], t2: Validation[T2, E])

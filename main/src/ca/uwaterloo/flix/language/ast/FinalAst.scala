@@ -209,11 +209,11 @@ object FinalAst {
 
     case class ConstraintUnion(exp1: FinalAst.Expression, exp2: FinalAst.Expression, tpe: Type, loc: SourceLocation) extends FinalAst.Expression
 
-    case class FixpointSolve(exp: FinalAst.Expression, tpe: Type, loc: SourceLocation) extends FinalAst.Expression
+    case class FixpointSolve(exp: FinalAst.Expression, stf: Ast.Stratification, tpe: Type, loc: SourceLocation) extends FinalAst.Expression
 
-    case class FixpointCheck(exp: FinalAst.Expression, tpe: Type, loc: SourceLocation) extends FinalAst.Expression
+    case class FixpointCheck(exp: FinalAst.Expression, stf: Ast.Stratification, tpe: Type, loc: SourceLocation) extends FinalAst.Expression
 
-    case class FixpointDelta(exp: FinalAst.Expression, tpe: Type, loc: SourceLocation) extends FinalAst.Expression
+    case class FixpointDelta(exp: FinalAst.Expression, stf: Ast.Stratification, tpe: Type, loc: SourceLocation) extends FinalAst.Expression
 
     case class UserError(tpe: Type, loc: SourceLocation) extends FinalAst.Expression
 
