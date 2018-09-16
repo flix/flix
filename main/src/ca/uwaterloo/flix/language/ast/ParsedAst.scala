@@ -600,7 +600,12 @@ object ParsedAst {
       * Record Expression.
       */
     case class Record(sp1: SourcePosition, fields: Seq[(Name.Ident, ParsedAst.Expression)], sp2: SourcePosition) extends ParsedAst.Expression
-    
+
+    /**
+      * Record Extension Expression.
+      */
+    case class RecordExtension(sp1: SourcePosition, fields: Seq[(Name.Ident, ParsedAst.Expression)], base: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+
     /**
       * ArrayLit Expression.
       *
