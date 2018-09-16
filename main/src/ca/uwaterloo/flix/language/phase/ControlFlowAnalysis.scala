@@ -45,7 +45,7 @@ object ControlFlowAnalysis {
   def join(e1: AbstractValue, e2: AbstractValue): AbstractValue = (e1, e2) match {
     case (AbstractValue.Bot, _) => e2
     case (_, AbstractValue.Bot) => e1
-    case (AbstractValue.Graph(g1), AbstractValue.Graph(g2)) => AbstractValue.Graph(union(g1, g2))
+    case (AbstractValue.Graph(g1), AbstractValue.Graph(g2)) => AbstractValue.Graph(Stratifier.union(g1, g2))
 
   }
 

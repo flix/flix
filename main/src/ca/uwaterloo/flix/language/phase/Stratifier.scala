@@ -407,7 +407,7 @@ object Stratifier extends Phase[Root, Root] {
   /**
     * Returns the union of the two dependency graphs.
     */
-  private def union(g1: DependencyGraph, g2: DependencyGraph): DependencyGraph =
+  def union(g1: DependencyGraph, g2: DependencyGraph): DependencyGraph =
     DependencyGraph(g1.xs ++ g2.xs)
 
   /**
