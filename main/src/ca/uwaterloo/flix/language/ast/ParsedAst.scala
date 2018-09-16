@@ -607,6 +607,11 @@ object ParsedAst {
     case class RecordExtension(sp1: SourcePosition, fields: Seq[(Name.Ident, ParsedAst.Expression)], base: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
+      * Record Projection Expression.
+      */
+    case class RecordProject(base: ParsedAst.Expression, label: Name.Ident, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
       * ArrayLit Expression.
       *
       * @param sp1  the position of the first character in the expression.

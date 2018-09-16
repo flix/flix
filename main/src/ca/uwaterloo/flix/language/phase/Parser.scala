@@ -656,6 +656,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
     }
 
+    def RecordProject: Rule1[ParsedAst.Expression] = rule {
+      Postfix ~ zeroOrMore(optWS ~ "." ~ Names.Field ~ SP ~> ParsedAst.Expression.RecordProject)
+    }
+
     def Postfix: Rule1[ParsedAst.Expression] = rule {
       ArraySlice ~ zeroOrMore(optWS ~ "." ~ Names.Definition ~ ArgumentList ~ SP ~> ParsedAst.Expression.Postfix)
     }
@@ -750,7 +754,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def FList: Rule1[ParsedAst.Expression] = rule {
-      Postfix ~ optional(optWS ~ SP ~ atomic("::") ~ SP ~ optWS ~ Expression ~> ParsedAst.Expression.FCons)
+      RecordProject ~ optional(optWS ~ SP ~ atomic("::") ~ SP ~ optWS ~ Expression ~> ParsedAst.Expression.FCons)
     }
 
     def FSet: Rule1[ParsedAst.Expression.FSet] = rule {
