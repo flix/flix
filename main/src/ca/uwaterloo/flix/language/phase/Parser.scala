@@ -582,7 +582,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Primary: Rule1[ParsedAst.Expression] = rule {
-      LetRec | LetMatch | IfThenElse | Match | LambdaMatch | Switch | TryCatch | Native | Lambda | Tuple |
+      LetRec | LetMatch | IfThenElse | Match | LambdaMatch | Switch | TryCatch | Native | Lambda | Tuple | Record |
         ArrayLit | ArrayNew | ArrayLength | VectorLit | VectorNew | VectorLength | FNil | FSet | FMap |
         NewRelationOrLattice | FixpointSolve | FixpointCheck | FixpointDelta | ConstraintSeq | Literal |
         HandleWith | Existential | Universal | UnaryLambda | QName | Wild | Tag | SName | Hole | UserError
@@ -694,6 +694,16 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Tuple: Rule1[ParsedAst.Expression] = rule {
       SP ~ "(" ~ optWS ~ zeroOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ SP ~> ParsedAst.Expression.Tuple
+    }
+
+    def Record: Rule1[ParsedAst.Expression] = {
+      def Field: Rule1[(Name.Ident, ParsedAst.Expression)] = rule {
+        Names.Field ~ optWS ~ atomic("=") ~ optWS ~ Expression ~> ((f: Name.Ident, e: ParsedAst.Expression) => (f, e))
+      }
+
+      rule {
+        SP ~ "%{" ~ optWS ~ zeroOrMore(Field).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.Record
+      }
     }
 
     def ArrayLit: Rule1[ParsedAst.Expression] = rule {
@@ -1185,6 +1195,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     def Handler: Rule1[Name.Ident] = LowerCaseName
 
     def Effect: Rule1[Name.Ident] = UpperCaseName
+
+    def Field: Rule1[Name.Ident] = LowerCaseName
 
     def Hole: Rule1[Name.Ident] = LowerCaseName
 

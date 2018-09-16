@@ -597,6 +597,11 @@ object ParsedAst {
     case class Tuple(sp1: SourcePosition, elms: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
+      * Record Expression.
+      */
+    case class Record(sp1: SourcePosition, fields: Seq[(Name.Ident, ParsedAst.Expression)], sp2: SourcePosition) extends ParsedAst.Expression
+    
+    /**
       * ArrayLit Expression.
       *
       * @param sp1  the position of the first character in the expression.
