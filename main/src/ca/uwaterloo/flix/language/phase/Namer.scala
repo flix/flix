@@ -644,6 +644,24 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case es => NamedAst.Expression.Tuple(es, Type.freshTypeVar(), loc)
       }
 
+    case WeededAst.Expression.RecordEmpty(loc) =>
+      ???
+
+    case WeededAst.Expression.RecordExtension(base, label, exp, loc) =>
+      mapN(visitExp(base, env0, tenv0), visitExp(exp, env0, tenv0)) {
+        case (b, e) => ???
+      }
+
+    case WeededAst.Expression.RecordProjection(base, label, loc) =>
+      mapN(visitExp(base, env0, tenv0)) {
+        case b => ???
+      }
+
+    case WeededAst.Expression.RecordRestriction(base, label, loc) =>
+      mapN(visitExp(base, env0, tenv0)) {
+        case b => ???
+      }
+
     case WeededAst.Expression.ArrayLit(elms, loc) =>
       traverse(elms)(e => visitExp(e, env0, tenv0)) map {
         case es => NamedAst.Expression.ArrayLit(es, Type.freshTypeVar(), loc)
