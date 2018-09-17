@@ -511,6 +511,18 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
             es <- traverse(elms)(e => visit(e, tenv0))
           } yield ResolvedAst.Expression.Tuple(es, tvar, loc)
 
+        case NamedAst.Expression.RecordEmpty(tvar, loc) =>
+          ???
+
+        case NamedAst.Expression.RecordExtension(base, label, exp, tvar, loc) =>
+          ???
+
+        case NamedAst.Expression.RecordProjection(base, label, tvar, loc) =>
+          ???
+
+        case NamedAst.Expression.RecordRestriction(base, label, tvar, loc) =>
+          ???
+
         case NamedAst.Expression.ArrayLit(elms, tvar, loc) =>
           for {
             es <- traverse(elms)(e => visit(e, tenv0))
