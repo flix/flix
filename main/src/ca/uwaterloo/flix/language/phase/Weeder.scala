@@ -601,6 +601,51 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         case xs => WeededAst.Expression.Tuple(xs, mkSL(sp1, sp2))
       }
 
+    case ParsedAst.Expression.RecordLiteral(sp1, fields, sp2) =>
+      val fieldsVal = traverse(fields) {
+        case ParsedAst.RecordField(fsp1, label, exp, fsp2) =>
+          mapN(visitExp(exp)) {
+            case e => label -> e
+          }
+      }
+
+      mapN(fieldsVal) {
+        case fs =>
+          // Rewrite into a sequence of nested record extensions.
+          val zero = WeededAst.Expression.RecordEmpty(mkSL(sp1, sp2))
+          fs.foldLeft(zero: WeededAst.Expression) {
+            case (acc, (label, exp)) => WeededAst.Expression.RecordExtension(acc, label, exp, mkSL(sp1, sp2))
+          }
+      }
+
+    case ParsedAst.Expression.RecordExtension(sp1, fields, base, sp2) =>
+      val fieldsVal = traverse(fields) {
+        case ParsedAst.RecordField(fsp1, label, exp, fsp2) =>
+          mapN(visitExp(exp)) {
+            case e => label -> e
+          }
+      }
+
+      mapN(visitExp(base), fieldsVal) {
+        case (b, fs) =>
+          // Rewrite into a sequence of nested record extensions.
+          fs.foldLeft(b) {
+            case (acc, (label, exp)) => WeededAst.Expression.RecordExtension(acc, label, exp, mkSL(sp1, sp2))
+          }
+      }
+
+    case ParsedAst.Expression.RecordProjection(base, label, sp2) =>
+      val sp1 = leftMostSourcePosition(base)
+      mapN(visitExp(base)) {
+        case b => WeededAst.Expression.RecordProjection(b, label, mkSL(sp1, sp2))
+      }
+
+    case ParsedAst.Expression.RecordRestriction(base, label, sp2) =>
+      val sp1 = leftMostSourcePosition(base)
+      mapN(visitExp(base)) {
+        case b => WeededAst.Expression.RecordRestriction(b, label, mkSL(sp1, sp2))
+      }
+
     case ParsedAst.Expression.ArrayLit(sp1, elms, sp2) =>
       traverse(elms)(e => visitExp(e)) map {
         case es => WeededAst.Expression.ArrayLit(es, mkSL(sp1, sp2))
@@ -1655,6 +1700,10 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.Switch(sp1, _, _) => sp1
     case ParsedAst.Expression.Tag(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Tuple(sp1, _, _) => sp1
+    case ParsedAst.Expression.RecordLiteral(sp1, _, _) => sp1
+    case ParsedAst.Expression.RecordExtension(sp1, _, _, _) => sp1
+    case ParsedAst.Expression.RecordProjection(base, _, _) => leftMostSourcePosition(base)
+    case ParsedAst.Expression.RecordRestriction(base, _, _) => leftMostSourcePosition(base)
     case ParsedAst.Expression.ArrayLit(sp1, _, _) => sp1
     case ParsedAst.Expression.ArrayNew(sp1, _, _, _) => sp1
     case ParsedAst.Expression.ArrayLoad(base, _, _) => leftMostSourcePosition(base)
