@@ -1197,6 +1197,15 @@ object ParsedAst {
     case class Tuple(sp1: SourcePosition, elms: Seq[ParsedAst.Type], sp2: SourcePosition) extends ParsedAst.Type
 
     /**
+      * Record Type.
+      *
+      * @param sp1  the position of the first character in the type.
+      * @param elms the types of the fields.
+      * @param sp2  the position of the last character in the type.
+      */
+    case class Record(sp1: SourcePosition, fields: Seq[ParsedAst.RecordFieldType], sp2: SourcePosition) extends ParsedAst.Type
+
+    /**
       * Nat Type.
       *
       * @param sp1 the position of the first character in the type.
@@ -1204,7 +1213,6 @@ object ParsedAst {
       * @param sp2 the position of the last character in the type.
       */
     case class Nat(sp1: SourcePosition, len: ParsedAst.Literal.Int32, sp2: SourcePosition) extends ParsedAst.Type
-
 
     /**
       * Arrow Type.
@@ -1427,5 +1435,15 @@ object ParsedAst {
     * @param sp2   the position of the last character in the field.
     */
   case class RecordField(sp1: SourcePosition, label: Name.Ident, exp: ParsedAst.Expression, sp2: SourcePosition)
+
+  /**
+    * Record Field Type.
+    *
+    * @param sp1   the position of the first character in the field.
+    * @param label the label of the field.
+    * @param tpe   the type of the field.
+    * @param sp2   the position of the last character in the field.
+    */
+  case class RecordFieldType(sp1: SourcePosition, label: Name.Ident, tpe: ParsedAst.Type, sp2: SourcePosition)
 
 }

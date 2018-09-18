@@ -971,7 +971,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Primary: Rule1[ParsedAst.Type] = rule {
-      Arrow | Nat | Tuple | Native | Var | Ambiguous
+      Arrow | Nat | Tuple | Record | Native | Var | Ambiguous
     }
 
     def Arrow: Rule1[ParsedAst.Type] = rule {
@@ -997,6 +997,16 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
       rule {
         Unit | Singleton | Tuple
+      }
+    }
+
+    def Record: Rule1[ParsedAst.Type] = {
+      def RecordFieldType: Rule1[ParsedAst.RecordFieldType] = rule {
+        SP ~ Names.Field ~ optWS ~ ":" ~ optWS ~ Type ~ SP ~> ParsedAst.RecordFieldType
+      }
+
+      rule {
+        SP ~ atomic("%{") ~ optWS ~ zeroOrMore(RecordFieldType).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Type.Record
       }
     }
 
