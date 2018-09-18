@@ -631,7 +631,6 @@ object ParsedAst {
       * @param label the label to remove from the record.
       * @param sp2   the position of the last character in the expression.
       */
-    // TODO: Actually parse...
     case class RecordRestriction(base: ParsedAst.Expression, label: Name.Ident, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**

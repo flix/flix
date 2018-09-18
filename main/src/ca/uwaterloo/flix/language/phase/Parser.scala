@@ -520,7 +520,13 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Infix: Rule1[ParsedAst.Expression] = rule {
-      Special ~ zeroOrMore(optWS ~ "`" ~ Names.QualifiedDefinition ~ "`" ~ optWS ~ Special ~ SP ~> ParsedAst.Expression.Infix)
+      RecordRestriction ~ zeroOrMore(optWS ~ "`" ~ Names.QualifiedDefinition ~ "`" ~ optWS ~ Special ~ SP ~> ParsedAst.Expression.Infix)
+    }
+
+    // TODO: Does this belong here in the precedence hierarchy?
+
+    def RecordRestriction: Rule1[ParsedAst.Expression] = rule {
+      Special ~ optional(optWS ~ atomic("%%%") ~ optWS ~ Names.Field ~ SP ~> ParsedAst.Expression.RecordRestriction)
     }
 
     def Special: Rule1[ParsedAst.Expression] = {
@@ -532,7 +538,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
       // NB: We allow any operator, other than a reserved operator, to be matched by this rule.
       def Reserved3: Rule1[String] = rule {
-        capture("<<<" | ">>>")
+        capture("<<<" | ">>>" | "%%%")
       }
 
       // Match any two character operator which is not reserved.
