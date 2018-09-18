@@ -129,6 +129,14 @@ object ResolvedAst {
 
     case class Tuple(elms: List[ResolvedAst.Expression], tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
+    case class RecordEmpty(tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+
+    case class RecordExtension(base: ResolvedAst.Expression, label: Name.Ident, exp: ResolvedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+
+    case class RecordProjection(base: ResolvedAst.Expression, label: Name.Ident, tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+
+    case class RecordRestriction(base: ResolvedAst.Expression, label: Name.Ident, tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+
     case class ArrayLit(elms: List[ResolvedAst.Expression], tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class ArrayNew(elm: ResolvedAst.Expression, len: ResolvedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
