@@ -1269,10 +1269,20 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
       }
     case NamedAst.Type.Enum(sym) =>
       Type.Enum(sym, Kind.Star).toSuccess
+
     case NamedAst.Type.Tuple(elms0, loc) =>
       for (
         elms <- traverse(elms0)(tpe => lookupType(tpe, ns0, root))
       ) yield Type.mkTuple(elms)
+
+    case NamedAst.Type.RecordEmpty(loc) =>
+      Type.RecordEmpty.toSuccess
+
+    case NamedAst.Type.RecordExtension(base, lab, field, loc) =>
+      for {
+        b <- lookupType(base, ns0, root)
+        f <- lookupType(field, ns0, root)
+      } yield Type.RecordExtension(b, lab, f)
 
     case NamedAst.Type.Nat(len, loc) => Type.Succ(len, Type.Zero).toSuccess
 

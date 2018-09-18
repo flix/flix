@@ -280,7 +280,9 @@ object NamedAst {
 
     case class Tuple(elms: List[NamedAst.Type], loc: SourceLocation) extends NamedAst.Type
 
-    case class Record(fields: List[(Name.Ident, NamedAst.Type)], loc: SourceLocation) extends NamedAst.Type
+    case class RecordEmpty(loc: SourceLocation) extends NamedAst.Type
+
+    case class RecordExtension(base: NamedAst.Type, label: Name.Ident, field: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
 
     case class Nat(len: Int, loc: SourceLocation) extends NamedAst.Type
 

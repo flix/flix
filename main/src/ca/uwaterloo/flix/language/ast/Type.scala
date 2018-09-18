@@ -412,6 +412,20 @@ object Type {
   }
 
   /**
+    * A type constructor that represents the empty record type.
+    */
+  case object RecordEmpty extends Type {
+    def kind: Kind = ??? // TODO
+  }
+
+  /**
+    * A type constructor that represents a record extension type.
+    */
+  case class RecordExtension(base: Type, lab: Name.Ident, fld: Type) extends Type {
+    def kind: Kind = ??? // TODO
+  }
+
+  /**
     * A type constructor that represents zero.
     */
   case object Zero extends Type {

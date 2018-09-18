@@ -272,7 +272,9 @@ object WeededAst {
 
     case class Tuple(elms: List[WeededAst.Type], loc: SourceLocation) extends WeededAst.Type
 
-    case class Record(fields: List[(Name.Ident, WeededAst.Type)], loc: SourceLocation) extends WeededAst.Type
+    case class RecordEmpty(loc: SourceLocation) extends WeededAst.Type
+
+    case class RecordExtension(base: WeededAst.Type, label: Name.Ident, tpe: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
 
     case class Nat(len: Int, loc: SourceLocation) extends WeededAst.Type
 
