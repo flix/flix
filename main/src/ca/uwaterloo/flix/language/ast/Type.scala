@@ -53,6 +53,8 @@ sealed trait Type {
     case Type.Succ(n, t) => Set.empty
     case Type.Arrow(l) => Set.empty
     case Type.Tuple(l) => Set.empty
+    case Type.RecordEmpty => Set.empty
+    case Type.RecordExtension(base, _, fld) => base.typeVars ++ fld.typeVars
     case Type.Enum(_, _) => Set.empty
     case Type.Relation(_, _) => Set.empty
     case Type.Lattice(_, _) => Set.empty
@@ -201,6 +203,8 @@ sealed trait Type {
     case Type.Solvable => "Solvable"
     case Type.Checkable => "Checkable"
     case Type.Tuple(l) => s"Tuple($l)"
+    case Type.RecordEmpty => "{ }"
+    case Type.RecordExtension(base, lab, fld) => "{ " + base.toString + " | " + lab + " : " + fld.toString + " }"
     case Type.Apply(tpe1, tpe2) => s"$tpe1[$tpe2]"
   }
 
@@ -421,7 +425,7 @@ object Type {
   /**
     * A type constructor that represents a record extension type.
     */
-  case class RecordExtension(base: Type, lab: Name.Ident, fld: Type) extends Type {
+  case class RecordExtension(base: Type, lab: String, fld: Type) extends Type {
     def kind: Kind = ??? // TODO
   }
 
@@ -573,6 +577,8 @@ object Type {
       case Type.Ref => Type.Ref
       case Type.Arrow(l) => Type.Arrow(l)
       case Type.Tuple(l) => Type.Tuple(l)
+      case Type.RecordEmpty => Type.RecordEmpty
+      case Type.RecordExtension(base, lab, fld) => Type.RecordExtension(visit(base), lab, visit(fld))
       case Type.Zero => Type.Zero
       case Type.Succ(n, t) => Type.Succ(n, t)
       case Type.Apply(tpe1, tpe2) => Type.Apply(visit(tpe1), visit(tpe2))
@@ -650,6 +656,17 @@ object Type {
           //
           case Type.Tuple(l) =>
             "(" + args.map(visit(_, m)).mkString(", ") + ")"
+
+          //
+          // RecordEmpty.
+          //
+          case Type.RecordEmpty => "{ }"
+
+          //
+          // RecordExtension.
+          //
+          case Type.RecordExtension(b, lab, fld) =>
+            "{ " + visit(b, m) + " | " + lab + " : " + visit(fld, m) + " }"
 
           //
           // Enum.

@@ -711,6 +711,29 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           ) yield resultType
 
         /*
+         * RecordEmpty expression.
+         */
+        case ResolvedAst.Expression.RecordEmpty(tvar, loc) =>
+          //
+          //  ------------
+          //  %{ } : % { }
+          //
+          unifyM(tvar, Type.RecordEmpty, loc)
+
+        /*
+         * RecordExtension expression.
+         */
+        case ResolvedAst.Expression.RecordExtension(base, lab, field, tvar, loc) =>
+          //
+          // TODO: Rule
+          //
+          for {
+            baseType <- visitExp(base)
+            fieldType <- visitExp(field)
+            resultType <- unifyM(tvar, Type.RecordExtension(baseType, lab.name, fieldType),loc)
+          } yield resultType
+
+        /*
          * ArrayLit expression.
          */
         case ResolvedAst.Expression.ArrayLit(elms, tvar, loc) =>

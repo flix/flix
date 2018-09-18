@@ -75,6 +75,8 @@ object Unification {
       case Type.Ref => Type.Ref
       case Type.Arrow(l) => Type.Arrow(l)
       case Type.Tuple(l) => Type.Tuple(l)
+      case Type.RecordEmpty => Type.RecordEmpty
+      case Type.RecordExtension(base, lab, fld) => Type.RecordExtension(apply(base), lab, apply(fld))
       case Type.Zero => Type.Zero
       case Type.Succ(n, t) => Type.Succ(n, apply(t))
       case Type.Enum(sym, kind) => Type.Enum(sym, kind)
@@ -197,6 +199,11 @@ object Unification {
       case (Type.Ref, Type.Ref) => Result.Ok(Substitution.empty)
       case (Type.Arrow(l1), Type.Arrow(l2)) if l1 == l2 => Result.Ok(Substitution.empty)
       case (Type.Tuple(l1), Type.Tuple(l2)) if l1 == l2 => Result.Ok(Substitution.empty)
+      case (Type.RecordEmpty, Type.RecordEmpty) => Result.Ok(Substitution.empty)
+
+      case (Type.RecordExtension(bas1e, lab1, fld1), Type.RecordExtension(base2, lab2, fld2)) =>
+        ???
+
       case (Type.Zero, Type.Zero) => Result.Ok(Substitution.empty) // 0 == 0
       case (Type.Succ(0, Type.Zero), Type.Zero) => Result.Ok(Substitution.empty)
       case (Type.Zero, Type.Succ(0, Type.Zero)) => Result.Ok(Substitution.empty)
