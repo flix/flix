@@ -620,9 +620,18 @@ object ParsedAst {
       *
       * @param base  the record expression.
       * @param label the label to project from the record.
-      * @param sp2   the position of the last character in the expression.*
+      * @param sp2   the position of the last character in the expression.
       */
     case class RecordProjection(base: ParsedAst.Expression, label: Name.Ident, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
+      * Record Projection Lambda Expression.
+      *
+      * @param sp1   the position of the first character in the expression.
+      * @param label the label to project from the record.
+      * @param sp2   the position of the last character in the expression.
+      */
+    case class RecordProjectionLambda(sp1: SourcePosition, label: Name.Ident, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Record Restriction Expression.

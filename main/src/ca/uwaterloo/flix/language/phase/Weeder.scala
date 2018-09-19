@@ -640,6 +640,15 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         case b => WeededAst.Expression.RecordProjection(b, label, mkSL(sp1, sp2))
       }
 
+    case ParsedAst.Expression.RecordProjectionLambda(sp1, label, sp2) =>
+      val loc = mkSL(sp1, sp2)
+      val ident = Name.Ident(sp1, "_rec", sp2)
+      val qname = Name.QName(sp1, Name.RootNS, ident, sp2)
+      val fparam = WeededAst.FormalParam(ident, Ast.Modifiers.Empty, None, loc)
+      val varExp = WeededAst.Expression.VarOrDef(qname, loc)
+      val lambdaBody = WeededAst.Expression.RecordProjection(varExp, label, loc)
+      WeededAst.Expression.Lambda(fparam, lambdaBody, loc).toSuccess
+
     case ParsedAst.Expression.RecordRestriction(base, label, sp2) =>
       val sp1 = leftMostSourcePosition(base)
       mapN(visitExp(base)) {
@@ -1715,6 +1724,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.RecordLiteral(sp1, _, _) => sp1
     case ParsedAst.Expression.RecordExtension(sp1, _, _, _) => sp1
     case ParsedAst.Expression.RecordProjection(base, _, _) => leftMostSourcePosition(base)
+    case ParsedAst.Expression.RecordProjectionLambda(sp1, _, _) => sp1
     case ParsedAst.Expression.RecordRestriction(base, _, _) => leftMostSourcePosition(base)
     case ParsedAst.Expression.ArrayLit(sp1, _, _) => sp1
     case ParsedAst.Expression.ArrayNew(sp1, _, _, _) => sp1

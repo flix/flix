@@ -588,7 +588,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Primary: Rule1[ParsedAst.Expression] = rule {
-      LetRec | LetMatch | IfThenElse | Match | LambdaMatch | Switch | TryCatch | Native | Lambda | Tuple | RecordExtension | RecordLiteral |
+      LetRec | LetMatch | IfThenElse | Match | LambdaMatch | Switch | TryCatch | Native | Lambda | Tuple | RecordExtension | RecordLiteral | RecordProjectionLambda |
         ArrayLit | ArrayNew | ArrayLength | VectorLit | VectorNew | VectorLength | FNil | FSet | FMap |
         NewRelationOrLattice | FixpointSolve | FixpointCheck | FixpointDelta | ConstraintSeq | Literal |
         HandleWith | Existential | Universal | UnaryLambda | QName | Wild | Tag | SName | Hole | UserError
@@ -712,6 +712,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def RecordExtension: Rule1[ParsedAst.Expression] = rule {
       SP ~ "%{" ~ optWS ~ oneOrMore(RecordField).separatedBy(optWS ~ "," ~ optWS) ~ WS ~ atomic("|") ~ WS ~ Expression ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.RecordExtension
+    }
+
+    def RecordProjectionLambda: Rule1[ParsedAst.Expression] = rule {
+      SP ~ "." ~ Names.Field ~ SP ~> ParsedAst.Expression.RecordProjectionLambda
     }
 
     def RecordField: Rule1[ParsedAst.RecordField] = rule {
