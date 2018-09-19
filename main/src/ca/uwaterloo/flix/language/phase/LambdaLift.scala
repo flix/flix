@@ -210,6 +210,22 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         val es = elms map visitExp
         Expression.Tuple(es, tpe, loc)
 
+      case Expression.RecordEmpty(tpe, loc) =>
+        Expression.RecordEmpty(tpe, loc)
+
+      case Expression.RecordExtension(base, label, fld, tpe, loc) =>
+        val b = visitExp(base)
+        val f = visitExp(fld)
+        Expression.RecordExtension(b, label, f, tpe, loc)
+
+      case Expression.RecordProjection(base, label, tpe, loc) =>
+        val b = visitExp(base)
+        Expression.RecordProjection(b, label, tpe, loc)
+
+      case Expression.RecordRestriction(base, label, tpe, loc) =>
+        val b = visitExp(base)
+        Expression.RecordRestriction(b, label, tpe, loc)
+
       case Expression.ArrayLit(elms, tpe, loc) =>
         val es = elms map visitExp
         Expression.ArrayLit(es, tpe, loc)

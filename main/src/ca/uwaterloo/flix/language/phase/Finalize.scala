@@ -248,6 +248,22 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
         val es = elms map visit
         FinalAst.Expression.Tuple(es, tpe, loc)
 
+      case SimplifiedAst.Expression.RecordEmpty(tpe, loc) =>
+        FinalAst.Expression.RecordEmpty(tpe, loc)
+
+      case SimplifiedAst.Expression.RecordExtension(base, label, fld, tpe, loc) =>
+        val b = visit(base)
+        val f = visit(fld)
+        FinalAst.Expression.RecordExtension(b, label, f, tpe, loc)
+
+      case SimplifiedAst.Expression.RecordProjection(base, label, tpe, loc) =>
+        val b = visit(base)
+        FinalAst.Expression.RecordProjection(b, label, tpe, loc)
+
+      case SimplifiedAst.Expression.RecordRestriction(base, label, tpe, loc) =>
+        val b = visit(base)
+        FinalAst.Expression.RecordRestriction(b, label, tpe, loc)
+
       case SimplifiedAst.Expression.ArrayLit(elms, tpe, loc) =>
         val es = elms map visit
         FinalAst.Expression.ArrayLit(es, tpe, loc)

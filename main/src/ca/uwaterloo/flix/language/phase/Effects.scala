@@ -309,6 +309,14 @@ object Effects extends Phase[Root, Root] {
             Expression.Tuple(elms, tpe, eff, loc)
           }
 
+        case Expression.RecordEmpty(tpe, eff, loc) => ???
+
+        case Expression.RecordExtension(base, label, fld, tpe, eff, loc) => ???
+
+        case Expression.RecordProjection(base, label, tpe, eff, loc) => ???
+
+        case Expression.RecordRestriction(base, label, tpe, eff, loc) => ???
+
         /**
           * ArrayLit Expression.
           */

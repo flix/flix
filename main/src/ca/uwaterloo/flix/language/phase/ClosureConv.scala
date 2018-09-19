@@ -197,6 +197,22 @@ object ClosureConv extends Phase[Root, Root] {
     case Expression.Tuple(elms, tpe, loc) =>
       Expression.Tuple(elms.map(visitExp), tpe, loc)
 
+    case Expression.RecordEmpty(tpe, loc) =>
+      Expression.RecordEmpty(tpe, loc)
+
+    case Expression.RecordExtension(base, label, fld, tpe, loc) =>
+      val b = visitExp(base)
+      val f = visitExp(fld)
+      Expression.RecordExtension(b, label, f, tpe, loc)
+
+    case Expression.RecordProjection(base, label, tpe, loc) =>
+      val b = visitExp(base)
+      Expression.RecordProjection(b, label, tpe, loc)
+
+    case Expression.RecordRestriction(base, label, tpe, loc) =>
+      val b = visitExp(base)
+      Expression.RecordRestriction(b, label, tpe, loc)
+
     case Expression.ArrayLit(elms, tpe, loc) =>
       Expression.ArrayLit(elms.map(visitExp), tpe, loc)
 
@@ -423,6 +439,10 @@ object ClosureConv extends Phase[Root, Root] {
     case Expression.Tag(enum, tag, exp, tpe, loc) => freeVars(exp)
     case Expression.Index(base, offset, tpe, loc) => freeVars(base)
     case Expression.Tuple(elms, tpe, loc) => mutable.LinkedHashSet.empty ++ elms.flatMap(freeVars)
+    case Expression.RecordEmpty(tpe, loc) => mutable.LinkedHashSet.empty
+    case Expression.RecordExtension(base, label, fld, tpe, loc) => freeVars(base) ++ freeVars(fld)
+    case Expression.RecordProjection(base, label, tpe, loc) => freeVars(base)
+    case Expression.RecordRestriction(base, label, tpe, loc) => freeVars(base)
     case Expression.ArrayLit(elms, tpe, loc) => mutable.LinkedHashSet.empty ++ elms.flatMap(freeVars)
     case Expression.ArrayNew(elm, len, tpe, loc) => freeVars(elm) ++ freeVars(len)
     case Expression.ArrayLoad(base, index, tpe, loc) => freeVars(base) ++ freeVars(index)
@@ -660,6 +680,22 @@ object ClosureConv extends Phase[Root, Root] {
       case Expression.Tuple(elms, tpe, loc) =>
         val es = elms map visitExp
         Expression.Tuple(es, tpe, loc)
+
+      case Expression.RecordEmpty(tpe, loc) =>
+        Expression.RecordEmpty(tpe, loc)
+
+      case Expression.RecordExtension(base, label, fld, tpe, loc) =>
+        val b = visitExp(base)
+        val f = visitExp(fld)
+        Expression.RecordExtension(b, label, f, tpe, loc)
+
+      case Expression.RecordProjection(base, label, tpe, loc) =>
+        val b = visitExp(base)
+        Expression.RecordProjection(b, label, tpe, loc)
+
+      case Expression.RecordRestriction(base, label, tpe, loc) =>
+        val b = visitExp(base)
+        Expression.RecordRestriction(b, label, tpe, loc)
 
       case Expression.ArrayLit(elms, tpe, loc) =>
         val es = elms map visitExp
