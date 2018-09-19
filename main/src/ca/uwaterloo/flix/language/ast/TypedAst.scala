@@ -163,7 +163,13 @@ object TypedAst {
 
     case class Tuple(elms: List[TypedAst.Expression], tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
 
-    case class RecordExtension(base: TypedAst.Expression, label: Name.Ident, exp: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    case class RecordEmpty(tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+
+    case class RecordExtension(base: TypedAst.Expression, label: Name.Ident, fld: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+
+    case class RecordProjection(base: TypedAst.Expression, label: Name.Ident, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+
+    case class RecordRestriction(base: TypedAst.Expression, label: Name.Ident, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
 
     case class ArrayLit(elms: List[TypedAst.Expression], tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
 

@@ -186,6 +186,14 @@ object SimplifiedAst {
 
     case class Tuple(elms: List[SimplifiedAst.Expression], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
+    case class RecordEmpty(tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
+
+    case class RecordExtension(base: SimplifiedAst.Expression, label: Name.Ident, fld: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
+
+    case class RecordProjection(base: SimplifiedAst.Expression, label: Name.Ident, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
+
+    case class RecordRestriction(base: SimplifiedAst.Expression, label: Name.Ident, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
+
     case class ArrayLit(elms: List[SimplifiedAst.Expression], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
     case class ArrayNew(elm: SimplifiedAst.Expression, len: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression

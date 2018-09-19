@@ -734,6 +734,22 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           } yield resultType
 
         /*
+         * RecordProjection expression.
+         */
+        case ResolvedAst.Expression.RecordProjection(base, label, tvar, loc) =>
+          for {
+            baseType <- visitExp(base)
+          } yield ???
+
+        /*
+         *
+         */
+        case ResolvedAst.Expression.RecordRestriction(base, label, tvar, loc) =>
+          ???
+
+
+
+        /*
          * ArrayLit expression.
          */
         case ResolvedAst.Expression.ArrayLit(elms, tvar, loc) =>
@@ -1346,7 +1362,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
          * RecordEmpty expression.
          */
         case ResolvedAst.Expression.RecordEmpty(tvar, loc) =>
-
+          TypedAst.Expression.RecordEmpty(subst0(tvar), Eff.Bot, loc)
 
         /*
          * RecordExtension expression.
@@ -1355,6 +1371,20 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           val b = visitExp(base, subst0)
           val f = visitExp(field, subst0)
           TypedAst.Expression.RecordExtension(b, label, f, subst0(tvar), Eff.Bot, loc)
+
+        /*
+          * RecordProjection expression.
+          */
+        case ResolvedAst.Expression.RecordProjection(base, label, tvar, loc) =>
+          val b = visitExp(base, subst0)
+          TypedAst.Expression.RecordProjection(b, label, subst0(tvar), Eff.Bot, loc)
+
+        /*
+         * RecordRestriction expression.
+         */
+        case ResolvedAst.Expression.RecordRestriction(base, label, tvar, loc) =>
+          val b = visitExp(base, subst0)
+          TypedAst.Expression.RecordRestriction(b, label, subst0(tvar), Eff.Bot, loc)
 
         /*
          * ArrayLit expression.

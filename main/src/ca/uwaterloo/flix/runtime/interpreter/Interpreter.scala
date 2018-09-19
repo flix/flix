@@ -123,6 +123,22 @@ object Interpreter {
       val es = elms.map(e => eval(e, env0, henv0, lenv0, root))
       Value.Tuple(es)
 
+    case Expression.RecordEmpty(tpe, loc) =>
+      Value.RecordEmpty
+
+    case Expression.RecordExtension(base, lab, fld, tpe, loc) =>
+      val b = eval(base, env0, henv0, lenv0, root)
+      val v = eval(fld, env0, henv0, lenv0, root)
+      Value.RecordExtension(b, lab, v)
+
+    case Expression.RecordProjection(base, label, tpe, loc) =>
+      val b = eval(base, env0, henv0, lenv0, root)
+      // TODO: Lookup the projection
+      ???
+
+    case Expression.RecordRestriction(base, label, tpe, loc) =>
+      ??? // TODO
+
     case Expression.ArrayLit(elms, tpe, _) =>
       val es = elms.map(e => eval(e, env0, henv0, lenv0, root))
       Value.Arr(es.toArray, tpe.typeArguments.head)
@@ -1017,6 +1033,14 @@ object Interpreter {
   private def cast2tuple(ref: AnyRef): Value.Tuple = ref match {
     case v: Value.Tuple => v
     case _ => throw InternalRuntimeException(s"Unexpected non-tuple value: ${ref.getClass.getName}.")
+  }
+
+  /**
+    * Casts the given reference `ref` to a record.
+    */
+  private def cast2record(ref: AnyRef): Value.RecordExtension = ref match {
+    case v: Value.RecordExtension => v
+    case _ => throw InternalRuntimeException(s"Unexpected non-record value: ${ref.getClass.getName}.")
   }
 
   /**

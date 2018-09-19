@@ -744,6 +744,26 @@ object SymbolicEvaluator {
         }
 
       /**
+        * RecordEmpty.
+        */
+      case Expression.RecordEmpty(tpe, loc) => ???
+
+      /**
+        * RecordExtension.
+        */
+      case Expression.RecordExtension(base, label, fld, tpe, loc) => ???
+
+      /**
+        * RecordProjection.
+        */
+      case Expression.RecordProjection(base, label, tpe, loc) => ???
+
+      /**
+        * RecordRestriction.
+        */
+      case Expression.RecordRestriction(base, label, tpe, loc) => ???
+
+      /**
         * Index (into tuple).
         */
       case Expression.Index(base, offset, _, _) =>

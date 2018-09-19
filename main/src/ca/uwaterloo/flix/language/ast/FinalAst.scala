@@ -165,6 +165,14 @@ object FinalAst {
 
     case class Tuple(elms: List[FinalAst.Expression], tpe: Type, loc: SourceLocation) extends FinalAst.Expression
 
+    case class RecordEmpty(tpe: Type, loc: SourceLocation) extends FinalAst.Expression
+
+    case class RecordExtension(base: FinalAst.Expression, label: String, fld: FinalAst.Expression, tpe: Type, loc: SourceLocation) extends FinalAst.Expression
+
+    case class RecordProjection(base: FinalAst.Expression, label: String, tpe: Type, loc: SourceLocation) extends FinalAst.Expression
+
+    case class RecordRestriction(base: FinalAst.Expression, label: String, tpe: Type, loc: SourceLocation) extends FinalAst.Expression
+
     case class ArrayLit(elms: List[FinalAst.Expression], tpe: Type, loc: SourceLocation) extends FinalAst.Expression
 
     case class ArrayNew(elm: FinalAst.Expression, len: FinalAst.Expression, tpe: Type, loc: SourceLocation) extends FinalAst.Expression
