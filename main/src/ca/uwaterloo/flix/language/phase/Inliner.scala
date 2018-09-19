@@ -151,6 +151,15 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         Expression.Index(visit(base), offset, tpe, loc)
       case Expression.Tuple(elms, tpe, loc) =>
         Expression.Tuple(elms.map(visit), tpe, loc)
+
+      case Expression.RecordEmpty(tpe, loc) => ??? // TODO: RecordEmpty
+
+      case Expression.RecordExtension(base, label, fld, tpe, loc) => ??? // TODO RecordExtension
+
+      case Expression.RecordProjection(base, label, tpe, loc) => ??? // TODO RecordProjection
+
+      case Expression.RecordRestriction(base, label, tpe, loc) => ??? // TODO RecordRestriction
+
       case Expression.ArrayLit(elms, tpe, loc) =>
         Expression.ArrayLit(elms.map(visit), tpe, loc)
       case Expression.ArrayNew(elm, len, tpe, loc) =>
@@ -286,6 +295,15 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       Expression.Index(renameAndSubstitute(base, env0), offset, tpe, loc)
     case Expression.Tuple(elms, tpe, loc) =>
       Expression.Tuple(elms.map(renameAndSubstitute(_, env0)), tpe, loc)
+
+    case Expression.RecordEmpty(tpe, loc) => ??? // TODO: RecordEmpty
+
+    case Expression.RecordExtension(base, label, fld, tpe, loc) => ??? // TODO RecordExtension
+
+    case Expression.RecordProjection(base, label, tpe, loc) => ??? // TODO RecordProjection
+
+    case Expression.RecordRestriction(base, label, tpe, loc) => ??? // TODO RecordRestriction
+
     case Expression.ArrayLit(elms, tpe, loc) =>
       Expression.ArrayLit(elms.map(renameAndSubstitute(_, env0)), tpe, loc)
     case Expression.ArrayNew(elm, len, tpe, loc) =>
@@ -483,6 +501,14 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     // Tuple expressions are atomic if the elements are.
     //
     case Expression.Tuple(elms, tpe, loc) => elms forall isAtomic
+
+    case Expression.RecordEmpty(tpe, loc) => ??? // TODO: RecordEmpty
+
+    case Expression.RecordExtension(base, label, fld, tpe, loc) => ??? // TODO RecordExtension
+
+    case Expression.RecordProjection(base, label, tpe, loc) => ??? // TODO RecordProjection
+
+    case Expression.RecordRestriction(base, label, tpe, loc) => ??? // TODO RecordRestriction
 
     //
     // ArrayLit expressions are atomic if the elements are.

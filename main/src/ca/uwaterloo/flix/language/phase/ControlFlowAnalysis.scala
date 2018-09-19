@@ -46,7 +46,7 @@ object ControlFlowAnalysis {
     case (AbstractValue.Bot, _) => e2
     case (_, AbstractValue.Bot) => e1
     case (AbstractValue.Graph(g1), AbstractValue.Graph(g2)) => AbstractValue.Graph(Stratifier.union(g1, g2))
-
+    case _ => ???
   }
 
   def joinAll(vs: List[AbstractValue]): AbstractValue = vs.foldLeft(AbstractValue.Bot: AbstractValue)(join)
@@ -132,6 +132,14 @@ object ControlFlowAnalysis {
       ???
 
     case Expression.Tuple(elms, tpe, eff, loc) => ???
+
+    case Expression.RecordEmpty(tpe, eff, loc) => ???
+
+    case Expression.RecordExtension(base, label, fld, tpe, eff, loc) => ???
+
+    case Expression.RecordProjection(base, label, tpe, eff, loc) => ???
+
+    case Expression.RecordRestriction(base, label, tpe, eff, loc) => ???
 
     case Expression.ArrayLit(elms, tpe, eff, loc) =>
       val vs = elms.map(fixpointExp(_, env0, l))
@@ -220,6 +228,7 @@ object ControlFlowAnalysis {
     v match {
       case AbstractValue.Bot => DependencyGraph.Empty
       case AbstractValue.Graph(g) => g
+      case _ => ???
     }
   }
 

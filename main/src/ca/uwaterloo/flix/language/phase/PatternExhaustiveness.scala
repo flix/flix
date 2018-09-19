@@ -205,6 +205,26 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
         case Expression.Tuple(elms, _, _, _) => sequence(elms map {
           checkPats(_, root)
         }).map(const(tast))
+
+        case Expression.RecordEmpty(tpe, eff, loc) =>
+          tast.toSuccess
+
+        case Expression.RecordExtension(base, label, fld, tpe, eff, loc) =>
+          for {
+            _ <- checkPats(base, root)
+            _ <- checkPats(fld, root)
+          } yield tast
+
+        case Expression.RecordProjection(base, label, tpe, eff, loc) =>
+          for {
+            _ <- checkPats(base, root)
+          } yield tast
+
+        case Expression.RecordRestriction(base, label, tpe, eff, loc) =>
+          for {
+            _ <- checkPats(base, root)
+          } yield tast
+
         case Expression.ArrayLit(elms, _, _, _) => sequence(elms map {
           checkPats(_, root)
         }).map(const(tast))
@@ -633,6 +653,8 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
       case Type.Vector => 2
       case Type.Zero => 0
       case Type.Succ(n, t) => 2
+      case Type.RecordEmpty => 0 // TODO: Correct?
+      case Type.RecordExtension(base, lab, fld) => 0 // TODO: Correct?
       case Type.Tuple(length) => length
       case Type.Enum(sym, kind) => 0
       case Type.Relation(sym, kind) => 0
