@@ -742,8 +742,8 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           //
           for {
             baseType <- visitExp(base)
-            resultType <- unifyM(baseType, Type.RecordExtension(Type.freshTypeVar(), label.name, tvar), loc)
-          } yield resultType
+            recordType <- unifyM(baseType, Type.RecordExtension(Type.freshTypeVar(), label.name, tvar), loc)
+          } yield tvar
 
         /*
          *
