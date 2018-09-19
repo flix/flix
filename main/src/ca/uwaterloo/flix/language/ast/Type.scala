@@ -157,6 +157,15 @@ sealed trait Type {
   }
 
   /**
+    * Returns `true` if `this` type is a record type.
+    */
+  def isRecord: Boolean = typeConstructor match {
+    case Type.RecordEmpty => true
+    case Type.RecordExtension(base, lab, fld) => true
+    case _ => false
+  }
+
+  /**
     * Returns `true` if `this` type is a reference type.
     */
   def isRef: Boolean = typeConstructor match {

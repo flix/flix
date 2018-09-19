@@ -1079,6 +1079,14 @@ object Synthesize extends Phase[Root, Root] {
             return Expression.Match(matchValue, rule :: Nil, Type.Str, ast.Eff.Pure, sl)
           }
 
+          //
+          // Records
+          //
+          if (tpe.isRecord) {
+            // TODO: Implement toString
+            return Expression.Str("<<record>>", sl)
+          }
+
           throw InternalCompilerException(s"Unknown type '$tpe'.")
       }
     }
