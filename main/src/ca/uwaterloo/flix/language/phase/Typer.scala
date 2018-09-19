@@ -740,9 +740,11 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           //
           // TODO: Rule
           //
+          val freshRowVar = Type.freshTypeVar()
+          val expectedType = Type.RecordExtension(freshRowVar, label.name, tvar)
           for {
-            baseType <- visitExp(base)
-            recordType <- unifyM(baseType, Type.RecordExtension(Type.freshTypeVar(), label.name, tvar), loc)
+            actualType <- visitExp(base)
+            recordType <- unifyM(actualType, expectedType, loc)
           } yield tvar
 
         /*
