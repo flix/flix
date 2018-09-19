@@ -737,9 +737,13 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
          * RecordProjection expression.
          */
         case ResolvedAst.Expression.RecordProjection(base, label, tvar, loc) =>
+          //
+          // TODO: Rule
+          //
           for {
             baseType <- visitExp(base)
-          } yield ???
+            resultType <- unifyM(baseType, Type.RecordExtension(Type.freshTypeVar(), label.name, tvar), loc)
+          } yield resultType
 
         /*
          *
