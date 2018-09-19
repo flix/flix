@@ -126,18 +126,18 @@ object Interpreter {
     case Expression.RecordEmpty(tpe, loc) =>
       Value.RecordEmpty
 
-    case Expression.RecordExtension(base, lab, fld, tpe, loc) =>
+    case Expression.RecordSelect(base, label, tpe, loc) =>
       val b = eval(base, env0, henv0, lenv0, root)
-      val v = eval(fld, env0, henv0, lenv0, root)
-      Value.RecordExtension(b, lab, v)
+      lookupRecordLabel(b, label)
 
-    case Expression.RecordProjection(base, label, tpe, loc) =>
+    case Expression.RecordExtend(base, label, value, tpe, loc) =>
       val b = eval(base, env0, henv0, lenv0, root)
-      lookupField(b, label)
+      val v = eval(value, env0, henv0, lenv0, root)
+      Value.RecordExtension(b, label, v)
 
-    case Expression.RecordRestriction(base, label, tpe, loc) =>
+    case Expression.RecordRestrict(base, label, tpe, loc) =>
       val b = eval(base, env0, henv0, lenv0, root)
-      restrictField(b, label)
+      removeRecordLabel(b, label)
 
     case Expression.ArrayLit(elms, tpe, _) =>
       val es = elms.map(e => eval(e, env0, henv0, lenv0, root))
@@ -1083,12 +1083,12 @@ object Interpreter {
   /**
     * Performs a lookup of the given field in the given record.
     */
-  private def lookupField(record: AnyRef, field: String): AnyRef = record match {
+  private def lookupRecordLabel(record: AnyRef, field: String): AnyRef = record match {
     case Value.RecordExtension(base, field2, value) =>
       if (field == field2)
         value
       else
-        lookupField(base, field)
+        lookupRecordLabel(base, field)
     case Value.RecordEmpty => throw InternalRuntimeException(s"Unexpected missing field: '$field'.")
     case _ => throw InternalRuntimeException(s"Unexpected non-record value: '$record'.")
   }
@@ -1096,12 +1096,12 @@ object Interpreter {
   /**
     * Removes the outermost occurrence of the given field from the given record.
     */
-  private def restrictField(record: AnyRef, field: String): AnyRef = record match {
+  private def removeRecordLabel(record: AnyRef, field: String): AnyRef = record match {
     case Value.RecordExtension(base, field2, value) =>
       if (field == field2)
         base
       else
-        Value.RecordExtension(restrictField(base, field), field2, value)
+        Value.RecordExtension(removeRecordLabel(base, field), field2, value)
     case Value.RecordEmpty => throw InternalRuntimeException(s"Unexpected missing field: '$field'.")
     case _ => throw InternalRuntimeException(s"Unexpected non-record value: '$record'.")
   }

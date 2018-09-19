@@ -773,11 +773,11 @@ object JvmOps {
 
       case Expression.RecordEmpty(tpe, loc) => ??? // TODO: RecordEmpty
 
-      case Expression.RecordExtension(base, label, fld, tpe, loc) => ??? // TODO: RecordExtension
+      case Expression.RecordExtend(base, label, fld, tpe, loc) => ??? // TODO: RecordExtension
 
-      case Expression.RecordProjection(base, label, tpe, loc) => ??? // TODO: RecordProjection
+      case Expression.RecordSelect(base, label, tpe, loc) => ??? // TODO: RecordProjection
 
-      case Expression.RecordRestriction(base, label, tpe, loc) => ??? // TODO: RecordRestriction
+      case Expression.RecordRestrict(base, label, tpe, loc) => ??? // TODO: RecordRestriction
 
       case Expression.ArrayLit(elms, tpe, loc) => elms.foldLeft(Set.empty[ClosureInfo]) {
         case (sacc, e) => sacc ++ visitExp(e)
@@ -1021,13 +1021,13 @@ object JvmOps {
         case (sacc, e) => sacc ++ visitExp(e)
       }
 
-      case Expression.RecordEmpty(tpe, loc) => ??? // TODO: RecordEmpty
+      case Expression.RecordEmpty(tpe, loc) => ??? // TODO
 
-      case Expression.RecordExtension(base, label, fld, tpe, loc) => ??? // TODO: RecordExtension
+      case Expression.RecordSelect(base, label, tpe, loc) => ??? // TODO
 
-      case Expression.RecordProjection(base, label, tpe, loc) => ??? // TODO: RecordProjection
+      case Expression.RecordExtend(base, label, value, tpe, loc) => ??? // TODO
 
-      case Expression.RecordRestriction(base, label, tpe, loc) => ??? // TODO: RecordRestriction
+      case Expression.RecordRestrict(base, label, tpe, loc) => ??? // TODO
 
       case Expression.ArrayLit(elms, tpe, loc) => elms.foldLeft(Set(tpe)) {
         case (sacc, e) => sacc ++ visitExp(e)
