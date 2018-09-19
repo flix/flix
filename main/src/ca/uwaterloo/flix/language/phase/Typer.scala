@@ -749,8 +749,13 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
          *
          */
         case ResolvedAst.Expression.RecordRestriction(base, label, tvar, loc) =>
-          ???
-
+          //
+          // TODO: Rule
+          //
+          for {
+            baseType <- visitExp(base)
+            resultType <- unifyM(baseType, Type.RecordExtension(Type.freshTypeVar(), label.name, tvar), loc)
+          } yield baseType
 
 
         /*
