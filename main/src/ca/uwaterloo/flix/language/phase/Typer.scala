@@ -730,7 +730,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           for {
             baseType <- visitExp(base)
             fieldType <- visitExp(field)
-            resultType <- unifyM(tvar, Type.RecordExtension(baseType, lab.name, fieldType),loc)
+            resultType <- unifyM(tvar, Type.RecordExtension(baseType, lab.name, fieldType), loc)
           } yield resultType
 
         /*
@@ -1341,6 +1341,20 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         case ResolvedAst.Expression.Tuple(elms, tvar, loc) =>
           val es = elms.map(e => visitExp(e, subst0))
           TypedAst.Expression.Tuple(es, subst0(tvar), Eff.Bot, loc)
+
+        /*
+         * RecordEmpty expression.
+         */
+        case ResolvedAst.Expression.RecordEmpty(tvar, loc) =>
+
+
+        /*
+         * RecordExtension expression.
+         */
+        case ResolvedAst.Expression.RecordExtension(base, label, field, tvar, loc) =>
+          val b = visitExp(base, subst0)
+          val f = visitExp(field, subst0)
+          TypedAst.Expression.RecordExtension(b, label, f, subst0(tvar), Eff.Bot, loc)
 
         /*
          * ArrayLit expression.
