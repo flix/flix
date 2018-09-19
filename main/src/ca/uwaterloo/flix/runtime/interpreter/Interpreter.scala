@@ -133,11 +133,11 @@ object Interpreter {
 
     case Expression.RecordProjection(base, label, tpe, loc) =>
       val b = eval(base, env0, henv0, lenv0, root)
-      // TODO: Lookup the projection
-      ???
+      lookupField(b, label)
 
     case Expression.RecordRestriction(base, label, tpe, loc) =>
-      ??? // TODO
+      val b = eval(base, env0, henv0, lenv0, root)
+      restrictField(b, label)
 
     case Expression.ArrayLit(elms, tpe, _) =>
       val es = elms.map(e => eval(e, env0, henv0, lenv0, root))
@@ -1079,6 +1079,32 @@ object Interpreter {
     * Constructs a bool from the given boolean `b`.
     */
   private def mkBool(b: Boolean): AnyRef = if (b) Value.True else Value.False
+
+  /**
+    * Performs a lookup of the given field in the given record.
+    */
+  private def lookupField(record: AnyRef, field: String): AnyRef = record match {
+    case Value.RecordExtension(base, field2, value) =>
+      if (field == field2)
+        value
+      else
+        lookupField(base, field)
+    case Value.RecordEmpty => throw InternalRuntimeException(s"Unexpected missing field: '$field'.")
+    case _ => throw InternalRuntimeException(s"Unexpected non-record value: '$record'.")
+  }
+
+  /**
+    * Removes the outermost occurrence of the given field from the given record.
+    */
+  private def restrictField(record: AnyRef, field: String): AnyRef = record match {
+    case Value.RecordExtension(base, field2, value) =>
+      if (field == field2)
+        base
+      else
+        Value.RecordExtension(restrictField(base, field), field2, value)
+    case Value.RecordEmpty => throw InternalRuntimeException(s"Unexpected missing field: '$field'.")
+    case _ => throw InternalRuntimeException(s"Unexpected non-record value: '$record'.")
+  }
 
   /**
     * Computes the fixed point of the given constraint set `cs`.
