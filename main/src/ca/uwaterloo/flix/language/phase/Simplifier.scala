@@ -383,18 +383,18 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case TypedAst.Expression.RecordEmpty(tpe, eff, loc) =>
         SimplifiedAst.Expression.RecordEmpty(tpe, loc)
 
-      case TypedAst.Expression.RecordExtension(base, label, fld, tpe, eff, loc) =>
-        val b = visitExp(base)
-        val f = visitExp(fld)
-        SimplifiedAst.Expression.RecordExtension(b, label.name, f, tpe, loc)
-
       case TypedAst.Expression.RecordProjection(base, label, tpe, eff, loc) =>
         val b = visitExp(base)
-        SimplifiedAst.Expression.RecordProjection(b, label.name, tpe, loc)
+        SimplifiedAst.Expression.RecordSelect(b, label.name, tpe, loc)
+
+      case TypedAst.Expression.RecordExtension(base, label, value, tpe, eff, loc) =>
+        val b = visitExp(base)
+        val v = visitExp(value)
+        SimplifiedAst.Expression.RecordExtend(b, label.name, v, tpe, loc)
 
       case TypedAst.Expression.RecordRestriction(base, label, tpe, eff, loc) =>
         val b = visitExp(base)
-        SimplifiedAst.Expression.RecordRestriction(b, label.name, tpe, loc)
+        SimplifiedAst.Expression.RecordRestrict(b, label.name, tpe, loc)
 
       case TypedAst.Expression.ArrayLit(elms, tpe, eff, loc) =>
         SimplifiedAst.Expression.ArrayLit(elms map visitExp, tpe, loc)
@@ -1116,18 +1116,18 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case SimplifiedAst.Expression.RecordEmpty(tpe, loc) =>
         SimplifiedAst.Expression.RecordEmpty(tpe, loc)
 
-      case SimplifiedAst.Expression.RecordExtension(base, label, fld, tpe, loc) =>
+      case SimplifiedAst.Expression.RecordExtend(base, label, fld, tpe, loc) =>
         val b = visit(base)
         val f = visit(fld)
-        SimplifiedAst.Expression.RecordExtension(b, label, f, tpe, loc)
+        SimplifiedAst.Expression.RecordExtend(b, label, f, tpe, loc)
 
-      case SimplifiedAst.Expression.RecordProjection(base, label, tpe, loc) =>
+      case SimplifiedAst.Expression.RecordSelect(base, label, tpe, loc) =>
         val b = visit(base)
-        SimplifiedAst.Expression.RecordProjection(b, label, tpe, loc)
+        SimplifiedAst.Expression.RecordSelect(b, label, tpe, loc)
 
-      case SimplifiedAst.Expression.RecordRestriction(base, label, tpe, loc) =>
+      case SimplifiedAst.Expression.RecordRestrict(base, label, tpe, loc) =>
         val b = visit(base)
-        SimplifiedAst.Expression.RecordRestriction(b, label, tpe, loc)
+        SimplifiedAst.Expression.RecordRestrict(b, label, tpe, loc)
 
       case SimplifiedAst.Expression.ArrayLit(elms, tpe, loc) =>
         SimplifiedAst.Expression.ArrayLit(elms.map(visit), tpe, loc)

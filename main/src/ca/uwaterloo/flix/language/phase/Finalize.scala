@@ -251,16 +251,16 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
       case SimplifiedAst.Expression.RecordEmpty(tpe, loc) =>
         FinalAst.Expression.RecordEmpty(tpe, loc)
 
-      case SimplifiedAst.Expression.RecordProjection(base, label, tpe, loc) =>
+      case SimplifiedAst.Expression.RecordSelect(base, label, tpe, loc) =>
         val b = visit(base)
         FinalAst.Expression.RecordSelect(b, label, tpe, loc)
 
-      case SimplifiedAst.Expression.RecordExtension(base, label, value, tpe, loc) =>
+      case SimplifiedAst.Expression.RecordExtend(base, label, value, tpe, loc) =>
         val b = visit(base)
         val v = visit(value)
         FinalAst.Expression.RecordExtend(b, label, v, tpe, loc)
 
-      case SimplifiedAst.Expression.RecordRestriction(base, label, tpe, loc) =>
+      case SimplifiedAst.Expression.RecordRestrict(base, label, tpe, loc) =>
         val b = visit(base)
         FinalAst.Expression.RecordRestrict(b, label, tpe, loc)
 

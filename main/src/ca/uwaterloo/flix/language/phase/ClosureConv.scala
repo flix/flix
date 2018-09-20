@@ -200,18 +200,18 @@ object ClosureConv extends Phase[Root, Root] {
     case Expression.RecordEmpty(tpe, loc) =>
       Expression.RecordEmpty(tpe, loc)
 
-    case Expression.RecordExtension(base, label, fld, tpe, loc) =>
+    case Expression.RecordSelect(base, label, tpe, loc) =>
       val b = visitExp(base)
-      val f = visitExp(fld)
-      Expression.RecordExtension(b, label, f, tpe, loc)
+      Expression.RecordSelect(b, label, tpe, loc)
 
-    case Expression.RecordProjection(base, label, tpe, loc) =>
+    case Expression.RecordExtend(base, label, value, tpe, loc) =>
       val b = visitExp(base)
-      Expression.RecordProjection(b, label, tpe, loc)
+      val v = visitExp(value)
+      Expression.RecordExtend(b, label, v, tpe, loc)
 
-    case Expression.RecordRestriction(base, label, tpe, loc) =>
+    case Expression.RecordRestrict(base, label, tpe, loc) =>
       val b = visitExp(base)
-      Expression.RecordRestriction(b, label, tpe, loc)
+      Expression.RecordRestrict(b, label, tpe, loc)
 
     case Expression.ArrayLit(elms, tpe, loc) =>
       Expression.ArrayLit(elms.map(visitExp), tpe, loc)
@@ -440,9 +440,9 @@ object ClosureConv extends Phase[Root, Root] {
     case Expression.Index(base, offset, tpe, loc) => freeVars(base)
     case Expression.Tuple(elms, tpe, loc) => mutable.LinkedHashSet.empty ++ elms.flatMap(freeVars)
     case Expression.RecordEmpty(tpe, loc) => mutable.LinkedHashSet.empty
-    case Expression.RecordExtension(base, label, fld, tpe, loc) => freeVars(base) ++ freeVars(fld)
-    case Expression.RecordProjection(base, label, tpe, loc) => freeVars(base)
-    case Expression.RecordRestriction(base, label, tpe, loc) => freeVars(base)
+    case Expression.RecordSelect(base, label, tpe, loc) => freeVars(base)
+    case Expression.RecordExtend(base, label, value, tpe, loc) => freeVars(base) ++ freeVars(value)
+    case Expression.RecordRestrict(base, label, tpe, loc) => freeVars(base)
     case Expression.ArrayLit(elms, tpe, loc) => mutable.LinkedHashSet.empty ++ elms.flatMap(freeVars)
     case Expression.ArrayNew(elm, len, tpe, loc) => freeVars(elm) ++ freeVars(len)
     case Expression.ArrayLoad(base, index, tpe, loc) => freeVars(base) ++ freeVars(index)
@@ -684,18 +684,18 @@ object ClosureConv extends Phase[Root, Root] {
       case Expression.RecordEmpty(tpe, loc) =>
         Expression.RecordEmpty(tpe, loc)
 
-      case Expression.RecordExtension(base, label, fld, tpe, loc) =>
+      case Expression.RecordSelect(base, label, tpe, loc) =>
         val b = visitExp(base)
-        val f = visitExp(fld)
-        Expression.RecordExtension(b, label, f, tpe, loc)
+        Expression.RecordSelect(b, label, tpe, loc)
 
-      case Expression.RecordProjection(base, label, tpe, loc) =>
+      case Expression.RecordExtend(base, label, value, tpe, loc) =>
         val b = visitExp(base)
-        Expression.RecordProjection(b, label, tpe, loc)
+        val v = visitExp(value)
+        Expression.RecordExtend(b, label, v, tpe, loc)
 
-      case Expression.RecordRestriction(base, label, tpe, loc) =>
+      case Expression.RecordRestrict(base, label, tpe, loc) =>
         val b = visitExp(base)
-        Expression.RecordRestriction(b, label, tpe, loc)
+        Expression.RecordRestrict(b, label, tpe, loc)
 
       case Expression.ArrayLit(elms, tpe, loc) =>
         val es = elms map visitExp

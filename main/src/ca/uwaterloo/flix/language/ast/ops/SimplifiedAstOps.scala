@@ -287,24 +287,24 @@ object SimplifiedAstOps {
         checkType(tpe)
 
       //
-      // RecordExtension Expressions.
+      // RecordSelect Expressions.
       //
-      case Expression.RecordExtension(base, label, fld, tpe, loc) =>
-        checkExp(base, env0, ienv0)
-        checkExp(fld, env0, ienv0)
-        checkType(tpe)
-
-      //
-      // RecordProjection Expressions.
-      //
-      case Expression.RecordProjection(base, label, tpe, loc) =>
+      case Expression.RecordSelect(base, label, tpe, loc) =>
         checkExp(base, env0, ienv0)
         checkType(tpe)
 
       //
-      // RecordRestriction Expressions.
+      // RecordExtend Expressions.
       //
-      case Expression.RecordRestriction(base, label, tpe, loc) =>
+      case Expression.RecordExtend(base, label, value, tpe, loc) =>
+        checkExp(base, env0, ienv0)
+        checkExp(value, env0, ienv0)
+        checkType(tpe)
+
+      //
+      // RecordRestrict Expressions.
+      //
+      case Expression.RecordRestrict(base, label, tpe, loc) =>
         checkExp(base, env0, ienv0)
         checkType(tpe)
 

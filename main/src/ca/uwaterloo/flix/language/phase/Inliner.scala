@@ -152,13 +152,13 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.Tuple(elms, tpe, loc) =>
         Expression.Tuple(elms.map(visit), tpe, loc)
 
-      case Expression.RecordEmpty(tpe, loc) => ??? // TODO: RecordEmpty
+      case Expression.RecordEmpty(tpe, loc) => ??? // TODO
 
-      case Expression.RecordExtension(base, label, fld, tpe, loc) => ??? // TODO RecordExtension
+      case Expression.RecordSelect(base, label, tpe, loc) => ??? // TODO
 
-      case Expression.RecordProjection(base, label, tpe, loc) => ??? // TODO RecordProjection
+      case Expression.RecordExtend(base, label, value, tpe, loc) => ??? // TODO
 
-      case Expression.RecordRestriction(base, label, tpe, loc) => ??? // TODO RecordRestriction
+      case Expression.RecordRestrict(base, label, tpe, loc) => ??? // TODO
 
       case Expression.ArrayLit(elms, tpe, loc) =>
         Expression.ArrayLit(elms.map(visit), tpe, loc)
@@ -296,13 +296,13 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     case Expression.Tuple(elms, tpe, loc) =>
       Expression.Tuple(elms.map(renameAndSubstitute(_, env0)), tpe, loc)
 
-    case Expression.RecordEmpty(tpe, loc) => ??? // TODO: RecordEmpty
+    case Expression.RecordEmpty(tpe, loc) => ??? // TODO
 
-    case Expression.RecordExtension(base, label, fld, tpe, loc) => ??? // TODO RecordExtension
+    case Expression.RecordSelect(base, label, tpe, loc) => ??? // TODO
 
-    case Expression.RecordProjection(base, label, tpe, loc) => ??? // TODO RecordProjection
+    case Expression.RecordExtend(base, label, value, tpe, loc) => ??? // TODO
 
-    case Expression.RecordRestriction(base, label, tpe, loc) => ??? // TODO RecordRestriction
+    case Expression.RecordRestrict(base, label, tpe, loc) => ??? // TODO
 
     case Expression.ArrayLit(elms, tpe, loc) =>
       Expression.ArrayLit(elms.map(renameAndSubstitute(_, env0)), tpe, loc)
@@ -502,13 +502,13 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     //
     case Expression.Tuple(elms, tpe, loc) => elms forall isAtomic
 
-    case Expression.RecordEmpty(tpe, loc) => ??? // TODO: RecordEmpty
+    case Expression.RecordEmpty(tpe, loc) => ??? // TODO
 
-    case Expression.RecordExtension(base, label, fld, tpe, loc) => ??? // TODO RecordExtension
+    case Expression.RecordSelect(base, label, tpe, loc) => ??? // TODO
 
-    case Expression.RecordProjection(base, label, tpe, loc) => ??? // TODO RecordProjection
+    case Expression.RecordExtend(base, label, value, tpe, loc) => ??? // TODO
 
-    case Expression.RecordRestriction(base, label, tpe, loc) => ??? // TODO RecordRestriction
+    case Expression.RecordRestrict(base, label, tpe, loc) => ??? // TODO
 
     //
     // ArrayLit expressions are atomic if the elements are.

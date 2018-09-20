@@ -264,23 +264,23 @@ object PrettyPrinter {
         case Expression.RecordEmpty(tpe, loc) =>
           vt.text("{}")
 
-        case Expression.RecordExtension(base, label, fld, tpe, loc) =>
-          vt.text("{ ")
-          vt.text(label)
-          vt.text(" = ")
-          visitExp(fld)
-          vt.text(" | ")
-          visitExp(base)
-          vt.text(" }")
-
-        case Expression.RecordProjection(base, label, tpe, loc) =>
+        case Expression.RecordSelect(base, label, tpe, loc) =>
           visitExp(base)
           vt.text(".")
           vt.text(label)
 
-        case Expression.RecordRestriction(base, label, tpe, loc) =>
+        case Expression.RecordExtend(base, label, value, tpe, loc) =>
+          vt.text("{ ")
+          vt.text(label)
+          vt.text(" = ")
+          visitExp(value)
+          vt.text(" | ")
           visitExp(base)
-          vt.text(" --- ")
+          vt.text(" }")
+
+        case Expression.RecordRestrict(base, label, tpe, loc) =>
+          visitExp(base)
+          vt.text(" %%% ")
           vt.text(label)
 
         case Expression.ArrayLit(elms, tpe, loc) =>
