@@ -728,7 +728,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           // TODO: Rule
           //
           val freshRowVar = Type.freshTypeVar()
-          val expectedType = Type.RecordExtension(freshRowVar, label.name, tvar)
+          val expectedType = Type.RecordExtension(freshRowVar, label, tvar)
           for {
             actualType <- visitExp(base)
             recordType <- unifyM(actualType, expectedType, loc)
@@ -744,7 +744,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           for {
             baseType <- visitExp(base)
             valueType <- visitExp(value)
-            resultType <- unifyM(tvar, Type.RecordExtension(baseType, lab.name, valueType), loc)
+            resultType <- unifyM(tvar, Type.RecordExtension(baseType, lab, valueType), loc)
           } yield resultType
 
         /*
@@ -756,7 +756,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           //
           for {
             baseType <- visitExp(base)
-            resultType <- unifyM(baseType, Type.RecordExtension(Type.freshTypeVar(), label.name, tvar), loc)
+            resultType <- unifyM(baseType, Type.RecordExtension(Type.freshTypeVar(), label, tvar), loc)
           } yield baseType
 
 

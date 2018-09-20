@@ -131,11 +131,11 @@ object ResolvedAst {
 
     case class RecordEmpty(tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class RecordSelect(base: ResolvedAst.Expression, label: Name.Ident, tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class RecordSelect(base: ResolvedAst.Expression, label: String, tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class RecordExtend(base: ResolvedAst.Expression, label: Name.Ident, value: ResolvedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class RecordExtend(base: ResolvedAst.Expression, label: String, value: ResolvedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class RecordRestrict(base: ResolvedAst.Expression, label: Name.Ident, tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class RecordRestrict(base: ResolvedAst.Expression, label: String, tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class ArrayLit(elms: List[ResolvedAst.Expression], tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 

@@ -165,11 +165,11 @@ object TypedAst {
 
     case class RecordEmpty(tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
 
-    case class RecordSelect(base: TypedAst.Expression, label: Name.Ident, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    case class RecordSelect(base: TypedAst.Expression, label: String, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
 
-    case class RecordExtend(base: TypedAst.Expression, label: Name.Ident, value: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    case class RecordExtend(base: TypedAst.Expression, label: String, value: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
 
-    case class RecordRestrict(base: TypedAst.Expression, label: Name.Ident, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    case class RecordRestrict(base: TypedAst.Expression, label: String, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
 
     case class ArrayLit(elms: List[TypedAst.Expression], tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
 

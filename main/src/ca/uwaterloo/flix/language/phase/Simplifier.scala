@@ -385,16 +385,16 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
 
       case TypedAst.Expression.RecordSelect(base, label, tpe, eff, loc) =>
         val b = visitExp(base)
-        SimplifiedAst.Expression.RecordSelect(b, label.name, tpe, loc)
+        SimplifiedAst.Expression.RecordSelect(b, label, tpe, loc)
 
       case TypedAst.Expression.RecordExtend(base, label, value, tpe, eff, loc) =>
         val b = visitExp(base)
         val v = visitExp(value)
-        SimplifiedAst.Expression.RecordExtend(b, label.name, v, tpe, loc)
+        SimplifiedAst.Expression.RecordExtend(b, label, v, tpe, loc)
 
       case TypedAst.Expression.RecordRestrict(base, label, tpe, eff, loc) =>
         val b = visitExp(base)
-        SimplifiedAst.Expression.RecordRestrict(b, label.name, tpe, loc)
+        SimplifiedAst.Expression.RecordRestrict(b, label, tpe, loc)
 
       case TypedAst.Expression.ArrayLit(elms, tpe, eff, loc) =>
         SimplifiedAst.Expression.ArrayLit(elms map visitExp, tpe, loc)

@@ -120,11 +120,11 @@ object WeededAst {
 
     case class RecordEmpty(loc: SourceLocation) extends WeededAst.Expression
 
-    case class RecordExtension(base: WeededAst.Expression, label: Name.Ident, exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+    case class RecordSelect(base: WeededAst.Expression, label: Name.Ident, loc: SourceLocation) extends WeededAst.Expression
 
-    case class RecordProjection(base: WeededAst.Expression, label: Name.Ident, loc: SourceLocation) extends WeededAst.Expression
+    case class RecordExtend(base: WeededAst.Expression, label: Name.Ident, value: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
-    case class RecordRestriction(base: WeededAst.Expression, label: Name.Ident, loc: SourceLocation) extends WeededAst.Expression
+    case class RecordRestrict(base: WeededAst.Expression, label: Name.Ident, loc: SourceLocation) extends WeededAst.Expression
 
     case class ArrayLit(elms: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
 

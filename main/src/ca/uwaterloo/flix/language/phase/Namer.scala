@@ -647,17 +647,17 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Expression.RecordEmpty(loc) =>
       NamedAst.Expression.RecordEmpty(Type.freshTypeVar(), loc).toSuccess
 
-    case WeededAst.Expression.RecordProjection(base, label, loc) =>
+    case WeededAst.Expression.RecordSelect(base, label, loc) =>
       mapN(visitExp(base, env0, tenv0)) {
         case b => NamedAst.Expression.RecordSelect(b, label, Type.freshTypeVar(), loc)
       }
 
-    case WeededAst.Expression.RecordExtension(base, label, value, loc) =>
+    case WeededAst.Expression.RecordExtend(base, label, value, loc) =>
       mapN(visitExp(base, env0, tenv0), visitExp(value, env0, tenv0)) {
         case (b, v) => NamedAst.Expression.RecordExtend(b, label, v, Type.freshTypeVar(), loc)
       }
 
-    case WeededAst.Expression.RecordRestriction(base, label, loc) =>
+    case WeededAst.Expression.RecordRestrict(base, label, loc) =>
       mapN(visitExp(base, env0, tenv0)) {
         case b => NamedAst.Expression.RecordRestrict(b, label, Type.freshTypeVar(), loc)
       }
@@ -1051,9 +1051,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Expression.Tag(enum, tag, expOpt, loc) => expOpt.map(freeVars).getOrElse(Nil)
     case WeededAst.Expression.Tuple(elms, loc) => elms.flatMap(freeVars)
     case WeededAst.Expression.RecordEmpty(loc) => Nil
-    case WeededAst.Expression.RecordExtension(base, label, exp, loc) => freeVars(base) ++ freeVars(exp)
-    case WeededAst.Expression.RecordProjection(base, label, loc) => freeVars(base)
-    case WeededAst.Expression.RecordRestriction(base, label, loc) => freeVars(base)
+    case WeededAst.Expression.RecordExtend(base, label, exp, loc) => freeVars(base) ++ freeVars(exp)
+    case WeededAst.Expression.RecordSelect(base, label, loc) => freeVars(base)
+    case WeededAst.Expression.RecordRestrict(base, label, loc) => freeVars(base)
     case WeededAst.Expression.ArrayLit(elms, loc) => elms.flatMap(freeVars)
     case WeededAst.Expression.ArrayNew(elm, len, loc) => freeVars(elm) ++ freeVars(len)
     case WeededAst.Expression.ArrayLoad(base, index, loc) => freeVars(base) ++ freeVars(index)

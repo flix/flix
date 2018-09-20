@@ -597,7 +597,7 @@ object ParsedAst {
     case class Tuple(sp1: SourcePosition, elms: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
-      * Record Expression.
+      * Record Literal Expression.
       *
       * @param sp1    the position of the first character in the expression.
       * @param fields the fields of the record.
@@ -606,41 +606,41 @@ object ParsedAst {
     case class RecordLiteral(sp1: SourcePosition, fields: Seq[ParsedAst.RecordField], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
-      * Record Extension Expression.
+      * Record Select Expression.
+      *
+      * @param base  the record expression.
+      * @param label the label to project from the record.
+      * @param sp2   the position of the last character in the expression.
+      */
+    case class RecordSelect(base: ParsedAst.Expression, label: Name.Ident, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
+      * Record Select Lambda Expression.
+      *
+      * @param sp1   the position of the first character in the expression.
+      * @param label the label to project from the record.
+      * @param sp2   the position of the last character in the expression.
+      */
+    case class RecordSelectLambda(sp1: SourcePosition, label: Name.Ident, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
+      * Record Extend Expression.
       *
       * @param sp1    the position of the first character in the expression.
       * @param fields the new fields of the record.
       * @param base   the record expression to extend.
       * @param sp2    the position of the last character in the expression.
       */
-    case class RecordExtension(sp1: SourcePosition, fields: Seq[ParsedAst.RecordField], base: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class RecordExtend(sp1: SourcePosition, fields: Seq[ParsedAst.RecordField], base: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
-      * Record Projection Expression.
-      *
-      * @param base  the record expression.
-      * @param label the label to project from the record.
-      * @param sp2   the position of the last character in the expression.
-      */
-    case class RecordProjection(base: ParsedAst.Expression, label: Name.Ident, sp2: SourcePosition) extends ParsedAst.Expression
-
-    /**
-      * Record Projection Lambda Expression.
-      *
-      * @param sp1   the position of the first character in the expression.
-      * @param label the label to project from the record.
-      * @param sp2   the position of the last character in the expression.
-      */
-    case class RecordProjectionLambda(sp1: SourcePosition, label: Name.Ident, sp2: SourcePosition) extends ParsedAst.Expression
-
-    /**
-      * Record Restriction Expression.
+      * Record Restrict Expression.
       *
       * @param base  the record expression.
       * @param label the label to remove from the record.
       * @param sp2   the position of the last character in the expression.
       */
-    case class RecordRestriction(base: ParsedAst.Expression, label: Name.Ident, sp2: SourcePosition) extends ParsedAst.Expression
+    case class RecordRestrict(base: ParsedAst.Expression, label: Name.Ident, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * ArrayLit Expression.
@@ -1439,10 +1439,10 @@ object ParsedAst {
     *
     * @param sp1   the position of the first character in the field.
     * @param label the label of the field.
-    * @param exp   the expression of the field.
+    * @param value the expression of the field.
     * @param sp2   the position of the last character in the field.
     */
-  case class RecordField(sp1: SourcePosition, label: Name.Ident, exp: ParsedAst.Expression, sp2: SourcePosition)
+  case class RecordField(sp1: SourcePosition, label: Name.Ident, value: ParsedAst.Expression, sp2: SourcePosition)
 
   /**
     * Record Field Type.
