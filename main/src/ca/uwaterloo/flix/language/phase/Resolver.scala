@@ -514,18 +514,18 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
         case NamedAst.Expression.RecordEmpty(tvar, loc) =>
           ResolvedAst.Expression.RecordEmpty(tvar, loc).toSuccess
 
-        case NamedAst.Expression.RecordProjection(base, label, tvar, loc) =>
+        case NamedAst.Expression.RecordSelect(base, label, tvar, loc) =>
           for {
             b <- visit(base, tenv0)
           } yield ResolvedAst.Expression.RecordSelect(b, label, tvar, loc)
 
-        case NamedAst.Expression.RecordExtension(base, label, value, tvar, loc) =>
+        case NamedAst.Expression.RecordExtend(base, label, value, tvar, loc) =>
           for {
             b <- visit(base, tenv0)
             v <- visit(value, tenv0)
           } yield ResolvedAst.Expression.RecordExtend(b, label, v, tvar, loc)
 
-        case NamedAst.Expression.RecordRestriction(base, label, tvar, loc) =>
+        case NamedAst.Expression.RecordRestrict(base, label, tvar, loc) =>
           for {
             b <- visit(base, tenv0)
           } yield ResolvedAst.Expression.RecordRestrict(b, label, tvar, loc)
