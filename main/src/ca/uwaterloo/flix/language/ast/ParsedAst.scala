@@ -636,11 +636,12 @@ object ParsedAst {
     /**
       * Record Restrict Expression.
       *
-      * @param base  the record expression.
-      * @param label the label to remove from the record.
-      * @param sp2   the position of the last character in the expression.
+      * @param sp1    the position of the first character in the expression.
+      * @param labels the sequence of labels to restrict.
+      * @param base   the record expression to restrict.
+      * @param sp2    the position of the last character in the expression.
       */
-    case class RecordRestrict(base: ParsedAst.Expression, label: Name.Ident, sp2: SourcePosition) extends ParsedAst.Expression
+    case class RecordRestrict(sp1: SourcePosition, labels: Seq[Name.Ident], base: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Record Update Expression.

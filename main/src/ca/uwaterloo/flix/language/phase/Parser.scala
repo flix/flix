@@ -520,12 +520,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Infix: Rule1[ParsedAst.Expression] = rule {
-      RecordRestrict ~ zeroOrMore(optWS ~ "`" ~ Names.QualifiedDefinition ~ "`" ~ optWS ~ Special ~ SP ~> ParsedAst.Expression.Infix)
-    }
-
-    def RecordRestrict: Rule1[ParsedAst.Expression] = rule {
-      // TODO: Does this belong here in the precedence hierarchy?
-      Special ~ optional(optWS ~ atomic("%%%") ~ optWS ~ Names.Field ~ SP ~> ParsedAst.Expression.RecordRestrict)
+      Special ~ zeroOrMore(optWS ~ "`" ~ Names.QualifiedDefinition ~ "`" ~ optWS ~ Special ~ SP ~> ParsedAst.Expression.Infix)
     }
 
     def Special: Rule1[ParsedAst.Expression] = {
@@ -537,7 +532,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
       // NB: We allow any operator, other than a reserved operator, to be matched by this rule.
       def Reserved3: Rule1[String] = rule {
-        capture("<<<" | ">>>" | "%%%")
+        capture("<<<" | ">>>")
       }
 
       // Match any two character operator which is not reserved.
@@ -588,7 +583,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Primary: Rule1[ParsedAst.Expression] = rule {
       LetRec | LetMatch | IfThenElse | Match | LambdaMatch | Switch | TryCatch | Native | Lambda | Tuple |
-        RecordExtend | RecordUpdate | RecordLiteral | RecordSelectLambda |
+        RecordRestrict | RecordExtend | RecordUpdate | RecordLiteral | RecordSelectLambda |
         ArrayLit | ArrayNew | ArrayLength | VectorLit | VectorNew | VectorLength | FNil | FSet | FMap |
         NewRelationOrLattice | FixpointSolve | FixpointCheck | FixpointDelta | ConstraintSeq | Literal |
         HandleWith | Existential | Universal | UnaryLambda | QName | Wild | Tag | SName | Hole | UserError
@@ -711,11 +706,15 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def RecordExtend: Rule1[ParsedAst.Expression] = rule {
-      SP ~ "%{" ~ optWS ~ oneOrMore(RecordFieldLiteral).separatedBy(optWS ~ "," ~ optWS) ~ WS ~ atomic("|") ~ WS ~ Expression ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.RecordExtend
+      SP ~ "%{" ~ optWS ~ oneOrMore(RecordFieldLiteral).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ atomic("|") ~ optWS ~ Expression ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.RecordExtend
+    }
+
+    def RecordRestrict: Rule1[ParsedAst.Expression] = rule {
+      SP ~ "%{" ~ optWS ~ oneOrMore(atomic("-") ~ Names.Field).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ atomic("|") ~ optWS ~ Expression ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.RecordRestrict
     }
 
     def RecordUpdate: Rule1[ParsedAst.Expression] = rule {
-      SP ~ "%{" ~ optWS ~ oneOrMore(RecordFieldUpdate).separatedBy(optWS ~ "," ~ optWS) ~ WS ~ atomic("|") ~ WS ~ Expression ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.RecordUpdate
+      SP ~ "%{" ~ optWS ~ oneOrMore(RecordFieldUpdate).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ atomic("|") ~ optWS ~ Expression ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.RecordUpdate
     }
 
     def RecordSelectLambda: Rule1[ParsedAst.Expression] = rule {
@@ -1024,7 +1023,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       rule {
-        SP ~ atomic("%{") ~ optWS ~ zeroOrMore(RecordFieldType).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ optional(optWS ~ "|"  ~ optWS  ~ Names.Variable) ~ optWS ~ "}" ~ SP ~> ParsedAst.Type.Record
+        SP ~ atomic("%{") ~ optWS ~ zeroOrMore(RecordFieldType).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ optional(optWS ~ "|" ~ optWS ~ Names.Variable) ~ optWS ~ "}" ~ SP ~> ParsedAst.Type.Record
       }
     }
 
