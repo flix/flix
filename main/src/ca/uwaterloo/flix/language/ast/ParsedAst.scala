@@ -650,7 +650,7 @@ object ParsedAst {
       * @param base   the record expression to extend.
       * @param sp2    the position of the last character in the expression.
       */
-    case class RecordUpdate(sp1: SourcePosition, base: ParsedAst.Expression, fields: Seq[ParsedAst.RecordFieldUpdate], sp2: SourcePosition) extends ParsedAst.Expression
+    case class RecordUpdate(sp1: SourcePosition, fields: Seq[ParsedAst.RecordFieldUpdate], base: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * ArrayLit Expression.

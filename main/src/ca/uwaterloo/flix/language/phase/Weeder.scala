@@ -655,7 +655,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         case b => WeededAst.Expression.RecordRestrict(b, label, mkSL(sp1, sp2))
       }
 
-    case ParsedAst.Expression.RecordUpdate(_, base, fields, _) =>
+    case ParsedAst.Expression.RecordUpdate(_, fields, base, _) =>
       val fieldsVal = traverse(fields) {
         case ParsedAst.RecordFieldUpdate(sp1, label, value, sp2) =>
           mapN(visitExp(value)) {
