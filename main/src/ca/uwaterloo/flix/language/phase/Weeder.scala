@@ -601,7 +601,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         case xs => WeededAst.Expression.Tuple(xs, mkSL(sp1, sp2))
       }
 
-    case ParsedAst.Expression.RecordLiteral(sp1, fields, sp2) =>
+    case ParsedAst.Expression.RecordLit(sp1, fields, sp2) =>
       val fieldsVal = traverse(fields) {
         case ParsedAst.RecordFieldLiteral(fsp1, label, exp, fsp2) =>
           mapN(visitExp(exp)) {
@@ -1395,8 +1395,11 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
     case ParsedAst.Type.Tuple(sp1, elms, sp2) => WeededAst.Type.Tuple(elms.toList.map(visitType), mkSL(sp1, sp2))
 
-    case ParsedAst.Type.Record(sp1, fields, sp2) =>
-      val zero = WeededAst.Type.RecordEmpty(mkSL(sp1, sp2))
+    case ParsedAst.Type.Record(sp1, fields, baseOpt, sp2) =>
+      val zero = baseOpt match {
+        case None => WeededAst.Type.RecordEmpty(mkSL(sp1, sp2))
+        case Some(base) => WeededAst.Type.Var(base, mkSL(sp1, sp2))
+      }
       fields.foldLeft(zero: WeededAst.Type) {
         case (acc, ParsedAst.RecordFieldType(ssp1, l, t, ssp2)) => WeededAst.Type.RecordExtension(acc, l, visitType(t), mkSL(ssp1, ssp2))
       }
@@ -1739,7 +1742,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.Switch(sp1, _, _) => sp1
     case ParsedAst.Expression.Tag(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Tuple(sp1, _, _) => sp1
-    case ParsedAst.Expression.RecordLiteral(sp1, _, _) => sp1
+    case ParsedAst.Expression.RecordLit(sp1, _, _) => sp1
     case ParsedAst.Expression.RecordExtend(sp1, _, _, _) => sp1
     case ParsedAst.Expression.RecordSelect(base, _, _) => leftMostSourcePosition(base)
     case ParsedAst.Expression.RecordSelectLambda(sp1, _, _) => sp1
@@ -1790,7 +1793,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Type.Var(sp1, _, _) => sp1
     case ParsedAst.Type.Ambiguous(sp1, _, _) => sp1
     case ParsedAst.Type.Tuple(sp1, _, _) => sp1
-    case ParsedAst.Type.Record(sp1, _, _) => sp1
+    case ParsedAst.Type.Record(sp1, _, _, _) => sp1
     case ParsedAst.Type.Nat(sp1, _, _) => sp1
     case ParsedAst.Type.Native(sp1, _, _) => sp1
     case ParsedAst.Type.Arrow(sp1, _, _, _) => sp1

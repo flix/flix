@@ -603,7 +603,7 @@ object ParsedAst {
       * @param fields the fields of the record.
       * @param sp2    the position of the last character in the expression.
       */
-    case class RecordLiteral(sp1: SourcePosition, fields: Seq[ParsedAst.RecordFieldLiteral], sp2: SourcePosition) extends ParsedAst.Expression
+    case class RecordLit(sp1: SourcePosition, fields: Seq[ParsedAst.RecordFieldLiteral], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Record Select Expression.
@@ -1217,11 +1217,12 @@ object ParsedAst {
     /**
       * Record Type.
       *
-      * @param sp1  the position of the first character in the type.
-      * @param elms the types of the fields.
-      * @param sp2  the position of the last character in the type.
+      * @param sp1    the position of the first character in the type.
+      * @param fields the types of the fields.
+      * @param base   the optional row variable.
+      * @param sp2    the position of the last character in the type.
       */
-    case class Record(sp1: SourcePosition, fields: Seq[ParsedAst.RecordFieldType], sp2: SourcePosition) extends ParsedAst.Type
+    case class Record(sp1: SourcePosition, fields: Seq[ParsedAst.RecordFieldType], base: Option[Name.Ident], sp2: SourcePosition) extends ParsedAst.Type
 
     /**
       * Nat Type.

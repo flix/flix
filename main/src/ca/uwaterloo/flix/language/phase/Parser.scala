@@ -707,7 +707,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def RecordLiteral: Rule1[ParsedAst.Expression] = rule {
-      SP ~ "%{" ~ optWS ~ zeroOrMore(RecordFieldLiteral).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.RecordLiteral
+      SP ~ "%{" ~ optWS ~ zeroOrMore(RecordFieldLiteral).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.RecordLit
     }
 
     def RecordExtend: Rule1[ParsedAst.Expression] = rule {
@@ -1024,7 +1024,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       rule {
-        SP ~ atomic("%{") ~ optWS ~ zeroOrMore(RecordFieldType).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Type.Record
+        SP ~ atomic("%{") ~ optWS ~ zeroOrMore(RecordFieldType).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ optional(optWS ~ "|"  ~ optWS  ~ Names.Variable) ~ optWS ~ "}" ~ SP ~> ParsedAst.Type.Record
       }
     }
 
