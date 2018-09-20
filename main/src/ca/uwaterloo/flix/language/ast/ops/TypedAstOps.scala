@@ -101,13 +101,13 @@ object TypedAstOps {
 
       case Expression.RecordEmpty(tpe, eff, loc) => Map.empty
 
-      case Expression.RecordExtension(base, label, fld, tpe, eff, loc) =>
-        visitExp(base, env0) ++ visitExp(fld, env0)
-
-      case Expression.RecordProjection(base, label, tpe, eff, loc) =>
+      case Expression.RecordSelect(base, label, tpe, eff, loc) =>
         visitExp(base, env0)
 
-      case Expression.RecordRestriction(base, label, tpe, eff, loc) =>
+      case Expression.RecordExtend(base, label, value, tpe, eff, loc) =>
+        visitExp(base, env0) ++ visitExp(value, env0)
+
+      case Expression.RecordRestrict(base, label, tpe, eff, loc) =>
         visitExp(base, env0)
 
       case Expression.ArrayLit(elms, tpe, eff, loc) =>

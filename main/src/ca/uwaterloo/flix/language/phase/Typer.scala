@@ -1376,26 +1376,26 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           TypedAst.Expression.RecordEmpty(subst0(tvar), Eff.Bot, loc)
 
         /*
-         * RecordExtension expression.
-         */
-        case ResolvedAst.Expression.RecordExtension(base, label, field, tvar, loc) =>
-          val b = visitExp(base, subst0)
-          val f = visitExp(field, subst0)
-          TypedAst.Expression.RecordExtension(b, label, f, subst0(tvar), Eff.Bot, loc)
-
-        /*
-          * RecordProjection expression.
+          * RecordSelect expression.
           */
         case ResolvedAst.Expression.RecordProjection(base, label, tvar, loc) =>
           val b = visitExp(base, subst0)
-          TypedAst.Expression.RecordProjection(b, label, subst0(tvar), Eff.Bot, loc)
+          TypedAst.Expression.RecordSelect(b, label, subst0(tvar), Eff.Bot, loc)
 
         /*
-         * RecordRestriction expression.
+         * RecordExtend expression.
+         */
+        case ResolvedAst.Expression.RecordExtension(base, label, value, tvar, loc) =>
+          val b = visitExp(base, subst0)
+          val v = visitExp(value, subst0)
+          TypedAst.Expression.RecordExtend(b, label, v, subst0(tvar), Eff.Bot, loc)
+
+        /*
+         * RecordRestrict expression.
          */
         case ResolvedAst.Expression.RecordRestriction(base, label, tvar, loc) =>
           val b = visitExp(base, subst0)
-          TypedAst.Expression.RecordRestriction(b, label, subst0(tvar), Eff.Bot, loc)
+          TypedAst.Expression.RecordRestrict(b, label, subst0(tvar), Eff.Bot, loc)
 
         /*
          * ArrayLit expression.

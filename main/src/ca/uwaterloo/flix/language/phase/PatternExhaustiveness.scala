@@ -209,18 +209,18 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
         case Expression.RecordEmpty(tpe, eff, loc) =>
           tast.toSuccess
 
-        case Expression.RecordExtension(base, label, fld, tpe, eff, loc) =>
-          for {
-            _ <- checkPats(base, root)
-            _ <- checkPats(fld, root)
-          } yield tast
-
-        case Expression.RecordProjection(base, label, tpe, eff, loc) =>
+        case Expression.RecordSelect(base, label, tpe, eff, loc) =>
           for {
             _ <- checkPats(base, root)
           } yield tast
 
-        case Expression.RecordRestriction(base, label, tpe, eff, loc) =>
+        case Expression.RecordExtend(base, label, value, tpe, eff, loc) =>
+          for {
+            _ <- checkPats(base, root)
+            _ <- checkPats(value, root)
+          } yield tast
+
+        case Expression.RecordRestrict(base, label, tpe, eff, loc) =>
           for {
             _ <- checkPats(base, root)
           } yield tast

@@ -311,11 +311,11 @@ object Effects extends Phase[Root, Root] {
 
         case Expression.RecordEmpty(tpe, eff, loc) => ???
 
-        case Expression.RecordExtension(base, label, fld, tpe, eff, loc) => ???
+        case Expression.RecordSelect(base, label, tpe, eff, loc) => ???
 
-        case Expression.RecordProjection(base, label, tpe, eff, loc) => ???
+        case Expression.RecordExtend(base, label, value, tpe, eff, loc) => ???
 
-        case Expression.RecordRestriction(base, label, tpe, eff, loc) => ???
+        case Expression.RecordRestrict(base, label, tpe, eff, loc) => ???
 
         /**
           * ArrayLit Expression.

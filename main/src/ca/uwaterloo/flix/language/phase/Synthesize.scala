@@ -177,18 +177,18 @@ object Synthesize extends Phase[Root, Root] {
       case Expression.RecordEmpty(tpe, eff, loc) =>
         Expression.RecordEmpty(tpe, eff, loc)
 
-      case Expression.RecordExtension(base, label, fld, tpe, eff, loc) =>
+      case Expression.RecordSelect(base, label, tpe, eff, loc) =>
         val b = visitExp(base)
-        val f = visitExp(fld)
-        Expression.RecordExtension(b, label, f, tpe, eff, loc)
+        Expression.RecordSelect(b, label, tpe, eff, loc)
 
-      case Expression.RecordProjection(base, label, tpe, eff, loc) =>
+      case Expression.RecordExtend(base, label, value, tpe, eff, loc) =>
         val b = visitExp(base)
-        Expression.RecordProjection(b, label, tpe, eff, loc)
+        val v = visitExp(value)
+        Expression.RecordExtend(b, label, v, tpe, eff, loc)
 
-      case Expression.RecordRestriction(base, label, tpe, eff, loc) =>
+      case Expression.RecordRestrict(base, label, tpe, eff, loc) =>
         val b = visitExp(base)
-        Expression.RecordRestriction(b, label, tpe, eff, loc)
+        Expression.RecordRestrict(b, label, tpe, eff, loc)
 
       case Expression.ArrayLit(elms, tpe, eff, loc) =>
         val es = elms map visitExp
