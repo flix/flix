@@ -633,11 +633,11 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       val lambdaBody = WeededAst.Expression.RecordSelect(varExp, label, loc)
       WeededAst.Expression.Lambda(fparam, lambdaBody, loc).toSuccess
 
-    case ParsedAst.Expression.RecordExtend(sp1, fields, base, sp2) =>
+    case ParsedAst.Expression.RecordExtend(_, fields, base, _) =>
       val fieldsVal = traverse(fields) {
-        case ParsedAst.RecordFieldLiteral(fsp1, label, exp, fsp2) =>
+        case ParsedAst.RecordFieldLiteral(sp1, label, exp, sp2) =>
           mapN(visitExp(exp)) {
-            case e => label -> e
+            case e => (label, e, mkSL(sp1, sp2))
           }
       }
 
@@ -645,7 +645,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         case (b, fs) =>
           // Rewrite into a sequence of nested record extensions.
           fs.foldLeft(b) {
-            case (acc, (label, exp)) => WeededAst.Expression.RecordExtend(acc, label, exp, mkSL(sp1, sp2))
+            case (acc, (label, value, loc)) => WeededAst.Expression.RecordExtend(acc, label, value, loc)
           }
       }
 
@@ -655,8 +655,23 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         case b => WeededAst.Expression.RecordRestrict(b, label, mkSL(sp1, sp2))
       }
 
-    case ParsedAst.Expression.RecordUpdate(sp1, base, fields, sp2) =>
-      ???
+    case ParsedAst.Expression.RecordUpdate(_, base, fields, _) =>
+      val fieldsVal = traverse(fields) {
+        case ParsedAst.RecordFieldUpdate(sp1, label, value, sp2) =>
+          mapN(visitExp(value)) {
+            case v => (label, v, mkSL(sp1, sp2))
+          }
+      }
+
+      mapN(visitExp(base), fieldsVal) {
+        case (b, fs) =>
+          // Rewrite into a sequence of pairwise nested restrictions and extensions.
+          fs.foldLeft(b) {
+            case (acc, (label, value, loc)) =>
+              val inner = WeededAst.Expression.RecordRestrict(acc, label, loc)
+              WeededAst.Expression.RecordExtend(inner, label, value, loc)
+          }
+      }
 
     case ParsedAst.Expression.ArrayLit(sp1, elms, sp2) =>
       traverse(elms)(e => visitExp(e)) map {
