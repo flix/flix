@@ -721,22 +721,9 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           unifyM(tvar, Type.RecordEmpty, loc)
 
         /*
-         * RecordExtension expression.
+         * RecordSelect expression.
          */
-        case ResolvedAst.Expression.RecordExtension(base, lab, field, tvar, loc) =>
-          //
-          // TODO: Rule
-          //
-          for {
-            baseType <- visitExp(base)
-            fieldType <- visitExp(field)
-            resultType <- unifyM(tvar, Type.RecordExtension(baseType, lab.name, fieldType), loc)
-          } yield resultType
-
-        /*
-         * RecordProjection expression.
-         */
-        case ResolvedAst.Expression.RecordProjection(base, label, tvar, loc) =>
+        case ResolvedAst.Expression.RecordSelect(base, label, tvar, loc) =>
           //
           // TODO: Rule
           //
@@ -748,9 +735,22 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           } yield tvar
 
         /*
-         *
+         * RecordExtend expression.
          */
-        case ResolvedAst.Expression.RecordRestriction(base, label, tvar, loc) =>
+        case ResolvedAst.Expression.RecordExtend(base, lab, value, tvar, loc) =>
+          //
+          // TODO: Rule
+          //
+          for {
+            baseType <- visitExp(base)
+            valueType <- visitExp(value)
+            resultType <- unifyM(tvar, Type.RecordExtension(baseType, lab.name, valueType), loc)
+          } yield resultType
+
+        /*
+         * RecordRestrict expression.
+         */
+        case ResolvedAst.Expression.RecordRestrict(base, label, tvar, loc) =>
           //
           // TODO: Rule
           //
@@ -1378,14 +1378,14 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         /*
           * RecordSelect expression.
           */
-        case ResolvedAst.Expression.RecordProjection(base, label, tvar, loc) =>
+        case ResolvedAst.Expression.RecordSelect(base, label, tvar, loc) =>
           val b = visitExp(base, subst0)
           TypedAst.Expression.RecordSelect(b, label, subst0(tvar), Eff.Bot, loc)
 
         /*
          * RecordExtend expression.
          */
-        case ResolvedAst.Expression.RecordExtension(base, label, value, tvar, loc) =>
+        case ResolvedAst.Expression.RecordExtend(base, label, value, tvar, loc) =>
           val b = visitExp(base, subst0)
           val v = visitExp(value, subst0)
           TypedAst.Expression.RecordExtend(b, label, v, subst0(tvar), Eff.Bot, loc)
@@ -1393,7 +1393,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         /*
          * RecordRestrict expression.
          */
-        case ResolvedAst.Expression.RecordRestriction(base, label, tvar, loc) =>
+        case ResolvedAst.Expression.RecordRestrict(base, label, tvar, loc) =>
           val b = visitExp(base, subst0)
           TypedAst.Expression.RecordRestrict(b, label, subst0(tvar), Eff.Bot, loc)
 
