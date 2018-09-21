@@ -98,6 +98,17 @@ object Safety extends Phase[Root, Root] {
         case (acc, e) => acc ::: visitExp(e)
       }
 
+    case Expression.RecordEmpty(tpe, eff, loc) => Nil
+
+    case Expression.RecordSelect(base, label, tpe, eff, loc) =>
+      visitExp(base)
+
+    case Expression.RecordExtend(base, label, value, tpe, eff, loc) =>
+      visitExp(base) ::: visitExp(value)
+
+    case Expression.RecordRestrict(base, label, tpe, eff, loc) =>
+      visitExp(base)
+
     case Expression.ArrayLit(elms, tpe, eff, loc) =>
       elms.foldLeft(Nil: List[CompilationError]) {
         case (acc, e) => acc ::: visitExp(e)

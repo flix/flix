@@ -174,6 +174,22 @@ object Synthesize extends Phase[Root, Root] {
         val es = elms map visitExp
         Expression.Tuple(es, tpe, eff, loc)
 
+      case Expression.RecordEmpty(tpe, eff, loc) =>
+        Expression.RecordEmpty(tpe, eff, loc)
+
+      case Expression.RecordSelect(base, label, tpe, eff, loc) =>
+        val b = visitExp(base)
+        Expression.RecordSelect(b, label, tpe, eff, loc)
+
+      case Expression.RecordExtend(base, label, value, tpe, eff, loc) =>
+        val b = visitExp(base)
+        val v = visitExp(value)
+        Expression.RecordExtend(b, label, v, tpe, eff, loc)
+
+      case Expression.RecordRestrict(base, label, tpe, eff, loc) =>
+        val b = visitExp(base)
+        Expression.RecordRestrict(b, label, tpe, eff, loc)
+
       case Expression.ArrayLit(elms, tpe, eff, loc) =>
         val es = elms map visitExp
         Expression.ArrayLit(es, tpe, eff, loc)
@@ -1061,6 +1077,14 @@ object Synthesize extends Phase[Root, Root] {
 
             // Assemble the entire match expression.
             return Expression.Match(matchValue, rule :: Nil, Type.Str, ast.Eff.Pure, sl)
+          }
+
+          //
+          // Records
+          //
+          if (tpe.isRecord) {
+            // TODO: Implement toString
+            return Expression.Str("<<record>>", sl)
           }
 
           throw InternalCompilerException(s"Unknown type '$tpe'.")

@@ -711,6 +711,56 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           ) yield resultType
 
         /*
+         * RecordEmpty expression.
+         */
+        case ResolvedAst.Expression.RecordEmpty(tvar, loc) =>
+          //
+          //  ------------
+          //  %{ } : % { }
+          //
+          unifyM(tvar, Type.RecordEmpty, loc)
+
+        /*
+         * RecordSelect expression.
+         */
+        case ResolvedAst.Expression.RecordSelect(base, label, tvar, loc) =>
+          //
+          // TODO: Rule
+          //
+          val freshRowVar = Type.freshTypeVar()
+          val expectedType = Type.RecordExtension(freshRowVar, label, tvar)
+          for {
+            actualType <- visitExp(base)
+            recordType <- unifyM(actualType, expectedType, loc)
+          } yield tvar
+
+        /*
+         * RecordExtend expression.
+         */
+        case ResolvedAst.Expression.RecordExtend(base, label, value, tvar, loc) =>
+          //
+          // TODO: Rule
+          //
+          for {
+            baseType <- visitExp(base)
+            valueType <- visitExp(value)
+            resultType <- unifyM(tvar, Type.RecordExtension(baseType, label, valueType), loc)
+          } yield resultType
+
+        /*
+         * RecordRestrict expression.
+         */
+        case ResolvedAst.Expression.RecordRestrict(base, label, tvar, loc) =>
+          //
+          // TODO: Rule
+          //
+          for {
+            baseType <- visitExp(base)
+            resultType <- unifyM(baseType, Type.RecordExtension(Type.freshTypeVar(), label, tvar), loc)
+          } yield baseType
+
+
+        /*
          * ArrayLit expression.
          */
         case ResolvedAst.Expression.ArrayLit(elms, tvar, loc) =>
@@ -1318,6 +1368,34 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         case ResolvedAst.Expression.Tuple(elms, tvar, loc) =>
           val es = elms.map(e => visitExp(e, subst0))
           TypedAst.Expression.Tuple(es, subst0(tvar), Eff.Bot, loc)
+
+        /*
+         * RecordEmpty expression.
+         */
+        case ResolvedAst.Expression.RecordEmpty(tvar, loc) =>
+          TypedAst.Expression.RecordEmpty(subst0(tvar), Eff.Bot, loc)
+
+        /*
+          * RecordSelect expression.
+          */
+        case ResolvedAst.Expression.RecordSelect(base, label, tvar, loc) =>
+          val b = visitExp(base, subst0)
+          TypedAst.Expression.RecordSelect(b, label, subst0(tvar), Eff.Bot, loc)
+
+        /*
+         * RecordExtend expression.
+         */
+        case ResolvedAst.Expression.RecordExtend(base, label, value, tvar, loc) =>
+          val b = visitExp(base, subst0)
+          val v = visitExp(value, subst0)
+          TypedAst.Expression.RecordExtend(b, label, v, subst0(tvar), Eff.Bot, loc)
+
+        /*
+         * RecordRestrict expression.
+         */
+        case ResolvedAst.Expression.RecordRestrict(base, label, tvar, loc) =>
+          val b = visitExp(base, subst0)
+          TypedAst.Expression.RecordRestrict(b, label, subst0(tvar), Eff.Bot, loc)
 
         /*
          * ArrayLit expression.

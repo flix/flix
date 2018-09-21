@@ -380,6 +380,22 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case TypedAst.Expression.Tuple(elms, tpe, eff, loc) =>
         SimplifiedAst.Expression.Tuple(elms map visitExp, tpe, loc)
 
+      case TypedAst.Expression.RecordEmpty(tpe, eff, loc) =>
+        SimplifiedAst.Expression.RecordEmpty(tpe, loc)
+
+      case TypedAst.Expression.RecordSelect(base, label, tpe, eff, loc) =>
+        val b = visitExp(base)
+        SimplifiedAst.Expression.RecordSelect(b, label, tpe, loc)
+
+      case TypedAst.Expression.RecordExtend(base, label, value, tpe, eff, loc) =>
+        val b = visitExp(base)
+        val v = visitExp(value)
+        SimplifiedAst.Expression.RecordExtend(b, label, v, tpe, loc)
+
+      case TypedAst.Expression.RecordRestrict(base, label, tpe, eff, loc) =>
+        val b = visitExp(base)
+        SimplifiedAst.Expression.RecordRestrict(b, label, tpe, loc)
+
       case TypedAst.Expression.ArrayLit(elms, tpe, eff, loc) =>
         SimplifiedAst.Expression.ArrayLit(elms map visitExp, tpe, loc)
 
@@ -1096,6 +1112,23 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         SimplifiedAst.Expression.Index(visit(exp), offset, tpe, loc)
       case SimplifiedAst.Expression.Tuple(elms, tpe, loc) =>
         SimplifiedAst.Expression.Tuple(elms.map(visit), tpe, loc)
+
+      case SimplifiedAst.Expression.RecordEmpty(tpe, loc) =>
+        SimplifiedAst.Expression.RecordEmpty(tpe, loc)
+
+      case SimplifiedAst.Expression.RecordExtend(base, label, value, tpe, loc) =>
+        val b = visit(base)
+        val v = visit(value)
+        SimplifiedAst.Expression.RecordExtend(b, label, v, tpe, loc)
+
+      case SimplifiedAst.Expression.RecordSelect(base, label, tpe, loc) =>
+        val b = visit(base)
+        SimplifiedAst.Expression.RecordSelect(b, label, tpe, loc)
+
+      case SimplifiedAst.Expression.RecordRestrict(base, label, tpe, loc) =>
+        val b = visit(base)
+        SimplifiedAst.Expression.RecordRestrict(b, label, tpe, loc)
+
       case SimplifiedAst.Expression.ArrayLit(elms, tpe, loc) =>
         SimplifiedAst.Expression.ArrayLit(elms.map(visit), tpe, loc)
       case SimplifiedAst.Expression.ArrayNew(elm, len, tpe, loc) =>

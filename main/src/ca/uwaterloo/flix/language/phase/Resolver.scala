@@ -511,6 +511,25 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
             es <- traverse(elms)(e => visit(e, tenv0))
           } yield ResolvedAst.Expression.Tuple(es, tvar, loc)
 
+        case NamedAst.Expression.RecordEmpty(tvar, loc) =>
+          ResolvedAst.Expression.RecordEmpty(tvar, loc).toSuccess
+
+        case NamedAst.Expression.RecordSelect(base, label, tvar, loc) =>
+          for {
+            b <- visit(base, tenv0)
+          } yield ResolvedAst.Expression.RecordSelect(b, label.name, tvar, loc)
+
+        case NamedAst.Expression.RecordExtend(base, label, value, tvar, loc) =>
+          for {
+            b <- visit(base, tenv0)
+            v <- visit(value, tenv0)
+          } yield ResolvedAst.Expression.RecordExtend(b, label.name, v, tvar, loc)
+
+        case NamedAst.Expression.RecordRestrict(base, label, tvar, loc) =>
+          for {
+            b <- visit(base, tenv0)
+          } yield ResolvedAst.Expression.RecordRestrict(b, label.name, tvar, loc)
+
         case NamedAst.Expression.ArrayLit(elms, tvar, loc) =>
           for {
             es <- traverse(elms)(e => visit(e, tenv0))
@@ -1250,10 +1269,20 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
       }
     case NamedAst.Type.Enum(sym) =>
       Type.Enum(sym, Kind.Star).toSuccess
+
     case NamedAst.Type.Tuple(elms0, loc) =>
       for (
         elms <- traverse(elms0)(tpe => lookupType(tpe, ns0, root))
       ) yield Type.mkTuple(elms)
+
+    case NamedAst.Type.RecordEmpty(loc) =>
+      Type.RecordEmpty.toSuccess
+
+    case NamedAst.Type.RecordExtension(base, label, value, loc) =>
+      for {
+        b <- lookupType(base, ns0, root)
+        v <- lookupType(value, ns0, root)
+      } yield Type.RecordExtension(b, label.name, v)
 
     case NamedAst.Type.Nat(len, loc) => Type.Succ(len, Type.Zero).toSuccess
 

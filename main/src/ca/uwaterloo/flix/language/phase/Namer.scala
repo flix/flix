@@ -644,6 +644,24 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case es => NamedAst.Expression.Tuple(es, Type.freshTypeVar(), loc)
       }
 
+    case WeededAst.Expression.RecordEmpty(loc) =>
+      NamedAst.Expression.RecordEmpty(Type.freshTypeVar(), loc).toSuccess
+
+    case WeededAst.Expression.RecordSelect(base, label, loc) =>
+      mapN(visitExp(base, env0, tenv0)) {
+        case b => NamedAst.Expression.RecordSelect(b, label, Type.freshTypeVar(), loc)
+      }
+
+    case WeededAst.Expression.RecordExtend(base, label, value, loc) =>
+      mapN(visitExp(base, env0, tenv0), visitExp(value, env0, tenv0)) {
+        case (b, v) => NamedAst.Expression.RecordExtend(b, label, v, Type.freshTypeVar(), loc)
+      }
+
+    case WeededAst.Expression.RecordRestrict(base, label, loc) =>
+      mapN(visitExp(base, env0, tenv0)) {
+        case b => NamedAst.Expression.RecordRestrict(b, label, Type.freshTypeVar(), loc)
+      }
+
     case WeededAst.Expression.ArrayLit(elms, loc) =>
       traverse(elms)(e => visitExp(e, env0, tenv0)) map {
         case es => NamedAst.Expression.ArrayLit(es, Type.freshTypeVar(), loc)
@@ -958,26 +976,31 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     /**
       * Inner visitor.
       */
-    def visit(tpe: WeededAst.Type, env: Map[String, Type.Var]): NamedAst.Type = tpe match {
+    def visit(tpe0: WeededAst.Type, env0: Map[String, Type.Var]): NamedAst.Type = tpe0 match {
       case WeededAst.Type.Unit(loc) => NamedAst.Type.Unit(loc)
-      case WeededAst.Type.Var(ident, loc) => env.get(ident.name) match {
+      case WeededAst.Type.Var(ident, loc) => env0.get(ident.name) match {
         case None =>
           throw InternalCompilerException(s"Unknown type variable '${ident.name}' near: ${loc.format}")
         case Some(tvar) => NamedAst.Type.Var(tvar, loc)
       }
       case WeededAst.Type.Ambiguous(qname, loc) =>
         if (qname.isUnqualified)
-          env.get(qname.ident.name) match {
+          env0.get(qname.ident.name) match {
             case None => NamedAst.Type.Ambiguous(qname, loc)
             case Some(tvar) => NamedAst.Type.Var(tvar, loc)
           }
         else
           NamedAst.Type.Ambiguous(qname, loc)
-      case WeededAst.Type.Tuple(elms, loc) => NamedAst.Type.Tuple(elms.map(e => visit(e, env)), loc)
+      case WeededAst.Type.Tuple(elms, loc) => NamedAst.Type.Tuple(elms.map(e => visit(e, env0)), loc)
+      case WeededAst.Type.RecordEmpty(loc) => NamedAst.Type.RecordEmpty(loc)
+      case WeededAst.Type.RecordExtension(base, label, value, loc) =>
+        val b = visit(base, env0)
+        val t = visit(value, env0)
+        NamedAst.Type.RecordExtension(b, label, t, loc)
       case WeededAst.Type.Nat(len, loc) => NamedAst.Type.Nat(len, loc)
       case WeededAst.Type.Native(fqn, loc) => NamedAst.Type.Native(fqn, loc)
-      case WeededAst.Type.Arrow(tparams, tresult, loc) => NamedAst.Type.Arrow(tparams.map(t => visit(t, env)), visit(tresult, env), loc)
-      case WeededAst.Type.Apply(tpe1, tpe2, loc) => NamedAst.Type.Apply(visit(tpe1, env), visit(tpe2, env), loc)
+      case WeededAst.Type.Arrow(tparams, tresult, loc) => NamedAst.Type.Arrow(tparams.map(t => visit(t, env0)), visit(tresult, env0), loc)
+      case WeededAst.Type.Apply(tpe1, tpe2, loc) => NamedAst.Type.Apply(visit(tpe1, env0), visit(tpe2, env0), loc)
     }
 
     visit(tpe, tenv0)
@@ -1027,6 +1050,10 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     }
     case WeededAst.Expression.Tag(enum, tag, expOpt, loc) => expOpt.map(freeVars).getOrElse(Nil)
     case WeededAst.Expression.Tuple(elms, loc) => elms.flatMap(freeVars)
+    case WeededAst.Expression.RecordEmpty(loc) => Nil
+    case WeededAst.Expression.RecordExtend(base, label, exp, loc) => freeVars(base) ++ freeVars(exp)
+    case WeededAst.Expression.RecordSelect(base, label, loc) => freeVars(base)
+    case WeededAst.Expression.RecordRestrict(base, label, loc) => freeVars(base)
     case WeededAst.Expression.ArrayLit(elms, loc) => elms.flatMap(freeVars)
     case WeededAst.Expression.ArrayNew(elm, len, loc) => freeVars(elm) ++ freeVars(len)
     case WeededAst.Expression.ArrayLoad(base, index, loc) => freeVars(base) ++ freeVars(index)
@@ -1093,6 +1120,8 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Type.Ambiguous(qname, loc) => Nil
     case WeededAst.Type.Unit(loc) => Nil
     case WeededAst.Type.Tuple(elms, loc) => elms.flatMap(freeVars)
+    case WeededAst.Type.RecordEmpty(loc) => Nil
+    case WeededAst.Type.RecordExtension(b, _, t, _) => freeVars(b) ::: freeVars(t)
     case WeededAst.Type.Nat(n, loc) => Nil
     case WeededAst.Type.Native(fqm, loc) => Nil
     case WeededAst.Type.Arrow(tparams, retType, loc) => tparams.flatMap(freeVars) ::: freeVars(retType)

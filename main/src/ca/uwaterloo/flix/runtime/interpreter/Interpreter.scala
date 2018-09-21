@@ -123,6 +123,22 @@ object Interpreter {
       val es = elms.map(e => eval(e, env0, henv0, lenv0, root))
       Value.Tuple(es)
 
+    case Expression.RecordEmpty(tpe, loc) =>
+      Value.RecordEmpty
+
+    case Expression.RecordSelect(base, label, tpe, loc) =>
+      val b = eval(base, env0, henv0, lenv0, root)
+      lookupRecordLabel(b, label)
+
+    case Expression.RecordExtend(base, label, value, tpe, loc) =>
+      val b = eval(base, env0, henv0, lenv0, root)
+      val v = eval(value, env0, henv0, lenv0, root)
+      Value.RecordExtension(b, label, v)
+
+    case Expression.RecordRestrict(base, label, tpe, loc) =>
+      val b = eval(base, env0, henv0, lenv0, root)
+      removeRecordLabel(b, label)
+
     case Expression.ArrayLit(elms, tpe, _) =>
       val es = elms.map(e => eval(e, env0, henv0, lenv0, root))
       Value.Arr(es.toArray, tpe.typeArguments.head)
@@ -1020,6 +1036,14 @@ object Interpreter {
   }
 
   /**
+    * Casts the given reference `ref` to a record.
+    */
+  private def cast2record(ref: AnyRef): Value.RecordExtension = ref match {
+    case v: Value.RecordExtension => v
+    case _ => throw InternalRuntimeException(s"Unexpected non-record value: ${ref.getClass.getName}.")
+  }
+
+  /**
     * Casts the given reference `ref` to an array value.
     */
   private def cast2array(ref: AnyRef): Value.Arr = ref match {
@@ -1055,6 +1079,32 @@ object Interpreter {
     * Constructs a bool from the given boolean `b`.
     */
   private def mkBool(b: Boolean): AnyRef = if (b) Value.True else Value.False
+
+  /**
+    * Performs a lookup of the given field in the given record.
+    */
+  private def lookupRecordLabel(record: AnyRef, field: String): AnyRef = record match {
+    case Value.RecordExtension(base, field2, value) =>
+      if (field == field2)
+        value
+      else
+        lookupRecordLabel(base, field)
+    case Value.RecordEmpty => throw InternalRuntimeException(s"Unexpected missing field: '$field'.")
+    case _ => throw InternalRuntimeException(s"Unexpected non-record value: '$record'.")
+  }
+
+  /**
+    * Removes the outermost occurrence of the given field from the given record.
+    */
+  private def removeRecordLabel(record: AnyRef, field: String): AnyRef = record match {
+    case Value.RecordExtension(base, field2, value) =>
+      if (field == field2)
+        base
+      else
+        Value.RecordExtension(removeRecordLabel(base, field), field2, value)
+    case Value.RecordEmpty => throw InternalRuntimeException(s"Unexpected missing field: '$field'.")
+    case _ => throw InternalRuntimeException(s"Unexpected non-record value: '$record'.")
+  }
 
   /**
     * Computes the fixed point of the given constraint set `cs`.

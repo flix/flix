@@ -1,0 +1,2 @@
+@test
+def testRecordSelect01(): %{} = %{}

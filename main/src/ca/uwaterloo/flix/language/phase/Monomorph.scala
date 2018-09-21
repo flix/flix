@@ -93,6 +93,8 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         case Type.Ref => Type.Ref
         case Type.Arrow(l) => Type.Arrow(l)
         case Type.Tuple(l) => Type.Tuple(l)
+        case Type.RecordEmpty => Type.RecordEmpty
+        case Type.RecordExtension(base, label, value) => Type.RecordExtension(apply(base), label, apply(value))
         case Type.Zero => Type.Zero
         case Type.Succ(n, i) => Type.Succ(n, i)
         case Type.Enum(sym, kind) => Type.Enum(sym, kind)
@@ -293,6 +295,22 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         case Expression.Tuple(elms, tpe, eff, loc) =>
           val es = elms.map(e => visitExp(e, env0))
           Expression.Tuple(es, subst0(tpe), eff, loc)
+
+        case Expression.RecordEmpty(tpe, eff, loc) =>
+          Expression.RecordEmpty(tpe, eff, loc)
+
+        case Expression.RecordSelect(base, label, tpe, eff, loc) =>
+          val b = visitExp(base, env0)
+          Expression.RecordSelect(b, label, tpe, eff, loc)
+
+        case Expression.RecordExtend(base, label, value, tpe, eff, loc) =>
+          val b = visitExp(base, env0)
+          val v = visitExp(value, env0)
+          Expression.RecordExtend(b, label, v, tpe, eff, loc)
+
+        case Expression.RecordRestrict(base, label, tpe, eff, loc) =>
+          val b = visitExp(base, env0)
+          Expression.RecordRestrict(b, label, tpe, eff, loc)
 
         case Expression.ArrayLit(elms, tpe, eff, loc) =>
           val es = elms.map(e => visitExp(e, env0))

@@ -116,6 +116,10 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.Untag(sym, tag, exp, tpe, loc) => visitExp(exp)
       case Expression.Index(base, offset, tpe, loc) => visitExp(base)
       case Expression.Tuple(elms, tpe, loc) => visitExps(elms)
+      case Expression.RecordEmpty(tpe, loc) => Set.empty
+      case Expression.RecordSelect(base, label, tpe, loc) => visitExp(base)
+      case Expression.RecordExtend(base, label, value, tpe, loc) => visitExp(base) ++ visitExp(value)
+      case Expression.RecordRestrict(base, label, tpe, loc) => visitExp(base)
       case Expression.ArrayLit(elms, tpe, loc) => visitExps(elms)
       case Expression.ArrayNew(elm, len, tpe, loc) => visitExp(elm) ++ visitExp(len)
       case Expression.ArrayLoad(base, index, tpe, lco) => visitExp(base) ++ visitExp(index)

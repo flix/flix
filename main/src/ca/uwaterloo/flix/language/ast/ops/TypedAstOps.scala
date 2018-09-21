@@ -99,6 +99,17 @@ object TypedAstOps {
           case (macc, elm) => macc ++ visitExp(elm, env0)
         }
 
+      case Expression.RecordEmpty(tpe, eff, loc) => Map.empty
+
+      case Expression.RecordSelect(base, label, tpe, eff, loc) =>
+        visitExp(base, env0)
+
+      case Expression.RecordExtend(base, label, value, tpe, eff, loc) =>
+        visitExp(base, env0) ++ visitExp(value, env0)
+
+      case Expression.RecordRestrict(base, label, tpe, eff, loc) =>
+        visitExp(base, env0)
+
       case Expression.ArrayLit(elms, tpe, eff, loc) =>
         elms.foldLeft(Map.empty[Symbol.HoleSym, HoleContext]) {
           case (macc, elm) => macc ++ visitExp(elm, env0)

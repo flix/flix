@@ -134,6 +134,19 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.Index(exp, index, tpe, loc) => visitExp(exp, i0)
       case Expression.Tuple(elms, tpe, loc) => visitExps(elms, i0)
 
+      case Expression.RecordEmpty(tpe, loc) => i0
+
+      case Expression.RecordSelect(base, label, tpe, loc) =>
+        visitExp(base, i0)
+
+      case Expression.RecordExtend(base, label, value, tpe, loc) =>
+        val i1 = visitExp(base, i0)
+        val i2 = visitExp(value, i1)
+        i2
+
+      case Expression.RecordRestrict(base, label, tpe, loc) =>
+        visitExp(base, i0)
+
       case Expression.ArrayLit(elms, tpe, loc) => visitExps(elms, i0)
 
       case Expression.ArrayNew(elm, len, tpe, loc) =>

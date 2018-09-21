@@ -247,6 +247,34 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         Expression.Tuple(es, tpe, loc)
 
       //
+      // RecordEmpty Expressions.
+      //
+      case Expression.RecordEmpty(tpe, loc) =>
+        Expression.RecordEmpty(tpe, loc)
+
+      //
+      // RecordSelect Expressions.
+      //
+      case Expression.RecordSelect(base, label, tpe, loc) =>
+        val b = visitExp(base, env0)
+        Expression.RecordSelect(b, label, tpe, loc)
+
+      //
+      // RecordExtend Expressions.
+      //
+      case Expression.RecordExtend(base, label, value, tpe, loc) =>
+        val b = visitExp(base, env0)
+        val v = visitExp(value, env0)
+        Expression.RecordExtend(b, label, v, tpe, loc)
+
+      //
+      // RecordRestrict Expressions.
+      //
+      case Expression.RecordRestrict(base, label, tpe, loc) =>
+        val b = visitExp(base, env0)
+        Expression.RecordRestrict(b, label, tpe, loc)
+
+      //
       // ArrayLit Expressions.
       //
       case Expression.ArrayLit(elms, tpe, loc) =>

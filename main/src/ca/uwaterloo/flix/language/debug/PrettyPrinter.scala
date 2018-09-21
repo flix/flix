@@ -261,6 +261,30 @@ object PrettyPrinter {
           }
           vt.text(")")
 
+        case Expression.RecordEmpty(tpe, loc) =>
+          vt.text("{}")
+
+        case Expression.RecordSelect(base, label, tpe, loc) =>
+          visitExp(base)
+          vt.text(".")
+          vt.text(label)
+
+        case Expression.RecordExtend(base, label, value, tpe, loc) =>
+          vt.text("{ ")
+          vt.text(label)
+          vt.text(" = ")
+          visitExp(value)
+          vt.text(" | ")
+          visitExp(base)
+          vt.text(" }")
+
+        case Expression.RecordRestrict(base, label, tpe, loc) =>
+          vt.text("{ -")
+          vt.text(label)
+          vt.text(" | ")
+          visitExp(base)
+          vt.text("}")
+
         case Expression.ArrayLit(elms, tpe, loc) =>
           vt.text("[")
           for (elm <- elms) {

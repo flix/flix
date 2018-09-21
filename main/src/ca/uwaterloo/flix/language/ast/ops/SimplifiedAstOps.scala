@@ -281,6 +281,34 @@ object SimplifiedAstOps {
         checkType(tpe)
 
       //
+      // RecordEmpty Expressions.
+      //
+      case Expression.RecordEmpty(tpe, loc) =>
+        checkType(tpe)
+
+      //
+      // RecordSelect Expressions.
+      //
+      case Expression.RecordSelect(base, label, tpe, loc) =>
+        checkExp(base, env0, ienv0)
+        checkType(tpe)
+
+      //
+      // RecordExtend Expressions.
+      //
+      case Expression.RecordExtend(base, label, value, tpe, loc) =>
+        checkExp(base, env0, ienv0)
+        checkExp(value, env0, ienv0)
+        checkType(tpe)
+
+      //
+      // RecordRestrict Expressions.
+      //
+      case Expression.RecordRestrict(base, label, tpe, loc) =>
+        checkExp(base, env0, ienv0)
+        checkType(tpe)
+
+      //
       // Array Expressions.
       //
       case Expression.ArrayLit(elms, tpe, loc) =>

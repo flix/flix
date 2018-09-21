@@ -1,0 +1,2 @@
+@test
+def testRecordUpdate01(): %{} = %{}
