@@ -1278,11 +1278,11 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     case NamedAst.Type.RecordEmpty(loc) =>
       Type.RecordEmpty.toSuccess
 
-    case NamedAst.Type.RecordExtension(base, lab, field, loc) =>
+    case NamedAst.Type.RecordExtension(base, label, value, loc) =>
       for {
         b <- lookupType(base, ns0, root)
-        f <- lookupType(field, ns0, root)
-      } yield Type.RecordExtension(b, lab.name, f)
+        v <- lookupType(value, ns0, root)
+      } yield Type.RecordExtension(b, label.name, v)
 
     case NamedAst.Type.Nat(len, loc) => Type.Succ(len, Type.Zero).toSuccess
 

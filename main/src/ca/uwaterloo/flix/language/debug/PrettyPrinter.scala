@@ -279,9 +279,11 @@ object PrettyPrinter {
           vt.text(" }")
 
         case Expression.RecordRestrict(base, label, tpe, loc) =>
-          visitExp(base)
-          vt.text(" %%% ")
+          vt.text("{ -")
           vt.text(label)
+          vt.text(" | ")
+          visitExp(base)
+          vt.text("}")
 
         case Expression.ArrayLit(elms, tpe, loc) =>
           vt.text("[")

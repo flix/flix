@@ -773,7 +773,7 @@ object JvmOps {
 
       case Expression.RecordEmpty(tpe, loc) => ??? // TODO: RecordEmpty
 
-      case Expression.RecordExtend(base, label, fld, tpe, loc) => ??? // TODO: RecordExtension
+      case Expression.RecordExtend(base, label, value, tpe, loc) => ??? // TODO: RecordExtension
 
       case Expression.RecordSelect(base, label, tpe, loc) => ??? // TODO: RecordProjection
 

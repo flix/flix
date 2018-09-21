@@ -600,7 +600,7 @@ object ParsedAst {
       * Record Literal Expression.
       *
       * @param sp1    the position of the first character in the expression.
-      * @param fields the fields of the record.
+      * @param fields the field literals of the record.
       * @param sp2    the position of the last character in the expression.
       */
     case class RecordLit(sp1: SourcePosition, fields: Seq[ParsedAst.RecordFieldLiteral], sp2: SourcePosition) extends ParsedAst.Expression
@@ -609,7 +609,7 @@ object ParsedAst {
       * Record Select Expression.
       *
       * @param base  the record expression.
-      * @param label the label to project from the record.
+      * @param label the label to select from the record.
       * @param sp2   the position of the last character in the expression.
       */
     case class RecordSelect(base: ParsedAst.Expression, label: Name.Ident, sp2: SourcePosition) extends ParsedAst.Expression
@@ -618,7 +618,7 @@ object ParsedAst {
       * Record Select Lambda Expression.
       *
       * @param sp1   the position of the first character in the expression.
-      * @param label the label to project from the record.
+      * @param label the label to select from the record.
       * @param sp2   the position of the last character in the expression.
       */
     case class RecordSelectLambda(sp1: SourcePosition, label: Name.Ident, sp2: SourcePosition) extends ParsedAst.Expression
@@ -627,7 +627,7 @@ object ParsedAst {
       * Record Extend Expression.
       *
       * @param sp1    the position of the first character in the expression.
-      * @param fields the field literals.
+      * @param fields the sequence of field literals.
       * @param base   the record expression to extend.
       * @param sp2    the position of the last character in the expression.
       */
@@ -647,7 +647,7 @@ object ParsedAst {
       * Record Update Expression.
       *
       * @param sp1    the position of the first character in the expression.
-      * @param fields the field updates.
+      * @param fields the sequence of fields up update and their values.
       * @param base   the record expression to extend.
       * @param sp2    the position of the last character in the expression.
       */
@@ -1219,7 +1219,7 @@ object ParsedAst {
       * Record Type.
       *
       * @param sp1    the position of the first character in the type.
-      * @param fields the types of the fields.
+      * @param fields the sequence of field types.
       * @param base   the optional row variable.
       * @param sp2    the position of the last character in the type.
       */
