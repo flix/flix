@@ -54,7 +54,7 @@ sealed trait Type {
     case Type.Arrow(l) => Set.empty
     case Type.Tuple(l) => Set.empty
     case Type.RecordEmpty => Set.empty
-    case Type.RecordExtension(base, _, fld) => base.typeVars ++ fld.typeVars
+    case Type.RecordExtension(base, label, value) => base.typeVars ++ value.typeVars
     case Type.Enum(_, _) => Set.empty
     case Type.Relation(_, _) => Set.empty
     case Type.Lattice(_, _) => Set.empty
@@ -161,7 +161,7 @@ sealed trait Type {
     */
   def isRecord: Boolean = typeConstructor match {
     case Type.RecordEmpty => true
-    case Type.RecordExtension(base, lab, fld) => true
+    case Type.RecordExtension(base, label, value) => true
     case _ => false
   }
 
@@ -213,7 +213,7 @@ sealed trait Type {
     case Type.Checkable => "Checkable"
     case Type.Tuple(l) => s"Tuple($l)"
     case Type.RecordEmpty => "{ }"
-    case Type.RecordExtension(base, lab, fld) => "{ " + base.toString + " | " + lab + " : " + fld.toString + " }"
+    case Type.RecordExtension(base, label, field) => "{ " + base.toString + " | " + label + " : " + field.toString + " }"
     case Type.Apply(tpe1, tpe2) => s"$tpe1[$tpe2]"
   }
 
@@ -434,7 +434,7 @@ object Type {
   /**
     * A type constructor that represents a record extension type.
     */
-  case class RecordExtension(base: Type, lab: String, fld: Type) extends Type {
+  case class RecordExtension(base: Type, label: String, value: Type) extends Type {
     def kind: Kind = ??? // TODO
   }
 
@@ -587,7 +587,7 @@ object Type {
       case Type.Arrow(l) => Type.Arrow(l)
       case Type.Tuple(l) => Type.Tuple(l)
       case Type.RecordEmpty => Type.RecordEmpty
-      case Type.RecordExtension(base, lab, fld) => Type.RecordExtension(visit(base), lab, visit(fld))
+      case Type.RecordExtension(base, label, value) => Type.RecordExtension(visit(base), label, visit(value))
       case Type.Zero => Type.Zero
       case Type.Succ(n, t) => Type.Succ(n, t)
       case Type.Apply(tpe1, tpe2) => Type.Apply(visit(tpe1), visit(tpe2))
@@ -674,8 +674,8 @@ object Type {
           //
           // RecordExtension.
           //
-          case Type.RecordExtension(b, lab, fld) =>
-            "{ " + visit(b, m) + " | " + lab + " : " + visit(fld, m) + " }"
+          case Type.RecordExtension(b, label, field) =>
+            "{ " + visit(b, m) + " | " + label + " : " + visit(field, m) + " }"
 
           //
           // Enum.

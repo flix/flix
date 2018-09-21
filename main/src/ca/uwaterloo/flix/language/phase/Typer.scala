@@ -737,14 +737,14 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         /*
          * RecordExtend expression.
          */
-        case ResolvedAst.Expression.RecordExtend(base, lab, value, tvar, loc) =>
+        case ResolvedAst.Expression.RecordExtend(base, label, value, tvar, loc) =>
           //
           // TODO: Rule
           //
           for {
             baseType <- visitExp(base)
             valueType <- visitExp(value)
-            resultType <- unifyM(tvar, Type.RecordExtension(baseType, lab, valueType), loc)
+            resultType <- unifyM(tvar, Type.RecordExtension(baseType, label, valueType), loc)
           } yield resultType
 
         /*

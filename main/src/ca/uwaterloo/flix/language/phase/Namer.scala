@@ -993,10 +993,10 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
           NamedAst.Type.Ambiguous(qname, loc)
       case WeededAst.Type.Tuple(elms, loc) => NamedAst.Type.Tuple(elms.map(e => visit(e, env0)), loc)
       case WeededAst.Type.RecordEmpty(loc) => NamedAst.Type.RecordEmpty(loc)
-      case WeededAst.Type.RecordExtension(base, lab, tpe, loc) =>
+      case WeededAst.Type.RecordExtension(base, label, value, loc) =>
         val b = visit(base, env0)
-        val t = visit(tpe, env0)
-        NamedAst.Type.RecordExtension(b, lab, t, loc)
+        val t = visit(value, env0)
+        NamedAst.Type.RecordExtension(b, label, t, loc)
       case WeededAst.Type.Nat(len, loc) => NamedAst.Type.Nat(len, loc)
       case WeededAst.Type.Native(fqn, loc) => NamedAst.Type.Native(fqn, loc)
       case WeededAst.Type.Arrow(tparams, tresult, loc) => NamedAst.Type.Arrow(tparams.map(t => visit(t, env0)), visit(tresult, env0), loc)

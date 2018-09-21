@@ -201,9 +201,9 @@ object Unification {
       case (Type.Tuple(l1), Type.Tuple(l2)) if l1 == l2 => Result.Ok(Substitution.empty)
       case (Type.RecordEmpty, Type.RecordEmpty) => Result.Ok(Substitution.empty)
 
-      case (Type.RecordExtension(base1, lab1, fld1), Type.RecordExtension(base2, lab2, fld2)) =>
-        if (lab1 == lab2) {
-          unify(fld1, fld2) flatMap {
+      case (Type.RecordExtension(base1, label1, value1), Type.RecordExtension(base2, label2, value2)) =>
+        if (label1 == label2) {
+          unify(value1, value2) flatMap {
             case subst => unify(subst(base1), subst(base2))
           }
         } else {
