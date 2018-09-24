@@ -60,6 +60,8 @@ object ControlFlowAnalysis {
         // Update the map and enqueue.
         argValues += sym -> lubArgs
         worklist += sym
+
+        println(s"Enqueued: $sym")
       }
     }
 
@@ -80,7 +82,7 @@ object ControlFlowAnalysis {
 
         // Construct an environment mapping the parameters to their values.
         val env = (defn.formals zip args).foldLeft(Map.empty[Symbol.VarSym, AbstractValue]) {
-          case (acc, (FormalParam(sym, _), value)) => acc + (sym -> value)
+          case (acc, (FormalParam(s, _), value)) => acc + (s -> value)
         }
 
         println(s"dequeue:  $sym, $env, ws size = ${worklist.size}")
@@ -92,6 +94,7 @@ object ControlFlowAnalysis {
 
   }
 
+  // TODO: Get rid of this useless wrapper?
   case class AbstractEnvironment(m: Map[Symbol.VarSym, AbstractValue]) {
     def lookup(sym: Symbol.VarSym): AbstractValue = m.get(sym) match {
       case None =>
@@ -99,6 +102,10 @@ object ControlFlowAnalysis {
         AbstractValue.Bot
       //throw InternalCompilerException(s"Unknown value of $sym.")
       case Some(v) => v
+    }
+
+    def extend(sym: Symbol.VarSym, v: AbstractValue): AbstractEnvironment = {
+      AbstractEnvironment(m + (sym -> v))
     }
   }
 
@@ -137,7 +144,7 @@ object ControlFlowAnalysis {
 
   private def evalExp(exp0: Expression, env0: AbstractEnvironment, l: Analysis): AbstractValue = {
 
-    def visitExp(exp0: Expression, env0: AbstractEnvironment, l: Analysis): AbstractValue = exp0 match {
+    def visitExp(exp0: Expression, env0: AbstractEnvironment, lenv0: Map[Symbol.LabelSym, Expression]): AbstractValue = exp0 match {
       case Expression.Unit => AbstractValue.AnyPrimitive
       case Expression.True => AbstractValue.AnyPrimitive
       case Expression.False => AbstractValue.AnyPrimitive
@@ -158,8 +165,8 @@ object ControlFlowAnalysis {
         ???
 
       case Expression.ApplyClo(exp, args, tpe, loc) =>
-        val clo = visitExp(exp, env0, l)
-        AbstractValue.Bot
+        val clo = visitExp(exp, env0, lenv0)
+        ???
 
       case Expression.ApplyDef(sym, args, tpe, loc) => invokeDef(sym, args)
 
@@ -185,33 +192,35 @@ object ControlFlowAnalysis {
         ???
 
       case Expression.Let(sym, exp1, exp2, tpe, loc) =>
-        ???
+        val v1 = visitExp(exp1, env0, lenv0)
+        val env1 = env0.extend(sym, v1)
+        visitExp(exp2, env1, lenv0)
 
       case Expression.LetRec(sym, exp1, exp2, tpe, loc) =>
         ???
 
       case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
         // Evaluate the conditional.
-        val v1 = visitExp(exp1, env0, l)
+        val v1 = visitExp(exp1, env0, lenv0)
 
         // Evaluate the then and else branches.
-        val v2 = visitExp(exp2, env0, l)
-        val v3 = visitExp(exp3, env0, l)
+        val v2 = visitExp(exp2, env0, lenv0)
+        val v3 = visitExp(exp3, env0, lenv0)
 
         // Join the two branches.
         lub(v2, v3)
 
       case Expression.Branch(exp, branches, tpe, loc) =>
-        ???
+        visitExp(exp, env0, branches)
 
       case Expression.JumpTo(sym, tpe, loc) =>
-        ???
+        visitExp(lenv0(sym), env0, lenv0)
 
       case Expression.Is(sym, tag, exp, loc) =>
         ???
 
       case Expression.Tag(sym, tag, exp, tpe, loc) =>
-        val v = visitExp(exp, env0, l)
+        val v = visitExp(exp, env0, lenv0)
         AbstractValue.AnyTag(v)
 
       case Expression.Untag(sym, tag, exp, tpe, loc) =>
@@ -221,7 +230,7 @@ object ControlFlowAnalysis {
         ???
 
       case Expression.Tuple(elms, tpe, loc) =>
-        val vs = elms.map(visitExp(_, env0, l))
+        val vs = elms.map(visitExp(_, env0, lenv0))
         AbstractValue.Tuple(vs)
 
       case Expression.RecordEmpty(tpe, loc) => ???
@@ -233,18 +242,18 @@ object ControlFlowAnalysis {
       case Expression.RecordRestrict(base, label, tpe, loc) => ???
 
       case Expression.ArrayLit(elms, tpe, loc) =>
-        val vs = elms.map(visitExp(_, env0, l))
+        val vs = elms.map(visitExp(_, env0, lenv0))
         val v = lubAll(vs)
         AbstractValue.Array(v)
 
       case Expression.ArrayNew(elm, len, tpe, loc) =>
         // TODO: Need allocation site?
-        val v = visitExp(elm, env0, l)
+        val v = visitExp(elm, env0, lenv0)
         AbstractValue.Array(v)
 
       case Expression.ArrayLoad(base, index, tpe, loc) =>
         // Evaluate the base and index expressions. The index is abstracted away.
-        (visitExp(base, env0, l), visitExp(index, env0, l)) match {
+        (visitExp(base, env0, lenv0), visitExp(index, env0, lenv0)) match {
           case (AbstractValue.Bot, _) => AbstractValue.Bot
           case (AbstractValue.Array(v), _) => v
           case (v, _) => throw InternalCompilerException(s"Unexpected abstract value: '$v'.")
@@ -252,7 +261,7 @@ object ControlFlowAnalysis {
 
       case Expression.ArrayLength(base, tpe, loc) =>
         // Evaluate and ignore the base expression.
-        val v = visitExp(base, env0, l)
+        val v = visitExp(base, env0, lenv0)
         AbstractValue.AnyPrimitive
 
       case Expression.ArrayStore(base, index, elm, tpe, loc) => ???
@@ -273,7 +282,7 @@ object ControlFlowAnalysis {
 
       case Expression.NativeConstructor(constructor, args, eff, loc) =>
         // Evaluate the arguments.
-        val as = args.map(visitExp(_, env0, l))
+        val as = args.map(visitExp(_, env0, lenv0))
 
         // Unsoundly ignore the constructed object.
         AbstractValue.Bot
@@ -283,7 +292,7 @@ object ControlFlowAnalysis {
 
         // Evaluate each catch rule.
         val values = rules map {
-          case CatchRule(sym, clazz, body) => visitExp(body, env0, l)
+          case CatchRule(sym, clazz, body) => visitExp(body, env0, lenv0)
         }
 
         // Join all the values.
@@ -295,7 +304,7 @@ object ControlFlowAnalysis {
 
       case Expression.NativeMethod(method, args, tpe, loc) =>
         // Evaluate the arguments.
-        val as = args.map(visitExp(_, env0, l))
+        val as = args.map(visitExp(_, env0, lenv0))
 
         // Unsoundly ignore the return value.
         AbstractValue.Bot
@@ -309,18 +318,18 @@ object ControlFlowAnalysis {
         AbstractValue.Graph(g)
 
       case Expression.ConstraintUnion(exp1, exp2, tpe, loc) =>
-        val v1 = visitExp(exp1, env0, l)
-        val v2 = visitExp(exp2, env0, l)
+        val v1 = visitExp(exp1, env0, lenv0)
+        val v2 = visitExp(exp2, env0, lenv0)
         lub(v1, v2)
 
       case Expression.FixpointSolve(exp, stf, tpe, loc) =>
-        visitExp(exp, env0, l)
+        visitExp(exp, env0, lenv0)
 
       case Expression.FixpointCheck(exp, stf, tpe, loc) =>
-        visitExp(exp, env0, l)
+        visitExp(exp, env0, lenv0)
 
       case Expression.FixpointDelta(exp, stf, tpe, loc) =>
-        visitExp(exp, env0, l)
+        visitExp(exp, env0, lenv0)
 
       case Expression.UserError(tpe, loc) => AbstractValue.Bot
 
@@ -337,7 +346,7 @@ object ControlFlowAnalysis {
       */
     def invokeDef(sym: Symbol.DefnSym, args: List[Expression]): AbstractValue = {
       // Evaluate the arguments.
-      val as = args.map(a => visitExp(a, env0, l))
+      val as = args.map(a => visitExp(a, env0, Map.empty))
 
       // Enqueue the call with its arguments.
       l.enqueue(sym, as)
@@ -346,7 +355,7 @@ object ControlFlowAnalysis {
       l.lookupReturn(sym)
     }
 
-    visitExp(exp0, env0, l)
+    visitExp(exp0, env0, Map.empty)
   }
 
   /**
