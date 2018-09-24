@@ -9,34 +9,58 @@ import scala.collection.mutable
 
 object ControlFlowAnalysis {
 
-  class Analysis() {
+  class Analysis(root: Root) {
 
     /**
-      * A mutable map to store the abstract return values of each function.
+      * A mutable map from functions symbols to their abstract argument values.
       */
-    private val m: mutable.Map[Symbol.DefnSym, AbstractValue] = mutable.Map.empty
+    private val argValues: mutable.Map[Symbol.DefnSym, List[AbstractValue]] = mutable.Map.empty
 
     /**
-      * A mutable queue of pending functions.
+      * A mutable map from function symbols to their abstract return values.
       */
-    private val w: mutable.Queue[Symbol.DefnSym] = mutable.Queue.empty
+    private val retValues: mutable.Map[Symbol.DefnSym, AbstractValue] = mutable.Map.empty
+
+    /**
+      * A mutable queue of pending function calls.
+      */
+    private val worklist: mutable.Queue[Symbol.DefnSym] = mutable.Queue.empty
+
+    /**
+      * Returns the abstract argument values of the function associated with the symbol `sym`.
+      */
+    def lookupArguments(sym: Symbol.DefnSym): List[AbstractValue] = argValues.getOrElse(sym, {
+      root.defs(sym).formals.map(_ => AbstractValue.Bot)
+    })
 
     /**
       * Returns the abstract return value of the function associated with the symbol `sym`.
       */
-    def lookup(sym: Symbol.DefnSym): AbstractValue =
-      m.getOrElse(sym, AbstractValue.Bot)
+    def lookupReturn(sym: Symbol.DefnSym): AbstractValue =
+      retValues.getOrElse(sym, AbstractValue.Bot)
 
+    /**
+      * Enqueues the function associated with the given symbol `sym` with the arguments `args` unless they are already subsumed.
+      */
+    def enqueue(sym: Symbol.DefnSym, newArgs: List[AbstractValue]): Unit = {
+      // Lookup the arguments.
+      val oldArgs = lookupArguments(sym)
 
-    def enqueue(sym: Symbol.DefnSym, args: List[AbstractValue]): Unit = {
+      // Determine if they are subsumed.
+      val unchanged = (newArgs zip oldArgs) forall {
+        case (newArg, oldArg) => leq(newArg, oldArg)
+      }
 
-      // Step 1: Lookup the arguments and determine if they are subsumed.
+      if (!unchanged) {
+        // Compute the least upper bound.
+        val lubArgs = (newArgs zip oldArgs) map {
+          case (newArg, oldArg) => lub(newArg, oldArg)
+        }
 
-      // Step 2: If not, enqueue the function.
-
-      // TODO: Need a mechanism to reanalyze a caller.
-
-      println(s"enqueue: $sym")
+        // Update the map and enqueue.
+        argValues += sym -> lubArgs
+        worklist += sym
+      }
     }
 
     /**
@@ -44,9 +68,12 @@ object ControlFlowAnalysis {
       */
     def fixpoint(): Unit = {
 
-      while (w.nonEmpty) {
+      while (worklist.nonEmpty) {
+        val sym = worklist.dequeue()
 
-        val sym = w.dequeue()
+        println(s"dequeue:  $sym, ws size = ${worklist.size}")
+
+        //evalExp()
 
 
       }
@@ -69,7 +96,7 @@ object ControlFlowAnalysis {
   def fixpoint(root: Root): Unit = {
 
     // Init a new empty analysis object.
-    val a = new Analysis()
+    val a = new Analysis(root)
 
     // Enqueue all single unit argument functions.
     for ((sym, defn) <- root.defs) {
@@ -296,6 +323,9 @@ object ControlFlowAnalysis {
 
     }
 
+    /**
+      * Abstractly invokes the function associated with the symbol `sym` with the given arguments `args`.
+      */
     def invokeDef(sym: Symbol.DefnSym, args: List[Expression]): AbstractValue = {
       // Evaluate the arguments.
       val as = args.map(a => visitExp(a, env0, l))
@@ -304,7 +334,7 @@ object ControlFlowAnalysis {
       l.enqueue(sym, as)
 
       // Lookup the current abstract value of the result.
-      l.lookup(sym)
+      l.lookupReturn(sym)
     }
 
     visitExp(exp0, env0, l)
@@ -315,7 +345,7 @@ object ControlFlowAnalysis {
     */
   def getDependencyGraph(exp: Expression): DependencyGraph = {
     // Computes the fixed point.
-    val v = evalExp(exp, AbstractEnvironment(Map.empty), new Analysis())
+    val v = evalExp(exp, AbstractEnvironment(Map.empty), new Analysis(null))
 
     v match {
       case AbstractValue.Bot => DependencyGraph.Empty
