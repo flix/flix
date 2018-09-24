@@ -650,6 +650,34 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
             es <- traverse(args)(e => visit(e, tenv0))
           } yield ResolvedAst.Expression.NativeMethod(method, es, tpe, loc)
 
+        case NamedAst.Expression.NewChannel(tpe, loc) =>
+          for {
+            t <- lookupType(tpe, ns0, prog0)
+          } yield ResolvedAst.Expression.NewChannel(t, loc)
+
+        case NamedAst.Expression.GetChannel(exp, tvar, loc) =>
+          for {
+            e <- visit(exp, tenv0)
+          } yield ResolvedAst.Expression.GetChannel(e, tvar, loc)
+
+        case NamedAst.Expression.PutChannel(exp1, exp2, tvar, loc) =>
+          for {
+            e1 <- visit(exp1, tenv0)
+            e2 <- visit(exp2, tenv0)
+          } yield ResolvedAst.Expression.PutChannel(e1, e2, tvar, loc)
+
+        case NamedAst.Expression.CloseChannel(exp, tvar, loc) =>
+          for {
+            e <- visit(exp, tenv0)
+          } yield ResolvedAst.Expression.CloseChannel(e, tvar, loc)
+
+        case NamedAst.Expression.Spawn(exp, tvar, loc) =>
+          for {
+            e <- visit(exp, tenv0)
+          } yield ResolvedAst.Expression.Spawn(e, tvar, loc)
+
+        //TODO Select
+
         case NamedAst.Expression.NewRelationOrLattice(name, tvar, loc) =>
           lookupRelationOrLattice(name, ns0, prog0) map {
             case RelationOrLattice.Rel(sym) => ResolvedAst.Expression.NewRelation(sym, tvar, loc)
