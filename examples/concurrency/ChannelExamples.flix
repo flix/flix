@@ -12,12 +12,12 @@ def closechTest(): Unit = closech makechTest()
 
 def spawnTest(): Unit = spawn 2
 
-def selectTest(): Unit = {
-    select {
-        case 2=> 2
-        case 3 =>
-            3
-        default =>
-            4
-    }
-}
+//def selectTest(): Unit = {
+//    select {
+//        case 2=> 2
+//        case 3 =>
+//            3
+//        default =>
+//            4
+//    }
+//}

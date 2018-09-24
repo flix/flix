@@ -899,6 +899,45 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         case es => WeededAst.Expression.NativeMethod(className, methodName, es, mkSL(sp1, sp2))
       }
 
+    case ParsedAst.Expression.NewChannel(sp1, tpe, sp2) =>
+      WeededAst.Expression.NewChannel(visitType(tpe), mkSL(sp1, sp2)).toSuccess
+
+    case ParsedAst.Expression.GetChannel(sp1, exp, sp2) =>
+      visitExp(exp) map {
+        case e => WeededAst.Expression.GetChannel(e, mkSL(sp1, sp2))
+      }
+
+    case ParsedAst.Expression.PutChannel(sp1, exp1, exp2, sp2) =>
+      mapN(visitExp(exp1), visitExp(exp2)) {
+        case (e1, e2) => WeededAst.Expression.PutChannel(e1, e2, mkSL(sp1, sp2))
+      }
+
+    case ParsedAst.Expression.CloseChannel(sp1, exp, sp2) =>
+      visitExp(exp) map {
+        case e => WeededAst.Expression.CloseChannel(e, mkSL(sp1, sp2))
+      }
+
+    case ParsedAst.Expression.Spawn(sp1, exp, sp2) =>
+      visitExp(exp) map {
+        case e => WeededAst.Expression.Spawn(e, mkSL(sp1, sp2))
+      }
+
+    //TODO: ???
+    case ParsedAst.Expression.Select(sp1, cases, default, sp2) => ???
+//      val casesVal = traverse(cases) {
+//        case (cond, body) => sequence(visitExp(cond), visitExp(body))
+//      }
+//      default match {
+//        case None =>
+//          casesVal map {
+//            case cs => WeededAst.Expression.Select(cs, None, mkSL(sp1, sp2))
+//          }
+//        case Some(d) =>
+//          casesVal map {
+//            case cs => WeededAst.Expression.Select(cs, Some(visitExp(d)), mkSL(sp1, sp2))
+//          }
+//      }
+
     case ParsedAst.Expression.NewRelationOrLattice(sp1, name, sp2) =>
       val loc = mkSL(sp1, sp2)
       WeededAst.Expression.NewRelationOrLattice(name, loc).toSuccess
@@ -1684,6 +1723,12 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.NativeField(sp1, _, _) => sp1
     case ParsedAst.Expression.NativeMethod(sp1, _, _, _) => sp1
     case ParsedAst.Expression.NativeConstructor(sp1, _, _, _) => sp1
+    case ParsedAst.Expression.NewChannel(sp1, _, _) => sp1
+    case ParsedAst.Expression.GetChannel(sp1, _, _) => sp1
+    case ParsedAst.Expression.PutChannel(sp1, _, _, _) => sp1
+    case ParsedAst.Expression.CloseChannel(sp1, _, _) => sp1
+    case ParsedAst.Expression.Spawn(sp1, _, _) => sp1
+    case ParsedAst.Expression.Select(sp1, _, _, _) => sp1
     case ParsedAst.Expression.NewRelationOrLattice(sp1, _, _) => sp1
     case ParsedAst.Expression.ConstraintSeq(sp1, _, _) => sp1
     case ParsedAst.Expression.FixpointSolve(sp1, _, _) => sp1

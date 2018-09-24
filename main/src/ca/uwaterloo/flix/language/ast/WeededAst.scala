@@ -166,6 +166,19 @@ object WeededAst {
 
     case class NativeMethod(className: String, methodName: String, args: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
 
+    case class NewChannel(tpe: WeededAst.Type, loc: SourceLocation) extends WeededAst.Expression
+
+    case class GetChannel(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+
+    case class PutChannel(exp1: WeededAst.Expression, exp2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+
+    case class CloseChannel(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+
+    case class Spawn(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+
+    //TODO: ???
+    case class Select(cases: List[(WeededAst.Expression, WeededAst.Expression)], default: Option[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
+
     case class NewRelationOrLattice(name: Name.QName, loc: SourceLocation) extends WeededAst.Expression
 
     case class Constraint(con: WeededAst.Constraint, loc: SourceLocation) extends WeededAst.Expression
