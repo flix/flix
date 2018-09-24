@@ -98,9 +98,7 @@ object ControlFlowAnalysis {
   case class AbstractEnvironment(m: Map[Symbol.VarSym, AbstractValue]) {
     def lookup(sym: Symbol.VarSym): AbstractValue = m.get(sym) match {
       case None =>
-        // TODO: XXX: Would be better to set formals etc. to bottom than just assume bottom...
-        AbstractValue.Bot
-      //throw InternalCompilerException(s"Unknown value of $sym.")
+        throw InternalCompilerException(s"Unknown value of $sym.")
       case Some(v) => v
     }
 
