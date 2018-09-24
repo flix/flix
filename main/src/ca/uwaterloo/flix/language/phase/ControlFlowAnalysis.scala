@@ -1,22 +1,58 @@
 package ca.uwaterloo.flix.language.phase
 
-import ca.uwaterloo.flix.language.ast.Symbol
-import ca.uwaterloo.flix.language.ast.FinalAst.{CatchRule, Def, Expression, Root}
+import ca.uwaterloo.flix.language.ast.{Symbol, Type}
+import ca.uwaterloo.flix.language.ast.FinalAst._
 import ca.uwaterloo.flix.language.phase.Stratifier.DependencyGraph
 import ca.uwaterloo.flix.util.InternalCompilerException
 
+import scala.collection.mutable
+
 object ControlFlowAnalysis {
 
-  class Analysis(m: Map[Symbol.DefnSym, AbstractValue]) {
+  class Analysis() {
 
+    /**
+      * A mutable map to store the abstract return values of each function.
+      */
+    private val m: mutable.Map[Symbol.DefnSym, AbstractValue] = mutable.Map.empty
 
+    /**
+      * A mutable queue of pending functions.
+      */
+    private val w: mutable.Queue[Symbol.DefnSym] = mutable.Queue.empty
 
+    /**
+      * Returns the abstract return value of the function associated with the symbol `sym`.
+      */
     def lookup(sym: Symbol.DefnSym): AbstractValue =
       m.getOrElse(sym, AbstractValue.Bot)
 
+
     def enqueue(sym: Symbol.DefnSym, args: List[AbstractValue]): Unit = {
-      // TODO: Add to queue if not already contained.
+
+      // Step 1: Lookup the arguments and determine if they are subsumed.
+
+      // Step 2: If not, enqueue the function.
+
+      // TODO: Need a mechanism to reanalyze a caller.
+
+      println(s"enqueue: $sym")
     }
+
+    /**
+      * Computes the fixpoint.
+      */
+    def fixpoint(): Unit = {
+
+      while (w.nonEmpty) {
+
+        val sym = w.dequeue()
+
+
+      }
+
+    }
+
 
   }
 
@@ -30,113 +66,33 @@ object ControlFlowAnalysis {
     }
   }
 
-  /**
-    * A common super-type for abstract values.
-    */
-  sealed trait AbstractValue
+  def fixpoint(root: Root): Unit = {
 
-  object AbstractValue {
+    // Init a new empty analysis object.
+    val a = new Analysis()
 
-    // TODO: names and Comments
-
-    /**
-      * Represents the bottom element.
-      */
-    case object Bot extends AbstractValue
-
-    /**
-      * Represents any Unit, True, False, Char, Float32, Float64, Int8, Int16, Int32, Int64, BigInt, or Str value.
-      */
-    case object AnyPrimitive extends AbstractValue
-
-    // TODO: case class Box() extends AbstractValue
-
-    // TODO: case class Closure() extends AbstractValue
-
-    /**
-      * Represents any tagged value where the tag is abstracted away.
-      */
-    case class AnyTag(v: AbstractValue) extends AbstractValue
-
-    /**
-      * Approximation of arrays. Abstracts indices.
-      */
-    case class Array(vs: AbstractValue) extends AbstractValue
-
-    /**
-      * Approximation of tuples. Maintains indices.
-      */
-    case class Tuple(vs: List[AbstractValue]) extends AbstractValue
-
-    // TODO: RecordEmpty/RecordExt.
-
-    case class Graph(g: DependencyGraph) extends AbstractValue
-
-    /**
-      * Approximation of any relation value.
-      */
-    case object AnyRelation extends AbstractValue
-
-    /**
-      * Approximation of any lattice value.
-      */
-    case object AnyLattice extends AbstractValue
-
-  }
-
-  /**
-    * Returns `true` if the abstract value `x` is less than or equal to the abstract value `y`.
-    */
-  def leq(x: AbstractValue, y: AbstractValue): Boolean = (x, y) match {
-    case (AbstractValue.Bot, _) => true
-    case (AbstractValue.AnyPrimitive, AbstractValue.AnyPrimitive) => true
-    case (AbstractValue.AnyTag(v1), AbstractValue.AnyTag(v2)) => leq(v1, v2)
-    case (AbstractValue.Array(v1), AbstractValue.Array(v2)) => leq(v1, v2)
-    case (AbstractValue.Tuple(vs1), AbstractValue.Tuple(vs2)) => (vs1 zip vs2) forall {
-      case (v1, v2) => leq(v1, v2)
-    }
-    case (AbstractValue.Graph(g1), AbstractValue.Graph(g2)) => g1.xs subsetOf g2.xs
-    case (AbstractValue.AnyRelation, AbstractValue.AnyRelation) => true
-    case (AbstractValue.AnyLattice, AbstractValue.AnyLattice) => true
-    case _ => false
-  }
-
-  /**
-    * Returns the least upper bound of the two abstract values `v1` and `v2`.
-    */
-  def lub(x: AbstractValue, y: AbstractValue): AbstractValue = (x, y) match {
-    case (AbstractValue.Bot, _) => y
-    case (_, AbstractValue.Bot) => x
-    case (AbstractValue.AnyPrimitive, AbstractValue.AnyPrimitive) => AbstractValue.AnyPrimitive
-    case (AbstractValue.AnyTag(v1), AbstractValue.AnyTag(v2)) => AbstractValue.AnyTag(lub(v1, v2))
-    case (AbstractValue.Tuple(vs1), AbstractValue.Tuple(vs2)) =>
-      val vs = (vs1 zip vs2).map {
-        case (v1, v2) => lub(v1, v2)
+    // Enqueue all single unit argument functions.
+    for ((sym, defn) <- root.defs) {
+      // Check if the definition takes a single unit argument.
+      if (isSingleUnitArg(defn.formals)) {
+        // Enqueue a call to the function.
+        a.enqueue(sym, List(AbstractValue.AnyPrimitive))
       }
-      AbstractValue.Tuple(vs)
-    case (AbstractValue.Graph(g1), AbstractValue.Graph(g2)) =>
-      val g = DependencyGraph(g1.xs ++ g2.xs)
-      AbstractValue.Graph(g)
-    case (AbstractValue.AnyRelation, AbstractValue.AnyRelation) => AbstractValue.AnyRelation
-    case (AbstractValue.AnyLattice, AbstractValue.AnyLattice) => AbstractValue.AnyLattice
-    case _ => throw InternalCompilerException(s"Unexpected abstract values: '$x' and '$y'. Possible type error?")
-  }
+    }
 
-  /**
-    * Returns the least upper bound of the given sequence of abstract values `vs`.
-    */
-  def lubAll(vs: List[AbstractValue]): AbstractValue = vs.foldLeft(AbstractValue.Bot: AbstractValue)(lub)
+    // Compute the fixpoint.
+    a.fixpoint()
 
-  private def fixpoint(root: Root): DependencyGraph = {
 
     // TODO: Repeatedly reanalyze a function if it calls a function that changes.
     // This essentially requires a call graph.
     // What about closures?
 
-    ???
+    // TODO: Return type...
   }
 
-  private def fixpointDef(def0: Def): DependencyGraph = {
+
+  private def evalDef(def0: Def): DependencyGraph = {
     ???
   }
 
@@ -359,13 +315,118 @@ object ControlFlowAnalysis {
     */
   def getDependencyGraph(exp: Expression): DependencyGraph = {
     // Computes the fixed point.
-    val v = evalExp(exp, AbstractEnvironment(Map.empty), new Analysis(Map.empty))
+    val v = evalExp(exp, AbstractEnvironment(Map.empty), new Analysis())
 
     v match {
       case AbstractValue.Bot => DependencyGraph.Empty
       case AbstractValue.Graph(g) => g
       case _ => throw InternalCompilerException(s"Unexpected abstract value: '$v'.")
     }
+  }
+
+  /**
+    * A common super-type for abstract values.
+    */
+  sealed trait AbstractValue
+
+  object AbstractValue {
+
+    // TODO: names and Comments
+
+    /**
+      * Represents the bottom element.
+      */
+    case object Bot extends AbstractValue
+
+    /**
+      * Represents any Unit, True, False, Char, Float32, Float64, Int8, Int16, Int32, Int64, BigInt, or Str value.
+      */
+    case object AnyPrimitive extends AbstractValue
+
+    // TODO: case class Box() extends AbstractValue
+
+    // TODO: case class Closure() extends AbstractValue
+
+    /**
+      * Represents any tagged value where the tag is abstracted away.
+      */
+    case class AnyTag(v: AbstractValue) extends AbstractValue
+
+    /**
+      * Approximation of arrays. Abstracts indices.
+      */
+    case class Array(vs: AbstractValue) extends AbstractValue
+
+    /**
+      * Approximation of tuples. Maintains indices.
+      */
+    case class Tuple(vs: List[AbstractValue]) extends AbstractValue
+
+    // TODO: RecordEmpty/RecordExt.
+
+    case class Graph(g: DependencyGraph) extends AbstractValue
+
+    /**
+      * Approximation of any relation value.
+      */
+    case object AnyRelation extends AbstractValue
+
+    /**
+      * Approximation of any lattice value.
+      */
+    case object AnyLattice extends AbstractValue
+
+  }
+
+  /**
+    * Returns `true` if the abstract value `x` is less than or equal to the abstract value `y`.
+    */
+  private def leq(x: AbstractValue, y: AbstractValue): Boolean = (x, y) match {
+    case (AbstractValue.Bot, _) => true
+    case (AbstractValue.AnyPrimitive, AbstractValue.AnyPrimitive) => true
+    case (AbstractValue.AnyTag(v1), AbstractValue.AnyTag(v2)) => leq(v1, v2)
+    case (AbstractValue.Array(v1), AbstractValue.Array(v2)) => leq(v1, v2)
+    case (AbstractValue.Tuple(vs1), AbstractValue.Tuple(vs2)) => (vs1 zip vs2) forall {
+      case (v1, v2) => leq(v1, v2)
+    }
+    case (AbstractValue.Graph(g1), AbstractValue.Graph(g2)) => g1.xs subsetOf g2.xs
+    case (AbstractValue.AnyRelation, AbstractValue.AnyRelation) => true
+    case (AbstractValue.AnyLattice, AbstractValue.AnyLattice) => true
+    case _ => false
+  }
+
+  /**
+    * Returns the least upper bound of the two abstract values `v1` and `v2`.
+    */
+  private def lub(x: AbstractValue, y: AbstractValue): AbstractValue = (x, y) match {
+    case (AbstractValue.Bot, _) => y
+    case (_, AbstractValue.Bot) => x
+    case (AbstractValue.AnyPrimitive, AbstractValue.AnyPrimitive) => AbstractValue.AnyPrimitive
+    case (AbstractValue.AnyTag(v1), AbstractValue.AnyTag(v2)) => AbstractValue.AnyTag(lub(v1, v2))
+    case (AbstractValue.Tuple(vs1), AbstractValue.Tuple(vs2)) =>
+      val vs = (vs1 zip vs2).map {
+        case (v1, v2) => lub(v1, v2)
+      }
+      AbstractValue.Tuple(vs)
+    case (AbstractValue.Graph(g1), AbstractValue.Graph(g2)) =>
+      val g = DependencyGraph(g1.xs ++ g2.xs)
+      AbstractValue.Graph(g)
+    case (AbstractValue.AnyRelation, AbstractValue.AnyRelation) => AbstractValue.AnyRelation
+    case (AbstractValue.AnyLattice, AbstractValue.AnyLattice) => AbstractValue.AnyLattice
+    case _ => throw InternalCompilerException(s"Unexpected abstract values: '$x' and '$y'. Possible type error?")
+  }
+
+  /**
+    * Returns the least upper bound of the given sequence of abstract values `vs`.
+    */
+  private def lubAll(vs: List[AbstractValue]): AbstractValue = vs.foldLeft(AbstractValue.Bot: AbstractValue)(lub)
+
+  /**
+    * Returns `true` if the given argument list `xs` has a single argument of type unit.
+    */
+  private def isSingleUnitArg(xs: List[FormalParam]): Boolean = xs match {
+    case FormalParam(sym, tpe) :: Nil => tpe == Type.Unit
+    case _ => false
   }
 
 }

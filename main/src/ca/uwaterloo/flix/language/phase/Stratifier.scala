@@ -91,6 +91,9 @@ object Stratifier extends Phase[Root, Root] {
     * Returns a stratified version of the given AST `root`.
     */
   def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationError] = flix.phase("Stratifier") {
+    // Run the control-flow analysis.
+    ControlFlowAnalysis.fixpoint(root)
+
     // Stratify every definition.
     val defsVal = traverse(root.defs) {
       case (sym, defn) => visitDef(defn).map(d => sym -> d)
