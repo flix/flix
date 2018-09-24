@@ -873,6 +873,62 @@ object ParsedAst {
     case class NativeMethod(sp1: SourcePosition, fqn: Seq[String], args: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
+      * NewChannel Expression.
+      *
+      * @param sp1 the position of the first character in the expression.
+      * @param tpe the type.
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class NewChannel(sp1: SourcePosition, tpe: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
+      * GetChannel Expression.
+      *
+      * @param sp1 the position of the first character in the expression.
+      * @param exp the Channel expression.
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class GetChannel(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
+      * PutChannel Expression
+      *
+      * @param sp1 the position of the first character in the expression.
+      * @param exp1 the Channel expression.
+      * @param exp2 the expression to put in the Channel.
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class PutChannel(sp1: SourcePosition, exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
+      * CloseChannel Expression.
+      *
+      * @param sp1 the position of the first character in the expression.
+      * @param exp the Channel expression.
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class CloseChannel(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
+      * Spawn Expression.
+      *
+      * @param sp1 the position of the first character in the expression.
+      * @param exp the expression.
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class Spawn(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
+      * Select Expression.
+      *
+      * @param sp1     the position of the first character in the expression.
+      * @param cases   the cases of the select.
+      * @param default the default case of the select.
+      * @param sp2     the position of the last character in the expression.
+      */
+    case class Select(sp1: SourcePosition, cases: Seq[(ParsedAst.Expression, ParsedAst.Expression)], default: Option[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
       * New Relation or Lattice.
       *
       * @param sp1  the position of the first character in the expression.

@@ -582,7 +582,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Primary: Rule1[ParsedAst.Expression] = rule {
-      LetRec | LetMatch | IfThenElse | Match | LambdaMatch | Switch | TryCatch | Native | Lambda | Tuple |
+      LetRec | LetMatch | IfThenElse | Match | LambdaMatch | Switch | TryCatch | Native | NewChannel | GetChannel | PutChannel | CloseChannel | Spawn | Select | Lambda | Tuple |
         ArrayLit | ArrayNew | ArrayLength | VectorLit | VectorNew | VectorLength | FNil | FSet | FMap |
         NewRelationOrLattice | FixpointSolve | FixpointCheck | FixpointDelta | ConstraintSeq | Literal |
         HandleWith | Existential | Universal | UnaryLambda | QName | Wild | Tag | SName | Hole | UserError
@@ -653,6 +653,38 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
       rule {
         atomic("native") ~ WS ~ (NativeField | NativeMethod | NativeConstructor)
+      }
+    }
+
+    def NewChannel: Rule1[ParsedAst.Expression.NewChannel] = rule {
+      SP ~ atomic("makech") ~ "[" ~ optWS ~ Type ~ optWS ~ "]" ~ SP ~> ParsedAst.Expression.NewChannel
+    }
+
+    def GetChannel: Rule1[ParsedAst.Expression.GetChannel] = rule {
+      SP ~ atomic("getch") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.GetChannel
+    }
+
+    def PutChannel: Rule1[ParsedAst.Expression.PutChannel] = rule {
+      SP ~ atomic("putch") ~ WS ~ Expression ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.PutChannel
+    }
+
+    def CloseChannel: Rule1[ParsedAst.Expression.CloseChannel] = rule {
+      SP ~ atomic("closech") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.CloseChannel
+    }
+
+    def Spawn: Rule1[ParsedAst.Expression.Spawn] = rule {
+      SP ~ atomic("spawn") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.Spawn
+    }
+
+    def Select: Rule1[ParsedAst.Expression.Select] = {
+      def Case: Rule1[(ParsedAst.Expression, ParsedAst.Expression)] = rule {
+        atomic("case") ~ WS ~ Expression ~ optWS ~ "=>" ~ optWS ~ Expression ~> ((e1: ParsedAst.Expression, e2: ParsedAst.Expression) => (e1, e2))
+      }
+      def Default: Rule1[ParsedAst.Expression] = rule {
+        atomic("default") ~ optWS ~ "=>" ~ optWS ~ Expression ~> ((e: ParsedAst.Expression) => e)
+      }
+      rule {
+        SP ~ atomic("select") ~ WS ~ "{" ~ optWS ~ oneOrMore(Case).separatedBy(optWS) ~ optWS ~ optional(Default) ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.Select
       }
     }
 
