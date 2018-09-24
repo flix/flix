@@ -348,19 +348,19 @@ object Stratifier extends Phase[Root, Root] {
       }
 
     case Expression.FixpointSolve(exp, _, tpe, loc) =>
-      val g = ControlFlowAnalysis.getDependencyGraphFromAbstractValue(exp)
+      val g = ControlFlowAnalysis.getDependencyGraph(exp)
       mapN(visitExp(exp), stratify(g, loc)) {
         case (e, s) => Expression.FixpointSolve(e, s, tpe, loc)
       }
 
     case Expression.FixpointCheck(exp, _, tpe, loc) =>
-      val g = ControlFlowAnalysis.getDependencyGraphFromAbstractValue(exp)
+      val g = ControlFlowAnalysis.getDependencyGraph(exp)
       mapN(visitExp(exp), stratify(g, loc)) {
         case (e, s) => Expression.FixpointCheck(e, s, tpe, loc)
       }
 
     case Expression.FixpointDelta(exp, _, tpe, loc) =>
-      val g = ControlFlowAnalysis.getDependencyGraphFromAbstractValue(exp)
+      val g = ControlFlowAnalysis.getDependencyGraph(exp)
       mapN(visitExp(exp), stratify(g, loc)) {
         case (e, s) => Expression.FixpointDelta(e, s, tpe, loc)
       }
@@ -422,12 +422,6 @@ object Stratifier extends Phase[Root, Root] {
 
     case Predicate.Body.Functional(varSym, defSym, term, loc) => None
   }
-
-  /**
-    * Returns the union of the two dependency graphs.
-    */
-  def union(g1: DependencyGraph, g2: DependencyGraph): DependencyGraph =
-    DependencyGraph(g1.xs ++ g2.xs)
 
   /**
     * Computes the stratification of the given dependency graph `g` at the given source location `loc`.

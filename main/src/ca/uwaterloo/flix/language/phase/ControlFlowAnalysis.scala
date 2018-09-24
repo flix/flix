@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.language.ast.Symbol
-import ca.uwaterloo.flix.language.ast.FinalAst.{Def, Expression, Root}
+import ca.uwaterloo.flix.language.ast.FinalAst.{CatchRule, Def, Expression, Root}
 import ca.uwaterloo.flix.language.phase.Stratifier.DependencyGraph
 import ca.uwaterloo.flix.util.InternalCompilerException
 
@@ -29,6 +29,8 @@ object ControlFlowAnalysis {
 
   object AbstractValue {
 
+    // TODO: names and Comments
+
     /**
       * Represents the bottom element.
       */
@@ -37,7 +39,7 @@ object ControlFlowAnalysis {
     /**
       * Represents any Unit, True, False, Char, Float32, Float64, Int8, Int16, Int32, Int64, BigInt, or Str value.
       */
-    case object AnyVal extends AbstractValue
+    case object AnyPrimitive extends AbstractValue
 
     // TODO: case class Box() extends AbstractValue
 
@@ -49,27 +51,28 @@ object ControlFlowAnalysis {
     case class AnyTag(v: AbstractValue) extends AbstractValue
 
     /**
-      * Represents any array value where the array indices are abstracted away.
+      * Approximation of arrays. Abstracts indices.
       */
     case class Array(vs: AbstractValue) extends AbstractValue
 
     /**
-      * Represents any vector value where the vector indices are abstracted away.
-      */
-    case class Vector(vs: AbstractValue) extends AbstractValue
-
-    /**
-      * Represents any tuple value where the tuple indices are maintained.
+      * Approximation of tuples. Maintains indices.
       */
     case class Tuple(vs: List[AbstractValue]) extends AbstractValue
 
     // TODO: RecordEmpty/RecordExt.
 
-    case class Graph(d: DependencyGraph) extends AbstractValue
+    case class Graph(g: DependencyGraph) extends AbstractValue
 
-    // TODO: Relation/Lattice value.
+    /**
+      * Approximation of any relation value.
+      */
+    case object AnyRelation extends AbstractValue
 
-    // TODO: Constraint Value
+    /**
+      * Approximation of any lattice value.
+      */
+    case object AnyLattice extends AbstractValue
 
   }
 
@@ -78,9 +81,15 @@ object ControlFlowAnalysis {
     */
   def leq(x: AbstractValue, y: AbstractValue): Boolean = (x, y) match {
     case (AbstractValue.Bot, _) => true
-    case (AbstractValue.AnyVal, AbstractValue.AnyVal) => true
+    case (AbstractValue.AnyPrimitive, AbstractValue.AnyPrimitive) => true
     case (AbstractValue.AnyTag(v1), AbstractValue.AnyTag(v2)) => leq(v1, v2)
-    // TODO: Rest
+    case (AbstractValue.Array(v1), AbstractValue.Array(v2)) => leq(v1, v2)
+    case (AbstractValue.Tuple(vs1), AbstractValue.Tuple(vs2)) => (vs1 zip vs2) forall {
+      case (v1, v2) => leq(v1, v2)
+    }
+    case (AbstractValue.Graph(g1), AbstractValue.Graph(g2)) => g1.xs subsetOf g2.xs
+    case (AbstractValue.AnyRelation, AbstractValue.AnyRelation) => true
+    case (AbstractValue.AnyLattice, AbstractValue.AnyLattice) => true
     case _ => false
   }
 
@@ -90,8 +99,19 @@ object ControlFlowAnalysis {
   def lub(x: AbstractValue, y: AbstractValue): AbstractValue = (x, y) match {
     case (AbstractValue.Bot, _) => y
     case (_, AbstractValue.Bot) => x
-    case (AbstractValue.Graph(g1), AbstractValue.Graph(g2)) => AbstractValue.Graph(Stratifier.union(g1, g2))
-    case _ => ???
+    case (AbstractValue.AnyPrimitive, AbstractValue.AnyPrimitive) => AbstractValue.AnyPrimitive
+    case (AbstractValue.AnyTag(v1), AbstractValue.AnyTag(v2)) => AbstractValue.AnyTag(lub(v1, v2))
+    case (AbstractValue.Tuple(vs1), AbstractValue.Tuple(vs2)) =>
+      val vs = (vs1 zip vs2).map {
+        case (v1, v2) => lub(v1, v2)
+      }
+      AbstractValue.Tuple(vs)
+    case (AbstractValue.Graph(g1), AbstractValue.Graph(g2)) =>
+      val g = DependencyGraph(g1.xs ++ g2.xs)
+      AbstractValue.Graph(g)
+    case (AbstractValue.AnyRelation, AbstractValue.AnyRelation) => AbstractValue.AnyRelation
+    case (AbstractValue.AnyLattice, AbstractValue.AnyLattice) => AbstractValue.AnyLattice
+    case _ => throw InternalCompilerException(s"Unexpected abstract values: '$x' and '$y'. Possible type error?")
   }
 
   /**
@@ -114,29 +134,29 @@ object ControlFlowAnalysis {
 
   // TODO: This really has to be done in a fixed point...
   // TODO: It seems unlike that this can simplt return an abstract value. It probably will have to return an abstract state...
-  private def fixpointExp(exp0: Expression, env0: AbstractEnvironment, l: AbstractLattice): AbstractValue = exp0 match {
-    case Expression.Unit => AbstractValue.AnyVal
-    case Expression.True => AbstractValue.AnyVal
-    case Expression.False => AbstractValue.AnyVal
-    case Expression.Char(lit) => AbstractValue.AnyVal
-    case Expression.Float32(lit) => AbstractValue.AnyVal
-    case Expression.Float64(lit) => AbstractValue.AnyVal
-    case Expression.Int8(lit) => AbstractValue.AnyVal
-    case Expression.Int16(lit) => AbstractValue.AnyVal
-    case Expression.Int32(lit) => AbstractValue.AnyVal
-    case Expression.Int64(lit) => AbstractValue.AnyVal
-    case Expression.BigInt(lit) => AbstractValue.AnyVal
-    case Expression.Str(lit) => AbstractValue.AnyVal
+
+  private def evalExp(exp0: Expression, env0: AbstractEnvironment, l: AbstractLattice): AbstractValue = exp0 match {
+    case Expression.Unit => AbstractValue.AnyPrimitive
+    case Expression.True => AbstractValue.AnyPrimitive
+    case Expression.False => AbstractValue.AnyPrimitive
+    case Expression.Char(lit) => AbstractValue.AnyPrimitive
+    case Expression.Float32(lit) => AbstractValue.AnyPrimitive
+    case Expression.Float64(lit) => AbstractValue.AnyPrimitive
+    case Expression.Int8(lit) => AbstractValue.AnyPrimitive
+    case Expression.Int16(lit) => AbstractValue.AnyPrimitive
+    case Expression.Int32(lit) => AbstractValue.AnyPrimitive
+    case Expression.Int64(lit) => AbstractValue.AnyPrimitive
+    case Expression.BigInt(lit) => AbstractValue.AnyPrimitive
+    case Expression.Str(lit) => AbstractValue.AnyPrimitive
 
     case Expression.Var(sym, tpe, loc) =>
       env0.lookup(sym)
-
 
     case Expression.Closure(sym, freeVars, fnType, tpe, loc) =>
       ???
 
     case Expression.ApplyClo(exp, args, tpe, loc) =>
-      val clo = fixpointExp(exp, env0, l)
+      val clo = evalExp(exp, env0, l)
       AbstractValue.Bot
 
     case Expression.ApplyDef(sym, args, tpe, loc) =>
@@ -159,7 +179,7 @@ object ControlFlowAnalysis {
       ???
 
     case Expression.Unary(op, exp, tpe, eff, loc) =>
-      AbstractValue.AnyVal
+      AbstractValue.AnyPrimitive
 
     case Expression.Binary(op, exp1, exp2, tpe, eff, loc) =>
       ???
@@ -171,23 +191,37 @@ object ControlFlowAnalysis {
       ???
 
     case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
-      // Compute the conditional (and ignore it).
-      val v1 = fixpointExp(exp1, env0, l)
+      // Evaluate the conditional.
+      val v1 = evalExp(exp1, env0, l)
 
-      // Compute the two branches.
-      val v2 = fixpointExp(exp2, env0, l)
-      val v3 = fixpointExp(exp3, env0, l)
+      // Evaluate the then and else branches.
+      val v2 = evalExp(exp2, env0, l)
+      val v3 = evalExp(exp3, env0, l)
 
-      // The result is the join of the two branches.
+      // Join the two branches.
       lub(v2, v3)
 
+    case Expression.Branch(exp, branches, tpe, loc) =>
+      ???
+
+    case Expression.JumpTo(sym, tpe, loc) =>
+      ???
+
+    case Expression.Is(sym, tag, exp, loc) =>
+      ???
 
     case Expression.Tag(sym, tag, exp, tpe, loc) =>
-      val v = fixpointExp(exp, env0, l)
+      val v = evalExp(exp, env0, l)
       AbstractValue.AnyTag(v)
 
+    case Expression.Untag(sym, tag, exp, tpe, loc) =>
+      ???
+
+    case Expression.Index(base, offset, tpe, loc) =>
+      ???
+
     case Expression.Tuple(elms, tpe, loc) =>
-      val vs = elms.map(fixpointExp(_, env0, l))
+      val vs = elms.map(evalExp(_, env0, l))
       AbstractValue.Tuple(vs)
 
     case Expression.RecordEmpty(tpe, loc) => ???
@@ -199,18 +233,18 @@ object ControlFlowAnalysis {
     case Expression.RecordRestrict(base, label, tpe, loc) => ???
 
     case Expression.ArrayLit(elms, tpe, loc) =>
-      val vs = elms.map(fixpointExp(_, env0, l))
+      val vs = elms.map(evalExp(_, env0, l))
       val v = lubAll(vs)
       AbstractValue.Array(v)
 
     case Expression.ArrayNew(elm, len, tpe, loc) =>
       // TODO: Need allocation site?
-      val v = fixpointExp(elm, env0, l)
+      val v = evalExp(elm, env0, l)
       AbstractValue.Array(v)
 
     case Expression.ArrayLoad(base, index, tpe, loc) =>
       // Evaluate the base and index expressions. The index is abstracted away.
-      (fixpointExp(base, env0, l), fixpointExp(index, env0, l)) match {
+      (evalExp(base, env0, l), evalExp(index, env0, l)) match {
         case (AbstractValue.Bot, _) => AbstractValue.Bot
         case (AbstractValue.Array(v), _) => v
         case (v, _) => throw InternalCompilerException(s"Unexpected abstract value: '$v'.")
@@ -218,8 +252,8 @@ object ControlFlowAnalysis {
 
     case Expression.ArrayLength(base, tpe, loc) =>
       // Evaluate and ignore the base expression.
-      val v = fixpointExp(base, env0, l)
-      AbstractValue.AnyVal
+      val v = evalExp(base, env0, l)
+      AbstractValue.AnyPrimitive
 
     case Expression.ArrayStore(base, index, elm, tpe, loc) => ???
 
@@ -237,48 +271,79 @@ object ControlFlowAnalysis {
 
     case Expression.Universal(fparam, exp, loc) => ???
 
-    case Expression.NativeConstructor(constructor, args, eff, loc) => ???
+    case Expression.NativeConstructor(constructor, args, eff, loc) =>
+      // Evaluate the arguments.
+      val as = args.map(evalExp(_, env0, l))
 
-    case Expression.TryCatch(exp, rules, tpe, loc) => ???
+      // Unsoundly ignore the constructed object.
+      AbstractValue.Bot
 
-    case Expression.NativeField(field, tpe, loc) => ???
+    case Expression.TryCatch(exp, rules, tpe, loc) =>
+      // Unsoundly ignore exp.
 
-    case Expression.NativeMethod(method, args, tpe, loc) => ???
+      // Evaluate each catch rule.
+      val values = rules map {
+        case CatchRule(sym, clazz, body) => evalExp(body, env0, l)
+      }
 
-    case Expression.NewRelation(sym, tpe, loc) => ???
+      // Join all the values.
+      lubAll(values)
 
-    case Expression.NewLattice(sym, tpe, loc) => ???
+    case Expression.NativeField(field, tpe, loc) =>
+      // Unsoundly ignore the field value.
+      AbstractValue.Bot
+
+    case Expression.NativeMethod(method, args, tpe, loc) =>
+      // Evaluate the arguments.
+      val as = args.map(evalExp(_, env0, l))
+
+      // Unsoundly ignore the return value.
+      AbstractValue.Bot
+
+    case Expression.NewRelation(sym, tpe, loc) => AbstractValue.AnyRelation
+
+    case Expression.NewLattice(sym, tpe, loc) => AbstractValue.AnyLattice
 
     case Expression.Constraint(con, tpe, loc) =>
       val g = Stratifier.getDependencyGraph(con)
       AbstractValue.Graph(g)
 
     case Expression.ConstraintUnion(exp1, exp2, tpe, loc) =>
-      val v1 = fixpointExp(exp1, env0, l)
-      val v2 = fixpointExp(exp2, env0, l)
+      val v1 = evalExp(exp1, env0, l)
+      val v2 = evalExp(exp2, env0, l)
       lub(v1, v2)
 
-    case Expression.FixpointSolve(exp, stf, tpe, loc) => ???
+    case Expression.FixpointSolve(exp, stf, tpe, loc) =>
+      evalExp(exp, env0, l)
 
-    case Expression.FixpointCheck(exp, stf, tpe, loc) => ???
+    case Expression.FixpointCheck(exp, stf, tpe, loc) =>
+      evalExp(exp, env0, l)
 
-    case Expression.FixpointDelta(exp, stf, tpe, loc) => ???
+    case Expression.FixpointDelta(exp, stf, tpe, loc) =>
+      evalExp(exp, env0, l)
 
     case Expression.UserError(tpe, loc) => AbstractValue.Bot
 
+    case Expression.HoleError(sym, tpe, loc) => AbstractValue.Bot
+
+    case Expression.MatchError(tpe, loc) => AbstractValue.Bot
+
+    case Expression.SwitchError(tpe, loc) => AbstractValue.Bot
+
   }
 
+  /**
+    * Returns (an over-approximation) of the dependency graph of the given expression `exp`.
+    */
+  def getDependencyGraph(exp: Expression): DependencyGraph = {
+    // Computes the fixed point.
+    val v = evalExp(exp, AbstractEnvironment(Map.empty), AbstractLattice(Map.empty))
 
-  // TODO: DOC
-  def getDependencyGraphFromAbstractValue(exp: Expression): DependencyGraph = {
-    // TODO
-    val v = fixpointExp(exp, AbstractEnvironment(Map.empty), AbstractLattice(Map.empty))
     v match {
       case AbstractValue.Bot => DependencyGraph.Empty
       case AbstractValue.Graph(g) => g
-      case _ => ???
+      case _ => throw InternalCompilerException(s"Unexpected abstract value: '$v'.")
     }
   }
-
 
 }
