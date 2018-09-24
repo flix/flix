@@ -67,19 +67,28 @@ object ControlFlowAnalysis {
       * Computes the fixpoint.
       */
     def fixpoint(): Unit = {
-
+      // Iterate until fixpoint.
       while (worklist.nonEmpty) {
+        // Dequeue a function.
         val sym = worklist.dequeue()
 
-        println(s"dequeue:  $sym, ws size = ${worklist.size}")
+        // Lookup the definition.
+        val defn = root.defs(sym)
 
-        //evalExp()
+        // Retrieve the current abstract arguments.
+        val args = lookupArguments(sym)
 
+        // Construct an environment mapping the parameters to their values.
+        val env = (defn.formals zip args).foldLeft(Map.empty[Symbol.VarSym, AbstractValue]) {
+          case (acc, (FormalParam(sym, _), value)) => acc + (sym -> value)
+        }
 
+        println(s"dequeue:  $sym, $env, ws size = ${worklist.size}")
+
+        // Evaluate the function body.
+        evalExp(defn.exp, AbstractEnvironment(env), this)
       }
-
     }
-
 
   }
 
