@@ -213,7 +213,7 @@ sealed trait Type {
     case Type.Checkable => "Checkable"
     case Type.Tuple(l) => s"Tuple($l)"
     case Type.RecordEmpty => "{ }"
-    case Type.RecordExtension(base, label, field) => "{ " + base.toString + " | " + label + " : " + field.toString + " }"
+    case Type.RecordExtension(base, label, field) => "{ " + label + " : " + field + " | " + base + " }"
     case Type.Apply(tpe1, tpe2) => s"$tpe1[$tpe2]"
   }
 

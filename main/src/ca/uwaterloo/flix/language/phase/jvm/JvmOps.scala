@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 import java.nio.file.{Files, LinkOption, Path}
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.GenSym
 import ca.uwaterloo.flix.language.ast.FinalAst._
 import ca.uwaterloo.flix.language.ast.{Symbol, Type}
 import ca.uwaterloo.flix.language.phase.Unification
@@ -872,6 +873,8 @@ object JvmOps {
     * Returns the set of tags associated with the given type.
     */
   def getTagsOf(tpe: Type)(implicit root: Root, flix: Flix): Set[TagInfo] = {
+    implicit val genSym: GenSym = flix.genSym
+
     // Return the empty set if the type is not an enum.
     if (!tpe.isEnum) {
       return Set.empty

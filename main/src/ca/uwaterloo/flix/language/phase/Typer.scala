@@ -374,6 +374,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       */
     def typecheckHandler(handler0: ResolvedAst.Handler, program0: ResolvedAst.Program)(implicit flix: Flix): Result[TypedAst.Handler, TypeError] = handler0 match {
       case ResolvedAst.Handler(doc, ann, mod, sym, tparams0, fparams0, exp0, sc, eff0, loc) =>
+        implicit val genSym: GenSym = flix.genSym
 
         val eff = program0.effs(sym)
         val effectType = Scheme.instantiate(eff.sc)(flix.genSym)
@@ -725,7 +726,9 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
          */
         case ResolvedAst.Expression.RecordSelect(base, label, tvar, loc) =>
           //
-          // TODO: Rule
+          // r : { label = tpe | row }
+          // -------------------------------
+          // r.label : tpe
           //
           val freshRowVar = Type.freshTypeVar()
           val expectedType = Type.RecordExtension(freshRowVar, label, tvar)
@@ -739,7 +742,9 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
          */
         case ResolvedAst.Expression.RecordExtend(base, label, value, tvar, loc) =>
           //
-          // TODO: Rule
+          // value : tpe
+          // -------------------------------------------
+          // { label = value | r } : { label : tpe | r }
           //
           for {
             baseType <- visitExp(base)
@@ -752,13 +757,16 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
          */
         case ResolvedAst.Expression.RecordRestrict(base, label, tvar, loc) =>
           //
-          // TODO: Rule
+          // ----------------------
+          // { -label | r } : { r }
           //
+          val freshFieldType = Type.freshTypeVar()
+          val freshRowVar = Type.freshTypeVar()
           for {
             baseType <- visitExp(base)
-            resultType <- unifyM(baseType, Type.RecordExtension(Type.freshTypeVar(), label, tvar), loc)
-          } yield baseType
-
+            recordType <- unifyM(baseType, Type.RecordExtension(freshRowVar, label, freshFieldType), loc)
+            resultType <- unifyM(tvar, freshRowVar, loc)
+          } yield resultType
 
         /*
          * ArrayLit expression.
