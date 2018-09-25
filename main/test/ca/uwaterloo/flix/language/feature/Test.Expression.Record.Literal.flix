@@ -31,6 +31,14 @@ def testRecordLiteral04(): %{ fstName: Str, lstName: Str, age: Int, cowboy: Bool
     %{ fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true }
 
 @test
+def testRecordLiteral05(): %{ x: Int, y: Int } =
+    %{ x = 0, y = 0 }
+
+@test
+def testRecordLiteral06(): %{ x: Int, y: Int, z: Int } =
+    %{ x = 0, y = 0, z = 0 }
+
+@test
 def testNestedRecordLiteral01(): %{ a: %{ x: Int, y: Int } } =
     %{ a = %{ x = 1, y = 2 } }
 
