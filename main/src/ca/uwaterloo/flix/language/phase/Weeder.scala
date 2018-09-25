@@ -613,8 +613,8 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         case fs =>
           // Rewrite into a sequence of nested record extensions.
           val zero = WeededAst.Expression.RecordEmpty(mkSL(sp1, sp2))
-          fs.foldLeft(zero: WeededAst.Expression) {
-            case (acc, (label, exp)) => WeededAst.Expression.RecordExtend(acc, label, exp, mkSL(sp1, sp2))
+          fs.foldRight(zero: WeededAst.Expression) {
+            case ((label, exp), acc) => WeededAst.Expression.RecordExtend(acc, label, exp, mkSL(sp1, sp2))
           }
       }
 
@@ -1402,8 +1402,8 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         case None => WeededAst.Type.RecordEmpty(mkSL(sp1, sp2))
         case Some(base) => WeededAst.Type.Var(base, mkSL(sp1, sp2))
       }
-      fields.foldLeft(zero: WeededAst.Type) {
-        case (acc, ParsedAst.RecordFieldType(ssp1, l, t, ssp2)) => WeededAst.Type.RecordExtension(acc, l, visitType(t), mkSL(ssp1, ssp2))
+      fields.foldRight(zero: WeededAst.Type) {
+        case (ParsedAst.RecordFieldType(ssp1, l, t, ssp2), acc) => WeededAst.Type.RecordExtension(acc, l, visitType(t), mkSL(ssp1, ssp2))
       }
 
     case ParsedAst.Type.Nat(sp1, len, sp2) => WeededAst.Type.Nat(checkNaturalNumber(len, sp1, sp2), mkSL(sp1, sp2))

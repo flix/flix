@@ -45,3 +45,17 @@ def testRecordForkExtend02(): Unit =
     let r4 = %{ color += "blu" | r1 };
     ()
 
+@test
+def testRecordDuplicateExtend01(): %{ x: Bool, x: Int, x: Str } =
+    let r0 = %{ x += "ab" | %{} };
+    let r1 = %{ x += 1234 | r0 };
+    let r2 = %{ x += true | r1 };
+        r2
+
+@test
+def testRecordDuplicateExtend02(): %{ x: Int, x: Int, x: Int } =
+    let r0 = %{ x += 123 | %{} };
+    let r1 = %{ x += 456 | r0 };
+    let r2 = %{ x += 789 | r1 };
+        r2
+
