@@ -603,7 +603,7 @@ object ParsedAst {
       * @param fields the field literals of the record.
       * @param sp2    the position of the last character in the expression.
       */
-    case class RecordLit(sp1: SourcePosition, fields: Seq[ParsedAst.RecordFieldLiteral], sp2: SourcePosition) extends ParsedAst.Expression
+    case class RecordLit(sp1: SourcePosition, fields: Seq[ParsedAst.RecordField], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Record Select Expression.
@@ -631,7 +631,7 @@ object ParsedAst {
       * @param base   the record expression to extend.
       * @param sp2    the position of the last character in the expression.
       */
-    case class RecordExtend(sp1: SourcePosition, fields: Seq[ParsedAst.RecordFieldLiteral], base: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class RecordExtend(sp1: SourcePosition, fields: Seq[ParsedAst.RecordField], base: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Record Restrict Expression.
@@ -1454,7 +1454,7 @@ object ParsedAst {
     * @param value the value of the field.
     * @param sp2   the position of the last character in the field.
     */
-  case class RecordFieldLiteral(sp1: SourcePosition, label: Name.Ident, value: ParsedAst.Expression, sp2: SourcePosition)
+  case class RecordField(sp1: SourcePosition, label: Name.Ident, value: ParsedAst.Expression, sp2: SourcePosition)
 
   /**
     * Record Field Update.

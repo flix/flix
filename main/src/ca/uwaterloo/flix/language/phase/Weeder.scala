@@ -603,7 +603,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
     case ParsedAst.Expression.RecordLit(sp1, fields, sp2) =>
       val fieldsVal = traverse(fields) {
-        case ParsedAst.RecordFieldLiteral(fsp1, label, exp, fsp2) =>
+        case ParsedAst.RecordField(fsp1, label, exp, fsp2) =>
           mapN(visitExp(exp)) {
             case e => label -> e
           }
@@ -635,7 +635,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
     case ParsedAst.Expression.RecordExtend(_, fields, base, _) =>
       val fieldsVal = traverse(fields) {
-        case ParsedAst.RecordFieldLiteral(sp1, label, exp, sp2) =>
+        case ParsedAst.RecordField(sp1, label, exp, sp2) =>
           mapN(visitExp(exp)) {
             case e => (label, e, mkSL(sp1, sp2))
           }
