@@ -59,3 +59,25 @@ def testRecordDuplicateExtend02(): %{ x: Int, x: Int, x: Int } =
     let r2 = %{ x += 789 | r1 };
         r2
 
+@test
+def testRecordDuplicateExtend03(): %{ x: Int, y: Char, x: Int, y: Char, x: Int } =
+    let r0 = %{ x += 123 | %{} };
+    let r1 = %{ y += 'a' | r0 };
+    let r2 = %{ x += 456 | r1 };
+    let r3 = %{ y += 'b' | r2 };
+    let r4 = %{ x += 789 | r3 };
+        r4
+
+@test
+def testRecordDuplicateExtend04(): Bool =
+    let r0 = %{ x += 123 | %{} };
+    let r1 = %{ x += "abc" | r0 };
+    let r2 = %{ x += "def" | r0 };
+        r1.x != r2.x
+
+@test
+def testRecordDuplicateExtend05(): Unit =
+    let r0 = %{ x += 123 | %{} };
+    let r1 = %{ x += Some(12345) | r0 };
+    let r2 = %{ x += 123 :: Nil  | r0 };
+        ()
