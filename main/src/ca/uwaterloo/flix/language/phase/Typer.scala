@@ -727,7 +727,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         case ResolvedAst.Expression.RecordSelect(base, label, tvar, loc) =>
           //
           // r : { label = tpe | row }
-          // -------------------------------
+          // -------------------------
           // r.label : tpe
           //
           val freshRowVar = Type.freshTypeVar()

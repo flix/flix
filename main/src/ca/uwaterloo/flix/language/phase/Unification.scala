@@ -205,16 +205,20 @@ object Unification {
 
       case (Type.RecordExtension(restRow1, label1, fieldType1), Type.RecordExtension(restRow2, label2, fieldType2)) if label1 == label2 =>
         unify(fieldType1, fieldType2) flatMap {
-          case subst => unify(subst(restRow1), subst(restRow2))
+          case subst1 => unify(subst1(restRow1), subst1(restRow2)) flatMap {
+            case subst2 => Result.Ok(subst2 @@ subst1)
+          }
         }
 
       case (Type.RecordExtension(restRow1, label1, fieldType1), row2) =>
         rewriteRow(row2, label1, fieldType1) flatMap {
-          case (subst, restRow2) =>
+          case (subst1, restRow2) =>
+
             // TODO: Missing the safety/occurs check.
 
-            // TODO: Is the substitution applied correctly here?, probably should compose the substitutions.
-            unify(subst(restRow1), subst(restRow2))
+            unify(subst1(restRow1), subst1(restRow2)) flatMap {
+              case subst2 => Result.Ok(subst2 @@ subst1)
+            }
         }
 
       case (Type.Zero, Type.Zero) => Result.Ok(Substitution.empty) // 0 == 0
@@ -262,8 +266,8 @@ object Unification {
       case Type.RecordExtension(restRow2, label2, fieldType2) =>
         if (label1 == label2) {
           for {
-            tpe <- unify(fieldType1, fieldType2)
-          } yield (tpe, restRow2)
+            subst <- unify(fieldType1, fieldType2)
+          } yield (subst, restRow2)
         } else {
           rewriteRow(restRow2, label1, fieldType1) map {
             case (subst, rewrittenRow) => (subst, Type.RecordExtension(rewrittenRow, label2, fieldType2))
@@ -273,7 +277,7 @@ object Unification {
         val restRow2 = Type.freshTypeVar()
         val type2 = Type.RecordExtension(restRow2, label1, fieldType1)
         val subst = Unification.Substitution(Map(tvar -> type2))
-        Ok((subst, type2))
+        Ok((subst, restRow2))
       case _ => throw InternalCompilerException(s"Unexpected non-row type: '$row2'.") // TODO: UnificationError?
     }
 
