@@ -39,6 +39,18 @@ def testRecordLiteral06(): %{ x: Int, y: Int, z: Int } =
     %{ x = 0, y = 0, z = 0 }
 
 @test
+def testRecordLiteralOrder01(): %{ x: Int, y: Int, z: Int } =
+    %{ x = 1, y = 2, z = 3 }
+
+@test
+def testRecordLiteralOrder02(): %{ x: Int, y: Int, z: Int } =
+    %{ y = 2, z = 3, x = 1 }
+
+@test
+def testRecordLiteralOrder03(): %{ x: Int, y: Int, z: Int } =
+    %{ z = 3, x = 1, y = 2 }
+
+@test
 def testNestedRecordLiteral01(): %{ a: %{ x: Int, y: Int } } =
     %{ a = %{ x = 1, y = 2 } }
 
