@@ -29,9 +29,14 @@ def testRecordRestrict04(): %{ } =
     r4
 
 @test
-def testRecordRestrict05(): %{ } =
+def testRecordRestrictMultiple01(): %{ fstName: Str, lstName: Str } =
     let r0 = %{ fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true };
-    %{ -fstName, -lstName, -age, -cowboy | r0 }
+    %{ -age, -cowboy | r0 }
+
+@test
+def testRecordRestrictMultiple02(): %{ age: Int, cowboy: Bool } =
+    let r0 = %{ fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true };
+    %{ -fstName, -lstName | r0 }
 
 @test
 def testRecordRestrictUnordered01(): %{ } =
