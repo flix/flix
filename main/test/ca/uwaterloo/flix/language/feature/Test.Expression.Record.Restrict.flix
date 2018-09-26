@@ -29,6 +29,19 @@ def testRecordRestrict04(): %{ } =
     r4
 
 @test
+def testRecordRestrict05(): Bool =
+    let r0 = %{ a = 123, a = 456 };
+    let r1 = %{ -a | r0 };
+        r1.a == 456
+
+@test
+def testRecordRestrict06(): Bool =
+    let r0 = %{ a = 123, a = 456, a = 789 };
+    let r1 = %{ -a | r0 };
+    let r2 = %{ -a | r1 };
+        r2.a == 789
+
+@test
 def testRecordRestrictMultiple01(): %{ fstName: Str, lstName: Str } =
     let r0 = %{ fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true };
     %{ -age, -cowboy | r0 }
@@ -52,7 +65,6 @@ def testRecordRestrictUnordered02(): %{ } =
 def testRecordRestrictUnordered03(): %{ } =
     let r0 = %{ fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true };
     %{  -cowboy, -age, -lstName, -fstName | r0 }
-
 
 @test
 def testRecordRestrictDuplicateLabels01(): %{ a: Int, a: Int } =
@@ -93,4 +105,3 @@ def testRecordRestrictDuplicateLabels07(): %{ a: Int } =
 def testRecordRestrictDuplicateLabels08(): %{} =
     let r = %{ a = 1, b = 42, a = 2, b = 84, a = 3};
         %{ -a, -b, -a, -b, -a | r }
-
