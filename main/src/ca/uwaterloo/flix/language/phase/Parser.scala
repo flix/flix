@@ -657,7 +657,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def NewChannel: Rule1[ParsedAst.Expression.NewChannel] = rule {
-      SP ~ atomic("makech") ~ "[" ~ optWS ~ Type ~ optWS ~ "]" ~ SP ~> ParsedAst.Expression.NewChannel
+      SP ~ atomic("newch") ~ SP ~> ParsedAst.Expression.NewChannel
     }
 
     def GetChannel: Rule1[ParsedAst.Expression.GetChannel] = rule {
@@ -677,15 +677,16 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Select: Rule1[ParsedAst.Expression.Select] = {
-      def Case: Rule1[(ParsedAst.Expression, ParsedAst.Expression)] = rule {
-        atomic("case") ~ WS ~ Expression ~ optWS ~ "=>" ~ optWS ~ Expression ~> ((e1: ParsedAst.Expression, e2: ParsedAst.Expression) => (e1, e2))
-      }
-      def Default: Rule1[ParsedAst.Expression] = rule {
-        atomic("default") ~ optWS ~ "=>" ~ optWS ~ Expression ~> ((e: ParsedAst.Expression) => e)
+      def Rule: Rule1[ParsedAst.SelectRule] = rule {
+        atomic("case") ~ WS ~ Pattern ~ optWS ~ "<-" ~ optWS ~ Expression ~ optWS ~ "=>" ~ optWS ~ Expression ~> ParsedAst.SelectRule
       }
       rule {
-        SP ~ atomic("select") ~ WS ~ "{" ~ optWS ~ oneOrMore(Case).separatedBy(optWS) ~ optWS ~ optional(Default) ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.Select
+        SP ~ atomic("select") ~ WS ~ "{" ~ optWS ~ oneOrMore(Rule).separatedBy(optWS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.Select
       }
+    }
+
+    def Statement: Rule1[ParsedAst.Expression.Statement] = rule {
+      SP ~ Expression ~ optWS ~ ";" ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.Statement
     }
 
     def Postfix: Rule1[ParsedAst.Expression] = rule {

@@ -876,10 +876,9 @@ object ParsedAst {
       * NewChannel Expression.
       *
       * @param sp1 the position of the first character in the expression.
-      * @param tpe the type.
       * @param sp2 the position of the last character in the expression.
       */
-    case class NewChannel(sp1: SourcePosition, tpe: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Expression
+    case class NewChannel(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * GetChannel Expression.
@@ -921,12 +920,21 @@ object ParsedAst {
     /**
       * Select Expression.
       *
-      * @param sp1     the position of the first character in the expression.
-      * @param cases   the cases of the select.
-      * @param default the default case of the select.
-      * @param sp2     the position of the last character in the expression.
+      * @param sp1   the position of the first character in the expression.
+      * @param rules the rules of the select expression.
+      * @param sp2   the position of the last character in the expression.
       */
-    case class Select(sp1: SourcePosition, cases: Seq[(ParsedAst.Expression, ParsedAst.Expression)], default: Option[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
+    case class Select(sp1: SourcePosition, rules: Seq[SelectRule], sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
+      * Statement Expression.
+      *
+      * @param sp1  the position of the first character in the expression.
+      * @param exp1 the first expression.
+      * @param exp2 the second expression.
+      * @param sp2  the position of the last character in the expression.
+      */
+    case class Statement(sp1: SourcePosition, exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * New Relation or Lattice.
@@ -1402,6 +1410,15 @@ object ParsedAst {
     * @param exp   the body expression of the rule.
     */
   case class MatchRule(pat: ParsedAst.Pattern, guard: Option[ParsedAst.Expression], exp: ParsedAst.Expression) extends ParsedAst
+
+  /**
+    * A select rule consists of a pattern, a channel expression, and a body expression.
+    *
+    * @param pat     the pattern of the rule.
+    * @param channel the channel expression of the rule.
+    * @param exp     the body expression of the rule.
+    */
+  case class SelectRule(pat: ParsedAst.Pattern, channel: ParsedAst.Expression, exp: ParsedAst.Expression) extends ParsedAst
 
   /**
     * Modifier.
