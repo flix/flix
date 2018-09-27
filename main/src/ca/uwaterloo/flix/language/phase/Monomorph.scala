@@ -94,7 +94,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         case Type.Arrow(l) => Type.Arrow(l)
         case Type.Tuple(l) => Type.Tuple(l)
         case Type.RecordEmpty => Type.RecordEmpty
-        case Type.RecordExtension(label, field, rest) => Type.RecordExtension(label, apply(field), apply(rest))
+        case Type.RecordExtend(label, value, rest) => Type.RecordExtend(label, apply(value), apply(rest))
         case Type.Zero => Type.Zero
         case Type.Succ(n, i) => Type.Succ(n, i)
         case Type.Enum(sym, kind) => Type.Enum(sym, kind)

@@ -1282,7 +1282,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
       for {
         v <- lookupType(value, ns0, root)
         r <- lookupType(rest, ns0, root)
-      } yield Type.RecordExtension(label.name, v, r)
+      } yield Type.RecordExtend(label.name, v, r)
 
     case NamedAst.Type.Nat(len, loc) => Type.Succ(len, Type.Zero).toSuccess
 
