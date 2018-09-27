@@ -88,8 +88,12 @@ def testSelectDuplicateLabels02(): Int =
     let a3 = %{ -a, -a | r}.a;
         a1 + a2 + a3
 
-// TODO: Broken?
-//@test
-//def testSelectDuplicateLabels03(): Int =
-//    let r = %{ a = true, a = "hello world", a = 84};
-//    %{ -a, -a | r }.a
+@test
+def testSelectDuplicateLabels03(): Str =
+    let r = %{ a = true, a = "hello world", a = 84};
+    %{ -a | r }.a
+
+@test
+def testSelectDuplicateLabels04(): Int =
+    let r = %{ a = true, a = "hello world", a = 84};
+    %{ -a, -a | r }.a
