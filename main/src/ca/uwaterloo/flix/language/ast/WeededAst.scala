@@ -178,8 +178,6 @@ object WeededAst {
 
     case class Select(rules: List[WeededAst.SelectRule], loc: SourceLocation) extends WeededAst.Expression
 
-    case class Statement(exp1: WeededAst.Expression, exp2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
-
     case class NewRelationOrLattice(name: Name.QName, loc: SourceLocation) extends WeededAst.Expression
 
     case class Constraint(con: WeededAst.Constraint, loc: SourceLocation) extends WeededAst.Expression

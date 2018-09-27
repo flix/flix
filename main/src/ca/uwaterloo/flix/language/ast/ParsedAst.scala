@@ -1414,11 +1414,11 @@ object ParsedAst {
   /**
     * A select rule consists of a pattern, a channel expression, and a body expression.
     *
-    * @param pat     the pattern of the rule.
-    * @param channel the channel expression of the rule.
-    * @param exp     the body expression of the rule.
+    * @param pat  the pattern of the rule.
+    * @param chan the channel expression of the rule.
+    * @param exp  the body expression of the rule.
     */
-  case class SelectRule(pat: ParsedAst.Pattern, channel: ParsedAst.Expression, exp: ParsedAst.Expression) extends ParsedAst
+  case class SelectRule(pat: ParsedAst.Pattern, chan: ParsedAst.Expression, exp: ParsedAst.Expression) extends ParsedAst
 
   /**
     * Modifier.

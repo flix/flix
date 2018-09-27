@@ -935,7 +935,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
     case ParsedAst.Expression.Statement(sp1, exp1, exp2, sp2) =>
       mapN(visitExp(exp1), visitExp(exp2)) {
-        case (e1, e2) => WeededAst.Expression.Statement(e1, e2, mkSL(sp1, sp2))
+        case (e1, e2) => WeededAst.Expression.LetRec(Name.Ident(sp1, "_temp", sp1), e1, e2, mkSL(sp1, sp2)) //TODO skal spX i LetRec være sp1?
       }
 
     case ParsedAst.Expression.NewRelationOrLattice(sp1, name, sp2) =>
