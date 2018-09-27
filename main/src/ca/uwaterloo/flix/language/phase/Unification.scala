@@ -16,6 +16,7 @@
 
 package ca.uwaterloo.flix.language.phase
 
+import ca.uwaterloo.flix.language.GenSym
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Type}
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.util.Result._
@@ -76,7 +77,7 @@ object Unification {
       case Type.Arrow(l) => Type.Arrow(l)
       case Type.Tuple(l) => Type.Tuple(l)
       case Type.RecordEmpty => Type.RecordEmpty
-      case Type.RecordExtension(base, lab, fld) => Type.RecordExtension(apply(base), lab, apply(fld))
+      case Type.RecordExtend(label, field, rest) => Type.RecordExtend(label, apply(field), apply(rest))
       case Type.Zero => Type.Zero
       case Type.Succ(n, t) => Type.Succ(n, apply(t))
       case Type.Enum(sym, kind) => Type.Enum(sym, kind)
@@ -135,12 +136,21 @@ object Unification {
       */
     case class OccursCheck(tvar: Type.Var, tpe: Type) extends UnificationError
 
+    /**
+      * An unification error due the field `fieldName` of type `fieldType` missing from the type `recordType`.
+      *
+      * @param fieldName  the name of the missing field.
+      * @param fieldType  the type of the missing field.
+      * @param recordType the record type the field is missing from.
+      */
+    case class UndefinedLabel(fieldName: String, fieldType: Type, recordType: Type) extends UnificationError
+
   }
 
   /**
     * Returns the most general unifier of the two given types `tpe1` and `tpe2`.
     */
-  def unify(tpe1: Type, tpe2: Type): Result[Substitution, UnificationError] = {
+  def unify(tpe1: Type, tpe2: Type)(implicit genSym: GenSym): Result[Substitution, UnificationError] = {
 
     // NB: Uses a closure to capture the source location `loc`.
 
@@ -199,15 +209,18 @@ object Unification {
       case (Type.Ref, Type.Ref) => Result.Ok(Substitution.empty)
       case (Type.Arrow(l1), Type.Arrow(l2)) if l1 == l2 => Result.Ok(Substitution.empty)
       case (Type.Tuple(l1), Type.Tuple(l2)) if l1 == l2 => Result.Ok(Substitution.empty)
+
       case (Type.RecordEmpty, Type.RecordEmpty) => Result.Ok(Substitution.empty)
 
-      case (Type.RecordExtension(base1, label1, value1), Type.RecordExtension(base2, label2, value2)) =>
-        if (label1 == label2) {
-          unify(value1, value2) flatMap {
-            case subst => unify(subst(base1), subst(base2))
-          }
-        } else {
-          ???
+      case (Type.RecordExtend(label1, fieldType1, restRow1), row2) =>
+        rewriteRow(row2, label1, fieldType1, row2) flatMap {
+          case (subst1, restRow2) =>
+
+            // TODO: Missing the safety/occurs check.
+
+            unify(subst1(restRow1), subst1(restRow2)) flatMap {
+              case subst2 => Result.Ok(subst2 @@ subst1)
+            }
         }
 
       case (Type.Zero, Type.Zero) => Result.Ok(Substitution.empty) // 0 == 0
@@ -246,6 +259,28 @@ object Unification {
         case Result.Err(e) => Result.Err(e)
       }
       case _ => throw InternalCompilerException(s"Mismatched type lists: `$ts1' and `$ts2'.")
+    }
+
+    // TODO: DOC
+    def rewriteRow(row2: Type, label1: String, fieldType1: Type, originalType: Type): Result[(Substitution, Type), UnificationError] = row2 match {
+      case Type.RecordEmpty =>
+        Err(UnificationError.UndefinedLabel(label1, fieldType1, originalType))
+      case Type.RecordExtend(label2, fieldType2, restRow2) =>
+        if (label1 == label2) {
+          for {
+            subst <- unify(fieldType1, fieldType2)
+          } yield (subst, restRow2)
+        } else {
+          rewriteRow(restRow2, label1, fieldType1, originalType) map {
+            case (subst, rewrittenRow) => (subst, Type.RecordExtend(label2, fieldType2, rewrittenRow))
+          }
+        }
+      case tvar: Type.Var =>
+        val restRow2 = Type.freshTypeVar()
+        val type2 = Type.RecordExtend(label1, fieldType1, restRow2)
+        val subst = Unification.Substitution(Map(tvar -> type2))
+        Ok((subst, restRow2))
+      case _ => throw InternalCompilerException(s"Unexpected non-row type: '$row2'.") // TODO: UnificationError?
     }
 
     unifyTypes(tpe1, tpe2)
@@ -306,7 +341,7 @@ object Unification {
     * Unifies the two given types `tpe1` and `tpe2` lifting their unified types and
     * associated substitution into the type inference monad.
     */
-  def unifyM(tpe1: Type, tpe2: Type, loc: SourceLocation): InferMonad[Type] = {
+  def unifyM(tpe1: Type, tpe2: Type, loc: SourceLocation)(implicit genSym: GenSym): InferMonad[Type] = {
     InferMonad((s: Substitution) => {
       val type1 = s(tpe1)
       val type2 = s(tpe2)
@@ -318,6 +353,8 @@ object Unification {
           Err(TypeError.UnificationError(baseType1, baseType2, type1, type2, loc))
         case Result.Err(UnificationError.OccursCheck(baseType1, baseType2)) =>
           Err(TypeError.OccursCheckError(baseType1, baseType2, type1, type2, loc))
+        case Result.Err(UnificationError.UndefinedLabel(label, field, tpe)) =>
+          Err(TypeError.UndefinedLabel(label, field, tpe, loc))
       }
     }
     )
@@ -326,17 +363,17 @@ object Unification {
   /**
     * Unifies the three given types `tpe1`, `tpe2`, and `tpe3`.
     */
-  def unifyM(tpe1: Type, tpe2: Type, tpe3: Type, loc: SourceLocation): InferMonad[Type] = unifyM(List(tpe1, tpe2, tpe3), loc)
+  def unifyM(tpe1: Type, tpe2: Type, tpe3: Type, loc: SourceLocation)(implicit genSym: GenSym): InferMonad[Type] = unifyM(List(tpe1, tpe2, tpe3), loc)
 
   /**
     * Unifies the four given types `tpe1`, `tpe2`, `tpe3` and `tpe4`.
     */
-  def unifyM(tpe1: Type, tpe2: Type, tpe3: Type, tpe4: Type, loc: SourceLocation): InferMonad[Type] = unifyM(List(tpe1, tpe2, tpe3, tpe4), loc)
+  def unifyM(tpe1: Type, tpe2: Type, tpe3: Type, tpe4: Type, loc: SourceLocation)(implicit genSym: GenSym): InferMonad[Type] = unifyM(List(tpe1, tpe2, tpe3, tpe4), loc)
 
   /**
     * Unifies all the types in the given non-empty list `ts`.
     */
-  def unifyM(ts: List[Type], loc: SourceLocation): InferMonad[Type] = {
+  def unifyM(ts: List[Type], loc: SourceLocation)(implicit genSym: GenSym): InferMonad[Type] = {
     assert(ts.nonEmpty)
 
     def visit(x0: InferMonad[Type], xs: List[Type]): InferMonad[Type] = xs match {
@@ -352,7 +389,7 @@ object Unification {
   /**
     * Pairwise unifies the two given lists of types `xs` and `ys`.
     */
-  def unifyM(xs: List[Type], ys: List[Type], loc: SourceLocation): InferMonad[List[Type]] = seqM((xs zip ys).map {
+  def unifyM(xs: List[Type], ys: List[Type], loc: SourceLocation)(implicit genSym: GenSym): InferMonad[List[Type]] = seqM((xs zip ys).map {
     case (x, y) => unifyM(x, y, loc)
   })
 

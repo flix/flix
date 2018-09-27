@@ -296,16 +296,16 @@ object SimplifiedAstOps {
       //
       // RecordExtend Expressions.
       //
-      case Expression.RecordExtend(base, label, value, tpe, loc) =>
-        checkExp(base, env0, ienv0)
+      case Expression.RecordExtend(label, value, rest, tpe, loc) =>
         checkExp(value, env0, ienv0)
+        checkExp(rest, env0, ienv0)
         checkType(tpe)
 
       //
       // RecordRestrict Expressions.
       //
-      case Expression.RecordRestrict(base, label, tpe, loc) =>
-        checkExp(base, env0, ienv0)
+      case Expression.RecordRestrict(label, rest, tpe, loc) =>
+        checkExp(rest, env0, ienv0)
         checkType(tpe)
 
       //

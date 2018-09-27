@@ -188,11 +188,11 @@ object SimplifiedAst {
 
     case class RecordEmpty(tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
-    case class RecordSelect(base: SimplifiedAst.Expression, label: String, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
+    case class RecordSelect(exp: SimplifiedAst.Expression, label: String, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
-    case class RecordExtend(base: SimplifiedAst.Expression, label: String, value: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
+    case class RecordExtend(label: String, value: SimplifiedAst.Expression, rest: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
-    case class RecordRestrict(base: SimplifiedAst.Expression, label: String, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
+    case class RecordRestrict(label: String, rest: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
     case class ArrayLit(elms: List[SimplifiedAst.Expression], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 

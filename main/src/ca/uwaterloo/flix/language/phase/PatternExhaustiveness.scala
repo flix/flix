@@ -214,15 +214,15 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
             _ <- checkPats(base, root)
           } yield tast
 
-        case Expression.RecordExtend(base, label, value, tpe, eff, loc) =>
+        case Expression.RecordExtend(label, value, rest, tpe, eff, loc) =>
           for {
-            _ <- checkPats(base, root)
+            _ <- checkPats(rest, root)
             _ <- checkPats(value, root)
           } yield tast
 
-        case Expression.RecordRestrict(base, label, tpe, eff, loc) =>
+        case Expression.RecordRestrict(label, rest, tpe, eff, loc) =>
           for {
-            _ <- checkPats(base, root)
+            _ <- checkPats(rest, root)
           } yield tast
 
         case Expression.ArrayLit(elms, _, _, _) => sequence(elms map {
@@ -654,7 +654,7 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
       case Type.Zero => 0
       case Type.Succ(n, t) => 2
       case Type.RecordEmpty => 0 // TODO: Correct?
-      case Type.RecordExtension(base, label, value) => 0 // TODO: Correct?
+      case Type.RecordExtend(base, label, value) => 0 // TODO: Correct?
       case Type.Tuple(length) => length
       case Type.Enum(sym, kind) => 0
       case Type.Relation(sym, kind) => 0

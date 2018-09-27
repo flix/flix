@@ -54,7 +54,7 @@ sealed trait Type {
     case Type.Arrow(l) => Set.empty
     case Type.Tuple(l) => Set.empty
     case Type.RecordEmpty => Set.empty
-    case Type.RecordExtension(base, label, value) => base.typeVars ++ value.typeVars
+    case Type.RecordExtend(label, value, rest) => value.typeVars ++ rest.typeVars
     case Type.Enum(_, _) => Set.empty
     case Type.Relation(_, _) => Set.empty
     case Type.Lattice(_, _) => Set.empty
@@ -161,7 +161,7 @@ sealed trait Type {
     */
   def isRecord: Boolean = typeConstructor match {
     case Type.RecordEmpty => true
-    case Type.RecordExtension(base, label, value) => true
+    case Type.RecordExtend(base, label, value) => true
     case _ => false
   }
 
@@ -213,7 +213,7 @@ sealed trait Type {
     case Type.Checkable => "Checkable"
     case Type.Tuple(l) => s"Tuple($l)"
     case Type.RecordEmpty => "{ }"
-    case Type.RecordExtension(base, label, field) => "{ " + base.toString + " | " + label + " : " + field.toString + " }"
+    case Type.RecordExtend(label, value, rest) => "{ " + label + " : " + value + " | " + rest + " }"
     case Type.Apply(tpe1, tpe2) => s"$tpe1[$tpe2]"
   }
 
@@ -434,7 +434,7 @@ object Type {
   /**
     * A type constructor that represents a record extension type.
     */
-  case class RecordExtension(base: Type, label: String, value: Type) extends Type {
+  case class RecordExtend(label: String, value: Type, rest: Type) extends Type {
     def kind: Kind = ??? // TODO
   }
 
@@ -587,7 +587,7 @@ object Type {
       case Type.Arrow(l) => Type.Arrow(l)
       case Type.Tuple(l) => Type.Tuple(l)
       case Type.RecordEmpty => Type.RecordEmpty
-      case Type.RecordExtension(base, label, value) => Type.RecordExtension(visit(base), label, visit(value))
+      case Type.RecordExtend(label, value, rest) => Type.RecordExtend(label, visit(value), visit(rest))
       case Type.Zero => Type.Zero
       case Type.Succ(n, t) => Type.Succ(n, t)
       case Type.Apply(tpe1, tpe2) => Type.Apply(visit(tpe1), visit(tpe2))
@@ -610,6 +610,16 @@ object Type {
     */
   implicit object ShowInstance extends Show[Type] {
     def show(a: Type): String = {
+
+      /**
+        * Returns the labels of the given record type `tpe`.
+        */
+      def labelsOf(tpe: Type): List[(String, Type)] = tpe match {
+        case Type.RecordEmpty => Nil
+        case Type.RecordExtend(label, value, rest) => (label, value) :: labelsOf(rest)
+        case _ => throw InternalCompilerException(s"Unexpected non-record type: '$tpe'.")
+      }
+
       /**
         * Local visitor.
         */
@@ -674,8 +684,9 @@ object Type {
           //
           // RecordExtension.
           //
-          case Type.RecordExtension(b, label, field) =>
-            "{ " + visit(b, m) + " | " + label + " : " + visit(field, m) + " }"
+          case Type.RecordExtend(label, value, rest) =>
+            val labels = labelsOf(tpe)
+            "{ " + labels.map(p => p._1 + " : " + visit(p._2, m)).mkString(", ") + " }"
 
           //
           // Enum.

@@ -126,11 +126,11 @@ object NamedAst {
 
     case class RecordEmpty(tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
-    case class RecordSelect(base: NamedAst.Expression, label: Name.Ident, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
+    case class RecordSelect(exp: NamedAst.Expression, label: Name.Ident, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
-    case class RecordExtend(base: NamedAst.Expression, label: Name.Ident, value: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
+    case class RecordExtend(label: Name.Ident, value: NamedAst.Expression, rest: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
-    case class RecordRestrict(base: NamedAst.Expression, label: Name.Ident, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
+    case class RecordRestrict(label: Name.Ident, rest: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
     case class ArrayLit(elms: List[NamedAst.Expression], tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
@@ -282,7 +282,7 @@ object NamedAst {
 
     case class RecordEmpty(loc: SourceLocation) extends NamedAst.Type
 
-    case class RecordExtension(base: NamedAst.Type, label: Name.Ident, field: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
+    case class RecordExtend(label: Name.Ident, field: NamedAst.Type, rest: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
 
     case class Nat(len: Int, loc: SourceLocation) extends NamedAst.Type
 

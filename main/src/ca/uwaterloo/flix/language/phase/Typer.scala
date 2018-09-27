@@ -374,6 +374,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       */
     def typecheckHandler(handler0: ResolvedAst.Handler, program0: ResolvedAst.Program)(implicit flix: Flix): Result[TypedAst.Handler, TypeError] = handler0 match {
       case ResolvedAst.Handler(doc, ann, mod, sym, tparams0, fparams0, exp0, sc, eff0, loc) =>
+        implicit val genSym: GenSym = flix.genSym
 
         val eff = program0.effs(sym)
         val effectType = Scheme.instantiate(eff.sc)(flix.genSym)
@@ -723,42 +724,49 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         /*
          * RecordSelect expression.
          */
-        case ResolvedAst.Expression.RecordSelect(base, label, tvar, loc) =>
+        case ResolvedAst.Expression.RecordSelect(exp, label, tvar, loc) =>
           //
-          // TODO: Rule
+          // r : { label = tpe | row }
+          // -------------------------
+          // r.label : tpe
           //
           val freshRowVar = Type.freshTypeVar()
-          val expectedType = Type.RecordExtension(freshRowVar, label, tvar)
+          val expectedType = Type.RecordExtend(label, tvar, freshRowVar)
           for {
-            actualType <- visitExp(base)
+            actualType <- visitExp(exp)
             recordType <- unifyM(actualType, expectedType, loc)
           } yield tvar
 
         /*
          * RecordExtend expression.
          */
-        case ResolvedAst.Expression.RecordExtend(base, label, value, tvar, loc) =>
+        case ResolvedAst.Expression.RecordExtend(label, value, rest, tvar, loc) =>
           //
-          // TODO: Rule
+          // value : tpe
+          // -------------------------------------------
+          // { label = value | r } : { label : tpe | r }
           //
           for {
-            baseType <- visitExp(base)
             valueType <- visitExp(value)
-            resultType <- unifyM(tvar, Type.RecordExtension(baseType, label, valueType), loc)
+            restType <- visitExp(rest)
+            resultType <- unifyM(tvar, Type.RecordExtend(label, valueType, restType), loc)
           } yield resultType
 
         /*
          * RecordRestrict expression.
          */
-        case ResolvedAst.Expression.RecordRestrict(base, label, tvar, loc) =>
+        case ResolvedAst.Expression.RecordRestrict(label, rest, tvar, loc) =>
           //
-          // TODO: Rule
+          // ----------------------
+          // { -label | r } : { r }
           //
+          val freshFieldType = Type.freshTypeVar()
+          val freshRowVar = Type.freshTypeVar()
           for {
-            baseType <- visitExp(base)
-            resultType <- unifyM(baseType, Type.RecordExtension(Type.freshTypeVar(), label, tvar), loc)
-          } yield baseType
-
+            restType <- visitExp(rest)
+            recordType <- unifyM(restType, Type.RecordExtend(label, freshFieldType, freshRowVar), loc)
+            resultType <- unifyM(tvar, freshRowVar, loc)
+          } yield resultType
 
         /*
          * ArrayLit expression.
@@ -1378,24 +1386,24 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         /*
           * RecordSelect expression.
           */
-        case ResolvedAst.Expression.RecordSelect(base, label, tvar, loc) =>
-          val b = visitExp(base, subst0)
-          TypedAst.Expression.RecordSelect(b, label, subst0(tvar), Eff.Bot, loc)
+        case ResolvedAst.Expression.RecordSelect(exp, label, tvar, loc) =>
+          val e = visitExp(exp, subst0)
+          TypedAst.Expression.RecordSelect(e, label, subst0(tvar), Eff.Bot, loc)
 
         /*
          * RecordExtend expression.
          */
-        case ResolvedAst.Expression.RecordExtend(base, label, value, tvar, loc) =>
-          val b = visitExp(base, subst0)
+        case ResolvedAst.Expression.RecordExtend(label, value, rest, tvar, loc) =>
           val v = visitExp(value, subst0)
-          TypedAst.Expression.RecordExtend(b, label, v, subst0(tvar), Eff.Bot, loc)
+          val r = visitExp(rest, subst0)
+          TypedAst.Expression.RecordExtend(label, v, r, subst0(tvar), Eff.Bot, loc)
 
         /*
          * RecordRestrict expression.
          */
-        case ResolvedAst.Expression.RecordRestrict(base, label, tvar, loc) =>
-          val b = visitExp(base, subst0)
-          TypedAst.Expression.RecordRestrict(b, label, subst0(tvar), Eff.Bot, loc)
+        case ResolvedAst.Expression.RecordRestrict(label, rest, tvar, loc) =>
+          val r = visitExp(rest, subst0)
+          TypedAst.Expression.RecordRestrict(label, r, subst0(tvar), Eff.Bot, loc)
 
         /*
          * ArrayLit expression.

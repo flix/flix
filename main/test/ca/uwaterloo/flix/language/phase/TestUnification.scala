@@ -16,13 +16,16 @@
 
 package ca.uwaterloo.flix.language.phase
 
+import ca.uwaterloo.flix.language.GenSym
 import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.language.phase.Unification._
 import org.scalatest.FunSuite
 
 class TestUnification extends FunSuite {
 
-  val SL = SourceLocation.Unknown
+  val SL: SourceLocation = SourceLocation.Unknown
+
+  implicit val genSym: GenSym = new GenSym()
 
   /////////////////////////////////////////////////////////////////////////////
   // Substitutions                                                           //

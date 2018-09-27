@@ -167,11 +167,11 @@ object FinalAst {
 
     case class RecordEmpty(tpe: Type, loc: SourceLocation) extends FinalAst.Expression
 
-    case class RecordSelect(base: FinalAst.Expression, label: String, tpe: Type, loc: SourceLocation) extends FinalAst.Expression
+    case class RecordSelect(exp: FinalAst.Expression, label: String, tpe: Type, loc: SourceLocation) extends FinalAst.Expression
 
-    case class RecordExtend(base: FinalAst.Expression, label: String, value: FinalAst.Expression, tpe: Type, loc: SourceLocation) extends FinalAst.Expression
+    case class RecordExtend(label: String, value: FinalAst.Expression, rest: FinalAst.Expression, tpe: Type, loc: SourceLocation) extends FinalAst.Expression
 
-    case class RecordRestrict(base: FinalAst.Expression, label: String, tpe: Type, loc: SourceLocation) extends FinalAst.Expression
+    case class RecordRestrict(label: String, rest: FinalAst.Expression, tpe: Type, loc: SourceLocation) extends FinalAst.Expression
 
     case class ArrayLit(elms: List[FinalAst.Expression], tpe: Type, loc: SourceLocation) extends FinalAst.Expression
 

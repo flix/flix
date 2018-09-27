@@ -100,6 +100,30 @@ object TypeError {
   }
 
   /**
+    * Undefined Label Error.
+    *
+    * @param fieldName  the name of the missing field.
+    * @param fieldType  the type of the missing field.
+    * @param recordType the record type where the field is missing.
+    * @param loc        the location where the error occurred.
+    */
+  case class UndefinedLabel(fieldName: String, fieldType: Type, recordType: Type, loc: SourceLocation) extends TypeError {
+    val source: Source = loc.source
+    val message: VirtualTerminal = {
+      val vt = new VirtualTerminal()
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Missing field '" << Red(fieldName) << "' of type '" << Cyan(fieldType.show) << "'." << NewLine
+      vt << NewLine
+      vt << Code(loc, "missing field.") << NewLine
+      vt << "The record type: " << Indent << NewLine
+      vt << NewLine
+      vt << recordType.show << NewLine
+      vt << Dedent << NewLine
+      vt << "does not contain the field '" << Red(fieldName) << "' of type " << Cyan(fieldType.show) << "." << NewLine
+    }
+  }
+
+  /**
     * Returns a string that represents the type difference between the two given types.
     */
   private def diff(tpe1: Type, tpe2: Type): TypeDiff = (tpe1, tpe2) match {

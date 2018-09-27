@@ -519,16 +519,16 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
             b <- visit(base, tenv0)
           } yield ResolvedAst.Expression.RecordSelect(b, label.name, tvar, loc)
 
-        case NamedAst.Expression.RecordExtend(base, label, value, tvar, loc) =>
+        case NamedAst.Expression.RecordExtend(label, value, rest, tvar, loc) =>
           for {
-            b <- visit(base, tenv0)
             v <- visit(value, tenv0)
-          } yield ResolvedAst.Expression.RecordExtend(b, label.name, v, tvar, loc)
+            r <- visit(rest, tenv0)
+          } yield ResolvedAst.Expression.RecordExtend(label.name, v, r, tvar, loc)
 
-        case NamedAst.Expression.RecordRestrict(base, label, tvar, loc) =>
+        case NamedAst.Expression.RecordRestrict(label, rest, tvar, loc) =>
           for {
-            b <- visit(base, tenv0)
-          } yield ResolvedAst.Expression.RecordRestrict(b, label.name, tvar, loc)
+            r <- visit(rest, tenv0)
+          } yield ResolvedAst.Expression.RecordRestrict(label.name, r, tvar, loc)
 
         case NamedAst.Expression.ArrayLit(elms, tvar, loc) =>
           for {
@@ -1278,11 +1278,11 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     case NamedAst.Type.RecordEmpty(loc) =>
       Type.RecordEmpty.toSuccess
 
-    case NamedAst.Type.RecordExtension(base, label, value, loc) =>
+    case NamedAst.Type.RecordExtend(label, value, rest, loc) =>
       for {
-        b <- lookupType(base, ns0, root)
         v <- lookupType(value, ns0, root)
-      } yield Type.RecordExtension(b, label.name, v)
+        r <- lookupType(rest, ns0, root)
+      } yield Type.RecordExtend(label.name, v, r)
 
     case NamedAst.Type.Nat(len, loc) => Type.Succ(len, Type.Zero).toSuccess
 
