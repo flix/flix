@@ -177,17 +177,17 @@ object ResolvedAst {
 
     case class NativeMethod(method: Method, args: List[ResolvedAst.Expression], tpe: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class NewChannel(tpe: Type, loc: SourceLocation) extends ResolvedAst.Expression
+    case class NewChannel(tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class GetChannel(exp: ResolvedAst.Expression, tpe: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class GetChannel(exp: ResolvedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class PutChannel(exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, tpe: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class PutChannel(exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class CloseChannel(exp: ResolvedAst.Expression, tpe: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class CloseChannel(exp: ResolvedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Spawn(exp: ResolvedAst.Expression, tpe: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class Spawn(exp: ResolvedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    //TODO: Select
+    case class Select(rules: List[ResolvedAst.SelectRule], tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class NewRelation(sym: Symbol.RelSym, tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
@@ -309,6 +309,8 @@ object ResolvedAst {
   case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: ResolvedAst.Expression)
 
   case class MatchRule(pat: ResolvedAst.Pattern, guard: ResolvedAst.Expression, exp: ResolvedAst.Expression)
+
+  case class SelectRule(pat: ResolvedAst.Pattern, chan: ResolvedAst.Expression, exp: ResolvedAst.Expression)
 
   case class TypeParam(name: Name.Ident, tpe: Type.Var, loc: SourceLocation)
 
