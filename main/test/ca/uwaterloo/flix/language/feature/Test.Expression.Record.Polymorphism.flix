@@ -70,11 +70,46 @@ def testRecordPolyExtend02(): Unit =
     let p2 = %{ fstName = "Lucky", lstName = "Luke" };
     let p3 = %{ fstName = "Bruce", lstName = "Wayne", alias = "Batman" };
     let p4 = %{ name = "Cher" };
-    let p5 = withAgeAndSex(p1, 21, "m");
-    let p5 = withAgeAndSex(p2, 42, "m");
-    let p6 = withAgeAndSex(p3, 42, "m");
-    let p7 = withAgeAndSex(p4, 42, "f");
+    let p5 = withAgeAndSex(21, "m", p1);
+    let p5 = withAgeAndSex(42, "m", p2);
+    let p6 = withAgeAndSex(42, "m", p3);
+    let p7 = withAgeAndSex(42, "f", p4);
     ()
 
-def withAgeAndSex[r](rec: r, age: Int, sex: Str): %{ age: Int, sex: Str | r } = %{ age += age, sex += sex | rec }
+def withAgeAndSex[r](age: Int, sex: Str, rec: r): %{ age: Int, sex: Str | r } = %{ age += age, sex += sex | rec }
+
+@test
+def testRecordPolySelect01(): Bool =
+    let p1 = %{ fstName = "Luke", lstName = "Skywalker" };
+    withAgeAndSex(21, "m", p1).fstName == "Luke"
+
+@test
+def testRecordPolySelect02(): Bool =
+    let p1 = %{ fstName = "Luke", lstName = "Skywalker" };
+    withAgeAndSex(21, "m", p1).lstName == "Skywalker"
+
+@test
+def testRecordPolySelect03(): Bool =
+    let p1 = %{ fstName = "Luke", lstName = "Skywalker" };
+    withAgeAndSex(21, "m", p1).age == 21
+
+@test
+def testRecordPolySelect04(): Bool =
+    let p1 = %{ fstName = "Luke", lstName = "Skywalker" };
+    withAgeAndSex(21, "m", p1).sex == "m"
+
+@test
+def testRecordPolySelectDuplicate01(): Bool =
+    let p1 = %{ fstName = "Luke", lstName = "Skywalker" };
+    let p2 = p1 |> withAgeAndSex(21, "m");
+    let p3 = p2 |> withAgeAndSex(22, "f");
+    p3.age == 22 && p3.sex == "f"
+
+@test
+def testRecordPolySelectDuplicate02(): Bool =
+    let p1 = %{ fstName = "Luke", lstName = "Skywalker" };
+    let p2 = p1 |> withAgeAndSex(21, "m");
+    let p3 = p2 |> withAgeAndSex(22, "f");
+    let p4 = p3 |> withAgeAndSex(23, "m");
+    p4.age == 23 && p4.sex == "m"
 
