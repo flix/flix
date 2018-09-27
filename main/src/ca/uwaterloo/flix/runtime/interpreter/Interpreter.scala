@@ -126,18 +126,18 @@ object Interpreter {
     case Expression.RecordEmpty(tpe, loc) =>
       Value.RecordEmpty
 
-    case Expression.RecordSelect(base, label, tpe, loc) =>
-      val b = eval(base, env0, henv0, lenv0, root)
-      lookupRecordLabel(b, label)
+    case Expression.RecordSelect(exp, label, tpe, loc) =>
+      val e = eval(exp, env0, henv0, lenv0, root)
+      lookupRecordLabel(e, label)
 
-    case Expression.RecordExtend(base, label, value, tpe, loc) =>
-      val b = eval(base, env0, henv0, lenv0, root)
+    case Expression.RecordExtend(label, value, rest, tpe, loc) =>
       val v = eval(value, env0, henv0, lenv0, root)
-      Value.RecordExtension(b, label, v)
+      val r = eval(rest, env0, henv0, lenv0, root)
+      Value.RecordExtension(r, label, v)
 
-    case Expression.RecordRestrict(base, label, tpe, loc) =>
-      val b = eval(base, env0, henv0, lenv0, root)
-      removeRecordLabel(b, label)
+    case Expression.RecordRestrict(label, rest, tpe, loc) =>
+      val r = eval(rest, env0, henv0, lenv0, root)
+      removeRecordLabel(r, label)
 
     case Expression.ArrayLit(elms, tpe, _) =>
       val es = elms.map(e => eval(e, env0, henv0, lenv0, root))

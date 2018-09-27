@@ -608,11 +608,11 @@ object ParsedAst {
     /**
       * Record Select Expression.
       *
-      * @param base  the record expression.
+      * @param exp   the record expression.
       * @param label the label to select from the record.
       * @param sp2   the position of the last character in the expression.
       */
-    case class RecordSelect(base: ParsedAst.Expression, label: Name.Ident, sp2: SourcePosition) extends ParsedAst.Expression
+    case class RecordSelect(exp: ParsedAst.Expression, label: Name.Ident, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Record Select Lambda Expression.
@@ -628,30 +628,30 @@ object ParsedAst {
       *
       * @param sp1    the position of the first character in the expression.
       * @param fields the sequence of field literals.
-      * @param base   the record expression to extend.
+      * @param rest   the record expression to extend.
       * @param sp2    the position of the last character in the expression.
       */
-    case class RecordExtend(sp1: SourcePosition, fields: Seq[ParsedAst.RecordField], base: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class RecordExtend(sp1: SourcePosition, fields: Seq[ParsedAst.RecordField], rest: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Record Restrict Expression.
       *
       * @param sp1    the position of the first character in the expression.
       * @param labels the sequence of labels to restrict.
-      * @param base   the record expression to restrict.
+      * @param rest   the record expression to restrict.
       * @param sp2    the position of the last character in the expression.
       */
-    case class RecordRestrict(sp1: SourcePosition, labels: Seq[Name.Ident], base: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class RecordRestrict(sp1: SourcePosition, labels: Seq[Name.Ident], rest: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Record Update Expression.
       *
       * @param sp1    the position of the first character in the expression.
       * @param fields the sequence of fields up update and their values.
-      * @param base   the record expression to extend.
+      * @param rest   the record expression to extend.
       * @param sp2    the position of the last character in the expression.
       */
-    case class RecordUpdate(sp1: SourcePosition, fields: Seq[ParsedAst.RecordFieldUpdate], base: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class RecordUpdate(sp1: SourcePosition, fields: Seq[ParsedAst.RecordField], rest: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * ArrayLit Expression.
@@ -1447,7 +1447,7 @@ object ParsedAst {
   case class Property(sp1: SourcePosition, law: Name.QName, args: Option[Seq[ParsedAst.Expression]], sp2: SourcePosition) extends AnnotationOrProperty
 
   /**
-    * Record Field Literal.
+    * Record Field Value.
     *
     * @param sp1   the position of the first character in the field.
     * @param label the label of the field.
@@ -1455,16 +1455,6 @@ object ParsedAst {
     * @param sp2   the position of the last character in the field.
     */
   case class RecordField(sp1: SourcePosition, label: Name.Ident, value: ParsedAst.Expression, sp2: SourcePosition)
-
-  /**
-    * Record Field Update.
-    *
-    * @param sp1   the position of the first character in the field.
-    * @param label the label of the field.
-    * @param value the value of the field.
-    * @param sp2   the position of the last character in the field.
-    */
-  case class RecordFieldUpdate(sp1: SourcePosition, label: Name.Ident, value: ParsedAst.Expression, sp2: SourcePosition)
 
   /**
     * Record Field Type.

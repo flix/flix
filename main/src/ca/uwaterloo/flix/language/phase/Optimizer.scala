@@ -255,24 +255,24 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       //
       // RecordSelect Expressions.
       //
-      case Expression.RecordSelect(base, label, tpe, loc) =>
-        val b = visitExp(base, env0)
-        Expression.RecordSelect(b, label, tpe, loc)
+      case Expression.RecordSelect(exp, label, tpe, loc) =>
+        val e = visitExp(exp, env0)
+        Expression.RecordSelect(e, label, tpe, loc)
 
       //
       // RecordExtend Expressions.
       //
-      case Expression.RecordExtend(base, label, value, tpe, loc) =>
-        val b = visitExp(base, env0)
+      case Expression.RecordExtend(label, value, rest, tpe, loc) =>
         val v = visitExp(value, env0)
-        Expression.RecordExtend(b, label, v, tpe, loc)
+        val r = visitExp(rest, env0)
+        Expression.RecordExtend(label, v, r, tpe, loc)
 
       //
       // RecordRestrict Expressions.
       //
-      case Expression.RecordRestrict(base, label, tpe, loc) =>
-        val b = visitExp(base, env0)
-        Expression.RecordRestrict(b, label, tpe, loc)
+      case Expression.RecordRestrict(label, rest, tpe, loc) =>
+        val r = visitExp(rest, env0)
+        Expression.RecordRestrict(label, r, tpe, loc)
 
       //
       // ArrayLit Expressions.

@@ -100,14 +100,14 @@ object Safety extends Phase[Root, Root] {
 
     case Expression.RecordEmpty(tpe, eff, loc) => Nil
 
-    case Expression.RecordSelect(base, label, tpe, eff, loc) =>
-      visitExp(base)
+    case Expression.RecordSelect(exp, label, tpe, eff, loc) =>
+      visitExp(exp)
 
-    case Expression.RecordExtend(base, label, value, tpe, eff, loc) =>
-      visitExp(base) ::: visitExp(value)
+    case Expression.RecordExtend(label, value, rest, tpe, eff, loc) =>
+      visitExp(value) ::: visitExp(rest)
 
-    case Expression.RecordRestrict(base, label, tpe, eff, loc) =>
-      visitExp(base)
+    case Expression.RecordRestrict(label, rest, tpe, eff, loc) =>
+      visitExp(rest)
 
     case Expression.ArrayLit(elms, tpe, eff, loc) =>
       elms.foldLeft(Nil: List[CompilationError]) {

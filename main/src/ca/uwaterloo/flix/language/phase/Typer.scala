@@ -724,7 +724,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         /*
          * RecordSelect expression.
          */
-        case ResolvedAst.Expression.RecordSelect(base, label, tvar, loc) =>
+        case ResolvedAst.Expression.RecordSelect(exp, label, tvar, loc) =>
           //
           // r : { label = tpe | row }
           // -------------------------
@@ -733,29 +733,29 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           val freshRowVar = Type.freshTypeVar()
           val expectedType = Type.RecordExtension(freshRowVar, label, tvar)
           for {
-            actualType <- visitExp(base)
+            actualType <- visitExp(exp)
             recordType <- unifyM(actualType, expectedType, loc)
           } yield tvar
 
         /*
          * RecordExtend expression.
          */
-        case ResolvedAst.Expression.RecordExtend(base, label, value, tvar, loc) =>
+        case ResolvedAst.Expression.RecordExtend(label, value, rest, tvar, loc) =>
           //
           // value : tpe
           // -------------------------------------------
           // { label = value | r } : { label : tpe | r }
           //
           for {
-            baseType <- visitExp(base)
             valueType <- visitExp(value)
-            resultType <- unifyM(tvar, Type.RecordExtension(baseType, label, valueType), loc)
+            restType <- visitExp(rest)
+            resultType <- unifyM(tvar, Type.RecordExtension(restType, label, valueType), loc)
           } yield resultType
 
         /*
          * RecordRestrict expression.
          */
-        case ResolvedAst.Expression.RecordRestrict(base, label, tvar, loc) =>
+        case ResolvedAst.Expression.RecordRestrict(label, rest, tvar, loc) =>
           //
           // ----------------------
           // { -label | r } : { r }
@@ -763,8 +763,8 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           val freshFieldType = Type.freshTypeVar()
           val freshRowVar = Type.freshTypeVar()
           for {
-            baseType <- visitExp(base)
-            recordType <- unifyM(baseType, Type.RecordExtension(freshRowVar, label, freshFieldType), loc)
+            restType <- visitExp(rest)
+            recordType <- unifyM(restType, Type.RecordExtension(freshRowVar, label, freshFieldType), loc)
             resultType <- unifyM(tvar, freshRowVar, loc)
           } yield resultType
 
@@ -1393,17 +1393,17 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         /*
          * RecordExtend expression.
          */
-        case ResolvedAst.Expression.RecordExtend(base, label, value, tvar, loc) =>
-          val b = visitExp(base, subst0)
+        case ResolvedAst.Expression.RecordExtend(label, value, rest, tvar, loc) =>
           val v = visitExp(value, subst0)
-          TypedAst.Expression.RecordExtend(b, label, v, subst0(tvar), Eff.Bot, loc)
+          val r = visitExp(rest, subst0)
+          TypedAst.Expression.RecordExtend(label, v, r, subst0(tvar), Eff.Bot, loc)
 
         /*
          * RecordRestrict expression.
          */
-        case ResolvedAst.Expression.RecordRestrict(base, label, tvar, loc) =>
-          val b = visitExp(base, subst0)
-          TypedAst.Expression.RecordRestrict(b, label, subst0(tvar), Eff.Bot, loc)
+        case ResolvedAst.Expression.RecordRestrict(label, rest, tvar, loc) =>
+          val r = visitExp(rest, subst0)
+          TypedAst.Expression.RecordRestrict(label, r, subst0(tvar), Eff.Bot, loc)
 
         /*
          * ArrayLit expression.
