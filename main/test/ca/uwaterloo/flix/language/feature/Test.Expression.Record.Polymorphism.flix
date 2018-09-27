@@ -50,3 +50,31 @@ def testRecordNonPolyExtend02(): Unit =
 
 def withAge(rec: %{ fstName: Str, lstName: Str }, age: Int): %{ fstName: Str, lstName: Str, age: Int } = %{ age += age | rec }
 
+@test
+def testRecordPolyExtend01(): Unit =
+    let p1 = %{ x = 0, y = 0 };
+    let p2 = %{ x = 0, y = 0, z = 0};
+    let p3 = %{ fstName = "Luke", lstName = "Skywalker" };
+    let p4 = %{ fstName = "Darth", lstName = "Vader" };
+    let p5 = withColor(p1, "Red");
+    let p6 = withColor(p2, "Blu");
+    let p7 = withColor(p3, "White");
+    let p8 = withColor(p4, "Black");
+    ()
+
+def withColor[r](rec: r, col: Str): %{ color: Str | r } = %{ color += col | rec }
+
+@test
+def testRecordPolyExtend02(): Unit =
+    let p1 = %{ fstName = "Luke", lstName = "Skywalker" };
+    let p2 = %{ fstName = "Lucky", lstName = "Luke" };
+    let p3 = %{ fstName = "Bruce", lstName = "Wayne", alias = "Batman" };
+    let p4 = %{ name = "Cher" };
+    let p5 = withAgeAndSex(p1, 21, "m");
+    let p5 = withAgeAndSex(p2, 42, "m");
+    let p6 = withAgeAndSex(p3, 42, "m");
+    let p7 = withAgeAndSex(p4, 42, "f");
+    ()
+
+def withAgeAndSex[r](rec: r, age: Int, sex: Str): %{ age: Int, sex: Str | r } = %{ age += age, sex += sex | rec }
+
