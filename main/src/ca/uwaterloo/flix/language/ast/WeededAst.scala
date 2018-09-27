@@ -166,7 +166,7 @@ object WeededAst {
 
     case class NativeMethod(className: String, methodName: String, args: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
 
-    case class NewChannel(tpe: WeededAst.Type, loc: SourceLocation) extends WeededAst.Expression
+    case class NewChannel(loc: SourceLocation) extends WeededAst.Expression
 
     case class GetChannel(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
@@ -176,8 +176,9 @@ object WeededAst {
 
     case class Spawn(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
-    //TODO: ???
-    case class Select(cases: List[(WeededAst.Expression, WeededAst.Expression)], default: Option[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
+    case class Select(rules: List[WeededAst.SelectRule], loc: SourceLocation) extends WeededAst.Expression
+
+    case class Statement(exp1: WeededAst.Expression, exp2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     case class NewRelationOrLattice(name: Name.QName, loc: SourceLocation) extends WeededAst.Expression
 
@@ -304,5 +305,7 @@ object WeededAst {
   case class Constraint(head: WeededAst.Predicate.Head, body: List[WeededAst.Predicate.Body], loc: SourceLocation)
 
   case class MatchRule(pat: WeededAst.Pattern, guard: WeededAst.Expression, exp: WeededAst.Expression)
+
+  case class SelectRule(pat: WeededAst.Pattern, channel: WeededAst.Expression, exp: WeededAst.Expression)
 
 }
