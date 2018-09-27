@@ -136,6 +136,15 @@ object Unification {
       */
     case class OccursCheck(tvar: Type.Var, tpe: Type) extends UnificationError
 
+    /**
+      * An unification error due the field `fieldName` of type `fieldType` missing from the type `recordType`.
+      *
+      * @param fieldName  the name of the missing field.
+      * @param fieldType  the type of the missing field.
+      * @param recordType the record type the field is missing from.
+      */
+    case class UndefinedLabel(fieldName: String, fieldType: Type, recordType: Type) extends UnificationError
+
   }
 
   /**
@@ -203,15 +212,8 @@ object Unification {
 
       case (Type.RecordEmpty, Type.RecordEmpty) => Result.Ok(Substitution.empty)
 
-      case (Type.RecordExtension(label1, fieldType1, restRow1), Type.RecordExtension(label2, fieldType2, restRow2)) if label1 == label2 =>
-        unify(fieldType1, fieldType2) flatMap {
-          case subst1 => unify(subst1(restRow1), subst1(restRow2)) flatMap {
-            case subst2 => Result.Ok(subst2 @@ subst1)
-          }
-        }
-
       case (Type.RecordExtension(label1, fieldType1, restRow1), row2) =>
-        rewriteRow(row2, label1, fieldType1) flatMap {
+        rewriteRow(row2, label1, fieldType1, row2) flatMap {
           case (subst1, restRow2) =>
 
             // TODO: Missing the safety/occurs check.
@@ -260,16 +262,16 @@ object Unification {
     }
 
     // TODO: DOC
-    def rewriteRow(row2: Type, label1: String, fieldType1: Type): Result[(Substitution, Type), UnificationError] = row2 match {
+    def rewriteRow(row2: Type, label1: String, fieldType1: Type, originalType: Type): Result[(Substitution, Type), UnificationError] = row2 match {
       case Type.RecordEmpty =>
-        throw InternalCompilerException(s"Unexpected empty row type: '$row2'.") // TODO: UnificationError?
+        Err(UnificationError.UndefinedLabel(label1, fieldType1, originalType))
       case Type.RecordExtension(label2, fieldType2, restRow2) =>
         if (label1 == label2) {
           for {
             subst <- unify(fieldType1, fieldType2)
           } yield (subst, restRow2)
         } else {
-          rewriteRow(restRow2, label1, fieldType1) map {
+          rewriteRow(restRow2, label1, fieldType1, originalType) map {
             case (subst, rewrittenRow) => (subst, Type.RecordExtension(label2, fieldType2, rewrittenRow))
           }
         }
@@ -351,6 +353,8 @@ object Unification {
           Err(TypeError.UnificationError(baseType1, baseType2, type1, type2, loc))
         case Result.Err(UnificationError.OccursCheck(baseType1, baseType2)) =>
           Err(TypeError.OccursCheckError(baseType1, baseType2, type1, type2, loc))
+        case Result.Err(UnificationError.UndefinedLabel(label, field, tpe)) =>
+          Err(TypeError.UndefinedLabel(label, field, tpe, loc))
       }
     }
     )

@@ -1386,9 +1386,9 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         /*
           * RecordSelect expression.
           */
-        case ResolvedAst.Expression.RecordSelect(base, label, tvar, loc) =>
-          val b = visitExp(base, subst0)
-          TypedAst.Expression.RecordSelect(b, label, subst0(tvar), Eff.Bot, loc)
+        case ResolvedAst.Expression.RecordSelect(exp, label, tvar, loc) =>
+          val e = visitExp(exp, subst0)
+          TypedAst.Expression.RecordSelect(e, label, subst0(tvar), Eff.Bot, loc)
 
         /*
          * RecordExtend expression.

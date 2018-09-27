@@ -213,7 +213,7 @@ sealed trait Type {
     case Type.Checkable => "Checkable"
     case Type.Tuple(l) => s"Tuple($l)"
     case Type.RecordEmpty => "{ }"
-    case Type.RecordExtension(base, label, field) => "{ " + label + " : " + field + " | " + base + " }"
+    case Type.RecordExtension(label, value, rest) => "{ " + label + " : " + value + " | " + rest + " }"
     case Type.Apply(tpe1, tpe2) => s"$tpe1[$tpe2]"
   }
 
@@ -610,6 +610,16 @@ object Type {
     */
   implicit object ShowInstance extends Show[Type] {
     def show(a: Type): String = {
+
+      /**
+        * Returns the labels of the given record type `tpe`.
+        */
+      def labelsOf(tpe: Type): List[(String, Type)] = tpe match {
+        case Type.RecordEmpty => Nil
+        case Type.RecordExtension(label, value, rest) => (label, value) :: labelsOf(rest)
+        case _ => throw InternalCompilerException(s"Unexpected non-record type: '$tpe'.")
+      }
+
       /**
         * Local visitor.
         */
@@ -674,8 +684,9 @@ object Type {
           //
           // RecordExtension.
           //
-          case Type.RecordExtension(label, field, rest) =>
-            "{ " + label + " : " + visit(field, m) + " | " + visit(rest, m) + " }"
+          case Type.RecordExtension(label, value, rest) =>
+            val labels = labelsOf(tpe)
+            "{ " + labels.map(p => p._1 + " : " + visit(p._2, m)).mkString(", ") + " }"
 
           //
           // Enum.
