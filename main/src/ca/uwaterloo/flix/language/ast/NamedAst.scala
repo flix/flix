@@ -172,17 +172,17 @@ object NamedAst {
 
     case class NativeMethod(method: Method, args: List[NamedAst.Expression], tpe: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
-    case class NewChannel(tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst.Expression
+    case class NewChannel(tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
-    case class GetChannel(exp: NamedAst.Expression, tpe: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
+    case class GetChannel(exp: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
-    case class PutChannel(exp1: NamedAst.Expression, exp2: NamedAst.Expression, tpe: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
+    case class PutChannel(exp1: NamedAst.Expression, exp2: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
-    case class CloseChannel(exp: NamedAst.Expression, tpe: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
+    case class CloseChannel(exp: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
-    case class Spawn(exp: NamedAst.Expression, tpe: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
+    case class Spawn(exp: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
-    //TODO implement Select
+    case class Select(rules: List[NamedAst.SelectRule],tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
     case class NewRelationOrLattice(name: Name.QName, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
@@ -323,6 +323,8 @@ object NamedAst {
   case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: NamedAst.Expression)
 
   case class MatchRule(pat: NamedAst.Pattern, guard: NamedAst.Expression, exp: NamedAst.Expression)
+
+  case class SelectRule(pat: NamedAst.Pattern, chan: NamedAst.Expression, exp: NamedAst.Expression)
 
   case class TypeParam(name: Name.Ident, tpe: ast.Type.Var, loc: SourceLocation)
 
