@@ -26,15 +26,27 @@ def testRecordPolymorphism08[r](): %{ fstName: Str, cowboy: Bool | r } = %{ fstN
 @test
 def testRecordPolymorphism09[r](): %{ lstName: Str, fstName: Str | r } = %{ fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true }
 
-// TODO: Currently broken
-//
-//@test
-//def testRecordPolyExtend01(): Unit =
-//    let p1 = %{ fstName = "Lucky", lstName = "Luke" };
-//    let p2 = %{ fstName = "Gandalf", lstName = "the Grey" };
-//    let p3 = withAge(p1, 42);
-//    let p4 = withAge(p2, 42);
-//    ()
-//
-//
-//def withAge(rec: %{ fstName: Str, lstName: Str }, age: Int): %{ fstName: Str, lstName: Str, age: Int } = { age += age | rec }
+@test
+def testRecordNonPolyExtend01(): Unit =
+    let p1 = %{ x = 0, y = 0 };
+    let p2 = %{ x = 1, y = 2 };
+    let p3 = %{ x = 7, y = 8 };
+    let p4 = withZ(p1, 21);
+    let p5 = withZ(p2, 42);
+    let p6 = withZ(p2, 84);
+    ()
+
+def withZ(rec: %{ x: Int, y: Int }, z: Int): %{ x: Int, y: Int, z: Int } = %{ z += z | rec }
+
+@test
+def testRecordNonPolyExtend02(): Unit =
+    let p1 = %{ fstName = "Luke", lstName = "Skywalker" };
+    let p2 = %{ fstName = "Lucky", lstName = "Luke" };
+    let p3 = %{ fstName = "Gandalf", lstName = "the Grey" };
+    let p4 = withAge(p1, 21);
+    let p5 = withAge(p2, 42);
+    let p6 = withAge(p2, 84);
+    ()
+
+def withAge(rec: %{ fstName: Str, lstName: Str }, age: Int): %{ fstName: Str, lstName: Str, age: Int } = %{ age += age | rec }
+
