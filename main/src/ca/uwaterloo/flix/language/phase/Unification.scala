@@ -77,7 +77,7 @@ object Unification {
       case Type.Arrow(l) => Type.Arrow(l)
       case Type.Tuple(l) => Type.Tuple(l)
       case Type.RecordEmpty => Type.RecordEmpty
-      case Type.RecordExtension(base, lab, fld) => Type.RecordExtension(apply(base), lab, apply(fld))
+      case Type.RecordExtension(label, field, rest) => Type.RecordExtension(label, apply(field), apply(rest))
       case Type.Zero => Type.Zero
       case Type.Succ(n, t) => Type.Succ(n, apply(t))
       case Type.Enum(sym, kind) => Type.Enum(sym, kind)
@@ -203,14 +203,14 @@ object Unification {
 
       case (Type.RecordEmpty, Type.RecordEmpty) => Result.Ok(Substitution.empty)
 
-      case (Type.RecordExtension(restRow1, label1, fieldType1), Type.RecordExtension(restRow2, label2, fieldType2)) if label1 == label2 =>
+      case (Type.RecordExtension(label1, fieldType1, restRow1), Type.RecordExtension(label2, fieldType2, restRow2)) if label1 == label2 =>
         unify(fieldType1, fieldType2) flatMap {
           case subst1 => unify(subst1(restRow1), subst1(restRow2)) flatMap {
             case subst2 => Result.Ok(subst2 @@ subst1)
           }
         }
 
-      case (Type.RecordExtension(restRow1, label1, fieldType1), row2) =>
+      case (Type.RecordExtension(label1, fieldType1, restRow1), row2) =>
         rewriteRow(row2, label1, fieldType1) flatMap {
           case (subst1, restRow2) =>
 
@@ -263,19 +263,19 @@ object Unification {
     def rewriteRow(row2: Type, label1: String, fieldType1: Type): Result[(Substitution, Type), UnificationError] = row2 match {
       case Type.RecordEmpty =>
         throw InternalCompilerException(s"Unexpected empty row type: '$row2'.") // TODO: UnificationError?
-      case Type.RecordExtension(restRow2, label2, fieldType2) =>
+      case Type.RecordExtension(label2, fieldType2, restRow2) =>
         if (label1 == label2) {
           for {
             subst <- unify(fieldType1, fieldType2)
           } yield (subst, restRow2)
         } else {
           rewriteRow(restRow2, label1, fieldType1) map {
-            case (subst, rewrittenRow) => (subst, Type.RecordExtension(rewrittenRow, label2, fieldType2))
+            case (subst, rewrittenRow) => (subst, Type.RecordExtension(label2, fieldType2, rewrittenRow))
           }
         }
       case tvar: Type.Var =>
         val restRow2 = Type.freshTypeVar()
-        val type2 = Type.RecordExtension(restRow2, label1, fieldType1)
+        val type2 = Type.RecordExtension(label1, fieldType1, restRow2)
         val subst = Unification.Substitution(Map(tvar -> type2))
         Ok((subst, restRow2))
       case _ => throw InternalCompilerException(s"Unexpected non-row type: '$row2'.") // TODO: UnificationError?

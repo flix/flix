@@ -282,7 +282,7 @@ object NamedAst {
 
     case class RecordEmpty(loc: SourceLocation) extends NamedAst.Type
 
-    case class RecordExtension(label: Name.Ident, field: NamedAst.Type, rest: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
+    case class RecordExtend(label: Name.Ident, field: NamedAst.Type, rest: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
 
     case class Nat(len: Int, loc: SourceLocation) extends NamedAst.Type
 

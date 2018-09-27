@@ -54,7 +54,7 @@ sealed trait Type {
     case Type.Arrow(l) => Set.empty
     case Type.Tuple(l) => Set.empty
     case Type.RecordEmpty => Set.empty
-    case Type.RecordExtension(base, label, value) => base.typeVars ++ value.typeVars
+    case Type.RecordExtension(label, value, rest) => rest.typeVars ++ value.typeVars
     case Type.Enum(_, _) => Set.empty
     case Type.Relation(_, _) => Set.empty
     case Type.Lattice(_, _) => Set.empty
@@ -434,7 +434,7 @@ object Type {
   /**
     * A type constructor that represents a record extension type.
     */
-  case class RecordExtension(base: Type, label: String, value: Type) extends Type {
+  case class RecordExtension(label: String, value: Type, rest: Type) extends Type {
     def kind: Kind = ??? // TODO
   }
 
@@ -587,7 +587,7 @@ object Type {
       case Type.Arrow(l) => Type.Arrow(l)
       case Type.Tuple(l) => Type.Tuple(l)
       case Type.RecordEmpty => Type.RecordEmpty
-      case Type.RecordExtension(base, label, value) => Type.RecordExtension(visit(base), label, visit(value))
+      case Type.RecordExtension(label, value, rest) => Type.RecordExtension(label, visit(value), visit(rest))
       case Type.Zero => Type.Zero
       case Type.Succ(n, t) => Type.Succ(n, t)
       case Type.Apply(tpe1, tpe2) => Type.Apply(visit(tpe1), visit(tpe2))
@@ -674,8 +674,8 @@ object Type {
           //
           // RecordExtension.
           //
-          case Type.RecordExtension(b, label, field) =>
-            "{ " + visit(b, m) + " | " + label + " : " + visit(field, m) + " }"
+          case Type.RecordExtension(label, field, rest) =>
+            "{ " + label + " : " + visit(field, m) + " | " + visit(rest, m) + " }"
 
           //
           // Enum.
