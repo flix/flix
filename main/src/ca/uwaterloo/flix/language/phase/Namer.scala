@@ -319,7 +319,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     /*
      * Relation.
      */
-    case WeededAst.Declaration.Relation(doc, mod, ident, tparams0, attr, loc) =>
+    case WeededAst.Declaration.Relation(doc, mod, ident, tparams0, attr, tpe, loc) =>
       // check if the table already exists.
       prog0.relations.get(ns0) match {
         case None =>
@@ -327,7 +327,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
           val sym = Symbol.mkRelSym(ns0, ident)
           val tparams = getTypeParams(tparams0)
           val attributes = attr.map(a => visitAttribute(a, getTypeEnv(tparams)))
-          val relation = NamedAst.Relation(doc, mod, sym, tparams, attributes, loc)
+          val tenv0 = getTypeEnv(tparams)
+          val scheme = getScheme(tparams, tpe, tenv0)
+          val relation = NamedAst.Relation(doc, mod, sym, tparams, attributes, scheme, loc)
           val relations = Map(ident.name -> relation)
           prog0.copy(relations = prog0.relations + (ns0 -> relations)).toSuccess
         case Some(relations0) =>
@@ -338,7 +340,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
               val sym = Symbol.mkRelSym(ns0, ident)
               val tparams = getTypeParams(tparams0)
               val attributes = attr.map(a => visitAttribute(a, getTypeEnv(tparams)))
-              val relation = NamedAst.Relation(doc, mod, sym, tparams, attributes, loc)
+              val tenv0 = getTypeEnv(tparams)
+              val scheme = getScheme(tparams, tpe, tenv0)
+              val relation = NamedAst.Relation(doc, mod, sym, tparams, attributes, scheme, loc)
               val relations = relations0 + (ident.name -> relation)
               prog0.copy(relations = prog0.relations + (ns0 -> relations)).toSuccess
             case Some(table) =>
@@ -350,7 +354,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     /*
      * Lattice.
      */
-    case WeededAst.Declaration.Lattice(doc, mod, ident, tparams0, attr, loc) =>
+    case WeededAst.Declaration.Lattice(doc, mod, ident, tparams0, attr, tpe, loc) =>
       // check if the table already exists.
       prog0.lattices.get(ns0) match {
         case None =>
@@ -358,7 +362,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
           val sym = Symbol.mkLatSym(ns0, ident)
           val tparams = getTypeParams(tparams0)
           val attributes = attr.map(k => visitAttribute(k, getTypeEnv(tparams)))
-          val lattice = NamedAst.Lattice(doc, mod, sym, tparams, attributes, loc)
+          val tenv0 = getTypeEnv(tparams)
+          val scheme = getScheme(tparams, tpe, tenv0)
+          val lattice = NamedAst.Lattice(doc, mod, sym, tparams, attributes, scheme, loc)
           val lattices = Map(ident.name -> lattice)
           prog0.copy(lattices = prog0.lattices + (ns0 -> lattices)).toSuccess
         case Some(lattices0) =>
@@ -369,7 +375,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
               val sym = Symbol.mkLatSym(ns0, ident)
               val tparams = getTypeParams(tparams0)
               val attributes = attr.map(k => visitAttribute(k, getTypeEnv(tparams)))
-              val lattice = NamedAst.Lattice(doc, mod, sym, tparams, attributes, loc)
+              val tenv0 = getTypeEnv(tparams)
+              val scheme = getScheme(tparams, tpe, tenv0)
+              val lattice = NamedAst.Lattice(doc, mod, sym, tparams, attributes, scheme, loc)
               val lattices = lattices0 + (ident.name -> lattice)
               prog0.copy(lattices = prog0.lattices + (ns0 -> lattices)).toSuccess
             case Some(table) =>
@@ -999,6 +1007,8 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         NamedAst.Type.RecordExtend(label, t, r, loc)
       case WeededAst.Type.Nat(len, loc) => NamedAst.Type.Nat(len, loc)
       case WeededAst.Type.Native(fqn, loc) => NamedAst.Type.Native(fqn, loc)
+      case WeededAst.Type.Relation(attrs, loc) => NamedAst.Type.Relation(attrs.map(a => visit(a, env0)), loc)
+      case WeededAst.Type.Lattice(attrs, loc) => NamedAst.Type.Lattice(attrs.map(a => visit(a, env0)), loc)
       case WeededAst.Type.Arrow(tparams, tresult, loc) => NamedAst.Type.Arrow(tparams.map(t => visit(t, env0)), visit(tresult, env0), loc)
       case WeededAst.Type.Apply(tpe1, tpe2, loc) => NamedAst.Type.Apply(visit(tpe1, env0), visit(tpe2, env0), loc)
     }

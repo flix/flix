@@ -258,7 +258,9 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
        * Check for `DuplicateAttribute`.
        */
       mapN(modVal, checkDuplicateAttribute(attrs)) {
-        case (mod, as) => List(WeededAst.Declaration.Relation(doc, mod, ident, tparams, as, mkSL(sp1, sp2)))
+        case (mod, as) =>
+          val tpe = WeededAst.Type.Relation(as.map(_.tpe), mkSL(sp1, sp2))
+          List(WeededAst.Declaration.Relation(doc, mod, ident, tparams, as, tpe, mkSL(sp1, sp2)))
       }
   }
 
@@ -283,7 +285,8 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       mapN(modVal, checkDuplicateAttribute(attr)) {
         case (mod, as) =>
           // Split the attributes into keys and element.
-          List(WeededAst.Declaration.Lattice(doc, mod, ident, tparams, as, mkSL(sp1, sp2)))
+          val tpe = WeededAst.Type.Lattice(as.map(_.tpe), mkSL(sp1, sp2))
+          List(WeededAst.Declaration.Lattice(doc, mod, ident, tparams, as, tpe, mkSL(sp1, sp2)))
       }
   }
 
@@ -990,6 +993,11 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
               val e2 = WeededAst.Expression.Constraint(c, loc)
               WeededAst.Expression.ConstraintUnion(eacc, e2, loc)
           }
+      }
+
+    case ParsedAst.Expression.ConstraintUnion(sp1, exp1, exp2, sp2) =>
+      mapN(visitExp(exp1), visitExp(exp2)) {
+        case (e1, e2) => WeededAst.Expression.ConstraintUnion(e1, e2, mkSL(sp1, sp2))
       }
 
     case ParsedAst.Expression.FixpointSolve(sp1, exp, sp2) =>
@@ -1781,6 +1789,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.NativeConstructor(sp1, _, _, _) => sp1
     case ParsedAst.Expression.NewRelationOrLattice(sp1, _, _) => sp1
     case ParsedAst.Expression.ConstraintSeq(sp1, _, _) => sp1
+    case ParsedAst.Expression.ConstraintUnion(sp1, _, _, _) => sp1
     case ParsedAst.Expression.FixpointSolve(sp1, _, _) => sp1
     case ParsedAst.Expression.FixpointCheck(sp1, _, _) => sp1
     case ParsedAst.Expression.FixpointDelta(sp1, _, _) => sp1

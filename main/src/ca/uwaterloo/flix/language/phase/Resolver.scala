@@ -317,22 +317,24 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     * Performs name resolution on the given relation `r0` in the given namespace `ns0`.
     */
   def resolveRelation(r0: NamedAst.Relation, ns0: Name.NName, prog0: NamedAst.Root)(implicit genSym: GenSym): Validation[ResolvedAst.Relation, ResolutionError] = r0 match {
-    case NamedAst.Relation(doc, mod, sym, tparams0, attr, loc) =>
+    case NamedAst.Relation(doc, mod, sym, tparams0, attr, sc, loc) =>
       for {
         tparams <- resolveTypeParams(tparams0, ns0, prog0)
         attributes <- traverse(attr)(a => resolve(a, ns0, prog0))
-      } yield ResolvedAst.Relation(doc, mod, sym, tparams, attributes, loc)
+        scheme <- resolveScheme(sc, ns0, prog0)
+      } yield ResolvedAst.Relation(doc, mod, sym, tparams, attributes, scheme, loc)
   }
 
   /**
     * Performs name resolution on the given table `t0` in the given namespace `ns0`.
     */
   def resolveLattice(l0: NamedAst.Lattice, ns0: Name.NName, prog0: NamedAst.Root)(implicit genSym: GenSym): Validation[ResolvedAst.Lattice, ResolutionError] = l0 match {
-    case NamedAst.Lattice(doc, mod, sym, tparams0, attr, loc) =>
+    case NamedAst.Lattice(doc, mod, sym, tparams0, attr, sc, loc) =>
       for {
         tparams <- resolveTypeParams(tparams0, ns0, prog0)
         attributes <- traverse(attr)(a => resolve(a, ns0, prog0))
-      } yield ResolvedAst.Lattice(doc, mod, sym, tparams, attributes, loc)
+        scheme <- resolveScheme(sc, ns0, prog0)
+      } yield ResolvedAst.Lattice(doc, mod, sym, tparams, attributes, scheme, loc)
   }
 
   /**
@@ -1290,6 +1292,13 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
       lookupJvmClass(fqn.mkString("."), loc) map {
         case clazz => Type.Native(clazz)
       }
+
+    case NamedAst.Type.Relation(attrs, loc) =>
+      ???
+
+    case NamedAst.Type.Lattice(attrs, loc) =>
+      ???
+
     case NamedAst.Type.Arrow(tparams0, tresult0, loc) =>
       for (
         tparams <- traverse(tparams0)(tpe => lookupType(tpe, ns0, root));
