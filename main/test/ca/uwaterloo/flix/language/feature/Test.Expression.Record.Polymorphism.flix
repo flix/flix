@@ -1,6 +1,5 @@
-// TODO: Currently broken
-//@test
-//def testRecordPolymorphism01[r](): %{ r } = %{ fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true }
+@test
+def testRecordPolymorphism01[r](): %{ | r } = %{ fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true }
 
 @test
 def testRecordPolymorphism02[r](): %{ fstName: Str | r } = %{ fstName = "Lucky", lstName = "Luke", age = 42, cowboy = true }
@@ -36,7 +35,7 @@ def testRecordNonPolyExtend01(): Unit =
     let p6 = withZ(p2, 84);
     ()
 
-def withZ(rec: %{ x: Int, y: Int }, z: Int): %{ x: Int, y: Int, z: Int } = %{ z += z | rec }
+def withZ(rec: %{ x: Int, y: Int }, z: Int): %{ x: Int, y: Int, z: Int } = %{ +z = z | rec }
 
 @test
 def testRecordNonPolyExtend02(): Unit =
@@ -48,7 +47,7 @@ def testRecordNonPolyExtend02(): Unit =
     let p6 = withAge(p2, 84);
     ()
 
-def withAge(rec: %{ fstName: Str, lstName: Str }, age: Int): %{ fstName: Str, lstName: Str, age: Int } = %{ age += age | rec }
+def withAge(rec: %{ fstName: Str, lstName: Str }, age: Int): %{ fstName: Str, lstName: Str, age: Int } = %{ +age = age | rec }
 
 @test
 def testRecordPolyExtend01(): Unit =
@@ -62,7 +61,7 @@ def testRecordPolyExtend01(): Unit =
     let p8 = withColor(p4, "Black");
     ()
 
-def withColor[r](rec: r, col: Str): %{ color: Str | r } = %{ color += col | rec }
+def withColor[r](rec: r, col: Str): %{ color: Str | r } = %{ +color = col | rec }
 
 @test
 def testRecordPolyExtend02(): Unit =
@@ -76,7 +75,7 @@ def testRecordPolyExtend02(): Unit =
     let p7 = withAgeAndSex(42, "f", p4);
     ()
 
-def withAgeAndSex[r](age: Int, sex: Str, rec: r): %{ age: Int, sex: Str | r } = %{ age += age, sex += sex | rec }
+def withAgeAndSex[r](age: Int, sex: Str, rec: r): %{ age: Int, sex: Str | r } = %{ +age = age, +sex = sex | rec }
 
 @test
 def testRecordPolySelect01(): Bool =
