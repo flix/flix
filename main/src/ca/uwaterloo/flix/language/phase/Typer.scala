@@ -1786,6 +1786,14 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       // P(x...) : a
       //
       case ResolvedAst.Predicate.Head.RelAtom(baseOpt, sym, terms, loc) =>
+        // Lookup the type scheme.
+        val scheme = program.relations(sym).sc
+
+        // Instantiate the type scheme.
+        val tpe = Scheme.instantiate(scheme)
+
+        // TODO
+
         getRelationSignature(sym, program) match {
           case Ok(declaredTypes) =>
             for {
