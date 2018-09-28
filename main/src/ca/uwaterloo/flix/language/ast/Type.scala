@@ -453,6 +453,20 @@ object Type {
   }
 
   /**
+    * A type constructor that represents relations.
+    */
+  case object Relation extends Type {
+    def kind: Kind = ??? // TODO
+  }
+
+  /**
+    * A type constructor that represents lattices.
+    */
+  case object Lattice extends Type {
+    def kind: Kind = ??? // TODO
+  }
+
+  /**
     * A type expression that a type application tpe1[tpe2].
     */
   case class Apply(tpe1: Type, tpe2: Type) extends Type {
@@ -554,6 +568,20 @@ object Type {
     * Returns the constraint set type parameters with the given type `tpe`.
     */
   def mkConstraintSet(tpe: Type): Type = Apply(ConstraintSet, tpe)
+
+  /**
+    * Returns the relation type with the given argument types `ts`.
+    */
+  def mkRelation(ts: List[Type]): Type = ts.foldLeft(Type.Relation: Type) {
+    case (acc, tpe) => Type.Apply(acc, tpe)
+  }
+
+  /**
+    * Returns the lattice type with the given argument types `ts`.
+    */
+  def mkLattice(ts: List[Type]): Type = ts.foldLeft(Type.Lattice: Type) {
+    case (acc, tpe) => Type.Apply(acc, tpe)
+  }
 
   /**
     * Replaces every free occurrence of a type variable in `typeVars`

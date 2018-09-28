@@ -1294,10 +1294,14 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
       }
 
     case NamedAst.Type.Relation(attrs, loc) =>
-      ???
+      for {
+        as <- traverse(attrs)(tpe => lookupType(tpe, ns0, root))
+      } yield Type.mkRelation(as)
 
     case NamedAst.Type.Lattice(attrs, loc) =>
-      ???
+      for {
+        as <- traverse(attrs)(tpe => lookupType(tpe, ns0, root))
+      } yield Type.mkLattice(as)
 
     case NamedAst.Type.Arrow(tparams0, tresult0, loc) =>
       for (
