@@ -56,8 +56,8 @@ sealed trait Type {
     case Type.RecordEmpty => Set.empty
     case Type.RecordExtend(label, value, rest) => value.typeVars ++ rest.typeVars
     case Type.Enum(_, _) => Set.empty
-    case Type.Relation(_, _) => Set.empty
-    case Type.Lattice(_, _) => Set.empty
+    case Type.Relation(_, _, _) => Set.empty
+    case Type.Lattice(_, _, _) => Set.empty
     case Type.ConstraintRow(m) => m.flatMap(_._2.typeVars).toSet
     case Type.ConstraintSet => Set.empty
     case Type.Solvable => Set.empty
@@ -129,7 +129,7 @@ sealed trait Type {
     * Returns `true` if `this` type is a relation type.
     */
   def isRelation: Boolean = typeConstructor match {
-    case Type.Relation(sym, _) => true
+    case Type.Relation(sym, _, _) => true
     case _ => false
   }
 
@@ -137,7 +137,7 @@ sealed trait Type {
     * Returns `true` if `this` type is a lattice type.
     */
   def isLattice: Boolean = typeConstructor match {
-    case Type.Lattice(sym, _) => true
+    case Type.Lattice(sym, _, _) => true
     case _ => false
   }
 
@@ -207,8 +207,8 @@ sealed trait Type {
     case Type.Ref => "Ref"
     case Type.Arrow(l) => s"Arrow($l)"
     case Type.Enum(sym, _) => sym.toString
-    case Type.Relation(sym, _) => sym.toString
-    case Type.Lattice(sym, _) => sym.toString
+    case Type.Relation(sym, _, _) => sym.toString
+    case Type.Lattice(sym, _, _) => sym.toString
     case Type.ConstraintRow(m) => m.mkString(", ")
     case Type.ConstraintSet => "ConstraintSet"
     case Type.Solvable => "Solvable"
@@ -383,20 +383,22 @@ object Type {
   case class Enum(sym: Symbol.EnumSym, kind: Kind) extends Type
 
   /**
-    * A type constructor that represents a relation.
+    * A type constructor that represents a relation with attributes of the given types.
     *
     * @param sym  the symbol of the relation.
+    * @param attr the attribute types of the relation.
     * @param kind the kind of the relation.
     */
-  case class Relation(sym: Symbol.RelSym, kind: Kind) extends Type
+  case class Relation(sym: Symbol.RelSym, attr: List[Type], kind: Kind) extends Type
 
   /**
-    * A type constructor that represents a lattice.
+    * A type constructor that represents a lattice with attributes of the given types.
     *
     * @param sym  the symbol of the lattice.
+    * @param attr the attribute types of the relation.
     * @param kind the kind of the lattice.
     */
-  case class Lattice(sym: Symbol.LatSym, kind: Kind) extends Type
+  case class Lattice(sym: Symbol.LatSym, attr: List[Type], kind: Kind) extends Type
 
   /**
     * A type constructor that represents a constraint system.
@@ -512,18 +514,14 @@ object Type {
   }
 
   /**
-    * Returns the relation constructor of symbol `sym` applied to the given type arguments `ts`.
+    * Returns the relation type corresponding to the given symbol `sym` with the given attribute types `ts`.
     */
-  def mkRelation(sym: Symbol.RelSym, ts: List[Type]): Type = ts.foldLeft(Type.Relation(sym, Kind.Star): Type) {
-    case (acc, tpe) => Type.Apply(acc, tpe)
-  }
+  def mkRelation(sym: Symbol.RelSym, ts: List[Type]): Type = Type.Relation(sym, ts, Kind.Star)
 
   /**
-    * Returns the lattice constructor of symbol `sym` applied to the given type arguments `ts`.
+    * Returns the lattice type corresponding to the given symbol `sym` with the given attribute types `ts`.
     */
-  def mkLattice(sym: Symbol.LatSym, ts: List[Type]): Type = ts.foldLeft(Type.Lattice(sym, Kind.Star): Type) {
-    case (acc, tpe) => Type.Apply(acc, tpe)
-  }
+  def mkLattice(sym: Symbol.LatSym, ts: List[Type]): Type = Type.Lattice(sym, ts, Kind.Star)
 
   /**
     * Constructs the tuple type (A, B, ...) where the types are drawn from the list `ts`.
@@ -613,8 +611,8 @@ object Type {
       case Type.Succ(n, t) => Type.Succ(n, t)
       case Type.Apply(tpe1, tpe2) => Type.Apply(visit(tpe1), visit(tpe2))
       case Type.Enum(sym, kind) => Type.Enum(sym, kind)
-      case Type.Relation(sym, kind) => Type.Relation(sym, kind)
-      case Type.Lattice(sym, kind) => Type.Lattice(sym, kind)
+      case Type.Relation(sym, attr, kind) => Type.Relation(sym, attr, kind)
+      case Type.Lattice(sym, attr, kind) => Type.Lattice(sym, attr, kind)
       case Type.ConstraintRow(m) =>
         val newM = m.foldLeft(Map.empty[Symbol.PredSym, Type]) {
           case (macc, (s, t)) => macc + (s -> visit(t))
@@ -714,14 +712,14 @@ object Type {
           //
           // Relation.
           //
-          case Type.Relation(sym, _) =>
-            if (args.isEmpty) sym.toString else sym.toString + "[" + args.map(visit(_, m)).mkString(", ") + "]"
+          case Type.Relation(sym, attr, _) =>
+            sym.toString + "(" + attr.map(visit(_, m).mkString(", ")) + ")"
 
           //
           // Lattice.
           //
-          case Type.Lattice(sym, _) =>
-            if (args.isEmpty) sym.toString else sym.toString + "[" + args.map(visit(_, m)).mkString(", ") + "]"
+          case Type.Lattice(sym, attr, _) =>
+            sym.toString + "(" + attr.map(visit(_, m).mkString(", ")) + ")"
 
           //
           // ConstraintRow.

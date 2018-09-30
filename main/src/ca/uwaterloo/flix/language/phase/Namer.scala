@@ -350,7 +350,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     /*
      * Lattice.
      */
-    case WeededAst.Declaration.Lattice(doc, mod, ident, tparams0, attr,loc) =>
+    case WeededAst.Declaration.Lattice(doc, mod, ident, tparams0, attr, loc) =>
       // check if the table already exists.
       prog0.lattices.get(ns0) match {
         case None =>
@@ -914,7 +914,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       for {
         b <- lookupVarOpt(baseOpt, outerEnv)
         ts <- traverse(terms)(t => visitExp(t, outerEnv ++ headEnv0 ++ ruleEnv0, tenv0))
-      } yield NamedAst.Predicate.Head.Atom(b, qname, ts, loc)
+      } yield NamedAst.Predicate.Head.Atom(b, qname, ts, Type.freshTypeVar(), loc)
   }
 
   /**
@@ -925,7 +925,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       val ts = terms.map(t => visitPattern(t, outerEnv ++ ruleEnv0))
       for {
         b <- lookupVarOpt(baseOpt, outerEnv)
-      } yield NamedAst.Predicate.Body.Atom(b, qname, polarity, ts, loc)
+      } yield NamedAst.Predicate.Body.Atom(b, qname, polarity, ts, Type.freshTypeVar(), loc)
 
     case WeededAst.Predicate.Body.Filter(qname, terms, loc) =>
       for {

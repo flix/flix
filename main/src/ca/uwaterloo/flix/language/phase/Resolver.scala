@@ -785,13 +785,13 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
 
         case NamedAst.Predicate.Head.False(loc) => ResolvedAst.Predicate.Head.False(loc).toSuccess
 
-        case NamedAst.Predicate.Head.Atom(baseOpt, qname, terms, loc) =>
+        case NamedAst.Predicate.Head.Atom(baseOpt, qname, terms, tvar, loc) =>
           for {
             t <- lookupRelationOrLattice(qname, ns0, prog0)
             ts <- traverse(terms)(t => Expressions.resolve(t, Map.empty, ns0, prog0))
           } yield t match {
-            case RelationOrLattice.Rel(sym) => ResolvedAst.Predicate.Head.RelAtom(baseOpt, sym, ts, loc)
-            case RelationOrLattice.Lat(sym) => ResolvedAst.Predicate.Head.LatAtom(baseOpt, sym, ts, loc)
+            case RelationOrLattice.Rel(sym) => ResolvedAst.Predicate.Head.RelAtom(baseOpt, sym, ts, tvar, loc)
+            case RelationOrLattice.Lat(sym) => ResolvedAst.Predicate.Head.LatAtom(baseOpt, sym, ts, tvar, loc)
           }
       }
     }
@@ -801,13 +801,13 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
         * Performs name resolution on the given body predicate `b0` in the given namespace `ns0`.
         */
       def resolve(b0: NamedAst.Predicate.Body, ns0: Name.NName, prog0: NamedAst.Root)(implicit genSym: GenSym): Validation[ResolvedAst.Predicate.Body, ResolutionError] = b0 match {
-        case NamedAst.Predicate.Body.Atom(baseOpt, qname, polarity, terms, loc) =>
+        case NamedAst.Predicate.Body.Atom(baseOpt, qname, polarity, terms, tvar, loc) =>
           for {
             t <- lookupRelationOrLattice(qname, ns0, prog0)
             ts <- traverse(terms)(t => Patterns.resolve(t, ns0, prog0))
           } yield t match {
-            case RelationOrLattice.Rel(sym) => ResolvedAst.Predicate.Body.RelAtom(baseOpt, sym, polarity, ts, loc)
-            case RelationOrLattice.Lat(sym) => ResolvedAst.Predicate.Body.LatAtom(baseOpt, sym, polarity, ts, loc)
+            case RelationOrLattice.Rel(sym) => ResolvedAst.Predicate.Body.RelAtom(baseOpt, sym, polarity, ts, tvar, loc)
+            case RelationOrLattice.Lat(sym) => ResolvedAst.Predicate.Body.LatAtom(baseOpt, sym, polarity, ts, tvar, loc)
           }
 
         case NamedAst.Predicate.Body.Filter(qname, terms, loc) =>
@@ -1260,10 +1260,10 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
           case (Some(enum), None, None) => getEnumTypeIfAccessible(enum, ns0, ns0.loc)
 
           // Case 3: Relation.
-          case (None, Some(rel), None) => getRelationTypeIfAccessible(rel, ns0, ns0.loc)
+          case (None, Some(rel), None) => getRelationTypeIfAccessible(rel, ns0, root, ns0.loc)
 
           // Case 4: Lattice.
-          case (None, None, Some(lat)) => getLatticeTypeIfAccessible(lat, ns0, ns0.loc)
+          case (None, None, Some(lat)) => getLatticeTypeIfAccessible(lat, ns0, root, ns0.loc)
 
           // Case 5: Errors.
           case (Some(enum), Some(rel), None) => ResolutionError.AmbiguousType(typeName, ns0, List(enum.loc, rel.loc), loc).toFailure
@@ -1559,20 +1559,30 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     *
     * Otherwise fails with a resolution error.
     */
-  def getRelationTypeIfAccessible(rel0: NamedAst.Relation, ns0: Name.NName, loc: SourceLocation): Validation[Type, ResolutionError] =
-    getRelationIfAccessible(rel0, ns0, loc) map {
-      case sym => Type.Relation(sym, Kind.Star)
+  def getRelationTypeIfAccessible(rel0: NamedAst.Relation, ns0: Name.NName, root: NamedAst.Root, loc: SourceLocation): Validation[Type, ResolutionError] = {
+    // NB: This is a small hack because the attribute types should be resolved according to the namespace of the relation.
+    val declNS = getNS(rel0.sym.namespace)
+    getRelationIfAccessible(rel0, ns0, loc) flatMap {
+      case sym => traverse(rel0.attr)(a => lookupType(a.tpe, declNS, root)) map {
+        case attr => Type.mkRelation(sym, attr)
+      }
     }
+  }
 
   /**
     * Successfully returns the type of the given `lat0` if it is accessible from the given namespace `ns0`.
     *
     * Otherwise fails with a resolution error.
     */
-  def getLatticeTypeIfAccessible(lat0: NamedAst.Lattice, ns0: Name.NName, loc: SourceLocation): Validation[Type, ResolutionError] =
-    getLatticeIfAccessible(lat0, ns0, loc) map {
-      case sym => Type.Lattice(sym, Kind.Star)
+  def getLatticeTypeIfAccessible(lat0: NamedAst.Lattice, ns0: Name.NName, root: NamedAst.Root, loc: SourceLocation): Validation[Type, ResolutionError] = {
+    // NB: This is a small hack because the attribute types should be resolved according to the namespace of the relation.
+    val declNS = getNS(lat0.sym.namespace)
+    getLatticeIfAccessible(lat0, ns0, loc) flatMap {
+      case sym => traverse(lat0.attr)(a => lookupType(a.tpe, declNS, root)) map {
+        case attr => Type.mkLattice(sym, attr)
+      }
     }
+  }
 
   /**
     * Returns the class reflection object for the given `className`.
@@ -1583,5 +1593,14 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     case ex: ClassNotFoundException => ResolutionError.UndefinedNativeClass(className, loc).toFailure
   }
 
-}
+  /**
+    * Returns a synthetic namespace obtained from the given sequence of namespace `parts`.
+    */
+  private def getNS(parts: List[String]): Name.NName = {
+    val sp1 = SourcePosition.Unknown
+    val sp2 = SourcePosition.Unknown
+    val idents = parts.map(s => Name.Ident(sp1, s, sp2))
+    Name.NName(sp1, idents, sp2)
+  }
 
+}

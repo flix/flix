@@ -555,26 +555,26 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
 
       case TypedAst.Predicate.Head.False(loc) => SimplifiedAst.Predicate.Head.False(loc)
 
-      case TypedAst.Predicate.Head.RelAtom(baseOpt, sym, terms, loc) =>
+      case TypedAst.Predicate.Head.RelAtom(baseOpt, sym, terms, tpe, loc) =>
         val ts = terms.map(t => exp2HeadTerm(t, cparams))
-        SimplifiedAst.Predicate.Head.RelAtom(baseOpt, sym, ts, loc)
+        SimplifiedAst.Predicate.Head.RelAtom(baseOpt, sym, ts, tpe, loc)
 
-      case TypedAst.Predicate.Head.LatAtom(baseOpt, sym, terms, loc) =>
+      case TypedAst.Predicate.Head.LatAtom(baseOpt, sym, terms, tpe, loc) =>
         val ts = terms.map(t => exp2HeadTerm(t, cparams))
-        SimplifiedAst.Predicate.Head.LatAtom(baseOpt, sym, ts, loc)
+        SimplifiedAst.Predicate.Head.LatAtom(baseOpt, sym, ts, tpe, loc)
     }
 
     /**
       * Translates the given `body` predicate to the SimplifiedAst.
       */
     def visitBodyPred(body: TypedAst.Predicate.Body, cparams: List[TypedAst.ConstraintParam]): SimplifiedAst.Predicate.Body = body match {
-      case TypedAst.Predicate.Body.RelAtom(baseOpt, sym, polarity, terms, loc) =>
+      case TypedAst.Predicate.Body.RelAtom(baseOpt, sym, polarity, terms, tpe, loc) =>
         val ts = terms.map(p => pat2BodyTerm(p, cparams))
-        SimplifiedAst.Predicate.Body.RelAtom(baseOpt, sym, polarity, ts, loc)
+        SimplifiedAst.Predicate.Body.RelAtom(baseOpt, sym, polarity, ts, tpe, loc)
 
-      case TypedAst.Predicate.Body.LatAtom(baseOpt, sym, polarity, terms, loc) =>
+      case TypedAst.Predicate.Body.LatAtom(baseOpt, sym, polarity, terms, tpe, loc) =>
         val ts = terms.map(p => pat2BodyTerm(p, cparams))
-        SimplifiedAst.Predicate.Body.LatAtom(baseOpt, sym, polarity, ts, loc)
+        SimplifiedAst.Predicate.Body.LatAtom(baseOpt, sym, polarity, ts, tpe, loc)
 
       case TypedAst.Predicate.Body.Filter(sym, terms, loc) =>
         SimplifiedAst.Predicate.Body.Filter(sym, terms.map(t => exp2BodyTerm(t, cparams)), loc)

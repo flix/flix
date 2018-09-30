@@ -708,7 +708,7 @@ object Interpreter {
   private def evalHeadPredicate(h0: FinalAst.Predicate.Head, env0: Map[String, AnyRef])(implicit root: FinalAst.Root, cache: SymbolCache, flix: Flix): api.predicate.Predicate = h0 match {
     case FinalAst.Predicate.Head.True(_) => new api.predicate.TruePredicate()
     case FinalAst.Predicate.Head.False(_) => new api.predicate.FalsePredicate()
-    case FinalAst.Predicate.Head.RelAtom(baseOpt, sym, terms, _) =>
+    case FinalAst.Predicate.Head.RelAtom(baseOpt, sym, terms, _, _) =>
       // Retrieve the relation.
       val relation = baseOpt match {
         case None => getRelation(sym)
@@ -717,7 +717,7 @@ object Interpreter {
       }
       val ts = terms.map(t => evalHeadTerm(t, env0))
       new api.predicate.AtomPredicate(relation, positive = true, ts.toArray, null)
-    case FinalAst.Predicate.Head.LatAtom(baseOpt, sym, terms, _) =>
+    case FinalAst.Predicate.Head.LatAtom(baseOpt, sym, terms, _, _) =>
       // Retrieve the lattice.
       val lattice = baseOpt match {
         case None => getLattice(sym)
@@ -732,7 +732,7 @@ object Interpreter {
     * Evaluates the given body predicate `b0` under the given environment `env0` to a body predicate value.
     */
   private def evalBodyPredicate(b0: FinalAst.Predicate.Body, env0: Map[String, AnyRef])(implicit root: FinalAst.Root, cache: SymbolCache, flix: Flix): api.predicate.Predicate = b0 match {
-    case FinalAst.Predicate.Body.RelAtom(baseOpt, sym, polarity, terms, index2sym, loc) =>
+    case FinalAst.Predicate.Body.RelAtom(baseOpt, sym, polarity, terms, index2sym, _, _) =>
       // Retrieve the relation.
       val relation = baseOpt match {
         case None => getRelation(sym)
@@ -752,7 +752,7 @@ object Interpreter {
       }
       new api.predicate.AtomPredicate(relation, p, ts.toArray, i2s.toArray)
 
-    case FinalAst.Predicate.Body.LatAtom(baseOpt, sym, polarity, terms, index2sym, loc) =>
+    case FinalAst.Predicate.Body.LatAtom(baseOpt, sym, polarity, terms, index2sym, _, _) =>
       // Retrieve the lattice.
       val lattice = baseOpt match {
         case None => getLattice(sym)

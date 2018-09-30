@@ -83,11 +83,11 @@ object ResolvedAst {
 
     case class Var(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Def(sym: Symbol.DefnSym, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class Def(sym: Symbol.DefnSym, tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Eff(sym: Symbol.EffSym, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class Eff(sym: Symbol.EffSym, tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Sig(sym: Symbol.SigSym, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class Sig(sym: Symbol.SigSym, tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Hole(sym: Symbol.HoleSym, tpe: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
@@ -115,27 +115,27 @@ object ResolvedAst {
 
     case class Str(lit: java.lang.String, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Apply(exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class Apply(exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Lambda(fparam: ResolvedAst.FormalParam, exp: ResolvedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class Lambda(fparam: ResolvedAst.FormalParam, exp: ResolvedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Unary(op: UnaryOperator, exp: ResolvedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class Unary(op: UnaryOperator, exp: ResolvedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Binary(op: BinaryOperator, exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class Binary(op: BinaryOperator, exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class IfThenElse(exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, exp3: ResolvedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class IfThenElse(exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, exp3: ResolvedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Let(sym: Symbol.VarSym, exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class Let(sym: Symbol.VarSym, exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class LetRec(sym: Symbol.VarSym, exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class LetRec(sym: Symbol.VarSym, exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Match(exp: ResolvedAst.Expression, rules: List[ResolvedAst.MatchRule], tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class Match(exp: ResolvedAst.Expression, rules: List[ResolvedAst.MatchRule], tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Switch(rules: List[(ResolvedAst.Expression, ResolvedAst.Expression)], tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class Switch(rules: List[(ResolvedAst.Expression, ResolvedAst.Expression)], tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Tag(sym: Symbol.EnumSym, tag: String, exp: ResolvedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class Tag(sym: Symbol.EnumSym, tag: String, exp: ResolvedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Tuple(elms: List[ResolvedAst.Expression], tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class Tuple(elms: List[ResolvedAst.Expression], tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class RecordEmpty(tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
@@ -157,25 +157,25 @@ object ResolvedAst {
 
     case class ArraySlice(base: ResolvedAst.Expression, beginIndex: ResolvedAst.Expression, endIndex: ResolvedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class VectorLit(elms: List[ResolvedAst.Expression], tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class VectorLit(elms: List[ResolvedAst.Expression], tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class VectorNew(elm: ResolvedAst.Expression, len: Int, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class VectorNew(elm: ResolvedAst.Expression, len: Int, tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class VectorLoad(base: ResolvedAst.Expression, index: Int, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class VectorLoad(base: ResolvedAst.Expression, index: Int, tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class VectorStore(base: ResolvedAst.Expression, index: Int, elm: ResolvedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class VectorStore(base: ResolvedAst.Expression, index: Int, elm: ResolvedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class VectorLength(base: ResolvedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class VectorLength(base: ResolvedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class VectorSlice(base: ResolvedAst.Expression, startIndex: Int, optEndIndex: Option[Int], tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class VectorSlice(base: ResolvedAst.Expression, startIndex: Int, optEndIndex: Option[Int], tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Ref(exp: ResolvedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class Ref(exp: ResolvedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Deref(exp: ResolvedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class Deref(exp: ResolvedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Assign(exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class Assign(exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class HandleWith(exp: ResolvedAst.Expression, bindings: List[ResolvedAst.HandlerBinding], tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class HandleWith(exp: ResolvedAst.Expression, bindings: List[ResolvedAst.HandlerBinding], tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Existential(fparam: ResolvedAst.FormalParam, exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
@@ -207,7 +207,7 @@ object ResolvedAst {
 
     case class FixpointDelta(exp: ResolvedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class UserError(tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class UserError(tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
   }
 
@@ -217,9 +217,9 @@ object ResolvedAst {
 
   object Pattern {
 
-    case class Wild(tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Pattern
+    case class Wild(tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Pattern
 
-    case class Var(sym: Symbol.VarSym, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Pattern
+    case class Var(sym: Symbol.VarSym, tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Pattern
 
     case class Unit(loc: SourceLocation) extends ResolvedAst.Pattern
 
@@ -245,9 +245,9 @@ object ResolvedAst {
 
     case class Str(lit: java.lang.String, loc: SourceLocation) extends ResolvedAst.Pattern
 
-    case class Tag(sym: Symbol.EnumSym, tag: String, pat: ResolvedAst.Pattern, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Pattern
+    case class Tag(sym: Symbol.EnumSym, tag: String, pat: ResolvedAst.Pattern, tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Pattern
 
-    case class Tuple(elms: scala.List[ResolvedAst.Pattern], tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Pattern
+    case class Tuple(elms: scala.List[ResolvedAst.Pattern], tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Pattern
 
   }
 
@@ -263,9 +263,9 @@ object ResolvedAst {
 
       case class False(loc: SourceLocation) extends ResolvedAst.Predicate.Head
 
-      case class RelAtom(base: Option[Symbol.VarSym], sym: Symbol.RelSym, terms: List[ResolvedAst.Expression], loc: SourceLocation) extends ResolvedAst.Predicate.Head
+      case class RelAtom(base: Option[Symbol.VarSym], sym: Symbol.RelSym, terms: List[ResolvedAst.Expression], tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Predicate.Head
 
-      case class LatAtom(base: Option[Symbol.VarSym], sym: Symbol.LatSym, terms: List[ResolvedAst.Expression], loc: SourceLocation) extends ResolvedAst.Predicate.Head
+      case class LatAtom(base: Option[Symbol.VarSym], sym: Symbol.LatSym, terms: List[ResolvedAst.Expression], tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Predicate.Head
 
     }
 
@@ -273,9 +273,9 @@ object ResolvedAst {
 
     object Body {
 
-      case class RelAtom(base: Option[Symbol.VarSym], sym: Symbol.RelSym, polarity: Ast.Polarity, terms: List[ResolvedAst.Pattern], loc: SourceLocation) extends ResolvedAst.Predicate.Body
+      case class RelAtom(base: Option[Symbol.VarSym], sym: Symbol.RelSym, polarity: Ast.Polarity, terms: List[ResolvedAst.Pattern], tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Predicate.Body
 
-      case class LatAtom(base: Option[Symbol.VarSym], sym: Symbol.LatSym, polarity: Ast.Polarity, terms: List[ResolvedAst.Pattern], loc: SourceLocation) extends ResolvedAst.Predicate.Body
+      case class LatAtom(base: Option[Symbol.VarSym], sym: Symbol.LatSym, polarity: Ast.Polarity, terms: List[ResolvedAst.Pattern], tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Predicate.Body
 
       case class Filter(sym: Symbol.DefnSym, terms: List[ResolvedAst.Expression], loc: SourceLocation) extends ResolvedAst.Predicate.Body
 

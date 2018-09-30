@@ -98,8 +98,8 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         case Type.Zero => Type.Zero
         case Type.Succ(n, i) => Type.Succ(n, i)
         case Type.Enum(sym, kind) => Type.Enum(sym, kind)
-        case Type.Relation(sym, kind) => Type.Relation(sym, kind)
-        case Type.Lattice(sym, kind) => Type.Lattice(sym, kind)
+        case Type.Relation(sym, attr, kind) => Type.Relation(sym, attr map visit, kind)
+        case Type.Lattice(sym, attr, kind) => Type.Lattice(sym, attr map visit, kind)
         case Type.ConstraintRow(m) =>
           val m2 = m.foldLeft(Map.empty[Symbol.PredSym, Type]) {
             case (macc, (predSym, predType)) => macc + (predSym -> visit(predType))
@@ -508,15 +508,15 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
 
         case Predicate.Head.False(loc) => Predicate.Head.False(loc)
 
-        case Predicate.Head.RelAtom(base, sym, terms, loc) =>
+        case Predicate.Head.RelAtom(base, sym, terms, tpe, loc) =>
           val b = base.map(s => env0(s))
           val ts = terms.map(t => visitExp(t, env0))
-          Predicate.Head.RelAtom(b, sym, ts, loc)
+          Predicate.Head.RelAtom(b, sym, ts, tpe, loc)
 
-        case Predicate.Head.LatAtom(base, sym, terms, loc) =>
+        case Predicate.Head.LatAtom(base, sym, terms, tpe, loc) =>
           val b = base.map(s => env0(s))
           val ts = terms.map(t => visitExp(t, env0))
-          Predicate.Head.LatAtom(b, sym, ts, loc)
+          Predicate.Head.LatAtom(b, sym, ts, tpe, loc)
       }
 
       /**
@@ -543,15 +543,15 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         }
 
         b0 match {
-          case Predicate.Body.RelAtom(baseOpt, sym, polarity, terms, loc) =>
+          case Predicate.Body.RelAtom(baseOpt, sym, polarity, terms, tpe, loc) =>
             val b = baseOpt.map(s => env0(s))
             val ts = terms map visitPatTemporaryToBeRemoved
-            Predicate.Body.RelAtom(b, sym, polarity, ts, loc)
+            Predicate.Body.RelAtom(b, sym, polarity, ts, tpe, loc)
 
-          case Predicate.Body.LatAtom(baseOpt, sym, polarity, terms, loc) =>
+          case Predicate.Body.LatAtom(baseOpt, sym, polarity, terms, tpe, loc) =>
             val b = baseOpt.map(s => env0(s))
             val ts = terms map visitPatTemporaryToBeRemoved
-            Predicate.Body.LatAtom(b, sym, polarity, ts, loc)
+            Predicate.Body.LatAtom(b, sym, polarity, ts, tpe, loc)
 
           case Predicate.Body.Filter(sym, terms, loc) =>
             val ts = terms.map(t => visitExp(t, env0))
