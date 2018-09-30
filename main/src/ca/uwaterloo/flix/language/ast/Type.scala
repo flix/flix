@@ -713,13 +713,13 @@ object Type {
           // Relation.
           //
           case Type.Relation(sym, attr, _) =>
-            sym.toString + "(" + attr.map(visit(_, m).mkString(", ")) + ")"
+            sym.toString + "(" + attr.map(visit(_, m)).mkString(", ") + ")"
 
           //
           // Lattice.
           //
           case Type.Lattice(sym, attr, _) =>
-            sym.toString + "(" + attr.map(visit(_, m).mkString(", ")) + ")"
+            sym.toString + "(" + attr.map(visit(_, m)).mkString(", ") + ")"
 
           //
           // ConstraintRow.
