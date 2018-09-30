@@ -645,15 +645,6 @@ object Type {
     def show(a: Type): String = {
 
       /**
-        * Returns the labels of the given record type `tpe`.
-        */
-      def labelsOf(tpe: Type): List[(String, Type)] = tpe match {
-        case Type.RecordEmpty => Nil
-        case Type.RecordExtend(label, value, rest) => (label, value) :: labelsOf(rest)
-        case _ => throw InternalCompilerException(s"Unexpected non-record type: '$tpe'.")
-      }
-
-      /**
         * Local visitor.
         */
       def visit(tpe: Type, m: Map[Int, String]): String = {
@@ -718,8 +709,7 @@ object Type {
           // RecordExtension.
           //
           case Type.RecordExtend(label, value, rest) =>
-            val labels = labelsOf(tpe)
-            "{ " + labels.map(p => p._1 + " : " + visit(p._2, m)).mkString(", ") + " }"
+            "{" + label + " = " + visit(value, m) + " | " + visit(rest, m) + "}"
 
           //
           // Enum.
