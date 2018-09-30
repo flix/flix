@@ -1137,13 +1137,17 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
          * New Relation expression.
          */
         case ResolvedAst.Expression.NewRelation(sym, tvar, loc) =>
-          unifyM(tvar, Type.Relation(sym, Kind.Star), loc)
+          val relation = program.relations(sym)
+          val tpe = Scheme.instantiate(relation.sc)
+          unifyM(tvar, tpe, loc)
 
         /*
          * New Lattice Expression.
          */
         case ResolvedAst.Expression.NewLattice(sym, tvar, loc) =>
-          unifyM(tvar, Type.Lattice(sym, Kind.Star), loc)
+          val lattice = program.lattices(sym)
+          val tpe = Scheme.instantiate(lattice.sc)
+          unifyM(tvar, tpe, loc)
 
         /*
          * Constraint expression.
@@ -1892,12 +1896,10 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         } yield mkAnyConstraintRow(program)
 
       case ResolvedAst.Predicate.Body.Functional(sym, term, loc) =>
-        ???
-
-      //        for {
-      //          tpe <- Expressions.infer(term, program)
-      //          ___ <- unifyM(Type.mkArray(sym.tvar), tpe, loc)
-      //        } yield List(tpe)
+        for {
+          tpe <- Expressions.infer(term, program)
+          ___ <- unifyM(Type.mkArray(sym.tvar), tpe, loc)
+        } yield mkAnyConstraintRow(program)
     }
 
     /**
