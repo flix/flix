@@ -1158,7 +1158,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           for {
             headPredicateType <- Predicates.infer(head0, program)
             bodyPredicateTypes <- seqM(body0.map(b => Predicates.infer(b, program)))
-            resultType <- unifyM(tvar, Type.mkConstraintSet(headPredicateType), loc)
+            resultType <- unifyM(tvar, Type.mkConstraintSetOldDeprecatedRemove(headPredicateType), loc)
           } yield resultType
 
         //
@@ -1170,7 +1170,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           for {
             tpe1 <- visitExp(exp1)
             tpe2 <- visitExp(exp2)
-            resultType <- unifyM(tvar, Type.mkConstraintSet(Type.freshTypeVar()), tpe1, tpe2, loc)
+            resultType <- unifyM(tvar, Type.mkConstraintSetOldDeprecatedRemove(Type.freshTypeVar()), tpe1, tpe2, loc)
           } yield resultType
 
         //
@@ -1183,7 +1183,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           // TODO: Temporary use string as return type?
           for {
             inferredType <- visitExp(exp)
-            expectedType <- unifyM(inferredType, Type.mkConstraintSet(Type.Solvable), loc)
+            expectedType <- unifyM(inferredType, Type.mkConstraintSetOldDeprecatedRemove(Type.Solvable), loc)
             resultType <- unifyM(tvar, Type.Str, loc)
           } yield resultType
 
@@ -1197,7 +1197,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         case ResolvedAst.Expression.FixpointCheck(exp, tvar, loc) =>
           for {
             inferredType <- visitExp(exp)
-            expectedType <- unifyM(inferredType, Type.mkConstraintSet(Type.Checkable), loc)
+            expectedType <- unifyM(inferredType, Type.mkConstraintSetOldDeprecatedRemove(Type.Checkable), loc)
             resultType <- unifyM(tvar, Type.Bool, loc)
           } yield resultType
 
@@ -1211,7 +1211,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         case ResolvedAst.Expression.FixpointDelta(exp, tvar, loc) =>
           for {
             inferredType <- visitExp(exp)
-            expectedType <- unifyM(inferredType, Type.mkConstraintSet(Type.Checkable), loc)
+            expectedType <- unifyM(inferredType, Type.mkConstraintSetOldDeprecatedRemove(Type.Checkable), loc)
             resultType <- unifyM(tvar, Type.Str, loc)
           } yield resultType
 
@@ -1781,27 +1781,31 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       //
       case ResolvedAst.Predicate.Head.False(loc) => Unification.liftM(Type.Checkable)
 
-      //
-      // -----------
-      // P(x...) : a
-      //
-      case ResolvedAst.Predicate.Head.RelAtom(baseOpt, sym, terms, loc) =>
-        // Lookup the type scheme.
-        val scheme = program.relations(sym).sc
+      case ResolvedAst.Predicate.Head.RelAtom(baseOpt, sym, terms, loc) => baseOpt match {
+        case None =>
+          // Case 1: We must return a constraint system where the type of `sym` matches that of this predicate.
 
-        // Instantiate the type scheme.
-        val tpe = Scheme.instantiate(scheme)
+          // Lookup the type scheme.
+          val scheme = program.relations(sym).sc
 
-        // TODO
+          // Instantiate the type scheme.
+          val declaredType = Scheme.instantiate(scheme)
 
-        getRelationSignature(sym, program) match {
-          case Ok(declaredTypes) =>
-            for {
-              _ <- baseOpt.map(baseSym => unifyM(baseSym.tvar, Type.Relation(sym, Kind.Star), loc)).getOrElse(liftM[Unit](()))
-              ts <- Terms.Head.typecheck(terms, declaredTypes, loc, program)
-            } yield Type.freshTypeVar()
-          case Err(e) => failM(e)
-        }
+          for {
+            termTypes <- Terms.Head.infer(terms, program)
+            resultType <- unifyM(Type.mkRelation(sym, termTypes), declaredType, loc)
+          } yield mkConstraintRow(sym, resultType, program)
+
+        case Some(varSym) =>
+          // Case 2: The type must match the type of the variable symbol.
+
+          // Note: We can simply return a fresh variable as a return type since a predicate with a base does not influence the result type.
+
+          for {
+            termTypes <- Terms.Head.infer(terms, program)
+            relationType <- unifyM(varSym.tvar, Type.mkRelation(sym, termTypes), loc)
+          } yield Type.freshTypeVar()
+      }
 
       //
       // -----------
@@ -1895,8 +1899,16 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
 
     object Head {
       /**
+        * Infers the type of the given `terms`.
+        */
+      def infer(terms: List[ResolvedAst.Expression], program: ResolvedAst.Program)(implicit genSym: GenSym): InferMonad[List[Type]] =
+        seqM(terms.map(t => Expressions.infer(t, program)))
+
+
+      /**
         * Infers the type of the given `terms` and checks them against the types `ts`.
         */
+      // TODO: Deprecated
       def typecheck(terms: List[ResolvedAst.Expression], ts: List[Type], loc: SourceLocation, program: ResolvedAst.Program)(implicit genSym: GenSym): InferMonad[List[Type]] = {
         for (
           actualTypes <- seqM(terms.map(t => Expressions.infer(t, program)));
@@ -1907,8 +1919,15 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
 
     object Body {
       /**
+        * Infers the type of the given `terms`.
+        */
+      def infer(terms: List[ResolvedAst.Pattern], program: ResolvedAst.Program)(implicit genSym: GenSym): InferMonad[List[Type]] =
+        seqM(terms.map(t => Patterns.infer(t, program)))
+
+      /**
         * Infers the type of the given `terms` and checks them against the types `ts`.
         */
+      // TODO: Deprecated
       def typecheck(terms: List[ResolvedAst.Pattern], ts: List[Type], loc: SourceLocation, program: ResolvedAst.Program)(implicit genSym: GenSym): InferMonad[List[Type]] = {
         for (
           actualTypes <- seqM(terms.map(t => Patterns.infer(t, program)));
@@ -1965,6 +1984,19 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     case ResolvedAst.FormalParam(sym, mod, tpe, loc) => TypedAst.FormalParam(sym, mod, subst0(sym.tvar), sym.loc)
   }
 
-  def getTypeFromField(field: Field): Type = ??? // TODO
+  /**
+    * Returns a constraint row type where the type of `sym` is `tpe` and other types are free.
+    */
+  private def mkConstraintRow(sym: Symbol.RelSym, tpe: Type, program: ResolvedAst.Program)(implicit genSym: GenSym): Type = {
+    val z = Map(sym -> tpe): Map[Symbol.PredSym, Type]
+    val m = program.allPredicateSymbols.foldLeft(z) {
+      case (macc, predSym) =>
+        if (sym == predSym)
+          macc
+        else
+          macc + (predSym -> Type.freshTypeVar())
+    }
+    Type.ConstraintRow(m)
+  }
 
 }

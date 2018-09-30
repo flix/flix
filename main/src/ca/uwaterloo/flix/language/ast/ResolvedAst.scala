@@ -34,7 +34,15 @@ object ResolvedAst {
                      lattices: Map[Symbol.LatSym, ResolvedAst.Lattice],
                      latticeComponents: Map[Type, ResolvedAst.LatticeComponents],
                      properties: List[ResolvedAst.Property],
-                     reachable: Set[Symbol.DefnSym])
+                     reachable: Set[Symbol.DefnSym]) {
+    /**
+      * Returns all predicate symbols in the program.
+      */
+    val allPredicateSymbols: Set[Symbol.PredSym] = {
+      relations.keySet ++ lattices.keySet
+    }
+
+  }
 
 
   case class Def(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, tparams: List[ResolvedAst.TypeParam], fparams: List[ResolvedAst.FormalParam], exp: ResolvedAst.Expression, sc: Scheme, eff: ast.Eff, loc: SourceLocation)

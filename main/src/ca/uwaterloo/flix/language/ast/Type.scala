@@ -58,6 +58,7 @@ sealed trait Type {
     case Type.Enum(_, _) => Set.empty
     case Type.Relation(_, _) => Set.empty
     case Type.Lattice(_, _) => Set.empty
+    case Type.ConstraintRow(m) => m.flatMap(_._2.typeVars).toSet
     case Type.ConstraintSet => Set.empty
     case Type.Solvable => Set.empty
     case Type.Checkable => Set.empty
@@ -208,6 +209,7 @@ sealed trait Type {
     case Type.Enum(sym, _) => sym.toString
     case Type.Relation(sym, _) => sym.toString
     case Type.Lattice(sym, _) => sym.toString
+    case Type.ConstraintRow(m) => m.mkString(", ")
     case Type.ConstraintSet => "ConstraintSet"
     case Type.Solvable => "Solvable"
     case Type.Checkable => "Checkable"
@@ -397,6 +399,15 @@ object Type {
   case class Lattice(sym: Symbol.LatSym, kind: Kind) extends Type
 
   /**
+    * A type constructor that represents a constraint system.
+    *
+    * @param m the types of the predicate symbols in the system.
+    */
+  case class ConstraintRow(m: Map[Symbol.PredSym, Type]) extends Type {
+    def kind: Kind = Kind.Star
+  }
+
+  /**
     * A type constructor that represents a constraint set.
     */
   case object ConstraintSet extends Type {
@@ -514,6 +525,13 @@ object Type {
   }
 
   /**
+    * Returns the constraint set type parameters with the given type `tpe`.
+    */
+  // TODO: Remove
+  def mkConstraintSetOldDeprecatedRemove(tpe: Type): Type = Apply(Type.ConstraintSet, tpe)
+
+
+  /**
     * Constructs the tuple type (A, B, ...) where the types are drawn from the list `ts`.
     */
   def mkTuple(ts: Type*): Type = mkTuple(ts.toList)
@@ -565,11 +583,6 @@ object Type {
   }
 
   /**
-    * Returns the constraint set type parameters with the given type `tpe`.
-    */
-  def mkConstraintSet(tpe: Type): Type = Apply(ConstraintSet, tpe)
-
-  /**
     * Replaces every free occurrence of a type variable in `typeVars`
     * with a fresh type variable in the given type `tpe`.
     */
@@ -608,6 +621,12 @@ object Type {
       case Type.Enum(sym, kind) => Type.Enum(sym, kind)
       case Type.Relation(sym, kind) => Type.Relation(sym, kind)
       case Type.Lattice(sym, kind) => Type.Lattice(sym, kind)
+      case Type.ConstraintRow(m) =>
+        val newM = m.foldLeft(Map.empty[Symbol.PredSym, Type]) {
+          case (macc, (s, t)) => macc + (s -> visit(t))
+        }
+        Type.ConstraintRow(newM)
+
       case Type.ConstraintSet => Type.ConstraintSet
       case Type.Solvable => Type.Solvable
       case Type.Checkable => Type.Checkable

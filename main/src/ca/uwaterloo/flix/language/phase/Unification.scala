@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.language.GenSym
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Type}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.util.Result._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
@@ -84,6 +84,11 @@ object Unification {
       case Type.Relation(sym, kind) => Type.Relation(sym, kind)
       case Type.Lattice(sym, kind) => Type.Lattice(sym, kind)
       case Type.ConstraintSet => Type.ConstraintSet
+      case Type.ConstraintRow(rows) =>
+        val newRows = rows.foldLeft(Map.empty[Symbol.PredSym, Type]) {
+          case (macc, (s, t)) => macc + (s -> apply(t))
+        }
+        Type.ConstraintRow(newRows)
       case Type.Solvable => Type.Solvable
       case Type.Checkable => Type.Checkable
       case Type.Apply(t1, t2) => Type.Apply(apply(t1), apply(t2))
@@ -230,8 +235,14 @@ object Unification {
       case (Type.Succ(n1, t1), Type.Succ(n2, t2)) if n1 > n2 => unifyTypes(Type.Succ(n1 - n2, t1), t2) // (42, x) == (21 y) --> (42-21, x) = y
       case (Type.Succ(n1, t1), Type.Succ(n2, t2)) if n1 < n2 => unifyTypes(Type.Succ(n2 - n1, t2), t1) // (21, x) == (42, y) --> (42-21, y) = x
       case (Type.Enum(sym1, kind1), Type.Enum(sym2, kind2)) if sym1 == sym2 => Result.Ok(Substitution.empty)
+
       case (Type.Relation(sym1, kind1), Type.Relation(sym2, kind2)) if sym1 == sym2 => Result.Ok(Substitution.empty)
+
       case (Type.Lattice(sym1, kind1), Type.Lattice(sym2, kind2)) if sym1 == sym2 => Result.Ok(Substitution.empty)
+
+      case (Type.ConstraintRow(m1), Type.ConstraintRow(m2)) =>
+        ??? // TODO
+
       case (Type.ConstraintSet, Type.ConstraintSet) => Result.Ok(Substitution.empty)
       case (Type.Solvable, Type.Solvable) => Result.Ok(Substitution.empty)
       case (Type.Checkable, Type.Checkable) => Result.Ok(Substitution.empty)
