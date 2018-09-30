@@ -100,6 +100,11 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         case Type.Enum(sym, kind) => Type.Enum(sym, kind)
         case Type.Relation(sym, kind) => Type.Relation(sym, kind)
         case Type.Lattice(sym, kind) => Type.Lattice(sym, kind)
+        case Type.ConstraintRow(m) =>
+          val m2 = m.foldLeft(Map.empty[Symbol.PredSym, Type]) {
+            case (macc, (predSym, predType)) => macc + (predSym -> visit(predType))
+          }
+          Type.ConstraintRow(m2)
         case Type.ConstraintSet => Type.ConstraintSet
         case Type.Solvable => Type.Solvable
         case Type.Checkable => Type.Checkable

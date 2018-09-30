@@ -1163,15 +1163,16 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           } yield resultType
 
         //
-        //  exp1 : ConstraintSet[a]    exp2 : ConstraintSet[a]
-        //  --------------------------------------------------
-        //  exp1 || exp2 : ConstraintSet[a]
+        //  exp1 : tpe1    exp2 : tpe2    tpe1 == tpe2
+        //  ------------------------------------------
+        //  union exp1 exp2 : tpe1
         //
         case ResolvedAst.Expression.ConstraintUnion(exp1, exp2, tvar, loc) =>
+          // TODO: How do we ensure that these are actually ConstraintRows?
           for {
             tpe1 <- visitExp(exp1)
             tpe2 <- visitExp(exp2)
-            resultType <- unifyM(tvar, Type.mkConstraintSetOldDeprecatedRemove(Type.freshTypeVar()), tpe1, tpe2, loc)
+            resultType <- unifyM(tvar, tpe1, tpe2, loc)
           } yield resultType
 
         //
