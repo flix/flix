@@ -730,6 +730,14 @@ object Type {
             if (args.isEmpty) sym.toString else sym.toString + "[" + args.map(visit(_, m)).mkString(", ") + "]"
 
           //
+          // ConstraintRow.
+          //
+          case Type.ConstraintRow(row) =>
+            "ConstraintRow {" + row.map {
+              case (s, t) => s.toString + ": " + visit(t, m)
+            }.mkString(", ") + "}"
+
+          //
           // Application.
           //
           case Type.Apply(tpe1, tpe2) => visit(tpe1, m) + "[" + visit(tpe2, m) + "]"

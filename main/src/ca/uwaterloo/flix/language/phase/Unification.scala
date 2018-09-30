@@ -84,11 +84,11 @@ object Unification {
       case Type.Relation(sym, kind) => Type.Relation(sym, kind)
       case Type.Lattice(sym, kind) => Type.Lattice(sym, kind)
       case Type.ConstraintSet => Type.ConstraintSet
-      case Type.ConstraintRow(rows) =>
-        val newRows = rows.foldLeft(Map.empty[Symbol.PredSym, Type]) {
+      case Type.ConstraintRow(row) =>
+        val newRow = row.foldLeft(Map.empty[Symbol.PredSym, Type]) {
           case (macc, (s, t)) => macc + (s -> apply(t))
         }
-        Type.ConstraintRow(newRows)
+        Type.ConstraintRow(newRow)
       case Type.Solvable => Type.Solvable
       case Type.Checkable => Type.Checkable
       case Type.Apply(t1, t2) => Type.Apply(apply(t1), apply(t2))
@@ -249,7 +249,15 @@ object Unification {
       case (Type.Lattice(sym1, kind1), Type.Lattice(sym2, kind2)) if sym1 == sym2 => Result.Ok(Substitution.empty)
 
       case (Type.ConstraintRow(m1), Type.ConstraintRow(m2)) =>
-        ??? // TODO
+        // NB: m1 and m2 are guaranteed to contain the same keys.
+        val keys = m1.keySet.toList
+
+        // Retrieve the types of each row (in the same order).
+        val types1 = keys.map(m1)
+        val types2 = keys.map(m2)
+
+        // And simply unify them.
+        unifyAll(types1, types2)
 
       case (Type.ConstraintSet, Type.ConstraintSet) => Result.Ok(Substitution.empty)
       case (Type.Solvable, Type.Solvable) => Result.Ok(Substitution.empty)
