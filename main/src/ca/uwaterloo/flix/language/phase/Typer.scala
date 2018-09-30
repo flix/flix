@@ -1163,57 +1163,53 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           } yield resultType
 
         //
-        //  exp1 : tpe1    exp2 : tpe2    tpe1 == tpe2
-        //  ------------------------------------------
-        //  union exp1 exp2 : tpe1
+        //  exp1 : tpe    exp2 : tpe    tpe == ConstraintRow {}
+        //  ---------------------------------------------------
+        //  union exp1 exp2 : tpe
         //
         case ResolvedAst.Expression.ConstraintUnion(exp1, exp2, tvar, loc) =>
-          // TODO: How do we ensure that these are actually ConstraintRows?
           for {
             tpe1 <- visitExp(exp1)
             tpe2 <- visitExp(exp2)
-            resultType <- unifyM(tvar, tpe1, tpe2, loc)
+            resultType <- unifyM(tvar, tpe1, tpe2, mkAnyConstraintRow(program), loc)
           } yield resultType
 
         //
-        //  exp : ConstraintSet[Solvable]
+        //  exp : ConstraintRow
         //  -----------------------------
         //  solve exp : Str
         //
         case ResolvedAst.Expression.FixpointSolve(exp, tvar, loc) =>
-          // TODO: Add support for records to deal with return type?
-          // TODO: Temporary use string as return type?
+          // TODO: Checkable/Solvable
           for {
             inferredType <- visitExp(exp)
-            expectedType <- unifyM(inferredType, Type.mkConstraintSetOldDeprecatedRemove(Type.Solvable), loc)
+            expectedType <- unifyM(inferredType, mkAnyConstraintRow(program), loc)
             resultType <- unifyM(tvar, Type.Str, loc)
           } yield resultType
 
         //
-        //  exp : ConstraintSet[Checkable]
+        //  exp : ConstraintRow
         //  ------------------------------
         //  check exp : Bool
         //
-        // TODO: This does not actually enforce that the constraint set must contain an integrity rule.
-        // TODO: It only prevents the case where we try to use both check and solve with the same constraint.
         case ResolvedAst.Expression.FixpointCheck(exp, tvar, loc) =>
+          // TODO: Checkable/Solvable
           for {
             inferredType <- visitExp(exp)
-            expectedType <- unifyM(inferredType, Type.mkConstraintSetOldDeprecatedRemove(Type.Checkable), loc)
+            expectedType <- unifyM(inferredType, mkAnyConstraintRow(program), loc)
             resultType <- unifyM(tvar, Type.Bool, loc)
           } yield resultType
 
         //
-        //  exp : ConstraintSet[Checkable]
+        //  exp : ConstraintRow
         //  ------------------------------
         //  delta exp : Str
         //
-        // TODO: This does not actually enforce that the constraint set must contain an integrity rule.
-        // TODO: It only prevents the case where we try to use both check and solve with the same constraint.
         case ResolvedAst.Expression.FixpointDelta(exp, tvar, loc) =>
+          // TODO: Checkable/Solvable
           for {
             inferredType <- visitExp(exp)
-            expectedType <- unifyM(inferredType, Type.mkConstraintSetOldDeprecatedRemove(Type.Checkable), loc)
+            expectedType <- unifyM(inferredType, mkAnyConstraintRow(program), loc)
             resultType <- unifyM(tvar, Type.Str, loc)
           } yield resultType
 
@@ -1775,13 +1771,17 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       // --------
       // true : a
       //
-      case ResolvedAst.Predicate.Head.True(loc) => Unification.liftM(Type.freshTypeVar())
+      case ResolvedAst.Predicate.Head.True(loc) =>
+        // TODO: Typing...
+        Unification.liftM(Type.freshTypeVar())
 
       //
       // -----------------
       // false : Checkable
       //
-      case ResolvedAst.Predicate.Head.False(loc) => Unification.liftM(Type.Checkable)
+      case ResolvedAst.Predicate.Head.False(loc) =>
+        // TODO: Typing...
+        Unification.liftM(Type.freshTypeVar())
 
       case ResolvedAst.Predicate.Head.RelAtom(baseOpt, sym, terms, loc) => baseOpt match {
         case None =>
@@ -1884,13 +1884,12 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       }
 
       case ResolvedAst.Predicate.Body.Filter(sym, terms, loc) =>
-        ???
-      //        val defn = program.defs(sym)
-      //        val expectedTypes = defn.fparams.map(_.tpe)
-      //        for (
-      //          actualTypes <- seqM(terms.map(t => Expressions.infer(t, program)));
-      //          unifiedTypes <- Unification.unifyM(expectedTypes, actualTypes, loc)
-      //        ) yield unifiedTypes
+        val defn = program.defs(sym)
+        val declaredType = Scheme.instantiate(defn.sc)
+        for {
+          argumentTypes <- seqM(terms.map(t => Expressions.infer(t, program)))
+          unifiedTypes <- Unification.unifyM(declaredType, Type.mkArrow(argumentTypes, Type.Bool), loc)
+        } yield mkAnyConstraintRow(program)
 
       case ResolvedAst.Predicate.Body.Functional(sym, term, loc) =>
         ???
@@ -2026,7 +2025,17 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
   }
 
   /**
-    * Returns a constraint row type where the type of `sym` is `tpe` and other types are free.
+    * Returns a constraint row where all predicates are free type variables.
+    */
+  private def mkAnyConstraintRow(program: ResolvedAst.Program)(implicit genSym: GenSym): Type = {
+    val m = program.allPredicateSymbols.foldLeft(Map.empty: Map[Symbol.PredSym, Type]) {
+      case (macc, predSym) => macc + (predSym -> Type.freshTypeVar())
+    }
+    Type.ConstraintRow(m)
+  }
+
+  /**
+    * Returns a constraint row type where the type of `sym` is `tpe` and other predicates are free type variables.
     */
   private def mkConstraintRow(sym: Symbol.PredSym, tpe: Type, program: ResolvedAst.Program)(implicit genSym: GenSym): Type = {
     val z = Map(sym -> tpe): Map[Symbol.PredSym, Type]

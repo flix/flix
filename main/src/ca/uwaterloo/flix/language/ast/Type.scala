@@ -410,6 +410,7 @@ object Type {
   /**
     * A type constructor that represents a constraint set.
     */
+  // TODO: Remove
   case object ConstraintSet extends Type {
     def kind: Kind = Kind.Star
   }
@@ -523,13 +524,6 @@ object Type {
   def mkLattice(sym: Symbol.LatSym, ts: List[Type]): Type = ts.foldLeft(Type.Lattice(sym, Kind.Star): Type) {
     case (acc, tpe) => Type.Apply(acc, tpe)
   }
-
-  /**
-    * Returns the constraint set type parameters with the given type `tpe`.
-    */
-  // TODO: Remove
-  def mkConstraintSetOldDeprecatedRemove(tpe: Type): Type = Apply(Type.ConstraintSet, tpe)
-
 
   /**
     * Constructs the tuple type (A, B, ...) where the types are drawn from the list `ts`.
