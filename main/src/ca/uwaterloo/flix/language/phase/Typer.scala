@@ -1784,7 +1784,11 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
 
       case ResolvedAst.Predicate.Head.RelAtom(baseOpt, sym, terms, loc) => baseOpt match {
         case None =>
-          // Case 1: We must return a constraint system where the type of `sym` matches that of this predicate.
+          //
+          // t_1 : tpe_1, ..., t_2: tpe_n,    rel P(tpe_1, ..., tpe_n)
+          // -------------------------------------------------------------
+          // P(t_1, ..., t_n): ConstraintRow[... P(tpe_1, ..., tpe_n) ...]
+          //
 
           // Lookup the type scheme.
           val scheme = program.relations(sym).sc
@@ -1792,35 +1796,44 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           // Instantiate the type scheme.
           val declaredType = Scheme.instantiate(scheme)
 
+          // Infer the types of the terms.
           for {
             termTypes <- Terms.Head.infer(terms, program)
-            resultType <- unifyM(Type.mkRelation(sym, termTypes), declaredType, loc)
-          } yield mkConstraintRow(sym, resultType, program)
+            predicateType <- unifyM(Type.mkRelation(sym, termTypes), declaredType, loc)
+          } yield mkConstraintRow(sym, predicateType, program)
 
         case Some(varSym) =>
-          // Case 2: The type must match the type of the variable symbol.
-
-          // Note: We can simply return a fresh variable as a return type since a predicate with a base does not influence the result type.
-
+          //
+          // t_1 : tpe_1, ..., t_2: tpe_n,    b: P(t_1, ..., t_n),  fresh t
+          // --------------------- ----------------------------------------
+          // b.P(t_1, ..., t_n): t
+          //
           for {
             termTypes <- Terms.Head.infer(terms, program)
-            relationType <- unifyM(varSym.tvar, Type.mkRelation(sym, termTypes), loc)
+            predicateType <- unifyM(Type.mkRelation(sym, termTypes), varSym.tvar, loc)
           } yield Type.freshTypeVar()
       }
 
-      //
-      // -----------
-      // P(x...) : a
-      //
-      case ResolvedAst.Predicate.Head.LatAtom(baseOpt, sym, terms, loc) =>
-        getLatticeSignature(sym, program) match {
-          case Ok(declaredTypes) =>
-            for {
-              _ <- baseOpt.map(baseSym => unifyM(baseSym.tvar, Type.Lattice(sym, Kind.Star), loc)).getOrElse(liftM[Unit](()))
-              ts <- Terms.Head.typecheck(terms, declaredTypes, loc, program)
-            } yield Type.freshTypeVar()
-          case Err(e) => failM(e)
-        }
+      case ResolvedAst.Predicate.Head.LatAtom(baseOpt, sym, terms, loc) => baseOpt match {
+        case None =>
+          // Lookup the type scheme.
+          val scheme = program.lattices(sym).sc
+
+          // Instantiate the type scheme.
+          val declaredType = Scheme.instantiate(scheme)
+
+          // Infer the types of the terms.
+          for {
+            termTypes <- Terms.Head.infer(terms, program)
+            predicateType <- unifyM(Type.mkLattice(sym, termTypes), declaredType, loc)
+          } yield mkConstraintRow(sym, predicateType, program)
+
+        case Some(varSym) =>
+          for {
+            termTypes <- Terms.Head.infer(terms, program)
+            predicateType <- unifyM(Type.mkLattice(sym, termTypes), varSym.tvar, loc)
+          } yield Type.freshTypeVar()
+      }
     }
 
     /**
@@ -1829,34 +1842,45 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     def infer(body0: ResolvedAst.Predicate.Body, program: ResolvedAst.Program)(implicit genSym: GenSym): InferMonad[Type] = body0 match {
       case ResolvedAst.Predicate.Body.RelAtom(baseOpt, sym, polarity, terms, loc) => baseOpt match {
         case None =>
+          // Lookup the type scheme.
+          val scheme = program.relations(sym).sc
 
-          ???
+          // Instantiate the type scheme.
+          val declaredType = Scheme.instantiate(scheme)
+
+          // Infer the types of the terms.
+          for {
+            termTypes <- Terms.Body.infer(terms, program)
+            predicateType <- unifyM(Type.mkRelation(sym, termTypes), declaredType, loc)
+          } yield mkConstraintRow(sym, predicateType, program)
 
         case Some(varSym) =>
-
-
-          ???
+          for {
+            termTypes <- Terms.Body.infer(terms, program)
+            predicateType <- unifyM(Type.mkRelation(sym, termTypes), varSym.tvar, loc)
+          } yield Type.freshTypeVar()
       }
 
-        ???
-      //        getRelationSignature(sym, program) match {
-      //          case Ok(declaredTypes) => for {
-      //            _ <- baseOpt.map(baseSym => unifyM(baseSym.tvar, Type.Relation(sym, Kind.Star), loc)).getOrElse(liftM[Unit](()))
-      //            ts <- Terms.Body.typecheck(terms, declaredTypes, loc, program)
-      //          } yield ts
-      //          case Err(e) => failM(e)
-      //        }
+      case ResolvedAst.Predicate.Body.LatAtom(baseOpt, sym, polarity, terms, loc) => baseOpt match {
+        case None =>
+          // Lookup the type scheme.
+          val scheme = program.lattices(sym).sc
 
-      case ResolvedAst.Predicate.Body.LatAtom(baseOpt, sym, polarity, terms, loc) =>
-        ???
-      //        getLatticeSignature(sym, program) match {
-      //          case Ok(declaredTypes) =>
-      //            for {
-      //              _ <- baseOpt.map(baseSym => unifyM(baseSym.tvar, Type.Lattice(sym, Kind.Star), loc)).getOrElse(liftM[Unit](()))
-      //              ts <- Terms.Body.typecheck(terms, declaredTypes, loc, program)
-      //            } yield ts
-      //          case Err(e) => failM(e)
-      //        }
+          // Instantiate the type scheme.
+          val declaredType = Scheme.instantiate(scheme)
+
+          // Infer the types of the terms.
+          for {
+            termTypes <- Terms.Body.infer(terms, program)
+            predicateType <- unifyM(Type.mkLattice(sym, termTypes), declaredType, loc)
+          } yield mkConstraintRow(sym, predicateType, program)
+
+        case Some(varSym) =>
+          for {
+            termTypes <- Terms.Body.infer(terms, program)
+            predicateType <- unifyM(Type.mkLattice(sym, termTypes), varSym.tvar, loc)
+          } yield Type.freshTypeVar()
+      }
 
       case ResolvedAst.Predicate.Body.Filter(sym, terms, loc) =>
         ???
@@ -2003,7 +2027,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
   /**
     * Returns a constraint row type where the type of `sym` is `tpe` and other types are free.
     */
-  private def mkConstraintRow(sym: Symbol.RelSym, tpe: Type, program: ResolvedAst.Program)(implicit genSym: GenSym): Type = {
+  private def mkConstraintRow(sym: Symbol.PredSym, tpe: Type, program: ResolvedAst.Program)(implicit genSym: GenSym): Type = {
     val z = Map(sym -> tpe): Map[Symbol.PredSym, Type]
     val m = program.allPredicateSymbols.foldLeft(z) {
       case (macc, predSym) =>
