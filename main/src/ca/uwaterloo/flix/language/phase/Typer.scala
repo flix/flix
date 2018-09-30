@@ -1151,14 +1151,15 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         case ResolvedAst.Expression.Constraint(cons, tvar, loc) =>
           val ResolvedAst.Constraint(cparams, head0, body0, loc) = cons
           //
-          //  A_0 : tpe_0    A_1 : tpe_1, ..., A_n : tpe_n
-          //  ---------------------------------------------------
-          //  A_0 :- A_1, ..., A_n : tpe_1 : ConstraintSet[tpe_0]
+          //  A_0 : tpe, A_1: tpe, ..., A_n : tpe
+          //  -----------------------------------
+          //  A_0 :- A_1, ..., A_n : tpe
           //
           for {
             headPredicateType <- Predicates.infer(head0, program)
             bodyPredicateTypes <- seqM(body0.map(b => Predicates.infer(b, program)))
-            resultType <- unifyM(tvar, Type.mkConstraintSetOldDeprecatedRemove(headPredicateType), loc)
+            unifiedBodyPredicateType <- unifyAllowEmptyM(bodyPredicateTypes, loc)
+            resultType <- unifyM(tvar, headPredicateType, unifiedBodyPredicateType, loc)
           } yield resultType
 
         //
@@ -1825,39 +1826,54 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     /**
       * Infers the type of the given body predicate.
       */
-    def infer(body0: ResolvedAst.Predicate.Body, program: ResolvedAst.Program)(implicit genSym: GenSym): InferMonad[List[Type]] = body0 match {
-      case ResolvedAst.Predicate.Body.RelAtom(baseOpt, sym, polarity, terms, loc) =>
-        getRelationSignature(sym, program) match {
-          case Ok(declaredTypes) => for {
-            _ <- baseOpt.map(baseSym => unifyM(baseSym.tvar, Type.Relation(sym, Kind.Star), loc)).getOrElse(liftM[Unit](()))
-            ts <- Terms.Body.typecheck(terms, declaredTypes, loc, program)
-          } yield ts
-          case Err(e) => failM(e)
-        }
+    def infer(body0: ResolvedAst.Predicate.Body, program: ResolvedAst.Program)(implicit genSym: GenSym): InferMonad[Type] = body0 match {
+      case ResolvedAst.Predicate.Body.RelAtom(baseOpt, sym, polarity, terms, loc) => baseOpt match {
+        case None =>
+
+          ???
+
+        case Some(varSym) =>
+
+
+          ???
+      }
+
+        ???
+      //        getRelationSignature(sym, program) match {
+      //          case Ok(declaredTypes) => for {
+      //            _ <- baseOpt.map(baseSym => unifyM(baseSym.tvar, Type.Relation(sym, Kind.Star), loc)).getOrElse(liftM[Unit](()))
+      //            ts <- Terms.Body.typecheck(terms, declaredTypes, loc, program)
+      //          } yield ts
+      //          case Err(e) => failM(e)
+      //        }
 
       case ResolvedAst.Predicate.Body.LatAtom(baseOpt, sym, polarity, terms, loc) =>
-        getLatticeSignature(sym, program) match {
-          case Ok(declaredTypes) =>
-            for {
-              _ <- baseOpt.map(baseSym => unifyM(baseSym.tvar, Type.Lattice(sym, Kind.Star), loc)).getOrElse(liftM[Unit](()))
-              ts <- Terms.Body.typecheck(terms, declaredTypes, loc, program)
-            } yield ts
-          case Err(e) => failM(e)
-        }
+        ???
+      //        getLatticeSignature(sym, program) match {
+      //          case Ok(declaredTypes) =>
+      //            for {
+      //              _ <- baseOpt.map(baseSym => unifyM(baseSym.tvar, Type.Lattice(sym, Kind.Star), loc)).getOrElse(liftM[Unit](()))
+      //              ts <- Terms.Body.typecheck(terms, declaredTypes, loc, program)
+      //            } yield ts
+      //          case Err(e) => failM(e)
+      //        }
 
       case ResolvedAst.Predicate.Body.Filter(sym, terms, loc) =>
-        val defn = program.defs(sym)
-        val expectedTypes = defn.fparams.map(_.tpe)
-        for (
-          actualTypes <- seqM(terms.map(t => Expressions.infer(t, program)));
-          unifiedTypes <- Unification.unifyM(expectedTypes, actualTypes, loc)
-        ) yield unifiedTypes
+        ???
+      //        val defn = program.defs(sym)
+      //        val expectedTypes = defn.fparams.map(_.tpe)
+      //        for (
+      //          actualTypes <- seqM(terms.map(t => Expressions.infer(t, program)));
+      //          unifiedTypes <- Unification.unifyM(expectedTypes, actualTypes, loc)
+      //        ) yield unifiedTypes
 
       case ResolvedAst.Predicate.Body.Functional(sym, term, loc) =>
-        for {
-          tpe <- Expressions.infer(term, program)
-          ___ <- unifyM(Type.mkArray(sym.tvar), tpe, loc)
-        } yield List(tpe)
+        ???
+
+      //        for {
+      //          tpe <- Expressions.infer(term, program)
+      //          ___ <- unifyM(Type.mkArray(sym.tvar), tpe, loc)
+      //        } yield List(tpe)
     }
 
     /**

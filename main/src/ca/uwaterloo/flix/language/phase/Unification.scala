@@ -428,6 +428,16 @@ object Unification {
   }
 
   /**
+    * Unifies all the types in the given (possibly empty) list `ts`.
+    */
+  def unifyAllowEmptyM(ts: List[Type], loc: SourceLocation)(implicit genSym: GenSym): InferMonad[Type] = {
+    if (ts.isEmpty)
+      liftM(Type.freshTypeVar())
+    else
+      unifyM(ts, loc)
+  }
+
+  /**
     * Pairwise unifies the two given lists of types `xs` and `ys`.
     */
   def unifyM(xs: List[Type], ys: List[Type], loc: SourceLocation)(implicit genSym: GenSym): InferMonad[List[Type]] = seqM((xs zip ys).map {
