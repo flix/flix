@@ -317,24 +317,34 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     * Performs name resolution on the given relation `r0` in the given namespace `ns0`.
     */
   def resolveRelation(r0: NamedAst.Relation, ns0: Name.NName, prog0: NamedAst.Root)(implicit genSym: GenSym): Validation[ResolvedAst.Relation, ResolutionError] = r0 match {
-    case NamedAst.Relation(doc, mod, sym, tparams0, attr, sc, loc) =>
+    case NamedAst.Relation(doc, mod, sym, tparams0, attr, loc) =>
       for {
         tparams <- resolveTypeParams(tparams0, ns0, prog0)
         attributes <- traverse(attr)(a => resolve(a, ns0, prog0))
-        scheme <- resolveScheme(sc, ns0, prog0)
-      } yield ResolvedAst.Relation(doc, mod, sym, tparams, attributes, scheme, loc)
+      } yield {
+        val quantifiers = tparams.map(_.tpe)
+        val tpe = Type.mkRelation(sym, attributes.map(_.tpe))
+        val scheme = Scheme(quantifiers, tpe)
+
+        ResolvedAst.Relation(doc, mod, sym, tparams, attributes, scheme, loc)
+      }
   }
 
   /**
     * Performs name resolution on the given table `t0` in the given namespace `ns0`.
     */
   def resolveLattice(l0: NamedAst.Lattice, ns0: Name.NName, prog0: NamedAst.Root)(implicit genSym: GenSym): Validation[ResolvedAst.Lattice, ResolutionError] = l0 match {
-    case NamedAst.Lattice(doc, mod, sym, tparams0, attr, sc, loc) =>
+    case NamedAst.Lattice(doc, mod, sym, tparams0, attr, loc) =>
       for {
         tparams <- resolveTypeParams(tparams0, ns0, prog0)
         attributes <- traverse(attr)(a => resolve(a, ns0, prog0))
-        scheme <- resolveScheme(sc, ns0, prog0)
-      } yield ResolvedAst.Lattice(doc, mod, sym, tparams, attributes, scheme, loc)
+      } yield {
+        val quantifiers = tparams.map(_.tpe)
+        val tpe = Type.mkLattice(sym, attributes.map(_.tpe))
+        val scheme = Scheme(quantifiers, tpe)
+
+        ResolvedAst.Lattice(doc, mod, sym, tparams, attributes, scheme, loc)
+      }
   }
 
   /**
@@ -1292,16 +1302,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
       lookupJvmClass(fqn.mkString("."), loc) map {
         case clazz => Type.Native(clazz)
       }
-
-    case NamedAst.Type.Relation(attrs, loc) =>
-      for {
-        as <- traverse(attrs)(tpe => lookupType(tpe, ns0, root))
-      } yield Type.mkRelation(as)
-
-    case NamedAst.Type.Lattice(attrs, loc) =>
-      for {
-        as <- traverse(attrs)(tpe => lookupType(tpe, ns0, root))
-      } yield Type.mkLattice(as)
 
     case NamedAst.Type.Arrow(tparams0, tresult0, loc) =>
       for (

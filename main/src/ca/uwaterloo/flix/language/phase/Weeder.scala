@@ -259,8 +259,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
        */
       mapN(modVal, checkDuplicateAttribute(attrs)) {
         case (mod, as) =>
-          val tpe = WeededAst.Type.Relation(as.map(_.tpe), mkSL(sp1, sp2))
-          List(WeededAst.Declaration.Relation(doc, mod, ident, tparams, as, tpe, mkSL(sp1, sp2)))
+          List(WeededAst.Declaration.Relation(doc, mod, ident, tparams, as, mkSL(sp1, sp2)))
       }
   }
 
@@ -285,8 +284,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       mapN(modVal, checkDuplicateAttribute(attr)) {
         case (mod, as) =>
           // Split the attributes into keys and element.
-          val tpe = WeededAst.Type.Lattice(as.map(_.tpe), mkSL(sp1, sp2))
-          List(WeededAst.Declaration.Lattice(doc, mod, ident, tparams, as, tpe, mkSL(sp1, sp2)))
+          List(WeededAst.Declaration.Lattice(doc, mod, ident, tparams, as, mkSL(sp1, sp2)))
       }
   }
 

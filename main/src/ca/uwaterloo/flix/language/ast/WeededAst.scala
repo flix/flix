@@ -52,9 +52,9 @@ object WeededAst {
 
     case class Disallow(doc: Ast.Doc, body: List[WeededAst.ComplexClass], loc: SourceLocation) extends WeededAst.Declaration
 
-    case class Relation(doc: Ast.Doc, mod: Ast.Modifiers, ident: Name.Ident, tparams: List[Name.Ident], attr: List[WeededAst.Attribute], tpe: WeededAst.Type, loc: SourceLocation) extends WeededAst.Declaration
+    case class Relation(doc: Ast.Doc, mod: Ast.Modifiers, ident: Name.Ident, tparams: List[Name.Ident], attr: List[WeededAst.Attribute], loc: SourceLocation) extends WeededAst.Declaration
 
-    case class Lattice(doc: Ast.Doc, mod: Ast.Modifiers, ident: Name.Ident, tparams: List[Name.Ident], attr: List[WeededAst.Attribute], tpe: WeededAst.Type, loc: SourceLocation) extends WeededAst.Declaration
+    case class Lattice(doc: Ast.Doc, mod: Ast.Modifiers, ident: Name.Ident, tparams: List[Name.Ident], attr: List[WeededAst.Attribute], loc: SourceLocation) extends WeededAst.Declaration
 
     case class LatticeComponents(tpe: WeededAst.Type, bot: WeededAst.Expression, top: WeededAst.Expression, equ: WeededAst.Expression, leq: WeededAst.Expression, lub: WeededAst.Expression, glb: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Declaration
 
@@ -279,10 +279,6 @@ object WeededAst {
     case class Nat(len: Int, loc: SourceLocation) extends WeededAst.Type
 
     case class Native(fqn: List[String], loc: SourceLocation) extends WeededAst.Type
-
-    case class Relation(attrs: List[WeededAst.Type], loc: SourceLocation) extends WeededAst.Type
-
-    case class Lattice(attrs: List[WeededAst.Type], loc: SourceLocation) extends WeededAst.Type
 
     case class Arrow(tparams: List[WeededAst.Type], retType: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
 

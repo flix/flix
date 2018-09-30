@@ -128,7 +128,7 @@ sealed trait Type {
     * Returns `true` if `this` type is a relation type.
     */
   def isRelation: Boolean = typeConstructor match {
-    case Type.Relation(sym, kind) => true
+    case Type.Relation(sym, _) => true
     case _ => false
   }
 
@@ -136,7 +136,7 @@ sealed trait Type {
     * Returns `true` if `this` type is a lattice type.
     */
   def isLattice: Boolean = typeConstructor match {
-    case Type.Lattice(sym, kind) => true
+    case Type.Lattice(sym, _) => true
     case _ => false
   }
 
@@ -453,20 +453,6 @@ object Type {
   }
 
   /**
-    * A type constructor that represents relations.
-    */
-  case object Relation extends Type {
-    def kind: Kind = ??? // TODO
-  }
-
-  /**
-    * A type constructor that represents lattices.
-    */
-  case object Lattice extends Type {
-    def kind: Kind = ??? // TODO
-  }
-
-  /**
     * A type expression that a type application tpe1[tpe2].
     */
   case class Apply(tpe1: Type, tpe2: Type) extends Type {
@@ -511,6 +497,20 @@ object Type {
       case (acc, x) => Apply(acc, x)
     }
     Apply(inner, b)
+  }
+
+  /**
+    * Returns the relation constructor of symbol `sym` applied to the given type arguments `ts`.
+    */
+  def mkRelation(sym: Symbol.RelSym, ts: List[Type]): Type = ts.foldLeft(Type.Relation(sym, Kind.Star): Type) {
+    case (acc, tpe) => Type.Apply(acc, tpe)
+  }
+
+  /**
+    * Returns the lattice constructor of symbol `sym` applied to the given type arguments `ts`.
+    */
+  def mkLattice(sym: Symbol.LatSym, ts: List[Type]): Type = ts.foldLeft(Type.Lattice(sym, Kind.Star): Type) {
+    case (acc, tpe) => Type.Apply(acc, tpe)
   }
 
   /**
@@ -568,20 +568,6 @@ object Type {
     * Returns the constraint set type parameters with the given type `tpe`.
     */
   def mkConstraintSet(tpe: Type): Type = Apply(ConstraintSet, tpe)
-
-  /**
-    * Returns the relation type with the given argument types `ts`.
-    */
-  def mkRelation(ts: List[Type]): Type = ts.foldLeft(Type.Relation: Type) {
-    case (acc, tpe) => Type.Apply(acc, tpe)
-  }
-
-  /**
-    * Returns the lattice type with the given argument types `ts`.
-    */
-  def mkLattice(ts: List[Type]): Type = ts.foldLeft(Type.Lattice: Type) {
-    case (acc, tpe) => Type.Apply(acc, tpe)
-  }
 
   /**
     * Replaces every free occurrence of a type variable in `typeVars`

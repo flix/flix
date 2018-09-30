@@ -58,9 +58,9 @@ object NamedAst {
 
   case class Disallow(doc: Ast.Doc, body: List[NamedAst.ComplexClass], loc: SourceLocation)
 
-  case class Relation(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.RelSym, tparams: List[NamedAst.TypeParam], attr: List[NamedAst.Attribute], sc: NamedAst.Scheme, loc: SourceLocation)
+  case class Relation(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.RelSym, tparams: List[NamedAst.TypeParam], attr: List[NamedAst.Attribute], loc: SourceLocation)
 
-  case class Lattice(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.LatSym, tparams: List[NamedAst.TypeParam], attr: List[NamedAst.Attribute], sc: NamedAst.Scheme, loc: SourceLocation)
+  case class Lattice(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.LatSym, tparams: List[NamedAst.TypeParam], attr: List[NamedAst.Attribute], loc: SourceLocation)
 
   case class LatticeComponents(tpe: NamedAst.Type, bot: NamedAst.Expression, top: NamedAst.Expression, equ: NamedAst.Expression, leq: NamedAst.Expression, lub: NamedAst.Expression, glb: NamedAst.Expression, ns: Name.NName, loc: SourceLocation)
 
@@ -288,9 +288,9 @@ object NamedAst {
 
     case class Native(fqn: List[String], loc: SourceLocation) extends NamedAst.Type
 
-    case class Relation(attrs: List[NamedAst.Type], loc: SourceLocation) extends NamedAst.Type
+    case class Relation(sym: Symbol.RelSym, loc: SourceLocation) extends NamedAst.Type
 
-    case class Lattice(attrs: List[NamedAst.Type], loc: SourceLocation) extends NamedAst.Type
+    case class Lattice(sym: Symbol.LatSym, loc: SourceLocation) extends NamedAst.Type
 
     case class Arrow(params: List[NamedAst.Type], ret: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
 
