@@ -124,6 +124,22 @@ object TypeError {
   }
 
   /**
+    * Unexpected non-row type.
+    *
+    * @param loc the location where the error occurred.
+    */
+  case class NonRow(tpe: Type, loc: SourceLocation) extends TypeError {
+    val source: Source = loc.source
+    val message: VirtualTerminal = {
+      val vt = new VirtualTerminal()
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Unexpected non-row type: '" << Red(tpe.show) << "'." << NewLine
+      vt << NewLine
+      vt << Code(loc, "unexpected non-row type.") << NewLine
+    }
+  }
+  
+  /**
     * Returns a string that represents the type difference between the two given types.
     */
   private def diff(tpe1: Type, tpe2: Type): TypeDiff = (tpe1, tpe2) match {

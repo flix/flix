@@ -145,6 +145,13 @@ object Unification {
       */
     case class UndefinedLabel(fieldName: String, fieldType: Type, recordType: Type) extends UnificationError
 
+    /**
+      * An unification error due to an unexpected non-row type.
+      *
+      * @param tpe the unexpected non-row type.
+      */
+    case class NonRowType(tpe: Type) extends UnificationError
+
   }
 
   /**
@@ -213,6 +220,7 @@ object Unification {
       case (Type.RecordEmpty, Type.RecordEmpty) => Result.Ok(Substitution.empty)
 
       case (Type.RecordExtend(label1, fieldType1, restRow1), row2) =>
+        // Attempt to write the row to match.
         rewriteRow(row2, label1, fieldType1, row2) flatMap {
           case (subst1, restRow2) =>
 
@@ -261,26 +269,38 @@ object Unification {
       case _ => throw InternalCompilerException(s"Mismatched type lists: `$ts1' and `$ts2'.")
     }
 
-    // TODO: DOC
+    /**
+      * Attempts to rewrite the given row type `row2` into a row that has the given label `label1` in front.
+      */
     def rewriteRow(row2: Type, label1: String, fieldType1: Type, originalType: Type): Result[(Substitution, Type), UnificationError] = row2 match {
-      case Type.RecordEmpty =>
-        Err(UnificationError.UndefinedLabel(label1, fieldType1, originalType))
       case Type.RecordExtend(label2, fieldType2, restRow2) =>
+        // Case 1: The row is of the form %{ label2: fieldType2 | restRow2 }
         if (label1 == label2) {
+          // Case 1.1: The labels match, their types must match.
           for {
             subst <- unify(fieldType1, fieldType2)
           } yield (subst, restRow2)
         } else {
+          // Case 1.2: The labels do not match, attempt to match with a label further down.
           rewriteRow(restRow2, label1, fieldType1, originalType) map {
             case (subst, rewrittenRow) => (subst, Type.RecordExtend(label2, fieldType2, rewrittenRow))
           }
         }
       case tvar: Type.Var =>
+        // Case 2: The row is a type variable.
+        // Introduce a fresh type variable to represent one more level of the row.
         val restRow2 = Type.freshTypeVar()
         val type2 = Type.RecordExtend(label1, fieldType1, restRow2)
         val subst = Unification.Substitution(Map(tvar -> type2))
         Ok((subst, restRow2))
-      case _ => throw InternalCompilerException(s"Unexpected non-row type: '$row2'.") // TODO: UnificationError?
+
+      case Type.RecordEmpty =>
+        // Case 3: The `label` does not exist in the record.
+        Err(UnificationError.UndefinedLabel(label1, fieldType1, originalType))
+
+      case _ =>
+        // Case 4: The type is not a row.
+        Err(UnificationError.NonRowType(row2))
     }
 
     unifyTypes(tpe1, tpe2)
@@ -355,6 +375,8 @@ object Unification {
           Err(TypeError.OccursCheckError(baseType1, baseType2, type1, type2, loc))
         case Result.Err(UnificationError.UndefinedLabel(label, field, tpe)) =>
           Err(TypeError.UndefinedLabel(label, field, tpe, loc))
+        case Result.Err(UnificationError.NonRowType(tpe)) =>
+          Err(TypeError.NonRow(tpe, loc))
       }
     }
     )
