@@ -41,6 +41,11 @@ import scala.collection.mutable
 class Shell(initialPaths: List[Path], options: Options) {
 
   /**
+    * The number of warmup iterations.
+    */
+  private val WarmupIterations = 80
+
+  /**
     * The default color context.
     */
   private implicit val _ = TerminalContext.AnsiTerminal
@@ -178,6 +183,7 @@ class Shell(initialPaths: List[Path], options: Options) {
     case Command.Benchmark => execBenchmark()
     case Command.Test => execTest()
     case Command.Verify => execVerify()
+    case Command.Warmup => execWarmup()
     case Command.Watch => execWatch()
     case Command.Unwatch => execUnwatch()
     case Command.Quit => execQuit()
@@ -528,6 +534,23 @@ class Shell(initialPaths: List[Path], options: Options) {
   }
 
   /**
+    * Warms up the compiler by running it multiple times.
+    */
+  private def execWarmup()(implicit terminal: Terminal): Unit = {
+    val elapsed = mutable.ListBuffer.empty[Duration]
+    for (i <- 0 until WarmupIterations) {
+      val t = System.nanoTime()
+      execReload()
+      terminal.writer().print(".")
+      terminal.writer().flush()
+      val e = System.nanoTime()
+      elapsed += new Duration(e - t)
+    }
+    terminal.writer().println()
+    terminal.writer().println(s"Minimum = ${Duration.min(elapsed).fmt}, Maximum = ${Duration.max(elapsed).fmt}, Average = ${Duration.avg(elapsed).fmt})")
+  }
+
+  /**
     * Watches source paths for changes.
     */
   private def execWatch()(implicit terminal: Terminal): Unit = {
@@ -588,6 +611,7 @@ class Shell(initialPaths: List[Path], options: Options) {
     w.println("  :benchmark                      Run all benchmarks in the program and show the results.")
     w.println("  :test                           Run all unit tests in the program and show the results.")
     w.println("  :verify                         Verify all properties in the program and show the results.")
+    w.println("  :warmup                         Warms up the compiler by running it multiple times.")
     w.println("  :watch :w                       Watches all source files for changes.")
     w.println("  :unwatch                        Unwatches all source files for changes.")
     w.println("  :quit :q                        Terminates the Flix shell.")

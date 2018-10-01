@@ -25,7 +25,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.runtime.solver.datastore.{IndexedLattice, IndexedRelation}
 import ca.uwaterloo.flix.runtime.Monitor
 import ca.uwaterloo.flix.runtime.solver.Solver
-import ca.uwaterloo.flix.util.DurationFormatter
+import ca.uwaterloo.flix.util.Duration
 import com.sun.net.httpserver.{HttpExchange, HttpHandler, HttpServer}
 import org.json4s.JsonAST._
 import org.json4s.native.JsonMethods
