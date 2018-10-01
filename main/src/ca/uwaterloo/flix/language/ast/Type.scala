@@ -619,8 +619,8 @@ object Type {
       case Type.Succ(n, t) => Type.Succ(n, t)
       case Type.Apply(tpe1, tpe2) => Type.Apply(visit(tpe1), visit(tpe2))
       case Type.Enum(sym, kind) => Type.Enum(sym, kind)
-      case Type.Relation(sym, attr, kind) => Type.Relation(sym, attr, kind)
-      case Type.Lattice(sym, attr, kind) => Type.Lattice(sym, attr, kind)
+      case Type.Relation(sym, attr, kind) => Type.Relation(sym, attr map visit, kind)
+      case Type.Lattice(sym, attr, kind) => Type.Lattice(sym, attr map visit, kind)
       case Type.ConstraintRow(m) =>
         val newM = m.foldLeft(Map.empty[Symbol.PredSym, Type]) {
           case (macc, (s, t)) => macc + (s -> visit(t))
