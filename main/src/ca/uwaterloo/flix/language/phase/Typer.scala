@@ -1076,6 +1076,65 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           ) yield tvar
 
         /*
+         * New Channel expression.
+         */
+        case ResolvedAst.Expression.NewChannel(tvar, loc) =>
+          unifyM(tvar, Type.mkChannel(Type.freshTypeVar()), loc)
+
+        /*
+         * Get Channel expression.
+         */
+        case ResolvedAst.Expression.GetChannel(exp, tvar, loc) =>
+          for {
+            actualExpType <- visitExp(exp)
+             _ <- unifyM(actualExpType, Type.mkChannel(tvar), loc)
+          } yield tvar
+
+        /*
+         * Put Channel expression.
+         */
+        case ResolvedAst.Expression.PutChannel(exp1, exp2, tvar, loc) =>
+          val elementType = Type.freshTypeVar()
+          for {
+            e1 <- visitExp(exp1)
+            e2 <- visitExp(exp2)
+            _ <- unifyM(e1, Type.mkChannel(elementType), loc)
+            _ <- unifyM(e2, elementType, loc)
+            resultType <- unifyM(tvar, Type.mkChannel(elementType), loc)
+          } yield resultType
+
+        /*
+         * Close Channel Expression.
+         */
+        case ResolvedAst.Expression.CloseChannel(exp, tvar, loc) =>
+          for {
+            e <- visitExp(exp)
+            _ <- unifyM(e, Type.mkChannel(Type.freshTypeVar()), loc)
+            resultType <- unifyM(tvar, Type.Unit, loc)
+          } yield resultType
+
+        /*
+         * Select Channel Expression.
+         */
+        case ResolvedAst.Expression.SelectChannel(rules, tvar, loc) =>
+          assert(rules.nonEmpty)
+          val syms = rules.map(_.sym)
+          val chans = rules.map(_.chan)
+          val bodies = rules.map(_.exp)
+
+          ???
+
+        /*
+         * Spawn Expression.
+         */
+        case ResolvedAst.Expression.Spawn(exp, tvar, loc) =>
+          for {
+            e <- visitExp(exp)
+            _ <- unifyM(e, Type.freshTypeVar(), loc)
+            resultType <- unifyM(tvar, Type.Unit, loc)
+          } yield resultType
+
+        /*
          * New Relation expression.
          */
         case ResolvedAst.Expression.NewRelation(sym, tvar, loc) =>
@@ -1512,6 +1571,53 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         case ResolvedAst.Expression.NativeMethod(method, actuals, tpe, loc) =>
           val es = actuals.map(e => reassemble(e, program, subst0))
           TypedAst.Expression.NativeMethod(method, es, subst0(tpe), Eff.Bot, loc)
+
+        /*
+         * New Channel expression.
+         */
+        case ResolvedAst.Expression.NewChannel(tvar, loc) =>
+          TypedAst.Expression.NewChannel(subst0(tvar), Eff.Bot, loc)
+
+        /*
+         * Get Channel expression.
+         */
+        case ResolvedAst.Expression.GetChannel(exp, tvar, loc) =>
+          val e = visitExp(exp, subst0)
+          TypedAst.Expression.GetChannel(e, subst0(tvar), Eff.Bot, loc)
+
+        /*
+         * Put Channel expression.
+         */
+        case ResolvedAst.Expression.PutChannel(exp1, exp2, tvar, loc) =>
+          val e1 = visitExp(exp1, subst0)
+          val e2 = visitExp(exp2, subst0)
+          TypedAst.Expression.PutChannel(e1, e2, subst0(tvar), Eff.Bot, loc)
+
+        /*
+         * Close Channel Expression.
+         */
+        case ResolvedAst.Expression.CloseChannel(exp, tvar, loc) =>
+          val e = visitExp(exp, subst0)
+          TypedAst.Expression.CloseChannel(e, subst0(tvar), Eff.Bot, loc)
+
+        /*
+         * Select Channel expression.
+         */
+        case ResolvedAst.Expression.SelectChannel(rules, tvar, loc) =>
+          val rs = rules map {
+            case ResolvedAst.SelectChannelRule(sym, chan, exp) =>
+              val c = visitExp(chan, subst0)
+              val b = visitExp(exp, subst0)
+              TypedAst.SelectChannelRule(sym, c, b)
+          }
+          TypedAst.Expression.SelectChannel(rs, subst0(tvar), Eff.Bot, loc)
+
+        /*
+         * Spawn expression.
+         */
+        case ResolvedAst.Expression.Spawn(exp, tvar, loc) =>
+          val e = visitExp(exp, subst0)
+          TypedAst.Expression.Spawn(e, subst0(tvar), Eff.Bot, loc)
 
         /*
          * New Relation expression.

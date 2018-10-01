@@ -2,7 +2,7 @@ def runTests(): (Int, Int) = {
     (2, 2)
 }
 
-def newchTest(): Channel[Int] = newch#
+def newchTest(): Channel = newch#
 
 def getchTest(): Int = getch newchTest()
 
