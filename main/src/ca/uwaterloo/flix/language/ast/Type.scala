@@ -207,8 +207,8 @@ sealed trait Type {
     case Type.Ref => "Ref"
     case Type.Arrow(l) => s"Arrow($l)"
     case Type.Enum(sym, _) => sym.toString
-    case Type.Relation(sym, _, _) => sym.toString
-    case Type.Lattice(sym, _, _) => sym.toString
+    case Type.Relation(sym, attr, _) => sym.toString + "(" + attr.mkString(", ") + ")"
+    case Type.Lattice(sym, attr, _) => sym.toString + "(" + attr.mkString(", ") + ")"
     case Type.ConstraintRow(m) => m.mkString(", ")
     case Type.ConstraintSet => "ConstraintSet"
     case Type.Solvable => "Solvable"
@@ -512,6 +512,13 @@ object Type {
       case (acc, x) => Apply(acc, x)
     }
     Apply(inner, b)
+  }
+
+  /**
+    * Constructs the apply type base[t_1, ,..., t_n].
+    */
+  def mkApply(base: Type, ts: List[Type]): Type = ts.foldLeft(base) {
+    case (acc, t) => Apply(acc, t)
   }
 
   /**
