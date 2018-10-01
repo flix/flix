@@ -182,7 +182,7 @@ object NamedAst {
 
     case class Spawn(exp: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
-    case class Select(rules: List[NamedAst.SelectRule],tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
+    case class SelectChannel(rules: List[NamedAst.SelectChannelRule],tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
     case class NewRelationOrLattice(name: Name.QName, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
@@ -324,7 +324,7 @@ object NamedAst {
 
   case class MatchRule(pat: NamedAst.Pattern, guard: NamedAst.Expression, exp: NamedAst.Expression)
 
-  case class SelectRule(pat: NamedAst.Pattern, chan: NamedAst.Expression, exp: NamedAst.Expression)
+  case class SelectChannelRule(sym: Symbol.VarSym, chan: NamedAst.Expression, exp: NamedAst.Expression)
 
   case class TypeParam(name: Name.Ident, tpe: ast.Type.Var, loc: SourceLocation)
 

@@ -816,19 +816,18 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case e => NamedAst.Expression.Spawn(e, Type.freshTypeVar(), loc)
       }
 
-    case WeededAst.Expression.Select(rules, loc) =>
+    case WeededAst.Expression.SelectChannel(rules, loc) =>
       val rulesVal = traverse(rules) {
-        case WeededAst.SelectRule(pat, chan, body) =>
-          // extend the environment with every variable occurring in the pattern
-          // and perform naming on the rule guard and body under the extended environment.
-          val (p, env1) = visitPattern(pat)
-          val extendedEnv = env0 ++ env1
-          mapN(visitExp(chan, env0, tenv0), visitExp(body, extendedEnv, tenv0)) {
-            case (c, b) => NamedAst.SelectRule(p, c, b)
+        case WeededAst.SelectChannelRule(ident, chan, body) =>
+          // make a fresh variable symbol for the local recursive variable.
+          val sym = Symbol.freshVarSym(ident)
+          val env1 = env0 + (ident.name -> sym)
+          mapN(visitExp(chan, env0, tenv0), visitExp(body, env1, tenv0)) {
+            case (c, b) => NamedAst.SelectChannelRule(sym, c, b)
           }
       }
       rulesVal map {
-        case rs => NamedAst.Expression.Select(rs, Type.freshTypeVar(), loc)
+        case rs => NamedAst.Expression.SelectChannel(rs, Type.freshTypeVar(), loc)
       }
 
     case WeededAst.Expression.NewRelationOrLattice(name, loc) =>
@@ -1096,8 +1095,8 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Expression.PutChannel(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
     case WeededAst.Expression.CloseChannel(exp, loc) => freeVars(exp)
     case WeededAst.Expression.Spawn(exp, loc) => freeVars(exp)
-    case WeededAst.Expression.Select(rules, loc) => rules.flatMap{
-      case WeededAst.SelectRule(pat, chan, exp) => freeVars(chan) ++ filterBoundVars(freeVars(exp), freeVars(pat))
+    case WeededAst.Expression.SelectChannel(rules, loc) => rules.flatMap{
+      case WeededAst.SelectChannelRule(ident, chan, exp) => freeVars(chan) ++ filterBoundVars(freeVars(exp), List(ident))
     }
     case WeededAst.Expression.NativeConstructor(className, args, loc) => args.flatMap(freeVars)
     case WeededAst.Expression.NewRelationOrLattice(name, loc) => Nil

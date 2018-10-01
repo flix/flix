@@ -909,6 +909,15 @@ object ParsedAst {
     case class CloseChannel(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
+      * SelectChannel Expression.
+      *
+      * @param sp1   the position of the first character in the expression.
+      * @param rules the rules of the select expression.
+      * @param sp2   the position of the last character in the expression.
+      */
+    case class SelectChannel(sp1: SourcePosition, rules: Seq[SelectChannelRule], sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
       * Spawn Expression.
       *
       * @param sp1 the position of the first character in the expression.
@@ -916,15 +925,6 @@ object ParsedAst {
       * @param sp2 the position of the last character in the expression.
       */
     case class Spawn(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
-
-    /**
-      * Select Expression.
-      *
-      * @param sp1   the position of the first character in the expression.
-      * @param rules the rules of the select expression.
-      * @param sp2   the position of the last character in the expression.
-      */
-    case class Select(sp1: SourcePosition, rules: Seq[SelectRule], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Statement Expression.
@@ -1412,13 +1412,13 @@ object ParsedAst {
   case class MatchRule(pat: ParsedAst.Pattern, guard: Option[ParsedAst.Expression], exp: ParsedAst.Expression) extends ParsedAst
 
   /**
-    * A select rule consists of a pattern, a channel expression, and a body expression.
+    * A select channel rule consists of a pattern, a channel expression, and a body expression.
     *
-    * @param pat  the pattern of the rule.
-    * @param chan the channel expression of the rule.
-    * @param exp  the body expression of the rule.
+    * @param ident  the bound identifier.
+    * @param chan   the channel expression of the rule.
+    * @param exp    the body expression of the rule.
     */
-  case class SelectRule(pat: ParsedAst.Pattern, chan: ParsedAst.Expression, exp: ParsedAst.Expression) extends ParsedAst
+  case class SelectChannelRule(ident: Name.Ident, chan: ParsedAst.Expression, exp: ParsedAst.Expression) extends ParsedAst
 
   /**
     * Modifier.

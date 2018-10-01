@@ -187,7 +187,7 @@ object ResolvedAst {
 
     case class Spawn(exp: ResolvedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class Select(rules: List[ResolvedAst.SelectRule], tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class SelectChannel(rules: List[ResolvedAst.SelectChannelRule], tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class NewRelation(sym: Symbol.RelSym, tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
@@ -310,7 +310,7 @@ object ResolvedAst {
 
   case class MatchRule(pat: ResolvedAst.Pattern, guard: ResolvedAst.Expression, exp: ResolvedAst.Expression)
 
-  case class SelectRule(pat: ResolvedAst.Pattern, chan: ResolvedAst.Expression, exp: ResolvedAst.Expression)
+  case class SelectChannelRule(sym: Symbol.VarSym, chan: ResolvedAst.Expression, exp: ResolvedAst.Expression)
 
   case class TypeParam(name: Name.Ident, tpe: Type.Var, loc: SourceLocation)
 

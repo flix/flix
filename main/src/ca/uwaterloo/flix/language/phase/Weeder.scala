@@ -922,15 +922,15 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         case e => WeededAst.Expression.Spawn(e, mkSL(sp1, sp2))
       }
 
-    case ParsedAst.Expression.Select(sp1, rules, sp2) =>
+    case ParsedAst.Expression.SelectChannel(sp1, rules, sp2) =>
       val rulesVal = traverse(rules) {
-        case ParsedAst.SelectRule(pat, chan, body) => mapN(visitPattern(pat), visitExp(chan), visitExp(body)) {
-          case (p, c, b) => WeededAst.SelectRule(p, c, b)
+        case ParsedAst.SelectChannelRule(ident, chan, body) => mapN(visitExp(chan), visitExp(body)) {
+          case (c, b) => WeededAst.SelectChannelRule(ident, c, b)
         }
       }
       
       rulesVal map {
-        case rs => WeededAst.Expression.Select(rs, mkSL(sp1, sp2))
+        case rs => WeededAst.Expression.SelectChannel(rs, mkSL(sp1, sp2))
       }
 
     case ParsedAst.Expression.Statement(sp1, exp1, exp2, sp2) =>
@@ -1728,7 +1728,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.PutChannel(sp1, _, _, _) => sp1
     case ParsedAst.Expression.CloseChannel(sp1, _, _) => sp1
     case ParsedAst.Expression.Spawn(sp1, _, _) => sp1
-    case ParsedAst.Expression.Select(sp1, _, _) => sp1
+    case ParsedAst.Expression.SelectChannel(sp1, _, _) => sp1
     case ParsedAst.Expression.Statement(sp1, _, _, _) => sp1
     case ParsedAst.Expression.NewRelationOrLattice(sp1, _, _) => sp1
     case ParsedAst.Expression.ConstraintSeq(sp1, _, _) => sp1
