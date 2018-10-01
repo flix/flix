@@ -939,13 +939,23 @@ object ParsedAst {
     case class NewRelationOrLattice(sp1: SourcePosition, name: Name.QName, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
-      * Constraint sequence expression.
+      * Constraint Sequence expression.
       *
       * @param sp1 the position of the first character in the expression.
       * @param cs  the sequence of constraints.
       * @param sp2 the position of the last character in the expression.
       */
     case class ConstraintSeq(sp1: SourcePosition, cs: Seq[Declaration.Constraint], sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
+      * Constraint Union expression.
+      *
+      * @param sp1  the position of the first character in the expression.
+      * @param exp1 the first constraint expression.
+      * @param exp2 the second constraint expression.
+      * @param sp2  the position of the last character in the expression.
+      */
+    case class ConstraintUnion(sp1: SourcePosition, exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Fixpoint Solve expression.
@@ -1224,6 +1234,15 @@ object ParsedAst {
       * @param sp2    the position of the last character in the type.
       */
     case class Record(sp1: SourcePosition, fields: Seq[ParsedAst.RecordFieldType], base: Option[Name.Ident], sp2: SourcePosition) extends ParsedAst.Type
+
+    /**
+      * Schema Type.
+      *
+      * @param sp1        the position of the first character in the type.
+      * @param predicates the predicates in the schema.
+      * @param sp2        the position of the last character in the type.
+      */
+    case class Schema(sp1: SourcePosition, predicates: Seq[(Name.QName, Seq[ParsedAst.Type])], sp2: SourcePosition) extends ParsedAst.Type
 
     /**
       * Nat Type.

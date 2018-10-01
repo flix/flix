@@ -65,16 +65,16 @@ object Synthesize extends Phase[Root, Root] {
     def visitHead(h0: Predicate.Head): Predicate.Head = h0 match {
       case Predicate.Head.True(loc) => h0
       case Predicate.Head.False(loc) => h0
-      case Predicate.Head.RelAtom(base, sym, terms, loc) => Predicate.Head.RelAtom(base, sym, terms map visitExp, loc)
-      case Predicate.Head.LatAtom(base, sym, terms, loc) => Predicate.Head.LatAtom(base, sym, terms map visitExp, loc)
+      case Predicate.Head.RelAtom(base, sym, terms, tpe, loc) => Predicate.Head.RelAtom(base, sym, terms map visitExp, tpe, loc)
+      case Predicate.Head.LatAtom(base, sym, terms, tpe, loc) => Predicate.Head.LatAtom(base, sym, terms map visitExp, tpe, loc)
     }
 
     /**
       * Performs synthesis on the given body predicate `h0`.
       */
     def visitBody(b0: Predicate.Body): Predicate.Body = b0 match {
-      case Predicate.Body.RelAtom(base, sym, polarity, pats, loc) => b0
-      case Predicate.Body.LatAtom(base, sym, polarity, pats, loc) => b0
+      case Predicate.Body.RelAtom(base, sym, polarity, pats, tpe, loc) => b0
+      case Predicate.Body.LatAtom(base, sym, polarity, pats, tpe, loc) => b0
       case Predicate.Body.Filter(sym, terms, loc) => Predicate.Body.Filter(sym, terms map visitExp, loc)
       case Predicate.Body.Functional(sym, term, loc) => Predicate.Body.Functional(sym, visitExp(term), loc)
     }
@@ -1020,14 +1020,6 @@ object Synthesize extends Phase[Root, Root] {
           }
 
           //
-          // ConstraintSet case.
-          //
-          if (tpe.isConstraintSet) {
-            val method = classOf[java.lang.Object].getMethod("toString")
-            return Expression.NativeMethod(method, List(exp0), Type.Str, ast.Eff.Pure, sl)
-          }
-
-          //
           // Tuple case.
           //
           if (tpe.isTuple) {
@@ -1083,8 +1075,16 @@ object Synthesize extends Phase[Root, Root] {
           // Records
           //
           if (tpe.isRecord) {
-            // TODO: Implement toString
+            // TODO: Implement toString for records.
             return Expression.Str("<<record>>", sl)
+          }
+
+          //
+          // Schema
+          //
+          if (tpe.isSchema) {
+            // TODO: Implement toString for schema.
+            return Expression.Str("<<schema>>", sl)
           }
 
           throw InternalCompilerException(s"Unknown type '$tpe'.")

@@ -585,8 +585,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       LetRec | LetMatch | IfThenElse | Match | LambdaMatch | Switch | TryCatch | Native | Lambda | Tuple |
         RecordRestrict | RecordExtend | RecordUpdate | RecordLiteral | RecordSelectLambda |
         ArrayLit | ArrayNew | ArrayLength | VectorLit | VectorNew | VectorLength | FNil | FSet | FMap |
-        NewRelationOrLattice | FixpointSolve | FixpointCheck | FixpointDelta | ConstraintSeq | Literal |
-        HandleWith | Existential | Universal | UnaryLambda | QName | Wild | Tag | SName | Hole | UserError
+        NewRelationOrLattice | FixpointSolve | FixpointCheck | FixpointDelta | ConstraintSeq | ConstraintUnion | Literal |
+      HandleWith | Existential | Universal | UnaryLambda | QName | Wild | Tag | SName | Hole | UserError
     }
 
     def Literal: Rule1[ParsedAst.Expression.Lit] = rule {
@@ -820,6 +820,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       SP ~ oneOrMore(Declarations.Constraint) ~ SP ~> ParsedAst.Expression.ConstraintSeq
     }
 
+    def ConstraintUnion: Rule1[ParsedAst.Expression] = rule {
+      SP ~ atomic("union") ~ WS ~ Expression ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.ConstraintUnion
+    }
+
     def NewRelationOrLattice: Rule1[ParsedAst.Expression] = rule {
       SP ~ atomic("new") ~ WS ~ Names.QualifiedTable ~ SP ~> ParsedAst.Expression.NewRelationOrLattice
     }
@@ -996,7 +1000,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Primary: Rule1[ParsedAst.Type] = rule {
-      Arrow | Nat | Tuple | Record | Native | Var | Ambiguous
+      Arrow | Nat | Tuple | Record | Schema | Native | Var | Ambiguous
     }
 
     def Arrow: Rule1[ParsedAst.Type] = rule {
@@ -1032,6 +1036,16 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
       rule {
         SP ~ atomic("%{") ~ optWS ~ zeroOrMore(RecordFieldType).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ optional(optWS ~ "|" ~ optWS ~ Names.Variable) ~ optWS ~ "}" ~ SP ~> ParsedAst.Type.Record
+      }
+    }
+
+    def Schema: Rule1[ParsedAst.Type] = {
+      def Predicate: Rule1[(Name.QName, Seq[ParsedAst.Type])] = rule {
+        Names.QualifiedTable ~ optWS ~ atomic("(") ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ atomic(")") ~> ((qn: Name.QName, ts: Seq[ParsedAst.Type]) => (qn, ts))
+      }
+
+      rule {
+        SP ~ atomic("Schema") ~ optWS ~ atomic("{") ~ optWS ~ zeroOrMore(Predicate).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Type.Schema
       }
     }
 

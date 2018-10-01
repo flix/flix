@@ -517,42 +517,46 @@ object SimplifiedAstOps {
 
       case Predicate.Head.False(loc) => // nop
 
-      case Predicate.Head.RelAtom(baseOpt, sym, terms, loc) =>
+      case Predicate.Head.RelAtom(baseOpt, sym, terms, tpe, loc) =>
         if (baseOpt.nonEmpty) {
           assert(env0 contains baseOpt.get, s"Undefined base variable symbol: '$baseOpt.get'.")
         }
         for (term <- terms) {
           checkHeadTerm(term, env0)
         }
+        checkType(tpe)
 
-      case Predicate.Head.LatAtom(baseOpt, sym, terms, loc) =>
+      case Predicate.Head.LatAtom(baseOpt, sym, terms, tpe, loc) =>
         if (baseOpt.nonEmpty) {
           assert(env0 contains baseOpt.get, s"Undefined base variable symbol: '$baseOpt.get'.")
         }
         for (term <- terms) {
           checkHeadTerm(term, env0)
         }
+        checkType(tpe)
     }
 
     /**
       * Checks invariants of the given body predicate `b0`.
       */
     def checkBodyPred(b0: Predicate.Body, env0: Set[Symbol.VarSym]): Unit = b0 match {
-      case Predicate.Body.RelAtom(baseOpt, sym, polarity, terms, loc) =>
+      case Predicate.Body.RelAtom(baseOpt, sym, polarity, terms, tpe, loc) =>
         if (baseOpt.nonEmpty) {
           assert(env0 contains baseOpt.get, s"Undefined base variable symbol: '$baseOpt.get'.")
         }
         for (term <- terms) {
           checkBodyTerm(term, env0)
         }
+        checkType(tpe)
 
-      case Predicate.Body.LatAtom(baseOpt, sym, polarity, terms, loc) =>
+      case Predicate.Body.LatAtom(baseOpt, sym, polarity, terms, tpe, loc) =>
         if (baseOpt.nonEmpty) {
           assert(env0 contains baseOpt.get, s"Undefined base variable symbol: '$baseOpt.get'.")
         }
         for (term <- terms) {
           checkBodyTerm(term, env0)
         }
+        checkType(tpe)
 
       case Predicate.Body.Filter(sym, terms, loc) =>
         for (term <- terms) {

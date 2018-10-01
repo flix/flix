@@ -655,11 +655,11 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
       case Type.Succ(n, t) => 2
       case Type.RecordEmpty => 0 // TODO: Correct?
       case Type.RecordExtend(base, label, value) => 0 // TODO: Correct?
+      case Type.Schema(m) => 0 // TODO: Correct
       case Type.Tuple(length) => length
       case Type.Enum(sym, kind) => 0
-      case Type.Relation(sym, kind) => 0
-      case Type.Lattice(sym, kind) => 0
-      case Type.ConstraintSet => 1
+      case Type.Relation(sym, attr, kind) => 0
+      case Type.Lattice(sym, attr, kind) => 0
       case Type.Solvable => 0
       case Type.Checkable => 0
       case Type.Apply(tpe1, tpe2) => countTypeArgs(tpe1)

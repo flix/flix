@@ -258,7 +258,8 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
        * Check for `DuplicateAttribute`.
        */
       mapN(modVal, checkDuplicateAttribute(attrs)) {
-        case (mod, as) => List(WeededAst.Declaration.Relation(doc, mod, ident, tparams, as, mkSL(sp1, sp2)))
+        case (mod, as) =>
+          List(WeededAst.Declaration.Relation(doc, mod, ident, tparams, as, mkSL(sp1, sp2)))
       }
   }
 
@@ -992,6 +993,11 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           }
       }
 
+    case ParsedAst.Expression.ConstraintUnion(sp1, exp1, exp2, sp2) =>
+      mapN(visitExp(exp1), visitExp(exp2)) {
+        case (e1, e2) => WeededAst.Expression.ConstraintUnion(e1, e2, mkSL(sp1, sp2))
+      }
+
     case ParsedAst.Expression.FixpointSolve(sp1, exp, sp2) =>
       visitExp(exp) map {
         case e => WeededAst.Expression.FixpointSolve(e, mkSL(sp1, sp2))
@@ -1227,7 +1233,12 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
     case ParsedAst.Predicate.Body.Filter(sp1, qname, terms, sp2) =>
       traverse(terms)(visitExp) map {
-        case ts => WeededAst.Predicate.Body.Filter(qname, ts, mkSL(sp1, sp2))
+        case ts =>
+          // Check if the term list is empty. If so, invoke the function with the unit value.
+          if (ts.isEmpty)
+            WeededAst.Predicate.Body.Filter(qname, List(WeededAst.Expression.Unit(mkSL(sp1, sp2))), mkSL(sp1, sp2))
+          else
+            WeededAst.Predicate.Body.Filter(qname, ts, mkSL(sp1, sp2))
       }
 
     case ParsedAst.Predicate.Body.Functional(sp1, ident, term, sp2) =>
@@ -1405,6 +1416,12 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       fields.foldRight(zero: WeededAst.Type) {
         case (ParsedAst.RecordFieldType(ssp1, l, t, ssp2), acc) => WeededAst.Type.RecordExtend(l, visitType(t), acc, mkSL(ssp1, ssp2))
       }
+
+    case ParsedAst.Type.Schema(sp1, predicates, sp2) =>
+      val ps = predicates map {
+        case (qname, attr) => qname -> (attr map visitType).toList
+      }
+      WeededAst.Type.Schema(ps.toList, mkSL(sp1, sp2))
 
     case ParsedAst.Type.Nat(sp1, len, sp2) => WeededAst.Type.Nat(checkNaturalNumber(len, sp1, sp2), mkSL(sp1, sp2))
 
@@ -1781,6 +1798,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.NativeConstructor(sp1, _, _, _) => sp1
     case ParsedAst.Expression.NewRelationOrLattice(sp1, _, _) => sp1
     case ParsedAst.Expression.ConstraintSeq(sp1, _, _) => sp1
+    case ParsedAst.Expression.ConstraintUnion(sp1, _, _, _) => sp1
     case ParsedAst.Expression.FixpointSolve(sp1, _, _) => sp1
     case ParsedAst.Expression.FixpointCheck(sp1, _, _) => sp1
     case ParsedAst.Expression.FixpointDelta(sp1, _, _) => sp1
@@ -1796,6 +1814,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Type.Ambiguous(sp1, _, _) => sp1
     case ParsedAst.Type.Tuple(sp1, _, _) => sp1
     case ParsedAst.Type.Record(sp1, _, _, _) => sp1
+    case ParsedAst.Type.Schema(sp1, _, _) => sp1
     case ParsedAst.Type.Nat(sp1, _, _) => sp1
     case ParsedAst.Type.Native(sp1, _, _) => sp1
     case ParsedAst.Type.Arrow(sp1, _, _, _) => sp1
