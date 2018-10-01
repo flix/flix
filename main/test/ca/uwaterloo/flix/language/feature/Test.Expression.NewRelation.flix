@@ -113,13 +113,13 @@ def testNewRelation14(): Bool =
     check j(a, b, 1, 2, 3)
 
 
-def f(a: A): ConstraintSet[Checkable] = { a.A(1). a.A(2). a.A(3). }
-def g(a: A, x: Int, y: Int, z: Int): ConstraintSet[Checkable] = { a.A(x). a.A(y). a.A(z). }
-def h(a: A, x: Int, y: Int, z: Int): ConstraintSet[Checkable] = {
+def f(a: A): Schema { A(Int), B(Int), R(Int) } = { a.A(1). a.A(2). a.A(3). }
+def g(a: A, x: Int, y: Int, z: Int): Schema { A(Int), B(Int), R(Int) } = { a.A(x). a.A(y). a.A(z). }
+def h(a: A, x: Int, y: Int, z: Int): Schema { A(Int), B(Int), R(Int) } = {
     a.A(y). a.A(z).
     a.A(x) :- a.A(x), a.A(y).
 }
-def j(a: A, b: B, x: Int, y: Int, z: Int): ConstraintSet[Checkable] = {
+def j(a: A, b: B, x: Int, y: Int, z: Int): Schema { A(Int), B(Int), R(Int) } = {
     a.A(x). a.A(y). a.A(z).
     b.B(add(u, v)) :- a.A(u), a.A(v).
 }
