@@ -1412,6 +1412,10 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         case (ParsedAst.RecordFieldType(ssp1, l, t, ssp2), acc) => WeededAst.Type.RecordExtend(l, visitType(t), acc, mkSL(ssp1, ssp2))
       }
 
+    case ParsedAst.Type.Schema(sp1, tpes, sp2) =>
+      val ts = tpes map visitType
+      WeededAst.Type.Schema(ts.toList, mkSL(sp1, sp2))
+
     case ParsedAst.Type.Nat(sp1, len, sp2) => WeededAst.Type.Nat(checkNaturalNumber(len, sp1, sp2), mkSL(sp1, sp2))
 
     case ParsedAst.Type.Native(sp1, fqn, sp2) => WeededAst.Type.Native(fqn.toList, mkSL(sp1, sp2))

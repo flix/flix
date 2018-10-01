@@ -249,8 +249,8 @@ object Unification {
       case (Type.Lattice(sym1, attr1, kind1), Type.Lattice(sym2, attr2, kind2)) if sym1 == sym2 => unifyAll(attr1, attr2)
 
       case (Type.ConstraintRow(m1), Type.ConstraintRow(m2)) =>
-        // NB: m1 and m2 are guaranteed to contain the same keys.
-        val keys = m1.keySet.toList
+        // NB: The schemas "ought to" contain the same keys.
+        val keys = (m1.keySet ++ m2.keySet).toList
 
         // Retrieve the types of each row (in the same order).
         val types1 = keys.map(m1)

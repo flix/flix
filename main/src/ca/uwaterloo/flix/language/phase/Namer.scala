@@ -997,6 +997,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         val t = visit(value, env0)
         val r = visit(rest, env0)
         NamedAst.Type.RecordExtend(label, t, r, loc)
+      case WeededAst.Type.Schema(tpes, loc) =>
+        val ts = tpes.map(visit(_, env0))
+        NamedAst.Type.Schema(ts, loc)
       case WeededAst.Type.Nat(len, loc) => NamedAst.Type.Nat(len, loc)
       case WeededAst.Type.Native(fqn, loc) => NamedAst.Type.Native(fqn, loc)
       case WeededAst.Type.Arrow(tparams, tresult, loc) => NamedAst.Type.Arrow(tparams.map(t => visit(t, env0)), visit(tresult, env0), loc)

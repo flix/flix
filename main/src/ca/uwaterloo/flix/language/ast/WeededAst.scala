@@ -276,6 +276,8 @@ object WeededAst {
 
     case class RecordExtend(label: Name.Ident, tpe: WeededAst.Type, rest: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
 
+    case class Schema(tpes: List[WeededAst.Type], loc: SourceLocation) extends WeededAst.Type
+
     case class Nat(len: Int, loc: SourceLocation) extends WeededAst.Type
 
     case class Native(fqn: List[String], loc: SourceLocation) extends WeededAst.Type

@@ -405,6 +405,7 @@ object Type {
     *
     * @param m the types of the predicate symbols in the system.
     */
+  // TODO: Rename to Schema
   case class ConstraintRow(m: Map[Symbol.PredSym, Type]) extends Type {
     def kind: Kind = Kind.Star
   }
