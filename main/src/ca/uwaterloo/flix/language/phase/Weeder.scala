@@ -1233,7 +1233,12 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
     case ParsedAst.Predicate.Body.Filter(sp1, qname, terms, sp2) =>
       traverse(terms)(visitExp) map {
-        case ts => WeededAst.Predicate.Body.Filter(qname, ts, mkSL(sp1, sp2))
+        case ts =>
+          // Check if the term list is empty. If so, invoke the function with the unit value.
+          if (ts.isEmpty)
+            WeededAst.Predicate.Body.Filter(qname, List(WeededAst.Expression.Unit(mkSL(sp1, sp2))), mkSL(sp1, sp2))
+          else
+            WeededAst.Predicate.Body.Filter(qname, ts, mkSL(sp1, sp2))
       }
 
     case ParsedAst.Predicate.Body.Functional(sp1, ident, term, sp2) =>
