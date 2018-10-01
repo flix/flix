@@ -491,9 +491,13 @@ class Shell(initialPaths: List[Path], options: Options) {
         // Pretty print the holes (if any).
         prettyPrintHoles()
       case Validation.Failure(errors) =>
+        terminal.writer().println()
         for (error <- errors) {
           terminal.writer().print(error.message.fmt)
         }
+        terminal.writer().println()
+        terminal.writer().print(prompt)
+        terminal.writer().flush()
     }
 
     flix.codeGen(root) match {

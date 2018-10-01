@@ -717,10 +717,10 @@ object Type {
             sym.toString + "(" + attr.map(visit(_, m)).mkString(", ") + ")"
 
           //
-          // ConstraintRow.
+          // Schema.
           //
           case Type.Schema(row) =>
-            "ConstraintRow {" + row.map {
+            "Schema {" + row.map {
               case (s, t) => s.toString + ": " + visit(t, m)
             }.mkString(", ") + "}"
 

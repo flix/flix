@@ -1167,7 +1167,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           } yield resultType
 
         //
-        //  exp1 : tpe    exp2 : tpe    tpe == ConstraintRow {}
+        //  exp1 : tpe    exp2 : tpe    tpe == Schema {}
         //  ---------------------------------------------------
         //  union exp1 exp2 : tpe
         //
@@ -1175,11 +1175,11 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           for {
             tpe1 <- visitExp(exp1)
             tpe2 <- visitExp(exp2)
-            resultType <- unifyM(tvar, tpe1, tpe2, mkAnyConstraintRow(program), loc)
+            resultType <- unifyM(tvar, tpe1, tpe2, mkAnySchema(program), loc)
           } yield resultType
 
         //
-        //  exp : ConstraintRow
+        //  exp : Schema
         //  -----------------------------
         //  solve exp : Str
         //
@@ -1187,12 +1187,12 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           // TODO: Checkable/Solvable
           for {
             inferredType <- visitExp(exp)
-            expectedType <- unifyM(inferredType, mkAnyConstraintRow(program), loc)
+            expectedType <- unifyM(inferredType, mkAnySchema(program), loc)
             resultType <- unifyM(tvar, Type.Str, loc)
           } yield resultType
 
         //
-        //  exp : ConstraintRow
+        //  exp : Schema
         //  ------------------------------
         //  check exp : Bool
         //
@@ -1200,12 +1200,12 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           // TODO: Checkable/Solvable
           for {
             inferredType <- visitExp(exp)
-            expectedType <- unifyM(inferredType, mkAnyConstraintRow(program), loc)
+            expectedType <- unifyM(inferredType, mkAnySchema(program), loc)
             resultType <- unifyM(tvar, Type.Bool, loc)
           } yield resultType
 
         //
-        //  exp : ConstraintRow
+        //  exp : Schema
         //  ------------------------------
         //  delta exp : Str
         //
@@ -1213,7 +1213,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           // TODO: Checkable/Solvable
           for {
             inferredType <- visitExp(exp)
-            expectedType <- unifyM(inferredType, mkAnyConstraintRow(program), loc)
+            expectedType <- unifyM(inferredType, mkAnySchema(program), loc)
             resultType <- unifyM(tvar, Type.Str, loc)
           } yield resultType
 
@@ -1791,8 +1791,8 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         case None =>
           //
           // t_1 : tpe_1, ..., t_2: tpe_n,    rel P(tpe_1, ..., tpe_n)
-          // -------------------------------------------------------------
-          // P(t_1, ..., t_n): ConstraintRow[... P(tpe_1, ..., tpe_n) ...]
+          // ---------------------------------------------------------:
+          // P(t_1, ..., t_n): Schema[... P(tpe_1, ..., tpe_n) ...]
           //
 
           // Lookup the type scheme.
@@ -1805,7 +1805,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           for {
             termTypes <- Terms.Head.infer(terms, program)
             predicateType <- unifyM(tvar, Type.mkRelation(sym, termTypes), declaredType, loc)
-          } yield mkConstraintRow(sym, predicateType, program)
+          } yield mkSchema(sym, predicateType, program)
 
         case Some(varSym) =>
           //
@@ -1831,7 +1831,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           for {
             termTypes <- Terms.Head.infer(terms, program)
             predicateType <- unifyM(tvar, Type.mkLattice(sym, termTypes), declaredType, loc)
-          } yield mkConstraintRow(sym, predicateType, program)
+          } yield mkSchema(sym, predicateType, program)
 
         case Some(varSym) =>
           for {
@@ -1857,7 +1857,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           for {
             termTypes <- Terms.Body.infer(terms, program)
             predicateType <- unifyM(tvar, Type.mkRelation(sym, termTypes), declaredType, loc)
-          } yield mkConstraintRow(sym, predicateType, program)
+          } yield mkSchema(sym, predicateType, program)
 
         case Some(varSym) =>
           for {
@@ -1878,7 +1878,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           for {
             termTypes <- Terms.Body.infer(terms, program)
             predicateType <- unifyM(tvar, Type.mkLattice(sym, termTypes), declaredType, loc)
-          } yield mkConstraintRow(sym, predicateType, program)
+          } yield mkSchema(sym, predicateType, program)
 
         case Some(varSym) =>
           for {
@@ -1893,13 +1893,13 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         for {
           argumentTypes <- seqM(terms.map(t => Expressions.infer(t, program)))
           unifiedTypes <- Unification.unifyM(declaredType, Type.mkArrow(argumentTypes, Type.Bool), loc)
-        } yield mkAnyConstraintRow(program)
+        } yield mkAnySchema(program)
 
       case ResolvedAst.Predicate.Body.Functional(sym, term, loc) =>
         for {
           tpe <- Expressions.infer(term, program)
           ___ <- unifyM(Type.mkArray(sym.tvar), tpe, loc)
-        } yield mkAnyConstraintRow(program)
+        } yield mkAnySchema(program)
     }
 
     /**
@@ -2027,9 +2027,9 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
   }
 
   /**
-    * Returns a constraint row where all predicates are free type variables.
+    * Returns a schema where all predicates are free type variables.
     */
-  private def mkAnyConstraintRow(program: ResolvedAst.Program)(implicit genSym: GenSym): Type = {
+  private def mkAnySchema(program: ResolvedAst.Program)(implicit genSym: GenSym): Type = {
     val m = program.allPredicateSymbols.foldLeft(Map.empty: Map[Symbol.PredSym, Type]) {
       case (macc, predSym) => macc + (predSym -> Type.freshTypeVar())
     }
@@ -2037,9 +2037,9 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
   }
 
   /**
-    * Returns a constraint row type where the type of `sym` is `tpe` and other predicates are free type variables.
+    * Returns a schema where the type of `sym` is `tpe` and other predicates are free type variables.
     */
-  private def mkConstraintRow(sym: Symbol.PredSym, tpe: Type, program: ResolvedAst.Program)(implicit genSym: GenSym): Type = {
+  private def mkSchema(sym: Symbol.PredSym, tpe: Type, program: ResolvedAst.Program)(implicit genSym: GenSym): Type = {
     val z = Map(sym -> tpe): Map[Symbol.PredSym, Type]
     val m = program.allPredicateSymbols.foldLeft(z) {
       case (macc, predSym) =>

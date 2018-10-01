@@ -197,7 +197,7 @@ object TypedAstOps {
 
       case Expression.NewLattice(sym, tpe, eff, loc) => Map.empty
 
-      case Expression.Constraint(c, tpe, eff, loc) => ??? // TODO
+      case Expression.Constraint(c, tpe, eff, loc) => Map.empty // TODO: Find holes in constraints?
 
       case Expression.ConstraintUnion(exp1, exp2, tpe, eff, loc) =>
         visitExp(exp1, env0) ++ visitExp(exp2, env0)
