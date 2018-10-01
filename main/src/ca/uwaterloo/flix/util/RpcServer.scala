@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.util
 
 import java.net.InetSocketAddress
-import java.time.Duration
+import java.time.{Duration => JDuration}
 import java.util.concurrent.{Executors, TimeUnit}
 
 import ca.uwaterloo.flix.api.Flix
@@ -42,7 +42,7 @@ class RpcServer(port: Int) {
     /**
       * The default solver timeout.
       */
-    val SolverTimeout: Duration = Duration.ofSeconds(10)
+    val SolverTimeout: JDuration = JDuration.ofSeconds(10)
 
     /**
       * Evaluates the given `input` program and returns a JSON object with the result.

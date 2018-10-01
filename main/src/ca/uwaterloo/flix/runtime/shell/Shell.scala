@@ -761,7 +761,7 @@ class Shell(initialPaths: List[Path], options: Options) {
     // Register each directory.
     for (path <- paths) {
       if (Files.isDirectory(path)) {
-        path.register(watchService, StandardWatchEventKinds.ENTRY_CREATE, StandardWatchEventKinds.ENTRY_MODIFY)
+        path.register(watchService, StandardWatchEventKinds.ENTRY_MODIFY)
       }
     }
 
@@ -774,25 +774,33 @@ class Shell(initialPaths: List[Path], options: Options) {
         // Wait for a set of events.
         val watchKey = watchService.take()
         // Iterate through each event.
+        val changed = mutable.ListBuffer.empty[Path]
         for (event <- watchKey.pollEvents().asScala) {
           // Check if a file with ".flix" extension changed.
           val changedPath = event.context().asInstanceOf[Path]
           if (changedPath.toString.endsWith(".flix")) {
-            terminal.writer().println()
-            terminal.writer().println(s"File: '$changedPath' changed.")
-            terminal.flush()
+            changed += changedPath
           }
         }
 
-        // Check if sufficient time has passed since the last compilation.
-        val currentTime = System.nanoTime()
-        if ((currentTime - lastChanged) >= Delay) {
-          lastChanged = currentTime
-          // Allow a short delay before running the compiler.
-          Thread.sleep(50)
-          executorService.submit(new Runnable {
-            def run(): Unit = execReload()
-          })
+        if (changed.nonEmpty) {
+          // Print information to the user.
+          terminal.writer().println()
+          terminal.writer().println(s"Recompiling. File(s) changed: ${changed.mkString(", ")}")
+          terminal.writer().print(prompt)
+          terminal.writer().flush()
+
+          // Check if sufficient time has passed since the last compilation.
+          val currentTime = System.nanoTime()
+          if ((currentTime - lastChanged) >= Delay) {
+            lastChanged = currentTime
+            // Allow a short delay before running the compiler.
+            Thread.sleep(50)
+            executorService.submit(new Runnable {
+              def run(): Unit = execReload()
+            })
+          }
+
         }
 
         // Reset the watch key.
