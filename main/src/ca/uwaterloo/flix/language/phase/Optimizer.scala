@@ -255,24 +255,24 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       //
       // RecordSelect Expressions.
       //
-      case Expression.RecordSelect(base, label, tpe, loc) =>
-        val b = visitExp(base, env0)
-        Expression.RecordSelect(b, label, tpe, loc)
+      case Expression.RecordSelect(exp, label, tpe, loc) =>
+        val e = visitExp(exp, env0)
+        Expression.RecordSelect(e, label, tpe, loc)
 
       //
       // RecordExtend Expressions.
       //
-      case Expression.RecordExtend(base, label, value, tpe, loc) =>
-        val b = visitExp(base, env0)
+      case Expression.RecordExtend(label, value, rest, tpe, loc) =>
         val v = visitExp(value, env0)
-        Expression.RecordExtend(b, label, v, tpe, loc)
+        val r = visitExp(rest, env0)
+        Expression.RecordExtend(label, v, r, tpe, loc)
 
       //
       // RecordRestrict Expressions.
       //
-      case Expression.RecordRestrict(base, label, tpe, loc) =>
-        val b = visitExp(base, env0)
-        Expression.RecordRestrict(b, label, tpe, loc)
+      case Expression.RecordRestrict(label, rest, tpe, loc) =>
+        val r = visitExp(rest, env0)
+        Expression.RecordRestrict(label, r, tpe, loc)
 
       //
       // ArrayLit Expressions.
@@ -470,16 +470,16 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     def visitHeadPred(p0: Predicate.Head): Predicate.Head = p0 match {
       case Predicate.Head.True(loc) => p0
       case Predicate.Head.False(loc) => p0
-      case Predicate.Head.RelAtom(baseOpt, sym, terms, loc) => Predicate.Head.RelAtom(baseOpt, sym, terms map visitHeadTerm, loc)
-      case Predicate.Head.LatAtom(baseOpt, sym, terms, loc) => Predicate.Head.LatAtom(baseOpt, sym, terms map visitHeadTerm, loc)
+      case Predicate.Head.RelAtom(baseOpt, sym, terms, tpe, loc) => Predicate.Head.RelAtom(baseOpt, sym, terms map visitHeadTerm, tpe, loc)
+      case Predicate.Head.LatAtom(baseOpt, sym, terms, tpe, loc) => Predicate.Head.LatAtom(baseOpt, sym, terms map visitHeadTerm, tpe, loc)
     }
 
     /**
       * Performs intra-procedural optimization on the terms of the given body predicate `p0`.
       */
     def visitBodyPred(p0: Predicate.Body): Predicate.Body = p0 match {
-      case Predicate.Body.RelAtom(baseOpt, sym, polarity, terms, loc) => Predicate.Body.RelAtom(baseOpt, sym, polarity, terms map visitBodyTerm, loc)
-      case Predicate.Body.LatAtom(baseOpt, sym, polarity, terms, loc) => Predicate.Body.LatAtom(baseOpt, sym, polarity, terms map visitBodyTerm, loc)
+      case Predicate.Body.RelAtom(baseOpt, sym, polarity, terms, tpe, loc) => Predicate.Body.RelAtom(baseOpt, sym, polarity, terms map visitBodyTerm, tpe, loc)
+      case Predicate.Body.LatAtom(baseOpt, sym, polarity, terms, tpe, loc) => Predicate.Body.LatAtom(baseOpt, sym, polarity, terms map visitBodyTerm, tpe, loc)
       case Predicate.Body.Filter(sym, terms, loc) => Predicate.Body.Filter(sym, terms map visitBodyTerm, loc)
       case Predicate.Body.Functional(sym, term, loc) => Predicate.Body.Functional(sym, visitHeadTerm(term), loc)
     }

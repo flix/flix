@@ -139,13 +139,13 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.RecordSelect(base, label, tpe, loc) =>
         visitExp(base, i0)
 
-      case Expression.RecordExtend(base, label, value, tpe, loc) =>
-        val i1 = visitExp(base, i0)
-        val i2 = visitExp(value, i1)
+      case Expression.RecordExtend(label, value, rest, tpe, loc) =>
+        val i1 = visitExp(value, i0)
+        val i2 = visitExp(rest, i1)
         i2
 
-      case Expression.RecordRestrict(base, label, tpe, loc) =>
-        visitExp(base, i0)
+      case Expression.RecordRestrict(label, rest, tpe, loc) =>
+        visitExp(rest, i0)
 
       case Expression.ArrayLit(elms, tpe, loc) => visitExps(elms, i0)
 

@@ -165,11 +165,11 @@ object TypedAst {
 
     case class RecordEmpty(tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
 
-    case class RecordSelect(base: TypedAst.Expression, label: String, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    case class RecordSelect(exp: TypedAst.Expression, label: String, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
 
-    case class RecordExtend(base: TypedAst.Expression, label: String, value: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    case class RecordExtend(label: String, value: TypedAst.Expression, rest: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
 
-    case class RecordRestrict(base: TypedAst.Expression, label: String, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    case class RecordRestrict(label: String, rest: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
 
     case class ArrayLit(elms: List[TypedAst.Expression], tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
 
@@ -321,9 +321,9 @@ object TypedAst {
 
       case class False(loc: SourceLocation) extends TypedAst.Predicate.Head
 
-      case class RelAtom(base: Option[Symbol.VarSym], sym: Symbol.RelSym, terms: List[TypedAst.Expression], loc: SourceLocation) extends TypedAst.Predicate.Head
+      case class RelAtom(base: Option[Symbol.VarSym], sym: Symbol.RelSym, terms: List[TypedAst.Expression], tpe: Type, loc: SourceLocation) extends TypedAst.Predicate.Head
 
-      case class LatAtom(base: Option[Symbol.VarSym], sym: Symbol.LatSym, terms: List[TypedAst.Expression], loc: SourceLocation) extends TypedAst.Predicate.Head
+      case class LatAtom(base: Option[Symbol.VarSym], sym: Symbol.LatSym, terms: List[TypedAst.Expression], tpe: Type, loc: SourceLocation) extends TypedAst.Predicate.Head
 
     }
 
@@ -331,9 +331,9 @@ object TypedAst {
 
     object Body {
 
-      case class RelAtom(base: Option[Symbol.VarSym], sym: Symbol.RelSym, polarity: Ast.Polarity, terms: List[TypedAst.Pattern], loc: SourceLocation) extends TypedAst.Predicate.Body
+      case class RelAtom(base: Option[Symbol.VarSym], sym: Symbol.RelSym, polarity: Ast.Polarity, terms: List[TypedAst.Pattern], tpe: Type, loc: SourceLocation) extends TypedAst.Predicate.Body
 
-      case class LatAtom(base: Option[Symbol.VarSym], sym: Symbol.LatSym, polarity: Ast.Polarity, terms: List[TypedAst.Pattern], loc: SourceLocation) extends TypedAst.Predicate.Body
+      case class LatAtom(base: Option[Symbol.VarSym], sym: Symbol.LatSym, polarity: Ast.Polarity, terms: List[TypedAst.Pattern], tpe: Type, loc: SourceLocation) extends TypedAst.Predicate.Body
 
       case class Filter(sym: Symbol.DefnSym, terms: List[TypedAst.Expression], loc: SourceLocation) extends TypedAst.Predicate.Body
 

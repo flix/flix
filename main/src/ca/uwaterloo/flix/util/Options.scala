@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.util
 
-import java.time.Duration
+import java.time.{Duration => JDuration}
 
 object Options {
   /**
@@ -77,7 +77,7 @@ case class Options(core: Boolean,
                    quickchecker: Boolean,
                    target: JvmTarget,
                    test: Boolean,
-                   timeout: Option[Duration],
+                   timeout: Option[JDuration],
                    threads: Int,
                    verbosity: Verbosity,
                    verifier: Boolean,

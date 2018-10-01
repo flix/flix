@@ -251,18 +251,18 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
       case SimplifiedAst.Expression.RecordEmpty(tpe, loc) =>
         FinalAst.Expression.RecordEmpty(tpe, loc)
 
-      case SimplifiedAst.Expression.RecordSelect(base, label, tpe, loc) =>
-        val b = visit(base)
-        FinalAst.Expression.RecordSelect(b, label, tpe, loc)
+      case SimplifiedAst.Expression.RecordSelect(exp, label, tpe, loc) =>
+        val e = visit(exp)
+        FinalAst.Expression.RecordSelect(e, label, tpe, loc)
 
-      case SimplifiedAst.Expression.RecordExtend(base, label, value, tpe, loc) =>
-        val b = visit(base)
+      case SimplifiedAst.Expression.RecordExtend(label, value, rest, tpe, loc) =>
         val v = visit(value)
-        FinalAst.Expression.RecordExtend(b, label, v, tpe, loc)
+        val r = visit(rest)
+        FinalAst.Expression.RecordExtend(label, v, r, tpe, loc)
 
-      case SimplifiedAst.Expression.RecordRestrict(base, label, tpe, loc) =>
-        val b = visit(base)
-        FinalAst.Expression.RecordRestrict(b, label, tpe, loc)
+      case SimplifiedAst.Expression.RecordRestrict(label, rest, tpe, loc) =>
+        val r = visit(rest)
+        FinalAst.Expression.RecordRestrict(label, r, tpe, loc)
 
       case SimplifiedAst.Expression.ArrayLit(elms, tpe, loc) =>
         val es = elms map visit
@@ -396,24 +396,24 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
   private def visitHeadPredicate(p0: SimplifiedAst.Predicate.Head, m: TopLevel)(implicit flix: Flix): FinalAst.Predicate.Head = p0 match {
     case SimplifiedAst.Predicate.Head.True(loc) => FinalAst.Predicate.Head.True(loc)
     case SimplifiedAst.Predicate.Head.False(loc) => FinalAst.Predicate.Head.False(loc)
-    case SimplifiedAst.Predicate.Head.RelAtom(baseOpt, sym, terms, loc) =>
+    case SimplifiedAst.Predicate.Head.RelAtom(baseOpt, sym, terms, tpe, loc) =>
       val ts = terms.map(t => visitHeadTerm(t, m))
-      FinalAst.Predicate.Head.RelAtom(baseOpt, sym, ts, loc)
-    case SimplifiedAst.Predicate.Head.LatAtom(baseOpt, sym, terms, loc) =>
+      FinalAst.Predicate.Head.RelAtom(baseOpt, sym, ts, tpe, loc)
+    case SimplifiedAst.Predicate.Head.LatAtom(baseOpt, sym, terms, tpe, loc) =>
       val ts = terms.map(t => visitHeadTerm(t, m))
-      FinalAst.Predicate.Head.LatAtom(baseOpt, sym, ts, loc)
+      FinalAst.Predicate.Head.LatAtom(baseOpt, sym, ts, tpe, loc)
   }
 
   private def visitBodyPredicate(p0: SimplifiedAst.Predicate.Body, m: TopLevel)(implicit flix: Flix): FinalAst.Predicate.Body = p0 match {
-    case SimplifiedAst.Predicate.Body.RelAtom(baseOpt, sym, polarity, terms, loc) =>
+    case SimplifiedAst.Predicate.Body.RelAtom(baseOpt, sym, polarity, terms, tpe, loc) =>
       val ts = terms.map(t => visitBodyTerm(t, m))
       val index2var = getIndex2VarTemporaryToBeRemoved(ts)
-      FinalAst.Predicate.Body.RelAtom(baseOpt, sym, polarity, ts, index2var, loc)
+      FinalAst.Predicate.Body.RelAtom(baseOpt, sym, polarity, ts, index2var, tpe, loc)
 
-    case SimplifiedAst.Predicate.Body.LatAtom(baseOpt, sym, polarity, terms, loc) =>
+    case SimplifiedAst.Predicate.Body.LatAtom(baseOpt, sym, polarity, terms, tpe, loc) =>
       val ts = terms.map(t => visitBodyTerm(t, m))
       val index2var = getIndex2VarTemporaryToBeRemoved(ts)
-      FinalAst.Predicate.Body.LatAtom(baseOpt, sym, polarity, ts, index2var, loc)
+      FinalAst.Predicate.Body.LatAtom(baseOpt, sym, polarity, ts, index2var, tpe, loc)
 
     case SimplifiedAst.Predicate.Body.Filter(sym, terms, loc) =>
       val ts = terms.map(t => visitBodyTerm(t, m))

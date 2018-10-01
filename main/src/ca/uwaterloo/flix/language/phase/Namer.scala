@@ -647,19 +647,19 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Expression.RecordEmpty(loc) =>
       NamedAst.Expression.RecordEmpty(Type.freshTypeVar(), loc).toSuccess
 
-    case WeededAst.Expression.RecordSelect(base, label, loc) =>
-      mapN(visitExp(base, env0, tenv0)) {
-        case b => NamedAst.Expression.RecordSelect(b, label, Type.freshTypeVar(), loc)
+    case WeededAst.Expression.RecordSelect(exp, label, loc) =>
+      mapN(visitExp(exp, env0, tenv0)) {
+        case e => NamedAst.Expression.RecordSelect(e, label, Type.freshTypeVar(), loc)
       }
 
-    case WeededAst.Expression.RecordExtend(base, label, value, loc) =>
-      mapN(visitExp(base, env0, tenv0), visitExp(value, env0, tenv0)) {
-        case (b, v) => NamedAst.Expression.RecordExtend(b, label, v, Type.freshTypeVar(), loc)
+    case WeededAst.Expression.RecordExtend(label, value, rest, loc) =>
+      mapN(visitExp(value, env0, tenv0), visitExp(rest, env0, tenv0)) {
+        case (v, r) => NamedAst.Expression.RecordExtend(label, v, r, Type.freshTypeVar(), loc)
       }
 
-    case WeededAst.Expression.RecordRestrict(base, label, loc) =>
-      mapN(visitExp(base, env0, tenv0)) {
-        case b => NamedAst.Expression.RecordRestrict(b, label, Type.freshTypeVar(), loc)
+    case WeededAst.Expression.RecordRestrict(label, rest, loc) =>
+      mapN(visitExp(rest, env0, tenv0)) {
+        case r => NamedAst.Expression.RecordRestrict(label, r, Type.freshTypeVar(), loc)
       }
 
     case WeededAst.Expression.ArrayLit(elms, loc) =>
@@ -914,7 +914,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       for {
         b <- lookupVarOpt(baseOpt, outerEnv)
         ts <- traverse(terms)(t => visitExp(t, outerEnv ++ headEnv0 ++ ruleEnv0, tenv0))
-      } yield NamedAst.Predicate.Head.Atom(b, qname, ts, loc)
+      } yield NamedAst.Predicate.Head.Atom(b, qname, ts, Type.freshTypeVar(), loc)
   }
 
   /**
@@ -925,7 +925,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       val ts = terms.map(t => visitPattern(t, outerEnv ++ ruleEnv0))
       for {
         b <- lookupVarOpt(baseOpt, outerEnv)
-      } yield NamedAst.Predicate.Body.Atom(b, qname, polarity, ts, loc)
+      } yield NamedAst.Predicate.Body.Atom(b, qname, polarity, ts, Type.freshTypeVar(), loc)
 
     case WeededAst.Predicate.Body.Filter(qname, terms, loc) =>
       for {
@@ -993,10 +993,15 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
           NamedAst.Type.Ambiguous(qname, loc)
       case WeededAst.Type.Tuple(elms, loc) => NamedAst.Type.Tuple(elms.map(e => visit(e, env0)), loc)
       case WeededAst.Type.RecordEmpty(loc) => NamedAst.Type.RecordEmpty(loc)
-      case WeededAst.Type.RecordExtension(base, label, value, loc) =>
-        val b = visit(base, env0)
+      case WeededAst.Type.RecordExtend(label, value, rest, loc) =>
         val t = visit(value, env0)
-        NamedAst.Type.RecordExtension(b, label, t, loc)
+        val r = visit(rest, env0)
+        NamedAst.Type.RecordExtend(label, t, r, loc)
+      case WeededAst.Type.Schema(predicates, loc) =>
+        val ts = predicates map {
+          case (qname, attr) => qname -> attr.map(visit(_, env0))
+        }
+        NamedAst.Type.Schema(ts, loc)
       case WeededAst.Type.Nat(len, loc) => NamedAst.Type.Nat(len, loc)
       case WeededAst.Type.Native(fqn, loc) => NamedAst.Type.Native(fqn, loc)
       case WeededAst.Type.Arrow(tparams, tresult, loc) => NamedAst.Type.Arrow(tparams.map(t => visit(t, env0)), visit(tresult, env0), loc)
@@ -1051,9 +1056,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Expression.Tag(enum, tag, expOpt, loc) => expOpt.map(freeVars).getOrElse(Nil)
     case WeededAst.Expression.Tuple(elms, loc) => elms.flatMap(freeVars)
     case WeededAst.Expression.RecordEmpty(loc) => Nil
-    case WeededAst.Expression.RecordExtend(base, label, exp, loc) => freeVars(base) ++ freeVars(exp)
-    case WeededAst.Expression.RecordSelect(base, label, loc) => freeVars(base)
-    case WeededAst.Expression.RecordRestrict(base, label, loc) => freeVars(base)
+    case WeededAst.Expression.RecordSelect(exp, label, loc) => freeVars(exp)
+    case WeededAst.Expression.RecordExtend(label, exp, rest, loc) => freeVars(exp) ++ freeVars(rest)
+    case WeededAst.Expression.RecordRestrict(label, rest, loc) => freeVars(rest)
     case WeededAst.Expression.ArrayLit(elms, loc) => elms.flatMap(freeVars)
     case WeededAst.Expression.ArrayNew(elm, len, loc) => freeVars(elm) ++ freeVars(len)
     case WeededAst.Expression.ArrayLoad(base, index, loc) => freeVars(base) ++ freeVars(index)
@@ -1121,7 +1126,10 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Type.Unit(loc) => Nil
     case WeededAst.Type.Tuple(elms, loc) => elms.flatMap(freeVars)
     case WeededAst.Type.RecordEmpty(loc) => Nil
-    case WeededAst.Type.RecordExtension(b, _, t, _) => freeVars(b) ::: freeVars(t)
+    case WeededAst.Type.RecordExtend(l, t, r, loc) => freeVars(t) ::: freeVars(r)
+    case WeededAst.Type.Schema(m, loc) => m.flatMap {
+      case (qname, attr) => attr flatMap freeVars
+    }
     case WeededAst.Type.Nat(n, loc) => Nil
     case WeededAst.Type.Native(fqm, loc) => Nil
     case WeededAst.Type.Arrow(tparams, retType, loc) => tparams.flatMap(freeVars) ::: freeVars(retType)

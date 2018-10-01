@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.util
 
 import ca.uwaterloo.flix.api.Flix
 
-import scala.concurrent.duration.Duration
+import scala.concurrent.duration.{Duration => SDuration}
 import scala.concurrent.{Await, Future}
 
 object ParOps {
@@ -34,7 +34,7 @@ object ParOps {
     val futures = xs.map(x => Future(f(x)))
 
     // Wait for all the results.
-    Await.result(Future.sequence(futures), Duration.Inf)
+    Await.result(Future.sequence(futures), SDuration.Inf)
   }
 
 }

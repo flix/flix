@@ -54,11 +54,11 @@ sealed trait Type {
     case Type.Arrow(l) => Set.empty
     case Type.Tuple(l) => Set.empty
     case Type.RecordEmpty => Set.empty
-    case Type.RecordExtension(base, label, value) => base.typeVars ++ value.typeVars
+    case Type.RecordExtend(label, value, rest) => value.typeVars ++ rest.typeVars
     case Type.Enum(_, _) => Set.empty
-    case Type.Relation(_, _) => Set.empty
-    case Type.Lattice(_, _) => Set.empty
-    case Type.ConstraintSet => Set.empty
+    case Type.Relation(_, _, _) => Set.empty
+    case Type.Lattice(_, _, _) => Set.empty
+    case Type.Schema(m) => m.flatMap(_._2.typeVars).toSet
     case Type.Solvable => Set.empty
     case Type.Checkable => Set.empty
     case Type.Apply(tpe1, tpe2) => tpe1.typeVars ++ tpe2.typeVars
@@ -128,7 +128,7 @@ sealed trait Type {
     * Returns `true` if `this` type is a relation type.
     */
   def isRelation: Boolean = typeConstructor match {
-    case Type.Relation(sym, kind) => true
+    case Type.Relation(sym, _, _) => true
     case _ => false
   }
 
@@ -136,15 +136,7 @@ sealed trait Type {
     * Returns `true` if `this` type is a lattice type.
     */
   def isLattice: Boolean = typeConstructor match {
-    case Type.Lattice(sym, kind) => true
-    case _ => false
-  }
-
-  /**
-    * Returns `true` if `this` type is a constraint set type.
-    */
-  def isConstraintSet: Boolean = typeConstructor match {
-    case Type.ConstraintSet => true
+    case Type.Lattice(sym, _, _) => true
     case _ => false
   }
 
@@ -161,7 +153,15 @@ sealed trait Type {
     */
   def isRecord: Boolean = typeConstructor match {
     case Type.RecordEmpty => true
-    case Type.RecordExtension(base, label, value) => true
+    case Type.RecordExtend(base, label, value) => true
+    case _ => false
+  }
+
+  /**
+    * Returns `true` if `this` type is a schema type.
+    */
+  def isSchema: Boolean = typeConstructor match {
+    case Type.Schema(_) => true
     case _ => false
   }
 
@@ -206,14 +206,14 @@ sealed trait Type {
     case Type.Ref => "Ref"
     case Type.Arrow(l) => s"Arrow($l)"
     case Type.Enum(sym, _) => sym.toString
-    case Type.Relation(sym, _) => sym.toString
-    case Type.Lattice(sym, _) => sym.toString
-    case Type.ConstraintSet => "ConstraintSet"
+    case Type.Relation(sym, attr, _) => sym.toString + "(" + attr.mkString(", ") + ")"
+    case Type.Lattice(sym, attr, _) => sym.toString + "(" + attr.mkString(", ") + ")"
+    case Type.Schema(m) => m.mkString(", ")
     case Type.Solvable => "Solvable"
     case Type.Checkable => "Checkable"
     case Type.Tuple(l) => s"Tuple($l)"
     case Type.RecordEmpty => "{ }"
-    case Type.RecordExtension(base, label, field) => "{ " + base.toString + " | " + label + " : " + field.toString + " }"
+    case Type.RecordExtend(label, value, rest) => "{ " + label + " : " + value + " | " + rest + " }"
     case Type.Apply(tpe1, tpe2) => s"$tpe1[$tpe2]"
   }
 
@@ -381,25 +381,29 @@ object Type {
   case class Enum(sym: Symbol.EnumSym, kind: Kind) extends Type
 
   /**
-    * A type constructor that represents a relation.
+    * A type constructor that represents a relation with attributes of the given types.
     *
     * @param sym  the symbol of the relation.
+    * @param attr the attribute types of the relation.
     * @param kind the kind of the relation.
     */
-  case class Relation(sym: Symbol.RelSym, kind: Kind) extends Type
+  case class Relation(sym: Symbol.RelSym, attr: List[Type], kind: Kind) extends Type
 
   /**
-    * A type constructor that represents a lattice.
+    * A type constructor that represents a lattice with attributes of the given types.
     *
     * @param sym  the symbol of the lattice.
+    * @param attr the attribute types of the relation.
     * @param kind the kind of the lattice.
     */
-  case class Lattice(sym: Symbol.LatSym, kind: Kind) extends Type
+  case class Lattice(sym: Symbol.LatSym, attr: List[Type], kind: Kind) extends Type
 
   /**
-    * A type constructor that represents a constraint set.
+    * A type constructor that represents a schema.
+    *
+    * @param m the types of the predicate symbols in the system.
     */
-  case object ConstraintSet extends Type {
+  case class Schema(m: Map[Symbol.PredSym, Type]) extends Type {
     def kind: Kind = Kind.Star
   }
 
@@ -434,7 +438,7 @@ object Type {
   /**
     * A type constructor that represents a record extension type.
     */
-  case class RecordExtension(base: Type, label: String, value: Type) extends Type {
+  case class RecordExtend(label: String, value: Type, rest: Type) extends Type {
     def kind: Kind = ??? // TODO
   }
 
@@ -500,6 +504,23 @@ object Type {
   }
 
   /**
+    * Constructs the apply type base[t_1, ,..., t_n].
+    */
+  def mkApply(base: Type, ts: List[Type]): Type = ts.foldLeft(base) {
+    case (acc, t) => Apply(acc, t)
+  }
+
+  /**
+    * Returns the relation type corresponding to the given symbol `sym` with the given attribute types `ts`.
+    */
+  def mkRelation(sym: Symbol.RelSym, ts: List[Type]): Type = Type.Relation(sym, ts, Kind.Star)
+
+  /**
+    * Returns the lattice type corresponding to the given symbol `sym` with the given attribute types `ts`.
+    */
+  def mkLattice(sym: Symbol.LatSym, ts: List[Type]): Type = Type.Lattice(sym, ts, Kind.Star)
+
+  /**
     * Constructs the tuple type (A, B, ...) where the types are drawn from the list `ts`.
     */
   def mkTuple(ts: Type*): Type = mkTuple(ts.toList)
@@ -551,11 +572,6 @@ object Type {
   }
 
   /**
-    * Returns the constraint set type parameters with the given type `tpe`.
-    */
-  def mkConstraintSet(tpe: Type): Type = Apply(ConstraintSet, tpe)
-
-  /**
     * Replaces every free occurrence of a type variable in `typeVars`
     * with a fresh type variable in the given type `tpe`.
     */
@@ -587,14 +603,19 @@ object Type {
       case Type.Arrow(l) => Type.Arrow(l)
       case Type.Tuple(l) => Type.Tuple(l)
       case Type.RecordEmpty => Type.RecordEmpty
-      case Type.RecordExtension(base, label, value) => Type.RecordExtension(visit(base), label, visit(value))
+      case Type.RecordExtend(label, value, rest) => Type.RecordExtend(label, visit(value), visit(rest))
       case Type.Zero => Type.Zero
       case Type.Succ(n, t) => Type.Succ(n, t)
       case Type.Apply(tpe1, tpe2) => Type.Apply(visit(tpe1), visit(tpe2))
       case Type.Enum(sym, kind) => Type.Enum(sym, kind)
-      case Type.Relation(sym, kind) => Type.Relation(sym, kind)
-      case Type.Lattice(sym, kind) => Type.Lattice(sym, kind)
-      case Type.ConstraintSet => Type.ConstraintSet
+      case Type.Relation(sym, attr, kind) => Type.Relation(sym, attr map visit, kind)
+      case Type.Lattice(sym, attr, kind) => Type.Lattice(sym, attr map visit, kind)
+      case Type.Schema(m) =>
+        val newM = m.foldLeft(Map.empty[Symbol.PredSym, Type]) {
+          case (macc, (s, t)) => macc + (s -> visit(t))
+        }
+        Type.Schema(newM)
+
       case Type.Solvable => Type.Solvable
       case Type.Checkable => Type.Checkable
     }
@@ -610,6 +631,7 @@ object Type {
     */
   implicit object ShowInstance extends Show[Type] {
     def show(a: Type): String = {
+
       /**
         * Local visitor.
         */
@@ -644,7 +666,6 @@ object Type {
           case Type.Succ(n, t) => n.toString + " " + t.toString
           case Type.Native(clazz) => "#" + clazz.getName
           case Type.Ref => "Ref"
-          case Type.ConstraintSet => "ConstraintSet"
           case Type.Solvable => "Solvable"
           case Type.Checkable => "Checkable"
 
@@ -674,8 +695,8 @@ object Type {
           //
           // RecordExtension.
           //
-          case Type.RecordExtension(b, label, field) =>
-            "{ " + visit(b, m) + " | " + label + " : " + visit(field, m) + " }"
+          case Type.RecordExtend(label, value, rest) =>
+            "{" + label + " = " + visit(value, m) + " | " + visit(rest, m) + "}"
 
           //
           // Enum.
@@ -686,14 +707,22 @@ object Type {
           //
           // Relation.
           //
-          case Type.Relation(sym, _) =>
-            if (args.isEmpty) sym.toString else sym.toString + "[" + args.map(visit(_, m)).mkString(", ") + "]"
+          case Type.Relation(sym, attr, _) =>
+            sym.toString + "(" + attr.map(visit(_, m)).mkString(", ") + ")"
 
           //
           // Lattice.
           //
-          case Type.Lattice(sym, _) =>
-            if (args.isEmpty) sym.toString else sym.toString + "[" + args.map(visit(_, m)).mkString(", ") + "]"
+          case Type.Lattice(sym, attr, _) =>
+            sym.toString + "(" + attr.map(visit(_, m)).mkString(", ") + ")"
+
+          //
+          // Schema.
+          //
+          case Type.Schema(row) =>
+            "Schema {" + row.map {
+              case (s, t) => s.toString + ": " + visit(t, m)
+            }.mkString(", ") + "}"
 
           //
           // Application.

@@ -100,14 +100,14 @@ object Safety extends Phase[Root, Root] {
 
     case Expression.RecordEmpty(tpe, eff, loc) => Nil
 
-    case Expression.RecordSelect(base, label, tpe, eff, loc) =>
-      visitExp(base)
+    case Expression.RecordSelect(exp, label, tpe, eff, loc) =>
+      visitExp(exp)
 
-    case Expression.RecordExtend(base, label, value, tpe, eff, loc) =>
-      visitExp(base) ::: visitExp(value)
+    case Expression.RecordExtend(label, value, rest, tpe, eff, loc) =>
+      visitExp(value) ::: visitExp(rest)
 
-    case Expression.RecordRestrict(base, label, tpe, eff, loc) =>
-      visitExp(base)
+    case Expression.RecordRestrict(label, rest, tpe, eff, loc) =>
+      visitExp(rest)
 
     case Expression.ArrayLit(elms, tpe, eff, loc) =>
       elms.foldLeft(Nil: List[CompilationError]) {
@@ -220,8 +220,8 @@ object Safety extends Phase[Root, Root] {
     * with the given positively defined variable symbols `posVars`.
     */
   private def checkBodyPredicate(p0: Predicate.Body, posVars: Set[Symbol.VarSym], quantVars: Set[Symbol.VarSym]): List[CompilationError] = p0 match {
-    case Predicate.Body.RelAtom(base, sym, polarity, terms, loc) => checkBodyAtomPredicate(polarity, terms, posVars, quantVars, loc)
-    case Predicate.Body.LatAtom(base, sym, polarity, terms, loc) => checkBodyAtomPredicate(polarity, terms, posVars, quantVars, loc)
+    case Predicate.Body.RelAtom(base, sym, polarity, terms, tpe, loc) => checkBodyAtomPredicate(polarity, terms, posVars, quantVars, loc)
+    case Predicate.Body.LatAtom(base, sym, polarity, terms, tpe, loc) => checkBodyAtomPredicate(polarity, terms, posVars, quantVars, loc)
     case Predicate.Body.Filter(sym, terms, loc) => Nil
     case Predicate.Body.Functional(sym, term, loc) => Nil
   }
@@ -252,7 +252,7 @@ object Safety extends Phase[Root, Root] {
     * Returns all positively defined variable symbols in the given body predicate `p0`.
     */
   private def positivelyDefinedVariables(p0: Predicate.Body): Set[Symbol.VarSym] = p0 match {
-    case Predicate.Body.RelAtom(base, sym, polarity, terms, loc) => polarity match {
+    case Predicate.Body.RelAtom(base, sym, polarity, terms, tpe, loc) => polarity match {
       case Polarity.Positive =>
         // Case 1: A positive atom positively defines all its free variables.
         terms.flatMap(freeVarsOf).toSet
@@ -260,7 +260,7 @@ object Safety extends Phase[Root, Root] {
         // Case 2: A negative atom does not positively define any variables.
         Set.empty
     }
-    case Predicate.Body.LatAtom(base, sym, polarity, terms, loc) => polarity match {
+    case Predicate.Body.LatAtom(base, sym, polarity, terms, tpe, loc) => polarity match {
       case Polarity.Positive =>
         // Case 1: A positive atom positively defines all its free variables.
         terms.flatMap(freeVarsOf).toSet

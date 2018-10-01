@@ -16,7 +16,8 @@
 
 package ca.uwaterloo.flix.language.phase
 
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Type}
+import ca.uwaterloo.flix.language.GenSym
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.util.Result._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
@@ -76,13 +77,17 @@ object Unification {
       case Type.Arrow(l) => Type.Arrow(l)
       case Type.Tuple(l) => Type.Tuple(l)
       case Type.RecordEmpty => Type.RecordEmpty
-      case Type.RecordExtension(base, lab, fld) => Type.RecordExtension(apply(base), lab, apply(fld))
+      case Type.RecordExtend(label, field, rest) => Type.RecordExtend(label, apply(field), apply(rest))
       case Type.Zero => Type.Zero
       case Type.Succ(n, t) => Type.Succ(n, apply(t))
       case Type.Enum(sym, kind) => Type.Enum(sym, kind)
-      case Type.Relation(sym, kind) => Type.Relation(sym, kind)
-      case Type.Lattice(sym, kind) => Type.Lattice(sym, kind)
-      case Type.ConstraintSet => Type.ConstraintSet
+      case Type.Relation(sym, attr, kind) => Type.Relation(sym, attr map apply, kind)
+      case Type.Lattice(sym, attr, kind) => Type.Lattice(sym, attr map apply, kind)
+      case Type.Schema(row) =>
+        val newRow = row.foldLeft(Map.empty[Symbol.PredSym, Type]) {
+          case (macc, (s, t)) => macc + (s -> apply(t))
+        }
+        Type.Schema(newRow)
       case Type.Solvable => Type.Solvable
       case Type.Checkable => Type.Checkable
       case Type.Apply(t1, t2) => Type.Apply(apply(t1), apply(t2))
@@ -135,12 +140,28 @@ object Unification {
       */
     case class OccursCheck(tvar: Type.Var, tpe: Type) extends UnificationError
 
+    /**
+      * An unification error due the field `fieldName` of type `fieldType` missing from the type `recordType`.
+      *
+      * @param fieldName  the name of the missing field.
+      * @param fieldType  the type of the missing field.
+      * @param recordType the record type the field is missing from.
+      */
+    case class UndefinedLabel(fieldName: String, fieldType: Type, recordType: Type) extends UnificationError
+
+    /**
+      * An unification error due to an unexpected non-row type.
+      *
+      * @param tpe the unexpected non-row type.
+      */
+    case class NonRowType(tpe: Type) extends UnificationError
+
   }
 
   /**
     * Returns the most general unifier of the two given types `tpe1` and `tpe2`.
     */
-  def unify(tpe1: Type, tpe2: Type): Result[Substitution, UnificationError] = {
+  def unify(tpe1: Type, tpe2: Type)(implicit genSym: GenSym): Result[Substitution, UnificationError] = {
 
     // NB: Uses a closure to capture the source location `loc`.
 
@@ -199,15 +220,19 @@ object Unification {
       case (Type.Ref, Type.Ref) => Result.Ok(Substitution.empty)
       case (Type.Arrow(l1), Type.Arrow(l2)) if l1 == l2 => Result.Ok(Substitution.empty)
       case (Type.Tuple(l1), Type.Tuple(l2)) if l1 == l2 => Result.Ok(Substitution.empty)
+
       case (Type.RecordEmpty, Type.RecordEmpty) => Result.Ok(Substitution.empty)
 
-      case (Type.RecordExtension(base1, label1, value1), Type.RecordExtension(base2, label2, value2)) =>
-        if (label1 == label2) {
-          unify(value1, value2) flatMap {
-            case subst => unify(subst(base1), subst(base2))
-          }
-        } else {
-          ???
+      case (Type.RecordExtend(label1, fieldType1, restRow1), row2) =>
+        // Attempt to write the row to match.
+        rewriteRow(row2, label1, fieldType1, row2) flatMap {
+          case (subst1, restRow2) =>
+
+            // TODO: Missing the safety/occurs check.
+
+            unify(subst1(restRow1), subst1(restRow2)) flatMap {
+              case subst2 => Result.Ok(subst2 @@ subst1)
+            }
         }
 
       case (Type.Zero, Type.Zero) => Result.Ok(Substitution.empty) // 0 == 0
@@ -217,9 +242,22 @@ object Unification {
       case (Type.Succ(n1, t1), Type.Succ(n2, t2)) if n1 > n2 => unifyTypes(Type.Succ(n1 - n2, t1), t2) // (42, x) == (21 y) --> (42-21, x) = y
       case (Type.Succ(n1, t1), Type.Succ(n2, t2)) if n1 < n2 => unifyTypes(Type.Succ(n2 - n1, t2), t1) // (21, x) == (42, y) --> (42-21, y) = x
       case (Type.Enum(sym1, kind1), Type.Enum(sym2, kind2)) if sym1 == sym2 => Result.Ok(Substitution.empty)
-      case (Type.Relation(sym1, kind1), Type.Relation(sym2, kind2)) if sym1 == sym2 => Result.Ok(Substitution.empty)
-      case (Type.Lattice(sym1, kind1), Type.Lattice(sym2, kind2)) if sym1 == sym2 => Result.Ok(Substitution.empty)
-      case (Type.ConstraintSet, Type.ConstraintSet) => Result.Ok(Substitution.empty)
+
+      case (Type.Relation(sym1, attr1, kind1), Type.Relation(sym2, attr2, kind2)) if sym1 == sym2 => unifyAll(attr1, attr2)
+
+      case (Type.Lattice(sym1, attr1, kind1), Type.Lattice(sym2, attr2, kind2)) if sym1 == sym2 => unifyAll(attr1, attr2)
+
+      case (Type.Schema(m1), Type.Schema(m2)) =>
+        // NB: The schemas "ought to" contain the same keys.
+        val keys = (m1.keySet ++ m2.keySet).toList
+
+        // Retrieve the types of each row (in the same order).
+        val types1 = keys.map(m1)
+        val types2 = keys.map(m2)
+
+        // And simply unify them.
+        unifyAll(types1, types2)
+
       case (Type.Solvable, Type.Solvable) => Result.Ok(Substitution.empty)
       case (Type.Checkable, Type.Checkable) => Result.Ok(Substitution.empty)
       case (Type.Apply(t11, t12), Type.Apply(t21, t22)) =>
@@ -246,6 +284,40 @@ object Unification {
         case Result.Err(e) => Result.Err(e)
       }
       case _ => throw InternalCompilerException(s"Mismatched type lists: `$ts1' and `$ts2'.")
+    }
+
+    /**
+      * Attempts to rewrite the given row type `row2` into a row that has the given label `label1` in front.
+      */
+    def rewriteRow(row2: Type, label1: String, fieldType1: Type, originalType: Type): Result[(Substitution, Type), UnificationError] = row2 match {
+      case Type.RecordExtend(label2, fieldType2, restRow2) =>
+        // Case 1: The row is of the form %{ label2: fieldType2 | restRow2 }
+        if (label1 == label2) {
+          // Case 1.1: The labels match, their types must match.
+          for {
+            subst <- unify(fieldType1, fieldType2)
+          } yield (subst, restRow2)
+        } else {
+          // Case 1.2: The labels do not match, attempt to match with a label further down.
+          rewriteRow(restRow2, label1, fieldType1, originalType) map {
+            case (subst, rewrittenRow) => (subst, Type.RecordExtend(label2, fieldType2, rewrittenRow))
+          }
+        }
+      case tvar: Type.Var =>
+        // Case 2: The row is a type variable.
+        // Introduce a fresh type variable to represent one more level of the row.
+        val restRow2 = Type.freshTypeVar()
+        val type2 = Type.RecordExtend(label1, fieldType1, restRow2)
+        val subst = Unification.Substitution(Map(tvar -> type2))
+        Ok((subst, restRow2))
+
+      case Type.RecordEmpty =>
+        // Case 3: The `label` does not exist in the record.
+        Err(UnificationError.UndefinedLabel(label1, fieldType1, originalType))
+
+      case _ =>
+        // Case 4: The type is not a row.
+        Err(UnificationError.NonRowType(row2))
     }
 
     unifyTypes(tpe1, tpe2)
@@ -306,7 +378,7 @@ object Unification {
     * Unifies the two given types `tpe1` and `tpe2` lifting their unified types and
     * associated substitution into the type inference monad.
     */
-  def unifyM(tpe1: Type, tpe2: Type, loc: SourceLocation): InferMonad[Type] = {
+  def unifyM(tpe1: Type, tpe2: Type, loc: SourceLocation)(implicit genSym: GenSym): InferMonad[Type] = {
     InferMonad((s: Substitution) => {
       val type1 = s(tpe1)
       val type2 = s(tpe2)
@@ -318,6 +390,10 @@ object Unification {
           Err(TypeError.UnificationError(baseType1, baseType2, type1, type2, loc))
         case Result.Err(UnificationError.OccursCheck(baseType1, baseType2)) =>
           Err(TypeError.OccursCheckError(baseType1, baseType2, type1, type2, loc))
+        case Result.Err(UnificationError.UndefinedLabel(label, field, tpe)) =>
+          Err(TypeError.UndefinedLabel(label, field, tpe, loc))
+        case Result.Err(UnificationError.NonRowType(tpe)) =>
+          Err(TypeError.NonRow(tpe, loc))
       }
     }
     )
@@ -326,17 +402,17 @@ object Unification {
   /**
     * Unifies the three given types `tpe1`, `tpe2`, and `tpe3`.
     */
-  def unifyM(tpe1: Type, tpe2: Type, tpe3: Type, loc: SourceLocation): InferMonad[Type] = unifyM(List(tpe1, tpe2, tpe3), loc)
+  def unifyM(tpe1: Type, tpe2: Type, tpe3: Type, loc: SourceLocation)(implicit genSym: GenSym): InferMonad[Type] = unifyM(List(tpe1, tpe2, tpe3), loc)
 
   /**
     * Unifies the four given types `tpe1`, `tpe2`, `tpe3` and `tpe4`.
     */
-  def unifyM(tpe1: Type, tpe2: Type, tpe3: Type, tpe4: Type, loc: SourceLocation): InferMonad[Type] = unifyM(List(tpe1, tpe2, tpe3, tpe4), loc)
+  def unifyM(tpe1: Type, tpe2: Type, tpe3: Type, tpe4: Type, loc: SourceLocation)(implicit genSym: GenSym): InferMonad[Type] = unifyM(List(tpe1, tpe2, tpe3, tpe4), loc)
 
   /**
     * Unifies all the types in the given non-empty list `ts`.
     */
-  def unifyM(ts: List[Type], loc: SourceLocation): InferMonad[Type] = {
+  def unifyM(ts: List[Type], loc: SourceLocation)(implicit genSym: GenSym): InferMonad[Type] = {
     assert(ts.nonEmpty)
 
     def visit(x0: InferMonad[Type], xs: List[Type]): InferMonad[Type] = xs match {
@@ -350,9 +426,19 @@ object Unification {
   }
 
   /**
+    * Unifies all the types in the given (possibly empty) list `ts`.
+    */
+  def unifyAllowEmptyM(ts: List[Type], loc: SourceLocation)(implicit genSym: GenSym): InferMonad[Type] = {
+    if (ts.isEmpty)
+      liftM(Type.freshTypeVar())
+    else
+      unifyM(ts, loc)
+  }
+
+  /**
     * Pairwise unifies the two given lists of types `xs` and `ys`.
     */
-  def unifyM(xs: List[Type], ys: List[Type], loc: SourceLocation): InferMonad[List[Type]] = seqM((xs zip ys).map {
+  def unifyM(xs: List[Type], ys: List[Type], loc: SourceLocation)(implicit genSym: GenSym): InferMonad[List[Type]] = seqM((xs zip ys).map {
     case (x, y) => unifyM(x, y, loc)
   })
 

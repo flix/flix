@@ -94,13 +94,17 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         case Type.Arrow(l) => Type.Arrow(l)
         case Type.Tuple(l) => Type.Tuple(l)
         case Type.RecordEmpty => Type.RecordEmpty
-        case Type.RecordExtension(base, label, value) => Type.RecordExtension(apply(base), label, apply(value))
+        case Type.RecordExtend(label, value, rest) => Type.RecordExtend(label, apply(value), apply(rest))
         case Type.Zero => Type.Zero
         case Type.Succ(n, i) => Type.Succ(n, i)
         case Type.Enum(sym, kind) => Type.Enum(sym, kind)
-        case Type.Relation(sym, kind) => Type.Relation(sym, kind)
-        case Type.Lattice(sym, kind) => Type.Lattice(sym, kind)
-        case Type.ConstraintSet => Type.ConstraintSet
+        case Type.Relation(sym, attr, kind) => Type.Relation(sym, attr map visit, kind)
+        case Type.Lattice(sym, attr, kind) => Type.Lattice(sym, attr map visit, kind)
+        case Type.Schema(m) =>
+          val m2 = m.foldLeft(Map.empty[Symbol.PredSym, Type]) {
+            case (macc, (predSym, predType)) => macc + (predSym -> visit(predType))
+          }
+          Type.Schema(m2)
         case Type.Solvable => Type.Solvable
         case Type.Checkable => Type.Checkable
         case Type.Apply(tpe1, tpe2) => Type.Apply(apply(tpe1), apply(tpe2))
@@ -303,14 +307,14 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           val b = visitExp(base, env0)
           Expression.RecordSelect(b, label, tpe, eff, loc)
 
-        case Expression.RecordExtend(base, label, value, tpe, eff, loc) =>
-          val b = visitExp(base, env0)
+        case Expression.RecordExtend(label, value, rest, tpe, eff, loc) =>
           val v = visitExp(value, env0)
-          Expression.RecordExtend(b, label, v, tpe, eff, loc)
+          val r = visitExp(rest, env0)
+          Expression.RecordExtend(label, v, r, tpe, eff, loc)
 
-        case Expression.RecordRestrict(base, label, tpe, eff, loc) =>
-          val b = visitExp(base, env0)
-          Expression.RecordRestrict(b, label, tpe, eff, loc)
+        case Expression.RecordRestrict(label, rest, tpe, eff, loc) =>
+          val r = visitExp(rest, env0)
+          Expression.RecordRestrict(label, r, tpe, eff, loc)
 
         case Expression.ArrayLit(elms, tpe, eff, loc) =>
           val es = elms.map(e => visitExp(e, env0))
@@ -503,15 +507,15 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
 
         case Predicate.Head.False(loc) => Predicate.Head.False(loc)
 
-        case Predicate.Head.RelAtom(base, sym, terms, loc) =>
+        case Predicate.Head.RelAtom(base, sym, terms, tpe, loc) =>
           val b = base.map(s => env0(s))
           val ts = terms.map(t => visitExp(t, env0))
-          Predicate.Head.RelAtom(b, sym, ts, loc)
+          Predicate.Head.RelAtom(b, sym, ts, tpe, loc)
 
-        case Predicate.Head.LatAtom(base, sym, terms, loc) =>
+        case Predicate.Head.LatAtom(base, sym, terms, tpe, loc) =>
           val b = base.map(s => env0(s))
           val ts = terms.map(t => visitExp(t, env0))
-          Predicate.Head.LatAtom(b, sym, ts, loc)
+          Predicate.Head.LatAtom(b, sym, ts, tpe, loc)
       }
 
       /**
@@ -538,15 +542,15 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         }
 
         b0 match {
-          case Predicate.Body.RelAtom(baseOpt, sym, polarity, terms, loc) =>
+          case Predicate.Body.RelAtom(baseOpt, sym, polarity, terms, tpe, loc) =>
             val b = baseOpt.map(s => env0(s))
             val ts = terms map visitPatTemporaryToBeRemoved
-            Predicate.Body.RelAtom(b, sym, polarity, ts, loc)
+            Predicate.Body.RelAtom(b, sym, polarity, ts, tpe, loc)
 
-          case Predicate.Body.LatAtom(baseOpt, sym, polarity, terms, loc) =>
+          case Predicate.Body.LatAtom(baseOpt, sym, polarity, terms, tpe, loc) =>
             val b = baseOpt.map(s => env0(s))
             val ts = terms map visitPatTemporaryToBeRemoved
-            Predicate.Body.LatAtom(b, sym, polarity, ts, loc)
+            Predicate.Body.LatAtom(b, sym, polarity, ts, tpe, loc)
 
           case Predicate.Body.Filter(sym, terms, loc) =>
             val ts = terms.map(t => visitExp(t, env0))

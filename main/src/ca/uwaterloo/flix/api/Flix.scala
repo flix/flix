@@ -284,7 +284,7 @@ class Flix {
     // Print performance information if in verbose mode.
     if (options.verbosity == Verbosity.Verbose) {
       // Print information about the phase.
-      val d = new DurationFormatter(e)
+      val d = new Duration(e)
       val terminalCtx = TerminalContext.AnsiTerminal
       val emojiPart = terminalCtx.emitBlue("✓ ")
       val phasePart = terminalCtx.emitBlue(f"$phase%-40s")
@@ -293,7 +293,7 @@ class Flix {
 
       // Print information about each subphase.
       for ((subphase, e) <- currentPhase.subphases) {
-        val d = new DurationFormatter(e)
+        val d = new Duration(e)
         val emojiPart = "    "
         val phasePart = terminalCtx.emitMagenta(f"$subphase%-37s")
         val timePart = f"(${d.fmtMiliSeconds}%8s)"

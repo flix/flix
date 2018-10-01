@@ -126,11 +126,11 @@ object NamedAst {
 
     case class RecordEmpty(tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
-    case class RecordSelect(base: NamedAst.Expression, label: Name.Ident, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
+    case class RecordSelect(exp: NamedAst.Expression, label: Name.Ident, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
-    case class RecordExtend(base: NamedAst.Expression, label: Name.Ident, value: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
+    case class RecordExtend(label: Name.Ident, value: NamedAst.Expression, rest: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
-    case class RecordRestrict(base: NamedAst.Expression, label: Name.Ident, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
+    case class RecordRestrict(label: Name.Ident, rest: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
     case class ArrayLit(elms: List[NamedAst.Expression], tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
@@ -248,7 +248,7 @@ object NamedAst {
 
       case class False(loc: SourceLocation) extends NamedAst.Predicate.Head
 
-      case class Atom(base: Option[Symbol.VarSym], name: Name.QName, terms: List[NamedAst.Expression], loc: SourceLocation) extends NamedAst.Predicate.Head
+      case class Atom(base: Option[Symbol.VarSym], name: Name.QName, terms: List[NamedAst.Expression], tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Predicate.Head
 
     }
 
@@ -256,7 +256,7 @@ object NamedAst {
 
     object Body {
 
-      case class Atom(base: Option[Symbol.VarSym], name: Name.QName, polarity: Ast.Polarity, terms: List[NamedAst.Pattern], loc: SourceLocation) extends NamedAst.Predicate.Body
+      case class Atom(base: Option[Symbol.VarSym], name: Name.QName, polarity: Ast.Polarity, terms: List[NamedAst.Pattern], tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Predicate.Body
 
       case class Filter(name: Name.QName, terms: List[NamedAst.Expression], loc: SourceLocation) extends NamedAst.Predicate.Body
 
@@ -282,11 +282,17 @@ object NamedAst {
 
     case class RecordEmpty(loc: SourceLocation) extends NamedAst.Type
 
-    case class RecordExtension(base: NamedAst.Type, label: Name.Ident, field: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
+    case class RecordExtend(label: Name.Ident, field: NamedAst.Type, rest: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
+
+    case class Schema(predicates: List[(Name.QName, List[NamedAst.Type])], loc: SourceLocation) extends NamedAst.Type
 
     case class Nat(len: Int, loc: SourceLocation) extends NamedAst.Type
 
     case class Native(fqn: List[String], loc: SourceLocation) extends NamedAst.Type
+
+    case class Relation(sym: Symbol.RelSym, loc: SourceLocation) extends NamedAst.Type
+
+    case class Lattice(sym: Symbol.LatSym, loc: SourceLocation) extends NamedAst.Type
 
     case class Arrow(params: List[NamedAst.Type], ret: NamedAst.Type, loc: SourceLocation) extends NamedAst.Type
 

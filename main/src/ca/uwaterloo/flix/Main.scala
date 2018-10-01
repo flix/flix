@@ -127,7 +127,7 @@ object Main {
           if (main.nonEmpty) {
             val name = main.get
             val evalTimer = new Timer(compilationResult.evalToString(name))
-            Console.println(s"$name returned `${evalTimer.getResult}' (compile: ${timer.getFormatter.fmt}, execute: ${evalTimer.getFormatter.fmt})")
+            Console.println(s"$name returned `${evalTimer.getResult}' (compile: ${timer.getDuration.fmt}, execute: ${evalTimer.getDuration.fmt})")
           }
 
           if (cmdOpts.benchmark) {

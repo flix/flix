@@ -41,11 +41,11 @@ class Timer[T](f: => T) {
   /**
     * Returns the elapsed time.
     */
-  def getDuration: Long = d
+  def getElapsed: Long = d
 
   /**
-    * Returns a duration formatter.
+    * Returns a duration object.
     */
-  def getFormatter: DurationFormatter = new DurationFormatter(d)
+  def getDuration: Duration = new Duration(d)
 
 }

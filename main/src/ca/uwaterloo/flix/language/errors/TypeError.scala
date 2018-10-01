@@ -100,6 +100,46 @@ object TypeError {
   }
 
   /**
+    * Undefined Label Error.
+    *
+    * @param fieldName  the name of the missing field.
+    * @param fieldType  the type of the missing field.
+    * @param recordType the record type where the field is missing.
+    * @param loc        the location where the error occurred.
+    */
+  case class UndefinedLabel(fieldName: String, fieldType: Type, recordType: Type, loc: SourceLocation) extends TypeError {
+    val source: Source = loc.source
+    val message: VirtualTerminal = {
+      val vt = new VirtualTerminal()
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Missing field '" << Red(fieldName) << "' of type '" << Cyan(fieldType.show) << "'." << NewLine
+      vt << NewLine
+      vt << Code(loc, "missing field.") << NewLine
+      vt << "The record type: " << Indent << NewLine
+      vt << NewLine
+      vt << recordType.show << NewLine
+      vt << Dedent << NewLine
+      vt << "does not contain the field '" << Red(fieldName) << "' of type " << Cyan(fieldType.show) << "." << NewLine
+    }
+  }
+
+  /**
+    * Unexpected non-row type.
+    *
+    * @param loc the location where the error occurred.
+    */
+  case class NonRow(tpe: Type, loc: SourceLocation) extends TypeError {
+    val source: Source = loc.source
+    val message: VirtualTerminal = {
+      val vt = new VirtualTerminal()
+      vt << Line(kind, source.format) << NewLine
+      vt << ">> Unexpected non-row type: '" << Red(tpe.show) << "'." << NewLine
+      vt << NewLine
+      vt << Code(loc, "unexpected non-row type.") << NewLine
+    }
+  }
+  
+  /**
     * Returns a string that represents the type difference between the two given types.
     */
   private def diff(tpe1: Type, tpe2: Type): TypeDiff = (tpe1, tpe2) match {
@@ -124,7 +164,6 @@ object TypeError {
     case (Type.Arrow(l1), Type.Arrow(l2)) if l1 == l2 => TypeDiff.Star(TypeConstructor.Arrow)
     case (Type.Enum(name1, kind1), Type.Enum(name2, kind2)) if name1 == name2 => TypeDiff.Star(TypeConstructor.Enum(name1.name))
     case (Type.Tuple(l1), Type.Tuple(l2)) if l1 == l2 => TypeDiff.Star(TypeConstructor.Tuple)
-    case (Type.ConstraintSet, Type.ConstraintSet) => TypeDiff.Star(TypeConstructor.Other)
     case (Type.Solvable, Type.Solvable) => TypeDiff.Star(TypeConstructor.Other)
     case (Type.Checkable, Type.Checkable) => TypeDiff.Star(TypeConstructor.Other)
     case (Type.Apply(t11, t12), Type.Apply(t21, t22)) =>

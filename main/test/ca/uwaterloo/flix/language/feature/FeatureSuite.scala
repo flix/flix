@@ -45,6 +45,7 @@ class FeatureSuite extends Suites(
   new FlixTest("Test.Expression.Constraint.Filter", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Constraint.Filter.flix")(compiled = false), // TODO
   new FlixTest("Test.Expression.Constraint", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Constraint.flix")(compiled = false), // TODO
   new FlixTest("Test.Expression.Constraint.Functional", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Constraint.Functional.flix")(compiled = false), // TODO
+  new FlixTest("Test.Expression.Constraint.Polymorphic", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Constraint.Polymorphic.flix")(compiled = false), // TODO
   new FlixTest("Test.Expression.Constraint.Transfer", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Constraint.Transfer.flix")(compiled = false), // TODO
   new FlixTest("Test.Expression.NewRelation", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.NewRelation.flix")(compiled = false), // TODO
 

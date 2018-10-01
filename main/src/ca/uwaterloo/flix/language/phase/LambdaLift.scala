@@ -213,18 +213,18 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.RecordEmpty(tpe, loc) =>
         Expression.RecordEmpty(tpe, loc)
 
-      case Expression.RecordSelect(base, label, tpe, loc) =>
-        val b = visitExp(base)
-        Expression.RecordSelect(b, label, tpe, loc)
+      case Expression.RecordSelect(exp, label, tpe, loc) =>
+        val e = visitExp(exp)
+        Expression.RecordSelect(e, label, tpe, loc)
 
-      case Expression.RecordExtend(base, label, value, tpe, loc) =>
-        val b = visitExp(base)
+      case Expression.RecordExtend(label, value, rest, tpe, loc) =>
         val v = visitExp(value)
-        Expression.RecordExtend(b, label, v, tpe, loc)
+        val r = visitExp(rest)
+        Expression.RecordExtend(label, v, r, tpe, loc)
 
-      case Expression.RecordRestrict(base, label, tpe, loc) =>
-        val b = visitExp(base)
-        Expression.RecordRestrict(b, label, tpe, loc)
+      case Expression.RecordRestrict(label, rest, tpe, loc) =>
+        val r = visitExp(rest)
+        Expression.RecordRestrict(label, r, tpe, loc)
 
       case Expression.ArrayLit(elms, tpe, loc) =>
         val es = elms map visitExp
@@ -354,12 +354,12 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     def visitHeadPredicate(head0: Predicate.Head): Predicate.Head = head0 match {
       case Predicate.Head.True(loc) => Predicate.Head.True(loc)
       case Predicate.Head.False(loc) => Predicate.Head.False(loc)
-      case Predicate.Head.RelAtom(base, sym, terms, loc) =>
+      case Predicate.Head.RelAtom(base, sym, terms, tpe, loc) =>
         val ts = terms map visitHeadTerm
-        Predicate.Head.RelAtom(base, sym, terms, loc)
-      case Predicate.Head.LatAtom(base, sym, terms, loc) =>
+        Predicate.Head.RelAtom(base, sym, terms, tpe, loc)
+      case Predicate.Head.LatAtom(base, sym, terms, tpe, loc) =>
         val ts = terms map visitHeadTerm
-        Predicate.Head.LatAtom(base, sym, terms, loc)
+        Predicate.Head.LatAtom(base, sym, terms, tpe, loc)
     }
 
     /**
