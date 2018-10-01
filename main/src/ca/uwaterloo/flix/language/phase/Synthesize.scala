@@ -1083,8 +1083,16 @@ object Synthesize extends Phase[Root, Root] {
           // Records
           //
           if (tpe.isRecord) {
-            // TODO: Implement toString
+            // TODO: Implement toString for records.
             return Expression.Str("<<record>>", sl)
+          }
+
+          //
+          // Schema
+          //
+          if (tpe.isSchema) {
+            // TODO: Implement toString for schema.
+            return Expression.Str("<<schema>>", sl)
           }
 
           throw InternalCompilerException(s"Unknown type '$tpe'.")

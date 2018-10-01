@@ -1296,21 +1296,20 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
         r <- lookupType(rest, ns0, root)
       } yield Type.RecordExtend(label.name, v, r)
 
-    case NamedAst.Type.Schema(tpes, loc) =>
-      traverse(tpes)(tpe => lookupType(tpe, ns0, root)) map {
-        case ts =>
-          val m = ts.foldLeft(Map.empty[Symbol.PredSym, Type]) {
-            case (macc, tpe) =>
-              tpe.typeConstructor match {
-                case Type.Relation(sym, _, _) => macc + (sym -> tpe)
-                case Type.Lattice(sym, _, _) => macc + (sym -> tpe)
-                case otherType =>
-                  // NB: This silently ignores non-relation and non-lattice types.
-                  macc
-              }
-          }
+    case NamedAst.Type.Schema(predicates, loc) =>
+      val predicatesVal = traverse(predicates) {
+        case (qname, typeArgs) =>
+          val relOrLatVal = lookupRelationOrLattice(qname, ns0, root)
+          val typeArgsVal = traverse(typeArgs)(lookupType(_, ns0, root))
 
-          Type.ConstraintRow(m)
+          mapN(relOrLatVal, typeArgsVal) {
+            case (RelationOrLattice.Rel(sym), attr) => sym -> Type.mkRelation(sym, attr)
+            case (RelationOrLattice.Lat(sym), attr) => sym -> Type.mkLattice(sym, attr)
+          }
+      }
+
+      predicatesVal map {
+        case m => Type.ConstraintRow(m.toMap)
       }
 
     case NamedAst.Type.Nat(len, loc) => Type.Succ(len, Type.Zero).toSuccess

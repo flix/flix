@@ -1238,11 +1238,11 @@ object ParsedAst {
     /**
       * Schema Type.
       *
-      * @param sp1  the position of the first character in the type.
-      * @param tpes the types in the schema.
-      * @param sp2  the position of the last character in the type.
+      * @param sp1        the position of the first character in the type.
+      * @param predicates the predicates in the schema.
+      * @param sp2        the position of the last character in the type.
       */
-    case class Schema(sp1: SourcePosition, tpes: Seq[ParsedAst.Type], sp2: SourcePosition) extends ParsedAst.Type
+    case class Schema(sp1: SourcePosition, predicates: Seq[(Name.QName, Seq[ParsedAst.Type])], sp2: SourcePosition) extends ParsedAst.Type
 
     /**
       * Nat Type.
