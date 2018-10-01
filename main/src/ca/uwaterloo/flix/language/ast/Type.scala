@@ -58,8 +58,7 @@ sealed trait Type {
     case Type.Enum(_, _) => Set.empty
     case Type.Relation(_, _, _) => Set.empty
     case Type.Lattice(_, _, _) => Set.empty
-    case Type.ConstraintRow(m) => m.flatMap(_._2.typeVars).toSet
-    case Type.ConstraintSet => Set.empty
+    case Type.Schema(m) => m.flatMap(_._2.typeVars).toSet
     case Type.Solvable => Set.empty
     case Type.Checkable => Set.empty
     case Type.Apply(tpe1, tpe2) => tpe1.typeVars ++ tpe2.typeVars
@@ -142,14 +141,6 @@ sealed trait Type {
   }
 
   /**
-    * Returns `true` if `this` type is a constraint set type.
-    */
-  def isConstraintSet: Boolean = typeConstructor match {
-    case Type.ConstraintSet => true
-    case _ => false
-  }
-
-  /**
     * Returns `true` if `this` type is a tuple type.
     */
   def isTuple: Boolean = typeConstructor match {
@@ -167,10 +158,10 @@ sealed trait Type {
   }
 
   /**
-    * Returns `true` if `this` type is a record type.
+    * Returns `true` if `this` type is a schema type.
     */
   def isSchema: Boolean = typeConstructor match {
-    case Type.ConstraintRow(_) => true
+    case Type.Schema(_) => true
     case _ => false
   }
 
@@ -217,8 +208,7 @@ sealed trait Type {
     case Type.Enum(sym, _) => sym.toString
     case Type.Relation(sym, attr, _) => sym.toString + "(" + attr.mkString(", ") + ")"
     case Type.Lattice(sym, attr, _) => sym.toString + "(" + attr.mkString(", ") + ")"
-    case Type.ConstraintRow(m) => m.mkString(", ")
-    case Type.ConstraintSet => "ConstraintSet"
+    case Type.Schema(m) => m.mkString(", ")
     case Type.Solvable => "Solvable"
     case Type.Checkable => "Checkable"
     case Type.Tuple(l) => s"Tuple($l)"
@@ -409,20 +399,11 @@ object Type {
   case class Lattice(sym: Symbol.LatSym, attr: List[Type], kind: Kind) extends Type
 
   /**
-    * A type constructor that represents a constraint system.
+    * A type constructor that represents a schema.
     *
     * @param m the types of the predicate symbols in the system.
     */
-  // TODO: Rename to Schema
-  case class ConstraintRow(m: Map[Symbol.PredSym, Type]) extends Type {
-    def kind: Kind = Kind.Star
-  }
-
-  /**
-    * A type constructor that represents a constraint set.
-    */
-  // TODO: Remove
-  case object ConstraintSet extends Type {
+  case class Schema(m: Map[Symbol.PredSym, Type]) extends Type {
     def kind: Kind = Kind.Star
   }
 
@@ -629,13 +610,12 @@ object Type {
       case Type.Enum(sym, kind) => Type.Enum(sym, kind)
       case Type.Relation(sym, attr, kind) => Type.Relation(sym, attr map visit, kind)
       case Type.Lattice(sym, attr, kind) => Type.Lattice(sym, attr map visit, kind)
-      case Type.ConstraintRow(m) =>
+      case Type.Schema(m) =>
         val newM = m.foldLeft(Map.empty[Symbol.PredSym, Type]) {
           case (macc, (s, t)) => macc + (s -> visit(t))
         }
-        Type.ConstraintRow(newM)
+        Type.Schema(newM)
 
-      case Type.ConstraintSet => Type.ConstraintSet
       case Type.Solvable => Type.Solvable
       case Type.Checkable => Type.Checkable
     }
@@ -686,7 +666,6 @@ object Type {
           case Type.Succ(n, t) => n.toString + " " + t.toString
           case Type.Native(clazz) => "#" + clazz.getName
           case Type.Ref => "Ref"
-          case Type.ConstraintSet => "ConstraintSet"
           case Type.Solvable => "Solvable"
           case Type.Checkable => "Checkable"
 
@@ -740,7 +719,7 @@ object Type {
           //
           // ConstraintRow.
           //
-          case Type.ConstraintRow(row) =>
+          case Type.Schema(row) =>
             "ConstraintRow {" + row.map {
               case (s, t) => s.toString + ": " + visit(t, m)
             }.mkString(", ") + "}"

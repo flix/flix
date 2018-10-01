@@ -2033,7 +2033,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     val m = program.allPredicateSymbols.foldLeft(Map.empty: Map[Symbol.PredSym, Type]) {
       case (macc, predSym) => macc + (predSym -> Type.freshTypeVar())
     }
-    Type.ConstraintRow(m)
+    Type.Schema(m)
   }
 
   /**
@@ -2048,7 +2048,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         else
           macc + (predSym -> Type.freshTypeVar())
     }
-    Type.ConstraintRow(m)
+    Type.Schema(m)
   }
 
 }

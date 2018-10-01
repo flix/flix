@@ -1020,14 +1020,6 @@ object Synthesize extends Phase[Root, Root] {
           }
 
           //
-          // ConstraintSet case.
-          //
-          if (tpe.isConstraintSet) {
-            val method = classOf[java.lang.Object].getMethod("toString")
-            return Expression.NativeMethod(method, List(exp0), Type.Str, ast.Eff.Pure, sl)
-          }
-
-          //
           // Tuple case.
           //
           if (tpe.isTuple) {

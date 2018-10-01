@@ -164,7 +164,6 @@ object TypeError {
     case (Type.Arrow(l1), Type.Arrow(l2)) if l1 == l2 => TypeDiff.Star(TypeConstructor.Arrow)
     case (Type.Enum(name1, kind1), Type.Enum(name2, kind2)) if name1 == name2 => TypeDiff.Star(TypeConstructor.Enum(name1.name))
     case (Type.Tuple(l1), Type.Tuple(l2)) if l1 == l2 => TypeDiff.Star(TypeConstructor.Tuple)
-    case (Type.ConstraintSet, Type.ConstraintSet) => TypeDiff.Star(TypeConstructor.Other)
     case (Type.Solvable, Type.Solvable) => TypeDiff.Star(TypeConstructor.Other)
     case (Type.Checkable, Type.Checkable) => TypeDiff.Star(TypeConstructor.Other)
     case (Type.Apply(t11, t12), Type.Apply(t21, t22)) =>

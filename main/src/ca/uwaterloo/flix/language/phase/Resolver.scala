@@ -1245,7 +1245,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
       case "Str" => Type.Str.toSuccess
       case "Array" => Type.Array.toSuccess
       case "Vector" => Type.Vector.toSuccess
-      case "ConstraintSet" => Type.ConstraintSet.toSuccess
       case "Solvable" => Type.Solvable.toSuccess
       case "Checkable" => Type.Checkable.toSuccess
       case "Ref" => Type.Ref.toSuccess
@@ -1309,7 +1308,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
       }
 
       predicatesVal map {
-        case m => Type.ConstraintRow(m.toMap)
+        case m => Type.Schema(m.toMap)
       }
 
     case NamedAst.Type.Nat(len, loc) => Type.Succ(len, Type.Zero).toSuccess
