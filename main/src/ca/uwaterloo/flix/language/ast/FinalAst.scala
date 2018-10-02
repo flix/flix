@@ -165,6 +165,14 @@ object FinalAst {
 
     case class Tuple(elms: List[FinalAst.Expression], tpe: Type, loc: SourceLocation) extends FinalAst.Expression
 
+    case class RecordEmpty(tpe: Type, loc: SourceLocation) extends FinalAst.Expression
+
+    case class RecordSelect(exp: FinalAst.Expression, label: String, tpe: Type, loc: SourceLocation) extends FinalAst.Expression
+
+    case class RecordExtend(label: String, value: FinalAst.Expression, rest: FinalAst.Expression, tpe: Type, loc: SourceLocation) extends FinalAst.Expression
+
+    case class RecordRestrict(label: String, rest: FinalAst.Expression, tpe: Type, loc: SourceLocation) extends FinalAst.Expression
+
     case class ArrayLit(elms: List[FinalAst.Expression], tpe: Type, loc: SourceLocation) extends FinalAst.Expression
 
     case class ArrayNew(elm: FinalAst.Expression, len: FinalAst.Expression, tpe: Type, loc: SourceLocation) extends FinalAst.Expression
@@ -209,11 +217,11 @@ object FinalAst {
 
     case class ConstraintUnion(exp1: FinalAst.Expression, exp2: FinalAst.Expression, tpe: Type, loc: SourceLocation) extends FinalAst.Expression
 
-    case class FixpointSolve(exp: FinalAst.Expression, tpe: Type, loc: SourceLocation) extends FinalAst.Expression
+    case class FixpointSolve(exp: FinalAst.Expression, stf: Ast.Stratification, tpe: Type, loc: SourceLocation) extends FinalAst.Expression
 
-    case class FixpointCheck(exp: FinalAst.Expression, tpe: Type, loc: SourceLocation) extends FinalAst.Expression
+    case class FixpointCheck(exp: FinalAst.Expression, stf: Ast.Stratification, tpe: Type, loc: SourceLocation) extends FinalAst.Expression
 
-    case class FixpointDelta(exp: FinalAst.Expression, tpe: Type, loc: SourceLocation) extends FinalAst.Expression
+    case class FixpointDelta(exp: FinalAst.Expression, stf: Ast.Stratification, tpe: Type, loc: SourceLocation) extends FinalAst.Expression
 
     case class UserError(tpe: Type, loc: SourceLocation) extends FinalAst.Expression
 
@@ -239,9 +247,9 @@ object FinalAst {
 
       case class False(loc: SourceLocation) extends FinalAst.Predicate.Head
 
-      case class RelAtom(base: Option[Symbol.VarSym], sym: Symbol.RelSym, terms: List[FinalAst.Term.Head], loc: SourceLocation) extends FinalAst.Predicate.Head
+      case class RelAtom(base: Option[Symbol.VarSym], sym: Symbol.RelSym, terms: List[FinalAst.Term.Head], tpe: Type, loc: SourceLocation) extends FinalAst.Predicate.Head
 
-      case class LatAtom(base: Option[Symbol.VarSym], sym: Symbol.LatSym, terms: List[FinalAst.Term.Head], loc: SourceLocation) extends FinalAst.Predicate.Head
+      case class LatAtom(base: Option[Symbol.VarSym], sym: Symbol.LatSym, terms: List[FinalAst.Term.Head], tpe: Type, loc: SourceLocation) extends FinalAst.Predicate.Head
 
     }
 
@@ -249,9 +257,9 @@ object FinalAst {
 
     object Body {
 
-      case class RelAtom(base: Option[Symbol.VarSym], sym: Symbol.RelSym, polarity: Ast.Polarity, terms: List[FinalAst.Term.Body], index2sym: List[Symbol.VarSym], loc: SourceLocation) extends FinalAst.Predicate.Body
+      case class RelAtom(base: Option[Symbol.VarSym], sym: Symbol.RelSym, polarity: Ast.Polarity, terms: List[FinalAst.Term.Body], index2sym: List[Symbol.VarSym], tpe: Type, loc: SourceLocation) extends FinalAst.Predicate.Body
 
-      case class LatAtom(base: Option[Symbol.VarSym], sym: Symbol.LatSym, polarity: Ast.Polarity, terms: List[FinalAst.Term.Body], index2sym: List[Symbol.VarSym], loc: SourceLocation) extends FinalAst.Predicate.Body
+      case class LatAtom(base: Option[Symbol.VarSym], sym: Symbol.LatSym, polarity: Ast.Polarity, terms: List[FinalAst.Term.Body], index2sym: List[Symbol.VarSym], tpe: Type, loc: SourceLocation) extends FinalAst.Predicate.Body
 
       case class Filter(sym: Symbol.DefnSym, terms: List[FinalAst.Term.Body], loc: SourceLocation) extends FinalAst.Predicate.Body
 

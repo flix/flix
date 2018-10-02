@@ -258,7 +258,8 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
        * Check for `DuplicateAttribute`.
        */
       mapN(modVal, checkDuplicateAttribute(attrs)) {
-        case (mod, as) => List(WeededAst.Declaration.Relation(doc, mod, ident, tparams, as, mkSL(sp1, sp2)))
+        case (mod, as) =>
+          List(WeededAst.Declaration.Relation(doc, mod, ident, tparams, as, mkSL(sp1, sp2)))
       }
   }
 
@@ -599,6 +600,80 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           WeededAst.Expression.Unit(loc)
         case x :: Nil => x
         case xs => WeededAst.Expression.Tuple(xs, mkSL(sp1, sp2))
+      }
+
+    case ParsedAst.Expression.RecordLit(sp1, fields, sp2) =>
+      val fieldsVal = traverse(fields) {
+        case ParsedAst.RecordField(fsp1, label, exp, fsp2) =>
+          mapN(visitExp(exp)) {
+            case e => label -> e
+          }
+      }
+
+      mapN(fieldsVal) {
+        case fs =>
+          // Rewrite into a sequence of nested record extensions.
+          val zero = WeededAst.Expression.RecordEmpty(mkSL(sp1, sp2))
+          fs.foldRight(zero: WeededAst.Expression) {
+            case ((l, e), acc) => WeededAst.Expression.RecordExtend(l, e, acc, mkSL(sp1, sp2))
+          }
+      }
+
+    case ParsedAst.Expression.RecordSelect(exp, label, sp2) =>
+      val sp1 = leftMostSourcePosition(exp)
+      mapN(visitExp(exp)) {
+        case e => WeededAst.Expression.RecordSelect(e, label, mkSL(sp1, sp2))
+      }
+
+    case ParsedAst.Expression.RecordSelectLambda(sp1, label, sp2) =>
+      val loc = mkSL(sp1, sp2)
+      val ident = Name.Ident(sp1, "_rec", sp2)
+      val qname = Name.QName(sp1, Name.RootNS, ident, sp2)
+      val fparam = WeededAst.FormalParam(ident, Ast.Modifiers.Empty, None, loc)
+      val varExp = WeededAst.Expression.VarOrDef(qname, loc)
+      val lambdaBody = WeededAst.Expression.RecordSelect(varExp, label, loc)
+      WeededAst.Expression.Lambda(fparam, lambdaBody, loc).toSuccess
+
+    case ParsedAst.Expression.RecordExtend(_, fields, rest, _) =>
+      val fieldsVal = traverse(fields) {
+        case ParsedAst.RecordField(sp1, label, exp, sp2) =>
+          mapN(visitExp(exp)) {
+            case e => (label, e, mkSL(sp1, sp2))
+          }
+      }
+
+      mapN(fieldsVal, visitExp(rest)) {
+        case (fs, r) =>
+          // Rewrite into a sequence of nested record extensions.
+          fs.foldLeft(r) {
+            case (acc, (label, value, loc)) => WeededAst.Expression.RecordExtend(label, value, acc, loc)
+          }
+      }
+
+    case ParsedAst.Expression.RecordRestrict(sp1, labels, rest, sp2) =>
+      val sp1 = leftMostSourcePosition(rest)
+      mapN(visitExp(rest)) {
+        case r => labels.foldLeft(r) {
+          case (acc, label) => WeededAst.Expression.RecordRestrict(label, acc, mkSL(sp1, sp2))
+        }
+      }
+
+    case ParsedAst.Expression.RecordUpdate(_, fields, rest, _) =>
+      val fieldsVal = traverse(fields) {
+        case ParsedAst.RecordField(sp1, label, value, sp2) =>
+          mapN(visitExp(value)) {
+            case v => (label, v, mkSL(sp1, sp2))
+          }
+      }
+
+      mapN(fieldsVal, visitExp(rest)) {
+        case (fs, r) =>
+          // Rewrite into a sequence of pairwise nested restrictions and extensions.
+          fs.foldLeft(r) {
+            case (acc, (label, value, loc)) =>
+              val inner = WeededAst.Expression.RecordRestrict(label, acc, loc)
+              WeededAst.Expression.RecordExtend(label, value, inner, loc)
+          }
       }
 
     case ParsedAst.Expression.ArrayLit(sp1, elms, sp2) =>
@@ -957,6 +1032,11 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           }
       }
 
+    case ParsedAst.Expression.ConstraintUnion(sp1, exp1, exp2, sp2) =>
+      mapN(visitExp(exp1), visitExp(exp2)) {
+        case (e1, e2) => WeededAst.Expression.ConstraintUnion(e1, e2, mkSL(sp1, sp2))
+      }
+
     case ParsedAst.Expression.FixpointSolve(sp1, exp, sp2) =>
       visitExp(exp) map {
         case e => WeededAst.Expression.FixpointSolve(e, mkSL(sp1, sp2))
@@ -1192,7 +1272,12 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
     case ParsedAst.Predicate.Body.Filter(sp1, qname, terms, sp2) =>
       traverse(terms)(visitExp) map {
-        case ts => WeededAst.Predicate.Body.Filter(qname, ts, mkSL(sp1, sp2))
+        case ts =>
+          // Check if the term list is empty. If so, invoke the function with the unit value.
+          if (ts.isEmpty)
+            WeededAst.Predicate.Body.Filter(qname, List(WeededAst.Expression.Unit(mkSL(sp1, sp2))), mkSL(sp1, sp2))
+          else
+            WeededAst.Predicate.Body.Filter(qname, ts, mkSL(sp1, sp2))
       }
 
     case ParsedAst.Predicate.Body.Functional(sp1, ident, term, sp2) =>
@@ -1355,11 +1440,32 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     */
   private def visitType(tpe: ParsedAst.Type): WeededAst.Type = tpe match {
     case ParsedAst.Type.Unit(sp1, sp2) => WeededAst.Type.Unit(mkSL(sp1, sp2))
+
     case ParsedAst.Type.Var(sp1, ident, sp2) => WeededAst.Type.Var(ident, mkSL(sp1, sp2))
+
     case ParsedAst.Type.Ambiguous(sp1, qname, sp2) => WeededAst.Type.Ambiguous(qname, mkSL(sp1, sp2))
+
     case ParsedAst.Type.Tuple(sp1, elms, sp2) => WeededAst.Type.Tuple(elms.toList.map(visitType), mkSL(sp1, sp2))
+
+    case ParsedAst.Type.Record(sp1, fields, restOpt, sp2) =>
+      val zero = restOpt match {
+        case None => WeededAst.Type.RecordEmpty(mkSL(sp1, sp2))
+        case Some(base) => WeededAst.Type.Var(base, mkSL(sp1, sp2))
+      }
+      fields.foldRight(zero: WeededAst.Type) {
+        case (ParsedAst.RecordFieldType(ssp1, l, t, ssp2), acc) => WeededAst.Type.RecordExtend(l, visitType(t), acc, mkSL(ssp1, ssp2))
+      }
+
+    case ParsedAst.Type.Schema(sp1, predicates, sp2) =>
+      val ps = predicates map {
+        case (qname, attr) => qname -> (attr map visitType).toList
+      }
+      WeededAst.Type.Schema(ps.toList, mkSL(sp1, sp2))
+
     case ParsedAst.Type.Nat(sp1, len, sp2) => WeededAst.Type.Nat(checkNaturalNumber(len, sp1, sp2), mkSL(sp1, sp2))
+
     case ParsedAst.Type.Native(sp1, fqn, sp2) => WeededAst.Type.Native(fqn.toList, mkSL(sp1, sp2))
+
     case ParsedAst.Type.Arrow(sp1, tparams, tresult, sp2) =>
       // Construct a curried arrow type.
       tparams.foldRight(visitType(tresult)) {
@@ -1694,6 +1800,12 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.Switch(sp1, _, _) => sp1
     case ParsedAst.Expression.Tag(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Tuple(sp1, _, _) => sp1
+    case ParsedAst.Expression.RecordLit(sp1, _, _) => sp1
+    case ParsedAst.Expression.RecordExtend(sp1, _, _, _) => sp1
+    case ParsedAst.Expression.RecordSelect(base, _, _) => leftMostSourcePosition(base)
+    case ParsedAst.Expression.RecordSelectLambda(sp1, _, _) => sp1
+    case ParsedAst.Expression.RecordRestrict(sp1, _, _, _) => sp1
+    case ParsedAst.Expression.RecordUpdate(sp1, _, _, _) => sp1
     case ParsedAst.Expression.ArrayLit(sp1, _, _) => sp1
     case ParsedAst.Expression.ArrayNew(sp1, _, _, _) => sp1
     case ParsedAst.Expression.ArrayLoad(base, _, _) => leftMostSourcePosition(base)
@@ -1732,6 +1844,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.Statement(sp1, _, _, _) => sp1
     case ParsedAst.Expression.NewRelationOrLattice(sp1, _, _) => sp1
     case ParsedAst.Expression.ConstraintSeq(sp1, _, _) => sp1
+    case ParsedAst.Expression.ConstraintUnion(sp1, _, _, _) => sp1
     case ParsedAst.Expression.FixpointSolve(sp1, _, _) => sp1
     case ParsedAst.Expression.FixpointCheck(sp1, _, _) => sp1
     case ParsedAst.Expression.FixpointDelta(sp1, _, _) => sp1
@@ -1746,6 +1859,8 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Type.Var(sp1, _, _) => sp1
     case ParsedAst.Type.Ambiguous(sp1, _, _) => sp1
     case ParsedAst.Type.Tuple(sp1, _, _) => sp1
+    case ParsedAst.Type.Record(sp1, _, _, _) => sp1
+    case ParsedAst.Type.Schema(sp1, _, _) => sp1
     case ParsedAst.Type.Nat(sp1, _, _) => sp1
     case ParsedAst.Type.Native(sp1, _, _) => sp1
     case ParsedAst.Type.Arrow(sp1, _, _, _) => sp1

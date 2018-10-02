@@ -41,6 +41,11 @@ import scala.collection.mutable
 class Shell(initialPaths: List[Path], options: Options) {
 
   /**
+    * The number of warmup iterations.
+    */
+  private val WarmupIterations = 80
+
+  /**
     * The default color context.
     */
   private implicit val _ = TerminalContext.AnsiTerminal
@@ -178,6 +183,7 @@ class Shell(initialPaths: List[Path], options: Options) {
     case Command.Benchmark => execBenchmark()
     case Command.Test => execTest()
     case Command.Verify => execVerify()
+    case Command.Warmup => execWarmup()
     case Command.Watch => execWatch()
     case Command.Unwatch => execUnwatch()
     case Command.Quit => execQuit()
@@ -485,9 +491,13 @@ class Shell(initialPaths: List[Path], options: Options) {
         // Pretty print the holes (if any).
         prettyPrintHoles()
       case Validation.Failure(errors) =>
+        terminal.writer().println()
         for (error <- errors) {
           terminal.writer().print(error.message.fmt)
         }
+        terminal.writer().println()
+        terminal.writer().print(prompt)
+        terminal.writer().flush()
     }
 
     flix.codeGen(root) match {
@@ -525,6 +535,23 @@ class Shell(initialPaths: List[Path], options: Options) {
   private def execVerify()(implicit terminal: Terminal): Unit = {
     // Verify all properties in the program.
     Verifier.runAndPrint(this.compilationResult.getRoot, terminal.writer())(flix)
+  }
+
+  /**
+    * Warms up the compiler by running it multiple times.
+    */
+  private def execWarmup()(implicit terminal: Terminal): Unit = {
+    val elapsed = mutable.ListBuffer.empty[Duration]
+    for (i <- 0 until WarmupIterations) {
+      val t = System.nanoTime()
+      execReload()
+      terminal.writer().print(".")
+      terminal.writer().flush()
+      val e = System.nanoTime()
+      elapsed += new Duration(e - t)
+    }
+    terminal.writer().println()
+    terminal.writer().println(s"Minimum = ${Duration.min(elapsed).fmt}, Maximum = ${Duration.max(elapsed).fmt}, Average = ${Duration.avg(elapsed).fmt})")
   }
 
   /**
@@ -588,6 +615,7 @@ class Shell(initialPaths: List[Path], options: Options) {
     w.println("  :benchmark                      Run all benchmarks in the program and show the results.")
     w.println("  :test                           Run all unit tests in the program and show the results.")
     w.println("  :verify                         Verify all properties in the program and show the results.")
+    w.println("  :warmup                         Warms up the compiler by running it multiple times.")
     w.println("  :watch :w                       Watches all source files for changes.")
     w.println("  :unwatch                        Unwatches all source files for changes.")
     w.println("  :quit :q                        Terminates the Flix shell.")
@@ -737,7 +765,7 @@ class Shell(initialPaths: List[Path], options: Options) {
     // Register each directory.
     for (path <- paths) {
       if (Files.isDirectory(path)) {
-        path.register(watchService, StandardWatchEventKinds.ENTRY_CREATE, StandardWatchEventKinds.ENTRY_MODIFY)
+        path.register(watchService, StandardWatchEventKinds.ENTRY_MODIFY)
       }
     }
 
@@ -750,25 +778,33 @@ class Shell(initialPaths: List[Path], options: Options) {
         // Wait for a set of events.
         val watchKey = watchService.take()
         // Iterate through each event.
+        val changed = mutable.ListBuffer.empty[Path]
         for (event <- watchKey.pollEvents().asScala) {
           // Check if a file with ".flix" extension changed.
           val changedPath = event.context().asInstanceOf[Path]
           if (changedPath.toString.endsWith(".flix")) {
-            terminal.writer().println()
-            terminal.writer().println(s"File: '$changedPath' changed.")
-            terminal.flush()
+            changed += changedPath
           }
         }
 
-        // Check if sufficient time has passed since the last compilation.
-        val currentTime = System.nanoTime()
-        if ((currentTime - lastChanged) >= Delay) {
-          lastChanged = currentTime
-          // Allow a short delay before running the compiler.
-          Thread.sleep(50)
-          executorService.submit(new Runnable {
-            def run(): Unit = execReload()
-          })
+        if (changed.nonEmpty) {
+          // Print information to the user.
+          terminal.writer().println()
+          terminal.writer().println(s"Recompiling. File(s) changed: ${changed.mkString(", ")}")
+          terminal.writer().print(prompt)
+          terminal.writer().flush()
+
+          // Check if sufficient time has passed since the last compilation.
+          val currentTime = System.nanoTime()
+          if ((currentTime - lastChanged) >= Delay) {
+            lastChanged = currentTime
+            // Allow a short delay before running the compiler.
+            Thread.sleep(50)
+            executorService.submit(new Runnable {
+              def run(): Unit = execReload()
+            })
+          }
+
         }
 
         // Reset the watch key.

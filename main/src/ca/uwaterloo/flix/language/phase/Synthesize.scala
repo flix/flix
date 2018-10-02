@@ -65,16 +65,16 @@ object Synthesize extends Phase[Root, Root] {
     def visitHead(h0: Predicate.Head): Predicate.Head = h0 match {
       case Predicate.Head.True(loc) => h0
       case Predicate.Head.False(loc) => h0
-      case Predicate.Head.RelAtom(base, sym, terms, loc) => Predicate.Head.RelAtom(base, sym, terms map visitExp, loc)
-      case Predicate.Head.LatAtom(base, sym, terms, loc) => Predicate.Head.LatAtom(base, sym, terms map visitExp, loc)
+      case Predicate.Head.RelAtom(base, sym, terms, tpe, loc) => Predicate.Head.RelAtom(base, sym, terms map visitExp, tpe, loc)
+      case Predicate.Head.LatAtom(base, sym, terms, tpe, loc) => Predicate.Head.LatAtom(base, sym, terms map visitExp, tpe, loc)
     }
 
     /**
       * Performs synthesis on the given body predicate `h0`.
       */
     def visitBody(b0: Predicate.Body): Predicate.Body = b0 match {
-      case Predicate.Body.RelAtom(base, sym, polarity, pats, loc) => b0
-      case Predicate.Body.LatAtom(base, sym, polarity, pats, loc) => b0
+      case Predicate.Body.RelAtom(base, sym, polarity, pats, tpe, loc) => b0
+      case Predicate.Body.LatAtom(base, sym, polarity, pats, tpe, loc) => b0
       case Predicate.Body.Filter(sym, terms, loc) => Predicate.Body.Filter(sym, terms map visitExp, loc)
       case Predicate.Body.Functional(sym, term, loc) => Predicate.Body.Functional(sym, visitExp(term), loc)
     }
@@ -173,6 +173,22 @@ object Synthesize extends Phase[Root, Root] {
       case Expression.Tuple(elms, tpe, eff, loc) =>
         val es = elms map visitExp
         Expression.Tuple(es, tpe, eff, loc)
+
+      case Expression.RecordEmpty(tpe, eff, loc) =>
+        Expression.RecordEmpty(tpe, eff, loc)
+
+      case Expression.RecordSelect(base, label, tpe, eff, loc) =>
+        val b = visitExp(base)
+        Expression.RecordSelect(b, label, tpe, eff, loc)
+
+      case Expression.RecordExtend(label, value, rest, tpe, eff, loc) =>
+        val v = visitExp(value)
+        val r = visitExp(rest)
+        Expression.RecordExtend(label, v, r, tpe, eff, loc)
+
+      case Expression.RecordRestrict(label, rest, tpe, eff, loc) =>
+        val r = visitExp(rest)
+        Expression.RecordRestrict(label, r, tpe, eff, loc)
 
       case Expression.ArrayLit(elms, tpe, eff, loc) =>
         val es = elms map visitExp
@@ -301,17 +317,17 @@ object Synthesize extends Phase[Root, Root] {
         val e2 = visitExp(exp2)
         Expression.ConstraintUnion(e1, e2, tpe, eff, loc)
 
-      case Expression.FixpointSolve(exp, tpe, eff, loc) =>
+      case Expression.FixpointSolve(exp, stf, tpe, eff, loc) =>
         val e = visitExp(exp)
-        Expression.FixpointSolve(e, tpe, eff, loc)
+        Expression.FixpointSolve(e, stf, tpe, eff, loc)
 
-      case Expression.FixpointCheck(exp, tpe, eff, loc) =>
+      case Expression.FixpointCheck(exp, stf, tpe, eff, loc) =>
         val e = visitExp(exp)
-        Expression.FixpointCheck(e, tpe, eff, loc)
+        Expression.FixpointCheck(e, stf, tpe, eff, loc)
 
-      case Expression.FixpointDelta(exp, tpe, eff, loc) =>
+      case Expression.FixpointDelta(exp, stf, tpe, eff, loc) =>
         val e = visitExp(exp)
-        Expression.FixpointDelta(e, tpe, eff, loc)
+        Expression.FixpointDelta(e, stf, tpe, eff, loc)
 
       case Expression.UserError(tpe, eff, loc) =>
         Expression.UserError(tpe, eff, loc)
@@ -1004,14 +1020,6 @@ object Synthesize extends Phase[Root, Root] {
           }
 
           //
-          // ConstraintSet case.
-          //
-          if (tpe.isConstraintSet) {
-            val method = classOf[java.lang.Object].getMethod("toString")
-            return Expression.NativeMethod(method, List(exp0), Type.Str, ast.Eff.Pure, sl)
-          }
-
-          //
           // Tuple case.
           //
           if (tpe.isTuple) {
@@ -1061,6 +1069,22 @@ object Synthesize extends Phase[Root, Root] {
 
             // Assemble the entire match expression.
             return Expression.Match(matchValue, rule :: Nil, Type.Str, ast.Eff.Pure, sl)
+          }
+
+          //
+          // Records
+          //
+          if (tpe.isRecord) {
+            // TODO: Implement toString for records.
+            return Expression.Str("<<record>>", sl)
+          }
+
+          //
+          // Schema
+          //
+          if (tpe.isSchema) {
+            // TODO: Implement toString for schema.
+            return Expression.Str("<<schema>>", sl)
           }
 
           throw InternalCompilerException(s"Unknown type '$tpe'.")

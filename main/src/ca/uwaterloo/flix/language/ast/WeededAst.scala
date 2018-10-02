@@ -118,6 +118,14 @@ object WeededAst {
 
     case class Tuple(elms: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
 
+    case class RecordEmpty(loc: SourceLocation) extends WeededAst.Expression
+
+    case class RecordSelect(exp: WeededAst.Expression, label: Name.Ident, loc: SourceLocation) extends WeededAst.Expression
+
+    case class RecordExtend(label: Name.Ident, value: WeededAst.Expression, rest: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+
+    case class RecordRestrict(label: Name.Ident, rest: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+
     case class ArrayLit(elms: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
 
     case class ArrayNew(elm: WeededAst.Expression, len: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
@@ -275,6 +283,12 @@ object WeededAst {
     case class Unit(loc: SourceLocation) extends WeededAst.Type
 
     case class Tuple(elms: List[WeededAst.Type], loc: SourceLocation) extends WeededAst.Type
+
+    case class RecordEmpty(loc: SourceLocation) extends WeededAst.Type
+
+    case class RecordExtend(label: Name.Ident, tpe: WeededAst.Type, rest: WeededAst.Type, loc: SourceLocation) extends WeededAst.Type
+
+    case class Schema(predicates: List[(Name.QName, List[WeededAst.Type])], loc: SourceLocation) extends WeededAst.Type
 
     case class Nat(len: Int, loc: SourceLocation) extends WeededAst.Type
 

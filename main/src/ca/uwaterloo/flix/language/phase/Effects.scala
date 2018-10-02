@@ -309,6 +309,14 @@ object Effects extends Phase[Root, Root] {
             Expression.Tuple(elms, tpe, eff, loc)
           }
 
+        case Expression.RecordEmpty(tpe, eff, loc) => ???
+
+        case Expression.RecordSelect(base, label, tpe, eff, loc) => ???
+
+        case Expression.RecordExtend(base, label, value, tpe, eff, loc) => ???
+
+        case Expression.RecordRestrict(base, label, tpe, eff, loc) => ???
+
         /**
           * ArrayLit Expression.
           */
@@ -577,11 +585,11 @@ object Effects extends Phase[Root, Root] {
 
         case Expression.ConstraintUnion(exp1, exp2, tpe, eff, loc) => ??? // TODO: ConstraintUnion
 
-        case Expression.FixpointSolve(exp, tpe, eff, loc) => ??? // TODO: FixpointSolve
+        case Expression.FixpointSolve(exp, stf, tpe, eff, loc) => ??? // TODO: FixpointSolve
 
-        case Expression.FixpointCheck(exp, tpe, eff, loc) => ??? // TODO: FixpointCheck
+        case Expression.FixpointCheck(exp, stf, tpe, eff, loc) => ??? // TODO: FixpointCheck
 
-        case Expression.FixpointDelta(exp, tpe, eff, loc) => ??? // TODO: FixpointDelta
+        case Expression.FixpointDelta(exp, stf, tpe, eff, loc) => ??? // TODO: FixpointDelta
 
         /**
           * User Error Expression.

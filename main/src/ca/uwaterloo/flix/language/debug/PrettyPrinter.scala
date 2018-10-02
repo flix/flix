@@ -261,6 +261,30 @@ object PrettyPrinter {
           }
           vt.text(")")
 
+        case Expression.RecordEmpty(tpe, loc) =>
+          vt.text("{}")
+
+        case Expression.RecordSelect(exp, label, tpe, loc) =>
+          visitExp(exp)
+          vt.text(".")
+          vt.text(label)
+
+        case Expression.RecordExtend(label, value, rest, tpe, loc) =>
+          vt.text("{ ")
+          vt.text(label)
+          vt.text(" = ")
+          visitExp(value)
+          vt.text(" | ")
+          visitExp(rest)
+          vt.text(" }")
+
+        case Expression.RecordRestrict(label, rest, tpe, loc) =>
+          vt.text("{ -")
+          vt.text(label)
+          vt.text(" | ")
+          visitExp(rest)
+          vt.text("}")
+
         case Expression.ArrayLit(elms, tpe, loc) =>
           vt.text("[")
           for (elm <- elms) {
@@ -387,15 +411,15 @@ object PrettyPrinter {
         case Expression.ConstraintUnion(exp1, exp2, tpe, loc) =>
           ??? // TODO: ConstraintUnion
 
-        case Expression.FixpointSolve(exp, tpe, loc) =>
+        case Expression.FixpointSolve(exp, stf, tpe, loc) =>
           vt.text("solve ")
           visitExp(exp)
 
-        case Expression.FixpointCheck(exp, tpe, loc) =>
+        case Expression.FixpointCheck(exp, stf, tpe, loc) =>
           vt.text("check ")
           visitExp(exp)
 
-        case Expression.FixpointDelta(exp, tpe, loc) =>
+        case Expression.FixpointDelta(exp, stf, tpe, loc) =>
           vt.text("delta ")
           visitExp(exp)
 

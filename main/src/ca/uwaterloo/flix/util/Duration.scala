@@ -16,10 +16,31 @@
 
 package ca.uwaterloo.flix.util
 
+object Duration {
+
+  /**
+    * Returns the minimal duration of `xs`.
+    */
+  def min(xs: Seq[Duration]): Duration = xs.min
+
+  /**
+    * Returns the maximum duration of `xs`.
+    */
+  def max(xs: Seq[Duration]): Duration = xs.max
+
+  /**
+    * Returns the average duration of `xs`.
+    */
+  def avg(xs: Seq[Duration]): Duration = new Duration(xs.map(_.d).sum / xs.length)
+
+  implicit val ordering: Ordering[Duration] = (x: Duration, y: Duration) => (x.d - y.d).asInstanceOf[Int]
+
+}
+
 /**
   * A simple class to format a time duration.
   */
-class DurationFormatter(d: Long) {
+class Duration(val d: Long) {
 
   /**
     * Returns the elapsed time in nanoseconds.

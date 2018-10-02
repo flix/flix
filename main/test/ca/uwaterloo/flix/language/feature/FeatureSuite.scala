@@ -45,8 +45,16 @@ class FeatureSuite extends Suites(
   new FlixTest("Test.Expression.Constraint.Filter", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Constraint.Filter.flix")(compiled = false), // TODO
   new FlixTest("Test.Expression.Constraint", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Constraint.flix")(compiled = false), // TODO
   new FlixTest("Test.Expression.Constraint.Functional", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Constraint.Functional.flix")(compiled = false), // TODO
+  new FlixTest("Test.Expression.Constraint.Polymorphic", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Constraint.Polymorphic.flix")(compiled = false), // TODO
   new FlixTest("Test.Expression.Constraint.Transfer", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Constraint.Transfer.flix")(compiled = false), // TODO
   new FlixTest("Test.Expression.NewRelation", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.NewRelation.flix")(compiled = false), // TODO
+
+  new FlixTest("Test.Expression.Record.Extend", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Record.Extend.flix")(compiled = false), // TODO
+  new FlixTest("Test.Expression.Record.Literal", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Record.Literal.flix")(compiled = false), // TODO
+  new FlixTest("Test.Expression.Record.Polymorphism", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Record.Polymorphism.flix")(compiled = false), // TODO
+  new FlixTest("Test.Expression.Record.Restrict", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Record.Restrict.flix")(compiled = false), // TODO
+  new FlixTest("Test.Expression.Record.Update", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Record.Update.flix")(compiled = false), // TODO
+  new FlixTest("Test.Expression.Record.Select", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Record.Select.flix")(compiled = false), // TODO
 
   new FlixTest("Test.Expression.Float", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Float.flix"),
   new FlixTest("Test.Expression.Float32", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Float32.flix"),

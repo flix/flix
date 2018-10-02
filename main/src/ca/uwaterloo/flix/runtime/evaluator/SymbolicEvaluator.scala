@@ -744,6 +744,26 @@ object SymbolicEvaluator {
         }
 
       /**
+        * RecordEmpty.
+        */
+      case Expression.RecordEmpty(tpe, loc) => ???
+
+      /**
+        * RecordSelect.
+        */
+      case Expression.RecordSelect(base, label, tpe, loc) => ???
+
+      /**
+        * RecordExtend.
+        */
+      case Expression.RecordExtend(base, label, value, tpe, loc) => ???
+
+      /**
+        * RecordRestrict.
+        */
+      case Expression.RecordRestrict(base, label, tpe, loc) => ???
+
+      /**
         * Index (into tuple).
         */
       case Expression.Index(base, offset, _, _) =>
@@ -861,17 +881,17 @@ object SymbolicEvaluator {
       /**
         * Fixpoint Solve.
         */
-      case Expression.FixpointSolve(exp, tpe, loc) => throw InternalCompilerException("Not yet supported.")
+      case Expression.FixpointSolve(exp, stf, tpe, loc) => throw InternalCompilerException("Not yet supported.")
 
       /**
         * Fixpoint Check.
         */
-      case Expression.FixpointCheck(exp, tpe, loc) => throw InternalCompilerException("Not yet supported.")
+      case Expression.FixpointCheck(exp, stf, tpe, loc) => throw InternalCompilerException("Not yet supported.")
 
       /**
         * Fixpoint Delta.
         */
-      case Expression.FixpointDelta(exp, tpe, loc) => throw InternalCompilerException("Not yet supported.")
+      case Expression.FixpointDelta(exp, stf, tpe, loc) => throw InternalCompilerException("Not yet supported.")
 
       /**
         * User Error.

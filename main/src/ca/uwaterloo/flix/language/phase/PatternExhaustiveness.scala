@@ -205,6 +205,26 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
         case Expression.Tuple(elms, _, _, _) => sequence(elms map {
           checkPats(_, root)
         }).map(const(tast))
+
+        case Expression.RecordEmpty(tpe, eff, loc) =>
+          tast.toSuccess
+
+        case Expression.RecordSelect(base, label, tpe, eff, loc) =>
+          for {
+            _ <- checkPats(base, root)
+          } yield tast
+
+        case Expression.RecordExtend(label, value, rest, tpe, eff, loc) =>
+          for {
+            _ <- checkPats(rest, root)
+            _ <- checkPats(value, root)
+          } yield tast
+
+        case Expression.RecordRestrict(label, rest, tpe, eff, loc) =>
+          for {
+            _ <- checkPats(rest, root)
+          } yield tast
+
         case Expression.ArrayLit(elms, _, _, _) => sequence(elms map {
           checkPats(_, root)
         }).map(const(tast))
@@ -301,17 +321,17 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
             _ <- checkPats(exp2, root)
           } yield tast
 
-        case Expression.FixpointSolve(exp, tpe, eff, loc) =>
+        case Expression.FixpointSolve(exp, stf, tpe, eff, loc) =>
           for {
             _ <- checkPats(exp, root)
           } yield tast
 
-        case Expression.FixpointCheck(exp, tpe, eff, loc) =>
+        case Expression.FixpointCheck(exp, stf, tpe, eff, loc) =>
           for {
             _ <- checkPats(exp, root)
           } yield tast
 
-        case Expression.FixpointDelta(exp, tpe, eff, loc) =>
+        case Expression.FixpointDelta(exp, stf, tpe, eff, loc) =>
           for {
             _ <- checkPats(exp, root)
           } yield tast
@@ -633,11 +653,13 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
       case Type.Vector => 2
       case Type.Zero => 0
       case Type.Succ(n, t) => 2
+      case Type.RecordEmpty => 0 // TODO: Correct?
+      case Type.RecordExtend(base, label, value) => 0 // TODO: Correct?
+      case Type.Schema(m) => 0 // TODO: Correct
       case Type.Tuple(length) => length
       case Type.Enum(sym, kind) => 0
-      case Type.Relation(sym, kind) => 0
-      case Type.Lattice(sym, kind) => 0
-      case Type.ConstraintSet => 1
+      case Type.Relation(sym, attr, kind) => 0
+      case Type.Lattice(sym, attr, kind) => 0
       case Type.Solvable => 0
       case Type.Checkable => 0
       case Type.Apply(tpe1, tpe2) => countTypeArgs(tpe1)

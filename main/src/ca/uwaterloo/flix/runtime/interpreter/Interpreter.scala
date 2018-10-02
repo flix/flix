@@ -123,6 +123,22 @@ object Interpreter {
       val es = elms.map(e => eval(e, env0, henv0, lenv0, root))
       Value.Tuple(es)
 
+    case Expression.RecordEmpty(tpe, loc) =>
+      Value.RecordEmpty
+
+    case Expression.RecordSelect(exp, label, tpe, loc) =>
+      val e = eval(exp, env0, henv0, lenv0, root)
+      lookupRecordLabel(e, label)
+
+    case Expression.RecordExtend(label, value, rest, tpe, loc) =>
+      val v = eval(value, env0, henv0, lenv0, root)
+      val r = eval(rest, env0, henv0, lenv0, root)
+      Value.RecordExtension(r, label, v)
+
+    case Expression.RecordRestrict(label, rest, tpe, loc) =>
+      val r = eval(rest, env0, henv0, lenv0, root)
+      removeRecordLabel(r, label)
+
     case Expression.ArrayLit(elms, tpe, _) =>
       val es = elms.map(e => eval(e, env0, henv0, lenv0, root))
       Value.Arr(es.toArray, tpe.typeArguments.head)
@@ -262,27 +278,26 @@ object Interpreter {
       val v2 = cast2constraintset(eval(exp2, env0, henv0, lenv0, root))
       v1.union(v2)
 
-    case Expression.FixpointSolve(exp, tpe, loc) =>
+    case Expression.FixpointSolve(exp, stf, tpe, loc) =>
       val cs = cast2constraintset(eval(exp, env0, henv0, lenv0, root))
-      val fixpoint = solve(cs)
+      val fixpoint = solve(cs, stf)
       fixpoint.toString
 
-    case Expression.FixpointCheck(exp, tpe, loc) =>
+    case Expression.FixpointCheck(exp, stf, tpe, loc) =>
       // TODO
       val cs = cast2constraintset(eval(exp, env0, henv0, lenv0, root))
       println(cs)
-      val solver = mkSolver(cs)
       try {
-        val fixpoint = solve(cs)
+        val fixpoint = solve(cs, stf)
         println(fixpoint)
         Value.True
       } catch {
         case ex: RuleError => Value.False
       }
 
-    case Expression.FixpointDelta(exp, tpe, loc) =>
+    case Expression.FixpointDelta(exp, stf, tpe, loc) =>
       val cs = cast2constraintset(eval(exp, env0, henv0, lenv0, root))
-      deltaSolve(cs)
+      deltaSolve(cs, stf)
 
     case Expression.UserError(_, loc) => throw new NotImplementedError(loc.reified)
 
@@ -693,7 +708,7 @@ object Interpreter {
   private def evalHeadPredicate(h0: FinalAst.Predicate.Head, env0: Map[String, AnyRef])(implicit root: FinalAst.Root, cache: SymbolCache, flix: Flix): api.predicate.Predicate = h0 match {
     case FinalAst.Predicate.Head.True(_) => new api.predicate.TruePredicate()
     case FinalAst.Predicate.Head.False(_) => new api.predicate.FalsePredicate()
-    case FinalAst.Predicate.Head.RelAtom(baseOpt, sym, terms, _) =>
+    case FinalAst.Predicate.Head.RelAtom(baseOpt, sym, terms, _, _) =>
       // Retrieve the relation.
       val relation = baseOpt match {
         case None => getRelation(sym)
@@ -702,7 +717,7 @@ object Interpreter {
       }
       val ts = terms.map(t => evalHeadTerm(t, env0))
       new api.predicate.AtomPredicate(relation, positive = true, ts.toArray, null)
-    case FinalAst.Predicate.Head.LatAtom(baseOpt, sym, terms, _) =>
+    case FinalAst.Predicate.Head.LatAtom(baseOpt, sym, terms, _, _) =>
       // Retrieve the lattice.
       val lattice = baseOpt match {
         case None => getLattice(sym)
@@ -717,7 +732,7 @@ object Interpreter {
     * Evaluates the given body predicate `b0` under the given environment `env0` to a body predicate value.
     */
   private def evalBodyPredicate(b0: FinalAst.Predicate.Body, env0: Map[String, AnyRef])(implicit root: FinalAst.Root, cache: SymbolCache, flix: Flix): api.predicate.Predicate = b0 match {
-    case FinalAst.Predicate.Body.RelAtom(baseOpt, sym, polarity, terms, index2sym, loc) =>
+    case FinalAst.Predicate.Body.RelAtom(baseOpt, sym, polarity, terms, index2sym, _, _) =>
       // Retrieve the relation.
       val relation = baseOpt match {
         case None => getRelation(sym)
@@ -737,7 +752,7 @@ object Interpreter {
       }
       new api.predicate.AtomPredicate(relation, p, ts.toArray, i2s.toArray)
 
-    case FinalAst.Predicate.Body.LatAtom(baseOpt, sym, polarity, terms, index2sym, loc) =>
+    case FinalAst.Predicate.Body.LatAtom(baseOpt, sym, polarity, terms, index2sym, _, _) =>
       // Retrieve the lattice.
       val lattice = baseOpt match {
         case None => getLattice(sym)
@@ -1021,6 +1036,14 @@ object Interpreter {
   }
 
   /**
+    * Casts the given reference `ref` to a record.
+    */
+  private def cast2record(ref: AnyRef): Value.RecordExtension = ref match {
+    case v: Value.RecordExtension => v
+    case _ => throw InternalRuntimeException(s"Unexpected non-record value: ${ref.getClass.getName}.")
+  }
+
+  /**
     * Casts the given reference `ref` to an array value.
     */
   private def cast2array(ref: AnyRef): Value.Arr = ref match {
@@ -1058,17 +1081,50 @@ object Interpreter {
   private def mkBool(b: Boolean): AnyRef = if (b) Value.True else Value.False
 
   /**
+    * Performs a lookup of the given field in the given record.
+    */
+  private def lookupRecordLabel(record: AnyRef, field: String): AnyRef = record match {
+    case Value.RecordExtension(base, field2, value) =>
+      if (field == field2)
+        value
+      else
+        lookupRecordLabel(base, field)
+    case Value.RecordEmpty => throw InternalRuntimeException(s"Unexpected missing field: '$field'.")
+    case _ => throw InternalRuntimeException(s"Unexpected non-record value: '$record'.")
+  }
+
+  /**
+    * Removes the outermost occurrence of the given field from the given record.
+    */
+  private def removeRecordLabel(record: AnyRef, field: String): AnyRef = record match {
+    case Value.RecordExtension(base, field2, value) =>
+      if (field == field2)
+        base
+      else
+        Value.RecordExtension(removeRecordLabel(base, field), field2, value)
+    case Value.RecordEmpty => throw InternalRuntimeException(s"Unexpected missing field: '$field'.")
+    case _ => throw InternalRuntimeException(s"Unexpected non-record value: '$record'.")
+  }
+
+  /**
     * Computes the fixed point of the given constraint set `cs`.
     */
-  private def solve(cs: ConstraintSet)(implicit flix: Flix): Fixpoint = {
-    val solver = mkSolver(cs)
+  private def solve(cs: ConstraintSet, stf: Ast.Stratification)(implicit flix: Flix): Fixpoint = {
+    // Configure the fixpoint solver based on the Flix options.
+    val options = new FixpointOptions
+    options.setMonitored(flix.options.monitor)
+    options.setThreads(flix.options.threads)
+    options.setVerbose(flix.options.verbosity == Verbosity.Verbose)
+
+    // Construct the solver.
+    val solver = new Solver(cs.complete(), options)
     solver.solve()
   }
 
   /**
     * Returns the minimal set of facts that fails to satisfy the given constraint set.
     */
-  private def deltaSolve(cs: ConstraintSet)(implicit flix: Flix): String = {
+  private def deltaSolve(cs: ConstraintSet, stf: Ast.Stratification)(implicit flix: Flix): String = {
     // Configure the fixpoint solver based on the Flix options.
     val options = new FixpointOptions
     options.setMonitored(flix.options.monitor)
@@ -1078,20 +1134,6 @@ object Interpreter {
     // Construct the solver.
     val deltaSolver = new DeltaSolver(cs, options)
     deltaSolver.deltaSolve()
-  }
-
-  /**
-    * Returns a fixpoint solver for the given constraint set `cs`.
-    */
-  private def mkSolver(cs: ConstraintSet)(implicit flix: Flix): Solver = {
-    // Configure the fixpoint solver based on the Flix options.
-    val options = new FixpointOptions
-    options.setMonitored(flix.options.monitor)
-    options.setThreads(flix.options.threads)
-    options.setVerbose(flix.options.verbosity == Verbosity.Verbose)
-
-    // Construct the solver.
-    new Solver(cs.complete(), options)
   }
 
   /**

@@ -210,6 +210,22 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         val es = elms map visitExp
         Expression.Tuple(es, tpe, loc)
 
+      case Expression.RecordEmpty(tpe, loc) =>
+        Expression.RecordEmpty(tpe, loc)
+
+      case Expression.RecordSelect(exp, label, tpe, loc) =>
+        val e = visitExp(exp)
+        Expression.RecordSelect(e, label, tpe, loc)
+
+      case Expression.RecordExtend(label, value, rest, tpe, loc) =>
+        val v = visitExp(value)
+        val r = visitExp(rest)
+        Expression.RecordExtend(label, v, r, tpe, loc)
+
+      case Expression.RecordRestrict(label, rest, tpe, loc) =>
+        val r = visitExp(rest)
+        Expression.RecordRestrict(label, r, tpe, loc)
+
       case Expression.ArrayLit(elms, tpe, loc) =>
         val es = elms map visitExp
         Expression.ArrayLit(es, tpe, loc)
@@ -305,17 +321,17 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         val e2 = visitExp(exp2)
         Expression.ConstraintUnion(e1, e2, tpe, loc)
 
-      case Expression.FixpointSolve(exp, tpe, loc) =>
+      case Expression.FixpointSolve(exp, stf, tpe, loc) =>
         val e = visitExp(exp)
-        Expression.FixpointSolve(e, tpe, loc)
+        Expression.FixpointSolve(e, stf, tpe, loc)
 
-      case Expression.FixpointCheck(exp, tpe, loc) =>
+      case Expression.FixpointCheck(exp, stf, tpe, loc) =>
         val e = visitExp(exp)
-        Expression.FixpointCheck(e, tpe, loc)
+        Expression.FixpointCheck(e, stf, tpe, loc)
 
-      case Expression.FixpointDelta(exp, tpe, loc) =>
+      case Expression.FixpointDelta(exp, stf, tpe, loc) =>
         val e = visitExp(exp)
-        Expression.FixpointDelta(e, tpe, loc)
+        Expression.FixpointDelta(e, stf, tpe, loc)
 
       case Expression.UserError(tpe, loc) => e
 
@@ -338,12 +354,12 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     def visitHeadPredicate(head0: Predicate.Head): Predicate.Head = head0 match {
       case Predicate.Head.True(loc) => Predicate.Head.True(loc)
       case Predicate.Head.False(loc) => Predicate.Head.False(loc)
-      case Predicate.Head.RelAtom(base, sym, terms, loc) =>
+      case Predicate.Head.RelAtom(base, sym, terms, tpe, loc) =>
         val ts = terms map visitHeadTerm
-        Predicate.Head.RelAtom(base, sym, terms, loc)
-      case Predicate.Head.LatAtom(base, sym, terms, loc) =>
+        Predicate.Head.RelAtom(base, sym, terms, tpe, loc)
+      case Predicate.Head.LatAtom(base, sym, terms, tpe, loc) =>
         val ts = terms map visitHeadTerm
-        Predicate.Head.LatAtom(base, sym, terms, loc)
+        Predicate.Head.LatAtom(base, sym, terms, tpe, loc)
     }
 
     /**

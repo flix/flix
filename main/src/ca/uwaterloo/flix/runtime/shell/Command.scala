@@ -101,6 +101,11 @@ object Command {
   case object Verify extends Command
 
   /**
+    * Warms up the compiler.
+    */
+  case object Warmup extends Command
+
+  /**
     * Watches source paths for changes.
     */
   case object Watch extends Command
@@ -270,6 +275,12 @@ object Command {
     //
     if (input == ":test")
       return Command.Test
+
+    //
+    // Warmup
+    //
+    if (input == ":warmup")
+      return Command.Warmup
 
     //
     // Watch

@@ -134,6 +134,19 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.Index(exp, index, tpe, loc) => visitExp(exp, i0)
       case Expression.Tuple(elms, tpe, loc) => visitExps(elms, i0)
 
+      case Expression.RecordEmpty(tpe, loc) => i0
+
+      case Expression.RecordSelect(base, label, tpe, loc) =>
+        visitExp(base, i0)
+
+      case Expression.RecordExtend(label, value, rest, tpe, loc) =>
+        val i1 = visitExp(value, i0)
+        val i2 = visitExp(rest, i1)
+        i2
+
+      case Expression.RecordRestrict(label, rest, tpe, loc) =>
+        visitExp(rest, i0)
+
       case Expression.ArrayLit(elms, tpe, loc) => visitExps(elms, i0)
 
       case Expression.ArrayNew(elm, len, tpe, loc) =>
@@ -190,11 +203,11 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         val i1 = visitExp(exp1, i0)
         visitExp(exp2, i1)
 
-      case Expression.FixpointSolve(exp, tpe, loc) => visitExp(exp, i0)
+      case Expression.FixpointSolve(exp, stf, tpe, loc) => visitExp(exp, i0)
 
-      case Expression.FixpointCheck(exp, tpe, loc) => visitExp(exp, i0)
+      case Expression.FixpointCheck(exp, stf, tpe, loc) => visitExp(exp, i0)
 
-      case Expression.FixpointDelta(exp, tpe, loc) => visitExp(exp, i0)
+      case Expression.FixpointDelta(exp, stf, tpe, loc) => visitExp(exp, i0)
 
       case Expression.UserError(tpe, loc) => i0
       case Expression.HoleError(sym, tpe, eff, loc) => i0

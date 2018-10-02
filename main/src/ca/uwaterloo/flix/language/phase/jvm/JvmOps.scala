@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 import java.nio.file.{Files, LinkOption, Path}
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.GenSym
 import ca.uwaterloo.flix.language.ast.FinalAst._
 import ca.uwaterloo.flix.language.ast.{Symbol, Type}
 import ca.uwaterloo.flix.language.phase.Unification
@@ -766,9 +767,18 @@ object JvmOps {
       case Expression.Untag(sym, tag, exp, tpe, loc) => visitExp(exp)
 
       case Expression.Index(base, offset, tpe, loc) => visitExp(base)
+
       case Expression.Tuple(elms, tpe, loc) => elms.foldLeft(Set.empty[ClosureInfo]) {
         case (sacc, e) => sacc ++ visitExp(e)
       }
+
+      case Expression.RecordEmpty(tpe, loc) => ??? // TODO: RecordEmpty
+
+      case Expression.RecordExtend(base, label, value, tpe, loc) => ??? // TODO: RecordExtension
+
+      case Expression.RecordSelect(base, label, tpe, loc) => ??? // TODO: RecordProjection
+
+      case Expression.RecordRestrict(base, label, tpe, loc) => ??? // TODO: RecordRestriction
 
       case Expression.ArrayLit(elms, tpe, loc) => elms.foldLeft(Set.empty[ClosureInfo]) {
         case (sacc, e) => sacc ++ visitExp(e)
@@ -816,11 +826,11 @@ object JvmOps {
 
       case Expression.ConstraintUnion(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2)
 
-      case Expression.FixpointSolve(exp, tpe, loc) => visitExp(exp)
+      case Expression.FixpointSolve(exp, stf, tpe, loc) => visitExp(exp)
 
-      case Expression.FixpointCheck(exp, tpe, loc) => visitExp(exp)
+      case Expression.FixpointCheck(exp, stf, tpe, loc) => visitExp(exp)
 
-      case Expression.FixpointDelta(exp, tpe, loc) => visitExp(exp)
+      case Expression.FixpointDelta(exp, stf, tpe, loc) => visitExp(exp)
 
       case Expression.UserError(tpe, loc) => Set.empty
       case Expression.HoleError(sym, tpe, loc) => Set.empty
@@ -863,6 +873,8 @@ object JvmOps {
     * Returns the set of tags associated with the given type.
     */
   def getTagsOf(tpe: Type)(implicit root: Root, flix: Flix): Set[TagInfo] = {
+    implicit val genSym: GenSym = flix.genSym
+
     // Return the empty set if the type is not an enum.
     if (!tpe.isEnum) {
       return Set.empty
@@ -1007,9 +1019,18 @@ object JvmOps {
       case Expression.Untag(sym, tag, exp, tpe, loc) => visitExp(exp) + tpe
 
       case Expression.Index(base, offset, tpe, loc) => visitExp(base) + tpe
+
       case Expression.Tuple(elms, tpe, loc) => elms.foldLeft(Set(tpe)) {
         case (sacc, e) => sacc ++ visitExp(e)
       }
+
+      case Expression.RecordEmpty(tpe, loc) => ??? // TODO
+
+      case Expression.RecordSelect(base, label, tpe, loc) => ??? // TODO
+
+      case Expression.RecordExtend(base, label, value, tpe, loc) => ??? // TODO
+
+      case Expression.RecordRestrict(base, label, tpe, loc) => ??? // TODO
 
       case Expression.ArrayLit(elms, tpe, loc) => elms.foldLeft(Set(tpe)) {
         case (sacc, e) => sacc ++ visitExp(e)
@@ -1057,11 +1078,11 @@ object JvmOps {
 
       case Expression.ConstraintUnion(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2) + tpe
 
-      case Expression.FixpointSolve(exp, tpe, loc) => visitExp(exp) + tpe
+      case Expression.FixpointSolve(exp, stf, tpe, loc) => visitExp(exp) + tpe
 
-      case Expression.FixpointCheck(exp, tpe, loc) => visitExp(exp) + tpe
+      case Expression.FixpointCheck(exp, stf, tpe, loc) => visitExp(exp) + tpe
 
-      case Expression.FixpointDelta(exp, tpe, loc) => visitExp(exp) + tpe
+      case Expression.FixpointDelta(exp, stf, tpe, loc) => visitExp(exp) + tpe
 
       case Expression.UserError(tpe, loc) => Set(tpe)
       case Expression.HoleError(sym, tpe, loc) => Set(tpe)
