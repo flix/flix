@@ -878,7 +878,7 @@ object ParsedAst {
       * @param sp1 the position of the first character in the expression.
       * @param sp2 the position of the last character in the expression.
       */
-    case class NewChannel(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Expression
+    case class NewChannel(sp1: SourcePosition, tpe: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * GetChannel Expression.
@@ -900,15 +900,6 @@ object ParsedAst {
     case class PutChannel(sp1: SourcePosition, exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
-      * CloseChannel Expression.
-      *
-      * @param sp1 the position of the first character in the expression.
-      * @param exp the Channel expression.
-      * @param sp2 the position of the last character in the expression.
-      */
-    case class CloseChannel(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
-
-    /**
       * SelectChannel Expression.
       *
       * @param sp1   the position of the first character in the expression.
@@ -916,6 +907,15 @@ object ParsedAst {
       * @param sp2   the position of the last character in the expression.
       */
     case class SelectChannel(sp1: SourcePosition, rules: Seq[SelectChannelRule], sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
+      * CloseChannel Expression.
+      *
+      * @param sp1 the position of the first character in the expression.
+      * @param exp the Channel expression.
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class CloseChannel(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Spawn Expression.

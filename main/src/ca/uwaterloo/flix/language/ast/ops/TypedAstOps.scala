@@ -182,6 +182,18 @@ object TypedAstOps {
           case (macc, arg) => macc ++ visitExp(arg, env0)
         }
 
+      case Expression.NewChannel(tpe, eff, loc) => ??? //TODO SJ: these methods
+
+      case Expression.GetChannel(exp, tpe, eff, loc) => ???
+
+      case Expression.PutChannel(exp1, exp2, tpe, eff, loc) => ???
+
+      case Expression.SelectChannel(rules, tpe, eff, loc) => ???
+
+      case Expression.CloseChannel(exp, tpe, eff, loc) => ???
+
+      case Expression.Spawn(exp, tpe, eff, loc) => ???
+
       case Expression.NewRelation(sym, tpe, eff, loc) => Map.empty
 
       case Expression.NewLattice(sym, tpe, eff, loc) => Map.empty

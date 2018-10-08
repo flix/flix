@@ -69,6 +69,7 @@ object Unification {
       case Type.Int64 => Type.Int64
       case Type.BigInt => Type.BigInt
       case Type.Str => Type.Str
+      case Type.Channel => Type.Channel
       case Type.Array => Type.Array
       case Type.Vector => Type.Vector
       case Type.Native(clazz) => Type.Native(clazz)
@@ -187,6 +188,7 @@ object Unification {
       case (Type.Int64, Type.Int64) => Result.Ok(Substitution.empty)
       case (Type.BigInt, Type.BigInt) => Result.Ok(Substitution.empty)
       case (Type.Str, Type.Str) => Result.Ok(Substitution.empty)
+      case (Type.Channel, Type.Channel) => Result.Ok(Substitution.empty)
       case (Type.Array, Type.Array) => Result.Ok(Substitution.empty)
       case (Type.Vector, Type.Vector) => Result.Ok(Substitution.empty)
       case (Type.Native(clazz1), Type.Native(clazz2)) =>

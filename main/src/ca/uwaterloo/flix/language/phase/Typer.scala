@@ -1078,43 +1078,34 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         /*
          * New Channel expression.
          */
-        case ResolvedAst.Expression.NewChannel(tvar, loc) =>
-          unifyM(tvar, Type.mkChannel(Type.freshTypeVar()), loc)
+        case ResolvedAst.Expression.NewChannel(tpe, loc) =>
+          unifyM(Type.mkChannel(tpe), Type.mkChannel(Type.freshTypeVar()), loc)
+          //TODO SJ: should it be mkChannel or Channel ? and is freshTypeVar correct?
 
         /*
          * Get Channel expression.
          */
         case ResolvedAst.Expression.GetChannel(exp, tvar, loc) =>
           for {
-            actualExpType <- visitExp(exp)
-             _ <- unifyM(actualExpType, Type.mkChannel(tvar), loc)
+            channelType <- visitExp(exp)
+            _ <- unifyM(channelType, Type.mkChannel(tvar), loc)
           } yield tvar
 
         /*
          * Put Channel expression.
          */
         case ResolvedAst.Expression.PutChannel(exp1, exp2, tvar, loc) =>
-          val elementType = Type.freshTypeVar()
+          val freshElementTypeVar = Type.freshTypeVar()
           for {
-            e1 <- visitExp(exp1)
-            e2 <- visitExp(exp2)
-            _ <- unifyM(e1, Type.mkChannel(elementType), loc)
-            _ <- unifyM(e2, elementType, loc)
-            resultType <- unifyM(tvar, Type.mkChannel(elementType), loc)
+            channelType <- visitExp(exp1)
+            elementType <- visitExp(exp2)
+            _ <- unifyM(channelType, Type.mkChannel(freshElementTypeVar), loc)
+            _ <- unifyM(elementType, freshElementTypeVar, loc)
+            resultType <- unifyM(tvar, Type.mkChannel(freshElementTypeVar), loc)
           } yield resultType
 
         /*
          * Close Channel Expression.
-         */
-        case ResolvedAst.Expression.CloseChannel(exp, tvar, loc) =>
-          for {
-            e <- visitExp(exp)
-            _ <- unifyM(e, Type.mkChannel(Type.freshTypeVar()), loc)
-            resultType <- unifyM(tvar, Type.Unit, loc)
-          } yield resultType
-
-        /*
-         * Select Channel Expression.
          */
         case ResolvedAst.Expression.SelectChannel(rules, tvar, loc) =>
           assert(rules.nonEmpty)
@@ -1123,6 +1114,16 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           val bodies = rules.map(_.exp)
 
           ???
+
+        /*
+         * Select Channel Expression.
+         */
+        case ResolvedAst.Expression.CloseChannel(exp, tvar, loc) =>
+          for {
+            e <- visitExp(exp)
+            _ <- unifyM(e, Type.mkChannel(Type.freshTypeVar()), loc)
+            resultType <- unifyM(tvar, Type.Unit, loc)
+          } yield resultType
 
         /*
          * Spawn Expression.
