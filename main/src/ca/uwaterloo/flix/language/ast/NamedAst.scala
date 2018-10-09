@@ -180,17 +180,17 @@ object NamedAst {
 
     case class NativeMethod(method: Method, args: List[NamedAst.Expression], tpe: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
-    case class NewChannel(tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
+    case class NewChannel(tpe: NamedAst.Type, loc: SourceLocation) extends NamedAst.Expression
 
     case class GetChannel(exp: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
     case class PutChannel(exp1: NamedAst.Expression, exp2: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
+    case class SelectChannel(rules: List[NamedAst.SelectChannelRule],tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
+
     case class CloseChannel(exp: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
     case class Spawn(exp: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
-
-    case class SelectChannel(rules: List[NamedAst.SelectChannelRule],tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
     case class NewRelationOrLattice(name: Name.QName, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 

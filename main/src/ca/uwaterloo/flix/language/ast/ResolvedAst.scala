@@ -193,17 +193,17 @@ object ResolvedAst {
 
     case class NativeMethod(method: Method, args: List[ResolvedAst.Expression], tpe: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class NewChannel(tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+    case class NewChannel(tpe: Type, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class GetChannel(exp: ResolvedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class PutChannel(exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
+    case class SelectChannel(rules: List[ResolvedAst.SelectChannelRule], tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+
     case class CloseChannel(exp: ResolvedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class Spawn(exp: ResolvedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
-
-    case class SelectChannel(rules: List[ResolvedAst.SelectChannelRule], tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class NewRelation(sym: Symbol.RelSym, tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 

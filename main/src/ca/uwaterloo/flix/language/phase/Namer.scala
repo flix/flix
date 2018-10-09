@@ -811,8 +811,8 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case Err(e) => e.toFailure
       }
 
-    case WeededAst.Expression.NewChannel(loc) =>
-      NamedAst.Expression.NewChannel(Type.freshTypeVar(), loc).toSuccess
+    case WeededAst.Expression.NewChannel(tpe, loc) =>
+      NamedAst.Expression.NewChannel(visitType(tpe, tenv0), loc).toSuccess
 
     case WeededAst.Expression.GetChannel(exp, loc) =>
       visitExp(exp, env0, tenv0) map {
@@ -822,16 +822,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Expression.PutChannel(exp1, exp2, loc) =>
       mapN(visitExp(exp1, env0, tenv0), visitExp(exp2, env0, tenv0)) {
         case (e1, e2) => NamedAst.Expression.PutChannel(e1, e2, Type.freshTypeVar(), loc)
-      }
-
-    case WeededAst.Expression.CloseChannel(exp, loc) =>
-      visitExp(exp, env0, tenv0) map {
-        case e => NamedAst.Expression.CloseChannel(e, Type.freshTypeVar(), loc)
-      }
-
-    case WeededAst.Expression.Spawn(exp, loc) =>
-      visitExp(exp, env0, tenv0) map {
-        case e => NamedAst.Expression.Spawn(e, Type.freshTypeVar(), loc)
       }
 
     case WeededAst.Expression.SelectChannel(rules, loc) =>
@@ -846,6 +836,16 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       }
       rulesVal map {
         case rs => NamedAst.Expression.SelectChannel(rs, Type.freshTypeVar(), loc)
+      }
+
+    case WeededAst.Expression.CloseChannel(exp, loc) =>
+      visitExp(exp, env0, tenv0) map {
+        case e => NamedAst.Expression.CloseChannel(e, Type.freshTypeVar(), loc)
+      }
+
+    case WeededAst.Expression.Spawn(exp, loc) =>
+      visitExp(exp, env0, tenv0) map {
+        case e => NamedAst.Expression.Spawn(e, Type.freshTypeVar(), loc)
       }
 
     case WeededAst.Expression.NewRelationOrLattice(name, loc) =>
@@ -1122,14 +1122,14 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       }
     case WeededAst.Expression.NativeField(className, fieldName, loc) => Nil
     case WeededAst.Expression.NativeMethod(className, methodName, args, loc) => args.flatMap(freeVars)
-    case WeededAst.Expression.NewChannel(loc) => Nil
+    case WeededAst.Expression.NewChannel(tpe,loc) => Nil
     case WeededAst.Expression.GetChannel(exp, loc) => freeVars(exp)
     case WeededAst.Expression.PutChannel(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
-    case WeededAst.Expression.CloseChannel(exp, loc) => freeVars(exp)
-    case WeededAst.Expression.Spawn(exp, loc) => freeVars(exp)
     case WeededAst.Expression.SelectChannel(rules, loc) => rules.flatMap{
       case WeededAst.SelectChannelRule(ident, chan, exp) => freeVars(chan) ++ filterBoundVars(freeVars(exp), List(ident))
     }
+    case WeededAst.Expression.CloseChannel(exp, loc) => freeVars(exp)
+    case WeededAst.Expression.Spawn(exp, loc) => freeVars(exp)
     case WeededAst.Expression.NativeConstructor(className, args, loc) => args.flatMap(freeVars)
     case WeededAst.Expression.NewRelationOrLattice(name, loc) => Nil
     case WeededAst.Expression.Constraint(c, loc) => ??? // TODO: Constraint

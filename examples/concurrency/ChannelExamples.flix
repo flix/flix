@@ -2,7 +2,7 @@ def runTests(): (Int, Int) = {
     (2, 2)
 }
 
-def newchTest(): Channel = newch#
+def newchTest(): Channel[Int] = newch Int
 
 def getchTest(): Int = getch newchTest()
 
@@ -13,11 +13,11 @@ def closechTest(): Unit = closech newchTest()
 def spawnTest(): Unit = spawn 2
 
 def selectTest(): Int = {
-    let c = newch#;
+    let c = newch Int;
     select {
         case x <- c => 2
         case y <- putchTest() => 3
     }
 }
 
-//def statementTest(): Int = 1 ;; 2
+def statementTest(): Int = 1 ;; 2

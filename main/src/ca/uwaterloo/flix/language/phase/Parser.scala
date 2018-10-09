@@ -612,7 +612,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       rule {
-        SP ~ atomic("match") ~ WS ~ Expression ~ WS ~ atomic("with") ~ WS ~ "{" ~ optWS ~ oneOrMore(Rule).separatedBy(optWS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.Match
+        SP ~ atomic("match") ~ WS ~ Expression ~ WS ~ atomic("with") ~ WS ~ "{" ~ optWS ~ oneOrMore(Rule).separatedBy(WS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.Match
       }
     }
 
@@ -659,7 +659,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def NewChannel: Rule1[ParsedAst.Expression.NewChannel] = rule {
-      SP ~ atomic("newch#") ~ SP ~> ParsedAst.Expression.NewChannel
+      SP ~ atomic("newch") ~ WS ~ Type ~ SP ~> ParsedAst.Expression.NewChannel
     }
 
     def GetChannel: Rule1[ParsedAst.Expression.GetChannel] = rule {
@@ -670,17 +670,17 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       SP ~ atomic("putch") ~ WS ~ Expression ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.PutChannel
     }
 
-    def CloseChannel: Rule1[ParsedAst.Expression.CloseChannel] = rule {
-      SP ~ atomic("closech") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.CloseChannel
-    }
-
     def SelectChannel: Rule1[ParsedAst.Expression.SelectChannel] = {
-      def Rule: Rule1[ParsedAst.SelectChannelRule] = rule {
-        atomic("case") ~ WS ~ Names.Variable ~ optWS ~ "<-" ~ optWS ~ Expression ~ optWS ~ "=>" ~ optWS ~ Expression ~> ParsedAst.SelectChannelRule
+      def SelectChannelRule: Rule1[ParsedAst.SelectChannelRule] = rule {
+        atomic("case") ~ WS ~ Names.Variable ~ optWS ~ atomic("<-") ~ optWS ~ Expression ~ optWS ~ "=>" ~ optWS ~ Expression ~> ParsedAst.SelectChannelRule
       }
       rule {
-        SP ~ atomic("select") ~ WS ~ "{" ~ optWS ~ oneOrMore(Rule).separatedBy(optWS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.SelectChannel
+        SP ~ atomic("select") ~ WS ~ "{" ~ optWS ~ oneOrMore(SelectChannelRule).separatedBy(optWS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.SelectChannel
       }
+    }
+
+    def CloseChannel: Rule1[ParsedAst.Expression.CloseChannel] = rule {
+      SP ~ atomic("closech") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.CloseChannel
     }
 
     def Spawn: Rule1[ParsedAst.Expression.Spawn] = rule {
