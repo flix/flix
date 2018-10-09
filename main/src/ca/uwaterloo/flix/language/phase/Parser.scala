@@ -466,10 +466,13 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   // Expressions                                                             //
   /////////////////////////////////////////////////////////////////////////////
   def Expression: Rule1[ParsedAst.Expression] = rule {
-    Expressions.Block
+    Expressions.Statement
   }
 
   object Expressions {
+    def Statement: Rule1[ParsedAst.Expression] = rule {
+      Block ~ optional(optWS ~ atomic(";;") ~ optWS ~ Expression ~ SP  ~> ParsedAst.Expression.Statement)
+    }
 
     def Block: Rule1[ParsedAst.Expression] = rule {
       "{" ~ optWS ~ Expression ~ optWS ~ "}" | Assign
@@ -662,7 +665,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def GetChannel: Rule1[ParsedAst.Expression.GetChannel] = rule {
-      SP ~ atomic("getch") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.GetChannel
+      SP ~ atomic("<-") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.GetChannel
     }
 
     def PutChannel: Rule1[ParsedAst.Expression.PutChannel] = rule {
@@ -671,7 +674,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def SelectChannel: Rule1[ParsedAst.Expression.SelectChannel] = {
       def SelectChannelRule: Rule1[ParsedAst.SelectChannelRule] = rule {
-        atomic("case") ~ WS ~ Names.Variable ~ optWS ~ atomic("<-") ~ optWS ~ Expression ~ optWS ~ "=>" ~ optWS ~ Expression ~> ParsedAst.SelectChannelRule
+        atomic("case") ~ WS ~ Names.Variable ~ optWS ~ atomic("<-") ~ optWS ~ Expression ~ optWS ~ atomic("=>") ~ optWS ~ Expression ~> ParsedAst.SelectChannelRule
       }
       rule {
         SP ~ atomic("select") ~ WS ~ "{" ~ optWS ~ oneOrMore(SelectChannelRule).separatedBy(optWS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.SelectChannel
@@ -684,10 +687,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Spawn: Rule1[ParsedAst.Expression.Spawn] = rule {
       SP ~ atomic("spawn") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.Spawn
-    }
-
-    def Statement: Rule1[ParsedAst.Expression.Statement] = rule {
-      SP ~ Expression ~ optWS ~ ";;" ~ optWS ~ Expression ~ SP ~> ParsedAst.Expression.Statement
     }
 
     def Postfix: Rule1[ParsedAst.Expression] = rule {
