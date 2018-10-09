@@ -1080,6 +1080,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
          */
         case ResolvedAst.Expression.NewChannel(tpe, loc) =>
           unifyM(Type.mkChannel(tpe), Type.mkChannel(Type.freshTypeVar()), loc)
+          //TODO SJ: could it be "liftM(Type.mkChannel(tpe))"?
           //TODO SJ: should it be mkChannel or Channel ? and is freshTypeVar correct?
 
         /*
