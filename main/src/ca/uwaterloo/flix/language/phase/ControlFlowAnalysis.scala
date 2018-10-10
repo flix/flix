@@ -213,13 +213,23 @@ object ControlFlowAnalysis {
         lub(v2, v3)
 
       case Expression.Branch(exp, branches, tpe, loc) =>
-        visitExp(exp, env0, branches)
+        // Evaluate the branching expression.
+        val v = visitExp(exp, env0, branches)
+
+        // Evaluate each of the branches.
+        val vs = branches map {
+          case (label, body) => visitExp(body, env0, branches)
+        }
+
+        // Join all the values.
+        lub(v, lubAll(vs))
 
       case Expression.JumpTo(sym, tpe, loc) =>
         visitExp(lenv0(sym), env0, lenv0)
 
       case Expression.Is(sym, tag, exp, loc) =>
-        AbstractValue.Bot // TODO
+        val v = visitExp(exp, env0, lenv0)
+        AbstractValue.AnyPrimitive
 
       case Expression.Tag(sym, tag, exp, tpe, loc) =>
         val v = visitExp(exp, env0, lenv0)
@@ -567,7 +577,7 @@ object ControlFlowAnalysis {
   /**
     * Returns the least upper bound of the given sequence of abstract values `vs`.
     */
-  private def lubAll(vs: List[AbstractValue]): AbstractValue = vs.foldLeft(AbstractValue.Bot: AbstractValue)(lub)
+  private def lubAll(vs: Traversable[AbstractValue]): AbstractValue = vs.foldLeft(AbstractValue.Bot: AbstractValue)(lub)
 
   /**
     * Returns `true` if the given argument list `xs` has a single argument of type unit.
