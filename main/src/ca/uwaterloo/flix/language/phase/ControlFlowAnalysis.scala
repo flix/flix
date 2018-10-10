@@ -368,30 +368,36 @@ object ControlFlowAnalysis {
       val clo = visitExp(exp, env0, lenv0)
       val as = args.map(a => visitExp(a, env0, lenv0))
 
-      // TODO:
-      return AbstractValue.Bot
-
       clo match {
         case AbstractValue.Bot => AbstractValue.Bot
 
-        //        case AbstractValue.Closure(sym, bindings) =>
-        //          // Lookup the definition.
-        //          val defn = l.root.defs(sym)
-        //
-        //          // Bindings for the capture variables are passed as arguments.
-        //          val env1 = defn.formals.take(bindings.length).zip(bindings).foldLeft(Map.empty[Symbol.VarSym, AbstractValue]) {
-        //            case (macc, (formal, actual)) => macc + (formal.sym -> actual)
-        //          }
-        //          // Now pass the actual arguments supplied by the caller.
-        //          val env2 = defn.formals.drop(bindings.length).zip(as).foldLeft(env1) {
-        //            case (macc, (formal, actual)) => macc + (formal.sym -> actual)
-        //          }
-        //          evalExp(defn.exp, env2, l)
+        case AbstractValue.ClosureSet(m) =>
+          val vs = m map {
+            case (sym, bindings) => invokeSingleClo(sym, bindings, as)
+          }
+          lubAll(vs)
 
         case _ => throw InternalCompilerException(s"Unexpected non-closure value: '$clo'.")
       }
     }
 
+    /**
+      * Abstractly invokes the closure with the given symbol `sym` with the bindings `bindings` and actual arguments `args`.
+      */
+    def invokeSingleClo(sym: Symbol.DefnSym, bindings: List[AbstractValue], args: List[AbstractValue]): AbstractValue = {
+      // Lookup the definition.
+      val defn = l.root.defs(sym)
+
+      // Bindings for the capture variables are passed as arguments.
+      val env1 = defn.formals.take(bindings.length).zip(bindings).foldLeft(Map.empty[Symbol.VarSym, AbstractValue]) {
+        case (macc, (formal, actual)) => macc + (formal.sym -> actual)
+      }
+      // Now pass the actual arguments supplied by the caller.
+      val env2 = defn.formals.drop(bindings.length).zip(args).foldLeft(env1) {
+        case (macc, (formal, actual)) => macc + (formal.sym -> actual)
+      }
+      evalExp(defn.exp, env2, l)
+    }
 
     /**
       * Abstractly invokes the function associated with the symbol `sym` with the given arguments `args`.
