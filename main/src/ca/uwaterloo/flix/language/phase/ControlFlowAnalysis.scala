@@ -81,7 +81,7 @@ object ControlFlowAnalysis {
         argValues += sym -> lubArgs
         worklist += sym
 
-        println(s"Enqueued: $sym")
+        // println(s"Enqueued: $sym") TODO
       }
     }
 
@@ -105,7 +105,7 @@ object ControlFlowAnalysis {
           case (acc, (FormalParam(s, _), value)) => acc + (s -> value)
         }
 
-        println(s"dequeue:  $sym, $env, ws size = ${worklist.size}")
+        // println(s"dequeue:  $sym, $env, ws size = ${worklist.size}") TODO
 
         // Evaluate the function body.
         evalExp(defn.exp, env, this)
@@ -272,7 +272,6 @@ object ControlFlowAnalysis {
         }
 
       case Expression.ArrayLength(base, tpe, loc) =>
-        // Evaluate and ignore the base expression.
         val v = visitExp(base, env0, lenv0)
         AbstractValue.AnyPrimitive
 
@@ -280,17 +279,25 @@ object ControlFlowAnalysis {
 
       case Expression.ArraySlice(base, beginIndex, endIndex, tpe, loc) => AbstractValue.Bot // TODO
 
-      case Expression.Ref(exp, tpe, loc) => AbstractValue.Bot // TODO
+      case Expression.Ref(exp, tpe, loc) => AbstractValue.Bot // TODO: Ref
 
-      case Expression.Deref(exp, tpe, loc) => AbstractValue.Bot // TODO
+      case Expression.Deref(exp, tpe, loc) => AbstractValue.Bot // TODO: Deref
 
-      case Expression.Assign(exp1, exp2, tpe, loc) => AbstractValue.Bot // TODO
+      case Expression.Assign(exp1, exp2, tpe, loc) => AbstractValue.Bot // TODO: Assign
 
-      case Expression.HandleWith(exp, bindings, tpe, loc) => AbstractValue.Bot // TODO
+      case Expression.HandleWith(exp, bindings, tpe, loc) => AbstractValue.Bot // TODO: HandleWith
 
-      case Expression.Existential(fparam, exp, loc) => AbstractValue.Bot // TODO
+      case Expression.Existential(fparam, exp, loc) =>
+        // NB: We are simply ignoring the value of the parameter and assigning it bottom.
+        val env1 = env0 + (fparam.sym -> AbstractValue.Bot)
+        val v = visitExp(exp, env1, lenv0)
+        AbstractValue.AnyPrimitive
 
-      case Expression.Universal(fparam, exp, loc) => AbstractValue.Bot // TODO
+      case Expression.Universal(fparam, exp, loc) =>
+        // NB: We are simply ignoring the value of the parameter and assigning it bottom.
+        val env1 = env0 + (fparam.sym -> AbstractValue.Bot)
+        val v = visitExp(exp, env1, lenv0)
+        AbstractValue.AnyPrimitive
 
       case Expression.NativeConstructor(constructor, args, eff, loc) =>
         // Evaluate the arguments.
@@ -326,7 +333,7 @@ object ControlFlowAnalysis {
       case Expression.NewLattice(sym, tpe, loc) => AbstractValue.AnyLattice
 
       case Expression.Constraint(con, tpe, loc) =>
-        val g = getDependencyGraph(con)
+        val g = visitConstraint(con)
         AbstractValue.Graph(g)
 
       case Expression.ConstraintUnion(exp1, exp2, tpe, loc) =>
@@ -335,21 +342,34 @@ object ControlFlowAnalysis {
         lub(v1, v2)
 
       case Expression.FixpointSolve(uid, exp, stf, tpe, loc) =>
-        // TODO: We need to introduce a stratification variable... and then store the result of v into it.
         val v = visitExp(exp, env0, lenv0)
         v match {
           case AbstractValue.Bot =>
           case AbstractValue.Graph(g) =>
             l.updateDependencyGraph(uid, g)
-          // TODO: Other cases.
+          case _ => throw InternalCompilerException(s"Unexpected non-dependency graph: '$v'.")
         }
-        v
+        AbstractValue.AnyPrimitive
 
       case Expression.FixpointCheck(uid, exp, stf, tpe, loc) =>
-        visitExp(exp, env0, lenv0)
+        val v = visitExp(exp, env0, lenv0)
+        v match {
+          case AbstractValue.Bot =>
+          case AbstractValue.Graph(g) =>
+            l.updateDependencyGraph(uid, g)
+          case _ => throw InternalCompilerException(s"Unexpected non-dependency graph: '$v'.")
+        }
+        AbstractValue.AnyPrimitive
 
       case Expression.FixpointDelta(uid, exp, stf, tpe, loc) =>
-        visitExp(exp, env0, lenv0)
+        val v = visitExp(exp, env0, lenv0)
+        v match {
+          case AbstractValue.Bot =>
+          case AbstractValue.Graph(g) =>
+            l.updateDependencyGraph(uid, g)
+          case _ => throw InternalCompilerException(s"Unexpected non-dependency graph: '$v'.")
+        }
+        AbstractValue.AnyPrimitive
 
       case Expression.UserError(tpe, loc) => AbstractValue.Bot
 
@@ -419,13 +439,13 @@ object ControlFlowAnalysis {
   /**
     * Returns the dependency graph of the given constraint.
     */
-  private def getDependencyGraph(c: Constraint): DependencyGraph = c match {
+  private def visitConstraint(c: Constraint): DependencyGraph = c match {
     case Constraint(cparams, head, body) =>
       // Determine if the head predicate has a symbol.
-      getHeadPredicateSymbol(head) match {
+      visitHeadPredicateSymbol(head) match {
         case None => DependencyGraph.Empty
         case Some(headSym) =>
-          val dependencies = body flatMap (b => getDependencyEdge(headSym, b))
+          val dependencies = body flatMap (b => visitDependencyEdge(headSym, b))
           DependencyGraph(dependencies.toSet)
       }
   }
@@ -433,7 +453,7 @@ object ControlFlowAnalysis {
   /**
     * Optionally returns the predicate symbol of the given head predicate `head0`.
     */
-  private def getHeadPredicateSymbol(head0: Predicate.Head): Option[Symbol.PredSym] = head0 match {
+  private def visitHeadPredicateSymbol(head0: Predicate.Head): Option[Symbol.PredSym] = head0 match {
     case Predicate.Head.True(_) => None
     case Predicate.Head.False(_) => None
     case Predicate.Head.RelAtom(base, sym, terms, tpe, loc) => Some(sym)
@@ -443,7 +463,7 @@ object ControlFlowAnalysis {
   /**
     * Optionally returns the predicate symbol of the given body predicate `body0`.
     */
-  private def getDependencyEdge(head: Symbol.PredSym, body0: Predicate.Body): Option[DependencyEdge] = body0 match {
+  private def visitDependencyEdge(head: Symbol.PredSym, body0: Predicate.Body): Option[DependencyEdge] = body0 match {
     case Predicate.Body.RelAtom(base, sym, polarity, terms, index2sym, tpe, loc) => polarity match {
       case Polarity.Positive => Some(DependencyEdge.Positive(head, sym))
       case Polarity.Negative => Some(DependencyEdge.Negative(head, sym))
