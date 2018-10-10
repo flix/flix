@@ -202,13 +202,13 @@ object TypedAstOps {
       case Expression.ConstraintUnion(exp1, exp2, tpe, eff, loc) =>
         visitExp(exp1, env0) ++ visitExp(exp2, env0)
 
-      case Expression.FixpointSolve(exp, stf, tpe, eff, loc) =>
+      case Expression.FixpointSolve(exp, tpe, eff, loc) =>
         visitExp(exp, env0)
 
-      case Expression.FixpointCheck(exp, stf, tpe, eff, loc) =>
+      case Expression.FixpointCheck(exp, tpe, eff, loc) =>
         visitExp(exp, env0)
 
-      case Expression.FixpointDelta(exp, stf, tpe, eff, loc) =>
+      case Expression.FixpointDelta(exp, tpe, eff, loc) =>
         visitExp(exp, env0)
 
       case Expression.UserError(tpe, eff, loc) => Map.empty
