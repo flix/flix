@@ -12,6 +12,11 @@ object ControlFlowAnalysis {
   class Analysis(val root: Root) {
 
     /**
+      * A mutable map from expression identifiers to dependency graphs.
+      */
+    private val dependencyGraphs: mutable.Map[Ast.UId, DependencyGraph] = mutable.Map.empty
+
+    /**
       * A mutable map from functions symbols to their abstract argument values.
       */
     private val argValues: mutable.Map[Symbol.DefnSym, List[AbstractValue]] = mutable.Map.empty
@@ -22,14 +27,24 @@ object ControlFlowAnalysis {
     private val retValues: mutable.Map[Symbol.DefnSym, AbstractValue] = mutable.Map.empty
 
     /**
-      * A mutable map from expression identifiers to dependency graphs.
-      */
-    private val dependencyGraphs: mutable.Map[Ast.UId, DependencyGraph] = mutable.Map.empty
-
-    /**
       * A mutable queue of pending function calls.
       */
     private val worklist: mutable.Queue[Symbol.DefnSym] = mutable.Queue.empty
+
+    /**
+      * Returns the over-approximated dependency graph of the given expression `uid.`
+      */
+    def getDependencyGraph(uid: Ast.UId): DependencyGraph = dependencyGraphs.get(uid) match {
+      case None => DependencyGraph.Empty
+      case Some(g) => g
+    }
+
+    /**
+      * Updates the given expression `uid` to be associated with the given dependency graph `g`.
+      */
+    def updateDependencyGraph(uid: Ast.UId, g: DependencyGraph): Unit = {
+      dependencyGraphs.put(uid, g)
+    }
 
     /**
       * Returns the abstract argument values of the function associated with the symbol `sym`.
@@ -69,25 +84,6 @@ object ControlFlowAnalysis {
         println(s"Enqueued: $sym")
       }
     }
-
-    /**
-      * Returns the over-approximated dependency graph of the given expression `uid.`
-      */
-    def getDependencyGraph(uid: Ast.UId): DependencyGraph = dependencyGraphs.get(uid) match {
-      case Some(g) => g
-      case _ =>
-        // TODO
-        DependencyGraph.Empty
-    }
-
-
-    /**
-      * TODO: DOC
-      */
-    def store(uid: Ast.UId, g: DependencyGraph): Unit = {
-      dependencyGraphs.put(uid, g)
-    }
-
 
     /**
       * Computes the fixpoint.
@@ -342,7 +338,7 @@ object ControlFlowAnalysis {
         v match {
           case AbstractValue.Bot =>
           case AbstractValue.Graph(g) =>
-            l.store(uid, g)
+            l.updateDependencyGraph(uid, g)
           // TODO: Other cases.
         }
         v
