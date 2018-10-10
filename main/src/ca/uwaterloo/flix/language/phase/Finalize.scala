@@ -361,15 +361,15 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
 
       case SimplifiedAst.Expression.FixpointSolve(exp, stf, tpe, loc) =>
         val e = visit(exp)
-        FinalAst.Expression.FixpointSolve(e, stf, tpe, loc)
+        FinalAst.Expression.FixpointSolve(e, Symbol.freshStfSym()(flix.genSym), null, tpe, loc)
 
       case SimplifiedAst.Expression.FixpointCheck(exp, stf, tpe, loc) =>
         val e = visit(exp)
-        FinalAst.Expression.FixpointCheck(e, stf, tpe, loc)
+        FinalAst.Expression.FixpointCheck(e, Symbol.freshStfSym()(flix.genSym), null, tpe, loc)
 
       case SimplifiedAst.Expression.FixpointDelta(exp, stf, tpe, loc) =>
         val e = visit(exp)
-        FinalAst.Expression.FixpointDelta(e, stf, tpe, loc)
+        FinalAst.Expression.FixpointDelta(e, Symbol.freshStfSym()(flix.genSym), null, tpe, loc)
 
       case SimplifiedAst.Expression.UserError(tpe, loc) =>
         FinalAst.Expression.UserError(tpe, loc)

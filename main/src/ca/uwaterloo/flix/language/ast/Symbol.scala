@@ -185,6 +185,13 @@ object Symbol {
   }
 
   /**
+    * Returns a fresh stratification symbol with no additional information.
+    */
+  def freshStfSym()(implicit genSym: GenSym): StfSym = {
+    new StfSym(genSym.freshId())
+  }
+
+  /**
     * Variable Symbol.
     *
     * @param id   the globally unique name of the symbol.
@@ -465,6 +472,26 @@ object Symbol {
       * Human readable representation.
       */
     override def toString: String = "?" + (if (namespace.isEmpty) name else namespace.mkString("/") + "." + name)
+  }
+
+  /**
+    * Stratification Symbol.
+    *
+    * @param id the globally unique name of the symbol.
+    */
+  final class StfSym(val id: Int) {
+    /**
+      * Returns `true` if this symbol is equal to `that` symbol.
+      */
+    override def equals(obj: scala.Any): Boolean = obj match {
+      case that: VarSym => this.id == that.id
+      case _ => false
+    }
+
+    /**
+      * Returns the hash code of this symbol.
+      */
+    override val hashCode: Int = id
   }
 
   /**

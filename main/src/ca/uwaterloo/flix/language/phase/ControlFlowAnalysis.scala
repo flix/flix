@@ -22,6 +22,9 @@ object ControlFlowAnalysis {
       */
     private val retValues: mutable.Map[Symbol.DefnSym, AbstractValue] = mutable.Map.empty
 
+    // TODO: DOC
+    private val stf: mutable.Map[Symbol.StfSym, AbstractValue] = mutable.Map.empty
+
     /**
       * A mutable queue of pending function calls.
       */
@@ -65,6 +68,27 @@ object ControlFlowAnalysis {
         println(s"Enqueued: $sym")
       }
     }
+
+
+    /**
+      * TODO: DOC
+      */
+    def getSym(sym: Symbol.StfSym): DependencyGraph = {
+      stf.get(sym) match {
+        case Some(AbstractValue.Graph(g)) => g
+        case _ =>
+          // TODO
+          DependencyGraph.Empty
+      }
+    }
+
+    /**
+      * TODO: DOC
+      */
+    def store(sym: Symbol.StfSym, v: AbstractValue): Unit = {
+      stf.put(sym, v)
+    }
+
 
     /**
       * Computes the fixpoint.
@@ -178,6 +202,7 @@ object ControlFlowAnalysis {
         AbstractValue.AnyPrimitive
 
       case Expression.Binary(sop, op, exp1, exp2, tpe, loc) =>
+        // TODO: Binary
         visitExp(exp1, env0, lenv0)
 
       case Expression.Let(sym, exp1, exp2, tpe, loc) =>
@@ -311,16 +336,16 @@ object ControlFlowAnalysis {
         val v2 = visitExp(exp2, env0, lenv0)
         lub(v1, v2)
 
-      case Expression.FixpointSolve(exp, stf, tpe, loc) =>
+      case Expression.FixpointSolve(exp, stf, _, tpe, loc) =>
         // TODO: We need to introduce a stratification variable... and then store the result of v into it.
         val v = visitExp(exp, env0, lenv0)
-        // TODO: Save the value.
+        l.store(stf, v)
         v
 
-      case Expression.FixpointCheck(exp, stf, tpe, loc) =>
+      case Expression.FixpointCheck(exp, stf, _, tpe, loc) =>
         visitExp(exp, env0, lenv0)
 
-      case Expression.FixpointDelta(exp, stf, tpe, loc) =>
+      case Expression.FixpointDelta(exp, stf, _, tpe, loc) =>
         visitExp(exp, env0, lenv0)
 
       case Expression.UserError(tpe, loc) => AbstractValue.Bot
@@ -511,6 +536,7 @@ object ControlFlowAnalysis {
     case (AbstractValue.Graph(g1), AbstractValue.Graph(g2)) => g1.xs subsetOf g2.xs
     case (AbstractValue.AnyRelation, AbstractValue.AnyRelation) => true
     case (AbstractValue.AnyLattice, AbstractValue.AnyLattice) => true
+      // TODO: Closures
     case _ => false
   }
 

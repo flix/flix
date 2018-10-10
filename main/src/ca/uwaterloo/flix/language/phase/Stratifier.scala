@@ -349,22 +349,22 @@ object Stratifier extends Phase[Root, Root] {
         case (e1, e2) => Expression.ConstraintUnion(e1, e2, tpe, loc)
       }
 
-    case Expression.FixpointSolve(exp, _, tpe, loc) =>
-      val g = ???
+    case Expression.FixpointSolve(exp, svar, _, tpe, loc) =>
+      val g = analysis.getSym(svar)
       mapN(visitExp(exp), stratify(g, loc)) {
-        case (e, s) => Expression.FixpointSolve(e, s, tpe, loc)
+        case (e, s) => Expression.FixpointSolve(e, svar, s, tpe, loc)
       }
 
-    case Expression.FixpointCheck(exp, _, tpe, loc) =>
-      val g = ???
+    case Expression.FixpointCheck(exp, svar, _, tpe, loc) =>
+      val g = analysis.getSym(svar)
       mapN(visitExp(exp), stratify(g, loc)) {
-        case (e, s) => Expression.FixpointCheck(e, s, tpe, loc)
+        case (e, s) => Expression.FixpointCheck(e, svar, s, tpe, loc)
       }
 
-    case Expression.FixpointDelta(exp, _, tpe, loc) =>
-      val g = ???
+    case Expression.FixpointDelta(exp, svar, _, tpe, loc) =>
+      val g = analysis.getSym(svar)
       mapN(visitExp(exp), stratify(g, loc)) {
-        case (e, s) => Expression.FixpointDelta(e, s, tpe, loc)
+        case (e, s) => Expression.FixpointDelta(e, svar, s, tpe, loc)
       }
 
     case Expression.UserError(tpe, loc) =>
