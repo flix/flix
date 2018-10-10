@@ -50,7 +50,7 @@ object Stratifier extends Phase[Root, Root] {
     */
   def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationError] = flix.phase("Stratifier") {
     // Run the control-flow analysis.
-    implicit val analysis: ControlFlowAnalysis.Analysis = ControlFlowAnalysis.fixpoint(root)
+    implicit val analysis: ControlFlowAnalysis.Analysis = ControlFlowAnalysis.runAnalysis(root)
 
     // Stratify every definition.
     val defsVal = traverse(root.defs) {

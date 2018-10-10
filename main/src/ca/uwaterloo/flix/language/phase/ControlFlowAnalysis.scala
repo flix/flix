@@ -108,27 +108,16 @@ object ControlFlowAnalysis {
         println(s"dequeue:  $sym, $env, ws size = ${worklist.size}")
 
         // Evaluate the function body.
-        evalExp(defn.exp, AbstractEnvironment(env), this)
+        evalExp(defn.exp, env, this)
       }
     }
 
   }
 
-  // TODO: Get rid of this useless wrapper?
-  case class AbstractEnvironment(m: Map[Symbol.VarSym, AbstractValue]) {
-    def lookup(sym: Symbol.VarSym): AbstractValue = m.get(sym) match {
-      case None =>
-        throw InternalCompilerException(s"Unknown value of $sym.")
-      case Some(v) => v
-    }
-
-    def extend(sym: Symbol.VarSym, v: AbstractValue): AbstractEnvironment = {
-      AbstractEnvironment(m + (sym -> v))
-    }
-  }
-
-  def fixpoint(root: Root): Analysis = {
-
+  /**
+    * Runs and returns the result of the analysis.
+    */
+  def runAnalysis(root: Root): Analysis = {
     // Init a new empty analysis object.
     val a = new Analysis(root)
 
@@ -144,20 +133,17 @@ object ControlFlowAnalysis {
     // Compute the fixpoint.
     a.fixpoint()
 
-
-    // TODO: Repeatedly reanalyze a function if it calls a function that changes.
-    // This essentially requires a call graph.
-    // What about closures?
-
+    // Returns the result.
     a
   }
 
-  // TODO: This really has to be done in a fixed point...
-  // TODO: It seems unlike that this can simplt return an abstract value. It probably will have to return an abstract state...
 
-  private def evalExp(exp0: Expression, outerEnv: AbstractEnvironment, l: Analysis): AbstractValue = {
+  /**
+    * Evaluates the given expression `exp0` under the given environment `outerEnv0` with the associated analysis object `l`.
+    */
+  private def evalExp(exp0: Expression, outerEnv0: Map[Symbol.VarSym, AbstractValue], l: Analysis): AbstractValue = {
 
-    def visitExp(exp0: Expression, env0: AbstractEnvironment, lenv0: Map[Symbol.LabelSym, Expression]): AbstractValue = exp0 match {
+    def visitExp(exp0: Expression, env0: Map[Symbol.VarSym, AbstractValue], lenv0: Map[Symbol.LabelSym, Expression]): AbstractValue = exp0 match {
       case Expression.Unit => AbstractValue.AnyPrimitive
       case Expression.True => AbstractValue.AnyPrimitive
       case Expression.False => AbstractValue.AnyPrimitive
@@ -171,43 +157,49 @@ object ControlFlowAnalysis {
       case Expression.BigInt(lit) => AbstractValue.AnyPrimitive
       case Expression.Str(lit) => AbstractValue.AnyPrimitive
 
-      case Expression.Var(sym, tpe, loc) =>
-        env0.lookup(sym)
+      case Expression.Var(sym, tpe, loc) => env0.get(sym) match {
+        case None => throw InternalCompilerException(s"Variable not found: '$sym'.")
+        case Some(v) => v
+      }
 
       case Expression.Closure(sym, freeVars, fnType, tpe, loc) =>
-        val env = freeVars.map(fv => env0.lookup(fv.sym))
+        val env = freeVars map {
+          case FreeVar(s, _) => env0.get(s) match {
+            case None => throw InternalCompilerException(s"Variable not found: '$sym'.")
+            case Some(v) => v
+          }
+        }
         AbstractValue.Closure(sym, env)
 
       case Expression.ApplyClo(exp, args, tpe, loc) => invokeClo(exp, args, env0, lenv0)
 
       case Expression.ApplyDef(sym, args, tpe, loc) => invokeDef(sym, args, env0)
 
-      case Expression.ApplyEff(sym, args, tpe, loc) => AbstractValue.Bot // TODO: Effects
+      case Expression.ApplyEff(sym, args, tpe, loc) => AbstractValue.Bot // TODO: ApplyEff
 
       case Expression.ApplyCloTail(exp, args, tpe, loc) => invokeClo(exp, args, env0, lenv0)
 
       case Expression.ApplyDefTail(sym, args, tpe, loc) => invokeDef(sym, args, env0)
 
-      case Expression.ApplyEffTail(sym, args, tpe, loc) => AbstractValue.Bot // TODO: Effects
+      case Expression.ApplyEffTail(sym, args, tpe, loc) => AbstractValue.Bot // TODO: ApplyEffTail
 
       case Expression.ApplySelfTail(sym, formals, actuals, tpe, loc) => invokeDef(sym, actuals, env0)
 
       case Expression.Unary(sop, op, exp, tpe, loc) =>
-        // TODO
+        val v = visitExp(exp, env0, lenv0)
         AbstractValue.AnyPrimitive
 
       case Expression.Binary(sop, op, exp1, exp2, tpe, loc) =>
-        visitExp(exp1, env0, lenv0)
-        visitExp(exp2, env0, lenv0)
+        val v1 = visitExp(exp1, env0, lenv0)
+        val v2 = visitExp(exp2, env0, lenv0)
         AbstractValue.AnyPrimitive
 
       case Expression.Let(sym, exp1, exp2, tpe, loc) =>
         val v1 = visitExp(exp1, env0, lenv0)
-        val env1 = env0.extend(sym, v1)
+        val env1 = env0 + (sym -> v1)
         visitExp(exp2, env1, lenv0)
 
-      case Expression.LetRec(sym, exp1, exp2, tpe, loc) =>
-        AbstractValue.Bot // TODO
+      case Expression.LetRec(sym, exp1, exp2, tpe, loc) => AbstractValue.Bot // TODO: LetRec
 
       case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
         // Evaluate the conditional.
@@ -362,7 +354,7 @@ object ControlFlowAnalysis {
     /**
       * Abstractly invokes the closure `exp` with the given arguments arguments `args`.
       */
-    def invokeClo(exp: Expression, args: List[Expression], env0: AbstractEnvironment, lenv0: Map[Symbol.LabelSym, Expression]): AbstractValue = {
+    def invokeClo(exp: Expression, args: List[Expression], env0: Map[Symbol.VarSym, AbstractValue], lenv0: Map[Symbol.LabelSym, Expression]): AbstractValue = {
       val clo = visitExp(exp, env0, lenv0)
       val as = args.map(a => visitExp(a, env0, lenv0))
 
@@ -384,7 +376,7 @@ object ControlFlowAnalysis {
           val env2 = defn.formals.drop(bindings.length).zip(as).foldLeft(env1) {
             case (macc, (formal, actual)) => macc + (formal.sym -> actual)
           }
-          evalExp(defn.exp, AbstractEnvironment(env2), l)
+          evalExp(defn.exp, env2, l)
 
         case _ => throw InternalCompilerException(s"Unexpected non-closure value: '$clo'.")
       }
@@ -393,7 +385,7 @@ object ControlFlowAnalysis {
     /**
       * Abstractly invokes the function associated with the symbol `sym` with the given arguments `args`.
       */
-    def invokeDef(sym: Symbol.DefnSym, args: List[Expression], env0: AbstractEnvironment): AbstractValue = {
+    def invokeDef(sym: Symbol.DefnSym, args: List[Expression], env0: Map[Symbol.VarSym, AbstractValue]): AbstractValue = {
       // Evaluate the arguments.
       val as = args.map(a => visitExp(a, env0, Map.empty))
 
@@ -404,28 +396,13 @@ object ControlFlowAnalysis {
       l.lookupReturn(sym)
     }
 
-    visitExp(exp0, outerEnv, Map.empty)
+    visitExp(exp0, outerEnv0, Map.empty)
   }
-
-  /**
-    * Returns (an over-approximation) of the dependency graph of the given expression `exp`.
-    */
-  def getDependencyGraph(exp: Expression): DependencyGraph = {
-    // Computes the fixed point.
-    val v = evalExp(exp, AbstractEnvironment(Map.empty), new Analysis(null))
-
-    v match {
-      case AbstractValue.Bot => DependencyGraph.Empty
-      case AbstractValue.Graph(g) => g
-      case _ => throw InternalCompilerException(s"Unexpected abstract value: '$v'.")
-    }
-  }
-
 
   /**
     * Returns the dependency graph of the given constraint.
     */
-  def getDependencyGraph(c: Constraint): DependencyGraph = c match {
+  private def getDependencyGraph(c: Constraint): DependencyGraph = c match {
     case Constraint(cparams, head, body) =>
       // Determine if the head predicate has a symbol.
       getHeadPredicateSymbol(head) match {
