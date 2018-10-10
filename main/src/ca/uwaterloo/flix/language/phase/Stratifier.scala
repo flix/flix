@@ -53,7 +53,6 @@ object Stratifier extends Phase[Root, Root] {
   // TODO: At compile time we know the stratification, just not the exact constraints.
 
   // TODO: Also compute strongly connected components?
-  // TODO: Would be a good exampple for flix semantics.
 
   /**
     * Represents a dependency between two predicate symbols.
@@ -92,7 +91,7 @@ object Stratifier extends Phase[Root, Root] {
     */
   def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationError] = flix.phase("Stratifier") {
     // Run the control-flow analysis.
-    ControlFlowAnalysis.fixpoint(root)
+    implicit val analysis: ControlFlowAnalysis.Analysis = ControlFlowAnalysis.fixpoint(root)
 
     // Stratify every definition.
     val defsVal = traverse(root.defs) {
@@ -108,7 +107,7 @@ object Stratifier extends Phase[Root, Root] {
   /**
     * Performs stratification of the given definition `def0`.
     */
-  private def visitDef(def0: Def): Validation[Def, CompilationError] =
+  private def visitDef(def0: Def)(implicit analysis: ControlFlowAnalysis.Analysis): Validation[Def, CompilationError] =
     visitExp(def0.exp) map {
       case e => def0.copy(exp = e)
     }
@@ -118,7 +117,7 @@ object Stratifier extends Phase[Root, Root] {
     *
     * Returns [[Success]] if the expression is stratified. Otherwise returns [[Failure]] with a [[StratificationError]].
     */
-  private def visitExp(exp0: Expression): Validation[Expression, StratificationError] = exp0 match {
+  private def visitExp(exp0: Expression)(implicit analysis: ControlFlowAnalysis.Analysis): Validation[Expression, StratificationError] = exp0 match {
     case Expression.Unit => Expression.Unit.toSuccess
     case Expression.True => Expression.True.toSuccess
     case Expression.False => Expression.False.toSuccess
@@ -351,19 +350,19 @@ object Stratifier extends Phase[Root, Root] {
       }
 
     case Expression.FixpointSolve(exp, _, tpe, loc) =>
-      val g = ControlFlowAnalysis.getDependencyGraph(exp)
+      val g = ???
       mapN(visitExp(exp), stratify(g, loc)) {
         case (e, s) => Expression.FixpointSolve(e, s, tpe, loc)
       }
 
     case Expression.FixpointCheck(exp, _, tpe, loc) =>
-      val g = ControlFlowAnalysis.getDependencyGraph(exp)
+      val g = ???
       mapN(visitExp(exp), stratify(g, loc)) {
         case (e, s) => Expression.FixpointCheck(e, s, tpe, loc)
       }
 
     case Expression.FixpointDelta(exp, _, tpe, loc) =>
-      val g = ControlFlowAnalysis.getDependencyGraph(exp)
+      val g = ???
       mapN(visitExp(exp), stratify(g, loc)) {
         case (e, s) => Expression.FixpointDelta(e, s, tpe, loc)
       }
@@ -380,50 +379,6 @@ object Stratifier extends Phase[Root, Root] {
     case Expression.SwitchError(tpe, loc) =>
       Expression.SwitchError(tpe, loc).toSuccess
 
-  }
-
-  /**
-    * Returns the dependency graph of the given constraint.
-    */
-  // TODO: Public
-  def getDependencyGraph(c: Constraint): DependencyGraph = c match {
-    case Constraint(cparams, head, body) =>
-      // Determine if the head predicate has a symbol.
-      getHeadPredicateSymbol(head) match {
-        case None => DependencyGraph.Empty
-        case Some(headSym) =>
-          val dependencies = body flatMap (b => getDependencyEdge(headSym, b))
-          DependencyGraph(dependencies.toSet)
-      }
-  }
-
-  /**
-    * Optionally returns the predicate symbol of the given head predicate `head0`.
-    */
-  private def getHeadPredicateSymbol(head0: Predicate.Head): Option[Symbol.PredSym] = head0 match {
-    case Predicate.Head.True(_) => None
-    case Predicate.Head.False(_) => None
-    case Predicate.Head.RelAtom(base, sym, terms, tpe, loc) => Some(sym)
-    case Predicate.Head.LatAtom(base, sym, terms, tpe, loc) => Some(sym)
-  }
-
-  /**
-    * Optionally returns the predicate symbol of the given body predicate `body0`.
-    */
-  private def getDependencyEdge(head: Symbol.PredSym, body0: Predicate.Body): Option[DependencyEdge] = body0 match {
-    case Predicate.Body.RelAtom(base, sym, polarity, terms, index2sym, tpe, loc) => polarity match {
-      case Polarity.Positive => Some(DependencyEdge.Positive(head, sym))
-      case Polarity.Negative => Some(DependencyEdge.Negative(head, sym))
-    }
-
-    case Predicate.Body.LatAtom(base, sym, polarity, terms, index2sym, tpe, loc) => polarity match {
-      case Polarity.Positive => Some(DependencyEdge.Positive(head, sym))
-      case Polarity.Negative => Some(DependencyEdge.Negative(head, sym))
-    }
-
-    case Predicate.Body.Filter(sym, terms, loc) => None
-
-    case Predicate.Body.Functional(varSym, defSym, term, loc) => None
   }
 
   /**
