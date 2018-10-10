@@ -255,13 +255,13 @@ object ControlFlowAnalysis {
         val vs = elms.map(visitExp(_, env0, lenv0))
         AbstractValue.Tuple(vs)
 
-      case Expression.RecordEmpty(tpe, loc) => AbstractValue.Bot // TODO
+      case Expression.RecordEmpty(tpe, loc) => AbstractValue.Bot // TODO: RecordEmpty
 
-      case Expression.RecordSelect(base, label, tpe, loc) => AbstractValue.Bot // TODO
+      case Expression.RecordSelect(base, label, tpe, loc) => AbstractValue.Bot // TODO: RecordSelect
 
-      case Expression.RecordExtend(base, label, value, tpe, loc) => AbstractValue.Bot // TODO
+      case Expression.RecordExtend(base, label, value, tpe, loc) => AbstractValue.Bot // TODO: RecordExtend
 
-      case Expression.RecordRestrict(base, label, tpe, loc) => AbstractValue.Bot // TODO
+      case Expression.RecordRestrict(base, label, tpe, loc) => AbstractValue.Bot // TODO: RecordRestrict
 
       case Expression.ArrayLit(elms, tpe, loc) =>
         val vs = elms.map(visitExp(_, env0, lenv0))
@@ -269,25 +269,38 @@ object ControlFlowAnalysis {
         AbstractValue.Array(v)
 
       case Expression.ArrayNew(elm, len, tpe, loc) =>
-        // TODO: Need allocation site?
+        // TODO: Since arrays are multiple this is not stricly speaking correct.
         val v = visitExp(elm, env0, lenv0)
         AbstractValue.Array(v)
 
       case Expression.ArrayLoad(base, index, tpe, loc) =>
-        // Evaluate the base and index expressions. The index is abstracted away.
-        (visitExp(base, env0, lenv0), visitExp(index, env0, lenv0)) match {
-          case (AbstractValue.Bot, _) => AbstractValue.Bot
-          case (AbstractValue.Array(v), _) => v
-          case (v, _) => throw InternalCompilerException(s"Unexpected abstract value: '$v'.")
+        val v1 = visitExp(base, env0, lenv0)
+        val v2 = visitExp(index, env0, lenv0)
+        v1 match {
+          case AbstractValue.Bot => AbstractValue.Bot
+          case AbstractValue.Array(v) => v
+          case _ => throw InternalCompilerException(s"Unexpected abstract value: '$v1'.")
         }
 
       case Expression.ArrayLength(base, tpe, loc) =>
         val v = visitExp(base, env0, lenv0)
         AbstractValue.AnyPrimitive
 
-      case Expression.ArrayStore(base, index, elm, tpe, loc) => AbstractValue.Bot // TODO
+      case Expression.ArrayStore(base, index, elm, tpe, loc) =>
+        val v1 = visitExp(base, env0, lenv0)
+        val v2 = visitExp(index, env0, lenv0)
+        val v3 = visitExp(elm, env0, lenv0)
+        v1
 
-      case Expression.ArraySlice(base, beginIndex, endIndex, tpe, loc) => AbstractValue.Bot // TODO
+      case Expression.ArraySlice(base, beginIndex, endIndex, tpe, loc) =>
+        val v1 = visitExp(base, env0, lenv0)
+        val v2 = visitExp(beginIndex, env0, lenv0)
+        val v3 = visitExp(endIndex, env0, lenv0)
+        v1 match {
+          case AbstractValue.Bot => AbstractValue.Bot
+          case AbstractValue.Array(v) => v
+          case _ => throw InternalCompilerException(s"Unexpected abstract value: '$v1'.")
+        }
 
       case Expression.Ref(exp, tpe, loc) => AbstractValue.Bot // TODO: Ref
 
