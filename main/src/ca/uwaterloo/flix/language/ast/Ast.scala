@@ -200,7 +200,37 @@ object Ast {
 
   }
 
+  /**
+    * Represents a dependency between two predicate symbols.
+    */
+  sealed trait DependencyEdge
 
+  object DependencyEdge {
+
+    /**
+      * Represents a positive labelled edge.
+      */
+    case class Positive(head: Symbol.PredSym, body: Symbol.PredSym) extends DependencyEdge
+
+    /**
+      * Represents a negative labelled edge.
+      */
+    case class Negative(head: Symbol.PredSym, body: Symbol.PredSym) extends DependencyEdge
+
+  }
+
+  object DependencyGraph {
+    /**
+      * The empty dependency graph.
+      */
+    val Empty: DependencyGraph = DependencyGraph(Set.empty)
+
+  }
+
+  /**
+    * Represents a dependency graph; a set of dependency edges.
+    */
+  case class DependencyGraph(xs: Set[DependencyEdge])
 
 
   object Stratification {

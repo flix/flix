@@ -1,9 +1,8 @@
 package ca.uwaterloo.flix.language.phase
 
-import ca.uwaterloo.flix.language.ast.Ast.Polarity
+import ca.uwaterloo.flix.language.ast.Ast.{DependencyEdge, DependencyGraph, Polarity}
 import ca.uwaterloo.flix.language.ast.{Ast, Symbol, Type}
 import ca.uwaterloo.flix.language.ast.FinalAst._
-import ca.uwaterloo.flix.language.phase.Stratifier.{DependencyEdge, DependencyGraph}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 import scala.collection.mutable
@@ -71,18 +70,16 @@ object ControlFlowAnalysis {
       }
     }
 
-
     /**
-      * TODO: DOC
+      * Returns the over-approximated dependency graph of the given expression `uid.`
       */
-    def getSym(uid: Ast.UId): DependencyGraph = {
-      dependencyGraphs.get(uid) match {
-        case Some(g) => g
-        case _ =>
-          // TODO
-          DependencyGraph.Empty
-      }
+    def getDependencyGraph(uid: Ast.UId): DependencyGraph = dependencyGraphs.get(uid) match {
+      case Some(g) => g
+      case _ =>
+        // TODO
+        DependencyGraph.Empty
     }
+
 
     /**
       * TODO: DOC

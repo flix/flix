@@ -19,9 +19,8 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol}
-import ca.uwaterloo.flix.language.ast.Ast.Polarity
+import ca.uwaterloo.flix.language.ast.Ast.{DependencyEdge, DependencyGraph, Polarity}
 import ca.uwaterloo.flix.language.ast.FinalAst.Predicate.Body
-import ca.uwaterloo.flix.language.ast.FinalAst.Predicate.Body.{Filter, Functional}
 import ca.uwaterloo.flix.language.ast.FinalAst.Predicate.Head.{False, True}
 import ca.uwaterloo.flix.language.ast.FinalAst._
 import ca.uwaterloo.flix.language.errors.StratificationError
@@ -45,38 +44,6 @@ import scala.collection.mutable
   * finds a cycle in the constraints and reports it.
   */
 object Stratifier extends Phase[Root, Root] {
-
-  /**
-    * Represents a dependency between two predicate symbols.
-    */
-  sealed trait DependencyEdge
-
-  object DependencyEdge {
-
-    /**
-      * Represents a positive labelled edge.
-      */
-    case class Positive(head: Symbol.PredSym, body: Symbol.PredSym) extends DependencyEdge
-
-    /**
-      * Represents a negative labelled edge.
-      */
-    case class Negative(head: Symbol.PredSym, body: Symbol.PredSym) extends DependencyEdge
-
-  }
-
-  object DependencyGraph {
-    /**
-      * The empty dependency graph.
-      */
-    val Empty: DependencyGraph = DependencyGraph(Set.empty)
-
-  }
-
-  /**
-    * Represents a dependency graph; a set of dependency edges.
-    */
-  case class DependencyGraph(xs: Set[DependencyEdge])
 
   /**
     * Returns a stratified version of the given AST `root`.
@@ -342,19 +309,19 @@ object Stratifier extends Phase[Root, Root] {
       }
 
     case Expression.FixpointSolve(uid, exp, _, tpe, loc) =>
-      val g = analysis.getSym(uid)
+      val g = analysis.getDependencyGraph(uid)
       mapN(visitExp(exp), stratify(g, loc)) {
         case (e, s) => Expression.FixpointSolve(uid, e, s, tpe, loc)
       }
 
     case Expression.FixpointCheck(uid, exp, _, tpe, loc) =>
-      val g = analysis.getSym(uid)
+      val g = analysis.getDependencyGraph(uid)
       mapN(visitExp(exp), stratify(g, loc)) {
         case (e, s) => Expression.FixpointCheck(uid, e, s, tpe, loc)
       }
 
     case Expression.FixpointDelta(uid, exp, _, tpe, loc) =>
-      val g = analysis.getSym(uid)
+      val g = analysis.getDependencyGraph(uid)
       mapN(visitExp(exp), stratify(g, loc)) {
         case (e, s) => Expression.FixpointDelta(uid, e, s, tpe, loc)
       }
@@ -449,7 +416,7 @@ object Stratifier extends Phase[Root, Root] {
   /**
     * Returns a path that forms a cycle with the edge from `src` to `dst` in the given dependency graph `g`.
     */
-  private def findNegativeCycle(src: Symbol.PredSym, dst: Symbol.PredSym, g: Stratifier.DependencyGraph): List[Symbol.PredSym] = {
+  private def findNegativeCycle(src: Symbol.PredSym, dst: Symbol.PredSym, g: DependencyGraph): List[Symbol.PredSym] = {
     // Computes a map from symbols to their successors.
     val m = mutable.Map.empty[Symbol.PredSym, Set[Symbol.PredSym]]
     for (edge <- g.xs) {
