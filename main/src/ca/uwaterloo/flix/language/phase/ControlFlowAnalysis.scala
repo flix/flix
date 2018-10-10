@@ -255,13 +255,31 @@ object ControlFlowAnalysis {
         val vs = elms.map(visitExp(_, env0, lenv0))
         AbstractValue.Tuple(vs)
 
-      case Expression.RecordEmpty(tpe, loc) => AbstractValue.Bot // TODO: RecordEmpty
+      case Expression.RecordEmpty(tpe, loc) => AbstractValue.Record(Map.empty)
 
-      case Expression.RecordSelect(base, label, tpe, loc) => AbstractValue.Bot // TODO: RecordSelect
+      case Expression.RecordSelect(exp, label, tpe, loc) =>
+        val v = visitExp(exp, env0, lenv0)
+        v match {
+          case AbstractValue.Bot => AbstractValue.Bot
+          case AbstractValue.Record(m) =>
+            m.getOrElse((label, tpe), AbstractValue.Bot)
+          case _ => throw InternalCompilerException(s"Unexpected abstract value: '$v'.")
+        }
 
-      case Expression.RecordExtend(base, label, value, tpe, loc) => AbstractValue.Bot // TODO: RecordExtend
+      case Expression.RecordExtend(label, value, rest, tpe, loc) =>
+        val newValue = visitExp(value, env0, lenv0)
+        val recordValue = visitExp(rest, env0, lenv0)
+        recordValue match {
+          case AbstractValue.Bot => AbstractValue.Bot
+          case AbstractValue.Record(m) =>
+            val oldValue = m.getOrElse((label, tpe), AbstractValue.Bot)
+            val lubValue = lub(newValue, oldValue)
+            AbstractValue.Record(m + ((label, tpe) -> lubValue))
+          case _ => throw InternalCompilerException(s"Unexpected abstract value: '$recordValue'.")
+        }
 
-      case Expression.RecordRestrict(base, label, tpe, loc) => AbstractValue.Bot // TODO: RecordRestrict
+      case Expression.RecordRestrict(label, rest, tpe, loc) =>
+        visitExp(rest, env0, lenv0)
 
       case Expression.ArrayLit(elms, tpe, loc) =>
         val vs = elms.map(visitExp(_, env0, lenv0))
@@ -541,6 +559,11 @@ object ControlFlowAnalysis {
     case class Tuple(vs: List[AbstractValue]) extends AbstractValue
 
     /**
+      * Approximation of tuples. Maintains labels and types..
+      */
+    case class Record(m: Map[(String, Type), AbstractValue]) extends AbstractValue
+
+    /**
       * Represents a collection of tags where each tag is mapped to an abstract value.
       */
     case class TagSet(m: Map[String, AbstractValue]) extends AbstractValue
@@ -574,6 +597,13 @@ object ControlFlowAnalysis {
     case (AbstractValue.Tuple(vs1), AbstractValue.Tuple(vs2)) => (vs1 zip vs2) forall {
       case (v1, v2) => leq(v1, v2)
     }
+
+    case (AbstractValue.Record(m1), AbstractValue.Record(m2)) =>
+      m1.forall {
+        case ((label, tpe), v1) =>
+          val v2 = m2.getOrElse((label, tpe), AbstractValue.Bot)
+          leq(v1, v2)
+      }
 
     case (AbstractValue.TagSet(m1), AbstractValue.TagSet(m2)) => m1 forall {
       case (tag, v) => leq(v, m2.getOrElse(tag, AbstractValue.Bot))
@@ -615,6 +645,15 @@ object ControlFlowAnalysis {
         case (v1, v2) => lub(v1, v2)
       }
       AbstractValue.Tuple(vs)
+
+    case (AbstractValue.Record(m1), AbstractValue.Record(m2)) =>
+      val m3 = (m1.keySet ++ m2.keySet) map {
+        case (label, tpe) =>
+          val v1 = m1.getOrElse((label, tpe), AbstractValue.Bot)
+          val v2 = m2.getOrElse((label, tpe), AbstractValue.Bot)
+          (label, tpe) -> lub(v1, v2)
+      }
+      AbstractValue.Record(m3.toMap)
 
     case (AbstractValue.TagSet(m1), AbstractValue.TagSet(m2)) =>
       val m3 = (m1.keySet ++ m2.keySet) map {
