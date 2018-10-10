@@ -46,14 +46,6 @@ import scala.collection.mutable
   */
 object Stratifier extends Phase[Root, Root] {
 
-  // TODO: Remove stratification field from constraint exprs in ASTs before FinalAst.
-
-  // TODO: It is important to understand that the stratification is different depending on the constraint system.
-  // TODO: Since the exact constraints are not known, we cannot actually separate the constraints until at runtime!
-  // TODO: At compile time we know the stratification, just not the exact constraints.
-
-  // TODO: Also compute strongly connected components?
-
   /**
     * Represents a dependency between two predicate symbols.
     */

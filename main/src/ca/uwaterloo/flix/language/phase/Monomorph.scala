@@ -453,17 +453,17 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           val e2 = visitExp(exp2, env0)
           Expression.ConstraintUnion(e1, e2, tpe, eff, loc)
 
-        case Expression.FixpointSolve(exp, stf, tpe, eff, loc) =>
+        case Expression.FixpointSolve(exp, tpe, eff, loc) =>
           val e = visitExp(exp, env0)
-          Expression.FixpointSolve(e, stf, tpe, eff, loc)
+          Expression.FixpointSolve(e, tpe, eff, loc)
 
-        case Expression.FixpointCheck(exp, stf, tpe, eff, loc) =>
+        case Expression.FixpointCheck(exp, tpe, eff, loc) =>
           val e = visitExp(exp, env0)
-          Expression.FixpointCheck(e, stf, tpe, eff, loc)
+          Expression.FixpointCheck(e, tpe, eff, loc)
 
-        case Expression.FixpointDelta(exp, stf, tpe, eff, loc) =>
+        case Expression.FixpointDelta(exp, tpe, eff, loc) =>
           val e = visitExp(exp, env0)
-          Expression.FixpointDelta(e, stf, tpe, eff, loc)
+          Expression.FixpointDelta(e, tpe, eff, loc)
 
         case Expression.UserError(tpe, eff, loc) => Expression.UserError(subst0(tpe), eff, loc)
       }

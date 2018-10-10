@@ -183,11 +183,11 @@ object Safety extends Phase[Root, Root] {
 
     case Expression.ConstraintUnion(exp1, exp2, tpe, eff, loc) => visitExp(exp1) ::: visitExp(exp2)
 
-    case Expression.FixpointSolve(exp, stf, tpe, eff, loc) => visitExp(exp)
+    case Expression.FixpointSolve(exp, tpe, eff, loc) => visitExp(exp)
 
-    case Expression.FixpointCheck(exp, stf, tpe, eff, loc) => visitExp(exp)
+    case Expression.FixpointCheck(exp, tpe, eff, loc) => visitExp(exp)
 
-    case Expression.FixpointDelta(exp, stf, tpe, eff, loc) => visitExp(exp)
+    case Expression.FixpointDelta(exp, tpe, eff, loc) => visitExp(exp)
 
     case Expression.UserError(tpe, eff, loc) => Nil
 

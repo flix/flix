@@ -359,15 +359,15 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
         val e2 = visit(exp2)
         FinalAst.Expression.ConstraintUnion(e1, e2, tpe, loc)
 
-      case SimplifiedAst.Expression.FixpointSolve(exp, stf, tpe, loc) =>
+      case SimplifiedAst.Expression.FixpointSolve(exp, tpe, loc) =>
         val e = visit(exp)
         FinalAst.Expression.FixpointSolve(Ast.freshUId(), e, Ast.Stratification.Empty, tpe, loc)
 
-      case SimplifiedAst.Expression.FixpointCheck(exp, stf, tpe, loc) =>
+      case SimplifiedAst.Expression.FixpointCheck(exp, tpe, loc) =>
         val e = visit(exp)
         FinalAst.Expression.FixpointCheck(Ast.freshUId(), e, Ast.Stratification.Empty, tpe, loc)
 
-      case SimplifiedAst.Expression.FixpointDelta(exp, stf, tpe, loc) =>
+      case SimplifiedAst.Expression.FixpointDelta(exp, tpe, loc) =>
         val e = visit(exp)
         FinalAst.Expression.FixpointDelta(Ast.freshUId(), e, Ast.Stratification.Empty, tpe, loc)
 
