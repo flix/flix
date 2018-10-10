@@ -238,7 +238,7 @@ object ControlFlowAnalysis {
 
       case Expression.Tag(sym, tag, exp, tpe, loc) =>
         val v = visitExp(exp, env0, lenv0)
-        AbstractValue.AnyTag(v)
+        AbstractValue.TagSet(Map(tag -> v))
 
       case Expression.Untag(sym, tag, exp, tpe, loc) =>
         AbstractValue.Bot // TODO
@@ -502,8 +502,7 @@ object ControlFlowAnalysis {
     /**
       * Represents any tagged value where the tag is abstracted away.
       */
-    // TODO: Cannot merge tags... they might have different inner type.
-    case class AnyTag(v: AbstractValue) extends AbstractValue
+    case class TagSet(m: Map[String, AbstractValue]) extends AbstractValue
 
     /**
       * Approximation of arrays. Abstracts indices.
@@ -537,7 +536,9 @@ object ControlFlowAnalysis {
   private def leq(x: AbstractValue, y: AbstractValue): Boolean = (x, y) match {
     case (AbstractValue.Bot, _) => true
     case (AbstractValue.AnyPrimitive, AbstractValue.AnyPrimitive) => true
-    case (AbstractValue.AnyTag(v1), AbstractValue.AnyTag(v2)) => leq(v1, v2)
+    case (AbstractValue.TagSet(m1), AbstractValue.TagSet(m2)) => m1 forall {
+      case (tag, v) => leq(v, m2.getOrElse(tag, AbstractValue.Bot))
+    }
     case (AbstractValue.Array(v1), AbstractValue.Array(v2)) => leq(v1, v2)
     case (AbstractValue.Tuple(vs1), AbstractValue.Tuple(vs2)) => (vs1 zip vs2) forall {
       case (v1, v2) => leq(v1, v2)
@@ -555,13 +556,27 @@ object ControlFlowAnalysis {
   private def lub(x: AbstractValue, y: AbstractValue): AbstractValue = (x, y) match {
     case (AbstractValue.Bot, _) => y
     case (_, AbstractValue.Bot) => x
+
     case (AbstractValue.AnyPrimitive, AbstractValue.AnyPrimitive) => AbstractValue.AnyPrimitive
-    case (AbstractValue.AnyTag(v1), AbstractValue.AnyTag(v2)) => AbstractValue.AnyTag(lub(v1, v2))
+
+    case (AbstractValue.TagSet(m1), AbstractValue.TagSet(m2)) =>
+      val m3 = (m1.keySet ++ m2.keySet) map {
+        case k =>
+          val v1 = m1.getOrElse(k, AbstractValue.Bot)
+          val v2 = m2.getOrElse(k, AbstractValue.Bot)
+          k -> lub(v1, v2)
+      }
+      AbstractValue.TagSet(m3.toMap)
+
     case (AbstractValue.Tuple(vs1), AbstractValue.Tuple(vs2)) =>
       val vs = (vs1 zip vs2).map {
         case (v1, v2) => lub(v1, v2)
       }
       AbstractValue.Tuple(vs)
+
+    case (AbstractValue.Array(v1), AbstractValue.Array(v2)) =>
+      AbstractValue.Array(lub(v1, v2))
+
     case (AbstractValue.Graph(g1), AbstractValue.Graph(g2)) =>
       val g = DependencyGraph(g1.xs ++ g2.xs)
       AbstractValue.Graph(g)
