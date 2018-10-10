@@ -23,7 +23,7 @@ object ControlFlowAnalysis {
     private val retValues: mutable.Map[Symbol.DefnSym, AbstractValue] = mutable.Map.empty
 
     // TODO: DOC
-    private val stf: mutable.Map[Symbol.StfSym, AbstractValue] = mutable.Map.empty
+    private val dependencyGraphs: mutable.Map[Symbol.StfSym, AbstractValue] = mutable.Map.empty
 
     /**
       * A mutable queue of pending function calls.
@@ -74,7 +74,7 @@ object ControlFlowAnalysis {
       * TODO: DOC
       */
     def getSym(sym: Symbol.StfSym): DependencyGraph = {
-      stf.get(sym) match {
+      dependencyGraphs.get(sym) match {
         case Some(AbstractValue.Graph(g)) => g
         case _ =>
           // TODO
@@ -86,7 +86,7 @@ object ControlFlowAnalysis {
       * TODO: DOC
       */
     def store(sym: Symbol.StfSym, v: AbstractValue): Unit = {
-      stf.put(sym, v)
+      dependencyGraphs.put(sym, v)
     }
 
 
@@ -202,8 +202,9 @@ object ControlFlowAnalysis {
         AbstractValue.AnyPrimitive
 
       case Expression.Binary(sop, op, exp1, exp2, tpe, loc) =>
-        // TODO: Binary
         visitExp(exp1, env0, lenv0)
+        visitExp(exp2, env0, lenv0)
+        AbstractValue.AnyPrimitive
 
       case Expression.Let(sym, exp1, exp2, tpe, loc) =>
         val v1 = visitExp(exp1, env0, lenv0)
