@@ -236,10 +236,20 @@ object ControlFlowAnalysis {
         AbstractValue.TagSet(Map(tag -> v))
 
       case Expression.Untag(sym, tag, exp, tpe, loc) =>
-        AbstractValue.Bot // TODO
+        val v = visitExp(exp, env0, lenv0)
+        v match {
+          case AbstractValue.Bot => AbstractValue.Bot
+          case AbstractValue.TagSet(m) => m.getOrElse(tag, AbstractValue.Bot)
+          case _ => throw InternalCompilerException(s"Unexpected abstract value: '$v'.")
+        }
 
       case Expression.Index(base, offset, tpe, loc) =>
-        AbstractValue.Bot // TODO
+        val v = visitExp(base, env0, lenv0)
+        v match {
+          case AbstractValue.Bot => AbstractValue.Bot
+          case AbstractValue.Tuple(vs) => vs(offset)
+          case _ => throw InternalCompilerException(s"Unexpected abstract value: '$v'.")
+        }
 
       case Expression.Tuple(elms, tpe, loc) =>
         val vs = elms.map(visitExp(_, env0, lenv0))
@@ -347,7 +357,7 @@ object ControlFlowAnalysis {
           case AbstractValue.Bot =>
           case AbstractValue.Graph(g) =>
             l.updateDependencyGraph(uid, g)
-          case _ => throw InternalCompilerException(s"Unexpected non-dependency graph: '$v'.")
+          case _ => throw InternalCompilerException(s"Unexpected abstract value: '$v'.")
         }
         AbstractValue.AnyPrimitive
 
@@ -357,7 +367,7 @@ object ControlFlowAnalysis {
           case AbstractValue.Bot =>
           case AbstractValue.Graph(g) =>
             l.updateDependencyGraph(uid, g)
-          case _ => throw InternalCompilerException(s"Unexpected non-dependency graph: '$v'.")
+          case _ => throw InternalCompilerException(s"Unexpected abstract value: '$v'.")
         }
         AbstractValue.AnyPrimitive
 
@@ -367,7 +377,7 @@ object ControlFlowAnalysis {
           case AbstractValue.Bot =>
           case AbstractValue.Graph(g) =>
             l.updateDependencyGraph(uid, g)
-          case _ => throw InternalCompilerException(s"Unexpected non-dependency graph: '$v'.")
+          case _ => throw InternalCompilerException(s"Unexpected abstract value: '$v'.")
         }
         AbstractValue.AnyPrimitive
 
@@ -487,8 +497,6 @@ object ControlFlowAnalysis {
 
   object AbstractValue {
 
-    // TODO: names and Comments
-
     /**
       * Represents the bottom element.
       */
@@ -498,32 +506,6 @@ object ControlFlowAnalysis {
       * Represents any Unit, True, False, Char, Float32, Float64, Int8, Int16, Int32, Int64, BigInt, or Str value.
       */
     case object AnyPrimitive extends AbstractValue
-
-    // TODO: case class Box() extends AbstractValue
-
-    /**
-      * Represents a closure where each def symbol is mapped to its environment arguments.
-      */
-    case class ClosureSet(m: Map[Symbol.DefnSym, List[AbstractValue]]) extends AbstractValue
-
-    /**
-      * Represents a collection of tags where each tag is mapped to an abstract value.
-      */
-    case class TagSet(m: Map[String, AbstractValue]) extends AbstractValue
-
-    /**
-      * Approximation of arrays. Abstracts indices.
-      */
-    case class Array(vs: AbstractValue) extends AbstractValue
-
-    /**
-      * Approximation of tuples. Maintains indices.
-      */
-    case class Tuple(vs: List[AbstractValue]) extends AbstractValue
-
-    // TODO: RecordEmpty/RecordExt.
-
-    case class Graph(g: DependencyGraph) extends AbstractValue
 
     /**
       * Approximation of any relation value.
@@ -535,15 +517,54 @@ object ControlFlowAnalysis {
       */
     case object AnyLattice extends AbstractValue
 
+    /**
+      * Approximation of arrays. Abstracts indices.
+      */
+    case class Array(vs: AbstractValue) extends AbstractValue
+
+    /**
+      * Approximation of tuples. Maintains indices.
+      */
+    case class Tuple(vs: List[AbstractValue]) extends AbstractValue
+
+    /**
+      * Represents a collection of tags where each tag is mapped to an abstract value.
+      */
+    case class TagSet(m: Map[String, AbstractValue]) extends AbstractValue
+
+    /**
+      * Represents a closure where each def symbol is mapped to its environment arguments.
+      */
+    case class ClosureSet(m: Map[Symbol.DefnSym, List[AbstractValue]]) extends AbstractValue
+
+    /**
+      * Represents an over-approximation of the dependecy graph of a constraint system.
+      */
+    case class Graph(g: DependencyGraph) extends AbstractValue
+
   }
 
   /**
     * Returns `true` if the abstract value `x` is less than or equal to the abstract value `y`.
     */
-  // TODO: Sort
   private def leq(x: AbstractValue, y: AbstractValue): Boolean = (x, y) match {
     case (AbstractValue.Bot, _) => true
+
     case (AbstractValue.AnyPrimitive, AbstractValue.AnyPrimitive) => true
+
+    case (AbstractValue.AnyRelation, AbstractValue.AnyRelation) => true
+
+    case (AbstractValue.AnyLattice, AbstractValue.AnyLattice) => true
+
+    case (AbstractValue.Array(v1), AbstractValue.Array(v2)) => leq(v1, v2)
+
+    case (AbstractValue.Tuple(vs1), AbstractValue.Tuple(vs2)) => (vs1 zip vs2) forall {
+      case (v1, v2) => leq(v1, v2)
+    }
+
+    case (AbstractValue.TagSet(m1), AbstractValue.TagSet(m2)) => m1 forall {
+      case (tag, v) => leq(v, m2.getOrElse(tag, AbstractValue.Bot))
+    }
 
     case (AbstractValue.ClosureSet(m1), AbstractValue.ClosureSet(m2)) =>
       m1.forall {
@@ -554,21 +575,7 @@ object ControlFlowAnalysis {
           }
       }
 
-    case (AbstractValue.TagSet(m1), AbstractValue.TagSet(m2)) => m1 forall {
-      case (tag, v) => leq(v, m2.getOrElse(tag, AbstractValue.Bot))
-    }
-
-    case (AbstractValue.Array(v1), AbstractValue.Array(v2)) => leq(v1, v2)
-
-    case (AbstractValue.Tuple(vs1), AbstractValue.Tuple(vs2)) => (vs1 zip vs2) forall {
-      case (v1, v2) => leq(v1, v2)
-    }
-
     case (AbstractValue.Graph(g1), AbstractValue.Graph(g2)) => g1.xs subsetOf g2.xs
-
-    case (AbstractValue.AnyRelation, AbstractValue.AnyRelation) => true
-
-    case (AbstractValue.AnyLattice, AbstractValue.AnyLattice) => true
 
     case _ => false
   }
@@ -576,12 +583,25 @@ object ControlFlowAnalysis {
   /**
     * Returns the least upper bound of the two abstract values `v1` and `v2`.
     */
-  // TODO: Sort
   private def lub(x: AbstractValue, y: AbstractValue): AbstractValue = (x, y) match {
     case (AbstractValue.Bot, _) => y
+
     case (_, AbstractValue.Bot) => x
 
     case (AbstractValue.AnyPrimitive, AbstractValue.AnyPrimitive) => AbstractValue.AnyPrimitive
+
+    case (AbstractValue.AnyRelation, AbstractValue.AnyRelation) => AbstractValue.AnyRelation
+
+    case (AbstractValue.AnyLattice, AbstractValue.AnyLattice) => AbstractValue.AnyLattice
+
+    case (AbstractValue.Array(v1), AbstractValue.Array(v2)) =>
+      AbstractValue.Array(lub(v1, v2))
+
+    case (AbstractValue.Tuple(vs1), AbstractValue.Tuple(vs2)) =>
+      val vs = (vs1 zip vs2).map {
+        case (v1, v2) => lub(v1, v2)
+      }
+      AbstractValue.Tuple(vs)
 
     case (AbstractValue.TagSet(m1), AbstractValue.TagSet(m2)) =>
       val m3 = (m1.keySet ++ m2.keySet) map {
@@ -591,23 +611,6 @@ object ControlFlowAnalysis {
           k -> lub(v1, v2)
       }
       AbstractValue.TagSet(m3.toMap)
-
-    case (AbstractValue.Tuple(vs1), AbstractValue.Tuple(vs2)) =>
-      val vs = (vs1 zip vs2).map {
-        case (v1, v2) => lub(v1, v2)
-      }
-      AbstractValue.Tuple(vs)
-
-    case (AbstractValue.Array(v1), AbstractValue.Array(v2)) =>
-      AbstractValue.Array(lub(v1, v2))
-
-    case (AbstractValue.Graph(g1), AbstractValue.Graph(g2)) =>
-      val g = DependencyGraph(g1.xs ++ g2.xs)
-      AbstractValue.Graph(g)
-
-    case (AbstractValue.AnyRelation, AbstractValue.AnyRelation) => AbstractValue.AnyRelation
-
-    case (AbstractValue.AnyLattice, AbstractValue.AnyLattice) => AbstractValue.AnyLattice
 
     case (AbstractValue.ClosureSet(m1), AbstractValue.ClosureSet(m2)) =>
       val m3 = (m1.keySet ++ m2.keySet) map {
@@ -621,8 +624,12 @@ object ControlFlowAnalysis {
       }
       AbstractValue.ClosureSet(m3.toMap)
 
+    case (AbstractValue.Graph(g1), AbstractValue.Graph(g2)) =>
+      val g = DependencyGraph(g1.xs ++ g2.xs)
+      AbstractValue.Graph(g)
+
     case _ =>
-      throw InternalCompilerException(s"Unexpected abstract values: '$x' and '$y'. Possible type error?")
+      throw InternalCompilerException(s"Unexpected incompatible abstract values: '$x' and '$y'.")
   }
 
   /**
