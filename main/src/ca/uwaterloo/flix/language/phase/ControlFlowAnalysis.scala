@@ -495,6 +495,7 @@ object ControlFlowAnalysis {
     /**
       * Represents any tagged value where the tag is abstracted away.
       */
+    // TODO: Cannot merge tags... they might have different inner type.
     case class AnyTag(v: AbstractValue) extends AbstractValue
 
     /**
@@ -537,7 +538,7 @@ object ControlFlowAnalysis {
     case (AbstractValue.Graph(g1), AbstractValue.Graph(g2)) => g1.xs subsetOf g2.xs
     case (AbstractValue.AnyRelation, AbstractValue.AnyRelation) => true
     case (AbstractValue.AnyLattice, AbstractValue.AnyLattice) => true
-      // TODO: Closures
+    // TODO: Closures
     case _ => false
   }
 
@@ -567,7 +568,8 @@ object ControlFlowAnalysis {
         case (e1, e2) => lub(e1, e2)
       }
       AbstractValue.Closure(sym1, newEnv)
-    case _ => throw InternalCompilerException(s"Unexpected abstract values: '$x' and '$y'. Possible type error?")
+    case _ =>
+      throw InternalCompilerException(s"Unexpected abstract values: '$x' and '$y'. Possible type error?")
   }
 
   /**
