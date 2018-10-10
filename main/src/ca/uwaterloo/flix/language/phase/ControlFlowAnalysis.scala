@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.language.ast.Ast.Polarity
-import ca.uwaterloo.flix.language.ast.{Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Ast, Symbol, Type}
 import ca.uwaterloo.flix.language.ast.FinalAst._
 import ca.uwaterloo.flix.language.phase.Stratifier.{DependencyEdge, DependencyGraph}
 import ca.uwaterloo.flix.util.InternalCompilerException
@@ -22,8 +22,10 @@ object ControlFlowAnalysis {
       */
     private val retValues: mutable.Map[Symbol.DefnSym, AbstractValue] = mutable.Map.empty
 
-    // TODO: DOC
-    private val dependencyGraphs: mutable.Map[Symbol.StfSym, AbstractValue] = mutable.Map.empty
+    /**
+      * A mutable map from expression identifiers to dependency graphs.
+      */
+    private val dependencyGraphs: mutable.Map[Ast.UId, DependencyGraph] = mutable.Map.empty
 
     /**
       * A mutable queue of pending function calls.
@@ -73,9 +75,9 @@ object ControlFlowAnalysis {
     /**
       * TODO: DOC
       */
-    def getSym(sym: Symbol.StfSym): DependencyGraph = {
-      dependencyGraphs.get(sym) match {
-        case Some(AbstractValue.Graph(g)) => g
+    def getSym(uid: Ast.UId): DependencyGraph = {
+      dependencyGraphs.get(uid) match {
+        case Some(g) => g
         case _ =>
           // TODO
           DependencyGraph.Empty
@@ -85,8 +87,8 @@ object ControlFlowAnalysis {
     /**
       * TODO: DOC
       */
-    def store(sym: Symbol.StfSym, v: AbstractValue): Unit = {
-      dependencyGraphs.put(sym, v)
+    def store(uid: Ast.UId, g: DependencyGraph): Unit = {
+      dependencyGraphs.put(uid, g)
     }
 
 
@@ -337,16 +339,21 @@ object ControlFlowAnalysis {
         val v2 = visitExp(exp2, env0, lenv0)
         lub(v1, v2)
 
-      case Expression.FixpointSolve(exp, stf, _, tpe, loc) =>
+      case Expression.FixpointSolve(uid, exp, stf, tpe, loc) =>
         // TODO: We need to introduce a stratification variable... and then store the result of v into it.
         val v = visitExp(exp, env0, lenv0)
-        l.store(stf, v)
+        v match {
+          case AbstractValue.Bot =>
+          case AbstractValue.Graph(g) =>
+            l.store(uid, g)
+          // TODO: Other cases.
+        }
         v
 
-      case Expression.FixpointCheck(exp, stf, _, tpe, loc) =>
+      case Expression.FixpointCheck(uid, exp, stf, tpe, loc) =>
         visitExp(exp, env0, lenv0)
 
-      case Expression.FixpointDelta(exp, stf, _, tpe, loc) =>
+      case Expression.FixpointDelta(uid, exp, stf, tpe, loc) =>
         visitExp(exp, env0, lenv0)
 
       case Expression.UserError(tpe, loc) => AbstractValue.Bot

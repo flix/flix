@@ -826,11 +826,11 @@ object JvmOps {
 
       case Expression.ConstraintUnion(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2)
 
-      case Expression.FixpointSolve(exp, svar, stf, tpe, loc) => visitExp(exp)
+      case Expression.FixpointSolve(uid, exp, stf, tpe, loc) => visitExp(exp)
 
-      case Expression.FixpointCheck(exp, svar, stf, tpe, loc) => visitExp(exp)
+      case Expression.FixpointCheck(uid, exp, stf, tpe, loc) => visitExp(exp)
 
-      case Expression.FixpointDelta(exp, svar, stf, tpe, loc) => visitExp(exp)
+      case Expression.FixpointDelta(uid, exp, stf, tpe, loc) => visitExp(exp)
 
       case Expression.UserError(tpe, loc) => Set.empty
       case Expression.HoleError(sym, tpe, loc) => Set.empty
@@ -1078,11 +1078,11 @@ object JvmOps {
 
       case Expression.ConstraintUnion(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2) + tpe
 
-      case Expression.FixpointSolve(exp, svar, stf, tpe, loc) => visitExp(exp) + tpe
+      case Expression.FixpointSolve(uid, exp, stf, tpe, loc) => visitExp(exp) + tpe
 
-      case Expression.FixpointCheck(exp, svar, stf, tpe, loc) => visitExp(exp) + tpe
+      case Expression.FixpointCheck(uid, exp, stf, tpe, loc) => visitExp(exp) + tpe
 
-      case Expression.FixpointDelta(exp, svar, stf, tpe, loc) => visitExp(exp) + tpe
+      case Expression.FixpointDelta(uid, exp, stf, tpe, loc) => visitExp(exp) + tpe
 
       case Expression.UserError(tpe, loc) => Set(tpe)
       case Expression.HoleError(sym, tpe, loc) => Set(tpe)
