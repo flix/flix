@@ -1114,7 +1114,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
             rule match {
               case ResolvedAst.SelectChannelRule(sym, chan, exp) => for {
                 channelType <- visitExp(chan)
-                _ <- unifyM (channelType, Type.Channel, loc)
+                _ <- unifyM (channelType, Type.mkChannel(Type.freshTypeVar()), loc)
               } yield liftM (Type.Unit)
             }
           }
