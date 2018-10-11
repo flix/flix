@@ -164,6 +164,22 @@ object Safety extends Phase[Root, Root] {
         case (acc, e) => acc ::: visitExp(e)
       }
 
+    case Expression.NewChannel(tpe, eff, loc) => Nil
+
+    case Expression.GetChannel(exp, tpe, eff, loc) => visitExp(exp)
+
+    case Expression.PutChannel(exp1, exp2, tpe, eff, loc) => visitExp(exp1) ::: visitExp(exp2)
+
+    case Expression.SelectChannel(rules, tpe, eff, loc) =>
+      //TODO SJ: Should we also visitExp(chan) - why does Match NOT visit its guard
+      rules.foldLeft(Nil: List[CompilationError]) {
+        case (acc, SelectChannelRule(sym, chan, exp)) => acc ::: visitExp(chan) ::: visitExp(exp)
+      }
+
+    case Expression.CloseChannel(exp, tpe, eff, loc) => visitExp(exp)
+
+    case Expression.Spawn(exp, tpe, eff, loc) => visitExp(exp)
+
     case Expression.NewRelation(sym, tpe, eff, loc) => Nil
 
     case Expression.NewLattice(sym, tpe, eff, loc) => Nil
