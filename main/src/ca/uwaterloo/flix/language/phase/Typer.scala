@@ -1106,7 +1106,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           } yield resultType
 
         /*
-         * Close Channel Expression.
+         * Select Channel Expression.
          */
         case ResolvedAst.Expression.SelectChannel(rules, tvar, loc) =>
           assert(rules.nonEmpty)
@@ -1114,10 +1114,16 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           val chans = rules.map(_.chan)
           val bodies = rules.map(_.exp)
 
-          ???
+          for {
+            chanTypes <- chans map visitExp
+            chanInnerTypes <- chanTypes map {case Type.mkChannel(x) => x}
+            symTypes <- unifyM(syms, chanInnerTypes, loc)
+            bodyTypes <- bodies map visitExp
+            rtpe <- unifyM(bodyTypes)
+          } yield rtpe
 
         /*
-         * Select Channel Expression.
+         * Close Channel Expression.
          */
         case ResolvedAst.Expression.CloseChannel(exp, tvar, loc) =>
           for {
@@ -1785,7 +1791,6 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
   }
 
   object Predicates {
-
     /**
       * Infers the type of the given head predicate.
       */
