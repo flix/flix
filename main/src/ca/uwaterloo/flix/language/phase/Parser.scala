@@ -479,7 +479,11 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Assign: Rule1[ParsedAst.Expression] = rule {
-      LogicalOr ~ optional(optWS ~ atomic(":=") ~ optWS ~ LogicalOr ~ SP ~> ParsedAst.Expression.Assign)
+      PutChannel ~ optional(optWS ~ atomic(":=") ~ optWS ~ PutChannel ~ SP ~> ParsedAst.Expression.Assign)
+    }
+
+    def PutChannel: Rule1[ParsedAst.Expression] = rule {
+      LogicalOr ~ optional(optWS ~ atomic("<-") ~ optWS ~ LogicalOr ~ SP ~> ParsedAst.Expression.PutChannel)
     }
 
     def LogicalOr: Rule1[ParsedAst.Expression] = rule {
@@ -507,7 +511,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Relational: Rule1[ParsedAst.Expression] = rule {
-      Shift ~ optional(optWS ~ capture(atomic("<=") | atomic(">=") | atomic("<") | atomic(">")) ~ optWS ~ Shift ~ SP ~> ParsedAst.Expression.Binary)
+      Shift ~ optional(WS ~ capture(atomic("<=") | atomic(">=") | atomic("<") | atomic(">")) ~ WS ~ Shift ~ SP ~> ParsedAst.Expression.Binary)
     }
 
     def Shift: Rule1[ParsedAst.Expression] = rule {
@@ -530,7 +534,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
       // NB: We allow any operator, other than a reserved operator, to be matched by this rule.
       def Reserved2: Rule1[String] = rule {
-        capture("**" | "<=" | ">=" | "==" | "!=" | "&&" | "||" | "=>" | "->")
+        capture("**" | "<=" | ">=" | "==" | "!=" | "&&" | "||" | "=>" | "->" | "<-")
       }
 
       // NB: We allow any operator, other than a reserved operator, to be matched by this rule.
@@ -586,7 +590,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Primary: Rule1[ParsedAst.Expression] = rule {
       LetRec | LetMatch | IfThenElse | Match | LambdaMatch | Switch | TryCatch | Native | NewChannel |
-        GetChannel | PutChannel | CloseChannel | Spawn | SelectChannel | Lambda | Tuple |
+        GetChannel | CloseChannel | Spawn | SelectChannel | Lambda | Tuple |
         ArrayLit | ArrayNew | ArrayLength | VectorLit | VectorNew | VectorLength | FNil | FSet | FMap |
         NewRelationOrLattice | FixpointSolve | FixpointCheck | FixpointDelta | ConstraintSeq | Literal |
         HandleWith | Existential | Universal | UnaryLambda | QName | Wild | Tag | SName | Hole | UserError
@@ -666,10 +670,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def GetChannel: Rule1[ParsedAst.Expression.GetChannel] = rule {
       SP ~ atomic("<-") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.GetChannel
-    }
-
-    def PutChannel: Rule1[ParsedAst.Expression.PutChannel] = rule {
-      SP ~ atomic("putch") ~ WS ~ Expression ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.PutChannel
     }
 
     def SelectChannel: Rule1[ParsedAst.Expression.SelectChannel] = {

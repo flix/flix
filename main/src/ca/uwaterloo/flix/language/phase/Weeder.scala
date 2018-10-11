@@ -907,9 +907,9 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         case e => WeededAst.Expression.GetChannel(e, mkSL(sp1, sp2))
       }
 
-    case ParsedAst.Expression.PutChannel(sp1, exp1, exp2, sp2) =>
+    case ParsedAst.Expression.PutChannel(exp1, exp2, sp2) =>
       mapN(visitExp(exp1), visitExp(exp2)) {
-        case (e1, e2) => WeededAst.Expression.PutChannel(e1, e2, mkSL(sp1, sp2))
+        case (e1, e2) => WeededAst.Expression.PutChannel(e1, e2, mkSL(leftMostSourcePosition(exp1), sp2))
       }
 
     case ParsedAst.Expression.SelectChannel(sp1, rules, sp2) =>
@@ -1726,7 +1726,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.NativeConstructor(sp1, _, _, _) => sp1
     case ParsedAst.Expression.NewChannel(sp1, _, _) => sp1
     case ParsedAst.Expression.GetChannel(sp1, _, _) => sp1
-    case ParsedAst.Expression.PutChannel(sp1, _, _, _) => sp1
+    case ParsedAst.Expression.PutChannel(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.SelectChannel(sp1, _, _) => sp1
     case ParsedAst.Expression.CloseChannel(sp1, _, _) => sp1
     case ParsedAst.Expression.Spawn(sp1, _, _) => sp1
