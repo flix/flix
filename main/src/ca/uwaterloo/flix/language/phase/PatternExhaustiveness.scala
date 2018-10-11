@@ -285,6 +285,30 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
           checkPats(_, root)
         }).map(const(tast))
 
+        case Expression.NewChannel(_, _, _) => tast.toSuccess
+
+        case Expression.GetChannel(exp, _, _ , _) => for {
+            _ <- checkPats(exp, root)
+          } yield tast
+
+        case Expression.PutChannel(exp1, exp2, _, _, _) => for {
+            _ <- checkPats(exp1, root)
+            _ <- checkPats(exp2, root)
+          } yield tast
+
+        case Expression.SelectChannel(rules, _, _, _) => for {
+          //TODO SJ: Should we also check x.chan? (why does Match NOT check its guard)
+          _ <- sequence(rules map { x => checkPats(x.exp, root)})
+        } yield tast
+
+        case Expression.CloseChannel(exp, _, _, _) => for {
+          _ <- checkPats(exp, root)
+        } yield tast
+
+        case Expression.Spawn(exp, _, _, _) => for {
+          _ <- checkPats(exp, root)
+        } yield tast
+
         case Expression.NewRelation(sym, tpe, eff, loc) =>
           Expression.NewRelation(sym, tpe, eff, loc).toSuccess
 
@@ -629,6 +653,7 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
       case Type.Native(clazz) => 0
       case Type.Ref => 0
       case Type.Arrow(length) => length
+      case Type.Channel => 1
       case Type.Array => 1
       case Type.Vector => 2
       case Type.Zero => 0
