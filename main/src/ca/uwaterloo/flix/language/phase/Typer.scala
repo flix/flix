@@ -1079,9 +1079,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
          * New Channel expression.
          */
         case ResolvedAst.Expression.NewChannel(tpe, loc) =>
-          unifyM(Type.mkChannel(tpe), Type.mkChannel(Type.freshTypeVar()), loc)
-          //TODO SJ: could it be "liftM(Type.mkChannel(tpe))"?
-          //TODO SJ: should it be mkChannel or Channel ? and is freshTypeVar correct?
+          liftM(Type.mkChannel(tpe))
 
         /*
          * Get Channel expression.
@@ -1110,16 +1108,21 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
          */
         case ResolvedAst.Expression.SelectChannel(rules, tvar, loc) =>
           assert(rules.nonEmpty)
-          val syms = rules.map(_.sym)
-          val chans = rules.map(_.chan)
           val bodies = rules.map(_.exp)
 
+          def inferSelectChannelRule(rule: ResolvedAst.SelectChannelRule): InferMonad[Unit] = {
+            rule match {
+              case ResolvedAst.SelectChannelRule(sym, chan, exp) => for {
+                channelType <- visitExp(chan)
+                _ <- unifyM (channelType, Type.Channel, loc)
+              } yield liftM (Type.Unit)
+            }
+          }
+
           for {
-            chanTypes <- chans map visitExp
-            chanInnerTypes <- chanTypes map {case Type.mkChannel(x) => x}
-            symTypes <- unifyM(syms, chanInnerTypes, loc)
-            bodyTypes <- bodies map visitExp
-            rtpe <- unifyM(bodyTypes)
+            _ <- seqM(rules.map(inferSelectChannelRule))
+            bodyTypes <- seqM(bodies map visitExp)
+            rtpe <- unifyM(bodyTypes, loc)
           } yield rtpe
 
         /*
@@ -1583,8 +1586,8 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         /*
          * New Channel expression.
          */
-        case ResolvedAst.Expression.NewChannel(tvar, loc) =>
-          TypedAst.Expression.NewChannel(subst0(tvar), Eff.Bot, loc)
+        case ResolvedAst.Expression.NewChannel(tpe, loc) =>
+          TypedAst.Expression.NewChannel(subst0(tpe), Eff.Bot, loc)
 
         /*
          * Get Channel expression.
