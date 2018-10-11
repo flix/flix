@@ -1,12 +1,12 @@
-def runTests(): (Int, Int) = {
+def allTests(): (Int, Int) = {
     (2, 2)
 }
 
 def newchTest(): Channel[Int] = newch Int
 
-def getchTest(): Int = getch newchTest()
+def getchTest(): Int = <- newchTest()
 
-def putchTest(): Channel[Int] = putch newchTest() 23
+def putchTest(): Channel[Int] = newchTest() <- 23
 
 def closechTest(): Unit = closech newchTest()
 

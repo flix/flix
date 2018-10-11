@@ -1137,8 +1137,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
          * New Channel expression.
          */
         case ResolvedAst.Expression.NewChannel(tpe, loc) =>
-          unifyM(Type.mkChannel(tpe), Type.mkChannel(Type.freshTypeVar()), loc)
-          //TODO SJ: should it be mkChannel or Channel ? and is freshTypeVar correct?
+          liftM(Type.mkChannel(tpe))
 
         /*
          * Get Channel expression.
@@ -1163,18 +1162,29 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           } yield resultType
 
         /*
-         * Close Channel Expression.
+         * Select Channel Expression.
          */
         case ResolvedAst.Expression.SelectChannel(rules, tvar, loc) =>
           assert(rules.nonEmpty)
-          val syms = rules.map(_.sym)
-          val chans = rules.map(_.chan)
           val bodies = rules.map(_.exp)
 
-          ???
+          def inferSelectChannelRule(rule: ResolvedAst.SelectChannelRule): InferMonad[Unit] = {
+            rule match {
+              case ResolvedAst.SelectChannelRule(sym, chan, exp) => for {
+                channelType <- visitExp(chan)
+                _ <- unifyM (channelType, Type.mkChannel(Type.freshTypeVar()), loc)
+              } yield liftM (Type.Unit)
+            }
+          }
+
+          for {
+            _ <- seqM(rules.map(inferSelectChannelRule))
+            bodyTypes <- seqM(bodies map visitExp)
+            rtpe <- unifyM(bodyTypes, loc)
+          } yield rtpe
 
         /*
-         * Select Channel Expression.
+         * Close Channel Expression.
          */
         case ResolvedAst.Expression.CloseChannel(exp, tvar, loc) =>
           for {
@@ -1664,8 +1674,8 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         /*
          * New Channel expression.
          */
-        case ResolvedAst.Expression.NewChannel(tvar, loc) =>
-          TypedAst.Expression.NewChannel(subst0(tvar), Eff.Bot, loc)
+        case ResolvedAst.Expression.NewChannel(tpe, loc) =>
+          TypedAst.Expression.NewChannel(subst0(tpe), Eff.Bot, loc)
 
         /*
          * Get Channel expression.
@@ -1872,7 +1882,6 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
   }
 
   object Predicates {
-
     /**
       * Infers the type of the given head predicate.
       */

@@ -949,12 +949,11 @@ object ParsedAst {
     /**
       * PutChannel Expression
       *
-      * @param sp1 the position of the first character in the expression.
       * @param exp1 the Channel expression.
       * @param exp2 the expression to put in the Channel.
-      * @param sp2 the position of the last character in the expression.
+      * @param sp2  the position of the last character in the expression.
       */
-    case class PutChannel(sp1: SourcePosition, exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class PutChannel(exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * SelectChannel Expression.
@@ -986,12 +985,11 @@ object ParsedAst {
     /**
       * Statement Expression.
       *
-      * @param sp1  the position of the first character in the expression.
       * @param exp1 the first expression.
       * @param exp2 the second expression.
       * @param sp2  the position of the last character in the expression.
       */
-    case class Statement(sp1: SourcePosition, exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class Statement(exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * New Relation or Lattice.
