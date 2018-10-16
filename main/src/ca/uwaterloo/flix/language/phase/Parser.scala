@@ -737,27 +737,35 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     def RecordLiteral: Rule1[ParsedAst.Expression] = rule {
       SP ~ "%{" ~ optWS ~ zeroOrMore(RecordFieldLit).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.RecordLit
     }
+
     def RecordExtend: Rule1[ParsedAst.Expression] = rule {
       SP ~ "%{" ~ optWS ~ oneOrMore(RecordFieldExtend).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ atomic("|") ~ optWS ~ Expression ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.RecordExtend
     }
+
     def RecordRestrict: Rule1[ParsedAst.Expression] = rule {
       SP ~ "%{" ~ optWS ~ oneOrMore(RecordFieldRestrict).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ atomic("|") ~ optWS ~ Expression ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.RecordRestrict
     }
+
     def RecordUpdate: Rule1[ParsedAst.Expression] = rule {
       SP ~ "%{" ~ optWS ~ oneOrMore(RecordFieldUpdate).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ atomic("|") ~ optWS ~ Expression ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.RecordUpdate
     }
+
     def RecordSelectLambda: Rule1[ParsedAst.Expression] = rule {
       SP ~ "." ~ Names.Field ~ SP ~> ParsedAst.Expression.RecordSelectLambda
     }
+
     def RecordFieldLit: Rule1[ParsedAst.RecordField] = rule {
       SP ~ Names.Field ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~> ParsedAst.RecordField
     }
+
     def RecordFieldExtend: Rule1[ParsedAst.RecordField] = rule {
       SP ~ "+" ~ Names.Field ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~> ParsedAst.RecordField
     }
+
     def RecordFieldRestrict: Rule1[Name.Ident] = rule {
       "-" ~ Names.Field
     }
+
     def RecordFieldUpdate: Rule1[ParsedAst.RecordField] = rule {
       SP ~ Names.Field ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~> ParsedAst.RecordField
     }
