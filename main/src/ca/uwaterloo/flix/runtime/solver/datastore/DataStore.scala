@@ -59,20 +59,20 @@ class DataStore[ValueType <: AnyRef](constraintSet: ConstraintSet)(implicit m: C
   }
 
   def indexHits: List[(String, String, Int)] = relations.flatMap {
-    case (name, relation) => relation.getIndexHits.map {
-      case (index, count) => (name.toString, "{" + index.mkString(", ") + "}", count)
+    case (pred, relation) => relation.getIndexHits.map {
+      case (index, count) => (pred.getName(), "{" + index.mkString(", ") + "}", count)
     }
   }.toSeq.sortBy(_._3).reverse.toList
 
   def indexMisses: List[(String, String, Int)] = relations.flatMap {
-    case (name, relation) => relation.getIndexMisses.map {
-      case (index, count) => (name.toString, "{" + index.mkString(", ") + "}", count)
+    case (pred, relation) => relation.getIndexMisses.map {
+      case (index, count) => (pred.getName(), "{" + index.mkString(", ") + "}", count)
     }
   }.toSeq.sortBy(_._3).reverse.toList
 
   def predicateStats: List[(String, Int, Int, Int, Int)] = relations.map {
-    case (name, relation) => (
-      name.toString,
+    case (pred, relation) => (
+      pred.getName(),
       relation.getSize,
       relation.getNumberOfIndexedLookups,
       relation.getNumberOfIndexedScans,

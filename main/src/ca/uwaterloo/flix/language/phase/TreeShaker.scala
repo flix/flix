@@ -141,9 +141,9 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.NewLattice(sym, tpe, loc) => Set.empty
       case Expression.Constraint(c0, tpe, loc) => visitConstraint(c0)
       case Expression.ConstraintUnion(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2)
-      case Expression.FixpointSolve(exp, stf, tpe, loc) => visitExp(exp)
-      case Expression.FixpointCheck(exp, stf, tpe, loc) => visitExp(exp)
-      case Expression.FixpointDelta(exp, stf, tpe, loc) => visitExp(exp)
+      case Expression.FixpointSolve(exp, tpe, loc) => visitExp(exp)
+      case Expression.FixpointCheck(exp, tpe, loc) => visitExp(exp)
+      case Expression.FixpointDelta(exp, tpe, loc) => visitExp(exp)
       case Expression.UserError(tpe, loc) => Set.empty
       case Expression.HoleError(sym, tpe, eff, loc) => Set.empty
       case Expression.MatchError(tpe, loc) => Set.empty

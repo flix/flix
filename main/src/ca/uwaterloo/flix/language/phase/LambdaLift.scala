@@ -321,17 +321,17 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         val e2 = visitExp(exp2)
         Expression.ConstraintUnion(e1, e2, tpe, loc)
 
-      case Expression.FixpointSolve(exp, stf, tpe, loc) =>
+      case Expression.FixpointSolve(exp, tpe, loc) =>
         val e = visitExp(exp)
-        Expression.FixpointSolve(e, stf, tpe, loc)
+        Expression.FixpointSolve(e, tpe, loc)
 
-      case Expression.FixpointCheck(exp, stf, tpe, loc) =>
+      case Expression.FixpointCheck(exp, tpe, loc) =>
         val e = visitExp(exp)
-        Expression.FixpointCheck(e, stf, tpe, loc)
+        Expression.FixpointCheck(e, tpe, loc)
 
-      case Expression.FixpointDelta(exp, stf, tpe, loc) =>
+      case Expression.FixpointDelta(exp, tpe, loc) =>
         val e = visitExp(exp)
-        Expression.FixpointDelta(e, stf, tpe, loc)
+        Expression.FixpointDelta(e, tpe, loc)
 
       case Expression.UserError(tpe, loc) => e
 
