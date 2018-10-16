@@ -1066,14 +1066,17 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       def RecordFieldType: Rule1[ParsedAst.RecordFieldType] = rule {
         SP ~ Names.Field ~ optWS ~ ":" ~ optWS ~ Type ~ SP ~> ParsedAst.RecordFieldType
       }
+
       rule {
         SP ~ atomic("%{") ~ optWS ~ zeroOrMore(RecordFieldType).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ optional(optWS ~ "|" ~ optWS ~ Names.Variable) ~ optWS ~ "}" ~ SP ~> ParsedAst.Type.Record
       }
     }
+
     def Schema: Rule1[ParsedAst.Type] = {
       def Predicate: Rule1[(Name.QName, Seq[ParsedAst.Type])] = rule {
         Names.QualifiedTable ~ optWS ~ atomic("(") ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ atomic(")") ~> ((qn: Name.QName, ts: Seq[ParsedAst.Type]) => (qn, ts))
       }
+
       rule {
         SP ~ atomic("Schema") ~ optWS ~ atomic("{") ~ optWS ~ zeroOrMore(Predicate).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Type.Schema
       }
