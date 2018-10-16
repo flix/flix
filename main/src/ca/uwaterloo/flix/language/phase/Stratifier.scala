@@ -18,12 +18,11 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol, TypedAst}
-import ca.uwaterloo.flix.language.ast.Ast.Polarity
-import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
-import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body.{Filter, Functional}
-import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Head.{False, True}
-import ca.uwaterloo.flix.language.ast.TypedAst._
+import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.ast.Ast.{DependencyEdge, DependencyGraph, Polarity}
+import ca.uwaterloo.flix.language.ast.FinalAst.Predicate.Body
+import ca.uwaterloo.flix.language.ast.FinalAst.Predicate.Head.{False, True}
+import ca.uwaterloo.flix.language.ast.FinalAst._
 import ca.uwaterloo.flix.language.errors.StratificationError
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 import ca.uwaterloo.flix.util.Validation._
@@ -46,49 +45,13 @@ import scala.collection.mutable
   */
 object Stratifier extends Phase[Root, Root] {
 
-  // TODO: It is important to understand that the stratification is different depending on the constraint system.
-  // TODO: Since the exact constraints are not known, we cannot actually separate the constraints until at runtime!
-  // TODO: At compile time we know the stratification, just not the exact constraints.
-
-  // TODO: Also compute strongly connected components?
-  // TODO: Would be a good exampple for flix semantics.
-
-  /**
-    * Represents a dependency between two predicate symbols.
-    */
-  sealed trait DependencyEdge
-
-  object DependencyEdge {
-
-    /**
-      * Represents a positive labelled edge.
-      */
-    case class Positive(head: Symbol.PredSym, body: Symbol.PredSym) extends DependencyEdge
-
-    /**
-      * Represents a negative labelled edge.
-      */
-    case class Negative(head: Symbol.PredSym, body: Symbol.PredSym) extends DependencyEdge
-
-  }
-
-  object DependencyGraph {
-    /**
-      * The empty dependency graph.
-      */
-    val Empty: DependencyGraph = DependencyGraph(Set.empty)
-
-  }
-
-  /**
-    * Represents a dependency graph; a set of dependency edges.
-    */
-  case class DependencyGraph(xs: Set[DependencyEdge])
-
   /**
     * Returns a stratified version of the given AST `root`.
     */
   def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationError] = flix.phase("Stratifier") {
+    // Run the control-flow analysis.
+    implicit val analysis: ControlFlowAnalysis.Analysis = ControlFlowAnalysis.runAnalysis(root)
+
     // Stratify every definition.
     val defsVal = traverse(root.defs) {
       case (sym, defn) => visitDef(defn).map(d => sym -> d)
@@ -103,7 +66,7 @@ object Stratifier extends Phase[Root, Root] {
   /**
     * Performs stratification of the given definition `def0`.
     */
-  private def visitDef(def0: Def): Validation[Def, CompilationError] =
+  private def visitDef(def0: Def)(implicit analysis: ControlFlowAnalysis.Analysis): Validation[Def, CompilationError] =
     visitExp(def0.exp) map {
       case e => def0.copy(exp = e)
     }
@@ -113,320 +76,269 @@ object Stratifier extends Phase[Root, Root] {
     *
     * Returns [[Success]] if the expression is stratified. Otherwise returns [[Failure]] with a [[StratificationError]].
     */
-  private def visitExp(exp0: Expression): Validation[Expression, StratificationError] = exp0 match {
-    case Expression.Unit(loc) => Expression.Unit(loc).toSuccess
-    case Expression.True(loc) => Expression.True(loc).toSuccess
-    case Expression.False(loc) => Expression.False(loc).toSuccess
-    case Expression.Char(lit, loc) => Expression.Char(lit, loc).toSuccess
-    case Expression.Float32(lit, loc) => Expression.Float32(lit, loc).toSuccess
-    case Expression.Float64(lit, loc) => Expression.Float64(lit, loc).toSuccess
-    case Expression.Int8(lit, loc) => Expression.Int8(lit, loc).toSuccess
-    case Expression.Int16(lit, loc) => Expression.Int16(lit, loc).toSuccess
-    case Expression.Int32(lit, loc) => Expression.Int32(lit, loc).toSuccess
-    case Expression.Int64(lit, loc) => Expression.Int64(lit, loc).toSuccess
-    case Expression.BigInt(lit, loc) => Expression.BigInt(lit, loc).toSuccess
-    case Expression.Str(lit, loc) => Expression.Str(lit, loc).toSuccess
+  private def visitExp(exp0: Expression)(implicit analysis: ControlFlowAnalysis.Analysis): Validation[Expression, StratificationError] = exp0 match {
+    case Expression.Unit => Expression.Unit.toSuccess
+    case Expression.True => Expression.True.toSuccess
+    case Expression.False => Expression.False.toSuccess
+    case Expression.Char(lit) => Expression.Char(lit).toSuccess
+    case Expression.Float32(lit) => Expression.Float32(lit).toSuccess
+    case Expression.Float64(lit) => Expression.Float64(lit).toSuccess
+    case Expression.Int8(lit) => Expression.Int8(lit).toSuccess
+    case Expression.Int16(lit) => Expression.Int16(lit).toSuccess
+    case Expression.Int32(lit) => Expression.Int32(lit).toSuccess
+    case Expression.Int64(lit) => Expression.Int64(lit).toSuccess
+    case Expression.BigInt(lit) => Expression.BigInt(lit).toSuccess
+    case Expression.Str(lit) => Expression.Str(lit).toSuccess
 
-    case Expression.Wild(tpe, eff, loc) => Expression.Wild(tpe, eff, loc).toSuccess
+    case Expression.Var(sym, tpe, loc) => Expression.Var(sym, tpe, loc).toSuccess
 
-    case Expression.Var(sym, tpe, eff, loc) => Expression.Var(sym, tpe, eff, loc).toSuccess
+    case Expression.Closure(sym, freeVars, fnType, tpe, loc) =>
+      Expression.Closure(sym, freeVars, fnType, tpe, loc).toSuccess
 
-    case Expression.Def(sym, tpe, eff, loc) => Expression.Def(sym, tpe, eff, loc).toSuccess
+    case Expression.ApplyClo(exp, args, tpe, loc) =>
+      mapN(visitExp(exp), traverse(args)(visitExp)) {
+        case (e, as) => Expression.ApplyClo(e, as, tpe, loc)
+      }
 
-    case Expression.Eff(sym, tpe, eff, loc) => Expression.Eff(sym, tpe, eff, loc).toSuccess
+    case Expression.ApplyDef(sym, args, tpe, loc) =>
+      mapN(traverse(args)(visitExp)) {
+        case as => Expression.ApplyDef(sym, as, tpe, loc)
+      }
 
-    case Expression.Hole(sym, tpe, eff, loc) => Expression.Hole(sym, tpe, eff, loc).toSuccess
+    case Expression.ApplyEff(sym, args, tpe, loc) =>
+      mapN(traverse(args)(visitExp)) {
+        case as => Expression.ApplyEff(sym, as, tpe, loc)
+      }
 
-    case Expression.Lambda(fparam, exp, tpe, eff, loc) =>
+    case Expression.ApplyCloTail(exp, args, tpe, loc) =>
+      mapN(visitExp(exp), traverse(args)(visitExp)) {
+        case (e, as) => Expression.ApplyCloTail(e, as, tpe, loc)
+      }
+
+    case Expression.ApplyDefTail(sym, args, tpe, loc) =>
+      mapN(traverse(args)(visitExp)) {
+        case as => Expression.ApplyDefTail(sym, as, tpe, loc)
+      }
+
+    case Expression.ApplyEffTail(sym, args, tpe, loc) =>
+      mapN(traverse(args)(visitExp)) {
+        case as => Expression.ApplyEffTail(sym, as, tpe, loc)
+      }
+
+    case Expression.ApplySelfTail(sym, formals, actuals, tpe, loc) =>
+      mapN(traverse(actuals)(visitExp)) {
+        case as => Expression.ApplySelfTail(sym, formals, as, tpe, loc)
+      }
+
+    case Expression.Unary(sop, op, exp, tpe, loc) =>
       mapN(visitExp(exp)) {
-        case e => Expression.Lambda(fparam, e, tpe, eff, loc)
+        case e => Expression.Unary(sop, op, e, tpe, loc)
       }
 
-    case Expression.Apply(exp1, exp2, tpe, eff, loc) =>
+    case Expression.Binary(sop, op, exp1, exp2, tpe, loc) =>
       mapN(visitExp(exp1), visitExp(exp2)) {
-        case (e1, e2) => Expression.Apply(e1, e2, tpe, eff, loc)
+        case (e1, e2) => Expression.Binary(sop, op, e1, e2, tpe, loc)
       }
 
-    case Expression.Unary(op, exp, tpe, eff, loc) =>
-      mapN(visitExp(exp)) {
-        case e => Expression.Unary(op, e, tpe, eff, loc)
-      }
-
-    case Expression.Binary(op, exp1, exp2, tpe, eff, loc) =>
+    case Expression.Let(sym, exp1, exp2, tpe, loc) =>
       mapN(visitExp(exp1), visitExp(exp2)) {
-        case (e1, e2) => Expression.Binary(op, e1, e2, tpe, eff, loc)
+        case (e1, e2) => Expression.Let(sym, e1, e2, tpe, loc)
       }
 
-    case Expression.Let(sym, exp1, exp2, tpe, eff, loc) =>
+    case Expression.LetRec(sym, exp1, exp2, tpe, loc) =>
       mapN(visitExp(exp1), visitExp(exp2)) {
-        case (e1, e2) => Expression.Let(sym, e1, e2, tpe, eff, loc)
+        case (e1, e2) => Expression.LetRec(sym, e1, e2, tpe, loc)
       }
 
-    case Expression.LetRec(sym, exp1, exp2, tpe, eff, loc) =>
-      mapN(visitExp(exp1), visitExp(exp2)) {
-        case (e1, e2) => Expression.LetRec(sym, e1, e2, tpe, eff, loc)
-      }
-
-    case Expression.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
+    case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
       mapN(visitExp(exp1), visitExp(exp2), visitExp(exp3)) {
-        case (e1, e2, e3) => Expression.IfThenElse(e1, e2, e3, tpe, eff, loc)
+        case (e1, e2, e3) => Expression.IfThenElse(e1, e2, e3, tpe, loc)
       }
 
-    case Expression.Match(exp, rules, tpe, eff, loc) =>
-      val rulesVal = traverse(rules) {
-        case MatchRule(p, g, b) => visitExp(b).map(MatchRule(p, g, _))
+    case Expression.Branch(exp, branches, tpe, loc) =>
+      val expVal = visitExp(exp)
+      val branchesVal = traverse(branches) {
+        case (label, body) => visitExp(body) map (b => label -> b)
+      }
+      mapN(expVal, branchesVal) {
+        case (e, bs) => Expression.Branch(e, bs.toMap, tpe, loc)
       }
 
-      mapN(visitExp(exp), rulesVal) {
-        case (e, rs) => Expression.Match(e, rs, tpe, eff, loc)
-      }
+    case Expression.JumpTo(sym, tpe, loc) =>
+      Expression.JumpTo(sym, tpe, loc).toSuccess
 
-    case Expression.Switch(rules, tpe, eff, loc) =>
-      val rulesVal = traverse(rules) {
-        case (g, b) => mapN(visitExp(g), visitExp(b))((_, _))
-      }
-      mapN(rulesVal) {
-        case rs => Expression.Switch(rs, tpe, eff, loc)
-      }
-
-    case Expression.Tag(sym, tag, exp, tpe, eff, loc) =>
+    case Expression.Is(sym, tag, exp, loc) =>
       mapN(visitExp(exp)) {
-        case e => Expression.Tag(sym, tag, e, tpe, eff, loc)
+        case e => Expression.Is(sym, tag, e, loc)
       }
 
-    case Expression.Tuple(elms, tpe, eff, loc) =>
-      mapN(traverse(elms)(visitExp)) {
-        case es => Expression.Tuple(es, tpe, eff, loc)
+    case Expression.Tag(sym, tag, exp, tpe, loc) =>
+      mapN(visitExp(exp)) {
+        case e => Expression.Tag(sym, tag, e, tpe, loc)
       }
 
-    case Expression.RecordEmpty(tpe, eff, loc) =>
-      Expression.RecordEmpty(tpe, eff, loc).toSuccess
+    case Expression.Untag(sym, tag, exp, tpe, loc) =>
+      mapN(visitExp(exp)) {
+        case e => Expression.Untag(sym, tag, e, tpe, loc)
+      }
 
-    case Expression.RecordSelect(base, label, tpe, eff, loc) =>
+    case Expression.Index(base, offset, tpe, loc) =>
       mapN(visitExp(base)) {
-        case b => Expression.RecordSelect(b, label, tpe, eff, loc)
+        case b => Expression.Index(b, offset, tpe, loc)
       }
 
-    case Expression.RecordExtend(label, value, rest, tpe, eff, loc) =>
+    case Expression.Tuple(elms, tpe, loc) =>
+      mapN(traverse(elms)(visitExp)) {
+        case es => Expression.Tuple(es, tpe, loc)
+      }
+
+    case Expression.RecordEmpty(tpe, loc) =>
+      Expression.RecordEmpty(tpe, loc).toSuccess
+
+    case Expression.RecordSelect(base, label, tpe, loc) =>
+      mapN(visitExp(base)) {
+        case b => Expression.RecordSelect(b, label, tpe, loc)
+      }
+
+    case Expression.RecordExtend(label, value, rest, tpe, loc) =>
       mapN(visitExp(value), visitExp(rest)) {
-        case (v, r) => Expression.RecordExtend(label, v, r, tpe, eff, loc)
+        case (v, r) => Expression.RecordExtend(label, v, r, tpe, loc)
       }
 
-    case Expression.RecordRestrict(label, rest, tpe, eff, loc) =>
+    case Expression.RecordRestrict(label, rest, tpe, loc) =>
       mapN(visitExp(rest)) {
-        case r => Expression.RecordRestrict(label, r, tpe, eff, loc)
+        case r => Expression.RecordRestrict(label, r, tpe, loc)
       }
 
-    case Expression.ArrayLit(elms, tpe, eff, loc) =>
+    case Expression.ArrayLit(elms, tpe, loc) =>
       mapN(traverse(elms)(visitExp)) {
-        case es => Expression.ArrayLit(es, tpe, eff, loc)
+        case es => Expression.ArrayLit(es, tpe, loc)
       }
 
-    case Expression.ArrayNew(elm, len, tpe, eff, loc) =>
+    case Expression.ArrayNew(elm, len, tpe, loc) =>
       mapN(visitExp(elm), visitExp(len)) {
-        case (e, l) => Expression.ArrayNew(e, l, tpe, eff, loc)
+        case (e, l) => Expression.ArrayNew(e, l, tpe, loc)
       }
 
-    case Expression.ArrayLoad(base, index, tpe, eff, loc) =>
+    case Expression.ArrayLoad(base, index, tpe, loc) =>
       mapN(visitExp(base), visitExp(index)) {
-        case (b, i) => Expression.ArrayLoad(b, i, tpe, eff, loc)
+        case (b, i) => Expression.ArrayLoad(b, i, tpe, loc)
       }
 
-    case Expression.ArrayLength(base, tpe, eff, loc) =>
+    case Expression.ArrayLength(base, tpe, loc) =>
       mapN(visitExp(base)) {
-        case b => Expression.ArrayLength(b, tpe, eff, loc)
+        case b => Expression.ArrayLength(b, tpe, loc)
       }
 
-    case Expression.ArrayStore(base, index, elm, tpe, eff, loc) =>
+    case Expression.ArrayStore(base, index, elm, tpe, loc) =>
       mapN(visitExp(base), visitExp(index), visitExp(elm)) {
-        case (b, i, e) => Expression.ArrayStore(b, i, e, tpe, eff, loc)
+        case (b, i, e) => Expression.ArrayStore(b, i, e, tpe, loc)
       }
 
-    case Expression.ArraySlice(base, beginIndex, endIndex, tpe, eff, loc) =>
+    case Expression.ArraySlice(base, beginIndex, endIndex, tpe, loc) =>
       mapN(visitExp(base), visitExp(beginIndex), visitExp(endIndex)) {
-        case (b, i1, i2) => Expression.ArraySlice(b, i1, i2, tpe, eff, loc)
+        case (b, i1, i2) => Expression.ArraySlice(b, i1, i2, tpe, loc)
       }
 
-    case Expression.VectorLit(elms, tpe, eff, loc) =>
-      mapN(traverse(elms)(visitExp)) {
-        case es => Expression.VectorLit(es, tpe, eff, loc)
-      }
-
-    case Expression.VectorNew(elm, len, tpe, eff, loc) =>
-      mapN(visitExp(elm)) {
-        case e => Expression.VectorNew(e, len, tpe, eff, loc)
-      }
-
-    case Expression.VectorLoad(base, index, tpe, eff, loc) =>
-      mapN(visitExp(base)) {
-        case b => Expression.VectorLoad(b, index, tpe, eff, loc)
-      }
-
-    case Expression.VectorStore(base, index, elm, tpe, eff, loc) =>
-      mapN(visitExp(base), visitExp(elm)) {
-        case (b, e) => Expression.VectorStore(b, index, e, tpe, eff, loc)
-      }
-
-    case Expression.VectorLength(base, tpe, eff, loc) =>
-      mapN(visitExp(base)) {
-        case b => Expression.VectorLength(b, tpe, eff, loc)
-      }
-
-    case Expression.VectorSlice(base, startIndex, endIndex, tpe, eff, loc) =>
-      mapN(visitExp(base)) {
-        case b => Expression.VectorSlice(b, startIndex, endIndex, tpe, eff, loc)
-      }
-
-    case Expression.Ref(exp, tpe, eff, loc) =>
+    case Expression.Ref(exp, tpe, loc) =>
       mapN(visitExp(exp)) {
-        case e => Expression.Ref(e, tpe, eff, loc)
+        case e => Expression.Ref(e, tpe, loc)
       }
 
-    case Expression.Deref(exp, tpe, eff, loc) =>
+    case Expression.Deref(exp, tpe, loc) =>
       mapN(visitExp(exp)) {
-        case e => Expression.Deref(e, tpe, eff, loc)
+        case e => Expression.Deref(e, tpe, loc)
       }
 
-    case Expression.Assign(exp1, exp2, tpe, eff, loc) =>
+    case Expression.Assign(exp1, exp2, tpe, loc) =>
       mapN(visitExp(exp1), visitExp(exp2)) {
-        case (e1, e2) => Expression.Assign(e1, e2, tpe, eff, loc)
+        case (e1, e2) => Expression.Assign(e1, e2, tpe, loc)
       }
 
-    case Expression.HandleWith(exp, bindings, tpe, eff, loc) =>
+    case Expression.HandleWith(exp, bindings, tpe, loc) =>
       val bindingsVal = traverse(bindings) {
         case HandlerBinding(sym, b) => visitExp(exp).map(HandlerBinding(sym, _))
       }
       mapN(visitExp(exp), bindingsVal) {
-        case (e, bs) => Expression.HandleWith(e, bs, tpe, eff, loc)
+        case (e, bs) => Expression.HandleWith(e, bs, tpe, loc)
       }
 
-    case Expression.Existential(fparam, exp, eff, loc) =>
+    case Expression.Existential(fparam, exp, loc) =>
       mapN(visitExp(exp)) {
-        case e => Expression.Existential(fparam, e, eff, loc)
+        case e => Expression.Existential(fparam, e, loc)
       }
 
-    case Expression.Universal(fparam, exp, eff, loc) =>
+    case Expression.Universal(fparam, exp, loc) =>
       mapN(visitExp(exp)) {
-        case e => Expression.Universal(fparam, e, eff, loc)
+        case e => Expression.Universal(fparam, e, loc)
       }
 
-    case Expression.Ascribe(exp, tpe, eff, loc) =>
-      mapN(visitExp(exp)) {
-        case e => Expression.Ascribe(e, tpe, eff, loc)
-      }
-
-    case Expression.Cast(exp, tpe, eff, loc) =>
-      mapN(visitExp(exp)) {
-        case e => Expression.Cast(e, tpe, eff, loc)
-      }
-
-    case Expression.NativeConstructor(constructor, args, tpe, eff, loc) =>
+    case Expression.NativeConstructor(constructor, args, tpe, loc) =>
       mapN(traverse(args)(visitExp)) {
-        case as => Expression.NativeConstructor(constructor, as, tpe, eff, loc)
+        case as => Expression.NativeConstructor(constructor, as, tpe, loc)
       }
 
-    case Expression.TryCatch(exp, rules, tpe, eff, loc) =>
+    case Expression.TryCatch(exp, rules, tpe, loc) =>
       val rulesVal = traverse(rules) {
         case CatchRule(sym, clazz, e) => visitExp(e).map(CatchRule(sym, clazz, _))
       }
       mapN(visitExp(exp), rulesVal) {
-        case (e, rs) => Expression.TryCatch(e, rs, tpe, eff, loc)
+        case (e, rs) => Expression.TryCatch(e, rs, tpe, loc)
       }
 
-    case Expression.NativeField(field, tpe, eff, loc) =>
-      Expression.NativeField(field, tpe, eff, loc).toSuccess
+    case Expression.NativeField(field, tpe, loc) =>
+      Expression.NativeField(field, tpe, loc).toSuccess
 
-    case Expression.NativeMethod(method, args, tpe, eff, loc) =>
+    case Expression.NativeMethod(method, args, tpe, loc) =>
       mapN(traverse(args)(visitExp)) {
-        case as => Expression.NativeMethod(method, as, tpe, eff, loc)
+        case as => Expression.NativeMethod(method, as, tpe, loc)
       }
 
-    case Expression.NewRelation(sym, tpe, eff, loc) =>
-      Expression.NewRelation(sym, tpe, eff, loc).toSuccess
+    case Expression.NewRelation(sym, tpe, loc) =>
+      Expression.NewRelation(sym, tpe, loc).toSuccess
 
-    case Expression.NewLattice(sym, tpe, eff, loc) =>
-      Expression.NewLattice(sym, tpe, eff, loc).toSuccess
+    case Expression.NewLattice(sym, tpe, loc) =>
+      Expression.NewLattice(sym, tpe, loc).toSuccess
 
-    case Expression.Constraint(con, tpe, eff, loc) =>
-      Expression.Constraint(con, tpe, eff, loc).toSuccess
+    case Expression.Constraint(con, tpe, loc) =>
+      Expression.Constraint(con, tpe, loc).toSuccess
 
-    case Expression.ConstraintUnion(exp1, exp2, tpe, eff, loc) =>
+    case Expression.ConstraintUnion(exp1, exp2, tpe, loc) =>
       mapN(visitExp(exp1), visitExp(exp2)) {
-        case (e1, e2) => Expression.ConstraintUnion(e1, e2, tpe, eff, loc)
+        case (e1, e2) => Expression.ConstraintUnion(e1, e2, tpe, loc)
       }
 
-    case Expression.FixpointSolve(exp, _, tpe, eff, loc) =>
-      val g = ControlFlowAnalysis.getDependencyGraphFromAbstractValue(exp)
+    case Expression.FixpointSolve(uid, exp, _, tpe, loc) =>
+      val g = analysis.getDependencyGraph(uid)
       mapN(visitExp(exp), stratify(g, loc)) {
-        case (e, s) => Expression.FixpointSolve(e, s, tpe, eff, loc)
+        case (e, s) => Expression.FixpointSolve(uid, e, s, tpe, loc)
       }
 
-    case Expression.FixpointCheck(exp, _, tpe, eff, loc) =>
-      val g = ControlFlowAnalysis.getDependencyGraphFromAbstractValue(exp)
+    case Expression.FixpointCheck(uid, exp, _, tpe, loc) =>
+      val g = analysis.getDependencyGraph(uid)
       mapN(visitExp(exp), stratify(g, loc)) {
-        case (e, s) => Expression.FixpointCheck(e, s, tpe, eff, loc)
+        case (e, s) => Expression.FixpointCheck(uid, e, s, tpe, loc)
       }
 
-    case Expression.FixpointDelta(exp, _, tpe, eff, loc) =>
-      val g = ControlFlowAnalysis.getDependencyGraphFromAbstractValue(exp)
+    case Expression.FixpointDelta(uid, exp, _, tpe, loc) =>
+      val g = analysis.getDependencyGraph(uid)
       mapN(visitExp(exp), stratify(g, loc)) {
-        case (e, s) => Expression.FixpointDelta(e, s, tpe, eff, loc)
+        case (e, s) => Expression.FixpointDelta(uid, e, s, tpe, loc)
       }
 
-    case Expression.UserError(tpe, eff, loc) =>
-      Expression.UserError(tpe, eff, loc).toSuccess
+    case Expression.UserError(tpe, loc) =>
+      Expression.UserError(tpe, loc).toSuccess
+
+    case Expression.HoleError(sym, tpe, loc) =>
+      Expression.HoleError(sym, tpe, loc).toSuccess
+
+    case Expression.MatchError(tpe, loc) =>
+      Expression.MatchError(tpe, loc).toSuccess
+
+    case Expression.SwitchError(tpe, loc) =>
+      Expression.SwitchError(tpe, loc).toSuccess
 
   }
-
-  /**
-    * Returns the dependency graph of the given constraint.
-    */
-  // TODO: Public
-  def getDependencyGraph(c: Constraint): DependencyGraph = c match {
-    case Constraint(cparams, head, body, loc) =>
-      // Determine if the head predicate has a symbol.
-      getHeadPredicateSymbol(head) match {
-        case None => DependencyGraph.Empty
-        case Some(headSym) =>
-          val dependencies = body flatMap (b => getDependencyEdge(headSym, b))
-          DependencyGraph(dependencies.toSet)
-      }
-  }
-
-  /**
-    * Optionally returns the predicate symbol of the given head predicate `head0`.
-    */
-  private def getHeadPredicateSymbol(head0: Predicate.Head): Option[Symbol.PredSym] = head0 match {
-    case Predicate.Head.True(_) => None
-    case Predicate.Head.False(_) => None
-    case Predicate.Head.RelAtom(base, sym, terms, tpe, loc) => Some(sym)
-    case Predicate.Head.LatAtom(base, sym, terms, tpe, loc) => Some(sym)
-  }
-
-  /**
-    * Optionally returns the predicate symbol of the given body predicate `body0`.
-    */
-  private def getDependencyEdge(head: Symbol.PredSym, body0: Predicate.Body): Option[DependencyEdge] = body0 match {
-    case Predicate.Body.RelAtom(base, sym, polarity, terms, tpe, loc) => polarity match {
-      case Polarity.Positive => Some(DependencyEdge.Positive(head, sym))
-      case Polarity.Negative => Some(DependencyEdge.Negative(head, sym))
-    }
-
-    case Predicate.Body.LatAtom(base, sym, polarity, terms, tpe, loc) => polarity match {
-      case Polarity.Positive => Some(DependencyEdge.Positive(head, sym))
-      case Polarity.Negative => Some(DependencyEdge.Negative(head, sym))
-    }
-
-    case Predicate.Body.Filter(sym, terms, loc) => None
-
-    case Predicate.Body.Functional(sym, term, loc) => None
-  }
-
-  /**
-    * Returns the union of the two dependency graphs.
-    */
-  def union(g1: DependencyGraph, g2: DependencyGraph): DependencyGraph =
-    DependencyGraph(g1.xs ++ g2.xs)
 
   /**
     * Computes the stratification of the given dependency graph `g` at the given source location `loc`.
@@ -504,7 +416,7 @@ object Stratifier extends Phase[Root, Root] {
   /**
     * Returns a path that forms a cycle with the edge from `src` to `dst` in the given dependency graph `g`.
     */
-  private def findNegativeCycle(src: Symbol.PredSym, dst: Symbol.PredSym, g: Stratifier.DependencyGraph): List[Symbol.PredSym] = {
+  private def findNegativeCycle(src: Symbol.PredSym, dst: Symbol.PredSym, g: DependencyGraph): List[Symbol.PredSym] = {
     // Computes a map from symbols to their successors.
     val m = mutable.Map.empty[Symbol.PredSym, Set[Symbol.PredSym]]
     for (edge <- g.xs) {
@@ -531,8 +443,8 @@ object Stratifier extends Phase[Root, Root] {
       * Returns `true` if the body predicate is negated.
       */
     def isNegative(p: Predicate.Body): Boolean = p match {
-      case Body.RelAtom(_, _, Polarity.Negative, _, _, _) => true
-      case Body.LatAtom(_, _, Polarity.Negative, _, _, _) => true
+      case Body.RelAtom(_, _, Polarity.Negative, _, _, _, _) => true
+      case Body.LatAtom(_, _, Polarity.Negative, _, _, _, _) => true
       case _ => false
     }
 
@@ -566,146 +478,10 @@ object Stratifier extends Phase[Root, Root] {
   }
 
   /**
-    * Create a ConstrHead type out of the head of a given constraint
-    */
-  def makeConstrHead(constr: TypedAst.Constraint): ConstrHead = constr.head match {
-    case True(_) => ConstrHead.True
-    case False(_) => ConstrHead.False
-    case Predicate.Head.RelAtom(_, sym, _, _, _) => ConstrHead.Atom(sym)
-    case Predicate.Head.LatAtom(_, sym, _, _, _) => ConstrHead.Atom(sym)
-  }
-
-
-  /**
-    * Stratify the graph
-    */
-  def stratifyOld(constraints: List[TypedAst.Constraint], syms: List[ /* Symbol.TableSym */ AnyRef]): Validation[List[AnyRef], StratificationError] = {
-    // Implementing as described in Database and Knowledge - Base Systems Volume 1
-    // Ullman, Algorithm 3.5 p 133
-
-    /// Start by creating a mapping from predicates to stratum
-    var stratumOf: Map[ConstrHead, Int] = (syms.map(x => (ConstrHead.Atom(x), 1))
-      ++ List((ConstrHead.True, 1), (ConstrHead.False, 1))).toMap
-    val numRules = constraints.size
-
-    // We repeatedly examine the rules. We move the head predicate to
-    // the same strata that the body predicate is currently in if it is
-    // non negated, or one after the body, if it is. We repeat until
-    // there are no changes.
-    //
-    // If we create more strata than there are rules, then there is no
-    // stratification and we error out
-    var changes = true
-    while (changes) {
-      changes = false
-      for (pred <- constraints) {
-        val headSym = makeConstrHead(pred)
-        val currStratum = stratumOf(headSym)
-
-        for (subGoal <- pred.body) {
-          subGoal match {
-            case Body.RelAtom(_, subGoalSym, Polarity.Positive, _, _, _) =>
-              val newStratum = math.max(currStratum, stratumOf(ConstrHead.Atom(subGoalSym)))
-              if (newStratum > numRules) {
-                // If we create more stratum than there are rules then
-                // we know there must be a negative cycle.
-                return StratificationError(???, ???).toFailure
-              }
-              if (currStratum != newStratum) {
-                // Update the strata of the predicate
-                stratumOf += (headSym -> newStratum)
-                changes = true
-              }
-
-            /* copied */
-            case Body.LatAtom(_, subGoalSym, Polarity.Positive, _, _, _) =>
-              val newStratum = math.max(currStratum, stratumOf(ConstrHead.Atom(subGoalSym)))
-              if (newStratum > numRules) {
-                // If we create more stratum than there are rules then
-                // we know there must be a negative cycle.
-                return StratificationError(???, ???).toFailure
-              }
-              if (currStratum != newStratum) {
-                // Update the strata of the predicate
-                stratumOf += (headSym -> newStratum)
-                changes = true
-              }
-
-            case Body.RelAtom(_, subGoalSym, Polarity.Negative, _, _, _) =>
-              val newStratum = math.max(stratumOf(headSym), stratumOf(ConstrHead.Atom(subGoalSym)) + 1)
-
-              if (newStratum > numRules) {
-                // If we create more stratum than there are rules then
-                // we know there must be a negative cycle
-                return StratificationError(???, ???).toFailure
-              }
-              if (currStratum != newStratum) {
-                // Update the strata of the predicate
-                stratumOf += (headSym -> newStratum)
-                changes = true
-              }
-
-            /* copied */
-            case Body.LatAtom(_, subGoalSym, Polarity.Negative, _, _, _) =>
-              val newStratum = math.max(stratumOf(headSym), stratumOf(ConstrHead.Atom(subGoalSym)) + 1)
-
-              if (newStratum > numRules) {
-                // If we create more stratum than there are rules then
-                // we know there must be a negative cycle
-                return StratificationError(???, ???).toFailure
-              }
-              if (currStratum != newStratum) {
-                // Update the strata of the predicate
-                stratumOf += (headSym -> newStratum)
-                changes = true
-              }
-
-            case _: Filter => // Do Nothing
-            case _: Functional => // Do Nothing
-          }
-        }
-      }
-    }
-
-    // We now have a mapping from predicates to strata, apply it to the
-    // list of rules we are given.
-    //
-    // While we're at it, we also reorder the goals so that negated
-    // literals occur after non negated ones. This ensures that the
-    // variables in the negated literals will be bound when we evaluate
-    // them
-
-
-    /**
-      * Separate a list of strata into the levels found earlier
-      */
-    def separate(constraints: List[TypedAst.Constraint], currLevel: Int): List[List[TypedAst.Constraint]] = {
-      // We consider the True and False atoms to be in the first stratum
-      def getLevel(c: TypedAst.Constraint): Int = stratumOf(makeConstrHead(c))
-
-      constraints match {
-        case Nil => Nil
-        case lst =>
-          val currStrata = lst.filter(x => getLevel(x) == currLevel)
-          val remStrata = lst.filter(x => getLevel(x) != currLevel)
-          currStrata :: separate(remStrata, currLevel + 1)
-      }
-    }
-
-    val separated = separate(constraints, 1)
-    val reordered = separated map {
-      _ map reorder
-    }
-
-    ???
-  }
-
-
-  /**
     * An edge represents a constraint in the program. It has a weight of -1
     * if it is a negated predicate, else it has a weight of 0
     */
-  case class Edge(weight: Int, rule: TypedAst.Constraint)
+  case class Edge(weight: Int, rule: Constraint)
 
   /**
     * A graph is an adjacency list of Constraint -> (Constraint, Weight)
@@ -721,7 +497,7 @@ object Stratifier extends Phase[Root, Root] {
     /**
       * Insert an edge from-to with weight into the graph
       */
-    def insert(from: /* Symbol.TableSym */ AnyRef, to: /* Symbol.TableSym */ AnyRef, constr: TypedAst.Constraint, weight: Int): Stratifier.Graph = {
+    def insert(from: /* Symbol.TableSym */ AnyRef, to: /* Symbol.TableSym */ AnyRef, constr: Constraint, weight: Int): Stratifier.Graph = {
       edges = edges.get(from) match {
         case Some(m) => edges + (from -> (m + (to -> Edge(weight, constr))))
         case None => edges + (from -> Map(to -> Edge(weight, constr)))
@@ -739,59 +515,58 @@ object Stratifier extends Phase[Root, Root] {
     * P :- Q creates an edge Q -> P of weight 0
     * P :- !Q creates an edge Q -> P of weight -1
     */
-  def createGraph(constraints: List[TypedAst.Constraint]): Graph = {
-    constraints.foldRight(new Graph)((constraint: TypedAst.Constraint, graph: Graph) => constraint.head match {
-      case TypedAst.Predicate.Head.RelAtom(_, headSym, _, _, _) =>
+  def createGraph(constraints: List[Constraint]): Graph = {
+    constraints.foldRight(new Graph)((constraint: Constraint, graph: Graph) => constraint.head match {
+      case Predicate.Head.RelAtom(_, headSym, _, _, _) =>
         // As well as creating the graph out of the given constraints, we also add a source node which
         // has a directed edge to all nodes
         graph.insert(null, headSym, constraint, 0)
-        constraint.body.foldRight(graph)((pred: TypedAst.Predicate.Body, graph: Graph) => pred match {
-          case TypedAst.Predicate.Body.RelAtom(_, predSym, Polarity.Positive, _, _, _) =>
+        constraint.body.foldRight(graph)((pred: Predicate.Body, graph: Graph) => pred match {
+          case Predicate.Body.RelAtom(_, predSym, Polarity.Positive, _, _, _, _) =>
             graph.insert(headSym, predSym, constraint, 0)
-          case TypedAst.Predicate.Body.LatAtom(_, predSym, Polarity.Positive, _, _, _) =>
+          case Predicate.Body.LatAtom(_, predSym, Polarity.Positive, _, _, _, _) =>
             graph.insert(headSym, predSym, constraint, 0)
-          case TypedAst.Predicate.Body.RelAtom(_, predSym, Polarity.Negative, _, _, _) =>
+          case Predicate.Body.RelAtom(_, predSym, Polarity.Negative, _, _, _, _) =>
             graph.insert(headSym, predSym, constraint, -1)
-          case TypedAst.Predicate.Body.LatAtom(_, predSym, Polarity.Negative, _, _, _) =>
-            graph.insert(headSym, predSym, constraint, -1)
-          case _: TypedAst.Predicate.Body.Filter => graph
-          case _: TypedAst.Predicate.Body.Functional => graph
+          case Predicate.Body.LatAtom(_, predSym, Polarity.Negative, _, _, _, _) => graph.insert(headSym, predSym, constraint, -1)
+          case _: Predicate.Body.Filter => graph
+          case _: Predicate.Body.Functional => graph
         })
 
       /* copied */
-      case TypedAst.Predicate.Head.LatAtom(_, headSym, _, _, _) =>
+      case Predicate.Head.LatAtom(_, headSym, _, _, _) =>
         // As well as creating the graph out of the given constraints, we also add a source node which
         // has a directed edge to all nodes
         graph.insert(null, headSym, constraint, 0)
-        constraint.body.foldRight(graph)((pred: TypedAst.Predicate.Body, graph: Graph) => pred match {
-          case TypedAst.Predicate.Body.RelAtom(_, predSym, Polarity.Positive, _, _, _) =>
+        constraint.body.foldRight(graph)((pred: Predicate.Body, graph: Graph) => pred match {
+          case Predicate.Body.RelAtom(_, predSym, Polarity.Positive, _, _, _, _) =>
             graph.insert(headSym, predSym, constraint, 0)
-          case TypedAst.Predicate.Body.LatAtom(_, predSym, Polarity.Positive, _, _, _) =>
+          case Predicate.Body.LatAtom(_, predSym, Polarity.Positive, _, _, _, _) =>
             graph.insert(headSym, predSym, constraint, 0)
-          case TypedAst.Predicate.Body.RelAtom(_, predSym, Polarity.Negative, _, _, _) =>
+          case Predicate.Body.RelAtom(_, predSym, Polarity.Negative, _, _, _, _) =>
             graph.insert(headSym, predSym, constraint, -1)
-          case TypedAst.Predicate.Body.LatAtom(_, predSym, Polarity.Negative, _, _, _) =>
+          case Predicate.Body.LatAtom(_, predSym, Polarity.Negative, _, _, _, _) =>
             graph.insert(headSym, predSym, constraint, -1)
-          case _: TypedAst.Predicate.Body.Filter => graph
-          case _: TypedAst.Predicate.Body.Functional => graph
+          case _: Predicate.Body.Filter => graph
+          case _: Predicate.Body.Functional => graph
         })
 
-      case TypedAst.Predicate.Head.True(_) => graph
-      case TypedAst.Predicate.Head.False(_) => graph
+      case Predicate.Head.True(_) => graph
+      case Predicate.Head.False(_) => graph
     })
   }
 
   /**
     * Returns true iff a graph has a negative cycle
     */
-  def findNegCycle(constraints: List[TypedAst.Constraint]): List[TypedAst.Constraint] = {
+  def findNegCycle(constraints: List[Constraint]): List[Constraint] = {
     // Get the list of constraints
     val g = createGraph(constraints)
 
     // The Bellman Ford algorithm, we can use it to find negative cycles
 
     // Initialize the distance and predecessor arrays to default values
-    var distPred: Map[ /* Symbol.TableSym */ AnyRef, (Int, TypedAst.Constraint)] = g.vertices.toList.zip(List.fill(g.vertices.size)((1, null))).toMap
+    var distPred: Map[ /* Symbol.TableSym */ AnyRef, (Int, Constraint)] = g.vertices.toList.zip(List.fill(g.vertices.size)((1, null))).toMap
     // The source has 0 weight
     distPred = distPred.updated(null, (0, null))
 
@@ -812,7 +587,7 @@ object Stratifier extends Phase[Root, Root] {
 
     // At this point, we must have found the shortest path, so if there is a
     // shorter path, then there is a negative cycle, and if so, we return it
-    var witness: List[TypedAst.Constraint] = Nil
+    var witness: List[Constraint] = Nil
     // Look for an edge (u,v) where distance(u) + Weight(u,v) < distance(v)
     for (fromEntry <- g.edges) {
       for (toEntry <- fromEntry._2) {

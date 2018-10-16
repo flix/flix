@@ -16,6 +16,8 @@
 
 package ca.uwaterloo.flix.language.ast
 
+import ca.uwaterloo.flix.api.Flix
+
 /**
   * A collection of AST nodes that are shared across multiple ASTs.
   */
@@ -198,6 +200,39 @@ object Ast {
 
   }
 
+  /**
+    * Represents a dependency between two predicate symbols.
+    */
+  sealed trait DependencyEdge
+
+  object DependencyEdge {
+
+    /**
+      * Represents a positive labelled edge.
+      */
+    case class Positive(head: Symbol.PredSym, body: Symbol.PredSym) extends DependencyEdge
+
+    /**
+      * Represents a negative labelled edge.
+      */
+    case class Negative(head: Symbol.PredSym, body: Symbol.PredSym) extends DependencyEdge
+
+  }
+
+  object DependencyGraph {
+    /**
+      * The empty dependency graph.
+      */
+    val Empty: DependencyGraph = DependencyGraph(Set.empty)
+
+  }
+
+  /**
+    * Represents a dependency graph; a set of dependency edges.
+    */
+  case class DependencyGraph(xs: Set[DependencyEdge])
+
+
   object Stratification {
     /**
       * Represents the empty stratification.
@@ -224,5 +259,33 @@ object Ast {
     * Represents that the annotated element is eliminated by the class `clazz`.
     */
   case class EliminatedBy(clazz: java.lang.Class[_]) extends scala.annotation.StaticAnnotation
+
+
+  /**
+    * Returns a fresh unique identifier.
+    */
+  def freshUId()(implicit flix: Flix): UId = {
+    new UId(flix.genSym.freshId())
+  }
+
+  /**
+    * A unique reference to an expression.
+    *
+    * @param id the globally unique name of the symbol.
+    */
+  final class UId(val id: Int) {
+    /**
+      * Returns `true` if this symbol is equal to `that` symbol.
+      */
+    override def equals(obj: scala.Any): Boolean = obj match {
+      case that: UId => this.id == that.id
+      case _ => false
+    }
+
+    /**
+      * Returns the hash code of this symbol.
+      */
+    override val hashCode: Int = id
+  }
 
 }

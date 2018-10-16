@@ -1750,21 +1750,21 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
          */
         case ResolvedAst.Expression.FixpointSolve(exp, tvar, loc) =>
           val e = reassemble(exp, program, subst0)
-          TypedAst.Expression.FixpointSolve(e, Ast.Stratification.Empty, subst0(tvar), Eff.Bot, loc)
+          TypedAst.Expression.FixpointSolve(e, subst0(tvar), Eff.Bot, loc)
 
         /*
          * FixpointCheck expression.
          */
         case ResolvedAst.Expression.FixpointCheck(exp, tvar, loc) =>
           val e = reassemble(exp, program, subst0)
-          TypedAst.Expression.FixpointCheck(e, Ast.Stratification.Empty, subst0(tvar), Eff.Bot, loc)
+          TypedAst.Expression.FixpointCheck(e, subst0(tvar), Eff.Bot, loc)
 
         /*
          * FixpointDelta expression.
          */
         case ResolvedAst.Expression.FixpointDelta(exp, tvar, loc) =>
           val e = reassemble(exp, program, subst0)
-          TypedAst.Expression.FixpointDelta(e, Ast.Stratification.Empty, subst0(tvar), Eff.Bot, loc)
+          TypedAst.Expression.FixpointDelta(e, subst0(tvar), Eff.Bot, loc)
 
         /*
          * User Error expression.

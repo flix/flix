@@ -234,7 +234,6 @@ class Flix {
   def codeGen(typedAst: TypedAst.Root): Validation[CompilationResult, CompilationError] = {
     // Construct the compiler pipeline.
     val pipeline = Documentor |>
-      Stratifier |>
       Monomorph |>
       Synthesize |>
       Simplifier |>
@@ -247,6 +246,7 @@ class Flix {
       TreeShaker |>
       VarNumbering |>
       Finalize |>
+      Stratifier |>
       QuickChecker |>
       Verifier |>
       JvmBackend
