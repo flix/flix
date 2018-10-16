@@ -1882,6 +1882,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
   }
 
   object Predicates {
+
     /**
       * Infers the type of the given head predicate.
       */

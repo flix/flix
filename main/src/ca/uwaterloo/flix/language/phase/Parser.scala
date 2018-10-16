@@ -589,10 +589,11 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Primary: Rule1[ParsedAst.Expression] = rule {
-      LetRec | LetMatch | IfThenElse | Match | LambdaMatch | Switch | TryCatch | Native | NewChannel |
-        GetChannel | SelectChannel | CloseChannel | Spawn | Lambda | Tuple |
-        ArrayLit | ArrayNew | ArrayLength | VectorLit | VectorNew | VectorLength | FNil | FSet | FMap |
-        NewRelationOrLattice | FixpointSolve | FixpointCheck | FixpointDelta | ConstraintSeq | Literal |
+      LetRec | LetMatch | IfThenElse | Match | LambdaMatch | Switch | TryCatch | Native | Lambda | Tuple |
+        RecordRestrict | RecordExtend | RecordUpdate | RecordLiteral | RecordSelectLambda | NewChannel |
+        GetChannel | SelectChannel | CloseChannel | Spawn | Lambda | Tuple | ArrayLit | ArrayNew |
+        ArrayLength | VectorLit | VectorNew | VectorLength | FNil | FSet | FMap | NewRelationOrLattice |
+        FixpointSolve | FixpointCheck | FixpointDelta | ConstraintSeq | ConstraintUnion |  Literal |
         HandleWith | Existential | Universal | UnaryLambda | QName | Wild | Tag | SName | Hole | UserError
     }
 
@@ -664,6 +665,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
     }
 
+    def RecordSelect: Rule1[ParsedAst.Expression] = rule {
+      Postfix ~ zeroOrMore(optWS ~ "." ~ Names.Field ~ SP ~> ParsedAst.Expression.RecordSelect)
+    }
+
     def NewChannel: Rule1[ParsedAst.Expression.NewChannel] = rule {
       SP ~ atomic("newch") ~ WS ~ Type ~ SP ~> ParsedAst.Expression.NewChannel
     }
@@ -729,6 +734,34 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       SP ~ "(" ~ optWS ~ zeroOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ SP ~> ParsedAst.Expression.Tuple
     }
 
+    def RecordLiteral: Rule1[ParsedAst.Expression] = rule {
+      SP ~ "%{" ~ optWS ~ zeroOrMore(RecordFieldLit).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.RecordLit
+    }
+    def RecordExtend: Rule1[ParsedAst.Expression] = rule {
+      SP ~ "%{" ~ optWS ~ oneOrMore(RecordFieldExtend).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ atomic("|") ~ optWS ~ Expression ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.RecordExtend
+    }
+    def RecordRestrict: Rule1[ParsedAst.Expression] = rule {
+      SP ~ "%{" ~ optWS ~ oneOrMore(RecordFieldRestrict).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ atomic("|") ~ optWS ~ Expression ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.RecordRestrict
+    }
+    def RecordUpdate: Rule1[ParsedAst.Expression] = rule {
+      SP ~ "%{" ~ optWS ~ oneOrMore(RecordFieldUpdate).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ atomic("|") ~ optWS ~ Expression ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.RecordUpdate
+    }
+    def RecordSelectLambda: Rule1[ParsedAst.Expression] = rule {
+      SP ~ "." ~ Names.Field ~ SP ~> ParsedAst.Expression.RecordSelectLambda
+    }
+    def RecordFieldLit: Rule1[ParsedAst.RecordField] = rule {
+      SP ~ Names.Field ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~> ParsedAst.RecordField
+    }
+    def RecordFieldExtend: Rule1[ParsedAst.RecordField] = rule {
+      SP ~ "+" ~ Names.Field ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~> ParsedAst.RecordField
+    }
+    def RecordFieldRestrict: Rule1[Name.Ident] = rule {
+      "-" ~ Names.Field
+    }
+    def RecordFieldUpdate: Rule1[ParsedAst.RecordField] = rule {
+      SP ~ Names.Field ~ optWS ~ "=" ~ optWS ~ Expression ~ SP ~> ParsedAst.RecordField
+    }
+
     def ArrayLit: Rule1[ParsedAst.Expression] = rule {
       SP ~ "[" ~ optWS ~ zeroOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "]" ~ SP ~> ParsedAst.Expression.ArrayLit
     }
@@ -762,7 +795,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def FList: Rule1[ParsedAst.Expression] = rule {
-      Postfix ~ optional(optWS ~ SP ~ atomic("::") ~ SP ~ optWS ~ Expression ~> ParsedAst.Expression.FCons)
+      RecordSelect ~ optional(optWS ~ SP ~ atomic("::") ~ SP ~ optWS ~ Expression ~> ParsedAst.Expression.FCons)
     }
 
     def FSet: Rule1[ParsedAst.Expression.FSet] = rule {
@@ -810,6 +843,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def ConstraintSeq: Rule1[ParsedAst.Expression] = rule {
       SP ~ oneOrMore(Declarations.Constraint) ~ SP ~> ParsedAst.Expression.ConstraintSeq
+    }
+
+    def ConstraintUnion: Rule1[ParsedAst.Expression] = rule {
+      SP ~ atomic("union") ~ WS ~ Expression ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.ConstraintUnion
     }
 
     def NewRelationOrLattice: Rule1[ParsedAst.Expression] = rule {
@@ -988,7 +1025,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Primary: Rule1[ParsedAst.Type] = rule {
-      Arrow | Nat | Tuple | Native | Var | Ambiguous
+      Arrow | Nat | Tuple | Record | Schema | Native | Var | Ambiguous
     }
 
     def Arrow: Rule1[ParsedAst.Type] = rule {
@@ -1014,6 +1051,23 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
       rule {
         Unit | Singleton | Tuple
+      }
+    }
+
+    def Record: Rule1[ParsedAst.Type] = {
+      def RecordFieldType: Rule1[ParsedAst.RecordFieldType] = rule {
+        SP ~ Names.Field ~ optWS ~ ":" ~ optWS ~ Type ~ SP ~> ParsedAst.RecordFieldType
+      }
+      rule {
+        SP ~ atomic("%{") ~ optWS ~ zeroOrMore(RecordFieldType).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ optional(optWS ~ "|" ~ optWS ~ Names.Variable) ~ optWS ~ "}" ~ SP ~> ParsedAst.Type.Record
+      }
+    }
+    def Schema: Rule1[ParsedAst.Type] = {
+      def Predicate: Rule1[(Name.QName, Seq[ParsedAst.Type])] = rule {
+        Names.QualifiedTable ~ optWS ~ atomic("(") ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ atomic(")") ~> ((qn: Name.QName, ts: Seq[ParsedAst.Type]) => (qn, ts))
+      }
+      rule {
+        SP ~ atomic("Schema") ~ optWS ~ atomic("{") ~ optWS ~ zeroOrMore(Predicate).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Type.Schema
       }
     }
 
@@ -1218,6 +1272,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     def Handler: Rule1[Name.Ident] = LowerCaseName
 
     def Effect: Rule1[Name.Ident] = UpperCaseName
+
+    def Field: Rule1[Name.Ident] = LowerCaseName
 
     def Hole: Rule1[Name.Ident] = LowerCaseName
 
