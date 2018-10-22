@@ -287,6 +287,35 @@ object ClosureConv extends Phase[Root, Root] {
       val as = args map visitExp
       Expression.NativeMethod(method, as, tpe, loc)
 
+    case Expression.NewChannel(tpe, eff, loc) =>
+      Expression.NewChannel(tpe, eff, loc)
+
+    case Expression.GetChannel(exp, tpe, eff, loc) =>
+      val e = visitExp(exp)
+      Expression.GetChannel(e, tpe, eff, loc)
+
+    case Expression.PutChannel(exp1, exp2, tpe, eff, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      Expression.PutChannel(e1, e2, tpe, eff, loc)
+
+    case Expression.SelectChannel(rules, tpe, eff, loc) =>
+      val rs = rules map {
+        case SelectChannelRule(sym, chan, exp) =>
+          val c = visitExp(chan)
+          val e = visitExp(exp)
+          SelectChannelRule(sym, c, e)
+      }
+      Expression.SelectChannel(rs, tpe, eff, loc)
+
+    case Expression.CloseChannel(exp, tpe, eff, loc) =>
+      val e = visitExp(exp)
+      Expression.CloseChannel(e, tpe, eff, loc)
+
+    case Expression.Spawn(exp, tpe, eff, loc) =>
+      val e = visitExp(exp)
+      Expression.Spawn(e, tpe, eff, loc)
+
     case Expression.NewRelation(sym, tpe, loc) =>
       Expression.NewRelation(sym, tpe, loc)
 
@@ -462,6 +491,16 @@ object ClosureConv extends Phase[Root, Root] {
     case Expression.NativeConstructor(constructor, args, tpe, loc) => mutable.LinkedHashSet.empty ++ args.flatMap(freeVars)
     case Expression.NativeField(field, tpe, loc) => mutable.LinkedHashSet.empty
     case Expression.NativeMethod(method, args, tpe, loc) => mutable.LinkedHashSet.empty ++ args.flatMap(freeVars)
+
+    case Expression.NewChannel(tpe, eff, loc) => mutable.LinkedHashSet.empty
+    case Expression.GetChannel(exp, tpe, eff, loc) => freeVars(exp)
+    case Expression.PutChannel(exp1, exp2, tpe, eff, loc) => freeVars(exp1) ++ freeVars(exp2)
+    //TODO SJ: is this right, and why not "free" -- "bound" see Namer.filterBoundVars
+    case Expression.SelectChannel(rules, tpe, eff, loc) => mutable.LinkedHashSet.empty ++ rules.flatMap{
+      case SelectChannelRule(sym, chan, exp) => freeVars(chan).filter(n1 => !List(sym).exists(n2 => n1._1 == n2))
+    }
+    case Expression.CloseChannel(exp, tpe, eff, loc) => freeVars(exp)
+    case Expression.Spawn(exp, tpe, eff, loc) => freeVars(exp)
 
     case Expression.NewRelation(sym, tpe, loc) => mutable.LinkedHashSet.empty
     case Expression.NewLattice(sym, tpe, loc) => mutable.LinkedHashSet.empty
@@ -775,6 +814,35 @@ object ClosureConv extends Phase[Root, Root] {
       case Expression.NativeMethod(method, args, tpe, loc) =>
         val es = args map visitExp
         Expression.NativeMethod(method, es, tpe, loc)
+
+      case Expression.NewChannel(tpe, eff, loc) =>
+        Expression.NewChannel(tpe, eff, loc)
+
+      case Expression.GetChannel(exp, tpe, eff, loc) =>
+        val e = visitExp(exp)
+        Expression.GetChannel(e, tpe, eff, loc)
+
+      case Expression.PutChannel(exp1, exp2, tpe, eff, loc) =>
+        val e1 = visitExp(exp1)
+        val e2 = visitExp(exp2)
+        Expression.PutChannel(e1, e2, tpe, eff, loc)
+
+      case Expression.SelectChannel(rules, tpe, eff, loc) =>
+        val rs = rules map {
+          case SelectChannelRule(sym, chan, exp) =>
+            val c = visitExp(chan)
+            val e = visitExp(exp)
+            SelectChannelRule(sym, c, e)
+        }
+        Expression.SelectChannel(rs, tpe, eff, loc)
+
+      case Expression.CloseChannel(exp, tpe, eff, loc) =>
+        val e = visitExp(exp)
+        Expression.CloseChannel(e, tpe, eff, loc)
+
+      case Expression.Spawn(exp, tpe, eff, loc) =>
+        val e = visitExp(exp)
+        Expression.Spawn(e, tpe, eff, loc)
 
       case Expression.NewRelation(sym, tpe, loc) => e
 
