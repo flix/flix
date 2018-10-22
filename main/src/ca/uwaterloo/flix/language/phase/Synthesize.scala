@@ -157,6 +157,7 @@ object Synthesize extends Phase[Root, Root] {
         val e = visitExp(exp)
         val rs = rules map {
           case MatchRule(pat, guard, body) => MatchRule(pat, guard, visitExp(body))
+            //TODO SJ: why not visit guard
         }
         Expression.Match(e, rs, tpe, eff, loc)
 
@@ -301,6 +302,35 @@ object Synthesize extends Phase[Root, Root] {
       case Expression.NativeMethod(method, args, tpe, eff, loc) =>
         val as = args map visitExp
         Expression.NativeMethod(method, as, tpe, eff, loc)
+
+      case Expression.NewChannel(tpe, eff, loc) =>
+        Expression.NewChannel(tpe, eff, loc)
+
+      case Expression.GetChannel(exp, tpe, eff, loc) =>
+        val e = visitExp(exp)
+        Expression.GetChannel(e, tpe, eff, loc)
+
+      case Expression.PutChannel(exp1, exp2, tpe, eff, loc) =>
+        val e1 = visitExp(exp1)
+        val e2 = visitExp(exp2)
+        Expression.PutChannel(e1, e2, tpe, eff, loc)
+
+      case Expression.SelectChannel(rules, tpe, eff, loc) =>
+        val rs = rules map {
+          case SelectChannelRule(sym, chan, exp) =>
+            val c = visitExp(chan)
+            val e = visitExp(exp)
+            SelectChannelRule(sym, c, e)
+        }
+        Expression.SelectChannel(rs, tpe, eff, loc)
+
+      case Expression.CloseChannel(exp, tpe, eff, loc) =>
+        val e = visitExp(exp)
+        Expression.CloseChannel(e, tpe, eff, loc)
+
+      case Expression.Spawn(exp, tpe, eff, loc) =>
+        val e = visitExp(exp)
+        Expression.Spawn(e, tpe, eff, loc)
 
       case Expression.NewRelation(sym, tpe, eff, loc) =>
         Expression.NewRelation(sym, tpe, eff, loc)
