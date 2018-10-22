@@ -490,6 +490,16 @@ class Shell(initialPaths: List[Path], options: Options) {
         this.root = ast
         // Pretty print the holes (if any).
         prettyPrintHoles()
+
+        // Generate code.
+        flix.codeGen(root) match {
+          case Validation.Success(m) =>
+            compilationResult = m
+          case Validation.Failure(errors) =>
+            for (error <- errors) {
+              terminal.writer().print(error.message.fmt)
+            }
+        }
       case Validation.Failure(errors) =>
         terminal.writer().println()
         for (error <- errors) {
@@ -500,14 +510,6 @@ class Shell(initialPaths: List[Path], options: Options) {
         terminal.writer().flush()
     }
 
-    flix.codeGen(root) match {
-      case Validation.Success(m) =>
-        compilationResult = m
-      case Validation.Failure(errors) =>
-        for (error <- errors) {
-          terminal.writer().print(error.message.fmt)
-        }
-    }
   }
 
   /**
