@@ -230,6 +230,19 @@ object SimplifiedAst {
 
     case class NativeMethod(method: Method, args: List[SimplifiedAst.Expression], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
+    case class NewChannel(tpe: Type, eff: ast.Eff, loc: SourceLocation) extends SimplifiedAst.Expression
+
+    case class GetChannel(exp: SimplifiedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends SimplifiedAst.Expression
+
+    case class PutChannel(exp1: SimplifiedAst.Expression, exp2: SimplifiedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends SimplifiedAst.Expression
+
+    case class SelectChannel(rules: List[SimplifiedAst.SelectChannelRule], tpe: Type, eff: ast.Eff, loc: SourceLocation) extends SimplifiedAst.Expression
+    //TODO SJ: Can this be simplified
+
+    case class CloseChannel(exp: SimplifiedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends SimplifiedAst.Expression
+
+    case class Spawn(exp: SimplifiedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends SimplifiedAst.Expression
+
     case class NewRelation(sym: Symbol.RelSym, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
     case class NewLattice(sym: Symbol.LatSym, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
@@ -251,8 +264,10 @@ object SimplifiedAst {
     case class MatchError(tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
     case class SwitchError(tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
-
   }
+
+  case class SelectChannelRule(sym: Symbol.VarSym, chan: SimplifiedAst.Expression, exp: SimplifiedAst.Expression)
+  //TODO SJ: Is this the correct sym type?
 
   sealed trait Predicate {
     def loc: SourceLocation
