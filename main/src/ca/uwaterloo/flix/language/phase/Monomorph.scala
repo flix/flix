@@ -87,6 +87,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         case Type.Int64 => Type.Int64
         case Type.BigInt => Type.BigInt
         case Type.Str => Type.Str
+        case Type.Channel => Type.Channel
         case Type.Array => Type.Array
         case Type.Vector => Type.Vector
         case Type.Native(clazz) => Type.Native(clazz)
@@ -433,6 +434,37 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         case Expression.NativeMethod(method, args, tpe, eff, loc) =>
           val es = args.map(e => visitExp(e, env0))
           Expression.NativeMethod(method, es, subst0(tpe), eff, loc)
+
+        case Expression.NewChannel(tpe, eff, loc) =>
+          Expression.NewChannel(subst0(tpe), eff, loc)
+
+        case Expression.GetChannel(exp, tpe, eff, loc) =>
+          val e = visitExp(exp, env0)
+          Expression.GetChannel(e, subst0(tpe), eff, loc)
+
+        case Expression.PutChannel(exp1, exp2, tpe, eff, loc) =>
+          val e1 = visitExp(exp1, env0)
+          val e2 = visitExp(exp2, env0)
+          Expression.PutChannel(e1, e2, tpe, eff, loc)
+
+        case Expression.SelectChannel(rules, tpe, eff, loc) =>
+          val rs = rules map {
+            case SelectChannelRule(sym, chan, exp) =>
+              val freshSym = Symbol.freshVarSym(sym)
+              val env1 = env0 + (sym -> freshSym)
+              val c = visitExp(chan, env1)
+              val e = visitExp(exp, env1)
+              SelectChannelRule(freshSym, c, e)
+          }
+          Expression.SelectChannel(rs, subst0(tpe), eff, loc)
+
+        case Expression.CloseChannel(exp, tpe, eff, loc) =>
+          val e = visitExp(exp, env0)
+          Expression.CloseChannel(e, subst0(tpe), eff, loc)
+
+        case Expression.Spawn(exp, tpe, eff, loc) =>
+          val e = visitExp(exp, env0)
+          Expression.Spawn(e, subst0(tpe), eff, loc)
 
         case Expression.NewRelation(sym, tpe, eff, loc) =>
           Expression.NewRelation(sym, subst0(tpe), eff, loc)
