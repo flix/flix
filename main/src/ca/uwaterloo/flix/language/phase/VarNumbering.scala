@@ -193,22 +193,22 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.NativeField(field, tpe, loc) => i0
       case Expression.NativeMethod(method, args, tpe, loc) => visitExps(args, i0)
 
-      case Expression.NewChannel(tpe, eff, loc) => i0
+      case Expression.NewChannel(tpe, loc) => i0
 
-      case Expression.GetChannel(exp, tpe, eff, loc) =>
+      case Expression.GetChannel(exp, tpe, loc) =>
         visitExp(exp, i0)
 
-      case Expression.PutChannel(exp1, exp2, tpe, eff, loc) =>
+      case Expression.PutChannel(exp1, exp2, tpe, loc) =>
         val i1 = visitExp(exp1, i0)
         visitExp(exp2, i1)
 
-      case Expression.SelectChannel(rules, tpe, eff, loc) =>
+      case Expression.SelectChannel(rules, tpe, loc) =>
         ??? //TODO SJ: How do we do this
 
-      case Expression.CloseChannel(exp, tpe, eff, loc) =>
+      case Expression.CloseChannel(exp, tpe, loc) =>
         visitExp(exp, i0)
 
-      case Expression.Spawn(exp, tpe, eff, loc) =>
+      case Expression.Spawn(exp, tpe, loc) =>
         visitExp(exp, i0)
 
       case Expression.NewRelation(sym, tpe, loc) => i0
