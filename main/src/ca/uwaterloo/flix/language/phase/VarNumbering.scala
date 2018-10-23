@@ -203,7 +203,7 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         visitExp(exp2, i1)
 
       case Expression.SelectChannel(rules, tpe, loc) =>
-        ??? //TODO SJ: How do we do this
+        i0 //TODO SJ: How do we do this
 
       case Expression.CloseChannel(exp, tpe, loc) =>
         visitExp(exp, i0)
