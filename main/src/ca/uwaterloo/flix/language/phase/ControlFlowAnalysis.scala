@@ -369,6 +369,19 @@ object ControlFlowAnalysis {
         // Unsoundly ignore the return value.
         AbstractValue.Bot
 
+      //TODO SJ: What to do?
+      case Expression.NewChannel(tpe, loc) => AbstractValue.Bot
+
+      case Expression.GetChannel(exp, tpe, loc) => AbstractValue.Bot
+
+      case Expression.PutChannel(exp1, exp2, tpe, loc) => AbstractValue.Bot
+
+      case Expression.SelectChannel(rules, tpe, loc) => AbstractValue.Bot
+
+      case Expression.CloseChannel(exp, tpe, loc) => AbstractValue.Bot
+
+      case Expression.Spawn(exp, tpe, loc) => AbstractValue.Bot
+
       case Expression.NewRelation(sym, tpe, loc) => AbstractValue.AnyRelation
 
       case Expression.NewLattice(sym, tpe, loc) => AbstractValue.AnyLattice

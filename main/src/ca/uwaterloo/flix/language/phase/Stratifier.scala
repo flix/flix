@@ -294,6 +294,40 @@ object Stratifier extends Phase[Root, Root] {
         case as => Expression.NativeMethod(method, as, tpe, loc)
       }
 
+    case Expression.NewChannel(tpe, loc) =>
+      Expression.NewChannel(tpe, loc).toSuccess
+
+    case Expression.GetChannel(exp, tpe, loc) =>
+      mapN(visitExp(exp)) {
+        case e => Expression.GetChannel(e, tpe, loc)
+      }
+
+    case Expression.PutChannel(exp1, exp2, tpe, loc) =>
+      mapN(visitExp(exp1), visitExp(exp2)) {
+        case (e1, e2) => Expression.PutChannel(e1, e2, tpe, loc)
+      }
+
+    //TODO SJ: Correct?
+    case Expression.SelectChannel(rules, tpe, loc) =>
+      val rulesVal = traverse(rules) {
+        case SelectChannelRule(sym, chan, exp) => mapN(visitExp(chan), visitExp(exp)) {
+          case (c, e) => SelectChannelRule(sym, c, e)
+        }
+      }
+      mapN(rulesVal) {
+        case rs => Expression.SelectChannel(rs, tpe, loc)
+      }
+
+    case Expression.CloseChannel(exp, tpe, loc) =>
+      mapN(visitExp(exp)) {
+        case e => Expression.CloseChannel(e, tpe, loc)
+      }
+
+    case Expression.Spawn(exp, tpe, loc) =>
+      mapN(visitExp(exp)) {
+        case e => Expression.Spawn(e, tpe, loc)
+      }
+
     case Expression.NewRelation(sym, tpe, loc) =>
       Expression.NewRelation(sym, tpe, loc).toSuccess
 
