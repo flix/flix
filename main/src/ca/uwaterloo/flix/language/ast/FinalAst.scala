@@ -209,6 +209,19 @@ object FinalAst {
 
     case class NativeMethod(method: Method, args: List[FinalAst.Expression], tpe: Type, loc: SourceLocation) extends FinalAst.Expression
 
+    case class NewChannel(tpe: Type, loc: SourceLocation) extends FinalAst.Expression
+
+    case class GetChannel(exp: FinalAst.Expression, tpe: Type, loc: SourceLocation) extends FinalAst.Expression
+
+    case class PutChannel(exp1: FinalAst.Expression, exp2: FinalAst.Expression, tpe: Type, loc: SourceLocation) extends FinalAst.Expression
+
+    case class SelectChannel(rules: List[FinalAst.SelectChannelRule], tpe: Type, loc: SourceLocation) extends FinalAst.Expression
+    //TODO SJ: Can this be simplified
+
+    case class CloseChannel(exp: FinalAst.Expression, tpe: Type, loc: SourceLocation) extends FinalAst.Expression
+
+    case class Spawn(exp: FinalAst.Expression, tpe: Type, loc: SourceLocation) extends FinalAst.Expression
+
     case class NewRelation(sym: Symbol.RelSym, tpe: Type, loc: SourceLocation) extends FinalAst.Expression
 
     case class NewLattice(sym: Symbol.LatSym, tpe: Type, loc: SourceLocation) extends FinalAst.Expression
@@ -232,6 +245,9 @@ object FinalAst {
     case class SwitchError(tpe: Type, loc: SourceLocation) extends FinalAst.Expression
 
   }
+
+  case class SelectChannelRule(sym: Symbol.VarSym, chan: FinalAst.Expression, exp: FinalAst.Expression)
+  //TODO SJ: Is this the correct sym type?
 
   sealed trait Predicate {
     def loc: SourceLocation
