@@ -1137,12 +1137,21 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
          * New Channel expression.
          */
         case ResolvedAst.Expression.NewChannel(tpe, loc) =>
+          //
+          //  --------------------
+          //  newch t : Channel[t]
+          //
           liftM(Type.mkChannel(tpe))
 
         /*
          * Get Channel expression.
          */
         case ResolvedAst.Expression.GetChannel(exp, tvar, loc) =>
+          //
+          //  exp: Channel[tpe]
+          //  -----------------
+          //  <- exp : tpe
+          //
           for {
             channelType <- visitExp(exp)
             _ <- unifyM(channelType, Type.mkChannel(tvar), loc)
@@ -1152,6 +1161,11 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
          * Put Channel expression.
          */
         case ResolvedAst.Expression.PutChannel(exp1, exp2, tvar, loc) =>
+          //
+          //  exp1: Channel[t], exp2: t
+          //  -------------------------
+          //  exp1 <- exp2 : Channel[t]
+          //
           val freshElementTypeVar = Type.freshTypeVar()
           for {
             channelType <- visitExp(exp1)
