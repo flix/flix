@@ -946,6 +946,11 @@ object Synthesize extends Phase[Root, Root] {
           val method = classOf[java.lang.Object].getMethod("toString")
           Expression.NativeMethod(method, List(exp0), Type.Str, ast.Eff.Pure, sl)
 
+        //TODO SJ: Correct? (What does it do?)
+        case Type.Channel =>
+          val method = classOf[java.lang.Object].getMethod("toString")
+          Expression.NativeMethod(method, List(exp0), Type.Str, ast.Eff.Pure, sl)
+
         case Type.Vector =>
           val method = classOf[java.lang.Object].getMethod("toString")
           Expression.NativeMethod(method, List(exp0), Type.Str, ast.Eff.Pure, sl)
@@ -963,6 +968,8 @@ object Synthesize extends Phase[Root, Root] {
         case Type.Apply(Type.Ref, _) => Expression.Str("<<ref>>", sl)
 
         case Type.Apply(Type.Array, _) => Expression.Str("<<array>>", sl)
+
+        case Type.Apply(Type.Channel, _) => Expression.Str("<<channel>>", sl)
 
         case Type.Apply(Type.Vector, _) => Expression.Str("<<vector>>", sl)
 
