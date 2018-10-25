@@ -1,3 +1,5 @@
+// TODO SJ: kan man lave tests med interpreter og ikke compiler?
+
 def testAll(): Int =
     if (!test1()) 1 else
     if (!test2()) 2 else
