@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.runtime.interpreter
 
 import java.lang.reflect.{InvocationTargetException, Modifier}
+import java.util.concurrent.locks.{Condition, ReentrantLock}
 
 import ca.uwaterloo.flix.api._
 import ca.uwaterloo.flix.language.ast.FinalAst._
@@ -257,6 +258,60 @@ object Interpreter {
     } catch {
       case ex: InvocationTargetException => throw ex.getTargetException
     }
+
+    case Expression.NewChannel(tpe, loc) => new Channel()
+
+    case Expression.GetChannel(exp, tpe, loc) =>
+      val c = eval(exp, env0, henv0, lenv0, root).asInstanceOf[Channel]
+      c.get()
+
+    case Expression.PutChannel(exp1, exp2, tpe, loc) =>
+      val c = eval(exp1, env0, henv0, lenv0, root).asInstanceOf[Channel]
+      val e = eval(exp2, env0, henv0, lenv0, root)
+      c.put(e)
+      c
+
+    case Expression.SelectChannel(rules, tpe, loc) =>
+      val rs = rules.map {
+        r => (r.sym, eval(r.chan, env0, henv0, lenv0, root).asInstanceOf[Channel], r.exp)
+      }
+      val chans = rs.map {r => r._2}
+
+      var cond: Condition = null
+
+      while (!Thread.interrupted()) {
+        // Lock all channels (using method from Channel.java)
+
+        try {
+          for (c <- chans) {
+            val e = c.tryGet()
+            if (e != null) {
+              return e // bind e, and then evaluate the body of the rule
+            }
+          }
+          val lock = new ReentrantLock()
+          cond = lock.newCondition()
+          for (c <- chans) {
+            c.addGetter(cond)
+          }
+        } finally {
+          //unlock channels (using method from Channel.java)
+        }
+
+        // Wait
+        if (cond != null) {
+          cond.await()
+        }
+      }
+      throw new InterruptedException()
+
+    case Expression.Spawn(exp, tpe, loc) =>
+      new Thread(){
+        override def run(): Unit = {
+          eval(exp, env0, henv0, lenv0, root)
+        }
+      }.start()
+      Value.Unit
 
     case Expression.NewRelation(sym, tpe, loc) =>
       val attr = root.relations(sym).attr.map {
