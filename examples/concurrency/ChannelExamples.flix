@@ -2,22 +2,35 @@ def allTests(): (Int, Int) = {
     (2, 2)
 }
 
-def newchTest(): Channel[Int] = newch Int
+//def newchTest(): Channel[Int] = newch Int
+//
+//def getchTest(): Int = <- newchTest()
 
-def getchTest(): Int = <- newchTest()
+def putchTest(): Int =
+    let c = newch Int;
+    let c2 = c <- 23;
+    let c3 = c2 <- 22;
+    <- c
+//
+//def closechTest(): Unit = closech newchTest()
+//
 
-def putchTest(): Channel[Int] = newchTest() <- 23
+def f(c: Channel[Int]): List[Channel[Int]] = List.map(x -> c <- x, List.range(1, 50))
 
-def closechTest(): Unit = closech newchTest()
+def spawnTest(): Int =
+    let c = newch Int;
+    spawn f(c); spawn f(c); spawn f(c); spawn f(c); spawn f(c);
+    spawn f(c); spawn f(c); spawn f(c); spawn f(c); spawn f(c);
+    <- c; <- c; <- c; <- c; <- c; <- c; <- c; <- c; <- c; <- c
 
-def spawnTest(): Unit = spawn 2
 
 def selectTest(): Int = {
-    let c = newch Int;
+    let c1 = newch Int;
+    let c2 = newch Int;
     select {
-        case x <- c => 2
-        case y <- putchTest() => 3
+        case x <- c1 => 2
+        case y <- c2 => 3
     }
 }
-
-def statementTest(): Int = 1 ;; 2
+//
+//def statementTest(): Int = 1 ; 2
