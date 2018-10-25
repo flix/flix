@@ -21,6 +21,9 @@ import org.scalatest.{ParallelTestExecution, Suites}
 
 // TODO: Sort
 class FeatureSuite extends Suites(
+  // TODO SJ: is this organized alphabetically or by ... "family"
+  //new FlixTest("Test.Expression.NewChannel", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.NewChannel.flix"), // TODO
+
   new FlixTest("TestCurrying", "main/test/ca/uwaterloo/flix/language/feature/TestCurrying.flix"),
   new FlixTest("TestEquality", "main/test/ca/uwaterloo/flix/language/feature/TestEquality.flix"),
   new FlixTest("Test.Decl.Namespace", "main/test/ca/uwaterloo/flix/language/feature/Test.Decl.Namespace.flix"),
