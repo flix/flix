@@ -156,8 +156,7 @@ object Synthesize extends Phase[Root, Root] {
       case Expression.Match(exp, rules, tpe, eff, loc) =>
         val e = visitExp(exp)
         val rs = rules map {
-          case MatchRule(pat, guard, body) => MatchRule(pat, guard, visitExp(body))
-            //TODO SJ: why not visit guard
+          case MatchRule(pat, guard, body) => MatchRule(pat, visitExp(guard), visitExp(body))
         }
         Expression.Match(e, rs, tpe, eff, loc)
 

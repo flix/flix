@@ -495,9 +495,8 @@ object ClosureConv extends Phase[Root, Root] {
     case Expression.NewChannel(tpe, loc) => mutable.LinkedHashSet.empty
     case Expression.GetChannel(exp, tpe, loc) => freeVars(exp)
     case Expression.PutChannel(exp1, exp2, tpe, loc) => freeVars(exp1) ++ freeVars(exp2)
-    //TODO SJ: is this right, and why not "free" -- "bound" see Namer.filterBoundVars
     case Expression.SelectChannel(rules, tpe, loc) => mutable.LinkedHashSet.empty ++ rules.flatMap{
-      case SelectChannelRule(sym, chan, exp) => freeVars(chan).filter(n1 => !List(sym).exists(n2 => n1._1 == n2))
+      case SelectChannelRule(sym, chan, exp) => freeVars(chan).filter(n1 => !List(sym).contains(n1._1))
     }
     case Expression.CloseChannel(exp, tpe, loc) => freeVars(exp)
     case Expression.Spawn(exp, tpe, loc) => freeVars(exp)

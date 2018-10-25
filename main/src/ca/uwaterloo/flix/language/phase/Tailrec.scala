@@ -104,7 +104,11 @@ object Tailrec extends Phase[Root, Root] {
           Expression.ApplySelfTail(sym, defn.fparams, args, tpe, loc)
         }
 
-      //TODO SJ: can anything channel related be tail recursive
+      case Expression.SelectChannel(rules, tpe, loc) =>
+        val rs = rules map {
+          case SelectChannelRule(sym, chan, exp) => SelectChannelRule(sym, chan, visit(exp))
+        }
+        Expression.SelectChannel(rs, tpe, loc)
 
       /*
        * Other expression: No calls in tail position.

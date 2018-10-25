@@ -369,7 +369,7 @@ object ControlFlowAnalysis {
         // Unsoundly ignore the return value.
         AbstractValue.Bot
 
-      //TODO SJ: What to do?
+      //TODO: Add support for Channels to ControlFlowAnalysis.
       case Expression.NewChannel(tpe, loc) => AbstractValue.Bot
 
       case Expression.GetChannel(exp, tpe, loc) => AbstractValue.Bot

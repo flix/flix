@@ -237,7 +237,6 @@ object SimplifiedAst {
     case class PutChannel(exp1: SimplifiedAst.Expression, exp2: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
     case class SelectChannel(rules: List[SimplifiedAst.SelectChannelRule], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
-    //TODO SJ: Can this be simplified
 
     case class CloseChannel(exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
@@ -264,10 +263,10 @@ object SimplifiedAst {
     case class MatchError(tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
     case class SwitchError(tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
+
   }
 
   case class SelectChannelRule(sym: Symbol.VarSym, chan: SimplifiedAst.Expression, exp: SimplifiedAst.Expression)
-  //TODO SJ: Is this the correct sym type?
 
   sealed trait Predicate {
     def loc: SourceLocation

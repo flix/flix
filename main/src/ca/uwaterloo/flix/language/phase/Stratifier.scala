@@ -307,7 +307,6 @@ object Stratifier extends Phase[Root, Root] {
         case (e1, e2) => Expression.PutChannel(e1, e2, tpe, loc)
       }
 
-    //TODO SJ: Correct?
     case Expression.SelectChannel(rules, tpe, loc) =>
       val rulesVal = traverse(rules) {
         case SelectChannelRule(sym, chan, exp) => mapN(visitExp(chan), visitExp(exp)) {
