@@ -8,12 +8,16 @@ def allTests(): (Int, Int) = {
 
 def putchTest(): Int =
     let c = newch Int;
-    let c2 = c <- 23;
-    let c3 = c2 <- 22;
+    //let c2 = c <- 23;
+    //let c3 = c2 <- 22;
     <- c
 //
 //def closechTest(): Unit = closech newchTest()
 //
+
+def collatz(n: Int): Int = 1//todo
+
+def slowFunction(n: Int): Int = collatz(n)
 
 def f(c: Channel[Int]): List[Channel[Int]] = List.map(x -> c <- x, List.range(1, 50))
 

@@ -7,6 +7,7 @@ import java.util.concurrent.locks.*;
 
 public class Channel {
   private boolean isOpen;
+  private int sizeLimit;
   private LinkedList<Object> queue;
   private Set<Condition> waitingGetters;
   private Condition waitingSetters;
@@ -27,11 +28,9 @@ public class Channel {
     lock.lock();
 
     try {
-      if (!isOpen) {
-        throw new RuntimeException();
-      }
+      checkIfClosed();
       queue.add(e);
-      for(Condition c : waitingGetters) {
+      for (Condition c : waitingGetters) {
         c.signalAll();
       }
       waitingGetters.clear();
@@ -42,24 +41,18 @@ public class Channel {
 
   public Object get() {
     lock.lock();
-
     try {
-      if (!isOpen) {
-        throw new RuntimeException();
+      //checkIfClosed(); you can read from a closed channel
+      Object e = queue.poll();
+      while (e == null) {
+        Condition c = lock.newCondition();
+        waitingGetters.add(c);
+        c.await();
+        e = queue.poll();
       }
-      Object e =  queue.poll();
-      if (e != null) {
-          return e;
-      } else {
-        try {
-          Condition c = lock.newCondition();
-          waitingGetters.add(c);
-          c.await();
-          return get(); //Change this to loop + helpers
-        } catch (InterruptedException e2) {
-          throw new RuntimeException();
-        }
-      }
+      return e;
+    } catch (InterruptedException e2) {
+      throw new RuntimeException();
     } finally {
       lock.unlock();
     }
@@ -69,19 +62,31 @@ public class Channel {
     lock.lock();
 
     try {
-      if (!isOpen) {
-        throw new RuntimeException();
-      }
+      //checkIfClosed(); you can read from a closed channel
       return queue.poll();
     } finally {
       lock.unlock();
     }
   }
 
+  private void checkIfClosed() {
+    if (!isOpen) throw new RuntimeException();
+  }
+
   public void addGetter(Condition c) {
     lock.lock();
     try {
       waitingGetters.add(c);
+    } finally {
+      lock.unlock();
+    }
+  }
+
+  public void close() {
+    lock.lock();
+    try {
+      checkIfClosed();
+      isOpen = false;
     } finally {
       lock.unlock();
     }
