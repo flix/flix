@@ -1,5 +1,7 @@
-def allTests(): (Int, Int) = {
-    (2, 2)
+def allTests(): Int = {
+    let x = 2;
+    x + 2;
+    x
 }
 
 //def newchTest(): Channel[Int] = newch Int
@@ -15,7 +17,10 @@ def putchTest(): Int =
 //def closechTest(): Unit = closech newchTest()
 //
 
-def collatz(n: Int): Int = 1//todo
+def collatz(n: Int): Int =
+    let c = newch Int;
+    c <- n;
+
 
 def slowFunction(n: Int): Int = collatz(n)
 

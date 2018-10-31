@@ -471,7 +471,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
   object Expressions {
     def Statement: Rule1[ParsedAst.Expression] = rule {
-      Expression ~ optional(optWS ~ atomic(";") ~ optWS ~ Statement ~ SP  ~> ParsedAst.Expression.Statement)
+      //TODO SJ: bad parsing with cases
+      Expression ~ optional(optWSNoNewLine ~ ( atomic(";") | NewLine) ~ optWS ~ Statement ~ SP  ~> ParsedAst.Expression.Statement)
     }
 
     def Block: Rule1[ParsedAst.Expression] = rule {
@@ -1333,6 +1334,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
   def NewLine: Rule0 = rule {
     "\n" | "\r"
+  }
+
+  def optWSNoNewLine: Rule0 = rule {
+    zeroOrMore(" " | "\t" | Comment)
   }
 
   /////////////////////////////////////////////////////////////////////////////
