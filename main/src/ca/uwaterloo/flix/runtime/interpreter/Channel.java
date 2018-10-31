@@ -47,9 +47,10 @@ public class Channel {
       if (!isOpen) {
         throw new RuntimeException();
       }
-      try {
-        return queue.remove();
-      } catch (NoSuchElementException e1) {
+      Object e =  queue.poll();
+      if (e != null) {
+          return e;
+      } else {
         try {
           Condition c = lock.newCondition();
           waitingGetters.add(c);
@@ -86,7 +87,19 @@ public class Channel {
     }
   }
 
-  private static void lockAllChannels(Channel[] channels) {
-    //Sort, and then lock
+  /**
+   * Sorts the list by channel id and then locks them all.
+   *
+   * @param channels the channels to lock
+   */
+  public static void lockAllChannels(Channel[] channels) {
+    Arrays.sort(channels, Comparator.comparing((Channel c) -> c.id));
+    for (Channel c : channels) c.lock.lock();
+  }
+
+  public static void unlockAllChannels(Channel[] channels) {
+    for (Channel c : channels) {
+      c.lock.unlock();
+    }
   }
 }

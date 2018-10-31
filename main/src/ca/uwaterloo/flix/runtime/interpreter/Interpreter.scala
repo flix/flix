@@ -275,31 +275,31 @@ object Interpreter {
       val rs = rules.map {
         r => (r.sym, eval(r.chan, env0, henv0, lenv0, root).asInstanceOf[Channel], r.exp)
       }
-      val chans = rs.map {r => r._2}
+      val chans = rs.map {r => r._2}.toArray[Channel]
 
       var cond: Condition = null
-
+      val lock = new ReentrantLock()
       while (!Thread.interrupted()) {
-        // Lock all channels (using method from Channel.java)
+        Channel.lockAllChannels(chans)
 
         try {
-          for (c <- chans) {
-            val e = c.tryGet()
-            if (e != null) {
-              return e // bind e, and then evaluate the body of the rule
+          for (rule <- rs) {
+            val element = rule._2.tryGet()
+            if (element != null) {
+              val newEnv = env0 + (rule._1.toString -> element)
+              return eval(rule._3, newEnv, henv0, lenv0, root)
             }
           }
-          val lock = new ReentrantLock()
           cond = lock.newCondition()
           for (c <- chans) {
             c.addGetter(cond)
           }
         } finally {
-          //unlock channels (using method from Channel.java)
+          Channel.unlockAllChannels(chans)
         }
 
-        // Wait
         if (cond != null) {
+          // java.lang.InternalMonitorStateException here
           cond.await()
         }
       }

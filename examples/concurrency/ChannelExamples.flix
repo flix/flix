@@ -26,9 +26,10 @@ def spawnTest(): Int =
 
 def selectTest(): Int = {
     let c1 = newch Int;
+    let asd = c1 <- 1;
     let c2 = newch Int;
     select {
-        case x <- c1 => 2
+        case x <- c1 => x + 1
         case y <- c2 => 3
     }
 }
