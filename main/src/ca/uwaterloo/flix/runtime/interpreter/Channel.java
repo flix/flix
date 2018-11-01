@@ -107,4 +107,8 @@ public class Channel {
       c.lock.unlock();
     }
   }
+
+  public static SelectChoice select(Channel[] channels) {
+      throw new RuntimeException();
+  }
 }

@@ -17,15 +17,16 @@ def putchTest(): Int =
 //def closechTest(): Unit = closech newchTest()
 //
 
-def collatz(n: Int): Int =
-    let c = newch Int;
-    c <- n;
+//def collatz(n: Int): Int =
+   // let c = newch Int;
+  //  c <- n;
 
 
-def slowFunction(n: Int): Int = collatz(n)
+//def slowFunction(n: Int): Int = collatz(n)
 
-def f(c: Channel[Int]): List[Channel[Int]] = List.map(x -> c <- x, List.range(1, 50))
+def f(c: Channel[Int]): List[Channel[Int]] = List.map(x -> c <- x, List.range(1, 5))
 
+@test
 def spawnTest(): Int =
     let c = newch Int;
     spawn f(c); spawn f(c); spawn f(c); spawn f(c); spawn f(c);

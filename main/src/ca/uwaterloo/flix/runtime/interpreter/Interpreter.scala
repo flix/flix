@@ -277,8 +277,9 @@ object Interpreter {
       }
       val chans = rs.map {r => r._2}.toArray[Channel]
 
-      var cond: Condition = null
       val lock = new ReentrantLock()
+      var cond: Condition = lock.newCondition()
+      lock.lock()
       while (!Thread.interrupted()) {
         Channel.lockAllChannels(chans)
 
@@ -290,7 +291,6 @@ object Interpreter {
               return eval(rule._3, newEnv, henv0, lenv0, root)
             }
           }
-          cond = lock.newCondition()
           for (c <- chans) {
             c.addGetter(cond)
           }
@@ -298,10 +298,10 @@ object Interpreter {
           Channel.unlockAllChannels(chans)
         }
 
-        if (cond != null) {
+        //if (cond != null) {
           // java.lang.InternalMonitorStateException here
           cond.await()
-        }
+        //}
       }
       throw new InterruptedException()
 
