@@ -38,9 +38,11 @@ def selectTest(): Int = {
     let c1 = newch Int;
     let asd = c1 <- 1;
     let c2 = newch Int;
+    let fgh = c2 <- 2;
     select {
-        case x <- c1 => x + 1
-        case y <- c2 => 3
+    // gets element from c1 since this channel has the lowest id
+        case x <- c2 => x + 1
+        case y <- c1 => y + 1
     }
 }
 //

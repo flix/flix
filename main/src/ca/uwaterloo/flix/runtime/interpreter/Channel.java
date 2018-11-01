@@ -7,7 +7,7 @@ import java.util.concurrent.locks.*;
 
 public class Channel {
   private boolean isOpen;
-  private int sizeLimit;
+  private int bufferSize;
   private LinkedList<Object> queue;
   private Set<Condition> waitingGetters;
   private Condition waitingSetters;
@@ -92,23 +92,70 @@ public class Channel {
     }
   }
 
-  /**
-   * Sorts the list by channel id and then locks them all.
-   *
-   * @param channels the channels to lock
-   */
-  public static void lockAllChannels(Channel[] channels) {
-    Arrays.sort(channels, Comparator.comparing((Channel c) -> c.id));
-    for (Channel c : channels) c.lock.lock();
-  }
-
-  public static void unlockAllChannels(Channel[] channels) {
-    for (Channel c : channels) {
-      c.lock.unlock();
-    }
+  public int getId() {
+    return id;
   }
 
   public static SelectChoice select(Channel[] channels) {
-      throw new RuntimeException();
+    // Create new Condition and lock the current thread
+    Lock selectLock = new ReentrantLock();
+    Condition condition = selectLock.newCondition();
+    selectLock.lock();
+
+    // Sort Channels to avoid deadlock
+    sortChannels(channels);
+
+    while (!Thread.interrupted()) {
+      // Lock (and sort) all Channels
+      lockAllChannels(channels);
+
+      try {
+        // Check if any Channel has an element
+        for (Channel channel : channels) {
+          Object element = channel.tryGet();
+          if (element != null) {
+            // Element found.
+            // Return the element and the index of the containing Channel
+            SelectChoice choice = new SelectChoice();
+            choice.channelId = channel.id;
+            choice.element = element;
+            return choice;
+          }
+        }
+
+        // No element was found.
+        // Add our condition to all Channels to get notified when a new element is added
+        for (Channel channel : channels) {
+          channel.addGetter(condition);
+        }
+      } finally {
+        // Unlock all Channels so other threads may input elements
+        unlockAllChannels(channels);
+      }
+
+      // Wait for an element to be added to any of the Channels
+      try {
+        condition.await();
+      } catch (InterruptedException e) {
+        throw new RuntimeException("Thread interrupted");
+      }
+    }
+
+    throw new RuntimeException("Thread interrupted");
+  }
+
+  private static void sortChannels(Channel[] channels) {
+    Arrays.sort(channels, Comparator.comparing((Channel c) -> c.id));
+  }
+
+  private static void lockAllChannels(Channel[] channels) {
+    // Arrays.sort(channels, Comparator.comparing((Channel c) -> c.id));
+    for (Channel c : channels) c.lock.lock();
+  }
+
+  private static void unlockAllChannels(Channel[] channels) {
+    for (Channel c : channels) {
+      c.lock.unlock();
+    }
   }
 }
