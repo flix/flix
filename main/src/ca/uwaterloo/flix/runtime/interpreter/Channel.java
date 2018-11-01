@@ -106,7 +106,7 @@ public class Channel {
     sortChannels(channels);
 
     while (!Thread.interrupted()) {
-      // Lock (and sort) all Channels
+      // Lock all Channels
       lockAllChannels(channels);
 
       try {
