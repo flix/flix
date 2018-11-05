@@ -5,6 +5,11 @@ package ca.uwaterloo.flix.runtime.solver.api
   */
 trait Table {
   /**
+    * Returns a copy of `this` table.
+    */
+  def copy(): Table
+
+  /**
     * Returns the name of the table.
     */
   def getName(): String

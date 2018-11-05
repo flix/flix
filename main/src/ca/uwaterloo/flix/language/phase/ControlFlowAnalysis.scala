@@ -390,7 +390,7 @@ object ControlFlowAnalysis {
             l.updateDependencyGraph(uid, g)
           case _ => throw InternalCompilerException(s"Unexpected abstract value: '$v'.")
         }
-        AbstractValue.AnyPrimitive
+        AbstractValue.Graph(DependencyGraph.Empty)
 
       case Expression.FixpointCheck(uid, exp, stf, tpe, loc) =>
         val v = visitExp(exp, env0, lenv0)
@@ -410,7 +410,7 @@ object ControlFlowAnalysis {
             l.updateDependencyGraph(uid, g)
           case _ => throw InternalCompilerException(s"Unexpected abstract value: '$v'.")
         }
-        AbstractValue.AnyPrimitive
+        AbstractValue.Graph(DependencyGraph.Empty)
 
       case Expression.UserError(tpe, loc) => AbstractValue.Bot
 

@@ -200,7 +200,7 @@ class DeltaSolver(constraintSet: ConstraintSet, options: FixpointOptions) {
   /**
     * Runs the solver.
     */
-  private def runSolver(cs: ConstraintSet): Fixpoint = {
+  private def runSolver(cs: ConstraintSet): ConstraintSet = {
     val solver = new Solver(cs.complete(), options)
     solver.solve()
   }

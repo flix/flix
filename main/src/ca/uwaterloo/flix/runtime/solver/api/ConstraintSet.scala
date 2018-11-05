@@ -32,6 +32,17 @@ class ConstraintSet(constraints: Array[Constraint]) {
   }
 
   /**
+    * Returns all facts in the constraint set as a new constraint set.
+    */
+  // TODO: In the future it would be better if constraint sets where immutable.
+  def getFacts(): ConstraintSet = {
+    val facts = constraints collect {
+      case constraint if constraint.isFact() => constraint.copy()
+    }
+    new ConstraintSet(facts)
+  }
+
+  /**
     * Returns all relations in the constraint set.
     */
   def getRelations(): Array[Relation] = getTables() collect {

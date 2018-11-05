@@ -280,8 +280,7 @@ object Interpreter {
 
     case Expression.FixpointSolve(uid, exp, stf, tpe, loc) =>
       val cs = cast2constraintset(eval(exp, env0, henv0, lenv0, root))
-      val fixpoint = solve(cs, stf)
-      fixpoint.toString
+      solve(cs, stf)
 
     case Expression.FixpointCheck(uid, exp, stf, tpe, loc) =>
       // TODO
@@ -1109,7 +1108,7 @@ object Interpreter {
   /**
     * Computes the fixed point of the given constraint set `cs`.
     */
-  private def solve(cs: ConstraintSet, stf: Ast.Stratification)(implicit flix: Flix): Fixpoint = {
+  private def solve(cs: ConstraintSet, stf: Ast.Stratification)(implicit flix: Flix): ConstraintSet = {
     // Configure the fixpoint solver based on the Flix options.
     val options = new FixpointOptions
     options.setMonitored(flix.options.monitor)

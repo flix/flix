@@ -1906,6 +1906,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         WeededAst.Expression.ConstraintUnion(eacc, constraintExp, loc)
     }
     val outerExp = WeededAst.Expression.FixpointSolve(innerExp, loc)
+    val toStringExp = WeededAst.Expression.NativeMethod("java.lang.Object", "toString", List(outerExp), loc)
 
     // The type and effect of the generated main.
     val argumentType = WeededAst.Type.Ambiguous(Name.mkQName("Unit"), loc)
@@ -1914,7 +1915,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     val eff = Eff.Top
 
     // Construct the declaration.
-    val decl = WeededAst.Declaration.Def(doc, ann, mod, ident, tparams, fparams, outerExp, tpe, eff, loc)
+    val decl = WeededAst.Declaration.Def(doc, ann, mod, ident, tparams, fparams, toStringExp, tpe, eff, loc)
 
     // Construct an AST root that contains the main declaration.
     WeededAst.Root(List(decl))

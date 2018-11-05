@@ -37,6 +37,12 @@ class Lattice(name: String, keys: Array[Attribute], value: Attribute, ops: Latti
 
   def getIndexedLattice(): IndexedLattice = indexedLattice
 
+
+  /**
+    * Returns a copy of `this` table.
+    */
+  override def copy(): Table = new Lattice(name, keys, value, ops)
+
   /**
     * Returns a human readable string representation of the lattice.
     */

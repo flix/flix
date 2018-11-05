@@ -13,6 +13,8 @@ import ca.uwaterloo.flix.runtime.solver.LatticeOps
 class LatticeVar(name: String, keys: Array[Attribute], value: Attribute, ops: LatticeOps) extends Table {
   override def getName(): String = name
 
+  override def copy(): Table = this
+
   def getKeys(): Array[Attribute] = keys
 
   def getValue(): Attribute = value

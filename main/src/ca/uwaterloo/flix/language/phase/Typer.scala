@@ -1181,14 +1181,13 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         //
         //  exp : Schema
         //  -----------------------------
-        //  solve exp : Str
+        //  solve exp : Schema
         //
         case ResolvedAst.Expression.FixpointSolve(exp, tvar, loc) =>
           // TODO: Checkable/Solvable
           for {
             inferredType <- visitExp(exp)
-            expectedType <- unifyM(inferredType, mkAnySchema(program), loc)
-            resultType <- unifyM(tvar, Type.Str, loc)
+            resultType <- unifyM(tvar, inferredType, mkAnySchema(program), loc)
           } yield resultType
 
         //

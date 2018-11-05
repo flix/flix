@@ -1083,8 +1083,8 @@ object Synthesize extends Phase[Root, Root] {
           // Schema
           //
           if (tpe.isSchema) {
-            // TODO: Implement toString for schema.
-            return Expression.Str("<<schema>>", sl)
+            val method = classOf[java.lang.Object].getMethod("toString")
+            return Expression.NativeMethod(method, List(exp0), Type.Str, ast.Eff.Pure, sl)
           }
 
           throw InternalCompilerException(s"Unknown type '$tpe'.")

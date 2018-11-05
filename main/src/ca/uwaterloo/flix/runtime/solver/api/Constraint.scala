@@ -145,6 +145,15 @@ class Constraint(cparams: Array[VarSym], head: Predicate, body: Array[Predicate]
   }
 
   /**
+    * Returns a copy of the constraint.
+    */
+  def copy(): Constraint = {
+    val newHead = head.copy()
+    val newBody = body.map(_.copy())
+    new Constraint(cparams, newHead, newBody)
+  }
+
+  /**
     * Returns a string representation of `this` constraint.
     */
   override def toString: String = {

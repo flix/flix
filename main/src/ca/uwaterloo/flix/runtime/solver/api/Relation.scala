@@ -32,6 +32,11 @@ class Relation(name: String, attributes: Array[Attribute]) extends Table {
   def getIndexedRelation(): IndexedRelation = indexedRelation
 
   /**
+    * Returns a copy of `this` table.
+    */
+  override def copy(): Table = new Relation(name, attributes)
+
+  /**
     * Returns a human readable string representation of the relation.
     */
   override def toString: String = {

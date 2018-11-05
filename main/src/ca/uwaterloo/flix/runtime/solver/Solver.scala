@@ -202,7 +202,7 @@ class Solver(val constraintSet: ConstraintSet, options: FixpointOptions) {
   /**
     * Solves the Flix program.
     */
-  def solve(): Fixpoint = try {
+  def solve(): ConstraintSet = try {
     // initialize the solver.
     initSolver()
 
@@ -240,7 +240,7 @@ class Solver(val constraintSet: ConstraintSet, options: FixpointOptions) {
     printDebug()
 
     // build and return the model.
-    mkFixpoint(totalTime)
+    constraintSet.getFacts()
   } catch {
     // Re-throw exceptions caught inside the individual reader/writer tasks.
     case ex: ExecutionException =>
@@ -740,11 +740,6 @@ class Solver(val constraintSet: ConstraintSet, options: FixpointOptions) {
     }
     result
   }
-
-  /**
-    * Constructs the minimal model from the datastore.
-    */
-  private def mkFixpoint(elapsed: Long): Fixpoint = new Fixpoint(constraintSet.getRelations(), constraintSet.getLattices())
 
   /**
     * Returns a new thread pool configured to use the appropriate number of threads.
