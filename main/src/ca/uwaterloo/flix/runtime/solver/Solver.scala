@@ -415,7 +415,7 @@ class Solver(val constraintSet: ConstraintSet, options: FixpointOptions) {
           // A variable is replaced by its value from the environment (or null if unbound).
           env(p.getSym().getStackOffset)
         case p: LitTerm =>
-          p.getFunction()()
+          p.getFunction().call()
         case p: WildTerm =>
           // A wildcard places no restrictions on the value.
           null
@@ -528,7 +528,7 @@ class Solver(val constraintSet: ConstraintSet, options: FixpointOptions) {
             // A variable is replaced by its value from the environment.
             env(p.getSym.getStackOffset)
           case p: LitTerm =>
-            p.getFunction()()
+            p.getFunction().call()
           case p: WildTerm =>
             // A wildcard should not appear as an argument to a filter function.
             throw InternalRuntimeException("Wildcard not allowed here!")
@@ -570,7 +570,7 @@ class Solver(val constraintSet: ConstraintSet, options: FixpointOptions) {
     */
   def evalHeadTerm(t: Term, root: ConstraintSet, env: Env): ProxyObject = t match {
     case t: VarTerm => env(t.getSym.getStackOffset)
-    case t: LitTerm => t.getFunction()()
+    case t: LitTerm => t.getFunction().call()
     case t: AppTerm =>
       val args = new Array[AnyRef](t.getArguments().length)
       var i = 0

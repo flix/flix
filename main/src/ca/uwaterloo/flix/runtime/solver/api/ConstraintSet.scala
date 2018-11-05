@@ -1,8 +1,9 @@
 package ca.uwaterloo.flix.runtime.solver.api
 
-import ca.uwaterloo.flix.runtime.solver.api.predicate._
+import java.io.{PrintWriter, StringWriter}
 
-import scala.collection.mutable
+import ca.uwaterloo.flix.runtime.solver.api.predicate._
+import ca.uwaterloo.flix.util.AsciiTable
 
 /**
   * Represents a collection of constraints.
@@ -143,8 +144,58 @@ class ConstraintSet(constraints: Array[Constraint]) {
   private def getAtomPredicates(): Array[AtomPredicate] = constraints.flatMap(_.getAllAtoms())
 
   /**
+    * Returns `true` if all constraints are facts.
+    */
+  private def isOnlyFacts(): Boolean = constraints.forall(_.isFact())
+
+  /**
     * Returns a human readable representation the constraint set.
     */
-  override def toString: String = constraints.mkString(", ")
+  override def toString: String = {
+    if (!isOnlyFacts()) {
+      return constraints.mkString(", ")
+    }
+
+    // TODO: Cleanup.
+
+    val sb = new StringBuilder
+
+    // Group all facts by predicate symbol.
+    val constraintsByHead = constraints.groupBy(_.getHeadPredicate())
+    for ((predicate, constraints) <- constraintsByHead) {
+      predicate match {
+        case head: AtomPredicate =>
+          // Retrieve the name and attributes of the predicate.
+          val name = head.getSym().getName()
+          val attributes = head.getTerms().map(_ => "attr")
+
+          // Construct an ascii table with a column for each attribute.
+          val columns = attributes
+          val table = new AsciiTable().withTitle(name).withCols(columns: _*)
+
+          // Add each row to the ASCII table.
+          for (row <- constraints) {
+            row.getHeadPredicate() match {
+              case atom: AtomPredicate =>
+                table.mkRow(atom.getTerms().toList)
+              case head: TruePredicate => //  nop
+              case head: FalsePredicate => //  nop
+              case _ => throw new RuntimeException(s"Unexpected head predicate: '$predicate'.")
+            }
+          }
+
+          // Write the ASCII table to the string buffer.
+          val sw = new StringWriter()
+          table.write(new PrintWriter(sw))
+          sb.append(sw.toString)
+
+        case head: TruePredicate => //  nop
+        case head: FalsePredicate => //  nop
+        case _ => throw new RuntimeException(s"Unexpected head predicate: '$predicate'.")
+      }
+    }
+
+    sb.toString()
+  }
 
 }

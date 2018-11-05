@@ -8,7 +8,7 @@ import ca.uwaterloo.flix.util.{AsciiTable, BitOps}
 /**
   * Represents a relation value.
   */
-class Relation(name: String, attributes: Array[Attribute]) extends Table {
+class Relation(val name: String, attributes: Array[Attribute]) extends Table {
 
   /**
     * Returns the name of the relation.
@@ -59,4 +59,18 @@ class Relation(name: String, attributes: Array[Attribute]) extends Table {
     sb.toString()
   }
 
+
+  def canEqual(other: Any): Boolean = other.isInstanceOf[Relation]
+
+  override def equals(other: Any): Boolean = other match {
+    case that: Relation =>
+      (that canEqual this) &&
+        name == that.name
+    case _ => false
+  }
+
+  override def hashCode(): Int = {
+    val state = Seq(name)
+    state.map(_.hashCode()).foldLeft(0)((a, b) => 31 * a + b)
+  }
 }

@@ -7,7 +7,7 @@ import ca.uwaterloo.flix.runtime.solver.api.symbol.VarSym
 /**
   * Represents an atom predicate for the symbol `sym` with arguments `terms`.
   */
-class AtomPredicate(sym: Table, positive: Boolean, terms: Array[Term], index2sym: Array[VarSym]) extends Predicate {
+class AtomPredicate(val sym: Table, positive: Boolean, terms: Array[Term], index2sym: Array[VarSym]) extends Predicate {
 
   /**
     * Returns a copy of this predicate.
@@ -42,4 +42,17 @@ class AtomPredicate(sym: Table, positive: Boolean, terms: Array[Term], index2sym
     */
   override def toString: String = sym.getName() + "(" + terms.mkString(", ") + ")"
 
+  def canEqual(other: Any): Boolean = other.isInstanceOf[AtomPredicate]
+
+  override def equals(other: Any): Boolean = other match {
+    case that: AtomPredicate =>
+      (that canEqual this) &&
+        sym == that.sym
+    case _ => false
+  }
+
+  override def hashCode(): Int = {
+    val state = Seq(sym)
+    state.map(_.hashCode()).foldLeft(0)((a, b) => 31 * a + b)
+  }
 }
