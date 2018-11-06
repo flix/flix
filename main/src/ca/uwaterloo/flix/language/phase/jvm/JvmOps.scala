@@ -64,6 +64,7 @@ object JvmOps {
       case Type.Int64 => JvmType.PrimLong
       case Type.BigInt => JvmType.BigInteger
       case Type.Str => JvmType.String
+      case Type.Channel => JvmType.Object
       case Type.Native(clazz) => JvmType.Object
       case Type.Ref => getCellClassType(tpe)
       case Type.Arrow(l) => getFunctionInterfaceType(tpe)
@@ -818,6 +819,19 @@ object JvmOps {
         case (sacc, e) => sacc ++ visitExp(e)
       }
 
+      case Expression.NewChannel(tpe, loc) => Set.empty
+
+      case Expression.GetChannel(exp, tpe, loc) => visitExp(exp)
+
+      case Expression.PutChannel(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2)
+
+      case Expression.SelectChannel(rules, tpe, loc) =>
+        rules.foldLeft(Set[ClosureInfo]())((old, rule) => old ++ visitExp(rule.chan) ++ visitExp(rule.exp))
+
+      case Expression.CloseChannel(exp, tpe, loc) => visitExp(exp)
+
+      case Expression.Spawn(exp, tpe, loc) => visitExp(exp)
+
       case Expression.NewRelation(sym, tpe, loc) => Set.empty
 
       case Expression.NewLattice(sym, tpe, loc) => Set.empty
@@ -1005,6 +1019,7 @@ object JvmOps {
 
       case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
         visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
+        //TODO SJ: should this also include tpe?
 
       case Expression.Branch(exp, branches, tpe, loc) => branches.foldLeft(visitExp(exp)) {
         case (sacc, (_, e)) => sacc ++ visitExp(e)
@@ -1023,6 +1038,20 @@ object JvmOps {
       case Expression.Tuple(elms, tpe, loc) => elms.foldLeft(Set(tpe)) {
         case (sacc, e) => sacc ++ visitExp(e)
       }
+
+        //TODO SJ: place these the right place
+      case Expression.NewChannel(tpe, loc) => Set(tpe)
+
+      case Expression.GetChannel(exp, tpe, loc) => visitExp(exp) + tpe
+
+      case Expression.PutChannel(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2) + tpe
+
+      case Expression.SelectChannel(rules, tpe, loc) =>
+        rules.foldLeft(Set(tpe))( (old, rule) => old ++ visitExp(rule.chan) ++ visitExp(rule.exp))
+
+      case Expression.CloseChannel(exp, tpe, loc) => visitExp(exp) + tpe
+
+      case Expression.Spawn(exp, tpe, loc) => visitExp(exp) + tpe
 
       case Expression.RecordEmpty(tpe, loc) => ??? // TODO
 

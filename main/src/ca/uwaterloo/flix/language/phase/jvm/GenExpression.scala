@@ -963,6 +963,14 @@ object GenExpression {
           AsmOps.getMethodDescriptor(List(), JvmType.Unit), false)
       }
 
+    case Expression.NewChannel(tpe, loc) =>
+      // Adding source line number for debugging
+      addSourceLine(visitor, loc)
+      visitor.visitTypeInsn(NEW, "ca/uwaterloo/flix/runtime/interpreter/Channel");
+      visitor.visitInsn(DUP);
+      visitor.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/interpreter/Channel", "<init>", "()V", false);
+
+
     case Expression.UserError(_, loc) =>
       addSourceLine(visitor, loc)
       AsmOps.compileThrowFlixError(visitor, JvmName.Runtime.NotImplementedError, loc)
