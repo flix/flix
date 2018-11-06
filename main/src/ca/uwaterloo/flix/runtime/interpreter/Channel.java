@@ -102,22 +102,23 @@ public class Channel {
     Condition condition = selectLock.newCondition();
     selectLock.lock();
 
-    // Sort Channels to avoid deadlock
-    sortChannels(channels);
+    // Sort Channels to avoid deadlock when locking
+    Channel[] sortedChannels = sortChannels(channels);
 
     while (!Thread.interrupted()) {
-      // Lock all Channels
-      lockAllChannels(channels);
+      // Lock all Channels in sorted order
+      lockAllChannels(sortedChannels);
 
       try {
         // Check if any Channel has an element
-        for (Channel channel : channels) {
+        for (int index = 0; index < channels.length; index++) {
+          Channel channel = channels[index];
           Object element = channel.tryGet();
           if (element != null) {
             // Element found.
-            // Return the element and the index of the containing Channel
+            // Return the element and the branchNumber (index) of the containing Channel
             SelectChoice choice = new SelectChoice();
-            choice.channelId = channel.id;
+            choice.branchNumber = index;
             choice.element = element;
             return choice;
           }
@@ -129,8 +130,8 @@ public class Channel {
           channel.addGetter(condition);
         }
       } finally {
-        // Unlock all Channels so other threads may input elements
-        unlockAllChannels(channels);
+        // Unlock all Channels in sorted order, so other threads may input elements
+        unlockAllChannels(sortedChannels);
       }
 
       // Wait for an element to be added to any of the Channels
@@ -144,8 +145,10 @@ public class Channel {
     throw new RuntimeException("Thread interrupted");
   }
 
-  private static void sortChannels(Channel[] channels) {
-    Arrays.sort(channels, Comparator.comparing((Channel c) -> c.id));
+  private static Channel[] sortChannels(Channel[] channels) {
+    Channel[] channelsCopy = Arrays.copyOf(channels, channels.length);
+    Arrays.sort(channelsCopy, Comparator.comparing((Channel c) -> c.id));
+    return channelsCopy;
   }
 
   private static void lockAllChannels(Channel[] channels) {

@@ -276,38 +276,10 @@ object Interpreter {
         r => (r.sym, eval(r.chan, env0, henv0, lenv0, root).asInstanceOf[Channel], r.exp)
       }
       val channelsArray = rs.map { r => r._2}.toArray[Channel]
-
       val selectChoice = Channel.select(channelsArray)
-
-      val selectedRule = rs.filter(r => r._2.getId == selectChoice.channelId).head
-
+      val selectedRule = rs.apply(selectChoice.branchNumber)
       val newEnv = env0 + (selectedRule._1.toString -> selectChoice.element)
       eval(selectedRule._3, newEnv, henv0, lenv0, root)
-
-//      val lock = new ReentrantLock()
-//      var cond: Condition = lock.newCondition()
-//      lock.lock()
-//      while (!Thread.interrupted()) {
-//        Channel.lockAllChannels(chans)
-//
-//        try {
-//          for (rule <- rs) {
-//            val element = rule._2.tryGet()
-//            if (element != null) {
-//              val newEnv = env0 + (rule._1.toString -> element)
-//              return eval(rule._3, newEnv, henv0, lenv0, root)
-//            }
-//          }
-//          for (c <- chans) {
-//            c.addGetter(cond)
-//          }
-//        } finally {
-//          Channel.unlockAllChannels(chans)
-//        }
-//
-//        cond.await()
-//      }
-//      throw new InterruptedException()
 
     case Expression.CloseChannel(exp, tpe, loc) =>
       val chan = eval(exp, env0, henv0, lenv0, root).asInstanceOf[Channel]

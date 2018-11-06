@@ -40,7 +40,6 @@ def selectTest(): Int = {
     let c2 = newch Int;
     let fgh = c2 <- 2;
     select {
-    // gets element from c1 since this channel has the lowest id
         case x <- c2 => x + 1
         case y <- c1 => y + 1
     }
