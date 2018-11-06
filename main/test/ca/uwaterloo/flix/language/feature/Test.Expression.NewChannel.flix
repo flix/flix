@@ -18,3 +18,15 @@ def testNewChannelPrimitive6(): Channel[BigInt] = newch BigInt
 
 @test
 def testNewChannelPrimitive7(): Channel[Str] = newch Str
+
+@test
+def testNewChannelPrimitive8(): Channel[Unit] = newch Unit
+
+@test
+def testNewChannelPrimitive9(): Channel[Array[Int]] = newch Array[Int]
+
+@test
+def testNewChannelPrimitive10(): Channel[Channel[Int]] = newch Channel[Int]
+
+@test
+def testNewChannelPrimitive11(): Channel[Channel[Channel[Channel[Str]]]] = newch Channel[Channel[Channel[Str]]]
