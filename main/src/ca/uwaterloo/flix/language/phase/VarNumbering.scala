@@ -203,7 +203,21 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         visitExp(exp2, i1)
 
       case Expression.SelectChannel(rules, tpe, loc) =>
-        i0 //TODO SJ: How do we do this
+        var currentOffset = i0
+        for (r <- rules) {
+          // Set the stack offset for the symbol.
+          r.sym.setStackOffset(currentOffset)
+
+          // Compute the next free stack offset.
+          currentOffset = currentOffset + getStackSize(r.chan.tpe)
+
+          // Visit the channel expression of the rule.
+          currentOffset = visitExp(r.chan, currentOffset)
+
+          // Visit the expression of the rule.
+          currentOffset = visitExp(r.exp, currentOffset)
+        }
+        currentOffset
 
       case Expression.CloseChannel(exp, tpe, loc) =>
         visitExp(exp, i0)
