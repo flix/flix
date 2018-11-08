@@ -716,7 +716,7 @@ object Interpreter {
           cast2relation(env0(baseSym.toString))
       }
       val ts = terms.map(t => evalHeadTerm(t, env0))
-      new api.predicate.AtomPredicate(relation, positive = true, ts.toArray, null)
+      new api.predicate.AtomPredicate(relation, true, ts.toArray, null)
     case FinalAst.Predicate.Head.LatAtom(baseOpt, sym, terms, _, _) =>
       // Retrieve the lattice.
       val lattice = baseOpt match {
@@ -725,7 +725,7 @@ object Interpreter {
           cast2lattice(env0(baseSym.toString))
       }
       val ts = terms.map(t => evalHeadTerm(t, env0))
-      new api.predicate.AtomPredicate(lattice, positive = true, ts.toArray, null)
+      new api.predicate.AtomPredicate(lattice, true, ts.toArray, null)
   }
 
   /**
@@ -772,7 +772,9 @@ object Interpreter {
       new api.predicate.AtomPredicate(lattice, p, ts.toArray, i2s.toArray)
 
     case FinalAst.Predicate.Body.Filter(sym, terms, loc) =>
-      val f = (as: Array[AnyRef]) => Linker.link(sym, root).invoke(as).getValue.asInstanceOf[Boolean].booleanValue()
+      val f = new function.Function[Array[AnyRef], java.lang.Boolean] {
+        override def apply(as: Array[AnyRef]): java.lang.Boolean = Linker.link(sym, root).invoke(as).getValue.asInstanceOf[Boolean].booleanValue()
+      }
       val ts = terms.map(t => evalBodyTerm(t, env0))
       new api.predicate.FilterPredicate(f, ts.toArray)
 

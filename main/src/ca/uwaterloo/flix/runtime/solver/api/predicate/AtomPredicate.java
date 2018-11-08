@@ -4,6 +4,8 @@ import ca.uwaterloo.flix.runtime.solver.api.Table;
 import ca.uwaterloo.flix.runtime.solver.api.symbol.VarSym;
 import ca.uwaterloo.flix.runtime.solver.api.term.Term;
 
+import java.util.Arrays;
+
 /**
  * Represents an atom predicate of the form: sym(terms).
  */
@@ -73,5 +75,13 @@ public final class AtomPredicate implements Predicate {
     // TODO
     public VarSym getIndex2SymTEMPORARY(int i) {
         return index2sym[i];
+    }
+
+    /**
+     * Returns a human-readable representation of `this` predicate.
+     */
+    @Override
+    public String toString() {
+        return sym.toString() + "(" + Arrays.toString(terms) + ")";
     }
 }

@@ -40,4 +40,5 @@ public final class LitTerm implements Term {
     public String toString() {
         return "<lit>";
     }
+
 }
