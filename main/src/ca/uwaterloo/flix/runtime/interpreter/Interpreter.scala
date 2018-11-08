@@ -263,6 +263,7 @@ object Interpreter {
       val attr = root.relations(sym).attr.map {
         case Attribute(name, _) => new api.Attribute(name)
       }
+      // TODO: Semantics are messed up... should be AnonRelSym
       symbol.RelSym.getInstance(sym.name, attr.toArray)
 
     case Expression.NewLattice(sym, tpe, loc) =>
