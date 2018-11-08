@@ -9,7 +9,5 @@ package ca.uwaterloo.flix.runtime.solver.api
 class RelationVar(name: String, attr: Array[Attribute]) extends Table {
   override def getName(): String = name
 
-  override def copy(): Table = this
-
   def getAttributes(): Array[Attribute] = attr
 }

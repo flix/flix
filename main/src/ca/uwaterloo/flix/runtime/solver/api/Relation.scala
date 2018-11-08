@@ -15,11 +15,6 @@ class Relation(val name: String, attributes: Array[Attribute]) extends Table {
     */
   def getAttributes(): Array[Attribute] = attributes
 
-  /**
-    * Returns a copy of `this` table.
-    */
-  override def copy(): Table = new Relation(name, attributes)
-
   def canEqual(other: Any): Boolean = other.isInstanceOf[Relation]
 
   override def equals(other: Any): Boolean = other match {

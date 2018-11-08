@@ -8,9 +8,4 @@ trait Table {
     * Returns the name of the table.
     */
   def getName(): String
-
-  /**
-    * Returns a copy of `this` table.
-    */
-  def copy(): Table
 }

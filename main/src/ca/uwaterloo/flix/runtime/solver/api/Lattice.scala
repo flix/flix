@@ -24,9 +24,4 @@ class Lattice(name: String, keys: Array[Attribute], value: Attribute, ops: Latti
 
   def getOps(): LatticeOps = ops
 
-  /**
-    * Returns a copy of `this` table.
-    */
-  override def copy(): Table = new Lattice(name, keys, value, ops)
-
 }
