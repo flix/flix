@@ -25,7 +25,7 @@ import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.runtime.{InvocationTarget, Linker}
 import ca.uwaterloo.flix.runtime.solver._
 import ca.uwaterloo.flix.runtime.solver.api.symbol.VarSym
-import ca.uwaterloo.flix.runtime.solver.api.{Attribute => _, Constraint => _, Lattice => _, Relation => _, _}
+import ca.uwaterloo.flix.runtime.solver.api.{Attribute => _, Constraint => _, Lattice => _, _}
 import ca.uwaterloo.flix.util.{InternalRuntimeException, Verbosity}
 import ca.uwaterloo.flix.util.tc.Show._
 import flix.runtime._
@@ -263,7 +263,7 @@ object Interpreter {
       val attr = root.relations(sym).attr.map {
         case Attribute(name, _) => new api.Attribute(name)
       }
-      new api.Relation(sym.name, attr.toArray)
+      symbol.RelSym.getInstance(sym.name, attr.toArray)
 
     case Expression.NewLattice(sym, tpe, loc) =>
       val attr = root.lattices(sym).attr.map {
@@ -1069,8 +1069,8 @@ object Interpreter {
   /**
     * Casts the given reference `ref` to a relation.
     */
-  private def cast2relation(ref: AnyRef): api.Relation = ref match {
-    case r: api.Relation => r
+  private def cast2relation(ref: AnyRef): symbol.RelSym = ref match {
+    case r: symbol.RelSym => r
     case _ => throw InternalRuntimeException(s"Unexpected non-relation value: ${ref.getClass.getName}.")
   }
 

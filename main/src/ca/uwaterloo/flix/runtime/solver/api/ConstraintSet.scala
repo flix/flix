@@ -3,6 +3,7 @@ package ca.uwaterloo.flix.runtime.solver.api
 import java.io.{PrintWriter, StringWriter}
 
 import ca.uwaterloo.flix.runtime.solver.api.predicate._
+import ca.uwaterloo.flix.runtime.solver.api.symbol.RelSym
 import ca.uwaterloo.flix.util.AsciiTable
 
 // TODO: Need to standardize on a functional interface for all functions... Perhaps Function[AnyRef, AnyRef]?
@@ -49,8 +50,8 @@ class ConstraintSet(constraints: Array[Constraint]) {
   /**
     * Returns all relations in the constraint set.
     */
-  def getRelations(): Array[Relation] = getTables() collect {
-    case r: Relation => r
+  def getRelations(): Array[RelSym] = getTables() collect {
+    case r: RelSym => r
   }
 
   /**
@@ -80,7 +81,7 @@ class ConstraintSet(constraints: Array[Constraint]) {
       case (name, relationVars) => {
         val relationVar = relationVars(0) // guaranteed to be non-empty.
         val attr = relationVar.getAttributes()
-        name -> new Relation(name, attr)
+        name -> RelSym.getInstance(name, attr)
       }
     }
 

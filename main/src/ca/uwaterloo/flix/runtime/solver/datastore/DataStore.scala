@@ -18,7 +18,8 @@ package ca.uwaterloo.flix.runtime.solver.datastore
 
 import java.io.{PrintWriter, StringWriter}
 
-import ca.uwaterloo.flix.runtime.solver.api.{ConstraintSet, Relation, Table}
+import ca.uwaterloo.flix.runtime.solver.api.symbol.RelSym
+import ca.uwaterloo.flix.runtime.solver.api.{ConstraintSet, Table}
 import ca.uwaterloo.flix.util.{AsciiTable, BitOps, InternalRuntimeException}
 
 import scala.collection.mutable
@@ -67,7 +68,7 @@ class DataStore[ValueType <: AnyRef](constraintSet: ConstraintSet)(implicit m: C
 
   def getRelations(): Traversable[IndexedRelation] = relations.values
 
-  def getRelation(r: Relation): IndexedRelation = relations(r)
+  def getRelation(r: RelSym): IndexedRelation = relations(r)
 
   def getLattices(): Traversable[IndexedLattice] = lattices.values
 

@@ -25,7 +25,7 @@ import ca.uwaterloo.flix.runtime.debugger.RestServer
 import ca.uwaterloo.flix.runtime.solver.api._
 import ca.uwaterloo.flix.runtime.Monitor
 import ca.uwaterloo.flix.runtime.solver.api.predicate._
-import ca.uwaterloo.flix.runtime.solver.api.symbol.VarSym
+import ca.uwaterloo.flix.runtime.solver.api.symbol.{RelSym, VarSym}
 import ca.uwaterloo.flix.runtime.solver.api.term._
 import ca.uwaterloo.flix.util._
 import flix.runtime.{ReifiedSourceLocation, RuleError, TimeoutError}
@@ -283,7 +283,7 @@ class Solver(constraintSet: ConstraintSet, options: FixpointOptions) {
         for ((sym, fact) <- interp) {
           // update the datastore, but don't compute any dependencies.
           sym match {
-            case r: Relation =>
+            case r: RelSym =>
               dataStore.getRelation(r).inferredFact(fact)
             case l: Lattice =>
               dataStore.getLattice(l).inferredFact(fact)
@@ -402,7 +402,7 @@ class Solver(constraintSet: ConstraintSet, options: FixpointOptions) {
   private def evalAtom(p: AtomPredicate, env: Env): Traversable[Env] = {
     // lookup the relation or lattice.
     val table = p.getSym() match {
-      case r: Relation => dataStore.getRelation(r)
+      case r: RelSym => dataStore.getRelation(r)
       case l: Lattice => dataStore.getLattice(l)
     }
 
@@ -596,7 +596,7 @@ class Solver(constraintSet: ConstraintSet, options: FixpointOptions) {
     * Processes an inferred `fact` for the relation or lattice with the symbol `sym`.
     */
   private def inferredFact(sym: Table, fact: Array[ProxyObject], localWorkList: WorkList): Unit = sym match {
-    case r: Relation =>
+    case r: RelSym =>
       val changed = dataStore.getRelation(r).inferredFact(fact)
       if (changed) {
         dependencies(sym, fact, localWorkList)
@@ -628,7 +628,7 @@ class Solver(constraintSet: ConstraintSet, options: FixpointOptions) {
 
 
     sym match {
-      case r: Relation =>
+      case r: RelSym =>
         for ((rule, p) <- dependenciesOf(sym)) {
           // unify all terms with their values.
           val env = unify(p.index2sym, fact, fact.length, rule.getNumberOfParameters)
