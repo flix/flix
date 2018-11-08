@@ -33,7 +33,7 @@ public final class LitTerm implements Term {
     }
 
     /**
-     * Returns a human-readable representation of `this` literal term.
+     * Returns a human-readable representation of `this` term.
      */
     @Override
     public String toString() {

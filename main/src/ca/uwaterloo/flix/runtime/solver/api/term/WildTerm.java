@@ -6,7 +6,7 @@ package ca.uwaterloo.flix.runtime.solver.api.term;
 public final class WildTerm implements Term {
 
     /**
-     * Returns a human-readable representation of `this` wildcard term.
+     * Returns a human-readable representation of `this` term.
      */
     @Override
     public String toString() {

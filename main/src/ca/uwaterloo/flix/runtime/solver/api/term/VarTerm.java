@@ -29,7 +29,7 @@ public final class VarTerm implements Term {
     }
 
     /**
-     * Returns a human-readable representation of `this` variable term.
+     * Returns a human-readable representation of `this` term.
      */
     @Override
     public String toString() {

@@ -47,7 +47,7 @@ public final class AppTerm implements Term {
     }
 
     /**
-     * Returns a human-readable representation of `this` function application term.
+     * Returns a human-readable representation of `this` term.
      */
     @Override
     public String toString() {
