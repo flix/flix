@@ -24,7 +24,7 @@ import ca.uwaterloo.flix.language.ast.FinalAst._
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.runtime.{InvocationTarget, Linker}
 import ca.uwaterloo.flix.runtime.solver._
-import ca.uwaterloo.flix.runtime.solver.api.symbol.VarSym
+import ca.uwaterloo.flix.runtime.solver.api.symbol.{AnonRelSym, VarSym}
 import ca.uwaterloo.flix.runtime.solver.api.{Attribute => _, Constraint => _, Lattice => _, _}
 import ca.uwaterloo.flix.util.{InternalRuntimeException, Verbosity}
 import ca.uwaterloo.flix.util.tc.Show._
@@ -710,6 +710,7 @@ object Interpreter {
     case FinalAst.Predicate.Head.False(_) => new api.predicate.FalsePredicate()
     case FinalAst.Predicate.Head.RelAtom(baseOpt, sym, terms, _, _) =>
       // Retrieve the relation.
+      // TODO: The semantics here are messed up...
       val relation = baseOpt match {
         case None => getRelation(sym)
         case Some(baseSym) =>
@@ -734,6 +735,7 @@ object Interpreter {
   private def evalBodyPredicate(b0: FinalAst.Predicate.Body, env0: Map[String, AnyRef])(implicit root: FinalAst.Root, cache: SymbolCache, flix: Flix): api.predicate.Predicate = b0 match {
     case FinalAst.Predicate.Body.RelAtom(baseOpt, sym, polarity, terms, index2sym, _, _) =>
       // Retrieve the relation.
+      // TODO: The semantics here are messed up...
       val relation = baseOpt match {
         case None => getRelation(sym)
         case Some(baseSym) =>
@@ -867,11 +869,12 @@ object Interpreter {
     *
     * NB: Allocates a new relation if no such relation exists in the cache.
     */
-  private def getRelation(sym: Symbol.RelSym)(implicit root: FinalAst.Root, flix: Flix): api.RelationVar = root.relations(sym) match {
+  private def getRelation(sym: Symbol.RelSym)(implicit root: FinalAst.Root, flix: Flix): AnonRelSym = root.relations(sym) match {
     case FinalAst.Relation(_, _, attr, _) =>
       val name = sym.toString
       val as = attr.map(a => new api.Attribute(a.name)).toArray
-      new RelationVar(name, as)
+      val parent = symbol.RelSym.getInstance(name, as)
+      new AnonRelSym(parent)
   }
 
   /**

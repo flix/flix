@@ -3,7 +3,7 @@ package ca.uwaterloo.flix.runtime.solver.api
 import java.io.{PrintWriter, StringWriter}
 
 import ca.uwaterloo.flix.runtime.solver.api.predicate._
-import ca.uwaterloo.flix.runtime.solver.api.symbol.RelSym
+import ca.uwaterloo.flix.runtime.solver.api.symbol.{RelSym, AnonRelSym}
 import ca.uwaterloo.flix.util.AsciiTable
 
 // TODO: Need to standardize on a functional interface for all functions... Perhaps Function[AnyRef, AnyRef]?
@@ -108,7 +108,7 @@ class ConstraintSet(constraints: Array[Constraint]) {
     def replacePredicate(p0: Predicate): Predicate = p0 match {
       case p: AtomPredicate =>
         val sym = p.getSym() match {
-          case r: RelationVar => instantiatedRelations(r.getName())
+          case r: AnonRelSym => instantiatedRelations(r.getName())
           case l: LatticeVar => instantiatedLattices(l.getName())
           case _ => p.getSym()
         }
@@ -125,8 +125,8 @@ class ConstraintSet(constraints: Array[Constraint]) {
   /**
     * Returns all relation variables in the constraint set.
     */
-  private def getRelationVars(): Array[RelationVar] = getTables() collect {
-    case r: RelationVar => r
+  private def getRelationVars(): Array[AnonRelSym] = getTables() collect {
+    case r: AnonRelSym => r
   }
 
   /**
