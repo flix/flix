@@ -5,7 +5,7 @@ env:
     - ANT_OPTS="-Xss8m -Xmx1536m"
 
 jdk:
-   - oraclejdk10
+   - oraclejdk11
 
 os:
     - linux
