@@ -2,6 +2,7 @@ package ca.uwaterloo.flix.runtime.solver.api.predicate;
 
 import ca.uwaterloo.flix.runtime.solver.api.ProxyObject;
 import ca.uwaterloo.flix.runtime.solver.api.symbol.VarSym;
+import flix.runtime.ReifiedSourceLocation;
 
 import java.util.function.Function;
 
@@ -26,9 +27,14 @@ public final class FunctionalPredicate implements Predicate {
     private final VarSym[] arguments;
 
     /**
+     * The reified source location.
+     */
+    private final ReifiedSourceLocation location; // TODO: Do we want these?
+
+    /**
      * Constructs a functional predicate for the given symbol, function, and function arguments.
      */
-    public FunctionalPredicate(VarSym sym, Function<Object[], ProxyObject[]> function, VarSym[] arguments) {
+    public FunctionalPredicate(VarSym sym, Function<Object[], ProxyObject[]> function, VarSym[] arguments, ReifiedSourceLocation location) {
         if (sym == null)
             throw new IllegalArgumentException("'sym' must be non-null.");
         if (function == null)
@@ -40,6 +46,7 @@ public final class FunctionalPredicate implements Predicate {
         this.sym = sym;
         this.function = function;
         this.arguments = arguments;
+        this.location = location;
     }
 
     /**

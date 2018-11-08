@@ -784,7 +784,7 @@ object Interpreter {
         override def apply(as: Array[AnyRef]): Array[ProxyObject] = Linker.link(defSym, root).invoke(as).getValue.asInstanceOf[Array[ProxyObject]]
       }
 
-      new api.predicate.FunctionalPredicate(s, f, terms.map(t => cache.getVarSym(t)).toArray)
+      new api.predicate.FunctionalPredicate(s, f, terms.map(t => cache.getVarSym(t)).toArray, loc.reified)
   }
 
   /**
