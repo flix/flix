@@ -40,7 +40,7 @@ import scala.collection.mutable.ArrayBuffer
   *
   * The solver computes the least fixed point of the rules in the given program.
   */
-class Solver(val constraintSet: ConstraintSet, options: FixpointOptions) {
+class Solver(constraintSet: ConstraintSet, options: FixpointOptions) {
 
   /**
     * Controls the number of batches per thread. A value of one means one batch per thread.
@@ -284,9 +284,9 @@ class Solver(val constraintSet: ConstraintSet, options: FixpointOptions) {
           // update the datastore, but don't compute any dependencies.
           sym match {
             case r: Relation =>
-              r.getIndexedRelation().inferredFact(fact)
+              dataStore.getRelation(r).inferredFact(fact)
             case l: Lattice =>
-              l.getIndexedLattice().inferredFact(fact)
+              dataStore.getLattice(l).inferredFact(fact)
           }
         }
       }
@@ -402,8 +402,8 @@ class Solver(val constraintSet: ConstraintSet, options: FixpointOptions) {
   private def evalAtom(p: AtomPredicate, env: Env): Traversable[Env] = {
     // lookup the relation or lattice.
     val table = p.getSym() match {
-      case r: Relation => r.getIndexedRelation()
-      case l: Lattice => l.getIndexedLattice()
+      case r: Relation => dataStore.getRelation(r)
+      case l: Lattice => dataStore.getLattice(l)
     }
 
     // evaluate all terms in the predicate.
@@ -597,13 +597,13 @@ class Solver(val constraintSet: ConstraintSet, options: FixpointOptions) {
     */
   private def inferredFact(sym: Table, fact: Array[ProxyObject], localWorkList: WorkList): Unit = sym match {
     case r: Relation =>
-      val changed = r.getIndexedRelation().inferredFact(fact)
+      val changed = dataStore.getRelation(r).inferredFact(fact)
       if (changed) {
         dependencies(sym, fact, localWorkList)
       }
 
     case l: Lattice =>
-      val changed = l.getIndexedLattice().inferredFact(fact)
+      val changed = dataStore.getLattice(l).inferredFact(fact)
       if (changed) {
         dependencies(sym, fact, localWorkList)
       }

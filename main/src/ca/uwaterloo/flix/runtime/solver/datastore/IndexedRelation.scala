@@ -31,7 +31,8 @@ import scala.collection.mutable.ArrayBuffer
   * @param indexes the indexes.
   * @param default the default index.
   */
-final class IndexedRelation(val attributes: Array[Attribute], indexes: Set[Int], default: Int) extends IndexedCollection {
+final class IndexedRelation(val name: String, val attributes: Array[Attribute], indexes: Set[Int], default: Int) extends IndexedCollection {
+  // TODO: Getter for name?
 
   /**
     * A map from indexes to keys to rows of values.

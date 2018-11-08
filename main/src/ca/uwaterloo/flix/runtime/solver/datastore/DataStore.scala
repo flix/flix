@@ -16,7 +16,10 @@
 
 package ca.uwaterloo.flix.runtime.solver.datastore
 
-import ca.uwaterloo.flix.runtime.solver.api.{ConstraintSet, Table}
+import java.io.{PrintWriter, StringWriter}
+
+import ca.uwaterloo.flix.runtime.solver.api.{ConstraintSet, Relation, Table}
+import ca.uwaterloo.flix.util.{AsciiTable, BitOps, InternalRuntimeException}
 
 import scala.collection.mutable
 import scala.reflect.ClassTag
@@ -29,20 +32,46 @@ class DataStore[ValueType <: AnyRef](constraintSet: ConstraintSet)(implicit m: C
   /**
     * A map from names to indexed relations.
     */
-  private val relations = mutable.Map.empty[Table, IndexedRelation]
+  val relations = mutable.Map.empty[Table, IndexedRelation]
 
   /**
     * A map from names to indexed lattices.
     */
-  private val lattices = mutable.Map.empty[Table, IndexedLattice]
+  val lattices = mutable.Map.empty[Table, IndexedLattice]
 
-  for (sym <- constraintSet.getRelations()) {
-    relations += (sym -> sym.getIndexedRelation())
+  for (relation <- constraintSet.getRelations()) {
+    val name = relation.getName()
+    val attributes = relation.getAttributes()
+
+    // NB: Just an index on the first attribute.
+    val idx = Set(Seq(0))
+    val indexes = idx map {
+      case columns => BitOps.setBits(vec = 0, bits = columns)
+    }
+    relations += relation -> new IndexedRelation(name, attributes, indexes, indexes.head)
   }
 
-  for (sym <- constraintSet.getLattices()) {
-    lattices += (sym -> sym.getIndexedLattice())
+  for (lattice <- constraintSet.getLattices()) {
+    val name = lattice.getName()
+    val keys = lattice.getKeys()
+    val value = lattice.getValue()
+    val ops = lattice.getOps()
+
+    // NB: Just an index on the first attribute and on all the keys.
+    val idx = Set(Seq(0), keys.indices)
+    val indexes = idx map {
+      case columns => BitOps.setBits(vec = 0, bits = columns)
+    }
+    lattices += (lattice -> new IndexedLattice(name, keys, value, indexes, ops))
   }
+
+  def getRelations(): Traversable[IndexedRelation] = relations.values
+
+  def getRelation(r: Relation): IndexedRelation = relations(r)
+
+  def getLattices(): Traversable[IndexedLattice] = lattices.values
+
+  def getLattice(l: ca.uwaterloo.flix.runtime.solver.api.Lattice): IndexedLattice = lattices(l)
 
   /**
     * Returns the total number of facts in the datastore.
@@ -78,5 +107,55 @@ class DataStore[ValueType <: AnyRef](constraintSet: ConstraintSet)(implicit m: C
       relation.getNumberOfIndexedScans,
       relation.getNumberOfFullScans)
   }.toSeq.sortBy(_._3).reverse.toList
+
+
+  //  /**
+  //    * Returns a human readable string representation of the relation.
+  //    */
+  //  private def asString(r: Relation): String = {
+  //    val sb = new StringBuilder
+  //
+  //    // Construct an ASCII table with a column for each attribute.
+  //    val columns = attributes.map(_.getName())
+  //    val table = new AsciiTable().withTitle(name).withCols(columns: _*)
+  //
+  //    // Add each row to the ASCII table.
+  //    for (row <- indexedRelation.scan) {
+  //      table.mkRow(row.toList)
+  //    }
+  //
+  //    // Write the ASCII table to the string buffer.
+  //    val sw = new StringWriter()
+  //    table.write(new PrintWriter(sw))
+  //    sb.append(sw.toString)
+  //
+  //    sb.toString()
+  //  }
+  //
+  //  /**
+  //    * Returns a human readable string representation of the lattice.
+  //    */
+  //  override def toString: String = {
+  //    val sb = new StringBuilder
+  //
+  //    // Construct an ASCII table with a column for each attribute.
+  //    val attributes = keys.toList ::: value :: Nil
+  //    val columns = attributes.map(_.getName())
+  //    val table = new AsciiTable().withTitle(name).withCols(columns: _*)
+  //
+  //    // Add each row to the ASCII table.
+  //    for ((key, value) <- indexedLattice.scan) {
+  //      val row = key.toArray.toList ::: value :: Nil
+  //      table.mkRow(row)
+  //    }
+  //
+  //    // Write the ASCII table to the string buffer.
+  //    val sw = new StringWriter()
+  //    table.write(new PrintWriter(sw))
+  //    sb.append(sw.toString)
+  //
+  //    sb.toString()
+  //  }
+
 
 }
