@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.runtime.solver.api.predicate;
 
-import ca.uwaterloo.flix.runtime.solver.api.symbol.Table;
+import ca.uwaterloo.flix.runtime.solver.api.symbol.PredSym;
 import ca.uwaterloo.flix.runtime.solver.api.symbol.VarSym;
 import ca.uwaterloo.flix.runtime.solver.api.term.Term;
 
@@ -14,7 +14,7 @@ public final class AtomPredicate implements Predicate {
     /**
      * The predicate symbol.
      */
-    private final Table sym;
+    private final PredSym sym;
 
     /**
      * Whether the atom is negated.
@@ -32,7 +32,7 @@ public final class AtomPredicate implements Predicate {
     /**
      * Constructs an atom predicate for the given predicate symbol, with the given polarity, and terms.
      */
-    public AtomPredicate(Table sym, Boolean positive, Term[] terms, VarSym[] index2sym) {
+    public AtomPredicate(PredSym sym, Boolean positive, Term[] terms, VarSym[] index2sym) {
         if (sym == null)
             throw new IllegalArgumentException("'sym' must be non-null.");
         if (terms == null)
@@ -47,7 +47,7 @@ public final class AtomPredicate implements Predicate {
     /**
      * Returns the symbol of `this` atom.
      */
-    public Table getSym() {
+    public PredSym getSym() {
         return sym;
     }
 

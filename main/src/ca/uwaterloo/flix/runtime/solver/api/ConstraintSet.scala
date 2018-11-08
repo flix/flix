@@ -3,7 +3,7 @@ package ca.uwaterloo.flix.runtime.solver.api
 import java.io.{PrintWriter, StringWriter}
 
 import ca.uwaterloo.flix.runtime.solver.api.predicate._
-import ca.uwaterloo.flix.runtime.solver.api.symbol.{AnonRelSym, LatSym, RelSym, Table}
+import ca.uwaterloo.flix.runtime.solver.api.symbol.{AnonRelSym, LatSym, RelSym, PredSym}
 import ca.uwaterloo.flix.util.AsciiTable
 
 // TODO: Need to standardize on a functional interface for all functions... Perhaps Function[AnyRef, AnyRef]?
@@ -139,7 +139,7 @@ class ConstraintSet(constraints: Array[Constraint]) {
   /**
     * Returns all tables in the constraint set.
     */
-  private def getTables(): Array[Table] =
+  private def getTables(): Array[PredSym] =
     getAtomPredicates().map(_.getSym()).distinct
 
   /**

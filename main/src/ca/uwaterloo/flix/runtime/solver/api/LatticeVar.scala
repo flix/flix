@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.runtime.solver.api
 
-import ca.uwaterloo.flix.runtime.solver.api.symbol.Table
+import ca.uwaterloo.flix.runtime.solver.api.symbol.PredSym
 
 /**
   * Represents an uninitialized lattice.
@@ -10,7 +10,7 @@ import ca.uwaterloo.flix.runtime.solver.api.symbol.Table
   * @param value the value of the lattice.
   * @param ops   the lattice operations.
   */
-class LatticeVar(name: String, keys: Array[Attribute], value: Attribute, ops: LatticeOps) extends Table {
+class LatticeVar(name: String, keys: Array[Attribute], value: Attribute, ops: LatticeOps) extends PredSym {
   override def getName(): String = name
 
   def getKeys(): Array[Attribute] = keys

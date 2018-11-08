@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.runtime.solver.datastore
 
 import java.io.{PrintWriter, StringWriter}
 
-import ca.uwaterloo.flix.runtime.solver.api.symbol.{LatSym, RelSym, Table}
+import ca.uwaterloo.flix.runtime.solver.api.symbol.{LatSym, RelSym, PredSym}
 import ca.uwaterloo.flix.runtime.solver.api.ConstraintSet
 import ca.uwaterloo.flix.util.{AsciiTable, BitOps, InternalRuntimeException}
 
@@ -33,12 +33,12 @@ class DataStore[ValueType <: AnyRef](constraintSet: ConstraintSet)(implicit m: C
   /**
     * A map from names to indexed relations.
     */
-  val relations = mutable.Map.empty[Table, IndexedRelation]
+  val relations = mutable.Map.empty[PredSym, IndexedRelation]
 
   /**
     * A map from names to indexed lattices.
     */
-  val lattices = mutable.Map.empty[Table, IndexedLattice]
+  val lattices = mutable.Map.empty[PredSym, IndexedLattice]
 
   for (relation <- constraintSet.getRelations()) {
     val name = relation.getName()

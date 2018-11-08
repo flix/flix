@@ -2,12 +2,11 @@ package ca.uwaterloo.flix.runtime.solver.api.symbol;
 
 import ca.uwaterloo.flix.runtime.solver.api.LatticeOps;
 import ca.uwaterloo.flix.runtime.solver.api.Attribute;
-import ca.uwaterloo.flix.runtime.solver.api.symbol.Table;
 
 /**
  * Represents a lattice value.
  */
-public final class LatSym implements Table {
+public final class LatSym implements PredSym {
 
     /**
      * The unique name of the lattice symbol.

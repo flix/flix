@@ -25,7 +25,7 @@ import ca.uwaterloo.flix.runtime.debugger.RestServer
 import ca.uwaterloo.flix.runtime.solver.api._
 import ca.uwaterloo.flix.runtime.Monitor
 import ca.uwaterloo.flix.runtime.solver.api.predicate._
-import ca.uwaterloo.flix.runtime.solver.api.symbol.{LatSym, RelSym, Table, VarSym}
+import ca.uwaterloo.flix.runtime.solver.api.symbol.{LatSym, RelSym, PredSym, VarSym}
 import ca.uwaterloo.flix.runtime.solver.api.term._
 import ca.uwaterloo.flix.util._
 import flix.runtime.{ReifiedSourceLocation, RuleError, TimeoutError}
@@ -76,12 +76,12 @@ class Solver(constraintSet: ConstraintSet, options: FixpointOptions) {
     *
     * An interpretation is collection of facts (a table symbol associated with an array of facts).
     */
-  type Interpretation = mutable.ArrayBuffer[(Table, Array[ProxyObject])]
+  type Interpretation = mutable.ArrayBuffer[(PredSym, Array[ProxyObject])]
 
   /**
     * The type of the dependency graph, a map from symbols to (constraint, atom) pairs.
     */
-  type DependencyGraph = mutable.Map[Table, Set[(Constraint, AtomPredicate)]]
+  type DependencyGraph = mutable.Map[PredSym, Set[(Constraint, AtomPredicate)]]
 
   //
   // State of the solver:
@@ -584,7 +584,7 @@ class Solver(constraintSet: ConstraintSet, options: FixpointOptions) {
   /**
     * Returns a callable to process a collection of inferred `facts` for the relation or lattice with the symbol `sym`.
     */
-  private def inferredFacts(sym: Table, facts: ArrayBuffer[Array[ProxyObject]]): Callable[WorkList] = () => {
+  private def inferredFacts(sym: PredSym, facts: ArrayBuffer[Array[ProxyObject]]): Callable[WorkList] = () => {
     val localWorkList = mkWorkList()
     for (fact <- facts) {
       inferredFact(sym, fact, localWorkList)
@@ -595,7 +595,7 @@ class Solver(constraintSet: ConstraintSet, options: FixpointOptions) {
   /**
     * Processes an inferred `fact` for the relation or lattice with the symbol `sym`.
     */
-  private def inferredFact(sym: Table, fact: Array[ProxyObject], localWorkList: WorkList): Unit = sym match {
+  private def inferredFact(sym: PredSym, fact: Array[ProxyObject], localWorkList: WorkList): Unit = sym match {
     case r: RelSym =>
       val changed = dataStore.getRelation(r).inferredFact(fact)
       if (changed) {
@@ -612,7 +612,7 @@ class Solver(constraintSet: ConstraintSet, options: FixpointOptions) {
   /**
     * Returns all dependencies of the given symbol `sym` along with an environment.
     */
-  private def dependencies(sym: Table, fact: Array[ProxyObject], localWorkList: WorkList): Unit = {
+  private def dependencies(sym: PredSym, fact: Array[ProxyObject], localWorkList: WorkList): Unit = {
 
     def unify(pat: Array[VarSym], fact: Array[ProxyObject], limit: Int, len: Int): Env = {
       val env: Env = new Array[ProxyObject](len)
@@ -729,8 +729,8 @@ class Solver(constraintSet: ConstraintSet, options: FixpointOptions) {
   /**
     * Sorts the given facts by their table symbol.
     */
-  private def groupFactsBySymbol(iter: Iterator[Interpretation]): mutable.Map[Table, ArrayBuffer[Array[ProxyObject]]] = {
-    val result = mutable.Map.empty[Table, ArrayBuffer[Array[ProxyObject]]]
+  private def groupFactsBySymbol(iter: Iterator[Interpretation]): mutable.Map[PredSym, ArrayBuffer[Array[ProxyObject]]] = {
+    val result = mutable.Map.empty[PredSym, ArrayBuffer[Array[ProxyObject]]]
     while (iter.hasNext) {
       val interp = iter.next()
       for ((symbol, fact) <- interp) {
@@ -785,7 +785,7 @@ class Solver(constraintSet: ConstraintSet, options: FixpointOptions) {
   /**
     * Returns a fresh (empty) interpretation.
     */
-  private def mkInterpretation(): Interpretation = new mutable.ArrayBuffer[(Table, Array[ProxyObject])]()
+  private def mkInterpretation(): Interpretation = new mutable.ArrayBuffer[(PredSym, Array[ProxyObject])]()
 
   /**
     * Checks if the solver is paused, and if so, waits for an interrupt.

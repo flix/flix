@@ -1,14 +1,13 @@
 package ca.uwaterloo.flix.runtime.solver.api.symbol;
 
 import ca.uwaterloo.flix.runtime.solver.api.Attribute;
-import ca.uwaterloo.flix.runtime.solver.api.symbol.Table;
 
 /**
  * Represents a fresh instance of a relation symbol.
  * <p>
  * Note: Equality is defined by identity since anon relation symbols differ based on their instance.
  */
-public final class AnonRelSym implements Table {
+public final class AnonRelSym implements PredSym {
 
     /**
      * The parent relation symbol.

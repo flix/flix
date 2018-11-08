@@ -1,7 +1,6 @@
 package ca.uwaterloo.flix.runtime.solver.api.symbol;
 
 import ca.uwaterloo.flix.runtime.solver.api.Attribute;
-import ca.uwaterloo.flix.runtime.solver.api.symbol.Table;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -11,7 +10,7 @@ import java.util.Map;
  * <p>
  * Note: Equality is defined by identity due to the internal cache.
  */
-public final class RelSym implements Table {
+public final class RelSym implements PredSym {
 
     /**
      * An internal cache of relation symbols.
