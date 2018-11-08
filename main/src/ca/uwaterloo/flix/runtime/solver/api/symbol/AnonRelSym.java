@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.runtime.solver.api.symbol;
 
 import ca.uwaterloo.flix.runtime.solver.api.Attribute;
-import ca.uwaterloo.flix.runtime.solver.api.Table;
+import ca.uwaterloo.flix.runtime.solver.api.symbol.Table;
 
 /**
  * Represents a fresh instance of a relation symbol.

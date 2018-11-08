@@ -1,5 +1,7 @@
 package ca.uwaterloo.flix.runtime.solver.api
 
+import ca.uwaterloo.flix.runtime.solver.api.symbol.Table
+
 /**
   * Represents an uninitialized lattice.
   *

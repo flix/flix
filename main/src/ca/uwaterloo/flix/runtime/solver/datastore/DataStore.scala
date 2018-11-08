@@ -18,8 +18,8 @@ package ca.uwaterloo.flix.runtime.solver.datastore
 
 import java.io.{PrintWriter, StringWriter}
 
-import ca.uwaterloo.flix.runtime.solver.api.symbol.{LatSym, RelSym}
-import ca.uwaterloo.flix.runtime.solver.api.{ConstraintSet, Table}
+import ca.uwaterloo.flix.runtime.solver.api.symbol.{LatSym, RelSym, Table}
+import ca.uwaterloo.flix.runtime.solver.api.ConstraintSet
 import ca.uwaterloo.flix.util.{AsciiTable, BitOps, InternalRuntimeException}
 
 import scala.collection.mutable

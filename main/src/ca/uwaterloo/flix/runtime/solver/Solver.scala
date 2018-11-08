@@ -25,7 +25,7 @@ import ca.uwaterloo.flix.runtime.debugger.RestServer
 import ca.uwaterloo.flix.runtime.solver.api._
 import ca.uwaterloo.flix.runtime.Monitor
 import ca.uwaterloo.flix.runtime.solver.api.predicate._
-import ca.uwaterloo.flix.runtime.solver.api.symbol.{LatSym, RelSym, VarSym}
+import ca.uwaterloo.flix.runtime.solver.api.symbol.{LatSym, RelSym, Table, VarSym}
 import ca.uwaterloo.flix.runtime.solver.api.term._
 import ca.uwaterloo.flix.util._
 import flix.runtime.{ReifiedSourceLocation, RuleError, TimeoutError}

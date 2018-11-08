@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.runtime.solver.api.predicate;
 
-import ca.uwaterloo.flix.runtime.solver.api.Table;
+import ca.uwaterloo.flix.runtime.solver.api.symbol.Table;
 import ca.uwaterloo.flix.runtime.solver.api.symbol.VarSym;
 import ca.uwaterloo.flix.runtime.solver.api.term.Term;
 
