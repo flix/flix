@@ -476,7 +476,7 @@ class Solver(constraintSet: ConstraintSet, options: FixpointOptions) {
       }
 
       // apply the function to obtain the array of values.
-      val values: Array[ProxyObject] = r.getFunction()(args)
+      val values: Array[ProxyObject] = r.getFunction().apply(args)
 
       // iterate through each value.
       for (value <- values) {

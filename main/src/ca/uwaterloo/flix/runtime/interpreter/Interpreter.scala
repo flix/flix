@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.runtime.interpreter
 
 import java.lang.reflect.{InvocationTargetException, Modifier}
+import java.util.function
 
 import ca.uwaterloo.flix.api._
 import ca.uwaterloo.flix.language.ast.FinalAst._
@@ -777,7 +778,10 @@ object Interpreter {
 
     case FinalAst.Predicate.Body.Functional(varSym, defSym, terms, loc) =>
       val s = cache.getVarSym(varSym)
-      val f = (as: Array[AnyRef]) => Linker.link(defSym, root).invoke(as).getValue.asInstanceOf[Array[ProxyObject]]
+      val f = new function.Function[Array[AnyRef], Array[ProxyObject]] {
+        override def apply(as: Array[AnyRef]): Array[ProxyObject] = Linker.link(defSym, root).invoke(as).getValue.asInstanceOf[Array[ProxyObject]]
+      }
+
       new api.predicate.FunctionalPredicate(s, f, terms.map(t => cache.getVarSym(t)).toArray)
   }
 
