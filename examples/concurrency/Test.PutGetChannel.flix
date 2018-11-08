@@ -53,7 +53,7 @@
 //    ! <- c
 
 def test8(cccc: Channel[Int]): Bool =
-    cccc <- 1 <- true;
+    cccc <- 1 <- 2;
     <- cccc == 1
 
 /*
