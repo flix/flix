@@ -672,6 +672,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       Postfix ~ zeroOrMore(optWS ~ "." ~ Names.Field ~ SP ~> ParsedAst.Expression.RecordSelect)
     }
 
+    //TODO SJ: order this
     def NewChannel: Rule1[ParsedAst.Expression.NewChannel] = rule {
       SP ~ atomic("newch") ~ WS ~ Type ~ SP ~> ParsedAst.Expression.NewChannel
     }
