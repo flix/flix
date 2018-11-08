@@ -13,7 +13,7 @@ public final class VarTerm implements Term {
     private VarSym sym;
 
     /**
-     * Constructs a new variable term from the given variable symbol `sym`.
+     * Constructs a variable term from the given variable symbol `sym`.
      */
     public VarTerm(VarSym sym) {
         if (sym == null)
@@ -35,4 +35,5 @@ public final class VarTerm implements Term {
     public String toString() {
         return sym.toString();
     }
+
 }

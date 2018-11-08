@@ -815,7 +815,9 @@ object Interpreter {
     //
     case FinalAst.Term.Head.App(sym, args, _, _) =>
       // Construct a function that when invoked applies the underlying function.
-      val f = (args: Array[AnyRef]) => Linker.link(sym, root).invoke(args)
+      val f = new java.util.function.Function[Array[AnyRef], ProxyObject] {
+        override def apply(args: Array[AnyRef]): ProxyObject = Linker.link(sym, root).invoke(args)
+      }
       val as = args.map(cache.getVarSym)
       new api.term.AppTerm(f, as.toArray)
   }
