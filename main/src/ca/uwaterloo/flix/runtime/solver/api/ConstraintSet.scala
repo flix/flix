@@ -38,7 +38,7 @@ class ConstraintSet(constraints: Array[Constraint]) {
   // TODO: In the future it would be better if constraint sets where immutable.
   def getFacts(): ConstraintSet = {
     val facts = constraints collect {
-      case constraint if constraint.isFact() => constraint.copy()
+      case constraint if constraint.isFact() => constraint
     }
     new ConstraintSet(facts)
   }

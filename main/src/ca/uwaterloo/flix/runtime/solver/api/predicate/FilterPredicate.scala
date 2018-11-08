@@ -19,11 +19,6 @@ class FilterPredicate(f: Array[AnyRef] => Boolean, args: Array[Term]) extends Pr
   }
 
   /**
-    * Returns a copy of this predicate.
-    */
-  override def copy(): Predicate = new FilterPredicate(f, args)
-
-  /**
     * Returns the function.
     */
   def getFunction(): Array[AnyRef] => Boolean = f

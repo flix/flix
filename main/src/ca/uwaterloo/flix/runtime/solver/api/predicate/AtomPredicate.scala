@@ -10,11 +10,6 @@ import ca.uwaterloo.flix.runtime.solver.api.symbol.VarSym
 class AtomPredicate(val sym: Table, positive: Boolean, terms: Array[Term], index2sym: Array[VarSym]) extends Predicate {
 
   /**
-    * Returns a copy of this predicate.
-    */
-  override def copy(): Predicate = new AtomPredicate(sym.copy(), positive, terms, index2sym)
-
-  /**
     * Returns the table symbol of the atom.
     */
   def getSym(): Table = sym

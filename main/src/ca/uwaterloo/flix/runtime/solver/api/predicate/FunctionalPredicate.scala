@@ -9,11 +9,6 @@ import ca.uwaterloo.flix.runtime.solver.api.symbol.VarSym
 class FunctionalPredicate(sym: VarSym, f: Array[AnyRef] => Array[ProxyObject], args: Array[VarSym]) extends Predicate {
 
   /**
-    * Returns a copy of this predicate.
-    */
-  override def copy(): Predicate = new FunctionalPredicate(sym, f, args)
-
-  /**
     * Returns the variable sym.
     */
   def getVarSym(): VarSym = sym
