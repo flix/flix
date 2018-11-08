@@ -1688,8 +1688,9 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         /*
          * New Channel expression.
          */
+          //TODO SJ: Use substitution?
         case ResolvedAst.Expression.NewChannel(tpe, loc) =>
-          TypedAst.Expression.NewChannel(subst0(tpe), Eff.Bot, loc)
+          TypedAst.Expression.NewChannel(Type.mkChannel(tpe), Eff.Bot, loc)
 
         /*
          * Get Channel expression.
