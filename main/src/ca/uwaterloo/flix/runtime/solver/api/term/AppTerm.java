@@ -8,7 +8,7 @@ import java.util.function.Function;
 /**
  * Represents a function application term.
  */
-public class AppTerm implements Term {
+public final class AppTerm implements Term {
 
     /**
      * The function.
@@ -44,6 +44,14 @@ public class AppTerm implements Term {
      */
     public VarSym[] getArguments() {
         return arguments;
+    }
+
+    /**
+     * Returns a human-readable representation of `this` function application term.
+     */
+    @Override
+    public String toString() {
+        return "f(<>)";
     }
 
 }
