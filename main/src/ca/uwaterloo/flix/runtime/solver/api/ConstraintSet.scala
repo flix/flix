@@ -89,7 +89,7 @@ class ConstraintSet(constraints: Array[Constraint]) {
     val instantiatedLattices = latticeVarsByName map {
       case (name, latticeVars) => {
         val latticeVar = latticeVars(0)
-        name -> new LatSym(name, latticeVar.getKeys(), latticeVar.getValue(), latticeVar.getOps())
+        name -> LatSym.getInstance(name, latticeVar.getKeys(), latticeVar.getValue(), latticeVar.getOps())
       }
     }
 

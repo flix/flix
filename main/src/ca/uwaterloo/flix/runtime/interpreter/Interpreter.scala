@@ -270,7 +270,7 @@ object Interpreter {
       val attr = root.lattices(sym).attr.map {
         case Attribute(name, _) => new api.Attribute(name)
       }
-      new symbol.LatSym(sym.name, attr.init.toArray, attr.last, /* TODO*/ null)
+      symbol.LatSym.getInstance(sym.name, attr.init.toArray, attr.last, /* TODO */ null)
 
     case Expression.Constraint(c, tpe, loc) =>
       evalConstraint(c, env0, henv0, lenv0, root)

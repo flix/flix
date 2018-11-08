@@ -3,10 +3,33 @@ package ca.uwaterloo.flix.runtime.solver.api.symbol;
 import ca.uwaterloo.flix.runtime.solver.api.LatticeOps;
 import ca.uwaterloo.flix.runtime.solver.api.Attribute;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * Represents a lattice value.
  */
 public final class LatSym implements PredSym {
+
+    /**
+     * An internal cache of lattice symbols.
+     * <p>
+     * Note: We never have to garbage collect these since there is only a small finite number of global lattice symbols.
+     */
+    private static final Map<String, LatSym> INTERNAL_CACHE = new HashMap<>();
+
+    /**
+     * Returns the relation symbol with the given unique name.
+     */
+    public static LatSym getInstance(String uniqueName, Attribute[] keys, Attribute value, LatticeOps ops) {
+        var lookup = INTERNAL_CACHE.get(uniqueName);
+        if (lookup != null) {
+            return lookup;
+        }
+        var sym = new LatSym(uniqueName, keys, value, ops);
+        INTERNAL_CACHE.put(uniqueName, sym);
+        return sym;
+    }
 
     /**
      * The unique name of the lattice symbol.
@@ -31,7 +54,7 @@ public final class LatSym implements PredSym {
     /**
      * Returns the lattice symbol with the given unique name.
      */
-    public LatSym(String uniqueName, Attribute[] keys, Attribute value, LatticeOps ops) {
+    private LatSym(String uniqueName, Attribute[] keys, Attribute value, LatticeOps ops) {
         if (uniqueName == null)
             throw new IllegalArgumentException("'uniqueName' must be non-null.");
         if (keys == null)

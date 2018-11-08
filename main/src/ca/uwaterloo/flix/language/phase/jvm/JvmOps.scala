@@ -822,7 +822,7 @@ object JvmOps {
 
       case Expression.NewLattice(sym, tpe, loc) => Set.empty
 
-      case Expression.Constraint(con, tpe, loc) => ??? // TODO: Constraint
+      case Expression.Constraint(con, tpe, loc) => Set.empty
 
       case Expression.ConstraintUnion(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2)
 

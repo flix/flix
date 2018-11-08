@@ -678,13 +678,13 @@ object GenExpression {
       // We get the inner type of the array
       val jvmType = JvmOps.getErasedJvmType(ca.uwaterloo.flix.language.ast.Type.getArrayInnerType(tpe))
       // Instantiating a new array of type jvmType
-      if(jvmType == JvmType.Object){ // Happens if the inner type is an object type
+      if (jvmType == JvmType.Object) { // Happens if the inner type is an object type
         visitor.visitTypeInsn(ANEWARRAY, "java/lang/Object")
-      } else{ // Happens if the inner type is a primitive type
+      } else { // Happens if the inner type is a primitive type
         visitor.visitIntInsn(NEWARRAY, AsmOps.getArrayTypeCode(jvmType))
       }
       // For each element we generate code to store it into the array
-      for(i <- 0 until elms.length){
+      for (i <- 0 until elms.length) {
         // Duplicates the 'array reference'
         visitor.visitInsn(DUP)
         // We push the 'index' of the current element on top of stack
@@ -706,12 +706,12 @@ object GenExpression {
       // Evaluating the 'length' of the array
       compileExpression(len, visitor, currentClass, lenv0, entryPoint)
       // Instantiating a new array of type jvmType
-      if(jvmType == JvmType.Object){ // Happens if the inner type is an object type
+      if (jvmType == JvmType.Object) { // Happens if the inner type is an object type
         visitor.visitTypeInsn(ANEWARRAY, "java/lang/Object")
-      } else{ // Happens if the inner type is a primitive type
+      } else { // Happens if the inner type is a primitive type
         visitor.visitIntInsn(NEWARRAY, AsmOps.getArrayTypeCode(jvmType))
       }
-      if(jvmType == JvmType.PrimLong || jvmType == JvmType.PrimDouble){ // Happens if the inner type is Int64 or Float64
+      if (jvmType == JvmType.PrimLong || jvmType == JvmType.PrimDouble) { // Happens if the inner type is Int64 or Float64
         // Duplicates the 'array reference' three places down the stack
         visitor.visitInsn(DUP_X2)
         // Duplicates the 'array reference' three places down the stack
@@ -762,7 +762,7 @@ object GenExpression {
       visitor.visitInsn(AsmOps.getArrayStoreInstruction(jvmType))
       // Since the return type is 'unit', we put an instance of 'unit' on top of the stack
       visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Value.Unit.toInternalName, "getInstance",
-                              AsmOps.getMethodDescriptor(Nil, JvmType.Unit), false)
+        AsmOps.getMethodDescriptor(Nil, JvmType.Unit), false)
 
     case Expression.ArrayLength(base, tpe, loc) =>
       // Adding source line number for debugging
@@ -796,9 +796,9 @@ object GenExpression {
       // Duplicates the 'length'
       visitor.visitInsn(DUP)
       // Instantiating a new array of type jvmType
-      if(jvmType == JvmType.Object){ // Happens if the inner type is an object type
+      if (jvmType == JvmType.Object) { // Happens if the inner type is an object type
         visitor.visitTypeInsn(ANEWARRAY, "java/lang/Object")
-      } else{ // Happens if the inner type is a primitive type
+      } else { // Happens if the inner type is a primitive type
         visitor.visitIntInsn(NEWARRAY, AsmOps.getArrayTypeCode(jvmType))
       }
       // Duplicates the 'array reference' and 'length' 4 places down the stack
@@ -962,6 +962,10 @@ object GenExpression {
         visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Value.Unit.toInternalName, "getInstance",
           AsmOps.getMethodDescriptor(List(), JvmType.Unit), false)
       }
+
+    case Expression.NewRelation(sym, tpe, loc) => ??? // TODO: NewRelation
+
+    case Expression.NewLattice(sym, tpe, loc) => ??? // TODO: NewLattice
 
     case Expression.UserError(_, loc) =>
       addSourceLine(visitor, loc)
