@@ -10,7 +10,7 @@ public final class VarTerm implements Term {
     /**
      * The variable symbol.
      */
-    private VarSym sym;
+    private final VarSym sym;
 
     /**
      * Constructs a variable term from the given variable symbol `sym`.
@@ -18,6 +18,7 @@ public final class VarTerm implements Term {
     public VarTerm(VarSym sym) {
         if (sym == null)
             throw new IllegalArgumentException("'sym' must be non-null.");
+
         this.sym = sym;
     }
 

@@ -13,12 +13,12 @@ public final class AppTerm implements Term {
     /**
      * The function.
      */
-    private Function<Object[], ProxyObject> function;
+    private final Function<Object[], ProxyObject> function;
 
     /**
      * The function arguments.
      */
-    private VarSym[] arguments;
+    private final VarSym[] arguments;
 
     /**
      * Constructs a function application term for the given function and arguments.
@@ -28,6 +28,7 @@ public final class AppTerm implements Term {
             throw new IllegalArgumentException("'function' must be non-null");
         if (arguments == null)
             throw new IllegalArgumentException("'arguments' must be non-null.");
+
         this.function = function;
         this.arguments = arguments;
     }

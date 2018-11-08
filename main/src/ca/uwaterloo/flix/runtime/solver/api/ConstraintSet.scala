@@ -5,9 +5,12 @@ import java.io.{PrintWriter, StringWriter}
 import ca.uwaterloo.flix.runtime.solver.api.predicate._
 import ca.uwaterloo.flix.util.AsciiTable
 
+// TODO: Need to standardize on a functional interface for all functions... Perhaps Function[AnyRef, AnyRef]?
+
 /**
   * Represents a collection of constraints.
   */
+// TODO: Rename
 class ConstraintSet(constraints: Array[Constraint]) {
 
   /**
@@ -108,7 +111,7 @@ class ConstraintSet(constraints: Array[Constraint]) {
           case l: LatticeVar => instantiatedLattices(l.getName())
           case _ => p.getSym()
         }
-        new AtomPredicate(sym, p.isPositive(), p.getTerms(), p.getIndex2SymTEMPORARY)
+        new AtomPredicate(sym, p.isPositive(), p.getTerms(), p.index2sym)
       case _ => p0
     }
 

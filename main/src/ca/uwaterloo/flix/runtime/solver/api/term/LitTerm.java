@@ -14,7 +14,7 @@ public final class LitTerm implements Term {
     /**
      * The zero argument function which returns the literal when invoked.
      */
-    private Callable<ProxyObject> function;
+    private final Callable<ProxyObject> function;
 
     /**
      * Construct a literal term for the given function.
@@ -22,6 +22,7 @@ public final class LitTerm implements Term {
     public LitTerm(Callable<ProxyObject> function) {
         if (function == null)
             throw new IllegalArgumentException("'function' must be non-null");
+
         this.function = function;
     }
 

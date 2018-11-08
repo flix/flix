@@ -8,22 +8,22 @@ import java.util.function.Function;
 /**
  * Represents a functional predicate of the form: sym <- function(args).
  */
-public class FunctionalPredicate implements Predicate {
+public final class FunctionalPredicate implements Predicate {
 
     /**
      * The variable.
      */
-    private VarSym sym;
+    private final VarSym sym;
 
     /**
      * The function.
      */
-    private Function<Object[], ProxyObject[]> function; // TODO: Why are the arguments not proxy objects?
+    private final Function<Object[], ProxyObject[]> function; // TODO: Why are the arguments not proxy objects?
 
     /**
      * The function arguments.
      */
-    private VarSym[] arguments;
+    private final VarSym[] arguments;
 
     /**
      * Constructs a functional predicate for the given symbol, function, and function arguments.

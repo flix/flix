@@ -631,7 +631,7 @@ class Solver(constraintSet: ConstraintSet, options: FixpointOptions) {
       case r: Relation =>
         for ((rule, p) <- dependenciesOf(sym)) {
           // unify all terms with their values.
-          val env = unify(p.getIndex2SymTEMPORARY, fact, fact.length, rule.getNumberOfParameters)
+          val env = unify(p.index2sym, fact, fact.length, rule.getNumberOfParameters)
           if (env != null) {
             localWorkList.push((rule, env))
           }
@@ -641,7 +641,7 @@ class Solver(constraintSet: ConstraintSet, options: FixpointOptions) {
         for ((rule, p) <- dependenciesOf(sym)) {
           // unify only key terms with their values.
           val numberOfKeys = l.getKeys().length
-          val env = unify(p.getIndex2SymTEMPORARY, fact, numberOfKeys, rule.getNumberOfParameters)
+          val env = unify(p.index2sym, fact, numberOfKeys, rule.getNumberOfParameters)
           if (env != null) {
             localWorkList.push((rule, env))
           }
