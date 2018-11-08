@@ -4,16 +4,12 @@
 //    x
 //}
 
-def newchTest(): Channel[Int] = newch Int
+//def newchTest(): Channel[Float64] = newch Float64
 
 //
-//def getchTest(): Int = <- newchTest()
+def getchTest(): Bool = let c = newch Bool; let c1 = c <- true; <- c1
 
-//def putchTest(): Int =
-//    let c = newch Int;
-//    //let c2 = c <- 23;
-//    //let c3 = c2 <- 22;
-//    <- c
+//def putchTest(): Channel[Bool] = let c = newch Bool; c <- true
 //
 //def closechTest(): Unit = closech newchTest()
 //

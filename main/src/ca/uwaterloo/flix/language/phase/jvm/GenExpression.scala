@@ -964,12 +964,26 @@ object GenExpression {
       }
 
     case Expression.NewChannel(tpe, loc) =>
-      // Adding source line number for debugging
       addSourceLine(visitor, loc)
       visitor.visitTypeInsn(NEW, "ca/uwaterloo/flix/runtime/interpreter/Channel")
       visitor.visitInsn(DUP)
       visitor.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/interpreter/Channel", "<init>", "()V", false)
 
+    case Expression.GetChannel(exp, tpe, loc) =>
+      addSourceLine(visitor, loc)
+      compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+      visitor.visitTypeInsn(CHECKCAST, "ca/uwaterloo/flix/runtime/interpreter/Channel")
+      visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/interpreter/Channel", "get", "()Ljava/lang/Object;", false)
+      AsmOps.castIfNotPrimAndUnbox(visitor, JvmOps.getJvmType(tpe))
+
+    case Expression.PutChannel(exp1, exp2, tpe, loc) =>
+      addSourceLine(visitor, loc)
+      compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+      visitor.visitTypeInsn(CHECKCAST, "ca/uwaterloo/flix/runtime/interpreter/Channel")
+      visitor.visitInsn(DUP)
+      compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+      AsmOps.boxIfPrim(visitor, JvmOps.getJvmType(exp2.tpe))
+      visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/interpreter/Channel", "put", "(Ljava/lang/Object;)V", false)
 
     case Expression.UserError(_, loc) =>
       addSourceLine(visitor, loc)

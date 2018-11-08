@@ -194,6 +194,48 @@ object AsmOps {
     case JvmType.Reference(name) => visitor.visitTypeInsn(CHECKCAST, name.toInternalName)
   }
 
+  def castIfNotPrimAndUnbox(visitor: MethodVisitor, tpe: JvmType): Unit = tpe match {
+    case JvmType.Void => throw InternalCompilerException(s"Unexpected type $tpe")
+    case JvmType.PrimBool =>
+      visitor.visitTypeInsn(CHECKCAST, "java/lang/Boolean")
+      visitor.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Boolean", "booleanValue", "()Z", false)
+    case JvmType.PrimChar =>
+      visitor.visitTypeInsn(CHECKCAST, "java/lang/Char")
+      visitor.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Char", "charValue", "()C", false)
+    case JvmType.PrimFloat =>
+      visitor.visitTypeInsn(CHECKCAST, "java/lang/Float")
+      visitor.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Float", "floatValue", "()F", false)
+    case JvmType.PrimDouble =>
+      visitor.visitTypeInsn(CHECKCAST, "java/lang/Double")
+      visitor.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Double", "doubleValue", "()D", false)
+    case JvmType.PrimByte =>
+      visitor.visitTypeInsn(CHECKCAST, "java/lang/Byte")
+      visitor.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Byte", "byteValue", "()B", false)
+    case JvmType.PrimShort =>
+      visitor.visitTypeInsn(CHECKCAST, "java/lang/Short")
+      visitor.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Short", "shortValue", "()S", false)
+    case JvmType.PrimInt =>
+      visitor.visitTypeInsn(CHECKCAST, "java/lang/Integer")
+      visitor.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Integer", "intValue", "()I", false)
+    case JvmType.PrimLong =>
+      visitor.visitTypeInsn(CHECKCAST, "java/lang/Long")
+      visitor.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Long", "longValue", "()J", false)
+    case JvmType.Reference(name) => visitor.visitTypeInsn(CHECKCAST, name.toInternalName)
+  }
+
+  def boxIfPrim(visitor: MethodVisitor, tpe: JvmType): Unit = tpe match {
+    case JvmType.Void => throw InternalCompilerException(s"Unexpected type $tpe")
+    case JvmType.PrimBool => visitor.visitMethodInsn(INVOKESTATIC, "java/lang/Boolean", "valueOf", "(Z)Ljava/lang/Boolean;", false)
+    case JvmType.PrimChar => visitor.visitMethodInsn(INVOKESTATIC, "java/lang/Char", "valueOf", "(C)Ljava/lang/Char;", false)
+    case JvmType.PrimFloat => visitor.visitMethodInsn(INVOKESTATIC, "java/lang/Float", "valueOf", "(F)Ljava/lang/Float;", false)
+    case JvmType.PrimDouble => visitor.visitMethodInsn(INVOKESTATIC, "java/lang/Double", "valueOf", "(D)Ljava/lang/Double;", false)
+    case JvmType.PrimByte => visitor.visitMethodInsn(INVOKESTATIC, "java/lang/Byte", "valueOf", "(B)Ljava/lang/Byte;", false)
+    case JvmType.PrimShort => visitor.visitMethodInsn(INVOKESTATIC, "java/lang/Short", "valueOf", "(S)Ljava/lang/Short;", false)
+    case JvmType.PrimInt => visitor.visitMethodInsn(INVOKESTATIC, "java/lang/Integer", "valueOf", "(I)Ljava/lang/Integer;", false)
+    case JvmType.PrimLong => visitor.visitMethodInsn(INVOKESTATIC, "java/lang/Long", "valueOf", "(J)Ljava/lang/Long;", false)
+    case JvmType.Reference(name) => ()
+  }
+
   /**
     * Generates a field for the class with with name `fieldName`, with descriptor `descriptor` using `visitor`.
     *
