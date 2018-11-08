@@ -25,7 +25,7 @@ import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.runtime.{InvocationTarget, Linker}
 import ca.uwaterloo.flix.runtime.solver._
 import ca.uwaterloo.flix.runtime.solver.api.symbol.{AnonRelSym, VarSym}
-import ca.uwaterloo.flix.runtime.solver.api.{Attribute => _, Constraint => _, Lattice => _, _}
+import ca.uwaterloo.flix.runtime.solver.api.{symbol, Attribute => _, Constraint => _, _}
 import ca.uwaterloo.flix.util.{InternalRuntimeException, Verbosity}
 import ca.uwaterloo.flix.util.tc.Show._
 import flix.runtime._
@@ -270,7 +270,7 @@ object Interpreter {
       val attr = root.lattices(sym).attr.map {
         case Attribute(name, _) => new api.Attribute(name)
       }
-      new api.Lattice(sym.name, attr.init.toArray, attr.last, /* TODO*/ null)
+      new symbol.LatSym(sym.name, attr.init.toArray, attr.last, /* TODO*/ null)
 
     case Expression.Constraint(c, tpe, loc) =>
       evalConstraint(c, env0, henv0, lenv0, root)
@@ -1081,8 +1081,8 @@ object Interpreter {
   /**
     * Casts the given reference `ref` to a lattice.
     */
-  private def cast2lattice(ref: AnyRef): api.Lattice = ref match {
-    case r: api.Lattice => r
+  private def cast2lattice(ref: AnyRef): symbol.LatSym = ref match {
+    case r: symbol.LatSym => r
     case _ => throw InternalRuntimeException(s"Unexpected non-lattice value: ${ref.getClass.getName}.")
   }
 

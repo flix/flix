@@ -16,8 +16,7 @@
 
 package ca.uwaterloo.flix.runtime.solver.datastore
 
-import ca.uwaterloo.flix.runtime.solver.LatticeOps
-import ca.uwaterloo.flix.runtime.solver.api.ProxyObject
+import ca.uwaterloo.flix.runtime.solver.api.{LatticeOps, ProxyObject}
 
 class LatticeImpl(ops: LatticeOps) extends Lattice[ProxyObject] {
 

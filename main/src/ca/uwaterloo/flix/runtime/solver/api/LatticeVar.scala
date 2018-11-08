@@ -1,7 +1,5 @@
 package ca.uwaterloo.flix.runtime.solver.api
 
-import ca.uwaterloo.flix.runtime.solver.LatticeOps
-
 /**
   * Represents an uninitialized lattice.
   *

@@ -18,8 +18,7 @@ package ca.uwaterloo.flix.runtime.solver.datastore
 
 import java.util
 
-import ca.uwaterloo.flix.runtime.solver.LatticeOps
-import ca.uwaterloo.flix.runtime.solver.api.{Attribute, ProxyObject}
+import ca.uwaterloo.flix.runtime.solver.api.{Attribute, LatticeOps, ProxyObject}
 
 import scala.annotation.switch
 import scala.collection.mutable

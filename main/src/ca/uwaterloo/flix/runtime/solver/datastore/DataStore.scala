@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.runtime.solver.datastore
 
 import java.io.{PrintWriter, StringWriter}
 
-import ca.uwaterloo.flix.runtime.solver.api.symbol.RelSym
+import ca.uwaterloo.flix.runtime.solver.api.symbol.{LatSym, RelSym}
 import ca.uwaterloo.flix.runtime.solver.api.{ConstraintSet, Table}
 import ca.uwaterloo.flix.util.{AsciiTable, BitOps, InternalRuntimeException}
 
@@ -72,7 +72,7 @@ class DataStore[ValueType <: AnyRef](constraintSet: ConstraintSet)(implicit m: C
 
   def getLattices(): Traversable[IndexedLattice] = lattices.values
 
-  def getLattice(l: ca.uwaterloo.flix.runtime.solver.api.Lattice): IndexedLattice = lattices(l)
+  def getLattice(l: LatSym): IndexedLattice = lattices(l)
 
   /**
     * Returns the total number of facts in the datastore.

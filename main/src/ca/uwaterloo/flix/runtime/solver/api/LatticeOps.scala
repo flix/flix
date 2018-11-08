@@ -1,7 +1,8 @@
-package ca.uwaterloo.flix.runtime.solver
+package ca.uwaterloo.flix.runtime.solver.api
 
 import ca.uwaterloo.flix.runtime.InvocationTarget
-import ca.uwaterloo.flix.runtime.solver.api.ProxyObject
+
+// TODO: Java interface
 
 trait LatticeOps {
 

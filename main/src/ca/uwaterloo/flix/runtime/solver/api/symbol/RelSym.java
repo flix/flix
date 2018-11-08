@@ -14,14 +14,14 @@ import java.util.Map;
 public final class RelSym implements Table {
 
     /**
-     * An internal cache of predicate symbols.
+     * An internal cache of relation symbols.
      * <p>
      * Note: We never have to garbage collect these since there is only a small finite number of global relation symbols.
      */
     private static final Map<String, RelSym> INTERNAL_CACHE = new HashMap<>();
 
     /**
-     * Returns the predicate symbol with the given unique name.
+     * Returns the relation symbol with the given unique name.
      */
     public static RelSym getInstance(String uniqueName, Attribute[] attributes) {
         var lookup = INTERNAL_CACHE.get(uniqueName);

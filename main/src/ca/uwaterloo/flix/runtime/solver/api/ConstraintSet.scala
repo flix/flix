@@ -3,7 +3,7 @@ package ca.uwaterloo.flix.runtime.solver.api
 import java.io.{PrintWriter, StringWriter}
 
 import ca.uwaterloo.flix.runtime.solver.api.predicate._
-import ca.uwaterloo.flix.runtime.solver.api.symbol.{RelSym, AnonRelSym}
+import ca.uwaterloo.flix.runtime.solver.api.symbol.{AnonRelSym, LatSym, RelSym}
 import ca.uwaterloo.flix.util.AsciiTable
 
 // TODO: Need to standardize on a functional interface for all functions... Perhaps Function[AnyRef, AnyRef]?
@@ -57,8 +57,8 @@ class ConstraintSet(constraints: Array[Constraint]) {
   /**
     * Returns all the lattices in the constraint set.
     */
-  def getLattices(): Array[Lattice] = getTables() collect {
-    case l: Lattice => l
+  def getLattices(): Array[LatSym] = getTables() collect {
+    case l: LatSym => l
   }
 
   /**
@@ -89,7 +89,7 @@ class ConstraintSet(constraints: Array[Constraint]) {
     val instantiatedLattices = latticeVarsByName map {
       case (name, latticeVars) => {
         val latticeVar = latticeVars(0)
-        name -> new Lattice(name, latticeVar.getKeys(), latticeVar.getValue(), latticeVar.getOps())
+        name -> new LatSym(name, latticeVar.getKeys(), latticeVar.getValue(), latticeVar.getOps())
       }
     }
 

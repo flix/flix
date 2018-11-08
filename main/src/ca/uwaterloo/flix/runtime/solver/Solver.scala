@@ -25,7 +25,7 @@ import ca.uwaterloo.flix.runtime.debugger.RestServer
 import ca.uwaterloo.flix.runtime.solver.api._
 import ca.uwaterloo.flix.runtime.Monitor
 import ca.uwaterloo.flix.runtime.solver.api.predicate._
-import ca.uwaterloo.flix.runtime.solver.api.symbol.{RelSym, VarSym}
+import ca.uwaterloo.flix.runtime.solver.api.symbol.{LatSym, RelSym, VarSym}
 import ca.uwaterloo.flix.runtime.solver.api.term._
 import ca.uwaterloo.flix.util._
 import flix.runtime.{ReifiedSourceLocation, RuleError, TimeoutError}
@@ -285,7 +285,7 @@ class Solver(constraintSet: ConstraintSet, options: FixpointOptions) {
           sym match {
             case r: RelSym =>
               dataStore.getRelation(r).inferredFact(fact)
-            case l: Lattice =>
+            case l: LatSym =>
               dataStore.getLattice(l).inferredFact(fact)
           }
         }
@@ -403,7 +403,7 @@ class Solver(constraintSet: ConstraintSet, options: FixpointOptions) {
     // lookup the relation or lattice.
     val table = p.getSym() match {
       case r: RelSym => dataStore.getRelation(r)
-      case l: Lattice => dataStore.getLattice(l)
+      case l: LatSym => dataStore.getLattice(l)
     }
 
     // evaluate all terms in the predicate.
@@ -602,7 +602,7 @@ class Solver(constraintSet: ConstraintSet, options: FixpointOptions) {
         dependencies(sym, fact, localWorkList)
       }
 
-    case l: Lattice =>
+    case l: LatSym =>
       val changed = dataStore.getLattice(l).inferredFact(fact)
       if (changed) {
         dependencies(sym, fact, localWorkList)
@@ -637,7 +637,7 @@ class Solver(constraintSet: ConstraintSet, options: FixpointOptions) {
           }
         }
 
-      case l: Lattice =>
+      case l: LatSym =>
         for ((rule, p) <- dependenciesOf(sym)) {
           // unify only key terms with their values.
           val numberOfKeys = l.getKeys().length
