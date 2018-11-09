@@ -26,7 +26,7 @@ import ca.uwaterloo.flix.runtime.{InvocationTarget, Linker}
 import ca.uwaterloo.flix.runtime.solver._
 import ca.uwaterloo.flix.runtime.solver.api.predicate.AtomPredicate
 import ca.uwaterloo.flix.runtime.solver.api.symbol._
-import ca.uwaterloo.flix.runtime.solver.api.{symbol, Attribute => _, Constraint => _, _}
+import ca.uwaterloo.flix.runtime.solver.api.{Attribute => _, Constraint => _, _}
 import ca.uwaterloo.flix.util.{InternalRuntimeException, Verbosity}
 import ca.uwaterloo.flix.util.tc.Show._
 import flix.runtime._
@@ -792,7 +792,6 @@ object Interpreter {
     //
     case FinalAst.Term.Head.QuantVar(sym, _, _) =>
       // Lookup the corresponding symbol in the cache.
-
       new api.term.VarTerm(cache.getVarSym(sym))
 
     //
