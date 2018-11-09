@@ -1496,7 +1496,12 @@ object GenExpression {
     case Term.Head.QuantVar(sym, tpe, loc) =>
       ??? // TODO
 
-    case Term.Head.CapturedVar(sym, tpe, loc) => readVar(sym, tpe, mv)
+    case Term.Head.CapturedVar(sym, tpe, loc) =>
+      // Add source line numbers for debugging.
+      addSourceLine(mv, loc)
+
+      // Read the value of the local variable and put it on the stack.
+      readVar(sym, tpe, mv)
 
     case Term.Head.Lit(sym, tpe, loc) =>
       ??? // TODO
@@ -1512,12 +1517,23 @@ object GenExpression {
   private def compileBodyTerm(t0: Term.Body, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = t0 match {
 
     case Term.Body.Wild(tpe, loc) =>
-      ??? // TODO
+      // Add source line numbers for debugging.
+      addSourceLine(mv, loc)
+
+      // Allocate a new object and invoke the constructor.
+      mv.visitTypeInsn(NEW, "ca/uwaterloo/flix/runtime/solver/api/term/WildTerm")
+      mv.visitInsn(DUP)
+      mv.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/solver/api/term/WildTerm", "<init>", "()V", false);
 
     case Term.Body.QuantVar(sym, tpe, loc) =>
       ??? // TODO
 
-    case Term.Body.CapturedVar(sym, tpe, loc) => readVar(sym, tpe, mv)
+    case Term.Body.CapturedVar(sym, tpe, loc) =>
+      // Add source line numbers for debugging.
+      addSourceLine(mv, loc)
+
+      // Read the value of the local variable and put it on the stack.
+      readVar(sym, tpe, mv)
 
     case Term.Body.Lit(sym, tpe, loc) =>
       ??? // TODO
