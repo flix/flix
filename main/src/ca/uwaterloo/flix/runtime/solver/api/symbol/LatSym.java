@@ -8,6 +8,8 @@ import java.util.Map;
 
 /**
  * Represents a lattice value.
+ * <p>
+ * Note: Equality is defined by identity due to the internal cache.
  */
 public final class LatSym implements PredSym {
 
@@ -97,6 +99,8 @@ public final class LatSym implements PredSym {
     public LatticeOps getOps() {
         return ops;
     }
+
+    /* equality by identity */
 
 }
 

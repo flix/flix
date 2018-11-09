@@ -15,7 +15,7 @@ public final class AnonRelSym implements PredSym {
     private final RelSym parent;
 
     /**
-     * Constructs a fresh anon relation symbol from its parent.
+     * Constructs a fresh anon relation symbol with the given parent.
      */
     public AnonRelSym(RelSym parent) {
         this.parent = parent;
@@ -34,5 +34,7 @@ public final class AnonRelSym implements PredSym {
     public Attribute[] getAttributes() {
         return parent.getAttributes();
     }
+
+    /* equality by identity */
 
 }

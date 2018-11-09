@@ -24,7 +24,7 @@ import ca.uwaterloo.flix.language.ast.FinalAst._
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.runtime.{InvocationTarget, Linker}
 import ca.uwaterloo.flix.runtime.solver._
-import ca.uwaterloo.flix.runtime.solver.api.symbol.{AnonRelSym, VarSym}
+import ca.uwaterloo.flix.runtime.solver.api.symbol.{AnonLatSym, AnonRelSym, LatSym, VarSym}
 import ca.uwaterloo.flix.runtime.solver.api.{symbol, Attribute => _, Constraint => _, _}
 import ca.uwaterloo.flix.util.{InternalRuntimeException, Verbosity}
 import ca.uwaterloo.flix.util.tc.Show._
@@ -883,14 +883,15 @@ object Interpreter {
     *
     * NB: Allocates a new lattice if no such lattice exists in the cache.
     */
-  private def getLattice(sym: Symbol.LatSym)(implicit root: FinalAst.Root, flix: Flix): api.LatticeVar = root.lattices(sym) match {
+  private def getLattice(sym: Symbol.LatSym)(implicit root: FinalAst.Root, flix: Flix): AnonLatSym = root.lattices(sym) match {
     case FinalAst.Lattice(_, _, attr, _) =>
       val name = sym.toString
       val as = attr.map(a => new api.Attribute(a.name))
       val keys = as.init.toArray
       val value = as.last
       val ops = getLatticeOps(attr.last.tpe)
-      new LatticeVar(name, keys, value, ops)
+      val parent = LatSym.getInstance(name, keys, value, ops)
+      new AnonLatSym(parent)
   }
 
   /**
