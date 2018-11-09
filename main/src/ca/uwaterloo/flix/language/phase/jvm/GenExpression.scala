@@ -23,6 +23,7 @@ import ca.uwaterloo.flix.language.ast.FinalAst._
 import ca.uwaterloo.flix.language.ast.SemanticOperator._
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Optimization}
+import ca.uwaterloo.flix.language.ast.{Type => FlixType}
 import org.objectweb.asm
 import org.objectweb.asm.Opcodes._
 import org.objectweb.asm._
@@ -66,10 +67,7 @@ object GenExpression {
     case Expression.Str(s) => visitor.visitLdcInsn(s)
 
     case Expression.Var(sym, tpe, _) =>
-      val jvmType = JvmOps.getErasedJvmType(tpe)
-      val iLOAD = AsmOps.getLoadInstruction(jvmType)
-      visitor.visitVarInsn(iLOAD, sym.getStackOffset + 3) // This is `+2` because the first 2 are reserved!
-      AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
+      readVar(sym, tpe, visitor)
 
     case Expression.Closure(sym, freeVars, fnType, tpe, loc) =>
       // ClosureInfo
@@ -1494,20 +1492,46 @@ object GenExpression {
     * Compiles the given head term `t0`.
     */
   private def compileHeadTerm(t0: Term.Head, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = t0 match {
-    case Term.Head.QuantVar(sym, tpe, loc) => ???
-    case Term.Head.CapturedVar(sym, tpe, loc) => ???
-    case Term.Head.Lit(sym, tpe, loc) => ???
-    case Term.Head.App(sym, args, tpe, loc) => ???
+
+    case Term.Head.QuantVar(sym, tpe, loc) =>
+      ??? // TODO
+
+    case Term.Head.CapturedVar(sym, tpe, loc) => readVar(sym, tpe, mv)
+
+    case Term.Head.Lit(sym, tpe, loc) =>
+      ??? // TODO
+
+    case Term.Head.App(sym, args, tpe, loc) =>
+      ??? // TODO
+
   }
 
   /**
     * Compiles the given body term `t0`.
     */
   private def compileBodyTerm(t0: Term.Body, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = t0 match {
-    case Term.Body.Wild(tpe, loc) => ???
-    case Term.Body.QuantVar(sym, tpe, loc) => ???
-    case Term.Body.CapturedVar(sym, tpe, loc) => ???
-    case Term.Body.Lit(sym, tpe, loc) => ???
+
+    case Term.Body.Wild(tpe, loc) =>
+      ??? // TODO
+
+    case Term.Body.QuantVar(sym, tpe, loc) =>
+      ??? // TODO
+
+    case Term.Body.CapturedVar(sym, tpe, loc) => readVar(sym, tpe, mv)
+
+    case Term.Body.Lit(sym, tpe, loc) =>
+      ??? // TODO
+
+  }
+
+  /**
+    * Generates code to read the given variable symbol and put it on top of the stack.
+    */
+  private def readVar(sym: Symbol.VarSym, tpe: FlixType, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
+    val jvmType = JvmOps.getErasedJvmType(tpe)
+    val iLOAD = AsmOps.getLoadInstruction(jvmType)
+    mv.visitVarInsn(iLOAD, sym.getStackOffset + 3) // This is `+2` because the first 2 are reserved!
+    AsmOps.castIfNotPrim(mv, JvmOps.getJvmType(tpe))
   }
 
   /*

@@ -26,6 +26,7 @@ import ca.uwaterloo.flix.runtime.{InvocationTarget, Linker}
 import ca.uwaterloo.flix.runtime.solver._
 import ca.uwaterloo.flix.runtime.solver.api.predicate.AtomPredicate
 import ca.uwaterloo.flix.runtime.solver.api.symbol._
+import ca.uwaterloo.flix.runtime.solver.api.term.WildTerm
 import ca.uwaterloo.flix.runtime.solver.api.{Attribute => _, Constraint => _, _}
 import ca.uwaterloo.flix.util.{InternalRuntimeException, Verbosity}
 import ca.uwaterloo.flix.util.tc.Show._
@@ -830,7 +831,7 @@ object Interpreter {
     //
     // Wildcards.
     //
-    case FinalAst.Term.Body.Wild(_, _) => new api.term.WildTerm()
+    case FinalAst.Term.Body.Wild(_, _) => new WildTerm()
 
     //
     // Free Variables (i.e. variables that are quantified over in the constraint).
