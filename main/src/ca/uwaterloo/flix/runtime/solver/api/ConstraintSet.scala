@@ -6,8 +6,6 @@ import ca.uwaterloo.flix.runtime.solver.api.predicate._
 import ca.uwaterloo.flix.runtime.solver.api.symbol._
 import ca.uwaterloo.flix.util.AsciiTable
 
-// TODO: Need to standardize on a functional interface for all functions... Perhaps Function[AnyRef, AnyRef]?
-
 /**
   * Represents a collection of constraints.
   */
@@ -33,15 +31,15 @@ class ConstraintSet(constraints: Array[Constraint]) {
   /**
     * Returns all relations in the constraint set.
     */
-  def getRelations(): Array[RelSym] = getTables() collect {
-    case r: RelSym => r
+  def getRelations(): Array[NamedRelSym] = getTables() collect {
+    case r: NamedRelSym => r
   }
 
   /**
     * Returns all the lattices in the constraint set.
     */
-  def getLattices(): Array[LatSym] = getTables() collect {
-    case l: LatSym => l
+  def getLattices(): Array[NamedLatSym] = getTables() collect {
+    case l: NamedLatSym => l
   }
 
   /**

@@ -11,24 +11,24 @@ import java.util.Map;
  * <p>
  * Note: Equality is defined by identity due to the internal cache.
  */
-public final class LatSym implements PredSym {
+public final class NamedLatSym implements PredSym {
 
     /**
      * An internal cache of lattice symbols.
      * <p>
      * Note: We never have to garbage collect these since there is only a small finite number of global lattice symbols.
      */
-    private static final Map<String, LatSym> INTERNAL_CACHE = new HashMap<>();
+    private static final Map<String, NamedLatSym> INTERNAL_CACHE = new HashMap<>();
 
     /**
      * Returns the relation symbol with the given unique name.
      */
-    public static LatSym getInstance(String uniqueName, Attribute[] keys, Attribute value, LatticeOps ops) {
+    public static NamedLatSym getInstance(String uniqueName, Attribute[] keys, Attribute value, LatticeOps ops) {
         var lookup = INTERNAL_CACHE.get(uniqueName);
         if (lookup != null) {
             return lookup;
         }
-        var sym = new LatSym(uniqueName, keys, value, ops);
+        var sym = new NamedLatSym(uniqueName, keys, value, ops);
         INTERNAL_CACHE.put(uniqueName, sym);
         return sym;
     }
@@ -56,7 +56,7 @@ public final class LatSym implements PredSym {
     /**
      * Returns the lattice symbol with the given unique name.
      */
-    private LatSym(String uniqueName, Attribute[] keys, Attribute value, LatticeOps ops) {
+    private NamedLatSym(String uniqueName, Attribute[] keys, Attribute value, LatticeOps ops) {
         if (uniqueName == null)
             throw new IllegalArgumentException("'uniqueName' must be non-null.");
         if (keys == null)

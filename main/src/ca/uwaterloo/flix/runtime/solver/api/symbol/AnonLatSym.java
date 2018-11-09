@@ -13,12 +13,12 @@ public final class AnonLatSym implements PredSym {
     /**
      * The parent lattice symbol.
      */
-    private final LatSym parent;
+    private final NamedLatSym parent;
 
     /**
      * Constructs a fresh anon lattice symbol with the given parent.
      */
-    public AnonLatSym(LatSym parent) {
+    public AnonLatSym(NamedLatSym parent) {
         this.parent = parent;
     }
 

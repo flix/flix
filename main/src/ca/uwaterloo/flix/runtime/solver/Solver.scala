@@ -283,11 +283,11 @@ class Solver(constraintSet: ConstraintSet, options: FixpointOptions) {
         for ((sym, fact) <- interp) {
           // update the datastore, but don't compute any dependencies.
           sym match {
-            case r: RelSym =>
+            case r: NamedRelSym =>
               dataStore.getRelation(r).inferredFact(fact)
             case r: AnonRelSym =>
               dataStore.getRelation(r).inferredFact(fact)
-            case l: LatSym =>
+            case l: NamedLatSym =>
               dataStore.getLattice(l).inferredFact(fact)
             case l: AnonLatSym =>
               dataStore.getLattice(l).inferredFact(fact)
@@ -406,8 +406,8 @@ class Solver(constraintSet: ConstraintSet, options: FixpointOptions) {
   private def evalAtom(p: AtomPredicate, env: Env): Traversable[Env] = {
     // lookup the relation or lattice.
     val table = p.getSym() match {
-      case r: RelSym => dataStore.getRelation(r)
-      case l: LatSym => dataStore.getLattice(l)
+      case r: NamedRelSym => dataStore.getRelation(r)
+      case l: NamedLatSym => dataStore.getLattice(l)
     }
 
     // evaluate all terms in the predicate.
@@ -600,13 +600,13 @@ class Solver(constraintSet: ConstraintSet, options: FixpointOptions) {
     * Processes an inferred `fact` for the relation or lattice with the symbol `sym`.
     */
   private def inferredFact(sym: PredSym, fact: Array[ProxyObject], localWorkList: WorkList): Unit = sym match {
-    case r: RelSym =>
+    case r: NamedRelSym =>
       val changed = dataStore.getRelation(r).inferredFact(fact)
       if (changed) {
         dependencies(sym, fact, localWorkList)
       }
 
-    case l: LatSym =>
+    case l: NamedLatSym =>
       val changed = dataStore.getLattice(l).inferredFact(fact)
       if (changed) {
         dependencies(sym, fact, localWorkList)
@@ -632,7 +632,7 @@ class Solver(constraintSet: ConstraintSet, options: FixpointOptions) {
 
 
     sym match {
-      case r: RelSym =>
+      case r: NamedRelSym =>
         for ((rule, p) <- dependenciesOf(sym)) {
           // unify all terms with their values.
           val env = unify(p.index2sym, fact, fact.length, rule.getNumberOfParameters)
@@ -641,7 +641,7 @@ class Solver(constraintSet: ConstraintSet, options: FixpointOptions) {
           }
         }
 
-      case l: LatSym =>
+      case l: NamedLatSym =>
         for ((rule, p) <- dependenciesOf(sym)) {
           // unify only key terms with their values.
           val numberOfKeys = l.getKeys().length

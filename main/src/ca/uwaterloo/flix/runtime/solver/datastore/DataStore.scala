@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.runtime.solver.datastore
 
 import java.io.{PrintWriter, StringWriter}
 
-import ca.uwaterloo.flix.runtime.solver.api.symbol.{LatSym, RelSym, PredSym}
+import ca.uwaterloo.flix.runtime.solver.api.symbol.{NamedLatSym, NamedRelSym, PredSym}
 import ca.uwaterloo.flix.runtime.solver.api.ConstraintSet
 import ca.uwaterloo.flix.util.{AsciiTable, BitOps, InternalRuntimeException}
 
@@ -68,7 +68,7 @@ class DataStore[ValueType <: AnyRef](constraintSet: ConstraintSet)(implicit m: C
 
   def getLattice(l: PredSym): IndexedLattice = lattices(l)
 
-  def initRelation(relation: RelSym): IndexedRelation = {
+  def initRelation(relation: NamedRelSym): IndexedRelation = {
     val name = relation.getName()
     val attributes = relation.getAttributes()
 

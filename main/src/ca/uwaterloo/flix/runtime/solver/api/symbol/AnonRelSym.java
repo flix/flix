@@ -12,12 +12,12 @@ public final class AnonRelSym implements PredSym {
     /**
      * The parent relation symbol.
      */
-    private final RelSym parent;
+    private final NamedRelSym parent;
 
     /**
      * Constructs a fresh anon relation symbol with the given parent.
      */
-    public AnonRelSym(RelSym parent) {
+    public AnonRelSym(NamedRelSym parent) {
         this.parent = parent;
     }
 

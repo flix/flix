@@ -4,6 +4,8 @@ import ca.uwaterloo.flix.runtime.InvocationTarget
 
 // TODO: Java interface
 
+// TODO: Need to standardize on a functional interface for all functions... Perhaps Function[AnyRef, AnyRef]?
+
 trait LatticeOps {
 
   def bot: ProxyObject

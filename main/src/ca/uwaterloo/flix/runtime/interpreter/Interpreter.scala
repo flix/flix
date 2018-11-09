@@ -264,14 +264,14 @@ object Interpreter {
       val attr = root.relations(sym).attr.map {
         case Attribute(name, _) => new api.Attribute(name)
       }
-      val parent = RelSym.getInstance(sym.name, attr.toArray)
+      val parent = NamedRelSym.getInstance(sym.name, attr.toArray)
       new AnonRelSym(parent)
 
     case Expression.NewLattice(sym, tpe, loc) =>
       val attr = root.lattices(sym).attr.map {
         case Attribute(name, _) => new api.Attribute(name)
       }
-      val parent = LatSym.getInstance(sym.name, attr.init.toArray, attr.last, /* TODO */ null)
+      val parent = NamedLatSym.getInstance(sym.name, attr.init.toArray, attr.last, /* TODO */ null)
       new AnonLatSym(parent)
 
     case Expression.Constraint(c, tpe, loc) =>
@@ -861,24 +861,24 @@ object Interpreter {
   /**
     * Returns the relation value associated with the given relation symbol `sym`.
     */
-  private def getRelSym(sym: Symbol.RelSym)(implicit root: FinalAst.Root, flix: Flix): RelSym = root.relations(sym) match {
+  private def getRelSym(sym: Symbol.RelSym)(implicit root: FinalAst.Root, flix: Flix): NamedRelSym = root.relations(sym) match {
     case FinalAst.Relation(_, _, attr, _) =>
       val name = sym.toString
       val as = attr.map(a => new api.Attribute(a.name)).toArray
-      RelSym.getInstance(name, as)
+      NamedRelSym.getInstance(name, as)
   }
 
   /**
     * Returns the lattice value associated with the given lattice symbol `sym`.
     */
-  private def getLattice(sym: Symbol.LatSym)(implicit root: FinalAst.Root, flix: Flix): LatSym = root.lattices(sym) match {
+  private def getLattice(sym: Symbol.LatSym)(implicit root: FinalAst.Root, flix: Flix): NamedLatSym = root.lattices(sym) match {
     case FinalAst.Lattice(_, _, attr, _) =>
       val name = sym.toString
       val as = attr.map(a => new api.Attribute(a.name))
       val keys = as.init.toArray
       val value = as.last
       val ops = getLatticeOps(attr.last.tpe)
-      LatSym.getInstance(name, keys, value, ops)
+      NamedLatSym.getInstance(name, keys, value, ops)
   }
 
   /**
