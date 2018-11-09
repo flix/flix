@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 import java.lang.reflect.Modifier
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.FinalAst.{CatchRule, Expression, Root}
+import ca.uwaterloo.flix.language.ast.FinalAst.{CatchRule, Expression, Predicate, Root}
 import ca.uwaterloo.flix.language.ast.SemanticOperator._
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Optimization}
@@ -1422,6 +1422,28 @@ object GenExpression {
           bigintOp, AsmOps.getMethodDescriptor(List(JvmOps.getJvmType(e2.tpe)), JvmType.BigInteger), false)
       case _ => throw InternalCompilerException(s"Unexpected semantic operator: $sop.")
     }
+  }
+
+  /**
+    * Compiles the given head expression `h0`.
+    */
+  private def compileHeadAtom(h0: Predicate.Head, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = h0 match {
+    //  TODO
+    case Predicate.Head.True(loc) =>
+      // Adding source line number for debugging
+      addSourceLine(mv, loc)
+
+
+      ???
+
+    case Predicate.Head.False(loc) =>
+      ???
+
+    case Predicate.Head.RelAtom(base, sym, terms, tpe, loc) =>
+      ???
+
+    case Predicate.Head.LatAtom(base, sym, terms, tpe, loc) =>
+      ???
   }
 
   /*
