@@ -25,7 +25,7 @@ import ca.uwaterloo.flix.runtime.debugger.RestServer
 import ca.uwaterloo.flix.runtime.solver.api._
 import ca.uwaterloo.flix.runtime.Monitor
 import ca.uwaterloo.flix.runtime.solver.api.predicate._
-import ca.uwaterloo.flix.runtime.solver.api.symbol.{LatSym, RelSym, PredSym, VarSym}
+import ca.uwaterloo.flix.runtime.solver.api.symbol._
 import ca.uwaterloo.flix.runtime.solver.api.term._
 import ca.uwaterloo.flix.util._
 import flix.runtime.{ReifiedSourceLocation, RuleError, TimeoutError}
@@ -213,7 +213,7 @@ class Solver(constraintSet: ConstraintSet, options: FixpointOptions) {
     initDataStore()
 
     // compute the fixedpoint for each stratum, in sequence.
-    for (stratum <- constraintSet.getConstraintsByStrata) {
+    for (stratum <- getConstraintsByStrata) {
       // initialize the worklist.
       initWorkList(stratum)
 
@@ -270,7 +270,7 @@ class Solver(constraintSet: ConstraintSet, options: FixpointOptions) {
   private def initDataStore(): Unit = {
     val t = System.nanoTime()
     // retrieve the lowest stratum.
-    val stratum0 = constraintSet.getConstraintsByStrata(0)
+    val stratum0 = getConstraintsByStrata(0)
 
     // iterate through all facts.
     for (constraint <- stratum0) {
@@ -285,7 +285,11 @@ class Solver(constraintSet: ConstraintSet, options: FixpointOptions) {
           sym match {
             case r: RelSym =>
               dataStore.getRelation(r).inferredFact(fact)
+            case r: AnonRelSym =>
+              dataStore.getRelation(r).inferredFact(fact)
             case l: LatSym =>
+              dataStore.getLattice(l).inferredFact(fact)
+            case l: AnonLatSym =>
               dataStore.getLattice(l).inferredFact(fact)
           }
         }
@@ -332,7 +336,7 @@ class Solver(constraintSet: ConstraintSet, options: FixpointOptions) {
       val initMiliSeconds = initTime / 1000000
       val readersMiliSeconds = readersTime / 1000000
       val writersMiliSeconds = writersTime / 1000000
-      val initialFacts = constraintSet.getConstraintsByStrata.head.count(_.isFact)
+      val initialFacts = getConstraintsByStrata.head.count(_.isFact)
       val totalFacts = dataStore.numberOfFacts
       val throughput = ((1000.0 * totalFacts.toDouble) / (solverTime.toDouble + 1.0)).toInt
       Console.println(f"Solved in $solverTime%,d msec. (init: $initMiliSeconds%,d msec, readers: $readersMiliSeconds%,d msec, writers: $writersMiliSeconds%,d msec)")
@@ -830,7 +834,7 @@ class Solver(constraintSet: ConstraintSet, options: FixpointOptions) {
     */
   private def initDependencies(): Unit = {
     // Iterate through each stratum.
-    for (stratum <- constraintSet.getConstraintsByStrata) {
+    for (stratum <- getConstraintsByStrata) {
       // Initialize the dependencies of every symbol to the empty set.
       for (rule <- stratum) {
         rule.getHeadPredicate() match {
@@ -857,6 +861,24 @@ class Solver(constraintSet: ConstraintSet, options: FixpointOptions) {
           }
         }
       }
+    }
+  }
+
+  /**
+    * Returns all the constraints in the constraint set by stratum.
+    */
+  // TODO: Precompute once.
+  def getConstraintsByStrata: Array[Array[Constraint]] = {
+    val groupedByStratum = constraintSet.getConstraints().groupBy(_.getStratum()).toList
+    val strata = groupedByStratum.sortBy(_._1).map(_._2).toArray
+
+    // Ensure that there is always at least one empty stratum.
+    if (strata.nonEmpty) {
+      strata
+    } else {
+      val a = Array.ofDim[Constraint](1, 1)
+      a(0) = Array.empty[Constraint]
+      a
     }
   }
 

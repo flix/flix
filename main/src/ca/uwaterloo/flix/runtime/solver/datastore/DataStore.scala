@@ -40,18 +40,12 @@ class DataStore[ValueType <: AnyRef](constraintSet: ConstraintSet)(implicit m: C
     */
   val lattices = mutable.Map.empty[PredSym, IndexedLattice]
 
+  // TODO: Need to init *ALL relation symbols*
   for (relation <- constraintSet.getRelations()) {
-    val name = relation.getName()
-    val attributes = relation.getAttributes()
-
-    // NB: Just an index on the first attribute.
-    val idx = Set(Seq(0))
-    val indexes = idx map {
-      case columns => BitOps.setBits(vec = 0, bits = columns)
-    }
-    relations += relation -> new IndexedRelation(name, attributes, indexes, indexes.head)
+    relations += relation -> initRelation(relation)
   }
 
+  // TODO: Need to init *ALL lattices symbols*
   for (lattice <- constraintSet.getLattices()) {
     val name = lattice.getName()
     val keys = lattice.getKeys()
@@ -68,11 +62,23 @@ class DataStore[ValueType <: AnyRef](constraintSet: ConstraintSet)(implicit m: C
 
   def getRelations(): Traversable[IndexedRelation] = relations.values
 
-  def getRelation(r: RelSym): IndexedRelation = relations(r)
+  def getRelation(r: PredSym): IndexedRelation = relations(r)
 
   def getLattices(): Traversable[IndexedLattice] = lattices.values
 
-  def getLattice(l: LatSym): IndexedLattice = lattices(l)
+  def getLattice(l: PredSym): IndexedLattice = lattices(l)
+
+  def initRelation(relation: RelSym): IndexedRelation = {
+    val name = relation.getName()
+    val attributes = relation.getAttributes()
+
+    // NB: Just an index on the first attribute.
+    val idx = Set(Seq(0))
+    val indexes = idx map {
+      case columns => BitOps.setBits(vec = 0, bits = columns)
+    }
+    new IndexedRelation(name, attributes, indexes, indexes.head)
+  }
 
   /**
     * Returns the total number of facts in the datastore.

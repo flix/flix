@@ -24,7 +24,8 @@ import ca.uwaterloo.flix.language.ast.FinalAst._
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.runtime.{InvocationTarget, Linker}
 import ca.uwaterloo.flix.runtime.solver._
-import ca.uwaterloo.flix.runtime.solver.api.symbol.{AnonLatSym, AnonRelSym, LatSym, VarSym}
+import ca.uwaterloo.flix.runtime.solver.api.predicate.AtomPredicate
+import ca.uwaterloo.flix.runtime.solver.api.symbol._
 import ca.uwaterloo.flix.runtime.solver.api.{symbol, Attribute => _, Constraint => _, _}
 import ca.uwaterloo.flix.util.{InternalRuntimeException, Verbosity}
 import ca.uwaterloo.flix.util.tc.Show._
@@ -263,14 +264,15 @@ object Interpreter {
       val attr = root.relations(sym).attr.map {
         case Attribute(name, _) => new api.Attribute(name)
       }
-      // TODO: Semantics are messed up... should be AnonRelSym
-      symbol.RelSym.getInstance(sym.name, attr.toArray)
+      val parent = RelSym.getInstance(sym.name, attr.toArray)
+      new AnonRelSym(parent)
 
     case Expression.NewLattice(sym, tpe, loc) =>
       val attr = root.lattices(sym).attr.map {
         case Attribute(name, _) => new api.Attribute(name)
       }
-      symbol.LatSym.getInstance(sym.name, attr.init.toArray, attr.last, /* TODO */ null)
+      val parent = LatSym.getInstance(sym.name, attr.init.toArray, attr.last, /* TODO */ null)
+      new AnonLatSym(parent)
 
     case Expression.Constraint(c, tpe, loc) =>
       evalConstraint(c, env0, henv0, lenv0, root)
@@ -710,24 +712,20 @@ object Interpreter {
     case FinalAst.Predicate.Head.True(_) => new api.predicate.TruePredicate()
     case FinalAst.Predicate.Head.False(_) => new api.predicate.FalsePredicate()
     case FinalAst.Predicate.Head.RelAtom(baseOpt, sym, terms, _, _) =>
-      // Retrieve the relation.
-      // TODO: The semantics here are messed up...
-      val relation = baseOpt match {
-        case None => getRelation(sym)
-        case Some(baseSym) =>
-          cast2relation(env0(baseSym.toString))
+      val ts = terms.map(t => evalHeadTerm(t, env0)).toArray
+      val relSym = baseOpt match {
+        case None => getRelSym(sym)
+        case Some(baseSym) => cast2relsym(env0(baseSym.toString))
       }
-      val ts = terms.map(t => evalHeadTerm(t, env0))
-      new api.predicate.AtomPredicate(relation, true, ts.toArray, null)
+      new AtomPredicate(relSym, true, ts, null)
     case FinalAst.Predicate.Head.LatAtom(baseOpt, sym, terms, _, _) =>
-      // Retrieve the lattice.
-      val lattice = baseOpt match {
+      val ts = terms.map(t => evalHeadTerm(t, env0)).toArray
+      val latSym = baseOpt match {
         case None => getLattice(sym)
         case Some(baseSym) =>
-          cast2lattice(env0(baseSym.toString))
+          cast2latsym(env0(baseSym.toString))
       }
-      val ts = terms.map(t => evalHeadTerm(t, env0))
-      new api.predicate.AtomPredicate(lattice, true, ts.toArray, null)
+      new AtomPredicate(latSym, true, ts, null)
   }
 
   /**
@@ -735,44 +733,39 @@ object Interpreter {
     */
   private def evalBodyPredicate(b0: FinalAst.Predicate.Body, env0: Map[String, AnyRef])(implicit root: FinalAst.Root, cache: SymbolCache, flix: Flix): api.predicate.Predicate = b0 match {
     case FinalAst.Predicate.Body.RelAtom(baseOpt, sym, polarity, terms, index2sym, _, _) =>
-      // Retrieve the relation.
-      // TODO: The semantics here are messed up...
-      val relation = baseOpt match {
-        case None => getRelation(sym)
-        case Some(baseSym) =>
-          cast2relation(env0(baseSym.toString))
-      }
-
       val p = polarity match {
         case Ast.Polarity.Positive => true
         case Ast.Polarity.Negative => false
       }
-      val ts = terms.map(t => evalBodyTerm(t, env0))
+      val ts = terms.map(t => evalBodyTerm(t, env0)).toArray
+      val relSym = baseOpt match {
+        case None => getRelSym(sym)
+        case Some(baseSym) => cast2relsym(env0(baseSym.toString))
+      }
       // TODO: Get rid of i2s
       val i2s = index2sym map {
         case x if x != null => cache.getVarSym(x)
         case _ => null
       }
-      new api.predicate.AtomPredicate(relation, p, ts.toArray, i2s.toArray)
+      new AtomPredicate(relSym, p, ts, i2s.toArray)
 
     case FinalAst.Predicate.Body.LatAtom(baseOpt, sym, polarity, terms, index2sym, _, _) =>
-      // Retrieve the lattice.
-      val lattice = baseOpt match {
-        case None => getLattice(sym)
-        case Some(baseSym) =>
-          cast2lattice(env0(baseSym.toString))
-      }
       val p = polarity match {
         case Ast.Polarity.Positive => true
         case Ast.Polarity.Negative => false
       }
-      val ts = terms.map(t => evalBodyTerm(t, env0))
+      val ts = terms.map(t => evalBodyTerm(t, env0)).toArray
+      val latSym = baseOpt match {
+        case None => getLattice(sym)
+        case Some(baseSym) =>
+          cast2latsym(env0(baseSym.toString))
+      }
       // TODO: Get rid of i2s
       val i2s = index2sym map {
         case x if x != null => cache.getVarSym(x)
         case _ => null
       }
-      new api.predicate.AtomPredicate(lattice, p, ts.toArray, i2s.toArray)
+      new AtomPredicate(latSym, p, ts, i2s.toArray)
 
     case FinalAst.Predicate.Body.Filter(sym, terms, loc) =>
       val f = new function.Function[Array[AnyRef], java.lang.Boolean] {
@@ -867,31 +860,25 @@ object Interpreter {
 
   /**
     * Returns the relation value associated with the given relation symbol `sym`.
-    *
-    * NB: Allocates a new relation if no such relation exists in the cache.
     */
-  private def getRelation(sym: Symbol.RelSym)(implicit root: FinalAst.Root, flix: Flix): AnonRelSym = root.relations(sym) match {
+  private def getRelSym(sym: Symbol.RelSym)(implicit root: FinalAst.Root, flix: Flix): RelSym = root.relations(sym) match {
     case FinalAst.Relation(_, _, attr, _) =>
       val name = sym.toString
       val as = attr.map(a => new api.Attribute(a.name)).toArray
-      val parent = symbol.RelSym.getInstance(name, as)
-      new AnonRelSym(parent)
+      RelSym.getInstance(name, as)
   }
 
   /**
     * Returns the lattice value associated with the given lattice symbol `sym`.
-    *
-    * NB: Allocates a new lattice if no such lattice exists in the cache.
     */
-  private def getLattice(sym: Symbol.LatSym)(implicit root: FinalAst.Root, flix: Flix): AnonLatSym = root.lattices(sym) match {
+  private def getLattice(sym: Symbol.LatSym)(implicit root: FinalAst.Root, flix: Flix): LatSym = root.lattices(sym) match {
     case FinalAst.Lattice(_, _, attr, _) =>
       val name = sym.toString
       val as = attr.map(a => new api.Attribute(a.name))
       val keys = as.init.toArray
       val value = as.last
       val ops = getLatticeOps(attr.last.tpe)
-      val parent = LatSym.getInstance(name, keys, value, ops)
-      new AnonLatSym(parent)
+      LatSym.getInstance(name, keys, value, ops)
   }
 
   /**
@@ -1074,16 +1061,16 @@ object Interpreter {
   /**
     * Casts the given reference `ref` to a relation.
     */
-  private def cast2relation(ref: AnyRef): symbol.RelSym = ref match {
-    case r: symbol.RelSym => r
+  private def cast2relsym(ref: AnyRef): AnonRelSym = ref match {
+    case r: AnonRelSym => r
     case _ => throw InternalRuntimeException(s"Unexpected non-relation value: ${ref.getClass.getName}.")
   }
 
   /**
     * Casts the given reference `ref` to a lattice.
     */
-  private def cast2lattice(ref: AnyRef): symbol.LatSym = ref match {
-    case r: symbol.LatSym => r
+  private def cast2latsym(ref: AnyRef): AnonLatSym = ref match {
+    case r: AnonLatSym => r
     case _ => throw InternalRuntimeException(s"Unexpected non-lattice value: ${ref.getClass.getName}.")
   }
 
@@ -1129,7 +1116,7 @@ object Interpreter {
     options.setVerbose(flix.options.verbosity == Verbosity.Verbose)
 
     // Construct the solver.
-    val solver = new Solver(cs.complete(), options)
+    val solver = new Solver(cs, options)
     solver.solve()
   }
 

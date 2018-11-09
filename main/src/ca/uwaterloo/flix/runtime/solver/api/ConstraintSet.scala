@@ -20,23 +20,6 @@ class ConstraintSet(constraints: Array[Constraint]) {
   def getConstraints(): Array[Constraint] = constraints
 
   /**
-    * Returns all the constraints in the constraint set by stratum.
-    */
-  def getConstraintsByStrata: Array[Array[Constraint]] = {
-    val groupedByStratum = constraints.groupBy(_.getStratum()).toList
-    val strata = groupedByStratum.sortBy(_._1).map(_._2).toArray
-
-    // Ensure that there is always at least one empty stratum.
-    if (strata.nonEmpty) {
-      strata
-    } else {
-      val a = Array.ofDim[Constraint](1, 1)
-      a(0) = Array.empty[Constraint]
-      a
-    }
-  }
-
-  /**
     * Returns all facts in the constraint set as a new constraint set.
     */
   // TODO: In the future it would be better if constraint sets where immutable.
@@ -66,74 +49,6 @@ class ConstraintSet(constraints: Array[Constraint]) {
     */
   def union(that: ConstraintSet): ConstraintSet = {
     new ConstraintSet(this.getConstraints() ++ that.getConstraints())
-  }
-
-  /**
-    * Returns a new constraint set with all relations/lattices instantiated.
-    */
-  def complete(): ConstraintSet = {
-    // Find all relation/lattice variables.
-    val relationVarsByName = getRelationVars().groupBy(_.getName())
-    val latticeVarsByName = getLatticeVars().groupBy(_.getName())
-
-    // Introduce a fresh relation for each name.
-    val instantiatedRelations = relationVarsByName map {
-      case (name, relationVars) => {
-        val relationVar = relationVars(0) // guaranteed to be non-empty.
-        val attr = relationVar.getAttributes()
-        name -> RelSym.getInstance(name, attr)
-      }
-    }
-
-    // Introduce a fresh lattice for each name.
-    val instantiatedLattices = latticeVarsByName map {
-      case (name, latticeVars) => {
-        val latticeVar = latticeVars(0)
-        name -> LatSym.getInstance(name, latticeVar.getKeys(), latticeVar.getValue(), latticeVar.getOps())
-      }
-    }
-
-    /**
-      * Replaces every occurrence of a relation/lattice variable with its instantiated value.
-      */
-    def replaceConstraint(c: Constraint): Constraint = {
-      val head = replacePredicate(c.getHeadPredicate())
-      val body = c.getBodyPredicates().map(replacePredicate)
-      new Constraint(c.getParams(), head, body)
-    }
-
-    /**
-      * Replaces every occurrence of a relation/lattice variable with its instantiated value.
-      */
-    def replacePredicate(p0: Predicate): Predicate = p0 match {
-      case p: AtomPredicate =>
-        val sym = p.getSym() match {
-          case r: AnonRelSym => instantiatedRelations(r.getName())
-          case l: AnonLatSym => instantiatedLattices(l.getName())
-          case _ => p.getSym()
-        }
-        new AtomPredicate(sym, p.isPositive(), p.getTerms(), p.index2sym)
-      case _ => p0
-    }
-
-    // Replace every relation/lattice variable with its instantiated value.
-    val cs = constraints map replaceConstraint
-
-    new ConstraintSet(cs)
-  }
-
-  /**
-    * Returns all relation variables in the constraint set.
-    */
-  private def getRelationVars(): Array[AnonRelSym] = getTables() collect {
-    case r: AnonRelSym => r
-  }
-
-  /**
-    * Returns all lattice variables in the constraint set.
-    */
-  private def getLatticeVars(): Array[AnonLatSym] = getTables() collect {
-    case l: AnonLatSym => l
   }
 
   /**
