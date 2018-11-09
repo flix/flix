@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.runtime.solver.datastore
 import java.io.{PrintWriter, StringWriter}
 
 import ca.uwaterloo.flix.runtime.solver.api.symbol._
-import ca.uwaterloo.flix.runtime.solver.api.ConstraintSet
+import ca.uwaterloo.flix.runtime.solver.api.ConstraintSystem
 import ca.uwaterloo.flix.util.{AsciiTable, BitOps, InternalRuntimeException}
 
 import scala.collection.mutable
@@ -28,7 +28,7 @@ import scala.reflect.ClassTag
 /**
   * A class implementing a data store for indexed relations and lattices.
   */
-class DataStore[ValueType <: AnyRef](constraintSet: ConstraintSet)(implicit m: ClassTag[ValueType]) {
+class DataStore[ValueType <: AnyRef](constraintSet: ConstraintSystem)(implicit m: ClassTag[ValueType]) {
 
   /**
     * A map from names to indexed relations.
@@ -41,12 +41,12 @@ class DataStore[ValueType <: AnyRef](constraintSet: ConstraintSet)(implicit m: C
   val lattices = mutable.Map.empty[PredSym, IndexedLattice]
 
   // Initialize relations for every relation symbol in the constraint system.
-  for (relSym <- constraintSet.getRelations()) {
+  for (relSym <- constraintSet.getRelationSymbols()) {
     relations += relSym -> initRelation(relSym)
   }
 
   // Initialize lattices for every lattice symbol in the constraint system.
-  for (latSym <- constraintSet.getLattices()) {
+  for (latSym <- constraintSet.getLatticeSymbols()) {
     lattices += (latSym -> initLattice(latSym))
   }
 

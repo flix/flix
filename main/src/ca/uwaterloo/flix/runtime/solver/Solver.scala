@@ -40,7 +40,7 @@ import scala.collection.mutable.ArrayBuffer
   *
   * The solver computes the least fixed point of the rules in the given program.
   */
-class Solver(constraintSet: ConstraintSet, options: FixpointOptions) {
+class Solver(constraintSystem: ConstraintSystem, options: FixpointOptions) {
 
   /**
     * Controls the number of batches per thread. A value of one means one batch per thread.
@@ -95,7 +95,7 @@ class Solver(constraintSet: ConstraintSet, options: FixpointOptions) {
     * Writing to the datastore is, in general, not thread-safe: Each relation/lattice may be concurrently updated, but
     * no concurrent writes may occur for the *same* relation/lattice.
     */
-  val dataStore = new DataStore[AnyRef](constraintSet)
+  val dataStore = new DataStore[AnyRef](constraintSystem)
 
   /**
     * The dependencies of the program. Populated by [[initDependencies]].
@@ -202,7 +202,7 @@ class Solver(constraintSet: ConstraintSet, options: FixpointOptions) {
   /**
     * Solves the Flix program.
     */
-  def solve(): ConstraintSet = try {
+  def solve(): ConstraintSystem = try {
     // initialize the solver.
     initSolver()
 
@@ -240,7 +240,7 @@ class Solver(constraintSet: ConstraintSet, options: FixpointOptions) {
     printDebug()
 
     // build and return the model.
-    constraintSet.getFacts()
+    constraintSystem.getModel()
   } catch {
     // Re-throw exceptions caught inside the individual reader/writer tasks.
     case ex: ExecutionException =>
@@ -559,7 +559,7 @@ class Solver(constraintSet: ConstraintSet, options: FixpointOptions) {
       val fact = new Array[ProxyObject](p.getTerms.length)
       var i = 0
       while (i < fact.length) {
-        val term: ProxyObject = evalHeadTerm(terms(i), constraintSet, env)
+        val term: ProxyObject = evalHeadTerm(terms(i), constraintSystem, env)
         fact(i) = term
         i = i + 1
       }
@@ -572,7 +572,7 @@ class Solver(constraintSet: ConstraintSet, options: FixpointOptions) {
   /**
     * Evaluates the given head term `t` under the given environment `env0`
     */
-  def evalHeadTerm(t: Term, root: ConstraintSet, env: Env): ProxyObject = t match {
+  def evalHeadTerm(t: Term, root: ConstraintSystem, env: Env): ProxyObject = t match {
     case t: VarTerm => env(t.getSym.getStackOffset)
     case t: LitTerm => t.getFunction().call()
     case t: AppTerm =>
@@ -869,7 +869,7 @@ class Solver(constraintSet: ConstraintSet, options: FixpointOptions) {
     */
   // TODO: Precompute once.
   def getConstraintsByStrata: Array[Array[Constraint]] = {
-    val groupedByStratum = constraintSet.getConstraints().groupBy(_.getStratum()).toList
+    val groupedByStratum = constraintSystem.getConstraints().groupBy(_.getStratum()).toList
     val strata = groupedByStratum.sortBy(_._1).map(_._2).toArray
 
     // Ensure that there is always at least one empty stratum.

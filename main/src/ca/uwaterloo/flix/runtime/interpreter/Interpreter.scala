@@ -280,7 +280,7 @@ object Interpreter {
     case Expression.ConstraintUnion(exp1, exp2, tpe, loc) =>
       val v1 = cast2constraintset(eval(exp1, env0, henv0, lenv0, root))
       val v2 = cast2constraintset(eval(exp2, env0, henv0, lenv0, root))
-      v1.union(v2)
+      ConstraintSystem.compose(v1, v2)
 
     case Expression.FixpointSolve(uid, exp, stf, tpe, loc) =>
       val cs = cast2constraintset(eval(exp, env0, henv0, lenv0, root))
@@ -702,7 +702,7 @@ object Interpreter {
 
     val constraint = new api.Constraint(cparams.toArray, head, body.toArray)
 
-    new ConstraintSet(Array(constraint))
+    new ConstraintSystem(constraint)
   }
 
   /**
@@ -1053,8 +1053,8 @@ object Interpreter {
   /**
     * Casts the given reference `ref` to a constraint value.
     */
-  private def cast2constraintset(ref: AnyRef): ConstraintSet = ref match {
-    case v: ConstraintSet => v
+  private def cast2constraintset(ref: AnyRef): ConstraintSystem = ref match {
+    case v: ConstraintSystem => v
     case _ => throw InternalRuntimeException(s"Unexpected non-constraint value: ${ref.getClass.getName}.")
   }
 
@@ -1108,7 +1108,7 @@ object Interpreter {
   /**
     * Computes the fixed point of the given constraint set `cs`.
     */
-  private def solve(cs: ConstraintSet, stf: Ast.Stratification)(implicit flix: Flix): ConstraintSet = {
+  private def solve(cs: ConstraintSystem, stf: Ast.Stratification)(implicit flix: Flix): ConstraintSystem = {
     // Configure the fixpoint solver based on the Flix options.
     val options = new FixpointOptions
     options.setMonitored(flix.options.monitor)
@@ -1123,7 +1123,7 @@ object Interpreter {
   /**
     * Returns the minimal set of facts that fails to satisfy the given constraint set.
     */
-  private def deltaSolve(cs: ConstraintSet, stf: Ast.Stratification)(implicit flix: Flix): String = {
+  private def deltaSolve(cs: ConstraintSystem, stf: Ast.Stratification)(implicit flix: Flix): String = {
     // Configure the fixpoint solver based on the Flix options.
     val options = new FixpointOptions
     options.setMonitored(flix.options.monitor)

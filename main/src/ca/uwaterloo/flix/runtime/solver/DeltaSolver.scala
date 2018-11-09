@@ -22,7 +22,7 @@ import flix.runtime.{RuleError, NotImplementedError, SwitchError, TimeoutError}
 /**
   * A delta debugging solver based on the Flix solver.
   */
-class DeltaSolver(constraintSet: ConstraintSet, options: FixpointOptions) {
+class DeltaSolver(constraintSet: ConstraintSystem, options: FixpointOptions) {
 
   /**
     * A common super-type to represent the result of running the solver.
@@ -106,7 +106,7 @@ class DeltaSolver(constraintSet: ConstraintSet, options: FixpointOptions) {
         facts = facts - block
 
         // reconstruct the constraints.
-        val cs = new ConstraintSet(facts.flatten.toArray ++ rules)
+        val cs = new ConstraintSystem(facts.flatten.toArray ++ rules)
 
         // try to solve the reconstructed program.
         trySolve(cs, exception) match {
@@ -150,7 +150,7 @@ class DeltaSolver(constraintSet: ConstraintSet, options: FixpointOptions) {
   /**
     * Optionally returns the exception thrown by the original program.
     */
-  def tryInit(cs: ConstraintSet): Option[RuntimeException] = {
+  def tryInit(cs: ConstraintSystem): Option[RuntimeException] = {
     try {
       runSolver(cs)
       None
@@ -162,7 +162,7 @@ class DeltaSolver(constraintSet: ConstraintSet, options: FixpointOptions) {
   /**
     * Attempts to solve the given program expects `expectedException` to be thrown.
     */
-  def trySolve(cs: ConstraintSet, expectedException: RuntimeException): SolverResult = {
+  def trySolve(cs: ConstraintSystem, expectedException: RuntimeException): SolverResult = {
     try {
       // run the solver.
       runSolver(cs)
@@ -200,7 +200,7 @@ class DeltaSolver(constraintSet: ConstraintSet, options: FixpointOptions) {
   /**
     * Runs the solver.
     */
-  private def runSolver(cs: ConstraintSet): ConstraintSet = {
+  private def runSolver(cs: ConstraintSystem): ConstraintSystem = {
     val solver = new Solver(cs, options)
     solver.solve()
   }
