@@ -7,7 +7,7 @@ import ca.uwaterloo.flix.runtime.solver.api.Attribute;
  * <p>
  * Note: Equality is defined by identity since anon relation symbols differ based on their instance.
  */
-public final class AnonRelSym implements PredSym {
+public final class AnonRelSym implements RelSym {
 
     /**
      * The parent relation symbol.

@@ -406,8 +406,8 @@ class Solver(constraintSet: ConstraintSet, options: FixpointOptions) {
   private def evalAtom(p: AtomPredicate, env: Env): Traversable[Env] = {
     // lookup the relation or lattice.
     val table = p.getSym() match {
-      case r: NamedRelSym => dataStore.getRelation(r)
-      case l: NamedLatSym => dataStore.getLattice(l)
+      case r: RelSym => dataStore.getRelation(r)
+      case l: LatSym => dataStore.getLattice(l)
     }
 
     // evaluate all terms in the predicate.
@@ -600,13 +600,13 @@ class Solver(constraintSet: ConstraintSet, options: FixpointOptions) {
     * Processes an inferred `fact` for the relation or lattice with the symbol `sym`.
     */
   private def inferredFact(sym: PredSym, fact: Array[ProxyObject], localWorkList: WorkList): Unit = sym match {
-    case r: NamedRelSym =>
+    case r: RelSym =>
       val changed = dataStore.getRelation(r).inferredFact(fact)
       if (changed) {
         dependencies(sym, fact, localWorkList)
       }
 
-    case l: NamedLatSym =>
+    case l: LatSym =>
       val changed = dataStore.getLattice(l).inferredFact(fact)
       if (changed) {
         dependencies(sym, fact, localWorkList)
@@ -632,7 +632,7 @@ class Solver(constraintSet: ConstraintSet, options: FixpointOptions) {
 
 
     sym match {
-      case r: NamedRelSym =>
+      case r: RelSym =>
         for ((rule, p) <- dependenciesOf(sym)) {
           // unify all terms with their values.
           val env = unify(p.index2sym, fact, fact.length, rule.getNumberOfParameters)
@@ -641,7 +641,7 @@ class Solver(constraintSet: ConstraintSet, options: FixpointOptions) {
           }
         }
 
-      case l: NamedLatSym =>
+      case l: LatSym =>
         for ((rule, p) <- dependenciesOf(sym)) {
           // unify only key terms with their values.
           val numberOfKeys = l.getKeys().length

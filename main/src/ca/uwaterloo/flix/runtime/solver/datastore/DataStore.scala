@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.runtime.solver.datastore
 
 import java.io.{PrintWriter, StringWriter}
 
-import ca.uwaterloo.flix.runtime.solver.api.symbol.{NamedLatSym, NamedRelSym, PredSym}
+import ca.uwaterloo.flix.runtime.solver.api.symbol._
 import ca.uwaterloo.flix.runtime.solver.api.ConstraintSet
 import ca.uwaterloo.flix.util.{AsciiTable, BitOps, InternalRuntimeException}
 
@@ -40,24 +40,14 @@ class DataStore[ValueType <: AnyRef](constraintSet: ConstraintSet)(implicit m: C
     */
   val lattices = mutable.Map.empty[PredSym, IndexedLattice]
 
-  // TODO: Need to init *ALL relation symbols*
-  for (relation <- constraintSet.getRelations()) {
-    relations += relation -> initRelation(relation)
+  // Initialize relations for every relation symbol in the constraint system.
+  for (relSym <- constraintSet.getRelations()) {
+    relations += relSym -> initRelation(relSym)
   }
 
-  // TODO: Need to init *ALL lattices symbols*
-  for (lattice <- constraintSet.getLattices()) {
-    val name = lattice.getName()
-    val keys = lattice.getKeys()
-    val value = lattice.getValue()
-    val ops = lattice.getOps()
-
-    // NB: Just an index on the first attribute and on all the keys.
-    val idx = Set(Seq(0), keys.indices)
-    val indexes = idx map {
-      case columns => BitOps.setBits(vec = 0, bits = columns)
-    }
-    lattices += (lattice -> new IndexedLattice(name, keys, value, indexes, ops))
+  // Initialize lattices for every lattice symbol in the constraint system.
+  for (latSym <- constraintSet.getLattices()) {
+    lattices += (latSym -> initLattice(latSym))
   }
 
   def getRelations(): Traversable[IndexedRelation] = relations.values
@@ -68,9 +58,9 @@ class DataStore[ValueType <: AnyRef](constraintSet: ConstraintSet)(implicit m: C
 
   def getLattice(l: PredSym): IndexedLattice = lattices(l)
 
-  def initRelation(relation: NamedRelSym): IndexedRelation = {
-    val name = relation.getName()
-    val attributes = relation.getAttributes()
+  def initRelation(relSym: RelSym): IndexedRelation = {
+    val name = relSym.getName()
+    val attributes = relSym.getAttributes()
 
     // NB: Just an index on the first attribute.
     val idx = Set(Seq(0))
@@ -78,6 +68,21 @@ class DataStore[ValueType <: AnyRef](constraintSet: ConstraintSet)(implicit m: C
       case columns => BitOps.setBits(vec = 0, bits = columns)
     }
     new IndexedRelation(name, attributes, indexes, indexes.head)
+  }
+
+  def initLattice(latSym: LatSym): IndexedLattice = {
+    val name = latSym.getName()
+    val keys = latSym.getKeys()
+    val value = latSym.getValue()
+    val ops = latSym.getOps()
+
+    // NB: Just an index on the first attribute and on all the keys.
+    val idx = Set(Seq(0), keys.indices)
+    val indexes = idx map {
+      case columns => BitOps.setBits(vec = 0, bits = columns)
+    }
+
+    new IndexedLattice(name, keys, value, indexes, ops)
   }
 
   /**

@@ -11,7 +11,7 @@ import java.util.Map;
  * <p>
  * Note: Equality is defined by identity due to the internal cache.
  */
-public final class NamedLatSym implements PredSym {
+public final class NamedLatSym implements LatSym {
 
     /**
      * An internal cache of lattice symbols.

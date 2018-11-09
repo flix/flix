@@ -10,7 +10,7 @@ import java.util.Map;
  * <p>
  * Note: Equality is defined by identity due to the internal cache.
  */
-public final class NamedRelSym implements PredSym {
+public final class NamedRelSym implements RelSym {
 
     /**
      * An internal cache of relation symbols.

@@ -8,7 +8,7 @@ import ca.uwaterloo.flix.runtime.solver.api.LatticeOps;
  * <p>
  * Note: Equality is defined by identity since anon lattice symbols differ based on their instance.
  */
-public final class AnonLatSym implements PredSym {
+public final class AnonLatSym implements LatSym {
 
     /**
      * The parent lattice symbol.

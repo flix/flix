@@ -31,15 +31,15 @@ class ConstraintSet(constraints: Array[Constraint]) {
   /**
     * Returns all relations in the constraint set.
     */
-  def getRelations(): Array[NamedRelSym] = getTables() collect {
-    case r: NamedRelSym => r
+  def getRelations(): Array[RelSym] = getTables() collect {
+    case r: RelSym => r
   }
 
   /**
     * Returns all the lattices in the constraint set.
     */
-  def getLattices(): Array[NamedLatSym] = getTables() collect {
-    case l: NamedLatSym => l
+  def getLattices(): Array[LatSym] = getTables() collect {
+    case l: LatSym => l
   }
 
   /**
