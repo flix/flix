@@ -1433,8 +1433,10 @@ object GenExpression {
       // Adding source line number for debugging
       addSourceLine(mv, loc)
 
-
-      ???
+      // Allocate a new object and invoke the constructor.
+      mv.visitTypeInsn(NEW, "ca/uwaterloo/flix/runtime/solver/api/predicate/TruePredicate")
+      mv.visitInsn(DUP)
+      mv.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/solver/api/predicate/TruePredicate", "<init>", "()V", false)
 
     case Predicate.Head.False(loc) =>
       ???
