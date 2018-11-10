@@ -968,10 +968,18 @@ object GenExpression {
       ??? // TODO: NewLattice
 
     case Expression.Constraint(con, tpe, loc) =>
-      ??? // TODO: Constraint
+      addSourceLine(visitor, loc)
+      visitor.visitInsn(ACONST_NULL)
+      visitor.visitTypeInsn(NEW, "ca/uwaterloo/flix/runtime/solver/api/ConstraintSystem")
+      visitor.visitInsn(DUP)
+      visitor.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/solver/api/ConstraintSystem", "<init>", "(Lca/uwaterloo/flix/runtime/solver/api/Constraint;)V", false)
 
     case Expression.ConstraintUnion(exp1, exp2, tpe, loc) =>
-      ??? // TODO: ConstraintUnion
+      addSourceLine(visitor, loc)
+      compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+      compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+      // TODO: Move strings into JvmName.
+      visitor.visitMethodInsn(INVOKESTATIC, "ca/uwaterloo/flix/runtime/solver/api/ConstraintSystem", "compose", "(Lca/uwaterloo/flix/runtime/solver/api/ConstraintSystem;Lca/uwaterloo/flix/runtime/solver/api/ConstraintSystem;)Lca/uwaterloo/flix/runtime/solver/api/ConstraintSystem;", false);
 
     case Expression.FixpointSolve(uid, exp, stf, tpe, loc) =>
       ??? // TODO: FixpointSolve

@@ -1074,7 +1074,7 @@ object JvmOps {
 
       case Expression.NewLattice(sym, tpe, loc) => Set(tpe)
 
-      case Expression.Constraint(con, tpe, loc) => ??? // TODO: Constraint
+      case Expression.Constraint(con, tpe, loc) => Set.empty // TODO: Constraint
 
       case Expression.ConstraintUnion(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2) + tpe
 
