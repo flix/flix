@@ -474,7 +474,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       //TODO SJ: bad parsing with cases
       //TODO SJ: comments har linebreaks :L
       //Expression ~ optional(optWSNoNewLine ~ ( atomic(";") | NewLine) ~ optWS ~ Statement ~ SP  ~> ParsedAst.Expression.Statement)
-      Expression ~ optional(optWS ~ atomic(";") ~ optWS ~ Statement ~ SP  ~> ParsedAst.Expression.Statement)
+      Expression ~ optional(optWS ~ atomic(";") ~ optWS ~ Statement ~ optional(";") ~ SP  ~> ParsedAst.Expression.Statement)
     }
 
     def Block: Rule1[ParsedAst.Expression] = rule {

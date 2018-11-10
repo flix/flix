@@ -8,6 +8,7 @@ def testPutOnBool(): Channel[Bool] =
     let c = newch Bool;
     c <- true
 
+// TODO SJ: this doesnt work
 //@test
 //def testPutOnChar(): Channel[Char] =
 //    let c = newch Char;
@@ -71,6 +72,7 @@ def testPutCombinedOperations1(): Channel[Int] =
     let c = newch Int;
     c <- 1 + 1
 
+//TODO SJ: this doesnt work
 //@test
 //def testPutCombinedOperations2(): Channel[Bool] =
 //    let c = newch Bool;
