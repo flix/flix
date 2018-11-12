@@ -23,6 +23,15 @@ import java.nio.file.{Path, Paths}
   */
 object JvmName {
 
+  // TODO: Introduce interpolator?
+  /**
+    * Returns the JvmName of the given string `s`.
+    */
+  def mk(s: String): JvmName = {
+    val l = s.split("/")
+    JvmName(l.init.toList, l.last)
+  }
+
   /**
     * The Flix Context class.
     */
@@ -97,6 +106,11 @@ object JvmName {
     * The `java.lang.Exception` name
     */
   val UnsupportedOperationException: JvmName = JvmName(List("java", "lang"), "UnsupportedOperationException")
+
+  /**
+    * The `java.lang.Object` name.
+    */
+  val ConstraintSystem: JvmName = mk("ca/uwaterloo/flix/runtime/solver/api/ConstraintSystem")
 
   /**
     * Get the class type for the cell with subtype `subType`

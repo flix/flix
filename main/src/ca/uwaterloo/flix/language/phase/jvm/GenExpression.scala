@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.FinalAst._
 import ca.uwaterloo.flix.language.ast.SemanticOperator._
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.util.{InternalCompilerException, Optimization}
+import ca.uwaterloo.flix.util.{InternalCompilerException, Optimization, Verbosity}
 import ca.uwaterloo.flix.language.ast.{Type => FlixType}
 import org.objectweb.asm
 import org.objectweb.asm.Opcodes._
@@ -968,21 +968,33 @@ object GenExpression {
       ??? // TODO: NewLattice
 
     case Expression.Constraint(con, tpe, loc) =>
+      // Add source line numbers for debugging.
       addSourceLine(visitor, loc)
+
       visitor.visitInsn(ACONST_NULL)
-      visitor.visitTypeInsn(NEW, "ca/uwaterloo/flix/runtime/solver/api/ConstraintSystem")
-      visitor.visitInsn(DUP)
-      visitor.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/solver/api/ConstraintSystem", "<init>", "(Lca/uwaterloo/flix/runtime/solver/api/Constraint;)V", false)
+      visitor.visitMethodInsn(INVOKESTATIC, "ca/uwaterloo/flix/runtime/solver/api/ConstraintSystem", "of", "(Lca/uwaterloo/flix/runtime/solver/api/Constraint;)Lca/uwaterloo/flix/runtime/solver/api/ConstraintSystem;", false)
 
     case Expression.ConstraintUnion(exp1, exp2, tpe, loc) =>
+      // Add source line numbers for debugging.
       addSourceLine(visitor, loc)
+
       compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
       compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
       // TODO: Move strings into JvmName.
       visitor.visitMethodInsn(INVOKESTATIC, "ca/uwaterloo/flix/runtime/solver/api/ConstraintSystem", "compose", "(Lca/uwaterloo/flix/runtime/solver/api/ConstraintSystem;Lca/uwaterloo/flix/runtime/solver/api/ConstraintSystem;)Lca/uwaterloo/flix/runtime/solver/api/ConstraintSystem;", false);
 
     case Expression.FixpointSolve(uid, exp, stf, tpe, loc) =>
-      ??? // TODO: FixpointSolve
+      // Add source line numbers for debugging.
+      addSourceLine(visitor, loc)
+
+      // Emit code for the constraint system expression.
+      compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+
+      // Emit code for the fixpoint options.
+      compileFixpointOptions(visitor)
+
+      // Emit code for the invocation of the solver.
+      visitor.visitMethodInsn(INVOKESTATIC, "ca/uwaterloo/flix/runtime/solver/api/SolverApi", "solve", "(Lca/uwaterloo/flix/runtime/solver/api/ConstraintSystem;Lca/uwaterloo/flix/runtime/solver/FixpointOptions;)Lca/uwaterloo/flix/runtime/solver/api/ConstraintSystem;", false)
 
     case Expression.FixpointCheck(uid, exp, stf, tpe, loc) =>
       ??? // TODO: FixpointCheck
@@ -1546,6 +1558,43 @@ object GenExpression {
     case Term.Body.Lit(sym, tpe, loc) =>
       ??? // TODO
 
+  }
+
+  /**
+    * Generates code the allocate a fixpoint options object based on the flix configuration.
+    */
+  private def compileFixpointOptions(mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
+    // TODO: Names.
+
+    // Allocate a fresh object.
+    mv.visitTypeInsn(NEW, "ca/uwaterloo/flix/runtime/solver/FixpointOptions")
+    mv.visitInsn(DUP)
+
+    // Invoke the constructor.
+    mv.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/solver/FixpointOptions", "<init>", "()V", false)
+
+    // Monitor
+    mv.visitInsn(DUP)
+    if (flix.options.monitor) {
+      mv.visitInsn(ICONST_1)
+    } else {
+      mv.visitInsn(ICONST_0)
+    }
+    mv.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/solver/FixpointOptions", "setMonitored", "(Z)V", false)
+
+    // Threads
+    mv.visitInsn(DUP)
+    mv.visitIntInsn(BIPUSH, flix.options.threads)
+    mv.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/solver/FixpointOptions", "setThreads", "(I)V", false)
+
+    // Verbosity
+    mv.visitInsn(DUP)
+    if (flix.options.verbosity == Verbosity.Verbose) {
+      mv.visitInsn(ICONST_1)
+    } else {
+      mv.visitInsn(ICONST_0)
+    }
+    mv.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/solver/FixpointOptions", "setVerbose", "(Z)V", false)
   }
 
   /**

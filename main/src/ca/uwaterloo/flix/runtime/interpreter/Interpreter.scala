@@ -703,7 +703,7 @@ object Interpreter {
 
     val constraint = new api.Constraint(cparams.toArray, head, body.toArray)
 
-    new ConstraintSystem(constraint)
+    ConstraintSystem.of(constraint)
   }
 
   /**
@@ -1106,18 +1106,11 @@ object Interpreter {
   }
 
   /**
-    * Computes the fixed point of the given constraint set `cs`.
+    * Computes the fixed point of the given constraint set `s`.
     */
-  private def solve(cs: ConstraintSystem, stf: Ast.Stratification)(implicit flix: Flix): ConstraintSystem = {
-    // Configure the fixpoint solver based on the Flix options.
-    val options = new FixpointOptions
-    options.setMonitored(flix.options.monitor)
-    options.setThreads(flix.options.threads)
-    options.setVerbose(flix.options.verbosity == Verbosity.Verbose)
-
-    // Construct the solver.
-    val solver = new Solver(cs, options)
-    solver.solve()
+  private def solve(s: ConstraintSystem, stf: Ast.Stratification)(implicit flix: Flix): ConstraintSystem = {
+    val o = getFixpointOptions()
+    SolverApi.solve(s, o)
   }
 
   /**
@@ -1125,14 +1118,23 @@ object Interpreter {
     */
   private def deltaSolve(cs: ConstraintSystem, stf: Ast.Stratification)(implicit flix: Flix): String = {
     // Configure the fixpoint solver based on the Flix options.
-    val options = new FixpointOptions
-    options.setMonitored(flix.options.monitor)
-    options.setThreads(flix.options.threads)
-    options.setVerbose(flix.options.verbosity == Verbosity.Verbose)
+    val options = getFixpointOptions()
 
     // Construct the solver.
     val deltaSolver = new DeltaSolver(cs, options)
     deltaSolver.deltaSolve()
+  }
+
+  /**
+    * Returns the fixpoint options object based on the flix configuration.
+    */
+  private def getFixpointOptions()(implicit flix: Flix): FixpointOptions = {
+    // Configure the fixpoint solver based on the Flix options.
+    val options = new FixpointOptions
+    options.setMonitored(flix.options.monitor)
+    options.setThreads(flix.options.threads)
+    options.setVerbose(flix.options.verbosity == Verbosity.Verbose)
+    options
   }
 
   /**

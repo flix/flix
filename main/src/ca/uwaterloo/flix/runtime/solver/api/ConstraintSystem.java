@@ -15,6 +15,16 @@ import java.util.List;
 public final class ConstraintSystem {
 
     /**
+     * Returns a new constraint system for the given constraint.
+     */
+    public static ConstraintSystem of(Constraint constraint) {
+        if (constraint == null)
+            throw new IllegalArgumentException("'constraint' must be non-null.");
+
+        return new ConstraintSystem(new Constraint[]{constraint});
+    }
+
+    /**
      * Returns the composition of `c1` with `c2`.
      */
     public static ConstraintSystem compose(ConstraintSystem c1, ConstraintSystem c2) {
@@ -34,25 +44,10 @@ public final class ConstraintSystem {
     private Constraint[] rules;
 
     /**
-     * Construct a new constraint system with the given constraint.
-     */
-    public ConstraintSystem(Constraint constraint) {
-        if (constraint == null)
-            throw new IllegalArgumentException("'constraint' must be non-null.");
-
-        if (constraint.isFact()) {
-            facts = new Constraint[]{constraint};
-            rules = new Constraint[]{};
-        } else {
-            facts = new Constraint[]{};
-            rules = new Constraint[]{constraint};
-        }
-    }
-
-    /**
      * Constructs a new constraint system with the given constraints.
      */
     public ConstraintSystem(Constraint[] constraints) {
+        // TODO: refactor into static method.
         var facts = new LinkedList<Constraint>();
         var rules = new LinkedList<Constraint>();
         for (Constraint c : constraints) {
