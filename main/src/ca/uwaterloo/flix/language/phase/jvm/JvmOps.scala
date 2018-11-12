@@ -70,6 +70,7 @@ object JvmOps {
       case Type.Tuple(l) => getTupleInterfaceType(tpe)
       case Type.Array => JvmType.Object
       case Type.Vector => JvmType.Object
+      case Type.Schema(m) => JvmType.Object
       case Type.Enum(sym, kind) =>
         getNullability(tpe) match {
           case Nullability.Nullable(t) =>
