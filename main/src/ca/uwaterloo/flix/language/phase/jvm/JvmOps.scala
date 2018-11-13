@@ -1038,20 +1038,6 @@ object JvmOps {
         case (sacc, e) => sacc ++ visitExp(e)
       }
 
-        //TODO SJ: place these the right place
-      case Expression.NewChannel(tpe, loc) => Set(tpe)
-
-      case Expression.GetChannel(exp, tpe, loc) => visitExp(exp) + tpe
-
-      case Expression.PutChannel(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2) + tpe
-
-      case Expression.SelectChannel(rules, tpe, loc) =>
-        rules.foldLeft(Set(tpe))( (old, rule) => old ++ visitExp(rule.chan) ++ visitExp(rule.exp))
-
-      case Expression.CloseChannel(exp, tpe, loc) => visitExp(exp) + tpe
-
-      case Expression.Spawn(exp, tpe, loc) => visitExp(exp) + tpe
-
       case Expression.RecordEmpty(tpe, loc) => ??? // TODO
 
       case Expression.RecordSelect(base, label, tpe, loc) => ??? // TODO
@@ -1097,6 +1083,19 @@ object JvmOps {
       case Expression.NativeMethod(method, args, tpe, loc) => args.foldLeft(Set(tpe)) {
         case (sacc, e) => sacc ++ visitExp(e)
       }
+
+      case Expression.NewChannel(tpe, loc) => Set(tpe)
+
+      case Expression.GetChannel(exp, tpe, loc) => visitExp(exp) + tpe
+
+      case Expression.PutChannel(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2) + tpe
+
+      case Expression.SelectChannel(rules, tpe, loc) =>
+        rules.foldLeft(Set(tpe))( (old, rule) => old ++ visitExp(rule.chan) ++ visitExp(rule.exp))
+
+      case Expression.CloseChannel(exp, tpe, loc) => visitExp(exp) + tpe
+
+      case Expression.Spawn(exp, tpe, loc) => visitExp(exp) + tpe
 
       case Expression.NewRelation(sym, tpe, loc) => Set(tpe)
 

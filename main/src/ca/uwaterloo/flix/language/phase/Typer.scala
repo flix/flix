@@ -1179,7 +1179,11 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
          * Select Channel Expression.
          */
         case ResolvedAst.Expression.SelectChannel(rules, tvar, loc) =>
-          // TODO SJ: make rule comment
+          //
+          //  exp1_i: Channel[t_i],            exp2_i: t
+          //  ------------------------------------------------
+          //  select { case sym_i <- exp1_i => exp2_i } : Unit
+          //
           assert(rules.nonEmpty)
           val bodies = rules.map(_.exp)
 
@@ -1202,6 +1206,11 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
          * Close Channel Expression.
          */
         case ResolvedAst.Expression.CloseChannel(exp, tvar, loc) =>
+          //
+          //  exp: Channel[t]
+          //  -----------------
+          //  closech exp : Unit
+          //
           for {
             e <- visitExp(exp)
             _ <- unifyM(e, Type.mkChannel(Type.freshTypeVar()), loc)
@@ -1212,6 +1221,11 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
          * Spawn Expression.
          */
         case ResolvedAst.Expression.Spawn(exp, tvar, loc) =>
+          //
+          //  exp: t
+          //  ------------------
+          //  spawn exp : Unit
+          //
           for {
             e <- visitExp(exp)
             _ <- unifyM(e, Type.freshTypeVar(), loc)
