@@ -1179,6 +1179,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
          * Select Channel Expression.
          */
         case ResolvedAst.Expression.SelectChannel(rules, tvar, loc) =>
+          // TODO SJ: make rule comment
           assert(rules.nonEmpty)
           val bodies = rules.map(_.exp)
 
