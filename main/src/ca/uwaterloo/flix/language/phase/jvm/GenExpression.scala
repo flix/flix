@@ -1559,7 +1559,7 @@ object GenExpression {
       mv.visitInsn(DUP)
 
       // Emit code for the predicate symbol.
-      mv.visitInsn(ACONST_NULL)
+      readVar(varSym, tpe, mv)
 
       // Emit code for the polarity of the atom.
       // A head atom is always positive.

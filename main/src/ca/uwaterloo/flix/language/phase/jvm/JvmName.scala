@@ -109,7 +109,7 @@ object JvmName {
 
   val ConstraintSystem: JvmName = mk("ca/uwaterloo/flix/runtime/solver/api/ConstraintSystem")
 
-  val PredSym: JvmName = mk("ca/uwaterloo/flix/runtime/solver/api/symbol.PredSym")
+  val PredSym: JvmName = mk("ca/uwaterloo/flix/runtime/solver/api/symbol/PredSym")
 
   /**
     * Get the class type for the cell with subtype `subType`
