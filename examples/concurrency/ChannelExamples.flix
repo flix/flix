@@ -7,11 +7,11 @@
 //def chanTest(): Channel[Float64] = chan Float64
 
 //
-def getchTest(): Bool = let c = chan Bool; let c1 = c <- true; <- c1
+//def getchTest(): Bool = let c = chan Bool; let c1 = c <- true; <- c1
 
 //def putchTest(): Channel[Bool] = let c = chan Bool; c <- true
 //
-//def closechTest(): Unit = closech chanTest()
+def closechTest(): Channel[Int] = let c = chan Int; let c1 = closech c; c <- 1
 //
 
 //def collatz(n: Int): Int =
