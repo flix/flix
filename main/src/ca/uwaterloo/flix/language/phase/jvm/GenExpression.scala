@@ -1532,10 +1532,16 @@ object GenExpression {
       mv.visitInsn(DUP)
       mv.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/solver/api/predicate/FalsePredicate", "<init>", "()V", false)
 
-    case Predicate.Head.RelAtom(base, sym, terms, tpe, loc) =>
+    case Predicate.Head.RelAtom(None, sym, terms, tpe, loc) =>
       ??? // TODO
 
-    case Predicate.Head.LatAtom(base, sym, terms, tpe, loc) =>
+    case Predicate.Head.LatAtom(None, sym, terms, tpe, loc) =>
+      ??? // TODO
+
+    case Predicate.Head.RelAtom(Some(varSym), sym, terms, tpe, loc) =>
+      ??? // TODO
+
+    case Predicate.Head.LatAtom(Some(varSym), sym, terms, tpe, loc) =>
       ??? // TODO
 
   }
@@ -1545,10 +1551,16 @@ object GenExpression {
     */
   private def compileBodyAtom(b0: Predicate.Body, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = b0 match {
 
-    case Predicate.Body.RelAtom(base, sym, polarity, terms, index2sym, tpe, loc) =>
+    case Predicate.Body.RelAtom(None, sym, polarity, terms, index2sym, tpe, loc) =>
       ??? // TODO
 
-    case Predicate.Body.LatAtom(base, sym, polarity, terms, index2sym, tpe, loc) =>
+    case Predicate.Body.LatAtom(None, sym, polarity, terms, index2sym, tpe, loc) =>
+      ??? // TODO
+
+    case Predicate.Body.RelAtom(Some(varSym), sym, polarity, terms, index2sym, tpe, loc) =>
+      ??? // TODO
+
+    case Predicate.Body.LatAtom(Some(varSym), sym, polarity, terms, index2sym, tpe, loc) =>
       ??? // TODO
 
     case Predicate.Body.Filter(sym, terms, loc) =>

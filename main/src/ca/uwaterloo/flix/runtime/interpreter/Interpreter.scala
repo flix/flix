@@ -708,7 +708,9 @@ object Interpreter {
     */
   private def evalHeadPredicate(h0: FinalAst.Predicate.Head, env0: Map[String, AnyRef])(implicit root: FinalAst.Root, cache: SymbolCache, flix: Flix): api.predicate.Predicate = h0 match {
     case FinalAst.Predicate.Head.True(_) => new api.predicate.TruePredicate()
+
     case FinalAst.Predicate.Head.False(_) => new api.predicate.FalsePredicate()
+
     case FinalAst.Predicate.Head.RelAtom(baseOpt, sym, terms, _, _) =>
       val ts = terms.map(t => evalHeadTerm(t, env0)).toArray
       val relSym = baseOpt match {
@@ -716,6 +718,7 @@ object Interpreter {
         case Some(baseSym) => cast2relsym(env0(baseSym.toString))
       }
       new AtomPredicate(relSym, true, ts, null)
+
     case FinalAst.Predicate.Head.LatAtom(baseOpt, sym, terms, _, _) =>
       val ts = terms.map(t => evalHeadTerm(t, env0)).toArray
       val latSym = baseOpt match {
