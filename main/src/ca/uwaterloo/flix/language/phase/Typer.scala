@@ -1182,7 +1182,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           //
           //  exp1_i: Channel[t_i],            exp2_i: t
           //  ------------------------------------------------
-          //  select { case sym_i <- exp1_i => exp2_i } : Unit
+          //  select { case sym_i <- exp1_i => exp2_i } : t
           //
           assert(rules.nonEmpty)
           val bodies = rules.map(_.exp)
