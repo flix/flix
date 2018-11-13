@@ -216,7 +216,6 @@ object FinalAst {
     case class PutChannel(exp1: FinalAst.Expression, exp2: FinalAst.Expression, tpe: Type, loc: SourceLocation) extends FinalAst.Expression
 
     case class SelectChannel(rules: List[FinalAst.SelectChannelRule], tpe: Type, loc: SourceLocation) extends FinalAst.Expression
-    //TODO SJ: Can this be simplified
 
     case class CloseChannel(exp: FinalAst.Expression, tpe: Type, loc: SourceLocation) extends FinalAst.Expression
 
@@ -247,7 +246,6 @@ object FinalAst {
   }
 
   case class SelectChannelRule(sym: Symbol.VarSym, chan: FinalAst.Expression, exp: FinalAst.Expression)
-  //TODO SJ: Is this the correct sym type?
 
   sealed trait Predicate {
     def loc: SourceLocation

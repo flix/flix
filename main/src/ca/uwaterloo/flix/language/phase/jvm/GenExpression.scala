@@ -965,25 +965,26 @@ object GenExpression {
 
     case Expression.NewChannel(tpe, loc) =>
       addSourceLine(visitor, loc)
-      visitor.visitTypeInsn(NEW, "ca/uwaterloo/flix/runtime/interpreter/Channel")
+      visitor.visitTypeInsn(NEW, JvmName.Channel.toInternalName)
       visitor.visitInsn(DUP)
-      visitor.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/interpreter/Channel", "<init>", "()V", false)
+      visitor.visitMethodInsn(INVOKESPECIAL, JvmName.Channel.toInternalName, "<init>", "()V", false)
 
     case Expression.GetChannel(exp, tpe, loc) =>
       addSourceLine(visitor, loc)
       compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
-      visitor.visitTypeInsn(CHECKCAST, "ca/uwaterloo/flix/runtime/interpreter/Channel")
-      visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/interpreter/Channel", "get", "()Ljava/lang/Object;", false)
+      visitor.visitTypeInsn(CHECKCAST, JvmName.Channel.toInternalName)
+      // TODO SJ: should the signature reference JvmName also?
+      visitor.visitMethodInsn(INVOKEVIRTUAL, JvmName.Channel.toInternalName, "get", "()Ljava/lang/Object;", false)
       AsmOps.castIfNotPrimAndUnbox(visitor, JvmOps.getJvmType(tpe))
 
     case Expression.PutChannel(exp1, exp2, tpe, loc) =>
       addSourceLine(visitor, loc)
       compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
-      visitor.visitTypeInsn(CHECKCAST, "ca/uwaterloo/flix/runtime/interpreter/Channel")
+      visitor.visitTypeInsn(CHECKCAST, JvmName.Channel.toInternalName)
       visitor.visitInsn(DUP)
       compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
       AsmOps.boxIfPrim(visitor, JvmOps.getJvmType(exp2.tpe))
-      visitor.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/interpreter/Channel", "put", "(Ljava/lang/Object;)V", false)
+      visitor.visitMethodInsn(INVOKEVIRTUAL, JvmName.Channel.toInternalName, "put", "(Ljava/lang/Object;)V", false)
 
     case Expression.UserError(_, loc) =>
       addSourceLine(visitor, loc)

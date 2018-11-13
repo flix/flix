@@ -5,24 +5,21 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.*;
 
-public class Channel {
-  private boolean isOpen;
-  private int bufferSize;
-  private LinkedList<Object> queue;
-  private Set<Condition> waitingGetters;
-  private Condition waitingSetters;
-  private Lock lock;
+public final class Channel {
+  //TODO SJ: make docs
   private static AtomicInteger GLOBALCOUNTER = new AtomicInteger();
-  private int id;
 
-  public Channel() {
-    this.isOpen = true;
-    this.queue = new LinkedList<>();
-    this.lock = new ReentrantLock();
-    this.waitingGetters = new HashSet<>();
-    this.waitingSetters = lock.newCondition();
-    this.id = GLOBALCOUNTER.getAndIncrement();
-  }
+  private boolean isOpen = true;
+  private LinkedList<Object> queue = new LinkedList<>();
+  private Set<Condition> waitingGetters = new HashSet<>();
+  private Lock lock = new ReentrantLock();
+  private Condition waitingSetters = lock.newCondition();
+  private int id = GLOBALCOUNTER.getAndIncrement();
+
+  /**
+   * NOT IMPLEMENTED
+   */
+  private int bufferSize;
 
   public void put(Object e) {
     lock.lock();
@@ -151,8 +148,12 @@ public class Channel {
     return channelsCopy;
   }
 
+  /**
+   * TODO SJ rewrite this
+   * PRECONDITION: Should always sort first to avoid deadlock.
+   * @param channels
+   */
   private static void lockAllChannels(Channel[] channels) {
-    // Arrays.sort(channels, Comparator.comparing((Channel c) -> c.id));
     for (Channel c : channels) c.lock.lock();
   }
 

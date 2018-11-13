@@ -287,6 +287,7 @@ object Interpreter {
       Value.Unit
 
     case Expression.Spawn(exp, tpe, loc) =>
+      // Todo determine daemon
       new Thread(){
         override def run(): Unit = {
           eval(exp, env0, henv0, lenv0, root)

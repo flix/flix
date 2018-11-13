@@ -471,9 +471,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
   object Expressions {
     def Statement: Rule1[ParsedAst.Expression] = rule {
-      //TODO SJ: bad parsing with cases
-      //TODO SJ: comments har linebreaks :L
-      //Expression ~ optional(optWSNoNewLine ~ ( atomic(";") | NewLine) ~ optWS ~ Statement ~ SP  ~> ParsedAst.Expression.Statement)
       Expression ~ optional(optWS ~ atomic(";") ~ optWS ~ Statement ~ optional(";") ~ SP  ~> ParsedAst.Expression.Statement)
     }
 
@@ -674,7 +671,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     //TODO SJ: order this
     def NewChannel: Rule1[ParsedAst.Expression.NewChannel] = rule {
-      SP ~ atomic("newch") ~ WS ~ Type ~ SP ~> ParsedAst.Expression.NewChannel
+      SP ~ atomic("chan") ~ WS ~ Type ~ SP ~> ParsedAst.Expression.NewChannel
     }
 
     def GetChannel: Rule1[ParsedAst.Expression.GetChannel] = rule {

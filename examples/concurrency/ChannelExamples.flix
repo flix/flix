@@ -4,18 +4,18 @@
 //    x
 //}
 
-//def newchTest(): Channel[Float64] = newch Float64
+//def chanTest(): Channel[Float64] = chan Float64
 
 //
-def getchTest(): Bool = let c = newch Bool; let c1 = c <- true; <- c1
+def getchTest(): Bool = let c = chan Bool; let c1 = c <- true; <- c1
 
-//def putchTest(): Channel[Bool] = let c = newch Bool; c <- true
+//def putchTest(): Channel[Bool] = let c = chan Bool; c <- true
 //
-//def closechTest(): Unit = closech newchTest()
+//def closechTest(): Unit = closech chanTest()
 //
 
 //def collatz(n: Int): Int =
-   // let c = newch Int;
+   // let c = chan Int;
   //  c <- n;
 
 
@@ -25,16 +25,16 @@ def getchTest(): Bool = let c = newch Bool; let c1 = c <- true; <- c1
 //
 //@test
 //def spawnTest(): Int =
-//    let c = newch Int;
+//    let c = chan Int;
 //    spawn f(c); spawn f(c); spawn f(c); spawn f(c); spawn f(c);
 //    spawn f(c); spawn f(c); spawn f(c); spawn f(c); spawn f(c);
 //    <- c; <- c; <- c; <- c; <- c; <- c; <- c; <- c; <- c; <- c
 //
 //
 //def selectTest(): Int = {
-//    let c1 = newch Int;
+//    let c1 = chan Int;
 //    let asd = c1 <- 1;
-//    let c2 = newch Int;
+//    let c2 = chan Int;
 //    let fgh = c2 <- 2;
 //    select {
 //        case x <- c2 => x + 1

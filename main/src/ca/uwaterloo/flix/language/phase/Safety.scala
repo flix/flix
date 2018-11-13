@@ -83,7 +83,7 @@ object Safety extends Phase[Root, Root] {
 
     case Expression.Match(exp, rules, tpe, eff, loc) =>
       rules.foldLeft(visitExp(exp)) {
-        case (acc, MatchRule(p, g, e)) => acc ::: visitExp(e)
+        case (acc, MatchRule(p, g, e)) => acc ::: visitExp(g) ::: visitExp(e)
       }
 
     case Expression.Switch(rules, tpe, eff, loc) =>
@@ -182,7 +182,6 @@ object Safety extends Phase[Root, Root] {
     case Expression.PutChannel(exp1, exp2, tpe, eff, loc) => visitExp(exp1) ::: visitExp(exp2)
 
     case Expression.SelectChannel(rules, tpe, eff, loc) =>
-      //TODO SJ: Should we also visitExp(chan) - why does Match NOT visit its guard
       rules.foldLeft(Nil: List[CompilationError]) {
         case (acc, SelectChannelRule(sym, chan, exp)) => acc ::: visitExp(chan) ::: visitExp(exp)
       }

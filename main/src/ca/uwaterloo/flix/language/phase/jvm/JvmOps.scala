@@ -1018,8 +1018,7 @@ object JvmOps {
         visitExp(exp1) ++ visitExp(exp2) + tpe
 
       case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
-        visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
-        //TODO SJ: should this also include tpe?
+        visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) + tpe
 
       case Expression.Branch(exp, branches, tpe, loc) => branches.foldLeft(visitExp(exp)) {
         case (sacc, (_, e)) => sacc ++ visitExp(e)

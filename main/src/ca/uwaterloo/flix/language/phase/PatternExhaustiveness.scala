@@ -316,10 +316,7 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
             _ <- checkPats(exp2, root)
           } yield tast
 
-        case Expression.SelectChannel(rules, _, _, _) => for {
-          //TODO SJ: Should we also check x.chan? (why does Match NOT check its guard)
-          _ <- sequence(rules map { x => checkPats(x.exp, root)})
-        } yield tast
+        case Expression.SelectChannel(_, _, _, _) => tast.toSuccess
 
         case Expression.CloseChannel(exp, _, _, _) => for {
           _ <- checkPats(exp, root)

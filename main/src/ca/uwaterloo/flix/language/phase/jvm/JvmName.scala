@@ -83,6 +83,12 @@ object JvmName {
     */
   val String: JvmName = JvmName(List("java", "lang"), "String")
 
+  //TODO SJ: place this class a better place
+  /**
+    * The `ca.uwaterloo.flix.runtime.interpreter.Channel` name.
+    */
+  val Channel: JvmName = JvmName(List("ca", "uwaterloo", "flix", "runtime", "interpreter"), "Channel")
+
   /**
     * The `scala.math.package$` name
     */

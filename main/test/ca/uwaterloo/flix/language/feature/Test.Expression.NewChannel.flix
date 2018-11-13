@@ -1,30 +1,32 @@
-@test
-def testNewChannelOnUnit(): Channel[Unit] = newch Unit
+//TODO SJ: fix naming
 
 @test
-def testNewChannelOnBool(): Channel[Bool] = newch Bool
+def testNewChannelOnUnit(): Channel[Unit] = chan Unit
 
 @test
-def testNewChannelOnChar(): Channel[Char] = newch Char
+def testNewChannelOnBool(): Channel[Bool] = chan Bool
 
 @test
-def testNewChannelOnFloat(): Channel[Float] = newch Float
+def testNewChannelOnChar(): Channel[Char] = chan Char
 
 @test
-def testNewChannelOnInt(): Channel[Int] = newch Int
+def testNewChannelOnFloat(): Channel[Float] = chan Float
 
 @test
-def testNewChannelOnBigInt(): Channel[BigInt] = newch BigInt
+def testNewChannelOnInt(): Channel[Int] = chan Int
 
 @test
-def testNewChannelOnStr(): Channel[Str] = newch Str
+def testNewChannelOnBigInt(): Channel[BigInt] = chan BigInt
 
 @test
-def testNewChannelOnChannel(): Channel[Channel[Int]] = newch Channel[Int]
+def testNewChannelOnStr(): Channel[Str] = chan Str
 
 @test
-def testNewChannelOnArray(): Channel[Array[Int]] = newch Array[Int]
+def testNewChannelOnChannel(): Channel[Channel[Int]] = chan Channel[Int]
 
 @test
-def testNewChannelOnNestedType(): Channel[Channel[Channel[Channel[Str]]]] = newch Channel[Channel[Channel[Str]]]
+def testNewChannelOnArray(): Channel[Array[Int]] = chan Array[Int]
+
+@test
+def testNewChannelOnNestedType(): Channel[Channel[Channel[Channel[Str]]]] = chan Channel[Channel[Channel[Str]]]
 

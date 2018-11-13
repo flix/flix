@@ -933,6 +933,7 @@ object ParsedAst {
       * NewChannel Expression.
       *
       * @param sp1 the position of the first character in the expression.
+      * @param tpe the type of the channel elements.
       * @param sp2 the position of the last character in the expression.
       */
     case class NewChannel(sp1: SourcePosition, tpe: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Expression
@@ -941,7 +942,7 @@ object ParsedAst {
       * GetChannel Expression.
       *
       * @param sp1 the position of the first character in the expression.
-      * @param exp the Channel expression.
+      * @param exp the channel expression.
       * @param sp2 the position of the last character in the expression.
       */
     case class GetChannel(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
@@ -949,8 +950,8 @@ object ParsedAst {
     /**
       * PutChannel Expression
       *
-      * @param exp1 the Channel expression.
-      * @param exp2 the expression to put in the Channel.
+      * @param exp1 the channel expression.
+      * @param exp2 the expression to put in the channel.
       * @param sp2  the position of the last character in the expression.
       */
     case class PutChannel(exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
@@ -968,7 +969,7 @@ object ParsedAst {
       * CloseChannel Expression.
       *
       * @param sp1 the position of the first character in the expression.
-      * @param exp the Channel expression.
+      * @param exp the channel expression.
       * @param sp2 the position of the last character in the expression.
       */
     case class CloseChannel(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
@@ -1495,7 +1496,7 @@ object ParsedAst {
   case class MatchRule(pat: ParsedAst.Pattern, guard: Option[ParsedAst.Expression], exp: ParsedAst.Expression) extends ParsedAst
 
   /**
-    * A select channel rule consists of a pattern, a channel expression, and a body expression.
+    * A select channel rule consists of an identifier, a channel expression, and a body expression.
     *
     * @param ident  the bound identifier.
     * @param chan   the channel expression of the rule.
