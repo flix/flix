@@ -986,6 +986,73 @@ object GenExpression {
       AsmOps.boxIfPrim(visitor, JvmOps.getJvmType(exp2.tpe))
       visitor.visitMethodInsn(INVOKEVIRTUAL, JvmName.Channel.toInternalName, "put", "(Ljava/lang/Object;)V", false)
 
+    case Expression.SelectChannel(rules, tpe, loc) =>
+      addSourceLine(visitor, loc)
+      // Make a new Channel[] containing all channel expressions
+
+      // Calculate the size of the array and initiate it
+      // TODO SJ: Is this okay with large numbers
+      compileInt(visitor, rules.size)
+      visitor.visitTypeInsn(ANEWARRAY, JvmName.Channel.toInternalName)
+      for (index <- rules.indices) {
+        // Dup so we end up with an array on top of the stack
+        visitor.visitInsn(DUP)
+        // Compile the index
+        compileInt(visitor, index)
+        // Compile the chan expression
+        compileExpression(rules.apply(index).chan, visitor, currentClass, lenv0, entryPoint)
+        // Cast the type from Object to Channel
+        visitor.visitTypeInsn(CHECKCAST, JvmName.Channel.toInternalName)
+        // Store the expression in the array
+        visitor.visitInsn(AASTORE)
+      }
+      // TODO SJ: Should we create a JvmName for the return type here?
+      // Invoke select in Channel. This puts a SelectChoice on the stack
+      visitor.visitMethodInsn(INVOKESTATIC, JvmName.Channel.toInternalName, "select", "([Lca/uwaterloo/flix/runtime/interpreter/Channel;)Lca/uwaterloo/flix/runtime/interpreter/SelectChoice;", false)
+      // Dup since we need to get the element and the relevant index
+      visitor.visitInsn(DUP)
+      // Get the relevant branchNumber and put it on the stack
+      visitor.visitFieldInsn(GETFIELD, JvmName.SelectChoice.toInternalName, "branchNumber", "I")
+
+      val labels: List[Label] = rules.map(r => new Label())
+      for (index <- rules.indices) {
+        // Dup since we need branchNumber for each rule
+        visitor.visitInsn(DUP)
+        // Put the current index of rules on the stack
+        compileInt(visitor, index)
+        // Get the difference of branchNumber and current index of rules
+        visitor.visitInsn(ISUB)
+        // If the difference is not 0, then it is not the correct case.
+        // Thus we jump so we don't compute anything
+        visitor.visitJumpInsn(IFNE, labels.apply(index))
+
+
+
+        // We found the correct branch
+        // We don't need to keep track of the branchNumber anymore
+        visitor.visitInsn(POP)
+        // The SelectChoice is on top again. We now get the element of the channel
+        visitor.visitFieldInsn(GETFIELD, JvmName.SelectChoice.toInternalName, "element", "Ljava/lang/Object;")
+        // Jvm Type of the elementType
+        val jvmType = JvmOps.getErasedJvmType(ca.uwaterloo.flix.language.ast.Type.getChannelInnerType(rules.apply(index).chan.tpe))
+        // Unbox if needed for primitives
+        AsmOps.castIfNotPrimAndUnbox(visitor, jvmType)
+        // Store instruction for `jvmType`
+        val iStore = AsmOps.getStoreInstruction(jvmType)
+        // TODO SJ: Why +3 ?(from IfThenElse) +3 does not seem to be correct! (we tried just always compiling 1 instead of storing and compiling the exp, which worked)
+        // Extend the environment with the element from the channel
+        visitor.visitVarInsn(iStore, rules.apply(index).sym.getStackOffset + 3)
+        // Finally compile the body of the selected rule
+        compileExpression(rules.apply(index).exp, visitor, currentClass, lenv0, entryPoint)
+        // Jump out of the branches so we do not go through unnecessary branches
+        visitor.visitJumpInsn(GOTO,labels.last)
+
+
+
+        // We jumped here to not compute anything
+        visitor.visitLabel(labels.apply(index))
+      }
+
     case Expression.CloseChannel(exp, tpe, loc) =>
       addSourceLine(visitor, loc)
       compileExpression(exp, visitor, currentClass, lenv0, entryPoint)

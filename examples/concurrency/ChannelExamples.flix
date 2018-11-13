@@ -31,15 +31,15 @@ def closechTest(): Channel[Int] = let c = chan Int; let c1 = closech c; c <- 1
 //    <- c; <- c; <- c; <- c; <- c; <- c; <- c; <- c; <- c; <- c
 //
 //
-//def selectTest(): Int = {
-//    let c1 = chan Int;
-//    let asd = c1 <- 1;
-//    let c2 = chan Int;
-//    let fgh = c2 <- 2;
-//    select {
-//        case x <- c2 => x + 1
-//        case y <- c1 => y + 1
-//    }
-//}
+def selectTest(): Int = {
+    let c1 = chan Int;
+    let asd = c1 <- 1;
+    let c2 = chan Int;
+    let fgh = c2 <- 2;
+    select {
+        case x <- c2 => x + 1
+        case y <- c1 => y + 1
+    }
+}
 //
 //def statementTest(): Int = 1 ; 2
