@@ -284,24 +284,21 @@ object Interpreter {
       ConstraintSystem.compose(v1, v2)
 
     case Expression.FixpointSolve(uid, exp, stf, tpe, loc) =>
-      val cs = cast2constraintset(eval(exp, env0, henv0, lenv0, root))
-      solve(cs, stf)
+      val s = cast2constraintset(eval(exp, env0, henv0, lenv0, root))
+      val o = getFixpointOptions()
+      SolverApi.solve(s, o)
 
     case Expression.FixpointCheck(uid, exp, stf, tpe, loc) =>
-      // TODO
-      val cs = cast2constraintset(eval(exp, env0, henv0, lenv0, root))
-      println(cs)
-      try {
-        val fixpoint = solve(cs, stf)
-        println(fixpoint)
-        Value.True
-      } catch {
-        case ex: RuleError => Value.False
-      }
+      val s = cast2constraintset(eval(exp, env0, henv0, lenv0, root))
+      val o = getFixpointOptions()
+      val r = SolverApi.check(s, o)
+      if (r) Value.True else Value.False
 
     case Expression.FixpointDelta(uid, exp, stf, tpe, loc) =>
-      val cs = cast2constraintset(eval(exp, env0, henv0, lenv0, root))
-      deltaSolve(cs, stf)
+      val s = cast2constraintset(eval(exp, env0, henv0, lenv0, root))
+      val o = getFixpointOptions()
+      val r = SolverApi.deltaSolve(s, o)
+      Value.Str(r)
 
     case Expression.UserError(_, loc) => throw new NotImplementedError(loc.reified)
 
@@ -1103,26 +1100,6 @@ object Interpreter {
         Value.RecordExtension(removeRecordLabel(base, field), field2, value)
     case Value.RecordEmpty => throw InternalRuntimeException(s"Unexpected missing field: '$field'.")
     case _ => throw InternalRuntimeException(s"Unexpected non-record value: '$record'.")
-  }
-
-  /**
-    * Computes the fixed point of the given constraint set `s`.
-    */
-  private def solve(s: ConstraintSystem, stf: Ast.Stratification)(implicit flix: Flix): ConstraintSystem = {
-    val o = getFixpointOptions()
-    SolverApi.solve(s, o)
-  }
-
-  /**
-    * Returns the minimal set of facts that fails to satisfy the given constraint set.
-    */
-  private def deltaSolve(cs: ConstraintSystem, stf: Ast.Stratification)(implicit flix: Flix): String = {
-    // Configure the fixpoint solver based on the Flix options.
-    val options = getFixpointOptions()
-
-    // Construct the solver.
-    val deltaSolver = new DeltaSolver(cs, options)
-    deltaSolver.deltaSolve()
   }
 
   /**

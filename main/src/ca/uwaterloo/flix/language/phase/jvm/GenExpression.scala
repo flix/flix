@@ -987,7 +987,7 @@ object GenExpression {
       // Add source line numbers for debugging.
       addSourceLine(visitor, loc)
 
-      // Emit code for the constraint system expression.
+      // Emit code for the constraint system.
       compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
 
       // Emit code for the fixpoint options.
@@ -997,10 +997,30 @@ object GenExpression {
       visitor.visitMethodInsn(INVOKESTATIC, "ca/uwaterloo/flix/runtime/solver/api/SolverApi", "solve", "(Lca/uwaterloo/flix/runtime/solver/api/ConstraintSystem;Lca/uwaterloo/flix/runtime/solver/FixpointOptions;)Lca/uwaterloo/flix/runtime/solver/api/ConstraintSystem;", false)
 
     case Expression.FixpointCheck(uid, exp, stf, tpe, loc) =>
-      ??? // TODO: FixpointCheck
+      // Add source line numbers for debugging.
+      addSourceLine(visitor, loc)
+
+      // Emit code for the constraint system.
+      compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+
+      // Emit code for the fixpoint options.
+      compileFixpointOptions(visitor)
+
+      // Emit code for the invocation of the solver.
+      visitor.visitMethodInsn(INVOKESTATIC, "ca/uwaterloo/flix/runtime/solver/api/SolverApi", "check", "(Lca/uwaterloo/flix/runtime/solver/api/ConstraintSystem;Lca/uwaterloo/flix/runtime/solver/FixpointOptions;)Z", false);
 
     case Expression.FixpointDelta(uid, exp, stf, tpe, loc) =>
-      ??? // TODO: FixpointDelta
+      // Add source line numbers for debugging.
+      addSourceLine(visitor, loc)
+
+      // Emit code for the constraint system.
+      compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+
+      // Emit code for the fixpoint options.
+      compileFixpointOptions(visitor)
+
+      // Emit code for the invocation of the solver.
+      visitor.visitMethodInsn(INVOKESTATIC, "ca/uwaterloo/flix/runtime/solver/api/SolverApi", "deltaSolve", "(Lca/uwaterloo/flix/runtime/solver/api/ConstraintSystem;Lca/uwaterloo/flix/runtime/solver/FixpointOptions;)Ljava/lang/String;", false);
 
     case Expression.UserError(_, loc) =>
       addSourceLine(visitor, loc)
