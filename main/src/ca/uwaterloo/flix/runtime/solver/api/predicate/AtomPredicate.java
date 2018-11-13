@@ -19,7 +19,7 @@ public final class AtomPredicate implements Predicate {
     /**
      * Whether the atom is negated.
      */
-    private final Boolean positive;
+    private final boolean positive;
 
     /**
      * The terms of the atom.
@@ -32,7 +32,7 @@ public final class AtomPredicate implements Predicate {
     /**
      * Constructs an atom predicate for the given predicate symbol, with the given polarity, and terms.
      */
-    public AtomPredicate(PredSym sym, Boolean positive, Term[] terms, VarSym[] index2sym) {
+    public AtomPredicate(PredSym sym, boolean positive, Term[] terms, VarSym[] index2sym) {
         if (sym == null)
             throw new IllegalArgumentException("'sym' must be non-null.");
         if (terms == null)
