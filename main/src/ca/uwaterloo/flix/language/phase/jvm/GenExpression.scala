@@ -1493,13 +1493,15 @@ object GenExpression {
       mv.visitInsn(DUP)
 
       // Emit code for the cparams.
-      mv.visitInsn(ACONST_NULL)
+      mv.visitInsn(ICONST_0)
+      mv.visitTypeInsn(ANEWARRAY, "ca/uwaterloo/flix/runtime/solver/api/symbol/VarSym")
 
       // Emit code for the head atom.
-      mv.visitInsn(ACONST_NULL)
+      compileHeadAtom(head, mv)
 
       // Emit code for the body atoms.
-      mv.visitInsn(ACONST_NULL)
+      mv.visitInsn(ICONST_0)
+      mv.visitTypeInsn(ANEWARRAY, "ca/uwaterloo/flix/runtime/solver/api/predicate/Predicate")
 
       // Invoke the constructor of constraint.
       mv.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/solver/api/Constraint", "<init>", "([Lca/uwaterloo/flix/runtime/solver/api/symbol/VarSym;Lca/uwaterloo/flix/runtime/solver/api/predicate/Predicate;[Lca/uwaterloo/flix/runtime/solver/api/predicate/Predicate;)V", false)

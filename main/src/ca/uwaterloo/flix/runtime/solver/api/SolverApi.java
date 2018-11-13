@@ -12,7 +12,9 @@ public final class SolverApi {
      */
     public static ConstraintSystem solve(ConstraintSystem s, FixpointOptions o) {
         Solver solver = new Solver(s, o);
-        return solver.solve();
+        ConstraintSystem result = solver.solve();
+        System.out.println(result.toString());
+        return result;
     }
 
     /**
