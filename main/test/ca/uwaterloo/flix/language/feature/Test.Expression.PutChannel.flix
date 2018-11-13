@@ -78,4 +78,5 @@ def testPutCombinedOperations1(): Channel[Int] =
 //@test
 //def testPutCombinedOperations2(): Channel[Bool] =
 //    let c = chan Bool;
-//    c <- c == chan Bool
+//    let someBool = c == chan Bool;
+//    c <- someBool
