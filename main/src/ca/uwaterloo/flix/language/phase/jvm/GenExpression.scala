@@ -971,16 +971,20 @@ object GenExpression {
       // Add source line numbers for debugging.
       addSourceLine(visitor, loc)
 
-      visitor.visitInsn(ACONST_NULL)
-      visitor.visitMethodInsn(INVOKESTATIC, "ca/uwaterloo/flix/runtime/solver/api/ConstraintSystem", "of", "(Lca/uwaterloo/flix/runtime/solver/api/Constraint;)Lca/uwaterloo/flix/runtime/solver/api/ConstraintSystem;", false)
+      // Emit code for the constraint.
+      compileConstraint(con, visitor)
 
     case Expression.ConstraintUnion(exp1, exp2, tpe, loc) =>
       // Add source line numbers for debugging.
       addSourceLine(visitor, loc)
 
+      // Emit code for the left-hand constraint system.
       compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+
+      // Emit code for the right-hand constraint system.
       compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
-      // TODO: Move strings into JvmName.
+
+      // Emit code for the invocation of compose.
       visitor.visitMethodInsn(INVOKESTATIC, "ca/uwaterloo/flix/runtime/solver/api/ConstraintSystem", "compose", "(Lca/uwaterloo/flix/runtime/solver/api/ConstraintSystem;Lca/uwaterloo/flix/runtime/solver/api/ConstraintSystem;)Lca/uwaterloo/flix/runtime/solver/api/ConstraintSystem;", false);
 
     case Expression.FixpointSolve(uid, exp, stf, tpe, loc) =>
@@ -1477,6 +1481,31 @@ object GenExpression {
           bigintOp, AsmOps.getMethodDescriptor(List(JvmOps.getJvmType(e2.tpe)), JvmType.BigInteger), false)
       case _ => throw InternalCompilerException(s"Unexpected semantic operator: $sop.")
     }
+  }
+
+  /**
+    * Compiles the given constraint `c`.
+    */
+  private def compileConstraint(c: Constraint, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = c match {
+    case Constraint(cparams, head, body) =>
+      // Allocate a fresh constraint object.
+      mv.visitTypeInsn(NEW, "ca/uwaterloo/flix/runtime/solver/api/Constraint")
+      mv.visitInsn(DUP)
+
+      // Emit code for the cparams.
+      mv.visitInsn(ACONST_NULL)
+
+      // Emit code for the head atom.
+      mv.visitInsn(ACONST_NULL)
+
+      // Emit code for the body atoms.
+      mv.visitInsn(ACONST_NULL)
+
+      // Invoke the constructor of constraint.
+      mv.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/solver/api/Constraint", "<init>", "([Lca/uwaterloo/flix/runtime/solver/api/symbol/VarSym;Lca/uwaterloo/flix/runtime/solver/api/predicate/Predicate;[Lca/uwaterloo/flix/runtime/solver/api/predicate/Predicate;)V", false)
+
+      // Emit code to instantiate the constraint system.
+      mv.visitMethodInsn(INVOKESTATIC, "ca/uwaterloo/flix/runtime/solver/api/ConstraintSystem", "of", "(Lca/uwaterloo/flix/runtime/solver/api/Constraint;)Lca/uwaterloo/flix/runtime/solver/api/ConstraintSystem;", false)
   }
 
   /**
