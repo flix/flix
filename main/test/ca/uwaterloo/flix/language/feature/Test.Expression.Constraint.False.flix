@@ -1,23 +1,23 @@
 @test
-def testTrueAtom01(): Unit =
+def testFalsePredicate01(): Unit =
     let x = false.;
     ()
 
 @test
-def testTrueAtom02(): Unit =
+def testFalsePredicate02(): Unit =
     let x = false.;
     let y = false.;
     ()
 
 @test
-def testTrueAtom03(): Unit =
+def testFalsePredicate03(): Unit =
     let x = false.;
     let y = false.;
     let r = union x y;
     ()
 
 @test
-def testTrueAtom04(): Unit =
+def testFalsePredicate04(): Unit =
     let x = false.;
     let y = false.;
     let u = union x y;
@@ -25,7 +25,7 @@ def testTrueAtom04(): Unit =
     ()
 
 @test
-def testTrueAtom05(): Unit =
+def testFalsePredicate05(): Unit =
     let x = false.;
     let y = false.;
     let u = union x y;
@@ -34,7 +34,7 @@ def testTrueAtom05(): Unit =
     ()
 
 @test
-def testTrueAtom06(): Unit =
+def testFalsePredicate06(): Unit =
     let x = false.;
     let y = false.;
     let u = check x;
@@ -42,7 +42,7 @@ def testTrueAtom06(): Unit =
     ()
 
 @test
-def testTrueAtom07(): Unit =
+def testFalsePredicate07(): Unit =
     let x = false.;
     let y = false.;
     let u = check (union x y);
