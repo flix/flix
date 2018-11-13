@@ -71,6 +71,7 @@ object JvmOps {
       case Type.Array => JvmType.Object
       case Type.Vector => JvmType.Object
       case Type.Schema(m) => JvmType.Reference(JvmName.ConstraintSystem)
+      case Type.Relation(sym, attr, kind) => JvmType.Reference(JvmName.PredSym)
       case Type.Enum(sym, kind) =>
         getNullability(tpe) match {
           case Nullability.Nullable(t) =>

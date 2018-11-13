@@ -962,7 +962,19 @@ object GenExpression {
       }
 
     case Expression.NewRelation(sym, tpe, loc) =>
-      ??? // TODO: NewRelation
+      // Add source line numbers for debugging.
+      addSourceLine(visitor, loc)
+
+      // Emit code for the name of the relation symbol.
+      visitor.visitLdcInsn(sym.toString)
+
+      // Emit code for the attributes.
+      // TODO: Currently emits an empty array.
+      visitor.visitInsn(ICONST_0)
+      visitor.visitTypeInsn(ANEWARRAY, "ca/uwaterloo/flix/runtime/solver/api/Attribute")
+
+      // Instantiate the relation symbol.
+      visitor.visitMethodInsn(INVOKESTATIC, "ca/uwaterloo/flix/runtime/solver/api/symbol/NamedRelSym", "getInstance", "(Ljava/lang/String;[Lca/uwaterloo/flix/runtime/solver/api/Attribute;)Lca/uwaterloo/flix/runtime/solver/api/symbol/NamedRelSym;", false)
 
     case Expression.NewLattice(sym, tpe, loc) =>
       ??? // TODO: NewLattice
