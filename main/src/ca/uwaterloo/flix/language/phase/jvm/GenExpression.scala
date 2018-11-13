@@ -986,6 +986,15 @@ object GenExpression {
       AsmOps.boxIfPrim(visitor, JvmOps.getJvmType(exp2.tpe))
       visitor.visitMethodInsn(INVOKEVIRTUAL, JvmName.Channel.toInternalName, "put", "(Ljava/lang/Object;)V", false)
 
+    case Expression.CloseChannel(exp, tpe, loc) =>
+      addSourceLine(visitor, loc)
+      compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+      visitor.visitTypeInsn(CHECKCAST, JvmName.Channel.toInternalName)
+      visitor.visitMethodInsn(INVOKEVIRTUAL, JvmName.Channel.toInternalName, "close", "()V", false)
+      // Put a Unit value on the stack
+      visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Value.Unit.toInternalName, "getInstance",
+        AsmOps.getMethodDescriptor(Nil, JvmType.Unit), false)
+
     case Expression.UserError(_, loc) =>
       addSourceLine(visitor, loc)
       AsmOps.compileThrowFlixError(visitor, JvmName.Runtime.NotImplementedError, loc)
