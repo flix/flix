@@ -1551,7 +1551,28 @@ object GenExpression {
       ??? // TODO
 
     case Predicate.Head.RelAtom(Some(varSym), sym, terms, tpe, loc) =>
-      ??? // TODO
+      // Add source line numbers for debugging.
+      addSourceLine(mv, loc)
+
+      // Instantiate the object.
+      mv.visitTypeInsn(NEW, "ca/uwaterloo/flix/runtime/solver/api/predicate/AtomPredicate")
+      mv.visitInsn(DUP)
+
+      // Emit code for the predicate symbol.
+      mv.visitInsn(ACONST_NULL)
+
+      // Emit code for the polarity of the atom.
+      // A head atom is always positive.
+      mv.visitInsn(ICONST_1)
+
+      // Emit code for the terms.
+      mv.visitInsn(ACONST_NULL)
+
+      // Emit code for index2var.
+      mv.visitInsn(ACONST_NULL)
+
+      // Emit code to invoke the constructor.
+      mv.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/solver/api/predicate/AtomPredicate", "<init>", "(Lca/uwaterloo/flix/runtime/solver/api/symbol/PredSym;Z[Lca/uwaterloo/flix/runtime/solver/api/term/Term;[Lca/uwaterloo/flix/runtime/solver/api/symbol/VarSym;)V", false)
 
     case Predicate.Head.LatAtom(Some(varSym), sym, terms, tpe, loc) =>
       ??? // TODO
