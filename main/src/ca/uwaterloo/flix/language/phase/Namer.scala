@@ -1092,6 +1092,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Expression.FixpointSolve(exp, loc) => freeVars(exp)
     case WeededAst.Expression.FixpointCheck(exp, loc) => freeVars(exp)
     case WeededAst.Expression.FixpointDelta(exp, loc) => freeVars(exp)
+    case WeededAst.Expression.FixpointProject(name, exp, loc) => freeVars(exp)
     case WeededAst.Expression.UserError(loc) => Nil
   }
 
