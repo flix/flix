@@ -1544,13 +1544,7 @@ object GenExpression {
       mv.visitInsn(DUP)
       mv.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/solver/api/predicate/FalsePredicate", "<init>", "()V", false)
 
-    case Predicate.Head.RelAtom(None, sym, terms, tpe, loc) =>
-      ??? // TODO
-
-    case Predicate.Head.LatAtom(None, sym, terms, tpe, loc) =>
-      ??? // TODO
-
-    case Predicate.Head.RelAtom(Some(varSym), sym, terms, tpe, loc) =>
+    case Predicate.Head.RelAtom(baseOpt, sym, terms, tpe, loc) =>
       // Add source line numbers for debugging.
       addSourceLine(mv, loc)
 
@@ -1559,14 +1553,34 @@ object GenExpression {
       mv.visitInsn(DUP)
 
       // Emit code for the predicate symbol.
-      readVar(varSym, tpe, mv)
+      baseOpt match {
+        case None =>
+          // Emit code for the predicate symbol.
+          mv.visitLdcInsn(sym.toString)
 
-      // Emit code for the polarity of the atom.
-      // A head atom is always positive.
+          // Emit code for the attributes.
+          mv.visitInsn(ICONST_0)
+          mv.visitTypeInsn(ANEWARRAY, "ca/uwaterloo/flix/runtime/solver/api/Attribute")
+
+          // Emit code to instantiate the predicate symbol.
+          mv.visitMethodInsn(INVOKESTATIC, "ca/uwaterloo/flix/runtime/solver/api/symbol/NamedRelSym", "getInstance", "(Ljava/lang/String;[Lca/uwaterloo/flix/runtime/solver/api/Attribute;)Lca/uwaterloo/flix/runtime/solver/api/symbol/NamedRelSym;", false);
+        case Some(varSym) =>
+          // Emit code for the predicate symbol.
+          readVar(varSym, tpe, mv)
+      }
+
+      // Emit code for the polarity of the atom. A head atom is always positive.
       mv.visitInsn(ICONST_1)
 
       // Emit code for the terms.
-      mv.visitInsn(ACONST_NULL)
+      compileInt(mv, terms.length)
+      mv.visitTypeInsn(ANEWARRAY, "ca/uwaterloo/flix/runtime/solver/api/term/Term")
+      for ((term, index) <- terms.zipWithIndex) {
+        // Compile each term and store it in the array.
+        //compileInt(mv, index)
+       // mv.visitInsn(ACONST_NULL) // TODO
+       // mv.visitInsn(AASTORE)
+      }
 
       // Emit code for index2var.
       mv.visitInsn(ACONST_NULL)
@@ -1574,7 +1588,7 @@ object GenExpression {
       // Emit code to invoke the constructor.
       mv.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/solver/api/predicate/AtomPredicate", "<init>", "(Lca/uwaterloo/flix/runtime/solver/api/symbol/PredSym;Z[Lca/uwaterloo/flix/runtime/solver/api/term/Term;[Lca/uwaterloo/flix/runtime/solver/api/symbol/VarSym;)V", false)
 
-    case Predicate.Head.LatAtom(Some(varSym), sym, terms, tpe, loc) =>
+    case Predicate.Head.LatAtom(baseOpt, sym, terms, tpe, loc) =>
       ??? // TODO
 
   }
