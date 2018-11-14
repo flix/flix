@@ -1577,9 +1577,10 @@ object GenExpression {
       mv.visitTypeInsn(ANEWARRAY, "ca/uwaterloo/flix/runtime/solver/api/term/Term")
       for ((term, index) <- terms.zipWithIndex) {
         // Compile each term and store it in the array.
-        //compileInt(mv, index)
-       // mv.visitInsn(ACONST_NULL) // TODO
-       // mv.visitInsn(AASTORE)
+        mv.visitInsn(DUP)
+        compileInt(mv, index)
+        compileHeadTerm(term, mv)
+        mv.visitInsn(AASTORE)
       }
 
       // Emit code for index2var.
@@ -1632,6 +1633,10 @@ object GenExpression {
 
       // Read the value of the local variable and put it on the stack.
       readVar(sym, tpe, mv)
+
+      // TODO: Need to allocate a LitTerm.
+
+      ???
 
     case Term.Head.Lit(sym, tpe, loc) =>
       ??? // TODO
