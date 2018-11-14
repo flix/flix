@@ -111,6 +111,8 @@ object JvmName {
 
   val PredSym: JvmName = mk("ca/uwaterloo/flix/runtime/solver/api/symbol/PredSym")
 
+  val ProxyObject: JvmName = mk("ca/uwaterloo/flix/runtime/solver/api/ProxyObject")
+
   /**
     * Get the class type for the cell with subtype `subType`
     */

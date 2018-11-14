@@ -175,16 +175,20 @@ object GenFunctionClasses {
   /**
     * Proxy Invoke method for the given `defn` and `classType`.
     */
-  private def compileProxyInvokeMethod(mv: ClassWriter, classType: JvmType.Reference, defn: Def, resultType: JvmType)(implicit root: Root, flix: Flix): Unit = {
+  private def compileProxyInvokeMethod(cw: ClassWriter, classType: JvmType.Reference, defn: Def, resultType: JvmType)(implicit root: Root, flix: Flix): Unit = {
     // Method header
-    val invokeMethod = mv.visitMethod(ACC_PUBLIC + ACC_FINAL, "proxyInvoke", AsmOps.getMethodDescriptor(List(JvmType.Context), JvmType.Void), null, null)
+
+    // TODO: Type probably needs to be object array.
+    val mv = cw.visitMethod(ACC_PUBLIC + ACC_FINAL, "proxyInvoke", AsmOps.getMethodDescriptor(List(JvmType.Object), JvmType.ProxyObject), null, null)
 
     // TODO...
 
+    mv.visitInsn(ACONST_NULL)
+
     // Return
-    invokeMethod.visitInsn(RETURN)
-    invokeMethod.visitMaxs(65535, 65535)
-    invokeMethod.visitEnd()
+    mv.visitInsn(ARETURN)
+    mv.visitMaxs(65535, 65535)
+    mv.visitEnd()
   }
 
 }
