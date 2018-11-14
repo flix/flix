@@ -276,7 +276,7 @@ object Interpreter {
       new AnonLatSym(parent)
 
     case Expression.Constraint(c, tpe, loc) =>
-      evalConstraint(c, env0, henv0, lenv0, root)
+      evalConstraint(c, env0, henv0, lenv0)(flix, root)
 
     case Expression.ConstraintUnion(exp1, exp2, tpe, loc) =>
       val v1 = cast2constraintset(eval(exp1, env0, henv0, lenv0, root))
@@ -690,11 +690,10 @@ object Interpreter {
   /**
     * Evaluates the given constraint `c0` to a constraint value under the given environment `env0`.
     */
-  private def evalConstraint(c0: Constraint, env0: Map[String, AnyRef], henv0: Map[Symbol.EffSym, AnyRef], lenv0: Map[Symbol.LabelSym, Expression], root: Root)(implicit flix: Flix): AnyRef = {
-    implicit val _ = root
-    implicit val cache = new SymbolCache
-
-    val cparams = c0.cparams.map(p => cache.getVarSym(p.sym))
+  private def evalConstraint(c0: Constraint, env0: Map[String, AnyRef], henv0: Map[Symbol.EffSym, AnyRef], lenv0: Map[Symbol.LabelSym, Expression])(implicit flix: Flix, root: FinalAst.Root): AnyRef = {
+    val cparams = c0.cparams.map {
+      case cparam => new VarSym(cparam.sym.text, cparam.sym.getStackOffset)
+    }
     val head = evalHeadPredicate(c0.head, env0)
     val body = c0.body.map(b => evalBodyPredicate(b, env0))
 
@@ -706,7 +705,7 @@ object Interpreter {
   /**
     * Evaluates the given head predicate `h0` under the given environment `env0` to a head predicate value.
     */
-  private def evalHeadPredicate(h0: FinalAst.Predicate.Head, env0: Map[String, AnyRef])(implicit root: FinalAst.Root, cache: SymbolCache, flix: Flix): api.predicate.Predicate = h0 match {
+  private def evalHeadPredicate(h0: FinalAst.Predicate.Head, env0: Map[String, AnyRef])(implicit root: FinalAst.Root, flix: Flix): api.predicate.Predicate = h0 match {
     case FinalAst.Predicate.Head.True(_) => new api.predicate.TruePredicate()
 
     case FinalAst.Predicate.Head.False(_) => new api.predicate.FalsePredicate()
@@ -732,7 +731,7 @@ object Interpreter {
   /**
     * Evaluates the given body predicate `b0` under the given environment `env0` to a body predicate value.
     */
-  private def evalBodyPredicate(b0: FinalAst.Predicate.Body, env0: Map[String, AnyRef])(implicit root: FinalAst.Root, cache: SymbolCache, flix: Flix): api.predicate.Predicate = b0 match {
+  private def evalBodyPredicate(b0: FinalAst.Predicate.Body, env0: Map[String, AnyRef])(implicit root: FinalAst.Root, flix: Flix): api.predicate.Predicate = b0 match {
     case FinalAst.Predicate.Body.RelAtom(baseOpt, sym, polarity, terms, _, _) =>
       val p = polarity match {
         case Ast.Polarity.Positive => true
@@ -769,24 +768,24 @@ object Interpreter {
       new api.predicate.FilterPredicate(f, ts.toArray)
 
     case FinalAst.Predicate.Body.Functional(varSym, defSym, terms, loc) =>
-      val s = cache.getVarSym(varSym)
+      val s = new VarSym(varSym.text, varSym.getStackOffset)
       val f = new function.Function[Array[AnyRef], Array[ProxyObject]] {
         override def apply(as: Array[AnyRef]): Array[ProxyObject] = Linker.link(defSym, root).invoke(as).getValue.asInstanceOf[Array[ProxyObject]]
       }
-
-      new api.predicate.FunctionalPredicate(s, f, terms.map(t => cache.getVarSym(t)).toArray)
+      val ts = terms.map(s => new VarSym(s.text, s.getStackOffset))
+      new api.predicate.FunctionalPredicate(s, f, ts.toArray)
   }
 
   /**
     * Evaluates the given head term `t0` under the given environment `env0` to a head term value.
     */
-  private def evalHeadTerm(t0: FinalAst.Term.Head, env0: Map[String, AnyRef])(implicit root: FinalAst.Root, cache: SymbolCache, flix: Flix): api.term.Term = t0 match {
+  private def evalHeadTerm(t0: FinalAst.Term.Head, env0: Map[String, AnyRef])(implicit root: FinalAst.Root, flix: Flix): api.term.Term = t0 match {
     //
     // Free Variables (i.e. variables that are quantified over in the constraint).
     //
     case FinalAst.Term.Head.QuantVar(sym, _, _) =>
       // Lookup the corresponding symbol in the cache.
-      new api.term.VarTerm(cache.getVarSym(sym))
+      new api.term.VarTerm(new VarSym(sym.text, sym.getStackOffset))
 
     //
     // Bound Variables (i.e. variables that have a value in the local environment).
@@ -813,14 +812,14 @@ object Interpreter {
       val f = new java.util.function.Function[Array[AnyRef], ProxyObject] {
         override def apply(args: Array[AnyRef]): ProxyObject = Linker.link(sym, root).invoke(args)
       }
-      val as = args.map(cache.getVarSym)
+      val as = args.map(s => new VarSym(s.text, s.getStackOffset))
       new api.term.AppTerm(f, as.toArray)
   }
 
   /**
     * Evaluates the given body term `t0` under the given environment `env0` to a body term value.
     */
-  private def evalBodyTerm(t0: FinalAst.Term.Body, env0: Map[String, AnyRef])(implicit root: FinalAst.Root, cache: SymbolCache, flix: Flix): api.term.Term = t0 match {
+  private def evalBodyTerm(t0: FinalAst.Term.Body, env0: Map[String, AnyRef])(implicit root: FinalAst.Root, flix: Flix): api.term.Term = t0 match {
     //
     // Wildcards.
     //
@@ -831,7 +830,7 @@ object Interpreter {
     //
     case FinalAst.Term.Body.QuantVar(sym, _, _) =>
       // Lookup the corresponding symbol in the cache.
-      new api.term.VarTerm(cache.getVarSym(sym))
+      new api.term.VarTerm(new VarSym(sym.text, sym.getStackOffset))
 
     //
     // Bound Variables (i.e. variables that have a value in the local environment).
@@ -1162,23 +1161,6 @@ object Interpreter {
     case o: java.math.BigInteger => Value.BigInt(o)
     case o: java.lang.String => Value.Str(o)
     case _ => ref
-  }
-
-
-  // Class used to ensure that the symbols share the same object by identity.
-  private class SymbolCache {
-
-    val varSyms = mutable.Map.empty[Symbol.VarSym, VarSym]
-
-    def getVarSym(sym: Symbol.VarSym): VarSym =
-      varSyms.get(sym) match {
-        case None =>
-          val newSym = new VarSym(sym.text, sym.getStackOffset)
-          varSyms += (sym -> newSym)
-          newSym
-        case Some(res) => res
-      }
-
   }
 
 }
