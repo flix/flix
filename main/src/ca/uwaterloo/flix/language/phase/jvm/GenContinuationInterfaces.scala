@@ -80,10 +80,10 @@ object GenContinuationInterfaces {
       AsmOps.getMethodDescriptor(Nil, resultType), null, null)
     getResultMethod.visitEnd()
 
-    // `apply()` method
-    val applyMethod = visitor.visitMethod(ACC_PUBLIC + ACC_ABSTRACT, "apply",
+    // `invoke()` method
+    val invokeMethod = visitor.visitMethod(ACC_PUBLIC + ACC_ABSTRACT, "invoke",
       AsmOps.getMethodDescriptor(List(JvmType.Context), JvmType.Void), null, null)
-    applyMethod.visitEnd()
+    invokeMethod.visitEnd()
 
     visitor.visitEnd()
     visitor.toByteArray

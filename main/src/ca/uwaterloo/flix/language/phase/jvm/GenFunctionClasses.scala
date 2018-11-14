@@ -90,8 +90,8 @@ object GenFunctionClasses {
     // Getter for the result field
     AsmOps.compileGetFieldMethod(visitor, classType.name, "result", "getResult", resultType)
 
-    // Apply method of the class
-    compileApplyMethod(visitor, classType, defn, resultType)
+    // Invoke method of the class
+    compileInvokeMethod(visitor, classType, defn, resultType)
 
     // Constructor of the class
     compileConstructor(visitor)
@@ -100,22 +100,22 @@ object GenFunctionClasses {
   }
 
   /**
-    * Apply method for the given `defn` and `classType`.
+    * Invoke method for the given `defn` and `classType`.
     */
-  private def compileApplyMethod(visitor: ClassWriter,
-                                 classType: JvmType.Reference,
-                                 defn: Def,
-                                 resultType: JvmType)(implicit root: Root, flix: Flix): Unit = {
+  private def compileInvokeMethod(visitor: ClassWriter,
+                                  classType: JvmType.Reference,
+                                  defn: Def,
+                                  resultType: JvmType)(implicit root: Root, flix: Flix): Unit = {
     // Method header
-    val applyMethod = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, "apply",
+    val invokeMethod = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, "invoke",
       AsmOps.getMethodDescriptor(List(JvmType.Context), JvmType.Void), null, null)
 
     // Enter label
     val enterLabel = new Label()
-    applyMethod.visitCode()
+    invokeMethod.visitCode()
 
     // visiting the label
-    applyMethod.visitLabel(enterLabel)
+    invokeMethod.visitLabel(enterLabel)
 
     // Saving parameters on variable stack
     for ((FormalParam(sym, tpe), ind) <- defn.formals.zipWithIndex) {
@@ -123,35 +123,35 @@ object GenFunctionClasses {
       val erasedType = JvmOps.getErasedJvmType(tpe)
 
       // Getting the parameter from the field
-      applyMethod.visitVarInsn(ALOAD, 0)
-      applyMethod.visitFieldInsn(GETFIELD, classType.name.toInternalName, s"arg$ind", erasedType.toDescriptor)
+      invokeMethod.visitVarInsn(ALOAD, 0)
+      invokeMethod.visitFieldInsn(GETFIELD, classType.name.toInternalName, s"arg$ind", erasedType.toDescriptor)
 
       // Storing the parameter on variable stack
       val iSTORE = AsmOps.getStoreInstruction(erasedType)
-      applyMethod.visitVarInsn(iSTORE, sym.getStackOffset + 3)
+      invokeMethod.visitVarInsn(iSTORE, sym.getStackOffset + 3)
     }
 
     // Generating the expression
-    GenExpression.compileExpression(defn.exp, applyMethod, classType, Map(), enterLabel)
+    GenExpression.compileExpression(defn.exp, invokeMethod, classType, Map(), enterLabel)
 
     // Loading `this`
-    applyMethod.visitVarInsn(ALOAD, 0)
+    invokeMethod.visitVarInsn(ALOAD, 0)
 
     // Swapping `this` and result of the expression
     if (AsmOps.getStackSize(resultType) == 1) {
-      applyMethod.visitInsn(SWAP)
+      invokeMethod.visitInsn(SWAP)
     } else {
-      applyMethod.visitInsn(DUP_X2)
-      applyMethod.visitInsn(POP)
+      invokeMethod.visitInsn(DUP_X2)
+      invokeMethod.visitInsn(POP)
     }
 
     // Saving the result on the `result` field of IFO
-    applyMethod.visitFieldInsn(PUTFIELD, classType.name.toInternalName, "result", resultType.toDescriptor)
+    invokeMethod.visitFieldInsn(PUTFIELD, classType.name.toInternalName, "result", resultType.toDescriptor)
 
     // Return
-    applyMethod.visitInsn(RETURN)
-    applyMethod.visitMaxs(65535, 65535)
-    applyMethod.visitEnd()
+    invokeMethod.visitInsn(RETURN)
+    invokeMethod.visitMaxs(65535, 65535)
+    invokeMethod.visitEnd()
   }
 
   /**

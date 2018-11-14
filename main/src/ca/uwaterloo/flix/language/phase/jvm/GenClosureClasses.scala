@@ -107,8 +107,8 @@ object GenClosureClasses {
     // Getter for the result field
     AsmOps.compileGetFieldMethod(visitor, classType.name, "result", "getResult", resultType)
 
-    // Apply method of the class
-    compileApplyMethod(visitor, classType, root.defs(closure.sym), closure.freeVars, resultType)
+    // Invoke method of the class
+    compileInvokeMethod(visitor, classType, root.defs(closure.sym), closure.freeVars, resultType)
 
     // Constructor of the class
     compileConstructor(visitor, classType, closure.freeVars)
@@ -119,10 +119,10 @@ object GenClosureClasses {
   /**
     * Apply method for the given `defn` and `classType`.
     */
-  private def compileApplyMethod(visitor: ClassWriter, classType: JvmType.Reference, defn: Def,
-                                 freeVars: List[FreeVar], resultType: JvmType)(implicit root: Root, flix: Flix): Unit = {
+  private def compileInvokeMethod(visitor: ClassWriter, classType: JvmType.Reference, defn: Def,
+                                  freeVars: List[FreeVar], resultType: JvmType)(implicit root: Root, flix: Flix): Unit = {
     // Method header
-    val applyMethod = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, "apply",
+    val invokeMethod = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, "invoke",
       AsmOps.getMethodDescriptor(List(JvmType.Context), JvmType.Void), null, null)
 
     // Free variables
@@ -133,34 +133,34 @@ object GenClosureClasses {
 
     // Sanity check
     val skipLabel = new Label
-    applyMethod.visitVarInsn(ALOAD, 0)
-    applyMethod.visitFieldInsn(GETFIELD, classType.name.toInternalName, "creationContext", JvmType.Object.toDescriptor)
-    applyMethod.visitVarInsn(ALOAD, 1)
+    invokeMethod.visitVarInsn(ALOAD, 0)
+    invokeMethod.visitFieldInsn(GETFIELD, classType.name.toInternalName, "creationContext", JvmType.Object.toDescriptor)
+    invokeMethod.visitVarInsn(ALOAD, 1)
 
     // If contexts are equal, precede to evaluate
-    applyMethod.visitJumpInsn(IF_ACMPEQ, skipLabel)
+    invokeMethod.visitJumpInsn(IF_ACMPEQ, skipLabel)
 
     val message = "Closure is called with a different Context"
     // Create a new `Exception` object
-    applyMethod.visitTypeInsn(NEW, JvmName.Exception.toInternalName)
-    applyMethod.visitInsn(DUP)
+    invokeMethod.visitTypeInsn(NEW, JvmName.Exception.toInternalName)
+    invokeMethod.visitInsn(DUP)
 
     // add the message to the stack
-    applyMethod.visitLdcInsn(message)
+    invokeMethod.visitLdcInsn(message)
 
     // invoke the constructor of the `Exception` object
-    applyMethod.visitMethodInsn(INVOKESPECIAL, JvmName.Exception.toInternalName, "<init>",
+    invokeMethod.visitMethodInsn(INVOKESPECIAL, JvmName.Exception.toInternalName, "<init>",
     AsmOps.getMethodDescriptor(List(JvmType.String), JvmType.Void), false)
 
     // throw the exception
-    applyMethod.visitInsn(ATHROW)
+    invokeMethod.visitInsn(ATHROW)
 
     // Visit skip label
-    applyMethod.visitLabel(skipLabel)
+    invokeMethod.visitLabel(skipLabel)
 
     // Enter label
     val enterLabel = new Label()
-    applyMethod.visitCode()
+    invokeMethod.visitCode()
 
     // Saving free variables on variable stack
     for ((FreeVar(sym, tpe), ind) <- frees.zipWithIndex) {
@@ -168,12 +168,12 @@ object GenClosureClasses {
       val erasedType = JvmOps.getErasedJvmType(tpe)
 
       // Getting the free variable from IFO
-      applyMethod.visitVarInsn(ALOAD, 0)
-      applyMethod.visitFieldInsn(GETFIELD, classType.name.toInternalName, s"clo$ind", erasedType.toDescriptor)
+      invokeMethod.visitVarInsn(ALOAD, 0)
+      invokeMethod.visitFieldInsn(GETFIELD, classType.name.toInternalName, s"clo$ind", erasedType.toDescriptor)
 
       // Saving the free variable on variable stack
       val iSTORE = AsmOps.getStoreInstruction(erasedType)
-      applyMethod.visitVarInsn(iSTORE, sym.getStackOffset + 3)
+      invokeMethod.visitVarInsn(iSTORE, sym.getStackOffset + 3)
     }
 
     // Saving parameters on variable stack
@@ -182,35 +182,35 @@ object GenClosureClasses {
       val erasedType = JvmOps.getErasedJvmType(tpe)
 
       // Getting the parameter from IFO
-      applyMethod.visitVarInsn(ALOAD, 0)
-      applyMethod.visitFieldInsn(GETFIELD, classType.name.toInternalName, s"arg$ind", erasedType.toDescriptor)
+      invokeMethod.visitVarInsn(ALOAD, 0)
+      invokeMethod.visitFieldInsn(GETFIELD, classType.name.toInternalName, s"arg$ind", erasedType.toDescriptor)
 
       // Saving the parameter on variable stack
       val iSTORE = AsmOps.getStoreInstruction(erasedType)
-      applyMethod.visitVarInsn(iSTORE, sym.getStackOffset + 3)
+      invokeMethod.visitVarInsn(iSTORE, sym.getStackOffset + 3)
     }
 
     // Generating the expression
-    GenExpression.compileExpression(defn.exp, applyMethod, classType, Map(), enterLabel)
+    GenExpression.compileExpression(defn.exp, invokeMethod, classType, Map(), enterLabel)
 
     // Loading `this`
-    applyMethod.visitVarInsn(ALOAD, 0)
+    invokeMethod.visitVarInsn(ALOAD, 0)
 
     // Swapping `this` and result of the expression
     if (AsmOps.getStackSize(resultType) == 1) {
-      applyMethod.visitInsn(SWAP)
+      invokeMethod.visitInsn(SWAP)
     } else {
-      applyMethod.visitInsn(DUP_X2)
-      applyMethod.visitInsn(POP)
+      invokeMethod.visitInsn(DUP_X2)
+      invokeMethod.visitInsn(POP)
     }
 
     // Saving the result on the `result` field of IFO
-    applyMethod.visitFieldInsn(PUTFIELD, classType.name.toInternalName, "result", resultType.toDescriptor)
+    invokeMethod.visitFieldInsn(PUTFIELD, classType.name.toInternalName, "result", resultType.toDescriptor)
 
     // Return
-    applyMethod.visitInsn(RETURN)
-    applyMethod.visitMaxs(1, 1)
-    applyMethod.visitEnd()
+    invokeMethod.visitInsn(RETURN)
+    invokeMethod.visitMaxs(1, 1)
+    invokeMethod.visitEnd()
   }
 
   /**

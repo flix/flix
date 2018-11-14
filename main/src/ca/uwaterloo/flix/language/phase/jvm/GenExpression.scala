@@ -143,9 +143,9 @@ object GenExpression {
       visitor.visitInsn(DUP)
       // Save it on the IFO local variable
       visitor.visitVarInsn(ASTORE, 2)
-      // Call apply
+      // Call invoke
       visitor.visitVarInsn(ALOAD, 1)
-      visitor.visitMethodInsn(INVOKEINTERFACE, cont.name.toInternalName, "apply", AsmOps.getMethodDescriptor(List(JvmType.Context), JvmType.Void), true)
+      visitor.visitMethodInsn(INVOKEINTERFACE, cont.name.toInternalName, "invoke", AsmOps.getMethodDescriptor(List(JvmType.Context), JvmType.Void), true)
       // Getting `continuation` field on `Context`
       visitor.visitVarInsn(ALOAD, 1)
       visitor.visitFieldInsn(GETFIELD, JvmName.Context.toInternalName, "continuation", JvmType.Object.toDescriptor)
@@ -226,9 +226,9 @@ object GenExpression {
       visitor.visitInsn(DUP)
       // Save it on the IFO local variable
       visitor.visitVarInsn(ASTORE, 2)
-      // Call apply
+      // Call invoke
       visitor.visitVarInsn(ALOAD, 1)
-      visitor.visitMethodInsn(INVOKEINTERFACE, cont.name.toInternalName, "apply", AsmOps.getMethodDescriptor(List(JvmType.Context), JvmType.Void), true)
+      visitor.visitMethodInsn(INVOKEINTERFACE, cont.name.toInternalName, "invoke", AsmOps.getMethodDescriptor(List(JvmType.Context), JvmType.Void), true)
       // Getting `continuation` field on `Context`
       visitor.visitVarInsn(ALOAD, 1)
       visitor.visitFieldInsn(GETFIELD, JvmName.Context.toInternalName, "continuation", JvmType.Object.toDescriptor)
