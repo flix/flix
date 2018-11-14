@@ -910,7 +910,7 @@ object GenExpression {
         // Store the exception in a local variable.
         val istore = AsmOps.getStoreInstruction(JvmType.Object)
         // TODO: We must store the exception in a local variable, but currently that does not work.
-        //visitor.visitVarInsn(istore, sym.getStackOffset + 3)
+        //visitor.visitVarInsn(istore, sym.getIndex + 3)
         visitor.visitInsn(POP)
 
         // Emit code for the handler body expression.

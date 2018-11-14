@@ -197,7 +197,16 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
 
       case Expression.NewLattice(sym, tpe, loc) => i0
 
-      case Expression.Constraint(c, tpe, loc) => i0
+      case Expression.Constraint(c, tpe, loc) =>
+        // Assign a number to each constraint parameters.
+        // These are unrelated to the true stack offsets.
+        for ((cparam, index) <- c.cparams.zipWithIndex) {
+          cparam match {
+            case ConstraintParam.HeadParam(sym, _, _) => sym.setStackOffset(index)
+            case ConstraintParam.RuleParam(sym, _, _) => sym.setStackOffset(index)
+          }
+        }
+        i0
 
       case Expression.ConstraintUnion(exp1, exp2, tpe, loc) =>
         val i1 = visitExp(exp1, i0)

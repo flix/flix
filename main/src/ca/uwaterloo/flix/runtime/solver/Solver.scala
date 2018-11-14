@@ -386,7 +386,7 @@ class Solver(constraintSystem: ConstraintSystem, options: FixpointOptions) {
         for (t <- p.getTerms) {
           t match {
             case p: VarTerm =>
-              assert(env(p.getSym.getStackOffset) != null, s"Unbound variable in negated atom.")
+              assert(env(p.getSym.getIndex) != null, s"Unbound variable in negated atom.")
             case _ => // Nop
           }
         }
@@ -420,7 +420,7 @@ class Solver(constraintSystem: ConstraintSystem, options: FixpointOptions) {
       val value: ProxyObject = p.getTerms()(i) match {
         case p: VarTerm =>
           // A variable is replaced by its value from the environment (or null if unbound).
-          env(p.getSym().getStackOffset)
+          env(p.getSym().getIndex)
         case p: LitTerm =>
           p.getFunction().apply(null)
         case p: WildTerm =>
@@ -446,7 +446,7 @@ class Solver(constraintSystem: ConstraintSystem, options: FixpointOptions) {
         term match {
           case t: VarTerm =>
             val sym = t.getSym
-            newRow.update(sym.getStackOffset, matchedRow(i))
+            newRow.update(sym.getIndex, matchedRow(i))
           case _ => // nop
         }
 
@@ -478,7 +478,7 @@ class Solver(constraintSystem: ConstraintSystem, options: FixpointOptions) {
       val args = new Array[AnyRef](r.getArguments().length)
       var i = 0
       for (a <- r.getArguments()) {
-        args(i) = env(a.getStackOffset)
+        args(i) = env(a.getIndex)
         i = i + 1
       }
 
@@ -488,7 +488,7 @@ class Solver(constraintSystem: ConstraintSystem, options: FixpointOptions) {
       // iterate through each value.
       for (value <- values) {
         val newEnv = copy(env)
-        newEnv(r.getVarSym().getStackOffset) = value
+        newEnv(r.getVarSym().getIndex) = value
         evalFunctionals(rule, rs, newEnv, interp)
       }
   }
@@ -533,7 +533,7 @@ class Solver(constraintSystem: ConstraintSystem, options: FixpointOptions) {
         val value: ProxyObject = p.getArguments()(j) match {
           case p: VarTerm =>
             // A variable is replaced by its value from the environment.
-            env(p.getSym.getStackOffset)
+            env(p.getSym.getIndex)
           case p: LitTerm =>
             p.getFunction().apply(null)
           case p: WildTerm =>
@@ -576,13 +576,13 @@ class Solver(constraintSystem: ConstraintSystem, options: FixpointOptions) {
     * Evaluates the given head term `t` under the given environment `env0`
     */
   def evalHeadTerm(t: Term, root: ConstraintSystem, env: Env): ProxyObject = t match {
-    case t: VarTerm => env(t.getSym.getStackOffset)
+    case t: VarTerm => env(t.getSym.getIndex)
     case t: LitTerm => t.getFunction().apply(null)
     case t: AppTerm =>
       val args = new Array[AnyRef](t.getArguments().length)
       var i = 0
       while (i < args.length) {
-        args(i) = env(t.getArguments()(i).getStackOffset).getValue
+        args(i) = env(t.getArguments()(i).getIndex).getValue
         i = i + 1
       }
       t.getFunction()(args)
@@ -627,7 +627,7 @@ class Solver(constraintSystem: ConstraintSystem, options: FixpointOptions) {
       while (i < limit) {
         val varName = pat(i)
         if (varName != null)
-          env(varName.getStackOffset) = fact(i)
+          env(varName.getIndex) = fact(i)
         i = i + 1
       }
       env

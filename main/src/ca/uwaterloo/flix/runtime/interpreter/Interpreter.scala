@@ -1173,7 +1173,7 @@ object Interpreter {
     def getVarSym(sym: Symbol.VarSym): VarSym =
       varSyms.get(sym) match {
         case None =>
-          val newSym = new VarSym(sym.text)
+          val newSym = new VarSym(sym.text, sym.getStackOffset)
           varSyms += (sym -> newSym)
           newSym
         case Some(res) => res

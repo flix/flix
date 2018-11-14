@@ -132,16 +132,6 @@ public final class Constraint {
                 this.bodyFunctionals[bodyFunctionalCounter++] = (FunctionalPredicate) b;
             }
         }
-
-        //
-        // Assign a number to each constraint parameter in the current constraint.
-        //
-        var offset = 0;
-        for (VarSym cparam : cparams) {
-            cparam.setStackOffset(offset);
-            offset = offset + 1;
-        }
-
     }
 
     // TODO: This cannot be right!!!!
