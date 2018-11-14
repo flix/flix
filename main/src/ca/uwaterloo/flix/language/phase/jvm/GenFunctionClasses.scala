@@ -90,13 +90,31 @@ object GenFunctionClasses {
     // Getter for the result field
     AsmOps.compileGetFieldMethod(visitor, classType.name, "result", "getResult", resultType)
 
-    // Invoke method of the class
-    compileInvokeMethod(visitor, classType, defn, resultType)
-
     // Constructor of the class
     compileConstructor(visitor)
 
+    // Invoke method of the class
+    compileInvokeMethod(visitor, classType, defn, resultType)
+
+    // Proxy Invoke method of the class
+    compileProxyInvokeMethod(visitor, classType, defn, resultType)
+
     visitor.toByteArray
+  }
+
+  /**
+    * Constructor of the class
+    */
+  private def compileConstructor(visitor: ClassWriter): Unit = {
+    val constructor = visitor.visitMethod(ACC_PUBLIC, "<init>", AsmOps.getMethodDescriptor(Nil, JvmType.Void), null, null)
+
+    constructor.visitVarInsn(ALOAD, 0)
+    constructor.visitMethodInsn(INVOKESPECIAL, JvmName.Object.toInternalName, "<init>",
+      AsmOps.getMethodDescriptor(Nil, JvmType.Void), false)
+
+    constructor.visitInsn(RETURN)
+    constructor.visitMaxs(1, 1)
+    constructor.visitEnd()
   }
 
   /**
@@ -155,18 +173,18 @@ object GenFunctionClasses {
   }
 
   /**
-    * Constructor of the class
+    * Proxy Invoke method for the given `defn` and `classType`.
     */
-  private def compileConstructor(visitor: ClassWriter): Unit = {
-    val constructor = visitor.visitMethod(ACC_PUBLIC, "<init>", AsmOps.getMethodDescriptor(Nil, JvmType.Void), null, null)
+  private def compileProxyInvokeMethod(mv: ClassWriter, classType: JvmType.Reference, defn: Def, resultType: JvmType)(implicit root: Root, flix: Flix): Unit = {
+    // Method header
+    val invokeMethod = mv.visitMethod(ACC_PUBLIC + ACC_FINAL, "proxyInvoke", AsmOps.getMethodDescriptor(List(JvmType.Context), JvmType.Void), null, null)
 
-    constructor.visitVarInsn(ALOAD, 0)
-    constructor.visitMethodInsn(INVOKESPECIAL, JvmName.Object.toInternalName, "<init>",
-      AsmOps.getMethodDescriptor(Nil, JvmType.Void), false)
+    // TODO...
 
-    constructor.visitInsn(RETURN)
-    constructor.visitMaxs(1, 1)
-    constructor.visitEnd()
+    // Return
+    invokeMethod.visitInsn(RETURN)
+    invokeMethod.visitMaxs(65535, 65535)
+    invokeMethod.visitEnd()
   }
 
 }
