@@ -717,7 +717,7 @@ object Interpreter {
         case None => getRelSym(sym)
         case Some(baseSym) => cast2relsym(env0(baseSym.toString))
       }
-      new AtomPredicate(relSym, true, ts, null)
+      new AtomPredicate(relSym, true, ts)
 
     case FinalAst.Predicate.Head.LatAtom(baseOpt, sym, terms, _, _) =>
       val ts = terms.map(t => evalHeadTerm(t, env0)).toArray
@@ -726,14 +726,14 @@ object Interpreter {
         case Some(baseSym) =>
           cast2latsym(env0(baseSym.toString))
       }
-      new AtomPredicate(latSym, true, ts, null)
+      new AtomPredicate(latSym, true, ts)
   }
 
   /**
     * Evaluates the given body predicate `b0` under the given environment `env0` to a body predicate value.
     */
   private def evalBodyPredicate(b0: FinalAst.Predicate.Body, env0: Map[String, AnyRef])(implicit root: FinalAst.Root, cache: SymbolCache, flix: Flix): api.predicate.Predicate = b0 match {
-    case FinalAst.Predicate.Body.RelAtom(baseOpt, sym, polarity, terms, index2sym, _, _) =>
+    case FinalAst.Predicate.Body.RelAtom(baseOpt, sym, polarity, terms, _, _) =>
       val p = polarity match {
         case Ast.Polarity.Positive => true
         case Ast.Polarity.Negative => false
@@ -743,14 +743,9 @@ object Interpreter {
         case None => getRelSym(sym)
         case Some(baseSym) => cast2relsym(env0(baseSym.toString))
       }
-      // TODO: Get rid of i2s
-      val i2s = index2sym map {
-        case x if x != null => cache.getVarSym(x)
-        case _ => null
-      }
-      new AtomPredicate(relSym, p, ts, i2s.toArray)
+      new AtomPredicate(relSym, p, ts)
 
-    case FinalAst.Predicate.Body.LatAtom(baseOpt, sym, polarity, terms, index2sym, _, _) =>
+    case FinalAst.Predicate.Body.LatAtom(baseOpt, sym, polarity, terms, _, _) =>
       val p = polarity match {
         case Ast.Polarity.Positive => true
         case Ast.Polarity.Negative => false
@@ -761,12 +756,7 @@ object Interpreter {
         case Some(baseSym) =>
           cast2latsym(env0(baseSym.toString))
       }
-      // TODO: Get rid of i2s
-      val i2s = index2sym map {
-        case x if x != null => cache.getVarSym(x)
-        case _ => null
-      }
-      new AtomPredicate(latSym, p, ts, i2s.toArray)
+      new AtomPredicate(latSym, p, ts)
 
     case FinalAst.Predicate.Body.Filter(sym, terms, loc) =>
       val f = new function.Function[Array[Object], ProxyObject] {

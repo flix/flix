@@ -26,13 +26,10 @@ public final class AtomPredicate implements Predicate {
      */
     private final Term[] terms;
 
-    // TODO: Temporary.
-    public final VarSym[] index2sym;
-
     /**
      * Constructs an atom predicate for the given predicate symbol, with the given polarity, and terms.
      */
-    public AtomPredicate(PredSym sym, boolean positive, Term[] terms, VarSym[] index2sym) {
+    public AtomPredicate(PredSym sym, boolean positive, Term[] terms) {
         if (sym == null)
             throw new IllegalArgumentException("'sym' must be non-null.");
         if (terms == null)
@@ -41,7 +38,6 @@ public final class AtomPredicate implements Predicate {
         this.sym = sym;
         this.positive = positive;
         this.terms = terms;
-        this.index2sym = index2sym;
     }
 
     /**
@@ -70,11 +66,6 @@ public final class AtomPredicate implements Predicate {
      */
     public Term[] getTerms() {
         return terms;
-    }
-
-    // TODO
-    public VarSym getIndex2SymTEMPORARY(int i) {
-        return index2sym[i];
     }
 
     /**

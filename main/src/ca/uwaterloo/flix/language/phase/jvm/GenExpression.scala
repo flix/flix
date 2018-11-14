@@ -1602,9 +1602,6 @@ object GenExpression {
         mv.visitInsn(AASTORE)
       }
 
-      // Emit code for index2var.
-      mv.visitInsn(ACONST_NULL)
-
       // Emit code to invoke the constructor.
       mv.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/solver/api/predicate/AtomPredicate", "<init>", "(Lca/uwaterloo/flix/runtime/solver/api/symbol/PredSym;Z[Lca/uwaterloo/flix/runtime/solver/api/term/Term;[Lca/uwaterloo/flix/runtime/solver/api/symbol/VarSym;)V", false)
 
@@ -1618,16 +1615,16 @@ object GenExpression {
     */
   private def compileBodyAtom(b0: Predicate.Body, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = b0 match {
 
-    case Predicate.Body.RelAtom(None, sym, polarity, terms, index2sym, tpe, loc) =>
+    case Predicate.Body.RelAtom(None, sym, polarity, terms, tpe, loc) =>
       ??? // TODO
 
-    case Predicate.Body.LatAtom(None, sym, polarity, terms, index2sym, tpe, loc) =>
+    case Predicate.Body.LatAtom(None, sym, polarity, terms, tpe, loc) =>
       ??? // TODO
 
-    case Predicate.Body.RelAtom(Some(varSym), sym, polarity, terms, index2sym, tpe, loc) =>
+    case Predicate.Body.RelAtom(Some(varSym), sym, polarity, terms, tpe, loc) =>
       ??? // TODO
 
-    case Predicate.Body.LatAtom(Some(varSym), sym, polarity, terms, index2sym, tpe, loc) =>
+    case Predicate.Body.LatAtom(Some(varSym), sym, polarity, terms, tpe, loc) =>
       ??? // TODO
 
     case Predicate.Body.Filter(sym, terms, loc) =>

@@ -443,8 +443,8 @@ object Stratifier extends Phase[Root, Root] {
       * Returns `true` if the body predicate is negated.
       */
     def isNegative(p: Predicate.Body): Boolean = p match {
-      case Body.RelAtom(_, _, Polarity.Negative, _, _, _, _) => true
-      case Body.LatAtom(_, _, Polarity.Negative, _, _, _, _) => true
+      case Body.RelAtom(_, _, Polarity.Negative, _, _, _) => true
+      case Body.LatAtom(_, _, Polarity.Negative, _, _, _) => true
       case _ => false
     }
 
@@ -522,13 +522,13 @@ object Stratifier extends Phase[Root, Root] {
         // has a directed edge to all nodes
         graph.insert(null, headSym, constraint, 0)
         constraint.body.foldRight(graph)((pred: Predicate.Body, graph: Graph) => pred match {
-          case Predicate.Body.RelAtom(_, predSym, Polarity.Positive, _, _, _, _) =>
+          case Predicate.Body.RelAtom(_, predSym, Polarity.Positive, _, _, _) =>
             graph.insert(headSym, predSym, constraint, 0)
-          case Predicate.Body.LatAtom(_, predSym, Polarity.Positive, _, _, _, _) =>
+          case Predicate.Body.LatAtom(_, predSym, Polarity.Positive, _, _, _) =>
             graph.insert(headSym, predSym, constraint, 0)
-          case Predicate.Body.RelAtom(_, predSym, Polarity.Negative, _, _, _, _) =>
+          case Predicate.Body.RelAtom(_, predSym, Polarity.Negative, _, _, _) =>
             graph.insert(headSym, predSym, constraint, -1)
-          case Predicate.Body.LatAtom(_, predSym, Polarity.Negative, _, _, _, _) => graph.insert(headSym, predSym, constraint, -1)
+          case Predicate.Body.LatAtom(_, predSym, Polarity.Negative, _, _, _) => graph.insert(headSym, predSym, constraint, -1)
           case _: Predicate.Body.Filter => graph
           case _: Predicate.Body.Functional => graph
         })
@@ -539,13 +539,13 @@ object Stratifier extends Phase[Root, Root] {
         // has a directed edge to all nodes
         graph.insert(null, headSym, constraint, 0)
         constraint.body.foldRight(graph)((pred: Predicate.Body, graph: Graph) => pred match {
-          case Predicate.Body.RelAtom(_, predSym, Polarity.Positive, _, _, _, _) =>
+          case Predicate.Body.RelAtom(_, predSym, Polarity.Positive, _, _, _) =>
             graph.insert(headSym, predSym, constraint, 0)
-          case Predicate.Body.LatAtom(_, predSym, Polarity.Positive, _, _, _, _) =>
+          case Predicate.Body.LatAtom(_, predSym, Polarity.Positive, _, _, _) =>
             graph.insert(headSym, predSym, constraint, 0)
-          case Predicate.Body.RelAtom(_, predSym, Polarity.Negative, _, _, _, _) =>
+          case Predicate.Body.RelAtom(_, predSym, Polarity.Negative, _, _, _) =>
             graph.insert(headSym, predSym, constraint, -1)
-          case Predicate.Body.LatAtom(_, predSym, Polarity.Negative, _, _, _, _) =>
+          case Predicate.Body.LatAtom(_, predSym, Polarity.Negative, _, _, _) =>
             graph.insert(headSym, predSym, constraint, -1)
           case _: Predicate.Body.Filter => graph
           case _: Predicate.Body.Functional => graph

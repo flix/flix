@@ -404,6 +404,9 @@ class Solver(constraintSystem: ConstraintSystem, options: FixpointOptions) {
     * Returns a sequence of rows matched by the given atom `p`.
     */
   private def evalAtom(p: AtomPredicate, env: Env): Traversable[Env] = {
+    // retrieve the terms.
+    val terms = p.getTerms
+
     // lookup the relation or lattice.
     val table = p.getSym() match {
       case r: RelSym => dataStore.getRelation(r)
@@ -436,22 +439,22 @@ class Solver(constraintSystem: ConstraintSystem, options: FixpointOptions) {
       // copy the environment for every row.
       val newRow = copy(env)
 
-      // A matched row may still fail to unify with a pattern term.
-      // We use this boolean variable to track whether that is the case.
-      var skip = false
-
+      // bind all variables in the terms to their values.
       var i = 0
-      while (i < matchedRow.length) {
-        val sym = p.getIndex2SymTEMPORARY(i)
-        if (sym != null)
-          newRow.update(sym.getStackOffset, matchedRow(i))
+      while (i < terms.length) {
+        val term = terms(i)
+        term match {
+          case t: VarTerm =>
+            val sym = t.getSym
+            newRow.update(sym.getStackOffset, matchedRow(i))
+          case _ => // nop
+        }
+
         i = i + 1
       }
 
-      // Check whether the row was successfully matched.
-      if (!skip) {
-        result += newRow
-      }
+      result += newRow
+
     }
 
     result
@@ -630,12 +633,18 @@ class Solver(constraintSystem: ConstraintSystem, options: FixpointOptions) {
       env
     }
 
+    def getVarArray(p: AtomPredicate): Array[VarSym] = {
+      p.getTerms.map {
+        case t: VarTerm => t.getSym
+        case _ => null
+      }
+    }
 
     sym match {
       case r: RelSym =>
         for ((rule, p) <- dependenciesOf(sym)) {
           // unify all terms with their values.
-          val env = unify(p.index2sym, fact, fact.length, rule.getNumberOfParameters)
+          val env = unify(getVarArray(p), fact, fact.length, rule.getNumberOfParameters)
           if (env != null) {
             localWorkList.push((rule, env))
           }
@@ -645,7 +654,7 @@ class Solver(constraintSystem: ConstraintSystem, options: FixpointOptions) {
         for ((rule, p) <- dependenciesOf(sym)) {
           // unify only key terms with their values.
           val numberOfKeys = l.getKeys().length
-          val env = unify(p.index2sym, fact, numberOfKeys, rule.getNumberOfParameters)
+          val env = unify(getVarArray(p), fact, numberOfKeys, rule.getNumberOfParameters)
           if (env != null) {
             localWorkList.push((rule, env))
           }

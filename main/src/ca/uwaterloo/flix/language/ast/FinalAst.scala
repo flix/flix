@@ -257,9 +257,9 @@ object FinalAst {
 
     object Body {
 
-      case class RelAtom(base: Option[Symbol.VarSym], sym: Symbol.RelSym, polarity: Ast.Polarity, terms: List[FinalAst.Term.Body], index2sym: List[Symbol.VarSym], tpe: Type, loc: SourceLocation) extends FinalAst.Predicate.Body
+      case class RelAtom(base: Option[Symbol.VarSym], sym: Symbol.RelSym, polarity: Ast.Polarity, terms: List[FinalAst.Term.Body], tpe: Type, loc: SourceLocation) extends FinalAst.Predicate.Body
 
-      case class LatAtom(base: Option[Symbol.VarSym], sym: Symbol.LatSym, polarity: Ast.Polarity, terms: List[FinalAst.Term.Body], index2sym: List[Symbol.VarSym], tpe: Type, loc: SourceLocation) extends FinalAst.Predicate.Body
+      case class LatAtom(base: Option[Symbol.VarSym], sym: Symbol.LatSym, polarity: Ast.Polarity, terms: List[FinalAst.Term.Body], tpe: Type, loc: SourceLocation) extends FinalAst.Predicate.Body
 
       case class Filter(sym: Symbol.DefnSym, terms: List[FinalAst.Term.Body], loc: SourceLocation) extends FinalAst.Predicate.Body
 

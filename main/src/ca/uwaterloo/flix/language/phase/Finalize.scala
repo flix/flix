@@ -407,13 +407,11 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
   private def visitBodyPredicate(p0: SimplifiedAst.Predicate.Body, m: TopLevel)(implicit flix: Flix): FinalAst.Predicate.Body = p0 match {
     case SimplifiedAst.Predicate.Body.RelAtom(baseOpt, sym, polarity, terms, tpe, loc) =>
       val ts = terms.map(t => visitBodyTerm(t, m))
-      val index2var = getIndex2VarTemporaryToBeRemoved(ts)
-      FinalAst.Predicate.Body.RelAtom(baseOpt, sym, polarity, ts, index2var, tpe, loc)
+      FinalAst.Predicate.Body.RelAtom(baseOpt, sym, polarity, ts, tpe, loc)
 
     case SimplifiedAst.Predicate.Body.LatAtom(baseOpt, sym, polarity, terms, tpe, loc) =>
       val ts = terms.map(t => visitBodyTerm(t, m))
-      val index2var = getIndex2VarTemporaryToBeRemoved(ts)
-      FinalAst.Predicate.Body.LatAtom(baseOpt, sym, polarity, ts, index2var, tpe, loc)
+      FinalAst.Predicate.Body.LatAtom(baseOpt, sym, polarity, ts, tpe, loc)
 
     case SimplifiedAst.Predicate.Body.Filter(sym, terms, loc) =>
       val ts = terms.map(t => visitBodyTerm(t, m))
@@ -459,21 +457,6 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
     val targs = tpe.typeArguments
     val freeArgs = fvs.map(_.tpe)
     Type.mkArrow(freeArgs ::: targs.init, targs.last)
-  }
-
-  // TODO: Deprecated
-  private def getIndex2VarTemporaryToBeRemoved(ts: List[FinalAst.Term.Body]): List[Symbol.VarSym] = {
-    val r = new Array[Symbol.VarSym](ts.length)
-    var i = 0
-    while (i < r.length) {
-      ts(i) match {
-        case FinalAst.Term.Body.QuantVar(sym, _, _) =>
-          r(i) = sym
-        case _ => // nop
-      }
-      i = i + 1
-    }
-    r.toList
   }
 
   // TODO: Deprecated
