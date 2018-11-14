@@ -19,7 +19,7 @@ public final class FunctionalPredicate implements Predicate {
     /**
      * The function.
      */
-    private final Function<Object[], ProxyObject[]> function; // TODO: Why are the arguments not proxy objects?
+    private final Function<Object[], ProxyObject[]> function;
 
     /**
      * The function arguments.
@@ -27,14 +27,9 @@ public final class FunctionalPredicate implements Predicate {
     private final VarSym[] arguments;
 
     /**
-     * The reified source location.
-     */
-    private final ReifiedSourceLocation location; // TODO: Do we want these?
-
-    /**
      * Constructs a functional predicate for the given symbol, function, and function arguments.
      */
-    public FunctionalPredicate(VarSym sym, Function<Object[], ProxyObject[]> function, VarSym[] arguments, ReifiedSourceLocation location) {
+    public FunctionalPredicate(VarSym sym, Function<Object[], ProxyObject[]> function, VarSym[] arguments) {
         if (sym == null)
             throw new IllegalArgumentException("'sym' must be non-null.");
         if (function == null)
@@ -46,7 +41,6 @@ public final class FunctionalPredicate implements Predicate {
         this.sym = sym;
         this.function = function;
         this.arguments = arguments;
-        this.location = location;
     }
 
     /**

@@ -1,5 +1,6 @@
 package ca.uwaterloo.flix.runtime.solver.api.predicate;
 
+import ca.uwaterloo.flix.runtime.solver.api.ProxyObject;
 import ca.uwaterloo.flix.runtime.solver.api.term.Term;
 
 import java.util.function.Function;
@@ -12,7 +13,7 @@ public final class FilterPredicate implements Predicate {
     /**
      * The function.
      */
-    private final Function<Object[], Boolean> function;
+    private final Function<Object[], ProxyObject> function;
 
     /**
      * The function arguments.
@@ -22,7 +23,7 @@ public final class FilterPredicate implements Predicate {
     /**
      * Constructs a filter predicate for the given function and function arguments.
      */
-    public FilterPredicate(Function<Object[], Boolean> function, Term[] arguments) {
+    public FilterPredicate(Function<Object[], ProxyObject> function, Term[] arguments) {
         if (function == null)
             throw new IllegalArgumentException("'function' must be non-null.");
 
@@ -36,7 +37,7 @@ public final class FilterPredicate implements Predicate {
     /**
      * Returns the function.
      */
-    public Function<Object[], Boolean> getFunction() {
+    public Function<Object[], ProxyObject> getFunction() {
         return function;
     }
 

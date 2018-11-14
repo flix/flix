@@ -3,6 +3,7 @@ package ca.uwaterloo.flix.runtime.solver.api.term;
 import ca.uwaterloo.flix.runtime.solver.api.ProxyObject;
 
 import java.util.concurrent.Callable;
+import java.util.function.Function;
 
 /**
  * Represents a literal.
@@ -14,12 +15,12 @@ public final class LitTerm implements Term {
     /**
      * The zero argument function which returns the literal when invoked.
      */
-    private final Callable<ProxyObject> function;
+    private final Function<Object, ProxyObject> function;
 
     /**
      * Construct a literal term for the given function.
      */
-    public LitTerm(Callable<ProxyObject> function) {
+    public LitTerm(Function<Object, ProxyObject> function) {
         if (function == null)
             throw new IllegalArgumentException("'function' must be non-null");
 
@@ -29,7 +30,7 @@ public final class LitTerm implements Term {
     /**
      * Returns the function.
      */
-    public Callable<ProxyObject> getFunction() {
+    public Function<Object, ProxyObject> getFunction() {
         return function;
     }
 

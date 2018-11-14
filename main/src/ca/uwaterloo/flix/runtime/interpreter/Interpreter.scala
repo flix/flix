@@ -769,8 +769,11 @@ object Interpreter {
       new AtomPredicate(latSym, p, ts, i2s.toArray)
 
     case FinalAst.Predicate.Body.Filter(sym, terms, loc) =>
-      val f = new function.Function[Array[AnyRef], java.lang.Boolean] {
-        override def apply(as: Array[AnyRef]): java.lang.Boolean = Linker.link(sym, root).invoke(as).getValue.asInstanceOf[Boolean].booleanValue()
+      val f = new function.Function[Array[Object], ProxyObject] {
+        override def apply(as: Array[Object]): ProxyObject = {
+          val bool = Linker.link(sym, root).invoke(as).getValue.asInstanceOf[java.lang.Boolean]
+          new ProxyObject(bool, null, null, null)
+        }
       }
       val ts = terms.map(t => evalBodyTerm(t, env0))
       new api.predicate.FilterPredicate(f, ts.toArray)
@@ -781,7 +784,7 @@ object Interpreter {
         override def apply(as: Array[AnyRef]): Array[ProxyObject] = Linker.link(defSym, root).invoke(as).getValue.asInstanceOf[Array[ProxyObject]]
       }
 
-      new api.predicate.FunctionalPredicate(s, f, terms.map(t => cache.getVarSym(t)).toArray, loc.reified)
+      new api.predicate.FunctionalPredicate(s, f, terms.map(t => cache.getVarSym(t)).toArray)
   }
 
   /**
@@ -803,14 +806,14 @@ object Interpreter {
       val v = wrapValueInProxyObject(env0(sym.toString), tpe)
 
       // Construct a literal term with a function that evaluates to the proxy object.
-      new api.term.LitTerm(() => v)
+      new api.term.LitTerm((_: AnyRef) => v)
 
     //
     // Literals.
     //
     case FinalAst.Term.Head.Lit(sym, _, _) =>
       // Construct a literal term with a function that invokes another function which returns the literal.
-      new api.term.LitTerm(() => Linker.link(sym, root).invoke(Array.emptyObjectArray))
+      new api.term.LitTerm((_: AnyRef) => Linker.link(sym, root).invoke(Array.emptyObjectArray))
 
     //
     // Applications.
@@ -848,14 +851,14 @@ object Interpreter {
       val v = wrapValueInProxyObject(env0(sym.toString), tpe)
 
       // Construct a literal term with a function that evaluates to the proxy object.
-      new api.term.LitTerm(() => v)
+      new api.term.LitTerm((_: AnyRef) => v)
 
     //
     // Literals.
     //
     case FinalAst.Term.Body.Lit(sym, _, _) =>
       // Construct a literal term with a function that invokes another function which returns the literal.
-      new api.term.LitTerm(() => Linker.link(sym, root).invoke(Array.emptyObjectArray))
+      new api.term.LitTerm((_: AnyRef) => Linker.link(sym, root).invoke(Array.emptyObjectArray))
   }
 
   /**
