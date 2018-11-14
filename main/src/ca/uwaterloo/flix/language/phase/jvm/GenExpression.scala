@@ -1559,8 +1559,27 @@ object GenExpression {
           mv.visitLdcInsn(sym.toString)
 
           // Emit code for the attributes.
-          mv.visitInsn(ICONST_0)
+          val attributes = root.relations(sym).attr
+          compileInt(mv, attributes.length)
           mv.visitTypeInsn(ANEWARRAY, "ca/uwaterloo/flix/runtime/solver/api/Attribute")
+          for ((attribute, index) <- attributes.zipWithIndex) {
+            // Compile each attribute and store it in the array.
+            mv.visitInsn(DUP)
+            compileInt(mv, index)
+
+            // Allocate the attribute object.
+            mv.visitTypeInsn(NEW, "ca/uwaterloo/flix/runtime/solver/api/Attribute")
+            mv.visitInsn(DUP)
+
+            // The name of the attribute.
+            mv.visitLdcInsn(attribute.name)
+
+            // Invoke the constructor of the attribute.
+            mv.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/solver/api/Attribute", "<init>", "(Ljava/lang/String;)V", false)
+
+            // Store the attribute in the array.
+            mv.visitInsn(AASTORE)
+          }
 
           // Emit code to instantiate the predicate symbol.
           mv.visitMethodInsn(INVOKESTATIC, "ca/uwaterloo/flix/runtime/solver/api/symbol/NamedRelSym", "getInstance", "(Ljava/lang/String;[Lca/uwaterloo/flix/runtime/solver/api/Attribute;)Lca/uwaterloo/flix/runtime/solver/api/symbol/NamedRelSym;", false);
