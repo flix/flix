@@ -9,20 +9,22 @@ public final class ProxyObject {
 
     // TODO: Document class.
 
-    private Object v;
-    private Function<Object[], Boolean> eq;
-    private Function<Object[], Integer> hash;
-    private Function<Object[], String> toStr;
+    private final Object value;
+    private final Function<Object[], Boolean> eq;
+    private final Function<Object[], Integer> hash;
+    private final Function<Object[], String> toStr;
 
-    public ProxyObject(Object v, Function<Object[], Boolean> eq, Function<Object[], Integer> hash, Function<Object[], String> toStr) {
-        this.v = v;
+    public ProxyObject(Object value, Function<Object[], Boolean> eq, Function<Object[], Integer> hash, Function<Object[], String> toStr) {
+        //if (value == null) throw new IllegalArgumentException("'value' must be non-null.");
+
+        this.value = value;
         this.eq = eq;
         this.hash = hash;
         this.toStr = toStr;
     }
 
     public Object getValue() {
-        return v;
+        return value;
     }
 
     @Override
@@ -38,7 +40,7 @@ public final class ProxyObject {
         if (hash == null)
             return this.getValue().hashCode();
         else
-            return hash.apply(new Object[]{v});
+            return hash.apply(new Object[]{value});
     }
 
     @Override
@@ -46,7 +48,7 @@ public final class ProxyObject {
         if (toStr == null)
             return this.getValue().toString();
         else
-            return toStr.apply(new Object[]{v});
+            return toStr.apply(new Object[]{value});
     }
 
 }

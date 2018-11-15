@@ -206,9 +206,20 @@ object GenFunctionClasses {
     //mv.visitFieldInsn(GETFIELD, classType.name.toInternalName, "result", resultType.toDescriptor)
     //mv.visitInsn(POP)
 
+    // Allocate a fresh proxy object.
+    mv.visitTypeInsn(NEW, "ca/uwaterloo/flix/runtime/solver/api/ProxyObject")
+    mv.visitInsn(DUP)
 
-    // TODO: Should actually wrap  this in a proxy object.
-    mv.visitInsn(ACONST_NULL)
+    // Evaluate the arguments.
+    mv.visitInsn(ACONST_NULL) // TODO: Actually load the field...
+    mv.visitInsn(ACONST_NULL) // TODO: Eq
+    mv.visitInsn(ACONST_NULL) // TODO: Hash
+    mv.visitInsn(ACONST_NULL) // TODO: toStr
+
+    // Invoke the constructor of the proxy object.
+    mv.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/solver/api/ProxyObject", "<init>", "(Ljava/lang/Object;Ljava/util/function/Function;Ljava/util/function/Function;Ljava/util/function/Function;)V", false);
+
+    // Return the proxy object.
     mv.visitInsn(ARETURN)
 
     mv.visitMaxs(65535, 65535)

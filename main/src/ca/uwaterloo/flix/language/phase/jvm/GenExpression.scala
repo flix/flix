@@ -1737,8 +1737,15 @@ object GenExpression {
       // Add source line numbers for debugging.
       addSourceLine(mv, loc)
 
-      // Invoke the def symbol with no arguments.
-      compileApplyCall(sym, new Array(0), mv)
+      // Emit code to allocate a fresh literal term.
+      mv.visitTypeInsn(NEW, "ca/uwaterloo/flix/runtime/solver/api/term/LitTerm")
+      mv.visitInsn(DUP)
+
+      // Emit code to construct the function object.
+      pushFunctionObject(sym, mv)
+
+      // Emit code to invoke the constructor of the literal term.
+      mv.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/solver/api/term/LitTerm", "<init>", "(Ljava/util/function/Function;)V", false);
 
     case Term.Head.App(sym, args, tpe, loc) =>
       ??? // TODO
@@ -1842,9 +1849,9 @@ object GenExpression {
   }
 
   /**
-    * Emits code the invoke the apply method of the given def symbol `sym` with the given arguments `args`.
+    * Emits code that puts the function object of the def symbol `def` on top of the stack.
     */
-  private def compileApplyCall(sym: Symbol.DefnSym, args: Array[Symbol.VarSym], mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
+  private def pushFunctionObject(sym: Symbol.DefnSym, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
     // Retrieve the namespace of the def symbol.
     val ns = JvmOps.getNamespace(sym)
 
@@ -1871,15 +1878,6 @@ object GenExpression {
 
     // Load the def object.
     mv.visitFieldInsn(GETFIELD, nsJvmType.name.toInternalName, defFieldName, defJvmType.toDescriptor)
-
-    // Emit code for the argument.
-    mv.visitInsn(ACONST_NULL)
-
-    // Emit code to invoke the method.
-    mv.visitMethodInsn(INVOKEINTERFACE, "java/util/function/Function", "apply", "(Ljava/lang/Object;)Ljava/lang/Object;", true)
-
-    // Emit a cast to ProxyObject - the expected return type.
-    mv.visitTypeInsn(CHECKCAST, JvmType.ProxyObject.name.toInternalName)
   }
 
   /**
