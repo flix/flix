@@ -88,20 +88,8 @@ object Linker {
         // Retrieve the wrapped array.
         val wrappedArray = getWrappedArray(result, resultType, root)
 
-        // The wrapped array operations.
-        val wrappedEq = new Function[Array[AnyRef], Boolean] {
-          override def apply(a: Array[AnyRef]): Boolean = {
-            val x = a(0)
-            val y = a(1)
-            x == y
-          }
-        }
-
-        val wrappedHash = (x: AnyRef) => x.hashCode()
-        val wrappedToString = (x: AnyRef) => x.toString
-
         // Construct the wrapped array object.
-        new ProxyObject(wrappedArray, wrappedEq, wrappedHash, wrappedToString)
+        new ProxyObject(wrappedArray, null, null, null)
       }
 
     }
@@ -142,24 +130,17 @@ object Linker {
     * Returns the given array `result` with all its values wrapped in proxy object.
     */
   private def getWrappedArray(result: AnyRef, tpe: Type, root: Root)(implicit flix: Flix): Array[ProxyObject] = {
-    // Primitive equality, hashCode, and toString method.
-    val primitiveEq = new Function[Array[AnyRef], Boolean] {
-      override def apply(a: Array[AnyRef]): Boolean = a(0) == a(1)
-    }
-    val primitiveHash = (x: AnyRef) => x.hashCode()
-    val primitiveToString = (x: AnyRef) => x.toString
-
     // Wrap the array values in proxy objects.
     result match {
-      case a: Array[Char] => a map (v => new ProxyObject(Char.box(v), primitiveEq, primitiveHash, primitiveToString))
+      case a: Array[Char] => a map (v => new ProxyObject(Char.box(v), null, null, null))
 
-      case a: Array[Byte] => a map (v => new ProxyObject(Byte.box(v), primitiveEq, primitiveHash, primitiveToString))
-      case a: Array[Short] => a map (v => new ProxyObject(Short.box(v), primitiveEq, primitiveHash, primitiveToString))
-      case a: Array[Int] => a map (v => new ProxyObject(Int.box(v), primitiveEq, primitiveHash, primitiveToString))
-      case a: Array[Long] => a map (v => new ProxyObject(Long.box(v), primitiveEq, primitiveHash, primitiveToString))
+      case a: Array[Byte] => a map (v => new ProxyObject(Byte.box(v), null, null, null))
+      case a: Array[Short] => a map (v => new ProxyObject(Short.box(v), null, null, null))
+      case a: Array[Int] => a map (v => new ProxyObject(Int.box(v), null, null, null))
+      case a: Array[Long] => a map (v => new ProxyObject(Long.box(v), null, null, null))
 
-      case a: Array[Float] => a map (v => new ProxyObject(Float.box(v), primitiveEq, primitiveHash, primitiveToString))
-      case a: Array[Double] => a map (v => new ProxyObject(Double.box(v), primitiveEq, primitiveHash, primitiveToString))
+      case a: Array[Float] => a map (v => new ProxyObject(Float.box(v), null, null, null))
+      case a: Array[Double] => a map (v => new ProxyObject(Double.box(v), null, null, null))
 
       case a: Array[AnyRef] => a map {
         case v =>
@@ -173,44 +154,41 @@ object Linker {
   }
 
   /**
-    * Returns a Scala function that computes equality of two raw Flix values.
+    * Returns a Java function that computes equality of two raw Flix values.
     */
-  private def getEqOp(tpe: Type, root: Root)(implicit flix: Flix): Function[Array[AnyRef], Boolean] = new Function[Array[AnyRef], Boolean] {
-    override def apply(a: Array[AnyRef]): Boolean = {
-      val x = a(0)
-      val y = a(1)
-      val sym = root.specialOps(SpecialOperator.Equality)(tpe)
-      link(sym, root).invoke(Array(x, y)).getValue match {
-        case java.lang.Boolean.TRUE => true
-        case java.lang.Boolean.FALSE => false
-        case v => throw InternalRuntimeException(s"Unexpected value: '$v' of type '${v.getClass.getName}'.")
-      }
+  private def getEqOp(tpe: Type, root: Root)(implicit flix: Flix): java.util.function.Function[Array[AnyRef], java.lang.Boolean] = (a: Array[AnyRef]) => {
+    val x = a(0)
+    val y = a(1)
+    val sym = root.specialOps(SpecialOperator.Equality)(tpe)
+    link(sym, root).invoke(Array(x, y)).getValue match {
+      case java.lang.Boolean.TRUE => true
+      case java.lang.Boolean.FALSE => false
+      case v => throw InternalRuntimeException(s"Unexpected value: '$v' of type '${v.getClass.getName}'.")
     }
-
   }
 
   /**
-    * Returns a Scala function that computes the hashCode of a raw Flix value.
+    * Returns a Java function that computes the hashCode of a raw Flix value.
     */
-  private def getHashOp(tpe: Type, root: Root)(implicit flix: Flix): AnyRef => Int =
-    (x: AnyRef) => {
-      val sym = root.specialOps(SpecialOperator.HashCode)(tpe)
-      link(sym, root).invoke(Array(x)).getValue match {
-        case i: java.lang.Integer => i.intValue()
-        case v => throw InternalRuntimeException(s"Unexpected value: '$v' of type '${v.getClass.getName}'.")
-      }
+  private def getHashOp(tpe: Type, root: Root)(implicit flix: Flix): java.util.function.Function[Array[AnyRef], Integer] = (a: Array[AnyRef]) => {
+    val x = a(0)
+    val sym = root.specialOps(SpecialOperator.HashCode)(tpe)
+    link(sym, root).invoke(Array(x)).getValue match {
+      case i: java.lang.Integer => i.intValue()
+      case v => throw InternalRuntimeException(s"Unexpected value: '$v' of type '${v.getClass.getName}'.")
     }
+  }
 
   /**
-    * Returns a Scala function that computes the string representation of a raw Flix value.
+    * Returns a Java function that computes the string representation of a raw Flix value.
     */
-  private def getToStrOp(tpe: Type, root: Root)(implicit flix: Flix): AnyRef => String =
-    (x: AnyRef) => {
-      val sym = root.specialOps(SpecialOperator.ToString)(tpe)
-      link(sym, root).invoke(Array(x)).getValue match {
-        case s: java.lang.String => s
-        case v => throw InternalRuntimeException(s"Unexpected value: '$v' of type '${v.getClass.getName}'.")
-      }
+  private def getToStrOp(tpe: Type, root: Root)(implicit flix: Flix): java.util.function.Function[Array[AnyRef], String] = (a: Array[AnyRef]) => {
+    val x = a(0)
+    val sym = root.specialOps(SpecialOperator.ToString)(tpe)
+    link(sym, root).invoke(Array(x)).getValue match {
+      case s: java.lang.String => s
+      case v => throw InternalRuntimeException(s"Unexpected value: '$v' of type '${v.getClass.getName}'.")
     }
+  }
 
 }
