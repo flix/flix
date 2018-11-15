@@ -76,9 +76,9 @@ object AsmOps {
   def getArrayLoadInstruction(tpe: JvmType): Int = tpe match {
     case JvmType.Void => throw InternalCompilerException(s"Unexpected type $tpe")
     case JvmType.PrimBool => BALOAD
-    case JvmType.PrimChar =>  CALOAD
+    case JvmType.PrimChar => CALOAD
     case JvmType.PrimByte => BALOAD
-    case JvmType.PrimShort =>  SALOAD
+    case JvmType.PrimShort => SALOAD
     case JvmType.PrimInt => IALOAD
     case JvmType.PrimLong => LALOAD
     case JvmType.PrimFloat => FALOAD
@@ -92,9 +92,9 @@ object AsmOps {
   def getArrayStoreInstruction(tpe: JvmType): Int = tpe match {
     case JvmType.Void => throw InternalCompilerException(s"Unexpected type $tpe")
     case JvmType.PrimBool => BASTORE
-    case JvmType.PrimChar =>  CASTORE
+    case JvmType.PrimChar => CASTORE
     case JvmType.PrimByte => BASTORE
-    case JvmType.PrimShort =>  SASTORE
+    case JvmType.PrimShort => SASTORE
     case JvmType.PrimInt => IASTORE
     case JvmType.PrimLong => LASTORE
     case JvmType.PrimFloat => FASTORE
@@ -115,18 +115,18 @@ object AsmOps {
     case JvmType.PrimShort => T_SHORT
     case JvmType.PrimInt => T_INT
     case JvmType.PrimLong => T_LONG
-    case JvmType.Reference(_) =>  throw InternalCompilerException(s"Expected primitive type. Actual type: $tpe")
+    case JvmType.Reference(_) => throw InternalCompilerException(s"Expected primitive type. Actual type: $tpe")
   }
 
   /**
     * Returns the CheckCast type for the value of the type specified by `tpe`
     */
-  def arrayGetCheckCastType(tpe: JvmType): String = tpe match{
+  def arrayGetCheckCastType(tpe: JvmType): String = tpe match {
     case JvmType.Void => throw InternalCompilerException(s"Unexpected type $tpe")
     case JvmType.PrimBool => "[Z"
-    case JvmType.PrimChar =>  "[C"
+    case JvmType.PrimChar => "[C"
     case JvmType.PrimByte => "[B"
-    case JvmType.PrimShort =>  "[S"
+    case JvmType.PrimShort => "[S"
     case JvmType.PrimInt => "[I"
     case JvmType.PrimLong => "[J"
     case JvmType.PrimFloat => "[F"
@@ -140,9 +140,9 @@ object AsmOps {
   def getArrayFillType(tpe: JvmType): String = tpe match {
     case JvmType.Void => throw InternalCompilerException(s"Unexpected type $tpe")
     case JvmType.PrimBool => "([ZZ)V"
-    case JvmType.PrimChar =>  "([CC)V"
+    case JvmType.PrimChar => "([CC)V"
     case JvmType.PrimByte => "([BB)V"
-    case JvmType.PrimShort =>  "([SS)V"
+    case JvmType.PrimShort => "([SS)V"
     case JvmType.PrimInt => "([II)V"
     case JvmType.PrimLong => "([JJ)V"
     case JvmType.PrimFloat => "([FF)V"
@@ -408,6 +408,20 @@ object AsmOps {
         method.visitVarInsn(ALOAD, 0)
         method.visitMethodInsn(INVOKESPECIAL, classType.name.toInternalName, getterName, getMethodDescriptor(Nil, fieldType), false)
     }
+  }
+
+
+  def boxIfPrim(tpe: JvmType, mv: MethodVisitor): Unit = tpe match {
+    case JvmType.Void => throw InternalCompilerException(s"Unexpected type $tpe")
+    case JvmType.PrimBool => mv.visitMethodInsn(INVOKESTATIC, "java/lang/Boolean", "valueOf", "(Z)Ljava/lang/Boolean;", false)
+    case JvmType.PrimChar => mv.visitMethodInsn(INVOKESTATIC, "java/lang/Char", "valueOf", "(C)Ljava/lang/Char;", false)
+    case JvmType.PrimFloat => mv.visitMethodInsn(INVOKESTATIC, "java/lang/Float", "valueOf", "(F)Ljava/lang/Float;", false)
+    case JvmType.PrimDouble => mv.visitMethodInsn(INVOKESTATIC, "java/lang/Double", "valueOf", "(D)Ljava/lang/Double;", false)
+    case JvmType.PrimByte => mv.visitMethodInsn(INVOKESTATIC, "java/lang/Byte", "valueOf", "(B)Ljava/lang/Byte;", false)
+    case JvmType.PrimShort => mv.visitMethodInsn(INVOKESTATIC, "java/lang/Short", "valueOf", "(S)Ljava/lang/Short;", false)
+    case JvmType.PrimInt => mv.visitMethodInsn(INVOKESTATIC, "java/lang/Integer", "valueOf", "(I)Ljava/lang/Integer;", false)
+    case JvmType.PrimLong => mv.visitMethodInsn(INVOKESTATIC, "java/lang/Long", "valueOf", "(J)Ljava/lang/Long;", false)
+    case JvmType.Reference(name) => ()
   }
 
 }
