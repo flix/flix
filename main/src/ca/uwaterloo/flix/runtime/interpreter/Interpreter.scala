@@ -286,11 +286,13 @@ object Interpreter {
       chan.close()
       Value.Unit
 
-    case Expression.Spawn(exp, tpe, loc) =>
+    case Expression.Spawn(sym, tpe, loc) =>
       // Todo determine daemon
       new Thread(){
         override def run(): Unit = {
-          eval(exp, env0, henv0, lenv0, root)
+          println("jthan")
+          invokeClo(allocateClosure(sym, List().toArray, env0), List(), env0, henv0, lenv0, root)
+//          eval(sym, env0, henv0, lenv0, root)
         }
       }.start()
       Value.Unit

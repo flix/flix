@@ -322,10 +322,8 @@ object Stratifier extends Phase[Root, Root] {
         case e => Expression.CloseChannel(e, tpe, loc)
       }
 
-    case Expression.Spawn(exp, tpe, loc) =>
-      mapN(visitExp(exp)) {
-        case e => Expression.Spawn(e, tpe, loc)
-      }
+    case Expression.Spawn(sym, tpe, loc) =>
+      Expression.Spawn(sym, tpe, loc).toSuccess
 
     case Expression.NewRelation(sym, tpe, loc) =>
       Expression.NewRelation(sym, tpe, loc).toSuccess

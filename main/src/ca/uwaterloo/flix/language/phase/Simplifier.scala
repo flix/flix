@@ -540,8 +540,12 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
 
       case TypedAst.Expression.Spawn(exp, tpe, eff, loc) =>
         val e = visitExp(exp)
+        val l = SimplifiedAst.Expression.Lambda(List(), e, tpe, loc)
         // TODO SJ: lav e til lambda exp med rigtige typer Unit -> tpe
-        SimplifiedAst.Expression.Spawn(e, tpe, loc)
+        // TODO SJ: Vi kom her til. Vi får en fejl ved spawn. Vi tror det er noget med den tomme liste af fparams. (Btw check commit for at se hvilke filer der er rørt)
+        val newTpe = Type.mkArrow(Type.Unit, e.tpe)
+        println(newTpe)
+        SimplifiedAst.Expression.Spawn(l, newTpe, loc)
 
       case TypedAst.Expression.NewRelation(sym, tpe, eff, loc) =>
         SimplifiedAst.Expression.NewRelation(sym, tpe, loc)
