@@ -371,7 +371,11 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
 
       case SimplifiedAst.Expression.Spawn(exp, tpe, loc) =>
         val e = visit(exp)
-        FinalAst.Expression.Spawn(e, tpe, loc)
+        val eSym = exp match {
+          case SimplifiedAst.Expression.Closure(sym, _, _, _) => sym
+          case _ => throw InternalCompilerException("Unexpected non closure expression")
+        }
+        FinalAst.Expression.Spawn(eSym, tpe, loc)
 
       case SimplifiedAst.Expression.NewRelation(sym, tpe, loc) =>
         FinalAst.Expression.NewRelation(sym, tpe, loc)

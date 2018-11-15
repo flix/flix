@@ -63,7 +63,9 @@ object GenFunctionClasses {
     val args = defn.tpe.typeArguments
 
     // The super interface.
-    val superInterface = Array(functionInterface.name.toInternalName)
+    // TODO SJ: implementerer Def$<funktionens navn> og Spawnable
+    // TODO SJ: add new method, spawn(). just call invoke/apply. giv new Context() til invoke
+    val superInterface = Array(functionInterface.name.toInternalName /* TODO SJ add Spawnable */)
 
     // Class visitor
     visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_FINAL, classType.name.toInternalName, null,

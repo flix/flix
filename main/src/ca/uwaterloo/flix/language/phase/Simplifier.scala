@@ -540,6 +540,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
 
       case TypedAst.Expression.Spawn(exp, tpe, eff, loc) =>
         val e = visitExp(exp)
+        // TODO SJ: lav e til lambda exp med rigtige typer Unit -> tpe
         SimplifiedAst.Expression.Spawn(e, tpe, loc)
 
       case TypedAst.Expression.NewRelation(sym, tpe, eff, loc) =>

@@ -4,6 +4,7 @@ package ca.uwaterloo.flix.runtime.interpreter;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.*;
+import java.util.function.Function;
 
 //TODO SJ: make docs
 public final class Channel {
@@ -50,6 +51,15 @@ public final class Channel {
    * element in a channel that's full, you wait until there's space.
    */
   private int bufferSize;
+
+  public static void spawn(Spawnable s) {
+    new Thread(){
+      @Override
+      public void run() {
+        s.spawn();
+      }
+    }.start();
+  }
 
   /**
    * Put an element into the queue or wait until it is possible

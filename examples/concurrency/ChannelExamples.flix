@@ -31,14 +31,14 @@
 //    <- c; <- c; <- c; <- c; <- c; <- c; <- c; <- c; <- c; <- c
 //
 //
-def selectTest(): Int = {
-    let c1 = chan Int;
-    let asd = c1 <- 1;
-    let c2 = chan Int;
-    let fgh = c2 <- 2;
+def selectTest(): Float64 = {
+    let c1 = chan Float64;
+    let asd = c1 <- 1.0;
+    let c2 = chan Float64;
+    let fgh = c2 <- 2.0;
     select {
-        case x <- c2 => x + 1
-        case y <- c1 => y + 1
+        case x <- c2 => x + 1.0
+        case y <- c1 => y + 1.0
     }
 }
 //

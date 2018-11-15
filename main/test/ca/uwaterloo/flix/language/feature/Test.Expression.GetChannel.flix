@@ -13,11 +13,11 @@ def testGetOnBool(): Bool =
     <- c
 
 //TODO SJ: this doesnt work
-//@test
-//def testGetOnChar(): Char =
-//    let c = chan Char;
-//    c <- 'c';
-//    <- c
+@test
+def testGetOnChar(): Char =
+    let c = chan Char;
+    c <- 'c';
+    <- c
 
 @test
 def testGetOnFloat(): Float =

@@ -11,10 +11,10 @@ def testPutOnBool(): Channel[Bool] =
     c <- true
 
 // TODO SJ: this doesnt work
-//@test
-//def testPutOnChar(): Channel[Char] =
-//    let c = chan Char;
-//    c <- 'a'
+@test
+def testPutOnChar(): Channel[Char] =
+    let c = chan Char;
+    c <- 'a'
 
 @test
 def testPutOnFloat(): Channel[Float] =
@@ -75,8 +75,10 @@ def testPutCombinedOperations1(): Channel[Int] =
     c <- 1 + 1
 
 //TODO SJ: this doesnt work
+// because other than channel reasons
 //@test
-//def testPutCombinedOperations2(): Channel[Bool] =
+//def testPutCombinedOperations2(): Unit =
 //    let c = chan Bool;
 //    let someBool = c == chan Bool;
-//    c <- someBool
+//    c <- someBool;
+//    ()

@@ -201,7 +201,7 @@ object AsmOps {
       visitor.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Boolean", "booleanValue", "()Z", false)
     case JvmType.PrimChar =>
       visitor.visitTypeInsn(CHECKCAST, "java/lang/Char")
-      visitor.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Char", "charValue", "()C", false)
+      visitor.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Character", "charValue", "()C", false)
     case JvmType.PrimFloat =>
       visitor.visitTypeInsn(CHECKCAST, "java/lang/Float")
       visitor.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Float", "floatValue", "()F", false)
@@ -226,7 +226,7 @@ object AsmOps {
   def boxIfPrim(visitor: MethodVisitor, tpe: JvmType): Unit = tpe match {
     case JvmType.Void => throw InternalCompilerException(s"Unexpected type $tpe")
     case JvmType.PrimBool => visitor.visitMethodInsn(INVOKESTATIC, "java/lang/Boolean", "valueOf", "(Z)Ljava/lang/Boolean;", false)
-    case JvmType.PrimChar => visitor.visitMethodInsn(INVOKESTATIC, "java/lang/Char", "valueOf", "(C)Ljava/lang/Char;", false)
+    case JvmType.PrimChar => visitor.visitMethodInsn(INVOKESTATIC, "java/lang/Character", "valueOf", "(C)Ljava/lang/Character;", false)
     case JvmType.PrimFloat => visitor.visitMethodInsn(INVOKESTATIC, "java/lang/Float", "valueOf", "(F)Ljava/lang/Float;", false)
     case JvmType.PrimDouble => visitor.visitMethodInsn(INVOKESTATIC, "java/lang/Double", "valueOf", "(D)Ljava/lang/Double;", false)
     case JvmType.PrimByte => visitor.visitMethodInsn(INVOKESTATIC, "java/lang/Byte", "valueOf", "(B)Ljava/lang/Byte;", false)

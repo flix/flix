@@ -669,7 +669,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       Postfix ~ zeroOrMore(optWS ~ "." ~ Names.Field ~ SP ~> ParsedAst.Expression.RecordSelect)
     }
 
-    //TODO SJ: order this
+    //TODO SJ: order this with primaries
     def NewChannel: Rule1[ParsedAst.Expression.NewChannel] = rule {
       SP ~ atomic("chan") ~ WS ~ Type ~ SP ~> ParsedAst.Expression.NewChannel
     }

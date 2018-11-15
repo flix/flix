@@ -991,9 +991,9 @@ object GenExpression {
       // Make a new Channel[] containing all channel expressions
 
       // Calculate the size of the array and initiate it
-      // TODO SJ: Is this okay with large numbers
       compileInt(visitor, rules.size)
       visitor.visitTypeInsn(ANEWARRAY, JvmName.Channel.toInternalName)
+      //TODO SJ: zip with index
       for (index <- rules.indices) {
         // Dup so we end up with an array on top of the stack
         visitor.visitInsn(DUP)
@@ -1006,7 +1006,7 @@ object GenExpression {
         // Store the expression in the array
         visitor.visitInsn(AASTORE)
       }
-      // TODO SJ: Should we create a JvmName for the return type here?
+      // TODO SJ: Should we create a JvmName for the return type here? yes
       // Invoke select in Channel. This puts a SelectChoice on the stack
       visitor.visitMethodInsn(INVOKESTATIC, JvmName.Channel.toInternalName, "select", "([Lca/uwaterloo/flix/runtime/interpreter/Channel;)Lca/uwaterloo/flix/runtime/interpreter/SelectChoice;", false)
       // Dup since we need to get the element and the relevant index
@@ -1015,6 +1015,7 @@ object GenExpression {
       visitor.visitFieldInsn(GETFIELD, JvmName.SelectChoice.toInternalName, "branchNumber", "I")
 
       val labels: List[Label] = rules.map(r => new Label())
+      val completedLabel: Label = new Label()
       for (index <- rules.indices) {
         // Dup since we need branchNumber for each rule
         visitor.visitInsn(DUP)
@@ -1039,19 +1040,23 @@ object GenExpression {
         AsmOps.castIfNotPrimAndUnbox(visitor, jvmType)
         // Store instruction for `jvmType`
         val iStore = AsmOps.getStoreInstruction(jvmType)
-        // TODO SJ: Why +3 ?(from IfThenElse) +3 does not seem to be correct! (we tried just always compiling 1 instead of storing and compiling the exp, which worked)
         // Extend the environment with the element from the channel
         visitor.visitVarInsn(iStore, rules.apply(index).sym.getStackOffset + 3)
         // Finally compile the body of the selected rule
         compileExpression(rules.apply(index).exp, visitor, currentClass, lenv0, entryPoint)
         // Jump out of the branches so we do not go through unnecessary branches
-        visitor.visitJumpInsn(GOTO,labels.last)
+        visitor.visitJumpInsn(GOTO,completedLabel)
 
 
 
         // We jumped here to not compute anything
         visitor.visitLabel(labels.apply(index))
       }
+      //TODO SJ: throw flixError med god string ELLER egen subclass
+      visitor.visitInsn(ACONST_NULL)
+      visitor.visitInsn(ATHROW)
+      // throw exception
+      visitor.visitLabel(completedLabel)
 
     case Expression.CloseChannel(exp, tpe, loc) =>
       addSourceLine(visitor, loc)
@@ -1061,6 +1066,37 @@ object GenExpression {
       // Put a Unit value on the stack
       visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Value.Unit.toInternalName, "getInstance",
         AsmOps.getMethodDescriptor(Nil, JvmType.Unit), false)
+
+    case Expression.Spawn(exp, tpe, loc) =>
+//      // exp -> sym
+//      //TODO SJ: omskriv til lambda i simplifier
+//      // Label for the loop
+//      val loop = new Label
+//      // Namespace of the Def
+//      val ns = JvmOps.getNamespace(sym)
+//      // JvmType of `ns`
+//      val nsJvmType = JvmOps.getNamespaceClassType(ns)
+//      // Name of the field for `ns` on `Context`
+//      val nsFieldName = JvmOps.getNamespaceFieldNameInContextClass(ns)
+//      // Field for Def on `ns`
+//      val defFiledName = JvmOps.getDefFieldNameInNamespaceClass(sym)
+//      // JvmType of Def
+//      val defJvmType = JvmOps.getFunctionDefinitionClassType(sym)
+//      // Type of the function
+//      val fnType = root.defs(sym).tpe
+//      // Type of the continuation interface
+//      val cont = JvmOps.getContinuationInterfaceType(fnType)
+//      // Type of the function interface
+//      val functionInterface = JvmOps.getFunctionInterfaceType(fnType)
+//      // Put the closure on `continuation` field of `Context`
+//      visitor.visitVarInsn(ALOAD, 1)
+//      // Load `Context`
+//      visitor.visitVarInsn(ALOAD, 1)
+//      // Load `ns`
+//      visitor.visitFieldInsn(GETFIELD, JvmName.Context.toInternalName, nsFieldName, nsJvmType.toDescriptor)
+//      // Load `continuation`
+//      visitor.visitFieldInsn(GETFIELD, nsJvmType.name.toInternalName, defFiledName, defJvmType.toDescriptor)
+//    // Result type
 
     case Expression.UserError(_, loc) =>
       addSourceLine(visitor, loc)
