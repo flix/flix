@@ -19,8 +19,10 @@ package ca.uwaterloo.flix.language.phase.jvm
 import java.lang.reflect.Modifier
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.language.ast.FinalAst._
 import ca.uwaterloo.flix.language.ast.SemanticOperator._
+import ca.uwaterloo.flix.language.ast.Symbol.PredSym
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Optimization, Verbosity}
 import ca.uwaterloo.flix.language.ast.{Type => FlixType}
@@ -1540,9 +1542,19 @@ object GenExpression {
       compileHeadAtom(head, mv)
 
       // Emit code for the body atoms.
-      // TODO: BodyAtoms
-      mv.visitInsn(ICONST_0)
+      compileInt(mv, c.body.length)
       mv.visitTypeInsn(ANEWARRAY, "ca/uwaterloo/flix/runtime/solver/api/predicate/Predicate")
+      for ((atom, index) <- c.body.zipWithIndex) {
+        // Compile each constraint param and store it in the array.
+        mv.visitInsn(DUP)
+        compileInt(mv, index)
+
+        // Compile the body atom.
+        compileBodyAtom(atom, mv)
+
+        // Store the result in the array.
+        mv.visitInsn(AASTORE)
+      }
 
       // Invoke the constructor of constraint.
       mv.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/solver/api/Constraint", "<init>", "([Lca/uwaterloo/flix/runtime/solver/api/symbol/VarSym;Lca/uwaterloo/flix/runtime/solver/api/predicate/Predicate;[Lca/uwaterloo/flix/runtime/solver/api/predicate/Predicate;)V", false)
@@ -1577,45 +1589,12 @@ object GenExpression {
       // Add source line numbers for debugging.
       addSourceLine(mv, loc)
 
-      // Instantiate the object.
+      // Allocate a fresh atom predicate object.
       mv.visitTypeInsn(NEW, "ca/uwaterloo/flix/runtime/solver/api/predicate/AtomPredicate")
       mv.visitInsn(DUP)
 
       // Emit code for the predicate symbol.
-      baseOpt match {
-        case None =>
-          // Emit code for the predicate symbol.
-          mv.visitLdcInsn(sym.toString)
-
-          // Emit code for the attributes.
-          val attributes = root.relations(sym).attr
-          compileInt(mv, attributes.length)
-          mv.visitTypeInsn(ANEWARRAY, "ca/uwaterloo/flix/runtime/solver/api/Attribute")
-          for ((attribute, index) <- attributes.zipWithIndex) {
-            // Compile each attribute and store it in the array.
-            mv.visitInsn(DUP)
-            compileInt(mv, index)
-
-            // Allocate the attribute object.
-            mv.visitTypeInsn(NEW, "ca/uwaterloo/flix/runtime/solver/api/Attribute")
-            mv.visitInsn(DUP)
-
-            // The name of the attribute.
-            mv.visitLdcInsn(attribute.name)
-
-            // Invoke the constructor of the attribute.
-            mv.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/solver/api/Attribute", "<init>", "(Ljava/lang/String;)V", false)
-
-            // Store the attribute in the array.
-            mv.visitInsn(AASTORE)
-          }
-
-          // Emit code to instantiate the predicate symbol.
-          mv.visitMethodInsn(INVOKESTATIC, "ca/uwaterloo/flix/runtime/solver/api/symbol/NamedRelSym", "getInstance", "(Ljava/lang/String;[Lca/uwaterloo/flix/runtime/solver/api/Attribute;)Lca/uwaterloo/flix/runtime/solver/api/symbol/NamedRelSym;", false);
-        case Some(varSym) =>
-          // Emit code for the predicate symbol.
-          readVar(varSym, tpe, mv)
-      }
+      compilePredicateSymbol(baseOpt, sym, tpe, mv)
 
       // Emit code for the polarity of the atom. A head atom is always positive.
       mv.visitInsn(ICONST_1)
@@ -1631,7 +1610,7 @@ object GenExpression {
         mv.visitInsn(AASTORE)
       }
 
-      // Emit code to invoke the constructor.
+      // Emit code to invoke the constructor of the atom predicate.
       mv.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/solver/api/predicate/AtomPredicate", "<init>", "(Lca/uwaterloo/flix/runtime/solver/api/symbol/PredSym;Z[Lca/uwaterloo/flix/runtime/solver/api/term/Term;)V", false);
 
     case Predicate.Head.LatAtom(baseOpt, sym, terms, tpe, loc) =>
@@ -1644,13 +1623,10 @@ object GenExpression {
     */
   private def compileBodyAtom(b0: Predicate.Body, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = b0 match {
 
-    case Predicate.Body.RelAtom(None, sym, polarity, terms, tpe, loc) =>
+    case Predicate.Body.RelAtom(baseOpt, sym, polarity, terms, tpe, loc) =>
       ??? // TODO
 
     case Predicate.Body.LatAtom(None, sym, polarity, terms, tpe, loc) =>
-      ??? // TODO
-
-    case Predicate.Body.RelAtom(Some(varSym), sym, polarity, terms, tpe, loc) =>
       ??? // TODO
 
     case Predicate.Body.LatAtom(Some(varSym), sym, polarity, terms, tpe, loc) =>
@@ -1662,6 +1638,47 @@ object GenExpression {
     case Predicate.Body.Functional(varSym, defSym, terms, loc) =>
       ??? // TODO
 
+  }
+
+  /**
+    * Emits code for the predicate symbol based on `baseOpt`.
+    */
+  private def compilePredicateSymbol(baseOpt: Option[Symbol.VarSym], sym: Symbol.RelSym, tpe: ast.Type, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
+    // Emit code for the predicate symbol.
+    baseOpt match {
+      case None =>
+        // Emit code for the predicate symbol.
+        mv.visitLdcInsn(sym.toString)
+
+        // Emit code for the attributes.
+        val attributes = root.relations(sym).attr
+        compileInt(mv, attributes.length)
+        mv.visitTypeInsn(ANEWARRAY, "ca/uwaterloo/flix/runtime/solver/api/Attribute")
+        for ((attribute, index) <- attributes.zipWithIndex) {
+          // Compile each attribute and store it in the array.
+          mv.visitInsn(DUP)
+          compileInt(mv, index)
+
+          // Allocate the attribute object.
+          mv.visitTypeInsn(NEW, "ca/uwaterloo/flix/runtime/solver/api/Attribute")
+          mv.visitInsn(DUP)
+
+          // The name of the attribute.
+          mv.visitLdcInsn(attribute.name)
+
+          // Invoke the constructor of the attribute.
+          mv.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/solver/api/Attribute", "<init>", "(Ljava/lang/String;)V", false)
+
+          // Store the attribute in the array.
+          mv.visitInsn(AASTORE)
+        }
+
+        // Emit code to instantiate the predicate symbol.
+        mv.visitMethodInsn(INVOKESTATIC, "ca/uwaterloo/flix/runtime/solver/api/symbol/NamedRelSym", "getInstance", "(Ljava/lang/String;[Lca/uwaterloo/flix/runtime/solver/api/Attribute;)Lca/uwaterloo/flix/runtime/solver/api/symbol/NamedRelSym;", false);
+      case Some(varSym) =>
+        // Emit code for the predicate symbol.
+        readVar(varSym, tpe, mv)
+    }
   }
 
   /**
