@@ -89,7 +89,14 @@ object Linker {
         val wrappedArray = getWrappedArray(result, resultType, root)
 
         // The wrapped array operations.
-        val wrappedEq = (x: AnyRef, y: AnyRef) => x == y
+        val wrappedEq = new Function[Array[AnyRef], Boolean] {
+          override def apply(a: Array[AnyRef]): Boolean = {
+            val x = a(0)
+            val y = a(1)
+            x == y
+          }
+        }
+
         val wrappedHash = (x: AnyRef) => x.hashCode()
         val wrappedToString = (x: AnyRef) => x.toString
 
@@ -136,7 +143,9 @@ object Linker {
     */
   private def getWrappedArray(result: AnyRef, tpe: Type, root: Root)(implicit flix: Flix): Array[ProxyObject] = {
     // Primitive equality, hashCode, and toString method.
-    val primitiveEq = (x: AnyRef, y: AnyRef) => x == y
+    val primitiveEq = new Function[Array[AnyRef], Boolean] {
+      override def apply(a: Array[AnyRef]): Boolean = a(0) == a(1)
+    }
     val primitiveHash = (x: AnyRef) => x.hashCode()
     val primitiveToString = (x: AnyRef) => x.toString
 
@@ -166,8 +175,10 @@ object Linker {
   /**
     * Returns a Scala function that computes equality of two raw Flix values.
     */
-  private def getEqOp(tpe: Type, root: Root)(implicit flix: Flix): (AnyRef, AnyRef) => Boolean =
-    (x: AnyRef, y: AnyRef) => {
+  private def getEqOp(tpe: Type, root: Root)(implicit flix: Flix): Function[Array[AnyRef], Boolean] = new Function[Array[AnyRef], Boolean] {
+    override def apply(a: Array[AnyRef]): Boolean = {
+      val x = a(0)
+      val y = a(1)
       val sym = root.specialOps(SpecialOperator.Equality)(tpe)
       link(sym, root).invoke(Array(x, y)).getValue match {
         case java.lang.Boolean.TRUE => true
@@ -175,6 +186,8 @@ object Linker {
         case v => throw InternalRuntimeException(s"Unexpected value: '$v' of type '${v.getClass.getName}'.")
       }
     }
+
+  }
 
   /**
     * Returns a Scala function that computes the hashCode of a raw Flix value.

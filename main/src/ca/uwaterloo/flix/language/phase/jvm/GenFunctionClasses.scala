@@ -201,9 +201,10 @@ object GenFunctionClasses {
     //
     // Read the result field.
     //
-    mv.visitVarInsn(ALOAD, 0)
-    mv.visitFieldInsn(GETFIELD, classType.name.toInternalName, "result", resultType.toDescriptor)
-    mv.visitInsn(POP)
+    // TODO: Be carefull with doubles longs etc.
+    //mv.visitVarInsn(ALOAD, 0)
+    //mv.visitFieldInsn(GETFIELD, classType.name.toInternalName, "result", resultType.toDescriptor)
+    //mv.visitInsn(POP)
 
 
     // TODO: Should actually wrap  this in a proxy object.

@@ -902,7 +902,14 @@ object Interpreter {
     val toStrSym = root.specialOps(SpecialOperator.ToString)(tpe)
 
     // Construct the operators.
-    val eqOp = (x: AnyRef, y: AnyRef) => Linker.link(eqSym, root).invoke(Array(x, y)).getValue.asInstanceOf[Boolean]
+    val eqOp = new Function[Array[AnyRef], Boolean] {
+      override def apply(a: Array[AnyRef]): Boolean = {
+        val x = a(0)
+        val y = a(1)
+        Linker.link(eqSym, root).invoke(Array(x, y)).getValue.asInstanceOf[Boolean]
+      }
+    }
+
     val hashOp = (x: AnyRef) => Linker.link(hashSym, root).invoke(Array(x)).getValue.asInstanceOf[Integer].intValue()
     val toStrOp = (x: AnyRef) => Linker.link(toStrSym, root).invoke(Array(x)).getValue.asInstanceOf[String]
 

@@ -5,7 +5,7 @@ import ca.uwaterloo.flix.util.InternalRuntimeException
 /**
   * A proxy object wraps a raw Flix object with appropriate methods for equality, hashCode, and toString.
   */
-class ProxyObject(v: AnyRef, eq: (AnyRef, AnyRef) => Boolean, hash: AnyRef => Int, toStr: AnyRef => String) {
+class ProxyObject(v: AnyRef, eq: Function[Array[Object], Boolean], hash: Function[Object, Int], toStr: Function[Object, String]) {
 
   /**
     * Returns the wrapped value.
@@ -17,7 +17,7 @@ class ProxyObject(v: AnyRef, eq: (AnyRef, AnyRef) => Boolean, hash: AnyRef => In
     */
   override def equals(obj: scala.Any): Boolean = obj match {
     case that: ProxyObject =>
-      if (eq == null) v == that.getValue else eq(v, that.getValue)
+      if (eq == null) v == that.getValue else eq.apply(List(v, that.getValue).toArray)
     case _ => throw InternalRuntimeException(s"Unexpected value: '$obj'.")
   }
 
