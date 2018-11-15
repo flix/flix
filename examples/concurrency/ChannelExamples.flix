@@ -11,7 +11,7 @@
 
 //def putchTest(): Channel[Bool] = let c = chan Bool; c <- true
 //
-def closechTest(): Channel[Int] = let c = chan Int; let c1 = closech c; c <- 1
+//def closechTest(): Channel[Int] = let c = chan Int; let c1 = closech c; c <- 1
 //
 
 //def collatz(n: Int): Int =
