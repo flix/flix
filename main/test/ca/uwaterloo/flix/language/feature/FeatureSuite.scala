@@ -113,9 +113,11 @@ class FeatureSuite extends Suites(
   new FlixTest("Test.Expression.VectorSliceNoStart", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.VectorSliceNoStart.flix"),
 
   new FlixTest("Test.Predicate.True", "main/test/ca/uwaterloo/flix/language/feature/Test.Predicate.True.flix"),
-  new FlixTest("Test.Predicate.QuantVar", "main/test/ca/uwaterloo/flix/language/feature/Test.Predicate.QuantVar.flix"),
   new FlixTest("Test.Predicate.False", "main/test/ca/uwaterloo/flix/language/feature/Test.Predicate.False.flix"),
-  new FlixTest("Test.Predicate.WildVar", "main/test/ca/uwaterloo/flix/language/feature/Test.Predicate.WildVar.flix")
+
+  new FlixTest("Test.Term.Lit", "main/test/ca/uwaterloo/flix/language/feature/Test.Term.Lit.flix"),
+  new FlixTest("Test.Term.QuantVar", "main/test/ca/uwaterloo/flix/language/feature/Test.Term.QuantVar.flix"),
+  new FlixTest("Test.Term.WildVar", "main/test/ca/uwaterloo/flix/language/feature/Test.Term.WildVar.flix"),
 
 ) with ParallelTestExecution {
   /* left empty */
