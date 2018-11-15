@@ -1512,9 +1512,29 @@ object GenExpression {
       mv.visitInsn(DUP)
 
       // Emit code for the cparams.
-      // TODO Constraint params
-      mv.visitInsn(ICONST_0)
+      compileInt(mv, c.cparams.length)
       mv.visitTypeInsn(ANEWARRAY, "ca/uwaterloo/flix/runtime/solver/api/symbol/VarSym")
+      for ((cparam, index) <- c.cparams.zipWithIndex) {
+        // Compile each constraint param and store it in the array.
+        mv.visitInsn(DUP)
+        compileInt(mv, index)
+
+        // Allocate a fresh variable symbol object.
+        mv.visitTypeInsn(NEW, "ca/uwaterloo/flix/runtime/solver/api/symbol/VarSym")
+        mv.visitInsn(DUP)
+
+        // Emit code for the name of the variable symbol.
+        mv.visitLdcInsn(cparam.sym.text)
+
+        // Emit code for the index of the variable symbol.
+        compileInt(mv, cparam.sym.getStackOffset)
+
+        // Invoke the constructor of the variable symbol.
+        mv.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/solver/api/symbol/VarSym", "<init>", "(Ljava/lang/String;I)V", false)
+
+        // Store the result in the array.
+        mv.visitInsn(AASTORE)
+      }
 
       // Emit code for the head atom.
       compileHeadAtom(head, mv)
