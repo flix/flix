@@ -20,6 +20,7 @@ import java.lang.reflect.Modifier
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast
+import ca.uwaterloo.flix.language.ast.Ast.Polarity
 import ca.uwaterloo.flix.language.ast.FinalAst._
 import ca.uwaterloo.flix.language.ast.SemanticOperator._
 import ca.uwaterloo.flix.language.ast.Symbol.PredSym
@@ -1624,7 +1625,36 @@ object GenExpression {
   private def compileBodyAtom(b0: Predicate.Body, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = b0 match {
 
     case Predicate.Body.RelAtom(baseOpt, sym, polarity, terms, tpe, loc) =>
-      ??? // TODO
+      // Add source line numbers for debugging.
+      addSourceLine(mv, loc)
+
+      // Allocate a fresh atom predicate object.
+      mv.visitTypeInsn(NEW, "ca/uwaterloo/flix/runtime/solver/api/predicate/AtomPredicate")
+      mv.visitInsn(DUP)
+
+      // Emit code for the predicate symbol.
+      compilePredicateSymbol(baseOpt, sym, tpe, mv)
+
+      // Emit code for the polarity of the atom. A head atom is always positive.
+      polarity match {
+        case Polarity.Positive => mv.visitInsn(ICONST_1)
+        case Polarity.Negative => mv.visitInsn(ICONST_0)
+      }
+
+      // Emit code for the terms.
+      compileInt(mv, terms.length)
+      mv.visitTypeInsn(ANEWARRAY, "ca/uwaterloo/flix/runtime/solver/api/term/Term")
+      for ((term, index) <- terms.zipWithIndex) {
+        // Compile each term and store it in the array.
+        mv.visitInsn(DUP)
+        compileInt(mv, index)
+        compileBodyTerm(term, mv)
+        mv.visitInsn(AASTORE)
+      }
+
+      // Emit code to invoke the constructor of the atom predicate.
+      mv.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/solver/api/predicate/AtomPredicate", "<init>", "(Lca/uwaterloo/flix/runtime/solver/api/symbol/PredSym;Z[Lca/uwaterloo/flix/runtime/solver/api/term/Term;)V", false);
+
 
     case Predicate.Body.LatAtom(None, sym, polarity, terms, tpe, loc) =>
       ??? // TODO
@@ -1687,25 +1717,11 @@ object GenExpression {
   private def compileHeadTerm(t0: Term.Head, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = t0 match {
 
     case Term.Head.QuantVar(sym, tpe, loc) =>
-      // Allocate a fresh variable term object.
-      mv.visitTypeInsn(NEW, "ca/uwaterloo/flix/runtime/solver/api/term/VarTerm")
-      mv.visitInsn(DUP)
+      // Add source line numbers for debugging.
+      addSourceLine(mv, loc)
 
-      // Allocate a fresh variable symbol object.
-      mv.visitTypeInsn(NEW, "ca/uwaterloo/flix/runtime/solver/api/symbol/VarSym")
-      mv.visitInsn(DUP)
-
-      // Emit the variable name.
-      mv.visitLdcInsn(sym.text)
-
-      // Emit the variable index.
-      compileInt(mv, sym.getStackOffset)
-
-      // Invoke the variable symbol constructor.
-      mv.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/solver/api/symbol/VarSym", "<init>", "(Ljava/lang/String;I)V", false)
-
-      // Invoke the variable term constructor.
-      mv.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/solver/api/term/VarTerm", "<init>", "(Lca/uwaterloo/flix/runtime/solver/api/symbol/VarSym;)V", false)
+      // Emit code for the quantified variable.
+      compileQuantVar(sym, mv)
 
     case Term.Head.CapturedVar(sym, tpe, loc) =>
       // Add source line numbers for debugging.
@@ -1741,7 +1757,11 @@ object GenExpression {
       mv.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/solver/api/term/WildTerm", "<init>", "()V", false);
 
     case Term.Body.QuantVar(sym, tpe, loc) =>
-      ??? // TODO
+      // Add source line numbers for debugging.
+      addSourceLine(mv, loc)
+
+      // Emit code for the quantified variable.
+      compileQuantVar(sym, mv)
 
     case Term.Body.CapturedVar(sym, tpe, loc) =>
       // Add source line numbers for debugging.
@@ -1756,6 +1776,31 @@ object GenExpression {
     case Term.Body.Lit(sym, tpe, loc) =>
       ??? // TODO
 
+  }
+
+  /**
+    * Emits code for the quantified variable symbol `sym`.
+    */
+  private def compileQuantVar(sym: Symbol.VarSym, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
+    // Allocate a fresh variable term object.
+    mv.visitTypeInsn(NEW, "ca/uwaterloo/flix/runtime/solver/api/term/VarTerm")
+    mv.visitInsn(DUP)
+
+    // Allocate a fresh variable symbol object.
+    mv.visitTypeInsn(NEW, "ca/uwaterloo/flix/runtime/solver/api/symbol/VarSym")
+    mv.visitInsn(DUP)
+
+    // Emit the variable name.
+    mv.visitLdcInsn(sym.text)
+
+    // Emit the variable index.
+    compileInt(mv, sym.getStackOffset)
+
+    // Invoke the variable symbol constructor.
+    mv.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/solver/api/symbol/VarSym", "<init>", "(Ljava/lang/String;I)V", false)
+
+    // Invoke the variable term constructor.
+    mv.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/solver/api/term/VarTerm", "<init>", "(Lca/uwaterloo/flix/runtime/solver/api/symbol/VarSym;)V", false)
   }
 
   /**
