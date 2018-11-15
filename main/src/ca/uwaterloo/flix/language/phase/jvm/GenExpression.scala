@@ -23,7 +23,6 @@ import ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.language.ast.Ast.Polarity
 import ca.uwaterloo.flix.language.ast.FinalAst._
 import ca.uwaterloo.flix.language.ast.SemanticOperator._
-import ca.uwaterloo.flix.language.ast.Symbol.PredSym
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.{InternalCompilerException, Optimization, Verbosity}
 import ca.uwaterloo.flix.language.ast.{Type => FlixType}
@@ -1735,7 +1734,11 @@ object GenExpression {
       ???
 
     case Term.Head.Lit(sym, tpe, loc) =>
-      ??? // TODO
+      // Add source line numbers for debugging.
+      addSourceLine(mv, loc)
+
+      // Invoke the def symbol with no arguments.
+      compileApplyCall(sym, new Array(0), mv)
 
     case Term.Head.App(sym, args, tpe, loc) =>
       ??? // TODO
@@ -1836,6 +1839,47 @@ object GenExpression {
       mv.visitInsn(ICONST_0)
     }
     mv.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/solver/FixpointOptions", "setVerbose", "(Z)V", false)
+  }
+
+  /**
+    * Emits code the invoke the apply method of the given def symbol `sym` with the given arguments `args`.
+    */
+  private def compileApplyCall(sym: Symbol.DefnSym, args: Array[Symbol.VarSym], mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
+    // Retrieve the namespace of the def symbol.
+    val ns = JvmOps.getNamespace(sym)
+
+    // Retrieve the JVM type of the namespace.
+    val nsJvmType = JvmOps.getNamespaceClassType(ns)
+
+    // Retrieve the name of the namespace field on the context object.
+    val nsFieldName = JvmOps.getNamespaceFieldNameInContextClass(ns)
+
+    // Retrieve the name of the def on the namespace object.
+    val defFieldName = JvmOps.getDefFieldNameInNamespaceClass(sym)
+
+    // Retrieve the type of the function def class.
+    val defJvmType = JvmOps.getFunctionDefinitionClassType(sym)
+
+    // The java.util.function.Function interface type.
+    val interfaceType = JvmType.Function
+
+    // Load the current context.
+    mv.visitVarInsn(ALOAD, 1)
+
+    // Load the namespace object.
+    mv.visitFieldInsn(GETFIELD, JvmName.Context.toInternalName, nsFieldName, nsJvmType.toDescriptor)
+
+    // Load the def object.
+    mv.visitFieldInsn(GETFIELD, nsJvmType.name.toInternalName, defFieldName, defJvmType.toDescriptor)
+
+    // Emit code for the argument.
+    mv.visitInsn(ACONST_NULL)
+
+    // Emit code to invoke the method.
+    mv.visitMethodInsn(INVOKEINTERFACE, "java/util/function/Function", "apply", "(Ljava/lang/Object;)Ljava/lang/Object;", true)
+
+    // Emit a cast to ProxyObject - the expected return type.
+    mv.visitTypeInsn(CHECKCAST, JvmType.ProxyObject.name.toInternalName)
   }
 
   /**

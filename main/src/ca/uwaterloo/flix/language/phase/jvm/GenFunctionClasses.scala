@@ -179,7 +179,7 @@ object GenFunctionClasses {
     // Method header
 
     // TODO: Type probably needs to be object array.
-    val mv = cw.visitMethod(ACC_PUBLIC + ACC_FINAL, "apply", AsmOps.getMethodDescriptor(List(JvmType.Object), JvmType.ProxyObject), null, null)
+    val mv = cw.visitMethod(ACC_PUBLIC + ACC_FINAL, "apply", AsmOps.getMethodDescriptor(List(JvmType.Object), JvmType.Object), null, null)
 
     // TODO...
 
