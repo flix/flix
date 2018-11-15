@@ -97,7 +97,7 @@ object GenFunctionClasses {
     compileInvokeMethod(visitor, classType, defn, resultType)
 
     // Apply method of the class
-    compileApplyMethod(visitor, classType, defn, resultType)
+    compileApplyMethod(visitor, classType, resultType)
 
     visitor.toByteArray
   }
@@ -175,19 +175,41 @@ object GenFunctionClasses {
   /**
     * Apply method for the given `defn` and `classType`.
     */
-  private def compileApplyMethod(cw: ClassWriter, classType: JvmType.Reference, defn: Def, resultType: JvmType)(implicit root: Root, flix: Flix): Unit = {
+  private def compileApplyMethod(cw: ClassWriter, classType: JvmType.Reference, resultType: JvmType)(implicit root: Root, flix: Flix): Unit = {
     // Method header
-
-    // TODO: Type probably needs to be object array.
     val mv = cw.visitMethod(ACC_PUBLIC + ACC_FINAL, "apply", AsmOps.getMethodDescriptor(List(JvmType.Object), JvmType.Object), null, null)
 
-    // TODO...
+    // TODO: Cast the argument to an array and call setArg.
 
+    // TODO: Temporary instantiate a new context object and call the invoke method.
+
+    //
+    // Call this.apply(new Context)
+    //
+
+    // Put `this` on the stack.
+    mv.visitVarInsn(ALOAD, 0)
+
+    // Allocate a fresh context object.
+    mv.visitTypeInsn(NEW, JvmName.Context.toInternalName)
+    mv.visitInsn(DUP)
+    mv.visitMethodInsn(INVOKESPECIAL, JvmName.Context.toInternalName, "<init>", "()V", false)
+
+    // Call the invoke method.
+    mv.visitMethodInsn(INVOKEVIRTUAL, classType.name.toInternalName, "invoke", "(LContext;)V", false)
+
+    //
+    // Read the result field.
+    //
+    mv.visitVarInsn(ALOAD, 0)
+    mv.visitFieldInsn(GETFIELD, classType.name.toInternalName, "result", resultType.toDescriptor)
+    mv.visitInsn(POP)
+
+
+    // TODO: Should actually wrap  this in a proxy object.
     mv.visitInsn(ACONST_NULL)
-    mv.visitInsn(ATHROW)
-
-    // Return
     mv.visitInsn(ARETURN)
+
     mv.visitMaxs(65535, 65535)
     mv.visitEnd()
   }
