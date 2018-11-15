@@ -113,6 +113,8 @@ object JvmName {
 
   val ProxyObject: JvmName = mk("ca/uwaterloo/flix/runtime/solver/api/ProxyObject")
 
+  val Function: JvmName = mk("java/util/function/Function")
+
   /**
     * Get the class type for the cell with subtype `subType`
     */

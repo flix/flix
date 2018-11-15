@@ -73,6 +73,8 @@ object JvmType {
 
   val ProxyObject: JvmType.Reference = Reference(JvmName.ProxyObject)
 
+  val Function: JvmType.Reference = Reference(JvmName.Function)
+
   /**
     * Represents the void type.
     */

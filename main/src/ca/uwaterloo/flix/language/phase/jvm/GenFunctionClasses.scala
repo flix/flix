@@ -96,8 +96,8 @@ object GenFunctionClasses {
     // Invoke method of the class
     compileInvokeMethod(visitor, classType, defn, resultType)
 
-    // Proxy Invoke method of the class
-    compileProxyInvokeMethod(visitor, classType, defn, resultType)
+    // Apply method of the class
+    compileApplyMethod(visitor, classType, defn, resultType)
 
     visitor.toByteArray
   }
@@ -173,17 +173,18 @@ object GenFunctionClasses {
   }
 
   /**
-    * Proxy Invoke method for the given `defn` and `classType`.
+    * Apply method for the given `defn` and `classType`.
     */
-  private def compileProxyInvokeMethod(cw: ClassWriter, classType: JvmType.Reference, defn: Def, resultType: JvmType)(implicit root: Root, flix: Flix): Unit = {
+  private def compileApplyMethod(cw: ClassWriter, classType: JvmType.Reference, defn: Def, resultType: JvmType)(implicit root: Root, flix: Flix): Unit = {
     // Method header
 
     // TODO: Type probably needs to be object array.
-    val mv = cw.visitMethod(ACC_PUBLIC + ACC_FINAL, "proxyInvoke", AsmOps.getMethodDescriptor(List(JvmType.Object), JvmType.ProxyObject), null, null)
+    val mv = cw.visitMethod(ACC_PUBLIC + ACC_FINAL, "apply", AsmOps.getMethodDescriptor(List(JvmType.Object), JvmType.ProxyObject), null, null)
 
     // TODO...
 
     mv.visitInsn(ACONST_NULL)
+    mv.visitInsn(ATHROW)
 
     // Return
     mv.visitInsn(ARETURN)
