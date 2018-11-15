@@ -200,7 +200,7 @@ public final class ConstraintSystem {
 //        }
 //
 //        }
-        return "<constraint system>";
+        return "<rules = " + rules.length + ", facts = " + facts.length + ">";
     }
 
     /**
