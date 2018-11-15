@@ -957,6 +957,11 @@ object ParsedAst {
       */
     case class ConstraintUnion(sp1: SourcePosition, exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
+    // TODO: Deprecated constraint union.
+    case class FixpointCompose(exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+
+    // TODO: Add project.
+
     /**
       * Fixpoint Solve expression.
       *
