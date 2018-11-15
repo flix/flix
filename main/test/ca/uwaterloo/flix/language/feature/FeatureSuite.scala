@@ -50,9 +50,6 @@ class FeatureSuite extends Suites(
 
   new FlixTest("Test.Expression.NewRelation", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.NewRelation.flix")(compiled = false), // TODO
 
-  new FlixTest("Test.Expression.Constraint.True", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Constraint.True.flix"),
-  new FlixTest("Test.Expression.Constraint.False", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Constraint.False.flix"),
-
   new FlixTest("Test.Expression.Record.Extend", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Record.Extend.flix")(compiled = false), // TODO
   new FlixTest("Test.Expression.Record.Literal", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Record.Literal.flix")(compiled = false), // TODO
   new FlixTest("Test.Expression.Record.Polymorphism", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Record.Polymorphism.flix")(compiled = false), // TODO
@@ -114,6 +111,11 @@ class FeatureSuite extends Suites(
   new FlixTest("Test.Expression.VectorSliceNoIndexes", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.VectorSliceNoIndexes.flix"),
   new FlixTest("Test.Expression.VectorSliceNoEnd", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.VectorSliceNoEnd.flix"),
   new FlixTest("Test.Expression.VectorSliceNoStart", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.VectorSliceNoStart.flix"),
+
+  new FlixTest("Test.Predicate.True", "main/test/ca/uwaterloo/flix/language/feature/Test.Predicate.True.flix"),
+  new FlixTest("Test.Predicate.QuantVar", "main/test/ca/uwaterloo/flix/language/feature/Test.Predicate.QuantVar.flix"),
+  new FlixTest("Test.Predicate.False", "main/test/ca/uwaterloo/flix/language/feature/Test.Predicate.False.flix")
+
 ) with ParallelTestExecution {
   /* left empty */
 }

@@ -969,10 +969,11 @@ object GenExpression {
       visitor.visitLdcInsn(sym.toString)
 
       // Emit code for the attributes.
-      // TODO: Currently emits an empty array.
+      // TODO: Attributes
       visitor.visitInsn(ICONST_0)
       visitor.visitTypeInsn(ANEWARRAY, "ca/uwaterloo/flix/runtime/solver/api/Attribute")
 
+      // TODO: Incorrect, should be anon symbol.
       // Instantiate the relation symbol.
       visitor.visitMethodInsn(INVOKESTATIC, "ca/uwaterloo/flix/runtime/solver/api/symbol/NamedRelSym", "getInstance", "(Ljava/lang/String;[Lca/uwaterloo/flix/runtime/solver/api/Attribute;)Lca/uwaterloo/flix/runtime/solver/api/symbol/NamedRelSym;", false)
 
@@ -1000,6 +1001,8 @@ object GenExpression {
       visitor.visitMethodInsn(INVOKESTATIC, "ca/uwaterloo/flix/runtime/solver/api/ConstraintSystem", "compose", "(Lca/uwaterloo/flix/runtime/solver/api/ConstraintSystem;Lca/uwaterloo/flix/runtime/solver/api/ConstraintSystem;)Lca/uwaterloo/flix/runtime/solver/api/ConstraintSystem;", false);
 
     case Expression.FixpointSolve(uid, exp, stf, tpe, loc) =>
+      // TODO: Stratification
+
       // Add source line numbers for debugging.
       addSourceLine(visitor, loc)
 
@@ -1013,6 +1016,8 @@ object GenExpression {
       visitor.visitMethodInsn(INVOKESTATIC, "ca/uwaterloo/flix/runtime/solver/api/SolverApi", "solve", "(Lca/uwaterloo/flix/runtime/solver/api/ConstraintSystem;Lca/uwaterloo/flix/runtime/solver/FixpointOptions;)Lca/uwaterloo/flix/runtime/solver/api/ConstraintSystem;", false)
 
     case Expression.FixpointCheck(uid, exp, stf, tpe, loc) =>
+      // TODO: Stratification
+
       // Add source line numbers for debugging.
       addSourceLine(visitor, loc)
 
@@ -1026,6 +1031,8 @@ object GenExpression {
       visitor.visitMethodInsn(INVOKESTATIC, "ca/uwaterloo/flix/runtime/solver/api/SolverApi", "check", "(Lca/uwaterloo/flix/runtime/solver/api/ConstraintSystem;Lca/uwaterloo/flix/runtime/solver/FixpointOptions;)Z", false);
 
     case Expression.FixpointDelta(uid, exp, stf, tpe, loc) =>
+      // TODO: Stratification
+
       // Add source line numbers for debugging.
       addSourceLine(visitor, loc)
 
@@ -1505,6 +1512,7 @@ object GenExpression {
       mv.visitInsn(DUP)
 
       // Emit code for the cparams.
+      // TODO Constraint params
       mv.visitInsn(ICONST_0)
       mv.visitTypeInsn(ANEWARRAY, "ca/uwaterloo/flix/runtime/solver/api/symbol/VarSym")
 
@@ -1512,6 +1520,7 @@ object GenExpression {
       compileHeadAtom(head, mv)
 
       // Emit code for the body atoms.
+      // TODO: BodyAtoms
       mv.visitInsn(ICONST_0)
       mv.visitTypeInsn(ANEWARRAY, "ca/uwaterloo/flix/runtime/solver/api/predicate/Predicate")
 
@@ -1603,7 +1612,7 @@ object GenExpression {
       }
 
       // Emit code to invoke the constructor.
-      mv.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/solver/api/predicate/AtomPredicate", "<init>", "(Lca/uwaterloo/flix/runtime/solver/api/symbol/PredSym;Z[Lca/uwaterloo/flix/runtime/solver/api/term/Term;[Lca/uwaterloo/flix/runtime/solver/api/symbol/VarSym;)V", false)
+      mv.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/solver/api/predicate/AtomPredicate", "<init>", "(Lca/uwaterloo/flix/runtime/solver/api/symbol/PredSym;Z[Lca/uwaterloo/flix/runtime/solver/api/term/Term;)V", false);
 
     case Predicate.Head.LatAtom(baseOpt, sym, terms, tpe, loc) =>
       ??? // TODO
@@ -1641,7 +1650,25 @@ object GenExpression {
   private def compileHeadTerm(t0: Term.Head, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = t0 match {
 
     case Term.Head.QuantVar(sym, tpe, loc) =>
-      ??? // TODO
+      // Allocate a fresh variable term object.
+      mv.visitTypeInsn(NEW, "ca/uwaterloo/flix/runtime/solver/api/term/VarTerm")
+      mv.visitInsn(DUP)
+
+      // Allocate a fresh variable symbol object.
+      mv.visitTypeInsn(NEW, "ca/uwaterloo/flix/runtime/solver/api/symbol/VarSym")
+      mv.visitInsn(DUP)
+
+      // Emit the variable name.
+      mv.visitLdcInsn(sym.text)
+
+      // Emit the variable index.
+      compileInt(mv, sym.getStackOffset)
+
+      // Invoke the variable symbol constructor.
+      mv.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/solver/api/symbol/VarSym", "<init>", "(Ljava/lang/String;I)V", false)
+
+      // Invoke the variable term constructor.
+      mv.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/solver/api/term/VarTerm", "<init>", "(Lca/uwaterloo/flix/runtime/solver/api/symbol/VarSym;)V", false)
 
     case Term.Head.CapturedVar(sym, tpe, loc) =>
       // Add source line numbers for debugging.
@@ -1686,6 +1713,9 @@ object GenExpression {
       // Read the value of the local variable and put it on the stack.
       readVar(sym, tpe, mv)
 
+      // TODO: Need to allocate a LitTerm.
+      ???
+
     case Term.Body.Lit(sym, tpe, loc) =>
       ??? // TODO
 
@@ -1695,8 +1725,6 @@ object GenExpression {
     * Generates code the allocate a fixpoint options object based on the flix configuration.
     */
   private def compileFixpointOptions(mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
-    // TODO: Names.
-
     // Allocate a fresh object.
     mv.visitTypeInsn(NEW, "ca/uwaterloo/flix/runtime/solver/FixpointOptions")
     mv.visitInsn(DUP)
