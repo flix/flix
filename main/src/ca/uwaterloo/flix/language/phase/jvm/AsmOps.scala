@@ -414,7 +414,7 @@ object AsmOps {
   def boxIfPrim(tpe: JvmType, mv: MethodVisitor): Unit = tpe match {
     case JvmType.Void => throw InternalCompilerException(s"Unexpected type $tpe")
     case JvmType.PrimBool => mv.visitMethodInsn(INVOKESTATIC, "java/lang/Boolean", "valueOf", "(Z)Ljava/lang/Boolean;", false)
-    case JvmType.PrimChar => mv.visitMethodInsn(INVOKESTATIC, "java/lang/Char", "valueOf", "(C)Ljava/lang/Char;", false)
+    case JvmType.PrimChar => mv.visitMethodInsn(INVOKESTATIC, "java/lang/Character", "valueOf", "(C)Ljava/lang/Character;", false)
     case JvmType.PrimFloat => mv.visitMethodInsn(INVOKESTATIC, "java/lang/Float", "valueOf", "(F)Ljava/lang/Float;", false)
     case JvmType.PrimDouble => mv.visitMethodInsn(INVOKESTATIC, "java/lang/Double", "valueOf", "(D)Ljava/lang/Double;", false)
     case JvmType.PrimByte => mv.visitMethodInsn(INVOKESTATIC, "java/lang/Byte", "valueOf", "(B)Ljava/lang/Byte;", false)
