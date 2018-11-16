@@ -1,4 +1,5 @@
 rel A(x: Int, y: Int, z: Int)
+rel P[a](x: Int, y: a, z: Int)
 
 @test
 def testFixpointCompose01(): Unit =
@@ -68,3 +69,31 @@ def testFixpointCompose09(): Unit =
     let c4 = A(z, y, x) :- A(x, y, z).;
     let rr = solve (c1 <+> c2) <+> (c2 <+> c1) <+> (c3 <+> c4) <+> (c4 <+> c3);
     ()
+
+@test
+def testFixpointCompose10(): Unit =
+    let c1 = P(1, 123, 1).;
+    let c2 = P(2, 123, 2).;
+    let rr = solve c1 <+> c2;
+    ()
+
+@test
+def testFixpointCompose11(): Unit =
+    let c1 = P(1, 123, 1).;
+    let c2 = P(2, 123, 2).;
+    let c3 = P(1, "a", 1).;
+    let c4 = P(2, "a", 2).;
+    let ra = solve c1 <+> c2;
+    let rb = solve c3 <+> c4;
+    ()
+
+@test
+def testFixpointCompose12(): Unit =
+    let c1 = P(1, 123, 1).;
+    let c2 = P(x, 555, z) :- P(x, 555, z).;
+    let c3 = P(1, "a", 1).;
+    let c4 = P(x, "a", z) :- P(x, "a", z).;
+    let ra = solve c1 <+> c2;
+    let rb = solve c3 <+> c4;
+    ()
+
