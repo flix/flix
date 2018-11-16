@@ -38,8 +38,18 @@ public final class ConstraintSystem {
      * Returns the projection of the given predicate symbol `sym` of the given constraint system `s`.
      */
     public static ConstraintSystem project(PredSym sym, ConstraintSystem s) {
-        // TODO
-        throw new UnsupportedOperationException();
+        // Collect all facts with `sym` in its head.
+        var facts = new LinkedList<Constraint>();
+        for (Constraint fact : s.facts) {
+            Predicate head = fact.getHeadPredicate();
+            if (head instanceof AtomPredicate) {
+                if (((AtomPredicate) head).getSym() == sym) {
+                    facts.add(fact);
+                }
+            }
+        }
+
+        return new ConstraintSystem(facts.toArray(new Constraint[0]), new Constraint[0]);
     }
 
     /**
