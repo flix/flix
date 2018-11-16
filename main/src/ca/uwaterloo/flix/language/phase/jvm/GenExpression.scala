@@ -1737,15 +1737,8 @@ object GenExpression {
       // Add source line numbers for debugging.
       addSourceLine(mv, loc)
 
-      // Emit code to allocate a fresh literal term.
-      mv.visitTypeInsn(NEW, "ca/uwaterloo/flix/runtime/solver/api/term/LitTerm")
-      mv.visitInsn(DUP)
-
-      // Emit code to construct the function object.
-      pushFunctionObject(sym, mv)
-
-      // Emit code to invoke the constructor of the literal term.
-      mv.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/solver/api/term/LitTerm", "<init>", "(Ljava/util/function/Function;)V", false);
+      // Compile the literal term.
+      compileLitTerm(sym, mv)
 
     case Term.Head.App(sym, args, tpe, loc) =>
       ??? // TODO
@@ -1784,7 +1777,11 @@ object GenExpression {
       ???
 
     case Term.Body.Lit(sym, tpe, loc) =>
-      ??? // TODO
+      // Add source line numbers for debugging.
+      addSourceLine(mv, loc)
+
+      // Compile the literal term.
+      compileLitTerm(sym, mv)
 
   }
 
@@ -1811,6 +1808,21 @@ object GenExpression {
 
     // Invoke the variable term constructor.
     mv.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/solver/api/term/VarTerm", "<init>", "(Lca/uwaterloo/flix/runtime/solver/api/symbol/VarSym;)V", false)
+  }
+
+  /**
+    * Emits code for the literal term with the def symbol `sym`.
+    */
+  private def compileLitTerm(sym: Symbol.DefnSym, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
+    // Emit code to allocate a fresh literal term.
+    mv.visitTypeInsn(NEW, "ca/uwaterloo/flix/runtime/solver/api/term/LitTerm")
+    mv.visitInsn(DUP)
+
+    // Emit code to construct the function object.
+    pushFunctionObject(sym, mv)
+
+    // Emit code to invoke the constructor of the literal term.
+    mv.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/solver/api/term/LitTerm", "<init>", "(Ljava/util/function/Function;)V", false);
   }
 
   /**

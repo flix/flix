@@ -17,6 +17,19 @@ def testLit02(): Unit =
     let r = solve x <+> y;
     ()
 
+@test
+def testLit03(): Unit =
+    let x = A(1, 1, "hello world").;
+    let y = A(1, 1, v) :- A(1, 1, v).;
+    let r = solve x <+> y;
+    ()
+
+@test
+def testLit04(): Unit =
+    let x = A(1, 1, "abc").;
+    let y = A(w, w, "abc") :- A(w, w, "abc").;
+    let r = solve x <+> y;
+    ()
 
 ///////////////////////////////////////////////////////////////////////////////
 /// Unit                                                                    ///
