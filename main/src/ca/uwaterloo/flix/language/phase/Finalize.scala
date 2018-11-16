@@ -371,6 +371,10 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
         val e = visit(exp)
         FinalAst.Expression.FixpointDelta(Ast.freshUId(), e, Ast.Stratification.Empty, tpe, loc)
 
+      case SimplifiedAst.Expression.FixpointProject(sym, exp, tpe, loc) =>
+        val e = visit(exp)
+        FinalAst.Expression.FixpointProject(sym, e, tpe, loc)
+
       case SimplifiedAst.Expression.UserError(tpe, loc) =>
         FinalAst.Expression.UserError(tpe, loc)
 

@@ -300,6 +300,14 @@ object Interpreter {
       val r = SolverApi.deltaSolve(s, o)
       Value.Str(r)
 
+    case Expression.FixpointProject(sym, exp, tpe, loc) =>
+      val s = cast2constraintset(eval(exp, env0, henv0, lenv0, root))
+      val predSym = sym match {
+        case x: Symbol.RelSym => NamedRelSym.getInstance(x.name, new Array(0)) // TODO: Attributes...
+        case x: Symbol.LatSym => NamedLatSym.getInstance(x.name, null, null, null) // TODO: Attributes...
+      }
+      ConstraintSystem.project(predSym, s)
+
     case Expression.UserError(_, loc) => throw new NotImplementedError(loc.reified)
 
     case Expression.HoleError(sym, _, loc) => throw new HoleError(sym.toString, loc.reified)

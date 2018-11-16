@@ -713,6 +713,19 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
             e <- visit(exp, tenv0)
           } yield ResolvedAst.Expression.FixpointDelta(e, tvar, loc)
 
+        case NamedAst.Expression.FixpointProject(name, exp, tvar, loc) =>
+          for {
+            relationOrLattice <- lookupRelationOrLattice(name, ns0, prog0)
+            e <- visit(exp, tenv0)
+          } yield {
+            relationOrLattice match {
+              case RelationOrLattice.Rel(sym) =>
+                ResolvedAst.Expression.FixpointProject(sym, e, tvar, loc)
+              case RelationOrLattice.Lat(sym) =>
+                ResolvedAst.Expression.FixpointProject(sym, e, tvar, loc)
+            }
+          }
+
         case NamedAst.Expression.UserError(tvar, loc) => ResolvedAst.Expression.UserError(tvar, loc).toSuccess
       }
 

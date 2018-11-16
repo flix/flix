@@ -990,6 +990,16 @@ object ParsedAst {
     case class FixpointDelta(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
+      * Fixpoint Project expression.
+      *
+      * @param sp1 the position of the first character in the expression.
+      * @param the name of the predicate.
+      * @param exp the constraint expression.
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class FixpointProject(sp1: SourcePosition, name: Name.QName, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
       * User Error Expression (an expression that immediately aborts execution).
       *
       * @param sp1 the position of the first character in the expression.

@@ -1047,6 +1047,9 @@ object GenExpression {
       // Emit code for the invocation of the solver.
       visitor.visitMethodInsn(INVOKESTATIC, "ca/uwaterloo/flix/runtime/solver/api/SolverApi", "deltaSolve", "(Lca/uwaterloo/flix/runtime/solver/api/ConstraintSystem;Lca/uwaterloo/flix/runtime/solver/FixpointOptions;)Ljava/lang/String;", false);
 
+    case Expression.FixpointProject(sym, exp, tpe, loc) =>
+      ??? // TODO: FixpointProject
+
     case Expression.UserError(_, loc) =>
       addSourceLine(visitor, loc)
       AsmOps.compileThrowFlixError(visitor, JvmName.Runtime.NotImplementedError, loc)

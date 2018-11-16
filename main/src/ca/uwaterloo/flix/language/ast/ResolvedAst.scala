@@ -207,6 +207,8 @@ object ResolvedAst {
 
     case class FixpointDelta(exp: ResolvedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
+    case class FixpointProject(sym: Symbol.PredSym, exp: ResolvedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+
     case class UserError(tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
   }

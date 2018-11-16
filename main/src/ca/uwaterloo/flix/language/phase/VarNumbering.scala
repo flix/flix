@@ -218,6 +218,8 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
 
       case Expression.FixpointDelta(exp, tpe, loc) => visitExp(exp, i0)
 
+      case Expression.FixpointProject(sym, exp, tpe, loc) => visitExp(exp, i0)
+
       case Expression.UserError(tpe, loc) => i0
       case Expression.HoleError(sym, tpe, eff, loc) => i0
       case Expression.MatchError(tpe, loc) => i0

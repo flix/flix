@@ -1020,6 +1020,11 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         case e => WeededAst.Expression.FixpointDelta(e, mkSL(sp1, sp2))
       }
 
+    case ParsedAst.Expression.FixpointProject(sp1, name, exp, sp2) =>
+      visitExp(exp) map {
+        case e => WeededAst.Expression.FixpointProject(name, e, mkSL(sp1, sp2))
+      }
+
     case ParsedAst.Expression.UserError(sp1, sp2) =>
       WeededAst.Expression.UserError(mkSL(sp1, sp2)).toSuccess
   }
@@ -1810,6 +1815,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.FixpointSolve(sp1, _, _) => sp1
     case ParsedAst.Expression.FixpointCheck(sp1, _, _) => sp1
     case ParsedAst.Expression.FixpointDelta(sp1, _, _) => sp1
+    case ParsedAst.Expression.FixpointProject(sp1, _, _, _) => sp1
     case ParsedAst.Expression.UserError(sp1, _) => sp1
   }
 

@@ -589,7 +589,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       LetRec | LetMatch | IfThenElse | Match | LambdaMatch | Switch | TryCatch | Native | Lambda | Tuple |
         RecordRestrict | RecordExtend | RecordUpdate | RecordLiteral | RecordSelectLambda |
         ArrayLit | ArrayNew | ArrayLength | VectorLit | VectorNew | VectorLength | FNil | FSet | FMap |
-        NewRelationOrLattice | FixpointSolve | FixpointCheck | FixpointDelta | ConstraintSeq | ConstraintUnion | Literal |
+        NewRelationOrLattice | FixpointSolve | FixpointCheck | FixpointDelta | FixpointProject | ConstraintSeq | ConstraintUnion | Literal |
       HandleWith | Existential | Universal | UnaryLambda | QName | Wild | Tag | SName | Hole | UserError
     }
 
@@ -842,6 +842,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def FixpointDelta: Rule1[ParsedAst.Expression] = rule {
       SP ~ atomic("delta") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.FixpointDelta
+    }
+
+    def FixpointProject: Rule1[ParsedAst.Expression] = rule {
+      SP ~ atomic("project") ~ WS ~ Names.QualifiedTable ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.FixpointProject
     }
 
     def UserError: Rule1[ParsedAst.Expression] = rule {

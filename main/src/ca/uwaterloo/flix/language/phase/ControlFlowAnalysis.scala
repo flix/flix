@@ -412,6 +412,10 @@ object ControlFlowAnalysis {
         }
         AbstractValue.Graph(DependencyGraph.Empty)
 
+      case Expression.FixpointProject(sym, exp, tpe, loc) =>
+        val v = visitExp(exp, env0, lenv0)
+        AbstractValue.Graph(DependencyGraph.Empty)
+
       case Expression.UserError(tpe, loc) => AbstractValue.Bot
 
       case Expression.HoleError(sym, tpe, loc) => AbstractValue.Bot

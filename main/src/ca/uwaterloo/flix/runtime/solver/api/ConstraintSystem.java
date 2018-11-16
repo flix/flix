@@ -3,6 +3,7 @@ package ca.uwaterloo.flix.runtime.solver.api;
 import ca.uwaterloo.flix.runtime.solver.api.predicate.AtomPredicate;
 import ca.uwaterloo.flix.runtime.solver.api.predicate.Predicate;
 import ca.uwaterloo.flix.runtime.solver.api.symbol.LatSym;
+import ca.uwaterloo.flix.runtime.solver.api.symbol.PredSym;
 import ca.uwaterloo.flix.runtime.solver.api.symbol.RelSym;
 
 import java.util.Arrays;
@@ -25,12 +26,20 @@ public final class ConstraintSystem {
     }
 
     /**
-     * Returns the composition of `c1` with `c2`.
+     * Returns the composition of `s1` with `s2`.
      */
-    public static ConstraintSystem compose(ConstraintSystem c1, ConstraintSystem c2) {
-        var facts = concat(c1.getFacts(), c2.getFacts());
-        var rules = concat(c1.getRules(), c2.getRules());
+    public static ConstraintSystem compose(ConstraintSystem s1, ConstraintSystem s2) {
+        var facts = concat(s1.getFacts(), s2.getFacts());
+        var rules = concat(s1.getRules(), s2.getRules());
         return new ConstraintSystem(facts, rules);
+    }
+
+    /**
+     * Returns the projection of the given predicate symbol `sym` of the given constraint system `s`.
+     */
+    public static ConstraintSystem project(PredSym sym, ConstraintSystem s) {
+        // TODO
+        throw new UnsupportedOperationException();
     }
 
     /**

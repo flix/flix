@@ -591,6 +591,8 @@ object Effects extends Phase[Root, Root] {
 
         case Expression.FixpointDelta(exp, tpe, eff, loc) => ??? // TODO: FixpointDelta
 
+        case Expression.FixpointProject(sym, exp, tpe, eff, loc) => ??? // TODO: FixpointProject
+
         /**
           * User Error Expression.
           */

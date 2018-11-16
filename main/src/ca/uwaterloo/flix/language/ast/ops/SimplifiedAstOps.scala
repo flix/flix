@@ -471,6 +471,13 @@ object SimplifiedAstOps {
         checkType(tpe)
 
       //
+      // Fixpoint Project.
+      //
+      case Expression.FixpointProject(symm, exp, tpe, loc) =>
+        checkExp(exp, env0, ienv0)
+        checkType(tpe)
+
+      //
       // Error Expressions.
       //
       case Expression.UserError(tpe, loc) => checkType(tpe)

@@ -333,6 +333,10 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         val e = visitExp(exp)
         Expression.FixpointDelta(e, tpe, loc)
 
+      case Expression.FixpointProject(sym, exp, tpe, loc) =>
+        val e = visitExp(exp)
+        Expression.FixpointProject(sym, e, tpe, loc)
+
       case Expression.UserError(tpe, loc) => e
 
       case Expression.HoleError(sym, tpe, eff, loc) => e

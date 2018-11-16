@@ -465,6 +465,10 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           val e = visitExp(exp, env0)
           Expression.FixpointDelta(e, tpe, eff, loc)
 
+        case Expression.FixpointProject(sym, exp, tpe, eff, loc) =>
+          val e = visitExp(exp, env0)
+          Expression.FixpointProject(sym, e, tpe, eff, loc)
+
         case Expression.UserError(tpe, eff, loc) => Expression.UserError(subst0(tpe), eff, loc)
       }
 

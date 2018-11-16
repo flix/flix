@@ -223,6 +223,8 @@ object FinalAst {
 
     case class FixpointDelta(uid: Ast.UId, exp: FinalAst.Expression, stf: Ast.Stratification, tpe: Type, loc: SourceLocation) extends FinalAst.Expression
 
+    case class FixpointProject(sym: Symbol.PredSym, exp: FinalAst.Expression, tpe: Type, loc: SourceLocation) extends FinalAst.Expression
+
     case class UserError(tpe: Type, loc: SourceLocation) extends FinalAst.Expression
 
     case class HoleError(sym: Symbol.HoleSym, tpe: Type, loc: SourceLocation) extends FinalAst.Expression
