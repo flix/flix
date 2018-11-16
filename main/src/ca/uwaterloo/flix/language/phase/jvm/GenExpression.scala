@@ -1048,7 +1048,16 @@ object GenExpression {
       visitor.visitMethodInsn(INVOKESTATIC, "ca/uwaterloo/flix/runtime/solver/api/SolverApi", "deltaSolve", "(Lca/uwaterloo/flix/runtime/solver/api/ConstraintSystem;Lca/uwaterloo/flix/runtime/solver/FixpointOptions;)Ljava/lang/String;", false);
 
     case Expression.FixpointProject(sym, exp, tpe, loc) =>
-      ??? // TODO: FixpointProject
+      // Add source line numbers for debugging.
+      addSourceLine(visitor, loc)
+
+      sym match {
+        case s: Symbol.RelSym =>
+          compilePredicateSymbol(None, s, null, visitor)
+          compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+          visitor.visitMethodInsn(INVOKESTATIC, "ca/uwaterloo/flix/runtime/solver/api/ConstraintSystem", "project", "(Lca/uwaterloo/flix/runtime/solver/api/symbol/PredSym;Lca/uwaterloo/flix/runtime/solver/api/ConstraintSystem;)Lca/uwaterloo/flix/runtime/solver/api/ConstraintSystem;", false)
+        case x: Symbol.LatSym => ??? // TODO
+      }
 
     case Expression.UserError(_, loc) =>
       addSourceLine(visitor, loc)

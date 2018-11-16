@@ -38,6 +38,11 @@ public final class ConstraintSystem {
      * Returns the projection of the given predicate symbol `sym` of the given constraint system `s`.
      */
     public static ConstraintSystem project(PredSym sym, ConstraintSystem s) {
+        if (sym == null)
+            throw new IllegalArgumentException("'sym' must be non-null.");
+        if (s == null)
+            throw new IllegalArgumentException("'s' must be non-null.");
+
         // Collect all facts with `sym` in its head.
         var facts = new LinkedList<Constraint>();
         for (Constraint fact : s.facts) {
