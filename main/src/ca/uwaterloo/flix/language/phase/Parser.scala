@@ -520,7 +520,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Compose: Rule1[ParsedAst.Expression] = rule {
-      Infix ~ optional(optWS ~ atomic("<+>") ~ optWS ~ Infix ~ SP ~> ParsedAst.Expression.FixpointCompose)
+      Infix ~ zeroOrMore(optWS ~ atomic("<+>") ~ optWS ~ Infix ~ SP ~> ParsedAst.Expression.FixpointCompose)
     }
 
     def Infix: Rule1[ParsedAst.Expression] = rule {
