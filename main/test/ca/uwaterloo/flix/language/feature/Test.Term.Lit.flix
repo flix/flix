@@ -246,7 +246,81 @@ def testStrLit03(): Unit =
     ()
 
 
+///////////////////////////////////////////////////////////////////////////////
+/// Option                                                                  ///
+///////////////////////////////////////////////////////////////////////////////
+rel OptionRel(x: Option[Int])
+
+// @test // TODO
+def testOptionLit01(): Unit =
+    let x = OptionRel(None).;
+    let r = solve x;
+    ()
+
+// @test // TODO
+def testOptionLit02(): Unit =
+    let x = OptionRel(Some(123)).;
+    let r = solve x;
+    ()
 
 
+///////////////////////////////////////////////////////////////////////////////
+/// Result                                                                  ///
+///////////////////////////////////////////////////////////////////////////////
+rel ResultRel(x: Result[Int, Str])
 
+// @test // TODO
+def testResultLit01(): Unit =
+    let x = ResultRel(Ok(123)).;
+    let r = solve x;
+    ()
+
+// @test // TODO
+def testResultLit02(): Unit =
+    let x = ResultRel(Err("hello world!")).;
+    let r = solve x;
+    ()
+
+
+///////////////////////////////////////////////////////////////////////////////
+/// List                                                                    ///
+///////////////////////////////////////////////////////////////////////////////
+//rel ListRel(x: List[Int]) // TODO
+
+//@test
+//def testListLit01(): Unit =
+//    let x = ListRel(Nil).;
+//    let r = solve x;
+//    ()
+//
+//@test
+//def testListLit02(): Unit =
+//    let x = ListRel(1 :: Nil).;
+//    let r = solve x;
+//    ()
+//
+//@test
+//def testListLit03(): Unit =
+//    let x = ListRel(1 :: 2 :: 3 :: Nil).;
+//    let r = solve x;
+//    ()
+//
+
+
+///////////////////////////////////////////////////////////////////////////////
+/// Tuple                                                                   ///
+///////////////////////////////////////////////////////////////////////////////
+rel TupleRel(x: (Bool, Char, Int))
+
+// @test // TODO
+def testTupleLit01(): Unit =
+    let x = TupleRel((true, 'a', 123)).;
+    let r = solve x;
+    ()
+
+// @test // TODO
+def testTupleLit02(): Unit =
+    let x = TupleRel((false, 'x', 789)).;
+    let r = solve x;
+    ()
 
