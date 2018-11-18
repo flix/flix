@@ -1229,6 +1229,19 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
             resultType <- unifyM(tvar, inferredType, loc) // TODO: The result type should focus on what is projected.
           } yield resultType
 
+        //
+        //  exp1 : tpe    exp2 : tpe    tpe == Schema {}
+        //  --------------------------------------------
+        //  exp1 |= exp2 : tpe
+        //
+        case ResolvedAst.Expression.FixpointEntails(exp1, exp2, tvar, loc) =>
+          for {
+            tpe1 <- visitExp(exp1)
+            tpe2 <- visitExp(exp2)
+            schemaType <- unifyM(tpe1, tpe2, mkAnySchema(program), loc)
+            resultType <- unifyM(tvar, Type.Bool, loc)
+          } yield resultType
+
         /*
          * User Error expression.
          */
@@ -1667,6 +1680,14 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         case ResolvedAst.Expression.FixpointProject(sym, exp, tvar, loc) =>
           val e = reassemble(exp, program, subst0)
           TypedAst.Expression.FixpointProject(sym, e, subst0(tvar), Eff.Bot, loc)
+
+        /*
+         * ConstraintUnion expression.
+         */
+        case ResolvedAst.Expression.FixpointEntails(exp1, exp2, tvar, loc) =>
+          val e1 = reassemble(exp1, program, subst0)
+          val e2 = reassemble(exp2, program, subst0)
+          TypedAst.Expression.FixpointEntails(e1, e2, subst0(tvar), Eff.Bot, loc)
 
         /*
          * User Error expression.

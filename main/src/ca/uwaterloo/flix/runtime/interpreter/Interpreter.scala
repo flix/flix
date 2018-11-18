@@ -308,6 +308,12 @@ object Interpreter {
       }
       ConstraintSystem.project(predSym, s)
 
+    case Expression.FixpointEntails(exp1, exp2, tpe, loc) =>
+      val v1 = cast2constraintset(eval(exp1, env0, henv0, lenv0, root))
+      val v2 = cast2constraintset(eval(exp2, env0, henv0, lenv0, root))
+      if (SolverApi.entails(v1, v2))
+        Value.True else Value.False
+
     case Expression.UserError(_, loc) => throw new NotImplementedError(loc.reified)
 
     case Expression.HoleError(sym, _, loc) => throw new HoleError(sym.toString, loc.reified)

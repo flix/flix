@@ -39,4 +39,14 @@ public final class SolverApi {
         return deltaSolver.deltaSolve();
     }
 
+    /**
+     * Returns `true` if all facts in `s2` are included in `s1`.
+     */
+    public static boolean entails(ConstraintSystem s1, ConstraintSystem s2) {
+        var facts1 = s1.getFacts();
+        var facts2 = s2.getFacts();
+        // TODO: Not yet implemented.
+        throw new RuntimeException();
+    }
+
 }

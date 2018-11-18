@@ -191,6 +191,8 @@ object Safety extends Phase[Root, Root] {
 
     case Expression.FixpointProject(sym, exp, tpe, eff, loc) => visitExp(exp)
 
+    case Expression.FixpointEntails(exp1, exp2, tpe, eff, loc) => visitExp(exp1) ::: visitExp(exp2)
+
     case Expression.UserError(tpe, eff, loc) => Nil
 
   }

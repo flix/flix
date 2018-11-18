@@ -516,9 +516,13 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Multiplicative: Rule1[ParsedAst.Expression] = rule {
-      Compose ~ zeroOrMore(optWS ~ capture(atomic("**") | atomic("*") | atomic("/") | atomic("%")) ~ optWS ~ Compose ~ SP ~> ParsedAst.Expression.Binary)
+      Entails ~ zeroOrMore(optWS ~ capture(atomic("**") | atomic("*") | atomic("/") | atomic("%")) ~ optWS ~ Entails ~ SP ~> ParsedAst.Expression.Binary)
     }
 
+    def Entails: Rule1[ParsedAst.Expression] = rule {
+      Compose ~ optional(optWS ~ atomic("|=") ~ optWS ~ Compose ~ SP ~> ParsedAst.Expression.FixpointEntails)
+    }
+    
     def Compose: Rule1[ParsedAst.Expression] = rule {
       Infix ~ zeroOrMore(optWS ~ atomic("<+>") ~ optWS ~ Infix ~ SP ~> ParsedAst.Expression.FixpointCompose)
     }
@@ -531,7 +535,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
       // NB: We allow any operator, other than a reserved operator, to be matched by this rule.
       def Reserved2: Rule1[String] = rule {
-        capture("**" | "<=" | ">=" | "==" | "!=" | "&&" | "||" | "=>" | "->")
+        capture("**" | "<=" | ">=" | "==" | "!=" | "&&" | "||" | "=>" | "->" | "|=")
       }
 
       // NB: We allow any operator, other than a reserved operator, to be matched by this rule.

@@ -992,12 +992,21 @@ object ParsedAst {
     /**
       * Fixpoint Project expression.
       *
-      * @param sp1 the position of the first character in the expression.
-      * @param the name of the predicate.
-      * @param exp the constraint expression.
-      * @param sp2 the position of the last character in the expression.
+      * @param sp1  the position of the first character in the expression.
+      * @param name the name of the predicate.
+      * @param exp  the constraint expression.
+      * @param sp2  the position of the last character in the expression.
       */
     case class FixpointProject(sp1: SourcePosition, name: Name.QName, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
+      * Fixpoint Entails expression.
+      *
+      * @param sp1  the position of the first character in the expression.
+      * @param exp1 the lhs expression.
+      * @param exp2 the rhs expression.
+      */
+    case class FixpointEntails(exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * User Error Expression (an expression that immediately aborts execution).

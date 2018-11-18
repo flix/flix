@@ -819,6 +819,11 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case c => NamedAst.Expression.Constraint(c, Type.freshTypeVar(), loc)
       }
 
+    case WeededAst.Expression.ConstraintUnion(exp1, exp2, loc) =>
+      mapN(visitExp(exp1, env0, tenv0), visitExp(exp2, env0, tenv0)) {
+        case (e1, e2) => NamedAst.Expression.ConstraintUnion(e1, e2, Type.freshTypeVar(), loc)
+      }
+
     case WeededAst.Expression.FixpointSolve(exp, loc) =>
       visitExp(exp, env0, tenv0) map {
         case e => NamedAst.Expression.FixpointSolve(e, Type.freshTypeVar(), loc)
@@ -839,9 +844,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case e => NamedAst.Expression.FixpointProject(name, e, Type.freshTypeVar(), loc)
       }
 
-    case WeededAst.Expression.ConstraintUnion(exp1, exp2, loc) =>
+    case WeededAst.Expression.FixpointEntails(exp1, exp2, loc) =>
       mapN(visitExp(exp1, env0, tenv0), visitExp(exp2, env0, tenv0)) {
-        case (e1, e2) => NamedAst.Expression.ConstraintUnion(e1, e2, Type.freshTypeVar(), loc)
+        case (e1, e2) => NamedAst.Expression.FixpointEntails(e1, e2, Type.freshTypeVar(), loc)
       }
 
     case WeededAst.Expression.UserError(loc) => NamedAst.Expression.UserError(Type.freshTypeVar(), loc).toSuccess

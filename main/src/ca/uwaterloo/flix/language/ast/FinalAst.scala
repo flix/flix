@@ -225,6 +225,8 @@ object FinalAst {
 
     case class FixpointProject(sym: Symbol.PredSym, exp: FinalAst.Expression, tpe: Type, loc: SourceLocation) extends FinalAst.Expression
 
+    case class FixpointEntails(exp1: FinalAst.Expression, exp2: FinalAst.Expression, tpe: Type, loc: SourceLocation) extends FinalAst.Expression
+
     case class UserError(tpe: Type, loc: SourceLocation) extends FinalAst.Expression
 
     case class HoleError(sym: Symbol.HoleSym, tpe: Type, loc: SourceLocation) extends FinalAst.Expression

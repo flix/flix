@@ -145,6 +145,7 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.FixpointCheck(exp, tpe, loc) => visitExp(exp)
       case Expression.FixpointDelta(exp, tpe, loc) => visitExp(exp)
       case Expression.FixpointProject(sym, exp, tpe, loc) => visitExp(exp)
+      case Expression.FixpointEntails(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2)
       case Expression.UserError(tpe, loc) => Set.empty
       case Expression.HoleError(sym, tpe, eff, loc) => Set.empty
       case Expression.MatchError(tpe, loc) => Set.empty

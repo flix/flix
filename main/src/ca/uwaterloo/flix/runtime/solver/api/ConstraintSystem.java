@@ -224,7 +224,7 @@ public final class ConstraintSystem {
 //        }
 //
 //        }
-        return "<rules = " + rules.length + ", facts = " + facts.length + ">";
+        return "<facts = " + facts.length + ", rules = " + rules.length + ">";
     }
 
     /**

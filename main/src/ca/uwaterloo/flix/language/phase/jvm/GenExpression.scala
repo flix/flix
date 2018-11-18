@@ -1059,6 +1059,19 @@ object GenExpression {
         case x: Symbol.LatSym => ??? // TODO
       }
 
+    case Expression.FixpointEntails(exp1, exp2, tpe, loc) =>
+      // Add source line numbers for debugging.
+      addSourceLine(visitor, loc)
+
+      // Emit code for the left-hand constraint system.
+      compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+
+      // Emit code for the right-hand constraint system.
+      compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+
+      // Emit code for the invocation of entails.
+      visitor.visitMethodInsn(INVOKESTATIC, "ca/uwaterloo/flix/runtime/solver/api/SolverApi", "entails", "(Lca/uwaterloo/flix/runtime/solver/api/ConstraintSystem;Lca/uwaterloo/flix/runtime/solver/api/ConstraintSystem;)Z", false);
+
     case Expression.UserError(_, loc) =>
       addSourceLine(visitor, loc)
       AsmOps.compileThrowFlixError(visitor, JvmName.Runtime.NotImplementedError, loc)

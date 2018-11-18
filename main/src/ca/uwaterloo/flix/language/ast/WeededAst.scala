@@ -188,6 +188,8 @@ object WeededAst {
 
     case class FixpointProject(name: Name.QName, exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
+    case class FixpointEntails(exp1: WeededAst.Expression, exp2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+
     case class UserError(loc: SourceLocation) extends WeededAst.Expression
 
   }

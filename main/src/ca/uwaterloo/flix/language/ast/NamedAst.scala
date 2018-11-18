@@ -194,6 +194,8 @@ object NamedAst {
 
     case class FixpointProject(name: Name.QName, exp: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
+    case class FixpointEntails(exp1: NamedAst.Expression, exp2: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
+
     case class UserError(tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
   }
