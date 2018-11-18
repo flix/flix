@@ -223,6 +223,11 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         val e = visit(exp)
         Expression.FixpointProject(sym, e, tpe, loc)
 
+      case Expression.FixpointEntails(exp1, exp2, tpe, loc) =>
+        val e1 = visit(exp1)
+        val e2 = visit(exp2)
+        Expression.FixpointEntails(e1, e2, tpe, loc)
+
       case Expression.UserError(_, _) => exp0
       case Expression.HoleError(_, _, _, _) => exp0
       case Expression.MatchError(_, _) => exp0
@@ -381,6 +386,11 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     case Expression.FixpointProject(sym, exp, tpe, loc) =>
       val e = renameAndSubstitute(exp, env0)
       Expression.FixpointProject(sym, e, tpe, loc)
+
+    case Expression.FixpointEntails(exp1, exp2, tpe, loc) =>
+      val e1 = renameAndSubstitute(exp1, env0)
+      val e2 = renameAndSubstitute(exp2, env0)
+      Expression.FixpointEntails(exp1, exp2, tpe, loc)
 
     case Expression.UserError(_, _) => exp0
     case Expression.HoleError(_, _, _, _) => exp0
@@ -638,6 +648,12 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     // Fixpoint Project expressions are atomic if its argument is.
     //
     case Expression.FixpointProject(sym, exp, tpe, loc) => isAtomic(exp)
+
+    //
+    // Fixpoint Entails expressions are atomic if their arguments are.
+    //
+    case Expression.FixpointEntails(exp1, exp2, tpe, loc) =>
+      isAtomic(exp1) && isAtomic(exp2)
 
     //
     // Errors are atomic.

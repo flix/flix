@@ -429,6 +429,9 @@ object PrettyPrinter {
           vt.text(" ")
           visitExp(exp)
 
+        case Expression.FixpointEntails(exp1, exp2, tpe, loc) =>
+          ??? // TODO: ConstraintUnion
+
         case Expression.UserError(tpe, loc) => vt << Red("UserError")
         case Expression.HoleError(sym, tpe, eff, loc) => Red("HoleError")
         case Expression.MatchError(tpe, loc) => vt << Red("MatchError")

@@ -593,6 +593,8 @@ object Effects extends Phase[Root, Root] {
 
         case Expression.FixpointProject(sym, exp, tpe, eff, loc) => ??? // TODO: FixpointProject
 
+        case Expression.FixpointEntails(exp1, exp2, tpe, eff, loc) => ??? // TODO: FixpointEntails
+
         /**
           * User Error Expression.
           */
