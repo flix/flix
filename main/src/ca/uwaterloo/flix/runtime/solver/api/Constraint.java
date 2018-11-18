@@ -7,6 +7,7 @@ import ca.uwaterloo.flix.runtime.solver.api.predicate.Predicate;
 import ca.uwaterloo.flix.runtime.solver.api.symbol.VarSym;
 
 import java.util.Arrays;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -243,6 +244,31 @@ public final class Constraint {
      */
     public FunctionalPredicate[] getFunctionals() {
         return bodyFunctionals;
+    }
+
+    /**
+     * Returns `true` if `o` is equal to `this` constraint (which must be a fact).
+     */
+    @Override
+    public boolean equals(Object o) {
+        if (!isFact())
+            throw new IllegalStateException("Equality is only defined for facts.");
+
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Constraint that = (Constraint) o;
+        return Objects.equals(head, that.head);
+    }
+
+    /**
+     * Returns the hash code of `this` constraint (which must be a fact).
+     */
+    @Override
+    public int hashCode() {
+        if (!isFact())
+            throw new IllegalStateException("Equality is only defined for facts.");
+
+        return Objects.hash(head);
     }
 
     /**

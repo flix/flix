@@ -5,6 +5,9 @@ import ca.uwaterloo.flix.runtime.solver.FixpointOptions;
 import ca.uwaterloo.flix.runtime.solver.Solver;
 import flix.runtime.RuleError;
 
+import java.util.Collections;
+import java.util.HashSet;
+
 public final class SolverApi {
 
     /**
@@ -43,10 +46,16 @@ public final class SolverApi {
      * Returns `true` if all facts in `s2` are included in `s1`.
      */
     public static boolean entails(ConstraintSystem s1, ConstraintSystem s2) {
-        var facts1 = s1.getFacts();
-        var facts2 = s2.getFacts();
-        // TODO: Not yet implemented.
-        throw new RuntimeException();
+        var facts1 = new HashSet<Constraint>();
+        var facts2 = new HashSet<Constraint>();
+
+        Collections.addAll(facts1, s1.getFacts());
+        Collections.addAll(facts2, s2.getFacts());
+
+        facts2.removeAll(facts1);
+
+        // If facts2 is empty then every fact in s2 appears in s1.
+        return facts2.isEmpty();
     }
 
 }
