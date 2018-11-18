@@ -1823,6 +1823,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.FixpointCheck(sp1, _, _) => sp1
     case ParsedAst.Expression.FixpointDelta(sp1, _, _) => sp1
     case ParsedAst.Expression.FixpointProject(sp1, _, _, _) => sp1
+    case ParsedAst.Expression.FixpointEntails(exp1, _, _) => leftMostSourcePosition(exp1)
     case ParsedAst.Expression.UserError(sp1, _) => sp1
   }
 
