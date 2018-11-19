@@ -22,6 +22,10 @@ public final class ConstraintSystem {
         if (constraint == null)
             throw new IllegalArgumentException("'constraint' must be non-null.");
 
+        if (constraint.isTrueFact()) {
+            return new ConstraintSystem(new Constraint[]{});
+        }
+
         return new ConstraintSystem(new Constraint[]{constraint});
     }
 

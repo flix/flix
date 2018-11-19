@@ -1,9 +1,6 @@
 package ca.uwaterloo.flix.runtime.solver.api;
 
-import ca.uwaterloo.flix.runtime.solver.api.predicate.AtomPredicate;
-import ca.uwaterloo.flix.runtime.solver.api.predicate.FilterPredicate;
-import ca.uwaterloo.flix.runtime.solver.api.predicate.FunctionalPredicate;
-import ca.uwaterloo.flix.runtime.solver.api.predicate.Predicate;
+import ca.uwaterloo.flix.runtime.solver.api.predicate.*;
 import ca.uwaterloo.flix.runtime.solver.api.symbol.VarSym;
 
 import java.util.Arrays;
@@ -152,6 +149,13 @@ public final class Constraint {
      */
     public boolean isRule() {
         return !isFact();
+    }
+
+    /**
+     * Returns `true` if `this` constraint is the true fact.
+     */
+    public boolean isTrueFact() {
+        return isFact() && head instanceof TruePredicate;
     }
 
     /**

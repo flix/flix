@@ -284,34 +284,80 @@ def testStrLit03(): Unit =
 ///////////////////////////////////////////////////////////////////////////////
 rel OptionRel(x: Option[Int])
 
-// @test // TODO
+@test
 def testOptionLit01(): Unit =
     let x = OptionRel(None).;
     let r = solve x;
     ()
 
-// @test // TODO
+@test
 def testOptionLit02(): Unit =
     let x = OptionRel(Some(123)).;
     let r = solve x;
     ()
 
+@test
+def testOptionLit03(): Unit =
+    let x = OptionRel(None).;
+    let y = OptionRel(Some(123)).;
+    let r = solve x <+> y;
+    ()
+
+@test
+def testOptionLit04(): Unit =
+    let x = OptionRel(None).;
+    let y = OptionRel(Some(123)).;
+    let z = OptionRel(Some(456)).;
+    let r = solve x <+> y <+> z;
+    ()
 
 ///////////////////////////////////////////////////////////////////////////////
 /// Result                                                                  ///
 ///////////////////////////////////////////////////////////////////////////////
 rel ResultRel(x: Result[Int, Str])
 
-// @test // TODO
+@test
 def testResultLit01(): Unit =
     let x = ResultRel(Ok(123)).;
     let r = solve x;
     ()
 
-// @test // TODO
+@test
 def testResultLit02(): Unit =
     let x = ResultRel(Err("hello world!")).;
     let r = solve x;
+    ()
+
+@test
+def testResultLit03(): Unit =
+    let x = ResultRel(Ok(123)).;
+    let y = ResultRel(Err("hello world!")).;
+    let r = solve x <+> y;
+    ()
+
+@test
+def testResultLit04(): Unit =
+    let x = ResultRel(Ok(123)).;
+    let y = ResultRel(Ok(456)).;
+    let z = ResultRel(Err("hello world!")).;
+    let r = solve x <+> y <+> z;
+    ()
+
+@test
+def testResultLit05(): Unit =
+    let x = ResultRel(Ok(123)).;
+    let y = ResultRel(Err("hello world!")).;
+    let z = ResultRel(Err("Goodbye world!")).;
+    let r = solve x <+> y <+> z;
+    ()
+
+@test
+def testResultLit06(): Unit =
+    let x = ResultRel(Ok(123)).;
+    let y = ResultRel(Ok(456)).;
+    let z = ResultRel(Err("hello world!")).;
+    let w = ResultRel(Err("Goodbye world!")).;
+    let r = solve x <+> y <+> z <+> w;
     ()
 
 
