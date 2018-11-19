@@ -372,13 +372,12 @@ object ClosureConv extends Phase[Root, Root] {
       Predicate.Body.LatAtom(base, sym, polarity, ts, tpe, loc)
 
     case Predicate.Body.Filter(sym, terms, loc) =>
-      val fvs = terms flatMap freeVars
-
       val ts = terms map visitBodyTerm
       Predicate.Body.Filter(sym, ts, loc)
 
     case Predicate.Body.Functional(sym, term, loc) =>
-      body0 // TODO
+      val t = visitHeadTerm(term)
+      Predicate.Body.Functional(sym, t, loc)
   }
 
   /**
@@ -387,15 +386,13 @@ object ClosureConv extends Phase[Root, Root] {
   private def visitHeadTerm(term0: Term.Head): Term.Head =
     term0 // TODO: Actually perform some operations.
 
-
   /**
     * Performs closure conversion on the given body term `term0`.
     */
   private def visitBodyTerm(term0: Term.Body)(implicit flix: Flix): Term.Body = term0 match {
     case Term.Body.Wild(tpe, loc) => Term.Body.Wild(tpe, loc)
     case Term.Body.QuantVar(sym, tpe, loc) => Term.Body.QuantVar(sym, tpe, loc)
-    case Term.Body.CapturedVar(sym, tpe, loc) =>
-      term0 // TODO
+    case Term.Body.CapturedVar(sym, tpe, loc) => Term.Body.CapturedVar(sym, tpe, loc)
     case Term.Body.Lit(exp, tpe, loc) =>
       val e = visitExp(exp)
       Term.Body.Lit(e, tpe, loc)
