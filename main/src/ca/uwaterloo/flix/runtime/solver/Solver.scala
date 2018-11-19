@@ -422,7 +422,7 @@ class Solver(constraintSystem: ConstraintSystem, options: FixpointOptions) {
           // A variable is replaced by its value from the environment (or null if unbound).
           env(p.getSym().getIndex)
         case p: LitTerm =>
-          p.getFunction().apply(null)
+          p.getFunction().apply(new Array[AnyRef](1))
         case p: WildTerm =>
           // A wildcard places no restrictions on the value.
           null

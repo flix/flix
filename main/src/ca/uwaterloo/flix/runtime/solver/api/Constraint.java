@@ -247,31 +247,6 @@ public final class Constraint {
     }
 
     /**
-     * Returns `true` if `o` is equal to `this` constraint (which must be a fact).
-     */
-    @Override
-    public boolean equals(Object o) {
-        if (!isFact())
-            throw new IllegalStateException("Equality is only defined for facts.");
-
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Constraint that = (Constraint) o;
-        return Objects.equals(head, that.head);
-    }
-
-    /**
-     * Returns the hash code of `this` constraint (which must be a fact).
-     */
-    @Override
-    public int hashCode() {
-        if (!isFact())
-            throw new IllegalStateException("Equality is only defined for facts.");
-
-        return Objects.hash(head);
-    }
-
-    /**
      * Returns a string representation of `this` constraint.
      */
     public String toString() {

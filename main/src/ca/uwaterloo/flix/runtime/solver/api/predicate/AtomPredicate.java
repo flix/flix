@@ -68,8 +68,6 @@ public final class AtomPredicate implements Predicate {
         return terms;
     }
 
-
-
     /**
      * Returns a human-readable representation of `this` predicate.
      */
