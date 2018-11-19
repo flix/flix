@@ -2,7 +2,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.FinalAst.Root
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, SpecialOperator, Symbol, Type}
 import ca.uwaterloo.flix.util.{InternalCompilerException, JvmTarget}
 import org.objectweb.asm.Opcodes._
 import org.objectweb.asm.{ClassWriter, MethodVisitor}
@@ -482,6 +482,31 @@ object AsmOps {
     case JvmType.PrimInt => mv.visitMethodInsn(INVOKESTATIC, "java/lang/Integer", "valueOf", "(I)Ljava/lang/Integer;", false)
     case JvmType.PrimLong => mv.visitMethodInsn(INVOKESTATIC, "java/lang/Long", "valueOf", "(J)Ljava/lang/Long;", false)
     case JvmType.Reference(name) => ()
+  }
+
+  /**
+    * Emits code to construct a new proxy object for the value on top of the stack of the given type `tpe`.
+    */
+  def newProxyObject(tpe: Type, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
+    // Construct the equal function object.
+    root.specialOps(SpecialOperator.Equality).get(tpe) match {
+      case None => mv.visitInsn(ACONST_NULL)
+      case Some(hashSym) => AsmOps.compileDefSymbol(hashSym, mv)
+    }
+
+    // Construct the hash function object.
+    root.specialOps(SpecialOperator.HashCode).get(tpe) match {
+      case None => mv.visitInsn(ACONST_NULL)
+      case Some(hashSym) => AsmOps.compileDefSymbol(hashSym, mv)
+    }
+
+    // Construct the toStr function object.
+    root.specialOps(SpecialOperator.ToString).get(tpe) match {
+      case None => mv.visitInsn(ACONST_NULL)
+      case Some(hashSym) => AsmOps.compileDefSymbol(hashSym, mv)
+    }
+    // Invoke the constructor of the proxy object.
+    mv.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/solver/api/ProxyObject", "<init>", "(Ljava/lang/Object;Ljava/util/function/Function;Ljava/util/function/Function;Ljava/util/function/Function;)V", false)
   }
 
 }
