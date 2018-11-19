@@ -208,10 +208,6 @@ object GenFunctionClasses {
     // Call the invoke method.
     mv.visitMethodInsn(INVOKEVIRTUAL, classType.name.toInternalName, "invoke", "(LContext;)V", false)
 
-    // Allocate a fresh proxy object.
-    mv.visitTypeInsn(NEW, "ca/uwaterloo/flix/runtime/solver/api/ProxyObject")
-    mv.visitInsn(DUP)
-
     // Retrieve the result from the field.
     mv.visitVarInsn(ALOAD, 0)
     mv.visitFieldInsn(GETFIELD, classType.name.toInternalName, "result", jvmResultType.toDescriptor)

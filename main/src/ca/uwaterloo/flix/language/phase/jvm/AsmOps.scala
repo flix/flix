@@ -505,8 +505,10 @@ object AsmOps {
       case None => mv.visitInsn(ACONST_NULL)
       case Some(hashSym) => AsmOps.compileDefSymbol(hashSym, mv)
     }
-    // Invoke the constructor of the proxy object.
-    mv.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/solver/api/ProxyObject", "<init>", "(Ljava/lang/Object;Ljava/util/function/Function;Ljava/util/function/Function;Ljava/util/function/Function;)V", false)
+
+    // Construct the proxy object.
+    mv.visitMethodInsn(INVOKESTATIC, "ca/uwaterloo/flix/runtime/solver/api/ProxyObject", "of", "(Ljava/lang/Object;Ljava/util/function/Function;Ljava/util/function/Function;Ljava/util/function/Function;)Lca/uwaterloo/flix/runtime/solver/api/ProxyObject;", false);
+
   }
 
 }

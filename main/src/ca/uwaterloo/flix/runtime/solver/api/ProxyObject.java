@@ -14,6 +14,10 @@ public final class ProxyObject {
     private final Function<Object[], ProxyObject> hash;
     private final Function<Object[], ProxyObject> toStr;
 
+    public static ProxyObject of(Object value, Function<Object[], ProxyObject> eq, Function<Object[], ProxyObject> hash, Function<Object[], ProxyObject> toStr) {
+        return new ProxyObject(value, eq, hash, toStr);
+    }
+
     public ProxyObject(Object value, Function<Object[], ProxyObject> eq, Function<Object[], ProxyObject> hash, Function<Object[], ProxyObject> toStr) {
         this.value = value;
         this.eq = eq;

@@ -1750,12 +1750,28 @@ object GenExpression {
       // Add source line numbers for debugging.
       addSourceLine(mv, loc)
 
+      // Allocate a fresh literal term.
+      mv.visitTypeInsn(NEW, "ca/uwaterloo/flix/runtime/solver/api/term/LitTerm")
+      mv.visitInsn(DUP)
+
+      // Allocate a fresh constant function.
+      mv.visitTypeInsn(NEW, "ca/uwaterloo/flix/runtime/solver/api/ConstantFunction")
+      mv.visitInsn(DUP)
+
       // Read the value of the local variable and put it on the stack.
       readVar(sym, tpe, mv)
 
-      // TODO: Need to allocate a LitTerm.
+      // Box the result, if necessary.
+      AsmOps.boxIfPrim(JvmOps.getErasedJvmType(tpe), mv)
 
-      ???
+      // Allocate a proxy object for the captured value.
+      AsmOps.newProxyObject(tpe, mv)
+
+      // Invoke the constructor of the constant function.
+      mv.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/solver/api/ConstantFunction", "<init>", "(Lca/uwaterloo/flix/runtime/solver/api/ProxyObject;)V", false);
+
+      // Invoke the constructor of the literal term.
+      mv.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/solver/api/term/LitTerm", "<init>", "(Ljava/util/function/Function;)V", false);
 
     case Term.Head.Lit(sym, tpe, loc) =>
       // Add source line numbers for debugging.
