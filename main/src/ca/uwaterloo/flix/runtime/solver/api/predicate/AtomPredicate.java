@@ -2,6 +2,7 @@ package ca.uwaterloo.flix.runtime.solver.api.predicate;
 
 import ca.uwaterloo.flix.runtime.solver.api.symbol.PredSym;
 import ca.uwaterloo.flix.runtime.solver.api.symbol.VarSym;
+import ca.uwaterloo.flix.runtime.solver.api.term.LitTerm;
 import ca.uwaterloo.flix.runtime.solver.api.term.Term;
 
 import java.util.Arrays;
@@ -66,6 +67,41 @@ public final class AtomPredicate implements Predicate {
      */
     public Term[] getTerms() {
         return terms;
+    }
+
+    /**
+     * Returns `true` if `this` atom is ground.
+     */
+    public boolean isGround() {
+        for (Term t : terms) {
+            if (!(t instanceof LitTerm)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Returns `true` if `this` atom entails `that` atom.
+     */
+    public boolean entails(AtomPredicate that) {
+        if (that == null)
+            throw new IllegalArgumentException("'that' must be non-null.");
+
+        // TODO: Lattice semantics.
+
+        if (this.sym.equals(that.sym) && this.isGround() && that.isGround()) {
+            for (var i = 0; i < this.getTerms().length; i++) {
+                var thisTerm = (LitTerm) this.getTerms()[i];
+                var thatTerm = (LitTerm) that.getTerms()[i];
+                var thisLit = thisTerm.getFunction().apply(new Object[1]);
+                var thatLit = thatTerm.getFunction().apply(new Object[1]);
+                if (!thisLit.equals(thatLit))
+                    return false;
+            }
+        }
+
+        return true;
     }
 
     /**

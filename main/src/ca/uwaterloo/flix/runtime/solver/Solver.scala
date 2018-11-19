@@ -240,7 +240,7 @@ class Solver(constraintSystem: ConstraintSystem, options: FixpointOptions) {
     printDebug()
 
     // build and return the model.
-    constraintSystem.getModel()
+    constraintSystem.getModel() // TODO: Need to include the inferred facts.
   } catch {
     // Re-throw exceptions caught inside the individual reader/writer tasks.
     case ex: ExecutionException =>

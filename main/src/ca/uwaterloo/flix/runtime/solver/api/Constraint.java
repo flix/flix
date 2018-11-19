@@ -251,6 +251,30 @@ public final class Constraint {
     }
 
     /**
+     * Returns `true` if `this` fact entails the given `that`.
+     */
+    public boolean entails(Constraint that) {
+        if (that == null)
+            throw new IllegalArgumentException("'that' must be non-null.");
+
+        if (this.isFact() && that.isFact()) {
+            if (this.head instanceof FalsePredicate) {
+                return true;
+            }
+            if (this.head instanceof TruePredicate && that.head instanceof TruePredicate) {
+                return true;
+            }
+            if (this.head instanceof AtomPredicate && that.head instanceof AtomPredicate) {
+                var thisHead = (AtomPredicate) this.head;
+                var thatHead = (AtomPredicate) that.head;
+                return thisHead.entails(thatHead);
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * Returns a string representation of `this` constraint.
      */
     public String toString() {

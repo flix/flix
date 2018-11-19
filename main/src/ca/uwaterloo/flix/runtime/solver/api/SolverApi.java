@@ -46,9 +46,19 @@ public final class SolverApi {
      * Returns `true` if all facts in `s2` are included in `s1`.
      */
     public static boolean entails(ConstraintSystem s1, ConstraintSystem s2) {
-
-        // TODO: Need to rewrite
-        return false;
+        var entails = true;
+        for (Constraint fact2 : s2.getFacts()) {
+            var found = false;
+            for (Constraint fact1 : s1.getFacts()) {
+                if (fact1.entails(fact2)) {
+                    found = true;
+                }
+            }
+            if (!found) {
+                entails = false;
+            }
+        }
+        return entails;
     }
 
 }
