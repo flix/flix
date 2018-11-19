@@ -373,7 +373,7 @@ object AsmOps {
   /**
     * Emits code that puts the function object of the def symbol `def` on top of the stack.
     */
-  def loadJavaFunctionObject(sym: Symbol.DefnSym, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
+  def compileDefSymbol(sym: Symbol.DefnSym, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
     // Retrieve the namespace of the def symbol.
     val ns = JvmOps.getNamespace(sym)
 

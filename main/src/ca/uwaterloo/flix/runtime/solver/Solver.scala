@@ -422,7 +422,7 @@ class Solver(constraintSystem: ConstraintSystem, options: FixpointOptions) {
           // A variable is replaced by its value from the environment (or null if unbound).
           env(p.getSym().getIndex)
         case p: LitTerm =>
-          p.getFunction().apply(new Array[AnyRef](1))
+          invoke(p.getFunction)
         case p: WildTerm =>
           // A wildcard places no restrictions on the value.
           null
@@ -535,7 +535,7 @@ class Solver(constraintSystem: ConstraintSystem, options: FixpointOptions) {
             // A variable is replaced by its value from the environment.
             env(p.getSym.getIndex)
           case p: LitTerm =>
-            p.getFunction().apply(null)
+            invoke(p.getFunction)
           case p: WildTerm =>
             // A wildcard should not appear as an argument to a filter function.
             throw InternalRuntimeException("Wildcard not allowed here!")
@@ -889,6 +889,16 @@ class Solver(constraintSystem: ConstraintSystem, options: FixpointOptions) {
       a(0) = Array.empty[Constraint]
       a
     }
+  }
+
+  /**
+    * Invokes the given function `f` with zero arguments.
+    *
+    * That is, invokes the function with an object array of length with the null value.
+    */
+  private def invoke(f: java.util.function.Function[AnyRef, ProxyObject]): ProxyObject = {
+    val args = new Array[AnyRef](1)
+    f.apply(args)
   }
 
 }

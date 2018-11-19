@@ -220,19 +220,19 @@ object GenFunctionClasses {
     // Construct the equal function object.
     root.specialOps(SpecialOperator.Equality).get(resultType) match {
       case None => mv.visitInsn(ACONST_NULL)
-      case Some(hashSym) => AsmOps.loadJavaFunctionObject(hashSym, mv)
+      case Some(hashSym) => AsmOps.compileDefSymbol(hashSym, mv)
     }
 
     // Construct the hash function object.
     root.specialOps(SpecialOperator.HashCode).get(resultType) match {
       case None => mv.visitInsn(ACONST_NULL)
-      case Some(hashSym) => AsmOps.loadJavaFunctionObject(hashSym, mv)
+      case Some(hashSym) => AsmOps.compileDefSymbol(hashSym, mv)
     }
 
     // Construct the toStr function object.
     root.specialOps(SpecialOperator.ToString).get(resultType) match {
       case None => mv.visitInsn(ACONST_NULL)
-      case Some(hashSym) => AsmOps.loadJavaFunctionObject(hashSym, mv)
+      case Some(hashSym) => AsmOps.compileDefSymbol(hashSym, mv)
     }
     // Invoke the constructor of the proxy object.
     mv.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/solver/api/ProxyObject", "<init>", "(Ljava/lang/Object;Ljava/util/function/Function;Ljava/util/function/Function;Ljava/util/function/Function;)V", false);

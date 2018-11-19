@@ -1666,28 +1666,27 @@ object GenExpression {
       }
 
       // Emit code for the terms.
-      compileInt(mv, terms.length)
-      mv.visitTypeInsn(ANEWARRAY, "ca/uwaterloo/flix/runtime/solver/api/term/Term")
-      for ((term, index) <- terms.zipWithIndex) {
-        // Compile each term and store it in the array.
-        mv.visitInsn(DUP)
-        compileInt(mv, index)
-        compileBodyTerm(term, mv)
-        mv.visitInsn(AASTORE)
-      }
+      compileBodyTerms(terms, mv)
 
       // Emit code to invoke the constructor of the atom predicate.
       mv.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/solver/api/predicate/AtomPredicate", "<init>", "(Lca/uwaterloo/flix/runtime/solver/api/symbol/PredSym;Z[Lca/uwaterloo/flix/runtime/solver/api/term/Term;)V", false);
 
-
-    case Predicate.Body.LatAtom(None, sym, polarity, terms, tpe, loc) =>
-      ??? // TODO
-
-    case Predicate.Body.LatAtom(Some(varSym), sym, polarity, terms, tpe, loc) =>
+    case Predicate.Body.LatAtom(baseOpt, sym, polarity, terms, tpe, loc) =>
       ??? // TODO
 
     case Predicate.Body.Filter(sym, terms, loc) =>
-      ??? // TODO
+      // Allocate a fresh filter predicate object.
+      mv.visitTypeInsn(NEW, "ca/uwaterloo/flix/runtime/solver/api/predicate/FilterPredicate")
+      mv.visitInsn(DUP)
+
+      // Emit code for the function symbol.
+      AsmOps.compileDefSymbol(sym, mv)
+
+      // Emit code for the terms.
+      compileBodyTerms(terms, mv)
+
+      // Emit code to invoke the constructor.
+      mv.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/solver/api/predicate/FilterPredicate", "<init>", "(Ljava/util/function/Function;[Lca/uwaterloo/flix/runtime/solver/api/term/Term;)V", false);
 
     case Predicate.Body.Functional(varSym, defSym, terms, loc) =>
       ??? // TODO
@@ -1811,6 +1810,21 @@ object GenExpression {
   }
 
   /**
+    * Compiles the given body `terms` to an array of term objects.
+    */
+  private def compileBodyTerms(terms: List[Term.Body], mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
+    compileInt(mv, terms.length)
+    mv.visitTypeInsn(ANEWARRAY, "ca/uwaterloo/flix/runtime/solver/api/term/Term")
+    for ((term, index) <- terms.zipWithIndex) {
+      // Compile each term and store it in the array.
+      mv.visitInsn(DUP)
+      compileInt(mv, index)
+      compileBodyTerm(term, mv)
+      mv.visitInsn(AASTORE)
+    }
+  }
+
+  /**
     * Emits code for the quantified variable symbol `sym`.
     */
   private def compileQuantVar(sym: Symbol.VarSym, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
@@ -1844,7 +1858,7 @@ object GenExpression {
     mv.visitInsn(DUP)
 
     // Emit code to construct the function object.
-    AsmOps.loadJavaFunctionObject(sym, mv)
+    AsmOps.compileDefSymbol(sym, mv)
 
     // Emit code to invoke the constructor of the literal term.
     mv.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/solver/api/term/LitTerm", "<init>", "(Ljava/util/function/Function;)V", false);
