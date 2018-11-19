@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.FinalAst._
-import ca.uwaterloo.flix.language.ast.Symbol
+import ca.uwaterloo.flix.language.ast.{SpecialOperator, Symbol, Type}
 import org.objectweb.asm.Opcodes._
 import org.objectweb.asm.{ClassWriter, Label}
 
@@ -82,19 +82,20 @@ object GenFunctionClasses {
     }
 
     // Jvm type of the result of the function
-    val resultType = JvmOps.getErasedJvmType(args.last)
+    val resultType = args.last
+    val jvmResultType = JvmOps.getErasedJvmType(resultType)
 
     // Field for the result
-    AsmOps.compileField(visitor, "result", resultType, isStatic = false, isPrivate = true)
+    AsmOps.compileField(visitor, "result", jvmResultType, isStatic = false, isPrivate = true)
 
     // Getter for the result field
-    AsmOps.compileGetFieldMethod(visitor, classType.name, "result", "getResult", resultType)
+    AsmOps.compileGetFieldMethod(visitor, classType.name, "result", "getResult", jvmResultType)
 
     // Constructor of the class
     compileConstructor(visitor)
 
     // Invoke method of the class
-    compileInvokeMethod(visitor, classType, defn, resultType)
+    compileInvokeMethod(visitor, classType, defn, jvmResultType)
 
     // Apply method of the class
     compileApplyMethod(visitor, classType, resultType)
@@ -175,13 +176,17 @@ object GenFunctionClasses {
   /**
     * Apply method for the given `defn` and `classType`.
     */
-  private def compileApplyMethod(cw: ClassWriter, classType: JvmType.Reference, resultType: JvmType)(implicit root: Root, flix: Flix): Unit = {
+  private def compileApplyMethod(cw: ClassWriter, classType: JvmType.Reference, resultType: Type)(implicit root: Root, flix: Flix): Unit = {
+    // The JVM result type
+    val jvmResultType = JvmOps.getErasedJvmType(resultType)
+
     // Method header
     val mv = cw.visitMethod(ACC_PUBLIC + ACC_FINAL, "apply", AsmOps.getMethodDescriptor(List(JvmType.Object), JvmType.Object), null, null)
 
     // TODO: Cast the argument to an array and call setArg.
 
     // TODO: Temporary instantiate a new context object and call the invoke method.
+    // TODO: Need to load it from thread local.
 
     //
     // Call this.apply(new Context)
@@ -195,6 +200,10 @@ object GenFunctionClasses {
     mv.visitInsn(DUP)
     mv.visitMethodInsn(INVOKESPECIAL, JvmName.Context.toInternalName, "<init>", "()V", false)
 
+    // Store the context object in local variable 1.
+    mv.visitInsn(DUP)
+    mv.visitVarInsn(ASTORE, 1)
+
     // Call the invoke method.
     mv.visitMethodInsn(INVOKEVIRTUAL, classType.name.toInternalName, "invoke", "(LContext;)V", false)
 
@@ -204,18 +213,26 @@ object GenFunctionClasses {
 
     // Retrieve the result from the field.
     mv.visitVarInsn(ALOAD, 0)
-    mv.visitFieldInsn(GETFIELD, classType.name.toInternalName, "result", resultType.toDescriptor)
-    AsmOps.boxIfPrim(resultType, mv)
+    mv.visitFieldInsn(GETFIELD, classType.name.toInternalName, "result", jvmResultType.toDescriptor)
+    AsmOps.boxIfPrim(jvmResultType, mv)
 
     // Construct the equal function object.
-    mv.visitInsn(ACONST_NULL) // TODO: Eq
+    root.specialOps(SpecialOperator.Equality).get(resultType) match {
+      case None => mv.visitInsn(ACONST_NULL)
+      case Some(hashSym) => AsmOps.loadJavaFunctionObject(hashSym, mv)
+    }
 
     // Construct the hash function object.
-    mv.visitInsn(ACONST_NULL) // TODO: Hash
+    root.specialOps(SpecialOperator.HashCode).get(resultType) match {
+      case None => mv.visitInsn(ACONST_NULL)
+      case Some(hashSym) => AsmOps.loadJavaFunctionObject(hashSym, mv)
+    }
 
     // Construct the toStr function object.
-    mv.visitInsn(ACONST_NULL) // TODO: toStr
-
+    root.specialOps(SpecialOperator.ToString).get(resultType) match {
+      case None => mv.visitInsn(ACONST_NULL)
+      case Some(hashSym) => AsmOps.loadJavaFunctionObject(hashSym, mv)
+    }
     // Invoke the constructor of the proxy object.
     mv.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/solver/api/ProxyObject", "<init>", "(Ljava/lang/Object;Ljava/util/function/Function;Ljava/util/function/Function;Ljava/util/function/Function;)V", false);
 

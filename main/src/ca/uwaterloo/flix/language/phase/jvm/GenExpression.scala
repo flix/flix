@@ -1844,7 +1844,7 @@ object GenExpression {
     mv.visitInsn(DUP)
 
     // Emit code to construct the function object.
-    pushFunctionObject(sym, mv)
+    AsmOps.loadJavaFunctionObject(sym, mv)
 
     // Emit code to invoke the constructor of the literal term.
     mv.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/solver/api/term/LitTerm", "<init>", "(Ljava/util/function/Function;)V", false);
@@ -1883,38 +1883,6 @@ object GenExpression {
       mv.visitInsn(ICONST_0)
     }
     mv.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/solver/FixpointOptions", "setVerbose", "(Z)V", false)
-  }
-
-  /**
-    * Emits code that puts the function object of the def symbol `def` on top of the stack.
-    */
-  private def pushFunctionObject(sym: Symbol.DefnSym, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
-    // Retrieve the namespace of the def symbol.
-    val ns = JvmOps.getNamespace(sym)
-
-    // Retrieve the JVM type of the namespace.
-    val nsJvmType = JvmOps.getNamespaceClassType(ns)
-
-    // Retrieve the name of the namespace field on the context object.
-    val nsFieldName = JvmOps.getNamespaceFieldNameInContextClass(ns)
-
-    // Retrieve the name of the def on the namespace object.
-    val defFieldName = JvmOps.getDefFieldNameInNamespaceClass(sym)
-
-    // Retrieve the type of the function def class.
-    val defJvmType = JvmOps.getFunctionDefinitionClassType(sym)
-
-    // The java.util.function.Function interface type.
-    val interfaceType = JvmType.Function
-
-    // Load the current context.
-    mv.visitVarInsn(ALOAD, 1)
-
-    // Load the namespace object.
-    mv.visitFieldInsn(GETFIELD, JvmName.Context.toInternalName, nsFieldName, nsJvmType.toDescriptor)
-
-    // Load the def object.
-    mv.visitFieldInsn(GETFIELD, nsJvmType.name.toInternalName, defFieldName, defJvmType.toDescriptor)
   }
 
   /**

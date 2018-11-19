@@ -2,7 +2,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.FinalAst.Root
-import ca.uwaterloo.flix.language.ast.SourceLocation
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
 import ca.uwaterloo.flix.util.{InternalCompilerException, JvmTarget}
 import org.objectweb.asm.Opcodes._
 import org.objectweb.asm.{ClassWriter, MethodVisitor}
@@ -368,6 +368,38 @@ object AsmOps {
 
     method.visitMaxs(3, 0)
     method.visitEnd()
+  }
+
+  /**
+    * Emits code that puts the function object of the def symbol `def` on top of the stack.
+    */
+  def loadJavaFunctionObject(sym: Symbol.DefnSym, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
+    // Retrieve the namespace of the def symbol.
+    val ns = JvmOps.getNamespace(sym)
+
+    // Retrieve the JVM type of the namespace.
+    val nsJvmType = JvmOps.getNamespaceClassType(ns)
+
+    // Retrieve the name of the namespace field on the context object.
+    val nsFieldName = JvmOps.getNamespaceFieldNameInContextClass(ns)
+
+    // Retrieve the name of the def on the namespace object.
+    val defFieldName = JvmOps.getDefFieldNameInNamespaceClass(sym)
+
+    // Retrieve the type of the function def class.
+    val defJvmType = JvmOps.getFunctionDefinitionClassType(sym)
+
+    // The java.util.function.Function interface type.
+    val interfaceType = JvmType.Function
+
+    // Load the current context.
+    mv.visitVarInsn(ALOAD, 1)
+
+    // Load the namespace object.
+    mv.visitFieldInsn(GETFIELD, JvmName.Context.toInternalName, nsFieldName, nsJvmType.toDescriptor)
+
+    // Load the def object.
+    mv.visitFieldInsn(GETFIELD, nsJvmType.name.toInternalName, defFieldName, defJvmType.toDescriptor)
   }
 
   /**
