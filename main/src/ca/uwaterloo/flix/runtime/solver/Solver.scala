@@ -577,7 +577,7 @@ class Solver(constraintSystem: ConstraintSystem, options: FixpointOptions) {
     */
   def evalHeadTerm(t: Term, root: ConstraintSystem, env: Env): ProxyObject = t match {
     case t: VarTerm => env(t.getSym.getIndex)
-    case t: LitTerm => t.getFunction().apply(null)
+    case t: LitTerm => t.getFunction().apply(new Array[AnyRef](1))
     case t: AppTerm =>
       val args = new Array[AnyRef](t.getArguments().length)
       var i = 0

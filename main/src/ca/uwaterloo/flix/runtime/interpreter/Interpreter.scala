@@ -916,25 +916,25 @@ object Interpreter {
     val toStrSym = root.specialOps(SpecialOperator.ToString)(tpe)
 
     // Construct the operators.
-    val eqOp = new java.util.function.Function[Array[AnyRef], java.lang.Boolean] {
-      override def apply(a: Array[AnyRef]): java.lang.Boolean = {
+    val eqOp = new java.util.function.Function[Array[AnyRef], ProxyObject] {
+      override def apply(a: Array[AnyRef]): ProxyObject = {
         val x = a(0)
         val y = a(1)
-        Linker.link(eqSym, root).invoke(Array(x, y)).getValue.asInstanceOf[java.lang.Boolean]
+        Linker.link(eqSym, root).invoke(Array(x, y))
       }
     }
 
-    val hashOp = new java.util.function.Function[Array[AnyRef], java.lang.Integer] {
-      override def apply(a: Array[AnyRef]): java.lang.Integer = {
+    val hashOp = new java.util.function.Function[Array[AnyRef], ProxyObject] {
+      override def apply(a: Array[AnyRef]): ProxyObject = {
         val x = a(0)
-        Linker.link(hashSym, root).invoke(Array(x)).getValue.asInstanceOf[Integer].intValue()
+        Linker.link(hashSym, root).invoke(Array(x))
       }
     }
 
-    val toStrOp = new java.util.function.Function[Array[AnyRef], java.lang.String] {
-      override def apply(a: Array[AnyRef]): java.lang.String = {
+    val toStrOp = new java.util.function.Function[Array[AnyRef], ProxyObject] {
+      override def apply(a: Array[AnyRef]): ProxyObject = {
         val x = a(0)
-        Linker.link(toStrSym, root).invoke(Array(x)).getValue.asInstanceOf[String]
+        Linker.link(toStrSym, root).invoke(Array(x))
       }
     }
 

@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.FinalAst._
 import ca.uwaterloo.flix.language.ast.{SpecialOperator, Symbol, Type}
 import org.objectweb.asm.Opcodes._
-import org.objectweb.asm.{ClassWriter, Label}
+import org.objectweb.asm.{ClassWriter, Label, MethodVisitor}
 
 /**
   * Generates bytecode for the function classes.
@@ -98,7 +98,7 @@ object GenFunctionClasses {
     compileInvokeMethod(visitor, classType, defn, jvmResultType)
 
     // Apply method of the class
-    compileApplyMethod(visitor, classType, resultType)
+    compileApplyMethod(visitor, classType, defn, resultType)
 
     visitor.toByteArray
   }
@@ -176,14 +176,15 @@ object GenFunctionClasses {
   /**
     * Apply method for the given `defn` and `classType`.
     */
-  private def compileApplyMethod(cw: ClassWriter, classType: JvmType.Reference, resultType: Type)(implicit root: Root, flix: Flix): Unit = {
+  private def compileApplyMethod(cw: ClassWriter, classType: JvmType.Reference, defn: Def, resultType: Type)(implicit root: Root, flix: Flix): Unit = {
     // The JVM result type
     val jvmResultType = JvmOps.getErasedJvmType(resultType)
 
     // Method header
     val mv = cw.visitMethod(ACC_PUBLIC + ACC_FINAL, "apply", AsmOps.getMethodDescriptor(List(JvmType.Object), JvmType.Object), null, null)
 
-    // TODO: Cast the argument to an array and call setArg.
+    // Emit code to invoke setArgX for every argument in the array.
+    compileArguments(defn, classType, mv)
 
     // TODO: Temporary instantiate a new context object and call the invoke method.
     // TODO: Need to load it from thread local.
@@ -241,6 +242,50 @@ object GenFunctionClasses {
 
     mv.visitMaxs(65535, 65535)
     mv.visitEnd()
+  }
+
+  /**
+    * Emits code to invoke setArgX for every value in the passed arguments array.
+    */
+  private def compileArguments(defn: Def, classType: JvmType.Reference, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
+    // The local variable where the object argument is stored.
+    val ArgumentLocalVar = 1
+
+    // The local variable for the array of objects.
+    val ArrayLocalVar = 2
+
+    // Load the arguments array.
+    mv.visitVarInsn(ALOAD, ArgumentLocalVar)
+
+    // Cast the object to an array of objects.
+    mv.visitTypeInsn(CHECKCAST, "[Ljava/lang/Object;")
+
+    // Store the array in a local variable.
+    mv.visitVarInsn(ASTORE, ArrayLocalVar)
+
+    // Iterate through each formal argument and invoke `setArg`.
+    for ((FormalParam(sym, tpe), index) <- defn.formals.zipWithIndex) {
+      // Load the `this` value (to be used for the call below).
+      mv.visitVarInsn(ALOAD, 0)
+
+      // Load the array.
+      mv.visitVarInsn(ALOAD, ArrayLocalVar)
+
+      // Push the array index.
+      mv.visitIntInsn(BIPUSH, index)
+
+      // Load the element at the index.
+      mv.visitInsn(AALOAD)
+
+      // Invoke the setArgX method on `this`.
+      val argErasedType = JvmOps.getErasedJvmType(tpe)
+
+      // Cast and unbox.
+      AsmOps.castIfNotPrimAndUnbox(argErasedType, mv)
+
+      // Invoke setArgX.
+      mv.visitMethodInsn(INVOKEVIRTUAL, classType.name.toInternalName, s"setArg$index", AsmOps.getMethodDescriptor(List(argErasedType), JvmType.Void), false)
+    }
   }
 
 }

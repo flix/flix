@@ -442,6 +442,34 @@ object AsmOps {
     }
   }
 
+  def castIfNotPrimAndUnbox(tpe: JvmType, mv: MethodVisitor): Unit = tpe match {
+    case JvmType.Void => throw InternalCompilerException(s"Unexpected type $tpe")
+    case JvmType.PrimBool =>
+      mv.visitTypeInsn(CHECKCAST, "java/lang/Boolean")
+      mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Boolean", "booleanValue", "()Z", false)
+    case JvmType.PrimChar =>
+      mv.visitTypeInsn(CHECKCAST, "java/lang/Character")
+      mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Character", "charValue", "()C", false)
+    case JvmType.PrimFloat =>
+      mv.visitTypeInsn(CHECKCAST, "java/lang/Float")
+      mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Float", "floatValue", "()F", false)
+    case JvmType.PrimDouble =>
+      mv.visitTypeInsn(CHECKCAST, "java/lang/Double")
+      mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Double", "doubleValue", "()D", false)
+    case JvmType.PrimByte =>
+      mv.visitTypeInsn(CHECKCAST, "java/lang/Byte")
+      mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Byte", "byteValue", "()B", false)
+    case JvmType.PrimShort =>
+      mv.visitTypeInsn(CHECKCAST, "java/lang/Short")
+      mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Short", "shortValue", "()S", false)
+    case JvmType.PrimInt =>
+      mv.visitTypeInsn(CHECKCAST, "java/lang/Integer")
+      mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Integer", "intValue", "()I", false)
+    case JvmType.PrimLong =>
+      mv.visitTypeInsn(CHECKCAST, "java/lang/Long")
+      mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Long", "longValue", "()J", false)
+    case JvmType.Reference(name) => mv.visitTypeInsn(CHECKCAST, name.toInternalName)
+  }
 
   def boxIfPrim(tpe: JvmType, mv: MethodVisitor): Unit = tpe match {
     case JvmType.Void => throw InternalCompilerException(s"Unexpected type $tpe")

@@ -156,39 +156,29 @@ object Linker {
   /**
     * Returns a Java function that computes equality of two raw Flix values.
     */
-  private def getEqOp(tpe: Type, root: Root)(implicit flix: Flix): java.util.function.Function[Array[AnyRef], java.lang.Boolean] = (a: Array[AnyRef]) => {
+  private def getEqOp(tpe: Type, root: Root)(implicit flix: Flix): java.util.function.Function[Array[AnyRef], ProxyObject] = (a: Array[AnyRef]) => {
     val x = a(0)
     val y = a(1)
     val sym = root.specialOps(SpecialOperator.Equality)(tpe)
-    link(sym, root).invoke(Array(x, y)).getValue match {
-      case java.lang.Boolean.TRUE => true
-      case java.lang.Boolean.FALSE => false
-      case v => throw InternalRuntimeException(s"Unexpected value: '$v' of type '${v.getClass.getName}'.")
-    }
+    link(sym, root).invoke(Array(x, y))
   }
 
   /**
     * Returns a Java function that computes the hashCode of a raw Flix value.
     */
-  private def getHashOp(tpe: Type, root: Root)(implicit flix: Flix): java.util.function.Function[Array[AnyRef], Integer] = (a: Array[AnyRef]) => {
+  private def getHashOp(tpe: Type, root: Root)(implicit flix: Flix): java.util.function.Function[Array[AnyRef], ProxyObject] = (a: Array[AnyRef]) => {
     val x = a(0)
     val sym = root.specialOps(SpecialOperator.HashCode)(tpe)
-    link(sym, root).invoke(Array(x)).getValue match {
-      case i: java.lang.Integer => i.intValue()
-      case v => throw InternalRuntimeException(s"Unexpected value: '$v' of type '${v.getClass.getName}'.")
-    }
+    link(sym, root).invoke(Array(x))
   }
 
   /**
     * Returns a Java function that computes the string representation of a raw Flix value.
     */
-  private def getToStrOp(tpe: Type, root: Root)(implicit flix: Flix): java.util.function.Function[Array[AnyRef], String] = (a: Array[AnyRef]) => {
+  private def getToStrOp(tpe: Type, root: Root)(implicit flix: Flix): java.util.function.Function[Array[AnyRef], ProxyObject] = (a: Array[AnyRef]) => {
     val x = a(0)
     val sym = root.specialOps(SpecialOperator.ToString)(tpe)
-    link(sym, root).invoke(Array(x)).getValue match {
-      case s: java.lang.String => s
-      case v => throw InternalRuntimeException(s"Unexpected value: '$v' of type '${v.getClass.getName}'.")
-    }
+    link(sym, root).invoke(Array(x))
   }
 
 }
