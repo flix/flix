@@ -56,23 +56,21 @@ def testFilter08(): Bool = check {
 //    R("a") :- isZero(x), isZero(y), isSame(x, y), A(x), B(y).
 //}
 
-//// TODO: Bugged
-//@test
-//def testFilter11(): Bool = check {
-//    R("a") :- isZero(increment(0)).
-//}
-//
-//// TODO: Bugged
-//@test
-//def testFilter12(): Bool = check {
-//    R("a") :- isZero(increment(decrement(0))).
-//}
-//
-//// TODO: Bugged
-//@test
-//def testFilter13(): Bool = check {
-//    R("a") :- isZero(increment(decrement(decrement(0)))).
-//}
+@test
+def testFilter11(): Bool = check {
+    R("a") :- isZero(increment(0)).
+}
+
+@test
+def testFilter12(): Bool = check {
+    R("a") :- isZero(increment(decrement(0))).
+}
+
+@test
+def testFilter13(): Bool = check {
+    R("a") :- isZero(increment(decrement(decrement(0)))).
+}
+
 //// TODO: Bugged
 //@test
 //def testFilter14(): Bool = check {

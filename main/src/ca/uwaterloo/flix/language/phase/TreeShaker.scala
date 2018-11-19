@@ -174,7 +174,7 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       val bodySymbols = c0.body.map {
         case SimplifiedAst.Predicate.Body.RelAtom(baseOpt, sym, polarity, terms, tpe, loc) => terms.map(visitBodyTerm).fold(Set())(_ ++ _)
         case SimplifiedAst.Predicate.Body.LatAtom(baseOpt, sym, polarity, terms, tpe, loc) => terms.map(visitBodyTerm).fold(Set())(_ ++ _)
-        case SimplifiedAst.Predicate.Body.Filter(sym, terms, loc) => Set(sym)
+        case SimplifiedAst.Predicate.Body.Filter(sym, terms, loc) => Set(sym) ++ terms.flatMap(visitBodyTerm)
         case SimplifiedAst.Predicate.Body.Functional(sym, term, loc) => visitHeadTerm(term)
       }.fold(Set())(_ ++ _)
 
