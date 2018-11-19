@@ -1238,7 +1238,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   /**
     * Weeds the given body predicate.
     */
-  private def visitPredicateBody(past: ParsedAst.Predicate.Body)(implicit flix: Flix): Validation[WeededAst.Predicate.Body, WeederError] = past match {
+  private def visitPredicateBody(b: ParsedAst.Predicate.Body)(implicit flix: Flix): Validation[WeededAst.Predicate.Body, WeederError] = b match {
     case ParsedAst.Predicate.Body.Positive(sp1, baseOpt, qname, terms, sp2) =>
       traverse(terms)(visitPattern) map {
         case ts => WeededAst.Predicate.Body.Atom(baseOpt, qname, Polarity.Positive, ts, mkSL(sp1, sp2))
@@ -1250,7 +1250,11 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         case ts => WeededAst.Predicate.Body.Atom(baseOpt, qname, Polarity.Negative, ts, loc)
       }
 
-    case ParsedAst.Predicate.Body.Filter(sp1, qname, terms, sp2) =>
+    case ParsedAst.Predicate.Body.Filter(sp1, exp, sp2) =>
+      // TODO: Allow arbitrary expressions as filters.
+      ???
+
+    case ParsedAst.Predicate.Body.ApplyFilter(sp1, qname, terms, sp2) =>
       traverse(terms)(visitExp) map {
         case ts =>
           // Check if the term list is empty. If so, invoke the function with the unit value.

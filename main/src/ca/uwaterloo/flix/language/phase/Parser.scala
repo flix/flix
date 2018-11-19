@@ -522,7 +522,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     def Entails: Rule1[ParsedAst.Expression] = rule {
       Compose ~ optional(optWS ~ atomic("|=") ~ optWS ~ Compose ~ SP ~> ParsedAst.Expression.FixpointEntails)
     }
-    
+
     def Compose: Rule1[ParsedAst.Expression] = rule {
       Infix ~ zeroOrMore(optWS ~ atomic("<+>") ~ optWS ~ Infix ~ SP ~> ParsedAst.Expression.FixpointCompose)
     }
@@ -594,7 +594,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         RecordRestrict | RecordExtend | RecordUpdate | RecordLiteral | RecordSelectLambda |
         ArrayLit | ArrayNew | ArrayLength | VectorLit | VectorNew | VectorLength | FNil | FSet | FMap |
         NewRelationOrLattice | FixpointSolve | FixpointCheck | FixpointDelta | FixpointProject | ConstraintSeq | ConstraintUnion | Literal |
-      HandleWith | Existential | Universal | UnaryLambda | QName | Wild | Tag | SName | Hole | UserError
+        HandleWith | Existential | Universal | UnaryLambda | QName | Wild | Tag | SName | Hole | UserError
     }
 
     def Literal: Rule1[ParsedAst.Expression.Lit] = rule {
@@ -936,7 +936,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   }
 
   def BodyPredicate: Rule1[ParsedAst.Predicate.Body] = rule {
-    Predicates.Body.Positive | Predicates.Body.Negative | Predicates.Body.Filter | Predicates.Body.NotEqual | Predicates.Body.Loop
+    Predicates.Body.Positive | Predicates.Body.Negative | Predicates.Body.Filter | Predicates.Body.ApplyFilter | Predicates.Body.NotEqual | Predicates.Body.Loop
   }
 
   object Predicates {
@@ -972,7 +972,11 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       def Filter: Rule1[ParsedAst.Predicate.Body.Filter] = rule {
-        SP ~ Names.QualifiedDefinition ~ optWS ~ ArgumentList ~ SP ~> ParsedAst.Predicate.Body.Filter
+        SP ~ atomic("if") ~ WS ~ Expression ~ SP ~> ParsedAst.Predicate.Body.Filter
+      }
+
+      def ApplyFilter: Rule1[ParsedAst.Predicate.Body.ApplyFilter] = rule {
+        SP ~ Names.QualifiedDefinition ~ optWS ~ ArgumentList ~ SP ~> ParsedAst.Predicate.Body.ApplyFilter
       }
 
       def NotEqual: Rule1[ParsedAst.Predicate.Body.NotEqual] = rule {
