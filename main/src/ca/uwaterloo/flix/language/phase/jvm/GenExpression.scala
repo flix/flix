@@ -1067,9 +1067,13 @@ object GenExpression {
       visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Value.Unit.toInternalName, "getInstance",
         AsmOps.getMethodDescriptor(Nil, JvmType.Unit), false)
 
-    case Expression.Spawn(exp, tpe, loc) =>
-//      // exp -> sym
-//      //TODO SJ: omskriv til lambda i simplifier
+    case Expression.Spawn(closure, tpe, loc) =>
+      visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Value.Unit.toInternalName, "getInstance",
+        AsmOps.getMethodDescriptor(Nil, JvmType.Unit), false)
+//      val sym = closure match {
+//        case Expression.Closure(closureSym, _, _, _, _) => closureSym
+//        case _ => throw InternalCompilerException(s"Unexpected non-closure: $closure")
+//      }
 //      // Label for the loop
 //      val loop = new Label
 //      // Namespace of the Def
@@ -1096,7 +1100,12 @@ object GenExpression {
 //      visitor.visitFieldInsn(GETFIELD, JvmName.Context.toInternalName, nsFieldName, nsJvmType.toDescriptor)
 //      // Load `continuation`
 //      visitor.visitFieldInsn(GETFIELD, nsJvmType.name.toInternalName, defFiledName, defJvmType.toDescriptor)
-//    // Result type
+//      // Result type
+//      val resultType = JvmOps.getErasedJvmType(tpe)
+//      // Casting to JvmType of FunctionInterface
+//      //visitor.visitTypeInsn(CHECKCAST, JvmName.Spawnable.toInternalName)
+//
+//      visitor.visitMethodInsn(INVOKESTATIC, JvmName.Channel.toInternalName, "spawn", "(Lca/uwaterloo/flix/runtime/interpreter/Spawnable;)V", false)
 
     case Expression.UserError(_, loc) =>
       addSourceLine(visitor, loc)

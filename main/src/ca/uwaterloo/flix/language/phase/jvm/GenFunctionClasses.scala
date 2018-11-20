@@ -65,7 +65,7 @@ object GenFunctionClasses {
     // The super interface.
     // TODO SJ: implementerer Def$<funktionens navn> og Spawnable
     // TODO SJ: add new method, spawn(). just call invoke/apply. giv new Context() til invoke
-    val superInterface = Array(functionInterface.name.toInternalName /* TODO SJ add Spawnable */)
+    val superInterface = Array(functionInterface.name.toInternalName, JvmName.Spawnable.toInternalName)
 
     // Class visitor
     visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_FINAL, classType.name.toInternalName, null,
@@ -94,6 +94,9 @@ object GenFunctionClasses {
 
     // Apply method of the class
     compileApplyMethod(visitor, classType, defn, resultType)
+
+    // spawn method of the class
+    compileSpawnMethod(visitor, classType, defn)
 
     // Constructor of the class
     compileConstructor(visitor)
@@ -154,6 +157,44 @@ object GenFunctionClasses {
     applyMethod.visitInsn(RETURN)
     applyMethod.visitMaxs(65535, 65535)
     applyMethod.visitEnd()
+  }
+
+  /**
+    * Spawn method for the given `defn` and `classType`.
+    */
+  private def compileSpawnMethod(visitor: ClassWriter,
+                                 classType: JvmType.Reference,
+                                 defn: Def)(implicit root: Root, flix: Flix): Unit = {
+
+    // Method header
+    val spawnMethod = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, "spawn",
+    AsmOps.getMethodDescriptor(List(JvmType.Context), JvmType.Void), null, null)
+
+    // Enter label
+    val enterLabel = new Label()
+    spawnMethod.visitCode()
+
+    // visiting the label
+    spawnMethod.visitLabel(enterLabel)
+
+    // Check if we have no parameters
+    val emptyBody = defn.formals.isEmpty
+
+    // Generating the expression if we have no parameters
+    if (!emptyBody) {
+      // TODO SJ: something here is wrong
+//      GenExpression.compileExpression(defn.exp, spawnMethod, classType, Map(), enterLabel)
+//      // pop the result
+//      spawnMethod.visitInsn(POP)
+    }
+
+//    spawnMethod.visitInsn(ACONST_NULL)
+//    spawnMethod.visitInsn(ATHROW)
+    // Return
+    // TODO SJ: maybe return is required?
+    spawnMethod.visitInsn(RETURN)
+    spawnMethod.visitMaxs(65535, 65535)
+    spawnMethod.visitEnd()
   }
 
   /**

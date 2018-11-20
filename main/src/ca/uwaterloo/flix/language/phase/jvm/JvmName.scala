@@ -95,6 +95,11 @@ object JvmName {
   val SelectChoice: JvmName = JvmName(List("ca", "uwaterloo", "flix", "runtime", "interpreter"), "SelectChoice")
 
   /**
+    * The `ca.uwaterloo.flix.runtime.interpreter.Spawnable` name.
+    */
+  val Spawnable: JvmName = JvmName(List("ca", "uwaterloo", "flix", "runtime", "interpreter"), "Spawnable")
+
+  /**
     * The `scala.math.package$` name
     */
   val ScalaMathPkg: JvmName = JvmName(List("scala", "math"), "package$")
