@@ -200,7 +200,7 @@ object AsmOps {
       visitor.visitTypeInsn(CHECKCAST, "java/lang/Boolean")
       visitor.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Boolean", "booleanValue", "()Z", false)
     case JvmType.PrimChar =>
-      visitor.visitTypeInsn(CHECKCAST, "java/lang/Char")
+      visitor.visitTypeInsn(CHECKCAST, "java/lang/Character")
       visitor.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Character", "charValue", "()C", false)
     case JvmType.PrimFloat =>
       visitor.visitTypeInsn(CHECKCAST, "java/lang/Float")
