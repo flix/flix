@@ -223,8 +223,8 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.CloseChannel(exp, tpe, loc) =>
         visitExp(exp, i0)
 
-      case Expression.Spawn(exp, tpe, loc) =>
-        visitExp(exp, i0)
+      case Expression.Spawn(closure, tpe, loc) =>
+        visitExp(closure, i0)
 
       case Expression.NewRelation(sym, tpe, loc) => i0
 

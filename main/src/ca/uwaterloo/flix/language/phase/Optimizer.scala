@@ -443,9 +443,9 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       //
       // Spawn.
       //
-      case Expression.Spawn(exp, tpe, loc) =>
-        val e = visitExp(exp, env0)
-        Expression.Spawn(e, tpe, loc)
+      case Expression.Spawn(closure, tpe, loc) =>
+        val c = visitExp(closure, env0)
+        Expression.Spawn(c, tpe, loc)
 
       //
       // NewRelation.

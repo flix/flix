@@ -312,9 +312,9 @@ object ClosureConv extends Phase[Root, Root] {
       val e = visitExp(exp)
       Expression.CloseChannel(e, tpe, loc)
 
-    case Expression.Spawn(exp, tpe, loc) =>
-      val e = visitExp(exp)
-      Expression.Spawn(e, tpe, loc)
+    case Expression.Spawn(lambda, tpe, loc) =>
+      val lambdaClosure = visitExp(lambda)
+      Expression.Spawn(lambdaClosure, tpe, loc)
 
     case Expression.NewRelation(sym, tpe, loc) =>
       Expression.NewRelation(sym, tpe, loc)

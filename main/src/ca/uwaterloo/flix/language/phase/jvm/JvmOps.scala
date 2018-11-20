@@ -830,7 +830,7 @@ object JvmOps {
 
       case Expression.CloseChannel(exp, tpe, loc) => visitExp(exp)
 
-      case Expression.Spawn(sym, tpe, loc) => Set(ClosureInfo(sym, List(), tpe))
+      case Expression.Spawn(closure, tpe, loc) => visitExp(closure)
 
       case Expression.NewRelation(sym, tpe, loc) => Set.empty
 

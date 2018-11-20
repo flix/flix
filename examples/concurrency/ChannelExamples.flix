@@ -30,7 +30,8 @@
 //    spawn f(c); spawn f(c); spawn f(c); spawn f(c); spawn f(c);
 //    <- c; <- c; <- c; <- c; <- c; <- c; <- c; <- c; <- c; <- c
 
-def spawnTest(): Unit = spawn 2
+// TODO SJ: When do we decide when "arguments" for spawn are evaluated? E.g. in "spawn f(x)" we might want x to be evaluated immediately, but "spawn c <- 2" should definitely be evaluated later
+def spawnTest(): Str = let c = chan Str; spawn c <- "2"; <- c
 //
 //
 //def selectTest(): Float64 = {

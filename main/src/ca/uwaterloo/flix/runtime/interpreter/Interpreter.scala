@@ -286,13 +286,13 @@ object Interpreter {
       chan.close()
       Value.Unit
 
-    case Expression.Spawn(sym, tpe, loc) =>
-      // Todo determine daemon
+    case Expression.Spawn(closure, tpe, loc) =>
+      // TODO SJ: determine daemon
+      // TODO SJ: Use ThreadPool?
       new Thread(){
         override def run(): Unit = {
-          println("jthan")
-          invokeClo(allocateClosure(sym, List().toArray, env0), List(), env0, henv0, lenv0, root)
-//          eval(sym, env0, henv0, lenv0, root)
+          val clo = eval(closure, env0, henv0, lenv0, root)
+          invokeClo(clo, List(), env0, henv0, lenv0, root)
         }
       }.start()
       Value.Unit
