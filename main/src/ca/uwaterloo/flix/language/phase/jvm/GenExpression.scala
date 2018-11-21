@@ -963,14 +963,14 @@ object GenExpression {
           AsmOps.getMethodDescriptor(List(), JvmType.Unit), false)
       }
 
-    case Expression.NewRelation(sym, tpe, loc) =>
+    case Expression.NewRelation(sym, exp, tpe, loc) =>
       // Add source line numbers for debugging.
       addSourceLine(visitor, loc)
 
       // Emit code for the name of the relation symbol.
       visitor.visitLdcInsn(sym.toString)
 
-      // Emit code for the parameter.
+      // Emit code for the parameter. // TODO EXP
       visitor.visitInsn(ACONST_NULL)
 
       // Emit code for the attributes.
@@ -981,7 +981,7 @@ object GenExpression {
       // Instantiate the relation symbol.
       visitor.visitMethodInsn(INVOKESTATIC, "ca/uwaterloo/flix/runtime/solver/api/symbol/RelSym", "of", "(Ljava/lang/String;Lca/uwaterloo/flix/runtime/solver/api/ProxyObject;[Lca/uwaterloo/flix/runtime/solver/api/Attribute;)Lca/uwaterloo/flix/runtime/solver/api/symbol/RelSym;", false);
 
-    case Expression.NewLattice(sym, tpe, loc) =>
+    case Expression.NewLattice(sym, exp, tpe, loc) =>
       ??? // TODO: NewLattice
 
     case Expression.Constraint(con, tpe, loc) =>

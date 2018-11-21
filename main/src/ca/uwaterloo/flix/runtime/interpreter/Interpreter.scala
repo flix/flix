@@ -261,10 +261,10 @@ object Interpreter {
       case ex: InvocationTargetException => throw ex.getTargetException
     }
 
-    case Expression.NewRelation(sym, tpe, loc) =>
+    case Expression.NewRelation(sym, exp, tpe, loc) =>
       ??? // TODO NewRelation
 
-    case Expression.NewLattice(sym, tpe, loc) =>
+    case Expression.NewLattice(sym, exp, tpe, loc) =>
       ??? // TODO: NewLattice
 
     case Expression.Constraint(c, tpe, loc) =>

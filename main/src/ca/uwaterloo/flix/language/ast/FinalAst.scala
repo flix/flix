@@ -209,9 +209,9 @@ object FinalAst {
 
     case class NativeMethod(method: Method, args: List[FinalAst.Expression], tpe: Type, loc: SourceLocation) extends FinalAst.Expression
 
-    case class NewRelation(sym: Symbol.RelSym, tpe: Type, loc: SourceLocation) extends FinalAst.Expression
+    case class NewRelation(sym: Symbol.RelSym, exp: FinalAst.Expression, tpe: Type, loc: SourceLocation) extends FinalAst.Expression
 
-    case class NewLattice(sym: Symbol.LatSym, tpe: Type, loc: SourceLocation) extends FinalAst.Expression
+    case class NewLattice(sym: Symbol.LatSym, exp: FinalAst.Expression, tpe: Type, loc: SourceLocation) extends FinalAst.Expression
 
     case class Constraint(con: FinalAst.Constraint, tpe: Type, loc: SourceLocation) extends FinalAst.Expression
 

@@ -345,10 +345,12 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
         FinalAst.Expression.NativeMethod(method, es, tpe, loc)
 
       case SimplifiedAst.Expression.NewRelation(sym, tpe, loc) =>
-        FinalAst.Expression.NewRelation(sym, tpe, loc)
+        val exp = FinalAst.Expression.Unit
+        FinalAst.Expression.NewRelation(sym, exp, tpe, loc)
 
       case SimplifiedAst.Expression.NewLattice(sym, tpe, loc) =>
-        FinalAst.Expression.NewLattice(sym, tpe, loc)
+        val exp = FinalAst.Expression.Unit
+        FinalAst.Expression.NewLattice(sym, exp, tpe, loc)
 
       case SimplifiedAst.Expression.Constraint(c0, tpe, loc) =>
         val c = visitConstraint(c0, m)

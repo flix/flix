@@ -861,12 +861,12 @@ object SymbolicEvaluator {
         * New Relation.
         *
         */
-      case Expression.NewRelation(sym, tpe, loc) => throw InternalCompilerException("Not yet supported.")
+      case Expression.NewRelation(sym, exp, tpe, loc) => throw InternalCompilerException("Not yet supported.")
 
       /**
         * New Lattice.
         */
-      case Expression.NewLattice(sym, tpe, loc) => throw InternalCompilerException("Not yet supported.")
+      case Expression.NewLattice(sym, exp, tpe, loc) => throw InternalCompilerException("Not yet supported.")
 
       /**
         * Constraint.

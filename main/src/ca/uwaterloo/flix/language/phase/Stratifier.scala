@@ -294,12 +294,15 @@ object Stratifier extends Phase[Root, Root] {
         case as => Expression.NativeMethod(method, as, tpe, loc)
       }
 
-    case Expression.NewRelation(sym, tpe, loc) =>
-      Expression.NewRelation(sym, tpe, loc).toSuccess
+    case Expression.NewRelation(sym, exp, tpe, loc) =>
+      mapN(visitExp(exp)) {
+        case e => Expression.NewRelation(sym, e, tpe, loc)
+      }
 
-    case Expression.NewLattice(sym, tpe, loc) =>
-      Expression.NewLattice(sym, tpe, loc).toSuccess
-
+    case Expression.NewLattice(sym, exp, tpe, loc) =>
+      mapN(visitExp(exp)) {
+        case e => Expression.NewLattice(sym, e, tpe, loc)
+      }
     case Expression.Constraint(con, tpe, loc) =>
       Expression.Constraint(con, tpe, loc).toSuccess
 

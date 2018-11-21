@@ -820,9 +820,9 @@ object JvmOps {
         case (sacc, e) => sacc ++ visitExp(e)
       }
 
-      case Expression.NewRelation(sym, tpe, loc) => Set.empty
+      case Expression.NewRelation(sym, exp, tpe, loc) => visitExp(exp)
 
-      case Expression.NewLattice(sym, tpe, loc) => Set.empty
+      case Expression.NewLattice(sym, exp, tpe, loc) => visitExp(exp)
 
       case Expression.Constraint(con, tpe, loc) => Set.empty
 
@@ -1076,9 +1076,9 @@ object JvmOps {
         case (sacc, e) => sacc ++ visitExp(e)
       }
 
-      case Expression.NewRelation(sym, tpe, loc) => Set(tpe)
+      case Expression.NewRelation(sym, exp, tpe, loc) => visitExp(exp)
 
-      case Expression.NewLattice(sym, tpe, loc) => Set(tpe)
+      case Expression.NewLattice(sym, exp, tpe, loc) => visitExp(exp)
 
       case Expression.Constraint(con, tpe, loc) => Set.empty // TODO: Constraint
 

@@ -369,9 +369,13 @@ object ControlFlowAnalysis {
         // Unsoundly ignore the return value.
         AbstractValue.Bot
 
-      case Expression.NewRelation(sym, tpe, loc) => AbstractValue.AnyRelation
+      case Expression.NewRelation(sym, exp, tpe, loc) =>
+        val v = visitExp(exp, env0, lenv0)
+        AbstractValue.AnyRelation
 
-      case Expression.NewLattice(sym, tpe, loc) => AbstractValue.AnyLattice
+      case Expression.NewLattice(sym, exp, tpe, loc) =>
+        val v = visitExp(exp, env0, lenv0)
+        AbstractValue.AnyLattice
 
       case Expression.Constraint(con, tpe, loc) =>
         val g = visitConstraint(con)
