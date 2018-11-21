@@ -1675,6 +1675,9 @@ object GenExpression {
       ??? // TODO: Predicate.Body.LatAtom
 
     case Predicate.Body.Filter(sym, terms, loc) =>
+      // Add source line numbers for debugging.
+      addSourceLine(mv, loc)
+
       // Allocate a fresh filter predicate object.
       mv.visitTypeInsn(NEW, "ca/uwaterloo/flix/runtime/solver/api/predicate/FilterPredicate")
       mv.visitInsn(DUP)
@@ -1689,7 +1692,24 @@ object GenExpression {
       mv.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/solver/api/predicate/FilterPredicate", "<init>", "(Ljava/util/function/Function;[Lca/uwaterloo/flix/runtime/solver/api/term/Term;)V", false);
 
     case Predicate.Body.Functional(varSym, defSym, terms, loc) =>
-      ??? // TODO
+      // Add source line numbers for debugging.
+      addSourceLine(mv, loc)
+
+      // Allocate a fresh functional predicate object.
+      mv.visitTypeInsn(NEW, "ca/uwaterloo/flix/runtime/solver/api/predicate/FunctionalPredicate")
+      mv.visitInsn(DUP)
+
+      // The variable symbol.
+      compileVarSym(varSym, mv)
+
+      // The function object.
+      AsmOps.compileDefSymbol(defSym, mv)
+
+      // The function argument variables.
+      mv.visitInsn(ACONST_NULL)
+
+      // Invoke the constructor.
+      mv.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/solver/api/predicate/FunctionalPredicate", "<init>", "(Lca/uwaterloo/flix/runtime/solver/api/symbol/VarSym;Ljava/util/function/Function;[Lca/uwaterloo/flix/runtime/solver/api/symbol/VarSym;)V", false);
 
   }
 
@@ -1779,21 +1799,7 @@ object GenExpression {
     AsmOps.compileDefSymbol(sym, mv)
 
     // The function arguments.
-    compileInt(mv, args.length)
-    mv.visitTypeInsn(ANEWARRAY, "ca/uwaterloo/flix/runtime/solver/api/symbol/VarSym")
-    for ((argVar, index) <- args.zipWithIndex) {
-      // Compile each variable symbol and store it in the array.
-      mv.visitInsn(DUP)
-
-      // Compile the array index.
-      compileInt(mv, index)
-
-      // Compile the variable symbol.
-      compileVarSym(argVar, mv)
-
-      // Store the variable symbol in the array.
-      mv.visitInsn(AASTORE)
-    }
+    compileVarSyms(args, mv)
 
     // Invoke the constructor of the app term.
     mv.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/solver/api/term/AppTerm", "<init>", "(Ljava/util/function/Function;[Lca/uwaterloo/flix/runtime/solver/api/symbol/VarSym;)V", false)
@@ -1916,6 +1922,28 @@ object GenExpression {
   }
 
   /**
+    * Compiles the given variable symbols `args` to an array of variable symbols.
+    */
+  private def compileVarSyms(args: List[Symbol.VarSym], mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
+    // The function arguments.
+    compileInt(mv, args.length)
+    mv.visitTypeInsn(ANEWARRAY, "ca/uwaterloo/flix/runtime/solver/api/symbol/VarSym")
+    for ((argVar, index) <- args.zipWithIndex) {
+      // Compile each variable symbol and store it in the array.
+      mv.visitInsn(DUP)
+
+      // Compile the array index.
+      compileInt(mv, index)
+
+      // Compile the variable symbol.
+      compileVarSym(argVar, mv)
+
+      // Store the variable symbol in the array.
+      mv.visitInsn(AASTORE)
+    }
+  }
+
+  /**
     * Compiles the given variable symbol `sym` to an api variable symbol.
     */
   private def compileVarSym(sym: Symbol.VarSym, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
@@ -1931,7 +1959,6 @@ object GenExpression {
 
     // Invoke the variable symbol constructor.
     mv.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/solver/api/symbol/VarSym", "<init>", "(Ljava/lang/String;I)V", false)
-
   }
 
   /**
