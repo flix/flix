@@ -100,6 +100,9 @@ object GenFunctionClasses {
     // Apply method of the class
     compileApplyMethod(visitor, classType, defn, resultType)
 
+    // Eval method of the class
+    compileEvalMethod(visitor, classType, defn, resultType)
+
     visitor.toByteArray
   }
 
@@ -206,7 +209,7 @@ object GenFunctionClasses {
     mv.visitVarInsn(ASTORE, 1)
 
     // Call the invoke method.
-    mv.visitMethodInsn(INVOKEVIRTUAL, classType.name.toInternalName, "invoke", "(LContext;)V", false)
+    mv.visitMethodInsn(INVOKEVIRTUAL, classType.name.toInternalName, "eval", "(LContext;)V", false)
 
     // Retrieve the result from the field.
     mv.visitVarInsn(ALOAD, 0)
@@ -222,6 +225,61 @@ object GenFunctionClasses {
 
     // Return the proxy object.
     mv.visitInsn(ARETURN)
+
+    mv.visitMaxs(65535, 65535)
+    mv.visitEnd()
+  }
+
+  /**
+    * Emits code for a functional that fully evaluates the current function, including tail calls.
+    */
+  private def compileEvalMethod(cw: ClassWriter, classType: JvmType.Reference, defn: Def, resultType: Type)(implicit root: Root, flix: Flix): Unit = {
+    // Method header
+    val mv = cw.visitMethod(ACC_PUBLIC + ACC_FINAL, "eval", AsmOps.getMethodDescriptor(List(JvmType.Context), JvmType.Void), null, null)
+
+    // The jvm result type.
+    val jvmResultType = JvmOps.getErasedJvmType(resultType)
+
+    // Label for the loop
+    val loop = new Label
+
+    // Type of the function
+    val fnType = root.defs(defn.sym).tpe
+
+    // Type of the continuation interface
+    val cont = JvmOps.getContinuationInterfaceType(fnType)
+
+    // Store this ifo to the continuation field.
+    mv.visitVarInsn(ALOAD, 1)
+    mv.visitVarInsn(ALOAD, 0)
+    mv.visitFieldInsn(PUTFIELD, JvmName.Context.toInternalName, "continuation", JvmType.Object.toDescriptor)
+
+    // Begin of the loop
+    mv.visitLabel(loop)
+
+    // Getting `continuation` field on `Context`
+    mv.visitVarInsn(ALOAD, 1)
+    mv.visitFieldInsn(GETFIELD, JvmName.Context.toInternalName, "continuation", JvmType.Object.toDescriptor)
+
+    // Setting `continuation` field of global to `null`
+    mv.visitVarInsn(ALOAD, 1)
+    mv.visitInsn(ACONST_NULL)
+    mv.visitFieldInsn(PUTFIELD, JvmName.Context.toInternalName, "continuation", JvmType.Object.toDescriptor)
+
+    // Cast to the continuation
+    mv.visitTypeInsn(CHECKCAST, cont.name.toInternalName)
+
+    // Call invoke
+    mv.visitVarInsn(ALOAD, 1)
+    mv.visitMethodInsn(INVOKEINTERFACE, cont.name.toInternalName, "invoke", AsmOps.getMethodDescriptor(List(JvmType.Context), JvmType.Void), true)
+
+    // Getting `continuation` field on `Context`
+    mv.visitVarInsn(ALOAD, 1)
+    mv.visitFieldInsn(GETFIELD, JvmName.Context.toInternalName, "continuation", JvmType.Object.toDescriptor)
+    mv.visitJumpInsn(IFNONNULL, loop)
+
+    // Return the proxy object.
+    mv.visitInsn(RETURN)
 
     mv.visitMaxs(65535, 65535)
     mv.visitEnd()
