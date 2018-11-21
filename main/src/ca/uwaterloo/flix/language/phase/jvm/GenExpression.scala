@@ -1639,7 +1639,7 @@ object GenExpression {
       mv.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/solver/api/predicate/AtomPredicate", "<init>", "(Lca/uwaterloo/flix/runtime/solver/api/symbol/PredSym;Z[Lca/uwaterloo/flix/runtime/solver/api/term/Term;)V", false);
 
     case Predicate.Head.LatAtom(baseOpt, sym, terms, tpe, loc) =>
-      ??? // TODO
+      ??? // TODO: Predicate.Body.LatAtom
 
   }
 
@@ -1672,7 +1672,7 @@ object GenExpression {
       mv.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/solver/api/predicate/AtomPredicate", "<init>", "(Lca/uwaterloo/flix/runtime/solver/api/symbol/PredSym;Z[Lca/uwaterloo/flix/runtime/solver/api/term/Term;)V", false);
 
     case Predicate.Body.LatAtom(baseOpt, sym, polarity, terms, tpe, loc) =>
-      ??? // TODO
+      ??? // TODO: Predicate.Body.LatAtom
 
     case Predicate.Body.Filter(sym, terms, loc) =>
       // Allocate a fresh filter predicate object.

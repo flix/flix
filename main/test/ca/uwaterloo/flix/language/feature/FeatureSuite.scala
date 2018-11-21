@@ -46,7 +46,6 @@ class FeatureSuite extends Suites(
   new FlixTest("Test.Expression.Constraint", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Constraint.flix")(compiled = false), // TODO
   new FlixTest("Test.Expression.Constraint.Functional", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Constraint.Functional.flix")(compiled = false), // TODO
   new FlixTest("Test.Expression.Constraint.Polymorphic", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Constraint.Polymorphic.flix")(compiled = false), // TODO
-  new FlixTest("Test.Expression.Constraint.Transfer", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Constraint.Transfer.flix")(compiled = false), // TODO
 
   new FlixTest("Test.Expression.NewRelation", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.NewRelation.flix")(compiled = false), // TODO
 
@@ -118,6 +117,7 @@ class FeatureSuite extends Suites(
   new FlixTest("Test.Predicate.False", "main/test/ca/uwaterloo/flix/language/feature/Test.Predicate.False.flix"),
   new FlixTest("Test.Predicate.Filter", "main/test/ca/uwaterloo/flix/language/feature/Test.Predicate.Filter.flix"),
 
+  new FlixTest("Test.Term.Apply", "main/test/ca/uwaterloo/flix/language/feature/Test.Term.Apply.flix"),
   new FlixTest("Test.Term.CapturedVar", "main/test/ca/uwaterloo/flix/language/feature/Test.Term.CapturedVar.flix"),
   new FlixTest("Test.Term.Lit", "main/test/ca/uwaterloo/flix/language/feature/Test.Term.Lit.flix"),
   new FlixTest("Test.Term.QuantVar", "main/test/ca/uwaterloo/flix/language/feature/Test.Term.QuantVar.flix"),
