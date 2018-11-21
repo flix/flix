@@ -1003,49 +1003,52 @@ object GenExpression {
       visitor.visitMethodInsn(INVOKESTATIC, "ca/uwaterloo/flix/runtime/solver/api/ConstraintSystem", "compose", "(Lca/uwaterloo/flix/runtime/solver/api/ConstraintSystem;Lca/uwaterloo/flix/runtime/solver/api/ConstraintSystem;)Lca/uwaterloo/flix/runtime/solver/api/ConstraintSystem;", false);
 
     case Expression.FixpointSolve(uid, exp, stf, tpe, loc) =>
-      // TODO: Stratification
-
       // Add source line numbers for debugging.
       addSourceLine(visitor, loc)
 
       // Emit code for the constraint system.
       compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
 
+      // Emit code for the stratification.
+      visitor.visitInsn(ACONST_NULL) // TODO: Stratification
+
       // Emit code for the fixpoint options.
       compileFixpointOptions(visitor)
 
       // Emit code for the invocation of the solver.
-      visitor.visitMethodInsn(INVOKESTATIC, "ca/uwaterloo/flix/runtime/solver/api/SolverApi", "solve", "(Lca/uwaterloo/flix/runtime/solver/api/ConstraintSystem;Lca/uwaterloo/flix/runtime/solver/FixpointOptions;)Lca/uwaterloo/flix/runtime/solver/api/ConstraintSystem;", false)
+      visitor.visitMethodInsn(INVOKESTATIC, "ca/uwaterloo/flix/runtime/solver/api/SolverApi", "solve", "(Lca/uwaterloo/flix/runtime/solver/api/ConstraintSystem;Lca/uwaterloo/flix/runtime/solver/api/Stratification;Lca/uwaterloo/flix/runtime/solver/FixpointOptions;)Lca/uwaterloo/flix/runtime/solver/api/ConstraintSystem;", false)
 
     case Expression.FixpointCheck(uid, exp, stf, tpe, loc) =>
-      // TODO: Stratification
-
       // Add source line numbers for debugging.
       addSourceLine(visitor, loc)
 
       // Emit code for the constraint system.
       compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
 
+      // Emit code for the stratification.
+      visitor.visitInsn(ACONST_NULL) // TODO: Stratification
+
       // Emit code for the fixpoint options.
       compileFixpointOptions(visitor)
 
       // Emit code for the invocation of the solver.
-      visitor.visitMethodInsn(INVOKESTATIC, "ca/uwaterloo/flix/runtime/solver/api/SolverApi", "check", "(Lca/uwaterloo/flix/runtime/solver/api/ConstraintSystem;Lca/uwaterloo/flix/runtime/solver/FixpointOptions;)Z", false);
+      visitor.visitMethodInsn(INVOKESTATIC, "ca/uwaterloo/flix/runtime/solver/api/SolverApi", "check", "(Lca/uwaterloo/flix/runtime/solver/api/ConstraintSystem;Lca/uwaterloo/flix/runtime/solver/api/Stratification;Lca/uwaterloo/flix/runtime/solver/FixpointOptions;)Z", false);
 
     case Expression.FixpointDelta(uid, exp, stf, tpe, loc) =>
-      // TODO: Stratification
-
       // Add source line numbers for debugging.
       addSourceLine(visitor, loc)
 
       // Emit code for the constraint system.
       compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
 
+      // Emit code for the stratification.
+      visitor.visitInsn(ACONST_NULL) // TODO: Stratification
+
       // Emit code for the fixpoint options.
       compileFixpointOptions(visitor)
 
       // Emit code for the invocation of the solver.
-      visitor.visitMethodInsn(INVOKESTATIC, "ca/uwaterloo/flix/runtime/solver/api/SolverApi", "deltaSolve", "(Lca/uwaterloo/flix/runtime/solver/api/ConstraintSystem;Lca/uwaterloo/flix/runtime/solver/FixpointOptions;)Ljava/lang/String;", false);
+      visitor.visitMethodInsn(INVOKESTATIC, "ca/uwaterloo/flix/runtime/solver/api/SolverApi", "deltaSolve", "(Lca/uwaterloo/flix/runtime/solver/api/ConstraintSystem;Lca/uwaterloo/flix/runtime/solver/api/Stratification;Lca/uwaterloo/flix/runtime/solver/FixpointOptions;)Ljava/lang/String;", false);
 
     case Expression.FixpointProject(sym, exp, tpe, loc) =>
       // Add source line numbers for debugging.

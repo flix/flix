@@ -285,19 +285,22 @@ object Interpreter {
 
     case Expression.FixpointSolve(uid, exp, stf, tpe, loc) =>
       val s = cast2constraintset(eval(exp, env0, henv0, lenv0, root))
+      val t = getStratification(stf)
       val o = getFixpointOptions()
-      SolverApi.solve(s, o)
+      SolverApi.solve(s, t, o)
 
     case Expression.FixpointCheck(uid, exp, stf, tpe, loc) =>
       val s = cast2constraintset(eval(exp, env0, henv0, lenv0, root))
+      val t = getStratification(stf)
       val o = getFixpointOptions()
-      val r = SolverApi.check(s, o)
+      val r = SolverApi.check(s, t, o)
       if (r) Value.True else Value.False
 
     case Expression.FixpointDelta(uid, exp, stf, tpe, loc) =>
       val s = cast2constraintset(eval(exp, env0, henv0, lenv0, root))
+      val t = getStratification(stf)
       val o = getFixpointOptions()
-      val r = SolverApi.deltaSolve(s, o)
+      val r = SolverApi.deltaSolve(s, t, o)
       Value.Str(r)
 
     case Expression.FixpointProject(sym, exp, tpe, loc) =>
@@ -940,6 +943,17 @@ object Interpreter {
 
     // Return the proxy object.
     new ProxyObject(v, eqOp, hashOp, toStrOp)
+  }
+
+  /**
+    * Returns the stratification.
+    */
+  private def getStratification(stf: Ast.Stratification): api.Stratification = {
+    val m = new java.util.HashMap[api.symbol.PredSym, Integer]
+
+    // TODO
+
+    new api.Stratification(m)
   }
 
   /////////////////////////////////////////////////////////////////////////////

@@ -11,9 +11,9 @@ import java.util.HashSet;
 public final class SolverApi {
 
     /**
-     * Solves the given constraint system `c` with the given fixpoint options `o`.
+     * Solves the given constraint system `c` with the given stratification `stf` and fixpoint options `o`.
      */
-    public static ConstraintSystem solve(ConstraintSystem s, FixpointOptions o) {
+    public static ConstraintSystem solve(ConstraintSystem s, Stratification stf, FixpointOptions o) {
         Solver solver = new Solver(s, o);
         ConstraintSystem result = solver.solve();
         System.out.println(result.toString());
@@ -21,9 +21,9 @@ public final class SolverApi {
     }
 
     /**
-     * Checks the given constraint system `c` with the given fixpoint options `o`.
+     * Checks the given constraint system `c` with the given stratification `stf` and fixpoint options `o`.
      */
-    public static boolean check(ConstraintSystem s, FixpointOptions o) {
+    public static boolean check(ConstraintSystem s, Stratification stf, FixpointOptions o) {
         try {
             Solver solver = new Solver(s, o);
             solver.solve();
@@ -34,9 +34,9 @@ public final class SolverApi {
     }
 
     /**
-     * Delta Solves the given constraint system `c` with the given fixpoint options `o`.
+     * Delta Solves the given constraint system `c` with the given stratification `stf` and fixpoint options `o`.
      */
-    public static String deltaSolve(ConstraintSystem s, FixpointOptions o) {
+    public static String deltaSolve(ConstraintSystem s, Stratification stf, FixpointOptions o) {
         // TODO: Update return type.
         DeltaSolver deltaSolver = new DeltaSolver(s, o);
         return deltaSolver.deltaSolve();
