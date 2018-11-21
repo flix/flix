@@ -209,12 +209,7 @@ object GenFunctionClasses {
     mv.visitVarInsn(ASTORE, 1)
 
     // Call the invoke method.
-    mv.visitMethodInsn(INVOKEVIRTUAL, classType.name.toInternalName, "eval", "(LContext;)V", false)
-
-    // Retrieve the result from the field.
-    mv.visitVarInsn(ALOAD, 0)
-    mv.visitFieldInsn(GETFIELD, classType.name.toInternalName, "result", jvmResultType.toDescriptor)
-    AsmOps.boxIfPrim(jvmResultType, mv)
+    mv.visitMethodInsn(INVOKEVIRTUAL, classType.name.toInternalName, "eval", "(LContext;)Ljava/lang/Object;", false)
 
     // Construct a proxy object.
     if (resultType.isArray) {
@@ -235,7 +230,7 @@ object GenFunctionClasses {
     */
   private def compileEvalMethod(cw: ClassWriter, classType: JvmType.Reference, defn: Def, resultType: Type)(implicit root: Root, flix: Flix): Unit = {
     // Method header
-    val mv = cw.visitMethod(ACC_PUBLIC + ACC_FINAL, "eval", AsmOps.getMethodDescriptor(List(JvmType.Context), JvmType.Void), null, null)
+    val mv = cw.visitMethod(ACC_PUBLIC + ACC_FINAL, "eval", AsmOps.getMethodDescriptor(List(JvmType.Context), JvmType.Object), null, null)
 
     // The jvm result type.
     val jvmResultType = JvmOps.getErasedJvmType(resultType)
@@ -269,6 +264,12 @@ object GenFunctionClasses {
     // Cast to the continuation
     mv.visitTypeInsn(CHECKCAST, cont.name.toInternalName)
 
+    // Duplicate
+    mv.visitInsn(DUP)
+
+    // Save it on the IFO local variable
+    mv.visitVarInsn(ASTORE, 2)
+
     // Call invoke
     mv.visitVarInsn(ALOAD, 1)
     mv.visitMethodInsn(INVOKEINTERFACE, cont.name.toInternalName, "invoke", AsmOps.getMethodDescriptor(List(JvmType.Context), JvmType.Void), true)
@@ -278,8 +279,13 @@ object GenFunctionClasses {
     mv.visitFieldInsn(GETFIELD, JvmName.Context.toInternalName, "continuation", JvmType.Object.toDescriptor)
     mv.visitJumpInsn(IFNONNULL, loop)
 
-    // Return the proxy object.
-    mv.visitInsn(RETURN)
+    // Load IFO from local variable and invoke `getResult` on it
+    mv.visitVarInsn(ALOAD, 2)
+    mv.visitMethodInsn(INVOKEINTERFACE, cont.name.toInternalName, "getResult", AsmOps.getMethodDescriptor(Nil, jvmResultType), true)
+    AsmOps.boxIfPrim(jvmResultType, mv)
+
+    // Return the result.
+    mv.visitInsn(ARETURN)
 
     mv.visitMaxs(65535, 65535)
     mv.visitEnd()
