@@ -577,15 +577,21 @@ class Solver(constraintSystem: ConstraintSystem, options: FixpointOptions) {
     */
   def evalHeadTerm(t: Term, root: ConstraintSystem, env: Env): ProxyObject = t match {
     case t: VarTerm => env(t.getSym.getIndex)
-    case t: LitTerm => t.getFunction().apply(new Array[AnyRef](1))
+    case t: LitTerm => t.getFunction.apply(new Array[AnyRef](1))
     case t: AppTerm =>
-      val args = new Array[AnyRef](t.getArguments().length)
-      var i = 0
-      while (i < args.length) {
-        args(i) = env(t.getArguments()(i).getIndex).getValue
-        i = i + 1
+      if (t.getArguments.length == 0) {
+        // TODO: A small hack. If the function takes zero arguments that actually means it must be invoked with the unit value.
+        // This means that it can be invoked with an array of size 1 with null in it.
+        t.getFunction()(new Array[AnyRef](1))
+      } else {
+        val args = new Array[AnyRef](t.getArguments.length)
+        var i = 0
+        while (i < args.length) {
+          args(i) = env(t.getArguments()(i).getIndex).getValue
+          i = i + 1
+        }
+        t.getFunction()(args)
       }
-      t.getFunction()(args)
   }
 
   /**
