@@ -109,6 +109,14 @@ sealed trait Type {
   }
 
   /**
+    * Returns `true` if `this` type is an array type.
+    */
+  def isArray: Boolean = typeConstructor match {
+    case Type.Array => true
+    case _ => false
+  }
+
+  /**
     * Returns `true` if `this` type is an arrow type.
     */
   def isArrow: Boolean = typeConstructor match {

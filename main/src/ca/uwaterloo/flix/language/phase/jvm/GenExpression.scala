@@ -737,7 +737,7 @@ object GenExpression {
       // Evaluating the 'base'
       compileExpression(base, visitor, currentClass, lenv0, entryPoint)
       // Cast the object to Array
-      visitor.visitTypeInsn(CHECKCAST, AsmOps.arrayGetCheckCastType(jvmType))
+      visitor.visitTypeInsn(CHECKCAST, AsmOps.getArrayType(jvmType))
       // Evaluating the 'index' to load from
       compileExpression(index, visitor, currentClass, lenv0, entryPoint)
       // Loads the 'element' at the given 'index' from the 'array'
@@ -752,7 +752,7 @@ object GenExpression {
       // Evaluating the 'base'
       compileExpression(base, visitor, currentClass, lenv0, entryPoint)
       // Cast the object to Array
-      visitor.visitTypeInsn(CHECKCAST, AsmOps.arrayGetCheckCastType(jvmType))
+      visitor.visitTypeInsn(CHECKCAST, AsmOps.getArrayType(jvmType))
       // Evaluating the 'index' to be stored in
       compileExpression(index, visitor, currentClass, lenv0, entryPoint)
       // Evaluating the 'element' to be stored
@@ -772,7 +772,7 @@ object GenExpression {
       // Evaluating the 'base'
       compileExpression(base, visitor, currentClass, lenv0, entryPoint)
       // Cast the object to array
-      visitor.visitTypeInsn(CHECKCAST, AsmOps.arrayGetCheckCastType(jvmType))
+      visitor.visitTypeInsn(CHECKCAST, AsmOps.getArrayType(jvmType))
       // Pushes the 'length' of the array on top of stack
       visitor.visitInsn(ARRAYLENGTH)
 

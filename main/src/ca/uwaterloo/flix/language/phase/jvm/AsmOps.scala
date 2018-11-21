@@ -5,7 +5,7 @@ import ca.uwaterloo.flix.language.ast.FinalAst.Root
 import ca.uwaterloo.flix.language.ast.{SourceLocation, SpecialOperator, Symbol, Type}
 import ca.uwaterloo.flix.util.{InternalCompilerException, JvmTarget}
 import org.objectweb.asm.Opcodes._
-import org.objectweb.asm.{ClassWriter, MethodVisitor}
+import org.objectweb.asm.{ClassWriter, Label, MethodVisitor}
 
 object AsmOps {
 
@@ -121,7 +121,7 @@ object AsmOps {
   /**
     * Returns the CheckCast type for the value of the type specified by `tpe`
     */
-  def arrayGetCheckCastType(tpe: JvmType): String = tpe match {
+  def getArrayType(tpe: JvmType): String = tpe match {
     case JvmType.Void => throw InternalCompilerException(s"Unexpected type $tpe")
     case JvmType.PrimBool => "[Z"
     case JvmType.PrimChar => "[C"
@@ -508,6 +508,98 @@ object AsmOps {
 
     // Construct the proxy object.
     mv.visitMethodInsn(INVOKESTATIC, "ca/uwaterloo/flix/runtime/solver/api/ProxyObject", "of", "(Ljava/lang/Object;Ljava/util/function/Function;Ljava/util/function/Function;Ljava/util/function/Function;)Lca/uwaterloo/flix/runtime/solver/api/ProxyObject;", false);
+  }
+
+  /**
+    * Emits code to construct a new proxy array for the array value on top of the stack of the given type `tpe`.
+    */
+  def newProxyArray(tpe: Type, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
+    // The type of the elements of the array.
+    val elementType = Type.getArrayInnerType(tpe)
+
+    // The type of the elements of the array, as a JVM type.
+    val jvmElementType = JvmOps.getErasedJvmType(elementType)
+
+    // The local variable index of the original array.
+    val originalArrayIndex = 2
+
+    // The local variable index of the new array.
+    val resultArrayIndex = 3
+
+    // The local variable index of the loop counter.
+    val loopCounterIndex = 4
+
+    // Cast the value to an array of objects.
+    mv.visitTypeInsn(CHECKCAST, AsmOps.getArrayType(jvmElementType))
+
+    // Store the original array in a local variable.
+    mv.visitVarInsn(ASTORE, originalArrayIndex)
+
+    // Compute the length of the original array.
+    mv.visitVarInsn(ALOAD, originalArrayIndex)
+    mv.visitInsn(ARRAYLENGTH)
+
+    // Allocate a new array of proxy objects of the same length as the original array and store it in a local variable.
+    mv.visitTypeInsn(ANEWARRAY, "ca/uwaterloo/flix/runtime/solver/api/ProxyObject")
+    mv.visitVarInsn(ASTORE, resultArrayIndex)
+
+    // Initialize the loop counter to zero.
+    mv.visitInsn(ICONST_0)
+    mv.visitVarInsn(ISTORE, loopCounterIndex)
+
+    // The labels for the loop entry and exit.
+    val loopEntry = new Label()
+    val loopExit = new Label()
+
+    // Visit the entry label.
+    mv.visitLabel(loopEntry)
+
+    // Push the loop counter
+    mv.visitVarInsn(ILOAD, loopCounterIndex)
+
+    // Push the length of the result array.
+    mv.visitVarInsn(ALOAD, resultArrayIndex)
+    mv.visitInsn(ARRAYLENGTH)
+
+    // Branch if we are done.
+    mv.visitJumpInsn(IF_ICMPGE, loopExit)
+
+    // The loop body.
+
+    // Load the result array and the current index (to prepare for the later store)
+    mv.visitVarInsn(ALOAD, resultArrayIndex)
+    mv.visitVarInsn(ILOAD, loopCounterIndex)
+
+    // Push the original array.
+    mv.visitVarInsn(ALOAD, originalArrayIndex)
+
+    // Load the element at the current index.
+    mv.visitVarInsn(ILOAD, loopCounterIndex)
+    mv.visitInsn(AsmOps.getArrayLoadInstruction(jvmElementType))
+
+    // Box the element, if necessary.
+    boxIfPrim(jvmElementType, mv)
+
+    // Allocate a new proxy object for the element.
+    newProxyObject(elementType, mv)
+
+    // The result array, current index, and proxy object is on the stack. Store the element.
+    mv.visitInsn(AASTORE)
+
+    // Increment the loop counter.
+    mv.visitVarInsn(ILOAD, loopCounterIndex)
+    mv.visitInsn(ICONST_1)
+    mv.visitInsn(IADD)
+    mv.visitVarInsn(ISTORE, loopCounterIndex)
+
+    // Branch to the loop entry.
+    mv.visitJumpInsn(GOTO, loopEntry)
+
+    // Visit the exit label.
+    mv.visitLabel(loopExit)
+
+    // Loop the result array.
+    mv.visitVarInsn(ALOAD, resultArrayIndex)
 
   }
 

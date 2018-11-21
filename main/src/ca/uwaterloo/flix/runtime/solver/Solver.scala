@@ -482,8 +482,6 @@ class Solver(constraintSystem: ConstraintSystem, options: FixpointOptions) {
         i = i + 1
       }
 
-      // TODO: XXX: How to get an array of proxy objects???
-
       // apply the function to obtain the array of values.
       val values: Array[ProxyObject] =
         if (r.getArguments.length == 0) {

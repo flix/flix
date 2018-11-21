@@ -214,7 +214,11 @@ object GenFunctionClasses {
     AsmOps.boxIfPrim(jvmResultType, mv)
 
     // Construct a proxy object.
-    AsmOps.newProxyObject(resultType, mv)
+    if (resultType.isArray) {
+      AsmOps.newProxyArray(resultType, mv)
+    } else {
+      AsmOps.newProxyObject(resultType, mv)
+    }
 
     // Return the proxy object.
     mv.visitInsn(ARETURN)
