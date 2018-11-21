@@ -403,14 +403,16 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       //
       // NewRelation.
       //
-      case Expression.NewRelation(sym, tpe, loc) =>
-        Expression.NewRelation(sym, tpe, loc)
+      case Expression.NewRelation(sym, exp, tpe, loc) =>
+        val e = visitExp(exp, env0)
+        Expression.NewRelation(sym, e, tpe, loc)
 
       //
       // NewLattice.
       //
-      case Expression.NewLattice(sym, tpe, loc) =>
-        Expression.NewLattice(sym, tpe, loc)
+      case Expression.NewLattice(sym, exp, tpe, loc) =>
+        val e = visitExp(exp, env0)
+        Expression.NewLattice(sym, e, tpe, loc)
 
       //
       // Constraint.

@@ -195,9 +195,13 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.NativeMethod(method, args, tpe, loc) =>
         Expression.NativeMethod(method, args.map(visit), tpe, loc)
 
-      case Expression.NewRelation(sym, tpe, loc) => Expression.NewRelation(sym, tpe, loc)
+      case Expression.NewRelation(sym, exp, tpe, loc) =>
+        val e = visit(exp)
+        Expression.NewRelation(sym, e, tpe, loc)
 
-      case Expression.NewLattice(sym, tpe, loc) => Expression.NewLattice(sym, tpe, loc)
+      case Expression.NewLattice(sym, exp, tpe, loc) =>
+        val e = visit(exp)
+        Expression.NewLattice(sym, e, tpe, loc)
 
       case Expression.Constraint(con, tpe, loc) =>
         ??? // TODO: Expression.Constraint
@@ -360,9 +364,13 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     case Expression.NativeMethod(method, args, tpe, loc) =>
       Expression.NativeMethod(method, args.map(renameAndSubstitute(_, env0)), tpe, loc)
 
-    case Expression.NewRelation(sym, tpe, loc) => Expression.NewRelation(sym, tpe, loc)
+    case Expression.NewRelation(sym, exp, tpe, loc) =>
+      val e = renameAndSubstitute(exp, env0)
+      Expression.NewRelation(sym, e, tpe, loc)
 
-    case Expression.NewLattice(sym, tpe, loc) => Expression.NewLattice(sym, tpe, loc)
+    case Expression.NewLattice(sym, exp, tpe, loc) =>
+      val e = renameAndSubstitute(exp, env0)
+      Expression.NewLattice(sym, e, tpe, loc)
 
     case Expression.Constraint(con, tpe, loc) => ??? // TODO: Expression.Constraint
 
@@ -611,12 +619,12 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     //
     // New Relation expressions are atomic.
     //
-    case Expression.NewRelation(sym, tpe, loc) => true
+    case Expression.NewRelation(sym, exp, tpe, loc) => isAtomic(exp)
 
     //
     // New Lattice expressions are atomic.
     //
-    case Expression.NewLattice(sym, tpe, loc) => true
+    case Expression.NewLattice(sym, exp, tpe, loc) => isAtomic(exp)
 
     //
     // Constraint expressions are atomic.

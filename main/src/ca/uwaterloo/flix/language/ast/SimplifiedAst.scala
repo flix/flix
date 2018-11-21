@@ -230,9 +230,9 @@ object SimplifiedAst {
 
     case class NativeMethod(method: Method, args: List[SimplifiedAst.Expression], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
-    case class NewRelation(sym: Symbol.RelSym, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
+    case class NewRelation(sym: Symbol.RelSym, exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
-    case class NewLattice(sym: Symbol.LatSym, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
+    case class NewLattice(sym: Symbol.LatSym, exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
     case class Constraint(con: SimplifiedAst.Constraint, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 

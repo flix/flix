@@ -426,13 +426,15 @@ object SimplifiedAstOps {
       //
       // New Relation.
       //
-      case Expression.NewRelation(sym, tpe, loc) =>
+      case Expression.NewRelation(sym, exp, tpe, loc) =>
+        checkExp(exp, env0, ienv0)
         checkType(tpe)
 
       //
       // New Lattice.
       //
-      case Expression.NewLattice(sym, tpe, loc) =>
+      case Expression.NewLattice(sym, exp, tpe, loc) =>
+        checkExp(exp, env0, ienv0)
         checkType(tpe)
 
       //

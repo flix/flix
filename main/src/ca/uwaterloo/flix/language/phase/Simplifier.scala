@@ -514,10 +514,12 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         SimplifiedAst.Expression.NativeMethod(method, es, tpe, loc)
 
       case TypedAst.Expression.NewRelation(sym, tpe, eff, loc) =>
-        SimplifiedAst.Expression.NewRelation(sym, tpe, loc)
+        val e = SimplifiedAst.Expression.Unit
+        SimplifiedAst.Expression.NewRelation(sym, e, tpe, loc)
 
       case TypedAst.Expression.NewLattice(sym, tpe, eff, loc) =>
-        SimplifiedAst.Expression.NewLattice(sym, tpe, loc)
+        val e = SimplifiedAst.Expression.Unit
+        SimplifiedAst.Expression.NewLattice(sym, e, tpe, loc)
 
       case TypedAst.Expression.Constraint(c0, tpe, eff, loc) =>
         val c = visitConstraint(c0)
@@ -1187,11 +1189,13 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         val es = args map visit
         SimplifiedAst.Expression.NativeMethod(method, es, tpe, loc)
 
-      case SimplifiedAst.Expression.NewRelation(sym, tpe, loc) =>
-        SimplifiedAst.Expression.NewRelation(sym, tpe, loc)
+      case SimplifiedAst.Expression.NewRelation(sym, exp, tpe, loc) =>
+        val e = visit(exp)
+        SimplifiedAst.Expression.NewRelation(sym, e, tpe, loc)
 
-      case SimplifiedAst.Expression.NewLattice(sym, tpe, loc) =>
-        SimplifiedAst.Expression.NewLattice(sym, tpe, loc)
+      case SimplifiedAst.Expression.NewLattice(sym, exp, tpe, loc) =>
+        val e = visit(exp)
+        SimplifiedAst.Expression.NewLattice(sym, e, tpe, loc)
 
       case SimplifiedAst.Expression.Constraint(con, tpe, loc) =>
         ??? // TODO Expression.Constraint

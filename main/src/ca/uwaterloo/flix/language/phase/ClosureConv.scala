@@ -287,11 +287,13 @@ object ClosureConv extends Phase[Root, Root] {
       val as = args map visitExp
       Expression.NativeMethod(method, as, tpe, loc)
 
-    case Expression.NewRelation(sym, tpe, loc) =>
-      Expression.NewRelation(sym, tpe, loc)
+    case Expression.NewRelation(sym, exp, tpe, loc) =>
+      val e = visitExp(exp)
+      Expression.NewRelation(sym, e, tpe, loc)
 
-    case Expression.NewLattice(sym, tpe, loc) =>
-      Expression.NewLattice(sym, tpe, loc)
+    case Expression.NewLattice(sym, exp, tpe, loc) =>
+      val e = visitExp(exp)
+      Expression.NewLattice(sym, e, tpe, loc)
 
     case Expression.Constraint(c0, tpe, loc) =>
       val Constraint(cparams0, head0, body0) = c0
@@ -469,8 +471,8 @@ object ClosureConv extends Phase[Root, Root] {
     case Expression.NativeField(field, tpe, loc) => mutable.LinkedHashSet.empty
     case Expression.NativeMethod(method, args, tpe, loc) => mutable.LinkedHashSet.empty ++ args.flatMap(freeVars)
 
-    case Expression.NewRelation(sym, tpe, loc) => mutable.LinkedHashSet.empty
-    case Expression.NewLattice(sym, tpe, loc) => mutable.LinkedHashSet.empty
+    case Expression.NewRelation(sym, exp, tpe, loc) => freeVars(exp)
+    case Expression.NewLattice(sym, exp, tpe, loc) => freeVars(exp)
 
     case Expression.Constraint(con, tpe, loc) =>
       val Constraint(cparams, head, body) = con
@@ -784,9 +786,13 @@ object ClosureConv extends Phase[Root, Root] {
         val es = args map visitExp
         Expression.NativeMethod(method, es, tpe, loc)
 
-      case Expression.NewRelation(sym, tpe, loc) => e
+      case Expression.NewRelation(sym, exp, tpe, loc) =>
+        val e = visitExp(exp)
+        Expression.NewRelation(sym, e, tpe, loc)
 
-      case Expression.NewLattice(sym, tpe, loc) => e
+      case Expression.NewLattice(sym, exp, tpe, loc) =>
+        val e = visitExp(exp)
+        Expression.NewLattice(sym, exp, tpe, loc)
 
       case Expression.Constraint(con, tpe, loc) =>
         val Constraint(cparams0, head0, body0) = con
