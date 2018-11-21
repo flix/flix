@@ -1691,7 +1691,7 @@ object GenExpression {
       // Emit code to invoke the constructor.
       mv.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/solver/api/predicate/FilterPredicate", "<init>", "(Ljava/util/function/Function;[Lca/uwaterloo/flix/runtime/solver/api/term/Term;)V", false);
 
-    case Predicate.Body.Functional(varSym, defSym, terms, loc) =>
+    case Predicate.Body.Functional(varSym, defSym, args, loc) =>
       // Add source line numbers for debugging.
       addSourceLine(mv, loc)
 
@@ -1706,7 +1706,7 @@ object GenExpression {
       AsmOps.compileDefSymbol(defSym, mv)
 
       // The function argument variables.
-      mv.visitInsn(ACONST_NULL)
+      compileVarSyms(args, mv)
 
       // Invoke the constructor.
       mv.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/solver/api/predicate/FunctionalPredicate", "<init>", "(Lca/uwaterloo/flix/runtime/solver/api/symbol/VarSym;Ljava/util/function/Function;[Lca/uwaterloo/flix/runtime/solver/api/symbol/VarSym;)V", false);

@@ -483,7 +483,13 @@ class Solver(constraintSystem: ConstraintSystem, options: FixpointOptions) {
       }
 
       // apply the function to obtain the array of values.
-      val values: Array[ProxyObject] = r.getFunction().apply(args)
+      val values: Array[ProxyObject] =
+        if (r.getArguments.length == 0) {
+          // TODO: A small hack to deal with zero arity functions.
+          r.getFunction().apply(new Array[AnyRef](1))
+        } else {
+          r.getFunction().apply(args)
+        }
 
       // iterate through each value.
       for (value <- values) {
