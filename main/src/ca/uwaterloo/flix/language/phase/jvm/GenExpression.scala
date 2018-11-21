@@ -1738,7 +1738,6 @@ object GenExpression {
     * Compiles the given head term `t0`.
     */
   private def compileHeadTerm(t0: Term.Head, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = t0 match {
-
     case Term.Head.QuantVar(sym, tpe, loc) =>
       // Add source line numbers for debugging.
       addSourceLine(mv, loc)
@@ -1762,14 +1761,12 @@ object GenExpression {
 
     case Term.Head.App(sym, args, tpe, loc) =>
       ??? // TODO
-
   }
 
   /**
     * Compiles the given body term `t0`.
     */
   private def compileBodyTerm(t0: Term.Body, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = t0 match {
-
     case Term.Body.Wild(tpe, loc) =>
       // Add source line numbers for debugging.
       addSourceLine(mv, loc)
@@ -1797,7 +1794,6 @@ object GenExpression {
 
       // Compile the literal term.
       compileLitTerm(sym, mv)
-
   }
 
   /**

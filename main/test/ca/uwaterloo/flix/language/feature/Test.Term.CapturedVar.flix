@@ -235,3 +235,123 @@ def testInt64CapturedVar03(): Bool =
     let r = solve x <+> y;
     r |= Int64Rel(c).
 
+///////////////////////////////////////////////////////////////////////////////
+/// BigInt                                                                  ///
+///////////////////////////////////////////////////////////////////////////////
+rel BigIntRel(x: BigInt)
+
+@test
+def testBigIntCapturedVar01(): Bool =
+    let c = 0ii;
+    let x = BigIntRel(c).;
+    let y = BigIntRel(c) :- BigIntRel(c).;
+    let r = solve x <+> y;
+    r |= BigIntRel(c).
+
+@test
+def testBigIntCapturedVar02(): Bool =
+    let c = 123ii;
+    let x = BigIntRel(c).;
+    let y = BigIntRel(c) :- BigIntRel(c).;
+    let r = solve x <+> y;
+    r |= BigIntRel(c).
+
+@test
+def testBigIntCapturedVar03(): Bool =
+    let c = -123ii;
+    let x = BigIntRel(c).;
+    let y = BigIntRel(c) :- BigIntRel(c).;
+    let r = solve x <+> y;
+    r |= BigIntRel(c).
+
+///////////////////////////////////////////////////////////////////////////////
+/// Str                                                                     ///
+///////////////////////////////////////////////////////////////////////////////
+rel StrRel(x: Str)
+
+@test
+def testStrCapturedVar01(): Bool =
+    let c = "";
+    let x = StrRel(c).;
+    let y = StrRel(c) :- StrRel(c).;
+    let r = solve x <+> y;
+    r |= StrRel(c).
+
+@test
+def testStrCapturedVar02(): Bool =
+    let c = "hello";
+    let x = StrRel(c).;
+    let y = StrRel(c) :- StrRel(c).;
+    let r = solve x <+> y;
+    r |= StrRel(c).
+
+@test
+def testStrCapturedVar03(): Bool =
+    let c = "hello world!";
+    let x = StrRel(c).;
+    let y = StrRel(c) :- StrRel(c).;
+    let r = solve x <+> y;
+    r |= StrRel(c).
+
+///////////////////////////////////////////////////////////////////////////////
+/// Option                                                                  ///
+///////////////////////////////////////////////////////////////////////////////
+rel OptionRel(x: Option[Int])
+
+@test
+def testOptionCapturedVar01(): Bool =
+    let c = None;
+    let x = OptionRel(c).;
+    let y = OptionRel(c) :- OptionRel(c).;
+    let r = solve x <+> y;
+    r |= OptionRel(c).
+
+@test
+def testOptionCapturedVar02(): Bool =
+    let c = Some(123);
+    let x = OptionRel(c).;
+    let y = OptionRel(c) :- OptionRel(c).;
+    let r = solve x <+> y;
+    r |= OptionRel(c).
+
+///////////////////////////////////////////////////////////////////////////////
+/// Result                                                                  ///
+///////////////////////////////////////////////////////////////////////////////
+rel ResultRel(x: Result[Int, Str])
+
+@test
+def testResultCapturedVar01(): Bool =
+    let c = Ok(123);
+    let x = ResultRel(c).;
+    let y = ResultRel(c) :- ResultRel(c).;
+    let r = solve x <+> y;
+    r |= ResultRel(c).
+
+@test
+def testResultCapturedVar02(): Bool =
+    let c = Err("goodbye world!");
+    let x = ResultRel(c).;
+    let y = ResultRel(c) :- ResultRel(c).;
+    let r = solve x <+> y;
+    r |= ResultRel(c).
+
+///////////////////////////////////////////////////////////////////////////////
+/// Tuple                                                                   ///
+///////////////////////////////////////////////////////////////////////////////
+rel TupleRel(x: (Bool, Char, Int))
+
+@test
+def testTupleCapturedVar01(): Bool =
+    let c = (true, 'a', 42);
+    let x = TupleRel(c).;
+    let y = TupleRel(c) :- TupleRel(c).;
+    let r = solve x <+> y;
+    r |= TupleRel(c).
+
+@test
+def testTupleCapturedVar02(): Bool =
+    let c = (false, 'x', -42);
+    let x = TupleRel(c).;
+    let y = TupleRel(c) :- TupleRel(c).;
+    let r = solve x <+> y;
+    r |= TupleRel(c).
