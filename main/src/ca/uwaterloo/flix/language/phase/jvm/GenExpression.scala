@@ -970,14 +970,16 @@ object GenExpression {
       // Emit code for the name of the relation symbol.
       visitor.visitLdcInsn(sym.toString)
 
+      // Emit code for the parameter.
+      visitor.visitInsn(ACONST_NULL)
+
       // Emit code for the attributes.
       // TODO: Attributes
       visitor.visitInsn(ICONST_0)
       visitor.visitTypeInsn(ANEWARRAY, "ca/uwaterloo/flix/runtime/solver/api/Attribute")
 
-      // TODO: Incorrect, should be anon symbol.
       // Instantiate the relation symbol.
-      visitor.visitMethodInsn(INVOKESTATIC, "ca/uwaterloo/flix/runtime/solver/api/symbol/NamedRelSym", "getInstance", "(Ljava/lang/String;[Lca/uwaterloo/flix/runtime/solver/api/Attribute;)Lca/uwaterloo/flix/runtime/solver/api/symbol/NamedRelSym;", false)
+      visitor.visitMethodInsn(INVOKESTATIC, "ca/uwaterloo/flix/runtime/solver/api/symbol/RelSym", "of", "(Ljava/lang/String;Lca/uwaterloo/flix/runtime/solver/api/ProxyObject;[Lca/uwaterloo/flix/runtime/solver/api/Attribute;)Lca/uwaterloo/flix/runtime/solver/api/symbol/RelSym;", false);
 
     case Expression.NewLattice(sym, tpe, loc) =>
       ??? // TODO: NewLattice
@@ -1726,6 +1728,9 @@ object GenExpression {
         // Emit code for the predicate symbol.
         mv.visitLdcInsn(sym.toString)
 
+        // Emit code for the parameter.
+        mv.visitInsn(ACONST_NULL)
+
         // Emit code for the attributes.
         val attributes = root.relations(sym).attr
         compileInt(mv, attributes.length)
@@ -1750,7 +1755,7 @@ object GenExpression {
         }
 
         // Emit code to instantiate the predicate symbol.
-        mv.visitMethodInsn(INVOKESTATIC, "ca/uwaterloo/flix/runtime/solver/api/symbol/NamedRelSym", "getInstance", "(Ljava/lang/String;[Lca/uwaterloo/flix/runtime/solver/api/Attribute;)Lca/uwaterloo/flix/runtime/solver/api/symbol/NamedRelSym;", false);
+        mv.visitMethodInsn(INVOKESTATIC, "ca/uwaterloo/flix/runtime/solver/api/symbol/RelSym", "of", "(Ljava/lang/String;Lca/uwaterloo/flix/runtime/solver/api/ProxyObject;[Lca/uwaterloo/flix/runtime/solver/api/Attribute;)Lca/uwaterloo/flix/runtime/solver/api/symbol/RelSym;", false);
       case Some(varSym) =>
         // Emit code for the predicate symbol.
         readVar(varSym, tpe, mv)

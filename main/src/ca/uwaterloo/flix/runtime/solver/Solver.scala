@@ -283,9 +283,7 @@ class Solver(constraintSystem: ConstraintSystem, stratification: Stratification,
         for ((sym, fact) <- interp) {
           // update the datastore, but don't compute any dependencies.
           sym match {
-            case r: NamedRelSym =>
-              dataStore.getRelation(r).inferredFact(fact)
-            case r: AnonRelSym =>
+            case r: RelSym =>
               dataStore.getRelation(r).inferredFact(fact)
             case l: NamedLatSym =>
               dataStore.getLattice(l).inferredFact(fact)

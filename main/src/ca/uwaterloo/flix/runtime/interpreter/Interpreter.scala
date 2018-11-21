@@ -262,11 +262,7 @@ object Interpreter {
     }
 
     case Expression.NewRelation(sym, tpe, loc) =>
-      val attr = root.relations(sym).attr.map {
-        case Attribute(name, _) => new api.Attribute(name)
-      }
-      val parent = NamedRelSym.getInstance(sym.name, attr.toArray)
-      new AnonRelSym(parent)
+      ??? // TODO NewRelation
 
     case Expression.NewLattice(sym, tpe, loc) =>
       val attr = root.lattices(sym).attr.map {
@@ -306,8 +302,8 @@ object Interpreter {
     case Expression.FixpointProject(sym, exp, tpe, loc) =>
       val s = cast2constraintset(eval(exp, env0, henv0, lenv0, root))
       val predSym = sym match {
-        case x: Symbol.RelSym => NamedRelSym.getInstance(x.name, new Array(0)) // TODO: Attributes...
-        case x: Symbol.LatSym => NamedLatSym.getInstance(x.name, null, null, null) // TODO: Attributes...
+        case x: Symbol.RelSym => ??? // TODO
+        case x: Symbol.LatSym => ??? // TODO
       }
       ConstraintSystem.project(predSym, s)
 
@@ -870,11 +866,11 @@ object Interpreter {
   /**
     * Returns the relation value associated with the given relation symbol `sym`.
     */
-  private def getRelSym(sym: Symbol.RelSym)(implicit root: FinalAst.Root, flix: Flix): NamedRelSym = root.relations(sym) match {
+  private def getRelSym(sym: Symbol.RelSym)(implicit root: FinalAst.Root, flix: Flix): RelSym = root.relations(sym) match {
     case FinalAst.Relation(_, _, attr, _) =>
       val name = sym.toString
       val as = attr.map(a => new api.Attribute(a.name)).toArray
-      NamedRelSym.getInstance(name, as)
+      RelSym.of(name, null, as)
   }
 
   /**
@@ -1099,8 +1095,8 @@ object Interpreter {
   /**
     * Casts the given reference `ref` to a relation.
     */
-  private def cast2relsym(ref: AnyRef): AnonRelSym = ref match {
-    case r: AnonRelSym => r
+  private def cast2relsym(ref: AnyRef): RelSym = ref match {
+    case r: RelSym => r
     case _ => throw InternalRuntimeException(s"Unexpected non-relation value: ${ref.getClass.getName}.")
   }
 
