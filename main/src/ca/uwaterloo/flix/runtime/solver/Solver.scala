@@ -285,9 +285,7 @@ class Solver(constraintSystem: ConstraintSystem, stratification: Stratification,
           sym match {
             case r: RelSym =>
               dataStore.getRelation(r).inferredFact(fact)
-            case l: NamedLatSym =>
-              dataStore.getLattice(l).inferredFact(fact)
-            case l: AnonLatSym =>
+            case l: LatSym =>
               dataStore.getLattice(l).inferredFact(fact)
           }
         }

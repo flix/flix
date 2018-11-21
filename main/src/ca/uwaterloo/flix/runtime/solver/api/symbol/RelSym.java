@@ -5,41 +5,11 @@ import ca.uwaterloo.flix.runtime.solver.api.ProxyObject;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 
 /**
  * Represents a parameterized relation symbol.
  */
 public final class RelSym implements PredSym {
-
-    /**
-     * An internal class to represent a pair of a name and a parameter.
-     * <p>
-     * The parameter may be null.
-     */
-    private static final class NameAndParameter {
-        private final String name;
-        private final ProxyObject parameter;
-
-        private NameAndParameter(String name, ProxyObject parameter) {
-            this.name = name;
-            this.parameter = parameter;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            NameAndParameter that = (NameAndParameter) o;
-            return Objects.equals(name, that.name) &&
-                    Objects.equals(parameter, that.parameter);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(name, parameter);
-        }
-    }
 
     /**
      * An internal cache of relation symbols.
@@ -68,7 +38,7 @@ public final class RelSym implements PredSym {
     }
 
     /**
-     * The unique name of the relation.
+     * The unique name of the relation symbol.
      */
     private final String name;
 
@@ -83,7 +53,7 @@ public final class RelSym implements PredSym {
     private final Attribute[] attributes;
 
     /**
-     * Constructs a relation symbol for the given unique name and attributes.
+     * Constructs a fresh relation symbol with the given `name` and `parameter`.
      */
     private RelSym(String name, ProxyObject parameter, Attribute[] attributes) {
         this.name = name;
@@ -113,7 +83,7 @@ public final class RelSym implements PredSym {
     }
 
     /**
-     * Returns a human-readable representation of `this` predicate symbol.
+     * Returns a human-readable representation of `this` relation symbol.
      */
     @Override
     public String toString() {

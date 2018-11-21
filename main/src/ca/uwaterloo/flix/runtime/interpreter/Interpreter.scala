@@ -265,11 +265,7 @@ object Interpreter {
       ??? // TODO NewRelation
 
     case Expression.NewLattice(sym, tpe, loc) =>
-      val attr = root.lattices(sym).attr.map {
-        case Attribute(name, _) => new api.Attribute(name)
-      }
-      val parent = NamedLatSym.getInstance(sym.name, attr.init.toArray, attr.last, /* TODO */ null)
-      new AnonLatSym(parent)
+      ??? // TODO: NewLattice
 
     case Expression.Constraint(c, tpe, loc) =>
       evalConstraint(c, env0, henv0, lenv0)(flix, root)
@@ -876,14 +872,14 @@ object Interpreter {
   /**
     * Returns the lattice value associated with the given lattice symbol `sym`.
     */
-  private def getLattice(sym: Symbol.LatSym)(implicit root: FinalAst.Root, flix: Flix): NamedLatSym = root.lattices(sym) match {
+  private def getLattice(sym: Symbol.LatSym)(implicit root: FinalAst.Root, flix: Flix): LatSym = root.lattices(sym) match {
     case FinalAst.Lattice(_, _, attr, _) =>
       val name = sym.toString
       val as = attr.map(a => new api.Attribute(a.name))
       val keys = as.init.toArray
       val value = as.last
       val ops = getLatticeOps(attr.last.tpe)
-      NamedLatSym.getInstance(name, keys, value, ops)
+      LatSym.of(name, null, keys, value, ops)
   }
 
   /**
@@ -1103,8 +1099,8 @@ object Interpreter {
   /**
     * Casts the given reference `ref` to a lattice.
     */
-  private def cast2latsym(ref: AnyRef): AnonLatSym = ref match {
-    case r: AnonLatSym => r
+  private def cast2latsym(ref: AnyRef): LatSym = ref match {
+    case r: LatSym => r
     case _ => throw InternalRuntimeException(s"Unexpected non-lattice value: ${ref.getClass.getName}.")
   }
 
