@@ -1760,7 +1760,43 @@ object GenExpression {
       compileLitTerm(sym, mv)
 
     case Term.Head.App(sym, args, tpe, loc) =>
-      ??? // TODO
+      // Add source line numbers for debugging.
+      addSourceLine(mv, loc)
+
+      // Compile the application term.
+      compileAppTerm(sym, args, mv)
+  }
+
+  /**
+    * Compiles an app term for the given def symbol `sym` with the given arguments `args`.
+    */
+  private def compileAppTerm(sym: Symbol.DefnSym, args: List[Symbol.VarSym], mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
+    // Allocate a fresh app term.
+    mv.visitTypeInsn(NEW, "ca/uwaterloo/flix/runtime/solver/api/term/AppTerm")
+    mv.visitInsn(DUP)
+
+    // The function object.
+    AsmOps.compileDefSymbol(sym, mv)
+
+    // The function arguments.
+    compileInt(mv, args.length)
+    mv.visitTypeInsn(ANEWARRAY, "ca/uwaterloo/flix/runtime/solver/api/symbol/VarSym")
+    for ((argVar, index) <- args.zipWithIndex) {
+      // Compile each variable symbol and store it in the array.
+      mv.visitInsn(DUP)
+
+      // Compile the array index.
+      compileInt(mv, index)
+
+      // Compile the variable symbol.
+      compileVarSym(argVar, mv)
+
+      // Store the variable symbol in the array.
+      mv.visitInsn(AASTORE)
+    }
+
+    // Invoke the constructor of the app term.
+    mv.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/solver/api/term/AppTerm", "<init>", "(Ljava/util/function/Function;[Lca/uwaterloo/flix/runtime/solver/api/symbol/VarSym;)V", false)
   }
 
   /**
@@ -1857,18 +1893,8 @@ object GenExpression {
     mv.visitTypeInsn(NEW, "ca/uwaterloo/flix/runtime/solver/api/term/VarTerm")
     mv.visitInsn(DUP)
 
-    // Allocate a fresh variable symbol object.
-    mv.visitTypeInsn(NEW, "ca/uwaterloo/flix/runtime/solver/api/symbol/VarSym")
-    mv.visitInsn(DUP)
-
-    // Emit the variable name.
-    mv.visitLdcInsn(sym.text)
-
-    // Emit the variable index.
-    compileInt(mv, sym.getStackOffset)
-
-    // Invoke the variable symbol constructor.
-    mv.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/solver/api/symbol/VarSym", "<init>", "(Ljava/lang/String;I)V", false)
+    // Compile the variable symbol.
+    compileVarSym(sym, mv)
 
     // Invoke the variable term constructor.
     mv.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/solver/api/term/VarTerm", "<init>", "(Lca/uwaterloo/flix/runtime/solver/api/symbol/VarSym;)V", false)
@@ -1886,7 +1912,26 @@ object GenExpression {
     AsmOps.compileDefSymbol(sym, mv)
 
     // Emit code to invoke the constructor of the literal term.
-    mv.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/solver/api/term/LitTerm", "<init>", "(Ljava/util/function/Function;)V", false);
+    mv.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/solver/api/term/LitTerm", "<init>", "(Ljava/util/function/Function;)V", false)
+  }
+
+  /**
+    * Compiles the given variable symbol `sym` to an api variable symbol.
+    */
+  private def compileVarSym(sym: Symbol.VarSym, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
+    // Allocate a fresh variable symbol object.
+    mv.visitTypeInsn(NEW, "ca/uwaterloo/flix/runtime/solver/api/symbol/VarSym")
+    mv.visitInsn(DUP)
+
+    // Emit the variable name.
+    mv.visitLdcInsn(sym.text)
+
+    // Emit the variable index.
+    compileInt(mv, sym.getStackOffset)
+
+    // Invoke the variable symbol constructor.
+    mv.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/solver/api/symbol/VarSym", "<init>", "(Ljava/lang/String;I)V", false)
+
   }
 
   /**
