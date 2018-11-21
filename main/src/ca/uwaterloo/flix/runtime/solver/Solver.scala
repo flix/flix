@@ -40,7 +40,7 @@ import scala.collection.mutable.ArrayBuffer
   *
   * The solver computes the least fixed point of the rules in the given program.
   */
-class Solver(constraintSystem: ConstraintSystem, options: FixpointOptions) {
+class Solver(constraintSystem: ConstraintSystem, stratification: Stratification, options: FixpointOptions) {
 
   /**
     * Controls the number of batches per thread. A value of one means one batch per thread.

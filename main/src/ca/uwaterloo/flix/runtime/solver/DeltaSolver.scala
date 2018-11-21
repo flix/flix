@@ -22,7 +22,7 @@ import flix.runtime.{RuleError, NotImplementedError, SwitchError, TimeoutError}
 /**
   * A delta debugging solver based on the Flix solver.
   */
-class DeltaSolver(constraintSet: ConstraintSystem, options: FixpointOptions) {
+class DeltaSolver(constraintSet: ConstraintSystem, stratification: Stratification, options: FixpointOptions) {
 
   /**
     * A common super-type to represent the result of running the solver.

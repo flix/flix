@@ -11,21 +11,21 @@ import java.util.HashSet;
 public final class SolverApi {
 
     /**
-     * Solves the given constraint system `c` with the given stratification `stf` and fixpoint options `o`.
+     * Solves the given constraint system `cs` with the given stratification `stf` and fixpoint options `fo`.
      */
-    public static ConstraintSystem solve(ConstraintSystem s, Stratification stf, FixpointOptions o) {
-        Solver solver = new Solver(s, o);
+    public static ConstraintSystem solve(ConstraintSystem cs, Stratification stf, FixpointOptions fo) {
+        Solver solver = new Solver(cs, stf, fo);
         ConstraintSystem result = solver.solve();
         System.out.println(result.toString());
         return result;
     }
 
     /**
-     * Checks the given constraint system `c` with the given stratification `stf` and fixpoint options `o`.
+     * Checks the given constraint system `cs` with the given stratification `stf` and fixpoint options `fo`.
      */
-    public static boolean check(ConstraintSystem s, Stratification stf, FixpointOptions o) {
+    public static boolean check(ConstraintSystem cs, Stratification stf, FixpointOptions fo) {
         try {
-            Solver solver = new Solver(s, o);
+            Solver solver = new Solver(cs, stf, fo);
             solver.solve();
             return true;
         } catch (RuleError e) {
@@ -34,22 +34,22 @@ public final class SolverApi {
     }
 
     /**
-     * Delta Solves the given constraint system `c` with the given stratification `stf` and fixpoint options `o`.
+     * Delta Solves the given constraint system `cs` with the given stratification `stf` and fixpoint options `fo`.
      */
-    public static String deltaSolve(ConstraintSystem s, Stratification stf, FixpointOptions o) {
+    public static String deltaSolve(ConstraintSystem cs, Stratification stf, FixpointOptions fo) {
         // TODO: Update return type.
-        DeltaSolver deltaSolver = new DeltaSolver(s, o);
+        DeltaSolver deltaSolver = new DeltaSolver(cs, stf, fo);
         return deltaSolver.deltaSolve();
     }
 
     /**
-     * Returns `true` if all facts in `s2` are included in `s1`.
+     * Returns `true` if all facts in `cs2` are included in `sc1`.
      */
-    public static boolean entails(ConstraintSystem s1, ConstraintSystem s2) {
+    public static boolean entails(ConstraintSystem cs1, ConstraintSystem cs2) {
         var entails = true;
-        for (Constraint fact2 : s2.getFacts()) {
+        for (Constraint fact2 : cs2.getFacts()) {
             var found = false;
-            for (Constraint fact1 : s1.getFacts()) {
+            for (Constraint fact1 : cs1.getFacts()) {
                 if (fact1.entails(fact2)) {
                     found = true;
                 }
