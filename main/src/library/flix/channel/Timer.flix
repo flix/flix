@@ -14,11 +14,6 @@
  * limitations under the License.
  */
 
-///
-/// A collection of timers.
-///
-/// A timer is a channel into which the Unit value is put once after some duration.
-///
 namespace Timer {
 
     ///
