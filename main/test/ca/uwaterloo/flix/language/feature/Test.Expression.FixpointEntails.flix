@@ -1,4 +1,8 @@
 rel A(x: Int, y: Int)
+rel B(x: Int, y: Int)
+
+rel E(x: Int, y: Int)
+rel P(x: Int, y: Int)
 
 @test
 def testFixpointEntails01(): Bool =
@@ -60,3 +64,62 @@ def testFixpointEntails14(): Bool =
 def testFixpointEntails15(): Bool =
     (A(0, 0). B(0, 0).) |= (B(0, 0). A(0, 0).)
 
+@test
+def testFixpointEntails16(): Bool =
+    let c1 = A(0, 0).;
+    let c2 = B(x, y) :- A(x, y).;
+    (solve (c1 <+> c2)) |= B(0, 0).
+
+@test
+def testFixpointEntails17(): Bool =
+    let c1 = A(0, 0). A(0, 1).;
+    let c2 = B(x, y) :- A(x, y).;
+    (solve (c1 <+> c2)) |= (B(0, 0). B(0, 1).)
+
+@test
+def testFixpointEntails18(): Bool =
+    let c1 = A(0, 0). A(0, 1). B(1, 1).;
+    let c2 = B(x, y) :- A(x, y).;
+    (solve (c1 <+> c2)) |= (B(0, 0). B(0, 1). B(1, 1).)
+
+@test
+def testFixpointEntails20(): Bool =
+    let c1 = E(0, 1). E(1, 2).;
+    let c2 = P(x, y) :- E(x, y).;
+    let c3 = P(x, z) :- P(x, y), E(y, z).;
+    (solve (c1 <+> c2 <+> c3)) |= P(0, 1).
+
+@test
+def testFixpointEntails21(): Bool =
+    let c1 = E(0, 1). E(1, 2).;
+    let c2 = P(x, y) :- E(x, y).;
+    let c3 = P(x, z) :- P(x, y), E(y, z).;
+    (solve (c1 <+> c2 <+> c3)) |= P(1, 2).
+
+@test
+def testFixpointEntails22(): Bool =
+    let c1 = E(0, 1). E(1, 2).;
+    let c2 = P(x, y) :- E(x, y).;
+    let c3 = P(x, z) :- P(x, y), E(y, z).;
+    (solve (c1 <+> c2 <+> c3)) |= P(0, 2).
+
+@test
+def testFixpointEntails23(): Bool =
+    let c1 = E(0, 1). E(1, 2). E(2, 3).;
+    let c2 = P(x, y) :- E(x, y).;
+    let c3 = P(x, z) :- P(x, y), E(y, z).;
+    (solve (c1 <+> c2 <+> c3)) |= (P(0, 2). P(1, 3). P(0, 3).)
+
+@test
+def testFixpointEntails24(): Bool =
+    let c1 = E(0, 1). E(1, 2). E(2, 3). E(3, 4).;
+    let c2 = P(x, y) :- E(x, y).;
+    let c3 = P(x, z) :- P(x, y), E(y, z).;
+    (solve (c1 <+> c2 <+> c3)) |= (P(0, 4).)
+
+@test
+def testFixpointEntails25(): Bool =
+    let c1 = E(0, 1). E(1, 2). E(2, 3). E(3, 4). E(4, 0).;
+    let c2 = P(x, y) :- E(x, y).;
+    let c3 = P(x, z) :- P(x, y), E(y, z).;
+    (solve (c1 <+> c2 <+> c3)) |= (P(2, 2).)
