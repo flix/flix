@@ -543,8 +543,8 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         // Make a function type, () -> e.tpe
         val newTpe = Type.mkArrow(Type.Unit, e.tpe)
         // Rewrite our Spawn expression to a Lambda
-        val l = SimplifiedAst.Expression.Lambda(List(), e, newTpe, loc)
-        SimplifiedAst.Expression.Spawn(l, newTpe, loc)
+        val lambda = SimplifiedAst.Expression.Lambda(List(), e, newTpe, loc)
+        SimplifiedAst.Expression.Spawn(lambda, newTpe, loc)
 
       case TypedAst.Expression.NewRelation(sym, tpe, eff, loc) =>
         SimplifiedAst.Expression.NewRelation(sym, tpe, loc)

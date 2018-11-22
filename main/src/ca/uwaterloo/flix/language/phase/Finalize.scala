@@ -369,14 +369,9 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
         val e = visit(exp)
         FinalAst.Expression.CloseChannel(e, tpe, loc)
 
-      case SimplifiedAst.Expression.Spawn(closure, tpe, loc) =>
-        // TODO SJ: Why did we only get the Sym before?
-        //        val cSym = closure match {
-        //          case SimplifiedAst.Expression.Closure(sym, freeVars, _, _) => sym
-        //          case _ => throw InternalCompilerException("Unexpected non closure expression")
-        //        }
-        val c = visit(closure)
-        FinalAst.Expression.Spawn(c, tpe, loc)
+      case SimplifiedAst.Expression.Spawn(exp, tpe, loc) =>
+        val e = visit(exp)
+        FinalAst.Expression.Spawn(e, tpe, loc)
 
       case SimplifiedAst.Expression.NewRelation(sym, tpe, loc) =>
         FinalAst.Expression.NewRelation(sym, tpe, loc)

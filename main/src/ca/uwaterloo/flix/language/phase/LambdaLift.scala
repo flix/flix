@@ -325,9 +325,9 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         val e = visitExp(exp)
         Expression.CloseChannel(e, tpe, loc)
 
-      case Expression.Spawn(lambdaClosure, tpe, loc) =>
-        val closure = visitExp(lambdaClosure)
-        Expression.Spawn(closure, tpe, loc)
+      case Expression.Spawn(exp, tpe, loc) =>
+        val e = visitExp(exp)
+        Expression.Spawn(e, tpe, loc)
 
       case Expression.NewRelation(sym, tpe, loc) =>
         Expression.NewRelation(sym, tpe, loc)
