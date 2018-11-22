@@ -26,10 +26,7 @@ namespace Timer {
     ///
     pub def days(n: Int): Channel[Unit] =
         let c = chan Unit;
-        spawn {
-            sleep(n * oneDay());
-            c <- ()
-        };
+        spawn sleepAndSend(n * Duration.oneDay(), c);
         c
 
     ///
@@ -37,10 +34,7 @@ namespace Timer {
     ///
     pub def hours(n: Int): Channel[Unit] =
         let c = chan Unit;
-        spawn {
-            sleep(n * oneHour());
-            c <- ()
-        };
+        spawn sleepAndSend(n * Duration.oneHour(), c);
         c
 
     ///
@@ -48,10 +42,7 @@ namespace Timer {
     ///
     pub def minutes(n: Int): Channel[Unit] =
         let c = chan Unit;
-        spawn {
-            sleep(n * oneMinute());
-            c <- ()
-        };
+        spawn sleepAndSend(n * Duration.oneMinute(), c);
         c
 
     ///
@@ -59,10 +50,7 @@ namespace Timer {
     ///
     pub def seconds(n: Int): Channel[Unit] =
         let c = chan Unit;
-        spawn {
-            sleep(n * oneSecond());
-            c <- ()
-        };
+        spawn sleepAndSend(n * Duration.oneSecond(), c);
         c
 
     ///
@@ -70,10 +58,7 @@ namespace Timer {
     ///
     pub def milliseconds(n: Int): Channel[Unit] =
         let c = chan Unit;
-        spawn {
-            sleep(n * oneMillisecond());
-            c <- ()
-        };
+        spawn sleepAndSend(n * Duration.oneMillisecond(), c);
         c
 
     ///
@@ -81,10 +66,7 @@ namespace Timer {
     ///
     pub def microseconds(n: Int): Channel[Unit] =
         let c = chan Unit;
-        spawn {
-            sleep(n * oneMicrosecond());
-            c <- ()
-        };
+        spawn sleepAndSend(n * Duration.oneMicrosecond(), c);
         c
 
     ///
@@ -92,46 +74,15 @@ namespace Timer {
     ///
     pub def nanoseconds(n: Int): Channel[Unit] =
         let c = chan Unit;
-        spawn {
-            sleep(n * oneNanosecond());
-            c <- ()
-        };
+        spawn sleepAndSend(n * Duration.oneNanosecond(), c);
         c
 
     ///
-    /// Returns the number of nanoseconds in one 24 hour day.
+    /// Sleeps for `s` nanoseconds and then sends the Unit value to the given channel `c`.
     ///
-    def oneDay(): Int = 24 * oneHour()
+    def sleepAndSend(s: Int, c: Channel[Unit]): Unit =
+        sleep(s); c <- (); ()
 
-    ///
-    /// Returns the number of nanoseconds in one hour.
-    ///
-    def oneHour(): Int = 60 * oneMinute()
-
-    ///
-    /// Returns the number of nanoseconds in one minute.
-    ///
-    def oneMinute(): Int = 60 * oneSecond()
-
-    ///
-    /// Returns the number of nanoseconds in one second.
-    ///
-    def oneSecond(): Int = 1000 * oneMillisecond()
-
-    ///
-    /// Returns the number of nanoseconds in one millisecond.
-    ///
-    def oneMillisecond(): Int = 1000 * oneMicrosecond()
-
-    ///
-    /// Returns the number of nanoseconds in one microsecond.
-    ///
-    def oneMicrosecond(): Int = 1000 * oneNanosecond()
-
-    ///
-    /// Returns the number of nanoseconds in one nanosecond, i.e. one.
-    ///
-    def oneNanosecond(): Int = 1
 
     def sleep(l: Int): Unit = () // TODO: Replace by build in command.
 
