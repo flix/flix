@@ -30,7 +30,8 @@ import ca.uwaterloo.flix.runtime.solver.api.term.WildTerm
 import ca.uwaterloo.flix.runtime.solver.api.{Attribute => _, Constraint => _, _}
 import ca.uwaterloo.flix.util.{InternalRuntimeException, Verbosity}
 import ca.uwaterloo.flix.util.tc.Show._
-import flix.runtime._
+import flix.runtime.fixpoint.predicate.{FalsePredicate, TruePredicate}
+import flix.runtime.{fixpoint, _}
 
 import scala.collection.mutable
 
@@ -714,10 +715,10 @@ object Interpreter {
   /**
     * Evaluates the given head predicate `h0` under the given environment `env0` to a head predicate value.
     */
-  private def evalHeadPredicate(h0: FinalAst.Predicate.Head, env0: Map[String, AnyRef])(implicit root: FinalAst.Root, flix: Flix): api.predicate.Predicate = h0 match {
-    case FinalAst.Predicate.Head.True(_) => new api.predicate.TruePredicate()
+  private def evalHeadPredicate(h0: FinalAst.Predicate.Head, env0: Map[String, AnyRef])(implicit root: FinalAst.Root, flix: Flix): fixpoint.predicate.Predicate = h0 match {
+    case FinalAst.Predicate.Head.True(_) => TruePredicate.getSingleton
 
-    case FinalAst.Predicate.Head.False(_) => new api.predicate.FalsePredicate()
+    case FinalAst.Predicate.Head.False(_) => FalsePredicate.getSingleton
 
     case FinalAst.Predicate.Head.RelAtom(baseOpt, sym, terms, _, _) =>
       val ts = terms.map(t => evalHeadTerm(t, env0)).toArray
@@ -740,7 +741,7 @@ object Interpreter {
   /**
     * Evaluates the given body predicate `b0` under the given environment `env0` to a body predicate value.
     */
-  private def evalBodyPredicate(b0: FinalAst.Predicate.Body, env0: Map[String, AnyRef])(implicit root: FinalAst.Root, flix: Flix): api.predicate.Predicate = b0 match {
+  private def evalBodyPredicate(b0: FinalAst.Predicate.Body, env0: Map[String, AnyRef])(implicit root: FinalAst.Root, flix: Flix): fixpoint.predicate.Predicate = b0 match {
     case FinalAst.Predicate.Body.RelAtom(baseOpt, sym, polarity, terms, _, _) =>
       val p = polarity match {
         case Ast.Polarity.Positive => true

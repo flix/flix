@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.runtime.solver.api;
 
 import ca.uwaterloo.flix.runtime.solver.api.predicate.AtomPredicate;
-import ca.uwaterloo.flix.runtime.solver.api.predicate.Predicate;
+import flix.runtime.fixpoint.predicate.Predicate;
 import ca.uwaterloo.flix.runtime.solver.api.symbol.LatSym;
 import ca.uwaterloo.flix.runtime.solver.api.symbol.PredSym;
 import ca.uwaterloo.flix.runtime.solver.api.symbol.RelSym;

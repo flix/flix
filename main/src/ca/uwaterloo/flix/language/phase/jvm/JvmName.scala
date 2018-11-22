@@ -131,6 +131,16 @@ object JvmName {
       val Unit: JvmName = JvmName(List("flix", "runtime", "value"), "Unit")
     }
 
+    object Fixpoint {
+
+      object Predicate {
+        val Predicate: JvmName = mk("flix/runtime/fixpoint/predicate/Predicate")
+        val TruePredicate: JvmName = mk("flix/runtime/fixpoint/predicate/TruePredicate")
+        val FalsePredicate: JvmName = mk("flix/runtime/fixpoint/predicate/FalsePredicate")
+      }
+
+    }
+
     val HoleError: JvmName = JvmName(List("flix", "runtime"), "HoleError")
 
     val MatchError: JvmName = JvmName(List("flix", "runtime"), "MatchError")

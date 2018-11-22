@@ -1573,7 +1573,7 @@ object GenExpression {
 
       // Emit code for the body atoms.
       compileInt(mv, c.body.length)
-      mv.visitTypeInsn(ANEWARRAY, "ca/uwaterloo/flix/runtime/solver/api/predicate/Predicate")
+      mv.visitTypeInsn(ANEWARRAY, JvmName.Runtime.Fixpoint.Predicate.Predicate.toInternalName)
       for ((atom, index) <- c.body.zipWithIndex) {
         // Compile each constraint param and store it in the array.
         mv.visitInsn(DUP)
@@ -1587,7 +1587,7 @@ object GenExpression {
       }
 
       // Invoke the constructor of constraint.
-      mv.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/solver/api/Constraint", "<init>", "([Lca/uwaterloo/flix/runtime/solver/api/symbol/VarSym;Lca/uwaterloo/flix/runtime/solver/api/predicate/Predicate;[Lca/uwaterloo/flix/runtime/solver/api/predicate/Predicate;)V", false)
+      mv.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/solver/api/Constraint", "<init>", "([Lca/uwaterloo/flix/runtime/solver/api/symbol/VarSym;Lflix/runtime/fixpoint/predicate/Predicate;[Lflix/runtime/fixpoint/predicate/Predicate;)V", false)
 
       // Emit code to instantiate the constraint system.
       mv.visitMethodInsn(INVOKESTATIC, "ca/uwaterloo/flix/runtime/solver/api/ConstraintSystem", "of", "(Lca/uwaterloo/flix/runtime/solver/api/Constraint;)Lca/uwaterloo/flix/runtime/solver/api/ConstraintSystem;", false)
@@ -1601,19 +1601,15 @@ object GenExpression {
       // Add source line numbers for debugging.
       addSourceLine(mv, loc)
 
-      // Allocate a new object and invoke the constructor.
-      mv.visitTypeInsn(NEW, "ca/uwaterloo/flix/runtime/solver/api/predicate/TruePredicate")
-      mv.visitInsn(DUP)
-      mv.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/solver/api/predicate/TruePredicate", "<init>", "()V", false)
+      // Retrieve the singleton instance.
+      mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Predicate.TruePredicate.toInternalName, "getSingleton", "()Lflix/runtime/fixpoint/predicate/TruePredicate;", false)
 
     case Predicate.Head.False(loc) =>
       // Add source line numbers for debugging.
       addSourceLine(mv, loc)
 
-      // Allocate a new object and invoke the constructor.
-      mv.visitTypeInsn(NEW, "ca/uwaterloo/flix/runtime/solver/api/predicate/FalsePredicate")
-      mv.visitInsn(DUP)
-      mv.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/solver/api/predicate/FalsePredicate", "<init>", "()V", false)
+      // Retrieve the singleton instance.
+      mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Predicate.FalsePredicate.toInternalName, "getSingleton", "()Lflix/runtime/fixpoint/predicate/FalsePredicate;", false)
 
     case Predicate.Head.RelAtom(baseOpt, sym, terms, tpe, loc) =>
       // Add source line numbers for debugging.

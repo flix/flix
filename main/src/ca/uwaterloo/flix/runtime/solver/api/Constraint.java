@@ -2,9 +2,11 @@ package ca.uwaterloo.flix.runtime.solver.api;
 
 import ca.uwaterloo.flix.runtime.solver.api.predicate.*;
 import ca.uwaterloo.flix.runtime.solver.api.symbol.VarSym;
+import flix.runtime.fixpoint.predicate.FalsePredicate;
+import flix.runtime.fixpoint.predicate.Predicate;
+import flix.runtime.fixpoint.predicate.TruePredicate;
 
 import java.util.Arrays;
-import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
