@@ -123,13 +123,6 @@ public final class ConstraintSystem {
     }
 
     /**
-     * Returns all the facts in `this` constraint system as a new constraint system.
-     */
-    public ConstraintSystem getModel() {
-        return new ConstraintSystem(facts, new Constraint[0]);
-    }
-
-    /**
      * Returns all relation symbols in `this` constraint system.
      */
     public RelSym[] getRelationSymbols() {

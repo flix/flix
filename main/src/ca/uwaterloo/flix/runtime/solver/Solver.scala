@@ -240,7 +240,7 @@ class Solver(constraintSystem: ConstraintSystem, stratification: Stratification,
     printDebug()
 
     // build and return the model.
-    constraintSystem.getModel() // TODO: Need to include the inferred facts.
+    getModel()
   } catch {
     // Re-throw exceptions caught inside the individual reader/writer tasks.
     case ex: ExecutionException =>
@@ -339,6 +339,33 @@ class Solver(constraintSystem: ConstraintSystem, stratification: Stratification,
       Console.println(f"Initial Facts: $initialFacts%,d. Total Facts: $totalFacts%,d.")
       Console.println(f"Throughput: $throughput%,d facts per second.")
     }
+  }
+
+  /**
+    * Returns a new constraint system with all the facts inferred by the solver.
+    */
+  private def getModel(): ConstraintSystem = {
+    val relationFacts = dataStore.relations.flatMap {
+      case (sym, indexedRelation) =>
+        indexedRelation.scan.map {
+          case row =>
+            val cparams = Array.emptyObjectArray
+            val terms = row map {
+              case proxyObject => new LitTerm(new ConstantFunction(proxyObject)): Term
+            }
+            val head = new AtomPredicate(sym, true, terms)
+            val body = new Array[Predicate](0)
+
+            new Constraint(new Array[VarSym](0), head, body)
+        }
+    }
+
+    // TODO: Lattice Facts
+
+    // TODO: Merge relation and lattice facts.
+    val facts = relationFacts.toArray
+
+    new ConstraintSystem(facts)
   }
 
   /**
