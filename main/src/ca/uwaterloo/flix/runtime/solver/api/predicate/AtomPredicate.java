@@ -90,14 +90,21 @@ public final class AtomPredicate implements Predicate {
 
         // TODO: Lattice semantics.
 
-        if (this.sym.equals(that.sym) && this.isGround() && that.isGround()) {
+        if (!this.sym.equals(that.sym)) {
+            // Case 1: Symbols differ.
+            return false;
+        }
+
+        if (this.isGround() && that.isGround()) {
             for (var i = 0; i < this.getTerms().length; i++) {
                 var thisTerm = (LitTerm) this.getTerms()[i];
                 var thatTerm = (LitTerm) that.getTerms()[i];
                 var thisLit = thisTerm.getFunction().apply(new Object[1]);
                 var thatLit = thatTerm.getFunction().apply(new Object[1]);
-                if (!thisLit.equals(thatLit))
+                if (!thisLit.equals(thatLit)) {
+                    // Case 2: A literal differs.
                     return false;
+                }
             }
         }
 

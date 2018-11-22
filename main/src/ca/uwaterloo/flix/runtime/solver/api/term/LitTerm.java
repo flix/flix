@@ -39,7 +39,7 @@ public final class LitTerm implements Term {
      */
     @Override
     public String toString() {
-        return "<lit>";
+        return function.apply(new Object[1]).toString();
     }
 
 }
