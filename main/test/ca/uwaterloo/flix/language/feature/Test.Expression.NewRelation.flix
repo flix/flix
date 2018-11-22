@@ -1,11 +1,11 @@
-@test
+//@test
 def testNewRelation01(): Bool =
     let a = new A;
     check {
         a.A(1).
     }
 
-@test
+//@test
 def testNewRelation02(): Bool =
     let a = new A;
     check {
@@ -14,7 +14,7 @@ def testNewRelation02(): Bool =
         a.A(3).
     }
 
-@test
+//@test
 def testNewRelation03(): Bool =
     let a = new A;
     let b = new B;
@@ -23,7 +23,7 @@ def testNewRelation03(): Bool =
         b.B(1).
     }
 
-@test
+//@test
 def testNewRelation04(): Bool =
     let a = new A;
     let b = new B;
@@ -32,7 +32,7 @@ def testNewRelation04(): Bool =
         b.B(1). b.B(2). b.B(3).
     }
 
-@test
+//@test
 def testNewRelation05(): Bool =
     let a = new A;
     let b = new B;
@@ -41,7 +41,7 @@ def testNewRelation05(): Bool =
         b.B(x) :- a.A(x).
     }
 
-@test
+//@test
 def testNewRelation06(): Bool =
     let a = new A;
     let b = new B;
@@ -53,7 +53,7 @@ def testNewRelation06(): Bool =
         r.R(x) :- b.B(x).
     }
 
-@test
+//@test
 def testNewRelation07(): Bool =
     let a = new A;
     let b = new B;
@@ -64,7 +64,7 @@ def testNewRelation07(): Bool =
         r.R(x) :- a.A(x), b.B(x).
     }
 
-@test
+//@test
 def testNewRelation08(): Bool =
     let a1 = new A;
     let a2 = new A;
@@ -73,7 +73,7 @@ def testNewRelation08(): Bool =
         a2.A(1). a2.A(2). a2.A(3).
     }
 
-@test
+//@test
 def testNewRelation09(): Bool =
     let a1 = new A;
     let a2 = new A;
@@ -84,29 +84,29 @@ def testNewRelation09(): Bool =
         R(x) :- a1.A(x), a2.A(x).
     }
 
-@test
+//@test
 def testNewRelation10(): Bool =
     let a = new A;
     let _ = check { a.A(1). a.A(2). a.A(3). };
     let _ = check { a.A(3). a.A(4). a.A(5). };
     check { a.A(1). }
 
-@test
+//@test
 def testNewRelation11(): Bool =
     let a = new A;
     check f(a)
 
-@test
+//@test
 def testNewRelation12(): Bool =
     let a = new A;
     check g(a, 1, 2, 3)
 
-@test
+//@test
 def testNewRelation13(): Bool =
     let a = new A;
     check h(a, 1, 2, 3)
 
-@test
+//@test
 def testNewRelation14(): Bool =
     let a = new A;
     let b = new B;
