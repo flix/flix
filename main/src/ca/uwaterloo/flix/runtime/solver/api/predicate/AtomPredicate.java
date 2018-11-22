@@ -88,6 +88,14 @@ public final class AtomPredicate implements Predicate {
         if (that == null)
             throw new IllegalArgumentException("'that' must be non-null.");
 
+        if (!this.isGround()) {
+            throw new IllegalArgumentException("'this' must be ground.");
+        }
+
+        if (!that.isGround()) {
+            throw new IllegalArgumentException("'that' must be ground.");
+        }
+
         // TODO: Lattice semantics.
 
         if (!this.sym.equals(that.sym)) {
@@ -95,18 +103,17 @@ public final class AtomPredicate implements Predicate {
             return false;
         }
 
-        if (this.isGround() && that.isGround()) {
-            for (var i = 0; i < this.getTerms().length; i++) {
-                var thisTerm = (LitTerm) this.getTerms()[i];
-                var thatTerm = (LitTerm) that.getTerms()[i];
-                var thisLit = thisTerm.getFunction().apply(new Object[1]);
-                var thatLit = thatTerm.getFunction().apply(new Object[1]);
-                if (!thisLit.equals(thatLit)) {
-                    // Case 2: A literal differs.
-                    return false;
-                }
+        for (var i = 0; i < this.getTerms().length; i++) {
+            var thisTerm = (LitTerm) this.getTerms()[i];
+            var thatTerm = (LitTerm) that.getTerms()[i];
+            var thisLit = thisTerm.getFunction().apply(new Object[1]);
+            var thatLit = thatTerm.getFunction().apply(new Object[1]);
+            if (!thisLit.equals(thatLit)) {
+                // Case 2: A literal differs.
+                return false;
             }
         }
+
 
         return true;
     }
