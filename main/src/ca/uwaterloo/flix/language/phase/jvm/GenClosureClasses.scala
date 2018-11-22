@@ -65,7 +65,7 @@ object GenClosureClasses {
     val functionInterface = JvmOps.getFunctionInterfaceType(closure.tpe)
 
     // The super interface.
-    val superInterface = Array(functionInterface.name.toInternalName)
+    val superInterface = Array(functionInterface.name.toInternalName, JvmName.Spawnable.toInternalName)
 
     // `JvmType` of the class for `defn`
     val classType = JvmOps.getClosureClassType(closure)
@@ -110,6 +110,9 @@ object GenClosureClasses {
     // Apply method of the class
     compileApplyMethod(visitor, classType, root.defs(closure.sym), closure.freeVars, resultType)
 
+    // Spawn method of the class
+    compileSpawnMethod(visitor, classType, root.defs(closure.sym))
+
     // Constructor of the class
     compileConstructor(visitor, classType, closure.freeVars)
 
@@ -131,11 +134,12 @@ object GenClosureClasses {
     // Function parameters
     val params = defn.formals.takeRight(defn.formals.length - freeVars.length)
 
+    // TODO Magnus, Jonathan, Simon: remove sanity checking
     // Sanity check
     val skipLabel = new Label
     applyMethod.visitVarInsn(ALOAD, 0)
-    applyMethod.visitFieldInsn(GETFIELD, classType.name.toInternalName, "creationContext", JvmType.Object.toDescriptor)
-    applyMethod.visitVarInsn(ALOAD, 1)
+//    applyMethod.visitFieldInsn(GETFIELD, classType.name.toInternalName, "creationContext", JvmType.Object.toDescriptor)
+    applyMethod.visitVarInsn(ALOAD, 0)
 
     // If contexts are equal, precede to evaluate
     applyMethod.visitJumpInsn(IF_ACMPEQ, skipLabel)
@@ -249,6 +253,33 @@ object GenClosureClasses {
     constructor.visitInsn(RETURN)
     constructor.visitMaxs(1, 1)
     constructor.visitEnd()
+  }
+
+  /**
+    * Spawn method for the given `defn` and `classType`.
+    */
+  private def compileSpawnMethod(visitor: ClassWriter,
+                                 classType: JvmType.Reference,
+                                 defn: Def)(implicit root: Root, flix: Flix): Unit = {
+
+    // Method header
+    val mv = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, "spawn",
+      AsmOps.getMethodDescriptor(List(), JvmType.Void), null, null)
+
+    // Put this on stack
+    mv.visitVarInsn(ALOAD, 0)
+
+    // Create new Context
+    mv.visitTypeInsn(NEW, JvmName.Context.toInternalName)
+    mv.visitInsn(DUP)
+    mv.visitMethodInsn(INVOKESPECIAL, JvmName.Context.toInternalName, "<init>", "()V", false)
+
+    // Call the apply method
+    mv.visitMethodInsn(INVOKEVIRTUAL, classType.name.toInternalName, "apply", "(LContext;)V", false)
+
+    mv.visitInsn(RETURN)
+    mv.visitMaxs(65535, 65535)
+    mv.visitEnd()
   }
 
 }

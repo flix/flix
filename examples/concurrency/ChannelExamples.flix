@@ -4,12 +4,12 @@
 //    x
 //}
 
-//def chanTest(): Channel[Float64] = chan Float64
+def chanTest(): Channel[Float64] = chan Float64
 
 //
-//def getchTest(): Bool = let c = chan Bool; let c1 = c <- true; <- c1
+pub def getchTest(): Bool = let c = chan Bool; let c1 = c <- true; <- c1
 
-//def putchTest(): Channel[Bool] = let c = chan Bool; c <- true
+def putchTest(): Channel[Bool] = let c = chan Bool; c <- true
 //
 //def closechTest(): Channel[Int] = let c = chan Int; let c1 = closech c; c <- 1
 //
@@ -34,15 +34,15 @@
 def spawnTest(): Str = let c = chan Str; spawn c <- "2"; <- c
 //
 //
-//def selectTest(): Float64 = {
-//    let c1 = chan Float64;
-//    let asd = c1 <- 1.0;
-//    let c2 = chan Float64;
-//    let fgh = c2 <- 2.0;
-//    select {
-//        case x <- c2 => x + 1.0
-//        case y <- c1 => y + 1.0
-//    }
-//}
+def selectTest(): Float64 = {
+    let c1 = chan Float64;
+    let asd = c1 <- 1.0;
+    let c2 = chan Float64;
+    let fgh = c2 <- 2.0;
+    select {
+        case x <- c2 => x + 1.0
+        case y <- c1 => y + 1.0
+    }
+}
 //
 //def statementTest(): Int = 1 ; 2

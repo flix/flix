@@ -1067,45 +1067,16 @@ object GenExpression {
       visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Value.Unit.toInternalName, "getInstance",
         AsmOps.getMethodDescriptor(Nil, JvmType.Unit), false)
 
-    case Expression.Spawn(closure, tpe, loc) =>
+    case Expression.Spawn(exp, tpe, loc) =>
+      addSourceLine(visitor, loc)
+      // Compile the expression, putting a function implementing the Spawnable interface on the stack
+      compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+      // Call spawn method from Channel class
+      visitor.visitMethodInsn(INVOKESTATIC, JvmName.Channel.toInternalName, "spawn",
+        AsmOps.getMethodDescriptor(List(JvmType.Spawnable), JvmType.Void), false)
+      // Put a Unit value on the stack
       visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Value.Unit.toInternalName, "getInstance",
         AsmOps.getMethodDescriptor(Nil, JvmType.Unit), false)
-//      val sym = closure match {
-//        case Expression.Closure(closureSym, _, _, _, _) => closureSym
-//        case _ => throw InternalCompilerException(s"Unexpected non-closure: $closure")
-//      }
-//      // Label for the loop
-//      val loop = new Label
-//      // Namespace of the Def
-//      val ns = JvmOps.getNamespace(sym)
-//      // JvmType of `ns`
-//      val nsJvmType = JvmOps.getNamespaceClassType(ns)
-//      // Name of the field for `ns` on `Context`
-//      val nsFieldName = JvmOps.getNamespaceFieldNameInContextClass(ns)
-//      // Field for Def on `ns`
-//      val defFiledName = JvmOps.getDefFieldNameInNamespaceClass(sym)
-//      // JvmType of Def
-//      val defJvmType = JvmOps.getFunctionDefinitionClassType(sym)
-//      // Type of the function
-//      val fnType = root.defs(sym).tpe
-//      // Type of the continuation interface
-//      val cont = JvmOps.getContinuationInterfaceType(fnType)
-//      // Type of the function interface
-//      val functionInterface = JvmOps.getFunctionInterfaceType(fnType)
-//      // Put the closure on `continuation` field of `Context`
-//      visitor.visitVarInsn(ALOAD, 1)
-//      // Load `Context`
-//      visitor.visitVarInsn(ALOAD, 1)
-//      // Load `ns`
-//      visitor.visitFieldInsn(GETFIELD, JvmName.Context.toInternalName, nsFieldName, nsJvmType.toDescriptor)
-//      // Load `continuation`
-//      visitor.visitFieldInsn(GETFIELD, nsJvmType.name.toInternalName, defFiledName, defJvmType.toDescriptor)
-//      // Result type
-//      val resultType = JvmOps.getErasedJvmType(tpe)
-//      // Casting to JvmType of FunctionInterface
-//      //visitor.visitTypeInsn(CHECKCAST, JvmName.Spawnable.toInternalName)
-//
-//      visitor.visitMethodInsn(INVOKESTATIC, JvmName.Channel.toInternalName, "spawn", "(Lca/uwaterloo/flix/runtime/interpreter/Spawnable;)V", false)
 
     case Expression.UserError(_, loc) =>
       addSourceLine(visitor, loc)
