@@ -29,7 +29,7 @@ import ca.uwaterloo.flix.runtime.solver.api.symbol._
 import ca.uwaterloo.flix.runtime.solver.api.{Attribute => _, Constraint => _, _}
 import ca.uwaterloo.flix.util.{InternalRuntimeException, Verbosity}
 import ca.uwaterloo.flix.util.tc.Show._
-import flix.runtime.fixpoint.predicate.{FalsePredicate, TruePredicate}
+import flix.runtime.fixpoint.predicate.{FalsePredicate, FilterPredicate, TruePredicate}
 import flix.runtime.fixpoint.symbol.VarSym
 import flix.runtime.fixpoint.term._
 import flix.runtime.{fixpoint, _}
@@ -776,7 +776,7 @@ object Interpreter {
         }
       }
       val ts = terms.map(t => evalBodyTerm(t, env0))
-      new api.predicate.FilterPredicate(f, ts.toArray)
+      FilterPredicate.of(f, ts.toArray)
 
     case FinalAst.Predicate.Body.Functional(varSym, defSym, terms, loc) =>
       val s = VarSym.of(varSym.text, varSym.getStackOffset)

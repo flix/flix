@@ -135,6 +135,8 @@ object JvmName {
 
       object Predicate {
         val Predicate: JvmName = mk("flix/runtime/fixpoint/predicate/Predicate")
+
+        val FilterPredicate: JvmName = mk("flix/runtime/fixpoint/predicate/FilterPredicate")
         val TruePredicate: JvmName = mk("flix/runtime/fixpoint/predicate/TruePredicate")
         val FalsePredicate: JvmName = mk("flix/runtime/fixpoint/predicate/FalsePredicate")
       }

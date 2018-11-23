@@ -1,6 +1,7 @@
 package ca.uwaterloo.flix.runtime.solver.api;
 
 import ca.uwaterloo.flix.runtime.solver.api.predicate.*;
+import flix.runtime.fixpoint.predicate.FilterPredicate;
 import flix.runtime.fixpoint.symbol.VarSym;
 import flix.runtime.fixpoint.predicate.FalsePredicate;
 import flix.runtime.fixpoint.predicate.Predicate;

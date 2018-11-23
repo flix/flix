@@ -1649,18 +1649,14 @@ object GenExpression {
       // Add source line numbers for debugging.
       addSourceLine(mv, loc)
 
-      // Allocate a fresh filter predicate object.
-      mv.visitTypeInsn(NEW, "ca/uwaterloo/flix/runtime/solver/api/predicate/FilterPredicate")
-      mv.visitInsn(DUP)
-
       // Emit code for the function symbol.
       AsmOps.compileDefSymbol(sym, mv)
 
       // Emit code for the terms.
       newBodyTerms(terms, mv)
 
-      // Emit code to invoke the constructor.
-      mv.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/solver/api/predicate/FilterPredicate", "<init>", "(Ljava/util/function/Function;[Lflix/runtime/fixpoint/term/Term;)V", false);
+      // Instantiate a new filter predicate object.
+      mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Predicate.FilterPredicate.toInternalName, "of", "(Ljava/util/function/Function;[Lflix/runtime/fixpoint/term/Term;)Lflix/runtime/fixpoint/predicate/FilterPredicate;", false);
 
     case Predicate.Body.Functional(varSym, defSym, args, loc) =>
       // Add source line numbers for debugging.
