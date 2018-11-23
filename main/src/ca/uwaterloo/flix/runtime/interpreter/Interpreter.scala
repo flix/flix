@@ -29,7 +29,7 @@ import ca.uwaterloo.flix.runtime.solver.api.symbol._
 import ca.uwaterloo.flix.runtime.solver.api.{Attribute => _, Constraint => _, _}
 import ca.uwaterloo.flix.util.{InternalRuntimeException, Verbosity}
 import ca.uwaterloo.flix.util.tc.Show._
-import flix.runtime.fixpoint.predicate.{FalsePredicate, FilterPredicate, TruePredicate}
+import flix.runtime.fixpoint.predicate.{FalsePredicate, FilterPredicate, FunctionalPredicate, TruePredicate}
 import flix.runtime.fixpoint.symbol.VarSym
 import flix.runtime.fixpoint.term._
 import flix.runtime.{fixpoint, _}
@@ -784,7 +784,7 @@ object Interpreter {
         override def apply(as: Array[AnyRef]): Array[ProxyObject] = Linker.link(defSym, root).invoke(as).getValue.asInstanceOf[Array[ProxyObject]]
       }
       val ts = terms.map(s => VarSym.of(s.text, s.getStackOffset))
-      new api.predicate.FunctionalPredicate(s, f, ts.toArray)
+      FunctionalPredicate.of(s, f, ts.toArray)
   }
 
   /**

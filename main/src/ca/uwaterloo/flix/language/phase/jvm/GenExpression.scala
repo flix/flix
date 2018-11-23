@@ -1662,10 +1662,6 @@ object GenExpression {
       // Add source line numbers for debugging.
       addSourceLine(mv, loc)
 
-      // Allocate a fresh functional predicate object.
-      mv.visitTypeInsn(NEW, "ca/uwaterloo/flix/runtime/solver/api/predicate/FunctionalPredicate")
-      mv.visitInsn(DUP)
-
       // The variable symbol.
       newVarSym(varSym, mv)
 
@@ -1675,8 +1671,8 @@ object GenExpression {
       // The function argument variables.
       newVarSyms(args, mv)
 
-      // Invoke the constructor.
-      mv.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/solver/api/predicate/FunctionalPredicate", "<init>", "(Lflix/runtime/fixpoint/symbol/VarSym;Ljava/util/function/Function;[Lflix/runtime/fixpoint/symbol/VarSym;)V", false);
+      // Instantiate a new functional predicate object.
+      mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Predicate.FunctionalPredicate.toInternalName, "of", "(Lflix/runtime/fixpoint/symbol/VarSym;Ljava/util/function/Function;[Lflix/runtime/fixpoint/symbol/VarSym;)Lflix/runtime/fixpoint/predicate/FunctionalPredicate;", false);
 
   }
 

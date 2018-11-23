@@ -61,7 +61,7 @@ public final class FilterPredicate implements Predicate {
      */
     @Override
     public String toString() {
-        return "if <...>";
+        return "<filter>";
     }
 
 }

@@ -1,4 +1,4 @@
-package ca.uwaterloo.flix.runtime.solver.api.predicate;
+package flix.runtime.fixpoint.predicate;
 
 import ca.uwaterloo.flix.runtime.solver.api.ProxyObject;
 import flix.runtime.fixpoint.symbol.VarSym;
@@ -10,6 +10,21 @@ import java.util.function.Function;
  * Represents a functional predicate of the form: sym <- function(args).
  */
 public final class FunctionalPredicate implements Predicate {
+
+    /**
+     * Constructs a functional predicate for the given symbol, function, and function arguments.
+     */
+    public static FunctionalPredicate of(VarSym sym, Function<Object[], ProxyObject[]> function, VarSym[] arguments) {
+        if (sym == null)
+            throw new IllegalArgumentException("'sym' must be non-null.");
+        if (function == null)
+            throw new IllegalArgumentException("'function' must be non-null.");
+        if (arguments == null) {
+            throw new IllegalArgumentException("'arguments' must be non-null.");
+        }
+
+        return new FunctionalPredicate(sym, function, arguments);
+    }
 
     /**
      * The variable.
@@ -27,17 +42,9 @@ public final class FunctionalPredicate implements Predicate {
     private final VarSym[] arguments;
 
     /**
-     * Constructs a functional predicate for the given symbol, function, and function arguments.
+     * Private constructor.
      */
-    public FunctionalPredicate(VarSym sym, Function<Object[], ProxyObject[]> function, VarSym[] arguments) {
-        if (sym == null)
-            throw new IllegalArgumentException("'sym' must be non-null.");
-        if (function == null)
-            throw new IllegalArgumentException("'function' must be non-null.");
-        if (arguments == null) {
-            throw new IllegalArgumentException("'arguments' must be non-null.");
-        }
-
+    private FunctionalPredicate(VarSym sym, Function<Object[], ProxyObject[]> function, VarSym[] arguments) {
         this.sym = sym;
         this.function = function;
         this.arguments = arguments;
