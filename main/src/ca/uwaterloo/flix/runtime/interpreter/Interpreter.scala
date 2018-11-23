@@ -24,12 +24,11 @@ import ca.uwaterloo.flix.language.ast.FinalAst._
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.runtime.{InvocationTarget, Linker}
 import ca.uwaterloo.flix.runtime.solver._
-import ca.uwaterloo.flix.runtime.solver.api.predicate.AtomPredicate
 import ca.uwaterloo.flix.runtime.solver.api.symbol._
 import ca.uwaterloo.flix.runtime.solver.api.{Attribute => _, Constraint => _, _}
 import ca.uwaterloo.flix.util.{InternalRuntimeException, Verbosity}
 import ca.uwaterloo.flix.util.tc.Show._
-import flix.runtime.fixpoint.predicate.{FalsePredicate, FilterPredicate, FunctionalPredicate, TruePredicate}
+import flix.runtime.fixpoint.predicate._
 import flix.runtime.fixpoint.symbol.VarSym
 import flix.runtime.fixpoint.term._
 import flix.runtime.{fixpoint, _}
@@ -727,7 +726,7 @@ object Interpreter {
         case None => getRelSym(sym)
         case Some(baseSym) => cast2relsym(env0(baseSym.toString))
       }
-      new AtomPredicate(relSym, true, ts)
+      AtomPredicate.of(relSym, true, ts)
 
     case FinalAst.Predicate.Head.LatAtom(baseOpt, sym, terms, _, _) =>
       val ts = terms.map(t => evalHeadTerm(t, env0)).toArray
@@ -736,7 +735,7 @@ object Interpreter {
         case Some(baseSym) =>
           cast2latsym(env0(baseSym.toString))
       }
-      new AtomPredicate(latSym, true, ts)
+      AtomPredicate.of(latSym, true, ts)
   }
 
   /**
@@ -753,7 +752,7 @@ object Interpreter {
         case None => getRelSym(sym)
         case Some(baseSym) => cast2relsym(env0(baseSym.toString))
       }
-      new AtomPredicate(relSym, p, ts)
+      AtomPredicate.of(relSym, p, ts)
 
     case FinalAst.Predicate.Body.LatAtom(baseOpt, sym, polarity, terms, _, _) =>
       val p = polarity match {
@@ -766,7 +765,7 @@ object Interpreter {
         case Some(baseSym) =>
           cast2latsym(env0(baseSym.toString))
       }
-      new AtomPredicate(latSym, p, ts)
+      AtomPredicate.of(latSym, p, ts)
 
     case FinalAst.Predicate.Body.Filter(sym, terms, loc) =>
       val f = new function.Function[Array[Object], ProxyObject] {

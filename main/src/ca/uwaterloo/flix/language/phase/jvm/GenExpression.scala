@@ -1593,10 +1593,6 @@ object GenExpression {
       // Add source line numbers for debugging.
       addSourceLine(mv, loc)
 
-      // Allocate a fresh atom predicate object.
-      mv.visitTypeInsn(NEW, "ca/uwaterloo/flix/runtime/solver/api/predicate/AtomPredicate")
-      mv.visitInsn(DUP)
-
       // Emit code for the predicate symbol.
       compilePredicateSymbol(baseOpt, sym, tpe, mv)
 
@@ -1606,8 +1602,8 @@ object GenExpression {
       // Emit code for the head terms.
       newHeadTerms(terms, mv)
 
-      // Emit code to invoke the constructor of the atom predicate.
-      mv.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/solver/api/predicate/AtomPredicate", "<init>", "(Lca/uwaterloo/flix/runtime/solver/api/symbol/PredSym;Z[Lflix/runtime/fixpoint/term/Term;)V", false);
+      // Instantiate a new atom predicate object.
+      mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Predicate.AtomPredicate.toInternalName, "of", "(Lca/uwaterloo/flix/runtime/solver/api/symbol/PredSym;Z[Lflix/runtime/fixpoint/term/Term;)Lflix/runtime/fixpoint/predicate/AtomPredicate;", false);
 
     case Predicate.Head.LatAtom(baseOpt, sym, terms, tpe, loc) =>
       ??? // TODO: Predicate.Body.LatAtom
@@ -1623,10 +1619,6 @@ object GenExpression {
       // Add source line numbers for debugging.
       addSourceLine(mv, loc)
 
-      // Allocate a fresh atom predicate object.
-      mv.visitTypeInsn(NEW, "ca/uwaterloo/flix/runtime/solver/api/predicate/AtomPredicate")
-      mv.visitInsn(DUP)
-
       // Emit code for the predicate symbol.
       compilePredicateSymbol(baseOpt, sym, tpe, mv)
 
@@ -1639,8 +1631,8 @@ object GenExpression {
       // Emit code for the terms.
       newBodyTerms(terms, mv)
 
-      // Emit code to invoke the constructor of the atom predicate.
-      mv.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/solver/api/predicate/AtomPredicate", "<init>", "(Lca/uwaterloo/flix/runtime/solver/api/symbol/PredSym;Z[Lflix/runtime/fixpoint/term/Term;)V", false);
+      // Instantiate a new atom predicate object.
+      mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Predicate.AtomPredicate.toInternalName, "of", "(Lca/uwaterloo/flix/runtime/solver/api/symbol/PredSym;Z[Lflix/runtime/fixpoint/term/Term;)Lflix/runtime/fixpoint/predicate/AtomPredicate;", false);
 
     case Predicate.Body.LatAtom(baseOpt, sym, polarity, terms, tpe, loc) =>
       ??? // TODO: Predicate.Body.LatAtom

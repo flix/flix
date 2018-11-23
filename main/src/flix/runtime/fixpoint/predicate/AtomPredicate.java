@@ -1,9 +1,8 @@
-package ca.uwaterloo.flix.runtime.solver.api.predicate;
+package flix.runtime.fixpoint.predicate;
 
 import ca.uwaterloo.flix.runtime.solver.api.symbol.PredSym;
 import flix.runtime.fixpoint.term.LitTerm;
 import flix.runtime.fixpoint.term.Term;
-import flix.runtime.fixpoint.predicate.Predicate;
 
 import java.util.Arrays;
 
@@ -11,6 +10,18 @@ import java.util.Arrays;
  * Represents an atom predicate of the form: sym(terms).
  */
 public final class AtomPredicate implements Predicate {
+
+    /**
+     * Constructs an atom predicate for the given predicate symbol, with the given polarity, and terms.
+     */
+    public static AtomPredicate of(PredSym sym, boolean positive, Term[] terms) {
+        if (sym == null)
+            throw new IllegalArgumentException("'sym' must be non-null.");
+        if (terms == null)
+            throw new IllegalArgumentException("'terms' must be non-null.");
+
+        return new AtomPredicate(sym, positive, terms);
+    }
 
     /**
      * The predicate symbol.
@@ -28,14 +39,9 @@ public final class AtomPredicate implements Predicate {
     private final Term[] terms;
 
     /**
-     * Constructs an atom predicate for the given predicate symbol, with the given polarity, and terms.
+     * Private constructor.
      */
-    public AtomPredicate(PredSym sym, boolean positive, Term[] terms) {
-        if (sym == null)
-            throw new IllegalArgumentException("'sym' must be non-null.");
-        if (terms == null)
-            throw new IllegalArgumentException("'terms' must be non-null.");
-
+    private AtomPredicate(PredSym sym, boolean positive, Term[] terms) {
         this.sym = sym;
         this.positive = positive;
         this.terms = terms;
@@ -96,12 +102,12 @@ public final class AtomPredicate implements Predicate {
             throw new IllegalArgumentException("'that' must be ground.");
         }
 
-        // TODO: Lattice semantics.
-
         if (!this.sym.equals(that.sym)) {
             // Case 1: Symbols differ.
             return false;
         }
+
+        // TODO: Lattice semantics.
 
         for (var i = 0; i < this.getTerms().length; i++) {
             var thisTerm = (LitTerm) this.getTerms()[i];
@@ -113,7 +119,6 @@ public final class AtomPredicate implements Predicate {
                 return false;
             }
         }
-
 
         return true;
     }

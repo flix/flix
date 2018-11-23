@@ -24,7 +24,6 @@ import ca.uwaterloo.flix.runtime.solver.datastore.DataStore
 import ca.uwaterloo.flix.runtime.debugger.RestServer
 import ca.uwaterloo.flix.runtime.solver.api._
 import ca.uwaterloo.flix.runtime.Monitor
-import ca.uwaterloo.flix.runtime.solver.api.predicate._
 import ca.uwaterloo.flix.runtime.solver.api.symbol._
 import ca.uwaterloo.flix.util._
 import flix.runtime.fixpoint.predicate._
@@ -355,7 +354,7 @@ class Solver(constraintSystem: ConstraintSystem, stratification: Stratification,
             val terms = row map {
               case proxyObject => LitTerm.of(new ConstantFunction(proxyObject)): Term
             }
-            val head = new AtomPredicate(sym, true, terms)
+            val head = AtomPredicate.of(sym, true, terms)
             val body = new Array[Predicate](0)
 
             new Constraint(new Array[VarSym](0), head, body)
