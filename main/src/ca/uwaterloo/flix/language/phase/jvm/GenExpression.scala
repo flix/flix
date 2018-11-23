@@ -1603,19 +1603,11 @@ object GenExpression {
       // Emit code for the polarity of the atom. A head atom is always positive.
       mv.visitInsn(ICONST_1)
 
-      // Emit code for the terms.
-      compileInt(mv, terms.length)
-      mv.visitTypeInsn(ANEWARRAY, "ca/uwaterloo/flix/runtime/solver/api/term/Term")
-      for ((term, index) <- terms.zipWithIndex) {
-        // Compile each term and store it in the array.
-        mv.visitInsn(DUP)
-        compileInt(mv, index)
-        compileHeadTerm(term, mv)
-        mv.visitInsn(AASTORE)
-      }
+      // Emit code for the head terms.
+      newHeadTerms(terms, mv)
 
       // Emit code to invoke the constructor of the atom predicate.
-      mv.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/solver/api/predicate/AtomPredicate", "<init>", "(Lca/uwaterloo/flix/runtime/solver/api/symbol/PredSym;Z[Lca/uwaterloo/flix/runtime/solver/api/term/Term;)V", false);
+      mv.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/solver/api/predicate/AtomPredicate", "<init>", "(Lca/uwaterloo/flix/runtime/solver/api/symbol/PredSym;Z[Lflix/runtime/fixpoint/term/Term;)V", false);
 
     case Predicate.Head.LatAtom(baseOpt, sym, terms, tpe, loc) =>
       ??? // TODO: Predicate.Body.LatAtom
@@ -1645,10 +1637,10 @@ object GenExpression {
       }
 
       // Emit code for the terms.
-      compileBodyTerms(terms, mv)
+      newBodyTerms(terms, mv)
 
       // Emit code to invoke the constructor of the atom predicate.
-      mv.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/solver/api/predicate/AtomPredicate", "<init>", "(Lca/uwaterloo/flix/runtime/solver/api/symbol/PredSym;Z[Lca/uwaterloo/flix/runtime/solver/api/term/Term;)V", false);
+      mv.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/solver/api/predicate/AtomPredicate", "<init>", "(Lca/uwaterloo/flix/runtime/solver/api/symbol/PredSym;Z[Lflix/runtime/fixpoint/term/Term;)V", false);
 
     case Predicate.Body.LatAtom(baseOpt, sym, polarity, terms, tpe, loc) =>
       ??? // TODO: Predicate.Body.LatAtom
@@ -1665,10 +1657,10 @@ object GenExpression {
       AsmOps.compileDefSymbol(sym, mv)
 
       // Emit code for the terms.
-      compileBodyTerms(terms, mv)
+      newBodyTerms(terms, mv)
 
       // Emit code to invoke the constructor.
-      mv.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/solver/api/predicate/FilterPredicate", "<init>", "(Ljava/util/function/Function;[Lca/uwaterloo/flix/runtime/solver/api/term/Term;)V", false);
+      mv.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/solver/api/predicate/FilterPredicate", "<init>", "(Ljava/util/function/Function;[Lflix/runtime/fixpoint/term/Term;)V", false);
 
     case Predicate.Body.Functional(varSym, defSym, args, loc) =>
       // Add source line numbers for debugging.
@@ -1803,11 +1795,26 @@ object GenExpression {
   }
 
   /**
-    * Compiles the given body `terms` to an array of term objects.
+    * Emits code for the given head `terms`.
     */
-  private def compileBodyTerms(terms: List[Term.Body], mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
+  private def newHeadTerms(terms: List[Term.Head], mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
     compileInt(mv, terms.length)
-    mv.visitTypeInsn(ANEWARRAY, "ca/uwaterloo/flix/runtime/solver/api/term/Term")
+    mv.visitTypeInsn(ANEWARRAY, JvmName.Runtime.Fixpoint.Term.Term.toInternalName)
+    for ((term, index) <- terms.zipWithIndex) {
+      // Compile each term and store it in the array.
+      mv.visitInsn(DUP)
+      compileInt(mv, index)
+      compileHeadTerm(term, mv)
+      mv.visitInsn(AASTORE)
+    }
+  }
+
+  /**
+    * Emits code for the given body `terms`.
+    */
+  private def newBodyTerms(terms: List[Term.Body], mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
+    compileInt(mv, terms.length)
+    mv.visitTypeInsn(ANEWARRAY, JvmName.Runtime.Fixpoint.Term.Term.toInternalName)
     for ((term, index) <- terms.zipWithIndex) {
       // Compile each term and store it in the array.
       mv.visitInsn(DUP)

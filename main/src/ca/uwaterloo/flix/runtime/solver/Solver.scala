@@ -26,11 +26,10 @@ import ca.uwaterloo.flix.runtime.solver.api._
 import ca.uwaterloo.flix.runtime.Monitor
 import ca.uwaterloo.flix.runtime.solver.api.predicate._
 import ca.uwaterloo.flix.runtime.solver.api.symbol._
-import ca.uwaterloo.flix.runtime.solver.api.term._
 import ca.uwaterloo.flix.util._
 import flix.runtime.fixpoint.predicate.{FalsePredicate, Predicate, TruePredicate}
 import flix.runtime.fixpoint.symbol.VarSym
-import flix.runtime.fixpoint.term.{AppTerm, LitTerm, VarTerm, WildTerm}
+import flix.runtime.fixpoint.term._
 import flix.runtime.{ReifiedSourceLocation, RuleError, TimeoutError}
 
 import scala.collection.mutable

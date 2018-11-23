@@ -1,7 +1,5 @@
 package flix.runtime.fixpoint.term;
 
-import ca.uwaterloo.flix.runtime.solver.api.term.Term;
-
 /**
  * Represents a wildcard term.
  */

@@ -31,7 +31,7 @@ import ca.uwaterloo.flix.util.{InternalRuntimeException, Verbosity}
 import ca.uwaterloo.flix.util.tc.Show._
 import flix.runtime.fixpoint.predicate.{FalsePredicate, TruePredicate}
 import flix.runtime.fixpoint.symbol.VarSym
-import flix.runtime.fixpoint.term.{AppTerm, LitTerm, VarTerm, WildTerm}
+import flix.runtime.fixpoint.term._
 import flix.runtime.{fixpoint, _}
 
 import scala.collection.mutable
@@ -790,7 +790,7 @@ object Interpreter {
   /**
     * Evaluates the given head term `t0` under the given environment `env0` to a head term value.
     */
-  private def evalHeadTerm(t0: FinalAst.Term.Head, env0: Map[String, AnyRef])(implicit root: FinalAst.Root, flix: Flix): api.term.Term = t0 match {
+  private def evalHeadTerm(t0: FinalAst.Term.Head, env0: Map[String, AnyRef])(implicit root: FinalAst.Root, flix: Flix): Term = t0 match {
     //
     // Free Variables (i.e. variables that are quantified over in the constraint).
     //
@@ -830,7 +830,7 @@ object Interpreter {
   /**
     * Evaluates the given body term `t0` under the given environment `env0` to a body term value.
     */
-  private def evalBodyTerm(t0: FinalAst.Term.Body, env0: Map[String, AnyRef])(implicit root: FinalAst.Root, flix: Flix): api.term.Term = t0 match {
+  private def evalBodyTerm(t0: FinalAst.Term.Body, env0: Map[String, AnyRef])(implicit root: FinalAst.Root, flix: Flix): Term = t0 match {
     //
     // Wildcards.
     //

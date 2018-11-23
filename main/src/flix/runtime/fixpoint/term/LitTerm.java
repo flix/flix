@@ -1,9 +1,7 @@
 package flix.runtime.fixpoint.term;
 
 import ca.uwaterloo.flix.runtime.solver.api.ProxyObject;
-import ca.uwaterloo.flix.runtime.solver.api.term.Term;
 
-import java.util.concurrent.Callable;
 import java.util.function.Function;
 
 /**

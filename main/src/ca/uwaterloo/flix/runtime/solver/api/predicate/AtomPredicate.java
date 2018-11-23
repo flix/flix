@@ -2,7 +2,7 @@ package ca.uwaterloo.flix.runtime.solver.api.predicate;
 
 import ca.uwaterloo.flix.runtime.solver.api.symbol.PredSym;
 import flix.runtime.fixpoint.term.LitTerm;
-import ca.uwaterloo.flix.runtime.solver.api.term.Term;
+import flix.runtime.fixpoint.term.Term;
 import flix.runtime.fixpoint.predicate.Predicate;
 
 import java.util.Arrays;

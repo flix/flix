@@ -1,4 +1,4 @@
-package ca.uwaterloo.flix.runtime.solver.api.term;
+package flix.runtime.fixpoint.term;
 
 /**
  * A common interface for terms.
