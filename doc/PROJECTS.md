@@ -36,3 +36,24 @@ The work will include reading papers, language design, and implementation in a r
 
 Contact: Magnus Madsen <magnusm@cs.au.dk>
 
+
+
+
+### Uniqueness / Ownership Typing 
+Resources, such a raw memory, file handles, sockets, database connections etc. must be carefully managed to ensure 
+correct use and to ensure they are released when no longer needed. In languages such as C and Java, it is to
+a high-degree the responsibility of the programmer to ensure such correct use. For example, in C it is easy to forget
+to free memory or to free memory twice, whereas in Java it is easy to forget to close a file stream.
+
+Programming languages such as Rust and Clean attempt to address these issues with uniqueness / ownership type systems.
+In these languages, the type system tracks the use of a resource and ensures that it accessed correctly and released
+at an appropriate time. 
+
+The aim of this project is to explore the design space of uniqueness/ownership typing for a functional language.
+The work will include reading papers, language design, and implementation in a real-world programming language.
+
+### Literature
+- Walker, David: Substructural type systems. Advanced Topics in Types and Programming Languages
+- Clarke, David G., John M. Potter, and James Noble: Ownership types for flexible alias protection
+
+Contact: Magnus Madsen <magnusm@cs.au.dk>
