@@ -1,6 +1,7 @@
-package ca.uwaterloo.flix.runtime.solver.api.term;
+package flix.runtime.fixpoint.term;
 
 import ca.uwaterloo.flix.runtime.solver.api.ProxyObject;
+import ca.uwaterloo.flix.runtime.solver.api.term.Term;
 
 import java.util.concurrent.Callable;
 import java.util.function.Function;
@@ -13,17 +14,24 @@ import java.util.function.Function;
 public final class LitTerm implements Term {
 
     /**
+     * Construct a literal term for the given function.
+     */
+    public static LitTerm of(Function<Object, ProxyObject> function) {
+        if (function == null)
+            throw new IllegalArgumentException("'function' must be non-null");
+
+        return new LitTerm(function);
+    }
+
+    /**
      * The zero argument function which returns the literal when invoked.
      */
     private final Function<Object, ProxyObject> function;
 
     /**
-     * Construct a literal term for the given function.
+     * Private constructor.
      */
-    public LitTerm(Function<Object, ProxyObject> function) {
-        if (function == null)
-            throw new IllegalArgumentException("'function' must be non-null");
-
+    private LitTerm(Function<Object, ProxyObject> function) {
         this.function = function;
     }
 

@@ -31,7 +31,7 @@ import ca.uwaterloo.flix.util.{InternalRuntimeException, Verbosity}
 import ca.uwaterloo.flix.util.tc.Show._
 import flix.runtime.fixpoint.predicate.{FalsePredicate, TruePredicate}
 import flix.runtime.fixpoint.symbol.VarSym
-import flix.runtime.fixpoint.term.{VarTerm, WildTerm}
+import flix.runtime.fixpoint.term.{LitTerm, VarTerm, WildTerm}
 import flix.runtime.{fixpoint, _}
 
 import scala.collection.mutable
@@ -806,14 +806,14 @@ object Interpreter {
       val v = wrapValueInProxyObject(env0(sym.toString), tpe)
 
       // Construct a literal term with a function that evaluates to the proxy object.
-      new api.term.LitTerm((_: AnyRef) => v)
+      LitTerm.of((_: AnyRef) => v)
 
     //
     // Literals.
     //
     case FinalAst.Term.Head.Lit(sym, _, _) =>
       // Construct a literal term with a function that invokes another function which returns the literal.
-      new api.term.LitTerm((_: AnyRef) => Linker.link(sym, root).invoke(Array.emptyObjectArray))
+      LitTerm.of((_: AnyRef) => Linker.link(sym, root).invoke(Array.emptyObjectArray))
 
     //
     // Applications.
@@ -851,14 +851,14 @@ object Interpreter {
       val v = wrapValueInProxyObject(env0(sym.toString), tpe)
 
       // Construct a literal term with a function that evaluates to the proxy object.
-      new api.term.LitTerm((_: AnyRef) => v)
+      LitTerm.of((_: AnyRef) => v)
 
     //
     // Literals.
     //
     case FinalAst.Term.Body.Lit(sym, _, _) =>
       // Construct a literal term with a function that invokes another function which returns the literal.
-      new api.term.LitTerm((_: AnyRef) => Linker.link(sym, root).invoke(Array.emptyObjectArray))
+      LitTerm.of((_: AnyRef) => Linker.link(sym, root).invoke(Array.emptyObjectArray))
   }
 
   /**

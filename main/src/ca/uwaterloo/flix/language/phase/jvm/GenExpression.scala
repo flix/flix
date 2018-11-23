@@ -1759,7 +1759,7 @@ object GenExpression {
       addSourceLine(mv, loc)
 
       // Compile the literal term.
-      compileLitTerm(sym, mv)
+      newLitTerm(sym, mv)
 
     case Term.Head.App(sym, args, tpe, loc) =>
       // Add source line numbers for debugging.
@@ -1817,7 +1817,7 @@ object GenExpression {
       addSourceLine(mv, loc)
 
       // Compile the literal term.
-      compileLitTerm(sym, mv)
+      newLitTerm(sym, mv)
   }
 
   /**
@@ -1847,10 +1847,6 @@ object GenExpression {
     * Emits code for the captured variable symbol `sym` term.
     */
   private def compileCapturedVarTerm(sym: Symbol.VarSym, tpe: ast.Type, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
-    // Allocate a fresh literal term.
-    mv.visitTypeInsn(NEW, "ca/uwaterloo/flix/runtime/solver/api/term/LitTerm")
-    mv.visitInsn(DUP)
-
     // Allocate a fresh constant function.
     mv.visitTypeInsn(NEW, "ca/uwaterloo/flix/runtime/solver/api/ConstantFunction")
     mv.visitInsn(DUP)
@@ -1867,8 +1863,8 @@ object GenExpression {
     // Invoke the constructor of the constant function.
     mv.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/solver/api/ConstantFunction", "<init>", "(Lca/uwaterloo/flix/runtime/solver/api/ProxyObject;)V", false)
 
-    // Invoke the constructor of the literal term.
-    mv.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/solver/api/term/LitTerm", "<init>", "(Ljava/util/function/Function;)V", false)
+    // Instantiate the literal term object.
+    mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Term.LitTerm.toInternalName, "of", "(Ljava/util/function/Function;)Lflix/runtime/fixpoint/term/LitTerm;", false);
   }
 
   /**
@@ -1883,18 +1879,14 @@ object GenExpression {
   }
 
   /**
-    * Emits code for the literal term with the def symbol `sym`.
+    * Emits code to allocate a new variable symbol for the given def symbol `sym`.
     */
-  private def compileLitTerm(sym: Symbol.DefnSym, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
-    // Emit code to allocate a fresh literal term.
-    mv.visitTypeInsn(NEW, "ca/uwaterloo/flix/runtime/solver/api/term/LitTerm")
-    mv.visitInsn(DUP)
-
+  private def newLitTerm(sym: Symbol.DefnSym, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
     // Emit code to construct the function object.
     AsmOps.compileDefSymbol(sym, mv)
 
-    // Emit code to invoke the constructor of the literal term.
-    mv.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/solver/api/term/LitTerm", "<init>", "(Ljava/util/function/Function;)V", false)
+    // Instantiate the literal term object.
+    mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Term.LitTerm.toInternalName, "of", "(Ljava/util/function/Function;)Lflix/runtime/fixpoint/term/LitTerm;", false);
   }
 
   /**

@@ -30,7 +30,7 @@ import ca.uwaterloo.flix.runtime.solver.api.term._
 import ca.uwaterloo.flix.util._
 import flix.runtime.fixpoint.predicate.{FalsePredicate, Predicate, TruePredicate}
 import flix.runtime.fixpoint.symbol.VarSym
-import flix.runtime.fixpoint.term.{VarTerm, WildTerm}
+import flix.runtime.fixpoint.term.{LitTerm, VarTerm, WildTerm}
 import flix.runtime.{ReifiedSourceLocation, RuleError, TimeoutError}
 
 import scala.collection.mutable
@@ -354,7 +354,7 @@ class Solver(constraintSystem: ConstraintSystem, stratification: Stratification,
           case row =>
             val cparams = Array.emptyObjectArray
             val terms = row map {
-              case proxyObject => new LitTerm(new ConstantFunction(proxyObject)): Term
+              case proxyObject => LitTerm.of(new ConstantFunction(proxyObject)): Term
             }
             val head = new AtomPredicate(sym, true, terms)
             val body = new Array[Predicate](0)
