@@ -31,7 +31,7 @@ import ca.uwaterloo.flix.util.{InternalRuntimeException, Verbosity}
 import ca.uwaterloo.flix.util.tc.Show._
 import flix.runtime.fixpoint.predicate.{FalsePredicate, TruePredicate}
 import flix.runtime.fixpoint.symbol.VarSym
-import flix.runtime.fixpoint.term.{LitTerm, VarTerm, WildTerm}
+import flix.runtime.fixpoint.term.{AppTerm, LitTerm, VarTerm, WildTerm}
 import flix.runtime.{fixpoint, _}
 
 import scala.collection.mutable
@@ -824,7 +824,7 @@ object Interpreter {
         override def apply(args: Array[AnyRef]): ProxyObject = Linker.link(sym, root).invoke(args)
       }
       val as = args.map(s => VarSym.of(s.text, s.getStackOffset))
-      new api.term.AppTerm(f, as.toArray)
+      AppTerm.of(f, as.toArray)
   }
 
   /**

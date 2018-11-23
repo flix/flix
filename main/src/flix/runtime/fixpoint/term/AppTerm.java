@@ -1,6 +1,7 @@
-package ca.uwaterloo.flix.runtime.solver.api.term;
+package flix.runtime.fixpoint.term;
 
 import ca.uwaterloo.flix.runtime.solver.api.ProxyObject;
+import ca.uwaterloo.flix.runtime.solver.api.term.Term;
 import flix.runtime.fixpoint.symbol.VarSym;
 
 import java.util.function.Function;
@@ -9,6 +10,18 @@ import java.util.function.Function;
  * Represents a function application term.
  */
 public final class AppTerm implements Term {
+
+    /**
+     * Constructs a function application term for the given function and arguments.
+     */
+    public static AppTerm of(Function<Object[], ProxyObject> function, VarSym[] arguments) {
+        if (function == null)
+            throw new IllegalArgumentException("'function' must be non-null");
+        if (arguments == null)
+            throw new IllegalArgumentException("'arguments' must be non-null.");
+
+        return new AppTerm(function, arguments);
+    }
 
     /**
      * The function.
@@ -21,14 +34,9 @@ public final class AppTerm implements Term {
     private final VarSym[] arguments;
 
     /**
-     * Constructs a function application term for the given function and arguments.
+     * Private constructor.
      */
-    public AppTerm(Function<Object[], ProxyObject> function, VarSym[] arguments) {
-        if (function == null)
-            throw new IllegalArgumentException("'function' must be non-null");
-        if (arguments == null)
-            throw new IllegalArgumentException("'arguments' must be non-null.");
-
+    private AppTerm(Function<Object[], ProxyObject> function, VarSym[] arguments) {
         this.function = function;
         this.arguments = arguments;
     }
@@ -52,7 +60,7 @@ public final class AppTerm implements Term {
      */
     @Override
     public String toString() {
-        return "f(<>)";
+        return "f(...)";
     }
 
 }

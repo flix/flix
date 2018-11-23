@@ -1766,25 +1766,7 @@ object GenExpression {
       addSourceLine(mv, loc)
 
       // Compile the application term.
-      compileAppTerm(sym, args, mv)
-  }
-
-  /**
-    * Compiles an app term for the given def symbol `sym` with the given arguments `args`.
-    */
-  private def compileAppTerm(sym: Symbol.DefnSym, args: List[Symbol.VarSym], mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
-    // Allocate a fresh app term.
-    mv.visitTypeInsn(NEW, "ca/uwaterloo/flix/runtime/solver/api/term/AppTerm")
-    mv.visitInsn(DUP)
-
-    // The function object.
-    AsmOps.compileDefSymbol(sym, mv)
-
-    // The function arguments.
-    newVarSyms(args, mv)
-
-    // Invoke the constructor of the app term.
-    mv.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/solver/api/term/AppTerm", "<init>", "(Ljava/util/function/Function;[Lflix/runtime/fixpoint/symbol/VarSym;)V", false)
+      newAppTerm(sym, args, mv)
   }
 
   /**
@@ -1879,7 +1861,7 @@ object GenExpression {
   }
 
   /**
-    * Emits code to allocate a new variable symbol for the given def symbol `sym`.
+    * Emits code to allocate a new literal term for the given def symbol `sym`.
     */
   private def newLitTerm(sym: Symbol.DefnSym, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
     // Emit code to construct the function object.
@@ -1887,6 +1869,20 @@ object GenExpression {
 
     // Instantiate the literal term object.
     mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Term.LitTerm.toInternalName, "of", "(Ljava/util/function/Function;)Lflix/runtime/fixpoint/term/LitTerm;", false);
+  }
+
+  /**
+    * Emits code to allocate a new app term for the given symbol `sym` and arguments `args`.
+    */
+  private def newAppTerm(sym: Symbol.DefnSym, args: List[Symbol.VarSym], mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
+    // The function object.
+    AsmOps.compileDefSymbol(sym, mv)
+
+    // The function arguments.
+    newVarSyms(args, mv)
+
+    // Instantiate a new app term object.
+    mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Term.AppTerm.toInternalName, "of", "(Ljava/util/function/Function;[Lflix/runtime/fixpoint/symbol/VarSym;)Lflix/runtime/fixpoint/term/AppTerm;", false);
   }
 
   /**
