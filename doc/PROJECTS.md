@@ -39,7 +39,7 @@ Contact: Magnus Madsen <magnusm@cs.au.dk>
 
 
 
-### Uniqueness / Ownership Typing 
+# Uniqueness / Ownership Typing 
 Resources, such a raw memory, file handles, sockets, database connections etc. must be carefully managed to ensure 
 correct use and to ensure they are released when no longer needed. In languages such as C and Java, it is to
 a high-degree the responsibility of the programmer to ensure such correct use. For example, in C it is easy to forget
@@ -57,3 +57,24 @@ The work will include reading papers, language design, and implementation in a r
 - Clarke, David G., John M. Potter, and James Noble: Ownership types for flexible alias protection
 
 Contact: Magnus Madsen <magnusm@cs.au.dk>
+
+
+
+
+
+# Algebraic Effects
+Modern languages, such as Java, JavaScript, Python, Kotlin, Go, etc., offer an increasing number of control-flow constructs,
+such as async/await, exception, co-routines, generators, etc. Algebraic effects is a promising approach to a unified mechanism 
+that is sufficiently powerful to express each of the former features and gives the programmer the power to define new such
+control-flow constructs.
+
+The aim of this project is to explore the design space of algebraic effects for a functional language.
+The work will include reading papers, language design, and implementation in a real-world programming language.
+
+### Literature
+- Pretnar, Matija. An introduction to algebraic effects and handlers. (invited tutorial paper.)
+- Bauer, Andrej, and Matija Pretnar: Programming with algebraic effects and handlers.
+
+Contact: Magnus Madsen <magnusm@cs.au.dk>
+
+
