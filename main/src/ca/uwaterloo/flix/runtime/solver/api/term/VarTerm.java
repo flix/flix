@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.runtime.solver.api.term;
 
-import ca.uwaterloo.flix.runtime.solver.api.symbol.VarSym;
+import flix.runtime.fixpoint.symbol.VarSym;
 
 /**
  * Represents a variable term.

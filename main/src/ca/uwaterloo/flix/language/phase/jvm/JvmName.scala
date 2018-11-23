@@ -139,6 +139,10 @@ object JvmName {
         val FalsePredicate: JvmName = mk("flix/runtime/fixpoint/predicate/FalsePredicate")
       }
 
+      object Symbol {
+        val VarSym: JvmName = mk("flix/runtime/fixpoint/symbol/VarSym")
+      }
+
     }
 
     val HoleError: JvmName = JvmName(List("flix", "runtime"), "HoleError")

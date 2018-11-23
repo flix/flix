@@ -1544,29 +1544,7 @@ object GenExpression {
       mv.visitInsn(DUP)
 
       // Emit code for the cparams.
-      compileInt(mv, c.cparams.length)
-      mv.visitTypeInsn(ANEWARRAY, "ca/uwaterloo/flix/runtime/solver/api/symbol/VarSym")
-      for ((cparam, index) <- c.cparams.zipWithIndex) {
-        // Compile each constraint param and store it in the array.
-        mv.visitInsn(DUP)
-        compileInt(mv, index)
-
-        // Allocate a fresh variable symbol object.
-        mv.visitTypeInsn(NEW, "ca/uwaterloo/flix/runtime/solver/api/symbol/VarSym")
-        mv.visitInsn(DUP)
-
-        // Emit code for the name of the variable symbol.
-        mv.visitLdcInsn(cparam.sym.text)
-
-        // Emit code for the index of the variable symbol.
-        compileInt(mv, cparam.sym.getStackOffset)
-
-        // Invoke the constructor of the variable symbol.
-        mv.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/solver/api/symbol/VarSym", "<init>", "(Ljava/lang/String;I)V", false)
-
-        // Store the result in the array.
-        mv.visitInsn(AASTORE)
-      }
+      newVarSyms(c.cparams.map(_.sym), mv)
 
       // Emit code for the head atom.
       compileHeadAtom(head, mv)
@@ -1587,7 +1565,7 @@ object GenExpression {
       }
 
       // Invoke the constructor of constraint.
-      mv.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/solver/api/Constraint", "<init>", "([Lca/uwaterloo/flix/runtime/solver/api/symbol/VarSym;Lflix/runtime/fixpoint/predicate/Predicate;[Lflix/runtime/fixpoint/predicate/Predicate;)V", false)
+      mv.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/solver/api/Constraint", "<init>", "([Lflix/runtime/fixpoint/symbol/VarSym;Lflix/runtime/fixpoint/predicate/Predicate;[Lflix/runtime/fixpoint/predicate/Predicate;)V", false)
 
       // Emit code to instantiate the constraint system.
       mv.visitMethodInsn(INVOKESTATIC, "ca/uwaterloo/flix/runtime/solver/api/ConstraintSystem", "of", "(Lca/uwaterloo/flix/runtime/solver/api/Constraint;)Lca/uwaterloo/flix/runtime/solver/api/ConstraintSystem;", false)
@@ -1701,16 +1679,16 @@ object GenExpression {
       mv.visitInsn(DUP)
 
       // The variable symbol.
-      compileVarSym(varSym, mv)
+      newVarSym(varSym, mv)
 
       // The function object.
       AsmOps.compileDefSymbol(defSym, mv)
 
       // The function argument variables.
-      compileVarSyms(args, mv)
+      newVarSyms(args, mv)
 
       // Invoke the constructor.
-      mv.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/solver/api/predicate/FunctionalPredicate", "<init>", "(Lca/uwaterloo/flix/runtime/solver/api/symbol/VarSym;Ljava/util/function/Function;[Lca/uwaterloo/flix/runtime/solver/api/symbol/VarSym;)V", false);
+      mv.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/solver/api/predicate/FunctionalPredicate", "<init>", "(Lflix/runtime/fixpoint/symbol/VarSym;Ljava/util/function/Function;[Lflix/runtime/fixpoint/symbol/VarSym;)V", false);
 
   }
 
@@ -1803,10 +1781,10 @@ object GenExpression {
     AsmOps.compileDefSymbol(sym, mv)
 
     // The function arguments.
-    compileVarSyms(args, mv)
+    newVarSyms(args, mv)
 
     // Invoke the constructor of the app term.
-    mv.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/solver/api/term/AppTerm", "<init>", "(Ljava/util/function/Function;[Lca/uwaterloo/flix/runtime/solver/api/symbol/VarSym;)V", false)
+    mv.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/solver/api/term/AppTerm", "<init>", "(Ljava/util/function/Function;[Lflix/runtime/fixpoint/symbol/VarSym;)V", false)
   }
 
   /**
@@ -1904,10 +1882,10 @@ object GenExpression {
     mv.visitInsn(DUP)
 
     // Compile the variable symbol.
-    compileVarSym(sym, mv)
+    newVarSym(sym, mv)
 
     // Invoke the variable term constructor.
-    mv.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/solver/api/term/VarTerm", "<init>", "(Lca/uwaterloo/flix/runtime/solver/api/symbol/VarSym;)V", false)
+    mv.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/solver/api/term/VarTerm", "<init>", "(Lflix/runtime/fixpoint/symbol/VarSym;)V", false)
   }
 
   /**
@@ -1926,13 +1904,13 @@ object GenExpression {
   }
 
   /**
-    * Compiles the given variable symbols `args` to an array of variable symbols.
+    * Emits code to allocate new variable symbols for the given symbols `syms`.
     */
-  private def compileVarSyms(args: List[Symbol.VarSym], mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
+  private def newVarSyms(syms: List[Symbol.VarSym], mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
     // The function arguments.
-    compileInt(mv, args.length)
-    mv.visitTypeInsn(ANEWARRAY, "ca/uwaterloo/flix/runtime/solver/api/symbol/VarSym")
-    for ((argVar, index) <- args.zipWithIndex) {
+    compileInt(mv, syms.length)
+    mv.visitTypeInsn(ANEWARRAY, JvmName.Runtime.Fixpoint.Symbol.VarSym.toInternalName)
+    for ((argVar, index) <- syms.zipWithIndex) {
       // Compile each variable symbol and store it in the array.
       mv.visitInsn(DUP)
 
@@ -1940,7 +1918,7 @@ object GenExpression {
       compileInt(mv, index)
 
       // Compile the variable symbol.
-      compileVarSym(argVar, mv)
+      newVarSym(argVar, mv)
 
       // Store the variable symbol in the array.
       mv.visitInsn(AASTORE)
@@ -1948,21 +1926,17 @@ object GenExpression {
   }
 
   /**
-    * Compiles the given variable symbol `sym` to an api variable symbol.
+    * Emits code to allocate a new variable symbol for the given symbol `sym`.
     */
-  private def compileVarSym(sym: Symbol.VarSym, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
-    // Allocate a fresh variable symbol object.
-    mv.visitTypeInsn(NEW, "ca/uwaterloo/flix/runtime/solver/api/symbol/VarSym")
-    mv.visitInsn(DUP)
-
+  private def newVarSym(sym: Symbol.VarSym, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
     // Emit the variable name.
     mv.visitLdcInsn(sym.text)
 
     // Emit the variable index.
     compileInt(mv, sym.getStackOffset)
 
-    // Invoke the variable symbol constructor.
-    mv.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/solver/api/symbol/VarSym", "<init>", "(Ljava/lang/String;I)V", false)
+    // Instantiate the variable symbol object.
+    mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Symbol.VarSym.toInternalName, "of", "(Ljava/lang/String;I)Lflix/runtime/fixpoint/symbol/VarSym;", false);
   }
 
   /**

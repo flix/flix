@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.runtime.solver.api.term;
 
 import ca.uwaterloo.flix.runtime.solver.api.ProxyObject;
-import ca.uwaterloo.flix.runtime.solver.api.symbol.VarSym;
+import flix.runtime.fixpoint.symbol.VarSym;
 
 import java.util.function.Function;
 

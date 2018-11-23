@@ -31,6 +31,7 @@ import ca.uwaterloo.flix.runtime.solver.api.{Attribute => _, Constraint => _, _}
 import ca.uwaterloo.flix.util.{InternalRuntimeException, Verbosity}
 import ca.uwaterloo.flix.util.tc.Show._
 import flix.runtime.fixpoint.predicate.{FalsePredicate, TruePredicate}
+import flix.runtime.fixpoint.symbol.VarSym
 import flix.runtime.{fixpoint, _}
 
 import scala.collection.mutable
@@ -702,7 +703,7 @@ object Interpreter {
     */
   private def evalConstraint(c0: Constraint, env0: Map[String, AnyRef], henv0: Map[Symbol.EffSym, AnyRef], lenv0: Map[Symbol.LabelSym, Expression])(implicit flix: Flix, root: FinalAst.Root): AnyRef = {
     val cparams = c0.cparams.map {
-      case cparam => new VarSym(cparam.sym.text, cparam.sym.getStackOffset)
+      case cparam => VarSym.of(cparam.sym.text, cparam.sym.getStackOffset)
     }
     val head = evalHeadPredicate(c0.head, env0)
     val body = c0.body.map(b => evalBodyPredicate(b, env0))
@@ -778,11 +779,11 @@ object Interpreter {
       new api.predicate.FilterPredicate(f, ts.toArray)
 
     case FinalAst.Predicate.Body.Functional(varSym, defSym, terms, loc) =>
-      val s = new VarSym(varSym.text, varSym.getStackOffset)
+      val s = VarSym.of(varSym.text, varSym.getStackOffset)
       val f = new function.Function[Array[AnyRef], Array[ProxyObject]] {
         override def apply(as: Array[AnyRef]): Array[ProxyObject] = Linker.link(defSym, root).invoke(as).getValue.asInstanceOf[Array[ProxyObject]]
       }
-      val ts = terms.map(s => new VarSym(s.text, s.getStackOffset))
+      val ts = terms.map(s => VarSym.of(s.text, s.getStackOffset))
       new api.predicate.FunctionalPredicate(s, f, ts.toArray)
   }
 
@@ -795,7 +796,7 @@ object Interpreter {
     //
     case FinalAst.Term.Head.QuantVar(sym, _, _) =>
       // Lookup the corresponding symbol in the cache.
-      new api.term.VarTerm(new VarSym(sym.text, sym.getStackOffset))
+      new api.term.VarTerm(VarSym.of(sym.text, sym.getStackOffset))
 
     //
     // Bound Variables (i.e. variables that have a value in the local environment).
@@ -822,7 +823,7 @@ object Interpreter {
       val f = new java.util.function.Function[Array[AnyRef], ProxyObject] {
         override def apply(args: Array[AnyRef]): ProxyObject = Linker.link(sym, root).invoke(args)
       }
-      val as = args.map(s => new VarSym(s.text, s.getStackOffset))
+      val as = args.map(s => VarSym.of(s.text, s.getStackOffset))
       new api.term.AppTerm(f, as.toArray)
   }
 
@@ -840,7 +841,7 @@ object Interpreter {
     //
     case FinalAst.Term.Body.QuantVar(sym, _, _) =>
       // Lookup the corresponding symbol in the cache.
-      new api.term.VarTerm(new VarSym(sym.text, sym.getStackOffset))
+      new api.term.VarTerm(VarSym.of(sym.text, sym.getStackOffset))
 
     //
     // Bound Variables (i.e. variables that have a value in the local environment).
