@@ -30,7 +30,7 @@ import ca.uwaterloo.flix.runtime.solver.api.term._
 import ca.uwaterloo.flix.util._
 import flix.runtime.fixpoint.predicate.{FalsePredicate, Predicate, TruePredicate}
 import flix.runtime.fixpoint.symbol.VarSym
-import flix.runtime.fixpoint.term.VarTerm
+import flix.runtime.fixpoint.term.{VarTerm, WildTerm}
 import flix.runtime.{ReifiedSourceLocation, RuleError, TimeoutError}
 
 import scala.collection.mutable

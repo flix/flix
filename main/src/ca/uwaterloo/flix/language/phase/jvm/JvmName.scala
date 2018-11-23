@@ -145,6 +145,7 @@ object JvmName {
 
       object Term {
         val VarTerm: JvmName = mk("flix/runtime/fixpoint/term/VarTerm")
+        val WildTerm: JvmName = mk("flix/runtime/fixpoint/term/WildTerm")
       }
 
     }

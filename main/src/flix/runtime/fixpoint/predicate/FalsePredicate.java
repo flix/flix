@@ -27,17 +27,17 @@ public final class FalsePredicate implements Predicate {
     private static final FalsePredicate INSTANCE = new FalsePredicate();
 
     /**
-     * Private constructor.
-     */
-    private FalsePredicate() {
-        /* empty constructor */
-    }
-
-    /**
      * Returns the singleton instance of the false predicate.
      */
     public static FalsePredicate getSingleton() {
         return INSTANCE;
+    }
+
+    /**
+     * Private constructor.
+     */
+    private FalsePredicate() {
+        /* empty constructor */
     }
 
     /**

@@ -26,13 +26,12 @@ import ca.uwaterloo.flix.runtime.{InvocationTarget, Linker}
 import ca.uwaterloo.flix.runtime.solver._
 import ca.uwaterloo.flix.runtime.solver.api.predicate.AtomPredicate
 import ca.uwaterloo.flix.runtime.solver.api.symbol._
-import ca.uwaterloo.flix.runtime.solver.api.term.WildTerm
 import ca.uwaterloo.flix.runtime.solver.api.{Attribute => _, Constraint => _, _}
 import ca.uwaterloo.flix.util.{InternalRuntimeException, Verbosity}
 import ca.uwaterloo.flix.util.tc.Show._
 import flix.runtime.fixpoint.predicate.{FalsePredicate, TruePredicate}
 import flix.runtime.fixpoint.symbol.VarSym
-import flix.runtime.fixpoint.term.VarTerm
+import flix.runtime.fixpoint.term.{VarTerm, WildTerm}
 import flix.runtime.{fixpoint, _}
 
 import scala.collection.mutable

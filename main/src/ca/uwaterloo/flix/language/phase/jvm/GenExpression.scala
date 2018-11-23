@@ -1796,7 +1796,7 @@ object GenExpression {
       addSourceLine(mv, loc)
 
       // Emits code for the wild card term.
-      compileWildTerm(mv)
+      newWildTerm(mv)
 
     case Term.Body.QuantVar(sym, tpe, loc) =>
       // Add source line numbers for debugging.
@@ -1836,13 +1836,11 @@ object GenExpression {
   }
 
   /**
-    * Emits code for the wild card term.
+    * Emits code to allocate a new wildcard term.
     */
-  private def compileWildTerm(mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
-    // Allocate a new object and invoke the constructor.
-    mv.visitTypeInsn(NEW, "ca/uwaterloo/flix/runtime/solver/api/term/WildTerm")
-    mv.visitInsn(DUP)
-    mv.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/solver/api/term/WildTerm", "<init>", "()V", false)
+  private def newWildTerm(mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
+    // Retrieve the singleton instance of the wildcard term.
+    mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Term.WildTerm.toInternalName, "getSingleton", "()Lflix/runtime/fixpoint/term/WildTerm;", false)
   }
 
   /**

@@ -27,17 +27,17 @@ public final class TruePredicate implements Predicate {
     private static final TruePredicate INSTANCE = new TruePredicate();
 
     /**
-     * Private constructor.
-     */
-    private TruePredicate() {
-        /* empty constructor */
-    }
-
-    /**
      * Returns the singleton instance of the true predicate.
      */
     public static TruePredicate getSingleton() {
         return INSTANCE;
+    }
+
+    /**
+     * Private constructor.
+     */
+    private TruePredicate() {
+        /* empty constructor */
     }
 
     /**
