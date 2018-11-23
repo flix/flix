@@ -22,7 +22,7 @@ public final class WildTerm implements Term {
     /**
      * Private constructor.
      */
-    public WildTerm() {
+    private WildTerm() {
         /* empty constructor */
     }
 

@@ -834,7 +834,7 @@ object Interpreter {
     //
     // Wildcards.
     //
-    case FinalAst.Term.Body.Wild(_, _) => new WildTerm()
+    case FinalAst.Term.Body.Wild(_, _) => WildTerm.getSingleton()
 
     //
     // Free Variables (i.e. variables that are quantified over in the constraint).
