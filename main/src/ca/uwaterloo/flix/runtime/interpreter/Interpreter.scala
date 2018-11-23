@@ -32,6 +32,7 @@ import ca.uwaterloo.flix.util.{InternalRuntimeException, Verbosity}
 import ca.uwaterloo.flix.util.tc.Show._
 import flix.runtime.fixpoint.predicate.{FalsePredicate, TruePredicate}
 import flix.runtime.fixpoint.symbol.VarSym
+import flix.runtime.fixpoint.term.VarTerm
 import flix.runtime.{fixpoint, _}
 
 import scala.collection.mutable
@@ -796,7 +797,7 @@ object Interpreter {
     //
     case FinalAst.Term.Head.QuantVar(sym, _, _) =>
       // Lookup the corresponding symbol in the cache.
-      new api.term.VarTerm(VarSym.of(sym.text, sym.getStackOffset))
+      VarTerm.of(VarSym.of(sym.text, sym.getStackOffset))
 
     //
     // Bound Variables (i.e. variables that have a value in the local environment).
@@ -841,7 +842,7 @@ object Interpreter {
     //
     case FinalAst.Term.Body.QuantVar(sym, _, _) =>
       // Lookup the corresponding symbol in the cache.
-      new api.term.VarTerm(VarSym.of(sym.text, sym.getStackOffset))
+      VarTerm.of(VarSym.of(sym.text, sym.getStackOffset))
 
     //
     // Bound Variables (i.e. variables that have a value in the local environment).

@@ -143,6 +143,10 @@ object JvmName {
         val VarSym: JvmName = mk("flix/runtime/fixpoint/symbol/VarSym")
       }
 
+      object Term {
+        val VarTerm: JvmName = mk("flix/runtime/fixpoint/term/VarTerm")
+      }
+
     }
 
     val HoleError: JvmName = JvmName(List("flix", "runtime"), "HoleError")

@@ -1,5 +1,6 @@
-package ca.uwaterloo.flix.runtime.solver.api.term;
+package flix.runtime.fixpoint.term;
 
+import ca.uwaterloo.flix.runtime.solver.api.term.Term;
 import flix.runtime.fixpoint.symbol.VarSym;
 
 /**
@@ -8,17 +9,24 @@ import flix.runtime.fixpoint.symbol.VarSym;
 public final class VarTerm implements Term {
 
     /**
+     * Constructs a new variable term from the given variable symbol `sym`.
+     */
+    public static VarTerm of(VarSym sym) {
+        if (sym == null)
+            throw new IllegalArgumentException("'sym' must be non-null.");
+
+        return new VarTerm(sym);
+    }
+
+    /**
      * The variable symbol.
      */
     private final VarSym sym;
 
     /**
-     * Constructs a variable term from the given variable symbol `sym`.
+     * Private constructor.
      */
-    public VarTerm(VarSym sym) {
-        if (sym == null)
-            throw new IllegalArgumentException("'sym' must be non-null.");
-
+    private VarTerm(VarSym sym) {
         this.sym = sym;
     }
 

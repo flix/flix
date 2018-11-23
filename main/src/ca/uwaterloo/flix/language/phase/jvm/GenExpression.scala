@@ -1745,7 +1745,7 @@ object GenExpression {
       addSourceLine(mv, loc)
 
       // Emit code for the quantified variable.
-      compileQuantVarTerm(sym, mv)
+      newVarTerm(sym, mv)
 
     case Term.Head.CapturedVar(sym, tpe, loc) =>
       // Add source line numbers for debugging.
@@ -1803,7 +1803,7 @@ object GenExpression {
       addSourceLine(mv, loc)
 
       // Emit code for the quantified variable.
-      compileQuantVarTerm(sym, mv)
+      newVarTerm(sym, mv)
 
     case Term.Body.CapturedVar(sym, tpe, loc) =>
       // Add source line numbers for debugging.
@@ -1874,18 +1874,14 @@ object GenExpression {
   }
 
   /**
-    * Emits code for the quantified variable symbol `sym` term.
+    * Emits code to allocate a new variable term for the given variable symbol `sym`.
     */
-  private def compileQuantVarTerm(sym: Symbol.VarSym, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
-    // Allocate a fresh variable term object.
-    mv.visitTypeInsn(NEW, "ca/uwaterloo/flix/runtime/solver/api/term/VarTerm")
-    mv.visitInsn(DUP)
-
+  private def newVarTerm(sym: Symbol.VarSym, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
     // Compile the variable symbol.
     newVarSym(sym, mv)
 
-    // Invoke the variable term constructor.
-    mv.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/solver/api/term/VarTerm", "<init>", "(Lflix/runtime/fixpoint/symbol/VarSym;)V", false)
+    // Instantiate the variable term object.
+    mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Term.VarTerm.toInternalName, "of", "(Lflix/runtime/fixpoint/symbol/VarSym;)Lflix/runtime/fixpoint/term/VarTerm;", false);
   }
 
   /**
