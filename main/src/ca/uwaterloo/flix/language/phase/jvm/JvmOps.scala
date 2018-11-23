@@ -820,10 +820,6 @@ object JvmOps {
         case (sacc, e) => sacc ++ visitExp(e)
       }
 
-      case Expression.NewRelation(sym, exp, tpe, loc) => visitExp(exp)
-
-      case Expression.NewLattice(sym, exp, tpe, loc) => visitExp(exp)
-
       case Expression.Constraint(con, tpe, loc) => Set.empty
 
       case Expression.ConstraintUnion(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2)
@@ -1075,10 +1071,6 @@ object JvmOps {
       case Expression.NativeMethod(method, args, tpe, loc) => args.foldLeft(Set(tpe)) {
         case (sacc, e) => sacc ++ visitExp(e)
       }
-
-      case Expression.NewRelation(sym, exp, tpe, loc) => visitExp(exp)
-
-      case Expression.NewLattice(sym, exp, tpe, loc) => visitExp(exp)
 
       case Expression.Constraint(con, tpe, loc) => Set.empty // TODO: Constraint
 

@@ -344,14 +344,6 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
         val es = args map visit
         FinalAst.Expression.NativeMethod(method, es, tpe, loc)
 
-      case SimplifiedAst.Expression.NewRelation(sym, exp, tpe, loc) =>
-        val e = visit(exp)
-        FinalAst.Expression.NewRelation(sym, e, tpe, loc)
-
-      case SimplifiedAst.Expression.NewLattice(sym, exp, tpe, loc) =>
-        val e = visit(exp)
-        FinalAst.Expression.NewLattice(sym, e, tpe, loc)
-
       case SimplifiedAst.Expression.Constraint(c0, tpe, loc) =>
         val c = visitConstraint(c0, m)
         FinalAst.Expression.Constraint(c, tpe, loc)
@@ -409,20 +401,41 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
     case SimplifiedAst.Predicate.Head.False(loc) => FinalAst.Predicate.Head.False(loc)
     case SimplifiedAst.Predicate.Head.RelAtom(baseOpt, sym, terms, tpe, loc) =>
       val ts = terms.map(t => visitHeadTerm(t, m))
-      FinalAst.Predicate.Head.RelAtom(baseOpt, sym, ts, tpe, loc)
+      baseOpt match {
+        case None =>
+          val unit = FinalAst.Expression.Unit
+          FinalAst.Predicate.Head.RelAtom(sym, unit, ts, tpe, loc)
+        case Some(value) => ??? // TODO
+      }
+
     case SimplifiedAst.Predicate.Head.LatAtom(baseOpt, sym, terms, tpe, loc) =>
       val ts = terms.map(t => visitHeadTerm(t, m))
-      FinalAst.Predicate.Head.LatAtom(baseOpt, sym, ts, tpe, loc)
+      baseOpt match {
+        case None =>
+          val unit = FinalAst.Expression.Unit
+          FinalAst.Predicate.Head.LatAtom(sym, unit, ts, tpe, loc)
+        case Some(value) => ??? // TODO
+      }
   }
 
   private def visitBodyPredicate(p0: SimplifiedAst.Predicate.Body, m: TopLevel)(implicit flix: Flix): FinalAst.Predicate.Body = p0 match {
     case SimplifiedAst.Predicate.Body.RelAtom(baseOpt, sym, polarity, terms, tpe, loc) =>
       val ts = terms.map(t => visitBodyTerm(t, m))
-      FinalAst.Predicate.Body.RelAtom(baseOpt, sym, polarity, ts, tpe, loc)
+      baseOpt match {
+        case None =>
+          val unit = FinalAst.Expression.Unit
+          FinalAst.Predicate.Body.RelAtom(sym, unit, polarity, ts, tpe, loc)
+        case Some(value) => ??? // TODO
+      }
 
     case SimplifiedAst.Predicate.Body.LatAtom(baseOpt, sym, polarity, terms, tpe, loc) =>
       val ts = terms.map(t => visitBodyTerm(t, m))
-      FinalAst.Predicate.Body.LatAtom(baseOpt, sym, polarity, ts, tpe, loc)
+      baseOpt match {
+        case None =>
+          val unit = FinalAst.Expression.Unit
+          FinalAst.Predicate.Body.LatAtom(sym, unit, polarity, ts, tpe, loc)
+        case Some(value) => ??? // TODO
+      }
 
     case SimplifiedAst.Predicate.Body.Filter(sym, terms, loc) =>
       val ts = terms.map(t => visitBodyTerm(t, m))

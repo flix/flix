@@ -963,27 +963,6 @@ object GenExpression {
           AsmOps.getMethodDescriptor(List(), JvmType.Unit), false)
       }
 
-    case Expression.NewRelation(sym, exp, tpe, loc) =>
-      // Add source line numbers for debugging.
-      addSourceLine(visitor, loc)
-
-      // Emit code for the name of the relation symbol.
-      visitor.visitLdcInsn(sym.toString)
-
-      // Emit code for the parameter. // TODO EXP
-      visitor.visitInsn(ACONST_NULL)
-
-      // Emit code for the attributes.
-      // TODO: Attributes
-      visitor.visitInsn(ICONST_0)
-      visitor.visitTypeInsn(ANEWARRAY, "ca/uwaterloo/flix/runtime/solver/api/Attribute")
-
-      // Instantiate the relation symbol.
-      visitor.visitMethodInsn(INVOKESTATIC, "ca/uwaterloo/flix/runtime/solver/api/symbol/RelSym", "of", "(Ljava/lang/String;Lca/uwaterloo/flix/runtime/solver/api/ProxyObject;[Lca/uwaterloo/flix/runtime/solver/api/Attribute;)Lca/uwaterloo/flix/runtime/solver/api/symbol/RelSym;", false);
-
-    case Expression.NewLattice(sym, exp, tpe, loc) =>
-      ??? // TODO: NewLattice
-
     case Expression.Constraint(con, tpe, loc) =>
       // Add source line numbers for debugging.
       addSourceLine(visitor, loc)
@@ -1589,12 +1568,12 @@ object GenExpression {
       // Retrieve the singleton instance.
       mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Predicate.FalsePredicate.toInternalName, "getSingleton", "()Lflix/runtime/fixpoint/predicate/FalsePredicate;", false)
 
-    case Predicate.Head.RelAtom(baseOpt, sym, terms, tpe, loc) =>
+    case Predicate.Head.RelAtom(sym, exp, terms, tpe, loc) =>
       // Add source line numbers for debugging.
       addSourceLine(mv, loc)
 
       // Emit code for the predicate symbol.
-      compilePredicateSymbol(baseOpt, sym, tpe, mv)
+      compilePredicateSymbol(None, sym, tpe, mv)
 
       // Emit code for the polarity of the atom. A head atom is always positive.
       mv.visitInsn(ICONST_1)
@@ -1615,12 +1594,12 @@ object GenExpression {
     */
   private def compileBodyAtom(b0: Predicate.Body, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = b0 match {
 
-    case Predicate.Body.RelAtom(baseOpt, sym, polarity, terms, tpe, loc) =>
+    case Predicate.Body.RelAtom(sym, exp, polarity, terms, tpe, loc) =>
       // Add source line numbers for debugging.
       addSourceLine(mv, loc)
 
       // Emit code for the predicate symbol.
-      compilePredicateSymbol(baseOpt, sym, tpe, mv)
+      compilePredicateSymbol(None, sym, tpe, mv)
 
       // Emit code for the polarity of the atom. A head atom is always positive.
       polarity match {
@@ -1672,6 +1651,7 @@ object GenExpression {
     * Emits code for the predicate symbol based on `baseOpt`.
     */
   private def compilePredicateSymbol(baseOpt: Option[Symbol.VarSym], sym: Symbol.RelSym, tpe: ast.Type, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
+    // TODO: Refactor, should not take baseOpt, but instead an expression.
     // Emit code for the predicate symbol.
     baseOpt match {
       case None =>

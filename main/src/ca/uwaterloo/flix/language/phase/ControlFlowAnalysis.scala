@@ -369,14 +369,6 @@ object ControlFlowAnalysis {
         // Unsoundly ignore the return value.
         AbstractValue.Bot
 
-      case Expression.NewRelation(sym, exp, tpe, loc) =>
-        val v = visitExp(exp, env0, lenv0)
-        AbstractValue.AnyRelation
-
-      case Expression.NewLattice(sym, exp, tpe, loc) =>
-        val v = visitExp(exp, env0, lenv0)
-        AbstractValue.AnyLattice
-
       case Expression.Constraint(con, tpe, loc) =>
         val g = visitConstraint(con)
         AbstractValue.Graph(g)
@@ -510,20 +502,20 @@ object ControlFlowAnalysis {
   private def visitHeadPredicateSymbol(head0: Predicate.Head): Option[Symbol.PredSym] = head0 match {
     case Predicate.Head.True(_) => None
     case Predicate.Head.False(_) => None
-    case Predicate.Head.RelAtom(base, sym, terms, tpe, loc) => Some(sym)
-    case Predicate.Head.LatAtom(base, sym, terms, tpe, loc) => Some(sym)
+    case Predicate.Head.RelAtom(sym, exp, terms, tpe, loc) => Some(sym)
+    case Predicate.Head.LatAtom(sym, exp, terms, tpe, loc) => Some(sym)
   }
 
   /**
     * Optionally returns the predicate symbol of the given body predicate `body0`.
     */
   private def visitDependencyEdge(head: Symbol.PredSym, body0: Predicate.Body): Option[DependencyEdge] = body0 match {
-    case Predicate.Body.RelAtom(base, sym, polarity, terms, tpe, loc) => polarity match {
+    case Predicate.Body.RelAtom(sym, exp, polarity, terms, tpe, loc) => polarity match {
       case Polarity.Positive => Some(DependencyEdge.Positive(head, sym))
       case Polarity.Negative => Some(DependencyEdge.Negative(head, sym))
     }
 
-    case Predicate.Body.LatAtom(base, sym, polarity, terms, tpe, loc) => polarity match {
+    case Predicate.Body.LatAtom(sym, exp, polarity, terms, tpe, loc) => polarity match {
       case Polarity.Positive => Some(DependencyEdge.Positive(head, sym))
       case Polarity.Negative => Some(DependencyEdge.Negative(head, sym))
     }

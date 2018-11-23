@@ -262,12 +262,6 @@ object Interpreter {
       case ex: InvocationTargetException => throw ex.getTargetException
     }
 
-    case Expression.NewRelation(sym, exp, tpe, loc) =>
-      ??? // TODO NewRelation
-
-    case Expression.NewLattice(sym, exp, tpe, loc) =>
-      ??? // TODO: NewLattice
-
     case Expression.Constraint(c, tpe, loc) =>
       evalConstraint(c, env0, henv0, lenv0)(flix, root)
 
@@ -720,21 +714,16 @@ object Interpreter {
 
     case FinalAst.Predicate.Head.False(_) => FalsePredicate.getSingleton
 
-    case FinalAst.Predicate.Head.RelAtom(baseOpt, sym, terms, _, _) =>
+    case FinalAst.Predicate.Head.RelAtom(sym, exp, terms, _, _) =>
       val ts = terms.map(t => evalHeadTerm(t, env0)).toArray
-      val relSym = baseOpt match {
-        case None => getRelSym(sym)
-        case Some(baseSym) => cast2relsym(env0(baseSym.toString))
-      }
+      // TODO: Should use the exp.
+      val relSym = getRelSym(sym)
       AtomPredicate.of(relSym, true, ts)
 
-    case FinalAst.Predicate.Head.LatAtom(baseOpt, sym, terms, _, _) =>
+    case FinalAst.Predicate.Head.LatAtom(sym, exp, terms, _, _) =>
       val ts = terms.map(t => evalHeadTerm(t, env0)).toArray
-      val latSym = baseOpt match {
-        case None => getLattice(sym)
-        case Some(baseSym) =>
-          cast2latsym(env0(baseSym.toString))
-      }
+      // TODO: Should use the exp.
+      val latSym = getLattice(sym)
       AtomPredicate.of(latSym, true, ts)
   }
 
@@ -742,29 +731,24 @@ object Interpreter {
     * Evaluates the given body predicate `b0` under the given environment `env0` to a body predicate value.
     */
   private def evalBodyPredicate(b0: FinalAst.Predicate.Body, env0: Map[String, AnyRef])(implicit root: FinalAst.Root, flix: Flix): fixpoint.predicate.Predicate = b0 match {
-    case FinalAst.Predicate.Body.RelAtom(baseOpt, sym, polarity, terms, _, _) =>
+    case FinalAst.Predicate.Body.RelAtom(sym, exp, polarity, terms, _, _) =>
       val p = polarity match {
         case Ast.Polarity.Positive => true
         case Ast.Polarity.Negative => false
       }
       val ts = terms.map(t => evalBodyTerm(t, env0)).toArray
-      val relSym = baseOpt match {
-        case None => getRelSym(sym)
-        case Some(baseSym) => cast2relsym(env0(baseSym.toString))
-      }
+      // TODO: Should use the exp.
+      val relSym = getRelSym(sym)
       AtomPredicate.of(relSym, p, ts)
 
-    case FinalAst.Predicate.Body.LatAtom(baseOpt, sym, polarity, terms, _, _) =>
+    case FinalAst.Predicate.Body.LatAtom(sym, exp, polarity, terms, _, _) =>
       val p = polarity match {
         case Ast.Polarity.Positive => true
         case Ast.Polarity.Negative => false
       }
       val ts = terms.map(t => evalBodyTerm(t, env0)).toArray
-      val latSym = baseOpt match {
-        case None => getLattice(sym)
-        case Some(baseSym) =>
-          cast2latsym(env0(baseSym.toString))
-      }
+      // TODO: Should use the exp.
+      val latSym = getLattice(sym)
       AtomPredicate.of(latSym, p, ts)
 
     case FinalAst.Predicate.Body.Filter(sym, terms, loc) =>
