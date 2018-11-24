@@ -3,6 +3,7 @@ package ca.uwaterloo.flix.runtime.solver.api.symbol;
 import ca.uwaterloo.flix.runtime.solver.api.LatticeOps;
 import ca.uwaterloo.flix.runtime.solver.api.Attribute;
 import ca.uwaterloo.flix.runtime.solver.api.ProxyObject;
+import flix.runtime.value.Unit;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -68,6 +69,11 @@ public final class LatSym implements PredSym {
     private final LatticeOps ops;
 
     /**
+     * The parameterless version of `this` lattice symbol.
+     */
+    private final LatSym parameterless;
+
+    /**
      * Constructs a fresh lattice symbol with the given `name` and `parameter`.
      */
     private LatSym(String name, ProxyObject parameter, Attribute[] keys, Attribute value, LatticeOps ops) {
@@ -76,6 +82,7 @@ public final class LatSym implements PredSym {
         this.keys = keys;
         this.value = value;
         this.ops = ops;
+        this.parameterless = of(name, new ProxyObject(Unit.getInstance(), null, null, null), keys, value, ops);
     }
 
     /**
@@ -114,7 +121,14 @@ public final class LatSym implements PredSym {
     }
 
     /**
-     * Returns a human-readable representation of `this` relation symbol.
+     * Returns the parameterless version of `this` lattice symbol.
+     */
+    public LatSym getParameterless() {
+        return this.parameterless;
+    }
+
+    /**
+     * Returns a human-readable representation of `this` lattice symbol.
      */
     @Override
     public String toString() {

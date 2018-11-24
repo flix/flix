@@ -10,4 +10,9 @@ public interface PredSym {
      */
     String getName();
 
+    /**
+     * Returns the parameterless version of the predicate symbol.
+     */
+    PredSym getParameterless();
+
 }

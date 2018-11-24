@@ -2,6 +2,7 @@ package ca.uwaterloo.flix.runtime.solver.api.symbol;
 
 import ca.uwaterloo.flix.runtime.solver.api.Attribute;
 import ca.uwaterloo.flix.runtime.solver.api.ProxyObject;
+import flix.runtime.value.Unit;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -53,12 +54,18 @@ public final class RelSym implements PredSym {
     private final Attribute[] attributes;
 
     /**
+     * The parameterless version of `this` relation symbol.
+     */
+    private final RelSym parameterless;
+
+    /**
      * Constructs a fresh relation symbol with the given `name` and `parameter`.
      */
     private RelSym(String name, ProxyObject parameter, Attribute[] attributes) {
         this.name = name;
         this.parameter = parameter;
         this.attributes = attributes;
+        this.parameterless = of(name, new ProxyObject(Unit.getInstance(), null, null, null), attributes);
     }
 
     /**
@@ -80,6 +87,13 @@ public final class RelSym implements PredSym {
      */
     public Attribute[] getAttributes() {
         return attributes;
+    }
+
+    /**
+     * Returns the parameterless version of `this` relation symbol.
+     */
+    public RelSym getParameterless() {
+        return this.parameterless;
     }
 
     /**
