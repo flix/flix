@@ -13,24 +13,24 @@ def testTruePredicate02(): Unit =
 def testTruePredicate03(): Unit =
     let x = true.;
     let y = true.;
-    let r = union x y;
+    let r = x <+> y;
     ()
 
 @test
 def testTruePredicate04(): Unit =
     let x = true.;
     let y = true.;
-    let u = union x y;
-    let v = union y x;
+    let u = x <+> y;
+    let v = y <+> x;
     ()
 
 @test
 def testTruePredicate05(): Unit =
     let x = true.;
     let y = true.;
-    let u = union x y;
-    let v = union y x;
-    let w = union y v;
+    let u = x <+> y;
+    let v = y <+> x;
+    let w = y <+> v;
     ()
 
 @test
@@ -53,8 +53,8 @@ def testTruePredicate07(): Unit =
 def testTruePredicate08(): Unit =
     let x = true.;
     let y = true.;
-    let u = solve (union x y);
-    let v = solve (union y x);
+    let u = solve (x <+> y);
+    let v = solve (y <+> x);
     ()
 
 @test
@@ -77,5 +77,5 @@ def testTruePredicate10(): Unit =
 def testTruePredicate11(): Unit =
     let x = true.;
     let y = true.;
-    let u = check (union (solve x) (solve y));
+    let u = check ((solve x) <+> (solve y));
     ()

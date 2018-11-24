@@ -25,7 +25,7 @@ def testQuantVar04(): Unit =
     let c1 = A(x) :- A(x).;
     let c2 = B(x, y) :- B(x, y).;
     let c3 = C(x, y, z) :- C(x, y, z).;
-    let rr = solve (union c1 (union c2 c3));
+    let rr = solve (c1 <+> c2 <+> c3);
     ()
 
 @test

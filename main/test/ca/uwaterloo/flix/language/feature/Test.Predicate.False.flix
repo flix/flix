@@ -13,24 +13,24 @@ def testFalsePredicate02(): Unit =
 def testFalsePredicate03(): Unit =
     let x = false.;
     let y = false.;
-    let r = union x y;
+    let r = x <+> y;
     ()
 
 @test
 def testFalsePredicate04(): Unit =
     let x = false.;
     let y = false.;
-    let u = union x y;
-    let v = union y x;
+    let u = x <+> y;
+    let v = y <+> x;
     ()
 
 @test
 def testFalsePredicate05(): Unit =
     let x = false.;
     let y = false.;
-    let u = union x y;
-    let v = union y x;
-    let w = union y v;
+    let u = x <+> y;
+    let v = y <+> x;
+    let w = y <+> v;
     ()
 
 @test
@@ -45,6 +45,6 @@ def testFalsePredicate06(): Unit =
 def testFalsePredicate07(): Unit =
     let x = false.;
     let y = false.;
-    let u = check (union x y);
-    let v = check (union y x);
+    let u = check (x <+> y);
+    let v = check (y <+> x);
     ()
