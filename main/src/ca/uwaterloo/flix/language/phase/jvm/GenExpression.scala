@@ -981,7 +981,7 @@ object GenExpression {
       compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
 
       // Emit code for the invocation of compose.
-      visitor.visitMethodInsn(INVOKESTATIC, "ca/uwaterloo/flix/runtime/solver/api/ConstraintSystem", "compose", "(Lca/uwaterloo/flix/runtime/solver/api/ConstraintSystem;Lca/uwaterloo/flix/runtime/solver/api/ConstraintSystem;)Lca/uwaterloo/flix/runtime/solver/api/ConstraintSystem;", false);
+      visitor.visitMethodInsn(INVOKESTATIC, "ca/uwaterloo/flix/runtime/solver/api/SolverApi", "compose", "(Lca/uwaterloo/flix/runtime/solver/api/ConstraintSystem;Lca/uwaterloo/flix/runtime/solver/api/ConstraintSystem;)Lca/uwaterloo/flix/runtime/solver/api/ConstraintSystem;", false);
 
     case Expression.FixpointSolve(uid, exp, stf, tpe, loc) =>
       // Add source line numbers for debugging.
@@ -1039,7 +1039,7 @@ object GenExpression {
         case s: Symbol.RelSym =>
           compilePredicateSymbol(None, s, null, visitor)
           compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
-          visitor.visitMethodInsn(INVOKESTATIC, "ca/uwaterloo/flix/runtime/solver/api/ConstraintSystem", "project", "(Lca/uwaterloo/flix/runtime/solver/api/symbol/PredSym;Lca/uwaterloo/flix/runtime/solver/api/ConstraintSystem;)Lca/uwaterloo/flix/runtime/solver/api/ConstraintSystem;", false)
+          visitor.visitMethodInsn(INVOKESTATIC, "ca/uwaterloo/flix/runtime/solver/api/SolverApi", "project", "(Lca/uwaterloo/flix/runtime/solver/api/symbol/PredSym;Lca/uwaterloo/flix/runtime/solver/api/ConstraintSystem;)Lca/uwaterloo/flix/runtime/solver/api/ConstraintSystem;", false)
         case x: Symbol.LatSym => ??? // TODO
       }
 

@@ -30,38 +30,6 @@ public final class ConstraintSystem {
     }
 
     /**
-     * Returns the composition of `s1` with `s2`.
-     */
-    public static ConstraintSystem compose(ConstraintSystem s1, ConstraintSystem s2) {
-        var facts = concat(s1.getFacts(), s2.getFacts());
-        var rules = concat(s1.getRules(), s2.getRules());
-        return new ConstraintSystem(facts, rules);
-    }
-
-    /**
-     * Returns the projection of the given predicate symbol `sym` of the given constraint system `s`.
-     */
-    public static ConstraintSystem project(PredSym sym, ConstraintSystem s) {
-        if (sym == null)
-            throw new IllegalArgumentException("'sym' must be non-null.");
-        if (s == null)
-            throw new IllegalArgumentException("'s' must be non-null.");
-
-        // Collect all facts with `sym` in its head.
-        var facts = new LinkedList<Constraint>();
-        for (Constraint fact : s.facts) {
-            Predicate head = fact.getHeadPredicate();
-            if (head instanceof AtomPredicate) {
-                if (((AtomPredicate) head).getSym() == sym) {
-                    facts.add(fact);
-                }
-            }
-        }
-
-        return new ConstraintSystem(facts.toArray(new Constraint[0]), new Constraint[0]);
-    }
-
-    /**
      * The collection of facts.
      */
     private Constraint[] facts;
@@ -91,7 +59,7 @@ public final class ConstraintSystem {
     /**
      * Constructs a new constraint system with the given facts and rules.
      */
-    private ConstraintSystem(Constraint[] facts, Constraint[] rules) {
+    public ConstraintSystem(Constraint[] facts, Constraint[] rules) {
         if (facts == null)
             throw new IllegalArgumentException("'facts' must be non-null.");
         if (rules == null)

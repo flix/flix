@@ -268,7 +268,7 @@ object Interpreter {
     case Expression.ConstraintUnion(exp1, exp2, tpe, loc) =>
       val v1 = cast2constraintset(eval(exp1, env0, henv0, lenv0, root))
       val v2 = cast2constraintset(eval(exp2, env0, henv0, lenv0, root))
-      ConstraintSystem.compose(v1, v2)
+      SolverApi.compose(v1, v2)
 
     case Expression.FixpointSolve(uid, exp, stf, tpe, loc) =>
       val s = cast2constraintset(eval(exp, env0, henv0, lenv0, root))
@@ -296,7 +296,7 @@ object Interpreter {
         case x: Symbol.RelSym => ??? // TODO
         case x: Symbol.LatSym => ??? // TODO
       }
-      ConstraintSystem.project(predSym, s)
+      SolverApi.project(predSym, s)
 
     case Expression.FixpointEntails(exp1, exp2, tpe, loc) =>
       val v1 = cast2constraintset(eval(exp1, env0, henv0, lenv0, root))
