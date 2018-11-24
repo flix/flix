@@ -939,19 +939,13 @@ object ParsedAst {
     case class ConstraintSeq(sp1: SourcePosition, cs: Seq[Declaration.Constraint], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
-      * Constraint Union expression.
+      * Constraint Compose expression.
       *
-      * @param sp1  the position of the first character in the expression.
       * @param exp1 the first constraint expression.
       * @param exp2 the second constraint expression.
       * @param sp2  the position of the last character in the expression.
       */
-    case class ConstraintUnion(sp1: SourcePosition, exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
-
-    // TODO: Deprecated constraint union.
     case class FixpointCompose(exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
-
-    // TODO: Add project.
 
     /**
       * Fixpoint Solve expression.
@@ -993,9 +987,9 @@ object ParsedAst {
     /**
       * Fixpoint Entails expression.
       *
-      * @param sp1  the position of the first character in the expression.
       * @param exp1 the lhs expression.
       * @param exp2 the rhs expression.
+      * @param sp2  the position of the last character in the expression.
       */
     case class FixpointEntails(exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 

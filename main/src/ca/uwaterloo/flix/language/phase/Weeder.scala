@@ -989,11 +989,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           }
       }
 
-    case ParsedAst.Expression.ConstraintUnion(sp1, exp1, exp2, sp2) =>
-      mapN(visitExp(exp1), visitExp(exp2)) {
-        case (e1, e2) => WeededAst.Expression.ConstraintUnion(e1, e2, mkSL(sp1, sp2))
-      }
-
     case ParsedAst.Expression.FixpointCompose(exp1, exp2, sp2) =>
       mapN(visitExp(exp1), visitExp(exp2)) {
         case (e1, e2) =>
@@ -1839,7 +1834,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.NativeMethod(sp1, _, _, _) => sp1
     case ParsedAst.Expression.NativeConstructor(sp1, _, _, _) => sp1
     case ParsedAst.Expression.ConstraintSeq(sp1, _, _) => sp1
-    case ParsedAst.Expression.ConstraintUnion(sp1, _, _, _) => sp1
     case ParsedAst.Expression.FixpointCompose(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.FixpointSolve(sp1, _, _) => sp1
     case ParsedAst.Expression.FixpointCheck(sp1, _, _) => sp1
