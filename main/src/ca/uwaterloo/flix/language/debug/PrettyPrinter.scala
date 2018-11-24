@@ -399,12 +399,6 @@ object PrettyPrinter {
           }
           vt.text(")")
 
-        case Expression.NewRelation(sym, exp, tpe, loc) =>
-          ??? // TODO: Expression.NewRelation
-
-        case Expression.NewLattice(sym, exp, tpe, loc) =>
-          ??? // TODO: Expression.NewLattice
-
         case Expression.Constraint(c, tpe, loc) =>
           ??? // TODO: Expression.Constraint
 

@@ -175,10 +175,6 @@ object Safety extends Phase[Root, Root] {
         case (acc, e) => acc ::: visitExp(e)
       }
 
-    case Expression.NewRelation(sym, tpe, eff, loc) => Nil
-
-    case Expression.NewLattice(sym, tpe, eff, loc) => Nil
-
     case Expression.Constraint(con, tpe, eff, loc) => checkConstraint(con)
 
     case Expression.ConstraintUnion(exp1, exp2, tpe, eff, loc) => visitExp(exp1) ::: visitExp(exp2)

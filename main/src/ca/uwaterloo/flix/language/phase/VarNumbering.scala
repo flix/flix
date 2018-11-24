@@ -193,10 +193,6 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.NativeField(field, tpe, loc) => i0
       case Expression.NativeMethod(method, args, tpe, loc) => visitExps(args, i0)
 
-      case Expression.NewRelation(sym, exp, tpe, loc) => visitExp(exp, i0)
-
-      case Expression.NewLattice(sym, exp, tpe, loc) => visitExp(exp, i0)
-
       case Expression.Constraint(c, tpe, loc) =>
         // Assign a number to each constraint parameters.
         // These are unrelated to the true stack offsets.

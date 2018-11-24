@@ -302,12 +302,6 @@ object Synthesize extends Phase[Root, Root] {
         val as = args map visitExp
         Expression.NativeMethod(method, as, tpe, eff, loc)
 
-      case Expression.NewRelation(sym, tpe, eff, loc) =>
-        Expression.NewRelation(sym, tpe, eff, loc)
-
-      case Expression.NewLattice(sym, tpe, eff, loc) =>
-        Expression.NewLattice(sym, tpe, eff, loc)
-
       case Expression.Constraint(c, tpe, eff, loc) =>
         // TODO: Recurse?
         Expression.Constraint(c, tpe, eff, loc)

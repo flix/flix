@@ -287,14 +287,6 @@ object ClosureConv extends Phase[Root, Root] {
       val as = args map visitExp
       Expression.NativeMethod(method, as, tpe, loc)
 
-    case Expression.NewRelation(sym, exp, tpe, loc) =>
-      val e = visitExp(exp)
-      Expression.NewRelation(sym, e, tpe, loc)
-
-    case Expression.NewLattice(sym, exp, tpe, loc) =>
-      val e = visitExp(exp)
-      Expression.NewLattice(sym, e, tpe, loc)
-
     case Expression.Constraint(c0, tpe, loc) =>
       val Constraint(cparams0, head0, body0) = c0
       val head = visitHeadPredicate(head0)
@@ -471,9 +463,6 @@ object ClosureConv extends Phase[Root, Root] {
     case Expression.NativeField(field, tpe, loc) => mutable.LinkedHashSet.empty
     case Expression.NativeMethod(method, args, tpe, loc) => mutable.LinkedHashSet.empty ++ args.flatMap(freeVars)
 
-    case Expression.NewRelation(sym, exp, tpe, loc) => freeVars(exp)
-    case Expression.NewLattice(sym, exp, tpe, loc) => freeVars(exp)
-
     case Expression.Constraint(con, tpe, loc) =>
       val Constraint(cparams, head, body) = con
       freeVars(head) ++ body.flatMap(freeVars)
@@ -509,34 +498,22 @@ object ClosureConv extends Phase[Root, Root] {
 
     case Predicate.Head.False(loc) => mutable.LinkedHashSet.empty
 
-    case Predicate.Head.RelAtom(baseOpt, sym, terms, tpe, loc) => baseOpt match {
-      case None =>
-        mutable.LinkedHashSet.empty ++ terms.flatMap(freeVars)
-      case Some(baseSym) =>
-        mutable.LinkedHashSet((baseSym, tpe)) ++ terms.flatMap(freeVars)
-    }
+    case Predicate.Head.RelAtom(sym, exp, terms, tpe, loc) =>
+      freeVars(exp) ++ terms.flatMap(freeVars)
 
-    case Predicate.Head.LatAtom(baseOpt, sym, terms, tpe, loc) => baseOpt match {
-      case None =>
-        mutable.LinkedHashSet.empty ++ terms.flatMap(freeVars)
-      case Some(baseSym) =>
-        mutable.LinkedHashSet((baseSym, tpe)) ++ terms.flatMap(freeVars)
-    }
+    case Predicate.Head.LatAtom(sym, exp, terms, tpe, loc) =>
+      freeVars(exp) ++ terms.flatMap(freeVars)
   }
 
   /**
     * Returns the free variables in the given body predicate `body0`.
     */
   private def freeVars(body0: Predicate.Body): mutable.LinkedHashSet[(Symbol.VarSym, Type)] = body0 match {
-    case Predicate.Body.RelAtom(baseOpt, sym, polarity, terms, tpe, loc) => baseOpt match {
-      case None => mutable.LinkedHashSet.empty ++ terms.flatMap(freeVars)
-      case Some(baseSym) => mutable.LinkedHashSet((baseSym, tpe)) ++ terms.flatMap(freeVars)
-    }
+    case Predicate.Body.RelAtom(sym, exp, polarity, terms, tpe, loc) =>
+      freeVars(exp) ++ terms.flatMap(freeVars)
 
-    case Predicate.Body.LatAtom(baseOpt, sym, polarity, terms, tpe, loc) => baseOpt match {
-      case None => mutable.LinkedHashSet.empty ++ terms.flatMap(freeVars)
-      case Some(baseSym) => mutable.LinkedHashSet((baseSym, tpe)) ++ terms.flatMap(freeVars)
-    }
+    case Predicate.Body.LatAtom(sym, exp, polarity, terms, tpe, loc) =>
+      freeVars(exp) ++ terms.flatMap(freeVars)
 
     case Predicate.Body.Filter(sym, terms, loc) =>
       mutable.LinkedHashSet.empty ++ terms.flatMap(freeVars)
@@ -786,14 +763,6 @@ object ClosureConv extends Phase[Root, Root] {
         val es = args map visitExp
         Expression.NativeMethod(method, es, tpe, loc)
 
-      case Expression.NewRelation(sym, exp, tpe, loc) =>
-        val e = visitExp(exp)
-        Expression.NewRelation(sym, e, tpe, loc)
-
-      case Expression.NewLattice(sym, exp, tpe, loc) =>
-        val e = visitExp(exp)
-        Expression.NewLattice(sym, exp, tpe, loc)
-
       case Expression.Constraint(con, tpe, loc) =>
         val Constraint(cparams0, head0, body0) = con
         val cs = cparams0 map {
@@ -845,27 +814,27 @@ object ClosureConv extends Phase[Root, Root] {
     def visitHeadPredicate(head0: Predicate.Head): Predicate.Head = head0 match {
       case Predicate.Head.True(loc) => Predicate.Head.True(loc)
       case Predicate.Head.False(loc) => Predicate.Head.False(loc)
-      case Predicate.Head.RelAtom(baseOpt, sym, terms, tpe, loc) =>
-        val b = baseOpt.map(s => subst.getOrElse(s, s))
+      case Predicate.Head.RelAtom(sym, exp, terms, tpe, loc) =>
+        val e = visitExp(exp)
         val ts = terms map visitHeadTerm
-        Predicate.Head.RelAtom(b, sym, ts, tpe, loc)
+        Predicate.Head.RelAtom(sym, e, ts, tpe, loc)
 
-      case Predicate.Head.LatAtom(baseOpt, sym, terms, tpe, loc) =>
-        val b = baseOpt.map(s => subst.getOrElse(s, s))
+      case Predicate.Head.LatAtom(sym, exp, terms, tpe, loc) =>
+        val e = visitExp(exp)
         val ts = terms map visitHeadTerm
-        Predicate.Head.LatAtom(b, sym, ts, tpe, loc)
+        Predicate.Head.LatAtom(sym, e, ts, tpe, loc)
     }
 
     def visitBodyPredicate(body0: Predicate.Body): Predicate.Body = body0 match {
-      case Predicate.Body.RelAtom(baseOpt, sym, polarity, terms, tpe, loc) =>
-        val b = baseOpt.map(s => subst.getOrElse(s, s))
+      case Predicate.Body.RelAtom(sym, exp, polarity, terms, tpe, loc) =>
+        val e = visitExp(exp)
         val ts = terms map visitBodyTerm
-        Predicate.Body.RelAtom(b, sym, polarity, ts, tpe, loc)
+        Predicate.Body.RelAtom(sym, e, polarity, ts, tpe, loc)
 
-      case Predicate.Body.LatAtom(baseOpt, sym, polarity, terms, tpe, loc) =>
-        val b = baseOpt.map(s => subst.getOrElse(s, s))
+      case Predicate.Body.LatAtom(sym, exp, polarity, terms, tpe, loc) =>
+        val e = visitExp(exp)
         val ts = terms map visitBodyTerm
-        Predicate.Body.LatAtom(b, sym, polarity, ts, tpe, loc)
+        Predicate.Body.LatAtom(sym, e, polarity, ts, tpe, loc)
 
       case Predicate.Body.Filter(sym, terms, loc) =>
         val ts = terms map visitBodyTerm

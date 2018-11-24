@@ -513,14 +513,6 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         val es = args.map(e => visitExp(e))
         SimplifiedAst.Expression.NativeMethod(method, es, tpe, loc)
 
-      case TypedAst.Expression.NewRelation(sym, tpe, eff, loc) =>
-        val e = SimplifiedAst.Expression.Unit
-        SimplifiedAst.Expression.NewRelation(sym, e, tpe, loc)
-
-      case TypedAst.Expression.NewLattice(sym, tpe, eff, loc) =>
-        val e = SimplifiedAst.Expression.Unit
-        SimplifiedAst.Expression.NewLattice(sym, e, tpe, loc)
-
       case TypedAst.Expression.Constraint(c0, tpe, eff, loc) =>
         val c = visitConstraint(c0)
         SimplifiedAst.Expression.Constraint(c, tpe, loc)
@@ -566,26 +558,30 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
 
       case TypedAst.Predicate.Head.False(loc) => SimplifiedAst.Predicate.Head.False(loc)
 
-      case TypedAst.Predicate.Head.RelAtom(baseOpt, sym, terms, tpe, loc) =>
+      case TypedAst.Predicate.Head.RelAtom(sym, exp, terms, tpe, loc) =>
+        val e = visitExp(exp)
         val ts = terms.map(t => exp2HeadTerm(t, cparams))
-        SimplifiedAst.Predicate.Head.RelAtom(baseOpt, sym, ts, tpe, loc)
+        SimplifiedAst.Predicate.Head.RelAtom(sym, e, ts, tpe, loc)
 
-      case TypedAst.Predicate.Head.LatAtom(baseOpt, sym, terms, tpe, loc) =>
+      case TypedAst.Predicate.Head.LatAtom(sym, exp, terms, tpe, loc) =>
+        val e = visitExp(exp)
         val ts = terms.map(t => exp2HeadTerm(t, cparams))
-        SimplifiedAst.Predicate.Head.LatAtom(baseOpt, sym, ts, tpe, loc)
+        SimplifiedAst.Predicate.Head.LatAtom(sym, e, ts, tpe, loc)
     }
 
     /**
       * Translates the given `body` predicate to the SimplifiedAst.
       */
     def visitBodyPred(body: TypedAst.Predicate.Body, cparams: List[TypedAst.ConstraintParam]): SimplifiedAst.Predicate.Body = body match {
-      case TypedAst.Predicate.Body.RelAtom(baseOpt, sym, polarity, terms, tpe, loc) =>
+      case TypedAst.Predicate.Body.RelAtom(sym, exp, polarity, terms, tpe, loc) =>
+        val e = visitExp(exp)
         val ts = terms.map(p => pat2BodyTerm(p, cparams))
-        SimplifiedAst.Predicate.Body.RelAtom(baseOpt, sym, polarity, ts, tpe, loc)
+        SimplifiedAst.Predicate.Body.RelAtom(sym, e, polarity, ts, tpe, loc)
 
-      case TypedAst.Predicate.Body.LatAtom(baseOpt, sym, polarity, terms, tpe, loc) =>
+      case TypedAst.Predicate.Body.LatAtom(sym, exp, polarity, terms, tpe, loc) =>
+        val e = visitExp(exp)
         val ts = terms.map(p => pat2BodyTerm(p, cparams))
-        SimplifiedAst.Predicate.Body.LatAtom(baseOpt, sym, polarity, ts, tpe, loc)
+        SimplifiedAst.Predicate.Body.LatAtom(sym, e, polarity, ts, tpe, loc)
 
       case TypedAst.Predicate.Body.Filter(sym, terms, loc) =>
         SimplifiedAst.Predicate.Body.Filter(sym, terms.map(t => exp2BodyTerm(t, cparams)), loc)
@@ -1188,14 +1184,6 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case SimplifiedAst.Expression.NativeMethod(method, args, tpe, loc) =>
         val es = args map visit
         SimplifiedAst.Expression.NativeMethod(method, es, tpe, loc)
-
-      case SimplifiedAst.Expression.NewRelation(sym, exp, tpe, loc) =>
-        val e = visit(exp)
-        SimplifiedAst.Expression.NewRelation(sym, e, tpe, loc)
-
-      case SimplifiedAst.Expression.NewLattice(sym, exp, tpe, loc) =>
-        val e = visit(exp)
-        SimplifiedAst.Expression.NewLattice(sym, e, tpe, loc)
 
       case SimplifiedAst.Expression.Constraint(con, tpe, loc) =>
         ??? // TODO Expression.Constraint

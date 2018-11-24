@@ -305,12 +305,6 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
           checkPats(_, root)
         }).map(const(tast))
 
-        case Expression.NewRelation(sym, tpe, eff, loc) =>
-          Expression.NewRelation(sym, tpe, eff, loc).toSuccess
-
-        case Expression.NewLattice(sym, tpe, eff, loc) =>
-          Expression.NewLattice(sym, tpe, eff, loc).toSuccess
-
         case Expression.Constraint(c, tpe, eff, loc) =>
           // TODO: check recursively.
           tast.toSuccess

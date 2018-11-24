@@ -301,14 +301,6 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         val es = args map visitExp
         Expression.NativeMethod(method, es, tpe, loc)
 
-      case Expression.NewRelation(sym, exp, tpe, loc) =>
-        val e = visitExp(exp)
-        Expression.NewRelation(sym, e, tpe, loc)
-
-      case Expression.NewLattice(sym, exp, tpe, loc) =>
-        val e = visitExp(exp)
-        Expression.NewLattice(sym, e, tpe, loc)
-
       case Expression.Constraint(c0, tpe, loc) =>
         val Constraint(cparams0, head0, body0) = c0
         // TODO

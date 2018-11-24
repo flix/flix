@@ -155,18 +155,18 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     /**
       * Performs name resolution on the given `constraints` in the given namespace `ns0`.
       */
-    def resolve(constraints: List[NamedAst.Constraint], ns0: Name.NName, prog0: NamedAst.Root)(implicit genSym: GenSym): Validation[List[ResolvedAst.Constraint], ResolutionError] = {
-      traverse(constraints)(c => resolve(c, ns0, prog0))
+    def resolve(constraints: List[NamedAst.Constraint], tenv0: Map[Symbol.VarSym, Type], ns0: Name.NName, prog0: NamedAst.Root)(implicit genSym: GenSym): Validation[List[ResolvedAst.Constraint], ResolutionError] = {
+      traverse(constraints)(c => resolve(c, tenv0, ns0, prog0))
     }
 
     /**
       * Performs name resolution on the given constraint `c0` in the given namespace `ns0`.
       */
-    def resolve(c0: NamedAst.Constraint, ns0: Name.NName, prog0: NamedAst.Root)(implicit genSym: GenSym): Validation[ResolvedAst.Constraint, ResolutionError] = {
+    def resolve(c0: NamedAst.Constraint, tenv0: Map[Symbol.VarSym, Type], ns0: Name.NName, prog0: NamedAst.Root)(implicit genSym: GenSym): Validation[ResolvedAst.Constraint, ResolutionError] = {
       for {
         ps <- traverse(c0.cparams)(p => Params.resolve(p, ns0, prog0))
-        h <- Predicates.Head.resolve(c0.head, ns0, prog0)
-        bs <- traverse(c0.body)(b => Predicates.Body.resolve(b, ns0, prog0))
+        h <- Predicates.Head.resolve(c0.head, tenv0, ns0, prog0)
+        bs <- traverse(c0.body)(b => Predicates.Body.resolve(b, tenv0, ns0, prog0))
       } yield ResolvedAst.Constraint(ps, h, bs, c0.loc)
     }
 
@@ -681,14 +681,8 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
             es <- traverse(args)(e => visit(e, tenv0))
           } yield ResolvedAst.Expression.NativeMethod(method, es, tpe, loc)
 
-        case NamedAst.Expression.NewRelationOrLattice(name, tvar, loc) =>
-          lookupRelationOrLattice(name, ns0, prog0) map {
-            case RelationOrLattice.Rel(sym) => ResolvedAst.Expression.NewRelation(sym, tvar, loc)
-            case RelationOrLattice.Lat(sym) => ResolvedAst.Expression.NewLattice(sym, tvar, loc)
-          }
-
         case NamedAst.Expression.Constraint(cons, tvar, loc) =>
-          Constraints.resolve(cons, ns0, prog0) map {
+          Constraints.resolve(cons, tenv0, ns0, prog0) map {
             case c => ResolvedAst.Expression.Constraint(c, tvar, loc)
           }
 
@@ -799,18 +793,19 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
       /**
         * Performs name resolution on the given head predicate `h0` in the given namespace `ns0`.
         */
-      def resolve(h0: NamedAst.Predicate.Head, ns0: Name.NName, prog0: NamedAst.Root)(implicit genSym: GenSym): Validation[ResolvedAst.Predicate.Head, ResolutionError] = h0 match {
+      def resolve(h0: NamedAst.Predicate.Head, tenv0: Map[Symbol.VarSym, Type], ns0: Name.NName, prog0: NamedAst.Root)(implicit genSym: GenSym): Validation[ResolvedAst.Predicate.Head, ResolutionError] = h0 match {
         case NamedAst.Predicate.Head.True(loc) => ResolvedAst.Predicate.Head.True(loc).toSuccess
 
         case NamedAst.Predicate.Head.False(loc) => ResolvedAst.Predicate.Head.False(loc).toSuccess
 
-        case NamedAst.Predicate.Head.Atom(baseOpt, qname, terms, tvar, loc) =>
+        case NamedAst.Predicate.Head.Atom(qname, exp, terms, tvar, loc) =>
           for {
             t <- lookupRelationOrLattice(qname, ns0, prog0)
+            e <- Expressions.resolve(exp, tenv0, ns0, prog0)
             ts <- traverse(terms)(t => Expressions.resolve(t, Map.empty, ns0, prog0))
           } yield t match {
-            case RelationOrLattice.Rel(sym) => ResolvedAst.Predicate.Head.RelAtom(baseOpt, sym, ts, tvar, loc)
-            case RelationOrLattice.Lat(sym) => ResolvedAst.Predicate.Head.LatAtom(baseOpt, sym, ts, tvar, loc)
+            case RelationOrLattice.Rel(sym) => ResolvedAst.Predicate.Head.RelAtom(sym, e, ts, tvar, loc)
+            case RelationOrLattice.Lat(sym) => ResolvedAst.Predicate.Head.LatAtom(sym, e, ts, tvar, loc)
           }
       }
     }
@@ -819,14 +814,15 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
       /**
         * Performs name resolution on the given body predicate `b0` in the given namespace `ns0`.
         */
-      def resolve(b0: NamedAst.Predicate.Body, ns0: Name.NName, prog0: NamedAst.Root)(implicit genSym: GenSym): Validation[ResolvedAst.Predicate.Body, ResolutionError] = b0 match {
-        case NamedAst.Predicate.Body.Atom(baseOpt, qname, polarity, terms, tvar, loc) =>
+      def resolve(b0: NamedAst.Predicate.Body, tenv0: Map[Symbol.VarSym, Type], ns0: Name.NName, prog0: NamedAst.Root)(implicit genSym: GenSym): Validation[ResolvedAst.Predicate.Body, ResolutionError] = b0 match {
+        case NamedAst.Predicate.Body.Atom(qname, exp, polarity, terms, tvar, loc) =>
           for {
             t <- lookupRelationOrLattice(qname, ns0, prog0)
+            e <- Expressions.resolve(exp, tenv0, ns0, prog0)
             ts <- traverse(terms)(t => Patterns.resolve(t, ns0, prog0))
           } yield t match {
-            case RelationOrLattice.Rel(sym) => ResolvedAst.Predicate.Body.RelAtom(baseOpt, sym, polarity, ts, tvar, loc)
-            case RelationOrLattice.Lat(sym) => ResolvedAst.Predicate.Body.LatAtom(baseOpt, sym, polarity, ts, tvar, loc)
+            case RelationOrLattice.Rel(sym) => ResolvedAst.Predicate.Body.RelAtom(sym, e, polarity, ts, tvar, loc)
+            case RelationOrLattice.Lat(sym) => ResolvedAst.Predicate.Body.LatAtom(sym, e, polarity, ts, tvar, loc)
           }
 
         case NamedAst.Predicate.Body.Filter(qname, terms, loc) =>

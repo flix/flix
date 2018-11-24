@@ -974,10 +974,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         case es => WeededAst.Expression.NativeMethod(className, methodName, es, mkSL(sp1, sp2))
       }
 
-    case ParsedAst.Expression.NewRelationOrLattice(sp1, name, sp2) =>
-      val loc = mkSL(sp1, sp2)
-      WeededAst.Expression.NewRelationOrLattice(name, loc).toSuccess
-
     case ParsedAst.Expression.ConstraintSeq(sp1, cs, sp2) =>
       val loc = mkSL(sp1, sp2)
 
@@ -1229,8 +1225,11 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Predicate.Head.False(sp1, sp2) => WeededAst.Predicate.Head.False(mkSL(sp1, sp2)).toSuccess
 
     case ParsedAst.Predicate.Head.Atom(sp1, baseOpt, qname, terms, sp2) =>
+      val loc = mkSL(sp1, sp2)
       traverse(terms)(visitExp) map {
-        case ts => WeededAst.Predicate.Head.Atom(baseOpt, qname, ts, mkSL(sp1, sp2))
+        case ts =>
+          val paramExp = WeededAst.Expression.Unit(loc)
+          WeededAst.Predicate.Head.Atom(qname, paramExp, ts, loc)
       }
 
   }
@@ -1240,14 +1239,19 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     */
   private def visitPredicateBody(b: ParsedAst.Predicate.Body)(implicit flix: Flix): Validation[WeededAst.Predicate.Body, WeederError] = b match {
     case ParsedAst.Predicate.Body.Positive(sp1, baseOpt, qname, terms, sp2) =>
+      val loc = mkSL(sp1, sp2)
       traverse(terms)(visitPattern) map {
-        case ts => WeededAst.Predicate.Body.Atom(baseOpt, qname, Polarity.Positive, ts, mkSL(sp1, sp2))
+        case ts =>
+          val paramExp = WeededAst.Expression.Unit(loc)
+          WeededAst.Predicate.Body.Atom(qname, paramExp, Polarity.Positive, ts, loc)
       }
 
     case ParsedAst.Predicate.Body.Negative(sp1, baseOpt, qname, terms, sp2) =>
       val loc = mkSL(sp1, sp2)
       traverse(terms)(visitPattern) map {
-        case ts => WeededAst.Predicate.Body.Atom(baseOpt, qname, Polarity.Negative, ts, loc)
+        case ts =>
+          val paramExp = WeededAst.Expression.Unit(loc)
+          WeededAst.Predicate.Body.Atom(qname, paramExp, Polarity.Negative, ts, loc)
       }
 
     case ParsedAst.Predicate.Body.Filter(sp1, exp, sp2) =>

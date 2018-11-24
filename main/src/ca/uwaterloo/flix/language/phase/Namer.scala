@@ -811,9 +811,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case Err(e) => e.toFailure
       }
 
-    case WeededAst.Expression.NewRelationOrLattice(name, loc) =>
-      NamedAst.Expression.NewRelationOrLattice(name, Type.freshTypeVar(), loc).toSuccess
-
     case WeededAst.Expression.Constraint(con, loc) =>
       visitConstraint(con, env0, tenv0) map {
         case c => NamedAst.Expression.Constraint(c, Type.freshTypeVar(), loc)
@@ -920,22 +917,22 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   private def visitHeadPredicate(head: WeededAst.Predicate.Head, outerEnv: Map[String, Symbol.VarSym], headEnv0: Map[String, Symbol.VarSym], ruleEnv0: Map[String, Symbol.VarSym], tenv0: Map[String, Type.Var])(implicit genSym: GenSym): Validation[NamedAst.Predicate.Head, NameError] = head match {
     case WeededAst.Predicate.Head.True(loc) => NamedAst.Predicate.Head.True(loc).toSuccess
     case WeededAst.Predicate.Head.False(loc) => NamedAst.Predicate.Head.False(loc).toSuccess
-    case WeededAst.Predicate.Head.Atom(baseOpt, qname, terms, loc) =>
+    case WeededAst.Predicate.Head.Atom(qname, exp, terms, loc) =>
       for {
-        b <- lookupVarOpt(baseOpt, outerEnv)
+        e <- visitExp(exp, outerEnv, tenv0)
         ts <- traverse(terms)(t => visitExp(t, outerEnv ++ headEnv0 ++ ruleEnv0, tenv0))
-      } yield NamedAst.Predicate.Head.Atom(b, qname, ts, Type.freshTypeVar(), loc)
+      } yield NamedAst.Predicate.Head.Atom(qname, e, ts, Type.freshTypeVar(), loc)
   }
 
   /**
     * Names the given body predicate `body` under the given environments.
     */
   private def visitBodyPredicate(body: WeededAst.Predicate.Body, outerEnv: Map[String, Symbol.VarSym], headEnv0: Map[String, Symbol.VarSym], ruleEnv0: Map[String, Symbol.VarSym], tenv0: Map[String, Type.Var])(implicit genSym: GenSym): Validation[NamedAst.Predicate.Body, NameError] = body match {
-    case WeededAst.Predicate.Body.Atom(baseOpt, qname, polarity, terms, loc) =>
+    case WeededAst.Predicate.Body.Atom(qname, exp, polarity, terms, loc) =>
       val ts = terms.map(t => visitPattern(t, outerEnv ++ ruleEnv0))
       for {
-        b <- lookupVarOpt(baseOpt, outerEnv)
-      } yield NamedAst.Predicate.Body.Atom(b, qname, polarity, ts, Type.freshTypeVar(), loc)
+        e <- visitExp(exp, outerEnv, tenv0)
+      } yield NamedAst.Predicate.Body.Atom(qname, e, polarity, ts, Type.freshTypeVar(), loc)
 
     case WeededAst.Predicate.Body.Filter(qname, terms, loc) =>
       for {
@@ -948,17 +945,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
           val sym = headEnv0(ident.name)
           NamedAst.Predicate.Body.Functional(sym, t, loc)
       }
-  }
-
-  /**
-    * Optionally returns the variable symbol of the given optional identifier `ident`.
-    */
-  private def lookupVarOpt(o: Option[Name.Ident], env0: Map[String, Symbol.VarSym]): Validation[Option[Symbol.VarSym], NameError] = o match {
-    case None => None.toSuccess
-    case Some(ident) => env0.get(ident.name) match {
-      case None => NameError.UndefinedVar(ident.name, ident.loc).toFailure
-      case Some(sym) => Some(sym).toSuccess
-    }
   }
 
   /**
@@ -1096,7 +1082,6 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Expression.NativeField(className, fieldName, loc) => Nil
     case WeededAst.Expression.NativeMethod(className, methodName, args, loc) => args.flatMap(freeVars)
     case WeededAst.Expression.NativeConstructor(className, args, loc) => args.flatMap(freeVars)
-    case WeededAst.Expression.NewRelationOrLattice(name, loc) => Nil
     case WeededAst.Expression.Constraint(c, loc) => ??? // TODO: Constraint
     case WeededAst.Expression.ConstraintUnion(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
     case WeededAst.Expression.FixpointSolve(exp, loc) => freeVars(exp)

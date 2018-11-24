@@ -193,10 +193,6 @@ object ResolvedAst {
 
     case class NativeMethod(method: Method, args: List[ResolvedAst.Expression], tpe: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class NewRelation(sym: Symbol.RelSym, tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
-
-    case class NewLattice(sym: Symbol.LatSym, tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
-
     case class Constraint(con: ResolvedAst.Constraint, tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class ConstraintUnion(exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
@@ -267,9 +263,9 @@ object ResolvedAst {
 
       case class False(loc: SourceLocation) extends ResolvedAst.Predicate.Head
 
-      case class RelAtom(base: Option[Symbol.VarSym], sym: Symbol.RelSym, terms: List[ResolvedAst.Expression], tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Predicate.Head
+      case class RelAtom(sym: Symbol.RelSym, exp: ResolvedAst.Expression, terms: List[ResolvedAst.Expression], tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Predicate.Head
 
-      case class LatAtom(base: Option[Symbol.VarSym], sym: Symbol.LatSym, terms: List[ResolvedAst.Expression], tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Predicate.Head
+      case class LatAtom(sym: Symbol.LatSym, exp: ResolvedAst.Expression, terms: List[ResolvedAst.Expression], tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Predicate.Head
 
     }
 
@@ -277,9 +273,9 @@ object ResolvedAst {
 
     object Body {
 
-      case class RelAtom(base: Option[Symbol.VarSym], sym: Symbol.RelSym, polarity: Ast.Polarity, terms: List[ResolvedAst.Pattern], tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Predicate.Body
+      case class RelAtom(sym: Symbol.RelSym, exp: ResolvedAst.Expression, polarity: Ast.Polarity, terms: List[ResolvedAst.Pattern], tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Predicate.Body
 
-      case class LatAtom(base: Option[Symbol.VarSym], sym: Symbol.LatSym, polarity: Ast.Polarity, terms: List[ResolvedAst.Pattern], tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Predicate.Body
+      case class LatAtom(sym: Symbol.LatSym, exp: ResolvedAst.Expression, polarity: Ast.Polarity, terms: List[ResolvedAst.Pattern], tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Predicate.Body
 
       case class Filter(sym: Symbol.DefnSym, terms: List[ResolvedAst.Expression], loc: SourceLocation) extends ResolvedAst.Predicate.Body
 

@@ -577,10 +577,6 @@ object Effects extends Phase[Root, Root] {
           val eff = ast.Eff.Top
           Expression.NativeMethod(method, args, tpe, eff, loc).toSuccess
 
-        case Expression.NewRelation(sym, tpe, eff, loc) => ??? // TODO: NewRelation
-
-        case Expression.NewLattice(sym, tpe, eff, loc) => ??? // TODO: NewLattice
-
         case Expression.Constraint(con, tpe, eff, loc) => ??? // TODO: Constraint
 
         case Expression.ConstraintUnion(exp1, exp2, tpe, eff, loc) => ??? // TODO: ConstraintUnion

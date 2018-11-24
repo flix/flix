@@ -180,8 +180,6 @@ object NamedAst {
 
     case class NativeMethod(method: Method, args: List[NamedAst.Expression], tpe: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
-    case class NewRelationOrLattice(name: Name.QName, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
-
     case class Constraint(con: NamedAst.Constraint, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
     case class ConstraintUnion(exp1: NamedAst.Expression, exp2: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
@@ -252,7 +250,7 @@ object NamedAst {
 
       case class False(loc: SourceLocation) extends NamedAst.Predicate.Head
 
-      case class Atom(base: Option[Symbol.VarSym], name: Name.QName, terms: List[NamedAst.Expression], tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Predicate.Head
+      case class Atom(name: Name.QName, exp: NamedAst.Expression, terms: List[NamedAst.Expression], tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Predicate.Head
 
     }
 
@@ -260,7 +258,7 @@ object NamedAst {
 
     object Body {
 
-      case class Atom(base: Option[Symbol.VarSym], name: Name.QName, polarity: Ast.Polarity, terms: List[NamedAst.Pattern], tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Predicate.Body
+      case class Atom(name: Name.QName, exp: NamedAst.Expression, polarity: Ast.Polarity, terms: List[NamedAst.Pattern], tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Predicate.Body
 
       case class Filter(name: Name.QName, terms: List[NamedAst.Expression], loc: SourceLocation) extends NamedAst.Predicate.Body
 

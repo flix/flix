@@ -230,10 +230,6 @@ object SimplifiedAst {
 
     case class NativeMethod(method: Method, args: List[SimplifiedAst.Expression], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
-    case class NewRelation(sym: Symbol.RelSym, exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
-
-    case class NewLattice(sym: Symbol.LatSym, exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
-
     case class Constraint(con: SimplifiedAst.Constraint, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
     case class ConstraintUnion(exp1: SimplifiedAst.Expression, exp2: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
@@ -272,9 +268,9 @@ object SimplifiedAst {
 
       case class False(loc: SourceLocation) extends SimplifiedAst.Predicate.Head
 
-      case class RelAtom(base: Option[Symbol.VarSym], sym: Symbol.RelSym, terms: List[SimplifiedAst.Term.Head], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Predicate.Head
+      case class RelAtom(sym: Symbol.RelSym, exp: SimplifiedAst.Expression, terms: List[SimplifiedAst.Term.Head], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Predicate.Head
 
-      case class LatAtom(base: Option[Symbol.VarSym], sym: Symbol.LatSym, terms: List[SimplifiedAst.Term.Head], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Predicate.Head
+      case class LatAtom(sym: Symbol.LatSym, exp: SimplifiedAst.Expression, terms: List[SimplifiedAst.Term.Head], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Predicate.Head
 
     }
 
@@ -282,9 +278,9 @@ object SimplifiedAst {
 
     object Body {
 
-      case class RelAtom(base: Option[Symbol.VarSym], sym: Symbol.RelSym, polarity: Ast.Polarity, terms: List[SimplifiedAst.Term.Body], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Predicate.Body
+      case class RelAtom(sym: Symbol.RelSym, exp: SimplifiedAst.Expression, polarity: Ast.Polarity, terms: List[SimplifiedAst.Term.Body], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Predicate.Body
 
-      case class LatAtom(base: Option[Symbol.VarSym], sym: Symbol.LatSym, polarity: Ast.Polarity, terms: List[SimplifiedAst.Term.Body], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Predicate.Body
+      case class LatAtom(sym: Symbol.LatSym, exp: SimplifiedAst.Expression, polarity: Ast.Polarity, terms: List[SimplifiedAst.Term.Body], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Predicate.Body
 
       case class Filter(sym: Symbol.DefnSym, terms: List[SimplifiedAst.Term.Body], loc: SourceLocation) extends SimplifiedAst.Predicate.Body
 

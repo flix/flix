@@ -1134,22 +1134,6 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           ) yield tvar
 
         /*
-         * New Relation expression.
-         */
-        case ResolvedAst.Expression.NewRelation(sym, tvar, loc) =>
-          val relation = program.relations(sym)
-          val tpe = Scheme.instantiate(relation.sc)
-          unifyM(tvar, tpe, loc)
-
-        /*
-         * New Lattice Expression.
-         */
-        case ResolvedAst.Expression.NewLattice(sym, tvar, loc) =>
-          val lattice = program.lattices(sym)
-          val tpe = Scheme.instantiate(lattice.sc)
-          unifyM(tvar, tpe, loc)
-
-        /*
          * Constraint expression.
          */
         case ResolvedAst.Expression.Constraint(cons, tvar, loc) =>
@@ -1627,18 +1611,6 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           TypedAst.Expression.NativeMethod(method, es, subst0(tpe), Eff.Bot, loc)
 
         /*
-         * New Relation expression.
-         */
-        case ResolvedAst.Expression.NewRelation(sym, tvar, loc) =>
-          TypedAst.Expression.NewRelation(sym, subst0(tvar), Eff.Bot, loc)
-
-        /*
-         * New Lattice expression.
-         */
-        case ResolvedAst.Expression.NewLattice(sym, tvar, loc) =>
-          TypedAst.Expression.NewLattice(sym, subst0(tvar), Eff.Bot, loc)
-
-        /*
          * Constraint expression.
          */
         case ResolvedAst.Expression.Constraint(cons, tvar, loc) =>
@@ -1827,105 +1799,72 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         // TODO: Typing...
         Unification.liftM(Type.freshTypeVar())
 
-      case ResolvedAst.Predicate.Head.RelAtom(baseOpt, sym, terms, tvar, loc) => baseOpt match {
-        case None =>
-          //
-          // t_1 : tpe_1, ..., t_2: tpe_n,    rel P(tpe_1, ..., tpe_n)
-          // ---------------------------------------------------------:
-          // P(t_1, ..., t_n): Schema[... P(tpe_1, ..., tpe_n) ...]
-          //
+      case ResolvedAst.Predicate.Head.RelAtom(sym, exp, terms, tvar, loc) =>
+        //
+        // t_1 : tpe_1, ..., t_2: tpe_n,    rel P(tpe_1, ..., tpe_n)
+        // ---------------------------------------------------------:
+        // P(t_1, ..., t_n): Schema[... P(tpe_1, ..., tpe_n) ...]
+        //
 
-          // Lookup the type scheme.
-          val scheme = program.relations(sym).sc
+        // Lookup the type scheme.
+        val scheme = program.relations(sym).sc
 
-          // Instantiate the type scheme.
-          val declaredType = Scheme.instantiate(scheme)
+        // Instantiate the type scheme.
+        val declaredType = Scheme.instantiate(scheme)
 
-          // Infer the types of the terms.
-          for {
-            termTypes <- Terms.Head.infer(terms, program)
-            predicateType <- unifyM(tvar, Type.mkRelation(sym, termTypes), declaredType, loc)
-          } yield mkSchema(sym, predicateType, program)
+        // Infer the types of the terms.
+        for {
+          paramType <- Expressions.infer(exp, program)
+          termTypes <- Terms.Head.infer(terms, program)
+          predicateType <- unifyM(tvar, Type.mkRelation(sym, termTypes), declaredType, loc)
+        } yield mkSchema(sym, predicateType, program)
 
-        case Some(varSym) =>
-          //
-          // t_1 : tpe_1, ..., t_2: tpe_n,    b: P(t_1, ..., t_n),  fresh t
-          // --------------------- ----------------------------------------
-          // b.P(t_1, ..., t_n): t
-          //
-          for {
-            termTypes <- Terms.Head.infer(terms, program)
-            predicateType <- unifyM(tvar, Type.mkRelation(sym, termTypes), varSym.tvar, loc)
-          } yield Type.freshTypeVar()
-      }
+      case ResolvedAst.Predicate.Head.LatAtom(sym, exp, terms, tvar, loc) =>
+        // Lookup the type scheme.
+        val scheme = program.lattices(sym).sc
 
-      case ResolvedAst.Predicate.Head.LatAtom(baseOpt, sym, terms, tvar, loc) => baseOpt match {
-        case None =>
-          // Lookup the type scheme.
-          val scheme = program.lattices(sym).sc
+        // Instantiate the type scheme.
+        val declaredType = Scheme.instantiate(scheme)
 
-          // Instantiate the type scheme.
-          val declaredType = Scheme.instantiate(scheme)
-
-          // Infer the types of the terms.
-          for {
-            termTypes <- Terms.Head.infer(terms, program)
-            predicateType <- unifyM(tvar, Type.mkLattice(sym, termTypes), declaredType, loc)
-          } yield mkSchema(sym, predicateType, program)
-
-        case Some(varSym) =>
-          for {
-            termTypes <- Terms.Head.infer(terms, program)
-            predicateType <- unifyM(tvar, Type.mkLattice(sym, termTypes), varSym.tvar, loc)
-          } yield Type.freshTypeVar()
-      }
+        // Infer the types of the terms.
+        for {
+          paramType <- Expressions.infer(exp, program)
+          termTypes <- Terms.Head.infer(terms, program)
+          predicateType <- unifyM(tvar, Type.mkLattice(sym, termTypes), declaredType, loc)
+        } yield mkSchema(sym, predicateType, program)
     }
 
     /**
       * Infers the type of the given body predicate.
       */
     def infer(body0: ResolvedAst.Predicate.Body, program: ResolvedAst.Program)(implicit genSym: GenSym): InferMonad[Type] = body0 match {
-      case ResolvedAst.Predicate.Body.RelAtom(baseOpt, sym, polarity, terms, tvar, loc) => baseOpt match {
-        case None =>
-          // Lookup the type scheme.
-          val scheme = program.relations(sym).sc
+      case ResolvedAst.Predicate.Body.RelAtom(sym, exp, polarity, terms, tvar, loc) =>
+        // Lookup the type scheme.
+        val scheme = program.relations(sym).sc
 
-          // Instantiate the type scheme.
-          val declaredType = Scheme.instantiate(scheme)
+        // Instantiate the type scheme.
+        val declaredType = Scheme.instantiate(scheme)
 
-          // Infer the types of the terms.
-          for {
-            termTypes <- Terms.Body.infer(terms, program)
-            predicateType <- unifyM(tvar, Type.mkRelation(sym, termTypes), declaredType, loc)
-          } yield mkSchema(sym, predicateType, program)
+        // Infer the types of the terms.
+        for {
+          paramType <- Expressions.infer(exp, program)
+          termTypes <- Terms.Body.infer(terms, program)
+          predicateType <- unifyM(tvar, Type.mkRelation(sym, termTypes), declaredType, loc)
+        } yield mkSchema(sym, predicateType, program)
 
-        case Some(varSym) =>
-          for {
-            termTypes <- Terms.Body.infer(terms, program)
-            predicateType <- unifyM(tvar, Type.mkRelation(sym, termTypes), varSym.tvar, loc)
-          } yield Type.freshTypeVar()
-      }
+      case ResolvedAst.Predicate.Body.LatAtom(sym, exp, polarity, terms, tvar, loc) =>
+        // Lookup the type scheme.
+        val scheme = program.lattices(sym).sc
 
-      case ResolvedAst.Predicate.Body.LatAtom(baseOpt, sym, polarity, terms, tvar, loc) => baseOpt match {
-        case None =>
-          // Lookup the type scheme.
-          val scheme = program.lattices(sym).sc
+        // Instantiate the type scheme.
+        val declaredType = Scheme.instantiate(scheme)
 
-          // Instantiate the type scheme.
-          val declaredType = Scheme.instantiate(scheme)
-
-          // Infer the types of the terms.
-          for {
-            termTypes <- Terms.Body.infer(terms, program)
-            predicateType <- unifyM(tvar, Type.mkLattice(sym, termTypes), declaredType, loc)
-          } yield mkSchema(sym, predicateType, program)
-
-        case Some(varSym) =>
-          for {
-            termTypes <- Terms.Body.infer(terms, program)
-            predicateType <- unifyM(tvar, Type.mkLattice(sym, termTypes), varSym.tvar, loc)
-          } yield Type.freshTypeVar()
-      }
+        // Infer the types of the terms.
+        for {
+          paramType <- Expressions.infer(exp, program)
+          termTypes <- Terms.Body.infer(terms, program)
+          predicateType <- unifyM(tvar, Type.mkLattice(sym, termTypes), declaredType, loc)
+        } yield mkSchema(sym, predicateType, program)
 
       case ResolvedAst.Predicate.Body.Filter(sym, terms, loc) =>
         val defn = program.defs(sym)
@@ -1947,29 +1886,39 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       */
     def reassemble(head0: ResolvedAst.Predicate.Head, program: ResolvedAst.Program, subst0: Substitution): TypedAst.Predicate.Head = head0 match {
       case ResolvedAst.Predicate.Head.True(loc) => TypedAst.Predicate.Head.True(loc)
+
       case ResolvedAst.Predicate.Head.False(loc) => TypedAst.Predicate.Head.False(loc)
-      case ResolvedAst.Predicate.Head.RelAtom(baseOpt, sym, terms, tvar, loc) =>
+
+      case ResolvedAst.Predicate.Head.RelAtom(sym, exp, terms, tvar, loc) =>
+        val e = Expressions.reassemble(exp, program, subst0)
         val ts = terms.map(t => Expressions.reassemble(t, program, subst0))
-        TypedAst.Predicate.Head.RelAtom(baseOpt, sym, ts, subst0(tvar), loc)
-      case ResolvedAst.Predicate.Head.LatAtom(baseOpt, sym, terms, tvar, loc) =>
+        TypedAst.Predicate.Head.RelAtom(sym, e, ts, subst0(tvar), loc)
+
+      case ResolvedAst.Predicate.Head.LatAtom(sym, exp, terms, tvar, loc) =>
+        val e = Expressions.reassemble(exp, program, subst0)
         val ts = terms.map(t => Expressions.reassemble(t, program, subst0))
-        TypedAst.Predicate.Head.LatAtom(baseOpt, sym, ts, subst0(tvar), loc)
+        TypedAst.Predicate.Head.LatAtom(sym, e, ts, subst0(tvar), loc)
     }
 
     /**
       * Applies the given substitution `subst0` to the given body predicate `body0`.
       */
     def reassemble(body0: ResolvedAst.Predicate.Body, program: ResolvedAst.Program, subst0: Substitution): TypedAst.Predicate.Body = body0 match {
-      case ResolvedAst.Predicate.Body.RelAtom(baseOpt, sym, polarity, terms, tvar, loc) =>
+      case ResolvedAst.Predicate.Body.RelAtom(sym, exp, polarity, terms, tvar, loc) =>
+        val e = Expressions.reassemble(exp, program, subst0)
         val ts = terms.map(t => Patterns.reassemble(t, program, subst0))
-        TypedAst.Predicate.Body.RelAtom(baseOpt, sym, polarity, ts, subst0(tvar), loc)
-      case ResolvedAst.Predicate.Body.LatAtom(baseOpt, sym, polarity, terms, tvar, loc) =>
+        TypedAst.Predicate.Body.RelAtom(sym, e, polarity, ts, subst0(tvar), loc)
+
+      case ResolvedAst.Predicate.Body.LatAtom(sym, exp, polarity, terms, tvar, loc) =>
+        val e = Expressions.reassemble(exp, program, subst0)
         val ts = terms.map(t => Patterns.reassemble(t, program, subst0))
-        TypedAst.Predicate.Body.LatAtom(baseOpt, sym, polarity, ts, subst0(tvar), loc)
+        TypedAst.Predicate.Body.LatAtom(sym, e, polarity, ts, subst0(tvar), loc)
+
       case ResolvedAst.Predicate.Body.Filter(sym, terms, loc) =>
         val defn = program.defs(sym)
         val ts = terms.map(t => Expressions.reassemble(t, program, subst0))
         TypedAst.Predicate.Body.Filter(defn.sym, ts, loc)
+
       case ResolvedAst.Predicate.Body.Functional(sym, term, loc) =>
         val t = Expressions.reassemble(term, program, subst0)
         TypedAst.Predicate.Body.Functional(sym, t, loc)
