@@ -1224,12 +1224,17 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
     case ParsedAst.Predicate.Head.False(sp1, sp2) => WeededAst.Predicate.Head.False(mkSL(sp1, sp2)).toSuccess
 
-    case ParsedAst.Predicate.Head.Atom(sp1, baseOpt, qname, terms, sp2) =>
+    case ParsedAst.Predicate.Head.Atom(sp1, qname, expOpt, terms, sp2) =>
       val loc = mkSL(sp1, sp2)
-      traverse(terms)(visitExp) map {
-        case ts =>
-          val paramExp = WeededAst.Expression.Unit(loc)
-          WeededAst.Predicate.Head.Atom(qname, paramExp, ts, loc)
+
+      val paramExp = expOpt match {
+        case None => WeededAst.Expression.Unit(loc).toSuccess
+        case Some(exp) => visitExp(exp)
+      }
+
+      mapN(paramExp, traverse(terms)(visitExp)) {
+        case (e, ts) =>
+          WeededAst.Predicate.Head.Atom(qname, e, ts, loc)
       }
 
   }
@@ -1238,20 +1243,30 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     * Weeds the given body predicate.
     */
   private def visitPredicateBody(b: ParsedAst.Predicate.Body)(implicit flix: Flix): Validation[WeededAst.Predicate.Body, WeederError] = b match {
-    case ParsedAst.Predicate.Body.Positive(sp1, baseOpt, qname, terms, sp2) =>
+    case ParsedAst.Predicate.Body.Positive(sp1, qname, expOpt, terms, sp2) =>
       val loc = mkSL(sp1, sp2)
-      traverse(terms)(visitPattern) map {
-        case ts =>
-          val paramExp = WeededAst.Expression.Unit(loc)
-          WeededAst.Predicate.Body.Atom(qname, paramExp, Polarity.Positive, ts, loc)
+
+      val paramExp = expOpt match {
+        case None => WeededAst.Expression.Unit(loc).toSuccess
+        case Some(exp) => visitExp(exp)
       }
 
-    case ParsedAst.Predicate.Body.Negative(sp1, baseOpt, qname, terms, sp2) =>
+      mapN(paramExp, traverse(terms)(visitPattern)) {
+        case (e, ts) =>
+          WeededAst.Predicate.Body.Atom(qname, e, Polarity.Positive, ts, loc)
+      }
+
+    case ParsedAst.Predicate.Body.Negative(sp1, qname, expOpt, terms, sp2) =>
       val loc = mkSL(sp1, sp2)
-      traverse(terms)(visitPattern) map {
-        case ts =>
-          val paramExp = WeededAst.Expression.Unit(loc)
-          WeededAst.Predicate.Body.Atom(qname, paramExp, Polarity.Negative, ts, loc)
+
+      val paramExp = expOpt match {
+        case None => WeededAst.Expression.Unit(loc).toSuccess
+        case Some(exp) => visitExp(exp)
+      }
+
+      mapN(paramExp, traverse(terms)(visitPattern)) {
+        case (e, ts) =>
+          WeededAst.Predicate.Body.Atom(qname, e, Polarity.Negative, ts, loc)
       }
 
     case ParsedAst.Predicate.Body.Filter(sp1, exp, sp2) =>

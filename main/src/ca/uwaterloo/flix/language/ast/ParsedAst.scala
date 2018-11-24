@@ -1138,12 +1138,12 @@ object ParsedAst {
         * Atom Predicate.
         *
         * @param sp1   the position of the first character in the predicate.
-        * @param base  the optional base relation or lattice.
-        * @param name  the qualified name of the table.
+        * @param name  the qualified name of the predicate.
+        * @param exp   the optional parameter of the predicate.
         * @param terms the terms of the predicate.
         * @param sp2   the position of the last character in the predicate.
         */
-      case class Atom(sp1: SourcePosition, base: Option[Name.Ident], name: Name.QName, terms: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Predicate.Head
+      case class Atom(sp1: SourcePosition, name: Name.QName, exp: Option[ParsedAst.Expression], terms: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Predicate.Head
 
     }
 
@@ -1155,23 +1155,23 @@ object ParsedAst {
         * Positive Predicate.
         *
         * @param sp1   the position of the first character in the predicate.
-        * @param base  the optional base relation or lattice.
-        * @param name  the qualified name of the table.
+        * @param name  the qualified name of the predicate.
+        * @param exp   the optional parameter of the predicate.
         * @param terms the terms of the predicate.
         * @param sp2   the position of the last character in the predicate.
         */
-      case class Positive(sp1: SourcePosition, base: Option[Name.Ident], name: Name.QName, terms: Seq[ParsedAst.Pattern], sp2: SourcePosition) extends ParsedAst.Predicate.Body
+      case class Positive(sp1: SourcePosition, name: Name.QName, exp: Option[ParsedAst.Expression], terms: Seq[ParsedAst.Pattern], sp2: SourcePosition) extends ParsedAst.Predicate.Body
 
       /**
         * Negative Predicate.
         *
         * @param sp1   the position of the first character in the predicate.
-        * @param base  the optional base relation or lattice.
-        * @param name  the qualified name of the table.
+        * @param name  the qualified name of the predicate.
+        * @param exp   the optional parameter of the predicate.
         * @param terms the terms of the predicate.
         * @param sp2   the position of the last character in the predicate.
         */
-      case class Negative(sp1: SourcePosition, base: Option[Name.Ident], name: Name.QName, terms: Seq[ParsedAst.Pattern], sp2: SourcePosition) extends ParsedAst.Predicate.Body
+      case class Negative(sp1: SourcePosition, name: Name.QName, exp: Option[ParsedAst.Expression], terms: Seq[ParsedAst.Pattern], sp2: SourcePosition) extends ParsedAst.Predicate.Body
 
       /**
         * Filter Predicate.
