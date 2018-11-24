@@ -593,7 +593,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       LetRec | LetMatch | IfThenElse | Match | LambdaMatch | Switch | TryCatch | Native | Lambda | Tuple |
         RecordRestrict | RecordExtend | RecordUpdate | RecordLiteral | RecordSelectLambda |
         ArrayLit | ArrayNew | ArrayLength | VectorLit | VectorNew | VectorLength | FNil | FSet | FMap |
-        NewRelationOrLattice | FixpointSolve | FixpointCheck | FixpointDelta | FixpointProject | ConstraintSeq | ConstraintUnion | Literal |
+        FixpointSolve | FixpointCheck | FixpointDelta | FixpointProject | ConstraintSeq | Literal |
         HandleWith | Existential | Universal | UnaryLambda | QName | Wild | Tag | SName | Hole | UserError
     }
 
@@ -826,14 +826,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def ConstraintSeq: Rule1[ParsedAst.Expression] = rule {
       SP ~ oneOrMore(Declarations.Constraint) ~ SP ~> ParsedAst.Expression.ConstraintSeq
-    }
-
-    def ConstraintUnion: Rule1[ParsedAst.Expression] = rule {
-      SP ~ atomic("union") ~ WS ~ Expression ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.ConstraintUnion
-    }
-
-    def NewRelationOrLattice: Rule1[ParsedAst.Expression] = rule {
-      SP ~ atomic("new") ~ WS ~ Names.QualifiedTable ~ SP ~> ParsedAst.Expression.NewRelationOrLattice
     }
 
     def FixpointSolve: Rule1[ParsedAst.Expression] = rule {
