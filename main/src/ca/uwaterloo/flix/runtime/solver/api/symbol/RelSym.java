@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.runtime.solver.api.symbol;
 
-import ca.uwaterloo.flix.runtime.solver.api.Attribute;
+import flix.runtime.fixpoint.Attribute;
 import ca.uwaterloo.flix.runtime.solver.api.ProxyObject;
 import flix.runtime.value.Unit;
 
@@ -65,7 +65,11 @@ public final class RelSym implements PredSym {
         this.name = name;
         this.parameter = parameter;
         this.attributes = attributes;
-        this.parameterless = of(name, new ProxyObject(Unit.getInstance(), null, null, null), attributes);
+        if (this.parameter == ProxyObject.UNIT) {
+            this.parameterless = this;
+        } else {
+            this.parameterless = of(name, ProxyObject.UNIT, attributes);
+        }
     }
 
     /**

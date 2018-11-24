@@ -25,7 +25,7 @@ import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.runtime.{InvocationTarget, Linker}
 import ca.uwaterloo.flix.runtime.solver._
 import ca.uwaterloo.flix.runtime.solver.api.symbol._
-import ca.uwaterloo.flix.runtime.solver.api.{Attribute => _, Constraint => _, _}
+import ca.uwaterloo.flix.runtime.solver.api.{Constraint => _, _}
 import ca.uwaterloo.flix.util.{InternalRuntimeException, Verbosity}
 import ca.uwaterloo.flix.util.tc.Show._
 import flix.runtime.fixpoint.predicate._
@@ -850,7 +850,7 @@ object Interpreter {
   private def getRelSym(sym: Symbol.RelSym)(implicit root: FinalAst.Root, flix: Flix): RelSym = root.relations(sym) match {
     case FinalAst.Relation(_, _, attr, _) =>
       val name = sym.toString
-      val as = attr.map(a => new api.Attribute(a.name)).toArray
+      val as = attr.map(a => fixpoint.Attribute.of(a.name)).toArray
       RelSym.of(name, null, as)
   }
 
@@ -860,7 +860,7 @@ object Interpreter {
   private def getLattice(sym: Symbol.LatSym)(implicit root: FinalAst.Root, flix: Flix): LatSym = root.lattices(sym) match {
     case FinalAst.Lattice(_, _, attr, _) =>
       val name = sym.toString
-      val as = attr.map(a => new api.Attribute(a.name))
+      val as = attr.map(a => fixpoint.Attribute.of(a.name))
       val keys = as.init.toArray
       val value = as.last
       val ops = getLatticeOps(attr.last.tpe)

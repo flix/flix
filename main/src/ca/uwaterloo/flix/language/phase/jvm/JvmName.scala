@@ -133,6 +133,8 @@ object JvmName {
 
     object Fixpoint {
 
+      val Attribute: JvmName = mk("flix/runtime/fixpoint/Attribute")
+
       object Predicate {
         val Predicate: JvmName = mk("flix/runtime/fixpoint/predicate/Predicate")
 

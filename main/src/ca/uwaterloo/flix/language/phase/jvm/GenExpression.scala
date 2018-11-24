@@ -1662,33 +1662,36 @@ object GenExpression {
         mv.visitInsn(ACONST_NULL)
 
         // Emit code for the attributes.
-        val attributes = root.relations(sym).attr
-        compileInt(mv, attributes.length)
-        mv.visitTypeInsn(ANEWARRAY, "ca/uwaterloo/flix/runtime/solver/api/Attribute")
-        for ((attribute, index) <- attributes.zipWithIndex) {
-          // Compile each attribute and store it in the array.
-          mv.visitInsn(DUP)
-          compileInt(mv, index)
-
-          // Allocate the attribute object.
-          mv.visitTypeInsn(NEW, "ca/uwaterloo/flix/runtime/solver/api/Attribute")
-          mv.visitInsn(DUP)
-
-          // The name of the attribute.
-          mv.visitLdcInsn(attribute.name)
-
-          // Invoke the constructor of the attribute.
-          mv.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/solver/api/Attribute", "<init>", "(Ljava/lang/String;)V", false)
-
-          // Store the attribute in the array.
-          mv.visitInsn(AASTORE)
-        }
+        newAttributesArray(root.relations(sym).attr, mv)
 
         // Emit code to instantiate the predicate symbol.
-        mv.visitMethodInsn(INVOKESTATIC, "ca/uwaterloo/flix/runtime/solver/api/symbol/RelSym", "of", "(Ljava/lang/String;Lca/uwaterloo/flix/runtime/solver/api/ProxyObject;[Lca/uwaterloo/flix/runtime/solver/api/Attribute;)Lca/uwaterloo/flix/runtime/solver/api/symbol/RelSym;", false);
+        mv.visitMethodInsn(INVOKESTATIC, "ca/uwaterloo/flix/runtime/solver/api/symbol/RelSym", "of", "(Ljava/lang/String;Lca/uwaterloo/flix/runtime/solver/api/ProxyObject;[Lflix/runtime/fixpoint/Attribute;)Lca/uwaterloo/flix/runtime/solver/api/symbol/RelSym;", false);
       case Some(varSym) =>
         // Emit code for the predicate symbol.
         readVar(varSym, tpe, mv)
+    }
+  }
+
+  /**
+    * Emits code to instantiate an array of the given `attributes`.
+    */
+  private def newAttributesArray(attributes: List[FinalAst.Attribute], mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
+    // Instantiate a new array of appropriate length.
+    compileInt(mv, attributes.length)
+    mv.visitTypeInsn(ANEWARRAY, JvmName.Runtime.Fixpoint.Attribute.toInternalName)
+    for ((attribute, index) <- attributes.zipWithIndex) {
+      // Compile each attribute and store it in the array.
+      mv.visitInsn(DUP)
+      compileInt(mv, index)
+
+      // The name of the attribute.
+      mv.visitLdcInsn(attribute.name)
+
+      // Instantiate a fresh attribute object.
+      mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Attribute.toInternalName, "of", "(Ljava/lang/String;)Lflix/runtime/fixpoint/Attribute;", false);
+
+      // Store the attribute in the array.
+      mv.visitInsn(AASTORE)
     }
   }
 

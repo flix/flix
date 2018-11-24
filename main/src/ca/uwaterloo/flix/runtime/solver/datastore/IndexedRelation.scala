@@ -16,8 +16,9 @@
 
 package ca.uwaterloo.flix.runtime.solver.datastore
 
-import ca.uwaterloo.flix.runtime.solver.api.{Attribute, ProxyObject}
+import ca.uwaterloo.flix.runtime.solver.api.ProxyObject
 import ca.uwaterloo.flix.util.BitOps
+import flix.runtime.fixpoint.Attribute
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer

@@ -1,5 +1,7 @@
 package ca.uwaterloo.flix.runtime.solver.api;
 
+import flix.runtime.value.Unit;
+
 import java.util.function.Function;
 
 /**
@@ -8,6 +10,8 @@ import java.util.function.Function;
 public final class ProxyObject {
 
     // TODO: Document class.
+
+    public static final ProxyObject UNIT = new ProxyObject(Unit.getInstance(), null, null, null);
 
     private final Object value;
     private final Function<Object[], ProxyObject> eq;

@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.runtime.solver.api.symbol;
 
 import ca.uwaterloo.flix.runtime.solver.api.LatticeOps;
-import ca.uwaterloo.flix.runtime.solver.api.Attribute;
+import flix.runtime.fixpoint.Attribute;
 import ca.uwaterloo.flix.runtime.solver.api.ProxyObject;
 import flix.runtime.value.Unit;
 
@@ -82,7 +82,11 @@ public final class LatSym implements PredSym {
         this.keys = keys;
         this.value = value;
         this.ops = ops;
-        this.parameterless = of(name, new ProxyObject(Unit.getInstance(), null, null, null), keys, value, ops);
+        if (this.parameter == ProxyObject.UNIT) {
+            this.parameterless = this;
+        } else {
+            this.parameterless = of(name, ProxyObject.UNIT, keys, value, ops);
+        }
     }
 
     /**
