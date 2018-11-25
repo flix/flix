@@ -3,6 +3,7 @@ package flix.runtime.fixpoint;
 import flix.runtime.fixpoint.predicate.*;
 import flix.runtime.fixpoint.symbol.VarSym;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -103,37 +104,22 @@ public final class Constraint {
         //
         // Partition the body predicates based on their types. The joy of arrays.
         //
-        // TODO: Rewrite, use ArrayList.
-
-        var numberOfBodyAtoms = 0;
-        var numberOfBodyFilters = 0;
-        var numberOfBodyFunctionals = 0;
+        var bodyAtoms = new ArrayList<AtomPredicate>();
+        var bodyFilters = new ArrayList<FilterPredicate>();
+        var bodyFunctionals = new ArrayList<FunctionalPredicate>();
         for (Predicate b : body) {
             if (b instanceof AtomPredicate) {
-                numberOfBodyAtoms++;
+                bodyAtoms.add((AtomPredicate) b);
             } else if (b instanceof FilterPredicate) {
-                numberOfBodyFilters++;
+                bodyFilters.add((FilterPredicate) b);
             } else if (b instanceof FunctionalPredicate) {
-                numberOfBodyFunctionals++;
+                bodyFunctionals.add((FunctionalPredicate) b);
             }
         }
 
-        this.bodyAtoms = new AtomPredicate[numberOfBodyAtoms];
-        this.bodyFilters = new FilterPredicate[numberOfBodyFilters];
-        this.bodyFunctionals = new FunctionalPredicate[numberOfBodyFunctionals];
-
-        var bodyAtomCounter = 0;
-        var bodyFilterounter = 0;
-        var bodyFunctionalCounter = 0;
-        for (Predicate b : body) {
-            if (b instanceof AtomPredicate) {
-                this.bodyAtoms[bodyAtomCounter++] = (AtomPredicate) b;
-            } else if (b instanceof FilterPredicate) {
-                this.bodyFilters[bodyFilterounter++] = (FilterPredicate) b;
-            } else if (b instanceof FunctionalPredicate) {
-                this.bodyFunctionals[bodyFunctionalCounter++] = (FunctionalPredicate) b;
-            }
-        }
+        this.bodyAtoms = bodyAtoms.toArray(new AtomPredicate[0]);
+        this.bodyFilters = bodyFilters.toArray(new FilterPredicate[0]);
+        this.bodyFunctionals = bodyFunctionals.toArray(new FunctionalPredicate[0]);
     }
 
     /**
