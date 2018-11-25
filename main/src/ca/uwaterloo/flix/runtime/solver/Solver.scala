@@ -851,8 +851,8 @@ class Solver(constraintSystem: ConstraintSystem, stratification: Stratification,
     * Checks whether the solver has exceed the timeout. If so, throws a timeout exception.
     */
   private def checkTimeout(): Unit = options.getTimeout match {
-    case None => // nop
-    case Some(timeout) =>
+    case null => // nop
+    case timeout =>
       val elapsed = System.nanoTime() - totalTime
       if (elapsed > timeout.toNanos) {
         stopSolver()
