@@ -994,10 +994,10 @@ object GenExpression {
       visitor.visitInsn(ACONST_NULL) // TODO: Stratification
 
       // Emit code for the fixpoint options.
-      compileFixpointOptions(visitor)
+      newOptions(visitor)
 
       // Emit code for the invocation of the solver.
-      visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Solver.toInternalName, "solve", "(Lflix/runtime/fixpoint/ConstraintSystem;Lca/uwaterloo/flix/runtime/solver/api/Stratification;Lca/uwaterloo/flix/runtime/solver/FixpointOptions;)Lflix/runtime/fixpoint/ConstraintSystem;", false)
+      visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Solver.toInternalName, "solve", "(Lflix/runtime/fixpoint/ConstraintSystem;Lca/uwaterloo/flix/runtime/solver/api/Stratification;Lflix/runtime/fixpoint/Options;)Lflix/runtime/fixpoint/ConstraintSystem;", false)
 
     case Expression.FixpointCheck(uid, exp, stf, tpe, loc) =>
       // Add source line numbers for debugging.
@@ -1010,10 +1010,10 @@ object GenExpression {
       visitor.visitInsn(ACONST_NULL) // TODO: Stratification
 
       // Emit code for the fixpoint options.
-      compileFixpointOptions(visitor)
+      newOptions(visitor)
 
       // Emit code for the invocation of the solver.
-      visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Solver.toInternalName, "check", "(Lflix/runtime/fixpoint/ConstraintSystem;Lca/uwaterloo/flix/runtime/solver/api/Stratification;Lca/uwaterloo/flix/runtime/solver/FixpointOptions;)Z", false);
+      visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Solver.toInternalName, "check", "(Lflix/runtime/fixpoint/ConstraintSystem;Lca/uwaterloo/flix/runtime/solver/api/Stratification;Lflix/runtime/fixpoint/Options;)Z", false);
 
     case Expression.FixpointDelta(uid, exp, stf, tpe, loc) =>
       // Add source line numbers for debugging.
@@ -1026,10 +1026,10 @@ object GenExpression {
       visitor.visitInsn(ACONST_NULL) // TODO: Stratification
 
       // Emit code for the fixpoint options.
-      compileFixpointOptions(visitor)
+      newOptions(visitor)
 
       // Emit code for the invocation of the solver.
-      visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Solver.toInternalName, "deltaSolve", "(Lflix/runtime/fixpoint/ConstraintSystem;Lca/uwaterloo/flix/runtime/solver/api/Stratification;Lca/uwaterloo/flix/runtime/solver/FixpointOptions;)Ljava/lang/String;", false);
+      visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Solver.toInternalName, "deltaSolve", "(Lflix/runtime/fixpoint/ConstraintSystem;Lca/uwaterloo/flix/runtime/solver/api/Stratification;Lflix/runtime/fixpoint/Options;)Ljava/lang/String;", false);
 
     case Expression.FixpointProject(sym, exp, tpe, loc) =>
       // Add source line numbers for debugging.
@@ -1892,15 +1892,15 @@ object GenExpression {
   }
 
   /**
-    * Generates code the allocate a fixpoint options object based on the flix configuration.
+    * Emits code to instantiate a new options object based on the flix options.
     */
-  private def compileFixpointOptions(mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
+  private def newOptions(mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
     // Allocate a fresh object.
-    mv.visitTypeInsn(NEW, "ca/uwaterloo/flix/runtime/solver/FixpointOptions")
+    mv.visitTypeInsn(NEW, JvmName.Runtime.Fixpoint.Options.toInternalName)
     mv.visitInsn(DUP)
 
     // Invoke the constructor.
-    mv.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/solver/FixpointOptions", "<init>", "()V", false)
+    mv.visitMethodInsn(INVOKESPECIAL, JvmName.Runtime.Fixpoint.Options.toInternalName, "<init>", "()V", false)
 
     // Monitor
     mv.visitInsn(DUP)
@@ -1909,12 +1909,12 @@ object GenExpression {
     } else {
       mv.visitInsn(ICONST_0)
     }
-    mv.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/solver/FixpointOptions", "setMonitored", "(Z)V", false)
+    mv.visitMethodInsn(INVOKEVIRTUAL, JvmName.Runtime.Fixpoint.Options.toInternalName, "setMonitored", "(Z)V", false)
 
     // Threads
     mv.visitInsn(DUP)
     mv.visitIntInsn(BIPUSH, flix.options.threads)
-    mv.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/solver/FixpointOptions", "setThreads", "(I)V", false)
+    mv.visitMethodInsn(INVOKEVIRTUAL, JvmName.Runtime.Fixpoint.Options.toInternalName, "setThreads", "(I)V", false)
 
     // Verbosity
     mv.visitInsn(DUP)
@@ -1923,7 +1923,7 @@ object GenExpression {
     } else {
       mv.visitInsn(ICONST_0)
     }
-    mv.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/solver/FixpointOptions", "setVerbose", "(Z)V", false)
+    mv.visitMethodInsn(INVOKEVIRTUAL, JvmName.Runtime.Fixpoint.Options.toInternalName, "setVerbose", "(Z)V", false)
   }
 
   /**

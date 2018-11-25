@@ -26,7 +26,7 @@ import ca.uwaterloo.flix.runtime.solver.api._
 import ca.uwaterloo.flix.runtime.Monitor
 import ca.uwaterloo.flix.runtime.solver.api.symbol._
 import ca.uwaterloo.flix.util._
-import flix.runtime.fixpoint.{ConstantFunction, ConstraintSystem}
+import flix.runtime.fixpoint.{ConstantFunction, ConstraintSystem, Options}
 import flix.runtime.fixpoint.predicate._
 import flix.runtime.fixpoint.symbol.{PredSym, VarSym}
 import flix.runtime.fixpoint.term._
@@ -42,7 +42,7 @@ import scala.collection.mutable.ArrayBuffer
   *
   * The solver computes the least fixed point of the rules in the given program.
   */
-class Solver(constraintSystem: ConstraintSystem, stratification: Stratification, options: FixpointOptions) {
+class Solver(constraintSystem: ConstraintSystem, stratification: Stratification, options: Options) {
 
   /**
     * Controls the number of batches per thread. A value of one means one batch per thread.

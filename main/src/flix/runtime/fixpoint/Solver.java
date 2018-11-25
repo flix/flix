@@ -1,7 +1,6 @@
 package flix.runtime.fixpoint;
 
 import ca.uwaterloo.flix.runtime.solver.DeltaSolver;
-import ca.uwaterloo.flix.runtime.solver.FixpointOptions;
 import ca.uwaterloo.flix.runtime.solver.api.Constraint;
 import ca.uwaterloo.flix.runtime.solver.api.Stratification;
 import flix.runtime.fixpoint.symbol.PredSym;
@@ -51,7 +50,7 @@ public final class Solver {
     /**
      * Solves the given constraint system `cs` with the given stratification `stf` and options `o`.
      */
-    public static ConstraintSystem solve(ConstraintSystem cs, Stratification stf, FixpointOptions o) {
+    public static ConstraintSystem solve(ConstraintSystem cs, Stratification stf, Options o) {
         ca.uwaterloo.flix.runtime.solver.Solver solver = new ca.uwaterloo.flix.runtime.solver.Solver(cs, stf, o);
         ConstraintSystem result = solver.solve();
         System.out.println(result.toString());
@@ -61,7 +60,7 @@ public final class Solver {
     /**
      * Checks the given constraint system `cs` with the given stratification `stf` and options `o`.
      */
-    public static boolean check(ConstraintSystem cs, Stratification stf, FixpointOptions o) {
+    public static boolean check(ConstraintSystem cs, Stratification stf, Options o) {
         try {
             ca.uwaterloo.flix.runtime.solver.Solver solver = new ca.uwaterloo.flix.runtime.solver.Solver(cs, stf, o);
             solver.solve();
@@ -74,7 +73,7 @@ public final class Solver {
     /**
      * Delta Solves the given constraint system `cs` with the given stratification `stf` and options `o`.
      */
-    public static String deltaSolve(ConstraintSystem cs, Stratification stf, FixpointOptions o) {
+    public static String deltaSolve(ConstraintSystem cs, Stratification stf, Options o) {
         DeltaSolver deltaSolver = new DeltaSolver(cs, stf, o);
         return deltaSolver.deltaSolve(); // TODO: Should return a constraint system and not a string.
     }

@@ -1,8 +1,8 @@
-package ca.uwaterloo.flix.runtime.solver;
+package flix.runtime.fixpoint;
 
 import java.time.Duration;
 
-public final class FixpointOptions {
+public final class Options {
 
     /**
      * Whether to enable to fixpoint monitor.

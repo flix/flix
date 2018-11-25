@@ -134,6 +134,7 @@ object JvmName {
       val Attribute: JvmName = mk("flix/runtime/fixpoint/Attribute")
       val ConstraintSystem: JvmName = mk("flix/runtime/fixpoint/ConstraintSystem")
       val ConstantFunction: JvmName = mk("flix/runtime/fixpoint/ConstantFunction")
+      val Options: JvmName = mk("flix/runtime/fixpoint/Options")
       val Solver: JvmName = mk("flix/runtime/fixpoint/Solver")
 
       object Predicate {

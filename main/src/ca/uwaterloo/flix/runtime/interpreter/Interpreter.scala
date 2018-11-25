@@ -28,7 +28,7 @@ import ca.uwaterloo.flix.runtime.solver.api.symbol._
 import ca.uwaterloo.flix.runtime.solver.api.{Constraint => _, _}
 import ca.uwaterloo.flix.util.{InternalRuntimeException, Verbosity}
 import ca.uwaterloo.flix.util.tc.Show._
-import flix.runtime.fixpoint.{ConstraintSystem, Solver}
+import flix.runtime.fixpoint.{ConstraintSystem, Options, Solver}
 import flix.runtime.fixpoint.predicate._
 import flix.runtime.fixpoint.symbol.{PredSym, VarSym}
 import flix.runtime.fixpoint.term._
@@ -1124,9 +1124,9 @@ object Interpreter {
   /**
     * Returns the fixpoint options object based on the flix configuration.
     */
-  private def getFixpointOptions()(implicit flix: Flix): FixpointOptions = {
+  private def getFixpointOptions()(implicit flix: Flix): Options = {
     // Configure the fixpoint solver based on the Flix options.
-    val options = new FixpointOptions
+    val options = new Options
     options.setMonitored(flix.options.monitor)
     options.setThreads(flix.options.threads)
     options.setVerbose(flix.options.verbosity == Verbosity.Verbose)
