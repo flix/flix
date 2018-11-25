@@ -28,7 +28,7 @@ import ca.uwaterloo.flix.runtime.solver.api.symbol._
 import ca.uwaterloo.flix.runtime.solver.api.{Constraint => _, _}
 import ca.uwaterloo.flix.util.{InternalRuntimeException, Verbosity}
 import ca.uwaterloo.flix.util.tc.Show._
-import flix.runtime.fixpoint.Solver
+import flix.runtime.fixpoint.{ConstraintSystem, Solver}
 import flix.runtime.fixpoint.predicate._
 import flix.runtime.fixpoint.symbol.{PredSym, VarSym}
 import flix.runtime.fixpoint.term._

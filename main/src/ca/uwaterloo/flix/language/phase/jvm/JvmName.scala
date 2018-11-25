@@ -107,8 +107,6 @@ object JvmName {
     */
   val UnsupportedOperationException: JvmName = JvmName(List("java", "lang"), "UnsupportedOperationException")
 
-  val ConstraintSystem: JvmName = mk("ca/uwaterloo/flix/runtime/solver/api/ConstraintSystem")
-
   val PredSym: JvmName = mk("ca/uwaterloo/flix/runtime/solver/api/symbol/PredSym")
 
   val ProxyObject: JvmName = mk("ca/uwaterloo/flix/runtime/solver/api/ProxyObject")
@@ -134,6 +132,7 @@ object JvmName {
     object Fixpoint {
 
       val Attribute: JvmName = mk("flix/runtime/fixpoint/Attribute")
+      val ConstraintSystem: JvmName = mk("flix/runtime/fixpoint/ConstraintSystem")
       val ConstantFunction: JvmName = mk("flix/runtime/fixpoint/ConstantFunction")
       val Solver: JvmName = mk("flix/runtime/fixpoint/Solver")
 

@@ -981,7 +981,7 @@ object GenExpression {
       compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
 
       // Emit code for the invocation of compose.
-      visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Solver.toInternalName, "compose", "(Lca/uwaterloo/flix/runtime/solver/api/ConstraintSystem;Lca/uwaterloo/flix/runtime/solver/api/ConstraintSystem;)Lca/uwaterloo/flix/runtime/solver/api/ConstraintSystem;", false);
+      visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Solver.toInternalName, "compose", "(Lflix/runtime/fixpoint/ConstraintSystem;Lflix/runtime/fixpoint/ConstraintSystem;)Lflix/runtime/fixpoint/ConstraintSystem;", false);
 
     case Expression.FixpointSolve(uid, exp, stf, tpe, loc) =>
       // Add source line numbers for debugging.
@@ -997,7 +997,7 @@ object GenExpression {
       compileFixpointOptions(visitor)
 
       // Emit code for the invocation of the solver.
-      visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Solver.toInternalName, "solve", "(Lca/uwaterloo/flix/runtime/solver/api/ConstraintSystem;Lca/uwaterloo/flix/runtime/solver/api/Stratification;Lca/uwaterloo/flix/runtime/solver/FixpointOptions;)Lca/uwaterloo/flix/runtime/solver/api/ConstraintSystem;", false)
+      visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Solver.toInternalName, "solve", "(Lflix/runtime/fixpoint/ConstraintSystem;Lca/uwaterloo/flix/runtime/solver/api/Stratification;Lca/uwaterloo/flix/runtime/solver/FixpointOptions;)Lflix/runtime/fixpoint/ConstraintSystem;", false)
 
     case Expression.FixpointCheck(uid, exp, stf, tpe, loc) =>
       // Add source line numbers for debugging.
@@ -1013,7 +1013,7 @@ object GenExpression {
       compileFixpointOptions(visitor)
 
       // Emit code for the invocation of the solver.
-      visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Solver.toInternalName, "check", "(Lca/uwaterloo/flix/runtime/solver/api/ConstraintSystem;Lca/uwaterloo/flix/runtime/solver/api/Stratification;Lca/uwaterloo/flix/runtime/solver/FixpointOptions;)Z", false);
+      visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Solver.toInternalName, "check", "(Lflix/runtime/fixpoint/ConstraintSystem;Lca/uwaterloo/flix/runtime/solver/api/Stratification;Lca/uwaterloo/flix/runtime/solver/FixpointOptions;)Z", false);
 
     case Expression.FixpointDelta(uid, exp, stf, tpe, loc) =>
       // Add source line numbers for debugging.
@@ -1029,7 +1029,7 @@ object GenExpression {
       compileFixpointOptions(visitor)
 
       // Emit code for the invocation of the solver.
-      visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Solver.toInternalName, "deltaSolve", "(Lca/uwaterloo/flix/runtime/solver/api/ConstraintSystem;Lca/uwaterloo/flix/runtime/solver/api/Stratification;Lca/uwaterloo/flix/runtime/solver/FixpointOptions;)Ljava/lang/String;", false);
+      visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Solver.toInternalName, "deltaSolve", "(Lflix/runtime/fixpoint/ConstraintSystem;Lca/uwaterloo/flix/runtime/solver/api/Stratification;Lca/uwaterloo/flix/runtime/solver/FixpointOptions;)Ljava/lang/String;", false);
 
     case Expression.FixpointProject(sym, exp, tpe, loc) =>
       // Add source line numbers for debugging.
@@ -1039,7 +1039,7 @@ object GenExpression {
         case s: Symbol.RelSym =>
           compilePredicateSymbol(None, s, null, visitor)
           compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
-          visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Solver.toInternalName, "project", "(Lflix/runtime/fixpoint/symbol/PredSym;Lca/uwaterloo/flix/runtime/solver/api/ConstraintSystem;)Lca/uwaterloo/flix/runtime/solver/api/ConstraintSystem;", false)
+          visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Solver.toInternalName, "project", "(Lflix/runtime/fixpoint/symbol/PredSym;Lflix/runtime/fixpoint/ConstraintSystem;)Lflix/runtime/fixpoint/ConstraintSystem;", false)
         case x: Symbol.LatSym => ??? // TODO
       }
 
@@ -1054,7 +1054,7 @@ object GenExpression {
       compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
 
       // Emit code for the invocation of entails.
-      visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Solver.toInternalName, "entails", "(Lca/uwaterloo/flix/runtime/solver/api/ConstraintSystem;Lca/uwaterloo/flix/runtime/solver/api/ConstraintSystem;)Z", false);
+      visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Solver.toInternalName, "entails", "(Lflix/runtime/fixpoint/ConstraintSystem;Lflix/runtime/fixpoint/ConstraintSystem;)Z", false);
 
     case Expression.UserError(_, loc) =>
       addSourceLine(visitor, loc)
@@ -1547,7 +1547,7 @@ object GenExpression {
       mv.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/solver/api/Constraint", "<init>", "([Lflix/runtime/fixpoint/symbol/VarSym;Lflix/runtime/fixpoint/predicate/Predicate;[Lflix/runtime/fixpoint/predicate/Predicate;)V", false)
 
       // Emit code to instantiate the constraint system.
-      mv.visitMethodInsn(INVOKESTATIC, "ca/uwaterloo/flix/runtime/solver/api/ConstraintSystem", "of", "(Lca/uwaterloo/flix/runtime/solver/api/Constraint;)Lca/uwaterloo/flix/runtime/solver/api/ConstraintSystem;", false)
+      mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.ConstraintSystem.toInternalName, "of", "(Lca/uwaterloo/flix/runtime/solver/api/Constraint;)Lflix/runtime/fixpoint/ConstraintSystem;", false)
   }
 
   /**

@@ -3,7 +3,6 @@ package flix.runtime.fixpoint;
 import ca.uwaterloo.flix.runtime.solver.DeltaSolver;
 import ca.uwaterloo.flix.runtime.solver.FixpointOptions;
 import ca.uwaterloo.flix.runtime.solver.api.Constraint;
-import ca.uwaterloo.flix.runtime.solver.api.ConstraintSystem;
 import ca.uwaterloo.flix.runtime.solver.api.Stratification;
 import flix.runtime.fixpoint.symbol.PredSym;
 import flix.runtime.RuleError;

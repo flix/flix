@@ -17,7 +17,8 @@
 package ca.uwaterloo.flix.runtime.solver
 
 import ca.uwaterloo.flix.runtime.solver.api._
-import flix.runtime.{RuleError, NotImplementedError, SwitchError, TimeoutError}
+import flix.runtime.fixpoint.ConstraintSystem
+import flix.runtime.{NotImplementedError, RuleError, SwitchError, TimeoutError}
 
 /**
   * A delta debugging solver based on the Flix solver.

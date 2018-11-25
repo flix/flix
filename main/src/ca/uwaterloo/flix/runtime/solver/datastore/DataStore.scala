@@ -19,8 +19,8 @@ package ca.uwaterloo.flix.runtime.solver.datastore
 import java.io.{PrintWriter, StringWriter}
 
 import ca.uwaterloo.flix.runtime.solver.api.symbol._
-import ca.uwaterloo.flix.runtime.solver.api.ConstraintSystem
 import ca.uwaterloo.flix.util.{AsciiTable, BitOps, InternalRuntimeException}
+import flix.runtime.fixpoint.ConstraintSystem
 import flix.runtime.fixpoint.symbol.PredSym
 
 import scala.collection.mutable

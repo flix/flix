@@ -70,7 +70,7 @@ object JvmOps {
       case Type.Tuple(l) => getTupleInterfaceType(tpe)
       case Type.Array => JvmType.Object
       case Type.Vector => JvmType.Object
-      case Type.Schema(m) => JvmType.Reference(JvmName.ConstraintSystem)
+      case Type.Schema(m) => JvmType.Reference(JvmName.Runtime.Fixpoint.ConstraintSystem)
       case Type.Relation(sym, attr, kind) => JvmType.Reference(JvmName.PredSym)
       case Type.Enum(sym, kind) =>
         getNullability(tpe) match {
