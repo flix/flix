@@ -5,7 +5,7 @@ import ca.uwaterloo.flix.runtime.solver.FixpointOptions;
 import ca.uwaterloo.flix.runtime.solver.api.Constraint;
 import ca.uwaterloo.flix.runtime.solver.api.ConstraintSystem;
 import ca.uwaterloo.flix.runtime.solver.api.Stratification;
-import ca.uwaterloo.flix.runtime.solver.api.symbol.PredSym;
+import flix.runtime.fixpoint.symbol.PredSym;
 import flix.runtime.RuleError;
 import flix.runtime.fixpoint.predicate.AtomPredicate;
 import flix.runtime.fixpoint.predicate.Predicate;

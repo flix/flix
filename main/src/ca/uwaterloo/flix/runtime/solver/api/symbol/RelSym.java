@@ -2,7 +2,7 @@ package ca.uwaterloo.flix.runtime.solver.api.symbol;
 
 import flix.runtime.fixpoint.Attribute;
 import ca.uwaterloo.flix.runtime.solver.api.ProxyObject;
-import flix.runtime.value.Unit;
+import flix.runtime.fixpoint.symbol.PredSym;
 
 import java.util.HashMap;
 import java.util.Map;

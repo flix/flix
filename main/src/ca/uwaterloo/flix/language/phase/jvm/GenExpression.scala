@@ -1039,7 +1039,7 @@ object GenExpression {
         case s: Symbol.RelSym =>
           compilePredicateSymbol(None, s, null, visitor)
           compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
-          visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Solver.toInternalName, "project", "(Lca/uwaterloo/flix/runtime/solver/api/symbol/PredSym;Lca/uwaterloo/flix/runtime/solver/api/ConstraintSystem;)Lca/uwaterloo/flix/runtime/solver/api/ConstraintSystem;", false)
+          visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Solver.toInternalName, "project", "(Lflix/runtime/fixpoint/symbol/PredSym;Lca/uwaterloo/flix/runtime/solver/api/ConstraintSystem;)Lca/uwaterloo/flix/runtime/solver/api/ConstraintSystem;", false)
         case x: Symbol.LatSym => ??? // TODO
       }
 
@@ -1582,7 +1582,7 @@ object GenExpression {
       newHeadTerms(terms, mv)
 
       // Instantiate a new atom predicate object.
-      mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Predicate.AtomPredicate.toInternalName, "of", "(Lca/uwaterloo/flix/runtime/solver/api/symbol/PredSym;Z[Lflix/runtime/fixpoint/term/Term;)Lflix/runtime/fixpoint/predicate/AtomPredicate;", false);
+      mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Predicate.AtomPredicate.toInternalName, "of", "(Lflix/runtime/fixpoint/symbol/PredSym;Z[Lflix/runtime/fixpoint/term/Term;)Lflix/runtime/fixpoint/predicate/AtomPredicate;", false);
 
     case Predicate.Head.LatAtom(baseOpt, sym, terms, tpe, loc) =>
       ??? // TODO: Predicate.Body.LatAtom
@@ -1611,7 +1611,7 @@ object GenExpression {
       newBodyTerms(terms, mv)
 
       // Instantiate a new atom predicate object.
-      mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Predicate.AtomPredicate.toInternalName, "of", "(Lca/uwaterloo/flix/runtime/solver/api/symbol/PredSym;Z[Lflix/runtime/fixpoint/term/Term;)Lflix/runtime/fixpoint/predicate/AtomPredicate;", false);
+      mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Predicate.AtomPredicate.toInternalName, "of", "(Lflix/runtime/fixpoint/symbol/PredSym;Z[Lflix/runtime/fixpoint/term/Term;)Lflix/runtime/fixpoint/predicate/AtomPredicate;", false);
 
     case Predicate.Body.LatAtom(baseOpt, sym, polarity, terms, tpe, loc) =>
       ??? // TODO: Predicate.Body.LatAtom

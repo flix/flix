@@ -147,6 +147,7 @@ object JvmName {
       }
 
       object Symbol {
+        val PredSym: JvmName = mk("flix/runtime/fixpoint/symbol/PredSym")
         val VarSym: JvmName = mk("flix/runtime/fixpoint/symbol/VarSym")
       }
 

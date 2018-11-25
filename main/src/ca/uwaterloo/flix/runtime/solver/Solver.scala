@@ -27,7 +27,7 @@ import ca.uwaterloo.flix.runtime.Monitor
 import ca.uwaterloo.flix.runtime.solver.api.symbol._
 import ca.uwaterloo.flix.util._
 import flix.runtime.fixpoint.predicate._
-import flix.runtime.fixpoint.symbol.VarSym
+import flix.runtime.fixpoint.symbol.{PredSym, VarSym}
 import flix.runtime.fixpoint.term._
 import flix.runtime.{ReifiedSourceLocation, RuleError, TimeoutError}
 

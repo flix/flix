@@ -30,7 +30,7 @@ import ca.uwaterloo.flix.util.{InternalRuntimeException, Verbosity}
 import ca.uwaterloo.flix.util.tc.Show._
 import flix.runtime.fixpoint.Solver
 import flix.runtime.fixpoint.predicate._
-import flix.runtime.fixpoint.symbol.VarSym
+import flix.runtime.fixpoint.symbol.{PredSym, VarSym}
 import flix.runtime.fixpoint.term._
 import flix.runtime.{fixpoint, _}
 
@@ -927,7 +927,7 @@ object Interpreter {
     * Returns the stratification.
     */
   private def getStratification(stf: Ast.Stratification): api.Stratification = {
-    val m = new java.util.HashMap[api.symbol.PredSym, Integer]
+    val m = new java.util.HashMap[PredSym, Integer]
 
     // TODO
 

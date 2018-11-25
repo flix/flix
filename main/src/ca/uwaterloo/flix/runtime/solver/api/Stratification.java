@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.runtime.solver.api;
 
-import ca.uwaterloo.flix.runtime.solver.api.symbol.PredSym;
+import flix.runtime.fixpoint.symbol.PredSym;
 
 import java.util.Map;
 

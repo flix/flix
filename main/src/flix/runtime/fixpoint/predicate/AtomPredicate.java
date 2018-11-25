@@ -1,6 +1,6 @@
 package flix.runtime.fixpoint.predicate;
 
-import ca.uwaterloo.flix.runtime.solver.api.symbol.PredSym;
+import flix.runtime.fixpoint.symbol.PredSym;
 import flix.runtime.fixpoint.term.LitTerm;
 import flix.runtime.fixpoint.term.Term;
 
