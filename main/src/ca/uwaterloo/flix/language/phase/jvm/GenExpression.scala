@@ -1671,7 +1671,7 @@ object GenExpression {
         newAttributesArray(root.relations(sym).attr, mv)
 
         // Emit code to instantiate the predicate symbol.
-        mv.visitMethodInsn(INVOKESTATIC, "ca/uwaterloo/flix/runtime/solver/api/symbol/RelSym", "of", "(Ljava/lang/String;Lca/uwaterloo/flix/runtime/solver/api/ProxyObject;[Lflix/runtime/fixpoint/Attribute;)Lca/uwaterloo/flix/runtime/solver/api/symbol/RelSym;", false);
+        mv.visitMethodInsn(INVOKESTATIC, "ca/uwaterloo/flix/runtime/solver/api/symbol/RelSym", "of", "(Ljava/lang/String;Lflix/runtime/ProxyObject;[Lflix/runtime/fixpoint/Attribute;)Lca/uwaterloo/flix/runtime/solver/api/symbol/RelSym;", false);
       case Some(varSym) =>
         // Emit code for the predicate symbol.
         readVar(varSym, tpe, mv)
@@ -1819,7 +1819,7 @@ object GenExpression {
     AsmOps.newProxyObject(tpe, mv)
 
     // Instantiate a fresh constant function object.
-    mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.ConstantFunction.toInternalName, "of", "(Lca/uwaterloo/flix/runtime/solver/api/ProxyObject;)Lflix/runtime/fixpoint/ConstantFunction;", false);
+    mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.ConstantFunction.toInternalName, "of", "(Lflix/runtime/ProxyObject;)Lflix/runtime/fixpoint/ConstantFunction;", false);
 
     // Instantiate the literal term object.
     mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Term.LitTerm.toInternalName, "of", "(Ljava/util/function/Function;)Lflix/runtime/fixpoint/term/LitTerm;", false);

@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.runtime.solver.api.symbol;
 
-import ca.uwaterloo.flix.runtime.solver.api.ProxyObject;
+import flix.runtime.ProxyObject;
 
 import java.util.Objects;
 

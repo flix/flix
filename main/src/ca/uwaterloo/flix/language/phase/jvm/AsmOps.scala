@@ -507,7 +507,7 @@ object AsmOps {
     }
 
     // Construct the proxy object.
-    mv.visitMethodInsn(INVOKESTATIC, "ca/uwaterloo/flix/runtime/solver/api/ProxyObject", "of", "(Ljava/lang/Object;Ljava/util/function/Function;Ljava/util/function/Function;Ljava/util/function/Function;)Lca/uwaterloo/flix/runtime/solver/api/ProxyObject;", false);
+    mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.ProxyObject.toInternalName, "of", "(Ljava/lang/Object;Ljava/util/function/Function;Ljava/util/function/Function;Ljava/util/function/Function;)Lflix/runtime/ProxyObject;", false);
   }
 
   /**
@@ -540,7 +540,7 @@ object AsmOps {
     mv.visitInsn(ARRAYLENGTH)
 
     // Allocate a new array of proxy objects of the same length as the original array and store it in a local variable.
-    mv.visitTypeInsn(ANEWARRAY, "ca/uwaterloo/flix/runtime/solver/api/ProxyObject")
+    mv.visitTypeInsn(ANEWARRAY, JvmName.Runtime.ProxyObject.toInternalName)
     mv.visitVarInsn(ASTORE, resultArrayIndex)
 
     // Initialize the loop counter to zero.

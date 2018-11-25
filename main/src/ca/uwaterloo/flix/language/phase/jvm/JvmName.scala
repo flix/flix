@@ -125,6 +125,8 @@ object JvmName {
 
   object Runtime {
 
+    val ProxyObject: JvmName = mk("flix/runtime/ProxyObject")
+
     object Value {
       val Unit: JvmName = JvmName(List("flix", "runtime", "value"), "Unit")
     }

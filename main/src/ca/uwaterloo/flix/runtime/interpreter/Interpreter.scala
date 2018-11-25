@@ -756,7 +756,7 @@ object Interpreter {
       val f = new function.Function[Array[Object], ProxyObject] {
         override def apply(as: Array[Object]): ProxyObject = {
           val bool = Linker.link(sym, root).invoke(as).getValue.asInstanceOf[java.lang.Boolean]
-          new ProxyObject(bool, null, null, null)
+          ProxyObject.of(bool, null, null, null)
         }
       }
       val ts = terms.map(t => evalBodyTerm(t, env0))
@@ -920,7 +920,7 @@ object Interpreter {
     }
 
     // Return the proxy object.
-    new ProxyObject(v, eqOp, hashOp, toStrOp)
+    ProxyObject.of(v, eqOp, hashOp, toStrOp)
   }
 
   /**

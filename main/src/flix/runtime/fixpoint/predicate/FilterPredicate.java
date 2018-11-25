@@ -1,8 +1,7 @@
 package flix.runtime.fixpoint.predicate;
 
-import ca.uwaterloo.flix.runtime.solver.api.ProxyObject;
+import flix.runtime.ProxyObject;
 import flix.runtime.fixpoint.term.Term;
-import flix.runtime.fixpoint.predicate.Predicate;
 
 import java.util.function.Function;
 

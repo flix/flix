@@ -1,6 +1,6 @@
 package flix.runtime.fixpoint.term;
 
-import ca.uwaterloo.flix.runtime.solver.api.ProxyObject;
+import flix.runtime.ProxyObject;
 import flix.runtime.fixpoint.symbol.VarSym;
 
 import java.util.function.Function;

@@ -1,6 +1,7 @@
 package ca.uwaterloo.flix.runtime.solver.api
 
 import ca.uwaterloo.flix.runtime.InvocationTarget
+import flix.runtime.ProxyObject
 
 // TODO: Java interface
 

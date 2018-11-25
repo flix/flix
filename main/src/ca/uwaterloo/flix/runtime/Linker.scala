@@ -22,10 +22,12 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.FinalAst._
 import ca.uwaterloo.flix.language.ast.{SpecialOperator, Symbol, Type}
 import ca.uwaterloo.flix.runtime.interpreter.Interpreter
-import ca.uwaterloo.flix.runtime.solver.api.ProxyObject
 import ca.uwaterloo.flix.util.{Evaluation, InternalRuntimeException}
+import flix.runtime.ProxyObject
 
 object Linker {
+
+  // TODO: Completely remove the linker...
 
   /**
     * Returns an invocation target for the Flix function corresponding to the given symbol `sym`.
@@ -81,7 +83,7 @@ object Linker {
         val toString = getToStrOp(resultType, root)
 
         // Create the proxy object.
-        new ProxyObject(result, eq, hash, toString)
+        ProxyObject.of(result, eq, hash, toString)
       } else {
         // Case 2: Array value.
 
@@ -89,7 +91,7 @@ object Linker {
         val wrappedArray = getWrappedArray(result, resultType, root)
 
         // Construct the wrapped array object.
-        new ProxyObject(wrappedArray, null, null, null)
+        ProxyObject.of(wrappedArray, null, null, null)
       }
 
     }
@@ -118,7 +120,7 @@ object Linker {
         val toString = getToStrOp(resultType, root)
 
         // Create the proxy object.
-        new ProxyObject(result, eq, hash, toString)
+        ProxyObject.of(result, eq, hash, toString)
       } catch {
         case e: InvocationTargetException =>
           // Rethrow the underlying exception.
@@ -132,15 +134,15 @@ object Linker {
   private def getWrappedArray(result: AnyRef, tpe: Type, root: Root)(implicit flix: Flix): Array[ProxyObject] = {
     // Wrap the array values in proxy objects.
     result match {
-      case a: Array[Char] => a map (v => new ProxyObject(Char.box(v), null, null, null))
+      case a: Array[Char] => a map (v => ProxyObject.of(Char.box(v), null, null, null))
 
-      case a: Array[Byte] => a map (v => new ProxyObject(Byte.box(v), null, null, null))
-      case a: Array[Short] => a map (v => new ProxyObject(Short.box(v), null, null, null))
-      case a: Array[Int] => a map (v => new ProxyObject(Int.box(v), null, null, null))
-      case a: Array[Long] => a map (v => new ProxyObject(Long.box(v), null, null, null))
+      case a: Array[Byte] => a map (v => ProxyObject.of(Byte.box(v), null, null, null))
+      case a: Array[Short] => a map (v => ProxyObject.of(Short.box(v), null, null, null))
+      case a: Array[Int] => a map (v => ProxyObject.of(Int.box(v), null, null, null))
+      case a: Array[Long] => a map (v => ProxyObject.of(Long.box(v), null, null, null))
 
-      case a: Array[Float] => a map (v => new ProxyObject(Float.box(v), null, null, null))
-      case a: Array[Double] => a map (v => new ProxyObject(Double.box(v), null, null, null))
+      case a: Array[Float] => a map (v => ProxyObject.of(Float.box(v), null, null, null))
+      case a: Array[Double] => a map (v => ProxyObject.of(Double.box(v), null, null, null))
 
       case a: Array[AnyRef] => a map {
         case v =>
@@ -148,7 +150,7 @@ object Linker {
           val elmType = tpe.typeArguments.head
 
           // Construct the wrapped element.
-          new ProxyObject(v, getEqOp(elmType, root), getHashOp(elmType, root), getToStrOp(elmType, root))
+          ProxyObject.of(v, getEqOp(elmType, root), getHashOp(elmType, root), getToStrOp(elmType, root))
       }
     }
   }
