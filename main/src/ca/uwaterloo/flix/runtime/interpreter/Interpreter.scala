@@ -28,6 +28,7 @@ import ca.uwaterloo.flix.runtime.solver.api.symbol._
 import ca.uwaterloo.flix.runtime.solver.api.{Constraint => _, _}
 import ca.uwaterloo.flix.util.{InternalRuntimeException, Verbosity}
 import ca.uwaterloo.flix.util.tc.Show._
+import flix.runtime.fixpoint.Solver
 import flix.runtime.fixpoint.predicate._
 import flix.runtime.fixpoint.symbol.VarSym
 import flix.runtime.fixpoint.term._
@@ -268,26 +269,26 @@ object Interpreter {
     case Expression.ConstraintUnion(exp1, exp2, tpe, loc) =>
       val v1 = cast2constraintset(eval(exp1, env0, henv0, lenv0, root))
       val v2 = cast2constraintset(eval(exp2, env0, henv0, lenv0, root))
-      SolverApi.compose(v1, v2)
+      Solver.compose(v1, v2)
 
     case Expression.FixpointSolve(uid, exp, stf, tpe, loc) =>
       val s = cast2constraintset(eval(exp, env0, henv0, lenv0, root))
       val t = getStratification(stf)
       val o = getFixpointOptions()
-      SolverApi.solve(s, t, o)
+      Solver.solve(s, t, o)
 
     case Expression.FixpointCheck(uid, exp, stf, tpe, loc) =>
       val s = cast2constraintset(eval(exp, env0, henv0, lenv0, root))
       val t = getStratification(stf)
       val o = getFixpointOptions()
-      val r = SolverApi.check(s, t, o)
+      val r = Solver.check(s, t, o)
       if (r) Value.True else Value.False
 
     case Expression.FixpointDelta(uid, exp, stf, tpe, loc) =>
       val s = cast2constraintset(eval(exp, env0, henv0, lenv0, root))
       val t = getStratification(stf)
       val o = getFixpointOptions()
-      val r = SolverApi.deltaSolve(s, t, o)
+      val r = Solver.deltaSolve(s, t, o)
       Value.Str(r)
 
     case Expression.FixpointProject(sym, exp, tpe, loc) =>
@@ -296,12 +297,12 @@ object Interpreter {
         case x: Symbol.RelSym => ??? // TODO
         case x: Symbol.LatSym => ??? // TODO
       }
-      SolverApi.project(predSym, s)
+      Solver.project(predSym, s)
 
     case Expression.FixpointEntails(exp1, exp2, tpe, loc) =>
       val v1 = cast2constraintset(eval(exp1, env0, henv0, lenv0, root))
       val v2 = cast2constraintset(eval(exp2, env0, henv0, lenv0, root))
-      if (SolverApi.entails(v1, v2))
+      if (Solver.entails(v1, v2))
         Value.True else Value.False
 
     case Expression.UserError(_, loc) => throw new NotImplementedError(loc.reified)
