@@ -702,7 +702,7 @@ object Interpreter {
     val head = evalHeadPredicate(c0.head, env0)
     val body = c0.body.map(b => evalBodyPredicate(b, env0))
 
-    val constraint = new api.Constraint(cparams.toArray, head, body.toArray)
+    val constraint = api.Constraint.of(cparams.toArray, head, body.toArray)
 
     ConstraintSystem.of(constraint)
   }

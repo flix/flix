@@ -9,12 +9,22 @@ import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Represents a constraint.
- * <p>
- * A constraint is a horn clause that consists of
- * a sequence of universally quantified variables,
- * a head predicate, and a sequence of body predicates.
  */
 public final class Constraint {
+
+    /**
+     * Constructs a constraint from the given quantified variables, head and body predicates.
+     */
+    public static Constraint of(VarSym[] cparams, Predicate head, Predicate[] body) {
+        if (cparams == null)
+            throw new IllegalArgumentException("'cparams' must be non-null.");
+        if (head == null)
+            throw new IllegalArgumentException("'head' must be non-null.");
+        if (body == null)
+            throw new IllegalArgumentException("'body' must be non-null.");
+
+        return new Constraint(cparams, head, body);
+    }
 
     /**
      * The universally quantified variables.
@@ -57,16 +67,9 @@ public final class Constraint {
     private final AtomicLong time = new AtomicLong();
 
     /**
-     * Constructs a constraint from the given quantified variables, head and body predicates.
+     * Private constructor.
      */
-    public Constraint(VarSym[] cparams, Predicate head, Predicate[] body) {
-        if (cparams == null)
-            throw new IllegalArgumentException("'cparams' must be non-null.");
-        if (head == null)
-            throw new IllegalArgumentException("'head' must be non-null.");
-        if (body == null)
-            throw new IllegalArgumentException("'body' must be non-null.");
-
+    private Constraint(VarSym[] cparams, Predicate head, Predicate[] body) {
         //
         // A head predicate cannot be a filter predicate.
         //
@@ -100,6 +103,8 @@ public final class Constraint {
         //
         // Partition the body predicates based on their types. The joy of arrays.
         //
+        // TODO: Rewrite, use ArrayList.
+
         var numberOfBodyAtoms = 0;
         var numberOfBodyFilters = 0;
         var numberOfBodyFunctionals = 0;
@@ -131,20 +136,15 @@ public final class Constraint {
         }
     }
 
-    // TODO: This cannot be right!!!!
-    public int getStratum() {
-        return 0;
-    }
-
     /**
-     * Returns `true` if the constraint is a fact.
+     * Returns `true` if `this` constraint is a fact.
      */
     public boolean isFact() {
         return body.length == 0;
     }
 
     /**
-     * Returns `true` if the constraint is a rule.
+     * Returns `true` if `this` constraint is a rule.
      */
     public boolean isRule() {
         return !isFact();
@@ -158,16 +158,16 @@ public final class Constraint {
     }
 
     /**
-     * Returns the constraint parameters.
+     * Returns the constraint parameters of `this` constraint.
      */
-    public VarSym[] getParams() {
+    public VarSym[] getConstraintParameters() {
         return this.cparams;
     }
 
     /**
-     * Returns the number of variables in the constraint.
+     * Returns the number of constraint parameters of `this` constraint.
      */
-    public int getNumberOfParameters() {
+    public int getNumberOfConstraintParameters() {
         return this.cparams.length;
     }
 
@@ -186,36 +186,35 @@ public final class Constraint {
     }
 
     /**
-     * Returns the number of times the constraint has been evaluated.
+     * Returns the number of times `this` constraint has been evaluated.
      */
     public int getNumberOfHits() {
         return hits.get();
     }
 
     /**
-     * Increments the number of times the constraint has been evaluated.
+     * Increments the number of times `this` constraint has been evaluated.
      */
     public void incrementNumberOfHits() {
         hits.getAndIncrement();
     }
 
     /**
-     * Returns the number of nanoseconds spent during evaluation of the constraint.
+     * Returns the number of nanoseconds spent during evaluation of `this` constraint.
      */
     public Long getElapsedTime() {
         return time.get();
     }
 
     /**
-     * Increments the number of times the constraint has been evaluated.
+     * Increments the number of times `this` constraint has been evaluated.
      */
     public void incrementElapsedTime(Long ns) {
         time.addAndGet(ns);
     }
 
-
     /**
-     * Returns all atom predicates in the constraint.
+     * Returns all atom predicates in `this` constraint.
      */
     public AtomPredicate[] getAllAtoms() {
         if (head instanceof AtomPredicate) {
@@ -229,21 +228,21 @@ public final class Constraint {
     }
 
     /**
-     * Returns all atoms predicates in the body of the constraint.
+     * Returns all atoms predicates in the body of `this` constraint.
      */
     public AtomPredicate[] getBodyAtoms() {
         return bodyAtoms;
     }
 
     /**
-     * Returns the filter predicates in the body of the constraint.
+     * Returns the filter predicates in the body of `this` constraint.
      */
     public FilterPredicate[] getFilters() {
         return bodyFilters;
     }
 
     /**
-     * Returns the functional predicates in the body of the constraint.
+     * Returns the functional predicates in the body of `this` constraint.
      */
     public FunctionalPredicate[] getFunctionals() {
         return bodyFunctionals;

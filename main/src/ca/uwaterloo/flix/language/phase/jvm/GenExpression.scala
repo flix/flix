@@ -1518,10 +1518,6 @@ object GenExpression {
     */
   private def compileConstraint(c: Constraint, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = c match {
     case Constraint(cparams, head, body) =>
-      // Allocate a fresh constraint object.
-      mv.visitTypeInsn(NEW, "ca/uwaterloo/flix/runtime/solver/api/Constraint")
-      mv.visitInsn(DUP)
-
       // Emit code for the cparams.
       newVarSyms(c.cparams.map(_.sym), mv)
 
@@ -1543,8 +1539,8 @@ object GenExpression {
         mv.visitInsn(AASTORE)
       }
 
-      // Invoke the constructor of constraint.
-      mv.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/solver/api/Constraint", "<init>", "([Lflix/runtime/fixpoint/symbol/VarSym;Lflix/runtime/fixpoint/predicate/Predicate;[Lflix/runtime/fixpoint/predicate/Predicate;)V", false)
+      // Instantiate a new constraint system object.
+      mv.visitMethodInsn(INVOKESTATIC, "ca/uwaterloo/flix/runtime/solver/api/Constraint", "of", "([Lflix/runtime/fixpoint/symbol/VarSym;Lflix/runtime/fixpoint/predicate/Predicate;[Lflix/runtime/fixpoint/predicate/Predicate;)Lca/uwaterloo/flix/runtime/solver/api/Constraint;", false);
 
       // Emit code to instantiate the constraint system.
       mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.ConstraintSystem.toInternalName, "of", "(Lca/uwaterloo/flix/runtime/solver/api/Constraint;)Lflix/runtime/fixpoint/ConstraintSystem;", false)

@@ -302,7 +302,7 @@ class Solver(constraintSystem: ConstraintSystem, stratification: Stratification,
   private def initWorkList(stratum: Array[Constraint]): Unit = {
     // add all rules to the worklist (under empty environments).
     for (rule <- stratum) {
-      worklist.push((rule, new Array[ProxyObject](rule.getNumberOfParameters)))
+      worklist.push((rule, new Array[ProxyObject](rule.getNumberOfConstraintParameters)))
     }
   }
 
@@ -358,7 +358,7 @@ class Solver(constraintSystem: ConstraintSystem, stratification: Stratification,
             val head = AtomPredicate.of(sym, true, terms)
             val body = new Array[Predicate](0)
 
-            new Constraint(new Array[VarSym](0), head, body)
+            Constraint.of(new Array[VarSym](0), head, body)
         }
     }
 
@@ -681,7 +681,7 @@ class Solver(constraintSystem: ConstraintSystem, stratification: Stratification,
       case r: RelSym =>
         for ((rule, p) <- dependenciesOf(sym)) {
           // unify all terms with their values.
-          val env = unify(getVarArray(p), fact, fact.length, rule.getNumberOfParameters)
+          val env = unify(getVarArray(p), fact, fact.length, rule.getNumberOfConstraintParameters)
           if (env != null) {
             localWorkList.push((rule, env))
           }
@@ -691,7 +691,7 @@ class Solver(constraintSystem: ConstraintSystem, stratification: Stratification,
         for ((rule, p) <- dependenciesOf(sym)) {
           // unify only key terms with their values.
           val numberOfKeys = l.getKeys().length
-          val env = unify(getVarArray(p), fact, numberOfKeys, rule.getNumberOfParameters)
+          val env = unify(getVarArray(p), fact, numberOfKeys, rule.getNumberOfConstraintParameters)
           if (env != null) {
             localWorkList.push((rule, env))
           }
@@ -915,7 +915,9 @@ class Solver(constraintSystem: ConstraintSystem, stratification: Stratification,
     */
   // TODO: Precompute once.
   def getConstraintsByStrata: Array[Array[Constraint]] = {
-    val groupedByStratum = constraintSystem.getConstraints().groupBy(_.getStratum()).toList
+    // TODO: Stratification
+    //val groupedByStratum = constraintSystem.getConstraints().groupBy(_.getStratum()).toList
+    val groupedByStratum = List((0, constraintSystem.getConstraints))
     val strata = groupedByStratum.sortBy(_._1).map(_._2).toArray
 
     // Ensure that there is always at least one empty stratum.
