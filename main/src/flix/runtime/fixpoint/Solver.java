@@ -20,7 +20,7 @@ public final class Solver {
      */
     public static ConstraintSystem compose(ConstraintSystem cs1, ConstraintSystem cs2) {
         var constraints = concat(cs1.getConstraints(), cs2.getConstraints());
-        return new ConstraintSystem(constraints);
+        return ConstraintSystem.of(constraints);
     }
 
     /**
@@ -45,7 +45,8 @@ public final class Solver {
 
         Constraint[] facts = result.toArray(new Constraint[0]);
         Constraint[] rules = new Constraint[0];
-        return new ConstraintSystem(facts, rules);
+        Constraint[] constraints = concat(facts, rules);
+        return ConstraintSystem.of(constraints);
     }
 
     /**

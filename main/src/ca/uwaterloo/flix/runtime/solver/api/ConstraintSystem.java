@@ -5,60 +5,66 @@ import flix.runtime.fixpoint.predicate.Predicate;
 import ca.uwaterloo.flix.runtime.solver.api.symbol.LatSym;
 import ca.uwaterloo.flix.runtime.solver.api.symbol.RelSym;
 
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.LinkedList;
 import java.util.List;
 
 /**
- * Represents a collection of constraints.
+ * Represents a system of constraints.
  */
 public final class ConstraintSystem {
 
     /**
-     * Returns a new constraint system for the given constraint.
+     * Represents the empty constraint system.
      */
-    public static ConstraintSystem of(Constraint constraint) {
-        if (constraint == null)
-            throw new IllegalArgumentException("'constraint' must be non-null.");
+    private static final ConstraintSystem EMPTY = new ConstraintSystem(new Constraint[0], new Constraint[0]);
 
-        if (constraint.isTrueFact()) {
-            return new ConstraintSystem(new Constraint[]{});
+    /**
+     * Constructs a new constraint system of the given constraint `c`.
+     */
+    public static ConstraintSystem of(Constraint c) {
+        if (c == null)
+            throw new IllegalArgumentException("'c' must be non-null.");
+
+        if (c.isTrueFact()) {
+            return EMPTY;
         }
 
-        return new ConstraintSystem(new Constraint[]{constraint});
+        return of(new Constraint[]{c});
     }
 
     /**
-     * The collection of facts.
+     * Constructs a new constraint system of the given constraints `cs`.
      */
-    private Constraint[] facts;
+    public static ConstraintSystem of(Constraint[] cs) {
+        if (cs == null)
+            throw new IllegalArgumentException("'cs' must be non-null.");
 
-    /**
-     * The collection of rules.
-     */
-    private Constraint[] rules;
-
-    /**
-     * Constructs a new constraint system with the given constraints.
-     */
-    public ConstraintSystem(Constraint[] constraints) {
-        // TODO: refactor into static method.
-        var facts = new LinkedList<Constraint>();
-        var rules = new LinkedList<Constraint>();
-        for (Constraint c : constraints) {
+        var facts = new ArrayList<Constraint>();
+        var rules = new ArrayList<Constraint>();
+        for (Constraint c : cs) {
             if (c.isFact())
                 facts.add(c);
             else
                 rules.add(c);
         }
-        this.facts = facts.toArray(new Constraint[0]);
-        this.rules = rules.toArray(new Constraint[0]);
+        return new ConstraintSystem(facts.toArray(new Constraint[0]), rules.toArray(new Constraint[0]));
     }
 
     /**
-     * Constructs a new constraint system with the given facts and rules.
+     * The array of facts.
      */
-    public ConstraintSystem(Constraint[] facts, Constraint[] rules) {
+    private final Constraint[] facts;
+
+    /**
+     * The array of rules.
+     */
+    private final Constraint[] rules;
+
+    /**
+     * Private constructor.
+     */
+    private ConstraintSystem(Constraint[] facts, Constraint[] rules) {
         if (facts == null)
             throw new IllegalArgumentException("'facts' must be non-null.");
         if (rules == null)
@@ -93,7 +99,7 @@ public final class ConstraintSystem {
      * Returns all relation symbols in `this` constraint system.
      */
     public RelSym[] getRelationSymbols() {
-        var result = new LinkedList<RelSym>();
+        var result = new ArrayList<RelSym>();
         for (AtomPredicate p : getAtomPredicates()) {
             if (p.getSym() instanceof RelSym) {
                 result.add((RelSym) p.getSym());
@@ -106,7 +112,7 @@ public final class ConstraintSystem {
      * Returns all lattice symbols in `this` constraint system.
      */
     public LatSym[] getLatticeSymbols() {
-        var result = new LinkedList<LatSym>();
+        var result = new ArrayList<LatSym>();
         for (AtomPredicate p : getAtomPredicates()) {
             if (p.getSym() instanceof LatSym) {
                 result.add((LatSym) p.getSym());
@@ -119,7 +125,7 @@ public final class ConstraintSystem {
      * Returns all atom predicates in `this` constraint system.
      */
     private List<AtomPredicate> getAtomPredicates() {
-        var result = new LinkedList<AtomPredicate>();
+        var result = new ArrayList<AtomPredicate>();
         for (Constraint c : facts) {
             for (Predicate p : c.getAllAtoms()) {
                 if (p instanceof AtomPredicate) {
@@ -139,55 +145,6 @@ public final class ConstraintSystem {
 
     @Override
     public String toString() {
-        //        /**
-//         * Returns a human readable representation the constraint set.
-//         */
-//        override def toString: String = {
-//        if (!isOnlyFacts()) {
-//        return constraints.mkString(", ")
-//        }
-////
-//        val sb = new StringBuilder
-//
-//        // Group all facts by predicate symbol.
-//        val constraintsByHead = constraints.groupBy(_.getHeadPredicate())
-//        for ((predicate, constraints) <- constraintsByHead) {
-//        predicate match {
-//        case head: AtomPredicate =>
-//        // Retrieve the name and attributes of the predicate.
-//        val name = head.getSym().getName()
-//        val attributes = head.getTerms().map(_ => "attr")
-//
-//        // Construct an ascii table with a column for each attribute.
-//        val columns = attributes
-//        val table = new AsciiTable().withTitle(name).withCols(columns: _*)
-//
-//        // Add each row to the ASCII table.
-//        for (row <- constraints) {
-//        row.getHeadPredicate() match {
-//        case atom: AtomPredicate =>
-//        table.mkRow(atom.getTerms().toList)
-//        case head: TruePredicate => //  nop
-//        case head: FalsePredicate => //  nop
-//        case _ => throw new RuntimeException(s"Unexpected head predicate: '$predicate'.")
-//        }
-//        }
-//
-//        // Write the ASCII table to the string buffer.
-//        val sw = new StringWriter()
-//        table.write(new PrintWriter(sw))
-//        sb.append(sw.toString)
-//
-//        case head: TruePredicate => //  nop
-//        case head: FalsePredicate => //  nop
-//        case _ => throw new RuntimeException(s"Unexpected head predicate: '$predicate'.")
-//        }
-//        }
-//
-//        sb.toString()
-//        }
-//
-//        }
         return "<facts = " + facts.length + ", rules = " + rules.length + ">";
     }
 

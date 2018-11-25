@@ -367,7 +367,7 @@ class Solver(constraintSystem: ConstraintSystem, stratification: Stratification,
     // TODO: Merge relation and lattice facts.
     val facts = relationFacts.toArray
 
-    new ConstraintSystem(facts)
+    ConstraintSystem.of(facts)
   }
 
   /**

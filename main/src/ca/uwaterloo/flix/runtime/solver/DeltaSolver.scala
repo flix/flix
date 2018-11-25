@@ -106,7 +106,7 @@ class DeltaSolver(constraintSet: ConstraintSystem, stratification: Stratificatio
         facts = facts - block
 
         // reconstruct the constraints.
-        val cs = new ConstraintSystem(facts.flatten.toArray ++ rules)
+        val cs = ConstraintSystem.of(facts.flatten.toArray ++ rules)
 
         // try to solve the reconstructed program.
         trySolve(cs, stratification, exception) match {
