@@ -1704,14 +1704,14 @@ object GenExpression {
       addSourceLine(mv, loc)
 
       // Emit code for the quantified variable.
-      newVarTerm(sym, mv)
+      newVarTermFromQuantVar(sym, mv)
 
     case Term.Head.CapturedVar(sym, tpe, loc) =>
       // Add source line numbers for debugging.
       addSourceLine(mv, loc)
 
       // Emit code for the captured var.
-      compileCapturedVarTerm(sym, tpe, mv)
+      newVarTermFromCapturedVar(sym, tpe, mv)
 
     case Term.Head.Lit(sym, tpe, loc) =>
       // Add source line numbers for debugging.
@@ -1744,14 +1744,14 @@ object GenExpression {
       addSourceLine(mv, loc)
 
       // Emit code for the quantified variable.
-      newVarTerm(sym, mv)
+      newVarTermFromQuantVar(sym, mv)
 
     case Term.Body.CapturedVar(sym, tpe, loc) =>
       // Add source line numbers for debugging.
       addSourceLine(mv, loc)
 
       // Emit code for the captured var.
-      compileCapturedVarTerm(sym, tpe, mv)
+      newVarTermFromCapturedVar(sym, tpe, mv)
 
     case Term.Body.Lit(sym, tpe, loc) =>
       // Add source line numbers for debugging.
@@ -1800,13 +1800,9 @@ object GenExpression {
   }
 
   /**
-    * Emits code for the captured variable symbol `sym` term.
+    * Emits code to allocate a new variable term for the given captured variable symbol `sym`.
     */
-  private def compileCapturedVarTerm(sym: Symbol.VarSym, tpe: ast.Type, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
-    // Allocate a fresh constant function.
-    mv.visitTypeInsn(NEW, "ca/uwaterloo/flix/runtime/solver/api/ConstantFunction")
-    mv.visitInsn(DUP)
-
+  private def newVarTermFromCapturedVar(sym: Symbol.VarSym, tpe: ast.Type, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
     // Read the value of the local variable and put it on the stack.
     readVar(sym, tpe, mv)
 
@@ -1816,17 +1812,17 @@ object GenExpression {
     // Allocate a proxy object for the captured value.
     AsmOps.newProxyObject(tpe, mv)
 
-    // Invoke the constructor of the constant function.
-    mv.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/solver/api/ConstantFunction", "<init>", "(Lca/uwaterloo/flix/runtime/solver/api/ProxyObject;)V", false)
+    // Instantiate a fresh constant function object.
+    mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.ConstantFunction.toInternalName, "of", "(Lca/uwaterloo/flix/runtime/solver/api/ProxyObject;)Lflix/runtime/fixpoint/ConstantFunction;", false);
 
     // Instantiate the literal term object.
     mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Term.LitTerm.toInternalName, "of", "(Ljava/util/function/Function;)Lflix/runtime/fixpoint/term/LitTerm;", false);
   }
 
   /**
-    * Emits code to allocate a new variable term for the given variable symbol `sym`.
+    * Emits code to allocate a new variable term for the given quantified variable symbol `sym`.
     */
-  private def newVarTerm(sym: Symbol.VarSym, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
+  private def newVarTermFromQuantVar(sym: Symbol.VarSym, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
     // Compile the variable symbol.
     newVarSym(sym, mv)
 

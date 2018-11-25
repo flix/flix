@@ -26,6 +26,7 @@ import ca.uwaterloo.flix.runtime.solver.api._
 import ca.uwaterloo.flix.runtime.Monitor
 import ca.uwaterloo.flix.runtime.solver.api.symbol._
 import ca.uwaterloo.flix.util._
+import flix.runtime.fixpoint.ConstantFunction
 import flix.runtime.fixpoint.predicate._
 import flix.runtime.fixpoint.symbol.{PredSym, VarSym}
 import flix.runtime.fixpoint.term._
@@ -352,7 +353,7 @@ class Solver(constraintSystem: ConstraintSystem, stratification: Stratification,
           case row =>
             val cparams = Array.emptyObjectArray
             val terms = row map {
-              case proxyObject => LitTerm.of(new ConstantFunction(proxyObject)): Term
+              case proxyObject => LitTerm.of(ConstantFunction.of(proxyObject)): Term
             }
             val head = AtomPredicate.of(sym, true, terms)
             val body = new Array[Predicate](0)
