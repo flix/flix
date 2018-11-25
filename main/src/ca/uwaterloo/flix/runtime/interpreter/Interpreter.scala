@@ -25,7 +25,7 @@ import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.runtime.{InvocationTarget, Linker}
 import ca.uwaterloo.flix.runtime.solver._
 import ca.uwaterloo.flix.runtime.solver.api.symbol._
-import ca.uwaterloo.flix.runtime.solver.api.{Constraint => _, _}
+import ca.uwaterloo.flix.runtime.solver.api._
 import ca.uwaterloo.flix.util.{InternalRuntimeException, Verbosity}
 import ca.uwaterloo.flix.util.tc.Show._
 import flix.runtime.fixpoint.{ConstraintSystem, Options, Solver}
@@ -702,7 +702,7 @@ object Interpreter {
     val head = evalHeadPredicate(c0.head, env0)
     val body = c0.body.map(b => evalBodyPredicate(b, env0))
 
-    val constraint = api.Constraint.of(cparams.toArray, head, body.toArray)
+    val constraint = fixpoint.Constraint.of(cparams.toArray, head, body.toArray)
 
     ConstraintSystem.of(constraint)
   }

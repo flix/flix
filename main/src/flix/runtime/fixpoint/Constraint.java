@@ -1,4 +1,4 @@
-package ca.uwaterloo.flix.runtime.solver.api;
+package flix.runtime.fixpoint;
 
 import flix.runtime.fixpoint.predicate.*;
 import flix.runtime.fixpoint.symbol.VarSym;
@@ -162,13 +162,6 @@ public final class Constraint {
      */
     public VarSym[] getConstraintParameters() {
         return this.cparams;
-    }
-
-    /**
-     * Returns the number of constraint parameters of `this` constraint.
-     */
-    public int getNumberOfConstraintParameters() {
-        return this.cparams.length;
     }
 
     /**

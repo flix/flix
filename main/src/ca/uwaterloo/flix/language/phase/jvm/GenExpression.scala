@@ -968,7 +968,7 @@ object GenExpression {
       addSourceLine(visitor, loc)
 
       // Emit code for the constraint.
-      compileConstraint(con, visitor)
+      newConstraintSystem(con, visitor)
 
     case Expression.ConstraintUnion(exp1, exp2, tpe, loc) =>
       // Add source line numbers for debugging.
@@ -1514,9 +1514,21 @@ object GenExpression {
   }
 
   /**
-    * Compiles the given constraint `c`.
+    * Emits code to instantiate a new constraint system for the given constraint `c`.
     */
-  private def compileConstraint(c: Constraint, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = c match {
+  private def newConstraintSystem(c: Constraint, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = c match {
+    case Constraint(cparams, head, body) =>
+      // Instantiate the constraint object.
+      newConstraint(c, mv)
+
+      // Instantiate the constraint system object.
+      mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.ConstraintSystem.toInternalName, "of", "(Lflix/runtime/fixpoint/Constraint;)Lflix/runtime/fixpoint/ConstraintSystem;", false)
+  }
+
+  /**
+    * Emits code to instantiate a new constraint for the given constraint `c`.
+    */
+  private def newConstraint(c: Constraint, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = c match {
     case Constraint(cparams, head, body) =>
       // Emit code for the cparams.
       newVarSyms(c.cparams.map(_.sym), mv)
@@ -1540,10 +1552,8 @@ object GenExpression {
       }
 
       // Instantiate a new constraint system object.
-      mv.visitMethodInsn(INVOKESTATIC, "ca/uwaterloo/flix/runtime/solver/api/Constraint", "of", "([Lflix/runtime/fixpoint/symbol/VarSym;Lflix/runtime/fixpoint/predicate/Predicate;[Lflix/runtime/fixpoint/predicate/Predicate;)Lca/uwaterloo/flix/runtime/solver/api/Constraint;", false);
+      mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Constraint.toInternalName, "of", "([Lflix/runtime/fixpoint/symbol/VarSym;Lflix/runtime/fixpoint/predicate/Predicate;[Lflix/runtime/fixpoint/predicate/Predicate;)Lflix/runtime/fixpoint/Constraint;", false);
 
-      // Emit code to instantiate the constraint system.
-      mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.ConstraintSystem.toInternalName, "of", "(Lca/uwaterloo/flix/runtime/solver/api/Constraint;)Lflix/runtime/fixpoint/ConstraintSystem;", false)
   }
 
   /**

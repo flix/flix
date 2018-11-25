@@ -1,6 +1,5 @@
 package flix.runtime.fixpoint;
 
-import ca.uwaterloo.flix.runtime.solver.api.Constraint;
 import flix.runtime.fixpoint.predicate.AtomPredicate;
 import flix.runtime.fixpoint.predicate.Predicate;
 import ca.uwaterloo.flix.runtime.solver.api.symbol.LatSym;

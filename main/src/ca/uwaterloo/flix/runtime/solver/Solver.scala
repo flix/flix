@@ -26,7 +26,7 @@ import ca.uwaterloo.flix.runtime.solver.api._
 import ca.uwaterloo.flix.runtime.Monitor
 import ca.uwaterloo.flix.runtime.solver.api.symbol._
 import ca.uwaterloo.flix.util._
-import flix.runtime.fixpoint.{ConstantFunction, ConstraintSystem, Options}
+import flix.runtime.fixpoint.{ConstantFunction, Constraint, ConstraintSystem, Options}
 import flix.runtime.fixpoint.predicate._
 import flix.runtime.fixpoint.symbol.{PredSym, VarSym}
 import flix.runtime.fixpoint.term._
@@ -302,7 +302,7 @@ class Solver(constraintSystem: ConstraintSystem, stratification: Stratification,
   private def initWorkList(stratum: Array[Constraint]): Unit = {
     // add all rules to the worklist (under empty environments).
     for (rule <- stratum) {
-      worklist.push((rule, new Array[ProxyObject](rule.getNumberOfConstraintParameters)))
+      worklist.push((rule, new Array[ProxyObject](rule.getConstraintParameters.length)))
     }
   }
 
@@ -681,7 +681,7 @@ class Solver(constraintSystem: ConstraintSystem, stratification: Stratification,
       case r: RelSym =>
         for ((rule, p) <- dependenciesOf(sym)) {
           // unify all terms with their values.
-          val env = unify(getVarArray(p), fact, fact.length, rule.getNumberOfConstraintParameters)
+          val env = unify(getVarArray(p), fact, fact.length, rule.getConstraintParameters.length)
           if (env != null) {
             localWorkList.push((rule, env))
           }
@@ -691,7 +691,7 @@ class Solver(constraintSystem: ConstraintSystem, stratification: Stratification,
         for ((rule, p) <- dependenciesOf(sym)) {
           // unify only key terms with their values.
           val numberOfKeys = l.getKeys().length
-          val env = unify(getVarArray(p), fact, numberOfKeys, rule.getNumberOfConstraintParameters)
+          val env = unify(getVarArray(p), fact, numberOfKeys, rule.getConstraintParameters.length)
           if (env != null) {
             localWorkList.push((rule, env))
           }
