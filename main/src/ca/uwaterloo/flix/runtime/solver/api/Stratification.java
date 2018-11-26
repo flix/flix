@@ -2,16 +2,45 @@ package ca.uwaterloo.flix.runtime.solver.api;
 
 import flix.runtime.fixpoint.symbol.PredSym;
 
+import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Represents a stratification.
+ */
 public class Stratification {
 
-    private final Map<PredSym, Integer> stratification;
+    /**
+     * A map from parameterless predicate symbols to their stratum.
+     */
+    private final Map<PredSym, Integer> stratification = new HashMap<>();
 
-    public Stratification(Map<PredSym, Integer> stratification) {
-        this.stratification = stratification;
+    /**
+     * Returns the stratum of the given predicate symbol `sym`.
+     */
+    public int getStratum(PredSym sym) {
+        if (sym == null)
+            throw new IllegalArgumentException("'sym' must be non-null.");
+
+        // Retrieve the stratum.
+        var result = stratification.get(sym.getParameterless());
+        if (result == null) {
+            return 0;
+            // TODO
+//            throw new IllegalArgumentException("Unknown stratum of the given predicate symbol: '" + sym + "'");
+        }
+
+        return result;
     }
 
-    // TODO: Implement and use in solver.
+    /**
+     * Sets the stratum of the  given parameterless predicate symbol `sym` to the given stratum `s`.
+     */
+    public void setStratum(PredSym sym, int s) {
+        if (sym == null)
+            throw new IllegalArgumentException("'sym' must be non-null.");
+
+        stratification.put(sym.getParameterless(), s);
+    }
 
 }

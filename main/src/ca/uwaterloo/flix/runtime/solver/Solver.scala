@@ -914,20 +914,30 @@ class Solver(constraintSystem: ConstraintSystem, stratification: Stratification,
     * Returns all the constraints in the constraint set by stratum.
     */
   // TODO: Precompute once.
-  def getConstraintsByStrata: Array[Array[Constraint]] = {
-    // TODO: Stratification
-    //val groupedByStratum = constraintSystem.getConstraints().groupBy(_.getStratum()).toList
-    val groupedByStratum = List((0, constraintSystem.getConstraints))
-    val strata = groupedByStratum.sortBy(_._1).map(_._2).toArray
+  private val getConstraintsByStrata: Array[Array[Constraint]] = {
 
-    // Ensure that there is always at least one empty stratum.
-    if (strata.nonEmpty) {
-      strata
-    } else {
+    val constraintsWithStratum = constraintSystem.getConstraints.map {
+      case c => c.getHeadPredicate match {
+        case h: AtomPredicate => (c, if (stratification == null) 0 else stratification.getStratum(h.getSym)) // TODO
+        case h: TruePredicate => (c, 0)
+        case h: FalsePredicate => (c, Int.MaxValue)
+      }
+
+    }
+
+    // TODO: Not very efficient...
+    val result = for ((_, arr) <- constraintsWithStratum.groupBy(_._2).toList.sortBy(_._1))
+      yield arr.map(_._1)
+
+    if (result.nonEmpty)
+      result.toArray
+    else {
+      // TODO: Hack, in case the system is empty.
       val a = Array.ofDim[Constraint](1, 1)
       a(0) = Array.empty[Constraint]
       a
     }
+
   }
 
   /**

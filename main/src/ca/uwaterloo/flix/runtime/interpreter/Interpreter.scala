@@ -869,6 +869,18 @@ object Interpreter {
   }
 
   /**
+    * Returns the stratification.
+    */
+  private def getStratification(stf: Ast.Stratification): api.Stratification = {
+    val result = new api.Stratification()
+    for ((sym, s) <- stf.m) {
+  //    val k = ??? // TODO: Need to get the symbol
+//      result.setStratum(k, s)
+    }
+    result
+  }
+
+  /**
     * Returns the lattice operations associated with the given type `tpe`.
     */
   private def getLatticeOps(tpe: Type)(implicit root: FinalAst.Root, flix: Flix): LatticeOps = {
@@ -921,17 +933,6 @@ object Interpreter {
 
     // Return the proxy object.
     ProxyObject.of(v, eqOp, hashOp, toStrOp)
-  }
-
-  /**
-    * Returns the stratification.
-    */
-  private def getStratification(stf: Ast.Stratification): api.Stratification = {
-    val m = new java.util.HashMap[PredSym, Integer]
-
-    // TODO
-
-    new api.Stratification(m)
   }
 
   /////////////////////////////////////////////////////////////////////////////
