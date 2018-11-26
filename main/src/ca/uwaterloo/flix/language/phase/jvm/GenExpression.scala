@@ -968,7 +968,7 @@ object GenExpression {
       addSourceLine(visitor, loc)
 
       // Emit code for the constraint.
-      newConstraintSystem(con, visitor)
+      newConstraintSystem(con, visitor)(root, flix, currentClass, lenv0, entryPoint)
 
     case Expression.ConstraintUnion(exp1, exp2, tpe, loc) =>
       // Add source line numbers for debugging.
@@ -991,7 +991,7 @@ object GenExpression {
       compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
 
       // Emit code for the stratification.
-      newStratification(stf, visitor)
+      newStratification(stf, visitor)(root, flix, currentClass, lenv0, entryPoint)
 
       // Emit code for the fixpoint options.
       newOptions(visitor)
@@ -1007,7 +1007,7 @@ object GenExpression {
       compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
 
       // Emit code for the stratification.
-      newStratification(stf, visitor)
+      newStratification(stf, visitor)(root, flix, currentClass, lenv0, entryPoint)
 
       // Emit code for the fixpoint options.
       newOptions(visitor)
@@ -1023,7 +1023,7 @@ object GenExpression {
       compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
 
       // Emit code for the stratification.
-      newStratification(stf, visitor)
+      newStratification(stf, visitor)(root, flix, currentClass, lenv0, entryPoint)
 
       // Emit code for the fixpoint options.
       newOptions(visitor)
@@ -1035,13 +1035,11 @@ object GenExpression {
       // Add source line numbers for debugging.
       addSourceLine(visitor, loc)
 
-      sym match {
-        case s: Symbol.RelSym =>
-          compilePredicateSymbol(None, s, null, visitor)
-          compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
-          visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Solver.toInternalName, "project", "(Lflix/runtime/fixpoint/symbol/PredSym;Lflix/runtime/fixpoint/ConstraintSystem;)Lflix/runtime/fixpoint/ConstraintSystem;", false)
-        case x: Symbol.LatSym => ??? // TODO
-      }
+      // Instantiate the predicate symbol.
+      newPredSym(sym, Some(exp), visitor)(root, flix, currentClass, lenv0, entryPoint)
+
+      // Invoke the project method.
+      visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Solver.toInternalName, "project", "(Lflix/runtime/fixpoint/symbol/PredSym;Lflix/runtime/fixpoint/ConstraintSystem;)Lflix/runtime/fixpoint/ConstraintSystem;", false)
 
     case Expression.FixpointEntails(exp1, exp2, tpe, loc) =>
       // Add source line numbers for debugging.
@@ -1516,7 +1514,7 @@ object GenExpression {
   /**
     * Emits code to instantiate a new constraint system for the given constraint `c`.
     */
-  private def newConstraintSystem(c: Constraint, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = c match {
+  private def newConstraintSystem(c: Constraint, mv: MethodVisitor)(implicit root: Root, flix: Flix, clazz: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label): Unit = c match {
     case Constraint(cparams, head, body) =>
       // Instantiate the constraint object.
       newConstraint(c, mv)
@@ -1528,7 +1526,7 @@ object GenExpression {
   /**
     * Emits code to instantiate a new constraint for the given constraint `c`.
     */
-  private def newConstraint(c: Constraint, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = c match {
+  private def newConstraint(c: Constraint, mv: MethodVisitor)(implicit root: Root, flix: Flix, clazz: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label): Unit = c match {
     case Constraint(cparams, head, body) =>
       // Emit code for the cparams.
       newVarSyms(c.cparams.map(_.sym), mv)
@@ -1559,7 +1557,7 @@ object GenExpression {
   /**
     * Compiles the given head expression `h0`.
     */
-  private def compileHeadAtom(h0: Predicate.Head, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = h0 match {
+  private def compileHeadAtom(h0: Predicate.Head, mv: MethodVisitor)(implicit root: Root, flix: Flix, clazz: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label): Unit = h0 match {
     case Predicate.Head.True(loc) =>
       // Add source line numbers for debugging.
       addSourceLine(mv, loc)
@@ -1579,7 +1577,7 @@ object GenExpression {
       addSourceLine(mv, loc)
 
       // Emit code for the predicate symbol.
-      compilePredicateSymbol(None, sym, tpe, mv)
+      newRelSym(sym, Some(exp), mv)
 
       // Emit code for the polarity of the atom. A head atom is always positive.
       mv.visitInsn(ICONST_1)
@@ -1598,14 +1596,14 @@ object GenExpression {
   /**
     * Compiles the given head expression `h0`.
     */
-  private def compileBodyAtom(b0: Predicate.Body, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = b0 match {
+  private def compileBodyAtom(b0: Predicate.Body, mv: MethodVisitor)(implicit root: Root, flix: Flix, clazz: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label): Unit = b0 match {
 
     case Predicate.Body.RelAtom(sym, exp, polarity, terms, tpe, loc) =>
       // Add source line numbers for debugging.
       addSourceLine(mv, loc)
 
       // Emit code for the predicate symbol.
-      compilePredicateSymbol(None, sym, tpe, mv)
+      newRelSym(sym, Some(exp), mv)
 
       // Emit code for the polarity of the atom. A head atom is always positive.
       polarity match {
@@ -1654,37 +1652,38 @@ object GenExpression {
   }
 
   /**
-    * Emits code for the given predicate symbol `predSym`.
+    * Emits code for the given predicate symbol `predSym` with the given optional parameter expression `exp`.
     */
-  private def newPredSym(predSym: Symbol.PredSym, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = predSym match {
+  private def newPredSym(predSym: Symbol.PredSym, optExp: Option[FinalAst.Expression], mv: MethodVisitor)(implicit root: Root, flix: Flix, clazz: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label): Unit = predSym match {
     case sym: Symbol.RelSym =>
-      compilePredicateSymbol(None, sym, null, mv) // TODO: Null
+      newRelSym(sym, optExp, mv)
     case sym: Symbol.LatSym => ??? // TODO
   }
 
   /**
-    * Emits code for the predicate symbol based on `baseOpt`.
+    * Emits code for the given relation symbol with the given optional parameter expression `exp`.
     */
-  private def compilePredicateSymbol(baseOpt: Option[Symbol.VarSym], sym: Symbol.RelSym, tpe: ast.Type, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
-    // TODO: Refactor, should not take baseOpt, but instead an expression.
+  private def newRelSym(sym: Symbol.RelSym, optExp: Option[FinalAst.Expression], mv: MethodVisitor)(implicit root: Root, flix: Flix, clazz: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label): Unit = {
     // Emit code for the predicate symbol.
-    baseOpt match {
+    mv.visitLdcInsn(sym.toString)
+
+    // Emit code for the parameter.
+    optExp match {
       case None =>
-        // Emit code for the predicate symbol.
-        mv.visitLdcInsn(sym.toString)
-
-        // Emit code for the parameter.
         mv.visitInsn(ACONST_NULL)
+      case Some(exp) =>
+        // Emit code for the expression.
+        compileExpression(exp, mv, clazz, lenv0, entryPoint)
 
-        // Emit code for the attributes.
-        newAttributesArray(root.relations(sym).attr, mv)
-
-        // Emit code to instantiate the predicate symbol.
-        mv.visitMethodInsn(INVOKESTATIC, "ca/uwaterloo/flix/runtime/solver/api/symbol/RelSym", "of", "(Ljava/lang/String;Lflix/runtime/ProxyObject;[Lflix/runtime/fixpoint/Attribute;)Lca/uwaterloo/flix/runtime/solver/api/symbol/RelSym;", false);
-      case Some(varSym) =>
-        // Emit code for the predicate symbol.
-        readVar(varSym, tpe, mv)
+        // Emit code for the proxy object.
+        AsmOps.newProxyObject(exp.tpe, mv)
     }
+
+    // Emit code for the attributes.
+    newAttributesArray(root.relations(sym).attr, mv)
+
+    // Emit code to instantiate the predicate symbol.
+    mv.visitMethodInsn(INVOKESTATIC, "ca/uwaterloo/flix/runtime/solver/api/symbol/RelSym", "of", "(Ljava/lang/String;Lflix/runtime/ProxyObject;[Lflix/runtime/fixpoint/Attribute;)Lca/uwaterloo/flix/runtime/solver/api/symbol/RelSym;", false);
   }
 
   /**
@@ -1909,7 +1908,7 @@ object GenExpression {
   /**
     * Emits code to instantiate a new stratification object.
     */
-  private def newStratification(stf: Ast.Stratification, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
+  private def newStratification(stf: Ast.Stratification, mv: MethodVisitor)(implicit root: Root, flix: Flix, clazz: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label): Unit = {
     // Instantiate a fresh stratification object.
     mv.visitTypeInsn(NEW, JvmName.Runtime.Fixpoint.Stratification.toInternalName)
     mv.visitInsn(DUP)
@@ -1920,7 +1919,7 @@ object GenExpression {
     // Add every predicate symbol with its stratum.
     for ((predSym, stratum) <- stf.m) {
       mv.visitInsn(DUP)
-      newPredSym(predSym, mv)
+      newPredSym(predSym, None, mv)
       compileInt(mv, stratum)
       mv.visitMethodInsn(INVOKEVIRTUAL, JvmName.Runtime.Fixpoint.Stratification.toInternalName, "setStratum", "(Lflix/runtime/fixpoint/symbol/PredSym;I)V", false)
     }
