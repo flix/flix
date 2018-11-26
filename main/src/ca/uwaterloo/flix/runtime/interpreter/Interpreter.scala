@@ -878,8 +878,9 @@ object Interpreter {
     */
   private def newStratification(stf: Ast.Stratification)(implicit root: FinalAst.Root, flix: Flix): api.Stratification = {
     val result = new api.Stratification()
-    for ((sym, stratum) <- stf.m) {
-      result.setStratum(newPredSym(sym), stratum)
+    for ((predSym, stratum) <- stf.m) {
+      val sym = newPredSym(predSym)
+      result.setStratum(sym, stratum)
     }
     result
   }

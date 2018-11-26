@@ -991,7 +991,7 @@ object GenExpression {
       compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
 
       // Emit code for the stratification.
-      visitor.visitInsn(ACONST_NULL) // TODO: Stratification
+      newStratification(stf, visitor)
 
       // Emit code for the fixpoint options.
       newOptions(visitor)
@@ -1007,7 +1007,7 @@ object GenExpression {
       compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
 
       // Emit code for the stratification.
-      visitor.visitInsn(ACONST_NULL) // TODO: Stratification
+      newStratification(stf, visitor)
 
       // Emit code for the fixpoint options.
       newOptions(visitor)
@@ -1023,7 +1023,7 @@ object GenExpression {
       compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
 
       // Emit code for the stratification.
-      visitor.visitInsn(ACONST_NULL) // TODO: Stratification
+      newStratification(stf, visitor)
 
       // Emit code for the fixpoint options.
       newOptions(visitor)
@@ -1654,6 +1654,15 @@ object GenExpression {
   }
 
   /**
+    * Emits code for the given predicate symbol `predSym`.
+    */
+  private def newPredSym(predSym: Symbol.PredSym, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = predSym match {
+    case sym: Symbol.RelSym =>
+      compilePredicateSymbol(None, sym, null, mv) // TODO: Null
+    case sym: Symbol.LatSym => ??? // TODO
+  }
+
+  /**
     * Emits code for the predicate symbol based on `baseOpt`.
     */
   private def compilePredicateSymbol(baseOpt: Option[Symbol.VarSym], sym: Symbol.RelSym, tpe: ast.Type, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
@@ -1895,6 +1904,26 @@ object GenExpression {
 
     // Instantiate the variable symbol object.
     mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Symbol.VarSym.toInternalName, "of", "(Ljava/lang/String;I)Lflix/runtime/fixpoint/symbol/VarSym;", false);
+  }
+
+  /**
+    * Emits code to instantiate a new stratification object.
+    */
+  private def newStratification(stf: Ast.Stratification, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
+    // Instantiate a fresh stratification object.
+    mv.visitTypeInsn(NEW, "ca/uwaterloo/flix/runtime/solver/api/Stratification")
+    mv.visitInsn(DUP)
+
+    // Invoke the constructor of the stratification object.
+    mv.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/solver/api/Stratification", "<init>", "()V", false)
+
+    // Add every predicate symbol with its stratum.
+    for ((predSym, stratum) <- stf.m) {
+      mv.visitInsn(DUP)
+      newPredSym(predSym, mv)
+      compileInt(mv, stratum)
+      mv.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/solver/api/Stratification", "setStratum", "(Lflix/runtime/fixpoint/symbol/PredSym;I)V", false)
+    }
   }
 
   /**

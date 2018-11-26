@@ -8,7 +8,7 @@ import java.util.Map;
 /**
  * Represents a stratification.
  */
-public class Stratification {
+public final class Stratification {
 
     /**
      * A map from parameterless predicate symbols to their stratum.
@@ -25,16 +25,14 @@ public class Stratification {
         // Retrieve the stratum.
         var result = stratification.get(sym.getParameterless());
         if (result == null) {
-            return 0;
-            // TODO
-//            throw new IllegalArgumentException("Unknown stratum of the given predicate symbol: '" + sym + "'");
+            return 0; // TODO: Need to verify that this matches the control flow analysis.
         }
 
         return result;
     }
 
     /**
-     * Sets the stratum of the  given parameterless predicate symbol `sym` to the given stratum `stratum`.
+     * Sets the stratum of the given predicate symbol `sym` to the given stratum `stratum`.
      */
     public void setStratum(PredSym sym, int stratum) {
         if (sym == null)

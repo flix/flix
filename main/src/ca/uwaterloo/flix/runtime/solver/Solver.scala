@@ -918,7 +918,7 @@ class Solver(constraintSystem: ConstraintSystem, stratification: Stratification,
 
     val constraintsWithStratum = constraintSystem.getConstraints.map {
       case c => c.getHeadPredicate match {
-        case h: AtomPredicate => (c, if (stratification == null) 0 else stratification.getStratum(h.getSym)) // TODO
+        case h: AtomPredicate => (c, stratification.getStratum(h.getSym))
         case h: TruePredicate => (c, 0)
         case h: FalsePredicate => (c, Int.MaxValue)
       }
