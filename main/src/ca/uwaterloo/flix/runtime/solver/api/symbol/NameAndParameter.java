@@ -10,14 +10,28 @@ import java.util.Objects;
  * The parameter may be null.
  */
 final class NameAndParameter {
+
+    /**
+     * The name. Must be non-null.
+     */
     private final String name;
+
+    /**
+     * The parameter. May be null.
+     */
     private final ProxyObject parameter;
 
+    /**
+     * Constructs a new name and parameter pair.
+     */
     NameAndParameter(String name, ProxyObject parameter) {
         this.name = name;
         this.parameter = parameter;
     }
 
+    /**
+     * Returns `true` if `this` is equal to `that`.
+     */
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -27,6 +41,9 @@ final class NameAndParameter {
                 Objects.equals(parameter, that.parameter);
     }
 
+    /**
+     * Returns the hash of `this` name and parameter.
+     */
     @Override
     public int hashCode() {
         return Objects.hash(name, parameter);

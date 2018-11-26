@@ -69,11 +69,6 @@ public final class LatSym implements PredSym {
     private final LatticeOps ops;
 
     /**
-     * The parameterless version of `this` lattice symbol.
-     */
-    private final LatSym parameterless;
-
-    /**
      * Constructs a fresh lattice symbol with the given `name` and `parameter`.
      */
     private LatSym(String name, ProxyObject parameter, Attribute[] keys, Attribute value, LatticeOps ops) {
@@ -82,11 +77,6 @@ public final class LatSym implements PredSym {
         this.keys = keys;
         this.value = value;
         this.ops = ops;
-        if (this.parameter == ProxyObject.UNIT) {
-            this.parameterless = this;
-        } else {
-            this.parameterless = of(name, ProxyObject.UNIT, keys, value, ops);
-        }
     }
 
     /**
@@ -128,7 +118,7 @@ public final class LatSym implements PredSym {
      * Returns the parameterless version of `this` lattice symbol.
      */
     public LatSym getParameterless() {
-        return this.parameterless;
+        return of(name, null, keys, value, ops);
     }
 
     /**
@@ -139,7 +129,7 @@ public final class LatSym implements PredSym {
         if (parameter == null)
             return name;
         else
-            return name + "(" + parameter.toString() + ")";
+            return name + "<" + parameter.toString() + ">";
     }
 
     /* equality by identity */

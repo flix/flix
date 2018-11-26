@@ -54,22 +54,12 @@ public final class RelSym implements PredSym {
     private final Attribute[] attributes;
 
     /**
-     * The parameterless version of `this` relation symbol.
-     */
-    private final RelSym parameterless;
-
-    /**
      * Constructs a fresh relation symbol with the given `name` and `parameter`.
      */
     private RelSym(String name, ProxyObject parameter, Attribute[] attributes) {
         this.name = name;
         this.parameter = parameter;
         this.attributes = attributes;
-        if (this.parameter == ProxyObject.UNIT) {
-            this.parameterless = this;
-        } else {
-            this.parameterless = of(name, ProxyObject.UNIT, attributes);
-        }
     }
 
     /**
@@ -97,7 +87,7 @@ public final class RelSym implements PredSym {
      * Returns the parameterless version of `this` relation symbol.
      */
     public RelSym getParameterless() {
-        return this.parameterless;
+        return of(name, null, attributes);
     }
 
     /**
@@ -108,7 +98,7 @@ public final class RelSym implements PredSym {
         if (parameter == null)
             return name;
         else
-            return name + "(" + parameter.toString() + ")";
+            return name + "<" + parameter.toString() + ">";
     }
 
     /* equality by identity */
