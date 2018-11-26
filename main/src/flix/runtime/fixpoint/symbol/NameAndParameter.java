@@ -1,4 +1,4 @@
-package ca.uwaterloo.flix.runtime.solver.api.symbol;
+package flix.runtime.fixpoint.symbol;
 
 import flix.runtime.ProxyObject;
 

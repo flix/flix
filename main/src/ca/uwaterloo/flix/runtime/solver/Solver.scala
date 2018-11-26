@@ -24,11 +24,10 @@ import ca.uwaterloo.flix.runtime.solver.datastore.DataStore
 import ca.uwaterloo.flix.runtime.debugger.RestServer
 import ca.uwaterloo.flix.runtime.solver.api._
 import ca.uwaterloo.flix.runtime.Monitor
-import ca.uwaterloo.flix.runtime.solver.api.symbol._
 import ca.uwaterloo.flix.util._
 import flix.runtime.fixpoint.{Options => _, _}
 import flix.runtime.fixpoint.predicate._
-import flix.runtime.fixpoint.symbol.{PredSym, VarSym}
+import flix.runtime.fixpoint.symbol.{LatSym, PredSym, RelSym, VarSym}
 import flix.runtime.fixpoint.term._
 import flix.runtime.{ProxyObject, ReifiedSourceLocation, RuleError, TimeoutError}
 

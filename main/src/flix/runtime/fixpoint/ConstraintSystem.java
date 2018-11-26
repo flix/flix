@@ -2,8 +2,8 @@ package flix.runtime.fixpoint;
 
 import flix.runtime.fixpoint.predicate.AtomPredicate;
 import flix.runtime.fixpoint.predicate.Predicate;
-import ca.uwaterloo.flix.runtime.solver.api.symbol.LatSym;
-import ca.uwaterloo.flix.runtime.solver.api.symbol.RelSym;
+import flix.runtime.fixpoint.symbol.LatSym;
+import flix.runtime.fixpoint.symbol.RelSym;
 
 import java.util.ArrayList;
 import java.util.Arrays;

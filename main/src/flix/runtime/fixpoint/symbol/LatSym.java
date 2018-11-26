@@ -1,9 +1,8 @@
-package ca.uwaterloo.flix.runtime.solver.api.symbol;
+package flix.runtime.fixpoint.symbol;
 
 import ca.uwaterloo.flix.runtime.solver.api.LatticeOps;
 import flix.runtime.fixpoint.Attribute;
 import flix.runtime.ProxyObject;
-import flix.runtime.fixpoint.symbol.PredSym;
 
 import java.util.HashMap;
 import java.util.Map;

@@ -23,18 +23,14 @@ import ca.uwaterloo.flix.api._
 import ca.uwaterloo.flix.language.ast.FinalAst._
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.runtime.{InvocationTarget, Linker}
-import ca.uwaterloo.flix.runtime.solver._
-import ca.uwaterloo.flix.runtime.solver.api.symbol._
 import ca.uwaterloo.flix.runtime.solver.api._
 import ca.uwaterloo.flix.util.{InternalRuntimeException, Verbosity}
 import ca.uwaterloo.flix.util.tc.Show._
 import flix.runtime.fixpoint.{ConstraintSystem, Options, Solver, Stratification}
 import flix.runtime.fixpoint.predicate._
-import flix.runtime.fixpoint.symbol.{PredSym, VarSym}
+import flix.runtime.fixpoint.symbol.{LatSym, PredSym, RelSym, VarSym}
 import flix.runtime.fixpoint.term._
 import flix.runtime.{fixpoint, _}
-
-import scala.collection.mutable
 
 object Interpreter {
 
