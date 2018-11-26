@@ -1,4 +1,4 @@
-package ca.uwaterloo.flix.runtime.solver.api;
+package flix.runtime.fixpoint;
 
 import flix.runtime.fixpoint.symbol.PredSym;
 

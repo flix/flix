@@ -997,7 +997,7 @@ object GenExpression {
       newOptions(visitor)
 
       // Emit code for the invocation of the solver.
-      visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Solver.toInternalName, "solve", "(Lflix/runtime/fixpoint/ConstraintSystem;Lca/uwaterloo/flix/runtime/solver/api/Stratification;Lflix/runtime/fixpoint/Options;)Lflix/runtime/fixpoint/ConstraintSystem;", false)
+      visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Solver.toInternalName, "solve", "(Lflix/runtime/fixpoint/ConstraintSystem;Lflix/runtime/fixpoint/Stratification;Lflix/runtime/fixpoint/Options;)Lflix/runtime/fixpoint/ConstraintSystem;", false)
 
     case Expression.FixpointCheck(uid, exp, stf, tpe, loc) =>
       // Add source line numbers for debugging.
@@ -1013,7 +1013,7 @@ object GenExpression {
       newOptions(visitor)
 
       // Emit code for the invocation of the solver.
-      visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Solver.toInternalName, "check", "(Lflix/runtime/fixpoint/ConstraintSystem;Lca/uwaterloo/flix/runtime/solver/api/Stratification;Lflix/runtime/fixpoint/Options;)Z", false);
+      visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Solver.toInternalName, "check", "(Lflix/runtime/fixpoint/ConstraintSystem;Lflix/runtime/fixpoint/Stratification;Lflix/runtime/fixpoint/Options;)Z", false);
 
     case Expression.FixpointDelta(uid, exp, stf, tpe, loc) =>
       // Add source line numbers for debugging.
@@ -1029,7 +1029,7 @@ object GenExpression {
       newOptions(visitor)
 
       // Emit code for the invocation of the solver.
-      visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Solver.toInternalName, "deltaSolve", "(Lflix/runtime/fixpoint/ConstraintSystem;Lca/uwaterloo/flix/runtime/solver/api/Stratification;Lflix/runtime/fixpoint/Options;)Ljava/lang/String;", false);
+      visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Solver.toInternalName, "deltaSolve", "(Lflix/runtime/fixpoint/ConstraintSystem;Lflix/runtime/fixpoint/Stratification;Lflix/runtime/fixpoint/Options;)Ljava/lang/String;", false);
 
     case Expression.FixpointProject(sym, exp, tpe, loc) =>
       // Add source line numbers for debugging.
@@ -1911,18 +1911,18 @@ object GenExpression {
     */
   private def newStratification(stf: Ast.Stratification, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
     // Instantiate a fresh stratification object.
-    mv.visitTypeInsn(NEW, "ca/uwaterloo/flix/runtime/solver/api/Stratification")
+    mv.visitTypeInsn(NEW, JvmName.Runtime.Fixpoint.Stratification.toInternalName)
     mv.visitInsn(DUP)
 
     // Invoke the constructor of the stratification object.
-    mv.visitMethodInsn(INVOKESPECIAL, "ca/uwaterloo/flix/runtime/solver/api/Stratification", "<init>", "()V", false)
+    mv.visitMethodInsn(INVOKESPECIAL, JvmName.Runtime.Fixpoint.Stratification.toInternalName, "<init>", "()V", false)
 
     // Add every predicate symbol with its stratum.
     for ((predSym, stratum) <- stf.m) {
       mv.visitInsn(DUP)
       newPredSym(predSym, mv)
       compileInt(mv, stratum)
-      mv.visitMethodInsn(INVOKEVIRTUAL, "ca/uwaterloo/flix/runtime/solver/api/Stratification", "setStratum", "(Lflix/runtime/fixpoint/symbol/PredSym;I)V", false)
+      mv.visitMethodInsn(INVOKEVIRTUAL, JvmName.Runtime.Fixpoint.Stratification.toInternalName, "setStratum", "(Lflix/runtime/fixpoint/symbol/PredSym;I)V", false)
     }
   }
 

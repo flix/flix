@@ -28,7 +28,7 @@ import ca.uwaterloo.flix.runtime.solver.api.symbol._
 import ca.uwaterloo.flix.runtime.solver.api._
 import ca.uwaterloo.flix.util.{InternalRuntimeException, Verbosity}
 import ca.uwaterloo.flix.util.tc.Show._
-import flix.runtime.fixpoint.{ConstraintSystem, Options, Solver}
+import flix.runtime.fixpoint.{ConstraintSystem, Options, Solver, Stratification}
 import flix.runtime.fixpoint.predicate._
 import flix.runtime.fixpoint.symbol.{PredSym, VarSym}
 import flix.runtime.fixpoint.term._
@@ -876,8 +876,8 @@ object Interpreter {
   /**
     * Returns the stratification.
     */
-  private def newStratification(stf: Ast.Stratification)(implicit root: FinalAst.Root, flix: Flix): api.Stratification = {
-    val result = new api.Stratification()
+  private def newStratification(stf: Ast.Stratification)(implicit root: FinalAst.Root, flix: Flix): Stratification = {
+    val result = new Stratification()
     for ((predSym, stratum) <- stf.m) {
       val sym = newPredSym(predSym)
       result.setStratum(sym, stratum)

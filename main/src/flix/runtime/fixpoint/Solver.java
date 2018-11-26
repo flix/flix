@@ -1,7 +1,6 @@
 package flix.runtime.fixpoint;
 
 import ca.uwaterloo.flix.runtime.solver.DeltaSolver;
-import ca.uwaterloo.flix.runtime.solver.api.Stratification;
 import flix.runtime.fixpoint.symbol.PredSym;
 import flix.runtime.RuleError;
 import flix.runtime.fixpoint.predicate.AtomPredicate;
