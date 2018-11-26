@@ -34,13 +34,13 @@ public class Stratification {
     }
 
     /**
-     * Sets the stratum of the  given parameterless predicate symbol `sym` to the given stratum `s`.
+     * Sets the stratum of the  given parameterless predicate symbol `sym` to the given stratum `stratum`.
      */
-    public void setStratum(PredSym sym, int s) {
+    public void setStratum(PredSym sym, int stratum) {
         if (sym == null)
             throw new IllegalArgumentException("'sym' must be non-null.");
 
-        stratification.put(sym.getParameterless(), s);
+        stratification.put(sym.getParameterless(), stratum);
     }
 
 }

@@ -273,31 +273,28 @@ object Interpreter {
 
     case Expression.FixpointSolve(uid, exp, stf, tpe, loc) =>
       val s = cast2constraintset(eval(exp, env0, henv0, lenv0, root))
-      val t = getStratification(stf)
+      val t = newStratification(stf)(root, flix)
       val o = getFixpointOptions()
       Solver.solve(s, t, o)
 
     case Expression.FixpointCheck(uid, exp, stf, tpe, loc) =>
       val s = cast2constraintset(eval(exp, env0, henv0, lenv0, root))
-      val t = getStratification(stf)
+      val t = newStratification(stf)(root, flix)
       val o = getFixpointOptions()
       val r = Solver.check(s, t, o)
       if (r) Value.True else Value.False
 
     case Expression.FixpointDelta(uid, exp, stf, tpe, loc) =>
       val s = cast2constraintset(eval(exp, env0, henv0, lenv0, root))
-      val t = getStratification(stf)
+      val t = newStratification(stf)(root, flix)
       val o = getFixpointOptions()
       val r = Solver.deltaSolve(s, t, o)
       Value.Str(r)
 
     case Expression.FixpointProject(sym, exp, tpe, loc) =>
-      val s = cast2constraintset(eval(exp, env0, henv0, lenv0, root))
-      val predSym = sym match {
-        case x: Symbol.RelSym => ??? // TODO
-        case x: Symbol.LatSym => ??? // TODO
-      }
-      Solver.project(predSym, s)
+      val cs = cast2constraintset(eval(exp, env0, henv0, lenv0, root))
+      val predSym = newPredSym(sym)(root, flix)
+      Solver.project(predSym, cs)
 
     case Expression.FixpointEntails(exp1, exp2, tpe, loc) =>
       val v1 = cast2constraintset(eval(exp1, env0, henv0, lenv0, root))
@@ -718,13 +715,13 @@ object Interpreter {
     case FinalAst.Predicate.Head.RelAtom(sym, exp, terms, _, _) =>
       val ts = terms.map(t => evalHeadTerm(t, env0)).toArray
       // TODO: Should use the exp.
-      val relSym = getRelSym(sym)
+      val relSym = newRelSym(sym)
       AtomPredicate.of(relSym, true, ts)
 
     case FinalAst.Predicate.Head.LatAtom(sym, exp, terms, _, _) =>
       val ts = terms.map(t => evalHeadTerm(t, env0)).toArray
       // TODO: Should use the exp.
-      val latSym = getLattice(sym)
+      val latSym = newLatSym(sym)
       AtomPredicate.of(latSym, true, ts)
   }
 
@@ -739,7 +736,7 @@ object Interpreter {
       }
       val ts = terms.map(t => evalBodyTerm(t, env0)).toArray
       // TODO: Should use the exp.
-      val relSym = getRelSym(sym)
+      val relSym = newRelSym(sym)
       AtomPredicate.of(relSym, p, ts)
 
     case FinalAst.Predicate.Body.LatAtom(sym, exp, polarity, terms, _, _) =>
@@ -749,7 +746,7 @@ object Interpreter {
       }
       val ts = terms.map(t => evalBodyTerm(t, env0)).toArray
       // TODO: Should use the exp.
-      val latSym = getLattice(sym)
+      val latSym = newLatSym(sym)
       AtomPredicate.of(latSym, p, ts)
 
     case FinalAst.Predicate.Body.Filter(sym, terms, loc) =>
@@ -846,9 +843,17 @@ object Interpreter {
   }
 
   /**
+    * Returns the predicate symbol of the given symbol `sym`.
+    */
+  def newPredSym(sym: Symbol.PredSym)(implicit root: FinalAst.Root, flix: Flix): PredSym = sym match {
+    case sym: Symbol.RelSym => newRelSym(sym)
+    case sym: Symbol.LatSym => newLatSym(sym)
+  }
+
+  /**
     * Returns the relation value associated with the given relation symbol `sym`.
     */
-  private def getRelSym(sym: Symbol.RelSym)(implicit root: FinalAst.Root, flix: Flix): RelSym = root.relations(sym) match {
+  private def newRelSym(sym: Symbol.RelSym)(implicit root: FinalAst.Root, flix: Flix): RelSym = root.relations(sym) match {
     case FinalAst.Relation(_, _, attr, _) =>
       val name = sym.toString
       val as = attr.map(a => fixpoint.Attribute.of(a.name)).toArray
@@ -858,7 +863,7 @@ object Interpreter {
   /**
     * Returns the lattice value associated with the given lattice symbol `sym`.
     */
-  private def getLattice(sym: Symbol.LatSym)(implicit root: FinalAst.Root, flix: Flix): LatSym = root.lattices(sym) match {
+  private def newLatSym(sym: Symbol.LatSym)(implicit root: FinalAst.Root, flix: Flix): LatSym = root.lattices(sym) match {
     case FinalAst.Lattice(_, _, attr, _) =>
       val name = sym.toString
       val as = attr.map(a => fixpoint.Attribute.of(a.name))
@@ -871,11 +876,10 @@ object Interpreter {
   /**
     * Returns the stratification.
     */
-  private def getStratification(stf: Ast.Stratification): api.Stratification = {
+  private def newStratification(stf: Ast.Stratification)(implicit root: FinalAst.Root, flix: Flix): api.Stratification = {
     val result = new api.Stratification()
-    for ((sym, s) <- stf.m) {
-  //    val k = ??? // TODO: Need to get the symbol
-//      result.setStratum(k, s)
+    for ((sym, stratum) <- stf.m) {
+      result.setStratum(newPredSym(sym), stratum)
     }
     result
   }
