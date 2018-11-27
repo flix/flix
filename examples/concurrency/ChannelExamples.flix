@@ -3,31 +3,31 @@
 //    x + 2;
 //    x
 //}
-
+//
 //def chanTest(): Channel[Float64] = chan Float64
 //
-////
-def getchTest(): (Int, Int) =
-    let c1 = chan Channel[Int];
-    let c2 = chan Int;
-    c1 <- (c2 <- 1) <- (c2 <- 2);
-    let x = <- <- c1;
-    let y = <- <- c1;
-    (x, y)
-
-
+//
+//def getchTest(): (Int, Int) =
+//    let c1 = chan Channel[Int];
+//    let c2 = chan Int;
+//    c1 <- (c2 <- 1) <- (c2 <- 2);
+//    let x = <- <- c1;
+//    let y = <- <- c1;
+//    (x, y)
+//
+//
 //def putchTest(): Channel[Bool] = let c = chan Bool; c <- true
-////
+//
 //def closechTest(): Channel[Int] = let c = chan Int; let c1 = closech c; c <- 1
 //
-
+//
 //def collatz(n: Int): Int =
-   // let c = chan Int;
-  //  c <- n;
-
-
+//    let c = chan Int;
+//    c <- n;
+//
+//
 //def slowFunction(n: Int): Int = collatz(n)
-
+//
 //def f(c: Channel[Int]): List[Channel[Int]] = List.map(x -> c <- x, List.range(1, 5))
 //
 //@test
@@ -36,11 +36,11 @@ def getchTest(): (Int, Int) =
 //    spawn f(c); spawn f(c); spawn f(c); spawn f(c); spawn f(c);
 //    spawn f(c); spawn f(c); spawn f(c); spawn f(c); spawn f(c);
 //    <- c; <- c; <- c; <- c; <- c; <- c; <- c; <- c; <- c; <- c
-
-// TODO SJ: When do we decide when "arguments" for spawn are evaluated? E.g. in "spawn f(x)" we might want x to be evaluated immediately, but "spawn c <- 2" should definitely be evaluated later
+//
+//// TODO SJ: When do we decide when "arguments" for spawn are evaluated? E.g. in "spawn f(x)" we might want x to be evaluated immediately, but "spawn c <- 2" should definitely be evaluated later
 //def spawnTest(): Str = let c = chan Str; spawn c <- "2"; <- c
-////
-////
+//
+//
 //def selectTest(): Float64 = {
 //    let c1 = chan Float64;
 //    let asd = c1 <- 1.0;
@@ -53,3 +53,18 @@ def getchTest(): (Int, Int) =
 //}
 //
 //def statementTest(): Int = 1 ; 2
+
+@test
+def test1(): Int =
+  let c = chan Int;
+  spawn c <- 2;
+  <- c
+
+//def f(c: Channel[Int]): Unit =
+//  c <- 2;
+//  ()
+
+def test2(): Int =
+  let c = chan Int;
+  spawn c <- 2;
+  <- c
