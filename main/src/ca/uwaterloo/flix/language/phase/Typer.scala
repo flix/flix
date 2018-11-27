@@ -1799,7 +1799,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         // TODO: Typing...
         Unification.liftM(Type.freshTypeVar())
 
-      case ResolvedAst.Predicate.Head.RelAtom(sym, exp, terms, tvar, loc) =>
+      case ResolvedAst.Predicate.Head.Atom(sym, exp, terms, tvar, loc) =>
         //
         // t_1 : tpe_1, ..., t_2: tpe_n,    rel P(tpe_1, ..., tpe_n)
         // ---------------------------------------------------------:
@@ -1807,7 +1807,10 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         //
 
         // Lookup the type scheme.
-        val scheme = program.relations(sym).sc
+        val scheme = sym match {
+          case x: Symbol.RelSym => program.relations(x).sc
+          case x: Symbol.LatSym => program.lattices(x).sc
+        }
 
         // Instantiate the type scheme.
         val declaredType = Scheme.instantiate(scheme)
@@ -1816,31 +1819,21 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         for {
           paramType <- Expressions.infer(exp, program)
           termTypes <- Terms.Head.infer(terms, program)
-          predicateType <- unifyM(tvar, Type.mkRelation(sym, termTypes), declaredType, loc)
+          predicateType <- unifyM(tvar, Type.mkRelationOrLattice(sym, termTypes), declaredType, loc)
         } yield mkSchema(sym, predicateType, program)
 
-      case ResolvedAst.Predicate.Head.LatAtom(sym, exp, terms, tvar, loc) =>
-        // Lookup the type scheme.
-        val scheme = program.lattices(sym).sc
-
-        // Instantiate the type scheme.
-        val declaredType = Scheme.instantiate(scheme)
-
-        // Infer the types of the terms.
-        for {
-          paramType <- Expressions.infer(exp, program)
-          termTypes <- Terms.Head.infer(terms, program)
-          predicateType <- unifyM(tvar, Type.mkLattice(sym, termTypes), declaredType, loc)
-        } yield mkSchema(sym, predicateType, program)
     }
 
     /**
       * Infers the type of the given body predicate.
       */
     def infer(body0: ResolvedAst.Predicate.Body, program: ResolvedAst.Program)(implicit genSym: GenSym): InferMonad[Type] = body0 match {
-      case ResolvedAst.Predicate.Body.RelAtom(sym, exp, polarity, terms, tvar, loc) =>
+      case ResolvedAst.Predicate.Body.Atom(sym, exp, polarity, terms, tvar, loc) =>
         // Lookup the type scheme.
-        val scheme = program.relations(sym).sc
+        val scheme = sym match {
+          case x: Symbol.RelSym => program.relations(x).sc
+          case x: Symbol.LatSym => program.lattices(x).sc
+        }
 
         // Instantiate the type scheme.
         val declaredType = Scheme.instantiate(scheme)
@@ -1849,21 +1842,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         for {
           paramType <- Expressions.infer(exp, program)
           termTypes <- Terms.Body.infer(terms, program)
-          predicateType <- unifyM(tvar, Type.mkRelation(sym, termTypes), declaredType, loc)
-        } yield mkSchema(sym, predicateType, program)
-
-      case ResolvedAst.Predicate.Body.LatAtom(sym, exp, polarity, terms, tvar, loc) =>
-        // Lookup the type scheme.
-        val scheme = program.lattices(sym).sc
-
-        // Instantiate the type scheme.
-        val declaredType = Scheme.instantiate(scheme)
-
-        // Infer the types of the terms.
-        for {
-          paramType <- Expressions.infer(exp, program)
-          termTypes <- Terms.Body.infer(terms, program)
-          predicateType <- unifyM(tvar, Type.mkLattice(sym, termTypes), declaredType, loc)
+          predicateType <- unifyM(tvar, Type.mkRelationOrLattice(sym, termTypes), declaredType, loc)
         } yield mkSchema(sym, predicateType, program)
 
       case ResolvedAst.Predicate.Body.Filter(sym, terms, loc) =>
@@ -1889,12 +1868,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
 
       case ResolvedAst.Predicate.Head.False(loc) => TypedAst.Predicate.Head.False(loc)
 
-      case ResolvedAst.Predicate.Head.RelAtom(sym, exp, terms, tvar, loc) =>
-        val e = Expressions.reassemble(exp, program, subst0)
-        val ts = terms.map(t => Expressions.reassemble(t, program, subst0))
-        TypedAst.Predicate.Head.Atom(sym, e, ts, subst0(tvar), loc)
-
-      case ResolvedAst.Predicate.Head.LatAtom(sym, exp, terms, tvar, loc) =>
+      case ResolvedAst.Predicate.Head.Atom(sym, exp, terms, tvar, loc) =>
         val e = Expressions.reassemble(exp, program, subst0)
         val ts = terms.map(t => Expressions.reassemble(t, program, subst0))
         TypedAst.Predicate.Head.Atom(sym, e, ts, subst0(tvar), loc)
@@ -1904,12 +1878,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       * Applies the given substitution `subst0` to the given body predicate `body0`.
       */
     def reassemble(body0: ResolvedAst.Predicate.Body, program: ResolvedAst.Program, subst0: Substitution): TypedAst.Predicate.Body = body0 match {
-      case ResolvedAst.Predicate.Body.RelAtom(sym, exp, polarity, terms, tvar, loc) =>
-        val e = Expressions.reassemble(exp, program, subst0)
-        val ts = terms.map(t => Patterns.reassemble(t, program, subst0))
-        TypedAst.Predicate.Body.Atom(sym, e, polarity, ts, subst0(tvar), loc)
-
-      case ResolvedAst.Predicate.Body.LatAtom(sym, exp, polarity, terms, tvar, loc) =>
+      case ResolvedAst.Predicate.Body.Atom(sym, exp, polarity, terms, tvar, loc) =>
         val e = Expressions.reassemble(exp, program, subst0)
         val ts = terms.map(t => Patterns.reassemble(t, program, subst0))
         TypedAst.Predicate.Body.Atom(sym, e, polarity, ts, subst0(tvar), loc)

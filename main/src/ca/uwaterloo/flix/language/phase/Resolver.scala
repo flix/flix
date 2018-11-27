@@ -323,7 +323,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
         attributes <- traverse(attr)(a => resolve(a, ns0, prog0))
       } yield {
         val quantifiers = tparams.map(_.tpe)
-        val tpe = Type.mkRelation(sym, attributes.map(_.tpe))
+        val tpe = Type.mkRelationOrLattice(sym, attributes.map(_.tpe))
         val scheme = Scheme(quantifiers, tpe)
 
         ResolvedAst.Relation(doc, mod, sym, tparams, attributes, scheme, loc)
@@ -340,7 +340,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
         attributes <- traverse(attr)(a => resolve(a, ns0, prog0))
       } yield {
         val quantifiers = tparams.map(_.tpe)
-        val tpe = Type.mkLattice(sym, attributes.map(_.tpe))
+        val tpe = Type.mkRelationOrLattice(sym, attributes.map(_.tpe))
         val scheme = Scheme(quantifiers, tpe)
 
         ResolvedAst.Lattice(doc, mod, sym, tparams, attributes, scheme, loc)
@@ -804,8 +804,8 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
             e <- Expressions.resolve(exp, tenv0, ns0, prog0)
             ts <- traverse(terms)(t => Expressions.resolve(t, Map.empty, ns0, prog0))
           } yield t match {
-            case RelationOrLattice.Rel(sym) => ResolvedAst.Predicate.Head.RelAtom(sym, e, ts, tvar, loc)
-            case RelationOrLattice.Lat(sym) => ResolvedAst.Predicate.Head.LatAtom(sym, e, ts, tvar, loc)
+            case RelationOrLattice.Rel(sym) => ResolvedAst.Predicate.Head.Atom(sym, e, ts, tvar, loc)
+            case RelationOrLattice.Lat(sym) => ResolvedAst.Predicate.Head.Atom(sym, e, ts, tvar, loc)
           }
       }
     }
@@ -821,8 +821,8 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
             e <- Expressions.resolve(exp, tenv0, ns0, prog0)
             ts <- traverse(terms)(t => Patterns.resolve(t, ns0, prog0))
           } yield t match {
-            case RelationOrLattice.Rel(sym) => ResolvedAst.Predicate.Body.RelAtom(sym, e, polarity, ts, tvar, loc)
-            case RelationOrLattice.Lat(sym) => ResolvedAst.Predicate.Body.LatAtom(sym, e, polarity, ts, tvar, loc)
+            case RelationOrLattice.Rel(sym) => ResolvedAst.Predicate.Body.Atom(sym, e, polarity, ts, tvar, loc)
+            case RelationOrLattice.Lat(sym) => ResolvedAst.Predicate.Body.Atom(sym, e, polarity, ts, tvar, loc)
           }
 
         case NamedAst.Predicate.Body.Filter(qname, terms, loc) =>
@@ -1317,8 +1317,8 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
           val typeArgsVal = traverse(typeArgs)(lookupType(_, ns0, root))
 
           mapN(relOrLatVal, typeArgsVal) {
-            case (RelationOrLattice.Rel(sym), attr) => sym -> Type.mkRelation(sym, attr)
-            case (RelationOrLattice.Lat(sym), attr) => sym -> Type.mkLattice(sym, attr)
+            case (RelationOrLattice.Rel(sym), attr) => sym -> Type.mkRelationOrLattice(sym, attr)
+            case (RelationOrLattice.Lat(sym), attr) => sym -> Type.mkRelationOrLattice(sym, attr)
           }
       }
 
@@ -1594,7 +1594,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     val declNS = getNS(rel0.sym.namespace)
     getRelationIfAccessible(rel0, ns0, loc) flatMap {
       case sym => traverse(rel0.attr)(a => lookupType(a.tpe, declNS, root)) map {
-        case attr => Type.mkRelation(sym, attr)
+        case attr => Type.mkRelationOrLattice(sym, attr)
       }
     }
   }
@@ -1609,7 +1609,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     val declNS = getNS(lat0.sym.namespace)
     getLatticeIfAccessible(lat0, ns0, loc) flatMap {
       case sym => traverse(lat0.attr)(a => lookupType(a.tpe, declNS, root)) map {
-        case attr => Type.mkLattice(sym, attr)
+        case attr => Type.mkRelationOrLattice(sym, attr)
       }
     }
   }

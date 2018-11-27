@@ -263,9 +263,7 @@ object ResolvedAst {
 
       case class False(loc: SourceLocation) extends ResolvedAst.Predicate.Head
 
-      case class RelAtom(sym: Symbol.RelSym, exp: ResolvedAst.Expression, terms: List[ResolvedAst.Expression], tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Predicate.Head
-
-      case class LatAtom(sym: Symbol.LatSym, exp: ResolvedAst.Expression, terms: List[ResolvedAst.Expression], tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Predicate.Head
+      case class Atom(sym: Symbol.PredSym, exp: ResolvedAst.Expression, terms: List[ResolvedAst.Expression], tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Predicate.Head
 
     }
 
@@ -273,9 +271,7 @@ object ResolvedAst {
 
     object Body {
 
-      case class RelAtom(sym: Symbol.RelSym, exp: ResolvedAst.Expression, polarity: Ast.Polarity, terms: List[ResolvedAst.Pattern], tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Predicate.Body
-
-      case class LatAtom(sym: Symbol.LatSym, exp: ResolvedAst.Expression, polarity: Ast.Polarity, terms: List[ResolvedAst.Pattern], tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Predicate.Body
+      case class Atom(sym: Symbol.PredSym, exp: ResolvedAst.Expression, polarity: Ast.Polarity, terms: List[ResolvedAst.Pattern], tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Predicate.Body
 
       case class Filter(sym: Symbol.DefnSym, terms: List[ResolvedAst.Expression], loc: SourceLocation) extends ResolvedAst.Predicate.Body
 
