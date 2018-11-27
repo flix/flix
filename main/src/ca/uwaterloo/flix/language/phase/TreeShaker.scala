@@ -165,13 +165,11 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       val headSymbols = c0.head match {
         case SimplifiedAst.Predicate.Head.True(loc) => Set.empty
         case SimplifiedAst.Predicate.Head.False(loc) => Set.empty
-        case SimplifiedAst.Predicate.Head.RelAtom(baseOpt, sym, terms, tpe, loc) => terms.map(visitHeadTerm).fold(Set())(_ ++ _)
-        case SimplifiedAst.Predicate.Head.LatAtom(baseOpt, sym, terms, tpe, loc) => terms.map(visitHeadTerm).fold(Set())(_ ++ _)
+        case SimplifiedAst.Predicate.Head.Atom(sym, exp, terms, tpe, loc) => terms.map(visitHeadTerm).fold(visitExp(exp))(_ ++ _)
       }
 
       val bodySymbols = c0.body.map {
-        case SimplifiedAst.Predicate.Body.RelAtom(baseOpt, sym, polarity, terms, tpe, loc) => terms.map(visitBodyTerm).fold(Set())(_ ++ _)
-        case SimplifiedAst.Predicate.Body.LatAtom(baseOpt, sym, polarity, terms, tpe, loc) => terms.map(visitBodyTerm).fold(Set())(_ ++ _)
+        case SimplifiedAst.Predicate.Body.Atom(sym, exp, polarity, terms, tpe, loc) => terms.map(visitBodyTerm).fold(visitExp(exp))(_ ++ _)
         case SimplifiedAst.Predicate.Body.Filter(sym, terms, loc) => Set(sym) ++ terms.flatMap(visitBodyTerm)
         case SimplifiedAst.Predicate.Body.Functional(sym, term, loc) => visitHeadTerm(term)
       }.fold(Set())(_ ++ _)

@@ -399,24 +399,14 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
   private def visitHeadPredicate(p0: SimplifiedAst.Predicate.Head, m: TopLevel)(implicit flix: Flix): FinalAst.Predicate.Head = p0 match {
     case SimplifiedAst.Predicate.Head.True(loc) => FinalAst.Predicate.Head.True(loc)
     case SimplifiedAst.Predicate.Head.False(loc) => FinalAst.Predicate.Head.False(loc)
-    case SimplifiedAst.Predicate.Head.RelAtom(sym, exp, terms, tpe, loc) =>
-      val e = visitExp(exp, m)
-      val ts = terms.map(t => visitHeadTerm(t, m))
-      FinalAst.Predicate.Head.Atom(sym, e, ts, tpe, loc)
-
-    case SimplifiedAst.Predicate.Head.LatAtom(sym, exp, terms, tpe, loc) =>
+    case SimplifiedAst.Predicate.Head.Atom(sym, exp, terms, tpe, loc) =>
       val e = visitExp(exp, m)
       val ts = terms.map(t => visitHeadTerm(t, m))
       FinalAst.Predicate.Head.Atom(sym, e, ts, tpe, loc)
   }
 
   private def visitBodyPredicate(p0: SimplifiedAst.Predicate.Body, m: TopLevel)(implicit flix: Flix): FinalAst.Predicate.Body = p0 match {
-    case SimplifiedAst.Predicate.Body.RelAtom(sym, exp, polarity, terms, tpe, loc) =>
-      val e = visitExp(exp, m)
-      val ts = terms.map(t => visitBodyTerm(t, m))
-      FinalAst.Predicate.Body.Atom(sym, e, polarity, ts, tpe, loc)
-
-    case SimplifiedAst.Predicate.Body.LatAtom(sym, exp, polarity, terms, tpe, loc) =>
+    case SimplifiedAst.Predicate.Body.Atom(sym, exp, polarity, terms, tpe, loc) =>
       val e = visitExp(exp, m)
       val ts = terms.map(t => visitBodyTerm(t, m))
       FinalAst.Predicate.Body.Atom(sym, e, polarity, ts, tpe, loc)

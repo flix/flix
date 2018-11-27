@@ -357,12 +357,9 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     def visitHeadPredicate(head0: Predicate.Head): Predicate.Head = head0 match {
       case Predicate.Head.True(loc) => Predicate.Head.True(loc)
       case Predicate.Head.False(loc) => Predicate.Head.False(loc)
-      case Predicate.Head.RelAtom(base, sym, terms, tpe, loc) =>
+      case Predicate.Head.Atom(base, sym, terms, tpe, loc) =>
         val ts = terms map visitHeadTerm
-        Predicate.Head.RelAtom(base, sym, terms, tpe, loc)
-      case Predicate.Head.LatAtom(base, sym, terms, tpe, loc) =>
-        val ts = terms map visitHeadTerm
-        Predicate.Head.LatAtom(base, sym, terms, tpe, loc)
+        Predicate.Head.Atom(base, sym, terms, tpe, loc)
     }
 
     /**

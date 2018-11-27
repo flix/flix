@@ -339,31 +339,26 @@ object ClosureConv extends Phase[Root, Root] {
   /**
     * Performs closure conversion on the given head predicate `head0`.
     */
-  private def visitHeadPredicate(head0: Predicate.Head): Predicate.Head = head0 match {
+  private def visitHeadPredicate(head0: Predicate.Head)(implicit flix: Flix): Predicate.Head = head0 match {
     case Predicate.Head.True(loc) => Predicate.Head.True(loc)
 
     case Predicate.Head.False(loc) => Predicate.Head.False(loc)
 
-    case Predicate.Head.RelAtom(base, sym, terms, tpe, loc) =>
+    case Predicate.Head.Atom(sym, exp, terms, tpe, loc) =>
+      val e = visitExp(exp)
       val ts = terms map visitHeadTerm
-      Predicate.Head.RelAtom(base, sym, ts, tpe, loc)
+      Predicate.Head.Atom(sym, e, ts, tpe, loc)
 
-    case Predicate.Head.LatAtom(base, sym, terms, tpe, loc) =>
-      val ts = terms map visitHeadTerm
-      Predicate.Head.LatAtom(base, sym, ts, tpe, loc)
   }
 
   /**
     * Performs closure conversion on the given body predicate `body0`.
     */
   private def visitBodyPredicate(body0: Predicate.Body)(implicit flix: Flix): Predicate.Body = body0 match {
-    case Predicate.Body.RelAtom(base, sym, polarity, terms, tpe, loc) =>
+    case Predicate.Body.Atom(sym, exp, polarity, terms, tpe, loc) =>
+      val e = visitExp(exp)
       val ts = terms map visitBodyTerm
-      Predicate.Body.RelAtom(base, sym, polarity, ts, tpe, loc)
-
-    case Predicate.Body.LatAtom(base, sym, polarity, terms, tpe, loc) =>
-      val ts = terms map visitBodyTerm
-      Predicate.Body.LatAtom(base, sym, polarity, ts, tpe, loc)
+      Predicate.Body.Atom(sym, e, polarity, ts, tpe, loc)
 
     case Predicate.Body.Filter(sym, terms, loc) =>
       val ts = terms map visitBodyTerm
@@ -498,10 +493,7 @@ object ClosureConv extends Phase[Root, Root] {
 
     case Predicate.Head.False(loc) => mutable.LinkedHashSet.empty
 
-    case Predicate.Head.RelAtom(sym, exp, terms, tpe, loc) =>
-      freeVars(exp) ++ terms.flatMap(freeVars)
-
-    case Predicate.Head.LatAtom(sym, exp, terms, tpe, loc) =>
+    case Predicate.Head.Atom(sym, exp, terms, tpe, loc) =>
       freeVars(exp) ++ terms.flatMap(freeVars)
   }
 
@@ -509,10 +501,7 @@ object ClosureConv extends Phase[Root, Root] {
     * Returns the free variables in the given body predicate `body0`.
     */
   private def freeVars(body0: Predicate.Body): mutable.LinkedHashSet[(Symbol.VarSym, Type)] = body0 match {
-    case Predicate.Body.RelAtom(sym, exp, polarity, terms, tpe, loc) =>
-      freeVars(exp) ++ terms.flatMap(freeVars)
-
-    case Predicate.Body.LatAtom(sym, exp, polarity, terms, tpe, loc) =>
+    case Predicate.Body.Atom(sym, exp, polarity, terms, tpe, loc) =>
       freeVars(exp) ++ terms.flatMap(freeVars)
 
     case Predicate.Body.Filter(sym, terms, loc) =>
@@ -814,27 +803,17 @@ object ClosureConv extends Phase[Root, Root] {
     def visitHeadPredicate(head0: Predicate.Head): Predicate.Head = head0 match {
       case Predicate.Head.True(loc) => Predicate.Head.True(loc)
       case Predicate.Head.False(loc) => Predicate.Head.False(loc)
-      case Predicate.Head.RelAtom(sym, exp, terms, tpe, loc) =>
+      case Predicate.Head.Atom(sym, exp, terms, tpe, loc) =>
         val e = visitExp(exp)
         val ts = terms map visitHeadTerm
-        Predicate.Head.RelAtom(sym, e, ts, tpe, loc)
-
-      case Predicate.Head.LatAtom(sym, exp, terms, tpe, loc) =>
-        val e = visitExp(exp)
-        val ts = terms map visitHeadTerm
-        Predicate.Head.LatAtom(sym, e, ts, tpe, loc)
+        Predicate.Head.Atom(sym, e, ts, tpe, loc)
     }
 
     def visitBodyPredicate(body0: Predicate.Body): Predicate.Body = body0 match {
-      case Predicate.Body.RelAtom(sym, exp, polarity, terms, tpe, loc) =>
+      case Predicate.Body.Atom(sym, exp, polarity, terms, tpe, loc) =>
         val e = visitExp(exp)
         val ts = terms map visitBodyTerm
-        Predicate.Body.RelAtom(sym, e, polarity, ts, tpe, loc)
-
-      case Predicate.Body.LatAtom(sym, exp, polarity, terms, tpe, loc) =>
-        val e = visitExp(exp)
-        val ts = terms map visitBodyTerm
-        Predicate.Body.LatAtom(sym, e, polarity, ts, tpe, loc)
+        Predicate.Body.Atom(sym, e, polarity, ts, tpe, loc)
 
       case Predicate.Body.Filter(sym, terms, loc) =>
         val ts = terms map visitBodyTerm
