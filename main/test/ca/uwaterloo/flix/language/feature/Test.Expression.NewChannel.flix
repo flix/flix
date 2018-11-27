@@ -1,32 +1,34 @@
 //TODO SJ: fix naming
 
 @test
-def testNewChannelOnUnit(): Channel[Unit] = chan Unit
+def testNewChannel01(): Channel[Unit] = chan Unit
 
 @test
-def testNewChannelOnBool(): Channel[Bool] = chan Bool
+def testNewChannel02(): Channel[Bool] = chan Bool
 
 @test
-def testNewChannelOnChar(): Channel[Char] = chan Char
+def testNewChannel03(): Channel[Char] = chan Char
 
 @test
-def testNewChannelOnFloat(): Channel[Float] = chan Float
+def testNewChannel04(): Channel[Float] = chan Float
 
 @test
-def testNewChannelOnInt(): Channel[Int] = chan Int
+def testNewChannel05(): Channel[Int] = chan Int
 
 @test
-def testNewChannelOnBigInt(): Channel[BigInt] = chan BigInt
+def testNewChannel06(): Channel[BigInt] = chan BigInt
 
 @test
-def testNewChannelOnStr(): Channel[Str] = chan Str
+def testNewChannel07(): Channel[Str] = chan Str
 
 @test
-def testNewChannelOnChannel(): Channel[Channel[Int]] = chan Channel[Int]
+def testNewChannel08(): Channel[Channel[Int]] = chan Channel[Int]
 
 @test
-def testNewChannelOnArray(): Channel[Array[Int]] = chan Array[Int]
+def testNewChannel09(): Channel[Array[Int]] = chan Array[Int]
 
 @test
-def testNewChannelOnNestedType(): Channel[Channel[Channel[Channel[Str]]]] = chan Channel[Channel[Channel[Str]]]
+def testNewChannel10(): Channel[Channel[Channel[Channel[Str]]]] = chan Channel[Channel[Channel[Str]]]
 
+@test
+def testNewChannel11(): Channel[Option[Int]] = chan Option[Int]
