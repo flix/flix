@@ -195,6 +195,14 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.NativeMethod(method, args, tpe, loc) =>
         Expression.NativeMethod(method, args.map(visit), tpe, loc)
 
+      // TODO SJ:
+      case Expression.NewChannel(tpe, loc) => exp0
+      case Expression.GetChannel(exp ,tpe, loc) => exp0
+      case Expression.PutChannel(exp1, exp2, tpe, loc) => exp0
+      case Expression.SelectChannel(rules, tpe, loc) => exp0
+      case Expression.CloseChannel(exp, tpe, loc) => exp0
+      case Expression.Spawn(exp, tpe, loc) => exp0
+
       case Expression.NewRelation(sym, tpe, loc) => Expression.NewRelation(sym, tpe, loc)
 
       case Expression.NewLattice(sym, tpe, loc) => Expression.NewLattice(sym, tpe, loc)
@@ -350,6 +358,14 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     case Expression.NativeField(_, _, _) => exp0
     case Expression.NativeMethod(method, args, tpe, loc) =>
       Expression.NativeMethod(method, args.map(renameAndSubstitute(_, env0)), tpe, loc)
+
+    // TODO SJ:
+    case Expression.NewChannel(tpe, loc) => exp0
+    case Expression.GetChannel(exp ,tpe, loc) => exp0
+    case Expression.PutChannel(exp1, exp2, tpe, loc) => exp0
+    case Expression.SelectChannel(rules, tpe, loc) => exp0
+    case Expression.CloseChannel(exp, tpe, loc) => exp0
+    case Expression.Spawn(exp, tpe, loc) => exp0
 
     case Expression.NewRelation(sym, tpe, loc) => Expression.NewRelation(sym, tpe, loc)
 
@@ -589,6 +605,14 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     // Native Methods are atomic if their arguments are.
     //
     case Expression.NativeMethod(method, args, tpe, loc) => args forall isAtomic
+
+    // TODO SJ:
+    case Expression.NewChannel(tpe, loc) => true
+    case Expression.GetChannel(exp, tpe, loc) => true
+    case Expression.PutChannel(exp1, exp2, tpe, loc) => true
+    case Expression.SelectChannel(rules, tpe, loc) => true
+    case Expression.CloseChannel(exp, tpe, loc) => true
+    case Expression.Spawn(exp, tpe, loc) => true
 
     //
     // New Relation expressions are atomic.
