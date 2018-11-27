@@ -399,6 +399,30 @@ object PrettyPrinter {
           }
           vt.text(")")
 
+        case Expression.NewChannel(tpe, loc) =>
+          vt.text("Channel[")
+          // TODO SJ: tpe
+          vt.text("]")
+
+        case Expression.PutChannel(exp1, exp2, tpe, loc) =>
+          visitExp(exp1)
+          vt.text(" <- ")
+          visitExp(exp2)
+
+        case Expression.GetChannel(exp, tpe, loc) =>
+          vt.text("<- ")
+          visitExp(exp)
+
+        case Expression.SelectChannel(rules, tpe, loc) =>
+          // TODO SJ:
+
+        case Expression.CloseChannel(exp, tpe, loc) =>
+          // TODO SJ:
+
+        case Expression.Spawn(exp, tpe, loc) =>
+          vt.text("Spawn ")
+          visitExp(exp)
+
         case Expression.NewRelation(sym, tpe, loc) =>
           ??? // TODO: Expression.NewRelation
 
