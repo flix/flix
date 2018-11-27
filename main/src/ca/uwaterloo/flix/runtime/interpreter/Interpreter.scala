@@ -270,26 +270,27 @@ object Interpreter {
     case Expression.FixpointSolve(uid, exp, stf, tpe, loc) =>
       val s = cast2constraintset(eval(exp, env0, henv0, lenv0, root))
       val t = newStratification(stf)(root, flix)
-      val o = getFixpointOptions()
+      val o = newOptions()
       Solver.solve(s, t, o)
 
     case Expression.FixpointCheck(uid, exp, stf, tpe, loc) =>
       val s = cast2constraintset(eval(exp, env0, henv0, lenv0, root))
       val t = newStratification(stf)(root, flix)
-      val o = getFixpointOptions()
+      val o = newOptions()
       val r = Solver.check(s, t, o)
       if (r) Value.True else Value.False
 
     case Expression.FixpointDelta(uid, exp, stf, tpe, loc) =>
       val s = cast2constraintset(eval(exp, env0, henv0, lenv0, root))
       val t = newStratification(stf)(root, flix)
-      val o = getFixpointOptions()
+      val o = newOptions()
       val r = Solver.deltaSolve(s, t, o)
       Value.Str(r)
 
     case Expression.FixpointProject(sym, exp, tpe, loc) =>
       val cs = cast2constraintset(eval(exp, env0, henv0, lenv0, root))
-      val predSym = newPredSym(sym)(root, flix)
+      val param = eval(exp, env0, henv0, lenv0, root)
+      val predSym = newPredSym(sym, wrapValueInProxyObject(param, exp.tpe)(root, flix))(root, flix)
       Solver.project(predSym, cs)
 
     case Expression.FixpointEntails(exp1, exp2, tpe, loc) =>
@@ -692,8 +693,8 @@ object Interpreter {
     val cparams = c0.cparams.map {
       case cparam => VarSym.of(cparam.sym.text, cparam.sym.getStackOffset)
     }
-    val head = evalHeadPredicate(c0.head, env0)
-    val body = c0.body.map(b => evalBodyPredicate(b, env0))
+    val head = evalHeadPredicate(c0.head, env0, henv0, lenv0)
+    val body = c0.body.map(b => evalBodyPredicate(b, env0, henv0, lenv0))
 
     val constraint = fixpoint.Constraint.of(cparams.toArray, head, body.toArray)
 
@@ -703,47 +704,47 @@ object Interpreter {
   /**
     * Evaluates the given head predicate `h0` under the given environment `env0` to a head predicate value.
     */
-  private def evalHeadPredicate(h0: FinalAst.Predicate.Head, env0: Map[String, AnyRef])(implicit root: FinalAst.Root, flix: Flix): fixpoint.predicate.Predicate = h0 match {
+  private def evalHeadPredicate(h0: FinalAst.Predicate.Head, env0: Map[String, AnyRef], henv0: Map[Symbol.EffSym, AnyRef], lenv0: Map[Symbol.LabelSym, Expression])(implicit root: FinalAst.Root, flix: Flix): fixpoint.predicate.Predicate = h0 match {
     case FinalAst.Predicate.Head.True(_) => TruePredicate.getSingleton
 
     case FinalAst.Predicate.Head.False(_) => FalsePredicate.getSingleton
 
-    case FinalAst.Predicate.Head.RelAtom(sym, exp, terms, _, _) =>
-      val ts = terms.map(t => evalHeadTerm(t, env0)).toArray
-      // TODO: Should use the exp.
-      val relSym = newRelSym(sym)
-      AtomPredicate.of(relSym, true, ts)
+    case FinalAst.Predicate.Head.RelAtom(sym, exp0, terms0, _, _) =>
+      val param = eval(exp0, env0, henv0, lenv0, root)
+      val terms = terms0.map(t => evalHeadTerm(t, env0)).toArray
+      val relSym = newRelSym(sym, wrapValueInProxyObject(param, exp0.tpe))
+      AtomPredicate.of(relSym, true, terms)
 
-    case FinalAst.Predicate.Head.LatAtom(sym, exp, terms, _, _) =>
-      val ts = terms.map(t => evalHeadTerm(t, env0)).toArray
-      // TODO: Should use the exp.
-      val latSym = newLatSym(sym)
-      AtomPredicate.of(latSym, true, ts)
+    case FinalAst.Predicate.Head.LatAtom(sym, exp0, terms0, _, _) =>
+      val param = eval(exp0, env0, henv0, lenv0, root)
+      val terms = terms0.map(t => evalHeadTerm(t, env0)).toArray
+      val latSym = newLatSym(sym, wrapValueInProxyObject(param, exp0.tpe))
+      AtomPredicate.of(latSym, true, terms)
   }
 
   /**
     * Evaluates the given body predicate `b0` under the given environment `env0` to a body predicate value.
     */
-  private def evalBodyPredicate(b0: FinalAst.Predicate.Body, env0: Map[String, AnyRef])(implicit root: FinalAst.Root, flix: Flix): fixpoint.predicate.Predicate = b0 match {
-    case FinalAst.Predicate.Body.RelAtom(sym, exp, polarity, terms, _, _) =>
-      val p = polarity match {
+  private def evalBodyPredicate(b0: FinalAst.Predicate.Body, env0: Map[String, AnyRef], henv0: Map[Symbol.EffSym, AnyRef], lenv0: Map[Symbol.LabelSym, Expression])(implicit root: FinalAst.Root, flix: Flix): fixpoint.predicate.Predicate = b0 match {
+    case FinalAst.Predicate.Body.RelAtom(sym, exp0, polarity0, terms0, _, _) =>
+      val polarity = polarity0 match {
         case Ast.Polarity.Positive => true
         case Ast.Polarity.Negative => false
       }
-      val ts = terms.map(t => evalBodyTerm(t, env0)).toArray
-      // TODO: Should use the exp.
-      val relSym = newRelSym(sym)
-      AtomPredicate.of(relSym, p, ts)
+      val param = eval(exp0, env0, henv0, lenv0, root)
+      val terms = terms0.map(t => evalBodyTerm(t, env0)).toArray
+      val relSym = newRelSym(sym, wrapValueInProxyObject(param, exp0.tpe))
+      AtomPredicate.of(relSym, polarity, terms)
 
-    case FinalAst.Predicate.Body.LatAtom(sym, exp, polarity, terms, _, _) =>
-      val p = polarity match {
+    case FinalAst.Predicate.Body.LatAtom(sym, exp0, polarity0, terms0, _, _) =>
+      val polarity = polarity0 match {
         case Ast.Polarity.Positive => true
         case Ast.Polarity.Negative => false
       }
-      val ts = terms.map(t => evalBodyTerm(t, env0)).toArray
-      // TODO: Should use the exp.
-      val latSym = newLatSym(sym)
-      AtomPredicate.of(latSym, p, ts)
+      val param = eval(exp0, env0, henv0, lenv0, root)
+      val terms = terms0.map(t => evalBodyTerm(t, env0)).toArray
+      val latSym = newLatSym(sym, wrapValueInProxyObject(param, exp0.tpe))
+      AtomPredicate.of(latSym, polarity, terms)
 
     case FinalAst.Predicate.Body.Filter(sym, terms, loc) =>
       val f = new function.Function[Array[Object], ProxyObject] {
@@ -811,7 +812,7 @@ object Interpreter {
     //
     // Wildcards.
     //
-    case FinalAst.Term.Body.Wild(_, _) => WildTerm.getSingleton()
+    case FinalAst.Term.Body.Wild(_, _) => WildTerm.getSingleton
 
     //
     // Free Variables (i.e. variables that are quantified over in the constraint).
@@ -841,25 +842,25 @@ object Interpreter {
   /**
     * Returns the predicate symbol of the given symbol `sym`.
     */
-  def newPredSym(sym: Symbol.PredSym)(implicit root: FinalAst.Root, flix: Flix): PredSym = sym match {
-    case sym: Symbol.RelSym => newRelSym(sym)
-    case sym: Symbol.LatSym => newLatSym(sym)
+  def newPredSym(sym: Symbol.PredSym, param: ProxyObject)(implicit root: FinalAst.Root, flix: Flix): PredSym = sym match {
+    case sym: Symbol.RelSym => newRelSym(sym, param)
+    case sym: Symbol.LatSym => newLatSym(sym, param)
   }
 
   /**
-    * Returns the relation value associated with the given relation symbol `sym`.
+    * Returns the relation value associated with the given relation symbol `sym` and parameter `param` (may be null).
     */
-  private def newRelSym(sym: Symbol.RelSym)(implicit root: FinalAst.Root, flix: Flix): RelSym = root.relations(sym) match {
+  private def newRelSym(sym: Symbol.RelSym, param: ProxyObject)(implicit root: FinalAst.Root, flix: Flix): RelSym = root.relations(sym) match {
     case FinalAst.Relation(_, _, attr, _) =>
       val name = sym.toString
       val as = attr.map(a => fixpoint.Attribute.of(a.name)).toArray
-      RelSym.of(name, null, as)
+      RelSym.of(name, param, as)
   }
 
   /**
-    * Returns the lattice value associated with the given lattice symbol `sym`.
+    * Returns the lattice value associated with the given lattice symbol `sym` and parameter `param` (may be null).
     */
-  private def newLatSym(sym: Symbol.LatSym)(implicit root: FinalAst.Root, flix: Flix): LatSym = root.lattices(sym) match {
+  private def newLatSym(sym: Symbol.LatSym, param: ProxyObject)(implicit root: FinalAst.Root, flix: Flix): LatSym = root.lattices(sym) match {
     case FinalAst.Lattice(_, _, attr, _) =>
       val name = sym.toString
       val as = attr.map(a => fixpoint.Attribute.of(a.name))
@@ -875,10 +876,22 @@ object Interpreter {
   private def newStratification(stf: Ast.Stratification)(implicit root: FinalAst.Root, flix: Flix): Stratification = {
     val result = new Stratification()
     for ((predSym, stratum) <- stf.m) {
-      val sym = newPredSym(predSym)
+      val sym = newPredSym(predSym, null)
       result.setStratum(sym, stratum)
     }
     result
+  }
+
+  /**
+    * Returns the fixpoint options object based on the flix configuration.
+    */
+  private def newOptions()(implicit flix: Flix): Options = {
+    // Configure the fixpoint solver based on the Flix options.
+    val options = new Options
+    options.setMonitored(flix.options.monitor)
+    options.setThreads(flix.options.threads)
+    options.setVerbose(flix.options.verbosity == Verbosity.Verbose)
+    options
   }
 
   /**
@@ -903,7 +916,11 @@ object Interpreter {
   /**
     * Returns the given value `v` of the given type `tpe` wrapped in a proxy object.
     */
-  private def wrapValueInProxyObject(v: AnyRef, tpe: Type)(implicit root: FinalAst.Root, flix: Flix): ProxyObject = {
+  private def wrapValueInProxyObject(v: AnyRef, tpe: Type)(implicit root: FinalAst.Root, f: Flix): ProxyObject = {
+    if (tpe == Type.Unit) {
+      return ProxyObject.of(flix.runtime.value.Unit.getInstance(), null, null, null)
+    }
+
     // Retrieve the operator symbols.
     val eqSym = root.specialOps(SpecialOperator.Equality)(tpe)
     val hashSym = root.specialOps(SpecialOperator.HashCode)(tpe)
@@ -1121,18 +1138,6 @@ object Interpreter {
         Value.RecordExtension(removeRecordLabel(base, field), field2, value)
     case Value.RecordEmpty => throw InternalRuntimeException(s"Unexpected missing field: '$field'.")
     case _ => throw InternalRuntimeException(s"Unexpected non-record value: '$record'.")
-  }
-
-  /**
-    * Returns the fixpoint options object based on the flix configuration.
-    */
-  private def getFixpointOptions()(implicit flix: Flix): Options = {
-    // Configure the fixpoint solver based on the Flix options.
-    val options = new Options
-    options.setMonitored(flix.options.monitor)
-    options.setThreads(flix.options.threads)
-    options.setVerbose(flix.options.verbosity == Verbosity.Verbose)
-    options
   }
 
   /**

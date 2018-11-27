@@ -247,6 +247,8 @@ object FinalAst {
 
       case class False(loc: SourceLocation) extends FinalAst.Predicate.Head
 
+      // TODO: Why are Rel and Lat atom even split?
+
       case class RelAtom(sym: Symbol.RelSym, param: FinalAst.Expression, terms: List[FinalAst.Term.Head], tpe: Type, loc: SourceLocation) extends FinalAst.Predicate.Head
 
       case class LatAtom(sym: Symbol.LatSym, param: FinalAst.Expression, terms: List[FinalAst.Term.Head], tpe: Type, loc: SourceLocation) extends FinalAst.Predicate.Head
@@ -256,6 +258,8 @@ object FinalAst {
     sealed trait Body extends FinalAst.Predicate
 
     object Body {
+
+      // TODO: Why are Rel and Lat atom even split?
 
       case class RelAtom(sym: Symbol.RelSym, exp: FinalAst.Expression, polarity: Ast.Polarity, terms: List[FinalAst.Term.Body], tpe: Type, loc: SourceLocation) extends FinalAst.Predicate.Body
 
