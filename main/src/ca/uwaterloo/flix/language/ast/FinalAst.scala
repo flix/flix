@@ -247,11 +247,7 @@ object FinalAst {
 
       case class False(loc: SourceLocation) extends FinalAst.Predicate.Head
 
-      // TODO: Why are Rel and Lat atom even split?
-
-      case class RelAtom(sym: Symbol.RelSym, param: FinalAst.Expression, terms: List[FinalAst.Term.Head], tpe: Type, loc: SourceLocation) extends FinalAst.Predicate.Head
-
-      case class LatAtom(sym: Symbol.LatSym, param: FinalAst.Expression, terms: List[FinalAst.Term.Head], tpe: Type, loc: SourceLocation) extends FinalAst.Predicate.Head
+      case class Atom(sym: Symbol.PredSym, param: FinalAst.Expression, terms: List[FinalAst.Term.Head], tpe: Type, loc: SourceLocation) extends FinalAst.Predicate.Head
 
     }
 
@@ -259,11 +255,7 @@ object FinalAst {
 
     object Body {
 
-      // TODO: Why are Rel and Lat atom even split?
-
-      case class RelAtom(sym: Symbol.RelSym, exp: FinalAst.Expression, polarity: Ast.Polarity, terms: List[FinalAst.Term.Body], tpe: Type, loc: SourceLocation) extends FinalAst.Predicate.Body
-
-      case class LatAtom(sym: Symbol.LatSym, exp: FinalAst.Expression, polarity: Ast.Polarity, terms: List[FinalAst.Term.Body], tpe: Type, loc: SourceLocation) extends FinalAst.Predicate.Body
+      case class Atom(sym: Symbol.PredSym, exp: FinalAst.Expression, polarity: Ast.Polarity, terms: List[FinalAst.Term.Body], tpe: Type, loc: SourceLocation) extends FinalAst.Predicate.Body
 
       case class Filter(sym: Symbol.DefnSym, terms: List[FinalAst.Term.Body], loc: SourceLocation) extends FinalAst.Predicate.Body
 

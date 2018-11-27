@@ -447,8 +447,7 @@ object Stratifier extends Phase[Root, Root] {
       * Returns `true` if the body predicate is negated.
       */
     def isNegative(p: Predicate.Body): Boolean = p match {
-      case Body.RelAtom(_, _, Polarity.Negative, _, _, _) => true
-      case Body.LatAtom(_, _, Polarity.Negative, _, _, _) => true
+      case Body.Atom(_, _, Polarity.Negative, _, _, _) => true
       case _ => false
     }
 
@@ -521,36 +520,18 @@ object Stratifier extends Phase[Root, Root] {
     */
   def createGraph(constraints: List[Constraint]): Graph = {
     constraints.foldRight(new Graph)((constraint: Constraint, graph: Graph) => constraint.head match {
-      case Predicate.Head.RelAtom(_, headSym, _, _, _) =>
+      case Predicate.Head.Atom(_, headSym, _, _, _) =>
         // As well as creating the graph out of the given constraints, we also add a source node which
         // has a directed edge to all nodes
         graph.insert(null, headSym, constraint, 0)
-        constraint.body.foldRight(graph)((pred: Predicate.Body, graph: Graph) => pred match {
-          case Predicate.Body.RelAtom(_, predSym, Polarity.Positive, _, _, _) =>
-            graph.insert(headSym, predSym, constraint, 0)
-          case Predicate.Body.LatAtom(_, predSym, Polarity.Positive, _, _, _) =>
-            graph.insert(headSym, predSym, constraint, 0)
-          case Predicate.Body.RelAtom(_, predSym, Polarity.Negative, _, _, _) =>
-            graph.insert(headSym, predSym, constraint, -1)
-          case Predicate.Body.LatAtom(_, predSym, Polarity.Negative, _, _, _) => graph.insert(headSym, predSym, constraint, -1)
-          case _: Predicate.Body.Filter => graph
-          case _: Predicate.Body.Functional => graph
-        })
 
-      /* copied */
-      case Predicate.Head.LatAtom(_, headSym, _, _, _) =>
-        // As well as creating the graph out of the given constraints, we also add a source node which
-        // has a directed edge to all nodes
-        graph.insert(null, headSym, constraint, 0)
         constraint.body.foldRight(graph)((pred: Predicate.Body, graph: Graph) => pred match {
-          case Predicate.Body.RelAtom(_, predSym, Polarity.Positive, _, _, _) =>
+          case Predicate.Body.Atom(_, predSym, Polarity.Positive, _, _, _) =>
             graph.insert(headSym, predSym, constraint, 0)
-          case Predicate.Body.LatAtom(_, predSym, Polarity.Positive, _, _, _) =>
-            graph.insert(headSym, predSym, constraint, 0)
-          case Predicate.Body.RelAtom(_, predSym, Polarity.Negative, _, _, _) =>
+
+          case Predicate.Body.Atom(_, predSym, Polarity.Negative, _, _, _) =>
             graph.insert(headSym, predSym, constraint, -1)
-          case Predicate.Body.LatAtom(_, predSym, Polarity.Negative, _, _, _) =>
-            graph.insert(headSym, predSym, constraint, -1)
+
           case _: Predicate.Body.Filter => graph
           case _: Predicate.Body.Functional => graph
         })
@@ -605,8 +586,7 @@ object Stratifier extends Phase[Root, Root] {
           witness = firstEdge :: witness
 
           var fromConstraint = distPred(firstEdge.head match {
-            case Predicate.Head.RelAtom(_, sym, _, _, _) => sym
-            case Predicate.Head.LatAtom(_, sym, _, _, _) => sym
+            case Predicate.Head.Atom(_, sym, _, _, _) => sym
             case _: False => throw InternalCompilerException("Encountered the False atom while looking for negative cyles which should never happen")
             case _: True => throw InternalCompilerException("Encountered the True atom while looking for negative cyles which should never happen")
           })._2
@@ -614,8 +594,7 @@ object Stratifier extends Phase[Root, Root] {
           while (fromConstraint != null && fromConstraint != firstEdge) {
             witness = fromConstraint :: witness
             fromConstraint = distPred(fromConstraint.head match {
-              case Predicate.Head.RelAtom(_, sym, _, _, _) => sym
-              case Predicate.Head.LatAtom(_, sym, _, _, _) => sym
+              case Predicate.Head.Atom(_, sym, _, _, _) => sym
               case _: False => throw InternalCompilerException("Encountered the False atom while looking for negative cyles which should never happen")
               case _: True => throw InternalCompilerException("Encountered the True atom while looking for negative cyles which should never happen")
             })._2

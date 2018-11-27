@@ -709,42 +709,48 @@ object Interpreter {
 
     case FinalAst.Predicate.Head.False(_) => FalsePredicate.getSingleton
 
-    case FinalAst.Predicate.Head.RelAtom(sym, exp0, terms0, _, _) =>
-      val param = eval(exp0, env0, henv0, lenv0, root)
-      val terms = terms0.map(t => evalHeadTerm(t, env0)).toArray
-      val relSym = newRelSym(sym, wrapValueInProxyObject(param, exp0.tpe))
-      AtomPredicate.of(relSym, true, terms)
+    case FinalAst.Predicate.Head.Atom(predSym, exp0, terms0, _, _) => predSym match {
+      case sym: Symbol.RelSym =>
+        val param = eval(exp0, env0, henv0, lenv0, root)
+        val terms = terms0.map(t => evalHeadTerm(t, env0)).toArray
+        val relSym = newRelSym(sym, wrapValueInProxyObject(param, exp0.tpe))
+        AtomPredicate.of(relSym, true, terms)
 
-    case FinalAst.Predicate.Head.LatAtom(sym, exp0, terms0, _, _) =>
-      val param = eval(exp0, env0, henv0, lenv0, root)
-      val terms = terms0.map(t => evalHeadTerm(t, env0)).toArray
-      val latSym = newLatSym(sym, wrapValueInProxyObject(param, exp0.tpe))
-      AtomPredicate.of(latSym, true, terms)
+      case sym: Symbol.LatSym =>
+        val param = eval(exp0, env0, henv0, lenv0, root)
+        val terms = terms0.map(t => evalHeadTerm(t, env0)).toArray
+        val latSym = newLatSym(sym, wrapValueInProxyObject(param, exp0.tpe))
+        AtomPredicate.of(latSym, true, terms)
+    }
+
   }
 
   /**
     * Evaluates the given body predicate `b0` under the given environment `env0` to a body predicate value.
     */
   private def evalBodyPredicate(b0: FinalAst.Predicate.Body, env0: Map[String, AnyRef], henv0: Map[Symbol.EffSym, AnyRef], lenv0: Map[Symbol.LabelSym, Expression])(implicit root: FinalAst.Root, flix: Flix): fixpoint.predicate.Predicate = b0 match {
-    case FinalAst.Predicate.Body.RelAtom(sym, exp0, polarity0, terms0, _, _) =>
-      val polarity = polarity0 match {
-        case Ast.Polarity.Positive => true
-        case Ast.Polarity.Negative => false
-      }
-      val param = eval(exp0, env0, henv0, lenv0, root)
-      val terms = terms0.map(t => evalBodyTerm(t, env0)).toArray
-      val relSym = newRelSym(sym, wrapValueInProxyObject(param, exp0.tpe))
-      AtomPredicate.of(relSym, polarity, terms)
 
-    case FinalAst.Predicate.Body.LatAtom(sym, exp0, polarity0, terms0, _, _) =>
-      val polarity = polarity0 match {
-        case Ast.Polarity.Positive => true
-        case Ast.Polarity.Negative => false
-      }
-      val param = eval(exp0, env0, henv0, lenv0, root)
-      val terms = terms0.map(t => evalBodyTerm(t, env0)).toArray
-      val latSym = newLatSym(sym, wrapValueInProxyObject(param, exp0.tpe))
-      AtomPredicate.of(latSym, polarity, terms)
+    case FinalAst.Predicate.Body.Atom(predSym, exp0, polarity0, terms0, _, _) => predSym match {
+      case sym: Symbol.RelSym =>
+        val polarity = polarity0 match {
+          case Ast.Polarity.Positive => true
+          case Ast.Polarity.Negative => false
+        }
+        val param = eval(exp0, env0, henv0, lenv0, root)
+        val terms = terms0.map(t => evalBodyTerm(t, env0)).toArray
+        val relSym = newRelSym(sym, wrapValueInProxyObject(param, exp0.tpe))
+        AtomPredicate.of(relSym, polarity, terms)
+
+      case sym: Symbol.LatSym =>
+        val polarity = polarity0 match {
+          case Ast.Polarity.Positive => true
+          case Ast.Polarity.Negative => false
+        }
+        val param = eval(exp0, env0, henv0, lenv0, root)
+        val terms = terms0.map(t => evalBodyTerm(t, env0)).toArray
+        val latSym = newLatSym(sym, wrapValueInProxyObject(param, exp0.tpe))
+        AtomPredicate.of(latSym, polarity, terms)
+    }
 
     case FinalAst.Predicate.Body.Filter(sym, terms, loc) =>
       val f = new function.Function[Array[Object], ProxyObject] {

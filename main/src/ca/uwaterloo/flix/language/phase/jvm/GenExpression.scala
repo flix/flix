@@ -1572,25 +1572,27 @@ object GenExpression {
       // Retrieve the singleton instance.
       mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Predicate.FalsePredicate.toInternalName, "getSingleton", "()Lflix/runtime/fixpoint/predicate/FalsePredicate;", false)
 
-    case Predicate.Head.RelAtom(sym, exp, terms, tpe, loc) =>
-      // Add source line numbers for debugging.
-      addSourceLine(mv, loc)
+    case Predicate.Head.Atom(predSym, exp, terms, tpe, loc) => predSym match {
+      case sym: Symbol.RelSym =>
+        // Add source line numbers for debugging.
+        addSourceLine(mv, loc)
 
-      // Emit code for the predicate symbol.
-      newRelSym(sym, Some(exp), mv)
+        // Emit code for the predicate symbol.
+        newRelSym(sym, Some(exp), mv)
 
-      // Emit code for the polarity of the atom. A head atom is always positive.
-      mv.visitInsn(ICONST_1)
+        // Emit code for the polarity of the atom. A head atom is always positive.
+        mv.visitInsn(ICONST_1)
 
-      // Emit code for the head terms.
-      newHeadTerms(terms, mv)
+        // Emit code for the head terms.
+        newHeadTerms(terms, mv)
 
-      // Instantiate a new atom predicate object.
-      mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Predicate.AtomPredicate.toInternalName, "of", "(Lflix/runtime/fixpoint/symbol/PredSym;Z[Lflix/runtime/fixpoint/term/Term;)Lflix/runtime/fixpoint/predicate/AtomPredicate;", false);
+        // Instantiate a new atom predicate object.
+        mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Predicate.AtomPredicate.toInternalName, "of", "(Lflix/runtime/fixpoint/symbol/PredSym;Z[Lflix/runtime/fixpoint/term/Term;)Lflix/runtime/fixpoint/predicate/AtomPredicate;", false);
 
-    case Predicate.Head.LatAtom(baseOpt, sym, terms, tpe, loc) =>
-      ??? // TODO: Predicate.Body.LatAtom
+      case sym: Symbol.LatSym =>
+        ??? // TODO: Predicate.Body.LatAtom
 
+    }
   }
 
   /**
@@ -1598,27 +1600,29 @@ object GenExpression {
     */
   private def compileBodyAtom(b0: Predicate.Body, mv: MethodVisitor)(implicit root: Root, flix: Flix, clazz: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label): Unit = b0 match {
 
-    case Predicate.Body.RelAtom(sym, exp, polarity, terms, tpe, loc) =>
-      // Add source line numbers for debugging.
-      addSourceLine(mv, loc)
+    case Predicate.Body.Atom(predSym, exp, polarity, terms, tpe, loc) => predSym match {
+      case sym: Symbol.RelSym =>
+        // Add source line numbers for debugging.
+        addSourceLine(mv, loc)
 
-      // Emit code for the predicate symbol.
-      newRelSym(sym, Some(exp), mv)
+        // Emit code for the predicate symbol.
+        newRelSym(sym, Some(exp), mv)
 
-      // Emit code for the polarity of the atom. A head atom is always positive.
-      polarity match {
-        case Polarity.Positive => mv.visitInsn(ICONST_1)
-        case Polarity.Negative => mv.visitInsn(ICONST_0)
-      }
+        // Emit code for the polarity of the atom. A head atom is always positive.
+        polarity match {
+          case Polarity.Positive => mv.visitInsn(ICONST_1)
+          case Polarity.Negative => mv.visitInsn(ICONST_0)
+        }
 
-      // Emit code for the terms.
-      newBodyTerms(terms, mv)
+        // Emit code for the terms.
+        newBodyTerms(terms, mv)
 
-      // Instantiate a new atom predicate object.
-      mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Predicate.AtomPredicate.toInternalName, "of", "(Lflix/runtime/fixpoint/symbol/PredSym;Z[Lflix/runtime/fixpoint/term/Term;)Lflix/runtime/fixpoint/predicate/AtomPredicate;", false);
+        // Instantiate a new atom predicate object.
+        mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Predicate.AtomPredicate.toInternalName, "of", "(Lflix/runtime/fixpoint/symbol/PredSym;Z[Lflix/runtime/fixpoint/term/Term;)Lflix/runtime/fixpoint/predicate/AtomPredicate;", false);
+      case sym: Symbol.LatSym =>
+        ??? // TODO: Predicate.Body.LatAtom
 
-    case Predicate.Body.LatAtom(baseOpt, sym, polarity, terms, tpe, loc) =>
-      ??? // TODO: Predicate.Body.LatAtom
+    }
 
     case Predicate.Body.Filter(sym, terms, loc) =>
       // Add source line numbers for debugging.

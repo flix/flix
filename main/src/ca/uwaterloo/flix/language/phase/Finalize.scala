@@ -402,24 +402,24 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
     case SimplifiedAst.Predicate.Head.RelAtom(sym, exp, terms, tpe, loc) =>
       val e = visitExp(exp, m)
       val ts = terms.map(t => visitHeadTerm(t, m))
-      FinalAst.Predicate.Head.RelAtom(sym, e, ts, tpe, loc)
+      FinalAst.Predicate.Head.Atom(sym, e, ts, tpe, loc)
 
     case SimplifiedAst.Predicate.Head.LatAtom(sym, exp, terms, tpe, loc) =>
       val e = visitExp(exp, m)
       val ts = terms.map(t => visitHeadTerm(t, m))
-      FinalAst.Predicate.Head.LatAtom(sym, e, ts, tpe, loc)
+      FinalAst.Predicate.Head.Atom(sym, e, ts, tpe, loc)
   }
 
   private def visitBodyPredicate(p0: SimplifiedAst.Predicate.Body, m: TopLevel)(implicit flix: Flix): FinalAst.Predicate.Body = p0 match {
     case SimplifiedAst.Predicate.Body.RelAtom(sym, exp, polarity, terms, tpe, loc) =>
       val e = visitExp(exp, m)
       val ts = terms.map(t => visitBodyTerm(t, m))
-      FinalAst.Predicate.Body.RelAtom(sym, e, polarity, ts, tpe, loc)
+      FinalAst.Predicate.Body.Atom(sym, e, polarity, ts, tpe, loc)
 
     case SimplifiedAst.Predicate.Body.LatAtom(sym, exp, polarity, terms, tpe, loc) =>
       val e = visitExp(exp, m)
       val ts = terms.map(t => visitBodyTerm(t, m))
-      FinalAst.Predicate.Body.LatAtom(sym, e, polarity, ts, tpe, loc)
+      FinalAst.Predicate.Body.Atom(sym, e, polarity, ts, tpe, loc)
 
     case SimplifiedAst.Predicate.Body.Filter(sym, terms, loc) =>
       val ts = terms.map(t => visitBodyTerm(t, m))
