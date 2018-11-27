@@ -1,5 +1,3 @@
-//TODO SJ: fix naming
-
 @test
 def testNewChannel01(): Channel[Unit] = chan Unit
 
