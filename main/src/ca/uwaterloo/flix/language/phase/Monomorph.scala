@@ -434,18 +434,18 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           val es = args.map(e => visitExp(e, env0))
           Expression.NativeMethod(method, es, subst0(tpe), eff, loc)
 
-        case Expression.Constraint(c0, tpe, eff, loc) =>
+        case Expression.FixpointConstraint(c0, tpe, eff, loc) =>
           val Constraint(cparams0, head0, body0, loc) = c0
           val (cparams, env1) = specializeConstraintParams(cparams0, subst0)
           val head = visitHeadPredicate(head0, env0 ++ env1)
           val body = body0.map(b => visitBodyPredicate(b, env0 ++ env1))
           val c = Constraint(cparams, head, body, loc)
-          Expression.Constraint(c, subst0(tpe), eff, loc)
+          Expression.FixpointConstraint(c, subst0(tpe), eff, loc)
 
-        case Expression.ConstraintUnion(exp1, exp2, tpe, eff, loc) =>
+        case Expression.FixpointCompose(exp1, exp2, tpe, eff, loc) =>
           val e1 = visitExp(exp1, env0)
           val e2 = visitExp(exp2, env0)
-          Expression.ConstraintUnion(e1, e2, tpe, eff, loc)
+          Expression.FixpointCompose(e1, e2, tpe, eff, loc)
 
         case Expression.FixpointSolve(exp, tpe, eff, loc) =>
           val e = visitExp(exp, env0)

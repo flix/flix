@@ -860,12 +860,12 @@ object SymbolicEvaluator {
       /**
         * Constraint.
         */
-      case Expression.Constraint(c, tpe, loc) => throw InternalCompilerException("Not yet supported.")
+      case Expression.FixpointConstraint(c, tpe, loc) => throw InternalCompilerException("Not yet supported.")
 
       /**
         * ConstraintUnion.
         */
-      case Expression.ConstraintUnion(e1, e2, tpe, loc) => throw InternalCompilerException("Not yet supported.")
+      case Expression.FixpointCompose(e1, e2, tpe, loc) => throw InternalCompilerException("Not yet supported.")
 
       /**
         * Fixpoint Solve.

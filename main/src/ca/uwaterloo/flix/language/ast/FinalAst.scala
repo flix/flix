@@ -209,9 +209,9 @@ object FinalAst {
 
     case class NativeMethod(method: Method, args: List[FinalAst.Expression], tpe: Type, loc: SourceLocation) extends FinalAst.Expression
 
-    case class Constraint(con: FinalAst.Constraint, tpe: Type, loc: SourceLocation) extends FinalAst.Expression
+    case class FixpointConstraint(c: FinalAst.Constraint, tpe: Type, loc: SourceLocation) extends FinalAst.Expression
 
-    case class ConstraintUnion(exp1: FinalAst.Expression, exp2: FinalAst.Expression, tpe: Type, loc: SourceLocation) extends FinalAst.Expression
+    case class FixpointCompose(exp1: FinalAst.Expression, exp2: FinalAst.Expression, tpe: Type, loc: SourceLocation) extends FinalAst.Expression
 
     case class FixpointSolve(uid: Ast.UId, exp: FinalAst.Expression, stf: Ast.Stratification, tpe: Type, loc: SourceLocation) extends FinalAst.Expression
 

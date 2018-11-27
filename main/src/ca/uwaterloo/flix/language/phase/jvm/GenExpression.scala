@@ -963,14 +963,14 @@ object GenExpression {
           AsmOps.getMethodDescriptor(List(), JvmType.Unit), false)
       }
 
-    case Expression.Constraint(con, tpe, loc) =>
+    case Expression.FixpointConstraint(con, tpe, loc) =>
       // Add source line numbers for debugging.
       addSourceLine(visitor, loc)
 
       // Emit code for the constraint.
       newConstraintSystem(con, visitor)(root, flix, currentClass, lenv0, entryPoint)
 
-    case Expression.ConstraintUnion(exp1, exp2, tpe, loc) =>
+    case Expression.FixpointCompose(exp1, exp2, tpe, loc) =>
       // Add source line numbers for debugging.
       addSourceLine(visitor, loc)
 

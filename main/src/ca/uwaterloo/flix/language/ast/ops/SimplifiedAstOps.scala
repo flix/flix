@@ -426,13 +426,13 @@ object SimplifiedAstOps {
       //
       // Constraint.
       //
-      case Expression.Constraint(c, tpe, loc) =>
+      case Expression.FixpointConstraint(c, tpe, loc) =>
         checkType(tpe)
 
       //
       // ConstraintUnion.
       //
-      case Expression.ConstraintUnion(exp1, exp2, tpe, loc) =>
+      case Expression.FixpointCompose(exp1, exp2, tpe, loc) =>
         checkExp(exp1, env0, ienv0)
         checkExp(exp2, env0, ienv0)
         checkType(tpe)

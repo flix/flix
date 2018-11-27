@@ -259,10 +259,10 @@ object Interpreter {
       case ex: InvocationTargetException => throw ex.getTargetException
     }
 
-    case Expression.Constraint(c, tpe, loc) =>
+    case Expression.FixpointConstraint(c, tpe, loc) =>
       evalConstraint(c, env0, henv0, lenv0)(flix, root)
 
-    case Expression.ConstraintUnion(exp1, exp2, tpe, loc) =>
+    case Expression.FixpointCompose(exp1, exp2, tpe, loc) =>
       val v1 = cast2constraintset(eval(exp1, env0, henv0, lenv0, root))
       val v2 = cast2constraintset(eval(exp2, env0, henv0, lenv0, root))
       Solver.compose(v1, v2)

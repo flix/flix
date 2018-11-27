@@ -820,9 +820,9 @@ object JvmOps {
         case (sacc, e) => sacc ++ visitExp(e)
       }
 
-      case Expression.Constraint(con, tpe, loc) => Set.empty
+      case Expression.FixpointConstraint(con, tpe, loc) => Set.empty
 
-      case Expression.ConstraintUnion(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2)
+      case Expression.FixpointCompose(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2)
 
       case Expression.FixpointSolve(uid, exp, stf, tpe, loc) => visitExp(exp)
 
@@ -1072,9 +1072,9 @@ object JvmOps {
         case (sacc, e) => sacc ++ visitExp(e)
       }
 
-      case Expression.Constraint(con, tpe, loc) => Set.empty // TODO: Constraint
+      case Expression.FixpointConstraint(con, tpe, loc) => Set.empty // TODO: Constraint
 
-      case Expression.ConstraintUnion(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2) + tpe
+      case Expression.FixpointCompose(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2) + tpe
 
       case Expression.FixpointSolve(uid, exp, stf, tpe, loc) => visitExp(exp) + tpe
 

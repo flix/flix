@@ -294,12 +294,12 @@ object Stratifier extends Phase[Root, Root] {
         case as => Expression.NativeMethod(method, as, tpe, loc)
       }
 
-    case Expression.Constraint(con, tpe, loc) =>
-      Expression.Constraint(con, tpe, loc).toSuccess
+    case Expression.FixpointConstraint(con, tpe, loc) =>
+      Expression.FixpointConstraint(con, tpe, loc).toSuccess
 
-    case Expression.ConstraintUnion(exp1, exp2, tpe, loc) =>
+    case Expression.FixpointCompose(exp1, exp2, tpe, loc) =>
       mapN(visitExp(exp1), visitExp(exp2)) {
-        case (e1, e2) => Expression.ConstraintUnion(e1, e2, tpe, loc)
+        case (e1, e2) => Expression.FixpointCompose(e1, e2, tpe, loc)
       }
 
     case Expression.FixpointSolve(uid, exp, _, tpe, loc) =>

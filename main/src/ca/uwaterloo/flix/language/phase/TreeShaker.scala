@@ -137,8 +137,8 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.NativeConstructor(constructor, args, tpe, loc) => visitExps(args)
       case Expression.NativeField(field, tpe, loc) => Set.empty
       case Expression.NativeMethod(method, args, tpe, loc) => visitExps(args)
-      case Expression.Constraint(c0, tpe, loc) => visitConstraint(c0)
-      case Expression.ConstraintUnion(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2)
+      case Expression.FixpointConstraint(c0, tpe, loc) => visitConstraint(c0)
+      case Expression.FixpointCompose(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2)
       case Expression.FixpointSolve(exp, tpe, loc) => visitExp(exp)
       case Expression.FixpointCheck(exp, tpe, loc) => visitExp(exp)
       case Expression.FixpointDelta(exp, tpe, loc) => visitExp(exp)

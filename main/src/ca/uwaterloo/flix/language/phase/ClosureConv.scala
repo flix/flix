@@ -287,17 +287,17 @@ object ClosureConv extends Phase[Root, Root] {
       val as = args map visitExp
       Expression.NativeMethod(method, as, tpe, loc)
 
-    case Expression.Constraint(c0, tpe, loc) =>
+    case Expression.FixpointConstraint(c0, tpe, loc) =>
       val Constraint(cparams0, head0, body0) = c0
       val head = visitHeadPredicate(head0)
       val body = body0 map visitBodyPredicate
       val c = Constraint(cparams0, head, body)
-      Expression.Constraint(c, tpe, loc)
+      Expression.FixpointConstraint(c, tpe, loc)
 
-    case Expression.ConstraintUnion(exp1, exp2, tpe, loc) =>
+    case Expression.FixpointCompose(exp1, exp2, tpe, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
-      Expression.ConstraintUnion(e1, e2, tpe, loc)
+      Expression.FixpointCompose(e1, e2, tpe, loc)
 
     case Expression.FixpointSolve(exp, tpe, loc) =>
       val e = visitExp(exp)
@@ -458,11 +458,11 @@ object ClosureConv extends Phase[Root, Root] {
     case Expression.NativeField(field, tpe, loc) => mutable.LinkedHashSet.empty
     case Expression.NativeMethod(method, args, tpe, loc) => mutable.LinkedHashSet.empty ++ args.flatMap(freeVars)
 
-    case Expression.Constraint(con, tpe, loc) =>
+    case Expression.FixpointConstraint(con, tpe, loc) =>
       val Constraint(cparams, head, body) = con
       freeVars(head) ++ body.flatMap(freeVars)
 
-    case Expression.ConstraintUnion(exp1, exp2, tpe, loc) => freeVars(exp1) ++ freeVars(exp2)
+    case Expression.FixpointCompose(exp1, exp2, tpe, loc) => freeVars(exp1) ++ freeVars(exp2)
     case Expression.FixpointSolve(exp, tpe, loc) => freeVars(exp)
     case Expression.FixpointCheck(exp, tpe, loc) => freeVars(exp)
     case Expression.FixpointDelta(exp, tpe, loc) => freeVars(exp)
@@ -752,7 +752,7 @@ object ClosureConv extends Phase[Root, Root] {
         val es = args map visitExp
         Expression.NativeMethod(method, es, tpe, loc)
 
-      case Expression.Constraint(con, tpe, loc) =>
+      case Expression.FixpointConstraint(con, tpe, loc) =>
         val Constraint(cparams0, head0, body0) = con
         val cs = cparams0 map {
           case ConstraintParam.HeadParam(s, t, l) => ConstraintParam.HeadParam(subst.getOrElse(s, s), t, l)
@@ -761,12 +761,12 @@ object ClosureConv extends Phase[Root, Root] {
         val head = visitHeadPredicate(head0)
         val body = body0 map visitBodyPredicate
         val c = Constraint(cs, head, body)
-        Expression.Constraint(c, tpe, loc)
+        Expression.FixpointConstraint(c, tpe, loc)
 
-      case Expression.ConstraintUnion(exp1, exp2, tpe, loc) =>
+      case Expression.FixpointCompose(exp1, exp2, tpe, loc) =>
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
-        Expression.ConstraintUnion(e1, e2, tpe, loc)
+        Expression.FixpointCompose(e1, e2, tpe, loc)
 
       case Expression.FixpointSolve(exp, tpe, loc) =>
         val e = visitExp(exp)

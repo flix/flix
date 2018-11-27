@@ -1136,7 +1136,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         /*
          * Constraint expression.
          */
-        case ResolvedAst.Expression.Constraint(cons, tvar, loc) =>
+        case ResolvedAst.Expression.FixpointConstraint(cons, tvar, loc) =>
           val ResolvedAst.Constraint(cparams, head0, body0, loc) = cons
           //
           //  A_0 : tpe, A_1: tpe, ..., A_n : tpe
@@ -1155,7 +1155,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         //  ---------------------------------------------------
         //  union exp1 exp2 : tpe
         //
-        case ResolvedAst.Expression.ConstraintUnion(exp1, exp2, tvar, loc) =>
+        case ResolvedAst.Expression.FixpointCompose(exp1, exp2, tvar, loc) =>
           for {
             tpe1 <- visitExp(exp1)
             tpe2 <- visitExp(exp2)
@@ -1613,17 +1613,17 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         /*
          * Constraint expression.
          */
-        case ResolvedAst.Expression.Constraint(cons, tvar, loc) =>
+        case ResolvedAst.Expression.FixpointConstraint(cons, tvar, loc) =>
           val c = Constraints.reassemble(cons, program, subst0)
-          TypedAst.Expression.Constraint(c, subst0(tvar), Eff.Bot, loc)
+          TypedAst.Expression.FixpointConstraint(c, subst0(tvar), Eff.Bot, loc)
 
         /*
          * ConstraintUnion expression.
          */
-        case ResolvedAst.Expression.ConstraintUnion(exp1, exp2, tvar, loc) =>
+        case ResolvedAst.Expression.FixpointCompose(exp1, exp2, tvar, loc) =>
           val e1 = reassemble(exp1, program, subst0)
           val e2 = reassemble(exp2, program, subst0)
-          TypedAst.Expression.ConstraintUnion(e1, e2, subst0(tvar), Eff.Bot, loc)
+          TypedAst.Expression.FixpointCompose(e1, e2, subst0(tvar), Eff.Bot, loc)
 
         /*
          * FixpointSolve expression.

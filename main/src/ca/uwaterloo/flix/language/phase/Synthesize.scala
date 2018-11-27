@@ -305,14 +305,14 @@ object Synthesize extends Phase[Root, Root] {
         val as = args map visitExp
         Expression.NativeMethod(method, as, tpe, eff, loc)
 
-      case Expression.Constraint(c, tpe, eff, loc) =>
+      case Expression.FixpointConstraint(c, tpe, eff, loc) =>
         // TODO: Recurse?
-        Expression.Constraint(c, tpe, eff, loc)
+        Expression.FixpointConstraint(c, tpe, eff, loc)
 
-      case Expression.ConstraintUnion(exp1, exp2, tpe, eff, loc) =>
+      case Expression.FixpointCompose(exp1, exp2, tpe, eff, loc) =>
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
-        Expression.ConstraintUnion(e1, e2, tpe, eff, loc)
+        Expression.FixpointCompose(e1, e2, tpe, eff, loc)
 
       case Expression.FixpointSolve(exp, tpe, eff, loc) =>
         val e = visitExp(exp)

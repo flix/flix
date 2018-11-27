@@ -513,14 +513,14 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         val es = args.map(e => visitExp(e))
         SimplifiedAst.Expression.NativeMethod(method, es, tpe, loc)
 
-      case TypedAst.Expression.Constraint(c0, tpe, eff, loc) =>
+      case TypedAst.Expression.FixpointConstraint(c0, tpe, eff, loc) =>
         val c = visitConstraint(c0)
-        SimplifiedAst.Expression.Constraint(c, tpe, loc)
+        SimplifiedAst.Expression.FixpointConstraint(c, tpe, loc)
 
-      case TypedAst.Expression.ConstraintUnion(exp1, exp2, tpe, eff, loc) =>
+      case TypedAst.Expression.FixpointCompose(exp1, exp2, tpe, eff, loc) =>
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
-        SimplifiedAst.Expression.ConstraintUnion(e1, e2, tpe, loc)
+        SimplifiedAst.Expression.FixpointCompose(e1, e2, tpe, loc)
 
       case TypedAst.Expression.FixpointSolve(exp, tpe, eff, loc) =>
         val e = visitExp(exp)
@@ -1175,13 +1175,13 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         val es = args map visit
         SimplifiedAst.Expression.NativeMethod(method, es, tpe, loc)
 
-      case SimplifiedAst.Expression.Constraint(con, tpe, loc) =>
+      case SimplifiedAst.Expression.FixpointConstraint(con, tpe, loc) =>
         ??? // TODO Expression.Constraint
 
-      case SimplifiedAst.Expression.ConstraintUnion(exp1, exp2, tpe, loc) =>
+      case SimplifiedAst.Expression.FixpointCompose(exp1, exp2, tpe, loc) =>
         val e1 = visit(exp1)
         val e2 = visit(exp2)
-        SimplifiedAst.Expression.ConstraintUnion(e1, e2, tpe, loc)
+        SimplifiedAst.Expression.FixpointCompose(e1, e2, tpe, loc)
 
       case SimplifiedAst.Expression.FixpointSolve(exp, tpe, loc) =>
         val e = visit(exp)

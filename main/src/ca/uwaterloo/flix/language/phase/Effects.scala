@@ -577,9 +577,9 @@ object Effects extends Phase[Root, Root] {
           val eff = ast.Eff.Top
           Expression.NativeMethod(method, args, tpe, eff, loc).toSuccess
 
-        case Expression.Constraint(con, tpe, eff, loc) => ??? // TODO: Constraint
+        case Expression.FixpointConstraint(con, tpe, eff, loc) => ??? // TODO: Constraint
 
-        case Expression.ConstraintUnion(exp1, exp2, tpe, eff, loc) => ??? // TODO: ConstraintUnion
+        case Expression.FixpointCompose(exp1, exp2, tpe, eff, loc) => ??? // TODO: ConstraintUnion
 
         case Expression.FixpointSolve(exp, tpe, eff, loc) => ??? // TODO: FixpointSolve
 

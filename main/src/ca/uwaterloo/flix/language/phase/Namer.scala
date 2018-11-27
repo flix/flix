@@ -811,14 +811,14 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case Err(e) => e.toFailure
       }
 
-    case WeededAst.Expression.Constraint(con, loc) =>
+    case WeededAst.Expression.FixpointConstraint(con, loc) =>
       visitConstraint(con, env0, tenv0) map {
-        case c => NamedAst.Expression.Constraint(c, Type.freshTypeVar(), loc)
+        case c => NamedAst.Expression.FixpointConstraint(c, Type.freshTypeVar(), loc)
       }
 
-    case WeededAst.Expression.ConstraintUnion(exp1, exp2, loc) =>
+    case WeededAst.Expression.FixpointCompose(exp1, exp2, loc) =>
       mapN(visitExp(exp1, env0, tenv0), visitExp(exp2, env0, tenv0)) {
-        case (e1, e2) => NamedAst.Expression.ConstraintUnion(e1, e2, Type.freshTypeVar(), loc)
+        case (e1, e2) => NamedAst.Expression.FixpointCompose(e1, e2, Type.freshTypeVar(), loc)
       }
 
     case WeededAst.Expression.FixpointSolve(exp, loc) =>
@@ -1082,8 +1082,8 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Expression.NativeField(className, fieldName, loc) => Nil
     case WeededAst.Expression.NativeMethod(className, methodName, args, loc) => args.flatMap(freeVars)
     case WeededAst.Expression.NativeConstructor(className, args, loc) => args.flatMap(freeVars)
-    case WeededAst.Expression.Constraint(c, loc) => ??? // TODO: Constraint
-    case WeededAst.Expression.ConstraintUnion(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
+    case WeededAst.Expression.FixpointConstraint(c, loc) => ??? // TODO: Constraint
+    case WeededAst.Expression.FixpointCompose(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
     case WeededAst.Expression.FixpointSolve(exp, loc) => freeVars(exp)
     case WeededAst.Expression.FixpointCheck(exp, loc) => freeVars(exp)
     case WeededAst.Expression.FixpointDelta(exp, loc) => freeVars(exp)

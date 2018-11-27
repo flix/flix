@@ -193,7 +193,7 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.NativeField(field, tpe, loc) => i0
       case Expression.NativeMethod(method, args, tpe, loc) => visitExps(args, i0)
 
-      case Expression.Constraint(c, tpe, loc) =>
+      case Expression.FixpointConstraint(c, tpe, loc) =>
         // Assign a number to each constraint parameters.
         // These are unrelated to the true stack offsets.
         for ((cparam, index) <- c.cparams.zipWithIndex) {
@@ -204,7 +204,7 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         }
         i0
 
-      case Expression.ConstraintUnion(exp1, exp2, tpe, loc) =>
+      case Expression.FixpointCompose(exp1, exp2, tpe, loc) =>
         val i1 = visitExp(exp1, i0)
         visitExp(exp2, i1)
 

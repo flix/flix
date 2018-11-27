@@ -344,14 +344,14 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
         val es = args map visit
         FinalAst.Expression.NativeMethod(method, es, tpe, loc)
 
-      case SimplifiedAst.Expression.Constraint(c0, tpe, loc) =>
+      case SimplifiedAst.Expression.FixpointConstraint(c0, tpe, loc) =>
         val c = visitConstraint(c0, m)
-        FinalAst.Expression.Constraint(c, tpe, loc)
+        FinalAst.Expression.FixpointConstraint(c, tpe, loc)
 
-      case SimplifiedAst.Expression.ConstraintUnion(exp1, exp2, tpe, loc) =>
+      case SimplifiedAst.Expression.FixpointCompose(exp1, exp2, tpe, loc) =>
         val e1 = visit(exp1)
         val e2 = visit(exp2)
-        FinalAst.Expression.ConstraintUnion(e1, e2, tpe, loc)
+        FinalAst.Expression.FixpointCompose(e1, e2, tpe, loc)
 
       case SimplifiedAst.Expression.FixpointSolve(exp, tpe, loc) =>
         val e = visit(exp)

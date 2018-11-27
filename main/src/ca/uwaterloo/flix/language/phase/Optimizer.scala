@@ -403,17 +403,17 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       //
       // Constraint.
       //
-      case Expression.Constraint(c0, tpe, loc) =>
+      case Expression.FixpointConstraint(c0, tpe, loc) =>
         // TODO: Recurse?
-        Expression.Constraint(c0, tpe, loc)
+        Expression.FixpointConstraint(c0, tpe, loc)
 
       //
       // Constraint Union.
       //
-      case Expression.ConstraintUnion(exp1, exp2, tpe, loc) =>
+      case Expression.FixpointCompose(exp1, exp2, tpe, loc) =>
         val e1 = visitExp(exp1, env0)
         val e2 = visitExp(exp2, env0)
-        Expression.ConstraintUnion(e1, e2, tpe, loc)
+        Expression.FixpointCompose(e1, e2, tpe, loc)
 
       //
       // Fixpoint Solve.

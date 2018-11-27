@@ -681,16 +681,16 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
             es <- traverse(args)(e => visit(e, tenv0))
           } yield ResolvedAst.Expression.NativeMethod(method, es, tpe, loc)
 
-        case NamedAst.Expression.Constraint(cons, tvar, loc) =>
+        case NamedAst.Expression.FixpointConstraint(cons, tvar, loc) =>
           Constraints.resolve(cons, tenv0, ns0, prog0) map {
-            case c => ResolvedAst.Expression.Constraint(c, tvar, loc)
+            case c => ResolvedAst.Expression.FixpointConstraint(c, tvar, loc)
           }
 
-        case NamedAst.Expression.ConstraintUnion(exp1, exp2, tvar, loc) =>
+        case NamedAst.Expression.FixpointCompose(exp1, exp2, tvar, loc) =>
           for {
             e1 <- visit(exp1, tenv0)
             e2 <- visit(exp2, tenv0)
-          } yield ResolvedAst.Expression.ConstraintUnion(e1, e2, tvar, loc)
+          } yield ResolvedAst.Expression.FixpointCompose(e1, e2, tvar, loc)
 
         case NamedAst.Expression.FixpointSolve(exp, tvar, loc) =>
           for {

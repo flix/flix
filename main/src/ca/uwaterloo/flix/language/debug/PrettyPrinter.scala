@@ -399,10 +399,10 @@ object PrettyPrinter {
           }
           vt.text(")")
 
-        case Expression.Constraint(c, tpe, loc) =>
+        case Expression.FixpointConstraint(c, tpe, loc) =>
           ??? // TODO: Expression.Constraint
 
-        case Expression.ConstraintUnion(exp1, exp2, tpe, loc) =>
+        case Expression.FixpointCompose(exp1, exp2, tpe, loc) =>
           ??? // TODO: ConstraintUnion
 
         case Expression.FixpointSolve(exp, tpe, loc) =>

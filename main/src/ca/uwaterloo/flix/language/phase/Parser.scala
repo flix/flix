@@ -825,7 +825,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def ConstraintSeq: Rule1[ParsedAst.Expression] = rule {
-      SP ~ oneOrMore(Declarations.Constraint) ~ SP ~> ParsedAst.Expression.ConstraintSeq
+      SP ~ oneOrMore(Declarations.Constraint) ~ SP ~> ParsedAst.Expression.FixpointConstraintSeq
     }
 
     def FixpointSolve: Rule1[ParsedAst.Expression] = rule {

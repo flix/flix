@@ -936,7 +936,7 @@ object ParsedAst {
       * @param cs  the sequence of constraints.
       * @param sp2 the position of the last character in the expression.
       */
-    case class ConstraintSeq(sp1: SourcePosition, cs: Seq[Declaration.Constraint], sp2: SourcePosition) extends ParsedAst.Expression
+    case class FixpointConstraintSeq(sp1: SourcePosition, cs: Seq[Declaration.Constraint], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Constraint Compose expression.

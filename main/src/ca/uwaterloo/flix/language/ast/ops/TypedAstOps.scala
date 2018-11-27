@@ -193,9 +193,9 @@ object TypedAstOps {
           case (macc, arg) => macc ++ visitExp(arg, env0)
         }
 
-      case Expression.Constraint(c, tpe, eff, loc) => Map.empty // TODO: Find holes in constraints?
+      case Expression.FixpointConstraint(c, tpe, eff, loc) => Map.empty // TODO: Find holes in constraints?
 
-      case Expression.ConstraintUnion(exp1, exp2, tpe, eff, loc) =>
+      case Expression.FixpointCompose(exp1, exp2, tpe, eff, loc) =>
         visitExp(exp1, env0) ++ visitExp(exp2, env0)
 
       case Expression.FixpointSolve(exp, tpe, eff, loc) =>

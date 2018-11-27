@@ -369,11 +369,11 @@ object ControlFlowAnalysis {
         // Unsoundly ignore the return value.
         AbstractValue.Bot
 
-      case Expression.Constraint(con, tpe, loc) =>
+      case Expression.FixpointConstraint(con, tpe, loc) =>
         val g = visitConstraint(con)
         AbstractValue.Graph(g)
 
-      case Expression.ConstraintUnion(exp1, exp2, tpe, loc) =>
+      case Expression.FixpointCompose(exp1, exp2, tpe, loc) =>
         val v1 = visitExp(exp1, env0, lenv0)
         val v2 = visitExp(exp2, env0, lenv0)
         lub(v1, v2)
