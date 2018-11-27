@@ -22,10 +22,9 @@ import java.util.concurrent.atomic.AtomicInteger
 
 import ca.uwaterloo.flix.runtime.solver.datastore.DataStore
 import ca.uwaterloo.flix.runtime.debugger.RestServer
-import ca.uwaterloo.flix.runtime.solver.api._
 import ca.uwaterloo.flix.runtime.Monitor
 import ca.uwaterloo.flix.util._
-import flix.runtime.fixpoint.{Options => _, _}
+import flix.runtime.fixpoint.{ConstantFunction, Constraint, ConstraintSystem, Stratification}
 import flix.runtime.fixpoint.predicate._
 import flix.runtime.fixpoint.symbol.{LatSym, PredSym, RelSym, VarSym}
 import flix.runtime.fixpoint.term._
@@ -278,7 +277,7 @@ class Solver(constraintSystem: ConstraintSystem, stratification: Stratification,
       if (constraint.isFact) {
         // evaluate the head of each fact.
         val interp = mkInterpretation()
-        evalHead(constraint.getHeadPredicate(), Array.empty, interp)
+        evalHead(constraint.getHeadPredicate, Array.empty, interp)
 
         // iterate through the interpretation.
         for ((sym, fact) <- interp) {
@@ -378,7 +377,7 @@ class Solver(constraintSystem: ConstraintSystem, stratification: Stratification,
     val t = System.nanoTime()
 
     val interp = mkInterpretation()
-    evalCross(rule, rule.getBodyAtoms().toList, env, interp)
+    evalCross(rule, rule.getBodyAtoms.toList, env, interp)
     val e = System.nanoTime() - t
 
     rule.incrementNumberOfHits()
@@ -432,7 +431,7 @@ class Solver(constraintSystem: ConstraintSystem, stratification: Stratification,
     val terms = p.getTerms
 
     // lookup the relation or lattice.
-    val table = p.getSym() match {
+    val table = p.getSym match {
       case r: RelSym => dataStore.getRelation(r)
       case l: LatSym => dataStore.getLattice(l)
     }
@@ -444,7 +443,7 @@ class Solver(constraintSystem: ConstraintSystem, stratification: Stratification,
       val value: ProxyObject = p.getTerms()(i) match {
         case p: VarTerm =>
           // A variable is replaced by its value from the environment (or null if unbound).
-          env(p.getSym().getIndex)
+          env(p.getSym.getIndex)
         case p: LitTerm =>
           invoke(p.getFunction)
         case p: WildTerm =>
@@ -488,7 +487,7 @@ class Solver(constraintSystem: ConstraintSystem, stratification: Stratification,
     * Computes the cross product of all functionals in the body.
     */
   private def evalAllFunctionals(rule: Constraint, env: Env, interp: Interpretation): Unit =
-    evalFunctionals(rule, rule.getFunctionals().toList, env, interp)
+    evalFunctionals(rule, rule.getFunctionals.toList, env, interp)
 
   /**
     * Evaluates a single functional.
@@ -499,9 +498,9 @@ class Solver(constraintSystem: ConstraintSystem, stratification: Stratification,
       evalAllFilters(rule, env, interp)
     case r :: rs =>
       // compute the values of the arguments
-      val args = new Array[AnyRef](r.getArguments().length)
+      val args = new Array[AnyRef](r.getArguments.length)
       var i = 0
-      for (a <- r.getArguments()) {
+      for (a <- r.getArguments) {
         args(i) = env(a.getIndex)
         i = i + 1
       }
@@ -510,15 +509,15 @@ class Solver(constraintSystem: ConstraintSystem, stratification: Stratification,
       val values: Array[ProxyObject] =
         if (r.getArguments.length == 0) {
           // TODO: A small hack to deal with zero arity functions.
-          r.getFunction().apply(new Array[AnyRef](1))
+          r.getFunction.apply(new Array[AnyRef](1))
         } else {
-          r.getFunction().apply(args)
+          r.getFunction.apply(args)
         }
 
       // iterate through each value.
       for (value <- values) {
         val newEnv = copy(env)
-        newEnv(r.getVarSym().getIndex) = value
+        newEnv(r.getVarSym.getIndex) = value
         evalFunctionals(rule, rs, newEnv, interp)
       }
   }
@@ -528,7 +527,7 @@ class Solver(constraintSystem: ConstraintSystem, stratification: Stratification,
     */
   private def evalAllFilters(rule: Constraint, env: Env, interp: Interpretation): Unit = {
     // Extract the filters function predicates from the rule.
-    val filters = rule.getFilters()
+    val filters = rule.getFilters
 
     // Evaluate each filter function predicate one-by-one.
     var i = 0
@@ -546,7 +545,7 @@ class Solver(constraintSystem: ConstraintSystem, stratification: Stratification,
 
     // All filter functions returned `true`.
     // Continue evaluation of the head of the rule.
-    evalHead(rule.getHeadPredicate(), env, interp)
+    evalHead(rule.getHeadPredicate, env, interp)
   }
 
   /**
@@ -555,7 +554,7 @@ class Solver(constraintSystem: ConstraintSystem, stratification: Stratification,
   private def evalFilter(filter: FilterPredicate, env: Env): Boolean = filter match {
     case p: FilterPredicate =>
       // Evaluate the arguments of the filter function predicate.
-      val args = new Array[AnyRef](p.getArguments().length)
+      val args = new Array[AnyRef](p.getArguments.length)
       var j = 0
       // Iterate through each term of the filter function predicate.
       while (j < args.length) {
@@ -689,7 +688,7 @@ class Solver(constraintSystem: ConstraintSystem, stratification: Stratification,
       case l: LatSym =>
         for ((rule, p) <- dependenciesOf(sym)) {
           // unify only key terms with their values.
-          val numberOfKeys = l.getKeys().length
+          val numberOfKeys = l.getKeys.length
           val env = unify(getVarArray(p), fact, numberOfKeys, rule.getConstraintParameters.length)
           if (env != null) {
             localWorkList.push((rule, env))
@@ -882,7 +881,7 @@ class Solver(constraintSystem: ConstraintSystem, stratification: Stratification,
     for (stratum <- getConstraintsByStrata) {
       // Initialize the dependencies of every symbol to the empty set.
       for (rule <- stratum) {
-        rule.getHeadPredicate() match {
+        rule.getHeadPredicate match {
           case p: AtomPredicate => dependenciesOf.update(p.getSym, Set.empty)
           case _ => // nop
         }
@@ -891,9 +890,9 @@ class Solver(constraintSystem: ConstraintSystem, stratification: Stratification,
       // Compute the dependencies via cross product.
       for (outerRule <- stratum if outerRule.isRule) {
         for (innerRule <- stratum if innerRule.isRule) {
-          for (body <- innerRule.getBodyPredicates()) {
+          for (body <- innerRule.getBodyPredicates) {
             // Loop through the atoms of the inner rule.
-            (outerRule.getHeadPredicate(), body) match {
+            (outerRule.getHeadPredicate, body) match {
               case (outer: AtomPredicate, inner: AtomPredicate) =>
                 // We have found a head and body atom. Check if they share the same symbol.
                 if (outer.getSym == inner.getSym) {
