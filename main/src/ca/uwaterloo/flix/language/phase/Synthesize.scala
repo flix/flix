@@ -65,16 +65,19 @@ object Synthesize extends Phase[Root, Root] {
     def visitHead(h0: Predicate.Head): Predicate.Head = h0 match {
       case Predicate.Head.True(loc) => h0
       case Predicate.Head.False(loc) => h0
-      case Predicate.Head.RelAtom(base, sym, terms, tpe, loc) => Predicate.Head.RelAtom(base, sym, terms map visitExp, tpe, loc)
-      case Predicate.Head.LatAtom(base, sym, terms, tpe, loc) => Predicate.Head.LatAtom(base, sym, terms map visitExp, tpe, loc)
+      case Predicate.Head.Atom(sym, exp, terms, tpe, loc) =>
+        val e = visitExp(exp)
+        val ts = terms map visitExp
+        Predicate.Head.Atom(sym, e, ts, tpe, loc)
     }
 
     /**
       * Performs synthesis on the given body predicate `h0`.
       */
     def visitBody(b0: Predicate.Body): Predicate.Body = b0 match {
-      case Predicate.Body.RelAtom(base, sym, polarity, pats, tpe, loc) => b0
-      case Predicate.Body.LatAtom(base, sym, polarity, pats, tpe, loc) => b0
+      case Predicate.Body.Atom(sym, exp, polarity, pats, tpe, loc) =>
+        val e = visitExp(exp)
+        Predicate.Body.Atom(sym, e, polarity, pats, tpe, loc)
       case Predicate.Body.Filter(sym, terms, loc) => Predicate.Body.Filter(sym, terms map visitExp, loc)
       case Predicate.Body.Functional(sym, term, loc) => Predicate.Body.Functional(sym, visitExp(term), loc)
     }

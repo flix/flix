@@ -1892,12 +1892,12 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       case ResolvedAst.Predicate.Head.RelAtom(sym, exp, terms, tvar, loc) =>
         val e = Expressions.reassemble(exp, program, subst0)
         val ts = terms.map(t => Expressions.reassemble(t, program, subst0))
-        TypedAst.Predicate.Head.RelAtom(sym, e, ts, subst0(tvar), loc)
+        TypedAst.Predicate.Head.Atom(sym, e, ts, subst0(tvar), loc)
 
       case ResolvedAst.Predicate.Head.LatAtom(sym, exp, terms, tvar, loc) =>
         val e = Expressions.reassemble(exp, program, subst0)
         val ts = terms.map(t => Expressions.reassemble(t, program, subst0))
-        TypedAst.Predicate.Head.LatAtom(sym, e, ts, subst0(tvar), loc)
+        TypedAst.Predicate.Head.Atom(sym, e, ts, subst0(tvar), loc)
     }
 
     /**
@@ -1907,12 +1907,12 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       case ResolvedAst.Predicate.Body.RelAtom(sym, exp, polarity, terms, tvar, loc) =>
         val e = Expressions.reassemble(exp, program, subst0)
         val ts = terms.map(t => Patterns.reassemble(t, program, subst0))
-        TypedAst.Predicate.Body.RelAtom(sym, e, polarity, ts, subst0(tvar), loc)
+        TypedAst.Predicate.Body.Atom(sym, e, polarity, ts, subst0(tvar), loc)
 
       case ResolvedAst.Predicate.Body.LatAtom(sym, exp, polarity, terms, tvar, loc) =>
         val e = Expressions.reassemble(exp, program, subst0)
         val ts = terms.map(t => Patterns.reassemble(t, program, subst0))
-        TypedAst.Predicate.Body.LatAtom(sym, e, polarity, ts, subst0(tvar), loc)
+        TypedAst.Predicate.Body.Atom(sym, e, polarity, ts, subst0(tvar), loc)
 
       case ResolvedAst.Predicate.Body.Filter(sym, terms, loc) =>
         val defn = program.defs(sym)
