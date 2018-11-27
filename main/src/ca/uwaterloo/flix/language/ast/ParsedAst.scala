@@ -930,7 +930,7 @@ object ParsedAst {
     case class NativeMethod(sp1: SourcePosition, fqn: Seq[String], args: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
-      * Constraint Sequence expression.
+      * Fixpoint Constraint Sequence expression.
       *
       * @param sp1 the position of the first character in the expression.
       * @param cs  the sequence of constraints.
@@ -939,7 +939,7 @@ object ParsedAst {
     case class FixpointConstraintSeq(sp1: SourcePosition, cs: Seq[Declaration.Constraint], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
-      * Constraint Compose expression.
+      * Fixpoint Compose expression.
       *
       * @param exp1 the first constraint expression.
       * @param exp2 the second constraint expression.
