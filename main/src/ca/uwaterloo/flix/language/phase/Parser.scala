@@ -841,7 +841,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def FixpointProject: Rule1[ParsedAst.Expression] = rule {
-      SP ~ atomic("project") ~ WS ~ Names.QualifiedTable ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.FixpointProject
+      SP ~ atomic("project") ~ WS ~ Names.QualifiedTable ~ optional("<" ~ Expressions.Primary ~ ">") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.FixpointProject
     }
 
     def UserError: Rule1[ParsedAst.Expression] = rule {

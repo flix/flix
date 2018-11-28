@@ -830,7 +830,7 @@ object JvmOps {
 
       case Expression.FixpointDelta(uid, exp, stf, tpe, loc) => visitExp(exp)
 
-      case Expression.FixpointProject(sym, exp, tpe, loc) => visitExp(exp)
+      case Expression.FixpointProject(sym, exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2)
 
       case Expression.FixpointEntails(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2)
 
@@ -1082,7 +1082,7 @@ object JvmOps {
 
       case Expression.FixpointDelta(uid, exp, stf, tpe, loc) => visitExp(exp) + tpe
 
-      case Expression.FixpointProject(sym, exp, tpe, loc) => visitExp(exp) + tpe
+      case Expression.FixpointProject(sym, exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2) + tpe
 
       case Expression.FixpointEntails(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2) + tpe
 

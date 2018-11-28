@@ -461,8 +461,9 @@ object SimplifiedAstOps {
       //
       // Fixpoint Project.
       //
-      case Expression.FixpointProject(symm, exp, tpe, loc) =>
-        checkExp(exp, env0, ienv0)
+      case Expression.FixpointProject(sym, exp1, exp2, tpe, loc) =>
+        checkExp(exp1, env0, ienv0)
+        checkExp(exp2, env0, ienv0)
         checkType(tpe)
 
       //

@@ -326,9 +326,10 @@ object Synthesize extends Phase[Root, Root] {
         val e = visitExp(exp)
         Expression.FixpointDelta(e, tpe, eff, loc)
 
-      case Expression.FixpointProject(sym, exp, tpe, eff, loc) =>
-        val e = visitExp(exp)
-        Expression.FixpointProject(sym, e, tpe, eff, loc)
+      case Expression.FixpointProject(sym, exp1, exp2, tpe, eff, loc) =>
+        val e1 = visitExp(exp1)
+        val e2 = visitExp(exp2)
+        Expression.FixpointProject(sym, e1, e2, tpe, eff, loc)
 
       case Expression.FixpointEntails(exp1, exp2, tpe, eff, loc) =>
         val e1 = visitExp(exp1)

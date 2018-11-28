@@ -327,9 +327,10 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         val e = visitExp(exp)
         Expression.FixpointDelta(e, tpe, loc)
 
-      case Expression.FixpointProject(sym, exp, tpe, loc) =>
-        val e = visitExp(exp)
-        Expression.FixpointProject(sym, e, tpe, loc)
+      case Expression.FixpointProject(sym, exp1, exp2, tpe, loc) =>
+        val e1 = visitExp(exp1)
+        val e2 = visitExp(exp2)
+        Expression.FixpointProject(sym, e1, e2, tpe, loc)
 
       case Expression.FixpointEntails(exp1, exp2, tpe, loc) =>
         val e1 = visitExp(exp1)

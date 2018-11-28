@@ -320,9 +320,9 @@ object Stratifier extends Phase[Root, Root] {
         case (e, s) => Expression.FixpointDelta(uid, e, s, tpe, loc)
       }
 
-    case Expression.FixpointProject(sym, exp, tpe, loc) =>
-      mapN(visitExp(exp)) {
-        case e => Expression.FixpointProject(sym, e, tpe, loc)
+    case Expression.FixpointProject(sym, exp1, exp2, tpe, loc) =>
+      mapN(visitExp(exp1), visitExp(exp2)) {
+        case (e1, e2) => Expression.FixpointProject(sym, e1, e2, tpe, loc)
       }
 
     case Expression.FixpointEntails(exp1, exp2, tpe, loc) =>

@@ -1031,12 +1031,15 @@ object GenExpression {
       // Emit code for the invocation of the solver.
       visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Solver.toInternalName, "deltaSolve", "(Lflix/runtime/fixpoint/ConstraintSystem;Lflix/runtime/fixpoint/Stratification;Lflix/runtime/fixpoint/Options;)Ljava/lang/String;", false);
 
-    case Expression.FixpointProject(sym, exp, tpe, loc) =>
+    case Expression.FixpointProject(sym, exp1, exp2, tpe, loc) =>
       // Add source line numbers for debugging.
       addSourceLine(visitor, loc)
 
       // Instantiate the predicate symbol.
-      newPredSym(sym, Some(exp), visitor)(root, flix, currentClass, lenv0, entryPoint)
+      newPredSym(sym, Some(exp1), visitor)(root, flix, currentClass, lenv0, entryPoint)
+
+      // Compile the constraint system.
+      compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
 
       // Invoke the project method.
       visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Solver.toInternalName, "project", "(Lflix/runtime/fixpoint/symbol/PredSym;Lflix/runtime/fixpoint/ConstraintSystem;)Lflix/runtime/fixpoint/ConstraintSystem;", false)
@@ -1678,6 +1681,9 @@ object GenExpression {
       case Some(exp) =>
         // Emit code for the expression.
         compileExpression(exp, mv, clazz, lenv0, entryPoint)
+
+        // Box, if necessary.
+        AsmOps.boxIfPrim(JvmOps.getErasedJvmType(exp.tpe), mv)
 
         // Emit code for the proxy object.
         AsmOps.newProxyObject(exp.tpe, mv)

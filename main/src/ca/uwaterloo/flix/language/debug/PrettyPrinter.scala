@@ -417,11 +417,14 @@ object PrettyPrinter {
           vt.text("delta ")
           visitExp(exp)
 
-        case Expression.FixpointProject(sym, exp, tpe, loc) =>
+        case Expression.FixpointProject(sym, exp1, exp2, tpe, loc) =>
           vt.text("project ")
           vt.text(sym.toString)
+          vt.text("<")
+          visitExp(exp1)
+          vt.text(">")
           vt.text(" ")
-          visitExp(exp)
+          visitExp(exp2)
 
         case Expression.FixpointEntails(exp1, exp2, tpe, loc) =>
           ??? // TODO: ConstraintUnion

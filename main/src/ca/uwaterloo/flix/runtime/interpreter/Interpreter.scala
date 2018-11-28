@@ -286,10 +286,10 @@ object Interpreter {
       val r = Solver.deltaSolve(s, t, o)
       Value.Str(r)
 
-    case Expression.FixpointProject(sym, exp, tpe, loc) =>
-      val cs = cast2constraintset(eval(exp, env0, henv0, lenv0, root))
-      val param = eval(exp, env0, henv0, lenv0, root)
-      val predSym = newPredSym(sym, wrapValueInProxyObject(param, exp.tpe)(root, flix))(root, flix)
+    case Expression.FixpointProject(sym, exp1, exp2, tpe, loc) =>
+      val param = eval(exp1, env0, henv0, lenv0, root)
+      val predSym = newPredSym(sym, wrapValueInProxyObject(param, exp1.tpe)(root, flix))(root, flix)
+      val cs = cast2constraintset(eval(exp2, env0, henv0, lenv0, root))
       Solver.project(predSym, cs)
 
     case Expression.FixpointEntails(exp1, exp2, tpe, loc) =>

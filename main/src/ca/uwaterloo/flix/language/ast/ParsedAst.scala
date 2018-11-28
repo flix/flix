@@ -979,10 +979,11 @@ object ParsedAst {
       *
       * @param sp1  the position of the first character in the expression.
       * @param name the name of the predicate.
-      * @param exp  the constraint expression.
+      * @param exp1 the optional constraint parameter.
+      * @param exp2 the constraint expression.
       * @param sp2  the position of the last character in the expression.
       */
-    case class FixpointProject(sp1: SourcePosition, name: Name.QName, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class FixpointProject(sp1: SourcePosition, name: Name.QName, exp1: Option[ParsedAst.Expression], exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Fixpoint Entails expression.

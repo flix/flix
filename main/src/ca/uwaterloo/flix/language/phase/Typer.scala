@@ -1205,10 +1205,11 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         //  ------------------------------
         //  delta exp : Str
         //
-        case ResolvedAst.Expression.FixpointProject(sym, exp, tvar, loc) =>
+        case ResolvedAst.Expression.FixpointProject(sym, exp1, exp2, tvar, loc) =>
           // TODO: Checkable/Solvable
           for {
-            inferredType <- visitExp(exp)
+            _ <- visitExp(exp1)
+            inferredType <- visitExp(exp2)
             expectedType <- unifyM(inferredType, mkAnySchema(program), loc)
             resultType <- unifyM(tvar, inferredType, loc) // TODO: The result type should focus on what is projected.
           } yield resultType
@@ -1649,9 +1650,10 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         /*
          * FixpointProject expression.
          */
-        case ResolvedAst.Expression.FixpointProject(sym, exp, tvar, loc) =>
-          val e = reassemble(exp, program, subst0)
-          TypedAst.Expression.FixpointProject(sym, e, subst0(tvar), Eff.Bot, loc)
+        case ResolvedAst.Expression.FixpointProject(sym, exp1, exp2, tvar, loc) =>
+          val e1 = reassemble(exp1, program, subst0)
+          val e2 = reassemble(exp2, program, subst0)
+          TypedAst.Expression.FixpointProject(sym, e1, e2, subst0(tvar), Eff.Bot, loc)
 
         /*
          * ConstraintUnion expression.
