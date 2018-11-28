@@ -905,25 +905,21 @@ object Interpreter {
   private def getLatticeOps(tpe: Type)(implicit root: FinalAst.Root, flix: Flix): LatticeOps = {
     val lattice = root.latticeComponents(tpe)
 
-    new LatticeOps {
-      override def bot: ProxyObject = Linker.link(lattice.bot, root).invoke(Array.empty)
-
-      override def equ: java.util.function.Function[Array[AnyRef], ProxyObject] = (args: Array[AnyRef]) => {
+    LatticeOps.of(
+      Linker.link(lattice.bot, root).invoke(Array.empty),
+      (args: Array[AnyRef]) => {
         Linker.link(lattice.equ, root).invoke(args)
-      }
-
-      override def leq: java.util.function.Function[Array[AnyRef], ProxyObject] = (args: Array[AnyRef]) => {
+      },
+      (args: Array[AnyRef]) => {
         Linker.link(lattice.leq, root).invoke(args)
-      }
-
-      override def lub: java.util.function.Function[Array[AnyRef], ProxyObject] = (args: Array[AnyRef]) => {
+      },
+      (args: Array[AnyRef]) => {
         Linker.link(lattice.lub, root).invoke(args)
-      }
-
-      override def glb: java.util.function.Function[Array[AnyRef], ProxyObject] = (args: Array[AnyRef]) => {
+      },
+      (args: Array[AnyRef]) => {
         Linker.link(lattice.glb, root).invoke(args)
       }
-    }
+    )
   }
 
   /**

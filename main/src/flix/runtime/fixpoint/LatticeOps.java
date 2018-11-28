@@ -17,36 +17,101 @@
 package flix.runtime.fixpoint;
 
 import flix.runtime.ProxyObject;
+
 import java.util.function.Function;
 
 /**
  * A collection of lattice operations.
  */
-public interface LatticeOps {
+public final class LatticeOps {
+
+    /**
+     * Returns a new lattice ops object for the given lattice components.
+     */
+    public static LatticeOps of(ProxyObject bot, Function<Object[], ProxyObject> equ, Function<Object[], ProxyObject> leq, Function<Object[], ProxyObject> lub, Function<Object[], ProxyObject> glb) {
+        if (bot == null)
+            throw new IllegalArgumentException("'bot' must be non-null");
+        if (equ == null)
+            throw new IllegalArgumentException("'equ' must be non-null");
+        if (leq == null)
+            throw new IllegalArgumentException("'leq' must be non-null");
+        if (lub == null)
+            throw new IllegalArgumentException("'lub' must be non-null");
+        if (glb == null)
+            throw new IllegalArgumentException("'glb' must be non-null");
+
+        return new LatticeOps(bot, equ, leq, lub, glb);
+    }
 
     /**
      * Returns the bottom element.
      */
-    ProxyObject bot();
+    private ProxyObject bot;
 
     /**
      * Returns the equality function.
      */
-    Function<Object[], ProxyObject> equ();
+    private Function<Object[], ProxyObject> equ;
 
     /**
      * Returns the partial order function.
      */
-    Function<Object[], ProxyObject> leq();
+    private Function<Object[], ProxyObject> leq;
 
     /**
      * Returns the least upper bound function.
      */
-    Function<Object[], ProxyObject> lub();
+    private Function<Object[], ProxyObject> lub;
 
     /**
      * Returns the greatest lower bound function.
      */
-    Function<Object[], ProxyObject> glb();
+    private Function<Object[], ProxyObject> glb;
+
+    /**
+     * Private constructor.
+     */
+    private LatticeOps(ProxyObject bot, Function<Object[], ProxyObject> equ, Function<Object[], ProxyObject> leq, Function<Object[], ProxyObject> lub, Function<Object[], ProxyObject> glb) {
+        this.bot = bot;
+        this.equ = equ;
+        this.leq = leq;
+        this.lub = lub;
+        this.glb = glb;
+    }
+
+    /**
+     * Returns the bottom element.
+     */
+    public ProxyObject bot() {
+        return bot;
+    }
+
+    /**
+     * Returns `true` if `x` is equal to `y`.
+     */
+    public boolean equ(Object x, Object y) {
+        return (Boolean) this.equ.apply(new Object[]{x, y}).getValue();
+    }
+
+    /**
+     * Returns `true` if `x` is less than or equal to `y`.
+     */
+    public boolean leq(Object x, Object y) {
+        return (Boolean) this.leq.apply(new Object[]{x, y}).getValue();
+    }
+
+    /**
+     * Returns the least upper bound of `x` and `y`.
+     */
+    public ProxyObject lub(Object x, Object y) {
+        return this.lub.apply(new Object[]{x, y});
+    }
+
+    /**
+     * Returns the greatest lower bound of `x` and `y`.
+     */
+    public ProxyObject glb(Object x, Object y) {
+        return this.glb.apply(new Object[]{x, y});
+    }
 
 }
