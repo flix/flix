@@ -1575,27 +1575,21 @@ object GenExpression {
       // Retrieve the singleton instance.
       mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Predicate.FalsePredicate.toInternalName, "getSingleton", "()Lflix/runtime/fixpoint/predicate/FalsePredicate;", false)
 
-    case Predicate.Head.Atom(predSym, exp, terms, tpe, loc) => predSym match {
-      case sym: Symbol.RelSym =>
-        // Add source line numbers for debugging.
-        addSourceLine(mv, loc)
+    case Predicate.Head.Atom(predSym, exp, terms, tpe, loc) =>
+      // Add source line numbers for debugging.
+      addSourceLine(mv, loc)
 
-        // Emit code for the predicate symbol.
-        newRelSym(sym, Some(exp), mv)
+      // Emit code for the predicate symbol.
+      newPredSym(predSym, Some(exp), mv)
 
-        // Emit code for the polarity of the atom. A head atom is always positive.
-        mv.visitInsn(ICONST_1)
+      // Emit code for the polarity of the atom. A head atom is always positive.
+      mv.visitInsn(ICONST_1)
 
-        // Emit code for the head terms.
-        newHeadTerms(terms, mv)
+      // Emit code for the head terms.
+      newHeadTerms(terms, mv)
 
-        // Instantiate a new atom predicate object.
-        mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Predicate.AtomPredicate.toInternalName, "of", "(Lflix/runtime/fixpoint/symbol/PredSym;Z[Lflix/runtime/fixpoint/term/Term;)Lflix/runtime/fixpoint/predicate/AtomPredicate;", false);
-
-      case sym: Symbol.LatSym =>
-        ??? // TODO: Predicate.Body.LatAtom
-
-    }
+      // Instantiate a new atom predicate object.
+      mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Predicate.AtomPredicate.toInternalName, "of", "(Lflix/runtime/fixpoint/symbol/PredSym;Z[Lflix/runtime/fixpoint/term/Term;)Lflix/runtime/fixpoint/predicate/AtomPredicate;", false)
   }
 
   /**
@@ -1603,29 +1597,24 @@ object GenExpression {
     */
   private def compileBodyAtom(b0: Predicate.Body, mv: MethodVisitor)(implicit root: Root, flix: Flix, clazz: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label): Unit = b0 match {
 
-    case Predicate.Body.Atom(predSym, exp, polarity, terms, tpe, loc) => predSym match {
-      case sym: Symbol.RelSym =>
-        // Add source line numbers for debugging.
-        addSourceLine(mv, loc)
+    case Predicate.Body.Atom(predSym, exp, polarity, terms, tpe, loc) =>
+      // Add source line numbers for debugging.
+      addSourceLine(mv, loc)
 
-        // Emit code for the predicate symbol.
-        newRelSym(sym, Some(exp), mv)
+      // Emit code for the predicate symbol.
+      newPredSym(predSym, Some(exp), mv)
 
-        // Emit code for the polarity of the atom. A head atom is always positive.
-        polarity match {
-          case Polarity.Positive => mv.visitInsn(ICONST_1)
-          case Polarity.Negative => mv.visitInsn(ICONST_0)
-        }
+      // Emit code for the polarity of the atom. A head atom is always positive.
+      polarity match {
+        case Polarity.Positive => mv.visitInsn(ICONST_1)
+        case Polarity.Negative => mv.visitInsn(ICONST_0)
+      }
 
-        // Emit code for the terms.
-        newBodyTerms(terms, mv)
+      // Emit code for the terms.
+      newBodyTerms(terms, mv)
 
-        // Instantiate a new atom predicate object.
-        mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Predicate.AtomPredicate.toInternalName, "of", "(Lflix/runtime/fixpoint/symbol/PredSym;Z[Lflix/runtime/fixpoint/term/Term;)Lflix/runtime/fixpoint/predicate/AtomPredicate;", false);
-      case sym: Symbol.LatSym =>
-        ??? // TODO: Predicate.Body.LatAtom
-
-    }
+      // Instantiate a new atom predicate object.
+      mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Predicate.AtomPredicate.toInternalName, "of", "(Lflix/runtime/fixpoint/symbol/PredSym;Z[Lflix/runtime/fixpoint/term/Term;)Lflix/runtime/fixpoint/predicate/AtomPredicate;", false)
 
     case Predicate.Body.Filter(sym, terms, loc) =>
       // Add source line numbers for debugging.
@@ -1638,7 +1627,7 @@ object GenExpression {
       newBodyTerms(terms, mv)
 
       // Instantiate a new filter predicate object.
-      mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Predicate.FilterPredicate.toInternalName, "of", "(Ljava/util/function/Function;[Lflix/runtime/fixpoint/term/Term;)Lflix/runtime/fixpoint/predicate/FilterPredicate;", false);
+      mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Predicate.FilterPredicate.toInternalName, "of", "(Ljava/util/function/Function;[Lflix/runtime/fixpoint/term/Term;)Lflix/runtime/fixpoint/predicate/FilterPredicate;", false)
 
     case Predicate.Body.Functional(varSym, defSym, args, loc) =>
       // Add source line numbers for debugging.
@@ -1654,7 +1643,7 @@ object GenExpression {
       newVarSyms(args, mv)
 
       // Instantiate a new functional predicate object.
-      mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Predicate.FunctionalPredicate.toInternalName, "of", "(Lflix/runtime/fixpoint/symbol/VarSym;Ljava/util/function/Function;[Lflix/runtime/fixpoint/symbol/VarSym;)Lflix/runtime/fixpoint/predicate/FunctionalPredicate;", false);
+      mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Predicate.FunctionalPredicate.toInternalName, "of", "(Lflix/runtime/fixpoint/symbol/VarSym;Ljava/util/function/Function;[Lflix/runtime/fixpoint/symbol/VarSym;)Lflix/runtime/fixpoint/predicate/FunctionalPredicate;", false)
 
   }
 
@@ -1662,9 +1651,8 @@ object GenExpression {
     * Emits code for the given predicate symbol `predSym` with the given optional parameter expression `exp`.
     */
   private def newPredSym(predSym: Symbol.PredSym, optExp: Option[FinalAst.Expression], mv: MethodVisitor)(implicit root: Root, flix: Flix, clazz: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label): Unit = predSym match {
-    case sym: Symbol.RelSym =>
-      newRelSym(sym, optExp, mv)
-    case sym: Symbol.LatSym => ??? // TODO
+    case sym: Symbol.RelSym => newRelSym(sym, optExp, mv)
+    case sym: Symbol.LatSym => newLatSym(sym, optExp, mv)
   }
 
   /**
@@ -1693,7 +1681,15 @@ object GenExpression {
     newAttributesArray(root.relations(sym).attr, mv)
 
     // Emit code to instantiate the predicate symbol.
-    mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Symbol.RelSym.toInternalName, "of", "(Ljava/lang/String;Lflix/runtime/ProxyObject;[Lflix/runtime/fixpoint/Attribute;)Lflix/runtime/fixpoint/symbol/RelSym;", false);
+    mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Symbol.RelSym.toInternalName, "of", "(Ljava/lang/String;Lflix/runtime/ProxyObject;[Lflix/runtime/fixpoint/Attribute;)Lflix/runtime/fixpoint/symbol/RelSym;", false)
+  }
+
+  /**
+    * Emits code for the given lattice symbol with the given optional parameter expression `exp`.
+    */
+  private def newLatSym(sym: Symbol.LatSym, optExp: Option[FinalAst.Expression], mv: MethodVisitor)(implicit root: Root, flix: Flix, clazz: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label): Unit = {
+    // TODO
+    ???
   }
 
   /**
@@ -1712,7 +1708,7 @@ object GenExpression {
       mv.visitLdcInsn(attribute.name)
 
       // Instantiate a fresh attribute object.
-      mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Attribute.toInternalName, "of", "(Ljava/lang/String;)Lflix/runtime/fixpoint/Attribute;", false);
+      mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Attribute.toInternalName, "of", "(Ljava/lang/String;)Lflix/runtime/fixpoint/Attribute;", false)
 
       // Store the attribute in the array.
       mv.visitInsn(AASTORE)
@@ -1837,10 +1833,10 @@ object GenExpression {
     AsmOps.newProxyObject(tpe, mv)
 
     // Instantiate a fresh constant function object.
-    mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.ConstantFunction.toInternalName, "of", "(Lflix/runtime/ProxyObject;)Lflix/runtime/fixpoint/ConstantFunction;", false);
+    mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.ConstantFunction.toInternalName, "of", "(Lflix/runtime/ProxyObject;)Lflix/runtime/fixpoint/ConstantFunction;", false)
 
     // Instantiate the literal term object.
-    mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Term.LitTerm.toInternalName, "of", "(Ljava/util/function/Function;)Lflix/runtime/fixpoint/term/LitTerm;", false);
+    mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Term.LitTerm.toInternalName, "of", "(Ljava/util/function/Function;)Lflix/runtime/fixpoint/term/LitTerm;", false)
   }
 
   /**
@@ -1851,7 +1847,7 @@ object GenExpression {
     newVarSym(sym, mv)
 
     // Instantiate the variable term object.
-    mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Term.VarTerm.toInternalName, "of", "(Lflix/runtime/fixpoint/symbol/VarSym;)Lflix/runtime/fixpoint/term/VarTerm;", false);
+    mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Term.VarTerm.toInternalName, "of", "(Lflix/runtime/fixpoint/symbol/VarSym;)Lflix/runtime/fixpoint/term/VarTerm;", false)
   }
 
   /**
@@ -1862,7 +1858,7 @@ object GenExpression {
     AsmOps.compileDefSymbol(sym, mv)
 
     // Instantiate the literal term object.
-    mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Term.LitTerm.toInternalName, "of", "(Ljava/util/function/Function;)Lflix/runtime/fixpoint/term/LitTerm;", false);
+    mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Term.LitTerm.toInternalName, "of", "(Ljava/util/function/Function;)Lflix/runtime/fixpoint/term/LitTerm;", false)
   }
 
   /**
@@ -1876,7 +1872,7 @@ object GenExpression {
     newVarSyms(args, mv)
 
     // Instantiate a new app term object.
-    mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Term.AppTerm.toInternalName, "of", "(Ljava/util/function/Function;[Lflix/runtime/fixpoint/symbol/VarSym;)Lflix/runtime/fixpoint/term/AppTerm;", false);
+    mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Term.AppTerm.toInternalName, "of", "(Ljava/util/function/Function;[Lflix/runtime/fixpoint/symbol/VarSym;)Lflix/runtime/fixpoint/term/AppTerm;", false)
   }
 
   /**
@@ -1912,7 +1908,7 @@ object GenExpression {
     compileInt(mv, sym.getStackOffset)
 
     // Instantiate the variable symbol object.
-    mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Symbol.VarSym.toInternalName, "of", "(Ljava/lang/String;I)Lflix/runtime/fixpoint/symbol/VarSym;", false);
+    mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Symbol.VarSym.toInternalName, "of", "(Ljava/lang/String;I)Lflix/runtime/fixpoint/symbol/VarSym;", false)
   }
 
   /**
