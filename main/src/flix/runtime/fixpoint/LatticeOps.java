@@ -14,38 +14,39 @@
  * limitations under the License.
  */
 
-package flix.runtime.fixpoint.term;
+package flix.runtime.fixpoint;
+
+import flix.runtime.ProxyObject;
+import java.util.function.Function;
 
 /**
- * Represents a wildcard term.
+ * A collection of lattice operations.
  */
-public final class WildTerm implements Term {
+public interface LatticeOps {
 
     /**
-     * Private singleton instance.
+     * Returns the bottom element.
      */
-    private static final WildTerm INSTANCE = new WildTerm();
+    ProxyObject bot();
 
     /**
-     * Returns the singleton instance of the wildcard term.
+     * Returns the equality function.
      */
-    public static WildTerm getSingleton() {
-        return INSTANCE;
-    }
+    Function<Object[], ProxyObject> equ();
 
     /**
-     * Private constructor.
+     * Returns the partial order function.
      */
-    private WildTerm() {
-        /* empty constructor */
-    }
+    Function<Object[], ProxyObject> leq();
 
     /**
-     * Returns a human-readable representation of `this` term.
+     * Returns the least upper bound function.
      */
-    @Override
-    public String toString() {
-        return "_";
-    }
+    Function<Object[], ProxyObject> lub();
+
+    /**
+     * Returns the greatest lower bound function.
+     */
+    Function<Object[], ProxyObject> glb();
 
 }

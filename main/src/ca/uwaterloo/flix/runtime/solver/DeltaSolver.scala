@@ -16,7 +16,6 @@
 
 package ca.uwaterloo.flix.runtime.solver
 
-import ca.uwaterloo.flix.runtime.solver.api._
 import flix.runtime.fixpoint.{ConstraintSystem, Options, Stratification}
 import flix.runtime.{NotImplementedError, RuleError, SwitchError, TimeoutError}
 
