@@ -1659,10 +1659,46 @@ object GenExpression {
     * Emits code for the given relation symbol with the given optional parameter expression `exp`.
     */
   private def newRelSym(sym: Symbol.RelSym, optExp: Option[FinalAst.Expression], mv: MethodVisitor)(implicit root: Root, flix: Flix, clazz: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label): Unit = {
-    // Emit code for the predicate symbol.
+    // Emit code for the name of the predicate symbol.
     mv.visitLdcInsn(sym.toString)
 
     // Emit code for the parameter.
+    newParam(optExp, mv)
+
+    // Emit code for the attributes.
+    newAttributesArray(root.relations(sym).attr, mv)
+
+    // Emit code to instantiate the predicate symbol.
+    mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Symbol.RelSym.toInternalName, "of", "(Ljava/lang/String;Lflix/runtime/ProxyObject;[Lflix/runtime/fixpoint/Attribute;)Lflix/runtime/fixpoint/symbol/RelSym;", false)
+  }
+
+  /**
+    * Emits code for the given lattice symbol with the given optional parameter expression `exp`.
+    */
+  private def newLatSym(sym: Symbol.LatSym, optExp: Option[FinalAst.Expression], mv: MethodVisitor)(implicit root: Root, flix: Flix, clazz: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label): Unit = {
+    // Emit code for the name of the predicate symbol.
+    mv.visitLdcInsn(sym.toString)
+
+    // Emit code for the parameter.
+    newParam(optExp, mv)
+
+    // Emit code for the keys.
+    newAttributesArray(root.lattices(sym).attr.init, mv)
+
+    // Emit code for the value.
+    newAttribute(root.lattices(sym).attr.last, mv)
+
+    // Emit code for the lattice operations.
+    mv.visitInsn(ACONST_NULL); // TODO
+
+    // Emit code to instantiate the predicate symbol.
+    mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Symbol.LatSym.toInternalName, "of", "(Ljava/lang/String;Lflix/runtime/ProxyObject;[Lflix/runtime/fixpoint/Attribute;Lflix/runtime/fixpoint/Attribute;Lflix/runtime/fixpoint/LatticeOps;)Lflix/runtime/fixpoint/symbol/LatSym;", false)
+  }
+
+  /**
+    * Emits code for the given optional predicate parameter.
+    */
+  private def newParam(optExp: Option[FinalAst.Expression], mv: MethodVisitor)(implicit root: Root, flix: Flix, clazz: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label): Unit = {
     optExp match {
       case None =>
         mv.visitInsn(ACONST_NULL)
@@ -1676,20 +1712,6 @@ object GenExpression {
         // Emit code for the proxy object.
         AsmOps.newProxyObject(exp.tpe, mv)
     }
-
-    // Emit code for the attributes.
-    newAttributesArray(root.relations(sym).attr, mv)
-
-    // Emit code to instantiate the predicate symbol.
-    mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Symbol.RelSym.toInternalName, "of", "(Ljava/lang/String;Lflix/runtime/ProxyObject;[Lflix/runtime/fixpoint/Attribute;)Lflix/runtime/fixpoint/symbol/RelSym;", false)
-  }
-
-  /**
-    * Emits code for the given lattice symbol with the given optional parameter expression `exp`.
-    */
-  private def newLatSym(sym: Symbol.LatSym, optExp: Option[FinalAst.Expression], mv: MethodVisitor)(implicit root: Root, flix: Flix, clazz: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label): Unit = {
-    // TODO
-    ???
   }
 
   /**
