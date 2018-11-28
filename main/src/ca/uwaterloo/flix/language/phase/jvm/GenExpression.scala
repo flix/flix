@@ -1693,26 +1693,34 @@ object GenExpression {
   }
 
   /**
-    * Emits code to instantiate an array of the given `attributes`.
+    * Emits code to instantiate an array of the given attributes `as`.
     */
-  private def newAttributesArray(attributes: List[FinalAst.Attribute], mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
+  private def newAttributesArray(as: List[FinalAst.Attribute], mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
     // Instantiate a new array of appropriate length.
-    compileInt(mv, attributes.length)
+    compileInt(mv, as.length)
     mv.visitTypeInsn(ANEWARRAY, JvmName.Runtime.Fixpoint.Attribute.toInternalName)
-    for ((attribute, index) <- attributes.zipWithIndex) {
+    for ((attribute, index) <- as.zipWithIndex) {
       // Compile each attribute and store it in the array.
       mv.visitInsn(DUP)
       compileInt(mv, index)
 
-      // The name of the attribute.
-      mv.visitLdcInsn(attribute.name)
-
-      // Instantiate a fresh attribute object.
-      mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Attribute.toInternalName, "of", "(Ljava/lang/String;)Lflix/runtime/fixpoint/Attribute;", false)
+      // Instantiate the attribute.
+      newAttribute(attribute, mv)
 
       // Store the attribute in the array.
       mv.visitInsn(AASTORE)
     }
+  }
+
+  /**
+    * Emits code to instantiate the given attribute `a`.
+    */
+  private def newAttribute(a: FinalAst.Attribute, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
+    // The name of the attribute.
+    mv.visitLdcInsn(a.name)
+
+    // Instantiate a fresh attribute object.
+    mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Attribute.toInternalName, "of", "(Ljava/lang/String;)Lflix/runtime/fixpoint/Attribute;", false)
   }
 
   /**
