@@ -1,6 +1,5 @@
 package ca.uwaterloo.flix.runtime.solver.api
 
-import ca.uwaterloo.flix.runtime.InvocationTarget
 import flix.runtime.ProxyObject
 
 // TODO: Java interface
@@ -11,12 +10,12 @@ trait LatticeOps {
 
   def bot: ProxyObject
 
-  def equ: InvocationTarget
+  def equ: java.util.function.Function[Array[AnyRef], ProxyObject]
 
-  def leq: InvocationTarget
+  def leq: java.util.function.Function[Array[AnyRef], ProxyObject]
 
-  def lub: InvocationTarget
+  def lub: java.util.function.Function[Array[AnyRef], ProxyObject]
 
-  def glb: InvocationTarget
+  def glb: java.util.function.Function[Array[AnyRef], ProxyObject]
 
 }

@@ -909,13 +909,21 @@ object Interpreter {
     new LatticeOps {
       override def bot: ProxyObject = Linker.link(lattice.bot, root).invoke(Array.empty)
 
-      override def equ: InvocationTarget = Linker.link(lattice.equ, root)
+      override def equ: java.util.function.Function[Array[AnyRef], ProxyObject] = (args: Array[AnyRef]) => {
+        Linker.link(lattice.equ, root).invoke(args)
+      }
 
-      override def leq: InvocationTarget = Linker.link(lattice.leq, root)
+      override def leq: java.util.function.Function[Array[AnyRef], ProxyObject] = (args: Array[AnyRef]) => {
+        Linker.link(lattice.leq, root).invoke(args)
+      }
 
-      override def lub: InvocationTarget = Linker.link(lattice.lub, root)
+      override def lub: java.util.function.Function[Array[AnyRef], ProxyObject] = (args: Array[AnyRef]) => {
+        Linker.link(lattice.lub, root).invoke(args)
+      }
 
-      override def glb: InvocationTarget = Linker.link(lattice.glb, root)
+      override def glb: java.util.function.Function[Array[AnyRef], ProxyObject] = (args: Array[AnyRef]) => {
+        Linker.link(lattice.glb, root).invoke(args)
+      }
     }
   }
 

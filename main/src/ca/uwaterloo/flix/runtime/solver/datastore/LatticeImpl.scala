@@ -39,7 +39,7 @@ class LatticeImpl(ops: LatticeOps) extends Lattice[ProxyObject] {
 
     // evaluate the equality function passing the arguments `x` and `y`.
     val args = Array(x, y)
-    val result = ops.equ.invoke(args).getValue
+    val result = ops.equ.apply(args).getValue
     return result.asInstanceOf[java.lang.Boolean].booleanValue()
   }
 
@@ -56,7 +56,7 @@ class LatticeImpl(ops: LatticeOps) extends Lattice[ProxyObject] {
 
     // evaluate the partial order function passing the arguments `x` and `y`.
     val args = Array(x, y)
-    val result = ops.leq.invoke(args).getValue
+    val result = ops.leq.apply(args).getValue
     return result.asInstanceOf[java.lang.Boolean].booleanValue()
   }
 
@@ -73,7 +73,7 @@ class LatticeImpl(ops: LatticeOps) extends Lattice[ProxyObject] {
 
     // evaluate the least upper bound function passing the arguments `x` and `y`.
     val args = Array(x, y)
-    ops.lub.invoke(args)
+    ops.lub.apply(args)
   }
 
   /**
@@ -89,7 +89,7 @@ class LatticeImpl(ops: LatticeOps) extends Lattice[ProxyObject] {
 
     // evaluate the greatest lower bound function passing the arguments `x` and `y`.
     val args = Array(x, y)
-    ops.glb.invoke(args)
+    ops.glb.apply(args)
   }
 
 }
