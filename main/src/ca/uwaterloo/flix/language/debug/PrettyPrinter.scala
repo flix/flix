@@ -400,10 +400,12 @@ object PrettyPrinter {
           vt.text(")")
 
         case Expression.FixpointConstraint(c, tpe, loc) =>
-          ??? // TODO: Expression.Constraint
+          vt.text("<constraint>")
 
         case Expression.FixpointCompose(exp1, exp2, tpe, loc) =>
-          ??? // TODO: ConstraintUnion
+          visitExp(exp1)
+          vt.text("<+>")
+          visitExp(exp2)
 
         case Expression.FixpointSolve(exp, tpe, loc) =>
           vt.text("solve ")
@@ -427,7 +429,9 @@ object PrettyPrinter {
           visitExp(exp2)
 
         case Expression.FixpointEntails(exp1, exp2, tpe, loc) =>
-          ??? // TODO: ConstraintUnion
+          visitExp(exp1)
+          vt.text("|=")
+          visitExp(exp2)
 
         case Expression.UserError(tpe, loc) => vt << Red("UserError")
         case Expression.HoleError(sym, tpe, eff, loc) => Red("HoleError")
