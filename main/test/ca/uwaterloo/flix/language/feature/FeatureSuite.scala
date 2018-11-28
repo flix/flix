@@ -112,6 +112,7 @@ class FeatureSuite extends Suites(
   // Fixpoints
   //
   new FlixTest("Test.Expression.FixpointCompose", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.FixpointCompose.flix"),
+  new FlixTest("Test.Expression.FixpointProject", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.FixpointProject.flix"),
 
   //
   // Predicates
