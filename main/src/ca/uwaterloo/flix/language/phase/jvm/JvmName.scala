@@ -23,7 +23,6 @@ import java.nio.file.{Path, Paths}
   */
 object JvmName {
 
-  // TODO: Introduce interpolator?
   /**
     * Returns the JvmName of the given string `s`.
     */
