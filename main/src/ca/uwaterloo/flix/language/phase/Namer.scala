@@ -1137,13 +1137,13 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     * Returns the free variables in the given constraint `c0`.
     */
   private def freeVarsConstraint(c0: WeededAst.Constraint): List[Name.Ident] = c0 match {
-    case WeededAst.Constraint(head, body, loc) => freeVarsHeadPredicate(head) ::: body.flatMap(freeVarsBodyPredicate)
+    case WeededAst.Constraint(head, body, loc) => freeVarsHeadPred(head) ::: body.flatMap(freeVarsBodyPred)
   }
 
   /**
     * Returns the free variables in the given head predicate `h0`.
     */
-  private def freeVarsHeadPredicate(h0: WeededAst.Predicate.Head): List[Name.Ident] = h0 match {
+  private def freeVarsHeadPred(h0: WeededAst.Predicate.Head): List[Name.Ident] = h0 match {
     case WeededAst.Predicate.Head.True(loc) => Nil
     case WeededAst.Predicate.Head.False(loc) => Nil
     case WeededAst.Predicate.Head.Atom(qname, exp, terms, loc) => freeVars(exp) ::: terms.flatMap(freeVars)
@@ -1152,7 +1152,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
   /**
     * Returns the free variables in the given body predicate `b0`.
     */
-  private def freeVarsBodyPredicate(b0: WeededAst.Predicate.Body): List[Name.Ident] = b0 match {
+  private def freeVarsBodyPred(b0: WeededAst.Predicate.Body): List[Name.Ident] = b0 match {
     case WeededAst.Predicate.Body.Atom(qname, exp, polarity, terms, loc) => freeVars(exp) ::: terms.flatMap(freeVars)
     case WeededAst.Predicate.Body.Filter(qname, terms, loc) => terms.flatMap(freeVars)
     case WeededAst.Predicate.Body.Functional(ident, term, loc) => freeVars(term)
