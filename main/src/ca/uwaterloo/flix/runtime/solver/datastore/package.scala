@@ -16,8 +16,8 @@
 
 package ca.uwaterloo.flix.runtime.solver
 
-import ca.uwaterloo.flix.runtime.solver.api.ProxyObject
 import ca.uwaterloo.flix.util.BitOps
+import flix.runtime.ProxyObject
 
 import scala.annotation.switch
 

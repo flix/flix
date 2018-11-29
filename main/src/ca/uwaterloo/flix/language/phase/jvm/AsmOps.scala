@@ -2,10 +2,10 @@ package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.FinalAst.Root
-import ca.uwaterloo.flix.language.ast.SourceLocation
+import ca.uwaterloo.flix.language.ast.{SourceLocation, SpecialOperator, Symbol, Type}
 import ca.uwaterloo.flix.util.{InternalCompilerException, JvmTarget}
 import org.objectweb.asm.Opcodes._
-import org.objectweb.asm.{ClassWriter, MethodVisitor}
+import org.objectweb.asm.{ClassWriter, Label, MethodVisitor}
 
 object AsmOps {
 
@@ -76,9 +76,9 @@ object AsmOps {
   def getArrayLoadInstruction(tpe: JvmType): Int = tpe match {
     case JvmType.Void => throw InternalCompilerException(s"Unexpected type $tpe")
     case JvmType.PrimBool => BALOAD
-    case JvmType.PrimChar =>  CALOAD
+    case JvmType.PrimChar => CALOAD
     case JvmType.PrimByte => BALOAD
-    case JvmType.PrimShort =>  SALOAD
+    case JvmType.PrimShort => SALOAD
     case JvmType.PrimInt => IALOAD
     case JvmType.PrimLong => LALOAD
     case JvmType.PrimFloat => FALOAD
@@ -92,9 +92,9 @@ object AsmOps {
   def getArrayStoreInstruction(tpe: JvmType): Int = tpe match {
     case JvmType.Void => throw InternalCompilerException(s"Unexpected type $tpe")
     case JvmType.PrimBool => BASTORE
-    case JvmType.PrimChar =>  CASTORE
+    case JvmType.PrimChar => CASTORE
     case JvmType.PrimByte => BASTORE
-    case JvmType.PrimShort =>  SASTORE
+    case JvmType.PrimShort => SASTORE
     case JvmType.PrimInt => IASTORE
     case JvmType.PrimLong => LASTORE
     case JvmType.PrimFloat => FASTORE
@@ -115,18 +115,18 @@ object AsmOps {
     case JvmType.PrimShort => T_SHORT
     case JvmType.PrimInt => T_INT
     case JvmType.PrimLong => T_LONG
-    case JvmType.Reference(_) =>  throw InternalCompilerException(s"Expected primitive type. Actual type: $tpe")
+    case JvmType.Reference(_) => throw InternalCompilerException(s"Expected primitive type. Actual type: $tpe")
   }
 
   /**
     * Returns the CheckCast type for the value of the type specified by `tpe`
     */
-  def arrayGetCheckCastType(tpe: JvmType): String = tpe match{
+  def getArrayType(tpe: JvmType): String = tpe match {
     case JvmType.Void => throw InternalCompilerException(s"Unexpected type $tpe")
     case JvmType.PrimBool => "[Z"
-    case JvmType.PrimChar =>  "[C"
+    case JvmType.PrimChar => "[C"
     case JvmType.PrimByte => "[B"
-    case JvmType.PrimShort =>  "[S"
+    case JvmType.PrimShort => "[S"
     case JvmType.PrimInt => "[I"
     case JvmType.PrimLong => "[J"
     case JvmType.PrimFloat => "[F"
@@ -140,9 +140,9 @@ object AsmOps {
   def getArrayFillType(tpe: JvmType): String = tpe match {
     case JvmType.Void => throw InternalCompilerException(s"Unexpected type $tpe")
     case JvmType.PrimBool => "([ZZ)V"
-    case JvmType.PrimChar =>  "([CC)V"
+    case JvmType.PrimChar => "([CC)V"
     case JvmType.PrimByte => "([BB)V"
-    case JvmType.PrimShort =>  "([SS)V"
+    case JvmType.PrimShort => "([SS)V"
     case JvmType.PrimInt => "([II)V"
     case JvmType.PrimLong => "([JJ)V"
     case JvmType.PrimFloat => "([FF)V"
@@ -371,6 +371,38 @@ object AsmOps {
   }
 
   /**
+    * Emits code that puts the function object of the def symbol `def` on top of the stack.
+    */
+  def compileDefSymbol(sym: Symbol.DefnSym, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
+    // Retrieve the namespace of the def symbol.
+    val ns = JvmOps.getNamespace(sym)
+
+    // Retrieve the JVM type of the namespace.
+    val nsJvmType = JvmOps.getNamespaceClassType(ns)
+
+    // Retrieve the name of the namespace field on the context object.
+    val nsFieldName = JvmOps.getNamespaceFieldNameInContextClass(ns)
+
+    // Retrieve the name of the def on the namespace object.
+    val defFieldName = JvmOps.getDefFieldNameInNamespaceClass(sym)
+
+    // Retrieve the type of the function def class.
+    val defJvmType = JvmOps.getFunctionDefinitionClassType(sym)
+
+    // The java.util.function.Function interface type.
+    val interfaceType = JvmType.Function
+
+    // Load the current context.
+    mv.visitVarInsn(ALOAD, 1)
+
+    // Load the namespace object.
+    mv.visitFieldInsn(GETFIELD, JvmName.Context.toInternalName, nsFieldName, nsJvmType.toDescriptor)
+
+    // Load the def object.
+    mv.visitFieldInsn(GETFIELD, nsJvmType.name.toInternalName, defFieldName, defJvmType.toDescriptor)
+  }
+
+  /**
     * This method box a field with name `name` with type `tpe` on the class `className`
     * If the field is a primitive then it is boxed using the appropriate java type, if it is not a primitive
     * then we just return the field
@@ -408,6 +440,167 @@ object AsmOps {
         method.visitVarInsn(ALOAD, 0)
         method.visitMethodInsn(INVOKESPECIAL, classType.name.toInternalName, getterName, getMethodDescriptor(Nil, fieldType), false)
     }
+  }
+
+  def castIfNotPrimAndUnbox(tpe: JvmType, mv: MethodVisitor): Unit = tpe match {
+    case JvmType.Void => throw InternalCompilerException(s"Unexpected type $tpe")
+    case JvmType.PrimBool =>
+      mv.visitTypeInsn(CHECKCAST, "java/lang/Boolean")
+      mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Boolean", "booleanValue", "()Z", false)
+    case JvmType.PrimChar =>
+      mv.visitTypeInsn(CHECKCAST, "java/lang/Character")
+      mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Character", "charValue", "()C", false)
+    case JvmType.PrimFloat =>
+      mv.visitTypeInsn(CHECKCAST, "java/lang/Float")
+      mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Float", "floatValue", "()F", false)
+    case JvmType.PrimDouble =>
+      mv.visitTypeInsn(CHECKCAST, "java/lang/Double")
+      mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Double", "doubleValue", "()D", false)
+    case JvmType.PrimByte =>
+      mv.visitTypeInsn(CHECKCAST, "java/lang/Byte")
+      mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Byte", "byteValue", "()B", false)
+    case JvmType.PrimShort =>
+      mv.visitTypeInsn(CHECKCAST, "java/lang/Short")
+      mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Short", "shortValue", "()S", false)
+    case JvmType.PrimInt =>
+      mv.visitTypeInsn(CHECKCAST, "java/lang/Integer")
+      mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Integer", "intValue", "()I", false)
+    case JvmType.PrimLong =>
+      mv.visitTypeInsn(CHECKCAST, "java/lang/Long")
+      mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Long", "longValue", "()J", false)
+    case JvmType.Reference(name) => mv.visitTypeInsn(CHECKCAST, name.toInternalName)
+  }
+
+  def boxIfPrim(tpe: JvmType, mv: MethodVisitor): Unit = tpe match {
+    case JvmType.Void => throw InternalCompilerException(s"Unexpected type $tpe")
+    case JvmType.PrimBool => mv.visitMethodInsn(INVOKESTATIC, "java/lang/Boolean", "valueOf", "(Z)Ljava/lang/Boolean;", false)
+    case JvmType.PrimChar => mv.visitMethodInsn(INVOKESTATIC, "java/lang/Character", "valueOf", "(C)Ljava/lang/Character;", false)
+    case JvmType.PrimFloat => mv.visitMethodInsn(INVOKESTATIC, "java/lang/Float", "valueOf", "(F)Ljava/lang/Float;", false)
+    case JvmType.PrimDouble => mv.visitMethodInsn(INVOKESTATIC, "java/lang/Double", "valueOf", "(D)Ljava/lang/Double;", false)
+    case JvmType.PrimByte => mv.visitMethodInsn(INVOKESTATIC, "java/lang/Byte", "valueOf", "(B)Ljava/lang/Byte;", false)
+    case JvmType.PrimShort => mv.visitMethodInsn(INVOKESTATIC, "java/lang/Short", "valueOf", "(S)Ljava/lang/Short;", false)
+    case JvmType.PrimInt => mv.visitMethodInsn(INVOKESTATIC, "java/lang/Integer", "valueOf", "(I)Ljava/lang/Integer;", false)
+    case JvmType.PrimLong => mv.visitMethodInsn(INVOKESTATIC, "java/lang/Long", "valueOf", "(J)Ljava/lang/Long;", false)
+    case JvmType.Reference(name) => ()
+  }
+
+  /**
+    * Emits code to construct a new proxy object for the value on top of the stack of the given type `tpe`.
+    */
+  def newProxyObject(tpe: Type, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
+    // Construct the equal function object.
+    root.specialOps(SpecialOperator.Equality).get(tpe) match {
+      case None => mv.visitInsn(ACONST_NULL)
+      case Some(hashSym) => AsmOps.compileDefSymbol(hashSym, mv)
+    }
+
+    // Construct the hash function object.
+    root.specialOps(SpecialOperator.HashCode).get(tpe) match {
+      case None => mv.visitInsn(ACONST_NULL)
+      case Some(hashSym) => AsmOps.compileDefSymbol(hashSym, mv)
+    }
+
+    // Construct the toStr function object.
+    root.specialOps(SpecialOperator.ToString).get(tpe) match {
+      case None => mv.visitInsn(ACONST_NULL)
+      case Some(hashSym) => AsmOps.compileDefSymbol(hashSym, mv)
+    }
+
+    // Construct the proxy object.
+    mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.ProxyObject.toInternalName, "of", "(Ljava/lang/Object;Ljava/util/function/Function;Ljava/util/function/Function;Ljava/util/function/Function;)Lflix/runtime/ProxyObject;", false);
+  }
+
+  /**
+    * Emits code to construct a new proxy array for the array value on top of the stack of the given type `tpe`.
+    */
+  def newProxyArray(tpe: Type, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
+    // The type of the elements of the array.
+    val elementType = Type.getArrayInnerType(tpe)
+
+    // The type of the elements of the array, as a JVM type.
+    val jvmElementType = JvmOps.getErasedJvmType(elementType)
+
+    // The local variable index of the original array.
+    val originalArrayIndex = 2
+
+    // The local variable index of the new array.
+    val resultArrayIndex = 3
+
+    // The local variable index of the loop counter.
+    val loopCounterIndex = 4
+
+    // Cast the value to an array of objects.
+    mv.visitTypeInsn(CHECKCAST, AsmOps.getArrayType(jvmElementType))
+
+    // Store the original array in a local variable.
+    mv.visitVarInsn(ASTORE, originalArrayIndex)
+
+    // Compute the length of the original array.
+    mv.visitVarInsn(ALOAD, originalArrayIndex)
+    mv.visitInsn(ARRAYLENGTH)
+
+    // Allocate a new array of proxy objects of the same length as the original array and store it in a local variable.
+    mv.visitTypeInsn(ANEWARRAY, JvmName.Runtime.ProxyObject.toInternalName)
+    mv.visitVarInsn(ASTORE, resultArrayIndex)
+
+    // Initialize the loop counter to zero.
+    mv.visitInsn(ICONST_0)
+    mv.visitVarInsn(ISTORE, loopCounterIndex)
+
+    // The labels for the loop entry and exit.
+    val loopEntry = new Label()
+    val loopExit = new Label()
+
+    // Visit the entry label.
+    mv.visitLabel(loopEntry)
+
+    // Push the loop counter
+    mv.visitVarInsn(ILOAD, loopCounterIndex)
+
+    // Push the length of the result array.
+    mv.visitVarInsn(ALOAD, resultArrayIndex)
+    mv.visitInsn(ARRAYLENGTH)
+
+    // Branch if we are done.
+    mv.visitJumpInsn(IF_ICMPGE, loopExit)
+
+    // The loop body.
+
+    // Load the result array and the current index (to prepare for the later store)
+    mv.visitVarInsn(ALOAD, resultArrayIndex)
+    mv.visitVarInsn(ILOAD, loopCounterIndex)
+
+    // Push the original array.
+    mv.visitVarInsn(ALOAD, originalArrayIndex)
+
+    // Load the element at the current index.
+    mv.visitVarInsn(ILOAD, loopCounterIndex)
+    mv.visitInsn(AsmOps.getArrayLoadInstruction(jvmElementType))
+
+    // Box the element, if necessary.
+    boxIfPrim(jvmElementType, mv)
+
+    // Allocate a new proxy object for the element.
+    newProxyObject(elementType, mv)
+
+    // The result array, current index, and proxy object is on the stack. Store the element.
+    mv.visitInsn(AASTORE)
+
+    // Increment the loop counter.
+    mv.visitVarInsn(ILOAD, loopCounterIndex)
+    mv.visitInsn(ICONST_1)
+    mv.visitInsn(IADD)
+    mv.visitVarInsn(ISTORE, loopCounterIndex)
+
+    // Branch to the loop entry.
+    mv.visitJumpInsn(GOTO, loopEntry)
+
+    // Visit the exit label.
+    mv.visitLabel(loopExit)
+
+    // Loop the result array.
+    mv.visitVarInsn(ALOAD, resultArrayIndex)
+
   }
 
 }

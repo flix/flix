@@ -17,19 +17,19 @@
 package ca.uwaterloo.flix.runtime.interpreter
 
 import java.lang.reflect.{InvocationTargetException, Modifier}
+import java.util.function
 
 import ca.uwaterloo.flix.api._
 import ca.uwaterloo.flix.language.ast.FinalAst._
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.runtime.{InvocationTarget, Linker}
-import ca.uwaterloo.flix.runtime.solver._
-import ca.uwaterloo.flix.runtime.solver.api.symbol.VarSym
-import ca.uwaterloo.flix.runtime.solver.api.{Attribute => _, Constraint => _, Lattice => _, Relation => _, _}
 import ca.uwaterloo.flix.util.{InternalRuntimeException, Verbosity}
 import ca.uwaterloo.flix.util.tc.Show._
-import flix.runtime._
-
-import scala.collection.mutable
+import flix.runtime.fixpoint.{Constraint => _, _}
+import flix.runtime.fixpoint.predicate._
+import flix.runtime.fixpoint.symbol.{LatSym, PredSym, RelSym, VarSym}
+import flix.runtime.fixpoint.term._
+import flix.runtime.{fixpoint, _}
 
 object Interpreter {
 
@@ -258,46 +258,45 @@ object Interpreter {
       case ex: InvocationTargetException => throw ex.getTargetException
     }
 
-    case Expression.NewRelation(sym, tpe, loc) =>
-      val attr = root.relations(sym).attr.map {
-        case Attribute(name, _) => new api.Attribute(name)
-      }
-      new api.Relation(sym.name, attr.toArray)
+    case Expression.FixpointConstraint(c, tpe, loc) =>
+      evalConstraint(c, env0, henv0, lenv0)(flix, root)
 
-    case Expression.NewLattice(sym, tpe, loc) =>
-      val attr = root.lattices(sym).attr.map {
-        case Attribute(name, _) => new api.Attribute(name)
-      }
-      new api.Lattice(sym.name, attr.init.toArray, attr.last, /* TODO*/ null)
-
-    case Expression.Constraint(c, tpe, loc) =>
-      evalConstraint(c, env0, henv0, lenv0, root)
-
-    case Expression.ConstraintUnion(exp1, exp2, tpe, loc) =>
+    case Expression.FixpointCompose(exp1, exp2, tpe, loc) =>
       val v1 = cast2constraintset(eval(exp1, env0, henv0, lenv0, root))
       val v2 = cast2constraintset(eval(exp2, env0, henv0, lenv0, root))
-      v1.union(v2)
+      Solver.compose(v1, v2)
 
     case Expression.FixpointSolve(uid, exp, stf, tpe, loc) =>
-      val cs = cast2constraintset(eval(exp, env0, henv0, lenv0, root))
-      val fixpoint = solve(cs, stf)
-      fixpoint.toString
+      val s = cast2constraintset(eval(exp, env0, henv0, lenv0, root))
+      val t = newStratification(stf)(root, flix)
+      val o = newOptions()
+      Solver.solve(s, t, o)
 
     case Expression.FixpointCheck(uid, exp, stf, tpe, loc) =>
-      // TODO
-      val cs = cast2constraintset(eval(exp, env0, henv0, lenv0, root))
-      println(cs)
-      try {
-        val fixpoint = solve(cs, stf)
-        println(fixpoint)
-        Value.True
-      } catch {
-        case ex: RuleError => Value.False
-      }
+      val s = cast2constraintset(eval(exp, env0, henv0, lenv0, root))
+      val t = newStratification(stf)(root, flix)
+      val o = newOptions()
+      val r = Solver.check(s, t, o)
+      if (r) Value.True else Value.False
 
     case Expression.FixpointDelta(uid, exp, stf, tpe, loc) =>
-      val cs = cast2constraintset(eval(exp, env0, henv0, lenv0, root))
-      deltaSolve(cs, stf)
+      val s = cast2constraintset(eval(exp, env0, henv0, lenv0, root))
+      val t = newStratification(stf)(root, flix)
+      val o = newOptions()
+      val r = Solver.deltaSolve(s, t, o)
+      Value.Str(r)
+
+    case Expression.FixpointProject(sym, exp1, exp2, tpe, loc) =>
+      val param = eval(exp1, env0, henv0, lenv0, root)
+      val predSym = newPredSym(sym, wrapValueInProxyObject(param, exp1.tpe)(root, flix))(root, flix)
+      val cs = cast2constraintset(eval(exp2, env0, henv0, lenv0, root))
+      Solver.project(predSym, cs)
+
+    case Expression.FixpointEntails(exp1, exp2, tpe, loc) =>
+      val v1 = cast2constraintset(eval(exp1, env0, henv0, lenv0, root))
+      val v2 = cast2constraintset(eval(exp2, env0, henv0, lenv0, root))
+      if (Solver.entails(v1, v2))
+        Value.True else Value.False
 
     case Expression.UserError(_, loc) => throw new NotImplementedError(loc.reified)
 
@@ -689,110 +688,98 @@ object Interpreter {
   /**
     * Evaluates the given constraint `c0` to a constraint value under the given environment `env0`.
     */
-  private def evalConstraint(c0: Constraint, env0: Map[String, AnyRef], henv0: Map[Symbol.EffSym, AnyRef], lenv0: Map[Symbol.LabelSym, Expression], root: Root)(implicit flix: Flix): AnyRef = {
-    implicit val _ = root
-    implicit val cache = new SymbolCache
+  private def evalConstraint(c0: Constraint, env0: Map[String, AnyRef], henv0: Map[Symbol.EffSym, AnyRef], lenv0: Map[Symbol.LabelSym, Expression])(implicit flix: Flix, root: FinalAst.Root): AnyRef = {
+    val cparams = c0.cparams.map {
+      case cparam => VarSym.of(cparam.sym.text, cparam.sym.getStackOffset)
+    }
+    val head = evalHeadPredicate(c0.head, env0, henv0, lenv0)
+    val body = c0.body.map(b => evalBodyPredicate(b, env0, henv0, lenv0))
 
-    val cparams = c0.cparams.map(p => cache.getVarSym(p.sym))
-    val head = evalHeadPredicate(c0.head, env0)
-    val body = c0.body.map(b => evalBodyPredicate(b, env0))
+    val constraint = fixpoint.Constraint.of(cparams.toArray, head, body.toArray)
 
-    val constraint = new api.Constraint(cparams.toArray, head, body.toArray)
-
-    new ConstraintSet(Array(constraint))
+    ConstraintSystem.of(constraint)
   }
 
   /**
     * Evaluates the given head predicate `h0` under the given environment `env0` to a head predicate value.
     */
-  private def evalHeadPredicate(h0: FinalAst.Predicate.Head, env0: Map[String, AnyRef])(implicit root: FinalAst.Root, cache: SymbolCache, flix: Flix): api.predicate.Predicate = h0 match {
-    case FinalAst.Predicate.Head.True(_) => new api.predicate.TruePredicate()
-    case FinalAst.Predicate.Head.False(_) => new api.predicate.FalsePredicate()
-    case FinalAst.Predicate.Head.RelAtom(baseOpt, sym, terms, _, _) =>
-      // Retrieve the relation.
-      val relation = baseOpt match {
-        case None => getRelation(sym)
-        case Some(baseSym) =>
-          cast2relation(env0(baseSym.toString))
-      }
-      val ts = terms.map(t => evalHeadTerm(t, env0))
-      new api.predicate.AtomPredicate(relation, positive = true, ts.toArray, null)
-    case FinalAst.Predicate.Head.LatAtom(baseOpt, sym, terms, _, _) =>
-      // Retrieve the lattice.
-      val lattice = baseOpt match {
-        case None => getLattice(sym)
-        case Some(baseSym) =>
-          cast2lattice(env0(baseSym.toString))
-      }
-      val ts = terms.map(t => evalHeadTerm(t, env0))
-      new api.predicate.AtomPredicate(lattice, positive = true, ts.toArray, null)
+  private def evalHeadPredicate(h0: FinalAst.Predicate.Head, env0: Map[String, AnyRef], henv0: Map[Symbol.EffSym, AnyRef], lenv0: Map[Symbol.LabelSym, Expression])(implicit root: FinalAst.Root, flix: Flix): fixpoint.predicate.Predicate = h0 match {
+    case FinalAst.Predicate.Head.True(_) => TruePredicate.getSingleton
+
+    case FinalAst.Predicate.Head.False(_) => FalsePredicate.getSingleton
+
+    case FinalAst.Predicate.Head.Atom(predSym, exp0, terms0, _, _) => predSym match {
+      case sym: Symbol.RelSym =>
+        val param = eval(exp0, env0, henv0, lenv0, root)
+        val terms = terms0.map(t => evalHeadTerm(t, env0)).toArray
+        val relSym = newRelSym(sym, wrapValueInProxyObject(param, exp0.tpe))
+        AtomPredicate.of(relSym, true, terms)
+
+      case sym: Symbol.LatSym =>
+        val param = eval(exp0, env0, henv0, lenv0, root)
+        val terms = terms0.map(t => evalHeadTerm(t, env0)).toArray
+        val latSym = newLatSym(sym, wrapValueInProxyObject(param, exp0.tpe))
+        AtomPredicate.of(latSym, true, terms)
+    }
+
   }
 
   /**
     * Evaluates the given body predicate `b0` under the given environment `env0` to a body predicate value.
     */
-  private def evalBodyPredicate(b0: FinalAst.Predicate.Body, env0: Map[String, AnyRef])(implicit root: FinalAst.Root, cache: SymbolCache, flix: Flix): api.predicate.Predicate = b0 match {
-    case FinalAst.Predicate.Body.RelAtom(baseOpt, sym, polarity, terms, index2sym, _, _) =>
-      // Retrieve the relation.
-      val relation = baseOpt match {
-        case None => getRelation(sym)
-        case Some(baseSym) =>
-          cast2relation(env0(baseSym.toString))
-      }
+  private def evalBodyPredicate(b0: FinalAst.Predicate.Body, env0: Map[String, AnyRef], henv0: Map[Symbol.EffSym, AnyRef], lenv0: Map[Symbol.LabelSym, Expression])(implicit root: FinalAst.Root, flix: Flix): fixpoint.predicate.Predicate = b0 match {
 
-      val p = polarity match {
-        case Ast.Polarity.Positive => true
-        case Ast.Polarity.Negative => false
-      }
-      val ts = terms.map(t => evalBodyTerm(t, env0))
-      // TODO: Get rid of i2s
-      val i2s = index2sym map {
-        case x if x != null => cache.getVarSym(x)
-        case _ => null
-      }
-      new api.predicate.AtomPredicate(relation, p, ts.toArray, i2s.toArray)
+    case FinalAst.Predicate.Body.Atom(predSym, exp0, polarity0, terms0, _, _) => predSym match {
+      case sym: Symbol.RelSym =>
+        val polarity = polarity0 match {
+          case Ast.Polarity.Positive => true
+          case Ast.Polarity.Negative => false
+        }
+        val param = eval(exp0, env0, henv0, lenv0, root)
+        val terms = terms0.map(t => evalBodyTerm(t, env0)).toArray
+        val relSym = newRelSym(sym, wrapValueInProxyObject(param, exp0.tpe))
+        AtomPredicate.of(relSym, polarity, terms)
 
-    case FinalAst.Predicate.Body.LatAtom(baseOpt, sym, polarity, terms, index2sym, _, _) =>
-      // Retrieve the lattice.
-      val lattice = baseOpt match {
-        case None => getLattice(sym)
-        case Some(baseSym) =>
-          cast2lattice(env0(baseSym.toString))
-      }
-      val p = polarity match {
-        case Ast.Polarity.Positive => true
-        case Ast.Polarity.Negative => false
-      }
-      val ts = terms.map(t => evalBodyTerm(t, env0))
-      // TODO: Get rid of i2s
-      val i2s = index2sym map {
-        case x if x != null => cache.getVarSym(x)
-        case _ => null
-      }
-      new api.predicate.AtomPredicate(lattice, p, ts.toArray, i2s.toArray)
+      case sym: Symbol.LatSym =>
+        val polarity = polarity0 match {
+          case Ast.Polarity.Positive => true
+          case Ast.Polarity.Negative => false
+        }
+        val param = eval(exp0, env0, henv0, lenv0, root)
+        val terms = terms0.map(t => evalBodyTerm(t, env0)).toArray
+        val latSym = newLatSym(sym, wrapValueInProxyObject(param, exp0.tpe))
+        AtomPredicate.of(latSym, polarity, terms)
+    }
 
     case FinalAst.Predicate.Body.Filter(sym, terms, loc) =>
-      val f = (as: Array[AnyRef]) => Linker.link(sym, root).invoke(as).getValue.asInstanceOf[Boolean].booleanValue()
+      val f = new function.Function[Array[Object], ProxyObject] {
+        override def apply(as: Array[Object]): ProxyObject = {
+          val bool = Linker.link(sym, root).invoke(as).getValue.asInstanceOf[java.lang.Boolean]
+          ProxyObject.of(bool, null, null, null)
+        }
+      }
       val ts = terms.map(t => evalBodyTerm(t, env0))
-      new api.predicate.FilterPredicate(f, ts.toArray)
+      FilterPredicate.of(f, ts.toArray)
 
     case FinalAst.Predicate.Body.Functional(varSym, defSym, terms, loc) =>
-      val s = cache.getVarSym(varSym)
-      val f = (as: Array[AnyRef]) => Linker.link(defSym, root).invoke(as).getValue.asInstanceOf[Array[ProxyObject]]
-      new api.predicate.FunctionalPredicate(s, f, terms.map(t => cache.getVarSym(t)).toArray)
+      val s = VarSym.of(varSym.text, varSym.getStackOffset)
+      val f = new function.Function[Array[AnyRef], Array[ProxyObject]] {
+        override def apply(as: Array[AnyRef]): Array[ProxyObject] = Linker.link(defSym, root).invoke(as).getValue.asInstanceOf[Array[ProxyObject]]
+      }
+      val ts = terms.map(s => VarSym.of(s.text, s.getStackOffset))
+      FunctionalPredicate.of(s, f, ts.toArray)
   }
 
   /**
     * Evaluates the given head term `t0` under the given environment `env0` to a head term value.
     */
-  private def evalHeadTerm(t0: FinalAst.Term.Head, env0: Map[String, AnyRef])(implicit root: FinalAst.Root, cache: SymbolCache, flix: Flix): api.term.Term = t0 match {
+  private def evalHeadTerm(t0: FinalAst.Term.Head, env0: Map[String, AnyRef])(implicit root: FinalAst.Root, flix: Flix): Term = t0 match {
     //
     // Free Variables (i.e. variables that are quantified over in the constraint).
     //
     case FinalAst.Term.Head.QuantVar(sym, _, _) =>
       // Lookup the corresponding symbol in the cache.
-
-      new api.term.VarTerm(cache.getVarSym(sym))
+      VarTerm.of(VarSym.of(sym.text, sym.getStackOffset))
 
     //
     // Bound Variables (i.e. variables that have a value in the local environment).
@@ -802,40 +789,42 @@ object Interpreter {
       val v = wrapValueInProxyObject(env0(sym.toString), tpe)
 
       // Construct a literal term with a function that evaluates to the proxy object.
-      new api.term.LitTerm(() => v)
+      LitTerm.of((_: AnyRef) => v)
 
     //
     // Literals.
     //
     case FinalAst.Term.Head.Lit(sym, _, _) =>
       // Construct a literal term with a function that invokes another function which returns the literal.
-      new api.term.LitTerm(() => Linker.link(sym, root).invoke(Array.emptyObjectArray))
+      LitTerm.of((_: AnyRef) => Linker.link(sym, root).invoke(Array.emptyObjectArray))
 
     //
     // Applications.
     //
     case FinalAst.Term.Head.App(sym, args, _, _) =>
       // Construct a function that when invoked applies the underlying function.
-      val f = (args: Array[AnyRef]) => Linker.link(sym, root).invoke(args)
-      val as = args.map(cache.getVarSym)
-      new api.term.AppTerm(f, as.toArray)
+      val f = new java.util.function.Function[Array[AnyRef], ProxyObject] {
+        override def apply(args: Array[AnyRef]): ProxyObject = Linker.link(sym, root).invoke(args)
+      }
+      val as = args.map(s => VarSym.of(s.text, s.getStackOffset))
+      AppTerm.of(f, as.toArray)
   }
 
   /**
     * Evaluates the given body term `t0` under the given environment `env0` to a body term value.
     */
-  private def evalBodyTerm(t0: FinalAst.Term.Body, env0: Map[String, AnyRef])(implicit root: FinalAst.Root, cache: SymbolCache, flix: Flix): api.term.Term = t0 match {
+  private def evalBodyTerm(t0: FinalAst.Term.Body, env0: Map[String, AnyRef])(implicit root: FinalAst.Root, flix: Flix): Term = t0 match {
     //
     // Wildcards.
     //
-    case FinalAst.Term.Body.Wild(_, _) => new api.term.WildTerm()
+    case FinalAst.Term.Body.Wild(_, _) => WildTerm.getSingleton
 
     //
     // Free Variables (i.e. variables that are quantified over in the constraint).
     //
     case FinalAst.Term.Body.QuantVar(sym, _, _) =>
       // Lookup the corresponding symbol in the cache.
-      new api.term.VarTerm(cache.getVarSym(sym))
+      VarTerm.of(VarSym.of(sym.text, sym.getStackOffset))
 
     //
     // Bound Variables (i.e. variables that have a value in the local environment).
@@ -845,41 +834,69 @@ object Interpreter {
       val v = wrapValueInProxyObject(env0(sym.toString), tpe)
 
       // Construct a literal term with a function that evaluates to the proxy object.
-      new api.term.LitTerm(() => v)
+      LitTerm.of((_: AnyRef) => v)
 
     //
     // Literals.
     //
     case FinalAst.Term.Body.Lit(sym, _, _) =>
       // Construct a literal term with a function that invokes another function which returns the literal.
-      new api.term.LitTerm(() => Linker.link(sym, root).invoke(Array.emptyObjectArray))
+      LitTerm.of((_: AnyRef) => Linker.link(sym, root).invoke(Array.emptyObjectArray))
   }
 
   /**
-    * Returns the relation value associated with the given relation symbol `sym`.
-    *
-    * NB: Allocates a new relation if no such relation exists in the cache.
+    * Returns the predicate symbol of the given symbol `sym`.
     */
-  private def getRelation(sym: Symbol.RelSym)(implicit root: FinalAst.Root, flix: Flix): api.RelationVar = root.relations(sym) match {
+  def newPredSym(sym: Symbol.PredSym, param: ProxyObject)(implicit root: FinalAst.Root, flix: Flix): PredSym = sym match {
+    case sym: Symbol.RelSym => newRelSym(sym, param)
+    case sym: Symbol.LatSym => newLatSym(sym, param)
+  }
+
+  /**
+    * Returns the relation value associated with the given relation symbol `sym` and parameter `param` (may be null).
+    */
+  private def newRelSym(sym: Symbol.RelSym, param: ProxyObject)(implicit root: FinalAst.Root, flix: Flix): RelSym = root.relations(sym) match {
     case FinalAst.Relation(_, _, attr, _) =>
       val name = sym.toString
-      val as = attr.map(a => new api.Attribute(a.name)).toArray
-      new RelationVar(name, as)
+      val as = attr.map(a => fixpoint.Attribute.of(a.name)).toArray
+      RelSym.of(name, param, as)
   }
 
   /**
-    * Returns the lattice value associated with the given lattice symbol `sym`.
-    *
-    * NB: Allocates a new lattice if no such lattice exists in the cache.
+    * Returns the lattice value associated with the given lattice symbol `sym` and parameter `param` (may be null).
     */
-  private def getLattice(sym: Symbol.LatSym)(implicit root: FinalAst.Root, flix: Flix): api.LatticeVar = root.lattices(sym) match {
+  private def newLatSym(sym: Symbol.LatSym, param: ProxyObject)(implicit root: FinalAst.Root, flix: Flix): LatSym = root.lattices(sym) match {
     case FinalAst.Lattice(_, _, attr, _) =>
       val name = sym.toString
-      val as = attr.map(a => new api.Attribute(a.name))
+      val as = attr.map(a => fixpoint.Attribute.of(a.name))
       val keys = as.init.toArray
       val value = as.last
       val ops = getLatticeOps(attr.last.tpe)
-      new LatticeVar(name, keys, value, ops)
+      LatSym.of(name, null, keys, value, ops)
+  }
+
+  /**
+    * Returns the stratification.
+    */
+  private def newStratification(stf: Ast.Stratification)(implicit root: FinalAst.Root, flix: Flix): Stratification = {
+    val result = new Stratification()
+    for ((predSym, stratum) <- stf.m) {
+      val sym = newPredSym(predSym, null)
+      result.setStratum(sym, stratum)
+    }
+    result
+  }
+
+  /**
+    * Returns the fixpoint options object based on the flix configuration.
+    */
+  private def newOptions()(implicit flix: Flix): Options = {
+    // Configure the fixpoint solver based on the Flix options.
+    val options = new Options
+    options.setMonitored(flix.options.monitor)
+    options.setThreads(flix.options.threads)
+    options.setVerbose(flix.options.verbosity == Verbosity.Verbose)
+    options
   }
 
   /**
@@ -888,35 +905,63 @@ object Interpreter {
   private def getLatticeOps(tpe: Type)(implicit root: FinalAst.Root, flix: Flix): LatticeOps = {
     val lattice = root.latticeComponents(tpe)
 
-    new LatticeOps {
-      override def bot: ProxyObject = Linker.link(lattice.bot, root).invoke(Array.empty)
-
-      override def equ: InvocationTarget = Linker.link(lattice.equ, root)
-
-      override def leq: InvocationTarget = Linker.link(lattice.leq, root)
-
-      override def lub: InvocationTarget = Linker.link(lattice.lub, root)
-
-      override def glb: InvocationTarget = Linker.link(lattice.glb, root)
-    }
+    LatticeOps.of(
+      (args: Array[AnyRef]) => {
+        Linker.link(lattice.bot, root).invoke(Array.empty)
+      },
+      (args: Array[AnyRef]) => {
+        Linker.link(lattice.equ, root).invoke(args)
+      },
+      (args: Array[AnyRef]) => {
+        Linker.link(lattice.leq, root).invoke(args)
+      },
+      (args: Array[AnyRef]) => {
+        Linker.link(lattice.lub, root).invoke(args)
+      },
+      (args: Array[AnyRef]) => {
+        Linker.link(lattice.glb, root).invoke(args)
+      }
+    )
   }
 
   /**
     * Returns the given value `v` of the given type `tpe` wrapped in a proxy object.
     */
-  private def wrapValueInProxyObject(v: AnyRef, tpe: Type)(implicit root: FinalAst.Root, flix: Flix): ProxyObject = {
+  private def wrapValueInProxyObject(v: AnyRef, tpe: Type)(implicit root: FinalAst.Root, f: Flix): ProxyObject = {
+    if (tpe == Type.Unit) {
+      return ProxyObject.of(flix.runtime.value.Unit.getInstance(), null, null, null)
+    }
+
     // Retrieve the operator symbols.
     val eqSym = root.specialOps(SpecialOperator.Equality)(tpe)
     val hashSym = root.specialOps(SpecialOperator.HashCode)(tpe)
     val toStrSym = root.specialOps(SpecialOperator.ToString)(tpe)
 
     // Construct the operators.
-    val eqOp = (x: AnyRef, y: AnyRef) => Linker.link(eqSym, root).invoke(Array(x, y)).getValue.asInstanceOf[Boolean]
-    val hashOp = (x: AnyRef) => Linker.link(hashSym, root).invoke(Array(x)).getValue.asInstanceOf[Integer].intValue()
-    val toStrOp = (x: AnyRef) => Linker.link(toStrSym, root).invoke(Array(x)).getValue.asInstanceOf[String]
+    val eqOp = new java.util.function.Function[Array[AnyRef], ProxyObject] {
+      override def apply(a: Array[AnyRef]): ProxyObject = {
+        val x = a(0)
+        val y = a(1)
+        Linker.link(eqSym, root).invoke(Array(x, y))
+      }
+    }
+
+    val hashOp = new java.util.function.Function[Array[AnyRef], ProxyObject] {
+      override def apply(a: Array[AnyRef]): ProxyObject = {
+        val x = a(0)
+        Linker.link(hashSym, root).invoke(Array(x))
+      }
+    }
+
+    val toStrOp = new java.util.function.Function[Array[AnyRef], ProxyObject] {
+      override def apply(a: Array[AnyRef]): ProxyObject = {
+        val x = a(0)
+        Linker.link(toStrSym, root).invoke(Array(x))
+      }
+    }
 
     // Return the proxy object.
-    new ProxyObject(v, eqOp, hashOp, toStrOp)
+    ProxyObject.of(v, eqOp, hashOp, toStrOp)
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -1054,24 +1099,24 @@ object Interpreter {
   /**
     * Casts the given reference `ref` to a constraint value.
     */
-  private def cast2constraintset(ref: AnyRef): ConstraintSet = ref match {
-    case v: ConstraintSet => v
+  private def cast2constraintset(ref: AnyRef): ConstraintSystem = ref match {
+    case v: ConstraintSystem => v
     case _ => throw InternalRuntimeException(s"Unexpected non-constraint value: ${ref.getClass.getName}.")
   }
 
   /**
     * Casts the given reference `ref` to a relation.
     */
-  private def cast2relation(ref: AnyRef): api.Relation = ref match {
-    case r: api.Relation => r
+  private def cast2relsym(ref: AnyRef): RelSym = ref match {
+    case r: RelSym => r
     case _ => throw InternalRuntimeException(s"Unexpected non-relation value: ${ref.getClass.getName}.")
   }
 
   /**
     * Casts the given reference `ref` to a lattice.
     */
-  private def cast2lattice(ref: AnyRef): api.Lattice = ref match {
-    case r: api.Lattice => r
+  private def cast2latsym(ref: AnyRef): LatSym = ref match {
+    case r: LatSym => r
     case _ => throw InternalRuntimeException(s"Unexpected non-lattice value: ${ref.getClass.getName}.")
   }
 
@@ -1104,36 +1149,6 @@ object Interpreter {
         Value.RecordExtension(removeRecordLabel(base, field), field2, value)
     case Value.RecordEmpty => throw InternalRuntimeException(s"Unexpected missing field: '$field'.")
     case _ => throw InternalRuntimeException(s"Unexpected non-record value: '$record'.")
-  }
-
-  /**
-    * Computes the fixed point of the given constraint set `cs`.
-    */
-  private def solve(cs: ConstraintSet, stf: Ast.Stratification)(implicit flix: Flix): Fixpoint = {
-    // Configure the fixpoint solver based on the Flix options.
-    val options = new FixpointOptions
-    options.setMonitored(flix.options.monitor)
-    options.setThreads(flix.options.threads)
-    options.setVerbose(flix.options.verbosity == Verbosity.Verbose)
-
-    // Construct the solver.
-    val solver = new Solver(cs.complete(), options)
-    solver.solve()
-  }
-
-  /**
-    * Returns the minimal set of facts that fails to satisfy the given constraint set.
-    */
-  private def deltaSolve(cs: ConstraintSet, stf: Ast.Stratification)(implicit flix: Flix): String = {
-    // Configure the fixpoint solver based on the Flix options.
-    val options = new FixpointOptions
-    options.setMonitored(flix.options.monitor)
-    options.setThreads(flix.options.threads)
-    options.setVerbose(flix.options.verbosity == Verbosity.Verbose)
-
-    // Construct the solver.
-    val deltaSolver = new DeltaSolver(cs, options)
-    deltaSolver.deltaSolve()
   }
 
   /**
@@ -1188,23 +1203,6 @@ object Interpreter {
     case o: java.math.BigInteger => Value.BigInt(o)
     case o: java.lang.String => Value.Str(o)
     case _ => ref
-  }
-
-
-  // Class used to ensure that the symbols share the same object by identity.
-  private class SymbolCache {
-
-    val varSyms = mutable.Map.empty[Symbol.VarSym, VarSym]
-
-    def getVarSym(sym: Symbol.VarSym): VarSym =
-      varSyms.get(sym) match {
-        case None =>
-          val newSym = new VarSym(sym.text)
-          varSyms += (sym -> newSym)
-          newSym
-        case Some(res) => res
-      }
-
   }
 
 }

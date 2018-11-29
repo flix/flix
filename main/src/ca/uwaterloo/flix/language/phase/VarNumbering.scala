@@ -193,13 +193,18 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.NativeField(field, tpe, loc) => i0
       case Expression.NativeMethod(method, args, tpe, loc) => visitExps(args, i0)
 
-      case Expression.NewRelation(sym, tpe, loc) => i0
+      case Expression.FixpointConstraint(c, tpe, loc) =>
+        // Assign a number to each constraint parameters.
+        // These are unrelated to the true stack offsets.
+        for ((cparam, index) <- c.cparams.zipWithIndex) {
+          cparam match {
+            case ConstraintParam.HeadParam(sym, _, _) => sym.setStackOffset(index)
+            case ConstraintParam.RuleParam(sym, _, _) => sym.setStackOffset(index)
+          }
+        }
+        i0
 
-      case Expression.NewLattice(sym, tpe, loc) => i0
-
-      case Expression.Constraint(c, tpe, loc) => i0
-
-      case Expression.ConstraintUnion(exp1, exp2, tpe, loc) =>
+      case Expression.FixpointCompose(exp1, exp2, tpe, loc) =>
         val i1 = visitExp(exp1, i0)
         visitExp(exp2, i1)
 
@@ -208,6 +213,14 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.FixpointCheck(exp, tpe, loc) => visitExp(exp, i0)
 
       case Expression.FixpointDelta(exp, tpe, loc) => visitExp(exp, i0)
+
+      case Expression.FixpointProject(sym, exp1, exp2, tpe, loc) =>
+        val i1 = visitExp(exp1, i0)
+        visitExp(exp2, i1)
+
+      case Expression.FixpointEntails(exp1, exp2, tpe, loc) =>
+        val i1 = visitExp(exp1, i0)
+        visitExp(exp2, i1)
 
       case Expression.UserError(tpe, loc) => i0
       case Expression.HoleError(sym, tpe, eff, loc) => i0

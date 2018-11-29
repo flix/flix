@@ -19,10 +19,13 @@ package ca.uwaterloo.flix.language.phase.jvm
 import java.lang.reflect.Modifier
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.FinalAst.{CatchRule, Expression, Root}
+import ca.uwaterloo.flix.language.ast
+import ca.uwaterloo.flix.language.ast.Ast.Polarity
+import ca.uwaterloo.flix.language.ast.FinalAst._
 import ca.uwaterloo.flix.language.ast.SemanticOperator._
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.util.{InternalCompilerException, Optimization}
+import ca.uwaterloo.flix.util.{InternalCompilerException, Optimization, Verbosity}
+import ca.uwaterloo.flix.language.ast.{Type => FlixType}
 import org.objectweb.asm
 import org.objectweb.asm.Opcodes._
 import org.objectweb.asm._
@@ -66,10 +69,7 @@ object GenExpression {
     case Expression.Str(s) => visitor.visitLdcInsn(s)
 
     case Expression.Var(sym, tpe, _) =>
-      val jvmType = JvmOps.getErasedJvmType(tpe)
-      val iLOAD = AsmOps.getLoadInstruction(jvmType)
-      visitor.visitVarInsn(iLOAD, sym.getStackOffset + 3) // This is `+2` because the first 2 are reserved!
-      AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
+      readVar(sym, tpe, visitor)
 
     case Expression.Closure(sym, freeVars, fnType, tpe, loc) =>
       // ClosureInfo
@@ -145,9 +145,9 @@ object GenExpression {
       visitor.visitInsn(DUP)
       // Save it on the IFO local variable
       visitor.visitVarInsn(ASTORE, 2)
-      // Call apply
+      // Call invoke
       visitor.visitVarInsn(ALOAD, 1)
-      visitor.visitMethodInsn(INVOKEINTERFACE, cont.name.toInternalName, "apply", AsmOps.getMethodDescriptor(List(JvmType.Context), JvmType.Void), true)
+      visitor.visitMethodInsn(INVOKEINTERFACE, cont.name.toInternalName, "invoke", AsmOps.getMethodDescriptor(List(JvmType.Context), JvmType.Void), true)
       // Getting `continuation` field on `Context`
       visitor.visitVarInsn(ALOAD, 1)
       visitor.visitFieldInsn(GETFIELD, JvmName.Context.toInternalName, "continuation", JvmType.Object.toDescriptor)
@@ -228,9 +228,9 @@ object GenExpression {
       visitor.visitInsn(DUP)
       // Save it on the IFO local variable
       visitor.visitVarInsn(ASTORE, 2)
-      // Call apply
+      // Call invoke
       visitor.visitVarInsn(ALOAD, 1)
-      visitor.visitMethodInsn(INVOKEINTERFACE, cont.name.toInternalName, "apply", AsmOps.getMethodDescriptor(List(JvmType.Context), JvmType.Void), true)
+      visitor.visitMethodInsn(INVOKEINTERFACE, cont.name.toInternalName, "invoke", AsmOps.getMethodDescriptor(List(JvmType.Context), JvmType.Void), true)
       // Getting `continuation` field on `Context`
       visitor.visitVarInsn(ALOAD, 1)
       visitor.visitFieldInsn(GETFIELD, JvmName.Context.toInternalName, "continuation", JvmType.Object.toDescriptor)
@@ -678,13 +678,13 @@ object GenExpression {
       // We get the inner type of the array
       val jvmType = JvmOps.getErasedJvmType(ca.uwaterloo.flix.language.ast.Type.getArrayInnerType(tpe))
       // Instantiating a new array of type jvmType
-      if(jvmType == JvmType.Object){ // Happens if the inner type is an object type
+      if (jvmType == JvmType.Object) { // Happens if the inner type is an object type
         visitor.visitTypeInsn(ANEWARRAY, "java/lang/Object")
-      } else{ // Happens if the inner type is a primitive type
+      } else { // Happens if the inner type is a primitive type
         visitor.visitIntInsn(NEWARRAY, AsmOps.getArrayTypeCode(jvmType))
       }
       // For each element we generate code to store it into the array
-      for(i <- 0 until elms.length){
+      for (i <- 0 until elms.length) {
         // Duplicates the 'array reference'
         visitor.visitInsn(DUP)
         // We push the 'index' of the current element on top of stack
@@ -706,12 +706,12 @@ object GenExpression {
       // Evaluating the 'length' of the array
       compileExpression(len, visitor, currentClass, lenv0, entryPoint)
       // Instantiating a new array of type jvmType
-      if(jvmType == JvmType.Object){ // Happens if the inner type is an object type
+      if (jvmType == JvmType.Object) { // Happens if the inner type is an object type
         visitor.visitTypeInsn(ANEWARRAY, "java/lang/Object")
-      } else{ // Happens if the inner type is a primitive type
+      } else { // Happens if the inner type is a primitive type
         visitor.visitIntInsn(NEWARRAY, AsmOps.getArrayTypeCode(jvmType))
       }
-      if(jvmType == JvmType.PrimLong || jvmType == JvmType.PrimDouble){ // Happens if the inner type is Int64 or Float64
+      if (jvmType == JvmType.PrimLong || jvmType == JvmType.PrimDouble) { // Happens if the inner type is Int64 or Float64
         // Duplicates the 'array reference' three places down the stack
         visitor.visitInsn(DUP_X2)
         // Duplicates the 'array reference' three places down the stack
@@ -737,7 +737,7 @@ object GenExpression {
       // Evaluating the 'base'
       compileExpression(base, visitor, currentClass, lenv0, entryPoint)
       // Cast the object to Array
-      visitor.visitTypeInsn(CHECKCAST, AsmOps.arrayGetCheckCastType(jvmType))
+      visitor.visitTypeInsn(CHECKCAST, AsmOps.getArrayType(jvmType))
       // Evaluating the 'index' to load from
       compileExpression(index, visitor, currentClass, lenv0, entryPoint)
       // Loads the 'element' at the given 'index' from the 'array'
@@ -752,7 +752,7 @@ object GenExpression {
       // Evaluating the 'base'
       compileExpression(base, visitor, currentClass, lenv0, entryPoint)
       // Cast the object to Array
-      visitor.visitTypeInsn(CHECKCAST, AsmOps.arrayGetCheckCastType(jvmType))
+      visitor.visitTypeInsn(CHECKCAST, AsmOps.getArrayType(jvmType))
       // Evaluating the 'index' to be stored in
       compileExpression(index, visitor, currentClass, lenv0, entryPoint)
       // Evaluating the 'element' to be stored
@@ -762,7 +762,7 @@ object GenExpression {
       visitor.visitInsn(AsmOps.getArrayStoreInstruction(jvmType))
       // Since the return type is 'unit', we put an instance of 'unit' on top of the stack
       visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Value.Unit.toInternalName, "getInstance",
-                              AsmOps.getMethodDescriptor(Nil, JvmType.Unit), false)
+        AsmOps.getMethodDescriptor(Nil, JvmType.Unit), false)
 
     case Expression.ArrayLength(base, tpe, loc) =>
       // Adding source line number for debugging
@@ -772,7 +772,7 @@ object GenExpression {
       // Evaluating the 'base'
       compileExpression(base, visitor, currentClass, lenv0, entryPoint)
       // Cast the object to array
-      visitor.visitTypeInsn(CHECKCAST, AsmOps.arrayGetCheckCastType(jvmType))
+      visitor.visitTypeInsn(CHECKCAST, AsmOps.getArrayType(jvmType))
       // Pushes the 'length' of the array on top of stack
       visitor.visitInsn(ARRAYLENGTH)
 
@@ -796,9 +796,9 @@ object GenExpression {
       // Duplicates the 'length'
       visitor.visitInsn(DUP)
       // Instantiating a new array of type jvmType
-      if(jvmType == JvmType.Object){ // Happens if the inner type is an object type
+      if (jvmType == JvmType.Object) { // Happens if the inner type is an object type
         visitor.visitTypeInsn(ANEWARRAY, "java/lang/Object")
-      } else{ // Happens if the inner type is a primitive type
+      } else { // Happens if the inner type is a primitive type
         visitor.visitIntInsn(NEWARRAY, AsmOps.getArrayTypeCode(jvmType))
       }
       // Duplicates the 'array reference' and 'length' 4 places down the stack
@@ -912,7 +912,7 @@ object GenExpression {
         // Store the exception in a local variable.
         val istore = AsmOps.getStoreInstruction(JvmType.Object)
         // TODO: We must store the exception in a local variable, but currently that does not work.
-        //visitor.visitVarInsn(istore, sym.getStackOffset + 3)
+        //visitor.visitVarInsn(istore, sym.getIndex + 3)
         visitor.visitInsn(POP)
 
         // Emit code for the handler body expression.
@@ -962,6 +962,100 @@ object GenExpression {
         visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Value.Unit.toInternalName, "getInstance",
           AsmOps.getMethodDescriptor(List(), JvmType.Unit), false)
       }
+
+    case Expression.FixpointConstraint(con, tpe, loc) =>
+      // Add source line numbers for debugging.
+      addSourceLine(visitor, loc)
+
+      // Emit code for the constraint.
+      newConstraintSystem(con, visitor)(root, flix, currentClass, lenv0, entryPoint)
+
+    case Expression.FixpointCompose(exp1, exp2, tpe, loc) =>
+      // Add source line numbers for debugging.
+      addSourceLine(visitor, loc)
+
+      // Emit code for the left-hand constraint system.
+      compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+
+      // Emit code for the right-hand constraint system.
+      compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+
+      // Emit code for the invocation of compose.
+      visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Solver.toInternalName, "compose", "(Lflix/runtime/fixpoint/ConstraintSystem;Lflix/runtime/fixpoint/ConstraintSystem;)Lflix/runtime/fixpoint/ConstraintSystem;", false);
+
+    case Expression.FixpointSolve(uid, exp, stf, tpe, loc) =>
+      // Add source line numbers for debugging.
+      addSourceLine(visitor, loc)
+
+      // Emit code for the constraint system.
+      compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+
+      // Emit code for the stratification.
+      newStratification(stf, visitor)(root, flix, currentClass, lenv0, entryPoint)
+
+      // Emit code for the fixpoint options.
+      newOptions(visitor)
+
+      // Emit code for the invocation of the solver.
+      visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Solver.toInternalName, "solve", "(Lflix/runtime/fixpoint/ConstraintSystem;Lflix/runtime/fixpoint/Stratification;Lflix/runtime/fixpoint/Options;)Lflix/runtime/fixpoint/ConstraintSystem;", false)
+
+    case Expression.FixpointCheck(uid, exp, stf, tpe, loc) =>
+      // Add source line numbers for debugging.
+      addSourceLine(visitor, loc)
+
+      // Emit code for the constraint system.
+      compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+
+      // Emit code for the stratification.
+      newStratification(stf, visitor)(root, flix, currentClass, lenv0, entryPoint)
+
+      // Emit code for the fixpoint options.
+      newOptions(visitor)
+
+      // Emit code for the invocation of the solver.
+      visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Solver.toInternalName, "check", "(Lflix/runtime/fixpoint/ConstraintSystem;Lflix/runtime/fixpoint/Stratification;Lflix/runtime/fixpoint/Options;)Z", false);
+
+    case Expression.FixpointDelta(uid, exp, stf, tpe, loc) =>
+      // Add source line numbers for debugging.
+      addSourceLine(visitor, loc)
+
+      // Emit code for the constraint system.
+      compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+
+      // Emit code for the stratification.
+      newStratification(stf, visitor)(root, flix, currentClass, lenv0, entryPoint)
+
+      // Emit code for the fixpoint options.
+      newOptions(visitor)
+
+      // Emit code for the invocation of the solver.
+      visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Solver.toInternalName, "deltaSolve", "(Lflix/runtime/fixpoint/ConstraintSystem;Lflix/runtime/fixpoint/Stratification;Lflix/runtime/fixpoint/Options;)Ljava/lang/String;", false);
+
+    case Expression.FixpointProject(sym, exp1, exp2, tpe, loc) =>
+      // Add source line numbers for debugging.
+      addSourceLine(visitor, loc)
+
+      // Instantiate the predicate symbol.
+      newPredSym(sym, Some(exp1), visitor)(root, flix, currentClass, lenv0, entryPoint)
+
+      // Compile the constraint system.
+      compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+
+      // Invoke the project method.
+      visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Solver.toInternalName, "project", "(Lflix/runtime/fixpoint/symbol/PredSym;Lflix/runtime/fixpoint/ConstraintSystem;)Lflix/runtime/fixpoint/ConstraintSystem;", false)
+
+    case Expression.FixpointEntails(exp1, exp2, tpe, loc) =>
+      // Add source line numbers for debugging.
+      addSourceLine(visitor, loc)
+
+      // Emit code for the left-hand constraint system.
+      compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+
+      // Emit code for the right-hand constraint system.
+      compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+
+      // Emit code for the invocation of entails.
+      visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Solver.toInternalName, "entails", "(Lflix/runtime/fixpoint/ConstraintSystem;Lflix/runtime/fixpoint/ConstraintSystem;)Z", false);
 
     case Expression.UserError(_, loc) =>
       addSourceLine(visitor, loc)
@@ -1418,6 +1512,525 @@ object GenExpression {
           bigintOp, AsmOps.getMethodDescriptor(List(JvmOps.getJvmType(e2.tpe)), JvmType.BigInteger), false)
       case _ => throw InternalCompilerException(s"Unexpected semantic operator: $sop.")
     }
+  }
+
+  /**
+    * Emits code to instantiate a new constraint system for the given constraint `c`.
+    */
+  private def newConstraintSystem(c: Constraint, mv: MethodVisitor)(implicit root: Root, flix: Flix, clazz: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label): Unit = c match {
+    case Constraint(cparams, head, body) =>
+      // Instantiate the constraint object.
+      newConstraint(c, mv)
+
+      // Instantiate the constraint system object.
+      mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.ConstraintSystem.toInternalName, "of", "(Lflix/runtime/fixpoint/Constraint;)Lflix/runtime/fixpoint/ConstraintSystem;", false)
+  }
+
+  /**
+    * Emits code to instantiate a new constraint for the given constraint `c`.
+    */
+  private def newConstraint(c: Constraint, mv: MethodVisitor)(implicit root: Root, flix: Flix, clazz: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label): Unit = c match {
+    case Constraint(cparams, head, body) =>
+      // Emit code for the cparams.
+      newVarSyms(c.cparams.map(_.sym), mv)
+
+      // Emit code for the head atom.
+      compileHeadAtom(head, mv)
+
+      // Emit code for the body atoms.
+      compileInt(mv, c.body.length)
+      mv.visitTypeInsn(ANEWARRAY, JvmName.Runtime.Fixpoint.Predicate.Predicate.toInternalName)
+      for ((atom, index) <- c.body.zipWithIndex) {
+        // Compile each constraint param and store it in the array.
+        mv.visitInsn(DUP)
+        compileInt(mv, index)
+
+        // Compile the body atom.
+        compileBodyAtom(atom, mv)
+
+        // Store the result in the array.
+        mv.visitInsn(AASTORE)
+      }
+
+      // Instantiate a new constraint system object.
+      mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Constraint.toInternalName, "of", "([Lflix/runtime/fixpoint/symbol/VarSym;Lflix/runtime/fixpoint/predicate/Predicate;[Lflix/runtime/fixpoint/predicate/Predicate;)Lflix/runtime/fixpoint/Constraint;", false);
+
+  }
+
+  /**
+    * Compiles the given head expression `h0`.
+    */
+  private def compileHeadAtom(h0: Predicate.Head, mv: MethodVisitor)(implicit root: Root, flix: Flix, clazz: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label): Unit = h0 match {
+    case Predicate.Head.True(loc) =>
+      // Add source line numbers for debugging.
+      addSourceLine(mv, loc)
+
+      // Retrieve the singleton instance.
+      mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Predicate.TruePredicate.toInternalName, "getSingleton", "()Lflix/runtime/fixpoint/predicate/TruePredicate;", false)
+
+    case Predicate.Head.False(loc) =>
+      // Add source line numbers for debugging.
+      addSourceLine(mv, loc)
+
+      // Retrieve the singleton instance.
+      mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Predicate.FalsePredicate.toInternalName, "getSingleton", "()Lflix/runtime/fixpoint/predicate/FalsePredicate;", false)
+
+    case Predicate.Head.Atom(predSym, exp, terms, tpe, loc) =>
+      // Add source line numbers for debugging.
+      addSourceLine(mv, loc)
+
+      // Emit code for the predicate symbol.
+      newPredSym(predSym, Some(exp), mv)
+
+      // Emit code for the polarity of the atom. A head atom is always positive.
+      mv.visitInsn(ICONST_1)
+
+      // Emit code for the head terms.
+      newHeadTerms(terms, mv)
+
+      // Instantiate a new atom predicate object.
+      mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Predicate.AtomPredicate.toInternalName, "of", "(Lflix/runtime/fixpoint/symbol/PredSym;Z[Lflix/runtime/fixpoint/term/Term;)Lflix/runtime/fixpoint/predicate/AtomPredicate;", false)
+  }
+
+  /**
+    * Compiles the given head expression `h0`.
+    */
+  private def compileBodyAtom(b0: Predicate.Body, mv: MethodVisitor)(implicit root: Root, flix: Flix, clazz: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label): Unit = b0 match {
+
+    case Predicate.Body.Atom(predSym, exp, polarity, terms, tpe, loc) =>
+      // Add source line numbers for debugging.
+      addSourceLine(mv, loc)
+
+      // Emit code for the predicate symbol.
+      newPredSym(predSym, Some(exp), mv)
+
+      // Emit code for the polarity of the atom. A head atom is always positive.
+      polarity match {
+        case Polarity.Positive => mv.visitInsn(ICONST_1)
+        case Polarity.Negative => mv.visitInsn(ICONST_0)
+      }
+
+      // Emit code for the terms.
+      newBodyTerms(terms, mv)
+
+      // Instantiate a new atom predicate object.
+      mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Predicate.AtomPredicate.toInternalName, "of", "(Lflix/runtime/fixpoint/symbol/PredSym;Z[Lflix/runtime/fixpoint/term/Term;)Lflix/runtime/fixpoint/predicate/AtomPredicate;", false)
+
+    case Predicate.Body.Filter(sym, terms, loc) =>
+      // Add source line numbers for debugging.
+      addSourceLine(mv, loc)
+
+      // Emit code for the function symbol.
+      AsmOps.compileDefSymbol(sym, mv)
+
+      // Emit code for the terms.
+      newBodyTerms(terms, mv)
+
+      // Instantiate a new filter predicate object.
+      mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Predicate.FilterPredicate.toInternalName, "of", "(Ljava/util/function/Function;[Lflix/runtime/fixpoint/term/Term;)Lflix/runtime/fixpoint/predicate/FilterPredicate;", false)
+
+    case Predicate.Body.Functional(varSym, defSym, args, loc) =>
+      // Add source line numbers for debugging.
+      addSourceLine(mv, loc)
+
+      // The variable symbol.
+      newVarSym(varSym, mv)
+
+      // The function object.
+      AsmOps.compileDefSymbol(defSym, mv)
+
+      // The function argument variables.
+      newVarSyms(args, mv)
+
+      // Instantiate a new functional predicate object.
+      mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Predicate.FunctionalPredicate.toInternalName, "of", "(Lflix/runtime/fixpoint/symbol/VarSym;Ljava/util/function/Function;[Lflix/runtime/fixpoint/symbol/VarSym;)Lflix/runtime/fixpoint/predicate/FunctionalPredicate;", false)
+
+  }
+
+  /**
+    * Emits code for the given predicate symbol `predSym` with the given optional parameter expression `exp`.
+    */
+  private def newPredSym(predSym: Symbol.PredSym, optExp: Option[FinalAst.Expression], mv: MethodVisitor)(implicit root: Root, flix: Flix, clazz: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label): Unit = predSym match {
+    case sym: Symbol.RelSym => newRelSym(sym, optExp, mv)
+    case sym: Symbol.LatSym => newLatSym(sym, optExp, mv)
+  }
+
+  /**
+    * Emits code for the given relation symbol with the given optional parameter expression `exp`.
+    */
+  private def newRelSym(sym: Symbol.RelSym, optExp: Option[FinalAst.Expression], mv: MethodVisitor)(implicit root: Root, flix: Flix, clazz: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label): Unit = {
+    // Emit code for the name of the predicate symbol.
+    mv.visitLdcInsn(sym.toString)
+
+    // Emit code for the parameter.
+    newParam(optExp, mv)
+
+    // Emit code for the attributes.
+    newAttributesArray(root.relations(sym).attr, mv)
+
+    // Emit code to instantiate the predicate symbol.
+    mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Symbol.RelSym.toInternalName, "of", "(Ljava/lang/String;Lflix/runtime/ProxyObject;[Lflix/runtime/fixpoint/Attribute;)Lflix/runtime/fixpoint/symbol/RelSym;", false)
+  }
+
+  /**
+    * Emits code for the given lattice symbol with the given optional parameter expression `exp`.
+    */
+  private def newLatSym(sym: Symbol.LatSym, optExp: Option[FinalAst.Expression], mv: MethodVisitor)(implicit root: Root, flix: Flix, clazz: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label): Unit = {
+    // Emit code for the name of the predicate symbol.
+    mv.visitLdcInsn(sym.toString)
+
+    // Emit code for the parameter.
+    newParam(optExp, mv)
+
+    // Emit code for the keys.
+    newAttributesArray(root.lattices(sym).attr.init, mv)
+
+    // Emit code for the value.
+    newAttribute(root.lattices(sym).attr.last, mv)
+
+    // Emit code for the lattice operations.
+    newLatticeOps(sym, mv)
+
+    // Emit code to instantiate the predicate symbol.
+    mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Symbol.LatSym.toInternalName, "of", "(Ljava/lang/String;Lflix/runtime/ProxyObject;[Lflix/runtime/fixpoint/Attribute;Lflix/runtime/fixpoint/Attribute;Lflix/runtime/fixpoint/LatticeOps;)Lflix/runtime/fixpoint/symbol/LatSym;", false)
+  }
+
+  /**
+    * Emits code for the given optional predicate parameter.
+    */
+  private def newParam(optExp: Option[FinalAst.Expression], mv: MethodVisitor)(implicit root: Root, flix: Flix, clazz: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label): Unit = {
+    optExp match {
+      case None =>
+        mv.visitInsn(ACONST_NULL)
+      case Some(exp) =>
+        // Emit code for the expression.
+        compileExpression(exp, mv, clazz, lenv0, entryPoint)
+
+        // Box, if necessary.
+        AsmOps.boxIfPrim(JvmOps.getErasedJvmType(exp.tpe), mv)
+
+        // Emit code for the proxy object.
+        AsmOps.newProxyObject(exp.tpe, mv)
+    }
+  }
+
+  /**
+    * Emits code to instantiate an array of the given attributes `as`.
+    */
+  private def newAttributesArray(as: List[FinalAst.Attribute], mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
+    // Instantiate a new array of appropriate length.
+    compileInt(mv, as.length)
+    mv.visitTypeInsn(ANEWARRAY, JvmName.Runtime.Fixpoint.Attribute.toInternalName)
+    for ((attribute, index) <- as.zipWithIndex) {
+      // Compile each attribute and store it in the array.
+      mv.visitInsn(DUP)
+      compileInt(mv, index)
+
+      // Instantiate the attribute.
+      newAttribute(attribute, mv)
+
+      // Store the attribute in the array.
+      mv.visitInsn(AASTORE)
+    }
+  }
+
+  /**
+    * Emits code to instantiate the given attribute `a`.
+    */
+  private def newAttribute(a: FinalAst.Attribute, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
+    // The name of the attribute.
+    mv.visitLdcInsn(a.name)
+
+    // Instantiate a fresh attribute object.
+    mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Attribute.toInternalName, "of", "(Ljava/lang/String;)Lflix/runtime/fixpoint/Attribute;", false)
+  }
+
+  /**
+    * Emits code to construct a lattice operations object for the given symbol `sym`.
+    */
+  private def newLatticeOps(sym: Symbol.LatSym, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
+    // Lookup the declaration.
+    val decl = root.lattices(sym)
+    val ops = root.latticeComponents(decl.attr.last.tpe)
+
+    // The bottom object.
+    AsmOps.compileDefSymbol(ops.bot, mv)
+
+    // The equ function.
+    AsmOps.compileDefSymbol(ops.equ, mv)
+
+    // The leq function.
+    AsmOps.compileDefSymbol(ops.leq, mv)
+
+    // The lub function.
+    AsmOps.compileDefSymbol(ops.lub, mv)
+
+    // The glb function.
+    AsmOps.compileDefSymbol(ops.glb, mv)
+
+    // Instantiate a new lattice ops object.
+    mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.LatticeOps.toInternalName, "of", "(Ljava/util/function/Function;Ljava/util/function/Function;Ljava/util/function/Function;Ljava/util/function/Function;Ljava/util/function/Function;)Lflix/runtime/fixpoint/LatticeOps;", false)
+  }
+
+  /**
+    * Compiles the given head term `t0`.
+    */
+  private def compileHeadTerm(t0: Term.Head, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = t0 match {
+    case Term.Head.QuantVar(sym, tpe, loc) =>
+      // Add source line numbers for debugging.
+      addSourceLine(mv, loc)
+
+      // Emit code for the quantified variable.
+      newVarTermFromQuantVar(sym, mv)
+
+    case Term.Head.CapturedVar(sym, tpe, loc) =>
+      // Add source line numbers for debugging.
+      addSourceLine(mv, loc)
+
+      // Emit code for the captured var.
+      newVarTermFromCapturedVar(sym, tpe, mv)
+
+    case Term.Head.Lit(sym, tpe, loc) =>
+      // Add source line numbers for debugging.
+      addSourceLine(mv, loc)
+
+      // Compile the literal term.
+      newLitTerm(sym, mv)
+
+    case Term.Head.App(sym, args, tpe, loc) =>
+      // Add source line numbers for debugging.
+      addSourceLine(mv, loc)
+
+      // Compile the application term.
+      newAppTerm(sym, args, mv)
+  }
+
+  /**
+    * Compiles the given body term `t0`.
+    */
+  private def compileBodyTerm(t0: Term.Body, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = t0 match {
+    case Term.Body.Wild(tpe, loc) =>
+      // Add source line numbers for debugging.
+      addSourceLine(mv, loc)
+
+      // Emits code for the wild card term.
+      newWildTerm(mv)
+
+    case Term.Body.QuantVar(sym, tpe, loc) =>
+      // Add source line numbers for debugging.
+      addSourceLine(mv, loc)
+
+      // Emit code for the quantified variable.
+      newVarTermFromQuantVar(sym, mv)
+
+    case Term.Body.CapturedVar(sym, tpe, loc) =>
+      // Add source line numbers for debugging.
+      addSourceLine(mv, loc)
+
+      // Emit code for the captured var.
+      newVarTermFromCapturedVar(sym, tpe, mv)
+
+    case Term.Body.Lit(sym, tpe, loc) =>
+      // Add source line numbers for debugging.
+      addSourceLine(mv, loc)
+
+      // Compile the literal term.
+      newLitTerm(sym, mv)
+  }
+
+  /**
+    * Emits code for the given head `terms`.
+    */
+  private def newHeadTerms(terms: List[Term.Head], mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
+    compileInt(mv, terms.length)
+    mv.visitTypeInsn(ANEWARRAY, JvmName.Runtime.Fixpoint.Term.Term.toInternalName)
+    for ((term, index) <- terms.zipWithIndex) {
+      // Compile each term and store it in the array.
+      mv.visitInsn(DUP)
+      compileInt(mv, index)
+      compileHeadTerm(term, mv)
+      mv.visitInsn(AASTORE)
+    }
+  }
+
+  /**
+    * Emits code for the given body `terms`.
+    */
+  private def newBodyTerms(terms: List[Term.Body], mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
+    compileInt(mv, terms.length)
+    mv.visitTypeInsn(ANEWARRAY, JvmName.Runtime.Fixpoint.Term.Term.toInternalName)
+    for ((term, index) <- terms.zipWithIndex) {
+      // Compile each term and store it in the array.
+      mv.visitInsn(DUP)
+      compileInt(mv, index)
+      compileBodyTerm(term, mv)
+      mv.visitInsn(AASTORE)
+    }
+  }
+
+  /**
+    * Emits code to allocate a new wildcard term.
+    */
+  private def newWildTerm(mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
+    // Retrieve the singleton instance of the wildcard term.
+    mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Term.WildTerm.toInternalName, "getSingleton", "()Lflix/runtime/fixpoint/term/WildTerm;", false)
+  }
+
+  /**
+    * Emits code to allocate a new variable term for the given captured variable symbol `sym`.
+    */
+  private def newVarTermFromCapturedVar(sym: Symbol.VarSym, tpe: ast.Type, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
+    // Read the value of the local variable and put it on the stack.
+    readVar(sym, tpe, mv)
+
+    // Box the result, if necessary.
+    AsmOps.boxIfPrim(JvmOps.getErasedJvmType(tpe), mv)
+
+    // Allocate a proxy object for the captured value.
+    AsmOps.newProxyObject(tpe, mv)
+
+    // Instantiate a fresh constant function object.
+    mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.ConstantFunction.toInternalName, "of", "(Lflix/runtime/ProxyObject;)Lflix/runtime/fixpoint/ConstantFunction;", false)
+
+    // Instantiate the literal term object.
+    mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Term.LitTerm.toInternalName, "of", "(Ljava/util/function/Function;)Lflix/runtime/fixpoint/term/LitTerm;", false)
+  }
+
+  /**
+    * Emits code to allocate a new variable term for the given quantified variable symbol `sym`.
+    */
+  private def newVarTermFromQuantVar(sym: Symbol.VarSym, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
+    // Compile the variable symbol.
+    newVarSym(sym, mv)
+
+    // Instantiate the variable term object.
+    mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Term.VarTerm.toInternalName, "of", "(Lflix/runtime/fixpoint/symbol/VarSym;)Lflix/runtime/fixpoint/term/VarTerm;", false)
+  }
+
+  /**
+    * Emits code to allocate a new literal term for the given def symbol `sym`.
+    */
+  private def newLitTerm(sym: Symbol.DefnSym, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
+    // Emit code to construct the function object.
+    AsmOps.compileDefSymbol(sym, mv)
+
+    // Instantiate the literal term object.
+    mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Term.LitTerm.toInternalName, "of", "(Ljava/util/function/Function;)Lflix/runtime/fixpoint/term/LitTerm;", false)
+  }
+
+  /**
+    * Emits code to allocate a new app term for the given symbol `sym` and arguments `args`.
+    */
+  private def newAppTerm(sym: Symbol.DefnSym, args: List[Symbol.VarSym], mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
+    // The function object.
+    AsmOps.compileDefSymbol(sym, mv)
+
+    // The function arguments.
+    newVarSyms(args, mv)
+
+    // Instantiate a new app term object.
+    mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Term.AppTerm.toInternalName, "of", "(Ljava/util/function/Function;[Lflix/runtime/fixpoint/symbol/VarSym;)Lflix/runtime/fixpoint/term/AppTerm;", false)
+  }
+
+  /**
+    * Emits code to allocate new variable symbols for the given symbols `syms`.
+    */
+  private def newVarSyms(syms: List[Symbol.VarSym], mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
+    // The function arguments.
+    compileInt(mv, syms.length)
+    mv.visitTypeInsn(ANEWARRAY, JvmName.Runtime.Fixpoint.Symbol.VarSym.toInternalName)
+    for ((argVar, index) <- syms.zipWithIndex) {
+      // Compile each variable symbol and store it in the array.
+      mv.visitInsn(DUP)
+
+      // Compile the array index.
+      compileInt(mv, index)
+
+      // Compile the variable symbol.
+      newVarSym(argVar, mv)
+
+      // Store the variable symbol in the array.
+      mv.visitInsn(AASTORE)
+    }
+  }
+
+  /**
+    * Emits code to allocate a new variable symbol for the given symbol `sym`.
+    */
+  private def newVarSym(sym: Symbol.VarSym, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
+    // Emit the variable name.
+    mv.visitLdcInsn(sym.text)
+
+    // Emit the variable index.
+    compileInt(mv, sym.getStackOffset)
+
+    // Instantiate the variable symbol object.
+    mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Symbol.VarSym.toInternalName, "of", "(Ljava/lang/String;I)Lflix/runtime/fixpoint/symbol/VarSym;", false)
+  }
+
+  /**
+    * Emits code to instantiate a new stratification object.
+    */
+  private def newStratification(stf: Ast.Stratification, mv: MethodVisitor)(implicit root: Root, flix: Flix, clazz: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label): Unit = {
+    // Instantiate a fresh stratification object.
+    mv.visitTypeInsn(NEW, JvmName.Runtime.Fixpoint.Stratification.toInternalName)
+    mv.visitInsn(DUP)
+
+    // Invoke the constructor of the stratification object.
+    mv.visitMethodInsn(INVOKESPECIAL, JvmName.Runtime.Fixpoint.Stratification.toInternalName, "<init>", "()V", false)
+
+    // Add every predicate symbol with its stratum.
+    for ((predSym, stratum) <- stf.m) {
+      mv.visitInsn(DUP)
+      newPredSym(predSym, None, mv)
+      compileInt(mv, stratum)
+      mv.visitMethodInsn(INVOKEVIRTUAL, JvmName.Runtime.Fixpoint.Stratification.toInternalName, "setStratum", "(Lflix/runtime/fixpoint/symbol/PredSym;I)V", false)
+    }
+  }
+
+  /**
+    * Emits code to instantiate a new options object based on the flix options.
+    */
+  private def newOptions(mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
+    // Allocate a fresh object.
+    mv.visitTypeInsn(NEW, JvmName.Runtime.Fixpoint.Options.toInternalName)
+    mv.visitInsn(DUP)
+
+    // Invoke the constructor.
+    mv.visitMethodInsn(INVOKESPECIAL, JvmName.Runtime.Fixpoint.Options.toInternalName, "<init>", "()V", false)
+
+    // Monitor
+    mv.visitInsn(DUP)
+    if (flix.options.monitor) {
+      mv.visitInsn(ICONST_1)
+    } else {
+      mv.visitInsn(ICONST_0)
+    }
+    mv.visitMethodInsn(INVOKEVIRTUAL, JvmName.Runtime.Fixpoint.Options.toInternalName, "setMonitored", "(Z)V", false)
+
+    // Threads
+    mv.visitInsn(DUP)
+    mv.visitIntInsn(BIPUSH, flix.options.threads)
+    mv.visitMethodInsn(INVOKEVIRTUAL, JvmName.Runtime.Fixpoint.Options.toInternalName, "setThreads", "(I)V", false)
+
+    // Verbosity
+    mv.visitInsn(DUP)
+    if (flix.options.verbosity == Verbosity.Verbose) {
+      mv.visitInsn(ICONST_1)
+    } else {
+      mv.visitInsn(ICONST_0)
+    }
+    mv.visitMethodInsn(INVOKEVIRTUAL, JvmName.Runtime.Fixpoint.Options.toInternalName, "setVerbose", "(Z)V", false)
+  }
+
+  /**
+    * Generates code to read the given variable symbol and put it on top of the stack.
+    */
+  private def readVar(sym: Symbol.VarSym, tpe: FlixType, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
+    val jvmType = JvmOps.getErasedJvmType(tpe)
+    val iLOAD = AsmOps.getLoadInstruction(jvmType)
+    mv.visitVarInsn(iLOAD, sym.getStackOffset + 3) // This is `+2` because the first 2 are reserved!
+    AsmOps.castIfNotPrim(mv, JvmOps.getJvmType(tpe))
   }
 
   /*

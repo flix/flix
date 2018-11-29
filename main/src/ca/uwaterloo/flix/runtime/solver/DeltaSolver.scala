@@ -16,13 +16,13 @@
 
 package ca.uwaterloo.flix.runtime.solver
 
-import ca.uwaterloo.flix.runtime.solver.api._
-import flix.runtime.{RuleError, NotImplementedError, SwitchError, TimeoutError}
+import flix.runtime.fixpoint.{ConstraintSystem, Options, Stratification}
+import flix.runtime.{NotImplementedError, RuleError, SwitchError, TimeoutError}
 
 /**
   * A delta debugging solver based on the Flix solver.
   */
-class DeltaSolver(constraintSet: ConstraintSet, options: FixpointOptions) {
+class DeltaSolver(constraintSet: ConstraintSystem, stratification: Stratification, options: Options) {
 
   /**
     * A common super-type to represent the result of running the solver.
@@ -70,7 +70,7 @@ class DeltaSolver(constraintSet: ConstraintSet, options: FixpointOptions) {
     /*
      * Attempts to determine the exception the (original) program crashes with.
      */
-    val exception = tryInit(constraintSet).getOrElse {
+    val exception = tryInit(constraintSet, stratification).getOrElse {
       Console.err.println(s"The program ran successfully. No need for delta debugging?")
       System.exit(1)
       null
@@ -106,10 +106,10 @@ class DeltaSolver(constraintSet: ConstraintSet, options: FixpointOptions) {
         facts = facts - block
 
         // reconstruct the constraints.
-        val cs = new ConstraintSet(facts.flatten.toArray ++ rules)
+        val cs = ConstraintSystem.of(facts.flatten.toArray ++ rules)
 
         // try to solve the reconstructed program.
-        trySolve(cs, exception) match {
+        trySolve(cs, stratification, exception) match {
           case SolverResult.Success =>
             // the program successfully completed. Must backtrack.
             Console.println(f"    [block $round%3d] ${block.size}%5d fact(s) retained (program ran successfully).")
@@ -150,9 +150,9 @@ class DeltaSolver(constraintSet: ConstraintSet, options: FixpointOptions) {
   /**
     * Optionally returns the exception thrown by the original program.
     */
-  def tryInit(cs: ConstraintSet): Option[RuntimeException] = {
+  def tryInit(cs: ConstraintSystem, stf: Stratification): Option[RuntimeException] = {
     try {
-      runSolver(cs)
+      runSolver(cs, stf)
       None
     } catch {
       case ex: RuntimeException => Some(ex)
@@ -162,10 +162,10 @@ class DeltaSolver(constraintSet: ConstraintSet, options: FixpointOptions) {
   /**
     * Attempts to solve the given program expects `expectedException` to be thrown.
     */
-  def trySolve(cs: ConstraintSet, expectedException: RuntimeException): SolverResult = {
+  def trySolve(cs: ConstraintSystem, stf: Stratification, expectedException: RuntimeException): SolverResult = {
     try {
       // run the solver.
-      runSolver(cs)
+      runSolver(cs, stf)
       // the solver successfully completed, return `Success`.
       SolverResult.Success
     } catch {
@@ -200,8 +200,8 @@ class DeltaSolver(constraintSet: ConstraintSet, options: FixpointOptions) {
   /**
     * Runs the solver.
     */
-  private def runSolver(cs: ConstraintSet): Fixpoint = {
-    val solver = new Solver(cs.complete(), options)
+  private def runSolver(cs: ConstraintSystem, stf: Stratification): ConstraintSystem = {
+    val solver = new Solver(cs, stf, options)
     solver.solve()
   }
 

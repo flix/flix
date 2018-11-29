@@ -174,17 +174,19 @@ object WeededAst {
 
     case class NativeMethod(className: String, methodName: String, args: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
 
-    case class NewRelationOrLattice(name: Name.QName, loc: SourceLocation) extends WeededAst.Expression
+    case class FixpointConstraint(c: WeededAst.Constraint, loc: SourceLocation) extends WeededAst.Expression
 
-    case class Constraint(con: WeededAst.Constraint, loc: SourceLocation) extends WeededAst.Expression
-
-    case class ConstraintUnion(exp1: WeededAst.Expression, exp2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+    case class FixpointCompose(exp1: WeededAst.Expression, exp2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     case class FixpointSolve(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     case class FixpointCheck(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     case class FixpointDelta(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+
+    case class FixpointProject(name: Name.QName, exp1: WeededAst.Expression, exp2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+
+    case class FixpointEntails(exp1: WeededAst.Expression, exp2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     case class UserError(loc: SourceLocation) extends WeededAst.Expression
 
@@ -242,7 +244,7 @@ object WeededAst {
 
       case class False(loc: SourceLocation) extends WeededAst.Predicate.Head
 
-      case class Atom(base: Option[Name.Ident], name: Name.QName, terms: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Predicate.Head
+      case class Atom(name: Name.QName, exp: WeededAst.Expression, terms: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Predicate.Head
 
     }
 
@@ -250,7 +252,7 @@ object WeededAst {
 
     object Body {
 
-      case class Atom(base: Option[Name.Ident], name: Name.QName, polarity: Ast.Polarity, terms: List[WeededAst.Pattern], loc: SourceLocation) extends WeededAst.Predicate.Body
+      case class Atom(name: Name.QName, exp: WeededAst.Expression, polarity: Ast.Polarity, terms: List[WeededAst.Pattern], loc: SourceLocation) extends WeededAst.Predicate.Body
 
       case class Filter(name: Name.QName, terms: List[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Predicate.Body
 

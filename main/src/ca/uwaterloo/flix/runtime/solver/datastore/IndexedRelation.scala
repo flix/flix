@@ -16,8 +16,9 @@
 
 package ca.uwaterloo.flix.runtime.solver.datastore
 
-import ca.uwaterloo.flix.runtime.solver.api.{Attribute, ProxyObject}
 import ca.uwaterloo.flix.util.BitOps
+import flix.runtime.ProxyObject
+import flix.runtime.fixpoint.Attribute
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -31,7 +32,8 @@ import scala.collection.mutable.ArrayBuffer
   * @param indexes the indexes.
   * @param default the default index.
   */
-final class IndexedRelation(val attributes: Array[Attribute], indexes: Set[Int], default: Int) extends IndexedCollection {
+final class IndexedRelation(val name: String, val attributes: Array[Attribute], indexes: Set[Int], default: Int) extends IndexedCollection {
+  // TODO: Getter for name?
 
   /**
     * A map from indexes to keys to rows of values.

@@ -516,7 +516,15 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Multiplicative: Rule1[ParsedAst.Expression] = rule {
-      Infix ~ zeroOrMore(optWS ~ capture(atomic("**") | atomic("*") | atomic("/") | atomic("%")) ~ optWS ~ Infix ~ SP ~> ParsedAst.Expression.Binary)
+      Entails ~ zeroOrMore(optWS ~ capture(atomic("**") | atomic("*") | atomic("/") | atomic("%")) ~ optWS ~ Entails ~ SP ~> ParsedAst.Expression.Binary)
+    }
+
+    def Entails: Rule1[ParsedAst.Expression] = rule {
+      Compose ~ optional(optWS ~ atomic("|=") ~ optWS ~ Compose ~ SP ~> ParsedAst.Expression.FixpointEntails)
+    }
+
+    def Compose: Rule1[ParsedAst.Expression] = rule {
+      Infix ~ zeroOrMore(optWS ~ atomic("<+>") ~ optWS ~ Infix ~ SP ~> ParsedAst.Expression.FixpointCompose)
     }
 
     def Infix: Rule1[ParsedAst.Expression] = rule {
@@ -527,12 +535,12 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
       // NB: We allow any operator, other than a reserved operator, to be matched by this rule.
       def Reserved2: Rule1[String] = rule {
-        capture("**" | "<=" | ">=" | "==" | "!=" | "&&" | "||" | "=>" | "->")
+        capture("**" | "<=" | ">=" | "==" | "!=" | "&&" | "||" | "=>" | "->" | "|=")
       }
 
       // NB: We allow any operator, other than a reserved operator, to be matched by this rule.
       def Reserved3: Rule1[String] = rule {
-        capture("<<<" | ">>>")
+        capture("<<<" | ">>>" | "<+>")
       }
 
       // Match any two character operator which is not reserved.
@@ -585,8 +593,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       LetRec | LetMatch | IfThenElse | Match | LambdaMatch | Switch | TryCatch | Native | Lambda | Tuple |
         RecordRestrict | RecordExtend | RecordUpdate | RecordLiteral | RecordSelectLambda |
         ArrayLit | ArrayNew | ArrayLength | VectorLit | VectorNew | VectorLength | FNil | FSet | FMap |
-        NewRelationOrLattice | FixpointSolve | FixpointCheck | FixpointDelta | ConstraintSeq | ConstraintUnion | Literal |
-      HandleWith | Existential | Universal | UnaryLambda | QName | Wild | Tag | SName | Hole | UserError
+        FixpointSolve | FixpointCheck | FixpointDelta | FixpointProject | ConstraintSeq | Literal |
+        HandleWith | Existential | Universal | UnaryLambda | QName | Wild | Tag | SName | Hole | UserError
     }
 
     def Literal: Rule1[ParsedAst.Expression.Lit] = rule {
@@ -817,15 +825,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def ConstraintSeq: Rule1[ParsedAst.Expression] = rule {
-      SP ~ oneOrMore(Declarations.Constraint) ~ SP ~> ParsedAst.Expression.ConstraintSeq
-    }
-
-    def ConstraintUnion: Rule1[ParsedAst.Expression] = rule {
-      SP ~ atomic("union") ~ WS ~ Expression ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.ConstraintUnion
-    }
-
-    def NewRelationOrLattice: Rule1[ParsedAst.Expression] = rule {
-      SP ~ atomic("new") ~ WS ~ Names.QualifiedTable ~ SP ~> ParsedAst.Expression.NewRelationOrLattice
+      SP ~ oneOrMore(Declarations.Constraint) ~ SP ~> ParsedAst.Expression.FixpointConstraintSeq
     }
 
     def FixpointSolve: Rule1[ParsedAst.Expression] = rule {
@@ -838,6 +838,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def FixpointDelta: Rule1[ParsedAst.Expression] = rule {
       SP ~ atomic("delta") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.FixpointDelta
+    }
+
+    def FixpointProject: Rule1[ParsedAst.Expression] = rule {
+      SP ~ atomic("project") ~ WS ~ Names.QualifiedTable ~ optional("<" ~ Expressions.Primary ~ ">") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.FixpointProject
     }
 
     def UserError: Rule1[ParsedAst.Expression] = rule {
@@ -924,7 +928,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   }
 
   def BodyPredicate: Rule1[ParsedAst.Predicate.Body] = rule {
-    Predicates.Body.Positive | Predicates.Body.Negative | Predicates.Body.Filter | Predicates.Body.NotEqual | Predicates.Body.Loop
+    Predicates.Body.Positive | Predicates.Body.Negative | Predicates.Body.Filter | Predicates.Body.ApplyFilter | Predicates.Body.NotEqual | Predicates.Body.Loop
   }
 
   object Predicates {
@@ -939,14 +943,14 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       def Atom: Rule1[ParsedAst.Predicate.Head.Atom] = rule {
-        SP ~ optional(Names.Variable ~ optWS ~ "." ~ optWS) ~ Names.QualifiedTable ~ optWS ~ NonEmptyArgumentList ~ SP ~> ParsedAst.Predicate.Head.Atom
+        SP ~ Names.QualifiedTable ~ optional("<" ~ Expressions.Primary ~ ">") ~ optWS ~ NonEmptyArgumentList ~ SP ~> ParsedAst.Predicate.Head.Atom
       }
 
     }
 
     object Body {
       def Positive: Rule1[ParsedAst.Predicate.Body.Positive] = rule {
-        SP ~ optional(Names.Variable ~ optWS ~ "." ~ optWS) ~ Names.QualifiedTable ~ optWS ~ NonEmptyPatternList ~ SP ~> ParsedAst.Predicate.Body.Positive
+        SP ~ Names.QualifiedTable ~ optional("<" ~ Expressions.Primary ~ ">") ~ optWS ~ NonEmptyPatternList ~ SP ~> ParsedAst.Predicate.Body.Positive
       }
 
       def Negative: Rule1[ParsedAst.Predicate.Body.Negative] = {
@@ -955,12 +959,16 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         }
 
         rule {
-          SP ~ Not ~ optWS ~ optional(Names.Variable ~ optWS ~ "." ~ optWS) ~ Names.QualifiedTable ~ optWS ~ NonEmptyPatternList ~ SP ~> ParsedAst.Predicate.Body.Negative
+          SP ~ Not ~ optWS ~ Names.QualifiedTable ~ optional("<" ~ Expressions.Primary ~ ">") ~ optWS ~ NonEmptyPatternList ~ SP ~> ParsedAst.Predicate.Body.Negative
         }
       }
 
       def Filter: Rule1[ParsedAst.Predicate.Body.Filter] = rule {
-        SP ~ Names.QualifiedDefinition ~ optWS ~ ArgumentList ~ SP ~> ParsedAst.Predicate.Body.Filter
+        SP ~ atomic("if") ~ WS ~ Expression ~ SP ~> ParsedAst.Predicate.Body.Filter
+      }
+
+      def ApplyFilter: Rule1[ParsedAst.Predicate.Body.ApplyFilter] = rule {
+        SP ~ Names.QualifiedDefinition ~ optWS ~ ArgumentList ~ SP ~> ParsedAst.Predicate.Body.ApplyFilter
       }
 
       def NotEqual: Rule1[ParsedAst.Predicate.Body.NotEqual] = rule {

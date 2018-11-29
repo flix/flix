@@ -974,28 +974,26 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         case es => WeededAst.Expression.NativeMethod(className, methodName, es, mkSL(sp1, sp2))
       }
 
-    case ParsedAst.Expression.NewRelationOrLattice(sp1, name, sp2) =>
-      val loc = mkSL(sp1, sp2)
-      WeededAst.Expression.NewRelationOrLattice(name, loc).toSuccess
-
-    case ParsedAst.Expression.ConstraintSeq(sp1, cs, sp2) =>
+    case ParsedAst.Expression.FixpointConstraintSeq(sp1, cs, sp2) =>
       val loc = mkSL(sp1, sp2)
 
       traverse(cs)(visitConstraint) map {
         case xs =>
           // The base constraint is simple the true fact.
-          val base = WeededAst.Expression.Constraint(WeededAst.Constraint(WeededAst.Predicate.Head.True(loc), Nil, loc), loc)
+          val base = WeededAst.Expression.FixpointConstraint(WeededAst.Constraint(WeededAst.Predicate.Head.True(loc), Nil, loc), loc)
           // Combine each of the constraints using union.
           xs.flatten.foldLeft(base: WeededAst.Expression) {
             case (eacc, c) =>
-              val e2 = WeededAst.Expression.Constraint(c, loc)
-              WeededAst.Expression.ConstraintUnion(eacc, e2, loc)
+              val e2 = WeededAst.Expression.FixpointConstraint(c, loc)
+              WeededAst.Expression.FixpointCompose(eacc, e2, loc)
           }
       }
 
-    case ParsedAst.Expression.ConstraintUnion(sp1, exp1, exp2, sp2) =>
+    case ParsedAst.Expression.FixpointCompose(exp1, exp2, sp2) =>
       mapN(visitExp(exp1), visitExp(exp2)) {
-        case (e1, e2) => WeededAst.Expression.ConstraintUnion(e1, e2, mkSL(sp1, sp2))
+        case (e1, e2) =>
+          val sp1 = leftMostSourcePosition(exp1)
+          WeededAst.Expression.FixpointCompose(e1, e2, mkSL(sp1, sp2))
       }
 
     case ParsedAst.Expression.FixpointSolve(sp1, exp, sp2) =>
@@ -1011,6 +1009,25 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.FixpointDelta(sp1, exp, sp2) =>
       visitExp(exp) map {
         case e => WeededAst.Expression.FixpointDelta(e, mkSL(sp1, sp2))
+      }
+
+    case ParsedAst.Expression.FixpointProject(sp1, name, exp1, exp2, sp2) =>
+      val loc = mkSL(sp1, sp2)
+
+      val paramExp = exp1 match {
+        case None => WeededAst.Expression.Unit(loc).toSuccess
+        case Some(exp) => visitExp(exp)
+      }
+
+      mapN(paramExp, visitExp(exp2)) {
+        case (e1, e2) => WeededAst.Expression.FixpointProject(name, e1, e2, mkSL(sp1, sp2))
+      }
+
+    case ParsedAst.Expression.FixpointEntails(exp1, exp2, sp2) =>
+      mapN(visitExp(exp1), visitExp(exp2)) {
+        case (e1, e2) =>
+          val sp1 = leftMostSourcePosition(exp1)
+          WeededAst.Expression.FixpointEntails(e1, e2, mkSL(sp1, sp2))
       }
 
     case ParsedAst.Expression.UserError(sp1, sp2) =>
@@ -1209,9 +1226,17 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
     case ParsedAst.Predicate.Head.False(sp1, sp2) => WeededAst.Predicate.Head.False(mkSL(sp1, sp2)).toSuccess
 
-    case ParsedAst.Predicate.Head.Atom(sp1, baseOpt, qname, terms, sp2) =>
-      traverse(terms)(visitExp) map {
-        case ts => WeededAst.Predicate.Head.Atom(baseOpt, qname, ts, mkSL(sp1, sp2))
+    case ParsedAst.Predicate.Head.Atom(sp1, qname, expOpt, terms, sp2) =>
+      val loc = mkSL(sp1, sp2)
+
+      val paramExp = expOpt match {
+        case None => WeededAst.Expression.Unit(loc).toSuccess
+        case Some(exp) => visitExp(exp)
+      }
+
+      mapN(paramExp, traverse(terms)(visitExp)) {
+        case (e, ts) =>
+          WeededAst.Predicate.Head.Atom(qname, e, ts, loc)
       }
 
   }
@@ -1219,19 +1244,38 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
   /**
     * Weeds the given body predicate.
     */
-  private def visitPredicateBody(past: ParsedAst.Predicate.Body)(implicit flix: Flix): Validation[WeededAst.Predicate.Body, WeederError] = past match {
-    case ParsedAst.Predicate.Body.Positive(sp1, baseOpt, qname, terms, sp2) =>
-      traverse(terms)(visitPattern) map {
-        case ts => WeededAst.Predicate.Body.Atom(baseOpt, qname, Polarity.Positive, ts, mkSL(sp1, sp2))
-      }
-
-    case ParsedAst.Predicate.Body.Negative(sp1, baseOpt, qname, terms, sp2) =>
+  private def visitPredicateBody(b: ParsedAst.Predicate.Body)(implicit flix: Flix): Validation[WeededAst.Predicate.Body, WeederError] = b match {
+    case ParsedAst.Predicate.Body.Positive(sp1, qname, expOpt, terms, sp2) =>
       val loc = mkSL(sp1, sp2)
-      traverse(terms)(visitPattern) map {
-        case ts => WeededAst.Predicate.Body.Atom(baseOpt, qname, Polarity.Negative, ts, loc)
+
+      val paramExp = expOpt match {
+        case None => WeededAst.Expression.Unit(loc).toSuccess
+        case Some(exp) => visitExp(exp)
       }
 
-    case ParsedAst.Predicate.Body.Filter(sp1, qname, terms, sp2) =>
+      mapN(paramExp, traverse(terms)(visitPattern)) {
+        case (e, ts) =>
+          WeededAst.Predicate.Body.Atom(qname, e, Polarity.Positive, ts, loc)
+      }
+
+    case ParsedAst.Predicate.Body.Negative(sp1, qname, expOpt, terms, sp2) =>
+      val loc = mkSL(sp1, sp2)
+
+      val paramExp = expOpt match {
+        case None => WeededAst.Expression.Unit(loc).toSuccess
+        case Some(exp) => visitExp(exp)
+      }
+
+      mapN(paramExp, traverse(terms)(visitPattern)) {
+        case (e, ts) =>
+          WeededAst.Predicate.Body.Atom(qname, e, Polarity.Negative, ts, loc)
+      }
+
+    case ParsedAst.Predicate.Body.Filter(sp1, exp, sp2) =>
+      // TODO: Allow arbitrary expressions as filters.
+      ???
+
+    case ParsedAst.Predicate.Body.ApplyFilter(sp1, qname, terms, sp2) =>
       traverse(terms)(visitExp) map {
         case ts =>
           // Check if the term list is empty. If so, invoke the function with the unit value.
@@ -1796,12 +1840,13 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.NativeField(sp1, _, _) => sp1
     case ParsedAst.Expression.NativeMethod(sp1, _, _, _) => sp1
     case ParsedAst.Expression.NativeConstructor(sp1, _, _, _) => sp1
-    case ParsedAst.Expression.NewRelationOrLattice(sp1, _, _) => sp1
-    case ParsedAst.Expression.ConstraintSeq(sp1, _, _) => sp1
-    case ParsedAst.Expression.ConstraintUnion(sp1, _, _, _) => sp1
+    case ParsedAst.Expression.FixpointConstraintSeq(sp1, _, _) => sp1
+    case ParsedAst.Expression.FixpointCompose(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.FixpointSolve(sp1, _, _) => sp1
     case ParsedAst.Expression.FixpointCheck(sp1, _, _) => sp1
     case ParsedAst.Expression.FixpointDelta(sp1, _, _) => sp1
+    case ParsedAst.Expression.FixpointProject(sp1, _, _, _, _) => sp1
+    case ParsedAst.Expression.FixpointEntails(exp1, _, _) => leftMostSourcePosition(exp1)
     case ParsedAst.Expression.UserError(sp1, _) => sp1
   }
 
@@ -1899,13 +1944,14 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
     // The main expression.
     val trueFact = WeededAst.Constraint(WeededAst.Predicate.Head.True(loc), Nil, loc)
-    val zeroExp = WeededAst.Expression.Constraint(trueFact, loc)
+    val zeroExp = WeededAst.Expression.FixpointConstraint(trueFact, loc)
     val innerExp = cs.foldLeft(zeroExp: WeededAst.Expression) {
       case (eacc, c) =>
-        val constraintExp = WeededAst.Expression.Constraint(c, loc)
-        WeededAst.Expression.ConstraintUnion(eacc, constraintExp, loc)
+        val constraintExp = WeededAst.Expression.FixpointConstraint(c, loc)
+        WeededAst.Expression.FixpointCompose(eacc, constraintExp, loc)
     }
     val outerExp = WeededAst.Expression.FixpointSolve(innerExp, loc)
+    val toStringExp = WeededAst.Expression.NativeMethod("java.lang.Object", "toString", List(outerExp), loc)
 
     // The type and effect of the generated main.
     val argumentType = WeededAst.Type.Ambiguous(Name.mkQName("Unit"), loc)
@@ -1914,7 +1960,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     val eff = Eff.Top
 
     // Construct the declaration.
-    val decl = WeededAst.Declaration.Def(doc, ann, mod, ident, tparams, fparams, outerExp, tpe, eff, loc)
+    val decl = WeededAst.Declaration.Def(doc, ann, mod, ident, tparams, fparams, toStringExp, tpe, eff, loc)
 
     // Construct an AST root that contains the main declaration.
     WeededAst.Root(List(decl))

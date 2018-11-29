@@ -210,10 +210,10 @@ class RestServer(solver: Solver) {
     * Returns the name and size of all relations.
     */
   class GetRelations extends JsonHandler {
-    def json: JValue = JArray(solver.constraintSet.getRelations().toList.map {
-      case sym => JObject(List(
-        JField("name", JString(sym.getName().toString)),
-        JField("size", JInt(sym.getIndexedRelation().getSize))
+    def json: JValue = JArray(solver.dataStore.getRelations().toList.map {
+      case rel => JObject(List(
+        JField("name", JString(rel.name)),
+        JField("size", JInt(rel.getSize))
       ))
     })
   }
@@ -222,10 +222,10 @@ class RestServer(solver: Solver) {
     * Returns the name and size of all lattices.
     */
   class GetLattices extends JsonHandler {
-    def json: JValue = JArray(solver.constraintSet.getLattices().toList.map {
-      case sym => JObject(List(
-        JField("name", JString(sym.getName().toString)),
-        JField("size", JInt(sym.getIndexedLattice().getSize))
+    def json: JValue = JArray(solver.dataStore.getLattices().toList.map {
+      case lat => JObject(List(
+        JField("name", JString(lat.name)),
+        JField("size", JInt(lat.getSize))
       ))
     })
   }
@@ -337,12 +337,12 @@ class RestServer(solver: Solver) {
     // mount ajax handlers.
     server.createContext("/status", new GetStatus())
     server.createContext("/relations", new GetRelations())
-    for (sym <- solver.constraintSet.getRelations()) {
-      server.createContext("/relation/" + sym.getName(), new ListRelation(sym.getIndexedRelation()))
+    for (rel <- solver.dataStore.getRelations()) {
+      server.createContext("/relation/" + rel.name, new ListRelation(rel))
     }
     server.createContext("/lattices", new GetLattices())
-    for (sym <- solver.constraintSet.getLattices()) {
-      server.createContext("/lattice/" + sym.getName(), new ListLattice(sym.getIndexedLattice()))
+    for (lat <- solver.dataStore.getLattices()) {
+      server.createContext("/lattice/" + lat.name, new ListLattice(lat))
     }
     server.createContext("/telemetry", new GetTelemetry())
     server.createContext("/performance/rules", new GetRulePerformance())

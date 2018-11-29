@@ -42,12 +42,7 @@ class FeatureSuite extends Suites(
   new FlixTest("Test.Expression.Bool", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Bool.flix"),
   new FlixTest("Test.Expression.Char", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Char.flix"),
 
-  new FlixTest("Test.Expression.Constraint.Filter", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Constraint.Filter.flix")(compiled = false), // TODO
-  new FlixTest("Test.Expression.Constraint", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Constraint.flix")(compiled = false), // TODO
   new FlixTest("Test.Expression.Constraint.Functional", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Constraint.Functional.flix")(compiled = false), // TODO
-  new FlixTest("Test.Expression.Constraint.Polymorphic", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Constraint.Polymorphic.flix")(compiled = false), // TODO
-  new FlixTest("Test.Expression.Constraint.Transfer", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Constraint.Transfer.flix")(compiled = false), // TODO
-  new FlixTest("Test.Expression.NewRelation", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.NewRelation.flix")(compiled = false), // TODO
 
   new FlixTest("Test.Expression.Record.Extend", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Record.Extend.flix")(compiled = false), // TODO
   new FlixTest("Test.Expression.Record.Literal", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Record.Literal.flix")(compiled = false), // TODO
@@ -110,6 +105,34 @@ class FeatureSuite extends Suites(
   new FlixTest("Test.Expression.VectorSliceNoIndexes", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.VectorSliceNoIndexes.flix"),
   new FlixTest("Test.Expression.VectorSliceNoEnd", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.VectorSliceNoEnd.flix"),
   new FlixTest("Test.Expression.VectorSliceNoStart", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.VectorSliceNoStart.flix"),
+
+  //
+  // Constraints.
+  //
+  new FlixTest("Test.Expression.Constraint", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Constraint.flix"),
+
+  //
+  // Fixpoints
+  //
+  new FlixTest("Test.Expression.FixpointCompose", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.FixpointCompose.flix"),
+  new FlixTest("Test.Expression.FixpointProject", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.FixpointProject.flix"),
+
+  //
+  // Predicates
+  //
+  new FlixTest("Test.Predicate.True", "main/test/ca/uwaterloo/flix/language/feature/Test.Predicate.True.flix"),
+  new FlixTest("Test.Predicate.False", "main/test/ca/uwaterloo/flix/language/feature/Test.Predicate.False.flix"),
+  new FlixTest("Test.Predicate.Filter", "main/test/ca/uwaterloo/flix/language/feature/Test.Predicate.Filter.flix"),
+
+  //
+  // Terms
+  //
+  new FlixTest("Test.Term.Apply", "main/test/ca/uwaterloo/flix/language/feature/Test.Term.Apply.flix"),
+  new FlixTest("Test.Term.CapturedVar", "main/test/ca/uwaterloo/flix/language/feature/Test.Term.CapturedVar.flix"),
+  new FlixTest("Test.Term.Lit", "main/test/ca/uwaterloo/flix/language/feature/Test.Term.Lit.flix"),
+  new FlixTest("Test.Term.QuantVar", "main/test/ca/uwaterloo/flix/language/feature/Test.Term.QuantVar.flix"),
+  new FlixTest("Test.Term.WildVar", "main/test/ca/uwaterloo/flix/language/feature/Test.Term.WildVar.flix"),
+
 ) with ParallelTestExecution {
   /* left empty */
 }

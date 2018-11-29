@@ -424,27 +424,15 @@ object SimplifiedAstOps {
         checkType(tpe)
 
       //
-      // New Relation.
-      //
-      case Expression.NewRelation(sym, tpe, loc) =>
-        checkType(tpe)
-
-      //
-      // New Lattice.
-      //
-      case Expression.NewLattice(sym, tpe, loc) =>
-        checkType(tpe)
-
-      //
       // Constraint.
       //
-      case Expression.Constraint(c, tpe, loc) =>
+      case Expression.FixpointConstraint(c, tpe, loc) =>
         checkType(tpe)
 
       //
       // ConstraintUnion.
       //
-      case Expression.ConstraintUnion(exp1, exp2, tpe, loc) =>
+      case Expression.FixpointCompose(exp1, exp2, tpe, loc) =>
         checkExp(exp1, env0, ienv0)
         checkExp(exp2, env0, ienv0)
         checkType(tpe)
@@ -468,6 +456,22 @@ object SimplifiedAstOps {
       //
       case Expression.FixpointDelta(exp, tpe, loc) =>
         checkExp(exp, env0, ienv0)
+        checkType(tpe)
+
+      //
+      // Fixpoint Project.
+      //
+      case Expression.FixpointProject(sym, exp1, exp2, tpe, loc) =>
+        checkExp(exp1, env0, ienv0)
+        checkExp(exp2, env0, ienv0)
+        checkType(tpe)
+
+      //
+      // Fixpoint Project.
+      //
+      case Expression.FixpointEntails(exp1, exp2, tpe, loc) =>
+        checkExp(exp1, env0, ienv0)
+        checkExp(exp2, env0, ienv0)
         checkType(tpe)
 
       //
@@ -517,42 +521,21 @@ object SimplifiedAstOps {
 
       case Predicate.Head.False(loc) => // nop
 
-      case Predicate.Head.RelAtom(baseOpt, sym, terms, tpe, loc) =>
-        if (baseOpt.nonEmpty) {
-          assert(env0 contains baseOpt.get, s"Undefined base variable symbol: '$baseOpt.get'.")
-        }
+      case Predicate.Head.Atom(sym, exp, terms, tpe, loc) =>
+        checkExp(exp, env0, Set.empty)
         for (term <- terms) {
           checkHeadTerm(term, env0)
         }
         checkType(tpe)
 
-      case Predicate.Head.LatAtom(baseOpt, sym, terms, tpe, loc) =>
-        if (baseOpt.nonEmpty) {
-          assert(env0 contains baseOpt.get, s"Undefined base variable symbol: '$baseOpt.get'.")
-        }
-        for (term <- terms) {
-          checkHeadTerm(term, env0)
-        }
-        checkType(tpe)
     }
 
     /**
       * Checks invariants of the given body predicate `b0`.
       */
     def checkBodyPred(b0: Predicate.Body, env0: Set[Symbol.VarSym]): Unit = b0 match {
-      case Predicate.Body.RelAtom(baseOpt, sym, polarity, terms, tpe, loc) =>
-        if (baseOpt.nonEmpty) {
-          assert(env0 contains baseOpt.get, s"Undefined base variable symbol: '$baseOpt.get'.")
-        }
-        for (term <- terms) {
-          checkBodyTerm(term, env0)
-        }
-        checkType(tpe)
-
-      case Predicate.Body.LatAtom(baseOpt, sym, polarity, terms, tpe, loc) =>
-        if (baseOpt.nonEmpty) {
-          assert(env0 contains baseOpt.get, s"Undefined base variable symbol: '$baseOpt.get'.")
-        }
+      case Predicate.Body.Atom(sym, exp, polarity, terms, tpe, loc) =>
+        checkExp(exp, env0, Set.empty)
         for (term <- terms) {
           checkBodyTerm(term, env0)
         }

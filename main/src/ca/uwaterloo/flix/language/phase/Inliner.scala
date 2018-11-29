@@ -195,17 +195,13 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.NativeMethod(method, args, tpe, loc) =>
         Expression.NativeMethod(method, args.map(visit), tpe, loc)
 
-      case Expression.NewRelation(sym, tpe, loc) => Expression.NewRelation(sym, tpe, loc)
-
-      case Expression.NewLattice(sym, tpe, loc) => Expression.NewLattice(sym, tpe, loc)
-
-      case Expression.Constraint(con, tpe, loc) =>
+      case Expression.FixpointConstraint(con, tpe, loc) =>
         ??? // TODO: Expression.Constraint
 
-      case Expression.ConstraintUnion(exp1, exp2, tpe, loc) =>
+      case Expression.FixpointCompose(exp1, exp2, tpe, loc) =>
         val e1 = visit(exp1)
         val e2 = visit(exp2)
-        Expression.ConstraintUnion(e1, e2, tpe, loc)
+        Expression.FixpointCompose(e1, e2, tpe, loc)
 
       case Expression.FixpointSolve(exp, tpe, loc) =>
         val e = visit(exp)
@@ -218,6 +214,16 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.FixpointDelta(exp, tpe, loc) =>
         val e = visit(exp)
         Expression.FixpointDelta(e, tpe, loc)
+
+      case Expression.FixpointProject(sym, exp1, exp2, tpe, loc) =>
+        val e1 = visit(exp1)
+        val e2 = visit(exp2)
+        Expression.FixpointProject(sym, e1, e2, tpe, loc)
+
+      case Expression.FixpointEntails(exp1, exp2, tpe, loc) =>
+        val e1 = visit(exp1)
+        val e2 = visit(exp2)
+        Expression.FixpointEntails(e1, e2, tpe, loc)
 
       case Expression.UserError(_, _) => exp0
       case Expression.HoleError(_, _, _, _) => exp0
@@ -351,16 +357,12 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     case Expression.NativeMethod(method, args, tpe, loc) =>
       Expression.NativeMethod(method, args.map(renameAndSubstitute(_, env0)), tpe, loc)
 
-    case Expression.NewRelation(sym, tpe, loc) => Expression.NewRelation(sym, tpe, loc)
+    case Expression.FixpointConstraint(con, tpe, loc) => ??? // TODO: Expression.Constraint
 
-    case Expression.NewLattice(sym, tpe, loc) => Expression.NewLattice(sym, tpe, loc)
-
-    case Expression.Constraint(con, tpe, loc) => ??? // TODO: Expression.Constraint
-
-    case Expression.ConstraintUnion(exp1, exp2, tpe, loc) =>
+    case Expression.FixpointCompose(exp1, exp2, tpe, loc) =>
       val e1 = renameAndSubstitute(exp1, env0)
       val e2 = renameAndSubstitute(exp2, env0)
-      Expression.ConstraintUnion(exp1, exp2, tpe, loc)
+      Expression.FixpointCompose(exp1, exp2, tpe, loc)
 
     case Expression.FixpointSolve(exp, tpe, loc) =>
       val e = renameAndSubstitute(exp, env0)
@@ -373,6 +375,16 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     case Expression.FixpointDelta(exp, tpe, loc) =>
       val e = renameAndSubstitute(exp, env0)
       Expression.FixpointDelta(e, tpe, loc)
+
+    case Expression.FixpointProject(sym, exp1, exp2, tpe, loc) =>
+      val e1 = renameAndSubstitute(exp1, env0)
+      val e2 = renameAndSubstitute(exp2, env0)
+      Expression.FixpointProject(sym, e1, e2, tpe, loc)
+
+    case Expression.FixpointEntails(exp1, exp2, tpe, loc) =>
+      val e1 = renameAndSubstitute(exp1, env0)
+      val e2 = renameAndSubstitute(exp2, env0)
+      Expression.FixpointEntails(exp1, exp2, tpe, loc)
 
     case Expression.UserError(_, _) => exp0
     case Expression.HoleError(_, _, _, _) => exp0
@@ -591,24 +603,14 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     case Expression.NativeMethod(method, args, tpe, loc) => args forall isAtomic
 
     //
-    // New Relation expressions are atomic.
-    //
-    case Expression.NewRelation(sym, tpe, loc) => true
-
-    //
-    // New Lattice expressions are atomic.
-    //
-    case Expression.NewLattice(sym, tpe, loc) => true
-
-    //
     // Constraint expressions are atomic.
     //
-    case Expression.Constraint(con, tpe, loc) => true
+    case Expression.FixpointConstraint(con, tpe, loc) => true
 
     //
     // Constraint Union expressions are atomic if their arguments are.
     //
-    case Expression.ConstraintUnion(exp1, exp2, tpe, loc) =>
+    case Expression.FixpointCompose(exp1, exp2, tpe, loc) =>
       isAtomic(exp1) && isAtomic(exp2)
 
     //
@@ -625,6 +627,17 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     // Fixpoint Delta expressions are atomic if its argument is.
     //
     case Expression.FixpointDelta(exp, tpe, loc) => isAtomic(exp)
+
+    //
+    // Fixpoint Project expressions are atomic if its argument is.
+    //
+    case Expression.FixpointProject(sym, exp1, exp2, tpe, loc) => isAtomic(exp1) && isAtomic(exp2)
+
+    //
+    // Fixpoint Entails expressions are atomic if their arguments are.
+    //
+    case Expression.FixpointEntails(exp1, exp2, tpe, loc) =>
+      isAtomic(exp1) && isAtomic(exp2)
 
     //
     // Errors are atomic.

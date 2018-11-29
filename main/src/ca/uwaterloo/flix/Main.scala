@@ -80,7 +80,7 @@ object Main {
       mode = if (cmdOpts.release) CompilationMode.Release else CompilationMode.Development,
       monitor = cmdOpts.monitor,
       quickchecker = cmdOpts.quickchecker,
-      timeout = if(!cmdOpts.timeout.isFinite()) None else Some(java.time.Duration.ofNanos(cmdOpts.timeout.toNanos)),
+      timeout = if (!cmdOpts.timeout.isFinite()) None else Some(java.time.Duration.ofNanos(cmdOpts.timeout.toNanos)),
       threads = if (cmdOpts.threads == -1) Options.Default.threads else cmdOpts.threads,
       verbosity = if (cmdOpts.verbose) Verbosity.Verbose else Verbosity.Normal,
       verifier = cmdOpts.verifier,
@@ -127,7 +127,11 @@ object Main {
           if (main.nonEmpty) {
             val name = main.get
             val evalTimer = new Timer(compilationResult.evalToString(name))
-            Console.println(s"$name returned `${evalTimer.getResult}' (compile: ${timer.getDuration.fmt}, execute: ${evalTimer.getDuration.fmt})")
+            options.verbosity match {
+              case Verbosity.Normal => Console.println(evalTimer.getResult)
+              case Verbosity.Verbose => Console.println(s"$name returned `${evalTimer.getResult}' (compile: ${timer.getDuration.fmt}, execute: ${evalTimer.getDuration.fmt})")
+              case Verbosity.Silent => // nop
+            }
           }
 
           if (cmdOpts.benchmark) {

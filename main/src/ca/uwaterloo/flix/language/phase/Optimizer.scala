@@ -401,31 +401,19 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         Expression.NativeMethod(method, as, tpe, loc)
 
       //
-      // NewRelation.
-      //
-      case Expression.NewRelation(sym, tpe, loc) =>
-        Expression.NewRelation(sym, tpe, loc)
-
-      //
-      // NewLattice.
-      //
-      case Expression.NewLattice(sym, tpe, loc) =>
-        Expression.NewLattice(sym, tpe, loc)
-
-      //
       // Constraint.
       //
-      case Expression.Constraint(c0, tpe, loc) =>
-        // TODO: Recurse?
-        Expression.Constraint(c0, tpe, loc)
+      case Expression.FixpointConstraint(c0, tpe, loc) =>
+        val c = visitConstraint(c0, env0)
+        Expression.FixpointConstraint(c0, tpe, loc)
 
       //
       // Constraint Union.
       //
-      case Expression.ConstraintUnion(exp1, exp2, tpe, loc) =>
+      case Expression.FixpointCompose(exp1, exp2, tpe, loc) =>
         val e1 = visitExp(exp1, env0)
         val e2 = visitExp(exp2, env0)
-        Expression.ConstraintUnion(e1, e2, tpe, loc)
+        Expression.FixpointCompose(e1, e2, tpe, loc)
 
       //
       // Fixpoint Solve.
@@ -449,6 +437,22 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         Expression.FixpointDelta(e, tpe, loc)
 
       //
+      // Fixpoint Project.
+      //
+      case Expression.FixpointProject(sym, exp1, exp2, tpe, loc) =>
+        val e1 = visitExp(exp1, env0)
+        val e2 = visitExp(exp2, env0)
+        Expression.FixpointProject(sym, e1, e2, tpe, loc)
+
+      //
+      // Fixpoint Entails.
+      //
+      case Expression.FixpointEntails(exp1, exp2, tpe, loc) =>
+        val e1 = visitExp(exp1, env0)
+        val e2 = visitExp(exp2, env0)
+        Expression.FixpointEntails(e1, e2, tpe, loc)
+
+      //
       // Error Expressions.
       //
       case Expression.UserError(tpe, loc) => Expression.UserError(tpe, loc)
@@ -465,39 +469,66 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     }
 
     /**
+      * Performs intra-procedural optimization on the given constraint `c0`.
+      */
+    def visitConstraint(c0: SimplifiedAst.Constraint, env0: Map[Symbol.VarSym, Symbol.VarSym]): SimplifiedAst.Constraint = c0 match {
+      case SimplifiedAst.Constraint(cparams, head0, body0) =>
+        val head = visitHeadPred(head0, env0)
+        val body = body0.map(visitBodyPred(_, env0))
+        SimplifiedAst.Constraint(cparams, head, body)
+    }
+
+    /**
       * Performs intra-procedural optimization on the terms of the given head predicate `p0`.
       */
-    def visitHeadPred(p0: Predicate.Head): Predicate.Head = p0 match {
+    def visitHeadPred(p0: Predicate.Head, env0: Map[Symbol.VarSym, Symbol.VarSym]): Predicate.Head = p0 match {
       case Predicate.Head.True(loc) => p0
       case Predicate.Head.False(loc) => p0
-      case Predicate.Head.RelAtom(baseOpt, sym, terms, tpe, loc) => Predicate.Head.RelAtom(baseOpt, sym, terms map visitHeadTerm, tpe, loc)
-      case Predicate.Head.LatAtom(baseOpt, sym, terms, tpe, loc) => Predicate.Head.LatAtom(baseOpt, sym, terms map visitHeadTerm, tpe, loc)
+      case Predicate.Head.Atom(sym, exp, terms, tpe, loc) =>
+        val ts = terms.map(visitHeadTerm(_, env0))
+        Predicate.Head.Atom(sym, exp, ts, tpe, loc)
     }
 
     /**
       * Performs intra-procedural optimization on the terms of the given body predicate `p0`.
       */
-    def visitBodyPred(p0: Predicate.Body): Predicate.Body = p0 match {
-      case Predicate.Body.RelAtom(baseOpt, sym, polarity, terms, tpe, loc) => Predicate.Body.RelAtom(baseOpt, sym, polarity, terms map visitBodyTerm, tpe, loc)
-      case Predicate.Body.LatAtom(baseOpt, sym, polarity, terms, tpe, loc) => Predicate.Body.LatAtom(baseOpt, sym, polarity, terms map visitBodyTerm, tpe, loc)
-      case Predicate.Body.Filter(sym, terms, loc) => Predicate.Body.Filter(sym, terms map visitBodyTerm, loc)
-      case Predicate.Body.Functional(sym, term, loc) => Predicate.Body.Functional(sym, visitHeadTerm(term), loc)
+    def visitBodyPred(p0: Predicate.Body, env0: Map[Symbol.VarSym, Symbol.VarSym]): Predicate.Body = p0 match {
+      case Predicate.Body.Atom(sym, exp, polarity, terms, tpe, loc) =>
+        val e = visitExp(exp, env0)
+        val ts = terms.map(visitBodyTerm(_, env0))
+        Predicate.Body.Atom(sym, e, polarity, ts, tpe, loc)
+
+      case Predicate.Body.Filter(sym, terms, loc) =>
+        val ts = terms.map(visitBodyTerm(_, env0))
+        Predicate.Body.Filter(sym, ts, loc)
+
+      case Predicate.Body.Functional(sym, term, loc) =>
+        val t = visitHeadTerm(term, env0)
+        Predicate.Body.Functional(sym, t, loc)
     }
 
     /**
       * Performs intra-procedural optimization on the given head term `t0`.
       */
-    def visitHeadTerm(h0: Term.Head): Term.Head = h0 match {
-      case Term.Head.QuantVar(sym, tpe, loc) => Term.Head.QuantVar(sym, tpe, loc)
-      case Term.Head.CapturedVar(sym, tpe, loc) => Term.Head.CapturedVar(sym, tpe, loc)
-      case Term.Head.Lit(lit, tpe, loc) => Term.Head.Lit(visitExp(lit, Map.empty), tpe, loc)
-      case Term.Head.App(sym, args, tpe, loc) => Term.Head.App(sym, args, tpe, loc)
+    def visitHeadTerm(h0: Term.Head, env0: Map[Symbol.VarSym, Symbol.VarSym]): Term.Head = h0 match {
+      case Term.Head.QuantVar(sym, tpe, loc) =>
+        Term.Head.QuantVar(sym, tpe, loc)
+
+      case Term.Head.CapturedVar(sym, tpe, loc) =>
+        Term.Head.CapturedVar(sym, tpe, loc)
+
+      case Term.Head.Lit(exp, tpe, loc) =>
+        val e = visitExp(exp, env0)
+        Term.Head.Lit(e, tpe, loc)
+
+      case Term.Head.App(sym, args, tpe, loc) =>
+        Term.Head.App(sym, args, tpe, loc)
     }
 
     /**
       * Performs intra-procedural optimization on the given body term `t0`.
       */
-    def visitBodyTerm(b0: Term.Body): Term.Body = b0 match {
+    def visitBodyTerm(b0: Term.Body, env0: Map[Symbol.VarSym, Symbol.VarSym]): Term.Body = b0 match {
       case Term.Body.Wild(tpe, loc) => Term.Body.Wild(tpe, loc)
       case Term.Body.QuantVar(sym, tpe, loc) => Term.Body.QuantVar(sym, tpe, loc)
       case Term.Body.CapturedVar(sym, tpe, loc) => Term.Body.CapturedVar(sym, tpe, loc)

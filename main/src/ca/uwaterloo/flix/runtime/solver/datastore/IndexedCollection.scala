@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.runtime.solver.datastore
 
-import ca.uwaterloo.flix.runtime.solver.api.ProxyObject
+import flix.runtime.ProxyObject
 
 // TODO: Consider index expression:
 // http://www.postgresql.org/docs/9.1/static/indexes-expressional.html

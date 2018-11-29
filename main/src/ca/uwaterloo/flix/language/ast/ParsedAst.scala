@@ -930,32 +930,22 @@ object ParsedAst {
     case class NativeMethod(sp1: SourcePosition, fqn: Seq[String], args: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
-      * New Relation or Lattice.
-      *
-      * @param sp1  the position of the first character in the expression.
-      * @param name the name of the relation or lattice.
-      * @param sp2  the position of the last character in the expression.
-      */
-    case class NewRelationOrLattice(sp1: SourcePosition, name: Name.QName, sp2: SourcePosition) extends ParsedAst.Expression
-
-    /**
-      * Constraint Sequence expression.
+      * Fixpoint Constraint Sequence expression.
       *
       * @param sp1 the position of the first character in the expression.
       * @param cs  the sequence of constraints.
       * @param sp2 the position of the last character in the expression.
       */
-    case class ConstraintSeq(sp1: SourcePosition, cs: Seq[Declaration.Constraint], sp2: SourcePosition) extends ParsedAst.Expression
+    case class FixpointConstraintSeq(sp1: SourcePosition, cs: Seq[Declaration.Constraint], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
-      * Constraint Union expression.
+      * Fixpoint Compose expression.
       *
-      * @param sp1  the position of the first character in the expression.
       * @param exp1 the first constraint expression.
       * @param exp2 the second constraint expression.
       * @param sp2  the position of the last character in the expression.
       */
-    case class ConstraintUnion(sp1: SourcePosition, exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class FixpointCompose(exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Fixpoint Solve expression.
@@ -983,6 +973,26 @@ object ParsedAst {
       * @param sp2 the position of the last character in the expression.
       */
     case class FixpointDelta(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
+      * Fixpoint Project expression.
+      *
+      * @param sp1  the position of the first character in the expression.
+      * @param name the name of the predicate.
+      * @param exp1 the optional constraint parameter.
+      * @param exp2 the constraint expression.
+      * @param sp2  the position of the last character in the expression.
+      */
+    case class FixpointProject(sp1: SourcePosition, name: Name.QName, exp1: Option[ParsedAst.Expression], exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
+      * Fixpoint Entails expression.
+      *
+      * @param exp1 the lhs expression.
+      * @param exp2 the rhs expression.
+      * @param sp2  the position of the last character in the expression.
+      */
+    case class FixpointEntails(exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * User Error Expression (an expression that immediately aborts execution).
@@ -1114,12 +1124,12 @@ object ParsedAst {
         * Atom Predicate.
         *
         * @param sp1   the position of the first character in the predicate.
-        * @param base  the optional base relation or lattice.
-        * @param name  the qualified name of the table.
+        * @param name  the qualified name of the predicate.
+        * @param exp   the optional parameter of the predicate.
         * @param terms the terms of the predicate.
         * @param sp2   the position of the last character in the predicate.
         */
-      case class Atom(sp1: SourcePosition, base: Option[Name.Ident], name: Name.QName, terms: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Predicate.Head
+      case class Atom(sp1: SourcePosition, name: Name.QName, exp: Option[ParsedAst.Expression], terms: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Predicate.Head
 
     }
 
@@ -1131,33 +1141,42 @@ object ParsedAst {
         * Positive Predicate.
         *
         * @param sp1   the position of the first character in the predicate.
-        * @param base  the optional base relation or lattice.
-        * @param name  the qualified name of the table.
+        * @param name  the qualified name of the predicate.
+        * @param exp   the optional parameter of the predicate.
         * @param terms the terms of the predicate.
         * @param sp2   the position of the last character in the predicate.
         */
-      case class Positive(sp1: SourcePosition, base: Option[Name.Ident], name: Name.QName, terms: Seq[ParsedAst.Pattern], sp2: SourcePosition) extends ParsedAst.Predicate.Body
+      case class Positive(sp1: SourcePosition, name: Name.QName, exp: Option[ParsedAst.Expression], terms: Seq[ParsedAst.Pattern], sp2: SourcePosition) extends ParsedAst.Predicate.Body
 
       /**
         * Negative Predicate.
         *
         * @param sp1   the position of the first character in the predicate.
-        * @param base  the optional base relation or lattice.
-        * @param name  the qualified name of the table.
+        * @param name  the qualified name of the predicate.
+        * @param exp   the optional parameter of the predicate.
         * @param terms the terms of the predicate.
         * @param sp2   the position of the last character in the predicate.
         */
-      case class Negative(sp1: SourcePosition, base: Option[Name.Ident], name: Name.QName, terms: Seq[ParsedAst.Pattern], sp2: SourcePosition) extends ParsedAst.Predicate.Body
+      case class Negative(sp1: SourcePosition, name: Name.QName, exp: Option[ParsedAst.Expression], terms: Seq[ParsedAst.Pattern], sp2: SourcePosition) extends ParsedAst.Predicate.Body
 
       /**
         * Filter Predicate.
+        *
+        * @param sp1 the position of the first character in the predicate.
+        * @param exp the filter expression.
+        * @param sp2 the position of the last character in the predicate.
+        */
+      case class Filter(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Predicate.Body
+
+      /**
+        * Filter Apply Predicate.
         *
         * @param sp1   the position of the first character in the predicate.
         * @param name  the qualified name of the filter function.
         * @param terms the terms of the predicate.
         * @param sp2   the position of the last character in the predicate.
         */
-      case class Filter(sp1: SourcePosition, name: Name.QName, terms: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Predicate.Body
+      case class ApplyFilter(sp1: SourcePosition, name: Name.QName, terms: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Predicate.Body
 
       /**
         * Functional Predicate.

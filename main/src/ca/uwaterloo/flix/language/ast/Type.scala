@@ -109,6 +109,14 @@ sealed trait Type {
   }
 
   /**
+    * Returns `true` if `this` type is an array type.
+    */
+  def isArray: Boolean = typeConstructor match {
+    case Type.Array => true
+    case _ => false
+  }
+
+  /**
     * Returns `true` if `this` type is an arrow type.
     */
   def isArrow: Boolean = typeConstructor match {
@@ -511,14 +519,12 @@ object Type {
   }
 
   /**
-    * Returns the relation type corresponding to the given symbol `sym` with the given attribute types `ts`.
+    * Returns the type corresponding to the given predicate symbol `sym` with the given attribute types `ts`.
     */
-  def mkRelation(sym: Symbol.RelSym, ts: List[Type]): Type = Type.Relation(sym, ts, Kind.Star)
-
-  /**
-    * Returns the lattice type corresponding to the given symbol `sym` with the given attribute types `ts`.
-    */
-  def mkLattice(sym: Symbol.LatSym, ts: List[Type]): Type = Type.Lattice(sym, ts, Kind.Star)
+  def mkRelationOrLattice(predSym: Symbol.PredSym, ts: List[Type]): Type = predSym match {
+    case sym: Symbol.RelSym => Type.Relation(sym, ts, Kind.Star)
+    case sym: Symbol.LatSym => Type.Lattice(sym, ts, Kind.Star)
+  }
 
   /**
     * Constructs the tuple type (A, B, ...) where the types are drawn from the list `ts`.

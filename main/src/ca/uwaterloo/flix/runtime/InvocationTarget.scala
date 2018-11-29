@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.runtime
 
-import ca.uwaterloo.flix.runtime.solver.api.ProxyObject
+import flix.runtime.ProxyObject
 
 @FunctionalInterface
 trait InvocationTarget {

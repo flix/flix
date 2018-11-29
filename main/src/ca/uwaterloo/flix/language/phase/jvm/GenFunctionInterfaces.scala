@@ -63,7 +63,10 @@ object GenFunctionInterfaces {
     }
 
     // `JvmType` of the continuation interface for `tpe`
-    val continuationType = JvmOps.getContinuationInterfaceType(tpe)
+    val continuationSuperInterface = JvmOps.getContinuationInterfaceType(tpe)
+
+    // `JvmType` of the java.util.functions.Function
+    val javaFunctionSuperInterface = JvmType.Function
 
     // `JvmType` of the functional interface for `tpe`
     val functionType = JvmOps.getFunctionInterfaceType(tpe)
@@ -72,11 +75,11 @@ object GenFunctionInterfaces {
     val visitor = AsmOps.mkClassWriter()
 
     // The super interface.
-    val superInterface = Array(continuationType.name.toInternalName)
+    val superInterfaces = Array(continuationSuperInterface.name.toInternalName, javaFunctionSuperInterface.name.toInternalName)
 
     // Class visitor
     visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_ABSTRACT + ACC_INTERFACE, functionType.name.toInternalName, null,
-      JvmName.Object.toInternalName, superInterface)
+      JvmName.Object.toInternalName, superInterfaces)
 
     // Adding setters for each argument of the function
     for ((arg, index) <- args.init.zipWithIndex) {
