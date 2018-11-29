@@ -67,7 +67,6 @@ public final class Solver {
     public static ConstraintSystem solve(ConstraintSystem cs, Stratification stf, Options o) {
         ca.uwaterloo.flix.runtime.solver.Solver solver = new ca.uwaterloo.flix.runtime.solver.Solver(cs, stf, o);
         ConstraintSystem result = solver.solve();
-        System.out.println(result.toString());
         return result;
     }
 
