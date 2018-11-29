@@ -1072,7 +1072,7 @@ object JvmOps {
         case (sacc, e) => sacc ++ visitExp(e)
       }
 
-      case Expression.FixpointConstraint(con, tpe, loc) => Set.empty // TODO: Constraint
+      case Expression.FixpointConstraint(c, tpe, loc) => visitConstraint(c) + tpe
 
       case Expression.FixpointCompose(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2) + tpe
 
@@ -1090,6 +1090,42 @@ object JvmOps {
       case Expression.HoleError(sym, tpe, loc) => Set(tpe)
       case Expression.MatchError(tpe, loc) => Set(tpe)
       case Expression.SwitchError(tpe, loc) => Set(tpe)
+    }
+
+    def visitConstraint(c0: Constraint): Set[Type] = c0 match {
+      case Constraint(cparams, head, body) =>
+        visitHeadPred(head) ++ body.flatMap(visitBodyPred)
+    }
+
+    def visitHeadPred(h0: Predicate.Head): Set[Type] = h0 match {
+      case Predicate.Head.True(loc) => Set.empty
+      case Predicate.Head.False(loc) => Set.empty
+      case Predicate.Head.Atom(sym, exp, terms, tpe, loc) =>
+        visitExp(exp) ++ terms.flatMap(visitHeadTerm) + tpe
+    }
+
+    def visitBodyPred(b0: Predicate.Body): Set[Type] = b0 match {
+      case Predicate.Body.Atom(sym, exp, polarity, terms, tpe, loc) =>
+        visitExp(exp) ++ terms.flatMap(visitBodyTerm)
+
+      case Predicate.Body.Filter(sym, terms, loc) =>
+        terms.flatMap(visitBodyTerm).toSet
+
+      case Predicate.Body.Functional(varSym, defSym, terms, loc) => Set.empty
+    }
+
+    def visitHeadTerm(t0: Term.Head): Set[Type] = t0 match {
+      case Term.Head.QuantVar(sym, tpe, loc) => Set(tpe)
+      case Term.Head.CapturedVar(sym, tpe, loc) => Set(tpe)
+      case Term.Head.Lit(sym, tpe, loc) => Set(tpe)
+      case Term.Head.App(sym, args, tpe, loc) => Set(tpe)
+    }
+
+    def visitBodyTerm(t0: Term.Body): Set[Type] = t0 match {
+      case Term.Body.Wild(tpe, loc) => Set(tpe)
+      case Term.Body.QuantVar(sym, tpe, loc) => Set(tpe)
+      case Term.Body.CapturedVar(sym, tpe, loc) => Set(tpe)
+      case Term.Body.Lit(sym, tpe, loc) => Set(tpe)
     }
 
     // TODO: Magnus: Look for types in other places.
