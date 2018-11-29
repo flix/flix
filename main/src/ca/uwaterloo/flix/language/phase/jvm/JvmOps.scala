@@ -72,16 +72,7 @@ object JvmOps {
       case Type.Vector => JvmType.Object
       case Type.Schema(m) => JvmType.Reference(JvmName.Runtime.Fixpoint.ConstraintSystem)
       case Type.Relation(sym, attr, kind) => JvmType.Reference(JvmName.PredSym)
-      case Type.Enum(sym, kind) =>
-        getNullability(tpe) match {
-          case Nullability.Nullable(t) =>
-            // If the enum is nullable it means that it is the Option[a] type.
-            // Hence we extract the inner type, the 'a'.
-            getJvmType(args.head)
-          case Nullability.NonNullable(t) => getEnumInterfaceType(tpe)
-          case Nullability.Primitive(t) => throw InternalCompilerException(s"Unexpected primitive type: '$tpe'.")
-          case Nullability.Reference(t) => throw InternalCompilerException(s"Unexpected reference type: '$tpe'.")
-        }
+      case Type.Enum(sym, kind) => getEnumInterfaceType(tpe)
       case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
     }
   }
@@ -478,91 +469,6 @@ object JvmOps {
 
     // The tag class resides in its namespace package.
     JvmType.Reference(JvmName(tag.sym.namespace, name))
-  }
-
-  /**
-    * Returns `true` if the given `tag` associated with the given enum symbol `sym` can be represented by null.
-    */
-  def isNullTag(sym: Symbol.EnumSym, tag: String)(implicit root: Root, flix: Flix): Boolean = {
-    // Retrieve the enum.
-    val enum = root.enums(sym)
-
-    // Retrieve the case.
-    val caze = enum.cases(tag)
-
-    // Check if the case is unit (i.e. can be represented by null).
-    caze.tpe == Type.Unit
-  }
-
-  /**
-    * Returns `true` if the given type `tpe` is nullable.
-    */
-  def isNullable(tpe: Type)(implicit root: Root, flix: Flix): Boolean = {
-    if (!tpe.isEnum)
-      throw InternalCompilerException(s"Unexpected type: $tpe")
-
-    getNullability(tpe) match {
-      case Nullability.Nullable(t) => true
-      case Nullability.Primitive(t) => false
-      case Nullability.Reference(t) => false
-      case Nullability.NonNullable(t) => false
-    }
-  }
-
-  /**
-    * Returns the nullability of the given type `tpe`.
-    */
-  def getNullability(tpe: Type)(implicit root: Root, flix: Flix): Nullability = {
-    // Check if the optimization is enabled.
-    if (!(flix.options.optimizations contains Optimization.NullableEnums))
-      return Nullability.NonNullable(tpe)
-
-    // Retrieve the type constructor.
-    val base = tpe.typeConstructor
-
-    // Retrieve the type arguments.
-    val args = tpe.typeArguments
-
-    // Match on the type constructor.
-    base match {
-      // Primitive types.
-      case Type.Unit => Nullability.Primitive(tpe)
-      case Type.Bool => Nullability.Primitive(tpe)
-      case Type.Char => Nullability.Primitive(tpe)
-      case Type.Float32 => Nullability.Primitive(tpe)
-      case Type.Float64 => Nullability.Primitive(tpe)
-      case Type.Int8 => Nullability.Primitive(tpe)
-      case Type.Int16 => Nullability.Primitive(tpe)
-      case Type.Int32 => Nullability.Primitive(tpe)
-      case Type.Int64 => Nullability.Primitive(tpe)
-
-      // Nullable types.
-      case Type.BigInt => Nullability.Reference(tpe)
-      case Type.Str => Nullability.Reference(tpe)
-      case Type.Native(clazz) => Nullability.Reference(tpe)
-      case Type.Ref => Nullability.Reference(tpe)
-      case Type.Arrow(l) => Nullability.Reference(tpe)
-      case Type.Tuple(l) => Nullability.Reference(tpe)
-
-      // Enum types.
-      case Type.Enum(sym, kind) =>
-        // Check if the enum is the Option type.
-        if (sym.name != "Option") {
-          return Nullability.NonNullable(tpe)
-        }
-
-        // The Option type has exactly one type argument.
-        val elementType = args.head
-
-        // Determine if the element type is nullable.
-        getNullability(elementType) match {
-          case Nullability.Nullable(t) => Nullability.NonNullable(tpe)
-          case Nullability.Primitive(t) => Nullability.NonNullable(tpe)
-          case Nullability.Reference(t) => Nullability.Nullable(tpe)
-          case Nullability.NonNullable(t) => Nullability.Nullable(elementType)
-        }
-      case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
-    }
   }
 
   /**

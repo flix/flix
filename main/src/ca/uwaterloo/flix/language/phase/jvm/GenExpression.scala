@@ -434,49 +434,20 @@ object GenExpression {
       if (JvmOps.isSingleCaseEnum(enum)) {
         // TODO: Ramin: Add support for single case enums?
       }
-      // Case 2: Check for nullability.
-      if (JvmOps.isNullable(exp.tpe)) {
-        // Compile the expression
-        compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
-
-        /*
-         * If type of the expression is Unit, then use the `IFNONNULL` comparator which will jump to `falseLabel` if the
-         * object is not null. If the type of expression is not Unit, then we use `IFNULL` comparator which will jump to
-         * `falseLabel` if the object is null.
-         */
-        val comparator = if (JvmOps.isNullTag(enum, tag)) {
-          IFNONNULL
-        } else {
-          IFNULL
-        }
-        // Label to the end of the comparison
-        val endLabel = new Label()
-        // Label to `false`
-        val falseLabel = new Label()
-        visitor.visitJumpInsn(comparator, falseLabel)
-        visitor.visitInsn(ICONST_1)
-        visitor.visitJumpInsn(GOTO, endLabel)
-        visitor.visitLabel(falseLabel)
-        visitor.visitInsn(ICONST_0)
-        visitor.visitLabel(endLabel)
+      // We get the `TagInfo` for the tag
+      val tagInfo = JvmOps.getTagInfo(exp.tpe, tag)
+      // Fusion info
+      val fusionInfo = JvmOps.getFusionTag(tagInfo)
+      // We get the JvmType of the class for tag
+      val classType = if (fusionInfo.isDefined && flix.options.optimizations.contains(Optimization.TagTupleFusion)) {
+        JvmOps.getFusionClassType(fusionInfo.get)
+      } else {
+        JvmOps.getTagClassType(tagInfo)
       }
-      // Case 3: Ordinary enum.
-      else {
-        // We get the `TagInfo` for the tag
-        val tagInfo = JvmOps.getTagInfo(exp.tpe, tag)
-        // Fusion info
-        val fusionInfo = JvmOps.getFusionTag(tagInfo)
-        // We get the JvmType of the class for tag
-        val classType = if (fusionInfo.isDefined && flix.options.optimizations.contains(Optimization.TagTupleFusion)) {
-          JvmOps.getFusionClassType(fusionInfo.get)
-        } else {
-          JvmOps.getTagClassType(tagInfo)
-        }
-        // First we compile the `exp`
-        compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
-        // We check if the enum is `instanceof` the class
-        visitor.visitTypeInsn(INSTANCEOF, classType.name.toInternalName)
-      }
+      // First we compile the `exp`
+      compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+      // We check if the enum is `instanceof` the class
+      visitor.visitTypeInsn(INSTANCEOF, classType.name.toInternalName)
 
     // Fusion when we directly create a tuple
     case Expression.Tag(enum, tag, exp@Expression.Tuple(elms, _, _), tpe, loc) if flix.options.optimizations.contains(Optimization.TagTupleFusion) =>
@@ -553,43 +524,29 @@ object GenExpression {
       if (JvmOps.isSingleCaseEnum(enum)) {
         // TODO: Ramin: Add support for single case enums?
       }
-      // Case 2: Check for nullability.
-      if (JvmOps.isNullable(tpe)) {
-        if (JvmOps.isNullTag(enum, tag)) {
-          // If the field is Unit, we push a NULL to the top of the stack
-          visitor.visitInsn(ACONST_NULL)
-        } else {
-          /*
-           * If the field type is Unit, we first evaluate the expression, then we pop the result from the top of the
-           * stack and push a NULL to the top of the stack.
-           */
-          compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
-        }
+
+      val tagInfo = JvmOps.getTagInfo(tpe, tag)
+      // We get the JvmType of the class for tag
+      val classType = JvmOps.getTagClassType(tagInfo)
+      /*
+     If the definition of the enum case has a `Unit` field, then it is represented by singleton pattern which means
+     there is only one instance of the class initiated as a field. We have to fetch this field instead of instantiating
+     a new one.
+     */
+      if (JvmOps.isUnitTag(tagInfo)) {
+        visitor.visitFieldInsn(GETSTATIC, classType.name.toInternalName, "unitInstance", classType.toDescriptor)
+      } else {
+        // Creating a new instance of the class
+        visitor.visitTypeInsn(NEW, classType.name.toInternalName)
+        visitor.visitInsn(DUP)
+        // Evaluating the single argument of the class constructor
+        compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+        // Descriptor of the constructor
+        val constructorDescriptor = AsmOps.getMethodDescriptor(List(JvmOps.getErasedJvmType(tagInfo.tagType)), JvmType.Void)
+        // Calling the constructor of the class
+        visitor.visitMethodInsn(INVOKESPECIAL, classType.name.toInternalName, "<init>", constructorDescriptor, false)
       }
-      // Case 3: Ordinary enum.
-      else {
-        val tagInfo = JvmOps.getTagInfo(tpe, tag)
-        // We get the JvmType of the class for tag
-        val classType = JvmOps.getTagClassType(tagInfo)
-        /*
-       If the definition of the enum case has a `Unit` field, then it is represented by singleton pattern which means
-       there is only one instance of the class initiated as a field. We have to fetch this field instead of instantiating
-       a new one.
-       */
-        if (JvmOps.isUnitTag(tagInfo)) {
-          visitor.visitFieldInsn(GETSTATIC, classType.name.toInternalName, "unitInstance", classType.toDescriptor)
-        } else {
-          // Creating a new instance of the class
-          visitor.visitTypeInsn(NEW, classType.name.toInternalName)
-          visitor.visitInsn(DUP)
-          // Evaluating the single argument of the class constructor
-          compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
-          // Descriptor of the constructor
-          val constructorDescriptor = AsmOps.getMethodDescriptor(List(JvmOps.getErasedJvmType(tagInfo.tagType)), JvmType.Void)
-          // Calling the constructor of the class
-          visitor.visitMethodInsn(INVOKESPECIAL, classType.name.toInternalName, "<init>", constructorDescriptor, false)
-        }
-      }
+
 
     case Expression.Untag(enum, tag, exp, tpe, loc) if tpe.isTuple && flix.options.optimizations.contains(Optimization.TagTupleFusion) =>
       compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
@@ -601,44 +558,22 @@ object GenExpression {
       if (JvmOps.isSingleCaseEnum(enum)) {
         // TODO: Ramin: Add support for single case enums?
       }
-      // Case 2: Check for nullability.
-      if (JvmOps.isNullable(exp.tpe)) {
-        if (JvmOps.isNullTag(enum, tag)) {
-          exp match {
-            case Expression.Var(_, _, _) =>
-              /*
-               * If sub expression is a var, then that expression has already been evaluated. Since the result is just NULL,
-               * we will not evaluate the sub expression and we will directly put a Unit on top of the stack.
-               */
-              visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Value.Unit.toInternalName, "getInstance",
-                AsmOps.getMethodDescriptor(Nil, JvmType.Unit), false)
-            case _ =>
-              /*
-               * If the sub expression is of type Unit, we evaluate the expression.
-               */
-              compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
-          }
-        } else {
-          // Else we just evaluate the expression
-          compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
-        }
-      } // Case 3: Ordinary enum.
-      else {
-        // We get the `TagInfo` for the tag
-        val tagInfo = JvmOps.getTagInfo(exp.tpe, tag)
-        // We get the JvmType of the class for the tag
-        val classType = JvmOps.getTagClassType(tagInfo)
-        // Evaluate the exp
-        compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
-        // Cast the exp to the type of the tag
-        visitor.visitTypeInsn(CHECKCAST, classType.name.toInternalName)
-        // Descriptor of the method
-        val methodDescriptor = AsmOps.getMethodDescriptor(Nil, JvmOps.getErasedJvmType(tagInfo.tagType))
-        // Invoke `getValue()` method to extract the field of the tag
-        visitor.visitMethodInsn(INVOKEVIRTUAL, classType.name.toInternalName, "getValue", methodDescriptor, false)
-        // Cast the object to it's type if it's not a primitive
-        AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
-      }
+
+      // We get the `TagInfo` for the tag
+      val tagInfo = JvmOps.getTagInfo(exp.tpe, tag)
+      // We get the JvmType of the class for the tag
+      val classType = JvmOps.getTagClassType(tagInfo)
+      // Evaluate the exp
+      compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+      // Cast the exp to the type of the tag
+      visitor.visitTypeInsn(CHECKCAST, classType.name.toInternalName)
+      // Descriptor of the method
+      val methodDescriptor = AsmOps.getMethodDescriptor(Nil, JvmOps.getErasedJvmType(tagInfo.tagType))
+      // Invoke `getValue()` method to extract the field of the tag
+      visitor.visitMethodInsn(INVOKEVIRTUAL, classType.name.toInternalName, "getValue", methodDescriptor, false)
+      // Cast the object to it's type if it's not a primitive
+      AsmOps.castIfNotPrim(visitor, JvmOps.getJvmType(tpe))
+
 
     case Expression.Index(base, offset, tpe, _) =>
       // We get the JvmType of the class for the tuple
