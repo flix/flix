@@ -217,7 +217,7 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
 
       case Expression.FixpointProject(sym, exp1, exp2, tpe, loc) =>
         val e1 = visit(exp1)
-        val e2 = visit(exp1)
+        val e2 = visit(exp2)
         Expression.FixpointProject(sym, e1, e2, tpe, loc)
 
       case Expression.FixpointEntails(exp1, exp2, tpe, loc) =>
