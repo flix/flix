@@ -88,8 +88,6 @@ object Unification {
           case (macc, (s, t)) => macc + (s -> apply(t))
         }
         Type.Schema(newRow)
-      case Type.Solvable => Type.Solvable
-      case Type.Checkable => Type.Checkable
       case Type.Apply(t1, t2) => Type.Apply(apply(t1), apply(t2))
     }
 
@@ -258,8 +256,6 @@ object Unification {
         // And simply unify them.
         unifyAll(types1, types2)
 
-      case (Type.Solvable, Type.Solvable) => Result.Ok(Substitution.empty)
-      case (Type.Checkable, Type.Checkable) => Result.Ok(Substitution.empty)
       case (Type.Apply(t11, t12), Type.Apply(t21, t22)) =>
         unifyTypes(t11, t21) match {
           case Result.Ok(subst1) => unify(subst1(t12), subst1(t22)) match {

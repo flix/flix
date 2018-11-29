@@ -105,8 +105,6 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
             case (macc, (predSym, predType)) => macc + (predSym -> visit(predType))
           }
           Type.Schema(m2)
-        case Type.Solvable => Type.Solvable
-        case Type.Checkable => Type.Checkable
         case Type.Apply(tpe1, tpe2) => Type.Apply(apply(tpe1), apply(tpe2))
       }
 
