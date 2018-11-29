@@ -37,7 +37,6 @@
 //    spawn f(c); spawn f(c); spawn f(c); spawn f(c); spawn f(c);
 //    <- c; <- c; <- c; <- c; <- c; <- c; <- c; <- c; <- c; <- c
 //
-//// TODO SJ: When do we decide when "arguments" for spawn are evaluated? E.g. in "spawn f(x)" we might want x to be evaluated immediately, but "spawn c <- 2" should definitely be evaluated later
 //def spawnTest(): Str = let c = chan Str; spawn c <- "2"; <- c
 //
 //
@@ -54,17 +53,15 @@
 //
 //def statementTest(): Int = 1 ; 2
 
-@test
-def test1(): Int =
-  let c = chan Int;
-  spawn c <- 2;
-  <- c
+def f(): Int = Console.printLine("te"); f()
+//
+def test1(): Int = spawn f(); 2
 
 //def f(c: Channel[Int]): Unit =
 //  c <- 2;
 //  ()
 
-def test2(): Int =
-  let c = chan Int;
-  spawn c <- 2;
-  <- c
+//def test2(): Int =
+//  let c = chan Int;
+//  spawn c <- 2;
+//  <- c

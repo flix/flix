@@ -111,7 +111,7 @@ object GenClosureClasses {
     compileApplyMethod(visitor, classType, root.defs(closure.sym), closure.freeVars, resultType)
 
     // Spawn method of the class
-    compileSpawnMethod(visitor, classType, root.defs(closure.sym))
+    compileSpawnMethod(visitor, classType, root.defs(closure.sym), resultType)
 
     // Constructor of the class
     compileConstructor(visitor, classType, closure.freeVars)
@@ -260,7 +260,7 @@ object GenClosureClasses {
     */
   private def compileSpawnMethod(visitor: ClassWriter,
                                  classType: JvmType.Reference,
-                                 defn: Def)(implicit root: Root, flix: Flix): Unit = {
+                                 defn: Def, resultType: JvmType)(implicit root: Root, flix: Flix): Unit = {
 
     // Method header
     val mv = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, "spawn",
@@ -273,9 +273,60 @@ object GenClosureClasses {
     mv.visitTypeInsn(NEW, JvmName.Context.toInternalName)
     mv.visitInsn(DUP)
     mv.visitMethodInsn(INVOKESPECIAL, JvmName.Context.toInternalName, "<init>", "()V", false)
+    mv.visitInsn(DUP)
+    mv.visitVarInsn(ASTORE, 1)
 
     // Call the apply method
     mv.visitMethodInsn(INVOKEVIRTUAL, classType.name.toInternalName, "apply", "(LContext;)V", false)
+
+    // Label for the loop
+    val loop = new Label
+
+    // Type of the function
+    val fnType = root.defs(defn.sym).tpe
+
+    // Type of the continuation interface
+    val cont = JvmOps.getContinuationInterfaceType(fnType)
+
+    // Store this ifo to the continuation field.
+    mv.visitVarInsn(ALOAD, 1)
+    mv.visitVarInsn(ALOAD, 0)
+    mv.visitFieldInsn(PUTFIELD, JvmName.Context.toInternalName, "continuation", JvmType.Object.toDescriptor)
+
+    // Begin of the loop
+    mv.visitLabel(loop)
+
+    // Getting `continuation` field on `Context`
+    mv.visitVarInsn(ALOAD, 1)
+    mv.visitFieldInsn(GETFIELD, JvmName.Context.toInternalName, "continuation", JvmType.Object.toDescriptor)
+
+    // Setting `continuation` field of global to `null`
+    mv.visitVarInsn(ALOAD, 1)
+    mv.visitInsn(ACONST_NULL)
+    mv.visitFieldInsn(PUTFIELD, JvmName.Context.toInternalName, "continuation", JvmType.Object.toDescriptor)
+
+    // Cast to the continuation
+    mv.visitTypeInsn(CHECKCAST, cont.name.toInternalName)
+
+    // Duplicate
+    mv.visitInsn(DUP)
+
+    // Save it on the IFO local variable
+    mv.visitVarInsn(ASTORE, 2)
+
+    // Call invoke
+    mv.visitVarInsn(ALOAD, 1)
+    mv.visitMethodInsn(INVOKEINTERFACE, cont.name.toInternalName, "apply", AsmOps.getMethodDescriptor(List(JvmType.Context), JvmType.Void), true)
+
+    // Getting `continuation` field on `Context`
+    mv.visitVarInsn(ALOAD, 1)
+    mv.visitFieldInsn(GETFIELD, JvmName.Context.toInternalName, "continuation", JvmType.Object.toDescriptor)
+    mv.visitJumpInsn(IFNONNULL, loop)
+
+    // Load IFO from local variable and invoke `getResult` on it
+    mv.visitVarInsn(ALOAD, 2)
+    mv.visitMethodInsn(INVOKEINTERFACE, cont.name.toInternalName, "getResult", AsmOps.getMethodDescriptor(Nil, resultType), true)
+    AsmOps.boxIfPrim(mv, resultType)
 
     mv.visitInsn(RETURN)
     mv.visitMaxs(65535, 65535)
