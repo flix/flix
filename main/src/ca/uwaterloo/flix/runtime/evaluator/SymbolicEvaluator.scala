@@ -865,22 +865,22 @@ object SymbolicEvaluator {
       /**
         * ConstraintUnion.
         */
-      case Expression.FixpointCompose(e1, e2, tpe, loc) => throw InternalCompilerException("Not yet supported.")
+      case Expression.FixpointCompose(exp1, exp2, tpe, loc) => throw InternalCompilerException("Not yet supported.")
 
       /**
         * Fixpoint Solve.
         */
-      case Expression.FixpointSolve(exp, svar, stf, tpe, loc) => throw InternalCompilerException("Not yet supported.")
+      case Expression.FixpointSolve(uid, exp, stf, tpe, loc) => throw InternalCompilerException("Not yet supported.")
 
       /**
         * Fixpoint Check.
         */
-      case Expression.FixpointCheck(exp, svar, stf, tpe, loc) => throw InternalCompilerException("Not yet supported.")
+      case Expression.FixpointCheck(uid, exp, stf, tpe, loc) => throw InternalCompilerException("Not yet supported.")
 
       /**
         * Fixpoint Delta.
         */
-      case Expression.FixpointDelta(exp, svar, stf, tpe, loc) => throw InternalCompilerException("Not yet supported.")
+      case Expression.FixpointDelta(uid, exp, stf, tpe, loc) => throw InternalCompilerException("Not yet supported.")
 
       /**
         * Fixpoint Project.
@@ -890,7 +890,7 @@ object SymbolicEvaluator {
       /**
         * Fixpoint Entails.
         */
-      case Expression.FixpointEntails(e1, e2, tpe, loc) => throw InternalCompilerException("Not yet supported.")
+      case Expression.FixpointEntails(exp1, exp2, tpe, loc) => throw InternalCompilerException("Not yet supported.")
 
       /**
         * User Error.
