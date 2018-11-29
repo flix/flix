@@ -302,13 +302,8 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         Expression.NativeMethod(method, es, tpe, loc)
 
       case Expression.FixpointConstraint(c0, tpe, loc) =>
-        val Constraint(cparams0, head0, body0) = c0
-        // TODO
-        //        val head = visitHeadPredicate(head0)
-        //        val body = ???
-
-        //      val c = Constraint(cparams0, head, body)
-        Expression.FixpointConstraint(c0, tpe, loc)
+        val c = visitConstraint(c0)
+        Expression.FixpointConstraint(c, tpe, loc)
 
       case Expression.FixpointCompose(exp1, exp2, tpe, loc) =>
         val e1 = visitExp(exp1)
@@ -353,7 +348,17 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     }
 
     /**
-      * Performs closure conversion and lambda lifting on the given head predicate `head0`.
+      * Performs lambda lifting on the given head predicate `head0`.
+      */
+    def visitConstraint(c0: SimplifiedAst.Constraint): SimplifiedAst.Constraint = c0 match {
+      case SimplifiedAst.Constraint(cparams, head0, body0) =>
+        val head = visitHeadPredicate(head0)
+        val body = body0.map(visitBodyPredicate)
+        SimplifiedAst.Constraint(cparams, head, body)
+    }
+
+    /**
+      * Performs lambda lifting on the given head predicate `head0`.
       */
     def visitHeadPredicate(head0: Predicate.Head): Predicate.Head = head0 match {
       case Predicate.Head.True(loc) => Predicate.Head.True(loc)
@@ -364,13 +369,51 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     }
 
     /**
-      * Performs closure conversion and lambda lifting on the given head term `term0`.
+      * Performs lambda lifting on the given body predicate `body0`.
+      */
+    def visitBodyPredicate(body0: Predicate.Body): Predicate.Body = body0 match {
+      case Predicate.Body.Atom(sym, exp, polarity, terms, tpe, loc) =>
+        val e = visitExp(exp)
+        val ts = terms.map(visitBodyTerm)
+        Predicate.Body.Atom(sym, e, polarity, ts, tpe, loc)
+
+      case Predicate.Body.Filter(sym, terms, loc) =>
+        val ts = terms.map(visitBodyTerm)
+        Predicate.Body.Filter(sym, ts, loc)
+
+      case Predicate.Body.Functional(sym, term, loc) =>
+        val t = visitHeadTerm(term)
+        Predicate.Body.Functional(sym, t, loc)
+    }
+
+    /**
+      * Performs lambda lifting on the given head term `term0`.
       */
     def visitHeadTerm(term0: Term.Head): Term.Head = term0 match {
-      case Term.Head.QuantVar(sym, tpe, loc) => ???
-      case Term.Head.CapturedVar(sym, tpe, loc) => ???
-      case Term.Head.Lit(lit, tpe, loc) => ???
-      case Term.Head.App(sym, args, tpe, loc) => ???
+      case Term.Head.QuantVar(sym, tpe, loc) => term0
+
+      case Term.Head.CapturedVar(sym, tpe, loc) => term0
+
+      case Term.Head.Lit(exp, tpe, loc) =>
+        val e = visitExp(exp)
+        Term.Head.Lit(e, tpe, loc)
+
+      case Term.Head.App(sym, args, tpe, loc) => term0
+    }
+
+    /**
+      * Performs lambda lifting on the given body term `term0`.
+      */
+    def visitBodyTerm(term0: Term.Body): Term.Body = term0 match {
+      case Term.Body.Wild(tpe, loc) => term0
+
+      case Term.Body.QuantVar(sym, tpe, loc) => term0
+
+      case Term.Body.CapturedVar(sym, tpe, loc) => term0
+
+      case Term.Body.Lit(exp, tpe, loc) =>
+        val e = visitExp(exp)
+        Term.Body.Lit(e, tpe, loc)
     }
 
     visitExp(exp0)
