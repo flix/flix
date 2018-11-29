@@ -1082,7 +1082,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Expression.NativeField(className, fieldName, loc) => Nil
     case WeededAst.Expression.NativeMethod(className, methodName, args, loc) => args.flatMap(freeVars)
     case WeededAst.Expression.NativeConstructor(className, args, loc) => args.flatMap(freeVars)
-    case WeededAst.Expression.FixpointConstraint(c, loc) => ??? // TODO: Constraint
+    case WeededAst.Expression.FixpointConstraint(c, loc) => freeVarsConstraint(c)
     case WeededAst.Expression.FixpointCompose(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
     case WeededAst.Expression.FixpointSolve(exp, loc) => freeVars(exp)
     case WeededAst.Expression.FixpointCheck(exp, loc) => freeVars(exp)
@@ -1131,6 +1131,31 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Type.Native(fqm, loc) => Nil
     case WeededAst.Type.Arrow(tparams, retType, loc) => tparams.flatMap(freeVars) ::: freeVars(retType)
     case WeededAst.Type.Apply(tpe1, tpe2, loc) => freeVars(tpe1) ++ freeVars(tpe2)
+  }
+
+  /**
+    * Returns the free variables in the given constraint `c0`.
+    */
+  private def freeVarsConstraint(c0: WeededAst.Constraint): List[Name.Ident] = c0 match {
+    case WeededAst.Constraint(head, body, loc) => freeVarsHeadPredicate(head) ::: body.flatMap(freeVarsBodyPredicate)
+  }
+
+  /**
+    * Returns the free variables in the given head predicate `h0`.
+    */
+  private def freeVarsHeadPredicate(h0: WeededAst.Predicate.Head): List[Name.Ident] = h0 match {
+    case WeededAst.Predicate.Head.True(loc) => Nil
+    case WeededAst.Predicate.Head.False(loc) => Nil
+    case WeededAst.Predicate.Head.Atom(qname, exp, terms, loc) => freeVars(exp) ::: terms.flatMap(freeVars)
+  }
+
+  /**
+    * Returns the free variables in the given body predicate `b0`.
+    */
+  private def freeVarsBodyPredicate(b0: WeededAst.Predicate.Body): List[Name.Ident] = b0 match {
+    case WeededAst.Predicate.Body.Atom(qname, exp, polarity, terms, loc) => freeVars(exp) ::: terms.flatMap(freeVars)
+    case WeededAst.Predicate.Body.Filter(qname, terms, loc) => terms.flatMap(freeVars)
+    case WeededAst.Predicate.Body.Functional(ident, term, loc) => freeVars(term)
   }
 
   /**
