@@ -494,8 +494,9 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       */
     def visitBodyPred(p0: Predicate.Body, env0: Map[Symbol.VarSym, Symbol.VarSym]): Predicate.Body = p0 match {
       case Predicate.Body.Atom(sym, exp, polarity, terms, tpe, loc) =>
+        val e = visitExp(exp, env0)
         val ts = terms.map(visitBodyTerm(_, env0))
-        Predicate.Body.Atom(sym, exp, polarity, ts, tpe, loc)
+        Predicate.Body.Atom(sym, e, polarity, ts, tpe, loc)
 
       case Predicate.Body.Filter(sym, terms, loc) =>
         val ts = terms.map(visitBodyTerm(_, env0))
