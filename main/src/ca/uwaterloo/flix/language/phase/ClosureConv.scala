@@ -373,8 +373,17 @@ object ClosureConv extends Phase[Root, Root] {
   /**
     * Performs closure conversion on the given head term `term0`.
     */
-  private def visitHeadTerm(term0: Term.Head): Term.Head =
-    term0 // TODO: Actually perform some operations.
+  private def visitHeadTerm(term0: Term.Head)(implicit flix: Flix): Term.Head = term0 match {
+    case Term.Head.QuantVar(sym, tpe, loc) => term0
+
+    case Term.Head.CapturedVar(sym, tpe, loc) => term0
+
+    case Term.Head.Lit(lit, tpe, loc) =>
+      val e = visitExp(lit)
+      Term.Head.Lit(e, tpe, loc)
+
+    case Term.Head.App(sym, args, tpe, loc) => term0
+  }
 
   /**
     * Performs closure conversion on the given body term `term0`.
