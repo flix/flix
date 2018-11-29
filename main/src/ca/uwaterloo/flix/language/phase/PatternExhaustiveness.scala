@@ -306,8 +306,9 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
         }).map(const(tast))
 
         case Expression.FixpointConstraint(c, tpe, eff, loc) =>
-          // TODO: check recursively.
-          tast.toSuccess
+          for {
+            _ <- visitConstraint(c, root)
+          } yield tast
 
         case Expression.FixpointCompose(exp1, exp2, tpe, eff, loc) =>
           for {
@@ -344,6 +345,45 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
 
         case Expression.UserError(_, _, _) => tast.toSuccess
       }
+    }
+
+    /**
+      * Performs exhaustive checking on the given constraint `c`.
+      */
+    def visitConstraint(c0: TypedAst.Constraint, root: TypedAst.Root)(implicit genSym: GenSym): Validation[TypedAst.Constraint, CompilationError] = c0 match {
+      case TypedAst.Constraint(cparams, head0, body0, loc) =>
+        for {
+          head <- visitHeadPred(head0, root)
+          body <- traverse(body0)(visitBodyPred(_, root))
+        } yield c0
+
+    }
+
+    def visitHeadPred(h0: TypedAst.Predicate.Head, root: TypedAst.Root)(implicit genSym: GenSym): Validation[TypedAst.Predicate.Head, CompilationError] = h0 match {
+      case TypedAst.Predicate.Head.True(loc) => h0.toSuccess
+      case TypedAst.Predicate.Head.False(loc) => h0.toSuccess
+      case TypedAst.Predicate.Head.Atom(sym, exp, terms, tpe, loc) =>
+        for {
+          e <- checkPats(exp, root)
+          ts <- traverse(terms)(checkPats(_, root))
+        } yield h0
+    }
+
+    def visitBodyPred(b0: TypedAst.Predicate.Body, root: TypedAst.Root)(implicit genSym: GenSym): Validation[TypedAst.Predicate.Body, CompilationError] = b0 match {
+      case TypedAst.Predicate.Body.Atom(sym, exp, polarity, terms, tpe, loc) =>
+        for {
+          e <- checkPats(exp, root)
+        } yield b0
+
+      case TypedAst.Predicate.Body.Filter(sym, terms, loc) =>
+        for {
+          ts <- traverse(terms)(checkPats(_, root))
+        } yield b0
+
+      case TypedAst.Predicate.Body.Functional(sym, term, loc) =>
+        for {
+          t <- checkPats(term, root)
+        } yield b0
     }
 
     /**
