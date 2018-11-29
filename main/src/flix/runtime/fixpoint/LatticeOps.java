@@ -28,7 +28,7 @@ public final class LatticeOps {
     /**
      * Returns a new lattice ops object for the given lattice components.
      */
-    public static LatticeOps of(ProxyObject bot, Function<Object[], ProxyObject> equ, Function<Object[], ProxyObject> leq, Function<Object[], ProxyObject> lub, Function<Object[], ProxyObject> glb) {
+    public static LatticeOps of(Function<Object[], ProxyObject> bot, Function<Object[], ProxyObject> equ, Function<Object[], ProxyObject> leq, Function<Object[], ProxyObject> lub, Function<Object[], ProxyObject> glb) {
         if (bot == null)
             throw new IllegalArgumentException("'bot' must be non-null");
         if (equ == null)
@@ -46,7 +46,7 @@ public final class LatticeOps {
     /**
      * Returns the bottom element.
      */
-    private ProxyObject bot;
+    private Function<Object[], ProxyObject> bot;
 
     /**
      * Returns the equality function.
@@ -71,7 +71,7 @@ public final class LatticeOps {
     /**
      * Private constructor.
      */
-    private LatticeOps(ProxyObject bot, Function<Object[], ProxyObject> equ, Function<Object[], ProxyObject> leq, Function<Object[], ProxyObject> lub, Function<Object[], ProxyObject> glb) {
+    private LatticeOps(Function<Object[], ProxyObject> bot, Function<Object[], ProxyObject> equ, Function<Object[], ProxyObject> leq, Function<Object[], ProxyObject> lub, Function<Object[], ProxyObject> glb) {
         this.bot = bot;
         this.equ = equ;
         this.leq = leq;
@@ -83,7 +83,7 @@ public final class LatticeOps {
      * Returns the bottom element.
      */
     public ProxyObject bot() {
-        return bot;
+        return this.bot.apply(new Object[1]);
     }
 
     /**

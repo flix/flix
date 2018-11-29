@@ -906,7 +906,9 @@ object Interpreter {
     val lattice = root.latticeComponents(tpe)
 
     LatticeOps.of(
-      Linker.link(lattice.bot, root).invoke(Array.empty),
+      (args: Array[AnyRef]) => {
+        Linker.link(lattice.bot, root).invoke(Array.empty)
+      },
       (args: Array[AnyRef]) => {
         Linker.link(lattice.equ, root).invoke(args)
       },

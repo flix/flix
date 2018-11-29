@@ -1689,7 +1689,7 @@ object GenExpression {
     newAttribute(root.lattices(sym).attr.last, mv)
 
     // Emit code for the lattice operations.
-    mv.visitInsn(ACONST_NULL); // TODO
+    newLatticeOps(sym, mv)
 
     // Emit code to instantiate the predicate symbol.
     mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Symbol.LatSym.toInternalName, "of", "(Ljava/lang/String;Lflix/runtime/ProxyObject;[Lflix/runtime/fixpoint/Attribute;Lflix/runtime/fixpoint/Attribute;Lflix/runtime/fixpoint/LatticeOps;)Lflix/runtime/fixpoint/symbol/LatSym;", false)
@@ -1743,6 +1743,33 @@ object GenExpression {
 
     // Instantiate a fresh attribute object.
     mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Attribute.toInternalName, "of", "(Ljava/lang/String;)Lflix/runtime/fixpoint/Attribute;", false)
+  }
+
+  /**
+    * Emits code to construct a lattice operations object for the given symbol `sym`.
+    */
+  private def newLatticeOps(sym: Symbol.LatSym, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
+    // Lookup the declaration.
+    val decl = root.lattices(sym)
+    val ops = root.latticeComponents(decl.attr.last.tpe)
+
+    // The bottom object.
+    AsmOps.compileDefSymbol(ops.bot, mv)
+
+    // The equ function.
+    AsmOps.compileDefSymbol(ops.equ, mv)
+
+    // The leq function.
+    AsmOps.compileDefSymbol(ops.leq, mv)
+
+    // The lub function.
+    AsmOps.compileDefSymbol(ops.lub, mv)
+
+    // The glb function.
+    AsmOps.compileDefSymbol(ops.glb, mv)
+
+    // Instantiate a new lattice ops object.
+    mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.LatticeOps.toInternalName, "of", "(Ljava/util/function/Function;Ljava/util/function/Function;Ljava/util/function/Function;Ljava/util/function/Function;Ljava/util/function/Function;)Lflix/runtime/fixpoint/LatticeOps;", false)
   }
 
   /**

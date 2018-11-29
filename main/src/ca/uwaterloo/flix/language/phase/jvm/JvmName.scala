@@ -138,6 +138,7 @@ object JvmName {
       val ConstraintSystem: JvmName = mk("flix/runtime/fixpoint/ConstraintSystem")
       val ConstantFunction: JvmName = mk("flix/runtime/fixpoint/ConstantFunction")
       val Options: JvmName = mk("flix/runtime/fixpoint/Options")
+      val LatticeOps: JvmName = mk("flix/runtime/fixpoint/LatticeOps")
       val Solver: JvmName = mk("flix/runtime/fixpoint/Solver")
       val Stratification: JvmName = mk("flix/runtime/fixpoint/Stratification")
 
