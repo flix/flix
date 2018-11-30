@@ -38,7 +38,7 @@ public final class LatSym implements PredSym {
      * <p>
      * The parameter may be null.
      */
-    public static LatSym of(String name, ProxyObject parameter, Attribute[] keys, Attribute value, LatticeOps ops) {
+    public synchronized static LatSym of(String name, ProxyObject parameter, Attribute[] keys, Attribute value, LatticeOps ops) {
         if (name == null)
             throw new IllegalArgumentException("'name' must be non-null.");
         if (keys == null)

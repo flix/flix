@@ -37,7 +37,7 @@ public final class RelSym implements PredSym {
      * <p>
      * The parameter may be null.
      */
-    public static RelSym of(String name, ProxyObject parameter, Attribute[] attributes) {
+    public synchronized static RelSym of(String name, ProxyObject parameter, Attribute[] attributes) {
         if (name == null)
             throw new IllegalArgumentException("'name' must be non-null.");
         if (attributes == null)

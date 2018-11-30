@@ -16,19 +16,12 @@
 
 package flix.runtime;
 
-import flix.runtime.value.Unit;
-
 import java.util.function.Function;
 
 /**
  * A wrapper for objects created natively by Flix with appropriate equals, hashCode, and toString methods.
  */
 public final class ProxyObject {
-
-    /**
-     * The Unit value as a proxy object.
-     */
-    public static final ProxyObject UNIT = new ProxyObject(Unit.getInstance(), null, null, null);
 
     /**
      * The wrapped (possibly boxed) value.
