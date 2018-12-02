@@ -115,18 +115,6 @@ class TestWeeder extends FunSuite with TestUtils {
     expectError[WeederError.DuplicateTag](result)
   }
 
-  test("EmptyRelation.01") {
-    val input = "rel R()"
-    val result = new Flix().addStr(input).compile()
-    expectError[WeederError.EmptyRelation](result)
-  }
-
-  test("EmptyLattice.01") {
-    val input = "lat L()"
-    val result = new Flix().addStr(input).compile()
-    expectError[WeederError.EmptyLattice](result)
-  }
-
   test("IllegalEffect.01") {
     val input = "def f(): Bool @ Foo = true"
     val result = new Flix().addStr(input).compile()

@@ -140,40 +140,6 @@ object WeederError {
   }
 
   /**
-    * An error raised to indicate that a relation declares no attributes.
-    *
-    * @param name the name of the relation.
-    * @param loc  the location of the declaration.
-    */
-  case class EmptyRelation(name: String, loc: SourceLocation) extends WeederError {
-    val source: Source = loc.source
-    val message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> The relation '" << Red(name) << "' does not declare any attributes." << NewLine
-      vt << NewLine
-      vt << Code(loc, "a relation must declare at least one attribute.") << NewLine
-    }
-  }
-
-  /**
-    * An error raised to indicate that a lattice declares no attributes.
-    *
-    * @param name the name of the lattice.
-    * @param loc  the location of the declaration.
-    */
-  case class EmptyLattice(name: String, loc: SourceLocation) extends WeederError {
-    val source: Source = loc.source
-    val message: VirtualTerminal = {
-      val vt = new VirtualTerminal
-      vt << Line(kind, source.format) << NewLine
-      vt << ">> The lattice '" << Red(name) << "' does not declare any attributes." << NewLine
-      vt << NewLine
-      vt << Code(loc, "a lattice must declare at least one attribute.") << NewLine
-    }
-  }
-
-  /**
     * An error raised to indicate an illegal array length,
     *
     * @param loc the location where the illegal array length occurs.

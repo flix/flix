@@ -249,12 +249,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       val tparams = tparams0.toList.map(_.ident)
 
       /*
-       * Check for `EmptyRelation`
-       */
-      if (attrs.isEmpty)
-        return EmptyRelation(ident.name, mkSL(sp1, sp2)).toFailure
-
-      /*
        * Check for `DuplicateAttribute`.
        */
       mapN(modVal, checkDuplicateAttribute(attrs)) {
@@ -271,12 +265,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       val doc = visitDoc(doc0)
       val modVal = visitModifiers(mod0, legalModifiers = Set(Ast.Modifier.Public))
       val tparams = tparams0.toList.map(_.ident)
-
-      /*
-       * Check for `EmptyLattice`.
-       */
-      if (attr.isEmpty)
-        return EmptyLattice(ident.name, mkSL(sp1, sp2)).toFailure
 
       /*
        * Check for `DuplicateAttribute`.

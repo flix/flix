@@ -221,11 +221,11 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Relation: Rule1[ParsedAst.Declaration.Relation] = rule {
-      Documentation ~ Modifiers ~ SP ~ atomic("rel") ~ WS ~ Names.Table ~ optWS ~ TypeParams ~ "(" ~ optWS ~ Attributes ~ optWS ~ ")" ~ SP ~> ParsedAst.Declaration.Relation
+      Documentation ~ Modifiers ~ SP ~ atomic("rel") ~ WS ~ Names.Table ~ optWS ~ TypeParams ~ optAttributeList ~ SP ~> ParsedAst.Declaration.Relation
     }
 
     def Lattice: Rule1[ParsedAst.Declaration.Lattice] = rule {
-      Documentation ~ Modifiers ~ SP ~ atomic("lat") ~ WS ~ Names.Table ~ optWS ~ TypeParams ~ "(" ~ optWS ~ Attributes ~ optWS ~ ")" ~ SP ~> ParsedAst.Declaration.Lattice
+      Documentation ~ Modifiers ~ SP ~ atomic("lat") ~ WS ~ Names.Table ~ optWS ~ TypeParams ~ optAttributeList ~ SP ~> ParsedAst.Declaration.Lattice
     }
 
     def Constraint: Rule1[ParsedAst.Declaration.Constraint] = {
@@ -350,10 +350,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
   def Attribute: Rule1[ParsedAst.Attribute] = rule {
     SP ~ Names.Attribute ~ optWS ~ ":" ~ optWS ~ Type ~ SP ~> ParsedAst.Attribute
-  }
-
-  def Attributes: Rule1[Seq[ParsedAst.Attribute]] = rule {
-    zeroOrMore(Attribute).separatedBy(optWS ~ "," ~ optWS)
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -943,14 +939,14 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       def Atom: Rule1[ParsedAst.Predicate.Head.Atom] = rule {
-        SP ~ Names.QualifiedTable ~ optional("<" ~ Expressions.Primary ~ ">") ~ optWS ~ NonEmptyArgumentList ~ SP ~> ParsedAst.Predicate.Head.Atom
+        SP ~ Names.QualifiedTable ~ optional("<" ~ Expressions.Primary ~ ">") ~ optWS ~ optArgumentList ~ SP ~> ParsedAst.Predicate.Head.Atom
       }
 
     }
 
     object Body {
       def Positive: Rule1[ParsedAst.Predicate.Body.Positive] = rule {
-        SP ~ Names.QualifiedTable ~ optional("<" ~ Expressions.Primary ~ ">") ~ optWS ~ NonEmptyPatternList ~ SP ~> ParsedAst.Predicate.Body.Positive
+        SP ~ Names.QualifiedTable ~ optional("<" ~ Expressions.Primary ~ ">") ~ optWS ~ optPatternList ~ SP ~> ParsedAst.Predicate.Body.Positive
       }
 
       def Negative: Rule1[ParsedAst.Predicate.Body.Negative] = {
@@ -959,7 +955,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         }
 
         rule {
-          SP ~ Not ~ optWS ~ Names.QualifiedTable ~ optional("<" ~ Expressions.Primary ~ ">") ~ optWS ~ NonEmptyPatternList ~ SP ~> ParsedAst.Predicate.Body.Negative
+          SP ~ Not ~ optWS ~ Names.QualifiedTable ~ optional("<" ~ Expressions.Primary ~ ">") ~ optWS ~ optPatternList ~ SP ~> ParsedAst.Predicate.Body.Negative
         }
       }
 
@@ -1103,12 +1099,19 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     "(" ~ optWS ~ zeroOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")"
   }
 
-  def NonEmptyArgumentList: Rule1[Seq[ParsedAst.Expression]] = rule {
-    "(" ~ optWS ~ oneOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")"
+  def optArgumentList: Rule1[Seq[ParsedAst.Expression]] = rule {
+    optional("(" ~ optWS ~ zeroOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")") ~> (
+      (o: Option[Seq[ParsedAst.Expression]]) => o.getOrElse(Seq.empty))
   }
 
-  def NonEmptyPatternList: Rule1[Seq[ParsedAst.Pattern]] = rule {
-    "(" ~ optWS ~ oneOrMore(Pattern).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")"
+  def optPatternList: Rule1[Seq[ParsedAst.Pattern]] = rule {
+    optional("(" ~ optWS ~ zeroOrMore(Pattern).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")") ~> (
+      (o: Option[Seq[ParsedAst.Pattern]]) => o.getOrElse(Seq.empty))
+  }
+
+  def optAttributeList: Rule1[Seq[ParsedAst.Attribute]] = rule {
+    optional("(" ~ optWS ~ zeroOrMore(Attribute).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")") ~> (
+      (o: Option[Seq[ParsedAst.Attribute]]) => o.getOrElse(Seq.empty))
   }
 
   def Annotations: Rule1[Seq[ParsedAst.AnnotationOrProperty]] = rule {
