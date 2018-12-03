@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.{ParsedAst, _}
 import ca.uwaterloo.flix.util.Validation._
-import ca.uwaterloo.flix.util.{ParOps, Timer, Validation}
+import ca.uwaterloo.flix.util.{ParOps, Validation}
 import org.parboiled2._
 
 import scala.collection.immutable.Seq
@@ -221,33 +221,24 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Relation: Rule1[ParsedAst.Declaration.Relation] = rule {
-      Documentation ~ Modifiers ~ SP ~ atomic("rel") ~ WS ~ Names.Table ~ optWS ~ TypeParams ~ optAttributeList ~ SP ~> ParsedAst.Declaration.Relation
+      Documentation ~ Modifiers ~ SP ~ atomic("rel") ~ WS ~ Names.Predicate ~ optWS ~ TypeParams ~ AttributeList ~ SP ~> ParsedAst.Declaration.Relation
     }
 
     def Lattice: Rule1[ParsedAst.Declaration.Lattice] = rule {
-      Documentation ~ Modifiers ~ SP ~ atomic("lat") ~ WS ~ Names.Table ~ optWS ~ TypeParams ~ optAttributeList ~ SP ~> ParsedAst.Declaration.Lattice
+      Documentation ~ Modifiers ~ SP ~ atomic("lat") ~ WS ~ Names.Predicate ~ optWS ~ TypeParams ~ AttributeList ~ SP ~> ParsedAst.Declaration.Lattice
     }
 
     def Constraint: Rule1[ParsedAst.Declaration.Constraint] = {
-      // A conjunction of head predicates: P(..) && P(..) && ...
-      def HeadConj: Rule1[Seq[ParsedAst.Predicate.Head]] = rule {
-        oneOrMore(HeadPredicate).separatedBy(optWS ~ "&&" ~ optWS)
+      def Head: Rule1[ParsedAst.Predicate.Head] = rule {
+        HeadPredicate
       }
 
-      // A disjunction of body predicates: P(..) || P(..) || ...
-      def BodyConj: Rule1[Seq[ParsedAst.Predicate.Body]] = rule {
-        oneOrMore(BodyPredicate).separatedBy(optWS ~ "||" ~ optWS)
-      }
-
-      def Body: Rule1[Seq[Seq[ParsedAst.Predicate.Body]]] = rule {
-        optional(optWS ~ ":-" ~ optWS ~ oneOrMore(BodyConj).separatedBy(optWS ~ "," ~ optWS)) ~> ((o: Option[Seq[Seq[ParsedAst.Predicate.Body]]]) => o match {
-          case None => Seq.empty
-          case Some(xs) => xs
-        })
+      def Body: Rule1[Seq[ParsedAst.Predicate.Body]] = rule {
+        optional(optWS ~ ":-" ~ optWS ~ oneOrMore(BodyPredicate).separatedBy(optWS ~ "," ~ optWS)) ~> ((o: Option[Seq[ParsedAst.Predicate.Body]]) => o.getOrElse(Seq.empty))
       }
 
       rule {
-        optWS ~ SP ~ HeadConj ~ Body ~ optWS ~ "." ~ SP ~> ParsedAst.Declaration.Constraint
+        optWS ~ SP ~ Head ~ Body ~ optWS ~ "." ~ SP ~> ParsedAst.Declaration.Constraint
       }
     }
 
@@ -837,7 +828,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def FixpointProject: Rule1[ParsedAst.Expression] = rule {
-      SP ~ atomic("project") ~ WS ~ Names.QualifiedTable ~ optional("<" ~ Expressions.Primary ~ ">") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.FixpointProject
+      SP ~ atomic("project") ~ WS ~ Names.QualifiedPredicate ~ optional("<" ~ Expressions.Primary ~ ">") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.FixpointProject
     }
 
     def UserError: Rule1[ParsedAst.Expression] = rule {
@@ -939,14 +930,14 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       def Atom: Rule1[ParsedAst.Predicate.Head.Atom] = rule {
-        SP ~ Names.QualifiedTable ~ optional("<" ~ Expressions.Primary ~ ">") ~ optWS ~ optArgumentList ~ SP ~> ParsedAst.Predicate.Head.Atom
+        SP ~ Names.QualifiedPredicate ~ optional("<" ~ Expressions.Primary ~ ">") ~ optWS ~ ArgumentList ~ SP ~> ParsedAst.Predicate.Head.Atom
       }
 
     }
 
     object Body {
       def Positive: Rule1[ParsedAst.Predicate.Body.Positive] = rule {
-        SP ~ Names.QualifiedTable ~ optional("<" ~ Expressions.Primary ~ ">") ~ optWS ~ optPatternList ~ SP ~> ParsedAst.Predicate.Body.Positive
+        SP ~ Names.QualifiedPredicate ~ optional("<" ~ Expressions.Primary ~ ">") ~ optWS ~ PatternList ~ SP ~> ParsedAst.Predicate.Body.Positive
       }
 
       def Negative: Rule1[ParsedAst.Predicate.Body.Negative] = {
@@ -955,7 +946,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         }
 
         rule {
-          SP ~ Not ~ optWS ~ Names.QualifiedTable ~ optional("<" ~ Expressions.Primary ~ ">") ~ optWS ~ optPatternList ~ SP ~> ParsedAst.Predicate.Body.Negative
+          SP ~ Not ~ optWS ~ Names.QualifiedPredicate ~ optional("<" ~ Expressions.Primary ~ ">") ~ optWS ~ PatternList ~ SP ~> ParsedAst.Predicate.Body.Negative
         }
       }
 
@@ -1045,7 +1036,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Schema: Rule1[ParsedAst.Type] = {
       def Predicate: Rule1[(Name.QName, Seq[ParsedAst.Type])] = rule {
-        Names.QualifiedTable ~ optWS ~ atomic("(") ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ atomic(")") ~> ((qn: Name.QName, ts: Seq[ParsedAst.Type]) => (qn, ts))
+        Names.QualifiedPredicate ~ optWS ~ atomic("(") ~ optWS ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ atomic(")") ~> ((qn: Name.QName, ts: Seq[ParsedAst.Type]) => (qn, ts))
       }
 
       rule {
@@ -1099,19 +1090,12 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     "(" ~ optWS ~ zeroOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")"
   }
 
-  def optArgumentList: Rule1[Seq[ParsedAst.Expression]] = rule {
-    optional("(" ~ optWS ~ zeroOrMore(Expression).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")") ~> (
-      (o: Option[Seq[ParsedAst.Expression]]) => o.getOrElse(Seq.empty))
+  def PatternList: Rule1[Seq[ParsedAst.Pattern]] = rule {
+    "(" ~ optWS ~ zeroOrMore(Pattern).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")"
   }
 
-  def optPatternList: Rule1[Seq[ParsedAst.Pattern]] = rule {
-    optional("(" ~ optWS ~ zeroOrMore(Pattern).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")") ~> (
-      (o: Option[Seq[ParsedAst.Pattern]]) => o.getOrElse(Seq.empty))
-  }
-
-  def optAttributeList: Rule1[Seq[ParsedAst.Attribute]] = rule {
-    optional("(" ~ optWS ~ zeroOrMore(Attribute).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")") ~> (
-      (o: Option[Seq[ParsedAst.Attribute]]) => o.getOrElse(Seq.empty))
+  def AttributeList: Rule1[Seq[ParsedAst.Attribute]] = rule {
+    "(" ~ optWS ~ zeroOrMore(Attribute).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")"
   }
 
   def Annotations: Rule1[Seq[ParsedAst.AnnotationOrProperty]] = rule {
@@ -1270,9 +1254,9 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def QualifiedEffect: Rule1[Name.QName] = LowerCaseQName
 
-    def Table: Rule1[Name.Ident] = UpperCaseName
+    def Predicate: Rule1[Name.Ident] = UpperCaseName
 
-    def QualifiedTable: Rule1[Name.QName] = UpperCaseQName
+    def QualifiedPredicate: Rule1[Name.QName] = UpperCaseQName
 
     def Tag: Rule1[Name.Ident] = UpperCaseName
 
