@@ -229,11 +229,11 @@ object ParsedAst {
       * Constraint Declaration.
       *
       * @param sp1  the position of the first character in the declaration.
-      * @param head the head predicates (a conjunction of predicates).
-      * @param body the body predicates (a sequence of disjunctions of predicates).
+      * @param head the head predicate.
+      * @param body the body predicates.
       * @param sp2  the position of the last character in the declaration.
       */
-    case class Constraint(sp1: SourcePosition, head: Seq[ParsedAst.Predicate.Head], body: Seq[Seq[ParsedAst.Predicate.Body]], sp2: SourcePosition) extends ParsedAst.Declaration
+    case class Constraint(sp1: SourcePosition, head: ParsedAst.Predicate.Head, body: Seq[ParsedAst.Predicate.Body], sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
       * Class Declaration.

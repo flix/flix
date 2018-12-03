@@ -249,12 +249,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       val tparams = tparams0.toList.map(_.ident)
 
       /*
-       * Check for `EmptyRelation`
-       */
-      if (attrs.isEmpty)
-        return EmptyRelation(ident.name, mkSL(sp1, sp2)).toFailure
-
-      /*
        * Check for `DuplicateAttribute`.
        */
       mapN(modVal, checkDuplicateAttribute(attrs)) {
@@ -273,12 +267,6 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       val tparams = tparams0.toList.map(_.ident)
 
       /*
-       * Check for `EmptyLattice`.
-       */
-      if (attr.isEmpty)
-        return EmptyLattice(ident.name, mkSL(sp1, sp2)).toFailure
-
-      /*
        * Check for `DuplicateAttribute`.
        */
       mapN(modVal, checkDuplicateAttribute(attr)) {
@@ -292,23 +280,12 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     * Performs weeding on the given constraint `c0`.
     */
   private def visitConstraint(c0: ParsedAst.Declaration.Constraint)(implicit flix: Flix): Validation[List[WeededAst.Constraint], WeederError] = c0 match {
-    case ParsedAst.Declaration.Constraint(sp1, head, body, sp2) =>
-      val headVal = traverse(head)(visitHeadPredicate)
-      val bodyVal = traverse(body)(disj => sequence(disj.map(visitPredicateBody)))
+    case ParsedAst.Declaration.Constraint(sp1, head0, body0, sp2) =>
+      val headVal = visitHeadPredicate(head0)
+      val bodyVal = traverse(body0)(visitPredicateBody)
 
       mapN(headVal, bodyVal) {
-        case (headConj, bs) =>
-          // Duplicate the constraint for each predicate in the head conjunction.
-          headConj flatMap {
-            case h =>
-              // Duplicate the constraint for each predicate in a body disjunction.
-              val unfolded = bs.foldRight(List(Nil): List[List[WeededAst.Predicate.Body]]) {
-                case (xs, acc) => xs.map(p => acc.flatMap(rs => p :: rs))
-              }
-              unfolded map {
-                case b => WeededAst.Constraint(h, b, mkSL(sp1, sp2))
-              }
-          }
+        case (h, bs) => List(WeededAst.Constraint(h, bs, mkSL(sp1, sp2)))
       }
   }
 
