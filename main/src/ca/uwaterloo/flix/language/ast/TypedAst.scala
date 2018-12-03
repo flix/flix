@@ -233,7 +233,7 @@ object TypedAst {
 
     case class FixpointDelta(exp: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
 
-    case class FixpointProject(sym: Symbol.PredSym, exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    case class FixpointProject(pred: TypedAst.PredicateWithParam, exp: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
 
     case class FixpointEntails(exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
 
@@ -321,7 +321,7 @@ object TypedAst {
 
       case class False(loc: SourceLocation) extends TypedAst.Predicate.Head
 
-      case class Atom(sym: Symbol.PredSym, exp: TypedAst.Expression, terms: List[TypedAst.Expression], tpe: Type, loc: SourceLocation) extends TypedAst.Predicate.Head
+      case class Atom(pred: TypedAst.PredicateWithParam, terms: List[TypedAst.Expression], tpe: Type, loc: SourceLocation) extends TypedAst.Predicate.Head
 
     }
 
@@ -329,7 +329,7 @@ object TypedAst {
 
     object Body {
 
-      case class Atom(sym: Symbol.PredSym, exp: TypedAst.Expression, polarity: Ast.Polarity, terms: List[TypedAst.Pattern], tpe: Type, loc: SourceLocation) extends TypedAst.Predicate.Body
+      case class Atom(pred: TypedAst.PredicateWithParam, polarity: Ast.Polarity, terms: List[TypedAst.Pattern], tpe: Type, loc: SourceLocation) extends TypedAst.Predicate.Body
 
       case class Filter(sym: Symbol.DefnSym, terms: List[TypedAst.Expression], loc: SourceLocation) extends TypedAst.Predicate.Body
 
@@ -362,6 +362,8 @@ object TypedAst {
   case class HandlerBinding(sym: Symbol.EffSym, exp: TypedAst.Expression)
 
   case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: TypedAst.Expression)
+
+  case class PredicateWithParam(sym: Symbol.PredSym, exp: TypedAst.Expression)
 
   case class MatchRule(pat: TypedAst.Pattern, guard: TypedAst.Expression, exp: TypedAst.Expression)
 

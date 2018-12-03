@@ -33,7 +33,7 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     */
   def run(root: SimplifiedAst.Root)(implicit flix: Flix): Validation[SimplifiedAst.Root, CompilationError] = flix.phase("Inliner") {
 
-    // TODO: Inliner disabled for now.
+    // TODO: Inliner is disabled and should be rewritten from scratch.
     return root.toSuccess
 
     implicit val genSym: GenSym = flix.genSym
@@ -215,10 +215,8 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         val e = visit(exp)
         Expression.FixpointDelta(e, tpe, loc)
 
-      case Expression.FixpointProject(sym, exp1, exp2, tpe, loc) =>
-        val e1 = visit(exp1)
-        val e2 = visit(exp2)
-        Expression.FixpointProject(sym, e1, e2, tpe, loc)
+      case Expression.FixpointProject(pred, exp2, tpe, loc) =>
+        ???
 
       case Expression.FixpointEntails(exp1, exp2, tpe, loc) =>
         val e1 = visit(exp1)
@@ -376,10 +374,8 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       val e = renameAndSubstitute(exp, env0)
       Expression.FixpointDelta(e, tpe, loc)
 
-    case Expression.FixpointProject(sym, exp1, exp2, tpe, loc) =>
-      val e1 = renameAndSubstitute(exp1, env0)
-      val e2 = renameAndSubstitute(exp2, env0)
-      Expression.FixpointProject(sym, e1, e2, tpe, loc)
+    case Expression.FixpointProject(pred, exp, tpe, loc) =>
+      ???
 
     case Expression.FixpointEntails(exp1, exp2, tpe, loc) =>
       val e1 = renameAndSubstitute(exp1, env0)
@@ -631,7 +627,7 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     //
     // Fixpoint Project expressions are atomic if its argument is.
     //
-    case Expression.FixpointProject(sym, exp1, exp2, tpe, loc) => isAtomic(exp1) && isAtomic(exp2)
+    case Expression.FixpointProject(pred, exp, tpe, loc) => false
 
     //
     // Fixpoint Entails expressions are atomic if their arguments are.

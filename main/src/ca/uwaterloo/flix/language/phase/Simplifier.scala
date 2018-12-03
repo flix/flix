@@ -534,10 +534,10 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         val e = visitExp(exp)
         SimplifiedAst.Expression.FixpointDelta(e, tpe, loc)
 
-      case TypedAst.Expression.FixpointProject(sym, exp1, exp2, tpe, eff, loc) =>
-        val e1 = visitExp(exp1)
-        val e2 = visitExp(exp2)
-        SimplifiedAst.Expression.FixpointProject(sym, e1, e2, tpe, loc)
+      case TypedAst.Expression.FixpointProject(pred, exp, tpe, eff, loc) =>
+        val p = visitPredicateWithParam(pred)
+        val e = visitExp(exp)
+        SimplifiedAst.Expression.FixpointProject(p, e, tpe, loc)
 
       case TypedAst.Expression.FixpointEntails(exp1, exp2, tpe, eff, loc) =>
         val e1 = visitExp(exp1)
@@ -559,20 +559,20 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
 
       case TypedAst.Predicate.Head.False(loc) => SimplifiedAst.Predicate.Head.False(loc)
 
-      case TypedAst.Predicate.Head.Atom(sym, exp, terms, tpe, loc) =>
-        val e = visitExp(exp)
+      case TypedAst.Predicate.Head.Atom(pred, terms, tpe, loc) =>
+        val p = visitPredicateWithParam(pred)
         val ts = terms.map(t => exp2HeadTerm(t, cparams))
-        SimplifiedAst.Predicate.Head.Atom(sym, e, ts, tpe, loc)
+        SimplifiedAst.Predicate.Head.Atom(p, ts, tpe, loc)
     }
 
     /**
       * Translates the given `body` predicate to the SimplifiedAst.
       */
     def visitBodyPred(body: TypedAst.Predicate.Body, cparams: List[TypedAst.ConstraintParam]): SimplifiedAst.Predicate.Body = body match {
-      case TypedAst.Predicate.Body.Atom(sym, exp, polarity, terms, tpe, loc) =>
-        val e = visitExp(exp)
+      case TypedAst.Predicate.Body.Atom(pred, polarity, terms, tpe, loc) =>
+        val p = visitPredicateWithParam(pred)
         val ts = terms.map(p => pat2BodyTerm(p, cparams))
-        SimplifiedAst.Predicate.Body.Atom(sym, e, polarity, ts, tpe, loc)
+        SimplifiedAst.Predicate.Body.Atom(p, polarity, ts, tpe, loc)
 
       case TypedAst.Predicate.Body.Filter(sym, terms, loc) =>
         SimplifiedAst.Predicate.Body.Filter(sym, terms.map(t => exp2BodyTerm(t, cparams)), loc)
@@ -583,6 +583,15 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
           case TypedAst.ConstraintParam.RuleParam(sym2, _, _) => sym != sym2
         }
         SimplifiedAst.Predicate.Body.Functional(sym, exp2HeadTerm(term, cps), loc)
+    }
+
+    /**
+      * Translates the given predicate with parameter `p0` to the SimplifiedAst.
+      */
+    def visitPredicateWithParam(p0: TypedAst.PredicateWithParam): SimplifiedAst.PredicateWithParam = p0 match {
+      case TypedAst.PredicateWithParam(sym, exp) =>
+        val e = visitExp(exp)
+        SimplifiedAst.PredicateWithParam(sym, e)
     }
 
     /**
@@ -1198,10 +1207,10 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         val e = visitExp(exp)
         SimplifiedAst.Expression.FixpointDelta(e, tpe, loc)
 
-      case SimplifiedAst.Expression.FixpointProject(sym, exp1, exp2, tpe, loc) =>
-        val e1 = visitExp(exp1)
-        val e2 = visitExp(exp2)
-        SimplifiedAst.Expression.FixpointProject(sym, e1, e2, tpe, loc)
+      case SimplifiedAst.Expression.FixpointProject(pred, exp, tpe, loc) =>
+        val p = visitPredicateWithParam(pred)
+        val e = visitExp(exp)
+        SimplifiedAst.Expression.FixpointProject(p, e, tpe, loc)
 
       case SimplifiedAst.Expression.FixpointEntails(exp1, exp2, tpe, loc) =>
         val e1 = visitExp(exp1)
@@ -1234,17 +1243,17 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
     def visitHeadPred(h0: SimplifiedAst.Predicate.Head): SimplifiedAst.Predicate.Head = h0 match {
       case SimplifiedAst.Predicate.Head.True(loc) => h0
       case SimplifiedAst.Predicate.Head.False(loc) => h0
-      case SimplifiedAst.Predicate.Head.Atom(sym, exp, terms, tpe, loc) =>
-        val e = visitExp(exp)
+      case SimplifiedAst.Predicate.Head.Atom(pred, terms, tpe, loc) =>
+        val p = visitPredicateWithParam(pred)
         val ts = terms.map(visitHeadTerm)
-        SimplifiedAst.Predicate.Head.Atom(sym, e, ts, tpe, loc)
+        SimplifiedAst.Predicate.Head.Atom(p, ts, tpe, loc)
     }
 
     def visitBodyPred(b0: SimplifiedAst.Predicate.Body): SimplifiedAst.Predicate.Body = b0 match {
-      case SimplifiedAst.Predicate.Body.Atom(sym, exp, polarity, terms, tpe, loc) =>
-        val e = visitExp(exp)
+      case SimplifiedAst.Predicate.Body.Atom(pred, polarity, terms, tpe, loc) =>
+        val p = visitPredicateWithParam(pred)
         val ts = terms.map(visitBodyTerm)
-        SimplifiedAst.Predicate.Body.Atom(sym, e, polarity, ts, tpe, loc)
+        SimplifiedAst.Predicate.Body.Atom(p, polarity, ts, tpe, loc)
 
       case SimplifiedAst.Predicate.Body.Filter(sym, terms, loc) =>
         val ts = terms.map(visitBodyTerm)
@@ -1281,6 +1290,12 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case SimplifiedAst.Term.Body.Lit(exp, tpe, loc) =>
         val e = visitExp(exp)
         SimplifiedAst.Term.Body.Lit(e, tpe, loc)
+    }
+
+    def visitPredicateWithParam(p0: SimplifiedAst.PredicateWithParam): SimplifiedAst.PredicateWithParam = p0 match {
+      case SimplifiedAst.PredicateWithParam(sym, exp) =>
+        val e = visitExp(exp)
+        SimplifiedAst.PredicateWithParam(sym, e)
     }
 
     visitExp(exp0)

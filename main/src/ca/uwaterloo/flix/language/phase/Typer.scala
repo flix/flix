@@ -1653,7 +1653,8 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         case ResolvedAst.Expression.FixpointProject(sym, exp1, exp2, tvar, loc) =>
           val e1 = reassemble(exp1, program, subst0)
           val e2 = reassemble(exp2, program, subst0)
-          TypedAst.Expression.FixpointProject(sym, e1, e2, subst0(tvar), Eff.Bot, loc)
+          val pred = TypedAst.PredicateWithParam(sym, e1)
+          TypedAst.Expression.FixpointProject(pred, e2, subst0(tvar), Eff.Bot, loc)
 
         /*
          * ConstraintUnion expression.
@@ -1873,7 +1874,8 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       case ResolvedAst.Predicate.Head.Atom(sym, exp, terms, tvar, loc) =>
         val e = Expressions.reassemble(exp, program, subst0)
         val ts = terms.map(t => Expressions.reassemble(t, program, subst0))
-        TypedAst.Predicate.Head.Atom(sym, e, ts, subst0(tvar), loc)
+        val pred = TypedAst.PredicateWithParam(sym, e)
+        TypedAst.Predicate.Head.Atom(pred, ts, subst0(tvar), loc)
     }
 
     /**
@@ -1883,7 +1885,8 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       case ResolvedAst.Predicate.Body.Atom(sym, exp, polarity, terms, tvar, loc) =>
         val e = Expressions.reassemble(exp, program, subst0)
         val ts = terms.map(t => Patterns.reassemble(t, program, subst0))
-        TypedAst.Predicate.Body.Atom(sym, e, polarity, ts, subst0(tvar), loc)
+        val pred = TypedAst.PredicateWithParam(sym, e)
+        TypedAst.Predicate.Body.Atom(pred, polarity, ts, subst0(tvar), loc)
 
       case ResolvedAst.Predicate.Body.Filter(sym, terms, loc) =>
         val defn = program.defs(sym)

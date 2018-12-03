@@ -304,10 +304,10 @@ object Synthesize extends Phase[Root, Root] {
         val e = visitExp(exp)
         Expression.FixpointDelta(e, tpe, eff, loc)
 
-      case Expression.FixpointProject(sym, exp1, exp2, tpe, eff, loc) =>
-        val e1 = visitExp(exp1)
-        val e2 = visitExp(exp2)
-        Expression.FixpointProject(sym, e1, e2, tpe, eff, loc)
+      case Expression.FixpointProject(pred, exp, tpe, eff, loc) =>
+        val p = visitPredicateWithParam(pred)
+        val e = visitExp(exp)
+        Expression.FixpointProject(p, e, tpe, eff, loc)
 
       case Expression.FixpointEntails(exp1, exp2, tpe, eff, loc) =>
         val e1 = visitExp(exp1)
@@ -336,19 +336,19 @@ object Synthesize extends Phase[Root, Root] {
       case Predicate.Head.True(loc) => h0
       case Predicate.Head.False(loc) => h0
 
-      case Predicate.Head.Atom(sym, exp, terms, tpe, loc) =>
-        val e = visitExp(exp)
+      case Predicate.Head.Atom(pred, terms, tpe, loc) =>
+        val p = visitPredicateWithParam(pred)
         val ts = terms map visitExp
-        Predicate.Head.Atom(sym, e, ts, tpe, loc)
+        Predicate.Head.Atom(p, ts, tpe, loc)
     }
 
     /**
       * Performs synthesis on the given body predicate `h0`.
       */
     def visitBodyPred(b0: Predicate.Body): Predicate.Body = b0 match {
-      case Predicate.Body.Atom(sym, exp, polarity, pats, tpe, loc) =>
-        val e = visitExp(exp)
-        Predicate.Body.Atom(sym, e, polarity, pats, tpe, loc)
+      case Predicate.Body.Atom(pred, polarity, pats, tpe, loc) =>
+        val p = visitPredicateWithParam(pred)
+        Predicate.Body.Atom(p, polarity, pats, tpe, loc)
 
       case Predicate.Body.Filter(sym, terms, loc) =>
         val ts = terms.map(visitExp)
@@ -357,6 +357,15 @@ object Synthesize extends Phase[Root, Root] {
       case Predicate.Body.Functional(sym, term, loc) =>
         val t = visitExp(term)
         Predicate.Body.Functional(sym, t, loc)
+    }
+
+    /**
+      * Performs synthesis on the given predicate with param `p0`.
+      */
+    def visitPredicateWithParam(p0: PredicateWithParam): PredicateWithParam = p0 match {
+      case PredicateWithParam(sym, exp) =>
+        val e = visitExp(exp)
+        PredicateWithParam(sym, e)
     }
 
     /**

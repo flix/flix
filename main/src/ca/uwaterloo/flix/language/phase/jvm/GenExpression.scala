@@ -966,15 +966,15 @@ object GenExpression {
       // Emit code for the invocation of the solver.
       visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Solver.toInternalName, "deltaSolve", "(Lflix/runtime/fixpoint/ConstraintSystem;Lflix/runtime/fixpoint/Stratification;Lflix/runtime/fixpoint/Options;)Ljava/lang/String;", false);
 
-    case Expression.FixpointProject(sym, exp1, exp2, tpe, loc) =>
+    case Expression.FixpointProject(pred, exp, tpe, loc) =>
       // Add source line numbers for debugging.
       addSourceLine(visitor, loc)
 
       // Instantiate the predicate symbol.
-      newPredSym(sym, Some(exp1), visitor)(root, flix, currentClass, lenv0, entryPoint)
+      newPredSym(pred, visitor)(root, flix, currentClass, lenv0, entryPoint)
 
       // Compile the constraint system.
-      compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+      compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
 
       // Invoke the project method.
       visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Solver.toInternalName, "project", "(Lflix/runtime/fixpoint/symbol/PredSym;Lflix/runtime/fixpoint/ConstraintSystem;)Lflix/runtime/fixpoint/ConstraintSystem;", false)
@@ -1510,12 +1510,12 @@ object GenExpression {
       // Retrieve the singleton instance.
       mv.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Fixpoint.Predicate.FalsePredicate.toInternalName, "getSingleton", "()Lflix/runtime/fixpoint/predicate/FalsePredicate;", false)
 
-    case Predicate.Head.Atom(predSym, exp, terms, tpe, loc) =>
+    case Predicate.Head.Atom(pred, terms, tpe, loc) =>
       // Add source line numbers for debugging.
       addSourceLine(mv, loc)
 
       // Emit code for the predicate symbol.
-      newPredSym(predSym, Some(exp), mv)
+      newPredSym(pred, mv)
 
       // Emit code for the polarity of the atom. A head atom is always positive.
       mv.visitInsn(ICONST_1)
@@ -1532,12 +1532,12 @@ object GenExpression {
     */
   private def compileBodyAtom(b0: Predicate.Body, mv: MethodVisitor)(implicit root: Root, flix: Flix, clazz: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label): Unit = b0 match {
 
-    case Predicate.Body.Atom(predSym, exp, polarity, terms, tpe, loc) =>
+    case Predicate.Body.Atom(pred, polarity, terms, tpe, loc) =>
       // Add source line numbers for debugging.
       addSourceLine(mv, loc)
 
       // Emit code for the predicate symbol.
-      newPredSym(predSym, Some(exp), mv)
+      newPredSym(pred, mv)
 
       // Emit code for the polarity of the atom. A head atom is always positive.
       polarity match {
@@ -1583,11 +1583,21 @@ object GenExpression {
   }
 
   /**
-    * Emits code for the given predicate symbol `predSym` with the given optional parameter expression `exp`.
+    * Emits code for the given predicate with parameter `p0`.
     */
-  private def newPredSym(predSym: Symbol.PredSym, optExp: Option[FinalAst.Expression], mv: MethodVisitor)(implicit root: Root, flix: Flix, clazz: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label): Unit = predSym match {
-    case sym: Symbol.RelSym => newRelSym(sym, optExp, mv)
-    case sym: Symbol.LatSym => newLatSym(sym, optExp, mv)
+  private def newPredSym(p0: PredicateWithParam, mv: MethodVisitor)(implicit root: Root, flix: Flix, clazz: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label): Unit = p0 match {
+    case PredicateWithParam(sym, exp) => sym match {
+      case sym: Symbol.RelSym => newRelSym(sym, Some(exp), mv)
+      case sym: Symbol.LatSym => newLatSym(sym, Some(exp), mv)
+    }
+  }
+
+  /**
+    * Emits code for the given predicate symbol without any parameter `sym`.
+    */
+  private def newPredSymWithoutParameter(sym: Symbol.PredSym, mv: MethodVisitor)(implicit root: Root, flix: Flix, clazz: JvmType.Reference, lenv0: Map[Symbol.LabelSym, Label], entryPoint: Label): Unit = sym match {
+    case sym: Symbol.RelSym => newRelSym(sym, None, mv)
+    case sym: Symbol.LatSym => newLatSym(sym, None, mv)
   }
 
   /**
@@ -1917,7 +1927,7 @@ object GenExpression {
     // Add every predicate symbol with its stratum.
     for ((predSym, stratum) <- stf.m) {
       mv.visitInsn(DUP)
-      newPredSym(predSym, None, mv)
+      newPredSymWithoutParameter(predSym, mv)
       compileInt(mv, stratum)
       mv.visitMethodInsn(INVOKEVIRTUAL, JvmName.Runtime.Fixpoint.Stratification.toInternalName, "setStratum", "(Lflix/runtime/fixpoint/symbol/PredSym;I)V", false)
     }

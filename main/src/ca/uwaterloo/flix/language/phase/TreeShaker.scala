@@ -142,7 +142,7 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.FixpointSolve(exp, tpe, loc) => visitExp(exp)
       case Expression.FixpointCheck(exp, tpe, loc) => visitExp(exp)
       case Expression.FixpointDelta(exp, tpe, loc) => visitExp(exp)
-      case Expression.FixpointProject(sym, exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2)
+      case Expression.FixpointProject(pred, exp, tpe, loc) => visitExp(pred.exp) ++ visitExp(exp)
       case Expression.FixpointEntails(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2)
       case Expression.UserError(tpe, loc) => Set.empty
       case Expression.HoleError(sym, tpe, eff, loc) => Set.empty
@@ -165,11 +165,11 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       val headSymbols = c0.head match {
         case SimplifiedAst.Predicate.Head.True(loc) => Set.empty
         case SimplifiedAst.Predicate.Head.False(loc) => Set.empty
-        case SimplifiedAst.Predicate.Head.Atom(sym, exp, terms, tpe, loc) => terms.map(visitHeadTerm).fold(visitExp(exp))(_ ++ _)
+        case SimplifiedAst.Predicate.Head.Atom(pred, terms, tpe, loc) => terms.map(visitHeadTerm).fold(visitExp(pred.exp))(_ ++ _)
       }
 
       val bodySymbols = c0.body.map {
-        case SimplifiedAst.Predicate.Body.Atom(sym, exp, polarity, terms, tpe, loc) => terms.map(visitBodyTerm).fold(visitExp(exp))(_ ++ _)
+        case SimplifiedAst.Predicate.Body.Atom(pred, polarity, terms, tpe, loc) => terms.map(visitBodyTerm).fold(visitExp(pred.exp))(_ ++ _)
         case SimplifiedAst.Predicate.Body.Filter(sym, terms, loc) => Set(sym) ++ terms.flatMap(visitBodyTerm)
         case SimplifiedAst.Predicate.Body.Functional(sym, term, loc) => visitHeadTerm(term)
       }.fold(Set())(_ ++ _)

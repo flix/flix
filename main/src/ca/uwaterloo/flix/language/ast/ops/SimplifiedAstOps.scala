@@ -461,9 +461,9 @@ object SimplifiedAstOps {
       //
       // Fixpoint Project.
       //
-      case Expression.FixpointProject(sym, exp1, exp2, tpe, loc) =>
-        checkExp(exp1, env0, ienv0)
-        checkExp(exp2, env0, ienv0)
+      case Expression.FixpointProject(pred, exp, tpe, loc) =>
+        checkPredicateWithParam(pred, env0, ienv0)
+        checkExp(exp, env0, ienv0)
         checkType(tpe)
 
       //
@@ -486,7 +486,7 @@ object SimplifiedAstOps {
     /**
       * Checks invariants of the given constraint `c0`.
       */
-    def checkConstraint(c0: Constraint): Unit = {
+    def checkConstraint(c0: Constraint, env0: Set[Symbol.VarSym], ienv0: Set[Symbol.LabelSym]): Unit = {
       for (param <- c0.cparams) {
         checkConstraintParam(param)
       }
@@ -497,9 +497,9 @@ object SimplifiedAstOps {
         case ConstraintParam.HeadParam(sym, tpe, loc) => sym
         case ConstraintParam.RuleParam(sym, tpe, loc) => sym
       }
-      checkHeadPred(c0.head, envHead.toSet)
+      checkHeadPred(c0.head, envHead.toSet, ienv0)
       for (bodyPred <- c0.body) {
-        checkBodyPred(bodyPred, ruleEnv.toSet)
+        checkBodyPred(bodyPred, ruleEnv.toSet, ienv0)
       }
     }
 
@@ -516,13 +516,13 @@ object SimplifiedAstOps {
     /**
       * Checks invariants of the given head predicate `h0`.
       */
-    def checkHeadPred(h0: Predicate.Head, env0: Set[Symbol.VarSym]): Unit = h0 match {
+    def checkHeadPred(h0: Predicate.Head, env0: Set[Symbol.VarSym], ienv0: Set[Symbol.LabelSym]): Unit = h0 match {
       case Predicate.Head.True(loc) => // nop
 
       case Predicate.Head.False(loc) => // nop
 
-      case Predicate.Head.Atom(sym, exp, terms, tpe, loc) =>
-        checkExp(exp, env0, Set.empty)
+      case Predicate.Head.Atom(pred, terms, tpe, loc) =>
+        checkPredicateWithParam(pred, env0, ienv0)
         for (term <- terms) {
           checkHeadTerm(term, env0)
         }
@@ -533,9 +533,9 @@ object SimplifiedAstOps {
     /**
       * Checks invariants of the given body predicate `b0`.
       */
-    def checkBodyPred(b0: Predicate.Body, env0: Set[Symbol.VarSym]): Unit = b0 match {
-      case Predicate.Body.Atom(sym, exp, polarity, terms, tpe, loc) =>
-        checkExp(exp, env0, Set.empty)
+    def checkBodyPred(b0: Predicate.Body, env0: Set[Symbol.VarSym], ienv0: Set[Symbol.LabelSym]): Unit = b0 match {
+      case Predicate.Body.Atom(pred, polarity, terms, tpe, loc) =>
+        checkPredicateWithParam(pred, env0, ienv0)
         for (term <- terms) {
           checkBodyTerm(term, env0)
         }
@@ -592,6 +592,13 @@ object SimplifiedAstOps {
       */
     def checkFormalParam(p0: FormalParam): Unit = {
       checkType(p0.tpe)
+    }
+
+    /**
+      * Checks invariants of the given predicate with param `p`.
+      */
+    def checkPredicateWithParam(p: PredicateWithParam, env0: Set[Symbol.VarSym], ienv0: Set[Symbol.LabelSym]): Unit = p match {
+      case PredicateWithParam(sym, exp) => checkExp(exp, env0, ienv0)
     }
 
     /**

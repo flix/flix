@@ -240,7 +240,7 @@ object SimplifiedAst {
 
     case class FixpointDelta(exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
-    case class FixpointProject(sym: Symbol.PredSym, exp1: SimplifiedAst.Expression, exp2: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
+    case class FixpointProject(pred: SimplifiedAst.PredicateWithParam, exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
     case class FixpointEntails(exp1: SimplifiedAst.Expression, exp2: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
@@ -268,7 +268,7 @@ object SimplifiedAst {
 
       case class False(loc: SourceLocation) extends SimplifiedAst.Predicate.Head
 
-      case class Atom(sym: Symbol.PredSym, exp: SimplifiedAst.Expression, terms: List[SimplifiedAst.Term.Head], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Predicate.Head
+      case class Atom(pred: SimplifiedAst.PredicateWithParam, terms: List[SimplifiedAst.Term.Head], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Predicate.Head
 
     }
 
@@ -276,7 +276,7 @@ object SimplifiedAst {
 
     object Body {
 
-      case class Atom(sym: Symbol.PredSym, exp: SimplifiedAst.Expression, polarity: Ast.Polarity, terms: List[SimplifiedAst.Term.Body], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Predicate.Body
+      case class Atom(pred: SimplifiedAst.PredicateWithParam, polarity: Ast.Polarity, terms: List[SimplifiedAst.Term.Body], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Predicate.Body
 
       case class Filter(sym: Symbol.DefnSym, terms: List[SimplifiedAst.Term.Body], loc: SourceLocation) extends SimplifiedAst.Predicate.Body
 
@@ -341,5 +341,7 @@ object SimplifiedAst {
   case class FreeVar(sym: Symbol.VarSym, tpe: Type)
 
   case class HandlerBinding(sym: Symbol.EffSym, exp: SimplifiedAst.Expression)
+
+  case class PredicateWithParam(sym: Symbol.PredSym, exp: SimplifiedAst.Expression)
 
 }

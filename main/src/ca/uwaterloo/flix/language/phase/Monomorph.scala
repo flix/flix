@@ -457,10 +457,10 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           val e = visitExp(exp, env0)
           Expression.FixpointDelta(e, tpe, eff, loc)
 
-        case Expression.FixpointProject(sym, exp1, exp2, tpe, eff, loc) =>
-          val e1 = visitExp(exp1, env0)
-          val e2 = visitExp(exp2, env0)
-          Expression.FixpointProject(sym, e1, e2, tpe, eff, loc)
+        case Expression.FixpointProject(pred, exp, tpe, eff, loc) =>
+          val p = visitPredicateWithParam(pred, env0)
+          val e = visitExp(exp, env0)
+          Expression.FixpointProject(p, e, tpe, eff, loc)
 
         case Expression.FixpointEntails(exp1, exp2, tpe, eff, loc) =>
           val e1 = visitExp(exp1, env0)
@@ -509,10 +509,10 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
 
         case Predicate.Head.False(loc) => Predicate.Head.False(loc)
 
-        case Predicate.Head.Atom(sym, exp, terms, tpe, loc) =>
-          val e = visitExp(exp, env0)
+        case Predicate.Head.Atom(pred, terms, tpe, loc) =>
+          val p = visitPredicateWithParam(pred, env0)
           val ts = terms.map(t => visitExp(t, env0))
-          Predicate.Head.Atom(sym, e, ts, tpe, loc)
+          Predicate.Head.Atom(p, ts, tpe, loc)
       }
 
       /**
@@ -539,10 +539,10 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         }
 
         b0 match {
-          case Predicate.Body.Atom(sym, exp, polarity, terms, tpe, loc) =>
-            val e = visitExp(exp, env0)
+          case Predicate.Body.Atom(pred, polarity, terms, tpe, loc) =>
+            val p = visitPredicateWithParam(pred, env0)
             val ts = terms map visitPatTemporaryToBeRemoved
-            Predicate.Body.Atom(sym, e, polarity, ts, tpe, loc)
+            Predicate.Body.Atom(pred, polarity, ts, tpe, loc)
 
           case Predicate.Body.Filter(sym, terms, loc) =>
             val ts = terms.map(t => visitExp(t, env0))
@@ -553,6 +553,15 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
             val t = visitExp(term, env0)
             Predicate.Body.Functional(s, t, loc)
         }
+      }
+
+      /**
+        * Specializes the given predicate with parameter `p0` w.r.t. the given environment and current substitution.
+        */
+      def visitPredicateWithParam(p0: PredicateWithParam, env0: Map[Symbol.VarSym, Symbol.VarSym]): PredicateWithParam = p0 match {
+        case PredicateWithParam(sym, exp) =>
+          val e = visitExp(exp, env0)
+          PredicateWithParam(sym, e)
       }
 
       visitExp(exp0, env0)

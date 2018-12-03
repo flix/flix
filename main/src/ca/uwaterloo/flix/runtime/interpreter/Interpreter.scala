@@ -286,10 +286,9 @@ object Interpreter {
       val r = Solver.deltaSolve(s, t, o)
       Value.Str(r)
 
-    case Expression.FixpointProject(sym, exp1, exp2, tpe, loc) =>
-      val param = eval(exp1, env0, henv0, lenv0, root)
-      val predSym = newPredSym(sym, wrapValueInProxyObject(param, exp1.tpe)(root, flix))(root, flix)
-      val cs = cast2constraintset(eval(exp2, env0, henv0, lenv0, root))
+    case Expression.FixpointProject(pred, exp, tpe, loc) =>
+      val predSym = newPredSym(pred, env0, henv0, lenv0)(root, flix)
+      val cs = cast2constraintset(eval(exp, env0, henv0, lenv0, root))
       Solver.project(predSym, cs)
 
     case Expression.FixpointEntails(exp1, exp2, tpe, loc) =>
@@ -708,20 +707,10 @@ object Interpreter {
 
     case FinalAst.Predicate.Head.False(_) => FalsePredicate.getSingleton
 
-    case FinalAst.Predicate.Head.Atom(predSym, exp0, terms0, _, _) => predSym match {
-      case sym: Symbol.RelSym =>
-        val param = eval(exp0, env0, henv0, lenv0, root)
-        val terms = terms0.map(t => evalHeadTerm(t, env0)).toArray
-        val relSym = newRelSym(sym, wrapValueInProxyObject(param, exp0.tpe))
-        AtomPredicate.of(relSym, true, terms)
-
-      case sym: Symbol.LatSym =>
-        val param = eval(exp0, env0, henv0, lenv0, root)
-        val terms = terms0.map(t => evalHeadTerm(t, env0)).toArray
-        val latSym = newLatSym(sym, wrapValueInProxyObject(param, exp0.tpe))
-        AtomPredicate.of(latSym, true, terms)
-    }
-
+    case FinalAst.Predicate.Head.Atom(pred, terms0, _, _) =>
+      val predSym = newPredSym(pred, env0, henv0, lenv0)
+      val terms = terms0.map(t => evalHeadTerm(t, env0)).toArray
+      AtomPredicate.of(predSym, true, terms)
   }
 
   /**
@@ -729,27 +718,14 @@ object Interpreter {
     */
   private def evalBodyPredicate(b0: FinalAst.Predicate.Body, env0: Map[String, AnyRef], henv0: Map[Symbol.EffSym, AnyRef], lenv0: Map[Symbol.LabelSym, Expression])(implicit root: FinalAst.Root, flix: Flix): fixpoint.predicate.Predicate = b0 match {
 
-    case FinalAst.Predicate.Body.Atom(predSym, exp0, polarity0, terms0, _, _) => predSym match {
-      case sym: Symbol.RelSym =>
-        val polarity = polarity0 match {
-          case Ast.Polarity.Positive => true
-          case Ast.Polarity.Negative => false
-        }
-        val param = eval(exp0, env0, henv0, lenv0, root)
-        val terms = terms0.map(t => evalBodyTerm(t, env0)).toArray
-        val relSym = newRelSym(sym, wrapValueInProxyObject(param, exp0.tpe))
-        AtomPredicate.of(relSym, polarity, terms)
-
-      case sym: Symbol.LatSym =>
-        val polarity = polarity0 match {
-          case Ast.Polarity.Positive => true
-          case Ast.Polarity.Negative => false
-        }
-        val param = eval(exp0, env0, henv0, lenv0, root)
-        val terms = terms0.map(t => evalBodyTerm(t, env0)).toArray
-        val latSym = newLatSym(sym, wrapValueInProxyObject(param, exp0.tpe))
-        AtomPredicate.of(latSym, polarity, terms)
-    }
+    case FinalAst.Predicate.Body.Atom(pred, polarity0, terms0, _, _) =>
+      val predSym = newPredSym(pred, env0, henv0, lenv0)
+      val polarity = polarity0 match {
+        case Ast.Polarity.Positive => true
+        case Ast.Polarity.Negative => false
+      }
+      val terms = terms0.map(t => evalBodyTerm(t, env0)).toArray
+      AtomPredicate.of(predSym, polarity, terms)
 
     case FinalAst.Predicate.Body.Filter(sym, terms, loc) =>
       val f = new function.Function[Array[Object], ProxyObject] {
@@ -845,11 +821,16 @@ object Interpreter {
   }
 
   /**
-    * Returns the predicate symbol of the given symbol `sym`.
+    * Returns the predicate symbol of the given predicate with parameter `p0`.
     */
-  def newPredSym(sym: Symbol.PredSym, param: ProxyObject)(implicit root: FinalAst.Root, flix: Flix): PredSym = sym match {
-    case sym: Symbol.RelSym => newRelSym(sym, param)
-    case sym: Symbol.LatSym => newLatSym(sym, param)
+  def newPredSym(p0: FinalAst.PredicateWithParam, env0: Map[String, AnyRef], henv0: Map[Symbol.EffSym, AnyRef], lenv0: Map[Symbol.LabelSym, Expression])(implicit root: FinalAst.Root, flix: Flix): PredSym = p0 match {
+    case PredicateWithParam(sym, exp0) =>
+      val value = eval(exp0, env0, henv0, lenv0, root)
+      val param = wrapValueInProxyObject(value, exp0.tpe)
+      sym match {
+        case sym: Symbol.RelSym => newRelSym(sym, param)
+        case sym: Symbol.LatSym => newLatSym(sym, param)
+      }
   }
 
   /**
@@ -881,7 +862,10 @@ object Interpreter {
   private def newStratification(stf: Ast.Stratification)(implicit root: FinalAst.Root, flix: Flix): Stratification = {
     val result = new Stratification()
     for ((predSym, stratum) <- stf.m) {
-      val sym = newPredSym(predSym, null)
+      val sym = predSym match {
+        case sym: Symbol.RelSym => newRelSym(sym, null)
+        case sym: Symbol.LatSym => newLatSym(sym, null)
+      }
       result.setStratum(sym, stratum)
     }
     result

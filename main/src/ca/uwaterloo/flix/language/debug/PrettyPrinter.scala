@@ -419,14 +419,11 @@ object PrettyPrinter {
           vt.text("delta ")
           visitExp(exp)
 
-        case Expression.FixpointProject(sym, exp1, exp2, tpe, loc) =>
+        case Expression.FixpointProject(pred, exp, tpe, loc) =>
           vt.text("project ")
-          vt.text(sym.toString)
-          vt.text("<")
-          visitExp(exp1)
-          vt.text(">")
+          fmtPredicateWithParam(pred, vt)
           vt.text(" ")
-          visitExp(exp2)
+          visitExp(exp)
 
         case Expression.FixpointEntails(exp1, exp2, tpe, loc) =>
           visitExp(exp1)
@@ -446,6 +443,14 @@ object PrettyPrinter {
       fmtSym(p.sym, vt)
       vt.text(": ")
       vt.text(p.tpe.show)
+    }
+
+    def fmtPredicateWithParam(p: PredicateWithParam, vt: VirtualTerminal): Unit = p match {
+      case PredicateWithParam(sym, exp) =>
+        vt.text(sym.toString)
+        vt.text("<")
+        fmtExp(exp, vt)
+        vt.text(">")
     }
 
     def fmtSym(sym: Symbol.VarSym, vt: VirtualTerminal): Unit = {
