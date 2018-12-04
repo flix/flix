@@ -546,6 +546,10 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         val lambda = SimplifiedAst.Expression.Lambda(List(), e, newTpe, loc)
         SimplifiedAst.Expression.Spawn(lambda, newTpe, loc)
 
+      case TypedAst.Expression.Sleep(exp, tpe, eff, loc) =>
+        val e = visitExp(exp)
+        SimplifiedAst.Expression.Sleep(e, tpe, loc)
+
       case TypedAst.Expression.NewRelation(sym, tpe, eff, loc) =>
         SimplifiedAst.Expression.NewRelation(sym, tpe, loc)
 
@@ -1239,6 +1243,10 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case SimplifiedAst.Expression.Spawn(exp, tpe, loc) =>
         val e = visit(exp)
         SimplifiedAst.Expression.Spawn(e, tpe, loc)
+
+      case SimplifiedAst.Expression.Sleep(exp, tpe, loc) =>
+        val e = visit(exp)
+        SimplifiedAst.Expression.Sleep(e, tpe, loc)
 
       case SimplifiedAst.Expression.NewRelation(sym, tpe, loc) =>
         SimplifiedAst.Expression.NewRelation(sym, tpe, loc)

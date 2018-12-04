@@ -219,7 +219,9 @@ object FinalAst {
 
     case class CloseChannel(exp: FinalAst.Expression, tpe: Type, loc: SourceLocation) extends FinalAst.Expression
 
-    case class Spawn(closure: FinalAst.Expression, tpe: Type, loc: SourceLocation) extends FinalAst.Expression
+    case class Spawn(exp: FinalAst.Expression, tpe: Type, loc: SourceLocation) extends FinalAst.Expression
+
+    case class Sleep(exp: FinalAst.Expression, tpe: Type, loc: SourceLocation) extends FinalAst.Expression
 
     case class NewRelation(sym: Symbol.RelSym, tpe: Type, loc: SourceLocation) extends FinalAst.Expression
 

@@ -848,6 +848,11 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case e => NamedAst.Expression.Spawn(e, Type.freshTypeVar(), loc)
       }
 
+    case WeededAst.Expression.Sleep(exp, loc) =>
+      visitExp(exp, env0, tenv0) map {
+        case e => NamedAst.Expression.Sleep(e, Type.freshTypeVar(), loc)
+      }
+
     case WeededAst.Expression.NewRelationOrLattice(name, loc) =>
       NamedAst.Expression.NewRelationOrLattice(name, Type.freshTypeVar(), loc).toSuccess
 
@@ -1130,6 +1135,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     }
     case WeededAst.Expression.CloseChannel(exp, loc) => freeVars(exp)
     case WeededAst.Expression.Spawn(exp, loc) => freeVars(exp)
+    case WeededAst.Expression.Sleep(exp, loc) => freeVars(exp)
     case WeededAst.Expression.NativeConstructor(className, args, loc) => args.flatMap(freeVars)
     case WeededAst.Expression.NewRelationOrLattice(name, loc) => Nil
     case WeededAst.Expression.Constraint(c, loc) => ??? // TODO: Constraint

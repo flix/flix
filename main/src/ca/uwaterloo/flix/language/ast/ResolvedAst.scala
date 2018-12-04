@@ -205,6 +205,8 @@ object ResolvedAst {
 
     case class Spawn(exp: ResolvedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
+    case class Sleep(exp: ResolvedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+
     case class NewRelation(sym: Symbol.RelSym, tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class NewLattice(sym: Symbol.LatSym, tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Expression

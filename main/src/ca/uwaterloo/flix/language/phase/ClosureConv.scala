@@ -316,6 +316,10 @@ object ClosureConv extends Phase[Root, Root] {
       val e = visitExp(exp)
       Expression.Spawn(e, tpe, loc)
 
+    case Expression.Sleep(exp, tpe, loc) =>
+      val e = visitExp(exp)
+      Expression.Sleep(e, tpe, loc)
+
     case Expression.NewRelation(sym, tpe, loc) =>
       Expression.NewRelation(sym, tpe, loc)
 
@@ -500,6 +504,7 @@ object ClosureConv extends Phase[Root, Root] {
     }
     case Expression.CloseChannel(exp, tpe, loc) => freeVars(exp)
     case Expression.Spawn(exp, tpe, loc) => freeVars(exp)
+    case Expression.Sleep(exp, tpe, loc) => freeVars(exp)
 
     case Expression.NewRelation(sym, tpe, loc) => mutable.LinkedHashSet.empty
     case Expression.NewLattice(sym, tpe, loc) => mutable.LinkedHashSet.empty
@@ -842,6 +847,10 @@ object ClosureConv extends Phase[Root, Root] {
       case Expression.Spawn(exp, tpe, loc) =>
         val e = visitExp(exp)
         Expression.Spawn(e, tpe, loc)
+
+      case Expression.Sleep(exp, tpe, loc) =>
+        val e = visitExp(exp)
+        Expression.Sleep(e, tpe, loc)
 
       case Expression.NewRelation(sym, tpe, loc) => e
 

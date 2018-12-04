@@ -323,7 +323,14 @@ object Stratifier extends Phase[Root, Root] {
       }
 
     case Expression.Spawn(exp, tpe, loc) =>
-      Expression.Spawn(exp, tpe, loc).toSuccess
+      mapN(visitExp(exp)) {
+        case e => Expression.Spawn(e, tpe, loc)
+      }
+
+    case Expression.Sleep(exp, tpe, loc) =>
+      mapN(visitExp(exp)) {
+        case e => Expression.Sleep(e, tpe, loc)
+      }
 
     case Expression.NewRelation(sym, tpe, loc) =>
       Expression.NewRelation(sym, tpe, loc).toSuccess

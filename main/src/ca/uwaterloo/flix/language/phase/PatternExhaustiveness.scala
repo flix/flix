@@ -326,6 +326,10 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
           _ <- checkPats(exp, root)
         } yield tast
 
+        case Expression.Sleep(exp, _, _, _) => for {
+          _ <- checkPats(exp, root)
+        } yield tast
+
         case Expression.NewRelation(sym, tpe, eff, loc) =>
           Expression.NewRelation(sym, tpe, eff, loc).toSuccess
 

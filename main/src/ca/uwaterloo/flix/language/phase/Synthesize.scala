@@ -331,6 +331,10 @@ object Synthesize extends Phase[Root, Root] {
         val e = visitExp(exp)
         Expression.Spawn(e, tpe, eff, loc)
 
+      case Expression.Sleep(exp, tpe, eff, loc) =>
+        val e = visitExp(exp)
+        Expression.Sleep(e, tpe, eff, loc)
+
       case Expression.NewRelation(sym, tpe, eff, loc) =>
         Expression.NewRelation(sym, tpe, eff, loc)
 

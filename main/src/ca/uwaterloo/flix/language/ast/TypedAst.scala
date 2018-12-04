@@ -235,6 +235,8 @@ object TypedAst {
 
     case class Spawn(exp: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
 
+    case class Sleep(exp: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+
     case class NewRelation(sym: Symbol.RelSym, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
 
     case class NewLattice(sym: Symbol.LatSym, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression

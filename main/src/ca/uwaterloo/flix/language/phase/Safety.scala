@@ -190,6 +190,8 @@ object Safety extends Phase[Root, Root] {
 
     case Expression.Spawn(exp, tpe, eff, loc) => visitExp(exp)
 
+    case Expression.Sleep(exp, tpe, eff, loc) => visitExp(exp)
+
     case Expression.NewRelation(sym, tpe, eff, loc) => Nil
 
     case Expression.NewLattice(sym, tpe, eff, loc) => Nil

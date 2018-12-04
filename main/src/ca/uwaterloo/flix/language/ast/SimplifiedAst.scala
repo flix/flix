@@ -242,6 +242,8 @@ object SimplifiedAst {
 
     case class Spawn(exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
+    case class Sleep(exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
+
     case class NewRelation(sym: Symbol.RelSym, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
     case class NewLattice(sym: Symbol.LatSym, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression

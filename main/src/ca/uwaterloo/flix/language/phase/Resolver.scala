@@ -720,6 +720,11 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
             e <- visit(exp, tenv0)
           } yield ResolvedAst.Expression.Spawn(e, tvar, loc)
 
+        case NamedAst.Expression.Sleep(exp, tvar, loc) =>
+          for {
+            e <- visit(exp, tenv0)
+          } yield ResolvedAst.Expression.Sleep(e, tvar, loc)
+
         case NamedAst.Expression.NewRelationOrLattice(name, tvar, loc) =>
           lookupRelationOrLattice(name, ns0, prog0) map {
             case RelationOrLattice.Rel(sym) => ResolvedAst.Expression.NewRelation(sym, tvar, loc)

@@ -373,6 +373,10 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
         val e = visit(exp)
         FinalAst.Expression.Spawn(e, tpe, loc)
 
+      case SimplifiedAst.Expression.Sleep(exp, tpe, loc) =>
+        val e = visit(exp)
+        FinalAst.Expression.Sleep(e, tpe, loc)
+
       case SimplifiedAst.Expression.NewRelation(sym, tpe, loc) =>
         FinalAst.Expression.NewRelation(sym, tpe, loc)
 

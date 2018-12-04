@@ -287,14 +287,18 @@ object Interpreter {
       Value.Unit
 
     case Expression.Spawn(exp, tpe, loc) =>
-      // TODO SJ: determine daemon
-      // TODO SJ: Use ThreadPool?
-      new Thread(){
-        override def run(): Unit = {
-          val e = eval(exp, env0, henv0, lenv0, root)
-          invokeClo(e, List(), env0, henv0, lenv0, root)
-        }
-      }.start()
+      Channel.spawn(() => {
+        val e = eval(exp, env0, henv0, lenv0, root)
+        invokeClo(e, List(), env0, henv0, lenv0, root)
+      })
+      Value.Unit
+
+    case Expression.Sleep(exp, tpe, loc) =>
+      val duration = cast2int32(eval(exp, env0, henv0, lenv0, root))
+      if (duration < 0) {
+        throw InternalRuntimeException(s"Duration $duration must be non-negative.")
+      }
+      Thread.sleep(duration)
       Value.Unit
 
     case Expression.NewRelation(sym, tpe, loc) =>

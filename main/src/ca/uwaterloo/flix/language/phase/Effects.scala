@@ -620,6 +620,11 @@ object Effects extends Phase[Root, Root] {
           */
         case Expression.Spawn(exp, tpe, eff, loc) => ??? //TODO SJ
 
+        /**
+          * Sleep Expression
+          */
+        case Expression.Sleep(exp, tpe, eff, loc) => ??? //TODO SJ
+
         case Expression.NewRelation(sym, tpe, eff, loc) => ??? // TODO: NewRelation
 
         case Expression.NewLattice(sym, tpe, eff, loc) => ??? // TODO: NewLattice

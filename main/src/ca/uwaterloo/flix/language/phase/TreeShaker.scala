@@ -143,6 +143,7 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.SelectChannel(rules, tpe, loc) => visitExps(rules.map(_.chan)) ++ visitExps(rules.map(_.exp))
       case Expression.CloseChannel(exp, tpe, loc) => visitExp(exp)
       case Expression.Spawn(exp, tpe, loc) => visitExp(exp)
+      case Expression.Sleep(exp, tpe, loc) => visitExp(exp)
       case Expression.NewRelation(sym, tpe, loc) => Set.empty
       case Expression.NewLattice(sym, tpe, loc) => Set.empty
       case Expression.Constraint(c0, tpe, loc) => visitConstraint(c0)

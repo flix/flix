@@ -202,6 +202,7 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.SelectChannel(rules, tpe, loc) => exp0
       case Expression.CloseChannel(exp, tpe, loc) => exp0
       case Expression.Spawn(exp, tpe, loc) => exp0
+      case Expression.Sleep(exp, tpe, loc) => exp0
 
       case Expression.NewRelation(sym, tpe, loc) => Expression.NewRelation(sym, tpe, loc)
 
@@ -366,6 +367,7 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     case Expression.SelectChannel(rules, tpe, loc) => exp0
     case Expression.CloseChannel(exp, tpe, loc) => exp0
     case Expression.Spawn(exp, tpe, loc) => exp0
+    case Expression.Sleep(exp, tpe, loc) => exp0
 
     case Expression.NewRelation(sym, tpe, loc) => Expression.NewRelation(sym, tpe, loc)
 
@@ -613,6 +615,7 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     case Expression.SelectChannel(rules, tpe, loc) => true
     case Expression.CloseChannel(exp, tpe, loc) => true
     case Expression.Spawn(exp, tpe, loc) => true
+    case Expression.Sleep(exp, tpe, loc) => true
 
     //
     // New Relation expressions are atomic.

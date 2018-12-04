@@ -466,6 +466,10 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           val e = visitExp(exp, env0)
           Expression.Spawn(e, subst0(tpe), eff, loc)
 
+        case Expression.Sleep(exp, tpe, eff, loc) =>
+          val e = visitExp(exp, env0)
+          Expression.Sleep(e, subst0(tpe), eff, loc)
+
         case Expression.NewRelation(sym, tpe, eff, loc) =>
           Expression.NewRelation(sym, subst0(tpe), eff, loc)
 

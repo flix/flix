@@ -192,6 +192,8 @@ object NamedAst {
 
     case class Spawn(exp: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
+    case class Sleep(exp: NamedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
+
     case class NewRelationOrLattice(name: Name.QName, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression
 
     case class Constraint(con: NamedAst.Constraint, tvar: ast.Type.Var, loc: SourceLocation) extends NamedAst.Expression

@@ -382,6 +382,8 @@ object ControlFlowAnalysis {
 
       case Expression.Spawn(exp, tpe, loc) => AbstractValue.Bot
 
+      case Expression.Sleep(exp, tpe, loc) => AbstractValue.Bot
+
       case Expression.NewRelation(sym, tpe, loc) => AbstractValue.AnyRelation
 
       case Expression.NewLattice(sym, tpe, loc) => AbstractValue.AnyLattice
