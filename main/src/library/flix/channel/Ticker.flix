@@ -77,7 +77,4 @@ namespace Ticker {
     ///
     def sleepSendAndRepeat(s: Int, c: Channel[Unit]): Unit =
         sleep(s); c <- (); sleepSendAndRepeat(s, c)
-
-    def sleep(l: Int): Unit = () // TODO: Replace by build in command.
-
 }
