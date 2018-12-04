@@ -50,12 +50,13 @@
 //        case y <- c1 => y + 1.0
 //    }
 //}
-//
-//def statementTest(): Int = 1 ; 2
 
-def f(): Int = Console.printLine("te"); f()
+//def statementTest(): Int = 1 ; 2
 //
-def test1(): Int = spawn f(); 2
+//def f(): Int = Console.printLine("te"); f()
+
+//def test1(): Int = spawn f(); 2
+
 
 //def f(c: Channel[Int]): Unit =
 //  c <- 2;
@@ -65,3 +66,5 @@ def test1(): Int = spawn f(); 2
 //  let c = chan Int;
 //  spawn c <- 2;
 //  <- c
+
+def sleepTest(): Unit = sleep(2)

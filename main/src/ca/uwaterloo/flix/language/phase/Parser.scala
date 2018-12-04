@@ -591,7 +591,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     def Primary: Rule1[ParsedAst.Expression] = rule {
       LetRec | LetMatch | IfThenElse | Match | LambdaMatch | Switch | TryCatch | Native | Lambda | Tuple |
         RecordRestrict | RecordExtend | RecordUpdate | RecordLiteral | RecordSelectLambda | NewChannel |
-        GetChannel | SelectChannel | CloseChannel | Spawn | Lambda | Tuple | ArrayLit | ArrayNew |
+        GetChannel | SelectChannel | CloseChannel | Spawn | Sleep | Lambda | Tuple | ArrayLit | ArrayNew |
         ArrayLength | VectorLit | VectorNew | VectorLength | FNil | FSet | FMap | NewRelationOrLattice |
         FixpointSolve | FixpointCheck | FixpointDelta | ConstraintSeq | ConstraintUnion |  Literal |
         HandleWith | Existential | Universal | UnaryLambda | QName | Wild | Tag | SName | Hole | UserError
@@ -693,6 +693,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Spawn: Rule1[ParsedAst.Expression.Spawn] = rule {
       SP ~ atomic("spawn") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.Spawn
+    }
+
+    def Sleep: Rule1[ParsedAst.Expression.Sleep] = rule {
+      SP ~ atomic("sleep") ~ "(" ~ optWS ~ Expression ~ optWS ~ ")" ~ SP ~> ParsedAst.Expression.Sleep
     }
 
     def Postfix: Rule1[ParsedAst.Expression] = rule {
