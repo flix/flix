@@ -312,6 +312,10 @@ object Synthesize extends Phase[Root, Root] {
         val e = visitExp(exp)
         Expression.Spawn(e, tpe, eff, loc)
 
+      case Expression.Sleep(exp, tpe, eff, loc) =>
+        val e = visitExp(exp)
+        Expression.Sleep(e, tpe, eff, loc)
+
       case Expression.FixpointConstraint(c0, tpe, eff, loc) =>
         val c = visitConstraint(c0)
         Expression.FixpointConstraint(c, tpe, eff, loc)

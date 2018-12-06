@@ -1233,6 +1233,21 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           } yield resultType
 
         /*
+         * Sleep expression.
+         */
+        case ResolvedAst.Expression.Sleep(exp, tvar, loc) =>
+          //
+          // exp: Int
+          // ------------------
+          // sleep exp : Unit
+          //
+          for {
+            e <- visitExp(exp)
+            _ <- unifyM(e, Type.Int32, loc)
+            resultType <- unifyM(tvar, Type.Unit, loc)
+          } yield resultType
+
+        /*
          * New Relation expression.
          */
         case ResolvedAst.Expression.NewRelation(sym, tvar, loc) =>
@@ -1747,6 +1762,13 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         case ResolvedAst.Expression.Spawn(exp, tvar, loc) =>
           val e = visitExp(exp, subst0)
           TypedAst.Expression.Spawn(e, subst0(tvar), Eff.Bot, loc)
+
+        /*
+         * Sleep expression.
+         */
+        case ResolvedAst.Expression.Sleep(exp, tvar, loc) =>
+          val e = visitExp(exp, subst0)
+          TypedAst.Expression.Sleep(e, subst0(tvar), Eff.Bot, loc)
 
         /*
          * New Relation expression.

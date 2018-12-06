@@ -226,6 +226,9 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.Spawn(exp, tpe, loc) =>
         visitExp(exp, i0)
 
+      case Expression.Sleep(exp, tpe, loc) =>
+        visitExp(exp, i0)
+
       case Expression.NewRelation(sym, tpe, loc) => i0
 
       case Expression.NewLattice(sym, tpe, loc) => i0

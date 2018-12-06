@@ -383,6 +383,8 @@ object ControlFlowAnalysis {
       case Expression.Spawn(exp, tpe, loc) => AbstractValue.Bot
 
       case Expression.FixpointConstraint(con, tpe, loc) =>
+
+      case Expression.FixpointConstraint(con, tpe, loc) =>
         val g = visitConstraint(con)
         AbstractValue.Graph(g)
 

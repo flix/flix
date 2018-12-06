@@ -186,6 +186,8 @@ object WeededAst {
 
     case class Spawn(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
+    case class Sleep(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
+
     case class FixpointConstraint(c: WeededAst.Constraint, loc: SourceLocation) extends WeededAst.Expression
 
     case class FixpointCompose(exp1: WeededAst.Expression, exp2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression

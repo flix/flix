@@ -373,6 +373,10 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
         val e = visit(exp)
         FinalAst.Expression.Spawn(e, tpe, loc)
 
+      case SimplifiedAst.Expression.Sleep(exp, tpe, loc) =>
+        val e = visit(exp)
+        FinalAst.Expression.Sleep(e, tpe, loc)
+
       case SimplifiedAst.Expression.FixpointConstraint(c0, tpe, loc) =>
         val c = visitConstraint(c0, m)
         FinalAst.Expression.FixpointConstraint(c, tpe, loc)

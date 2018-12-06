@@ -1078,6 +1078,18 @@ object GenExpression {
       visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Value.Unit.toInternalName, "getInstance",
         AsmOps.getMethodDescriptor(Nil, JvmType.Unit), false)
 
+    case Expression.Sleep(exp, tpe, loc) =>
+      addSourceLine(visitor, loc)
+      // Compile the expression, putting the time to sleep on top of the stack
+      compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+      // Cast to a long
+      visitor.visitInsn(I2L)
+      // Call Thread.Sleep with this duration
+      visitor.visitMethodInsn(INVOKESTATIC, "java/lang/Thread", "sleep", "(J)V", false)
+      // Put a Unit value on the stack
+      visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Value.Unit.toInternalName, "getInstance",
+        AsmOps.getMethodDescriptor(Nil, JvmType.Unit), false)
+
     case Expression.UserError(_, loc) =>
       addSourceLine(visitor, loc)
       AsmOps.compileThrowFlixError(visitor, JvmName.Runtime.NotImplementedError, loc)

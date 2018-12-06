@@ -620,6 +620,11 @@ object Effects extends Phase[Root, Root] {
           */
         case Expression.Spawn(exp, tpe, eff, loc) => ??? //TODO SJ
 
+        /**
+          * Sleep Expression
+          */
+        case Expression.Sleep(exp, tpe, eff, loc) => ??? //TODO SJ
+
         case Expression.FixpointConstraint(con, tpe, eff, loc) => ??? // TODO: Constraint
 
         case Expression.FixpointCompose(exp1, exp2, tpe, eff, loc) => ??? // TODO: ConstraintUnion

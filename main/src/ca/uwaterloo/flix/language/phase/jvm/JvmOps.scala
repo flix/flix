@@ -830,7 +830,9 @@ object JvmOps {
 
       case Expression.CloseChannel(exp, tpe, loc) => visitExp(exp)
 
-      case Expression.Spawn(closure, tpe, loc) => visitExp(closure)
+      case Expression.Spawn(exp, tpe, loc) => visitExp(exp)
+
+      case Expression.Sleep(exp, tpe, loc) => visitExp(exp)
 
       case Expression.NewRelation(sym, tpe, loc) => Set.empty
 
@@ -1095,7 +1097,9 @@ object JvmOps {
 
       case Expression.CloseChannel(exp, tpe, loc) => visitExp(exp) + tpe
 
-      case Expression.Spawn(sym, tpe, loc) => Set(tpe)
+      case Expression.Spawn(exp, tpe, loc) => visitExp(exp) + tpe
+
+      case Expression.Sleep(exp, tpe, loc) => visitExp(exp) + tpe
 
       case Expression.NewRelation(sym, tpe, loc) => Set(tpe)
 

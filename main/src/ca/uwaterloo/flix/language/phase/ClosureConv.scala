@@ -316,6 +316,13 @@ object ClosureConv extends Phase[Root, Root] {
       val e = visitExp(exp)
       Expression.Spawn(e, tpe, loc)
 
+    case Expression.Sleep(exp, tpe, loc) =>
+      val e = visitExp(exp)
+      Expression.Sleep(e, tpe, loc)
+
+    case Expression.NewRelation(sym, tpe, loc) =>
+      Expression.NewRelation(sym, tpe, loc)
+
     case Expression.FixpointConstraint(c0, tpe, loc) =>
       val Constraint(cparams0, head0, body0) = c0
       val head = visitHeadPredicate(head0)
@@ -505,6 +512,7 @@ object ClosureConv extends Phase[Root, Root] {
     }
     case Expression.CloseChannel(exp, tpe, loc) => freeVars(exp)
     case Expression.Spawn(exp, tpe, loc) => freeVars(exp)
+    case Expression.Sleep(exp, tpe, loc) => freeVars(exp)
 
     case Expression.FixpointConstraint(con, tpe, loc) =>
       val Constraint(cparams, head, body) = con
@@ -828,6 +836,10 @@ object ClosureConv extends Phase[Root, Root] {
       case Expression.Spawn(exp, tpe, loc) =>
         val e = visitExp(exp)
         Expression.Spawn(e, tpe, loc)
+
+      case Expression.Sleep(exp, tpe, loc) =>
+        val e = visitExp(exp)
+        Expression.Sleep(e, tpe, loc)
 
       case Expression.FixpointConstraint(con, tpe, loc) =>
         val Constraint(cparams0, head0, body0) = con

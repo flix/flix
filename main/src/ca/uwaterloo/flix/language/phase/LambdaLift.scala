@@ -329,6 +329,10 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         val e = visitExp(exp)
         Expression.Spawn(e, tpe, loc)
 
+      case Expression.Sleep(exp, tpe, loc) =>
+        val e = visitExp(exp)
+        Expression.Sleep(e, tpe, loc)
+
       case Expression.FixpointConstraint(c0, tpe, loc) =>
         val c = visitConstraint(c0)
         Expression.FixpointConstraint(c, tpe, loc)

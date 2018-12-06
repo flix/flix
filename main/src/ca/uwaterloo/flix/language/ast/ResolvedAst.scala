@@ -205,6 +205,8 @@ object ResolvedAst {
 
     case class Spawn(exp: ResolvedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
+    case class Sleep(exp: ResolvedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
+
     case class FixpointConstraint(c: ResolvedAst.Constraint, tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class FixpointCompose(exp1: ResolvedAst.Expression, exp2: ResolvedAst.Expression, tvar: ast.Type.Var, loc: SourceLocation) extends ResolvedAst.Expression

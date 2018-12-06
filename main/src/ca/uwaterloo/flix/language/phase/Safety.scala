@@ -190,6 +190,8 @@ object Safety extends Phase[Root, Root] {
 
     case Expression.Spawn(exp, tpe, eff, loc) => visitExp(exp)
 
+    case Expression.Sleep(exp, tpe, eff, loc) => visitExp(exp)
+
     case Expression.FixpointConstraint(con, tpe, eff, loc) => checkConstraint(con)
 
     case Expression.FixpointCompose(exp1, exp2, tpe, eff, loc) => visitExp(exp1) ::: visitExp(exp2)

@@ -448,6 +448,13 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         Expression.Spawn(e, tpe, loc)
 
       //
+      // Sleep.
+      //
+      case Expression.Sleep(exp, tpe, loc) =>
+        val e = visitExp(exp, env0)
+        Expression.Sleep(e, tpe, loc)
+
+      //
       // Constraint.
       //
       case Expression.FixpointConstraint(c0, tpe, loc) =>

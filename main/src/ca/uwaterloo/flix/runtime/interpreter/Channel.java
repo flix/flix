@@ -52,13 +52,11 @@ public final class Channel {
    */
   private int bufferSize;
 
+  //TODO SJ: Determine daemon and Threadpool
   public static void spawn(Spawnable s) {
-    new Thread(){
-      @Override
-      public void run() {
-        s.spawn();
-      }
-    }.start();
+    Thread thread = new Thread(s::spawn);
+    thread.setDaemon(true);
+    thread.start();
   }
 
   /**
@@ -171,8 +169,14 @@ public final class Channel {
    * @return the channel index of the channel with an element and the element
    */
   public static SelectChoice select(Channel[] channels) {
+    //TODO SJ: Fix Lock/Condition problem
+
     // Create new Condition and lock the current thread
-    Lock selectLock = new ReentrantLock();
+//    Lock selectLock = new ReentrantLock();
+//    Condition condition  = selectLock.newCondition();
+//    selectLock.lock();
+
+    Lock selectLock = channels[0].lock;
     Condition condition = selectLock.newCondition();
     selectLock.lock();
 
