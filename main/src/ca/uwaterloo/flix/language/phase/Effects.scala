@@ -620,19 +620,19 @@ object Effects extends Phase[Root, Root] {
           */
         case Expression.Spawn(exp, tpe, eff, loc) => ??? //TODO SJ
 
-        case Expression.NewRelation(sym, tpe, eff, loc) => ??? // TODO: NewRelation
+        case Expression.FixpointConstraint(con, tpe, eff, loc) => ??? // TODO: Constraint
 
-        case Expression.NewLattice(sym, tpe, eff, loc) => ??? // TODO: NewLattice
-
-        case Expression.Constraint(con, tpe, eff, loc) => ??? // TODO: Constraint
-
-        case Expression.ConstraintUnion(exp1, exp2, tpe, eff, loc) => ??? // TODO: ConstraintUnion
+        case Expression.FixpointCompose(exp1, exp2, tpe, eff, loc) => ??? // TODO: ConstraintUnion
 
         case Expression.FixpointSolve(exp, tpe, eff, loc) => ??? // TODO: FixpointSolve
 
         case Expression.FixpointCheck(exp, tpe, eff, loc) => ??? // TODO: FixpointCheck
 
         case Expression.FixpointDelta(exp, tpe, eff, loc) => ??? // TODO: FixpointDelta
+
+        case Expression.FixpointProject(sym, exp1, exp2, tpe, eff, loc) => ??? // TODO: FixpointProject
+
+        case Expression.FixpointEntails(exp1, exp2, tpe, eff, loc) => ??? // TODO: FixpointEntails
 
         /**
           * User Error Expression.

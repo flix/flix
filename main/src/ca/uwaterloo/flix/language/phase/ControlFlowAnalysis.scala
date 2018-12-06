@@ -382,15 +382,11 @@ object ControlFlowAnalysis {
 
       case Expression.Spawn(exp, tpe, loc) => AbstractValue.Bot
 
-      case Expression.NewRelation(sym, tpe, loc) => AbstractValue.AnyRelation
-
-      case Expression.NewLattice(sym, tpe, loc) => AbstractValue.AnyLattice
-
-      case Expression.Constraint(con, tpe, loc) =>
+      case Expression.FixpointConstraint(con, tpe, loc) =>
         val g = visitConstraint(con)
         AbstractValue.Graph(g)
 
-      case Expression.ConstraintUnion(exp1, exp2, tpe, loc) =>
+      case Expression.FixpointCompose(exp1, exp2, tpe, loc) =>
         val v1 = visitExp(exp1, env0, lenv0)
         val v2 = visitExp(exp2, env0, lenv0)
         lub(v1, v2)
@@ -403,7 +399,7 @@ object ControlFlowAnalysis {
             l.updateDependencyGraph(uid, g)
           case _ => throw InternalCompilerException(s"Unexpected abstract value: '$v'.")
         }
-        AbstractValue.AnyPrimitive
+        AbstractValue.Graph(DependencyGraph.Empty)
 
       case Expression.FixpointCheck(uid, exp, stf, tpe, loc) =>
         val v = visitExp(exp, env0, lenv0)
@@ -423,6 +419,16 @@ object ControlFlowAnalysis {
             l.updateDependencyGraph(uid, g)
           case _ => throw InternalCompilerException(s"Unexpected abstract value: '$v'.")
         }
+        AbstractValue.Graph(DependencyGraph.Empty)
+
+      case Expression.FixpointProject(sym, exp1, exp2, tpe, loc) =>
+        val v1 = visitExp(exp1, env0, lenv0)
+        val v2 = visitExp(exp2, env0, lenv0)
+        AbstractValue.Graph(DependencyGraph.Empty)
+
+      case Expression.FixpointEntails(exp1, exp2, tpe, loc) =>
+        val v1 = visitExp(exp1, env0, lenv0)
+        val v2 = visitExp(exp2, env0, lenv0)
         AbstractValue.AnyPrimitive
 
       case Expression.UserError(tpe, loc) => AbstractValue.Bot
@@ -510,20 +516,14 @@ object ControlFlowAnalysis {
   private def visitHeadPredicateSymbol(head0: Predicate.Head): Option[Symbol.PredSym] = head0 match {
     case Predicate.Head.True(_) => None
     case Predicate.Head.False(_) => None
-    case Predicate.Head.RelAtom(base, sym, terms, tpe, loc) => Some(sym)
-    case Predicate.Head.LatAtom(base, sym, terms, tpe, loc) => Some(sym)
+    case Predicate.Head.Atom(sym, exp, terms, tpe, loc) => Some(sym)
   }
 
   /**
     * Optionally returns the predicate symbol of the given body predicate `body0`.
     */
   private def visitDependencyEdge(head: Symbol.PredSym, body0: Predicate.Body): Option[DependencyEdge] = body0 match {
-    case Predicate.Body.RelAtom(base, sym, polarity, terms, index2sym, tpe, loc) => polarity match {
-      case Polarity.Positive => Some(DependencyEdge.Positive(head, sym))
-      case Polarity.Negative => Some(DependencyEdge.Negative(head, sym))
-    }
-
-    case Predicate.Body.LatAtom(base, sym, polarity, terms, index2sym, tpe, loc) => polarity match {
+    case Predicate.Body.Atom(sym, exp, polarity, terms, tpe, loc) => polarity match {
       case Polarity.Positive => Some(DependencyEdge.Positive(head, sym))
       case Polarity.Negative => Some(DependencyEdge.Negative(head, sym))
     }

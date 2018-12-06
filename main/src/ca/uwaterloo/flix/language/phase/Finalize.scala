@@ -373,20 +373,14 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
         val e = visit(exp)
         FinalAst.Expression.Spawn(e, tpe, loc)
 
-      case SimplifiedAst.Expression.NewRelation(sym, tpe, loc) =>
-        FinalAst.Expression.NewRelation(sym, tpe, loc)
-
-      case SimplifiedAst.Expression.NewLattice(sym, tpe, loc) =>
-        FinalAst.Expression.NewLattice(sym, tpe, loc)
-
-      case SimplifiedAst.Expression.Constraint(c0, tpe, loc) =>
+      case SimplifiedAst.Expression.FixpointConstraint(c0, tpe, loc) =>
         val c = visitConstraint(c0, m)
-        FinalAst.Expression.Constraint(c, tpe, loc)
+        FinalAst.Expression.FixpointConstraint(c, tpe, loc)
 
-      case SimplifiedAst.Expression.ConstraintUnion(exp1, exp2, tpe, loc) =>
+      case SimplifiedAst.Expression.FixpointCompose(exp1, exp2, tpe, loc) =>
         val e1 = visit(exp1)
         val e2 = visit(exp2)
-        FinalAst.Expression.ConstraintUnion(e1, e2, tpe, loc)
+        FinalAst.Expression.FixpointCompose(e1, e2, tpe, loc)
 
       case SimplifiedAst.Expression.FixpointSolve(exp, tpe, loc) =>
         val e = visit(exp)
@@ -399,6 +393,16 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
       case SimplifiedAst.Expression.FixpointDelta(exp, tpe, loc) =>
         val e = visit(exp)
         FinalAst.Expression.FixpointDelta(Ast.freshUId(), e, Ast.Stratification.Empty, tpe, loc)
+
+      case SimplifiedAst.Expression.FixpointProject(sym, exp1, exp2, tpe, loc) =>
+        val e1 = visit(exp1)
+        val e2 = visit(exp2)
+        FinalAst.Expression.FixpointProject(sym, e1, e2, tpe, loc)
+
+      case SimplifiedAst.Expression.FixpointEntails(exp1, exp2, tpe, loc) =>
+        val e1 = visit(exp1)
+        val e2 = visit(exp2)
+        FinalAst.Expression.FixpointEntails(e1, e2, tpe, loc)
 
       case SimplifiedAst.Expression.UserError(tpe, loc) =>
         FinalAst.Expression.UserError(tpe, loc)
@@ -425,24 +429,17 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
   private def visitHeadPredicate(p0: SimplifiedAst.Predicate.Head, m: TopLevel)(implicit flix: Flix): FinalAst.Predicate.Head = p0 match {
     case SimplifiedAst.Predicate.Head.True(loc) => FinalAst.Predicate.Head.True(loc)
     case SimplifiedAst.Predicate.Head.False(loc) => FinalAst.Predicate.Head.False(loc)
-    case SimplifiedAst.Predicate.Head.RelAtom(baseOpt, sym, terms, tpe, loc) =>
+    case SimplifiedAst.Predicate.Head.Atom(sym, exp, terms, tpe, loc) =>
+      val e = visitExp(exp, m)
       val ts = terms.map(t => visitHeadTerm(t, m))
-      FinalAst.Predicate.Head.RelAtom(baseOpt, sym, ts, tpe, loc)
-    case SimplifiedAst.Predicate.Head.LatAtom(baseOpt, sym, terms, tpe, loc) =>
-      val ts = terms.map(t => visitHeadTerm(t, m))
-      FinalAst.Predicate.Head.LatAtom(baseOpt, sym, ts, tpe, loc)
+      FinalAst.Predicate.Head.Atom(sym, e, ts, tpe, loc)
   }
 
   private def visitBodyPredicate(p0: SimplifiedAst.Predicate.Body, m: TopLevel)(implicit flix: Flix): FinalAst.Predicate.Body = p0 match {
-    case SimplifiedAst.Predicate.Body.RelAtom(baseOpt, sym, polarity, terms, tpe, loc) =>
+    case SimplifiedAst.Predicate.Body.Atom(sym, exp, polarity, terms, tpe, loc) =>
+      val e = visitExp(exp, m)
       val ts = terms.map(t => visitBodyTerm(t, m))
-      val index2var = getIndex2VarTemporaryToBeRemoved(ts)
-      FinalAst.Predicate.Body.RelAtom(baseOpt, sym, polarity, ts, index2var, tpe, loc)
-
-    case SimplifiedAst.Predicate.Body.LatAtom(baseOpt, sym, polarity, terms, tpe, loc) =>
-      val ts = terms.map(t => visitBodyTerm(t, m))
-      val index2var = getIndex2VarTemporaryToBeRemoved(ts)
-      FinalAst.Predicate.Body.LatAtom(baseOpt, sym, polarity, ts, index2var, tpe, loc)
+      FinalAst.Predicate.Body.Atom(sym, e, polarity, ts, tpe, loc)
 
     case SimplifiedAst.Predicate.Body.Filter(sym, terms, loc) =>
       val ts = terms.map(t => visitBodyTerm(t, m))
@@ -488,21 +485,6 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
     val targs = tpe.typeArguments
     val freeArgs = fvs.map(_.tpe)
     Type.mkArrow(freeArgs ::: targs.init, targs.last)
-  }
-
-  // TODO: Deprecated
-  private def getIndex2VarTemporaryToBeRemoved(ts: List[FinalAst.Term.Body]): List[Symbol.VarSym] = {
-    val r = new Array[Symbol.VarSym](ts.length)
-    var i = 0
-    while (i < r.length) {
-      ts(i) match {
-        case FinalAst.Term.Body.QuantVar(sym, _, _) =>
-          r(i) = sym
-        case _ => // nop
-      }
-      i = i + 1
-    }
-    r.toList
   }
 
   // TODO: Deprecated

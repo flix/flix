@@ -423,17 +423,13 @@ object PrettyPrinter {
           vt.text("Spawn ")
           visitExp(exp)
 
-        case Expression.NewRelation(sym, tpe, loc) =>
-          ??? // TODO: Expression.NewRelation
+        case Expression.FixpointConstraint(c, tpe, loc) =>
+          vt.text("<constraint>")
 
-        case Expression.NewLattice(sym, tpe, loc) =>
-          ??? // TODO: Expression.NewLattice
-
-        case Expression.Constraint(c, tpe, loc) =>
-          ??? // TODO: Expression.Constraint
-
-        case Expression.ConstraintUnion(exp1, exp2, tpe, loc) =>
-          ??? // TODO: ConstraintUnion
+        case Expression.FixpointCompose(exp1, exp2, tpe, loc) =>
+          visitExp(exp1)
+          vt.text("<+>")
+          visitExp(exp2)
 
         case Expression.FixpointSolve(exp, tpe, loc) =>
           vt.text("solve ")
@@ -446,6 +442,20 @@ object PrettyPrinter {
         case Expression.FixpointDelta(exp, tpe, loc) =>
           vt.text("delta ")
           visitExp(exp)
+
+        case Expression.FixpointProject(sym, exp1, exp2, tpe, loc) =>
+          vt.text("project ")
+          vt.text(sym.toString)
+          vt.text("<")
+          visitExp(exp1)
+          vt.text(">")
+          vt.text(" ")
+          visitExp(exp2)
+
+        case Expression.FixpointEntails(exp1, exp2, tpe, loc) =>
+          visitExp(exp1)
+          vt.text("|=")
+          visitExp(exp2)
 
         case Expression.UserError(tpe, loc) => vt << Red("UserError")
         case Expression.HoleError(sym, tpe, eff, loc) => Red("HoleError")

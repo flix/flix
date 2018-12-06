@@ -59,25 +59,6 @@ object Synthesize extends Phase[Root, Root] {
       defn.copy(exp = visitExp(defn.exp))
     }
 
-    /**
-      * Performs synthesis on the given head predicate `h0`.
-      */
-    def visitHead(h0: Predicate.Head): Predicate.Head = h0 match {
-      case Predicate.Head.True(loc) => h0
-      case Predicate.Head.False(loc) => h0
-      case Predicate.Head.RelAtom(base, sym, terms, tpe, loc) => Predicate.Head.RelAtom(base, sym, terms map visitExp, tpe, loc)
-      case Predicate.Head.LatAtom(base, sym, terms, tpe, loc) => Predicate.Head.LatAtom(base, sym, terms map visitExp, tpe, loc)
-    }
-
-    /**
-      * Performs synthesis on the given body predicate `h0`.
-      */
-    def visitBody(b0: Predicate.Body): Predicate.Body = b0 match {
-      case Predicate.Body.RelAtom(base, sym, polarity, pats, tpe, loc) => b0
-      case Predicate.Body.LatAtom(base, sym, polarity, pats, tpe, loc) => b0
-      case Predicate.Body.Filter(sym, terms, loc) => Predicate.Body.Filter(sym, terms map visitExp, loc)
-      case Predicate.Body.Functional(sym, term, loc) => Predicate.Body.Functional(sym, visitExp(term), loc)
-    }
 
     /**
       * Performs synthesis on the given expression `exp0`.
@@ -331,20 +312,14 @@ object Synthesize extends Phase[Root, Root] {
         val e = visitExp(exp)
         Expression.Spawn(e, tpe, eff, loc)
 
-      case Expression.NewRelation(sym, tpe, eff, loc) =>
-        Expression.NewRelation(sym, tpe, eff, loc)
+      case Expression.FixpointConstraint(c0, tpe, eff, loc) =>
+        val c = visitConstraint(c0)
+        Expression.FixpointConstraint(c, tpe, eff, loc)
 
-      case Expression.NewLattice(sym, tpe, eff, loc) =>
-        Expression.NewLattice(sym, tpe, eff, loc)
-
-      case Expression.Constraint(c, tpe, eff, loc) =>
-        // TODO: Recurse?
-        Expression.Constraint(c, tpe, eff, loc)
-
-      case Expression.ConstraintUnion(exp1, exp2, tpe, eff, loc) =>
+      case Expression.FixpointCompose(exp1, exp2, tpe, eff, loc) =>
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
-        Expression.ConstraintUnion(e1, e2, tpe, eff, loc)
+        Expression.FixpointCompose(e1, e2, tpe, eff, loc)
 
       case Expression.FixpointSolve(exp, tpe, eff, loc) =>
         val e = visitExp(exp)
@@ -358,9 +333,59 @@ object Synthesize extends Phase[Root, Root] {
         val e = visitExp(exp)
         Expression.FixpointDelta(e, tpe, eff, loc)
 
+      case Expression.FixpointProject(sym, exp1, exp2, tpe, eff, loc) =>
+        val e1 = visitExp(exp1)
+        val e2 = visitExp(exp2)
+        Expression.FixpointProject(sym, e1, e2, tpe, eff, loc)
+
+      case Expression.FixpointEntails(exp1, exp2, tpe, eff, loc) =>
+        val e1 = visitExp(exp1)
+        val e2 = visitExp(exp2)
+        Expression.FixpointEntails(e1, e2, tpe, eff, loc)
+
       case Expression.UserError(tpe, eff, loc) =>
         Expression.UserError(tpe, eff, loc)
 
+    }
+
+    /**
+      * Performs synthesis on the given constraint `c0`.
+      */
+    def visitConstraint(c0: Constraint): Constraint = c0 match {
+      case Constraint(cparams, head0, body0, loc) =>
+        val head = visitHeadPred(head0)
+        val body = body0.map(visitBodyPred)
+        Constraint(cparams, head, body, loc)
+    }
+
+    /**
+      * Performs synthesis on the given head predicate `h0`.
+      */
+    def visitHeadPred(h0: Predicate.Head): Predicate.Head = h0 match {
+      case Predicate.Head.True(loc) => h0
+      case Predicate.Head.False(loc) => h0
+
+      case Predicate.Head.Atom(sym, exp, terms, tpe, loc) =>
+        val e = visitExp(exp)
+        val ts = terms map visitExp
+        Predicate.Head.Atom(sym, e, ts, tpe, loc)
+    }
+
+    /**
+      * Performs synthesis on the given body predicate `h0`.
+      */
+    def visitBodyPred(b0: Predicate.Body): Predicate.Body = b0 match {
+      case Predicate.Body.Atom(sym, exp, polarity, pats, tpe, loc) =>
+        val e = visitExp(exp)
+        Predicate.Body.Atom(sym, e, polarity, pats, tpe, loc)
+
+      case Predicate.Body.Filter(sym, terms, loc) =>
+        val ts = terms.map(visitExp)
+        Predicate.Body.Filter(sym, ts, loc)
+
+      case Predicate.Body.Functional(sym, term, loc) =>
+        val t = visitExp(term)
+        Predicate.Body.Functional(sym, t, loc)
     }
 
     /**
@@ -1118,8 +1143,8 @@ object Synthesize extends Phase[Root, Root] {
           // Schema
           //
           if (tpe.isSchema) {
-            // TODO: Implement toString for schema.
-            return Expression.Str("<<schema>>", sl)
+            val method = classOf[java.lang.Object].getMethod("toString")
+            return Expression.NativeMethod(method, List(exp0), Type.Str, ast.Eff.Pure, sl)
           }
 
           throw InternalCompilerException(s"Unknown type '$tpe'.")
