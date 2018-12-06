@@ -273,11 +273,7 @@ object GenClosureClasses {
     mv.visitTypeInsn(NEW, JvmName.Context.toInternalName)
     mv.visitInsn(DUP)
     mv.visitMethodInsn(INVOKESPECIAL, JvmName.Context.toInternalName, "<init>", "()V", false)
-    mv.visitInsn(DUP)
     mv.visitVarInsn(ASTORE, 1)
-
-    // Call the apply method
-    mv.visitMethodInsn(INVOKEVIRTUAL, classType.name.toInternalName, "apply", "(LContext;)V", false)
 
     // Label for the loop
     val loop = new Label
