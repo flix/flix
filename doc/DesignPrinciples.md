@@ -1,5 +1,9 @@
 # Design Principles
 
+## Safety first, performance second.
+
+## Simple is not easy, will not sacrifice a principle for practicality
+
 ## Everything is an expression
 
 ## Arbitrary-precision Arithmetic
@@ -48,3 +52,5 @@
 
 ## Interactive Shell
 
+## Keyword-based syntax
+ 
