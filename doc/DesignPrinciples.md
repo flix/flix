@@ -16,15 +16,17 @@
 
 ## Patterns must be exhaustive
 
-## Readable error messages
+## Human-Readable error messages
 
 ## All warnings are compile-time errors
 
-## Initialization code before main
+## No Initialization code before main
 
 ## No order of declarations
 
 ## No coercions
+
+## No global state
 
 ## Every function is curried
 
