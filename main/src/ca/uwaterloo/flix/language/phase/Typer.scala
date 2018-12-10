@@ -1243,7 +1243,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           //
           for {
             e <- visitExp(exp)
-            _ <- unifyM(e, Type.Int32, loc)
+            _ <- unifyM(e, Type.Int64, loc)
             resultType <- unifyM(tvar, Type.Unit, loc)
           } yield resultType
 

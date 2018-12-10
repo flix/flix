@@ -294,11 +294,14 @@ object Interpreter {
       Value.Unit
 
     case Expression.Sleep(exp, tpe, loc) =>
-      val duration = cast2int32(eval(exp, env0, henv0, lenv0, root))
+      val duration = cast2int64(eval(exp, env0, henv0, lenv0, root))
       if (duration < 0) {
         throw InternalRuntimeException(s"Duration $duration must be non-negative.")
       }
-      Thread.sleep(duration)
+      // Convert to ms and ns as Sleep receives parameter in ns
+      val ms = duration / 1000000
+      val ns = (duration % 1000000).toInt
+      Thread.sleep(ms, ns)
       Value.Unit
 
     case Expression.FixpointConstraint(c, tpe, loc) =>

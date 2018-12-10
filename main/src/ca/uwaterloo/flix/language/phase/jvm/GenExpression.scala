@@ -1015,12 +1015,29 @@ object GenExpression {
 
     case Expression.Sleep(exp, tpe, loc) =>
       addSourceLine(visitor, loc)
-      // Compile the expression, putting the time to sleep on top of the stack
+      // Compile the expression, putting the time to sleep in ns (as a long) on top of the stack
       compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
-      // Cast to a long
-      visitor.visitInsn(I2L)
-      // Call Thread.Sleep with this duration
-      visitor.visitMethodInsn(INVOKESTATIC, "java/lang/Thread", "sleep", "(J)V", false)
+
+      // Convert the time into ms and ns
+      // Dup the time
+      visitor.visitInsn(DUP2)
+
+      // Calculate the ns (time % 1.000.000)
+      visitor.visitLdcInsn(1000000L)
+      visitor.visitInsn(LREM)
+      // Cast to int and store for later
+      visitor.visitInsn(L2I)
+      visitor.visitVarInsn(ISTORE, 2)
+
+      // Calculate the ms (time / 1.000.000)
+      visitor.visitLdcInsn(1000000L)
+      visitor.visitInsn(LDIV)
+
+      // Load the ns, putting ns on top of the stack
+      visitor.visitVarInsn(ILOAD, 2)
+
+      // Call Thread.Sleep with the calculated duration in (ms, ns)
+      visitor.visitMethodInsn(INVOKESTATIC, "java/lang/Thread", "sleep", "(JI)V", false)
       // Put a Unit value on the stack
       visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Value.Unit.toInternalName, "getInstance",
         AsmOps.getMethodDescriptor(Nil, JvmType.Unit), false)

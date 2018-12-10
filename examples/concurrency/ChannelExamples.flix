@@ -67,51 +67,44 @@
 //  spawn c <- 2;
 //  <- c
 
-def sleepTest(): Bool = {
-  Console.printLine("1");
-  let c = chan Int;
-
-  spawn {
-    Console.printLine("2");
-//    sleep(2000);
-    Console.printLine("3");
-    c <- 1;
-
-    Console.printLine("4")
-//  ???
-  };
-
-  Console.printLine("5");
-
-  select {
-    case x <- c => Console.printLine("6")
-  };
-
-  Console.printLine("7");
-
-  let c1 = Timer.seconds(0);
-
-  sleep(5000);
-
-  select {
-    case x <- c => false
-    case y <- c1 => true
-  }
-}
-
-
-//def sleepTest(): Int = {
+//def sleepTest(): Bool = {
+//  Console.printLine("1");
 //  let c = chan Int;
 //
 //  spawn {
-//    sleep(2000);
-//    c <- 1
+//    Console.printLine("2");
+//    sleep(2000i64);
+//    Console.printLine("3");
+//    c <- 1;
+//
+//    Console.printLine("4")
+////  ???
 //  };
 //
+//  Console.printLine("5");
+//
 //  select {
-//    case x <- c => x
+//    case x <- c => Console.printLine("6")
+//  };
+//
+//  Console.printLine("7");
+//
+//  let c1 = Timer.seconds(0);
+//
+//  sleep(5000i64);
+//
+//  select {
+//    case x <- c => false
+//    case y <- c1 => true
 //  }
 //}
+
+
+def sleepTest(): Unit = {
+  Console.printLine("1");
+  sleep(5i64 * Duration.oneSecond());
+  Console.printLine("2")
+}
 
 
 
