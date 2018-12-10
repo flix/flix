@@ -208,6 +208,8 @@ object TypedAstOps {
 
       case Expression.Spawn(exp, tpe, eff, loc) => visitExp(exp, env0)
 
+      case Expression.Sleep(exp, tpe, eff, loc) => visitExp(exp, env0)
+
       case Expression.FixpointConstraint(c, tpe, eff, loc) => visitConstraint(c, env0)
 
       case Expression.FixpointCompose(exp1, exp2, tpe, eff, loc) =>

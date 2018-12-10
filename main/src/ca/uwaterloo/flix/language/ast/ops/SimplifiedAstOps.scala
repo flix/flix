@@ -472,6 +472,13 @@ object SimplifiedAstOps {
         checkType(tpe)
 
       //
+      // Sleep.
+      //
+      case Expression.Sleep(exp, tpe, loc) =>
+        checkExp(exp, env0, ienv0)
+        checkType(tpe)
+
+      //
       // Constraint.
       //
       case Expression.FixpointConstraint(c, tpe, loc) =>

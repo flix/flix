@@ -423,6 +423,10 @@ object PrettyPrinter {
           vt.text("Spawn ")
           visitExp(exp)
 
+        case Expression.Sleep(exp, tpe, loc) =>
+          vt.text("Sleep ")
+          visitExp(exp)
+
         case Expression.FixpointConstraint(c, tpe, loc) =>
           vt.text("<constraint>")
 
