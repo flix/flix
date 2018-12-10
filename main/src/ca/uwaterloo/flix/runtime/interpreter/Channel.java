@@ -1,15 +1,16 @@
 package ca.uwaterloo.flix.runtime.interpreter;
 
 
-import javafx.util.Pair;
-
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.*;
 
 //TODO SJ: make docs
-public final class Channel {
 
+/**
+ * Precondition: Null is not a valid element to put in a Channel.
+ */
+public final class Channel {
   /**
    * GLOBALCOUNTER gives a new id to every channel. Should not be
    * used directly, since every channel has an id field from it at creation.
@@ -26,25 +27,24 @@ public final class Channel {
    */
   private LinkedList<Object> queue = new LinkedList<>();
 
-  //TODO SJ: Make Pair class
   /**
    * waitingGetters is a set of conditions that is waiting for get.
    * This set is cleared after each new element.
    */
-  private Set<Pair<Lock, Condition>> waitingGetters = new HashSet<>();
+  private Set<LockConditionPair> waitingGetters = new HashSet<>();
   /**
-   * lock is the lock of this channel.
+   * channelLock is the channelLock of this channel.
    */
-  private Lock lock = new ReentrantLock();
+  private Lock channelLock = new ReentrantLock();
   /**
    * NOT IMPLEMENTED.
    * waitingSetters is a condition that can notify threads of
    * available space in the queue. This is useless without bufferSize.
    */
-  private Condition waitingSetters = lock.newCondition();
+  private Condition waitingSetters = channelLock.newCondition();
   /**
    * id is the unique identifier of a channel. This is used
-   * to sort and lock a list of channels to avoid a deadlock.
+   * to sort and channelLock a list of channels to avoid a deadlock.
    */
   private final int id = GLOBALCOUNTER.getAndIncrement();
 
@@ -63,121 +63,6 @@ public final class Channel {
   }
 
   /**
-   * Put an element into the queue or wait until it is possible
-   * to do so.
-   *
-   * @param e the element to add
-   */
-  public void put(Object e) {
-    lock.lock();
-
-    try {
-      checkIfClosed();
-      // TODO SJ: implement bufferSize here
-      queue.add(e);
-      for (Pair<Lock, Condition> pair : waitingGetters) {
-        Condition c = pair.getValue();
-        Lock conditionLock = pair.getKey();
-        //TODO SJ: Will this release the lock too early (before waitingGetters.clear) if conditionLock = lock ?
-        try {
-          conditionLock.lock();
-          c.signalAll();
-        } finally {
-          conditionLock.unlock();
-        }
-      }
-      waitingGetters.clear();
-    } finally {
-      lock.unlock();
-    }
-  }
-
-  /**
-   * Retrieves the head of the queue or waits until it is possible to do so.
-   *
-   * @return the head of the queue
-   */
-  public Object get() {
-    lock.lock();
-    try {
-      //checkIfClosed(); you can read from a closed channel
-      Object e = queue.poll();
-      while (e == null) {
-        Condition c = lock.newCondition();
-        waitingGetters.add(new Pair<>(lock, c));
-        c.await();
-        e = queue.poll();
-      }
-      return e;
-    } catch (InterruptedException e2) {
-      throw new RuntimeException();
-    } finally {
-      lock.unlock();
-    }
-  }
-
-  /**
-   * Retrieves the head of the queue or null if the queue is empty.
-   *
-   * @return the head of the queue or null if its empty
-   */
-  public Object tryGet() {
-    lock.lock();
-
-    try {
-      //checkIfClosed(); you can read from a closed channel
-      return queue.poll();
-    } finally {
-      lock.unlock();
-    }
-  }
-
-  /**
-   * If isOpen is false throw a runtime exception.
-   */
-  private void checkIfClosed() {
-    if (!isOpen) throw new RuntimeException();
-  }
-
-  /**
-   * Adds the given condition to the list of conditions waiting to
-   * retrieve elements from the queue.
-   *
-   * @param c the condition to add
-   */
-  public void addGetter(Lock conditionLock, Condition c) {
-    lock.lock();
-    try {
-      waitingGetters.add(new Pair<>(conditionLock, c));
-    } finally {
-      lock.unlock();
-    }
-  }
-
-  /**
-   * Closes the channel. All subsequent put calls will throw a runtime exception.
-   * If the channel is already closed a runtime exception will also be thrown.
-   */
-  public void close() {
-    lock.lock();
-    try {
-      checkIfClosed();
-      isOpen = false;
-    } finally {
-      lock.unlock();
-    }
-  }
-
-  /**
-   * Returns the unique id of the channel.
-   *
-   * @return the unique id of the channel
-   */
-  public int getId() {
-    return id;
-  }
-
-  /**
    * Given a array of channels, returns the first channel that has an element
    * and return the index of that channel and the retrieved element in a
    * SelectChoice object.
@@ -186,16 +71,10 @@ public final class Channel {
    * @return the channel index of the channel with an element and the element
    */
   public static SelectChoice select(Channel[] channels) {
-    //TODO SJ: Fix Lock/Condition problem
-
-    // Create new Condition and lock the current thread
+    // Create new Condition and channelLock the current thread
     Lock selectLock = new ReentrantLock();
     Condition condition = selectLock.newCondition();
     selectLock.lock();
-
-//    Lock selectLock = channels[0].lock;
-//    Condition condition = selectLock.newCondition();
-//    selectLock.lock();
 
     // Sort Channels to avoid deadlock when locking
     Channel[] sortedChannels = sortChannels(channels);
@@ -261,7 +140,7 @@ public final class Channel {
    * @param channels the array of channels to unlock
    */
   private static void lockAllChannels(Channel[] channels) {
-    for (Channel c : channels) c.lock.lock();
+    for (Channel c : channels) c.channelLock.lock();
   }
 
   /**
@@ -270,8 +149,132 @@ public final class Channel {
    * @param channels the channels to unlock
    */
   private static void unlockAllChannels(Channel[] channels) {
-    for (Channel c : channels) {
-      c.lock.unlock();
+    for (Channel c : channels) c.channelLock.unlock();
+  }
+
+  /**
+   * Put an element into the queue or wait until it is possible
+   * to do so.
+   *
+   * @param e the element to add
+   */
+  public void put(Object e) {
+    channelLock.lock();
+
+    try {
+      checkIfClosed();
+      // TODO SJ: implement bufferSize here
+      queue.add(e);
+      for (LockConditionPair pair : waitingGetters) {
+        Lock conditionLock = pair.getLock();
+        Condition condition = pair.getCondition();
+        try {
+          conditionLock.lock();
+          condition.signalAll();
+        } finally {
+          conditionLock.unlock();
+        }
+      }
+      waitingGetters.clear();
+    } finally {
+      channelLock.unlock();
     }
+  }
+
+  /**
+   * Retrieves the head of the queue or waits until it is possible to do so.
+   *
+   * @return the head of the queue
+   */
+  public Object get() {
+    channelLock.lock();
+    try {
+      //checkIfClosed(); you can read from a closed channel
+      Object e = queue.poll();
+      while (e == null) {
+        Lock conditionLock = new ReentrantLock();
+        conditionLock.lock();
+        try {
+          Condition condition = conditionLock.newCondition();
+          waitingGetters.add(new LockConditionPair(conditionLock, condition));
+          // Temporarily unlock the Channel while waiting. This is necessary as the Condition comes from a different Lock.
+          try {
+            channelLock.unlock();
+            condition.await();
+          } finally {
+            channelLock.lock();
+          }
+          e = queue.poll();
+        } finally {
+          conditionLock.unlock();
+        }
+      }
+      return e;
+    } catch (InterruptedException e2) {
+      throw new RuntimeException();
+    } finally {
+      channelLock.unlock();
+    }
+  }
+
+  /**
+   * Retrieves the head of the queue or null if the queue is empty.
+   *
+   * @return the head of the queue or null if its empty
+   */
+  public Object tryGet() {
+    channelLock.lock();
+
+    try {
+      //checkIfClosed(); you can read from a closed channel
+      return queue.poll();
+    } finally {
+      channelLock.unlock();
+    }
+  }
+
+  /**
+   * If isOpen is false throw a runtime exception.
+   */
+  private void checkIfClosed() {
+    if (!isOpen) throw new RuntimeException();
+  }
+
+  /**
+   * Adds the given condition to the list of conditions waiting to
+   * retrieve elements from the queue.
+   *
+   * @param condition the condition to add
+   */
+  public void addGetter(Lock conditionLock, Condition condition) {
+    channelLock.lock();
+    try {
+      waitingGetters.add(new LockConditionPair(conditionLock, condition));
+    } finally {
+      channelLock.unlock();
+    }
+  }
+
+  /**
+   * Closes the channel. All subsequent put calls will throw a runtime exception.
+   * If the channel is already closed a runtime exception will also be thrown.
+   */
+  public void close() {
+    channelLock.lock();
+    try {
+      checkIfClosed();
+      isOpen = false;
+    } finally {
+      channelLock.unlock();
+    }
+  }
+
+  /**
+   * Returns the unique id of the channel.
+   *
+   * @return the unique id of the channel
+   */
+  public int getId() {
+    return id;
   }
 }
