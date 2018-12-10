@@ -71,16 +71,9 @@ object JvmOps {
       case Type.Tuple(l) => getTupleInterfaceType(tpe)
       case Type.Array => JvmType.Object
       case Type.Vector => JvmType.Object
-      case Type.Enum(sym, kind) =>
-        getNullability(tpe) match {
-          case Nullability.Nullable(t) =>
-            // If the enum is nullable it means that it is the Option[a] type.
-            // Hence we extract the inner type, the 'a'.
-            getJvmType(args.head)
-          case Nullability.NonNullable(t) => getEnumInterfaceType(tpe)
-          case Nullability.Primitive(t) => throw InternalCompilerException(s"Unexpected primitive type: '$tpe'.")
-          case Nullability.Reference(t) => throw InternalCompilerException(s"Unexpected reference type: '$tpe'.")
-        }
+      case Type.Schema(m) => JvmType.Reference(JvmName.Runtime.Fixpoint.ConstraintSystem)
+      case Type.Relation(sym, attr, kind) => JvmType.Reference(JvmName.PredSym)
+      case Type.Enum(sym, kind) => getEnumInterfaceType(tpe)
       case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
     }
   }
@@ -480,91 +473,6 @@ object JvmOps {
   }
 
   /**
-    * Returns `true` if the given `tag` associated with the given enum symbol `sym` can be represented by null.
-    */
-  def isNullTag(sym: Symbol.EnumSym, tag: String)(implicit root: Root, flix: Flix): Boolean = {
-    // Retrieve the enum.
-    val enum = root.enums(sym)
-
-    // Retrieve the case.
-    val caze = enum.cases(tag)
-
-    // Check if the case is unit (i.e. can be represented by null).
-    caze.tpe == Type.Unit
-  }
-
-  /**
-    * Returns `true` if the given type `tpe` is nullable.
-    */
-  def isNullable(tpe: Type)(implicit root: Root, flix: Flix): Boolean = {
-    if (!tpe.isEnum)
-      throw InternalCompilerException(s"Unexpected type: $tpe")
-
-    getNullability(tpe) match {
-      case Nullability.Nullable(t) => true
-      case Nullability.Primitive(t) => false
-      case Nullability.Reference(t) => false
-      case Nullability.NonNullable(t) => false
-    }
-  }
-
-  /**
-    * Returns the nullability of the given type `tpe`.
-    */
-  def getNullability(tpe: Type)(implicit root: Root, flix: Flix): Nullability = {
-    // Check if the optimization is enabled.
-    if (!(flix.options.optimizations contains Optimization.NullableEnums))
-      return Nullability.NonNullable(tpe)
-
-    // Retrieve the type constructor.
-    val base = tpe.typeConstructor
-
-    // Retrieve the type arguments.
-    val args = tpe.typeArguments
-
-    // Match on the type constructor.
-    base match {
-      // Primitive types.
-      case Type.Unit => Nullability.Primitive(tpe)
-      case Type.Bool => Nullability.Primitive(tpe)
-      case Type.Char => Nullability.Primitive(tpe)
-      case Type.Float32 => Nullability.Primitive(tpe)
-      case Type.Float64 => Nullability.Primitive(tpe)
-      case Type.Int8 => Nullability.Primitive(tpe)
-      case Type.Int16 => Nullability.Primitive(tpe)
-      case Type.Int32 => Nullability.Primitive(tpe)
-      case Type.Int64 => Nullability.Primitive(tpe)
-
-      // Nullable types.
-      case Type.BigInt => Nullability.Reference(tpe)
-      case Type.Str => Nullability.Reference(tpe)
-      case Type.Native(clazz) => Nullability.Reference(tpe)
-      case Type.Ref => Nullability.Reference(tpe)
-      case Type.Arrow(l) => Nullability.Reference(tpe)
-      case Type.Tuple(l) => Nullability.Reference(tpe)
-
-      // Enum types.
-      case Type.Enum(sym, kind) =>
-        // Check if the enum is the Option type.
-        if (sym.name != "Option") {
-          return Nullability.NonNullable(tpe)
-        }
-
-        // The Option type has exactly one type argument.
-        val elementType = args.head
-
-        // Determine if the element type is nullable.
-        getNullability(elementType) match {
-          case Nullability.Nullable(t) => Nullability.NonNullable(tpe)
-          case Nullability.Primitive(t) => Nullability.NonNullable(tpe)
-          case Nullability.Reference(t) => Nullability.Nullable(tpe)
-          case Nullability.NonNullable(t) => Nullability.Nullable(elementType)
-        }
-      case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.")
-    }
-  }
-
-  /**
     * Returns `true` if the given enum symbol `sym` is a single-case enum.
     */
   def isSingleCaseEnum(sym: Symbol.EnumSym)(implicit root: Root, flix: Flix): Boolean = {
@@ -834,19 +742,19 @@ object JvmOps {
 
       case Expression.Sleep(exp, tpe, loc) => visitExp(exp)
 
-      case Expression.NewRelation(sym, tpe, loc) => Set.empty
+      case Expression.FixpointConstraint(con, tpe, loc) => Set.empty
 
-      case Expression.NewLattice(sym, tpe, loc) => Set.empty
-
-      case Expression.Constraint(con, tpe, loc) => ??? // TODO: Constraint
-
-      case Expression.ConstraintUnion(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2)
+      case Expression.FixpointCompose(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2)
 
       case Expression.FixpointSolve(uid, exp, stf, tpe, loc) => visitExp(exp)
 
       case Expression.FixpointCheck(uid, exp, stf, tpe, loc) => visitExp(exp)
 
       case Expression.FixpointDelta(uid, exp, stf, tpe, loc) => visitExp(exp)
+
+      case Expression.FixpointProject(sym, exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2)
+
+      case Expression.FixpointEntails(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2)
 
       case Expression.UserError(tpe, loc) => Set.empty
       case Expression.HoleError(sym, tpe, loc) => Set.empty
@@ -1101,13 +1009,9 @@ object JvmOps {
 
       case Expression.Sleep(exp, tpe, loc) => visitExp(exp) + tpe
 
-      case Expression.NewRelation(sym, tpe, loc) => Set(tpe)
+      case Expression.FixpointConstraint(c, tpe, loc) => visitConstraint(c) + tpe
 
-      case Expression.NewLattice(sym, tpe, loc) => Set(tpe)
-
-      case Expression.Constraint(con, tpe, loc) => ??? // TODO: Constraint
-
-      case Expression.ConstraintUnion(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2) + tpe
+      case Expression.FixpointCompose(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2) + tpe
 
       case Expression.FixpointSolve(uid, exp, stf, tpe, loc) => visitExp(exp) + tpe
 
@@ -1115,10 +1019,50 @@ object JvmOps {
 
       case Expression.FixpointDelta(uid, exp, stf, tpe, loc) => visitExp(exp) + tpe
 
+      case Expression.FixpointProject(sym, exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2) + tpe
+
+      case Expression.FixpointEntails(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2) + tpe
+
       case Expression.UserError(tpe, loc) => Set(tpe)
       case Expression.HoleError(sym, tpe, loc) => Set(tpe)
       case Expression.MatchError(tpe, loc) => Set(tpe)
       case Expression.SwitchError(tpe, loc) => Set(tpe)
+    }
+
+    def visitConstraint(c0: Constraint): Set[Type] = c0 match {
+      case Constraint(cparams, head, body) =>
+        visitHeadPred(head) ++ body.flatMap(visitBodyPred)
+    }
+
+    def visitHeadPred(h0: Predicate.Head): Set[Type] = h0 match {
+      case Predicate.Head.True(loc) => Set.empty
+      case Predicate.Head.False(loc) => Set.empty
+      case Predicate.Head.Atom(sym, exp, terms, tpe, loc) =>
+        visitExp(exp) ++ terms.flatMap(visitHeadTerm) + tpe
+    }
+
+    def visitBodyPred(b0: Predicate.Body): Set[Type] = b0 match {
+      case Predicate.Body.Atom(sym, exp, polarity, terms, tpe, loc) =>
+        visitExp(exp) ++ terms.flatMap(visitBodyTerm)
+
+      case Predicate.Body.Filter(sym, terms, loc) =>
+        terms.flatMap(visitBodyTerm).toSet
+
+      case Predicate.Body.Functional(varSym, defSym, terms, loc) => Set.empty
+    }
+
+    def visitHeadTerm(t0: Term.Head): Set[Type] = t0 match {
+      case Term.Head.QuantVar(sym, tpe, loc) => Set(tpe)
+      case Term.Head.CapturedVar(sym, tpe, loc) => Set(tpe)
+      case Term.Head.Lit(sym, tpe, loc) => Set(tpe)
+      case Term.Head.App(sym, args, tpe, loc) => Set(tpe)
+    }
+
+    def visitBodyTerm(t0: Term.Body): Set[Type] = t0 match {
+      case Term.Body.Wild(tpe, loc) => Set(tpe)
+      case Term.Body.QuantVar(sym, tpe, loc) => Set(tpe)
+      case Term.Body.CapturedVar(sym, tpe, loc) => Set(tpe)
+      case Term.Body.Lit(sym, tpe, loc) => Set(tpe)
     }
 
     // TODO: Magnus: Look for types in other places.

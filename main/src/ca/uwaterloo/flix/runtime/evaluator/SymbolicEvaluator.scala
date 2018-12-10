@@ -866,40 +866,39 @@ object SymbolicEvaluator {
       case Expression.Spawn(exp, tpe, loc) => throw InternalCompilerException("Not yet supported.")
 
       /**
-        * New Relation.
-        *
-        */
-      case Expression.NewRelation(sym, tpe, loc) => throw InternalCompilerException("Not yet supported.")
-
-      /**
-        * New Lattice.
-        */
-      case Expression.NewLattice(sym, tpe, loc) => throw InternalCompilerException("Not yet supported.")
-
-      /**
         * Constraint.
         */
-      case Expression.Constraint(c, tpe, loc) => throw InternalCompilerException("Not yet supported.")
+      case Expression.FixpointConstraint(c, tpe, loc) => throw InternalCompilerException("Not yet supported.")
 
       /**
         * ConstraintUnion.
         */
-      case Expression.ConstraintUnion(e1, e2, tpe, loc) => throw InternalCompilerException("Not yet supported.")
+      case Expression.FixpointCompose(exp1, exp2, tpe, loc) => throw InternalCompilerException("Not yet supported.")
 
       /**
         * Fixpoint Solve.
         */
-      case Expression.FixpointSolve(exp, svar, stf, tpe, loc) => throw InternalCompilerException("Not yet supported.")
+      case Expression.FixpointSolve(uid, exp, stf, tpe, loc) => throw InternalCompilerException("Not yet supported.")
 
       /**
         * Fixpoint Check.
         */
-      case Expression.FixpointCheck(exp, svar, stf, tpe, loc) => throw InternalCompilerException("Not yet supported.")
+      case Expression.FixpointCheck(uid, exp, stf, tpe, loc) => throw InternalCompilerException("Not yet supported.")
 
       /**
         * Fixpoint Delta.
         */
-      case Expression.FixpointDelta(exp, svar, stf, tpe, loc) => throw InternalCompilerException("Not yet supported.")
+      case Expression.FixpointDelta(uid, exp, stf, tpe, loc) => throw InternalCompilerException("Not yet supported.")
+
+      /**
+        * Fixpoint Project.
+        */
+      case Expression.FixpointProject(sym, exp1, exp2, tpe, loc) => throw InternalCompilerException("Not yet supported.")
+
+      /**
+        * Fixpoint Entails.
+        */
+      case Expression.FixpointEntails(exp1, exp2, tpe, loc) => throw InternalCompilerException("Not yet supported.")
 
       /**
         * User Error.

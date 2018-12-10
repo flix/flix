@@ -24,6 +24,14 @@ import java.nio.file.{Path, Paths}
 object JvmName {
 
   /**
+    * Returns the JvmName of the given string `s`.
+    */
+  def mk(s: String): JvmName = {
+    val l = s.split("/")
+    JvmName(l.init.toList, l.last)
+  }
+
+  /**
     * The Flix Context class.
     */
   val Context: JvmName = JvmName(Nil, "Context")
@@ -114,6 +122,12 @@ object JvmName {
     */
   val UnsupportedOperationException: JvmName = JvmName(List("java", "lang"), "UnsupportedOperationException")
 
+  val PredSym: JvmName = mk("ca/uwaterloo/flix/runtime/solver/api/symbol/PredSym")
+
+  val ProxyObject: JvmName = mk("ca/uwaterloo/flix/runtime/solver/api/ProxyObject")
+
+  val Function: JvmName = mk("java/util/function/Function")
+
   /**
     * Get the class type for the cell with subtype `subType`
     */
@@ -126,8 +140,50 @@ object JvmName {
 
   object Runtime {
 
+    val ProxyObject: JvmName = mk("flix/runtime/ProxyObject")
+
     object Value {
       val Unit: JvmName = JvmName(List("flix", "runtime", "value"), "Unit")
+    }
+
+    object Fixpoint {
+
+      val Attribute: JvmName = mk("flix/runtime/fixpoint/Attribute")
+      val Constraint: JvmName = mk("flix/runtime/fixpoint/Constraint")
+      val ConstraintSystem: JvmName = mk("flix/runtime/fixpoint/ConstraintSystem")
+      val ConstantFunction: JvmName = mk("flix/runtime/fixpoint/ConstantFunction")
+      val Options: JvmName = mk("flix/runtime/fixpoint/Options")
+      val LatticeOps: JvmName = mk("flix/runtime/fixpoint/LatticeOps")
+      val Solver: JvmName = mk("flix/runtime/fixpoint/Solver")
+      val Stratification: JvmName = mk("flix/runtime/fixpoint/Stratification")
+
+      object Predicate {
+        val Predicate: JvmName = mk("flix/runtime/fixpoint/predicate/Predicate")
+
+        val AtomPredicate: JvmName = mk("flix/runtime/fixpoint/predicate/AtomPredicate")
+        val FilterPredicate: JvmName = mk("flix/runtime/fixpoint/predicate/FilterPredicate")
+        val FunctionalPredicate: JvmName = mk("flix/runtime/fixpoint/predicate/FunctionalPredicate")
+        val TruePredicate: JvmName = mk("flix/runtime/fixpoint/predicate/TruePredicate")
+        val FalsePredicate: JvmName = mk("flix/runtime/fixpoint/predicate/FalsePredicate")
+      }
+
+      object Symbol {
+        val PredSym: JvmName = mk("flix/runtime/fixpoint/symbol/PredSym")
+        val LatSym: JvmName = mk("flix/runtime/fixpoint/symbol/LatSym")
+        val RelSym: JvmName = mk("flix/runtime/fixpoint/symbol/RelSym")
+
+        val VarSym: JvmName = mk("flix/runtime/fixpoint/symbol/VarSym")
+      }
+
+      object Term {
+        val Term: JvmName = mk("flix/runtime/fixpoint/term/Term")
+
+        val AppTerm: JvmName = mk("flix/runtime/fixpoint/term/AppTerm")
+        val LitTerm: JvmName = mk("flix/runtime/fixpoint/term/LitTerm")
+        val VarTerm: JvmName = mk("flix/runtime/fixpoint/term/VarTerm")
+        val WildTerm: JvmName = mk("flix/runtime/fixpoint/term/WildTerm")
+      }
+
     }
 
     val HoleError: JvmName = JvmName(List("flix", "runtime"), "HoleError")

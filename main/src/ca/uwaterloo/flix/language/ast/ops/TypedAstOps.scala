@@ -208,13 +208,9 @@ object TypedAstOps {
 
       case Expression.Spawn(exp, tpe, eff, loc) => visitExp(exp, env0)
 
-      case Expression.NewRelation(sym, tpe, eff, loc) => Map.empty
+      case Expression.FixpointConstraint(c, tpe, eff, loc) => visitConstraint(c, env0)
 
-      case Expression.NewLattice(sym, tpe, eff, loc) => Map.empty
-
-      case Expression.Constraint(c, tpe, eff, loc) => Map.empty // TODO: Find holes in constraints?
-
-      case Expression.ConstraintUnion(exp1, exp2, tpe, eff, loc) =>
+      case Expression.FixpointCompose(exp1, exp2, tpe, eff, loc) =>
         visitExp(exp1, env0) ++ visitExp(exp2, env0)
 
       case Expression.FixpointSolve(exp, tpe, eff, loc) =>
@@ -226,7 +222,39 @@ object TypedAstOps {
       case Expression.FixpointDelta(exp, tpe, eff, loc) =>
         visitExp(exp, env0)
 
+      case Expression.FixpointProject(sym, exp1, exp2, tpe, eff, loc) =>
+        visitExp(exp1, env0)
+        visitExp(exp2, env0)
+
+      case Expression.FixpointEntails(exp1, exp2, tpe, eff, loc) =>
+        visitExp(exp1, env0) ++ visitExp(exp2, env0)
+
       case Expression.UserError(tpe, eff, loc) => Map.empty
+    }
+
+    /**
+      * Finds the holes and hole contexts in the given constraint `c0`.
+      */
+    def visitConstraint(c0: Constraint, env0: Map[Symbol.VarSym, Type]): Map[Symbol.HoleSym, HoleContext] = c0 match {
+      case Constraint(cparams, head, body, loc) => visitHead(head, env0) ++ body.flatMap(visitBody(_, env0))
+    }
+
+    /**
+      * Finds the holes and hole contexts in the given head predicate `h0`.
+      */
+    def visitHead(h0: Predicate.Head, env0: Map[Symbol.VarSym, Type]): Map[Symbol.HoleSym, HoleContext] = h0 match {
+      case Predicate.Head.True(loc) => Map.empty
+      case Predicate.Head.False(loc) => Map.empty
+      case Predicate.Head.Atom(sym, exp, terms, tpe, loc) => visitExp(exp, env0) ++ terms.flatMap(visitExp(_, env0))
+    }
+
+    /**
+      * Finds the holes and hole contexts in the given body predicate `b0`.
+      */
+    def visitBody(b0: Predicate.Body, env0: Map[Symbol.VarSym, Type]): Map[Symbol.HoleSym, HoleContext] = b0 match {
+      case Predicate.Body.Atom(sym, exp, polarity, terms, tpe, loc) => visitExp(exp, env0)
+      case Predicate.Body.Filter(sym, terms, loc) => Map.empty[Symbol.HoleSym, HoleContext] ++ terms.flatMap(visitExp(_, env0))
+      case Predicate.Body.Functional(sym, term, loc) => visitExp(term, env0)
     }
 
     /**

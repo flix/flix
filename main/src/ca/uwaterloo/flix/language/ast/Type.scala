@@ -60,8 +60,6 @@ sealed trait Type {
     case Type.Relation(_, _, _) => Set.empty
     case Type.Lattice(_, _, _) => Set.empty
     case Type.Schema(m) => m.flatMap(_._2.typeVars).toSet
-    case Type.Solvable => Set.empty
-    case Type.Checkable => Set.empty
     case Type.Apply(tpe1, tpe2) => tpe1.typeVars ++ tpe2.typeVars
   }
 
@@ -106,6 +104,14 @@ sealed trait Type {
     */
   def isVar: Boolean = typeConstructor match {
     case Type.Var(_, _) => true
+    case _ => false
+  }
+
+  /**
+    * Returns `true` if `this` type is an array type.
+    */
+  def isArray: Boolean = typeConstructor match {
+    case Type.Array => true
     case _ => false
   }
 
@@ -211,8 +217,6 @@ sealed trait Type {
     case Type.Relation(sym, attr, _) => sym.toString + "(" + attr.mkString(", ") + ")"
     case Type.Lattice(sym, attr, _) => sym.toString + "(" + attr.mkString(", ") + ")"
     case Type.Schema(m) => m.mkString(", ")
-    case Type.Solvable => "Solvable"
-    case Type.Checkable => "Checkable"
     case Type.Tuple(l) => s"Tuple($l)"
     case Type.RecordEmpty => "{ }"
     case Type.RecordExtend(label, value, rest) => "{ " + label + " : " + value + " | " + rest + " }"
@@ -417,20 +421,6 @@ object Type {
   }
 
   /**
-    * A phantom type that represents solvable constraint sets (i.e. that contain integrity constraints.)
-    */
-  case object Solvable extends Type {
-    def kind: Kind = Kind.Star
-  }
-
-  /**
-    * A phantom type that represents checkable constraint sets (i.e. that *does not* contain integrity constraints.)
-    */
-  case object Checkable extends Type {
-    def kind: Kind = Kind.Star
-  }
-
-  /**
     * A type constructor that represents tuples of the given `length`.
     */
   case class Tuple(length: Int) extends Type {
@@ -520,14 +510,12 @@ object Type {
   }
 
   /**
-    * Returns the relation type corresponding to the given symbol `sym` with the given attribute types `ts`.
+    * Returns the type corresponding to the given predicate symbol `sym` with the given attribute types `ts`.
     */
-  def mkRelation(sym: Symbol.RelSym, ts: List[Type]): Type = Type.Relation(sym, ts, Kind.Star)
-
-  /**
-    * Returns the lattice type corresponding to the given symbol `sym` with the given attribute types `ts`.
-    */
-  def mkLattice(sym: Symbol.LatSym, ts: List[Type]): Type = Type.Lattice(sym, ts, Kind.Star)
+  def mkRelationOrLattice(predSym: Symbol.PredSym, ts: List[Type]): Type = predSym match {
+    case sym: Symbol.RelSym => Type.Relation(sym, ts, Kind.Star)
+    case sym: Symbol.LatSym => Type.Lattice(sym, ts, Kind.Star)
+  }
 
   /**
     * Constructs the tuple type (A, B, ...) where the types are drawn from the list `ts`.
@@ -637,9 +625,6 @@ object Type {
           case (macc, (s, t)) => macc + (s -> visit(t))
         }
         Type.Schema(newM)
-
-      case Type.Solvable => Type.Solvable
-      case Type.Checkable => Type.Checkable
     }
 
     visit(tpe)
@@ -689,8 +674,6 @@ object Type {
           case Type.Succ(n, t) => n.toString + " " + t.toString
           case Type.Native(clazz) => "#" + clazz.getName
           case Type.Ref => "Ref"
-          case Type.Solvable => "Solvable"
-          case Type.Checkable => "Checkable"
 
           //
           // Arrow.

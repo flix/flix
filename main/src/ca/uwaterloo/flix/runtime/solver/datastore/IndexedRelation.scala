@@ -16,8 +16,9 @@
 
 package ca.uwaterloo.flix.runtime.solver.datastore
 
-import ca.uwaterloo.flix.runtime.solver.api.{Attribute, ProxyObject}
 import ca.uwaterloo.flix.util.BitOps
+import flix.runtime.ProxyObject
+import flix.runtime.fixpoint.Attribute
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -31,7 +32,8 @@ import scala.collection.mutable.ArrayBuffer
   * @param indexes the indexes.
   * @param default the default index.
   */
-final class IndexedRelation(val attributes: Array[Attribute], indexes: Set[Int], default: Int) extends IndexedCollection {
+final class IndexedRelation(val name: String, val attributes: Array[Attribute], indexes: Set[Int], default: Int) extends IndexedCollection {
+  // TODO: Getter for name?
 
   /**
     * A map from indexes to keys to rows of values.
@@ -62,6 +64,16 @@ final class IndexedRelation(val attributes: Array[Attribute], indexes: Set[Int],
     * Records the number of full scans, i.e. table scans which cannot use an index.
     */
   private var fullScans = 0
+
+  /**
+    * Whether the relation is nullary.
+    */
+  private val isNullary = attributes.isEmpty
+
+  /**
+    * Whether the nullary fact is present.
+    */
+  private var isNullaryPresent: Boolean = false
 
   /**
     * Initialize the store for all indexes.
@@ -143,6 +155,12 @@ final class IndexedRelation(val attributes: Array[Attribute], indexes: Set[Int],
     * Updates all indexes and tables with a new `fact`.
     */
   private def newFact(fact: Array[ProxyObject]): Unit = {
+    // case 0: Check for the nullary case.
+    if (isNullary) {
+      isNullaryPresent = true
+      return
+    }
+
     // loop through all the indexes and update the tables.
     for (idx <- indexes) {
       val key = keyOf(idx, fact)
@@ -159,6 +177,15 @@ final class IndexedRelation(val attributes: Array[Attribute], indexes: Set[Int],
     * Returns an iterator over the matching rows.
     */
   def lookup(pat: Array[ProxyObject]): Iterator[Array[ProxyObject]] = {
+    // case 0: Check for the nullary case.
+    if (isNullary) {
+      if (isNullaryPresent) {
+        return Iterator(Array.empty)
+      } else {
+        return Iterator.empty
+      }
+    }
+
     // case 1: Check if there is an exact index.
     var idx = getExactIndex(indexes, pat)
     if (idx != 0) {
@@ -196,8 +223,19 @@ final class IndexedRelation(val attributes: Array[Attribute], indexes: Set[Int],
   /**
     * Returns all rows in the relation using a table scan.
     */
-  def scan: Iterator[Array[ProxyObject]] = store(default).iterator.flatMap {
-    case (key, value) => value
+  def scan: Iterator[Array[ProxyObject]] = {
+    // case 0: Check for the nullary case.
+    if (isNullary) {
+      if (isNullaryPresent) {
+        return Iterator(Array.empty)
+      } else {
+        return Iterator.empty
+      }
+    }
+
+    store(default).iterator.flatMap {
+      case (key, value) => value
+    }
   }
 
   /**

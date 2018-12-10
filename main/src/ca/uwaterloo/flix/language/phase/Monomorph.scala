@@ -106,8 +106,6 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
             case (macc, (predSym, predType)) => macc + (predSym -> visit(predType))
           }
           Type.Schema(m2)
-        case Type.Solvable => Type.Solvable
-        case Type.Checkable => Type.Checkable
         case Type.Apply(tpe1, tpe2) => Type.Apply(apply(tpe1), apply(tpe2))
       }
 
@@ -470,24 +468,18 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           val e = visitExp(exp, env0)
           Expression.Sleep(e, subst0(tpe), eff, loc)
 
-        case Expression.NewRelation(sym, tpe, eff, loc) =>
-          Expression.NewRelation(sym, subst0(tpe), eff, loc)
-
-        case Expression.NewLattice(sym, tpe, eff, loc) =>
-          Expression.NewLattice(sym, subst0(tpe), eff, loc)
-
-        case Expression.Constraint(c0, tpe, eff, loc) =>
+        case Expression.FixpointConstraint(c0, tpe, eff, loc) =>
           val Constraint(cparams0, head0, body0, loc) = c0
           val (cparams, env1) = specializeConstraintParams(cparams0, subst0)
           val head = visitHeadPredicate(head0, env0 ++ env1)
           val body = body0.map(b => visitBodyPredicate(b, env0 ++ env1))
           val c = Constraint(cparams, head, body, loc)
-          Expression.Constraint(c, subst0(tpe), eff, loc)
+          Expression.FixpointConstraint(c, subst0(tpe), eff, loc)
 
-        case Expression.ConstraintUnion(exp1, exp2, tpe, eff, loc) =>
+        case Expression.FixpointCompose(exp1, exp2, tpe, eff, loc) =>
           val e1 = visitExp(exp1, env0)
           val e2 = visitExp(exp2, env0)
-          Expression.ConstraintUnion(e1, e2, tpe, eff, loc)
+          Expression.FixpointCompose(e1, e2, tpe, eff, loc)
 
         case Expression.FixpointSolve(exp, tpe, eff, loc) =>
           val e = visitExp(exp, env0)
@@ -500,6 +492,16 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         case Expression.FixpointDelta(exp, tpe, eff, loc) =>
           val e = visitExp(exp, env0)
           Expression.FixpointDelta(e, tpe, eff, loc)
+
+        case Expression.FixpointProject(sym, exp1, exp2, tpe, eff, loc) =>
+          val e1 = visitExp(exp1, env0)
+          val e2 = visitExp(exp2, env0)
+          Expression.FixpointProject(sym, e1, e2, tpe, eff, loc)
+
+        case Expression.FixpointEntails(exp1, exp2, tpe, eff, loc) =>
+          val e1 = visitExp(exp1, env0)
+          val e2 = visitExp(exp2, env0)
+          Expression.FixpointEntails(e1, e2, tpe, eff, loc)
 
         case Expression.UserError(tpe, eff, loc) => Expression.UserError(subst0(tpe), eff, loc)
       }
@@ -543,15 +545,10 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
 
         case Predicate.Head.False(loc) => Predicate.Head.False(loc)
 
-        case Predicate.Head.RelAtom(base, sym, terms, tpe, loc) =>
-          val b = base.map(s => env0(s))
+        case Predicate.Head.Atom(sym, exp, terms, tpe, loc) =>
+          val e = visitExp(exp, env0)
           val ts = terms.map(t => visitExp(t, env0))
-          Predicate.Head.RelAtom(b, sym, ts, tpe, loc)
-
-        case Predicate.Head.LatAtom(base, sym, terms, tpe, loc) =>
-          val b = base.map(s => env0(s))
-          val ts = terms.map(t => visitExp(t, env0))
-          Predicate.Head.LatAtom(b, sym, ts, tpe, loc)
+          Predicate.Head.Atom(sym, e, ts, tpe, loc)
       }
 
       /**
@@ -578,15 +575,10 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         }
 
         b0 match {
-          case Predicate.Body.RelAtom(baseOpt, sym, polarity, terms, tpe, loc) =>
-            val b = baseOpt.map(s => env0(s))
+          case Predicate.Body.Atom(sym, exp, polarity, terms, tpe, loc) =>
+            val e = visitExp(exp, env0)
             val ts = terms map visitPatTemporaryToBeRemoved
-            Predicate.Body.RelAtom(b, sym, polarity, ts, tpe, loc)
-
-          case Predicate.Body.LatAtom(baseOpt, sym, polarity, terms, tpe, loc) =>
-            val b = baseOpt.map(s => env0(s))
-            val ts = terms map visitPatTemporaryToBeRemoved
-            Predicate.Body.LatAtom(b, sym, polarity, ts, tpe, loc)
+            Predicate.Body.Atom(sym, e, polarity, ts, tpe, loc)
 
           case Predicate.Body.Filter(sym, terms, loc) =>
             val ts = terms.map(t => visitExp(t, env0))

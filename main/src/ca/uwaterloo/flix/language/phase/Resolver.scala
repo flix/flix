@@ -155,18 +155,18 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     /**
       * Performs name resolution on the given `constraints` in the given namespace `ns0`.
       */
-    def resolve(constraints: List[NamedAst.Constraint], ns0: Name.NName, prog0: NamedAst.Root)(implicit genSym: GenSym): Validation[List[ResolvedAst.Constraint], ResolutionError] = {
-      traverse(constraints)(c => resolve(c, ns0, prog0))
+    def resolve(constraints: List[NamedAst.Constraint], tenv0: Map[Symbol.VarSym, Type], ns0: Name.NName, prog0: NamedAst.Root)(implicit genSym: GenSym): Validation[List[ResolvedAst.Constraint], ResolutionError] = {
+      traverse(constraints)(c => resolve(c, tenv0, ns0, prog0))
     }
 
     /**
       * Performs name resolution on the given constraint `c0` in the given namespace `ns0`.
       */
-    def resolve(c0: NamedAst.Constraint, ns0: Name.NName, prog0: NamedAst.Root)(implicit genSym: GenSym): Validation[ResolvedAst.Constraint, ResolutionError] = {
+    def resolve(c0: NamedAst.Constraint, tenv0: Map[Symbol.VarSym, Type], ns0: Name.NName, prog0: NamedAst.Root)(implicit genSym: GenSym): Validation[ResolvedAst.Constraint, ResolutionError] = {
       for {
         ps <- traverse(c0.cparams)(p => Params.resolve(p, ns0, prog0))
-        h <- Predicates.Head.resolve(c0.head, ns0, prog0)
-        bs <- traverse(c0.body)(b => Predicates.Body.resolve(b, ns0, prog0))
+        h <- Predicates.Head.resolve(c0.head, tenv0, ns0, prog0)
+        bs <- traverse(c0.body)(b => Predicates.Body.resolve(b, tenv0, ns0, prog0))
       } yield ResolvedAst.Constraint(ps, h, bs, c0.loc)
     }
 
@@ -323,7 +323,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
         attributes <- traverse(attr)(a => resolve(a, ns0, prog0))
       } yield {
         val quantifiers = tparams.map(_.tpe)
-        val tpe = Type.mkRelation(sym, attributes.map(_.tpe))
+        val tpe = Type.mkRelationOrLattice(sym, attributes.map(_.tpe))
         val scheme = Scheme(quantifiers, tpe)
 
         ResolvedAst.Relation(doc, mod, sym, tparams, attributes, scheme, loc)
@@ -340,7 +340,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
         attributes <- traverse(attr)(a => resolve(a, ns0, prog0))
       } yield {
         val quantifiers = tparams.map(_.tpe)
-        val tpe = Type.mkLattice(sym, attributes.map(_.tpe))
+        val tpe = Type.mkRelationOrLattice(sym, attributes.map(_.tpe))
         val scheme = Scheme(quantifiers, tpe)
 
         ResolvedAst.Lattice(doc, mod, sym, tparams, attributes, scheme, loc)
@@ -725,22 +725,16 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
             e <- visit(exp, tenv0)
           } yield ResolvedAst.Expression.Sleep(e, tvar, loc)
 
-        case NamedAst.Expression.NewRelationOrLattice(name, tvar, loc) =>
-          lookupRelationOrLattice(name, ns0, prog0) map {
-            case RelationOrLattice.Rel(sym) => ResolvedAst.Expression.NewRelation(sym, tvar, loc)
-            case RelationOrLattice.Lat(sym) => ResolvedAst.Expression.NewLattice(sym, tvar, loc)
+        case NamedAst.Expression.FixpointConstraint(cons, tvar, loc) =>
+          Constraints.resolve(cons, tenv0, ns0, prog0) map {
+            case c => ResolvedAst.Expression.FixpointConstraint(c, tvar, loc)
           }
 
-        case NamedAst.Expression.Constraint(cons, tvar, loc) =>
-          Constraints.resolve(cons, ns0, prog0) map {
-            case c => ResolvedAst.Expression.Constraint(c, tvar, loc)
-          }
-
-        case NamedAst.Expression.ConstraintUnion(exp1, exp2, tvar, loc) =>
+        case NamedAst.Expression.FixpointCompose(exp1, exp2, tvar, loc) =>
           for {
             e1 <- visit(exp1, tenv0)
             e2 <- visit(exp2, tenv0)
-          } yield ResolvedAst.Expression.ConstraintUnion(e1, e2, tvar, loc)
+          } yield ResolvedAst.Expression.FixpointCompose(e1, e2, tvar, loc)
 
         case NamedAst.Expression.FixpointSolve(exp, tvar, loc) =>
           for {
@@ -756,6 +750,19 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
           for {
             e <- visit(exp, tenv0)
           } yield ResolvedAst.Expression.FixpointDelta(e, tvar, loc)
+
+        case NamedAst.Expression.FixpointProject(name, exp1, exp2, tvar, loc) =>
+          for {
+            sym <- lookupPredicateSymbol(name, ns0, prog0)
+            e1 <- visit(exp1, tenv0)
+            e2 <- visit(exp2, tenv0)
+          } yield ResolvedAst.Expression.FixpointProject(sym, e1, e2, tvar, loc)
+
+        case NamedAst.Expression.FixpointEntails(exp1, exp2, tvar, loc) =>
+          for {
+            e1 <- visit(exp1, tenv0)
+            e2 <- visit(exp2, tenv0)
+          } yield ResolvedAst.Expression.FixpointEntails(e1, e2, tvar, loc)
 
         case NamedAst.Expression.UserError(tvar, loc) => ResolvedAst.Expression.UserError(tvar, loc).toSuccess
       }
@@ -824,19 +831,17 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
       /**
         * Performs name resolution on the given head predicate `h0` in the given namespace `ns0`.
         */
-      def resolve(h0: NamedAst.Predicate.Head, ns0: Name.NName, prog0: NamedAst.Root)(implicit genSym: GenSym): Validation[ResolvedAst.Predicate.Head, ResolutionError] = h0 match {
+      def resolve(h0: NamedAst.Predicate.Head, tenv0: Map[Symbol.VarSym, Type], ns0: Name.NName, prog0: NamedAst.Root)(implicit genSym: GenSym): Validation[ResolvedAst.Predicate.Head, ResolutionError] = h0 match {
         case NamedAst.Predicate.Head.True(loc) => ResolvedAst.Predicate.Head.True(loc).toSuccess
 
         case NamedAst.Predicate.Head.False(loc) => ResolvedAst.Predicate.Head.False(loc).toSuccess
 
-        case NamedAst.Predicate.Head.Atom(baseOpt, qname, terms, tvar, loc) =>
+        case NamedAst.Predicate.Head.Atom(qname, exp, terms, tvar, loc) =>
           for {
-            t <- lookupRelationOrLattice(qname, ns0, prog0)
+            sym <- lookupPredicateSymbol(qname, ns0, prog0)
+            e <- Expressions.resolve(exp, tenv0, ns0, prog0)
             ts <- traverse(terms)(t => Expressions.resolve(t, Map.empty, ns0, prog0))
-          } yield t match {
-            case RelationOrLattice.Rel(sym) => ResolvedAst.Predicate.Head.RelAtom(baseOpt, sym, ts, tvar, loc)
-            case RelationOrLattice.Lat(sym) => ResolvedAst.Predicate.Head.LatAtom(baseOpt, sym, ts, tvar, loc)
-          }
+          } yield ResolvedAst.Predicate.Head.Atom(sym, e, ts, tvar, loc)
       }
     }
 
@@ -844,15 +849,13 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
       /**
         * Performs name resolution on the given body predicate `b0` in the given namespace `ns0`.
         */
-      def resolve(b0: NamedAst.Predicate.Body, ns0: Name.NName, prog0: NamedAst.Root)(implicit genSym: GenSym): Validation[ResolvedAst.Predicate.Body, ResolutionError] = b0 match {
-        case NamedAst.Predicate.Body.Atom(baseOpt, qname, polarity, terms, tvar, loc) =>
+      def resolve(b0: NamedAst.Predicate.Body, tenv0: Map[Symbol.VarSym, Type], ns0: Name.NName, prog0: NamedAst.Root)(implicit genSym: GenSym): Validation[ResolvedAst.Predicate.Body, ResolutionError] = b0 match {
+        case NamedAst.Predicate.Body.Atom(qname, exp, polarity, terms, tvar, loc) =>
           for {
-            t <- lookupRelationOrLattice(qname, ns0, prog0)
+            sym <- lookupPredicateSymbol(qname, ns0, prog0)
+            e <- Expressions.resolve(exp, tenv0, ns0, prog0)
             ts <- traverse(terms)(t => Patterns.resolve(t, ns0, prog0))
-          } yield t match {
-            case RelationOrLattice.Rel(sym) => ResolvedAst.Predicate.Body.RelAtom(baseOpt, sym, polarity, ts, tvar, loc)
-            case RelationOrLattice.Lat(sym) => ResolvedAst.Predicate.Body.LatAtom(baseOpt, sym, polarity, ts, tvar, loc)
-          }
+          } yield ResolvedAst.Predicate.Body.Atom(sym, e, polarity, ts, tvar, loc)
 
         case NamedAst.Predicate.Body.Filter(qname, terms, loc) =>
           for {
@@ -1199,22 +1202,9 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
   }
 
   /**
-    * Represents the result of a predicate lookup.
-    */
-  sealed trait RelationOrLattice
-
-  object RelationOrLattice {
-
-    case class Rel(sym: Symbol.RelSym) extends RelationOrLattice
-
-    case class Lat(sym: Symbol.LatSym) extends RelationOrLattice
-
-  }
-
-  /**
     * Finds the table of the given `qname` in the namespace `ns`.
     */
-  def lookupRelationOrLattice(qname: Name.QName, ns: Name.NName, prog0: NamedAst.Root): Validation[RelationOrLattice, ResolutionError] = {
+  def lookupPredicateSymbol(qname: Name.QName, ns: Name.NName, prog0: NamedAst.Root): Validation[Symbol.PredSym, ResolutionError] = {
     val (relations, lattices) = if (qname.isUnqualified) {
       // Lookup in the current namespace.
       (prog0.relations.getOrElse(ns, Map.empty), prog0.lattices.getOrElse(ns, Map.empty))
@@ -1229,8 +1219,8 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
 
     (relationOpt, latticeOpt) match {
       case (None, None) => ResolutionError.UndefinedTable(qname, ns, qname.loc).toFailure
-      case (Some(rel), None) => getRelationIfAccessible(rel, ns, qname.loc) map RelationOrLattice.Rel
-      case (None, Some(lat)) => getLatticeIfAccessible(lat, ns, qname.loc) map RelationOrLattice.Lat
+      case (Some(rel), None) => getRelationIfAccessible(rel, ns, qname.loc)
+      case (None, Some(lat)) => getLatticeIfAccessible(lat, ns, qname.loc)
       case (Some(rel), Some(lat)) => ResolutionError.AmbiguousRelationOrLattice(qname, ns, List(rel.loc, lat.loc), qname.loc).toFailure
     }
   }
@@ -1290,8 +1280,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
       case "Channel" => Type.Channel.toSuccess
       case "Array" => Type.Array.toSuccess
       case "Vector" => Type.Vector.toSuccess
-      case "Solvable" => Type.Solvable.toSuccess
-      case "Checkable" => Type.Checkable.toSuccess
       case "Ref" => Type.Ref.toSuccess
 
       // Disambiguate type.
@@ -1343,12 +1331,11 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     case NamedAst.Type.Schema(predicates, loc) =>
       val predicatesVal = traverse(predicates) {
         case (qname, typeArgs) =>
-          val relOrLatVal = lookupRelationOrLattice(qname, ns0, root)
+          val predSymVal = lookupPredicateSymbol(qname, ns0, root)
           val typeArgsVal = traverse(typeArgs)(lookupType(_, ns0, root))
 
-          mapN(relOrLatVal, typeArgsVal) {
-            case (RelationOrLattice.Rel(sym), attr) => sym -> Type.mkRelation(sym, attr)
-            case (RelationOrLattice.Lat(sym), attr) => sym -> Type.mkLattice(sym, attr)
+          mapN(predSymVal, typeArgsVal) {
+            case (sym, attr) => sym -> Type.mkRelationOrLattice(sym, attr)
           }
       }
 
@@ -1624,7 +1611,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     val declNS = getNS(rel0.sym.namespace)
     getRelationIfAccessible(rel0, ns0, loc) flatMap {
       case sym => traverse(rel0.attr)(a => lookupType(a.tpe, declNS, root)) map {
-        case attr => Type.mkRelation(sym, attr)
+        case attr => Type.mkRelationOrLattice(sym, attr)
       }
     }
   }
@@ -1639,7 +1626,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
     val declNS = getNS(lat0.sym.namespace)
     getLatticeIfAccessible(lat0, ns0, loc) flatMap {
       case sym => traverse(lat0.attr)(a => lookupType(a.tpe, declNS, root)) map {
-        case attr => Type.mkLattice(sym, attr)
+        case attr => Type.mkRelationOrLattice(sym, attr)
       }
     }
   }

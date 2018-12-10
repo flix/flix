@@ -113,18 +113,10 @@ object Optimization {
     * All optimizations supported by the compiler.
     */
   val All: Set[Optimization] = Set(
-    NullableEnums,
     SingleCaseEnums,
     TagTupleFusion,
     TailCalls
   )
-
-  /**
-    * Enables compilation with nullable enums.
-    *
-    * A nullable enum is an enum with exactly two cases where one case is the unit constructor.
-    */
-  case object NullableEnums extends Optimization
 
   /**
     * Enables compilation with elimination of single case enums.

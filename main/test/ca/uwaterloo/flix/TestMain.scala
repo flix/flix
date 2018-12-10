@@ -162,12 +162,6 @@ class TestMain extends FunSuite {
     assert(opts.xnofusion)
   }
 
-  test("--Xno-nullable") {
-    val args = Array("--Xno-nullable", "p.flix")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.xnonullable)
-  }
-
   test("--Xno-inline") {
     val args = Array("--Xno-inline", "p.flix")
     val opts = Main.parseCmdOpts(args).get
