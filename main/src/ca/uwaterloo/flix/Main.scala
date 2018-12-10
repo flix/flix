@@ -64,7 +64,6 @@ object Main {
 
     // compute the enabled optimizations.
     val optimizations = Optimization.All.filter {
-      case Optimization.NullableEnums => !cmdOpts.xnonullable
       case Optimization.SingleCaseEnums => !cmdOpts.xnosinglecase
       case Optimization.TagTupleFusion => !cmdOpts.xnofusion
       case Optimization.TailCalls => !cmdOpts.xnotailcalls
@@ -80,7 +79,7 @@ object Main {
       mode = if (cmdOpts.release) CompilationMode.Release else CompilationMode.Development,
       monitor = cmdOpts.monitor,
       quickchecker = cmdOpts.quickchecker,
-      timeout = if(!cmdOpts.timeout.isFinite()) None else Some(java.time.Duration.ofNanos(cmdOpts.timeout.toNanos)),
+      timeout = if (!cmdOpts.timeout.isFinite()) None else Some(java.time.Duration.ofNanos(cmdOpts.timeout.toNanos)),
       threads = if (cmdOpts.threads == -1) Options.Default.threads else cmdOpts.threads,
       verbosity = if (cmdOpts.verbose) Verbosity.Verbose else Verbosity.Normal,
       verifier = cmdOpts.verifier,
@@ -127,7 +126,11 @@ object Main {
           if (main.nonEmpty) {
             val name = main.get
             val evalTimer = new Timer(compilationResult.evalToString(name))
-            Console.println(s"$name returned `${evalTimer.getResult}' (compile: ${timer.getDuration.fmt}, execute: ${evalTimer.getDuration.fmt})")
+            options.verbosity match {
+              case Verbosity.Normal => Console.println(evalTimer.getResult)
+              case Verbosity.Verbose => Console.println(s"$name returned `${evalTimer.getResult}' (compile: ${timer.getDuration.fmt}, execute: ${evalTimer.getDuration.fmt})")
+              case Verbosity.Silent => // nop
+            }
           }
 
           if (cmdOpts.benchmark) {
@@ -173,7 +176,6 @@ object Main {
                      xinvariants: Boolean = false,
                      xnofusion: Boolean = false,
                      xnoinline: Boolean = false,
-                     xnonullable: Boolean = false,
                      xnosinglecase: Boolean = false,
                      xnotailcalls: Boolean = false,
                      files: Seq[File] = Seq())
@@ -288,10 +290,6 @@ object Main {
       // Xno-inline
       opt[Unit]("Xno-inline").action((_, c) => c.copy(xnoinline = true)).
         text("[experimental] disables inlining.")
-
-      // Xno-nullable
-      opt[Unit]("Xno-nullable").action((_, c) => c.copy(xnonullable = true)).
-        text("[experimental] disables nullable enums.")
 
       // Xno-single-case
       opt[Unit]("Xno-single-case").action((_, c) => c.copy(xnosinglecase = true)).

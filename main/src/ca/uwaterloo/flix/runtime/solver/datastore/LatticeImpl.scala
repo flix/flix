@@ -16,8 +16,8 @@
 
 package ca.uwaterloo.flix.runtime.solver.datastore
 
-import ca.uwaterloo.flix.runtime.solver.LatticeOps
-import ca.uwaterloo.flix.runtime.solver.api.ProxyObject
+import flix.runtime.ProxyObject
+import flix.runtime.fixpoint.LatticeOps
 
 class LatticeImpl(ops: LatticeOps) extends Lattice[ProxyObject] {
 
@@ -38,9 +38,7 @@ class LatticeImpl(ops: LatticeOps) extends Lattice[ProxyObject] {
     if (x eq y) return true
 
     // evaluate the equality function passing the arguments `x` and `y`.
-    val args = Array(x, y)
-    val result = ops.equ.invoke(args).getValue
-    return result.asInstanceOf[java.lang.Boolean].booleanValue()
+    ops.equ(x, y)
   }
 
   /**
@@ -55,9 +53,7 @@ class LatticeImpl(ops: LatticeOps) extends Lattice[ProxyObject] {
     if (x eq y) return true
 
     // evaluate the partial order function passing the arguments `x` and `y`.
-    val args = Array(x, y)
-    val result = ops.leq.invoke(args).getValue
-    return result.asInstanceOf[java.lang.Boolean].booleanValue()
+    ops.leq(x, y)
   }
 
   /**
@@ -72,8 +68,7 @@ class LatticeImpl(ops: LatticeOps) extends Lattice[ProxyObject] {
     if (x eq y) return e1
 
     // evaluate the least upper bound function passing the arguments `x` and `y`.
-    val args = Array(x, y)
-    ops.lub.invoke(args)
+    ops.lub(x, y)
   }
 
   /**
@@ -88,8 +83,7 @@ class LatticeImpl(ops: LatticeOps) extends Lattice[ProxyObject] {
     if (x eq y) return e1
 
     // evaluate the greatest lower bound function passing the arguments `x` and `y`.
-    val args = Array(x, y)
-    ops.glb.invoke(args)
+    ops.glb(x, y)
   }
 
 }

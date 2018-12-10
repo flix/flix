@@ -1244,7 +1244,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         SimplifiedAst.Expression.Spawn(e, tpe, loc)
 
       case SimplifiedAst.Expression.Sleep(exp, tpe, loc) =>
-        val e = visit(exp)
+        val e = visitExp(exp)
         SimplifiedAst.Expression.Sleep(e, tpe, loc)
 
       case SimplifiedAst.Expression.FixpointConstraint(c0, tpe, loc) =>
@@ -1255,7 +1255,6 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
         SimplifiedAst.Expression.FixpointCompose(e1, e2, tpe, loc)
-
 
       case SimplifiedAst.Expression.FixpointSolve(exp, tpe, loc) =>
         val e = visitExp(exp)

@@ -1,10 +1,11 @@
 package ca.uwaterloo.flix.runtime.interpreter;
 
 
+import javafx.util.Pair;
+
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.*;
-import java.util.function.Function;
 
 //TODO SJ: make docs
 public final class Channel {
@@ -21,14 +22,16 @@ public final class Channel {
    */
   private boolean isOpen = true;
   /**
-   *  queue is the queue of elements in the list.
+   * queue is the queue of elements in the list.
    */
   private LinkedList<Object> queue = new LinkedList<>();
+
+  //TODO SJ: Make Pair class
   /**
    * waitingGetters is a set of conditions that is waiting for get.
    * This set is cleared after each new element.
    */
-  private Set<Condition> waitingGetters = new HashSet<>();
+  private Set<Pair<Lock, Condition>> waitingGetters = new HashSet<>();
   /**
    * lock is the lock of this channel.
    */
@@ -62,6 +65,7 @@ public final class Channel {
   /**
    * Put an element into the queue or wait until it is possible
    * to do so.
+   *
    * @param e the element to add
    */
   public void put(Object e) {
@@ -71,8 +75,16 @@ public final class Channel {
       checkIfClosed();
       // TODO SJ: implement bufferSize here
       queue.add(e);
-      for (Condition c : waitingGetters) {
-        c.signalAll();
+      for (Pair<Lock, Condition> pair : waitingGetters) {
+        Condition c = pair.getValue();
+        Lock conditionLock = pair.getKey();
+        //TODO SJ: Will this release the lock too early (before waitingGetters.clear) if conditionLock = lock ?
+        try {
+          conditionLock.lock();
+          c.signalAll();
+        } finally {
+          conditionLock.unlock();
+        }
       }
       waitingGetters.clear();
     } finally {
@@ -82,6 +94,7 @@ public final class Channel {
 
   /**
    * Retrieves the head of the queue or waits until it is possible to do so.
+   *
    * @return the head of the queue
    */
   public Object get() {
@@ -91,7 +104,7 @@ public final class Channel {
       Object e = queue.poll();
       while (e == null) {
         Condition c = lock.newCondition();
-        waitingGetters.add(c);
+        waitingGetters.add(new Pair<>(lock, c));
         c.await();
         e = queue.poll();
       }
@@ -105,6 +118,7 @@ public final class Channel {
 
   /**
    * Retrieves the head of the queue or null if the queue is empty.
+   *
    * @return the head of the queue or null if its empty
    */
   public Object tryGet() {
@@ -128,12 +142,13 @@ public final class Channel {
   /**
    * Adds the given condition to the list of conditions waiting to
    * retrieve elements from the queue.
+   *
    * @param c the condition to add
    */
-  public void addGetter(Condition c) {
+  public void addGetter(Lock conditionLock, Condition c) {
     lock.lock();
     try {
-      waitingGetters.add(c);
+      waitingGetters.add(new Pair<>(conditionLock, c));
     } finally {
       lock.unlock();
     }
@@ -155,6 +170,7 @@ public final class Channel {
 
   /**
    * Returns the unique id of the channel.
+   *
    * @return the unique id of the channel
    */
   public int getId() {
@@ -165,6 +181,7 @@ public final class Channel {
    * Given a array of channels, returns the first channel that has an element
    * and return the index of that channel and the retrieved element in a
    * SelectChoice object.
+   *
    * @param channels the channels to select on
    * @return the channel index of the channel with an element and the element
    */
@@ -172,13 +189,13 @@ public final class Channel {
     //TODO SJ: Fix Lock/Condition problem
 
     // Create new Condition and lock the current thread
-//    Lock selectLock = new ReentrantLock();
-//    Condition condition  = selectLock.newCondition();
-//    selectLock.lock();
-
-    Lock selectLock = channels[0].lock;
+    Lock selectLock = new ReentrantLock();
     Condition condition = selectLock.newCondition();
     selectLock.lock();
+
+//    Lock selectLock = channels[0].lock;
+//    Condition condition = selectLock.newCondition();
+//    selectLock.lock();
 
     // Sort Channels to avoid deadlock when locking
     Channel[] sortedChannels = sortChannels(channels);
@@ -194,7 +211,7 @@ public final class Channel {
           Object element = channel.tryGet();
           if (element != null) {
             // Element found.
-            // Return the element and the branchNumber (index) of the containing Channel
+            // Return the element and the branchNumber (index of the array) of the containing Channel
             SelectChoice choice = new SelectChoice();
             choice.branchNumber = index;
             choice.element = element;
@@ -205,7 +222,7 @@ public final class Channel {
         // No element was found.
         // Add our condition to all Channels to get notified when a new element is added
         for (Channel channel : channels) {
-          channel.addGetter(condition);
+          channel.addGetter(selectLock, condition);
         }
       } finally {
         // Unlock all Channels in sorted order, so other threads may input elements
@@ -226,6 +243,7 @@ public final class Channel {
   /**
    * Returns a new array of the given channels sorted by their id.
    * The given array is not changed.
+   *
    * @param channels the channels so sort
    * @return a sorted array of the given channels
    */
@@ -239,6 +257,7 @@ public final class Channel {
    * Locks all of the given channels. The given list of channels
    * should always be sorted first to avoid deadlocks.
    * PRECONDITION: The channel array should be sorted by id.
+   *
    * @param channels the array of channels to unlock
    */
   private static void lockAllChannels(Channel[] channels) {
@@ -247,6 +266,7 @@ public final class Channel {
 
   /**
    * unlocks all the given channels.
+   *
    * @param channels the channels to unlock
    */
   private static void unlockAllChannels(Channel[] channels) {

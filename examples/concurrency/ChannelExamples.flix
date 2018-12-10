@@ -73,10 +73,12 @@ def sleepTest(): Bool = {
 
   spawn {
     Console.printLine("2");
-    sleep(2000);
+//    sleep(2000);
     Console.printLine("3");
     c <- 1;
+
     Console.printLine("4")
+//  ???
   };
 
   Console.printLine("5");
@@ -96,6 +98,20 @@ def sleepTest(): Bool = {
     case y <- c1 => true
   }
 }
+
+
+//def sleepTest(): Int = {
+//  let c = chan Int;
+//
+//  spawn {
+//    sleep(2000);
+//    c <- 1
+//  };
+//
+//  select {
+//    case x <- c => x
+//  }
+//}
 
 
 

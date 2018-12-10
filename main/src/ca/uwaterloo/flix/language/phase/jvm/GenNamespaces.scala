@@ -191,9 +191,9 @@ object GenNamespaces {
     // Storing the continuation on a local variable
     method.visitVarInsn(ASTORE, ifoAddr)
 
-    // Call apply
+    // Call invoke
     method.visitVarInsn(ALOAD, contextAddr)
-    method.visitMethodInsn(INVOKEINTERFACE, cont.name.toInternalName, "apply", AsmOps.getMethodDescriptor(List(JvmType.Context), JvmType.Void), true)
+    method.visitMethodInsn(INVOKEINTERFACE, cont.name.toInternalName, "invoke", AsmOps.getMethodDescriptor(List(JvmType.Context), JvmType.Void), true)
 
     // Getting `continuation` field on `Context`
     method.visitVarInsn(ALOAD, contextAddr)

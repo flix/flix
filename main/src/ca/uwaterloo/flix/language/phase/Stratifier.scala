@@ -562,6 +562,7 @@ object Stratifier extends Phase[Root, Root] {
         // As well as creating the graph out of the given constraints, we also add a source node which
         // has a directed edge to all nodes
         graph.insert(null, headSym, constraint, 0)
+
         constraint.body.foldRight(graph)((pred: Predicate.Body, graph: Graph) => pred match {
           case Predicate.Body.Atom(_, predSym, Polarity.Positive, _, _, _) =>
             graph.insert(headSym, predSym, constraint, 0)

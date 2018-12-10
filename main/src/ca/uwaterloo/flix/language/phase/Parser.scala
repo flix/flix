@@ -165,7 +165,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Def: Rule1[ParsedAst.Declaration.Def] = rule {
-      Documentation ~ Annotations ~ Modifiers ~ SP ~ atomic("def") ~ WS ~ Names.Definition ~ optWS ~ TypeParams ~ FormalParamList ~ optWS ~ ":" ~ optWS ~ TypeAndEffect ~ optWS ~ "=" ~ optWS ~ Expression.Statement ~ SP ~> ParsedAst.Declaration.Def
+      Documentation ~ Annotations ~ Modifiers ~ SP ~ atomic("def") ~ WS ~ Names.Definition ~ optWS ~ TypeParams ~ FormalParamList ~ optWS ~ ":" ~ optWS ~ TypeAndEffect ~ optWS ~ "=" ~ optWS ~ Expressions.Statement ~ SP ~> ParsedAst.Declaration.Def
     }
 
     def Eff: Rule1[ParsedAst.Declaration.Eff] = rule {
@@ -586,10 +586,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     def Primary: Rule1[ParsedAst.Expression] = rule {
       LetRec | LetMatch | IfThenElse | Match | LambdaMatch | Switch | TryCatch | Native | Lambda | Tuple |
         RecordRestrict | RecordExtend | RecordUpdate | RecordLiteral | RecordSelectLambda | NewChannel |
-        GetChannel | SelectChannel | CloseChannel | Spawn | Sleep | ArrayLit | ArrayNew |
-        ArrayLength | VectorLit | VectorNew | VectorLength | FNil | FSet | FMap |
-        FixpointSolve | FixpointCheck | FixpointDelta | FixpointProject | ConstraintSeq | Literal |
-        HandleWith | Existential | Universal | UnaryLambda | QName | Wild | Tag | SName | Hole | UserError
+        GetChannel | SelectChannel | CloseChannel | Spawn | Sleep | ArrayLit | ArrayNew | ArrayLength |
+        VectorLit | VectorNew | VectorLength | FNil | FSet | FMap | FixpointSolve | FixpointCheck |
+        FixpointDelta | FixpointProject | ConstraintSeq | Literal | HandleWith | Existential | Universal |
+        UnaryLambda | QName | Wild | Tag | SName | Hole | UserError
     }
 
     def Literal: Rule1[ParsedAst.Expression.Lit] = rule {

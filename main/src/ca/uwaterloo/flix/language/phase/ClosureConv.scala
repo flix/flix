@@ -320,9 +320,6 @@ object ClosureConv extends Phase[Root, Root] {
       val e = visitExp(exp)
       Expression.Sleep(e, tpe, loc)
 
-    case Expression.NewRelation(sym, tpe, loc) =>
-      Expression.NewRelation(sym, tpe, loc)
-
     case Expression.FixpointConstraint(c0, tpe, loc) =>
       val Constraint(cparams0, head0, body0) = c0
       val head = visitHeadPredicate(head0)
@@ -856,6 +853,7 @@ object ClosureConv extends Phase[Root, Root] {
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
         Expression.FixpointCompose(e1, e2, tpe, loc)
+
       case Expression.FixpointSolve(exp, tpe, loc) =>
         val e = visitExp(exp)
         Expression.FixpointSolve(e, tpe, loc)
