@@ -24,7 +24,6 @@ import flix.runtime.fixpoint.predicate.Predicate;
 
 import java.util.Arrays;
 import java.util.LinkedList;
-import java.util.List;
 
 public final class Solver {
 
@@ -32,7 +31,7 @@ public final class Solver {
      * Returns the composition of `cs1` with `cs2`.
      */
     public static ConstraintSystem compose(ConstraintSystem cs1, ConstraintSystem cs2) {
-        Constraint[] constraints = concat(cs1.getConstraints(), cs2.getConstraints());
+        var constraints = concat(cs1.getConstraints(), cs2.getConstraints());
         return ConstraintSystem.of(constraints);
     }
 
@@ -46,7 +45,7 @@ public final class Solver {
             throw new IllegalArgumentException("'cs' must be non-null.");
 
         // Collect all facts with `sym` in its head.
-        List<Constraint> result = new LinkedList<>();
+        var result = new LinkedList<Constraint>();
         for (Constraint fact : cs.getFacts()) {
             Predicate head = fact.getHeadPredicate();
             if (head instanceof AtomPredicate) {
@@ -96,9 +95,9 @@ public final class Solver {
      * Returns `true` if all facts in `cs2` are included in `cs1`.
      */
     public static boolean entails(ConstraintSystem cs1, ConstraintSystem cs2) {
-        boolean entails = true;
+        var entails = true;
         for (Constraint fact2 : cs2.getFacts()) {
-            boolean found = false;
+            var found = false;
             for (Constraint fact1 : cs1.getFacts()) {
                 if (fact1.entails(fact2)) {
                     found = true;

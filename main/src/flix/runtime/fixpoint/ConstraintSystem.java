@@ -56,8 +56,8 @@ public final class ConstraintSystem {
         if (cs == null)
             throw new IllegalArgumentException("'cs' must be non-null.");
 
-        List<Constraint> facts = new ArrayList<>();
-        List<Constraint> rules = new ArrayList<>();
+        var facts = new ArrayList<Constraint>();
+        var rules = new ArrayList<Constraint>();
         for (Constraint c : cs) {
             if (c.isFact())
                 facts.add(c);
@@ -115,7 +115,7 @@ public final class ConstraintSystem {
      * Returns all relation symbols in `this` constraint system.
      */
     public RelSym[] getRelationSymbols() {
-        List<RelSym> result = new ArrayList<>();
+        var result = new ArrayList<RelSym>();
         for (AtomPredicate p : getAtomPredicates()) {
             if (p.getSym() instanceof RelSym) {
                 result.add((RelSym) p.getSym());
@@ -128,7 +128,7 @@ public final class ConstraintSystem {
      * Returns all lattice symbols in `this` constraint system.
      */
     public LatSym[] getLatticeSymbols() {
-        List<LatSym> result = new ArrayList<>();
+        var result = new ArrayList<LatSym>();
         for (AtomPredicate p : getAtomPredicates()) {
             if (p.getSym() instanceof LatSym) {
                 result.add((LatSym) p.getSym());
@@ -141,7 +141,7 @@ public final class ConstraintSystem {
      * Returns all atom predicates in `this` constraint system.
      */
     private List<AtomPredicate> getAtomPredicates() {
-        List<AtomPredicate> result = new ArrayList<>();
+        var result = new ArrayList<AtomPredicate>();
         for (Constraint c : facts) {
             for (Predicate p : c.getAllAtoms()) {
                 if (p instanceof AtomPredicate) {

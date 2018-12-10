@@ -16,7 +16,6 @@
 
 package flix.runtime.fixpoint.predicate;
 
-import flix.runtime.ProxyObject;
 import flix.runtime.fixpoint.symbol.PredSym;
 import flix.runtime.fixpoint.term.LitTerm;
 import flix.runtime.fixpoint.term.Term;
@@ -126,11 +125,11 @@ public final class AtomPredicate implements Predicate {
 
         // TODO: Lattice semantics.
 
-        for (int i = 0; i < this.getTerms().length; i++) {
-            LitTerm thisTerm = (LitTerm) this.getTerms()[i];
-            LitTerm thatTerm = (LitTerm) that.getTerms()[i];
-            ProxyObject thisLit = thisTerm.getFunction().apply(new Object[1]);
-            ProxyObject thatLit = thatTerm.getFunction().apply(new Object[1]);
+        for (var i = 0; i < this.getTerms().length; i++) {
+            var thisTerm = (LitTerm) this.getTerms()[i];
+            var thatTerm = (LitTerm) that.getTerms()[i];
+            var thisLit = thisTerm.getFunction().apply(new Object[1]);
+            var thatLit = thatTerm.getFunction().apply(new Object[1]);
             if (!thisLit.equals(thatLit)) {
                 // Case 2: A literal differs.
                 return false;

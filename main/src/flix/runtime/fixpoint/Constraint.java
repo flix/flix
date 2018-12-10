@@ -21,7 +21,6 @@ import flix.runtime.fixpoint.symbol.VarSym;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -121,9 +120,9 @@ public final class Constraint {
         //
         // Partition the body predicates based on their types. The joy of arrays.
         //
-        List<AtomPredicate> bodyAtoms = new ArrayList<>();
-        List<FilterPredicate> bodyFilters = new ArrayList<>();
-        List<FunctionalPredicate> bodyFunctionals = new ArrayList<>();
+        var bodyAtoms = new ArrayList<AtomPredicate>();
+        var bodyFilters = new ArrayList<FilterPredicate>();
+        var bodyFunctionals = new ArrayList<FunctionalPredicate>();
         for (Predicate b : body) {
             if (b instanceof AtomPredicate) {
                 bodyAtoms.add((AtomPredicate) b);
@@ -214,7 +213,7 @@ public final class Constraint {
      */
     public AtomPredicate[] getAllAtoms() {
         if (head instanceof AtomPredicate) {
-            AtomPredicate[] result = new AtomPredicate[bodyAtoms.length + 1];
+            var result = new AtomPredicate[bodyAtoms.length + 1];
             result[0] = (AtomPredicate) head;
             System.arraycopy(bodyAtoms, 0, result, 1, bodyAtoms.length);
             return result;
@@ -259,8 +258,8 @@ public final class Constraint {
                 return true;
             }
             if (this.head instanceof AtomPredicate && that.head instanceof AtomPredicate) {
-                AtomPredicate thisHead = (AtomPredicate) this.head;
-                AtomPredicate thatHead = (AtomPredicate) that.head;
+                var thisHead = (AtomPredicate) this.head;
+                var thatHead = (AtomPredicate) that.head;
                 return thisHead.entails(thatHead);
             }
         }

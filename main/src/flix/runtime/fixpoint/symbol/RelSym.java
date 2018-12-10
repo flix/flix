@@ -43,12 +43,12 @@ public final class RelSym implements PredSym {
         if (attributes == null)
             throw new IllegalArgumentException("'attributes' must be non-null.");
 
-        NameAndParameter key = new NameAndParameter(name, parameter);
-        RelSym lookup = INTERNAL_CACHE.get(key);
+        var key = new NameAndParameter(name, parameter);
+        var lookup = INTERNAL_CACHE.get(key);
         if (lookup != null) {
             return lookup;
         }
-        RelSym sym = new RelSym(name, parameter, attributes);
+        var sym = new RelSym(name, parameter, attributes);
         INTERNAL_CACHE.put(key, sym);
         return sym;
     }

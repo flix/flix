@@ -48,12 +48,12 @@ public final class LatSym implements PredSym {
         if (ops == null)
             throw new IllegalArgumentException("'ops' must be non-null.");
 
-        NameAndParameter key = new NameAndParameter(name, parameter);
-        LatSym lookup = INTERNAL_CACHE.get(key);
+        var key = new NameAndParameter(name, parameter);
+        var lookup = INTERNAL_CACHE.get(key);
         if (lookup != null) {
             return lookup;
         }
-        LatSym sym = new LatSym(name, parameter, keys, value, ops);
+        var sym = new LatSym(name, parameter, keys, value, ops);
         INTERNAL_CACHE.put(key, sym);
         return sym;
     }

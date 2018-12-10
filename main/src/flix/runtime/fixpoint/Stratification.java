@@ -39,7 +39,7 @@ public final class Stratification {
             throw new IllegalArgumentException("'sym' must be non-null.");
 
         // Retrieve the stratum.
-        Integer result = stratification.get(sym.getParameterless());
+        var result = stratification.get(sym.getParameterless());
         if (result == null) {
             return 0; // TODO: Need to verify that this matches the control flow analysis.
         }
