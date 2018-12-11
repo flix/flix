@@ -107,6 +107,7 @@
 
 def defaultTest(): Int = {
   let c = chan Int;
+//  c <- 1;
   select {
     case x <- c => x
     case _ => 3

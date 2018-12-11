@@ -123,11 +123,6 @@ public final class Channel {
     throw new RuntimeException("Thread interrupted");
   }
 
-  // TODO delete this
-  public static SelectChoice select(Channel[] channels) {
-    return select(channels, false);
-  }
-
   /**
    * Returns a new array of the given channels sorted by their id.
    * The given array is not changed.
