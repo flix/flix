@@ -458,7 +458,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
   object Expressions {
     def Statement: Rule1[ParsedAst.Expression] = rule {
-      Expression ~ optional(optWS ~ atomic(";") ~ optWS ~ Statement ~ optional(";") ~ SP  ~> ParsedAst.Expression.Statement)
+      Expression ~ optional(optWS ~ atomic(";") ~ optWS ~ Statement ~ SP  ~> ParsedAst.Expression.Statement)
     }
 
     def Block: Rule1[ParsedAst.Expression] = rule {
@@ -677,8 +677,13 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       def SelectChannelRule: Rule1[ParsedAst.SelectChannelRule] = rule {
         atomic("case") ~ WS ~ Names.Variable ~ optWS ~ atomic("<-") ~ optWS ~ Expression ~ optWS ~ atomic("=>") ~ optWS ~ Statement ~> ParsedAst.SelectChannelRule
       }
+
+      def SelectChannelDefault: Rule1[ParsedAst.SelectChannelDefault] = rule {
+        atomic("case") ~ WS ~ atomic("_") ~ optWS ~ atomic("=>") ~ optWS ~ Statement ~> ParsedAst.SelectChannelDefault
+      }
+
       rule {
-        SP ~ atomic("select") ~ WS ~ "{" ~ optWS ~ oneOrMore(SelectChannelRule).separatedBy(optWS) ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.SelectChannel
+        SP ~ atomic("select") ~ WS ~ "{" ~ optWS ~ oneOrMore(SelectChannelRule).separatedBy(optWS) ~ optWS ~ optional(SelectChannelDefault) ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.SelectChannel
       }
     }
 

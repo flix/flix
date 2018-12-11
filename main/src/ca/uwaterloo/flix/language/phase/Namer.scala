@@ -20,7 +20,7 @@ import java.lang.reflect.{Constructor, Field, Method, Modifier}
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.GenSym
-import ca.uwaterloo.flix.language.ast.WeededAst.Declaration
+import ca.uwaterloo.flix.language.ast.WeededAst.{Declaration, SelectChannelDefault}
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.NameError
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
@@ -824,7 +824,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case (e1, e2) => NamedAst.Expression.PutChannel(e1, e2, Type.freshTypeVar(), loc)
       }
 
-    case WeededAst.Expression.SelectChannel(rules, loc) =>
+    case WeededAst.Expression.SelectChannel(rules, default, loc) =>
       val rulesVal = traverse(rules) {
         case WeededAst.SelectChannelRule(ident, chan, body) =>
           // make a fresh variable symbol for the local recursive variable.
@@ -834,8 +834,16 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
             case (c, b) => NamedAst.SelectChannelRule(sym, c, b)
           }
       }
-      rulesVal map {
-        case rs => NamedAst.Expression.SelectChannel(rs, Type.freshTypeVar(), loc)
+
+      val defaultVal = default match {
+        case Some(SelectChannelDefault(exp)) => visitExp(exp, env0, tenv0) map {
+          case e => Some(NamedAst.SelectChannelDefault(e))
+        }
+        case None => None.toSuccess
+      }
+
+      mapN(rulesVal, defaultVal) {
+        case (rs, d) => NamedAst.Expression.SelectChannel(rs, d, Type.freshTypeVar(), loc)
       }
 
     case WeededAst.Expression.CloseChannel(exp, loc) =>
@@ -1126,9 +1134,16 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
     case WeededAst.Expression.NewChannel(tpe,loc) => Nil
     case WeededAst.Expression.GetChannel(exp, loc) => freeVars(exp)
     case WeededAst.Expression.PutChannel(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
-    case WeededAst.Expression.SelectChannel(rules, loc) => rules.flatMap{
-      case WeededAst.SelectChannelRule(ident, chan, exp) => freeVars(chan) ++ filterBoundVars(freeVars(exp), List(ident))
-    }
+    case WeededAst.Expression.SelectChannel(rules, default, loc) =>
+      val rulesFreeVars = rules.flatMap {
+        case WeededAst.SelectChannelRule(ident, chan, exp) =>
+          freeVars(chan) ++ filterBoundVars(freeVars(exp), List(ident))
+      }
+      val defaultFreeVars = default match {
+        case Some(SelectChannelDefault(exp)) => freeVars(exp)
+        case None => Nil
+      }
+      rulesFreeVars ++ defaultFreeVars
     case WeededAst.Expression.CloseChannel(exp, loc) => freeVars(exp)
     case WeededAst.Expression.Spawn(exp, loc) => freeVars(exp)
     case WeededAst.Expression.Sleep(exp, loc) => freeVars(exp)

@@ -199,10 +199,17 @@ object TypedAstOps {
 
       case Expression.PutChannel(exp1, exp2, tpe, eff, loc) => visitExp(exp1, env0) ++ visitExp(exp2, env0)
 
-      case Expression.SelectChannel(rules, tpe, eff, loc) =>
-        rules.foldLeft(Map.empty[Symbol.HoleSym, HoleContext]){
+      case Expression.SelectChannel(rules, default, tpe, eff, loc) =>
+        val rs = rules.foldLeft(Map.empty[Symbol.HoleSym, HoleContext]){
           case (macc, SelectChannelRule(sym, chan, exp)) => macc ++ visitExp(chan, env0) ++ visitExp(exp, env0)
         }
+
+        val d = default match {
+          case Some(SelectChannelDefault(exp)) => visitExp(exp, env0)
+          case None => Map.empty
+        }
+
+        rs ++ d
 
       case Expression.CloseChannel(exp, tpe, eff, loc) => visitExp(exp, env0)
 

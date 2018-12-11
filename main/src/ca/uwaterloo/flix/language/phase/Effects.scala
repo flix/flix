@@ -608,7 +608,7 @@ object Effects extends Phase[Root, Root] {
         /**
           * Select Channel Expression
           */
-        case Expression.SelectChannel(rules, tpe, eff, loc) => ??? //TODO SJ
+        case Expression.SelectChannel(rules, default, tpe, eff, loc) => ??? //TODO SJ
 
         /**
           * Close Channel Expression

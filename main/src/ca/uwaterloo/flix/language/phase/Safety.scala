@@ -181,10 +181,17 @@ object Safety extends Phase[Root, Root] {
 
     case Expression.PutChannel(exp1, exp2, tpe, eff, loc) => visitExp(exp1) ::: visitExp(exp2)
 
-    case Expression.SelectChannel(rules, tpe, eff, loc) =>
-      rules.foldLeft(Nil: List[CompilationError]) {
-        case (acc, SelectChannelRule(sym, chan, exp)) => acc ::: visitExp(chan) ::: visitExp(exp)
+    case Expression.SelectChannel(rules, default, tpe, eff, loc) =>
+      val rs = rules.foldLeft(Nil: List[CompilationError]) {
+        case (acc, SelectChannelRule(sym, chan, body)) => acc ::: visitExp(chan) ::: visitExp(body)
       }
+
+      val d = default match {
+        case Some(SelectChannelDefault(exp)) => visitExp(exp)
+        case None => Nil
+      }
+
+      rs ++ d
 
     case Expression.CloseChannel(exp, tpe, eff, loc) => visitExp(exp)
 

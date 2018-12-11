@@ -20,6 +20,7 @@ import java.math.BigInteger
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Polarity
+import ca.uwaterloo.flix.language.ast.ParsedAst.SelectChannelDefault
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.WeederError
 import ca.uwaterloo.flix.language.errors.WeederError._
@@ -966,15 +967,22 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         case (e1, e2) => WeededAst.Expression.PutChannel(e1, e2, mkSL(leftMostSourcePosition(exp1), sp2))
       }
 
-    case ParsedAst.Expression.SelectChannel(sp1, rules, sp2) =>
+    case ParsedAst.Expression.SelectChannel(sp1, rules, default, sp2) =>
       val rulesVal = traverse(rules) {
         case ParsedAst.SelectChannelRule(ident, chan, body) => mapN(visitExp(chan), visitExp(body)) {
           case (c, b) => WeededAst.SelectChannelRule(ident, c, b)
         }
       }
 
-      rulesVal map {
-        case rs => WeededAst.Expression.SelectChannel(rs, mkSL(sp1, sp2))
+      val defaultVal = default match {
+        case Some(SelectChannelDefault(exp)) => visitExp(exp) map {
+          case e => Some(WeededAst.SelectChannelDefault(e))
+        }
+        case None => None.toSuccess
+      }
+
+      mapN(rulesVal, defaultVal) {
+        case (rs, d) => WeededAst.Expression.SelectChannel(rs, d, mkSL(sp1, sp2))
       }
 
     case ParsedAst.Expression.CloseChannel(sp1, exp, sp2) =>
@@ -1867,7 +1875,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.NewChannel(sp1, _, _) => sp1
     case ParsedAst.Expression.GetChannel(sp1, _, _) => sp1
     case ParsedAst.Expression.PutChannel(e1, _, _) => leftMostSourcePosition(e1)
-    case ParsedAst.Expression.SelectChannel(sp1, _, _) => sp1
+    case ParsedAst.Expression.SelectChannel(sp1, _, _, _) => sp1
     case ParsedAst.Expression.CloseChannel(sp1, _, _) => sp1
     case ParsedAst.Expression.Spawn(sp1, _, _) => sp1
     case ParsedAst.Expression.Sleep(sp1, _, _) => sp1

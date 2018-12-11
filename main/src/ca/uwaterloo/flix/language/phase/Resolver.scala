@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.GenSym
+import ca.uwaterloo.flix.language.ast.NamedAst.SelectChannelDefault
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.ResolutionError
 import ca.uwaterloo.flix.util.Validation._
@@ -697,7 +698,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
             e2 <- visit(exp2, tenv0)
           } yield ResolvedAst.Expression.PutChannel(e1, e2, tvar, loc)
 
-        case NamedAst.Expression.SelectChannel(rules, tvar, loc) =>
+        case NamedAst.Expression.SelectChannel(rules, default, tvar, loc) =>
           val rulesVal = traverse(rules) {
             case NamedAst.SelectChannelRule(sym, chan, body) =>
               for {
@@ -706,9 +707,18 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
               } yield ResolvedAst.SelectChannelRule(sym, c, b)
           }
 
+          val defaultVal = default match {
+            case Some(SelectChannelDefault(exp)) =>
+              for {
+                e <- visit(exp, tenv0)
+              } yield Some(ResolvedAst.SelectChannelDefault(e))
+            case None => None.toSuccess
+          }
+
           for {
             rs <- rulesVal
-          } yield ResolvedAst.Expression.SelectChannel(rs, tvar, loc)
+            d <- defaultVal
+          } yield ResolvedAst.Expression.SelectChannel(rs, d, tvar, loc)
 
         case NamedAst.Expression.CloseChannel(exp, tvar, loc) =>
           for {

@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import java.lang.reflect.Field
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.ResolvedAst.SelectChannelDefault
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.Unification._
@@ -1178,8 +1179,8 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         /*
          * Select Channel Expression.
          */
-        case ResolvedAst.Expression.SelectChannel(rules, tvar, loc) =>
-          //
+        case ResolvedAst.Expression.SelectChannel(rules, default, tvar, loc) =>
+          //  TODO SJ
           //  exp1_i: Channel[t_i],            exp2_i: t
           //  ------------------------------------------------
           //  select { case sym_i <- exp1_i => exp2_i } : t
@@ -1187,12 +1188,23 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           assert(rules.nonEmpty)
           val bodies = rules.map(_.exp)
 
+          // check that each rules channel expression is a channel
           def inferSelectChannelRule(rule: ResolvedAst.SelectChannelRule): InferMonad[Unit] = {
             rule match {
               case ResolvedAst.SelectChannelRule(sym, chan, exp) => for {
                 channelType <- visitExp(chan)
                 _ <- unifyM (channelType, Type.mkChannel(Type.freshTypeVar()), loc)
-              } yield liftM (Type.Unit)
+              } yield liftM(Type.Unit)
+            }
+          }
+
+          def inferSelectChannelDefault(rtpe: Type, defaultCase: Option[ResolvedAst.SelectChannelDefault]): InferMonad[Unit] = {
+            defaultCase match {
+              case Some(SelectChannelDefault(exp)) =>
+                for {
+                  tpe <- visitExp(exp)
+                } yield unify(rtpe, tpe)
+              case None => liftM(Type.Unit)
             }
           }
 
@@ -1200,6 +1212,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
             _ <- seqM(rules.map(inferSelectChannelRule))
             bodyTypes <- seqM(bodies map visitExp)
             rtpe <- unifyM(bodyTypes, loc)
+            _ <- inferSelectChannelDefault(rtpe, default)
           } yield rtpe
 
         /*
@@ -1757,14 +1770,22 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         /*
          * Select Channel expression.
          */
-        case ResolvedAst.Expression.SelectChannel(rules, tvar, loc) =>
+        case ResolvedAst.Expression.SelectChannel(rules, default, tvar, loc) =>
           val rs = rules map {
             case ResolvedAst.SelectChannelRule(sym, chan, exp) =>
               val c = visitExp(chan, subst0)
               val b = visitExp(exp, subst0)
               TypedAst.SelectChannelRule(sym, c, b)
           }
-          TypedAst.Expression.SelectChannel(rs, subst0(tvar), Eff.Bot, loc)
+
+          val d = default match {
+            case Some(SelectChannelDefault(exp)) =>
+              val e = visitExp(exp, subst0)
+              Some(TypedAst.SelectChannelDefault(e))
+            case None => None
+          }
+
+          TypedAst.Expression.SelectChannel(rs, d, subst0(tvar), Eff.Bot, loc)
 
         /*
          * Spawn expression.

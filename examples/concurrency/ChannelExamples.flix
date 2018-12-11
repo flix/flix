@@ -98,14 +98,20 @@
 //    case y <- c1 => true
 //  }
 //}
+//
+//def sleepTest(): Unit = {
+//  Console.printLine("1");
+//  sleep(5i64 * Duration.oneSecond());
+//  Console.printLine("2")
+//}
 
-
-def sleepTest(): Unit = {
-  Console.printLine("1");
-  sleep(5i64 * Duration.oneSecond());
-  Console.printLine("2")
+def defaultTest(): Int = {
+  let c = chan Int;
+  select {
+    case x <- c => 2
+    case _ => "3"
+  }
 }
-
 
 
 

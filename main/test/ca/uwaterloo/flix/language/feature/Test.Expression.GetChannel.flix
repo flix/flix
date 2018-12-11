@@ -57,7 +57,7 @@ def testGetChannel10(): Int =
   let c = chan Int;
   c <- 1 <- 2;
   <- c;
-  <- c;
+  <- c
 
 @test
 def testGetChannel11(): Int =
@@ -67,7 +67,7 @@ def testGetChannel11(): Int =
   <- c;
   <- c;
   <- c;
-  <- c;
+  <- c
 
 @test
 def testGetChannel12(): Int =
