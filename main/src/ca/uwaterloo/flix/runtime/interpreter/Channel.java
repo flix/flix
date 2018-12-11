@@ -70,7 +70,7 @@ public final class Channel {
    * @param channels the channels to select on
    * @return the channel index of the channel with an element and the element
    */
-  public static SelectChoice select(Channel[] channels) {
+  public static SelectChoice select(Channel[] channels, boolean hasDefault) {
     // Create new Condition and channelLock the current thread
     Lock selectLock = new ReentrantLock();
     Condition condition = selectLock.newCondition();
@@ -91,14 +91,18 @@ public final class Channel {
           if (element != null) {
             // Element found.
             // Return the element and the branchNumber (index of the array) of the containing Channel
-            SelectChoice choice = new SelectChoice();
-            choice.branchNumber = index;
-            choice.element = element;
+            SelectChoice choice = new SelectChoice(index, element);
             return choice;
           }
         }
 
         // No element was found.
+
+        // If there is a default case, choose this
+        if (hasDefault) {
+          return SelectChoice.DEFAULT_CHOICE;
+        }
+
         // Add our condition to all Channels to get notified when a new element is added
         for (Channel channel : channels) {
           channel.addGetter(selectLock, condition);
@@ -117,6 +121,11 @@ public final class Channel {
     }
 
     throw new RuntimeException("Thread interrupted");
+  }
+
+  // TODO delete this
+  public static SelectChoice select(Channel[] channels) {
+    return select(channels, false);
   }
 
   /**

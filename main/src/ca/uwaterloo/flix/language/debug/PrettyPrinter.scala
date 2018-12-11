@@ -413,10 +413,10 @@ object PrettyPrinter {
           vt.text("<- ")
           visitExp(exp)
 
-        case Expression.SelectChannel(rules, tpe, loc) =>
+        case Expression.SelectChannel(rules, default, tpe, loc) => vt.text("???")
         // TODO SJ:
 
-        case Expression.CloseChannel(exp, tpe, loc) =>
+        case Expression.CloseChannel(exp, tpe, loc) => vt.text("???")
         // TODO SJ:
 
         case Expression.Spawn(exp, tpe, loc) =>

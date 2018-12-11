@@ -445,7 +445,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           val e2 = visitExp(exp2, env0)
           Expression.PutChannel(e1, e2, subst0(tpe), eff, loc)
 
-        case Expression.SelectChannel(rules, tpe, eff, loc) =>
+        case Expression.SelectChannel(rules, default, tpe, eff, loc) =>
           val rs = rules map {
             case SelectChannelRule(sym, chan, exp) =>
               val freshSym = Symbol.freshVarSym(sym)
@@ -454,7 +454,10 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
               val e = visitExp(exp, env1)
               SelectChannelRule(freshSym, c, e)
           }
-          Expression.SelectChannel(rs, subst0(tpe), eff, loc)
+
+          val d = default.map{case SelectChannelDefault(exp) => SelectChannelDefault(visitExp(exp, env0))}
+
+          Expression.SelectChannel(rs, d, subst0(tpe), eff, loc)
 
         case Expression.CloseChannel(exp, tpe, eff, loc) =>
           val e = visitExp(exp, env0)

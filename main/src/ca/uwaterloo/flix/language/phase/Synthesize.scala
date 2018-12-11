@@ -295,14 +295,17 @@ object Synthesize extends Phase[Root, Root] {
         val e2 = visitExp(exp2)
         Expression.PutChannel(e1, e2, tpe, eff, loc)
 
-      case Expression.SelectChannel(rules, tpe, eff, loc) =>
+      case Expression.SelectChannel(rules, default, tpe, eff, loc) =>
         val rs = rules map {
           case SelectChannelRule(sym, chan, exp) =>
             val c = visitExp(chan)
             val e = visitExp(exp)
             SelectChannelRule(sym, c, e)
         }
-        Expression.SelectChannel(rs, tpe, eff, loc)
+
+        val d = default.map{case SelectChannelDefault(exp) => SelectChannelDefault(visitExp(exp))}
+
+        Expression.SelectChannel(rs, d, tpe, eff, loc)
 
       case Expression.CloseChannel(exp, tpe, eff, loc) =>
         val e = visitExp(exp)

@@ -307,14 +307,22 @@ object Stratifier extends Phase[Root, Root] {
         case (e1, e2) => Expression.PutChannel(e1, e2, tpe, loc)
       }
 
-    case Expression.SelectChannel(rules, tpe, loc) =>
+    case Expression.SelectChannel(rules, default, tpe, loc) =>
       val rulesVal = traverse(rules) {
         case SelectChannelRule(sym, chan, exp) => mapN(visitExp(chan), visitExp(exp)) {
           case (c, e) => SelectChannelRule(sym, c, e)
         }
       }
-      mapN(rulesVal) {
-        case rs => Expression.SelectChannel(rs, tpe, loc)
+
+      val defaultVal = default match {
+        case Some(SelectChannelDefault(exp)) => visitExp(exp) map {
+          case e => Some(SelectChannelDefault(e))
+        }
+        case None => None.toSuccess
+      }
+
+      mapN(rulesVal, defaultVal) {
+        case (rs, d) => Expression.SelectChannel(rs, d, tpe, loc)
       }
 
     case Expression.CloseChannel(exp, tpe, loc) =>

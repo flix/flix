@@ -202,7 +202,7 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         val i1 = visitExp(exp1, i0)
         visitExp(exp2, i1)
 
-      case Expression.SelectChannel(rules, tpe, loc) =>
+      case Expression.SelectChannel(rules, default, tpe, loc) =>
         var currentOffset = i0
         for (r <- rules) {
           // Set the stack offset for the symbol.
@@ -218,7 +218,10 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
           // Visit the expression of the rule.
           currentOffset = visitExp(r.exp, currentOffset)
         }
-        currentOffset
+        default match {
+          case Some(SelectChannelDefault(exp)) => visitExp(exp, currentOffset)
+          case None => currentOffset
+        }
 
       case Expression.CloseChannel(exp, tpe, loc) =>
         visitExp(exp, i0)

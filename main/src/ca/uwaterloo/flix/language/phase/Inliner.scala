@@ -199,7 +199,7 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.NewChannel(tpe, loc) => exp0
       case Expression.GetChannel(exp ,tpe, loc) => exp0
       case Expression.PutChannel(exp1, exp2, tpe, loc) => exp0
-      case Expression.SelectChannel(rules, tpe, loc) => exp0
+      case Expression.SelectChannel(rules, default, tpe, loc) => exp0
       case Expression.CloseChannel(exp, tpe, loc) => exp0
       case Expression.Spawn(exp, tpe, loc) => exp0
       case Expression.Sleep(exp, tpe, loc) => exp0
@@ -370,7 +370,7 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     case Expression.NewChannel(tpe, loc) => exp0
     case Expression.GetChannel(exp ,tpe, loc) => exp0
     case Expression.PutChannel(exp1, exp2, tpe, loc) => exp0
-    case Expression.SelectChannel(rules, tpe, loc) => exp0
+    case Expression.SelectChannel(rules, default, tpe, loc) => exp0
     case Expression.CloseChannel(exp, tpe, loc) => exp0
     case Expression.Spawn(exp, tpe, loc) => exp0
     case Expression.Sleep(exp, tpe, loc) => exp0
@@ -624,7 +624,7 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     case Expression.NewChannel(tpe, loc) => true
     case Expression.GetChannel(exp, tpe, loc) => true
     case Expression.PutChannel(exp1, exp2, tpe, loc) => true
-    case Expression.SelectChannel(rules, tpe, loc) => true
+    case Expression.SelectChannel(rules, default, tpe, loc) => true
     case Expression.CloseChannel(exp, tpe, loc) => true
     case Expression.Spawn(exp, tpe, loc) => true
     case Expression.Sleep(exp, tpe, loc) => true

@@ -1198,12 +1198,14 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
             }
           }
 
+          // check that default case has same type as bodies (the same as result type)
           def inferSelectChannelDefault(rtpe: Type, defaultCase: Option[ResolvedAst.SelectChannelDefault]): InferMonad[Unit] = {
             defaultCase match {
               case Some(SelectChannelDefault(exp)) =>
                 for {
                   tpe <- visitExp(exp)
-                } yield unify(rtpe, tpe)
+                  _ <- unifyM(rtpe, tpe, loc)
+                } yield liftM(Type.Unit)
               case None => liftM(Type.Unit)
             }
           }
@@ -1778,12 +1780,8 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
               TypedAst.SelectChannelRule(sym, c, b)
           }
 
-          val d = default match {
-            case Some(SelectChannelDefault(exp)) =>
-              val e = visitExp(exp, subst0)
-              Some(TypedAst.SelectChannelDefault(e))
-            case None => None
-          }
+          val d = default.map{case SelectChannelDefault(exp) =>
+            TypedAst.SelectChannelDefault(visitExp(exp, subst0))}
 
           TypedAst.Expression.SelectChannel(rs, d, subst0(tvar), Eff.Bot, loc)
 

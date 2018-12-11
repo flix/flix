@@ -312,14 +312,17 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         val e2 = visitExp(exp2)
         Expression.PutChannel(e1, e2, tpe, loc)
 
-      case Expression.SelectChannel(rules, tpe, loc) =>
+      case Expression.SelectChannel(rules, default, tpe, loc) =>
         val rs = rules map {
           case SelectChannelRule(sym, chan, exp) =>
             val c = visitExp(chan)
             val e = visitExp(exp)
             SelectChannelRule(sym, c, e)
         }
-        Expression.SelectChannel(rs, tpe, loc)
+
+        val d = default.map{case SelectChannelDefault(exp) => SelectChannelDefault(visitExp(exp))}
+
+        Expression.SelectChannel(rs, d, tpe, loc)
 
       case Expression.CloseChannel(exp, tpe, loc) =>
         val e = visitExp(exp)

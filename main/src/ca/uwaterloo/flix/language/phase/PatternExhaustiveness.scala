@@ -317,17 +317,11 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
         } yield tast
 
         case Expression.SelectChannel(rules, default, _, _, _) => for {
-          _ <- rules.foreach {
-            case TypedAst.SelectChannelRule(sym, chan, body) =>
-              checkPats(chan, root)
-              checkPats(body, root)
-          }
-
+          _ <- sequence(rules.map(r => {checkPats(r.chan, root); checkPats(r.exp, root)}))
           _ <- default match {
             case Some(TypedAst.SelectChannelDefault(exp)) => checkPats(exp, root)
             case None => None.toSuccess
           }
-
         } yield tast
 
         case Expression.CloseChannel(exp, _, _, _) => for {

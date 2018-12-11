@@ -376,7 +376,7 @@ object ControlFlowAnalysis {
 
       case Expression.PutChannel(exp1, exp2, tpe, loc) => AbstractValue.Bot
 
-      case Expression.SelectChannel(rules, tpe, loc) => AbstractValue.Bot
+      case Expression.SelectChannel(rules, default, tpe, loc) => AbstractValue.Bot
 
       case Expression.CloseChannel(exp, tpe, loc) => AbstractValue.Bot
 

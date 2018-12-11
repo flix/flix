@@ -271,14 +271,29 @@ object Interpreter {
       c.put(e)
       c
 
-    case Expression.SelectChannel(rules, tpe, loc) =>
+    case Expression.SelectChannel(rules, default, tpe, loc) =>
+      // Evaluate all Channel expressions
       val rs = rules.map {
         r => (r.sym, eval(r.chan, env0, henv0, lenv0, root).asInstanceOf[Channel], r.exp)
       }
+      // Create an array of Channels used to call select in Channel.java
       val channelsArray = rs.map { r => r._2}.toArray[Channel]
-      val selectChoice = Channel.select(channelsArray)
+      // Check if there is a default case
+      val hasDefault = default.isDefined
+      // Call select which returns a selectChoice with the given branchNumber
+      val selectChoice = Channel.select(channelsArray, hasDefault)
+
+      // Check if the default case was selected
+      if (selectChoice.defaultChoice) {
+        // Evaluate the default case
+        return eval(default.get.exp, env0, henv0, lenv0, root)
+      }
+
+      // The default was not chosen. Find the matching rule
       val selectedRule = rs.apply(selectChoice.branchNumber)
+      // Bind the sym of the rule to the element from the selected channel
       val newEnv = env0 + (selectedRule._1.toString -> selectChoice.element)
+      // Evaluate the expression of the selected rule
       eval(selectedRule._3, newEnv, henv0, lenv0, root)
 
     case Expression.CloseChannel(exp, tpe, loc) =>

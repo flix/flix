@@ -108,8 +108,8 @@
 def defaultTest(): Int = {
   let c = chan Int;
   select {
-    case x <- c => 2
-    case _ => "3"
+    case x <- c => x
+    case _ => 3
   }
 }
 

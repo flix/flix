@@ -921,7 +921,7 @@ object GenExpression {
       AsmOps.boxIfPrim(visitor, JvmOps.getJvmType(exp2.tpe))
       visitor.visitMethodInsn(INVOKEVIRTUAL, JvmName.Channel.toInternalName, "put", "(Ljava/lang/Object;)V", false)
 
-    case Expression.SelectChannel(rules, tpe, loc) =>
+    case Expression.SelectChannel(rules, default, tpe, loc) =>
       addSourceLine(visitor, loc)
       // Make a new Channel[] containing all channel expressions
 

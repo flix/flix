@@ -449,13 +449,13 @@ object SimplifiedAstOps {
       //
       // Select Channel.
       //
-      case Expression.SelectChannel(rules, tpe, loc) =>
+      case Expression.SelectChannel(rules, default, tpe, loc) =>
         for (rule <- rules) {
           checkExp(rule.chan, env0, ienv0)
           checkExp(rule.exp, env0, ienv0)
         }
+        default.foreach(d => checkExp(d.exp, env0, ienv0))
         checkType(tpe)
-
 
       //
       // Close Channel.

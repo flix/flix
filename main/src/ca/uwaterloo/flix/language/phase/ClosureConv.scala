@@ -299,14 +299,17 @@ object ClosureConv extends Phase[Root, Root] {
       val e2 = visitExp(exp2)
       Expression.PutChannel(e1, e2, tpe, loc)
 
-    case Expression.SelectChannel(rules, tpe, loc) =>
+    case Expression.SelectChannel(rules, default, tpe, loc) =>
       val rs = rules map {
         case SelectChannelRule(sym, chan, exp) =>
           val c = visitExp(chan)
           val e = visitExp(exp)
           SelectChannelRule(sym, c, e)
       }
-      Expression.SelectChannel(rs, tpe, loc)
+
+      val d = default.map{case SelectChannelDefault(exp) => SelectChannelDefault(visitExp(exp))}
+
+      Expression.SelectChannel(rs, d, tpe, loc)
 
     case Expression.CloseChannel(exp, tpe, loc) =>
       val e = visitExp(exp)
@@ -504,9 +507,17 @@ object ClosureConv extends Phase[Root, Root] {
     case Expression.NewChannel(tpe, loc) => mutable.LinkedHashSet.empty
     case Expression.GetChannel(exp, tpe, loc) => freeVars(exp)
     case Expression.PutChannel(exp1, exp2, tpe, loc) => freeVars(exp1) ++ freeVars(exp2)
-    case Expression.SelectChannel(rules, tpe, loc) => mutable.LinkedHashSet.empty ++ rules.flatMap{
-      case SelectChannelRule(sym, chan, exp) => freeVars(chan).filter(n1 => !List(sym).contains(n1._1))
-    }
+    case Expression.SelectChannel(rules, default, tpe, loc) =>
+      val rs = mutable.LinkedHashSet.empty ++ rules.flatMap{
+        case SelectChannelRule(sym, chan, exp) => freeVars(chan).filter(n1 => !List(sym).contains(n1._1))
+      }
+
+      val d = default match {
+        case Some(SelectChannelDefault(exp)) => freeVars(exp)
+        case None => mutable.LinkedHashSet.empty
+      }
+
+      rs ++ d
     case Expression.CloseChannel(exp, tpe, loc) => freeVars(exp)
     case Expression.Spawn(exp, tpe, loc) => freeVars(exp)
     case Expression.Sleep(exp, tpe, loc) => freeVars(exp)
@@ -817,14 +828,17 @@ object ClosureConv extends Phase[Root, Root] {
         val e2 = visitExp(exp2)
         Expression.PutChannel(e1, e2, eff, loc)
 
-      case Expression.SelectChannel(rules, tpe, loc) =>
+      case Expression.SelectChannel(rules, default, tpe, loc) =>
         val rs = rules map {
           case SelectChannelRule(sym, chan, exp) =>
             val c = visitExp(chan)
             val e = visitExp(exp)
             SelectChannelRule(sym, c, e)
         }
-        Expression.SelectChannel(rs, tpe, loc)
+
+        val d = default.map{case SelectChannelDefault(exp) => SelectChannelDefault(visitExp(exp))}
+
+        Expression.SelectChannel(rs, d, tpe, loc)
 
       case Expression.CloseChannel(exp, tpe, loc) =>
         val e = visitExp(exp)
