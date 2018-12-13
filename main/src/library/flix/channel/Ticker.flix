@@ -19,62 +19,92 @@ namespace Ticker {
     ///
     /// Returns a channel that receives the Unit value repeatedly every `n` days.
     ///
-    pub def days(n: Int64): Channel[Unit] =
-        let c = chan Unit 100;
-        spawn sleepSendAndRepeat(n * Duration.oneDay(), c);
-        c
+    pub def days(n: Int64): Ticker =
+        let ticker = newTicker();
+        spawn sleepSendAndRepeat(n * Duration.oneDay(), ticker, 0);
+        ticker
 
     ///
     /// Returns a channel that receives the Unit value repeatedly every `n` hours.
     ///
-    pub def hours(n: Int64): Channel[Unit] =
-        let c = chan Unit 100;
-        spawn sleepSendAndRepeat(n * Duration.oneHour(), c);
-        c
+    pub def hours(n: Int64): Ticker =
+        let ticker = newTicker();
+        spawn sleepSendAndRepeat(n * Duration.oneHour(), ticker, 0);
+        ticker
 
     ///
     /// Returns a channel that receives the Unit value repeatedly every `n` minutes.
     ///
-    pub def minutes(n: Int64): Channel[Unit] =
-        let c = chan Unit 100;
-        spawn sleepSendAndRepeat(n * Duration.oneMinute(), c);
-        c
+    pub def minutes(n: Int64): Ticker =
+        let ticker = newTicker();
+        spawn sleepSendAndRepeat(n * Duration.oneMinute(), ticker, 0);
+        ticker
 
     ///
     /// Returns a channel that receives the Unit value repeatedly every `n` seconds.
     ///
-    pub def seconds(n: Int64): Channel[Unit] =
-        let c = chan Unit 100;
-        spawn sleepSendAndRepeat(n * Duration.oneSecond(), c);
-        c
+    pub def seconds(n: Int64): Ticker =
+        let ticker = newTicker();
+        spawn sleepSendAndRepeat(n * Duration.oneSecond(), ticker, 0);
+        ticker
 
     ///
     /// Returns a channel that receives the Unit value repeatedly every `n` milliseconds.
     ///
-    pub def milliseconds(n: Int64): Channel[Unit] =
-        let c = chan Unit 100;
-        spawn sleepSendAndRepeat(n * Duration.oneMillisecond(), c);
-        c
+    pub def milliseconds(n: Int64): Ticker =
+        let ticker = newTicker();
+        spawn sleepSendAndRepeat(n * Duration.oneMillisecond(), ticker, 0);
+        ticker
 
     ///
     /// Returns a channel that receives the Unit value repeatedly every `n` microseconds.
     ///
-    pub def microseconds(n: Int64): Channel[Unit] =
-        let c = chan Unit 100;
-        spawn sleepSendAndRepeat(n * Duration.oneMicrosecond(), c);
-        c
+    pub def microseconds(n: Int64): Ticker =
+        let ticker = newTicker();
+        spawn sleepSendAndRepeat(n * Duration.oneMicrosecond(), ticker, 0);
+        ticker
 
     ///
     /// Returns a channel that receives the Unit value repeatedly every `n` nanoseconds.
     ///
-    pub def nanoseconds(n: Int64): Channel[Unit] =
-        let c = chan Unit 100;
-        spawn sleepSendAndRepeat(n * Duration.oneNanosecond(), c);
-        c
+    pub def nanoseconds(n: Int64): Ticker =
+        let ticker = newTicker();
+        spawn sleepSendAndRepeat(n * Duration.oneNanosecond(), ticker, 0);
+        ticker
 
     ///
     /// Sleeps for `s` nanoseconds, sends the Unit value to the given channel `c`, and then repeats.
     ///
-    def sleepSendAndRepeat(s: Int64, c: Channel[Unit]): Unit =
-        sleep(s); c <- (); sleepSendAndRepeat(s, c)
+    def sleepSendAndRepeat(ns: Int64, ticker: Ticker, count: Int): Unit =
+        let (tickChannel, stopChannel) = match ticker with {
+          case Ticker(t, s) => (t, s)
+        };
+        
+        sleep(ns);
+        
+        select {
+          case stop <- stopChannel => ()
+          case _ => {
+            tickChannel <- count;
+            sleepSendAndRepeat(ns, ticker, count + 1)
+          }
+        }
+
+    pub enum Ticker {
+      case Ticker(Channel[Int], Channel[Unit])
+    }
+    
+    def newTicker(): Ticker = Ticker(chan Int 100, chan Unit 100)
+
+    pub def stop(ticker: Ticker): Unit = {
+      match ticker with {
+        case Ticker(tickChannel, stopChannel) => stopChannel <- (); ()
+      }
+    }
+
+    pub def tick(ticker: Ticker): Channel[Int] = {
+      match ticker with {
+        case Ticker(tickChannel, stopChannel) => tickChannel
+      }
+    }
 }

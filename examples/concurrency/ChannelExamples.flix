@@ -128,23 +128,55 @@
 //  ()
 //}
 
-def sizeTest(): Unit = {
-  let c = chan Int 1;
-  spawn {
-      select {
-              case x <- c => Console.printLine("<- c")
-              case _ => Console.printLine("default")
-            };
-      sleep(2i64 * Duration.oneSecond());
-      select {
-        case x <- c => Console.printLine("<- c")
-        case _ => Console.printLine("default")
+//def sizeTest(): Unit = {
+//  let c = chan Int 1;
+//  spawn {
+//      select {
+//              case x <- c => Console.printLine("<- c")
+//              case _ => Console.printLine("default")
+//            };
+//      sleep(2i64 * Duration.oneSecond());
+//      select {
+//        case x <- c => Console.printLine("<- c")
+//        case _ => Console.printLine("default")
+//      }
+//    };
+//  sleep(1i64 * Duration.oneSecond());
+//  c <- 1;
+//  Console.printLine("c <- 1");
+//  c <- 2;
+//  Console.printLine("c <- 2");
+//  ()
+//}
+
+def tiktok(ticker: Ticker.Ticker, c: Channel[Int]): Unit = {
+  select {
+    case result <- c =>
+      Console.printLine("Result found");
+      ()
+    case tick <- Ticker.tick(ticker) => {
+      if(tick < 5) {
+        Console.printLine("tiktok");
+        tiktok(ticker, c)
       }
-    };
-  sleep(1i64 * Duration.oneSecond());
-  c <- 1;
-  Console.printLine("c <- 1");
-  c <- 2;
-  Console.printLine("c <- 2");
+      else {
+        Console.printLine("Stop");
+        Ticker.stop(ticker)
+      }
+    }
+  }
+}
+
+def slowFunction(c: Channel[Int]): Unit = {
+  sleep(3i64 * Duration.oneSecond());
+  // c <- 42 waits forever, and causes select tiktok() to halt too.
+  c <- 42;
   ()
+}
+
+def tickerTest(): Unit = {
+  let ticker = Ticker.seconds(1i64);
+  let c = chan Int 1;
+  spawn slowFunction(c);
+  tiktok(ticker, c)
 }

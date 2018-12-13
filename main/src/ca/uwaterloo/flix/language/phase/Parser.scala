@@ -692,7 +692,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Sleep: Rule1[ParsedAst.Expression.Sleep] = rule {
-      SP ~ atomic("sleep") ~ "(" ~ optWS ~ Expression ~ optWS ~ ")" ~ SP ~> ParsedAst.Expression.Sleep
+      SP ~ atomic("sleep") ~ optWS ~ "(" ~ optWS ~ Expression ~ optWS ~ ")" ~ SP ~> ParsedAst.Expression.Sleep
     }
 
     def Postfix: Rule1[ParsedAst.Expression] = rule {

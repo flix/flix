@@ -95,8 +95,7 @@ public final class Channel {
           if (element != null) {
             // Element found.
             // Return the element and the branchNumber (index of the array) of the containing Channel
-            SelectChoice choice = new SelectChoice(index, element);
-            return choice;
+            return new SelectChoice(index, element);
           }
         }
 
