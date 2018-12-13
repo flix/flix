@@ -378,8 +378,6 @@ object ControlFlowAnalysis {
 
       case Expression.SelectChannel(rules, default, tpe, loc) => AbstractValue.Bot
 
-      case Expression.CloseChannel(exp, tpe, loc) => AbstractValue.Bot
-
       case Expression.Spawn(exp, tpe, loc) => AbstractValue.Bot
 
       case Expression.Sleep(exp, tpe, loc) => AbstractValue.Bot

@@ -211,8 +211,6 @@ object TypedAstOps {
 
         rs ++ d
 
-      case Expression.CloseChannel(exp, tpe, eff, loc) => visitExp(exp, env0)
-
       case Expression.Spawn(exp, tpe, eff, loc) => visitExp(exp, env0)
 
       case Expression.Sleep(exp, tpe, eff, loc) => visitExp(exp, env0)

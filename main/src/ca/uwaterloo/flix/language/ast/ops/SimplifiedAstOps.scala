@@ -458,13 +458,6 @@ object SimplifiedAstOps {
         checkType(tpe)
 
       //
-      // Close Channel.
-      //
-      case Expression.CloseChannel(exp, tpe, loc) =>
-        checkExp(exp, env0, ienv0)
-        checkType(tpe)
-
-      //
       // Spawn.
       //
       case Expression.Spawn(exp, tpe, loc) =>

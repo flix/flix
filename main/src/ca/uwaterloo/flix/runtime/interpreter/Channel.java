@@ -17,12 +17,6 @@ public final class Channel {
    */
   private static AtomicInteger GLOBALCOUNTER = new AtomicInteger();
   /**
-   * isOpen indicates whether or not the channel can recieve any more element.
-   * A runtime exception is thrown if you put on a closed channel.
-   * Get works normally.
-   */
-  private boolean isOpen = true;
-  /**
    * queue is the queue of elements in the list.
    */
   private LinkedList<Object> queue = new LinkedList<>();
@@ -166,7 +160,6 @@ public final class Channel {
     channelLock.lock();
 
     try {
-      checkIfClosed();
       // TODO SJ: implement bufferSize here
       queue.add(e);
       for (LockConditionPair pair : waitingGetters) {
@@ -238,13 +231,6 @@ public final class Channel {
   }
 
   /**
-   * If isOpen is false throw a runtime exception.
-   */
-  private void checkIfClosed() {
-    if (!isOpen) throw new RuntimeException();
-  }
-
-  /**
    * Adds the given condition to the list of conditions waiting to
    * retrieve elements from the queue.
    *
@@ -254,20 +240,6 @@ public final class Channel {
     channelLock.lock();
     try {
       waitingGetters.add(new LockConditionPair(conditionLock, condition));
-    } finally {
-      channelLock.unlock();
-    }
-  }
-
-  /**
-   * Closes the channel. All subsequent put calls will throw a runtime exception.
-   * If the channel is already closed a runtime exception will also be thrown.
-   */
-  public void close() {
-    channelLock.lock();
-    try {
-      checkIfClosed();
-      isOpen = false;
     } finally {
       channelLock.unlock();
     }

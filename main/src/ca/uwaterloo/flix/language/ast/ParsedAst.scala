@@ -967,15 +967,6 @@ object ParsedAst {
     case class SelectChannel(sp1: SourcePosition, rules: Seq[SelectChannelRule], default: Option[SelectChannelDefault], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
-      * CloseChannel Expression.
-      *
-      * @param sp1 the position of the first character in the expression.
-      * @param exp the channel expression.
-      * @param sp2 the position of the last character in the expression.
-      */
-    case class CloseChannel(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
-
-    /**
       * Spawn Expression.
       *
       * @param sp1 the position of the first character in the expression.

@@ -147,7 +147,6 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
           case None => Set.empty
         }
         rs ++ d
-      case Expression.CloseChannel(exp, tpe, loc) => visitExp(exp)
       case Expression.Spawn(exp, tpe, loc) => visitExp(exp)
       case Expression.Sleep(exp, tpe, loc) => visitExp(exp)
       case Expression.FixpointConstraint(c0, tpe, loc) => visitConstraint(c0)

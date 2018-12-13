@@ -611,11 +611,6 @@ object Effects extends Phase[Root, Root] {
         case Expression.SelectChannel(rules, default, tpe, eff, loc) => ??? //TODO SJ
 
         /**
-          * Close Channel Expression
-          */
-        case Expression.CloseChannel(exp, tpe, eff, loc) => ??? //TODO SJ
-
-        /**
           * Spawn Expression
           */
         case Expression.Spawn(exp, tpe, eff, loc) => ??? //TODO SJ

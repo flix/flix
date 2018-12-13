@@ -182,8 +182,6 @@ object WeededAst {
 
     case class SelectChannel(rules: List[WeededAst.SelectChannelRule], default: Option[SelectChannelDefault], loc: SourceLocation) extends WeededAst.Expression
 
-    case class CloseChannel(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
-
     case class Spawn(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
     case class Sleep(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression

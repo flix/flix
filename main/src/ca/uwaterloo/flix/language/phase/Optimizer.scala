@@ -437,13 +437,6 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         Expression.SelectChannel(rs, d, tpe, loc)
 
       //
-      // Close Channel.
-      //
-      case Expression.CloseChannel(exp, tpe, loc) =>
-        val e = visitExp(exp, env0)
-        Expression.CloseChannel(e, tpe, loc)
-
-      //
       // Spawn.
       //
       case Expression.Spawn(exp, tpe, loc) =>

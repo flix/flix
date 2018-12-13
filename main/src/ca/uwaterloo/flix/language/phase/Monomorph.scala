@@ -459,10 +459,6 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
 
           Expression.SelectChannel(rs, d, subst0(tpe), eff, loc)
 
-        case Expression.CloseChannel(exp, tpe, eff, loc) =>
-          val e = visitExp(exp, env0)
-          Expression.CloseChannel(e, subst0(tpe), eff, loc)
-
         case Expression.Spawn(exp, tpe, eff, loc) =>
           val e = visitExp(exp, env0)
           Expression.Spawn(e, subst0(tpe), eff, loc)

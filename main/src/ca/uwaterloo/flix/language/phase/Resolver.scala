@@ -720,11 +720,6 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
             d <- defaultVal
           } yield ResolvedAst.Expression.SelectChannel(rs, d, tvar, loc)
 
-        case NamedAst.Expression.CloseChannel(exp, tvar, loc) =>
-          for {
-            e <- visit(exp, tenv0)
-          } yield ResolvedAst.Expression.CloseChannel(e, tvar, loc)
-
         case NamedAst.Expression.Spawn(exp, tvar, loc) =>
           for {
             e <- visit(exp, tenv0)

@@ -193,8 +193,6 @@ object Safety extends Phase[Root, Root] {
 
       rs ++ d
 
-    case Expression.CloseChannel(exp, tpe, eff, loc) => visitExp(exp)
-
     case Expression.Spawn(exp, tpe, eff, loc) => visitExp(exp)
 
     case Expression.Sleep(exp, tpe, eff, loc) => visitExp(exp)

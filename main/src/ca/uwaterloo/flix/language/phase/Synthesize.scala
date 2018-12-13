@@ -307,10 +307,6 @@ object Synthesize extends Phase[Root, Root] {
 
         Expression.SelectChannel(rs, d, tpe, eff, loc)
 
-      case Expression.CloseChannel(exp, tpe, eff, loc) =>
-        val e = visitExp(exp)
-        Expression.CloseChannel(e, tpe, eff, loc)
-
       case Expression.Spawn(exp, tpe, eff, loc) =>
         val e = visitExp(exp)
         Expression.Spawn(e, tpe, eff, loc)

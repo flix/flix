@@ -862,7 +862,6 @@ object SymbolicEvaluator {
       case Expression.GetChannel(exp ,tpe, loc) => throw InternalCompilerException("Not yet supported.")
       case Expression.PutChannel(exp1, exp2, tpe, loc) => throw InternalCompilerException("Not yet supported.")
       case Expression.SelectChannel(rules, default, tpe, loc) => throw InternalCompilerException("Not yet supported.")
-      case Expression.CloseChannel(exp, tpe, loc) => throw InternalCompilerException("Not yet supported.")
       case Expression.Spawn(exp, tpe, loc) => throw InternalCompilerException("Not yet supported.")
       case Expression.Sleep(exp, tpe, loc) => throw InternalCompilerException("Not yet supported.")
 

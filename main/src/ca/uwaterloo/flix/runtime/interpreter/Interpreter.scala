@@ -296,11 +296,6 @@ object Interpreter {
       // Evaluate the expression of the selected rule
       eval(selectedRule._3, newEnv, henv0, lenv0, root)
 
-    case Expression.CloseChannel(exp, tpe, loc) =>
-      val chan = eval(exp, env0, henv0, lenv0, root).asInstanceOf[Channel]
-      chan.close()
-      Value.Unit
-
     case Expression.Spawn(exp, tpe, loc) =>
       Channel.spawn(() => {
         val e = eval(exp, env0, henv0, lenv0, root)

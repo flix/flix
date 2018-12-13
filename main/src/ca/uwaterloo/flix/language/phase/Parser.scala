@@ -586,7 +586,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     def Primary: Rule1[ParsedAst.Expression] = rule {
       LetRec | LetMatch | IfThenElse | Match | LambdaMatch | Switch | TryCatch | Native | Lambda | Tuple |
         RecordRestrict | RecordExtend | RecordUpdate | RecordLiteral | RecordSelectLambda | NewChannel |
-        GetChannel | SelectChannel | CloseChannel | Spawn | Sleep | ArrayLit | ArrayNew | ArrayLength |
+        GetChannel | SelectChannel | Spawn | Sleep | ArrayLit | ArrayNew | ArrayLength |
         VectorLit | VectorNew | VectorLength | FNil | FSet | FMap | FixpointSolve | FixpointCheck |
         FixpointDelta | FixpointProject | ConstraintSeq | Literal | HandleWith | Existential | Universal |
         UnaryLambda | QName | Wild | Tag | SName | Hole | UserError
@@ -685,10 +685,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       rule {
         SP ~ atomic("select") ~ WS ~ "{" ~ optWS ~ oneOrMore(SelectChannelRule).separatedBy(optWS) ~ optWS ~ optional(SelectChannelDefault) ~ optWS ~ "}" ~ SP ~> ParsedAst.Expression.SelectChannel
       }
-    }
-
-    def CloseChannel: Rule1[ParsedAst.Expression.CloseChannel] = rule {
-      SP ~ atomic("closech") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.CloseChannel
     }
 
     def Spawn: Rule1[ParsedAst.Expression.Spawn] = rule {

@@ -742,8 +742,6 @@ object JvmOps {
         }
         rs ++ d
 
-      case Expression.CloseChannel(exp, tpe, loc) => visitExp(exp)
-
       case Expression.Spawn(exp, tpe, loc) => visitExp(exp)
 
       case Expression.Sleep(exp, tpe, loc) => visitExp(exp)
@@ -1013,8 +1011,6 @@ object JvmOps {
           case None => Set.empty
         }
         rs ++ d
-
-      case Expression.CloseChannel(exp, tpe, loc) => visitExp(exp) + tpe
 
       case Expression.Spawn(exp, tpe, loc) => visitExp(exp) + tpe
 

@@ -369,10 +369,6 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
 
         FinalAst.Expression.SelectChannel(rs, d, tpe, loc)
 
-      case SimplifiedAst.Expression.CloseChannel(exp, tpe, loc) =>
-        val e = visit(exp)
-        FinalAst.Expression.CloseChannel(e, tpe, loc)
-
       case SimplifiedAst.Expression.Spawn(exp, tpe, loc) =>
         val e = visit(exp)
         FinalAst.Expression.Spawn(e, tpe, loc)

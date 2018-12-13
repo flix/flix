@@ -217,8 +217,6 @@ object FinalAst {
 
     case class SelectChannel(rules: List[FinalAst.SelectChannelRule], default: Option[FinalAst.SelectChannelDefault], tpe: Type, loc: SourceLocation) extends FinalAst.Expression
 
-    case class CloseChannel(exp: FinalAst.Expression, tpe: Type, loc: SourceLocation) extends FinalAst.Expression
-
     case class Spawn(exp: FinalAst.Expression, tpe: Type, loc: SourceLocation) extends FinalAst.Expression
 
     case class Sleep(exp: FinalAst.Expression, tpe: Type, loc: SourceLocation) extends FinalAst.Expression

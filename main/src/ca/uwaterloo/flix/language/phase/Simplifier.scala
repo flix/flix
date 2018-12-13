@@ -538,10 +538,6 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
 
         SimplifiedAst.Expression.SelectChannel(rs, d, tpe, loc)
 
-      case TypedAst.Expression.CloseChannel(exp, tpe, eff, loc) =>
-        val e = visitExp(exp)
-        SimplifiedAst.Expression.CloseChannel(e, tpe, loc)
-
       case TypedAst.Expression.Spawn(exp, tpe, eff, loc) =>
         val e = visitExp(exp)
         // Make a function type, () -> e.tpe
@@ -1242,10 +1238,6 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
           SimplifiedAst.SelectChannelDefault(visitExp(exp))}
 
         SimplifiedAst.Expression.SelectChannel(rs, d, tpe, loc)
-
-      case SimplifiedAst.Expression.CloseChannel(exp, tpe, loc) =>
-        val e = visitExp(exp)
-        SimplifiedAst.Expression.CloseChannel(e, tpe, loc)
 
       case SimplifiedAst.Expression.Spawn(exp, tpe, loc) =>
         val e = visitExp(exp)

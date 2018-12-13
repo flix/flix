@@ -311,10 +311,6 @@ object ClosureConv extends Phase[Root, Root] {
 
       Expression.SelectChannel(rs, d, tpe, loc)
 
-    case Expression.CloseChannel(exp, tpe, loc) =>
-      val e = visitExp(exp)
-      Expression.CloseChannel(e, tpe, loc)
-
     case Expression.Spawn(exp, tpe, loc) =>
       val e = visitExp(exp)
       Expression.Spawn(e, tpe, loc)
@@ -518,7 +514,6 @@ object ClosureConv extends Phase[Root, Root] {
       }
 
       rs ++ d
-    case Expression.CloseChannel(exp, tpe, loc) => freeVars(exp)
     case Expression.Spawn(exp, tpe, loc) => freeVars(exp)
     case Expression.Sleep(exp, tpe, loc) => freeVars(exp)
 
@@ -839,10 +834,6 @@ object ClosureConv extends Phase[Root, Root] {
         val d = default.map{case SelectChannelDefault(exp) => SelectChannelDefault(visitExp(exp))}
 
         Expression.SelectChannel(rs, d, tpe, loc)
-
-      case Expression.CloseChannel(exp, tpe, loc) =>
-        val e = visitExp(exp)
-        Expression.CloseChannel(e, tpe, loc)
 
       case Expression.Spawn(exp, tpe, loc) =>
         val e = visitExp(exp)
