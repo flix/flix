@@ -294,8 +294,10 @@ object Stratifier extends Phase[Root, Root] {
         case as => Expression.NativeMethod(method, as, tpe, loc)
       }
 
-    case Expression.NewChannel(tpe, loc) =>
-      Expression.NewChannel(tpe, loc).toSuccess
+    case Expression.NewChannel(tpe, exp, loc) =>
+      mapN(visitExp(exp)) {
+        case e => Expression.NewChannel(tpe, e, loc)
+      }
 
     case Expression.GetChannel(exp, tpe, loc) =>
       mapN(visitExp(exp)) {

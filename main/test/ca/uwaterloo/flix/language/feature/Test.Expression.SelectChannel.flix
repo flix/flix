@@ -1,7 +1,7 @@
 //TODO SJ: make tests
 @test
 def testSelectChannel1(): Int =
-    let c1 = chan Int;
+    let c1 = chan Int 100;
     c1 <- 2;
     select {
         case x <- c1 => x
@@ -19,7 +19,7 @@ def testSelectChannel1(): Int =
 //  ch <- ()
 //
 //def selectChannelUnit01(): Unit =
-//  let ch = chan Unit;
+//  let ch = chan Unit 100;
 //  let _ = spawn fUnit01(ch);
 //  select {
 //    case y <- ch => y
@@ -32,7 +32,7 @@ def testSelectChannel1(): Int =
 //  ch <- ()
 //
 //def selectChannelUnit02(): Unit =
-//  let ch = chan Unit;
+//  let ch = chan Unit 100;
 //  let _ = spawn fUnit02(ch);
 //  select {
 //    case x <- ch => x
@@ -45,7 +45,7 @@ def testSelectChannel1(): Int =
 //  ch <- ()
 //
 //def selectChannelUnit03(): Unit =
-//  let ch = chan Unit;
+//  let ch = chan Unit 100;
 //  let _ = spawn fUnit03(ch);
 //  select {
 //    case x <- ch => x
@@ -55,7 +55,7 @@ def testSelectChannel1(): Int =
 //def testSelectChannelUnit03(): Bool = selectChannelUnit03() `assertEq!` ()
 //
 //def selectChannelUnit04(): Unit =
-//  let ch = chan Unit;
+//  let ch = chan Unit 100;
 //  let _ = ch <- ();
 //  select {
 //    case x <- ch => x
@@ -65,7 +65,7 @@ def testSelectChannel1(): Int =
 //def testSelectChannelUnit04(): Bool = selectChannelUnit04() `assertEq!` ()
 //
 //def selectChannelUnit05(): Unit =
-//  let ch = chan Unit;
+//  let ch = chan Unit 100;
 //  let _ = ch <- ();
 //  select {
 //    case x <- ch => ()
@@ -78,8 +78,8 @@ def testSelectChannel1(): Int =
 //  ch <- ()
 //
 //def selectChannelUnit06(): Unit =
-//  let ch1 = chan Unit;
-//  let ch2 = chan Unit;
+//  let ch1 = chan Unit 100;
+//  let ch2 = chan Unit 100;
 //  let _ = spawn fUnit06(ch1);
 //  select {
 //    case x <- ch1 => x
@@ -92,8 +92,8 @@ def testSelectChannel1(): Int =
 //  ch <- ()
 //
 //def selectChannelUnit07(): Unit =
-//  let ch1 = chan Unit;
-//  let ch2 = chan Unit;
+//  let ch1 = chan Unit 100;
+//  let ch2 = chan Unit 100;
 //  let _ = spawn fUnit07(ch2);
 //  select {
 //    case x <- ch2 => x
@@ -108,7 +108,7 @@ def testSelectChannel1(): Int =
 //  ch <- true
 //
 //def selectChannelBool01(): Bool =
-//  let ch = chan Bool;
+//  let ch = chan Bool 100;
 //  let _ = spawn fBool01(ch);
 //  select {
 //    case x <- ch => x
@@ -121,7 +121,7 @@ def testSelectChannel1(): Int =
 //  ch <- false
 //
 //def selectChannelBool02(): Bool =
-//  let ch = chan Bool;
+//  let ch = chan Bool 100;
 //  let _ = spawn fBool02(ch);
 //  select {
 //    case x <- ch => x
@@ -134,7 +134,7 @@ def testSelectChannel1(): Int =
 //  ch <- true
 //
 //def selectChannelBool03(): Bool =
-//  let ch = chan Bool;
+//  let ch = chan Bool 100;
 //  let _ = spawn fBool03(ch);
 //  select {
 //    case x <- ch => x
@@ -147,7 +147,7 @@ def testSelectChannel1(): Int =
 //  ch <- false
 //
 //def selectChannelBool04(): Bool =
-//  let ch = chan Bool;
+//  let ch = chan Bool 100;
 //  let _ = spawn fBool04(ch);
 //  select {
 //    case x <- ch => x
@@ -160,7 +160,7 @@ def testSelectChannel1(): Int =
 //  ch <- true
 //
 //def selectChannelBool05(): Bool =
-//  let ch = chan Bool;
+//  let ch = chan Bool 100;
 //  let _ = spawn fBool05(ch);
 //  select {
 //    case x <- ch => x
@@ -173,7 +173,7 @@ def testSelectChannel1(): Int =
 //  ch <- false
 //
 //def selectChannelBool06(): Bool =
-//  let ch = chan Bool;
+//  let ch = chan Bool 100;
 //  let _ = spawn fBool06(ch);
 //  select {
 //    case x <- ch => x
@@ -183,7 +183,7 @@ def testSelectChannel1(): Int =
 //def testSelectChannelBool06(): Bool = selectChannelBool06() `assertEq!` false
 //
 //def selectChannelBool07(): Bool =
-//  let ch = chan Bool;
+//  let ch = chan Bool 100;
 //  let _ = ch <- true;
 //  select {
 //    case x <- ch => x
@@ -193,7 +193,7 @@ def testSelectChannel1(): Int =
 //def testSelectChannelBool07(): Bool = selectChannelBool07() `assertEq!` true
 //
 //def selectChannelBool08(): Bool =
-//  let ch = chan Bool;
+//  let ch = chan Bool 100;
 //  let _ = ch <- false;
 //  select {
 //    case x <- ch => x
@@ -203,7 +203,7 @@ def testSelectChannel1(): Int =
 //def testSelectChannelBool08(): Bool = selectChannelBool08() `assertEq!` false
 //
 //def selectChannelBool09(): Bool =
-//  let ch = chan Bool;
+//  let ch = chan Bool 100;
 //  let _ = ch <- true;
 //  select {
 //    case x <- ch => true
@@ -213,7 +213,7 @@ def testSelectChannel1(): Int =
 //def testSelectChannelBool09(): Bool = selectChannelBool09() `assertEq!` true
 //
 //def selectChannelBool10(): Bool =
-//  let ch = chan Bool;
+//  let ch = chan Bool 100;
 //  let _ = ch <- false;
 //  select {
 //    case x <- ch => false
@@ -223,7 +223,7 @@ def testSelectChannel1(): Int =
 //def testSelectChannelBool10(): Bool = selectChannelBool10() `assertEq!` false
 //
 //def selectChannelBool11(): Bool =
-//  let ch = chan Bool;
+//  let ch = chan Bool 100;
 //  let _ = ch <- true;
 //  select {
 //    case x <- ch => true && true
@@ -233,7 +233,7 @@ def testSelectChannel1(): Int =
 //def testSelectChannelBool11(): Bool = selectChannelBool11() `assertEq!` true
 //
 //def selectChannelBool12(): Bool =
-//  let ch = chan Bool;
+//  let ch = chan Bool 100;
 //  let _ = ch <- true;
 //  select {
 //    case x <- ch => true && false
@@ -243,7 +243,7 @@ def testSelectChannel1(): Int =
 //def testSelectChannelBool12(): Bool = selectChannelBool12() `assertEq!` false
 //
 //def selectChannelBool13(): Bool =
-//  let ch = chan Bool;
+//  let ch = chan Bool 100;
 //  let _ = ch <- true;
 //  select {
 //    case x <- ch => false && false
@@ -253,7 +253,7 @@ def testSelectChannel1(): Int =
 //def testSelectChannelBool13(): Bool = selectChannelBool13() `assertEq!` false
 //
 //def selectChannelBool14(): Bool =
-//  let ch = chan Bool;
+//  let ch = chan Bool 100;
 //  let _ = ch <- true;
 //  select {
 //    case x <- ch => false && true
@@ -263,7 +263,7 @@ def testSelectChannel1(): Int =
 //def testSelectChannelBool14(): Bool = selectChannelBool14() `assertEq!` false
 //
 //def selectChannelBool15(): Bool =
-//  let ch = chan Bool;
+//  let ch = chan Bool 100;
 //  let _ = ch <- true;
 //  select {
 //    case x <- ch => true || true
@@ -273,7 +273,7 @@ def testSelectChannel1(): Int =
 //def testSelectChannelBool15(): Bool = selectChannelBool15() `assertEq!` true
 //
 //def selectChannelBool16(): Bool =
-//  let ch = chan Bool;
+//  let ch = chan Bool 100;
 //  let _ = ch <- true;
 //  select {
 //    case x <- ch => true || false
@@ -283,7 +283,7 @@ def testSelectChannel1(): Int =
 //def testSelectChannelBool16(): Bool = selectChannelBool16() `assertEq!` true
 //
 //def selectChannelBool17(): Bool =
-//  let ch = chan Bool;
+//  let ch = chan Bool 100;
 //  let _ = ch <- true;
 //  select {
 //    case x <- ch => false || false
@@ -293,7 +293,7 @@ def testSelectChannel1(): Int =
 //def testSelectChannelBool17(): Bool = selectChannelBool17() `assertEq!` false
 //
 //def selectChannelBool18(): Bool =
-//  let ch = chan Bool;
+//  let ch = chan Bool 100;
 //  let _ = ch <- true;
 //  select {
 //    case x <- ch => false || true
@@ -303,7 +303,7 @@ def testSelectChannel1(): Int =
 //def testSelectChannelBool18(): Bool = selectChannelBool18() `assertEq!` true
 //
 //def selectChannelBool19(): Bool =
-//  let ch = chan Bool;
+//  let ch = chan Bool 100;
 //  let _ = ch <- true;
 //  select {
 //    case x <- ch => x && true
@@ -313,7 +313,7 @@ def testSelectChannel1(): Int =
 //def testSelectChannelBool19(): Bool = selectChannelBool19() `assertEq!` true
 //
 //def selectChannelBool20(): Bool =
-//  let ch = chan Bool;
+//  let ch = chan Bool 100;
 //  let _ = ch <- true;
 //  select {
 //    case x <- ch => x && false
@@ -323,7 +323,7 @@ def testSelectChannel1(): Int =
 //def testSelectChannelBool20(): Bool = selectChannelBool20() `assertEq!` false
 //
 //def selectChannelBool21(): Bool =
-//  let ch = chan Bool;
+//  let ch = chan Bool 100;
 //  let _ = ch <- false;
 //  select {
 //    case x <- ch => x && false
@@ -333,7 +333,7 @@ def testSelectChannel1(): Int =
 //def testSelectChannelBool21(): Bool = selectChannelBool21() `assertEq!` false
 //
 //def selectChannelBool22(): Bool =
-//  let ch = chan Bool;
+//  let ch = chan Bool 100;
 //  let _ = ch <- false;
 //  select {
 //    case x <- ch => x && true
@@ -343,7 +343,7 @@ def testSelectChannel1(): Int =
 //def testSelectChannelBool22(): Bool = selectChannelBool22() `assertEq!` false
 //
 //def selectChannelBool23(): Bool =
-//  let ch = chan Bool;
+//  let ch = chan Bool 100;
 //  let _ = ch <- true;
 //  select {
 //    case x <- ch => x || true
@@ -353,7 +353,7 @@ def testSelectChannel1(): Int =
 //def testSelectChannelBool23(): Bool = selectChannelBool23() `assertEq!` true
 //
 //def selectChannelBool24(): Bool =
-//  let ch = chan Bool;
+//  let ch = chan Bool 100;
 //  let _ = ch <- true;
 //  select {
 //    case x <- ch => x || false
@@ -363,7 +363,7 @@ def testSelectChannel1(): Int =
 //def testSelectChannelBool24(): Bool = selectChannelBool24() `assertEq!` true
 //
 //def selectChannelBool25(): Bool =
-//  let ch = chan Bool;
+//  let ch = chan Bool 100;
 //  let _ = ch <- false;
 //  select {
 //    case x <- ch => x || false
@@ -373,7 +373,7 @@ def testSelectChannel1(): Int =
 //def testSelectChannelBool25(): Bool = selectChannelBool25() `assertEq!` false
 //
 //def selectChannelBool26(): Bool =
-//  let ch = chan Bool;
+//  let ch = chan Bool 100;
 //  let _ = ch <- false;
 //  select {
 //    case x <- ch => x || true
@@ -386,8 +386,8 @@ def testSelectChannel1(): Int =
 //  ch <- true
 //
 //def selectChannelBool27(): Bool =
-//  let ch1 = chan Bool;
-//  let ch2 = chan Bool;
+//  let ch1 = chan Bool 100;
+//  let ch2 = chan Bool 100;
 //  let _ = spawn fBool27(ch1);
 //  select {
 //    case x <- ch1 => x
@@ -400,8 +400,8 @@ def testSelectChannel1(): Int =
 //  ch <- false
 //
 //def selectChannelBool28(): Bool =
-//  let ch1 = chan Bool;
-//  let ch2 = chan Bool;
+//  let ch1 = chan Bool 100;
+//  let ch2 = chan Bool 100;
 //  let _ = spawn fBool28(ch1);
 //  select {
 //    case x <- ch1 => x
@@ -414,8 +414,8 @@ def testSelectChannel1(): Int =
 //  ch <- true
 //
 //def selectChannelBool29(): Bool =
-//  let ch1 = chan Bool;
-//  let ch2 = chan Bool;
+//  let ch1 = chan Bool 100;
+//  let ch2 = chan Bool 100;
 //  let _ = spawn fBool29(ch2);
 //  select {
 //    case x <- ch2 => x
@@ -428,8 +428,8 @@ def testSelectChannel1(): Int =
 //  ch <- false
 //
 //def selectChannelBool30(): Bool =
-//  let ch1 = chan Bool;
-//  let ch2 = chan Bool;
+//  let ch1 = chan Bool 100;
+//  let ch2 = chan Bool 100;
 //  let _ = spawn fBool30(ch2);
 //  select {
 //    case x <- ch2 => x
@@ -443,7 +443,7 @@ def testSelectChannel1(): Int =
 //  ch <- 0
 //
 //def selectChannelInt01(): Int =
-//  let ch = chan Int;
+//  let ch = chan Int 100;
 //  let _ = spawn fInt01(ch);
 //  select {
 //    case x <- ch => x
@@ -456,7 +456,7 @@ def testSelectChannel1(): Int =
 //  ch <- 1
 //
 //def selectChannelInt02(): Int =
-//  let ch = chan Int;
+//  let ch = chan Int 100;
 //  let _ = spawn fInt02(ch);
 //  select {
 //    case x <- ch => x
@@ -469,7 +469,7 @@ def testSelectChannel1(): Int =
 //  ch <- 10
 //
 //def selectChannelInt03(): Int =
-//  let ch = chan Int;
+//  let ch = chan Int 100;
 //  let _ = spawn fInt03(ch);
 //  select {
 //    case x <- ch => x
@@ -482,7 +482,7 @@ def testSelectChannel1(): Int =
 //  ch <- 2147483647
 //
 //def selectChannelInt04(): Int =
-//  let ch = chan Int;
+//  let ch = chan Int 100;
 //  let _ = spawn fInt04(ch);
 //  select {
 //    case x <- ch => x
@@ -495,7 +495,7 @@ def testSelectChannel1(): Int =
 //  ch <- -1
 //
 //def selectChannelInt05(): Int =
-//  let ch = chan Int;
+//  let ch = chan Int 100;
 //  let _ = spawn fInt05(ch);
 //  select {
 //    case x <- ch => x
@@ -508,7 +508,7 @@ def testSelectChannel1(): Int =
 //  ch <- -10
 //
 //def selectChannelInt06(): Int =
-//  let ch = chan Int;
+//  let ch = chan Int 100;
 //  let _ = spawn fInt06(ch);
 //  select {
 //    case x <- ch => x
@@ -521,7 +521,7 @@ def testSelectChannel1(): Int =
 //  ch <- -214748
 //
 //def selectChannelInt07(): Int =
-//  let ch = chan Int;
+//  let ch = chan Int 100;
 //  let _ = spawn fInt07(ch);
 //  select {
 //    case x <- ch => x
@@ -534,7 +534,7 @@ def testSelectChannel1(): Int =
 //  ch <- 0
 //
 //def selectChannelInt08(): Int =
-//  let ch = chan Int;
+//  let ch = chan Int 100;
 //  let _ = spawn fInt08(ch);
 //  select {
 //    case x <- ch => x
@@ -547,7 +547,7 @@ def testSelectChannel1(): Int =
 //  ch <- 1
 //
 //def selectChannelInt09(): Int =
-//  let ch = chan Int;
+//  let ch = chan Int 100;
 //  let _ = spawn fInt09(ch);
 //  select {
 //    case x <- ch => x
@@ -560,7 +560,7 @@ def testSelectChannel1(): Int =
 //  ch <- 10
 //
 //def selectChannelInt10(): Int =
-//  let ch = chan Int;
+//  let ch = chan Int 100;
 //  let _ = spawn fInt10(ch);
 //  select {
 //    case x <- ch => x
@@ -573,7 +573,7 @@ def testSelectChannel1(): Int =
 //  ch <- 2147483647
 //
 //def selectChannelInt11(): Int =
-//  let ch = chan Int;
+//  let ch = chan Int 100;
 //  let _ = spawn fInt11(ch);
 //  select {
 //    case x <- ch => x
@@ -586,7 +586,7 @@ def testSelectChannel1(): Int =
 //  ch <- -1
 //
 //def selectChannelInt12(): Int =
-//  let ch = chan Int;
+//  let ch = chan Int 100;
 //  let _ = spawn fInt12(ch);
 //  select {
 //    case x <- ch => x
@@ -599,7 +599,7 @@ def testSelectChannel1(): Int =
 //  ch <- -10
 //
 //def selectChannelInt13(): Int =
-//  let ch = chan Int;
+//  let ch = chan Int 100;
 //  let _ = spawn fInt13(ch);
 //  select {
 //    case x <- ch => x
@@ -612,7 +612,7 @@ def testSelectChannel1(): Int =
 //  ch <- -214748
 //
 //def selectChannelInt14(): Int =
-//  let ch = chan Int;
+//  let ch = chan Int 100;
 //  let _ = spawn fInt14(ch);
 //  select {
 //    case x <- ch => x
@@ -625,7 +625,7 @@ def testSelectChannel1(): Int =
 //  ch <- 0
 //
 //def selectChannelInt15(): Int =
-//  let ch = chan Int;
+//  let ch = chan Int 100;
 //  let _ = spawn fInt15(ch);
 //  select {
 //    case x <- ch => x
@@ -638,7 +638,7 @@ def testSelectChannel1(): Int =
 //  ch <- 1
 //
 //def selectChannelInt16(): Int =
-//  let ch = chan Int;
+//  let ch = chan Int 100;
 //  let _ = spawn fInt16(ch);
 //  select {
 //    case x <- ch => x
@@ -651,7 +651,7 @@ def testSelectChannel1(): Int =
 //  ch <- 10
 //
 //def selectChannelInt17(): Int =
-//  let ch = chan Int;
+//  let ch = chan Int 100;
 //  let _ = spawn fInt17(ch);
 //  select {
 //    case x <- ch => x
@@ -664,7 +664,7 @@ def testSelectChannel1(): Int =
 //  ch <- 2147483647
 //
 //def selectChannelInt18(): Int =
-//  let ch = chan Int;
+//  let ch = chan Int 100;
 //  let _ = spawn fInt18(ch);
 //  select {
 //    case x <- ch => x
@@ -677,7 +677,7 @@ def testSelectChannel1(): Int =
 //  ch <- -1
 //
 //def selectChannelInt19(): Int =
-//  let ch = chan Int;
+//  let ch = chan Int 100;
 //  let _ = spawn fInt19(ch);
 //  select {
 //    case x <- ch => x
@@ -690,7 +690,7 @@ def testSelectChannel1(): Int =
 //  ch <- -10
 //
 //def selectChannelInt20(): Int =
-//  let ch = chan Int;
+//  let ch = chan Int 100;
 //  let _ = spawn fInt20(ch);
 //  select {
 //    case x <- ch => x
@@ -703,7 +703,7 @@ def testSelectChannel1(): Int =
 //  ch <- -214748
 //
 //def selectChannelInt21(): Int =
-//  let ch = chan Int;
+//  let ch = chan Int 100;
 //  let _ = spawn fInt21(ch);
 //  select {
 //    case x <- ch => x
@@ -713,7 +713,7 @@ def testSelectChannel1(): Int =
 //def testSelectChannelInt21(): Bool = selectChannelInt21() `assertEq!` -214748
 //
 //def selectChannelInt22(): Int =
-//  let ch = chan Int;
+//  let ch = chan Int 100;
 //  let _ = ch <- 0;
 //  select {
 //    case x <- ch => x
@@ -723,7 +723,7 @@ def testSelectChannel1(): Int =
 //def testSelectChannelInt22(): Bool = selectChannelInt22() `assertEq!` 0
 //
 //def selectChannelInt23(): Int =
-//  let ch = chan Int;
+//  let ch = chan Int 100;
 //  let _ = ch <- 1;
 //  select {
 //    case x <- ch => x
@@ -733,7 +733,7 @@ def testSelectChannel1(): Int =
 //def testSelectChannelInt23(): Bool = selectChannelInt23() `assertEq!` 1
 //
 //def selectChannelInt24(): Int =
-//  let ch = chan Int;
+//  let ch = chan Int 100;
 //  let _ = ch <- 10;
 //  select {
 //    case x <- ch => x
@@ -743,7 +743,7 @@ def testSelectChannel1(): Int =
 //def testSelectChannelInt24(): Bool = selectChannelInt24() `assertEq!` 10
 //
 //def selectChannelInt25(): Int =
-//  let ch = chan Int;
+//  let ch = chan Int 100;
 //  let _ = ch <- 2147483647;
 //  select {
 //    case x <- ch => x
@@ -753,7 +753,7 @@ def testSelectChannel1(): Int =
 //def testSelectChannelInt25(): Bool = selectChannelInt25() `assertEq!` 2147483647
 //
 //def selectChannelInt26(): Int =
-//  let ch = chan Int;
+//  let ch = chan Int 100;
 //  let _ = ch <- -1;
 //  select {
 //    case x <- ch => x
@@ -763,7 +763,7 @@ def testSelectChannel1(): Int =
 //def testSelectChannelInt26(): Bool = selectChannelInt26() `assertEq!` -1
 //
 //def selectChannelInt27(): Int =
-//  let ch = chan Int;
+//  let ch = chan Int 100;
 //  let _ = ch <- -10;
 //  select {
 //    case x <- ch => x
@@ -773,7 +773,7 @@ def testSelectChannel1(): Int =
 //def testSelectChannelInt27(): Bool = selectChannelInt27() `assertEq!` -10
 //
 //def selectChannelInt28(): Int =
-//  let ch = chan Int;
+//  let ch = chan Int 100;
 //  let _ = ch <- -214748;
 //  select {
 //    case x <- ch => x
@@ -783,7 +783,7 @@ def testSelectChannel1(): Int =
 //def testSelectChannelInt28(): Bool = selectChannelInt28() `assertEq!` -214748
 //
 //def selectChannelInt29(): Int =
-//  let ch = chan Int;
+//  let ch = chan Int 100;
 //  let _ = ch <- 0;
 //  select {
 //    case x <- ch => 0
@@ -793,7 +793,7 @@ def testSelectChannel1(): Int =
 //def testSelectChannelInt29(): Bool = selectChannelInt29() `assertEq!` 0
 //
 //def selectChannelInt30(): Int =
-//  let ch = chan Int;
+//  let ch = chan Int 100;
 //  let _ = ch <- 0;
 //  select {
 //    case x <- ch => 1
@@ -803,7 +803,7 @@ def testSelectChannel1(): Int =
 //def testSelectChannelInt30(): Bool = selectChannelInt30() `assertEq!` 1
 //
 //def selectChannelInt31(): Int =
-//  let ch = chan Int;
+//  let ch = chan Int 100;
 //  let _ = ch <- 0;
 //  select {
 //    case x <- ch => 10
@@ -813,7 +813,7 @@ def testSelectChannel1(): Int =
 //def testSelectChannelInt31(): Bool = selectChannelInt31() `assertEq!` 10
 //
 //def selectChannelInt32(): Int =
-//  let ch = chan Int;
+//  let ch = chan Int 100;
 //  let _ = ch <- 0;
 //  select {
 //    case x <- ch => 2147483647
@@ -823,7 +823,7 @@ def testSelectChannel1(): Int =
 //def testSelectChannelInt32(): Bool = selectChannelInt32() `assertEq!` 2147483647
 //
 //def selectChannelInt33(): Int =
-//  let ch = chan Int;
+//  let ch = chan Int 100;
 //  let _ = ch <- 0;
 //  select {
 //    case x <- ch => -1
@@ -833,7 +833,7 @@ def testSelectChannel1(): Int =
 //def testSelectChannelInt33(): Bool = selectChannelInt33() `assertEq!` -1
 //
 //def selectChannelInt34(): Int =
-//  let ch = chan Int;
+//  let ch = chan Int 100;
 //  let _ = ch <- 0;
 //  select {
 //    case x <- ch => -10
@@ -843,7 +843,7 @@ def testSelectChannel1(): Int =
 //def testSelectChannelInt34(): Bool = selectChannelInt34() `assertEq!` -10
 //
 //def selectChannelInt35(): Int =
-//  let ch = chan Int;
+//  let ch = chan Int 100;
 //  let _ = ch <- 0;
 //  select {
 //    case x <- ch => -214748
@@ -856,8 +856,8 @@ def testSelectChannel1(): Int =
 //  ch <- 0
 //
 //def selectChannelInt36(): Int =
-//  let ch1 = chan Int;
-//  let ch2 = chan Int;
+//  let ch1 = chan Int 100;
+//  let ch2 = chan Int 100;
 //  let _ = spawn fInt36(ch1);
 //  select {
 //    case x <- ch1 => x
@@ -870,8 +870,8 @@ def testSelectChannel1(): Int =
 //  ch <- 1
 //
 //def selectChannelInt37(): Int =
-//  let ch1 = chan Int;
-//  let ch2 = chan Int;
+//  let ch1 = chan Int 100;
+//  let ch2 = chan Int 100;
 //  let _ = spawn fInt37(ch1);
 //  select {
 //    case x <- ch1 => x
@@ -884,8 +884,8 @@ def testSelectChannel1(): Int =
 //  ch <- 10
 //
 //def selectChannelInt38(): Int =
-//  let ch1 = chan Int;
-//  let ch2 = chan Int;
+//  let ch1 = chan Int 100;
+//  let ch2 = chan Int 100;
 //  let _ = spawn fInt38(ch1);
 //  select {
 //    case x <- ch1 => x
@@ -898,8 +898,8 @@ def testSelectChannel1(): Int =
 //  ch <- 2147483647
 //
 //def selectChannelInt39(): Int =
-//  let ch1 = chan Int;
-//  let ch2 = chan Int;
+//  let ch1 = chan Int 100;
+//  let ch2 = chan Int 100;
 //  let _ = spawn fInt39(ch1);
 //  select {
 //    case x <- ch1 => x
@@ -912,8 +912,8 @@ def testSelectChannel1(): Int =
 //  ch <- -1
 //
 //def selectChannelInt40(): Int =
-//  let ch1 = chan Int;
-//  let ch2 = chan Int;
+//  let ch1 = chan Int 100;
+//  let ch2 = chan Int 100;
 //  let _ = spawn fInt40(ch1);
 //  select {
 //    case x <- ch1 => x
@@ -926,8 +926,8 @@ def testSelectChannel1(): Int =
 //  ch <- -10
 //
 //def selectChannelInt41(): Int =
-//  let ch1 = chan Int;
-//  let ch2 = chan Int;
+//  let ch1 = chan Int 100;
+//  let ch2 = chan Int 100;
 //  let _ = spawn fInt41(ch1);
 //  select {
 //    case x <- ch1 => x
@@ -940,8 +940,8 @@ def testSelectChannel1(): Int =
 //  ch <- -214748
 //
 //def selectChannelInt42(): Int =
-//  let ch1 = chan Int;
-//  let ch2 = chan Int;
+//  let ch1 = chan Int 100;
+//  let ch2 = chan Int 100;
 //  let _ = spawn fInt42(ch1);
 //  select {
 //    case x <- ch1 => x
@@ -954,8 +954,8 @@ def testSelectChannel1(): Int =
 //  ch <- 0
 //
 //def selectChannelInt43(): Int =
-//  let ch1 = chan Int;
-//  let ch2 = chan Int;
+//  let ch1 = chan Int 100;
+//  let ch2 = chan Int 100;
 //  let _ = spawn fInt43(ch2);
 //  select {
 //    case x <- ch1 => x
@@ -969,8 +969,8 @@ def testSelectChannel1(): Int =
 //  ch <- 1
 //
 //def selectChannelInt44(): Int =
-//  let ch1 = chan Int;
-//  let ch2 = chan Int;
+//  let ch1 = chan Int 100;
+//  let ch2 = chan Int 100;
 //  let _ = spawn fInt44(ch2);
 //  select {
 //    case x <- ch1 => x
@@ -984,8 +984,8 @@ def testSelectChannel1(): Int =
 //  ch <- 10
 //
 //def selectChannelInt45(): Int =
-//  let ch1 = chan Int;
-//  let ch2 = chan Int;
+//  let ch1 = chan Int 100;
+//  let ch2 = chan Int 100;
 //  let _ = spawn fInt45(ch2);
 //  select {
 //    case x <- ch1 => x
@@ -999,8 +999,8 @@ def testSelectChannel1(): Int =
 //  ch <- 2147483647
 //
 //def selectChannelInt46(): Int =
-//  let ch1 = chan Int;
-//  let ch2 = chan Int;
+//  let ch1 = chan Int 100;
+//  let ch2 = chan Int 100;
 //  let _ = spawn fInt46(ch2);
 //  select {
 //    case x <- ch1 => x
@@ -1014,8 +1014,8 @@ def testSelectChannel1(): Int =
 //  ch <- -1
 //
 //def selectChannelInt47(): Int =
-//  let ch1 = chan Int;
-//  let ch2 = chan Int;
+//  let ch1 = chan Int 100;
+//  let ch2 = chan Int 100;
 //  let _ = spawn fInt47(ch2);
 //  select {
 //    case x <- ch1 => x
@@ -1029,8 +1029,8 @@ def testSelectChannel1(): Int =
 //  ch <- -10
 //
 //def selectChannelInt48(): Int =
-//  let ch1 = chan Int;
-//  let ch2 = chan Int;
+//  let ch1 = chan Int 100;
+//  let ch2 = chan Int 100;
 //  let _ = spawn fInt48(ch2);
 //  select {
 //    case x <- ch1 => x
@@ -1044,8 +1044,8 @@ def testSelectChannel1(): Int =
 //  ch <- -214748
 //
 //def selectChannelInt49(): Int =
-//  let ch1 = chan Int;
-//  let ch2 = chan Int;
+//  let ch1 = chan Int 100;
+//  let ch2 = chan Int 100;
 //  let _ = spawn fInt49(ch2);
 //  select {
 //    case x <- ch1 => x
@@ -1060,7 +1060,7 @@ def testSelectChannel1(): Int =
 //  ch <- ""
 //
 //def selectChannelStr01(): Str =
-//  let ch = chan Str;
+//  let ch = chan Str 100;
 //  let _ = spawn fStr01(ch);
 //  select {
 //    case x <- ch => x
@@ -1073,7 +1073,7 @@ def testSelectChannel1(): Int =
 //  ch <- "a"
 //
 //def selectChannelStr02(): Str =
-//  let ch = chan Str;
+//  let ch = chan Str 100;
 //  let _ = spawn fStr02(ch);
 //  select {
 //    case x <- ch => x
@@ -1086,7 +1086,7 @@ def testSelectChannel1(): Int =
 //  ch <- "str"
 //
 //def selectChannelStr03(): Str =
-//  let ch = chan Str;
+//  let ch = chan Str 100;
 //  let _ = spawn fStr03(ch);
 //  select {
 //    case x <- ch => x
@@ -1099,7 +1099,7 @@ def testSelectChannel1(): Int =
 //  ch <- ""
 //
 //def selectChannelStr04(): Str =
-//  let ch = chan Str;
+//  let ch = chan Str 100;
 //  let _ = spawn fStr04(ch);
 //  select {
 //    case x <- ch => x
@@ -1112,7 +1112,7 @@ def testSelectChannel1(): Int =
 //  ch <- "str"
 //
 //def selectChannelStr05(): Str =
-//  let ch = chan Str;
+//  let ch = chan Str 100;
 //  let _ = spawn fStr05(ch);
 //  select {
 //    case x <- ch => x
@@ -1125,7 +1125,7 @@ def testSelectChannel1(): Int =
 //  ch <- ""
 //
 //def selectChannelStr06(): Str =
-//  let ch = chan Str;
+//  let ch = chan Str 100;
 //  let _ = spawn fStr06(ch);
 //  select {
 //    case x <- ch => x
@@ -1138,7 +1138,7 @@ def testSelectChannel1(): Int =
 //  ch <- "str"
 //
 //def selectChannelStr07(): Str =
-//  let ch = chan Str;
+//  let ch = chan Str 100;
 //  let _ = spawn fStr07(ch);
 //  select {
 //    case x <- ch => x
@@ -1148,7 +1148,7 @@ def testSelectChannel1(): Int =
 //def testSelectChannelStr07(): Bool = selectChannelStr07() `assertEq!` "str"
 //
 //def selectChannelStr08(): Str =
-//  let ch = chan Str;
+//  let ch = chan Str 100;
 //  let _ = ch <- "";
 //  select {
 //    case x <- ch => x
@@ -1158,7 +1158,7 @@ def testSelectChannel1(): Int =
 //def testSelectChannelStr08(): Bool = selectChannelStr08() `assertEq!` ""
 //
 //def selectChannelStr09(): Str =
-//  let ch = chan Str;
+//  let ch = chan Str 100;
 //  let _ = ch <- "str";
 //  select {
 //    case x <- ch => x
@@ -1168,7 +1168,7 @@ def testSelectChannel1(): Int =
 //def testSelectChannelStr09(): Bool = selectChannelStr09() `assertEq!` "str"
 //
 //def selectChannelStr10(): Str =
-//  let ch = chan Str;
+//  let ch = chan Str 100;
 //  let _ = ch <- "";
 //  select {
 //    case x <- ch => ""
@@ -1178,7 +1178,7 @@ def testSelectChannel1(): Int =
 //def testSelectChannelStr10(): Bool = selectChannelStr10() `assertEq!` ""
 //
 //def selectChannelStr11(): Str =
-//  let ch = chan Str;
+//  let ch = chan Str 100;
 //  let _ = ch <- "";
 //  select {
 //    case x <- ch => "str"
@@ -1191,8 +1191,8 @@ def testSelectChannel1(): Int =
 //  ch <- ""
 //
 //def selectChannelStr12(): Str =
-//  let ch1 = chan Str;
-//  let ch2 = chan Str;
+//  let ch1 = chan Str 100;
+//  let ch2 = chan Str 100;
 //  let _ = spawn fStr12(ch1);
 //  select {
 //    case x <- ch1 => x
@@ -1205,8 +1205,8 @@ def testSelectChannel1(): Int =
 //  ch <- "str"
 //
 //def selectChannelStr13(): Str =
-//  let ch1 = chan Str;
-//  let ch2 = chan Str;
+//  let ch1 = chan Str 100;
+//  let ch2 = chan Str 100;
 //  let _ = spawn fStr13(ch1);
 //  select {
 //    case x <- ch1 => x
@@ -1219,8 +1219,8 @@ def testSelectChannel1(): Int =
 //  ch <- ""
 //
 //def selectChannelStr14(): Str =
-//  let ch1 = chan Str;
-//  let ch2 = chan Str;
+//  let ch1 = chan Str 100;
+//  let ch2 = chan Str 100;
 //  let _ = spawn fStr14(ch2);
 //  select {
 //    case x <- ch1 => x
@@ -1234,8 +1234,8 @@ def testSelectChannel1(): Int =
 //  ch <- "str"
 //
 //def selectChannelStr15(): Str =
-//  let ch1 = chan Str;
-//  let ch2 = chan Str;
+//  let ch1 = chan Str 100;
+//  let ch2 = chan Str 100;
 //  let _ = spawn fStr15(ch2);
 //  select {
 //    case x <- ch1 => x
@@ -1250,7 +1250,7 @@ def testSelectChannel1(): Int =
 //  ch <- 'a'
 //
 //def selectChannelChar01(): Char =
-//  let ch = chan Char;
+//  let ch = chan Char 100;
 //  let _ = spawn fChar01(ch);
 //  select {
 //    case x <- ch => x
@@ -1263,7 +1263,7 @@ def testSelectChannel1(): Int =
 //  ch <- 'c'
 //
 //def selectChannelChar02(): Char =
-//  let ch = chan Char;
+//  let ch = chan Char 100;
 //  let _ = spawn fChar02(ch);
 //  select {
 //    case x <- ch => x
@@ -1276,7 +1276,7 @@ def testSelectChannel1(): Int =
 //  ch <- 'a'
 //
 //def selectChannelChar03(): Char =
-//  let ch = chan Char;
+//  let ch = chan Char 100;
 //  let _ = spawn fChar03(ch);
 //  select {
 //    case x <- ch => x
@@ -1289,7 +1289,7 @@ def testSelectChannel1(): Int =
 //  ch <- 'c'
 //
 //def selectChannelChar04(): Char =
-//  let ch = chan Char;
+//  let ch = chan Char 100;
 //  let _ = spawn fChar04(ch);
 //  select {
 //    case x <- ch => x
@@ -1302,7 +1302,7 @@ def testSelectChannel1(): Int =
 //  ch <- 'a'
 //
 //def selectChannelChar05(): Char =
-//  let ch = chan Char;
+//  let ch = chan Char 100;
 //  let _ = spawn fChar05(ch);
 //  select {
 //    case x <- ch => x
@@ -1315,7 +1315,7 @@ def testSelectChannel1(): Int =
 //  ch <- 'c'
 //
 //def selectChannelChar06(): Char =
-//  let ch = chan Char;
+//  let ch = chan Char 100;
 //  let _ = spawn fChar06(ch);
 //  select {
 //    case x <- ch => x
@@ -1325,7 +1325,7 @@ def testSelectChannel1(): Int =
 //def testSelectChannelChar06(): Bool = selectChannelChar06() `assertEq!` 'c'
 //
 //def selectChannelChar07(): Char =
-//  let ch = chan Char;
+//  let ch = chan Char 100;
 //  let _ = ch <- 'a';
 //  select {
 //    case x <- ch => x
@@ -1335,7 +1335,7 @@ def testSelectChannel1(): Int =
 //def testSelectChannelChar07(): Bool = selectChannelChar07() `assertEq!` 'a'
 //
 //def selectChannelChar08(): Char =
-//  let ch = chan Char;
+//  let ch = chan Char 100;
 //  let _ = ch <- 'c';
 //  select {
 //    case x <- ch => x
@@ -1345,7 +1345,7 @@ def testSelectChannel1(): Int =
 //def testSelectChannelChar08(): Bool = selectChannelChar08() `assertEq!` 'c'
 //
 //def selectChannelChar09(): Char =
-//  let ch = chan Char;
+//  let ch = chan Char 100;
 //  let _ = ch <- 'z';
 //  select {
 //    case x <- ch => 'a'
@@ -1355,7 +1355,7 @@ def testSelectChannel1(): Int =
 //def testSelectChannelChar09(): Bool = selectChannelChar09() `assertEq!` 'a'
 //
 //def selectChannelChar10(): Char =
-//  let ch = chan Char;
+//  let ch = chan Char 100;
 //  let _ = ch <- 'a';
 //  select {
 //    case x <- ch => 'c'
@@ -1368,8 +1368,8 @@ def testSelectChannel1(): Int =
 //  ch <- 'a'
 //
 //def selectChannelChar11(): Char =
-//  let ch1 = chan Char;
-//  let ch2 = chan Char;
+//  let ch1 = chan Char 100;
+//  let ch2 = chan Char 100;
 //  let _ = spawn fChar11(ch1);
 //  select {
 //    case x <- ch1 => x
@@ -1382,8 +1382,8 @@ def testSelectChannel1(): Int =
 //  ch <- 'c'
 //
 //def selectChannelChar12(): Char =
-//  let ch1 = chan Char;
-//  let ch2 = chan Char;
+//  let ch1 = chan Char 100;
+//  let ch2 = chan Char 100;
 //  let _ = spawn fChar12(ch1);
 //  select {
 //    case x <- ch1 => x
@@ -1396,8 +1396,8 @@ def testSelectChannel1(): Int =
 //  ch <- 'a'
 //
 //def selectChannelChar13(): Char =
-//  let ch1 = chan Char;
-//  let ch2 = chan Char;
+//  let ch1 = chan Char 100;
+//  let ch2 = chan Char 100;
 //  let _ = spawn fChar13(ch2);
 //  select {
 //    case x <- ch1 => x
@@ -1411,8 +1411,8 @@ def testSelectChannel1(): Int =
 //  ch <- 'c'
 //
 //def selectChannelChar14(): Char =
-//  let ch1 = chan Char;
-//  let ch2 = chan Char;
+//  let ch1 = chan Char 100;
+//  let ch2 = chan Char 100;
 //  let _ = spawn fChar14(ch2);
 //  select {
 //    case x <- ch1 => x
@@ -1427,7 +1427,7 @@ def testSelectChannel1(): Int =
 //  ch <- None
 //
 //def selectChannelOption01(): Option[Int] =
-//  let ch = chan Option[Int];
+//  let ch = chan Option[Int] 100;
 //  let _ = spawn fOption01(ch);
 //  select {
 //    case x <- ch => x
@@ -1440,7 +1440,7 @@ def testSelectChannel1(): Int =
 //  ch <- Some(42)
 //
 //def selectChannelOption02(): Option[Int] =
-//  let ch = chan Option[Int];
+//  let ch = chan Option[Int] 100;
 //  let _ = spawn fOption02(ch);
 //  select {
 //    case x <- ch => x
@@ -1453,7 +1453,7 @@ def testSelectChannel1(): Int =
 //  ch <- None
 //
 //def selectChannelOption03(): Int =
-//  let ch = chan Option[Int];
+//  let ch = chan Option[Int] 100;
 //  let _ = spawn fOption03(ch);
 //  select {
 //    case x <- ch => match x with {
@@ -1469,7 +1469,7 @@ def testSelectChannel1(): Int =
 //  ch <- Some(42)
 //
 //def selectChannelOption04(): Int =
-//  let ch = chan Option[Int];
+//  let ch = chan Option[Int] 100;
 //  let _ = spawn fOption04(ch);
 //  select {
 //    case x <- ch => match x with {
@@ -1485,7 +1485,7 @@ def testSelectChannel1(): Int =
 //  ch <- None
 //
 //def selectChannelOption05(): Option[Str] =
-//  let ch = chan Option[Str];
+//  let ch = chan Option[Str] 100;
 //  let _ = spawn fOption05(ch);
 //  select {
 //    case x <- ch => x
@@ -1498,7 +1498,7 @@ def testSelectChannel1(): Int =
 //  ch <- Some("Str")
 //
 //def selectChannelOption06(): Option[Str] =
-//  let ch = chan Option[Str];
+//  let ch = chan Option[Str] 100;
 //  let _ = spawn fOption06(ch);
 //  select {
 //    case x <- ch => x
@@ -1511,7 +1511,7 @@ def testSelectChannel1(): Int =
 //  ch <- None
 //
 //def selectChanneloption07(): Str =
-//  let ch = chan Option[Str];
+//  let ch = chan Option[Str] 100;
 //  let _ = spawn foption07(ch);
 //  select {
 //    case x <- ch => match x with {
@@ -1527,7 +1527,7 @@ def testSelectChannel1(): Int =
 //  ch <- Some("str")
 //
 //def selectChannelOption08(): Str =
-//  let ch = chan Option[Str];
+//  let ch = chan Option[Str] 100;
 //  let _ = spawn fOption08(ch);
 //  select {
 //    case x <- ch => match x with {
@@ -1552,7 +1552,7 @@ def testSelectChannel1(): Int =
 //  ch <- true
 //
 //def selectChannelIf01(): Int =
-//  let ch = chan Bool;
+//  let ch = chan Bool 100;
 //  let _ = spawn fIf01(ch);
 //  select {
 //    case x <- ch => if (x) 3 else 7
@@ -1565,7 +1565,7 @@ def testSelectChannel1(): Int =
 //  ch <- false
 //
 //def selectChannelIf02(): Int =
-//  let ch = chan Bool;
+//  let ch = chan Bool 100;
 //  let _ = spawn fIf02(ch);
 //  select {
 //    case x <- ch => if (x) 3 else 7
@@ -1578,7 +1578,7 @@ def testSelectChannel1(): Int =
 //  ch <- true
 //
 //def selectChannelIf03(): Str =
-//  let ch = chan Bool;
+//  let ch = chan Bool 100;
 //  let _ = spawn fIf03(ch);
 //  select {
 //    case x <- ch => if (x) "a" else "b"
@@ -1591,7 +1591,7 @@ def testSelectChannel1(): Int =
 //  ch <- false
 //
 //def selectChannelIf04(): Str =
-//  let ch = chan Bool;
+//  let ch = chan Bool 100;
 //  let _ = spawn fIf04(ch);
 //  select {
 //    case x <- ch => if (x) "a" else "b"
@@ -1604,7 +1604,7 @@ def testSelectChannel1(): Int =
 //  ch <- true
 //
 //def selectChannelIf05(): Char =
-//  let ch = chan Bool;
+//  let ch = chan Bool 100;
 //  let _ = spawn fIf05(ch);
 //  select {
 //    case x <- ch => if (x) 'a' else 'b'
@@ -1617,7 +1617,7 @@ def testSelectChannel1(): Int =
 //  ch <- false
 //
 //def selectChannelIf06(): Char =
-//  let ch = chan Bool;
+//  let ch = chan Bool 100;
 //  let _ = spawn fIf06(ch);
 //  select {
 //    case x <- ch => if (x) 'a' else 'b'
@@ -1630,8 +1630,8 @@ def testSelectChannel1(): Int =
 //  ch <- 1
 //
 //def selectChannelMultipleChannels01(): Int =
-//  let ch1 = chan Int;
-//  let ch2 = chan Str;
+//  let ch1 = chan Int 100;
+//  let ch2 = chan Str 100;
 //  let _ = spawn fMultipleChannels01(ch1);
 //  select {
 //    case x <- ch1 => x
@@ -1645,8 +1645,8 @@ def testSelectChannel1(): Int =
 //  ch <- "a"
 //
 //def selectChannelMultipleChannels02(): Int =
-//  let ch1 = chan Int;
-//  let ch2 = chan Str;
+//  let ch1 = chan Int 100;
+//  let ch2 = chan Str 100;
 //  let _ = spawn fMultipleChannels02(ch2);
 //  select {
 //    case x <- ch1 => x
@@ -1660,8 +1660,8 @@ def testSelectChannel1(): Int =
 //  ch <- 1
 //
 //def selectChannelMultipleChannels03(): Str =
-//  let ch1 = chan Int;
-//  let ch2 = chan Str;
+//  let ch1 = chan Int 100;
+//  let ch2 = chan Str 100;
 //  let _ = spawn fMultipleChannels03(ch1);
 //  select {
 //    case x <- ch1 => "z"
@@ -1675,8 +1675,8 @@ def testSelectChannel1(): Int =
 //  ch <- "a"
 //
 //def selectChannelMultipleChannels04(): Str =
-//  let ch1 = chan Int;
-//  let ch2 = chan Str;
+//  let ch1 = chan Int 100;
+//  let ch2 = chan Str 100;
 //  let _ = spawn fMultipleChannels04(ch2);
 //  select {
 //    case x <- ch1 => "z"
@@ -1687,10 +1687,10 @@ def testSelectChannel1(): Int =
 //def testSelectChannelMultipleChannels04(): Bool = selectChannelMultipleChannels04() `assertEq!` "a"
 //
 //def fMultipleSelects01(): Int =
-//  let ch1 = chan Int;
-//  let ch2 = chan Int;
-//  let ch3 = chan Int;
-//  let ch4 = chan Int;
+//  let ch1 = chan Int 100;
+//  let ch2 = chan Int 100;
+//  let ch3 = chan Int 100;
+//  let ch4 = chan Int 100;
 //  let _ = spawn gMultipleSelects01(ch1, ch2, ch3);
 //  let _ = spawn hMultipleSelects01(ch1, ch2, ch3, ch4);
 //  select {

@@ -193,7 +193,8 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.NativeField(field, tpe, loc) => i0
       case Expression.NativeMethod(method, args, tpe, loc) => visitExps(args, i0)
 
-      case Expression.NewChannel(tpe, loc) => i0
+      case Expression.NewChannel(tpe, exp, loc) =>
+        visitExp(exp, i0)
 
       case Expression.GetChannel(exp, tpe, loc) =>
         visitExp(exp, i0)

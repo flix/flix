@@ -1137,12 +1137,17 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         /*
        * New Channel expression.
        */
-        case ResolvedAst.Expression.NewChannel(tpe, loc) =>
+        case ResolvedAst.Expression.NewChannel(tpe, exp, loc) =>
           //
+          //  exp: Int
           //  --------------------
-          //  newch t : Channel[t]
+          //  newch t exp : Channel[t]
           //
-          liftM(Type.mkChannel(tpe))
+          for {
+            actualLengthType <- visitExp(exp)
+            lengthType <- unifyM(actualLengthType, Type.Int32, loc)
+            resultType <- liftM(Type.mkChannel(tpe))
+          } yield resultType
 
         /*
          * Get Channel expression.
@@ -1728,9 +1733,9 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         /*
        * New Channel expression.
        */
-        //TODO SJ: Use substitution?
-        case ResolvedAst.Expression.NewChannel(tpe, loc) =>
-          TypedAst.Expression.NewChannel(Type.mkChannel(tpe), Eff.Bot, loc)
+        case ResolvedAst.Expression.NewChannel(tpe, exp, loc) =>
+          val e = visitExp(exp, subst0)
+          TypedAst.Expression.NewChannel(Type.mkChannel(tpe), e, Eff.Bot, loc)
 
         /*
          * Get Channel expression.

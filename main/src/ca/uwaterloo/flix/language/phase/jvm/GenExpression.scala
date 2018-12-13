@@ -898,11 +898,12 @@ object GenExpression {
           AsmOps.getMethodDescriptor(List(), JvmType.Unit), false)
       }
 
-    case Expression.NewChannel(tpe, loc) =>
+    case Expression.NewChannel(tpe, exp, loc) =>
       addSourceLine(visitor, loc)
       visitor.visitTypeInsn(NEW, JvmName.Channel.toInternalName)
       visitor.visitInsn(DUP)
-      visitor.visitMethodInsn(INVOKESPECIAL, JvmName.Channel.toInternalName, "<init>", "()V", false)
+      compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+      visitor.visitMethodInsn(INVOKESPECIAL, JvmName.Channel.toInternalName, "<init>", "(I)V", false)
 
     case Expression.GetChannel(exp, tpe, loc) =>
       addSourceLine(visitor, loc)
@@ -933,7 +934,7 @@ object GenExpression {
         visitor.visitInsn(DUP)
         // Compile the index
         compileInt(visitor, index)
-        // Compile the chan expression
+        // Compile the chan expression 100
         compileExpression(rule.chan, visitor, currentClass, lenv0, entryPoint)
         // Cast the type from Object to Channel
         visitor.visitTypeInsn(CHECKCAST, JvmName.Channel.toInternalName)

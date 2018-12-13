@@ -428,7 +428,8 @@ object SimplifiedAstOps {
       //
       // New Channel.
       //
-      case Expression.NewChannel(tpe, loc) =>
+      case Expression.NewChannel(tpe, exp, loc) =>
+        checkExp(exp, env0, ienv0)
         checkType(tpe)
 
       //

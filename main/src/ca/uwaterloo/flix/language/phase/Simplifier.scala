@@ -513,8 +513,9 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         val es = args.map(e => visitExp(e))
         SimplifiedAst.Expression.NativeMethod(method, es, tpe, loc)
 
-      case TypedAst.Expression.NewChannel(tpe, eff, loc) =>
-        SimplifiedAst.Expression.NewChannel(tpe, loc)
+      case TypedAst.Expression.NewChannel(tpe, exp, eff, loc) =>
+        val e = visitExp(exp)
+        SimplifiedAst.Expression.NewChannel(tpe, e, loc)
 
       case TypedAst.Expression.GetChannel(exp, tpe, eff, loc) =>
         val e = visitExp(exp)
@@ -1214,8 +1215,9 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         val es = args map visitExp
         SimplifiedAst.Expression.NativeMethod(method, es, tpe, loc)
 
-      case SimplifiedAst.Expression.NewChannel(tpe, loc) =>
-        SimplifiedAst.Expression.NewChannel(tpe, loc)
+      case SimplifiedAst.Expression.NewChannel(tpe, exp, loc) =>
+        val e = visitExp(exp)
+        SimplifiedAst.Expression.NewChannel(tpe, e, loc)
 
       case SimplifiedAst.Expression.GetChannel(exp, tpe, loc) =>
         val e = visitExp(exp)

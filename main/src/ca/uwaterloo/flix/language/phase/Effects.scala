@@ -580,8 +580,12 @@ object Effects extends Phase[Root, Root] {
         /**
           * New Channel Expression
           */
-        case Expression.NewChannel(tpe, eff, loc) =>
-          Expression.NewChannel(tpe, eff, loc).toSuccess
+        case Expression.NewChannel(tpe, exp, eff, loc) =>
+          for {
+            e <- visitExp(exp, env0)
+          } yield {
+            Expression.NewChannel(tpe, e, eff, loc)
+          }
 
         /**
           * Get Channel Expression

@@ -287,8 +287,9 @@ object ClosureConv extends Phase[Root, Root] {
       val as = args map visitExp
       Expression.NativeMethod(method, as, tpe, loc)
 
-    case Expression.NewChannel(tpe, loc) =>
-      Expression.NewChannel(tpe, loc)
+    case Expression.NewChannel(tpe, exp, loc) =>
+      val e = visitExp(exp)
+      Expression.NewChannel(tpe, e, loc)
 
     case Expression.GetChannel(exp, tpe, loc) =>
       val e = visitExp(exp)
@@ -500,7 +501,7 @@ object ClosureConv extends Phase[Root, Root] {
     case Expression.NativeField(field, tpe, loc) => mutable.LinkedHashSet.empty
     case Expression.NativeMethod(method, args, tpe, loc) => mutable.LinkedHashSet.empty ++ args.flatMap(freeVars)
 
-    case Expression.NewChannel(tpe, loc) => mutable.LinkedHashSet.empty
+    case Expression.NewChannel(tpe, exp, loc) => freeVars(exp)
     case Expression.GetChannel(exp, tpe, loc) => freeVars(exp)
     case Expression.PutChannel(exp1, exp2, tpe, loc) => freeVars(exp1) ++ freeVars(exp2)
     case Expression.SelectChannel(rules, default, tpe, loc) =>
@@ -811,8 +812,9 @@ object ClosureConv extends Phase[Root, Root] {
         val es = args map visitExp
         Expression.NativeMethod(method, es, tpe, loc)
 
-      case Expression.NewChannel(tpe, loc) =>
-        Expression.NewChannel(tpe, loc)
+      case Expression.NewChannel(tpe, exp, loc) =>
+        val e = visitExp(exp)
+        Expression.NewChannel(tpe, e, loc)
 
       case Expression.GetChannel(exp, tpe, loc) =>
         val e = visitExp(exp)

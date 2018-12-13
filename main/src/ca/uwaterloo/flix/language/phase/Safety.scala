@@ -175,7 +175,7 @@ object Safety extends Phase[Root, Root] {
         case (acc, e) => acc ::: visitExp(e)
       }
 
-    case Expression.NewChannel(tpe, eff, loc) => Nil
+    case Expression.NewChannel(tpe, exp, eff, loc) => visitExp(exp)
 
     case Expression.GetChannel(exp, tpe, eff, loc) => visitExp(exp)
 

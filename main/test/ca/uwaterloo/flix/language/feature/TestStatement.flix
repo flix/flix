@@ -130,27 +130,27 @@ def f16(): List[Int] =
 def testStatement16(): Bool = f16() `assertEq!` 1 :: 2 :: 3 :: 4 :: Nil
 
 def f17(): Int =
-    chan Int;
-    chan Int;
+    chan Int 100;
+    chan Int 100;
     2
 
 @test
 def testStatement17(): Bool = f17() `assertEq!` 2
 
 def f18(): Int =
-    chan Int;
-    chan Int;
-    chan Int;
+    chan Int 100;
+    chan Int 100;
+    chan Int 100;
     10
 
 @test
 def testStatement18(): Bool = f18() `assertEq!` 10
 
 def f19(): Int =
-    chan Int;
-    chan Int;
-    chan Int;
-    chan Int;
+    chan Int 100;
+    chan Int 100;
+    chan Int 100;
+    chan Int 100;
     42
 
 @test
@@ -205,7 +205,7 @@ def f25(): Int =
 def testStatement25(): Bool = f25() `assertEq!` 2
 
 def f26(): Int =
-    let ch = chan Int;
+    let ch = chan Int 100;
     ch <- 2 <- 3;
     ch <- 10;
     <- ch
@@ -214,8 +214,8 @@ def f26(): Int =
 def testStatement26(): Bool = f26() `assertEq!` 2
 
 def f27(): Int =
-    let ch1 = chan Int;
-    let ch2 = chan Int;
+    let ch1 = chan Int 100;
+    let ch2 = chan Int 100;
     ch1 <- 2;
     ch2 <- 3;
     ch1 <- 10;
@@ -225,8 +225,8 @@ def f27(): Int =
 def testStatement27(): Bool = f27() `assertEq!` 3
 
 def f28(): Int =
-    let ch1 = chan Int;
-    let ch2 = chan Int;
+    let ch1 = chan Int 100;
+    let ch2 = chan Int 100;
     spawn g28(ch1);
     ch2 <- 3;
     ch2 <- 10;

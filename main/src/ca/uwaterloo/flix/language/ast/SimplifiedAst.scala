@@ -230,7 +230,7 @@ object SimplifiedAst {
 
     case class NativeMethod(method: Method, args: List[SimplifiedAst.Expression], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
-    case class NewChannel(tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
+    case class NewChannel(tpe: Type, exp: SimplifiedAst.Expression, loc: SourceLocation) extends SimplifiedAst.Expression
 
     case class GetChannel(exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 

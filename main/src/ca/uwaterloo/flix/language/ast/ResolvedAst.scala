@@ -193,7 +193,7 @@ object ResolvedAst {
 
     case class NativeMethod(method: Method, args: List[ResolvedAst.Expression], tpe: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 
-    case class NewChannel(tpe: Type, loc: SourceLocation) extends ResolvedAst.Expression
+    case class NewChannel(tpe: Type, exp: ResolvedAst.Expression, loc: SourceLocation) extends ResolvedAst.Expression
 
     case class GetChannel(exp: ResolvedAst.Expression, tvar: Type.Var, loc: SourceLocation) extends ResolvedAst.Expression
 

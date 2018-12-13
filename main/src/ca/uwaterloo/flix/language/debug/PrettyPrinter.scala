@@ -399,7 +399,7 @@ object PrettyPrinter {
           }
           vt.text(")")
 
-        case Expression.NewChannel(tpe, loc) =>
+        case Expression.NewChannel(tpe, exp, loc) =>
           vt.text("Channel[")
           // TODO SJ: tpe
           vt.text("]")

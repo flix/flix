@@ -811,8 +811,10 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case Err(e) => e.toFailure
       }
 
-    case WeededAst.Expression.NewChannel(tpe, loc) =>
-      NamedAst.Expression.NewChannel(visitType(tpe, tenv0), loc).toSuccess
+    case WeededAst.Expression.NewChannel(tpe, exp, loc) =>
+      visitExp(exp, env0, tenv0) map {
+        case e => NamedAst.Expression.NewChannel(visitType(tpe, tenv0), e, loc)
+      }
 
     case WeededAst.Expression.GetChannel(exp, loc) =>
       visitExp(exp, env0, tenv0) map {
@@ -1126,7 +1128,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       }
     case WeededAst.Expression.NativeField(className, fieldName, loc) => Nil
     case WeededAst.Expression.NativeMethod(className, methodName, args, loc) => args.flatMap(freeVars)
-    case WeededAst.Expression.NewChannel(tpe,loc) => Nil
+    case WeededAst.Expression.NewChannel(tpe, exp, loc) => freeVars(exp)
     case WeededAst.Expression.GetChannel(exp, loc) => freeVars(exp)
     case WeededAst.Expression.PutChannel(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
     case WeededAst.Expression.SelectChannel(rules, default, loc) =>

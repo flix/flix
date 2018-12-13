@@ -682,10 +682,11 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
             es <- traverse(args)(e => visit(e, tenv0))
           } yield ResolvedAst.Expression.NativeMethod(method, es, tpe, loc)
 
-        case NamedAst.Expression.NewChannel(tpe, loc) =>
+        case NamedAst.Expression.NewChannel(tpe, exp, loc) =>
           for {
             t <- lookupType(tpe, ns0, prog0)
-          } yield ResolvedAst.Expression.NewChannel(t, loc)
+            e <- visit(exp, tenv0)
+          } yield ResolvedAst.Expression.NewChannel(t, e, loc)
 
         case NamedAst.Expression.GetChannel(exp, tvar, loc) =>
           for {

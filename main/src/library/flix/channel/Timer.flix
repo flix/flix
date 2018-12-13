@@ -20,7 +20,7 @@ namespace Timer {
     /// Returns a channel that receives the Unit value after `n` days.
     ///
     pub def days(n: Int64): Channel[Unit] =
-        let c = chan Unit;
+        let c = chan Unit 100;
         spawn sleepAndSend(n * Duration.oneDay(), c);
         c
 
@@ -28,7 +28,7 @@ namespace Timer {
     /// Returns a channel that receives the Unit value after `n` hours.
     ///
     pub def hours(n: Int64): Channel[Unit] =
-        let c = chan Unit;
+        let c = chan Unit 100;
         spawn sleepAndSend(n * Duration.oneHour(), c);
         c
 
@@ -36,7 +36,7 @@ namespace Timer {
     /// Returns a channel that receives the Unit value after `n` minutes.
     ///
     pub def minutes(n: Int64): Channel[Unit] =
-        let c = chan Unit;
+        let c = chan Unit 100;
         spawn sleepAndSend(n * Duration.oneMinute(), c);
         c
 
@@ -44,7 +44,7 @@ namespace Timer {
     /// Returns a channel that receives the Unit value after `n` seconds.
     ///
     pub def seconds(n: Int64): Channel[Unit] =
-        let c = chan Unit;
+        let c = chan Unit 100;
         spawn sleepAndSend(n * Duration.oneSecond(), c);
         c
 
@@ -52,7 +52,7 @@ namespace Timer {
     /// Returns a channel that receives the Unit value after `n` milliseconds.
     ///
     pub def milliseconds(n: Int64): Channel[Unit] =
-        let c = chan Unit;
+        let c = chan Unit 100;
         spawn sleepAndSend(n * Duration.oneMillisecond(), c);
         c
 
@@ -60,7 +60,7 @@ namespace Timer {
     /// Returns a channel that receives the Unit value after `n` microseconds.
     ///
     pub def microseconds(n: Int64): Channel[Unit] =
-        let c = chan Unit;
+        let c = chan Unit 100;
         spawn sleepAndSend(n * Duration.oneMicrosecond(), c);
         c
 
@@ -68,7 +68,7 @@ namespace Timer {
     /// Returns a channel that receives the Unit value after `n` nanoseconds.
     ///
     pub def nanoseconds(n: Int64): Channel[Unit] =
-        let c = chan Unit;
+        let c = chan Unit 100;
         spawn sleepAndSend(n * Duration.oneNanosecond(), c);
         c
 

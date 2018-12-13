@@ -666,7 +666,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     //TODO SJ: order this with primaries
     def NewChannel: Rule1[ParsedAst.Expression.NewChannel] = rule {
-      SP ~ atomic("chan") ~ WS ~ Type ~ SP ~> ParsedAst.Expression.NewChannel
+      SP ~ atomic("chan") ~ WS ~ Type ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.NewChannel
     }
 
     def GetChannel: Rule1[ParsedAst.Expression.GetChannel] = rule {

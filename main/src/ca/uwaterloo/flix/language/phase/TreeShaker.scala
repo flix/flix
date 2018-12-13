@@ -137,7 +137,7 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.NativeConstructor(constructor, args, tpe, loc) => visitExps(args)
       case Expression.NativeField(field, tpe, loc) => Set.empty
       case Expression.NativeMethod(method, args, tpe, loc) => visitExps(args)
-      case Expression.NewChannel(tpe, loc) => Set.empty
+      case Expression.NewChannel(tpe, exp, loc) => visitExp(exp)
       case Expression.GetChannel(exp, tpe, loc) => visitExp(exp)
       case Expression.PutChannel(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2)
       case Expression.SelectChannel(rules, default, tpe, loc) =>

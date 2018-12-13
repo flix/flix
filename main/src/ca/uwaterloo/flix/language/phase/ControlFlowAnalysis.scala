@@ -370,7 +370,7 @@ object ControlFlowAnalysis {
         AbstractValue.Bot
 
       //TODO: Add support for Channels to ControlFlowAnalysis.
-      case Expression.NewChannel(tpe, loc) => AbstractValue.Bot
+      case Expression.NewChannel(tpe, exp, loc) => AbstractValue.Bot
 
       case Expression.GetChannel(exp, tpe, loc) => AbstractValue.Bot
 

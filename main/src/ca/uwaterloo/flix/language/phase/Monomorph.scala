@@ -433,8 +433,9 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
           val es = args.map(e => visitExp(e, env0))
           Expression.NativeMethod(method, es, subst0(tpe), eff, loc)
 
-        case Expression.NewChannel(tpe, eff, loc) =>
-          Expression.NewChannel(subst0(tpe), eff, loc)
+        case Expression.NewChannel(tpe, exp, eff, loc) =>
+          val e = visitExp(exp, env0)
+          Expression.NewChannel(subst0(tpe), e, eff, loc)
 
         case Expression.GetChannel(exp, tpe, eff, loc) =>
           val e = visitExp(exp, env0)

@@ -193,7 +193,7 @@ object TypedAstOps {
           case (macc, arg) => macc ++ visitExp(arg, env0)
         }
 
-      case Expression.NewChannel(tpe, eff, loc) => Map.empty
+      case Expression.NewChannel(tpe, exp, eff, loc) => visitExp(exp, env0)
 
       case Expression.GetChannel(exp, tpe, eff, loc) => visitExp(exp, env0)
 

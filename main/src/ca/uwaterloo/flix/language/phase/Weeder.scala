@@ -954,8 +954,10 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
     // TODO SJ: Rewrite to Ascribe(newch, Channel[Int]), to remove the tpe (and get tvar like everything else)
     // TODO SJ: Also do not allow function types (Arrow) when rewriting
-    case ParsedAst.Expression.NewChannel(sp1, tpe, sp2) =>
-      WeededAst.Expression.NewChannel(visitType(tpe), mkSL(sp1, sp2)).toSuccess
+    case ParsedAst.Expression.NewChannel(sp1, tpe, exp, sp2) =>
+      visitExp(exp) map {
+        case e => WeededAst.Expression.NewChannel(visitType(tpe), e, mkSL(sp1, sp2))
+      }
 
     case ParsedAst.Expression.GetChannel(sp1, exp, sp2) =>
       visitExp(exp) map {
@@ -1867,7 +1869,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.NativeField(sp1, _, _) => sp1
     case ParsedAst.Expression.NativeMethod(sp1, _, _, _) => sp1
     case ParsedAst.Expression.NativeConstructor(sp1, _, _, _) => sp1
-    case ParsedAst.Expression.NewChannel(sp1, _, _) => sp1
+    case ParsedAst.Expression.NewChannel(sp1, _, _, _) => sp1
     case ParsedAst.Expression.GetChannel(sp1, _, _) => sp1
     case ParsedAst.Expression.PutChannel(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.SelectChannel(sp1, _, _, _) => sp1

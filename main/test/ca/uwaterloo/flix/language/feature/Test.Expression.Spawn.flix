@@ -289,12 +289,12 @@ def testSpawnTuple05(): Unit = spawn fTuple05()
 def fChannel01(x: Channel[Int]): Unit = ()
 
 @test
-def testSpawnChannel01(): Unit = spawn fChannel01(chan Int)
+def testSpawnChannel01(): Unit = spawn fChannel01(chan Int 100)
 
 def fChannel02(x: Channel[Int], y: Channel[Str]): Unit = ()
 
 @test
-def testSpawnChannel02(): Unit = spawn fChannel02(chan Int, chan Str)
+def testSpawnChannel02(): Unit = spawn fChannel02(chan Int 100, chan Str 100)
 
 def fList01(x: List[Int]): Unit = ()
 

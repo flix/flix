@@ -305,7 +305,9 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
           checkPats(_, root)
         }).map(const(tast))
 
-        case Expression.NewChannel(_, _, _) => tast.toSuccess
+        case Expression.NewChannel(_, exp, _, _) => for {
+          _ <- checkPats(exp, root)
+        } yield tast
 
         case Expression.GetChannel(exp, _, _ , _) => for {
           _ <- checkPats(exp, root)

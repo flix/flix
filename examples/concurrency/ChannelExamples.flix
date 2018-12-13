@@ -4,22 +4,25 @@
 //    x
 //}
 //
-//def chanTest(): Channel[Float64] = chan Float64
+//def chanTest(): Channel[Float64] = chan Float64 100
 //
 //
 //def getchTest(): (Int, Int) =
-//    let c1 = chan Channel[Int];
-//    let c2 = chan Int;
+//    let c1 = chan Channel[Int] 100;
+//    let c2 = chan Int 100;
 //    c1 <- (c2 <- 1) <- (c2 <- 2);
 //    let x = <- <- c1;
 //    let y = <- <- c1;
 //    (x, y)
 //
 //
-//def putchTest(): Channel[Bool] = let c = chan Bool; c <- true
+//def putchTest(): Channel[Bool] = let c = chan Bool 100; c <- true
+//
+//def closechTest(): Channel[Int] = let c = chan Int 100; let c1 = closech c; c <- 1
+//
 //
 //def collatz(n: Int): Int =
-//    let c = chan Int;
+//    let c = chan Int 100;
 //    c <- n;
 //
 //
@@ -29,18 +32,18 @@
 //
 //@test
 //def spawnTest(): Int =
-//    let c = chan Int;
+//    let c = chan Int 100;
 //    spawn f(c); spawn f(c); spawn f(c); spawn f(c); spawn f(c);
 //    spawn f(c); spawn f(c); spawn f(c); spawn f(c); spawn f(c);
 //    <- c; <- c; <- c; <- c; <- c; <- c; <- c; <- c; <- c; <- c
 //
-//def spawnTest(): Str = let c = chan Str; spawn c <- "2"; <- c
+//def spawnTest(): Str = let c = chan Str 100; spawn c <- "2"; <- c
 //
 //
 //def selectTest(): Float64 = {
-//    let c1 = chan Float64;
+//    let c1 = chan Float64 100;
 //    let asd = c1 <- 1.0;
-//    let c2 = chan Float64;
+//    let c2 = chan Float64 100;
 //    let fgh = c2 <- 2.0;
 //    select {
 //        case x <- c2 => x + 1.0
@@ -60,13 +63,13 @@
 //  ()
 
 //def test2(): Int =
-//  let c = chan Int;
+//  let c = chan Int 100;
 //  spawn c <- 2;
 //  <- c
 
 //def sleepTest(): Bool = {
 //  Console.printLine("1");
-//  let c = chan Int;
+//  let c = chan Int 100;
 //
 //  spawn {
 //    Console.printLine("2");
@@ -102,14 +105,46 @@
 //  Console.printLine("2")
 //}
 
-def defaultTest(): Int = {
-  let c = chan Int;
+//def defaultTest(): Int = {
+//  let c = chan Int 100;
 //  c <- 1;
-  select {
-    case x <- c => x
-    case _ => 3
-  }
+//  select {
+//    case x <- c => x
+//    case _ => 3
+//  }
+//}
+
+//def sizeTest(): Unit = {
+//  let c = chan Int 1;
+//  c <- 1;
+//  Console.printLine("c <- 1");
+//  spawn {
+//    sleep(2i64 * Duration.oneSecond());
+//    <- c;
+//    Console.printLine("<- c")
+//  };
+//  c <- 2;
+//  Console.printLine("c <- 2");
+//  ()
+//}
+
+def sizeTest(): Unit = {
+  let c = chan Int 1;
+  spawn {
+      select {
+              case x <- c => Console.printLine("<- c")
+              case _ => Console.printLine("default")
+            };
+      sleep(2i64 * Duration.oneSecond());
+      select {
+        case x <- c => Console.printLine("<- c")
+        case _ => Console.printLine("default")
+      }
+    };
+  sleep(1i64 * Duration.oneSecond());
+  c <- 1;
+  Console.printLine("c <- 1");
+  c <- 2;
+  Console.printLine("c <- 2");
+  ()
 }
-
-
-

@@ -209,7 +209,7 @@ object FinalAst {
 
     case class NativeMethod(method: Method, args: List[FinalAst.Expression], tpe: Type, loc: SourceLocation) extends FinalAst.Expression
 
-    case class NewChannel(tpe: Type, loc: SourceLocation) extends FinalAst.Expression
+    case class NewChannel(tpe: Type, exp: FinalAst.Expression, loc: SourceLocation) extends FinalAst.Expression
 
     case class GetChannel(exp: FinalAst.Expression, tpe: Type, loc: SourceLocation) extends FinalAst.Expression
 

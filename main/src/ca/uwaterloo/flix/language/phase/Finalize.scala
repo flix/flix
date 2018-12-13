@@ -344,8 +344,9 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
         val es = args map visit
         FinalAst.Expression.NativeMethod(method, es, tpe, loc)
 
-      case SimplifiedAst.Expression.NewChannel(tpe, loc) =>
-        FinalAst.Expression.NewChannel(tpe, loc)
+      case SimplifiedAst.Expression.NewChannel(tpe, exp, loc) =>
+        val e = visit(exp)
+        FinalAst.Expression.NewChannel(tpe, e, loc)
 
       case SimplifiedAst.Expression.GetChannel(exp, tpe, loc) =>
         val e = visit(exp)

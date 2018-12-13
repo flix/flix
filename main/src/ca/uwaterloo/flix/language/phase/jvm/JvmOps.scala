@@ -727,7 +727,7 @@ object JvmOps {
         case (sacc, e) => sacc ++ visitExp(e)
       }
 
-      case Expression.NewChannel(tpe, loc) => Set.empty
+      case Expression.NewChannel(tpe, exp, loc) => visitExp(exp)
 
       case Expression.GetChannel(exp, tpe, loc) => visitExp(exp)
 
@@ -998,7 +998,7 @@ object JvmOps {
         case (sacc, e) => sacc ++ visitExp(e)
       }
 
-      case Expression.NewChannel(tpe, loc) => Set(tpe)
+      case Expression.NewChannel(tpe, exp, loc) => visitExp(exp) + tpe
 
       case Expression.GetChannel(exp, tpe, loc) => visitExp(exp) + tpe
 

@@ -934,9 +934,10 @@ object ParsedAst {
       *
       * @param sp1 the position of the first character in the expression.
       * @param tpe the type of the channel elements.
+      * @param exp the size of the channel.
       * @param sp2 the position of the last character in the expression.
       */
-    case class NewChannel(sp1: SourcePosition, tpe: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Expression
+    case class NewChannel(sp1: SourcePosition, tpe: ParsedAst.Type, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * GetChannel Expression.

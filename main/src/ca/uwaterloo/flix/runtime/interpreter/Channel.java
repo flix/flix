@@ -16,26 +16,29 @@ public final class Channel {
    * used directly, since every channel has an id field from it at creation.
    */
   private static AtomicInteger GLOBALCOUNTER = new AtomicInteger();
+
   /**
-   * queue is the queue of elements in the list.
+   * elementQueue is the elementQueue of elements in the list.
    */
-  private LinkedList<Object> queue = new LinkedList<>();
+  private LinkedList<Object> elementQueue = new LinkedList<>();
 
   /**
    * waitingGetters is a set of conditions that is waiting for get.
    * This set is cleared after each new element.
    */
   private Set<LockConditionPair> waitingGetters = new HashSet<>();
+
   /**
    * channelLock is the channelLock of this channel.
    */
   private Lock channelLock = new ReentrantLock();
+
   /**
-   * NOT IMPLEMENTED.
    * waitingSetters is a condition that can notify threads of
-   * available space in the queue. This is useless without bufferSize.
+   * available space in the elementQueue.
    */
   private Condition waitingSetters = channelLock.newCondition();
+
   /**
    * id is the unique identifier of a channel. This is used
    * to sort and channelLock a list of channels to avoid a deadlock.
@@ -43,13 +46,20 @@ public final class Channel {
   private final int id = GLOBALCOUNTER.getAndIncrement();
 
   /**
-   * NOT IMPLEMENTED.
    * bufferSize is the size of a channel. If you try to put an
    * element in a channel that's full, you wait until there's space.
    */
   private int bufferSize;
 
-  //TODO SJ: Determine daemon and Threadpool
+  public Channel(int bufferSize) {
+    // TODO SJ handle special case with bufferSize = 0
+    if (bufferSize <= 0) {
+      throw new RuntimeException("Channel bufferSize must be positive");
+    }
+    this.bufferSize = bufferSize;
+  }
+
+  //TODO SJ: Determine Threadpool
   public static void spawn(Spawnable s) {
     Thread thread = new Thread(s::spawn);
     thread.setDaemon(true);
@@ -151,7 +161,7 @@ public final class Channel {
   }
 
   /**
-   * Put an element into the queue or wait until it is possible
+   * Put an element into the elementQueue or wait until it is possible
    * to do so.
    *
    * @param e the element to add
@@ -160,8 +170,22 @@ public final class Channel {
     channelLock.lock();
 
     try {
-      // TODO SJ: implement bufferSize here
-      queue.add(e);
+      // Check if the channel is full
+      while(elementQueue.size() >= bufferSize) {
+        if(Thread.interrupted()) {
+          throw new RuntimeException("Thread interrupted");
+        }
+
+        // Wait until signalled that the channel has space
+        try {
+          waitingSetters.await();
+        } catch (InterruptedException e1) {
+          throw new RuntimeException("Thread interrupted");
+        }
+      }
+
+      // There was space to put another element in the channel
+      elementQueue.add(e);
       for (LockConditionPair pair : waitingGetters) {
         Lock conditionLock = pair.getLock();
         Condition condition = pair.getCondition();
@@ -179,15 +203,15 @@ public final class Channel {
   }
 
   /**
-   * Retrieves the head of the queue or waits until it is possible to do so.
+   * Retrieves the head of the elementQueue or waits until it is possible to do so.
    *
-   * @return the head of the queue
+   * @return the head of the elementQueue
    */
   public Object get() {
     channelLock.lock();
     try {
       //checkIfClosed(); you can read from a closed channel
-      Object e = queue.poll();
+      Object e = elementQueue.poll();
       while (e == null) {
         Lock conditionLock = new ReentrantLock();
         conditionLock.lock();
@@ -201,11 +225,13 @@ public final class Channel {
           } finally {
             channelLock.lock();
           }
-          e = queue.poll();
+          e = elementQueue.poll();
         } finally {
           conditionLock.unlock();
         }
       }
+      // Signal waiting setters that the channel has space
+      waitingSetters.signalAll();
       return e;
     } catch (InterruptedException e2) {
       throw new RuntimeException();
@@ -215,16 +241,20 @@ public final class Channel {
   }
 
   /**
-   * Retrieves the head of the queue or null if the queue is empty.
+   * Retrieves the head of the elementQueue or null if the elementQueue is empty.
    *
-   * @return the head of the queue or null if its empty
+   * @return the head of the elementQueue or null if its empty
    */
   public Object tryGet() {
     channelLock.lock();
 
     try {
-      //checkIfClosed(); you can read from a closed channel
-      return queue.poll();
+      Object element = elementQueue.poll();
+      // If there was an element, signal waiting setters
+      if (element != null) {
+        waitingSetters.signalAll();
+      }
+      return element;
     } finally {
       channelLock.unlock();
     }
@@ -232,7 +262,7 @@ public final class Channel {
 
   /**
    * Adds the given condition to the list of conditions waiting to
-   * retrieve elements from the queue.
+   * retrieve elements from the elementQueue.
    *
    * @param condition the condition to add
    */

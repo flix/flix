@@ -403,8 +403,9 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       //
       // New Channel.
       //
-      case Expression.NewChannel(tpe, loc) =>
-        Expression.NewChannel(tpe, loc)
+      case Expression.NewChannel(tpe, exp, loc) =>
+        val e = visitExp(exp, env0)
+        Expression.NewChannel(tpe, e, loc)
 
       //
       // Get Channel.

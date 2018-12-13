@@ -301,7 +301,9 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         val es = args map visitExp
         Expression.NativeMethod(method, es, tpe, loc)
 
-      case Expression.NewChannel(tpe, loc) => e
+      case Expression.NewChannel(tpe, exp, loc) =>
+        val e = visitExp(exp)
+        Expression.NewChannel(tpe, e, loc)
 
       case Expression.GetChannel(exp, tpe, loc) =>
         val e = visitExp(exp)
