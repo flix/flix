@@ -120,6 +120,12 @@ public final class Channel {
         condition.await();
       } catch (InterruptedException e) {
         throw new RuntimeException("Thread interrupted");
+      } finally {
+        // Unlock the selectLock, which is relevant when a different thread wants to put
+        // an element into a channel that was not selected from the select.
+        // This other channel will then signal the condition from selectLock (in the put method),
+        // so it needs the lock.
+        selectLock.unlock();
       }
     }
 
@@ -185,6 +191,8 @@ public final class Channel {
 
       // There was space to put another element in the channel
       elementQueue.add(e);
+
+      // Signal waitingGetters that there is an element available
       for (LockConditionPair pair : waitingGetters) {
         Lock conditionLock = pair.getLock();
         Condition condition = pair.getCondition();
@@ -195,6 +203,8 @@ public final class Channel {
           conditionLock.unlock();
         }
       }
+      // Clear waitingGetters.
+      // If a waitingGetter does not receive an element, it can add itself again
       waitingGetters.clear();
     } finally {
       channelLock.unlock();

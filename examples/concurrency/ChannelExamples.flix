@@ -149,34 +149,100 @@
 //  ()
 //}
 
-def tiktok(ticker: Ticker.Ticker, c: Channel[Int]): Unit = {
-  select {
-    case result <- c =>
-      Console.printLine("Result found");
-      ()
-    case tick <- Ticker.tick(ticker) => {
-      if(tick < 5) {
-        Console.printLine("tiktok");
-        tiktok(ticker, c)
-      }
-      else {
-        Console.printLine("Stop");
-        Ticker.stop(ticker)
-      }
-    }
-  }
-}
-
-def slowFunction(c: Channel[Int]): Unit = {
-  sleep(3i64 * Duration.oneSecond());
-  // c <- 42 waits forever, and causes select tiktok() to halt too.
-  c <- 42;
-  ()
-}
-
-def tickerTest(): Unit = {
-  let ticker = Ticker.seconds(1i64);
-  let c = chan Int 1;
-  spawn slowFunction(c);
-  tiktok(ticker, c)
+//def tiktok(ticker: Ticker.Ticker, c: Channel[Int]): Unit = {
+//  select {
+//    case result <- c =>
+//      Console.printLine("Result found");
+//      ()
+//    case tick <- Ticker.tick(ticker) => {
+//      if(tick < 5) {
+//        Console.printLine("tiktok");
+//        tiktok(ticker, c)
+//      }
+//      else {
+//        Console.printLine("Stop");
+//        Ticker.stop(ticker)
+//      }
+//    }
+//  }
+//}
+//
+//def slowFunction(c: Channel[Int]): Unit = {
+//  sleep(3i64 * Duration.oneSecond());
+//   c <- 42 waits forever, and causes select tiktok() to halt too.
+//  c <- 42;
+//  ()
+//}
+//
+//def tickerTest(): Unit = {
+//  let ticker = Ticker.seconds(1i64);
+//  let c = chan Int 1;
+//  spawn slowFunction(c);
+//  tiktok(ticker, c)
+//}
+//
+// Should equal tickerTest, but Ticker is replaced with a regular channel and sleeping
+//def selectTest(): Unit = {
+//  let c1 = chan Int 5;
+//  let c2 = chan Int 5;
+//  let c3 = chan Int 5;
+//  c2 <- 1 <- 2 <- 3 <- 4 <- 5;
+//  spawn fillTick(c2);
+//  spawn fill(c1);
+//  sleep(5i64 * Duration.oneSecond());
+//  sel(c1, c2, 0);
+//  spawn {sleep(1i64 * Duration.oneSecond()); c2 <- 1; Console.printLine("c2 <- 1")};
+//  spawn {select {
+//    case x <- c1 => Console.printLine("c1")
+//    case y <- c2 => Console.printLine("c2")
+//  }; sleep(3i64 * Duration.oneHour())};
+//  sleep(3i64 * Duration.oneSecond());
+//  c2 <- 1;
+//  sleep(3i64 * Duration.oneSecond());
+//  spawn {sleep(1i64 * Duration.oneSecond()); c1 <- 1; Console.printLine("c1 <- 1")};
+//  spawn {c1 <- 1; c3 <- 5};
+//  sleep(3i64 * Duration.oneSecond());
+//  c3 <- 6;
+//  ()
+//}
+//
+//def fill(c: Channel[Int]): Unit = {
+//  sleep(3i64 * Duration.oneSecond());
+//  c <- 1;
+//  ()
+//}
+//
+//def fillTick(c: Channel[Int]): Unit = {
+//  sleep(800i64 * Duration.oneMillisecond());
+//  c <- 1;
+//  sleep(800i64 * Duration.oneMillisecond());
+//  c <- 2;
+//  sleep(800i64 * Duration.oneMillisecond());
+//  c <- 3;
+//  sleep(800i64 * Duration.oneMillisecond());
+//  c <- 4;
+//  sleep(800i64 * Duration.oneMillisecond());
+//  c <- 5;
+//  ()
+//}
+//
+//def sel(c1: Channel[Int], c2: Channel[Int], i: Int): Unit = {
+//  if (i < 1) {
+//    select {
+//      case x <- c1 => sel(c1, c2, i + 1)
+//      case y <- c2 => Console.printLine("c2"); sel(c1, c2, i + 1)
+//    }
+//  } else {
+//    Console.printLine("done")
+//  }
+//}
+//
+//
+def blah(): Int = {
+  let ch1 = chan Int 100;
+  ch1 <- 1;
+  let y = select {
+    case x <- ch1 => x
+  };
+  y
 }
