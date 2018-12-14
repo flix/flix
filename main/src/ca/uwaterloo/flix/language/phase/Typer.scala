@@ -1218,9 +1218,10 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           for {
             _ <- seqM(rules.map(inferSelectChannelRule))
             bodyTypes <- seqM(bodies map visitExp)
-            rtpe <- unifyM(bodyTypes, loc)
-            _ <- inferSelectChannelDefault(rtpe, default)
-          } yield rtpe
+            actualResultType <- unifyM(bodyTypes, loc)
+            _ <- inferSelectChannelDefault(actualResultType, default)
+            resultType <- unifyM(tvar, actualResultType, loc)
+          } yield resultType
 
         /*
          * Spawn Expression.
