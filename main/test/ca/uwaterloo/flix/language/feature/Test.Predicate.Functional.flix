@@ -27,11 +27,6 @@ def testFunctional05(): Bool = check {
     R(x) :- A(x), y <- one().
 }
 
-@test
-def testFunctional06(): Bool = check {
-    R(add(x, y)) :- x <- one(), y <- two().
-}
-
 def zer(): Array[Int] = []
 def one(): Array[Int] = [21]
 def two(): Array[Int] = [21, 42]
