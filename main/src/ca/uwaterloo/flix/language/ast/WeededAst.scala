@@ -180,7 +180,7 @@ object WeededAst {
 
     case class PutChannel(exp1: WeededAst.Expression, exp2: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
-    case class SelectChannel(rules: List[WeededAst.SelectChannelRule], default: Option[SelectChannelDefault], loc: SourceLocation) extends WeededAst.Expression
+    case class SelectChannel(rules: List[WeededAst.SelectChannelRule], default: Option[WeededAst.Expression], loc: SourceLocation) extends WeededAst.Expression
 
     case class Spawn(exp: WeededAst.Expression, loc: SourceLocation) extends WeededAst.Expression
 
@@ -321,6 +321,4 @@ object WeededAst {
   case class MatchRule(pat: WeededAst.Pattern, guard: WeededAst.Expression, exp: WeededAst.Expression)
 
   case class SelectChannelRule(ident: Name.Ident, channel: WeededAst.Expression, exp: WeededAst.Expression)
-
-  case class SelectChannelDefault(exp: WeededAst.Expression)
 }

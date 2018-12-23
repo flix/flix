@@ -308,7 +308,7 @@ object ClosureConv extends Phase[Root, Root] {
           SelectChannelRule(sym, c, e)
       }
 
-      val d = default.map{case SelectChannelDefault(exp) => SelectChannelDefault(visitExp(exp))}
+      val d = default.map(exp => visitExp(exp))
 
       Expression.SelectChannel(rs, d, tpe, loc)
 
@@ -510,7 +510,7 @@ object ClosureConv extends Phase[Root, Root] {
       }
 
       val d = default match {
-        case Some(SelectChannelDefault(exp)) => freeVars(exp)
+        case Some(exp) => freeVars(exp)
         case None => mutable.LinkedHashSet.empty
       }
 
@@ -833,7 +833,7 @@ object ClosureConv extends Phase[Root, Root] {
             SelectChannelRule(sym, c, e)
         }
 
-        val d = default.map{case SelectChannelDefault(exp) => SelectChannelDefault(visitExp(exp))}
+        val d = default.map(exp => visitExp(exp))
 
         Expression.SelectChannel(rs, d, tpe, loc)
 

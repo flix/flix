@@ -215,7 +215,7 @@ object FinalAst {
 
     case class PutChannel(exp1: FinalAst.Expression, exp2: FinalAst.Expression, tpe: Type, loc: SourceLocation) extends FinalAst.Expression
 
-    case class SelectChannel(rules: List[FinalAst.SelectChannelRule], default: Option[FinalAst.SelectChannelDefault], tpe: Type, loc: SourceLocation) extends FinalAst.Expression
+    case class SelectChannel(rules: List[FinalAst.SelectChannelRule], default: Option[FinalAst.Expression], tpe: Type, loc: SourceLocation) extends FinalAst.Expression
 
     case class Spawn(exp: FinalAst.Expression, tpe: Type, loc: SourceLocation) extends FinalAst.Expression
 
@@ -246,8 +246,6 @@ object FinalAst {
   }
 
   case class SelectChannelRule(sym: Symbol.VarSym, chan: FinalAst.Expression, exp: FinalAst.Expression)
-
-  case class SelectChannelDefault(exp: FinalAst.Expression)
 
   sealed trait Predicate {
     def loc: SourceLocation

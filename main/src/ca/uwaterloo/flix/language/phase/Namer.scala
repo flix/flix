@@ -20,7 +20,7 @@ import java.lang.reflect.{Constructor, Field, Method, Modifier}
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.GenSym
-import ca.uwaterloo.flix.language.ast.WeededAst.{Declaration, SelectChannelDefault}
+import ca.uwaterloo.flix.language.ast.WeededAst.Declaration
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.NameError
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
@@ -838,8 +838,8 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       }
 
       val defaultVal = default match {
-        case Some(SelectChannelDefault(exp)) => visitExp(exp, env0, tenv0) map {
-          case e => Some(NamedAst.SelectChannelDefault(e))
+        case Some(exp) => visitExp(exp, env0, tenv0) map {
+          case e => Some(e)
         }
         case None => None.toSuccess
       }
@@ -1137,7 +1137,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
           freeVars(chan) ++ filterBoundVars(freeVars(exp), List(ident))
       }
       val defaultFreeVars = default match {
-        case Some(SelectChannelDefault(exp)) => freeVars(exp)
+        case Some(exp) => freeVars(exp)
         case None => Nil
       }
       rulesFreeVars ++ defaultFreeVars

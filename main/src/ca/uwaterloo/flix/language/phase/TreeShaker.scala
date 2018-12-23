@@ -143,7 +143,7 @@ object TreeShaker extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.SelectChannel(rules, default, tpe, loc) =>
         val rs = visitExps(rules.map(_.chan)) ++ visitExps(rules.map(_.exp))
         val d = default match {
-          case Some(SimplifiedAst.SelectChannelDefault(exp)) => visitExp(exp)
+          case Some(exp) => visitExp(exp)
           case None => Set.empty
         }
         rs ++ d

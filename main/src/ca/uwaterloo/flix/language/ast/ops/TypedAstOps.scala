@@ -205,7 +205,7 @@ object TypedAstOps {
         }
 
         val d = default match {
-          case Some(SelectChannelDefault(exp)) => visitExp(exp, env0)
+          case Some(exp) => visitExp(exp, env0)
           case None => Map.empty
         }
 

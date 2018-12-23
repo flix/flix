@@ -455,7 +455,7 @@ object SimplifiedAstOps {
           checkExp(rule.chan, env0, ienv0)
           checkExp(rule.exp, env0, ienv0)
         }
-        default.foreach(d => checkExp(d.exp, env0, ienv0))
+        default.foreach(exp => checkExp(exp, env0, ienv0))
         checkType(tpe)
 
       //

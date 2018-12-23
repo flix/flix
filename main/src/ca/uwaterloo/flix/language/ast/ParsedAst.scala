@@ -965,7 +965,7 @@ object ParsedAst {
       * @param default the default of the select expression.
       * @param sp2     the position of the last character in the expression.
       */
-    case class SelectChannel(sp1: SourcePosition, rules: Seq[SelectChannelRule], default: Option[SelectChannelDefault], sp2: SourcePosition) extends ParsedAst.Expression
+    case class SelectChannel(sp1: SourcePosition, rules: Seq[SelectChannelRule], default: Option[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Spawn Expression.
@@ -1524,13 +1524,6 @@ object ParsedAst {
     * @param exp   the body expression of the rule.
     */
   case class SelectChannelRule(ident: Name.Ident, chan: ParsedAst.Expression, exp: ParsedAst.Expression) extends ParsedAst
-
-  /**
-    * A select channel default case.
-    *
-    * @param exp the body expression of the default.
-    */
-  case class SelectChannelDefault(exp: ParsedAst.Expression) extends ParsedAst
 
   /**
     * Modifier.

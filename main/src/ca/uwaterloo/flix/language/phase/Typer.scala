@@ -19,7 +19,6 @@ package ca.uwaterloo.flix.language.phase
 import java.lang.reflect.Field
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.ResolvedAst.SelectChannelDefault
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.Unification._
@@ -1204,9 +1203,9 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           }
 
           // check that default case has same type as bodies (the same as result type)
-          def inferSelectChannelDefault(rtpe: Type, defaultCase: Option[ResolvedAst.SelectChannelDefault]): InferMonad[Unit] = {
+          def inferSelectChannelDefault(rtpe: Type, defaultCase: Option[ResolvedAst.Expression]): InferMonad[Unit] = {
             defaultCase match {
-              case Some(SelectChannelDefault(exp)) =>
+              case Some(exp) =>
                 for {
                   tpe <- visitExp(exp)
                   _ <- unifyM(rtpe, tpe, loc)
@@ -1764,8 +1763,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
               TypedAst.SelectChannelRule(sym, c, b)
           }
 
-          val d = default.map{case SelectChannelDefault(exp) =>
-            TypedAst.SelectChannelDefault(visitExp(exp, subst0))}
+          val d = default.map(exp => visitExp(exp, subst0))
 
           TypedAst.Expression.SelectChannel(rs, d, subst0(tvar), Eff.Bot, loc)
 

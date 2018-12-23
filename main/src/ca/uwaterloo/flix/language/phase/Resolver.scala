@@ -18,7 +18,6 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.GenSym
-import ca.uwaterloo.flix.language.ast.NamedAst.SelectChannelDefault
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.ResolutionError
 import ca.uwaterloo.flix.util.Validation._
@@ -709,10 +708,10 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
           }
 
           val defaultVal = default match {
-            case Some(SelectChannelDefault(exp)) =>
+            case Some(exp) =>
               for {
                 e <- visit(exp, tenv0)
-              } yield Some(ResolvedAst.SelectChannelDefault(e))
+              } yield Some(e)
             case None => None.toSuccess
           }
 

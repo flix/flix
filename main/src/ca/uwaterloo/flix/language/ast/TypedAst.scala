@@ -229,7 +229,7 @@ object TypedAst {
 
     case class PutChannel(exp1: TypedAst.Expression, exp2: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
 
-    case class SelectChannel(rules: List[TypedAst.SelectChannelRule], default: Option[TypedAst.SelectChannelDefault], tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
+    case class SelectChannel(rules: List[TypedAst.SelectChannelRule], default: Option[TypedAst.Expression], tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
 
     case class Spawn(exp: TypedAst.Expression, tpe: Type, eff: ast.Eff, loc: SourceLocation) extends TypedAst.Expression
 
@@ -378,8 +378,6 @@ object TypedAst {
   case class MatchRule(pat: TypedAst.Pattern, guard: TypedAst.Expression, exp: TypedAst.Expression)
 
   case class SelectChannelRule(sym: Symbol.VarSym, chan: TypedAst.Expression, exp: TypedAst.Expression)
-
-  case class SelectChannelDefault(exp: TypedAst.Expression)
 
   case class TypeParam(name: Name.Ident, tpe: Type, loc: SourceLocation)
 

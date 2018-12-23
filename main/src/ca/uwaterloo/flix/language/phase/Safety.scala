@@ -187,7 +187,7 @@ object Safety extends Phase[Root, Root] {
       }
 
       val d = default match {
-        case Some(SelectChannelDefault(exp)) => visitExp(exp)
+        case Some(exp) => visitExp(exp)
         case None => Nil
       }
 

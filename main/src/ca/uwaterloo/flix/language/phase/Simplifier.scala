@@ -534,8 +534,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
             SimplifiedAst.SelectChannelRule(sym, c, e)
         }
 
-        val d = default.map{case TypedAst.SelectChannelDefault(exp) =>
-          SimplifiedAst.SelectChannelDefault(visitExp(exp))}
+        val d = default.map(exp => visitExp(exp))
 
         SimplifiedAst.Expression.SelectChannel(rs, d, tpe, loc)
 
@@ -1236,8 +1235,7 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
             SimplifiedAst.SelectChannelRule(sym, c, e)
         }
 
-        val d = default.map{case SimplifiedAst.SelectChannelDefault(exp) =>
-          SimplifiedAst.SelectChannelDefault(visitExp(exp))}
+        val d = default.map(exp => visitExp(exp))
 
         SimplifiedAst.Expression.SelectChannel(rs, d, tpe, loc)
 

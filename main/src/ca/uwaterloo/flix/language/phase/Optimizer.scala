@@ -433,7 +433,7 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
             SelectChannelRule(sym, c, e)
         }
 
-        val d = default.map{case SelectChannelDefault(exp) => SelectChannelDefault(visitExp(exp, env0))}
+        val d = default.map(exp => visitExp(exp, env0))
 
         Expression.SelectChannel(rs, d, tpe, loc)
 

@@ -1016,7 +1016,7 @@ object GenExpression {
       // If we have a default case we can compile that, otherwise we write
       // an error we will never hit to satisfy the jvm
       if (default.isDefined) {
-        compileExpression(default.get.exp, visitor, currentClass, lenv0, entryPoint)
+        compileExpression(default.get, visitor, currentClass, lenv0, entryPoint)
       } else {
         visitor.visitInsn(ACONST_NULL)
         visitor.visitInsn(ATHROW)

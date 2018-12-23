@@ -317,8 +317,8 @@ object Stratifier extends Phase[Root, Root] {
       }
 
       val defaultVal = default match {
-        case Some(SelectChannelDefault(exp)) => visitExp(exp) map {
-          case e => Some(SelectChannelDefault(e))
+        case Some(exp) => visitExp(exp) map {
+          case e => Some(e)
         }
         case None => None.toSuccess
       }

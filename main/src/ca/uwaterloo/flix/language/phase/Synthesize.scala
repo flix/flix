@@ -304,7 +304,7 @@ object Synthesize extends Phase[Root, Root] {
             SelectChannelRule(sym, c, e)
         }
 
-        val d = default.map{case SelectChannelDefault(exp) => SelectChannelDefault(visitExp(exp))}
+        val d = default.map(exp => visitExp(exp))
 
         Expression.SelectChannel(rs, d, tpe, eff, loc)
 

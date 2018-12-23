@@ -365,8 +365,7 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
             FinalAst.SelectChannelRule(sym, c, e)
         }
 
-        val d = default.map{case SimplifiedAst.SelectChannelDefault(exp) =>
-          FinalAst.SelectChannelDefault(visit(exp))}
+        val d = default.map(exp => visit(exp))
 
         FinalAst.Expression.SelectChannel(rs, d, tpe, loc)
 

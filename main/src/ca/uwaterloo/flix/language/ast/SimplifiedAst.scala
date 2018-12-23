@@ -236,7 +236,7 @@ object SimplifiedAst {
 
     case class PutChannel(exp1: SimplifiedAst.Expression, exp2: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
-    case class SelectChannel(rules: List[SimplifiedAst.SelectChannelRule], default: Option[SimplifiedAst.SelectChannelDefault], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
+    case class SelectChannel(rules: List[SimplifiedAst.SelectChannelRule], default: Option[SimplifiedAst.Expression], tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
     case class Spawn(exp: SimplifiedAst.Expression, tpe: Type, loc: SourceLocation) extends SimplifiedAst.Expression
 
@@ -267,8 +267,6 @@ object SimplifiedAst {
   }
 
   case class SelectChannelRule(sym: Symbol.VarSym, chan: SimplifiedAst.Expression, exp: SimplifiedAst.Expression)
-
-  case class SelectChannelDefault(exp: SimplifiedAst.Expression)
 
   sealed trait Predicate {
     def loc: SourceLocation

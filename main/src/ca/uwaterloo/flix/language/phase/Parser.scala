@@ -678,8 +678,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         atomic("case") ~ WS ~ Names.Variable ~ optWS ~ atomic("<-") ~ optWS ~ Expression ~ optWS ~ atomic("=>") ~ optWS ~ Statement ~> ParsedAst.SelectChannelRule
       }
 
-      def SelectChannelDefault: Rule1[ParsedAst.SelectChannelDefault] = rule {
-        atomic("case") ~ WS ~ atomic("_") ~ optWS ~ atomic("=>") ~ optWS ~ Statement ~> ParsedAst.SelectChannelDefault
+      def SelectChannelDefault: Rule1[ParsedAst.Expression] = rule {
+        atomic("case") ~ WS ~ atomic("_") ~ optWS ~ atomic("=>") ~ optWS ~ Statement
       }
 
       rule {

@@ -220,7 +220,7 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
           currentOffset = visitExp(r.exp, currentOffset)
         }
         default match {
-          case Some(SelectChannelDefault(exp)) => visitExp(exp, currentOffset)
+          case Some(exp) => visitExp(exp, currentOffset)
           case None => currentOffset
         }
 

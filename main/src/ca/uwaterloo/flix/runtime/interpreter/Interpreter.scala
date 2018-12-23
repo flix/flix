@@ -288,7 +288,7 @@ object Interpreter {
       // Check if the default case was selected
       if (selectChoice.defaultChoice) {
         // Evaluate the default case
-        return eval(default.get.exp, env0, henv0, lenv0, root)
+        return eval(default.get, env0, henv0, lenv0, root)
       }
 
       // The default was not chosen. Find the matching rule

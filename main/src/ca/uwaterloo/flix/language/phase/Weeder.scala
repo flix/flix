@@ -20,7 +20,6 @@ import java.math.BigInteger
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Polarity
-import ca.uwaterloo.flix.language.ast.ParsedAst.SelectChannelDefault
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.WeederError
 import ca.uwaterloo.flix.language.errors.WeederError._
@@ -977,8 +976,8 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
       }
 
       val defaultVal = default match {
-        case Some(SelectChannelDefault(exp)) => visitExp(exp) map {
-          case e => Some(WeededAst.SelectChannelDefault(e))
+        case Some(exp) => visitExp(exp) map {
+          case e => Some(e)
         }
         case None => None.toSuccess
       }
