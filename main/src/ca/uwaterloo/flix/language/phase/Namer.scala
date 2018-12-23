@@ -1136,10 +1136,7 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case WeededAst.SelectChannelRule(ident, chan, exp) =>
           freeVars(chan) ++ filterBoundVars(freeVars(exp), List(ident))
       }
-      val defaultFreeVars = default match {
-        case Some(exp) => freeVars(exp)
-        case None => Nil
-      }
+      val defaultFreeVars = default.map(freeVars).getOrElse(Nil)
       rulesFreeVars ++ defaultFreeVars
     case WeededAst.Expression.Spawn(exp, loc) => freeVars(exp)
     case WeededAst.Expression.Sleep(exp, loc) => freeVars(exp)

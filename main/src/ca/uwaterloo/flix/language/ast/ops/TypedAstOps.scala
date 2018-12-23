@@ -204,10 +204,7 @@ object TypedAstOps {
           case (macc, SelectChannelRule(sym, chan, exp)) => macc ++ visitExp(chan, env0) ++ visitExp(exp, env0)
         }
 
-        val d = default match {
-          case Some(exp) => visitExp(exp, env0)
-          case None => Map.empty
-        }
+        val d = default.map(visitExp(_, env0)).getOrElse(Map.empty)
 
         rs ++ d
 

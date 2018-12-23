@@ -102,7 +102,6 @@ class Flix {
     "flix/io/OutputStream.flix" -> LocalResource.get("/library/flix/io/OutputStream.flix"),
     "flix/io/Path.flix" -> LocalResource.get("/library/flix/io/Path.flix"),
 
-    "flix/channel/Channel.flix" -> LocalResource.get("/library/flix/channel/Channel.flix"),
     "flix/channel/Ticker.flix" -> LocalResource.get("/library/flix/channel/Ticker.flix"),
     "flix/channel/Timer.flix" -> LocalResource.get("/library/flix/channel/Timer.flix"),
 

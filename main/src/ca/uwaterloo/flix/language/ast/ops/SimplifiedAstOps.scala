@@ -423,8 +423,6 @@ object SimplifiedAstOps {
         }
         checkType(tpe)
 
-      // TODO SJ: are these correct?
-
       //
       // New Channel.
       //

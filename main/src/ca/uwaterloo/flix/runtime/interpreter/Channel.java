@@ -1,14 +1,11 @@
 package ca.uwaterloo.flix.runtime.interpreter;
 
-
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.*;
 
-//TODO SJ: make docs
-
 /**
- * Precondition: Null is not a valid element to put in a Channel.
+ * Precondition: Null is not a valid element to put in a channel.
  */
 public final class Channel {
   /**
@@ -52,15 +49,14 @@ public final class Channel {
   private int bufferSize;
 
   public Channel(int bufferSize) {
-    // TODO SJ handle special case with bufferSize = 0
     if (bufferSize <= 0) {
       throw new RuntimeException("Channel bufferSize must be positive");
     }
     this.bufferSize = bufferSize;
   }
 
-  //TODO SJ: Determine Threadpool
   public static void spawn(Spawnable s) {
+    // Create a new Thread and evaluate the spawned expression in the new Thread
     Thread thread = new Thread(s::spawn);
     thread.setDaemon(true);
     thread.start();
@@ -80,21 +76,21 @@ public final class Channel {
     Condition condition = selectLock.newCondition();
     selectLock.lock();
 
-    // Sort Channels to avoid deadlock when locking
+    // Sort channels to avoid deadlock when locking
     Channel[] sortedChannels = sortChannels(channels);
 
     while (!Thread.interrupted()) {
-      // Lock all Channels in sorted order
+      // Lock all channels in sorted order
       lockAllChannels(sortedChannels);
 
       try {
-        // Check if any Channel has an element
+        // Check if any channel has an element
         for (int index = 0; index < channels.length; index++) {
           Channel channel = channels[index];
           Object element = channel.tryGet();
           if (element != null) {
             // Element found.
-            // Return the element and the branchNumber (index of the array) of the containing Channel
+            // Return the element and the branchNumber (index of the array) of the containing channel
             return new SelectChoice(index, element);
           }
         }
@@ -106,16 +102,16 @@ public final class Channel {
           return SelectChoice.DEFAULT_CHOICE;
         }
 
-        // Add our condition to all Channels to get notified when a new element is added
+        // Add our condition to all channels to get notified when a new element is added
         for (Channel channel : channels) {
           channel.addGetter(selectLock, condition);
         }
       } finally {
-        // Unlock all Channels in sorted order, so other threads may input elements
+        // Unlock all channels in sorted order, so other threads may input elements
         unlockAllChannels(sortedChannels);
       }
 
-      // Wait for an element to be added to any of the Channels
+      // Wait for an element to be added to any of the channels
       try {
         condition.await();
       } catch (InterruptedException e) {
@@ -140,6 +136,7 @@ public final class Channel {
    * @return a sorted array of the given channels
    */
   private static Channel[] sortChannels(Channel[] channels) {
+    // Create a new array to sort since the original is still used
     Channel[] channelsCopy = Arrays.copyOf(channels, channels.length);
     Arrays.sort(channelsCopy, Comparator.comparing((Channel c) -> c.id));
     return channelsCopy;
@@ -176,8 +173,8 @@ public final class Channel {
 
     try {
       // Check if the channel is full
-      while(elementQueue.size() >= bufferSize) {
-        if(Thread.interrupted()) {
+      while (elementQueue.size() >= bufferSize) {
+        if (Thread.interrupted()) {
           throw new RuntimeException("Thread interrupted");
         }
 
@@ -219,21 +216,28 @@ public final class Channel {
   public Object get() {
     channelLock.lock();
     try {
-      //checkIfClosed(); you can read from a closed channel
+      // Try to get an element
       Object e = elementQueue.poll();
       while (e == null) {
+        // No element was found
+
+        // Create a new Lock and Condition
         Lock conditionLock = new ReentrantLock();
         conditionLock.lock();
         try {
           Condition condition = conditionLock.newCondition();
+          // Add LockConditionPair to the channel
           waitingGetters.add(new LockConditionPair(conditionLock, condition));
-          // Temporarily unlock the Channel while waiting. This is necessary as the Condition comes from a different Lock.
+          // Temporarily unlock the channel while waiting. This is necessary as the Condition comes from a different Lock.
           try {
             channelLock.unlock();
             condition.await();
           } finally {
             channelLock.lock();
           }
+
+          // Someone signalled that an element was put in the channel.
+          // Try to get the element (which could already be taken by someone else)
           e = elementQueue.poll();
         } finally {
           conditionLock.unlock();
@@ -241,6 +245,8 @@ public final class Channel {
       }
       // Signal waiting setters that the channel has space
       waitingSetters.signalAll();
+
+      // Return the element from the channel
       return e;
     } catch (InterruptedException e2) {
       throw new RuntimeException();
@@ -258,11 +264,13 @@ public final class Channel {
     channelLock.lock();
 
     try {
+      // Try to get an element from the channel
       Object element = elementQueue.poll();
       // If there was an element, signal waiting setters
       if (element != null) {
         waitingSetters.signalAll();
       }
+      // Return the element from the channel, or null if channel was empty
       return element;
     } finally {
       channelLock.unlock();

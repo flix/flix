@@ -400,9 +400,9 @@ object PrettyPrinter {
           vt.text(")")
 
         case Expression.NewChannel(tpe, exp, loc) =>
-          vt.text("Channel[")
-          // TODO SJ: tpe
-          vt.text("]")
+          vt.text("Channel")
+          vt.text(" ")
+          visitExp(exp)
 
         case Expression.PutChannel(exp1, exp2, tpe, loc) =>
           visitExp(exp1)
@@ -413,15 +413,32 @@ object PrettyPrinter {
           vt.text("<- ")
           visitExp(exp)
 
-        case Expression.SelectChannel(rules, default, tpe, loc) => vt.text("???")
-        // TODO SJ:
+        case Expression.SelectChannel(rules, default, tpe, loc) =>
+          vt << "select {" << Indent << NewLine
+          for (SelectChannelRule(sym, chan, exp) <- rules) {
+            vt << "case "
+            fmtSym(sym, vt)
+            vt << " <- "
+            visitExp(chan)
+            vt << " => "
+            visitExp(exp)
+            vt << NewLine
+          }
+          default match {
+            case Some(exp) =>
+              vt << "case _ => "
+              visitExp(exp)
+              vt << NewLine
+            case None =>
+          }
+          vt << Dedent << "}"
 
         case Expression.Spawn(exp, tpe, loc) =>
-          vt.text("Spawn ")
+          vt.text("spawn ")
           visitExp(exp)
 
         case Expression.Sleep(exp, tpe, loc) =>
-          vt.text("Sleep ")
+          vt.text("sleep ")
           visitExp(exp)
 
         case Expression.FixpointConstraint(c, tpe, loc) =>

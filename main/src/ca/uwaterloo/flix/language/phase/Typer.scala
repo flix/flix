@@ -1184,10 +1184,17 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
          * Select Channel Expression.
          */
         case ResolvedAst.Expression.SelectChannel(rules, default, tvar, loc) =>
-          //  TODO SJ
-          //  exp1_i: Channel[t_i],            exp2_i: t
+          //  SelectChannelRule
+          //
+          //  chan: Channel[t1],   exp: t2
           //  ------------------------------------------------
-          //  select { case sym_i <- exp1_i => exp2_i } : t
+          //  case sym <- chan => exp : t2
+          //
+          //
+          //  SelectChannel
+          //  rule_i: t,     default: t
+          //  ------------------------------------------------
+          //  select { rule_i; (default) } : t
           //
           assert(rules.nonEmpty)
           val bodies = rules.map(_.exp)
@@ -1763,7 +1770,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
               TypedAst.SelectChannelRule(sym, c, b)
           }
 
-          val d = default.map(exp => visitExp(exp, subst0))
+          val d = default.map(visitExp(_, subst0))
 
           TypedAst.Expression.SelectChannel(rs, d, subst0(tvar), Eff.Bot, loc)
 

@@ -736,10 +736,7 @@ object JvmOps {
       case Expression.SelectChannel(rules, default, tpe, loc) =>
         val rs = rules.foldLeft(Set.empty[ClosureInfo])((old, rule) =>
           old ++ visitExp(rule.chan) ++ visitExp(rule.exp))
-        val d = default match {
-          case Some(exp) => visitExp(exp)
-          case None => Set.empty
-        }
+        val d = default.map(visitExp).getOrElse(Set.empty)
         rs ++ d
 
       case Expression.Spawn(exp, tpe, loc) => visitExp(exp)
@@ -1006,10 +1003,7 @@ object JvmOps {
 
       case Expression.SelectChannel(rules, default, tpe, loc) =>
         val rs = rules.foldLeft(Set(tpe))( (old, rule) => old ++ visitExp(rule.chan) ++ visitExp(rule.exp))
-        val d = default match {
-          case Some(exp) => visitExp(exp)
-          case None => Set.empty
-        }
+        val d = default.map(visitExp).getOrElse(Set.empty)
         rs ++ d
 
       case Expression.Spawn(exp, tpe, loc) => visitExp(exp) + tpe

@@ -456,7 +456,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
               SelectChannelRule(freshSym, c, e)
           }
 
-          val d = default.map(exp => visitExp(exp, env0))
+          val d = default.map(visitExp(_, env0))
 
           Expression.SelectChannel(rs, d, subst0(tpe), eff, loc)
 

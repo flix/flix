@@ -219,11 +219,7 @@ object VarNumbering extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
           // Visit the expression of the rule.
           currentOffset = visitExp(r.exp, currentOffset)
         }
-        default match {
-          case Some(exp) => visitExp(exp, currentOffset)
-          case None => currentOffset
-        }
-
+        default.map(visitExp(_, currentOffset)).getOrElse(currentOffset)
 
       case Expression.Spawn(exp, tpe, loc) =>
         visitExp(exp, i0)

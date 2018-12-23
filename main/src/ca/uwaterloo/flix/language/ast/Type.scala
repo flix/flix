@@ -537,6 +537,11 @@ object Type {
     */
   def mkChannel(elmType: Type): Type = Apply(Channel, elmType)
 
+  /**
+    * Return the inner type of the channel
+    *
+    * For example given Channel[Int] return Int.
+    */
   def getChannelInnerType(tpe: Type): Type = {
     tpe match {
       case Type.Apply(Type.Channel, t) => t

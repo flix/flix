@@ -186,10 +186,7 @@ object Safety extends Phase[Root, Root] {
         case (acc, SelectChannelRule(sym, chan, body)) => acc ::: visitExp(chan) ::: visitExp(body)
       }
 
-      val d = default match {
-        case Some(exp) => visitExp(exp)
-        case None => Nil
-      }
+      val d = default.map(visitExp).getOrElse(Nil)
 
       rs ++ d
 
