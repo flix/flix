@@ -501,7 +501,8 @@ class Solver(constraintSystem: ConstraintSystem, stratification: Stratification,
       val args = new Array[AnyRef](r.getArguments.length)
       var i = 0
       for (a <- r.getArguments) {
-        args(i) = env(a.getIndex)
+        val v = env(a.getIndex)
+        args(i) = if (v == null) null else v.getValue
         i = i + 1
       }
 

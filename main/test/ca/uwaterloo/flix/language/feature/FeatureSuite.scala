@@ -49,8 +49,6 @@ class FeatureSuite extends Suites(
   new FlixTest("Test.Expression.Bool", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Bool.flix"),
   new FlixTest("Test.Expression.Char", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Char.flix"),
 
-  new FlixTest("Test.Expression.Constraint.Functional", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Constraint.Functional.flix")(compiled = false), // TODO
-
   new FlixTest("Test.Expression.Record.Extend", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Record.Extend.flix")(compiled = false), // TODO
   new FlixTest("Test.Expression.Record.Literal", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Record.Literal.flix")(compiled = false), // TODO
   new FlixTest("Test.Expression.Record.Polymorphism", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Record.Polymorphism.flix")(compiled = false), // TODO
@@ -132,6 +130,7 @@ class FeatureSuite extends Suites(
   new FlixTest("Test.Predicate.Atom", "main/test/ca/uwaterloo/flix/language/feature/Test.Predicate.Atom.flix"),
   new FlixTest("Test.Predicate.Nullary", "main/test/ca/uwaterloo/flix/language/feature/Test.Predicate.Nullary.flix"),
   new FlixTest("Test.Predicate.Filter", "main/test/ca/uwaterloo/flix/language/feature/Test.Predicate.Filter.flix"),
+  new FlixTest("Test.Predicate.Functional", "main/test/ca/uwaterloo/flix/language/feature/Test.Predicate.Functional.flix"),
 
   //
   // Terms
