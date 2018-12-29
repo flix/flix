@@ -753,7 +753,7 @@ object JvmOps {
 
       case Expression.FixpointDelta(uid, exp, stf, tpe, loc) => visitExp(exp)
 
-      case Expression.FixpointProject(sym, exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2)
+      case Expression.FixpointProject(pred, exp, tpe, loc) => visitExp(pred.exp) ++ visitExp(exp)
 
       case Expression.FixpointEntails(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2)
 
@@ -1020,7 +1020,7 @@ object JvmOps {
 
       case Expression.FixpointDelta(uid, exp, stf, tpe, loc) => visitExp(exp) + tpe
 
-      case Expression.FixpointProject(sym, exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2) + tpe
+      case Expression.FixpointProject(pred, exp, tpe, loc) => visitExp(pred.exp) ++ visitExp(exp) + tpe
 
       case Expression.FixpointEntails(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2) + tpe
 
@@ -1038,13 +1038,13 @@ object JvmOps {
     def visitHeadPred(h0: Predicate.Head): Set[Type] = h0 match {
       case Predicate.Head.True(loc) => Set.empty
       case Predicate.Head.False(loc) => Set.empty
-      case Predicate.Head.Atom(sym, exp, terms, tpe, loc) =>
-        visitExp(exp) ++ terms.flatMap(visitHeadTerm) + tpe
+      case Predicate.Head.Atom(pred, terms, tpe, loc) =>
+        visitExp(pred.exp) ++ terms.flatMap(visitHeadTerm) + tpe
     }
 
     def visitBodyPred(b0: Predicate.Body): Set[Type] = b0 match {
-      case Predicate.Body.Atom(sym, exp, polarity, terms, tpe, loc) =>
-        visitExp(exp) ++ terms.flatMap(visitBodyTerm)
+      case Predicate.Body.Atom(pred, polarity, terms, tpe, loc) =>
+        visitExp(pred.exp) ++ terms.flatMap(visitBodyTerm)
 
       case Predicate.Body.Filter(sym, terms, loc) =>
         terms.flatMap(visitBodyTerm).toSet

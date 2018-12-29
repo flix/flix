@@ -231,7 +231,7 @@ object FinalAst {
 
     case class FixpointDelta(uid: Ast.UId, exp: FinalAst.Expression, stf: Ast.Stratification, tpe: Type, loc: SourceLocation) extends FinalAst.Expression
 
-    case class FixpointProject(sym: Symbol.PredSym, exp1: FinalAst.Expression, exp2: FinalAst.Expression, tpe: Type, loc: SourceLocation) extends FinalAst.Expression
+    case class FixpointProject(pred: FinalAst.PredicateWithParam, exp: FinalAst.Expression, tpe: Type, loc: SourceLocation) extends FinalAst.Expression
 
     case class FixpointEntails(exp1: FinalAst.Expression, exp2: FinalAst.Expression, tpe: Type, loc: SourceLocation) extends FinalAst.Expression
 
@@ -261,7 +261,7 @@ object FinalAst {
 
       case class False(loc: SourceLocation) extends FinalAst.Predicate.Head
 
-      case class Atom(sym: Symbol.PredSym, param: FinalAst.Expression, terms: List[FinalAst.Term.Head], tpe: Type, loc: SourceLocation) extends FinalAst.Predicate.Head
+      case class Atom(pred: FinalAst.PredicateWithParam, terms: List[FinalAst.Term.Head], tpe: Type, loc: SourceLocation) extends FinalAst.Predicate.Head
 
     }
 
@@ -269,7 +269,7 @@ object FinalAst {
 
     object Body {
 
-      case class Atom(sym: Symbol.PredSym, exp: FinalAst.Expression, polarity: Ast.Polarity, terms: List[FinalAst.Term.Body], tpe: Type, loc: SourceLocation) extends FinalAst.Predicate.Body
+      case class Atom(pred: FinalAst.PredicateWithParam, polarity: Ast.Polarity, terms: List[FinalAst.Term.Body], tpe: Type, loc: SourceLocation) extends FinalAst.Predicate.Body
 
       case class Filter(sym: Symbol.DefnSym, terms: List[FinalAst.Term.Body], loc: SourceLocation) extends FinalAst.Predicate.Body
 
@@ -336,5 +336,7 @@ object FinalAst {
   case class FreeVar(sym: Symbol.VarSym, tpe: Type)
 
   case class HandlerBinding(sym: Symbol.EffSym, exp: FinalAst.Expression)
+
+  case class PredicateWithParam(sym: Symbol.PredSym, exp: FinalAst.Expression)
 
 }

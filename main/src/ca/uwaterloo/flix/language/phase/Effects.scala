@@ -34,7 +34,7 @@ object Effects extends Phase[Root, Root] {
     */
   def run(root: Root)(implicit flix: Flix): Validation[Root, EffectError] = flix.phase("Effects") {
 
-    // TODO: Effects currently disabled:
+    // TODO: Effects is disabled and should be rewritten from scratch.
     return root.toSuccess
 
   }
@@ -634,7 +634,7 @@ object Effects extends Phase[Root, Root] {
 
         case Expression.FixpointDelta(exp, tpe, eff, loc) => ??? // TODO: FixpointDelta
 
-        case Expression.FixpointProject(sym, exp1, exp2, tpe, eff, loc) => ??? // TODO: FixpointProject
+        case Expression.FixpointProject(pred, exp, tpe, eff, loc) => ??? // TODO: FixpointProject
 
         case Expression.FixpointEntails(exp1, exp2, tpe, eff, loc) => ??? // TODO: FixpointEntails
 

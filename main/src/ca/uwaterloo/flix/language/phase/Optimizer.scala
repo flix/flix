@@ -490,10 +490,10 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       //
       // Fixpoint Project.
       //
-      case Expression.FixpointProject(sym, exp1, exp2, tpe, loc) =>
-        val e1 = visitExp(exp1, env0)
-        val e2 = visitExp(exp2, env0)
-        Expression.FixpointProject(sym, e1, e2, tpe, loc)
+      case Expression.FixpointProject(pred, exp, tpe, loc) =>
+        val p = visitPredicateWithParam(pred, env0)
+        val e = visitExp(exp, env0)
+        Expression.FixpointProject(p, e, tpe, loc)
 
       //
       // Fixpoint Entails.
@@ -535,19 +535,20 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     def visitHeadPred(p0: Predicate.Head, env0: Map[Symbol.VarSym, Symbol.VarSym]): Predicate.Head = p0 match {
       case Predicate.Head.True(loc) => p0
       case Predicate.Head.False(loc) => p0
-      case Predicate.Head.Atom(sym, exp, terms, tpe, loc) =>
+      case Predicate.Head.Atom(pred, terms, tpe, loc) =>
+        val p = visitPredicateWithParam(pred, env0)
         val ts = terms.map(visitHeadTerm(_, env0))
-        Predicate.Head.Atom(sym, exp, ts, tpe, loc)
+        Predicate.Head.Atom(p, ts, tpe, loc)
     }
 
     /**
       * Performs intra-procedural optimization on the terms of the given body predicate `p0`.
       */
     def visitBodyPred(p0: Predicate.Body, env0: Map[Symbol.VarSym, Symbol.VarSym]): Predicate.Body = p0 match {
-      case Predicate.Body.Atom(sym, exp, polarity, terms, tpe, loc) =>
-        val e = visitExp(exp, env0)
+      case Predicate.Body.Atom(pred, polarity, terms, tpe, loc) =>
+        val p = visitPredicateWithParam(pred, env0)
         val ts = terms.map(visitBodyTerm(_, env0))
-        Predicate.Body.Atom(sym, e, polarity, ts, tpe, loc)
+        Predicate.Body.Atom(p, polarity, ts, tpe, loc)
 
       case Predicate.Body.Filter(sym, terms, loc) =>
         val ts = terms.map(visitBodyTerm(_, env0))
@@ -584,6 +585,15 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Term.Body.QuantVar(sym, tpe, loc) => Term.Body.QuantVar(sym, tpe, loc)
       case Term.Body.CapturedVar(sym, tpe, loc) => Term.Body.CapturedVar(sym, tpe, loc)
       case Term.Body.Lit(exp, tpe, loc) => Term.Body.Lit(visitExp(exp, Map.empty), tpe, loc)
+    }
+
+    /**
+      * Performs intra-procedural optimization on the given predicate with param `p0`.
+      */
+    def visitPredicateWithParam(p0: PredicateWithParam, env0: Map[Symbol.VarSym, Symbol.VarSym]): PredicateWithParam = p0 match {
+      case PredicateWithParam(sym, exp) =>
+        val e = visitExp(exp, env0)
+        PredicateWithParam(sym, e)
     }
 
     // Visit every definition in the program.

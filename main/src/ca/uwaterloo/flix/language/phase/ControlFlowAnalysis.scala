@@ -421,9 +421,9 @@ object ControlFlowAnalysis {
         }
         AbstractValue.Graph(DependencyGraph.Empty)
 
-      case Expression.FixpointProject(sym, exp1, exp2, tpe, loc) =>
-        val v1 = visitExp(exp1, env0, lenv0)
-        val v2 = visitExp(exp2, env0, lenv0)
+      case Expression.FixpointProject(pred, exp, tpe, loc) =>
+        val p = visitPredicateWithParam(pred, env0, lenv0)
+        val v = visitExp(exp, env0, lenv0)
         AbstractValue.Graph(DependencyGraph.Empty)
 
       case Expression.FixpointEntails(exp1, exp2, tpe, loc) =>
@@ -439,6 +439,13 @@ object ControlFlowAnalysis {
 
       case Expression.SwitchError(tpe, loc) => AbstractValue.Bot
 
+    }
+
+    /**
+      * Abstractly evaluates the given parameter with predicate `p0`.
+      */
+    def visitPredicateWithParam(p0: PredicateWithParam, env0: Map[Symbol.VarSym, AbstractValue], lenv0: Map[Symbol.LabelSym, Expression]): AbstractValue = p0 match {
+      case PredicateWithParam(sym, exp) => visitExp(exp, env0, lenv0)
     }
 
     /**
@@ -516,16 +523,16 @@ object ControlFlowAnalysis {
   private def visitHeadPredicateSymbol(head0: Predicate.Head): Option[Symbol.PredSym] = head0 match {
     case Predicate.Head.True(_) => None
     case Predicate.Head.False(_) => None
-    case Predicate.Head.Atom(sym, exp, terms, tpe, loc) => Some(sym)
+    case Predicate.Head.Atom(pred, terms, tpe, loc) => Some(pred.sym)
   }
 
   /**
     * Optionally returns the predicate symbol of the given body predicate `body0`.
     */
   private def visitDependencyEdge(head: Symbol.PredSym, body0: Predicate.Body): Option[DependencyEdge] = body0 match {
-    case Predicate.Body.Atom(sym, exp, polarity, terms, tpe, loc) => polarity match {
-      case Polarity.Positive => Some(DependencyEdge.Positive(head, sym))
-      case Polarity.Negative => Some(DependencyEdge.Negative(head, sym))
+    case Predicate.Body.Atom(pred, polarity, terms, tpe, loc) => polarity match {
+      case Polarity.Positive => Some(DependencyEdge.Positive(head, pred.sym))
+      case Polarity.Negative => Some(DependencyEdge.Negative(head, pred.sym))
     }
 
     case Predicate.Body.Filter(sym, terms, loc) => None

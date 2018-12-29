@@ -344,10 +344,10 @@ object ClosureConv extends Phase[Root, Root] {
       val e = visitExp(exp)
       Expression.FixpointDelta(e, tpe, loc)
 
-    case Expression.FixpointProject(sym, exp1, exp2, tpe, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      Expression.FixpointProject(sym, e1, e2, tpe, loc)
+    case Expression.FixpointProject(pred, exp, tpe, loc) =>
+      val p = visitPredicateWithParam(pred)
+      val e = visitExp(exp)
+      Expression.FixpointProject(p, e, tpe, loc)
 
     case Expression.FixpointEntails(exp1, exp2, tpe, loc) =>
       val e1 = visitExp(exp1)
@@ -378,10 +378,10 @@ object ClosureConv extends Phase[Root, Root] {
 
     case Predicate.Head.False(loc) => Predicate.Head.False(loc)
 
-    case Predicate.Head.Atom(sym, exp, terms, tpe, loc) =>
-      val e = visitExp(exp)
+    case Predicate.Head.Atom(pred, terms, tpe, loc) =>
+      val p = visitPredicateWithParam(pred)
       val ts = terms map visitHeadTerm
-      Predicate.Head.Atom(sym, e, ts, tpe, loc)
+      Predicate.Head.Atom(p, ts, tpe, loc)
 
   }
 
@@ -389,10 +389,10 @@ object ClosureConv extends Phase[Root, Root] {
     * Performs closure conversion on the given body predicate `body0`.
     */
   private def visitBodyPredicate(body0: Predicate.Body)(implicit flix: Flix): Predicate.Body = body0 match {
-    case Predicate.Body.Atom(sym, exp, polarity, terms, tpe, loc) =>
-      val e = visitExp(exp)
+    case Predicate.Body.Atom(pred, polarity, terms, tpe, loc) =>
+      val p = visitPredicateWithParam(pred)
       val ts = terms map visitBodyTerm
-      Predicate.Body.Atom(sym, e, polarity, ts, tpe, loc)
+      Predicate.Body.Atom(p, polarity, ts, tpe, loc)
 
     case Predicate.Body.Filter(sym, terms, loc) =>
       val ts = terms map visitBodyTerm
@@ -428,6 +428,15 @@ object ClosureConv extends Phase[Root, Root] {
     case Term.Body.Lit(exp, tpe, loc) =>
       val e = visitExp(exp)
       Term.Body.Lit(e, tpe, loc)
+  }
+
+  /**
+    * Performs closure conversion on the given predicate with parameter `p0`.
+    */
+  private def visitPredicateWithParam(p0: PredicateWithParam)(implicit flix: Flix): PredicateWithParam = p0 match {
+    case PredicateWithParam(sym, exp) =>
+      val e = visitExp(exp)
+      PredicateWithParam(sym, e)
   }
 
   /**
@@ -523,7 +532,7 @@ object ClosureConv extends Phase[Root, Root] {
     case Expression.FixpointSolve(exp, tpe, loc) => freeVars(exp)
     case Expression.FixpointCheck(exp, tpe, loc) => freeVars(exp)
     case Expression.FixpointDelta(exp, tpe, loc) => freeVars(exp)
-    case Expression.FixpointProject(sym, exp1, exp2, tpe, loc) => freeVars(exp1) ++ freeVars(exp2)
+    case Expression.FixpointProject(pred, exp, tpe, loc) => freeVars(pred.exp) ++ freeVars(exp)
     case Expression.FixpointEntails(exp1, exp2, tpe, loc) => freeVars(exp1) ++ freeVars(exp2)
 
     case Expression.UserError(tpe, loc) => mutable.LinkedHashSet.empty
@@ -550,16 +559,16 @@ object ClosureConv extends Phase[Root, Root] {
 
     case Predicate.Head.False(loc) => mutable.LinkedHashSet.empty
 
-    case Predicate.Head.Atom(sym, exp, terms, tpe, loc) =>
-      freeVars(exp) ++ terms.flatMap(freeVars)
+    case Predicate.Head.Atom(pred, terms, tpe, loc) =>
+      freeVars(pred.exp) ++ terms.flatMap(freeVars)
   }
 
   /**
     * Returns the free variables in the given body predicate `body0`.
     */
   private def freeVars(body0: Predicate.Body): mutable.LinkedHashSet[(Symbol.VarSym, Type)] = body0 match {
-    case Predicate.Body.Atom(sym, exp, polarity, terms, tpe, loc) =>
-      freeVars(exp) ++ terms.flatMap(freeVars)
+    case Predicate.Body.Atom(pred, polarity, terms, tpe, loc) =>
+      freeVars(pred.exp) ++ terms.flatMap(freeVars)
 
     case Predicate.Body.Filter(sym, terms, loc) =>
       mutable.LinkedHashSet.empty ++ terms.flatMap(freeVars)
@@ -599,7 +608,7 @@ object ClosureConv extends Phase[Root, Root] {
   /**
     * Applies the given substitution map `subst` to the given expression `e`.
     */
-  private def replace(e0: Expression, subst: Map[Symbol.VarSym, Symbol.VarSym]): Expression = {
+  private def replace(e0: Expression, subst: Map[Symbol.VarSym, Symbol.VarSym])(implicit flix: Flix): Expression = {
 
     def visitExp(e: Expression): Expression = e match {
       case Expression.Unit => e
@@ -870,10 +879,10 @@ object ClosureConv extends Phase[Root, Root] {
         val e = visitExp(exp)
         Expression.FixpointDelta(e, tpe, loc)
 
-      case Expression.FixpointProject(sym, exp1, exp2, tpe, loc) =>
-        val e1 = visitExp(exp1)
-        val e2 = visitExp(exp2)
-        Expression.FixpointProject(sym, e1, e2, tpe, loc)
+      case Expression.FixpointProject(pred, exp, tpe, loc) =>
+        val p = visitPredicateWithParam(pred)
+        val e = visitExp(exp)
+        Expression.FixpointProject(p, e, tpe, loc)
 
       case Expression.FixpointEntails(exp1, exp2, tpe, loc) =>
         val e1 = visitExp(exp1)
@@ -894,17 +903,17 @@ object ClosureConv extends Phase[Root, Root] {
     def visitHeadPredicate(head0: Predicate.Head): Predicate.Head = head0 match {
       case Predicate.Head.True(loc) => Predicate.Head.True(loc)
       case Predicate.Head.False(loc) => Predicate.Head.False(loc)
-      case Predicate.Head.Atom(sym, exp, terms, tpe, loc) =>
-        val e = visitExp(exp)
+      case Predicate.Head.Atom(pred, terms, tpe, loc) =>
+        val p = visitPredicateWithParam(pred)
         val ts = terms map visitHeadTerm
-        Predicate.Head.Atom(sym, e, ts, tpe, loc)
+        Predicate.Head.Atom(pred, ts, tpe, loc)
     }
 
     def visitBodyPredicate(body0: Predicate.Body): Predicate.Body = body0 match {
-      case Predicate.Body.Atom(sym, exp, polarity, terms, tpe, loc) =>
-        val e = visitExp(exp)
+      case Predicate.Body.Atom(pred, polarity, terms, tpe, loc) =>
+        val p = visitPredicateWithParam(pred)
         val ts = terms map visitBodyTerm
-        Predicate.Body.Atom(sym, e, polarity, ts, tpe, loc)
+        Predicate.Body.Atom(p, polarity, ts, tpe, loc)
 
       case Predicate.Body.Filter(sym, terms, loc) =>
         val ts = terms map visitBodyTerm

@@ -363,9 +363,9 @@ object Stratifier extends Phase[Root, Root] {
         case (e, s) => Expression.FixpointDelta(uid, e, s, tpe, loc)
       }
 
-    case Expression.FixpointProject(sym, exp1, exp2, tpe, loc) =>
-      mapN(visitExp(exp1), visitExp(exp2)) {
-        case (e1, e2) => Expression.FixpointProject(sym, e1, e2, tpe, loc)
+    case Expression.FixpointProject(pred, exp, tpe, loc) =>
+      mapN(visitPredicateWithParam(pred), visitExp(exp)) {
+        case (p, e) => Expression.FixpointProject(p, e, tpe, loc)
       }
 
     case Expression.FixpointEntails(exp1, exp2, tpe, loc) =>
@@ -385,6 +385,15 @@ object Stratifier extends Phase[Root, Root] {
     case Expression.SwitchError(tpe, loc) =>
       Expression.SwitchError(tpe, loc).toSuccess
 
+  }
+
+  /**
+    * Performs stratification of the given predicate with parameter `p0`.
+    */
+  private def visitPredicateWithParam(p0: PredicateWithParam)(implicit analysis: ControlFlowAnalysis.Analysis): Validation[PredicateWithParam, StratificationError] = p0 match {
+    case PredicateWithParam(sym, exp) => mapN(visitExp(exp)) {
+      case e => PredicateWithParam(sym, e)
+    }
   }
 
   /**
@@ -490,7 +499,7 @@ object Stratifier extends Phase[Root, Root] {
       * Returns `true` if the body predicate is negated.
       */
     def isNegative(p: Predicate.Body): Boolean = p match {
-      case Body.Atom(_, _, Polarity.Negative, _, _, _) => true
+      case Body.Atom(_, Polarity.Negative, _, _, _) => true
       case _ => false
     }
 
@@ -502,150 +511,4 @@ object Stratifier extends Phase[Root, Root] {
     c0.copy(body = nonNegated ::: negated)
   }
 
-
-  /////////////////////////////////////////////////////////////////////////////
-  ////////     LEGACY CODE                                       //////////////
-  /////////////////////////////////////////////////////////////////////////////
-
-  /**
-    * A small case class to allow us to abstract over the possible heads in a
-    * constraint
-    */
-  sealed trait ConstrHead
-
-  object ConstrHead {
-
-    case object True extends ConstrHead
-
-    case object False extends ConstrHead
-
-    case class Atom(sym: /* Symbol.TableSym */ AnyRef) extends ConstrHead
-
-  }
-
-  /**
-    * An edge represents a constraint in the program. It has a weight of -1
-    * if it is a negated predicate, else it has a weight of 0
-    */
-  case class Edge(weight: Int, rule: Constraint)
-
-  /**
-    * A graph is an adjacency list of Constraint -> (Constraint, Weight)
-    * where weight is either -1 or 0
-    */
-  class Graph {
-
-    var vertices: Set[ /* Symbol.TableSym */ AnyRef] = Set.empty
-
-    // An adjacency list of from - to edges with weights
-    var edges: Map[ /* Symbol.TableSym */ AnyRef, Map[ /* Symbol.TableSym */ AnyRef, Edge]] = Map.empty
-
-    /**
-      * Insert an edge from-to with weight into the graph
-      */
-    def insert(from: /* Symbol.TableSym */ AnyRef, to: /* Symbol.TableSym */ AnyRef, constr: Constraint, weight: Int): Stratifier.Graph = {
-      edges = edges.get(from) match {
-        case Some(m) => edges + (from -> (m + (to -> Edge(weight, constr))))
-        case None => edges + (from -> Map(to -> Edge(weight, constr)))
-      }
-      vertices += from
-      vertices += to
-      this
-    }
-  }
-
-  /**
-    * Use the constraints to create an adjacency matrix
-    *
-    * A constraint of:
-    * P :- Q creates an edge Q -> P of weight 0
-    * P :- !Q creates an edge Q -> P of weight -1
-    */
-  def createGraph(constraints: List[Constraint]): Graph = {
-    constraints.foldRight(new Graph)((constraint: Constraint, graph: Graph) => constraint.head match {
-      case Predicate.Head.Atom(_, headSym, _, _, _) =>
-        // As well as creating the graph out of the given constraints, we also add a source node which
-        // has a directed edge to all nodes
-        graph.insert(null, headSym, constraint, 0)
-
-        constraint.body.foldRight(graph)((pred: Predicate.Body, graph: Graph) => pred match {
-          case Predicate.Body.Atom(_, predSym, Polarity.Positive, _, _, _) =>
-            graph.insert(headSym, predSym, constraint, 0)
-
-          case Predicate.Body.Atom(_, predSym, Polarity.Negative, _, _, _) =>
-            graph.insert(headSym, predSym, constraint, -1)
-
-          case _: Predicate.Body.Filter => graph
-          case _: Predicate.Body.Functional => graph
-        })
-
-      case Predicate.Head.True(_) => graph
-      case Predicate.Head.False(_) => graph
-    })
-  }
-
-  /**
-    * Returns true iff a graph has a negative cycle
-    */
-  def findNegCycle(constraints: List[Constraint]): List[Constraint] = {
-    // Get the list of constraints
-    val g = createGraph(constraints)
-
-    // The Bellman Ford algorithm, we can use it to find negative cycles
-
-    // Initialize the distance and predecessor arrays to default values
-    var distPred: Map[ /* Symbol.TableSym */ AnyRef, (Int, Constraint)] = g.vertices.toList.zip(List.fill(g.vertices.size)((1, null))).toMap
-    // The source has 0 weight
-    distPred = distPred.updated(null, (0, null))
-
-    // Relax the vertices |V|+1 times. The path can't be longer than |V|
-    for (_ <- 0 to g.vertices.size + 1) {
-      for (fromEntry <- g.edges) {
-        for (toEntry <- fromEntry._2) {
-          val from = fromEntry._1
-          val to = toEntry._1
-          val weight = toEntry._2.weight
-          // Relax the edge from-to
-          if (distPred(from)._1 + weight < distPred(to)._1) {
-            distPred = distPred.updated(to, (distPred(from)._1 + weight, toEntry._2.rule))
-          }
-        }
-      }
-    }
-
-    // At this point, we must have found the shortest path, so if there is a
-    // shorter path, then there is a negative cycle, and if so, we return it
-    var witness: List[Constraint] = Nil
-    // Look for an edge (u,v) where distance(u) + Weight(u,v) < distance(v)
-    for (fromEntry <- g.edges) {
-      for (toEntry <- fromEntry._2) {
-        val from = fromEntry._1
-        val to = toEntry._1
-        val weight = toEntry._2.weight
-        if (distPred(from)._1 + weight < distPred(to)._1) {
-          // We found part of a negative cycle
-          // Go backwards from v until we find a cycle
-          val firstEdge = distPred(from)._2
-          witness = firstEdge :: witness
-
-          var fromConstraint = distPred(firstEdge.head match {
-            case Predicate.Head.Atom(_, sym, _, _, _) => sym
-            case _: False => throw InternalCompilerException("Encountered the False atom while looking for negative cyles which should never happen")
-            case _: True => throw InternalCompilerException("Encountered the True atom while looking for negative cyles which should never happen")
-          })._2
-
-          while (fromConstraint != null && fromConstraint != firstEdge) {
-            witness = fromConstraint :: witness
-            fromConstraint = distPred(fromConstraint.head match {
-              case Predicate.Head.Atom(_, sym, _, _, _) => sym
-              case _: False => throw InternalCompilerException("Encountered the False atom while looking for negative cyles which should never happen")
-              case _: True => throw InternalCompilerException("Encountered the True atom while looking for negative cyles which should never happen")
-            })._2
-          }
-          return witness
-        }
-      }
-    }
-    witness
-  }
 }

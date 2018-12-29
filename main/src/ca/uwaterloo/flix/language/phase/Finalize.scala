@@ -398,10 +398,10 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
         val e = visit(exp)
         FinalAst.Expression.FixpointDelta(Ast.freshUId(), e, Ast.Stratification.Empty, tpe, loc)
 
-      case SimplifiedAst.Expression.FixpointProject(sym, exp1, exp2, tpe, loc) =>
-        val e1 = visit(exp1)
-        val e2 = visit(exp2)
-        FinalAst.Expression.FixpointProject(sym, e1, e2, tpe, loc)
+      case SimplifiedAst.Expression.FixpointProject(pred, exp, tpe, loc) =>
+        val p = visitPredicateWithParam(pred, m)
+        val e = visit(exp)
+        FinalAst.Expression.FixpointProject(p, e, tpe, loc)
 
       case SimplifiedAst.Expression.FixpointEntails(exp1, exp2, tpe, loc) =>
         val e1 = visit(exp1)
@@ -433,17 +433,17 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
   private def visitHeadPredicate(p0: SimplifiedAst.Predicate.Head, m: TopLevel)(implicit flix: Flix): FinalAst.Predicate.Head = p0 match {
     case SimplifiedAst.Predicate.Head.True(loc) => FinalAst.Predicate.Head.True(loc)
     case SimplifiedAst.Predicate.Head.False(loc) => FinalAst.Predicate.Head.False(loc)
-    case SimplifiedAst.Predicate.Head.Atom(sym, exp, terms, tpe, loc) =>
-      val e = visitExp(exp, m)
+    case SimplifiedAst.Predicate.Head.Atom(pred, terms, tpe, loc) =>
+      val p = visitPredicateWithParam(pred, m)
       val ts = terms.map(t => visitHeadTerm(t, m))
-      FinalAst.Predicate.Head.Atom(sym, e, ts, tpe, loc)
+      FinalAst.Predicate.Head.Atom(p, ts, tpe, loc)
   }
 
   private def visitBodyPredicate(p0: SimplifiedAst.Predicate.Body, m: TopLevel)(implicit flix: Flix): FinalAst.Predicate.Body = p0 match {
-    case SimplifiedAst.Predicate.Body.Atom(sym, exp, polarity, terms, tpe, loc) =>
-      val e = visitExp(exp, m)
+    case SimplifiedAst.Predicate.Body.Atom(pred, polarity, terms, tpe, loc) =>
+      val p = visitPredicateWithParam(pred, m)
       val ts = terms.map(t => visitBodyTerm(t, m))
-      FinalAst.Predicate.Body.Atom(sym, e, polarity, ts, tpe, loc)
+      FinalAst.Predicate.Body.Atom(p, polarity, ts, tpe, loc)
 
     case SimplifiedAst.Predicate.Body.Filter(sym, terms, loc) =>
       val ts = terms.map(t => visitBodyTerm(t, m))
@@ -455,6 +455,12 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
 
       case _ => throw InternalCompilerException(s"Unexpected term: $term.")
     }
+  }
+
+  private def visitPredicateWithParam(p0: SimplifiedAst.PredicateWithParam, m: TopLevel)(implicit flix: Flix): FinalAst.PredicateWithParam = p0 match {
+    case SimplifiedAst.PredicateWithParam(sym, exp) =>
+      val e = visitExp(exp, m)
+      FinalAst.PredicateWithParam(sym, e)
   }
 
   private def visitHeadTerm(t0: SimplifiedAst.Term.Head, m: TopLevel)(implicit flix: Flix): FinalAst.Term.Head = t0 match {
