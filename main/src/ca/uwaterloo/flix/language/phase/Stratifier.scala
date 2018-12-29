@@ -294,6 +294,49 @@ object Stratifier extends Phase[Root, Root] {
         case as => Expression.NativeMethod(method, as, tpe, loc)
       }
 
+    case Expression.NewChannel(tpe, exp, loc) =>
+      mapN(visitExp(exp)) {
+        case e => Expression.NewChannel(tpe, e, loc)
+      }
+
+    case Expression.GetChannel(exp, tpe, loc) =>
+      mapN(visitExp(exp)) {
+        case e => Expression.GetChannel(e, tpe, loc)
+      }
+
+    case Expression.PutChannel(exp1, exp2, tpe, loc) =>
+      mapN(visitExp(exp1), visitExp(exp2)) {
+        case (e1, e2) => Expression.PutChannel(e1, e2, tpe, loc)
+      }
+
+    case Expression.SelectChannel(rules, default, tpe, loc) =>
+      val rulesVal = traverse(rules) {
+        case SelectChannelRule(sym, chan, exp) => mapN(visitExp(chan), visitExp(exp)) {
+          case (c, e) => SelectChannelRule(sym, c, e)
+        }
+      }
+
+      val defaultVal = default match {
+        case Some(exp) => visitExp(exp) map {
+          case e => Some(e)
+        }
+        case None => None.toSuccess
+      }
+
+      mapN(rulesVal, defaultVal) {
+        case (rs, d) => Expression.SelectChannel(rs, d, tpe, loc)
+      }
+
+    case Expression.Spawn(exp, tpe, loc) =>
+      mapN(visitExp(exp)) {
+        case e => Expression.Spawn(e, tpe, loc)
+      }
+
+    case Expression.Sleep(exp, tpe, loc) =>
+      mapN(visitExp(exp)) {
+        case e => Expression.Sleep(e, tpe, loc)
+      }
+
     case Expression.FixpointConstraint(con, tpe, loc) =>
       Expression.FixpointConstraint(con, tpe, loc).toSuccess
 

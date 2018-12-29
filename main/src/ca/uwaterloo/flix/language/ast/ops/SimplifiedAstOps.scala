@@ -424,6 +424,53 @@ object SimplifiedAstOps {
         checkType(tpe)
 
       //
+      // New Channel.
+      //
+      case Expression.NewChannel(tpe, exp, loc) =>
+        checkExp(exp, env0, ienv0)
+        checkType(tpe)
+
+      //
+      // Get Channel.
+      //
+      case Expression.GetChannel(exp, tpe, loc) =>
+        checkExp(exp, env0, ienv0)
+        checkType(tpe)
+
+      //
+      // Put Channel.
+      //
+      case Expression.PutChannel(exp1, exp2, tpe, loc) =>
+        checkExp(exp1, env0, ienv0)
+        checkExp(exp2, env0, ienv0)
+        checkType(tpe)
+
+      //
+      // Select Channel.
+      //
+      case Expression.SelectChannel(rules, default, tpe, loc) =>
+        for (rule <- rules) {
+          checkExp(rule.chan, env0, ienv0)
+          checkExp(rule.exp, env0, ienv0)
+        }
+        default.foreach(exp => checkExp(exp, env0, ienv0))
+        checkType(tpe)
+
+      //
+      // Spawn.
+      //
+      case Expression.Spawn(exp, tpe, loc) =>
+        checkExp(exp, env0, ienv0)
+        checkType(tpe)
+
+      //
+      // Sleep.
+      //
+      case Expression.Sleep(exp, tpe, loc) =>
+        checkExp(exp, env0, ienv0)
+        checkType(tpe)
+
+      //
       // Constraint.
       //
       case Expression.FixpointConstraint(c, tpe, loc) =>

@@ -91,6 +91,22 @@ object JvmName {
     */
   val String: JvmName = JvmName(List("java", "lang"), "String")
 
+  //TODO SJ: place this class a better place
+  /**
+    * The `ca.uwaterloo.flix.runtime.interpreter.Channel` name.
+    */
+  val Channel: JvmName = JvmName(List("ca", "uwaterloo", "flix", "runtime", "interpreter"), "Channel")
+
+  /**
+    * The `ca.uwaterloo.flix.runtime.interpreter.SelectChoice` name.
+    */
+  val SelectChoice: JvmName = JvmName(List("ca", "uwaterloo", "flix", "runtime", "interpreter"), "SelectChoice")
+
+  /**
+    * The `ca.uwaterloo.flix.runtime.interpreter.Spawnable` name.
+    */
+  val Spawnable: JvmName = JvmName(List("ca", "uwaterloo", "flix", "runtime", "interpreter"), "Spawnable")
+
   /**
     * The `scala.math.package$` name
     */

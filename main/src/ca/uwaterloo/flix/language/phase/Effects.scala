@@ -577,6 +577,53 @@ object Effects extends Phase[Root, Root] {
           val eff = ast.Eff.Top
           Expression.NativeMethod(method, args, tpe, eff, loc).toSuccess
 
+        /**
+          * New Channel Expression
+          */
+        case Expression.NewChannel(tpe, exp, eff, loc) =>
+          for {
+            e <- visitExp(exp, env0)
+          } yield {
+            Expression.NewChannel(tpe, e, eff, loc)
+          }
+
+        /**
+          * Get Channel Expression
+          */
+        case Expression.GetChannel(exp, tpe, eff, loc) =>
+          for {
+            e <- visitExp(exp, env0)
+          } yield {
+            Expression.GetChannel(e, tpe, eff, loc)
+          }
+
+        /**
+          * Put Channel Expression
+          */
+        case Expression.PutChannel(exp1, exp2, tpe, eff, loc) =>
+          //TODO SJ: Why does Let have "val eff = e1. eff seq e2.eff" - should we do that?
+          for {
+            e1 <- visitExp(exp1, env0)
+            e2 <- visitExp(exp2, env0)
+          } yield {
+            Expression.PutChannel(e1, e2, tpe, eff, loc)
+          }
+
+        /**
+          * Select Channel Expression
+          */
+        case Expression.SelectChannel(rules, default, tpe, eff, loc) => ??? //TODO SJ
+
+        /**
+          * Spawn Expression
+          */
+        case Expression.Spawn(exp, tpe, eff, loc) => ??? //TODO SJ
+
+        /**
+          * Sleep Expression
+          */
+        case Expression.Sleep(exp, tpe, eff, loc) => ??? //TODO SJ
+
         case Expression.FixpointConstraint(con, tpe, eff, loc) => ??? // TODO: Constraint
 
         case Expression.FixpointCompose(exp1, exp2, tpe, eff, loc) => ??? // TODO: ConstraintUnion

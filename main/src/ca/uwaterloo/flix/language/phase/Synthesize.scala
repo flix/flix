@@ -137,7 +137,7 @@ object Synthesize extends Phase[Root, Root] {
       case Expression.Match(exp, rules, tpe, eff, loc) =>
         val e = visitExp(exp)
         val rs = rules map {
-          case MatchRule(pat, guard, body) => MatchRule(pat, guard, visitExp(body))
+          case MatchRule(pat, guard, body) => MatchRule(pat, visitExp(guard), visitExp(body))
         }
         Expression.Match(e, rs, tpe, eff, loc)
 
@@ -282,6 +282,39 @@ object Synthesize extends Phase[Root, Root] {
       case Expression.NativeMethod(method, args, tpe, eff, loc) =>
         val as = args map visitExp
         Expression.NativeMethod(method, as, tpe, eff, loc)
+
+      case Expression.NewChannel(tpe, exp, eff, loc) =>
+        val e = visitExp(exp)
+        Expression.NewChannel(tpe, e, eff, loc)
+
+      case Expression.GetChannel(exp, tpe, eff, loc) =>
+        val e = visitExp(exp)
+        Expression.GetChannel(e, tpe, eff, loc)
+
+      case Expression.PutChannel(exp1, exp2, tpe, eff, loc) =>
+        val e1 = visitExp(exp1)
+        val e2 = visitExp(exp2)
+        Expression.PutChannel(e1, e2, tpe, eff, loc)
+
+      case Expression.SelectChannel(rules, default, tpe, eff, loc) =>
+        val rs = rules map {
+          case SelectChannelRule(sym, chan, exp) =>
+            val c = visitExp(chan)
+            val e = visitExp(exp)
+            SelectChannelRule(sym, c, e)
+        }
+
+        val d = default.map(visitExp(_))
+
+        Expression.SelectChannel(rs, d, tpe, eff, loc)
+
+      case Expression.Spawn(exp, tpe, eff, loc) =>
+        val e = visitExp(exp)
+        Expression.Spawn(e, tpe, eff, loc)
+
+      case Expression.Sleep(exp, tpe, eff, loc) =>
+        val e = visitExp(exp)
+        Expression.Sleep(e, tpe, eff, loc)
 
       case Expression.FixpointConstraint(c0, tpe, eff, loc) =>
         val c = visitConstraint(c0)
@@ -950,6 +983,10 @@ object Synthesize extends Phase[Root, Root] {
           val method = classOf[java.lang.Object].getMethod("toString")
           Expression.NativeMethod(method, List(exp0), Type.Str, ast.Eff.Pure, sl)
 
+        case Type.Channel =>
+          val method = classOf[java.lang.Object].getMethod("toString")
+          Expression.NativeMethod(method, List(exp0), Type.Str, ast.Eff.Pure, sl)
+
         case Type.Vector =>
           val method = classOf[java.lang.Object].getMethod("toString")
           Expression.NativeMethod(method, List(exp0), Type.Str, ast.Eff.Pure, sl)
@@ -967,6 +1004,8 @@ object Synthesize extends Phase[Root, Root] {
         case Type.Apply(Type.Ref, _) => Expression.Str("<<ref>>", sl)
 
         case Type.Apply(Type.Array, _) => Expression.Str("<<array>>", sl)
+
+        case Type.Apply(Type.Channel, _) => Expression.Str("<<channel>>", sl)
 
         case Type.Apply(Type.Vector, _) => Expression.Str("<<vector>>", sl)
 

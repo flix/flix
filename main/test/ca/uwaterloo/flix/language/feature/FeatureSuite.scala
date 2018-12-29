@@ -21,6 +21,13 @@ import org.scalatest.{ParallelTestExecution, Suites}
 
 // TODO: Sort
 class FeatureSuite extends Suites(
+  new FlixTest("Test.Expression.NewChannel", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.NewChannel.flix"),
+  new FlixTest("Test.Expression.PutChannel", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.PutChannel.flix"),
+  new FlixTest("Test.Expression.GetChannel", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.GetChannel.flix"),
+  new FlixTest("Test.Expression.SelectChannel", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.SelectChannel.flix"),
+  new FlixTest("Test.Expression.Spawn", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Spawn.flix"),
+  new FlixTest("TestStatement", "main/test/ca/uwaterloo/flix/language/feature/TestStatement.flix"),
+
   new FlixTest("TestCurrying", "main/test/ca/uwaterloo/flix/language/feature/TestCurrying.flix"),
   new FlixTest("TestEquality", "main/test/ca/uwaterloo/flix/language/feature/TestEquality.flix"),
   new FlixTest("Test.Decl.Namespace", "main/test/ca/uwaterloo/flix/language/feature/Test.Decl.Namespace.flix"),
@@ -41,8 +48,6 @@ class FeatureSuite extends Suites(
   new FlixTest("Test.Expression.Unit", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Unit.flix"),
   new FlixTest("Test.Expression.Bool", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Bool.flix"),
   new FlixTest("Test.Expression.Char", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Char.flix"),
-
-  new FlixTest("Test.Expression.Constraint.Functional", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Constraint.Functional.flix")(compiled = false), // TODO
 
   new FlixTest("Test.Expression.Record.Extend", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Record.Extend.flix")(compiled = false), // TODO
   new FlixTest("Test.Expression.Record.Literal", "main/test/ca/uwaterloo/flix/language/feature/Test.Expression.Record.Literal.flix")(compiled = false), // TODO
@@ -125,6 +130,7 @@ class FeatureSuite extends Suites(
   new FlixTest("Test.Predicate.Atom", "main/test/ca/uwaterloo/flix/language/feature/Test.Predicate.Atom.flix"),
   new FlixTest("Test.Predicate.Nullary", "main/test/ca/uwaterloo/flix/language/feature/Test.Predicate.Nullary.flix"),
   new FlixTest("Test.Predicate.Filter", "main/test/ca/uwaterloo/flix/language/feature/Test.Predicate.Filter.flix"),
+  new FlixTest("Test.Predicate.Functional", "main/test/ca/uwaterloo/flix/language/feature/Test.Predicate.Functional.flix"),
 
   //
   // Terms

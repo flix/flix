@@ -104,6 +104,15 @@ object Tailrec extends Phase[Root, Root] {
           Expression.ApplySelfTail(sym, defn.fparams, args, tpe, loc)
         }
 
+      case Expression.SelectChannel(rules, default, tpe, loc) =>
+        val rs = rules map {
+          case SelectChannelRule(sym, chan, exp) => SelectChannelRule(sym, chan, visit(exp))
+        }
+
+        val d = default.map(exp => visit(exp))
+
+        Expression.SelectChannel(rs, d, tpe, loc)
+
       /*
        * Other expression: No calls in tail position.
        */

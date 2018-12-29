@@ -369,6 +369,19 @@ object ControlFlowAnalysis {
         // Unsoundly ignore the return value.
         AbstractValue.Bot
 
+      //TODO: Add support for Channels to ControlFlowAnalysis.
+      case Expression.NewChannel(tpe, exp, loc) => AbstractValue.Bot
+
+      case Expression.GetChannel(exp, tpe, loc) => AbstractValue.Bot
+
+      case Expression.PutChannel(exp1, exp2, tpe, loc) => AbstractValue.Bot
+
+      case Expression.SelectChannel(rules, default, tpe, loc) => AbstractValue.Bot
+
+      case Expression.Spawn(exp, tpe, loc) => AbstractValue.Bot
+
+      case Expression.Sleep(exp, tpe, loc) => AbstractValue.Bot
+
       case Expression.FixpointConstraint(con, tpe, loc) =>
         val g = visitConstraint(con)
         AbstractValue.Graph(g)

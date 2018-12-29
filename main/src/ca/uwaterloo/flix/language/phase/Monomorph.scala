@@ -87,6 +87,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         case Type.Int64 => Type.Int64
         case Type.BigInt => Type.BigInt
         case Type.Str => Type.Str
+        case Type.Channel => Type.Channel
         case Type.Array => Type.Array
         case Type.Vector => Type.Vector
         case Type.Native(clazz) => Type.Native(clazz)
@@ -431,6 +432,41 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         case Expression.NativeMethod(method, args, tpe, eff, loc) =>
           val es = args.map(e => visitExp(e, env0))
           Expression.NativeMethod(method, es, subst0(tpe), eff, loc)
+
+        case Expression.NewChannel(tpe, exp, eff, loc) =>
+          val e = visitExp(exp, env0)
+          Expression.NewChannel(subst0(tpe), e, eff, loc)
+
+        case Expression.GetChannel(exp, tpe, eff, loc) =>
+          val e = visitExp(exp, env0)
+          Expression.GetChannel(e, subst0(tpe), eff, loc)
+
+        case Expression.PutChannel(exp1, exp2, tpe, eff, loc) =>
+          val e1 = visitExp(exp1, env0)
+          val e2 = visitExp(exp2, env0)
+          Expression.PutChannel(e1, e2, subst0(tpe), eff, loc)
+
+        case Expression.SelectChannel(rules, default, tpe, eff, loc) =>
+          val rs = rules map {
+            case SelectChannelRule(sym, chan, exp) =>
+              val freshSym = Symbol.freshVarSym(sym)
+              val env1 = env0 + (sym -> freshSym)
+              val c = visitExp(chan, env1)
+              val e = visitExp(exp, env1)
+              SelectChannelRule(freshSym, c, e)
+          }
+
+          val d = default.map(visitExp(_, env0))
+
+          Expression.SelectChannel(rs, d, subst0(tpe), eff, loc)
+
+        case Expression.Spawn(exp, tpe, eff, loc) =>
+          val e = visitExp(exp, env0)
+          Expression.Spawn(e, subst0(tpe), eff, loc)
+
+        case Expression.Sleep(exp, tpe, eff, loc) =>
+          val e = visitExp(exp, env0)
+          Expression.Sleep(e, subst0(tpe), eff, loc)
 
         case Expression.FixpointConstraint(c0, tpe, eff, loc) =>
           val Constraint(cparams0, head0, body0, loc) = c0

@@ -67,6 +67,11 @@ object JvmType {
   val String: JvmType.Reference = Reference(JvmName.String)
 
   /**
+    * The `ca.uwaterloo.flix.runtime.interpreter.Spawnable` type.
+    */
+  val Spawnable: JvmType.Reference = Reference(JvmName.Spawnable)
+
+  /**
     * The `scala.math.package$` type
     */
   val ScalaMathPkg: JvmType.Reference = Reference(JvmName.ScalaMathPkg)

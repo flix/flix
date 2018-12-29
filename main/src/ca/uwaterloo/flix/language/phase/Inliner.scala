@@ -195,6 +195,14 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
       case Expression.NativeMethod(method, args, tpe, loc) =>
         Expression.NativeMethod(method, args.map(visit), tpe, loc)
 
+      // TODO SJ:
+      case Expression.NewChannel(tpe, exp, loc) => exp0
+      case Expression.GetChannel(exp ,tpe, loc) => exp0
+      case Expression.PutChannel(exp1, exp2, tpe, loc) => exp0
+      case Expression.SelectChannel(rules, default, tpe, loc) => exp0
+      case Expression.Spawn(exp, tpe, loc) => exp0
+      case Expression.Sleep(exp, tpe, loc) => exp0
+
       case Expression.FixpointConstraint(con, tpe, loc) =>
         ??? // TODO: Expression.Constraint
 
@@ -354,6 +362,14 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     case Expression.NativeField(_, _, _) => exp0
     case Expression.NativeMethod(method, args, tpe, loc) =>
       Expression.NativeMethod(method, args.map(renameAndSubstitute(_, env0)), tpe, loc)
+
+    // TODO SJ:
+    case Expression.NewChannel(tpe, exp, loc) => exp0
+    case Expression.GetChannel(exp ,tpe, loc) => exp0
+    case Expression.PutChannel(exp1, exp2, tpe, loc) => exp0
+    case Expression.SelectChannel(rules, default, tpe, loc) => exp0
+    case Expression.Spawn(exp, tpe, loc) => exp0
+    case Expression.Sleep(exp, tpe, loc) => exp0
 
     case Expression.FixpointConstraint(con, tpe, loc) => ??? // TODO: Expression.Constraint
 
@@ -597,6 +613,14 @@ object Inliner extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
     // Native Methods are atomic if their arguments are.
     //
     case Expression.NativeMethod(method, args, tpe, loc) => args forall isAtomic
+
+    // TODO SJ:
+    case Expression.NewChannel(tpe, exp, loc) => true
+    case Expression.GetChannel(exp, tpe, loc) => true
+    case Expression.PutChannel(exp1, exp2, tpe, loc) => true
+    case Expression.SelectChannel(rules, default, tpe, loc) => true
+    case Expression.Spawn(exp, tpe, loc) => true
+    case Expression.Sleep(exp, tpe, loc) => true
 
     //
     // Constraint expressions are atomic.

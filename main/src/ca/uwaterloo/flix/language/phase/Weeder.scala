@@ -951,6 +951,57 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
         case es => WeededAst.Expression.NativeMethod(className, methodName, es, mkSL(sp1, sp2))
       }
 
+    // TODO SJ: Rewrite to Ascribe(newch, Channel[Int]), to remove the tpe (and get tvar like everything else)
+    // TODO SJ: Also do not allow function types (Arrow) when rewriting
+    case ParsedAst.Expression.NewChannel(sp1, tpe, exp, sp2) =>
+      visitExp(exp) map {
+        case e => WeededAst.Expression.NewChannel(visitType(tpe), e, mkSL(sp1, sp2))
+      }
+
+    case ParsedAst.Expression.GetChannel(sp1, exp, sp2) =>
+      visitExp(exp) map {
+        case e => WeededAst.Expression.GetChannel(e, mkSL(sp1, sp2))
+      }
+
+    case ParsedAst.Expression.PutChannel(exp1, exp2, sp2) =>
+      mapN(visitExp(exp1), visitExp(exp2)) {
+        case (e1, e2) => WeededAst.Expression.PutChannel(e1, e2, mkSL(leftMostSourcePosition(exp1), sp2))
+      }
+
+    case ParsedAst.Expression.SelectChannel(sp1, rules, default, sp2) =>
+      val rulesVal = traverse(rules) {
+        case ParsedAst.SelectChannelRule(ident, chan, body) => mapN(visitExp(chan), visitExp(body)) {
+          case (c, b) => WeededAst.SelectChannelRule(ident, c, b)
+        }
+      }
+
+      val defaultVal = default match {
+        case Some(exp) => visitExp(exp) map {
+          case e => Some(e)
+        }
+        case None => None.toSuccess
+      }
+
+      mapN(rulesVal, defaultVal) {
+        case (rs, d) => WeededAst.Expression.SelectChannel(rs, d, mkSL(sp1, sp2))
+      }
+
+    case ParsedAst.Expression.Spawn(sp1, exp, sp2) =>
+      visitExp(exp) map {
+        case e => WeededAst.Expression.Spawn(e, mkSL(sp1, sp2))
+      }
+
+    case ParsedAst.Expression.Sleep(sp1, exp, sp2) =>
+      visitExp(exp) map {
+        case e => WeededAst.Expression.Sleep(e, mkSL(sp1, sp2))
+      }
+
+    case ParsedAst.Expression.Statement(exp1, exp2, sp2) =>
+      val sp1 = leftMostSourcePosition(exp1)
+      mapN(visitExp(exp1), visitExp(exp2)) {
+        case (e1, e2) => WeededAst.Expression.Let(Name.Ident(sp1, "_temp", sp1), e1, e2, mkSL(sp1, sp2)) //TODO skal spX i LetRec være sp1?
+      }
+
     case ParsedAst.Expression.FixpointConstraintSeq(sp1, cs, sp2) =>
       val loc = mkSL(sp1, sp2)
 
@@ -1817,6 +1868,13 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.Expression.NativeField(sp1, _, _) => sp1
     case ParsedAst.Expression.NativeMethod(sp1, _, _, _) => sp1
     case ParsedAst.Expression.NativeConstructor(sp1, _, _, _) => sp1
+    case ParsedAst.Expression.NewChannel(sp1, _, _, _) => sp1
+    case ParsedAst.Expression.GetChannel(sp1, _, _) => sp1
+    case ParsedAst.Expression.PutChannel(e1, _, _) => leftMostSourcePosition(e1)
+    case ParsedAst.Expression.SelectChannel(sp1, _, _, _) => sp1
+    case ParsedAst.Expression.Spawn(sp1, _, _) => sp1
+    case ParsedAst.Expression.Sleep(sp1, _, _) => sp1
+    case ParsedAst.Expression.Statement(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.FixpointConstraintSeq(sp1, _, _) => sp1
     case ParsedAst.Expression.FixpointCompose(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.FixpointSolve(sp1, _, _) => sp1

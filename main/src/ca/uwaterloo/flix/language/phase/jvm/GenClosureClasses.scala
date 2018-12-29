@@ -65,7 +65,7 @@ object GenClosureClasses {
     val functionInterface = JvmOps.getFunctionInterfaceType(closure.tpe)
 
     // The super interface.
-    val superInterface = Array(functionInterface.name.toInternalName)
+    val superInterface = Array(functionInterface.name.toInternalName, JvmName.Spawnable.toInternalName)
 
     // `JvmType` of the class for `defn`
     val classType = JvmOps.getClosureClassType(closure)
@@ -110,6 +110,9 @@ object GenClosureClasses {
     // Invoke method of the class
     compileInvokeMethod(visitor, classType, root.defs(closure.sym), closure.freeVars, resultType)
 
+    // Spawn method of the class
+    compileSpawnMethod(visitor, classType, root.defs(closure.sym), resultType)
+
     // Constructor of the class
     compileConstructor(visitor, classType, closure.freeVars)
 
@@ -131,11 +134,13 @@ object GenClosureClasses {
     // Function parameters
     val params = defn.formals.takeRight(defn.formals.length - freeVars.length)
 
+    // TODO Magnus, Jonathan, Simon: remove sanity checking
     // Sanity check
     val skipLabel = new Label
     invokeMethod.visitVarInsn(ALOAD, 0)
-    invokeMethod.visitFieldInsn(GETFIELD, classType.name.toInternalName, "creationContext", JvmType.Object.toDescriptor)
-    invokeMethod.visitVarInsn(ALOAD, 1)
+    //invokeMethod.visitFieldInsn(GETFIELD, classType.name.toInternalName, "creationContext", JvmType.Object.toDescriptor)
+    // line below was: invokeMethod.visitVarInsn(ALOAD, 1)
+    invokeMethod.visitVarInsn(ALOAD, 0)
 
     // If contexts are equal, precede to evaluate
     invokeMethod.visitJumpInsn(IF_ACMPEQ, skipLabel)
@@ -249,6 +254,80 @@ object GenClosureClasses {
     constructor.visitInsn(RETURN)
     constructor.visitMaxs(1, 1)
     constructor.visitEnd()
+  }
+
+  /**
+    * Spawn method for the given `defn` and `classType`.
+    */
+  private def compileSpawnMethod(visitor: ClassWriter,
+                                 classType: JvmType.Reference,
+                                 defn: Def, resultType: JvmType)(implicit root: Root, flix: Flix): Unit = {
+
+    // Method header
+    val mv = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, "spawn",
+      AsmOps.getMethodDescriptor(List(), JvmType.Void), null, null)
+
+    // Put this on stack
+    mv.visitVarInsn(ALOAD, 0)
+
+    // Create new Context
+    mv.visitTypeInsn(NEW, JvmName.Context.toInternalName)
+    mv.visitInsn(DUP)
+    mv.visitMethodInsn(INVOKESPECIAL, JvmName.Context.toInternalName, "<init>", "()V", false)
+    mv.visitVarInsn(ASTORE, 1)
+
+    // Label for the loop
+    val loop = new Label
+
+    // Type of the function
+    val fnType = root.defs(defn.sym).tpe
+
+    // Type of the continuation interface
+    val cont = JvmOps.getContinuationInterfaceType(fnType)
+
+    // Store this ifo to the continuation field.
+    mv.visitVarInsn(ALOAD, 1)
+    mv.visitVarInsn(ALOAD, 0)
+    mv.visitFieldInsn(PUTFIELD, JvmName.Context.toInternalName, "continuation", JvmType.Object.toDescriptor)
+
+    // Begin of the loop
+    mv.visitLabel(loop)
+
+    // Getting `continuation` field on `Context`
+    mv.visitVarInsn(ALOAD, 1)
+    mv.visitFieldInsn(GETFIELD, JvmName.Context.toInternalName, "continuation", JvmType.Object.toDescriptor)
+
+    // Setting `continuation` field of global to `null`
+    mv.visitVarInsn(ALOAD, 1)
+    mv.visitInsn(ACONST_NULL)
+    mv.visitFieldInsn(PUTFIELD, JvmName.Context.toInternalName, "continuation", JvmType.Object.toDescriptor)
+
+    // Cast to the continuation
+    mv.visitTypeInsn(CHECKCAST, cont.name.toInternalName)
+
+    // Duplicate
+    mv.visitInsn(DUP)
+
+    // Save it on the IFO local variable
+    mv.visitVarInsn(ASTORE, 2)
+
+    // Call invoke
+    mv.visitVarInsn(ALOAD, 1)
+    mv.visitMethodInsn(INVOKEINTERFACE, cont.name.toInternalName, "invoke", AsmOps.getMethodDescriptor(List(JvmType.Context), JvmType.Void), true)
+
+    // Getting `continuation` field on `Context`
+    mv.visitVarInsn(ALOAD, 1)
+    mv.visitFieldInsn(GETFIELD, JvmName.Context.toInternalName, "continuation", JvmType.Object.toDescriptor)
+    mv.visitJumpInsn(IFNONNULL, loop)
+
+    // Load IFO from local variable and invoke `getResult` on it
+    mv.visitVarInsn(ALOAD, 2)
+    mv.visitMethodInsn(INVOKEINTERFACE, cont.name.toInternalName, "getResult", AsmOps.getMethodDescriptor(Nil, resultType), true)
+    AsmOps.boxIfPrim(mv, resultType)
+
+    mv.visitInsn(RETURN)
+    mv.visitMaxs(65535, 65535)
+    mv.visitEnd()
   }
 
 }

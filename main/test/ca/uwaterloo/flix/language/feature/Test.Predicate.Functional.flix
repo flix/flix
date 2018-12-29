@@ -29,14 +29,36 @@ def testFunctional05(): Bool = check {
 
 @test
 def testFunctional06(): Bool = check {
-    R(add(x, y)) :- x <- one(), y <- two().
+    A(1). A(2). A(3).
+
+    R(x) :- A(x), y <- two().
+}
+
+@test
+def testFunctional07(): Bool = check {
+    F(x) :- x <- zerOption().
+}
+
+@test
+def testFunctional08(): Bool = check {
+    F(x) :- x <- oneOption().
+}
+
+@test
+def testFunctional09(): Bool = check {
+    F(x) :- x <- twoOption().
 }
 
 def zer(): Array[Int] = []
 def one(): Array[Int] = [21]
 def two(): Array[Int] = [21, 42]
-def add(x: Int, y: Int): Int = x + y
+
+def zerOption(): Array[Option[Int]] = []
+def oneOption(): Array[Option[Int]] = [None]
+def twoOption(): Array[Option[Int]] = [None, Some(123)]
 
 rel A(x: Int)
 rel B(x: Int)
 rel R(x: Int)
+
+rel F(x: Option[Int])

@@ -45,6 +45,7 @@ sealed trait Type {
     case Type.Int64 => Set.empty
     case Type.BigInt => Set.empty
     case Type.Str => Set.empty
+    case Type.Channel => Set.empty
     case Type.Array => Set.empty
     case Type.Vector => Set.empty
     case Type.Native(clazz) => Set.empty
@@ -204,6 +205,7 @@ sealed trait Type {
     case Type.Int64 => "Int64"
     case Type.BigInt => "BigInt"
     case Type.Str => "Str"
+    case Type.Channel => "Channel"
     case Type.Array => "Array"
     case Type.Vector => "Vector"
     case Type.Zero => "Zero"
@@ -338,6 +340,13 @@ object Type {
     * A type constructor that represent strings.
     */
   case object Str extends Type {
+    def kind: Kind = Kind.Star
+  }
+
+  /**
+    * A type constructor that represent channels.
+    */
+  case object Channel extends Type {
     def kind: Kind = Kind.Star
   }
 
@@ -524,6 +533,23 @@ object Type {
   }
 
   /**
+    * Constructs the channel type [elmType] where 'elmType' is the given type.
+    */
+  def mkChannel(elmType: Type): Type = Apply(Channel, elmType)
+
+  /**
+    * Return the inner type of the channel
+    *
+    * For example given Channel[Int] return Int.
+    */
+  def getChannelInnerType(tpe: Type): Type = {
+    tpe match {
+      case Type.Apply(Type.Channel, t) => t
+      case _ => throw InternalCompilerException(s"Excepted channel type. Actual type: '$tpe' ")
+    }
+  }
+
+  /**
     * Constructs the array type [elmType] where 'elmType' is the given type.
     */
   def mkArray(elmType: Type): Type = Apply(Array, elmType)
@@ -584,6 +610,7 @@ object Type {
       case Type.Int64 => Type.Int64
       case Type.BigInt => Type.BigInt
       case Type.Str => Type.Str
+      case Type.Channel => Type.Channel
       case Type.Array => Type.Array
       case Type.Vector => Type.Vector
       case Type.Native(clazz) => Type.Native(clazz)
@@ -645,6 +672,7 @@ object Type {
           case Type.Int64 => "Int64"
           case Type.BigInt => "BigInt"
           case Type.Str => "String"
+          case Type.Channel => "Channel"
           case Type.Array => "Array"
           case Type.Vector => "Vector"
           case Type.Zero => "Zero"
