@@ -301,6 +301,39 @@ object LambdaLift extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         val es = args map visitExp
         Expression.NativeMethod(method, es, tpe, loc)
 
+      case Expression.NewChannel(tpe, exp, loc) =>
+        val e = visitExp(exp)
+        Expression.NewChannel(tpe, e, loc)
+
+      case Expression.GetChannel(exp, tpe, loc) =>
+        val e = visitExp(exp)
+        Expression.GetChannel(e, tpe, loc)
+
+      case Expression.PutChannel(exp1, exp2, tpe, loc) =>
+        val e1 = visitExp(exp1)
+        val e2 = visitExp(exp2)
+        Expression.PutChannel(e1, e2, tpe, loc)
+
+      case Expression.SelectChannel(rules, default, tpe, loc) =>
+        val rs = rules map {
+          case SelectChannelRule(sym, chan, exp) =>
+            val c = visitExp(chan)
+            val e = visitExp(exp)
+            SelectChannelRule(sym, c, e)
+        }
+
+        val d = default.map(visitExp(_))
+
+        Expression.SelectChannel(rs, d, tpe, loc)
+
+      case Expression.Spawn(exp, tpe, loc) =>
+        val e = visitExp(exp)
+        Expression.Spawn(e, tpe, loc)
+
+      case Expression.Sleep(exp, tpe, loc) =>
+        val e = visitExp(exp)
+        Expression.Sleep(e, tpe, loc)
+
       case Expression.FixpointConstraint(c0, tpe, loc) =>
         val c = visitConstraint(c0)
         Expression.FixpointConstraint(c, tpe, loc)

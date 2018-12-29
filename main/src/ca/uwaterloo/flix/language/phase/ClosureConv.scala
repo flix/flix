@@ -287,6 +287,39 @@ object ClosureConv extends Phase[Root, Root] {
       val as = args map visitExp
       Expression.NativeMethod(method, as, tpe, loc)
 
+    case Expression.NewChannel(tpe, exp, loc) =>
+      val e = visitExp(exp)
+      Expression.NewChannel(tpe, e, loc)
+
+    case Expression.GetChannel(exp, tpe, loc) =>
+      val e = visitExp(exp)
+      Expression.GetChannel(e, tpe, loc)
+
+    case Expression.PutChannel(exp1, exp2, tpe, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      Expression.PutChannel(e1, e2, tpe, loc)
+
+    case Expression.SelectChannel(rules, default, tpe, loc) =>
+      val rs = rules map {
+        case SelectChannelRule(sym, chan, exp) =>
+          val c = visitExp(chan)
+          val e = visitExp(exp)
+          SelectChannelRule(sym, c, e)
+      }
+
+      val d = default.map(visitExp(_))
+
+      Expression.SelectChannel(rs, d, tpe, loc)
+
+    case Expression.Spawn(exp, tpe, loc) =>
+      val e = visitExp(exp)
+      Expression.Spawn(e, tpe, loc)
+
+    case Expression.Sleep(exp, tpe, loc) =>
+      val e = visitExp(exp)
+      Expression.Sleep(e, tpe, loc)
+
     case Expression.FixpointConstraint(c0, tpe, loc) =>
       val Constraint(cparams0, head0, body0) = c0
       val head = visitHeadPredicate(head0)
@@ -467,6 +500,20 @@ object ClosureConv extends Phase[Root, Root] {
     case Expression.NativeConstructor(constructor, args, tpe, loc) => mutable.LinkedHashSet.empty ++ args.flatMap(freeVars)
     case Expression.NativeField(field, tpe, loc) => mutable.LinkedHashSet.empty
     case Expression.NativeMethod(method, args, tpe, loc) => mutable.LinkedHashSet.empty ++ args.flatMap(freeVars)
+
+    case Expression.NewChannel(tpe, exp, loc) => freeVars(exp)
+    case Expression.GetChannel(exp, tpe, loc) => freeVars(exp)
+    case Expression.PutChannel(exp1, exp2, tpe, loc) => freeVars(exp1) ++ freeVars(exp2)
+    case Expression.SelectChannel(rules, default, tpe, loc) =>
+      val rs = mutable.LinkedHashSet.empty ++ rules.flatMap{
+        case SelectChannelRule(sym, chan, exp) => freeVars(chan).filter(n1 => !List(sym).contains(n1._1))
+      }
+
+      val d = default.map(freeVars).getOrElse(mutable.LinkedHashSet.empty)
+
+      rs ++ d
+    case Expression.Spawn(exp, tpe, loc) => freeVars(exp)
+    case Expression.Sleep(exp, tpe, loc) => freeVars(exp)
 
     case Expression.FixpointConstraint(con, tpe, loc) =>
       val Constraint(cparams, head, body) = con
@@ -761,6 +808,39 @@ object ClosureConv extends Phase[Root, Root] {
       case Expression.NativeMethod(method, args, tpe, loc) =>
         val es = args map visitExp
         Expression.NativeMethod(method, es, tpe, loc)
+
+      case Expression.NewChannel(tpe, exp, loc) =>
+        val e = visitExp(exp)
+        Expression.NewChannel(tpe, e, loc)
+
+      case Expression.GetChannel(exp, tpe, loc) =>
+        val e = visitExp(exp)
+        Expression.GetChannel(e, tpe, loc)
+
+      case Expression.PutChannel(exp1, exp2, eff, loc) =>
+        val e1 = visitExp(exp1)
+        val e2 = visitExp(exp2)
+        Expression.PutChannel(e1, e2, eff, loc)
+
+      case Expression.SelectChannel(rules, default, tpe, loc) =>
+        val rs = rules map {
+          case SelectChannelRule(sym, chan, exp) =>
+            val c = visitExp(chan)
+            val e = visitExp(exp)
+            SelectChannelRule(sym, c, e)
+        }
+
+        val d = default.map(visitExp(_))
+
+        Expression.SelectChannel(rs, d, tpe, loc)
+
+      case Expression.Spawn(exp, tpe, loc) =>
+        val e = visitExp(exp)
+        Expression.Spawn(e, tpe, loc)
+
+      case Expression.Sleep(exp, tpe, loc) =>
+        val e = visitExp(exp)
+        Expression.Sleep(e, tpe, loc)
 
       case Expression.FixpointConstraint(con, tpe, loc) =>
         val Constraint(cparams0, head0, body0) = con

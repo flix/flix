@@ -305,6 +305,35 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
           checkPats(_, root)
         }).map(const(tast))
 
+        case Expression.NewChannel(_, exp, _, _) => for {
+          _ <- checkPats(exp, root)
+        } yield tast
+
+        case Expression.GetChannel(exp, _, _ , _) => for {
+          _ <- checkPats(exp, root)
+        } yield tast
+
+        case Expression.PutChannel(exp1, exp2, _, _, _) => for {
+          _ <- checkPats(exp1, root)
+          _ <- checkPats(exp2, root)
+        } yield tast
+
+        case Expression.SelectChannel(rules, default, _, _, _) => for {
+          _ <- sequence(rules.map(r => {checkPats(r.chan, root); checkPats(r.exp, root)}))
+          _ <- default match {
+            case Some(exp) => checkPats(exp, root)
+            case None => None.toSuccess
+          }
+        } yield tast
+
+        case Expression.Spawn(exp, _, _, _) => for {
+          _ <- checkPats(exp, root)
+        } yield tast
+
+        case Expression.Sleep(exp, _, _, _) => for {
+          _ <- checkPats(exp, root)
+        } yield tast
+
         case Expression.FixpointConstraint(c, tpe, eff, loc) =>
           for {
             _ <- visitConstraint(c, root)
@@ -695,6 +724,7 @@ object PatternExhaustiveness extends Phase[TypedAst.Root, TypedAst.Root] {
       case Type.Native(clazz) => 0
       case Type.Ref => 0
       case Type.Arrow(length) => length
+      case Type.Channel => 1
       case Type.Array => 1
       case Type.Vector => 2
       case Type.Zero => 0

@@ -681,6 +681,55 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
             es <- traverse(args)(e => visit(e, tenv0))
           } yield ResolvedAst.Expression.NativeMethod(method, es, tpe, loc)
 
+        case NamedAst.Expression.NewChannel(tpe, exp, loc) =>
+          for {
+            t <- lookupType(tpe, ns0, prog0)
+            e <- visit(exp, tenv0)
+          } yield ResolvedAst.Expression.NewChannel(t, e, loc)
+
+        case NamedAst.Expression.GetChannel(exp, tvar, loc) =>
+          for {
+            e <- visit(exp, tenv0)
+          } yield ResolvedAst.Expression.GetChannel(e, tvar, loc)
+
+        case NamedAst.Expression.PutChannel(exp1, exp2, tvar, loc) =>
+          for {
+            e1 <- visit(exp1, tenv0)
+            e2 <- visit(exp2, tenv0)
+          } yield ResolvedAst.Expression.PutChannel(e1, e2, tvar, loc)
+
+        case NamedAst.Expression.SelectChannel(rules, default, tvar, loc) =>
+          val rulesVal = traverse(rules) {
+            case NamedAst.SelectChannelRule(sym, chan, body) =>
+              for {
+                c <- visit(chan, tenv0)
+                b <- visit(body, tenv0)
+              } yield ResolvedAst.SelectChannelRule(sym, c, b)
+          }
+
+          val defaultVal = default match {
+            case Some(exp) =>
+              for {
+                e <- visit(exp, tenv0)
+              } yield Some(e)
+            case None => None.toSuccess
+          }
+
+          for {
+            rs <- rulesVal
+            d <- defaultVal
+          } yield ResolvedAst.Expression.SelectChannel(rs, d, tvar, loc)
+
+        case NamedAst.Expression.Spawn(exp, tvar, loc) =>
+          for {
+            e <- visit(exp, tenv0)
+          } yield ResolvedAst.Expression.Spawn(e, tvar, loc)
+
+        case NamedAst.Expression.Sleep(exp, tvar, loc) =>
+          for {
+            e <- visit(exp, tenv0)
+          } yield ResolvedAst.Expression.Sleep(e, tvar, loc)
+
         case NamedAst.Expression.FixpointConstraint(cons, tvar, loc) =>
           Constraints.resolve(cons, tenv0, ns0, prog0) map {
             case c => ResolvedAst.Expression.FixpointConstraint(c, tvar, loc)
@@ -1233,6 +1282,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
       case "Int64" => Type.Int64.toSuccess
       case "BigInt" => Type.BigInt.toSuccess
       case "Str" => Type.Str.toSuccess
+      case "Channel" => Type.Channel.toSuccess
       case "Array" => Type.Array.toSuccess
       case "Vector" => Type.Vector.toSuccess
       case "Ref" => Type.Ref.toSuccess

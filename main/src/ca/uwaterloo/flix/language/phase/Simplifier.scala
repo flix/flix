@@ -513,6 +513,43 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
         val es = args.map(e => visitExp(e))
         SimplifiedAst.Expression.NativeMethod(method, es, tpe, loc)
 
+      case TypedAst.Expression.NewChannel(tpe, exp, eff, loc) =>
+        val e = visitExp(exp)
+        SimplifiedAst.Expression.NewChannel(tpe, e, loc)
+
+      case TypedAst.Expression.GetChannel(exp, tpe, eff, loc) =>
+        val e = visitExp(exp)
+        SimplifiedAst.Expression.GetChannel(e, tpe, loc)
+
+      case TypedAst.Expression.PutChannel(exp1, exp2, tpe, eff, loc) =>
+        val e1 = visitExp(exp1)
+        val e2 = visitExp(exp2)
+        SimplifiedAst.Expression.PutChannel(e1, e2, tpe, loc)
+
+      case TypedAst.Expression.SelectChannel(rules, default, tpe, eff, loc) =>
+        val rs = rules map {
+          case TypedAst.SelectChannelRule(sym, chan, exp) =>
+            val c = visitExp(chan)
+            val e = visitExp(exp)
+            SimplifiedAst.SelectChannelRule(sym, c, e)
+        }
+
+        val d = default.map(visitExp(_))
+
+        SimplifiedAst.Expression.SelectChannel(rs, d, tpe, loc)
+
+      case TypedAst.Expression.Spawn(exp, tpe, eff, loc) =>
+        val e = visitExp(exp)
+        // Make a function type, () -> e.tpe
+        val newTpe = Type.mkArrow(Type.Unit, e.tpe)
+        // Rewrite our Spawn expression to a Lambda
+        val lambda = SimplifiedAst.Expression.Lambda(List(), e, newTpe, loc)
+        SimplifiedAst.Expression.Spawn(lambda, newTpe, loc)
+
+      case TypedAst.Expression.Sleep(exp, tpe, eff, loc) =>
+        val e = visitExp(exp)
+        SimplifiedAst.Expression.Sleep(e, tpe, loc)
+
       case TypedAst.Expression.FixpointConstraint(c0, tpe, eff, loc) =>
         val c = visitConstraint(c0)
         SimplifiedAst.Expression.FixpointConstraint(c, tpe, loc)
@@ -1176,6 +1213,39 @@ object Simplifier extends Phase[TypedAst.Root, SimplifiedAst.Root] {
       case SimplifiedAst.Expression.NativeMethod(method, args, tpe, loc) =>
         val es = args map visitExp
         SimplifiedAst.Expression.NativeMethod(method, es, tpe, loc)
+
+      case SimplifiedAst.Expression.NewChannel(tpe, exp, loc) =>
+        val e = visitExp(exp)
+        SimplifiedAst.Expression.NewChannel(tpe, e, loc)
+
+      case SimplifiedAst.Expression.GetChannel(exp, tpe, loc) =>
+        val e = visitExp(exp)
+        SimplifiedAst.Expression.GetChannel(e, tpe, loc)
+
+      case SimplifiedAst.Expression.PutChannel(exp1, exp2, tpe, loc) =>
+        val e1 = visitExp(exp1)
+        val e2 = visitExp(exp2)
+        SimplifiedAst.Expression.PutChannel(e1, e2, tpe, loc)
+
+      case SimplifiedAst.Expression.SelectChannel(rules, default, tpe, loc) =>
+        val rs = rules map {
+          case SimplifiedAst.SelectChannelRule(sym, chan, exp) =>
+            val c = visitExp(chan)
+            val e = visitExp(exp)
+            SimplifiedAst.SelectChannelRule(sym, c, e)
+        }
+
+        val d = default.map(visitExp(_))
+
+        SimplifiedAst.Expression.SelectChannel(rs, d, tpe, loc)
+
+      case SimplifiedAst.Expression.Spawn(exp, tpe, loc) =>
+        val e = visitExp(exp)
+        SimplifiedAst.Expression.Spawn(e, tpe, loc)
+
+      case SimplifiedAst.Expression.Sleep(exp, tpe, loc) =>
+        val e = visitExp(exp)
+        SimplifiedAst.Expression.Sleep(e, tpe, loc)
 
       case SimplifiedAst.Expression.FixpointConstraint(c0, tpe, loc) =>
         val c = visitConstraint(c0)

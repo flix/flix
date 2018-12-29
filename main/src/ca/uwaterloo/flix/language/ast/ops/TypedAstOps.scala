@@ -193,6 +193,25 @@ object TypedAstOps {
           case (macc, arg) => macc ++ visitExp(arg, env0)
         }
 
+      case Expression.NewChannel(tpe, exp, eff, loc) => visitExp(exp, env0)
+
+      case Expression.GetChannel(exp, tpe, eff, loc) => visitExp(exp, env0)
+
+      case Expression.PutChannel(exp1, exp2, tpe, eff, loc) => visitExp(exp1, env0) ++ visitExp(exp2, env0)
+
+      case Expression.SelectChannel(rules, default, tpe, eff, loc) =>
+        val rs = rules.foldLeft(Map.empty[Symbol.HoleSym, HoleContext]){
+          case (macc, SelectChannelRule(sym, chan, exp)) => macc ++ visitExp(chan, env0) ++ visitExp(exp, env0)
+        }
+
+        val d = default.map(visitExp(_, env0)).getOrElse(Map.empty)
+
+        rs ++ d
+
+      case Expression.Spawn(exp, tpe, eff, loc) => visitExp(exp, env0)
+
+      case Expression.Sleep(exp, tpe, eff, loc) => visitExp(exp, env0)
+
       case Expression.FixpointConstraint(c, tpe, eff, loc) => visitConstraint(c, env0)
 
       case Expression.FixpointCompose(exp1, exp2, tpe, eff, loc) =>

@@ -209,6 +209,18 @@ object FinalAst {
 
     case class NativeMethod(method: Method, args: List[FinalAst.Expression], tpe: Type, loc: SourceLocation) extends FinalAst.Expression
 
+    case class NewChannel(tpe: Type, exp: FinalAst.Expression, loc: SourceLocation) extends FinalAst.Expression
+
+    case class GetChannel(exp: FinalAst.Expression, tpe: Type, loc: SourceLocation) extends FinalAst.Expression
+
+    case class PutChannel(exp1: FinalAst.Expression, exp2: FinalAst.Expression, tpe: Type, loc: SourceLocation) extends FinalAst.Expression
+
+    case class SelectChannel(rules: List[FinalAst.SelectChannelRule], default: Option[FinalAst.Expression], tpe: Type, loc: SourceLocation) extends FinalAst.Expression
+
+    case class Spawn(exp: FinalAst.Expression, tpe: Type, loc: SourceLocation) extends FinalAst.Expression
+
+    case class Sleep(exp: FinalAst.Expression, tpe: Type, loc: SourceLocation) extends FinalAst.Expression
+
     case class FixpointConstraint(c: FinalAst.Constraint, tpe: Type, loc: SourceLocation) extends FinalAst.Expression
 
     case class FixpointCompose(exp1: FinalAst.Expression, exp2: FinalAst.Expression, tpe: Type, loc: SourceLocation) extends FinalAst.Expression
@@ -232,6 +244,8 @@ object FinalAst {
     case class SwitchError(tpe: Type, loc: SourceLocation) extends FinalAst.Expression
 
   }
+
+  case class SelectChannelRule(sym: Symbol.VarSym, chan: FinalAst.Expression, exp: FinalAst.Expression)
 
   sealed trait Predicate {
     def loc: SourceLocation

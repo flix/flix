@@ -930,6 +930,71 @@ object ParsedAst {
     case class NativeMethod(sp1: SourcePosition, fqn: Seq[String], args: Seq[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
+      * NewChannel Expression.
+      *
+      * @param sp1 the position of the first character in the expression.
+      * @param tpe the type of the channel elements.
+      * @param exp the size of the channel.
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class NewChannel(sp1: SourcePosition, tpe: ParsedAst.Type, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
+      * GetChannel Expression.
+      *
+      * @param sp1 the position of the first character in the expression.
+      * @param exp the channel expression.
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class GetChannel(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
+      * PutChannel Expression
+      *
+      * @param exp1 the channel expression.
+      * @param exp2 the expression to put in the channel.
+      * @param sp2  the position of the last character in the expression.
+      */
+    case class PutChannel(exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
+      * SelectChannel Expression.
+      *
+      * @param sp1     the position of the first character in the expression.
+      * @param rules   the rules of the select expression.
+      * @param default the default of the select expression.
+      * @param sp2     the position of the last character in the expression.
+      */
+    case class SelectChannel(sp1: SourcePosition, rules: Seq[SelectChannelRule], default: Option[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
+      * Spawn Expression.
+      *
+      * @param sp1 the position of the first character in the expression.
+      * @param exp the expression.
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class Spawn(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
+      * Sleep Expression.
+      *
+      * @param sp1 the position of the first character in the expression.
+      * @param exp the expression.
+      * @param sp2 the position of the last character in the expression.
+      */
+    case class Sleep(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
+      * Statement Expression.
+      *
+      * @param exp1 the first expression.
+      * @param exp2 the second expression.
+      * @param sp2  the position of the last character in the expression.
+      */
+    case class Statement(exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
       * Fixpoint Constraint Sequence expression.
       *
       * @param sp1 the position of the first character in the expression.
@@ -1450,6 +1515,15 @@ object ParsedAst {
     * @param exp   the body expression of the rule.
     */
   case class MatchRule(pat: ParsedAst.Pattern, guard: Option[ParsedAst.Expression], exp: ParsedAst.Expression) extends ParsedAst
+
+  /**
+    * A select channel rule consists of an identifier, a channel expression, and a body expression.
+    *
+    * @param ident the bound identifier.
+    * @param chan  the channel expression of the rule.
+    * @param exp   the body expression of the rule.
+    */
+  case class SelectChannelRule(ident: Name.Ident, chan: ParsedAst.Expression, exp: ParsedAst.Expression) extends ParsedAst
 
   /**
     * Modifier.

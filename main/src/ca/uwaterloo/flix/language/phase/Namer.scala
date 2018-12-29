@@ -811,6 +811,53 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
         case Err(e) => e.toFailure
       }
 
+    case WeededAst.Expression.NewChannel(tpe, exp, loc) =>
+      visitExp(exp, env0, tenv0) map {
+        case e => NamedAst.Expression.NewChannel(visitType(tpe, tenv0), e, loc)
+      }
+
+    case WeededAst.Expression.GetChannel(exp, loc) =>
+      visitExp(exp, env0, tenv0) map {
+        case e => NamedAst.Expression.GetChannel(e, Type.freshTypeVar(), loc)
+      }
+
+    case WeededAst.Expression.PutChannel(exp1, exp2, loc) =>
+      mapN(visitExp(exp1, env0, tenv0), visitExp(exp2, env0, tenv0)) {
+        case (e1, e2) => NamedAst.Expression.PutChannel(e1, e2, Type.freshTypeVar(), loc)
+      }
+
+    case WeededAst.Expression.SelectChannel(rules, default, loc) =>
+      val rulesVal = traverse(rules) {
+        case WeededAst.SelectChannelRule(ident, chan, body) =>
+          // make a fresh variable symbol for the local recursive variable.
+          val sym = Symbol.freshVarSym(ident)
+          val env1 = env0 + (ident.name -> sym)
+          mapN(visitExp(chan, env0, tenv0), visitExp(body, env1, tenv0)) {
+            case (c, b) => NamedAst.SelectChannelRule(sym, c, b)
+          }
+      }
+
+      val defaultVal = default match {
+        case Some(exp) => visitExp(exp, env0, tenv0) map {
+          case e => Some(e)
+        }
+        case None => None.toSuccess
+      }
+
+      mapN(rulesVal, defaultVal) {
+        case (rs, d) => NamedAst.Expression.SelectChannel(rs, d, Type.freshTypeVar(), loc)
+      }
+
+    case WeededAst.Expression.Spawn(exp, loc) =>
+      visitExp(exp, env0, tenv0) map {
+        case e => NamedAst.Expression.Spawn(e, Type.freshTypeVar(), loc)
+      }
+
+    case WeededAst.Expression.Sleep(exp, loc) =>
+      visitExp(exp, env0, tenv0) map {
+        case e => NamedAst.Expression.Sleep(e, Type.freshTypeVar(), loc)
+      }
+
     case WeededAst.Expression.FixpointConstraint(con, loc) =>
       visitConstraint(con, env0, tenv0) map {
         case c => NamedAst.Expression.FixpointConstraint(c, Type.freshTypeVar(), loc)
@@ -1081,6 +1128,18 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
       }
     case WeededAst.Expression.NativeField(className, fieldName, loc) => Nil
     case WeededAst.Expression.NativeMethod(className, methodName, args, loc) => args.flatMap(freeVars)
+    case WeededAst.Expression.NewChannel(tpe, exp, loc) => freeVars(exp)
+    case WeededAst.Expression.GetChannel(exp, loc) => freeVars(exp)
+    case WeededAst.Expression.PutChannel(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)
+    case WeededAst.Expression.SelectChannel(rules, default, loc) =>
+      val rulesFreeVars = rules.flatMap {
+        case WeededAst.SelectChannelRule(ident, chan, exp) =>
+          freeVars(chan) ++ filterBoundVars(freeVars(exp), List(ident))
+      }
+      val defaultFreeVars = default.map(freeVars).getOrElse(Nil)
+      rulesFreeVars ++ defaultFreeVars
+    case WeededAst.Expression.Spawn(exp, loc) => freeVars(exp)
+    case WeededAst.Expression.Sleep(exp, loc) => freeVars(exp)
     case WeededAst.Expression.NativeConstructor(className, args, loc) => args.flatMap(freeVars)
     case WeededAst.Expression.FixpointConstraint(c, loc) => freeVarsConstraint(c)
     case WeededAst.Expression.FixpointCompose(exp1, exp2, loc) => freeVars(exp1) ++ freeVars(exp2)

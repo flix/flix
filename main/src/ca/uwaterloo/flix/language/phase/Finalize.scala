@@ -344,6 +344,39 @@ object Finalize extends Phase[SimplifiedAst.Root, FinalAst.Root] {
         val es = args map visit
         FinalAst.Expression.NativeMethod(method, es, tpe, loc)
 
+      case SimplifiedAst.Expression.NewChannel(tpe, exp, loc) =>
+        val e = visit(exp)
+        FinalAst.Expression.NewChannel(tpe, e, loc)
+
+      case SimplifiedAst.Expression.GetChannel(exp, tpe, loc) =>
+        val e = visit(exp)
+        FinalAst.Expression.GetChannel(e, tpe, loc)
+
+      case SimplifiedAst.Expression.PutChannel(exp1, exp2, tpe, loc) =>
+        val e1 = visit(exp1)
+        val e2 = visit(exp2)
+        FinalAst.Expression.PutChannel(e1, e2, tpe, loc)
+
+      case SimplifiedAst.Expression.SelectChannel(rules, default, tpe, loc) =>
+        val rs = rules map {
+          case SimplifiedAst.SelectChannelRule(sym, chan, exp) =>
+            val c = visit(chan)
+            val e = visit(exp)
+            FinalAst.SelectChannelRule(sym, c, e)
+        }
+
+        val d = default.map(exp => visit(exp))
+
+        FinalAst.Expression.SelectChannel(rs, d, tpe, loc)
+
+      case SimplifiedAst.Expression.Spawn(exp, tpe, loc) =>
+        val e = visit(exp)
+        FinalAst.Expression.Spawn(e, tpe, loc)
+
+      case SimplifiedAst.Expression.Sleep(exp, tpe, loc) =>
+        val e = visit(exp)
+        FinalAst.Expression.Sleep(e, tpe, loc)
+
       case SimplifiedAst.Expression.FixpointConstraint(c0, tpe, loc) =>
         val c = visitConstraint(c0, m)
         FinalAst.Expression.FixpointConstraint(c, tpe, loc)

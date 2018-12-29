@@ -64,6 +64,7 @@ object JvmOps {
       case Type.Int64 => JvmType.PrimLong
       case Type.BigInt => JvmType.BigInteger
       case Type.Str => JvmType.String
+      case Type.Channel => JvmType.Object
       case Type.Native(clazz) => JvmType.Object
       case Type.Ref => getCellClassType(tpe)
       case Type.Arrow(l) => getFunctionInterfaceType(tpe)
@@ -726,6 +727,22 @@ object JvmOps {
         case (sacc, e) => sacc ++ visitExp(e)
       }
 
+      case Expression.NewChannel(tpe, exp, loc) => visitExp(exp)
+
+      case Expression.GetChannel(exp, tpe, loc) => visitExp(exp)
+
+      case Expression.PutChannel(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2)
+
+      case Expression.SelectChannel(rules, default, tpe, loc) =>
+        val rs = rules.foldLeft(Set.empty[ClosureInfo])((old, rule) =>
+          old ++ visitExp(rule.chan) ++ visitExp(rule.exp))
+        val d = default.map(visitExp).getOrElse(Set.empty)
+        rs ++ d
+
+      case Expression.Spawn(exp, tpe, loc) => visitExp(exp)
+
+      case Expression.Sleep(exp, tpe, loc) => visitExp(exp)
+
       case Expression.FixpointConstraint(con, tpe, loc) => Set.empty
 
       case Expression.FixpointCompose(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2)
@@ -912,7 +929,7 @@ object JvmOps {
         visitExp(exp1) ++ visitExp(exp2) + tpe
 
       case Expression.IfThenElse(exp1, exp2, exp3, tpe, loc) =>
-        visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
+        visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) + tpe
 
       case Expression.Branch(exp, branches, tpe, loc) => branches.foldLeft(visitExp(exp)) {
         case (sacc, (_, e)) => sacc ++ visitExp(e)
@@ -977,6 +994,21 @@ object JvmOps {
       case Expression.NativeMethod(method, args, tpe, loc) => args.foldLeft(Set(tpe)) {
         case (sacc, e) => sacc ++ visitExp(e)
       }
+
+      case Expression.NewChannel(tpe, exp, loc) => visitExp(exp) + tpe
+
+      case Expression.GetChannel(exp, tpe, loc) => visitExp(exp) + tpe
+
+      case Expression.PutChannel(exp1, exp2, tpe, loc) => visitExp(exp1) ++ visitExp(exp2) + tpe
+
+      case Expression.SelectChannel(rules, default, tpe, loc) =>
+        val rs = rules.foldLeft(Set(tpe))( (old, rule) => old ++ visitExp(rule.chan) ++ visitExp(rule.exp))
+        val d = default.map(visitExp).getOrElse(Set.empty)
+        rs ++ d
+
+      case Expression.Spawn(exp, tpe, loc) => visitExp(exp) + tpe
+
+      case Expression.Sleep(exp, tpe, loc) => visitExp(exp) + tpe
 
       case Expression.FixpointConstraint(c, tpe, loc) => visitConstraint(c) + tpe
 

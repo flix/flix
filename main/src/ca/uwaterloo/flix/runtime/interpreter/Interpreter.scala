@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.runtime.interpreter
 
 import java.lang.reflect.{InvocationTargetException, Modifier}
 import java.util.function
+import java.util.concurrent.locks.{Condition, ReentrantLock}
 
 import ca.uwaterloo.flix.api._
 import ca.uwaterloo.flix.language.ast.FinalAst._
@@ -257,6 +258,63 @@ object Interpreter {
     } catch {
       case ex: InvocationTargetException => throw ex.getTargetException
     }
+
+    case Expression.NewChannel(tpe, exp, loc) =>
+      val size = cast2int32(eval(exp, env0, henv0, lenv0, root))
+      new Channel(size)
+
+    case Expression.GetChannel(exp, tpe, loc) =>
+      val c = eval(exp, env0, henv0, lenv0, root).asInstanceOf[Channel]
+      c.get()
+
+    case Expression.PutChannel(exp1, exp2, tpe, loc) =>
+      val c = eval(exp1, env0, henv0, lenv0, root).asInstanceOf[Channel]
+      val e = eval(exp2, env0, henv0, lenv0, root)
+      c.put(e)
+      c
+
+    case Expression.SelectChannel(rules, default, tpe, loc) =>
+      // Evaluate all Channel expressions
+      val rs = rules.map {
+        r => (r.sym, eval(r.chan, env0, henv0, lenv0, root).asInstanceOf[Channel], r.exp)
+      }
+      // Create an array of Channels used to call select in Channel.java
+      val channelsArray = rs.map { r => r._2}.toArray[Channel]
+      // Check if there is a default case
+      val hasDefault = default.isDefined
+      // Call select which returns a selectChoice with the given branchNumber
+      val selectChoice = Channel.select(channelsArray, hasDefault)
+
+      // Check if the default case was selected
+      if (selectChoice.defaultChoice) {
+        // Evaluate the default case
+        return eval(default.get, env0, henv0, lenv0, root)
+      }
+
+      // The default was not chosen. Find the matching rule
+      val selectedRule = rs.apply(selectChoice.branchNumber)
+      // Bind the sym of the rule to the element from the selected channel
+      val newEnv = env0 + (selectedRule._1.toString -> selectChoice.element)
+      // Evaluate the expression of the selected rule
+      eval(selectedRule._3, newEnv, henv0, lenv0, root)
+
+    case Expression.Spawn(exp, tpe, loc) =>
+      Channel.spawn(() => {
+        val e = eval(exp, env0, henv0, lenv0, root)
+        invokeClo(e, List(), env0, henv0, lenv0, root)
+      })
+      Value.Unit
+
+    case Expression.Sleep(exp, tpe, loc) =>
+      val duration = cast2int64(eval(exp, env0, henv0, lenv0, root))
+      if (duration < 0) {
+        throw InternalRuntimeException(s"Duration $duration must be non-negative.")
+      }
+      // Convert to ms and ns as Sleep receives parameter in ns
+      val ms = duration / 1000000
+      val ns = (duration % 1000000).toInt
+      Thread.sleep(ms, ns)
+      Value.Unit
 
     case Expression.FixpointConstraint(c, tpe, loc) =>
       evalConstraint(c, env0, henv0, lenv0)(flix, root)

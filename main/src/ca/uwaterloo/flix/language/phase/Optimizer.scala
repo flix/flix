@@ -401,6 +401,57 @@ object Optimizer extends Phase[SimplifiedAst.Root, SimplifiedAst.Root] {
         Expression.NativeMethod(method, as, tpe, loc)
 
       //
+      // New Channel.
+      //
+      case Expression.NewChannel(tpe, exp, loc) =>
+        val e = visitExp(exp, env0)
+        Expression.NewChannel(tpe, e, loc)
+
+      //
+      // Get Channel.
+      //
+      case Expression.GetChannel(exp, tpe, loc) =>
+        val e = visitExp(exp, env0)
+        Expression.GetChannel(e, tpe, loc)
+
+      //
+      // Put Channel.
+      //
+      case Expression.PutChannel(exp1, exp2, tpe, loc) =>
+        val e1 = visitExp(exp1, env0)
+        val e2 = visitExp(exp2, env0)
+        Expression.PutChannel(e1, e2, tpe, loc)
+
+      //
+      // Select Channel.
+      //
+      case Expression.SelectChannel(rules, default, tpe, loc) =>
+        val rs = rules map {
+          case SelectChannelRule(sym, chan, exp) =>
+            val c = visitExp(chan, env0)
+            val e = visitExp(exp, env0)
+            SelectChannelRule(sym, c, e)
+        }
+
+        val d = default.map(visitExp(_, env0))
+
+        Expression.SelectChannel(rs, d, tpe, loc)
+
+      //
+      // Spawn.
+      //
+      case Expression.Spawn(exp, tpe, loc) =>
+        val e = visitExp(exp, env0)
+        Expression.Spawn(e, tpe, loc)
+
+      //
+      // Sleep.
+      //
+      case Expression.Sleep(exp, tpe, loc) =>
+        val e = visitExp(exp, env0)
+        Expression.Sleep(e, tpe, loc)
+
+      //
       // Constraint.
       //
       case Expression.FixpointConstraint(c0, tpe, loc) =>

@@ -20,3 +20,5 @@ By adding your name to this document, you agree to release all your contribution
 - [Patrick Bering Tietze](https://github.com/Tietze95)
 - [Simon Dalgas Christensen](https://github.com/Dalgas104)
 - [Frederik Kirk Kristensen](https://github.com/FkirkK)
+- [Jonathan Starup](https://github.com/JonathanStarup)
+- [Simon Meldahl Schmidt](https://github.com/SimonMeldahl)

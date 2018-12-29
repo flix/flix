@@ -898,6 +898,173 @@ object GenExpression {
           AsmOps.getMethodDescriptor(List(), JvmType.Unit), false)
       }
 
+    case Expression.NewChannel(tpe, exp, loc) =>
+      addSourceLine(visitor, loc)
+      visitor.visitTypeInsn(NEW, JvmName.Channel.toInternalName)
+      visitor.visitInsn(DUP)
+      compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+      visitor.visitMethodInsn(INVOKESPECIAL, JvmName.Channel.toInternalName, "<init>", "(I)V", false)
+
+    case Expression.GetChannel(exp, tpe, loc) =>
+      addSourceLine(visitor, loc)
+      compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+      visitor.visitTypeInsn(CHECKCAST, JvmName.Channel.toInternalName)
+      // TODO SJ: should the signature reference JvmName also?
+      visitor.visitMethodInsn(INVOKEVIRTUAL, JvmName.Channel.toInternalName, "get", "()Ljava/lang/Object;", false)
+      AsmOps.castIfNotPrimAndUnbox(visitor, JvmOps.getJvmType(tpe))
+
+    case Expression.PutChannel(exp1, exp2, tpe, loc) =>
+      addSourceLine(visitor, loc)
+      compileExpression(exp1, visitor, currentClass, lenv0, entryPoint)
+      visitor.visitTypeInsn(CHECKCAST, JvmName.Channel.toInternalName)
+      visitor.visitInsn(DUP)
+      compileExpression(exp2, visitor, currentClass, lenv0, entryPoint)
+      AsmOps.boxIfPrim(visitor, JvmOps.getJvmType(exp2.tpe))
+      visitor.visitMethodInsn(INVOKEVIRTUAL, JvmName.Channel.toInternalName, "put", "(Ljava/lang/Object;)V", false)
+
+    case Expression.SelectChannel(rules, default, tpe, loc) =>
+      addSourceLine(visitor, loc)
+      // Make a new Channel[] containing all channel expressions
+
+      // Calculate the size of the array and initiate it
+      compileInt(visitor, rules.size)
+      visitor.visitTypeInsn(ANEWARRAY, JvmName.Channel.toInternalName)
+      for ((rule, index) <- rules.zipWithIndex) {
+        // Dup so we end up with an array on top of the stack
+        visitor.visitInsn(DUP)
+        // Compile the index
+        compileInt(visitor, index)
+        // Compile the chan expression 100
+        compileExpression(rule.chan, visitor, currentClass, lenv0, entryPoint)
+        // Cast the type from Object to Channel
+        visitor.visitTypeInsn(CHECKCAST, JvmName.Channel.toInternalName)
+        // Store the expression in the array
+        visitor.visitInsn(AASTORE)
+      }
+
+      // If this select has a default, we want to call select with true
+      if (default.isDefined) {
+        visitor.visitInsn(ICONST_1)
+      } else {
+        visitor.visitInsn(ICONST_0)
+      }
+
+
+      // TODO SJ: Should we create a JvmName for the return type here? yes
+      // Invoke select in Channel. This puts a SelectChoice on the stack
+      visitor.visitMethodInsn(INVOKESTATIC, JvmName.Channel.toInternalName, "select", "([Lca/uwaterloo/flix/runtime/interpreter/Channel;Z)Lca/uwaterloo/flix/runtime/interpreter/SelectChoice;", false)
+
+      // Check if the default case was selected
+      val defaultLabel = new Label()
+      visitor.visitInsn(DUP)
+      visitor.visitFieldInsn(GETFIELD, JvmName.SelectChoice.toInternalName, "defaultChoice", "Z")
+      // Jump if needed
+      visitor.visitJumpInsn(IFNE, defaultLabel)
+
+      // Dup since we need to get the element and the relevant index
+      visitor.visitInsn(DUP)
+      // Get the relevant branchNumber and put it on the stack
+      visitor.visitFieldInsn(GETFIELD, JvmName.SelectChoice.toInternalName, "branchNumber", "I")
+
+      val labels: List[Label] = rules.map(r => new Label())
+      val completedLabel: Label = new Label()
+      // Find the correct branch and get the associated element
+      for (((rule, index), label) <- rules.zipWithIndex.zip(labels)) {
+        // Dup since we need branchNumber for each rule
+        visitor.visitInsn(DUP)
+        // Put the current index of rules on the stack
+        compileInt(visitor, index)
+        // Get the difference of branchNumber and current index of rules
+        visitor.visitInsn(ISUB)
+        // If the difference is not 0, then it is not the correct case.
+        // Thus we jump so we don't compute anything
+        visitor.visitJumpInsn(IFNE, label)
+
+
+        // We found the correct branch
+        // We don't need to keep track of the branchNumber anymore
+        visitor.visitInsn(POP)
+        // The SelectChoice is on top again. We now get the element of the channel
+        visitor.visitFieldInsn(GETFIELD, JvmName.SelectChoice.toInternalName, "element", "Ljava/lang/Object;")
+        // Jvm Type of the elementType
+        val jvmType = JvmOps.getErasedJvmType(ca.uwaterloo.flix.language.ast.Type.getChannelInnerType(rule.chan.tpe))
+        // Unbox if needed for primitives
+        AsmOps.castIfNotPrimAndUnbox(visitor, jvmType)
+        // Store instruction for `jvmType`
+        val iStore = AsmOps.getStoreInstruction(jvmType)
+        // Extend the environment with the element from the channel
+        visitor.visitVarInsn(iStore, rule.sym.getStackOffset + 3)
+        // Finally compile the body of the selected rule
+        compileExpression(rule.exp, visitor, currentClass, lenv0, entryPoint)
+        // Jump out of the branches so we do not go through unnecessary branches
+        visitor.visitJumpInsn(GOTO, completedLabel)
+
+
+        // We jumped here to not compute anything
+        visitor.visitLabel(label)
+      }
+
+      // TODO SJ: throw flixError med god string ELLER egen subclass
+      // Throw exception
+      visitor.visitInsn(ACONST_NULL)
+      visitor.visitInsn(ATHROW)
+
+      // Place the default label
+      visitor.visitLabel(defaultLabel)
+      // Pop the SelectChoice
+      visitor.visitInsn(POP)
+      // If we have a default case we can compile that, otherwise we write
+      // an error we will never hit to satisfy the jvm
+      if (default.isDefined) {
+        compileExpression(default.get, visitor, currentClass, lenv0, entryPoint)
+      } else {
+        visitor.visitInsn(ACONST_NULL)
+        visitor.visitInsn(ATHROW)
+      }
+
+      // Jump here if the correct rule has been evaluated
+      visitor.visitLabel(completedLabel)
+
+    case Expression.Spawn(exp, tpe, loc) =>
+      addSourceLine(visitor, loc)
+      // Compile the expression, putting a function implementing the Spawnable interface on the stack
+      compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+      // Call spawn method from Channel class
+      visitor.visitMethodInsn(INVOKESTATIC, JvmName.Channel.toInternalName, "spawn",
+        AsmOps.getMethodDescriptor(List(JvmType.Spawnable), JvmType.Void), false)
+      // Put a Unit value on the stack
+      visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Value.Unit.toInternalName, "getInstance",
+        AsmOps.getMethodDescriptor(Nil, JvmType.Unit), false)
+
+    case Expression.Sleep(exp, tpe, loc) =>
+      addSourceLine(visitor, loc)
+      // Compile the expression, putting the time to sleep in ns (as a long) on top of the stack
+      compileExpression(exp, visitor, currentClass, lenv0, entryPoint)
+
+      // Convert the time into ms and ns
+      // Dup the time
+      visitor.visitInsn(DUP2)
+
+      // Calculate the ns (time % 1.000.000)
+      visitor.visitLdcInsn(1000000L)
+      visitor.visitInsn(LREM)
+      // Cast to int and store for later
+      visitor.visitInsn(L2I)
+      visitor.visitVarInsn(ISTORE, 2)
+
+      // Calculate the ms (time / 1.000.000)
+      visitor.visitLdcInsn(1000000L)
+      visitor.visitInsn(LDIV)
+
+      // Load the ns, putting ns on top of the stack
+      visitor.visitVarInsn(ILOAD, 2)
+
+      // Call Thread.Sleep with the calculated duration in (ms, ns)
+      visitor.visitMethodInsn(INVOKESTATIC, "java/lang/Thread", "sleep", "(JI)V", false)
+      // Put a Unit value on the stack
+      visitor.visitMethodInsn(INVOKESTATIC, JvmName.Runtime.Value.Unit.toInternalName, "getInstance",
+        AsmOps.getMethodDescriptor(Nil, JvmType.Unit), false)
+
     case Expression.FixpointConstraint(con, tpe, loc) =>
       // Add source line numbers for debugging.
       addSourceLine(visitor, loc)

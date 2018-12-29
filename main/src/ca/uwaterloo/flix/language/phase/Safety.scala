@@ -83,7 +83,7 @@ object Safety extends Phase[Root, Root] {
 
     case Expression.Match(exp, rules, tpe, eff, loc) =>
       rules.foldLeft(visitExp(exp)) {
-        case (acc, MatchRule(p, g, e)) => acc ::: visitExp(e)
+        case (acc, MatchRule(p, g, e)) => acc ::: visitExp(g) ::: visitExp(e)
       }
 
     case Expression.Switch(rules, tpe, eff, loc) =>
@@ -174,6 +174,25 @@ object Safety extends Phase[Root, Root] {
       args.foldLeft(Nil: List[CompilationError]) {
         case (acc, e) => acc ::: visitExp(e)
       }
+
+    case Expression.NewChannel(tpe, exp, eff, loc) => visitExp(exp)
+
+    case Expression.GetChannel(exp, tpe, eff, loc) => visitExp(exp)
+
+    case Expression.PutChannel(exp1, exp2, tpe, eff, loc) => visitExp(exp1) ::: visitExp(exp2)
+
+    case Expression.SelectChannel(rules, default, tpe, eff, loc) =>
+      val rs = rules.foldLeft(Nil: List[CompilationError]) {
+        case (acc, SelectChannelRule(sym, chan, body)) => acc ::: visitExp(chan) ::: visitExp(body)
+      }
+
+      val d = default.map(visitExp).getOrElse(Nil)
+
+      rs ++ d
+
+    case Expression.Spawn(exp, tpe, eff, loc) => visitExp(exp)
+
+    case Expression.Sleep(exp, tpe, eff, loc) => visitExp(exp)
 
     case Expression.FixpointConstraint(con, tpe, eff, loc) => checkConstraint(con)
 
