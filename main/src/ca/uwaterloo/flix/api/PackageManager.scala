@@ -1,8 +1,11 @@
 package ca.uwaterloo.flix.api
 
+import java.io.{BufferedOutputStream, BufferedReader, FileOutputStream, FileReader}
 import java.nio.file.{Files, Path}
+import java.util.jar.{Attributes, JarOutputStream}
+import java.util.zip.{ZipEntry, ZipOutputStream}
 
-import ca.uwaterloo.flix.util.InternalCompilerException
+import ca.uwaterloo.flix.util.{InternalCompilerException, StreamOps}
 
 object PackageManager {
 
@@ -28,7 +31,7 @@ object PackageManager {
     //
     // Compute the name of the package based on the directory name.
     //
-    val packageName = p.toAbsolutePath.getParent.getFileName.toString
+    val packageName = getPackageName(p)
 
     //
     // Compute all the directories and files we intend to create.
@@ -99,6 +102,54 @@ object PackageManager {
         |""".stripMargin
     }
   }
+
+
+  // TODO: DOC
+  def buildJar(p: Path): Unit = {
+    // TODO: Check that this is flix project
+
+    val jarFile = p.resolve(getPackageName(p) + ".jar").normalize()
+
+    if (Files.exists(jarFile)) {
+      throw new RuntimeException()
+    }
+
+    val manifest = new java.util.jar.Manifest
+
+    val fos = new FileOutputStream(jarFile.toFile)
+    val jos = new JarOutputStream(fos, manifest)
+    val bos = new BufferedOutputStream(jos)
+    for (f <- Nil) {
+    }
+  }
+
+  // TODO: DOC
+  def buildPkg(p: Path): Unit = {
+    // TODO: Check that this is flix project
+
+    val pkgFile = p.resolve(getPackageName(p) + ".fpkg").normalize()
+
+    if (Files.exists(pkgFile)) {
+      throw new RuntimeException()
+    }
+
+    val readmeFile = getReadmeFile(p)
+
+
+    val zip = new ZipOutputStream(Files.newOutputStream(pkgFile))
+
+    val entry = new ZipEntry("README.md")
+    zip.putNextEntry(entry)
+    zip.write(Files.readAllBytes(readmeFile))
+    zip.closeEntry()
+
+    zip.finish()
+  }
+
+  /**
+    * Returns the package name based on the given path `p`.
+    */
+  private def getPackageName(p: Path): String = p.toAbsolutePath.getParent.getFileName.toString
 
   /**
     * Returns the path to the source directory relative to the given path `p`.

@@ -47,10 +47,19 @@ object Main {
 
     // check if the init command was passed.
     try {
-      if (cmdOpts.mode.contains("init")) {
-        PackageManager.init(Paths.get("."))
-        System.exit(0)
+      cmdOpts.mode match {
+        case Some("init") =>
+          PackageManager.init(Paths.get("."))
+          System.exit(0)
+        case Some("build-jar") =>
+          PackageManager.buildJar(Paths.get("."))
+          System.exit(0)
+        case Some("build-pkg") =>
+          PackageManager.buildPkg(Paths.get("."))
+          System.exit(0)
+        case _ => // nop
       }
+
     } catch {
       case ex: RuntimeException =>
         Console.println(ex.getMessage)
@@ -324,9 +333,9 @@ object Main {
 
       cmd("init").action((_, c) => c.copy(mode = Some("init"))).text("create a new empty project in the current directory")
 
-      cmd("build").text("create a new empty project in the current directory")
+      cmd("build-jar").action((_, c) => c.copy(mode = Some("build-jar"))).text("create a new empty project in the current directory")
 
-      cmd("package").text("create a new empty project in the current directory")
+      cmd("build-pkg").action((_, c) => c.copy(mode = Some("build-pkg"))).text("create a new empty project in the current directory")
 
     }
 
