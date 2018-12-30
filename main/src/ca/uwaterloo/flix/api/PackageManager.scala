@@ -127,22 +127,28 @@ object PackageManager {
   def buildPkg(p: Path): Unit = {
     // TODO: Check that this is flix project
 
-    val pkgFile = p.resolve(getPackageName(p) + ".fpkg").normalize()
+    // The path to the fpkg file.
+    val pkgFile = getPkgFile(p)
 
+    // Check that the pkg file does not already exist.
     if (Files.exists(pkgFile)) {
-      throw new RuntimeException()
+      throw new RuntimeException(s"The path '$pkgFile' already exists. Aborting.")
     }
 
-    val readmeFile = getReadmeFile(p)
-
-
+    // Construct a new zip file.
     val zip = new ZipOutputStream(Files.newOutputStream(pkgFile))
 
-    val entry = new ZipEntry("README.md")
-    zip.putNextEntry(entry)
-    zip.write(Files.readAllBytes(readmeFile))
-    zip.closeEntry()
+    // Add required resources.
+    addEntry(zip, "HISTORY.md", getHistoryFile(p))
+    addEntry(zip, "LICENSE.md", getLicenseFile(p))
+    addEntry(zip, "README.md", getReadmeFile(p))
+    addEntry(zip, "package.json", getPackageFile(p))
 
+    // Add all source files.
+
+    // Add all test files.
+
+    // Close the zip file.
     zip.finish()
   }
 
@@ -150,6 +156,11 @@ object PackageManager {
     * Returns the package name based on the given path `p`.
     */
   private def getPackageName(p: Path): String = p.toAbsolutePath.getParent.getFileName.toString
+
+  /**
+    * Returns the path to the flix package based on the given path `p`.
+    */
+  private def getPkgFile(p: Path): Path = p.resolve(getPackageName(p) + ".fpkg").normalize()
 
   /**
     * Returns the path to the source directory relative to the given path `p`.
@@ -213,6 +224,13 @@ object PackageManager {
     val writer = Files.newBufferedWriter(p)
     writer.write(s)
     writer.close()
+  }
+
+  private def addEntry(zip: ZipOutputStream, name: String, p: Path): Unit = {
+    val entry = new ZipEntry(name)
+    zip.putNextEntry(entry)
+    zip.write(Files.readAllBytes(p))
+    zip.closeEntry()
   }
 
 }
