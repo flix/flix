@@ -106,8 +106,9 @@ object PackageManager {
     }
   }
 
-
-  // TODO: DOC
+  /**
+    * Builds a jar package for the given project path `p`.
+    */
   def buildJar(p: Path): Unit = {
     // TODO: Check that this is flix project
 
@@ -126,9 +127,13 @@ object PackageManager {
     }
   }
 
-  // TODO: DOC
+  /**
+    * Builds a flix package for the given project path `p`.
+    */
   def buildPkg(p: Path): Unit = {
-    // TODO: Check that this is flix project
+    // Check that the path is a project path.
+    if (!isProjectPath(p))
+      throw new RuntimeException(s"The path '$p' does not appear to be a flix project.")
 
     // The path to the fpkg file.
     val pkgFile = getPkgFile(p)
@@ -158,10 +163,16 @@ object PackageManager {
       val name = p.relativize(testFile).toString
       addEntry(zip, name, testFile)
     }
-    
+
     // Close the zip file.
     zip.finish()
   }
+
+  /**
+    * Returns `true` if the given path `p` appears to be a flix project path.
+    */
+  private def isProjectPath(p: Path): Boolean =
+    Files.exists(getPackageFile(p)) && Files.exists(getSourceDirectory(p))
 
   /**
     * Returns the package name based on the given path `p`.
