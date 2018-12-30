@@ -88,7 +88,7 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
           val fparam = ResolvedAst.FormalParam(Symbol.freshVarSym(), Ast.Modifiers.Empty, Type.Unit, SourceLocation.Unknown)
           val fparams = List(fparam)
           val sc = Scheme(Nil, Type.freshTypeVar())
-          val eff = Eff.Pure
+          val eff = Eff.Empty
           val loc = SourceLocation.Unknown
           val defn = ResolvedAst.Def(doc, ann, mod, sym, tparams, fparams, exp, sc, eff, loc)
           sym -> defn

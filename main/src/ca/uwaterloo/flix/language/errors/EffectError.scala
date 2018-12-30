@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 Magnus Madsen
+ * Copyright 2018 Magnus Madsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.{Eff, EffectSet, Source, SourceLocation}
+import ca.uwaterloo.flix.language.ast.{Eff, Source, SourceLocation}
 import ca.uwaterloo.flix.util.vt.VirtualString._
 import ca.uwaterloo.flix.util.vt.VirtualTerminal
 
@@ -45,10 +45,6 @@ case class EffectError(expected: Eff, inferred: Eff, loc: SourceLocation) extend
   /**
     * Returns a human readable representation of the given effect `eff`.
     */
-  private def pretty(eff: Eff): String = eff match {
-    case Eff.Box(EffectSet.Bot) => "Bot"
-    case Eff.Box(EffectSet.Top) => "Top"
-    case Eff.Box(EffectSet.MayMust(may, must)) => s"may = {${may.mkString(", ")}}, must = {${must.mkString(", ")}}"
-    case _ => eff.toString
-  }
+  private def pretty(eff: Eff): String = eff.toString
+
 }

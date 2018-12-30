@@ -270,7 +270,7 @@ class Shell(initialPaths: List[Path], options: Options) {
 
     // Print the effect to the terminal.
     val vt = new VirtualTerminal
-    vt << Magenta(effect.show) << NewLine
+    vt << Magenta(effect.toString) << NewLine
     terminal.writer().print(vt.fmt)
   }
 

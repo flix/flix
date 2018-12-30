@@ -1374,24 +1374,24 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         /*
          * Wildcard expression.
          */
-        case ResolvedAst.Expression.Wild(tvar, loc) => TypedAst.Expression.Wild(subst0(tvar), Eff.Bot, loc)
+        case ResolvedAst.Expression.Wild(tvar, loc) => TypedAst.Expression.Wild(subst0(tvar), Eff.Empty, loc)
 
         /*
          * Variable expression.
          */
-        case ResolvedAst.Expression.Var(sym, _, loc) => TypedAst.Expression.Var(sym, subst0(sym.tvar), Eff.Bot, loc)
+        case ResolvedAst.Expression.Var(sym, _, loc) => TypedAst.Expression.Var(sym, subst0(sym.tvar), Eff.Empty, loc)
 
         /*
          * Def expression.
          */
         case ResolvedAst.Expression.Def(sym, tvar, loc) =>
-          TypedAst.Expression.Def(sym, subst0(tvar), Eff.Bot, loc)
+          TypedAst.Expression.Def(sym, subst0(tvar), Eff.Empty, loc)
 
         /*
          * Eff expression.
          */
         case ResolvedAst.Expression.Eff(sym, tvar, loc) =>
-          TypedAst.Expression.Eff(sym, subst0(tvar), Eff.Bot, loc)
+          TypedAst.Expression.Eff(sym, subst0(tvar), Eff.Empty, loc)
 
         /*
          * Eff expression.
@@ -1403,7 +1403,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
          * Hole expression.
          */
         case ResolvedAst.Expression.Hole(sym, tpe, loc) =>
-          TypedAst.Expression.Hole(sym, subst0(tpe), Eff.Bot, loc)
+          TypedAst.Expression.Hole(sym, subst0(tpe), Eff.Empty, loc)
 
         /*
          * Literal expression.
@@ -1427,7 +1427,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         case ResolvedAst.Expression.Apply(exp1, exp2, tvar, loc) =>
           val e1 = visitExp(exp1, subst0)
           val e2 = visitExp(exp2, subst0)
-          TypedAst.Expression.Apply(e1, e2, subst0(tvar), Eff.Bot, loc)
+          TypedAst.Expression.Apply(e1, e2, subst0(tvar), Eff.Empty, loc)
 
         /*
          * Lambda expression.
@@ -1436,14 +1436,14 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           val p = visitParam(fparam)
           val e = visitExp(exp, subst0)
           val t = subst0(tvar)
-          TypedAst.Expression.Lambda(p, e, t, Eff.Bot, loc)
+          TypedAst.Expression.Lambda(p, e, t, Eff.Empty, loc)
 
         /*
          * Unary expression.
          */
         case ResolvedAst.Expression.Unary(op, exp, tvar, loc) =>
           val e = visitExp(exp, subst0)
-          TypedAst.Expression.Unary(op, e, subst0(tvar), Eff.Bot, loc)
+          TypedAst.Expression.Unary(op, e, subst0(tvar), Eff.Empty, loc)
 
         /*
          * Binary expression.
@@ -1451,7 +1451,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         case ResolvedAst.Expression.Binary(op, exp1, exp2, tvar, loc) =>
           val e1 = visitExp(exp1, subst0)
           val e2 = visitExp(exp2, subst0)
-          TypedAst.Expression.Binary(op, e1, e2, subst0(tvar), Eff.Bot, loc)
+          TypedAst.Expression.Binary(op, e1, e2, subst0(tvar), Eff.Empty, loc)
 
         /*
          * If-then-else expression.
@@ -1460,7 +1460,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           val e1 = visitExp(exp1, subst0)
           val e2 = visitExp(exp2, subst0)
           val e3 = visitExp(exp3, subst0)
-          TypedAst.Expression.IfThenElse(e1, e2, e3, subst0(tvar), Eff.Bot, loc)
+          TypedAst.Expression.IfThenElse(e1, e2, e3, subst0(tvar), Eff.Empty, loc)
 
         /*
          * Let expression.
@@ -1468,7 +1468,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         case ResolvedAst.Expression.Let(sym, exp1, exp2, tvar, loc) =>
           val e1 = visitExp(exp1, subst0)
           val e2 = visitExp(exp2, subst0)
-          TypedAst.Expression.Let(sym, e1, e2, subst0(tvar), Eff.Bot, loc)
+          TypedAst.Expression.Let(sym, e1, e2, subst0(tvar), Eff.Empty, loc)
 
         /*
          * LetRec expression.
@@ -1476,7 +1476,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         case ResolvedAst.Expression.LetRec(sym, exp1, exp2, tvar, loc) =>
           val e1 = visitExp(exp1, subst0)
           val e2 = visitExp(exp2, subst0)
-          TypedAst.Expression.LetRec(sym, e1, e2, subst0(tvar), Eff.Bot, loc)
+          TypedAst.Expression.LetRec(sym, e1, e2, subst0(tvar), Eff.Empty, loc)
 
         /*
          * Match expression.
@@ -1490,7 +1490,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
               val b = visitExp(exp, subst0)
               TypedAst.MatchRule(p, g, b)
           }
-          TypedAst.Expression.Match(e1, rs, subst0(tvar), Eff.Bot, loc)
+          TypedAst.Expression.Match(e1, rs, subst0(tvar), Eff.Empty, loc)
 
         /*
          * Switch expression.
@@ -1499,34 +1499,34 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           val rs = rules.map {
             case (cond, body) => (visitExp(cond, subst0), visitExp(body, subst0))
           }
-          TypedAst.Expression.Switch(rs, subst0(tvar), Eff.Bot, loc)
+          TypedAst.Expression.Switch(rs, subst0(tvar), Eff.Empty, loc)
 
         /*
          * Tag expression.
          */
         case ResolvedAst.Expression.Tag(sym, tag, exp, tvar, loc) =>
           val e = visitExp(exp, subst0)
-          TypedAst.Expression.Tag(sym, tag, e, subst0(tvar), Eff.Bot, loc)
+          TypedAst.Expression.Tag(sym, tag, e, subst0(tvar), Eff.Empty, loc)
 
         /*
          * Tuple expression.
          */
         case ResolvedAst.Expression.Tuple(elms, tvar, loc) =>
           val es = elms.map(e => visitExp(e, subst0))
-          TypedAst.Expression.Tuple(es, subst0(tvar), Eff.Bot, loc)
+          TypedAst.Expression.Tuple(es, subst0(tvar), Eff.Empty, loc)
 
         /*
          * RecordEmpty expression.
          */
         case ResolvedAst.Expression.RecordEmpty(tvar, loc) =>
-          TypedAst.Expression.RecordEmpty(subst0(tvar), Eff.Bot, loc)
+          TypedAst.Expression.RecordEmpty(subst0(tvar), Eff.Empty, loc)
 
         /*
           * RecordSelect expression.
           */
         case ResolvedAst.Expression.RecordSelect(exp, label, tvar, loc) =>
           val e = visitExp(exp, subst0)
-          TypedAst.Expression.RecordSelect(e, label, subst0(tvar), Eff.Bot, loc)
+          TypedAst.Expression.RecordSelect(e, label, subst0(tvar), Eff.Empty, loc)
 
         /*
          * RecordExtend expression.
@@ -1534,21 +1534,21 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         case ResolvedAst.Expression.RecordExtend(label, value, rest, tvar, loc) =>
           val v = visitExp(value, subst0)
           val r = visitExp(rest, subst0)
-          TypedAst.Expression.RecordExtend(label, v, r, subst0(tvar), Eff.Bot, loc)
+          TypedAst.Expression.RecordExtend(label, v, r, subst0(tvar), Eff.Empty, loc)
 
         /*
          * RecordRestrict expression.
          */
         case ResolvedAst.Expression.RecordRestrict(label, rest, tvar, loc) =>
           val r = visitExp(rest, subst0)
-          TypedAst.Expression.RecordRestrict(label, r, subst0(tvar), Eff.Bot, loc)
+          TypedAst.Expression.RecordRestrict(label, r, subst0(tvar), Eff.Empty, loc)
 
         /*
          * ArrayLit expression.
          */
         case ResolvedAst.Expression.ArrayLit(elms, tvar, loc) =>
           val es = elms.map(e => visitExp(e, subst0))
-          TypedAst.Expression.ArrayLit(es, subst0(tvar), Eff.Bot, loc)
+          TypedAst.Expression.ArrayLit(es, subst0(tvar), Eff.Empty, loc)
 
         /*
          * ArrayNew expression.
@@ -1556,7 +1556,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         case ResolvedAst.Expression.ArrayNew(elm, len, tvar, loc) =>
           val e = visitExp(elm, subst0)
           val ln = visitExp(len, subst0)
-          TypedAst.Expression.ArrayNew(e, ln, subst0(tvar), Eff.Bot, loc)
+          TypedAst.Expression.ArrayNew(e, ln, subst0(tvar), Eff.Empty, loc)
 
         /*
          * ArrayLoad expression.
@@ -1564,7 +1564,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         case ResolvedAst.Expression.ArrayLoad(exp1, exp2, tvar, loc) =>
           val e1 = visitExp(exp1, subst0)
           val e2 = visitExp(exp2, subst0)
-          TypedAst.Expression.ArrayLoad(e1, e2, subst0(tvar), Eff.Bot, loc)
+          TypedAst.Expression.ArrayLoad(e1, e2, subst0(tvar), Eff.Empty, loc)
 
         /*
          * ArrayStore expression.
@@ -1573,14 +1573,14 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           val e1 = visitExp(exp1, subst0)
           val e2 = visitExp(exp2, subst0)
           val e3 = visitExp(exp3, subst0)
-          TypedAst.Expression.ArrayStore(e1, e2, e3, subst0(tvar), Eff.Bot, loc)
+          TypedAst.Expression.ArrayStore(e1, e2, e3, subst0(tvar), Eff.Empty, loc)
 
         /*
          * ArrayLength expression.
          */
         case ResolvedAst.Expression.ArrayLength(exp, tvar, loc) =>
           val e = visitExp(exp, subst0)
-          TypedAst.Expression.ArrayLength(e, subst0(tvar), Eff.Bot, loc)
+          TypedAst.Expression.ArrayLength(e, subst0(tvar), Eff.Empty, loc)
 
         /*
          * ArraySlice expression.
@@ -1589,28 +1589,28 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           val e1 = visitExp(exp1, subst0)
           val e2 = visitExp(exp2, subst0)
           val e3 = visitExp(exp3, subst0)
-          TypedAst.Expression.ArraySlice(e1, e2, e3, subst0(tvar), Eff.Bot, loc)
+          TypedAst.Expression.ArraySlice(e1, e2, e3, subst0(tvar), Eff.Empty, loc)
 
         /*
          * VectorLit expression.
          */
         case ResolvedAst.Expression.VectorLit(elms, tvar, loc) =>
           val es = elms.map(e => visitExp(e, subst0))
-          TypedAst.Expression.VectorLit(es, subst0(tvar), Eff.Bot, loc)
+          TypedAst.Expression.VectorLit(es, subst0(tvar), Eff.Empty, loc)
 
         /*
          * VectorLoad expression.
          */
         case ResolvedAst.Expression.VectorNew(elm, len, tvar, loc) =>
           val e = visitExp(elm, subst0)
-          TypedAst.Expression.VectorNew(e, len, subst0(tvar), Eff.Bot, loc)
+          TypedAst.Expression.VectorNew(e, len, subst0(tvar), Eff.Empty, loc)
 
         /*
          * VectorLoad expression.
          */
         case ResolvedAst.Expression.VectorLoad(base, index, tvar, loc) =>
           val b = visitExp(base, subst0)
-          TypedAst.Expression.VectorLoad(b, index, subst0(tvar), Eff.Bot, loc)
+          TypedAst.Expression.VectorLoad(b, index, subst0(tvar), Eff.Empty, loc)
 
         /*
          * VectorStore expression.
@@ -1618,14 +1618,14 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         case ResolvedAst.Expression.VectorStore(base, index, elm, tvar, loc) =>
           val b = visitExp(base, subst0)
           val e = visitExp(elm, subst0)
-          TypedAst.Expression.VectorStore(b, index, e, subst0(tvar), Eff.Bot, loc)
+          TypedAst.Expression.VectorStore(b, index, e, subst0(tvar), Eff.Empty, loc)
 
         /*
          * VectorLength expression.
          */
         case ResolvedAst.Expression.VectorLength(base, tvar, loc) =>
           val b = visitExp(base, subst0)
-          TypedAst.Expression.VectorLength(b, subst0(tvar), Eff.Bot, loc)
+          TypedAst.Expression.VectorLength(b, subst0(tvar), Eff.Empty, loc)
 
         /*
          * VectorSlice expression.
@@ -1634,11 +1634,11 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           val e = visitExp(base, subst0)
           optEndIndex match {
             case None =>
-              val len = TypedAst.Expression.VectorLength(e, Type.Int32, Eff.Bot, loc)
-              TypedAst.Expression.VectorSlice(e, startIndex, len, subst0(tvar), Eff.Bot, loc)
+              val len = TypedAst.Expression.VectorLength(e, Type.Int32, Eff.Empty, loc)
+              TypedAst.Expression.VectorSlice(e, startIndex, len, subst0(tvar), Eff.Empty, loc)
             case Some(endIndex) =>
               val len = TypedAst.Expression.Int32(endIndex, loc)
-              TypedAst.Expression.VectorSlice(e, startIndex, len, subst0(tvar), Eff.Bot, loc)
+              TypedAst.Expression.VectorSlice(e, startIndex, len, subst0(tvar), Eff.Empty, loc)
           }
 
         /*
@@ -1650,14 +1650,14 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
             throw InternalCompilerException("Unbound tvar in ref.")
 
           val e = visitExp(exp, subst0)
-          TypedAst.Expression.Ref(e, subst0(tvar), Eff.Top, loc)
+          TypedAst.Expression.Ref(e, subst0(tvar), Eff.Empty, loc)
 
         /*
          * Dereference expression.
          */
         case ResolvedAst.Expression.Deref(exp, tvar, loc) =>
           val e = visitExp(exp, subst0)
-          TypedAst.Expression.Deref(e, subst0(tvar), Eff.Top, loc)
+          TypedAst.Expression.Deref(e, subst0(tvar), Eff.Empty, loc)
 
         /*
          * Assignment expression.
@@ -1665,7 +1665,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         case ResolvedAst.Expression.Assign(exp1, exp2, tvar, loc) =>
           val e1 = visitExp(exp1, subst0)
           val e2 = visitExp(exp2, subst0)
-          TypedAst.Expression.Assign(e1, e2, subst0(tvar), Eff.Top, loc)
+          TypedAst.Expression.Assign(e1, e2, subst0(tvar), Eff.Empty, loc)
 
         /*
          * HandleWith expression.
@@ -1675,21 +1675,21 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           val bs = bindings map {
             case ResolvedAst.HandlerBinding(sym, handler) => TypedAst.HandlerBinding(sym, visitExp(handler, subst0))
           }
-          TypedAst.Expression.HandleWith(e, bs, subst0(tvar), Eff.Top, loc)
+          TypedAst.Expression.HandleWith(e, bs, subst0(tvar), Eff.Empty, loc)
 
         /*
          * Existential expression.
          */
         case ResolvedAst.Expression.Existential(fparam, exp, loc) =>
           val e = visitExp(exp, subst0)
-          TypedAst.Expression.Existential(visitParam(fparam), e, Eff.Bot, loc)
+          TypedAst.Expression.Existential(visitParam(fparam), e, Eff.Empty, loc)
 
         /*
          * Universal expression.
          */
         case ResolvedAst.Expression.Universal(fparam, exp, loc) =>
           val e = visitExp(exp, subst0)
-          TypedAst.Expression.Universal(visitParam(fparam), e, Eff.Bot, loc)
+          TypedAst.Expression.Universal(visitParam(fparam), e, Eff.Empty, loc)
 
         /*
          * Ascribe expression.
@@ -1715,41 +1715,41 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
               val b = visitExp(body, subst0)
               TypedAst.CatchRule(sym, clazz, b)
           }
-          TypedAst.Expression.TryCatch(e, rs, subst0(tvar), Eff.Bot, loc)
+          TypedAst.Expression.TryCatch(e, rs, subst0(tvar), Eff.Empty, loc)
 
         /*
          * Native Constructor expression.
          */
         case ResolvedAst.Expression.NativeConstructor(constructor, actuals, tpe, loc) =>
           val es = actuals.map(e => reassemble(e, program, subst0))
-          TypedAst.Expression.NativeConstructor(constructor, es, subst0(tpe), Eff.Bot, loc)
+          TypedAst.Expression.NativeConstructor(constructor, es, subst0(tpe), Eff.Empty, loc)
 
         /*
          * Native Field expression.
          */
         case ResolvedAst.Expression.NativeField(field, tpe, loc) =>
-          TypedAst.Expression.NativeField(field, subst0(tpe), Eff.Bot, loc)
+          TypedAst.Expression.NativeField(field, subst0(tpe), Eff.Empty, loc)
 
         /*
          * Native Method expression.
          */
         case ResolvedAst.Expression.NativeMethod(method, actuals, tpe, loc) =>
           val es = actuals.map(e => reassemble(e, program, subst0))
-          TypedAst.Expression.NativeMethod(method, es, subst0(tpe), Eff.Bot, loc)
+          TypedAst.Expression.NativeMethod(method, es, subst0(tpe), Eff.Empty, loc)
 
         /*
        * New Channel expression.
        */
         case ResolvedAst.Expression.NewChannel(tpe, exp, loc) =>
           val e = visitExp(exp, subst0)
-          TypedAst.Expression.NewChannel(Type.mkChannel(tpe), e, Eff.Bot, loc)
+          TypedAst.Expression.NewChannel(Type.mkChannel(tpe), e, Eff.Empty, loc)
 
         /*
          * Get Channel expression.
          */
         case ResolvedAst.Expression.GetChannel(exp, tvar, loc) =>
           val e = visitExp(exp, subst0)
-          TypedAst.Expression.GetChannel(e, subst0(tvar), Eff.Bot, loc)
+          TypedAst.Expression.GetChannel(e, subst0(tvar), Eff.Empty, loc)
 
         /*
          * Put Channel expression.
@@ -1757,7 +1757,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         case ResolvedAst.Expression.PutChannel(exp1, exp2, tvar, loc) =>
           val e1 = visitExp(exp1, subst0)
           val e2 = visitExp(exp2, subst0)
-          TypedAst.Expression.PutChannel(e1, e2, subst0(tvar), Eff.Bot, loc)
+          TypedAst.Expression.PutChannel(e1, e2, subst0(tvar), Eff.Empty, loc)
 
         /*
          * Select Channel expression.
@@ -1772,28 +1772,28 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
 
           val d = default.map(visitExp(_, subst0))
 
-          TypedAst.Expression.SelectChannel(rs, d, subst0(tvar), Eff.Bot, loc)
+          TypedAst.Expression.SelectChannel(rs, d, subst0(tvar), Eff.Empty, loc)
 
         /*
          * Spawn expression.
          */
         case ResolvedAst.Expression.Spawn(exp, tvar, loc) =>
           val e = visitExp(exp, subst0)
-          TypedAst.Expression.Spawn(e, subst0(tvar), Eff.Bot, loc)
+          TypedAst.Expression.Spawn(e, subst0(tvar), Eff.Empty, loc)
 
         /*
          * Sleep expression.
          */
         case ResolvedAst.Expression.Sleep(exp, tvar, loc) =>
           val e = visitExp(exp, subst0)
-          TypedAst.Expression.Sleep(e, subst0(tvar), Eff.Bot, loc)
+          TypedAst.Expression.Sleep(e, subst0(tvar), Eff.Empty, loc)
 
         /*
          * Constraint expression.
          */
         case ResolvedAst.Expression.FixpointConstraint(cons, tvar, loc) =>
           val c = Constraints.reassemble(cons, program, subst0)
-          TypedAst.Expression.FixpointConstraint(c, subst0(tvar), Eff.Bot, loc)
+          TypedAst.Expression.FixpointConstraint(c, subst0(tvar), Eff.Empty, loc)
 
         /*
          * ConstraintUnion expression.
@@ -1801,28 +1801,28 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         case ResolvedAst.Expression.FixpointCompose(exp1, exp2, tvar, loc) =>
           val e1 = reassemble(exp1, program, subst0)
           val e2 = reassemble(exp2, program, subst0)
-          TypedAst.Expression.FixpointCompose(e1, e2, subst0(tvar), Eff.Bot, loc)
+          TypedAst.Expression.FixpointCompose(e1, e2, subst0(tvar), Eff.Empty, loc)
 
         /*
          * FixpointSolve expression.
          */
         case ResolvedAst.Expression.FixpointSolve(exp, tvar, loc) =>
           val e = reassemble(exp, program, subst0)
-          TypedAst.Expression.FixpointSolve(e, subst0(tvar), Eff.Bot, loc)
+          TypedAst.Expression.FixpointSolve(e, subst0(tvar), Eff.Empty, loc)
 
         /*
          * FixpointCheck expression.
          */
         case ResolvedAst.Expression.FixpointCheck(exp, tvar, loc) =>
           val e = reassemble(exp, program, subst0)
-          TypedAst.Expression.FixpointCheck(e, subst0(tvar), Eff.Bot, loc)
+          TypedAst.Expression.FixpointCheck(e, subst0(tvar), Eff.Empty, loc)
 
         /*
          * FixpointDelta expression.
          */
         case ResolvedAst.Expression.FixpointDelta(exp, tvar, loc) =>
           val e = reassemble(exp, program, subst0)
-          TypedAst.Expression.FixpointDelta(e, subst0(tvar), Eff.Bot, loc)
+          TypedAst.Expression.FixpointDelta(e, subst0(tvar), Eff.Empty, loc)
 
         /*
          * FixpointProject expression.
@@ -1831,7 +1831,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
           val e1 = reassemble(exp1, program, subst0)
           val e2 = reassemble(exp2, program, subst0)
           val pred = TypedAst.PredicateWithParam(sym, e1)
-          TypedAst.Expression.FixpointProject(pred, e2, subst0(tvar), Eff.Bot, loc)
+          TypedAst.Expression.FixpointProject(pred, e2, subst0(tvar), Eff.Empty, loc)
 
         /*
          * ConstraintUnion expression.
@@ -1839,13 +1839,13 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         case ResolvedAst.Expression.FixpointEntails(exp1, exp2, tvar, loc) =>
           val e1 = reassemble(exp1, program, subst0)
           val e2 = reassemble(exp2, program, subst0)
-          TypedAst.Expression.FixpointEntails(e1, e2, subst0(tvar), Eff.Bot, loc)
+          TypedAst.Expression.FixpointEntails(e1, e2, subst0(tvar), Eff.Empty, loc)
 
         /*
          * User Error expression.
          */
         case ResolvedAst.Expression.UserError(tvar, loc) =>
-          TypedAst.Expression.UserError(subst0(tvar), Eff.Bot, loc)
+          TypedAst.Expression.UserError(subst0(tvar), Eff.Empty, loc)
       }
 
       /**
