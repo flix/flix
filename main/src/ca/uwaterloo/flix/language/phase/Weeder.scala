@@ -187,7 +187,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           val t = mkArrowType(fs, visitType(tpe), loc)
           val ann = Ast.Annotations(List(Ast.Annotation.Law(loc)))
           val mod = Ast.Modifiers(Ast.Modifier.Public :: Nil)
-          List(WeededAst.Declaration.Def(doc, ann, mod, ident, tparams, fs.head :: Nil, e, t, Eff.Pure, loc))
+          List(WeededAst.Declaration.Def(doc, ann, mod, ident, tparams, fs.head :: Nil, e, t, Eff.Empty, loc))
       }
   }
 
@@ -509,7 +509,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           tpe match {
             case None => WeededAst.Expression.Let(ident, value, body, mkSL(sp1, sp2))
             case Some(t) =>
-              val ascribed = WeededAst.Expression.Ascribe(value, visitType(t), Eff.Pure, value.loc)
+              val ascribed = WeededAst.Expression.Ascribe(value, visitType(t), Eff.Empty, value.loc)
               WeededAst.Expression.Let(ident, ascribed, body, mkSL(sp1, sp2))
           }
         case (pattern, value, body) =>
@@ -519,7 +519,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
           tpe match {
             case None => WeededAst.Expression.Match(value, List(rule), mkSL(sp1, sp2))
             case Some(t) =>
-              val ascribed = WeededAst.Expression.Ascribe(value, visitType(t), Eff.Pure, value.loc)
+              val ascribed = WeededAst.Expression.Ascribe(value, visitType(t), Eff.Empty, value.loc)
               WeededAst.Expression.Match(ascribed, List(rule), mkSL(sp1, sp2))
           }
       }
@@ -1525,37 +1525,11 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     * Weeds the given parsed optional effect `effOpt`.
     */
   private def visitEff(effOpt: Option[ParsedAst.Effect]): Validation[Eff, WeederError] = effOpt match {
-    case None => Eff.Pure.toSuccess
+    case None => Eff.Empty.toSuccess
     case Some(ParsedAst.Effect(xs)) =>
-      /*
-       * Check for the Any and Pure effects.
-       */
-      if (xs.length == 1) {
-        if (xs.head.name == "Any") {
-          return Eff.Box(EffectSet.Top).toSuccess
-        }
-        if (xs.head.name == "Pure") {
-          return Eff.Box(EffectSet.Pure).toSuccess
-        }
-      }
-
-      /*
-       * Process each effect.
-       */
-      val effectsVal = traverse(xs) {
-        case ident => ident.name match {
-          case "IO" => Effect.IO.toSuccess
-          case "File" => Effect.File.toSuccess
-          case "Network" => Effect.Network.toSuccess
-          case name => IllegalEffect(ident.loc).toFailure
-        }
-      }
-
-      for {
-        eff <- effectsVal
-      } yield Eff.Box(EffectSet.MayMust(eff.toSet, eff.toSet))
+      // TODO: Add support for effects.
+      Eff.Empty.toSuccess
   }
-
 
   /**
     * Weeds the given list of formal parameter `fparams`.
@@ -1992,7 +1966,7 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     val argumentType = WeededAst.Type.Ambiguous(Name.mkQName("Unit"), loc)
     val resultType = WeededAst.Type.Ambiguous(Name.mkQName("Str"), loc)
     val tpe = WeededAst.Type.Arrow(argumentType :: Nil, resultType, loc)
-    val eff = Eff.Top
+    val eff = Eff.Empty
 
     // Construct the declaration.
     val decl = WeededAst.Declaration.Def(doc, ann, mod, ident, tparams, fparams, toStringExp, tpe, eff, loc)
