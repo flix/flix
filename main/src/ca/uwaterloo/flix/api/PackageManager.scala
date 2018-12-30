@@ -46,8 +46,12 @@ object PackageManager {
     //
     // Check that the project directories and files do not already exist.
     //
-    if (Files.exists(sourceDirectory)) {
-      throw new RuntimeException(s"The path: '$sourceDirectory' already exists. Aborting.")
+    val allPaths = List(
+      sourceDirectory, testDirectory, packageFile, historyFile, licenseFile, readmeFile, mainSourceFile, mainTestFile
+    )
+    val pathExists = allPaths.find(f => Files.exists(f))
+    if (pathExists.nonEmpty) {
+      throw new RuntimeException(s"The path: '${pathExists.get}' already exists. Aborting.")
     }
 
     //
