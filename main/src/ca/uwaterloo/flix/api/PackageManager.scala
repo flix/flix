@@ -1,9 +1,12 @@
 package ca.uwaterloo.flix.api
 
 import java.io.{BufferedOutputStream, BufferedReader, FileOutputStream, FileReader}
-import java.nio.file.{Files, Path}
+import java.nio.file.attribute.BasicFileAttributes
+import java.nio.file.{FileVisitResult, Files, Path, SimpleFileVisitor}
 import java.util.jar.{Attributes, JarOutputStream}
 import java.util.zip.{ZipEntry, ZipOutputStream}
+
+import scala.collection.mutable
 
 import ca.uwaterloo.flix.util.{InternalCompilerException, StreamOps}
 
@@ -145,9 +148,17 @@ object PackageManager {
     addEntry(zip, "package.json", getPackageFile(p))
 
     // Add all source files.
+    for (sourceFile <- getAllFiles(getSourceDirectory(p))) {
+      val name = p.relativize(sourceFile).toString
+      addEntry(zip, name, sourceFile)
+    }
 
     // Add all test files.
-
+    for (testFile <- getAllFiles(getTestDirectory(p))) {
+      val name = p.relativize(testFile).toString
+      addEntry(zip, name, testFile)
+    }
+    
     // Close the zip file.
     zip.finish()
   }
@@ -226,11 +237,32 @@ object PackageManager {
     writer.close()
   }
 
+  /**
+    * Adds the given path `p` to the given `zip` file with the given `name`.
+    */
   private def addEntry(zip: ZipOutputStream, name: String, p: Path): Unit = {
     val entry = new ZipEntry(name)
     zip.putNextEntry(entry)
     zip.write(Files.readAllBytes(p))
     zip.closeEntry()
+  }
+
+  /**
+    * Returns all files in the source files.
+    */
+  private def getAllFiles(p: Path): List[Path] = {
+    val visitor = new FileVisitor
+    Files.walkFileTree(p, visitor)
+    visitor.result.toList
+  }
+
+  class FileVisitor extends SimpleFileVisitor[Path] {
+    val result: mutable.ListBuffer[Path] = mutable.ListBuffer.empty
+
+    override def visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult = {
+      result += file
+      FileVisitResult.CONTINUE
+    }
   }
 
 }
