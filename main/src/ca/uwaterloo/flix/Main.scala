@@ -46,9 +46,15 @@ object Main {
     }
 
     // check if the init command was passed.
-    if (cmdOpts.mode.contains("init")) {
-      val statusCode = PackageManager.init(Paths.get("."))
-      System.exit(statusCode)
+    try {
+      if (cmdOpts.mode.contains("init")) {
+        PackageManager.init(Paths.get("."))
+        System.exit(0)
+      }
+    } catch {
+      case ex: RuntimeException =>
+        Console.println(ex.getMessage)
+        System.exit(1)
     }
 
     // check if the --listen flag was passed.

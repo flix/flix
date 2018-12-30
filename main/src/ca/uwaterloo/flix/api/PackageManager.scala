@@ -11,28 +11,24 @@ object PackageManager {
     *
     * The project must not already exist.
     */
-  def init(p: Path): Int = {
-
+  def init(p: Path): Unit = {
     //
     // Check that the current working directory is usable.
     //
     if (!Files.isDirectory(p)) {
-      Console.println(s"The directory: '$p' is not accessible. Aborting.")
-      return 1
+      throw new RuntimeException(s"The directory: '$p' is not accessible. Aborting.")
     }
     if (!Files.isReadable(p)) {
-      Console.println(s"The directory: '$p' is not readable. Aborting.")
-      return 1
+      throw new RuntimeException(s"The directory: '$p' is not readable. Aborting.")
     }
     if (!Files.isWritable(p)) {
-      Console.println(s"The directory: '$p' is not writable. Aborting.")
-      return 1
+      throw new RuntimeException(s"The directory: '$p' is not writable. Aborting.")
     }
 
     //
     // Compute the name of the package based on the directory name.
     //
-    val packageName = p.normalize().getFileName.toString
+    val packageName = p.toAbsolutePath.getParent.getFileName.toString
 
     //
     // Compute all the directories and files we intend to create.
@@ -51,8 +47,7 @@ object PackageManager {
     // Check that the project directories and files do not already exist.
     //
     if (Files.exists(sourceDirectory)) {
-      Console.println(s"The path: '$sourceDirectory' already exists. Aborting.")
-      return 1
+      throw new RuntimeException(s"The path: '$sourceDirectory' already exists. Aborting.")
     }
 
     //
@@ -66,41 +61,39 @@ object PackageManager {
          |  "package": "$packageName",
          |  "version": "0.1.0"
          |}
-      """.stripMargin
+         |""".stripMargin
     }
 
     newFile(historyFile) {
       """### v0.1.0
         |   Initial release.
-      """.stripMargin
+        |""".stripMargin
     }
 
     newFile(licenseFile) {
-      """Enter license information here."""
+      """Enter license information here.
+        |""".stripMargin
     }
 
     newFile(readmeFile) {
       s"""# $packageName
          |
-         | Enter some useful information for others.
+         |Enter some useful information.
          |
-      """.stripMargin
+         |""".stripMargin
     }
 
     newFile(mainSourceFile) {
-      """// Main entry point.
+      """// The main entry point.
         |def main(): Int = 123
-      """.stripMargin
+        |""".stripMargin
     }
 
     newFile(mainTestFile) {
       """@test
-        |def test01(): Bool = true
-      """.stripMargin
+        |def testMain01(): Bool = main() == 123
+        |""".stripMargin
     }
-
-    // Return success.
-    return 0
   }
 
   /**
