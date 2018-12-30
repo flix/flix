@@ -19,7 +19,7 @@ package ca.uwaterloo.flix
 import java.io.{File, PrintWriter}
 import java.nio.file.Paths
 
-import ca.uwaterloo.flix.api.{Flix, ProjectManager, Version}
+import ca.uwaterloo.flix.api.{Flix, PackageManager, Version}
 import ca.uwaterloo.flix.runtime.shell.Shell
 import ca.uwaterloo.flix.runtime.{Benchmarker, Tester}
 import ca.uwaterloo.flix.util._
@@ -47,7 +47,7 @@ object Main {
 
     // check if the init command was passed.
     if (cmdOpts.mode.contains("init")) {
-      val statusCode = ProjectManager.init(Paths.get("."))
+      val statusCode = PackageManager.init(Paths.get("."))
       System.exit(statusCode)
     }
 
