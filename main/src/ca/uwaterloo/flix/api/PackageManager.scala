@@ -30,6 +30,11 @@ object PackageManager {
     }
 
     //
+    // Compute the name of the package based on the directory name.
+    //
+    val packageName = p.normalize().getFileName.toString
+
+    //
     // Compute all the directories and files we intend to create.
     //
     val sourceDirectory = getSourceDirectory(p)
@@ -54,11 +59,43 @@ object PackageManager {
     // Create the project directories and files.
     //
     newDirectory(sourceDirectory)
+    newDirectory(testDirectory)
 
+    newFile(packageFile) {
+      s"""{
+         |  "package": "$packageName",
+         |  "version": "0.1.0"
+         |}
+      """.stripMargin
+    }
+
+    newFile(historyFile) {
+      """### v0.1.0
+        |   Initial release.
+      """.stripMargin
+    }
+
+    newFile(licenseFile) {
+      """Enter license information here."""
+    }
+
+    newFile(readmeFile) {
+      s"""# $packageName
+         |
+         | Enter some useful information for others.
+         |
+      """.stripMargin
+    }
 
     newFile(mainSourceFile) {
       """// Main entry point.
         |def main(): Int = 123
+      """.stripMargin
+    }
+
+    newFile(mainTestFile) {
+      """@test
+        |def test01(): Bool = true
       """.stripMargin
     }
 
