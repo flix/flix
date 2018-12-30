@@ -17,8 +17,9 @@
 package ca.uwaterloo.flix
 
 import java.io.{File, PrintWriter}
+import java.nio.file.Paths
 
-import ca.uwaterloo.flix.api.{Flix, Version}
+import ca.uwaterloo.flix.api.{Flix, ProjectManager, Version}
 import ca.uwaterloo.flix.runtime.shell.Shell
 import ca.uwaterloo.flix.runtime.{Benchmarker, Tester}
 import ca.uwaterloo.flix.util._
@@ -42,6 +43,12 @@ object Main {
       Console.err.println("Unable to parse command line arguments. Will now exit.")
       System.exit(1)
       null
+    }
+
+    // check if the init command was passed.
+    if (cmdOpts.mode.contains("init")) {
+      val statusCode = ProjectManager.init(Paths.get("."))
+      System.exit(statusCode)
     }
 
     // check if the --listen flag was passed.
@@ -155,7 +162,8 @@ object Main {
   /**
     * A case class representing the parsed command line options.
     */
-  case class CmdOpts(benchmark: Boolean = false,
+  case class CmdOpts(mode: Option[String] = None,
+                     benchmark: Boolean = false,
                      documentor: Boolean = false,
                      interactive: Boolean = false,
                      listen: Option[Int] = None,
@@ -190,6 +198,7 @@ object Main {
 
       // Head
       head("The Flix Programming Language", Version.CurrentVersion.toString)
+
 
       // Benchmark.
       opt[Unit]("benchmark").action((_, c) => c.copy(benchmark = true)).
@@ -306,6 +315,12 @@ object Main {
         .optional()
         .unbounded()
         .text("input Flix source code files.")
+
+      cmd("init").action((_, c) => c.copy(mode = Some("init"))).text("create a new empty project in the current directory")
+
+      cmd("build").text("create a new empty project in the current directory")
+
+      cmd("package").text("create a new empty project in the current directory")
 
     }
 
