@@ -48,9 +48,9 @@ package object ast {
     case class TxtFile(path: Path) extends Input
 
     /**
-      * A source that is backed by a zip file.
+      * A source that is backed by flix package file.
       */
-    case class ZipFile(path: Path) extends Input
+    case class PkgFile(path: Path) extends Input
 
   }
 

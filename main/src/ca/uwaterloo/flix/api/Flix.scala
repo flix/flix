@@ -346,8 +346,7 @@ class Flix {
     */
   private def getPathInputs: List[Input] = paths.foldLeft(List.empty[Input]) {
     case (xs, p) if p.getFileName.toString.endsWith(".flix") => Input.TxtFile(p) :: xs
-    case (xs, p) if p.getFileName.toString.endsWith(".flix.zip") => Input.ZipFile(p) :: xs
-    case (xs, p) if p.getFileName.toString.endsWith(".flix.gzip") => Input.ZipFile(p) :: xs
+    case (xs, p) if p.getFileName.toString.endsWith(".fpkg") => Input.PkgFile(p) :: xs
     case (_, p) => throw new IllegalStateException(s"Unknown file type '${p.getFileName}'.")
   }
 

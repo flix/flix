@@ -2,13 +2,14 @@ package ca.uwaterloo.flix.api
 
 import java.nio.file.attribute.BasicFileAttributes
 import java.nio.file.{FileVisitResult, Files, Path, SimpleFileVisitor}
-import java.util.zip.{ZipEntry, ZipOutputStream}
+import java.util.zip.{ZipEntry, ZipFile, ZipOutputStream}
 
+import ca.uwaterloo.flix.language.ast.Source
 import ca.uwaterloo.flix.runtime.{CompilationResult, Tester}
 import ca.uwaterloo.flix.util.vt.TerminalContext
 
 import scala.collection.mutable
-import ca.uwaterloo.flix.util.{InternalCompilerException, Options, Validation}
+import ca.uwaterloo.flix.util.{InternalCompilerException, Options, StreamOps, Validation}
 
 object PackageManager {
 
@@ -243,6 +244,33 @@ object PackageManager {
         val results = Tester.test(compilationResult)
         Console.println(results.output.fmt)
     }
+  }
+
+  /**
+    * Returns a list of sources extracted from the given flix package at path `p`.
+    */
+  def unpack(p: Path)(implicit flix: Flix): List[Source] = {
+    // Check that the path is a flix package.
+    if (!isPkgFile(p))
+      throw new RuntimeException(s"The path '$p' is not a flix package.")
+
+    // Open the zip file.
+    val zip = new ZipFile(p.toFile)
+
+    // Collect all source and test files.
+    val result = mutable.ListBuffer.empty[Source]
+    val iterator = zip.entries()
+    while (iterator.hasMoreElements) {
+      val entry = iterator.nextElement()
+      val name = entry.getName
+      if (name.endsWith(".flix")) {
+        val bytes = StreamOps.readAllBytes(zip.getInputStream(entry))
+        val array = new String(bytes, flix.defaultCharset).toCharArray
+        result += Source(name, array)
+      }
+    }
+
+    result.toList
   }
 
   /**

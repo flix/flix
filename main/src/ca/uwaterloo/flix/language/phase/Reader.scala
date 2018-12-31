@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import java.nio.file.Files
 import java.util.zip.ZipFile
 
-import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.api.{Flix, PackageManager}
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.{Input, Source, Symbol}
 import ca.uwaterloo.flix.util.Validation._
@@ -38,34 +38,29 @@ object Reader extends Phase[(List[Input], Map[Symbol.DefnSym, String]), (List[So
     val (input, named) = arg
 
     // Compute the sources.
-    val sources = input map {
+    val sources = input flatMap {
 
       /**
         * Internal.
         */
-      case Input.Internal(name, text) => Source(name, text.toCharArray)
+      case Input.Internal(name, text) => Source(name, text.toCharArray) :: Nil
 
       /**
         * String.
         */
-      case Input.Str(text) => Source("???", text.toCharArray)
+      case Input.Str(text) => Source("???", text.toCharArray) :: Nil
 
       /**
         * Text file.
         */
       case Input.TxtFile(path) =>
         val bytes = Files.readAllBytes(path)
-        Source(path.toString, new String(bytes, flix.defaultCharset).toCharArray)
+        Source(path.toString, new String(bytes, flix.defaultCharset).toCharArray) :: Nil
 
       /**
-        * Zip file.
+        * Pkg file.
         */
-      case Input.ZipFile(path) =>
-        val file = new ZipFile(path.toFile)
-        val entry = file.entries().nextElement()
-        val inputStream = file.getInputStream(entry)
-        val bytes = StreamOps.readAllBytes(inputStream)
-        Source(path.toString, new String(bytes, flix.defaultCharset).toCharArray)
+      case Input.PkgFile(path) => PackageManager.unpack(path)
     }
 
     // Return a triple of inputs, elapsed time, and named expressions.
