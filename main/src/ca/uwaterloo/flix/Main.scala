@@ -17,8 +17,9 @@
 package ca.uwaterloo.flix
 
 import java.io.{File, PrintWriter}
+import java.nio.file.Paths
 
-import ca.uwaterloo.flix.api.{Flix, Version}
+import ca.uwaterloo.flix.api.{Flix, PackageManager, Version}
 import ca.uwaterloo.flix.runtime.shell.Shell
 import ca.uwaterloo.flix.runtime.{Benchmarker, Tester}
 import ca.uwaterloo.flix.util._
@@ -85,6 +86,44 @@ object Main {
       verifier = cmdOpts.verifier,
       writeClassFiles = !cmdOpts.interactive
     )
+
+    // check if command was passed.
+    try {
+      val cwd = Paths.get(".")
+
+      cmdOpts.command match {
+        case Command.None =>
+        // nop, continue
+
+        case Command.Init =>
+          PackageManager.init(cwd, options)
+          System.exit(0)
+
+        case Command.Build =>
+          PackageManager.build(cwd, options)
+          System.exit(0)
+
+        case Command.BuildJar =>
+          PackageManager.buildJar(cwd, options)
+          System.exit(0)
+
+        case Command.BuildPkg =>
+          PackageManager.buildPkg(cwd, options)
+          System.exit(0)
+
+        case Command.Run =>
+          PackageManager.run(cwd, options)
+          System.exit(0)
+
+        case Command.Test =>
+          PackageManager.test(cwd, options)
+          System.exit(0)
+      }
+    } catch {
+      case ex: RuntimeException =>
+        Console.println(ex.getMessage)
+        System.exit(1)
+    }
 
     // check if running in interactive mode.
     if (cmdOpts.interactive) {
@@ -155,7 +194,8 @@ object Main {
   /**
     * A case class representing the parsed command line options.
     */
-  case class CmdOpts(benchmark: Boolean = false,
+  case class CmdOpts(command: Command = Command.None,
+                     benchmark: Boolean = false,
                      documentor: Boolean = false,
                      interactive: Boolean = false,
                      listen: Option[Int] = None,
@@ -181,6 +221,29 @@ object Main {
                      files: Seq[File] = Seq())
 
   /**
+    * A case class representing possible commands.
+    */
+  sealed trait Command
+
+  object Command {
+
+    case object None extends Command
+
+    case object Init extends Command
+
+    case object Build extends Command
+
+    case object BuildJar extends Command
+
+    case object BuildPkg extends Command
+
+    case object Run extends Command
+
+    case object Test extends Command
+
+  }
+
+  /**
     * Parse command line options.
     *
     * @param args the arguments array.
@@ -190,6 +253,21 @@ object Main {
 
       // Head
       head("The Flix Programming Language", Version.CurrentVersion.toString)
+
+      // Command
+      cmd("init").action((_, c) => c.copy(command = Command.Init)).text("  create a new project in the current directory.")
+
+      cmd("build").action((_, c) => c.copy(command = Command.Build)).text("  build the current project.")
+
+      cmd("build-jar").action((_, c) => c.copy(command = Command.BuildJar)).text("  build a jar-file for the current project.")
+
+      cmd("build-pkg").action((_, c) => c.copy(command = Command.BuildPkg)).text("  build a fpkg-file for the current project.")
+
+      cmd("run").action((_, c) => c.copy(command = Command.Run)).text("  run main for the current project.")
+
+      cmd("test").action((_, c) => c.copy(command = Command.Test)).text("  run tests for the current project.")
+
+      note("")
 
       // Benchmark.
       opt[Unit]("benchmark").action((_, c) => c.copy(benchmark = true)).
