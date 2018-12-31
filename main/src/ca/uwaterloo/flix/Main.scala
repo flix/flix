@@ -255,17 +255,17 @@ object Main {
       head("The Flix Programming Language", Version.CurrentVersion.toString)
 
       // Command
-      cmd("init").action((_, c) => c.copy(mode = Command.Init)).text("  creates a new project in the current directory.")
+      cmd("init").action((_, c) => c.copy(mode = Command.Init)).text("  create a new project in the current directory.")
 
-      cmd("build").action((_, c) => c.copy(mode = Command.Build)).text("  builds the current project.")
+      cmd("build").action((_, c) => c.copy(mode = Command.Build)).text("  build the current project.")
 
-      cmd("build-jar").action((_, c) => c.copy(mode = Command.BuildJar)).text("  builds a jar-file for the current project.")
+      cmd("build-jar").action((_, c) => c.copy(mode = Command.BuildJar)).text("  build a jar-file for the current project.")
 
-      cmd("build-pkg").action((_, c) => c.copy(mode = Command.BuildPkg)).text("  builds a fpkg-file for the current project.")
+      cmd("build-pkg").action((_, c) => c.copy(mode = Command.BuildPkg)).text("  build a fpkg-file for the current project.")
 
-      cmd("run").action((_, c) => c.copy(mode = Command.Run)).text("  runs main for the current project.")
+      cmd("run").action((_, c) => c.copy(mode = Command.Run)).text("  run main for the current project.")
 
-      cmd("test").action((_, c) => c.copy(mode = Command.Test)).text("  runs tests for the current project.")
+      cmd("test").action((_, c) => c.copy(mode = Command.Test)).text("  run tests for the current project.")
 
       note("")
 
