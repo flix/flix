@@ -91,7 +91,10 @@ object Main {
     try {
       val cwd = Paths.get(".")
 
-      cmdOpts.mode match {
+      cmdOpts.command match {
+        case Command.None =>
+        // nop, continue
+
         case Command.Init =>
           PackageManager.init(cwd, options)
           System.exit(0)
@@ -115,10 +118,7 @@ object Main {
         case Command.Test =>
           PackageManager.test(cwd, options)
           System.exit(0)
-
-        case _ => // nop
       }
-
     } catch {
       case ex: RuntimeException =>
         Console.println(ex.getMessage)
@@ -192,32 +192,9 @@ object Main {
   }
 
   /**
-    * A case class representing possible commands.
-    */
-  sealed trait Command
-
-  object Command {
-
-    case object NoCommand extends Command
-
-    case object Init extends Command
-
-    case object Build extends Command
-
-    case object BuildJar extends Command
-
-    case object BuildPkg extends Command
-
-    case object Run extends Command
-
-    case object Test extends Command
-
-  }
-
-  /**
     * A case class representing the parsed command line options.
     */
-  case class CmdOpts(mode: Command = Command.NoCommand,
+  case class CmdOpts(command: Command = Command.None,
                      benchmark: Boolean = false,
                      documentor: Boolean = false,
                      interactive: Boolean = false,
@@ -244,6 +221,29 @@ object Main {
                      files: Seq[File] = Seq())
 
   /**
+    * A case class representing possible commands.
+    */
+  sealed trait Command
+
+  object Command {
+
+    case object None extends Command
+
+    case object Init extends Command
+
+    case object Build extends Command
+
+    case object BuildJar extends Command
+
+    case object BuildPkg extends Command
+
+    case object Run extends Command
+
+    case object Test extends Command
+
+  }
+
+  /**
     * Parse command line options.
     *
     * @param args the arguments array.
@@ -255,17 +255,17 @@ object Main {
       head("The Flix Programming Language", Version.CurrentVersion.toString)
 
       // Command
-      cmd("init").action((_, c) => c.copy(mode = Command.Init)).text("  create a new project in the current directory.")
+      cmd("init").action((_, c) => c.copy(command = Command.Init)).text("  create a new project in the current directory.")
 
-      cmd("build").action((_, c) => c.copy(mode = Command.Build)).text("  build the current project.")
+      cmd("build").action((_, c) => c.copy(command = Command.Build)).text("  build the current project.")
 
-      cmd("build-jar").action((_, c) => c.copy(mode = Command.BuildJar)).text("  build a jar-file for the current project.")
+      cmd("build-jar").action((_, c) => c.copy(command = Command.BuildJar)).text("  build a jar-file for the current project.")
 
-      cmd("build-pkg").action((_, c) => c.copy(mode = Command.BuildPkg)).text("  build a fpkg-file for the current project.")
+      cmd("build-pkg").action((_, c) => c.copy(command = Command.BuildPkg)).text("  build a fpkg-file for the current project.")
 
-      cmd("run").action((_, c) => c.copy(mode = Command.Run)).text("  run main for the current project.")
+      cmd("run").action((_, c) => c.copy(command = Command.Run)).text("  run main for the current project.")
 
-      cmd("test").action((_, c) => c.copy(mode = Command.Test)).text("  run tests for the current project.")
+      cmd("test").action((_, c) => c.copy(command = Command.Test)).text("  run tests for the current project.")
 
       note("")
 

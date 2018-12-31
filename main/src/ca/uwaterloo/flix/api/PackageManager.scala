@@ -4,17 +4,21 @@ import java.nio.file.attribute.BasicFileAttributes
 import java.nio.file.{FileVisitResult, Files, Path, SimpleFileVisitor}
 import java.util.zip.{ZipEntry, ZipFile, ZipOutputStream}
 
+import scala.collection.mutable
+
 import ca.uwaterloo.flix.language.ast.Source
 import ca.uwaterloo.flix.runtime.{CompilationResult, Tester}
 import ca.uwaterloo.flix.util.vt.TerminalContext
 
-import scala.collection.mutable
 import ca.uwaterloo.flix.util.{InternalCompilerException, Options, StreamOps, Validation}
 
+/**
+  * An interface to manage flix packages.
+  */
 object PackageManager {
 
   /**
-    * Initializes a new flix project in the given path `p`. 
+    * Initializes a new flix project at the given path `p`.
     *
     * The project must not already exist.
     */
@@ -22,14 +26,8 @@ object PackageManager {
     //
     // Check that the current working directory is usable.
     //
-    if (!Files.isDirectory(p)) {
+    if (!Files.isDirectory(p) || !Files.isReadable(p) || !Files.isWritable(p)) {
       throw new RuntimeException(s"The directory: '$p' is not accessible. Aborting.")
-    }
-    if (!Files.isReadable(p)) {
-      throw new RuntimeException(s"The directory: '$p' is not readable. Aborting.")
-    }
-    if (!Files.isWritable(p)) {
-      throw new RuntimeException(s"The directory: '$p' is not writable. Aborting.")
     }
 
     //
@@ -277,7 +275,12 @@ object PackageManager {
     * Returns `true` if the given path `p` appears to be a flix project path.
     */
   private def isProjectPath(p: Path): Boolean =
-    Files.exists(getPackageFile(p)) && Files.exists(getSourceDirectory(p))
+    Files.exists(getSourceDirectory(p)) &&
+      Files.exists(getTestDirectory(p)) &&
+      Files.exists(getHistoryFile(p)) &&
+      Files.exists(getLicenseFile(p)) &&
+      Files.exists(getReadmeFile(p)) &&
+      Files.exists(getPackageFile(p))
 
   /**
     * Returns the package name based on the given path `p`.
@@ -418,7 +421,7 @@ object PackageManager {
     false
   }
 
-  class FileVisitor extends SimpleFileVisitor[Path] {
+  private class FileVisitor extends SimpleFileVisitor[Path] {
     val result: mutable.ListBuffer[Path] = mutable.ListBuffer.empty
 
     override def visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult = {

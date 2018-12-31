@@ -27,37 +27,37 @@ class TestMain extends FunSuite {
   test("init") {
     val args = Array("init")
     val opts = Main.parseCmdOpts(args).get
-    assert(opts.mode == Main.Command.Init)
+    assert(opts.command == Main.Command.Init)
   }
 
   test("build") {
     val args = Array("build")
     val opts = Main.parseCmdOpts(args).get
-    assert(opts.mode == Main.Command.Build)
+    assert(opts.command == Main.Command.Build)
   }
 
   test("build-jar") {
     val args = Array("build-jar")
     val opts = Main.parseCmdOpts(args).get
-    assert(opts.mode == Main.Command.BuildJar)
+    assert(opts.command == Main.Command.BuildJar)
   }
 
   test("build-pkg") {
     val args = Array("build-pkg")
     val opts = Main.parseCmdOpts(args).get
-    assert(opts.mode == Main.Command.BuildPkg)
+    assert(opts.command == Main.Command.BuildPkg)
   }
 
   test("run") {
     val args = Array("run")
     val opts = Main.parseCmdOpts(args).get
-    assert(opts.mode == Main.Command.Run)
+    assert(opts.command == Main.Command.Run)
   }
 
   test("test") {
     val args = Array("test")
     val opts = Main.parseCmdOpts(args).get
-    assert(opts.mode == Main.Command.Test)
+    assert(opts.command == Main.Command.Test)
   }
 
   test("--benchmark") {
