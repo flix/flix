@@ -21,7 +21,6 @@ See the [official Flix website](https://flix.github.io/) for more information ab
 You can [try Flix](https://flix.github.io/try/) in the online editor.
 
 [![Build Status](https://travis-ci.org/flix/flix.svg?branch=master)](https://travis-ci.org/flix/flix)
-[![CircleCI](https://circleci.com/gh/flix/flix.svg?style=svg)](https://circleci.com/gh/flix/flix)
 [![Gitter](https://badges.gitter.im/gitterHQ/gitter.svg)](https://gitter.im/flix/Lobby)
 
 ## Sample Flix Code (Functional)
