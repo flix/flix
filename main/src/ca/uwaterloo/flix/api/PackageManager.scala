@@ -221,6 +221,18 @@ object PackageManager {
   }
 
   /**
+    * Runs the main function in flix package for the given project path `p`.
+    */
+  def run(p: Path, o: Options): Unit = {
+    build(p, o) match {
+      case None => // nop
+      case Some(compilationResult) =>
+        val result = compilationResult.evalToString("main")
+        Console.println(result)
+    }
+  }
+
+  /**
     * Runs all tests in the flix package for the given project path `p`.
     */
   def test(p: Path, o: Options): Unit = {

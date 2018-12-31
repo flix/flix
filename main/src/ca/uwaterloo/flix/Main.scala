@@ -108,6 +108,10 @@ object Main {
           PackageManager.buildPkg(cwd)
           System.exit(0)
 
+        case Some("run") =>
+          PackageManager.run(cwd, options)
+          System.exit(0)
+
         case Some("test") =>
           PackageManager.test(cwd, options)
           System.exit(0)
@@ -353,6 +357,8 @@ object Main {
       cmd("build-jar").action((_, c) => c.copy(mode = Some("build-jar"))).text("builds a jar-file for the project in the current working directory.")
 
       cmd("build-pkg").action((_, c) => c.copy(mode = Some("build-pkg"))).text("builds a fpkg-file for the project in the current working directory.")
+
+      cmd("run").action((_, c) => c.copy(mode = Some("run"))).text("runs main for the project in the current working directory.")
 
       cmd("test").action((_, c) => c.copy(mode = Some("test"))).text("runs all tests for the project in the current working directory.")
 
