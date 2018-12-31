@@ -152,9 +152,9 @@ object PackageManager {
     // The path to the jar file.
     val jarFile = getJarFile(p)
 
-    // Check that the jar file does not already exist.
-    if (Files.exists(jarFile)) {
-      throw new RuntimeException(s"The path '$jarFile' already exists. Aborting.")
+    // Check whether it is safe to write to the file.
+    if (Files.exists(jarFile) && !isJarFile(jarFile)) {
+      throw new RuntimeException(s"The path '$jarFile' exists and is not a jar-file. Refusing to overwrite.")
     }
 
     // Construct a new zip file.
@@ -190,9 +190,9 @@ object PackageManager {
     // The path to the fpkg file.
     val pkgFile = getPkgFile(p)
 
-    // Check that the pkg file does not already exist.
-    if (Files.exists(pkgFile)) {
-      throw new RuntimeException(s"The path '$pkgFile' already exists. Aborting.")
+    // Check whether it is safe to write to the file.
+    if (Files.exists(pkgFile) && !isPkgFile(pkgFile)) {
+      throw new RuntimeException(s"The path '$pkgFile' exists and is not a fpkg-file. Refusing to overwrite.")
     }
 
     // Construct a new zip file.
@@ -359,6 +359,35 @@ object PackageManager {
     val visitor = new FileVisitor
     Files.walkFileTree(p, visitor)
     visitor.result.toList
+  }
+
+  /**
+    * Returns `true` if the given path `p` is a jar-file.
+    */
+  private def isJarFile(p: Path): Boolean = isZipArchive(p)
+
+  /**
+    * Returns `true` if the given path `p` is a fpkg-file.
+    */
+  private def isPkgFile(p: Path): Boolean = isZipArchive(p)
+
+  /**
+    * Returns `true` if the given path `p` is a zip-archive.
+    */
+  private def isZipArchive(p: Path): Boolean = {
+    if (Files.exists(p) && Files.isReadable(p) && Files.isRegularFile(p)) {
+      // Read the first four bytes of the file.
+      val is = Files.newInputStream(p)
+      val b1 = is.read()
+      val b2 = is.read()
+      val b3 = is.read()
+      val b4 = is.read()
+      is.close()
+
+      // Check if the four first bytes match 0x50, 0x4b, 0x03, 0x04
+      return b1 == 0x50 && b2 == 0x4b && b3 == 0x03 && b4 == 0x04
+    }
+    false
   }
 
   class FileVisitor extends SimpleFileVisitor[Path] {
