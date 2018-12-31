@@ -110,21 +110,38 @@ object PackageManager {
     * Builds a jar package for the given project path `p`.
     */
   def buildJar(p: Path): Unit = {
-    // TODO: Check that this is flix project
+    // Check that the path is a project path.
+    if (!isProjectPath(p))
+      throw new RuntimeException(s"The path '$p' does not appear to be a flix project.")
 
-    val jarFile = p.resolve(getPackageName(p) + ".jar").normalize()
+    // The path to the jar file.
+    val jarFile = getJarFile(p)
 
+    // Check that the jar file does not already exist.
     if (Files.exists(jarFile)) {
-      throw new RuntimeException()
+      throw new RuntimeException(s"The path '$jarFile' already exists. Aborting.")
     }
 
-    val manifest = new java.util.jar.Manifest
+    // Construct a new zip file.
+    val zip = new ZipOutputStream(Files.newOutputStream(jarFile))
 
-    val fos = new FileOutputStream(jarFile.toFile)
-    val jos = new JarOutputStream(fos, manifest)
-    val bos = new BufferedOutputStream(jos)
-    for (f <- Nil) {
+    // META-INF/MANIFEST.MF
+    val manifest =
+      """Manifest-Version: 1.0
+        |Main-Class: Main
+      """.stripMargin
+
+    // Add manifest file.
+    addToZip(zip, "META-INF/MANIFEST.MF", manifest.getBytes)
+
+    // Add all class files.
+    for (buildFile <- getAllFiles(getBuildDirectory(p))) {
+      val name = getBuildDirectory(p).relativize(buildFile).toString
+      addToZip(zip, name, buildFile)
     }
+
+    // Close the zip file.
+    zip.finish()
   }
 
   /**
@@ -147,21 +164,21 @@ object PackageManager {
     val zip = new ZipOutputStream(Files.newOutputStream(pkgFile))
 
     // Add required resources.
-    addEntry(zip, "HISTORY.md", getHistoryFile(p))
-    addEntry(zip, "LICENSE.md", getLicenseFile(p))
-    addEntry(zip, "README.md", getReadmeFile(p))
-    addEntry(zip, "package.json", getPackageFile(p))
+    addToZip(zip, "HISTORY.md", getHistoryFile(p))
+    addToZip(zip, "LICENSE.md", getLicenseFile(p))
+    addToZip(zip, "README.md", getReadmeFile(p))
+    addToZip(zip, "package.json", getPackageFile(p))
 
     // Add all source files.
     for (sourceFile <- getAllFiles(getSourceDirectory(p))) {
       val name = p.relativize(sourceFile).toString
-      addEntry(zip, name, sourceFile)
+      addToZip(zip, name, sourceFile)
     }
 
     // Add all test files.
     for (testFile <- getAllFiles(getTestDirectory(p))) {
       val name = p.relativize(testFile).toString
-      addEntry(zip, name, testFile)
+      addToZip(zip, name, testFile)
     }
 
     // Close the zip file.
@@ -180,9 +197,19 @@ object PackageManager {
   private def getPackageName(p: Path): String = p.toAbsolutePath.getParent.getFileName.toString
 
   /**
-    * Returns the path to the flix package based on the given path `p`.
+    * Returns the path to the pkg file based on the given path `p`.
     */
   private def getPkgFile(p: Path): Path = p.resolve(getPackageName(p) + ".fpkg").normalize()
+
+  /**
+    * Returns the path to the jar file based on the given path `p`.
+    */
+  private def getJarFile(p: Path): Path = p.resolve(getPackageName(p) + ".jar").normalize()
+
+  /**
+    * Returns the path to the build directory relative to the given path `p`.
+    */
+  private def getBuildDirectory(p: Path): Path = p.resolve("./target/flix/").normalize()
 
   /**
     * Returns the path to the source directory relative to the given path `p`.
@@ -249,12 +276,19 @@ object PackageManager {
   }
 
   /**
-    * Adds the given path `p` to the given `zip` file with the given `name`.
+    * Adds an entry to the given zip file.
     */
-  private def addEntry(zip: ZipOutputStream, name: String, p: Path): Unit = {
+  private def addToZip(zip: ZipOutputStream, name: String, p: Path): Unit = {
+    addToZip(zip, name, Files.readAllBytes(p))
+  }
+
+  /**
+    * Adds an entry to the given zip file.
+    */
+  private def addToZip(zip: ZipOutputStream, name: String, d: Array[Byte]): Unit = {
     val entry = new ZipEntry(name)
     zip.putNextEntry(entry)
-    zip.write(Files.readAllBytes(p))
+    zip.write(d)
     zip.closeEntry()
   }
 
