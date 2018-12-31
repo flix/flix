@@ -92,27 +92,27 @@ object Main {
       val cwd = Paths.get(".")
 
       cmdOpts.mode match {
-        case Some("init") =>
+        case Command.Init =>
           PackageManager.init(cwd)
           System.exit(0)
 
-        case Some("build") =>
+        case Command.Build =>
           PackageManager.build(cwd, options)
           System.exit(0)
 
-        case Some("build-jar") =>
+        case Command.BuildJar =>
           PackageManager.buildJar(cwd)
           System.exit(0)
 
-        case Some("build-pkg") =>
+        case Command.BuildPkg =>
           PackageManager.buildPkg(cwd)
           System.exit(0)
 
-        case Some("run") =>
+        case Command.Run =>
           PackageManager.run(cwd, options)
           System.exit(0)
 
-        case Some("test") =>
+        case Command.Test =>
           PackageManager.test(cwd, options)
           System.exit(0)
 
@@ -192,9 +192,32 @@ object Main {
   }
 
   /**
+    * A case class representing possible commands.
+    */
+  sealed trait Command
+
+  object Command {
+
+    case object NoCommand extends Command
+
+    case object Init extends Command
+
+    case object Build extends Command
+
+    case object BuildJar extends Command
+
+    case object BuildPkg extends Command
+
+    case object Run extends Command
+
+    case object Test extends Command
+
+  }
+
+  /**
     * A case class representing the parsed command line options.
     */
-  case class CmdOpts(mode: Option[String] = None,
+  case class CmdOpts(mode: Command = Command.NoCommand,
                      benchmark: Boolean = false,
                      documentor: Boolean = false,
                      interactive: Boolean = false,
@@ -231,6 +254,20 @@ object Main {
       // Head
       head("The Flix Programming Language", Version.CurrentVersion.toString)
 
+      // Command
+      cmd("init").action((_, c) => c.copy(mode = Command.Init)).text("  creates a new project in the current directory.")
+
+      cmd("build").action((_, c) => c.copy(mode = Command.Build)).text("  builds the current project.")
+
+      cmd("build-jar").action((_, c) => c.copy(mode = Command.BuildJar)).text("  builds a jar-file for the current project.")
+
+      cmd("build-pkg").action((_, c) => c.copy(mode = Command.BuildPkg)).text("  builds a fpkg-file for the current project.")
+
+      cmd("run").action((_, c) => c.copy(mode = Command.Run)).text("  runs main for the current project.")
+
+      cmd("test").action((_, c) => c.copy(mode = Command.Test)).text("  runs tests for the current project.")
+
+      note("")
 
       // Benchmark.
       opt[Unit]("benchmark").action((_, c) => c.copy(benchmark = true)).
@@ -347,20 +384,6 @@ object Main {
         .optional()
         .unbounded()
         .text("input Flix source code files.")
-
-      note("")
-
-      cmd("init").action((_, c) => c.copy(mode = Some("init"))).text("creates a new empty project in the current working directory.")
-
-      cmd("build").action((_, c) => c.copy(mode = Some("build"))).text("builds the project in the current working directory.")
-
-      cmd("build-jar").action((_, c) => c.copy(mode = Some("build-jar"))).text("builds a jar-file for the project in the current working directory.")
-
-      cmd("build-pkg").action((_, c) => c.copy(mode = Some("build-pkg"))).text("builds a fpkg-file for the project in the current working directory.")
-
-      cmd("run").action((_, c) => c.copy(mode = Some("run"))).text("runs main for the project in the current working directory.")
-
-      cmd("test").action((_, c) => c.copy(mode = Some("test"))).text("runs all tests for the project in the current working directory.")
 
     }
 
