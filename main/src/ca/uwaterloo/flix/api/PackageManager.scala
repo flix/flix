@@ -326,7 +326,7 @@ object PackageManager {
   }
 
   /**
-    * Returns all files in the source files.
+    * Returns all files in the given path `p`.
     */
   private def getAllFiles(p: Path): List[Path] = {
     val visitor = new FileVisitor

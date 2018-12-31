@@ -340,13 +340,15 @@ object Main {
         .unbounded()
         .text("input Flix source code files.")
 
-      cmd("init").action((_, c) => c.copy(mode = Some("init"))).text("create a new empty project in the current directory")
+      note("")
 
-      cmd("build").action((_, c) => c.copy(mode = Some("build"))).text("...") // TODO
+      cmd("init").action((_, c) => c.copy(mode = Some("init"))).text("creates a new empty flix project in the current working directory.")
 
-      cmd("build-jar").action((_, c) => c.copy(mode = Some("build-jar"))).text("...") // TODO
+      cmd("build").action((_, c) => c.copy(mode = Some("build"))).text("builds the project in the current working directory.")
 
-      cmd("build-pkg").action((_, c) => c.copy(mode = Some("build-pkg"))).text("...") // TODO
+      cmd("build-jar").action((_, c) => c.copy(mode = Some("build-jar"))).text("builds a jar-file for the project in the current working directory.")
+
+      cmd("build-pkg").action((_, c) => c.copy(mode = Some("build-pkg"))).text("builds a fpkg-file for the project in the current working directory.")
 
     }
 
