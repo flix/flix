@@ -1,14 +1,13 @@
 package ca.uwaterloo.flix.api
 
-import java.io.{BufferedOutputStream, BufferedReader, FileOutputStream, FileReader}
 import java.nio.file.attribute.BasicFileAttributes
 import java.nio.file.{FileVisitResult, Files, Path, SimpleFileVisitor}
-import java.util.jar.{Attributes, JarOutputStream}
 import java.util.zip.{ZipEntry, ZipOutputStream}
 
-import scala.collection.mutable
+import ca.uwaterloo.flix.util.vt.TerminalContext
 
-import ca.uwaterloo.flix.util.{InternalCompilerException, StreamOps}
+import scala.collection.mutable
+import ca.uwaterloo.flix.util.{InternalCompilerException, Options, Validation}
 
 object PackageManager {
 
@@ -103,6 +102,40 @@ object PackageManager {
       """@test
         |def testMain01(): Bool = main() == 123
         |""".stripMargin
+    }
+  }
+
+  /**
+    * Builds (compiles) the source files for the given project path `p`.
+    */
+  def build(p: Path, o: Options): Unit = {
+    // Check that the path is a project path.
+    if (!isProjectPath(p))
+      throw new RuntimeException(s"The path '$p' does not appear to be a flix project.")
+
+    // Configure a new Flix object.
+    val flix = new Flix()
+    flix.setOptions(o.copy(writeClassFiles = true))
+
+    // Add all source files.
+    for (sourceFile <- getAllFiles(getSourceDirectory(p))) {
+      if (sourceFile.getFileName.toString.endsWith(".flix")) {
+        flix.addPath(sourceFile)
+      }
+    }
+
+    // Add all test files.
+    for (testFile <- getAllFiles(getTestDirectory(p))) {
+      if (testFile.getFileName.toString.endsWith(".flix")) {
+        flix.addPath(testFile)
+      }
+    }
+
+    flix.compile() match {
+      case Validation.Success(r) => // nop, successful.
+      case Validation.Failure(errors) =>
+        implicit val _ = TerminalContext.AnsiTerminal
+        errors.foreach(e => println(e.message.fmt))
     }
   }
 

@@ -45,27 +45,6 @@ object Main {
       null
     }
 
-    // check if the init command was passed.
-    try {
-      cmdOpts.mode match {
-        case Some("init") =>
-          PackageManager.init(Paths.get("."))
-          System.exit(0)
-        case Some("build-jar") =>
-          PackageManager.buildJar(Paths.get("."))
-          System.exit(0)
-        case Some("build-pkg") =>
-          PackageManager.buildPkg(Paths.get("."))
-          System.exit(0)
-        case _ => // nop
-      }
-
-    } catch {
-      case ex: RuntimeException =>
-        Console.println(ex.getMessage)
-        System.exit(1)
-    }
-
     // check if the --listen flag was passed.
     if (cmdOpts.listen.nonEmpty) {
       val rpcServer = new RpcServer(cmdOpts.listen.get)
@@ -107,6 +86,36 @@ object Main {
       verifier = cmdOpts.verifier,
       writeClassFiles = !cmdOpts.interactive
     )
+
+    // check if command was passed.
+    try {
+      val cwd = Paths.get(".")
+
+      cmdOpts.mode match {
+        case Some("init") =>
+          PackageManager.init(cwd)
+          System.exit(0)
+
+        case Some("build") =>
+          PackageManager.build(cwd, options)
+          System.exit(0)
+
+        case Some("build-jar") =>
+          PackageManager.buildJar(cwd)
+          System.exit(0)
+
+        case Some("build-pkg") =>
+          PackageManager.buildPkg(cwd)
+          System.exit(0)
+
+        case _ => // nop
+      }
+
+    } catch {
+      case ex: RuntimeException =>
+        Console.println(ex.getMessage)
+        System.exit(1)
+    }
 
     // check if running in interactive mode.
     if (cmdOpts.interactive) {
@@ -333,9 +342,11 @@ object Main {
 
       cmd("init").action((_, c) => c.copy(mode = Some("init"))).text("create a new empty project in the current directory")
 
-      cmd("build-jar").action((_, c) => c.copy(mode = Some("build-jar"))).text("create a new empty project in the current directory")
+      cmd("build").action((_, c) => c.copy(mode = Some("build"))).text("...") // TODO
 
-      cmd("build-pkg").action((_, c) => c.copy(mode = Some("build-pkg"))).text("create a new empty project in the current directory")
+      cmd("build-jar").action((_, c) => c.copy(mode = Some("build-jar"))).text("...") // TODO
+
+      cmd("build-pkg").action((_, c) => c.copy(mode = Some("build-pkg"))).text("...") // TODO
 
     }
 
