@@ -108,6 +108,10 @@ object Main {
           PackageManager.buildPkg(cwd)
           System.exit(0)
 
+        case Some("test") =>
+          PackageManager.test(cwd, options)
+          System.exit(0)
+
         case _ => // nop
       }
 
@@ -342,13 +346,15 @@ object Main {
 
       note("")
 
-      cmd("init").action((_, c) => c.copy(mode = Some("init"))).text("creates a new empty flix project in the current working directory.")
+      cmd("init").action((_, c) => c.copy(mode = Some("init"))).text("creates a new empty project in the current working directory.")
 
       cmd("build").action((_, c) => c.copy(mode = Some("build"))).text("builds the project in the current working directory.")
 
       cmd("build-jar").action((_, c) => c.copy(mode = Some("build-jar"))).text("builds a jar-file for the project in the current working directory.")
 
       cmd("build-pkg").action((_, c) => c.copy(mode = Some("build-pkg"))).text("builds a fpkg-file for the project in the current working directory.")
+
+      cmd("test").action((_, c) => c.copy(mode = Some("test"))).text("runs all tests for the project in the current working directory.")
 
     }
 

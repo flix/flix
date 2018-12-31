@@ -4,6 +4,7 @@ import java.nio.file.attribute.BasicFileAttributes
 import java.nio.file.{FileVisitResult, Files, Path, SimpleFileVisitor}
 import java.util.zip.{ZipEntry, ZipOutputStream}
 
+import ca.uwaterloo.flix.runtime.{CompilationResult, Tester}
 import ca.uwaterloo.flix.util.vt.TerminalContext
 
 import scala.collection.mutable
@@ -108,7 +109,7 @@ object PackageManager {
   /**
     * Builds (compiles) the source files for the given project path `p`.
     */
-  def build(p: Path, o: Options): Unit = {
+  def build(p: Path, o: Options): Option[CompilationResult] = {
     // Check that the path is a project path.
     if (!isProjectPath(p))
       throw new RuntimeException(s"The path '$p' does not appear to be a flix project.")
@@ -132,10 +133,11 @@ object PackageManager {
     }
 
     flix.compile() match {
-      case Validation.Success(r) => // nop, successful.
+      case Validation.Success(r) => Some(r)
       case Validation.Failure(errors) =>
         implicit val _ = TerminalContext.AnsiTerminal
         errors.foreach(e => println(e.message.fmt))
+        None
     }
   }
 
@@ -216,6 +218,19 @@ object PackageManager {
 
     // Close the zip file.
     zip.finish()
+  }
+
+  /**
+    * Runs all tests in the flix package for the given project path `p`.
+    */
+  def test(p: Path, o: Options): Unit = {
+    build(p, o) match {
+      case None => // nop
+      case Some(compilationResult) =>
+        implicit val _ = TerminalContext.AnsiTerminal
+        val results = Tester.test(compilationResult)
+        Console.println(results.output.fmt)
+    }
   }
 
   /**
