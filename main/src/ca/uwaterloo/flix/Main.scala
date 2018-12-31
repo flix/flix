@@ -93,7 +93,7 @@ object Main {
 
       cmdOpts.mode match {
         case Command.Init =>
-          PackageManager.init(cwd)
+          PackageManager.init(cwd, options)
           System.exit(0)
 
         case Command.Build =>
@@ -101,11 +101,11 @@ object Main {
           System.exit(0)
 
         case Command.BuildJar =>
-          PackageManager.buildJar(cwd)
+          PackageManager.buildJar(cwd, options)
           System.exit(0)
 
         case Command.BuildPkg =>
-          PackageManager.buildPkg(cwd)
+          PackageManager.buildPkg(cwd, options)
           System.exit(0)
 
         case Command.Run =>

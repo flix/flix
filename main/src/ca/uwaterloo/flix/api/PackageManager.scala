@@ -17,7 +17,7 @@ object PackageManager {
     *
     * The project must not already exist.
     */
-  def init(p: Path): Unit = {
+  def init(p: Path, o: Options): Unit = {
     //
     // Check that the current working directory is usable.
     //
@@ -144,7 +144,7 @@ object PackageManager {
   /**
     * Builds a jar package for the given project path `p`.
     */
-  def buildJar(p: Path): Unit = {
+  def buildJar(p: Path, o: Options): Unit = {
     // Check that the path is a project path.
     if (!isProjectPath(p))
       throw new RuntimeException(s"The path '$p' does not appear to be a flix project.")
@@ -182,7 +182,7 @@ object PackageManager {
   /**
     * Builds a flix package for the given project path `p`.
     */
-  def buildPkg(p: Path): Unit = {
+  def buildPkg(p: Path, o: Options): Unit = {
     // Check that the path is a project path.
     if (!isProjectPath(p))
       throw new RuntimeException(s"The path '$p' does not appear to be a flix project.")
