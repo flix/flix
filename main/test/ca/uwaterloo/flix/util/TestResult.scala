@@ -21,14 +21,6 @@ import org.scalatest.FunSuite
 
 class TestResult extends FunSuite {
 
-  test("isOk") {
-    assert(Ok(42).isOk)
-  }
-
-  test("isErr") {
-    assert(Err(42).isErr)
-  }
-
   test("get01") {
     assertResult(42)(Ok(42).get)
   }

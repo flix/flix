@@ -1,5 +1,5 @@
 /*
- *  Copyright 2016 Magnus Madsen
+ *  Copyright 2019 Magnus Madsen
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -21,23 +21,10 @@ import scala.annotation.tailrec
 /**
   * A result either holds a value ([[Result.Ok]]) or holds an error ([[Result.Err]]).
   *
-  * @tparam T the type of  he value.
+  * @tparam T the type of the value.
   * @tparam E the type of the error.
   */
 sealed trait Result[T, E] {
-
-  /**
-    * Returns `true` iff `this` result holds a value.
-    */
-  def isOk: Boolean = this match {
-    case x: Result.Ok[T, E] => true
-    case x: Result.Err[T, E] => false
-  }
-
-  /**
-    * Returns `true` iff `this` result holds an error.
-    */
-  def isErr: Boolean = !isOk
 
   /**
     * Retrieves the value from `this` result.
