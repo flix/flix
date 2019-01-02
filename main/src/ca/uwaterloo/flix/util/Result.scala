@@ -1,5 +1,5 @@
 /*
- *  Copyright 2016 Magnus Madsen
+ *  Copyright 2019 Magnus Madsen
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -21,30 +21,17 @@ import scala.annotation.tailrec
 /**
   * A result either holds a value ([[Result.Ok]]) or holds an error ([[Result.Err]]).
   *
-  * @tparam T the type of  he value.
+  * @tparam T the type of the value.
   * @tparam E the type of the error.
   */
 sealed trait Result[T, E] {
-
-  /**
-    * Returns `true` iff `this` result holds a value.
-    */
-  def isOk: Boolean = this match {
-    case x: Result.Ok[T, E] => true
-    case x: Result.Err[T, E] => false
-  }
-
-  /**
-    * Returns `true` iff `this` result holds an error.
-    */
-  def isErr: Boolean = !isOk
 
   /**
     * Retrieves the value from `this` result.
     *
     * @throws IllegalStateException if `this` result does not hold a value.
     */
-  def get: T = this match {
+  final def get: T = this match {
     case Result.Ok(t) => t
     case Result.Err(e) => throw new IllegalStateException(s"Result is Err($e).")
   }
@@ -52,7 +39,7 @@ sealed trait Result[T, E] {
   /**
     * Applies the given function `f` to value of `this` wrapping it in [[Result.Ok]].
     */
-  def map[B](f: T => B): Result[B, E] = this match {
+  final def map[U](f: T => U): Result[U, E] = this match {
     case Result.Ok(t) => Result.Ok(f(t))
     case Result.Err(e) => Result.Err(e)
   }
@@ -60,7 +47,7 @@ sealed trait Result[T, E] {
   /**
     * Applies the given function `f` to the value of `this`.
     */
-  def flatMap[B](f: T => Result[B, E]): Result[B, E] = this match {
+  final def flatMap[B](f: T => Result[B, E]): Result[B, E] = this match {
     case Result.Ok(t) => f(t)
     case Result.Err(e) => Result.Err(e)
   }
@@ -84,7 +71,7 @@ object Result {
     *
     * Returns the first error value encountered, if any.
     */
-  def seqM[T, E](xs: List[Result[T, E]]): Result[List[T], E] = {
+  def sequence[T, E](xs: List[Result[T, E]]): Result[List[T], E] = {
     /**
       * Local tail recursive visitor. Uses an accumulator to avoid stack overflow.
       */

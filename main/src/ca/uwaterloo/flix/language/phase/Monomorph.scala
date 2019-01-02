@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.{BinaryOperator, Symbol, Type, TypedAst, UnaryOperator}
-import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
+import ca.uwaterloo.flix.util.{InternalCompilerException, Result, Validation}
 import ca.uwaterloo.flix.util.Validation._
 
 import scala.collection.mutable
@@ -748,7 +748,7 @@ object Monomorph extends Phase[TypedAst.Root, TypedAst.Root] {
         // Check the function name.
         if (name == sym.name) {
           // Check whether the type unifies.
-          if (Unification.unify(defn.tpe, tpe).isOk) {
+          if (Unification.unify(defn.tpe, tpe).isInstanceOf[Result.Ok[_, _]]) {
             // Match found!
             matches += sym
           }

@@ -21,14 +21,6 @@ import org.scalatest.FunSuite
 
 class TestResult extends FunSuite {
 
-  test("isOk") {
-    assert(Ok(42).isOk)
-  }
-
-  test("isErr") {
-    assert(Err(42).isErr)
-  }
-
   test("get01") {
     assertResult(42)(Ok(42).get)
   }
@@ -89,20 +81,20 @@ class TestResult extends FunSuite {
   }
 
   test("seqM01") {
-    assertResult(Ok(Nil))(seqM(Nil))
+    assertResult(Ok(Nil))(sequence(Nil))
   }
 
   test("seqM02") {
     val a = Ok(1): Result[Int, String]
     val b = Ok(2): Result[Int, String]
-    assertResult(Ok(List(1, 2)))(seqM(List(a, b)))
+    assertResult(Ok(List(1, 2)))(sequence(List(a, b)))
   }
 
   test("seqM03") {
     val a = Ok(1): Result[Int, String]
     val b = Ok(2): Result[Int, String]
     val c = Ok(3): Result[Int, String]
-    assertResult(Ok(List(1, 2, 3)))(seqM(List(a, b, c)))
+    assertResult(Ok(List(1, 2, 3)))(sequence(List(a, b, c)))
   }
 
   test("seqM04") {
@@ -110,7 +102,7 @@ class TestResult extends FunSuite {
     val b = Ok(2): Result[Int, String]
     val c = Ok(3): Result[Int, String]
     val d = Ok(4): Result[Int, String]
-    assertResult(Ok(List(1, 2, 3, 4)))(seqM(List(a, b, c, d)))
+    assertResult(Ok(List(1, 2, 3, 4)))(sequence(List(a, b, c, d)))
   }
 
 }

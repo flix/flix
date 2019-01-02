@@ -547,7 +547,9 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
 
     case ParsedAst.Expression.Switch(sp1, rules, sp2) =>
       val rulesVal = traverse(rules) {
-        case (cond, body) => sequence(visitExp(cond), visitExp(body))
+        case (cond, body) => mapN(visitExp(cond), visitExp(body)) {
+          case (c, b) => (c, b)
+        }
       }
       rulesVal map {
         case rs => WeededAst.Expression.Switch(rs, mkSL(sp1, sp2))
@@ -816,7 +818,9 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
        * Rewrites a `FMap` expression into `Map/empty` and a `Map/insert` calls.
        */
       val elmsVal = traverse(elms) {
-        case (key, value) => sequence(visitExp(key), visitExp(value))
+        case (key, value) => mapN(visitExp(key), visitExp(value)) {
+          case (k, v) => (k, v)
+        }
       }
 
       elmsVal map {
@@ -1582,7 +1586,9 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.ClassConstraint(head0, body0) =>
       val headVal = visitSimpleClass(head0)
       val bodyVal = traverse(body0)(visitSimpleClass)
-      sequence(headVal, bodyVal)
+      mapN(headVal, bodyVal) {
+        case (h, b) => (h, b)
+      }
   }
 
   /**
@@ -1592,7 +1598,9 @@ object Weeder extends Phase[ParsedAst.Program, WeededAst.Program] {
     case ParsedAst.ImplConstraint(head0, body0) =>
       val headVal = visitComplexClass(head0)
       val bodyVal = traverse(body0)(visitComplexClass)
-      sequence(headVal, bodyVal)
+      mapN(headVal, bodyVal) {
+        case (h, b) => (h, b)
+      }
   }
 
   /**

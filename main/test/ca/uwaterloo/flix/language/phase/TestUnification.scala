@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.language.GenSym
 import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.language.phase.Unification._
+import ca.uwaterloo.flix.util.Result
 import org.scalatest.FunSuite
 
 class TestUnification extends FunSuite {
@@ -140,132 +141,132 @@ class TestUnification extends FunSuite {
 
   test("Unify.Var.01") {
     val result = Unification.unify(Type.Var(1, Kind.Star), Type.Unit)
-    assert(result.isOk)
+    assert(isOk(result))
   }
 
   test("Unify.Var.02") {
     val result = Unification.unify(Type.Unit, Type.Var(1, Kind.Star))
-    assert(result.isOk)
+    assert(isOk(result))
   }
 
   test("Unify.Var.03") {
     val result = Unification.unify(Type.Var(1, Kind.Star), Type.Var(1, Kind.Star))
-    assert(result.isOk)
+    assert(isOk(result))
   }
 
   test("Unify.Var.04") {
     val result = Unification.unify(Type.Var(1, Kind.Star), Type.Var(2, Kind.Star))
-    assert(result.isOk)
+    assert(isOk(result))
   }
 
   test("Unify.Unit") {
     val result = Unification.unify(Type.Unit, Type.Unit)
-    assert(result.isOk)
+    assert(isOk(result))
   }
 
   test("Unify.Bool") {
     val result = Unification.unify(Type.Bool, Type.Bool)
-    assert(result.isOk)
+    assert(isOk(result))
   }
 
   test("Unify.Char") {
     val result = Unification.unify(Type.Char, Type.Char)
-    assert(result.isOk)
+    assert(isOk(result))
   }
 
   test("Unify.Float32") {
     val result = Unification.unify(Type.Float32, Type.Float32)
-    assert(result.isOk)
+    assert(isOk(result))
   }
 
   test("Unify.Float64") {
     val result = Unification.unify(Type.Float64, Type.Float64)
-    assert(result.isOk)
+    assert(isOk(result))
   }
 
   test("Unify.Int8") {
     val result = Unification.unify(Type.Int8, Type.Int8)
-    assert(result.isOk)
+    assert(isOk(result))
   }
 
   test("Unify.Int16") {
     val result = Unification.unify(Type.Int16, Type.Int16)
-    assert(result.isOk)
+    assert(isOk(result))
   }
 
   test("Unify.Int32") {
     val result = Unification.unify(Type.Int32, Type.Int32)
-    assert(result.isOk)
+    assert(isOk(result))
   }
 
   test("Unify.Int64") {
     val result = Unification.unify(Type.Int64, Type.Int64)
-    assert(result.isOk)
+    assert(isOk(result))
   }
 
   test("Unify.BigInt") {
     val result = Unification.unify(Type.BigInt, Type.BigInt)
-    assert(result.isOk)
+    assert(isOk(result))
   }
 
   test("Unify.Str") {
     val result = Unification.unify(Type.Str, Type.Str)
-    assert(result.isOk)
+    assert(isOk(result))
   }
 
   test("Unify.Native") {
     val result = Unification.unify(Type.Native(classOf[String]), Type.Native(classOf[String]))
-    assert(result.isOk)
+    assert(isOk(result))
   }
 
   test("Unify.Arrow") {
     val result = Unification.unify(Type.Arrow(3), Type.Arrow(3))
-    assert(result.isOk)
+    assert(isOk(result))
   }
 
   test("Unify.FTuple") {
     val result = Unification.unify(Type.Tuple(42), Type.Tuple(42))
-    assert(result.isOk)
+    assert(isOk(result))
   }
 
   test("Unify.Zero") {
     val result = Unification.unify(Type.Zero, Type.Zero)
-    assert(result.isOk)
+    assert(isOk(result))
   }
 
   test("Unify.ZeroSucc.01") {
     val result = Unification.unify(Type.Zero, Type.Succ(0, Type.Zero))
-    assert(result.isOk)
+    assert(isOk(result))
   }
 
   test("Unify.ZeroSucc.02") {
     val result = Unification.unify(Type.Succ(0, Type.Zero), Type.Zero)
-    assert(result.isOk)
+    assert(isOk(result))
   }
 
   test("Unify.Succ.01") {
     val freshVar = Type.Var(1, Kind.Star)
     val result = Unification.unify(Type.Succ(1, freshVar), Type.Succ(1, freshVar))
-    assert(result.isOk)
+    assert(isOk(result))
   }
 
   test("Unify.Succ.02") {
     val freshVar = Type.Var(1, Kind.Star)
     val result = Unification.unify(Type.Succ(1, freshVar), Type.Succ(2, freshVar))
-    assert(result.isOk)
+    assert(isOk(result))
   }
 
   test("Unify.Succ.03") {
     val freshVar = Type.Var(1, Kind.Star)
     val freshVar2 = Type.Var(1, Kind.Star)
     val result = Unification.unify(Type.Succ(1, freshVar), Type.Succ(2, freshVar2))
-    assert(result.isOk)
+    assert(isOk(result))
   }
 
   test("Unify.Succ.04") {
     val freshVar = Type.Var(1, Kind.Star)
     val result = Unification.unify(Type.Succ(1, freshVar), Type.Succ(2, Type.Zero))
-    assert(result.isOk)
+    assert(isOk(result))
   }
 
   test("Unify.Succ.05") {
@@ -273,20 +274,20 @@ class TestUnification extends FunSuite {
     val tpe1 = Type.mkVector(Type.Bool, Type.Succ(7, Type.Zero))
     val tpe2 = Type.mkVector(Type.Bool, Type.Succ(5, freshVar))
     val result = Unification.unify(tpe1, tpe2)
-    assert(result.isOk)
+    assert(isOk(result))
   }
 
   test("Unify.Succ.06") {
     val freshVar = Type.Var(1, Kind.Star)
     val freshVar2 = Type.Var(1, Kind.Star)
     val result = Unification.unify(Type.Succ(1, freshVar), Type.Succ(2, Type.Zero))
-    assert(result.isOk)
+    assert(isOk(result))
   }
 
   test("Unify.Enum.01") {
     val sym = Symbol.mkEnumSym("Color")
     val result = Unification.unify(Type.Enum(sym, Kind.Star), Type.Enum(sym, Kind.Star))
-    assert(result.isOk)
+    assert(isOk(result))
   }
 
   test("Unify.01") {
@@ -403,13 +404,13 @@ class TestUnification extends FunSuite {
   test("unifyM.01") {
     val subst0 = Substitution.empty
     val result = Unification.unifyM(Type.Bool, Type.Bool, SL).run(subst0)
-    assert(result.isOk)
+    assert(isOk(result))
   }
 
   test("unifyM.02") {
     val subst0 = Substitution.empty
     val result = Unification.unifyM(Type.Bool, Type.Char, SL).run(subst0)
-    assert(result.isErr)
+    assert(!isOk(result))
   }
 
   test("unifyM.03") {
@@ -428,16 +429,15 @@ class TestUnification extends FunSuite {
     val res1 = Unification.unifyM(Type.Bool, Type.Bool, SL)
     val res2 = Unification.unifyM(Type.Char, Type.Char, SL)
     val result = seqM(List(res1, res2)).run(subst0)
-    assert(result.isOk)
+    assert(isOk(result))
   }
-
 
   test("seqM.02") {
     val subst0 = Substitution.empty
     val res1 = Unification.unifyM(Type.Bool, Type.Char, SL)
     val res2 = Unification.unifyM(Type.Bool, Type.Char, SL)
     val result = seqM(List(res1, res2)).run(subst0)
-    assert(result.isErr)
+    assert(!isOk(result))
   }
 
   test("seqM.03") {
@@ -450,6 +450,11 @@ class TestUnification extends FunSuite {
     assertResult(Type.Bool)(subst.m(Type.Var(1, Kind.Star)))
     assertResult(Type.Char)(subst.m(Type.Var(2, Kind.Star)))
     assertResult(Type.mkTuple(List(Type.Bool, Type.Char)))(subst.m(Type.Var(3, Kind.Star)))
+  }
+
+  private def isOk[T, E](r: Result[T, E]) = r match {
+    case Result.Ok(_) => true
+    case Result.Err(_) => false
   }
 
 }

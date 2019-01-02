@@ -109,7 +109,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         val results = ParOps.parMap(visitDefn, defs)
 
         // Sequence the results and convert them back to a map.
-        Result.seqM(results).map(_.toMap)
+        Result.sequence(results).map(_.toMap)
       }
 
       /**
@@ -170,7 +170,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         }
 
         // Sequence the results and convert them back to a map.
-        Result.seqM(result).map(_.toMap)
+        Result.sequence(result).map(_.toMap)
       }
     }
 
@@ -230,7 +230,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         }
 
         // Sequence the results and convert them back to a map.
-        Result.seqM(result).map(_.toMap)
+        Result.sequence(result).map(_.toMap)
       }
 
     }
@@ -247,7 +247,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       }
 
       // Sequence the results and convert them back to a map.
-      Result.seqM(result).map(_.toMap)
+      Result.sequence(result).map(_.toMap)
     }
 
     /**
@@ -262,7 +262,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       }
 
       // Sequence the results and convert them back to a map.
-      Result.seqM(result).map(_.toMap)
+      Result.sequence(result).map(_.toMap)
     }
 
     /**
@@ -273,7 +273,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     def visitRelation(r: ResolvedAst.Relation): Result[(Symbol.RelSym, TypedAst.Relation), TypeError] = r match {
       case ResolvedAst.Relation(doc, mod, sym, tparams, attr, sc, loc) =>
         for {
-          typedAttributes <- Result.seqM(attr.map(a => visitAttribute(a)))
+          typedAttributes <- Result.sequence(attr.map(a => visitAttribute(a)))
         } yield sym -> TypedAst.Relation(doc, mod, sym, typedAttributes, loc)
     }
 
@@ -285,7 +285,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
     def visitLattice(r: ResolvedAst.Lattice): Result[(Symbol.LatSym, TypedAst.Lattice), TypeError] = r match {
       case ResolvedAst.Lattice(doc, mod, sym, tparams, attr, sc, loc) =>
         for {
-          typedAttributes <- Result.seqM(attr.map(a => visitAttribute(a)))
+          typedAttributes <- Result.sequence(attr.map(a => visitAttribute(a)))
         } yield sym -> TypedAst.Lattice(doc, mod, sym, typedAttributes, loc)
     }
 
@@ -323,7 +323,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
         }
 
         // Sequence the results and sort the properties by their source location.
-        Result.seqM(results).map(_.sortBy(_.loc))
+        Result.sequence(results).map(_.sortBy(_.loc))
       }
 
     }
@@ -338,7 +338,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       }
 
       // Sequence the results and convert them back to a map.
-      Result.seqM(effs).map(_.toMap)
+      Result.sequence(effs).map(_.toMap)
     }
 
     /**
@@ -366,7 +366,7 @@ object Typer extends Phase[ResolvedAst.Program, TypedAst.Root] {
       }
 
       // Sequence the results and convert them back to a map.
-      Result.seqM(effs).map(_.toMap)
+      Result.sequence(effs).map(_.toMap)
     }
 
     /**
