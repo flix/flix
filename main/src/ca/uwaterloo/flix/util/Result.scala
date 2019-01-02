@@ -71,7 +71,7 @@ object Result {
     *
     * Returns the first error value encountered, if any.
     */
-  def seqM[T, E](xs: List[Result[T, E]]): Result[List[T], E] = {
+  def sequence[T, E](xs: List[Result[T, E]]): Result[List[T], E] = {
     /**
       * Local tail recursive visitor. Uses an accumulator to avoid stack overflow.
       */
