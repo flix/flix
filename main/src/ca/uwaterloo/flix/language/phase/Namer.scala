@@ -621,7 +621,9 @@ object Namer extends Phase[WeededAst.Program, NamedAst.Root] {
 
     case WeededAst.Expression.Switch(rules, loc) =>
       val rulesVal = traverse(rules) {
-        case (cond, body) => sequence(visitExp(cond, env0, tenv0), visitExp(body, env0, tenv0))
+        case (cond, body) => mapN(visitExp(cond, env0, tenv0), visitExp(body, env0, tenv0)) {
+          case (c, b) => (c, b)
+        }
       }
 
       rulesVal map {

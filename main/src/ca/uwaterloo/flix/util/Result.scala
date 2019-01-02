@@ -31,7 +31,7 @@ sealed trait Result[T, E] {
     *
     * @throws IllegalStateException if `this` result does not hold a value.
     */
-  def get: T = this match {
+  final def get: T = this match {
     case Result.Ok(t) => t
     case Result.Err(e) => throw new IllegalStateException(s"Result is Err($e).")
   }
@@ -39,7 +39,7 @@ sealed trait Result[T, E] {
   /**
     * Applies the given function `f` to value of `this` wrapping it in [[Result.Ok]].
     */
-  def map[B](f: T => B): Result[B, E] = this match {
+  final def map[U](f: T => U): Result[U, E] = this match {
     case Result.Ok(t) => Result.Ok(f(t))
     case Result.Err(e) => Result.Err(e)
   }
@@ -47,7 +47,7 @@ sealed trait Result[T, E] {
   /**
     * Applies the given function `f` to the value of `this`.
     */
-  def flatMap[B](f: T => Result[B, E]): Result[B, E] = this match {
+  final def flatMap[B](f: T => Result[B, E]): Result[B, E] = this match {
     case Result.Ok(t) => f(t)
     case Result.Err(e) => Result.Err(e)
   }

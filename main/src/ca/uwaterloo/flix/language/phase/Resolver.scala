@@ -468,7 +468,9 @@ object Resolver extends Phase[NamedAst.Root, ResolvedAst.Program] {
 
         case NamedAst.Expression.Switch(rules, tvar, loc) =>
           val rulesVal = traverse(rules) {
-            case (cond, body) => sequence(visit(cond, tenv0), visit(body, tenv0))
+            case (cond, body) => mapN(visit(cond, tenv0), visit(body, tenv0)) {
+              case (c, b) => (c, b)
+            }
           }
           rulesVal map {
             case rs => ResolvedAst.Expression.Switch(rs, tvar, loc)

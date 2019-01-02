@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Magnus Madsen
+ * Copyright 2018 Magnus Madsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,67 +18,52 @@ package ca.uwaterloo.flix.util
 
 import scala.collection.mutable
 
-sealed trait Validation[+Value, +Error] {
-
-  import Validation._
+sealed trait Validation[+T, +E] {
 
   /**
-    * Returns `true` iff this is a [[Success]] object.
-    */
-  final def isSuccess: Boolean = this match {
-    case v: Success[Value, Error] => true
-    case _ => false
-  }
-
-  /**
-    * Returns `true` iff this is a [[Failure]] object.
-    */
-  final def isFailure: Boolean = !isSuccess
-
-  /**
-    * Returns the value inside `this` [[Success]] object.
+    * Returns the value inside `this` [[Validation.Success]] object.
     *
-    * Throws an exception if `this` is a [[Failure]] object.
+    * Throws an exception if `this` is a [[Validation.Failure]] object.
     */
-  final def get: Value = this match {
-    case Success(value) => value
-    case Failure(errors) => throw new RuntimeException(s"Attempt to retrieve value from Failure. The errors are: ${errors.mkString(", ")}")
+  final def get: T = this match {
+    case Validation.Success(value) => value
+    case Validation.Failure(errors) => throw new RuntimeException(s"Attempt to retrieve value from Failure. The errors are: ${errors.mkString(", ")}")
   }
 
   /**
-    * Returns a [[Success]] containing the result of applying `f` to the value in this validation (if it exists).
+    * Returns a [[Validation.Success]] containing the result of applying `f` to the value in this validation (if it exists).
     *
     * Preserves the errors.
     */
-  final def map[Output](f: Value => Output): Validation[Output, Error] = this match {
-    case Success(value) => Success(f(value))
-    case Failure(errors) => Failure(errors)
+  final def map[U](f: T => U): Validation[U, E] = this match {
+    case Validation.Success(value) => Validation.Success(f(value))
+    case Validation.Failure(errors) => Validation.Failure(errors)
   }
 
   /**
-    * Similar to `map` but does not wrap the result in a [[Success]].
+    * Similar to `map` but does not wrap the result in a [[Validation.Success]].
     *
     * Preserves the errors.
     */
-  final def flatMap[Output, A >: Error](f: Value => Validation[Output, A]): Validation[Output, A] = this match {
-    case Success(input) => f(input) match {
-      case Success(value) => Success(value)
-      case Failure(thatErrors) => Failure(errors #::: thatErrors)
+  final def flatMap[U, A >: E](f: T => Validation[U, A]): Validation[U, A] = this match {
+    case Validation.Success(input) => f(input) match {
+      case Validation.Success(value) => Validation.Success(value)
+      case Validation.Failure(thatErrors) => Validation.Failure(errors #::: thatErrors)
     }
-    case Failure(errors) => Failure(errors)
+    case Validation.Failure(errors) => Validation.Failure(errors)
   }
 
   /**
-    * Returns the errors in this [[Success]] or [[Failure]] object.
+    * Returns the errors in this [[Validation.Success]] or [[Validation.Failure]] object.
     */
-  def errors: Stream[Error]
+  protected def errors: Stream[E]
 
 }
 
 object Validation {
 
   /**
-    * Represents a sucessful validation with the empty list.
+    * Represents a successful validation with the empty list.
     */
   final val SuccessNil = Success(Nil)
 
@@ -97,7 +82,6 @@ object Validation {
   /**
     * Sequences the given list of validations `xs`.
     */
-  // TODO: Rename to sequence.
   def sequence[T, E](xs: Traversable[Validation[T, E]]): Validation[List[T], E] = {
     val zero = Success(List.empty[T]): Validation[List[T], E]
     xs.foldRight(zero) {
@@ -113,36 +97,9 @@ object Validation {
   }
 
   /**
-    * Sequences the validation T1 and T2 into a validation pair.
-    */
-  // TODO: Rename to sequence.
-  // TODO: Tests
-  def sequence[T1, T2, E](a: Validation[T1, E], b: Validation[T2, E]): Validation[(T1, T2), E] =
-    (a, b) match {
-      case (Success(valueA), Success(valueB)) =>
-        Success((valueA, valueB))
-      case _ => Failure(b.errors #::: a.errors)
-    }
-
-  /**
     * Traverses `xs` while applying the function `f`.
     */
-  // TODO: In general it is better to use traverse than sequence.
   def traverse[T, S, E](xs: Traversable[T])(f: T => Validation[S, E]): Validation[List[S], E] = fastTraverse(xs)(f)
-
-
-  /**
-    * A slow implementation of traverse.
-    */
-  private def slowTraverse[T, S, E](xs: Traversable[T])(f: T => Validation[S, E]): Validation[List[S], E] = xs.toList match {
-    case Nil => Success(Nil)
-    case y :: ys =>
-      // TODO: Correctness issue with multiple failures?
-      val s = f(y)
-      traverse(ys)(f) flatMap {
-        case rs => s map (r => r :: rs)
-      }
-  }
 
   /**
     * A fast implementation of traverse.
