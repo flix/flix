@@ -3,7 +3,7 @@
 HEAD:
 
 Version 0.4:
-- Added support first-class Datalog constraints.
+- Added support for first-class Datalog constraints.
 - Added support for processes and channels.
 - Many other improvements.
 
