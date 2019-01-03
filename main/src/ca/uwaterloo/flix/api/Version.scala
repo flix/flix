@@ -20,7 +20,7 @@ object Version {
   /**
     * Represents the current version of Flix.
     */
-  val CurrentVersion = Version(major = 0, minor = 4, revision = 0)
+  val CurrentVersion = Version(major = 0, minor = 5, revision = 0)
 }
 
 /**
