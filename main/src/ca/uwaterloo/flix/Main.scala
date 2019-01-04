@@ -179,7 +179,6 @@ object Main {
                      xdebug: Boolean = false,
                      xinterpreter: Boolean = false,
                      xinvariants: Boolean = false,
-                     xnoinline: Boolean = false,
                      xnotailcalls: Boolean = false,
                      files: Seq[File] = Seq())
 
@@ -298,10 +297,6 @@ object Main {
       // Xinvariants.
       opt[Unit]("Xinvariants").action((_, c) => c.copy(xinvariants = true)).
         text("[experimental] enables compiler invariants.")
-
-      // Xno-inline
-      opt[Unit]("Xno-inline").action((_, c) => c.copy(xnoinline = true)).
-        text("[experimental] disables inlining.")
 
       // Xno-tailcalls
       opt[Unit]("Xno-tailcalls").action((_, c) => c.copy(xnotailcalls = true)).

@@ -144,12 +144,6 @@ class TestMain extends FunSuite {
     assert(opts.xinvariants)
   }
 
-  test("--Xno-inline") {
-    val args = Array("--Xno-inline", "p.flix")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.xnoinline)
-  }
-
   test("--Xno-tailcalls") {
     val args = Array("--Xno-tailcalls", "p.flix")
     val opts = Main.parseCmdOpts(args).get
