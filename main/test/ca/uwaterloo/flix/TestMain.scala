@@ -204,12 +204,6 @@ class TestMain extends FunSuite {
     assert(opts.xnoinline)
   }
 
-  test("--Xno-single-case") {
-    val args = Array("--Xno-single-case", "p.flix")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.xnosinglecase)
-  }
-
   test("--Xno-tailcalls") {
     val args = Array("--Xno-tailcalls", "p.flix")
     val opts = Main.parseCmdOpts(args).get

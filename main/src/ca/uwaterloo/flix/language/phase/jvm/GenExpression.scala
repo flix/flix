@@ -430,10 +430,6 @@ object GenExpression {
     case Expression.Is(enum, tag, exp, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
-      // Case 1: Check for unwrappability.
-      if (JvmOps.isSingleCaseEnum(enum)) {
-        // TODO: Ramin: Add support for single case enums?
-      }
       // We get the `TagInfo` for the tag
       val tagInfo = JvmOps.getTagInfo(exp.tpe, tag)
       // Fusion info
@@ -520,11 +516,6 @@ object GenExpression {
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
 
-      // Case 1: Check for unwrappability.
-      if (JvmOps.isSingleCaseEnum(enum)) {
-        // TODO: Ramin: Add support for single case enums?
-      }
-
       val tagInfo = JvmOps.getTagInfo(tpe, tag)
       // We get the JvmType of the class for tag
       val classType = JvmOps.getTagClassType(tagInfo)
@@ -554,10 +545,6 @@ object GenExpression {
     case Expression.Untag(enum, tag, exp, tpe, loc) =>
       // Adding source line number for debugging
       addSourceLine(visitor, loc)
-      // Case 1: Check for unwrappability.
-      if (JvmOps.isSingleCaseEnum(enum)) {
-        // TODO: Ramin: Add support for single case enums?
-      }
 
       // We get the `TagInfo` for the tag
       val tagInfo = JvmOps.getTagInfo(exp.tpe, tag)

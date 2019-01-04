@@ -113,15 +113,9 @@ object Optimization {
     * All optimizations supported by the compiler.
     */
   val All: Set[Optimization] = Set(
-    SingleCaseEnums,
     TagTupleFusion,
     TailCalls
   )
-
-  /**
-    * Enables compilation with elimination of single case enums.
-    */
-  case object SingleCaseEnums extends Optimization
 
   /**
     * Enables compilation with tag and tuple fusion.

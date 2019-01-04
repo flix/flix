@@ -65,7 +65,6 @@ object Main {
 
     // compute the enabled optimizations.
     val optimizations = Optimization.All.filter {
-      case Optimization.SingleCaseEnums => !cmdOpts.xnosinglecase
       case Optimization.TagTupleFusion => !cmdOpts.xnofusion
       case Optimization.TailCalls => !cmdOpts.xnotailcalls
     }
@@ -216,7 +215,6 @@ object Main {
                      xinvariants: Boolean = false,
                      xnofusion: Boolean = false,
                      xnoinline: Boolean = false,
-                     xnosinglecase: Boolean = false,
                      xnotailcalls: Boolean = false,
                      files: Seq[File] = Seq())
 
@@ -368,10 +366,6 @@ object Main {
       // Xno-inline
       opt[Unit]("Xno-inline").action((_, c) => c.copy(xnoinline = true)).
         text("[experimental] disables inlining.")
-
-      // Xno-single-case
-      opt[Unit]("Xno-single-case").action((_, c) => c.copy(xnosinglecase = true)).
-        text("[experimental] disables single case elimination.")
 
       // Xno-tailcalls
       opt[Unit]("Xno-tailcalls").action((_, c) => c.copy(xnotailcalls = true)).
