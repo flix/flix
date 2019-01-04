@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import java.nio.file.Files
 
-import ca.uwaterloo.flix.api.{Flix, PackageManager}
+import ca.uwaterloo.flix.api.{Flix, Package}
 import ca.uwaterloo.flix.language.CompilationError
 import ca.uwaterloo.flix.language.ast.Ast.{Input, Source}
 import ca.uwaterloo.flix.language.ast.Symbol
@@ -60,7 +60,7 @@ object Reader extends Phase[(List[Input], Map[Symbol.DefnSym, String]), (List[So
       /**
         * Pkg file.
         */
-      case Input.PkgFile(path) => PackageManager.unpack(path)
+      case Input.PkgFile(path) => Package.unpack(path)
     }
 
     // Return a triple of inputs, elapsed time, and named expressions.

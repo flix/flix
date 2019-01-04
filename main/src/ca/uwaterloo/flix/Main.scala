@@ -19,7 +19,7 @@ package ca.uwaterloo.flix
 import java.io.{File, PrintWriter}
 import java.nio.file.Paths
 
-import ca.uwaterloo.flix.api.{Flix, PackageManager, Version}
+import ca.uwaterloo.flix.api.{Flix, Package, Version}
 import ca.uwaterloo.flix.runtime.shell.Shell
 import ca.uwaterloo.flix.runtime.{Benchmarker, Tester}
 import ca.uwaterloo.flix.util._
@@ -96,27 +96,27 @@ object Main {
         // nop, continue
 
         case Command.Init =>
-          PackageManager.init(cwd, options)
+          Package.init(cwd, options)
           System.exit(0)
 
         case Command.Build =>
-          PackageManager.build(cwd, options)
+          Package.build(cwd, options)
           System.exit(0)
 
         case Command.BuildJar =>
-          PackageManager.buildJar(cwd, options)
+          Package.buildJar(cwd, options)
           System.exit(0)
 
         case Command.BuildPkg =>
-          PackageManager.buildPkg(cwd, options)
+          Package.buildPkg(cwd, options)
           System.exit(0)
 
         case Command.Run =>
-          PackageManager.run(cwd, options)
+          Package.run(cwd, options)
           System.exit(0)
 
         case Command.Test =>
-          PackageManager.test(cwd, options)
+          Package.test(cwd, options)
           System.exit(0)
       }
     } catch {

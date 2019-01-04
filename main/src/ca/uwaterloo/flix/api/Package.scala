@@ -14,7 +14,7 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, Options, StreamOps, Va
 /**
   * An interface to manage flix packages.
   */
-object PackageManager {
+object Package {
 
   /**
     * Initializes a new flix project at the given path `p`.
