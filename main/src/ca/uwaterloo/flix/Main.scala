@@ -109,7 +109,8 @@ object Main {
     }
 
     // check if running in interactive mode.
-    if (cmdOpts.interactive) {
+    val interactive = cmdOpts.interactive || (cmdOpts.command == Command.None && cmdOpts.files.isEmpty)
+    if (interactive) {
       val shell = new Shell(cmdOpts.files.toList.map(_.toPath), options)
       shell.loop()
       System.exit(0)
