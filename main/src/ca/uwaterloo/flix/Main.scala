@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Magnus Madsen
+ * Copyright 2019 Magnus Madsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,8 +26,6 @@ import ca.uwaterloo.flix.util._
 import ca.uwaterloo.flix.util.vt._
 import flix.runtime.FlixError
 
-import scala.concurrent.duration.Duration
-
 /**
   * The main entry point for the Flix compiler and runtime.
   */
@@ -39,7 +37,7 @@ object Main {
   def main(argv: Array[String]): Unit = {
 
     // parse command line options.
-    var cmdOpts: CmdOpts = parseCmdOpts(argv).getOrElse {
+    val cmdOpts: CmdOpts = parseCmdOpts(argv).getOrElse {
       Console.err.println("Unable to parse command line arguments. Will now exit.")
       System.exit(1)
       null
@@ -52,20 +50,8 @@ object Main {
       rpcServer.await()
     }
 
-    // check if the --tutorial flag was passed.
-    if (cmdOpts.tutorial != null) {
-      printTutorial(cmdOpts.tutorial)
-      System.exit(0)
-    }
-
-    // enable interactive mode if no input paths were given.
-    if (cmdOpts.files.isEmpty && !cmdOpts.pipe) {
-      cmdOpts = cmdOpts.copy(interactive = true)
-    }
-
     // compute the enabled optimizations.
     val optimizations = Optimization.All.filter {
-      case Optimization.TagTupleFusion => !cmdOpts.xnofusion
       case Optimization.TailCalls => !cmdOpts.xnotailcalls
     }
 
@@ -79,8 +65,6 @@ object Main {
       mode = if (cmdOpts.release) CompilationMode.Release else CompilationMode.Development,
       monitor = cmdOpts.monitor,
       quickchecker = cmdOpts.quickchecker,
-      timeout = if (!cmdOpts.timeout.isFinite()) None else Some(java.time.Duration.ofNanos(cmdOpts.timeout.toNanos)),
-      threads = if (cmdOpts.threads == -1) Options.Default.threads else cmdOpts.threads,
       verbosity = if (cmdOpts.verbose) Verbosity.Verbose else Verbosity.Normal,
       verifier = cmdOpts.verifier,
       writeClassFiles = !cmdOpts.interactive
@@ -125,7 +109,8 @@ object Main {
     }
 
     // check if running in interactive mode.
-    if (cmdOpts.interactive) {
+    val interactive = cmdOpts.interactive || (cmdOpts.command == Command.None && cmdOpts.files.isEmpty)
+    if (interactive) {
       val shell = new Shell(cmdOpts.files.toList.map(_.toPath), options)
       shell.loop()
       System.exit(0)
@@ -138,19 +123,6 @@ object Main {
       flix.addPath(file.toPath)
     }
 
-    // read input from standard-in.
-    if (cmdOpts.pipe) {
-      val s = StreamOps.readAll(Console.in)
-      flix.addStr(s)
-    }
-
-    // check if a main function was given.
-    val main = cmdOpts.main
-    if (main.nonEmpty) {
-      val name = main.get
-      flix.addReachableRoot(name)
-    }
-
     // the default color context.
     implicit val _ = TerminalContext.AnsiTerminal
 
@@ -160,15 +132,15 @@ object Main {
       timer.getResult match {
         case Validation.Success(compilationResult) =>
 
-          val main = cmdOpts.main
-          if (main.nonEmpty) {
-            val name = main.get
-            val evalTimer = new Timer(compilationResult.evalToString(name))
-            options.verbosity match {
-              case Verbosity.Normal => Console.println(evalTimer.getResult)
-              case Verbosity.Verbose => Console.println(s"$name returned `${evalTimer.getResult}' (compile: ${timer.getDuration.fmt}, execute: ${evalTimer.getDuration.fmt})")
-              case Verbosity.Silent => // nop
-            }
+          compilationResult.getMain match {
+            case None => // nop
+            case Some(m) =>
+              val evalTimer = new Timer(compilationResult.evalToString("main"))
+              options.verbosity match {
+                case Verbosity.Normal => Console.println(evalTimer.getResult)
+                case Verbosity.Verbose => Console.println(s"main returned `${evalTimer.getResult}' (compile: ${timer.getDuration.fmt}, execute: ${evalTimer.getDuration.fmt})")
+                case Verbosity.Silent => // nop
+              }
           }
 
           if (cmdOpts.benchmark) {
@@ -198,23 +170,16 @@ object Main {
                      documentor: Boolean = false,
                      interactive: Boolean = false,
                      listen: Option[Int] = None,
-                     main: Option[String] = None,
                      monitor: Boolean = false,
-                     pipe: Boolean = false,
                      quickchecker: Boolean = false,
                      release: Boolean = false,
-                     threads: Int = -1,
                      test: Boolean = false,
-                     timeout: Duration = Duration.Inf,
-                     tutorial: String = null,
                      verbose: Boolean = false,
                      verifier: Boolean = false,
                      xcore: Boolean = false,
                      xdebug: Boolean = false,
                      xinterpreter: Boolean = false,
                      xinvariants: Boolean = false,
-                     xnofusion: Boolean = false,
-                     xnoinline: Boolean = false,
                      xnotailcalls: Boolean = false,
                      files: Seq[File] = Seq())
 
@@ -287,18 +252,9 @@ object Main {
         valueName("<port>").
         text("listens on the given port.")
 
-      // Main.
-      opt[String]("main").action((s, c) => c.copy(main = Some(s))).
-        valueName("<name>").
-        text("evaluates the <name> function.")
-
       // Monitor.
       opt[Unit]("monitor").action((_, c) => c.copy(monitor = true)).
         text("enables the debugger and profiler.")
-
-      // Pipe.
-      opt[Unit]("pipe").action((_, c) => c.copy(pipe = true)).
-        text("reads from standard input.")
 
       // Quickchecker.
       opt[Unit]("quickchecker").action((_, c) => c.copy(quickchecker = true)).
@@ -311,22 +267,6 @@ object Main {
       // Test.
       opt[Unit]("test").action((_, c) => c.copy(test = true)).
         text("runs unit tests.")
-
-      // Timeout
-      opt[Duration]("timeout").action((d, c) => c.copy(timeout = d)).
-        valueName("<n>").
-        text("sets the solver timeout (1ms, 1s, 1min, etc).")
-
-      // Threads.
-      opt[Int]("threads").action((i, c) => c.copy(threads = i)).
-        validate(x => if (x > 0) success else failure("Value <n> must be at least 1.")).
-        valueName("<n>").
-        text("sets the number of threads to use.")
-
-      // Tutorial.
-      opt[String]("tutorial").action((f, c) => c.copy(tutorial = f)).
-        valueName("<name>").
-        text("prints the named tutorial to stdout. Try `--tutorial help'.")
 
       // Verbose.
       opt[Unit]("verbose").action((_, c) => c.copy(verbose = true))
@@ -359,14 +299,6 @@ object Main {
       opt[Unit]("Xinvariants").action((_, c) => c.copy(xinvariants = true)).
         text("[experimental] enables compiler invariants.")
 
-      // Xno-fusion
-      opt[Unit]("Xno-fusion").action((_, c) => c.copy(xnofusion = true)).
-        text("[experimental] disables tag and tuple fusion.")
-
-      // Xno-inline
-      opt[Unit]("Xno-inline").action((_, c) => c.copy(xnoinline = true)).
-        text("[experimental] disables inlining.")
-
       // Xno-tailcalls
       opt[Unit]("Xno-tailcalls").action((_, c) => c.copy(xnotailcalls = true)).
         text("[experimental] disables tail call elimination.")
@@ -382,26 +314,6 @@ object Main {
     }
 
     parser.parse(args, CmdOpts())
-  }
-
-  /**
-    * Prints the given tutorial to standard out.
-    */
-  def printTutorial(name: String): Unit = {
-    val inputStream = name match {
-      case "delta-debugging" => LocalResource.Tutorials.DeltaDebugging
-      case "introduction" => LocalResource.Tutorials.Introduction
-      case "interpreter" => LocalResource.Tutorials.Interpreter
-      case _ =>
-        Console.println("No match. Available tutorials:")
-        Console.println("  introduction")
-        Console.println("  delta-debugging")
-        System.exit(1)
-        null
-    }
-
-    StreamOps.writeAll(inputStream, Console.out)
-    inputStream.close()
   }
 
 }

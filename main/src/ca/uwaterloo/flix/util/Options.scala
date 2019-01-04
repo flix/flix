@@ -113,14 +113,8 @@ object Optimization {
     * All optimizations supported by the compiler.
     */
   val All: Set[Optimization] = Set(
-    TagTupleFusion,
     TailCalls
   )
-
-  /**
-    * Enables compilation with tag and tuple fusion.
-    */
-  case object TagTupleFusion extends Optimization
 
   /**
     * Enables compilation with full tail calls.

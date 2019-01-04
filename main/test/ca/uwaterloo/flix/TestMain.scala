@@ -84,12 +84,6 @@ class TestMain extends FunSuite {
     assert(opts.listen.nonEmpty)
   }
 
-  test("--main foo") {
-    val args = Array("--main", "foo", "p.flix")
-    val opts = Main.parseCmdOpts(args).get
-    assertResult(Some("foo"))(opts.main)
-  }
-
   test("--monitor") {
     val args = Array("--monitor", "p.flix")
     val opts = Main.parseCmdOpts(args).get
@@ -102,12 +96,6 @@ class TestMain extends FunSuite {
     assert(opts.quickchecker)
   }
 
-  test("--pipe") {
-    val args = Array("--pipe")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.pipe)
-  }
-
   test("--release") {
     val args = Array("--release", "p.flix")
     val opts = Main.parseCmdOpts(args).get
@@ -118,42 +106,6 @@ class TestMain extends FunSuite {
     val args = Array("--test", "p.flix")
     val opts = Main.parseCmdOpts(args).get
     assert(opts.test)
-  }
-
-  test("--timeout 42ms") {
-    val args = Array("--timeout", "42ms", "p.flix")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.timeout == Duration(42, TimeUnit.MILLISECONDS))
-  }
-
-  test("--timeout 42s") {
-    val args = Array("--timeout", "42s", "p.flix")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.timeout == Duration(42, TimeUnit.SECONDS))
-  }
-
-  test("--timeout 42min") {
-    val args = Array("--timeout", "42min", "p.flix")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.timeout == Duration(42, TimeUnit.MINUTES))
-  }
-
-  test("--timeout 42hours") {
-    val args = Array("--timeout", "42hours", "p.flix")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.timeout == Duration(42, TimeUnit.HOURS))
-  }
-
-  test("--threads") {
-    val args = Array("--threads", "42", "p.flix")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.threads == 42)
-  }
-
-  test("--tutorial") {
-    val args = Array("--tutorial", "tut.flix")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.tutorial != null)
   }
 
   test("--verbose") {
@@ -190,18 +142,6 @@ class TestMain extends FunSuite {
     val args = Array("--Xinvariants", "p.flix")
     val opts = Main.parseCmdOpts(args).get
     assert(opts.xinvariants)
-  }
-
-  test("--Xno-fusion") {
-    val args = Array("--Xno-fusion", "p.flix")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.xnofusion)
-  }
-
-  test("--Xno-inline") {
-    val args = Array("--Xno-inline", "p.flix")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.xnoinline)
   }
 
   test("--Xno-tailcalls") {
