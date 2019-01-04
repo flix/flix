@@ -24,8 +24,8 @@ import flix.runtime.ProxyObject
 /**
   * A class representing the result of a compilation.
   *
-  * @param root       the abstract syntax tree of the program.
-  * @param defs       the definitions in the program.
+  * @param root the abstract syntax tree of the program.
+  * @param defs the definitions in the program.
   */
 class CompilationResult(root: Root, defs: Map[Symbol.DefnSym, () => ProxyObject])(implicit flix: Flix) {
 
@@ -33,6 +33,11 @@ class CompilationResult(root: Root, defs: Map[Symbol.DefnSym, () => ProxyObject]
     * Returns the root AST.
     */
   def getRoot: Root = root
+
+  /**
+    * Optionally returns the main function.
+    */
+  def getMain: Option[() => AnyRef] = defs.get(Symbol.mkDefnSym("main"))
 
   /**
     * Returns all the benchmark functions in the program.

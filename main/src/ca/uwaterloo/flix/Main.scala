@@ -26,8 +26,6 @@ import ca.uwaterloo.flix.util._
 import ca.uwaterloo.flix.util.vt._
 import flix.runtime.FlixError
 
-import scala.concurrent.duration.Duration
-
 /**
   * The main entry point for the Flix compiler and runtime.
   */
@@ -141,13 +139,6 @@ object Main {
       flix.addStr(s)
     }
 
-    // check if a main function was given.
-    val main = cmdOpts.main
-    if (main.nonEmpty) {
-      val name = main.get
-      flix.addReachableRoot(name)
-    }
-
     // the default color context.
     implicit val _ = TerminalContext.AnsiTerminal
 
@@ -157,15 +148,15 @@ object Main {
       timer.getResult match {
         case Validation.Success(compilationResult) =>
 
-          val main = cmdOpts.main
-          if (main.nonEmpty) {
-            val name = main.get
-            val evalTimer = new Timer(compilationResult.evalToString(name))
-            options.verbosity match {
-              case Verbosity.Normal => Console.println(evalTimer.getResult)
-              case Verbosity.Verbose => Console.println(s"$name returned `${evalTimer.getResult}' (compile: ${timer.getDuration.fmt}, execute: ${evalTimer.getDuration.fmt})")
-              case Verbosity.Silent => // nop
-            }
+          compilationResult.getMain match {
+            case None => // nop
+            case Some(m) =>
+              val evalTimer = new Timer(compilationResult.evalToString("main"))
+              options.verbosity match {
+                case Verbosity.Normal => Console.println(evalTimer.getResult)
+                case Verbosity.Verbose => Console.println(s"main returned `${evalTimer.getResult}' (compile: ${timer.getDuration.fmt}, execute: ${evalTimer.getDuration.fmt})")
+                case Verbosity.Silent => // nop
+              }
           }
 
           if (cmdOpts.benchmark) {
@@ -195,7 +186,6 @@ object Main {
                      documentor: Boolean = false,
                      interactive: Boolean = false,
                      listen: Option[Int] = None,
-                     main: Option[String] = None,
                      monitor: Boolean = false,
                      pipe: Boolean = false,
                      quickchecker: Boolean = false,
@@ -280,11 +270,6 @@ object Main {
       opt[Int]("listen").action((s, c) => c.copy(listen = Some(s))).
         valueName("<port>").
         text("listens on the given port.")
-
-      // Main.
-      opt[String]("main").action((s, c) => c.copy(main = Some(s))).
-        valueName("<name>").
-        text("evaluates the <name> function.")
 
       // Monitor.
       opt[Unit]("monitor").action((_, c) => c.copy(monitor = true)).
