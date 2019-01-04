@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Magnus Madsen
+ * Copyright 2019 Magnus Madsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ object Main {
   def main(argv: Array[String]): Unit = {
 
     // parse command line options.
-    var cmdOpts: CmdOpts = parseCmdOpts(argv).getOrElse {
+    val cmdOpts: CmdOpts = parseCmdOpts(argv).getOrElse {
       Console.err.println("Unable to parse command line arguments. Will now exit.")
       System.exit(1)
       null
@@ -48,17 +48,6 @@ object Main {
       val rpcServer = new RpcServer(cmdOpts.listen.get)
       rpcServer.start()
       rpcServer.await()
-    }
-
-    // check if the --tutorial flag was passed.
-    if (cmdOpts.tutorial != null) {
-      printTutorial(cmdOpts.tutorial)
-      System.exit(0)
-    }
-
-    // enable interactive mode if no input paths were given.
-    if (cmdOpts.files.isEmpty && !cmdOpts.pipe) {
-      cmdOpts = cmdOpts.copy(interactive = true)
     }
 
     // compute the enabled optimizations.
@@ -133,12 +122,6 @@ object Main {
       flix.addPath(file.toPath)
     }
 
-    // read input from standard-in.
-    if (cmdOpts.pipe) {
-      val s = StreamOps.readAll(Console.in)
-      flix.addStr(s)
-    }
-
     // the default color context.
     implicit val _ = TerminalContext.AnsiTerminal
 
@@ -187,11 +170,9 @@ object Main {
                      interactive: Boolean = false,
                      listen: Option[Int] = None,
                      monitor: Boolean = false,
-                     pipe: Boolean = false,
                      quickchecker: Boolean = false,
                      release: Boolean = false,
                      test: Boolean = false,
-                     tutorial: String = null,
                      verbose: Boolean = false,
                      verifier: Boolean = false,
                      xcore: Boolean = false,
@@ -275,10 +256,6 @@ object Main {
       opt[Unit]("monitor").action((_, c) => c.copy(monitor = true)).
         text("enables the debugger and profiler.")
 
-      // Pipe.
-      opt[Unit]("pipe").action((_, c) => c.copy(pipe = true)).
-        text("reads from standard input.")
-
       // Quickchecker.
       opt[Unit]("quickchecker").action((_, c) => c.copy(quickchecker = true)).
         text("enables the quickchecker.")
@@ -290,11 +267,6 @@ object Main {
       // Test.
       opt[Unit]("test").action((_, c) => c.copy(test = true)).
         text("runs unit tests.")
-
-      // Tutorial.
-      opt[String]("tutorial").action((f, c) => c.copy(tutorial = f)).
-        valueName("<name>").
-        text("prints the named tutorial to stdout. Try `--tutorial help'.")
 
       // Verbose.
       opt[Unit]("verbose").action((_, c) => c.copy(verbose = true))
@@ -346,26 +318,6 @@ object Main {
     }
 
     parser.parse(args, CmdOpts())
-  }
-
-  /**
-    * Prints the given tutorial to standard out.
-    */
-  def printTutorial(name: String): Unit = {
-    val inputStream = name match {
-      case "delta-debugging" => LocalResource.Tutorials.DeltaDebugging
-      case "introduction" => LocalResource.Tutorials.Introduction
-      case "interpreter" => LocalResource.Tutorials.Interpreter
-      case _ =>
-        Console.println("No match. Available tutorials:")
-        Console.println("  introduction")
-        Console.println("  delta-debugging")
-        System.exit(1)
-        null
-    }
-
-    StreamOps.writeAll(inputStream, Console.out)
-    inputStream.close()
   }
 
 }

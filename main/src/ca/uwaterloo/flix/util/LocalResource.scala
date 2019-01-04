@@ -35,16 +35,6 @@ object LocalResource {
 
   }
 
-  object Tutorials {
-
-    def DeltaDebugging: InputStream = getInputStream("/tutorials/delta-debugging.flix")
-
-    def Introduction: InputStream = getInputStream("/tutorials/introduction.flix")
-
-    def Interpreter: InputStream = getInputStream("/tutorials/interpreter.flix")
-
-  }
-
   /**
     * Returns the given relative path as a string.
     */

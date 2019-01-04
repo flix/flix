@@ -96,12 +96,6 @@ class TestMain extends FunSuite {
     assert(opts.quickchecker)
   }
 
-  test("--pipe") {
-    val args = Array("--pipe")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.pipe)
-  }
-
   test("--release") {
     val args = Array("--release", "p.flix")
     val opts = Main.parseCmdOpts(args).get
@@ -112,12 +106,6 @@ class TestMain extends FunSuite {
     val args = Array("--test", "p.flix")
     val opts = Main.parseCmdOpts(args).get
     assert(opts.test)
-  }
-
-  test("--tutorial") {
-    val args = Array("--tutorial", "tut.flix")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.tutorial != null)
   }
 
   test("--verbose") {
