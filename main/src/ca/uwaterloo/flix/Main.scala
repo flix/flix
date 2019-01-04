@@ -78,8 +78,6 @@ object Main {
       mode = if (cmdOpts.release) CompilationMode.Release else CompilationMode.Development,
       monitor = cmdOpts.monitor,
       quickchecker = cmdOpts.quickchecker,
-      timeout = if (!cmdOpts.timeout.isFinite()) None else Some(java.time.Duration.ofNanos(cmdOpts.timeout.toNanos)),
-      threads = if (cmdOpts.threads == -1) Options.Default.threads else cmdOpts.threads,
       verbosity = if (cmdOpts.verbose) Verbosity.Verbose else Verbosity.Normal,
       verifier = cmdOpts.verifier,
       writeClassFiles = !cmdOpts.interactive
@@ -202,9 +200,7 @@ object Main {
                      pipe: Boolean = false,
                      quickchecker: Boolean = false,
                      release: Boolean = false,
-                     threads: Int = -1,
                      test: Boolean = false,
-                     timeout: Duration = Duration.Inf,
                      tutorial: String = null,
                      verbose: Boolean = false,
                      verifier: Boolean = false,
@@ -309,17 +305,6 @@ object Main {
       // Test.
       opt[Unit]("test").action((_, c) => c.copy(test = true)).
         text("runs unit tests.")
-
-      // Timeout
-      opt[Duration]("timeout").action((d, c) => c.copy(timeout = d)).
-        valueName("<n>").
-        text("sets the solver timeout (1ms, 1s, 1min, etc).")
-
-      // Threads.
-      opt[Int]("threads").action((i, c) => c.copy(threads = i)).
-        validate(x => if (x > 0) success else failure("Value <n> must be at least 1.")).
-        valueName("<n>").
-        text("sets the number of threads to use.")
 
       // Tutorial.
       opt[String]("tutorial").action((f, c) => c.copy(tutorial = f)).

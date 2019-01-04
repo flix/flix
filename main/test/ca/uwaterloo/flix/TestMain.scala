@@ -120,36 +120,6 @@ class TestMain extends FunSuite {
     assert(opts.test)
   }
 
-  test("--timeout 42ms") {
-    val args = Array("--timeout", "42ms", "p.flix")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.timeout == Duration(42, TimeUnit.MILLISECONDS))
-  }
-
-  test("--timeout 42s") {
-    val args = Array("--timeout", "42s", "p.flix")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.timeout == Duration(42, TimeUnit.SECONDS))
-  }
-
-  test("--timeout 42min") {
-    val args = Array("--timeout", "42min", "p.flix")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.timeout == Duration(42, TimeUnit.MINUTES))
-  }
-
-  test("--timeout 42hours") {
-    val args = Array("--timeout", "42hours", "p.flix")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.timeout == Duration(42, TimeUnit.HOURS))
-  }
-
-  test("--threads") {
-    val args = Array("--threads", "42", "p.flix")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.threads == 42)
-  }
-
   test("--tutorial") {
     val args = Array("--tutorial", "tut.flix")
     val opts = Main.parseCmdOpts(args).get
