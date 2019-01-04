@@ -83,11 +83,6 @@ object JvmBackend extends Phase[Root, CompilationResult] {
     val tags = JvmOps.tagsOf(root)
 
     //
-    // Compute the set of fusion tags in the program.
-    //
-    val fusionTags = tags.flatMap(JvmOps.getFusionTag)
-
-    //
     // Compute the set of types in the program.
     //
     val types = JvmOps.typesOf(root)
@@ -148,11 +143,6 @@ object JvmBackend extends Phase[Root, CompilationResult] {
     val tupleClasses = GenTupleClasses.gen(types)
 
     //
-    // Generate tag-tuple fusion classes for tag-tuple in the program.
-    //
-    val fusionClasses = GenFusionClasses.gen(fusionTags)
-
-    //
     // Generate cell classes.
     //
     val cellClasses = GenCellClasses.gen()
@@ -172,7 +162,6 @@ object JvmBackend extends Phase[Root, CompilationResult] {
       tagClasses,
       tupleInterfaces,
       tupleClasses,
-      fusionClasses,
       cellClasses
     ).reduce(_ ++ _)
 

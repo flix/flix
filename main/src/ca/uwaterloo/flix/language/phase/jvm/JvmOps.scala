@@ -434,45 +434,6 @@ object JvmOps {
   def getDefMethodNameInNamespaceClass(sym: Symbol.DefnSym): String = "m_" + mangle(sym.name)
 
   /**
-    * Optionally returns the given `tag` as a fusion `tag`.
-    */
-  def getFusionTag(tag: TagInfo): Option[FusionTagInfo] = {
-    // Retrieve the tag type.
-    val innerType = tag.tagType
-
-    // Return none if the tag type is a non-tuple.
-    if (!innerType.isTuple)
-      return None
-
-    // Retrieve the element types of the tuple.
-    val elementTypes = innerType.typeArguments
-
-    // Construct the fusion tag.
-    Some(FusionTagInfo(tag.sym, tag.tag, tag.enumType, tag.tagType, elementTypes))
-  }
-
-  /**
-    * Returns the fusion class type `Cons$X$Y$Z` for the given type `tpe`.
-    *
-    * For example,
-    *
-    * Some((Int, Int))      =>    Some$2$Int$Int
-    */
-  def getFusionClassType(tag: FusionTagInfo)(implicit root: Root, flix: Flix): JvmType.Reference = {
-    // Retrieve the tag name.
-    val tagName = tag.tag
-
-    // Retrieve the type arguments.
-    val args = tag.elms.map(tpe => stringify(getErasedJvmType(tpe)))
-
-    // The JVM name is of the form Tag$Arg0$Arg1$Arg2
-    val name = if (args.isEmpty) tagName else tagName + "$" + args.length + "$" + args.mkString("$")
-
-    // The tag class resides in its namespace package.
-    JvmType.Reference(JvmName(tag.sym.namespace, name))
-  }
-
-  /**
     * Performs name mangling on the given string `s` to avoid issues with special characters.
     */
   // TODO: Magnus: Use this in appropriate places.

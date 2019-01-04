@@ -65,7 +65,6 @@ object Main {
 
     // compute the enabled optimizations.
     val optimizations = Optimization.All.filter {
-      case Optimization.TagTupleFusion => !cmdOpts.xnofusion
       case Optimization.TailCalls => !cmdOpts.xnotailcalls
     }
 
@@ -213,7 +212,6 @@ object Main {
                      xdebug: Boolean = false,
                      xinterpreter: Boolean = false,
                      xinvariants: Boolean = false,
-                     xnofusion: Boolean = false,
                      xnoinline: Boolean = false,
                      xnotailcalls: Boolean = false,
                      files: Seq[File] = Seq())
@@ -358,10 +356,6 @@ object Main {
       // Xinvariants.
       opt[Unit]("Xinvariants").action((_, c) => c.copy(xinvariants = true)).
         text("[experimental] enables compiler invariants.")
-
-      // Xno-fusion
-      opt[Unit]("Xno-fusion").action((_, c) => c.copy(xnofusion = true)).
-        text("[experimental] disables tag and tuple fusion.")
 
       // Xno-inline
       opt[Unit]("Xno-inline").action((_, c) => c.copy(xnoinline = true)).
