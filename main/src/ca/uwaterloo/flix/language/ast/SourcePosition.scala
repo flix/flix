@@ -1,0 +1,20 @@
+package ca.uwaterloo.flix.language.ast
+
+import ca.uwaterloo.flix.language.ast.Ast.Source
+import org.parboiled2.ParserInput
+
+object SourcePosition {
+  /**
+    * Represents an unknown source position.
+    */
+  val Unknown: SourcePosition = SourcePosition(Source("", Array.emptyCharArray), 0, 0, None)
+}
+
+/**
+  * A class that represent a physical source position inside a source input.
+  *
+  * @param line  the line number.
+  * @param col   the column number.
+  * @param input the parser input.
+  */
+case class SourcePosition(source: Source, line: Int, col: Int, input: Option[ParserInput])

@@ -16,12 +16,56 @@
 
 package ca.uwaterloo.flix.language.ast
 
+import java.nio.file.Path
+
 import ca.uwaterloo.flix.api.Flix
 
 /**
   * A collection of AST nodes that are shared across multiple ASTs.
   */
 object Ast {
+
+  /**
+    * A common super-type for inputs.
+    */
+  sealed trait Input
+
+  object Input {
+
+    /**
+      * A source that is backed by an internal resource.
+      */
+    case class Internal(name: String, text: String) extends Input
+
+    /**
+      * A source that is backed by a regular string.
+      */
+    case class Str(text: String) extends Input
+
+    /**
+      * A source that is backed by a regular file.
+      */
+    case class TxtFile(path: Path) extends Input
+
+    /**
+      * A source that is backed by flix package file.
+      */
+    case class PkgFile(path: Path) extends Input
+
+  }
+
+  /**
+    * A source is a name and an array of character data.
+    */
+  case class Source(name: String, data: Array[Char]) {
+    def format: String = name
+
+    override def equals(o: scala.Any): Boolean = o match {
+      case that: Source => this.name == that.name
+    }
+
+    override def hashCode(): Int = name.hashCode
+  }
 
   /**
     * A common super type for AST nodes that represent annotations.

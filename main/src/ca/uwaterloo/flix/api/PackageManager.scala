@@ -4,12 +4,11 @@ import java.nio.file.attribute.BasicFileAttributes
 import java.nio.file.{FileVisitResult, Files, Path, SimpleFileVisitor}
 import java.util.zip.{ZipEntry, ZipFile, ZipOutputStream}
 
-import scala.collection.mutable
+import ca.uwaterloo.flix.language.ast.Ast.Source
 
-import ca.uwaterloo.flix.language.ast.Source
+import scala.collection.mutable
 import ca.uwaterloo.flix.runtime.{CompilationResult, Tester}
 import ca.uwaterloo.flix.util.vt.TerminalContext
-
 import ca.uwaterloo.flix.util.{InternalCompilerException, Options, StreamOps, Validation}
 
 /**

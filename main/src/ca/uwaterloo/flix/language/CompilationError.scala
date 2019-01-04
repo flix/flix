@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language
 
-import ca.uwaterloo.flix.language.ast.Source
+import ca.uwaterloo.flix.language.ast.Ast.Source
 import ca.uwaterloo.flix.util.vt.VirtualTerminal
 
 /**

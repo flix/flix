@@ -17,13 +17,13 @@
 package ca.uwaterloo.flix.language.phase
 
 import java.nio.file.Files
-import java.util.zip.ZipFile
 
 import ca.uwaterloo.flix.api.{Flix, PackageManager}
 import ca.uwaterloo.flix.language.CompilationError
-import ca.uwaterloo.flix.language.ast.{Input, Source, Symbol}
+import ca.uwaterloo.flix.language.ast.Ast.{Input, Source}
+import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.util.Validation._
-import ca.uwaterloo.flix.util.{StreamOps, Validation}
+import ca.uwaterloo.flix.util.Validation
 
 /**
   * A phase to read inputs into memory.
